@@ -277,16 +277,17 @@ impl Emitter {
         self.colors.resize(n * 3, 0.0);
         self.sizes.resize(n, 0.0);
         let p = self.params;
-        for i in 0..n {
-            let u = (self.age[i] / self.life[i]).clamp(0.0, 1.0);
+        let it = self.age.iter().zip(self.life.iter()).zip(self.colors.chunks_exact_mut(3).zip(self.sizes.iter_mut()));
+        for ((&age, &life), (col, size)) in it {
+            let u = (age / life).clamp(0.0, 1.0);
             let s = u * 3.0;
             let k = (s as usize).min(2);
             let f = s - k as f32;
             let (a, b) = (gradient[k], gradient[k + 1]);
             for c in 0..3 {
-                self.colors[i * 3 + c] = a[c] + (b[c] - a[c]) * f;
+                col[c] = a[c] + (b[c] - a[c]) * f;
             }
-            self.sizes[i] = p.size_start + (p.size_end - p.size_start) * u;
+            *size = p.size_start + (p.size_end - p.size_start) * u;
         }
     }
 
@@ -352,6 +353,39 @@ mod tests {
             }
             i += 1;
         }
+    }
+
+    #[test]
+    fn shade_matches_reference_bit_for_bit() {
+        let mut e = Emitter::new(3000, 5);
+        e.params.rate = 2000.0;
+        e.params.life = 1.0;
+        e.params.life_var = 0.8;
+        e.params.size_start = 2.0;
+        e.params.size_end = 0.25;
+        for _ in 0..50 {
+            e.step(1.0 / 60.0);
+        }
+        let g: Gradient = [[1.0, 0.9, 0.5], [1.0, 0.4, 0.1], [0.6, 0.1, 0.2], [0.1, 0.1, 0.3]];
+        e.shade(&g);
+        // The previous indexed loop, verbatim.
+        let n = e.len();
+        let (mut colors, mut sizes) = (alloc::vec![0.0f32; n * 3], alloc::vec![0.0f32; n]);
+        let p = e.params;
+        for i in 0..n {
+            let u = (e.age[i] / e.life[i]).clamp(0.0, 1.0);
+            let s = u * 3.0;
+            let k = (s as usize).min(2);
+            let f = s - k as f32;
+            let (a, b) = (g[k], g[k + 1]);
+            for c in 0..3 {
+                colors[i * 3 + c] = a[c] + (b[c] - a[c]) * f;
+            }
+            sizes[i] = p.size_start + (p.size_end - p.size_start) * u;
+        }
+        assert!(n > 1000);
+        assert_eq!(e.colors.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), colors.iter().map(|v| v.to_bits()).collect::<Vec<_>>());
+        assert_eq!(e.sizes.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), sizes.iter().map(|v| v.to_bits()).collect::<Vec<_>>());
     }
 
     #[test]

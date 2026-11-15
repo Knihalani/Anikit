@@ -175,3 +175,11 @@ bench('emitter: step (turbulence + attractor)', 100000, 'particles', () => {
   w.ak_emitter_burst(id, 100000);
   return { id, done: () => w.ak_emitter_free(id) };
 }, (c) => w.ak_emitter_step(c.id, 1 / 60));
+bench('emitter: shade (colour + size over life)', 100000, 'particles', () => {
+  const id = w.ak_emitter_create(100000, 7);
+  f64([0, 2, 0.5, 0, 0, 0, 1, 200, 0, 0, 0, 1, 0, 200, 0.4, 0.6, 0, -300, 0, 0.4, 0, 0.01, 0, 0, 0, 0, 1, 0]);
+  w.ak_emitter_params(id);
+  w.ak_emitter_burst(id, 100000);
+  for (let i = 0; i < 30; i++) w.ak_emitter_step(id, 1 / 60);
+  return { id, done: () => w.ak_emitter_free(id) };
+}, (c) => { f64([1, 0.9, 0.5, 1, 0.4, 0.1, 0.6, 0.1, 0.2, 0.1, 0.1, 0.3]); w.ak_emitter_shade(c.id); });

@@ -54,6 +54,7 @@ the wasm build in vitest, so the two targets are checked against each other.
 | splat draw + tone map (trail 0.5), 1080×675 | 150k points | 10.2–10.8 | 5.8 |
 | splat draw + tone map (trail 0.5), 1920×1080 (65% discs) | 120k points | 30.4–31.0 | 17.8–19.0 |
 | emitter step (turbulence + attractor) | 100k | 2.64–2.85 | 1.42–1.60 |
+| emitter shade (colour + size over life) | 100k | 1.22–1.24 | 0.39–0.40 |
 | world step (settled pile) | 1k / 5k / 20k bodies | unchanged | unchanged |
 | cloud step | 150k | unchanged (1.57–1.70) | unchanged |
 
@@ -74,7 +75,7 @@ End to end:
 path (the core's share of a 10k-object tick is ~0.2 ms of ~1.7 ms), which was
 out of scope here, so core changes don't move it.
 
-Wasm size: 397,170 → 403,063 bytes after `wasm-opt` (+5.9 KB, of which 4.8 KB
+Wasm size: 397,170 → 403,742 bytes after `wasm-opt` (+6.6 KB, of which 4.8 KB
 is the two-phase splat draw, §1).
 
 ## 1. Splat tone map: clamps as compare + select
@@ -167,6 +168,10 @@ separate loops) is bit-identical (`step_matches_reference_bit_for_bit`, with
 emission, deaths, variable `dt` and all four variants).
 
 wasm 100k: 2.64–2.85 → 1.42–1.60 ms; native: 2.34–2.48 → 1.95–2.16 ms.
+
+`shade` (colour and size over life, called every rendered frame) walks the
+arrays with iterators instead of indexing five of them: wasm 100k
+1.22–1.24 → 0.39–0.40 ms (`shade_matches_reference_bit_for_bit`).
 
 ## 5. sRGB encode (the only non-bit-exact change)
 
