@@ -271,8 +271,11 @@ export function spring(targets: Targets, props: Record<string, number | string>,
 }
 
 export interface InertiaProp {
+  /** Initial velocity in units per second (e.g. a pointer's release velocity). */
   velocity: number;
+  /** Lower bound: the value springs back if it glides past. */
   min?: number;
+  /** Upper bound: the value springs back if it glides past. */
   max?: number;
   /** Snap the resting point: a step, a list of points, or a function. */
   snap?: number | number[] | ((natural: number) => number);
@@ -285,6 +288,7 @@ export interface InertiaOptions extends PhysicsOptions {
   timeConstant?: number;
   /** Spring used when hitting a bound. */
   bounceStiffness?: number;
+  /** Damping of that bound spring (default 40). */
   bounceDamping?: number;
 }
 
@@ -354,6 +358,7 @@ export interface PhysicsProp {
   acceleration?: number;
   /** Bounds that the value bounces off (see `restitution`). */
   min?: number;
+  /** Upper bound the value bounces off. */
   max?: number;
 }
 
@@ -364,7 +369,9 @@ export interface BallisticOptions {
   restitution?: number;
   /** Stop after this many seconds. */
   life?: number;
+  /** Every frame while moving. */
   onUpdate?: () => void;
+  /** Came to rest (or `life` ran out). */
   onComplete?: () => void;
 }
 

@@ -34,7 +34,7 @@
   "scripts": {
     "build:wasm": "node scripts/build-wasm.mjs",
     "build": "node scripts/build-wasm.mjs && node scripts/build.mjs && node scripts/build-llms.mjs",
-    "typecheck": "tsc --noEmit && node scripts/check-docs.mjs",
+    "typecheck": "tsc --noEmit && node scripts/check-docs.mjs && node scripts/check-jsdoc.mjs",
     "docs": "node scripts/check-docs.mjs && node scripts/build-llms.mjs",
     "docs:browser": "node scripts/check-recipes-browser.mjs",
     "test": "node scripts/build-wasm.mjs && vitest run",

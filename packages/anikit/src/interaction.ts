@@ -21,11 +21,17 @@ import type { OptionKeys } from './debug';
 // ---------------------------------------------------------------------------
 
 export interface Bounds {
+  /** Smallest x (transform px). */
   minX?: number;
+  /** Largest x (transform px). */
   maxX?: number;
+  /** Smallest y (transform px). */
   minY?: number;
+  /** Largest y (transform px). */
   maxY?: number;
+  /** Smallest rotation (degrees) for `type: 'rotate'`. */
   minRotation?: number;
+  /** Largest rotation (degrees) for `type: 'rotate'`. */
   maxRotation?: number;
 }
 
@@ -293,10 +299,15 @@ export function draggable(targets: Targets, options?: DraggableOptions): Draggab
 // ---------------------------------------------------------------------------
 
 export interface ObserverEvent {
+  /** Horizontal movement since the last event (px). */
   deltaX: number;
+  /** Vertical movement since the last event (px). */
   deltaY: number;
+  /** Horizontal velocity (px/s). */
   velocityX: number;
+  /** Vertical velocity (px/s). */
   velocityY: number;
+  /** The DOM event that produced this one. */
   event: Event;
 }
 

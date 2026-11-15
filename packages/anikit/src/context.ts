@@ -17,7 +17,9 @@
 import { setSelectorRoot } from './props';
 
 export interface Revertible {
+  /** Undo: stop and restore what was changed. */
   revert(): void;
+  /** Stop without restoring. */
   kill?(): void;
 }
 

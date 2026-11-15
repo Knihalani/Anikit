@@ -16,6 +16,7 @@ import { core, W } from './wasm';
 import { engine } from './core';
 
 export interface AudioAnalysis {
+  /** Estimated tempo in beats per minute. */
   bpm: number;
   /** Beat times in seconds (a steady grid fitted to the onsets). */
   beats: number[];
@@ -25,7 +26,9 @@ export interface AudioAnalysis {
   envelope: Float32Array;
   /** Onset strength per `hop` seconds, 0…1. */
   flux: Float32Array;
+  /** Seconds between `envelope` / `flux` samples. */
   hop: number;
+  /** Length of the audio in seconds. */
   duration: number;
   /** Interpolated loudness at `t` seconds. */
   at(t: number): number;

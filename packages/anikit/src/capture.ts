@@ -176,6 +176,7 @@ export function encodeGif(frames: ArrayLike<ArrayLike<number>>, width: number, h
 export interface RecordOptions extends RasterOptions {
   /** Seconds to record (default 2). */
   duration?: number;
+  /** Frames per second (default 30). */
   fps?: number;
   /** 'gif' (default), 'webm', or 'frames' (PNG blobs). */
   format?: 'gif' | 'webm' | 'frames';
@@ -185,15 +186,20 @@ export interface RecordOptions extends RasterOptions {
   realtime?: boolean;
   /** GIF loop count (0 = forever). */
   loop?: number;
+  /** Called with 0…1 as frames are captured. */
   onProgress?: (fraction: number) => void;
 }
 
 export interface Recording {
+  /** The encoded file (GIF or WebM). */
   blob: Blob;
   /** Object URL of `blob` (revoke when done). */
   url: string;
+  /** Number of frames captured. */
   frames: number;
+  /** Frame width in pixels. */
   width: number;
+  /** Frame height in pixels. */
   height: number;
   /** PNG blobs when `format: 'frames'`. */
   images?: Blob[];

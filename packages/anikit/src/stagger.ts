@@ -16,6 +16,7 @@ export interface StaggerOptions {
   from?: number | 'first' | 'last' | 'center' | 'edges' | 'random';
   /** `[columns, rows]` for 2D grid distances. */
   grid?: [number, number];
+  /** With `grid`: measure distance along one axis only. */
   axis?: 'x' | 'y';
   /** Easing applied across the distribution. */
   ease?: EasingInput;

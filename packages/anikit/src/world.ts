@@ -47,8 +47,11 @@ const WORLD_KEYS: OptionKeys<WorldOptions> = {
 };
 
 export interface BodyInit {
+  /** Centre x (px, world space). */
   x: number;
+  /** Centre y (px, world space). */
   y: number;
+  /** Radius (px). */
   r: number;
   /** <= 0 → static. Default: area-proportional. */
   mass?: number;

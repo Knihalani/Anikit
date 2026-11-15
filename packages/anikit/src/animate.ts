@@ -49,6 +49,7 @@ export interface MotionPathOptions {
   path: PathSource;
   /** Progress along the path to travel from / to (0–1). Default 0 → 1. */
   start?: number;
+  /** Progress along the path to stop at (0–1). Default 1. */
   end?: number;
   /** Rotate the target to follow the path tangent; a number adds an angle offset. */
   rotate?: boolean | number;

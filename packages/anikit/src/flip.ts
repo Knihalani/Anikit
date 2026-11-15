@@ -13,8 +13,11 @@ import { Targets, toTargets, stateOf, flushTransforms } from './props';
 import { checkTargets } from './debug';
 
 export interface FlipState {
+  /** The captured elements. */
   els: Element[];
+  /** Their boxes at capture time. */
   rects: DOMRect[];
+  /** Their inline opacity at capture time. */
   opacity: string[];
 }
 

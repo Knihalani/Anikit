@@ -566,7 +566,9 @@ export function scrollTriggerBatch(targets: Targets, options: Omit<ScrollTrigger
 // ---------------------------------------------------------------------------
 
 export interface ScrollToOptions extends AnimateOptions {
+  /** Element (or selector) to scroll. Default: the page. */
   container?: Element | Window | string;
+  /** Scroll along x. Default false. */
   horizontal?: boolean;
   /** Pixels to subtract from an element target (e.g. a fixed header). */
   offset?: number;
@@ -636,6 +638,7 @@ export interface SmoothScrollOptions {
   wheelMultiplier?: number;
   /** Also smooth touch scrolling (default false: native touch momentum is better). */
   touch?: boolean;
+  /** Called with the scroll position (px) every frame it moves. */
   onUpdate?: (scroll: number) => void;
 }
 

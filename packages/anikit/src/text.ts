@@ -28,6 +28,7 @@ export interface SplitResult {
   chars: HTMLElement[];
   /** One span per word. */
   words: HTMLElement[];
+  /** One wrapper per rendered line (when `type` includes `'lines'`). */
   lines: HTMLElement[];
   /** Restore the original markup. */
   revert(): void;
