@@ -107,6 +107,8 @@ export class Scene3D {
   /** Animatable model rotation in degrees (applied X, then Y, then Z). */
   rotation: Vec3 = { x: 0, y: 0, z: 0 };
   fov: number;
+  /** Camera roll around its viewing axis, in degrees (banking, barrel rolls). */
+  roll = 0;
   near: number;
   far: number;
   canvas: HTMLCanvasElement | null;
@@ -171,9 +173,21 @@ export class Scene3D {
     const model = Array.from(F64.subarray(p, p + 16));
     const c = this.camera;
     const t = this.target;
-    p = w.ak_camera(c.x, c.y, c.z, t.x, t.y, t.z, this.fov, this.width / this.height, this.near, this.far) >>> 3;
+    const aspect = this.width / this.height;
+    p = w.ak_camera(c.x, c.y, c.z, t.x, t.y, t.z, this.fov, aspect, this.near, this.far) >>> 3;
     views();
-    return model.concat(Array.from(F64.subarray(p, p + 16)));
+    const vp = Array.from(F64.subarray(p, p + 16));
+    if (this.roll) {
+      // Roll in view space: P·Rz·V = (P·Rz·P⁻¹)·(P·V), which on clip x/y is an
+      // aspect-corrected rotation of the first two rows.
+      const a = (this.roll * Math.PI) / 180, cs = Math.cos(a), sn = Math.sin(a);
+      for (let col = 0; col < 4; col++) {
+        const x = vp[col * 4], y = vp[col * 4 + 1];
+        vp[col * 4] = cs * x - (sn / aspect) * y;
+        vp[col * 4 + 1] = aspect * sn * x + cs * y;
+      }
+    }
+    return model.concat(vp);
   }
 
   /**
