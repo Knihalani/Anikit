@@ -539,6 +539,266 @@ impl Path {
     }
 }
 
+impl Path {
+    /// Flatten into polylines (one per subpath) with max deviation `tolerance`.
+    pub fn flatten(&self, tolerance: f64) -> Vec<Vec<[f64; 2]>> {
+        let tol = tolerance.max(1e-6);
+        let mut out = Vec::with_capacity(self.subpaths.len());
+        for sp in &self.subpaths {
+            let mut pts = alloc::vec![sp.start];
+            let mut p0 = sp.start;
+            for s in &sp.segs {
+                // Segment count from the control polygon's deviation (Wang's formula).
+                let dd = |a: f64, b: f64, c: f64| abs(a - 2.0 * b + c);
+                let m = dd(p0[0], s[0], s[2]).max(dd(s[0], s[2], s[4])).max(dd(p0[1], s[1], s[3])).max(dd(s[1], s[3], s[5]));
+                let n = ((sqrt(m * 0.75 / tol)) as usize + 1).clamp(1, 512);
+                for k in 1..=n {
+                    pts.push(cubic_point(p0, s, k as f64 / n as f64));
+                }
+                p0 = [s[4], s[5]];
+            }
+            out.push(pts);
+        }
+        out
+    }
+
+    /// Signed area (positive = clockwise in SVG's y-down space).
+    pub fn area(&self) -> f64 {
+        let mut a = 0.0;
+        for poly in self.flatten(0.005) {
+            let n = poly.len();
+            for i in 0..n {
+                let p = poly[i];
+                let q = poly[(i + 1) % n];
+                a += p[0] * q[1] - q[0] * p[1];
+            }
+        }
+        a / 2.0
+    }
+
+    /// The part of the path between `start` and `end` (fractions of the total
+    /// length, 0–1). Useful for "draw-on" effects and path slicing.
+    pub fn trim(&self, start: f64, end: f64) -> Path {
+        let (s, e) = (start.clamp(0.0, 1.0), end.clamp(0.0, 1.0));
+        let (s, e) = if s <= e { (s, e) } else { (e, s) };
+        if e - s <= 0.0 {
+            return Path::default();
+        }
+        let total = self.length();
+        let (ls, le) = (s * total, e * total);
+        let mut out = Path::default();
+        let mut acc = 0.0;
+        for sp in &self.subpaths {
+            let mut p0 = sp.start;
+            let mut cur: Option<SubPath> = None;
+            for seg in &sp.segs {
+                let len = cubic_length(p0, seg, 1.0);
+                let (a, b) = (acc, acc + len);
+                if b > ls && a < le && len > 0.0 {
+                    let t0 = if ls > a { t_at_length(p0, seg, ls - a) } else { 0.0 };
+                    let t1 = if le < b { t_at_length(p0, seg, le - a) } else { 1.0 };
+                    let (piece_start, piece) = sub_cubic(p0, seg, t0, t1);
+                    match &mut cur {
+                        Some(c) => c.segs.push(piece),
+                        None => cur = Some(SubPath { start: piece_start, segs: alloc::vec![piece], closed: false }),
+                    }
+                }
+                acc = b;
+                p0 = [seg[4], seg[5]];
+            }
+            if let Some(c) = cur {
+                out.subpaths.push(c);
+            }
+        }
+        out
+    }
+
+    /// A smooth path through `points` (`[x0, y0, x1, y1, …]`) using a
+    /// Catmull–Rom spline; `curviness` 0 = straight lines, 1 = natural.
+    pub fn through_points(points: &[f64], curviness: f64, closed: bool) -> Path {
+        let n = points.len() / 2;
+        if n == 0 {
+            return Path::default();
+        }
+        let p = |i: isize| -> [f64; 2] {
+            let i = if closed {
+                i.rem_euclid(n as isize) as usize
+            } else {
+                i.clamp(0, n as isize - 1) as usize
+            };
+            [points[i * 2], points[i * 2 + 1]]
+        };
+        let k = curviness / 6.0;
+        let count = if closed { n } else { n - 1 };
+        let mut segs = Vec::with_capacity(count);
+        for i in 0..count as isize {
+            let (p0, p1, p2, p3) = (p(i - 1), p(i), p(i + 1), p(i + 2));
+            segs.push([
+                p1[0] + (p2[0] - p0[0]) * k,
+                p1[1] + (p2[1] - p0[1]) * k,
+                p2[0] - (p3[0] - p1[0]) * k,
+                p2[1] - (p3[1] - p1[1]) * k,
+                p2[0],
+                p2[1],
+            ]);
+        }
+        Path { subpaths: alloc::vec![SubPath { start: p(0), segs, closed }] }
+    }
+
+    /// Reduce detail: flatten, drop points within `tolerance` (Ramer–Douglas–
+    /// Peucker), then rebuild as straight lines or (with `smooth`) a spline.
+    pub fn simplify(&self, tolerance: f64, smooth: bool) -> Path {
+        let mut out = Path::default();
+        for (poly, sp) in self.flatten(tolerance * 0.25).into_iter().zip(&self.subpaths) {
+            let kept = rdp(&poly, tolerance.max(1e-9));
+            let mut flat = Vec::with_capacity(kept.len() * 2);
+            let pts = if sp.closed && kept.len() > 2 && kept[0] == kept[kept.len() - 1] { &kept[..kept.len() - 1] } else { &kept[..] };
+            for q in pts {
+                flat.push(q[0]);
+                flat.push(q[1]);
+            }
+            let piece = if smooth { Path::through_points(&flat, 1.0, sp.closed) } else { Path::polygon(&flat, sp.closed) };
+            out.subpaths.extend(piece.subpaths);
+        }
+        out
+    }
+}
+
+/// Parameter `t` at which the arc length of a cubic reaches `target`.
+pub fn t_at_length(p0: [f64; 2], s: &Seg, target: f64) -> f64 {
+    let total = cubic_length(p0, s, 1.0);
+    if target <= 0.0 {
+        return 0.0;
+    }
+    if target >= total {
+        return 1.0;
+    }
+    let (mut lo, mut hi) = (0.0, 1.0);
+    let mut t = target / total;
+    for _ in 0..30 {
+        let l = cubic_length(p0, s, t);
+        if abs(l - target) < 1e-9 {
+            break;
+        }
+        if l < target {
+            lo = t;
+        } else {
+            hi = t;
+        }
+        t = (lo + hi) / 2.0;
+    }
+    t
+}
+
+/// The sub-curve of a cubic between parameters `t0 < t1`.
+pub fn sub_cubic(p0: [f64; 2], s: &Seg, t0: f64, t1: f64) -> ([f64; 2], Seg) {
+    let (_, mid, right) = if t0 > 0.0 { split_cubic(p0, s, t0) } else { (*s, p0, *s) };
+    let start = if t0 > 0.0 { mid } else { p0 };
+    let rest = right;
+    if t1 >= 1.0 {
+        return (start, rest);
+    }
+    let local = if t0 < 1.0 { (t1 - t0) / (1.0 - t0) } else { 1.0 };
+    let (left, _, _) = split_cubic(start, &rest, local);
+    (start, left)
+}
+
+#[inline]
+fn sq(v: f64) -> f64 {
+    v * v
+}
+
+fn rdp(pts: &[[f64; 2]], tol: f64) -> Vec<[f64; 2]> {
+    let n = pts.len();
+    if n <= 2 {
+        return pts.to_vec();
+    }
+    let mut keep = alloc::vec![false; n];
+    keep[0] = true;
+    keep[n - 1] = true;
+    let mut stack = alloc::vec![(0usize, n - 1)];
+    while let Some((a, b)) = stack.pop() {
+        if b <= a + 1 {
+            continue;
+        }
+        let (pa, pb) = (pts[a], pts[b]);
+        let (dx, dy) = (pb[0] - pa[0], pb[1] - pa[1]);
+        let len = sqrt(dx * dx + dy * dy);
+        let mut worst = (0.0, a);
+        for (i, q) in pts.iter().enumerate().take(b).skip(a + 1) {
+            let d = if len > 0.0 {
+                abs(dy * q[0] - dx * q[1] + pb[0] * pa[1] - pb[1] * pa[0]) / len
+            } else {
+                sqrt(sq(q[0] - pa[0]) + sq(q[1] - pa[1]))
+            };
+            if d > worst.0 {
+                worst = (d, i);
+            }
+        }
+        if worst.0 > tol {
+            keep[worst.1] = true;
+            stack.push((a, worst.1));
+            stack.push((worst.1, b));
+        }
+    }
+    pts.iter().zip(keep).filter(|(_, k)| *k).map(|(p, _)| *p).collect()
+}
+
+impl PathLut {
+    /// Sample at an absolute distance along the path.
+    pub fn sample_length(&self, l: f64) -> [f64; 3] {
+        self.sample(if self.length > 0.0 { l / self.length } else { 0.0 })
+    }
+
+    /// Closest point on the path to `(x, y)`: `[progress, x, y, distance]`.
+    pub fn closest(&self, x: f64, y: f64) -> [f64; 4] {
+        let d = &self.data;
+        let n = d.len() / 3;
+        if n == 0 {
+            return [0.0, 0.0, 0.0, f64::INFINITY];
+        }
+        let dist2 = |i: usize| sq(d[i * 3] - x) + sq(d[i * 3 + 1] - y);
+        let mut best = 0;
+        let mut bd = dist2(0);
+        for i in 1..n {
+            let v = dist2(i);
+            if v < bd {
+                bd = v;
+                best = i;
+            }
+        }
+        // Refine on the neighbouring segments by projection.
+        let mut res = [best as f64 / (n - 1).max(1) as f64, d[best * 3], d[best * 3 + 1], sqrt(bd)];
+        for j in [best.saturating_sub(1), best] {
+            if j + 1 >= n {
+                continue;
+            }
+            let (ax, ay, bx, by) = (d[j * 3], d[j * 3 + 1], d[j * 3 + 3], d[j * 3 + 4]);
+            let (vx, vy) = (bx - ax, by - ay);
+            let l2 = vx * vx + vy * vy;
+            let f = if l2 > 0.0 { (((x - ax) * vx + (y - ay) * vy) / l2).clamp(0.0, 1.0) } else { 0.0 };
+            let (px, py) = (ax + vx * f, ay + vy * f);
+            let dd = sqrt(sq(px - x) + sq(py - y));
+            if dd < res[3] {
+                res = [(j as f64 + f) / (n - 1) as f64, px, py, dd];
+            }
+        }
+        res
+    }
+
+    /// `n` points evenly spaced by distance: `[x0, y0, x1, y1, …]`.
+    pub fn points(&self, n: usize) -> Vec<f64> {
+        let mut out = Vec::with_capacity(n * 2);
+        for i in 0..n {
+            let t = if n > 1 { i as f64 / (n - 1) as f64 } else { 0.0 };
+            let s = self.sample(t);
+            out.push(s[0]);
+            out.push(s[1]);
+        }
+        out
+    }
+}
+
 fn quad_to_cubic(x0: f64, y0: f64, qx: f64, qy: f64, x: f64, y: f64) -> Seg {
     [x0 + 2.0 / 3.0 * (qx - x0), y0 + 2.0 / 3.0 * (qy - y0), x + 2.0 / 3.0 * (qx - x), y + 2.0 / 3.0 * (qy - y), x, y]
 }
@@ -756,6 +1016,33 @@ mod tests {
         assert!((q[0] - 50.0).abs() < 1e-6 && q[2].abs() < 1e-6);
         let r = lut.sample(0.75);
         assert!((r[1] - 50.0).abs() < 1e-6 && (r[2] - 90.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn ops() {
+        let line = Path::parse("M0 0 L100 0");
+        let t = line.trim(0.25, 0.75);
+        assert!((t.length() - 50.0).abs() < 1e-6);
+        assert!((t.subpaths[0].start[0] - 25.0).abs() < 1e-6);
+        let c = Path::ellipse(0.0, 0.0, 10.0, 10.0);
+        let half = c.trim(0.0, 0.5);
+        assert!((half.length() - c.length() / 2.0).abs() < 1e-3);
+        assert!((c.area().abs() - core::f64::consts::PI * 100.0).abs() < 1.0);
+        let sq = Path::parse("M0 0 H10 V10 H0 Z");
+        assert!((sq.area().abs() - 100.0).abs() < 1e-9);
+        let lut = PathLut::new(&line, 101);
+        let cp = lut.closest(30.0, 5.0);
+        assert!((cp[0] - 0.3).abs() < 1e-9 && (cp[3] - 5.0).abs() < 1e-9);
+        assert_eq!(lut.points(3), alloc::vec![0.0, 0.0, 50.0, 0.0, 100.0, 0.0]);
+        let sp = Path::through_points(&[0.0, 0.0, 50.0, 50.0, 100.0, 0.0], 1.0, false);
+        assert_eq!(sp.subpaths[0].segs.len(), 2);
+        let mid = sp.point_at(0.5);
+        assert!((mid[0] - 50.0).abs() < 1.0 && (mid[1] - 50.0).abs() < 1.0);
+        let flat = c.flatten(0.01);
+        assert!(flat[0].len() > 20);
+        let s = c.simplify(0.5, false);
+        assert!(s.segment_count() < flat[0].len() && s.segment_count() >= 8);
+        assert!((s.length() - c.length()).abs() < 2.0);
     }
 
     #[test]

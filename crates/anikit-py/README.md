@@ -2,9 +2,10 @@
 
 Python bindings for **Anikit**, a high-performance animation engine with a Rust
 core. Animate plain Python objects — dicts, objects, lists of them — with
-tweens, keyframes, timelines, springs and inertia; interpolate colours in
-OKLab; measure, follow and morph SVG paths; and export animations to CSS
-`@keyframes` or the Web Animations API.
+tweens, keyframes, timelines, springs, inertia and ballistic physics;
+interpolate colours in OKLab; measure, edit, follow and morph SVG paths;
+generate smooth noise; and export animations to CSS `@keyframes` or the Web
+Animations API.
 
 All public times are in **seconds**.
 
@@ -69,6 +70,32 @@ s.sample(60)        # 60 samples over [0, 1]
 Easing(lambda t: t ** 3)                   # any Python function (sampled to a table)
 ```
 
+### Custom, composed and preset easings
+
+```python
+Easing("custom(M0,0 C0.5,0 0.5,1 1,1)")    # "CustomEase": draw the curve as SVG path data
+Easing.from_path("M0,0 C0.2,0 0.3,1.2 0.6,1 0.8,0.9 1,1")   # may overshoot
+# (y up from (0,0) to (1,1); paths in other ranges / y-down are normalised by their end points)
+
+Easing("reverse(inQuad)")                  # 1 - f(1 - t) → same as outQuad
+Easing("mirror(outBack)")                  # there and back within one iteration
+Easing("blend(inQuad, outBounce, 0.3)")    # a·0.7 + b·0.3 (weight defaults to 0.5)
+Easing("inCubic").reversed(), Easing("outBack").mirrored(), Easing.blend("linear", fn, 0.2)
+
+Easing("rough(20, 1, 7, outQuad)")         # jitter: points, strength, seed, template
+Easing.rough(points=30, strength=2, seed=7, template="outQuad")   # deterministic per seed
+
+Easing("expoScale(1, 10)")                 # zoom 1 → 10 at a perceptually constant rate
+Easing.expo_scale(1, 10)
+
+Easing("spring.wobbly")                    # presets (also bare: "wobbly"):
+# gentle, wobbly, stiff, slow, molasses, snappy, bouncy
+```
+
+All of these are plain easing strings, so they work anywhere an easing is
+accepted (`animate(..., ease="mirror(outBack)")`, keyframes, timelines, CSS
+export — non-native curves become `linear()`).
+
 ## Colours
 
 ```python
@@ -83,6 +110,24 @@ color.to_css((0, 0, 0, 0.25))             # 'rgba(0,0,0,0.25)'
 
 Spaces: `oklab`, `oklch`, `srgb`, `linear-srgb`, `hsl`. Alpha is premultiplied,
 so fading to `transparent` never passes through grey.
+
+## Noise
+
+```python
+from anikit import Noise
+
+n = Noise(seed=7)                         # same seed → same field
+n.noise2(x, y), n.noise3(x, y, t)         # smooth simplex noise, ≈ [-1, 1]
+n.fbm2(x, y, octaves=5, lacunarity=2, gain=0.5)   # fractal detail (also fbm3)
+
+# Vectorised: one native call for a whole list; numbers broadcast.
+xs = [i * 0.05 for i in range(1000)]
+wobble = n.noise2_many(xs, 0.0)           # also noise3_many, fbm2_many, fbm3_many
+field = n.grid(64, 64, step=0.05, z=t, octaves=3)   # 64 rows × 64 values
+
+# Typical use: organic idle motion driven by time.
+anikit.animate(leaf, {"x": 100}, duration=2, ease=lambda t: t + 0.05 * n.noise2(t * 4, 0))
+```
 
 ## Paths, motion and morphing
 
@@ -103,6 +148,53 @@ m.frames(30, ease="inOutCubic")     # 30 path strings
 anikit.animate(sprite, {"motion": motion_path(p, rotate="angle")}, duration=2)
 anikit.animate(icon, {"d": [Path.rect(0, 0, 10, 10), Path.circle(5, 5, 5)]})
 ```
+
+### Path operations
+
+```python
+p = Path.through([(0, 0), (50, 80), (120, 20), (200, 60)], curviness=1)   # smooth spline
+Path.through(points, closed=True)          # closed loop; curviness=0 → straight lines
+
+p.trim(0.2, 0.6)                           # the part between 20% and 60% of the length
+p.flatten(tolerance=0.25)                  # [[(x, y), ...], ...] one polyline per subpath
+p.simplify(1.0)                            # Ramer–Douglas–Peucker → lines
+p.simplify(1.0, smooth=True)               # … → smooth spline through the kept points
+Path.rect(0, 0, 30, 20).area               # 600.0 (signed: clockwise on screen > 0)
+
+p.point_at_length(42)                      # (x, y, angle) 42 units along the path
+p.closest_point(60, 70)                    # (progress, x, y, distance) — e.g. drag along a path
+p.sample_points(20)                        # 20 (x, y) points evenly spaced by distance
+
+# "Draw-on" effect: grow the visible part of a path.
+o = {"end": 0.0}
+anikit.animate(o, {"end": 1}, duration=1,
+               on_update=lambda: setattr(svg, "d", p.trim(0, o["end"]).d))
+```
+
+`closest_point` and the distance queries use the path's lookup table, so they
+are accurate to a small fraction of a unit (sharp corners are cut by less than
+one table step).
+
+### Morphing through several shapes
+
+```python
+from anikit import morph, morph_many
+
+seq = morph(square, circle, star)          # 3+ shapes → MorphSequence (2 → Morph)
+seq = morph_many([square, circle, star])
+seq.at(0.5)                                # path data at the circle
+seq.frames(60, ease="inOutSine")           # 60 path strings through all shapes
+
+anikit.animate(icon, {"d": [square, circle, star]}, duration=2)         # evenly spaced
+anikit.animate(icon, {"d": seq}, duration=2)
+anikit.animate(icon, {"d": [None, {"value": circle, "offset": 0.3},     # None = current shape
+                            {"value": star, "ease": "outBack"}]})
+```
+
+All shapes are normalised to one structure (subpaths padded, segments
+subdivided, closed shapes rotated to line up with the previous one), so a
+multi-shape morph is a single numeric track whose keyframes are the shapes —
+per-keyframe `offset` and `ease` work as for any other property.
 
 ## Stagger
 
@@ -191,6 +283,40 @@ anikit.inertia(card, {"x": {"velocity": 900, "end": [0, 250, 500]}})    # snaps 
 
 Springs use the exact closed-form solution, so they are stable at any frame rate.
 
+## Physics (ballistic motion)
+
+```python
+p = anikit.physics(
+    ball,
+    {
+        "x": {"velocity": 300, "min": 0, "max": 800},                    # walls
+        "y": {"velocity": -600, "acceleration": 1500, "max": 400},       # gravity + floor
+    },
+    friction=0.2,          # exponential drag (1/s); terminal velocity = acceleration / friction
+    restitution=0.5,       # bounce energy kept: 0 = stop dead … 1 = perfectly elastic
+    life=None,             # seconds; None = until at rest
+    on_update=None, on_complete=None,
+)
+p.velocity("y"), p.acceleration("y"), p.finished
+p.set_acceleration({"x": 50})              # wind / change gravity while running
+p.stop()
+
+anikit.physics(confetti, {"y": lambda t, i, n: {"velocity": -400 - 40 * i, "acceleration": 900}},
+               life=3)                     # per-target values, fixed lifetime
+```
+
+A plain number is the initial velocity (units/s); a dict accepts `velocity`,
+`acceleration`, `min`, `max` and per-property `friction` / `restitution`.
+Without `velocity`, a simulation already driving the property (spring,
+inertia or physics) hands over its velocity — and `spring()`/`inertia()`
+likewise continue from a physics simulation's velocity. Integration is exact,
+so results do not depend on the frame rate.
+
+A simulation finishes when it is at rest (slower than `rest_speed`, default
+0.05 units/s, with no acceleration or lying on a bound it is pushed against)
+or when `life` runs out. Motion that is accelerated with no bound in its way,
+or bounces elastically without friction, never rests — give it a `life`.
+
 ## Driving the engine
 
 ```python
@@ -200,7 +326,7 @@ for i, t in anikit.render(fps=30, duration=2.0):   # frames for t = 0, 1/30, ...
     ...
 
 engine = anikit.Engine()                    # independent world
-engine.animate(obj, {"x": 1}); engine.tick(0.016)
+engine.animate(obj, {"x": 1}); engine.tick(0.016)   # also engine.spring/inertia/physics
 engine.speed = 0.5                          # global time scale
 ```
 

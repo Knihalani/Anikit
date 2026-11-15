@@ -19,7 +19,8 @@ use anikit_core::color::{self, ColorSpace, Rgba};
 use anikit_core::css;
 use anikit_core::easing::Easing;
 use anikit_core::engine::{self as core_engine, Error, Handle, PlayState, TrackKind, TrackSpec, LINEAR, NONE};
-use anikit_core::morph::{self, MorphPlan};
+use anikit_core::morph::{self, MorphPlan, MorphSeq};
+use anikit_core::noise::Noise;
 use anikit_core::path::{Path, PathLut};
 use anikit_core::spring::SpringParams;
 use anikit_core::stagger::{self as core_stagger, Axis, Stagger, StaggerFrom};
@@ -124,6 +125,43 @@ impl NativeEasing {
         NativeEasing { e: Easing::spring(SpringParams::new(stiffness, damping, mass), velocity) }
     }
 
+    /// "CustomEase": an easing drawn as an SVG path from (0, 0) to (1, 1)
+    /// (paths in other coordinate ranges are normalised by their end points).
+    #[staticmethod]
+    fn from_path(d: &str) -> PyResult<Self> {
+        Easing::from_path(d)
+            .map(|e| NativeEasing { e })
+            .ok_or_else(|| PyValueError::new_err(format!("cannot build an easing from path {d:?}")))
+    }
+
+    /// Seeded jittery easing around `template` (linear by default).
+    #[staticmethod]
+    #[pyo3(signature = (points=20, strength=1.0, seed=1, template=None))]
+    fn rough(points: usize, strength: f64, seed: u32, template: Option<PyRef<'_, NativeEasing>>) -> PyResult<Self> {
+        if !strength.is_finite() {
+            return Err(PyValueError::new_err("rough() strength must be finite"));
+        }
+        let t = template.map(|t| t.e.clone()).unwrap_or(Easing::Linear);
+        Ok(NativeEasing { e: Easing::rough(points, strength, seed, &t) })
+    }
+
+    /// Weighted mix `a·(1-weight) + b·weight`.
+    #[staticmethod]
+    #[pyo3(signature = (a, b, weight=0.5))]
+    fn blend(a: PyRef<'_, NativeEasing>, b: PyRef<'_, NativeEasing>, weight: f64) -> Self {
+        NativeEasing { e: Easing::Blend(Box::new(a.e.clone()), Box::new(b.e.clone()), weight) }
+    }
+
+    /// Time-reversed easing `1 - f(1 - t)` (turns "in" into "out").
+    fn reversed(&self) -> Self {
+        NativeEasing { e: Easing::Reverse(Box::new(self.e.clone())) }
+    }
+
+    /// There-and-back easing: `f(2t)` then `f(2 - 2t)`.
+    fn mirrored(&self) -> Self {
+        NativeEasing { e: Easing::Mirror(Box::new(self.e.clone())) }
+    }
+
     fn __call__(&self, t: f64) -> f64 {
         self.e.ease(t)
     }
@@ -178,6 +216,9 @@ impl NativeEasing {
             Easing::Wiggle { .. } => "wiggle",
             Easing::SlowMo { .. } => "slowmo",
             Easing::Anticipate(_) => "anticipate",
+            Easing::Reverse(_) => "reverse",
+            Easing::Mirror(_) => "mirror",
+            Easing::Blend(..) => "blend",
         }
     }
 
@@ -398,6 +439,65 @@ impl NativePath {
         NativePath::wrap(p)
     }
 
+    /// Polylines (one per subpath) deviating at most `tolerance` from the curve.
+    #[pyo3(signature = (tolerance=0.25))]
+    fn flatten(&self, tolerance: f64) -> PyResult<Vec<Vec<(f64, f64)>>> {
+        if !(tolerance.is_finite() && tolerance > 0.0) {
+            return Err(PyValueError::new_err("tolerance must be a positive number"));
+        }
+        Ok(self.p.flatten(tolerance).into_iter().map(|poly| poly.into_iter().map(|q| (q[0], q[1])).collect()).collect())
+    }
+
+    /// Signed area (positive = clockwise in SVG's y-down space).
+    #[getter]
+    fn area(&self) -> f64 {
+        self.p.area()
+    }
+
+    /// The part between fractions `start` and `end` of the total length.
+    fn trim(&self, start: f64, end: f64) -> Self {
+        NativePath::wrap(self.p.trim(start, end))
+    }
+
+    /// Ramer–Douglas–Peucker simplification (lines, or a spline with `smooth`).
+    #[pyo3(signature = (tolerance=1.0, smooth=false))]
+    fn simplify(&self, tolerance: f64, smooth: bool) -> PyResult<Self> {
+        if !(tolerance.is_finite() && tolerance > 0.0) {
+            return Err(PyValueError::new_err("tolerance must be a positive number"));
+        }
+        Ok(NativePath::wrap(self.p.simplify(tolerance, smooth)))
+    }
+
+    /// Catmull–Rom spline through flat `[x0, y0, x1, y1, ...]`.
+    #[staticmethod]
+    #[pyo3(signature = (points, curviness=1.0, closed=false))]
+    fn through(points: Vec<f64>, curviness: f64, closed: bool) -> PyResult<Self> {
+        if !points.len().is_multiple_of(2) {
+            return Err(PyValueError::new_err("points must be flat x, y pairs"));
+        }
+        if points.len() < 4 {
+            return Err(PyValueError::new_err("a path through points needs at least 2 points"));
+        }
+        Ok(NativePath::wrap(Path::through_points(&points, curviness, closed)))
+    }
+
+    /// `(x, y, angle_deg)` at absolute distance `l` along the path.
+    fn point_at_length(&mut self, l: f64) -> (f64, f64, f64) {
+        let p = self.lut().sample_length(l);
+        (p[0], p[1], p[2])
+    }
+
+    /// Closest point to `(x, y)`: `(progress, x, y, distance)`.
+    fn closest(&mut self, x: f64, y: f64) -> (f64, f64, f64, f64) {
+        let r = self.lut().closest(x, y);
+        (r[0], r[1], r[2], r[3])
+    }
+
+    /// `n` `(x, y)` points evenly spaced by distance (both ends included).
+    fn sample_points(&mut self, n: usize) -> Vec<(f64, f64)> {
+        self.lut().points(n).chunks_exact(2).map(|c| (c[0], c[1])).collect()
+    }
+
     fn __eq__(&self, other: &Bound<'_, PyAny>) -> bool {
         match other.cast::<NativePath>() {
             Ok(o) => o.borrow().p == self.p,
@@ -483,6 +583,263 @@ impl NativeMorph {
 #[pyo3(signature = (template, values, decimals=3))]
 fn morph_write(template: Vec<(usize, bool)>, values: Vec<f64>, decimals: u32) -> String {
     morph::write_template(&template, &values, decimals.min(12))
+}
+
+/// Any number of shapes normalised to one structure: `frames[k]` are the
+/// channel values of shape `k`; interpolate between them and format with
+/// [`NativeMorphSeq::write`].
+#[pyclass(frozen, module = "anikit._anikit", name = "NativeMorphSeq")]
+pub struct NativeMorphSeq {
+    seq: MorphSeq,
+}
+
+#[pymethods]
+impl NativeMorphSeq {
+    #[new]
+    fn new(paths: Vec<PyRef<'_, NativePath>>) -> PyResult<Self> {
+        if paths.len() < 2 {
+            return Err(PyValueError::new_err("a morph needs at least 2 shapes"));
+        }
+        let ps: Vec<Path> = paths.iter().map(|p| p.p.clone()).collect();
+        Ok(NativeMorphSeq { seq: morph::prepare_many(&ps) })
+    }
+
+    /// One channel vector per shape.
+    #[getter]
+    fn frames(&self) -> Vec<Vec<f64>> {
+        self.seq.frames.clone()
+    }
+
+    /// Per subpath `(segment_count, closed)`.
+    #[getter]
+    fn template(&self) -> Vec<(usize, bool)> {
+        self.seq.template.clone()
+    }
+
+    /// Template flattened to `[segments, closed, segments, closed, ...]`.
+    fn template_flat(&self) -> Vec<f64> {
+        self.seq.template_flat()
+    }
+
+    #[getter]
+    fn channels(&self) -> usize {
+        self.seq.channels()
+    }
+
+    fn __len__(&self) -> usize {
+        self.seq.frames.len()
+    }
+
+    /// Path data at sequence progress `t` in `[0, 1]` (linear between shapes).
+    #[pyo3(signature = (t, decimals=3))]
+    fn at(&self, t: f64, decimals: u32) -> String {
+        let decimals = decimals.min(12);
+        let f = &self.seq.frames;
+        let n = f.len();
+        let x = t.clamp(0.0, 1.0) * (n - 1) as f64;
+        let i = (x as usize).min(n - 2);
+        let k = x - i as f64;
+        let v: Vec<f64> = f[i].iter().zip(&f[i + 1]).map(|(a, b)| a + (b - a) * k).collect();
+        morph::write_template(&self.seq.template, &v, decimals)
+    }
+
+    /// Format already-interpolated channel values as path data.
+    #[pyo3(signature = (values, decimals=3))]
+    fn write(&self, values: Vec<f64>, decimals: u32) -> PyResult<String> {
+        if values.len() != self.seq.channels() {
+            return Err(PyValueError::new_err(format!(
+                "expected {} values, got {}",
+                self.seq.channels(),
+                values.len()
+            )));
+        }
+        Ok(morph::write_template(&self.seq.template, &values, decimals.min(12)))
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "NativeMorphSeq(shapes={}, subpaths={}, channels={})",
+            self.seq.frames.len(),
+            self.seq.template.len(),
+            self.seq.channels()
+        )
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Noise
+// ---------------------------------------------------------------------------
+
+/// A coordinate argument of the vectorised noise functions: one value
+/// (broadcast) or a list of values.
+#[derive(FromPyObject)]
+enum Coord {
+    One(f64),
+    Many(Vec<f64>),
+}
+
+impl Coord {
+    #[inline]
+    fn get(&self, i: usize) -> f64 {
+        match self {
+            Coord::One(v) => *v,
+            Coord::Many(v) => v[i],
+        }
+    }
+}
+
+/// Common length of broadcast coordinates (a scalar-only call yields 1).
+fn broadcast_len(cs: &[&Coord]) -> PyResult<usize> {
+    let mut n: Option<usize> = None;
+    for c in cs {
+        if let Coord::Many(v) = c {
+            match n {
+                None => n = Some(v.len()),
+                Some(m) if m != v.len() => {
+                    return Err(PyValueError::new_err(format!(
+                        "coordinate lists must have the same length ({m} != {})",
+                        v.len()
+                    )))
+                }
+                _ => {}
+            }
+        }
+    }
+    Ok(n.unwrap_or(1))
+}
+
+fn check_fbm(octaves: u32, lacunarity: f64, gain: f64) -> PyResult<()> {
+    if octaves == 0 {
+        return Err(PyValueError::new_err("octaves must be >= 1"));
+    }
+    if !lacunarity.is_finite() || !gain.is_finite() || gain <= 0.0 {
+        return Err(PyValueError::new_err("lacunarity must be finite and gain > 0"));
+    }
+    Ok(())
+}
+
+/// Seeded simplex noise (2D/3D) and fractal Brownian motion; output ≈ [-1, 1].
+#[pyclass(frozen, module = "anikit._anikit", name = "NativeNoise")]
+pub struct NativeNoise {
+    n: Noise,
+}
+
+#[pymethods]
+impl NativeNoise {
+    #[new]
+    #[pyo3(signature = (seed=0))]
+    fn new(seed: u32) -> Self {
+        NativeNoise { n: Noise::new(seed) }
+    }
+
+    #[getter]
+    fn seed(&self) -> u32 {
+        self.n.seed()
+    }
+
+    fn noise2(&self, x: f64, y: f64) -> f64 {
+        self.n.noise2(x, y)
+    }
+
+    fn noise3(&self, x: f64, y: f64, z: f64) -> f64 {
+        self.n.noise3(x, y, z)
+    }
+
+    #[pyo3(signature = (x, y, octaves=4, lacunarity=2.0, gain=0.5))]
+    fn fbm2(&self, x: f64, y: f64, octaves: u32, lacunarity: f64, gain: f64) -> PyResult<f64> {
+        check_fbm(octaves, lacunarity, gain)?;
+        Ok(self.n.fbm2(x, y, octaves, lacunarity, gain))
+    }
+
+    #[pyo3(signature = (x, y, z, octaves=4, lacunarity=2.0, gain=0.5))]
+    fn fbm3(&self, x: f64, y: f64, z: f64, octaves: u32, lacunarity: f64, gain: f64) -> PyResult<f64> {
+        check_fbm(octaves, lacunarity, gain)?;
+        Ok(self.n.fbm3(x, y, z, octaves, lacunarity, gain))
+    }
+
+    /// Vectorised `noise2`; each coordinate is a float (broadcast) or a list.
+    fn noise2_many(&self, py: Python<'_>, x: Coord, y: Coord) -> PyResult<Vec<f64>> {
+        let len = broadcast_len(&[&x, &y])?;
+        Ok(py.detach(|| (0..len).map(|i| self.n.noise2(x.get(i), y.get(i))).collect()))
+    }
+
+    /// Vectorised `noise3`; each coordinate is a float (broadcast) or a list.
+    fn noise3_many(&self, py: Python<'_>, x: Coord, y: Coord, z: Coord) -> PyResult<Vec<f64>> {
+        let len = broadcast_len(&[&x, &y, &z])?;
+        Ok(py.detach(|| (0..len).map(|i| self.n.noise3(x.get(i), y.get(i), z.get(i))).collect()))
+    }
+
+    /// Vectorised `fbm2`.
+    #[pyo3(signature = (x, y, octaves=4, lacunarity=2.0, gain=0.5))]
+    fn fbm2_many(&self, py: Python<'_>, x: Coord, y: Coord, octaves: u32, lacunarity: f64, gain: f64) -> PyResult<Vec<f64>> {
+        check_fbm(octaves, lacunarity, gain)?;
+        let len = broadcast_len(&[&x, &y])?;
+        Ok(py.detach(|| (0..len).map(|i| self.n.fbm2(x.get(i), y.get(i), octaves, lacunarity, gain)).collect()))
+    }
+
+    /// Vectorised `fbm3`.
+    #[pyo3(signature = (x, y, z, octaves=4, lacunarity=2.0, gain=0.5))]
+    #[allow(clippy::too_many_arguments)]
+    fn fbm3_many(
+        &self,
+        py: Python<'_>,
+        x: Coord,
+        y: Coord,
+        z: Coord,
+        octaves: u32,
+        lacunarity: f64,
+        gain: f64,
+    ) -> PyResult<Vec<f64>> {
+        check_fbm(octaves, lacunarity, gain)?;
+        let len = broadcast_len(&[&x, &y, &z])?;
+        Ok(py.detach(|| (0..len).map(|i| self.n.fbm3(x.get(i), y.get(i), z.get(i), octaves, lacunarity, gain)).collect()))
+    }
+
+    /// `width * height` row-major samples of `noise2` (or `fbm2` with
+    /// `octaves > 1`) at `(x0 + i*step, y0 + j*step)`, plus `z` as a third
+    /// axis when given.
+    #[pyo3(signature = (width, height, x0=0.0, y0=0.0, step=0.1, z=None, octaves=1, lacunarity=2.0, gain=0.5))]
+    #[allow(clippy::too_many_arguments)]
+    fn grid(
+        &self,
+        py: Python<'_>,
+        width: usize,
+        height: usize,
+        x0: f64,
+        y0: f64,
+        step: f64,
+        z: Option<f64>,
+        octaves: u32,
+        lacunarity: f64,
+        gain: f64,
+    ) -> PyResult<Vec<f64>> {
+        check_fbm(octaves, lacunarity, gain)?;
+        let total = width.checked_mul(height).filter(|&t| t <= 1 << 26);
+        let Some(total) = total else {
+            return Err(PyValueError::new_err("grid too large"));
+        };
+        let n = &self.n;
+        Ok(py.detach(|| {
+            let mut out = Vec::with_capacity(total);
+            for j in 0..height {
+                let y = y0 + j as f64 * step;
+                for i in 0..width {
+                    let x = x0 + i as f64 * step;
+                    out.push(match (z, octaves) {
+                        (None, 1) => n.noise2(x, y),
+                        (None, o) => n.fbm2(x, y, o, lacunarity, gain),
+                        (Some(z), 1) => n.noise3(x, y, z),
+                        (Some(z), o) => n.fbm3(x, y, z, o, lacunarity, gain),
+                    });
+                }
+            }
+            out
+        }))
+    }
+
+    fn __repr__(&self) -> String {
+        format!("NativeNoise(seed={})", self.n.seed())
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -707,6 +1064,52 @@ impl Engine {
                 SpringParams::new(bounce_stiffness, bounce_damping, bounce_mass),
             )
             .py()
+    }
+
+    /// Ballistic simulation: velocity (units/s), constant acceleration
+    /// (units/s²), exponential `friction` (1/s), bouncing `min`/`max` bounds
+    /// with `restitution` (0–1). Finishes at rest or after `life` ms.
+    #[pyo3(signature = (pos, vel, acc=None, friction=0.0, min=None, max=None, restitution=0.0, life=None))]
+    #[allow(clippy::too_many_arguments)]
+    fn create_physics(
+        &mut self,
+        pos: Vec<f64>,
+        vel: Vec<f64>,
+        acc: Option<Vec<f64>>,
+        friction: f64,
+        min: Option<Vec<f64>>,
+        max: Option<Vec<f64>>,
+        restitution: f64,
+        life: Option<f64>,
+    ) -> PyResult<Handle> {
+        if !friction.is_finite() || friction < 0.0 {
+            return Err(PyValueError::new_err("friction must be finite and >= 0"));
+        }
+        if !restitution.is_finite() {
+            return Err(PyValueError::new_err("restitution must be finite"));
+        }
+        let ch = pos.len();
+        for (name, b) in [("min", &min), ("max", &max)] {
+            if let Some(b) = b {
+                if b.len() != ch {
+                    return Err(PyValueError::new_err(format!("{name} needs {ch} values, got {}", b.len())));
+                }
+            }
+        }
+        let acc = acc.unwrap_or_default();
+        let life = match life {
+            None => f64::INFINITY,
+            Some(l) if l > 0.0 => l,
+            Some(_) => return Err(PyValueError::new_err("life must be > 0 (or None for unlimited)")),
+        };
+        self.inner
+            .create_physics(&pos, &vel, &acc, friction, min.as_deref(), max.as_deref(), restitution, life)
+            .py()
+    }
+
+    /// Change a physics simulation's acceleration (e.g. gravity, wind).
+    fn sim_set_acceleration(&mut self, h: Handle, acc: Vec<f64>) -> PyResult<()> {
+        self.inner.sim_set_acceleration(h, &acc).py()
     }
 
     // ---- simulations -----------------------------------------------------
@@ -996,6 +1399,8 @@ fn _anikit(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NativeEasing>()?;
     m.add_class::<NativePath>()?;
     m.add_class::<NativeMorph>()?;
+    m.add_class::<NativeMorphSeq>()?;
+    m.add_class::<NativeNoise>()?;
     m.add_function(wrap_pyfunction!(ease, m)?)?;
     m.add_function(wrap_pyfunction!(easing_css, m)?)?;
     m.add_function(wrap_pyfunction!(spring_settle_time, m)?)?;

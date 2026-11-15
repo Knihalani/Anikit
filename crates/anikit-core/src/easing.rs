@@ -73,6 +73,12 @@ pub enum Easing {
     SlowMo { ratio: f64, power: f64 },
     /// Pull back, then shoot to the target.
     Anticipate(f64),
+    /// Time-reversed easing: `1 - f(1 - t)` (turns an "in" into an "out").
+    Reverse(Box<Easing>),
+    /// Goes there and back within one iteration: `f(2t)` then `f(2 - 2t)`.
+    Mirror(Box<Easing>),
+    /// Weighted mix of two easings: `a·(1-w) + b·w`.
+    Blend(Box<Easing>, Box<Easing>, f64),
 }
 
 
@@ -311,7 +317,83 @@ impl Easing {
                     0.5 * (2.0 - exp2(-10.0 * (t2 - 1.0)))
                 }
             }
+            Easing::Reverse(e) => 1.0 - e.ease(1.0 - t),
+            Easing::Mirror(e) => {
+                if t < 0.5 {
+                    e.ease(2.0 * t)
+                } else {
+                    e.ease(2.0 - 2.0 * t)
+                }
+            }
+            Easing::Blend(a, b, w) => a.ease(t) * (1.0 - w) + b.ease(t) * w,
         }
+    }
+
+    /// "CustomEase": an easing drawn as an SVG path from (0,0) to (1,1), with
+    /// y up, e.g. `M0,0 C0.2,0 0.3,1.2 0.6,1 0.8,0.9 1,1`. Paths in other
+    /// coordinate ranges are normalised by their start/end points.
+    pub fn from_path(d: &str) -> Option<Easing> {
+        let path = crate::path::Path::parse(d);
+        let sp = path.subpaths.first()?;
+        if sp.segs.is_empty() {
+            return None;
+        }
+        // Dense samples along the curve.
+        let mut pts: Vec<(f64, f64)> = Vec::with_capacity(sp.segs.len() * 64 + 1);
+        let mut p0 = sp.start;
+        pts.push((p0[0], p0[1]));
+        for seg in &sp.segs {
+            for k in 1..=64 {
+                let q = crate::path::cubic_point(p0, seg, k as f64 / 64.0);
+                pts.push((q[0], q[1]));
+            }
+            p0 = [seg[4], seg[5]];
+        }
+        let (x0, y0) = pts[0];
+        let (x1, y1) = pts[pts.len() - 1];
+        let (sx, sy) = (x1 - x0, y1 - y0);
+        if sx.abs() < 1e-12 || sy.abs() < 1e-12 {
+            return None;
+        }
+        // Normalise and force x to be non-decreasing (an easing is a function of x).
+        let mut maxx = f64::NEG_INFINITY;
+        for p in pts.iter_mut() {
+            let x = ((p.0 - x0) / sx).max(maxx);
+            maxx = x;
+            *p = (x, (p.1 - y0) / sy);
+        }
+        // Resample uniformly in x → O(1) lookups.
+        let n = 512;
+        let mut table = Vec::with_capacity(n);
+        let mut j = 0;
+        for i in 0..n {
+            let x = i as f64 / (n - 1) as f64;
+            while j + 2 < pts.len() && pts[j + 1].0 < x {
+                j += 1;
+            }
+            let (a, b) = (pts[j], pts[(j + 1).min(pts.len() - 1)]);
+            let f = if b.0 > a.0 { ((x - a.0) / (b.0 - a.0)).clamp(0.0, 1.0) } else { 1.0 };
+            table.push(a.1 + (b.1 - a.1) * f);
+        }
+        Some(Easing::Table(table.into_boxed_slice()))
+    }
+
+    /// Jittery "rough" easing around a template (seeded, deterministic).
+    pub fn rough(points: usize, strength: f64, seed: u32, template: &Easing) -> Easing {
+        let points = points.clamp(2, 400);
+        let mut rng = crate::math::Rng(seed.max(1));
+        let mut v = Vec::with_capacity((points + 2) * 2);
+        v.push(0.0);
+        v.push(0.0);
+        for i in 1..=points {
+            let x = i as f64 / (points + 1) as f64;
+            let jitter = (rng.next_f64() * 2.0 - 1.0) * strength * 0.1;
+            v.push(x);
+            v.push(template.ease(x) + jitter);
+        }
+        v.push(1.0);
+        v.push(1.0);
+        Easing::Points(v.into_boxed_slice())
     }
 
     /// Ease every value of `ts` in place. The variant is matched once, outside
@@ -393,8 +475,59 @@ impl Easing {
         let nums = args.map(parse_numbers).unwrap_or_default();
         let arg = |i: usize, d: f64| nums.get(i).copied().unwrap_or(d);
 
+        // Modifiers and forms whose arguments are themselves easings / paths.
+        if let Some(a) = args {
+            match name {
+                "custom" | "path" | "customease" => return Easing::from_path(a),
+                "reverse" | "invert" => return Some(Easing::Reverse(Box::new(Easing::parse(a)?))),
+                "mirror" | "yoyo" => return Some(Easing::Mirror(Box::new(Easing::parse(a)?))),
+                "blend" | "mix" => {
+                    let parts = split_top_level(a);
+                    if parts.len() < 2 {
+                        return None;
+                    }
+                    let w = parts.get(2).and_then(|x| crate::util::parse_f64(x)).unwrap_or(0.5);
+                    return Some(Easing::Blend(
+                        Box::new(Easing::parse(parts[0])?),
+                        Box::new(Easing::parse(parts[1])?),
+                        w,
+                    ));
+                }
+                "rough" => {
+                    let parts = split_top_level(a);
+                    let num = |i: usize, d: f64| parts.get(i).and_then(|x| crate::util::parse_f64(x)).unwrap_or(d);
+                    let template = parts.get(3).and_then(|x| Easing::parse(x)).unwrap_or(Easing::Linear);
+                    return Some(Easing::rough(num(0, 20.0) as usize, num(1, 1.0), num(2, 1.0) as u32, &template));
+                }
+                _ => {}
+            }
+        }
+
+        // Spring presets (react-spring style).
+        let preset = match name.strip_prefix("spring").unwrap_or(name) {
+            "gentle" => Some((120.0, 14.0)),
+            "wobbly" => Some((180.0, 12.0)),
+            "stiff" => Some((210.0, 20.0)),
+            "slow" => Some((280.0, 60.0)),
+            "molasses" => Some((280.0, 120.0)),
+            "snappy" => Some((400.0, 30.0)),
+            "bouncy" => Some((300.0, 10.0)),
+            _ => None,
+        };
+        if let Some((k, c)) = preset {
+            return Some(Easing::spring(SpringParams::new(k, c, 1.0), 0.0));
+        }
+
         // Exact keywords / function forms first.
         match name {
+            "rough" => return Some(Easing::rough(20, 1.0, 1, &Easing::Linear)),
+            "exposcale" => {
+                let (a, b) = (arg(0, 1.0).max(1e-6), arg(1, 2.0).max(1e-6));
+                if (a - b).abs() < 1e-12 {
+                    return Some(Easing::Linear);
+                }
+                return Some(Easing::from_fn(512, |p| (pow(b / a, p) * a - a) / (b - a)));
+            }
             "linear" | "none" | "power0" => {
                 return match args {
                     Some(a) if !a.trim().is_empty() => parse_css_linear(a),
@@ -461,6 +594,26 @@ impl Easing {
         };
         Some(Easing::Curve(curve, mode.unwrap_or(Mode::Out)))
     }
+}
+
+/// Split on commas that are not nested inside parentheses.
+fn split_top_level(s: &str) -> Vec<&str> {
+    let mut out = Vec::new();
+    let mut depth = 0i32;
+    let mut start = 0;
+    for (i, c) in s.char_indices() {
+        match c {
+            '(' => depth += 1,
+            ')' => depth -= 1,
+            ',' if depth == 0 => {
+                out.push(s[start..i].trim());
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    out.push(s[start..].trim());
+    out
 }
 
 fn split_mode(n: &str) -> Option<(Option<Mode>, &str)> {
@@ -704,6 +857,36 @@ mod tests {
         } else {
             panic!()
         }
+    }
+
+    #[test]
+    fn extended_easings() {
+        // CustomEase from a path: a straight diagonal is linear.
+        let e = p("custom(M0,0 L1,1)");
+        assert!((e.ease(0.3) - 0.3).abs() < 1e-3);
+        let c = p("custom(M0,0 C0.5,0 0.5,1 1,1)");
+        assert!(c.ease(0.25) < 0.25 && c.ease(0.75) > 0.75);
+        assert!((c.ease(1.0) - 1.0).abs() < 1e-9);
+        // SVG-space path (y down, arbitrary range) is normalised.
+        let s = p("custom(M0,100 L200,0)");
+        assert!((s.ease(0.5) - 0.5).abs() < 1e-3);
+        // Modifiers.
+        let r = p("reverse(inQuad)");
+        assert!((r.ease(0.5) - 0.75).abs() < 1e-12);
+        let m = p("mirror(linear)");
+        assert!((m.ease(0.5) - 1.0).abs() < 1e-12 && m.ease(1.0).abs() < 1e-12);
+        let b = p("blend(inQuad, outQuad, 0.5)");
+        assert!((b.ease(0.5) - 0.5).abs() < 1e-12);
+        let nested = p("mirror(back.out(2))");
+        assert!(nested.ease(0.25) > 0.5);
+        // Presets and others.
+        for n in ["spring.gentle", "wobbly", "spring.stiff", "molasses", "rough", "rough(30, 2, 7, outQuad)", "expoScale(1, 4)"] {
+            let e = p(n);
+            assert!(e.ease(0.0).abs() < 1e-6, "{n}");
+            assert!((e.ease(1.0) - 1.0).abs() < 1e-6, "{n}");
+        }
+        let x = p("expoScale(1, 10)");
+        assert!(x.ease(0.5) < 0.5);
     }
 
     #[test]

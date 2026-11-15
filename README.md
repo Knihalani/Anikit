@@ -62,7 +62,36 @@ Memory safety comes from Rust (the only `unsafe` is the single‑threaded static
 - **Compositor offload:** `compositor()` hands transform and opacity work to the browser's compositor thread through WAAPI. Any easing, springs included, is converted by the core into a minimal native `linear()` easing.
 - **Instanced batches:** `batch()` animates up to millions of instances into one contiguous `Float32Array`. It's built for canvas and WebGL, with zero per‑instance JS work.
 - **Control:** play, pause, reverse, restart, seek, `progress`, `speed`, `complete`, `cancel`, `kill`. Animations are awaitable (`await animate(...)`) and support `onStart`, `onUpdate`, `onComplete`, `onRepeat` and `onReverseComplete`. There's also a global time scale, lag smoothing, an FPS cap, and a manual tick mode for tests, SSR and video export.
-- **Utilities:** `ease()`, `easing()`, `cssEasing()`, `mixColor()`, `parseColor()`, `stagger()` (1D/2D grid, any origin, eased spread, seeded random), `clamp`, `lerp`, `mapRange`, `wrap`, `snap`, seeded `random`.
+- **Scroll suite:**
+  - `scrollTrigger()`: start/end in any unit, scrub with optional spring smoothing, pinning, snapping (including to timeline labels), toggle actions and classes, callbacks for every direction, and debug markers;
+  - `scrollTriggerBatch()`, `scrollTo()` and `smoothScroll()` (inertial wheel scrolling);
+  - `observer()`: unified wheel, touch, pointer and scroll intents.
+- **Interaction:** `draggable()` gives momentum, bounds, edge resistance, axis locking, snapping and rotation knobs. `hover()` and `press()` are gesture helpers, and `VelocityTracker` measures pointer speed.
+- **More easings:** draw your own as an SVG path (`custom(M0,0 C…)`), modifiers (`reverse()`, `mirror()`, `blend()`), spring presets (`spring.gentle`, `wobbly`, …), `rough()` and `expoScale()`.
+- **More values:**
+  - `random(…)` strings resolved per target;
+  - `snap`, `round`, `modifiers` (for wrap‑around carousels) and `format` (Intl number counters);
+  - `text` typewriter and scramble effects, `xPercent`/`yPercent`;
+  - morphing through any number of shapes.
+- **Ballistic physics:** `physics()` covers gravity, wind, drag and bouncing bounds. Impacts are resolved at the moment of collision, so it comes to rest the same way at any frame rate.
+- **Effects library:** 35+ ready presets (entrances, exits, attention seekers, loops, text, SVG). Add your own with `registerEffect()`.
+- **Cleanup and responsiveness:**
+  - `revert()` restores original inline styles;
+  - `context()` gives scoped, framework‑friendly cleanup;
+  - `matchMedia()` runs responsive setups that revert themselves;
+  - `engine.reducedMotion` handles accessibility.
+- **Workflow:**
+  - `sequence()` builds a timeline from an array;
+  - timelines gain `tweenTo`/`tweenFromTo`, `remove`, `clear` and label navigation;
+  - also `quickTo`, `quickSetter` and `delayedCall`;
+  - `toCSS()` bakes any animation into native `@keyframes`;
+  - `inspector()` is a dev panel for scrubbing animations.
+- **Noise and geometry:** seeded simplex noise and fBm (`noise2`, `noise3`, `fbm`, `wander`). Paths can be trimmed, smoothed through points, simplified, flattened and measured for area, and you can find the closest point on a path.
+- **Utilities:**
+  - `ease()`, `easing()`, `cssEasing()`, `mixColor()`, `parseColor()`;
+  - `stagger()` (1D/2D grid, any origin, eased spread, seeded random);
+  - `interpolate()` for numbers, colours and values with units;
+  - `distribute()`, `clamp`, `lerp`, `mapRange`, `wrap`, `snap`, seeded `random`, `shuffle`, `pipe`.
 
 Full TypeScript API: [`docs/api.md`](docs/api.md). Python API: [`crates/anikit-py/README.md`](crates/anikit-py/README.md).
 
@@ -103,7 +132,7 @@ These results are mixed, and the reasons matter:
 - **Writing a property onto a JS object costs the same for every library.** A good JIT is already close to the hardware limit there. Anikit's per‑object bookkeeping (core handle → record → bindings) currently makes plain‑object tweening **2–3× slower than GSAP** in this synthetic test. With DOM targets, the style writes, style recalc and paint dominate a frame, so this difference is a small share of real frame time.
 - **The architecture wins when JS stops touching every object.** `batch()` is ~6× faster than GSAP animating equivalent objects. The heavy‑math features (OKLab colour, morphing, exact springs, long timelines) run in WASM at native‑like speed, and `compositor()` moves work off the main thread entirely.
 
-Bundle sizes: the default entry embeds the WASM module (zero config, 115 KB gz). `anikit/lean` is **18 KB gz of JS** that streams a separate **73 KB gz** `.wasm`, which can be cached and compiles while it downloads.
+Bundle sizes: the default entry embeds the WASM module (zero config, 148 KB gz in total). `anikit/lean` is **31 KB gz of JS** that streams a separate **88 KB gz** `.wasm`, which is cacheable and compiles while it downloads. The JS side is ES modules marked side‑effect free, so bundlers drop the features you don't import (scroll, interaction, effects, inspector, …).
 
 ## Repository layout
 
@@ -132,7 +161,7 @@ cd packages/anikit && npm install && npm test && npm run build
 cd crates/anikit-py && python -m venv .venv && . .venv/bin/activate && pip install maturin pytest && maturin develop --release && pytest
 ```
 
-To see the demo, build the TS package and serve the repo root (for example `python -m http.server`), then open `/examples/`.
+To see the demos, build the TS package and serve the repo root (for example `python -m http.server`). `/examples/` shows the core features and `/examples/scroll.html` the scroll and interaction suite.
 
 ## Status and limitations
 
@@ -142,5 +171,7 @@ This is v0.1 and the API may still change.
 - **Handle reuse:** generation counters are 12‑bit, so a handle held through more than 4,096 reuses of the same slot could alias.
 - **Morph keyframes:** shape morphs interpolate between two shapes. For more, chain tweens in a timeline.
 - **Compositor mode:** `compositor()` needs `linear()` easing support to run springs on the compositor (Chrome 113+, Firefox 112+, Safari 17.2+). Otherwise it falls back to `ease-out`.
+- **Path queries:** `MotionPath.closest()` is as precise as the path's arc‑length lookup table, typically within about 0.05 units.
+- **Pinning:** `scrollTrigger` pinning uses `position: fixed` for the page and a counter‑transform inside scrolling containers. Pinned elements inside transformed ancestors behave like `fixed` elements always do in CSS, relative to the transformed ancestor.
 
 MIT licensed.

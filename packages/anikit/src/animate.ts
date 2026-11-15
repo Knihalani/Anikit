@@ -9,9 +9,9 @@
  * animate(obj, { value: 100 }, { onUpdate: () => draw(obj.value) })
  * ```
  */
-import { core, F64, LINEAR, f64Buf, whenReady } from './wasm';
+import { core, F64, LINEAR, f64Buf, whenReady, views } from './wasm';
 import {
-  register, unregister, wake, flush, easingId, easingDuration, NodeRecord, EasingInput,
+  register, unregister, wake, flush, easingId, easingDuration, NodeRecord, EasingInput, prefersReduced,
   FL_FILL_BACKWARDS, FL_FILL_FORWARDS, FL_IMMEDIATE,
 } from './core';
 import {
@@ -19,11 +19,11 @@ import {
 } from './values';
 import {
   Target, Targets, toTargets, classify, Kind, readValue, writer, convertUnit, defaultUnit, isElement,
-  claim, unclaim, Owner, stateOf, markDirty, transformUnit, TargetState,
+  claim, unclaim, Owner, stateOf, markDirty, transformUnit, TargetState, snapshot, composeTransform, kebab,
 } from './props';
 import { Playable, Callbacks, Linked } from './playable';
-import { Binding, bind, apply, custom, transformSlot, M_PROP, M_TRANSFORM } from './bind';
-import { pathData, PathSource, morphPlan, writeMorph, elementLength } from './svg';
+import { Binding, bind, apply, custom, transformSlot, M_PROP, M_TRANSFORM, M_TRANSFORM2, M_STYLE_NUM, M_STYLE_FMT, M_VAR, M_CUSTOM } from './bind';
+import { pathData, PathSource, writeMorph, elementLength, morphSequence } from './svg';
 import { writeStr } from './wasm';
 
 // ---------------------------------------------------------------------------
@@ -38,6 +38,7 @@ export type PropValue =
   | Array<FnValue<Scalar | null>>
   | { to?: FnValue<Scalar>; from?: FnValue<Scalar>; value?: Array<FnValue<Scalar | null>>; ease?: EasingInput | EasingInput[] }
   | MotionPathOptions
+  | TextOptions
   | Element;
 
 export interface MotionPathOptions {
@@ -83,12 +84,22 @@ export interface AnimateOptions extends Callbacks<Animation> {
   overwrite?: boolean;
   /** Render the first keyframe immediately even when delayed. */
   immediateRender?: boolean;
+  /** Snap numeric values to a step (or list of values); a number applies to all properties. */
+  snap?: number | Record<string, number | number[]>;
+  /** Round to integers: `true` for all properties or a list of property names. */
+  round?: boolean | string[];
+  /** Transform each value right before it is applied, e.g. `{ x: (v) => v % 500 }`. */
+  modifiers?: Record<string, (value: any, target: any) => any>;
+  /** Format numbers written as text (counters): Intl options or a function. */
+  format?: Intl.NumberFormatOptions | ((value: number) => string);
+  /** Locale used by `format` (default: the user's). */
+  locale?: string;
 }
 
 const OPTION_KEYS = new Set([
   'duration', 'delay', 'endDelay', 'ease', 'repeat', 'repeatDelay', 'yoyo', 'direction', 'speed', 'autoplay',
   'times', 'colorSpace', 'fillMode', 'overwrite', 'immediateRender', 'onStart', 'onUpdate', 'onComplete',
-  'onRepeat', 'onReverseComplete',
+  'onRepeat', 'onReverseComplete', 'snap', 'round', 'modifiers', 'format', 'locale',
 ]);
 
 const DIRECTIONS = { normal: 0, reverse: 1, alternate: 2, 'alternate-reverse': 3 } as const;
@@ -109,6 +120,8 @@ class Part implements NodeRecord, Owner, Linked {
   }
   /** Whether the controller wants per-frame `onUpdate` notifications. */
   upd = false;
+  /** Timing used to create the node: [delayMs, durationMs, iterations, direction]. */
+  tm: [number, number, number, number] = [0, 0, 1, 0];
   render(): void {
     const at = this.at;
     const b = this.b;
@@ -162,8 +175,79 @@ export interface BuildContext {
   set?: boolean;
 }
 
+const RANDOM_RE = /^\s*random\((.*)\)\s*$/;
+
+/** Resolve `"random(min, max[, snap])"` / `"random([a, b, c])"` value strings. */
+export function resolveRandom(v: unknown): unknown {
+  if (typeof v !== 'string') return v;
+  const m = RANDOM_RE.exec(v);
+  if (!m) return v;
+  const body = m[1].trim();
+  if (body.startsWith('[')) {
+    const items = body.slice(1, body.lastIndexOf(']')).split(',').map((x) => x.trim()).filter(Boolean);
+    const pick = items[Math.floor(Math.random() * items.length)];
+    const n = Number(pick);
+    return Number.isFinite(n) && pick !== '' ? n : pick.replace(/^['"]|['"]$/g, '');
+  }
+  const parts = body.split(',').map((x) => x.trim());
+  const unit = /[a-z%]+$/i.exec(parts[0])?.[0] ?? '';
+  const [lo, hi, step] = parts.map(parseFloat);
+  let r = lo + Math.random() * ((hi ?? 1) - lo);
+  if (step) r = Math.round(r / step) * step;
+  return unit ? r + unit : r;
+}
+
 function resolve<T>(v: FnValue<T>, t: unknown, i: number, n: number): T {
-  return typeof v === 'function' ? (v as any)(t, i, n) : v;
+  return resolveRandom(typeof v === 'function' ? (v as any)(t, i, n) : v) as T;
+}
+
+/** Post-processing pipeline for one property (snap/round/modifier/format), or null. */
+function postFor(prop: string, o: AnimateOptions): ((v: any, target: any) => any) | null {
+  const snapOpt = o.snap === undefined ? undefined : typeof o.snap === 'number' ? o.snap : o.snap[prop];
+  const round = o.round === true || (Array.isArray(o.round) && o.round.includes(prop));
+  const mod = o.modifiers?.[prop];
+  let fmt: ((v: number) => string) | undefined;
+  if (o.format) {
+    fmt = typeof o.format === 'function' ? o.format : ((nf) => (v: number) => nf.format(v))(new Intl.NumberFormat(o.locale, o.format));
+  }
+  if (snapOpt === undefined && !round && !mod && !fmt) return null;
+  return (v: any, target: any) => {
+    if (typeof v === 'number') {
+      if (snapOpt !== undefined) {
+        v = Array.isArray(snapOpt)
+          ? snapOpt.reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a))
+          : Math.round(v / snapOpt) * snapOpt;
+      }
+      if (round) v = Math.round(v);
+    }
+    if (mod) v = mod(v, target);
+    if (fmt && typeof v === 'number') v = fmt(v);
+    return v;
+  };
+}
+
+const SCRAMBLE_SETS: Record<string, string> = {
+  upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  lower: 'abcdefghijklmnopqrstuvwxyz',
+  digits: '0123456789',
+  symbols: '!<>-_\\/[]{}—=+*^?#',
+  binary: '01',
+};
+
+/** Options for the `text` property. */
+export interface TextOptions {
+  /** Text to end with. */
+  value: string;
+  /** Text to start from (default: current text). */
+  from?: string;
+  /** 'type' replaces characters progressively; 'scramble' reveals through random glyphs. */
+  type?: 'type' | 'scramble';
+  /** Animate per word (`' '`) instead of per character. */
+  delimiter?: string;
+  /** Scramble character set: 'upper' | 'lower' | 'digits' | 'symbols' | 'binary' or custom characters. */
+  chars?: string;
+  /** Scramble refresh rate (0–1, default 1 = every frame). */
+  speed?: number;
 }
 
 function isPlainObject(v: unknown): v is Record<string, any> {
@@ -233,7 +317,7 @@ function normalize(kf: Props | Keyframe[], opts: AnimateOptions): [Map<string, P
       (o as any)[key] = v;
       continue;
     }
-    if (key === 'path' || key === 'draw' || key === 'd' || key === 'attr') {
+    if (key === 'path' || key === 'draw' || key === 'd' || key === 'attr' || key === 'text') {
       out.set(key, { values: [], raw: v });
       continue;
     }
@@ -260,12 +344,16 @@ export class Animation extends Playable {
   _parts: Part[] = [];
   private _group = 0;
   private _immediate = false;
+  /** Restorers for `revert()` (captured before the first write). */
+  _restore: Array<() => void> = [];
+  private _times: number[] | undefined;
   /** Seconds; available once built. */
   _end = 0;
 
   constructor(targets: Targets, keyframes: Props | Keyframe[], options: AnimateOptions = {}, ctx: BuildContext = {}) {
     const [props, opts] = normalize(keyframes, options);
     super(opts);
+    this._times = opts.times;
     whenReady(() => this._build(targets, props, opts, ctx));
   }
 
@@ -275,7 +363,8 @@ export class Animation extends Playable {
     const n = targets.length;
     const claims = !ctx.child && o.overwrite !== false;
     const cs = COLOR_SPACES[o.colorSpace ?? 'oklab'] ?? 2;
-    const repeat = o.repeat === undefined ? 0 : o.repeat < 0 ? Infinity : o.repeat;
+    const reduce = prefersReduced();
+    const repeat = reduce || o.repeat === undefined ? 0 : o.repeat < 0 ? Infinity : o.repeat;
     const direction =
       o.direction !== undefined ? DIRECTIONS[o.direction] ?? 0 : o.yoyo ? DIRECTIONS.alternate : 0;
     let fill = FL_FILL_BACKWARDS | FL_FILL_FORWARDS;
@@ -334,7 +423,22 @@ export class Animation extends Playable {
         }
         const idx = addTrack(track, spec.ease, spec.offsets);
         const numeric = track.kind === TRACK_NUMBER && track.ch === 1;
-        part.b.push(bind(target, prop, kind, idx, numeric, track.unit, track.format));
+        this._restore.push(snapshot(target, prop, kind));
+        const post = postFor(prop, o);
+        if (post) {
+          const write = writer(target, prop, kind, track.unit);
+          const unit = track.unit;
+          const raw = kind === Kind.Transform || (kind === Kind.Prop && !unit);
+          const fmt = track.format;
+          part.b.push(custom(target, prop, idx, 0, numeric
+            ? (at) => {
+                const v = post(F64[at], target);
+                write(typeof v === 'number' && !raw ? r3(v) + unit : v);
+              }
+            : (at) => write(post(fmt(at), target))));
+        } else {
+          part.b.push(bind(target, prop, kind, idx, numeric, track.unit, track.format));
+        }
         if (ctx.chain) chainSet(ctx.chain, target, prop, track.last);
       }
 
@@ -352,13 +456,13 @@ export class Animation extends Playable {
       // Timing.
       const easeForDur = easeList ? easeList[0] : baseEase;
       let dur: number;
-      if (ctx.set) dur = 0;
+      if (ctx.set || reduce) dur = 0;
       else if (o.duration !== undefined) dur = resolve(o.duration, target, i, n);
       else if (isSpringEase(easeForDur)) {
         const d = easingDuration(easingId(easeForDur as EasingInput));
         dur = d > 0 ? d : 0.5;
       } else dur = 0.5;
-      const delay = ctx.set ? 0 : resolve(o.delay ?? 0, target, i, n);
+      const delay = ctx.set || reduce ? 0 : resolve(o.delay ?? 0, target, i, n);
       let durMs = Math.max(0, dur * 1000);
       const rd = (o.repeatDelay ?? 0) * 1000;
       if (rd > 0 && durMs > 0) {
@@ -380,6 +484,7 @@ export class Animation extends Playable {
         this._immediate = true;
       }
 
+      part.tm = [delay * 1000, durMs, repeat + 1, direction];
       part.h = createAnim(
         delay * 1000, durMs, repeat + 1, direction, (o.endDelay ?? 0) * 1000, flags, tracks,
       );
@@ -436,8 +541,58 @@ export class Animation extends Playable {
     cs: number, ctx: BuildContext,
   ): void {
     const raw = resolve(rawIn as FnValue<any>, target, i, n);
+    if (prop === 'text') {
+      const spec: TextOptions = isPlainObject(raw) && 'value' in raw ? (raw as TextOptions) : { value: String(raw) };
+      const isEl = isElement(target);
+      const textProp = isEl ? 'textContent' : 'text';
+      this._restore.push(snapshot(target, textProp, Kind.Prop));
+      const fromText = spec.from ?? String((target as any)[textProp] ?? '');
+      const delim = spec.delimiter ?? '';
+      const a = delim ? fromText.split(delim) : Array.from(fromText);
+      const b = delim ? String(spec.value).split(delim) : Array.from(String(spec.value));
+      const t: TrackDef = {
+        kind: TRACK_NUMBER, arg: 0, ch: 1, out: 1, values: [0, 1], unit: '',
+        format: () => 0, first: fromText, last: String(spec.value),
+      };
+      const idx = addTrack(t, undefined);
+      const set = (v: string) => ((target as any)[textProp] = v);
+      if (spec.type === 'scramble') {
+        const pool = spec.chars ? SCRAMBLE_SETS[spec.chars] ?? spec.chars : SCRAMBLE_SETS.upper + SCRAMBLE_SETS.digits + SCRAMBLE_SETS.symbols;
+        const speed = Math.min(1, Math.max(0.01, spec.speed ?? 1));
+        let cache: string[] = [];
+        let tick = 0;
+        part.b.push(custom(target, 'text', idx, 0, (at) => {
+          const p = Math.min(1, Math.max(0, F64[at]));
+          if (p >= 1) return set(b.join(delim));
+          const revealed = Math.floor(p * b.length);
+          const len = Math.round(a.length + (b.length - a.length) * p);
+          if ((tick += speed) >= 1 || cache.length !== len) {
+            tick = 0;
+            cache = Array.from({ length: len }, () => pool[Math.floor(Math.random() * pool.length)]);
+          }
+          const out: string[] = [];
+          for (let k = 0; k < len; k++) {
+            const real = k < revealed ? b[k] : undefined;
+            if (real !== undefined) out.push(real);
+            else {
+              const target_ = b[k] ?? a[k] ?? '';
+              out.push(/^\s+$/.test(target_) ? target_ : cache[k]);
+            }
+          }
+          set(out.join(delim));
+        }));
+      } else {
+        const total = Math.max(a.length, b.length);
+        part.b.push(custom(target, 'text', idx, 0, (at) => {
+          const k = Math.round(Math.min(1, Math.max(0, F64[at])) * total);
+          set(b.slice(0, k).concat(a.slice(k)).join(delim));
+        }));
+      }
+      return;
+    }
     if (prop === 'attr' && isPlainObject(raw)) {
       for (const key of Object.keys(raw)) {
+        this._restore.push(snapshot(target, key, Kind.Attr));
         const vals = Array.isArray(raw[key]) ? raw[key] : [null, raw[key]];
         const read = () => readValue(target, key, Kind.Attr);
         const t = buildTrack(vals.map((v: any) => resolve(v, target, i, n)), read, (v) => v, cs);
@@ -449,6 +604,7 @@ export class Animation extends Playable {
       return;
     }
     if (prop === 'path') {
+      this._restore.push(snapshot(target, 'x', Kind.Transform));
       const spec: MotionPathOptions =
         isPlainObject(raw) && 'path' in raw ? (raw as MotionPathOptions) : { path: raw as PathSource };
       const w = core();
@@ -479,23 +635,32 @@ export class Animation extends Playable {
       const chained = ctx.chain?.get(target)?.get('d');
       const from = vals[0] ?? chained ?? (isElement(el) ? el.getAttribute('d') : (target as any).d) ?? '';
       const to = vals[vals.length - 1];
-      const plan = morphPlan(from as PathSource, to as PathSource);
-      const tmpl = plan.template;
+      void to;
+      // Any number of shapes: normalise them all to one structure (core).
+      const shapes = [from, ...vals.slice(1).map((v: unknown) => v ?? from)] as PathSource[];
+      const seq = morphSequence(shapes);
+      const tmpl = seq.template;
+      const values: number[] = [];
+      for (const f of seq.frames) values.push(...f);
+      const ch = seq.frames[0].length;
       const t: TrackDef = {
-        kind: TRACK_NUMBER, arg: 0, ch: plan.from.length, out: plan.from.length,
-        values: plan.from.concat(plan.to), unit: '',
+        kind: TRACK_NUMBER, arg: 0, ch, out: ch, values, unit: '',
         format: (at) => writeMorph(tmpl, F64, at),
-        first: writeMorph(tmpl, plan.from), last: writeMorph(tmpl, plan.to),
+        first: writeMorph(tmpl, seq.frames[0]), last: writeMorph(tmpl, seq.frames[seq.frames.length - 1]),
       };
-      const idx = addTrack(t, undefined);
+      if (isElement(el)) this._restore.push(snapshot(target, 'd', Kind.Attr));
+      const idx = addTrack(t, undefined, this._times);
       const write = isElement(el) ? (v: string) => el.setAttribute('d', v) : (v: string) => ((target as any).d = v);
-      part.b.push(custom(target, 'd', idx, 0, (at) => write(writeMorph(tmpl, F64, at))));
+      const mb = custom(target, 'd', idx, 0, (at) => write(writeMorph(tmpl, F64, at)));
+      ((this as any)._dFmt ??= new Map()).set(mb, (at: number) => writeMorph(tmpl, F64, at));
+      part.b.push(mb);
       if (ctx.chain) chainSet(ctx.chain, target, 'd', t.last);
       return;
     }
     if (prop === 'draw') {
       // draw: visible segment of a stroke as "start end" fractions (or a single end fraction).
       const el = target as SVGElement;
+      this._restore.push(snapshot(target, 'strokeDasharray', Kind.Style), snapshot(target, 'strokeDashoffset', Kind.Style));
       const len = elementLength(el);
       const parse = (v: unknown): [number, number] => {
         if (v === null || v === undefined) return [0, 1];
@@ -535,6 +700,67 @@ export class Animation extends Playable {
       return;
     }
     void part;
+  }
+
+  /**
+   * Bake this animation into native CSS: `@keyframes` plus a rule using it.
+   * Values are sampled from the engine (any easing, spring, colour space or
+   * keyframe set works); transforms, styles and CSS variables are included.
+   * One block per target (`name-0`, `name-1`, …) when there are several.
+   */
+  toCSS(options: { name?: string; selector?: string; samples?: number } = {}): string {
+    const w = core();
+    const name = options.name ?? 'anikit';
+    const samples = Math.max(2, options.samples ?? 30);
+    const dirs = ['normal', 'reverse', 'alternate', 'alternate-reverse'];
+    let css = '';
+    this._parts.forEach((part, pi) => {
+      const nm = this._parts.length > 1 ? name + '-' + pi : name;
+      css += '@keyframes ' + nm + ' {\n';
+      for (let k = 0; k < samples; k++) {
+        const p = k / (samples - 1);
+        const base = w.ak_sample(part.h, p) >>> 3;
+        views();
+        const decls: string[] = [];
+        let ts: TargetState | null = null;
+        for (const b of part.b) {
+          if (!b.on) continue;
+          const at = base + b.off;
+          if (b.mode === M_TRANSFORM || b.mode === M_TRANSFORM2) {
+            if (!ts) {
+              const src = b.obj as TargetState;
+              ts = new TargetState(src.el);
+              ts.t = src.t.slice();
+              ts.u = src.u.slice();
+            }
+            ts.t[b.slot] = F64[at];
+            if (b.mode === M_TRANSFORM2) ts.t[b.slot2] = F64[at];
+          } else if (b.mode === M_STYLE_NUM) decls.push(kebab(b.key) + ': ' + r3(F64[at]) + b.unit);
+          else if (b.mode === M_STYLE_FMT || b.mode === M_VAR) decls.push(kebab(b.key) + ': ' + b.fmt!(at));
+          else if (b.prop === 'd' && b.mode === M_CUSTOM) {
+            const d = (this as any)._dFmt?.get(b) as ((at: number) => string) | undefined;
+            if (d) decls.push(`d: path("${d(at)}")`);
+          }
+        }
+        if (ts) decls.unshift('transform: ' + composeTransform(ts));
+        css += '  ' + r3(p * 100) + '% { ' + decls.join('; ') + ' }\n';
+      }
+      css += '}\n';
+      if (options.selector) {
+        const [delay, dur, it, dir] = part.tm;
+        const sel = this._parts.length > 1 ? `${options.selector}:nth-of-type(${pi + 1})` : options.selector;
+        css += `${sel} { animation: ${nm} ${r3(dur / 1000)}s linear ${r3(delay / 1000)}s ${it === Infinity ? 'infinite' : it} ${dirs[dir]} both; }\n`;
+      }
+    });
+    return css;
+  }
+
+  /** Kill and restore every animated property to its value before this animation. */
+  override revert(): void {
+    whenReady(() => {
+      this.kill();
+      for (const r of this._restore.splice(0).reverse()) r();
+    });
   }
 
   protected _kill(): void {

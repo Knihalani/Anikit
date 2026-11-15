@@ -23,8 +23,9 @@ from ._anikit import __version__
 from ._animation import Animation, Position, Timeline, animate, timeline
 from ._easing import Easing, EasingLike, ease
 from ._engine import Engine, default_engine, resolve_engine, set_default_engine
-from ._path import Morph, MotionPath, Path, PathLike, morph, motion_path
-from ._physics import SpringAnimation, inertia, spring
+from ._noise import Noise
+from ._path import ClosestPoint, Morph, MorphSequence, MotionPath, Path, PathLike, morph, morph_many, motion_path
+from ._physics import PhysicsAnimation, SpringAnimation, inertia, physics, spring
 from ._stagger import Stagger, stagger
 
 __all__ = [
@@ -46,7 +47,9 @@ __all__ = [
     "Position",
     "spring",
     "inertia",
+    "physics",
     "SpringAnimation",
+    "PhysicsAnimation",
     # easing
     "Easing",
     "EasingLike",
@@ -55,12 +58,16 @@ __all__ = [
     "Path",
     "PathLike",
     "Morph",
+    "MorphSequence",
     "morph",
+    "morph_many",
+    "ClosestPoint",
     "MotionPath",
     "motion_path",
     # utilities
     "stagger",
     "Stagger",
+    "Noise",
     "color",
     "export",
 ]

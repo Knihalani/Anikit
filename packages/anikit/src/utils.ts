@@ -5,6 +5,7 @@
 import { core, writeStr, F64, f64Buf, views } from './wasm';
 import { easingId, EasingInput } from './core';
 import { parseColor, COLOR_SPACES, ColorSpaceName, r3 } from './values';
+import { stagger, StaggerOptions } from './stagger';
 
 export { cssEasing } from './compositor';
 export { parseColor };
@@ -60,3 +61,98 @@ export function random(min = 0, max = 1, seed?: number): number {
 }
 
 void writeStr;
+
+// ---------------------------------------------------------------------------
+// Interpolation & collection helpers
+// ---------------------------------------------------------------------------
+
+type Interp = number | string;
+
+/**
+ * Map an input through stops: `interpolate([0, 100, 200], [0, 1, 0])(50)` → 0.5.
+ * Outputs may be numbers, colours (mixed in OKLab) or numbers with units
+ * (`'10px'`, `'45deg'`). Options: `clamp` (default true), `ease` per segment.
+ */
+export function interpolate(
+  input: number[],
+  output: Interp[],
+  options: { clamp?: boolean; ease?: EasingInput | EasingInput[]; colorSpace?: ColorSpaceName } = {},
+): (v: number) => Interp {
+  if (input.length !== output.length || input.length < 2) throw new Error('anikit: interpolate needs ≥2 matching stops');
+  const clampIt = options.clamp !== false;
+  const eases = Array.isArray(options.ease) && typeof options.ease[0] !== 'number'
+    ? (options.ease as EasingInput[]).map((e) => easing(e))
+    : options.ease ? [easing(options.ease as EasingInput)] : [];
+  const isColor = typeof output[0] === 'string' && parseColor(output[0] as string) !== null;
+  const unit = typeof output[0] === 'string' && !isColor ? /[a-z%]+$/i.exec(output[0] as string)?.[0] ?? '' : '';
+  const nums = isColor ? [] : output.map((o) => (typeof o === 'number' ? o : parseFloat(o)));
+  return (v: number) => {
+    let i = 0;
+    while (i < input.length - 2 && v > input[i + 1]) i++;
+    let t = (v - input[i]) / (input[i + 1] - input[i] || 1);
+    if (clampIt) t = Math.min(1, Math.max(0, t));
+    if (eases.length) t = (eases[i] ?? eases[0])(t);
+    if (isColor) return mixColor(output[i] as string, output[i + 1] as string, t, options.colorSpace);
+    const r = nums[i] + (nums[i + 1] - nums[i]) * t;
+    return unit ? r3(r) + unit : r;
+  };
+}
+
+/** Normalise `v` from `[min, max]` to `[0, 1]`. */
+export const normalize = (v: number, min: number, max: number) => (v - min) / (max - min || 1);
+/** Round to `decimals` places. */
+export const roundTo = (v: number, decimals = 0) => {
+  const f = 10 ** decimals;
+  return Math.round(v * f) / f;
+};
+/** Compose functions left to right: `pipe(clampFn, snapFn)(v)`. */
+export const pipe = <T>(...fns: Array<(v: T) => T>) => (v: T): T => fns.reduce((a, f) => f(a), v);
+/** Shuffle an array in place (Fisher–Yates); returns it. */
+export function shuffle<T>(arr: T[], seed?: number): T[] {
+  let s = seed;
+  for (let i = arr.length - 1; i > 0; i--) {
+    const r = s === undefined ? Math.random() : random(0, 1, (s = (s * 1664525 + 1013904223) >>> 0));
+    const j = Math.floor(r * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+/** `[r, g, b, a]` (0–255, alpha 0–1) of any CSS colour. */
+export function splitColor(c: string): [number, number, number, number] {
+  const v = parseColor(c);
+  if (!v) throw new Error(`anikit: cannot parse colour "${c}"`);
+  return v;
+}
+/** Unit of a CSS value (`'12px'` → `'px'`). */
+export const getUnit = (v: string | number) => (typeof v === 'number' ? '' : /[a-z%]+$/i.exec(v.trim())?.[0] ?? '');
+/** Resolve selectors / lists / NodeLists into an array. */
+export { toTargets as toArray } from './props';
+/**
+ * Like `stagger()` but for any value (GSAP's `distribute`): spread `amount`
+ * across targets from `base`, e.g. `scale: distribute({ base: 0.5, amount: 1, from: 'center' })`.
+ */
+export function distribute(o: { base?: number; amount?: number; each?: number; from?: StaggerOptions['from']; grid?: [number, number]; axis?: 'x' | 'y'; ease?: EasingInput } = {}) {
+  return stagger(o.each ?? 0, { start: o.base ?? 0, total: o.each === undefined ? o.amount ?? 1 : undefined, from: o.from, grid: o.grid, axis: o.axis, ease: o.ease });
+}
+
+/** Tracks a value's velocity (units/s) over the last ~100ms of samples. */
+export class VelocityTracker {
+  private samples: Array<[number, number]> = [];
+  constructor(private window = 100) {}
+  /** Record a value (timestamp defaults to now). */
+  add(value: number, time = typeof performance !== 'undefined' ? performance.now() : Date.now()): void {
+    this.samples.push([time, value]);
+    const cutoff = time - this.window;
+    while (this.samples.length > 2 && this.samples[0][0] < cutoff) this.samples.shift();
+  }
+  get velocity(): number {
+    const s = this.samples;
+    if (s.length < 2) return 0;
+    const [t0, v0] = s[0];
+    const [t1, v1] = s[s.length - 1];
+    return t1 > t0 ? ((v1 - v0) / (t1 - t0)) * 1000 : 0;
+  }
+  reset(): void {
+    this.samples.length = 0;
+  }
+}

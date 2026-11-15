@@ -16,7 +16,7 @@ from ._values import MISSING, Kind, MotionKind, plan_track, read, setter_for
 
 if TYPE_CHECKING:  # pragma: no cover
     from ._animation import Animation, Timeline
-    from ._physics import SpringAnimation
+    from ._physics import PhysicsAnimation, SpringAnimation
 
 __all__ = ["Engine", "default_engine", "set_default_engine"]
 
@@ -186,7 +186,7 @@ def release_tree(engine_ref: "weakref.ReferenceType[Engine]", tree: Tree) -> Non
 
 class Engine:
     """An animation world. Create animations with :meth:`animate`,
-    :meth:`timeline`, :meth:`spring` and :meth:`inertia`, then advance it with
+    :meth:`timeline`, :meth:`spring`, :meth:`inertia` and :meth:`physics`, then advance it with
     :meth:`tick` (or iterate :meth:`render`).
 
     All times are in **seconds**. The native engine is available as
@@ -570,6 +570,12 @@ class Engine:
         from ._physics import inertia
 
         return inertia(targets, props, engine=self, **options)
+
+    def physics(self, targets: Any, props: Mapping[str, Any], **options: Any) -> "PhysicsAnimation":
+        """See :func:`anikit.physics`."""
+        from ._physics import physics
+
+        return physics(targets, props, engine=self, **options)
 
     def set(self, targets: Any, props: Mapping[str, Any], *, color_space: str = "oklab") -> None:
         """Write property values immediately (callables, relative values,

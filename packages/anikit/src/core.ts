@@ -69,18 +69,31 @@ const evScratch: number[] = [];
  * Apply everything the core produced since the last flush: values of updated
  * nodes, then post-render hooks, then events and user callbacks.
  */
+let rendering = false;
+
 export function flush(): void {
   const w = W;
   if (!w) return;
-  views();
-  const n = w.ak_updated_len();
-  if (n > 0) {
-    const up = w.ak_updated_ptr() >>> 2;
-    for (let i = 0; i < n; i++) {
-      const h = U32[up + i];
-      const r = records[h & INDEX_MASK];
-      if (r !== undefined && r.h === h && r.render !== undefined) r.render();
+  // Re-entrancy: callbacks fired while rendering (e.g. a spring's onUpdate
+  // seeking another animation) append to the same core list; the loop below
+  // picks those up, so a nested call has nothing to do.
+  if (rendering) return;
+  rendering = true;
+  try {
+    let i = 0;
+    for (;;) {
+      const n = w.ak_updated_len();
+      if (i >= n) break;
+      views();
+      const up = w.ak_updated_ptr() >>> 2;
+      for (; i < n; i++) {
+        const h = U32[up + i];
+        const r = records[h & INDEX_MASK];
+        if (r !== undefined && r.h === h && r.render !== undefined) r.render();
+      }
     }
+  } finally {
+    rendering = false;
   }
   for (let i = 0; i < flushHooks.length; i++) flushHooks[i]();
   // Copy events before dispatching: callbacks may create or seek animations.
@@ -170,7 +183,26 @@ export function wake(): void {
 // Public engine controls
 // ---------------------------------------------------------------------------
 
+let reduced: 'never' | 'always' | 'user' = 'never';
+/** True when animations should be reduced (see `engine.reducedMotion`). */
+export function prefersReduced(): boolean {
+  if (reduced === 'always') return true;
+  if (reduced === 'never') return false;
+  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 export const engine = {
+  /**
+   * Accessibility: `'user'` follows the OS "reduce motion" setting, `'always'`
+   * forces it. When reduced, animations jump to their end state (no motion,
+   * no infinite loops) while callbacks and promises still fire.
+   */
+  get reducedMotion(): 'never' | 'always' | 'user' {
+    return reduced;
+  },
+  set reducedMotion(v: 'never' | 'always' | 'user') {
+    reduced = v;
+  },
   /**
    * Drive the engine yourself (tests, SSR, video export, custom loops).
    * `engine.tick(ms)` then advances time.

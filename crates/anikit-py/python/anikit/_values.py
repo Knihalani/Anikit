@@ -14,8 +14,9 @@ A property value may be:
   *arriving* at that keyframe)
 * ``{"from": a, "to": b, "ease": e}``
 * a :class:`~anikit.Path` (motion: writes ``(x, y, angle)``), a
-  :class:`~anikit.MotionPath`, or a :class:`~anikit.Morph` / list of two paths
-  (shape morphing: writes path data strings)
+  :class:`~anikit.MotionPath`, or a :class:`~anikit.Morph` /
+  :class:`~anikit.MorphSequence` / list of two or more paths (shape morphing:
+  writes path data strings; every shape is a keyframe)
 * anything else (booleans, objects) → discrete (switches half-way)
 * a callable ``fn(target, index, total)`` returning any of the above
 """
@@ -25,11 +26,11 @@ from __future__ import annotations
 import math
 import operator
 import re
-from typing import Any, Callable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 
 from . import _anikit
 from ._easing import Easing, EasingLike
-from ._path import Morph, MotionPath, Path
+from ._path import Morph, MorphSequence, MotionPath, Path
 
 TRACK_NUMBER = _anikit.TRACK_NUMBER
 TRACK_COLOR = _anikit.TRACK_COLOR
@@ -217,9 +218,11 @@ class MotionKind(PathKind):
 
 
 class MorphKind(Kind):
+    """Shape morph: every channel is a number; decoded into path data."""
+
     __slots__ = ("morph", "channels", "out_channels")
 
-    def __init__(self, m: Morph) -> None:
+    def __init__(self, m: Union[Morph, MorphSequence]) -> None:
         self.morph = m
         self.channels = self.out_channels = m.channels
 
@@ -245,7 +248,7 @@ _CURRENT: Any = object()  # keyframe placeholder: read the current value
 
 
 def resolve_callable(v: Any, target: Any, index: int, total: int) -> Any:
-    if callable(v) and not isinstance(v, (Easing, Path, Morph, MotionPath, type)):
+    if callable(v) and not isinstance(v, (Easing, Path, Morph, MorphSequence, MotionPath, type)):
         return v(target, index, total)
     return v
 
@@ -511,19 +514,31 @@ def plan_track(
     if isinstance(raw, Morph):
         mk = MorphKind(raw)
         return TrackPlan(key, mk, [raw.from_values, raw.to_values], [], [None], mk.decode(raw.to_values, 0))
+    if isinstance(raw, MorphSequence):
+        # One numeric track whose keyframes are the normalised shapes.
+        mk = MorphKind(raw)
+        rows = raw.keyframes
+        return TrackPlan(key, mk, rows, [], [None] * (len(rows) - 1), mk.decode(rows[-1], 0))
 
     frames = frames_of(raw, target, index, total)
     if any(isinstance(f.value, Path) for f in frames):
-        if len(frames) != 2:
-            raise ValueError("shape morphing supports exactly two keyframes (from, to)")
-        a, b = frames[0].value, frames[1].value
-        if a is _CURRENT:
-            a = current
-        if a is MISSING or not isinstance(a, (str, Path)):
+        shapes = [f.value for f in frames]
+        if shapes[0] is _CURRENT:
+            shapes[0] = current
+        if shapes[0] is MISSING or not isinstance(shapes[0], (str, Path)):
             raise ValueError(f"cannot morph {key!r}: no start shape")
-        m = Morph(a, b)
-        mk = MorphKind(m)
-        return TrackPlan(key, mk, [m.from_values, m.to_values], [], [frames[1].ease], mk.decode(m.to_values, 0))
+        for s in shapes[1:]:
+            if not isinstance(s, (str, Path)):
+                raise TypeError(f"cannot morph {key!r} to {s!r}: every keyframe must be a Path or path data")
+        eases = [f.ease for f in frames[1:]]
+        if len(shapes) == 2:
+            m = Morph(shapes[0], shapes[1])
+            mk = MorphKind(m)
+            return TrackPlan(key, mk, [m.from_values, m.to_values], [], eases, mk.decode(m.to_values, 0))
+        seq = MorphSequence(shapes)
+        mk = MorphKind(seq)
+        rows = seq.keyframes
+        return TrackPlan(key, mk, rows, fill_offsets(frames), eases, mk.decode(rows[-1], 0))
 
     res = resolve_values([f.value for f in frames], current, color_space)
     offsets = fill_offsets(frames)

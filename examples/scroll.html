@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Anikit scroll demo</title>
+<style>
+  :root { --bg: #0d0f14; --panel: #161a22; --ink: #e8ebf2; --muted: #8a93a6; --accent: #6ea8ff; --accent2: #ff7ab6; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
+  #bar { position: fixed; inset: 0 0 auto 0; height: 4px; background: var(--accent); transform-origin: 0 50%; transform: scaleX(0); z-index: 5; }
+  section { min-height: 100vh; display: grid; place-items: center; padding: 40px; position: relative; }
+  h1 { font-size: clamp(40px, 8vw, 96px); margin: 0; }
+  .muted { color: var(--muted); }
+  #pinned { width: 100%; height: 100vh; display: grid; place-items: center; background: var(--panel); }
+  #pinned .ring { width: 220px; height: 220px; border-radius: 50%; border: 10px solid var(--accent); }
+  .cards { display: grid; grid-template-columns: repeat(3, minmax(120px, 220px)); gap: 20px; }
+  .card { height: 160px; border-radius: 14px; background: var(--panel); display: grid; place-items: center; opacity: 0; }
+  .card.active { outline: 2px solid var(--accent2); }
+  #counter { font-size: 64px; font-variant-numeric: tabular-nums; }
+  #drag-zone { width: 600px; max-width: 90vw; height: 260px; border: 1px dashed #333a4a; border-radius: 14px; position: relative; }
+  #puck { width: 70px; height: 70px; border-radius: 50%; background: var(--accent2); position: absolute; left: 0; top: 0; }
+  nav { position: fixed; right: 16px; top: 16px; z-index: 6; display: flex; gap: 8px; }
+  nav button { background: #232938; color: var(--ink); border: 0; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<nav><button id="to-cards">Cards ↓</button><button id="to-top">Top ↑</button></nav>
+<section id="intro"><div><h1 id="headline">Scroll me</h1><p class="muted" id="sub">scrollTrigger · scrub · pin · snap · scrollTo · draggable</p></div></section>
+<section id="pin-section" style="padding:0"><div id="pinned"><div class="ring" id="ring"></div></div></section>
+<section id="cards-section"><div class="cards" id="cards"></div></section>
+<section id="count-section"><div><div id="counter">0</div><p class="muted">counts up when it enters</p></div></section>
+<section id="drag-section"><div id="drag-zone"><div id="puck"></div></div></section>
+<script type="module">
+  import { animate, timeline, scrollTrigger, scrollTriggerBatch, scrollTo, draggable, effects, splitText, stagger } from '../packages/anikit/dist/anikit.js';
+
+  // Page progress bar.
+  scrollTrigger({ animation: animate('#bar', { scaleX: [0, 1] }, { ease: 'linear', autoplay: false }), scrub: true, start: 'top', end: 'bottom' });
+
+  // Headline parallax + letters scatter while scrolling out.
+  const { chars } = splitText('#headline', { type: 'chars' });
+  scrollTrigger({
+    trigger: '#intro', start: 'top top', end: 'bottom top', scrub: 0.4,
+    animation: animate(chars, { y: (el, i) => [0, (i % 2 ? -1 : 1) * 120], rotate: (el, i) => [0, (i - 4) * 12], opacity: [1, 0] }, { ease: 'linear', autoplay: false }),
+  });
+
+  // Pinned section: ring scales and morphs colour while the section stays fixed.
+  const pinTl = timeline({ autoplay: false })
+    .add('#ring', { scale: [0.4, 2.2], borderColor: ['#6ea8ff', '#ff7ab6'] }, { ease: 'linear', duration: 1 })
+    .label('half', 0.5)
+    .add('#ring', { rotateX: [0, 60] }, { ease: 'linear', duration: 0.5 }, 0.5);
+  scrollTrigger({ trigger: '#pin-section', start: 'top top', end: '+=800', pin: '#pinned', scrub: true, animation: pinTl, snap: { to: [0, 0.5, 1], duration: 0.4 }, markers: true });
+
+  // Cards: per-card triggers with toggle actions and classes.
+  const cards = document.getElementById('cards');
+  for (let i = 0; i < 9; i++) { const c = document.createElement('div'); c.className = 'card'; c.textContent = i + 1; cards.appendChild(c); }
+  scrollTriggerBatch('.card', {
+    start: 'top 85%', toggleClass: 'active', toggleActions: 'play none none reverse',
+    animation: (el, i) => animate(el, { y: [60, 0], opacity: [0, 1] }, { duration: 0.6, delay: (i % 3) * 0.08, ease: 'outCubic', autoplay: false }),
+  });
+
+  // Counter.
+  scrollTrigger({ trigger: '#count-section', start: 'top 60%', once: true, onEnter: () => effects.countUp('#counter', { to: 98765, duration: 2, format: { maximumFractionDigits: 0 } }) });
+
+  // Draggable puck with momentum, bounds and snapping.
+  window.drag = draggable('#puck', { bounds: '#drag-zone', inertia: true, snap: { x: 53, y: 63 } })[0];
+
+  document.getElementById('to-cards').onclick = () => scrollTo('#cards-section', { duration: 1 });
+  document.getElementById('to-top').onclick = () => scrollTo(0, { duration: 1 });
+</script>
+</body>
+</html>

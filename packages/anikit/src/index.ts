@@ -6,15 +6,16 @@
  * DOM with batched, dirty-only writes.
  */
 export { animate, from, fromTo, set, Animation } from './animate';
-export type { AnimateOptions, Props, PropValue, Keyframe, MotionPathOptions, FnValue, Scalar } from './animate';
-export { timeline, Timeline } from './timeline';
-export type { TimelineOptions, Position } from './timeline';
+export type { AnimateOptions, Props, PropValue, Keyframe, MotionPathOptions, FnValue, Scalar, TextOptions } from './animate';
+export { resolveRandom } from './animate';
+export { timeline, Timeline, sequence, delayedCall } from './timeline';
+export type { TimelineOptions, Position, SequenceStep } from './timeline';
 export { batch, Batch } from './batch';
 export type { BatchOptions, BatchValue } from './batch';
 export { stagger, staggerValues } from './stagger';
 export type { StaggerOptions, StaggerFn } from './stagger';
-export { spring, inertia, PhysicsAnimation } from './spring';
-export type { PhysicsOptions, InertiaOptions, InertiaProp } from './spring';
+export { spring, inertia, physics, PhysicsAnimation } from './spring';
+export type { PhysicsOptions, InertiaOptions, InertiaProp, PhysicsProp, BallisticOptions } from './spring';
 export { scroll, inView } from './scroll';
 export type { ScrollOptions, InViewOptions } from './scroll';
 export { splitText } from './text';
@@ -26,9 +27,24 @@ export { engine, flush } from './core';
 export type { EasingInput, EasingFn, SpringOptions } from './core';
 export { ready, init } from './wasm';
 export {
-  morph, morphPlan, shapeToPath, pathData, pathLength, pathBounds, normalizePath, MotionPath,
-  circle, ellipse, rect, polygon, star,
+  morph, morphPlan, morphSequence, shapeToPath, pathData, pathLength, pathBounds, normalizePath, MotionPath,
+  circle, ellipse, rect, polygon, star, trimPath, pathThrough, simplifyPath, pathArea, flattenPath,
 } from './svg';
 export type { PathSource } from './svg';
-export { ease, easing, mixColor, parseColor, clamp, lerp, mapRange, wrap, snap, random } from './utils';
+export {
+  ease, easing, mixColor, parseColor, clamp, lerp, mapRange, wrap, snap, random, interpolate, normalize, roundTo,
+  pipe, shuffle, splitColor, getUnit, toArray, distribute, VelocityTracker,
+} from './utils';
+export { noise2, noise3, fbm, noiseMany, wander } from './noise';
+export { context, matchMedia, Context } from './context';
+export type { Revertible } from './context';
+export { quickTo, quickSetter } from './quick';
+export { effects, effect, registerEffect, effectNames } from './effects';
+export type { EffectOptions, EffectFn } from './effects';
 export type { Playable, PlayState } from './playable';
+export { scrollTrigger, scrollTriggerBatch, ScrollTrigger, scrollTo, smoothScroll, refreshAll as refreshScrollTriggers } from './scrolltrigger';
+export type { ScrollTriggerOptions, ScrollToOptions, SmoothScrollOptions } from './scrolltrigger';
+export { draggable, Draggable, observer, hover, press } from './interaction';
+export type { DraggableOptions, Bounds, ObserverOptions, ObserverEvent } from './interaction';
+export { inspector } from './inspector';
+export type { InspectorOptions } from './inspector';

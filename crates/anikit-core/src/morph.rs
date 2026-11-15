@@ -240,9 +240,110 @@ pub fn prepare(a: &Path, b: &Path) -> MorphPlan {
     plan
 }
 
+/// A morph through any number of shapes, all normalised to one structure.
+#[derive(Clone, Debug, PartialEq)]
+pub struct MorphSeq {
+    pub template: Vec<(usize, bool)>,
+    /// One channel vector per shape (all the same length).
+    pub frames: Vec<Vec<f64>>,
+}
+
+impl MorphSeq {
+    pub fn channels(&self) -> usize {
+        self.frames.first().map(|f| f.len()).unwrap_or(0)
+    }
+    pub fn template_flat(&self) -> Vec<f64> {
+        MorphPlan { template: self.template.clone(), from: Vec::new(), to: Vec::new() }.template_flat()
+    }
+    /// Path data at shape-sequence progress `t ∈ [0, 1]` (linear between shapes).
+    pub fn at(&self, t: f64) -> String {
+        let n = self.frames.len();
+        if n == 0 {
+            return String::new();
+        }
+        if n == 1 {
+            return write_template(&self.template, &self.frames[0], 3);
+        }
+        let f = t.clamp(0.0, 1.0) * (n - 1) as f64;
+        let i = (f as usize).min(n - 2);
+        let k = f - i as f64;
+        let v: Vec<f64> = self.frames[i].iter().zip(&self.frames[i + 1]).map(|(a, b)| a + (b - a) * k).collect();
+        write_template(&self.template, &v, 3)
+    }
+}
+
+/// Normalise several shapes to a common structure so they can be used as
+/// keyframes of one morph. Each shape is aligned to the previous one.
+pub fn prepare_many(paths: &[Path]) -> MorphSeq {
+    if paths.is_empty() {
+        return MorphSeq { template: Vec::new(), frames: Vec::new() };
+    }
+    let mut subs: Vec<Vec<SubPath>> = paths
+        .iter()
+        .map(|p| if p.subpaths.is_empty() { alloc::vec![point_subpath([0.0, 0.0], false)] } else { p.subpaths.clone() })
+        .collect();
+    let nsub = subs.iter().map(|s| s.len()).max().unwrap_or(1);
+    // Pad subpath counts with points collapsed at a neighbour's centroid.
+    for k in 0..subs.len() {
+        while subs[k].len() < nsub {
+            let idx = subs[k].len();
+            let donor = subs.iter().find(|s| s.len() > idx).map(|s| s[idx].clone());
+            let (c, closed) = donor.map(|d| (centroid(&d), d.closed)).unwrap_or(([0.0, 0.0], false));
+            subs[k].push(point_subpath(c, closed));
+        }
+    }
+    let mut seq = MorphSeq { template: Vec::new(), frames: alloc::vec![Vec::new(); paths.len()] };
+    for j in 0..nsub {
+        let column: Vec<SubPath> = subs
+            .iter()
+            .map(|s| if s[j].segs.is_empty() { point_subpath(s[j].start, s[j].closed) } else { s[j].clone() })
+            .collect();
+        let n = column.iter().map(|c| c.segs.len()).max().unwrap_or(1);
+        let all_closed = column.iter().all(|c| c.closed);
+        let any_closed = column.iter().any(|c| c.closed);
+        let mut prev: Option<SubPath> = None;
+        for (k, c) in column.iter().enumerate() {
+            let mut d = subdivide(c, n);
+            if all_closed {
+                if let Some(p) = &prev {
+                    d = align(p, &d);
+                }
+            }
+            let out = &mut seq.frames[k];
+            out.push(d.start[0]);
+            out.push(d.start[1]);
+            for s in &d.segs {
+                out.extend_from_slice(s);
+            }
+            prev = Some(d);
+        }
+        seq.template.push((n, any_closed));
+    }
+    seq
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn morph_many() {
+        let shapes = [
+            Path::parse("M0 0 H100 V100 H0 Z"),
+            Path::ellipse(50.0, 50.0, 50.0, 50.0),
+            Path::star(50.0, 50.0, 7, 50.0, 20.0, 0.0),
+            Path::parse("M0 0 L10 0 Z M50 50 L60 60 L50 60 Z"),
+        ];
+        let seq = prepare_many(&shapes);
+        assert_eq!(seq.frames.len(), 4);
+        let ch = seq.channels();
+        assert!(seq.frames.iter().all(|f| f.len() == ch));
+        assert_eq!(seq.template.len(), 2);
+        let first = Path::parse(&seq.at(0.0));
+        assert!((first.length() - 400.0).abs() < 1e-2);
+        let star = Path::parse(&seq.at(2.0 / 3.0));
+        assert!((star.length() - shapes[2].length()).abs() < 1e-2);
+    }
 
     #[test]
     fn morph_square_to_circle() {

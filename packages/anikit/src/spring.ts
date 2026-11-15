@@ -18,6 +18,8 @@ import {
 } from './props';
 import { parseValue, parseColor, r3 } from './values';
 import { Binding, bind, apply, custom } from './bind';
+import { track } from './context';
+import { snapshot } from './props';
 
 export interface PhysicsOptions {
   stiffness?: number;
@@ -141,10 +143,12 @@ export class PhysicsAnimation implements PromiseLike<void> {
   private _resolve!: () => void;
   constructor() {
     this._done = new Promise((r) => (this._resolve = r));
+    track(this);
   }
   /** @internal */
   _track(list: Sim[]): void {
     this._sims = list;
+    for (const sm of list) this._restore.push(snapshot(sm.target, sm.prop, classify(sm.target, sm.prop)));
     let left = list.length;
     if (!left) this._resolve();
     for (const s of list) s.done.push(() => --left === 0 && this._resolve());
@@ -165,6 +169,19 @@ export class PhysicsAnimation implements PromiseLike<void> {
     }
     return out;
   }
+  /** Stop and restore the animated properties to their values before this started. */
+  revert(): void {
+    whenReady(() => {
+      for (const s of this._sims) s.dispose();
+      for (const r of this._restore.splice(0).reverse()) r();
+    });
+  }
+  /** Alias of {@link stop}. */
+  kill(): void {
+    this.stop();
+  }
+  /** @internal */
+  _restore: Array<() => void> = [];
   /** Stop all simulations where they are. */
   stop(): void {
     whenReady(() => {
@@ -297,6 +314,73 @@ export function inertia(targets: Targets, props: Record<string, InertiaProp | nu
         claim(target, prop, sim);
         map.set(prop, sim);
         w.ak_sim_rest(sim.h, options.restDelta ?? 0.01, options.restSpeed ?? 0.1);
+        if (options.onUpdate || options.onComplete) sim.listeners.push(options);
+        list.push(sim);
+      }
+    }
+    ctl._track(list);
+    wake();
+  });
+  return ctl;
+}
+
+export interface PhysicsProp {
+  /** Initial velocity (units/s). */
+  velocity?: number;
+  /** Constant acceleration (units/s²), e.g. gravity `980`. */
+  acceleration?: number;
+  /** Bounds that the value bounces off (see `restitution`). */
+  min?: number;
+  max?: number;
+}
+
+export interface BallisticOptions {
+  /** Linear drag (1/s); 0 = none. */
+  friction?: number;
+  /** Bounciness at bounds, 0 (stop) – 1 (perfectly elastic). Default 0.5. */
+  restitution?: number;
+  /** Stop after this many seconds. */
+  life?: number;
+  onUpdate?: () => void;
+  onComplete?: () => void;
+}
+
+/**
+ * Ballistic motion: velocity, gravity/wind, drag and bouncing bounds — solved
+ * exactly in the core (confetti, throws, falling objects, particle bursts).
+ *
+ * ```ts
+ * physics(ball, { x: { velocity: 300 }, y: { velocity: -600, acceleration: 1500, max: floorY } }, { restitution: 0.6 });
+ * ```
+ */
+export function physics(targets: Targets, props: Record<string, PhysicsProp | number>, options: BallisticOptions = {}): PhysicsAnimation {
+  const ctl = new PhysicsAnimation();
+  whenReady(() => {
+    const w = core();
+    const list: Sim[] = [];
+    for (const target of toTargets(targets)) {
+      let map = sims.get(target);
+      if (!map) sims.set(target, (map = new Map()));
+      for (const prop of Object.keys(props)) {
+        const spec: PhysicsProp = typeof props[prop] === 'number' ? { velocity: props[prop] as number } : (props[prop] as PhysicsProp);
+        const kind = classify(target, prop);
+        const cur = parseValue(readValue(target, prop, kind));
+        const unit = kind === Kind.Transform ? transformUnit(prop) : defaultUnit(prop, kind);
+        const b = bind(target, prop, kind, 0, true, unit, (at: number) => r3(F64[at]) + unit);
+        map.get(prop)?.dispose();
+        const hasMin = spec.min !== undefined;
+        const hasMax = spec.max !== undefined;
+        let at = f64Buf(5);
+        F64[at++] = cur.k === 'num' ? cur.n : 0;
+        F64[at++] = spec.velocity ?? 0;
+        F64[at++] = spec.acceleration ?? 0;
+        if (hasMin) F64[at++] = spec.min!;
+        if (hasMax) F64[at++] = spec.max!;
+        const sim = new Sim(target, prop, 1, b);
+        sim.h = w.ak_physics_create(1, options.friction ?? 0, options.restitution ?? 0.5, (options.life ?? 0) * 1000, +hasMin, +hasMax);
+        register(sim);
+        claim(target, prop, sim);
+        map.set(prop, sim);
         if (options.onUpdate || options.onComplete) sim.listeners.push(options);
         list.push(sim);
       }

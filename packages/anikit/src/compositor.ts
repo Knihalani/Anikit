@@ -40,7 +40,7 @@ const DIR = { normal: 'normal', reverse: 'reverse', alternate: 'alternate', 'alt
 const SLOT: Record<string, number[]> = {
   x: [0], translateX: [0], y: [1], translateY: [1], z: [2], translateZ: [2], rotate: [3], rotateZ: [3], rotation: [3],
   rotateX: [4], rotateY: [5], skewX: [6], skewY: [7], skew: [6, 7], scaleX: [8], scaleY: [9], scaleZ: [10], scale: [8, 9],
-  perspective: [11],
+  perspective: [11], xPercent: [12], yPercent: [13],
 };
 
 /** Controller for compositor animations (mirrors the core Animation API). */

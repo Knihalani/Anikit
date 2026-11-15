@@ -127,9 +127,98 @@ export class MotionPath {
     views();
     return { x: F64[p], y: F64[p + 1], angle: F64[p + 2] };
   }
+  /** Point at an absolute distance along the path. */
+  atLength(length: number): { x: number; y: number; angle: number } {
+    return this.at(this.length > 0 ? length / this.length : 0);
+  }
+  /** Closest point on the path to `(x, y)`, with its progress (0–1) and distance. */
+  closest(x: number, y: number): { progress: number; x: number; y: number; distance: number } {
+    const p = core().ak_path_lut_closest(this.id, x, y) >>> 3;
+    views();
+    return { progress: F64[p], x: F64[p + 1], y: F64[p + 2], distance: F64[p + 3] };
+  }
+  /** `n` points spaced evenly by distance. */
+  points(n: number): Array<[number, number]> {
+    const p = core().ak_path_lut_points(this.id, n) >>> 3;
+    views();
+    const out: Array<[number, number]> = [];
+    for (let i = 0; i < n; i++) out.push([F64[p + i * 2], F64[p + i * 2 + 1]]);
+    return out;
+  }
   dispose(): void {
     core().ak_path_lut_free(this.id);
   }
+}
+
+/** The part of a path between `start` and `end` (fractions of its length). */
+export function trimPath(src: PathSource, start: number, end: number, decimals = 3): string {
+  return readStr(core().ak_path_trim(writeStr(pathData(src)), start, end, decimals));
+}
+
+/** A smooth path through points (Catmull–Rom). `curviness` 0 = straight lines. */
+export function pathThrough(points: Array<[number, number]> | ArrayLike<number>, options: { curviness?: number; closed?: boolean } = {}): string {
+  const flat: number[] = [];
+  const arr = points as ArrayLike<any>;
+  for (let i = 0; i < arr.length; i++) {
+    const v = arr[i];
+    if (Array.isArray(v)) flat.push(v[0], v[1]);
+    else flat.push(v as number);
+  }
+  const at = f64Buf(flat.length);
+  F64.set(flat, at);
+  return readStr(core().ak_path_through(flat.length / 2, options.curviness ?? 1, options.closed ? 1 : 0, 3));
+}
+
+/** Reduce a path's detail within `tolerance`; `smooth` rebuilds it as a spline. */
+export function simplifyPath(src: PathSource, tolerance = 1, smooth = false): string {
+  return readStr(core().ak_path_simplify(writeStr(pathData(src)), tolerance, smooth ? 1 : 0, 3));
+}
+
+/** Signed area of a closed path (positive = clockwise in screen space). */
+export function pathArea(src: PathSource): number {
+  return core().ak_path_area(writeStr(pathData(src)));
+}
+
+/** Flatten a path into polylines (one per subpath). */
+export function flattenPath(src: PathSource, tolerance = 0.5): Array<Array<[number, number]>> {
+  const w = core();
+  w.ak_path_flatten(writeStr(pathData(src)), tolerance);
+  views();
+  let i = w.ak_f64_buf(0) >>> 3;
+  const out: Array<Array<[number, number]>> = [];
+  const nsub = F64[i++];
+  for (let k = 0; k < nsub; k++) {
+    const n = F64[i++];
+    const poly: Array<[number, number]> = [];
+    for (let j = 0; j < n; j++, i += 2) poly.push([F64[i], F64[i + 1]]);
+    out.push(poly);
+  }
+  return out;
+}
+
+/** Normalise several shapes into one structure: keyframes for a multi-shape morph. */
+export function morphSequence(shapes: PathSource[]): { template: number[]; frames: number[][] } {
+  const w = core();
+  const datas = shapes.map(pathData);
+  let off = 0;
+  const lens = datas.map((d) => {
+    const l = writeStr(d, off);
+    off += l;
+    return l;
+  });
+  const at = f64Buf(lens.length);
+  F64.set(lens, at);
+  w.ak_morph_many(lens.length);
+  views();
+  let i = w.ak_f64_buf(0) >>> 3;
+  const ch = F64[i];
+  const tl = F64[i + 1];
+  i += 2;
+  const template = Array.from(F64.subarray(i, i + tl));
+  i += tl;
+  const frames: number[][] = [];
+  for (let k = 0; k < shapes.length; k++, i += ch) frames.push(Array.from(F64.subarray(i, i + ch)));
+  return { template, frames };
 }
 
 // ---------------------------------------------------------------------------

@@ -47,6 +47,7 @@ struct State {
     out_str: String,
     luts: Vec<Option<PathLut>>,
     free_luts: Vec<u32>,
+    noise: Option<anikit_core::noise::Noise>,
 }
 
 struct Global(UnsafeCell<State>);
@@ -60,6 +61,7 @@ static STATE: Global = Global(UnsafeCell::new(State {
     out_str: String::new(),
     luts: Vec::new(),
     free_luts: Vec::new(),
+    noise: None,
 }));
 
 #[inline(always)]
@@ -773,4 +775,190 @@ pub extern "C" fn ak_batch_create(len: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn ak_batch_ptr(h: u32) -> *const f32 {
     st().engine.batch_values(h).map(|v| v.as_ptr()).unwrap_or(core::ptr::null())
+}
+
+
+// ---------------------------------------------------------------------------
+// Noise
+// ---------------------------------------------------------------------------
+
+fn noise(seed: u32) -> &'static anikit_core::noise::Noise {
+    let s = st();
+    if s.noise.as_ref().map(|n| n.seed() != seed).unwrap_or(true) {
+        s.noise = Some(anikit_core::noise::Noise::new(seed));
+    }
+    s.noise.as_ref().unwrap_or_else(|| unreachable!())
+}
+
+#[no_mangle]
+pub extern "C" fn ak_noise2(seed: u32, x: f64, y: f64) -> f64 {
+    noise(seed).noise2(x, y)
+}
+#[no_mangle]
+pub extern "C" fn ak_noise3(seed: u32, x: f64, y: f64, z: f64) -> f64 {
+    noise(seed).noise3(x, y, z)
+}
+#[no_mangle]
+pub extern "C" fn ak_fbm2(seed: u32, x: f64, y: f64, octaves: u32, lacunarity: f64, gain: f64) -> f64 {
+    noise(seed).fbm2(x, y, octaves, lacunarity, gain)
+}
+#[no_mangle]
+pub extern "C" fn ak_fbm3(seed: u32, x: f64, y: f64, z: f64, octaves: u32, lacunarity: f64, gain: f64) -> f64 {
+    noise(seed).fbm3(x, y, z, octaves, lacunarity, gain)
+}
+/// Bulk 3D noise: f64 buffer `[x, y, z] * n` → results written to `[0..n]`.
+#[no_mangle]
+pub extern "C" fn ak_noise3_bulk(seed: u32, n: u32) -> *mut f64 {
+    let nz = noise(seed).clone();
+    let s = st();
+    let n = (n as usize).min(s.f64_buf.len() / 3);
+    for i in 0..n {
+        let (x, y, z) = (s.f64_buf[i * 3], s.f64_buf[i * 3 + 1], s.f64_buf[i * 3 + 2]);
+        s.f64_buf[i] = nz.noise3(x, y, z);
+    }
+    s.f64_buf.as_mut_ptr()
+}
+
+// ---------------------------------------------------------------------------
+// Path operations
+// ---------------------------------------------------------------------------
+
+/// Trim the path in the u8 buffer to `[start, end]` (length fractions). String result.
+#[no_mangle]
+pub extern "C" fn ak_path_trim(len: u32, start: f64, end: f64, decimals: u32) -> u32 {
+    let p = Path::parse(input_str(len)).trim(start, end);
+    set_out(p.to_svg(decimals))
+}
+
+/// Smooth path through `n` points (`[x, y] * n` in the f64 buffer). String result.
+#[no_mangle]
+pub extern "C" fn ak_path_through(n: u32, curviness: f64, closed: u32, decimals: u32) -> u32 {
+    let s = st();
+    let n = (n as usize * 2).min(s.f64_buf.len());
+    let p = Path::through_points(&s.f64_buf[..n], curviness, closed != 0);
+    set_out(p.to_svg(decimals))
+}
+
+#[no_mangle]
+pub extern "C" fn ak_path_simplify(len: u32, tolerance: f64, smooth: u32, decimals: u32) -> u32 {
+    let p = Path::parse(input_str(len)).simplify(tolerance, smooth != 0);
+    set_out(p.to_svg(decimals))
+}
+
+#[no_mangle]
+pub extern "C" fn ak_path_area(len: u32) -> f64 {
+    Path::parse(input_str(len)).area()
+}
+
+/// Flatten to polylines: f64 buffer `[nSub, (nPts, x, y, ...) * nSub]`; returns its length.
+#[no_mangle]
+pub extern "C" fn ak_path_flatten(len: u32, tolerance: f64) -> u32 {
+    let polys = Path::parse(input_str(len)).flatten(tolerance);
+    let mut out = Vec::new();
+    out.push(polys.len() as f64);
+    for poly in &polys {
+        out.push(poly.len() as f64);
+        for p in poly {
+            out.push(p[0]);
+            out.push(p[1]);
+        }
+    }
+    write_f64(&out);
+    out.len() as u32
+}
+
+/// Closest point on a LUT: `[progress, x, y, distance]` in the f64 buffer.
+#[no_mangle]
+pub extern "C" fn ak_path_lut_closest(id: u32, x: f64, y: f64) -> *mut f64 {
+    let v = st().luts.get(id as usize).and_then(|l| l.as_ref()).map(|l| l.closest(x, y)).unwrap_or([0.0; 4]);
+    write_f64(&v)
+}
+
+/// `n` evenly spaced points `[x, y] * n` in the f64 buffer.
+#[no_mangle]
+pub extern "C" fn ak_path_lut_points(id: u32, n: u32) -> *mut f64 {
+    let v = st().luts.get(id as usize).and_then(|l| l.as_ref()).map(|l| l.points(n as usize)).unwrap_or_default();
+    write_f64(&v)
+}
+
+/// Morph through `count` shapes. Byte lengths of each path in the f64 buffer,
+/// path data back-to-back in the u8 buffer. Writes
+/// `[channels, templateLen, template..., frame0..., frame1..., ...]`; returns length.
+#[no_mangle]
+pub extern "C" fn ak_morph_many(count: u32) -> u32 {
+    let paths: Vec<Path> = {
+        let s = st();
+        let n = (count as usize).min(s.f64_buf.len());
+        let mut at = 0usize;
+        let mut v = Vec::with_capacity(n);
+        for i in 0..n {
+            let l = s.f64_buf[i] as usize;
+            let end = (at + l).min(s.u8_buf.len());
+            v.push(Path::parse(core::str::from_utf8(&s.u8_buf[at..end]).unwrap_or("")));
+            at = end;
+        }
+        v
+    };
+    let seq = morph::prepare_many(&paths);
+    let tmpl = seq.template_flat();
+    let mut out = Vec::with_capacity(2 + tmpl.len() + seq.channels() * seq.frames.len());
+    out.push(seq.channels() as f64);
+    out.push(tmpl.len() as f64);
+    out.extend_from_slice(&tmpl);
+    for f in &seq.frames {
+        out.extend_from_slice(f);
+    }
+    write_f64(&out);
+    out.len() as u32
+}
+
+// ---------------------------------------------------------------------------
+// Physics & sampling
+// ---------------------------------------------------------------------------
+
+/// Ballistic simulation. f64 buffer `[pos * ch, vel * ch, acc * ch, (min * ch)?, (max * ch)?]`.
+#[no_mangle]
+pub extern "C" fn ak_physics_create(ch: u32, friction: f64, restitution: f64, life_ms: f64, has_min: u32, has_max: u32) -> u32 {
+    let s = st();
+    let ch = ch as usize;
+    let need = ch * (3 + has_min.min(1) + has_max.min(1)) as usize;
+    if s.f64_buf.len() < need {
+        return 0;
+    }
+    let b = &s.f64_buf;
+    let mut at = ch * 3;
+    let mut opt = |f: u32| {
+        if f != 0 {
+            let r = &b[at..at + ch];
+            at += ch;
+            Some(r)
+        } else {
+            None
+        }
+    };
+    let min = opt(has_min);
+    let max = opt(has_max);
+    handle(s.engine.create_physics(&b[..ch], &b[ch..ch * 2], &b[ch * 2..ch * 3], friction, min, max, restitution, life_ms))
+}
+
+#[no_mangle]
+pub extern "C" fn ak_sim_acceleration(h: u32, ch: u32) -> i32 {
+    let s = st();
+    let ch = (ch as usize).min(s.f64_buf.len());
+    let a = s.f64_buf[..ch].to_vec();
+    code(s.engine.sim_set_acceleration(h, &a))
+}
+
+/// Evaluate an animation at raw iteration progress `p` (timing easing applied)
+/// into the f64 buffer without changing its state. Returns the buffer address.
+#[no_mangle]
+pub extern "C" fn ak_sample(h: u32, p: f64) -> *mut f64 {
+    let n = ak_values_len(h);
+    let ptr = ak_f64_buf(n);
+    let s = st();
+    let mut tmp = alloc::vec![0.0; n as usize];
+    if s.engine.sample(h, p, &mut tmp).is_ok() {
+        s.f64_buf[..n as usize].copy_from_slice(&tmp);
+    }
+    ptr
 }

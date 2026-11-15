@@ -23,7 +23,7 @@ use alloc::vec::Vec;
 
 use crate::color::{self, ColorSpace, Rgba};
 use crate::easing::Easing;
-use crate::math::{abs, exp};
+use crate::math::{abs, exp, sqrt};
 use crate::path::{sample_lut, PathLut};
 use crate::spring::SpringParams;
 use crate::timing::{Phase, Timing};
@@ -275,6 +275,9 @@ impl Batch {
 pub enum SimKind {
     Spring,
     Decay,
+    /// Ballistic motion: velocity, constant acceleration (gravity), friction,
+    /// bouncing bounds.
+    Physics,
 }
 
 #[derive(Debug)]
@@ -289,6 +292,10 @@ struct Sim {
     time_constant: f64,
     rest_delta: f64,
     rest_speed: f64,
+    /// Physics: friction coefficient (1/s), bounce restitution, remaining life (s).
+    friction: f64,
+    restitution: f64,
+    life: f64,
 }
 
 #[derive(Debug)]
@@ -931,6 +938,9 @@ impl Engine {
             time_constant: 0.35,
             rest_delta: 0.005,
             rest_speed: 0.05,
+            friction: 0.0,
+            restitution: 0.0,
+            life: f64::INFINITY,
         };
         let idx = self.alloc(Kind::Sim(Box::new(sim)), Timing::default(), flags::DEFAULT)?;
         self.activate_sim(idx);
@@ -985,10 +995,84 @@ impl Engine {
             time_constant: tc,
             rest_delta: 0.005,
             rest_speed: 0.05,
+            friction: 0.0,
+            restitution: 0.0,
+            life: f64::INFINITY,
         };
         let idx = self.alloc(Kind::Sim(Box::new(sim)), Timing::default(), flags::DEFAULT)?;
         self.activate_sim(idx);
         Ok(self.handle_of(idx))
+    }
+
+    /// Ballistic physics simulation (projectiles, confetti, falling objects).
+    ///
+    /// Per channel: position, velocity (units/s) and constant acceleration
+    /// (units/s², e.g. gravity). `friction` (1/s) applies exponential drag.
+    /// Optional `min`/`max` bounds reflect the velocity scaled by
+    /// `restitution` (0 = stop, 1 = perfectly elastic). The simulation
+    /// finishes after `life_ms` (if finite) or when everything is at rest.
+    /// All updates are exact for constant acceleration + linear drag.
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_physics(
+        &mut self,
+        pos: &[f64],
+        vel: &[f64],
+        acc: &[f64],
+        friction: f64,
+        min: Option<&[f64]>,
+        max: Option<&[f64]>,
+        restitution: f64,
+        life_ms: f64,
+    ) -> Result<Handle, Error> {
+        let ch = pos.len();
+        if ch == 0 || vel.len() != ch || (acc.len() != ch && !acc.is_empty()) {
+            return Err(Error::InvalidInput);
+        }
+        let mut buf = alloc::vec![0.0; ch * 5];
+        buf[..ch].copy_from_slice(pos);
+        buf[ch..ch * 2].copy_from_slice(vel);
+        if !acc.is_empty() {
+            buf[ch * 2..ch * 3].copy_from_slice(acc);
+        }
+        for k in 0..ch {
+            let lo = min.and_then(|m| m.get(k).copied()).unwrap_or(f64::NEG_INFINITY);
+            let hi = max.and_then(|m| m.get(k).copied()).unwrap_or(f64::INFINITY);
+            if lo > hi {
+                return Err(Error::InvalidInput);
+            }
+            buf[ch * 3 + k] = lo;
+            buf[ch * 4 + k] = hi;
+            // Start inside the bounds.
+            buf[k] = buf[k].clamp(lo, hi);
+        }
+        let sim = Sim {
+            kind: SimKind::Physics,
+            ch,
+            cfg: 0,
+            buf,
+            mode: alloc::vec![0; ch],
+            time_constant: 0.0,
+            rest_delta: 0.0,
+            rest_speed: 0.05,
+            friction: friction.max(0.0),
+            restitution: restitution.clamp(0.0, 1.0),
+            life: if life_ms.is_finite() && life_ms > 0.0 { life_ms / 1000.0 } else { f64::INFINITY },
+        };
+        let idx = self.alloc(Kind::Sim(Box::new(sim)), Timing::default(), flags::DEFAULT)?;
+        self.activate_sim(idx);
+        Ok(self.handle_of(idx))
+    }
+
+    /// Set the acceleration of a physics simulation (e.g. change gravity / wind).
+    pub fn sim_set_acceleration(&mut self, h: Handle, acc: &[f64]) -> Result<(), Error> {
+        let (i, s) = self.sim_mut(h)?;
+        if acc.len() != s.ch || s.kind != SimKind::Physics {
+            return Err(Error::InvalidInput);
+        }
+        let ch = s.ch;
+        s.buf[ch * 2..ch * 3].copy_from_slice(acc);
+        self.activate_sim(i);
+        Ok(())
     }
 
     fn spring_cfg(&mut self, p: SpringParams) -> u32 {
@@ -1023,6 +1107,9 @@ impl Engine {
     /// Retarget a spring, preserving its current position and velocity.
     pub fn sim_set_target(&mut self, h: Handle, target: &[f64]) -> Result<(), Error> {
         let (i, s) = self.sim_mut(h)?;
+        if s.kind == SimKind::Physics {
+            return Err(Error::WrongKind);
+        }
         if target.len() != s.ch {
             return Err(Error::InvalidInput);
         }
@@ -1623,7 +1710,10 @@ impl Engine {
             let i = self.active_sims[k] as usize;
             let h = self.handle_of(i);
             let at_rest = match &mut self.nodes[i].kind {
-                Kind::Sim(s) => step_sim(s, &self.springs[s.cfg as usize].matrix, dt),
+                Kind::Sim(s) => {
+                    let m = self.springs.get(s.cfg as usize).map(|c| c.matrix).unwrap_or([1.0, 0.0, 0.0, 1.0]);
+                    step_sim(s, &m, dt)
+                }
                 _ => true,
             };
             self.updated.push(h);
@@ -1644,6 +1734,9 @@ impl Engine {
 /// Advance one simulation; returns true when every channel is at rest.
 #[inline]
 fn step_sim(s: &mut Sim, m: &[f64; 4], dt: f64) -> bool {
+    if s.kind == SimKind::Physics {
+        return step_physics(s, dt);
+    }
     let ch = s.ch;
     let (pos, rest) = s.buf.split_at_mut(ch);
     let (vel, rest) = rest.split_at_mut(ch);
@@ -1693,6 +1786,88 @@ fn step_sim(s: &mut Sim, m: &[f64; 4], dt: f64) -> bool {
         }
     }
     all_rest
+}
+
+/// Exact state after time `t` under constant acceleration `a` and linear drag `k`.
+#[inline]
+fn ballistic(x: f64, v: f64, a: f64, k: f64, t: f64) -> (f64, f64) {
+    if k > 0.0 {
+        let e = exp(-k * t);
+        let f1 = (1.0 - e) / k;
+        (x + (v - a / k) * f1 + a * t / k, v * e + a * f1)
+    } else {
+        (x + v * t + 0.5 * a * t * t, v + a * t)
+    }
+}
+
+/// Exact integration of `x'' = a - k·x'` per channel. Bounds are resolved at
+/// the moment of impact (not at the end of the frame), so bouncing loses
+/// energy correctly and comes to rest regardless of frame rate.
+fn step_physics(s: &mut Sim, dt: f64) -> bool {
+    let ch = s.ch;
+    let k = s.friction;
+    let (pos, rest) = s.buf.split_at_mut(ch);
+    let (vel, rest) = rest.split_at_mut(ch);
+    let (acc, bounds) = rest.split_at_mut(ch);
+    let (min, max) = bounds.split_at(ch);
+    let mut moving = false;
+    for c in 0..ch {
+        let a = acc[c];
+        let (lo, hi) = (min[c], max[c]);
+        let (mut x, mut v) = (pos[c], vel[c]);
+        let mut remaining = dt;
+        // A ball resting on a bound, pushed into it, stays put.
+        let resting = (x <= lo && a <= 0.0 && v <= 0.0) || (x >= hi && a >= 0.0 && v >= 0.0);
+        if resting && (x == lo || x == hi) && abs(v) < 1e-9 {
+            vel[c] = 0.0;
+            continue;
+        }
+        // Up to a few bounces per frame.
+        for _ in 0..8 {
+            let (nx, nv) = ballistic(x, v, a, k, remaining);
+            if nx >= lo && nx <= hi {
+                x = nx;
+                v = nv;
+                break;
+            }
+            let b = if nx < lo { lo } else { hi };
+            // Bisection for the impact time within `remaining`.
+            let (mut t0, mut t1) = (0.0, remaining);
+            for _ in 0..40 {
+                let tm = 0.5 * (t0 + t1);
+                let (xm, _) = ballistic(x, v, a, k, tm);
+                if (b == lo && xm < lo) || (b == hi && xm > hi) {
+                    t1 = tm;
+                } else {
+                    t0 = tm;
+                }
+            }
+            let (_, vi) = ballistic(x, v, a, k, t0);
+            x = b;
+            v = -vi * s.restitution;
+            remaining -= t0;
+            // Too slow to leave the bound again (rises less than ~0.5 units): rest.
+            let pushed_in = (b == lo && a < 0.0) || (b == hi && a > 0.0);
+            let lift = if pushed_in { sqrt(2.0 * abs(a) * 0.5) } else { 0.0 };
+            if abs(v) <= lift.max(s.rest_speed) {
+                v = 0.0;
+                if pushed_in || abs(a) == 0.0 {
+                    break;
+                }
+            }
+            if remaining <= 1e-12 {
+                break;
+            }
+        }
+        pos[c] = x;
+        vel[c] = v;
+        let on_bound_rest = v == 0.0 && ((x == lo && a <= 0.0) || (x == hi && a >= 0.0));
+        if !(on_bound_rest || (abs(v) < s.rest_speed && a == 0.0)) {
+            moving = true;
+        }
+    }
+    s.life -= dt;
+    !moving || s.life <= 0.0
 }
 
 fn sanitize(mut t: Timing) -> Timing {
@@ -1981,6 +2156,59 @@ mod tests {
         e.restart(g).unwrap();
         e.tick(10.0);
         assert!(has_event(&e, a, event::START));
+    }
+
+    #[test]
+    fn physics_projectile() {
+        let mut e = Engine::new();
+        // Free fall from rest: x = ½ g t².
+        let h = e.create_physics(&[0.0], &[0.0], &[100.0], 0.0, None, None, 0.0, 0.0).unwrap();
+        e.tick(500.0);
+        assert!((e.values(h).unwrap()[0] - 12.5).abs() < 1e-9);
+        // Drag: terminal velocity a/k.
+        let d = e.create_physics(&[0.0], &[0.0], &[100.0], 5.0, None, None, 0.0, 0.0).unwrap();
+        for _ in 0..200 {
+            e.tick(16.0);
+        }
+        assert!((e.sim_velocity(d).unwrap()[0] - 20.0).abs() < 1e-4);
+        // Bouncing ball comes to rest on the floor and finishes.
+        let b = e
+            .create_physics(&[0.0, 0.0], &[50.0, 0.0], &[0.0, 980.0], 0.5, None, Some(&[f64::INFINITY, 300.0]), 0.6, 0.0)
+            .unwrap();
+        let mut finished = false;
+        for _ in 0..2000 {
+            e.tick(16.0);
+            if e.events().chunks(2).any(|c| c[0] == b && c[1] == event::FINISH) {
+                finished = true;
+                break;
+            }
+        }
+        assert!(finished);
+        assert_eq!(e.values(b).unwrap()[1], 300.0);
+        // High restitution still comes to rest (impact-time resolution), at any frame rate.
+        for dt in [16.0, 8.0, 33.0] {
+            let b = e
+                .create_physics(&[0.0], &[0.0], &[980.0], 0.0, None, Some(&[300.0]), 0.8, 0.0)
+                .unwrap();
+            let mut done = false;
+            for _ in 0..(60_000.0 / dt) as usize {
+                e.tick(dt);
+                if e.events().chunks(2).any(|c| c[0] == b && c[1] == event::FINISH) {
+                    done = true;
+                    break;
+                }
+            }
+            assert!(done, "dt {dt}");
+            assert_eq!(e.values(b).unwrap()[0], 300.0);
+        }
+        assert_eq!(e.sim_set_target(b, &[0.0, 0.0]), Err(Error::WrongKind));
+        assert!(e.create_physics(&[0.0], &[0.0], &[], 0.0, Some(&[5.0]), Some(&[1.0]), 0.5, 0.0).is_err());
+        // Life limit.
+        let l = e.create_physics(&[0.0], &[10.0], &[], 0.0, None, None, 0.0, 100.0).unwrap();
+        e.tick(60.0);
+        assert_eq!(e.state(l).unwrap(), PlayState::Playing);
+        e.tick(60.0);
+        assert_eq!(e.state(l).unwrap(), PlayState::Finished);
     }
 
     #[test]

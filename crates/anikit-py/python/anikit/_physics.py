@@ -1,4 +1,5 @@
-"""Physics-driven motion: retargetable springs and inertia (decay with bounds)."""
+"""Physics-driven motion: retargetable springs, inertia (decay with bounds) and
+ballistic simulation (velocity, gravity, drag, bouncing bounds)."""
 
 from __future__ import annotations
 
@@ -20,13 +21,13 @@ from ._values import (
     resolve_values,
 )
 
-__all__ = ["SpringAnimation", "spring", "inertia"]
+__all__ = ["SpringAnimation", "PhysicsAnimation", "spring", "inertia", "physics"]
 
 
 class _Sim:
     """One simulation node animating one ``target[key]``."""
 
-    __slots__ = ("handle", "target", "key", "kind", "entry", "ctrl", "channels")
+    __slots__ = ("handle", "target", "key", "kind", "entry", "ctrl", "channels", "ballistic")
 
     def __init__(self, handle: int, target: Any, key: str, kind: Kind, entry: Entry, ctrl: "SpringAnimation") -> None:
         self.handle = handle
@@ -36,6 +37,8 @@ class _Sim:
         self.entry = entry
         self.ctrl: Optional[SpringAnimation] = ctrl
         self.channels = kind.channels
+        #: A :func:`physics` simulation (never retargeted in place by :func:`spring`).
+        self.ballistic = False
 
 
 class SpringAnimation:
@@ -228,7 +231,8 @@ def spring(
             frames = frames_of(resolve_callable(raw, t, i, n), t, i, n)
             if len(frames) > 2:
                 raise ValueError("springs take a single target value or [from, to]")
-            if existing is not None:
+            if existing is not None and not existing.ballistic:
+                # Relative values build on where a running spring is heading.
                 cur = existing.kind.decode(core.sim_target(existing.handle), 0)
             else:
                 cur = read(t, key)
@@ -241,6 +245,12 @@ def spring(
             goal = res.rows[-1]
             ch = len(goal)
             vel = _vec(velocity, ch)
+            if existing is not None and existing.ballistic:
+                # Replace a ballistic simulation with a fresh spring, keeping its momentum.
+                if vel is None and existing.channels == ch:
+                    vel = core.sim_velocity(existing.handle)
+                engine._release_sim(existing, completed=False)
+                existing = None
             if existing is not None and (existing.channels != ch or type(existing.kind) is not type(kind)):
                 engine._release_sim(existing, completed=False)
                 existing = None
@@ -370,4 +380,159 @@ def inertia(
                 core.sim_set_rest(
                     sim.handle, 0.005 if rest_delta is None else rest_delta, 0.05 if rest_speed is None else rest_speed
                 )
+    return ctrl
+
+
+class PhysicsAnimation(SpringAnimation):
+    """Controller for ballistic simulations created by :func:`physics`.
+
+    Like :class:`SpringAnimation` (``velocity()``, ``stop()``, ``finished``,
+    ``on_complete``), plus live control of the acceleration. A property that a
+    later :func:`spring`, :func:`inertia`, :func:`physics` or tween takes over
+    leaves this controller (its velocity carries over to springs/inertia/physics).
+    """
+
+    def acceleration(self, key: str, target: Any = None) -> float:
+        """Current acceleration (units/s²) of ``key`` (first target unless given)."""
+        s = self._find(key, target)
+        # For physics simulations the core keeps the acceleration where springs keep their target.
+        return self._engine.core.sim_target(s.handle)[0]
+
+    def set_acceleration(self, props: Mapping[str, float], target: Any = None) -> "PhysicsAnimation":
+        """Change the acceleration of running simulations, e.g. turn gravity
+        off or add wind: ``ctrl.set_acceleration({"x": 40, "y": 0})``.
+
+        Applies to every target (or only ``target``). Simulations that already
+        came to rest are finished and cannot be changed; start a new
+        :func:`physics` instead.
+        """
+        core = self._engine.core
+        found = False
+        for key, value in props.items():
+            a = float(value)
+            for s in self._sims:
+                if s.key == key and (target is None or s.target is target):
+                    core.sim_set_acceleration(s.handle, [a])
+                    found = True
+        if not found and props:
+            raise KeyError(f"no running simulation for {sorted(props)!r}")
+        return self
+
+    def target_value(self, key: str, target: Any = None) -> Any:
+        """Physics simulations have no target value."""
+        raise TypeError("physics simulations have no target; use velocity() or acceleration()")
+
+    def retarget(self, props: Mapping[str, Any]) -> "PhysicsAnimation":
+        """Launch this controller's targets again with new ``props`` (same options)."""
+        return physics(self._targets, props, engine=self._engine, **self._params)
+
+    def __repr__(self) -> str:
+        return f"<PhysicsAnimation sims={len(self._sims)} {'running' if self._sims else 'finished'}>"
+
+
+_PHYSICS_KEYS = frozenset({"velocity", "acceleration", "min", "max", "friction", "restitution"})
+
+
+def physics(
+    targets: Any,
+    props: Mapping[str, Any],
+    friction: float = 0.0,
+    restitution: float = 0.5,
+    life: Optional[float] = None,
+    *,
+    rest_speed: Optional[float] = None,
+    on_update: Optional[Callback] = None,
+    on_complete: Optional[Callback] = None,
+    engine: Optional[Engine] = None,
+) -> PhysicsAnimation:
+    """Ballistic motion: launch properties with a velocity under constant
+    acceleration (gravity, wind), drag and bouncing bounds — confetti,
+    projectiles, falling and bouncing objects.
+
+    ``props`` maps each property to its initial velocity (units/s) or a dict::
+
+        physics(ball, {
+            "x": {"velocity": 300, "min": 0, "max": 800},
+            "y": {"velocity": -600, "acceleration": 1500, "max": 400},   # gravity, floor
+        }, friction=0.2, restitution=0.6)
+
+    Keys: ``velocity`` (default: the velocity of a simulation already driving
+    the property, else 0), ``acceleration`` (units/s², default 0), ``min`` /
+    ``max`` bounds (hitting one reflects the motion, scaled by
+    ``restitution``), and per-property ``friction`` / ``restitution``
+    overrides. ``friction`` (1/s) applies exponential drag: velocity decays by
+    ``e^(-friction·t)`` and terminal velocity is ``acceleration / friction``.
+    ``restitution`` is 0 (stop dead) … 1 (perfectly elastic).
+
+    Integration is exact (frame-rate independent). A simulation finishes when
+    it comes to rest (slower than ``rest_speed``, default 0.05 units/s, with no
+    acceleration or resting on a bound it is pushed against) or after ``life``
+    seconds. Motion with acceleration and no bound in its direction, or
+    perfectly elastic bounces without friction, never rests: pass ``life``.
+
+    Numeric properties and unit strings (``"10px"``) are supported. Returns a
+    :class:`PhysicsAnimation`.
+    """
+    engine = resolve_engine(engine)
+    tl = as_targets(targets)
+    if not isinstance(props, Mapping) or not props:
+        raise ValueError("props must be a non-empty mapping of property -> velocity or options")
+    if life is not None and not float(life) > 0:
+        raise ValueError("life must be > 0 seconds (or None for unlimited)")
+    params: Dict[str, Any] = dict(
+        friction=friction,
+        restitution=restitution,
+        life=life,
+        rest_speed=rest_speed,
+        on_update=on_update,
+        on_complete=on_complete,
+    )
+    hooks = Hooks(on_update=on_update, on_complete=on_complete)
+    ctrl = PhysicsAnimation(engine, hooks, params, tl)
+    core = engine.core
+    life_ms = None if life is None else float(life) * 1000.0
+    n = len(tl)
+    for i, t in enumerate(tl):
+        for key, spec in props.items():
+            spec = resolve_callable(spec, t, i, n)
+            opts = dict(spec) if isinstance(spec, Mapping) else {"velocity": spec}
+            unknown = set(opts) - _PHYSICS_KEYS
+            if unknown:
+                raise TypeError(f"unexpected physics option(s) for {key!r}: {sorted(unknown)}")
+            cur = read(t, key)
+            if cur is MISSING:
+                cur = 0.0
+            res = resolve_values([cur, cur], cur, 0)
+            if not isinstance(res.kind, (NumberKind, UnitKind)):
+                raise TypeError(f"physics needs a numeric property, {key!r} is {cur!r}")
+            pos = res.rows[0][0]
+            existing = engine._sims.get((id(t), key))
+            v = opts.get("velocity")
+            if v is None:
+                v = 0.0
+                if existing is not None and core.is_alive(existing.handle):
+                    v = core.sim_velocity(existing.handle)[0]
+            acc = float(opts.get("acceleration") or 0.0)
+            lo = opts.get("min")
+            hi = opts.get("max")
+            if lo is not None and hi is not None and float(lo) > float(hi):
+                raise ValueError(f"min > max for {key!r}")
+            fr = float(opts.get("friction", friction))
+            rs = float(opts.get("restitution", restitution))
+            h = core.create_physics(
+                [pos],
+                [float(v)],
+                [acc],
+                fr,
+                None if lo is None else [float(lo)],
+                None if hi is None else [float(hi)],
+                rs,
+                life_ms,
+            )
+            if existing is not None:
+                engine._release_sim(existing, completed=False)
+            sim = _install(engine, ctrl, t, key, res.kind, h, hooks)
+            sim.ballistic = True
+            if rest_speed is not None:
+                core.sim_set_rest(sim.handle, 0.005, float(rest_speed))
     return ctrl

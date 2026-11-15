@@ -25,6 +25,7 @@ pub mod easing;
 pub mod engine;
 pub mod math;
 pub mod morph;
+pub mod noise;
 pub mod path;
 pub mod spring;
 pub mod stagger;

@@ -17,6 +17,7 @@
 import { core, whenReady } from './wasm';
 import { register, unregister, easingId, NodeRecord, EasingInput, EV_CALLBACK, FL_FILL_BACKWARDS, FL_FILL_FORWARDS, LINEAR, wake } from './core';
 import { Animation, AnimateOptions, Props, Keyframe, Chain, PropValue } from './animate';
+import type { Targets as _T } from './props';
 import { Playable, Callbacks, Linked } from './playable';
 import { Targets } from './props';
 
@@ -45,7 +46,7 @@ export interface TimelineOptions extends Callbacks<Timeline> {
   defaults?: AnimateOptions;
 }
 
-type Child = { ctl: Playable | null; start: number; end: number };
+type Child = { ctl: Playable | null; start: number; end: number; h: number };
 
 export class Timeline extends Playable {
   readonly labels = new Map<string, number>();
@@ -120,7 +121,7 @@ export class Timeline extends Playable {
     const w = core();
     w.ak_group_add(this._h, child._h, startSec * 1000);
     const dur = w.ak_duration(child._h) / 1000;
-    const c: Child = { ctl: child, start: startSec, end: startSec + dur };
+    const c: Child = { ctl: child, start: startSec, end: startSec + dur, h: child._h };
     this._children.push(c);
     this._last = c;
     if (c.end > this._endTime) this._endTime = c.end;
@@ -196,7 +197,7 @@ export class Timeline extends Playable {
       w.ak_group_add(this._h, h, start * 1000);
       const rec: NodeRecord = { h, at: 0, event: (k) => k === EV_CALLBACK && fn() };
       register(rec);
-      const c: Child = { ctl: null, start, end: start };
+      const c: Child = { ctl: null, start, end: start, h };
       this._children.push(c);
       this._last = c;
       if (start > this._endTime) {
@@ -234,6 +235,92 @@ export class Timeline extends Playable {
     return this;
   }
 
+  /** Revert every child (restoring original values), newest first. */
+  override revert(): void {
+    whenReady(() => {
+      const kids = this._children.slice().reverse();
+      for (const c of kids) c.ctl?.revert();
+      this.kill();
+    });
+  }
+
+  /** Child animations / timelines in order of insertion. */
+  getChildren(): Playable[] {
+    return this._children.map((c) => c.ctl).filter((c): c is Playable => c !== null);
+  }
+
+  /** Remove (and kill) a child animation or timeline. */
+  remove(child: Playable): this {
+    whenReady(() => {
+      const i = this._children.findIndex((c) => c.ctl === child);
+      if (i < 0) return;
+      this._children.splice(i, 1);
+      child.kill();
+      this._endTime = this._children.reduce((m, c) => Math.max(m, c.end), 0);
+      this._last = this._children[this._children.length - 1] ?? null;
+    });
+    return this;
+  }
+
+  /** Kill every child (labels are kept). */
+  clear(): this {
+    whenReady(() => {
+      for (const c of this._children.splice(0)) {
+        if (c.ctl) c.ctl.kill();
+        else core().ak_release(c.h);
+      }
+      this._endTime = 0;
+      this._last = null;
+    });
+    return this;
+  }
+
+  /** The most recent label at or before the playhead. */
+  get currentLabel(): string | undefined {
+    return this._labelAround(this.time, -1, true);
+  }
+  /** Label after `time` (default: the playhead). */
+  nextLabel(time = this.time): string | undefined {
+    return this._labelAround(time, 1, false);
+  }
+  /** Label before `time` (default: the playhead). */
+  previousLabel(time = this.time): string | undefined {
+    return this._labelAround(time, -1, false);
+  }
+  private _labelAround(time: number, dir: number, inclusive: boolean): string | undefined {
+    let best: [string, number] | undefined;
+    for (const [name, t] of this.labels) {
+      const ok = dir > 0 ? t > time + 1e-9 : inclusive ? t <= time + 1e-9 : t < time - 1e-9;
+      if (!ok) continue;
+      if (!best || (dir > 0 ? t < best[1] : t > best[1])) best = [name, t];
+    }
+    return best?.[0];
+  }
+
+  /**
+   * Animate the playhead to a time/label (pausing the timeline), e.g. for
+   * step-through UIs: `tl.tweenTo('step2', { duration: 0.6, ease: 'inOutCubic' })`.
+   */
+  tweenTo(position: number | string, options: AnimateOptions = {}): Animation {
+    return this.tweenFromTo(null, position, options);
+  }
+  /** Animate the playhead between two times/labels. */
+  tweenFromTo(from: number | string | null, to: number | string, options: AnimateOptions = {}): Animation {
+    this.pause();
+    const sec = (p: number | string) => (typeof p === 'number' ? p : this.labels.get(p) ?? 0);
+    const proxy = { t: from === null ? this.time : sec(from) };
+    const target = sec(to);
+    const dur = options.duration ?? Math.max(0.001, Math.abs(target - proxy.t) / Math.abs(this.speed || 1));
+    const user = options.onUpdate;
+    return new Animation(proxy, { t: [proxy.t, target] }, {
+      ease: 'linear', ...options, duration: dur, overwrite: false,
+      onUpdate: (a) => {
+        this.seek(proxy.t);
+        user?.(a);
+      },
+    });
+  }
+
   protected _kill(): void {
     for (const c of this._cleanups) c();
     this._cleanups = [];
@@ -257,4 +344,47 @@ export class Timeline extends Playable {
 /** Create a timeline. */
 export function timeline(options?: TimelineOptions): Timeline {
   return new Timeline(options);
+}
+
+/** One step of a {@link sequence}: `[targets, keyframes, options & { at? }]`, a label, or a function. */
+export type SequenceStep =
+  | [_T, Props | Keyframe[], (AnimateOptions & { at?: Position })?]
+  | [Playable, { at?: Position }?]
+  | [() => void, { at?: Position }?]
+  | string;
+
+/**
+ * Declarative timeline from an array (Motion-style):
+ *
+ * ```ts
+ * sequence([
+ *   ['.a', { x: 100 }],
+ *   ['.b', { opacity: [0, 1] }, { at: '<' }],
+ *   'middle',
+ *   ['.c', { scale: 2 }, { at: 'middle+=0.2', duration: 1 }],
+ *   [() => console.log('done')],
+ * ], { defaults: { ease: 'outCubic' } });
+ * ```
+ */
+export function sequence(steps: SequenceStep[], options?: TimelineOptions): Timeline {
+  const tl = new Timeline(options);
+  for (const step of steps) {
+    if (typeof step === 'string') {
+      tl.label(step);
+      continue;
+    }
+    const [a, b, c] = step as any[];
+    if (typeof a === 'function') tl.call(a, b?.at);
+    else if (a instanceof Playable) tl.add(a, b?.at);
+    else {
+      const { at, ...opts } = (c ?? {}) as AnimateOptions & { at?: Position };
+      tl.add(a, b, opts, at);
+    }
+  }
+  return tl;
+}
+
+/** Call `fn` after `seconds` (engine time: respects global speed and pausing). */
+export function delayedCall(seconds: number, fn: () => void): Timeline {
+  return new Timeline().call(fn, seconds);
 }

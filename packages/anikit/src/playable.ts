@@ -11,6 +11,7 @@
  * freed immediately.
  */
 import { core, whenReady, W } from './wasm';
+import { track } from './context';
 import { flush, wake, EV_START, EV_REPEAT, EV_COMPLETE, EV_REVERSE_COMPLETE, EV_FINISH } from './core';
 
 export type PlayState = 'idle' | 'running' | 'paused' | 'finished';
@@ -47,6 +48,7 @@ export abstract class Playable implements PromiseLike<void> {
   constructor(cb: Callbacks<any>) {
     this._cb = cb;
     this._fresh();
+    track(this);
   }
 
   private _fresh(): void {
@@ -192,6 +194,10 @@ export abstract class Playable implements PromiseLike<void> {
   }
   /** Alias of {@link kill}. */
   stop(): void {
+    this.kill();
+  }
+  /** Kill and restore every animated property to its value before this was created. */
+  revert(): void {
     this.kill();
   }
   protected abstract _kill(): void;

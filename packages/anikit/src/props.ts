@@ -22,11 +22,12 @@ const TRANSFORM: Record<string, [number, string]> = {
   skewX: [6, 'deg'], skewY: [7, 'deg'],
   scaleX: [8, ''], scaleY: [9, ''], scaleZ: [10, ''],
   perspective: [11, 'px'],
+  xPercent: [12, '%'], yPercent: [13, '%'],
 };
 /** `scale` and `skew` set two slots at once. */
 const DOUBLE: Record<string, [number, number, string]> = { scale: [8, 9, ''], skew: [6, 7, 'deg'] };
 
-const IDENTITY = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0];
+const IDENTITY = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0];
 
 /** State slots written by a transform property (`-1` when only one). */
 export function transformSlots(p: string): [number, number] {
@@ -135,6 +136,7 @@ export function composeTransform(s: TargetState): string {
   const t = s.t;
   let out = '';
   if (t[11]) out += 'perspective(' + r3(t[11]) + 'px) ';
+  if (t[12] || t[13]) out += 'translate(' + r3(t[12]) + '%,' + r3(t[13]) + '%) ';
   if (t[0] || t[1] || t[2]) {
     out += t[2]
       ? 'translate3d(' + r3(t[0]) + s.u[0] + ',' + r3(t[1]) + s.u[1] + ',' + r3(t[2]) + s.u[2] + ') '
@@ -230,10 +232,17 @@ export function readValue(target: Target, prop: string, kind: Kind): unknown {
     }
     default: {
       const v = (target as any)[prop];
+      if (TEXT_PROPS.has(prop) && typeof v === 'string') {
+        // Counters: read "1,234.5 kg" as 1234.5.
+        const n = parseFloat(v.replace(/[^\d.eE+-]/g, ''));
+        return Number.isFinite(n) ? n : 0;
+      }
       return v === undefined || v === null ? 0 : v;
     }
   }
 }
+
+export const TEXT_PROPS = new Set(['textContent', 'innerText', 'innerHTML', 'value']);
 
 function isColorProp(p: string): boolean {
   return /color|fill|stroke|background$/i.test(p);
@@ -306,6 +315,45 @@ export function defaultUnit(prop: string, kind: Kind): string {
   return '';
 }
 
+/**
+ * Capture a property's current *inline* value so it can be restored later
+ * (`animation.revert()`, `context.revert()`).
+ */
+export function snapshot(target: Target, prop: string, kind: Kind): () => void {
+  switch (kind) {
+    case Kind.Transform: {
+      const s = stateOf(target);
+      const t = s.t.slice();
+      const u = s.u.slice();
+      const inline = (target as HTMLElement).style?.transform ?? '';
+      return () => {
+        s.t = t.slice();
+        s.u = u.slice();
+        if ((target as HTMLElement).style) (target as HTMLElement).style.transform = inline;
+      };
+    }
+    case Kind.Style:
+    case Kind.Var: {
+      const style = (target as HTMLElement).style;
+      const key = kind === Kind.Var ? prop : kebab(camel(prop));
+      const v = style.getPropertyValue(key);
+      const pr = style.getPropertyPriority(key);
+      return () => (v ? style.setProperty(key, v, pr) : style.removeProperty(key));
+    }
+    case Kind.Attr: {
+      const el = target as Element;
+      const v = el.getAttribute(prop);
+      return () => (v === null ? el.removeAttribute(prop) : el.setAttribute(prop, v));
+    }
+    default: {
+      const v = (target as any)[prop];
+      return () => {
+        (target as any)[prop] = v;
+      };
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Writers
 // ---------------------------------------------------------------------------
@@ -358,12 +406,20 @@ export function writer(target: Target, prop: string, kind: Kind, unit: string): 
 
 export type Targets = string | Target | ArrayLike<Target> | Iterable<Target> | null | undefined;
 
+/** Root for selector lookups (set by `context(fn, scope)`). */
+let selectorRoot: ParentNode | null = null;
+export function setSelectorRoot(root: ParentNode | null): ParentNode | null {
+  const prev = selectorRoot;
+  selectorRoot = root;
+  return prev;
+}
+
 /** Normalise a selector / element / list / object into an array of targets. */
 export function toTargets(t: Targets): Target[] {
   if (t === null || t === undefined) return [];
   if (typeof t === 'string') {
     if (typeof document === 'undefined') return [];
-    return Array.from(document.querySelectorAll(t));
+    return Array.from((selectorRoot ?? document).querySelectorAll(t));
   }
   if (isElement(t)) return [t];
   if (Array.isArray(t)) {
