@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { animate, timeline, flip, presence, enter, exit, engine, viewTransition } from '../src/index';
+import { animate, timeline, flip, presence, enter, exit, engine, viewTransition, compositor, scroll } from '../src/index';
 import { setup, advance, box } from './setup';
 
 beforeAll(setup);
@@ -347,5 +347,84 @@ describe('viewTransition', () => {
     advance(1.1);
     await vt;
     expect(big.style.transform).toBe('none');
+  });
+});
+
+/** A minimal WAAPI Animation double (happy-dom doesn't run them). */
+function fakeAnimate(el: HTMLElement) {
+  const made: any[] = [];
+  (el as any).animate = (frames: unknown, timing: any) => {
+    const a: any = {
+      frames, timing, playState: 'running', currentTime: 0, timeline: null, rangeStart: 'normal', rangeEnd: 'normal',
+      effect: { getComputedTiming: () => ({ endTime: timing.duration + timing.delay, progress: 0 }) },
+      finished: new Promise(() => {}),
+      pause() { a.playState = 'paused'; },
+      play() { a.playState = 'running'; },
+      cancel() { a.playState = 'idle'; },
+      commitStyles() {},
+      updatePlaybackRate() {},
+    };
+    made.push(a);
+    return a;
+  };
+  return made;
+}
+
+describe('compositor + scroll', () => {
+  it('hands compositor animations to a native ScrollTimeline over the measured range', () => {
+    const G = globalThis as any;
+    const el = box();
+    const made = fakeAnimate(el);
+    const timelines: any[] = [];
+    G.ScrollTimeline = function (this: any, o: any) {
+      this.o = o;
+      timelines.push(this);
+    };
+    try {
+      const a = compositor(el, { opacity: [0, 1], x: [0, 100] }, { ease: 'linear', duration: 1 });
+      const target = box();
+      (target as any).getBoundingClientRect = () => ({ top: 1500, left: 0, width: 100, height: 400, right: 100, bottom: 1900 });
+      const stop = scroll(a, { target, offset: ['start end', 'end start'] });
+      expect(timelines.length).toBe(1);
+      expect(timelines[0].o.axis).toBe('block');
+      expect(made[0].timeline).toBe(timelines[0]);
+      const vh = window.innerHeight;
+      expect(made[0].rangeStart).toBe(1500 - vh + 'px');
+      expect(made[0].rangeEnd).toBe('1900px');
+      stop();
+      expect(made[0].playState).toBe('paused');
+    } finally {
+      delete G.ScrollTimeline;
+    }
+  });
+
+  it('scrubs from scroll events where ScrollTimeline is missing', () => {
+    const el = box();
+    const made = fakeAnimate(el);
+    const a = compositor(el, { opacity: [0, 1] }, { ease: 'linear', duration: 2 });
+    const scroller = box({ height: '100px', overflow: 'auto' });
+    Object.defineProperty(scroller, 'scrollHeight', { value: 1100 });
+    Object.defineProperty(scroller, 'clientHeight', { value: 100 });
+    scroll(a, { container: scroller });
+    scroller.scrollTop = 250;
+    scroller.dispatchEvent(new Event('scroll'));
+    expect(made[0].playState).toBe('paused');
+    expect(made[0].currentTime).toBeCloseTo(500, 6);
+  });
+
+  it('compositor(): reduced motion jumps to the end, revert() restores inline styles', () => {
+    const el = box({ opacity: '0.5' });
+    const made = fakeAnimate(el);
+    engine.reducedMotion = 'always';
+    try {
+      const a = compositor(el, { opacity: [0, 1] }, { duration: 1 });
+      expect(made[0].timing.duration).toBe(0);
+      el.style.opacity = '1'; // as commitStyles() would
+      a.revert();
+      expect(el.style.opacity).toBe('0.5');
+      expect(made[0].playState).toBe('idle');
+    } finally {
+      engine.reducedMotion = 'never';
+    }
   });
 });

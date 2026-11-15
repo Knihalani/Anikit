@@ -121,7 +121,12 @@ const stop = scroll(animate('.bar', { scaleX: [0, 1] }, { ease: 'linear' }));   
 scroll(animate(img, { y: [-80, 80] }), { target: img, offset: ['start end', 'end start'], smooth: 0.1 });
 scroll((p) => (counter.textContent = Math.round(p * 100) + '%'), { container: panel });
 inView('.reveal', (el) => { animate(el, { opacity: [0, 1] }); return () => animate(el, { opacity: 0 }); }, { amount: 0.3 });
+scroll(compositor('.hero', { scale: [1, 1.15], opacity: [1, 0] }, { ease: 'linear' }), { target: hero, offset: ['start start', 'end start'] });
 ```
+
+Give `scroll()` a `compositor()` animation and it's attached to a native `ScrollTimeline` where the browser has one: the browser scrubs it in step with the scroll, and no JavaScript runs while scrolling. The `offset` range is measured from layout (and again on resize), so it means the same as on the JavaScript path. Without `ScrollTimeline`, or with `smooth`, it's scrubbed from the scroll event instead (`native: false` forces that). In Chromium with 300 scroll-linked elements, script time while scrolling went from about 0.47 ms to 0.05 ms per frame; style and layout time stayed about the same.
+
+`compositor()` animations honour `engine.reducedMotion` (they jump to the end), and `revert()` cancels them and puts back the inline styles from before.
 
 ---
 
