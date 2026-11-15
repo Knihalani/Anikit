@@ -37,7 +37,7 @@ import dataclasses
 import math
 import time
 from dataclasses import dataclass
-from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 try:
     import numpy as np
@@ -58,6 +58,7 @@ __all__ = [
     "torus_knot",
     "plane",
     "cylinder",
+    "tube",
     "heightfield",
     "custom",
     "Texture",
@@ -69,6 +70,8 @@ __all__ = [
     "Item",
     "Points",
     "Mirror",
+    "Shadows",
+    "PATTERNS",
     "Shards",
     "shatter",
     "FlightPath",
@@ -203,6 +206,44 @@ def plane(cells: Union[int, Tuple[int, int]] = 1) -> Mesh:
 def cylinder(segments: int = 32, caps: bool = True) -> Mesh:
     """Capped cylinder, radius 1, height 1 (Y −0.5…0.5); ``u`` runs around, ``v`` along."""
     return Mesh(NativeMesh.cylinder(int(segments), bool(caps)))
+
+
+def tube(
+    points: Any,
+    radius: float = 10.0,
+    sides: int = 8,
+    radii: Any = None,
+    taper: Optional[Tuple[float, float]] = None,
+) -> Mesh:
+    """An open tube along a path of points (light trails, energy streams,
+    cables) with twist-free frames. ``u`` runs along it (0…1 by length, so a
+    material ``pulse`` travels down it), ``v`` around it.
+
+    ``points`` is ``(n, 3)``, flat xyz or a list of ``(x, y, z)`` (e.g.
+    ``path.points(200)`` of a :func:`flight_path`), at least two points.
+    ``radii`` scales the radius per point (overrides ``taper``); ``taper=(a,
+    b)`` scales it from ``a`` at the start to ``b`` at the end, eased with a
+    smoothstep (``(0, 1)`` for a comet). ``(n - 1) * sides * 2`` triangles::
+
+        trail = raster.tube(path.points(200), radius=12, taper=(0, 1))
+        raster.Item(trail, blend="additive", material=raster.Material(emissive=1, pulse=3, pulse_phase=t * 4))
+    """
+    pts = np.asarray(points, dtype=np.float64).reshape(-1)
+    n = pts.size // 3
+    pts = pts[: n * 3]
+    if radii is not None:
+        rs: Any = np.asarray(radii, dtype=np.float64).reshape(-1)
+        if rs.size != n:
+            raise ValueError(f"radii need one value per point ({n}), got {rs.size}")
+    elif taper is not None:
+        a, b = _v2(taper, "taper")
+        k = np.arange(n, dtype=np.float64) / max(1, n - 1)
+        rs = a + (b - a) * (k * k * (3 - 2 * k))
+    else:
+        rs = None
+    return Mesh(
+        NativeMesh.tube(_f32(pts, "points"), None if rs is None else _f32(rs, "radii"), float(radius), int(sides))
+    )
 
 
 def heightfield(
@@ -459,6 +500,10 @@ def _v2(v: Any, name: str) -> Tuple[float, float]:
     return (t[0], t[1])
 
 
+#: Line patterns for :attr:`Material.pattern` (in core order).
+PATTERNS = ("grid", "hex", "dots", "circuit")
+
+
 @dataclass
 class Material:
     """Surface options for a draw (all optional; defaults match the core).
@@ -479,6 +524,8 @@ class Material:
     * ``texture`` (:class:`Texture`), ``texture_mode`` (``"albedo"`` tints
       the lit colour, ``"emissive"`` adds it unlit × ``texture_gain``),
       ``texture_repeat`` (UV tiling).
+    * ``pattern``: what ``lines`` draws in ``grid`` cells — ``"grid"``
+      (default), ``"hex"`` cells, ``"dots"`` or ``"circuit"`` traces with pads.
     """
 
     ambient: float = 0.22
@@ -502,10 +549,13 @@ class Material:
     texture_mode: str = "albedo"
     texture_repeat: Tuple[float, float] = (1.0, 1.0)
     texture_gain: float = 1.0
+    pattern: str = "grid"
 
     def _pack(self) -> List[float]:
         if self.texture_mode not in ("albedo", "emissive"):
             raise ValueError(f"texture_mode must be 'albedo' or 'emissive', got {self.texture_mode!r}")
+        if self.pattern not in PATTERNS:
+            raise ValueError(f"pattern must be one of {PATTERNS}, got {self.pattern!r}")
         if self.texture is not None and not isinstance(self.texture, Texture):
             raise TypeError("material.texture must be a Texture (see anikit.raster.texture)")
         mode = 0.0 if self.texture is None else (2.0 if self.texture_mode == "emissive" else 1.0)
@@ -530,6 +580,7 @@ class Material:
             mode,
             *_v2(self.texture_repeat, "texture_repeat"),
             float(self.texture_gain),
+            float(PATTERNS.index(self.pattern)),
         ]
 
 
@@ -541,6 +592,9 @@ class Lighting:
     strings or 0…1 rgb. ``fog=(near, far)`` fades to ``fog_color`` (default:
     the render's background). ``sky``/``horizon``/``ground`` colour the
     reflected environment, ``strips`` adds sharp studio light strips.
+    ``ground_fog=(bottom, top, range)`` (or a dict of those) adds fog in
+    ``fog_color`` that is full below world ``y = bottom``, gone above ``top``,
+    and reaches full strength over ``range`` units of distance.
     """
 
     key: Vec3 = (0.4, 0.8, 0.6)
@@ -554,9 +608,20 @@ class Lighting:
     horizon: ColorLike = (1.0, 0.85, 0.7)
     ground: ColorLike = (0.05, 0.05, 0.07)
     strips: ColorLike = (0.0, 0.0, 0.0)
+    ground_fog: Optional[Any] = None
 
     def _pack(self, background: Vec3) -> List[float]:
         fog = (0.0, math.inf) if self.fog is None else _v2(self.fog, "fog")
+        gf = self.ground_fog
+        if gf is None:
+            gfv: Vec3 = (0.0, 0.0, 0.0)
+        elif isinstance(gf, Mapping):
+            unknown = set(gf) - {"bottom", "top", "range"}
+            if unknown:
+                raise TypeError(f"ground_fog keys are bottom, top, range; got {sorted(unknown)}")
+            gfv = (float(gf.get("bottom", 0.0)), float(gf.get("top", 0.0)), float(gf.get("range", 0.0)))
+        else:
+            gfv = _v3(gf, "ground_fog")
         return [
             *_v3(self.key, "key"),
             *_rgb(self.key_color),
@@ -570,6 +635,7 @@ class Lighting:
             *_rgb(self.horizon),
             *_rgb(self.ground),
             *_rgb(self.strips),
+            *gfv,
         ]
 
 
@@ -588,7 +654,8 @@ class Item:
     ``"gloss"`` (opaque, blended over what is already drawn by ``gloss``).
     ``mirror=True`` marks the glossy surface for the render's ``mirror``
     option (the floor); ``reflect=False`` leaves the item out of the
-    mirrored pass.
+    mirrored pass. ``cast_shadow=False`` keeps an item out of the render's
+    ``shadows`` map (additive and ``mirror=True`` items never cast).
     """
 
     mesh: Mesh
@@ -599,6 +666,7 @@ class Item:
     mirror: bool = False
     reflect: bool = True
     gloss: float = 0.5
+    cast_shadow: bool = True
 
 
 @dataclass
@@ -628,6 +696,80 @@ class Mirror:
 
     y: float
     strength: float = 0.5
+
+
+@dataclass
+class Shadows:
+    """Key-light shadows for :meth:`Renderer3D.render`: opaque items cast
+    into a shadow map along ``key`` covering a box of half-size ``extent``
+    around ``center`` (default: the camera's target), ``size`` texels square,
+    darkening the key light by ``strength`` (0–1) with depth ``bias``."""
+
+    extent: float
+    center: Optional[Vec3] = None
+    size: int = 2048
+    strength: float = 0.8
+    bias: float = 0.0015
+
+
+def _shadows(s: Any) -> Optional[Shadows]:
+    if s is None or s is False:
+        return None
+    if isinstance(s, Shadows):
+        out = s
+    elif isinstance(s, (int, float)) and not isinstance(s, bool):
+        out = Shadows(float(s))
+    elif isinstance(s, Mapping):
+        out = Shadows(**s)
+    else:
+        raise TypeError(f"shadows must be a Shadows, an extent or a dict, got {type(s).__name__}")
+    if not (math.isfinite(out.extent) and out.extent > 0):
+        raise ValueError(f"shadows extent must be a positive number, got {out.extent!r}")
+    return out
+
+
+def _option(value: Any, name: str, first: str, keys: Sequence[str]) -> Optional[Dict[str, float]]:
+    """``None``/``False`` → off; ``True`` → ``{}``; a number → ``{first: n}``;
+    a dict → checked against ``keys``."""
+    if value is None or value is False:
+        return None
+    if value is True:
+        return {}
+    if isinstance(value, (int, float)):
+        return {first: float(value)}
+    if isinstance(value, Mapping):
+        unknown = set(value) - set(keys)
+        if unknown:
+            raise TypeError(f"{name} keys are {', '.join(keys)}; got {sorted(unknown)}")
+        return {k: float(v) for k, v in value.items()}
+    raise TypeError(f"{name} must be True, a number or a dict, got {type(value).__name__}")
+
+
+def _light_view_projection(key: Vec3, center: Sequence[float], e: float) -> List[float]:
+    """Orthographic light camera looking along −``key`` at ``center``
+    (x, y in ±e, depth 0…4e), exactly as the TypeScript renderer builds it."""
+    kl = math.hypot(key[0], key[1], key[2]) or 1.0
+    d = (key[0] / kl, key[1] / kl, key[2] / kl)
+    c = center
+    ey = (c[0] + d[0] * e * 2, c[1] + d[1] * e * 2, c[2] + d[2] * e * 2)
+    up = (0.0, 0.0, 1.0) if abs(d[1]) > 0.99 else (0.0, 1.0, 0.0)
+    f = (-d[0], -d[1], -d[2])
+    r = (f[1] * up[2] - f[2] * up[1], f[2] * up[0] - f[0] * up[2], f[0] * up[1] - f[1] * up[0])
+    rl = math.hypot(*r) or 1.0
+    r = (r[0] / rl, r[1] / rl, r[2] / rl)
+    u = (r[1] * f[2] - r[2] * f[1], r[2] * f[0] - r[0] * f[2], r[0] * f[1] - r[1] * f[0])
+
+    def dot(a: Sequence[float], b: Sequence[float]) -> float:
+        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+
+    near, far = 0.0, e * 4
+    sx, sz, tz = 1 / e, -2 / (far - near), -(far + near) / (far - near)
+    return [
+        sx * r[0], sx * u[0], sz * -f[0], 0.0,
+        sx * r[1], sx * u[1], sz * -f[1], 0.0,
+        sx * r[2], sx * u[2], sz * -f[2], 0.0,
+        -sx * dot(r, ey), -sx * dot(u, ey), sz * dot(f, ey) + tz, 1.0,
+    ]  # fmt: skip
 
 
 def _item(it: Any) -> Union[Item, Points]:
@@ -782,6 +924,10 @@ class Renderer3D:
         background: Any = "#000000",
         transparent: bool = False,
         mirror: Any = None,
+        skybox: Any = None,
+        shadows: Any = None,
+        dof: Any = None,
+        motion_blur: Any = None,
         lighting: Optional[Lighting] = None,
         **light: Any,
     ) -> np.ndarray:
@@ -790,14 +936,34 @@ class Renderer3D:
 
         Lighting comes from ``lighting`` and/or keyword overrides
         (``key``, ``key_color``, ``fill``, ``fill_color``, ``rim_color``,
-        ``fog``, ``fog_color``, ``sky``, ``horizon``, ``ground``, ``strips``;
-        see :class:`Lighting`). ``transparent=True`` clears to alpha 0.
+        ``fog``, ``fog_color``, ``sky``, ``horizon``, ``ground``, ``strips``,
+        ``ground_fog``; see :class:`Lighting`). ``transparent=True`` clears
+        to alpha 0.
 
         ``mirror`` (a :class:`Mirror`, a ``y``, ``(y, strength)`` or a dict)
         makes a mirror floor exactly like the TypeScript renderer: the scene
         reflected about ``y`` (winding flipped), then the depth is cleared,
         then items with ``mirror=True`` are drawn glossily over the
         reflection, then everything else.
+
+        * ``shadows`` (a :class:`Shadows`, an ``extent`` or a dict of its
+          fields): opaque items with ``cast_shadow=True`` cast key-light
+          shadows. ``center`` defaults to the camera's target (pass it when
+          ``camera`` is a ``(matrix, eye)`` pair).
+        * ``skybox`` (``True``, a sun size ~1–4, or ``{"sun": s}``): paint
+          the background with the environment gradient (meeting the fog at
+          the horizon) and a sun towards ``key``.
+        * ``dof`` (a ``focus`` distance or ``{"focus", "aperture", "max"}``):
+          depth of field; ``aperture`` = px of blur at infinity (default 16),
+          ``max`` caps it (default 3% of the width).
+        * ``motion_blur`` (``True``, a ``shutter`` or ``{"shutter", "max"}``):
+          camera motion blur against the previous ``render()``'s camera;
+          ``shutter`` 0–1 of a frame (default 0.5), ``max`` px (default 6% of
+          the width). Call :meth:`reset_motion` after a cut.
+
+        Passes, as in TypeScript: shadow map, mirror, opaque items, sky,
+        then additive items and points (in item order, so light adds onto the
+        sky), then depth of field, then motion blur.
 
         Returns the frame as a writable ``(height, width, 4)`` uint8 array.
         """
@@ -811,6 +977,20 @@ class Renderer3D:
         if light:
             lights = dataclasses.replace(lights, **light)
         lpack = lights._pack(bg)
+        shadow = _shadows(shadows)
+        sky = _option(skybox, "skybox", "sun", ("sun",))
+        dofo = _option(dof, "dof", "focus", ("focus", "aperture", "max"))
+        if dofo is not None and "focus" not in dofo:
+            raise TypeError("dof needs a focus distance: dof=600 or dof={'focus': 600, 'aperture': 16}")
+        mb = _option(motion_blur, "motion_blur", "shutter", ("shutter", "max"))
+        center: Optional[Vec3] = None
+        if shadow is not None:
+            if shadow.center is not None:
+                center = _v3(shadow.center, "shadows center")
+            elif isinstance(camera, Camera):
+                center = camera.target
+            else:
+                raise ValueError("shadows need a center when the camera is a (matrix, eye) pair")
         its = [_item(it) for it in items]
         for it in its:
             if isinstance(it, Item) and it.blend not in _BLENDS:
@@ -839,6 +1019,17 @@ class Renderer3D:
                 )
             )
 
+        if shadow is not None and center is not None:
+            nat.shadow_begin(
+                _light_view_projection(_v3(lights.key, "key"), center, float(shadow.extent)),
+                int(shadow.size),
+                float(shadow.bias),
+                float(shadow.strength),
+            )
+            for it in meshes:
+                if not it.cast_shadow or it.blend == "additive" or it.mirror:
+                    continue
+                nat.shadow_draw(it.mesh.native, _instance_data(it.instances))
         mir = _mirror(mirror)
         if mir is not None:
             # 1. The scene reflected about y (winding flips), 2. clear depth,
@@ -852,13 +1043,27 @@ class Renderer3D:
             for it in meshes:
                 if it.mirror:
                     tris += draw(it, vp, eye, blend="gloss", gloss=mir.strength)
+
+        def is_light(it: Union[Item, Points]) -> bool:
+            return isinstance(it, Points) or it.blend == "additive"
+
+        for it in its:
+            if isinstance(it, Points) or is_light(it) or (mir is not None and it.mirror):
+                continue
+            tris += draw(it, vp, eye, gloss=it.gloss)
+        if sky is not None:
+            nat.sky(vp, lpack, sky.get("sun", 0.0))
+        # Light last: additive geometry and points add onto everything (the sky too).
         for it in its:
             if isinstance(it, Points):
                 self._draw_points(it, vp, eye)
-                continue
-            if mir is not None and it.mirror:
-                continue
-            tris += draw(it, vp, eye, gloss=it.gloss)
+            elif is_light(it):
+                tris += draw(it, vp, eye, gloss=it.gloss)
+        w = self.width
+        if dofo is not None:
+            nat.depth_of_field(vp, dofo["focus"], dofo.get("aperture", 16.0), dofo.get("max", w * 0.03))
+        if mb is not None and self._prev_vp is not None:
+            nat.motion_blur(vp, self._prev_vp, mb.get("shutter", 0.5), mb.get("max", w * 0.06))
         self._prev_vp = vp
         self.triangles = tris
         out = np.frombuffer(nat.rgba(), np.uint8).reshape(self.height, self.width, 4)
@@ -881,6 +1086,12 @@ class Renderer3D:
             streak=float(p.streak),
             fog=fog,
         )
+
+    def reset_motion(self) -> "Renderer3D":
+        """Forget the previous camera (after a cut), so motion blur and point
+        streaks don't smear across it."""
+        self._prev_vp = None
+        return self
 
     def frame(self) -> np.ndarray:
         """The current frame as a new ``(height, width, 4)`` uint8 array."""

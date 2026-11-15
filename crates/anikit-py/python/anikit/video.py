@@ -51,6 +51,7 @@ POST_OPTIONS = (
     "rays",  # god rays from rays_center (0-2)
     "rays_center",  # (x, y) 0-1 of the frame (default (0.5, 0.4))
     "rays_length",  # 0-1 of the way (default 0.6)
+    "aa",  # FXAA-style edge antialiasing (0-1; 1 recommended for raster frames)
     "exposure",  # 1 = none
     "contrast",  # 1 = none
     "saturation",  # 1 = none

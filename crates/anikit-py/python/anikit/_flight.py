@@ -133,9 +133,18 @@ class FlightPath:
         return (out[0], out[1], out[2])
 
     @property
-    def points(self) -> List[Vec3]:
-        """The control points."""
+    def control_points(self) -> List[Vec3]:
+        """The control points the path was built from."""
         return list(self._pts)
+
+    def points(self, n: int, from_: float = 0.0, to: Optional[float] = None) -> List[Vec3]:
+        """``n`` points (at least 2) evenly spaced by arc length from ``from_``
+        to ``to`` (defaults: the whole path), e.g. for :func:`anikit.raster.tube`
+        light trails."""
+        a = float(from_)
+        b = self.length if to is None else float(to)
+        k = max(2, int(n))
+        return [self.point(a + (b - a) * i / max(1, k - 1)) for i in range(k)]
 
     def point(self, s: float) -> Vec3:
         """Position at arc length ``s`` (clamped; wraps when closed)."""

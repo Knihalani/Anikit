@@ -426,6 +426,8 @@ class NativeMesh:
     @staticmethod
     def cylinder(segments: int = 32, caps: bool = True) -> NativeMesh: ...
     @staticmethod
+    def tube(points: _F32, radii: Optional[_F32] = None, radius: float = 10.0, sides: int = 8) -> NativeMesh: ...
+    @staticmethod
     def heightfield(width: int, depth: int, heights: _F32, skip: float = ...) -> NativeMesh: ...
     @staticmethod
     def custom(positions: _F32, normals: _F32, indices: _U32, uvs: Optional[_F32] = None) -> NativeMesh: ...
@@ -455,9 +457,11 @@ class NativeRaster:
     ``material`` packs ambient, diffuse, specular, shininess, rim, emissive,
     metal, iridescence, hue, lines, line_color(3), grid(2), line_width, pulse,
     pulse_count, pulse_phase, pulse_dir(3), texture mode (0 none, 1 albedo,
-    2 emissive), texture_repeat(2), texture_gain. ``lighting`` packs key(3),
-    key_color(3), fill(3), fill_color(3), rim_color(3), fog(2; far <= 0 or
-    inf = none), fog_color(3), sky(3), horizon(3), ground(3), strips(3).
+    2 emissive), texture_repeat(2), texture_gain, pattern (0 grid, 1 hex,
+    2 dots, 3 circuit). ``lighting`` packs key(3), key_color(3), fill(3),
+    fill_color(3), rim_color(3), fog(2; far <= 0 or inf = none),
+    fog_color(3), sky(3), horizon(3), ground(3), strips(3), ground_fog(3:
+    bottom, top, range; range 0 = none).
     """
 
     def __new__(cls, width: int, height: int) -> NativeRaster: ...
@@ -497,6 +501,15 @@ class NativeRaster:
         streak: float = 0.0,
         fog: Tuple[float, float] = ...,
     ) -> None: ...
+    def shadow_begin(
+        self, light_view_projection: _Mat16, size: int = 2048, bias: float = 0.0015, strength: float = 0.8
+    ) -> None: ...
+    def shadow_draw(self, mesh: NativeMesh, instances: Optional[_F32]) -> None: ...
+    def sky(self, view_projection: _Mat16, lighting: Sequence[float], sun: float = 0.0) -> None: ...
+    def depth_of_field(self, view_projection: _Mat16, focus: float, aperture: float, max_px: float) -> None: ...
+    def motion_blur(
+        self, view_projection: _Mat16, prev_view_projection: _Mat16, shutter: float, max_px: float
+    ) -> None: ...
     def rgba(self) -> bytearray: ...
     def pixel(self, x: int, y: int) -> Tuple[int, int, int, int]: ...
 
@@ -526,6 +539,7 @@ class NativePostFx:
         rays: Optional[float] = None,
         rays_center: Optional[Tuple[float, float]] = None,
         rays_length: Optional[float] = None,
+        aa: Optional[float] = None,
         exposure: Optional[float] = None,
         contrast: Optional[float] = None,
         saturation: Optional[float] = None,
