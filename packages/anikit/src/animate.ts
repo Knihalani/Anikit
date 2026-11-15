@@ -114,6 +114,29 @@ function isKnownStyle(el: HTMLElement, prop: string): boolean {
   return !st || prop in st || camel(prop) in st || prop.startsWith('--');
 }
 
+/** Size properties that accept `'auto'` as an animation value. */
+const AUTO_SIZE = new Set(['height', 'width', 'maxHeight', 'maxWidth', 'blockSize', 'inlineSize']);
+
+/** The used size (px) of `prop` when set to `auto`, measured without leaving a trace. */
+export function measureAuto(el: HTMLElement, prop: string): number {
+  const style = el.style as any;
+  const key = camel(prop);
+  const prev = style[key];
+  const max = key.replace(/^(width|height)$/, (m) => 'max' + m[0].toUpperCase() + m.slice(1));
+  const prevMax = max !== key ? style[max] : undefined;
+  style[key] = /^max/.test(key) ? 'none' : 'auto';
+  if (prevMax !== undefined) style[max] = 'none';
+  const vertical = /height|block/i.test(key);
+  let px = parseFloat(computed(el, key.replace(/^max(.)/, (_, c) => c.toLowerCase())));
+  if (!Number.isFinite(px)) {
+    // No layout engine (or a non-px computed value): fall back to the content size.
+    px = vertical ? el.scrollHeight : el.scrollWidth;
+  }
+  style[key] = prev;
+  if (prevMax !== undefined) style[max] = prevMax;
+  return px || 0;
+}
+
 // ---------------------------------------------------------------------------
 // Internals
 // ---------------------------------------------------------------------------
@@ -433,6 +456,20 @@ export class Animation extends Playable {
         }
         const raw = spec.values.map((v) => resolve(v, target, i, n));
         if (raw[0] !== null && raw[0] !== undefined && raw.length > 1) hasExplicitFrom = true;
+        // `height: 'auto'` (and width, min/max sizes): animate to the measured
+        // size, then hand the property back to layout as `auto`.
+        let autoPx: number[] | null = null;
+        if (kind === Kind.Style && AUTO_SIZE.has(camel(prop))) {
+          const el = target as HTMLElement;
+          const inlineAuto = el.style && (el.style as any)[camel(prop)] === 'auto';
+          if (raw.some((v, k) => v === 'auto' || (inlineAuto && k === 0 && (v === null || v === undefined)))) {
+            const px = measureAuto(el, prop);
+            autoPx = [px];
+            for (let k = 0; k < raw.length; k++) {
+              if (raw[k] === 'auto' || (k === 0 && inlineAuto && (raw[k] === null || raw[k] === undefined))) raw[k] = px + 'px';
+            }
+          }
+        }
         const chained = ctx.chain?.get(target)?.get(prop);
         const read = () => (chained !== undefined ? chained : readValue(target, prop, kind));
         const el = isElement(target) ? target : null;
@@ -453,7 +490,21 @@ export class Animation extends Playable {
         const numeric = track.kind === TRACK_NUMBER && track.ch === 1;
         this._restore.push(snapshot(target, prop, kind));
         const post = postFor(prop, o);
-        if (post) {
+        if (autoPx && numeric && track.unit === 'px') {
+          // Write `auto` whenever the value sits on the measured size (start
+          // or end): identical on screen, and the element stays responsive.
+          const style = (target as HTMLElement).style as any;
+          const key = camel(prop);
+          const ap = autoPx[0];
+          const kw = /^max/.test(key) ? 'none' : 'auto';
+          const b = custom(target, prop, idx, 0, (at) => {
+            let v = F64[at];
+            if (post) v = post(v, target);
+            const s = Math.abs(v - ap) < 1e-3 ? kw : r3(v) + 'px';
+            if (style[key] !== s) style[key] = s;
+          });
+          part.b.push(b);
+        } else if (post) {
           const write = writer(target, prop, kind, track.unit);
           const unit = track.unit;
           const raw = kind === Kind.Transform || (kind === Kind.Prop && !unit);

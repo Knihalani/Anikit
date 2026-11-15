@@ -181,7 +181,10 @@ animate(label, { text: 'Hello world' });                                       /
 animate(label, { text: { value: 'DECRYPTED', type: 'scramble', chars: 'upper' } });
 animate(el, { xPercent: -50, yPercent: -50 });                                 // translate(-50%, -50%)
 animate(path, { d: [null, circle(50, 50, 40), star(50, 50, 6, 45, 20)] });     // morph through N shapes
+animate(panel, { height: open ? 'auto' : 0 }, { ease: 'outCubic' });            // accordions
 ```
+
+`'auto'` works for `height`, `width`, `maxHeight`, `maxWidth`, `blockSize` and `inlineSize`, as a target, as a start value, or as a keyframe. The size is measured when the animation is built, and the property is written back as `auto` (`none` for max sizes) whenever the value sits on that size, so the element stays responsive after the animation ends or is reversed. Add `overflow: hidden` (or `clip`) yourself if the content shouldn't spill while it grows.
 
 ## Control, cleanup and accessibility
 
