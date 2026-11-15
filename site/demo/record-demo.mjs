@@ -255,7 +255,10 @@ async function setupPage(page) {
 // Rendering
 // ---------------------------------------------------------------------------
 const frames = Math.round(END * FPS);
-const WORKERS = +(process.env.WORKERS || 2);
+// Parallel workers are faster, but on small machines (4 cores) Chrome can stop
+// producing new compositor frames under the load and return stale captures.
+// Default to one worker; raise WORKERS on machines with more cores.
+const WORKERS = +(process.env.WORKERS || 1);
 const SEG = process.env.SEG;
 
 if (!SEG && !PREVIEW && WORKERS > 1) {
@@ -389,6 +392,7 @@ for (let f = 0; f < last; f++) {
     }
     await advance(dt * (1 - SHUTTER));
   }
+  if (process.env.DEBUG && f % 30 === 0 && f >= first) console.log('t', t.toFixed(2), await page.evaluate(() => ({ speed: +globalThis.__ANIKIT__.speed.toFixed(3), time: Math.round(globalThis.__ANIKIT__.time), cuts: document.querySelectorAll('.cut').length, y: scrollY, grav: document.documentElement.classList.contains('gravity-on') })));
   if ((f - first) % 300 === 0) console.log(`${tag} ${t.toFixed(1)}s · ${((Date.now() - t0) / 1000).toFixed(0)}s elapsed`);
 }
 await pending;
