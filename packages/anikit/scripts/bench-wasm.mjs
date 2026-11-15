@@ -110,7 +110,7 @@ const f = 1 / Math.tan((40 * Math.PI) / 360);
 const nf = 1 / (10 - 6000);
 const VP = [f / 1.6, 0, 0, 0, 0, f, 0, 0, 0, 0, 6010 * nf, -1, 0, 0, 2 * 6000 * 10 * nf - 1000 * 6010 * nf, 1000];
 const I = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-for (const n of [150000]) {
+for (const n of (process.env.CLOUD_N || '150000').split(',').map(Number)) {
   bench('cloud: step', n, 'particles', () => ({ id: cloud(n) }), (c) => w.ak_cloud_step(c.id, 1 / 60, 0, 1, 0.5));
   for (const sort of [0, 1]) {
     bench(`project${sort ? ' + depth sort' : ''}`, n, 'points', () => {

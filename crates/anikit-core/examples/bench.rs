@@ -27,7 +27,27 @@ fn bench(name: &str, n: usize, mut setup: impl FnMut(&mut Engine), frames: usize
     );
 }
 
+/// ns per `Easing::ease` call over a sweep of progress values.
+fn bench_easing(name: &str) {
+    let e = anikit_core::Easing::parse(name).unwrap();
+    let n = 1_000_000;
+    let mut sum = 0.0;
+    let mut best = f64::INFINITY;
+    for _ in 0..5 {
+        let t = Instant::now();
+        for i in 0..n {
+            sum += e.ease(std::hint::black_box(i as f64 / n as f64));
+        }
+        best = best.min(t.elapsed().as_secs_f64() * 1e9 / n as f64);
+    }
+    std::hint::black_box(sum);
+    println!("{:<44} {best:>6.1} ns/call", format!("ease: {name}"));
+}
+
 fn main() {
+    for name in ["outCubic", "cubic-bezier(0.25, 0.1, 0.25, 1)", "inOutSine", "outElastic", "spring(200, 12)", "steps(5)"] {
+        bench_easing(name);
+    }
     let long = Timing { duration: 1e9, ..Default::default() };
     for n in [1_000usize, 10_000] {
         bench("tween (cache-resident sizes)", n, |e| {

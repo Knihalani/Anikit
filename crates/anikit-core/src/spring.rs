@@ -14,7 +14,7 @@
 //! spring configuration per frame and then advances every channel of every
 //! spring using it with four multiply-adds.
 
-use crate::math::{abs, cos, exp, ln, sin, sqrt, PI};
+use crate::math::{abs, exp, ln, sincos, sqrt, PI};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SpringParams {
@@ -74,8 +74,8 @@ impl SpringParams {
             let alpha = z * w0;
             let wd = w0 * sqrt(1.0 - z * z);
             let e = exp(-alpha * dt);
-            let cs = cos(wd * dt);
-            let sn = sin(wd * dt);
+            // One argument reduction for both (bit-identical to sin + cos).
+            let (sn, cs) = sincos(wd * dt);
             [
                 e * (cs + alpha / wd * sn),
                 e * sn / wd,

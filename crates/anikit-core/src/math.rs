@@ -65,6 +65,12 @@ pub fn sin(x: f64) -> f64 {
 pub fn cos(x: f64) -> f64 {
     libm::cos(x)
 }
+/// `(sin x, cos x)` sharing one argument reduction; bit-identical to calling
+/// [`sin`] and [`cos`] separately (same libm kernels).
+#[inline(always)]
+pub fn sincos(x: f64) -> (f64, f64) {
+    libm::sincos(x)
+}
 #[inline(always)]
 pub fn tan(x: f64) -> f64 {
     libm::tan(x)
@@ -239,5 +245,22 @@ mod tests {
         }
         assert!(worst < 1e-7, "{worst}");
         assert!((fast_exp2(-3.5) - libm::exp2(-3.5)).abs() < 1e-12);
+    }
+
+    #[test]
+    fn sincos_matches_sin_and_cos_bit_for_bit() {
+        let mut rng = Rng(99);
+        for i in 0..200_000 {
+            // Small, medium (several reductions) and huge arguments, plus specials.
+            let x = match i % 4 {
+                0 => (rng.next_f64() - 0.5) * 2.0,
+                1 => (rng.next_f64() - 0.5) * 200.0,
+                2 => (rng.next_f64() - 0.5) * 1e9,
+                _ => [0.0, -0.0, 1e-300, PI, -PI / 4.0, f64::INFINITY, f64::NAN][i % 7],
+            };
+            let (s, c) = sincos(x);
+            assert_eq!(s.to_bits(), sin(x).to_bits(), "sin {x}");
+            assert_eq!(c.to_bits(), cos(x).to_bits(), "cos {x}");
+        }
     }
 }
