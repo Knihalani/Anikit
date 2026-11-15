@@ -103,6 +103,11 @@ export class FlightPath {
     return [T[lo * 3] + (T[hi * 3] - T[lo * 3]) * f, T[lo * 3 + 1] + (T[hi * 3 + 1] - T[lo * 3 + 1]) * f, T[lo * 3 + 2] + (T[hi * 3 + 2] - T[lo * 3 + 2]) * f];
   }
 
+  /** `n` points evenly spaced by arc length from `from` to `to` (defaults: the whole path) — e.g. for `mesh.tube()` light trails. */
+  points(n: number, from = 0, to = this.length): [number, number, number][] {
+    return Array.from({ length: Math.max(2, n) }, (_, i) => this.point(from + ((to - from) * i) / Math.max(1, n - 1)));
+  }
+
   /** Unit tangent at arc length `s`. */
   tangent(s: number): [number, number, number] {
     const h = Math.max(1, this.length * 1e-4);

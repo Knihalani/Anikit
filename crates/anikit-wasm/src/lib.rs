@@ -1835,6 +1835,14 @@ pub extern "C" fn ak_mesh_builtin(kind: u32) -> u32 {
         3 => torus(b(0), b(1), (b(2) as usize).max(8), (b(3) as usize).max(3)),
         4 => plane((b(0) as usize).max(1), (b(1) as usize).max(1)),
         5 => cylinder((b(0) as usize).max(3), b(1) != 0.0),
+        7 => {
+            // Open tube: n points, radius, sides, has radii; then xyz * n; then radii * n.
+            let n = b(0) as usize;
+            let rad = b(3) != 0.0;
+            let pts: Vec<f32> = s.f64_buf.get(4..4 + n * 3).map(|v| v.iter().map(|x| *x as f32).collect()).unwrap_or_default();
+            let radii: Vec<f32> = if rad { s.f64_buf.get(4 + n * 3..4 + n * 4).map(|v| v.iter().map(|x| *x as f32).collect()).unwrap_or_default() } else { Vec::new() };
+            tube_path(&pts, &radii, b(1), (b(2) as usize).max(3))
+        }
         6 => {
             // Heightfield: w, h, skip, then w*h heights.
             let (w, h) = ((b(0) as usize).max(2), (b(1) as usize).max(2));

@@ -104,6 +104,34 @@ export const mesh = {
     const [x, z] = Array.isArray(cells) ? cells : [cells, cells];
     return builtin(4, [x, z]);
   },
+  /**
+   * An open tube along a path of points (light trails, energy streams, cables), with
+   * twist-free frames. `u` runs along it (0–1 by length, so `pulse` travels down it),
+   * `v` around. `taper` (or a per-point `radii` array) thins the ends.
+   *
+   * ```ts
+   * const trail = mesh.tube(path.points(200), { radius: 12, taper: [0, 1] });
+   * items.push({ mesh: trail, blend: 'additive', material: { emissive: 1, pulse: 3, pulsePhase: t * 4 } });
+   * ```
+   */
+  tube(points: ArrayLike<number> | [number, number, number][], o: {
+    /** Tube radius (default 10). */
+    radius?: number;
+    /** Sides around the tube (default 8). */
+    sides?: number;
+    /** Radius scale per point (overrides `taper`). */
+    radii?: ArrayLike<number>;
+    /** Radius scale at the start and end, eased along the tube (e.g. `[0, 1]` for a comet). */
+    taper?: [number, number];
+  } = {}): Mesh3D {
+    const flat: number[] = Array.isArray(points[0]) ? (points as [number, number, number][]).flat() : Array.from(points as ArrayLike<number>);
+    const n = Math.floor(flat.length / 3);
+    const radii = o.radii ? Array.from(o.radii) : o.taper ? Array.from({ length: n }, (_, i) => { const k = i / Math.max(1, n - 1); const e = k * k * (3 - 2 * k); return o.taper![0] + (o.taper![1] - o.taper![0]) * e; }) : null;
+    const vals = [n, o.radius ?? 10, o.sides ?? 8, radii ? 1 : 0, ...flat.slice(0, n * 3), ...(radii ?? [])];
+    const at = f64Buf(vals.length);
+    F64.set(vals, at);
+    return new Mesh3D(core().ak_mesh_builtin(7));
+  },
   /** Capped cylinder, radius 1, height 1 (Y −0.5…0.5). `u` runs around, `v` along. */
   cylinder: (segments = 32, caps = true) => builtin(5, [segments, caps ? 1 : 0]),
   /**

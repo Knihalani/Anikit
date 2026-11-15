@@ -110,4 +110,13 @@ describe('mesh builders', () => {
     const mirrored = red(r.render(cam, items, { mirror: { y: -50, strength: 0.6 } }).slice());
     expect(mirrored).toBeGreaterThan(plain + 5); // the red cube shows up in the floor below it
   });
+
+  it('builds open tubes along paths (trails)', () => {
+    const path = flightPath([[0, 0, 0], [100, 0, -500], [0, 50, -1000]]);
+    const pts = path.points(40);
+    expect(pts.length).toBe(40);
+    const tube = mesh.tube(pts, { radius: 5, sides: 6, taper: [0, 1] });
+    expect(tube.triangles).toBe(39 * 6 * 2);
+    expect(mesh.tube([[0, 0, 0], [0, 0, -10]]).vertices).toBe(2 * 9);
+  });
 });

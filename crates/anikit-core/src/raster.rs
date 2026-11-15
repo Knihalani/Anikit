@@ -1525,6 +1525,65 @@ pub fn tube(f: impl Fn(f32) -> [f32; 3], r: f32, segments: usize, sides: usize) 
     m
 }
 
+/// An open tube of radius `r` along a polyline (`pts`, xyz triples), with
+/// parallel-transport frames (no twisting) and a per-point radius scale
+/// (`radii`, optional) so trails can taper. `u` runs along the tube (0…1 by
+/// arc length), `v` around it.
+#[allow(clippy::needless_range_loop)]
+pub fn tube_path(pts: &[f32], radii: &[f32], r: f32, sides: usize) -> Mesh {
+    let n = pts.len() / 3;
+    let sides = sides.max(3);
+    let mut m = Mesh::default();
+    if n < 2 {
+        return m;
+    }
+    let p = |i: usize| [pts[i * 3], pts[i * 3 + 1], pts[i * 3 + 2]];
+    let cross = |a: [f32; 3], b: [f32; 3]| [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    let tangent = |i: usize| {
+        let (a, b) = (p(i.saturating_sub(1)), p((i + 1).min(n - 1)));
+        norm3([b[0] - a[0], b[1] - a[1], b[2] - a[2]])
+    };
+    // Arc length for u.
+    let mut acc = vec![0.0f32; n];
+    for i in 1..n {
+        let (a, b) = (p(i - 1), p(i));
+        acc[i] = acc[i - 1] + crate::math::sqrtf((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2]));
+    }
+    let total = acc[n - 1].max(1e-6);
+    let t0 = tangent(0);
+    let seed = if t0[1].abs() < 0.9 { [0.0, 1.0, 0.0] } else { [1.0, 0.0, 0.0] };
+    let mut nrm = norm3(cross(cross(t0, seed), t0));
+    let tau = core::f32::consts::TAU;
+    for i in 0..n {
+        let t = tangent(i);
+        // Parallel transport: remove the tangent component from the previous normal.
+        let d = dot(nrm, t);
+        let v = [nrm[0] - d * t[0], nrm[1] - d * t[1], nrm[2] - d * t[2]];
+        if dot(v, v) > 1e-10 {
+            nrm = norm3(v);
+        }
+        let bn = cross(t, nrm);
+        let rr = r * radii.get(i).copied().unwrap_or(1.0);
+        let c = p(i);
+        for j in 0..=sides {
+            let a = (j % sides) as f32 / sides as f32 * tau;
+            let (ca, sa) = (libm::cosf(a), libm::sinf(a));
+            let dir = [nrm[0] * ca + bn[0] * sa, nrm[1] * ca + bn[1] * sa, nrm[2] * ca + bn[2] * sa];
+            m.pos.extend_from_slice(&[c[0] + dir[0] * rr, c[1] + dir[1] * rr, c[2] + dir[2] * rr]);
+            m.nrm.extend_from_slice(&dir);
+            m.uv.extend_from_slice(&[acc[i] / total, j as f32 / sides as f32]);
+        }
+    }
+    let row = (sides + 1) as u32;
+    for i in 0..(n - 1) as u32 {
+        for j in 0..sides as u32 {
+            let (a, b, c, d) = (i * row + j, (i + 1) * row + j, (i + 1) * row + j + 1, i * row + j + 1);
+            m.idx.extend_from_slice(&[a, b, c, a, c, d]);
+        }
+    }
+    m
+}
+
 /// A (p, q) torus knot as a tube.
 pub fn torus_knot(p: f32, q: f32, big_r: f32, r: f32, tube_r: f32, segments: usize, sides: usize) -> Mesh {
     tube(
@@ -1687,7 +1746,8 @@ mod tests {
     #[test]
     fn mesh_builders_are_consistent() {
         let hf: Vec<f32> = (0..64).map(|i| if i % 3 == 0 { 0.0 } else { 0.2 }).collect();
-        for m in [cube(), sphere(8, 12), tube(|t| [libm::cosf(t * 6.283), libm::sinf(t * 6.283), 0.0], 0.2, 32, 8), plane(4, 3), cylinder(12, true), heightfield(8, 8, &hf, 0.0)] {
+        let path: Vec<f32> = (0..20).flat_map(|i| [i as f32, libm::sinf(i as f32 * 0.4), 0.0]).collect();
+        for m in [tube_path(&path, &[], 0.2, 6), cube(), sphere(8, 12), tube(|t| [libm::cosf(t * 6.283), libm::sinf(t * 6.283), 0.0], 0.2, 32, 8), plane(4, 3), cylinder(12, true), heightfield(8, 8, &hf, 0.0)] {
             assert_eq!(m.pos.len(), m.nrm.len());
             assert_eq!(m.uv.len() * 3, m.pos.len() * 2);
             assert_eq!(m.idx.len() % 3, 0);
