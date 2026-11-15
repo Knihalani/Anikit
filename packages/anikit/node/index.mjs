@@ -100,7 +100,7 @@ export async function renderToFile(comp, o) {
   const t0 = Date.now();
   let n = 0;
   await comp.render({
-    canvas, from: o.from, to: o.to, preroll: o.preroll, readPixels,
+    canvas, from: o.from, to: o.to, preroll: o.preroll, readPixels, createCanvas: (w, h) => canvasLib().createCanvas(w, h),
     onFrame: async (fr) => {
       // Copy out of wasm memory: the pipe may not drain before the next frame.
       await write(Buffer.from(fr.i420()));
@@ -119,7 +119,7 @@ export async function renderPreview(comp, o) {
   mkdirSync(o.dir, { recursive: true });
   const canvas = o.canvas ?? canvasLib().createCanvas(comp.width, comp.height);
   await comp.render({
-    canvas, from: o.from, to: o.to, every: o.every ?? 30, readPixels,
+    canvas, from: o.from, to: o.to, every: o.every ?? 30, readPixels, createCanvas: (w, h) => canvasLib().createCanvas(w, h),
     onFrame: (fr) => writeFileSync(join(o.dir, `f${String(fr.index).padStart(5, '0')}.jpg`), canvas.toBuffer('image/jpeg', 85)),
   });
 }

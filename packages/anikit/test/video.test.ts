@@ -52,6 +52,32 @@ describe('composition', () => {
   });
 });
 
+describe('transitions', () => {
+  it('runs both scenes during an overlap and composites them', async () => {
+    const log: string[] = [];
+    const draws: Record<string, number> = { a: 0, b: 0 };
+    const mk = () => {
+      const ctx: any = { fillStyle: '', globalAlpha: 1, globalCompositeOperation: '', fillRect() {}, clearRect() {}, setTransform() {}, save() {}, restore() {},
+        drawImage: (c: any) => log.push('img:' + c.tag), getImageData: () => ({ data: new Uint8ClampedArray(4 * 2 * 4) }) };
+      return ctx;
+    };
+    let n = 0;
+    const createCanvas = () => { const c: any = { width: 4, height: 2, tag: 'buf' + n++ }; const x = mk(); c.getContext = () => x; return c; };
+    const c = composition({ width: 4, height: 2, fps: 10, duration: 2 });
+    c.scene('a', 0, 1, { enter: () => log.push('enter a'), step: () => {}, draw: () => draws.a++ });
+    c.scene('b', 1, 2, { enter: () => log.push('enter b'), transition: { duration: 0.5, type: 'push' }, draw: () => draws.b++ });
+    expect(c.scenesAt(1.2).map((s) => s.name)).toEqual(['a', 'b']);
+    expect(c.scenesAt(1.6).map((s) => s.name)).toEqual(['b']);
+    const main: any = { width: 4, height: 2, getContext: () => mainCtx };
+    const mainCtx = mk();
+    await c.render({ canvas: main, createCanvas, onFrame: () => {} });
+    expect(log.filter((l) => l.startsWith('enter'))).toEqual(['enter a', 'enter b']);
+    expect(draws.a).toBe(15); // 10 frames alone + 5 during the transition
+    expect(draws.b).toBe(10);
+    expect(log.filter((l) => l === 'img:buf0').length).toBeGreaterThan(0);
+  });
+});
+
 describe('FrameBuffer', () => {
   it('converts white to BT.709 limited-range Y', () => {
     const fb = new FrameBuffer(2, 2);

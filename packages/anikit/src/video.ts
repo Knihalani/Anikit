@@ -51,6 +51,33 @@ export interface SceneHooks {
   step?(f: FrameInfo): void;
   /** Draw the frame. */
   draw(f: FrameInfo): void;
+  /**
+   * Transition in from the previous scene. The previous scene keeps running
+   * and drawing for `duration` seconds after this one starts; both render to
+   * their own offscreen canvases and are composited.
+   */
+  transition?: Transition;
+}
+
+/** Composite `from` and `to` at progress `p` (0…1, already eased). */
+export type TransitionFn = (ctx: Ctx2D, from: CanvasLike, to: CanvasLike, p: number, width: number, height: number) => void;
+export interface Transition {
+  duration: number;
+  /** Built-in transition or your own compositing function (default 'fade'). */
+  type?: 'fade' | 'iris' | 'push' | 'whip' | 'slice' | 'zoom' | 'flash' | 'mask' | TransitionFn;
+  /** Easing of the progress (default 'inOutCubic'; 'inOutQuart' for push/whip). */
+  ease?: EasingInput;
+  /** Iris / zoom / mask centre, 0…1 of the frame (default centre). */
+  origin?: [number, number];
+  /** Push / whip / slice direction (default 'left': the new scene enters from the right). */
+  direction?: 'left' | 'right' | 'up' | 'down';
+  /** Slice: number of bands (default 7). */
+  slices?: number;
+  /** Mask: the letterform the next scene is revealed through (default '●'), and its font. */
+  text?: string;
+  font?: string;
+  /** Flash colour (default '#fff'). */
+  color?: string;
 }
 export interface SceneDef extends SceneHooks {
   name: string;
@@ -92,6 +119,8 @@ export interface RenderOptions {
   readPixels?: (ctx: Ctx2D, width: number, height: number) => ArrayLike<number>;
   /** Pixel byte order returned by `readPixels`. */
   order?: 'rgba' | 'bgra';
+  /** Create offscreen canvases for transitions (Node: pass your canvas library's). */
+  createCanvas?: (width: number, height: number) => CanvasLike;
   onFrame(frame: RenderedFrame): void | Promise<void>;
 }
 
@@ -170,9 +199,21 @@ export class Composition {
     return Math.round(this.duration * this.fps);
   }
 
-  /** The scene active at `t` (scenes may not overlap; gaps draw nothing). */
+  /** When a scene stops running: its end, extended over the next scene's transition. */
+  private runsUntil(i: number): number {
+    const s = this.scenes[i], n = this.scenes[i + 1];
+    return n?.transition && n.start < s.end + 1e-9 ? Math.max(s.end, n.start + n.transition.duration) : s.end;
+  }
+  /** Scenes running at `t` (two during a transition), oldest first. */
+  scenesAt(t: number): SceneDef[] {
+    const out = this.scenes.filter((s, i) => t >= s.start && t < this.runsUntil(i));
+    if (!out.length && t >= this.duration - 1e-9 && this.scenes.length) out.push(this.scenes[this.scenes.length - 1]);
+    return out.slice(-2);
+  }
+  /** The (newest) scene active at `t`. */
   sceneAt(t: number): SceneDef | undefined {
-    return this.scenes.find((s) => t >= s.start && t < s.end) ?? (t >= this.duration - 1e-9 ? this.scenes[this.scenes.length - 1] : undefined);
+    const a = this.scenesAt(t);
+    return a[a.length - 1];
   }
 
   /** Render frames deterministically, calling `onFrame` for each delivered frame. */
@@ -193,67 +234,183 @@ export class Composition {
     const read = o.readPixels ?? ((c: Ctx2D) => c.getImageData(0, 0, w, h).data);
     const order = o.order ?? 'rgba';
     const dt = 1000 / fps;
-    let current: SceneDef | undefined;
+    const entered = new Set<SceneDef>();
     let cue = 0;
-    const info = (t: number, frame: number, s: SceneDef): FrameInfo => ({
-      ctx, t, frame, width: w, height: h, scene: s, local: t - s.start, progress: Math.min(1, Math.max(0, (t - s.start) / (s.end - s.start))),
+    const make = o.createCanvas ?? defaultCanvas;
+    const bufs: CanvasLike[] = [];
+    const buf = (k: number) => (bufs[k] ??= make(w, h));
+    const info = (t: number, frame: number, s: SceneDef, c: Ctx2D = ctx): FrameInfo => ({
+      ctx: c, t, frame, width: w, height: h, scene: s, local: t - s.start, progress: Math.min(1, Math.max(0, (t - s.start) / (s.end - s.start))),
     });
-    const paint = (fi: FrameInfo) => {
-      if (this.options.background) {
-        ctx.fillStyle = this.options.background;
-        ctx.fillRect(0, 0, w, h);
-      }
-      fi.scene.draw(fi);
+    const bg = (c: Ctx2D) => {
+      if (!this.options.background) return;
+      c.fillStyle = this.options.background;
+      c.fillRect(0, 0, w, h);
     };
+    const paint = (t: number, f: number, act: SceneDef[]) => {
+      const [a, b] = act;
+      if (!b || !b.transition) {
+        bg(ctx);
+        (b ?? a).draw(info(t, f, b ?? a));
+        return;
+      }
+      const ca = buf(0), cb = buf(1);
+      const xa = ca.getContext('2d') as Ctx2D, xb = cb.getContext('2d') as Ctx2D;
+      for (const x of [xa, xb]) { x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, w, h); bg(x); }
+      a.draw(info(t, f, a, xa));
+      b.draw(info(t, f, b, xb));
+      const tr = b.transition;
+      const p = Math.min(1, Math.max(0, (t - b.start) / tr.duration));
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      bg(ctx);
+      composite(ctx, ca, cb, p, w, h, tr, () => buf(2));
+      ctx.restore();
+    };
+    const enterAll = (t: number, f: number, act: SceneDef[]) => {
+      for (const s of act) if (!entered.has(s)) { entered.add(s); s.enter?.(info(t, f, s)); }
+    };
+    const stepAll = (fi: (s: SceneDef) => FrameInfo, act: SceneDef[]) => { for (const s of act) s.step?.(fi(s)); };
     try {
       for (let f = 0; f < last; f++) {
         const t = f / fps;
         while (cue < this.cues.length && this.cues[cue].t <= t + 1e-9) this.cues[cue++].fn();
-        const s = this.sceneAt(t);
-        if (s && s !== current) {
-          current = s;
-          s.enter?.(info(t, f, s));
-        }
+        const act = this.scenesAt(t);
+        enterAll(t, f, act);
         // Timelines created this frame autoplay on a microtask: let them start.
         await null;
         const visible = f >= first && (f - first) % every === 0;
         const warm = f >= pre && f < first;
-        if (!s || (!visible && !warm)) {
-          engine.tick(dt);
-          if (s) s.step?.(info(t, f, s));
-          continue;
+        // The tick schedule is identical whether or not a frame is drawn, so
+        // simulations evolve the same in every worker and every slice.
+        const sub = samples > 1 ? (dt * shutter) / samples : dt;
+        const blur = samples > 1 && visible;
+        for (let k = 0; k < samples; k++) {
+          engine.tick(sub);
+          const ts = t + (k * sub) / 1000;
+          stepAll((s) => info(ts, f, s), act);
+          if (!act.length) continue;
+          if (blur) {
+            paint(ts, f, act);
+            fb.write(read(ctx, w, h));
+            fb.accumulate();
+          } else if (warm || (visible && k === samples - 1)) paint(ts, f, act); // warm: same renders as drawn frames, so trails match
         }
-        if (samples === 1 || warm) {
-          engine.tick(dt);
-          const fi = info(t, f, s);
-          s.step?.(fi);
-          paint(fi);
-          if (warm) continue;
+        if (samples > 1) engine.tick(dt - sub * samples);
+        if (!visible || !act.length) continue;
+        if (blur) {
+          fb.resolve();
+          await o.onFrame({ index: f, t, ctx, rgba: () => fb.rgba(), i420: () => fb.i420(order) });
+        } else {
           let rgba: Uint8Array | null = null;
           await o.onFrame({
             index: f, t, ctx,
             rgba: () => rgba ?? (rgba = fb.write(read(ctx, w, h)).rgba()),
             i420: () => (rgba ? fb : fb.write(read(ctx, w, h))).i420(order),
           });
-          continue;
         }
-        // Motion blur: sub-frames across the shutter, averaged in WebAssembly.
-        const sub = (dt * shutter) / samples;
-        for (let k = 0; k < samples; k++) {
-          engine.tick(sub);
-          const fi = info(t + (k * sub) / 1000, f, s);
-          s.step?.(fi);
-          paint(fi);
-          fb.write(read(ctx, w, h));
-          fb.accumulate();
-        }
-        engine.tick(dt - sub * samples);
-        fb.resolve();
-        await o.onFrame({ index: f, t, ctx, rgba: () => fb.rgba(), i420: () => fb.i420(order) });
       }
     } finally {
       fb.free();
       if (!wasManual) engine.manual(false);
+    }
+  }
+}
+
+function defaultCanvas(w: number, h: number): CanvasLike {
+  if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h) as unknown as CanvasLike;
+  return Object.assign(document.createElement('canvas'), { width: w, height: h }) as unknown as CanvasLike;
+}
+
+const DEFAULT_EASE: Record<string, EasingInput> = { push: 'inOutQuart', whip: 'inOutExpo', slice: 'inOutQuart', zoom: 'inOutCubic', iris: 'inOutCubic', mask: 'inExpo', flash: 'linear', fade: 'inOutSine' };
+
+/** Composite two scene buffers for a transition at raw progress `p`. */
+function composite(ctx: Ctx2D, from: CanvasLike, to: CanvasLike, raw: number, w: number, h: number, tr: Transition, temp: () => CanvasLike): void {
+  const type = tr.type ?? 'fade';
+  const p = ease(tr.ease ?? (typeof type === 'string' ? DEFAULT_EASE[type] : 'inOutCubic') ?? 'inOutCubic', raw);
+  const img = (c: CanvasLike, x = 0, y = 0, s = 1, a = 1) => {
+    if (a <= 0) return;
+    ctx.globalAlpha = a;
+    if (s === 1) ctx.drawImage(c as unknown as CanvasImageSource, x, y, w, h);
+    else ctx.drawImage(c as unknown as CanvasImageSource, x + (w - w * s) / 2, y + (h - h * s) / 2, w * s, h * s);
+    ctx.globalAlpha = 1;
+  };
+  const [ox, oy] = tr.origin ?? [0.5, 0.5];
+  const dir = tr.direction ?? 'left';
+  const dx = dir === 'left' ? -1 : dir === 'right' ? 1 : 0, dy = dir === 'up' ? -1 : dir === 'down' ? 1 : 0;
+  if (typeof type === 'function') return type(ctx, from, to, p, w, h);
+  switch (type) {
+    case 'fade':
+      img(from); img(to, 0, 0, 1, p); return;
+    case 'iris': {
+      img(from);
+      const cx = ox * w, cy = oy * h, r = p * Math.hypot(Math.max(cx, w - cx), Math.max(cy, h - cy));
+      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, Math.max(0.01, r), 0, Math.PI * 2); ctx.clip(); img(to); ctx.restore();
+      return;
+    }
+    case 'push': {
+      const ux = dx * w * p, uy = dy * h * p;
+      img(from, ux, uy); img(to, ux - dx * w, uy - dy * h); return;
+    }
+    case 'whip': {
+      // A fast push with a directional smear proportional to speed.
+      const speed = Math.sin(Math.PI * raw);
+      const ux = dx * w * p, uy = dy * h * p, taps = 6;
+      for (const [c, bx, by] of [[from, ux, uy], [to, ux - dx * w, uy - dy * h]] as Array<[CanvasLike, number, number]>) {
+        img(c, bx, by);
+        for (let k = 1; k <= taps; k++) {
+          const o = (k / taps) * speed * 0.09;
+          img(c, bx - dx * w * o, by - dy * h * o, 1, 0.5 / k);
+        }
+      }
+      return;
+    }
+    case 'slice': {
+      img(from);
+      const n = tr.slices ?? 7, st = 0.5 / n, vertical = dy !== 0;
+      for (let i = 0; i < n; i++) {
+        const q = ease('outExpo', Math.min(1, Math.max(0, (raw * (1 + st * (n - 1)) - i * st))));
+        if (q <= 0) continue;
+        const sign = i % 2 ? 1 : -1;
+        ctx.save(); ctx.beginPath();
+        if (vertical) ctx.rect((i * w) / n, 0, w / n + 1, h); else ctx.rect(0, (i * h) / n, w, h / n + 1);
+        ctx.clip();
+        if (vertical) img(to, 0, sign * h * (1 - q)); else img(to, sign * w * (1 - q), 0);
+        ctx.restore();
+      }
+      return;
+    }
+    case 'zoom':
+      img(to, 0, 0, 0.7 + 0.3 * p, Math.min(1, p * 1.6));
+      img(from, 0, 0, 1 + 2.5 * p * p, 1 - p);
+      return;
+    case 'flash': {
+      img(raw < 0.5 ? from : to);
+      ctx.globalAlpha = Math.pow(1 - Math.abs(2 * raw - 1), 1.5);
+      ctx.fillStyle = tr.color ?? '#fff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.globalAlpha = 1;
+      return;
+    }
+    case 'mask': {
+      // Reveal the next scene through a letterform that grows to fill the frame.
+      img(from);
+      if (raw >= 0.999) { img(to); return; }
+      const t = temp(), x = t.getContext('2d') as Ctx2D;
+      x.setTransform(1, 0, 0, 1, 0, 0);
+      x.globalCompositeOperation = 'source-over';
+      x.clearRect(0, 0, w, h);
+      const size = h * 0.6 * Math.pow(60, p);
+      x.font = tr.font ?? `900 ${size}px Display, Inter, system-ui`;
+      x.textAlign = 'center';
+      x.textBaseline = 'middle';
+      x.fillStyle = '#000';
+      x.fillText(tr.text ?? '●', ox * w, oy * h);
+      x.globalCompositeOperation = 'source-in';
+      x.drawImage(to as unknown as CanvasImageSource, 0, 0, w, h);
+      x.globalCompositeOperation = 'source-over';
+      ctx.drawImage(t as unknown as CanvasImageSource, 0, 0, w, h);
+      return;
     }
   }
 }
@@ -276,7 +433,7 @@ export interface TypeFxOptions {
   italic?: boolean;
   color?: string;
   /** 'rise' (masked), 'wave', 'type' (typewriter), 'scramble', 'fade' (default 'rise'). */
-  effect?: 'rise' | 'wave' | 'type' | 'scramble' | 'fade';
+  effect?: 'rise' | 'wave' | 'type' | 'scramble' | 'fade' | 'slam';
   /** When the effect starts (seconds, in the same clock as `t`). */
   start?: number;
   /** Current time. */
@@ -299,7 +456,8 @@ export function typeFx(ctx: Ctx2D, text: string, x: number, y: number, o: TypeFx
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
   ctx.fillStyle = o.color ?? '#000';
-  const st = o.stagger ?? 0.03, dur = o.duration ?? 0.7, start = o.start ?? 0, e = o.ease ?? 'outExpo';
+  const slam = o.effect === 'slam';
+  const st = o.stagger ?? (slam ? 0.035 : 0.03), dur = o.duration ?? (slam ? 0.32 : 0.7), start = o.start ?? 0, e = o.ease ?? 'outExpo';
   const ls = o.letterSpacing ?? 0;
   const widths = Array.from(text, (c) => ctx.measureText(c).width + ls);
   const total = widths.reduce((a, b) => a + b, 0);
@@ -321,7 +479,18 @@ export function typeFx(ctx: Ctx2D, text: string, x: number, y: number, o: TypeFx
     else if (effect === 'fade') alpha = v;
     else if (effect === 'type') alpha = p > 0 ? 1 : 0;
     else if (effect === 'scramble' && p < 1 && c !== ' ') ch = p <= 0 ? '' : GLYPHS[(Math.floor(o.t * 30) + i * 7) % GLYPHS.length];
-    if (alpha > 0 && ch) {
+    if (effect === 'slam') {
+      // Characters punch in from 3× scale.
+      if (p > 0) {
+        const sc = 1 + (1 - v) * 2.2;
+        ctx.globalAlpha = Math.min(1, p * 3);
+        ctx.save();
+        ctx.translate(cx + widths[i] / 2, y - size * 0.36);
+        ctx.scale(sc, sc);
+        ctx.fillText(ch, -widths[i] / 2, size * 0.36);
+        ctx.restore();
+      }
+    } else if (alpha > 0 && ch) {
       ctx.globalAlpha = alpha;
       ctx.fillText(ch, cx, y + dy);
     }

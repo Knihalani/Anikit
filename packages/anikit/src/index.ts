@@ -56,7 +56,7 @@ export type { EmitterOptions, SpawnShape } from './emitter';
 export { analyzeAudio, decodeAudio } from './audio';
 export type { AudioAnalysis } from './audio';
 export { composition, Composition, FrameBuffer, typeFx, exportWebM, muxWebM } from './video';
-export type { CompositionOptions, SceneHooks, SceneDef, FrameInfo, RenderOptions, RenderedFrame, TypeFxOptions } from './video';
+export type { CompositionOptions, SceneHooks, SceneDef, FrameInfo, RenderOptions, RenderedFrame, TypeFxOptions, Transition, TransitionFn } from './video';
 export type { CloudOptions, ShapeInput, GlowOptions, GlowRenderOptions } from './cloud';
 export { scene3d, Scene3D, tilt, parseTransform, toMatrix3d, mixTransforms } from './scene';
 export type { SceneOptions, Projection, DrawOptions, TiltOptions, Vec3, Matrix } from './scene';
