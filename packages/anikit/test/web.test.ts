@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { animate, timeline, flip, presence, enter, exit, engine, viewTransition, compositor, scroll, splitText } from '../src/index';
+import { animate, timeline, flip, presence, enter, exit, engine, viewTransition, compositor, scroll, splitText, mixColor } from '../src/index';
 import { setup, advance, box } from './setup';
 
 beforeAll(setup);
@@ -498,5 +498,36 @@ describe('splitText masks and autoSplit', () => {
     } finally {
       G.ResizeObserver = RO;
     }
+  });
+});
+
+describe('complex values', () => {
+  const at = (from: string, to: string, t: number, options: Record<string, unknown> = {}) => {
+    const o = { v: from };
+    animate(o, { v: [from, to] }, { duration: 1, ease: 'linear', ...options });
+    advance(t);
+    return o.v;
+  };
+
+  it('interpolates colours inside strings in the colour space, premultiplied', () => {
+    // Fading in from transparent black stays red (straight RGB would go dark).
+    expect(at('0px 0px 0px rgba(0,0,0,0)', '0px 0px 10px rgba(255,0,0,1)', 0.5)).toBe('0px 0px 5px rgba(255,0,0,0.5)');
+    const g = at('linear-gradient(90deg, rgb(255,0,0), rgb(0,0,255))', 'linear-gradient(90deg, rgb(0,0,255), rgb(255,0,0))', 0.5);
+    const mid = mixColor('rgb(255,0,0)', 'rgb(0,0,255)', 0.5, 'oklab');
+    expect(g).toBe(`linear-gradient(90deg, ${mid}, ${mid})`);
+    const srgb = at('linear-gradient(red, blue)', 'linear-gradient(blue, red)', 0.5, { colorSpace: 'srgb' });
+    expect(srgb).toBe('linear-gradient(rgb(128,0,128), rgb(128,0,128))');
+  });
+
+  it('fills filter lists with identity values (none → list, different functions)', () => {
+    expect(at('none', 'brightness(1.5) blur(4px)', 0.5)).toBe('brightness(1.25) blur(2px)');
+    expect(at('blur(4px)', 'grayscale(100%)', 0.5)).toBe('blur(2px) grayscale(0.5)');
+    expect(at('saturate(2) hue-rotate(0.5turn)', 'hue-rotate(0)', 0.5)).toBe('saturate(1.5) hue-rotate(90deg)');
+  });
+
+  it('lines up shadow lists (colour first or last, different counts, bare zeros)', () => {
+    const v = at('rgba(0, 0, 0, 0.2) 0px 4px 12px 0px', '0 8px 24px rgba(0,0,0,.4), inset 0 0 0 2px rgb(255,0,0)', 0.5);
+    expect(v).toBe('0px 6px 18px 0px rgba(0,0,0,0.3), inset 0px 0px 0px 1px rgba(255,0,0,0.5)');
+    expect(at('none', '2px 2px red', 0.5)).toBe('1px 1px rgba(255,0,0,0.5)');
   });
 });

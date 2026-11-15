@@ -7,6 +7,7 @@
  * `box-shadow`, `filter`, `clip-path`, gradients) and discrete values.
  */
 import { core, writeStr, F64, views } from './wasm';
+import { harmonize } from './cssvalues';
 
 export const TRACK_NUMBER = 0;
 export const TRACK_COLOR = 1;
@@ -164,6 +165,12 @@ export interface TrackDef {
   /** Final value as written (for chaining and `complete()`). */
   last: string | number;
   first: string | number;
+  /**
+   * Further tracks whose outputs follow this one's contiguously (complex
+   * strings: colours get their own colour tracks so they interpolate in the
+   * chosen colour space, premultiplied, like solid colours).
+   */
+  segs?: TrackDef[];
 }
 
 export type Converter = (value: number, from: string, to: string) => number;
@@ -240,43 +247,46 @@ export function buildTrack(
 
   // Complex strings (possibly mixed with "none"/numbers/colours that can be
   // lifted into the template).
-  const tmpl = parsed.find((p) => p.k === 'complex') as PComplex | undefined;
-  if (tmpl) {
-    const lifted: (PComplex | null)[] = parsed.map((p) => {
-      if (p.k === 'complex') return sameTemplate(p, tmpl) ? p : null;
-      if (p.k === 'str' && (p.s === 'none' || p.s === '' || p.s === 'auto' || p.s === 'normal')) return zeroLike(tmpl);
-      if (p.k === 'num' && tmpl.slots.length === 1 && tmpl.slots[0] === 0) {
-        return { k: 'complex', parts: tmpl.parts, slots: tmpl.slots, nums: [p.n] };
-      }
-      if (p.k === 'color' && tmpl.slots.length === 1 && tmpl.slots[0] === 1) {
-        return { k: 'complex', parts: tmpl.parts, slots: tmpl.slots, nums: p.c.slice() };
-      }
-      return null;
-    });
-    if (lifted.every((x) => x !== null)) {
-      const ch = tmpl.nums.length;
-      const values: number[] = [];
-      for (const p of lifted as PComplex[]) values.push(...p.nums);
-      const { parts, slots } = tmpl;
-      const build = (src: number[] | Float64Array, at: number): string => {
-        let s = parts[0];
-        let i = at;
-        for (let k = 0; k < slots.length; k++) {
-          if (slots[k] === 0) s += r3(src[i++]);
-          else {
-            s += fmtColor(src, i);
-            i += 4;
-          }
-          s += parts[k + 1];
-        }
-        return s;
-      };
-      return {
-        kind: TRACK_NUMBER, arg: 0, ch, out: ch, values, unit: '',
-        format: (at) => build(F64, at),
-        first: build(values, 0), last: build(values, (n - 1) * ch),
-      };
+  let lifted = liftComplex(parsed);
+  // "none" lifts to zeros, which is wrong for most filters (brightness(0) is
+  // black): let the list rules decide first in that case too.
+  if (!lifted || parsed.some((p) => p.k === 'str' && (p.s === 'none' || p.s === ''))) {
+    // Lists that don't line up as written (filter functions in a different
+    // set or order, shadow lists of different lengths or token order):
+    // rewrite them into one shape and try again.
+    const fixed = harmonize(parsed.map(toText));
+    if (fixed) {
+      const reparsed = fixed.map(parseValue);
+      lifted = liftComplex(reparsed);
+      if (lifted) parsed.splice(0, parsed.length, ...reparsed);
     }
+  }
+  if (lifted) {
+    const tmpl = lifted[0];
+    const ch = tmpl.nums.length;
+    const values: number[] = [];
+    for (const p of lifted) values.push(...p.nums);
+    const { parts, slots } = tmpl;
+    const build = (src: number[] | Float64Array, at: number): string => {
+      let s = parts[0];
+      let i = at;
+      for (let k = 0; k < slots.length; k++) {
+        if (slots[k] === 0) s += r3(src[i++]);
+        else {
+          s += fmtColor(src, i);
+          i += 4;
+        }
+        s += parts[k + 1];
+      }
+      return s;
+    };
+    const def: TrackDef = {
+      kind: TRACK_NUMBER, arg: 0, ch, out: ch, values, unit: '',
+      format: (at) => build(F64, at),
+      first: build(values, 0), last: build(values, (n - 1) * ch),
+    };
+    if (slots.includes(1)) splitColors(def, lifted, colorSpace);
+    return def;
   }
 
   // Discrete fallback: switch between raw strings.
@@ -288,6 +298,64 @@ export function buildTrack(
     format: (at) => strs[F64[at] | 0],
     first: strs[0], last: strs[n - 1],
   };
+}
+
+/** Lift every keyframe into one complex template, or null if they don't share one. */
+function liftComplex(parsed: Parsed[]): PComplex[] | null {
+  const tmpl = parsed.find((p) => p.k === 'complex') as PComplex | undefined;
+  if (!tmpl) return null;
+  const lifted: PComplex[] = [];
+  for (const p of parsed) {
+    if (p.k === 'complex') {
+      if (!sameTemplate(p, tmpl)) return null;
+      lifted.push(p);
+    } else if (p.k === 'str' && (p.s === 'none' || p.s === '' || p.s === 'auto' || p.s === 'normal')) lifted.push(zeroLike(tmpl));
+    else if (p.k === 'num' && tmpl.slots.length === 1 && tmpl.slots[0] === 0) {
+      lifted.push({ k: 'complex', parts: tmpl.parts, slots: tmpl.slots, nums: [p.n] });
+    } else if (p.k === 'color' && tmpl.slots.length === 1 && tmpl.slots[0] === 1) {
+      lifted.push({ k: 'complex', parts: tmpl.parts, slots: tmpl.slots, nums: p.c.slice() });
+    } else return null;
+  }
+  return lifted;
+}
+
+/**
+ * Re-cut a complex track into runs of numbers and single colours, each its
+ * own core track (outputs stay contiguous, so formatting is unchanged).
+ */
+function splitColors(def: TrackDef, lifted: PComplex[], colorSpace: number): void {
+  const slots = lifted[0].slots;
+  const runs: Array<[number, number, boolean]> = []; // [start, length, isColor]
+  let at = 0;
+  for (const sl of slots) {
+    if (sl === 1) {
+      runs.push([at, 4, true]);
+      at += 4;
+    } else {
+      const last = runs[runs.length - 1];
+      if (last && !last[2]) last[1]++;
+      else runs.push([at, 1, false]);
+      at++;
+    }
+  }
+  const tracks: TrackDef[] = runs.map(([start, len, color]) => {
+    const values: number[] = [];
+    for (const p of lifted) for (let k = 0; k < len; k++) values.push(p.nums[start + k]);
+    return {
+      kind: color ? TRACK_COLOR : TRACK_NUMBER, arg: color ? colorSpace : 0, ch: len, out: len, values, unit: '',
+      format: def.format, first: def.first, last: def.last,
+    };
+  });
+  const head = tracks[0];
+  def.kind = head.kind;
+  def.arg = head.arg;
+  def.ch = def.out = head.ch;
+  def.values = head.values;
+  if (tracks.length > 1) def.segs = tracks.slice(1);
+}
+
+function toText(p: Parsed): string {
+  return p.k === 'str' ? p.s : p.k === 'num' ? p.n + p.unit : p.k === 'color' ? fmtColor(p.c, 0) : buildFromComplex(p);
 }
 
 function buildFromComplex(p: PComplex): string {

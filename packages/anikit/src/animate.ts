@@ -444,7 +444,16 @@ export class Animation extends Playable {
           t.easings = id === LINEAR ? [] : [id];
         }
         tracks.push(t);
-        return tracks.length - 1;
+        const idx = tracks.length - 1;
+        // Segments of a complex value follow it (same timing, contiguous outputs).
+        if (t.segs) {
+          for (const sg of t.segs) {
+            if (t.offsets) sg.offsets = t.offsets.slice();
+            sg.easings = t.easings ? t.easings.slice() : undefined;
+            tracks.push(sg);
+          }
+        }
+        return idx;
       };
 
       for (const [prop, spec] of props) {
@@ -479,7 +488,7 @@ export class Animation extends Playable {
         const conv = (v: number, f: string, t: string) => convertUnit(el, prop, v, f, t);
         let track = buildTrack(raw, read, conv, cs, du);
         if (kind === Kind.Transform) {
-          if (track.kind !== TRACK_NUMBER || track.ch !== 1) continue;
+          if (track.kind !== TRACK_NUMBER || track.ch !== 1 || track.segs) continue;
           // Angles/scales always use their canonical unit; x/y/z keep any length unit.
           du = transformUnit(prop);
           if (du !== 'px' && track.unit !== du) {
@@ -489,7 +498,7 @@ export class Animation extends Playable {
           }
         }
         const idx = addTrack(track, spec.ease, spec.offsets);
-        const numeric = track.kind === TRACK_NUMBER && track.ch === 1;
+        const numeric = track.kind === TRACK_NUMBER && track.ch === 1 && !track.segs;
         if (kind !== Kind.Transform || !snappedTransform) this._restore.push(snapshot(target, prop, kind));
         if (kind === Kind.Transform) snappedTransform = true;
         const post = postFor(prop, o);

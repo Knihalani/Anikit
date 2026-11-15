@@ -251,6 +251,19 @@ animate(path, { d: [null, circle(50, 50, 40), star(50, 50, 6, 45, 20)] });     /
 animate(panel, { height: open ? 'auto' : 0 }, { ease: 'outCubic' });            // accordions
 ```
 
+Complex values (shadows, filters, gradients, `clip-path`, anything with numbers and colours in it) interpolate number by number. Two refinements apply:
+
+- **Colours inside them** blend like solid colours: in `colorSpace` (OKLab by default) with premultiplied alpha, so a shadow fading in from `transparent` doesn't go dark on the way.
+- **Lists that don't line up as written are reconciled:**
+  - Filter lists get the missing functions at their identity values (`'none'` → `'brightness(1.5) blur(4px)'` starts from `brightness(1) blur(0px)`, not black). Percentages become numbers, and bare zeros get units.
+  - Shadow lists are rewritten as `[inset] x y blur spread color`, which matches the colour-first form that computed styles use, and shorter lists are padded with transparent shadows.
+
+```ts
+animate(card, { boxShadow: '0 12px 32px rgba(0,0,0,.25), inset 0 0 0 1px #fff3' });  // from the stylesheet's shadow
+animate(img, { filter: 'blur(4px) saturate(2)' });                                    // from 'none' or a different list
+animate(hero, { backgroundImage: 'linear-gradient(90deg, #f0c, #0cf)' });             // stops blend in OKLab
+```
+
 `'auto'` works for `height`, `width`, `maxHeight`, `maxWidth`, `blockSize` and `inlineSize`, as a target, as a start value, or as a keyframe. The size is measured when the animation is built, and the property is written back as `auto` (`none` for max sizes) whenever the value sits on that size, so the element stays responsive after the animation ends or is reversed. Add `overflow: hidden` (or `clip`) yourself if the content shouldn't spill while it grows.
 
 ## Control, cleanup and accessibility
