@@ -13,15 +13,20 @@ import { checkKeys, checkTargets, warn, didYouMean } from './debug';
 import type { OptionKeys } from './debug';
 
 export interface SplitOptions {
-  /** Comma separated: 'chars', 'words', 'lines' (default 'words,chars'). */
+  /** Comma separated: `'chars'`, `'words'`, `'lines'`. Default `'words,chars'`. Lines are measured from the layout at split time. */
   type?: string;
+  /** Class added to every character span. */
   charClass?: string;
+  /** Class added to every word span. */
   wordClass?: string;
+  /** Class added to every line wrapper (with `type` including `'lines'`). */
   lineClass?: string;
 }
 
 export interface SplitResult {
+  /** One span per character (grapheme). */
   chars: HTMLElement[];
+  /** One span per word. */
   words: HTMLElement[];
   lines: HTMLElement[];
   /** Restore the original markup. */

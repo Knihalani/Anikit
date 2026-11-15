@@ -24,12 +24,15 @@ import type { OptionKeys } from './debug';
 import { snapshot } from './props';
 
 export interface PhysicsOptions {
+  /** Spring constant. Default 100; higher is snappier (pointer followers: ~300). */
   stiffness?: number;
+  /** Friction. Default 10; higher settles with less overshoot (critically damped ≈ 2·√(stiffness·mass)). */
   damping?: number;
+  /** Mass. Default 1. */
   mass?: number;
-  /** Perceptual alternative: visual duration in seconds… */
+  /** Perceptual alternative to stiffness/damping: approximate settle time in seconds (not ms)… */
   duration?: number;
-  /** …and bounciness 0–1. */
+  /** …and bounciness, 0 (none) to 1 (very bouncy). Default 0.25 when either is given. */
   bounce?: number;
   /** Initial velocity (units/s); a number or per-property map. Defaults to the current velocity. */
   velocity?: number | Record<string, number>;
@@ -37,7 +40,9 @@ export interface PhysicsOptions {
   restDelta?: number;
   /** Speed considered at rest (units/s). */
   restSpeed?: number;
+  /** Every frame while moving. */
   onUpdate?: () => void;
+  /** Came to rest (the controller is also awaitable: `await spring(…)`). */
   onComplete?: () => void;
 }
 

@@ -48,13 +48,21 @@ export interface DraggableOptions {
   lockAxis?: boolean;
   /** Minimum movement (px) before a drag starts — lets clicks through. Default 3. */
   minimumMovement?: number;
+  /** CSS cursor while hovering / dragging. Default `'grab'` / `'grabbing'`. */
   cursor?: string;
+  /** Pointer down on the target (before any movement). */
   onPress?: (d: Draggable, e: PointerEvent) => void;
+  /** Movement passed `minimumMovement`: the drag begins. */
   onDragStart?: (d: Draggable, e: PointerEvent) => void;
+  /** Every pointer move while dragging (`d.x`, `d.y`, `d.rotation` are current). */
   onDrag?: (d: Draggable, e: PointerEvent) => void;
+  /** Pointer released after a drag (before any inertia). */
   onDragEnd?: (d: Draggable, e: PointerEvent) => void;
+  /** Pointer released, whether or not it dragged. */
   onRelease?: (d: Draggable, e: PointerEvent) => void;
+  /** Every frame of the inertia glide. */
   onThrowUpdate?: (d: Draggable) => void;
+  /** The inertia glide came to rest. */
   onThrowComplete?: (d: Draggable) => void;
 }
 
@@ -293,6 +301,7 @@ export interface ObserverEvent {
 }
 
 export interface ObserverOptions {
+  /** Element (or selector) to listen on. Default: the window. */
   target?: Element | Window | string;
   /** Comma separated: 'wheel', 'touch', 'pointer', 'scroll'. Default 'wheel,touch,pointer'. */
   type?: string;
@@ -300,15 +309,23 @@ export interface ObserverOptions {
   tolerance?: number;
   /** Prevent default browser handling (e.g. page scroll) for wheel/touch. */
   preventDefault?: boolean;
-  /** Invert wheel direction semantics. */
+  /** Multiplier on wheel deltas (default 1; negative inverts). */
   wheelSpeed?: number;
+  /** Intent to see what is above (wheel up, swipe down). */
   onUp?: (e: ObserverEvent) => void;
+  /** Intent to see what is below (wheel down, swipe up). */
   onDown?: (e: ObserverEvent) => void;
+  /** Intent to see what is to the left. */
   onLeft?: (e: ObserverEvent) => void;
+  /** Intent to see what is to the right. */
   onRight?: (e: ObserverEvent) => void;
+  /** Any movement (deltas and velocities in `e`). */
   onChange?: (e: ObserverEvent) => void;
+  /** Pointer / touch down. */
   onPress?: (e: ObserverEvent) => void;
+  /** Pointer / touch up. */
   onRelease?: (e: ObserverEvent) => void;
+  /** Pointer / touch move while pressed. */
   onDrag?: (e: ObserverEvent) => void;
   /** Fires once input has been quiet for 150ms. */
   onStop?: (e: ObserverEvent) => void;

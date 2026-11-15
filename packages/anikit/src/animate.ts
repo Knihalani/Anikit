@@ -54,48 +54,128 @@ export interface MotionPathOptions {
   rotate?: boolean | number;
 }
 
-export type Props = Record<string, PropValue>;
+/**
+ * The properties anikit treats specially (documented here so editor hover
+ * explains them). Any other key is a CSS property in camelCase
+ * (`backgroundColor`), a CSS variable (`'--hue'`), or a property of a plain
+ * object target.
+ *
+ * Every value may be: a single end value (`100`), keyframes (`[0, 100]`,
+ * `[null, 50, 0]` where `null` is the current value), a relative value
+ * (`'+=50'`, `'-=50'`, `'*=2'`), `'random(0, 100)'`, or a function
+ * `(target, index, count) => value` evaluated per target.
+ */
+export interface TransformProps {
+  /** translateX. Number = px; any length or `%` of the element (`'50%'`, `'2rem'`). Prefer over `left`. */
+  x?: PropValue;
+  /** translateY. Number = px; any length or `%`. Prefer over `top`. */
+  y?: PropValue;
+  /** translateZ in px (needs `perspective` on the element or a parent to be visible). */
+  z?: PropValue;
+  /** 2D rotation. Number = degrees; also `'1turn'`, `'0.5rad'`. Relative: `'+=90'`. */
+  rotate?: PropValue;
+  /** 3D rotation around X. Number = degrees. */
+  rotateX?: PropValue;
+  /** 3D rotation around Y. Number = degrees. */
+  rotateY?: PropValue;
+  /** Same as `rotate`. Number = degrees. */
+  rotateZ?: PropValue;
+  /** Uniform scale factor (1 = natural size; unitless). */
+  scale?: PropValue;
+  /** Horizontal scale factor (unitless). */
+  scaleX?: PropValue;
+  /** Vertical scale factor (unitless). */
+  scaleY?: PropValue;
+  /** Skew on both axes. Number = degrees. */
+  skew?: PropValue;
+  /** Horizontal skew. Number = degrees. */
+  skewX?: PropValue;
+  /** Vertical skew. Number = degrees. */
+  skewY?: PropValue;
+  /** translateX as a percentage of the element's own width (`xPercent: -50` centres it). */
+  xPercent?: PropValue;
+  /** translateY as a percentage of the element's own height. */
+  yPercent?: PropValue;
+  /** Perspective (px) applied in this element's own transform, for its 3D rotations. */
+  perspective?: PropValue;
+  /** Opacity, 0–1 (not 0–100). */
+  opacity?: PropValue;
+  /** A full CSS transform list, interpolated like browsers do: `'rotateY(180deg) translateZ(40px)'`. */
+  transform?: PropValue;
+  /** SVG shape morph: path data, a `<path>`/shape element or a selector. Arrays morph through several shapes. */
+  d?: PropValue;
+  /** Motion along a path: path data, a selector, an element, or `{ path, start, end, rotate }`. */
+  path?: PropValue;
+  /** Visible stroke segment as fractions of the length: `[0, 1]` draws a line in; `['0 0', '0 1']` explicit. */
+  draw?: PropValue;
+  /** Attributes: `attr: { r: 20, cx: 50, viewBox: '0 0 10 10' }`. */
+  attr?: Record<string, PropValue>;
+  /** Typewriter / scramble text: `'Hello'` or `{ value: 'Hello', type: 'scramble', chars: 'upper' }`. */
+  text?: PropValue;
+  /** Number counter written as text; combine with the `format` / `round` options. */
+  textContent?: PropValue;
+}
+
+/** Properties to animate: see {@link TransformProps} for the special keys. Any CSS property, CSS variable or object key also works. */
+export type Props = TransformProps & Record<string, PropValue | Record<string, PropValue>>;
 export type Keyframe = Record<string, Scalar | null | undefined> & { offset?: number; ease?: EasingInput };
 
 export interface AnimateOptions extends Callbacks<Animation> {
-  /** Seconds (default 0.5; spring easings default to their natural duration). */
+  /**
+   * Length of one iteration, in **seconds** (not ms). Default `0.5`; with a
+   * spring easing, the spring's natural settle time. Can be a function
+   * `(target, index, count) => seconds`.
+   * @example animate('.box', { x: 100 }, { duration: 0.8 })
+   */
   duration?: FnValue<number>;
-  /** Seconds before starting (accepts `stagger()`). */
+  /**
+   * Wait before starting, in **seconds**. Use `stagger(0.05)` to offset each target.
+   * @example animate('.item', { opacity: [0, 1] }, { delay: stagger(0.05, { from: 'center' }) })
+   */
   delay?: FnValue<number>;
-  /** Seconds to hold after finishing (before `finished` resolves). */
+  /** Seconds to hold after the last iteration before `finished` resolves. Default 0. */
   endDelay?: number;
-  /** Easing for each keyframe segment, or one per segment. */
+  /**
+   * Easing. Default `'outQuad'`. Names (`'outCubic'`, `'power2.inOut'`, `'ease-in-out'`),
+   * functions (`'cubic-bezier(.2,.8,.2,1)'`, `'steps(4)'`, `'back.out(1.7)'`),
+   * springs (`'spring(bounce: 0.3)'`, `{ stiffness: 200, damping: 20 }`), `[x1, y1, x2, y2]`
+   * or `(t) => number`. An array gives one easing per keyframe segment.
+   */
   ease?: EasingInput | EasingInput[];
-  /** Extra iterations (`Infinity` or `-1` loops forever). */
+  /** Extra iterations after the first (`1` plays twice). `Infinity` or `-1` loops forever. Default 0. */
   repeat?: number;
-  /** Pause between iterations (seconds). */
+  /** Pause between iterations, in seconds. Default 0. */
   repeatDelay?: number;
-  /** Alternate direction every iteration. */
+  /** Alternate direction every iteration (same as `direction: 'alternate'`). Default false. */
   yoyo?: boolean;
+  /** Iteration direction, as in CSS. Default `'normal'`. */
   direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse';
-  /** Playback rate (default 1). */
+  /** Playback rate: `2` is twice as fast, negative plays backwards. Default 1. */
   speed?: number;
-  /** Start immediately (default true). */
+  /** Start playing immediately. Default true; pass `false` for scroll triggers and manual control. */
   autoplay?: boolean;
-  /** Keyframe offsets (0–1) for array values. */
+  /** Keyframe offsets (0–1) for array values, e.g. `{ x: [0, 100, 50] }` with `times: [0, 0.3, 1]`. */
   times?: number[];
-  /** Colour interpolation space (default 'oklab'). */
+  /** Colour interpolation space. Default `'oklab'` (perceptually even, no grey midpoints). */
   colorSpace?: ColorSpaceName;
-  /** Which values to keep outside the active period (default 'both'). */
+  /** Which values apply outside the active period. Default `'both'`. (Named `fillMode` so `fill` stays the SVG property.) */
   fillMode?: 'both' | 'forwards' | 'backwards' | 'none';
-  /** Take properties over from running animations (default true). */
+  /** Take the animated properties over from animations already running on the same targets. Default true. */
   overwrite?: boolean;
-  /** Render the first keyframe immediately even when delayed. */
+  /** Render the first keyframe right away, before the delay ends. Default: on for delayed animations with explicit start values. */
   immediateRender?: boolean;
-  /** Snap numeric values to a step (or list of values); a number applies to all properties. */
+  /** Snap numeric values to a step (or the nearest of a list); a number applies to every property: `{ snap: { x: 50 } }`. */
   snap?: number | Record<string, number | number[]>;
-  /** Round to integers: `true` for all properties or a list of property names. */
+  /** Round to integers: `true` for every property, or a list of property names. */
   round?: boolean | string[];
-  /** Transform each value right before it is applied, e.g. `{ x: (v) => v % 500 }`. */
+  /** Transform each value right before it is written, e.g. `{ x: (v) => v % 500 }` for wrapping. */
   modifiers?: Record<string, (value: any, target: any) => any>;
-  /** Format numbers written as text (counters): Intl options or a function. */
+  /**
+   * Format numbers written as text (counters): `Intl.NumberFormat` options or a function.
+   * @example animate('#price', { textContent: 12499 }, { format: { style: 'currency', currency: 'USD' } })
+   */
   format?: Intl.NumberFormatOptions | ((value: number) => string);
-  /** Locale used by `format` (default: the user's). */
+  /** Locale used by `format`. Default: the user's. */
   locale?: string;
 }
 

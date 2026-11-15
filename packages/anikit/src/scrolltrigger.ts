@@ -29,6 +29,7 @@ export interface ScrollTriggerOptions {
   trigger?: Element | string;
   /** Scroll container (default: the page). */
   scroller?: Element | Window | string;
+  /** Measure along the x axis (horizontal scrollers). Default false. */
   horizontal?: boolean;
   /**
    * `"<trigger edge> <viewport edge>"`, edges: top/center/bottom (left/right
@@ -38,11 +39,19 @@ export interface ScrollTriggerOptions {
   start?: Pos;
   /** As `start`, or `'+=500'` relative to the start. Default `'bottom top'`. */
   end?: Pos;
-  /** Animation / timeline controlled by this trigger. */
+  /**
+   * Animation or timeline controlled by this trigger (it is paused for you; creating it with `autoplay: false` avoids a first-frame flash).
+   * One per trigger; for one trigger per element use `scrollTriggerBatch()`.
+   */
   animation?: Playable;
   /** Link progress to scroll: `true`, or a smoothing lag in seconds. */
   scrub?: boolean | number;
-  /** `onEnter onLeave onEnterBack onLeaveBack` actions, e.g. `'play pause resume reset'`. */
+  /**
+   * Four actions for `onEnter onLeave onEnterBack onLeaveBack`, each one of
+   * play / pause / resume / reverse / restart / reset / complete / none.
+   * Default `'play none none none'`. Ignored with `scrub`.
+   * @example toggleActions: 'play none none reverse'   // reverse when scrolling back above the start
+   */
   toggleActions?: string;
   /** Pin an element (default the trigger) while active. */
   pin?: boolean | Element | string;
@@ -56,12 +65,19 @@ export interface ScrollTriggerOptions {
   markers?: boolean | { color?: string };
   /** Run once, then kill the trigger after the first enter. */
   once?: boolean;
+  /** Scrolling down past `start`. */
   onEnter?: (self: ScrollTrigger) => void;
+  /** Scrolling down past `end`. */
   onLeave?: (self: ScrollTrigger) => void;
+  /** Scrolling up past `end` (back into the range). */
   onEnterBack?: (self: ScrollTrigger) => void;
+  /** Scrolling up past `start` (out of the range). */
   onLeaveBack?: (self: ScrollTrigger) => void;
+  /** `isActive` changed. */
   onToggle?: (self: ScrollTrigger) => void;
+  /** Progress changed (`self.progress`, 0–1; `self.direction` 1 or -1). */
   onUpdate?: (self: ScrollTrigger) => void;
+  /** Positions were re-measured (load, resize, `refreshScrollTriggers()`). */
   onRefresh?: (self: ScrollTrigger) => void;
 }
 

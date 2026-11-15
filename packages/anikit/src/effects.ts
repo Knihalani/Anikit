@@ -28,8 +28,34 @@ export interface EffectOptions extends AnimateOptions {
   intensity?: number;
   /** Loop forever (attention / looping effects). */
   loop?: boolean;
+  /** `countUp`: number to count to (default 100). */
+  to?: number;
+  /** `countUp`: number to start from (default 0). */
+  start?: number;
+  /** `typewriter` / `scramble`: the text to reveal. */
+  text?: string;
+  /** `typewriter`: seconds per character (default 0.04). */
+  charDelay?: number;
+  /** `typewriter`: reveal per word with `' '`. */
+  delimiter?: string;
+  /** `scramble`: glyph set, `'upper' | 'lower' | 'digits' | 'symbols' | 'binary'` or your own characters. */
+  chars?: string;
+  /** `highlight`: flash colour (default `'#fff3a0'`). */
+  color?: string;
+  /** `flipIn` / `flipOut`: rotation axis (default `'x'`). */
+  axis?: 'x' | 'y';
+  /** Options of your own effects (see `registerEffect`). */
   [key: string]: any;
 }
+
+/** Names of the built-in effects. */
+export type EffectName =
+  | 'fadeIn' | 'fadeOut' | 'slideIn' | 'slideOut' | 'scaleIn' | 'scaleOut' | 'zoomIn' | 'zoomOut' | 'pop'
+  | 'bounceIn' | 'bounceOut' | 'dropIn' | 'flipIn' | 'flipOut' | 'rotateIn' | 'blurIn' | 'blurOut' | 'revealClip' | 'cascade'
+  | 'shake' | 'headShake' | 'wobble' | 'jello' | 'rubberBand' | 'swing' | 'tada' | 'pulse' | 'heartbeat' | 'flash' | 'highlight'
+  | 'float' | 'breathe' | 'spin' | 'wiggleLoop'
+  | 'typewriter' | 'scramble' | 'countUp'
+  | 'drawSVG' | 'undrawSVG';
 
 export type EffectFn = (targets: Targets, options: EffectOptions) => Playable;
 
@@ -64,7 +90,7 @@ const axisFor = (from: EffectOptions['from']): ['x' | 'y', number] =>
 const neg = (v: number | string, s: number): number | string =>
   typeof v === 'number' ? v * s : s < 0 ? '-' + v : v;
 
-const builtins: Record<string, [EffectFn, EffectOptions?]> = {
+const builtins: Record<EffectName, [EffectFn, EffectOptions?]> = {
   // Entrances / exits
   fadeIn: [(t, o) => animate(t, { opacity: [0, 1] }, opts(o, { ease: 'outQuad' }))],
   fadeOut: [(t, o) => animate(t, { opacity: 0 }, opts(o, { ease: 'inQuad' }))],
@@ -126,7 +152,9 @@ const builtins: Record<string, [EffectFn, EffectOptions?]> = {
 
 for (const [name, [fn, d]] of Object.entries(builtins)) registerEffect(name, fn, d ?? {});
 
-type Effects = Record<string, (targets: Targets, options?: EffectOptions) => Animation | Playable>;
+/** Built-in effects by name (with autocomplete), plus any added with `registerEffect()`. */
+type Effects = { readonly [K in EffectName]: (targets: Targets, options?: EffectOptions) => Animation } &
+  Record<string, (targets: Targets, options?: EffectOptions) => Animation | Playable>;
 
 /** All registered effects as functions: `effects.fadeIn('.a')`. */
 export const effects: Effects = new Proxy({} as Effects, {

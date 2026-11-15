@@ -18,10 +18,15 @@ export type PlayState = 'idle' | 'running' | 'paused' | 'finished';
 const STATES: PlayState[] = ['idle', 'running', 'paused', 'finished'];
 
 export interface Callbacks<T> {
+  /** First frame after the delay. */
   onStart?: (self: T) => void;
+  /** Every frame while running, after the DOM writes of that frame. */
   onUpdate?: (self: T) => void;
+  /** Reached the end (after the last repeat). The controller is also awaitable: `await anim`. */
   onComplete?: (self: T) => void;
+  /** Each new iteration when `repeat` is set. */
   onRepeat?: (self: T) => void;
+  /** Reached the start while playing backwards (`reverse()` or negative speed). */
   onReverseComplete?: (self: T) => void;
 }
 

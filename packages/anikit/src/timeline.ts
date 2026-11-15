@@ -33,18 +33,21 @@ import type { OptionKeys } from './debug';
 export type Position = number | string;
 
 export interface TimelineOptions extends Callbacks<Timeline> {
+  /** Seconds before the timeline starts. Default 0. */
   delay?: number;
   /** Extra iterations (`Infinity` / -1 loops forever). */
   repeat?: number;
   /** Pause after each iteration (seconds). */
   repeatDelay?: number;
+  /** Play every other iteration backwards (with `repeat`). Default false. */
   yoyo?: boolean;
+  /** Playback rate. Default 1; negative plays backwards. */
   speed?: number;
   /** Easing applied to the timeline's overall progress. */
   ease?: EasingInput;
   /** Start automatically (default true). */
   autoplay?: boolean;
-  /** Default options for every child animation. */
+  /** Default options for every child added with `add()` / `to()` / `from()`, e.g. `{ duration: 0.4, ease: 'outCubic' }`. */
   defaults?: AnimateOptions;
 }
 

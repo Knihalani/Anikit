@@ -20,6 +20,7 @@ export interface ScrollOptions {
   target?: Element;
   /** Scroll container (default: the page). */
   container?: Element | Window;
+  /** Scroll axis. Default `'y'`. */
   axis?: 'x' | 'y';
   /**
    * `[startOffset, endOffset]`, each `"<target edge> <container edge>"`. Edges:
@@ -126,6 +127,7 @@ export function scroll(subject: Playable | ((progress: number) => void), options
 }
 
 export interface InViewOptions {
+  /** Scrolling ancestor used as the viewport. Default: the browser viewport. */
   root?: Element | Document;
   /** Root margin, e.g. `"0px 0px -20% 0px"`. */
   margin?: string;
