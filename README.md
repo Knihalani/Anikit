@@ -113,7 +113,7 @@ Memory safety comes from Rust (the only `unsafe` is the single‑threaded static
   - `interpolate()` for numbers, colours and values with units;
   - `distribute()`, `clamp`, `lerp`, `mapRange`, `wrap`, `snap`, seeded `random`, `shuffle`, `pipe`.
 
-Full TypeScript API: [`docs/api.md`](docs/api.md). Python API: [`crates/anikit-py/README.md`](crates/anikit-py/README.md).
+Task recipes (tested): [`docs/recipes.md`](docs/recipes.md). Full TypeScript API: [`docs/api.md`](docs/api.md). Python API: [`crates/anikit-py/README.md`](crates/anikit-py/README.md). Coding agents: [`packages/anikit/AGENTS.md`](packages/anikit/AGENTS.md) and [`llms-full.txt`](llms-full.txt).
 
 ## Performance
 
@@ -177,7 +177,7 @@ These results are mixed, and the reasons matter:
 - **Writing a property onto a JS object costs the same for every library.** A good JIT is already close to the hardware limit there. Anikit's per‑object bookkeeping (core handle → record → bindings) currently makes plain‑object tweening **2–3× slower than GSAP** in this synthetic test. With DOM targets, the style writes, style recalc and paint dominate a frame, so this difference is a small share of real frame time.
 - **The architecture wins when JS stops touching every object.** `batch()` is ~6× faster than GSAP animating equivalent objects. The heavy‑math features (OKLab colour, morphing, exact springs, long timelines) run in WASM at native‑like speed, and `compositor()` moves work off the main thread entirely.
 
-Bundle sizes: the default entry embeds the WASM module (zero config, 214 KB gz in total). `anikit/lean` is **41 KB gz of JS** that streams a separate **129 KB gz** `.wasm`, which is cacheable and compiles while it downloads. The JS side is ES modules marked side‑effect free, so bundlers drop the features you don't import (scroll, interaction, effects, inspector, …).
+Bundle sizes: the default entry embeds the WASM module (zero config, 263 KB gz in total). `anikit/lean` is **53 KB gz of JS** that streams a separate **156 KB gz** `.wasm`, which is cacheable and compiles while it downloads. The JS side is ES modules marked side‑effect free, so bundlers drop the features you don't import (scroll, interaction, effects, inspector, …).
 
 ## Repository layout
 
