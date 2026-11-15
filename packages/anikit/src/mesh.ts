@@ -300,6 +300,8 @@ export interface LightOptions {
   ground?: string | V3;
   /** Colour of sharp studio light strips in the environment: gives chrome crisp highlights. */
   strips?: string | V3;
+  /** Ground fog in `fogColor`: full below `bottom`, none above `top` (world y), reaching full strength over `range` units of distance. */
+  groundFog?: { bottom: number; top: number; range: number };
 }
 /**
  * Light points drawn into the 3D frame: stars, dust, sparks, data. They add
@@ -385,6 +387,12 @@ export class Renderer3D {
      * `resetMotion()` after a cut.
      */
     motionBlur?: { shutter?: number; max?: number } | boolean;
+    /**
+     * Paint the background with the environment (`sky` / `horizon` / `ground` gradient, meeting the
+     * fog at the horizon) instead of a flat colour; `sun` adds a sun disc + halo towards `key`
+     * (angular size, ~1–4). Drawn after opaque geometry, before additive items and points.
+     */
+    skybox?: boolean | { sun?: number };
   } = {}): Uint8ClampedArray {
     const t0 = performance.now();
     const w = core();
@@ -407,7 +415,8 @@ export class Renderer3D {
         m.emissive ?? 0, m.metal ?? 0, m.iridescence ?? 0, m.hue ?? 0, ...rgb(o.sky, [0.25, 0.3, 0.55]), ...rgb(o.horizon, [1, 0.85, 0.7]), ...rgb(o.ground, [0.05, 0.05, 0.07]),
         m.lines ?? 0, ...rgb(m.lineColor, [1, 1, 1]), ...(m.grid ?? [8, 8]), m.lineWidth ?? 0.04,
         m.pulse ?? 0, m.pulseCount ?? 1, m.pulsePhase ?? 0, ...(m.pulseDir ?? [0, 0, 0]), ...rgb(o.strips, [0, 0, 0]),
-        m.texture ? m.texture.id + 1 : 0, m.texture ? (m.textureMode === 'emissive' ? 2 : 1) : 0, ...(m.textureRepeat ?? [1, 1]), m.textureGain ?? 1, gloss];
+        m.texture ? m.texture.id + 1 : 0, m.texture ? (m.textureMode === 'emissive' ? 2 : 1) : 0, ...(m.textureRepeat ?? [1, 1]), m.textureGain ?? 1, gloss,
+        o.groundFog?.bottom ?? 0, o.groundFog?.top ?? 0, o.groundFog?.range ?? 0];
       const at = f64Buf(vals.length); // may grow memory: reserve before touching F64
       F64.set(vals, at);
       const flags = (it.cull === false ? 0 : 1) | (it.blend === 'additive' ? 2 : 0) | extra;
@@ -425,13 +434,23 @@ export class Renderer3D {
       w.ak_raster_clear_depth(this.id);
       for (const it of meshes) if (it.mirror) drawMesh(it, matrix, eye, 4, o.mirror.strength ?? 0.5);
     }
+    const light = (it: DrawItem | PointsItem) => 'points' in it || it.blend === 'additive';
     for (const item of items) {
-      if ('points' in item) {
-        this.drawPoints(item, matrix, eye);
-        continue;
-      }
-      if (o.mirror && item.mirror) continue;
-      drawMesh(item, matrix, eye, 0);
+      if (light(item) || (o.mirror && (item as DrawItem).mirror)) continue;
+      drawMesh(item as DrawItem, matrix, eye, 0);
+    }
+    if (o.skybox) {
+      const sb = o.skybox === true ? {} : o.skybox;
+      const vals = [...matrix, ...(o.key ?? [0.4, 0.8, 0.6]), ...rgb(o.keyColor), ...rgb(o.sky, [0.25, 0.3, 0.55]), ...rgb(o.horizon, [1, 0.85, 0.7]), ...rgb(o.ground, [0.05, 0.05, 0.07]), ...rgb(o.fogColor, bg), ...(o.fog ?? [0, 0])];
+      const at = f64Buf(vals.length);
+      F64.set(vals, at);
+      w.ak_raster_sky(this.id, sb.sun ?? 0);
+    }
+    // Light last: additive geometry and points add onto everything (incl. the sky).
+    for (const item of items) {
+      if (!light(item)) continue;
+      if ('points' in item) this.drawPoints(item, matrix, eye);
+      else drawMesh(item, matrix, eye, 0);
     }
     if (o.motionBlur && this.prevMatrix) {
       const mb = o.motionBlur === true ? {} : o.motionBlur;

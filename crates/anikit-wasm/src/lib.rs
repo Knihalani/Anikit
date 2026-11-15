@@ -1955,10 +1955,12 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
         tex_repeat: [b[75], b[76]],
         tex_gain: b[77],
     };
-    let light = Lighting { key: v3(24), key_color: v3(27), fill: v3(30), fill_color: v3(33), rim_color: v3(36), fog: [b[39], if b[40] > 0.0 { b[40] } else { f32::INFINITY }], fog_color: v3(41), sky: v3(48), horizon: v3(51), ground: v3(54), strips: v3(70) };
+    let light = Lighting { key: v3(24), key_color: v3(27), fill: v3(30), fill_color: v3(33), rim_color: v3(36), fog: [b[39], if b[40] > 0.0 { b[40] } else { f32::INFINITY }], fog_color: v3(41), sky: v3(48), horizon: v3(51), ground: v3(54), strips: v3(70), ground_fog: [0.0; 3] };
     let Some(Some(m)) = s.meshes.get(mesh as usize) else { return 0 };
     let tex = (b[73] as usize).checked_sub(1).and_then(|t| s.textures.get(t)).and_then(|t| t.as_ref());
     let gloss = if nf > 78 { s.f64_buf[78] as f32 } else { 0.5 };
+    let ground_fog = if nf > 81 { [s.f64_buf[79] as f32, s.f64_buf[80] as f32, s.f64_buf[81] as f32] } else { [0.0; 3] };
+    let light = Lighting { ground_fog, ..light };
     let Some(Some((r, inst))) = s.rasters.get_mut(id as usize) else { return 0 };
     let k = (n as usize * INSTANCE_STRIDE).min(inst.len());
     // Flags: bit 0 back-face culling, bit 1 additive, bit 2 gloss (strength f64[78]), bit 3 flip winding.
@@ -1999,6 +2001,23 @@ pub extern "C" fn ak_raster_motion_blur(id: u32, shutter: f64, max_px: f64) {
     let prev: anikit_core::raster::M4 = core::array::from_fn(|i| s.f64_buf[16 + i] as f32);
     if let Some(Some((r, _))) = s.rasters.get_mut(id as usize) {
         r.motion_blur(&vp, &prev, shutter as f32, max_px as f32);
+    }
+}
+/// Fill the background with the environment (see `Raster::sky`). f64 buffer: viewProj(16),
+/// key(3), keyColor(3), sky(3), horizon(3), ground(3), fogColor(3), fog(2).
+#[no_mangle]
+pub extern "C" fn ak_raster_sky(id: u32, sun: f64) {
+    use anikit_core::raster::*;
+    let s = st();
+    if s.f64_buf.len() < 36 {
+        return;
+    }
+    let b: Vec<f32> = s.f64_buf[..36].iter().map(|v| *v as f32).collect();
+    let vp: M4 = core::array::from_fn(|i| b[i]);
+    let v3 = |i: usize| [b[i], b[i + 1], b[i + 2]];
+    let light = Lighting { key: v3(16), key_color: v3(19), sky: v3(22), horizon: v3(25), ground: v3(28), fog_color: v3(31), fog: [b[34], if b[35] > 0.0 { b[35] } else { f32::INFINITY }], ..Lighting::default() };
+    if let Some(Some((r, _))) = s.rasters.get_mut(id as usize) {
+        r.sky(&vp, &light, sun as f32);
     }
 }
 /// Reset the depth buffer only (mirror passes).

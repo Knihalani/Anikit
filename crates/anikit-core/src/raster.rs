@@ -95,6 +95,9 @@ pub struct Lighting {
     pub ground: [f32; 3],
     /// Colour of sharp studio light strips in the environment (0 = none).
     pub strips: [f32; 3],
+    /// Ground fog: full below `[0]`, none above `[1]` (world y), reaching full
+    /// strength over `[2]` units of distance (0 = off). Uses `fog_color`.
+    pub ground_fog: [f32; 3],
 }
 
 impl Default for Lighting {
@@ -111,6 +114,7 @@ impl Default for Lighting {
             horizon: [1.0, 0.85, 0.7],
             ground: [0.05, 0.05, 0.07],
             strips: [0.0; 3],
+            ground_fog: [0.0, 0.0, 0.0],
         }
     }
 }
@@ -483,8 +487,15 @@ impl Shade<'_> {
                 c[k] = c[k] + e * m.line_color[k];
             }
         }
-        if self.fog_on {
-            let f = ((d2 * rd - l.fog[0]) * self.fog_inv).clamp(0.0, 1.0);
+        if self.fog_on || l.ground_fog[2] > 0.0 {
+            let dist = d2 * rd;
+            let mut f = if self.fog_on { ((dist - l.fog[0]) * self.fog_inv).clamp(0.0, 1.0) } else { V4::splat(0.0) };
+            if l.ground_fog[2] > 0.0 {
+                let gf = l.ground_fog;
+                let low = ((gf[1] - p[1]) * (1.0 / (gf[1] - gf[0]).max(1e-3))).clamp(0.0, 1.0);
+                let g = low * low * (dist * (1.0 / gf[2])).minf(1.0);
+                f = f + (1.0 - f) * g;
+            }
             for k in 0..3 {
                 c[k] = c[k] + (l.fog_color[k] - c[k]) * f;
             }
@@ -1143,6 +1154,70 @@ impl Raster {
     }
 }
 
+impl Raster {
+    /// Fill every pixel no geometry covered (depth still clear) with the
+    /// environment: a sky/horizon/ground gradient seen along each view ray,
+    /// plus a sun disc with a soft halo towards `light.key` (`sun` = its
+    /// angular size factor, 0 = none). Call after the opaque draws.
+    #[allow(clippy::needless_range_loop)]
+    pub fn sky(&mut self, vp: &M4, light: &Lighting, sun: f32) {
+        let m64: crate::space::Mat4 = core::array::from_fn(|i| vp[i] as f64);
+        let Some(inv) = crate::space::invert(&m64) else { return };
+        let inv: M4 = core::array::from_fn(|i| inv[i] as f32);
+        let (w, h) = (self.width, self.height);
+        let (hw, hh) = (w as f32 * 0.5, h as f32 * 0.5);
+        let key = norm3(light.key);
+        let un = |nx: f32, ny: f32, nz: f32| {
+            let cw = inv[3] * nx + inv[7] * ny + inv[11] * nz + inv[15];
+            let iw = 1.0 / cw;
+            [(inv[0] * nx + inv[4] * ny + inv[8] * nz + inv[12]) * iw, (inv[1] * nx + inv[5] * ny + inv[9] * nz + inv[13]) * iw, (inv[2] * nx + inv[6] * ny + inv[10] * nz + inv[14]) * iw]
+        };
+        let fog = light.fog_color;
+        let blend_fog = light.fog[1].is_finite();
+        for y in 0..h {
+            let ny = 1.0 - (y as f32 + 0.5) / hh;
+            for x in 0..w {
+                let i = y * w + x;
+                if self.depth[i].is_finite() {
+                    continue;
+                }
+                let nx = (x as f32 + 0.5) / hw - 1.0;
+                let (a, b) = (un(nx, ny, -1.0), un(nx, ny, 1.0));
+                let d = norm3([b[0] - a[0], b[1] - a[1], b[2] - a[2]]);
+                let up = d[1].clamp(-1.0, 1.0);
+                // Horizon band, sky above, ground below.
+                let band = {
+                    let t = up * 3.0;
+                    let q = 1.0 / (1.0 + t * t);
+                    q * q
+                };
+                let mut c: [f32; 3] = core::array::from_fn(|k| {
+                    let sg = if up > 0.0 { light.sky[k] } else { light.ground[k] };
+                    sg + (light.horizon[k] - sg) * band
+                });
+                if blend_fog {
+                    // Towards the horizon the sky meets the fog colour, so distant geometry dissolves into it.
+                    let f = band * 0.6;
+                    for k in 0..3 {
+                        c[k] += (fog[k] - c[k]) * f;
+                    }
+                }
+                if sun > 0.0 {
+                    let cs = dot(d, key).max(0.0);
+                    // Disc + halo: sharp core, wide glow.
+                    let t = (1.0 - cs) * (400.0 / (sun * sun));
+                    let disc = (1.0 - t).clamp(0.0, 1.0);
+                    let halo = 0.25 / (1.0 + t * 0.6);
+                    for k in 0..3 {
+                        c[k] += light.key_color[k] * (disc * 3.0 + halo);
+                    }
+                }
+                self.color[i] = pack4([V4::splat(c[0]), V4::splat(c[1]), V4::splat(c[2])])[0];
+            }
+        }
+    }
+}
+
 /// Light points drawn into a [`Raster`] (stars, dust, sparks): additive,
 /// depth-tested against the solid geometry already drawn, and optionally
 /// streaked along their screen motion since the previous camera.
@@ -1755,5 +1830,20 @@ mod tests {
         let snapshot = r.color.clone();
         r.motion_blur(&vp(), &vp(), 1.0, 40.0);
         assert_eq!(r.color, snapshot);
+    }
+
+    #[test]
+    fn sky_fills_only_the_background() {
+        let mut r = Raster::new(32, 32);
+        r.clear(0, 255);
+        let mut inst = ID.to_vec();
+        inst.extend_from_slice(&[0.0, 0.0, 0.0]);
+        let mat = Material { ambient: 0.0, diffuse: 0.0, specular: 0.0, rim: 0.0, ..Material::default() };
+        r.draw(&cube(), &inst, &vp(), [0.0, 0.0, 5.0], &mat, &Lighting::default(), true);
+        let light = Lighting { sky: [0.0, 0.0, 1.0], horizon: [1.0, 0.0, 0.0], ground: [0.0, 1.0, 0.0], ..Lighting::default() };
+        r.sky(&vp(), &light, 0.0);
+        assert_eq!(r.color[16 * 32 + 16] & 0xffffff, 0, "geometry untouched");
+        assert!((r.color[0] >> 16) & 255 > 0 || r.color[0] & 255 > 0, "sky above");
+        assert!((r.color[31 * 32] >> 8) & 255 > 0 || r.color[31 * 32] & 255 > 0, "ground below");
     }
 }

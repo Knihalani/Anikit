@@ -841,6 +841,8 @@ const px = r3.render(scene, [
 
 Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [near, far]`, `fogColor`, environment `sky`, `horizon`, `ground`, `strips`. Items draw in order; per item `cull: false` shows back faces (tumbling shards), `blend: 'additive'` adds light.
 
+**Sky and atmosphere**: `render(…, { skybox: { sun: 2.5 }, key: [0, 0.12, -1], keyColor, sky, horizon, ground, fog, fogColor, groundFog: { bottom, top, range } })` paints every uncovered pixel with the environment gradient (meeting the fog at the horizon) and a sun disc + halo towards `key`; `groundFog` pools fog near the floor. Pair the sun with the grade's `rays` aimed at it.
+
 **Camera motion blur**: `render(scene, items, { motionBlur: { shutter: 0.5, max } })` reprojects every pixel with the previous `render()`'s camera using the depth buffer and blurs along that motion (depth-aware, so near geometry smears over the background). Smooth, ghost-free speed from one render per frame — use it with composition `motionBlur: 1`, give points `streak: 0`–`0.5`, and call `r3.resetMotion()` after a cut.
 
 **Mirror floors**: `render(scene, items, { mirror: { y, strength } })` renders the scene reflected about the plane `y`, then draws items marked `mirror: true` (the floor) glossily over that reflection (`strength` 0–1), then everything else. Neon on wet asphalt. The mirror item should cover the view below the horizon; `reflect: false` keeps an item out of the reflection. Costs a second pass.
