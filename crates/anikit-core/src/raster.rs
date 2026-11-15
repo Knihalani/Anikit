@@ -149,6 +149,8 @@ pub struct Raster {
     /// Triangles drawn by the last call (diagnostics).
     pub drawn: usize,
     queue: Queue,
+    /// Additive light accumulation for [`Raster::points`] (RGB f32, allocated on first use).
+    light: Vec<f32>,
     /// Pixels shaded by the last call (diagnostics).
     pub shaded: usize,
     pub tested: usize,
@@ -709,6 +711,156 @@ fn flush<const MODE: u8>(q: &mut Queue, color: &mut [u32], sh: &Shade) {
     q.n = 0;
 }
 
+/// Light points drawn into a [`Raster`] (stars, dust, sparks): additive,
+/// depth-tested against the solid geometry already drawn, and optionally
+/// streaked along their screen motion since the previous camera.
+#[derive(Clone, Copy, Debug)]
+pub struct PointStyle {
+    /// World-space radius of each point.
+    pub size: f32,
+    /// Brightness multiplier.
+    pub intensity: f32,
+    /// Streak length as a multiple of the screen motion between `prev_vp`
+    /// and `vp` (0 = round points).
+    pub streak: f32,
+    /// Fade out between these camera distances.
+    pub fog: [f32; 2],
+}
+
+impl Default for PointStyle {
+    fn default() -> Self {
+        Self { size: 2.0, intensity: 1.0, streak: 0.0, fog: [0.0, f32::INFINITY] }
+    }
+}
+
+impl Raster {
+    /// Draw `pos` (xyz per point) with `rgb` colours (three per point, or
+    /// empty for white) as additive light. `prev_vp` (the previous frame's
+    /// view-projection) gives motion streaks when `style.streak > 0`.
+    #[allow(clippy::too_many_arguments)]
+    pub fn points(&mut self, pos: &[f32], rgb: &[f32], vp: &M4, prev_vp: Option<&M4>, eye: [f32; 3], style: &PointStyle) {
+        let n = pos.len() / 3;
+        let (w, h) = (self.width, self.height);
+        let (hw, hh) = (w as f32 * 0.5, h as f32 * 0.5);
+        self.light.clear();
+        self.light.resize(w * h * 3, 0.0);
+        // Focal length in NDC: the y row of P·V has the camera's cot(fov/2) as its length.
+        let focal = crate::math::sqrtf(vp[1] * vp[1] + vp[5] * vp[5] + vp[9] * vp[9]);
+        let fog_on = style.fog[1].is_finite();
+        let fog_inv = 1.0 / (style.fog[1] - style.fog[0]).max(1e-3);
+        let has_rgb = rgb.len() >= n * 3;
+        let proj = |m: &M4, x: f32, y: f32, z: f32| {
+            let cw = m[3] * x + m[7] * y + m[11] * z + m[15];
+            let iw = 1.0 / cw;
+            ((m[0] * x + m[4] * y + m[8] * z + m[12]) * iw, (m[1] * x + m[5] * y + m[9] * z + m[13]) * iw, (m[2] * x + m[6] * y + m[10] * z + m[14]) * iw, cw)
+        };
+        for i in 0..n {
+            let (x, y, z) = (pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
+            let (nx, ny, nz, cw) = proj(vp, x, y, z);
+            if cw <= 1e-3 || !(-1.0..=1.0).contains(&nz) {
+                continue;
+            }
+            let (sx, sy) = (hw + nx * hw, hh - ny * hh);
+            let r = style.size * focal * hh / cw;
+            if sx < -r - 64.0 || sy < -r - 64.0 || sx > w as f32 + r + 64.0 || sy > h as f32 + r + 64.0 {
+                continue;
+            }
+            let mut e = style.intensity;
+            if fog_on {
+                let dist = crate::math::sqrtf((x - eye[0]) * (x - eye[0]) + (y - eye[1]) * (y - eye[1]) + (z - eye[2]) * (z - eye[2]));
+                e *= 1.0 - ((dist - style.fog[0]) * fog_inv).clamp(0.0, 1.0);
+                if e <= 0.0 {
+                    continue;
+                }
+            }
+            let c = if has_rgb { [rgb[i * 3], rgb[i * 3 + 1], rgb[i * 3 + 2]] } else { [1.0; 3] };
+            // Energy of a disc of radius r (in px²), spread over at least one pixel.
+            let area = (r * r * core::f32::consts::PI).max(0.0);
+            // Streak start: where the point was under the previous camera.
+            let (mut ox, mut oy) = (sx, sy);
+            if style.streak > 0.0 {
+                if let Some(pm) = prev_vp {
+                    let (px, py, _, pw) = proj(pm, x, y, z);
+                    if pw > 1e-3 {
+                        let (qx, qy) = (hw + px * hw, hh - py * hh);
+                        ox = sx + (qx - sx) * style.streak;
+                        oy = sy + (qy - sy) * style.streak;
+                    }
+                }
+            }
+            let len = crate::math::sqrtf((ox - sx) * (ox - sx) + (oy - sy) * (oy - sy)).min(w as f32);
+            let steps = (len.max(0.0) as usize) + 1;
+            // Total energy is conserved along the streak; the head carries a little extra.
+            let per = e * area.max(1.0) / steps as f32;
+            for k in 0..steps {
+                let t = if steps == 1 { 0.0 } else { k as f32 / (steps - 1) as f32 };
+                let (px, py) = (sx + (ox - sx) * t, sy + (oy - sy) * t);
+                let fade = 1.0 - t * 0.85;
+                self.splat_light(px, py, nz, c, per * fade * if k == 0 { 1.6 } else { 1.0 }, r);
+            }
+        }
+        // Resolve: tone-map the light and add it to the frame.
+        for (i, px) in self.color.iter_mut().enumerate() {
+            let l = &self.light[i * 3..i * 3 + 3];
+            if l[0] + l[1] + l[2] <= 0.0 {
+                continue;
+            }
+            // Soft knee so dense clusters saturate gracefully.
+            let t = |v: f32| (v / (1.0 + v * 0.35) * 255.0) as u32;
+            let add = t(l[0]).min(255) | (t(l[1]).min(255) << 8) | (t(l[2]).min(255) << 16);
+            *px = add_packed(*px, add);
+        }
+    }
+
+    /// Add energy `e` of colour `c` around (x, y): bilinear for sub-pixel
+    /// points, a small disc for larger ones; depth-tested at the centre.
+    #[inline]
+    fn splat_light(&mut self, x: f32, y: f32, z: f32, c: [f32; 3], e: f32, r: f32) {
+        let (w, h) = (self.width as isize, self.height as isize);
+        if r <= 1.0 {
+            let (fx, fy) = (x - 0.5, y - 0.5);
+            let (ix, iy) = (crate::math::floorf(fx) as isize, crate::math::floorf(fy) as isize);
+            let (tx, ty) = (fx - ix as f32, fy - iy as f32);
+            for (dx, dy, wgt) in [(0, 0, (1.0 - tx) * (1.0 - ty)), (1, 0, tx * (1.0 - ty)), (0, 1, (1.0 - tx) * ty), (1, 1, tx * ty)] {
+                let (px, py) = (ix + dx, iy + dy);
+                if px < 0 || py < 0 || px >= w || py >= h {
+                    continue;
+                }
+                let i = (py * w + px) as usize;
+                if z > self.depth[i] {
+                    continue;
+                }
+                let k = e * wgt;
+                self.light[i * 3] += c[0] * k;
+                self.light[i * 3 + 1] += c[1] * k;
+                self.light[i * 3 + 2] += c[2] * k;
+            }
+            return;
+        }
+        let ri = r.min(64.0);
+        let (x0, x1) = (((x - ri) as isize).max(0), ((x + ri) as isize + 1).min(w - 1));
+        let (y0, y1) = (((y - ri) as isize).max(0), ((y + ri) as isize + 1).min(h - 1));
+        let norm = e / (ri * ri * 1.6);
+        for py in y0..=y1 {
+            for px in x0..=x1 {
+                let (dx, dy) = (px as f32 + 0.5 - x, py as f32 + 0.5 - y);
+                let q = 1.0 - (dx * dx + dy * dy) / (ri * ri);
+                if q <= 0.0 {
+                    continue;
+                }
+                let i = (py * w + px) as usize;
+                if z > self.depth[i] {
+                    continue;
+                }
+                let k = norm * q * q;
+                self.light[i * 3] += c[0] * k;
+                self.light[i * 3 + 1] += c[1] * k;
+                self.light[i * 3 + 2] += c[2] * k;
+            }
+        }
+    }
+}
+
 const DEPTH: u8 = 0;
 const SHADE_EQ: u8 = 1;
 const ADD: u8 = 2;
@@ -1050,5 +1202,31 @@ mod tests {
             r.draw(&cylinder(24, true), &inst, &vp, eye, &Material::default(), &Lighting::default(), true);
             assert!(r.color[16 * 32 + 16] & 0xff > 20, "visible from {eye:?}");
         }
+    }
+
+    #[test]
+    fn points_are_occluded_and_streak() {
+        let mut r = Raster::new(64, 64);
+        r.clear(0, 255);
+        let eye = [0.0, 0.0, 5.0];
+        // A wall covering the left half, in front of the points.
+        let mut wall = [1.0f32, 0.0, 0.0, 0.0, 4.0, 0.0, 0.0, 0.0, 0.1, -1.0, 0.0, 1.0].to_vec();
+        wall.extend_from_slice(&[0.0, 0.0, 0.0]);
+        let mat = Material { ambient: 0.0, diffuse: 0.0, specular: 0.0, rim: 0.0, ..Material::default() };
+        r.draw(&cube(), &wall, &vp(), eye, &mat, &Lighting::default(), true);
+        let pts = [-0.9f32, 0.0, 0.0, 0.6, 0.0, 0.0];
+        let style = PointStyle { size: 0.05, intensity: 4.0, ..PointStyle::default() };
+        r.points(&pts, &[], &vp(), None, eye, &style);
+        let lum = |r: &Raster, x0: usize, x1: usize| (x0..x1).flat_map(|x| (28..36).map(move |y| (x, y))).map(|(x, y)| r.color[y * 64 + x] & 255).sum::<u32>();
+        assert!(lum(&r, 36, 50) > 100, "right point visible");
+        assert_eq!(lum(&r, 14, 28), 0, "left point hidden behind the wall");
+        // Streaks: a moving camera smears a point along its screen motion.
+        let mut r2 = Raster::new(64, 64);
+        r2.clear(0, 255);
+        let m = mul(&perspective(45.0, 1.0, 1.0, 100.0), &look_at([0.6, 0.0, 5.0], [0.6, 0.0, 0.0], [0.0, 1.0, 0.0]));
+        let prev: M4 = core::array::from_fn(|i| m[i] as f32);
+        r2.points(&pts[3..], &[], &vp(), Some(&prev), eye, &PointStyle { streak: 1.0, ..style });
+        let lit = r2.color.iter().filter(|c| **c & 255 > 0).count();
+        assert!(lit > 8, "streak covers several pixels: {lit}");
     }
 }

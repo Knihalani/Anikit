@@ -257,6 +257,27 @@ export interface LightOptions {
   /** Colour of sharp studio light strips in the environment: gives chrome crisp highlights. */
   strips?: string | V3;
 }
+/**
+ * Light points drawn into the 3D frame: stars, dust, sparks, data. They add
+ * light, are hidden behind solid geometry drawn before them, and can streak
+ * along their screen motion (warp-speed stars) using the camera from the
+ * previous render.
+ */
+export interface PointsItem {
+  /** xyz per point (world space). */
+  points: ArrayLike<number>;
+  /** rgb per point (0–1, may exceed 1 for hot points); default white. */
+  colors?: ArrayLike<number>;
+  /** World-space radius (default 2). */
+  size?: number;
+  /** Brightness (default 1). */
+  intensity?: number;
+  /** Streak length × the screen motion since the previous render (0 = round; 1 = shutter-accurate; 4 = warp). */
+  streak?: number;
+  /** Fade out between these camera distances. */
+  fog?: [number, number];
+}
+
 export interface DrawItem {
   mesh: Mesh3D;
   /** Instances, or omit for one untransformed white instance. */
@@ -304,7 +325,7 @@ export class Renderer3D {
    * (when it has one) and returns the RGBA pixels (a view into WebAssembly
    * memory, valid until the next call).
    */
-  render(scene: Scene3D, items: DrawItem[], o: LightOptions & { background?: string; transparent?: boolean } = {}): Uint8ClampedArray {
+  render(scene: Scene3D, items: (DrawItem | PointsItem)[], o: LightOptions & { background?: string; transparent?: boolean } = {}): Uint8ClampedArray {
     const t0 = performance.now();
     const w = core();
     const bg = rgb(o.background, [0, 0, 0]);
@@ -315,7 +336,12 @@ export class Renderer3D {
     const { matrix, eye } = scene.viewProjection();
     scene.width = sw; scene.height = sh;
     this.triangles = 0;
-    for (const it of items) {
+    for (const item of items) {
+      if ('points' in item) {
+        this.drawPoints(item, matrix, eye);
+        continue;
+      }
+      const it = item;
       const inst = it.instances ?? this.single;
       const ptr = w.ak_raster_instances(this.id, inst.count);
       new Float32Array(W!.memory.buffer, ptr, inst.count * STRIDE).set(inst.data.subarray(0, inst.count * STRIDE));
@@ -330,6 +356,7 @@ export class Renderer3D {
       F64.set(vals, at);
       this.triangles += w.ak_raster_draw(this.id, it.mesh.id, inst.count, (it.cull === false ? 0 : 1) | (it.blend === 'additive' ? 2 : 0), vals.length);
     }
+    this.prevMatrix = matrix;
     const px = new Uint8ClampedArray(W!.memory.buffer, w.ak_raster_ptr(this.id), this.width * this.height * 4);
     const ctx = 'getContext' in this.target ? this.target.getContext('2d') : null;
     if (ctx) {
@@ -340,6 +367,25 @@ export class Renderer3D {
     }
     this.lastMs = performance.now() - t0;
     return px;
+  }
+
+  private prevMatrix: number[] | null = null;
+
+  private drawPoints(it: PointsItem, matrix: number[], eye: number[]): void {
+    const w = core();
+    const n = Math.floor(it.points.length / 3);
+    if (!n) return;
+    const ptr = w.ak_raster_point_buf(this.id, n);
+    const mem = new Float32Array(W!.memory.buffer, ptr, n * 6);
+    mem.set(it.points.length === n * 3 ? it.points : Array.prototype.slice.call(it.points, 0, n * 3), 0);
+    if (it.colors && it.colors.length >= n * 3) mem.set(it.colors.length === n * 3 ? it.colors : Array.prototype.slice.call(it.colors, 0, n * 3), n * 3);
+    else mem.fill(1, n * 3, n * 6);
+    const prev = this.prevMatrix ?? matrix;
+    const fog = it.fog ?? [0, 0];
+    const vals = [...matrix, ...prev, eye[0], eye[1], eye[2], it.size ?? 2, it.intensity ?? 1, it.streak ?? 0, fog[0], fog[1]];
+    const at = f64Buf(vals.length);
+    F64.set(vals, at);
+    w.ak_raster_points(this.id, n, this.prevMatrix ? 1 : 0);
   }
 
   destroy(): void {

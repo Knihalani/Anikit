@@ -1953,6 +1953,30 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
     r.draw_with(m, &inst[..k], &vp, eye, &mat, &light, cull_back & 1 != 0, blend);
     r.drawn as u32
 }
+/// Writable point buffer for [`ak_raster_points`]: `n * 6` f32 (xyz, rgb).
+#[no_mangle]
+pub extern "C" fn ak_raster_point_buf(id: u32, n: u32) -> *mut f32 {
+    ak_raster_instances(id, n.saturating_mul(6).div_ceil(anikit_core::raster::INSTANCE_STRIDE as u32).max(1))
+}
+/// Draw `n` light points from the point buffer. f64 buffer: viewProj(16),
+/// prevViewProj(16, ignored unless `has_prev`), eye(3), size, intensity,
+/// streak, fogNear, fogFar (0 = no fog).
+#[no_mangle]
+pub extern "C" fn ak_raster_points(id: u32, n: u32, has_prev: u32) {
+    use anikit_core::raster::*;
+    let s = st();
+    if s.f64_buf.len() < 40 {
+        return;
+    }
+    let b: Vec<f32> = s.f64_buf[..40].iter().map(|v| *v as f32).collect();
+    let vp: M4 = core::array::from_fn(|i| b[i]);
+    let prev: M4 = core::array::from_fn(|i| b[16 + i]);
+    let style = PointStyle { size: b[35], intensity: b[36], streak: b[37], fog: [b[38], if b[39] > 0.0 { b[39] } else { f32::INFINITY }] };
+    let Some(Some((r, buf))) = s.rasters.get_mut(id as usize) else { return };
+    let n = (n as usize).min(buf.len() / 6);
+    let (pos, rgb) = buf[..n * 6].split_at(n * 3);
+    r.points(pos, rgb, &vp, if has_prev != 0 { Some(&prev) } else { None }, [b[32], b[33], b[34]], &style);
+}
 #[no_mangle]
 pub extern "C" fn ak_raster_ptr(id: u32) -> *const u32 {
     match st().rasters.get(id as usize) {

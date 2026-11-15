@@ -160,6 +160,8 @@ export interface Exports {
   ak_raster_clear(id: number, rgb: number, alpha: number): void;
   ak_raster_instances(id: number, n: number): number;
   ak_raster_draw(id: number, mesh: number, n: number, cullBack: number, nf: number): number;
+  ak_raster_point_buf(id: number, n: number): number;
+  ak_raster_points(id: number, n: number, hasPrev: number): void;
   ak_raster_ptr(id: number): number;
   ak_emitter_create(capacity: number, seed: number): number;
   ak_emitter_free(id: number): void;

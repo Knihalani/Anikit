@@ -56,4 +56,16 @@ describe('mesh builders', () => {
     expect(lit[c + 1]).toBe(base[c + 1]); // background green kept
     expect(lit[c]).toBeGreaterThan(50); // red added
   });
+
+  it('draws light points that streak with camera motion', () => {
+    const r = renderer3d({ width: 64, height: 64 });
+    const cam = scene3d({ width: 64, height: 64, camera: { x: 0, y: 0, z: 300 }, target: { x: 0, y: 0, z: 0 } });
+    const pts = { points: [0, 0, 0], size: 1, intensity: 3 };
+    const lit = (px: Uint8ClampedArray) => { let n = 0; for (let i = 0; i < px.length; i += 4) if (px[i] > 0) n++; return n; };
+    const still = lit(r.render(cam, [pts], {}).slice());
+    expect(still).toBeGreaterThan(0);
+    cam.camera.x = 40; cam.target.x = 40;
+    const moving = lit(r.render(cam, [{ ...pts, streak: 1 }], {}).slice());
+    expect(moving).toBeGreaterThan(still * 2);
+  });
 });

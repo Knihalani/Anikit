@@ -53,7 +53,7 @@ export type { WorldOptions, BodyInit } from './world';
 export { pointCloud, PointCloud, textPoints, glow, Glow } from './cloud';
 export { emitter, Emitter } from './emitter';
 export { mesh, Mesh3D, instances, Instances, renderer3d, Renderer3D } from './mesh';
-export type { InstanceInit, MaterialOptions, LightOptions, DrawItem } from './mesh';
+export type { InstanceInit, MaterialOptions, LightOptions, DrawItem, PointsItem } from './mesh';
 export type { PostOptions, PostValue, PostColor, ImpactOptions } from './video';
 export type { EmitterOptions, SpawnShape } from './emitter';
 export { analyzeAudio, decodeAudio } from './audio';
