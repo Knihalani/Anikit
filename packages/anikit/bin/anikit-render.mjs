@@ -20,15 +20,20 @@ const args = process.argv.slice(2);
 const opt = (name, d) => { const i = args.indexOf('--' + name); return i >= 0 ? args[i + 1] : d; };
 const file = args[0] === '--init' ? 'init' : args.find((a, i) => !a.startsWith('--') && (i === 0 || !args[i - 1].startsWith('--')));
 if (!file) {
-  console.log('usage: anikit-render <composition.mjs> --out film.mp4 [--workers N] [--audio track.wav] [--preview N]\n       anikit-render --init [film.mjs]   (write a starter film)');
+  console.log('usage: anikit-render <composition.mjs> --out film.mp4 [--workers N] [--audio track.wav] [--preview N]\n       anikit-render --init [film.mjs] [--template film|journey]   (write a starter film)');
   process.exit(1);
 }
 if (args[0] === '--init') {
   const { copyFileSync, existsSync: ex } = await import('node:fs');
-  const dest = resolve(args[1] || 'film.mjs');
+  // --init [file] [--template film | journey]
+  const name = args[1] && !args[1].startsWith('--') ? args[1] : 'film.mjs';
+  const tpl = opt('template', 'film');
+  const src = join(dirname(fileURLToPath(import.meta.url)), `../templates/${tpl}.mjs`);
+  if (!ex(src)) { console.error(`anikit-render --init: unknown template "${tpl}" (film, journey)`); process.exit(1); }
+  const dest = resolve(name);
   if (ex(dest)) { console.error(`anikit-render --init: ${dest} already exists`); process.exit(1); }
-  copyFileSync(join(dirname(fileURLToPath(import.meta.url)), '../templates/film.mjs'), dest);
-  console.log(`wrote ${dest}\n  preview: npx anikit-render ${args[1] || 'film.mjs'} --preview 15 --out preview/\n  render:  npx anikit-render ${args[1] || 'film.mjs'} --out film.mp4`);
+  copyFileSync(src, dest);
+  console.log(`wrote ${dest} (template: ${tpl})\n  review:  npx anikit-render ${name} --review review/\n  preview: npx anikit-render ${name} --preview 15 --out preview/\n  render:  npx anikit-render ${name} --out film.mp4`);
   process.exit(0);
 }
 const out = resolve(opt('out', 'anikit.mp4'));

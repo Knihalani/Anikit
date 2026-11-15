@@ -122,6 +122,7 @@ Use this when asked for a video, trailer, title sequence, product film or animat
 
 ```bash
 npx anikit-render --init film.mjs                    # a working starter: 3D cubes + particles + type + impact + grade
+npx anikit-render --init fly.mjs --template journey  # a 3D fly-through: neon city, chrome gates, shattering knot, 3D wordmark
 npx anikit-render film.mjs --preview 15 --out pv/    # every 15th frame as JPEG, fast; look at these before rendering
 npx anikit-render film.mjs --out film.mp4 --workers 4 [--audio track.wav] [--fade-out 0.5]
 ```
