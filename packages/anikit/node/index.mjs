@@ -120,6 +120,11 @@ export async function renderPreview(comp, o) {
   const canvas = o.canvas ?? canvasLib().createCanvas(comp.width, comp.height);
   await comp.render({
     canvas, from: o.from, to: o.to, every: o.every ?? 30, readPixels, createCanvas: (w, h) => canvasLib().createCanvas(w, h),
-    onFrame: (fr) => writeFileSync(join(o.dir, `f${String(fr.index).padStart(5, '0')}.jpg`), canvas.toBuffer('image/jpeg', 85)),
+    onFrame: (fr) => {
+      // Save the graded frame (bloom, streaks, grade…), not the raw canvas.
+      const out = canvasLib().createCanvas(comp.width, comp.height);
+      out.getContext('2d').putImageData(new globalThis.ImageData(new Uint8ClampedArray(fr.rgba()), comp.width, comp.height), 0, 0);
+      writeFileSync(join(o.dir, `f${String(fr.index).padStart(5, '0')}.jpg`), out.toBuffer('image/jpeg', 88));
+    },
   });
 }

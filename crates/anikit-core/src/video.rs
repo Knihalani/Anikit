@@ -103,7 +103,7 @@ pub fn rgba_to_i420(src: &[u8], w: usize, h: usize, order: Order, out: &mut [u8]
 }
 
 /// Film-look post-processing parameters (all off at 0).
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug)]
 pub struct Post {
     /// Bloom: brightness threshold (0…1), strength, and blur radius in pixels.
     pub bloom_threshold: f32,
@@ -116,6 +116,53 @@ pub struct Post {
     /// Film grain amplitude in 8-bit levels, re-seeded per frame.
     pub grain: f32,
     pub seed: u32,
+    /// Anamorphic streaks: horizontal flares from bright pixels (strength,
+    /// length in pixels, tint).
+    pub streaks: f32,
+    pub streak_length: f32,
+    pub streak_tint: [f32; 3],
+    /// Radial zoom blur towards `zoom_center` (0…1 of the frame): 0 = off,
+    /// 0.1 = fast, 0.3 = warp speed.
+    pub zoom_blur: f32,
+    pub zoom_center: [f32; 2],
+    /// Colour grade: exposure multiplier (1 = none), contrast (1 = none),
+    /// saturation (1 = none), additive shadow tint and multiplicative
+    /// highlight tint (0…1 per channel; zeros = none).
+    pub exposure: f32,
+    pub contrast: f32,
+    pub saturation: f32,
+    pub shadows: [f32; 3],
+    pub highlights: [f32; 3],
+}
+
+impl Default for Post {
+    fn default() -> Self {
+        Self {
+            bloom_threshold: 0.7,
+            bloom: 0.0,
+            bloom_radius: 24.0,
+            aberration: 0.0,
+            vignette: 0.0,
+            grain: 0.0,
+            seed: 0,
+            streaks: 0.0,
+            streak_length: 160.0,
+            streak_tint: [0.6, 0.75, 1.0],
+            zoom_blur: 0.0,
+            zoom_center: [0.5, 0.5],
+            exposure: 1.0,
+            contrast: 1.0,
+            saturation: 1.0,
+            shadows: [0.0; 3],
+            highlights: [0.0; 3],
+        }
+    }
+}
+
+impl Post {
+    fn grading(&self) -> bool {
+        self.exposure != 1.0 || self.contrast != 1.0 || self.saturation != 1.0 || self.shadows.iter().any(|v| *v != 0.0) || self.highlights.iter().any(|v| *v != 0.0)
+    }
 }
 
 /// Scratch buffers for [`Post`], reused across frames.
@@ -123,17 +170,28 @@ pub struct Post {
 pub struct PostFx {
     small: Vec<f32>,
     tmp: Vec<f32>,
+    streak: Vec<f32>,
     copy: Vec<u8>,
 }
 
 impl PostFx {
-    /// Apply `p` to an RGBA frame in place.
+    /// Apply `p` to an RGBA frame in place. Order: zoom blur, aberration,
+    /// bloom + streaks (from the same bright pass), grade, vignette + grain.
     pub fn apply(&mut self, rgba: &mut [u8], w: usize, h: usize, p: &Post) {
+        if w == 0 || h == 0 || rgba.len() < w * h * 4 {
+            return;
+        }
+        if p.zoom_blur > 0.0 {
+            self.zoom(rgba, w, h, p);
+        }
         if p.aberration > 0.0 {
             self.aberrate(rgba, w, h, p.aberration);
         }
-        if p.bloom > 0.0 {
+        if p.bloom > 0.0 || p.streaks > 0.0 {
             self.bloom(rgba, w, h, p);
+        }
+        if p.grading() {
+            grade(rgba, p);
         }
         if p.vignette > 0.0 || p.grain > 0.0 {
             let (cx, cy) = (w as f32 * 0.5, h as f32 * 0.5);
@@ -154,6 +212,43 @@ impl PostFx {
                         *c = (*c as f32 * k + n).clamp(0.0, 255.0) as u8;
                     }
                 }
+            }
+        }
+    }
+
+    /// Radial zoom blur: each pixel averages 12 samples along its ray towards
+    /// the centre (the ray growing with distance: speed lines). Sample
+    /// positions are jittered per pixel, trading ghost copies for fine noise.
+    fn zoom(&mut self, rgba: &mut [u8], w: usize, h: usize, p: &Post) {
+        self.copy.clear();
+        self.copy.extend_from_slice(rgba);
+        let (cx, cy) = (p.zoom_center[0] * w as f32, p.zoom_center[1] * h as f32);
+        const N: usize = 12;
+        let k = p.zoom_blur.min(0.9) / N as f32;
+        let (wi, hi) = (w as isize - 1, h as isize - 1);
+        for y in 0..h {
+            let dy = (cy - y as f32) * k;
+            for x in 0..w {
+                let dx = (cx - x as f32) * k;
+                // Per-pixel hash in 0…1 (stable across frames, so it reads as texture, not boil).
+                let mut hs = (x as u32).wrapping_mul(0x9E37_79B1) ^ (y as u32).wrapping_mul(0x85EB_CA77);
+                hs ^= hs >> 15;
+                hs = hs.wrapping_mul(0x2C1B_3C6D);
+                let jit = (hs >> 8) as f32 * (1.0 / 16_777_216.0);
+                let mut acc = [0u32; 3];
+                for j in 0..N {
+                    let t = j as f32 + jit;
+                    let sx = ((x as f32 + dx * t + 0.5) as isize).clamp(0, wi) as usize;
+                    let sy = ((y as f32 + dy * t + 0.5) as isize).clamp(0, hi) as usize;
+                    let o = (sy * w + sx) * 4;
+                    acc[0] += self.copy[o] as u32;
+                    acc[1] += self.copy[o + 1] as u32;
+                    acc[2] += self.copy[o + 2] as u32;
+                }
+                let i = (y * w + x) * 4;
+                rgba[i] = ((acc[0] + N as u32 / 2) / N as u32) as u8;
+                rgba[i + 1] = ((acc[1] + N as u32 / 2) / N as u32) as u8;
+                rgba[i + 2] = ((acc[2] + N as u32 / 2) / N as u32) as u8;
             }
         }
     }
@@ -210,20 +305,86 @@ impl PostFx {
             }
         }
         let r = (crate::math::floorf(p.bloom_radius / 4.0 + 0.5) as usize).max(1);
+        if p.streaks > 0.0 {
+            // Anamorphic streaks: the bright pass blurred along x only, three
+            // passes (≈ gaussian) with a long radius.
+            self.streak.clear();
+            self.streak.extend_from_slice(&self.small);
+            let sr = (crate::math::floorf(p.streak_length / 4.0 + 0.5) as usize).max(1);
+            for _ in 0..3 {
+                box_blur(&self.streak, &mut self.tmp, sw, sh, sr, true);
+                core::mem::swap(&mut self.streak, &mut self.tmp);
+            }
+        }
         for _ in 0..2 {
             box_blur(&self.small, &mut self.tmp, sw, sh, r, true);
             box_blur(&self.tmp, &mut self.small, sw, sh, r, false);
         }
+        // Combine glow (and streaks) at quarter resolution, then add back with
+        // bilinear upsampling (no 4×4 blocks).
+        let (bk, st) = (p.bloom, p.streaks);
+        if st > 0.0 {
+            let tint = p.streak_tint;
+            for (i, v) in self.small.iter_mut().enumerate() {
+                *v = *v * bk + self.streak[i] * st * tint[i % 3];
+            }
+        } else {
+            for v in self.small.iter_mut() {
+                *v *= bk;
+            }
+        }
+        let small = &self.small;
         for y in 0..h {
-            let sy = (y / 4).min(sh - 1);
+            let fy = ((y as f32 + 0.5) / 4.0 - 0.5).clamp(0.0, (sh - 1) as f32);
+            let y0 = fy as usize;
+            let y1 = (y0 + 1).min(sh - 1);
+            let ty = fy - y0 as f32;
             for x in 0..w {
-                let sx = (x / 4).min(sw - 1);
-                let o = (sy * sw + sx) * 3;
+                let fx = ((x as f32 + 0.5) / 4.0 - 0.5).clamp(0.0, (sw - 1) as f32);
+                let x0 = fx as usize;
+                let x1 = (x0 + 1).min(sw - 1);
+                let tx = fx - x0 as f32;
+                let (a, b, c, d) = ((y0 * sw + x0) * 3, (y0 * sw + x1) * 3, (y1 * sw + x0) * 3, (y1 * sw + x1) * 3);
                 let i = (y * w + x) * 4;
-                for c in 0..3 {
-                    rgba[i + c] = (rgba[i + c] as f32 + self.small[o + c] * p.bloom).min(255.0) as u8;
+                for ch in 0..3 {
+                    let top = small[a + ch] + (small[b + ch] - small[a + ch]) * tx;
+                    let bot = small[c + ch] + (small[d + ch] - small[c + ch]) * tx;
+                    let g = top + (bot - top) * ty;
+                    rgba[i + ch] = (rgba[i + ch] as f32 + g).min(255.0) as u8;
                 }
             }
+        }
+    }
+}
+
+/// Exposure, contrast (around mid-grey), saturation and split toning.
+#[allow(clippy::needless_range_loop)]
+fn grade(rgba: &mut [u8], p: &Post) {
+    // Per-channel tone curve as a LUT (exposure + contrast), then the
+    // cross-channel part (saturation, tints) per pixel.
+    let mut lut = [0f32; 256];
+    for (i, v) in lut.iter_mut().enumerate() {
+        let x = (i as f32 / 255.0) * p.exposure;
+        *v = (x - 0.5) * p.contrast + 0.5;
+    }
+    let tint = p.shadows.iter().any(|v| *v != 0.0) || p.highlights.iter().any(|v| *v != 0.0);
+    for px in rgba.chunks_exact_mut(4) {
+        let mut c = [lut[px[0] as usize], lut[px[1] as usize], lut[px[2] as usize]];
+        let l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+        if p.saturation != 1.0 {
+            for v in c.iter_mut() {
+                *v = l + (*v - l) * p.saturation;
+            }
+        }
+        if tint {
+            let lc = l.clamp(0.0, 1.0);
+            let (sh, hi) = ((1.0 - lc) * (1.0 - lc), lc * lc);
+            for k in 0..3 {
+                c[k] = c[k] + p.shadows[k] * sh + c[k] * p.highlights[k] * hi;
+            }
+        }
+        for k in 0..3 {
+            px[k] = (c[k] * 255.0 + 0.5).clamp(0.0, 255.0) as u8;
         }
     }
 }
@@ -359,5 +520,34 @@ mod tests {
         let mut out2 = alloc::vec![0u8; i420_len(w, h)];
         rgba_to_i420(&px, w, h, Order::Bgra, &mut out2);
         assert_eq!(out, out2);
+    }
+
+    #[test]
+    fn streaks_zoom_and_grade() {
+        let (w, h) = (64usize, 32usize);
+        // One bright dot in the middle.
+        let mut base = alloc::vec![0u8; w * h * 4];
+        for y in 15..17 {
+            for x in 31..33 {
+                base[(y * w + x) * 4..(y * w + x) * 4 + 3].copy_from_slice(&[255, 255, 255]);
+            }
+        }
+        let mut fx = PostFx::default();
+        let mut s = base.clone();
+        fx.apply(&mut s, w, h, &Post { streaks: 2.0, streak_length: 64.0, bloom_threshold: 0.5, ..Default::default() });
+        // Streaks reach far horizontally but not vertically.
+        let at = |b: &[u8], x: usize, y: usize| b[(y * w + x) * 4 + 2];
+        assert!(at(&s, 16, 16) > 0, "streak spreads along x");
+        assert_eq!(at(&s, 32, 2), 0, "but not along y");
+        // Zoom blur smears towards the centre: an off-centre dot spreads radially.
+        let mut z = alloc::vec![0u8; w * h * 4];
+        z[(16 * w + 60) * 4..(16 * w + 60) * 4 + 3].copy_from_slice(&[255, 255, 255]);
+        fx.apply(&mut z, w, h, &Post { zoom_blur: 0.5, ..Default::default() });
+        let smear = (61..64).map(|x| z[(16 * w + x) * 4] as u32).sum::<u32>();
+        assert!(z[(16 * w + 60) * 4] < 255 && smear > 0, "smeared outward along the ray");
+        // Grade: exposure brightens, saturation 0 makes grey.
+        let mut g = alloc::vec![100u8, 50, 20, 255];
+        fx.apply(&mut g, 1, 1, &Post { exposure: 1.5, saturation: 0.0, ..Default::default() });
+        assert!(g[0] == g[1] && g[1] == g[2] && g[0] > 50, "{g:?}");
     }
 }

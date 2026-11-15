@@ -149,7 +149,7 @@ export interface Exports {
   ak_video_add(id: number): number;
   ak_video_resolve(id: number): void;
   ak_video_i420(id: number, order: number): number;
-  ak_video_post(id: number, seed: number): void;
+  ak_video_post(id: number, seed: number, nf: number): number;
   ak_mesh_builtin(kind: number): number;
   ak_mesh_custom(nverts: number, ntris: number): number;
   ak_mesh_ptr(id: number, which: number): number;

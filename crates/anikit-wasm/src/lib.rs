@@ -1593,24 +1593,42 @@ pub extern "C" fn ak_video_resolve(id: u32) {
 /// Film-look post pass on the input frame. f64 buffer:
 /// `[bloomThreshold, bloom, bloomRadius, aberration, vignette, grain]`.
 #[no_mangle]
-pub extern "C" fn ak_video_post(id: u32, seed: u32) {
+pub extern "C" fn ak_video_post(id: u32, seed: u32, nf: u32) -> u32 {
+    // f64 buffer: bloomThreshold, bloom, bloomRadius, aberration, vignette, grain,
+    // [6..23) streaks, streakLength, streakTint(3), zoomBlur, zoomCenter(2), exposure,
+    // contrast, saturation, shadows(3), highlights(3).
     let b = &st().f64_buf;
-    if b.len() < 6 {
-        return;
+    let nf = (nf as usize).min(b.len());
+    if nf < 6 {
+        return 0;
     }
+    let g = |i: usize, d: f32| if i < nf { b[i] as f32 } else { d };
+    let d = anikit_core::video::Post::default();
     let p = anikit_core::video::Post {
-        bloom_threshold: b[0] as f32,
-        bloom: b[1] as f32,
-        bloom_radius: b[2] as f32,
-        aberration: b[3] as f32,
-        vignette: b[4] as f32,
-        grain: b[5] as f32,
+        bloom_threshold: g(0, d.bloom_threshold),
+        bloom: g(1, 0.0),
+        bloom_radius: g(2, d.bloom_radius),
+        aberration: g(3, 0.0),
+        vignette: g(4, 0.0),
+        grain: g(5, 0.0),
         seed,
+        streaks: g(6, 0.0),
+        streak_length: g(7, d.streak_length),
+        streak_tint: [g(8, d.streak_tint[0]), g(9, d.streak_tint[1]), g(10, d.streak_tint[2])],
+        zoom_blur: g(11, 0.0),
+        zoom_center: [g(12, 0.5), g(13, 0.5)],
+        exposure: g(14, 1.0),
+        contrast: g(15, 1.0),
+        saturation: g(16, 1.0),
+        shadows: [g(17, 0.0), g(18, 0.0), g(19, 0.0)],
+        highlights: [g(20, 0.0), g(21, 0.0), g(22, 0.0)],
     };
     if let Some(v) = video(id) {
         let (w, h) = (v.mixer.width, v.mixer.height);
         v.post.apply(&mut v.input, w, h, &p);
+        return 1;
     }
+    0
 }
 /// Convert the input frame to I420 (`order`: 0 RGBA, 1 BGRA); returns the address.
 #[no_mangle]

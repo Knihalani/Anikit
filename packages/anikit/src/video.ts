@@ -111,13 +111,38 @@ export interface CompositionOptions {
   post?: PostOptions;
 }
 
+/** A post value: a number, or a function of composition time in seconds (animate the grade). */
+export type PostValue = number | ((t: number) => number);
+export type PostColor = [number, number, number] | ((t: number) => [number, number, number]);
+
 export interface PostOptions {
-  bloom?: number;
-  bloomThreshold?: number;
-  bloomRadius?: number;
-  aberration?: number;
-  vignette?: number;
-  grain?: number;
+  /** Glow around bright pixels: strength (0–2), luminance threshold (0–1, default 0.7), radius px (default 24). */
+  bloom?: PostValue;
+  bloomThreshold?: PostValue;
+  bloomRadius?: PostValue;
+  /** Radial chromatic aberration in px at the corners. */
+  aberration?: PostValue;
+  /** Darkened corners (0–1). */
+  vignette?: PostValue;
+  /** Film grain amplitude in 8-bit levels. */
+  grain?: PostValue;
+  /** Anamorphic streaks: horizontal flares from highlights (strength 0–2), length px (default 160), tint (default cool blue). */
+  streaks?: PostValue;
+  streakLength?: PostValue;
+  streakTint?: PostColor;
+  /**
+   * Radial zoom blur (speed lines) towards `zoomCenter` ([0.5, 0.5] = middle):
+   * 0.1 fast, 0.3 warp. Usually a function of time: `zoomBlur: (t) => t > 3 && t < 4 ? 0.25 : 0`.
+   */
+  zoomBlur?: PostValue;
+  zoomCenter?: [number, number];
+  /** Colour grade: exposure (1 = none), contrast (1 = none), saturation (1 = none). */
+  exposure?: PostValue;
+  contrast?: PostValue;
+  saturation?: PostValue;
+  /** Split toning: colour added to shadows, and multiplied into highlights (0–1 each, e.g. teal shadows `[0, 0.04, 0.06]`, warm highlights `[0.08, 0.02, -0.04]`). */
+  shadows?: PostColor;
+  highlights?: PostColor;
 }
 
 /** A hit: camera shake, a flash frame and an aberration kick, all decaying. */
@@ -186,8 +211,9 @@ export class FrameBuffer {
     return new Uint8Array(W!.memory.buffer, core().ak_video_input(this.id), this.width * this.height * 4);
   }
   /** Film grade (reads its parameters from the f64 scratch buffer; see Composition). */
-  post(seed: number): this {
-    core().ak_video_post(this.id, seed >>> 0);
+  /** Apply the grade from the f64 scratch buffer (`nf` values, see `ak_video_post`). */
+  post(seed: number, nf = 6): this {
+    core().ak_video_post(this.id, seed >>> 0, nf);
     return this;
   }
   /** I420 of the current frame (view, valid until the next call). */
@@ -348,12 +374,19 @@ export class Composition {
       }
     };
     /** The film grade, once per output frame (not per motion-blur sample). */
+    const num = (v: PostValue | undefined, t: number, d: number) => (v === undefined ? d : typeof v === 'function' ? v(t) : v);
+    const col = (v: PostColor | undefined, t: number, d: [number, number, number]) => (v === undefined ? d : typeof v === 'function' ? v(t) : v);
     const grade = (f: number, t: number) => {
-      const ab = (post?.aberration ?? 0) + (this.impacts.length ? this.impactAt(t).aberration : 0);
+      const ab = num(post?.aberration, t, 0) + (this.impacts.length ? this.impactAt(t).aberration : 0);
       if (!postOn && ab <= 0) return;
-      const at = f64Buf(6);
-      F64.set([post?.bloomThreshold ?? 0.7, post?.bloom ?? 0, post?.bloomRadius ?? 24, ab, post?.vignette ?? 0, post?.grain ?? 0], at);
-      fb.post(f);
+      const p = post ?? {};
+      const zc = p.zoomCenter ?? [0.5, 0.5];
+      const vals = [num(p.bloomThreshold, t, 0.7), num(p.bloom, t, 0), num(p.bloomRadius, t, 24), ab, num(p.vignette, t, 0), num(p.grain, t, 0),
+        num(p.streaks, t, 0), num(p.streakLength, t, 160), ...col(p.streakTint, t, [0.6, 0.75, 1]), num(p.zoomBlur, t, 0), zc[0], zc[1],
+        num(p.exposure, t, 1), num(p.contrast, t, 1), num(p.saturation, t, 1), ...col(p.shadows, t, [0, 0, 0]), ...col(p.highlights, t, [0, 0, 0])];
+      const at = f64Buf(vals.length);
+      F64.set(vals, at);
+      fb.post(f, vals.length);
     };
     const bg = (c: Ctx2D) => {
       if (!this.options.background) return;
