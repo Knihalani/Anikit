@@ -48,6 +48,8 @@ pub struct Material {
     pub tex_mode: u8,
     pub tex_repeat: [f32; 2],
     pub tex_gain: f32,
+    /// What `lines` draws: 0 grid lines (default), 1 hexagons, 2 dots, 3 circuit traces.
+    pub pattern: u8,
 }
 
 impl Default for Material {
@@ -73,6 +75,7 @@ impl Default for Material {
             tex_mode: 0,
             tex_repeat: [1.0, 1.0],
             tex_gain: 1.0,
+            pattern: 0,
         }
     }
 }
@@ -332,6 +335,47 @@ fn grid4(t: V4, cells: f32, hw: f32, fw: V4) -> V4 {
     ((hw - d) * inv + 0.5).clamp(0.0, 1.0) * gain + (1.0 - fade) * (2.0 * hw).min(1.0)
 }
 
+/// Procedural glowing patterns in cell space (`x`, `y` = uv × cells), with
+/// footprint `fw` (cells per pixel) for antialiasing and half-width `hw`:
+/// 1 hexagon edges, 2 dots, 3 circuit traces with pads.
+#[inline(always)]
+fn pattern4(kind: u8, x: V4, y: V4, fw: V4, hw: f32) -> V4 {
+    let aa = fw.maxf(1e-4);
+    // Coverage of a band of half-width hw at distance d.
+    let band = |d: V4| ((V4::splat(hw) - d) / aa + 0.5).clamp(0.0, 1.0);
+    // Patterns denser than ~2 px per cell fade to their mean instead of shimmering.
+    let fade = (2.0 - fw * 4.0).clamp(0.0, 1.0);
+    let cov = match kind {
+        1 => {
+            // Hexagons: nearest of two offset lattices, distance to the cell edge.
+            let (sx, sy) = (1.0f32, 1.732_050_8f32);
+            let (ax, ay) = ((x / sx).fract() * sx - sx * 0.5, (y / sy).fract() * sy - sy * 0.5);
+            let (bxx, byy) = (((x - sx * 0.5) / sx).fract() * sx - sx * 0.5, ((y - sy * 0.5) / sy).fract() * sy - sy * 0.5);
+            let use_a = (ax * ax + ay * ay).lt(bxx * bxx + byy * byy);
+            let (gx, gy) = (V4::select(use_a, ax, bxx).abs(), V4::select(use_a, ay, byy).abs());
+            let e = (gx * 0.5 + gy * 0.866_025_4).max(gx);
+            band(0.5 - e)
+        }
+        2 => {
+            let (fx, fy) = (x.fract() - 0.5, y.fract() - 0.5);
+            let d = (fx * fx + fy * fy).sqrt();
+            band(d - hw * 2.0)
+        }
+        _ => {
+            // Circuit: each cell hashes to a horizontal or vertical trace through
+            // its centre (which joins the neighbours'), some cells get a pad.
+            let (cx, cy) = (x.floor(), y.floor());
+            let h = ((cx * 0.1031 + cy * 0.113_69) * (cx * 0.0973 + cy * 0.1099 + 33.33)).fract();
+            let (fx, fy) = ((x - cx - 0.5).abs(), (y - cy - 0.5).abs());
+            let horiz = h.ltf(0.5);
+            let trace = band(V4::select(horiz, fy, fx));
+            let pad = band((fx * fx + fy * fy).sqrt() - hw * 2.5);
+            trace.max(V4::select(h.gtf(0.8), pad, V4::splat(0.0)))
+        }
+    };
+    cov * fade + (1.0 - fade) * (2.0 * hw).min(1.0) * 0.5
+}
+
 /// Pixels waiting to be shaded: passing pixels from successive rows and
 /// triangles are packed into full groups of four before shading, so small
 /// triangles don't waste SIMD lanes.
@@ -482,9 +526,16 @@ impl Shade<'_> {
                 V4::splat(0.0)
             };
             let zero = V4::splat(0.0);
-            let lu = if m.lines > 0.0 && m.grid[0] > 0.0 { grid4(u, m.grid[0], m.line_width, fwu) } else { zero };
-            let lv = if m.lines > 0.0 && m.grid[1] > 0.0 { grid4(v, m.grid[1], m.line_width, fwv) } else { zero };
-            let e = lu.max(lv) * m.lines * (1.0 + 3.0 * band) + band * m.pulse;
+            let lm = if m.lines <= 0.0 {
+                zero
+            } else if m.pattern == 0 {
+                let lu = if m.grid[0] > 0.0 { grid4(u, m.grid[0], m.line_width, fwu) } else { zero };
+                let lv = if m.grid[1] > 0.0 { grid4(v, m.grid[1], m.line_width, fwv) } else { zero };
+                lu.max(lv)
+            } else {
+                pattern4(m.pattern, u * m.grid[0].max(1e-3), v * m.grid[1].max(1e-3), (fwu * m.grid[0]).max(fwv * m.grid[1]), m.line_width)
+            };
+            let e = lm * m.lines * (1.0 + 3.0 * band) + band * m.pulse;
             for k in 0..3 {
                 c[k] = c[k] + e * m.line_color[k];
             }
@@ -2072,5 +2123,25 @@ mod tests {
         assert_eq!(contrast(&row(&a)), sharp, "no aperture, no blur");
         r.depth_of_field(&vp(), 40.0, 40.0, 10.0);
         assert!(contrast(&row(&r)) < sharp, "out of focus blurs");
+    }
+
+    #[test]
+    fn procedural_patterns_cover_part_of_each_cell() {
+        // Sample a cell densely: every pattern lights some of it, none lights all of it.
+        for kind in 1..=3u8 {
+            let mut lit = 0;
+            let n = 64;
+            for i in 0..n {
+                for j in 0..n {
+                    let (x, y) = (2.0 + i as f32 / n as f32, 5.0 + j as f32 / n as f32);
+                    let c = pattern4(kind, V4::splat(x), V4::splat(y), V4::splat(0.01), 0.06).to_array()[0];
+                    assert!((0.0..=1.0).contains(&c));
+                    if c > 0.5 {
+                        lit += 1;
+                    }
+                }
+            }
+            assert!(lit > 50 && lit < n * n * 3 / 4, "pattern {kind}: {lit}");
+        }
     }
 }

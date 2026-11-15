@@ -836,6 +836,7 @@ const px = r3.render(scene, [
 | `metal` (0–1) | mirror reflection of the environment (`sky`/`horizon`/`ground` + sharp studio `strips`) |
 | `iridescence` (0–1), `hue` | thin-film rainbow tint on reflections, shifting with viewing angle |
 | `lines`, `lineColor`, `grid: [u, v]`, `lineWidth` | antialiased glowing lines in UV space; `0` cells = none that way. Cube faces are 0–1 (edge outlines with `[1, 1]`); tubes/knots run `u` along and `v` around |
+| `pattern: 'hex' \| 'dots' \| 'circuit'` | what `lines` draws instead of grid lines: glowing hexagon cells, a dot matrix, or circuit traces with pads (in `grid` cells, `lineWidth` thick) |
 | `pulse`, `pulseCount`, `pulsePhase`, `pulseDir` | bright pulses travelling along `u` (animate `pulsePhase`); `pulseDir` offsets each instance's phase by its position, so a wave sweeps through a field |
 | `texture`, `textureMode`, `textureRepeat`, `textureGain` | an image from `texture(imageData | canvas)` mapped by UV: `'albedo'` tints the lit colour, `'emissive'` glows unlit (screens, signs); mipmapped, so it doesn't shimmer when small |
 

@@ -1962,6 +1962,7 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
         tex_mode: b[74] as u8,
         tex_repeat: [b[75], b[76]],
         tex_gain: b[77],
+        pattern: if nf > 82 { s.f64_buf[82] as u8 } else { 0 },
     };
     let light = Lighting { key: v3(24), key_color: v3(27), fill: v3(30), fill_color: v3(33), rim_color: v3(36), fog: [b[39], if b[40] > 0.0 { b[40] } else { f32::INFINITY }], fog_color: v3(41), sky: v3(48), horizon: v3(51), ground: v3(54), strips: v3(70), ground_fog: [0.0; 3] };
     let Some(Some(m)) = s.meshes.get(mesh as usize) else { return 0 };

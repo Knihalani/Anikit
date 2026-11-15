@@ -315,6 +315,13 @@ impl Mul<f32> for V4 {
         self * V4::splat(o)
     }
 }
+impl Div<f32> for V4 {
+    type Output = Self;
+    #[inline(always)]
+    fn div(self, o: f32) -> Self {
+        self * (1.0 / o)
+    }
+}
 impl Add<V4> for f32 {
     type Output = V4;
     #[inline(always)]

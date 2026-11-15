@@ -290,6 +290,8 @@ export interface MaterialOptions {
    * and half-width in cells. Pair with a dark body and the film grade's bloom.
    */
   lines?: number;
+  /** What `lines` draws: `'grid'` (default), `'hex'` cells, `'dots'`, or `'circuit'` traces with pads — in `grid` cells. */
+  pattern?: 'grid' | 'hex' | 'dots' | 'circuit';
   lineColor?: string | V3;
   grid?: [number, number];
   lineWidth?: number;
@@ -450,7 +452,8 @@ export class Renderer3D {
         m.lines ?? 0, ...rgb(m.lineColor, [1, 1, 1]), ...(m.grid ?? [8, 8]), m.lineWidth ?? 0.04,
         m.pulse ?? 0, m.pulseCount ?? 1, m.pulsePhase ?? 0, ...(m.pulseDir ?? [0, 0, 0]), ...rgb(o.strips, [0, 0, 0]),
         m.texture ? m.texture.id + 1 : 0, m.texture ? (m.textureMode === 'emissive' ? 2 : 1) : 0, ...(m.textureRepeat ?? [1, 1]), m.textureGain ?? 1, gloss,
-        o.groundFog?.bottom ?? 0, o.groundFog?.top ?? 0, o.groundFog?.range ?? 0];
+        o.groundFog?.bottom ?? 0, o.groundFog?.top ?? 0, o.groundFog?.range ?? 0,
+        ({ grid: 0, hex: 1, dots: 2, circuit: 3 } as const)[m.pattern ?? 'grid'] ?? 0];
       const at = f64Buf(vals.length); // may grow memory: reserve before touching F64
       F64.set(vals, at);
       const flags = (it.cull === false ? 0 : 1) | (it.blend === 'additive' ? 2 : 0) | extra;
