@@ -1988,6 +1988,19 @@ pub extern "C" fn ak_texture_free(id: u32) {
         *t = None;
     }
 }
+/// Camera motion blur (see `Raster::motion_blur`). f64 buffer: viewProj(16), prevViewProj(16).
+#[no_mangle]
+pub extern "C" fn ak_raster_motion_blur(id: u32, shutter: f64, max_px: f64) {
+    let s = st();
+    if s.f64_buf.len() < 32 {
+        return;
+    }
+    let vp: anikit_core::raster::M4 = core::array::from_fn(|i| s.f64_buf[i] as f32);
+    let prev: anikit_core::raster::M4 = core::array::from_fn(|i| s.f64_buf[16 + i] as f32);
+    if let Some(Some((r, _))) = s.rasters.get_mut(id as usize) {
+        r.motion_blur(&vp, &prev, shutter as f32, max_px as f32);
+    }
+}
 /// Reset the depth buffer only (mirror passes).
 #[no_mangle]
 pub extern "C" fn ak_raster_clear_depth(id: u32) {

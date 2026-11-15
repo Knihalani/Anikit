@@ -164,6 +164,7 @@ export interface Exports {
   ak_texture_create(w: number, h: number): number;
   ak_texture_free(id: number): void;
   ak_raster_clear_depth(id: number): void;
+  ak_raster_motion_blur(id: number, shutter: number, maxPx: number): void;
   ak_raster_points(id: number, n: number, hasPrev: number): void;
   ak_raster_ptr(id: number): number;
   ak_emitter_create(capacity: number, seed: number): number;

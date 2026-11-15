@@ -373,7 +373,19 @@ export class Renderer3D {
    * (when it has one) and returns the RGBA pixels (a view into WebAssembly
    * memory, valid until the next call).
    */
-  render(scene: Scene3D, items: (DrawItem | PointsItem)[], o: LightOptions & { background?: string; transparent?: boolean; mirror?: { y: number; strength?: number } } = {}): Uint8ClampedArray {
+  render(scene: Scene3D, items: (DrawItem | PointsItem)[], o: LightOptions & {
+    background?: string;
+    transparent?: boolean;
+    mirror?: { y: number; strength?: number };
+    /**
+     * Camera motion blur from the depth buffer, against the camera of the previous
+     * `render()`: smooth, ghost-free blur for fast flights in one pass. `shutter` 0–1
+     * of a frame (default 0.5), `max` caps the blur in px (default 6% of the width).
+     * Use it with composition `motionBlur: 1` (one render per frame); call
+     * `resetMotion()` after a cut.
+     */
+    motionBlur?: { shutter?: number; max?: number } | boolean;
+  } = {}): Uint8ClampedArray {
     const t0 = performance.now();
     const w = core();
     const bg = rgb(o.background, [0, 0, 0]);
@@ -421,6 +433,12 @@ export class Renderer3D {
       if (o.mirror && item.mirror) continue;
       drawMesh(item, matrix, eye, 0);
     }
+    if (o.motionBlur && this.prevMatrix) {
+      const mb = o.motionBlur === true ? {} : o.motionBlur;
+      const at = f64Buf(32);
+      F64.set([...matrix, ...this.prevMatrix], at);
+      w.ak_raster_motion_blur(this.id, mb.shutter ?? 0.5, mb.max ?? this.width * 0.06);
+    }
     this.prevMatrix = matrix;
     const px = new Uint8ClampedArray(W!.memory.buffer, w.ak_raster_ptr(this.id), this.width * this.height * 4);
     const ctx = 'getContext' in this.target ? this.target.getContext('2d') : null;
@@ -435,6 +453,12 @@ export class Renderer3D {
   }
 
   private prevMatrix: number[] | null = null;
+
+  /** Forget the previous camera (after a cut), so motion blur and point streaks don't smear across it. */
+  resetMotion(): this {
+    this.prevMatrix = null;
+    return this;
+  }
 
   private drawPoints(it: PointsItem, matrix: number[], eye: number[]): void {
     const w = core();

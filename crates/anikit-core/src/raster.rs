@@ -237,6 +237,10 @@ pub struct Raster {
     pub gloss: f32,
     /// Cull front faces instead of back faces (mirrored cameras flip winding).
     pub flip_winding: bool,
+    /// Scratch for [`Raster::motion_blur`]: frame copy, velocity + view depth, tile maxima.
+    blur_src: Vec<u32>,
+    vel: Vec<u32>,
+    tiles: Vec<[f32; 2]>,
     /// Additive light accumulation for [`Raster::points`] (RGB f32, allocated on first use).
     light: Vec<f32>,
     /// Pixels shaded by the last call (diagnostics).
@@ -940,6 +944,205 @@ fn flush<const MODE: u8>(q: &mut Queue, color: &mut [u32], sh: &Shade, gl: u32) 
     q.n = 0;
 }
 
+impl Raster {
+    /// Camera motion blur from the depth buffer.
+    ///
+    /// Each pixel's world position is reconstructed with the inverse of
+    /// `vp` and reprojected with `prev_vp` (the previous frame's camera),
+    /// giving a screen velocity × `shutter` (0…1 of a frame), capped at
+    /// `max_px`. The blur is reconstructed at half resolution along the
+    /// largest velocity of each tile neighbourhood, with depth-aware weights
+    /// (McGuire et al.) so near geometry smears over what is behind it, then
+    /// blended over the sharp frame where things actually move. Object motion
+    /// within a frame isn't captured.
+    #[allow(clippy::needless_range_loop)]
+    pub fn motion_blur(&mut self, vp: &M4, prev_vp: &M4, shutter: f32, max_px: f32) {
+        let m64: crate::space::Mat4 = core::array::from_fn(|i| vp[i] as f64);
+        let Some(inv) = crate::space::invert(&m64) else { return };
+        let inv: M4 = core::array::from_fn(|i| inv[i] as f32);
+        let (w, h) = (self.width, self.height);
+        if w < 4 || h < 4 {
+            return;
+        }
+        let (fw, fh) = (w as f32 * 0.5, h as f32 * 0.5);
+        // Half-resolution working set.
+        let (bw, bh) = (w / 2, h / 2);
+        let max_b = max_px * 0.5;
+        // 1. Half-res colour (2×2 mean), speed + view distance packed in 4 bytes
+        //    (bf16 distance | 8.8 speed), and 8×8 tile maxima of the velocity.
+        const T: usize = 8;
+        let (tw, th) = (bw.div_ceil(T), bh.div_ceil(T));
+        self.tiles.clear();
+        self.tiles.resize(tw * th, [0.0; 2]);
+        self.vel.clear();
+        self.vel.resize(bw * bh, 0);
+        self.blur_src.clear();
+        self.blur_src.resize(bw * bh, 0);
+        let pack = |lin: f32, len: f32| (lin.to_bits() & 0xffff_0000) | ((len.clamp(0.5, 255.0) * 256.0) as u32).min(0xffff);
+        let mut any = false;
+        for by in 0..bh {
+            for bx in 0..bw {
+                let (x, y) = (bx * 2, by * 2);
+                let i = y * w + x;
+                let q = [self.color[i], self.color[i + 1], self.color[i + w], self.color[i + w + 1]];
+                let ch = |s: u32| ((q[0] >> s & 255) + (q[1] >> s & 255) + (q[2] >> s & 255) + (q[3] >> s & 255) + 2) >> 2;
+                self.blur_src[by * bw + bx] = ch(0) | ch(8) << 8 | ch(16) << 16;
+                // Nearest of the four depths: edges belong to the foreground.
+                let d = self.depth[i].min(self.depth[i + 1]).min(self.depth[i + w]).min(self.depth[i + w + 1]);
+                let nz = if d.is_finite() { d } else { 0.9999 };
+                let (nx, ny) = ((x as f32 + 1.0) / fw - 1.0, 1.0 - (y as f32 + 1.0) / fh);
+                let cw = inv[3] * nx + inv[7] * ny + inv[11] * nz + inv[15];
+                if cw.abs() < 1e-12 {
+                    continue;
+                }
+                let iw = 1.0 / cw;
+                let wx = (inv[0] * nx + inv[4] * ny + inv[8] * nz + inv[12]) * iw;
+                let wy = (inv[1] * nx + inv[5] * ny + inv[9] * nz + inv[13]) * iw;
+                let wz = (inv[2] * nx + inv[6] * ny + inv[10] * nz + inv[14]) * iw;
+                let lin = vp[3] * wx + vp[7] * wy + vp[11] * wz + vp[15];
+                let pw = prev_vp[3] * wx + prev_vp[7] * wy + prev_vp[11] * wz + prev_vp[15];
+                if pw <= 1e-6 {
+                    self.vel[by * bw + bx] = pack(lin, 0.5);
+                    continue;
+                }
+                let ipw = 1.0 / pw;
+                let px = (prev_vp[0] * wx + prev_vp[4] * wy + prev_vp[8] * wz + prev_vp[12]) * ipw;
+                let py = (prev_vp[1] * wx + prev_vp[5] * wy + prev_vp[9] * wz + prev_vp[13]) * ipw;
+                // Velocity in half-res pixels.
+                let (mut vx, mut vy) = ((nx - px) * fw * 0.5 * shutter, (py - ny) * fh * 0.5 * shutter);
+                let mut len = crate::math::sqrtf(vx * vx + vy * vy);
+                if len > max_b {
+                    vx *= max_b / len;
+                    vy *= max_b / len;
+                    len = max_b;
+                }
+                any |= len > 0.5;
+                self.vel[by * bw + bx] = pack(lin, len);
+                let t = &mut self.tiles[(by / T) * tw + bx / T];
+                if len * len > t[0] * t[0] + t[1] * t[1] {
+                    *t = [vx, vy];
+                }
+            }
+        }
+        if !any {
+            return;
+        }
+        // 2. Max over each tile's 3×3 neighbourhood.
+        let tmax = self.tiles.clone();
+        for ty in 0..th {
+            for tx in 0..tw {
+                let mut best = [0.0f32; 2];
+                for dy in -1i32..=1 {
+                    for dx in -1i32..=1 {
+                        let (nx, ny) = (tx as i32 + dx, ty as i32 + dy);
+                        if nx < 0 || ny < 0 || nx >= tw as i32 || ny >= th as i32 {
+                            continue;
+                        }
+                        let v = tmax[ny as usize * tw + nx as usize];
+                        if v[0] * v[0] + v[1] * v[1] > best[0] * best[0] + best[1] * best[1] {
+                            best = v;
+                        }
+                    }
+                }
+                self.tiles[ty * tw + tx] = best;
+            }
+        }
+        // 3. Half-res reconstruction into `light` (reused as an RGB f32 buffer).
+        self.light.clear();
+        self.light.resize(bw * bh * 3, 0.0);
+        let unpack = |v: u32| (f32::from_bits(v & 0xffff_0000), (v & 0xffff) as f32 * (1.0 / 256.0));
+        let (src, vel) = (&self.blur_src, &self.vel);
+        let (wi, hi) = (bw as isize - 1, bh as isize - 1);
+        const N: usize = 8;
+        for by in 0..bh {
+            for bx in 0..bw {
+                let j = by * bw + bx;
+                let c0 = src[j];
+                let o = j * 3;
+                let mut hs = (bx as u32).wrapping_mul(0x9E37_79B1) ^ (by as u32).wrapping_mul(0x85EB_CA77);
+                hs ^= hs >> 15;
+                hs = hs.wrapping_mul(0x2C1B_3C6D);
+                let jx = ((hs >> 4) & 7) as isize - 4;
+                let jy = ((hs >> 12) & 7) as isize - 4;
+                let tx = ((bx as isize + jx).clamp(0, wi) as usize) / T;
+                let ty = ((by as isize + jy).clamp(0, hi) as usize) / T;
+                let vn = self.tiles[ty * tw + tx];
+                let ln2 = vn[0] * vn[0] + vn[1] * vn[1];
+                if ln2 < 0.25 {
+                    self.light[o] = (c0 & 255) as f32;
+                    self.light[o + 1] = ((c0 >> 8) & 255) as f32;
+                    self.light[o + 2] = ((c0 >> 16) & 255) as f32;
+                    continue;
+                }
+                let ln = crate::math::sqrtf(ln2);
+                let (zc, lc) = unpack(vel[j]);
+                let ilc = 1.0 / lc;
+                let kz = 1.0 / (0.02 * zc.abs().max(1.0));
+                let mut acc = [(c0 & 255) as f32 * ilc, ((c0 >> 8) & 255) as f32 * ilc, ((c0 >> 16) & 255) as f32 * ilc];
+                let mut tot = ilc;
+                let jit = (hs >> 8) as f32 * (1.0 / 16_777_216.0) - 0.5;
+                for k in 0..N {
+                    let half = ((k as f32 + 0.5 + jit * 0.95) / N as f32 - 0.5) * 2.0 * 0.5;
+                    let (sx, sy) = (bx as f32 + 0.5 + vn[0] * half, by as f32 + 0.5 + vn[1] * half);
+                    let m = ((sy as isize).clamp(0, hi) as usize) * bw + (sx as isize).clamp(0, wi) as usize;
+                    let (zs, ls) = unpack(vel[m]);
+                    let dist = (half * ln).abs();
+                    let ils = 1.0 / ls;
+                    let fg = ((zc - zs) * kz + 0.5).clamp(0.0, 1.0);
+                    let wgt = fg * (1.0 - dist * ils).max(0.0) + (1.0 - fg) * (1.0 - dist * ilc).max(0.0) + (10.5 - dist * 10.0 * ils).clamp(0.0, 1.0) * (10.5 - dist * 10.0 * ilc).clamp(0.0, 1.0) * 2.0;
+                    if wgt <= 0.0 {
+                        continue;
+                    }
+                    let c = src[m];
+                    acc[0] += (c & 255) as f32 * wgt;
+                    acc[1] += ((c >> 8) & 255) as f32 * wgt;
+                    acc[2] += ((c >> 16) & 255) as f32 * wgt;
+                    tot += wgt;
+                }
+                let it = 1.0 / tot;
+                self.light[o] = acc[0] * it;
+                self.light[o + 1] = acc[1] * it;
+                self.light[o + 2] = acc[2] * it;
+            }
+        }
+        // 4. Blend the bilinear-upsampled blur over the sharp frame by local speed
+        //    (sharp where still, fully blurred from ~3 px of motion).
+        // Blend factor per tile (speed in full-res px).
+        let alpha: Vec<f32> = self.tiles.iter().map(|t| ((crate::math::sqrtf(t[0] * t[0] + t[1] * t[1]) * 2.0 - 0.75) / 2.25).clamp(0.0, 1.0)).collect();
+        let lt = &self.light;
+        let span = T * 2; // tile width in full-res px
+        for y in 0..h {
+            let fy = ((y as f32 + 0.5) * 0.5 - 0.5).clamp(0.0, (bh - 1) as f32);
+            let y0 = fy as usize;
+            let y1 = (y0 + 1).min(bh - 1);
+            let ty = fy - y0 as f32;
+            let arow = &alpha[((y / 2).min(bh - 1) / T).min(th - 1) * tw..][..tw];
+            for x in 0..w {
+                let a = arow[(x / span).min(tw - 1)];
+                if a <= 0.0 {
+                    continue;
+                }
+                let fx = ((x as f32 + 0.5) * 0.5 - 0.5).clamp(0.0, (bw - 1) as f32);
+                let x0 = fx as usize;
+                let x1 = (x0 + 1).min(bw - 1);
+                let tx = fx - x0 as f32;
+                let i = y * w + x;
+                let c = self.color[i];
+                let mut out = c & 0xff00_0000;
+                for ch in 0..3 {
+                    let s = |yy: usize, xx: usize| lt[(yy * bw + xx) * 3 + ch];
+                    let top = s(y0, x0) + (s(y0, x1) - s(y0, x0)) * tx;
+                    let bot = s(y1, x0) + (s(y1, x1) - s(y1, x0)) * tx;
+                    let b = top + (bot - top) * ty;
+                    let o = ((c >> (8 * ch)) & 255) as f32;
+                    out |= (((o + (b - o) * a) + 0.5) as u32).min(255) << (8 * ch);
+                }
+                self.color[i] = out;
+            }
+        }
+    }
+}
+
 /// Light points drawn into a [`Raster`] (stars, dust, sparks): additive,
 /// depth-tested against the solid geometry already drawn, and optionally
 /// streaked along their screen motion since the previous camera.
@@ -1531,5 +1734,26 @@ mod tests {
             if blue > 150 && red < 80 && green < 80 { seen[2] = true; }
         }
         assert!(seen.iter().all(|s| *s), "{seen:?}");
+    }
+
+    #[test]
+    fn camera_motion_blur_smears_along_the_move() {
+        let mut r = Raster::new(64, 64);
+        r.clear(0, 255);
+        let mut inst = ID.to_vec();
+        inst.extend_from_slice(&[1.0, 1.0, 1.0]);
+        let mat = Material { ambient: 1.0, diffuse: 0.0, specular: 0.0, rim: 0.0, ..Material::default() };
+        r.draw(&cube(), &inst, &vp(), [0.0, 0.0, 5.0], &mat, &Lighting::default(), true);
+        let lit = |r: &Raster| r.color.iter().filter(|c| **c & 255 > 10).count();
+        let before = lit(&r);
+        // The previous camera was 1 unit to the left: the cube smears horizontally.
+        let m = mul(&perspective(45.0, 1.0, 1.0, 100.0), &look_at([-1.0, 0.0, 5.0], [-1.0, 0.0, 0.0], [0.0, 1.0, 0.0]));
+        let prev: M4 = core::array::from_fn(|i| m[i] as f32);
+        r.motion_blur(&vp(), &prev, 1.0, 40.0);
+        assert!(lit(&r) > before + 30, "{} vs {}", lit(&r), before);
+        // A static camera changes nothing.
+        let snapshot = r.color.clone();
+        r.motion_blur(&vp(), &vp(), 1.0, 40.0);
+        assert_eq!(r.color, snapshot);
     }
 }

@@ -29,6 +29,15 @@ fn main() {
     let pulse = Material { pulse: 1.2, ..Material::default() };
     let scenes: [(&str, &Mesh, &[f32], &Material); 8] = [("knot", &knot, &one, &chrome), ("knot plain", &knot, &one, &plain), ("knot metal", &knot, &one, &metal), ("knot irid", &knot, &one, &irid), ("knot lines", &knot, &one, &lines), ("knot pulse", &knot, &one, &pulse), ("900 towers", &cube, &towers, &edges), ("6000 cubes", &cube, &swarm, &plain)];
     let mut r = Raster::new(w, h);
+    {
+        let m2 = mul(&perspective(50.0, w as f64 / h as f64, 8.0, 40000.0), &look_at([300.0, 250.0, 1450.0], [0.0, -50.0, -100.0], [0.0, 1.0, 0.0]));
+        let prev: M4 = core::array::from_fn(|i| m2[i] as f32);
+        r.clear(0, 255);
+        r.draw(&cube, &towers, &vp, eye, &Material::default(), &light, true);
+        let t = Instant::now();
+        for _ in 0..5 { r.motion_blur(&vp, &prev, 0.5, 115.0); }
+        println!("motion blur {:.1} ms", t.elapsed().as_secs_f64() * 1e3 / 5.0);
+    }
     let t = Instant::now();
     for _ in 0..50 { r.clear(0x04050a, 255); }
     println!("clear {:.2} ms", t.elapsed().as_secs_f64() * 1e3 / 50.0);
