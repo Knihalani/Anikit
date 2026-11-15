@@ -490,13 +490,17 @@ function fromState(state: FlipState, options: FlipOptions = {}): Timeline {
       const dones = popped.map((x) => x.finish(p ?? null));
       const done = () => dones.forEach((d) => d());
       if (p) {
-        // Children of a timeline don't settle their own promise: hook completion.
+        // Children of a timeline don't settle their own promise when they
+        // complete: hook completion. A kill (the timeline killed, a context
+        // reverted, opacity taken over by another animation) does settle it;
+        // either way the element must not be left popped out.
         const cb = p._cb;
         const user = cb.onComplete;
         cb.onComplete = (a: Playable) => {
           done();
           user?.(a);
         };
+        p.then(done);
         tl.add(p, 0);
       } else done();
     }

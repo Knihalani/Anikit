@@ -49,6 +49,7 @@ function turnAround(el: Element): Playable | null {
   const ex = exiting.get(el);
   if (!ex) return null;
   exiting.delete(el);
+  if (ex._killed) return null; // stopped or taken over: start afresh
   ex.reverse();
   return ex;
 }
@@ -78,6 +79,11 @@ export function exit(targets: Targets, keyframes: Props = { opacity: 0 }, option
     },
   });
   for (const el of els) exiting.set(el, a);
+  // Killed or taken over before the end: the element stays, and is no
+  // longer considered on its way out.
+  a.then(() => {
+    for (const el of els) if (exiting.get(el) === a) exiting.delete(el);
+  });
   return a;
 }
 

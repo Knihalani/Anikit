@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { animate, timeline, flip, presence, enter, exit, engine, viewTransition, compositor, scroll, splitText, mixColor, gesture, transformPath } from '../src/index';
+import { animate, timeline, flip, presence, enter, exit, engine, viewTransition, compositor, scroll, splitText, mixColor, gesture, transformPath, context } from '../src/index';
 import { setup, advance, box } from './setup';
 
 beforeAll(setup);
@@ -719,5 +719,87 @@ describe('motion path alignment', () => {
     expect(el.style.transform).toBe('translate(30px,0px)');
     a.seek(0.5);
     expect(el.style.transform).toBe('translate(180px,0px)');
+  });
+});
+
+describe('leaving elements are never orphaned', () => {
+  function list(cls: string) {
+    const c = document.createElement('div');
+    c.className = cls;
+    document.body.appendChild(c);
+    const els = [0, 1].map((i) => {
+      const el = document.createElement('div');
+      el.className = 'it';
+      c.appendChild(el);
+      layout(el, { x: 0, y: i * 50, w: 100, h: 40 });
+      return el;
+    });
+    return { c, els };
+  }
+
+  it('timeline killed mid-exit', async () => {
+    const { els } = list('orph1');
+    const tl = flip('.orph1 .it', () => els[0].remove(), { duration: 1, ease: 'linear', fade: true });
+    await tick();
+    advance(0.3);
+    expect(els[0].isConnected).toBe(true);
+    tl.kill();
+    await settle();
+    expect(els[0].isConnected).toBe(false);
+    expect(els[0].getAttribute('style')).toBe(null);
+  });
+
+  it('context reverted mid-exit', async () => {
+    const { els } = list('orph2');
+    const ctx = context(() => {
+      flip('.orph2 .it', () => els[0].remove(), { duration: 1, ease: 'linear', fade: true });
+    });
+    await tick();
+    advance(0.3);
+    ctx.revert();
+    await settle();
+    expect(els[0].isConnected).toBe(false);
+    expect(els[0].getAttribute('style')).toBe(null);
+  });
+
+  it('opacity taken over by another animation', async () => {
+    const { els } = list('orph3');
+    flip('.orph3 .it', () => els[0].remove(), { duration: 1, ease: 'linear', fade: true });
+    await tick();
+    advance(0.3);
+    animate(els[0], { opacity: 1 }, { duration: 0.2 });
+    await settle();
+    expect(els[0].isConnected).toBe(false);
+  });
+
+  it('reduced motion: flip fade and presence().remove() still remove', async () => {
+    engine.reducedMotion = 'always';
+    try {
+      const { c, els } = list('orph4');
+      flip('.orph4 .it', () => els[0].remove(), { fade: true });
+      await tick();
+      advance(0.05);
+      await settle();
+      expect(els[0].isConnected).toBe(false);
+      presence(c).remove(els[1]);
+      await tick();
+      advance(0.05);
+      await settle();
+      expect(els[1].isConnected).toBe(false);
+    } finally {
+      engine.reducedMotion = 'never';
+    }
+  });
+
+  it('exit() taken over, then enter(): the element stays and enters', async () => {
+    const el = box();
+    exit(el, { opacity: [1, 0] }, { duration: 1, ease: 'linear' });
+    advance(0.3);
+    animate(el, { opacity: 1 }, { duration: 0.1 });
+    await settle();
+    enter(el, { opacity: [0, 1] }, { duration: 0.5, ease: 'linear' });
+    advance(1);
+    expect(el.isConnected).toBe(true);
+    expect(el.style.opacity).toBe('1');
   });
 });
