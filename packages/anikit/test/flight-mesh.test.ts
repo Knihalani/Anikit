@@ -119,4 +119,47 @@ describe('mesh builders', () => {
     expect(tube.triangles).toBe(39 * 6 * 2);
     expect(mesh.tube([[0, 0, 0], [0, 0, -10]]).vertices).toBe(2 * 9);
   });
+
+  it('paints the sky, casts shadows, blurs out of focus, lights with point lights', () => {
+    const W = 48, H = 48;
+    const r = renderer3d({ width: W, height: H });
+    const cam = scene3d({ width: W, height: H, camera: { x: 0, y: 300, z: 600 }, target: { x: 0, y: 0, z: 0 } });
+    const floor = { mesh: mesh.plane(), instances: instances(1, () => ({ y: -50, scale: 3000, color: [0.8, 0.8, 0.8] })), material: { specular: 0, rim: 0 } };
+    const box = { mesh: mesh.cube(), instances: instances(1, () => ({ y: 60, scale: 100, color: [0.8, 0.8, 0.8] })), material: { specular: 0, rim: 0 } };
+    const sum = (px: Uint8ClampedArray, ch = 0) => { let s = 0; for (let i = ch; i < px.length; i += 4) s += px[i]; return s; };
+    // Sky fills the background only.
+    const plain = r.render(cam, [floor, box], { background: '#000000' }).slice();
+    const sky = r.render(cam, [floor, box], { background: '#000000', skybox: true, sky: [0, 0, 1], horizon: [0, 0, 1], ground: [0, 0, 1] }).slice();
+    expect(sum(sky, 2)).toBeGreaterThan(sum(plain, 2));
+    expect(sky[(40 * W + 24) * 4]).toBe(plain[(40 * W + 24) * 4]); // floor pixel unchanged
+    // Shadows darken the floor under the box.
+    const lit = sum(r.render(cam, [floor, box], { key: [0, 1, 0] }).slice());
+    const shaded = sum(r.render(cam, [floor, box], { key: [0, 1, 0], shadows: { extent: 600, center: [0, 0, 0] } }).slice());
+    expect(shaded).toBeLessThan(lit);
+    // Point lights add coloured light.
+    const dark = { ...floor, material: { ambient: 0, diffuse: 1, specular: 0, rim: 0 } };
+    const noLight = sum(r.render(cam, [dark], { key: [0, -1, 0], fill: [0, -1, 0] }).slice(), 1);
+    const withLight = sum(r.render(cam, [dark], { key: [0, -1, 0], fill: [0, -1, 0], lights: [{ position: [0, 50, 0], color: [0, 1, 0], radius: 300, intensity: 2 }] }).slice(), 1);
+    expect(withLight).toBeGreaterThan(noLight + 1000);
+    // Depth of field lowers contrast when nothing is in focus.
+    const lines = { ...floor, material: { lines: 3, grid: [40, 40] as [number, number], lineWidth: 0.1 } };
+    const edges = (px: Uint8ClampedArray) => { let e = 0; for (let y = 0; y < H; y++) for (let x = 0; x + 1 < W; x++) e += Math.abs(px[(y * W + x) * 4] - px[(y * W + x + 1) * 4]); return e; };
+    const sharp = edges(r.render(cam, [lines], {}).slice());
+    const soft = edges(r.render(cam, [lines], { dof: { focus: 30000, aperture: 30, max: 8 } }).slice());
+    expect(sharp).toBeGreaterThan(0);
+    expect(soft).toBeLessThan(sharp);
+  });
+
+  it('applies camera motion blur only when the camera moved', () => {
+    const r = renderer3d({ width: 48, height: 48 });
+    const cam = scene3d({ width: 48, height: 48, camera: { x: 0, y: 0, z: 400 }, target: { x: 0, y: 0, z: 0 } });
+    const items = [{ mesh: mesh.cube(), instances: instances(1, () => ({ scale: 120, color: [1, 1, 1] })), material: { ambient: 1, diffuse: 0, specular: 0, rim: 0, lines: 2, grid: [4, 4] as [number, number] } }];
+    const still = r.render(cam, items, {}).slice();
+    const prevCamera = cam.viewProjection().matrix;
+    expect(Array.from(r.render(cam, items, { motionBlur: true, prevCamera }))).toEqual(Array.from(still));
+    cam.camera.x = 60; cam.target.x = 60;
+    const moved = r.render(cam, items, {}).slice();
+    const blurred = r.render(cam, items, { motionBlur: { shutter: 1 }, prevCamera }).slice();
+    expect(Array.from(blurred)).not.toEqual(Array.from(moved));
+  });
 });
