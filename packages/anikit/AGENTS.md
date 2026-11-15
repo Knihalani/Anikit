@@ -133,7 +133,7 @@ The module default-exports `async ({ anikit, node }) => composition`. Building b
 |---|---|
 | Scenes, timing | `composition({ width, height, fps, duration, motionBlur, post })`, `.scene(name, start, end, { enter, step, draw, transition, timeScale, motionBlur })`, `.cue(t, fn)` |
 | Punch | `.impact(t, { shake, flash, flashOpacity, aberration, decay })` — applied to the finished frame |
-| Film look | `post: { bloom, bloomThreshold, bloomRadius, streaks, streakLength, aberration, vignette, grain, zoomBlur, exposure, contrast, saturation, shadows, highlights }` — any value can be `(t) => …` |
+| Film look | `post: { bloom, bloomThreshold, bloomRadius, streaks, streakLength, rays, raysCenter, aberration, vignette, grain, zoomBlur, exposure, contrast, saturation, shadows, highlights }` — any value can be `(t) => …` |
 | Slow motion / bullet time | scene `timeScale: (local) => 0.1…1` — slows tweens, particles, physics together |
 | Solid 3D | `renderer3d({ width, height })`, `mesh.cube() / sphere() / torus() / torusKnot() / plane() / cylinder() / heightfield() / text() / custom()`, `instances(n, i => ({ x, y, z, rx, ry, rz, scale, sx, sy, sz, color }))`, `render(scene3d, [{ mesh, instances, material, cull, blend }], { background, fog, sky, horizon, ground, strips })` |
 | Materials that don't look plain | dark bodies + light: `{ metal: 0.9, iridescence: 0.3 }` chrome, `{ lines: 1.5, lineColor, grid: [1, 1] }` glowing edges, `{ pulse: 2, pulsePhase: t }` travelling light, `{ emissive: 1 }` neon; set `strips` for crisp chrome highlights |

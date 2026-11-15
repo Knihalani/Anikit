@@ -125,6 +125,11 @@ pub struct Post {
     /// 0.1 = fast, 0.3 = warp speed.
     pub zoom_blur: f32,
     pub zoom_center: [f32; 2],
+    /// God rays: highlights smeared radially from `rays_center` (0…1 of the
+    /// frame, e.g. a light behind the scene) over `rays_length` of the way (0…1).
+    pub rays: f32,
+    pub rays_center: [f32; 2],
+    pub rays_length: f32,
     /// Colour grade: exposure multiplier (1 = none), contrast (1 = none),
     /// saturation (1 = none), additive shadow tint and multiplicative
     /// highlight tint (0…1 per channel; zeros = none).
@@ -150,6 +155,9 @@ impl Default for Post {
             streak_tint: [0.6, 0.75, 1.0],
             zoom_blur: 0.0,
             zoom_center: [0.5, 0.5],
+            rays: 0.0,
+            rays_center: [0.5, 0.4],
+            rays_length: 0.6,
             exposure: 1.0,
             contrast: 1.0,
             saturation: 1.0,
@@ -171,6 +179,7 @@ pub struct PostFx {
     small: Vec<f32>,
     tmp: Vec<f32>,
     streak: Vec<f32>,
+    rays: Vec<f32>,
     copy: Vec<u8>,
 }
 
@@ -184,7 +193,7 @@ impl PostFx {
         if p.zoom_blur > 0.0 {
             self.zoom(rgba, w, h, p);
         }
-        let glow = p.bloom > 0.0 || p.streaks > 0.0;
+        let glow = p.bloom > 0.0 || p.streaks > 0.0 || p.rays > 0.0;
         if glow {
             self.glow(rgba, w, h, p);
         }
@@ -262,6 +271,10 @@ impl PostFx {
             }
         }
         let r = (crate::math::floorf(p.bloom_radius / 4.0 + 0.5) as usize).max(1);
+        if p.rays > 0.0 {
+            self.rays.clear();
+            self.rays.extend_from_slice(&self.small);
+        }
         if p.streaks > 0.0 {
             // Anamorphic streaks: the bright pass blurred along x only, three
             // passes (≈ gaussian) with a long radius.
@@ -277,8 +290,21 @@ impl PostFx {
             box_blur(&self.small, &mut self.tmp, sw, sh, r, true);
             box_blur(&self.tmp, &mut self.small, sw, sh, r, false);
         }
+        if p.rays > 0.0 {
+            self.god_rays(sw, sh, p);
+        }
         let (bk, st) = (p.bloom, p.streaks);
-        if st > 0.0 {
+        if p.rays > 0.0 {
+            for (v, r) in self.small.iter_mut().zip(&self.rays) {
+                *v = *v * bk + r * p.rays;
+            }
+            if st > 0.0 {
+                let tint = p.streak_tint;
+                for (i, v) in self.small.iter_mut().enumerate() {
+                    *v += self.streak[i] * st * tint[i % 3];
+                }
+            }
+        } else if st > 0.0 {
             let tint = p.streak_tint;
             for (i, v) in self.small.iter_mut().enumerate() {
                 *v = *v * bk + self.streak[i] * st * tint[i % 3];
@@ -288,6 +314,40 @@ impl PostFx {
                 *v *= bk;
             }
         }
+    }
+
+    /// Radial blur of the quarter-resolution bright pass towards the light
+    /// (`self.rays` in, rays out): 24 decaying taps per pixel, cheap at ¼ res.
+    #[allow(clippy::needless_range_loop)]
+    fn god_rays(&mut self, sw: usize, sh: usize, p: &Post) {
+        const N: usize = 24;
+        let (cx, cy) = (p.rays_center[0] * sw as f32, p.rays_center[1] * sh as f32);
+        let k = p.rays_length.clamp(0.0, 1.0) / N as f32;
+        self.tmp.resize(sw * sh * 3, 0.0);
+        let (wi, hi) = (sw as isize - 1, sh as isize - 1);
+        for y in 0..sh {
+            for x in 0..sw {
+                let (dx, dy) = ((cx - x as f32) * k, (cy - y as f32) * k);
+                let mut acc = [0.0f32; 3];
+                let mut wgt = 1.0f32;
+                let mut norm = 0.0f32;
+                for j in 0..N {
+                    let sx = ((x as f32 + dx * j as f32 + 0.5) as isize).clamp(0, wi) as usize;
+                    let sy = ((y as f32 + dy * j as f32 + 0.5) as isize).clamp(0, hi) as usize;
+                    let o = (sy * sw + sx) * 3;
+                    for c in 0..3 {
+                        acc[c] += self.rays[o + c] * wgt;
+                    }
+                    norm += wgt;
+                    wgt *= 0.96;
+                }
+                let o = (y * sw + x) * 3;
+                for c in 0..3 {
+                    self.tmp[o + c] = acc[c] / norm * 2.0;
+                }
+            }
+        }
+        core::mem::swap(&mut self.rays, &mut self.tmp);
     }
 
     /// One fused full-resolution pass, four pixels at a time in SIMD:

@@ -143,6 +143,13 @@ export interface PostOptions {
   /** Split toning: colour added to shadows, and multiplied into highlights (0–1 each, e.g. teal shadows `[0, 0.04, 0.06]`, warm highlights `[0.08, 0.02, -0.04]`). */
   shadows?: PostColor;
   highlights?: PostColor;
+  /**
+   * God rays: highlights streamed radially from `raysCenter` ([x, y] 0–1 of the frame,
+   * e.g. a light behind the city) over `raysLength` (0–1, default 0.6) of the way. Strength 0–2.
+   */
+  rays?: PostValue;
+  raysCenter?: [number, number] | ((t: number) => [number, number]);
+  raysLength?: PostValue;
 }
 
 /** A hit: camera shake, a flash frame and an aberration kick, all decaying. */
@@ -383,7 +390,8 @@ export class Composition {
       const zc = p.zoomCenter ?? [0.5, 0.5];
       const vals = [num(p.bloomThreshold, t, 0.7), num(p.bloom, t, 0), num(p.bloomRadius, t, 24), ab, num(p.vignette, t, 0), num(p.grain, t, 0),
         num(p.streaks, t, 0), num(p.streakLength, t, 160), ...col(p.streakTint, t, [0.6, 0.75, 1]), num(p.zoomBlur, t, 0), zc[0], zc[1],
-        num(p.exposure, t, 1), num(p.contrast, t, 1), num(p.saturation, t, 1), ...col(p.shadows, t, [0, 0, 0]), ...col(p.highlights, t, [0, 0, 0])];
+        num(p.exposure, t, 1), num(p.contrast, t, 1), num(p.saturation, t, 1), ...col(p.shadows, t, [0, 0, 0]), ...col(p.highlights, t, [0, 0, 0]),
+        num(p.rays, t, 0), ...(typeof p.raysCenter === 'function' ? p.raysCenter(t) : p.raysCenter ?? [0.5, 0.4]), num(p.raysLength, t, 0.6)];
       const at = f64Buf(vals.length);
       F64.set(vals, at);
       fb.post(f, vals.length);
