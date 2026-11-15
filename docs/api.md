@@ -168,6 +168,23 @@ const state = flip.capture('.item'); reorder(); flip.from(state, { duration: 0.4
 - `scale: false` animates position only. With scale on, `border-radius` is counter-scaled every frame so corners don't stretch (`correctRadius: false` to skip it).
 - Layout is read once for all elements (transforms off, measure, transforms back) rather than once per element.
 
+## Presence: enter and exit
+
+The DOM has no "about to be removed" phase. These helpers animate first and remove afterwards, and cope with an element coming back halfway through its exit.
+
+```ts
+exit('.toast', { opacity: 0, y: 20 }, { duration: 0.3 });  // animate out, then remove (after: 'hide' sets `hidden` instead)
+enter('.panel', { opacity: [0, 1], y: [12, 0] });            // un-hide and animate in; turns a running exit() around
+
+const list = presence('#todos', { enter: { opacity: [0, 1], y: [-8, 0] }, exit: { opacity: 0, scale: 0.9 }, duration: 0.3 });
+list.add(item);                         // insert (at the end, or before a node) and animate in
+list.remove(item);                      // animate out, then remove
+list.toggle(item, false);               // same, but keep it in the DOM with `hidden`
+await list.replace(oldView, newView, { mode: 'wait' });  // 'sync' (default) runs both at once
+```
+
+With `layout: true` (the default) siblings slide into their new places through `flip()`, and a leaving child leaves the flow at once, pinned where it was while it animates out. With `layout: false` a leaving child stays in the flow until it's removed. Adding a child that is still animating out turns it around from where it is. Reduced motion skips the animations but still inserts and removes.
+
 ## Engine
 
 `engine.manual(true)` with `engine.tick(ms)` drives the engine yourself (tests, video export). Also available:

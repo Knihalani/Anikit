@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { animate, timeline, flip } from '../src/index';
+import { animate, timeline, flip, presence, enter, exit, engine } from '../src/index';
 import { setup, advance, box } from './setup';
 
 beforeAll(setup);
@@ -203,5 +203,94 @@ describe('flip', () => {
     await tick();
     advance(1.1);
     expect(modal.style.transform).toBe('none');
+  });
+});
+
+describe('presence', () => {
+  it('exit() animates out then removes; enter() turns a running exit around', async () => {
+    const a = box();
+    exit(a, { opacity: 0 }, { duration: 1, ease: 'linear' });
+    advance(1.1);
+    expect(a.isConnected).toBe(false);
+
+    const b = box();
+    exit(b, { opacity: [1, 0] }, { duration: 1, ease: 'linear' });
+    advance(0.5);
+    enter(b);
+    advance(1.1);
+    expect(b.isConnected).toBe(true);
+    expect(b.style.opacity).toBe('1');
+  });
+
+  it('honours reduced motion (still removes)', () => {
+    engine.reducedMotion = 'always';
+    try {
+      const a = box();
+      exit(a, { opacity: 0 });
+      advance(0.05);
+      expect(a.isConnected).toBe(false);
+    } finally {
+      engine.reducedMotion = 'never';
+    }
+  });
+
+  it('adds and removes children without layout animation', () => {
+    const c = box();
+    const p = presence(c, { layout: false, duration: 1, ease: 'linear', exit: { opacity: [1, 0] } });
+    const a = document.createElement('div');
+    p.add(a);
+    expect(a.parentNode).toBe(c);
+    expect(a.style.opacity).toBe('0');
+    advance(1.1);
+    expect(a.style.opacity).toBe('1');
+    p.remove(a);
+    advance(0.5);
+    expect(a.isConnected).toBe(true);
+    advance(0.6);
+    expect(a.isConnected).toBe(false);
+    p.toggle(a, true);
+    expect(a.parentNode).toBe(c);
+  });
+
+  it('removes with siblings sliding up, and takes an element back mid-exit', async () => {
+    const c = box();
+    const els = [0, 1, 2].map((i) => {
+      const el = document.createElement('div');
+      c.appendChild(el);
+      return el;
+    });
+    const boxes = els.map((el, i) => layout(el, { x: 0, y: i * 50, w: 100, h: 40 }));
+    const p = presence(c, { duration: 1, ease: 'linear' });
+    p.remove(els[1]);
+    boxes[2].y = 50;
+    // (the stub's layout is static: move the last box by hand to mimic reflow)
+    await tick();
+    advance(0.5);
+    expect(els[1].isConnected).toBe(true);
+    expect(els[1].style.position).toBe('absolute');
+    p.add(els[1], els[2]);
+    expect(els[1].style.position).toBe('');
+    await tick();
+    advance(1.1);
+    expect(els[1].isConnected).toBe(true);
+    expect(els[1].style.opacity).toBe('1');
+  });
+
+  it("replace() with mode 'wait' exits before entering", async () => {
+    const c = box();
+    const a = document.createElement('div');
+    c.appendChild(a);
+    const b = document.createElement('div');
+    const p = presence(c, { layout: false, duration: 0.5, ease: 'linear' });
+    const done = p.replace(a, b, { mode: 'wait' });
+    advance(0.25);
+    expect(b.isConnected).toBe(false);
+    advance(0.3);
+    await settle();
+    expect(a.isConnected).toBe(false);
+    expect(b.parentNode).toBe(c);
+    advance(0.6);
+    await done;
+    expect(b.style.opacity).toBe('1');
   });
 });
