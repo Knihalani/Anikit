@@ -51,6 +51,8 @@ struct State {
     worlds: Vec<Option<anikit_core::world::World>>,
     projectors: Vec<Option<anikit_core::space::Projector>>,
     points: Vec<Vec<f32>>,
+    clouds: Vec<Option<anikit_core::cloud::Cloud>>,
+    splats: Vec<Option<anikit_core::splat::Splat>>,
 }
 
 struct Global(UnsafeCell<State>);
@@ -68,6 +70,8 @@ static STATE: Global = Global(UnsafeCell::new(State {
     worlds: Vec::new(),
     projectors: Vec::new(),
     points: Vec::new(),
+    clouds: Vec::new(),
+    splats: Vec::new(),
 }));
 
 #[inline(always)]
@@ -1222,7 +1226,7 @@ pub extern "C" fn ak_projector_points(id: u32, len: u32) -> *mut f32 {
         None => core::ptr::null_mut(),
     }
 }
-/// Project points. `source`: 0 = batch `handle`, 1 = the projector's own points.
+/// Project points. `source`: 0 = batch `handle`, 1 = the projector's own points, 2 = cloud `handle`.
 /// f64 buffer: `[model * 16, viewProj * 16]`. Returns the `[sx, sy, depth, scale] * n` f32 address.
 #[no_mangle]
 #[allow(clippy::too_many_arguments)]
@@ -1239,6 +1243,11 @@ pub extern "C" fn ak_project(id: u32, source: u32, handle: u32, stride: u32, ox:
         match s.engine.batch_values(handle) {
             Ok(v) => v,
             Err(_) => return core::ptr::null(),
+        }
+    } else if source == 2 {
+        match s.clouds.get(handle as usize) {
+            Some(Some(c)) => &c.pos,
+            _ => return core::ptr::null(),
         }
     } else {
         match s.points.get(id as usize) {
@@ -1331,5 +1340,163 @@ pub extern "C" fn ak_gif_free(id: u32) {
         s.enc = None;
         s.frame = Vec::new();
         s.done = Vec::new();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Point clouds + additive splat rendering
+// ---------------------------------------------------------------------------
+
+fn cloud(id: u32) -> Option<&'static mut anikit_core::cloud::Cloud> {
+    st().clouds.get_mut(id as usize).and_then(|c| c.as_mut())
+}
+
+#[no_mangle]
+pub extern "C" fn ak_cloud_create(n: u32, shapes: u32, seed: u32) -> u32 {
+    let s = st();
+    let c = anikit_core::cloud::Cloud::new(n as usize, shapes as usize, seed);
+    if let Some(i) = s.clouds.iter().position(|c| c.is_none()) {
+        s.clouds[i] = Some(c);
+        return i as u32;
+    }
+    s.clouds.push(Some(c));
+    (s.clouds.len() - 1) as u32
+}
+#[no_mangle]
+pub extern "C" fn ak_cloud_free(id: u32) {
+    if let Some(c) = st().clouds.get_mut(id as usize) {
+        *c = None;
+    }
+}
+/// Writable `[x, y, z] * n` storage for shape `k`.
+#[no_mangle]
+pub extern "C" fn ak_cloud_shape(id: u32, k: u32) -> *mut f32 {
+    cloud(id).map(|c| c.shape_mut(k as usize).as_mut_ptr()).unwrap_or(core::ptr::null_mut())
+}
+#[no_mangle]
+pub extern "C" fn ak_cloud_snap(id: u32, k: u32) {
+    if let Some(c) = cloud(id) {
+        c.snap(k as usize);
+    }
+}
+/// f64 buffer: `[stiffness, damping, spread, noise, swirl, frequency]`.
+#[no_mangle]
+pub extern "C" fn ak_cloud_params(id: u32) {
+    let b = &st().f64_buf;
+    if b.len() < 6 {
+        return;
+    }
+    let p = anikit_core::cloud::CloudParams {
+        stiffness: b[0] as f32,
+        damping: b[1] as f32,
+        spread: b[2] as f32,
+        noise: b[3] as f32,
+        swirl: b[4] as f32,
+        frequency: b[5] as f32,
+    };
+    if let Some(c) = cloud(id) {
+        c.params = p;
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_cloud_step(id: u32, dt: f64, from: u32, to: u32, mix: f64) -> *const f32 {
+    match cloud(id) {
+        Some(c) => {
+            c.step(dt as f32, from as usize, to as usize, mix as f32);
+            c.pos.as_ptr()
+        }
+        None => core::ptr::null(),
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_cloud_ptr(id: u32) -> *const f32 {
+    cloud(id).map(|c| c.pos.as_ptr()).unwrap_or(core::ptr::null())
+}
+#[no_mangle]
+pub extern "C" fn ak_cloud_explode(id: u32, x: f64, y: f64, z: f64, strength: f64) {
+    if let Some(c) = cloud(id) {
+        c.explode(x as f32, y as f32, z as f32, strength as f32);
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_cloud_speed(id: u32) -> f64 {
+    cloud(id).map(|c| c.mean_speed() as f64).unwrap_or(0.0)
+}
+
+fn splat(id: u32) -> Option<&'static mut anikit_core::splat::Splat> {
+    st().splats.get_mut(id as usize).and_then(|c| c.as_mut())
+}
+#[no_mangle]
+pub extern "C" fn ak_splat_create(w: u32, h: u32) -> u32 {
+    let s = st();
+    let sp = anikit_core::splat::Splat::new(w as usize, h as usize);
+    if let Some(i) = s.splats.iter().position(|c| c.is_none()) {
+        s.splats[i] = Some(sp);
+        return i as u32;
+    }
+    s.splats.push(Some(sp));
+    (s.splats.len() - 1) as u32
+}
+#[no_mangle]
+pub extern "C" fn ak_splat_free(id: u32) {
+    if let Some(c) = st().splats.get_mut(id as usize) {
+        *c = None;
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_splat_resize(id: u32, w: u32, h: u32) {
+    if let Some(sp) = splat(id) {
+        sp.resize(w as usize, h as usize);
+    }
+}
+/// Writable per-point linear RGB storage (`n * 3` f32).
+#[no_mangle]
+pub extern "C" fn ak_splat_colors(id: u32, n: u32) -> *mut f32 {
+    match splat(id) {
+        Some(sp) => {
+            sp.colors.resize(n as usize * 3, 1.0);
+            sp.colors.as_mut_ptr()
+        }
+        None => core::ptr::null_mut(),
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_splat_fade(id: u32, k: f64) {
+    if let Some(sp) = splat(id) {
+        sp.fade(k as f32);
+    }
+}
+/// Splat the last projection of projector `pid`.
+/// f64 buffer: `[size, intensity, fogNear, fogFar, scale, lensX, lensY, lensR, lensStrength, maxRadius]`.
+#[no_mangle]
+pub extern "C" fn ak_splat_draw(id: u32, pid: u32, n: u32) {
+    let s = st();
+    if s.f64_buf.len() < 10 {
+        return;
+    }
+    let b = &s.f64_buf;
+    let p = anikit_core::splat::SplatParams {
+        size: b[0] as f32,
+        intensity: b[1] as f32,
+        fog_near: b[2] as f32,
+        fog_far: if b[3] > 0.0 { b[3] as f32 } else { f32::INFINITY },
+        scale: b[4] as f32,
+        lens: [b[5] as f32, b[6] as f32, b[7] as f32, b[8] as f32],
+        max_radius: b[9] as f32,
+    };
+    let Some(Some(proj)) = s.projectors.get(pid as usize) else { return };
+    let Some(Some(sp)) = s.splats.get_mut(id as usize) else { return };
+    sp.draw(&proj.out, n as usize, &p);
+}
+/// Tone-map, then keep `keep` of the light for the next frame (trails; 0
+/// clears). Returns the RGBA pixel address (`w * h * 4` bytes).
+#[no_mangle]
+pub extern "C" fn ak_splat_resolve(id: u32, exposure: f64, bg: u32, keep: f64) -> *const u8 {
+    match splat(id) {
+        Some(sp) => {
+            sp.resolve_fade(exposure as f32, bg, keep as f32);
+            sp.rgba.as_ptr() as *const u8
+        }
+        None => core::ptr::null(),
     }
 }

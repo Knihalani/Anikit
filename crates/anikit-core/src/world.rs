@@ -15,11 +15,11 @@ use alloc::vec::Vec;
 
 #[inline(always)]
 fn sqrtf(x: f32) -> f32 {
-    libm::sqrtf(x)
+    crate::math::sqrtf(x)
 }
 #[inline(always)]
 fn floorf(x: f32) -> f32 {
-    libm::floorf(x)
+    crate::math::floorf(x)
 }
 
 /// A distance constraint between two bodies.

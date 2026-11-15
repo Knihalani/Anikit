@@ -1,14 +1,23 @@
 # Anikit
 
-**A web animation engine with a Rust core.** One `no_std` Rust engine for timing, easing, springs, colours, paths, morphing and timelines. It compiles to WebAssembly for the browser (TypeScript API) and to a native extension for Python.
+**A web animation engine with a Rust core.** One `no_std` Rust engine for timing, easing, springs, colours, paths, morphing, timelines, 2D physics, 3D maths, particle clouds and GIF encoding. It compiles to WebAssembly for the browser (TypeScript API) and to a native extension for Python.
+
+The landing page in [`site/`](site/) is built entirely with Anikit: 140,000 particles flow behind the page from shape to shape as you scroll, every word can be dropped into a physics world, and holding Space slows the whole engine down.
 
 ```ts
-import { animate, timeline, stagger, spring, scroll, splitText, star } from 'anikit';
+import { animate, timeline, stagger, spring, scroll, splitText, star, world, pointCloud, textPoints, glow, scene3d, engine, record } from 'anikit';
 
 animate('.card', { y: [40, 0], opacity: [0, 1] }, { delay: stagger(0.05), ease: 'spring(bounce: 0.3)' });
 animate('path', { d: star(50, 50, 5, 45, 20) }, { duration: 0.8, ease: 'inOutCubic' }); // shape morph
 spring(ball, { x: 300, y: 120 }, { stiffness: 300, damping: 22 });                      // retargetable physics
 scroll(animate('.progress', { scaleX: [0, 1] }, { ease: 'linear' }));                   // scroll-linked
+
+const w = world({ container: '#stage' });                 // 2D physics in WebAssembly
+w.bind('.letter', { rotate: true }); w.dragging();
+const cloud = pointCloud(150_000, { shapes: [textPoints('hello', 150_000), (i) => [i % 400, i % 300, 0]] });
+const g = glow('#bg'), scene = scene3d();
+engine.onFrame(() => g.render(scene, cloud));             // particles → light, in the core
+await record('#hero', { duration: 2 });                   // frame-exact GIF
 ```
 
 ```python
@@ -26,7 +35,7 @@ for frame, t in anikit.render(fps=60):
 
 | Layer | What it does |
 |---|---|
-| **`crates/anikit-core`** (Rust, `no_std`, `#![forbid(unsafe_code)]`) | The engine: WAAPI‑compatible timing, 40+ easings and every common easing syntax, closed‑form springs, inertia, CSS Color 4 parsing with OKLab/OKLCH interpolation, SVG path geometry, shape morphing, stagger, timelines, events. |
+| **`crates/anikit-core`** (Rust, `no_std`, `#![forbid(unsafe_code)]`) | The engine: WAAPI‑compatible timing, 40+ easings and every common easing syntax, closed‑form springs, inertia, CSS Color 4 parsing with OKLab/OKLCH interpolation, SVG path geometry, shape morphing, stagger, timelines, events. Plus a PBD physics world, 3D transform maths and projection, point clouds, an additive splat renderer and a GIF encoder. |
 | **`crates/anikit-wasm`** | A raw C‑ABI WebAssembly build with **no wasm‑bindgen glue**. Inputs go through a scratch buffer; outputs are read **zero‑copy** from linear memory. A frame costs **one** host→WASM call no matter how many animations are running. |
 | **`packages/anikit`** (TypeScript) | The DOM layer: per‑element transform composition, one style write per element per frame, dirty‑only updates, property ownership (auto‑overwrite), and a monomorphic binding loop the JIT can inline. |
 | **`crates/anikit-py`** (PyO3) | Python bindings and an idiomatic high‑level API over the same engine. Exports to CSS `@keyframes` and WAAPI. |
@@ -87,6 +96,14 @@ Memory safety comes from Rust (the only `unsafe` is the single‑threaded static
   - `toCSS()` bakes any animation into native `@keyframes`;
   - `inspector()` is a dev panel for scrubbing animations.
 - **Noise and geometry:** seeded simplex noise and fBm (`noise2`, `noise3`, `fbm`, `wander`). Paths can be trimmed, smoothed through points, simplified, flattened and measured for area, and you can find the closest point on a path.
+- **Physics worlds:** `world()` is a 2D rigid‑circle solver in WebAssembly: sub‑stepped position‑based dynamics, a sorted‑grid broad phase, restitution and friction, ropes, cloth with tearing, static boxes from elements, attractors, pointer forces, picking and drag‑to‑throw. DOM elements can be bodies (`bind()`), or draw thousands of bodies to a canvas.
+- **3D:**
+  - `transform` lists interpolate exactly like browsers do: decomposition, quaternion slerp, recomposition, all in the core;
+  - `scene3d()` projects and radix‑sorts point sets in WebAssembly, with an orbit camera; `tilt()` gives spring‑driven pointer tilt.
+- **Point clouds and glow:** `pointCloud()` simulates hundreds of thousands of particles, each spring‑following a blend between target shapes through a turbulence field. `glow()` renders them as additive light directly into pixels (bilinear splats, bokeh, fog, a pointer lens, trails, tone mapping), with adaptive resolution to hold a frame budget. `textPoints()` samples shapes from text.
+- **Capture:** `screenshot()` and `record()` produce frame‑exact GIF, WebM or PNG frames of any element or canvas, with GIFs encoded in the core. The `anikit-record` CLI records any page headlessly to GIF, MP4, WebM or PNG.
+- **Built for agents (and humans):** `engine.inspect()` returns live JSON of everything running; `testing` gives fake time, `advance()`, `finishAll()` and warning capture; warnings carry "did you mean" suggestions; `AGENTS.md` files and generated `llms.txt` / `llms-full.txt` describe the repo and the API for coding agents.
+- **One clock:** `engine.speed` slows tweens, springs, physics worlds, particle clouds and `onFrame` callbacks together.
 - **Utilities:**
   - `ease()`, `easing()`, `cssEasing()`, `mixColor()`, `parseColor()`;
   - `stagger()` (1D/2D grid, any origin, eased spread, seeded random);
@@ -119,6 +136,31 @@ The optimizations behind these numbers were all measured, not assumed:
 - a polynomial `pow` for the sRGB transfer function (error under 1e‑7);
 - an O(1) `group_add`.
 
+**Against alternatives.** These are where moving work into WebAssembly pays off. Each row comes from a script in `packages/anikit/scripts/`, run on the same VM.
+
+| Workload | Anikit | Alternative | Speed‑up | Script |
+|---|---:|---:|---:|---|
+| 2D physics, 250 colliding bodies, per step | 0.09 ms | matter.js 3.9–5.4 ms | 43–60× | `bench-physics.mjs` |
+| 2D physics, 1,000 bodies | 0.28–0.47 ms | matter.js 7.2–7.4 ms | 16–26× | 〃 |
+| 2D physics, 5,000 bodies | 1.3 ms | matter.js 11.3–11.9 ms | ~9× | 〃 |
+| 3D project + depth sort, 100k points | 3.2 ms | optimised plain JS 35.6 ms | 11× | `bench-3d.mjs` |
+| 3D project + depth sort, 500k points | 13.8 ms | plain JS 217 ms | 16× | 〃 |
+| 2,000 animated DOM elements, real Chromium | 56–59 fps | GSAP 26–27 fps | ~2.2× fps | `bench-dom.mjs` |
+
+Physics numbers vary between runs at small sizes (matter.js's per‑step overhead dominates there), so ranges are shown. In the DOM benchmark at 5,000 elements Anikit ran at 26–32 fps against GSAP's 19, and Motion was 3–5× slower than both. Most of a DOM frame is the browser's own style, layout and paint work, which no library can skip; Anikit wins by doing less JS and skipping unchanged writes.
+
+**Particles** (`bench-cloud.mjs`, Chromium). Per frame: simulation, projection, splat, tone map and `putImageData` at 1080×675. Every row is lit in this test, which is the worst case; sparse shapes skip empty rows.
+
+| Particles | Simulate | Render | Total |
+|---:|---:|---:|---:|
+| 50,000 | 0.6 ms | 8.4 ms | 9.0 ms |
+| 150,000 | 2.1 ms | 11.4 ms | 13.4 ms |
+| 300,000 | 4.7 ms | 16.5 ms | 21.2 ms |
+
+On this VM the tone‑map pass is memory‑bandwidth bound (the same loop runs in ~3 ms natively here). Desktop machines with more memory bandwidth are faster, and `glow({ budget })` lowers the resolution automatically where they aren't.
+
+One fix sped up everything that uses square roots or floors: libm's `sqrt`/`floor` compile to software routines on `wasm32` unless nightly‑only features are enabled. The core now calls the stable SIMD intrinsics on one lane, which lower to the native instructions. The particle simulation became 3.4× faster, and the physics speed‑up over matter.js went from 7–27× to 9–44× (up to 60×) in the same benchmark.
+
 **End to end in Node** (`cd packages/anikit && npm run bench`). This is WASM core plus the JS write path, compared with GSAP 3 animating the same plain objects:
 
 | Case | N | Anikit | GSAP 3 |
@@ -132,17 +174,19 @@ These results are mixed, and the reasons matter:
 - **Writing a property onto a JS object costs the same for every library.** A good JIT is already close to the hardware limit there. Anikit's per‑object bookkeeping (core handle → record → bindings) currently makes plain‑object tweening **2–3× slower than GSAP** in this synthetic test. With DOM targets, the style writes, style recalc and paint dominate a frame, so this difference is a small share of real frame time.
 - **The architecture wins when JS stops touching every object.** `batch()` is ~6× faster than GSAP animating equivalent objects. The heavy‑math features (OKLab colour, morphing, exact springs, long timelines) run in WASM at native‑like speed, and `compositor()` moves work off the main thread entirely.
 
-Bundle sizes: the default entry embeds the WASM module (zero config, 148 KB gz in total). `anikit/lean` is **31 KB gz of JS** that streams a separate **88 KB gz** `.wasm`, which is cacheable and compiles while it downloads. The JS side is ES modules marked side‑effect free, so bundlers drop the features you don't import (scroll, interaction, effects, inspector, …).
+Bundle sizes: the default entry embeds the WASM module (zero config, 214 KB gz in total). `anikit/lean` is **41 KB gz of JS** that streams a separate **129 KB gz** `.wasm`, which is cacheable and compiles while it downloads. The JS side is ES modules marked side‑effect free, so bundlers drop the features you don't import (scroll, interaction, effects, inspector, …).
 
 ## Repository layout
 
 ```
-crates/anikit-core   Rust engine (no_std) + tests + examples/bench.rs
+crates/anikit-core   Rust engine (no_std) + tests + examples/ (bench, physics_bench, cloud_bench)
 crates/anikit-wasm   WebAssembly C-ABI shim (no_std, dlmalloc)
 crates/anikit-py     Python package (PyO3 + maturin), tests, README
-packages/anikit      TypeScript package: src/, test/ (vitest + happy-dom), scripts/
-examples/            Browser demo (examples/index.html)
+packages/anikit      TypeScript package: src/, test/ (vitest + happy-dom), scripts/ (build, benchmarks), bin/anikit-record
+site/                The landing page (built with Anikit)
+examples/            Browser demos (examples/index.html, examples/scroll.html)
 docs/                API reference
+AGENTS.md, llms.txt  Guides for coding agents
 ```
 
 ## Building and testing
@@ -161,7 +205,9 @@ cd packages/anikit && npm install && npm test && npm run build
 cd crates/anikit-py && python -m venv .venv && . .venv/bin/activate && pip install maturin pytest && maturin develop --release && pytest
 ```
 
-To see the demos, build the TS package and serve the repo root (for example `python -m http.server`). `/examples/` shows the core features and `/examples/scroll.html` the scroll and interaction suite.
+To see the demos, build the TS package and serve the repo root (for example `python -m http.server`). `/site/` is the landing page, `/examples/` shows the core features and `/examples/scroll.html` the scroll and interaction suite.
+
+Benchmarks: `npm run bench`, `npm run bench:physics`, `npm run bench:3d`, `npm run bench:dom`, `npm run bench:cloud` (in `packages/anikit`) and `cargo run --release -p anikit-core --example bench` / `physics_bench` / `cloud_bench`.
 
 ## Status and limitations
 
@@ -169,7 +215,8 @@ This is v0.1 and the API may still change.
 
 - **Repeats skipped in one frame:** if a large frame skips several iterations, one `REPEAT` event is reported, not one per iteration.
 - **Handle reuse:** generation counters are 12‑bit, so a handle held through more than 4,096 reuses of the same slot could alias.
-- **Morph keyframes:** shape morphs interpolate between two shapes. For more, chain tweens in a timeline.
+- **Physics shapes:** `world()` bodies are circles. Boxes are static colliders; rigid shapes are built from circles held by constraints (the landing page's "gravity" words work this way).
+- **Glow rendering is on the CPU:** `glow()` is WebAssembly writing pixels, not WebGL. It's fast because it's simple, but very large canvases at full resolution are memory‑bandwidth bound; use `resolution` / `budget`. For millions of points per frame, hand `cloud.positions` or `batch.data` to WebGL instead.
 - **Compositor mode:** `compositor()` needs `linear()` easing support to run springs on the compositor (Chrome 113+, Firefox 112+, Safari 17.2+). Otherwise it falls back to `ease-out`.
 - **Path queries:** `MotionPath.closest()` is as precise as the path's arc‑length lookup table, typically within about 0.05 units.
 - **Pinning:** `scrollTrigger` pinning uses `position: fixed` for the page and a counter‑transform inside scrolling containers. Pinned elements inside transformed ancestors behave like `fixed` elements always do in CSS, relative to the transformed ancestor.

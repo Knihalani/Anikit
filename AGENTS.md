@@ -6,7 +6,7 @@ Anikit is an animation engine: a `no_std` Rust core compiled to WebAssembly (Typ
 
 | Path | What | Verify with |
 |---|---|---|
-| `crates/anikit-core` | Engine: timing, easing, springs, colour, paths, morph, timelines, batches, physics `world`, 3D `space`, noise | `cargo test -p anikit-core` · `cargo clippy -p anikit-core -- -D warnings` |
+| `crates/anikit-core` | Engine: timing, easing, springs, colour, paths, morph, timelines, batches, physics `world`, 3D `space`, particle `cloud`, `splat` renderer, `gif` encoder, noise | `cargo test -p anikit-core` · `cargo clippy -p anikit-core -- -D warnings` |
 | `crates/anikit-wasm` | C‑ABI WebAssembly shim (`ak_*` exports, no wasm‑bindgen). Inputs go through a scratch buffer; outputs are read from linear memory. | `cargo clippy -p anikit-wasm -- -D warnings` |
 | `packages/anikit` | TypeScript API + DOM layer (`src/`), vitest + happy‑dom tests (`test/`), build and bench scripts | `npm test` · `npx tsc --noEmit` · `node scripts/build.mjs` |
 | `crates/anikit-py` | PyO3 bindings + high‑level Python API | `. .venv/bin/activate && maturin develop --release && pytest` |
@@ -38,6 +38,12 @@ Anikit is an animation engine: a `no_std` Rust core compiled to WebAssembly (Typ
   - every new controller must be registered with `track()` (see `context.ts`) and implement `revert()`/`kill()`.
 - **Scratch buffer:** don't call user code (functions passed as values, `stagger()` and so on) between reserving the f64 scratch buffer and the `ak_*` call that consumes it. Resolve user inputs first. This was a real bug in `batch()`.
 - **Honesty:** benchmark claims in `README.md` must come from the scripts in `packages/anikit/scripts/`.
+- **Maths on wasm:** use `crate::math::{sqrt, sqrtf, floor, floorf, ceil, ceilf}`, never `libm::sqrt*`/`floor*`/`ceil*` directly. On wasm32, libm's versions are *software* routines unless nightly features are on; `math.rs` routes them to the hardware instructions. Check with `wasm-dis dist/anikit.wasm | grep -c f32.sqrt` (should be non-zero).
+- **Pixel loops:** keep them branch-free over planar `f32` slices so LLVM vectorises them (`f32x4` on wasm), and keep decaying values out of denormal range (subtract a small floor). Denormals made one loop ~100× slower.
+
+## Benchmarks
+
+`packages/anikit/scripts/`: `bench.mjs` (Node, vs GSAP on objects), `bench-dom.mjs` (Chromium, DOM vs GSAP/Motion), `bench-physics.mjs` (vs matter.js), `bench-3d.mjs` (projection vs plain JS), `bench-cloud.mjs` (point cloud + glow in Chromium). Native: `cargo run --release -p anikit-core --example bench|physics_bench|cloud_bench`. V8 tiers WebAssembly up lazily, so warm up (100+ iterations) before timing.
 
 ## Debugging tips
 

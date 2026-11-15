@@ -19,6 +19,7 @@ extern crate alloc;
 extern crate std;
 
 pub mod bezier;
+pub mod cloud;
 pub mod color;
 pub mod css;
 pub mod easing;
@@ -29,6 +30,7 @@ pub mod morph;
 pub mod noise;
 pub mod path;
 pub mod space;
+pub mod splat;
 pub mod spring;
 pub mod stagger;
 pub mod timing;

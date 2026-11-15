@@ -50,6 +50,8 @@ export { inspector } from './inspector';
 export type { InspectorOptions } from './inspector';
 export { world, World } from './world';
 export type { WorldOptions, BodyInit } from './world';
+export { pointCloud, PointCloud, textPoints, glow, Glow } from './cloud';
+export type { CloudOptions, ShapeInput, GlowOptions, GlowRenderOptions } from './cloud';
 export { scene3d, Scene3D, tilt, parseTransform, toMatrix3d, mixTransforms } from './scene';
 export type { SceneOptions, Projection, DrawOptions, TiltOptions, Vec3, Matrix } from './scene';
 export { testing } from './testing';

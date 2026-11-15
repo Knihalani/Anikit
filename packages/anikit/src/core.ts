@@ -165,12 +165,17 @@ function loop(ts: number): void {
 
 let pendingWake = false;
 
+let rate = 1;
+
 function step(dt: number): void {
   const w = core();
-  clock += dt;
   w.ak_tick(dt);
+  // Frame callbacks (worlds, clouds, user loops) see engine time, so
+  // `engine.speed` slows everything down together.
+  const sdt = dt * rate;
+  clock += sdt;
   flush();
-  if (frameCallbacks.size) for (const cb of frameCallbacks) cb(clock, dt);
+  if (frameCallbacks.size) for (const cb of frameCallbacks) cb(clock, sdt);
 }
 
 /** Make sure the frame loop is running (no-op in manual mode). */
@@ -221,9 +226,16 @@ export const engine = {
   tick(ms = 1000 / 60): void {
     step(ms);
   },
-  /** Global time scale (1 = normal, 0.5 = slow motion). */
+  /**
+   * Global time scale (1 = normal, 0.1 = bullet time). Applies to every
+   * animation, physics world, point cloud and `onFrame` callback's `dt`.
+   */
   set speed(r: number) {
-    whenReady(() => core().ak_set_global_rate(r));
+    rate = Math.max(0, r);
+    whenReady(() => core().ak_set_global_rate(rate));
+  },
+  get speed(): number {
+    return rate;
   },
   /**
    * Treat frame gaps above `threshold` ms (tab switch, debugger) as `adjusted`
@@ -236,7 +248,10 @@ export const engine = {
   set fps(v: number) {
     maxFps = v > 0 ? v : 0;
   },
-  /** Run `cb(time, dt)` every frame after animations are applied. Returns an unsubscribe fn. */
+  /**
+   * Run `cb(time, dt)` every frame after animations are applied (`dt` in ms,
+   * scaled by `engine.speed`). Returns an unsubscribe fn.
+   */
   onFrame(cb: FrameCallback): () => void {
     frameCallbacks.add(cb);
     wake();

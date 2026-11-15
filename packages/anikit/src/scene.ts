@@ -15,6 +15,7 @@
 import { core, writeStr, F64, f64Buf, views, W } from './wasm';
 import { engine } from './core';
 import { Batch } from './batch';
+import { PointCloud } from './cloud';
 import { spring, inertia } from './spring';
 import { Targets, toTargets, stateOf, markDirty } from './props';
 import { VelocityTracker } from './utils';
@@ -93,6 +94,8 @@ export interface DrawOptions {
   channels?: [string, string, string];
   /** Draw squares (faster) instead of circles. */
   squares?: boolean;
+  /** Overall opacity multiplier (default 1). */
+  opacity?: number;
 }
 
 export class Scene3D {
@@ -109,6 +112,10 @@ export class Scene3D {
   width: number;
   height: number;
   private pid: number;
+  /** @internal */
+  get _pid(): number {
+    return this.pid;
+  }
   private ownLen = 0;
   private offs: Array<() => void> = [];
 
@@ -157,7 +164,7 @@ export class Scene3D {
    * Project a batch (channels x/y/z) or a flat `[x, y, z, …]` array. Runs
    * entirely in the core; returns zero-copy views valid until the next call.
    */
-  project(source: Batch | ArrayLike<number>, o: { channels?: [string, string, string]; sort?: boolean } = {}): Projection {
+  project(source: Batch | PointCloud | ArrayLike<number>, o: { channels?: [string, string, string]; sort?: boolean } = {}): Projection {
     const w = core();
     const mats = this.matrices();
     let n: number;
@@ -172,6 +179,10 @@ export class Scene3D {
       handle = source._h;
       stride = source.stride;
       offs = [source.channels[cx] ?? 0, source.channels[cy] ?? 1, source.channels[cz] ?? 2];
+    } else if (source instanceof PointCloud) {
+      n = source.count;
+      src = 2;
+      handle = source._h;
     } else {
       n = Math.floor(source.length / 3);
       src = 1;
@@ -191,7 +202,7 @@ export class Scene3D {
   }
 
   /** Project and draw points on the scene's canvas (sorted, size by depth, fog). */
-  draw(source: Batch | ArrayLike<number>, o: DrawOptions = {}): Projection {
+  draw(source: Batch | PointCloud | ArrayLike<number>, o: DrawOptions = {}): Projection {
     const proj = this.project(source, { channels: o.channels });
     const ctx = this.canvas?.getContext('2d');
     if (!ctx) return proj;
@@ -204,6 +215,7 @@ export class Scene3D {
     const { data, order, count } = proj;
     const size = o.size ?? 2;
     const fog = o.fog ?? 0.6;
+    const op = o.opacity ?? 1;
     const camDist = Math.hypot(this.camera.x - this.target.x, this.camera.y - this.target.y, this.camera.z - this.target.z) || 1;
     const fixed = typeof o.color === 'string' || o.color === undefined ? (o.color as string | undefined) ?? '#ffffff' : null;
     if (fixed) ctx.fillStyle = fixed;
@@ -214,7 +226,7 @@ export class Scene3D {
       const d = data[i * 4 + 2];
       const r = size * sc * camDist * 0.002;
       if (r < 0.15) continue;
-      ctx.globalAlpha = fog > 0 ? Math.max(0.05, Math.min(1, 1 - fog * ((d - camDist) / camDist))) : 1;
+      ctx.globalAlpha = op * (fog > 0 ? Math.max(0.05, Math.min(1, 1 - fog * ((d - camDist) / camDist))) : 1);
       if (!fixed) ctx.fillStyle = (o.color as (i: number, d: number, s: number) => string)(i, d, sc);
       const x = data[i * 4];
       const y = data[i * 4 + 1];

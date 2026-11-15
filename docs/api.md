@@ -152,7 +152,7 @@ const b = batch(50_000, { x: (i) => [0, i % 500], y: [0, 300], a: [0, 1] },
 
 `engine.manual(true)` with `engine.tick(ms)` drives the engine yourself (tests, video export). Also available:
 
-- `engine.speed = 0.5`: global time scale;
+- `engine.speed = 0.5`: global time scale (also scales physics worlds, point clouds and `onFrame` `dt`);
 - `engine.lagSmoothing(threshold, adjusted)`;
 - `engine.fps = 30`: frame‑rate cap;
 - `engine.onFrame(cb)`: per‑frame callback;
@@ -280,3 +280,128 @@ press('.btn', (el) => { animate(el, { scale: 0.95 }); return () => animate(el, {
 | `trimPath(d, 0.2, 0.8)`, `pathThrough(points, { curviness, closed })`, `simplifyPath(d, tolerance, smooth)`, `pathArea(d)`, `flattenPath(d, tol)` | Path operations. |
 | `MotionPath.closest(x, y)`, `.atLength(px)`, `.points(n)` | Path queries. |
 | `VelocityTracker`, `shuffle`, `pipe`, `splitColor`, `getUnit`, `roundTo`, `normalize`, `toArray` | Helpers. |
+
+---
+
+## Physics worlds
+
+`world(options?)` is a 2D rigid-circle physics world solved in WebAssembly: position-based dynamics with sub-steps, a sorted uniform grid for broad phase, restitution and friction, distance constraints (ropes, cloth, soft bodies, tearing), static boxes, attractors and picking. It steps on the engine clock, so `engine.speed` slows it too.
+
+```ts
+const w = world({ container: '#stage', gravity: [0, 980], substeps: 4, restitution: 0.2, friction: 0.05 });
+w.addMany(Array.from({ length: 2000 }, () => ({ x: Math.random() * 800, y: Math.random() * 400, r: 3 + Math.random() * 4 })));
+w.bind('.letter', { rotate: true });        // DOM elements become bodies; their transforms follow
+w.obstacles('.wall');                       // element boxes become static colliders
+w.rope([[100, 40], [400, 40]], { segments: 24, pinStart: true });
+w.cloth(200, 60, 30, 20, 12, { pinTop: 3, tear: 2.5 });
+w.pointer({ mode: 'repel', radius: 140 });  // or 'attract'
+w.dragging();                               // grab and throw bodies
+w.draw(ctx, { color: (i) => palette[i % 4], links: '#fff6' });
+```
+
+| Member | Purpose |
+|---|---|
+| `add(x, y, r, mass?)`, `addMany(bodies)` | Add bodies (mass ≤ 0 makes them static). Returns the first index. |
+| `bind(targets, { radius, mass, rotate })` | Turn elements into bodies. |
+| `box(x0, y0, x1, y1)`, `obstacles(targets)` | Static colliders. |
+| `link(a, b, { length, stiffness, tear })`, `rope(points, opts)`, `cloth(x, y, cols, rows, spacing, opts)` | Constraints. `linksAlive()` reports torn links. |
+| `attract(x, y, strength, radius)`, `setAttractor(i, …)`, `clearAttractors()`, `pointer(opts)` | Force fields. |
+| `impulse(x, y, radius, strength)`, `setPosition`, `setVelocity`, `velocity(i)`, `pin(i)`, `remove(i)`, `setRadius` | Direct control. |
+| `pick(x, y)`, `x(i)`, `y(i)`, `angle(i)`, `radius(i)`, `data` | Queries. `data` is a zero-copy `Float32Array` of `[x, y, angle]` per body. |
+| `energy`, `pairTests`, `count` | Diagnostics. |
+| `onStep(cb)`, `step(dt)`, `pause()`, `play()`, `set(options)`, `refreshBounds()`, `destroy()` / `revert()` | Lifecycle. |
+
+## 3D
+
+```ts
+// Transform lists interpolate like browsers do (decompose → slerp → recompose):
+animate(card, { transform: 'rotateY(180deg) translateZ(40px)' }, { ease: 'spring(bounce: .3)' });
+tilt('.card', { max: 12, scale: 1.03 });              // pointer tilt on a spring
+
+const scene = scene3d({ canvas: '#c', fov: 50, camera: { z: 800 } });
+scene.orbit({ autoRotate: 8 });                       // drag to rotate, with inertia
+scene.draw(batchOrXYZ, { size: 2, fog: 0.6, color: (i) => '#9af' });
+const { data, order, count } = scene.project(points); // [sx, sy, depth, scale] * n, far→near order
+```
+
+- The `transform` property accepts any CSS transform list. Lists are decomposed (CSS Transforms 2), rotations slerped as quaternions, and recomposed to `matrix3d()` in the core.
+- `parseTransform(css)`, `toMatrix3d(m)` and `mixTransforms(a, b, t)` expose the same maths.
+- `scene.project()` transforms and depth-sorts (LSD radix sort) entirely in WebAssembly. Sources: a `batch()` with `x`/`y`/`z` channels, a `pointCloud()`, or a flat `[x, y, z, …]` array.
+
+## Point clouds and glow
+
+`pointCloud(count, options)` keeps particles in WebAssembly. Each one spring-follows a blend between target shapes with its own timing, plus a turbulence field, so morphs ripple through the cloud and can be scrubbed, interrupted or blasted apart. `glow(canvas, options)` renders projected points as additive light straight into pixels: sub-pixel bilinear splats, soft bokeh for near points, depth fog, a pointer lens, motion trails and tone mapping. JavaScript does one `putImageData` per frame.
+
+```ts
+const cloud = pointCloud(150_000, {
+  shapes: [textPoints('anikit', 150_000, { width: 800 }), (i, n) => sphere(i, n)],
+  stiffness: 34, damping: 7.5, spread: 0.75, swirl: 70,
+});
+const scene = scene3d({ fov: 40, camera: { z: 1000 } });
+const g = glow('#bg', { resolution: 0.75, trail: 0.5, background: '#07080b', budget: 6 });
+g.resize(innerWidth, innerHeight);
+g.colors(cloud.count, (i) => [0.4, 0.45, 1]);
+engine.onFrame(() => g.render(scene, cloud, { size: 1.2, intensity: 0.3, fog: [700, 2600], lens: { x, y } }));
+
+cloud.morph(1, { duration: 2.5, ease: 'inOutCubic' }); // tweened
+cloud.morph(2); cloud.mix = scrollProgress;          // or drive the blend yourself
+cloud.explode(0, 0, 0, 1200);                        // shockwave; particles find their way home
+```
+
+| Member | Purpose |
+|---|---|
+| `shape(k, xyzOrFn)`, `snap(k)` | Define / jump to shapes. |
+| `from`, `to`, `mix`, `morph(k, { duration, ease, from })` | Blend state. |
+| `set({ stiffness, damping, spread, noise, swirl, frequency })` | Tune the motion. |
+| `step(dt)` (automatic unless `autoStep: false`), `explode(x, y, z, strength)`, `positions`, `speed` | Simulation. |
+| `textPoints(text, count, { font, weight, width, depth })` | Sample points from rendered text. |
+| `glow.render(scene, source, { size, intensity, fog, lens, exposure, maxRadius })` | Draw a frame. |
+| `glow.colors(count, rgbOrFn)`, `glow.resize(w, h)`, `glow.options.trail`, `glow.lastMs`, `glow.avgMs` | Colours, size, trails, timing. |
+
+`budget` (ms, default 7) enables adaptive quality: if rendering stays over budget, the pixel resolution steps down (to `minResolution`) so slower machines keep their frame rate.
+
+## Capture: screenshots and recordings
+
+```ts
+const png = await screenshot('#card');                          // Blob (canvas, element or page)
+const rec = await record('#hero', { duration: 2, fps: 30 });     // frame-exact GIF by default
+rec.download('hero.gif');
+await record(canvas, { duration: 3, format: 'webm' });           // or 'frames' (PNG blobs)
+await record('#stage', { animation: tl });                       // seek a timeline per frame
+```
+
+Recordings are deterministic: engine time is switched to manual and advanced exactly `1 / fps` per frame, however slow the machine. GIFs are encoded by the core (median-cut palettes with exact slots for frequent colours, changed-rectangle delta frames, LZW). `GifWriter` and `encodeGif(frames, w, h, fps)` work in Node too.
+
+Headless, from the command line (Playwright + Chromium):
+
+```bash
+npx anikit-record ./index.html --out hero.gif --duration 3 --fps 30 --selector '#hero'
+```
+
+```bash
+npx anikit-record https://example.com --out clip.mp4 --size 1280x720
+```
+
+```bash
+npx anikit-record ./index.html --screenshot shot.png --at 1.5
+```
+
+Output can be `.gif`, `.mp4` or `.webm` (ffmpeg), or a directory of PNG frames. Local files are served over a fake origin, so ES modules work without a server.
+
+## Testing and diagnostics
+
+```ts
+import { testing, engine } from 'anikit';
+
+testing.useFakeTime();              // no rAF: time only moves when you say
+animate(card, { x: 100 }, { duration: 1, ease: 'linear' });
+testing.advance(0.5);               // card.style.transform === 'translate(50px, 0px)'
+testing.finishAll();                // run until idle
+const warnings = testing.captureWarnings();
+engine.inspect();                   // [{ id, state, time, duration, progress, type, target, props }]
+testing.reset();
+```
+
+- Warnings start with `anikit:` and include "did you mean" suggestions for misspelled easings, properties and effect names. `setWarnings(false)` silences them; `onWarning(fn)` routes them.
+- `engine.inspect()` returns a JSON-serialisable snapshot of everything running; it's also reachable as `globalThis.__ANIKIT__` for agents driving a headless browser.
+- `engine.speed` scales every animation, world, point cloud and `onFrame` `dt` together (bullet time).

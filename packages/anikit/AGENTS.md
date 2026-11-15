@@ -34,6 +34,8 @@ Calls work immediately. The WebAssembly core loads in the background and queues 
   - **Hundreds of DOM elements:** `animate()` is fine.
   - **Thousands of things on a canvas:** use `batch()` (one Float32Array) or `world()`.
   - **Many points in 3D:** project them with `scene3d()`.
+  - **Tens or hundreds of thousands of particles:** `pointCloud()` (simulation) + `glow()` (rendering); both run in WebAssembly. Use `glow({ budget })` so slow machines lower the resolution instead of the frame rate.
+  - **Slow motion / pause everything:** `engine.speed` scales tweens, worlds, clouds and `onFrame` `dt` together.
   - **The main thread will be busy:** use `compositor()` for transform/opacity.
 
 ## Recipes
@@ -70,6 +72,20 @@ w.pointer({ mode: 'repel' });
 const cloud = batch(20000, { x: (i) => [0, Math.cos(i) * 300], y: (i) => [0, Math.sin(i * 1.3) * 300], z: (i) => [0, Math.sin(i) * 300] }, { duration: 2 });
 const scene = scene3d({ canvas: '#c' }).orbit({ autoRotate: 10 });
 engine.onFrame(() => scene.draw(cloud, { size: 1.5, color: '#9cf' }));
+
+// 100k glowing particles that morph between shapes (text → sphere) and part around the pointer
+const pc = pointCloud(100_000, { shapes: [textPoints('hello', 100_000, { width: 700 }), (i, n) => {
+  const y = 1 - (2 * i) / n, r = Math.sqrt(1 - y * y), t = i * 2.4; return [Math.cos(t) * r * 250, y * 250, Math.sin(t) * r * 250];
+}] });
+const g = glow('#bg', { trail: 0.5, background: '#07080b' });
+const cam = scene3d({ fov: 40, camera: { z: 1000 } });
+g.resize(innerWidth, innerHeight);
+let ptr = null; addEventListener('pointermove', (e) => (ptr = { x: e.clientX, y: e.clientY }));
+engine.onFrame(() => g.render(cam, pc, { size: 1.2, intensity: 0.3, lens: ptr }));
+pc.morph(1, { duration: 2.5, ease: 'inOutCubic' });   // or: pc.morph(1); pc.mix = scrollProgress;
+
+// Record any of the above to a GIF, frame-exact
+const rec = await record('#stage', { duration: 2, fps: 30 }); rec.download('stage.gif');
 
 // Effects
 effects.fadeIn('.toast');

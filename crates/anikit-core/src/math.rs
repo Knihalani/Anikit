@@ -1,17 +1,57 @@
 //! Thin, inlinable math layer.
 //!
 //! The core is `no_std`, so transcendental functions come from `libm`. On
-//! `wasm32` the cheap operations (`sqrt`, `floor`, `abs`, ...) lower to single
-//! WebAssembly instructions.
+//! `wasm32` the cheap operations (`sqrt`, `floor`, `ceil`) call the single
+//! WebAssembly instructions directly.
 
 pub const PI: f64 = core::f64::consts::PI;
 pub const TAU: f64 = core::f64::consts::TAU;
 pub const DEG: f64 = 180.0 / PI;
 pub const RAD: f64 = PI / 180.0;
 
+// `libm` only uses hardware instructions with nightly-only features, and the
+// scalar `core::arch::wasm32::f32_sqrt`-style intrinsics are unstable too. The
+// SIMD intrinsics are stable, so on wasm32+simd128 the cheap operations run
+// one lane of the vector instruction (which the backend lowers to the scalar
+// `f32.sqrt` / `f64.floor` / ... instructions). Elsewhere libm inlines to the
+// platform instructions.
+#[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
+mod hw {
+    use core::arch::wasm32 as w;
+    #[inline(always)]
+    pub fn sqrt(x: f64) -> f64 {
+        w::f64x2_extract_lane::<0>(w::f64x2_sqrt(w::f64x2_splat(x)))
+    }
+    #[inline(always)]
+    pub fn floor(x: f64) -> f64 {
+        w::f64x2_extract_lane::<0>(w::f64x2_floor(w::f64x2_splat(x)))
+    }
+    #[inline(always)]
+    pub fn ceil(x: f64) -> f64 {
+        w::f64x2_extract_lane::<0>(w::f64x2_ceil(w::f64x2_splat(x)))
+    }
+    #[inline(always)]
+    pub fn sqrtf(x: f32) -> f32 {
+        w::f32x4_extract_lane::<0>(w::f32x4_sqrt(w::f32x4_splat(x)))
+    }
+    #[inline(always)]
+    pub fn floorf(x: f32) -> f32 {
+        w::f32x4_extract_lane::<0>(w::f32x4_floor(w::f32x4_splat(x)))
+    }
+    #[inline(always)]
+    pub fn ceilf(x: f32) -> f32 {
+        w::f32x4_extract_lane::<0>(w::f32x4_ceil(w::f32x4_splat(x)))
+    }
+}
+#[cfg(not(all(target_arch = "wasm32", target_feature = "simd128")))]
+mod hw {
+    pub use libm::{ceil, ceilf, floor, floorf, sqrt, sqrtf};
+}
+pub use hw::{ceilf, floorf, sqrtf};
+
 #[inline(always)]
 pub fn sqrt(x: f64) -> f64 {
-    libm::sqrt(x)
+    hw::sqrt(x)
 }
 #[inline(always)]
 pub fn cbrt(x: f64) -> f64 {
@@ -55,11 +95,11 @@ pub fn pow(x: f64, y: f64) -> f64 {
 }
 #[inline(always)]
 pub fn floor(x: f64) -> f64 {
-    libm::floor(x)
+    hw::floor(x)
 }
 #[inline(always)]
 pub fn ceil(x: f64) -> f64 {
-    libm::ceil(x)
+    hw::ceil(x)
 }
 #[inline(always)]
 pub fn round(x: f64) -> f64 {
