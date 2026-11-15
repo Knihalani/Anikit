@@ -444,15 +444,52 @@ impl Raster {
             return;
         }
         self.order.clear();
-        self.order.extend(0..count as u32);
+        // Frustum-cull whole instances by bounding sphere (Gribb–Hartmann planes from vp).
+        let (bc, br) = bounds(mesh);
+        let row = |r: usize| [vp[r], vp[4 + r], vp[8 + r], vp[12 + r]];
+        let (r0, r1, r2, r3) = (row(0), row(1), row(2), row(3));
+        let planes: [[f32; 4]; 6] = core::array::from_fn(|k| {
+            let (a, sgn) = match k {
+                0 => (r0, 1.0),
+                1 => (r0, -1.0),
+                2 => (r1, 1.0),
+                3 => (r1, -1.0),
+                4 => (r2, 1.0),
+                _ => (r2, -1.0),
+            };
+            let p = [r3[0] + sgn * a[0], r3[1] + sgn * a[1], r3[2] + sgn * a[2], r3[3] + sgn * a[3]];
+            let l = 1.0 / crate::math::sqrtf(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]).max(1e-12);
+            [p[0] * l, p[1] * l, p[2] * l, p[3] * l]
+        });
+        for i in 0..count {
+            let m = &instances[i * INSTANCE_STRIDE..i * INSTANCE_STRIDE + 12];
+            let c = [
+                m[0] * bc[0] + m[3] * bc[1] + m[6] * bc[2] + m[9],
+                m[1] * bc[0] + m[4] * bc[1] + m[7] * bc[2] + m[10],
+                m[2] * bc[0] + m[5] * bc[1] + m[8] * bc[2] + m[11],
+            ];
+            let s2 = (m[0] * m[0] + m[1] * m[1] + m[2] * m[2]).max(m[3] * m[3] + m[4] * m[4] + m[5] * m[5]).max(m[6] * m[6] + m[7] * m[7] + m[8] * m[8]);
+            let r = br * crate::math::sqrtf(s2);
+            if planes.iter().all(|p| p[0] * c[0] + p[1] * c[1] + p[2] * c[2] + p[3] >= -r) {
+                self.order.push(i as u32);
+            }
+        }
+        let count = self.order.len();
+        if count == 0 {
+            return;
+        }
         if count > 1 && blend == Blend::Opaque {
             let d2 = |i: u32| {
                 let b = i as usize * INSTANCE_STRIDE;
                 let (dx, dy, dz) = (instances[b + 9] - eye[0], instances[b + 10] - eye[1], instances[b + 11] - eye[2]);
                 dx * dx + dy * dy + dz * dz
             };
+            // Keys indexed by instance (culled ones are never looked up).
             self.keys.clear();
-            self.keys.extend(self.order.iter().map(|&i| d2(i)));
+            self.keys.resize(instances.len() / INSTANCE_STRIDE, 0.0);
+            for &i in &self.order {
+                self.keys[i as usize] = d2(i);
+            }
             let keys = &self.keys;
             self.order.sort_unstable_by(|a, b| keys[*a as usize].partial_cmp(&keys[*b as usize]).unwrap_or(core::cmp::Ordering::Equal));
         }
@@ -658,8 +695,70 @@ impl Raster {
             let s0: [f32; NV] = core::array::from_fn(|k| b0 * p0.a[k] + b1 * p1.a[k] + b2 * p2.a[k]);
             // Split borrows so the span loop keeps everything in locals.
             let (depth, color, qu) = (&mut self.depth[a0..=a1], &mut self.color, &mut self.queue);
-            for (k, dp) in depth.iter_mut().enumerate() {
+            let len = depth.len();
+            let mut k = 0;
+            // Groups of four: when all four pass the depth test (large faces,
+            // no overdraw) shade them straight from registers.
+            while k + 4 <= len {
                 let kf = k as f32;
+                let zs = [z0 + dz * kf, z0 + dz * (kf + 1.0), z0 + dz * (kf + 2.0), z0 + dz * (kf + 3.0)];
+                let d4 = &mut depth[k..k + 4];
+                let pass: [bool; 4] = core::array::from_fn(|l| match MODE {
+                    SHADE_EQ => zs[l] <= d4[l],
+                    _ => zs[l] < d4[l],
+                });
+                if !(pass[0] || pass[1] || pass[2] || pass[3]) {
+                    k += 4;
+                    continue; // hidden: the common case under overdraw
+                }
+                if pass[0] && pass[1] && pass[2] && pass[3] {
+                    if MODE == SHADE_LT {
+                        d4.copy_from_slice(&zs);
+                    }
+                    // A queued pixel from an earlier (farther) triangle must not land on top later.
+                    let (g0, g1) = (a0 + k, a0 + k + 4);
+                    if (0..qu.n).any(|l| (g0..g1).contains(&qu.idx[l])) {
+                        self.shaded += qu.n;
+                        flush::<MODE>(qu, color, sh);
+                    }
+                    let kk = V4::new(kf, kf + 1.0, kf + 2.0, kf + 3.0);
+                    let iw = 1.0 / (kk * dq + q0);
+                    let a: [V4; NV] = core::array::from_fn(|c| (kk * da[c] + s0[c]) * iw);
+                    let px = pack4(sh.px4([a[0], a[1], a[2]], [a[3], a[4], a[5]], a[6], a[7], V4::splat(fwu), V4::splat(fwv)));
+                    let dst = &mut color[a0 + k..a0 + k + 4];
+                    for l in 0..4 {
+                        dst[l] = if MODE == ADD { add_packed(dst[l], px[l]) } else { px[l] };
+                    }
+                    self.shaded += 4;
+                } else {
+                    for l in 0..4 {
+                        if !pass[l] {
+                            continue;
+                        }
+                        if MODE == SHADE_LT {
+                            d4[l] = zs[l];
+                        }
+                        let kf = (k + l) as f32;
+                        let qi = qu.n & 3;
+                        qu.idx[qi] = a0 + k + l;
+                        qu.q[qi] = q0 + dq * kf;
+                        for c in 0..NV {
+                            qu.a[c][qi] = s0[c] + da[c] * kf;
+                        }
+                        qu.fw[0][qi] = fwu;
+                        qu.fw[1][qi] = fwv;
+                        qu.n = qi + 1;
+                        if qi == 3 {
+                            self.shaded += 4;
+                            flush::<MODE>(qu, color, sh);
+                        }
+                    }
+                }
+                k += 4;
+            }
+            // Tail (and short spans): queue the passing pixels.
+            for (kk, dp) in depth[k..].iter_mut().enumerate() {
+                let kf = (k + kk) as f32;
                 let z = z0 + dz * kf;
                 let ok = match MODE {
                     SHADE_EQ => z <= *dp,
@@ -672,7 +771,7 @@ impl Raster {
                     *dp = z;
                 }
                 let l = qu.n & 3;
-                qu.idx[l] = a0 + k;
+                qu.idx[l] = a0 + k + kk;
                 qu.q[l] = q0 + dq * kf;
                 for c in 0..NV {
                     qu.a[c][l] = s0[c] + da[c] * kf;
@@ -859,6 +958,27 @@ impl Raster {
             }
         }
     }
+}
+
+/// Bounding sphere of a mesh (box centre, max distance), in model space.
+fn bounds(mesh: &Mesh) -> ([f32; 3], f32) {
+    let mut lo = [f32::INFINITY; 3];
+    let mut hi = [f32::NEG_INFINITY; 3];
+    for p in mesh.pos.chunks_exact(3) {
+        for k in 0..3 {
+            lo[k] = lo[k].min(p[k]);
+            hi[k] = hi[k].max(p[k]);
+        }
+    }
+    if lo[0] > hi[0] {
+        return ([0.0; 3], 0.0);
+    }
+    let c = [(lo[0] + hi[0]) * 0.5, (lo[1] + hi[1]) * 0.5, (lo[2] + hi[2]) * 0.5];
+    let mut r2 = 0.0f32;
+    for p in mesh.pos.chunks_exact(3) {
+        r2 = r2.max((p[0] - c[0]) * (p[0] - c[0]) + (p[1] - c[1]) * (p[1] - c[1]) + (p[2] - c[2]) * (p[2] - c[2]));
+    }
+    (c, crate::math::sqrtf(r2) * 1.0001 + 1e-6)
 }
 
 const DEPTH: u8 = 0;
@@ -1228,5 +1348,18 @@ mod tests {
         r2.points(&pts[3..], &[], &vp(), Some(&prev), eye, &PointStyle { streak: 1.0, ..style });
         let lit = r2.color.iter().filter(|c| **c & 255 > 0).count();
         assert!(lit > 8, "streak covers several pixels: {lit}");
+    }
+
+    #[test]
+    fn culls_instances_outside_the_frustum() {
+        let mut r = Raster::new(32, 32);
+        r.clear(0, 255);
+        let mut inst = Vec::new();
+        for (x, z) in [(0.0f32, 0.0f32), (0.0, 20.0), (50.0, 0.0)] {
+            inst.extend_from_slice(&[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, x, 0.0, z, 1.0, 1.0, 1.0]);
+        }
+        r.draw(&cube(), &inst, &vp(), [0.0, 0.0, 5.0], &Material::default(), &Lighting::default(), true);
+        // Only the cube in view is rasterised (behind the camera and far to the side are culled).
+        assert!(r.drawn >= 2 && r.drawn <= 6, "{}", r.drawn);
     }
 }
