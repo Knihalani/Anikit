@@ -823,10 +823,10 @@ mod tests {
 
     /// A fixed scenario covering the dense grid (bounded world: stacking,
     /// boxes, a tearing rope, a pinned body, an attractor, an impulse,
-    /// restitution + friction) and the hashed grid (unbounded world). Its
-    /// hash was recorded before the solver was optimised, so the optimised
-    /// solver must reproduce the original arithmetic exactly;
-    /// `test/world-3d.test.ts` runs the same scenario through the wasm build.
+    /// restitution + friction) and the hashed grid (unbounded world). The
+    /// hash was recorded on the current solver, so a future optimisation
+    /// must reproduce its arithmetic exactly; `test/world-3d.test.ts` runs
+    /// the same scenario through the wasm build.
     /// All inputs are exact in `f32` so the JS side passes identical values.
     fn golden_scenario() -> u32 {
         let dt = (1.0f64 / 60.0) as f32;

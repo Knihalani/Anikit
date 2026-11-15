@@ -187,6 +187,8 @@ struct Batch {
     eases: Box<[u32]>,
     values: Box<[f64]>,
     delays: Box<[f64]>,
+    /// Every delay is zero (set at creation; delays never change).
+    no_delays: bool,
     scratch: Box<[f64]>,
     seg: Box<[u32]>,
     out: Box<[f32]>,
@@ -212,7 +214,7 @@ impl Batch {
         let (n, ch, nkf) = (self.n, self.ch, self.nkf);
         let tm = self.timing;
         let single = nkf == 2 && self.offsets[0] == 0.0 && self.offsets[1] == 1.0;
-        if single && self.delays.iter().all(|&d| d == 0.0) {
+        if single && self.no_delays {
             // No stagger: every instance has the same progress, so time and
             // ease it once (the per-instance results would all be equal),
             // then lerp all channels.
@@ -849,6 +851,7 @@ impl Engine {
             offsets: offsets.into_boxed_slice(),
             eases: spec.easings.into_boxed_slice(),
             values: spec.values.into_boxed_slice(),
+            no_delays: delays.iter().all(|&d| d == 0.0),
             delays: delays.into_boxed_slice(),
             scratch: alloc::vec![0.0; n].into_boxed_slice(),
             seg: alloc::vec![0; n].into_boxed_slice(),
@@ -2368,6 +2371,7 @@ mod tests {
                 eases: Box::new([]),
                 values: (0..n * 3).map(|i| i as f64).collect(),
                 delays: delays.clone().into_boxed_slice(),
+                no_delays: false,
                 scratch: vec![0.0; n].into_boxed_slice(),
                 seg: vec![0; n].into_boxed_slice(),
                 out: vec![0.0; n].into_boxed_slice(),
