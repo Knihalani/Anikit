@@ -22,7 +22,11 @@ import type { OptionKeys } from './debug';
 import { Timeline } from './timeline';
 
 type Action = 'play' | 'pause' | 'resume' | 'reset' | 'restart' | 'complete' | 'reverse' | 'none';
-type Pos = string | number | ((self: ScrollTrigger) => number);
+type Edge = 'top' | 'center' | 'bottom';
+/** `"<trigger edge> <viewport edge>"` (autocompletes the common pairs; offsets such as `'top+=20 80%'` or `'+=600'` work too), px, or a function. */
+type Pos = `${Edge} ${Edge}` | `${Edge} ${number}%` | (string & {}) | number | ((self: ScrollTrigger) => number);
+/** Four actions for onEnter, onLeave, onEnterBack, onLeaveBack. */
+type ToggleActions = `${Action} ${Action} ${Action} ${Action}` | (string & {});
 
 export interface ScrollTriggerOptions {
   /** Element whose position defines start/end (default: the scroller itself, i.e. page progress). */
@@ -52,7 +56,7 @@ export interface ScrollTriggerOptions {
    * Default `'play none none none'`. Ignored with `scrub`.
    * @example toggleActions: 'play none none reverse'   // reverse when scrolling back above the start
    */
-  toggleActions?: string;
+  toggleActions?: ToggleActions;
   /** Pin an element (default the trigger) while active. */
   pin?: boolean | Element | string;
   /** Add padding so following content waits for the pin (default true). */
