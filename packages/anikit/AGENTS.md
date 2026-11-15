@@ -155,6 +155,7 @@ Most of these print an `anikit:` warning that names the fix; read the console.
 | "unknown easing" (throws) | Use a listed name (`'outCubic'`, `'power2.out'`, `'ease-in-out'`); the error suggests the nearest. |
 | "rotate is an angle" / "opacity goes from 0 to 1" | Wrong unit: `rotate: 45` or `'0.5turn'`; `opacity: 0.5`, not `50`. |
 | Element jumps at the start | Give an explicit start value: `x: [0, 100]`, `opacity: [0, 1]`. |
+| `left`/`top` don't move it; "has no effect … position: static" | Animate `x`/`y` (transforms, also faster), or give the element `position: relative`. |
 | Timeline children start from the wrong value | Sequential tweens of a property chain automatically; for parallel ones give `[from, to]`. |
 | Scroll animation runs on load or flashes | Create it with `autoplay: false` and pass it as `animation` (the trigger pauses it, but `autoplay: false` avoids a first frame). |
 | `scrollTrigger({ animation: (el) => … })` throws | That form belongs to `scrollTriggerBatch()`; `scrollTrigger` takes one animation. |
