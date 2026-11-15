@@ -649,6 +649,7 @@ const film = composition({ …, motionBlur: { samples: 2 }, post: {
   aberration: 0.6, vignette: 0.45, grain: 4,
   zoomBlur: (t) => (t > 6 && t < 7 ? 0.25 : 0),               // speed lines on the warp
   rays: 1, raysCenter: [0.5, 0.42], raysLength: 0.7,           // god rays from a light behind the scene
+  aa: 1,                                                       // FXAA-style edge antialiasing for renderer3d geometry
   contrast: 1.08, saturation: 1.1, shadows: [0, 0.015, 0.04], highlights: [0.06, 0.02, -0.02], // grade + split tone
 } });
 film.impact(12.75, { shake: 40, flash: '#fff', flashOpacity: 0.7, aberration: 9 });  // shake + flash + aberration kick

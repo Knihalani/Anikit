@@ -130,6 +130,8 @@ pub struct Post {
     pub rays: f32,
     pub rays_center: [f32; 2],
     pub rays_length: f32,
+    /// Edge antialiasing (FXAA-style, 0…1): smooths stair-stepped geometry edges.
+    pub aa: f32,
     /// Colour grade: exposure multiplier (1 = none), contrast (1 = none),
     /// saturation (1 = none), additive shadow tint and multiplicative
     /// highlight tint (0…1 per channel; zeros = none).
@@ -158,6 +160,7 @@ impl Default for Post {
             rays: 0.0,
             rays_center: [0.5, 0.4],
             rays_length: 0.6,
+            aa: 0.0,
             exposure: 1.0,
             contrast: 1.0,
             saturation: 1.0,
@@ -180,6 +183,7 @@ pub struct PostFx {
     tmp: Vec<f32>,
     streak: Vec<f32>,
     rays: Vec<f32>,
+    luma: Vec<u8>,
     copy: Vec<u8>,
 }
 
@@ -190,6 +194,9 @@ impl PostFx {
         if w == 0 || h == 0 || rgba.len() < w * h * 4 {
             return;
         }
+        if p.aa > 0.0 {
+            self.antialias(rgba, w, h, p.aa);
+        }
         if p.zoom_blur > 0.0 {
             self.zoom(rgba, w, h, p);
         }
@@ -199,6 +206,58 @@ impl PostFx {
         }
         if glow || p.aberration > 0.0 || p.grading() || p.vignette > 0.0 || p.grain > 0.0 {
             self.composite(rgba, w, h, p, glow);
+        }
+    }
+
+    /// FXAA-style edge antialiasing: where local luma contrast is high, blend
+    /// each pixel towards its neighbour across the edge, by how much the
+    /// centre differs from its 3×3 neighbourhood (sub-pixel aliasing).
+    #[allow(clippy::needless_range_loop)]
+    fn antialias(&mut self, rgba: &mut [u8], w: usize, h: usize, strength: f32) {
+        if w < 3 || h < 3 {
+            return;
+        }
+        self.luma.clear();
+        self.luma.extend(rgba.chunks_exact(4).map(|p| ((54 * p[0] as u32 + 183 * p[1] as u32 + 19 * p[2] as u32) >> 8) as u8));
+        self.copy.clear();
+        self.copy.extend_from_slice(rgba);
+        let l = &self.luma;
+        let k = strength.clamp(0.0, 1.0);
+        for y in 1..h - 1 {
+            for x in 1..w - 1 {
+                let i = y * w + x;
+                let (c, n, s, e, wv) = (l[i] as i32, l[i - w] as i32, l[i + w] as i32, l[i + 1] as i32, l[i - 1] as i32);
+                let hi = c.max(n).max(s).max(e).max(wv);
+                let lo = c.min(n).min(s).min(e).min(wv);
+                let range = hi - lo;
+                if range < 16.max(hi >> 3) {
+                    continue;
+                }
+                let (nw, ne, sw, se) = (l[i - w - 1] as i32, l[i - w + 1] as i32, l[i + w - 1] as i32, l[i + w + 1] as i32);
+                // Sub-pixel blend amount from the centre vs. its neighbourhood.
+                let avg = (2 * (n + s + e + wv) + nw + ne + sw + se) as f32 / 12.0;
+                let sub = ((avg - c as f32).abs() / range as f32).clamp(0.0, 1.0);
+                let sub = sub * sub * (3.0 - 2.0 * sub);
+                let amt = sub * sub * 0.75 * k;
+                if amt < 0.02 {
+                    continue;
+                }
+                // Edge orientation: horizontal edges blend vertically, and vice versa.
+                let horiz = (n + s - 2 * c).abs() * 2 + (nw + sw - 2 * wv).abs() + (ne + se - 2 * e).abs();
+                let vert = (e + wv - 2 * c).abs() * 2 + (nw + ne - 2 * n).abs() + (sw + se - 2 * s).abs();
+                let j = if horiz >= vert {
+                    if (n - c).abs() >= (s - c).abs() { i - w } else { i + w }
+                } else if (wv - c).abs() >= (e - c).abs() {
+                    i - 1
+                } else {
+                    i + 1
+                };
+                for ch in 0..3 {
+                    let a = self.copy[i * 4 + ch] as f32;
+                    let b = self.copy[j * 4 + ch] as f32;
+                    rgba[i * 4 + ch] = (a + (b - a) * amt + 0.5) as u8;
+                }
+            }
         }
     }
 
@@ -636,5 +695,25 @@ mod tests {
         let mut g = alloc::vec![100u8, 50, 20, 255];
         fx.apply(&mut g, 1, 1, &Post { exposure: 1.5, saturation: 0.0, ..Default::default() });
         assert!(g[0] == g[1] && g[1] == g[2] && g[0] > 50, "{g:?}");
+    }
+
+    #[test]
+    fn antialias_softens_stair_steps_only() {
+        let (w, h) = (16usize, 16usize);
+        // A hard diagonal edge (white above y = x).
+        let mut img = alloc::vec![0u8; w * h * 4];
+        for y in 0..h {
+            for x in 0..w {
+                let v = if y < x { 255 } else { 0 };
+                img[(y * w + x) * 4..(y * w + x) * 4 + 4].copy_from_slice(&[v, v, v, 255]);
+            }
+        }
+        let before = img.clone();
+        PostFx::default().apply(&mut img, w, h, &Post { aa: 1.0, ..Default::default() });
+        let mids = img.chunks_exact(4).filter(|p| p[0] > 20 && p[0] < 235).count();
+        assert!(mids > 5, "edge pixels blended: {mids}");
+        // Flat regions are untouched.
+        assert_eq!(img[(2 * w + 13) * 4], before[(2 * w + 13) * 4]);
+        assert_eq!(img[(13 * w + 2) * 4], before[(13 * w + 2) * 4]);
     }
 }

@@ -150,6 +150,8 @@ export interface PostOptions {
   rays?: PostValue;
   raysCenter?: [number, number] | ((t: number) => [number, number]);
   raysLength?: PostValue;
+  /** Edge antialiasing (FXAA-style) for 3D geometry, 0–1 (1 recommended with `renderer3d`). */
+  aa?: PostValue;
 }
 
 /** A hit: camera shake, a flash frame and an aberration kick, all decaying. */
@@ -391,7 +393,7 @@ export class Composition {
       const vals = [num(p.bloomThreshold, t, 0.7), num(p.bloom, t, 0), num(p.bloomRadius, t, 24), ab, num(p.vignette, t, 0), num(p.grain, t, 0),
         num(p.streaks, t, 0), num(p.streakLength, t, 160), ...col(p.streakTint, t, [0.6, 0.75, 1]), num(p.zoomBlur, t, 0), zc[0], zc[1],
         num(p.exposure, t, 1), num(p.contrast, t, 1), num(p.saturation, t, 1), ...col(p.shadows, t, [0, 0, 0]), ...col(p.highlights, t, [0, 0, 0]),
-        num(p.rays, t, 0), ...(typeof p.raysCenter === 'function' ? p.raysCenter(t) : p.raysCenter ?? [0.5, 0.4]), num(p.raysLength, t, 0.6)];
+        num(p.rays, t, 0), ...(typeof p.raysCenter === 'function' ? p.raysCenter(t) : p.raysCenter ?? [0.5, 0.4]), num(p.raysLength, t, 0.6), num(p.aa, t, 0)];
       const at = f64Buf(vals.length);
       F64.set(vals, at);
       fb.post(f, vals.length);
