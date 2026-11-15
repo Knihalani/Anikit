@@ -420,6 +420,12 @@ export class Renderer3D {
      */
     motionBlur?: { shutter?: number; max?: number } | boolean;
     /**
+     * The camera one frame earlier, as `scene.viewProjection().matrix`. Motion blur and
+     * point streaks use it instead of the previous `render()` call — needed when not every
+     * frame is drawn (previews, `--review`, parallel slices).
+     */
+    prevCamera?: number[];
+    /**
      * Paint the background with the environment (`sky` / `horizon` / `ground` gradient, meeting the
      * fog at the horizon) instead of a flat colour; `sun` adds a sun disc + halo towards `key`
      * (angular size, ~1–4). Drawn after opaque geometry, before additive items and points.
@@ -529,7 +535,7 @@ export class Renderer3D {
     // Light last: additive geometry and points add onto everything (incl. the sky).
     for (const item of items) {
       if (!light(item)) continue;
-      if ('points' in item) this.drawPoints(item, matrix, eye);
+      if ('points' in item) this.drawPoints(item, matrix, eye, o.prevCamera);
       else drawMesh(item, matrix, eye, 0);
     }
     if (o.dof) {
@@ -537,10 +543,11 @@ export class Renderer3D {
       F64.set(matrix, at);
       w.ak_raster_dof(this.id, o.dof.focus, o.dof.aperture ?? 16, o.dof.max ?? this.width * 0.03);
     }
-    if (o.motionBlur && this.prevMatrix) {
+    const prev = o.prevCamera ?? this.prevMatrix;
+    if (o.motionBlur && prev) {
       const mb = o.motionBlur === true ? {} : o.motionBlur;
       const at = f64Buf(32);
-      F64.set([...matrix, ...this.prevMatrix], at);
+      F64.set([...matrix, ...prev], at);
       w.ak_raster_motion_blur(this.id, mb.shutter ?? 0.5, mb.max ?? this.width * 0.06);
     }
     this.prevMatrix = matrix;
@@ -564,7 +571,7 @@ export class Renderer3D {
     return this;
   }
 
-  private drawPoints(it: PointsItem, matrix: number[], eye: number[]): void {
+  private drawPoints(it: PointsItem, matrix: number[], eye: number[], prevCamera?: number[]): void {
     const w = core();
     let src = it.points, cols = it.colors;
     if (!('length' in src)) {
@@ -582,12 +589,12 @@ export class Renderer3D {
     mem.set(pts.length === n * 3 ? pts : Array.prototype.slice.call(pts, 0, n * 3), 0);
     if (colors && colors.length >= n * 3) mem.set(colors.length === n * 3 ? colors : Array.prototype.slice.call(colors, 0, n * 3), n * 3);
     else mem.fill(1, n * 3, n * 6);
-    const prev = this.prevMatrix ?? matrix;
+    const prev = prevCamera ?? this.prevMatrix ?? matrix;
     const fog = it.fog ?? [0, 0];
     const vals = [...matrix, ...prev, eye[0], eye[1], eye[2], it.size ?? 2, it.intensity ?? 1, it.streak ?? 0, fog[0], fog[1]];
     const at = f64Buf(vals.length);
     F64.set(vals, at);
-    w.ak_raster_points(this.id, n, this.prevMatrix ? 1 : 0);
+    w.ak_raster_points(this.id, n, prevCamera || this.prevMatrix ? 1 : 0);
   }
 
   destroy(): void {
