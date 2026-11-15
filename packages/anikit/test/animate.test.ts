@@ -118,7 +118,7 @@ describe('animate: values', () => {
     const a = [box(), box(), box()];
     animate(a, { x: [0, 100] }, { duration: 1, ease: 'linear', delay: stagger(0.5) });
     advance(0.5);
-    expect(a.map(tf)).toEqual(['translate(50px,0px)', 'none', 'none']);
+    expect(a.map(tf)).toEqual(['translate(50px,0px)', '', '']); // unstarted: nothing written
   });
 
   it('immediately renders explicit from values when delayed', () => {

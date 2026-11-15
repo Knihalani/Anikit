@@ -27,10 +27,12 @@ pub mod math;
 pub mod morph;
 pub mod noise;
 pub mod path;
+pub mod space;
 pub mod spring;
 pub mod stagger;
 pub mod timing;
 pub mod util;
+pub mod world;
 
 pub use easing::Easing;
 pub use engine::{BatchSpec, Engine, Handle, TrackKind, TrackSpec};

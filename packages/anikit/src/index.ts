@@ -48,3 +48,7 @@ export { draggable, Draggable, observer, hover, press } from './interaction';
 export type { DraggableOptions, Bounds, ObserverOptions, ObserverEvent } from './interaction';
 export { inspector } from './inspector';
 export type { InspectorOptions } from './inspector';
+export { world, World } from './world';
+export type { WorldOptions, BodyInit } from './world';
+export { scene3d, Scene3D, tilt, parseTransform, toMatrix3d, mixTransforms } from './scene';
+export type { SceneOptions, Projection, DrawOptions, TiltOptions, Vec3, Matrix } from './scene';

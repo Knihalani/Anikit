@@ -15,15 +15,16 @@ import {
   FL_FILL_BACKWARDS, FL_FILL_FORWARDS, FL_IMMEDIATE,
 } from './core';
 import {
-  buildTrack, TrackDef, TRACK_NUMBER, TRACK_PATH, COLOR_SPACES, ColorSpaceName, r3,
+  buildTrack, TrackDef, TRACK_NUMBER, TRACK_PATH, TRACK_MATRIX, COLOR_SPACES, ColorSpaceName, r3,
 } from './values';
 import {
   Target, Targets, toTargets, classify, Kind, readValue, writer, convertUnit, defaultUnit, isElement,
-  claim, unclaim, Owner, stateOf, markDirty, transformUnit, TargetState, snapshot, composeTransform, kebab,
+  claim, unclaim, Owner, stateOf, markDirty, transformUnit, TargetState, snapshot, composeTransform, kebab, computed,
 } from './props';
 import { Playable, Callbacks, Linked } from './playable';
 import { Binding, bind, apply, custom, transformSlot, M_PROP, M_TRANSFORM, M_TRANSFORM2, M_STYLE_NUM, M_STYLE_FMT, M_VAR, M_CUSTOM } from './bind';
 import { pathData, PathSource, writeMorph, elementLength, morphSequence } from './svg';
+import { parseTransform, toMatrix3d } from './scene';
 import { writeStr } from './wasm';
 
 // ---------------------------------------------------------------------------
@@ -133,8 +134,11 @@ class Part implements NodeRecord, Owner, Linked {
       const m = x.mode;
       if (m === M_TRANSFORM) {
         const s = x.obj as TargetState;
-        s.t[x.slot] = f[at + x.off];
-        if (!s.dirty) markDirty(s);
+        const v = f[at + x.off];
+        if (s.t[x.slot] !== v) {
+          s.t[x.slot] = v;
+          if (!s.dirty) markDirty(s);
+        }
       } else if (m === M_PROP) {
         x.target[x.key] = f[at + x.off];
       } else apply(x, at + x.off);
@@ -317,7 +321,7 @@ function normalize(kf: Props | Keyframe[], opts: AnimateOptions): [Map<string, P
       (o as any)[key] = v;
       continue;
     }
-    if (key === 'path' || key === 'draw' || key === 'd' || key === 'attr' || key === 'text') {
+    if (key === 'path' || key === 'draw' || key === 'd' || key === 'attr' || key === 'text' || key === 'transform') {
       out.set(key, { values: [], raw: v });
       continue;
     }
@@ -541,6 +545,26 @@ export class Animation extends Playable {
     cs: number, ctx: BuildContext,
   ): void {
     const raw = resolve(rawIn as FnValue<any>, target, i, n);
+    if (prop === 'transform') {
+      // Whole transform lists, interpolated like browsers do (matrix
+      // decomposition + quaternion slerp in the core).
+      const isEl = isElement(target);
+      const vals = Array.isArray(raw) ? raw.map((v) => resolve(v, target, i, n)) : [null, raw];
+      const current = () =>
+        isEl ? ((target as HTMLElement).style.transform || computed(target as Element, 'transform') || 'none') : String((target as any).transform ?? 'none');
+      const mats: number[] = [];
+      for (const v of vals) mats.push(...parseTransform(String(v ?? current())));
+      if (isEl) this._restore.push(snapshot(target, 'transform', Kind.Style));
+      else this._restore.push(snapshot(target, 'transform', Kind.Prop));
+      const t: TrackDef = {
+        kind: TRACK_MATRIX, arg: 0, ch: 16, out: 16, values: mats, unit: '',
+        format: (at) => toMatrix3d(F64, at), first: toMatrix3d(mats, 0), last: toMatrix3d(mats, mats.length - 16),
+      };
+      const idx = addTrack(t, undefined, this._times);
+      const style = isEl ? (target as HTMLElement).style : null;
+      part.b.push(custom(target, 'transform', idx, 0, style ? (at) => (style.transform = toMatrix3d(F64, at)) : (at) => ((target as any).transform = toMatrix3d(F64, at))));
+      return;
+    }
     if (prop === 'text') {
       const spec: TextOptions = isPlainObject(raw) && 'value' in raw ? (raw as TextOptions) : { value: String(raw) };
       const isEl = isElement(target);

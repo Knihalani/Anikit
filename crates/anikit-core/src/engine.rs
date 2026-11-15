@@ -86,6 +86,10 @@ pub enum TrackKind {
     /// Motion along a path: keyframe values are progress along the path (0–1);
     /// outputs `x, y, angle°`.
     Path,
+    /// 3D transform: keyframes are 4×4 matrices (16 values, CSS `matrix3d`
+    /// order); interpolated like browsers do (decompose → lerp + quaternion
+    /// slerp → recompose); outputs 16 values.
+    Matrix,
 }
 
 /// Description of one animated track (one property).
@@ -468,6 +472,11 @@ impl Anim {
                         let lut = &data[tr.lut_at as usize..(tr.lut_at + tr.lut_len) as usize];
                         o.copy_from_slice(&sample_lut(lut, vals.first().copied().unwrap_or(0.0)));
                     }
+                    TrackKind::Matrix => {
+                        let mut d = [0.0; 17];
+                        d.copy_from_slice(&vals[..17]);
+                        o.copy_from_slice(&crate::space::recompose(&d));
+                    }
                     _ => o.copy_from_slice(&vals[..ch.min(o.len())]),
                 }
                 continue;
@@ -490,6 +499,13 @@ impl Anim {
                 }
                 TrackKind::Discrete => {
                     o[0] = if e < 0.5 { a[0] } else { b[0] };
+                }
+                TrackKind::Matrix => {
+                    let mut da = [0.0; 17];
+                    let mut db = [0.0; 17];
+                    da.copy_from_slice(a);
+                    db.copy_from_slice(b);
+                    o.copy_from_slice(&crate::space::recompose(&crate::space::mix_decomposed(&da, &db, e)));
                 }
                 TrackKind::Path => {
                     let lut = &data[tr.lut_at as usize..(tr.lut_at + tr.lut_len) as usize];
@@ -642,6 +658,12 @@ impl Engine {
                     }
                     (1, 3)
                 }
+                TrackKind::Matrix => {
+                    if ch != 16 {
+                        return Err(Error::InvalidInput);
+                    }
+                    (17, 16)
+                }
             };
             let off_at = data.len() as u32;
             if spec.offsets.is_empty() {
@@ -666,6 +688,17 @@ impl Engine {
                         data.extend_from_slice(&color::to_space(Rgba::new(v[0], v[1], v[2], v[3]), space));
                     }
                     color::fix_hues(&mut data[start..], space);
+                }
+                TrackKind::Matrix => {
+                    for k in 0..nkf {
+                        let mut m = [0.0; 16];
+                        m.copy_from_slice(&spec.values[k * 16..k * 16 + 16]);
+                        // Singular matrices (e.g. scale(0)) fall back to a near-zero scale.
+                        let d = crate::space::decompose(&m).unwrap_or([
+                            m[12], m[13], m[14], 1e-9, 1e-9, 1e-9, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
+                        ]);
+                        data.extend_from_slice(&d);
+                    }
                 }
                 _ => data.extend_from_slice(&spec.values),
             }
@@ -2209,6 +2242,30 @@ mod tests {
         assert_eq!(e.state(l).unwrap(), PlayState::Playing);
         e.tick(60.0);
         assert_eq!(e.state(l).unwrap(), PlayState::Finished);
+    }
+
+    #[test]
+    fn matrix_tracks() {
+        let mut e = Engine::new();
+        let a = crate::space::parse_transform("rotateY(0deg)").unwrap();
+        let b = crate::space::parse_transform("rotateY(90deg) translateZ(100px)").unwrap();
+        let mut v = a.to_vec();
+        v.extend_from_slice(&b);
+        let mut spec = TrackSpec::number(v, 16);
+        spec.kind = TrackKind::Matrix;
+        let h = e.create_anim(Timing { duration: 100.0, ..Default::default() }, &[spec], flags::DEFAULT).unwrap();
+        e.play(h).unwrap();
+        e.tick(100.0);
+        let out = e.values(h).unwrap();
+        for k in 0..16 {
+            assert!((out[k] - b[k]).abs() < 1e-9);
+        }
+        e.seek(h, 50.0).unwrap();
+        let mid = e.values(h).unwrap();
+        let expect = crate::space::mix_matrix(&a, &b, 0.5);
+        for k in 0..16 {
+            assert!((mid[k] - expect[k]).abs() < 1e-9);
+        }
     }
 
     #[test]

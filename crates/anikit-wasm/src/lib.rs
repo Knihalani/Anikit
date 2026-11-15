@@ -48,6 +48,9 @@ struct State {
     luts: Vec<Option<PathLut>>,
     free_luts: Vec<u32>,
     noise: Option<anikit_core::noise::Noise>,
+    worlds: Vec<Option<anikit_core::world::World>>,
+    projectors: Vec<Option<anikit_core::space::Projector>>,
+    points: Vec<Vec<f32>>,
 }
 
 struct Global(UnsafeCell<State>);
@@ -62,6 +65,9 @@ static STATE: Global = Global(UnsafeCell::new(State {
     luts: Vec::new(),
     free_luts: Vec::new(),
     noise: None,
+    worlds: Vec::new(),
+    projectors: Vec::new(),
+    points: Vec::new(),
 }));
 
 #[inline(always)]
@@ -274,6 +280,7 @@ pub extern "C" fn ak_anim_create(len: u32) -> u32 {
         let (kind, path) = match kind_code {
             1 => (TrackKind::Color(ColorSpace::from_u8(arg as u8)), None),
             2 => (TrackKind::Discrete, None),
+            4 => (TrackKind::Matrix, None),
             3 => {
                 let lut = s.luts.get(arg as usize).and_then(|l| l.clone());
                 if lut.is_none() {
@@ -961,4 +968,289 @@ pub extern "C" fn ak_sample(h: u32, p: f64) -> *mut f64 {
         s.f64_buf[..n as usize].copy_from_slice(&tmp);
     }
     ptr
+}
+
+
+// ---------------------------------------------------------------------------
+// Physics world
+// ---------------------------------------------------------------------------
+
+use anikit_core::world::{Attractor, World, WorldConfig};
+
+fn world(id: u32) -> Option<&'static mut World> {
+    st().worlds.get_mut(id as usize).and_then(|w| w.as_mut())
+}
+
+#[no_mangle]
+#[allow(clippy::too_many_arguments)]
+pub extern "C" fn ak_world_create(
+    gx: f64, gy: f64, damping: f64, substeps: u32, iterations: u32, restitution: f64, wall_restitution: f64, friction: f64,
+) -> u32 {
+    let w = World::new(WorldConfig {
+        gravity: [gx as f32, gy as f32],
+        damping: damping as f32,
+        substeps,
+        iterations,
+        restitution: restitution as f32,
+        wall_restitution: wall_restitution as f32,
+        friction: friction as f32,
+        ..Default::default()
+    });
+    let s = st();
+    if let Some(i) = s.worlds.iter().position(|w| w.is_none()) {
+        s.worlds[i] = Some(w);
+        i as u32
+    } else {
+        s.worlds.push(Some(w));
+        (s.worlds.len() - 1) as u32
+    }
+}
+#[no_mangle]
+#[allow(clippy::too_many_arguments)]
+pub extern "C" fn ak_world_config(
+    id: u32, gx: f64, gy: f64, damping: f64, substeps: u32, iterations: u32, restitution: f64, wall_restitution: f64, friction: f64,
+) {
+    if let Some(w) = world(id) {
+        let c = &mut w.config;
+        c.gravity = [gx as f32, gy as f32];
+        c.damping = damping as f32;
+        c.substeps = substeps;
+        c.iterations = iterations;
+        c.restitution = restitution as f32;
+        c.wall_restitution = wall_restitution as f32;
+        c.friction = friction as f32;
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_world_free(id: u32) {
+    if let Some(slot) = st().worlds.get_mut(id as usize) {
+        *slot = None;
+    }
+}
+/// Bounds (pass non-finite values to disable).
+#[no_mangle]
+pub extern "C" fn ak_world_bounds(id: u32, x0: f64, y0: f64, x1: f64, y1: f64) {
+    if let Some(w) = world(id) {
+        let f = |v: f64, d: f32| if v.is_finite() { v as f32 } else { d };
+        w.config.bounds = [f(x0, f32::NEG_INFINITY), f(y0, f32::NEG_INFINITY), f(x1, f32::INFINITY), f(y1, f32::INFINITY)];
+    }
+}
+/// Add `n` bodies from the f64 buffer `[x, y, r, mass] * n`; returns the first index.
+#[no_mangle]
+pub extern "C" fn ak_world_add(id: u32, n: u32) -> u32 {
+    let s = st();
+    let n = (n as usize * 4).min(s.f64_buf.len());
+    let data: Vec<f32> = s.f64_buf[..n].iter().map(|&v| v as f32).collect();
+    world(id).map(|w| w.add_bodies(&data)).unwrap_or(u32::MAX)
+}
+#[no_mangle]
+pub extern "C" fn ak_world_box(id: u32, x0: f64, y0: f64, x1: f64, y1: f64) -> u32 {
+    world(id).map(|w| w.add_box(x0 as f32, y0 as f32, x1 as f32, y1 as f32)).unwrap_or(u32::MAX)
+}
+#[no_mangle]
+pub extern "C" fn ak_world_clear_boxes(id: u32) {
+    if let Some(w) = world(id) {
+        w.clear_boxes();
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_world_constraint(id: u32, a: u32, b: u32, length: f64, stiffness: f64, tear: f64) -> u32 {
+    world(id).map(|w| w.add_constraint(a, b, length as f32, stiffness as f32, tear as f32)).unwrap_or(u32::MAX)
+}
+/// Constraint states into the f64 buffer `[a, b, alive] * n`; returns n.
+#[no_mangle]
+pub extern "C" fn ak_world_constraints(id: u32) -> u32 {
+    let v: Vec<f64> = match world(id) {
+        Some(w) => w.constraints().iter().flat_map(|c| [c.a as f64, c.b as f64, c.alive as u8 as f64]).collect(),
+        None => return 0,
+    };
+    write_f64(&v);
+    (v.len() / 3) as u32
+}
+/// Attractors from the f64 buffer `[x, y, strength, radius] * n`.
+#[no_mangle]
+pub extern "C" fn ak_world_attractors(id: u32, n: u32) {
+    let s = st();
+    let n = (n as usize).min(s.f64_buf.len() / 4);
+    let a: Vec<Attractor> = (0..n)
+        .map(|i| {
+            let b = &s.f64_buf[i * 4..i * 4 + 4];
+            Attractor { x: b[0] as f32, y: b[1] as f32, strength: b[2] as f32, radius: b[3] as f32 }
+        })
+        .collect();
+    if let Some(w) = world(id) {
+        w.set_attractors(&a);
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_world_step(id: u32, dt: f64) {
+    if let Some(w) = world(id) {
+        w.step(dt as f32);
+    }
+}
+/// Address of `[x, y, angle] * n` (f32).
+#[no_mangle]
+pub extern "C" fn ak_world_ptr(id: u32) -> *const f32 {
+    world(id).map(|w| w.output().as_ptr()).unwrap_or(core::ptr::null())
+}
+#[no_mangle]
+pub extern "C" fn ak_world_len(id: u32) -> u32 {
+    world(id).map(|w| w.len() as u32).unwrap_or(0)
+}
+#[no_mangle]
+pub extern "C" fn ak_world_set_position(id: u32, i: u32, x: f64, y: f64, keep_velocity: u32) {
+    if let Some(w) = world(id) {
+        w.set_position(i as usize, x as f32, y as f32, keep_velocity != 0);
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_world_set_velocity(id: u32, i: u32, vx: f64, vy: f64) {
+    if let Some(w) = world(id) {
+        w.set_velocity(i as usize, vx as f32, vy as f32);
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_world_velocity(id: u32, i: u32) -> *mut f64 {
+    let v = world(id).map(|w| w.velocity(i as usize)).unwrap_or([0.0; 2]);
+    write_f64(&[v[0] as f64, v[1] as f64])
+}
+#[no_mangle]
+pub extern "C" fn ak_world_set_pinned(id: u32, i: u32, pinned: u32) {
+    if let Some(w) = world(id) {
+        w.set_pinned(i as usize, pinned != 0);
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_world_set_active(id: u32, i: u32, on: u32) {
+    if let Some(w) = world(id) {
+        w.set_active(i as usize, on != 0);
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_world_set_radius(id: u32, i: u32, r: f64) {
+    if let Some(w) = world(id) {
+        w.set_radius(i as usize, r as f32);
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_world_impulse(id: u32, x: f64, y: f64, radius: f64, strength: f64) {
+    if let Some(w) = world(id) {
+        w.impulse(x as f32, y as f32, radius as f32, strength as f32);
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_world_pick(id: u32, x: f64, y: f64) -> u32 {
+    world(id).map(|w| w.pick(x as f32, y as f32)).unwrap_or(u32::MAX)
+}
+#[no_mangle]
+pub extern "C" fn ak_world_energy(id: u32) -> f64 {
+    world(id).map(|w| w.kinetic_energy() as f64).unwrap_or(0.0)
+}
+#[no_mangle]
+pub extern "C" fn ak_world_pair_tests(id: u32) -> f64 {
+    world(id).map(|w| w.pair_tests as f64).unwrap_or(0.0)
+}
+
+// ---------------------------------------------------------------------------
+// 3D
+// ---------------------------------------------------------------------------
+
+use anikit_core::space;
+
+/// Parse a CSS transform list from the u8 buffer into 16 values (f64 buffer). Returns 1 on success.
+#[no_mangle]
+pub extern "C" fn ak_transform_parse(len: u32) -> u32 {
+    match space::parse_transform(input_str(len)) {
+        Some(m) => {
+            write_f64(&m);
+            1
+        }
+        None => 0,
+    }
+}
+/// Interpolate two matrices (f64 buffer `[a * 16, b * 16]`) like browsers do.
+#[no_mangle]
+pub extern "C" fn ak_matrix_mix(t: f64) -> *mut f64 {
+    let s = st();
+    if s.f64_buf.len() < 32 {
+        return ak_f64_buf(32);
+    }
+    let mut a = [0.0; 16];
+    let mut b = [0.0; 16];
+    a.copy_from_slice(&s.f64_buf[..16]);
+    b.copy_from_slice(&s.f64_buf[16..32]);
+    write_f64(&space::mix_matrix(&a, &b, t))
+}
+/// View-projection matrix from a camera → f64 buffer (16 values).
+#[no_mangle]
+#[allow(clippy::too_many_arguments)]
+pub extern "C" fn ak_camera(ex: f64, ey: f64, ez: f64, tx: f64, ty: f64, tz: f64, fov: f64, aspect: f64, near: f64, far: f64) -> *mut f64 {
+    let view = space::look_at([ex, ey, ez], [tx, ty, tz], [0.0, 1.0, 0.0]);
+    let proj = space::perspective(fov, aspect, near, far);
+    write_f64(&space::mul(&proj, &view))
+}
+/// Rotation matrix from Euler angles (degrees, X then Y then Z) → f64 buffer.
+#[no_mangle]
+pub extern "C" fn ak_rotation(x: f64, y: f64, z: f64) -> *mut f64 {
+    write_f64(&space::to_matrix(&space::quat_euler(x, y, z)))
+}
+#[no_mangle]
+pub extern "C" fn ak_projector_create() -> u32 {
+    let s = st();
+    s.projectors.push(Some(space::Projector::default()));
+    s.points.push(Vec::new());
+    (s.projectors.len() - 1) as u32
+}
+#[no_mangle]
+pub extern "C" fn ak_projector_free(id: u32) {
+    let s = st();
+    if let Some(p) = s.projectors.get_mut(id as usize) {
+        *p = None;
+    }
+    if let Some(v) = s.points.get_mut(id as usize) {
+        *v = Vec::new();
+    }
+}
+/// A projector-owned f32 buffer for `n * stride` point values the host fills.
+#[no_mangle]
+pub extern "C" fn ak_projector_points(id: u32, len: u32) -> *mut f32 {
+    match st().points.get_mut(id as usize) {
+        Some(v) => {
+            v.resize(len as usize, 0.0);
+            v.as_mut_ptr()
+        }
+        None => core::ptr::null_mut(),
+    }
+}
+/// Project points. `source`: 0 = batch `handle`, 1 = the projector's own points.
+/// f64 buffer: `[model * 16, viewProj * 16]`. Returns the `[sx, sy, depth, scale] * n` f32 address.
+#[no_mangle]
+#[allow(clippy::too_many_arguments)]
+pub extern "C" fn ak_project(id: u32, source: u32, handle: u32, stride: u32, ox: u32, oy: u32, oz: u32, n: u32, w: f64, h: f64, sort: u32) -> *const f32 {
+    let s = st();
+    if s.f64_buf.len() < 32 {
+        return core::ptr::null();
+    }
+    let mut model = [0.0; 16];
+    let mut vp = [0.0; 16];
+    model.copy_from_slice(&s.f64_buf[..16]);
+    vp.copy_from_slice(&s.f64_buf[16..32]);
+    let src: &[f32] = if source == 0 {
+        match s.engine.batch_values(handle) {
+            Ok(v) => v,
+            Err(_) => return core::ptr::null(),
+        }
+    } else {
+        match s.points.get(id as usize) {
+            Some(v) => v,
+            None => return core::ptr::null(),
+        }
+    };
+    let Some(Some(p)) = s.projectors.get_mut(id as usize) else { return core::ptr::null() };
+    p.project(src, stride as usize, [ox as usize, oy as usize, oz as usize], n as usize, &model, &vp, w, h, sort != 0);
+    p.out.as_ptr()
+}
+#[no_mangle]
+pub extern "C" fn ak_projector_order(id: u32) -> *const u32 {
+    st().projectors.get(id as usize).and_then(|p| p.as_ref()).map(|p| p.order.as_ptr()).unwrap_or(core::ptr::null())
 }

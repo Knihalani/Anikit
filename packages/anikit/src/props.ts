@@ -161,12 +161,90 @@ export function markDirty(s: TargetState): void {
 }
 
 /** Write all pending transforms (one style write per element per frame). */
+// ---------------------------------------------------------------------------
+// CSS Typed OM fast path: ~35% cheaper than string transforms in Chromium
+// because the browser skips CSS parsing. Each element keeps reusable value
+// objects; they are rebuilt only when the set of active components changes.
+// ---------------------------------------------------------------------------
+
+const G = globalThis as any;
+const TYPED_OK = typeof G.CSS !== 'undefined' && typeof G.CSS.px === 'function' && typeof G.CSSTransformValue === 'function';
+let TYPED = false;
+/** Opt into CSS Typed OM transform writes (benchmark-dependent; off by default). */
+export function setTypedOM(on: boolean): void {
+  TYPED = on && TYPED_OK;
+}
+const UNIT: Record<string, string> = { '%': 'percent', '': 'px' };
+
+interface TypedTransform {
+  key: number;
+  value: any;
+  /** [CSSUnitValue, slot] pairs to refresh each flush. */
+  slots: Array<[any, number]>;
+}
+const typed = new WeakMap<TargetState, TypedTransform>();
+
+function shapeKey(s: TargetState): number {
+  const t = s.t;
+  let k = 0;
+  if (t[11]) k |= 1;
+  if (t[12] || t[13]) k |= 2;
+  if (t[0] || t[1] || t[2]) k |= t[2] ? 8 : 4;
+  if (t[3]) k |= 16;
+  if (t[4]) k |= 32;
+  if (t[5]) k |= 64;
+  if (t[6] || t[7]) k |= 128;
+  if (t[8] !== 1 || t[9] !== 1) k |= t[10] !== 1 ? 512 : 256;
+  else if (t[10] !== 1) k |= 512;
+  // Units of x/y/z participate in the shape.
+  return k | (s.u[0] === 'px' ? 0 : 1 << 12) | (s.u[1] === 'px' ? 0 : 1 << 13) | (s.u[2] === 'px' ? 0 : 1 << 14);
+}
+
+function buildTyped(s: TargetState, key: number): TypedTransform {
+  const C = G.CSS;
+  const parts: any[] = [];
+  const slots: Array<[any, number]> = [];
+  const v = (factory: (n: number) => any, slot: number) => {
+    const u = factory(s.t[slot]);
+    slots.push([u, slot]);
+    return u;
+  };
+  const len = (slot: number) => v((n) => new G.CSSUnitValue(n, UNIT[s.u[slot]] ?? s.u[slot]), slot);
+  if (key & 1) parts.push(new G.CSSPerspective(v((n) => C.px(n), 11)));
+  if (key & 2) parts.push(new G.CSSTranslate(v((n) => C.percent(n), 12), v((n) => C.percent(n), 13)));
+  if (key & 4) parts.push(new G.CSSTranslate(len(0), len(1)));
+  if (key & 8) parts.push(new G.CSSTranslate(len(0), len(1), len(2)));
+  if (key & 16) parts.push(new G.CSSRotate(v((n) => C.deg(n), 3)));
+  if (key & 32) parts.push(new G.CSSRotate(1, 0, 0, v((n) => C.deg(n), 4)));
+  if (key & 64) parts.push(new G.CSSRotate(0, 1, 0, v((n) => C.deg(n), 5)));
+  if (key & 128) parts.push(new G.CSSSkew(v((n) => C.deg(n), 6), v((n) => C.deg(n), 7)));
+  if (key & 512) parts.push(new G.CSSScale(v((n) => C.number(n), 8), v((n) => C.number(n), 9), v((n) => C.number(n), 10)));
+  else if (key & 256) parts.push(new G.CSSScale(v((n) => C.number(n), 8), v((n) => C.number(n), 9)));
+  return { key, value: parts.length ? new G.CSSTransformValue(parts) : null, slots };
+}
+
+/** Write all pending transforms (one style write per element per frame). */
 export function flushTransforms(): void {
   for (let i = 0; i < dirty.length; i++) {
     const s = dirty[i];
     s.dirty = false;
     const el = s.el as HTMLElement;
-    if (el.style) el.style.transform = composeTransform(s);
+    if (!el.style) continue;
+    const map = TYPED ? (el as any).attributeStyleMap : null;
+    if (map) {
+      const key = shapeKey(s);
+      let tt = typed.get(s);
+      if (!tt || tt.key !== key) {
+        tt = buildTyped(s, key);
+        typed.set(s, tt);
+      } else {
+        for (let k = 0; k < tt.slots.length; k++) tt.slots[k][0].value = s.t[tt.slots[k][1]];
+      }
+      if (tt.value) map.set('transform', tt.value);
+      else el.style.transform = 'none';
+    } else {
+      el.style.transform = composeTransform(s);
+    }
   }
   dirty.length = 0;
 }

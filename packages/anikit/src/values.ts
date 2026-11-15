@@ -12,6 +12,7 @@ export const TRACK_NUMBER = 0;
 export const TRACK_COLOR = 1;
 export const TRACK_DISCRETE = 2;
 export const TRACK_PATH = 3;
+export const TRACK_MATRIX = 4;
 
 export type ColorSpaceName = 'srgb' | 'linear' | 'oklab' | 'oklch' | 'hsl';
 export const COLOR_SPACES: Record<ColorSpaceName, number> = { srgb: 0, linear: 1, oklab: 2, oklch: 3, hsl: 4 };

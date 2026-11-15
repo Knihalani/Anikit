@@ -24,6 +24,9 @@ type Fmt = (at: number) => string | number;
 
 export class Binding {
   on = true;
+  /** Last written number / string (skip writes that would not change anything). */
+  ln = NaN;
+  ls: unknown = undefined;
   constructor(
     public target: any,
     public prop: string,
@@ -49,28 +52,54 @@ export function apply(b: Binding, at: number): void {
       return;
     case M_TRANSFORM: {
       const s = b.obj as TargetState;
-      s.t[b.slot] = F64[at];
-      if (!s.dirty) markDirty(s);
+      const v = F64[at];
+      if (s.t[b.slot] !== v) {
+        s.t[b.slot] = v;
+        if (!s.dirty) markDirty(s);
+      }
       return;
     }
     case M_TRANSFORM2: {
       const s = b.obj as TargetState;
-      s.t[b.slot] = s.t[b.slot2] = F64[at];
-      if (!s.dirty) markDirty(s);
+      const v = F64[at];
+      if (s.t[b.slot] !== v || s.t[b.slot2] !== v) {
+        s.t[b.slot] = s.t[b.slot2] = v;
+        if (!s.dirty) markDirty(s);
+      }
       return;
     }
-    case M_STYLE_NUM:
-      b.obj[b.key] = r3(F64[at]) + b.unit;
+    case M_STYLE_NUM: {
+      const v = r3(F64[at]);
+      if (v !== b.ln) {
+        b.ln = v;
+        b.obj[b.key] = v + b.unit;
+      }
       return;
-    case M_STYLE_FMT:
-      b.obj[b.key] = b.fmt!(at);
+    }
+    case M_STYLE_FMT: {
+      const v = b.fmt!(at);
+      if (v !== b.ls) {
+        b.ls = v;
+        b.obj[b.key] = v;
+      }
       return;
-    case M_VAR:
-      (b.obj as CSSStyleDeclaration).setProperty(b.key, String(b.fmt!(at)));
+    }
+    case M_VAR: {
+      const v = String(b.fmt!(at));
+      if (v !== b.ls) {
+        b.ls = v;
+        (b.obj as CSSStyleDeclaration).setProperty(b.key, v);
+      }
       return;
-    case M_ATTR:
-      (b.target as Element).setAttribute(b.key, String(b.fmt!(at)));
+    }
+    case M_ATTR: {
+      const v = String(b.fmt!(at));
+      if (v !== b.ls) {
+        b.ls = v;
+        (b.target as Element).setAttribute(b.key, v);
+      }
       return;
+    }
     case M_PROP_FMT:
       b.target[b.key] = b.fmt!(at);
       return;
