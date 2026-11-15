@@ -42,7 +42,7 @@ describe('pointCloud', () => {
 
   it('splat + tone map match the native golden scene bit for bit', () => {
     // Same scene as `golden_scene_hash` in crates/anikit-core/src/splat.rs:
-    // the wasm build takes the SIMD tone-map path, the native test the scalar one.
+    // the wasm build runs the simd128-vectorised tone map, the native test SSE2 code.
     const w = core();
     const n = 400;
     const pid = w.ak_projector_create();
