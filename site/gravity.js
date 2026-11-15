@@ -3,8 +3,8 @@
 // switch it off and they spring back into the layout.
 import { world, splitText, set, animate, stagger } from '../packages/anikit/dist/anikit.js';
 
-const TEXT = 'h1, h2, h3, h4, .moment-sub, .sub, .lede, .eyebrow, .kicker, .stat-label, .card p, .story-steps li, .fine, .phys-label, .knob-value, .ease-code, .install-cmd, .footer span';
-const SOLID = '.btn, .chip, .fx, .tile, .stat-num, .puck, .flip, .nav .brand, .nav-links a, .code-card, .record-card, .phys-stage, .card-svg, .ease-stage, .feel-box';
+const TEXT = '.hero-title, .giant, .m-word, .t-line, .hero-copy, .m-desc, .t-copy, .part-copy, .corner, .install-row code, .p-stat p';
+const SOLID = '.pill, .card, .hold, .p-num, .t-key, .big-num';
 
 export function gravity({ onChange } = {}) {
   let active = null;
@@ -16,7 +16,7 @@ export function gravity({ onChange } = {}) {
     const taken = new Set();
     // Solid blocks first (they keep their contents).
     for (const el of document.querySelectorAll(SOLID)) {
-      if (el.closest('.hud') || [...taken].some((t) => t.contains(el))) continue;
+      if (el.closest('.frame, .cursor') || [...taken].some((t) => t.contains(el))) continue;
       const r = el.getBoundingClientRect();
       if (!visible(r)) continue;
       if (r.width * r.height > innerWidth * innerHeight * 0.18) continue;
@@ -24,7 +24,7 @@ export function gravity({ onChange } = {}) {
       taken.add(el);
     }
     for (const el of document.querySelectorAll(TEXT)) {
-      if (el.closest('.hud') || [...taken].some((t) => t.contains(el))) continue;
+      if (el.closest('.frame, .cursor') || [...taken].some((t) => t.contains(el))) continue;
       const r = el.getBoundingClientRect();
       if (!visible(r)) continue;
       if (!el.dataset.gsplit) {

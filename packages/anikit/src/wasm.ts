@@ -142,6 +142,7 @@ export interface Exports {
   ak_splat_fade(id: number, k: number): void;
   ak_splat_draw(id: number, pid: number, n: number): void;
   ak_splat_resolve(id: number, exposure: number, bg: number, keep: number): number;
+  ak_splat_mode(id: number, ink: number): void;
   ak_gif_new(w: number, h: number, loop: number): number;
   ak_gif_frame_ptr(id: number): number;
   ak_gif_add(id: number, delayCs: number): void;

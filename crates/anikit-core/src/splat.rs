@@ -28,11 +28,13 @@ pub struct SplatParams {
     pub lens: [f32; 4],
     /// Largest disc radius in buffer pixels.
     pub max_radius: f32,
+    /// Colour multiplier applied to every point (cheap palette changes).
+    pub tint: [f32; 3],
 }
 
 impl Default for SplatParams {
     fn default() -> Self {
-        Self { size: 1.0, intensity: 0.3, fog_near: 0.0, fog_far: f32::INFINITY, scale: 1.0, lens: [0.0; 4], max_radius: 6.0 }
+        Self { size: 1.0, intensity: 0.3, fog_near: 0.0, fog_far: f32::INFINITY, scale: 1.0, lens: [0.0; 4], max_radius: 6.0, tint: [1.0; 3] }
     }
 }
 
@@ -55,6 +57,11 @@ pub struct Splat {
     /// Rows that held any light at the last resolve (so their pixels aren't plain background).
     lit: Vec<bool>,
     last_bg: Option<u32>,
+    /// Subtractive "ink" rendering: accumulated values absorb the background
+    /// (`bg / (1 + c)` per channel) instead of adding light. Point colours
+    /// are then absorption per channel (1, 1, 1 = black ink).
+    pub ink: bool,
+    last_ink: bool,
 }
 
 /// Points up to this buffer-pixel radius use the 4-tap bilinear splat.
@@ -145,6 +152,7 @@ impl Splat {
                 }
             }
             let (cr, cg, cb) = if has_colors { (colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]) } else { (1.0, 1.0, 1.0) };
+            let (cr, cg, cb) = (cr * p.tint[0], cg * p.tint[1], cb * p.tint[2]);
             let bx = x * p.scale - 0.5;
             let by = y * p.scale - 0.5;
             let rad = (size * sc).min(maxr);
@@ -217,7 +225,8 @@ impl Splat {
         // vectorises (f32x4 on wasm simd128). Subtracting a floor keeps
         // decaying light out of denormal range (~100x slower arithmetic) and
         // lets trails end.
-        if self.last_bg != Some(bg) {
+        if self.last_bg != Some(bg) || self.last_ink != self.ink {
+            self.last_ink = self.ink;
             // Background changed (or first frame): every row must be written.
             self.lit.iter_mut().for_each(|l| *l = true);
             self.last_bg = Some(bg);
@@ -238,16 +247,31 @@ impl Splat {
                 .zip(self.r[span.clone()].iter_mut())
                 .zip(self.g[span.clone()].iter_mut())
                 .zip(self.b[span].iter_mut());
-            for (((px, r), g), b) in pixels {
-                let (cr, cg, cb) = (*r * s, *g * s, *b * s);
-                any = any.max(*r + *g + *b);
-                let vr = (kr * cr / (1.0 + cr)).min(mr) + br + 0.5;
-                let vg = (kg * cg / (1.0 + cg)).min(mg) + bgc + 0.5;
-                let vb = (kb * cb / (1.0 + cb)).min(mb) + bb + 0.5;
-                *px = (vr as i32 as u32) | ((vg as i32 as u32) << 8) | ((vb as i32 as u32) << 16) | 0xff00_0000;
-                *r = (*r * keep - floor).max(0.0);
-                *g = (*g * keep - floor).max(0.0);
-                *b = (*b * keep - floor).max(0.0);
+            if self.ink {
+                // Ink absorbs: transmittance 1 / (1 + c) per channel.
+                for (((px, r), g), b) in pixels {
+                    let (cr, cg, cb) = (*r * s, *g * s, *b * s);
+                    any = any.max(*r + *g + *b);
+                    let vr = br / (1.0 + cr) + 0.5;
+                    let vg = bgc / (1.0 + cg) + 0.5;
+                    let vb = bb / (1.0 + cb) + 0.5;
+                    *px = (vr as i32 as u32) | ((vg as i32 as u32) << 8) | ((vb as i32 as u32) << 16) | 0xff00_0000;
+                    *r = (*r * keep - floor).max(0.0);
+                    *g = (*g * keep - floor).max(0.0);
+                    *b = (*b * keep - floor).max(0.0);
+                }
+            } else {
+                for (((px, r), g), b) in pixels {
+                    let (cr, cg, cb) = (*r * s, *g * s, *b * s);
+                    any = any.max(*r + *g + *b);
+                    let vr = (kr * cr / (1.0 + cr)).min(mr) + br + 0.5;
+                    let vg = (kg * cg / (1.0 + cg)).min(mg) + bgc + 0.5;
+                    let vb = (kb * cb / (1.0 + cb)).min(mb) + bb + 0.5;
+                    *px = (vr as i32 as u32) | ((vg as i32 as u32) << 8) | ((vb as i32 as u32) << 16) | 0xff00_0000;
+                    *r = (*r * keep - floor).max(0.0);
+                    *g = (*g * keep - floor).max(0.0);
+                    *b = (*b * keep - floor).max(0.0);
+                }
             }
             self.lit[y] = any > 0.0;
         }
@@ -302,6 +326,22 @@ mod tests {
         let n = f32::NAN;
         s.draw(&[4.0, 4.0, 1.0, n, n, 4.0, 1.0, 9.0, 4.0, f32::INFINITY, 1.0, 9.0], 3, &SplatParams::default());
         assert!(s.r.iter().all(|v| *v == 0.0));
+    }
+
+    #[test]
+    fn ink_darkens_paper() {
+        let mut s = Splat::new(8, 8);
+        s.ink = true;
+        s.draw(&[4.0, 4.0, 1.0, 0.5], 1, &SplatParams { intensity: 50.0, ..Default::default() });
+        s.resolve(1.0, 0xeeeeee);
+        let dark = s.rgba[3 * 8 + 3] & 0xff;
+        assert!(dark < 0x40, "{dark:x}");
+        assert_eq!(s.rgba[0] & 0xff, 0xee);
+        // Tint scales the deposit.
+        let mut t = Splat::new(8, 8);
+        t.draw(&[4.0, 4.0, 1.0, 0.5], 1, &SplatParams { tint: [0.0, 1.0, 1.0], ..Default::default() });
+        assert_eq!(t.light(3, 3)[0], 0.0);
+        assert!(t.light(3, 3)[1] > 0.0);
     }
 
     #[test]

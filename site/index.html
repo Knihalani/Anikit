@@ -4,248 +4,146 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Anikit — motion, compiled</title>
-<meta name="description" content="A web animation engine with a Rust/WebAssembly core: tweens, timelines, springs, physics, 3D, scroll, SVG, text, capture." />
+<meta name="description" content="A web animation engine with a Rust/WebAssembly core: tweens, springs, timelines, physics, particles, 3D, scroll, SVG, text, capture." />
+<link rel="preload" href="fonts/InterDisplay-Black.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <canvas id="cosmos" aria-hidden="true"></canvas>
-<div id="progress" aria-hidden="true"></div>
+
+<!-- Fixed editorial frame (mix-blend: readable on every colour field) -->
+<div class="frame">
+  <a class="f-brand" href="#top">anikit<sup>®</sup></a>
+  <div class="f-scene"><span id="scene-no">01</span> / <span id="scene-total">08</span> — <span id="scene-name">Motion</span></div>
+  <div class="f-hud">
+    <span id="hud-stats">booting the core…</span>
+    <button class="f-btn" id="hud-gravity" title="Turn every word into a physics body (G)">Gravity</button>
+    <button class="f-btn" id="hud-slow" title="Hold to slow time (Space)">Slow-mo</button>
+  </div>
+  <div class="f-progress"><i id="progress"></i></div>
+</div>
+<div class="cursor" id="cursor" aria-hidden="true"><i></i><span id="cursor-label"></span></div>
 <div class="vignette" id="vignette" aria-hidden="true"></div>
 
-<nav class="nav" id="nav">
-  <a class="brand" href="#top" aria-label="Anikit home">
-    <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><path id="mark" d="M16 3 L29 29 L3 29 Z" /></svg>
-    <span>anikit</span>
-  </a>
-  <div class="nav-links">
-    <a href="#perf">Performance</a><a href="#ease">Easing</a><a href="#story">Timelines</a><a href="#physics">Physics</a><a href="#space">3D</a><a href="#effects">Effects</a><a href="#agents">Agents</a>
-  </div>
-  <a class="nav-cta" href="#install">Install</a>
-</nav>
-
-<!-- HERO -->
-<header class="hero station" id="top" data-shape="wordmark" data-exposure="0.68">
-  <div class="hero-inner">
-    <p class="eyebrow"><span class="dot"></span> Rust core · WebAssembly · TypeScript · Python</p>
-    <div class="wordmark-space" aria-hidden="true"></div>
-    <h1 id="headline">Motion, compiled.</h1>
-    <p class="lede"><span id="tagline">An animation engine written in Rust and running in WebAssembly.</span></p>
-    <div class="hero-actions">
-      <a class="btn primary magnetic" href="#install">Get started</a>
-      <a class="btn ghost magnetic" href="#perf">See the numbers</a>
-    </div>
-  </div>
-  <div class="scroll-hint" aria-hidden="true"><span></span></div>
-</header>
-
 <main>
-  <!-- MOMENT: the particles -->
-  <section class="moment station" data-shape="galaxy" data-exposure="1.1">
-    <div class="moment-inner">
-      <p class="kicker">Look closer</p>
-      <h2 class="moment-title" id="m1-title"><span class="count-live" id="m1-count">150,000</span> particles.</h2>
-      <p class="moment-sub">Each one has its own spring, its own timing and its own path through a turbulence field. All of them are simulated, projected and lit in WebAssembly, on the main thread, in <b id="m1-ms">a few</b> milliseconds per frame.</p>
-      <p class="moment-hint">Move your cursor through them. Click to send a shockwave.</p>
+  <!-- 01 · HERO (paper) -->
+  <header class="scene hero station" id="top" data-shape="wordmark" data-bg="#ece6da" data-mode="ink" data-exposure="1.0" data-name="Motion">
+    <div class="corner tl mono">Motion engine<br />Rust → WebAssembly</div>
+    <div class="corner tr mono">TypeScript · Python<br />MIT · v0.1</div>
+    <div class="wordmark-space" aria-hidden="true"></div>
+    <h1 class="sr-only">anikit</h1>
+    <div class="hero-row">
+      <p class="hero-title" id="hero-title">Motion,<br /><em>compiled.</em></p>
+      <div class="hero-side">
+        <p class="mono hero-copy" id="hero-copy">One engine for tweens, springs, timelines, physics, particles, 3D, scroll, SVG and text. Written in Rust. Running in WebAssembly. Every pixel on this page.</p>
+        <div class="hero-actions">
+          <a class="pill solid" href="#install" data-cursor="Install">npm i anikit</a>
+          <button class="pill" id="hero-gravity" data-cursor="Drop it">Drop the page ↓</button>
+        </div>
+      </div>
     </div>
-  </section>
+    <div class="scroll-cue mono"><span>Scroll</span><i></i></div>
+  </header>
 
-  <!-- PERFORMANCE -->
-  <section id="perf" class="section station" data-shape="sphere" data-exposure="0.42">
-    <div class="section-head">
-      <p class="kicker">Performance</p>
-      <h2>Native speed where it counts.</h2>
-      <p class="sub">The math runs in WebAssembly: timing, easing, springs, physics, projection and depth sorting. JavaScript only touches what changed. Every figure below comes from scripts in the repo.</p>
-    </div>
-    <div class="stats">
-      <article class="stat-card"><div class="stat-num"><span class="count" data-to="27">0</span>×</div><div class="stat-label">faster physics than matter.js<br /><small>250 colliding bodies; 7–27× across sizes</small></div><div class="bar"><i data-w="1"></i></div></article>
-      <article class="stat-card"><div class="stat-num"><span class="count" data-to="16">0</span>×</div><div class="stat-label">faster 3D projection + depth sort<br /><small>500k points vs optimised JS</small></div><div class="bar"><i data-w=".6"></i></div></article>
-      <article class="stat-card"><div class="stat-num"><span class="count" data-to="2.2" data-decimals="1">0</span>×</div><div class="stat-label">GSAP's frame rate, real Chromium<br /><small>2,000 DOM elements: 56–59 vs 26–27 fps</small></div><div class="bar"><i data-w=".25"></i></div></article>
-      <article class="stat-card"><div class="stat-num"><span class="count" data-to="100000" data-format="1">0</span></div><div class="stat-label">instances per frame in ~1.3 ms<br /><small>batch(): one Float32Array, zero per-object JS</small></div><div class="bar"><i data-w=".8"></i></div></article>
-    </div>
-    <p class="fine">Plain object property writes cost the same in every JS library. Anikit's wins come from moving heavy work into WebAssembly and skipping unchanged DOM writes. Full methodology is in the README.</p>
-  </section>
-
-  <!-- EASING LAB -->
-  <section id="ease" class="section station" data-shape="wave" data-exposure="0.38">
-    <div class="section-head">
-      <p class="kicker">Easing</p>
-      <h2>Every curve you know. And the ones you'll draw.</h2>
-      <p class="sub">CSS, Penner, GSAP and spring syntaxes, custom SVG curves, modifiers, and functions. Pick one; the curve morphs into it.</p>
-    </div>
-    <div class="ease-lab">
-      <div class="ease-chips" id="ease-chips" role="list"></div>
-      <div class="ease-stage">
-        <svg viewBox="-10 -40 320 260" class="ease-svg" aria-hidden="true">
-          <path class="grid" d="M0 0 H300 M0 200 H300 M0 0 V200 M300 0 V200" />
-          <path id="ease-curve" d="M0 200 L300 0" />
-        </svg>
-        <div class="ease-track"><div class="ease-ball" id="ease-ball"></div></div>
-        <code class="ease-code" id="ease-code">ease: 'outBack'</code>
+  <!-- 02 · MANIFESTO (ink) -->
+  <section class="scene manifesto station" id="manifesto" data-shape="ribbon" data-bg="#0c0c0c" data-mode="light" data-tint="1,0.32,0.14" data-exposure="0.55" data-name="Everything">
+    <div class="pin" id="manifesto-pin">
+      <div class="m-label mono"><span id="m-index">01</span> / 10<br /><span class="m-desc" id="m-desc">Any property, any target.</span><br /><code id="m-code">animate(el, { x: 400 })</code></div>
+      <div class="m-stack" id="m-stack">
+        <div class="m-word">Tweens</div>
+        <div class="m-word">Springs</div>
+        <div class="m-word">Timelines</div>
+        <div class="m-word">Physics</div>
+        <div class="m-word">Particles</div>
+        <div class="m-word">3D</div>
+        <div class="m-word">Scroll</div>
+        <div class="m-word">Text</div>
+        <div class="m-word">Paths</div>
+        <div class="m-word">Capture</div>
       </div>
     </div>
   </section>
 
-  <!-- PINNED STORY -->
-  <section id="story" class="story station" data-shape="knot" data-exposure="0.3">
-    <div class="story-pin" id="story-pin">
-      <div class="story-copy">
-        <p class="kicker">Timelines × Scroll</p>
-        <h2 id="story-title">Scrub through time.</h2>
-        <ol class="story-steps" id="story-steps">
-          <li data-label="build">Sequence with labels and overlaps</li>
-          <li data-label="morph">Morph any shape into any shape</li>
-          <li data-label="paint">Interpolate colour in OKLab</li>
-          <li data-label="orbit">Compose 3D transforms</li>
-        </ol>
+  <!-- 03 · PHYSICS (ultramarine) -->
+  <section class="scene physics station" id="physics" data-shape="rain" data-bg="#1f2bff" data-mode="light" data-exposure="0" data-name="Physics">
+    <div class="pin">
+      <canvas id="sand" aria-hidden="true"></canvas>
+      <div class="p-letters" id="p-letters" aria-label="Gravity"></div>
+      <div class="corner tl mono">03 — Physics<br />Rigid bodies · ropes · cloth</div>
+      <div class="p-stat">
+        <div class="p-num">43×</div>
+        <p class="mono">faster than matter.js<br />250 colliding bodies · bench-physics.mjs</p>
       </div>
-      <div class="story-stage" id="story-stage">
-        <svg viewBox="0 0 400 400" class="story-svg" aria-hidden="true">
-          <defs>
-            <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c8cff" /><stop offset="1" stop-color="#ff7ab6" /></linearGradient>
-          </defs>
-          <path id="story-shape" d="" fill="url(#g1)" />
-        </svg>
-        <div class="story-dots" id="story-dots"></div>
-      </div>
+      <p class="corner br mono p-hint">Drag the letters · click to blast</p>
     </div>
   </section>
 
-  <!-- SVG -->
-  <section id="svg" class="section station" data-shape="helix" data-exposure="0.4">
-    <div class="section-head">
-      <p class="kicker">SVG</p>
-      <h2>Paths that think.</h2>
-      <p class="sub">Morphing between arbitrary shapes, stroke drawing, motion along arc-length-parameterised paths, and path tools: trim, smooth, simplify, measure.</p>
-    </div>
-    <div class="cards three">
-      <article class="card"><svg viewBox="0 0 200 200" class="card-svg"><path id="blob" /></svg><h3>Morph</h3><p>Different point counts and subpaths work; shapes are aligned to minimise travel.</p></article>
-      <article class="card"><svg viewBox="0 0 200 200" class="card-svg"><path id="draw-path" d="M20 160 C40 40 80 40 100 100 S160 160 180 40" /><circle id="rider" r="6" /></svg><h3>Draw &amp; ride</h3><p><code>draw</code> reveals strokes; <code>path</code> moves along them with auto-rotation.</p></article>
-      <article class="card"><svg viewBox="0 0 200 200" class="card-svg"><path id="spline" /><g id="spline-dots"></g></svg><h3>Spline tools</h3><p>A smooth curve through points that wander with seeded simplex noise.</p></article>
+  <!-- 04 · PARTICLES (black) -->
+  <section class="scene particles" id="particles" data-name="Particles">
+    <div class="station marker" data-shape="knot" data-bg="#050505" data-mode="light" data-tint="1,0.86,0.72" data-exposure="1" data-name="Particles"></div>
+    <div class="station marker m2" data-shape="burst" data-bg="#050505" data-mode="light" data-tint="1,0.5,0.24" data-exposure="1.05" data-name="Particles"></div>
+    <div class="pin">
+      <p class="big-num" id="big-num"><span class="outline">150,000</span><span class="fill" id="big-num-fill">150,000</span></p>
+      <p class="mono part-copy">Particles, each with its own spring and its own path through a turbulence field — simulated, projected and lit in WebAssembly, one <code>putImageData</code> per frame.</p>
+      <p class="corner br mono">Move through them · click for a shockwave</p>
     </div>
   </section>
 
-  <!-- MOMENT: gravity -->
-  <section class="moment station" data-shape="ground" data-exposure="1">
-    <div class="moment-inner">
-      <p class="kicker">Physics</p>
-      <h2 class="moment-title">Now drop the page.</h2>
-      <p class="moment-sub">Every word on your screen becomes a rigid body in a WebAssembly physics world. Throw them around. Press again and they spring back into the layout.</p>
-      <button class="btn primary big-btn" id="gravity-cta">Turn on gravity</button>
+  <!-- 05 · TIME (acid) -->
+  <section class="scene time station" id="time" data-shape="vortex" data-bg="#d2ff3c" data-mode="ink" data-exposure="0.95" data-name="Time">
+    <div class="pin">
+      <p class="t-line">Hold</p>
+      <p class="t-line"><span class="t-key" id="t-key">Space</span></p>
+      <p class="t-line">to bend time.</p>
+      <p class="mono t-copy">One clock drives tweens, springs, physics and particles. Slow it down and everything slows together — mid-flight.</p>
+      <button class="hold" id="hold-btn" data-cursor="Hold">Hold</button>
     </div>
   </section>
 
-  <!-- PHYSICS -->
-  <section id="physics" class="section station" data-shape="chains" data-exposure="0.4">
-    <div class="section-head">
-      <p class="kicker">Physics</p>
-      <h2>A physics world in your page.</h2>
-      <p class="sub">Collisions, constraints, ropes and cloth, solved in WebAssembly. Drag the letters. Move your cursor through the field.</p>
-    </div>
-    <div class="physics-grid">
-      <div class="phys-stage" id="letters-stage">
-        <div class="phys-label">DOM elements as bodies — throw them</div>
-      </div>
-      <div class="phys-stage canvas-stage" id="field-stage">
-        <canvas id="field"></canvas>
-        <div class="phys-label" id="field-stat">&nbsp;</div>
-      </div>
+  <!-- 06 · PATHS (paper) -->
+  <section class="scene paths station" id="paths" data-shape="grid" data-bg="#ece6da" data-mode="ink" data-exposure="0.35" data-name="Paths">
+    <div class="pin">
+      <h2 class="giant">Paths<br />that<br />think.</h2>
+      <svg class="blob" viewBox="0 0 400 400" aria-hidden="true"><path id="blob" /></svg>
+      <svg class="trail" viewBox="0 0 1600 400" preserveAspectRatio="none" aria-hidden="true"><path id="trail" d="M-20 300 C 200 40 360 380 560 200 S 900 20 1080 220 S 1400 380 1620 120" /><circle id="rider" r="11" /></svg>
+      <p class="mono corner br">Morph · draw · motion paths · arc-length exact</p>
     </div>
   </section>
 
-  <!-- 3D -->
-  <section id="space" class="section station" data-shape="lattice" data-exposure="0.4">
-    <div class="section-head">
-      <p class="kicker">3D</p>
-      <h2>Depth, done right.</h2>
-      <p class="sub">Transform lists interpolate exactly like browsers do, using matrix decomposition and quaternion slerp. Cards tilt with springs. Click to flip.</p>
-    </div>
-    <div class="flip-cards" id="flip-cards"></div>
-    <div class="layout-demo">
-      <div class="layout-head"><h3>Layout transitions (FLIP)</h3><button class="btn small" id="shuffle">Shuffle</button><button class="btn small" id="relayout">Change layout</button></div>
-      <div class="tiles" id="tiles"></div>
+  <!-- 07 · DEPTH (vermilion) -->
+  <section class="scene depth station" id="depth" data-shape="lattice" data-bg="#ff3b14" data-mode="ink" data-exposure="0.32" data-name="Depth">
+    <div class="pin">
+      <h2 class="giant depth-title">Depth.</h2>
+      <div class="ring-stage" id="ring-stage"><div class="ring" id="ring"></div></div>
+      <p class="mono corner bl">Transform lists interpolate like browsers do:<br />decompose → slerp → recompose. Click a card.</p>
     </div>
   </section>
 
-  <!-- MOMENT: time -->
-  <section class="moment station" data-shape="vortex" data-exposure="1.05">
-    <div class="moment-inner">
-      <p class="kicker">One clock</p>
-      <h2 class="moment-title">Hold <kbd>Space</kbd> to bend time.</h2>
-      <p class="moment-sub">Tweens, springs, physics, particles and scroll effects all share one engine clock. Slow it down and everything slows together, mid-flight.</p>
-      <button class="btn ghost big-btn" id="slow-cta">Press and hold</button>
-    </div>
-  </section>
-
-  <!-- EFFECTS -->
-  <section id="effects" class="section station" data-shape="burst" data-exposure="0.35">
-    <div class="section-head">
-      <p class="kicker">Effects</p>
-      <h2><span id="fx-count">39</span> presets. Your own in one line.</h2>
-      <p class="sub">Entrances, exits, attention seekers, loops, text and SVG effects. Hover or click any tile.</p>
-    </div>
-    <div class="effects" id="effects-grid"></div>
-  </section>
-
-  <!-- SPRINGS & DRAG -->
-  <section id="feel" class="section station" data-shape="rings" data-exposure="0.35">
-    <div class="section-head">
-      <p class="kicker">Feel</p>
-      <h2>Springs, momentum, gestures.</h2>
-      <p class="sub">Retargetable springs keep their velocity. Inertia glides, bounces off bounds and snaps.</p>
-    </div>
-    <div class="feel-grid">
-      <div class="feel-box" id="drag-zone"><div class="puck" id="puck">drag</div><div class="phys-label">draggable · inertia · snap to grid</div></div>
-      <div class="feel-box" id="follow-zone"><div class="follower" id="follower"></div><div class="follower small" id="follower2"></div><div class="phys-label">spring follow · move your cursor</div></div>
-      <div class="feel-box knob-box"><div class="knob" id="knob"><i></i></div><div class="knob-value" id="knob-value">0</div><div class="phys-label">rotate draggable · bounded</div></div>
-    </div>
-  </section>
-
-  <!-- AGENTS -->
-  <section id="agents" class="section station" data-shape="grid" data-exposure="0.3">
-    <div class="section-head">
-      <p class="kicker">Built for humans and agents</p>
-      <h2>Inspectable. Testable. Recordable.</h2>
-      <p class="sub">Typos come back with "did you mean…". <code>engine.inspect()</code> returns live JSON. Time can be stepped deterministically. Any animation records to a GIF in the browser, or headlessly with <code>anikit-record</code>.</p>
-    </div>
-    <div class="agent-grid">
-      <div class="code-card">
-        <div class="code-head"><span></span><span></span><span></span><em>engine.inspect()</em></div>
-        <pre id="inspect-out">[]</pre>
-      </div>
-      <div class="code-card">
-        <div class="code-head"><span></span><span></span><span></span><em>verify.ts</em></div>
-        <pre id="code-type"></pre>
-      </div>
-      <div class="record-card">
-        <div class="record-demo" id="record-demo"><div class="rd-orb"></div><div class="rd-orb"></div><div class="rd-orb"></div><div class="rd-text">record me</div></div>
-        <button class="btn primary" id="record-btn">Record this to GIF</button>
-        <p class="fine" id="record-out">Frame-exact: engine time is stepped 1/30 s per frame.</p>
+  <!-- 08 · AGENTS (black) -->
+  <section class="scene agents station" id="agents" data-shape="grid" data-bg="#0c0c0c" data-mode="light" data-tint="0.82,1,0.24" data-exposure="0.45" data-name="Agents">
+    <div class="pin">
+      <h2 class="giant">Machines<br />read it<br />too.</h2>
+      <pre class="term" id="term"></pre>
+      <div class="rec">
+        <button class="pill solid" id="rec-btn" data-cursor="Record">● Record 2 s</button>
+        <p class="mono" id="rec-out">Frame-exact GIF, encoded in WebAssembly.</p>
       </div>
     </div>
   </section>
 
-  <!-- INSTALL -->
-  <section id="install" class="section install station" data-shape="install" data-exposure="1.1">
-    <h2 class="big" id="install-title">Make it move.</h2>
-    <div class="install-row">
-      <code class="install-cmd" id="install-cmd">npm install anikit</code>
-      <button class="btn primary" id="copy">Copy</button>
+  <!-- 09 · INSTALL (paper) -->
+  <section class="scene install station" id="install" data-shape="outro" data-bg="#ece6da" data-mode="ink" data-exposure="1" data-name="Install">
+    <div class="pin">
+      <p class="giant outro" id="outro">Make it<br />move.</p>
+      <div class="install-row">
+        <code class="mono" id="install-cmd">npm install anikit</code>
+        <button class="pill solid" id="copy" data-cursor="Copy">Copy</button>
+      </div>
+      <p class="mono corner bl">pip install anikit — the same engine in Python</p>
+      <p class="mono corner br">Every frame on this page runs on anikit.</p>
     </div>
-    <p class="sub center">TypeScript and Python, MIT licensed. Click anywhere here for confetti, powered by <code>physics()</code>.</p>
-    <canvas id="confetti" aria-hidden="true"></canvas>
   </section>
 </main>
-
-<div class="hud" id="hud">
-  <span class="hud-dot"></span><span id="hud-stats">starting…</span>
-  <button class="hud-btn" id="hud-gravity" title="Turn every word into a physics body">Gravity</button>
-  <button class="hud-btn" id="hud-slow" title="Hold (or hold Space) to slow time">Slow-mo</button>
-</div>
-
-<footer class="footer">
-  <span>anikit · MIT</span>
-  <span>Every animation on this page runs on anikit.</span>
-</footer>
 
 <script type="module" src="main.js"></script>
 </body>

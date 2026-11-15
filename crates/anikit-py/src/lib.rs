@@ -2291,6 +2291,7 @@ impl NativeSplat {
             scale,
             lens: [finite("lens", lens.0)?, finite("lens", lens.1)?, finite("lens", lens.2)?, finite("lens", lens.3)?],
             max_radius: finite("max_radius", max_radius)?,
+            ..SplatParams::default()
         };
         let n = proj.len() / 4;
         let s = &mut self.s;

@@ -246,6 +246,12 @@ export interface GlowOptions {
   budget?: number;
   /** Lowest resolution adaptive quality may use (default 0.4). */
   minResolution?: number;
+  /**
+   * `'light'` (default) adds light over the background; `'ink'` absorbs it,
+   * like pigment on paper — use it on light backgrounds. Point colours are
+   * then absorption per channel (`[1, 1, 1]` = black ink). Can be changed live.
+   */
+  mode?: 'light' | 'ink';
 }
 
 export interface GlowRenderOptions {
@@ -261,6 +267,8 @@ export interface GlowRenderOptions {
   maxRadius?: number;
   /** Override exposure for this frame. */
   exposure?: number;
+  /** Multiply every point's colour (cheap live palette changes). */
+  tint?: [number, number, number];
 }
 
 function parseHex(c: string): number {
@@ -288,6 +296,7 @@ export class Glow {
   /** Smoothed render cost (ms). */
   avgMs = 0;
   private slow = 0;
+  private mode: 'light' | 'ink' = 'light';
 
   constructor(canvas: HTMLCanvasElement | string, o: GlowOptions = {}) {
     const c = typeof canvas === 'string' ? document.querySelector<HTMLCanvasElement>(canvas) : canvas;
@@ -301,6 +310,7 @@ export class Glow {
       trail: o.trail ?? 0,
       budget: o.budget ?? 7,
       minResolution: o.minResolution ?? 0.4,
+      mode: o.mode ?? 'light',
     };
     this.ctx = c.getContext('2d', { alpha: false })!;
     this.id = core().ak_splat_create(1, 1);
@@ -349,11 +359,16 @@ export class Glow {
     scene.width = this.width;
     scene.height = this.height;
     const proj = scene.project(source, { sort: false });
-    const at = f64Buf(10);
+    if (this.options.mode !== this.mode) {
+      this.mode = this.options.mode;
+      w.ak_splat_mode(this.id, this.mode === 'ink' ? 1 : 0);
+    }
+    const tint = o.tint ?? [1, 1, 1];
+    const at = f64Buf(13);
     const l = o.lens;
     const fog = o.fog ?? [0, 0];
     F64.set(
-      [o.size ?? 1, o.intensity ?? 0.25, fog[0], fog[1], this.options.resolution, l ? l.x : 0, l ? l.y : 0, l ? l.radius ?? 140 : 0, l ? l.strength ?? 40 : 0, o.maxRadius ?? 6],
+      [o.size ?? 1, o.intensity ?? 0.25, fog[0], fog[1], this.options.resolution, l ? l.x : 0, l ? l.y : 0, l ? l.radius ?? 140 : 0, l ? l.strength ?? 40 : 0, o.maxRadius ?? 6, tint[0], tint[1], tint[2]],
       at,
     );
     w.ak_splat_draw(this.id, scene._pid, proj.count);

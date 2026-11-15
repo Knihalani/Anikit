@@ -1,8 +1,7 @@
-// Anikit landing page — every animation here runs on anikit.
+// Anikit — a kinetic poster film. Every frame on this page runs on anikit.
 import {
-  ready, engine, animate, set, timeline, stagger, spring, scrollTrigger, scrollTriggerBatch, splitText, effects,
-  world, scene3d, batch, tilt, flip, draggable, inView, hover, observer, record, physics, easing, pathThrough,
-  noise2, circle, star, rect, polygon, effectNames,
+  ready, engine, animate, set, timeline, stagger, spring, scroll, inView, splitText, effects, world,
+  record, noise2, circle, star, rect, pathThrough, flush,
 } from '../packages/anikit/dist/anikit.js';
 import { cosmos, bulletTime } from './cosmos.js';
 import { gravity } from './gravity.js';
@@ -11,513 +10,362 @@ await ready;
 engine.reducedMotion = 'user';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-const dpr = Math.min(2, devicePixelRatio || 1);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const dpr = Math.min(2, devicePixelRatio || 1);
+const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-/** Run `fn` each frame only while `el` is on screen. */
+/** Run `fn(dt)` every frame only while `el` is on screen. */
 function whileVisible(el, fn) {
   let off = null;
   inView(el, () => {
-    off = engine.onFrame(fn);
-    return () => off?.();
-  }, { margin: '100px' });
+    off = engine.onFrame((_t, dt) => fn(dt));
+    return () => { off?.(); off = null; };
+  }, { amount: 0 });
 }
+/** Scroll progress through a pinned section (0 at pin start, 1 at pin end). */
+const pinned = (section, fn) => scroll(fn, { target: section, offset: ['start start', 'end end'] });
+/** Wrap every character of an element in an inline-block span. */
+const chars = (el) => splitText(el, { type: 'words,chars', charClass: 'ch', wordClass: 'gw' }).chars;
 
 // ---------------------------------------------------------------------------
-// Chrome: progress bar, nav, brand mark
+// The cosmos, time, gravity, frame UI
 // ---------------------------------------------------------------------------
-scrollTrigger({ animation: animate('#progress', { scaleX: [0, 1] }, { ease: 'linear', autoplay: false }), scrub: true, start: 'top', end: 'bottom' });
-animate('#nav', { y: [-80, 0], opacity: [0, 1] }, { duration: 0.9, delay: 0.3, ease: 'outCubic' });
-let navHidden = false;
-observer({
-  type: 'scroll', tolerance: 24,
-  onDown: () => !navHidden && scrollY > 400 && ((navHidden = true), animate('#nav', { y: -90 }, { duration: 0.4, ease: 'inCubic' })),
-  onUp: () => navHidden && ((navHidden = false), animate('#nav', { y: 0 }, { duration: 0.5, ease: 'outCubic' })),
+const cos = await cosmos({ reduced });
+const bt = bulletTime({
+  glow: cos.glow,
+  buttons: [$('#hud-slow'), $('#hold-btn')],
+  vignette: $('#vignette'),
+  onChange: (slow) => animate('#t-key', { y: slow ? '0.08em' : 0, boxShadow: slow ? '0 0em 0 #0c0c0c' : '0 0.09em 0 #0c0c0c' }, { duration: 0.12 }),
 });
-const markShapes = [polygon([[16, 3], [29, 29], [3, 29]]), circle(16, 16, 13), star(16, 16, 5, 14, 6), rect(4, 4, 24, 24, 6)];
-let markI = 0;
-hover('.brand', () => {
-  markI = (markI + 1) % markShapes.length;
-  animate('#mark', { d: markShapes[markI] }, { duration: 0.6, ease: 'spring(bounce: 0.35, duration: 0.5)' });
-});
-
-// ---------------------------------------------------------------------------
-// The cosmos (fixed behind the page), bullet time, gravity and the HUD
-// ---------------------------------------------------------------------------
-const cos = cosmos({ reduced });
-const bt = bulletTime({ glow: cos.glow, buttons: [$('#hud-slow'), $('#slow-cta')], vignette: $('#vignette') });
-const grav = gravity({
-  onChange: (on, n) => {
-    $('#hud-gravity').classList.toggle('on', on);
-    $('#gravity-cta').textContent = on ? 'Restore the page' : 'Turn on gravity';
-    hudNote = on ? `${n} bodies · drag to throw · double-click for a shockwave` : '';
-  },
-});
+const grav = gravity({ onChange: (on, n) => { $('#hud-gravity').classList.toggle('on', on); hudNote = on ? `${n} bodies · drag · double-click · Esc` : ''; } });
 let hudNote = '';
-$('#hud-gravity').addEventListener('click', () => grav.toggle());
-$('#gravity-cta').addEventListener('click', () => grav.toggle());
-addEventListener('keydown', (e) => e.key === 'Escape' && grav.active && grav.off());
-{
-  const out = $('#hud-stats');
-  const ms = $('#m1-ms');
-  $('#m1-count').textContent = cos.count.toLocaleString();
-  setInterval(() => {
-    const st = cos.stats;
-    const sp = bt.speed;
-    out.textContent = hudNote || `${cos.count.toLocaleString()} particles · ${st.ms.toFixed(1)} ms · ${st.fps} fps${sp < 0.99 ? ` · ${sp.toFixed(2)}× time` : ''}`;
-    ms.textContent = st.ms ? st.ms.toFixed(1) : 'a few';
-  }, 250);
-}
-cos.playIntro();
-
-// Moments: staggered reveals
-for (const m of $$('.moment-inner')) {
-  const kids = Array.from(m.children);
-  set(kids, { opacity: 0, y: 30 });
-  inView(m, () => {
-    animate(kids, { opacity: 1, y: 0 }, { duration: 1, ease: 'outCubic', delay: stagger(0.12) });
-  }, { amount: 0.3 });
-}
-
-// Headline, tagline, buttons
-{
-  const { chars } = splitText('#headline', { type: 'words,chars', charClass: 'char', wordClass: 'gw' });
-  $('#headline').dataset.gsplit = '1';
-  animate(chars, { y: [90, 0], rotate: (_e, i) => [(i % 2 ? 1 : -1) * 12, 0], opacity: [0, 1] },
-    { duration: 1.1, ease: 'spring(bounce: 0.25, duration: 0.9)', delay: stagger(0.035, { start: 0.25 }) });
-  animate('.eyebrow, .lede, .hero-actions', { y: [16, 0], opacity: [0, 1] }, { duration: 0.9, ease: 'outCubic', delay: stagger(0.1, { start: 0.7 }) });
-  const lines = [
-    'An animation engine written in Rust and running in WebAssembly.',
-    'Tweens, timelines, springs, physics and 3D. One engine.',
-    'Frame-exact recording. Inspectable state. Agent-ready.',
-    'Seven to twenty-seven times faster physics than matter.js.',
-  ];
-  let li = 0;
-  setInterval(() => {
-    if (document.hidden) return;
-    li = (li + 1) % lines.length;
-    animate('#tagline', { text: { value: lines[li], type: 'scramble', chars: 'lower' } }, { duration: 1.1, ease: 'linear' });
-  }, 4200);
-  // Magnetic buttons.
-  for (const b of $$('.magnetic')) {
-    b.addEventListener('pointermove', (e) => {
-      const r = b.getBoundingClientRect();
-      spring(b, { x: (e.clientX - r.left - r.width / 2) * 0.25, y: (e.clientY - r.top - r.height / 2) * 0.35 }, { stiffness: 260, damping: 18 });
-    });
-    b.addEventListener('pointerleave', () => spring(b, { x: 0, y: 0 }, { stiffness: 200, damping: 12 }));
-  }
-  animate('.scroll-hint span', { y: [0, 12], opacity: [1, 0] }, { duration: 1.4, ease: 'inOutSine', repeat: Infinity });
-}
-
-// Section headings reveal as they enter.
-for (const head of $$('.section-head')) set(head.children, { opacity: 0 });
-scrollTriggerBatch('.section-head', {
-  start: 'top 88%', once: true,
-  onEnter: (st) => animate(st.trigger.children, { y: [28, 0], opacity: [0, 1] }, { duration: 0.9, ease: 'outCubic', delay: stagger(0.08) }),
+for (const b of [$('#hud-gravity'), $('#hero-gravity')]) b.addEventListener('click', () => grav.toggle());
+addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && grav.active) grav.off();
+  if ((e.key === 'g' || e.key === 'G') && !e.metaKey && !e.ctrlKey) grav.toggle();
 });
+setInterval(() => {
+  const s = cos.stats;
+  $('#hud-stats').textContent = hudNote || `${cos.count.toLocaleString('en-US')} particles · ${s.ms.toFixed(1)} ms · ${s.fps} fps${bt.speed < 0.99 ? ` · ${bt.speed.toFixed(2)}×` : ''}`;
+}, 250);
 
-// ---------------------------------------------------------------------------
-// Performance numbers
-// ---------------------------------------------------------------------------
-set('.stat-card', { opacity: 0 });
-scrollTrigger({
-  trigger: '.stats', start: 'top 85%', once: true,
-  onEnter: () => {
-    animate('.stat-card', { y: [40, 0], opacity: [0, 1] }, { duration: 0.8, ease: 'outCubic', delay: stagger(0.09) });
-    $$('.stat-card').forEach((card, i) => {
-      const c = $('.count', card);
-      const to = Number(c.dataset.to);
-      const d = Number(c.dataset.decimals || 0);
-      effects.countUp(c, { to, duration: 1.8, delay: 0.2 + i * 0.09, locale: 'en-US', format: { minimumFractionDigits: d, maximumFractionDigits: d } });
-      animate($('.bar i', card), { scaleX: [0, Number($('.bar i', card).dataset.w)] }, { duration: 1.6, delay: 0.3 + i * 0.09, ease: 'outExpo' });
-    });
-  },
-});
-
-// ---------------------------------------------------------------------------
-// Easing lab: curve morphs between easings
-// ---------------------------------------------------------------------------
+// Scene counter + progress.
 {
-  const list = [
-    'outBack', 'spring.wobbly', 'bounce.out', 'elastic.out(1, 0.35)', 'inOutExpo', 'steps(6)',
-    'custom(M0,0 C0.2,1.4 0.5,-0.4 1,1)', 'rough(16, 1.4, 7, outQuad)', 'mirror(inOutSine)', 'anticipate',
-    'spring(bounce: 0.6, duration: 0.8)', 'slowmo(0.6, 0.8)', 'ease-in-out', 'blend(inQuad, outBounce, 0.5)',
-  ];
-  const chips = $('#ease-chips');
-  const curvePath = (name) => {
-    const f = easing(name);
-    let d = '';
-    for (let k = 0; k <= 96; k++) {
-      const t = k / 96;
-      d += (k ? 'L' : 'M') + (t * 300).toFixed(2) + ' ' + (200 - f(t) * 200).toFixed(2);
+  const names = [...new Set(cos.stations.map((s) => s.name))];
+  $('#scene-total').textContent = String(names.length).padStart(2, '0');
+  let last = '';
+  engine.onFrame(() => {
+    const name = cos.state.station.name;
+    if (name !== last) {
+      last = name;
+      $('#scene-no').textContent = String(names.indexOf(name) + 1).padStart(2, '0');
+      animate('#scene-name', { text: { value: name, type: 'scramble', chars: 'upper' } }, { duration: 0.45, ease: 'linear' });
     }
-    return d;
-  };
-  const ball = $('#ease-ball');
-  const pick = (name, btn) => {
-    $$('.chip', chips).forEach((c) => c.classList.toggle('active', c === btn));
-    animate('#ease-curve', { d: curvePath(name) }, { duration: 0.7, ease: 'inOutCubic' });
-    const w = $('.ease-track').clientWidth - 34;
-    animate(ball, { x: [0, w] }, { duration: 1.3, ease: name, repeat: Infinity, repeatDelay: 0.6 });
-    animate('#ease-code', { text: { value: `ease: '${name}'`, type: 'scramble', chars: 'symbols' } }, { duration: 0.5, ease: 'linear' });
-  };
-  list.forEach((name, i) => {
-    const b = document.createElement('button');
-    b.className = 'chip';
-    b.textContent = name;
-    b.addEventListener('click', () => pick(name, b));
-    chips.appendChild(b);
-    if (i === 0) {
-      $('#ease-curve').setAttribute('d', curvePath('linear'));
-      pick(name, b);
-    }
+    const max = document.documentElement.scrollHeight - innerHeight;
+    set('#progress', { scaleX: max > 0 ? scrollY / max : 0 });
   });
-  set('.chip', { opacity: 0 });
-  scrollTrigger({ trigger: '#ease', start: 'top 75%', once: true, onEnter: () => animate('.chip', { y: [12, 0], opacity: [0, 1] }, { duration: 0.5, delay: stagger(0.025), ease: 'outCubic' }) });
+}
+
+// Cursor: a difference-blended dot that swells over anything interactive.
+if (fine) {
+  const cur = $('#cursor');
+  const label = $('#cursor-label');
+  const pos = { x: innerWidth / 2, y: innerHeight / 2 };
+  addEventListener('pointermove', (e) => {
+    spring(pos, { x: e.clientX, y: e.clientY }, { stiffness: 900, damping: 50 });
+    set(cur, { opacity: 1 });
+  }, { passive: true });
+  engine.onFrame(() => set(cur, { x: pos.x, y: pos.y }));
+  let over = null;
+  addEventListener('pointerover', (e) => {
+    const t = e.target.closest?.('[data-cursor], a, button');
+    if (t === over) return;
+    over = t;
+    const text = t?.dataset?.cursor || '';
+    label.textContent = text;
+    animate($('i', cur), { scale: t ? (text ? 5 : 2.4) : 1 }, { duration: 0.5, ease: 'spring(bounce: 0.35, duration: 0.45)' });
+    animate(label, { opacity: t && text ? 1 : 0 }, { duration: 0.2 });
+  });
+  addEventListener('pointerdown', () => animate($('i', cur), { scale: [null, 0.6, null] }, { duration: 0.35, ease: 'outCubic' }));
+}
+
+// Shockwaves on the open "stage" scenes.
+for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
+  el.addEventListener('click', (e) => { if (!e.target.closest('a, button')) cos.shock(e.clientX, e.clientY); });
 }
 
 // ---------------------------------------------------------------------------
-// Pinned story: a timeline scrubbed by scroll, snapping to labels
+// 01 · Hero
 // ---------------------------------------------------------------------------
 {
-  const shape = $('#story-shape');
-  shape.setAttribute('d', circle(200, 200, 30));
-  const dots = $('#story-dots');
-  for (let i = 0; i < 24; i++) dots.appendChild(document.createElement('i'));
-  const dotEls = $$('i', dots);
-  const W = () => $('#story-stage').clientWidth;
-  const ringX = (i, r) => Math.cos((i / 24) * Math.PI * 2) * r;
-  const ringY = (i, r) => Math.sin((i / 24) * Math.PI * 2) * r;
-  const tl = timeline({ autoplay: false, defaults: { ease: 'inOutCubic', duration: 1 } })
-    .label('build', 0)
-    .add(shape, { d: circle(200, 200, 120) }, { ease: 'outBack' }, 0)
-    .add(dotEls, { x: (_e, i) => [(i % 2 ? 1 : -1) * 600, ringX(i, W() * 0.46)], y: (_e, i) => [ringY(i, 400), ringY(i, W() * 0.46)], opacity: [0, 1] }, { delay: stagger(0.02) }, 0)
-    .label('morph')
-    .add(shape, { d: [null, star(200, 200, 6, 150, 70), star(200, 200, 12, 160, 120)] })
-    .label('paint')
-    .add('#g1 stop:first-child', { stopColor: ['#7c8cff', '#ffc46b'] })
-    .add('#g1 stop:last-child', { stopColor: ['#ff7ab6', '#4de0c2'] }, {}, '<')
-    .add(dotEls, { scale: [1, 2.2], backgroundColor: ['#eceef4', '#ffc46b'] }, { delay: stagger(0.01, { from: 'center' }) }, '<')
-    .label('orbit')
-    .add('#story-stage', { transform: ['rotateX(0deg) rotateY(0deg)', 'rotateX(58deg) rotateZ(-28deg) scale(0.92)'] })
-    .add(dotEls, { y: (_e, i) => ringY(i, W() * 0.46) - 60 }, { delay: stagger(0.015) }, '<');
-  const steps = $$('#story-steps li');
-  scrollTrigger({
-    trigger: '#story', start: 'top top', end: '+=2600', pin: '#story-pin', scrub: 0.6, animation: tl,
-    snap: { to: 'labels', duration: 0.6, ease: 'inOutCubic' },
-    onUpdate: () => {
-      const cur = tl.currentLabel ?? 'build';
-      steps.forEach((li) => li.classList.toggle('on', li.dataset.label === cur));
-    },
+  const cs = chars($('#hero-title'));
+  $('#hero-title').dataset.gsplit = '1';
+  set(cs, { yPercent: 110, rotate: 8, opacity: 0 });
+  set('#hero-copy, .hero-actions, .hero .corner, .scroll-cue', { opacity: 0, y: 14 });
+  setTimeout(() => {
+    animate(cs, { yPercent: 0, rotate: 0, opacity: 1 }, { duration: 1.1, ease: 'spring(bounce: 0.2, duration: 0.9)', delay: stagger(0.03) });
+    animate('#hero-copy, .hero-actions, .hero .corner, .scroll-cue', { opacity: 1, y: 0 }, { duration: 0.9, ease: 'outCubic', delay: stagger(0.08, { start: 0.4 }) });
+  }, reduced ? 0 : 2300);
+  animate('.scroll-cue i', { scaleX: [0, 1, 1], x: [0, 0, 46], opacity: [1, 1, 0] }, { duration: 1.8, ease: 'inOutCubic', repeat: Infinity });
+  cos.playIntro();
+}
+
+// ---------------------------------------------------------------------------
+// 02 · Manifesto: a kinetic list scrubbed by scroll
+// ---------------------------------------------------------------------------
+{
+  const items = [
+    ['Any CSS property, SVG attribute or JS object.', "animate(el, { x: 400, rotate: 90 })", 'outExpo'],
+    ['Retarget mid-flight — velocity is kept.', "spring(el, { x }, { bounce: 0.4 })", 'spring(bounce: 0.55)'],
+    ['Labels, overlaps, nesting, exact seeking.', "timeline().add(a).add(b, '<0.2')", 'outBack'],
+    ['Rigid bodies, ropes and cloth in WebAssembly.', 'world({ gravity: [0, 980] })', 'outBounce'],
+    ['150,000 particles, simulated and lit in the core.', 'pointCloud(150_000, { shapes })', 'outElastic'],
+    ['Transform lists, slerped like browsers do.', "animate(el, { transform: 'rotateY(180deg)' })", 'inOutCubic'],
+    ['Scrub, pin, snap to labels.', 'scrollTrigger({ scrub: true, pin: true })', 'outQuart'],
+    ['Split by line, word, char. Scramble. Type.', "splitText(el, { type: 'chars' })", 'steps(6)'],
+    ['Morph anything into anything.', 'animate(path, { d: star(…) })', 'outCirc'],
+    ['Frame-exact GIF, WebM and PNG.', "record('#hero', { duration: 2 })", 'rough(16, 1.4, 7, outQuad)'],
+  ];
+  const section = $('#manifesto');
+  const stack = $('#m-stack');
+  const words = $$('.m-word', stack);
+  const wordChars = words.map((w) => chars(w));
+  let active = -1;
+  let wordH = words[0].getBoundingClientRect().height;
+  addEventListener('resize', () => (wordH = words[0].getBoundingClientRect().height));
+  const activate = (i) => {
+    if (i === active) return;
+    const prev = active;
+    active = i;
+    words.forEach((w, k) => w.classList.toggle('on', k === i));
+    const [desc, code, ease] = items[i];
+    $('#m-index').textContent = String(i + 1).padStart(2, '0');
+    animate('#m-desc', { text: { value: desc, type: 'scramble', chars: 'lower' } }, { duration: 0.5, ease: 'linear' });
+    $('#m-code').textContent = `${code}  // ease: '${ease}'`;
+    const dir = prev < i ? 1 : -1;
+    const three = i === 5;
+    animate(wordChars[i], three ? { rotateX: [-90 * dir, 0], opacity: [0, 1] } : { yPercent: [60 * dir, 0], opacity: [0, 1] }, { duration: 0.9, ease, delay: stagger(0.035) });
+  };
+  pinned(section, (p) => {
+    const f = Math.min(words.length - 1, Math.max(0, p * (words.length - 0.2) - 0.1));
+    set(stack, { y: -(f + 0.5) * wordH });
+    words.forEach((w, k) => {
+      const d = Math.abs(k - f);
+      set(w, { x: Math.max(0, 1 - d) * 40, opacity: Math.max(0.12, 1 - d * 0.35) });
+    });
+    activate(Math.round(f));
   });
 }
 
 // ---------------------------------------------------------------------------
-// SVG cards
+// 03 · Physics: giant letters and 3,000 grains share one WebAssembly world
 // ---------------------------------------------------------------------------
 {
-  const blobShape = (seed) => pathThrough(Array.from({ length: 7 }, (_, k) => {
-    const a = (k / 7) * Math.PI * 2, r = 62 + noise2(k * 0.7, seed) * 22;
-    return [100 + Math.cos(a) * r, 100 + Math.sin(a) * r];
+  const section = $('#physics');
+  const pin = $('.pin', section);
+  const host = $('#p-letters');
+  const canvas = $('#sand');
+  const ctx = canvas.getContext('2d');
+  const letters = 'GRAVITY'.split('').map((ch) => {
+    const s = document.createElement('div');
+    s.className = 'p-letter';
+    s.textContent = ch;
+    host.appendChild(s);
+    return s;
+  });
+  let w = null, firstGrain = 0, grains = 0, started = false;
+  const letterIds = new Set();
+  const fit = () => {
+    canvas.width = pin.clientWidth * dpr;
+    canvas.height = pin.clientHeight * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    w?.refreshBounds();
+  };
+  const start = () => {
+    if (started) return;
+    started = true;
+    fit();
+    addEventListener('resize', fit);
+    w = world({ container: pin, gravity: [0, 2200], substeps: 4, iterations: 3, restitution: 0.25, friction: 0.12, damping: 0.02 });
+    // Letters enter one by one from above, spread across the width.
+    const W = pin.clientWidth;
+    letters.forEach((el, i) => {
+      const r = el.getBoundingClientRect();
+      set(el, { x: (W / (letters.length + 1)) * (i + 1) - r.width / 2, y: 20 - r.height });
+    });
+    flush();
+    letterIds.clear();
+    letters.forEach((el, i) => setTimeout(() => {
+      const [id] = w.bind(el, { rotate: true, radius: (e) => { const r = e.getBoundingClientRect(); return Math.min(r.width, r.height * 0.78) * 0.5; }, mass: 40 });
+      letterIds.add(id);
+      w.setVelocity(id, (Math.random() - 0.5) * 300, 200);
+    }, reduced ? 0 : 140 * i));
+    w.pointer({ mode: 'repel', radius: 130, strength: 9000 });
+    w.dragging({ hitSlop: 20 });
+    pin.addEventListener('click', (e) => {
+      const r = pin.getBoundingClientRect();
+      w.impulse(e.clientX - r.left, e.clientY - r.top, 320, 2600);
+    });
+    firstGrain = -1;
+  };
+  inView(section, start, { amount: 0.25 });
+  const MAX = innerWidth < 760 ? 700 : 1600;
+  whileVisible(pin, () => {
+    if (!w) return;
+    // Pour grains from a moving spout until the floor is covered.
+    if (grains < MAX) {
+      const W = pin.clientWidth, n = Math.min(40, MAX - grains);
+      const sx = W * (0.5 + 0.38 * Math.sin(performance.now() / 900));
+      const first = w.addMany(Array.from({ length: n }, () => ({ x: sx + (Math.random() - 0.5) * 60, y: 6 + Math.random() * 30, r: 2.4 + Math.random() * 2 })));
+      if (firstGrain < 0) firstGrain = first;
+      grains += n;
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (firstGrain < 0) return;
+    ctx.fillStyle = '#ece6da';
+    for (let i = firstGrain; i < w.count; i++) {
+      if (letterIds.has(i)) continue;
+      const r = w.radius(i);
+      ctx.beginPath();
+      ctx.arc(w.x(i), w.y(i), r * 0.92, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 04 · Particles: the number fills as you scroll through the shapes
+// ---------------------------------------------------------------------------
+{
+  const section = $('#particles');
+  $$('#big-num span').forEach((s) => (s.textContent = cos.count.toLocaleString('en-US')));
+  pinned(section, (p) => set('#big-num-fill', { clipPath: `inset(0 ${(100 - p * 100).toFixed(2)}% 0 0)` }));
+}
+
+// ---------------------------------------------------------------------------
+// 05 · Time
+// ---------------------------------------------------------------------------
+{
+  const lines = $$('.t-line');
+  set(lines, { yPercent: 40, opacity: 0 });
+  inView('#time', () => animate(lines, { yPercent: 0, opacity: 1 }, { duration: 1, ease: 'spring(bounce: 0.3, duration: 0.8)', delay: stagger(0.08) }), { amount: 0.3 });
+  animate('#hold-btn', { scale: [1, 1.06, 1] }, { duration: 1.6, ease: 'inOutSine', repeat: Infinity });
+}
+
+// ---------------------------------------------------------------------------
+// 06 · Paths: a giant blob morphs with scroll; a stroke draws across the page
+// ---------------------------------------------------------------------------
+{
+  const section = $('#paths');
+  const blobShape = (seed, n = 9) => pathThrough(Array.from({ length: n }, (_, k) => {
+    const a = (k / n) * Math.PI * 2, r = 150 + noise2(k * 0.6, seed) * 60;
+    return [200 + Math.cos(a) * r, 200 + Math.sin(a) * r];
   }), { closed: true });
   const blob = $('#blob');
-  blob.setAttribute('d', star(100, 100, 5, 78, 34));
-  animate(blob, {
-    d: [null, circle(100, 100, 70), rect(32, 32, 136, 136, 28), blobShape(3), star(100, 100, 9, 80, 56), star(100, 100, 5, 78, 34)],
-    fill: ['#7c8cff', '#ff7ab6', '#ffc46b', '#4de0c2', '#c9cfff', '#7c8cff'],
-  }, { duration: 9, ease: 'inOutCubic', repeat: Infinity });
-  animate('#draw-path', { draw: [0, 1] }, { duration: 2.2, ease: 'inOutCubic', repeat: Infinity, yoyo: true, repeatDelay: 0.5 });
-  animate('#rider', { path: { path: '#draw-path' } }, { duration: 2.2, ease: 'inOutCubic', repeat: Infinity, yoyo: true, repeatDelay: 0.5 });
-  const spline = $('#spline');
-  const sdots = $('#spline-dots');
-  for (let k = 0; k < 7; k++) sdots.appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'circle')).setAttribute('r', '3.5');
-  const cs = $$('circle', sdots);
-  whileVisible(spline, (t) => {
-    const pts = cs.map((c, k) => {
-      const a = (k / 7) * Math.PI * 2;
-      const r = 58 + noise2(k * 3.1, t / 1400) * 30;
-      const p = [100 + Math.cos(a) * r, 100 + Math.sin(a) * r];
-      c.setAttribute('cx', p[0].toFixed(1));
-      c.setAttribute('cy', p[1].toFixed(1));
-      return p;
-    });
-    spline.setAttribute('d', pathThrough(pts, { closed: true }));
+  blob.setAttribute('d', circle(200, 200, 170));
+  const shapes = [circle(200, 200, 170), star(200, 200, 12, 190, 120), blobShape(2), rect(40, 40, 320, 320, 40), star(200, 200, 5, 195, 80), blobShape(7, 11)];
+  const tl = timeline({ autoplay: false, defaults: { ease: 'inOutCubic', duration: 1 } });
+  for (let k = 1; k < shapes.length; k++) tl.add(blob, { d: shapes[k] });
+  const draw = animate('#trail', { draw: [0, 1] }, { autoplay: false, ease: 'linear', duration: 1 });
+  const ride = animate('#rider', { path: { path: '#trail' } }, { autoplay: false, ease: 'linear', duration: 1 });
+  pinned(section, (p) => {
+    tl.progress = p;
+    draw.progress = p;
+    ride.progress = p;
   });
+  animate('.blob', { rotate: 360 }, { duration: 40, ease: 'linear', repeat: Infinity });
 }
 
 // ---------------------------------------------------------------------------
-// Physics
+// 07 · Depth: a ring of cards turned by scroll
 // ---------------------------------------------------------------------------
 {
-  // DOM letters as bodies.
-  const stage = $('#letters-stage');
-  const word = 'ANIKIT×WASM';
-  [...word].forEach((ch, i) => {
-    const d = document.createElement('div');
-    d.className = 'letter' + (i === 6 ? ' accent' : '');
-    d.textContent = ch;
-    d.style.left = 30 + ((i * 76) % (stage.clientWidth - 90)) + 'px';
-    d.style.top = 20 + Math.floor((i * 76) / (stage.clientWidth - 90)) * 72 + 'px';
-    stage.appendChild(d);
-  });
-  const letters = world({ container: stage, gravity: [0, 1800], restitution: 0.45, friction: 0.08, substeps: 6 });
-  letters.bind('.letter', { rotate: true });
-  letters.dragging();
-  letters.pause();
-  inView(stage, () => {
-    letters.play();
-  }, { amount: 0.4 });
-  stage.addEventListener('dblclick', (e) => {
-    const r = stage.getBoundingClientRect();
-    letters.impulse(e.clientX - r.left, e.clientY - r.top, 260, 1400);
-  });
-
-  // Canvas field.
-  const fieldStage = $('#field-stage');
-  const canvas = $('#field');
-  const ctx = canvas.getContext('2d');
-  const size = () => {
-    canvas.width = fieldStage.clientWidth * dpr;
-    canvas.height = fieldStage.clientHeight * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  };
-  size();
-  addEventListener('resize', size);
-  const field = world({ container: fieldStage, gravity: [0, 600], restitution: 0.25, friction: 0.04, autoStep: false, substeps: 3 });
-  const n = innerWidth < 700 ? 500 : 950;
-  const fw = fieldStage.clientWidth;
-  field.addMany(Array.from({ length: n }, (_, i) => ({ x: 20 + Math.random() * (fw - 40), y: Math.random() * 300, r: 2.5 + (i % 7) * 0.9 })));
-  field.rope([[fw * 0.7, 0], [fw * 0.7, 170]], { segments: 18, pinStart: true, radius: 3.5 });
-  field.pointer({ mode: 'repel', radius: 110, strength: 9000 });
-  field.dragging({ hitSlop: 6 });
-  const palette = ['#7c8cff', '#ff7ab6', '#ffc46b', '#c9cfff', '#4de0c2', '#5b6274', '#9aa3ff'];
-  const colorOf = (i) => palette[i % palette.length];
-  let acc = 0, k = 0, lastT = performance.now();
-  whileVisible(fieldStage, (_t, dt) => {
-    const t0 = performance.now();
-    field.step(Math.min(dt, 33) / 1000);
-    acc += performance.now() - t0;
-    k++;
-    field.draw(ctx, { color: colorOf, links: 'rgba(255,255,255,0.35)' });
-    if (performance.now() - lastT > 800) {
-      $('#field-stat').textContent = `${field.count.toLocaleString()} bodies · ${(acc / k).toFixed(2)} ms/step · ${field.pairTests.toLocaleString()} pair tests`;
-      acc = k = 0;
-      lastT = performance.now();
-    }
-  });
-}
-
-// ---------------------------------------------------------------------------
-// 3D: tilt + transform interpolation, FLIP layout
-// ---------------------------------------------------------------------------
-{
-  const host = $('#flip-cards');
-  const data = [
-    ['Transforms', 'Click to flip', 'rotateY(180deg)', 'decompose → slerp → recompose'],
-    ['Springs', 'Tilt follows your pointer', 'spring(bounce: 0.35)', 'velocity-preserving retargets'],
-    ['Matrices', 'Any transform list', 'translateZ · rotate3d · skew', 'interpolated in WebAssembly'],
+  const section = $('#depth');
+  const ring = $('#ring');
+  const feats = [
+    ['Spring', "ease: 'spring(bounce: .4)'", 'M0 90 C 20 -40 40 120 60 40 S 90 70 120 60'],
+    ['Inertia', 'inertia(el, { x: { velocity } })', 'M0 90 C 30 10 60 4 120 2'],
+    ['Flip', "flip('.tile', change)", 'M10 80 L40 20 L70 80 L100 20'],
+    ['Morph', 'animate(p, { d: star(…) })', 'M0 60 Q 30 0 60 60 T 120 60'],
+    ['Scroll', 'scrollTrigger({ pin: true })', 'M0 90 L120 0'],
+    ['Text', "splitText(el, { type: 'chars' })", 'M0 70 h20 v-30 h20 v30 h20 v-50 h20 v50 h20'],
+    ['OKLab', "animate(el, { color: 'oklch(…)' })", 'M0 50 C 40 50 40 10 60 10 S 80 90 120 90'],
+    ['WAAPI', 'compositor(el, { x: 200 })', 'M0 80 C 40 80 60 20 120 20'],
+    ['Capture', "record('#hero')", 'M0 50 h120 M60 0 v100'],
+    ['Python', 'anikit.animate(box, {…})', 'M0 90 Q 60 -60 120 90'],
   ];
-  for (const [t, s, c, b] of data) {
-    const card = document.createElement('div');
-    card.className = 'flip';
-    card.innerHTML = `<div class="flip-inner" style="position:absolute;inset:0;transform-style:preserve-3d">
-      <div class="face front"><div class="cube-wrap"><div class="cube">${'<i></i>'.repeat(6)}</div></div><h4>${t}</h4><p>${s}</p></div>
-      <div class="face back"><h4><code>${c}</code></h4><p>${b}</p></div></div>`;
-    host.appendChild(card);
+  const R = () => innerHeight * 0.4;
+  const cards = feats.map(([name, code, d], i) => {
+    const c = document.createElement('button');
+    c.className = 'card';
+    c.dataset.cursor = 'Flip';
+    c.innerHTML = `<span class="n">${String(i + 1).padStart(2, '0')}</span><svg viewBox="0 0 120 100"><path d="${d}"/></svg><b>${name}</b><code>${code}</code>`;
+    ring.appendChild(c);
+    return c;
+  });
+  const place = () => cards.forEach((c, i) => set(c, { transform: `rotateY(${i * 36}deg) translateZ(${R()}px)` }));
+  place();
+  addEventListener('resize', place);
+  cards.forEach((c, i) => {
     let flipped = false;
-    card.addEventListener('click', () => {
+    c.addEventListener('click', () => {
       flipped = !flipped;
-      animate($('.flip-inner', card), { transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }, { duration: 0.9, ease: 'spring(bounce: 0.3, duration: 0.8)' });
+      animate(c, { transform: `rotateY(${i * 36}deg) translateZ(${R() + (flipped ? 120 : 0)}px) rotateY(${flipped ? 180 : 0}deg) rotateX(${flipped ? -10 : 0}deg)` }, { duration: 1.1, ease: 'spring(bounce: 0.35, duration: 0.9)' });
     });
-  }
-  // Each card's cube shows a different way of driving 3D transforms.
-  const cubes = $$('.cube', host);
-  set(cubes, { rotateX: -24, rotateY: 30 });
-  animate(cubes[0], { rotateY: 390 }, { duration: 9, ease: 'linear', repeat: -1 });
-  animate(cubes[1], { rotateX: [-24, 24], rotateY: [30, -30] }, { duration: 2.6, ease: 'inOutSine', repeat: -1, yoyo: true });
-  animate(cubes[2], {
-    transform: [
-      'rotateX(-24deg) rotateY(30deg)',
-      'rotateX(40deg) rotateY(-50deg) scale(0.85)',
-      'rotate3d(1, 1, 0, 70deg) translateZ(10px)',
-      'rotateX(-24deg) rotateY(30deg)',
-    ],
-  }, { duration: 6, ease: 'inOutCubic', repeat: -1 });
-  tilt('.flip', { max: 10, scale: 1.02 });
-  set('.flip', { opacity: 0 });
-  scrollTrigger({ trigger: '#flip-cards', start: 'top 85%', once: true, onEnter: () => effects.flipIn('.flip', { stagger: 0.1, axis: 'x' }) });
-
-  const tiles = $('#tiles');
-  for (let i = 0; i < 16; i++) {
-    const t = document.createElement('div');
-    t.className = 'tile' + (i % 5 === 0 ? ' hot' : '');
-    t.textContent = String(i + 1).padStart(2, '0');
-    tiles.appendChild(t);
-  }
-  $('#shuffle').addEventListener('click', () => flip('.tile', () => {
-    const kids = $$('.tile');
-    for (let i = kids.length - 1; i > 0; i--) tiles.appendChild(kids.splice(Math.floor(Math.random() * (i + 1)), 1)[0]);
-  }, { duration: 0.7, ease: 'spring(bounce: 0.2, duration: 0.6)', delay: stagger(0.015) }));
-  $('#relayout').addEventListener('click', () => flip('.tile', () => tiles.classList.toggle('wide'), { duration: 0.8, ease: 'spring(bounce: 0.15, duration: 0.7)' }));
-}
-
-// ---------------------------------------------------------------------------
-// Effects gallery
-// ---------------------------------------------------------------------------
-{
-  const grid = $('#effects-grid');
-  $('#fx-count').textContent = String(effectNames().length);
-  const pick = ['fadeIn', 'slideIn', 'zoomIn', 'pop', 'bounceIn', 'dropIn', 'flipIn', 'rotateIn', 'blurIn', 'revealClip', 'shake',
-    'headShake', 'wobble', 'jello', 'rubberBand', 'swing', 'tada', 'pulse', 'heartbeat', 'flash', 'float', 'spin', 'breathe', 'wiggleLoop']
-    .filter((n) => effectNames().includes(n));
-  for (const name of pick) {
-    const tile = document.createElement('div');
-    tile.className = 'fx';
-    tile.innerHTML = `<div class="fx-box"></div><span class="fx-name">${name}</span>`;
-    grid.appendChild(tile);
-    const box = $('.fx-box', tile);
-    let running = null;
-    const run = () => {
-      running?.kill();
-      set(box, { x: 0, y: 0, rotate: 0, scale: 1, opacity: 1, skewX: 0, skewY: 0, scaleX: 1, scaleY: 1, rotateX: 0, rotateY: 0 });
-      box.style.filter = '';
-      box.style.clipPath = '';
-      const loop = ['float', 'spin', 'breathe', 'wiggleLoop'].includes(name);
-      running = effects[name](box, loop ? { repeat: 1 } : {});
-    };
-    tile.addEventListener('pointerenter', run);
-    tile.addEventListener('click', run);
-  }
-  set('.fx', { opacity: 0 });
-  scrollTrigger({
-    trigger: '#effects-grid', start: 'top 85%', once: true,
-    onEnter: () => animate('.fx', { scale: [0.9, 1], opacity: [0, 1] }, { duration: 0.6, ease: 'outBack', delay: stagger(0.03, { grid: [6, 4], from: 'center' }) }),
   });
+  const tilt = { x: 0, y: 0 };
+  addEventListener('pointermove', (e) => spring(tilt, { x: (e.clientY / innerHeight - 0.5) * -14, y: (e.clientX / innerWidth - 0.5) * 18 }, { stiffness: 120, damping: 18 }), { passive: true });
+  let p = 0;
+  pinned(section, (v) => (p = v));
+  whileVisible(section, () => set(ring, { rotateX: -12 + tilt.x, rotateY: -p * 324 + tilt.y }));
+  // Paths inside the cards draw on as the ring enters.
+  inView(section, () => animate($$('.card path'), { draw: [0, 1] }, { duration: 1.4, ease: 'inOutCubic', delay: stagger(0.06) }), { amount: 0.2 });
 }
 
 // ---------------------------------------------------------------------------
-// Feel: draggable, spring follow, rotary knob
+// 08 · Agents: live engine.inspect() and in-page recording
 // ---------------------------------------------------------------------------
 {
-  set('#puck', { x: 53 * 2, y: 53 * 2 });
-  draggable('#puck', { bounds: '#drag-zone', inertia: true, snap: { x: 53, y: 53 }, edgeResistance: 0.25 });
-  const zone = $('#follow-zone');
-  zone.addEventListener('pointermove', (e) => {
-    const r = zone.getBoundingClientRect();
-    const p = { x: e.clientX - r.left, y: e.clientY - r.top };
-    spring('#follower', p, { stiffness: 90, damping: 9 });
-    spring('#follower2', p, { stiffness: 600, damping: 30 });
-  });
-  set(['#follower', '#follower2'], { x: 160, y: 150 });
-  const out = $('#knob-value');
-  const show = (d) => (out.textContent = String(Math.round(((d.rotation + 140) / 280) * 100)));
-  draggable('#knob', { type: 'rotate', inertia: true, bounds: { minRotation: -140, maxRotation: 140 }, onDrag: show, onThrowUpdate: show });
-}
-
-// ---------------------------------------------------------------------------
-// Agents: live inspect(), typed code, record to GIF
-// ---------------------------------------------------------------------------
-{
-  const pre = $('#inspect-out');
-  let lastT = 0;
-  whileVisible(pre, (t) => {
-    if (t - lastT < 250) return;
-    lastT = t;
+  const term = $('#term');
+  let tick = 0;
+  whileVisible(term, () => {
+    if (++tick % 15) return;
     const all = engine.inspect().filter((s) => s.state === 'running');
     const live = all.filter((s) => s.progress > 0 && s.progress < 1);
-    const snap = (live.length ? live : all).slice(0, 7);
-    const q = (v) => (typeof v === 'string' ? `'${v}'` : Array.isArray(v) ? `[${v.map(q).join(', ')}]` : typeof v === 'number' ? +v.toFixed(2) : v);
-    const line = (s) => '  { ' + ['id', 'type', 'target', 'props', 'progress'].filter((k) => s[k] !== undefined).map((k) => `${k}: ${q(s[k])}`).join(', ') + ' }';
-    pre.textContent = `// ${all.length} running\n[\n${snap.map(line).join(',\n')}${all.length > snap.length ? ',\n  …' : ''}\n]`;
+    const rows = (live.length ? live : all).slice(0, 14);
+    const q = (v) => (typeof v === 'string' ? `'${v}'` : Array.isArray(v) ? `[${v.map(q).join(', ')}]` : typeof v === 'number' ? +v.toFixed(3) : v);
+    term.innerHTML = `<span class="k">&gt; engine.inspect()</span>  // ${all.length} running\n` + rows.map((s) =>
+      `{ <span class="k">id</span>: ${s.id}, <span class="k">type</span>: ${q(s.type)}, <span class="k">target</span>: ${q(s.target ?? '–')}, <span class="k">props</span>: ${q(s.props ?? [])}, <span class="k">progress</span>: ${q(s.progress)} }`).join('\n');
   });
-  const code = `import { testing, engine, record } from 'anikit';
-
-testing.useFakeTime();
-animate(card, { x: 100 }, { duration: 1, ease: 'linear' });
-testing.advance(0.5);
-// card.style.transform === 'translate(50px,0px)'
-
-engine.inspect();
-// [{ type: 'tween', target: 'div#card',
-//    props: ['x'], progress: 0.5, … }]
-
-const gif = await record('#hero', { duration: 2 });
-// $ npx anikit-record page.html --out clip.mp4`;
-  scrollTrigger({ trigger: '#code-type', start: 'top 80%', once: true, onEnter: () => animate('#code-type', { text: code }, { duration: 4, ease: 'linear' }) });
-
-  // Orbiting record demo.
-  const orbs = $$('.rd-orb');
-  orbs.forEach((o, i) => {
-    animate(o, { path: { path: circle(0, 0, 46 + i * 18) } }, { duration: 3 + i, ease: 'linear', repeat: Infinity });
-  });
-  const btn = $('#record-btn');
+  const btn = $('#rec-btn');
   btn.addEventListener('click', async () => {
     btn.disabled = true;
-    btn.textContent = 'Recording…';
+    btn.textContent = '● Recording…';
     const t0 = performance.now();
-    const rec = await record('#record-demo', { duration: 2, fps: 24, scale: 1, onProgress: (p) => (btn.textContent = `Recording… ${Math.round(p * 100)}%`) });
-    const img = document.createElement('img');
+    const rec = await record('#term', { duration: 2, fps: 20, scale: 1, background: '#0c0c0c' });
+    const img = new Image();
     img.src = rec.url;
-    img.alt = 'Recorded GIF';
-    $('#record-demo').replaceWith(img);
-    $('#record-out').innerHTML = `${rec.frames} frames · ${(rec.blob.size / 1024).toFixed(0)} KB GIF · ${((performance.now() - t0) / 1000).toFixed(1)} s · <a href="${rec.url}" download="anikit.gif"><u>download</u></a>`;
-    btn.textContent = 'Recorded ✓';
-    effects.pop(img);
+    $('#rec-out').replaceChildren(img);
+    $('#rec-out').append(` ${rec.frames} frames · ${(rec.blob.size / 1024).toFixed(0)} KB · ${((performance.now() - t0) / 1000).toFixed(1)} s`);
+    btn.textContent = '● Record 2 s';
+    btn.disabled = false;
   });
 }
 
 // ---------------------------------------------------------------------------
-// Install: title, copy, confetti physics
+// 09 · Install
 // ---------------------------------------------------------------------------
 {
-  const { chars } = splitText('#install-title', { type: 'words,chars', charClass: 'char', wordClass: 'gw' });
-  $('#install-title').dataset.gsplit = '1';
-  set(chars, { opacity: 0 });
-  scrollTrigger({
-    trigger: '#install', start: 'top 75%', once: true,
-    onEnter: () => animate(chars, { y: [60, 0], opacity: [0, 1], rotateX: [-80, 0] }, { duration: 0.9, ease: 'outBack', delay: stagger(0.03) }),
-  });
+  const cs = chars($('#outro'));
+  $('#outro').dataset.gsplit = '1';
+  set(cs, { yPercent: 100, opacity: 0 });
+  inView('#install', () => animate(cs, { yPercent: 0, opacity: 1 }, { duration: 1, ease: 'spring(bounce: 0.3, duration: 0.8)', delay: stagger(0.035) }), { amount: 0.4 });
+  $('#outro').addEventListener('click', () => effects.rubberBand(cs, { stagger: 0.03 }));
   $('#copy').addEventListener('click', async (e) => {
-    try { await navigator.clipboard.writeText('npm install anikit'); } catch {}
+    try { await navigator.clipboard.writeText('npm install anikit'); } catch { /* clipboard blocked */ }
     e.currentTarget.textContent = 'Copied';
     effects.pop(e.currentTarget, { duration: 0.35 });
   });
-  const section = $('#install');
-  const canvas = $('#confetti');
-  const ctx = canvas.getContext('2d');
-  let bits = [];
-  const fit = () => {
-    canvas.width = section.clientWidth * dpr;
-    canvas.height = section.clientHeight * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  };
-  fit();
-  addEventListener('resize', fit);
-  const colors = ['#7c8cff', '#ff7ab6', '#ffc46b', '#4de0c2', '#eceef4'];
-  section.addEventListener('click', (e) => {
-    if (reduced || e.target.closest('button')) return;
-    const r = section.getBoundingClientRect();
-    const fresh = Array.from({ length: 70 }, (_, i) => ({ x: e.clientX - r.left, y: e.clientY - r.top, rot: 0, c: colors[i % colors.length], s: 4 + Math.random() * 5 }));
-    for (const b of fresh) {
-      const a = Math.random() * Math.PI * 2;
-      const v = 300 + Math.random() * 700;
-      physics(b, { x: { velocity: Math.cos(a) * v }, y: { velocity: Math.sin(a) * v - 400, acceleration: 1400, max: section.clientHeight - 6 }, rot: { velocity: (Math.random() - 0.5) * 900 } }, { friction: 0.9, restitution: 0.4, life: 3 });
-    }
-    bits = bits.concat(fresh).slice(-600);
-  });
-  engine.onFrame(() => {
-    if (!bits.length) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (const b of bits) {
-      ctx.save();
-      ctx.translate(b.x, b.y);
-      ctx.rotate((b.rot * Math.PI) / 180);
-      ctx.fillStyle = b.c;
-      ctx.fillRect(-b.s / 2, -b.s / 4, b.s, b.s / 2);
-      ctx.restore();
-    }
-  });
 }
 
-// Expose for tinkering in devtools.
 window.anikit = await import('../packages/anikit/dist/anikit.js');

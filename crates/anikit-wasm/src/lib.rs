@@ -1467,7 +1467,7 @@ pub extern "C" fn ak_splat_fade(id: u32, k: f64) {
     }
 }
 /// Splat the last projection of projector `pid`.
-/// f64 buffer: `[size, intensity, fogNear, fogFar, scale, lensX, lensY, lensR, lensStrength, maxRadius]`.
+/// f64 buffer: `[size, intensity, fogNear, fogFar, scale, lensX, lensY, lensR, lensStrength, maxRadius, tintR?, tintG?, tintB?]`.
 #[no_mangle]
 pub extern "C" fn ak_splat_draw(id: u32, pid: u32, n: u32) {
     let s = st();
@@ -1483,6 +1483,7 @@ pub extern "C" fn ak_splat_draw(id: u32, pid: u32, n: u32) {
         scale: b[4] as f32,
         lens: [b[5] as f32, b[6] as f32, b[7] as f32, b[8] as f32],
         max_radius: b[9] as f32,
+        tint: if b.len() >= 13 { [b[10] as f32, b[11] as f32, b[12] as f32] } else { [1.0; 3] },
     };
     let Some(Some(proj)) = s.projectors.get(pid as usize) else { return };
     let Some(Some(sp)) = s.splats.get_mut(id as usize) else { return };
@@ -1498,5 +1499,12 @@ pub extern "C" fn ak_splat_resolve(id: u32, exposure: f64, bg: u32, keep: f64) -
             sp.rgba.as_ptr() as *const u8
         }
         None => core::ptr::null(),
+    }
+}
+/// Rendering mode: 0 = additive light, 1 = subtractive ink.
+#[no_mangle]
+pub extern "C" fn ak_splat_mode(id: u32, ink: u32) {
+    if let Some(sp) = splat(id) {
+        sp.ink = ink != 0;
     }
 }
