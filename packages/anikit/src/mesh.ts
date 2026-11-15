@@ -176,6 +176,12 @@ export interface DrawItem {
   material?: MaterialOptions;
   /** Back-face culling (default true). */
   cull?: boolean;
+  /**
+   * `'opaque'` (default) or `'additive'`: added to the frame as light (beams,
+   * holograms, glowing wire), depth-tested against what is drawn but not
+   * occluding. Draw additive items after the opaque ones.
+   */
+  blend?: 'opaque' | 'additive';
 }
 type CanvasLike = { width: number; height: number; getContext(t: '2d'): CanvasRenderingContext2D | null };
 
@@ -234,7 +240,7 @@ export class Renderer3D {
         m.pulse ?? 0, m.pulseCount ?? 1, m.pulsePhase ?? 0, ...(m.pulseDir ?? [0, 0, 0]), ...rgb(o.strips, [0, 0, 0])];
       const at = f64Buf(vals.length); // may grow memory: reserve before touching F64
       F64.set(vals, at);
-      this.triangles += w.ak_raster_draw(this.id, it.mesh.id, inst.count, it.cull === false ? 0 : 1, vals.length);
+      this.triangles += w.ak_raster_draw(this.id, it.mesh.id, inst.count, (it.cull === false ? 0 : 1) | (it.blend === 'additive' ? 2 : 0), vals.length);
     }
     const px = new Uint8ClampedArray(W!.memory.buffer, w.ak_raster_ptr(this.id), this.width * this.height * 4);
     const ctx = 'getContext' in this.target ? this.target.getContext('2d') : null;

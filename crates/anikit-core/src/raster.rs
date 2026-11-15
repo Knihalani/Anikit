@@ -148,6 +148,15 @@ pub struct Raster {
     keys: Vec<f32>,
     /// Triangles drawn by the last call (diagnostics).
     pub drawn: usize,
+    queue: Queue,
+    /// Pixels shaded by the last call (diagnostics).
+    pub shaded: usize,
+    pub tested: usize,
+    pub rows: usize,
+    /// Run a depth-only pre-pass before shading opaque draws, so each pixel is
+    /// shaded once. Front-to-back instance order already keeps overdraw low,
+    /// so this only pays off for heavily self-overlapping single meshes.
+    pub prepass: bool,
 }
 
 /// Everything the pixel shader needs for one instance.
@@ -160,164 +169,204 @@ struct Shade<'a> {
     base: [f32; 3],
     phase: f32,
     fog_on: bool,
-    fog_span: f32,
+    fog_inv: f32,
     env_on: bool,
+    strips_on: bool,
     pattern_on: bool,
+    /// Per-instance lighting terms: base×(ambient+emissive), base×diffuse×key, base×diffuse×fill.
+    lit: [[f32; 3]; 3],
+}
+
+impl Shade<'_> {
+    #[inline(always)]
+    fn set_base(&mut self, b: [f32; 3]) {
+        let (m, l) = (self.m, self.l);
+        self.base = b;
+        self.lit = [
+            core::array::from_fn(|k| b[k] * (m.ambient + m.emissive)),
+            core::array::from_fn(|k| b[k] * m.diffuse * l.key_color[k]),
+            core::array::from_fn(|k| b[k] * m.diffuse * l.fill_color[k]),
+        ];
+    }
 }
 
 #[inline(always)]
 fn norm3(v: [f32; 3]) -> [f32; 3] {
-    let l = crate::math::sqrtf(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).max(1e-9);
-    [v[0] / l, v[1] / l, v[2] / l]
+    let r = 1.0 / crate::math::sqrtf(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).max(1e-9);
+    [v[0] * r, v[1] * r, v[2] * r]
 }
 #[inline(always)]
 fn dot(a: [f32; 3], b: [f32; 3]) -> f32 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
+
+use crate::simd::{dot3, V4};
+
+/// ≈ 0.5 + 0.5·cos(2πx) per lane, without a software cosine (smoothstep of a triangle wave).
 #[inline(always)]
-fn fract(x: f32) -> f32 {
-    x - crate::math::floorf(x)
-}
-/// ≈ 0.5 + 0.5·cos(2πx), without a software cosine (smoothstep of a triangle wave).
-#[inline(always)]
-fn wave(x: f32) -> f32 {
-    let y = (2.0 * fract(x) - 1.0).abs();
+fn wave4(x: V4) -> V4 {
+    let y = (2.0 * x.fract() - 1.0).abs();
     y * y * (3.0 - 2.0 * y)
 }
 /// A soft peak of width ~1/k around 0 (rational, no exp).
 #[inline(always)]
-fn peak(x: f32, k: f32) -> f32 {
-    let b = 1.0 / (1.0 + (x * k) * (x * k));
+fn peak4(x: V4, k: f32) -> V4 {
+    let t = x * k;
+    let b = 1.0 / (1.0 + t * t);
     b * b
 }
-/// Antialiased line coverage for a grid coordinate `g` with screen footprint `fw` (cells per pixel).
+
+/// Antialiased grid-line coverage at `t × cells`, with a per-lane screen
+/// footprint `fw` (UV units per pixel). Lines thinner than a pixel dim rather
+/// than shimmer, and grids denser than ~2 px per cell fade to their mean.
 #[inline(always)]
-fn grid_line(g: f32, fw: f32, hw: f32) -> f32 {
-    let f = fract(g);
-    let d = f.min(1.0 - f);
-    let aa = fw.max(1e-4);
-    let cov = ((hw - d) / aa + 0.5).clamp(0.0, 1.0) * (2.0 * hw / aa).min(1.0);
-    // Below ~2 px per cell the lines would shimmer: fade to the grid's mean coverage.
+fn grid4(t: V4, cells: f32, hw: f32, fw: V4) -> V4 {
+    let fw = fw * cells;
+    let aa = fw.maxf(1e-4);
+    let inv = 1.0 / aa;
     let fade = (2.0 - fw * 4.0).clamp(0.0, 1.0);
-    cov * fade + (2.0 * hw).min(1.0) * (1.0 - fade)
+    let gain = (2.0 * hw * inv).minf(1.0) * fade;
+    let f = (t * cells).fract();
+    let d = f.min(1.0 - f);
+    ((hw - d) * inv + 0.5).clamp(0.0, 1.0) * gain + (1.0 - fade) * (2.0 * hw).min(1.0)
 }
 
-/// Tone-map and pack: luminance above 0.6 rolls off smoothly towards 1, and
-/// channels that still exceed 1 burn towards white instead of clipping.
+/// Pixels waiting to be shaded: passing pixels from successive rows and
+/// triangles are packed into full groups of four before shading, so small
+/// triangles don't waste SIMD lanes.
+#[derive(Debug, Default)]
+struct Queue {
+    n: usize,
+    idx: [usize; 4],
+    /// 1/w and varyings/w (divided at flush).
+    q: [f32; 4],
+    a: [[f32; 4]; NV],
+    fw: [[f32; 4]; 2],
+}
+
+/// Tone-map and pack four pixels: luminance above 0.6 rolls off smoothly
+/// towards 1, and channels that still exceed 1 burn towards white instead
+/// of clipping per channel.
 #[inline(always)]
-fn pack(c: [f32; 3]) -> u32 {
-    let mut c = [c[0].max(0.0), c[1].max(0.0), c[2].max(0.0)];
-    let l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-    if l > 0.6 {
-        let x = l - 0.6;
-        let s = (0.6 + x / (1.0 + x * 2.5)) / l;
-        c = [c[0] * s, c[1] * s, c[2] * s];
-    }
-    let m = c[0].max(c[1]).max(c[2]);
-    if m > 1.0 {
-        let w = ((m - 1.0) * 0.2).min(0.75);
-        let inv = 1.0 / m;
-        c = core::array::from_fn(|k| c[k] * inv + (1.0 - c[k] * inv) * w);
-    }
-    // Float→int casts saturate in Rust, so only the upper bound needs a min.
-    let q = |v: f32| ((v * 255.0 + 0.5) as u32).min(255);
-    q(c[0]) | (q(c[1]) << 8) | (q(c[2]) << 16) | 0xff00_0000
+fn pack4(c: [V4; 3]) -> [u32; 4] {
+    let (r, g, b) = (c[0].maxf(0.0), c[1].maxf(0.0), c[2].maxf(0.0));
+    let l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    let x = (l - 0.6).maxf(0.0);
+    let s = V4::select(l.gtf(0.6), (0.6 + x / (1.0 + x * 2.5)) / l.maxf(1e-6), V4::splat(1.0));
+    let (r, g, b) = (r * s, g * s, b * s);
+    let m = r.max(g).max(b).maxf(1.0);
+    let w = ((m - 1.0) * 0.2).minf(0.75);
+    let inv = 1.0 / m;
+    let t = |v: V4| {
+        let v = v * inv;
+        v + (1.0 - v) * w
+    };
+    V4::pack_rgb(t(r), t(g), t(b))
 }
 
-#[allow(clippy::needless_range_loop)]
+#[cfg(test)]
+fn pack(c: [f32; 3]) -> u32 {
+    pack4([V4::splat(c[0]), V4::splat(c[1]), V4::splat(c[2])])[0]
+}
+
 impl Shade<'_> {
     #[inline(always)]
-    fn env(&self, r: [f32; 3]) -> [f32; 3] {
+    fn env4(&self, r: &[V4; 3]) -> [V4; 3] {
         let l = self.l;
         let up = r[1].clamp(-1.0, 1.0);
-        let band = peak(up, 3.0);
-        let mut e: [f32; 3] = core::array::from_fn(|k| {
-            let sg = if up > 0.0 { l.sky[k] } else { l.ground[k] };
+        let band = peak4(up, 3.0);
+        let above = up.gtf(0.0);
+        let mut e: [V4; 3] = core::array::from_fn(|k| {
+            let sg = V4::select(above, V4::splat(l.sky[k]), V4::splat(l.ground[k]));
             sg + (l.horizon[k] - sg) * band
         });
-        if l.strips[0] + l.strips[1] + l.strips[2] > 0.0 {
+        if self.strips_on {
             // Studio softboxes: a high horizontal strip and two vertical panels.
-            let s = peak(up - 0.55, 14.0) + if up > -0.25 { peak(r[0] - 0.72, 10.0) + 0.6 * peak(r[0] + 0.55, 16.0) } else { 0.0 };
-            for k in 0..3 {
-                e[k] += l.strips[k] * s;
+            let side = peak4(r[0] - 0.72, 10.0) + 0.6 * peak4(r[0] + 0.55, 16.0);
+            let st = peak4(up - 0.55, 14.0) + V4::select(up.gtf(-0.25), side, V4::splat(0.0));
+            for (k, ek) in e.iter_mut().enumerate() {
+                *ek = *ek + st * l.strips[k];
             }
         }
         e
     }
 
+    /// Shade four pixels at once.
     #[inline(always)]
-    fn px(&self, n: [f32; 3], p: [f32; 3], u: f32, v: f32, fwu: f32, fwv: f32) -> [f32; 3] {
+    #[allow(clippy::needless_range_loop)]
+    fn px4(&self, n: [V4; 3], p: [V4; 3], u: V4, v: V4, fwu: V4, fwv: V4) -> [V4; 3] {
         let (m, l) = (self.m, self.l);
         let view = [self.eye[0] - p[0], self.eye[1] - p[1], self.eye[2] - p[2]];
-        let dist = crate::math::sqrtf(dot(view, view)).max(1e-6);
-        let vd = [view[0] / dist, view[1] / dist, view[2] / dist];
-        let mut n = norm3(n);
-        let mut ndv = dot(n, vd);
-        if ndv < 0.0 {
-            // Two-sided: back faces seen through gaps light like front faces.
-            n = [-n[0], -n[1], -n[2]];
-            ndv = -ndv;
-        }
-        let dk = dot(n, self.key).max(0.0);
-        let df = dot(n, self.fill).max(0.0);
-        let hv = norm3([self.key[0] + vd[0], self.key[1] + vd[1], self.key[2] + vd[2]]);
-        let x = dot(n, hv).max(0.0);
+        let d2 = dot3(&view, &view).maxf(1e-12);
+        let rd = 1.0 / d2.sqrt();
+        let vd = [view[0] * rd, view[1] * rd, view[2] * rd];
+        let rn = 1.0 / dot3(&n, &n).sqrt().maxf(1e-9);
+        let ndv0 = dot3(&n, &vd) * rn;
+        // Normalise and flip back faces (two-sided lighting) with one scale.
+        let sc = V4::select(ndv0.ltf(0.0), -rn, rn);
+        let n = [n[0] * sc, n[1] * sc, n[2] * sc];
+        let ndv = ndv0.abs();
+        let key = [V4::splat(self.key[0]), V4::splat(self.key[1]), V4::splat(self.key[2])];
+        let dk = dot3(&n, &key).maxf(0.0);
+        let df = (n[0] * self.fill[0] + n[1] * self.fill[1] + n[2] * self.fill[2]).maxf(0.0);
+        let h = [vd[0] + self.key[0], vd[1] + self.key[1], vd[2] + self.key[2]];
+        let x = (dot3(&n, &h) / dot3(&h, &h).sqrt().maxf(1e-9)).maxf(0.0);
         // Schlick's cheap power: x / (s − s·x + x) ≈ x^s.
-        let sp = if dk > 0.0 { x / (m.shininess - m.shininess * x + x) * m.specular } else { 0.0 };
+        let ss = m.shininess;
+        let sp = V4::select(dk.gtf(0.0), x / (ss - ss * x + x) * m.specular, V4::splat(0.0));
         let fr = 1.0 - ndv;
         let rim = fr * fr * fr * m.rim;
-        let b = self.base;
-        let mut c: [f32; 3] = core::array::from_fn(|k| {
-            b[k] * (m.ambient + m.diffuse * (dk * l.key_color[k] + df * l.fill_color[k]) + m.emissive) + sp * l.key_color[k] + rim * l.rim_color[k]
-        });
+        let (ka, kk, kf) = (&self.lit[0], &self.lit[1], &self.lit[2]);
+        let mut c: [V4; 3] = core::array::from_fn(|k| ka[k] + dk * kk[k] + df * kf[k] + sp * l.key_color[k] + rim * l.rim_color[k]);
         if self.env_on {
             let r = [2.0 * ndv * n[0] - vd[0], 2.0 * ndv * n[1] - vd[1], 2.0 * ndv * n[2] - vd[2]];
-            let mut e = self.env(r);
+            let mut e = self.env4(&r);
             if m.iridescence > 0.0 {
                 // Thin film: tint the reflection with a palette indexed by the viewing angle.
-                let x = fr * 1.6 + m.hue;
                 let t = m.iridescence;
-                let pal = [wave(x), wave(x + 0.33), wave(x + 0.67)];
+                let xx = fr * 1.6 + m.hue;
+                let pal = [wave4(xx), wave4(xx + 0.33), wave4(xx + 0.67)];
                 for k in 0..3 {
-                    e[k] *= 1.0 - t + t * 1.7 * pal[k];
-                    c[k] += pal[k] * t * 0.3 * fr;
+                    e[k] = e[k] * ((1.0 - t) + pal[k] * (t * 1.7));
+                    c[k] = c[k] + pal[k] * fr * (t * 0.3);
                 }
             }
             if m.metal > 0.0 {
+                let b = self.base;
                 for k in 0..3 {
                     let refl = e[k] * (0.3 + 0.7 * b[k]) + sp * l.key_color[k];
-                    c[k] += (refl - c[k]) * m.metal;
+                    c[k] = c[k] + (refl - c[k]) * m.metal;
                 }
             } else {
                 // Dielectric: a fresnel-weighted reflection on top.
-                let f = 0.04 + 0.96 * fr * fr * fr * fr * fr;
+                let f2 = fr * fr;
+                let f = (0.04 + 0.96 * f2 * f2 * fr) * m.iridescence;
                 for k in 0..3 {
-                    c[k] += e[k] * f * m.iridescence;
+                    c[k] = c[k] + e[k] * f;
                 }
             }
         }
         if self.pattern_on {
             let band = if m.pulse > 0.0 {
-                let t = fract(u * m.pulse_count - self.phase);
+                let t = (u * m.pulse_count - self.phase).fract();
                 let t2 = t * t;
                 let t4 = t2 * t2;
                 t4 * t4 * t
             } else {
-                0.0
+                V4::splat(0.0)
             };
-            // A zero cell count turns that direction's lines off (stripes along one axis only).
-            let lu = if m.lines > 0.0 && m.grid[0] > 0.0 { grid_line(u * m.grid[0], fwu * m.grid[0], m.line_width) } else { 0.0 };
-            let lv = if m.lines > 0.0 && m.grid[1] > 0.0 { grid_line(v * m.grid[1], fwv * m.grid[1], m.line_width) } else { 0.0 };
-            let lm = lu.max(lv);
-            let e = lm * m.lines * (1.0 + 3.0 * band) + band * m.pulse;
+            let zero = V4::splat(0.0);
+            let lu = if m.lines > 0.0 && m.grid[0] > 0.0 { grid4(u, m.grid[0], m.line_width, fwu) } else { zero };
+            let lv = if m.lines > 0.0 && m.grid[1] > 0.0 { grid4(v, m.grid[1], m.line_width, fwv) } else { zero };
+            let e = lu.max(lv) * m.lines * (1.0 + 3.0 * band) + band * m.pulse;
             for k in 0..3 {
-                c[k] += m.line_color[k] * e;
+                c[k] = c[k] + e * m.line_color[k];
             }
         }
         if self.fog_on {
-            let f = ((dist - l.fog[0]) / self.fog_span).clamp(0.0, 1.0);
+            let f = ((d2 * rd - l.fog[0]) * self.fog_inv).clamp(0.0, 1.0);
             for k in 0..3 {
-                c[k] += (l.fog_color[k] - c[k]) * f;
+                c[k] = c[k] + (l.fog_color[k] - c[k]) * f;
             }
         }
         c
@@ -350,17 +399,27 @@ impl Raster {
         Sv { x: hw + c[0] * q * hw, y: hh - c[1] * q * hh, z: c[2] * q, q, a: core::array::from_fn(|k| a[k] * q) }
     }
 
-    /// Draw `mesh` once per instance. `vp` is view × projection, `eye` the
-    /// camera position (for specular, rim, reflections and fog).
+    /// Draw `mesh` once per instance (opaque). `vp` is view × projection,
+    /// `eye` the camera position (for specular, rim, reflections and fog).
+    #[allow(clippy::too_many_arguments)]
+    pub fn draw(&mut self, mesh: &Mesh, instances: &[f32], vp: &M4, eye: [f32; 3], mat: &Material, light: &Lighting, cull_back: bool) {
+        self.draw_with(mesh, instances, vp, eye, mat, light, cull_back, Blend::Opaque);
+    }
+
+    /// [`Raster::draw`] with a blend mode.
+    ///
+    /// Opaque draws are shaded front to back (optionally after a depth
+    /// pre-pass, see [`Raster::prepass`]), four pixels at a time. Additive draws are depth-tested against what is
+    /// already drawn but don't write depth.
     #[allow(clippy::too_many_arguments)]
     #[allow(clippy::needless_range_loop)]
-    pub fn draw(&mut self, mesh: &Mesh, instances: &[f32], vp: &M4, eye: [f32; 3], mat: &Material, light: &Lighting, cull_back: bool) {
+    pub fn draw_with(&mut self, mesh: &Mesh, instances: &[f32], vp: &M4, eye: [f32; 3], mat: &Material, light: &Lighting, cull_back: bool, blend: Blend) {
         let nv = mesh.pos.len() / 3;
         let has_uv = mesh.uv.len() >= nv * 2;
-        self.clip.resize(nv, [0.0; 4]);
-        self.var.resize(nv, [0.0; NV]);
-        self.sv.resize(nv, Sv::default());
         self.drawn = 0;
+        self.shaded = 0;
+        self.tested = 0;
+        self.rows = 0;
         let mut sh = Shade {
             m: mat,
             l: light,
@@ -370,16 +429,21 @@ impl Raster {
             base: [0.0; 3],
             phase: 0.0,
             fog_on: light.fog[1].is_finite(),
-            fog_span: (light.fog[1] - light.fog[0]).max(1e-3),
+            fog_inv: 1.0 / (light.fog[1] - light.fog[0]).max(1e-3),
             env_on: mat.metal > 0.0 || mat.iridescence > 0.0,
+            strips_on: light.strips[0] + light.strips[1] + light.strips[2] > 0.0,
             pattern_on: mat.lines > 0.0 || mat.pulse > 0.0,
+            lit: [[0.0; 3]; 3],
         };
         // Front-to-back: nearer instances fill the depth buffer first, so the
-        // depth test rejects hidden pixels before any shading or stores.
+        // depth test rejects hidden pixels early.
         let count = instances.len() / INSTANCE_STRIDE;
+        if count == 0 || nv == 0 {
+            return;
+        }
         self.order.clear();
         self.order.extend(0..count as u32);
-        if count > 1 {
+        if count > 1 && blend == Blend::Opaque {
             let d2 = |i: u32| {
                 let b = i as usize * INSTANCE_STRIDE;
                 let (dx, dy, dz) = (instances[b + 9] - eye[0], instances[b + 10] - eye[1], instances[b + 11] - eye[2]);
@@ -390,12 +454,16 @@ impl Raster {
             let keys = &self.keys;
             self.order.sort_unstable_by(|a, b| keys[*a as usize].partial_cmp(&keys[*b as usize]).unwrap_or(core::cmp::Ordering::Equal));
         }
+        // Transform and project every vertex of every instance once; both
+        // passes rasterise from these.
+        let total = count * nv;
+        self.clip.resize(total, [0.0; 4]);
+        self.var.resize(total, [0.0; NV]);
+        self.sv.resize(total, Sv::default());
         for oi in 0..count {
             let ii = self.order[oi] as usize;
-            let inst = &instances[ii * INSTANCE_STRIDE..(ii + 1) * INSTANCE_STRIDE];
-            let m = &inst[..12];
-            sh.base = [inst[12], inst[13], inst[14]];
-            sh.phase = mat.pulse_phase + dot([m[9], m[10], m[11]], mat.pulse_dir);
+            let m = &instances[ii * INSTANCE_STRIDE..ii * INSTANCE_STRIDE + 12];
+            let off = oi * nv;
             for v in 0..nv {
                 let (px, py, pz) = (mesh.pos[v * 3], mesh.pos[v * 3 + 1], mesh.pos[v * 3 + 2]);
                 let wx = m[0] * px + m[3] * py + m[6] * pz + m[9];
@@ -403,7 +471,7 @@ impl Raster {
                 let wz = m[2] * px + m[5] * py + m[8] * pz + m[11];
                 let (nx, ny, nz) = (mesh.nrm[v * 3], mesh.nrm[v * 3 + 1], mesh.nrm[v * 3 + 2]);
                 let (uu, vv) = if has_uv { (mesh.uv[v * 2], mesh.uv[v * 2 + 1]) } else { (0.0, 0.0) };
-                self.var[v] = [
+                let var = [
                     m[0] * nx + m[3] * ny + m[6] * nz,
                     m[1] * nx + m[4] * ny + m[7] * nz,
                     m[2] * nx + m[5] * ny + m[8] * nz,
@@ -419,56 +487,98 @@ impl Raster {
                     vp[2] * wx + vp[6] * wy + vp[10] * wz + vp[14],
                     vp[3] * wx + vp[7] * wy + vp[11] * wz + vp[15],
                 ];
-                self.clip[v] = c;
+                self.clip[off + v] = c;
+                self.var[off + v] = var;
                 if c[2] >= -c[3] && c[3] > 0.0 {
-                    self.sv[v] = self.to_screen(c, &self.var[v]);
+                    self.sv[off + v] = self.to_screen(c, &var);
                 }
             }
-            for t in mesh.idx.chunks_exact(3) {
-                let ix = [t[0] as usize, t[1] as usize, t[2] as usize];
-                // Signed distance to the near plane (z = −w in clip space).
-                let d = ix.map(|i| self.clip[i][2] + self.clip[i][3]);
-                let inside = d.map(|x| x >= 0.0 && x.is_finite());
-                if inside[0] && inside[1] && inside[2] {
-                    let (a, b, c) = (self.sv[ix[0]], self.sv[ix[1]], self.sv[ix[2]]);
-                    self.tri(&a, &b, &c, cull_back, &sh);
-                    continue;
-                }
-                if !inside[0] && !inside[1] && !inside[2] {
-                    continue;
-                }
-                // Clip against the near plane (Sutherland–Hodgman): 1 or 2 triangles.
-                let mut poly: [([f32; 4], [f32; NV]); 4] = [([0.0; 4], [0.0; NV]); 4];
-                let mut np = 0;
-                for e in 0..3 {
-                    let (i, j) = (e, (e + 1) % 3);
-                    let (ci, cj) = (self.clip[ix[i]], self.clip[ix[j]]);
-                    let (vi, vj) = (self.var[ix[i]], self.var[ix[j]]);
-                    if inside[i] {
-                        poly[np] = (ci, vi);
-                        np += 1;
-                    }
-                    if inside[i] != inside[j] {
-                        let s = d[i] / (d[i] - d[j]);
-                        poly[np] = (core::array::from_fn(|k| ci[k] + (cj[k] - ci[k]) * s), core::array::from_fn(|k| vi[k] + (vj[k] - vi[k]) * s));
-                        np += 1;
+        }
+        match blend {
+            Blend::Opaque => {
+                let pre = self.prepass;
+                if pre {
+                    for oi in 0..count {
+                        self.tris::<DEPTH>(mesh, oi * nv, cull_back, &sh);
                     }
                 }
-                if np < 3 || poly[..np].iter().any(|p| p.0[3] <= 1e-6) {
-                    continue;
+                for oi in 0..count {
+                    let ii = self.order[oi] as usize;
+                    let inst = &instances[ii * INSTANCE_STRIDE..(ii + 1) * INSTANCE_STRIDE];
+                    sh.set_base([inst[12], inst[13], inst[14]]);
+                    sh.phase = mat.pulse_phase + dot([inst[9], inst[10], inst[11]], mat.pulse_dir);
+                    if pre {
+                        self.tris::<SHADE_EQ>(mesh, oi * nv, cull_back, &sh);
+                    } else {
+                        self.tris::<SHADE_LT>(mesh, oi * nv, cull_back, &sh);
+                    }
                 }
-                let s0 = self.to_screen(poly[0].0, &poly[0].1);
-                for k in 1..np - 1 {
-                    let (s1, s2) = (self.to_screen(poly[k].0, &poly[k].1), self.to_screen(poly[k + 1].0, &poly[k + 1].1));
-                    self.tri(&s0, &s1, &s2, cull_back, &sh);
+            }
+            Blend::Additive => {
+                for oi in 0..count {
+                    let ii = self.order[oi] as usize;
+                    let inst = &instances[ii * INSTANCE_STRIDE..(ii + 1) * INSTANCE_STRIDE];
+                    sh.set_base([inst[12], inst[13], inst[14]]);
+                    sh.phase = mat.pulse_phase + dot([inst[9], inst[10], inst[11]], mat.pulse_dir);
+                    self.tris::<ADD>(mesh, oi * nv, cull_back, &sh);
                 }
             }
         }
     }
 
+    /// Rasterise one instance's triangles (vertices at `off`), clipping
+    /// against the near plane.
+    #[inline]
+    fn tris<const MODE: u8>(&mut self, mesh: &Mesh, off: usize, cull_back: bool, sh: &Shade) {
+        for t in mesh.idx.chunks_exact(3) {
+            let ix = [off + t[0] as usize, off + t[1] as usize, off + t[2] as usize];
+            // Signed distance to the near plane (z = −w in clip space).
+            let d = ix.map(|i| self.clip[i][2] + self.clip[i][3]);
+            let inside = d.map(|x| x >= 0.0 && x.is_finite());
+            if inside[0] && inside[1] && inside[2] {
+                let (a, b, c) = (self.sv[ix[0]], self.sv[ix[1]], self.sv[ix[2]]);
+                self.tri::<MODE>(&a, &b, &c, cull_back, sh);
+                continue;
+            }
+            if !inside[0] && !inside[1] && !inside[2] {
+                continue;
+            }
+            // Sutherland–Hodgman against the near plane: 1 or 2 triangles.
+            let mut poly: [([f32; 4], [f32; NV]); 4] = [([0.0; 4], [0.0; NV]); 4];
+            let mut np = 0;
+            for e in 0..3 {
+                let (i, j) = (e, (e + 1) % 3);
+                let (ci, cj) = (self.clip[ix[i]], self.clip[ix[j]]);
+                let (vi, vj) = (self.var[ix[i]], self.var[ix[j]]);
+                if inside[i] {
+                    poly[np] = (ci, vi);
+                    np += 1;
+                }
+                if inside[i] != inside[j] {
+                    let s = d[i] / (d[i] - d[j]);
+                    poly[np] = (core::array::from_fn(|k| ci[k] + (cj[k] - ci[k]) * s), core::array::from_fn(|k| vi[k] + (vj[k] - vi[k]) * s));
+                    np += 1;
+                }
+            }
+            if np < 3 || poly[..np].iter().any(|p| p.0[3] <= 1e-6) {
+                continue;
+            }
+            let s0 = self.to_screen(poly[0].0, &poly[0].1);
+            for k in 1..np - 1 {
+                let (s1, s2) = (self.to_screen(poly[k].0, &poly[k].1), self.to_screen(poly[k + 1].0, &poly[k + 1].1));
+                self.tri::<MODE>(&s0, &s1, &s2, cull_back, sh);
+            }
+        }
+        // The shading inputs (base colour, pulse phase) change per instance.
+        if MODE != DEPTH {
+            self.shaded += self.queue.n;
+            flush::<MODE>(&mut self.queue, &mut self.color, sh);
+        }
+    }
+
     #[inline]
     #[allow(clippy::needless_range_loop)]
-    fn tri(&mut self, p0: &Sv, p1: &Sv, p2: &Sv, cull_back: bool, sh: &Shade) {
+    fn tri<const MODE: u8>(&mut self, p0: &Sv, p1: &Sv, p2: &Sv, cull_back: bool, sh: &Shade) {
         let (x0, y0, x1, y1, x2, y2) = (p0.x, p0.y, p1.x, p1.y, p2.x, p2.y);
         let area = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
         if area.is_nan() || area.abs() < 1e-6 || (cull_back && area > 0.0) {
@@ -482,25 +592,30 @@ impl Raster {
         if minx > maxx || miny > maxy {
             return;
         }
-        self.drawn += 1;
+        if MODE != DEPTH {
+            self.drawn += 1;
+        }
         let inv = 1.0 / area;
         // Edge functions; per row, solve for the covered span directly, then
-        // walk it with incrementally interpolated depth, 1/w and varyings/w.
+        // walk it with incrementally interpolated depth (and, when shading,
+        // 1/w and varyings/w).
         let e = |ax: f32, ay: f32, bx: f32, by: f32, px: f32, py: f32| (bx - ax) * (py - ay) - (by - ay) * (px - ax);
         let sgn = if area > 0.0 { 1.0 } else { -1.0 };
         let d = [-(y2 - y1) * sgn, -(y0 - y2) * sgn, -(y1 - y0) * sgn];
-        // Barycentric gradients in x and y.
         let gx = [d[0] * sgn * inv, d[1] * sgn * inv, d[2] * sgn * inv];
-        let gy = [(x2 - x1) * inv, (x0 - x2) * inv, (x1 - x0) * inv];
         let lerp = |g: &[f32; 3], a: f32, b: f32, c: f32| g[0] * a + g[1] * b + g[2] * c;
         let dz = lerp(&gx, p0.z, p1.z, p2.z);
-        let dq = lerp(&gx, p0.q, p1.q, p2.q);
-        let da: [f32; NV] = core::array::from_fn(|k| lerp(&gx, p0.a[k], p1.a[k], p2.a[k]));
-        // UV footprint per pixel (affine estimate, constant over the triangle) for antialiasing.
-        let (u0, u1, u2) = (p0.a[6] / p0.q, p1.a[6] / p1.q, p2.a[6] / p2.q);
-        let (v0, v1, v2) = (p0.a[7] / p0.q, p1.a[7] / p1.q, p2.a[7] / p2.q);
-        let fwu = lerp(&gx, u0, u1, u2).abs() + lerp(&gy, u0, u1, u2).abs();
-        let fwv = lerp(&gx, v0, v1, v2).abs() + lerp(&gy, v0, v1, v2).abs();
+        let (mut dq, mut da, mut fwu, mut fwv) = (0.0, [0.0f32; NV], 0.0, 0.0);
+        if MODE != DEPTH {
+            let gy = [(x2 - x1) * inv, (x0 - x2) * inv, (x1 - x0) * inv];
+            dq = lerp(&gx, p0.q, p1.q, p2.q);
+            da = core::array::from_fn(|k| lerp(&gx, p0.a[k], p1.a[k], p2.a[k]));
+            // UV footprint per pixel (affine estimate, constant over the triangle) for antialiasing.
+            let (u0, u1, u2) = (p0.a[6] / p0.q, p1.a[6] / p1.q, p2.a[6] / p2.q);
+            let (v0, v1, v2) = (p0.a[7] / p0.q, p1.a[7] / p1.q, p2.a[7] / p2.q);
+            fwu = lerp(&gx, u0, u1, u2).abs() + lerp(&gy, u0, u1, u2).abs();
+            fwv = lerp(&gx, v0, v1, v2).abs() + lerp(&gy, v0, v1, v2).abs();
+        }
         let span = (maxx - minx) as f32;
         for py in miny..=maxy {
             let fy = py as f32 + 0.5;
@@ -523,26 +638,97 @@ impl Raster {
                 continue;
             }
             let (b0, b1, b2) = ((wv[0] + d[0] * lo) * sgn * inv, (wv[1] + d[1] * lo) * sgn * inv, (wv[2] + d[2] * lo) * sgn * inv);
-            let mut z = b0 * p0.z + b1 * p1.z + b2 * p2.z;
-            let mut q = b0 * p0.q + b1 * p1.q + b2 * p2.q;
-            let mut a: [f32; NV] = core::array::from_fn(|k| b0 * p0.a[k] + b1 * p1.a[k] + b2 * p2.a[k]);
+            let z0 = b0 * p0.z + b1 * p1.z + b2 * p2.z;
             let row = py as usize * self.width + minx as usize;
             let (a0, a1) = (row + lo as usize, row + hi as usize);
-            for i in a0..=a1 {
-                if z < self.depth[i] {
-                    self.depth[i] = z;
-                    let iw = 1.0 / q;
-                    let c = sh.px([a[0] * iw, a[1] * iw, a[2] * iw], [a[3] * iw, a[4] * iw, a[5] * iw], a[6] * iw, a[7] * iw, fwu, fwv);
-                    self.color[i] = pack(c);
+            // Depth along the span is evaluated as z0 + dz·k in every mode, so a
+            // pre-pass and the shading pass agree bit for bit.
+            if MODE == DEPTH {
+                for (k, dp) in self.depth[a0..=a1].iter_mut().enumerate() {
+                    let z = z0 + dz * k as f32;
+                    if z < *dp {
+                        *dp = z;
+                    }
                 }
-                z += dz;
-                q += dq;
-                for k in 0..NV {
-                    a[k] += da[k];
+                continue;
+            }
+            let q0 = b0 * p0.q + b1 * p1.q + b2 * p2.q;
+            let s0: [f32; NV] = core::array::from_fn(|k| b0 * p0.a[k] + b1 * p1.a[k] + b2 * p2.a[k]);
+            // Split borrows so the span loop keeps everything in locals.
+            let (depth, color, qu) = (&mut self.depth[a0..=a1], &mut self.color, &mut self.queue);
+            for (k, dp) in depth.iter_mut().enumerate() {
+                let kf = k as f32;
+                let z = z0 + dz * kf;
+                let ok = match MODE {
+                    SHADE_EQ => z <= *dp,
+                    _ => z < *dp,
+                };
+                if !ok {
+                    continue;
+                }
+                if MODE == SHADE_LT {
+                    *dp = z;
+                }
+                let l = qu.n & 3;
+                qu.idx[l] = a0 + k;
+                qu.q[l] = q0 + dq * kf;
+                for c in 0..NV {
+                    qu.a[c][l] = s0[c] + da[c] * kf;
+                }
+                qu.fw[0][l] = fwu;
+                qu.fw[1][l] = fwv;
+                qu.n = l + 1;
+                if l == 3 {
+                    self.shaded += 4;
+                    flush::<MODE>(qu, color, sh);
                 }
             }
         }
     }
+}
+
+/// Shade the queued pixels (up to four) in one SIMD group and store them.
+#[inline(always)]
+#[allow(clippy::needless_range_loop)]
+fn flush<const MODE: u8>(q: &mut Queue, color: &mut [u32], sh: &Shade) {
+    let n = q.n;
+    if n == 0 {
+        return;
+    }
+    // Perspective divide for all four lanes at once.
+    let iw = 1.0 / V4::from_array(q.q);
+    let a: [V4; NV] = core::array::from_fn(|k| V4::from_array(q.a[k]) * iw);
+    let c = sh.px4([a[0], a[1], a[2]], [a[3], a[4], a[5]], a[6], a[7], V4::from_array(q.fw[0]), V4::from_array(q.fw[1]));
+    let px = pack4(c);
+    for l in 0..n.min(4) {
+        let i = q.idx[l];
+        if let Some(dst) = color.get_mut(i) {
+            *dst = if MODE == ADD { add_packed(*dst, px[l]) } else { px[l] };
+        }
+    }
+    q.n = 0;
+}
+
+const DEPTH: u8 = 0;
+const SHADE_EQ: u8 = 1;
+const ADD: u8 = 2;
+const SHADE_LT: u8 = 3;
+
+/// Saturating per-channel add of two packed RGBA words (alpha kept from `dst`).
+#[inline(always)]
+fn add_packed(dst: u32, src: u32) -> u32 {
+    let ch = |s: u32| (((dst >> s) & 255) + ((src >> s) & 255)).min(255) << s;
+    ch(0) | ch(8) | ch(16) | (dst & 0xff00_0000)
+}
+
+/// How a draw call writes pixels.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Blend {
+    /// Depth-tested and depth-writing; shaded once per visible pixel.
+    #[default]
+    Opaque,
+    /// Added to the frame (light: beams, holograms, glowing wire); depth-tested, no depth write.
+    Additive,
 }
 
 // ---------------------------------------------------------------------------

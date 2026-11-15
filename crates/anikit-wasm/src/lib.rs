@@ -1921,7 +1921,9 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
     let Some(Some(m)) = s.meshes.get(mesh as usize) else { return 0 };
     let Some(Some((r, inst))) = s.rasters.get_mut(id as usize) else { return 0 };
     let k = (n as usize * INSTANCE_STRIDE).min(inst.len());
-    r.draw(m, &inst[..k], &vp, eye, &mat, &light, cull_back != 0);
+    // Flags: bit 0 back-face culling, bit 1 additive blending.
+    let blend = if cull_back & 2 != 0 { Blend::Additive } else { Blend::Opaque };
+    r.draw_with(m, &inst[..k], &vp, eye, &mat, &light, cull_back & 1 != 0, blend);
     r.drawn as u32
 }
 #[no_mangle]
