@@ -185,6 +185,7 @@ pub struct PostFx {
     rays: Vec<f32>,
     luma: Vec<u8>,
     copy: Vec<u8>,
+    half: Vec<u8>,
 }
 
 impl PostFx {
@@ -265,38 +266,78 @@ impl PostFx {
     /// each pixel's ray towards the centre, the second with a 4× longer step,
     /// so 8 reads per pixel give 16 evenly spread samples without ghosting.
     fn zoom(&mut self, rgba: &mut [u8], w: usize, h: usize, p: &Post) {
-        let (cx, cy) = (p.zoom_center[0] * w as f32, p.zoom_center[1] * h as f32);
+        // Blur at half resolution (radial smear is smooth along the ray), then
+        // blend over the sharp frame by how long each pixel's ray is, so the
+        // centre stays full-resolution sharp.
+        if w < 4 || h < 4 {
+            return;
+        }
+        let (bw, bh) = (w / 2, h / 2);
+        self.half.clear();
+        self.half.resize(bw * bh * 3, 0);
+        for by in 0..bh {
+            for bx in 0..bw {
+                let i = (by * 2 * w + bx * 2) * 4;
+                for c in 0..3 {
+                    let s = rgba[i + c] as u16 + rgba[i + 4 + c] as u16 + rgba[i + w * 4 + c] as u16 + rgba[i + w * 4 + 4 + c] as u16;
+                    self.half[(by * bw + bx) * 3 + c] = ((s + 2) >> 2) as u8;
+                }
+            }
+        }
+        let (cx, cy) = (p.zoom_center[0] * bw as f32, p.zoom_center[1] * bh as f32);
         let k = p.zoom_blur.min(0.9) / 16.0;
-        let (wi, hi) = (w as isize - 1, h as isize - 1);
+        let (wi, hi) = (bw as isize - 1, bh as isize - 1);
         for pass in 0..2u32 {
             self.copy.clear();
-            self.copy.extend_from_slice(rgba);
+            self.copy.extend_from_slice(&self.half);
             let step = if pass == 0 { k } else { k * 4.0 };
-            for y in 0..h {
-                let dy = (cy - y as f32) * step;
-                let row = &mut rgba[y * w * 4..(y + 1) * w * 4];
-                for (x, px) in row.chunks_exact_mut(4).enumerate() {
-                    let dx = (cx - x as f32) * step;
+            for by in 0..bh {
+                let dy = (cy - by as f32) * step;
+                for bx in 0..bw {
+                    let dx = (cx - bx as f32) * step;
                     if dx * dx + dy * dy < 0.0625 {
-                        continue; // the ray is shorter than a pixel: nothing to blur
+                        continue;
                     }
-                    let mut hs = (x as u32).wrapping_mul(0x9E37_79B1) ^ (y as u32).wrapping_mul(0x85EB_CA77) ^ pass;
+                    let mut hs = (bx as u32).wrapping_mul(0x9E37_79B1) ^ (by as u32).wrapping_mul(0x85EB_CA77) ^ pass;
                     hs ^= hs >> 15;
                     hs = hs.wrapping_mul(0x2C1B_3C6D);
                     let jit = (hs >> 8) as f32 * (1.0 / 16_777_216.0);
                     let mut acc = [0u32; 3];
                     for j in 0..4 {
                         let t = j as f32 + jit;
-                        let sx = ((x as f32 + dx * t + 0.5) as isize).clamp(0, wi) as usize;
-                        let sy = ((y as f32 + dy * t + 0.5) as isize).clamp(0, hi) as usize;
-                        let o = (sy * w + sx) * 4;
+                        let sx = (bx as f32 + dx * t + 0.5).clamp(0.0, wi as f32) as usize;
+                        let sy = (by as f32 + dy * t + 0.5).clamp(0.0, hi as f32) as usize;
+                        let o = (sy * bw + sx) * 3;
                         acc[0] += self.copy[o] as u32;
                         acc[1] += self.copy[o + 1] as u32;
                         acc[2] += self.copy[o + 2] as u32;
                     }
-                    px[0] = ((acc[0] + 2) >> 2) as u8;
-                    px[1] = ((acc[1] + 2) >> 2) as u8;
-                    px[2] = ((acc[2] + 2) >> 2) as u8;
+                    let o = (by * bw + bx) * 3;
+                    self.half[o] = ((acc[0] + 2) >> 2) as u8;
+                    self.half[o + 1] = ((acc[1] + 2) >> 2) as u8;
+                    self.half[o + 2] = ((acc[2] + 2) >> 2) as u8;
+                }
+            }
+        }
+        // Blend: weight by ray length in full-res px (sharp below ~1.5 px, blurred from ~4 px).
+        let (fcx, fcy) = (p.zoom_center[0] * w as f32, p.zoom_center[1] * h as f32);
+        let kk = p.zoom_blur.min(0.9) * 1.25; // ≈ total smear length per px of radius
+        for y in 0..h {
+            let by = (y / 2).min(bh - 1);
+            let dy = y as f32 - fcy;
+            for x in 0..w {
+                let dx = x as f32 - fcx;
+                let len = crate::math::sqrtf(dx * dx + dy * dy) * kk;
+                let a = ((len - 1.5) * 0.4).clamp(0.0, 1.0);
+                if a <= 0.0 {
+                    continue;
+                }
+                let ai = (a * 256.0) as u32;
+                let o = (by * bw + (x / 2).min(bw - 1)) * 3;
+                let i = (y * w + x) * 4;
+                for c in 0..3 {
+                    let v = (rgba[i + c] as u32 * (256 - ai) + self.half[o + c] as u32 * ai + 128) >> 8;
+                    rgba[i + c] = v.min(255) as u8;
                 }
             }
         }

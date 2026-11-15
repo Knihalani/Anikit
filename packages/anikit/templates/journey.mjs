@@ -45,7 +45,7 @@ export default async function journey({ anikit: A }) {
       aa: 1, rays: 0.8, raysCenter: [0.5, 0.42],
       bloom: 0.9, bloomThreshold: 0.5, bloomRadius: 44, streaks: 0.5, streakLength: 300,
       aberration: 0.7, vignette: 0.45, grain: 4, contrast: 1.06, saturation: 1.1,
-      zoomBlur: (t) => (t < 2.4 ? 0.06 : 0), // speed lines while we race in
+
     },
   });
   film.impact(0, { flash: '#ffffff', flashOpacity: 0.8, decay: 6 });
