@@ -6,7 +6,7 @@ Import from 'anikit'. Times are in seconds (only `engine.onFrame`/`engine.tick` 
 
 ## Docs
 - [Agent playbook](packages/anikit/AGENTS.md): "want X → use Y" table, rules, snippets, verification, common mistakes and fixes
-- [Recipes](docs/recipes.md): task-sized, tested examples (16 tasks + Python)
+- [Recipes](docs/recipes.md): task-sized, tested examples (17 tasks + Python)
 - [Full reference](llms-full.txt): playbook + recipes + every API in one file
 
 ## Recipes
@@ -26,6 +26,7 @@ Import from 'anikit'. Times are in seconds (only `engine.onFrame`/`engine.tick` 
 - Testing an animation
 - Recording a GIF or MP4
 - Rendering a video in Node
+- A 3D fly-through film (that doesn't look plain)
 - Python
 
 ## Reference sections

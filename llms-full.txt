@@ -737,6 +737,59 @@ export default async function film({ anikit }) {
 
 Keep films deterministic: start tweens in a scene's `enter()`, advance simulations in `step({ dt })`, and only read state in `draw()`. `Math.random` is seeded; don't use `Date.now()`. See [Video: compositions](api.md#video-compositions).
 
+## A 3D fly-through film (that doesn't look plain)
+
+Start from the template — it already wires everything below — then change the world and the route:
+
+```bash
+npx anikit-render --init fly.mjs --template journey
+npx anikit-render fly.mjs --review review/      # sheet.jpg + pacing.txt: look before you render
+npx anikit-render fly.mjs --out fly.mp4         # 1080p60 across all cores, with a progress line
+```
+
+The pieces, in the order a frame is built:
+
+```js
+// fly.mjs
+export default async ({ anikit: A }) => {
+  const { composition, scene3d, renderer3d, mesh, instances, flightPath } = A;
+  const W = 1920, H = 1080;
+  const cam = scene3d({ fov: 64, width: W, height: H, near: 4, far: 40000 });
+  const r3 = renderer3d({ width: W, height: H });
+  // 1. A route and a speed curve. Fractions of the path over seconds; it never stops until the end.
+  const path = flightPath([[0, 400, 3000], [0, 80, -3000], [250, 120, -9000], [0, 150, -20000]], { lookAhead: 900, bank: 1.3 });
+  const s = path.timing([[0, 0], [2, 0.4], [4, 0.75], [6, 1]]);
+  // 2. The world: dark bodies, colour in light.
+  const towers = instances(400, (i) => ({ x: (i % 2 ? 1 : -1) * (300 + (i * 37) % 900), y: 300, z: -Math.floor(i / 2) * 150, sx: 100, sy: 1200, sz: 100, color: [0.03, 0.035, 0.05] }));
+  const film = composition({ width: W, height: H, fps: 60, duration: 6, motionBlur: 1,
+    post: { aa: 1, bloom: 0.9, bloomThreshold: 0.5, streaks: 0.5, rays: 0.8, vignette: 0.45, grain: 4, contrast: 1.06 } });
+  let clock = 0, prev = 0;
+  film.scene('fly', 0, 6, {
+    step: ({ dt }) => { prev = clock; clock += dt; },          // a clock that respects timeScale
+    draw: ({ ctx }) => {
+      path.apply(cam, s(prev)); const prevCamera = cam.viewProjection().matrix;
+      path.apply(cam, s(clock));
+      const px = r3.render(cam, [
+        { mirror: true, mesh: mesh.plane(1), instances: instances(1, () => ({ y: -300, z: -10000, sx: 12000, sz: 30000, color: [0.02, 0.02, 0.03] })), material: { lines: 1.4, lineColor: [0.3, 0.55, 1.6], grid: [60, 150], lineWidth: 0.03 } },
+        { mesh: mesh.cube(), instances: towers, material: { metal: 0.6, lines: 1.6, pattern: 'hex', grid: [3, 12], lineColor: [1.6, 0.3, 1], pulse: 2, pulsePhase: clock * 2 } },
+      ], { background: '#03040a', fog: [8000, 24000], fogColor: [0.18, 0.06, 0.2], sky: [0.02, 0.02, 0.08], horizon: [0.95, 0.35, 0.7], ground: [0.01, 0.01, 0.02],
+           strips: [1.8, 1.8, 2.2], key: [0, 0.14, -1], keyColor: [1, 0.7, 0.9], skybox: { sun: 2.2 }, mirror: { y: -300, strength: 0.45 }, motionBlur: { shutter: 0.55 }, prevCamera });
+      ctx.putImageData(new globalThis.ImageData(px, W, H), 0, 0);
+    },
+  });
+  return film;
+};
+```
+
+What makes it look expensive rather than plain:
+
+- **Near-black bodies, colour in light.** Base colours around `[0.03, 0.035, 0.05]`; the colour comes from `lines` / `pattern` (`'hex'`, `'circuit'`, `'dots'`), `pulse`, `emissive`, chrome (`metal` + `strips`) and bloom. Flat-coloured lit shapes read as placeholder art.
+- **Two or three hues per shot.** One warm, one cool, one neutral. The sky (`skybox`), the fog colour and the horizon should be the same family so geometry dissolves into the distance.
+- **Speed you can feel.** `motionBlur` on the render (with `prevCamera`, so previews match the final render), stars as `points` with a small `streak`, light trails (`mesh.tube` along `path.points()`, `blend: 'additive'`, `pulse`), objects passing close to the camera. Bank into turns (`bank`), add a barrel roll (`path.apply(cam, s, rollDegrees)`).
+- **Something always changes.** `--review` flags any stretch of ≥ 1 s with little motion. Fix every hold you didn't intend: speed up, cut closer to geometry, add a pulse wave or a hit.
+- **Hits land.** `film.impact(t, { shake, flash, aberration })` plus a `timeScale` dip right after (bullet time) and a `shatter()` of the object you hit.
+- **One hero at the end.** `mesh.text(name, { font })` in chrome on the mirror floor, the sun behind it, `rays` aimed at the sun, the camera settling (ease the last metres, then hold ~1.5 s).
+
 ## Python
 
 The Python package animates plain objects (dicts, objects, lists of them) with the same engine. Times are seconds; options are keyword arguments in `snake_case`.
@@ -1647,7 +1700,7 @@ Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [nea
 
 **Depth of field**: `render(…, { dof: { focus, aperture, max } })` blurs by distance from the focal plane (thin lens; `aperture` = blur in px at infinity). Animate `focus` for rack-focus shots.
 
-**Camera motion blur**: `render(scene, items, { motionBlur: { shutter: 0.5, max } })` reprojects every pixel with the previous `render()`'s camera using the depth buffer and blurs along that motion (depth-aware, so near geometry smears over the background). Smooth, ghost-free speed from one render per frame — use it with composition `motionBlur: 1`, give points `streak: 0`–`0.5`, and call `r3.resetMotion()` after a cut.
+**Camera motion blur**: `render(scene, items, { motionBlur: { shutter: 0.5, max } })` reprojects every pixel with the previous `render()`'s camera using the depth buffer and blurs along that motion (depth-aware, so near geometry smears over the background). Smooth, ghost-free speed from one render per frame — use it with composition `motionBlur: 1`, give points `streak: 0`–`0.5`, and call `r3.resetMotion()` after a cut. Pass `prevCamera` (the camera one frame earlier, `scene.viewProjection().matrix`) so previews and `--review`, which skip frames, blur exactly like the final render — see `templates/journey.mjs`.
 
 **Mirror floors**: `render(scene, items, { mirror: { y, strength } })` renders the scene reflected about the plane `y`, then draws items marked `mirror: true` (the floor) glossily over that reflection (`strength` 0–1), then everything else. Neon on wet asphalt. The mirror item should cover the view below the horizon; `reflect: false` keeps an item out of the reflection. Costs a second pass.
 
