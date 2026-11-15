@@ -5,6 +5,7 @@
 import { core, writeStr, f64Buf, F64, readStr, views } from './wasm';
 import { isElement } from './props';
 import { r3 } from './values';
+import { warn, selectorHint } from './debug';
 
 /** Anything that resolves to path data. */
 export type PathSource = string | Element;
@@ -16,9 +17,15 @@ export function pathData(src: PathSource): string {
   if (typeof src === 'string') {
     if (PATH_CMD.test(src)) return src;
     if (typeof document !== 'undefined') {
-      const el = document.querySelector(src);
+      let el: Element | null = null;
+      try {
+        el = document.querySelector(src);
+      } catch {
+        /* not a selector */
+      }
       if (el) return shapeToPath(el);
     }
+    if (src.trim()) warn(`"${src}" is neither path data (starting with M) nor a selector that matches an SVG shape.${typeof document !== 'undefined' && /^[A-Za-z][\w-]*$/.test(src) ? selectorHint(src) : ''}`);
     return src;
   }
   return shapeToPath(src);

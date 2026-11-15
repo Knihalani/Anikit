@@ -8,7 +8,11 @@ import { animate, timeline, stagger, spring, inertia, scroll, inView, splitText,
 // or: import ... from 'anikit/lean'  (streams anikit.wasm instead of embedding it)
 ```
 
-The WebAssembly core starts compiling on import. Calls made before it's ready are queued and run in order, so you rarely need it, but `await ready` is available.
+The WebAssembly core starts compiling on import. Calls made before it's ready are queued and run in order, so you rarely need it, but `await ready` is available. Functions that return a computed value right away (`ease()`, `morph()`, `pathLength()`, `staggerValues()`, `world()`, …) need the core loaded: with `anikit/lean`, `await init()` (or `await ready`) first.
+
+**Units:** times are **seconds** everywhere (`duration`, `delay`, `stagger(0.05)`, `seek(1.2)`), except the low-level clock: `engine.tick(ms)`, `engine.time` and `engine.onFrame((timeMs, dtMs) => …)` are milliseconds. Numbers default to `px` for lengths, `deg` for angles; `scale` and `opacity` are unitless (opacity 0–1).
+
+Task-oriented examples: [recipes.md](recipes.md). Mistakes are reported as `anikit:` warnings with fixes (see [Testing and diagnostics](#testing-and-diagnostics)).
 
 ---
 
@@ -58,7 +62,16 @@ animate(obj, { value: 1 }, { onUpdate: () => render(obj.value) }); // plain obje
 
 ### Controller (`Animation`, `Timeline`, `Batch`)
 
-`play()`, `pause()`, `reverse()`, `restart()`, `seek(seconds)`, `complete()`, `cancel()`, `kill()`/`stop()`. Properties: `progress` (get/set, 0–1), `time` (get/set), `duration`, `speed` (get/set), `state` (`'idle' | 'running' | 'paused' | 'finished'`) and `iteration`. Controllers are thenables: `await animate(...)`, or use `.finished`.
+`play()`, `pause()`, `reverse()`, `restart()`, `seek(seconds)`, `complete()` (jump to the end), `cancel()` (back to the start values), `kill()`/`stop()` (stop where it is), `revert()` (stop and restore the original inline styles). Properties: `progress` (get/set, 0–1), `time` (get/set, seconds), `duration`, `speed` (get/set), `state` (`'idle' | 'running' | 'paused' | 'finished'`) and `iteration`. Controllers are thenables: `await animate(...)`, or use `.finished`. All of these are `Playable`s.
+
+```ts
+const a = animate('.box', { x: 200 }, { duration: 1, autoplay: false });
+a.progress = 0.5;            // scrub by hand
+await a.play();              // resolves when finished
+const css = a.toCSS({ name: 'slide', selector: '.box' });   // see "Bake to CSS"
+```
+
+`spring()`, `inertia()` and `physics()` return a `PhysicsAnimation` (`velocity`, `finished`, `then`, `kill()`/`stop()`, `revert()`); `compositor()` returns a `CompositorAnimation` (`play`, `pause`, `reverse`, `seek`, `speed`, `progress`, `kill`, `finished`).
 
 ---
 
@@ -74,6 +87,23 @@ Accepted everywhere an `ease` is:
 - **Other forms:** a `[x1, y1, x2, y2]` bezier array, or any `(t) => number` function (sampled once into a 1024‑point table).
 
 Helpers: `ease(e, t)`, `easing(e) → (t) => number`, and `cssEasing(e)` (native CSS string; springs become `linear()`).
+
+Unknown names throw with a suggestion (`'outCubik'` → "Did you mean "outCubic"?"). In TypeScript, `EasingName` autocompletes every named easing while any string is still accepted.
+
+---
+
+## Stagger
+
+`stagger(each, options?)` returns a function value: use it for `delay` (seconds between targets) or any numeric property.
+
+```ts
+import { animate, stagger } from 'anikit';
+animate('.cell', { scale: [0, 1] }, { delay: stagger(0.04, { grid: [10, 6], from: 'center' }) });   // ripples out of the middle
+animate('.bar', { y: [40, 0] }, { delay: stagger(0.05, { start: 0.3, ease: 'inQuad' }) });          // base delay + eased spread
+animate('.dot', { x: stagger(20) });                                                                // 0, 20, 40 … px
+```
+
+Options: `from` (`'first'` default, `'last'`, `'center'`, `'edges'`, `'random'` or an index), `grid: [columns, rows]` with optional `axis: 'x' | 'y'`, `total` (spread over this many seconds instead of `each` per step), `start` (added to every value), `ease` (across the distribution), `seed` (for `'random'`). `staggerValues(count, each, options)` returns the numbers directly.
 
 ---
 
@@ -97,7 +127,9 @@ tl.seek('spin'); tl.playFrom(0.5);
 - `'+=0.5'` / `'-=0.5'`: relative to the timeline end;
 - a label, optionally with an offset (`'label'`, `'label+=0.3'`).
 
-With no position, a child goes at the end of the timeline. Options: `delay`, `repeat`, `repeatDelay`, `yoyo`, `speed`, `ease` (applied to the overall progress), `autoplay` and `defaults`. Sequential tweens of the same property chain their start values.
+With no position, a child goes at the end of the timeline. The position may also go straight after the properties, GSAP style: `tl.add('.b', { x: 100 }, '-=0.2')`. Options: `delay`, `repeat`, `repeatDelay`, `yoyo`, `speed`, `ease` (applied to the overall progress), `autoplay` and `defaults`. Sequential tweens of the same property chain their start values.
+
+Children: `add(targets, props, options?, position?)` (alias `to`), `from(targets, fromProps, options?, position?)`, `fromTo(targets, fromProps, toProps, options?, position?)`, `set(targets, props, position?)`, `call(fn, position?)`, `label(name, position?)`, and `add(animationOrTimeline, position?)` to nest. `tl.labels` is a `Map` of label → seconds.
 
 ---
 
@@ -111,6 +143,8 @@ await s;                             // resolves at rest
 
 inertia(card, { x: { velocity: vx, min: 0, max: 600, snap: 100 } }, { power: 0.8, timeConstant: 0.35 });
 ```
+
+`spring(targets, props, options?)`: props are end values (numbers or strings with units, colours too). Options: `stiffness` (default 100), `damping` (10), `mass` (1), or the perceptual pair `bounce` (0–1) + `duration` (seconds); `velocity` (units/s, a number or per-property map), `restDelta`, `restSpeed`, `onUpdate`, `onComplete`. There is no `delay` or `ease`: call it later, or use `animate()` with `ease: 'spring(…)'` for a timed spring. `inertia()` adds `power` (0.8), `timeConstant` (0.35 s), `bounceStiffness` and `bounceDamping`; each prop is `{ velocity, min?, max?, snap? }` or a bare velocity. All three return a `PhysicsAnimation`.
 
 ---
 
@@ -127,7 +161,16 @@ inView('.reveal', (el) => { animate(el, { opacity: [0, 1] }); return () => anima
 
 ## SVG
 
-`morph(a, b) → (t) => d`, `morphPlan(a, b)`, `pathLength(p)`, `pathBounds(p)`, `normalizePath(p)`, `shapeToPath(el)` and `new MotionPath(p).at(t) → { x, y, angle }`. Shape builders: `circle`, `ellipse`, `rect`, `polygon` and `star`.
+`morph(a, b) → (t) => d`, `morphPlan(a, b)`, `morphSequence([a, b, c]) → { template, frames }` (one shared template for N shapes), `pathData(src)` (path data of a string, element or selector), `pathLength(p)`, `pathBounds(p) → [minX, minY, maxX, maxY]`, `normalizePath(p)`, `shapeToPath(el)` and `new MotionPath(p).at(t) → { x, y, angle }`. Shape builders return path data: `circle(cx, cy, r)`, `ellipse(cx, cy, rx, ry?)`, `rect(x, y, w, h, rx?, ry?)`, `polygon(points, closed?)` and `star(cx, cy, points, outer, inner?, rotation?)`.
+
+```ts
+import { animate, morph, circle, star, MotionPath } from 'anikit';
+animate('#blob', { d: star(50, 50, 5, 40, 18) }, { duration: 0.8, ease: 'inOutCubic' });  // morph a <path>
+const at = morph(circle(50, 50, 40), star(50, 50, 6, 45, 20));   // at(0.5) → path data halfway
+animate('#dot', { path: { path: '#track', rotate: true } }, { duration: 3, ease: 'linear' });
+const { x, y, angle } = new MotionPath('#track').at(0.25);
+animate('#line', { draw: [0, 1] }, { duration: 1.2 });            // stroke draws in
+```
 
 ---
 
@@ -146,6 +189,11 @@ const b = batch(50_000, { x: (i) => [0, i % 500], y: [0, 300], a: [0, 1] },
 // b.data: Float32Array (count * stride), e.g. gl.bufferSubData(gl.ARRAY_BUFFER, 0, b.data)
 ```
 
+- `splitText(targets, { type: 'chars' | 'words' | 'lines' (comma separated, default 'words,chars'), charClass, wordClass, lineClass }) → { chars, words, lines, revert() }`. Characters are grapheme-safe (emoji stay whole).
+- `flip(targets, mutate, options?)` measures, runs `mutate()` (your DOM/class change), then animates from the old layout. Options are animation options plus `scale` (default true) and `fade`. For async changes: `const state = flip.capture(targets); …; flip.from(state, options)`.
+- `compositor(targets, props, options?)` runs on the browser's compositor thread (Web Animations) with anikit easings, springs included; keeps going when the main thread is busy.
+- `batch(count, props, options?) → Batch`: `data` (Float32Array, `count * stride`), `stride`, `channels` (`{ x: 0, y: 1, … }`), `get(i, prop)`. A prop is a shared keyframe list or `(index, count) => keyframes`.
+
 ---
 
 ## Engine
@@ -153,12 +201,20 @@ const b = batch(50_000, { x: (i) => [0, i % 500], y: [0, 300], a: [0, 1] },
 `engine.manual(true)` with `engine.tick(ms)` drives the engine yourself (tests, video export). Also available:
 
 - `engine.speed = 0.5`: global time scale (also scales physics worlds, point clouds and `onFrame` `dt`);
-- `engine.lagSmoothing(threshold, adjusted)`;
+- `engine.lagSmoothing(threshold, adjusted)` (ms): after a long frame, advance only `adjusted` ms; `lagSmoothing(0)` turns it off;
 - `engine.fps = 30`: frame‑rate cap;
-- `engine.onFrame(cb)`: per‑frame callback;
-- `engine.stats()`: active and allocated nodes.
+- `engine.onFrame((timeMs, dtMs) => …)`: per‑frame callback after the frame's DOM writes, in **milliseconds**; returns an unsubscribe function;
+- `engine.time`: elapsed engine time (ms);
+- `engine.reducedMotion = 'user'`: honour the OS setting (default `'never'`);
+- `engine.inspect()`: JSON snapshot of everything running (see [Testing and diagnostics](#testing-and-diagnostics));
+- `engine.stats()`: `{ active, nodes, time }`.
 
-`flush()` applies pending results synchronously.
+```ts
+const off = engine.onFrame((time, dt) => { ctx.clearRect(0, 0, w, h); drawParticles(dt / 1000); });   // dt in ms
+off();
+```
+
+`flush()` applies pending results synchronously. `ready` is a promise for the core; `init(urlOrBytes?)` loads it from a URL or bytes instead of the embedded copy (`anikit/lean` does this from `./anikit.wasm` automatically).
 
 Utilities: `stagger(each, { from, grid, axis, ease, total, start, seed })`, `staggerValues(count, each, opts)`, `mixColor(a, b, t, space)`, `parseColor(s)`, `clamp`, `lerp`, `mapRange`, `wrap`, `snap` and `random(min, max, seed?)`.
 
@@ -181,12 +237,23 @@ animate(label, { text: 'Hello world' });                                       /
 animate(label, { text: { value: 'DECRYPTED', type: 'scramble', chars: 'upper' } });
 animate(el, { xPercent: -50, yPercent: -50 });                                 // translate(-50%, -50%)
 animate(path, { d: [null, circle(50, 50, 40), star(50, 50, 6, 45, 20)] });     // morph through N shapes
+resolveRandom('random(0, 100, 5)');                                            // the same parser, standalone
 ```
 
 ## Control, cleanup and accessibility
 
 - `anim.revert()` kills the animation and restores every property it touched to its original inline value. `timeline.revert()` does the same for every child.
-- `context(fn, scope?)` collects everything created inside `fn` (animations, timelines, scroll triggers, draggables, observers…), scopes selector lookups to `scope`, and offers `ctx.revert()` / `ctx.kill()`. `fn` may return a cleanup function. It's the natural fit for component lifecycles in React, Vue or Svelte.
+- `context(fn, scope?)` collects everything created inside `fn` (animations, timelines, scroll triggers, draggables, observers…), scopes selector lookups to `scope`, and offers `ctx.revert()` / `ctx.kill()`. `fn` may return a cleanup function. It's the natural fit for component lifecycles in React, Vue or Svelte. The returned `Context` also has `ctx.add(fn)` to collect more later (e.g. in event handlers) and `ctx.items`.
+
+```ts
+// React
+useLayoutEffect(() => {
+  const ctx = context(() => {
+    animate('.card', { y: [24, 0], opacity: [0, 1] }, { delay: stagger(0.05) });   // '.card' inside rootRef only
+  }, rootRef.current);
+  return () => ctx.revert();
+}, []);
+```
 - `matchMedia().add('(min-width: 800px)', setup)` runs `setup` while the query matches and reverts it automatically when it stops matching. `add({ wide: '…', reduce: '(prefers-reduced-motion: reduce)' }, ({ wide, reduce }) => …)` takes several named conditions.
 - `engine.reducedMotion = 'user' | 'always' | 'never'`: when motion is reduced, animations jump straight to their end state, while callbacks and promises still fire.
 - `quickSetter(el, 'x')` returns a fast setter; `quickTo(el, 'x', opts)` returns a function that re‑targets a tween on each call.
@@ -228,8 +295,12 @@ Over 35 presets. Every one accepts the usual animation options plus `stagger`, `
 - **Text:** `typewriter`, `scramble`, `countUp`.
 - **SVG:** `drawSVG`, `undrawSVG`.
 
+Options for specific effects: `countUp` takes `to`/`start` (plus `format`), `typewriter`/`scramble` take `text` (and `charDelay`, `delimiter`, `chars`), `highlight` takes `color`, `flipIn`/`flipOut` take `axis`. `effect('name', targets, options)` runs one by name, and `effectNames()` lists every registered effect.
+
 ```ts
 effects.slideIn('.menu li', { from: 'left', stagger: 0.04 });
+effects.countUp('#total', { to: 12500, format: { style: 'currency', currency: 'USD' } });
+effects.typewriter('#hello', { text: 'Hello, world' });
 registerEffect('glow', (t, o) => animate(t, { filter: ['drop-shadow(0 0 0 gold)', `drop-shadow(0 0 ${o.size}px gold)`] }, o), { size: 12 });
 effects.glow('.star');
 ```
@@ -253,6 +324,10 @@ const smooth = smoothScroll({ smooth: 0.6 });
 
 One passive listener per scroller drives every trigger, and layout is measured only on refresh (load and resize). Call `refreshScrollTriggers()` after you change the layout yourself. Pinning uses `position: fixed` for the page and a counter‑translate inside scrolling elements.
 
+- `animation` takes one animation or timeline; it is paused for you (create it with `autoplay: false` to avoid a first-frame flash). For one trigger per element, use `scrollTriggerBatch(targets, { animation: (el, i) => … })`, which takes a factory.
+- `toggleActions` is four words for onEnter / onLeave / onEnterBack / onLeaveBack, each `play pause resume reverse restart reset complete none`; it is ignored with `scrub`.
+- The `ScrollTrigger` instance has `progress` (0–1), `direction` (1 / -1), `isActive`, `start`/`end` (px), `refresh()`, `enable()`, `disable()`, `kill(revert?)` and `revert()`.
+
 `observer({ target, type: 'wheel,touch,pointer,scroll', tolerance, onUp, onDown, onLeft, onRight, onChange, onDrag, onPress, onRelease, onStop })` normalises input intents. Use it for full‑page section transitions and carousels.
 
 ## Interaction
@@ -264,7 +339,9 @@ hover('.btn', (el) => { animate(el, { scale: 1.05 }); return () => animate(el, {
 press('.btn', (el) => { animate(el, { scale: 0.95 }); return () => animate(el, { scale: 1 }); });
 ```
 
-`Draggable` exposes `x`, `y`, `rotation`, `isDragging`, `enable()`, `disable()`, `setPosition()`, `kill()` and `revert()`.
+`draggable()` returns one `Draggable` per element. It exposes `x`, `y`, `rotation`, `deltaX`/`deltaY`, `isDragging`, `isPressed`, `enabled`, `enable()`, `disable()`, `setPosition(x, y, rotation?)`, `kill()` and `revert()`. Options: `type` (`'x,y'`, `'x'`, `'y'`, `'rotate'`), `bounds` (element, selector or `{ minX, maxX, minY, maxY, minRotation, maxRotation }`), `inertia`, `snap` (step, list or function; per axis with `{ x, y, rotation }`), `edgeResistance` (0.35), `lockAxis`, `handle`, `minimumMovement` (3 px), `cursor`, and callbacks `onPress`, `onDragStart`, `onDrag`, `onDragEnd`, `onRelease`, `onThrowUpdate`, `onThrowComplete` (each receives the `Draggable`).
+
+`hover(targets, fn)` and `press(targets, fn)` call `fn(el, event)` on enter/press; a function returned from `fn` runs on leave/release. Both return `{ kill, revert }`. Hover ignores touch, so nothing gets stuck.
 
 ## Dev tools
 
@@ -285,7 +362,7 @@ press('.btn', (el) => { animate(el, { scale: 0.95 }); return () => animate(el, {
 
 ## Physics worlds
 
-`world(options?)` is a 2D rigid-circle physics world solved in WebAssembly: position-based dynamics with sub-steps, a sorted uniform grid for broad phase, restitution and friction, distance constraints (ropes, cloth, soft bodies, tearing), static boxes, attractors and picking. It steps on the engine clock, so `engine.speed` slows it too.
+`world(options?) → World` is a 2D rigid-circle physics world solved in WebAssembly: position-based dynamics with sub-steps, a sorted uniform grid for broad phase, restitution and friction, distance constraints (ropes, cloth, soft bodies, tearing), static boxes, attractors and picking. It steps on the engine clock, so `engine.speed` slows it too.
 
 ```ts
 const w = world({ container: '#stage', gravity: [0, 980], substeps: 4, restitution: 0.2, friction: 0.05 });
@@ -372,6 +449,8 @@ await record(canvas, { duration: 3, format: 'webm' });           // or 'frames' 
 await record('#stage', { animation: tl });                       // seek a timeline per frame
 ```
 
+`rasterize(target, { scale, background }) → Promise<HTMLCanvasElement>` is the step both use: it draws a canvas, an element or the page into a canvas. `record()` resolves to `{ blob, url, frames, width, height, images?, download(name) }`; options are `duration` (s), `fps`, `format: 'gif' | 'webm' | 'frames'`, `animation` (seek this per frame instead of running the engine), `scale`, `background`, `loop`, `realtime` and `onProgress`.
+
 Recordings are deterministic: engine time is switched to manual and advanced exactly `1 / fps` per frame, however slow the machine. GIFs are encoded by the core (median-cut palettes with exact slots for frequent colours, changed-rectangle delta frames, LZW). `GifWriter` and `encodeGif(frames, w, h, fps)` work in Node too.
 
 Headless, from the command line (Playwright + Chromium):
@@ -395,18 +474,38 @@ Output can be `.gif`, `.mp4` or `.webm` (ffmpeg), or a directory of PNG frames. 
 ```ts
 import { testing, engine } from 'anikit';
 
+await testing.ready;                // the core (once per test file)
 testing.useFakeTime();              // no rAF: time only moves when you say
+const warnings = testing.captureWarnings();   // before the code under test
 animate(card, { x: 100 }, { duration: 1, ease: 'linear' });
-testing.advance(0.5);               // card.style.transform === 'translate(50px, 0px)'
-testing.finishAll();                // run until idle
-const warnings = testing.captureWarnings();
+testing.advance(0.5);               // card.style.transform === 'translate(50px,0px)'
 engine.inspect();                   // [{ id, state, time, duration, progress, type, target, props }]
-testing.reset();
+testing.finishAll();                // run until idle; returns the seconds it took
+expect(warnings).toEqual([]);
+testing.reset();                    // between tests: forget animations and shown warnings
 ```
 
-- Warnings start with `anikit:` and include "did you mean" suggestions for misspelled easings, properties and effect names. `setWarnings(false)` silences them; `onWarning(fn)` routes them.
-- `engine.inspect()` returns a JSON-serialisable snapshot of everything running; it's also reachable as `globalThis.__ANIKIT__` for agents driving a headless browser.
+- `testing.advance(seconds, fps = 60)` ticks in frames of `1/fps`; `testing.finishAll(maxSeconds = 60)` runs until nothing is active; `testing.inspect()` is `engine.inspect()`.
+- Warnings start with `anikit:`, are shown once per unique message, and say how to fix the problem. `setWarnings(false)` silences them (they are off when `NODE_ENV=production`); `onWarning(fn)` routes them (`onWarning(null)` restores `console.warn`). `testing.captureWarnings()` returns a live array and starts afresh each call.
+- Unknown easings, unknown effects, invalid selectors and wrong argument types (e.g. a function passed to `scrollTrigger({ animation })`) **throw** with a suggestion.
+- `engine.inspect()` returns a JSON-serialisable snapshot of everything running; it's also reachable as `globalThis.__ANIKIT__.inspect()` for agents driving a headless browser.
 - `engine.speed` scales every animation, world, point cloud and `onFrame` `dt` together (bullet time).
+
+What gets a warning:
+
+| Mistake | Example | Message says |
+|---|---|---|
+| Unknown option (every main API) | `{ durration: 1 }`, `spring(el, p, { delay: 1 })`, `stagger(0.1, { form: 'center' })` | it is ignored; did you mean `duration` / `from` |
+| Option typo among the properties | `animate(el, { x: 1, delya: 0.2 })` | did you mean the option `delay` |
+| Milliseconds instead of seconds | `duration: 600`, `delay: 250`, `stagger(50)` | did you mean `0.6` |
+| Wrong unit or range | `rotate: '45px'`, `x: '10deg'`, `scale: '2px'`, `opacity: 50` | the expected unit; `0.5` |
+| Not a number for a transform | `x: '10px 20px'` | it was skipped; use `transform` |
+| Unknown property | `animate(el, { colour: 'red' })` | did you mean `color` |
+| Empty targets | `animate(null, …)`, `animate('hero', …)` with `.hero` on the page, an empty list | a `querySelector` returned null; did you mean `.hero`; the document is still loading |
+| Bad enumerations | `colorSpace: 'okl'`, `direction: 'alternative'`, `fillMode: 'forward'`, `stagger(…, { from: 'centre' })`, `splitText(el, { type: 'letters' })` | the valid values |
+| Scroll positions | `start: 'top middle'`, `toggleActions: 'play none none reversed'`, `toggleActions` with `scrub`, `pin: true` without a trigger | the accepted grammar |
+| Argument order habits | `animate(el, props, 0.5)`, `animate(el, 'fadeIn')`, `stagger({ each: 0.1 })` | the anikit form (the first and last still work) |
+| Path sources | `animate(dot, { path: '#missing' })` | neither path data nor a matching selector |
 
 ## Particle emitters
 
@@ -518,3 +617,36 @@ film.scene('flight', 16, 24, { timeScale: (t) => 1 - 0.88 * Math.exp(-((t - 18.7
 - `timeScale(local)` scales engine time for that scene — tweens, particles and physics all slow together; `step()` receives the scaled `dt`.
 - Per-scene `motionBlur` (samples) overrides the composition: use 1 for static shots and more for fast ones.
 - Mistakes throw readable errors (overlapping scenes without a transition, missing `draw`, scenes outside the duration).
+
+---
+
+## Export index
+
+Every export of `anikit`, with where it is described. Types are listed by name; hover them in an editor for per-option docs (defaults, units, examples).
+
+| Area | Functions and classes | Types |
+|---|---|---|
+| [Animate](#animatetargets-keyframes-options--animation) | `animate`, `from`, `fromTo`, `set`, `Animation`, `resolveRandom` | `AnimateOptions`, `Props`, `TransformProps`, `PropValue`, `Keyframe`, `MotionPathOptions`, `FnValue`, `Scalar`, `TextOptions` |
+| [Timelines](#timelineoptions--timeline) | `timeline`, `Timeline`, `sequence`, `delayedCall` | `TimelineOptions`, `Position`, `SequenceStep` |
+| [Controllers](#controller-animation-timeline-batch) | (methods on every controller) | `Playable`, `PlayState` |
+| [Easings](#easings) | `ease`, `easing`, `cssEasing` | `EasingInput`, `EasingName`, `EasingFn`, `SpringOptions` |
+| [Stagger](#stagger) | `stagger`, `staggerValues`, `distribute` | `StaggerOptions`, `StaggerFn` |
+| [Physics](#physics) | `spring`, `inertia`, `physics`, `PhysicsAnimation` | `PhysicsOptions`, `InertiaOptions`, `InertiaProp`, `PhysicsProp`, `BallisticOptions` |
+| [Scroll & viewport](#scroll--viewport) | `scroll`, `inView`, `scrollTrigger`, `scrollTriggerBatch`, `ScrollTrigger`, `scrollTo`, `smoothScroll`, `refreshScrollTriggers` | `ScrollOptions`, `InViewOptions`, `ScrollTriggerOptions`, `ScrollToOptions`, `SmoothScrollOptions` |
+| [Text, layout, compositor, batches](#text-layout-compositor-batches) | `splitText`, `flip`, `compositor`, `CompositorAnimation`, `batch`, `Batch` | `SplitOptions`, `SplitResult`, `FlipOptions`, `FlipState`, `BatchOptions`, `BatchValue` |
+| [SVG](#svg) | `morph`, `morphPlan`, `morphSequence`, `shapeToPath`, `pathData`, `pathLength`, `pathBounds`, `normalizePath`, `MotionPath`, `circle`, `ellipse`, `rect`, `polygon`, `star`, `trimPath`, `pathThrough`, `simplifyPath`, `pathArea`, `flattenPath` | `PathSource` |
+| [Utilities](#more-utilities) | `mixColor`, `parseColor`, `splitColor`, `clamp`, `lerp`, `mapRange`, `wrap`, `snap`, `random`, `interpolate`, `normalize`, `roundTo`, `pipe`, `shuffle`, `getUnit`, `toArray`, `VelocityTracker` | |
+| [Noise](#more-utilities) | `noise2`, `noise3`, `fbm`, `noiseMany`, `wander` | |
+| [Cleanup](#control-cleanup-and-accessibility) | `context`, `Context`, `matchMedia`, `quickTo`, `quickSetter` | `Revertible` |
+| [Effects](#effects) | `effects`, `effect`, `registerEffect`, `effectNames` | `EffectOptions`, `EffectFn`, `EffectName` |
+| [Interaction](#interaction) | `draggable`, `Draggable`, `observer`, `hover`, `press` | `DraggableOptions`, `Bounds`, `ObserverOptions`, `ObserverEvent` |
+| [Engine](#engine) | `engine`, `flush`, `ready`, `init` | |
+| [Dev tools](#dev-tools) and [testing](#testing-and-diagnostics) | `inspector`, `testing`, `setWarnings`, `onWarning` | `InspectorOptions` |
+| [Physics worlds](#physics-worlds) | `world`, `World` | `WorldOptions`, `BodyInit` |
+| [3D](#3d) | `scene3d`, `Scene3D`, `tilt`, `parseTransform`, `toMatrix3d`, `mixTransforms` | `SceneOptions`, `Projection`, `DrawOptions`, `TiltOptions`, `Vec3`, `Matrix` |
+| [Point clouds and glow](#point-clouds-and-glow) | `pointCloud`, `PointCloud`, `textPoints`, `glow`, `Glow` | `CloudOptions`, `ShapeInput`, `GlowOptions`, `GlowRenderOptions` |
+| [Particle emitters](#particle-emitters) | `emitter`, `Emitter` | `EmitterOptions`, `SpawnShape` |
+| [Solid 3D](#solid-3d-renderer3d-mesh-instances) | `renderer3d`, `Renderer3D`, `mesh`, `Mesh3D`, `instances`, `Instances` | `InstanceInit`, `MaterialOptions`, `LightOptions`, `DrawItem` |
+| [Audio](#audio-analysis) | `analyzeAudio`, `decodeAudio` | `AudioAnalysis` |
+| [Video](#video-compositions) | `composition`, `Composition`, `FrameBuffer`, `typeFx`, `exportWebM`, `muxWebM` | `CompositionOptions`, `SceneHooks`, `SceneDef`, `FrameInfo`, `RenderOptions`, `RenderedFrame`, `TypeFxOptions`, `Transition`, `TransitionFn`, `PostOptions`, `ImpactOptions` |
+| [Capture](#capture-screenshots-and-recordings) | `screenshot`, `record`, `rasterize`, `encodeGif`, `GifWriter` | `CaptureTarget`, `RasterOptions`, `RecordOptions`, `Recording` |
