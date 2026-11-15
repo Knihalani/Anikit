@@ -132,9 +132,13 @@ The module default-exports `async ({ anikit, node }) => composition`. Building b
 |---|---|
 | Scenes, timing | `composition({ width, height, fps, duration, motionBlur, post })`, `.scene(name, start, end, { enter, step, draw, transition, timeScale, motionBlur })`, `.cue(t, fn)` |
 | Punch | `.impact(t, { shake, flash, flashOpacity, aberration, decay })` — applied to the finished frame |
-| Film look | `post: { bloom, bloomThreshold, bloomRadius, aberration, vignette, grain }` |
+| Film look | `post: { bloom, bloomThreshold, bloomRadius, streaks, streakLength, aberration, vignette, grain, zoomBlur, exposure, contrast, saturation, shadows, highlights }` — any value can be `(t) => …` |
 | Slow motion / bullet time | scene `timeScale: (local) => 0.1…1` — slows tweens, particles, physics together |
-| Solid 3D | `renderer3d({ width, height })`, `mesh.cube() / sphere() / torus() / torusKnot() / custom()`, `instances(n, i => ({ x, y, z, rx, ry, rz, scale, color }))`, `render(scene3d, [{ mesh, instances, material }], { background, fog, keyColor, rimColor })` |
+| Solid 3D | `renderer3d({ width, height })`, `mesh.cube() / sphere() / torus() / torusKnot() / plane() / cylinder() / heightfield() / text() / custom()`, `instances(n, i => ({ x, y, z, rx, ry, rz, scale, sx, sy, sz, color }))`, `render(scene3d, [{ mesh, instances, material, cull, blend }], { background, fog, sky, horizon, ground, strips })` |
+| Materials that don't look plain | dark bodies + light: `{ metal: 0.9, iridescence: 0.3 }` chrome, `{ lines: 1.5, lineColor, grid: [1, 1] }` glowing edges, `{ pulse: 2, pulsePhase: t }` travelling light, `{ emissive: 1 }` neon; set `strips` for crisp chrome highlights |
+| Flying camera ("journey") | `flightPath(points, { lookAhead, bank })`, `path.timing([[sec, frac], …])`, `path.apply(cam, s(t), extraRoll)`; `cam.roll` for barrel rolls |
+| Stars, dust, sparks in 3D | `{ points, colors, size, intensity, streak, fog }` items in `render()` — depth-tested, streak with camera motion; accepts an `emitter()` |
+| Explosions | `shatter(mesh, { force, spin, gravity })` → `{ mesh, instances }`; `shards.update(t - hitTime)` |
 | Particles as light or ink | `pointCloud(n, { shapes })` + `glow(node.glowTarget(w, h), { mode: 'light' | 'ink' })` |
 | Sparks | `emitter({ rate, life, speed, spread, gravity, colors })`, `.burst(n)` |
 | Physics | `world({ bounds, gravity })` |
@@ -145,7 +149,8 @@ The module default-exports `async ({ anikit, node }) => composition`. Building b
 **Rules that keep films correct**
 1. Start tweens and simulations in `enter()`; advance simulations in `step(f)` with **`f.dt`** (engine seconds, already scaled by `timeScale`). `draw()` only reads state — with motion blur it runs several times per frame.
 2. Don't read wall-clock time. `Math.random` is seeded by `anikit-render`, so parallel workers produce identical frames.
-3. Solid 3D: draw the renderer's pixels first (`ctx.putImageData(new ImageData(px, w, h), 0, 0)`), then particles with `globalCompositeOperation = 'lighter'`, then type.
+3. Solid 3D: draw the renderer's pixels first (`ctx.putImageData(new ImageData(px, w, h), 0, 0)`), then 2D particles (`glow`) with `globalCompositeOperation = 'lighter'`, then type. Prefer `points` items inside `render()` for particles that must hide behind geometry.
+6. Plain flat-coloured shapes look cheap. Use near-black bodies and put the colour in light: chrome + `strips`, glowing `lines`, `pulse`, `emissive`, bloom. Two or three hues per shot.
 4. One shared `scene3d` per shot; scenes that overlap in a transition must not share mutable state (cameras, glow targets).
 5. Type must contrast with what's behind it — paper on dark, or a scrim (`createLinearGradient`) behind it.
 

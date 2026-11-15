@@ -491,29 +491,68 @@ Each worker builds the same composition (randomness is seeded), simulates to its
 
 ### Solid 3D: `renderer3d`, `mesh`, `instances`
 
-A z-buffered, lit, instanced triangle rasterizer in WebAssembly — no WebGL. Per-vertex Blinn–Phong with key and fill lights, a fresnel rim and depth fog; instances are drawn front-to-back.
+A z-buffered, instanced triangle renderer in WebAssembly — no WebGL. Triangles are clipped at the near plane (fly *through* geometry), shaded **per pixel** four pixels at a time in SIMD, and tone-mapped so hot colours roll off towards white instead of clipping.
 
 ```ts
 const r3 = renderer3d({ width: 1920, height: 1080 });     // or a canvas (drawn into automatically)
-const cubes = instances(3000, (i) => ({ x, y, z, rx, ry, rz, scale: 14, color: i % 9 ? '#ece6da' : '#ff3b14' }));
-const knot = mesh.torusKnot({ p: 2, q: 5, radius: 250, tube: 46 });
+const towers = instances(900, (i) => ({ x, y, z, sx: 80, sy: h, sz: 80, color: [0.04, 0.045, 0.06] }));
+const knot = mesh.torusKnot({ p: 2, q: 3, radius: 300, tube: 58, segments: 600, sides: 28 });
 const px = r3.render(scene, [
-  { mesh: mesh.cube(), instances: cubes, material: { specular: 0.5, rim: 0.4 } },
-  { mesh: knot, material: { specular: 1.1, shininess: 70, rim: 0.9 } },
-], { background: '#06070a', fog: [1400, 5200], keyColor: [1, 0.95, 0.9], rimColor: [1, 0.4, 0.25] });
+  // Black chrome with light pulses running along the tube:
+  { mesh: knot, material: { metal: 0.9, iridescence: 0.25, specular: 1.4, shininess: 120, lines: 1.2, lineColor: [0.3, 0.8, 1.6], grid: [0, 6], pulse: 2.5, pulseCount: 3, pulsePhase: t } },
+  // Dark towers with glowing edges and a wave of light sweeping along z:
+  { mesh: mesh.cube(), instances: towers, material: { lines: 1.6, lineColor: [1.4, 0.35, 0.9], grid: [1, 1], lineWidth: 0.035, pulse: 1.5, pulseDir: [0, 0, 0.0015], pulsePhase: t } },
+  // Light: stars that streak with camera motion and hide behind the towers:
+  { points: stars, colors, size: 3, intensity: 2.5, streak: 1.5, fog: [8000, 20000] },
+  // Additive geometry (beams, holograms): depth-tested, not occluding:
+  { mesh: beam, instances: beams, blend: 'additive', material: { emissive: 1 } },
+], { background: '#04050a', fog: [1800, 5200], sky: [0.05, 0.07, 0.16], horizon: [0.9, 0.5, 0.95], ground: [0.01, 0.01, 0.02], strips: [2.2, 2.3, 2.6] });
 ```
 
-`mesh.custom(positions, normals, indices)` takes your own geometry. `r3.triangles` and `r3.lastMs` report the last frame. `scene.viewProjection()` gives the matrix and model-space eye for your own renderers.
+**Materials** (`material`, all optional):
+
+| Option | Effect |
+|---|---|
+| `ambient`, `diffuse`, `specular`, `shininess`, `rim` | Blinn–Phong key + fill light and a fresnel rim |
+| `emissive` | base colour × emissive added unlit — glows under the grade's bloom |
+| `metal` (0–1) | mirror reflection of the environment (`sky`/`horizon`/`ground` + sharp studio `strips`) |
+| `iridescence` (0–1), `hue` | thin-film rainbow tint on reflections, shifting with viewing angle |
+| `lines`, `lineColor`, `grid: [u, v]`, `lineWidth` | antialiased glowing lines in UV space; `0` cells = none that way. Cube faces are 0–1 (edge outlines with `[1, 1]`); tubes/knots run `u` along and `v` around |
+| `pulse`, `pulseCount`, `pulsePhase`, `pulseDir` | bright pulses travelling along `u` (animate `pulsePhase`); `pulseDir` offsets each instance's phase by its position, so a wave sweeps through a field |
+
+Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [near, far]`, `fogColor`, environment `sky`, `horizon`, `ground`, `strips`. Items draw in order; per item `cull: false` shows back faces (tumbling shards), `blend: 'additive'` adds light.
+
+**Meshes**: `mesh.cube()`, `sphere(rings, segments)`, `torus(radius, tube, segments, sides)`, `torusKnot({ p, q, radius, spread, tube, segments, sides })`, `plane(cells)` (XZ, faces +Y — floors that run to the horizon with `grid`), `cylinder(segments, caps)`, `heightfield(w, d, heights | (x, z) => h, { skip })`, `text(str, { font, depth, bevel, resolution })` (solid bevelled 3D text in any font; stand it up with `rx: 90` and use `sz: size * mesh.aspect`), `custom(positions, normals, indices, uvs?)`.
+
+**Light points** (`{ points, colors?, size, intensity, streak, fog }`): `points` is a flat xyz array or a live `emitter()` / `pointCloud()`. `streak` stretches each point along its screen motion since the previous `render()` (1 = shutter-accurate, 3+ = warp).
+
+**Shatter**: `shatter(mesh, { transform, force, spread, spin, gravity, drag, ripple, color })` turns every triangle into a flying shard; `shards.update(secondsSinceHit)` poses them; draw `{ mesh: shards.mesh, instances: shards.instances, cull: false }`. Deterministic, so parallel render workers agree.
+
+**Camera flights**: `flightPath(points, { lookAhead, bank, maxBank, closed })` is a smooth (centripetal Catmull–Rom) path with an arc-length table. `path.apply(scene, s, extraRoll)` places the camera at distance `s`, looking `lookAhead` ahead and banking into turns; `path.timing([[sec, fraction], …])` returns a monotone, smoothly accelerating seconds→distance function (hold a fraction to stop). `scene.roll` rolls any camera about its view axis.
+
+```ts
+const path = flightPath([[0, 300, 2000], [0, 120, -2000], [180, 60, -8000], [0, 400, -26000]], { lookAhead: 900, bank: 1.4 });
+const s = path.timing([[0, 0], [1.5, 0.2], [4, 0.9], [5, 1]]);
+film.scene('fly', 0, 5, { draw: ({ t }) => { path.apply(cam, s(t), t > 3 ? (t - 3) * 360 : 0); /* barrel roll */ … } });
+```
+
+`r3.triangles` and `r3.lastMs` report the last frame. `scene.viewProjection()` gives the matrix and model-space eye for your own renderers. Benchmark: `node scripts/bench-raster.mjs`.
 
 ### Film grade, impacts and speed ramps
 
 ```ts
-const film = composition({ …, motionBlur: { samples: 2 }, post: { bloom: 0.55, bloomThreshold: 0.72, aberration: 0.5, vignette: 0.4, grain: 5 } });
+const film = composition({ …, motionBlur: { samples: 2 }, post: {
+  bloom: 0.8, bloomThreshold: 0.55, bloomRadius: 40,          // glow around highlights
+  streaks: 0.5, streakLength: 260, streakTint: [0.6, 0.75, 1], // anamorphic flares
+  aberration: 0.6, vignette: 0.45, grain: 4,
+  zoomBlur: (t) => (t > 6 && t < 7 ? 0.25 : 0),               // speed lines on the warp
+  contrast: 1.08, saturation: 1.1, shadows: [0, 0.015, 0.04], highlights: [0.06, 0.02, -0.02], // grade + split tone
+} });
 film.impact(12.75, { shake: 40, flash: '#fff', flashOpacity: 0.7, aberration: 9 });  // shake + flash + aberration kick
 film.scene('flight', 16, 24, { timeScale: (t) => 1 - 0.88 * Math.exp(-((t - 18.7) / 0.55) ** 2), step: ({ dt }) => sim.step(dt), draw });
 ```
 
-- `post` runs in WebAssembly once per output frame (after motion blur); grain is seeded by frame index, so parallel slices match.
+- `post` runs in WebAssembly once per output frame (after motion blur); grain is seeded by frame index, so parallel slices match. Every value may be a function of composition time, so the grade can follow the edit.
 - `impact()` shakes and flashes the finished frame (after transitions); `impactAt(t)` is its pure function of time.
 - `timeScale(local)` scales engine time for that scene — tweens, particles and physics all slow together; `step()` receives the scaled `dt`.
 - Per-scene `motionBlur` (samples) overrides the composition: use 1 for static shots and more for fast ones.
