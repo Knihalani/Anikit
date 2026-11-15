@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { ready, flightPath, scene3d, mesh, instances, renderer3d } from '../src/index';
+import { ready, flightPath, scene3d, mesh, instances, renderer3d, shatter } from '../src/index';
 
 beforeAll(async () => { await ready; });
 
@@ -67,5 +67,19 @@ describe('mesh builders', () => {
     cam.camera.x = 40; cam.target.x = 40;
     const moving = lit(r.render(cam, [{ ...pts, streak: 1 }], {}).slice());
     expect(moving).toBeGreaterThan(still * 2);
+  });
+
+  it('shatters a mesh into shards that start intact and fly apart deterministically', () => {
+    const src = mesh.cube();
+    const a = shatter(src, { transform: { scale: 100 }, force: 500 });
+    expect(a.count).toBe(12);
+    // At t = 0 every shard sits on its source triangle: the first vertex of shard 0 lies on the cube surface.
+    const d = a.instances.data;
+    expect(Math.max(Math.abs(d[9]), Math.abs(d[10]), Math.abs(d[11]))).toBeCloseTo(50, 3);
+    a.update(1);
+    const moved = Math.hypot(d[9], d[10], d[11]);
+    expect(moved).toBeGreaterThan(150);
+    const b = shatter(src, { transform: { scale: 100 }, force: 500 }).update(1);
+    expect(Array.from(b.instances.data)).toEqual(Array.from(d));
   });
 });

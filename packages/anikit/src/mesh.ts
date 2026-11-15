@@ -264,8 +264,8 @@ export interface LightOptions {
  * previous render.
  */
 export interface PointsItem {
-  /** xyz per point (world space). */
-  points: ArrayLike<number>;
+  /** xyz per point (world space), or a live `emitter()` / `pointCloud()` (its positions, and colours when it has them). */
+  points: ArrayLike<number> | { positions: Float32Array; colors?: Float32Array; shade?: () => void };
   /** rgb per point (0–1, may exceed 1 for hot points); default white. */
   colors?: ArrayLike<number>;
   /** World-space radius (default 2). */
@@ -373,12 +373,21 @@ export class Renderer3D {
 
   private drawPoints(it: PointsItem, matrix: number[], eye: number[]): void {
     const w = core();
-    const n = Math.floor(it.points.length / 3);
+    let src = it.points, cols = it.colors;
+    if (!('length' in src)) {
+      src.shade?.();
+      cols ??= src.colors;
+      src = src.positions;
+    }
+    // Views into wasm memory would detach if reserving the point buffer grows memory: copy them first.
+    const own = (a: ArrayLike<number> | undefined) => (a instanceof Float32Array && a.buffer === W!.memory.buffer ? a.slice() : a);
+    const pts = own(src)!, colors = own(cols);
+    const n = Math.floor(pts.length / 3);
     if (!n) return;
     const ptr = w.ak_raster_point_buf(this.id, n);
     const mem = new Float32Array(W!.memory.buffer, ptr, n * 6);
-    mem.set(it.points.length === n * 3 ? it.points : Array.prototype.slice.call(it.points, 0, n * 3), 0);
-    if (it.colors && it.colors.length >= n * 3) mem.set(it.colors.length === n * 3 ? it.colors : Array.prototype.slice.call(it.colors, 0, n * 3), n * 3);
+    mem.set(pts.length === n * 3 ? pts : Array.prototype.slice.call(pts, 0, n * 3), 0);
+    if (colors && colors.length >= n * 3) mem.set(colors.length === n * 3 ? colors : Array.prototype.slice.call(colors, 0, n * 3), n * 3);
     else mem.fill(1, n * 3, n * 6);
     const prev = this.prevMatrix ?? matrix;
     const fog = it.fog ?? [0, 0];

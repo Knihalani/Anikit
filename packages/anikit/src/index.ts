@@ -63,6 +63,8 @@ export type { CompositionOptions, SceneHooks, SceneDef, FrameInfo, RenderOptions
 export type { CloudOptions, ShapeInput, GlowOptions, GlowRenderOptions } from './cloud';
 export { scene3d, Scene3D, tilt, parseTransform, toMatrix3d, mixTransforms } from './scene';
 export { flightPath, FlightPath } from './flight';
+export { shatter, Shards } from './shatter';
+export type { ShatterOptions } from './shatter';
 export type { FlightPathOptions, FlightPose, Point3 } from './flight';
 export type { SceneOptions, Projection, DrawOptions, TiltOptions, Vec3, Matrix } from './scene';
 export { testing } from './testing';
