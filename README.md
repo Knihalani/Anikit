@@ -1,6 +1,6 @@
 # Anikit
 
-**A web animation engine with a Rust core.** One `no_std` Rust engine for timing, easing, springs, colours, paths, morphing, timelines, 2D physics, 3D maths, particle clouds and GIF encoding. It compiles to WebAssembly for the browser (TypeScript API) and to a native extension for Python.
+**A web animation engine with a Rust core.** One `no_std` Rust engine for timing, easing, springs, colours, paths, morphing, timelines, 2D physics, 3D maths, particle clouds, a solid 3D renderer, a film grade and GIF encoding. It compiles to WebAssembly for the browser (TypeScript API) and to a native extension for Python, and renders films in Node frame-exactly — no WebGL, no editor.
 
 The landing page in [`site/`](site/) is built entirely with Anikit: a scroll-driven "poster film" where 150,000 particles print as ink on paper and glow as light on dark, colour fields flood from scene to scene, giant letters fall into a physics world full of sand, every word on screen can be dropped and thrown, and holding Space slows the whole engine down. [`site/demo/record-demo.mjs`](site/demo/record-demo.mjs) renders a directed, frame-exact 1080p60 film of it (virtual time, motion blur, camera moves).
 
@@ -99,9 +99,11 @@ Memory safety comes from Rust (the only `unsafe` is the single‑threaded static
 - **Physics worlds:** `world()` is a 2D rigid‑circle solver in WebAssembly: sub‑stepped position‑based dynamics, a sorted‑grid broad phase, restitution and friction, ropes, cloth with tearing, static boxes from elements, attractors, pointer forces, picking and drag‑to‑throw. DOM elements can be bodies (`bind()`), or draw thousands of bodies to a canvas.
 - **3D:**
   - `transform` lists interpolate exactly like browsers do: decomposition, quaternion slerp, recomposition, all in the core;
-  - `scene3d()` projects and radix‑sorts point sets in WebAssembly, with an orbit camera; `tilt()` gives spring‑driven pointer tilt.
+  - `scene3d()` projects and radix‑sorts point sets in WebAssembly, with an orbit camera and roll; `tilt()` gives spring‑driven pointer tilt;
+  - `renderer3d()` is a solid 3D renderer in WebAssembly, no WebGL: instanced meshes clipped at the near plane and shaded per pixel four at a time in SIMD (chrome reflections of a studio environment, thin-film iridescence, emissive, image textures, glowing grid / hex / dot / circuit patterns and travelling light pulses), additive light geometry, depth-tested light points that streak with camera motion, mirror floors, key-light shadow maps, a sky with a sun, ground fog, depth of field and depth-based camera motion blur. Meshes include cubes, spheres, tori, torus knots, planes, cylinders, heightfields, tubes along paths and solid 3D text in any font;
+  - `flightPath()` flies a camera along a smooth path with look-ahead and banking, timed by a monotone speed curve; `shatter()` breaks any mesh into flying shards. [`examples/journey.html`](examples/journey.html) runs a fly-through live in the browser.
 - **Point clouds and glow:** `pointCloud()` simulates hundreds of thousands of particles, each spring‑following a blend between target shapes through a turbulence field. `glow()` renders them as additive light directly into pixels (bilinear splats, bokeh, fog, a pointer lens, trails, tone mapping), with adaptive resolution to hold a frame budget. `textPoints()` samples shapes from text.
-- **Video creation:** `composition()` scenes, cues, transitions (iris, push, whip, slice, zoom, flash, letterform mask or your own) and kinetic type (`typeFx`, including `slam`) render frame-exactly with motion blur; `exportWebM()` encodes in the browser via WebCodecs with a built-in muxer, and `anikit-render` renders in Node (Skia + ffmpeg) across parallel workers with audio. Frames convert to I420 in WebAssembly. The [film](film/) is made this way, transitions included.
+- **Video creation:** `composition()` scenes, cues, transitions (iris, push, whip, slice, zoom, flash, letterform mask or your own), speed ramps, impacts and kinetic type (`typeFx`, including `slam`) render frame-exactly with motion blur; a film grade runs in WebAssembly per frame (bloom, anamorphic streaks, god rays, zoom blur, chromatic aberration, FXAA, exposure/contrast/saturation and split toning, vignette, grain — every value animatable). `exportWebM()` encodes in the browser via WebCodecs with a built-in muxer, and `anikit-render` renders in Node (Skia + ffmpeg) across parallel workers with audio; `--still`, `--preview` and `--review` (a contact sheet plus a pacing report that flags static holds) check a film without watching it, and `--init --template journey` starts a 3D fly-through. Frames convert to I420 in WebAssembly. The [film](film/) is made this way.
 - **Particle emitters:** `emitter()` spawns and simulates particles in WebAssembly (shapes, cones, gravity, drag, turbulence, attractors, colour/size over life) and renders through `glow()`.
 - **Audio analysis:** `analyzeAudio()` finds tempo, beats and onsets (FFT + spectral flux in WebAssembly) so animation and video cuts land on the music.
 - **Capture:** `screenshot()` and `record()` produce frame‑exact GIF, WebM or PNG frames of any element or canvas, with GIFs encoded in the core. The `anikit-record` CLI records any page headlessly to GIF, MP4, WebM or PNG.
@@ -118,6 +120,14 @@ Task recipes (tested): [`docs/recipes.md`](docs/recipes.md). Full TypeScript API
 ## Performance
 
 All numbers are from a shared 4‑core cloud VM, so treat them as indicative. Reproduce them with the commands below.
+
+**Solid 3D renderer** (WebAssembly in Node, 1920×1080, `node packages/anikit/scripts/bench-raster.mjs`):
+
+| Scene | Triangles drawn | ms/frame |
+|---|---:|---:|
+| Torus knot: chrome, iridescence, grid lines, pulses | 17,557 | 29 |
+| 900 towers with glowing edges and a pulse wave | 4,770 | 76 |
+| 6,000 overlapping cubes | 30,087 | 208 |
 
 **Core engine** (native, `cargo run --release -p anikit-core --example bench`), per animation per frame:
 

@@ -1,6 +1,12 @@
 # anikit
 
-A web animation engine with a Rust/WebAssembly core: tweens, keyframes, timelines, springs, inertia, OKLab colour, shape morphing, motion paths, scroll triggers, text splitting, FLIP, effects, physics worlds, 3D, particles, GIF/video capture, compositor offload and instanced batches.
+A web animation engine with a Rust/WebAssembly core: tweens, keyframes, timelines, springs, inertia, OKLab colour, shape morphing, motion paths, scroll triggers, text splitting, FLIP and presence, view transitions, gestures, effects, physics worlds, particles, GIF/video capture, compositor offload and instanced batches — plus a solid 3D renderer (no WebGL) and a frame-exact film pipeline with a cinematic grade.
+
+```bash
+npx anikit-render --init fly.mjs --template journey   # a 3D fly-through film to start from
+npx anikit-render fly.mjs --review review/            # contact sheet + pacing report
+npx anikit-render fly.mjs --out fly.mp4               # 1080p60, parallel workers
+```
 
 ```bash
 npm install anikit
