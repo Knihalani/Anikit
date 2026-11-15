@@ -160,7 +160,7 @@ impl Anim {
     fn out(&self) -> &[f64] {
         &self.buf[self.out_at..]
     }
-    #[inline]
+    #[inline(always)]
     fn eval(&mut self, easings: &[Easing], p: f64) {
         let (data, out) = self.buf.split_at_mut(self.out_at);
         Anim::eval_into(&mut self.tracks, data, easings, p, out);
@@ -445,7 +445,7 @@ fn ease_by(easings: &[Easing], id: u32, t: f64) -> f64 {
 
 impl Anim {
     /// Evaluate every enabled track at (eased) iteration progress `p` into `out`.
-    #[inline]
+    #[inline(always)]
     fn eval_into(tracks: &mut [Track], data: &[f64], easings: &[Easing], p: f64, out: &mut [f64]) {
         for tr in tracks.iter_mut() {
             if !tr.enabled {
@@ -470,89 +470,98 @@ impl Anim {
                 }
                 continue;
             }
-            let n = tr.nkf as usize;
-            let ch = tr.ch as usize;
-            let off = &data[tr.off_at as usize..tr.off_at as usize + n];
-            let vals = &data[tr.val_at as usize..tr.val_at as usize + n * ch];
-            let o = &mut out[tr.out_at as usize..tr.out_at as usize + tr.out_ch as usize];
-            // Segment search with a temporal-coherence cursor: amortised O(1).
-            let (i, e) = if tr.seg1 {
-                (0usize, ease_by(easings, tr.ease0, p))
-            } else if n <= 1 {
-                (0usize, 0.0)
-            } else {
-                let mut i = (tr.cursor as usize).min(n - 2);
-                while i > 0 && p < off[i] {
-                    i -= 1;
-                }
-                while i < n - 2 && p >= off[i + 1] {
-                    i += 1;
-                }
-                tr.cursor = i as u32;
-                let span = off[i + 1] - off[i];
-                let local = if span > 0.0 {
-                    (p - off[i]) / span
-                } else if p >= off[i + 1] {
-                    1.0
-                } else {
-                    0.0
-                };
-                let id = match tr.ease_n {
-                    0 => LINEAR,
-                    1 => tr.ease0,
-                    _ => data[tr.ease_at as usize + i] as u32,
-                };
-                (i, ease_by(easings, id, local))
-            };
-            if n <= 1 {
-                match tr.kind {
-                    TrackKind::Color(space) => {
-                        let c = color::from_space(&vals[..4], space);
-                        o.copy_from_slice(&c.to_array());
-                    }
-                    TrackKind::Path => {
-                        let lut = &data[tr.lut_at as usize..(tr.lut_at + tr.lut_len) as usize];
-                        o.copy_from_slice(&sample_lut(lut, vals.first().copied().unwrap_or(0.0)));
-                    }
-                    TrackKind::Matrix => {
-                        let mut d = [0.0; 17];
-                        d.copy_from_slice(&vals[..17]);
-                        o.copy_from_slice(&crate::space::recompose(&d));
-                    }
-                    _ => o.copy_from_slice(&vals[..ch.min(o.len())]),
-                }
-                continue;
+            Anim::eval_track(tr, data, easings, p, out);
+        }
+    }
+
+    /// The general track evaluation (keyframe segments, colour, path,
+    /// matrix, discrete): out of line so the single-segment fast path in
+    /// [`eval_into`](Self::eval_into) can be inlined into the frame loop
+    /// without duplicating all of this.
+    #[inline(never)]
+    fn eval_track(tr: &mut Track, data: &[f64], easings: &[Easing], p: f64, out: &mut [f64]) {
+        let n = tr.nkf as usize;
+        let ch = tr.ch as usize;
+        let off = &data[tr.off_at as usize..tr.off_at as usize + n];
+        let vals = &data[tr.val_at as usize..tr.val_at as usize + n * ch];
+        let o = &mut out[tr.out_at as usize..tr.out_at as usize + tr.out_ch as usize];
+        // Segment search with a temporal-coherence cursor: amortised O(1).
+        let (i, e) = if tr.seg1 {
+            (0usize, ease_by(easings, tr.ease0, p))
+        } else if n <= 1 {
+            (0usize, 0.0)
+        } else {
+            let mut i = (tr.cursor as usize).min(n - 2);
+            while i > 0 && p < off[i] {
+                i -= 1;
             }
-            let a = &vals[i * ch..i * ch + ch];
-            let b = &vals[(i + 1) * ch..(i + 1) * ch + ch];
+            while i < n - 2 && p >= off[i + 1] {
+                i += 1;
+            }
+            tr.cursor = i as u32;
+            let span = off[i + 1] - off[i];
+            let local = if span > 0.0 {
+                (p - off[i]) / span
+            } else if p >= off[i + 1] {
+                1.0
+            } else {
+                0.0
+            };
+            let id = match tr.ease_n {
+                0 => LINEAR,
+                1 => tr.ease0,
+                _ => data[tr.ease_at as usize + i] as u32,
+            };
+            (i, ease_by(easings, id, local))
+        };
+        if n <= 1 {
             match tr.kind {
-                TrackKind::Number => {
-                    // Tight loop: auto-vectorised (wasm simd128 / SSE / NEON).
-                    for ((o, &a), &b) in o.iter_mut().zip(a).zip(b) {
-                        *o = a + (b - a) * e;
-                    }
-                }
                 TrackKind::Color(space) => {
-                    let mut c = [0.0; 4];
-                    for k in 0..4 {
-                        c[k] = a[k] + (b[k] - a[k]) * e;
-                    }
-                    o.copy_from_slice(&color::from_space(&c, space).to_array());
-                }
-                TrackKind::Discrete => {
-                    o[0] = if e < 0.5 { a[0] } else { b[0] };
-                }
-                TrackKind::Matrix => {
-                    let mut da = [0.0; 17];
-                    let mut db = [0.0; 17];
-                    da.copy_from_slice(a);
-                    db.copy_from_slice(b);
-                    o.copy_from_slice(&crate::space::recompose(&crate::space::mix_decomposed(&da, &db, e)));
+                    let c = color::from_space(&vals[..4], space);
+                    o.copy_from_slice(&c.to_array());
                 }
                 TrackKind::Path => {
                     let lut = &data[tr.lut_at as usize..(tr.lut_at + tr.lut_len) as usize];
-                    o.copy_from_slice(&sample_lut(lut, a[0] + (b[0] - a[0]) * e));
+                    o.copy_from_slice(&sample_lut(lut, vals.first().copied().unwrap_or(0.0)));
                 }
+                TrackKind::Matrix => {
+                    let mut d = [0.0; 17];
+                    d.copy_from_slice(&vals[..17]);
+                    o.copy_from_slice(&crate::space::recompose(&d));
+                }
+                _ => o.copy_from_slice(&vals[..ch.min(o.len())]),
+            }
+            return;
+        }
+        let a = &vals[i * ch..i * ch + ch];
+        let b = &vals[(i + 1) * ch..(i + 1) * ch + ch];
+        match tr.kind {
+            TrackKind::Number => {
+                // Tight loop: auto-vectorised (wasm simd128 / SSE / NEON).
+                for ((o, &a), &b) in o.iter_mut().zip(a).zip(b) {
+                    *o = a + (b - a) * e;
+                }
+            }
+            TrackKind::Color(space) => {
+                let mut c = [0.0; 4];
+                for k in 0..4 {
+                    c[k] = a[k] + (b[k] - a[k]) * e;
+                }
+                o.copy_from_slice(&color::from_space(&c, space).to_array());
+            }
+            TrackKind::Discrete => {
+                o[0] = if e < 0.5 { a[0] } else { b[0] };
+            }
+            TrackKind::Matrix => {
+                let mut da = [0.0; 17];
+                let mut db = [0.0; 17];
+                da.copy_from_slice(a);
+                db.copy_from_slice(b);
+                o.copy_from_slice(&crate::space::recompose(&crate::space::mix_decomposed(&da, &db, e)));
+            }
+            TrackKind::Path => {
+                let lut = &data[tr.lut_at as usize..(tr.lut_at + tr.lut_len) as usize];
+                o.copy_from_slice(&sample_lut(lut, a[0] + (b[0] - a[0]) * e));
             }
         }
     }
