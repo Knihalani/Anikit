@@ -322,7 +322,9 @@ const cdp = await page.context().newCDPSession(page);
 let scrollPos = 0;
 const capture = async (quality, t) => {
   const c = camAt(t);
-  const cw = W / c.z, ch = H / c.z;
+  // Chrome loses a pixel or two to rounding with fractional clips, so capture
+  // a few pixels oversize; ffmpeg crops every frame to exactly W × H.
+  const cw = (W + 4) / c.z, ch = (H + 4) / c.z;
   const x = Math.max(0, Math.min(W - cw, c.x * W - cw / 2));
   const y = Math.max(0, Math.min(H - ch, c.y * H - ch / 2));
   const r = await cdp.send('Page.captureScreenshot', { format: 'jpeg', quality, optimizeForSpeed: true, clip: { x, y: y + scrollPos, width: cw, height: ch, scale: c.z } });
@@ -339,11 +341,11 @@ const advance = async (ms) => {
 
 let ff = null;
 if (!PREVIEW) {
-  const vf = [];
+  const vf = [`crop=${W}:${H}:0:0`];
   if (SUB > 1) vf.push(`tmix=frames=${SUB}`, `select='eq(mod(n\\,${SUB})\\,${SUB - 1})'`, `setpts=N/(${FPS}*TB)`);
   if (first === 0) vf.push('fade=t=in:st=0:d=0.5');
   if (last === frames) vf.push(`fade=t=out:st=${((last - first) / FPS - 1.0).toFixed(3)}:d=1.0`);
-  ff = spawn('nice', ['-n', '19', 'ffmpeg', '-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS * SUB), '-c:v', 'mjpeg', '-i', '-',
+  ff = spawn('nice', ['-n', '19', 'ffmpeg', '-y', '-loglevel', 'error', '-reinit_filter', '0', '-f', 'image2pipe', '-framerate', String(FPS * SUB), '-c:v', 'mjpeg', '-i', '-',
     '-vf', vf.join(','), '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p', '-r', String(FPS), '-movflags', '+faststart', target], { stdio: ['pipe', 'inherit', 'inherit'] });
 } else mkdirSync(OUT, { recursive: true });
 const write = (buf) => new Promise((res) => (ff.stdin.write(buf) ? res() : ff.stdin.once('drain', res)));
