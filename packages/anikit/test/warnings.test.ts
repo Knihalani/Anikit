@@ -97,6 +97,26 @@ describe('animate() guidance', () => {
     expect(() => animate(box(), { x: 1 }, { ease: 'power2.outt' })).toThrow(/unknown easing/);
   });
 
+  it('honours GSAP/anime habits (stagger, loop) and maps other libraries\' option names', () => {
+    const els = [box(), box(), box()];
+    const a = animate(els, { x: [0, 100], stagger: 0.5 } as any, { duration: 1, ease: 'linear' });
+    a.seek(1);
+    expect(els.slice(0, 2).map(tf)).toEqual(['translate(100px,0px)', 'translate(50px,0px)']);   // the third starts at t = 1
+    const b = animate(els, { y: [0, 100] }, { duration: 1, ease: 'linear', stagger: { each: 0.5, from: 'last' } });
+    b.seek(1);
+    expect(els.map((e) => e.style.transform.includes('translate(') && e.style.transform)).toEqual([
+      'translate(100px,0px)', 'translate(50px,50px)', 'translate(0px,100px)',
+    ]);
+    const c = animate(box(), { x: [0, 10] }, { duration: 1, loop: true });
+    expect(c.duration).toBe(Infinity);
+    expect(warnings).toEqual([]);
+    animate(box(), { x: 1 }, { easing: 'outCubic', iterations: 2, fill: 'forwards', paused: true } as any);
+    expect(has('"easing"', 'Use ease instead')).toBe(true);
+    expect(has('"iterations"', 'Use repeat')).toBe(true);
+    expect(has('"fill"', 'Use fillMode instead')).toBe(true);
+    expect(has('"paused"', 'Use autoplay: false instead')).toBe(true);
+  });
+
   it('accepts per-target keyframes from a function', () => {
     const els = [box(), box()];
     animate(els, { x: (_el: unknown, i: number) => [i * 10, 100 + i * 10] }, { duration: 1, ease: 'linear' }).seek(0.5);
@@ -122,6 +142,15 @@ describe('other APIs', () => {
     expect(tl.duration).toBe(1.5);
     tl.seek(1);
     expect(tf(b)).toBe('translate(50px,0px)');
+    const c = box();
+    const tl2 = timeline({ autoplay: false, defaults: { duration: 1, ease: 'linear' } })
+      .add(a, { x: [0, 100] })
+      .from(c, { y: 100 }, '-=0.5')
+      .fromTo(b, { y: 0 }, { y: 100 }, '<');
+    expect(tl2.duration).toBe(1.5);
+    tl2.seek(1);
+    expect(tf(c)).toBe('translate(0px,50px)');
+    expect(tf(b)).toContain('50px)');
   });
 
   it('stagger: unknown keys, unknown origin, GSAP object form', () => {

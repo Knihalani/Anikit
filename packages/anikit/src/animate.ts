@@ -23,6 +23,8 @@ import {
 } from './props';
 import { Playable, Callbacks, Linked } from './playable';
 import { warn, didYouMean, describe, cssPropertyNames, suggest, warningsOn, checkSeconds, checkTargets } from './debug';
+import { stagger as staggerFn } from './stagger';
+import type { StaggerOptions } from './stagger';
 import type { OptionKeys } from './debug';
 import { Binding, bind, apply, custom, transformSlot, M_PROP, M_TRANSFORM, M_TRANSFORM2, M_STYLE_NUM, M_STYLE_FMT, M_VAR, M_CUSTOM } from './bind';
 import { pathData, PathSource, writeMorph, elementLength, morphSequence } from './svg';
@@ -178,28 +180,45 @@ export interface AnimateOptions extends Callbacks<Animation> {
   format?: Intl.NumberFormatOptions | ((value: number) => string);
   /** Locale used by `format`. Default: the user's. */
   locale?: string;
+  /**
+   * Shorthand for `delay: stagger(each)` (GSAP style). The object form takes the
+   * stagger options plus `each` / `amount`: `{ each: 0.05, from: 'center' }`.
+   */
+  stagger?: number | (StaggerOptions & { each?: number; amount?: number });
+  /** `true` loops forever (same as `repeat: Infinity`). */
+  loop?: boolean;
 }
 
 /** Every `AnimateOptions` key (compiler-checked; used for "unknown option" warnings). */
 export const ANIMATE_KEYS: OptionKeys<AnimateOptions> = {
   duration: 0, delay: 0, endDelay: 0, ease: 0, repeat: 0, repeatDelay: 0, yoyo: 0, direction: 0, speed: 0, autoplay: 0,
   times: 0, colorSpace: 0, fillMode: 0, overwrite: 0, immediateRender: 0, onStart: 0, onUpdate: 0, onComplete: 0,
-  onRepeat: 0, onReverseComplete: 0, snap: 0, round: 0, modifiers: 0, format: 0, locale: 0,
+  onRepeat: 0, onReverseComplete: 0, snap: 0, round: 0, modifiers: 0, format: 0, locale: 0, stagger: 0, loop: 0,
 };
 const OPTION_KEYS = new Set(Object.keys(ANIMATE_KEYS));
 
 const DIRECTIONS = { normal: 0, reverse: 1, alternate: 2, 'alternate-reverse': 3 } as const;
 /** Options accepted for compatibility / by wrappers (not warned about). */
-const EXTRA_OPTION_KEYS = new Set(['stagger', 'distance', 'from', 'intensity', 'loop', 'axis', 'at', 'charDelay', 'start', 'to', 'chars', 'delimiter', 'text', 'size', 'color']);
+const EXTRA_OPTION_KEYS = new Set(['distance', 'from', 'intensity', 'axis', 'at', 'charDelay', 'start', 'to', 'chars', 'delimiter', 'text', 'size', 'color']);
 const TRANSFORM_PROPS = ['x', 'y', 'z', 'rotate', 'rotateX', 'rotateY', 'rotateZ', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'skew', 'skewX', 'skewY', 'perspective', 'xPercent', 'yPercent'];
 const SPECIAL_PROPS = ['path', 'draw', 'd', 'attr', 'text', 'transform'];
+/** Option names from other libraries (Web Animations, anime.js, GSAP, Motion) → the anikit form. */
+const OPTION_ALIASES: Record<string, string> = {
+  easing: 'ease', iterations: 'repeat (extra iterations: iterations - 1; Infinity loops)', fill: 'fillMode', paused: 'autoplay: false',
+  playbackRate: 'speed', reversed: "direction: 'reverse'", onEnd: 'onComplete', onFinish: 'onComplete', onBegin: 'onStart',
+  onPlay: 'onStart', onLoop: 'onRepeat', startDelay: 'delay', iterationStart: 'seek()', keyframes: 'the second argument (keyframes)',
+};
 const FILL_MODES = ['both', 'forwards', 'backwards', 'none'];
+/** Elements whose position was already checked (one style read per element, not per call). */
+const positionChecked = new WeakSet<Element>();
 const ANGLE_UNITS = ['', 'deg', 'rad', 'turn', 'grad'];
 
 /** Construction-time validation of animation options (only while warnings are on). */
 function checkAnimateOptions(given: AnimateOptions, o: AnimateOptions): void {
   for (const k of Object.keys(given)) {
-    if (!OPTION_KEYS.has(k) && !EXTRA_OPTION_KEYS.has(k)) warn(`unknown animation option "${k}"; it is ignored.${didYouMean(k, OPTION_KEYS)}`);
+    if (OPTION_KEYS.has(k) || EXTRA_OPTION_KEYS.has(k)) continue;
+    const alias = OPTION_ALIASES[k];
+    warn(`unknown animation option "${k}"; it is ignored.${alias ? ` Use ${alias} instead.` : didYouMean(k, OPTION_KEYS)}`);
   }
   checkSeconds('animate()', 'duration', o.duration);
   checkSeconds('animate()', 'delay', o.delay);
@@ -232,7 +251,7 @@ function checkValues(prop: string, kind: Kind, raw: unknown[], target: unknown):
       else if (canonical === '' && unit !== '%') warn(`"${prop}" is a unitless factor (1 = 100%), but got "${v}". Use e.g. ${prop}: 1.5.`);
       else if ((canonical === 'px' || canonical === '%') && angleUnit) warn(`"${prop}" is a length, but got "${v}". Use a number (px) or a length unit; for rotation use "rotate".`);
     }
-  } else if ((prop === 'left' || prop === 'top' || prop === 'right' || prop === 'bottom') && isElement(target) && computed(target, 'position') === 'static') {
+  } else if ((prop === 'left' || prop === 'top' || prop === 'right' || prop === 'bottom') && isElement(target) && !positionChecked.has(target) && positionChecked.add(target) && computed(target, 'position') === 'static') {
     warn(`"${prop}" has no effect on ${describe(target)} because it is position: static. Animate x / y (transforms, faster) instead, or give it position: relative.`);
   } else if (prop === 'opacity' && isElement(target)) {
     const big = raw.find((v) => typeof v === 'number' && v > 1);
@@ -514,6 +533,15 @@ export class Animation extends Playable {
       keyframes = {};
     }
     const [props, opts] = normalize(keyframes, options ?? {});
+    const st = opts.stagger;
+    if (st !== undefined && opts.delay === undefined) {
+      if (typeof st === 'number') opts.delay = staggerFn(st);
+      else {
+        const { each, amount, ...rest } = st;
+        opts.delay = staggerFn(each ?? 0.1, { ...rest, total: rest.total ?? amount });
+      }
+    }
+    if (opts.loop === true && opts.repeat === undefined) opts.repeat = Infinity;
     super(opts);
     if (warningsOn()) checkAnimateOptions(options ?? {}, opts);
     this._times = opts.times;

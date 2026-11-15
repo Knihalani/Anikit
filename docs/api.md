@@ -55,7 +55,9 @@ animate(obj, { value: 1 }, { onUpdate: () => render(obj.value) }); // plain obje
 | `fillMode` | `'both'` | `'forwards' \| 'backwards' \| 'none'` (named `fillMode` so `fill` stays the SVG/CSS property). |
 | `overwrite` | `true` | A new animation takes over the properties it animates. |
 | `immediateRender` | auto | Render the first keyframe right away. Defaults to on for delayed animations with explicit start values. |
-| `autoplay` | `true` | |
+| `autoplay` | `true` | `false` for scroll triggers and manual control. |
+| `stagger` | | Shorthand for `delay: stagger(n)`; GSAP's `{ each, from, grid, amount }` works too. |
+| `loop` | | `true` repeats forever (`repeat: Infinity`). |
 | `onStart`, `onUpdate`, `onComplete`, `onRepeat`, `onReverseComplete` | | `onUpdate` fires once per frame, after DOM writes. |
 
 `from(targets, values, options)`, `fromTo(targets, fromValues, toValues, options)` and `set(targets, values)` (instant) are shorthands.
@@ -600,6 +602,7 @@ What gets a warning:
 | Mistake | Example | Message says |
 |---|---|---|
 | Unknown option (every main API) | `{ durration: 1 }`, `spring(el, p, { delay: 1 })`, `stagger(0.1, { form: 'center' })` | it is ignored; did you mean `duration` / `from` |
+| Another library's option name | `easing`, `iterations`, `fill`, `paused`, `playbackRate`, `onEnd` | the anikit name (`ease`, `repeat`, `fillMode`, `autoplay: false`, `speed`, `onComplete`) |
 | Option typo among the properties | `animate(el, { x: 1, delya: 0.2 })` | did you mean the option `delay` |
 | Milliseconds instead of seconds | `duration: 600`, `delay: 250`, `stagger(50)` | did you mean `0.6` |
 | Wrong unit or range | `rotate: '45px'`, `x: '10deg'`, `scale: '2px'`, `opacity: 50` | the expected unit; `0.5` |
