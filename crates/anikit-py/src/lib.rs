@@ -14,7 +14,9 @@
 
 use pyo3::exceptions::{PyIndexError, PyKeyError, PyMemoryError, PyRuntimeError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::PyBytes;
+use pyo3::types::{PyByteArray, PyBytes};
+
+mod render3d;
 
 use anikit_core::cloud::Cloud;
 use anikit_core::color::{self, ColorSpace, Rgba};
@@ -1400,25 +1402,48 @@ impl Engine {
 // Flat f32 buffers
 // ---------------------------------------------------------------------------
 
-/// Flat `f32` input: native-endian `bytes` (e.g. `array('f').tobytes()`) or any
-/// sequence of numbers.
+/// Flat `f32` input: native-endian `bytes` or `bytearray` (e.g.
+/// `array('f').tobytes()`, a float32 numpy array's buffer) or any sequence of
+/// numbers.
 #[derive(FromPyObject)]
 enum F32Data<'py> {
     Bytes(Bound<'py, PyBytes>),
+    ByteArray(Bound<'py, PyByteArray>),
     Seq(Vec<f32>),
+}
+
+fn decode_f32(raw: &[u8], out: &mut Vec<f32>) -> PyResult<()> {
+    if !raw.len().is_multiple_of(4) {
+        return Err(PyValueError::new_err("f32 byte buffers must be a multiple of 4 bytes long"));
+    }
+    out.clear();
+    out.extend(raw.chunks_exact(4).map(|c| f32::from_ne_bytes([c[0], c[1], c[2], c[3]])));
+    Ok(())
 }
 
 impl F32Data<'_> {
     fn into_vec(self) -> PyResult<Vec<f32>> {
         match self {
             F32Data::Seq(v) => Ok(v),
-            F32Data::Bytes(b) => {
-                let raw = b.as_bytes();
-                if !raw.len().is_multiple_of(4) {
-                    return Err(PyValueError::new_err("f32 byte buffers must be a multiple of 4 bytes long"));
-                }
-                Ok(raw.chunks_exact(4).map(|c| f32::from_ne_bytes([c[0], c[1], c[2], c[3]])).collect())
+            other => {
+                let mut v = Vec::new();
+                other.read_into(&mut v)?;
+                Ok(v)
             }
+        }
+    }
+
+    /// Decode into `out`, reusing its allocation.
+    fn read_into(&self, out: &mut Vec<f32>) -> PyResult<()> {
+        match self {
+            F32Data::Seq(v) => {
+                out.clear();
+                out.extend_from_slice(v);
+                Ok(())
+            }
+            F32Data::Bytes(b) => decode_f32(b.as_bytes(), out),
+            // SAFETY: the GIL is held and no Python code runs while the slice is borrowed.
+            F32Data::ByteArray(b) => decode_f32(unsafe { b.as_bytes() }, out),
         }
     }
 }
@@ -2373,6 +2398,7 @@ fn _anikit(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NativeProjector>()?;
     m.add_class::<NativeCloud>()?;
     m.add_class::<NativeSplat>()?;
+    render3d::register(m)?;
     m.add_function(wrap_pyfunction!(ease, m)?)?;
     m.add_function(wrap_pyfunction!(easing_css, m)?)?;
     m.add_function(wrap_pyfunction!(spring_settle_time, m)?)?;

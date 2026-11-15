@@ -21,14 +21,22 @@ __all__ = [
     "FLAG_IMMEDIATE",
     "LINEAR",
     "NONE",
+    "RASTER_INSTANCE_STRIDE",
+    "RASTER_LIGHTING_LEN",
+    "RASTER_MATERIAL_LEN",
     "NativeCloud",
     "NativeEasing",
+    "NativeFrameMixer",
+    "NativeMesh",
     "NativeMorph",
     "NativeMorphSeq",
     "NativeNoise",
     "NativePath",
+    "NativePostFx",
     "NativeProjector",
+    "NativeRaster",
     "NativeSplat",
+    "NativeTexture",
     "NativeWorld",
     "STATE_FINISHED",
     "STATE_IDLE",
@@ -48,6 +56,7 @@ __all__ = [
     "color_try_parse",
     "ease",
     "easing_css",
+    "i420_len",
     "mat4_decompose",
     "mat4_determinant",
     "mat4_invert",
@@ -69,6 +78,7 @@ __all__ = [
     "quat_mul",
     "quat_slerp",
     "quat_to_matrix",
+    "rgba_to_i420",
     "spring_from_duration_bounce",
     "spring_response",
     "spring_settle_time",
@@ -250,7 +260,7 @@ class NativeNoise:
 
 _Bounds = Tuple[float, float, float, float]
 #: Flat ``f32`` input: native-endian bytes (``array('f').tobytes()``) or numbers.
-_F32 = Union[bytes, Sequence[float]]
+_F32 = Union[bytes, bytearray, Sequence[float]]
 
 @final
 class NativeWorld:
@@ -376,6 +386,170 @@ class NativeSplat:
     def pixel(self, x: int, y: int) -> Tuple[int, int, int, int]: ...
     def light(self, x: int, y: int) -> Tuple[float, float, float]: ...
     def total_light(self) -> Tuple[float, float, float]: ...
+
+# ---------------------------------------------------------------------------
+# Solid 3D (raster) and the film grade (video)
+# ---------------------------------------------------------------------------
+
+#: Floats per instance: column-major 3x4 affine then rgb.
+RASTER_INSTANCE_STRIDE: int
+#: Floats in a packed material (see ``NativeRaster.draw``).
+RASTER_MATERIAL_LEN: int
+#: Floats in a packed lighting (see ``NativeRaster.draw``).
+RASTER_LIGHTING_LEN: int
+
+_U32 = Union[bytes, Sequence[int]]
+_Mat16 = Sequence[float]
+
+@final
+class NativeMesh:
+    """Immutable triangle mesh (positions, normals, uvs, indices)."""
+
+    @staticmethod
+    def cube() -> NativeMesh: ...
+    @staticmethod
+    def sphere(rings: int = 16, segments: int = 24) -> NativeMesh: ...
+    @staticmethod
+    def torus_knot(
+        p: float = 2.0,
+        q: float = 5.0,
+        radius: float = 300.0,
+        spread: float = 120.0,
+        tube: float = 40.0,
+        segments: int = 360,
+        sides: int = 16,
+    ) -> NativeMesh: ...
+    @staticmethod
+    def torus(radius: float = 300.0, tube: float = 60.0, segments: int = 96, sides: int = 24) -> NativeMesh: ...
+    @staticmethod
+    def plane(nx: int = 1, nz: int = 1) -> NativeMesh: ...
+    @staticmethod
+    def cylinder(segments: int = 32, caps: bool = True) -> NativeMesh: ...
+    @staticmethod
+    def heightfield(width: int, depth: int, heights: _F32, skip: float = ...) -> NativeMesh: ...
+    @staticmethod
+    def custom(positions: _F32, normals: _F32, indices: _U32, uvs: Optional[_F32] = None) -> NativeMesh: ...
+    @property
+    def vertex_count(self) -> int: ...
+    @property
+    def triangle_count(self) -> int: ...
+    def positions(self) -> bytes: ...
+    def normals(self) -> bytes: ...
+    def uvs(self) -> bytes: ...
+    def indices(self) -> bytes: ...
+
+@final
+class NativeTexture:
+    """Mipmapped RGBA image for materials."""
+
+    def __new__(cls, width: int, height: int, data: Union[bytes, bytearray]) -> NativeTexture: ...
+    @property
+    def width(self) -> int: ...
+    @property
+    def height(self) -> int: ...
+
+@final
+class NativeRaster:
+    """Z-buffered, lit, instanced triangle rasteriser.
+
+    ``material`` packs ambient, diffuse, specular, shininess, rim, emissive,
+    metal, iridescence, hue, lines, line_color(3), grid(2), line_width, pulse,
+    pulse_count, pulse_phase, pulse_dir(3), texture mode (0 none, 1 albedo,
+    2 emissive), texture_repeat(2), texture_gain. ``lighting`` packs key(3),
+    key_color(3), fill(3), fill_color(3), rim_color(3), fog(2; far <= 0 or
+    inf = none), fog_color(3), sky(3), horizon(3), ground(3), strips(3).
+    """
+
+    def __new__(cls, width: int, height: int) -> NativeRaster: ...
+    @property
+    def width(self) -> int: ...
+    @property
+    def height(self) -> int: ...
+    @property
+    def drawn(self) -> int: ...
+    prepass: bool
+    def resize(self, width: int, height: int) -> None: ...
+    def clear(self, rgb: int = 0, alpha: int = 255) -> None: ...
+    def clear_depth(self) -> None: ...
+    def draw(
+        self,
+        mesh: NativeMesh,
+        instances: Optional[_F32],
+        view_projection: _Mat16,
+        eye: _Vec3,
+        material: Sequence[float],
+        lighting: Sequence[float],
+        cull: bool = True,
+        blend: str = "opaque",
+        flip_winding: bool = False,
+        gloss: float = 0.5,
+        texture: Optional[NativeTexture] = None,
+    ) -> int: ...
+    def points(
+        self,
+        positions: _F32,
+        view_projection: _Mat16,
+        eye: _Vec3,
+        colors: Optional[_F32] = None,
+        prev_view_projection: Optional[_Mat16] = None,
+        size: float = 2.0,
+        intensity: float = 1.0,
+        streak: float = 0.0,
+        fog: Tuple[float, float] = ...,
+    ) -> None: ...
+    def rgba(self) -> bytearray: ...
+    def pixel(self, x: int, y: int) -> Tuple[int, int, int, int]: ...
+
+@final
+class NativePostFx:
+    """Film-look post pass with reusable scratch buffers."""
+
+    def __new__(cls) -> NativePostFx: ...
+    def apply(
+        self,
+        frame: bytearray,
+        width: int,
+        height: int,
+        *,
+        seed: int = 0,
+        bloom: Optional[float] = None,
+        bloom_threshold: Optional[float] = None,
+        bloom_radius: Optional[float] = None,
+        aberration: Optional[float] = None,
+        vignette: Optional[float] = None,
+        grain: Optional[float] = None,
+        streaks: Optional[float] = None,
+        streak_length: Optional[float] = None,
+        streak_tint: Optional[_Vec3] = None,
+        zoom_blur: Optional[float] = None,
+        zoom_center: Optional[Tuple[float, float]] = None,
+        rays: Optional[float] = None,
+        rays_center: Optional[Tuple[float, float]] = None,
+        rays_length: Optional[float] = None,
+        exposure: Optional[float] = None,
+        contrast: Optional[float] = None,
+        saturation: Optional[float] = None,
+        shadows: Optional[_Vec3] = None,
+        highlights: Optional[_Vec3] = None,
+    ) -> None: ...
+
+@final
+class NativeFrameMixer:
+    """Averages RGBA sub-frames (motion blur)."""
+
+    def __new__(cls, width: int, height: int) -> NativeFrameMixer: ...
+    @property
+    def width(self) -> int: ...
+    @property
+    def height(self) -> int: ...
+    @property
+    def count(self) -> int: ...
+    def add(self, frame: Union[bytes, bytearray]) -> int: ...
+    def resolve(self) -> bytearray: ...
+    def reset(self) -> None: ...
+
+def rgba_to_i420(frame: Union[bytes, bytearray], width: int, height: int, order: str = "rgba") -> bytes: ...
+def i420_len(width: int, height: int) -> int: ...
 
 @final
 class Engine:

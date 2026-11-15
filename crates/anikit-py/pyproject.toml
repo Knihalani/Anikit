@@ -19,7 +19,9 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=7"]
+# anikit.raster (solid 3D) and anikit.video (film grade) return numpy frames.
+numpy = ["numpy>=1.21"]
+test = ["pytest>=7", "numpy>=1.21"]
 
 [tool.maturin]
 python-source = "python"

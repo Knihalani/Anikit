@@ -4,7 +4,11 @@ Animate plain Python objects (dicts, objects, lists of them), drive the world
 with :func:`tick` or :func:`render`, and export to CSS/WAAPI. Also: a fast 2D
 physics :class:`World` (bodies, ropes, cloth, attractors), 3D transforms /
 projection in :mod:`anikit.transform`, and particle clouds that morph between
-shapes (:class:`PointCloud`) rendered as glowing light (:class:`Splat`)::
+shapes (:class:`PointCloud`) rendered as glowing light (:class:`Splat`).
+With numpy installed: solid 3D rendering into numpy frames in
+:mod:`anikit.raster` (meshes, instancing, materials, mirror floors,
+:func:`~anikit.raster.shatter`) and the film grade in :mod:`anikit.video`;
+camera flights with :func:`flight_path`::
 
     import anikit
 
@@ -19,7 +23,7 @@ All public times are in **seconds**.
 
 from __future__ import annotations
 
-from typing import Any, Iterator, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Tuple
 
 from . import color, export, transform
 from ._anikit import __version__
@@ -27,6 +31,7 @@ from ._animation import Animation, Position, Timeline, animate, timeline
 from ._cloud import PointCloud, ShapeInput, Splat
 from ._easing import Easing, EasingLike, ease
 from ._engine import Engine, default_engine, resolve_engine, set_default_engine
+from ._flight import FlightPath, FlightPose, flight_path
 from ._noise import Noise
 from ._path import ClosestPoint, Morph, MorphSequence, MotionPath, Path, PathLike, morph, morph_many, motion_path
 from ._physics import PhysicsAnimation, SpringAnimation, inertia, physics, spring
@@ -66,6 +71,10 @@ __all__ = [
     "PointCloud",
     "ShapeInput",
     "Splat",
+    # camera flights
+    "FlightPath",
+    "FlightPose",
+    "flight_path",
     # easing
     "Easing",
     "EasingLike",
@@ -88,6 +97,18 @@ __all__ = [
     "export",
     "transform",
 ]
+
+# Submodules that need numpy load on first access (``anikit.raster``, ``anikit.video``).
+if TYPE_CHECKING:
+    from . import raster, video
+else:
+
+    def __getattr__(name: str) -> Any:
+        if name in ("raster", "video"):
+            import importlib
+
+            return importlib.import_module(f".{name}", __name__)
+        raise AttributeError(f"module 'anikit' has no attribute {name!r}")
 
 
 def tick(dt: float, *, engine: Optional[Engine] = None) -> None:
