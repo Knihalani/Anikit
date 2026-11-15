@@ -14,8 +14,8 @@
  *   .call(() => console.log('done'));
  * ```
  */
-import { core, whenReady } from './wasm';
-import { register, unregister, easingId, NodeRecord, EasingInput, EV_CALLBACK, FL_FILL_BACKWARDS, FL_FILL_FORWARDS, LINEAR, wake } from './core';
+import { core, whenReady, W } from './wasm';
+import { register, unregister, easingId, NodeRecord, EasingInput, EV_CALLBACK, FL_FILL_BACKWARDS, FL_FILL_FORWARDS, LINEAR, wake, onFlush } from './core';
 import { Animation, AnimateOptions, Props, Keyframe, Chain, PropValue } from './animate';
 import type { Targets as _T } from './props';
 import { Playable, Callbacks, Linked } from './playable';
@@ -48,6 +48,30 @@ export interface TimelineOptions extends Callbacks<Timeline> {
 
 type Child = { ctl: Playable | null; start: number; end: number; h: number };
 
+/**
+ * Timelines with an `onUpdate` callback. A group node has no values of its
+ * own, so nothing marks it updated: once per flush (after the frame's DOM
+ * writes), each one whose time moved is queued for `onUpdate`. Only attached
+ * (playing or recently seeked) timelines are in the set.
+ */
+const updating = new Set<Timeline>();
+onFlush(() => {
+  if (updating.size === 0) return;
+  const w = W;
+  if (!w) return;
+  for (const tl of updating) {
+    if (!tl._h) {
+      updating.delete(tl);
+      continue;
+    }
+    const t = w.ak_time(tl._h);
+    if (t !== tl._lastTime) {
+      tl._lastTime = t;
+      tl._touch();
+    }
+  }
+});
+
 export class Timeline extends Playable {
   readonly labels = new Map<string, number>();
   private _chain: Chain = new WeakMap();
@@ -56,6 +80,8 @@ export class Timeline extends Playable {
   private _last: Child | null = null;
   private _endTime = 0;
   private _spacer = 0;
+  /** Time (ms) at the last `onUpdate` check. */
+  _lastTime = NaN;
   private _opts: TimelineOptions;
   /** Set when nested inside another timeline (suppresses autoplay). */
   _nested = false;
@@ -75,6 +101,7 @@ export class Timeline extends Playable {
       const rec: NodeRecord & Linked = { h: this._h, at: 0, ctl: this, event: (k: number) => rec.ctl?._event(k) };
       register(rec);
       this._links.push(rec);
+      if (o.onUpdate) updating.add(this);
       if (o.speed !== undefined) w.ak_set_rate(this._h, o.speed);
       if (o.repeatDelay) {
         // An invisible marker keeps the group's (auto) duration past the content.
@@ -321,7 +348,17 @@ export class Timeline extends Playable {
     });
   }
 
+  override _attach(): void {
+    super._attach();
+    if (this._cb.onUpdate && this._h) updating.add(this);
+  }
+  protected override _detach(): void {
+    super._detach();
+    updating.delete(this);
+  }
+
   protected _kill(): void {
+    updating.delete(this);
     for (const c of this._cleanups) c();
     this._cleanups = [];
     for (const l of this._links) unregister(l as unknown as NodeRecord);

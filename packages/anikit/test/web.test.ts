@@ -653,3 +653,27 @@ describe("reduced motion: 'fade' mode", () => {
     }
   });
 });
+
+describe('timeline onUpdate', () => {
+  it('fires once per frame while playing and on seeks, then stops', async () => {
+    const el = box();
+    const seen: number[] = [];
+    const tl = timeline({ onUpdate: (t) => seen.push(Math.round(t.progress * 100)) }).add(el, { x: 100 }, { duration: 1, ease: 'linear' });
+    await tick();
+    advance(0.5);
+    const playing = seen.length;
+    expect(playing).toBeGreaterThanOrEqual(29);
+    expect(seen[seen.length - 1]).toBe(50);
+    tl.pause().seek(0.2);
+    expect(seen[seen.length - 1]).toBe(20);
+    const n = seen.length;
+    advance(0.5); // paused: nothing moves, no updates
+    expect(seen.length).toBe(n);
+    tl.play();
+    advance(1.5);
+    expect(seen[seen.length - 1]).toBe(100);
+    const done = seen.length;
+    advance(0.5);
+    expect(seen.length).toBe(done);
+  });
+});

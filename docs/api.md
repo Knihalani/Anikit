@@ -97,7 +97,7 @@ tl.seek('spin'); tl.playFrom(0.5);
 - `'+=0.5'` / `'-=0.5'`: relative to the timeline end;
 - a label, optionally with an offset (`'label'`, `'label+=0.3'`).
 
-With no position, a child goes at the end of the timeline. Options: `delay`, `repeat`, `repeatDelay`, `yoyo`, `speed`, `ease` (applied to the overall progress), `autoplay` and `defaults`. Sequential tweens of the same property chain their start values.
+With no position, a child goes at the end of the timeline. Options: `delay`, `repeat`, `repeatDelay`, `yoyo`, `speed`, `ease` (applied to the overall progress), `autoplay`, `defaults` and the callbacks (`onStart`, `onUpdate`, `onComplete`, `onRepeat`, `onReverseComplete`). `onUpdate` fires once per frame while the playhead moves (playing or seeking), after that frame's DOM writes. Sequential tweens of the same property chain their start values.
 
 ---
 
