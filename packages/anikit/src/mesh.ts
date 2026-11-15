@@ -126,6 +126,13 @@ export interface MaterialOptions {
   specular?: number;
   shininess?: number;
   rim?: number;
+  /** Unlit self-illumination (×base colour): glows under the film grade's bloom. */
+  emissive?: number;
+  /** Chrome: mirror reflection of the sky/horizon/ground environment (0–1). */
+  metal?: number;
+  /** Thin-film rainbow sheen by viewing angle (0–1), and its hue offset. */
+  iridescence?: number;
+  hue?: number;
 }
 export interface LightOptions {
   key?: V3;
@@ -136,6 +143,10 @@ export interface LightOptions {
   /** Fog from `[near, far]` distance to `fogColor` (default: the background). */
   fog?: [number, number];
   fogColor?: string | V3;
+  /** Environment reflected by metal materials. */
+  sky?: string | V3;
+  horizon?: string | V3;
+  ground?: string | V3;
 }
 export interface DrawItem {
   mesh: Mesh3D;
@@ -195,9 +206,10 @@ export class Renderer3D {
       new Float32Array(W!.memory.buffer, ptr, inst.count * STRIDE).set(inst.data.subarray(0, inst.count * STRIDE));
       const m = it.material ?? {};
       const kc = rgb(o.keyColor), fc = rgb(o.fillColor, [0.25, 0.28, 0.35]), rc = rgb(o.rimColor), fog = o.fog ?? [0, 0], fogc = rgb(o.fogColor, bg);
-      const at = f64Buf(46);
+      const at = f64Buf(59);
       F64.set([...matrix, ...eye, m.ambient ?? 0.22, m.diffuse ?? 0.85, m.specular ?? 0.5, m.shininess ?? 40, m.rim ?? 0.35,
-        ...(o.key ?? [0.4, 0.8, 0.6]), ...kc, ...(o.fill ?? [-0.6, -0.2, 0.4]), ...fc, ...rc, fog[0], fog[1], ...fogc], at);
+        ...(o.key ?? [0.4, 0.8, 0.6]), ...kc, ...(o.fill ?? [-0.6, -0.2, 0.4]), ...fc, ...rc, fog[0], fog[1], ...fogc,
+        m.emissive ?? 0, m.metal ?? 0, m.iridescence ?? 0, m.hue ?? 0, ...rgb(o.sky, [0.25, 0.3, 0.55]), ...rgb(o.horizon, [1, 0.85, 0.7]), ...rgb(o.ground, [0.05, 0.05, 0.07])], at);
       this.triangles += w.ak_raster_draw(this.id, it.mesh.id, inst.count, it.cull === false ? 0 : 1);
     }
     const px = new Uint8ClampedArray(W!.memory.buffer, w.ak_raster_ptr(this.id), this.width * this.height * 4);

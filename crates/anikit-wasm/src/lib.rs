@@ -1883,12 +1883,17 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32) -> 
     if s.f64_buf.len() < 46 {
         return 0;
     }
-    let b: Vec<f32> = s.f64_buf[..46].iter().map(|v| *v as f32).collect();
+    // Optional extended block: emissive, metal, iridescence, hue, sky(3), horizon(3), ground(3).
+    let nb = if s.f64_buf.len() >= 59 { 59 } else { 46 };
+    let mut b: Vec<f32> = s.f64_buf[..nb].iter().map(|v| *v as f32).collect();
+    if nb == 46 {
+        b.extend_from_slice(&[0.0, 0.0, 0.0, 0.0, 0.25, 0.3, 0.55, 1.0, 0.85, 0.7, 0.05, 0.05, 0.07]);
+    }
     let vp: M4 = core::array::from_fn(|i| b[i]);
     let eye = [b[16], b[17], b[18]];
-    let mat = Material { ambient: b[19], diffuse: b[20], specular: b[21], shininess: b[22], rim: b[23] };
+    let mat = Material { ambient: b[19], diffuse: b[20], specular: b[21], shininess: b[22], rim: b[23], emissive: b[46], metal: b[47], iridescence: b[48], hue: b[49] };
     let v3 = |i: usize| [b[i], b[i + 1], b[i + 2]];
-    let light = Lighting { key: v3(24), key_color: v3(27), fill: v3(30), fill_color: v3(33), rim_color: v3(36), fog: [b[39], if b[40] > 0.0 { b[40] } else { f32::INFINITY }], fog_color: v3(41) };
+    let light = Lighting { key: v3(24), key_color: v3(27), fill: v3(30), fill_color: v3(33), rim_color: v3(36), fog: [b[39], if b[40] > 0.0 { b[40] } else { f32::INFINITY }], fog_color: v3(41), sky: v3(50), horizon: v3(53), ground: v3(56) };
     let Some(Some(m)) = s.meshes.get(mesh as usize) else { return 0 };
     let Some(Some((r, inst))) = s.rasters.get_mut(id as usize) else { return 0 };
     let k = (n as usize * INSTANCE_STRIDE).min(inst.len());

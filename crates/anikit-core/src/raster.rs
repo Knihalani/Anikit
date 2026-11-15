@@ -21,11 +21,18 @@ pub struct Material {
     pub shininess: f32,
     /// Fresnel-style edge light.
     pub rim: f32,
+    /// Self-illumination: base colour × emissive is added unlit (glows under bloom).
+    pub emissive: f32,
+    /// Mirror reflection of the procedural environment (0 = matte, 1 = chrome).
+    pub metal: f32,
+    /// Thin-film rainbow sheen that shifts with viewing angle, and its hue offset.
+    pub iridescence: f32,
+    pub hue: f32,
 }
 
 impl Default for Material {
     fn default() -> Self {
-        Self { ambient: 0.22, diffuse: 0.85, specular: 0.5, shininess: 40.0, rim: 0.35 }
+        Self { ambient: 0.22, diffuse: 0.85, specular: 0.5, shininess: 40.0, rim: 0.35, emissive: 0.0, metal: 0.0, iridescence: 0.0, hue: 0.0 }
     }
 }
 
@@ -41,6 +48,10 @@ pub struct Lighting {
     /// Fog: start and end distance from the camera, and colour (0…1).
     pub fog: [f32; 2],
     pub fog_color: [f32; 3],
+    /// Environment for reflections: sky (up), horizon band, ground (down).
+    pub sky: [f32; 3],
+    pub horizon: [f32; 3],
+    pub ground: [f32; 3],
 }
 
 impl Default for Lighting {
@@ -53,6 +64,9 @@ impl Default for Lighting {
             rim_color: [1.0, 1.0, 1.0],
             fog: [0.0, f32::INFINITY],
             fog_color: [0.0; 3],
+            sky: [0.25, 0.3, 0.55],
+            horizon: [1.0, 0.85, 0.7],
+            ground: [0.05, 0.05, 0.07],
         }
     }
 }
@@ -186,7 +200,29 @@ impl Raster {
                 let rim = fr * fr * fr * mat.rim;
                 let mut c = [0.0f32; 3];
                 for k in 0..3 {
-                    c[k] = base[k] * (mat.ambient + mat.diffuse * (dk * light.key_color[k] + df * light.fill_color[k])) + sp * light.key_color[k] + rim * light.rim_color[k];
+                    c[k] = base[k] * (mat.ambient + mat.diffuse * (dk * light.key_color[k] + df * light.fill_color[k] + mat.emissive)) + sp * light.key_color[k] + rim * light.rim_color[k];
+                }
+                if mat.metal > 0.0 {
+                    // Reflect the view ray off the surface and look up a sky/horizon/ground gradient.
+                    let ndv = dot(n, vd);
+                    let ry = 2.0 * ndv * n[1] - vd[1];
+                    let up = ry.clamp(-1.0, 1.0);
+                    let band = libm::expf(-up * up * 18.0);
+                    let env: [f32; 3] = core::array::from_fn(|k| {
+                        let sg = if up > 0.0 { light.sky[k] } else { light.ground[k] };
+                        sg + (light.horizon[k] - sg) * band
+                    });
+                    for k in 0..3 {
+                        c[k] += (env[k] * (0.35 + 0.65 * base[k]) - c[k]) * mat.metal;
+                    }
+                }
+                if mat.iridescence > 0.0 {
+                    // Thin-film sheen: a cosine palette indexed by the viewing angle.
+                    let x = (1.0 - dot(n, vd).abs()) * 1.6 + mat.hue;
+                    let tau = core::f32::consts::TAU;
+                    for (k, off) in [0.0f32, 0.33, 0.67].iter().enumerate() {
+                        c[k] += (0.5 + 0.5 * libm::cosf(tau * (x + off))) * mat.iridescence;
+                    }
                 }
                 if fog_on {
                     let f = ((dist - light.fog[0]) / fog_span).clamp(0.0, 1.0);
@@ -327,26 +363,46 @@ pub fn tube(f: impl Fn(f32) -> [f32; 3], r: f32, segments: usize, sides: usize) 
     let mut m = Mesh::default();
     let tau = core::f32::consts::TAU;
     let pts: Vec<[f32; 3]> = (0..segments).map(|i| f(i as f32 / segments as f32)).collect();
-    // Parallel-transport-ish frame: tangent + a stable normal.
-    let mut prev_n = [0.0f32, 0.0, 1.0];
-    for i in 0..segments {
-        let p = pts[i];
+    // Parallel-transport frames, then spread the closing twist evenly along
+    // the curve so the last ring lines up with the first (no seam).
+    let tangent = |i: usize| {
         let q = pts[(i + 1) % segments];
         let o = pts[(i + segments - 1) % segments];
-        let t = norm3([q[0] - o[0], q[1] - o[1], q[2] - o[2]]);
-        // n = normalize(prev_n − (prev_n·t) t)
-        let d = dot(prev_n, t);
-        let mut n = [prev_n[0] - d * t[0], prev_n[1] - d * t[1], prev_n[2] - d * t[2]];
-        if dot(n, n) < 1e-6 {
-            n = [t[1], -t[0], 0.0];
+        norm3([q[0] - o[0], q[1] - o[1], q[2] - o[2]])
+    };
+    let cross = |a: [f32; 3], b: [f32; 3]| [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    let transport = |n: [f32; 3], t: [f32; 3]| {
+        let d = dot(n, t);
+        let v = [n[0] - d * t[0], n[1] - d * t[1], n[2] - d * t[2]];
+        if dot(v, v) < 1e-8 { norm3([t[1], -t[0], 0.0]) } else { norm3(v) }
+    };
+    let t0 = tangent(0);
+    let seed_n = if t0[2].abs() < 0.9 { [0.0, 0.0, 1.0] } else { [1.0, 0.0, 0.0] };
+    let mut normals = Vec::with_capacity(segments);
+    let mut n = transport(seed_n, t0);
+    for i in 0..segments {
+        if i > 0 {
+            n = transport(n, tangent(i));
         }
-        n = norm3(n);
-        prev_n = n;
-        let bn = [t[1] * n[2] - t[2] * n[1], t[2] * n[0] - t[0] * n[2], t[0] * n[1] - t[1] * n[0]];
+        normals.push(n);
+    }
+    // Angle between the frame carried once around the loop and the first frame.
+    let carried = transport(normals[segments - 1], t0);
+    let b0 = cross(t0, normals[0]);
+    let twist = libm::atan2f(dot(carried, b0), dot(carried, normals[0]));
+    for i in 0..segments {
+        let t = tangent(i);
+        let n0 = normals[i];
+        let b = cross(t, n0);
+        let a = -twist * i as f32 / segments as f32;
+        let (ca, sa) = (libm::cosf(a), libm::sinf(a));
+        let n = [n0[0] * ca + b[0] * sa, n0[1] * ca + b[1] * sa, n0[2] * ca + b[2] * sa];
+        let bn = cross(t, n);
+        let p = pts[i];
         for j in 0..sides {
-            let a = j as f32 / sides as f32 * tau;
-            let (ca, sa) = (libm::cosf(a), libm::sinf(a));
-            let dir = [n[0] * ca + bn[0] * sa, n[1] * ca + bn[1] * sa, n[2] * ca + bn[2] * sa];
+            let ang = j as f32 / sides as f32 * tau;
+            let (cj, sj) = (libm::cosf(ang), libm::sinf(ang));
+            let dir = [n[0] * cj + bn[0] * sj, n[1] * cj + bn[1] * sj, n[2] * cj + bn[2] * sj];
             for k in 0..3 {
                 m.pos.push(p[k] + dir[k] * r);
             }
