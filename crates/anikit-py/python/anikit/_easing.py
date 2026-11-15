@@ -214,9 +214,30 @@ class Easing:
         return f"Easing(<{self.kind}>)"
 
 
+_CURVES = ("Quad", "Cubic", "Quart", "Quint", "Sine", "Expo", "Circ", "Back", "Elastic", "Bounce")
+#: Easing names, for "did you mean" suggestions.
+EASING_NAMES = (
+    ["linear", "ease", "ease-in", "ease-out", "ease-in-out", "step-start", "step-end", "spring", "anticipate", "wiggle", "shake", "slowmo"]
+    + [m + c for c in _CURVES for m in ("in", "out", "inOut", "outIn")]
+    + [f"power{p}.{m}" for p in range(1, 5) for m in ("in", "out", "inOut")]
+    + ["gentle", "wobbly", "stiff", "slow", "molasses", "snappy", "bouncy"]
+)
+
+
 @lru_cache(maxsize=256)
 def _parse(spec: str) -> NativeEasing:
-    return NativeEasing(spec)
+    try:
+        return NativeEasing(spec)
+    except ValueError:
+        import difflib
+
+        head = spec.split("(")[0].strip()
+        near = difflib.get_close_matches(head, EASING_NAMES, n=1, cutoff=0.7)
+        hint = f' Did you mean "{near[0]}"?' if near else ""
+        raise ValueError(
+            f"unknown easing: {spec!r}.{hint} Use a name such as 'outCubic', 'power2.inOut' or 'ease-in-out', "
+            "a function form such as 'cubic-bezier(.2,.8,.2,1)' or 'spring(bounce: 0.3)', or a callable."
+        ) from None
 
 
 def _table_from_callable(fn: Callable[[float], float], samples: int) -> NativeEasing:

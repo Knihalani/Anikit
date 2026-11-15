@@ -44,6 +44,13 @@ def _seconds(name: str, v: Any, allow_negative: bool = False) -> float:
         raise TypeError(f"{name} must be a number of seconds, got {v!r}") from None
     if math.isnan(x) or (x < 0 and not allow_negative):
         raise ValueError(f"{name} must be >= 0, got {v!r}")
+    if 100 <= x < math.inf:
+        import warnings
+
+        warnings.warn(
+            f"anikit: {name} is {x:g} seconds. Times in anikit are seconds; did you mean {name}={x / 1000:g}?",
+            stacklevel=4,
+        )
     return x
 
 
@@ -453,7 +460,11 @@ def _merge_options(base: Mapping[str, Any], opts: Dict[str, Any]) -> Dict[str, A
     out.update(base)
     for k, v in opts.items():
         if k not in _OPTION_DEFAULTS:
-            raise TypeError(f"unexpected option {k!r}")
+            import difflib
+
+            near = difflib.get_close_matches(k, list(_OPTION_DEFAULTS), n=1)
+            hint = f" Did you mean {near[0]!r}?" if near else f" Options: {', '.join(sorted(_OPTION_DEFAULTS))}."
+            raise TypeError(f"unexpected option {k!r}.{hint}")
         out[k] = v
     return out
 
