@@ -371,6 +371,8 @@ export interface DrawItem {
   mirror?: boolean;
   /** Leave this item out of the mirrored pass (default: everything opaque reflects). */
   reflect?: boolean;
+  /** Cast shadows when the render has `shadows` (default true for opaque items). */
+  castShadow?: boolean;
 }
 type CanvasLike = { width: number; height: number; getContext(t: '2d'): CanvasRenderingContext2D | null };
 
@@ -429,6 +431,13 @@ export class Renderer3D {
      * Applied after everything is drawn (points too), before motion blur.
      */
     dof?: { focus: number; aperture?: number; max?: number };
+    /**
+     * Key-light shadows: opaque items cast shadows (a shadow map along `key`, covering a
+     * box of half-size `extent` around `center`, default the camera target). `size`
+     * texels (default 2048), `strength` 0–1 (default 0.8), depth `bias` (default 0.0015).
+     * Items with `castShadow: false` don't cast.
+     */
+    shadows?: { extent: number; center?: V3; size?: number; strength?: number; bias?: number };
   } = {}): Uint8ClampedArray {
     const t0 = performance.now();
     const w = core();
@@ -460,6 +469,40 @@ export class Renderer3D {
       this.triangles += w.ak_raster_draw(this.id, it.mesh.id, inst.count, flags, vals.length);
     };
     const meshes = items.filter((it): it is DrawItem => !('points' in it));
+    if (o.shadows) {
+      // Orthographic light camera looking along −key at the centre.
+      const sh = o.shadows, e = sh.extent;
+      const k = o.key ?? [0.4, 0.8, 0.6], kl = Math.hypot(k[0], k[1], k[2]) || 1, d = [k[0] / kl, k[1] / kl, k[2] / kl];
+      const c = sh.center ?? [scene.target.x, scene.target.y, scene.target.z];
+      const ey = [c[0] + d[0] * e * 2, c[1] + d[1] * e * 2, c[2] + d[2] * e * 2];
+      const up = Math.abs(d[1]) > 0.99 ? [0, 0, 1] : [0, 1, 0];
+      // View basis: f = −d (towards the centre), r = f × up, u = r × f.
+      const f = [-d[0], -d[1], -d[2]];
+      let r = [f[1] * up[2] - f[2] * up[1], f[2] * up[0] - f[0] * up[2], f[0] * up[1] - f[1] * up[0]];
+      const rl = Math.hypot(r[0], r[1], r[2]) || 1; r = r.map((v) => v / rl);
+      const u = [r[1] * f[2] - r[2] * f[1], r[2] * f[0] - r[0] * f[2], r[0] * f[1] - r[1] * f[0]];
+      const dotv = (a: number[], b: number[]) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+      // Ortho: x,y in [−e, e], view depth 0…4e → NDC (column-major, GL conventions).
+      const near = 0, far = e * 4, sx = 1 / e, sz = -2 / (far - near), tz = -(far + near) / (far - near);
+      const lvp = [
+        sx * r[0], sx * u[0] * 0 + u[0] * sx, sz * -f[0], 0,
+        sx * r[1], u[1] * sx, sz * -f[1], 0,
+        sx * r[2], u[2] * sx, sz * -f[2], 0,
+        -sx * dotv(r, ey), -sx * dotv(u, ey), sz * dotv(f, ey) + tz, 1,
+      ];
+      // (Row 1 is u·sx; row 2 maps view depth −f·(p − eye) to NDC.)
+      for (let col = 0; col < 3; col++) lvp[col * 4 + 1] = u[col] * sx;
+      const at = f64Buf(16);
+      F64.set(lvp, at);
+      w.ak_raster_shadow_begin(this.id, sh.size ?? 2048, sh.bias ?? 0.0015, sh.strength ?? 0.8);
+      for (const it of meshes) {
+        if (it.castShadow === false || it.blend === 'additive' || it.mirror) continue;
+        const inst = it.instances ?? this.single;
+        const ptr = w.ak_raster_instances(this.id, inst.count);
+        new Float32Array(W!.memory.buffer, ptr, inst.count * STRIDE).set(inst.data.subarray(0, inst.count * STRIDE));
+        w.ak_raster_shadow_draw(this.id, it.mesh.id, inst.count);
+      }
+    }
     if (o.mirror) {
       // 1. The scene reflected about y = mirror.y (winding flips), 2. clear depth,
       // 3. the glossy surface blended over the reflection, 4. the scene itself.

@@ -2041,6 +2041,28 @@ pub extern "C" fn ak_raster_dof(id: u32, focus: f64, aperture: f64, max_px: f64)
         r.depth_of_field(&vp, focus as f32, aperture as f32, max_px as f32);
     }
 }
+/// Start a key-light shadow map (see `Raster::shadow_begin`). f64 buffer: lightViewProj(16).
+#[no_mangle]
+pub extern "C" fn ak_raster_shadow_begin(id: u32, size: u32, bias: f64, strength: f64) {
+    let s = st();
+    if s.f64_buf.len() < 16 {
+        return;
+    }
+    let vp: anikit_core::raster::M4 = core::array::from_fn(|i| s.f64_buf[i] as f32);
+    if let Some(Some((r, _))) = s.rasters.get_mut(id as usize) {
+        r.shadow_begin(&vp, size as usize, bias as f32, strength as f32);
+    }
+}
+/// Draw `n` instances (from the instance buffer) of `mesh` into the shadow map.
+#[no_mangle]
+pub extern "C" fn ak_raster_shadow_draw(id: u32, mesh: u32, n: u32) {
+    use anikit_core::raster::*;
+    let s = st();
+    let Some(Some(m)) = s.meshes.get(mesh as usize) else { return };
+    let Some(Some((r, inst))) = s.rasters.get_mut(id as usize) else { return };
+    let k = (n as usize * INSTANCE_STRIDE).min(inst.len());
+    r.shadow_draw(m, &inst[..k], false);
+}
 /// Reset the depth buffer only (mirror passes).
 #[no_mangle]
 pub extern "C" fn ak_raster_clear_depth(id: u32) {

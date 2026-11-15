@@ -250,6 +250,13 @@ pub struct Raster {
     tiles: Vec<[f32; 2]>,
     alpha: Vec<f32>,
     row_px: Vec<u32>,
+    /// Shadow map from the key light (see [`Raster::shadow_begin`]).
+    shadow_depth: Vec<f32>,
+    shadow_size: usize,
+    shadow_vp: M4,
+    shadow_bias: f32,
+    shadow_strength: f32,
+    shadows_on: bool,
     /// Additive light accumulation for [`Raster::points`] (RGB f32, allocated on first use).
     light: Vec<f32>,
     /// Pixels shaded by the last call (diagnostics).
@@ -279,6 +286,8 @@ struct Shade<'a> {
     /// Per-instance lighting terms: base×(ambient+emissive), base×diffuse×key, base×diffuse×fill.
     lit: [[f32; 3]; 3],
     tex: Option<&'a Texture>,
+    /// Shadow map: depth, size, light view-projection, bias, strength.
+    shadow: Option<(&'a [f32], usize, M4, f32, f32)>,
 }
 
 impl Shade<'_> {
@@ -463,7 +472,33 @@ impl Shade<'_> {
         let n = [n[0] * sc, n[1] * sc, n[2] * sc];
         let ndv = ndv0.abs();
         let key = [V4::splat(self.key[0]), V4::splat(self.key[1]), V4::splat(self.key[2])];
-        let dk = dot3(&n, &key).maxf(0.0);
+        let mut dk = dot3(&n, &key).maxf(0.0);
+        if let Some((sd, size, svp, bias, strength)) = self.shadow {
+            // Light-space position → shadow map texel; 2×2 PCF.
+            let lw = p[0] * svp[3] + p[1] * svp[7] + p[2] * svp[11] + svp[15];
+            let ilw = 1.0 / lw;
+            let lx = (p[0] * svp[0] + p[1] * svp[4] + p[2] * svp[8] + svp[12]) * ilw;
+            let ly = (p[0] * svp[1] + p[1] * svp[5] + p[2] * svp[9] + svp[13]) * ilw;
+            let lz = (p[0] * svp[2] + p[1] * svp[6] + p[2] * svp[10] + svp[14]) * ilw - bias;
+            let hs = size as f32 * 0.5;
+            let (tx, ty, tz) = ((lx * hs + hs - 0.5).to_array(), (hs - ly * hs - 0.5).to_array(), lz.to_array());
+            let lit: [f32; 4] = core::array::from_fn(|l| {
+                let (fx, fy) = (tx[l], ty[l]);
+                if !(fx > -1.0 && fy > -1.0 && fx < size as f32 && fy < size as f32) {
+                    return 1.0;
+                }
+                let (x0, y0) = (fx.max(0.0) as usize, fy.max(0.0) as usize);
+                let (x1, y1) = ((x0 + 1).min(size - 1), (y0 + 1).min(size - 1));
+                let (ax, ay) = (fx - x0 as f32, fy - y0 as f32);
+                let t = |x: usize, y: usize| if tz[l] <= sd[y * size + x] { 1.0 } else { 0.0 };
+                let top = t(x0, y0) + (t(x1, y0) - t(x0, y0)) * ax.clamp(0.0, 1.0);
+                let bot = t(x0, y1) + (t(x1, y1) - t(x0, y1)) * ax.clamp(0.0, 1.0);
+                top + (bot - top) * ay.clamp(0.0, 1.0)
+            });
+            let k = 1.0 - (1.0 - V4::from_array(lit)) * strength;
+            dk = dk * k;
+        }
+        let dk = dk;
         let df = (n[0] * self.fill[0] + n[1] * self.fill[1] + n[2] * self.fill[2]).maxf(0.0);
         let h = [vd[0] + self.key[0], vd[1] + self.key[1], vd[2] + self.key[2]];
         let x = (dot3(&n, &h) / dot3(&h, &h).sqrt().maxf(1e-9)).maxf(0.0);
@@ -574,6 +609,40 @@ impl Raster {
         let c = ((rgb >> 16) & 255) | (rgb & 0xff00) | ((rgb & 255) << 16) | ((alpha as u32) << 24);
         self.color.iter_mut().for_each(|p| *p = c);
         self.depth.iter_mut().for_each(|d| *d = f32::INFINITY);
+        self.shadows_on = false;
+    }
+
+    /// Start a shadow map for the key light: `light_vp` is the light's
+    /// (orthographic) view-projection, `size` the map's resolution. Draw the
+    /// shadow casters with [`Raster::shadow_draw`], then draw the scene as
+    /// usual: the key light and its highlights are dimmed by `strength` (0…1)
+    /// where occluded (4-tap PCF, depth `bias` in NDC). [`Raster::clear`] ends it.
+    pub fn shadow_begin(&mut self, light_vp: &M4, size: usize, bias: f32, strength: f32) {
+        let size = size.clamp(16, 8192);
+        self.shadow_size = size;
+        self.shadow_depth.clear();
+        self.shadow_depth.resize(size * size, f32::INFINITY);
+        self.shadow_vp = *light_vp;
+        self.shadow_bias = bias;
+        self.shadow_strength = strength.clamp(0.0, 1.0);
+        self.shadows_on = true;
+    }
+
+    /// Render `mesh` instances into the shadow map (depth only).
+    pub fn shadow_draw(&mut self, mesh: &Mesh, instances: &[f32], cull_back: bool) {
+        if !self.shadows_on {
+            return;
+        }
+        let (w, h) = (self.width, self.height);
+        let s = self.shadow_size;
+        core::mem::swap(&mut self.depth, &mut self.shadow_depth);
+        self.width = s;
+        self.height = s;
+        let vp = self.shadow_vp;
+        self.draw_with(mesh, instances, &vp, [0.0; 3], &Material::default(), &Lighting::default(), cull_back, Blend::DepthOnly, None);
+        self.width = w;
+        self.height = h;
+        core::mem::swap(&mut self.depth, &mut self.shadow_depth);
     }
 
     /// Reset depth only (keep the colour): draw a mirrored pass, then the real scene over it.
@@ -603,6 +672,15 @@ impl Raster {
     #[allow(clippy::too_many_arguments)]
     #[allow(clippy::needless_range_loop)]
     pub fn draw_with(&mut self, mesh: &Mesh, instances: &[f32], vp: &M4, eye: [f32; 3], mat: &Material, light: &Lighting, cull_back: bool, blend: Blend, tex: Option<&Texture>) {
+        // The shadow map is read while the frame is written: move it out for the call.
+        let shadow_depth = core::mem::take(&mut self.shadow_depth);
+        self.draw_inner(mesh, instances, vp, eye, mat, light, cull_back, blend, tex, &shadow_depth);
+        self.shadow_depth = shadow_depth;
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::needless_range_loop)]
+    fn draw_inner(&mut self, mesh: &Mesh, instances: &[f32], vp: &M4, eye: [f32; 3], mat: &Material, light: &Lighting, cull_back: bool, blend: Blend, tex: Option<&Texture>, shadow_depth: &[f32]) {
         let nv = mesh.pos.len() / 3;
         let has_uv = mesh.uv.len() >= nv * 2;
         self.drawn = 0;
@@ -624,6 +702,7 @@ impl Raster {
             pattern_on: mat.lines > 0.0 || mat.pulse > 0.0,
             lit: [[0.0; 3]; 3],
             tex,
+            shadow: if self.shadows_on && blend != Blend::DepthOnly { Some((shadow_depth, self.shadow_size, self.shadow_vp, self.shadow_bias, self.shadow_strength)) } else { None },
         };
         // Front-to-back: nearer instances fill the depth buffer first, so the
         // depth test rejects hidden pixels early.
@@ -722,6 +801,11 @@ impl Raster {
             }
         }
         match blend {
+            Blend::DepthOnly => {
+                for oi in 0..count {
+                    self.tris::<DEPTH>(mesh, oi * nv, cull_back, &sh);
+                }
+            }
             Blend::Opaque => {
                 let pre = self.prepass;
                 if pre {
@@ -1624,6 +1708,8 @@ pub enum Blend {
     /// Opaque, but blended over what is already in the colour buffer by
     /// [`Raster::gloss`]: a glossy floor over a mirrored render of the scene.
     Gloss,
+    /// Depth only (shadow maps, occluders).
+    DepthOnly,
 }
 
 // ---------------------------------------------------------------------------
@@ -2143,5 +2229,29 @@ mod tests {
             }
             assert!(lit > 50 && lit < n * n * 3 / 4, "pattern {kind}: {lit}");
         }
+    }
+
+    #[test]
+    fn key_light_casts_shadows() {
+        // Camera looks down at a floor; a cube floats above it; the light shines straight down.
+        let m = mul(&perspective(60.0, 1.0, 0.5, 100.0), &look_at([0.0, 8.0, 0.01], [0.0; 3], [0.0, 1.0, 0.0]));
+        let vp: M4 = core::array::from_fn(|i| m[i] as f32);
+        // Orthographic light from above: x → x, z → y, y → depth (column-major).
+        let e = 4.0f32;
+        let lvp: M4 = [1.0 / e, 0.0, 0.0, 0.0, 0.0, 0.0, -0.1, 0.0, 0.0, -1.0 / e, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0];
+        let floor = [6.0f32, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 6.0, 0.0, -1.0, 0.0, 0.8, 0.8, 0.8];
+        let block = [1.0f32, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.5, 1.0, 0.0, 0.8, 0.8, 0.8];
+        let light = Lighting { key: [0.0, 1.0, 0.0], ..Lighting::default() };
+        let mat = Material { ambient: 0.1, diffuse: 1.0, specular: 0.0, rim: 0.0, ..Material::default() };
+        let mut r = Raster::new(64, 64);
+        r.clear(0, 255);
+        r.shadow_begin(&lvp, 256, 0.002, 1.0);
+        r.shadow_draw(&cube(), &block, false);
+        r.shadow_draw(&plane(1, 1), &floor, false);
+        r.draw(&plane(1, 1), &floor, &vp, [0.0, 8.0, 0.0], &mat, &light, true);
+        let lit = r.color.iter().map(|c| c & 255).max().unwrap();
+        let dark = r.color.iter().filter(|c| **c & 255 > 0 && **c & 255 < lit / 3).count();
+        // The block's shadow is a dark patch on the lit floor (the block itself is drawn from below as floor only).
+        assert!(dark > 20 && dark < 64 * 64 / 4, "shadowed pixels: {dark} (lit {lit})");
     }
 }
