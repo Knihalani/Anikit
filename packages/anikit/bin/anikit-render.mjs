@@ -183,7 +183,13 @@ if (SEG) {
   const { comp } = await build();
   // Fades are applied by the first/last worker while it encodes, so joining
   // the slices never needs a second encode.
-  await node.renderToFile(comp, { ...enc, out: target, from: +a, to: +b, fadeIn: +fi || 0, fadeOut: +fo || 0, fadeColor: fc || undefined });
+  // Report progress to the parent (it prints one aggregated line).
+  let last = 0;
+  await node.renderToFile(comp, {
+    ...enc, out: target, from: +a, to: +b, fadeIn: +fi || 0, fadeOut: +fo || 0, fadeColor: fc || undefined,
+    onProgress: (_fr, n) => { const now = Date.now(); if (process.send && now - last > 250) { last = now; process.send({ n }); } },
+  });
+  process.send?.({ n: Math.round((+b - +a) * comp.fps) });
   process.exit(0);
 }
 
@@ -198,15 +204,31 @@ const fadeIn = +opt('fade-in', 0), fadeOut = +opt('fade-out', 0), audio = opt('a
 const tmp = out + '.parts';
 mkdirSync(tmp, { recursive: true });
 const parts = [];
+// Progress: workers report frames done over IPC; one line on a terminal, every 10% otherwise.
+const done = new Array(workers).fill(0);
+const tty = process.stderr.isTTY;
+let lastDecile = -1;
+const report = () => {
+  const n = done.reduce((x, y) => x + y, 0), secs = (Date.now() - t0) / 1000, rate = n / Math.max(0.001, secs);
+  const eta = rate > 0 ? (frames - n) / rate : 0;
+  const line = `anikit-render: ${n}/${frames} frames · ${rate.toFixed(1)} fps · ETA ${Math.floor(eta / 60)}m${String(Math.round(eta % 60)).padStart(2, '0')}s`;
+  if (tty) process.stderr.write(`\r${line}   `);
+  else if (Math.floor((n / frames) * 10) > lastDecile) { lastDecile = Math.floor((n / frames) * 10); console.error(line); }
+};
+const ticker = setInterval(report, 500);
 await Promise.all(Array.from({ length: workers }, (_, k) => {
   const fa = Math.round(from * fps) + k * per, fb = Math.min(Math.round(to * fps), fa + per);
   if (fa >= fb) return null;
   const part = join(tmp, `p${k}.mp4`);
   parts.push(part);
   return new Promise((res, rej) => spawn(process.execPath, [fileURLToPath(import.meta.url), ...args], {
-    env: { ...process.env, ANIKIT_SEG: [fa / fps, fb / fps, part, k === 0 ? fadeIn : 0, fb === Math.round(to * fps) ? fadeOut : 0, opt('fade-color', '')].join('|') }, stdio: 'inherit',
-  }).on('close', (c) => (c ? rej(new Error(`worker ${k} exited ${c}`)) : res())));
+    env: { ...process.env, ANIKIT_SEG: [fa / fps, fb / fps, part, k === 0 ? fadeIn : 0, fb === Math.round(to * fps) ? fadeOut : 0, opt('fade-color', '')].join('|') }, stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+  }).on('message', (m) => { if (m && typeof m.n === 'number') done[k] = m.n; })
+    .on('close', (c) => (c ? rej(new Error(`worker ${k} exited ${c}`)) : res())));
 }));
+clearInterval(ticker);
+report();
+if (tty) process.stderr.write('\n');
 writeFileSync(join(tmp, 'list.txt'), parts.map((p) => `file '${p}'`).join('\n'));
 const ffArgs = ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', join(tmp, 'list.txt')];
 if (audio) ffArgs.push('-ss', String(from), '-i', resolve(audio));
