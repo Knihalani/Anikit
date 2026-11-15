@@ -290,13 +290,13 @@ impl PostFx {
         }
     }
 
-    /// One fused full-resolution pass: chromatic aberration (red/blue sampled
-    /// radially apart), bloom/streaks added back with a bilinear 4× upsample,
-    /// the grade (exposure + contrast LUT, saturation, split toning),
-    /// vignette and grain.
+    /// One fused full-resolution pass, four pixels at a time in SIMD:
+    /// chromatic aberration (red/blue sampled radially apart), bloom/streaks
+    /// added back with a bilinear 4× upsample, the grade (exposure, contrast,
+    /// saturation, split toning), vignette and grain.
     #[allow(clippy::needless_range_loop)]
-    #[allow(clippy::too_many_arguments)]
     fn composite(&mut self, rgba: &mut [u8], w: usize, h: usize, p: &Post, glow: bool) {
+        use crate::simd::V4;
         let ab = p.aberration > 0.0;
         if ab {
             self.copy.clear();
@@ -306,11 +306,8 @@ impl PostFx {
         if glow {
             self.tmp.resize(sw * 3, 0.0);
         }
-        // Tone LUT over 0…511 so bloom can push past white before the grade.
-        let mut lut = [0f32; 512];
-        for (i, v) in lut.iter_mut().enumerate() {
-            *v = (((i as f32 / 255.0) * p.exposure - 0.5) * p.contrast + 0.5) * 255.0;
-        }
+        // Exposure + contrast around mid-grey is affine on 0…1 values.
+        let (ga, gb) = (p.exposure * p.contrast / 255.0, 0.5 - 0.5 * p.contrast);
         let tint = p.shadows.iter().any(|v| *v != 0.0) || p.highlights.iter().any(|v| *v != 0.0);
         let sat = p.saturation != 1.0;
         let (cx, cy) = (w as f32 * 0.5, h as f32 * 0.5);
@@ -319,8 +316,9 @@ impl PostFx {
         let vig = p.vignette * 1.4;
         let grain = p.grain * 2.0 / 255.0;
         let seed = p.seed.wrapping_mul(0x9E37_79B9);
-        const PH: [(isize, f32); 4] = [(-1, 0.375), (-1, 0.125), (1, 0.125), (1, 0.375)];
         let (wi, hi) = (w as isize - 1, h as isize - 1);
+        let phase = V4::new(0.375, 0.125, 0.125, 0.375);
+        let lanes = V4::new(0.0, 1.0, 2.0, 3.0);
         for y in 0..h {
             if glow {
                 let fy = ((y as f32 + 0.5) * 0.25 - 0.5).clamp(0.0, (sh - 1) as f32);
@@ -333,35 +331,48 @@ impl PostFx {
                 }
             }
             let dy = y as f32 - cy;
-            let dy2 = dy * dy;
+            let dy2 = V4::splat(dy * dy);
             let row = &mut rgba[y * w * 4..(y + 1) * w * 4];
-            for (x, px) in row.chunks_exact_mut(4).enumerate() {
-                let dx = x as f32 - cx;
-                let mut c = if ab {
+            let mut x0 = 0;
+            while x0 < w {
+                let nl = (w - x0).min(4);
+                let px = |l: usize, c: usize| row[(x0 + l.min(nl - 1)) * 4 + c] as f32;
+                let (mut r, g, mut b) = (
+                    V4::new(px(0, 0), px(1, 0), px(2, 0), px(3, 0)),
+                    V4::new(px(0, 1), px(1, 1), px(2, 1), px(3, 1)),
+                    V4::new(px(0, 2), px(1, 2), px(2, 2), px(3, 2)),
+                );
+                if ab {
                     // Red pushed outward, blue pulled inward, proportional to radius.
-                    let (ox, oy) = (dx * norm, dy * norm);
-                    let at = |sx: f32, sy: f32| ((sy + 0.5) as isize).clamp(0, hi) as usize * w + ((sx + 0.5) as isize).clamp(0, wi) as usize;
-                    let (ir, ib) = (at(x as f32 - ox, y as f32 - oy), at(x as f32 + ox, y as f32 + oy));
-                    [self.copy[ir * 4] as f32, px[1] as f32, self.copy[ib * 4 + 2] as f32]
-                } else {
-                    [px[0] as f32, px[1] as f32, px[2] as f32]
-                };
+                    let mut rr = [0f32; 4];
+                    let mut bb = [0f32; 4];
+                    for l in 0..4 {
+                        let x = (x0 + l.min(nl - 1)) as f32;
+                        let (ox, oy) = ((x - cx) * norm, dy * norm);
+                        let at = |sx: f32, sy: f32| ((sy + 0.5) as isize).clamp(0, hi) as usize * w + ((sx + 0.5) as isize).clamp(0, wi) as usize;
+                        rr[l] = self.copy[at(x - ox, y as f32 - oy) * 4] as f32;
+                        bb[l] = self.copy[at(x + ox, y as f32 + oy) * 4 + 2] as f32;
+                    }
+                    r = V4::from_array(rr);
+                    b = V4::from_array(bb);
+                }
+                let mut c = [r, g, b];
                 if glow {
-                    let sx = x >> 2;
-                    let (dir, t) = PH[x & 3];
-                    let nx = (sx as isize + dir).clamp(0, sw as isize - 1) as usize;
-                    let (a, b) = (sx * 3, nx * 3);
+                    // Lanes x0..x0+3 are exactly the four upsample phases of source pixel x0/4.
+                    let sx = x0 >> 2;
+                    let (lft, rgt) = (sx.saturating_sub(1), (sx + 1).min(sw - 1));
                     let rb = &self.tmp;
                     for ch in 0..3 {
-                        c[ch] += rb[a + ch] + (rb[b + ch] - rb[a + ch]) * t;
+                        let a = rb[sx * 3 + ch];
+                        let nb = V4::new(rb[lft * 3 + ch], rb[lft * 3 + ch], rb[rgt * 3 + ch], rb[rgt * 3 + ch]);
+                        c[ch] = c[ch] + a + (nb - a) * phase;
                     }
                 }
-                // Exposure + contrast via the LUT (linear interpolation not needed at 8-bit steps).
                 for v in c.iter_mut() {
-                    *v = lut[(*v as usize).min(511)] * (1.0 / 255.0);
+                    *v = *v * ga + gb;
                 }
                 if sat || tint {
-                    let l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+                    let l = c[0] * 0.2126 + c[1] * 0.7152 + c[2] * 0.0722;
                     if sat {
                         for v in c.iter_mut() {
                             *v = l + (*v - l) * p.saturation;
@@ -371,25 +382,35 @@ impl PostFx {
                         let lc = l.clamp(0.0, 1.0);
                         let (shd, hil) = ((1.0 - lc) * (1.0 - lc), lc * lc);
                         for k in 0..3 {
-                            c[k] += p.shadows[k] * shd + c[k] * p.highlights[k] * hil;
+                            c[k] = c[k] + shd * p.shadows[k] + c[k] * hil * p.highlights[k];
                         }
                     }
                 }
+                let dx = lanes + (x0 as f32 - cx);
                 let r2 = (dx * dx + dy2) * inv_r2;
-                let k = 255.0 * (1.0 - vig * r2 * r2);
-                // Grain: an independent hash per pixel (no serial RNG chain).
+                let k = 1.0 - r2 * r2 * vig;
                 let n = if grain > 0.0 {
-                    let mut hs = (x as u32).wrapping_mul(0x85EB_CA77) ^ (y as u32).wrapping_mul(0xC2B2_AE3D) ^ seed;
-                    hs ^= hs >> 15;
-                    hs = hs.wrapping_mul(0x2C1B_3C6D);
-                    hs ^= hs >> 12;
-                    ((hs >> 24) as f32 / 255.0 - 0.5) * grain
+                    // Grain: an independent hash per pixel (no serial RNG chain).
+                    let g4: [f32; 4] = core::array::from_fn(|l| {
+                        let mut hs = ((x0 + l) as u32).wrapping_mul(0x85EB_CA77) ^ (y as u32).wrapping_mul(0xC2B2_AE3D) ^ seed;
+                        hs ^= hs >> 15;
+                        hs = hs.wrapping_mul(0x2C1B_3C6D);
+                        hs ^= hs >> 12;
+                        ((hs >> 24) as f32 / 255.0 - 0.5) * grain
+                    });
+                    V4::from_array(g4)
                 } else {
-                    0.0
+                    V4::splat(0.0)
                 };
-                for ch in 0..3 {
-                    px[ch] = ((c[ch] + n) * k + 0.5).clamp(0.0, 255.0) as u8;
+                let out = V4::pack_rgb(((c[0] + n) * k).maxf(0.0), ((c[1] + n) * k).maxf(0.0), ((c[2] + n) * k).maxf(0.0));
+                for l in 0..nl {
+                    let o = (x0 + l) * 4;
+                    let v = out[l];
+                    row[o] = v as u8;
+                    row[o + 1] = (v >> 8) as u8;
+                    row[o + 2] = (v >> 16) as u8;
                 }
+                x0 += 4;
             }
         }
     }
