@@ -72,6 +72,16 @@ describe('animate() guidance', () => {
     expect(has('"x" needs a single number', 'skipped')).toBe(true);
   });
 
+  it('flags left/top on static elements', () => {
+    const el = box({ position: 'static' });   // happy-dom has no default computed position
+    animate(el, { left: 100 });
+    expect(has('"left" has no effect on div because it is position: static', 'x / y')).toBe(true);
+    const abs = box({ position: 'absolute' });
+    warnings.length = 0;
+    animate(abs, { left: 100 });
+    expect(warnings).toEqual([]);
+  });
+
   it('checks enumerated options', () => {
     const el = box();
     animate(el, { color: 'red' }, { colorSpace: 'okl' as any });

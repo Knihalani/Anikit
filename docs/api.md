@@ -603,6 +603,7 @@ What gets a warning:
 | Option typo among the properties | `animate(el, { x: 1, delya: 0.2 })` | did you mean the option `delay` |
 | Milliseconds instead of seconds | `duration: 600`, `delay: 250`, `stagger(50)` | did you mean `0.6` |
 | Wrong unit or range | `rotate: '45px'`, `x: '10deg'`, `scale: '2px'`, `opacity: 50` | the expected unit; `0.5` |
+| `left`/`top` on a `position: static` element | `animate(el, { left: 100 })` | it has no effect; use `x`/`y` |
 | Not a number for a transform | `x: '10px 20px'` | it was skipped; use `transform` |
 | Unknown property | `animate(el, { colour: 'red' })` | did you mean `color` |
 | Empty targets | `animate(null, …)`, `animate('hero', …)` with `.hero` on the page, an empty list | a `querySelector` returned null; did you mean `.hero`; the document is still loading |

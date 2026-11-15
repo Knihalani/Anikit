@@ -232,6 +232,8 @@ function checkValues(prop: string, kind: Kind, raw: unknown[], target: unknown):
       else if (canonical === '' && unit !== '%') warn(`"${prop}" is a unitless factor (1 = 100%), but got "${v}". Use e.g. ${prop}: 1.5.`);
       else if ((canonical === 'px' || canonical === '%') && angleUnit) warn(`"${prop}" is a length, but got "${v}". Use a number (px) or a length unit; for rotation use "rotate".`);
     }
+  } else if ((prop === 'left' || prop === 'top' || prop === 'right' || prop === 'bottom') && isElement(target) && computed(target, 'position') === 'static') {
+    warn(`"${prop}" has no effect on ${describe(target)} because it is position: static. Animate x / y (transforms, faster) instead, or give it position: relative.`);
   } else if (prop === 'opacity' && isElement(target)) {
     const big = raw.find((v) => typeof v === 'number' && v > 1);
     if (big !== undefined) warn(`opacity goes from 0 to 1, but got ${big} on ${describe(target)}. Did you mean ${+((big as number) / 100).toFixed(3)}?`);
