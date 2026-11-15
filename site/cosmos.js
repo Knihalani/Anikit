@@ -261,7 +261,8 @@ export function cosmos({ reduced = false } = {}) {
     stats.frames++;
     if (now - stats.last > 500) {
       stats.ms = stats.acc / stats.frames;
-      stats.fps = Math.round((stats.frames * 1000) / (now - stats.last));
+      // Never report more frames than the measured cost could sustain.
+      stats.fps = Math.min(Math.round((stats.frames * 1000) / (now - stats.last)), stats.ms > 0 ? Math.floor(1000 / stats.ms) : 999);
       stats.acc = stats.frames = 0;
       stats.last = now;
     }

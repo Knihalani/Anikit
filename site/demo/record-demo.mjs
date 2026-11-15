@@ -284,6 +284,8 @@ async function setupPage(page) {
 // the slices join seamlessly (ffmpeg concat, no re-encode).
 // ---------------------------------------------------------------------------
 const frames = Math.round(END * FPS);
+// Parallel workers render faster but share CPU, which inflates the HUD's
+// measured frame cost; use WORKERS=1 for the final cut.
 const WORKERS = +(process.env.WORKERS || 2);
 const SEG = process.env.SEG; // "from:to:file" when running as a worker
 
@@ -357,9 +359,11 @@ if (!PREVIEW) {
   const fades = [];
   if (first === 0) fades.push('fade=t=in:st=0:d=0.4');
   if (last === frames) fades.push(`fade=t=out:st=${((last - first) / FPS - 0.8).toFixed(3)}:d=0.8`);
-  ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
+  // The encoder runs at the lowest CPU priority so the page's own frame-cost
+  // measurement (shown in the HUD) isn't inflated by the recorder.
+  ff = spawn('nice', ['-n', '19', 'ffmpeg', '-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
     ...(fades.length ? ['-vf', fades.join(',')] : []),
-    '-c:v', 'libx264', '-preset', 'medium', '-crf', '17', '-pix_fmt', 'yuv420p', '-r', String(FPS), '-movflags', '+faststart', target], { stdio: ['pipe', 'inherit', 'inherit'] });
+    '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-pix_fmt', 'yuv420p', '-r', String(FPS), '-movflags', '+faststart', target], { stdio: ['pipe', 'inherit', 'inherit'] });
 } else mkdirSync(OUT, { recursive: true });
 const write = (buf) => new Promise((res) => (ff.stdin.write(buf) ? res() : ff.stdin.once('drain', res)));
 
