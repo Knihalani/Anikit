@@ -522,7 +522,7 @@ export class Animation extends Playable {
     const w = core();
     const targets = (this.targets = toTargets(targetsIn));
     const n = targets.length;
-    if (!ctx.quiet) checkTargets('animate()', targetsIn, n);
+    if (!ctx.quiet) checkTargets(ctx.child ? 'timeline.add()' : ctx.set ? 'set()' : 'animate()', targetsIn, n);
     const claims = !ctx.child && o.overwrite !== false;
     const cs = COLOR_SPACES[o.colorSpace ?? 'oklab'] ?? 2;
     const reduce = prefersReduced();
