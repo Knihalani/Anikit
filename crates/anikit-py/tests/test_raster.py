@@ -330,3 +330,14 @@ def test_shatter_intact_at_zero_and_renders():
     r3 = raster.Renderer3D(W, H)
     assert lit(r3.render(cam(), [sh.item(material={"metal": 0.5})])).any()
     assert sh.item().cull is False and sh.mesh is raster.shatter(raster.sphere(3, 3)).mesh
+
+
+def test_example_script_writes_pngs(tmp_path, monkeypatch):
+    import runpy
+    import sys
+
+    script = pathlib.Path(__file__).parent.parent / "examples" / "knot_mirror.py"
+    monkeypatch.setattr(sys, "argv", [str(script), str(tmp_path), "1"])
+    runpy.run_path(str(script), run_name="__main__")
+    png = (tmp_path / "knot_000.png").read_bytes()
+    assert png.startswith(b"\x89PNG\r\n\x1a\n") and png.endswith(b"IEND\xaeB`\x82")
