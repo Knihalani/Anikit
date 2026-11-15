@@ -69,6 +69,13 @@ const a = animate('.box', { x: 200 }, { duration: 1, autoplay: false });
 a.progress = 0.5;            // scrub by hand
 await a.play();              // resolves when finished
 const css = a.toCSS({ name: 'slide', selector: '.box' });   // see "Bake to CSS"
+
+// The classes, for types and instanceof checks:
+const all: Array<Animation | Timeline | Batch> = [a, timeline(), batch(10, { x: [0, 1] })];
+all.forEach((c) => c.pause());
+const s: PhysicsAnimation = spring('.dot', { x: 100 });
+const c: CompositorAnimation = compositor('.toast', { opacity: [0, 1] });
+await Promise.all([s, c]);   // both are awaitable too
 ```
 
 `spring()`, `inertia()` and `physics()` return a `PhysicsAnimation` (`velocity`, `finished`, `then`, `kill()`/`stop()`, `revert()`); `compositor()` returns a `CompositorAnimation` (`play`, `pause`, `reverse`, `seek`, `speed`, `progress`, `kill`, `finished`).
@@ -88,6 +95,12 @@ Accepted everywhere an `ease` is:
 
 Helpers: `ease(e, t)`, `easing(e) → (t) => number`, and `cssEasing(e)` (native CSS string; springs become `linear()`).
 
+```ts
+ease('outCubic', 0.5);                       // 0.875
+const bounce = easing('spring(bounce: 0.3)');   // (t) => number, for your own maths
+el.style.transition = `transform 0.6s ${cssEasing('spring(bounce: 0.3)')}`;   // 'linear(…)' ('ease-out' where linear() is unsupported)
+```
+
 Unknown names throw with a suggestion (`'outCubik'` → "Did you mean "outCubic"?"). In TypeScript, `EasingName` autocompletes every named easing while any string is still accepted.
 
 ---
@@ -103,7 +116,11 @@ animate('.bar', { y: [40, 0] }, { delay: stagger(0.05, { start: 0.3, ease: 'inQu
 animate('.dot', { x: stagger(20) });                                                                // 0, 20, 40 … px
 ```
 
-Options: `from` (`'first'` default, `'last'`, `'center'`, `'edges'`, `'random'` or an index), `grid: [columns, rows]` with optional `axis: 'x' | 'y'`, `total` (spread over this many seconds instead of `each` per step), `start` (added to every value), `ease` (across the distribution), `seed` (for `'random'`). `staggerValues(count, each, options)` returns the numbers directly.
+Options: `from` (`'first'` default, `'last'`, `'center'`, `'edges'`, `'random'` or an index), `grid: [columns, rows]` with optional `axis: 'x' | 'y'`, `total` (spread over this many seconds instead of `each` per step), `start` (added to every value), `ease` (across the distribution), `seed` (for `'random'`). `staggerValues(count, each, options)` returns the numbers directly:
+
+```ts
+staggerValues(4, 0.1, { from: 'center' });    // [0.15, 0.05, 0.05, 0.15]
+```
 
 ---
 
@@ -172,6 +189,24 @@ const { x, y, angle } = new MotionPath('#track').at(0.25);
 animate('#line', { draw: [0, 1] }, { duration: 1.2 });            // stroke draws in
 ```
 
+Path utilities (all return path data strings or numbers; a source is path data, an SVG element or a selector):
+
+```ts
+pathLength('M0,0 L100,0');                       // 100
+pathBounds(circle(50, 50, 40));                  // [10, 10, 90, 90]
+pathArea(rect(0, 0, 10, 20));                    // 200
+pathData('#logo path');                          // the d of an element (shapes are converted)
+shapeToPath(document.querySelector('circle')!);  // <circle>/<rect>/<ellipse>/<line>/<poly*> → path data
+normalizePath('M0 0 H10 V10 Z');                 // absolute cubic segments: 'M0 0C3.333 0 …Z'
+ellipse(50, 50, 40, 20); polygon([[0, 0], [10, 0], [5, 8]]);
+trimPath('M0,0 L100,0', 0.25, 0.75);            // the middle half: 'M25 0C41.667 0 58.333 0 75 0'
+pathThrough([[0, 0], [50, 40], [100, 0]], { curviness: 1 });   // smooth curve through points
+simplifyPath(d, 1);                              // fewer points within 1 unit
+flattenPath('M0,0 L10,0 L10,10');                // [[[0, 0], [10, 0], [10, 10]]] polylines per subpath
+const plan = morphPlan(circle(0, 0, 10), rect(0, 0, 10, 10));      // { template, from, to }
+const seq = morphSequence([circle(0, 0, 10), rect(0, 0, 10, 10), star(0, 0, 5, 10)]);   // { template, frames }
+```
+
 ---
 
 ## Text, layout, compositor, batches
@@ -212,6 +247,7 @@ const b = batch(50_000, { x: (i) => [0, i % 500], y: [0, 300], a: [0, 1] },
 ```ts
 const off = engine.onFrame((time, dt) => { ctx.clearRect(0, 0, w, h); drawParticles(dt / 1000); });   // dt in ms
 off();
+flush();   // apply pending values right now (e.g. before measuring layout)
 ```
 
 `flush()` applies pending results synchronously. `ready` is a promise for the core; `init(urlOrBytes?)` loads it from a URL or bytes instead of the embedded copy (`anikit/lean` does this from `./anikit.wasm` automatically).
@@ -259,6 +295,14 @@ useLayoutEffect(() => {
 - `quickSetter(el, 'x')` returns a fast setter; `quickTo(el, 'x', opts)` returns a function that re‑targets a tween on each call.
 - `delayedCall(seconds, fn)` runs `fn` on engine time, so it respects the global speed and pausing.
 
+```ts
+const call = delayedCall(1.5, () => effects.pulse('.badge'));   // a Timeline: call.kill() cancels it
+const setX = quickSetter('.cursor', 'x');                       // fastest way to write one property often
+addEventListener('pointermove', (e) => setX(e.clientX));
+const ctx: Context = context(() => {}, document.querySelector('#app'));
+ctx.add(() => animate('.late', { opacity: [0, 1] }));          // collect more later; ctx.revert() undoes all
+```
+
 ## Timeline extras
 
 `tl.tweenTo(labelOrTime, opts)` and `tl.tweenFromTo(a, b, opts)` animate the playhead. There's also `tl.remove(child)`, `tl.clear()`, `tl.getChildren()`, `tl.currentLabel`, `tl.nextLabel()` and `tl.previousLabel()`.
@@ -302,6 +346,8 @@ effects.slideIn('.menu li', { from: 'left', stagger: 0.04 });
 effects.countUp('#total', { to: 12500, format: { style: 'currency', currency: 'USD' } });
 effects.typewriter('#hello', { text: 'Hello, world' });
 registerEffect('glow', (t, o) => animate(t, { filter: ['drop-shadow(0 0 0 gold)', `drop-shadow(0 0 ${o.size}px gold)`] }, o), { size: 12 });
+effect('glow', '.star', { size: 20 });   // by name
+effectNames();                           // ['fadeIn', 'fadeOut', …, 'glow']
 effects.glow('.star');
 ```
 
@@ -320,6 +366,11 @@ scrollTrigger({
 scrollTriggerBatch('.card', { start: 'top 85%', animation: (el, i) => animate(el, { y: [40, 0] }, { autoplay: false }) });
 scrollTo('#pricing', { duration: 1, offset: 80 });
 const smooth = smoothScroll({ smooth: 0.6 });
+const st: ScrollTrigger = scrollTrigger({ trigger: '.chart', start: 'top 70%', onEnter: () => effects.drawSVG('.chart path') });
+st.progress; st.isActive;
+refreshScrollTriggers();                                  // after you change the layout yourself
+const swipe = observer({ type: 'wheel,touch', tolerance: 20, onDown: () => next(), onUp: () => prev() });
+swipe.kill();
 ```
 
 One passive listener per scroller drives every trigger, and layout is measured only on refresh (load and resize). Call `refreshScrollTriggers()` after you change the layout yourself. Pinning uses `position: fixed` for the page and a counter‑translate inside scrolling elements.
@@ -337,6 +388,8 @@ const [d] = draggable('.card', { bounds: '.board', inertia: true, snap: { x: 100
 draggable('.knob', { type: 'rotate', bounds: { minRotation: -135, maxRotation: 135 }, onDrag: (d) => setVolume(d.rotation) });
 hover('.btn', (el) => { animate(el, { scale: 1.05 }); return () => animate(el, { scale: 1 }); });
 press('.btn', (el) => { animate(el, { scale: 0.95 }); return () => animate(el, { scale: 1 }); });
+const [knob]: Draggable[] = draggable('.knob', { type: 'rotate' });
+knob.setPosition(0, 0, 45);
 ```
 
 `draggable()` returns one `Draggable` per element. It exposes `x`, `y`, `rotation`, `deltaX`/`deltaY`, `isDragging`, `isPressed`, `enabled`, `enable()`, `disable()`, `setPosition(x, y, rotation?)`, `kill()` and `revert()`. Options: `type` (`'x,y'`, `'x'`, `'y'`, `'rotate'`), `bounds` (element, selector or `{ minX, maxX, minY, maxY, minRotation, maxRotation }`), `inertia`, `snap` (step, list or function; per axis with `{ x, y, rotation }`), `edgeResistance` (0.35), `lockAxis`, `handle`, `minimumMovement` (3 px), `cursor`, and callbacks `onPress`, `onDragStart`, `onDrag`, `onDragEnd`, `onRelease`, `onThrowUpdate`, `onThrowComplete` (each receives the `Draggable`).
@@ -346,6 +399,11 @@ press('.btn', (el) => { animate(el, { scale: 0.95 }); return () => animate(el, {
 ## Dev tools
 
 `inspector(animationOrTimeline)` opens a floating panel to play, pause, scrub, restart, loop, change speed and jump to labels. Space toggles playback.
+
+```ts
+const panel = inspector(timeline().add('.a', { x: 100 }).label('end'), { title: 'Intro', paused: true });
+panel.destroy();
+```
 
 ## More utilities
 
@@ -357,6 +415,44 @@ press('.btn', (el) => { animate(el, { scale: 0.95 }); return () => animate(el, {
 | `trimPath(d, 0.2, 0.8)`, `pathThrough(points, { curviness, closed })`, `simplifyPath(d, tolerance, smooth)`, `pathArea(d)`, `flattenPath(d, tol)` | Path operations. |
 | `MotionPath.closest(x, y)`, `.atLength(px)`, `.points(n)` | Path queries. |
 | `VelocityTracker`, `shuffle`, `pipe`, `splitColor`, `getUnit`, `roundTo`, `normalize`, `toArray` | Helpers. |
+
+```ts
+// Numbers
+clamp(150, 0, 100);                 // 100
+lerp(0, 10, 0.25);                  // 2.5
+mapRange(5, 0, 10, 100, 200);       // 150
+normalize(25, 0, 200);              // 0.125
+wrap(370, 0, 360);                  // 10
+snap(37, 10); snap(37, [0, 25, 50]);   // 40, 25
+roundTo(3.14159, 2);                // 3.14
+random(0, 10); random(0, 10, 42);   // seeded when given a seed
+shuffle([1, 2, 3, 4], 1);           // seeded shuffle (copy)
+pipe((v: number) => v * 2, (v: number) => clamp(v, 0, 10))(7);   // 10
+
+// Colours and units
+mixColor('#ff0000', '#0000ff', 0.5);          // 'rgb(140,83,162)' (OKLab); pass 'srgb' for 'rgb(128,0,128)'
+parseColor('rebeccapurple');                  // [102, 51, 153, 1]
+splitColor('#ff000080');                      // [255, 0, 0, 0.502]
+getUnit('12rem');                             // 'rem'
+interpolate([0, 100, 200], [0, 1, 0])(150);   // 0.5
+interpolate([0, 100], ['#000', '#fff'])(50);  // 'rgb(99,99,99)'
+interpolate([0, 1], ['0px', '100px'], { ease: 'inQuad', clamp: true })(0.5);
+
+// Targets and distribution
+toArray('.card');                                                   // resolved targets, as an array
+animate('.bar', { scaleY: distribute({ base: 0.5, amount: 1, from: 'center' }) });   // spread values, not delays
+
+// Noise (seeded simplex, −1…1) and velocity
+const n2 = noise2(x * 0.01, y * 0.01);
+const n3 = noise3(x * 0.01, y * 0.01, t, 7);
+const f = fbm(x * 0.01, y * 0.01, undefined, { octaves: 4 });
+const many: Float64Array = noiseMany([0.1, 0.2, 0.3, 1.1, 1.2, 1.3]);   // one value per xyz triple
+const drift = wander({ speed: 1, amplitude: 20 });                       // drift(t) → smooth −20…20
+animate('.leaf', { x: (_el: Element, i: number) => drift(i) });
+const vt = new VelocityTracker();             // window: 100 ms
+addEventListener('pointermove', (e) => vt.add(e.clientX));   // timestamps default to performance.now() (ms)
+vt.velocity;                                  // units per second
+```
 
 ---
 
@@ -374,6 +470,7 @@ w.cloth(200, 60, 30, 20, 12, { pinTop: 3, tear: 2.5 });
 w.pointer({ mode: 'repel', radius: 140 });  // or 'attract'
 w.dragging();                               // grab and throw bodies
 w.draw(ctx, { color: (i) => palette[i % 4], links: '#fff6' });
+const typed: World = w;                     // the class, for types
 ```
 
 | Member | Purpose |
@@ -447,6 +544,11 @@ const rec = await record('#hero', { duration: 2, fps: 30 });     // frame-exact 
 rec.download('hero.gif');
 await record(canvas, { duration: 3, format: 'webm' });           // or 'frames' (PNG blobs)
 await record('#stage', { animation: tl });                       // seek a timeline per frame
+const pixels: HTMLCanvasElement = await rasterize('#card', { scale: 2, background: '#fff' });
+const gif = new GifWriter(320, 240);                              // incremental, also in Node
+gif.add(new Uint8Array(320 * 240 * 4), 0.1);                      // RGBA pixels, seconds on screen
+const bytes: Uint8Array = gif.finish();
+const same = encodeGif([new Uint8Array(320 * 240 * 4)], 320, 240, 10);   // frames, width, height, fps
 ```
 
 `rasterize(target, { scale, background }) → Promise<HTMLCanvasElement>` is the step both use: it draws a canvas, an element or the page into a canvas. `record()` resolves to `{ blob, url, frames, width, height, images?, download(name) }`; options are `duration` (s), `fps`, `format: 'gif' | 'webm' | 'frames'`, `animation` (seek this per frame instead of running the engine), `scale`, `background`, `loop`, `realtime` and `onProgress`.
@@ -483,6 +585,8 @@ engine.inspect();                   // [{ id, state, time, duration, progress, t
 testing.finishAll();                // run until idle; returns the seconds it took
 expect(warnings).toEqual([]);
 testing.reset();                    // between tests: forget animations and shown warnings
+setWarnings(false);                 // silence (they are off with NODE_ENV=production)
+onWarning((msg) => myLogger.warn(msg));   // route them; onWarning(null) restores console.warn
 ```
 
 - `testing.advance(seconds, fps = 60)` ticks in frames of `1/fps`; `testing.finishAll(maxSeconds = 60)` runs until nothing is active; `testing.inspect()` is `engine.inspect()`.

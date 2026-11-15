@@ -1,30 +1,33 @@
 // Keep the docs honest:
-//  1. every export of src/index.ts is mentioned (in backticks) in docs/api.md;
-//  2. every ```ts block of docs/recipes.md and AGENTS.md type-checks against
-//     the real API (together with the tests), via tsconfig.test.json.
+//  1. every value export of src/index.ts is used in a type-checked example
+//     (docs/api.md, docs/recipes.md or AGENTS.md), and every type export is
+//     mentioned in docs/api.md;
+//  2. those examples type-check against the real API, together with the
+//     tests (tsconfig.test.json). api.md blocks are fragments: they get a
+//     generated prelude (imports + placeholder declarations; see snippets.mjs).
 // Run: node scripts/check-docs.mjs   (also part of `npm run typecheck`)
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { pkg, root, writeSnippets } from './snippets.mjs';
+import { pkg, root, writeSnippets, checkedSnippets, exportNames, API_DOC } from './snippets.mjs';
 
-export function exportNames() {
-  const src = readFileSync(join(pkg, 'src/index.ts'), 'utf8');
-  const names = [];
-  for (const m of src.matchAll(/export\s+(?:type\s+)?\{([^}]+)\}/g)) {
-    for (const part of m[1].split(',')) {
-      const name = part.trim().split(/\s+as\s+/).pop();
-      if (name) names.push(name);
-    }
-  }
-  return names;
-}
-
+/** Exports without an example (values) or a mention in api.md (types). */
 export function undocumentedExports() {
-  const api = readFileSync(join(root, 'docs/api.md'), 'utf8');
+  const api = readFileSync(API_DOC, 'utf8');
   const mentioned = new Set();
   for (const m of api.matchAll(/`([^`\n]+)`/g)) for (const id of m[1].matchAll(/[A-Za-z_$][\w$]*/g)) mentioned.add(id[0]);
-  return exportNames().filter((n) => !mentioned.has(n));
+  // Protected sections (3D, particles, video) are documented elsewhere; their
+  // exports only need a mention.
+  const used = new Set();
+  for (const s of checkedSnippets()) for (const id of s.code.match(/[A-Za-z_$][\w$]*/g) ?? []) used.add(id);
+  const external = new Set([
+    'scene3d', 'Scene3D', 'tilt', 'parseTransform', 'toMatrix3d', 'mixTransforms', 'pointCloud', 'PointCloud', 'textPoints', 'glow', 'Glow',
+    'emitter', 'Emitter', 'mesh', 'Mesh3D', 'instances', 'Instances', 'renderer3d', 'Renderer3D', 'composition', 'Composition',
+    'FrameBuffer', 'typeFx', 'exportWebM', 'muxWebM',
+  ]);
+  const values = exportNames('value').filter((n) => !used.has(n) && !(external.has(n) && mentioned.has(n)));
+  const types = exportNames('type').filter((n) => !mentioned.has(n));
+  return [...values.map((n) => `${n} (no type-checked example)`), ...types.map((n) => `${n} (type not mentioned)`)];
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
@@ -32,15 +35,16 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const missing = undocumentedExports();
   if (missing.length) {
     ok = false;
-    console.error(`docs/api.md does not mention these exports: ${missing.join(', ')}`);
+    console.error(`docs: ${missing.length} exports need docs:\n  ${missing.join('\n  ')}`);
   }
   const files = writeSnippets();
   try {
     execFileSync('npx', ['tsc', '-p', 'tsconfig.test.json'], { cwd: pkg, stdio: 'inherit' });
-    console.log(`check-docs: ${exportNames().length} exports documented, ${files.length} snippets + tests type-check`);
+    console.log(`check-docs: ${exportNames().length} exports documented, ${files.length} doc examples + tests type-check`);
   } catch {
     ok = false;
-    console.error('check-docs: type errors above (snippet files are named <doc>-<line>.ts)');
+    console.error('check-docs: type errors above (test/.snippets/<doc>-<line>.ts; line N of the file is line <line>+N-1 of the doc)');
   }
+  void root;
   process.exit(ok ? 0 : 1);
 }
