@@ -225,16 +225,18 @@ impl PostFx {
         let l = &self.luma;
         let k = strength.clamp(0.0, 1.0);
         for y in 1..h - 1 {
+            // Row slices: the neighbourhood reads below need no bounds checks.
+            let (up, row, dn) = (&l[(y - 1) * w..y * w], &l[y * w..(y + 1) * w], &l[(y + 1) * w..(y + 2) * w]);
             for x in 1..w - 1 {
-                let i = y * w + x;
-                let (c, n, s, e, wv) = (l[i] as i32, l[i - w] as i32, l[i + w] as i32, l[i + 1] as i32, l[i - 1] as i32);
+                let (c, n, s, e, wv) = (row[x] as i32, up[x] as i32, dn[x] as i32, row[x + 1] as i32, row[x - 1] as i32);
                 let hi = c.max(n).max(s).max(e).max(wv);
                 let lo = c.min(n).min(s).min(e).min(wv);
                 let range = hi - lo;
                 if range < 16.max(hi >> 3) {
                     continue;
                 }
-                let (nw, ne, sw, se) = (l[i - w - 1] as i32, l[i - w + 1] as i32, l[i + w - 1] as i32, l[i + w + 1] as i32);
+                let i = y * w + x;
+                let (nw, ne, sw, se) = (up[x - 1] as i32, up[x + 1] as i32, dn[x - 1] as i32, dn[x + 1] as i32);
                 // Sub-pixel blend amount from the centre vs. its neighbourhood.
                 let avg = (2 * (n + s + e + wv) + nw + ne + sw + se) as f32 / 12.0;
                 let sub = ((avg - c as f32).abs() / range as f32).clamp(0.0, 1.0);
@@ -253,10 +255,11 @@ impl PostFx {
                 } else {
                     i + 1
                 };
+                let ai = (amt * 256.0) as i32;
                 for ch in 0..3 {
-                    let a = self.copy[i * 4 + ch] as f32;
-                    let b = self.copy[j * 4 + ch] as f32;
-                    rgba[i * 4 + ch] = (a + (b - a) * amt + 0.5) as u8;
+                    let a = self.copy[i * 4 + ch] as i32;
+                    let b = self.copy[j * 4 + ch] as i32;
+                    rgba[i * 4 + ch] = (a + (((b - a) * ai + 128) >> 8)) as u8;
                 }
             }
         }
@@ -420,9 +423,9 @@ impl PostFx {
     /// (`self.rays` in, rays out): 24 decaying taps per pixel, cheap at ¼ res.
     #[allow(clippy::needless_range_loop)]
     fn god_rays(&mut self, sw: usize, sh: usize, p: &Post) {
-        const N: usize = 24;
+        const N: usize = 14;
         let (cx, cy) = (p.rays_center[0] * sw as f32, p.rays_center[1] * sh as f32);
-        let k = p.rays_length.clamp(0.0, 1.0) / N as f32;
+        let k = p.rays_length.clamp(0.0, 1.0) / 24.0; // taps are spread over 24 steps of the ray
         self.tmp.resize(sw * sh * 3, 0.0);
         let (wi, hi) = (sw as isize - 1, sh as isize - 1);
         for y in 0..sh {
@@ -431,15 +434,21 @@ impl PostFx {
                 let mut acc = [0.0f32; 3];
                 let mut wgt = 1.0f32;
                 let mut norm = 0.0f32;
+                // Jittered start (per pixel hash) hides the coarser tap spacing.
+                let mut hs = (x as u32).wrapping_mul(0x9E37_79B1) ^ (y as u32).wrapping_mul(0x85EB_CA77);
+                hs ^= hs >> 15;
+                hs = hs.wrapping_mul(0x2C1B_3C6D);
+                let jit = (hs >> 8) as f32 * (1.0 / 16_777_216.0);
                 for j in 0..N {
-                    let sx = ((x as f32 + dx * j as f32 + 0.5) as isize).clamp(0, wi) as usize;
-                    let sy = ((y as f32 + dy * j as f32 + 0.5) as isize).clamp(0, hi) as usize;
+                    let t = (j as f32 + jit) * (24.0 / N as f32);
+                    let sx = (x as f32 + dx * t + 0.5).clamp(0.0, wi as f32) as usize;
+                    let sy = (y as f32 + dy * t + 0.5).clamp(0.0, hi as f32) as usize;
                     let o = (sy * sw + sx) * 3;
                     for c in 0..3 {
                         acc[c] += self.rays[o + c] * wgt;
                     }
                     norm += wgt;
-                    wgt *= 0.96;
+                    wgt *= 0.93;
                 }
                 let o = (y * sw + x) * 3;
                 for c in 0..3 {
