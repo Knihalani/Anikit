@@ -332,6 +332,11 @@ export interface LightOptions {
   strips?: string | V3;
   /** Ground fog in `fogColor`: full below `bottom`, none above `top` (world y), reaching full strength over `range` units of distance. */
   groundFog?: { bottom: number; top: number; range: number };
+  /**
+   * Point lights (up to 8): coloured pools of light from neon signs, trails, sparks.
+   * `radius` sets the falloff (r² / (r² + d²), faded out by 4·radius), `intensity` its strength.
+   */
+  lights?: { position: V3; color?: string | V3; radius?: number; intensity?: number }[];
 }
 /**
  * Light points drawn into the 3D frame: stars, dust, sparks, data. They add
@@ -468,13 +473,17 @@ export class Renderer3D {
         m.pulse ?? 0, m.pulseCount ?? 1, m.pulsePhase ?? 0, ...(m.pulseDir ?? [0, 0, 0]), ...rgb(o.strips, [0, 0, 0]),
         m.texture ? m.texture.id + 1 : 0, m.texture ? (m.textureMode === 'emissive' ? 2 : 1) : 0, ...(m.textureRepeat ?? [1, 1]), m.textureGain ?? 1, gloss,
         o.groundFog?.bottom ?? 0, o.groundFog?.top ?? 0, o.groundFog?.range ?? 0,
-        ({ grid: 0, hex: 1, dots: 2, circuit: 3 } as const)[m.pattern ?? 'grid'] ?? 0];
+        ({ grid: 0, hex: 1, dots: 2, circuit: 3 } as const)[m.pattern ?? 'grid'] ?? 0,
+        ...pointLights];
       const at = f64Buf(vals.length); // may grow memory: reserve before touching F64
       F64.set(vals, at);
       const flags = (it.cull === false ? 0 : 1) | (it.blend === 'additive' ? 2 : 0) | extra;
       this.triangles += w.ak_raster_draw(this.id, it.mesh.id, inst.count, flags, vals.length);
     };
     const meshes = items.filter((it): it is DrawItem => !('points' in it));
+    const pls = (o.lights ?? []).slice(0, 8);
+    const pointLights: number[] = [pls.length];
+    for (const pl of pls) pointLights.push(...pl.position, ...rgb(pl.color), pl.radius ?? 500, pl.intensity ?? 1);
     if (o.shadows) {
       // Orthographic light camera looking along −key at the centre.
       const sh = o.shadows, e = sh.extent;

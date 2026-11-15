@@ -101,6 +101,11 @@ pub struct Lighting {
     /// Ground fog: full below `[0]`, none above `[1]` (world y), reaching full
     /// strength over `[2]` units of distance (0 = off). Uses `fog_color`.
     pub ground_fog: [f32; 3],
+    /// Point lights: position (3), colour (3), radius, intensity; the first
+    /// `point_count` are used (up to 8). Light falls off as r² / (r² + d²) and
+    /// fades out by 4·radius; they add diffuse and specular light.
+    pub point_lights: [[f32; 8]; 8],
+    pub point_count: u8,
 }
 
 impl Default for Lighting {
@@ -118,6 +123,8 @@ impl Default for Lighting {
             ground: [0.05, 0.05, 0.07],
             strips: [0.0; 3],
             ground_fog: [0.0, 0.0, 0.0],
+            point_lights: [[0.0; 8]; 8],
+            point_count: 0,
         }
     }
 }
@@ -517,6 +524,32 @@ impl Shade<'_> {
             (Some(tx), 1) => core::array::from_fn(|k| tx[k] * (dk * kk[k] + df * kf[k] + ka[k]) + sp * l.key_color[k] + rim * l.rim_color[k]),
             _ => core::array::from_fn(|k| ka[k] + dk * kk[k] + df * kf[k] + sp * l.key_color[k] + rim * l.rim_color[k]),
         };
+        if l.point_count > 0 {
+            // Local lights: diffuse (tinted by the base / texture) + Schlick specular.
+            let b = self.base;
+            for pl in &l.point_lights[..(l.point_count as usize).min(8)] {
+                let lv = [pl[0] - p[0], pl[1] - p[1], pl[2] - p[2]];
+                let d2 = dot3(&lv, &lv).maxf(1e-6);
+                let r2 = pl[6] * pl[6];
+                let win = (1.0 - d2 * (1.0 / (16.0 * r2))).clamp(0.0, 1.0);
+                let att = r2 / (d2 + r2) * win * win * pl[7];
+                let il = 1.0 / d2.sqrt();
+                let ld = [lv[0] * il, lv[1] * il, lv[2] * il];
+                let ndl = dot3(&n, &ld).maxf(0.0);
+                let hp = [ld[0] + vd[0], ld[1] + vd[1], ld[2] + vd[2]];
+                let xh = (dot3(&n, &hp) / dot3(&hp, &hp).sqrt().maxf(1e-9)).maxf(0.0);
+                let spec = V4::select(ndl.gtf(0.0), xh / (ss - ss * xh + xh) * m.specular, V4::splat(0.0));
+                let dif = ndl * att * m.diffuse;
+                let sat = spec * att;
+                for k in 0..3 {
+                    let alb = match (texel, m.tex_mode) {
+                        (Some(tx), 1) => tx[k] * b[k],
+                        _ => V4::splat(b[k]),
+                    };
+                    c[k] = c[k] + (alb * dif + sat) * pl[3 + k];
+                }
+            }
+        }
         if let (Some(tx), 2) = (texel, m.tex_mode) {
             // Emissive: added unlit (screens, signs), scaled by alpha.
             for k in 0..3 {
@@ -2253,5 +2286,24 @@ mod tests {
         let dark = r.color.iter().filter(|c| **c & 255 > 0 && **c & 255 < lit / 3).count();
         // The block's shadow is a dark patch on the lit floor (the block itself is drawn from below as floor only).
         assert!(dark > 20 && dark < 64 * 64 / 4, "shadowed pixels: {dark} (lit {lit})");
+    }
+
+    #[test]
+    fn point_lights_pool_light_locally() {
+        // A dark floor seen from above with one red light near one side.
+        let m = mul(&perspective(60.0, 1.0, 0.5, 100.0), &look_at([0.0, 8.0, 0.01], [0.0; 3], [0.0, 1.0, 0.0]));
+        let vp: M4 = core::array::from_fn(|i| m[i] as f32);
+        let floor = [6.0f32, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 6.0, 0.0, -1.0, 0.0, 1.0, 1.0, 1.0];
+        let mut light = Lighting { key: [0.0, -1.0, 0.0], fill: [0.0, -1.0, 0.0], ..Lighting::default() };
+        light.point_lights[0] = [2.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 3.0];
+        light.point_count = 1;
+        let mat = Material { ambient: 0.0, diffuse: 1.0, specular: 0.0, rim: 0.0, ..Material::default() };
+        let mut r = Raster::new(64, 64);
+        r.clear(0, 255);
+        r.draw(&plane(1, 1), &floor, &vp, [0.0, 8.0, 0.0], &mat, &light, true);
+        let red = r.color.iter().filter(|c| **c & 255 > 60).count();
+        let green = r.color.iter().filter(|c| (**c >> 8) & 255 > 20).count();
+        assert!(red > 20 && red < 64 * 64 / 2, "a pool, not a flood: {red}");
+        assert_eq!(green, 0, "the light is red");
     }
 }

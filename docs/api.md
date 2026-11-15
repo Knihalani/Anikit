@@ -844,6 +844,8 @@ Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [nea
 
 **Sky and atmosphere**: `render(…, { skybox: { sun: 2.5 }, key: [0, 0.12, -1], keyColor, sky, horizon, ground, fog, fogColor, groundFog: { bottom, top, range } })` paints every uncovered pixel with the environment gradient (meeting the fog at the horizon) and a sun disc + halo towards `key`; `groundFog` pools fog near the floor. Pair the sun with the grade's `rays` aimed at it.
 
+**Point lights**: `render(…, { lights: [{ position, color, radius, intensity }] })` — up to 8 coloured local lights (diffuse + specular, smooth falloff) for neon pools on glossy floors, glowing trails that light the walls, muzzle flashes.
+
 **Shadows**: `render(…, { key, shadows: { extent, center, size, strength, bias } })` renders the opaque items from the key light into a shadow map (orthographic, covering `extent` around `center`) and dims the key light where it's blocked (2×2 PCF). `castShadow: false` opts an item out.
 
 **Depth of field**: `render(…, { dof: { focus, aperture, max } })` blurs by distance from the focal plane (thin lens; `aperture` = blur in px at infinity). Animate `focus` for rack-focus shots.

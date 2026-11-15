@@ -1964,12 +1964,24 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
         tex_gain: b[77],
         pattern: if nf > 82 { s.f64_buf[82] as u8 } else { 0 },
     };
-    let light = Lighting { key: v3(24), key_color: v3(27), fill: v3(30), fill_color: v3(33), rim_color: v3(36), fog: [b[39], if b[40] > 0.0 { b[40] } else { f32::INFINITY }], fog_color: v3(41), sky: v3(48), horizon: v3(51), ground: v3(54), strips: v3(70), ground_fog: [0.0; 3] };
+    let light = Lighting { key: v3(24), key_color: v3(27), fill: v3(30), fill_color: v3(33), rim_color: v3(36), fog: [b[39], if b[40] > 0.0 { b[40] } else { f32::INFINITY }], fog_color: v3(41), sky: v3(48), horizon: v3(51), ground: v3(54), strips: v3(70), ground_fog: [0.0; 3], ..Lighting::default() };
     let Some(Some(m)) = s.meshes.get(mesh as usize) else { return 0 };
     let tex = (b[73] as usize).checked_sub(1).and_then(|t| s.textures.get(t)).and_then(|t| t.as_ref());
     let gloss = if nf > 78 { s.f64_buf[78] as f32 } else { 0.5 };
     let ground_fog = if nf > 81 { [s.f64_buf[79] as f32, s.f64_buf[80] as f32, s.f64_buf[81] as f32] } else { [0.0; 3] };
-    let light = Lighting { ground_fog, ..light };
+    // [83] point light count, then 8 floats per light (position, colour, radius, intensity).
+    let mut point_lights = [[0.0f32; 8]; 8];
+    let mut point_count = 0u8;
+    if nf > 83 {
+        let n = (s.f64_buf[83] as usize).min(8).min((nf - 84) / 8);
+        for (i, pl) in point_lights.iter_mut().enumerate().take(n) {
+            for (k, v) in pl.iter_mut().enumerate() {
+                *v = s.f64_buf[84 + i * 8 + k] as f32;
+            }
+        }
+        point_count = n as u8;
+    }
+    let light = Lighting { ground_fog, point_lights, point_count, ..light };
     let Some(Some((r, inst))) = s.rasters.get_mut(id as usize) else { return 0 };
     let k = (n as usize * INSTANCE_STRIDE).min(inst.len());
     // Flags: bit 0 back-face culling, bit 1 additive, bit 2 gloss (strength f64[78]), bit 3 flip winding.
