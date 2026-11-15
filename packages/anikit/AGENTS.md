@@ -91,7 +91,31 @@ const rec = await record('#stage', { duration: 2, fps: 30 }); rec.download('stag
 effects.fadeIn('.toast');
 effects.shake('#password');
 effects.countUp('#revenue', { to: 128400, format: { style: 'currency', currency: 'USD' } });
+
+// Layout and presence: list changes animate; removed items fade out in place, then go
+flip('.card', () => applyFilter(), { fade: true });
+const todos = presence('#todos', { enter: { opacity: [0, 1], y: [-8, 0] }, exit: { opacity: 0 } });
+todos.add(item); todos.remove(item);
+exit('.toast');                                            // animate out, then remove
+animate(panel, { height: open ? 'auto' : 0 });             // accordions
+
+// Shared element (thumbnail -> detail) with the View Transitions API, FLIP fallback
+viewTransition(() => showDetail(), { ease: 'spring(bounce: 0.2, duration: 0.5)', names: { hero: [thumb, () => detailImg()] } });
+
+// Scroll-linked on the compositor (native ScrollTimeline where available)
+scroll(compositor('.hero', { scale: [1, 1.2], opacity: [1, 0] }, { ease: 'linear' }), { target: hero, offset: ['start start', 'end start'] });
+
+// Text lines rising from behind a mask, re-split on resize
+splitText('.lede', { type: 'lines', mask: 'lines', autoSplit: true, onSplit: ({ lines }) => animate(lines, { yPercent: [100, 0] }, { delay: stagger(0.08) }) });
+
+// Pinch-zoom / rotate / pan with limits and momentum
+gesture('#photo', { minScale: 1, maxScale: 5 });
+
+// Follow an SVG path exactly as drawn (viewBox and page position mapped)
+animate('.dot', { path: { path: '#route', align: true, rotate: true } }, { duration: 4 });
 ```
+
+Accessibility: with `engine.reducedMotion = 'user'`, add `engine.reducedMotionMode = 'fade'` to keep fades and colour changes while movement (transforms, paths, layout) jumps to its end.
 
 ## Verifying your work
 
