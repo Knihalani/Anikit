@@ -1,0 +1,257 @@
+/**
+ * Low-level bridge to the WebAssembly core.
+ *
+ * The core exports plain C-ABI functions. Bulk data is exchanged through
+ * linear memory: we write inputs into a scratch region and read outputs
+ * (animated values, updated handles, events) straight from memory views —
+ * no copies, no glue code, no per-value calls.
+ */
+import { WASM_BASE64 } from './generated/wasm-bytes';
+
+export interface Exports {
+  memory: WebAssembly.Memory;
+  ak_f64_buf(n: number): number;
+  ak_u8_buf(n: number): number;
+  ak_str_ptr(): number;
+  ak_easing_parse(len: number): number;
+  ak_easing_table(n: number): number;
+  ak_easing_bezier(x1: number, y1: number, x2: number, y2: number): number;
+  ak_easing_spring(k: number, c: number, m: number, v: number): number;
+  ak_easing_spring_db(duration: number, bounce: number, v: number): number;
+  ak_ease(id: number, t: number): number;
+  ak_easing_duration(id: number): number;
+  ak_easing_css(id: number, tolerance: number): number;
+  ak_easing_sample(id: number, n: number): number;
+  ak_anim_create(len: number): number;
+  ak_group_create(
+    delay: number, duration: number, iterations: number, direction: number,
+    endDelay: number, easing: number, flags: number, auto: number,
+  ): number;
+  ak_callback_create(): number;
+  ak_group_add(g: number, c: number, start: number): number;
+  ak_group_remove(c: number): number;
+  ak_spring_create(ch: number, k: number, c: number, m: number): number;
+  ak_decay_create(
+    ch: number, power: number, tc: number, k: number, c: number, m: number,
+    hasTarget: number, hasMin: number, hasMax: number,
+  ): number;
+  ak_sim_target(h: number, ch: number): number;
+  ak_sim_position(h: number, ch: number, hasVel: number): number;
+  ak_sim_params(h: number, k: number, c: number, m: number): number;
+  ak_sim_rest(h: number, d: number, s: number): number;
+  ak_sim_velocity_ptr(h: number): number;
+  ak_play(h: number): number;
+  ak_pause(h: number): number;
+  ak_seek(h: number, t: number): number;
+  ak_set_progress(h: number, p: number): number;
+  ak_set_rate(h: number, r: number): number;
+  ak_reverse(h: number): number;
+  ak_restart(h: number): number;
+  ak_release(h: number): number;
+  ak_set_start(h: number, s: number): number;
+  ak_set_timing(
+    h: number, delay: number, duration: number, iterations: number, direction: number,
+    endDelay: number, easing: number,
+  ): number;
+  ak_track_enabled(h: number, track: number, enabled: number): number;
+  ak_clear(): void;
+  ak_values_ptr(h: number): number;
+  ak_values_len(h: number): number;
+  ak_alive(h: number): number;
+  ak_time(h: number): number;
+  ak_duration(h: number): number;
+  ak_progress(h: number): number;
+  ak_state(h: number): number;
+  ak_iteration(h: number): number;
+  ak_rate(h: number): number;
+  ak_tick(dt: number): number;
+  ak_updated_ptr(): number;
+  ak_updated_len(): number;
+  ak_events_ptr(): number;
+  ak_events_len(): number;
+  ak_clear_frame(): void;
+  ak_set_lag_smoothing(threshold: number, adjusted: number): void;
+  ak_set_global_rate(r: number): void;
+  ak_active_count(): number;
+  ak_node_count(): number;
+  ak_color_parse(len: number): number;
+  ak_color_mix(t: number, space: number): number;
+  ak_batch_create(len: number): number;
+  ak_batch_ptr(h: number): number;
+  ak_path_lut(len: number, samples: number): number;
+  ak_path_lut_free(id: number): void;
+  ak_path_lut_length(id: number): number;
+  ak_path_lut_sample(id: number, t: number): number;
+  ak_path_length(len: number): number;
+  ak_path_bounds(len: number): number;
+  ak_path_normalize(len: number, decimals: number): number;
+  ak_morph(lenA: number, lenB: number): number;
+  ak_stagger(
+    count: number, each: number, total: number, start: number, from: number, fromValue: number,
+    cols: number, rows: number, axis: number, ease: number,
+  ): number;
+}
+
+/** Easing id meaning "linear" (u32::MAX in the core). */
+export const LINEAR = 0xffffffff;
+export const EASING_ERROR = 0xfffffffe;
+
+export let W: Exports | null = null;
+let buffer: ArrayBuffer | null = null;
+export let F64: Float64Array = new Float64Array(0);
+export let U32: Uint32Array = new Uint32Array(0);
+export let U8: Uint8Array = new Uint8Array(0);
+
+/** Re-create memory views if linear memory grew (cheap identity check). */
+export function views(): void {
+  const b = W!.memory.buffer;
+  if (b !== buffer) {
+    buffer = b as ArrayBuffer;
+    F64 = new Float64Array(b);
+    U32 = new Uint32Array(b);
+    U8 = new Uint8Array(b);
+  }
+}
+
+function decodeBase64(s: string): Uint8Array {
+  if (typeof atob === 'function') {
+    const bin = atob(s);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  // Node without atob (very old) — Buffer exists there.
+  return new Uint8Array((globalThis as any).Buffer.from(s, 'base64'));
+}
+
+const queue: Array<() => void> = [];
+let readyResolve!: () => void;
+/** Resolves once the WebAssembly core is instantiated. */
+export const ready: Promise<void> = new Promise<void>((r) => (readyResolve = r));
+
+function install(instance: WebAssembly.Instance): void {
+  W = instance.exports as unknown as Exports;
+  views();
+  readyResolve();
+  // Flush operations requested before the core was ready, in order.
+  for (let i = 0; i < queue.length; i++) queue[i]();
+  queue.length = 0;
+}
+
+let started = false;
+function boot(): void {
+  if (started) return;
+  if (!WASM_BASE64) {
+    // Lean build: stream the module that ships next to this file.
+    void init(new URL('./anikit.wasm', import.meta.url));
+    return;
+  }
+  started = true;
+  const bytes = decodeBase64(WASM_BASE64);
+  try {
+    // Synchronous compile works in Node, workers, Firefox, Safari and in
+    // Chromium when allowed; it lets the very first animate() run immediately.
+    const mod = new WebAssembly.Module(bytes as BufferSource);
+    install(new WebAssembly.Instance(mod, {}));
+  } catch {
+    WebAssembly.instantiate(bytes as BufferSource, {}).then((r) => install(r.instance));
+  }
+}
+
+/**
+ * Load the core from a URL instead of the embedded copy (smaller JS payload,
+ * streaming compilation). Call before any other API.
+ */
+export async function init(source?: string | URL | Response | BufferSource): Promise<void> {
+  if (W) return;
+  if (source === undefined) {
+    boot();
+    return ready;
+  }
+  if (started) return ready;
+  started = true;
+  let result: WebAssembly.WebAssemblyInstantiatedSource;
+  if (typeof source === 'string' || source instanceof URL) {
+    const res = fetch(source);
+    result = WebAssembly.instantiateStreaming
+      ? await WebAssembly.instantiateStreaming(res, {})
+      : await WebAssembly.instantiate(await (await res).arrayBuffer(), {});
+  } else if (typeof Response !== 'undefined' && source instanceof Response) {
+    result = await WebAssembly.instantiate(await source.arrayBuffer(), {});
+  } else {
+    result = await WebAssembly.instantiate(source as BufferSource, {});
+  }
+  install(result.instance);
+}
+
+/** Run `fn` now if the core is ready, otherwise as soon as it is. */
+export function whenReady(fn: () => void): void {
+  if (!W) boot();
+  if (W) fn();
+  else queue.push(fn);
+}
+
+/** Get the exports, booting synchronously if needed (throws if unavailable). */
+export function core(): Exports {
+  if (!W) boot();
+  if (!W) throw new Error('anikit: WebAssembly core is still loading — await `ready` first');
+  return W;
+}
+
+// ---------------------------------------------------------------------------
+// Scratch helpers
+// ---------------------------------------------------------------------------
+
+const encoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null;
+const decoder = typeof TextDecoder !== 'undefined' ? new TextDecoder() : null;
+
+/** Write a string into the u8 scratch buffer at `offset`; returns byte length. */
+export function writeStr(s: string, offset = 0): number {
+  const w = core();
+  const max = s.length * 3 + offset;
+  w.ak_u8_buf(max);
+  views();
+  // Fast path for ASCII (path data, easings, colours are almost always ASCII).
+  const base = w.ak_u8_buf(0) + offset;
+  let ascii = true;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c > 127) {
+      ascii = false;
+      break;
+    }
+    U8[base + i] = c;
+  }
+  if (ascii) return s.length;
+  const r = encoder!.encodeInto(s, U8.subarray(base, base + s.length * 3));
+  return r.written!;
+}
+
+export function readStr(len: number): string {
+  views();
+  const p = core().ak_str_ptr();
+  if (decoder) return decoder.decode(U8.subarray(p, p + len));
+  let s = '';
+  for (let i = 0; i < len; i++) s += String.fromCharCode(U8[p + i]);
+  return s;
+}
+
+/** Reserve `n` f64 slots in scratch memory; returns the F64 index of slot 0. */
+export function f64Buf(n: number): number {
+  const p = core().ak_f64_buf(n);
+  views();
+  return p >>> 3;
+}
+
+/** Copy `n` f64 values starting at byte pointer `ptr` into a new array. */
+export function readF64(ptr: number, n: number): number[] {
+  views();
+  const at = ptr >>> 3;
+  const out = new Array<number>(n);
+  for (let i = 0; i < n; i++) out[i] = F64[at + i];
+  return out;
+}
+
+// Start compiling as soon as the module loads so the core is ready by the
+// first frame (synchronously where the platform allows it).
+boot();

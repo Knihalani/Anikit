@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Anikit demo</title>
+<style>
+  :root { --bg: #0d0f14; --panel: #161a22; --ink: #e8ebf2; --muted: #8a93a6; --accent: #6ea8ff; --accent2: #ff7ab6; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, Segoe UI, sans-serif; }
+  #progress { position: fixed; inset: 0 0 auto 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transform-origin: 0 50%; transform: scaleX(0); z-index: 10; }
+  header { padding: 72px 24px 24px; max-width: 1040px; margin: auto; }
+  h1 { font-size: clamp(32px, 6vw, 64px); margin: 0 0 8px; letter-spacing: -0.02em; }
+  header p { color: var(--muted); margin: 0; max-width: 640px; }
+  main { max-width: 1040px; margin: auto; padding: 0 24px 120px; display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  section { background: var(--panel); border-radius: 14px; padding: 18px; min-height: 280px; position: relative; overflow: hidden; }
+  section h2 { font-size: 14px; margin: 0 0 4px; }
+  section small { color: var(--muted); display: block; margin-bottom: 12px; }
+  button { background: #232938; color: var(--ink); border: 0; border-radius: 8px; padding: 6px 12px; font: inherit; cursor: pointer; }
+  button:hover { background: #2c3446; }
+  .grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+  .grid div { aspect-ratio: 1; border-radius: 4px; background: var(--accent); cursor: pointer; }
+  svg { width: 100%; height: 190px; display: block; }
+  .ball { width: 26px; height: 26px; border-radius: 50%; background: var(--accent2); position: absolute; left: 0; top: 0; pointer-events: none; }
+  canvas { width: 100%; height: 200px; display: block; border-radius: 8px; background: #0b0d12; }
+  .stat { color: var(--muted); font: 12px ui-monospace, monospace; }
+  .cards { display: flex; gap: 8px; flex-wrap: wrap; }
+  .cards div { width: 54px; height: 54px; border-radius: 10px; background: #2c3446; display: grid; place-items: center; }
+  .cards.wide div { width: 110px; }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<header>
+  <h1 id="title">Anikit animates everything.</h1>
+  <p>Rust engine compiled to WebAssembly. Every section below runs on the same core — one call per frame, zero-copy results.</p>
+</header>
+<main>
+  <section>
+    <h2>Stagger grid</h2><small>Click a cell: 2D grid stagger from that origin, spring easing.</small>
+    <div class="grid" id="grid"></div>
+  </section>
+  <section>
+    <h2>Shape morphing</h2><small>Any path → any path; colour in OKLab.</small>
+    <svg viewBox="0 0 200 200"><path id="shape" fill="#6ea8ff" /></svg>
+    <button id="morph">Morph</button>
+  </section>
+  <section>
+    <h2>Motion path + stroke draw</h2><small>Arc-length parameterised, auto-rotating.</small>
+    <svg viewBox="0 0 300 190">
+      <path id="track" d="M10 160 C60 10 120 10 150 95 S240 180 290 30" fill="none" stroke="#6ea8ff" stroke-width="3" stroke-linecap="round" />
+      <path id="arrow" d="M-9 -6 L9 0 L-9 6 Z" fill="#ff7ab6" />
+    </svg>
+  </section>
+  <section id="springzone">
+    <h2>Retargetable springs</h2><small>Move the pointer here — velocity is preserved on every retarget.</small>
+    <div class="ball" id="ball"></div>
+  </section>
+  <section>
+    <h2>Instanced batch</h2><small><code>batch()</code> → one Float32Array, no per-particle JS writes.</small>
+    <canvas id="cv" width="800" height="400"></canvas>
+    <div class="stat" id="stat"></div>
+  </section>
+  <section>
+    <h2>Timeline + FLIP</h2><small>Sequenced reveal, then a layout change animated with FLIP.</small>
+    <div class="cards" id="cards"></div>
+    <p><button id="flip">Toggle layout</button> <button id="replay">Replay timeline</button></p>
+  </section>
+</main>
+<div style="height: 60vh"></div>
+<script type="module">
+  import {
+    animate, set, timeline, stagger, spring, scroll, splitText, flip, batch, star, circle, rect, engine,
+  } from '../packages/anikit/dist/anikit.js';
+
+  // Scroll progress bar + split-text intro.
+  scroll(animate('#progress', { scaleX: [0, 1] }, { ease: 'linear' }));
+  const { chars } = splitText('#title', { type: 'words,chars' });
+  animate(chars, { y: ['0.6em', 0], opacity: [0, 1], rotate: [8, 0] }, { duration: 0.7, ease: 'outCubic', delay: stagger(0.02) });
+
+  // Grid stagger.
+  const grid = document.getElementById('grid');
+  for (let i = 0; i < 100; i++) grid.appendChild(document.createElement('div'));
+  const cells = grid.children;
+  grid.addEventListener('click', (e) => {
+    const i = Array.prototype.indexOf.call(cells, e.target);
+    if (i < 0) return;
+    animate(cells, { scale: [1, 0.35, 1], backgroundColor: ['#6ea8ff', '#ff7ab6', '#6ea8ff'] },
+      { duration: 0.9, ease: 'inOutSine', delay: stagger(0.045, { grid: [10, 10], from: i }) });
+  });
+
+  // Morph cycle.
+  const shapes = [star(100, 100, 5, 85, 36), circle(100, 100, 80), rect(25, 25, 150, 150, 24), star(100, 100, 12, 85, 60)];
+  const colors = ['#6ea8ff', '#ff7ab6', '#ffd166', '#06d6a0'];
+  const shape = document.getElementById('shape');
+  shape.setAttribute('d', shapes[0]);
+  let k = 0;
+  document.getElementById('morph').onclick = () => {
+    k = (k + 1) % shapes.length;
+    animate(shape, { d: shapes[k], fill: colors[k] }, { duration: 0.8, ease: 'spring(bounce: 0.25, duration: 0.7)' });
+  };
+
+  // Motion path with drawing.
+  animate('#track', { draw: [0, 1] }, { duration: 2.4, ease: 'inOutCubic', repeat: Infinity, yoyo: true, repeatDelay: 0.4 });
+  animate('#arrow', { path: { path: '#track', rotate: true } }, { duration: 2.4, ease: 'inOutCubic', repeat: Infinity, yoyo: true, repeatDelay: 0.4 });
+
+  // Springs.
+  const zone = document.getElementById('springzone');
+  const ball = document.getElementById('ball');
+  set(ball, { x: 140, y: 140 });
+  zone.addEventListener('pointermove', (e) => {
+    const r = zone.getBoundingClientRect();
+    spring(ball, { x: e.clientX - r.left - 13, y: e.clientY - r.top - 13 }, { stiffness: 220, damping: 14 });
+  });
+
+  // Batch particles.
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const N = 30000;
+  const W = cv.width, H = cv.height;
+  const img = ctx.createImageData(W, H);
+  const px = new Uint32Array(img.data.buffer);
+  const b = batch(N, {
+    x: (i) => [W / 2, W / 2 + Math.cos(i * 2.399) * Math.sqrt(i / N) * W * 0.48],
+    y: (i) => [H / 2, H / 2 + Math.sin(i * 2.399) * Math.sqrt(i / N) * H * 0.48],
+  }, {
+    duration: 1.6, ease: 'outBack', delay: stagger(1.2 / N), repeat: Infinity, yoyo: true, repeatDelay: 0.6,
+    onUpdate: () => {
+      const d = b.data;
+      px.fill(0xff120d0b);
+      for (let i = 0; i < d.length; i += 2) {
+        const x = d[i] | 0, y = d[i + 1] | 0;
+        if (x >= 0 && x < W && y >= 0 && y < H) px[y * W + x] = 0xffffa86e;
+      }
+      ctx.putImageData(img, 0, 0);
+    },
+  });
+  let frames = 0, last = performance.now();
+  engine.onFrame(() => {
+    frames++;
+    const now = performance.now();
+    if (now - last > 1000) {
+      document.getElementById('stat').textContent = `${N.toLocaleString()} particles · ${frames} fps · ${engine.stats().active} active nodes`;
+      frames = 0; last = now;
+    }
+  });
+
+  // Timeline + FLIP.
+  const cards = document.getElementById('cards');
+  for (let i = 0; i < 8; i++) { const d = document.createElement('div'); d.textContent = i + 1; cards.appendChild(d); }
+  const reveal = () => timeline({ defaults: { duration: 0.5, ease: 'outBack' } })
+    .add(cards.children, { y: [30, 0], opacity: [0, 1] }, { delay: stagger(0.06) })
+    .add(cards.children, { rotate: [0, 360] }, { delay: stagger(0.04, { from: 'end' }), duration: 0.8, ease: 'inOutCubic' }, '-=0.2');
+  reveal();
+  document.getElementById('replay').onclick = reveal;
+  document.getElementById('flip').onclick = () =>
+    flip(cards.children, () => cards.classList.toggle('wide'), { duration: 0.6, ease: 'spring(bounce: 0.2, duration: 0.6)' });
+</script>
+</body>
+</html>

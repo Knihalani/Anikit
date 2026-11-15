@@ -1,0 +1,16 @@
+[package]
+name = "anikit-wasm"
+description = "WebAssembly C-ABI bindings for anikit-core (no wasm-bindgen; zero-copy output)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+anikit-core = { path = "../anikit-core" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+dlmalloc = { version = "0.2", features = ["global"] }

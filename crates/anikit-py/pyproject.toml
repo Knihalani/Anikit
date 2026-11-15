@@ -1,0 +1,40 @@
+[build-system]
+requires = ["maturin>=1.5,<2"]
+build-backend = "maturin"
+
+[project]
+name = "anikit"
+description = "High-performance animation engine (Rust core): tweens, timelines, springs, inertia, colours, SVG paths, morphing and CSS export."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+dynamic = ["version"]
+keywords = ["animation", "tween", "easing", "spring", "timeline", "svg", "motion"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Multimedia :: Graphics",
+    "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[tool.maturin]
+python-source = "python"
+module-name = "anikit._anikit"
+features = ["pyo3/extension-module"]
+include = ["python/anikit/py.typed", "python/anikit/_anikit.pyi"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "python/anikit"]
+addopts = "--doctest-modules"
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+
+[tool.mypy]
+strict = true
+files = ["python/anikit"]

@@ -1,0 +1,53 @@
+{
+  "name": "anikit",
+  "version": "0.1.0",
+  "description": "Hyper-performant web animation engine: Rust/WebAssembly core, tiny-overhead DOM layer. Tweens, timelines, springs, inertia, morphing, motion paths, scroll, text, FLIP.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/anikit.cjs",
+  "module": "./dist/anikit.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/anikit.js",
+      "require": "./dist/anikit.cjs"
+    },
+    "./anikit.wasm": "./dist/anikit.wasm",
+    "./lean": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/anikit.lean.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build:wasm": "node scripts/build-wasm.mjs",
+    "build": "node scripts/build-wasm.mjs && node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/build-wasm.mjs && vitest run",
+    "bench": "node scripts/bench.mjs"
+  },
+  "keywords": [
+    "animation",
+    "tween",
+    "timeline",
+    "spring",
+    "webassembly",
+    "wasm",
+    "svg",
+    "morph",
+    "motion"
+  ],
+  "devDependencies": {
+    "binaryen": "^132.0.0",
+    "esbuild": "^0.28.2",
+    "gsap": "^3.15.1",
+    "happy-dom": "^21.0.4",
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.0"
+  }
+}

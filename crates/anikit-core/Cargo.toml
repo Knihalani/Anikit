@@ -1,0 +1,14 @@
+[package]
+name = "anikit-core"
+description = "Allocation-light, no_std animation engine: easings, springs, colors, paths, morphing and timelines."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+libm = "0.2"
+
+[features]
+default = []
+std = []

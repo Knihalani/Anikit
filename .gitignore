@@ -1,0 +1,11 @@
+/target
+node_modules/
+dist/
+*.pyc
+__pycache__/
+.venv/
+*.so
+*.pyd
+.pytest_cache/
+packages/anikit/src/generated/
+target/

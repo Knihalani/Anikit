@@ -1,0 +1,22 @@
+[workspace]
+resolver = "2"
+members = ["crates/anikit-core", "crates/anikit-wasm", "crates/anikit-py"]
+default-members = ["crates/anikit-core"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/knihalani/anikit"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+
+# Profile used for the WebAssembly build: abort on panic (no unwinding tables),
+# maximum optimisation, everything inlined across crates.
+[profile.wasm]
+inherits = "release"
+panic = "abort"
+strip = true
