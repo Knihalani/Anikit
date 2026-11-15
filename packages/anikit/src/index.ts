@@ -73,3 +73,4 @@ export { viewTransition } from './viewtransition';
 export type { ViewTransitionOptions, ViewTransitionHandle } from './viewtransition';
 export { gesture, Gesture } from './gesture';
 export type { GestureOptions } from './gesture';
+export { transformPath } from './svg';

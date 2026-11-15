@@ -34,7 +34,7 @@ animate(obj, { value: 1 }, { onUpdate: () => render(obj.value) }); // plain obje
 | `'--name'` | CSS custom property. |
 | `attr: { r: 20, cx: 50 }` | Attributes. Non‑CSS attributes of SVG elements are detected automatically. |
 | `d: pathData \| element \| selector` | Shape morph between any two paths. |
-| `path: pathData \| { path, start?, end?, rotate? }` | Motion along a path. `rotate: true` (or an angle offset) follows the tangent. |
+| `path: pathData \| { path, start?, end?, rotate?, align?, alignOrigin? }` | Motion along a path. `rotate: true` (or an angle offset) follows the tangent. `align: true` puts the target exactly on the path as drawn on the page (SVG user space, viewBox and all, mapped to the target's coordinates), with `alignOrigin` (default `[0.5, 0.5]`) on the line; pass an SVG element as `align` when `path` is raw data in its coordinates. |
 | `draw: [0, 1]` or `['0 0', '0.2 0.8']` | Visible stroke segment as fractions of the length. |
 
 **Options** (`AnimateOptions`)
@@ -375,7 +375,7 @@ Two fingers zoom and rotate about their midpoint, and the point under the finger
 | `interpolate([0, 100, 200], [0, 1, 0], { ease, clamp })` | Map through stops. Outputs can be numbers, colours or values with units. |
 | `distribute({ base, amount, from, grid, ease })` | Spread any value across targets. |
 | `noise2(x, y, seed)`, `noise3`, `fbm(x, y, z?, { octaves })`, `noiseMany(xyz)`, `wander({ speed, amplitude })` | Seeded simplex noise. |
-| `trimPath(d, 0.2, 0.8)`, `pathThrough(points, { curviness, closed })`, `simplifyPath(d, tolerance, smooth)`, `pathArea(d)`, `flattenPath(d, tol)` | Path operations. |
+| `trimPath(d, 0.2, 0.8)`, `pathThrough(points, { curviness, closed })`, `simplifyPath(d, tolerance, smooth)`, `pathArea(d)`, `flattenPath(d, tol)`, `transformPath(d, [a, b, c, d, e, f])` | Path operations. |
 | `MotionPath.closest(x, y)`, `.atLength(px)`, `.points(n)` | Path queries. |
 | `VelocityTracker`, `shuffle`, `pipe`, `splitColor`, `getUnit`, `roundTo`, `normalize`, `toArray` | Helpers. |
 

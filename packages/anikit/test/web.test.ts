@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { animate, timeline, flip, presence, enter, exit, engine, viewTransition, compositor, scroll, splitText, mixColor, gesture } from '../src/index';
+import { animate, timeline, flip, presence, enter, exit, engine, viewTransition, compositor, scroll, splitText, mixColor, gesture, transformPath } from '../src/index';
 import { setup, advance, box } from './setup';
 
 beforeAll(setup);
@@ -675,5 +675,32 @@ describe('timeline onUpdate', () => {
     const done = seen.length;
     advance(0.5);
     expect(seen.length).toBe(done);
+  });
+});
+
+describe('motion path alignment', () => {
+  it('transformPath applies an affine matrix to any path', () => {
+    expect(transformPath('M0 0 L10 0', [2, 0, 0, 2, 5, 5])).toBe('M5 5C11.667 5 18.333 5 25 5');
+    // 90° rotation
+    expect(transformPath('M1 0 L2 0', [0, 1, -1, 0, 0, 0])).toBe('M0 1C0 1.333 0 1.667 0 2');
+  });
+
+  it('align maps the path from SVG space onto the target', () => {
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', 'M0 0 L100 0');
+    svg.appendChild(path);
+    document.body.appendChild(svg);
+    // The SVG is drawn at (50, 20), scaled ×3 (viewBox).
+    (path as any).getScreenCTM = () => ({ a: 3, b: 0, c: 0, d: 3, e: 50, f: 20 });
+    const el = box();
+    (el as any).getBoundingClientRect = () => ({ left: 10, top: 10, width: 20, height: 20, right: 30, bottom: 30 });
+    const a = animate(el, { path: { path, align: true } }, { duration: 1, ease: 'linear', autoplay: false });
+    a.seek(0);
+    // Centre (20, 20) moves onto (50, 20).
+    expect(el.style.transform).toBe('translate(30px,0px)');
+    a.seek(0.5);
+    expect(el.style.transform).toBe('translate(180px,0px)');
   });
 });

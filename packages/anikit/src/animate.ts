@@ -24,7 +24,7 @@ import {
 import { Playable, Callbacks, Linked } from './playable';
 import { warn, didYouMean, describe, cssPropertyNames } from './debug';
 import { Binding, bind, apply, custom, transformSlot, M_PROP, M_TRANSFORM, M_TRANSFORM2, M_STYLE_NUM, M_STYLE_FMT, M_VAR, M_CUSTOM } from './bind';
-import { pathData, PathSource, writeMorph, elementLength, morphSequence } from './svg';
+import { pathData, PathSource, writeMorph, elementLength, morphSequence, transformPath } from './svg';
 import { parseTransform, toMatrix3d } from './scene';
 import { writeStr } from './wasm';
 
@@ -51,6 +51,15 @@ export interface MotionPathOptions {
   end?: number;
   /** Rotate the target to follow the path tangent; a number adds an angle offset. */
   rotate?: boolean | number;
+  /**
+   * Put the target exactly on the path as drawn on the page: the path's
+   * coordinates (its SVG user space, viewBox and all) are mapped to the
+   * target's. `true` uses the path element itself; pass an SVG element when
+   * `path` is raw path data in that element's coordinates.
+   */
+  align?: boolean | Element | string;
+  /** Point of the target that sits on the path, as fractions of its box (default `[0.5, 0.5]` with `align`). */
+  alignOrigin?: [number, number];
 }
 
 export type Props = Record<string, PropValue>;
@@ -741,8 +750,10 @@ export class Animation extends Playable {
       this._restore.push(snapshot(target, 'x', Kind.Transform));
       const spec: MotionPathOptions =
         isPlainObject(raw) && 'path' in raw ? (raw as MotionPathOptions) : { path: raw as PathSource };
+      let data = pathData(spec.path);
+      if (spec.align && isElement(target)) data = this._alignPath(data, spec, target as HTMLElement);
       const w = core();
-      const lut = w.ak_path_lut(writeStr(pathData(spec.path)), 0);
+      const lut = w.ak_path_lut(writeStr(data), 0);
       const t: TrackDef = {
         kind: TRACK_PATH, arg: lut, ch: 1, out: 3, values: [spec.start ?? 0, spec.end ?? 1], unit: '',
         format: () => 0, first: 0, last: 0,
@@ -825,6 +836,32 @@ export class Animation extends Playable {
       }));
       return;
     }
+  }
+
+  /** Map path data from its SVG user space into `target`'s translate space. */
+  private _alignPath(data: string, spec: MotionPathOptions, target: HTMLElement): string {
+    const ref =
+      spec.align === true
+        ? typeof spec.path === 'string'
+          ? /^\s*[mM]/.test(spec.path) ? null : document.querySelector(spec.path)
+          : spec.path
+        : typeof spec.align === 'string'
+          ? document.querySelector(spec.align)
+          : (spec.align as Element);
+    const ctm = ref && typeof (ref as SVGGraphicsElement).getScreenCTM === 'function' ? (ref as SVGGraphicsElement).getScreenCTM() : null;
+    const [ox, oy] = spec.alignOrigin ?? [0.5, 0.5];
+    // Untransformed box of the target (one write, one read, restore).
+    const st = target.style;
+    const prev = st.transform;
+    st.transform = 'none';
+    const r = target.getBoundingClientRect();
+    st.transform = prev;
+    if (spec.rotate !== undefined && spec.rotate !== false) {
+      this._restore.push(snapshot(target, 'transformOrigin', Kind.Style));
+      st.transformOrigin = ox * 100 + '% ' + oy * 100 + '%';
+    }
+    const m = ctm ?? { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+    return transformPath(data, [m.a, m.b, m.c, m.d, m.e - (r.left + ox * r.width), m.f - (r.top + oy * r.height)]);
   }
 
   /** All properties of a part were taken over: free it. */
