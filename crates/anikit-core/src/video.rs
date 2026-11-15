@@ -184,123 +184,80 @@ impl PostFx {
         if p.zoom_blur > 0.0 {
             self.zoom(rgba, w, h, p);
         }
-        if p.aberration > 0.0 {
-            self.aberrate(rgba, w, h, p.aberration);
+        let glow = p.bloom > 0.0 || p.streaks > 0.0;
+        if glow {
+            self.glow(rgba, w, h, p);
         }
-        if p.bloom > 0.0 || p.streaks > 0.0 {
-            self.bloom(rgba, w, h, p);
+        if glow || p.aberration > 0.0 || p.grading() || p.vignette > 0.0 || p.grain > 0.0 {
+            self.composite(rgba, w, h, p, glow);
         }
-        if p.grading() {
-            grade(rgba, p);
-        }
-        if p.vignette > 0.0 || p.grain > 0.0 {
-            let (cx, cy) = (w as f32 * 0.5, h as f32 * 0.5);
-            let inv = 1.0 / (cx * cx + cy * cy);
-            let mut s = p.seed.wrapping_mul(2_654_435_761) | 1;
+    }
+
+    /// Radial zoom blur (speed lines): two passes of four jittered taps along
+    /// each pixel's ray towards the centre, the second with a 4× longer step,
+    /// so 8 reads per pixel give 16 evenly spread samples without ghosting.
+    fn zoom(&mut self, rgba: &mut [u8], w: usize, h: usize, p: &Post) {
+        let (cx, cy) = (p.zoom_center[0] * w as f32, p.zoom_center[1] * h as f32);
+        let k = p.zoom_blur.min(0.9) / 16.0;
+        let (wi, hi) = (w as isize - 1, h as isize - 1);
+        for pass in 0..2u32 {
+            self.copy.clear();
+            self.copy.extend_from_slice(rgba);
+            let step = if pass == 0 { k } else { k * 4.0 };
             for y in 0..h {
-                let dy = y as f32 - cy;
+                let dy = (cy - y as f32) * step;
                 let row = &mut rgba[y * w * 4..(y + 1) * w * 4];
                 for (x, px) in row.chunks_exact_mut(4).enumerate() {
-                    let dx = x as f32 - cx;
-                    let r2 = (dx * dx + dy * dy) * inv;
-                    let k = 1.0 - p.vignette * r2 * r2 * 1.4;
-                    s ^= s << 13;
-                    s ^= s >> 17;
-                    s ^= s << 5;
-                    let n = ((s >> 24) as f32 / 255.0 - 0.5) * 2.0 * p.grain;
-                    for c in px[..3].iter_mut() {
-                        *c = (*c as f32 * k + n).clamp(0.0, 255.0) as u8;
+                    let dx = (cx - x as f32) * step;
+                    if dx * dx + dy * dy < 0.0625 {
+                        continue; // the ray is shorter than a pixel: nothing to blur
                     }
+                    let mut hs = (x as u32).wrapping_mul(0x9E37_79B1) ^ (y as u32).wrapping_mul(0x85EB_CA77) ^ pass;
+                    hs ^= hs >> 15;
+                    hs = hs.wrapping_mul(0x2C1B_3C6D);
+                    let jit = (hs >> 8) as f32 * (1.0 / 16_777_216.0);
+                    let mut acc = [0u32; 3];
+                    for j in 0..4 {
+                        let t = j as f32 + jit;
+                        let sx = ((x as f32 + dx * t + 0.5) as isize).clamp(0, wi) as usize;
+                        let sy = ((y as f32 + dy * t + 0.5) as isize).clamp(0, hi) as usize;
+                        let o = (sy * w + sx) * 4;
+                        acc[0] += self.copy[o] as u32;
+                        acc[1] += self.copy[o + 1] as u32;
+                        acc[2] += self.copy[o + 2] as u32;
+                    }
+                    px[0] = ((acc[0] + 2) >> 2) as u8;
+                    px[1] = ((acc[1] + 2) >> 2) as u8;
+                    px[2] = ((acc[2] + 2) >> 2) as u8;
                 }
             }
         }
     }
 
-    /// Radial zoom blur: each pixel averages 12 samples along its ray towards
-    /// the centre (the ray growing with distance: speed lines). Sample
-    /// positions are jittered per pixel, trading ghost copies for fine noise.
-    fn zoom(&mut self, rgba: &mut [u8], w: usize, h: usize, p: &Post) {
-        self.copy.clear();
-        self.copy.extend_from_slice(rgba);
-        let (cx, cy) = (p.zoom_center[0] * w as f32, p.zoom_center[1] * h as f32);
-        const N: usize = 12;
-        let k = p.zoom_blur.min(0.9) / N as f32;
-        let (wi, hi) = (w as isize - 1, h as isize - 1);
-        for y in 0..h {
-            let dy = (cy - y as f32) * k;
-            for x in 0..w {
-                let dx = (cx - x as f32) * k;
-                // Per-pixel hash in 0…1 (stable across frames, so it reads as texture, not boil).
-                let mut hs = (x as u32).wrapping_mul(0x9E37_79B1) ^ (y as u32).wrapping_mul(0x85EB_CA77);
-                hs ^= hs >> 15;
-                hs = hs.wrapping_mul(0x2C1B_3C6D);
-                let jit = (hs >> 8) as f32 * (1.0 / 16_777_216.0);
-                let mut acc = [0u32; 3];
-                for j in 0..N {
-                    let t = j as f32 + jit;
-                    let sx = ((x as f32 + dx * t + 0.5) as isize).clamp(0, wi) as usize;
-                    let sy = ((y as f32 + dy * t + 0.5) as isize).clamp(0, hi) as usize;
-                    let o = (sy * w + sx) * 4;
-                    acc[0] += self.copy[o] as u32;
-                    acc[1] += self.copy[o + 1] as u32;
-                    acc[2] += self.copy[o + 2] as u32;
-                }
-                let i = (y * w + x) * 4;
-                rgba[i] = ((acc[0] + N as u32 / 2) / N as u32) as u8;
-                rgba[i + 1] = ((acc[1] + N as u32 / 2) / N as u32) as u8;
-                rgba[i + 2] = ((acc[2] + N as u32 / 2) / N as u32) as u8;
-            }
-        }
-    }
-
-    fn aberrate(&mut self, rgba: &mut [u8], w: usize, h: usize, amount: f32) {
-        self.copy.clear();
-        self.copy.extend_from_slice(rgba);
-        let (cx, cy) = (w as f32 * 0.5, h as f32 * 0.5);
-        let norm = amount / crate::math::sqrtf(cx * cx + cy * cy).max(1.0);
-        for y in 0..h {
-            let dy = y as f32 - cy;
-            for x in 0..w {
-                let dx = x as f32 - cx;
-                // Red pushed outward, blue pulled inward, proportional to radius.
-                let (ox, oy) = (dx * norm, dy * norm);
-                let sample = |sx: f32, sy: f32, c: usize| -> u8 {
-                    let ix = (crate::math::floorf(sx + 0.5) as isize).clamp(0, w as isize - 1) as usize;
-                    let iy = (crate::math::floorf(sy + 0.5) as isize).clamp(0, h as isize - 1) as usize;
-                    self.copy[(iy * w + ix) * 4 + c]
-                };
-                let i = (y * w + x) * 4;
-                rgba[i] = sample(x as f32 - ox, y as f32 - oy, 0);
-                rgba[i + 2] = sample(x as f32 + ox, y as f32 + oy, 2);
-            }
-        }
-    }
-
+    /// Bloom and streaks at quarter resolution into `self.small` (already
+    /// scaled by their strengths): bright pass, blurs.
     #[allow(clippy::needless_range_loop)]
-    fn bloom(&mut self, rgba: &mut [u8], w: usize, h: usize, p: &Post) {
-        // Bright pass at quarter resolution, two box blurs (≈ gaussian), add back.
+    fn glow(&mut self, rgba: &[u8], w: usize, h: usize, p: &Post) {
         let (sw, sh) = (w.div_ceil(4), h.div_ceil(4));
         self.small.resize(sw * sh * 3, 0.0);
         self.tmp.resize(sw * sh * 3, 0.0);
+        // Weight per 8-bit luminance (a LUT instead of a divide per pixel).
         let th = p.bloom_threshold * 255.0;
-        for sy in 0..sh {
-            for sx in 0..sw {
-                let mut acc = [0.0f32; 3];
-                let mut n = 0.0;
-                for y in sy * 4..(sy * 4 + 4).min(h) {
-                    for x in sx * 4..(sx * 4 + 4).min(w) {
-                        let px = &rgba[(y * w + x) * 4..(y * w + x) * 4 + 3];
-                        let l = 0.2126 * px[0] as f32 + 0.7152 * px[1] as f32 + 0.0722 * px[2] as f32;
-                        let k = ((l - th) / (255.0 - th + 1.0)).max(0.0);
-                        for c in 0..3 {
-                            acc[c] += px[c] as f32 * k;
-                        }
-                        n += 1.0;
-                    }
-                }
-                let o = (sy * sw + sx) * 3;
-                for c in 0..3 {
-                    self.small[o + c] = acc[c] / n;
+        let inv = 1.0 / (255.0 - th + 1.0);
+        let lut: [f32; 256] = core::array::from_fn(|l| ((l as f32 - th) * inv).max(0.0) * (1.0 / 16.0));
+        self.small.iter_mut().for_each(|v| *v = 0.0);
+        for y in 0..h {
+            let sy = y >> 2;
+            let row = &rgba[y * w * 4..(y + 1) * w * 4];
+            let out = &mut self.small[sy * sw * 3..(sy + 1) * sw * 3];
+            for (x, px) in row.chunks_exact(4).enumerate() {
+                let l = (54 * px[0] as u32 + 183 * px[1] as u32 + 19 * px[2] as u32) >> 8;
+                let k = lut[l as usize];
+                if k > 0.0 {
+                    let o = (x >> 2) * 3;
+                    out[o] += px[0] as f32 * k;
+                    out[o + 1] += px[1] as f32 * k;
+                    out[o + 2] += px[2] as f32 * k;
                 }
             }
         }
@@ -320,8 +277,6 @@ impl PostFx {
             box_blur(&self.small, &mut self.tmp, sw, sh, r, true);
             box_blur(&self.tmp, &mut self.small, sw, sh, r, false);
         }
-        // Combine glow (and streaks) at quarter resolution, then add back with
-        // bilinear upsampling (no 4×4 blocks).
         let (bk, st) = (p.bloom, p.streaks);
         if st > 0.0 {
             let tint = p.streak_tint;
@@ -333,58 +288,109 @@ impl PostFx {
                 *v *= bk;
             }
         }
-        let small = &self.small;
+    }
+
+    /// One fused full-resolution pass: chromatic aberration (red/blue sampled
+    /// radially apart), bloom/streaks added back with a bilinear 4× upsample,
+    /// the grade (exposure + contrast LUT, saturation, split toning),
+    /// vignette and grain.
+    #[allow(clippy::needless_range_loop)]
+    #[allow(clippy::too_many_arguments)]
+    fn composite(&mut self, rgba: &mut [u8], w: usize, h: usize, p: &Post, glow: bool) {
+        let ab = p.aberration > 0.0;
+        if ab {
+            self.copy.clear();
+            self.copy.extend_from_slice(rgba);
+        }
+        let (sw, sh) = (w.div_ceil(4), h.div_ceil(4));
+        if glow {
+            self.tmp.resize(sw * 3, 0.0);
+        }
+        // Tone LUT over 0…511 so bloom can push past white before the grade.
+        let mut lut = [0f32; 512];
+        for (i, v) in lut.iter_mut().enumerate() {
+            *v = (((i as f32 / 255.0) * p.exposure - 0.5) * p.contrast + 0.5) * 255.0;
+        }
+        let tint = p.shadows.iter().any(|v| *v != 0.0) || p.highlights.iter().any(|v| *v != 0.0);
+        let sat = p.saturation != 1.0;
+        let (cx, cy) = (w as f32 * 0.5, h as f32 * 0.5);
+        let inv_r2 = 1.0 / (cx * cx + cy * cy);
+        let norm = p.aberration / crate::math::sqrtf(cx * cx + cy * cy).max(1.0);
+        let vig = p.vignette * 1.4;
+        let grain = p.grain * 2.0 / 255.0;
+        let seed = p.seed.wrapping_mul(0x9E37_79B9);
+        const PH: [(isize, f32); 4] = [(-1, 0.375), (-1, 0.125), (1, 0.125), (1, 0.375)];
+        let (wi, hi) = (w as isize - 1, h as isize - 1);
         for y in 0..h {
-            let fy = ((y as f32 + 0.5) / 4.0 - 0.5).clamp(0.0, (sh - 1) as f32);
-            let y0 = fy as usize;
-            let y1 = (y0 + 1).min(sh - 1);
-            let ty = fy - y0 as f32;
-            for x in 0..w {
-                let fx = ((x as f32 + 0.5) / 4.0 - 0.5).clamp(0.0, (sw - 1) as f32);
-                let x0 = fx as usize;
-                let x1 = (x0 + 1).min(sw - 1);
-                let tx = fx - x0 as f32;
-                let (a, b, c, d) = ((y0 * sw + x0) * 3, (y0 * sw + x1) * 3, (y1 * sw + x0) * 3, (y1 * sw + x1) * 3);
-                let i = (y * w + x) * 4;
-                for ch in 0..3 {
-                    let top = small[a + ch] + (small[b + ch] - small[a + ch]) * tx;
-                    let bot = small[c + ch] + (small[d + ch] - small[c + ch]) * tx;
-                    let g = top + (bot - top) * ty;
-                    rgba[i + ch] = (rgba[i + ch] as f32 + g).min(255.0) as u8;
+            if glow {
+                let fy = ((y as f32 + 0.5) * 0.25 - 0.5).clamp(0.0, (sh - 1) as f32);
+                let y0 = fy as usize;
+                let y1 = (y0 + 1).min(sh - 1);
+                let ty = fy - y0 as f32;
+                let (r0, r1) = (&self.small[y0 * sw * 3..(y0 + 1) * sw * 3], &self.small[y1 * sw * 3..(y1 + 1) * sw * 3]);
+                for ((o, a), b) in self.tmp[..sw * 3].iter_mut().zip(r0).zip(r1) {
+                    *o = a + (b - a) * ty;
                 }
             }
-        }
-    }
-}
-
-/// Exposure, contrast (around mid-grey), saturation and split toning.
-#[allow(clippy::needless_range_loop)]
-fn grade(rgba: &mut [u8], p: &Post) {
-    // Per-channel tone curve as a LUT (exposure + contrast), then the
-    // cross-channel part (saturation, tints) per pixel.
-    let mut lut = [0f32; 256];
-    for (i, v) in lut.iter_mut().enumerate() {
-        let x = (i as f32 / 255.0) * p.exposure;
-        *v = (x - 0.5) * p.contrast + 0.5;
-    }
-    let tint = p.shadows.iter().any(|v| *v != 0.0) || p.highlights.iter().any(|v| *v != 0.0);
-    for px in rgba.chunks_exact_mut(4) {
-        let mut c = [lut[px[0] as usize], lut[px[1] as usize], lut[px[2] as usize]];
-        let l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-        if p.saturation != 1.0 {
-            for v in c.iter_mut() {
-                *v = l + (*v - l) * p.saturation;
+            let dy = y as f32 - cy;
+            let dy2 = dy * dy;
+            let row = &mut rgba[y * w * 4..(y + 1) * w * 4];
+            for (x, px) in row.chunks_exact_mut(4).enumerate() {
+                let dx = x as f32 - cx;
+                let mut c = if ab {
+                    // Red pushed outward, blue pulled inward, proportional to radius.
+                    let (ox, oy) = (dx * norm, dy * norm);
+                    let at = |sx: f32, sy: f32| ((sy + 0.5) as isize).clamp(0, hi) as usize * w + ((sx + 0.5) as isize).clamp(0, wi) as usize;
+                    let (ir, ib) = (at(x as f32 - ox, y as f32 - oy), at(x as f32 + ox, y as f32 + oy));
+                    [self.copy[ir * 4] as f32, px[1] as f32, self.copy[ib * 4 + 2] as f32]
+                } else {
+                    [px[0] as f32, px[1] as f32, px[2] as f32]
+                };
+                if glow {
+                    let sx = x >> 2;
+                    let (dir, t) = PH[x & 3];
+                    let nx = (sx as isize + dir).clamp(0, sw as isize - 1) as usize;
+                    let (a, b) = (sx * 3, nx * 3);
+                    let rb = &self.tmp;
+                    for ch in 0..3 {
+                        c[ch] += rb[a + ch] + (rb[b + ch] - rb[a + ch]) * t;
+                    }
+                }
+                // Exposure + contrast via the LUT (linear interpolation not needed at 8-bit steps).
+                for v in c.iter_mut() {
+                    *v = lut[(*v as usize).min(511)] * (1.0 / 255.0);
+                }
+                if sat || tint {
+                    let l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+                    if sat {
+                        for v in c.iter_mut() {
+                            *v = l + (*v - l) * p.saturation;
+                        }
+                    }
+                    if tint {
+                        let lc = l.clamp(0.0, 1.0);
+                        let (shd, hil) = ((1.0 - lc) * (1.0 - lc), lc * lc);
+                        for k in 0..3 {
+                            c[k] += p.shadows[k] * shd + c[k] * p.highlights[k] * hil;
+                        }
+                    }
+                }
+                let r2 = (dx * dx + dy2) * inv_r2;
+                let k = 255.0 * (1.0 - vig * r2 * r2);
+                // Grain: an independent hash per pixel (no serial RNG chain).
+                let n = if grain > 0.0 {
+                    let mut hs = (x as u32).wrapping_mul(0x85EB_CA77) ^ (y as u32).wrapping_mul(0xC2B2_AE3D) ^ seed;
+                    hs ^= hs >> 15;
+                    hs = hs.wrapping_mul(0x2C1B_3C6D);
+                    hs ^= hs >> 12;
+                    ((hs >> 24) as f32 / 255.0 - 0.5) * grain
+                } else {
+                    0.0
+                };
+                for ch in 0..3 {
+                    px[ch] = ((c[ch] + n) * k + 0.5).clamp(0.0, 255.0) as u8;
+                }
             }
-        }
-        if tint {
-            let lc = l.clamp(0.0, 1.0);
-            let (sh, hi) = ((1.0 - lc) * (1.0 - lc), lc * lc);
-            for k in 0..3 {
-                c[k] = c[k] + p.shadows[k] * sh + c[k] * p.highlights[k] * hi;
-            }
-        }
-        for k in 0..3 {
-            px[k] = (c[k] * 255.0 + 0.5).clamp(0.0, 255.0) as u8;
         }
     }
 }
