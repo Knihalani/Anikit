@@ -13,7 +13,16 @@ export const noise2 = (x: number, y: number, seed = 0): number => core().ak_nois
 /** 3D simplex noise in ≈[-1, 1] (use z as time for evolving fields). */
 export const noise3 = (x: number, y: number, z: number, seed = 0): number => core().ak_noise3(seed, x, y, z);
 /** Fractal noise: several octaves of 2D/3D simplex noise. */
-export function fbm(x: number, y: number, z?: number, o: { octaves?: number; lacunarity?: number; gain?: number; seed?: number } = {}): number {
+export function fbm(x: number, y: number, z?: number, o: {
+  /** Layers of detail (default 4). */
+  octaves?: number;
+  /** Frequency multiplier per octave (default 2). */
+  lacunarity?: number;
+  /** Amplitude multiplier per octave (default 0.5). */
+  gain?: number;
+  /** Noise seed (default 0). */
+  seed?: number;
+} = {}): number {
   const w = core();
   const [oc, la, ga, sd] = [o.octaves ?? 4, o.lacunarity ?? 2, o.gain ?? 0.5, o.seed ?? 0];
   return z === undefined ? w.ak_fbm2(sd, x, y, oc, la, ga) : w.ak_fbm3(sd, x, y, z, oc, la, ga);
@@ -28,7 +37,14 @@ export function noiseMany(xyz: ArrayLike<number>, seed = 0): Float64Array {
   return F64.slice(p, p + n);
 }
 /** A smooth wandering value: `wander(t)` drifts in [-amplitude, amplitude]. */
-export function wander(options: { speed?: number; amplitude?: number; seed?: number } = {}): (t: number) => number {
+export function wander(options: {
+  /** How fast it drifts, per unit of `t` (default 1). */
+  speed?: number;
+  /** Output range ±amplitude (default 1). */
+  amplitude?: number;
+  /** Seed (default random). */
+  seed?: number;
+} = {}): (t: number) => number {
   const speed = options.speed ?? 1;
   const amp = options.amplitude ?? 1;
   const seed = options.seed ?? Math.floor(Math.random() * 1e6);

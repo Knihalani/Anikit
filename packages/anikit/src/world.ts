@@ -149,7 +149,14 @@ export class World {
    * Turn elements into circular bodies (radius from their size). Their
    * transforms follow the simulation; `rotate` makes them roll.
    */
-  bind(targets: Targets, options: { radius?: number | ((el: Element) => number); mass?: number; rotate?: boolean } = {}): number[] {
+  bind(targets: Targets, options: {
+    /** Body radius in px (default: half the element's smaller side), or per element. */
+    radius?: number | ((el: Element) => number);
+    /** Mass (default: by area; <= 0 is static). */
+    mass?: number;
+    /** Roll the element with the body (default false). */
+    rotate?: boolean;
+  } = {}): number[] {
     const els = toTargets(targets) as HTMLElement[];
     const cr = this.container?.getBoundingClientRect() ?? { left: 0, top: 0 };
     const ids: number[] = [];
@@ -183,7 +190,14 @@ export class World {
   }
 
   /** Distance constraint (spring when `stiffness < 1`); `length` defaults to the current distance. */
-  link(a: number, b: number, options: { length?: number; stiffness?: number; tear?: number } = {}): this {
+  link(a: number, b: number, options: {
+    /** Rest length in px (default: the current distance). */
+    length?: number;
+    /** 0…1, 1 = rigid (default 1). */
+    stiffness?: number;
+    /** Break when stretched beyond this factor of the rest length (default 0 = never). */
+    tear?: number;
+  } = {}): this {
     core().ak_world_constraint(this.id, a, b, options.length ?? -1, options.stiffness ?? 1, options.tear ?? 0);
     this.links.push([a, b]);
     return this;
@@ -192,7 +206,20 @@ export class World {
   /** A rope between points; returns body indices. */
   rope(
     points: Array<[number, number]>,
-    o: { segments?: number; radius?: number; stiffness?: number; pinStart?: boolean; pinEnd?: boolean; tear?: number } = {},
+    o: {
+      /** Number of links (default 20). */
+      segments?: number;
+      /** Radius of each body in px (default 3). */
+      radius?: number;
+      /** 0…1 (default 1). */
+      stiffness?: number;
+      /** Fix the first point in place. */
+      pinStart?: boolean;
+      /** Fix the last point in place. */
+      pinEnd?: boolean;
+      /** Break factor, as in `link()` (default never). */
+      tear?: number;
+    } = {},
   ): number[] {
     const seg = o.segments ?? 20;
     const pts: Array<[number, number]> = [];
@@ -213,7 +240,16 @@ export class World {
   /** A cloth grid; returns body indices row-major. */
   cloth(
     x: number, y: number, cols: number, rows: number, spacing: number,
-    o: { radius?: number; pinTop?: boolean | number; stiffness?: number; tear?: number } = {},
+    o: {
+      /** Body radius in px (default spacing / 4). */
+      radius?: number;
+      /** Pin the top row: true (default) = every point, n = every nth, false = none. */
+      pinTop?: boolean | number;
+      /** 0…1 (default 1). */
+      stiffness?: number;
+      /** Break factor, as in `link()` (default never). */
+      tear?: number;
+    } = {},
   ): number[] {
     const bodies: BodyInit[] = [];
     const pinEvery = typeof o.pinTop === 'number' ? o.pinTop : o.pinTop === false ? 0 : 1;
@@ -268,7 +304,14 @@ export class World {
   }
 
   /** The pointer attracts or repels bodies. */
-  pointer(o: { mode?: 'attract' | 'repel'; strength?: number; radius?: number } = {}): this {
+  pointer(o: {
+    /** Default `'repel'`. */
+    mode?: 'attract' | 'repel';
+    /** Force (default 4000). */
+    strength?: number;
+    /** Reach in px (default 150). */
+    radius?: number;
+  } = {}): this {
     this.pointerAttr = { mode: o.mode === 'attract' ? 1 : -1, strength: o.strength ?? 4000, radius: o.radius ?? 150, x: 0, y: 0, on: false };
     const target = (this.container ?? window) as HTMLElement;
     const move = (e: PointerEvent) => {
@@ -290,7 +333,10 @@ export class World {
   }
 
   /** Grab bodies with the pointer and throw them. */
-  dragging(o: { hitSlop?: number } = {}): this {
+  dragging(o: {
+    /** Extra px around bodies that still grab them (helps with small bodies on touch). */
+    hitSlop?: number;
+  } = {}): this {
     const target = (this.container ?? window) as HTMLElement;
     let held = -1;
     let last: [number, number, number] = [0, 0, 0];
@@ -432,7 +478,14 @@ export class World {
   }
 
   /** Draw bodies as circles on a 2D canvas (quick default renderer). */
-  draw(ctx: CanvasRenderingContext2D, o: { color?: string | ((i: number) => string); links?: string; clear?: boolean } = {}): void {
+  draw(ctx: CanvasRenderingContext2D, o: {
+    /** Fill colour, or per body index (default `'#6ea8ff'`). */
+    color?: string | ((i: number) => string);
+    /** Stroke colour for links (default: links not drawn). */
+    links?: string;
+    /** Clear the canvas first (default true). */
+    clear?: boolean;
+  } = {}): void {
     const d = this.data;
     if (o.clear !== false) ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     if (o.links && this.links.length) {

@@ -163,7 +163,12 @@ export function trimPath(src: PathSource, start: number, end: number, decimals =
 }
 
 /** A smooth path through points (Catmull–Rom). `curviness` 0 = straight lines. */
-export function pathThrough(points: Array<[number, number]> | ArrayLike<number>, options: { curviness?: number; closed?: boolean } = {}): string {
+export function pathThrough(points: Array<[number, number]> | ArrayLike<number>, options: {
+  /** 0 = straight lines, 1 = smooth (default). */
+  curviness?: number;
+  /** Join the last point back to the first. */
+  closed?: boolean;
+} = {}): string {
   const flat: number[] = [];
   const arr = points as ArrayLike<any>;
   for (let i = 0; i < arr.length; i++) {

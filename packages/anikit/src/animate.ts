@@ -932,7 +932,14 @@ export class Animation extends Playable {
    * keyframe set works); transforms, styles and CSS variables are included.
    * One block per target (`name-0`, `name-1`, …) when there are several.
    */
-  toCSS(options: { name?: string; selector?: string; samples?: number } = {}): string {
+  toCSS(options: {
+    /** `@keyframes` name (default `'anikit'`; `-0`, `-1`… per target). */
+    name?: string;
+    /** Selector for the rule that runs it (default `.<name>`). */
+    selector?: string;
+    /** Keyframes sampled from the engine (default 30). */
+    samples?: number;
+  } = {}): string {
     const w = core();
     const name = options.name ?? 'anikit';
     const samples = Math.max(2, options.samples ?? 30);
