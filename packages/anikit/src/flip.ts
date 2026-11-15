@@ -61,7 +61,11 @@ export interface FlipOptions extends AnimateOptions {
   id?: (el: Element) => string | null | undefined;
   /** Cross-fade when both shared elements stay visible (default true). */
   crossfade?: boolean;
-  /** Keep `border-radius` undistorted while scaling (default true). */
+  /**
+   * Keep `border-radius` undistorted while scaling, by counter-scaling it every
+   * frame (default false: that's a style recalc and repaint per element per
+   * frame, where transforms alone stay on the compositor).
+   */
   correctRadius?: boolean;
 }
 
@@ -250,7 +254,7 @@ function readRadius(el: Element): number[] | null {
 
 function fromState(state: FlipState, options: FlipOptions = {}): Timeline {
   const {
-    scale = true, fade, enter, leave, onEnter, onLeave, targets, id: idFn, crossfade = true, correctRadius = true,
+    scale = true, fade, enter, leave, onEnter, onLeave, targets, id: idFn, crossfade = true, correctRadius = false,
     ...anim
   } = options;
   const id = idFn ?? defaultId;

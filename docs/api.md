@@ -124,7 +124,7 @@ inView('.reveal', (el) => { animate(el, { opacity: [0, 1] }); return () => anima
 scroll(compositor('.hero', { scale: [1, 1.15], opacity: [1, 0] }, { ease: 'linear' }), { target: hero, offset: ['start start', 'end start'] });
 ```
 
-Give `scroll()` a `compositor()` animation and it's attached to a native `ScrollTimeline` where the browser has one: the browser scrubs it in step with the scroll, and no JavaScript runs while scrolling. The `offset` range is measured from layout (and again on resize), so it means the same as on the JavaScript path. Without `ScrollTimeline`, or with `smooth`, it's scrubbed from the scroll event instead (`native: false` forces that). In Chromium with 300 scroll-linked elements, script time while scrolling went from about 0.47 ms to 0.05 ms per frame; style and layout time stayed about the same.
+Give `scroll()` a `compositor()` animation and it's attached to a native `ScrollTimeline` where the browser has one: the browser scrubs it in step with the scroll, and no JavaScript runs while scrolling. The `offset` range is measured from layout (and again on resize), so it means the same as on the JavaScript path. Without `ScrollTimeline`, or with `smooth`, it's scrubbed from the scroll event instead (`native: false` forces that).
 
 `compositor()` animations honour `engine.reducedMotion` (they jump to the end), and `revert()` cancels them and puts back the inline styles from before.
 
@@ -176,7 +176,7 @@ const state = flip.capture('.item'); reorder(); flip.from(state, { duration: 0.4
 - **Leaving elements** (removed from the DOM or hidden by the change) are put back at their last box with `position: absolute`, so their siblings reflow straight away. They play `leave` (or a fade, or `onLeave(els)`) and are then removed or hidden for real, with their inline styles restored. If a later change brings one back mid-exit, the exit is cancelled and it animates from where it is.
 - **Shared elements:** two different elements with the same `data-flip-id` (or the same `id(el)`) are treated as one: the incoming one starts on the outgoing one's box. If both stay visible they cross-fade (`crossfade: false` to turn it off).
 - **Interrupted flips** start from where the elements are on screen and end on their own transforms.
-- `scale: false` animates position only. With scale on, `border-radius` is counter-scaled every frame so corners don't stretch (`correctRadius: false` to skip it).
+- `scale: false` animates position only. `correctRadius: true` counter-scales `border-radius` every frame so rounded corners don't stretch while an element scales. It's off by default because it adds a style recalc and a repaint per element per frame, while transforms alone stay on the compositor.
 - Layout is read once for all elements (transforms off, measure, transforms back) rather than once per element.
 
 ## Presence: enter and exit

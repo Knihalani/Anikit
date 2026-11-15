@@ -94,7 +94,7 @@ describe('flip', () => {
     flip(a, () => {
       b.w = 200;
       b.h = 100;
-    }, { duration: 1, ease: 'linear' });
+    }, { duration: 1, ease: 'linear', correctRadius: true });
     expect(a.style.transform).toBe('translate(-50px,-25px) scale(0.5,0.5)');
     expect(a.style.borderRadius).toBe('20px');
     await tick();
