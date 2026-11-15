@@ -668,7 +668,8 @@ class Timeline(_Controller):
         if isinstance(position, (int, float)):
             return max(0.0, float(position))
         if not isinstance(position, str):
-            raise TypeError(f"position must be a number or a string, got {type(position).__name__}")
+            hint = " (options are keyword arguments: tl.add(target, props, \"-=0.2\", duration=0.5))" if isinstance(position, Mapping) else ""
+            raise TypeError(f"position must be a number or a string, got {type(position).__name__}{hint}")
         p = position.strip()
         try:
             return max(0.0, float(p))
