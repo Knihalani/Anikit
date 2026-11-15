@@ -870,6 +870,91 @@ pub fn sphere(rings: usize, segments: usize) -> Mesh {
     m
 }
 
+/// A flat grid in the XZ plane (−0.5…0.5), facing +Y, with `nx × nz` cells
+/// (UVs span 0…1 across it): floors, water, terrain bases.
+pub fn plane(nx: usize, nz: usize) -> Mesh {
+    heightfield(nx + 1, nz + 1, &[], f32::NEG_INFINITY)
+}
+
+/// A heightfield in the XZ plane (−0.5…0.5) from `w × h` samples (row-major,
+/// row = z), heights in Y. Smooth normals from central differences. Cells
+/// whose four corners are all `<= skip` are omitted (cut-outs, e.g. text
+/// embossed from a bitmap). Empty `heights` gives a flat plane.
+#[allow(clippy::needless_range_loop)]
+pub fn heightfield(w: usize, h: usize, heights: &[f32], skip: f32) -> Mesh {
+    let (w, h) = (w.max(2), h.max(2));
+    let at = |x: usize, z: usize| heights.get(z.min(h - 1) * w + x.min(w - 1)).copied().unwrap_or(0.0);
+    let (sx, sz) = (1.0 / (w - 1) as f32, 1.0 / (h - 1) as f32);
+    let mut m = Mesh::default();
+    for z in 0..h {
+        for x in 0..w {
+            let y = at(x, z);
+            m.pos.extend_from_slice(&[x as f32 * sx - 0.5, y, z as f32 * sz - 0.5]);
+            let dx = (at(x + 1, z) - at(x.saturating_sub(1), z)) / (sx * (if x == 0 || x == w - 1 { 1.0 } else { 2.0 }));
+            let dz = (at(x, z + 1) - at(x, z.saturating_sub(1))) / (sz * (if z == 0 || z == h - 1 { 1.0 } else { 2.0 }));
+            m.nrm.extend_from_slice(&norm3([-dx, 1.0, -dz]));
+            m.uv.extend_from_slice(&[x as f32 * sx, z as f32 * sz]);
+        }
+    }
+    for z in 0..h - 1 {
+        for x in 0..w - 1 {
+            if heights.len() >= w * h && at(x, z) <= skip && at(x + 1, z) <= skip && at(x, z + 1) <= skip && at(x + 1, z + 1) <= skip {
+                continue;
+            }
+            let (a, b, c, d) = ((z * w + x) as u32, (z * w + x + 1) as u32, ((z + 1) * w + x + 1) as u32, ((z + 1) * w + x) as u32);
+            // Counter-clockwise seen from +Y.
+            m.idx.extend_from_slice(&[a, c, b, a, d, c]);
+        }
+    }
+    m
+}
+
+/// A capped cylinder of radius 1 and height 1 (Y −0.5…0.5): pillars, beams,
+/// discs. `u` runs around, `v` along the side.
+pub fn cylinder(segments: usize, caps: bool) -> Mesh {
+    let n = segments.max(3);
+    let tau = core::f32::consts::TAU;
+    let mut m = Mesh::default();
+    for j in 0..=1 {
+        for i in 0..=n {
+            let a = i as f32 / n as f32 * tau;
+            let (c, s) = (libm::cosf(a), libm::sinf(a));
+            m.pos.extend_from_slice(&[c, j as f32 - 0.5, s]);
+            m.nrm.extend_from_slice(&[c, 0.0, s]);
+            m.uv.extend_from_slice(&[i as f32 / n as f32, j as f32]);
+        }
+    }
+    let row = (n + 1) as u32;
+    for i in 0..n as u32 {
+        let (a, b) = (i, i + 1);
+        m.idx.extend_from_slice(&[a, a + row, b + row, a, b + row, b]);
+    }
+    if caps {
+        for (y, ny) in [(-0.5f32, -1.0f32), (0.5, 1.0)] {
+            let c0 = (m.pos.len() / 3) as u32;
+            m.pos.extend_from_slice(&[0.0, y, 0.0]);
+            m.nrm.extend_from_slice(&[0.0, ny, 0.0]);
+            m.uv.extend_from_slice(&[0.5, 0.5]);
+            for i in 0..=n {
+                let a = i as f32 / n as f32 * tau;
+                let (c, s) = (libm::cosf(a), libm::sinf(a));
+                m.pos.extend_from_slice(&[c, y, s]);
+                m.nrm.extend_from_slice(&[0.0, ny, 0.0]);
+                m.uv.extend_from_slice(&[0.5 + c * 0.5, 0.5 + s * 0.5]);
+            }
+            for i in 0..n as u32 {
+                let (a, b) = (c0 + 1 + i, c0 + 2 + i);
+                if ny > 0.0 {
+                    m.idx.extend_from_slice(&[c0, b, a]);
+                } else {
+                    m.idx.extend_from_slice(&[c0, a, b]);
+                }
+            }
+        }
+    }
+    m
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -903,7 +988,8 @@ mod tests {
 
     #[test]
     fn mesh_builders_are_consistent() {
-        for m in [cube(), sphere(8, 12), tube(|t| [libm::cosf(t * 6.283), libm::sinf(t * 6.283), 0.0], 0.2, 32, 8)] {
+        let hf: Vec<f32> = (0..64).map(|i| if i % 3 == 0 { 0.0 } else { 0.2 }).collect();
+        for m in [cube(), sphere(8, 12), tube(|t| [libm::cosf(t * 6.283), libm::sinf(t * 6.283), 0.0], 0.2, 32, 8), plane(4, 3), cylinder(12, true), heightfield(8, 8, &hf, 0.0)] {
             assert_eq!(m.pos.len(), m.nrm.len());
             assert_eq!(m.uv.len() * 3, m.pos.len() * 2);
             assert_eq!(m.idx.len() % 3, 0);
@@ -940,5 +1026,29 @@ mod tests {
         // Over-bright colours keep their hue ordering instead of clipping to equal channels.
         let p = pack([4.0, 1.0, 0.2]);
         assert!((p & 255) == 255 && ((p >> 8) & 255) < 250 && ((p >> 16) & 255) < ((p >> 8) & 255));
+    }
+
+    #[test]
+    fn plane_and_cylinder_face_outwards() {
+        // Seen from above, the plane is front-facing (not culled).
+        let mut r = Raster::new(32, 32);
+        r.clear(0, 255);
+        let m = mul(&perspective(60.0, 1.0, 0.1, 100.0), &look_at([0.0, 3.0, 0.01], [0.0; 3], [0.0, 1.0, 0.0]));
+        let vp: M4 = core::array::from_fn(|i| m[i] as f32);
+        let mut inst = [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 4.0, 0.0, 0.0, 0.0].to_vec();
+        inst.extend_from_slice(&[1.0, 1.0, 1.0]);
+        r.draw(&plane(2, 2), &inst, &vp, [0.0, 3.0, 0.0], &Material::default(), &Lighting::default(), true);
+        assert!(r.color[16 * 32 + 16] & 0xff > 40);
+        // Cylinder side and caps survive back-face culling from the side and from above.
+        for eye in [[0.0, 0.0, 4.0], [0.0, 4.0, 0.01]] {
+            let mut r = Raster::new(32, 32);
+            r.clear(0, 255);
+            let m = mul(&perspective(60.0, 1.0, 0.1, 100.0), &look_at([eye[0] as f64, eye[1] as f64, eye[2] as f64], [0.0; 3], [0.0, 1.0, 0.0]));
+            let vp: M4 = core::array::from_fn(|i| m[i] as f32);
+            let mut inst = ID.to_vec();
+            inst.extend_from_slice(&[1.0, 1.0, 1.0]);
+            r.draw(&cylinder(24, true), &inst, &vp, eye, &Material::default(), &Lighting::default(), true);
+            assert!(r.color[16 * 32 + 16] & 0xff > 20, "visible from {eye:?}");
+        }
     }
 }

@@ -62,6 +62,8 @@ export { composition, Composition, FrameBuffer, typeFx, exportWebM, muxWebM } fr
 export type { CompositionOptions, SceneHooks, SceneDef, FrameInfo, RenderOptions, RenderedFrame, TypeFxOptions, Transition, TransitionFn } from './video';
 export type { CloudOptions, ShapeInput, GlowOptions, GlowRenderOptions } from './cloud';
 export { scene3d, Scene3D, tilt, parseTransform, toMatrix3d, mixTransforms } from './scene';
+export { flightPath, FlightPath } from './flight';
+export type { FlightPathOptions, FlightPose, Point3 } from './flight';
 export type { SceneOptions, Projection, DrawOptions, TiltOptions, Vec3, Matrix } from './scene';
 export { testing } from './testing';
 export { setWarnings, onWarning } from './debug';

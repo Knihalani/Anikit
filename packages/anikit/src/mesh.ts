@@ -30,6 +30,8 @@ function rgb(c: string | V3 | undefined, d: V3 = [1, 1, 1]): V3 {
 
 /** A mesh living in WebAssembly memory. */
 export class Mesh3D {
+  /** Depth/width ratio for meshes built from images (`mesh.text`): use it as the instance's `sz`/`sy` factor. */
+  aspect = 1;
   constructor(readonly id: number) {}
   get vertices(): number {
     return core().ak_mesh_ptr(this.id, 3);
@@ -58,14 +60,100 @@ export const mesh = {
     builtin(2, [o.p ?? 2, o.q ?? 5, o.radius ?? 300, o.spread ?? 120, o.tube ?? 40, o.segments ?? 360, o.sides ?? 16]),
   /** A torus in the XY plane. */
   torus: (radius = 300, tube = 60, segments = 96, sides = 24) => builtin(3, [radius, tube, segments, sides]),
-  /** Your own geometry: xyz positions and normals per vertex, three indices per triangle. */
-  custom(positions: ArrayLike<number>, normals: ArrayLike<number>, indices: ArrayLike<number>): Mesh3D {
+  /**
+   * A flat grid in the XZ plane (−0.5…0.5, scale it with the instance), facing +Y,
+   * with `cells` subdivisions; UVs span 0–1. Floors and horizons: pair with
+   * `lines` + `grid` for a glowing grid that runs to the horizon.
+   */
+  plane: (cells: number | [number, number] = 1) => {
+    const [x, z] = Array.isArray(cells) ? cells : [cells, cells];
+    return builtin(4, [x, z]);
+  },
+  /** Capped cylinder, radius 1, height 1 (Y −0.5…0.5). `u` runs around, `v` along. */
+  cylinder: (segments = 32, caps = true) => builtin(5, [segments, caps ? 1 : 0]),
+  /**
+   * A heightfield in the XZ plane (−0.5…0.5) from a `width × depth` grid of
+   * heights (row-major), with smooth normals. Cells whose corners are all
+   * `<= skip` are cut out (use `skip: 0` to keep only raised areas).
+   *
+   * ```ts
+   * const hills = mesh.heightfield(64, 64, (x, z) => noise2(x * 4, z * 4) * 0.1);
+   * ```
+   */
+  heightfield(width: number, depth: number, heights: ArrayLike<number> | ((x: number, z: number) => number), o: { skip?: number } = {}): Mesh3D {
+    const n = width * depth;
+    // Resolve user code before reserving the scratch buffer (AGENTS.md scratch-buffer rule).
+    const hs = typeof heights === 'function' ? Float64Array.from({ length: n }, (_, i) => heights((i % width) / (width - 1), Math.floor(i / width) / (depth - 1))) : heights;
+    const at = f64Buf(3 + n);
+    F64.set([width, depth, o.skip ?? -Infinity], at);
+    F64.set(hs as ArrayLike<number>, at + 3);
+    return new Mesh3D(core().ak_mesh_builtin(6));
+  },
+  /**
+   * Solid 3D text in any font: the text is rasterised to a canvas, softened
+   * (which gives the edges a bevel) and raised into a heightfield, so the
+   * letters stand `depth` tall out of the XZ plane. Rotate the instance
+   * (`rx: 90`) to stand it up facing the camera. Width is 1 unit; scale it.
+   *
+   * ```ts
+   * const word = mesh.text('anikit', { font: '900 120px Inter', depth: 0.06 });
+   * items.push({ mesh: word, instances: instances(1, () => ({ rx: 90, scale: 1200 })) });
+   * ```
+   */
+  text(s: string, o: { font?: string; resolution?: number; depth?: number; bevel?: number; padding?: number } = {}): Mesh3D {
+    const font = o.font ?? '900 120px sans-serif';
+    const doc = (globalThis as { document?: { createElement(t: string): HTMLCanvasElement } }).document;
+    if (!doc) throw new Error('anikit: mesh.text() needs a canvas (a browser, or anikit/node\'s loadAnikit in Node)');
+    const probe = doc.createElement('canvas').getContext('2d')!;
+    probe.font = font;
+    const m = probe.measureText(s);
+    const pad = o.padding ?? 8;
+    const tw = Math.ceil(m.width) + pad * 2;
+    const asc = m.actualBoundingBoxAscent || parseFloat(font.match(/(\d+)px/)?.[1] ?? '100') * 0.8;
+    const desc = m.actualBoundingBoxDescent || 0;
+    const th = Math.ceil(asc + desc) + pad * 2;
+    // Sample grid: `resolution` columns across the text (default 360).
+    const cols = Math.max(16, Math.round(o.resolution ?? 360));
+    const scale = cols / tw;
+    const W = cols, H = Math.max(4, Math.round(th * scale));
+    const c = doc.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d')!;
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.font = font; ctx.fillStyle = '#fff'; ctx.textBaseline = 'alphabetic';
+    const bevel = o.bevel ?? 1.2;
+    if (bevel > 0 && 'filter' in ctx) ctx.filter = `blur(${bevel / scale}px)`;
+    ctx.fillText(s, pad, pad + asc);
+    const px = ctx.getImageData(0, 0, W, H).data;
+    // A bevel even without canvas filters: a 3×3 box blur.
+    const raw = new Float32Array(W * H);
+    for (let i = 0; i < W * H; i++) raw[i] = px[i * 4] / 255;
+    const hs = new Float64Array(W * H);
+    const depth = o.depth ?? 0.06;
+    for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
+      let acc = 0, k = 0;
+      for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+        const xx = x + dx, zz = z + dz;
+        if (xx >= 0 && zz >= 0 && xx < W && zz < H) { acc += raw[zz * W + xx]; k++; }
+      }
+      const v = acc / k;
+      hs[z * W + x] = v * v * (3 - 2 * v) * depth * (W / Math.max(W, H));
+    }
+    // Aspect: the heightfield spans −0.5…0.5 in both X and Z; squash Z via the instance (sz = H / W).
+    const mesh3 = mesh.heightfield(W, H, hs, { skip: 1e-4 * depth });
+    mesh3.aspect = H / W;
+    return mesh3;
+  },
+  /** Your own geometry: xyz positions and normals per vertex, three indices per triangle, optional uv pairs. */
+  custom(positions: ArrayLike<number>, normals: ArrayLike<number>, indices: ArrayLike<number>, uvs?: ArrayLike<number>): Mesh3D {
     const w = core();
     const id = w.ak_mesh_custom(positions.length / 3, indices.length / 3);
     const mem = W!.memory.buffer;
     new Float32Array(mem, w.ak_mesh_ptr(id, 0), positions.length).set(positions);
     new Float32Array(mem, w.ak_mesh_ptr(id, 1), normals.length).set(normals);
     new Uint32Array(mem, w.ak_mesh_ptr(id, 2), indices.length).set(indices);
+    if (uvs) new Float32Array(mem, w.ak_mesh_ptr(id, 5), (positions.length / 3) * 2).set(uvs);
     return new Mesh3D(id);
   },
 };

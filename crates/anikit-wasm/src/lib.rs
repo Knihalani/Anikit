@@ -1809,6 +1809,14 @@ pub extern "C" fn ak_mesh_builtin(kind: u32) -> u32 {
         1 => sphere((b(0) as usize).max(3), (b(1) as usize).max(3)),
         2 => torus_knot(b(0), b(1), b(2), b(3), b(4), (b(5) as usize).max(8), (b(6) as usize).max(3)),
         3 => torus(b(0), b(1), (b(2) as usize).max(8), (b(3) as usize).max(3)),
+        4 => plane((b(0) as usize).max(1), (b(1) as usize).max(1)),
+        5 => cylinder((b(0) as usize).max(3), b(1) != 0.0),
+        6 => {
+            // Heightfield: w, h, skip, then w*h heights.
+            let (w, h) = ((b(0) as usize).max(2), (b(1) as usize).max(2));
+            let hs: Vec<f32> = s.f64_buf.get(3..3 + w * h).map(|v| v.iter().map(|x| *x as f32).collect()).unwrap_or_default();
+            heightfield(w, h, &hs, b(2))
+        }
         _ => cube(),
     };
     push_slot(&mut s.meshes, m)
@@ -1816,6 +1824,7 @@ pub extern "C" fn ak_mesh_builtin(kind: u32) -> u32 {
 /// Custom mesh storage: write positions/normals (xyz) and indices, then draw.
 #[no_mangle]
 pub extern "C" fn ak_mesh_custom(nverts: u32, ntris: u32) -> u32 {
+    // Positions, normals and UVs are zeroed: write them through `ak_mesh_ptr` (0, 1, 5) and indices (2).
     let m = anikit_core::raster::Mesh { pos: alloc::vec![0.0; nverts as usize * 3], nrm: alloc::vec![0.0; nverts as usize * 3], uv: alloc::vec![0.0; nverts as usize * 2], idx: alloc::vec![0; ntris as usize * 3] };
     push_slot(&mut st().meshes, m)
 }
