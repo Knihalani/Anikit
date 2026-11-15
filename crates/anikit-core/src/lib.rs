@@ -32,6 +32,7 @@ pub mod morph;
 pub mod noise;
 pub mod path;
 pub mod raster;
+pub mod simd;
 pub mod space;
 pub mod splat;
 pub mod spring;

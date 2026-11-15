@@ -390,6 +390,11 @@ pub fn parse(s: &str) -> Option<Rgba> {
     let Some(args) = args else {
         return named(&lname);
     };
+    // A colour function must be the whole value: "rgba(0,0,0,.2) 0px 4px 12px"
+    // (a computed box-shadow) is not a colour.
+    if !s.ends_with(')') {
+        return None;
+    }
     if lname == "color" {
         return parse_color_fn(args);
     }
@@ -583,6 +588,12 @@ mod tests {
             let back = from_space(&v, sp);
             assert!(close(back, c, 1e-3), "{sp:?} {back:?}");
         }
+    }
+    #[test]
+    fn rejects_trailing_text() {
+        assert!(parse("rgba(0, 0, 0, 0.2) 0px 4px 12px 0px").is_none());
+        assert!(parse("red 2px").is_none());
+        assert!(parse(" rgb(1, 2, 3) ").is_some());
     }
     #[test]
     fn mix_premultiplied() {

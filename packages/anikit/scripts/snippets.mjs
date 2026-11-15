@@ -57,7 +57,9 @@ const PLACEHOLDERS = {
   otherTimelineOrAnimation: 'import("anikit").Timeline', render: '(v: number) => void', draw: '(data: Float32Array, stride: number) => void',
   drawParticles: '(dt: number) => void', setVolume: '(v: number) => void', rootRef: '{ current: HTMLElement }',
   useLayoutEffect: '(fn: () => void | (() => void), deps: unknown[]) => void', gl: 'WebGLRenderingContext',
-  canvas: 'HTMLCanvasElement', d: 'string', next: '() => void', prev: '() => void', myLogger: 'Console', expect: '(v: unknown) => { toEqual(x: unknown): void }', tl: 'import("anikit").Timeline', t: 'number',
+  canvas: 'HTMLCanvasElement', d: 'string', hero: 'HTMLElement', thumb: 'HTMLElement', modal: 'HTMLElement', oldView: 'HTMLElement', newView: 'HTMLElement',
+  applyFilter: '() => void', reorder: '() => void', openDetail: '(id: string) => void', id: 'string', route: '(to: unknown) => void',
+  save: '(...values: number[]) => void', view: '{ set(x: number, y: number, scale: number): void }', open: 'boolean', next: '() => void', prev: '() => void', myLogger: 'Console', expect: '(v: unknown) => { toEqual(x: unknown): void }', tl: 'import("anikit").Timeline', t: 'number',
   onEnter: 'Cb', onLeave: 'Cb', onEnterBack: 'Cb', onLeaveBack: 'Cb', onToggle: 'Cb', onUpdate: 'Cb', item: 'HTMLElement', list: 'HTMLElement',
 };
 

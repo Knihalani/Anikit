@@ -16,7 +16,7 @@ animate('.card', { y: [40, 0], opacity: [0, 1] }, { delay: stagger(0.05), ease: 
 - Mistakes print `anikit:` warnings that say how to fix them (unknown options and properties with "did you mean", millisecond-looking durations, wrong units, selectors that match nothing). `testing.captureWarnings()` collects them in tests.
 - Every option has JSDoc (defaults, units, examples) and easing names autocomplete, so editor hover is usually enough.
 - `import 'anikit'` embeds the WASM module, so it works with zero configuration (bundlers, CDNs, Node).
-- `import 'anikit/lean'` (ESM) streams `anikit.wasm` from next to the script instead: 53 KB gz of JS plus a cacheable 156 KB gz module (sizes printed by `node scripts/build.mjs`).
+- `import 'anikit/lean'` (ESM) streams `anikit.wasm` from next to the script instead: 68 KB gz of JS plus a cacheable 187 KB gz module (sizes printed by `node scripts/build.mjs`).
 
 Docs:
 

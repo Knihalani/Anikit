@@ -10,7 +10,8 @@
  * ```
  */
 import { core, readStr, whenReady } from './wasm';
-import { easingId, easingDuration, EasingInput, LINEAR } from './core';
+import { easingId, easingDuration, EasingInput, LINEAR, prefersReduced } from './core';
+import { track } from './context';
 import { AnimateOptions, Props, FnValue, Scalar, ANIMATE_KEYS } from './animate';
 import { checkKeys, checkSeconds, checkTargets } from './debug';
 import { Targets, toTargets, classify, Kind, readValue, stateOf, composeTransform, TargetState, isTransform, transformUnit, kebab } from './props';
@@ -49,13 +50,27 @@ export class CompositorAnimation implements PromiseLike<void> {
   animations: globalThis.Animation[] = [];
   private _done: Promise<void>;
   private _resolve!: () => void;
+  /** Driven by scroll (a scroll timeline or `progress`): never auto-committed on finish. */
+  _linked = false;
+  /** Restore the inline values that were there before (`revert()`). */
+  _restore: Array<() => void> = [];
+  private _ready: Array<() => void> | null = [];
   constructor() {
     this._done = new Promise((r) => (this._resolve = r));
+    track(this);
+  }
+  /** Run `fn` once the WAAPI animations exist (they're created when the core is ready). */
+  _whenBuilt(fn: () => void): void {
+    if (this._ready) this._ready.push(fn);
+    else fn();
   }
   /** @internal */
   _settle(list: globalThis.Animation[]): void {
     this.animations = list;
     Promise.all(list.map((a) => a.finished.catch(() => undefined))).then(() => this._resolve());
+    const r = this._ready;
+    this._ready = null;
+    if (r) for (const fn of r) fn();
   }
   get finished(): Promise<void> {
     return this._done;
@@ -92,9 +107,35 @@ export class CompositorAnimation implements PromiseLike<void> {
     const t = a.effect?.getComputedTiming();
     return Number(t?.progress ?? 0);
   }
+  /** Seek every animation to overall progress `p` (0–1) and hold there (pauses). */
+  set progress(p: number) {
+    this._whenBuilt(() => {
+      for (const a of this.animations) {
+        const end = Number(a.effect?.getComputedTiming().endTime ?? 0);
+        if (a.playState !== 'paused') a.pause();
+        a.currentTime = Math.min(1, Math.max(0, p)) * end;
+      }
+    });
+  }
+  /** Total duration in seconds (longest animation, delays included). */
+  get duration(): number {
+    let d = 0;
+    for (const a of this.animations) d = Math.max(d, Number(a.effect?.getComputedTiming().endTime ?? 0));
+    return Number.isFinite(d) ? d / 1000 : Infinity;
+  }
   kill(): void {
-    this.animations.forEach((a) => a.cancel());
-    this._resolve();
+    this._whenBuilt(() => {
+      this.animations.forEach((a) => a.cancel());
+      this._resolve();
+    });
+  }
+  /** Cancel and put back the inline styles from before the animation. */
+  revert(): void {
+    this._whenBuilt(() => {
+      this.animations.forEach((a) => a.cancel());
+      for (const r of this._restore.splice(0).reverse()) r();
+      this._resolve();
+    });
   }
 }
 
@@ -110,9 +151,30 @@ export function compositor(targets: Targets, props: Props, options: AnimateOptio
     checkTargets('compositor()', targets, n);
     const ease = (Array.isArray(options.ease) && typeof options.ease[0] !== 'number' ? options.ease[0] : options.ease) as EasingInput;
     const easing = cssEasing(ease ?? 'outQuad');
+    const reduce = prefersReduced();
     els.forEach((el, i) => {
       const res = <T,>(v: FnValue<T>): T => (typeof v === 'function' ? (v as any)(el, i, n) : v);
       const s = stateOf(el);
+      // Inline values to restore on revert().
+      {
+        const st = (el as HTMLElement).style;
+        const keys = new Set<string>();
+        for (const k of Object.keys(props)) keys.add(isTransform(k) ? 'transform' : k.startsWith('--') ? k : kebab(k));
+        const t0 = s.t.slice();
+        const u0 = s.u.slice();
+        for (const key of keys) {
+          const v = st.getPropertyValue(key);
+          const pr = st.getPropertyPriority(key);
+          ctl._restore.push(() => {
+            if (v) st.setProperty(key, v, pr);
+            else st.removeProperty(key);
+            if (key === 'transform') {
+              s.t = t0.slice();
+              s.u = u0.slice();
+            }
+          });
+        }
+      }
       const frames: Array<Record<string, string | number>> = [];
       // Per-property keyframe values.
       let count = 2;
@@ -166,10 +228,11 @@ export function compositor(targets: Targets, props: Props, options: AnimateOptio
         if (d > 0) dur = d;
       }
       const anim = el.animate(frames as Keyframe[], {
-        duration: dur * 1000,
-        delay: res(options.delay ?? 0) * 1000,
-        endDelay: (options.endDelay ?? 0) * 1000,
-        iterations: repeat + 1,
+        // Reduced motion: jump to the end state (committed like a normal finish).
+        duration: reduce ? 0 : dur * 1000,
+        delay: reduce ? 0 : res(options.delay ?? 0) * 1000,
+        endDelay: reduce ? 0 : (options.endDelay ?? 0) * 1000,
+        iterations: reduce ? 1 : repeat + 1,
         direction: options.direction ? DIR[options.direction] : options.yoyo ? 'alternate' : 'normal',
         easing,
         fill: 'both',
@@ -177,6 +240,9 @@ export function compositor(targets: Targets, props: Props, options: AnimateOptio
       if (options.speed) anim.playbackRate = options.speed;
       const last = temp[count - 1];
       anim.finished.then(() => {
+        // Scroll-linked animations finish whenever the scroll reaches the end:
+        // they must stay attached.
+        if (ctl._linked) return;
         // Persist the final values as inline styles and free the effect.
         try {
           anim.commitStyles();

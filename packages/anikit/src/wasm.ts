@@ -149,7 +149,7 @@ export interface Exports {
   ak_video_add(id: number): number;
   ak_video_resolve(id: number): void;
   ak_video_i420(id: number, order: number): number;
-  ak_video_post(id: number, seed: number): void;
+  ak_video_post(id: number, seed: number, nf: number): number;
   ak_mesh_builtin(kind: number): number;
   ak_mesh_custom(nverts: number, ntris: number): number;
   ak_mesh_ptr(id: number, which: number): number;
@@ -160,6 +160,11 @@ export interface Exports {
   ak_raster_clear(id: number, rgb: number, alpha: number): void;
   ak_raster_instances(id: number, n: number): number;
   ak_raster_draw(id: number, mesh: number, n: number, cullBack: number, nf: number): number;
+  ak_raster_point_buf(id: number, n: number): number;
+  ak_texture_create(w: number, h: number): number;
+  ak_texture_free(id: number): void;
+  ak_raster_clear_depth(id: number): void;
+  ak_raster_points(id: number, n: number, hasPrev: number): void;
   ak_raster_ptr(id: number): number;
   ak_emitter_create(capacity: number, seed: number): number;
   ak_emitter_free(id: number): void;

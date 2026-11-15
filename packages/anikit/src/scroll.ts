@@ -4,6 +4,7 @@
  * ```ts
  * scroll(animate('.bar', { scaleX: [0, 1] }, { ease: 'linear' }));          // page progress bar
  * scroll(animate(img, { y: [-50, 50] }), { target: img, smooth: 0.1 });    // smoothed parallax
+ * scroll(compositor('.hero', { scale: [1, 1.2], opacity: [1, 0] }), { target: hero, offset: ['start start', 'end start'] }); // runs on the compositor
  * inView('.card', (el) => { animate(el, { opacity: [0, 1] }); });
  * ```
  */
@@ -13,6 +14,7 @@ import { spring, PhysicsAnimation } from './spring';
 import { whenReady } from './wasm';
 import { checkKeys, checkTargets, checkSeconds } from './debug';
 import type { OptionKeys } from './debug';
+import { CompositorAnimation } from './compositor';
 
 type Edge = string | number;
 export interface ScrollOptions {
@@ -30,6 +32,12 @@ export interface ScrollOptions {
   offset?: [string, string];
   /** Smooth the progress with a spring; value ≈ lag in seconds (0 = off). */
   smooth?: number;
+  /**
+   * For {@link compositor} animations: hand them to a native `ScrollTimeline`
+   * so the browser scrubs them off the main thread (default true; ignored
+   * with `smooth`). Without support they're scrubbed from the scroll event.
+   */
+  native?: boolean;
 }
 
 const EDGES: Record<string, number> = { start: 0, center: 0.5, end: 1 };
@@ -46,13 +54,17 @@ function parseOffset(o: string): [string, string] {
   return [p[0] ?? 'start', p[1] ?? p[0] ?? 'start'];
 }
 
-const SCROLL_KEYS: OptionKeys<ScrollOptions> = { target: 0, container: 0, axis: 0, offset: 0, smooth: 0 };
+const SCROLL_KEYS: OptionKeys<ScrollOptions> = { target: 0, container: 0, axis: 0, offset: 0, smooth: 0, native: 0 };
 
 /**
  * Drive an animation's progress (or call a function with progress 0–1) from
  * scroll position. Returns a cleanup function.
+ *
+ * {@link compositor} animations are attached to a native `ScrollTimeline`
+ * where supported: the browser then scrubs them on the compositor thread and
+ * no JavaScript runs while scrolling.
  */
-export function scroll(subject: Playable | ((progress: number) => void), options: ScrollOptions = {}): () => void {
+export function scroll(subject: Playable | CompositorAnimation | ((progress: number) => void), options: ScrollOptions = {}): () => void {
   checkKeys('scroll()', options, SCROLL_KEYS);
   checkSeconds('scroll()', 'smooth', options.smooth, 10);
   if (typeof window === 'undefined') return () => {};
@@ -82,8 +94,16 @@ export function scroll(subject: Playable | ((progress: number) => void), options
     end = pos + edge(o1[0], len) - edge(o1[1], size);
   };
 
+  if (subject instanceof CompositorAnimation) {
+    subject._linked = true;
+    const G = globalThis as any;
+    if (options.native !== false && !options.smooth && typeof G.ScrollTimeline === 'function') {
+      measure();
+      return nativeScroll(subject, scroller, axis, measure, () => [start, end]);
+    }
+  }
   const apply: (p: number) => void =
-    subject instanceof Playable
+    subject instanceof Playable || subject instanceof CompositorAnimation
       ? (p) => {
           subject.progress = p;
         }
@@ -124,6 +144,46 @@ export function scroll(subject: Playable | ((progress: number) => void), options
     evTarget.removeEventListener('scroll', update);
     window.removeEventListener('resize', onResize);
     smoother?.stop();
+  };
+}
+
+/** Attach compositor animations to a native scroll timeline over [start, end] px. */
+function nativeScroll(
+  subject: CompositorAnimation, scroller: Element, axis: 'x' | 'y', measure: () => void, range: () => [number, number],
+): () => void {
+  const G = globalThis as any;
+  const timeline = new G.ScrollTimeline({ source: scroller, axis: axis === 'y' ? 'block' : 'inline' });
+  const attach = () => {
+    const [a, b] = range();
+    for (const anim of subject.animations) {
+      const x = anim as any;
+      if (x.timeline !== timeline) x.timeline = timeline;
+      // Lengths from the start of the scroll range (the string form: Chromium
+      // reads a bare CSSUnitValue here as 0%).
+      x.rangeStart = Math.max(0, a) + 'px';
+      x.rangeEnd = Math.max(a + 0.01, b) + 'px';
+      if (anim.playState !== 'running') anim.play();
+    }
+  };
+  subject._whenBuilt(attach);
+  // Ranges are in px: re-measure when the layout changes size.
+  const onResize = () => {
+    measure();
+    attach();
+  };
+  window.addEventListener('resize', onResize, { passive: true });
+  return () => {
+    window.removeEventListener('resize', onResize);
+    subject._whenBuilt(() => {
+      for (const anim of subject.animations) {
+        // Keep the current look: same progress, back on the document timeline.
+        const p = Number(anim.effect?.getComputedTiming().progress ?? 0) || 0;
+        (anim as any).timeline = document.timeline;
+        anim.pause();
+        const end = Number(anim.effect?.getComputedTiming().endTime ?? 0);
+        if (Number.isFinite(end)) anim.currentTime = p * end;
+      }
+    });
   };
 }
 

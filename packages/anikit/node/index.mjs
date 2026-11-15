@@ -99,7 +99,13 @@ export async function renderToFile(comp, o) {
     '-r', String(fps), '-movflags', '+faststart', o.out];
   const ff = spawn('ffmpeg', args, { stdio: ['pipe', 'inherit', 'inherit'] });
   const done = new Promise((res, rej) => ff.on('close', (c) => (c ? rej(new Error(`ffmpeg exited ${c}`)) : res())));
-  const write = (b) => new Promise((r) => (ff.stdin.write(b) ? r() : ff.stdin.once('drain', r)));
+  // Keep up to `o.queue` frames (default 3) buffered for ffmpeg so encoding
+  // overlaps rendering instead of waiting for each frame to drain.
+  const frameBytes = w * h * 1.5, maxQueued = frameBytes * (o.queue ?? 3);
+  const write = (b) => {
+    ff.stdin.write(b);
+    return ff.stdin.writableLength > maxQueued ? new Promise((r) => ff.stdin.once('drain', r)) : null;
+  };
   const canvas = o.canvas ?? canvasLib().createCanvas(w, h);
   const t0 = Date.now();
   let n = 0;
@@ -107,7 +113,8 @@ export async function renderToFile(comp, o) {
     canvas, from: o.from, to: o.to, preroll: o.preroll, readPixels, createCanvas: (w, h) => canvasLib().createCanvas(w, h),
     onFrame: async (fr) => {
       // Copy out of wasm memory: the pipe may not drain before the next frame.
-      await write(Buffer.from(fr.i420()));
+      const wait = write(Buffer.from(fr.i420()));
+      if (wait) await wait;
       n++;
       o.onProgress?.(fr, n, (Date.now() - t0) / 1000);
     },
@@ -145,6 +152,96 @@ export async function renderPreview(comp, o) {
   const canvas = o.canvas ?? canvasLib().createCanvas(comp.width, comp.height);
   await comp.render({
     canvas, from: o.from, to: o.to, every: o.every ?? 30, readPixels, createCanvas: (w, h) => canvasLib().createCanvas(w, h),
-    onFrame: (fr) => writeFileSync(join(o.dir, `f${String(fr.index).padStart(5, '0')}.jpg`), canvas.toBuffer('image/jpeg', 85)),
+    onFrame: (fr) => {
+      // Save the graded frame (bloom, streaks, grade…), not the raw canvas.
+      const out = canvasLib().createCanvas(comp.width, comp.height);
+      out.getContext('2d').putImageData(new globalThis.ImageData(new Uint8ClampedArray(fr.rgba()), comp.width, comp.height), 0, 0);
+      writeFileSync(join(o.dir, `f${String(fr.index).padStart(5, '0')}.jpg`), out.toBuffer('image/jpeg', 88));
+    },
   });
 }
+
+/**
+ * Review a film without watching it: renders every `every`-th frame once
+ * (default 6, i.e. 10 per second at 60 fps), and returns
+ * - a contact sheet (JPEG buffer): graded frames every `sheetEvery` seconds
+ *   (default 0.5) tiled `cols` across with timestamps;
+ * - a pacing report: motion energy over time (mean absolute luma change
+ *   between samples, 0–255), holds (stretches with little motion longer than
+ *   `hold` seconds, default 1), flat frames (almost no contrast) and cuts.
+ *
+ *   anikit-render film.mjs --review review/   (writes sheet.jpg, pacing.txt, pacing.csv)
+ */
+export async function reviewFilm(comp, o = {}) {
+  const lib = canvasLib();
+  const { width: W, height: H, fps } = comp;
+  const every = o.every ?? Math.max(1, Math.round(fps / 10));
+  const sheetEvery = o.sheetEvery ?? 0.5;
+  const cols = o.cols ?? 8, tw = o.thumb ?? 320, th = Math.round((tw * H) / W);
+  const holdS = o.hold ?? 1, quiet = o.quiet ?? 1.2;
+  // Small luma probe per sample (64 px wide).
+  const pw = 64, ph = Math.max(1, Math.round((pw * H) / W));
+  const probe = lib.createCanvas(pw, ph), pctx = probe.getContext('2d');
+  const full = lib.createCanvas(W, H), fctx = full.getContext('2d');
+  const thumbs = [];
+  const samples = []; // { t, energy, contrast }
+  let prev = null, nextSheet = 0;
+  const canvas = o.canvas ?? lib.createCanvas(W, H);
+  await comp.render({
+    canvas, from: o.from, to: o.to, every, readPixels, createCanvas: (w, h) => lib.createCanvas(w, h),
+    onFrame: (fr) => {
+      fctx.putImageData(new globalThis.ImageData(new Uint8ClampedArray(fr.rgba()), W, H), 0, 0);
+      pctx.drawImage(full, 0, 0, pw, ph);
+      const d = pctx.getImageData(0, 0, pw, ph).data;
+      const y = new Float32Array(pw * ph);
+      let mean = 0;
+      for (let i = 0; i < y.length; i++) { y[i] = 0.2126 * d[i * 4] + 0.7152 * d[i * 4 + 1] + 0.0722 * d[i * 4 + 2]; mean += y[i]; }
+      mean /= y.length;
+      let varc = 0, energy = 0;
+      for (let i = 0; i < y.length; i++) { varc += (y[i] - mean) ** 2; if (prev) energy += Math.abs(y[i] - prev[i]); }
+      samples.push({ t: fr.t, energy: prev ? energy / y.length : 0, contrast: Math.sqrt(varc / y.length), mean });
+      prev = y;
+      if (fr.t + 1e-6 >= nextSheet) {
+        const c = lib.createCanvas(tw, th);
+        c.getContext('2d').drawImage(full, 0, 0, tw, th);
+        thumbs.push({ t: fr.t, c });
+        nextSheet += sheetEvery;
+      }
+    },
+  });
+  // Contact sheet.
+  const nc = Math.max(1, Math.min(cols, thumbs.length));
+  const rows = Math.ceil(thumbs.length / nc);
+  const sheet = lib.createCanvas(nc * tw, rows * (th + 18));
+  const sctx = sheet.getContext('2d');
+  sctx.fillStyle = '#111'; sctx.fillRect(0, 0, sheet.width, sheet.height);
+  sctx.font = '13px monospace'; sctx.fillStyle = '#ddd';
+  thumbs.forEach(({ t, c }, i) => {
+    const x = (i % nc) * tw, y = Math.floor(i / nc) * (th + 18);
+    sctx.drawImage(c, x, y);
+    sctx.fillText(`${t.toFixed(2)}s`, x + 4, y + th + 13);
+  });
+  // Pacing: holds = runs of low energy longer than holdS; flats; cuts.
+  const holds = [];
+  let run = null;
+  for (const s of samples) {
+    if (s.energy < quiet) run ??= { from: s.t, to: s.t };
+    if (s.energy < quiet) run.to = s.t;
+    else if (run) { if (run.to - run.from >= holdS) holds.push(run); run = null; }
+  }
+  if (run && run.to - run.from >= holdS) holds.push(run);
+  const flats = samples.filter((s) => s.contrast < 4).map((s) => s.t);
+  const energies = samples.map((s) => s.energy).sort((a, b) => a - b);
+  const median = energies[Math.floor(energies.length / 2)] ?? 0;
+  const cuts = samples.filter((s) => s.energy > Math.max(25, median * 6)).map((s) => s.t);
+  const lines = [
+    `film ${W}x${H} @ ${fps} fps, ${samples.length} samples (every ${every} frames)`,
+    `motion energy: median ${median.toFixed(1)}, mean ${(energies.reduce((a, b) => a + b, 0) / Math.max(1, energies.length)).toFixed(1)} (mean |Δluma| per sample, 0-255)`,
+    holds.length ? `HOLDS (little motion for ≥ ${holdS}s): ${holds.map((h) => `${h.from.toFixed(2)}–${h.to.toFixed(2)}s`).join(', ')}` : `no holds longer than ${holdS}s`,
+    flats.length ? `FLAT frames (almost no contrast): ${flats.map((t) => t.toFixed(2)).join(', ')}` : 'no flat frames',
+    `cuts / hits: ${cuts.map((t) => t.toFixed(2)).join(', ') || 'none'}`,
+  ];
+  const csv = 't,energy,contrast,mean\n' + samples.map((s) => `${s.t.toFixed(3)},${s.energy.toFixed(2)},${s.contrast.toFixed(2)},${s.mean.toFixed(1)}`).join('\n');
+  return { sheet: sheet.toBuffer('image/jpeg', 85), report: lines.join('\n'), csv, samples, holds, flats, cuts };
+}
+

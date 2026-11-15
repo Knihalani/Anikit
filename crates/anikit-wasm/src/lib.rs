@@ -59,6 +59,7 @@ struct State {
     audio: anikit_core::audio::Analysis,
     meshes: Vec<Option<anikit_core::raster::Mesh>>,
     rasters: Vec<Option<(anikit_core::raster::Raster, Vec<f32>)>>,
+    textures: Vec<Option<anikit_core::raster::Texture>>,
 }
 
 struct VideoSlot {
@@ -91,6 +92,7 @@ static STATE: Global = Global(UnsafeCell::new(State {
     audio: anikit_core::audio::Analysis { hop: 0.0, envelope: Vec::new(), flux: Vec::new(), onsets: Vec::new(), bpm: 0.0, beats: Vec::new() },
     meshes: Vec::new(),
     rasters: Vec::new(),
+    textures: Vec::new(),
 }));
 
 #[inline(always)]
@@ -1593,24 +1595,46 @@ pub extern "C" fn ak_video_resolve(id: u32) {
 /// Film-look post pass on the input frame. f64 buffer:
 /// `[bloomThreshold, bloom, bloomRadius, aberration, vignette, grain]`.
 #[no_mangle]
-pub extern "C" fn ak_video_post(id: u32, seed: u32) {
+pub extern "C" fn ak_video_post(id: u32, seed: u32, nf: u32) -> u32 {
+    // f64 buffer: bloomThreshold, bloom, bloomRadius, aberration, vignette, grain,
+    // [6..23) streaks, streakLength, streakTint(3), zoomBlur, zoomCenter(2), exposure,
+    // contrast, saturation, shadows(3), highlights(3), [23..27) rays, raysCenter(2), raysLength, [27] aa.
     let b = &st().f64_buf;
-    if b.len() < 6 {
-        return;
+    let nf = (nf as usize).min(b.len());
+    if nf < 6 {
+        return 0;
     }
+    let g = |i: usize, d: f32| if i < nf { b[i] as f32 } else { d };
+    let d = anikit_core::video::Post::default();
     let p = anikit_core::video::Post {
-        bloom_threshold: b[0] as f32,
-        bloom: b[1] as f32,
-        bloom_radius: b[2] as f32,
-        aberration: b[3] as f32,
-        vignette: b[4] as f32,
-        grain: b[5] as f32,
+        bloom_threshold: g(0, d.bloom_threshold),
+        bloom: g(1, 0.0),
+        bloom_radius: g(2, d.bloom_radius),
+        aberration: g(3, 0.0),
+        vignette: g(4, 0.0),
+        grain: g(5, 0.0),
         seed,
+        streaks: g(6, 0.0),
+        streak_length: g(7, d.streak_length),
+        streak_tint: [g(8, d.streak_tint[0]), g(9, d.streak_tint[1]), g(10, d.streak_tint[2])],
+        zoom_blur: g(11, 0.0),
+        zoom_center: [g(12, 0.5), g(13, 0.5)],
+        exposure: g(14, 1.0),
+        contrast: g(15, 1.0),
+        saturation: g(16, 1.0),
+        shadows: [g(17, 0.0), g(18, 0.0), g(19, 0.0)],
+        highlights: [g(20, 0.0), g(21, 0.0), g(22, 0.0)],
+        rays: g(23, 0.0),
+        rays_center: [g(24, d.rays_center[0]), g(25, d.rays_center[1])],
+        rays_length: g(26, d.rays_length),
+        aa: g(27, 0.0),
     };
     if let Some(v) = video(id) {
         let (w, h) = (v.mixer.width, v.mixer.height);
         v.post.apply(&mut v.input, w, h, &p);
+        return 1;
     }
+    0
 }
 /// Convert the input frame to I420 (`order`: 0 RGBA, 1 BGRA); returns the address.
 #[no_mangle]
@@ -1809,6 +1833,14 @@ pub extern "C" fn ak_mesh_builtin(kind: u32) -> u32 {
         1 => sphere((b(0) as usize).max(3), (b(1) as usize).max(3)),
         2 => torus_knot(b(0), b(1), b(2), b(3), b(4), (b(5) as usize).max(8), (b(6) as usize).max(3)),
         3 => torus(b(0), b(1), (b(2) as usize).max(8), (b(3) as usize).max(3)),
+        4 => plane((b(0) as usize).max(1), (b(1) as usize).max(1)),
+        5 => cylinder((b(0) as usize).max(3), b(1) != 0.0),
+        6 => {
+            // Heightfield: w, h, skip, then w*h heights.
+            let (w, h) = ((b(0) as usize).max(2), (b(1) as usize).max(2));
+            let hs: Vec<f32> = s.f64_buf.get(3..3 + w * h).map(|v| v.iter().map(|x| *x as f32).collect()).unwrap_or_default();
+            heightfield(w, h, &hs, b(2))
+        }
         _ => cube(),
     };
     push_slot(&mut s.meshes, m)
@@ -1816,6 +1848,7 @@ pub extern "C" fn ak_mesh_builtin(kind: u32) -> u32 {
 /// Custom mesh storage: write positions/normals (xyz) and indices, then draw.
 #[no_mangle]
 pub extern "C" fn ak_mesh_custom(nverts: u32, ntris: u32) -> u32 {
+    // Positions, normals and UVs are zeroed: write them through `ak_mesh_ptr` (0, 1, 5) and indices (2).
     let m = anikit_core::raster::Mesh { pos: alloc::vec![0.0; nverts as usize * 3], nrm: alloc::vec![0.0; nverts as usize * 3], uv: alloc::vec![0.0; nverts as usize * 2], idx: alloc::vec![0; ntris as usize * 3] };
     push_slot(&mut st().meshes, m)
 }
@@ -1879,7 +1912,8 @@ pub extern "C" fn ak_raster_instances(id: u32, n: u32) -> *mut f32 {
 /// keyColor(3), fill(3), fillColor(3), rimColor(3), fog(2), fogColor(3);
 /// optional [44..57) emissive, metal, iridescence, hue, sky(3), horizon(3), ground(3);
 /// optional [57..73) lines, lineColor(3), grid(2), lineWidth, pulse, pulseCount, pulsePhase,
-/// pulseDir(3), strips(3). Returns triangles rasterised.
+/// pulseDir(3), strips(3); optional [73..78) texture id + 1 (0 = none), mode, repeat u, v, gain.
+/// Returns triangles rasterised.
 #[no_mangle]
 pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf: u32) -> u32 {
     use anikit_core::raster::*;
@@ -1888,11 +1922,12 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
     if nf < 44 {
         return 0;
     }
-    const DEFAULTS: [f32; 29] = [
+    const DEFAULTS: [f32; 34] = [
         0.0, 0.0, 0.0, 0.0, 0.25, 0.3, 0.55, 1.0, 0.85, 0.7, 0.05, 0.05, 0.07, // emissive … ground
         0.0, 1.0, 1.0, 1.0, 8.0, 8.0, 0.04, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, // lines … strips
+        0.0, 0.0, 1.0, 1.0, 1.0, // texture id + 1, mode, repeat u, v, gain
     ];
-    let nb = if nf >= 73 { 73 } else if nf >= 57 { 57 } else { 44 };
+    let nb = if nf >= 78 { 78 } else if nf >= 73 { 73 } else if nf >= 57 { 57 } else { 44 };
     let mut b: Vec<f32> = s.f64_buf[..nb].iter().map(|v| *v as f32).collect();
     b.extend_from_slice(&DEFAULTS[nb - 44..]);
     let vp: M4 = core::array::from_fn(|i| b[i]);
@@ -1916,13 +1951,73 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
         pulse_count: b[65],
         pulse_phase: b[66],
         pulse_dir: v3(67),
+        tex_mode: b[74] as u8,
+        tex_repeat: [b[75], b[76]],
+        tex_gain: b[77],
     };
     let light = Lighting { key: v3(24), key_color: v3(27), fill: v3(30), fill_color: v3(33), rim_color: v3(36), fog: [b[39], if b[40] > 0.0 { b[40] } else { f32::INFINITY }], fog_color: v3(41), sky: v3(48), horizon: v3(51), ground: v3(54), strips: v3(70) };
     let Some(Some(m)) = s.meshes.get(mesh as usize) else { return 0 };
+    let tex = (b[73] as usize).checked_sub(1).and_then(|t| s.textures.get(t)).and_then(|t| t.as_ref());
+    let gloss = if nf > 78 { s.f64_buf[78] as f32 } else { 0.5 };
     let Some(Some((r, inst))) = s.rasters.get_mut(id as usize) else { return 0 };
     let k = (n as usize * INSTANCE_STRIDE).min(inst.len());
-    r.draw(m, &inst[..k], &vp, eye, &mat, &light, cull_back != 0);
+    // Flags: bit 0 back-face culling, bit 1 additive, bit 2 gloss (strength f64[78]), bit 3 flip winding.
+    let blend = if cull_back & 2 != 0 {
+        Blend::Additive
+    } else if cull_back & 4 != 0 {
+        Blend::Gloss
+    } else {
+        Blend::Opaque
+    };
+    r.gloss = gloss;
+    r.flip_winding = cull_back & 8 != 0;
+    r.draw_with(m, &inst[..k], &vp, eye, &mat, &light, cull_back & 1 != 0, blend, tex);
     r.drawn as u32
+}
+/// A texture from `w * h * 4` RGBA bytes in the u8 scratch buffer (mipmapped); returns its id.
+#[no_mangle]
+pub extern "C" fn ak_texture_create(w: u32, h: u32) -> u32 {
+    let s = st();
+    let n = (w as usize * h as usize * 4).min(s.u8_buf.len());
+    let t = anikit_core::raster::Texture::from_rgba(w as usize, h as usize, &s.u8_buf[..n]);
+    push_slot(&mut s.textures, t)
+}
+#[no_mangle]
+pub extern "C" fn ak_texture_free(id: u32) {
+    if let Some(t) = st().textures.get_mut(id as usize) {
+        *t = None;
+    }
+}
+/// Reset the depth buffer only (mirror passes).
+#[no_mangle]
+pub extern "C" fn ak_raster_clear_depth(id: u32) {
+    if let Some(Some((r, _))) = st().rasters.get_mut(id as usize) {
+        r.clear_depth();
+    }
+}
+/// Writable point buffer for [`ak_raster_points`]: `n * 6` f32 (xyz, rgb).
+#[no_mangle]
+pub extern "C" fn ak_raster_point_buf(id: u32, n: u32) -> *mut f32 {
+    ak_raster_instances(id, n.saturating_mul(6).div_ceil(anikit_core::raster::INSTANCE_STRIDE as u32).max(1))
+}
+/// Draw `n` light points from the point buffer. f64 buffer: viewProj(16),
+/// prevViewProj(16, ignored unless `has_prev`), eye(3), size, intensity,
+/// streak, fogNear, fogFar (0 = no fog).
+#[no_mangle]
+pub extern "C" fn ak_raster_points(id: u32, n: u32, has_prev: u32) {
+    use anikit_core::raster::*;
+    let s = st();
+    if s.f64_buf.len() < 40 {
+        return;
+    }
+    let b: Vec<f32> = s.f64_buf[..40].iter().map(|v| *v as f32).collect();
+    let vp: M4 = core::array::from_fn(|i| b[i]);
+    let prev: M4 = core::array::from_fn(|i| b[16 + i]);
+    let style = PointStyle { size: b[35], intensity: b[36], streak: b[37], fog: [b[38], if b[39] > 0.0 { b[39] } else { f32::INFINITY }] };
+    let Some(Some((r, buf))) = s.rasters.get_mut(id as usize) else { return };
+    let n = (n as usize).min(buf.len() / 6);
+    let (pos, rgb) = buf[..n * 6].split_at(n * 3);
+    r.points(pos, rgb, &vp, if has_prev != 0 { Some(&prev) } else { None }, [b[32], b[33], b[34]], &style);
 }
 #[no_mangle]
 pub extern "C" fn ak_raster_ptr(id: u32) -> *const u32 {

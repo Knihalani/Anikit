@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import {
   animate, timeline, sequence, stagger, spring, inertia, physics, batch, scrollTrigger, scrollTriggerBatch, scrollTo,
   smoothScroll, draggable, observer, scroll, inView, splitText, flip, world, compositor, effects, effectNames, testing,
-  onWarning, set, fromTo, from,
+  onWarning, set, fromTo, from, presence, gesture, viewTransition,
 } from '../src/index';
 import { setup, box } from './setup';
 
@@ -212,6 +212,34 @@ describe('other APIs', () => {
     expect(has('scrollTo(): "#missing" matched no element')).toBe(true);
     smoothScroll({ smoothness: 1 } as any).destroy();
     expect(has('smoothScroll(): unknown option "smoothness"')).toBe(true);
+  });
+
+  it('layout, presence, view transitions, gestures: new options are known, typos are not', () => {
+    const grid = box();
+    grid.className = 'grid';
+    const kid = document.createElement('div');
+    kid.className = 'item';
+    grid.append(kid);
+    flip('.grid .item', () => grid.classList.toggle('dense'), { enter: { opacity: [0, 1] }, leave: { opacity: 0 }, crossfade: true, correctRadius: true, fade: true, targets: '.grid .item' });
+    const p = document.createElement('p');
+    p.textContent = 'masked lines';
+    document.body.append(p);
+    splitText(p, { type: 'lines', mask: 'lines', maskClass: 'm', autoSplit: false, onSplit: () => undefined }).revert();
+    gesture(box(), { minScale: 1, maxScale: 4, inertia: true, onChange: () => {} }).forEach((g: any) => g.kill?.());
+    const host = box();
+    host.id = 'list';
+    presence('#list', { enter: { opacity: [0, 1] }, exit: { opacity: 0 }, layout: true, duration: 0.2 });
+    expect(warnings).toEqual([]);
+    flip('.grid .item', () => {}, { leaves: { opacity: 0 } } as any);
+    expect(has('flip(): unknown option "leaves"', '"leave"')).toBe(true);
+    splitText(p, { masks: 'lines' } as any).revert();
+    expect(has('splitText(): unknown option "masks"', '"mask"')).toBe(true);
+    gesture(box(), { maxscale: 3 } as any);
+    expect(has('gesture(): unknown option "maxscale"', '"maxScale"')).toBe(true);
+    presence('#list', { exits: { opacity: 0 } } as any);
+    expect(has('presence(): unknown option "exits"', '"exit"')).toBe(true);
+    void viewTransition(() => {}, { fallbak: 'none' } as any);
+    expect(has('viewTransition(): unknown option "fallbak"', '"fallback"')).toBe(true);
   });
 
   it('interaction and viewport helpers: unknown options and empty targets', () => {

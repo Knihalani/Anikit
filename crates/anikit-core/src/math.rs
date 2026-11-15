@@ -43,11 +43,74 @@ mod hw {
         w::f32x4_extract_lane::<0>(w::f32x4_ceil(w::f32x4_splat(x)))
     }
 }
-#[cfg(not(all(target_arch = "wasm32", target_feature = "simd128")))]
+// With `std` (native builds: Python, benches) use std's methods, which lower to
+// the hardware instructions; libm's are bit-by-bit software routines without
+// nightly features (~10x slower sqrt).
+#[cfg(all(not(all(target_arch = "wasm32", target_feature = "simd128")), any(test, feature = "std")))]
+mod hw {
+    #[inline(always)]
+    pub fn sqrt(x: f64) -> f64 {
+        x.sqrt()
+    }
+    #[inline(always)]
+    pub fn floor(x: f64) -> f64 {
+        x.floor()
+    }
+    #[inline(always)]
+    pub fn ceil(x: f64) -> f64 {
+        x.ceil()
+    }
+    #[inline(always)]
+    pub fn sqrtf(x: f32) -> f32 {
+        x.sqrt()
+    }
+    #[inline(always)]
+    pub fn floorf(x: f32) -> f32 {
+        x.floor()
+    }
+    #[inline(always)]
+    pub fn ceilf(x: f32) -> f32 {
+        x.ceil()
+    }
+}
+#[cfg(all(not(all(target_arch = "wasm32", target_feature = "simd128")), not(any(test, feature = "std"))))]
 mod hw {
     pub use libm::{ceil, ceilf, floor, floorf, sqrt, sqrtf};
 }
 pub use hw::{ceilf, floorf, sqrtf};
+
+/// Four lanes of f32 (shaders process pixels in groups of four).
+pub type F4 = [f32; 4];
+
+/// Lane-wise square root: one `f32x4.sqrt` on wasm, `sqrtps` natively.
+#[inline(always)]
+pub fn sqrt4(v: F4) -> F4 {
+    #[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
+    {
+        use core::arch::wasm32 as w;
+        let r = w::f32x4_sqrt(w::f32x4(v[0], v[1], v[2], v[3]));
+        [w::f32x4_extract_lane::<0>(r), w::f32x4_extract_lane::<1>(r), w::f32x4_extract_lane::<2>(r), w::f32x4_extract_lane::<3>(r)]
+    }
+    #[cfg(not(all(target_arch = "wasm32", target_feature = "simd128")))]
+    {
+        [hw::sqrtf(v[0]), hw::sqrtf(v[1]), hw::sqrtf(v[2]), hw::sqrtf(v[3])]
+    }
+}
+
+/// Lane-wise floor.
+#[inline(always)]
+pub fn floor4(v: F4) -> F4 {
+    #[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
+    {
+        use core::arch::wasm32 as w;
+        let r = w::f32x4_floor(w::f32x4(v[0], v[1], v[2], v[3]));
+        [w::f32x4_extract_lane::<0>(r), w::f32x4_extract_lane::<1>(r), w::f32x4_extract_lane::<2>(r), w::f32x4_extract_lane::<3>(r)]
+    }
+    #[cfg(not(all(target_arch = "wasm32", target_feature = "simd128")))]
+    {
+        [hw::floorf(v[0]), hw::floorf(v[1]), hw::floorf(v[2]), hw::floorf(v[3])]
+    }
+}
 
 #[inline(always)]
 pub fn sqrt(x: f64) -> f64 {

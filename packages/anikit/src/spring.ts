@@ -11,7 +11,7 @@
  * ```
  */
 import { core, whenReady, F64, f64Buf } from './wasm';
-import { register, unregister, wake, NodeRecord, EV_FINISH } from './core';
+import { register, unregister, wake, NodeRecord, EV_FINISH, prefersReduced } from './core';
 import {
   Target, Targets, toTargets, classify, Kind, readValue, writer, convertUnit, defaultUnit, isElement,
   claim, unclaim, Owner, transformUnit,
@@ -258,6 +258,15 @@ export function spring(targets: Targets, props: Record<string, number | string>,
           claim(target, prop, sim);
           map.set(prop, sim);
         }
+        if (prefersReduced()) {
+          // Reduced motion: arrive at once (at rest on the target).
+          const b = f64Buf(ch * 2);
+          for (let i = 0; i < ch; i++) {
+            F64[b + i] = r.values[i];
+            F64[b + ch + i] = 0;
+          }
+          w.ak_sim_position(sim.h, ch, 1);
+        }
         const unitScale = ch === 4 ? 1 : 1;
         w.ak_sim_rest(sim.h, options.restDelta ?? 0.01 * unitScale, options.restSpeed ?? 0.1 * unitScale);
         if ((options.onUpdate || options.onComplete) && !sim.listeners.includes(options)) sim.listeners.push(options);
@@ -307,7 +316,9 @@ export function inertia(targets: Targets, props: Record<string, InertiaProp | nu
       let map = sims.get(target);
       if (!map) sims.set(target, (map = new Map()));
       for (const prop of Object.keys(props)) {
-        const spec = typeof props[prop] === 'number' ? { velocity: props[prop] as number } : (props[prop] as InertiaProp);
+        const spec0 = typeof props[prop] === 'number' ? { velocity: props[prop] as number } : (props[prop] as InertiaProp);
+        // Reduced motion: no gliding (bounds and snapping still apply).
+        const spec = prefersReduced() ? { ...spec0, velocity: 0 } : spec0;
         const kind = classify(target, prop);
         const cur = parseValue(readValue(target, prop, kind));
         const pos = cur.k === 'num' ? cur.n : 0;

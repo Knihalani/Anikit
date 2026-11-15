@@ -157,6 +157,34 @@ export class MotionPath {
   }
 }
 
+/**
+ * Apply an affine matrix `[a, b, c, d, e, f]` (as in SVG / `DOMMatrix`) to a
+ * path. The path is normalised to absolute cubics first, so any command works.
+ *
+ * ```ts
+ * transformPath('M0 0 L10 0', [2, 0, 0, 2, 5, 5]); // scaled ×2, moved by (5, 5)
+ * ```
+ */
+export function transformPath(src: PathSource, m: [number, number, number, number, number, number], decimals = 3): string {
+  const d = normalizePath(src, 6);
+  const [a, b, c, dd, e, f] = m;
+  const k = Math.pow(10, decimals);
+  const round = (v: number) => Math.round(v * k) / k;
+  let x = 0;
+  let odd = false;
+  // Every number of a normalised path is a coordinate, in x/y pairs.
+  return d.replace(/-?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?/gi, (tok) => {
+    const v = parseFloat(tok);
+    if (!odd) {
+      x = v;
+      odd = true;
+      return '\u0000';
+    }
+    odd = false;
+    return round(a * x + c * v + e) + ' ' + round(b * x + dd * v + f);
+  }).replace(/\u0000\s*/g, '');
+}
+
 /** The part of a path between `start` and `end` (fractions of its length). */
 export function trimPath(src: PathSource, start: number, end: number, decimals = 3): string {
   return readStr(core().ak_path_trim(writeStr(pathData(src)), start, end, decimals));

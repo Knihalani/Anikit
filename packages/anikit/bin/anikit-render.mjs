@@ -15,8 +15,9 @@ import { cpus } from 'node:os';
 const HELP = `anikit-render — render an anikit composition to video, frame-exact, in Node (no browser)
 
 Usage
-  anikit-render --init [film.mjs]                     write a working starter film
+  anikit-render --init [film.mjs] [--template film|journey]   write a working starter film
   anikit-render <film.mjs> --still <t> [--out f.png]  one frame at t seconds, as PNG (or .jpg): a quick check
+  anikit-render <film.mjs> --review [dir/]            contact sheet + pacing report (default dir: review/)
   anikit-render <film.mjs> --preview <N> --out dir/   every Nth frame as JPEG
   anikit-render <film.mjs> --out film.mp4 [options]   render the video
 
@@ -30,17 +31,22 @@ Options
   --crf <n>             quality: lower is better and bigger (default 18)
   --preset <name>       x264 speed/size trade-off (default medium)
   --codec <name>        ffmpeg video codec (default libx264)
+  --template <name>     with --init: film (default) or journey
+  --every <n>           with --review: analyse every nth frame
+  --sheet-every <n>     with --review: one contact-sheet tile every nth frame
   -h, --help            show this help
 
 The module default-exports  async ({ anikit, node }) => composition;  run --init
 for a complete example. Needs ffmpeg on PATH and the peer dependency
 @napi-rs/canvas (npm i -D @napi-rs/canvas).
 
-Workflow: --still 2 to look at one frame, --preview 15 to check the whole film,
-then render. Output never depends on machine speed.`;
+Workflow: --still 2 to look at one frame, --review to check pacing and the whole
+film at a glance (or --preview 15 for full frames), then render. Output never depends on machine speed.`;
 
-const VALUE = ['out', 'workers', 'from', 'to', 'audio', 'fade-in', 'fade-out', 'fade-color', 'crf', 'preset', 'codec', 'preview', 'still'];
+const VALUE = ['out', 'workers', 'from', 'to', 'audio', 'fade-in', 'fade-out', 'fade-color', 'crf', 'preset', 'codec', 'preview', 'still', 'template', 'every', 'sheet-every'];
 const BOOL = ['help', 'init'];
+/** Flags whose value is optional (`--review` or `--review dir/`). */
+const OPTIONAL = ['review'];
 const fail = (msg) => {
   console.error(`anikit-render: ${msg}\nRun "anikit-render --help" for usage.`);
   process.exit(1);
@@ -68,7 +74,13 @@ for (let i = 0; i < args.length; i++) {
   const eq = a.indexOf('=');
   const name = a.slice(2, eq < 0 ? undefined : eq);
   if (BOOL.includes(name)) { opts[name] = true; continue; }
-  if (!VALUE.includes(name)) fail(`unknown option --${name}.${closest(name, [...VALUE, ...BOOL])}`);
+  if (OPTIONAL.includes(name)) {
+    if (eq >= 0) opts[name] = a.slice(eq + 1);
+    else if (args[i + 1] !== undefined && !args[i + 1].startsWith('--') && /[\\/]$|^[^.]*$/.test(args[i + 1]) && positional.length) opts[name] = args[++i];
+    else opts[name] = true;
+    continue;
+  }
+  if (!VALUE.includes(name)) fail(`unknown option --${name}.${closest(name, [...VALUE, ...BOOL, ...OPTIONAL])}`);
   const val = eq >= 0 ? a.slice(eq + 1) : args[++i];
   if (val === undefined || (eq < 0 && val.startsWith('--'))) fail(`--${name} needs a value.`);
   opts[name] = val;
@@ -77,7 +89,7 @@ const opt = (name, d) => opts[name] ?? d;
 const num = (name, d) => {
   if (opts[name] === undefined) return d;
   const n = Number(opts[name]);
-  if (!Number.isFinite(n)) fail(`--${name} must be a number${['workers', 'preview', 'crf'].includes(name) ? '' : ' of seconds'}, got "${opts[name]}".`);
+  if (!Number.isFinite(n)) fail(`--${name} must be a number${['workers', 'preview', 'crf', 'every', 'sheet-every'].includes(name) ? '' : ' of seconds'}, got "${opts[name]}".`);
   return n;
 };
 if (opts.help) {
@@ -86,11 +98,15 @@ if (opts.help) {
 }
 const here = dirname(fileURLToPath(import.meta.url));
 if (opts.init) {
+  // --init [file] [--template film | journey]
   const name = positional[0] || 'film.mjs';
+  const tpl = opt('template', 'film');
+  const src = join(here, `../templates/${tpl}.mjs`);
+  if (!/^[\w-]+$/.test(tpl) || !existsSync(src)) fail(`--init: unknown template "${tpl}"; use --template film or --template journey.`);
   const dest = resolve(name);
   if (existsSync(dest)) fail(`--init: ${dest} already exists; pass another name: anikit-render --init my-film.mjs`);
-  copyFileSync(join(here, '../templates/film.mjs'), dest);
-  console.log(`wrote ${dest}\n  look:    npx anikit-render ${name} --still 1.5 --out still.png\n  preview: npx anikit-render ${name} --preview 15 --out preview/\n  render:  npx anikit-render ${name} --out film.mp4`);
+  copyFileSync(src, dest);
+  console.log(`wrote ${dest} (template: ${tpl})\n  look:    npx anikit-render ${name} --still 1.5 --out still.png\n  review:  npx anikit-render ${name} --review review/\n  preview: npx anikit-render ${name} --preview 15 --out preview/\n  render:  npx anikit-render ${name} --out film.mp4`);
   process.exit(0);
 }
 const file = positional[0];
@@ -100,7 +116,7 @@ if (!file) {
 }
 if (positional.length > 1) fail(`unexpected argument "${positional[1]}". Options start with -- (e.g. --out ${positional[1]}).`);
 if (!existsSync(resolve(file))) fail(`${file} not found.${/\.m?js$/.test(file) ? '' : ' Pass the composition module, e.g. film.mjs (anikit-render --init writes one).'}`);
-for (const n of ['workers', 'preview', 'still', 'from', 'to', 'fade-in', 'fade-out', 'crf']) num(n);
+for (const n of ['workers', 'preview', 'still', 'from', 'to', 'fade-in', 'fade-out', 'crf', 'every', 'sheet-every']) num(n);
 if (opts.preview !== undefined && !(num('preview') >= 1)) fail('--preview takes N >= 1: write every Nth frame.');
 if (opts.workers !== undefined && !(num('workers') >= 1)) fail('--workers must be at least 1.');
 const out = resolve(opt('out', 'anikit.mp4'));
@@ -125,6 +141,20 @@ async function build() {
 
 const node = await import(join(here, '../node/index.mjs'));
 const enc = { crf: opt('crf', 18), preset: opt('preset', 'medium'), codec: opt('codec', 'libx264') };
+
+if (opts.review !== undefined) {
+  // One pass: contact sheet + pacing report, so an agent can judge a film without watching it.
+  const { comp } = await build();
+  const rv = opts.review;
+  const dir = rv !== true ? resolve(rv) : opts.out !== undefined ? out : resolve('review');
+  mkdirSync(dir, { recursive: true });
+  const r = await node.reviewFilm(comp, { every: num('every'), sheetEvery: num('sheet-every'), from: num('from'), to: num('to') });
+  writeFileSync(join(dir, 'sheet.jpg'), r.sheet);
+  writeFileSync(join(dir, 'pacing.txt'), r.report + '\n');
+  writeFileSync(join(dir, 'pacing.csv'), r.csv + '\n');
+  console.log(r.report + `\nreview → ${dir}/sheet.jpg, pacing.txt, pacing.csv`);
+  process.exit(0);
+}
 
 if (opts.still !== undefined) {
   const t = num('still');

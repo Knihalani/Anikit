@@ -28,8 +28,45 @@ function rgb(c: string | V3 | undefined, d: V3 = [1, 1, 1]): V3 {
   return p ? [p[0] / 255, p[1] / 255, p[2] / 255] : d;
 }
 
+/** An image living in WebAssembly memory, mipmapped, for `material.texture`. */
+export class Texture3D {
+  constructor(readonly id: number, readonly width: number, readonly height: number) {}
+  free(): void {
+    core().ak_texture_free(this.id);
+  }
+}
+
+type ImageLike = { width: number; height: number; data: ArrayLike<number> };
+
+/**
+ * Upload an image for 3D materials: `ImageData`, `{ width, height, data }`
+ * (RGBA bytes), or a canvas (its current pixels). Row 0 is the top (v = 0).
+ *
+ * ```ts
+ * const screen = texture(uiCanvas);
+ * { mesh: mesh.plane(), instances, material: { texture: screen, textureMode: 'emissive', textureGain: 1.4 } }
+ * ```
+ */
+export function texture(src: ImageLike | CanvasLike): Texture3D {
+  let img: ImageLike;
+  if ('data' in src) img = src;
+  else {
+    const ctx = src.getContext('2d');
+    if (!ctx) throw new Error('anikit: texture() needs ImageData, { width, height, data } or a canvas with a 2d context');
+    img = ctx.getImageData(0, 0, src.width, src.height);
+  }
+  const n = img.width * img.height * 4;
+  if (img.data.length < n) throw new Error(`anikit: texture() got ${img.data.length} bytes, expected ${n} (width × height × 4)`);
+  const w = core();
+  const ptr = w.ak_u8_buf(n);
+  new Uint8Array(W!.memory.buffer, ptr, n).set(img.data.length === n ? img.data : Array.prototype.slice.call(img.data, 0, n));
+  return new Texture3D(w.ak_texture_create(img.width, img.height), img.width, img.height);
+}
+
 /** A mesh living in WebAssembly memory. */
 export class Mesh3D {
+  /** Depth/width ratio for meshes built from images (`mesh.text`): use it as the instance's `sz`/`sy` factor. */
+  aspect = 1;
   constructor(readonly id: number) {}
   get vertices(): number {
     return core().ak_mesh_ptr(this.id, 3);
@@ -58,14 +95,100 @@ export const mesh = {
     builtin(2, [o.p ?? 2, o.q ?? 5, o.radius ?? 300, o.spread ?? 120, o.tube ?? 40, o.segments ?? 360, o.sides ?? 16]),
   /** A torus in the XY plane. */
   torus: (radius = 300, tube = 60, segments = 96, sides = 24) => builtin(3, [radius, tube, segments, sides]),
-  /** Your own geometry: xyz positions and normals per vertex, three indices per triangle. */
-  custom(positions: ArrayLike<number>, normals: ArrayLike<number>, indices: ArrayLike<number>): Mesh3D {
+  /**
+   * A flat grid in the XZ plane (−0.5…0.5, scale it with the instance), facing +Y,
+   * with `cells` subdivisions; UVs span 0–1. Floors and horizons: pair with
+   * `lines` + `grid` for a glowing grid that runs to the horizon.
+   */
+  plane: (cells: number | [number, number] = 1) => {
+    const [x, z] = Array.isArray(cells) ? cells : [cells, cells];
+    return builtin(4, [x, z]);
+  },
+  /** Capped cylinder, radius 1, height 1 (Y −0.5…0.5). `u` runs around, `v` along. */
+  cylinder: (segments = 32, caps = true) => builtin(5, [segments, caps ? 1 : 0]),
+  /**
+   * A heightfield in the XZ plane (−0.5…0.5) from a `width × depth` grid of
+   * heights (row-major), with smooth normals. Cells whose corners are all
+   * `<= skip` are cut out (use `skip: 0` to keep only raised areas).
+   *
+   * ```ts
+   * const hills = mesh.heightfield(64, 64, (x, z) => noise2(x * 4, z * 4) * 0.1);
+   * ```
+   */
+  heightfield(width: number, depth: number, heights: ArrayLike<number> | ((x: number, z: number) => number), o: { skip?: number } = {}): Mesh3D {
+    const n = width * depth;
+    // Resolve user code before reserving the scratch buffer (AGENTS.md scratch-buffer rule).
+    const hs = typeof heights === 'function' ? Float64Array.from({ length: n }, (_, i) => heights((i % width) / (width - 1), Math.floor(i / width) / (depth - 1))) : heights;
+    const at = f64Buf(3 + n);
+    F64.set([width, depth, o.skip ?? -Infinity], at);
+    F64.set(hs as ArrayLike<number>, at + 3);
+    return new Mesh3D(core().ak_mesh_builtin(6));
+  },
+  /**
+   * Solid 3D text in any font: the text is rasterised to a canvas, softened
+   * (which gives the edges a bevel) and raised into a heightfield, so the
+   * letters stand `depth` tall out of the XZ plane. Rotate the instance
+   * (`rx: 90`) to stand it up facing the camera. Width is 1 unit; scale it.
+   *
+   * ```ts
+   * const word = mesh.text('anikit', { font: '900 120px Inter', depth: 0.06 });
+   * items.push({ mesh: word, instances: instances(1, () => ({ rx: 90, scale: 1200 })) });
+   * ```
+   */
+  text(s: string, o: { font?: string; resolution?: number; depth?: number; bevel?: number; padding?: number } = {}): Mesh3D {
+    const font = o.font ?? '900 120px sans-serif';
+    const doc = (globalThis as { document?: { createElement(t: string): HTMLCanvasElement } }).document;
+    if (!doc) throw new Error('anikit: mesh.text() needs a canvas (a browser, or anikit/node\'s loadAnikit in Node)');
+    const probe = doc.createElement('canvas').getContext('2d')!;
+    probe.font = font;
+    const m = probe.measureText(s);
+    const pad = o.padding ?? 8;
+    const tw = Math.ceil(m.width) + pad * 2;
+    const asc = m.actualBoundingBoxAscent || parseFloat(font.match(/(\d+)px/)?.[1] ?? '100') * 0.8;
+    const desc = m.actualBoundingBoxDescent || 0;
+    const th = Math.ceil(asc + desc) + pad * 2;
+    // Sample grid: `resolution` columns across the text (default 360).
+    const cols = Math.max(16, Math.round(o.resolution ?? 360));
+    const scale = cols / tw;
+    const W = cols, H = Math.max(4, Math.round(th * scale));
+    const c = doc.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d')!;
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.font = font; ctx.fillStyle = '#fff'; ctx.textBaseline = 'alphabetic';
+    const bevel = o.bevel ?? 1.2;
+    if (bevel > 0 && 'filter' in ctx) ctx.filter = `blur(${bevel / scale}px)`;
+    ctx.fillText(s, pad, pad + asc);
+    const px = ctx.getImageData(0, 0, W, H).data;
+    // A bevel even without canvas filters: a 3×3 box blur.
+    const raw = new Float32Array(W * H);
+    for (let i = 0; i < W * H; i++) raw[i] = px[i * 4] / 255;
+    const hs = new Float64Array(W * H);
+    const depth = o.depth ?? 0.06;
+    for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
+      let acc = 0, k = 0;
+      for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+        const xx = x + dx, zz = z + dz;
+        if (xx >= 0 && zz >= 0 && xx < W && zz < H) { acc += raw[zz * W + xx]; k++; }
+      }
+      const v = acc / k;
+      hs[z * W + x] = v * v * (3 - 2 * v) * depth * (W / Math.max(W, H));
+    }
+    // Aspect: the heightfield spans −0.5…0.5 in both X and Z; squash Z via the instance (sz = H / W).
+    const mesh3 = mesh.heightfield(W, H, hs, { skip: 1e-4 * depth });
+    mesh3.aspect = H / W;
+    return mesh3;
+  },
+  /** Your own geometry: xyz positions and normals per vertex, three indices per triangle, optional uv pairs. */
+  custom(positions: ArrayLike<number>, normals: ArrayLike<number>, indices: ArrayLike<number>, uvs?: ArrayLike<number>): Mesh3D {
     const w = core();
     const id = w.ak_mesh_custom(positions.length / 3, indices.length / 3);
     const mem = W!.memory.buffer;
     new Float32Array(mem, w.ak_mesh_ptr(id, 0), positions.length).set(positions);
     new Float32Array(mem, w.ak_mesh_ptr(id, 1), normals.length).set(normals);
     new Uint32Array(mem, w.ak_mesh_ptr(id, 2), indices.length).set(indices);
+    if (uvs) new Float32Array(mem, w.ak_mesh_ptr(id, 5), (positions.length / 3) * 2).set(uvs);
     return new Mesh3D(id);
   },
 };
@@ -152,6 +275,15 @@ export interface MaterialOptions {
   pulseCount?: number;
   pulsePhase?: number;
   pulseDir?: V3;
+  /**
+   * An image from `texture()`, mapped by the mesh's UVs (× `textureRepeat`).
+   * `'albedo'` (default) tints the lit colour; `'emissive'` adds it unlit ×
+   * `textureGain` — screens, signs, holograms.
+   */
+  texture?: Texture3D;
+  textureMode?: 'albedo' | 'emissive';
+  textureRepeat?: [number, number];
+  textureGain?: number;
 }
 export interface LightOptions {
   key?: V3;
@@ -169,6 +301,27 @@ export interface LightOptions {
   /** Colour of sharp studio light strips in the environment: gives chrome crisp highlights. */
   strips?: string | V3;
 }
+/**
+ * Light points drawn into the 3D frame: stars, dust, sparks, data. They add
+ * light, are hidden behind solid geometry drawn before them, and can streak
+ * along their screen motion (warp-speed stars) using the camera from the
+ * previous render.
+ */
+export interface PointsItem {
+  /** xyz per point (world space), or a live `emitter()` / `pointCloud()` (its positions, and colours when it has them). */
+  points: ArrayLike<number> | { positions: Float32Array; colors?: Float32Array; shade?: () => void };
+  /** rgb per point (0–1, may exceed 1 for hot points); default white. */
+  colors?: ArrayLike<number>;
+  /** World-space radius (default 2). */
+  size?: number;
+  /** Brightness (default 1). */
+  intensity?: number;
+  /** Streak length × the screen motion since the previous render (0 = round; 1 = shutter-accurate; 4 = warp). */
+  streak?: number;
+  /** Fade out between these camera distances. */
+  fog?: [number, number];
+}
+
 export interface DrawItem {
   mesh: Mesh3D;
   /** Instances, or omit for one untransformed white instance. */
@@ -176,6 +329,16 @@ export interface DrawItem {
   material?: MaterialOptions;
   /** Back-face culling (default true). */
   cull?: boolean;
+  /**
+   * `'opaque'` (default) or `'additive'`: added to the frame as light (beams,
+   * holograms, glowing wire), depth-tested against what is drawn but not
+   * occluding. Draw additive items after the opaque ones.
+   */
+  blend?: 'opaque' | 'additive';
+  /** This item is the glossy surface for the render's `mirror` option (e.g. the floor plane). */
+  mirror?: boolean;
+  /** Leave this item out of the mirrored pass (default: everything opaque reflects). */
+  reflect?: boolean;
 }
 type CanvasLike = { width: number; height: number; getContext(t: '2d'): CanvasRenderingContext2D | null };
 
@@ -210,7 +373,7 @@ export class Renderer3D {
    * (when it has one) and returns the RGBA pixels (a view into WebAssembly
    * memory, valid until the next call).
    */
-  render(scene: Scene3D, items: DrawItem[], o: LightOptions & { background?: string; transparent?: boolean } = {}): Uint8ClampedArray {
+  render(scene: Scene3D, items: (DrawItem | PointsItem)[], o: LightOptions & { background?: string; transparent?: boolean; mirror?: { y: number; strength?: number } } = {}): Uint8ClampedArray {
     const t0 = performance.now();
     const w = core();
     const bg = rgb(o.background, [0, 0, 0]);
@@ -221,21 +384,44 @@ export class Renderer3D {
     const { matrix, eye } = scene.viewProjection();
     scene.width = sw; scene.height = sh;
     this.triangles = 0;
-    for (const it of items) {
+    const drawMesh = (it: DrawItem, mat: number[], ey: number[], extra: number, gloss = 0.5) => {
       const inst = it.instances ?? this.single;
       const ptr = w.ak_raster_instances(this.id, inst.count);
       new Float32Array(W!.memory.buffer, ptr, inst.count * STRIDE).set(inst.data.subarray(0, inst.count * STRIDE));
       const m = it.material ?? {};
       const kc = rgb(o.keyColor), fc = rgb(o.fillColor, [0.25, 0.28, 0.35]), rc = rgb(o.rimColor), fog = o.fog ?? [0, 0], fogc = rgb(o.fogColor, bg);
-      const vals = [...matrix, ...eye, m.ambient ?? 0.22, m.diffuse ?? 0.85, m.specular ?? 0.5, m.shininess ?? 40, m.rim ?? 0.35,
+      const vals = [...mat, ...ey, m.ambient ?? 0.22, m.diffuse ?? 0.85, m.specular ?? 0.5, m.shininess ?? 40, m.rim ?? 0.35,
         ...(o.key ?? [0.4, 0.8, 0.6]), ...kc, ...(o.fill ?? [-0.6, -0.2, 0.4]), ...fc, ...rc, fog[0], fog[1], ...fogc,
         m.emissive ?? 0, m.metal ?? 0, m.iridescence ?? 0, m.hue ?? 0, ...rgb(o.sky, [0.25, 0.3, 0.55]), ...rgb(o.horizon, [1, 0.85, 0.7]), ...rgb(o.ground, [0.05, 0.05, 0.07]),
         m.lines ?? 0, ...rgb(m.lineColor, [1, 1, 1]), ...(m.grid ?? [8, 8]), m.lineWidth ?? 0.04,
-        m.pulse ?? 0, m.pulseCount ?? 1, m.pulsePhase ?? 0, ...(m.pulseDir ?? [0, 0, 0]), ...rgb(o.strips, [0, 0, 0])];
+        m.pulse ?? 0, m.pulseCount ?? 1, m.pulsePhase ?? 0, ...(m.pulseDir ?? [0, 0, 0]), ...rgb(o.strips, [0, 0, 0]),
+        m.texture ? m.texture.id + 1 : 0, m.texture ? (m.textureMode === 'emissive' ? 2 : 1) : 0, ...(m.textureRepeat ?? [1, 1]), m.textureGain ?? 1, gloss];
       const at = f64Buf(vals.length); // may grow memory: reserve before touching F64
       F64.set(vals, at);
-      this.triangles += w.ak_raster_draw(this.id, it.mesh.id, inst.count, it.cull === false ? 0 : 1, vals.length);
+      const flags = (it.cull === false ? 0 : 1) | (it.blend === 'additive' ? 2 : 0) | extra;
+      this.triangles += w.ak_raster_draw(this.id, it.mesh.id, inst.count, flags, vals.length);
+    };
+    const meshes = items.filter((it): it is DrawItem => !('points' in it));
+    if (o.mirror) {
+      // 1. The scene reflected about y = mirror.y (winding flips), 2. clear depth,
+      // 3. the glossy surface blended over the reflection, 4. the scene itself.
+      const Y = o.mirror.y;
+      const mr = matrix.slice();
+      for (let r = 0; r < 4; r++) { mr[4 + r] = -matrix[4 + r]; mr[12 + r] = matrix[12 + r] + 2 * Y * matrix[4 + r]; }
+      const er = [eye[0], 2 * Y - eye[1], eye[2]];
+      for (const it of meshes) if (!it.mirror && it.reflect !== false && it.blend !== 'additive') drawMesh(it, mr, er, 8);
+      w.ak_raster_clear_depth(this.id);
+      for (const it of meshes) if (it.mirror) drawMesh(it, matrix, eye, 4, o.mirror.strength ?? 0.5);
     }
+    for (const item of items) {
+      if ('points' in item) {
+        this.drawPoints(item, matrix, eye);
+        continue;
+      }
+      if (o.mirror && item.mirror) continue;
+      drawMesh(item, matrix, eye, 0);
+    }
+    this.prevMatrix = matrix;
     const px = new Uint8ClampedArray(W!.memory.buffer, w.ak_raster_ptr(this.id), this.width * this.height * 4);
     const ctx = 'getContext' in this.target ? this.target.getContext('2d') : null;
     if (ctx) {
@@ -246,6 +432,34 @@ export class Renderer3D {
     }
     this.lastMs = performance.now() - t0;
     return px;
+  }
+
+  private prevMatrix: number[] | null = null;
+
+  private drawPoints(it: PointsItem, matrix: number[], eye: number[]): void {
+    const w = core();
+    let src = it.points, cols = it.colors;
+    if (!('length' in src)) {
+      src.shade?.();
+      cols ??= src.colors;
+      src = src.positions;
+    }
+    // Views into wasm memory would detach if reserving the point buffer grows memory: copy them first.
+    const own = (a: ArrayLike<number> | undefined) => (a instanceof Float32Array && a.buffer === W!.memory.buffer ? a.slice() : a);
+    const pts = own(src)!, colors = own(cols);
+    const n = Math.floor(pts.length / 3);
+    if (!n) return;
+    const ptr = w.ak_raster_point_buf(this.id, n);
+    const mem = new Float32Array(W!.memory.buffer, ptr, n * 6);
+    mem.set(pts.length === n * 3 ? pts : Array.prototype.slice.call(pts, 0, n * 3), 0);
+    if (colors && colors.length >= n * 3) mem.set(colors.length === n * 3 ? colors : Array.prototype.slice.call(colors, 0, n * 3), n * 3);
+    else mem.fill(1, n * 3, n * 6);
+    const prev = this.prevMatrix ?? matrix;
+    const fog = it.fog ?? [0, 0];
+    const vals = [...matrix, ...prev, eye[0], eye[1], eye[2], it.size ?? 2, it.intensity ?? 1, it.streak ?? 0, fog[0], fog[1]];
+    const at = f64Buf(vals.length);
+    F64.set(vals, at);
+    w.ak_raster_points(this.id, n, this.prevMatrix ? 1 : 0);
   }
 
   destroy(): void {

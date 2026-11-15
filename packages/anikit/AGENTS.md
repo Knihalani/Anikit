@@ -119,6 +119,42 @@ const rec = await record('#stage', { duration: 2, fps: 30 });
 rec.download('stage.gif');
 ```
 
+```ts
+import { animate, flip, presence, exit, viewTransition, scroll, compositor, splitText, stagger, gesture, engine } from 'anikit';
+declare const item: HTMLElement, panel: HTMLElement, open: boolean, thumb: HTMLElement, hero: HTMLElement;
+declare function applyFilter(): void;
+declare function showDetail(): void;
+declare function detailImg(): HTMLElement | null;
+
+// Layout and presence: list changes animate; removed items fade out in place, then go
+flip('.card', () => applyFilter(), { fade: true });
+const todos = presence('#todos', { enter: { opacity: [0, 1], y: [-8, 0] }, exit: { opacity: 0 } });
+todos.add(item); todos.remove(item);
+exit('.toast');                                            // animate out, then remove
+animate(panel, { height: open ? 'auto' : 0 });             // accordions
+
+// Shared element (thumbnail -> detail) with the View Transitions API, FLIP fallback
+viewTransition(() => showDetail(), { ease: 'spring(bounce: 0.2, duration: 0.5)', names: { hero: [thumb, () => detailImg()] } });
+
+// Scroll-linked on the compositor (native ScrollTimeline where available)
+scroll(compositor('.hero', { scale: [1, 1.2], opacity: [1, 0] }, { ease: 'linear' }), { target: hero, offset: ['start start', 'end start'] });
+
+// Text lines rising from behind a mask, re-split on resize
+splitText('.lede', { type: 'lines', mask: 'lines', autoSplit: true, onSplit: ({ lines }) => animate(lines, { yPercent: [100, 0] }, { delay: stagger(0.08) }) });
+
+// Pinch-zoom / rotate / pan with limits and momentum
+gesture('#photo', { minScale: 1, maxScale: 5 });
+
+// Follow an SVG path exactly as drawn (viewBox and page position mapped)
+animate('.dot', { path: { path: '#route', align: true, rotate: true } }, { duration: 4 });
+
+// Reduced motion that keeps fades and colour changes
+engine.reducedMotion = 'user';
+engine.reducedMotionMode = 'fade';
+```
+
+Accessibility: with `engine.reducedMotion = 'user'`, add `engine.reducedMotionMode = 'fade'` to keep fades and colour changes while movement (transforms, paths, layout) jumps to its end.
+
 Task-sized versions (hero, list, carousel, page transition, counters, FLIP, React cleanup, recording, Node video, Python) are in the recipes section of `llms-full.txt`.
 
 ## Verifying your work
@@ -172,6 +208,7 @@ Use this when asked for a video, trailer, title sequence, product film or animat
 
 ```bash
 npx anikit-render --init film.mjs                    # a working starter: 3D cubes + particles + type + impact + grade
+npx anikit-render --init fly.mjs --template journey  # a 3D fly-through: neon city, chrome gates, shattering knot, 3D wordmark
 npx anikit-render film.mjs --preview 15 --out pv/    # every 15th frame as JPEG, fast; look at these before rendering
 npx anikit-render film.mjs --out film.mp4 --workers 4 [--audio track.wav] [--fade-out 0.5]
 ```
@@ -182,9 +219,13 @@ The module default-exports `async ({ anikit, node }) => composition`. Building b
 |---|---|
 | Scenes, timing | `composition({ width, height, fps, duration, motionBlur, post })`, `.scene(name, start, end, { enter, step, draw, transition, timeScale, motionBlur })`, `.cue(t, fn)` |
 | Punch | `.impact(t, { shake, flash, flashOpacity, aberration, decay })` — applied to the finished frame |
-| Film look | `post: { bloom, bloomThreshold, bloomRadius, aberration, vignette, grain }` |
+| Film look | `post: { aa, bloom, bloomThreshold, bloomRadius, streaks, streakLength, rays, raysCenter, aberration, vignette, grain, zoomBlur, exposure, contrast, saturation, shadows, highlights }` — any value can be `(t) => …` |
 | Slow motion / bullet time | scene `timeScale: (local) => 0.1…1` — slows tweens, particles, physics together |
-| Solid 3D | `renderer3d({ width, height })`, `mesh.cube() / sphere() / torus() / torusKnot() / custom()`, `instances(n, i => ({ x, y, z, rx, ry, rz, scale, color }))`, `render(scene3d, [{ mesh, instances, material }], { background, fog, keyColor, rimColor })` |
+| Solid 3D | `renderer3d({ width, height })`, `mesh.cube() / sphere() / torus() / torusKnot() / plane() / cylinder() / heightfield() / text() / custom()`, `instances(n, i => ({ x, y, z, rx, ry, rz, scale, sx, sy, sz, color }))`, `render(scene3d, [{ mesh, instances, material, cull, blend }], { background, fog, sky, horizon, ground, strips })` |
+| Materials that don't look plain | dark bodies + light: `{ metal: 0.9, iridescence: 0.3 }` chrome, `{ lines: 1.5, lineColor, grid: [1, 1] }` glowing edges, `{ pulse: 2, pulsePhase: t }` travelling light, `{ emissive: 1 }` neon; set `strips` for crisp chrome highlights |
+| Flying camera ("journey") | `flightPath(points, { lookAhead, bank })`, `path.timing([[sec, frac], …])`, `path.apply(cam, s(t), extraRoll)`; `cam.roll` for barrel rolls |
+| Stars, dust, sparks in 3D | `{ points, colors, size, intensity, streak, fog }` items in `render()` — depth-tested, streak with camera motion; accepts an `emitter()` |
+| Explosions | `shatter(mesh, { force, spin, gravity })` → `{ mesh, instances }`; `shards.update(t - hitTime)` |
 | Particles as light or ink | `pointCloud(n, { shapes })` + `glow(node.glowTarget(w, h), { mode: 'light' | 'ink' })` |
 | Sparks | `emitter({ rate, life, speed, spread, gravity, colors })`, `.burst(n)` |
 | Physics | `world({ bounds, gravity })` |
@@ -195,11 +236,13 @@ The module default-exports `async ({ anikit, node }) => composition`. Building b
 **Rules that keep films correct**
 1. Start tweens and simulations in `enter()`; advance simulations in `step(f)` with **`f.dt`** (engine seconds, already scaled by `timeScale`). `draw()` only reads state — with motion blur it runs several times per frame.
 2. Don't read wall-clock time. `Math.random` is seeded by `anikit-render`, so parallel workers produce identical frames.
-3. Solid 3D: draw the renderer's pixels first (`ctx.putImageData(new ImageData(px, w, h), 0, 0)`), then particles with `globalCompositeOperation = 'lighter'`, then type.
+3. Solid 3D: draw the renderer's pixels first (`ctx.putImageData(new ImageData(px, w, h), 0, 0)`), then 2D particles (`glow`) with `globalCompositeOperation = 'lighter'`, then type. Prefer `points` items inside `render()` for particles that must hide behind geometry.
+6. Plain flat-coloured shapes look cheap. Use near-black bodies and put the colour in light: chrome + `strips`, glowing `lines`, `pulse`, `emissive`, bloom. Two or three hues per shot.
 4. One shared `scene3d` per shot; scenes that overlap in a transition must not share mutable state (cameras, glow targets).
 5. Type must contrast with what's behind it — paper on dark, or a scrim (`createLinearGradient`) behind it.
 
 **Verify like a picky editor**
+- `npx anikit-render film.mjs --review review/` renders the film once at 10 samples/s and writes `sheet.jpg` (graded frames every 0.5 s with timestamps — the whole film in one image), `pacing.txt` (motion energy, **holds** where little moves for ≥ 1 s, flat frames, cuts) and `pacing.csv`. Look at the sheet; fix every hold the user didn't ask for.
 - Preview at `--preview 15` and look at every frame; then render and pull strips around each cut/impact with ffmpeg (`-ss t -frames:v 14 -vf scale=240:-1,tile=14x1`).
 - Watch for: empty or flat frames, type over same-tone content, shots that hold still for more than ~1 s.
 - `ffprobe` the output: duration, frame count, and whether an audio stream should be there.

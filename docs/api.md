@@ -38,7 +38,7 @@ animate(obj, { value: 1 }, { onUpdate: () => render(obj.value) }); // plain obje
 | `'--name'` | CSS custom property. |
 | `attr: { r: 20, cx: 50 }` | Attributes. Non‑CSS attributes of SVG elements are detected automatically. |
 | `d: pathData \| element \| selector` | Shape morph between any two paths. |
-| `path: pathData \| { path, start?, end?, rotate? }` | Motion along a path. `rotate: true` (or an angle offset) follows the tangent. |
+| `path: pathData \| { path, start?, end?, rotate?, align?, alignOrigin? }` | Motion along a path. `rotate: true` (or an angle offset) follows the tangent. `align: true` puts the target exactly on the path as drawn on the page (SVG user space, viewBox and all, mapped to the target's coordinates), with `alignOrigin` (default `[0.5, 0.5]`) on the line; pass an SVG element as `align` when `path` is raw data in its coordinates. |
 | `draw: [0, 1]` or `['0 0', '0.2 0.8']` | Visible stroke segment as fractions of the length. |
 
 **Options** (`AnimateOptions`)
@@ -152,7 +152,7 @@ tl.seek('spin'); tl.playFrom(0.5);
 - `'+=0.5'` / `'-=0.5'`: relative to the timeline end;
 - a label, optionally with an offset (`'label'`, `'label+=0.3'`).
 
-With no position, a child goes at the end of the timeline. The position may also go straight after the properties, GSAP style: `tl.add('.b', { x: 100 }, '-=0.2')`. Options: `delay`, `repeat`, `repeatDelay`, `yoyo`, `speed`, `ease` (applied to the overall progress), `autoplay` and `defaults`. Sequential tweens of the same property chain their start values.
+With no position, a child goes at the end of the timeline. The position may also go straight after the properties, GSAP style: `tl.add('.b', { x: 100 }, '-=0.2')`. Options: `delay`, `repeat`, `repeatDelay`, `yoyo`, `speed`, `ease` (applied to the overall progress), `autoplay`, `defaults` and the callbacks (`onStart`, `onUpdate`, `onComplete`, `onRepeat`, `onReverseComplete`). `onUpdate` fires once per frame while the playhead moves (playing or seeking), after that frame's DOM writes. Sequential tweens of the same property chain their start values.
 
 Children: `add(targets, props, options?, position?)` (alias `to`), `from(targets, fromProps, options?, position?)`, `fromTo(targets, fromProps, toProps, options?, position?)`, `set(targets, props, position?)`, `call(fn, position?)`, `label(name, position?)`, and `add(animationOrTimeline, position?)` to nest. `tl.labels` is a `Map` of label → seconds.
 
@@ -180,7 +180,12 @@ const stop = scroll(animate('.bar', { scaleX: [0, 1] }, { ease: 'linear' }));   
 scroll(animate(img, { y: [-80, 80] }), { target: img, offset: ['start end', 'end start'], smooth: 0.1 });
 scroll((p) => (counter.textContent = Math.round(p * 100) + '%'), { container: panel });
 inView('.reveal', (el) => { animate(el, { opacity: [0, 1] }); return () => animate(el, { opacity: 0 }); }, { amount: 0.3 });
+scroll(compositor('.hero', { scale: [1, 1.15], opacity: [1, 0] }, { ease: 'linear' }), { target: hero, offset: ['start start', 'end start'] });
 ```
+
+Give `scroll()` a `compositor()` animation and it's attached to a native `ScrollTimeline` where the browser has one: the browser scrubs it in step with the scroll, and no JavaScript runs while scrolling. The `offset` range is measured from layout (and again on resize), so it means the same as on the JavaScript path. Without `ScrollTimeline`, or with `smooth`, it's scrubbed from the scroll event instead (`native: false` forces that).
+
+`compositor()` animations honour `engine.reducedMotion` (they jump to the end), and `revert()` cancels them and puts back the inline styles from before.
 
 ---
 
@@ -208,6 +213,7 @@ shapeToPath(document.querySelector('circle')!);  // <circle>/<rect>/<ellipse>/<l
 normalizePath('M0 0 H10 V10 Z');                 // absolute cubic segments: 'M0 0C3.333 0 …Z'
 ellipse(50, 50, 40, 20); polygon([[0, 0], [10, 0], [5, 8]]);
 trimPath('M0,0 L100,0', 0.25, 0.75);            // the middle half: 'M25 0C41.667 0 58.333 0 75 0'
+transformPath('M0 0 L10 0', [2, 0, 0, 2, 5, 5]);   // apply a 2D matrix [a, b, c, d, e, f]
 pathThrough([[0, 0], [50, 40], [100, 0]], { curviness: 1 });   // smooth curve through points
 simplifyPath(d, 1);                              // fewer points within 1 unit
 flattenPath('M0,0 L10,0 L10,10');                // [[[0, 0], [10, 0], [10, 10]]] polylines per subpath
@@ -223,7 +229,11 @@ const seq = morphSequence([circle(0, 0, 10), rect(0, 0, 10, 10), star(0, 0, 5, 1
 const { chars, words, lines, revert } = splitText('h1', { type: 'lines,words,chars' });
 animate(chars, { y: ['100%', 0], opacity: [0, 1] }, { delay: stagger(0.02) });
 
-flip('.item', () => grid.classList.toggle('dense'), { duration: 0.6, ease: 'spring(bounce: .2)' });
+// Lines rising from behind a mask; re-split (and the animation handed over) when the width changes
+splitText('.lede', { type: 'lines', mask: 'lines', autoSplit: true,
+  onSplit: ({ lines }) => animate(lines, { yPercent: [100, 0] }, { delay: stagger(0.08), ease: 'outCubic' }) });
+
+flip('.item', () => grid.classList.toggle('dense'), { duration: 0.6, ease: 'spring(bounce: .2)' }); // see "Layout transitions"
 
 compositor('.toast', { y: [20, 0], opacity: [0, 1] }, { ease: 'spring(bounce: .4)' }); // compositor thread
 
@@ -232,12 +242,70 @@ const b = batch(50_000, { x: (i) => [0, i % 500], y: [0, 300], a: [0, 1] },
 // b.data: Float32Array (count * stride), e.g. gl.bufferSubData(gl.ARRAY_BUFFER, 0, b.data)
 ```
 
-- `splitText(targets, { type: 'chars' | 'words' | 'lines' (comma separated, default 'words,chars'), charClass, wordClass, lineClass }) → { chars, words, lines, revert() }`. Characters are grapheme-safe (emoji stay whole).
-- `flip(targets, mutate, options?)` measures, runs `mutate()` (your DOM/class change), then animates from the old layout. Options are animation options plus `scale` (default true) and `fade`. For async changes: `const state = flip.capture(targets); …; flip.from(state, options)`.
+- `splitText(targets, { type: 'chars' | 'words' | 'lines' (comma separated, default 'words,chars'), charClass, wordClass, lineClass, mask, maskClass, autoSplit, onSplit }) → { chars, words, lines, masks, split(), revert() }`. Characters are grapheme-safe (emoji stay whole).
+- `splitText` options: `mask: 'lines' | 'words' | 'chars'` wraps each unit in an `overflow: clip` element (returned in `masks`; class via `maskClass`). `autoSplit: true` splits again when an element's width changes and once web fonts have loaded, so lines match the layout. `onSplit(result)` runs after every split; return the animation that uses the pieces, and on a re-split it's reverted and the new one is moved to the same time. `result.split()` re-splits on demand, and `revert()` restores the markup (a `context()` does this too).
+- `flip(targets, mutate, options?)` measures, runs `mutate()` (your DOM/class change), then animates from the old layout; see [Layout transitions](#layout-transitions-flip) for enter/leave, shared elements and presence.
 - `compositor(targets, props, options?)` runs on the browser's compositor thread (Web Animations) with anikit easings, springs included; keeps going when the main thread is busy.
 - `batch(count, props, options?) → Batch`: `data` (Float32Array, `count * stride`), `stride`, `channels` (`{ x: 0, y: 1, … }`), `get(i, prop)`. A prop is a shared keyframe list or `(index, count) => keyframes`.
 
+
 ---
+
+## Layout transitions: `flip`
+
+`flip(targets, mutate, options?)` records where elements are, runs `mutate`, and animates every element from its old box to its new one using only transforms. It returns a `Timeline` holding every animation it started, so `await flip(...)` waits for all of them.
+
+```ts
+flip('.item', () => grid.classList.toggle('dense'), { duration: 0.6, ease: 'spring(bounce: .2)' });
+flip('.card', () => applyFilter(), { fade: true });                    // removed cards fade out in place, new ones fade in
+flip('.card', () => list.prepend(card), { enter: { scale: [0.6, 1], opacity: [0, 1] }, leave: { scale: 0.6, opacity: 0 } });
+flip('[data-flip-id]', () => { thumb.hidden = true; modal.hidden = false; });  // shared element: modal grows out of the thumbnail
+const state = flip.capture('.item'); reorder(); flip.from(state, { duration: 0.4 }); // manual capture
+```
+
+- **Re-queried targets:** when `targets` is a selector it's queried again after `mutate`, so elements added by the change are found. Pass `targets` in the options to name them explicitly.
+- **Entering elements** (new, or hidden before) play `enter` keyframes, or `{ opacity: [0, 1] }` with `fade: true`, or whatever `onEnter(els)` returns.
+- **Leaving elements** (removed from the DOM or hidden by the change) are put back at their last box with `position: absolute`, so their siblings reflow straight away. They play `leave` (or a fade, or `onLeave(els)`) and are then removed or hidden for real, with their inline styles restored. If a later change brings one back mid-exit, the exit is cancelled and it animates from where it is.
+- **Shared elements:** two different elements with the same `data-flip-id` (or the same `id(el)`) are treated as one: the incoming one starts on the outgoing one's box. If both stay visible they cross-fade (`crossfade: false` to turn it off).
+- **Interrupted flips** start from where the elements are on screen and end on their own transforms.
+- `scale: false` animates position only. `correctRadius: true` counter-scales `border-radius` every frame so rounded corners don't stretch while an element scales. It's off by default because it adds a style recalc and a repaint per element per frame, while transforms alone stay on the compositor.
+- Layout is read once for all elements (transforms off, measure, transforms back) rather than once per element.
+
+## Presence: enter and exit
+
+The DOM has no "about to be removed" phase. These helpers animate first and remove afterwards, and cope with an element coming back halfway through its exit.
+
+```ts
+exit('.toast', { opacity: 0, y: 20 }, { duration: 0.3 });  // animate out, then remove (after: 'hide' sets `hidden` instead)
+enter('.panel', { opacity: [0, 1], y: [12, 0] });            // un-hide and animate in; turns a running exit() around
+
+const list: Presence = presence('#todos', { enter: { opacity: [0, 1], y: [-8, 0] }, exit: { opacity: 0, scale: 0.9 }, duration: 0.3 });
+list.add(item);                         // insert (at the end, or before a node) and animate in
+list.remove(item);                      // animate out, then remove
+list.toggle(item, false);               // same, but keep it in the DOM with `hidden`
+await list.replace(oldView, newView, { mode: 'wait' });  // 'sync' (default) runs both at once
+```
+
+With `layout: true` (the default) siblings slide into their new places through `flip()`, and a leaving child leaves the flow at once, pinned where it was while it animates out. With `layout: false` a leaving child stays in the flow until it's removed. Adding a child that is still animating out turns it around from where it is. Reduced motion skips the animations but still inserts and removes.
+
+## View Transitions
+
+`viewTransition(update, options?)` runs `update` (which changes the DOM) through `document.startViewTransition`, so the browser cross-fades and morphs snapshots on the compositor. Anikit adds:
+
+- **Timing:** `duration`, `delay` and `ease` apply to every transition group. Any Anikit easing works, and springs and custom curves become native `linear()`.
+- **Temporary names:** `names: { hero: el }` gives an element a `view-transition-name` for this transition only. A pair `[before, after]` names one element in the old state and another in the new one, so the browser morphs one into the other.
+- **Custom snapshots:** `old` / `new` take WAAPI keyframes for the outgoing and incoming snapshot of `scope` (default `'root'`).
+- **Fallback:** without the API, the named elements are animated with `flip()` (`fallback: 'none'` just runs the update). With reduced motion the update runs straight away.
+
+```ts
+await viewTransition(() => openDetail(id), {
+  duration: 0.5, ease: 'spring(bounce: 0.2, duration: 0.5)',
+  names: { hero: [thumb, () => document.querySelector('.detail img')] },
+});
+viewTransition(() => route(next), { old: { opacity: [1, 0] }, new: { transform: ['translateY(24px)', 'none'], opacity: [0, 1] }, types: ['forward'] });
+```
+
+The handle mirrors `ViewTransition`: `updateCallbackDone`, `ready`, `finished`, `skipTransition()`, plus `native` (whether the browser API ran it). Awaiting it waits for `finished`.
 
 ## Engine
 
@@ -286,8 +354,24 @@ animate(label, { text: 'Hello world' });                                       /
 animate(label, { text: { value: 'DECRYPTED', type: 'scramble', chars: 'upper' } });
 animate(el, { xPercent: -50, yPercent: -50 });                                 // translate(-50%, -50%)
 animate(path, { d: [null, circle(50, 50, 40), star(50, 50, 6, 45, 20)] });     // morph through N shapes
+animate(panel, { height: open ? 'auto' : 0 }, { ease: 'outCubic' });            // accordions
 resolveRandom('random(0, 100, 5)');                                            // the same parser, standalone
 ```
+
+Complex values (shadows, filters, gradients, `clip-path`, anything with numbers and colours in it) interpolate number by number. Two refinements apply:
+
+- **Colours inside them** blend like solid colours: in `colorSpace` (OKLab by default) with premultiplied alpha, so a shadow fading in from `transparent` doesn't go dark on the way.
+- **Lists that don't line up as written are reconciled:**
+  - Filter lists get the missing functions at their identity values (`'none'` → `'brightness(1.5) blur(4px)'` starts from `brightness(1) blur(0px)`, not black). Percentages become numbers, and bare zeros get units.
+  - Shadow lists are rewritten as `[inset] x y blur spread color`, which matches the colour-first form that computed styles use, and shorter lists are padded with transparent shadows.
+
+```ts
+animate(card, { boxShadow: '0 12px 32px rgba(0,0,0,.25), inset 0 0 0 1px #fff3' });  // from the stylesheet's shadow
+animate(img, { filter: 'blur(4px) saturate(2)' });                                    // from 'none' or a different list
+animate(hero, { backgroundImage: 'linear-gradient(90deg, #f0c, #0cf)' });             // stops blend in OKLab
+```
+
+`'auto'` works for `height`, `width`, `maxHeight`, `maxWidth`, `blockSize` and `inlineSize`, as a target, as a start value, or as a keyframe. The size is measured when the animation is built, and the property is written back as `auto` (`none` for max sizes) whenever the value sits on that size, so the element stays responsive after the animation ends or is reversed. Add `overflow: hidden` (or `clip`) yourself if the content shouldn't spill while it grows.
 
 ## Control, cleanup and accessibility
 
@@ -305,6 +389,7 @@ useLayoutEffect(() => {
 ```
 - `matchMedia().add('(min-width: 800px)', setup)` runs `setup` while the query matches and reverts it automatically when it stops matching. `add({ wide: '…', reduce: '(prefers-reduced-motion: reduce)' }, ({ wide, reduce }) => …)` takes several named conditions.
 - `engine.reducedMotion = 'user' | 'always' | 'never'`: when motion is reduced, animations jump straight to their end state, while callbacks and promises still fire.
+- `engine.reducedMotionMode = 'fade'` takes out only the movement: transforms, motion paths, shape morphs and layout properties (sizes, offsets, margins, SVG geometry attributes) hold their end values, while opacity, colours and filters animate with their normal timing. With it, `flip()` and `presence()` still cross-fade, but nothing slides. The default, `'instant'`, jumps everything. `compositor()` animations always jump. In both modes `spring()` arrives at once, and `inertia()`, `draggable` throws and `gesture` flings don't glide.
 - `quickSetter(el, 'x')` returns a fast setter; `quickTo(el, 'x', opts)` returns a function that re‑targets a tween on each call.
 - `delayedCall(seconds, fn)` runs `fn` on engine time, so it respects the global speed and pausing.
 
@@ -409,6 +494,20 @@ knob.setPosition(0, 0, 45);
 
 `hover(targets, fn)` and `press(targets, fn)` call `fn(el, event)` on enter/press; a function returned from `fn` runs on leave/release. Both return `{ kill, revert }`. Hover ignores touch, so nothing gets stuck.
 
+### Pinch, rotate and pan: `gesture`
+
+```ts
+const [g]: Gesture[] = gesture('#photo', { minScale: 1, maxScale: 6, bounds: { minX: -400, maxX: 400, minY: -300, maxY: 300 } });
+gesture('.sticker', { type: 'pinch,rotate', onChange: (g) => save(g.scale, g.rotation) });
+gesture(canvas, { apply: false, onChange: ({ x, y, scale }) => view.set(x, y, scale) });   // drive anything
+```
+
+Two fingers zoom and rotate about their midpoint, and the point under the fingers stays there. One finger pans, and lifting a finger mid-gesture carries on smoothly with the other. Ctrl/⌘ + wheel (trackpad pinch) zooms about the pointer. A plain wheel still scrolls.
+
+- **Limits:** `minScale`, `maxScale` and `bounds` are rubber-banded while held (`edgeResistance`, default 0.35; scale resists in log space). On release the scale springs back about the last finger position, or the element glides with momentum (`inertia: false` to stop dead).
+- **Options:** `type` is any of `'pan,pinch,rotate'`. `apply: false` only reports through callbacks: `onStart`, `onChange`, `onEnd` (fingers up) and `onRest` (settled).
+- **The `Gesture` object** has `x`, `y`, `scale`, `rotation`, `pointers`, `isActive`, `set({ x, y, scale, rotation })`, `enable()`, `disable()`, `kill()` and `revert()`.
+
 ## Dev tools
 
 `inspector(animationOrTimeline)` opens a floating panel to play, pause, scrub, restart, loop, change speed and jump to labels. Space toggles playback.
@@ -425,7 +524,7 @@ panel.destroy();
 | `interpolate([0, 100, 200], [0, 1, 0], { ease, clamp })` | Map through stops. Outputs can be numbers, colours or values with units. |
 | `distribute({ base, amount, from, grid, ease })` | Spread any value across targets. |
 | `noise2(x, y, seed)`, `noise3`, `fbm(x, y, z?, { octaves })`, `noiseMany(xyz)`, `wander({ speed, amplitude })` | Seeded simplex noise. |
-| `trimPath(d, 0.2, 0.8)`, `pathThrough(points, { curviness, closed })`, `simplifyPath(d, tolerance, smooth)`, `pathArea(d)`, `flattenPath(d, tol)` | Path operations. |
+| `trimPath(d, 0.2, 0.8)`, `pathThrough(points, { curviness, closed })`, `simplifyPath(d, tolerance, smooth)`, `pathArea(d)`, `flattenPath(d, tol)`, `transformPath(d, [a, b, c, d, e, f])` | Path operations. |
 | `MotionPath.closest(x, y)`, `.atLength(px)`, `.points(n)` | Path queries. |
 | `VelocityTracker`, `shuffle`, `pipe`, `splitColor`, `getUnit`, `roundTo`, `normalize`, `toArray` | Helpers. |
 
@@ -703,35 +802,80 @@ npx anikit-render film.mjs --out film.mp4 --workers 4 --fade-in 0.3 --fade-out 0
 
 ```bash
 npx anikit-render film.mjs --preview 30 --out frames/
+npx anikit-render film.mjs --review review/   # contact sheet + pacing report (holds, flat frames, cuts)
 ```
 
 Each worker builds the same composition (randomness is seeded), simulates to its slice without drawing, pre-rolls half a second so trails match, renders and encodes; slices join without re-encoding and the audio is muxed in. Needs the optional peer dependency `@napi-rs/canvas` and ffmpeg. `loadAnikit()`, `renderToFile()` and `renderPreview()` are the programmatic equivalents.
 
 ### Solid 3D: `renderer3d`, `mesh`, `instances`
 
-A z-buffered, lit, instanced triangle rasterizer in WebAssembly — no WebGL. Per-vertex Blinn–Phong with key and fill lights, a fresnel rim and depth fog; instances are drawn front-to-back.
+A z-buffered, instanced triangle renderer in WebAssembly — no WebGL. Triangles are clipped at the near plane (fly *through* geometry), shaded **per pixel** four pixels at a time in SIMD, and tone-mapped so hot colours roll off towards white instead of clipping.
 
 ```ts
 const r3 = renderer3d({ width: 1920, height: 1080 });     // or a canvas (drawn into automatically)
-const cubes = instances(3000, (i) => ({ x, y, z, rx, ry, rz, scale: 14, color: i % 9 ? '#ece6da' : '#ff3b14' }));
-const knot = mesh.torusKnot({ p: 2, q: 5, radius: 250, tube: 46 });
+const towers = instances(900, (i) => ({ x, y, z, sx: 80, sy: h, sz: 80, color: [0.04, 0.045, 0.06] }));
+const knot = mesh.torusKnot({ p: 2, q: 3, radius: 300, tube: 58, segments: 600, sides: 28 });
 const px = r3.render(scene, [
-  { mesh: mesh.cube(), instances: cubes, material: { specular: 0.5, rim: 0.4 } },
-  { mesh: knot, material: { specular: 1.1, shininess: 70, rim: 0.9 } },
-], { background: '#06070a', fog: [1400, 5200], keyColor: [1, 0.95, 0.9], rimColor: [1, 0.4, 0.25] });
+  // Black chrome with light pulses running along the tube:
+  { mesh: knot, material: { metal: 0.9, iridescence: 0.25, specular: 1.4, shininess: 120, lines: 1.2, lineColor: [0.3, 0.8, 1.6], grid: [0, 6], pulse: 2.5, pulseCount: 3, pulsePhase: t } },
+  // Dark towers with glowing edges and a wave of light sweeping along z:
+  { mesh: mesh.cube(), instances: towers, material: { lines: 1.6, lineColor: [1.4, 0.35, 0.9], grid: [1, 1], lineWidth: 0.035, pulse: 1.5, pulseDir: [0, 0, 0.0015], pulsePhase: t } },
+  // Light: stars that streak with camera motion and hide behind the towers:
+  { points: stars, colors, size: 3, intensity: 2.5, streak: 1.5, fog: [8000, 20000] },
+  // Additive geometry (beams, holograms): depth-tested, not occluding:
+  { mesh: beam, instances: beams, blend: 'additive', material: { emissive: 1 } },
+], { background: '#04050a', fog: [1800, 5200], sky: [0.05, 0.07, 0.16], horizon: [0.9, 0.5, 0.95], ground: [0.01, 0.01, 0.02], strips: [2.2, 2.3, 2.6] });
 ```
 
-`mesh.custom(positions, normals, indices)` takes your own geometry. `r3.triangles` and `r3.lastMs` report the last frame. `scene.viewProjection()` gives the matrix and model-space eye for your own renderers.
+**Materials** (`material`, all optional):
+
+| Option | Effect |
+|---|---|
+| `ambient`, `diffuse`, `specular`, `shininess`, `rim` | Blinn–Phong key + fill light and a fresnel rim |
+| `emissive` | base colour × emissive added unlit — glows under the grade's bloom |
+| `metal` (0–1) | mirror reflection of the environment (`sky`/`horizon`/`ground` + sharp studio `strips`) |
+| `iridescence` (0–1), `hue` | thin-film rainbow tint on reflections, shifting with viewing angle |
+| `lines`, `lineColor`, `grid: [u, v]`, `lineWidth` | antialiased glowing lines in UV space; `0` cells = none that way. Cube faces are 0–1 (edge outlines with `[1, 1]`); tubes/knots run `u` along and `v` around |
+| `pulse`, `pulseCount`, `pulsePhase`, `pulseDir` | bright pulses travelling along `u` (animate `pulsePhase`); `pulseDir` offsets each instance's phase by its position, so a wave sweeps through a field |
+| `texture`, `textureMode`, `textureRepeat`, `textureGain` | an image from `texture(imageData | canvas)` mapped by UV: `'albedo'` tints the lit colour, `'emissive'` glows unlit (screens, signs); mipmapped, so it doesn't shimmer when small |
+
+Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [near, far]`, `fogColor`, environment `sky`, `horizon`, `ground`, `strips`. Items draw in order; per item `cull: false` shows back faces (tumbling shards), `blend: 'additive'` adds light.
+
+**Mirror floors**: `render(scene, items, { mirror: { y, strength } })` renders the scene reflected about the plane `y`, then draws items marked `mirror: true` (the floor) glossily over that reflection (`strength` 0–1), then everything else. Neon on wet asphalt. The mirror item should cover the view below the horizon; `reflect: false` keeps an item out of the reflection. Costs a second pass.
+
+**Meshes**: `mesh.cube()`, `sphere(rings, segments)`, `torus(radius, tube, segments, sides)`, `torusKnot({ p, q, radius, spread, tube, segments, sides })`, `plane(cells)` (XZ, faces +Y — floors that run to the horizon with `grid`), `cylinder(segments, caps)`, `heightfield(w, d, heights | (x, z) => h, { skip })`, `text(str, { font, depth, bevel, resolution })` (solid bevelled 3D text in any font; stand it up with `rx: 90` and use `sz: size * mesh.aspect`), `custom(positions, normals, indices, uvs?)`.
+
+**Light points** (`{ points, colors?, size, intensity, streak, fog }`): `points` is a flat xyz array or a live `emitter()` / `pointCloud()`. `streak` stretches each point along its screen motion since the previous `render()` (1 = shutter-accurate, 3+ = warp).
+
+**Shatter**: `shatter(mesh, { transform, force, spread, spin, gravity, drag, ripple, color })` turns every triangle into a flying shard; `shards.update(secondsSinceHit)` poses them; draw `{ mesh: shards.mesh, instances: shards.instances, cull: false }`. Deterministic, so parallel render workers agree.
+
+**Camera flights**: `flightPath(points, { lookAhead, bank, maxBank, closed })` is a smooth (centripetal Catmull–Rom) path with an arc-length table. `path.apply(scene, s, extraRoll)` places the camera at distance `s`, looking `lookAhead` ahead and banking into turns; `path.timing([[sec, fraction], …])` returns a monotone, smoothly accelerating seconds→distance function (hold a fraction to stop). `scene.roll` rolls any camera about its view axis.
+
+```ts
+const path = flightPath([[0, 300, 2000], [0, 120, -2000], [180, 60, -8000], [0, 400, -26000]], { lookAhead: 900, bank: 1.4 });
+const s = path.timing([[0, 0], [1.5, 0.2], [4, 0.9], [5, 1]]);
+film.scene('fly', 0, 5, { draw: ({ t }) => { path.apply(cam, s(t), t > 3 ? (t - 3) * 360 : 0); /* barrel roll */ … } });
+```
+
+`r3.triangles` and `r3.lastMs` report the last frame. `scene.viewProjection()` gives the matrix and model-space eye for your own renderers. Benchmark: `node scripts/bench-raster.mjs`.
 
 ### Film grade, impacts and speed ramps
 
 ```ts
-const film = composition({ …, motionBlur: { samples: 2 }, post: { bloom: 0.55, bloomThreshold: 0.72, aberration: 0.5, vignette: 0.4, grain: 5 } });
+const film = composition({ …, motionBlur: { samples: 2 }, post: {
+  bloom: 0.8, bloomThreshold: 0.55, bloomRadius: 40,          // glow around highlights
+  streaks: 0.5, streakLength: 260, streakTint: [0.6, 0.75, 1], // anamorphic flares
+  aberration: 0.6, vignette: 0.45, grain: 4,
+  zoomBlur: (t) => (t > 6 && t < 7 ? 0.25 : 0),               // speed lines on the warp
+  rays: 1, raysCenter: [0.5, 0.42], raysLength: 0.7,           // god rays from a light behind the scene
+  aa: 1,                                                       // FXAA-style edge antialiasing for renderer3d geometry
+  contrast: 1.08, saturation: 1.1, shadows: [0, 0.015, 0.04], highlights: [0.06, 0.02, -0.02], // grade + split tone
+} });
 film.impact(12.75, { shake: 40, flash: '#fff', flashOpacity: 0.7, aberration: 9 });  // shake + flash + aberration kick
 film.scene('flight', 16, 24, { timeScale: (t) => 1 - 0.88 * Math.exp(-((t - 18.7) / 0.55) ** 2), step: ({ dt }) => sim.step(dt), draw });
 ```
 
-- `post` runs in WebAssembly once per output frame (after motion blur); grain is seeded by frame index, so parallel slices match.
+- `post` runs in WebAssembly once per output frame (after motion blur); grain is seeded by frame index, so parallel slices match. Every value may be a function of composition time, so the grade can follow the edit.
 - `impact()` shakes and flashes the finished frame (after transitions); `impactAt(t)` is its pure function of time.
 - `timeScale(local)` scales engine time for that scene — tweens, particles and physics all slow together; `step()` receives the scaled `dt`.
 - Per-scene `motionBlur` (samples) overrides the composition: use 1 for static shots and more for fast ones.
@@ -753,19 +897,20 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Physics](#physics) | `spring`, `inertia`, `physics`, `PhysicsAnimation` | `PhysicsOptions`, `InertiaOptions`, `InertiaProp`, `PhysicsProp`, `BallisticOptions` |
 | [Scroll & viewport](#scroll--viewport) | `scroll`, `inView`, `scrollTrigger`, `scrollTriggerBatch`, `ScrollTrigger`, `scrollTo`, `smoothScroll`, `refreshScrollTriggers` | `ScrollOptions`, `InViewOptions`, `ScrollTriggerOptions`, `ScrollToOptions`, `SmoothScrollOptions` |
 | [Text, layout, compositor, batches](#text-layout-compositor-batches) | `splitText`, `flip`, `compositor`, `CompositorAnimation`, `batch`, `Batch` | `SplitOptions`, `SplitResult`, `FlipOptions`, `FlipState`, `BatchOptions`, `BatchValue` |
-| [SVG](#svg) | `morph`, `morphPlan`, `morphSequence`, `shapeToPath`, `pathData`, `pathLength`, `pathBounds`, `normalizePath`, `MotionPath`, `circle`, `ellipse`, `rect`, `polygon`, `star`, `trimPath`, `pathThrough`, `simplifyPath`, `pathArea`, `flattenPath` | `PathSource` |
+| [SVG](#svg) | `morph`, `morphPlan`, `morphSequence`, `shapeToPath`, `pathData`, `pathLength`, `pathBounds`, `normalizePath`, `MotionPath`, `circle`, `ellipse`, `rect`, `polygon`, `star`, `trimPath`, `pathThrough`, `simplifyPath`, `pathArea`, `flattenPath`, `transformPath` | `PathSource` |
 | [Utilities](#more-utilities) | `mixColor`, `parseColor`, `splitColor`, `clamp`, `lerp`, `mapRange`, `wrap`, `snap`, `random`, `interpolate`, `normalize`, `roundTo`, `pipe`, `shuffle`, `getUnit`, `toArray`, `VelocityTracker` | |
 | [Noise](#more-utilities) | `noise2`, `noise3`, `fbm`, `noiseMany`, `wander` | |
 | [Cleanup](#control-cleanup-and-accessibility) | `context`, `Context`, `matchMedia`, `quickTo`, `quickSetter` | `Revertible` |
 | [Effects](#effects) | `effects`, `effect`, `registerEffect`, `effectNames` | `EffectOptions`, `EffectFn`, `EffectName` |
-| [Interaction](#interaction) | `draggable`, `Draggable`, `observer`, `hover`, `press` | `DraggableOptions`, `Bounds`, `ObserverOptions`, `ObserverEvent` |
+| [Layout transitions](#layout-transitions-flip), [presence](#presence-enter-and-exit) and [View Transitions](#view-transitions) | `flip`, `presence`, `Presence`, `enter`, `exit`, `viewTransition` | `FlipOptions`, `FlipState`, `PresenceOptions`, `ViewTransitionOptions`, `ViewTransitionHandle` |
+| [Interaction](#interaction) | `draggable`, `Draggable`, `observer`, `hover`, `press`, `gesture`, `Gesture` | `DraggableOptions`, `Bounds`, `ObserverOptions`, `ObserverEvent`, `GestureOptions` |
 | [Engine](#engine) | `engine`, `flush`, `ready`, `init` | |
 | [Dev tools](#dev-tools) and [testing](#testing-and-diagnostics) | `inspector`, `testing`, `setWarnings`, `onWarning` | `InspectorOptions` |
 | [Physics worlds](#physics-worlds) | `world`, `World` | `WorldOptions`, `BodyInit` |
 | [3D](#3d) | `scene3d`, `Scene3D`, `tilt`, `parseTransform`, `toMatrix3d`, `mixTransforms` | `SceneOptions`, `Projection`, `DrawOptions`, `TiltOptions`, `Vec3`, `Matrix` |
 | [Point clouds and glow](#point-clouds-and-glow) | `pointCloud`, `PointCloud`, `textPoints`, `glow`, `Glow` | `CloudOptions`, `ShapeInput`, `GlowOptions`, `GlowRenderOptions` |
 | [Particle emitters](#particle-emitters) | `emitter`, `Emitter` | `EmitterOptions`, `SpawnShape` |
-| [Solid 3D](#solid-3d-renderer3d-mesh-instances) | `renderer3d`, `Renderer3D`, `mesh`, `Mesh3D`, `instances`, `Instances` | `InstanceInit`, `MaterialOptions`, `LightOptions`, `DrawItem` |
+| [Solid 3D](#solid-3d-renderer3d-mesh-instances) | `renderer3d`, `Renderer3D`, `mesh`, `Mesh3D`, `instances`, `Instances`, `texture`, `Texture3D`, `shatter`, `Shards`, `flightPath`, `FlightPath` | `InstanceInit`, `MaterialOptions`, `LightOptions`, `DrawItem`, `PointsItem`, `ShatterOptions`, `FlightPathOptions`, `FlightPose`, `Point3` |
 | [Audio](#audio-analysis) | `analyzeAudio`, `decodeAudio` | `AudioAnalysis` |
-| [Video](#video-compositions) | `composition`, `Composition`, `FrameBuffer`, `typeFx`, `exportWebM`, `muxWebM` | `CompositionOptions`, `SceneHooks`, `SceneDef`, `FrameInfo`, `RenderOptions`, `RenderedFrame`, `TypeFxOptions`, `Transition`, `TransitionFn`, `PostOptions`, `ImpactOptions` |
+| [Video](#video-compositions) | `composition`, `Composition`, `FrameBuffer`, `typeFx`, `exportWebM`, `muxWebM` | `CompositionOptions`, `SceneHooks`, `SceneDef`, `FrameInfo`, `RenderOptions`, `RenderedFrame`, `TypeFxOptions`, `Transition`, `TransitionFn`, `PostOptions`, `PostValue`, `PostColor`, `ImpactOptions` |
 | [Capture](#capture-screenshots-and-recordings) | `screenshot`, `record`, `rasterize`, `encodeGif`, `GifWriter` | `CaptureTarget`, `RasterOptions`, `RecordOptions`, `Recording` |

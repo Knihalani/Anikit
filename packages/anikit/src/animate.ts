@@ -11,7 +11,7 @@
  */
 import { core, F64, LINEAR, f64Buf, whenReady, views } from './wasm';
 import {
-  register, unregister, wake, flush, easingId, easingDuration, NodeRecord, EasingInput, prefersReduced,
+  register, unregister, wake, flush, easingId, easingDuration, NodeRecord, EasingInput, prefersReduced, reducedMotionMode,
   FL_FILL_BACKWARDS, FL_FILL_FORWARDS, FL_IMMEDIATE,
 } from './core';
 import {
@@ -27,7 +27,7 @@ import { stagger as staggerFn } from './stagger';
 import type { StaggerOptions } from './stagger';
 import type { OptionKeys } from './debug';
 import { Binding, bind, apply, custom, transformSlot, M_PROP, M_TRANSFORM, M_TRANSFORM2, M_STYLE_NUM, M_STYLE_FMT, M_VAR, M_CUSTOM } from './bind';
-import { pathData, PathSource, writeMorph, elementLength, morphSequence } from './svg';
+import { pathData, PathSource, writeMorph, elementLength, morphSequence, transformPath } from './svg';
 import { parseTransform, toMatrix3d } from './scene';
 import { writeStr } from './wasm';
 
@@ -55,6 +55,15 @@ export interface MotionPathOptions {
   end?: number;
   /** Rotate the target to follow the path tangent; a number adds an angle offset. */
   rotate?: boolean | number;
+  /**
+   * Put the target exactly on the path as drawn on the page: the path's
+   * coordinates (its SVG user space, viewBox and all) are mapped to the
+   * target's. `true` uses the path element itself; pass an SVG element when
+   * `path` is raw path data in that element's coordinates.
+   */
+  align?: boolean | Element | string;
+  /** Point of the target that sits on the path, as fractions of its box (default `[0.5, 0.5]` with `align`). */
+  alignOrigin?: [number, number];
 }
 
 /**
@@ -262,6 +271,44 @@ function checkValues(prop: string, kind: Kind, raw: unknown[], target: unknown):
 function isKnownStyle(el: HTMLElement, prop: string): boolean {
   const st = el.style as any;
   return !st || prop in st || camel(prop) in st || prop.startsWith('--');
+}
+
+/** Layout properties whose animation moves things (held still under reduced motion 'fade'). */
+const MOTION_STYLE = /^(width|height|(min|max)(Width|Height)|blockSize|inlineSize|top|left|right|bottom|inset.*|margin.*|padding.*|translate|rotate|scale|offset(Distance|Path|Rotate)?|backgroundPosition.*|objectPosition|transform|perspective|gap|rowGap|columnGap|letterSpacing|wordSpacing|lineHeight|fontSize)$/;
+
+const MOTION_ATTR = /^(x|y|cx|cy|r|rx|ry|x1|x2|y1|y2|dx|dy|width|height|points|transform|d|offset)$/;
+
+/** Collapse a track onto its last keyframe (values stay, motion doesn't). */
+function stillTrack(t: TrackDef): void {
+  const ch = t.ch;
+  const last = t.values.slice(-ch);
+  const nk = t.values.length / ch;
+  const v: number[] = [];
+  for (let k = 0; k < nk; k++) v.push(...last);
+  t.values = v;
+}
+
+/** Size properties that accept `'auto'` as an animation value. */
+const AUTO_SIZE = new Set(['height', 'width', 'maxHeight', 'maxWidth', 'blockSize', 'inlineSize']);
+
+/** The used size (px) of `prop` when set to `auto`, measured without leaving a trace. */
+export function measureAuto(el: HTMLElement, prop: string): number {
+  const style = el.style as any;
+  const key = camel(prop);
+  const prev = style[key];
+  const max = key.replace(/^(width|height)$/, (m) => 'max' + m[0].toUpperCase() + m.slice(1));
+  const prevMax = max !== key ? style[max] : undefined;
+  style[key] = /^max/.test(key) ? 'none' : 'auto';
+  if (prevMax !== undefined) style[max] = 'none';
+  const vertical = /height|block/i.test(key);
+  let px = parseFloat(computed(el, key.replace(/^max(.)/, (_, c) => c.toLowerCase())));
+  if (!Number.isFinite(px)) {
+    // No layout engine (or a non-px computed value): fall back to the content size.
+    px = vertical ? el.scrollHeight : el.scrollWidth;
+  }
+  style[key] = prev;
+  if (prevMax !== undefined) style[max] = prevMax;
+  return px || 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -555,7 +602,10 @@ export class Animation extends Playable {
     if (!ctx.quiet) checkTargets(ctx.child ? 'timeline.add()' : ctx.set ? 'set()' : 'animate()', targetsIn, n);
     const claims = !ctx.child && o.overwrite !== false;
     const cs = COLOR_SPACES[o.colorSpace ?? 'oklab'] ?? 2;
-    const reduce = prefersReduced();
+    // Reduced motion: everything jumps ('instant'), or only movement does ('fade').
+    const reducedAny = prefersReduced();
+    const reduce = reducedAny && reducedMotionMode() === 'instant';
+    const still = reducedAny && !reduce;
     const repeat = reduce || o.repeat === undefined ? 0 : o.repeat < 0 ? Infinity : o.repeat;
     const direction =
       o.direction !== undefined ? DIRECTIONS[o.direction] ?? 0 : o.yoyo ? DIRECTIONS.alternate : 0;
@@ -572,8 +622,15 @@ export class Animation extends Playable {
       part.upd = !!o.onUpdate;
       const tracks: TrackDef[] = [];
       let hasExplicitFrom = false;
+      // One transform snapshot per target covers every transform component.
+      let snappedTransform = false;
 
-      const addTrack = (t: TrackDef, ease: EasingInput | EasingInput[] | undefined, offsets?: number[]) => {
+      const addTrack = (t: TrackDef, ease: EasingInput | EasingInput[] | undefined, offsets?: number[], motion = false) => {
+        if (still && motion) {
+          // Hold the end value for the whole animation: no movement, same timing.
+          stillTrack(t);
+          if (t.segs) t.segs.forEach(stillTrack);
+        }
         const nk = t.values.length / t.ch;
         if (offsets && offsets.length === nk) t.offsets = offsets;
         const e = ease ?? (easeList ? easeList : baseEase);
@@ -586,7 +643,16 @@ export class Animation extends Playable {
           t.easings = id === LINEAR ? [] : [id];
         }
         tracks.push(t);
-        return tracks.length - 1;
+        const idx = tracks.length - 1;
+        // Segments of a complex value follow it (same timing, contiguous outputs).
+        if (t.segs) {
+          for (const sg of t.segs) {
+            if (t.offsets) sg.offsets = t.offsets.slice();
+            sg.easings = t.easings ? t.easings.slice() : undefined;
+            tracks.push(sg);
+          }
+        }
+        return idx;
       };
 
       for (const [prop, spec] of props) {
@@ -605,6 +671,20 @@ export class Animation extends Playable {
         if (raw.length === 2 && raw[0] === null && Array.isArray(raw[1])) raw = raw[1] as Array<Scalar | null>;
         if (i === 0 && warningsOn()) checkValues(prop, kind, raw, target);
         if (raw[0] !== null && raw[0] !== undefined && raw.length > 1) hasExplicitFrom = true;
+        // `height: 'auto'` (and width, min/max sizes): animate to the measured
+        // size, then hand the property back to layout as `auto`.
+        let autoPx: number[] | null = null;
+        if (kind === Kind.Style && AUTO_SIZE.has(camel(prop))) {
+          const el = target as HTMLElement;
+          const inlineAuto = el.style && (el.style as any)[camel(prop)] === 'auto';
+          if (raw.some((v, k) => v === 'auto' || (inlineAuto && k === 0 && (v === null || v === undefined)))) {
+            const px = measureAuto(el, prop);
+            autoPx = [px];
+            for (let k = 0; k < raw.length; k++) {
+              if (raw[k] === 'auto' || (k === 0 && inlineAuto && (raw[k] === null || raw[k] === undefined))) raw[k] = px + 'px';
+            }
+          }
+        }
         const chained = ctx.chain?.get(target)?.get(prop);
         const read = () => (chained !== undefined ? chained : readValue(target, prop, kind));
         const el = isElement(target) ? target : null;
@@ -612,7 +692,7 @@ export class Animation extends Playable {
         const conv = (v: number, f: string, t: string) => convertUnit(el, prop, v, f, t);
         let track = buildTrack(raw, read, conv, cs, du);
         if (kind === Kind.Transform) {
-          if (track.kind !== TRACK_NUMBER || track.ch !== 1) {
+          if (track.kind !== TRACK_NUMBER || track.ch !== 1 || track.complex) {
             if (i === 0) warn(`"${prop}" needs a single number (optionally with a unit, e.g. 100 or '50%'); got ${raw.map((v) => JSON.stringify(v)).join(' → ')}, so it was skipped. For a full transform string use the "transform" property.`);
             continue;
           }
@@ -624,11 +704,27 @@ export class Animation extends Playable {
             track.unit = du;
           }
         }
-        const idx = addTrack(track, spec.ease, spec.offsets);
-        const numeric = track.kind === TRACK_NUMBER && track.ch === 1;
-        this._restore.push(snapshot(target, prop, kind));
+        const idx = addTrack(track, spec.ease, spec.offsets, kind === Kind.Transform || (kind === Kind.Style && MOTION_STYLE.test(camel(prop))));
+        // (A one-number template such as `blur(4px)` is not a plain number.)
+        const numeric = track.kind === TRACK_NUMBER && track.ch === 1 && !track.complex;
+        if (kind !== Kind.Transform || !snappedTransform) this._restore.push(snapshot(target, prop, kind));
+        if (kind === Kind.Transform) snappedTransform = true;
         const post = postFor(prop, o);
-        if (post) {
+        if (autoPx && numeric && track.unit === 'px') {
+          // Write `auto` whenever the value sits on the measured size (start
+          // or end): identical on screen, and the element stays responsive.
+          const style = (target as HTMLElement).style as any;
+          const key = camel(prop);
+          const ap = autoPx[0];
+          const kw = /^max/.test(key) ? 'none' : 'auto';
+          const b = custom(target, prop, idx, 0, (at) => {
+            let v = F64[at];
+            if (post) v = post(v, target);
+            const s = Math.abs(v - ap) < 1e-3 ? kw : r3(v) + 'px';
+            if (style[key] !== s) style[key] = s;
+          });
+          part.b.push(b);
+        } else if (post) {
           const write = writer(target, prop, kind, track.unit);
           const unit = track.unit;
           const raw = kind === Kind.Transform || (kind === Kind.Prop && !unit);
@@ -741,7 +837,7 @@ export class Animation extends Playable {
   /** Special properties: motion `path`, morph `d`, stroke `draw`, `attr`. */
   private _special(
     prop: string, rawIn: unknown, target: Target, i: number, n: number, part: Part, tracks: TrackDef[],
-    addTrack: (t: TrackDef, e: EasingInput | EasingInput[] | undefined, o?: number[]) => number,
+    addTrack: (t: TrackDef, e: EasingInput | EasingInput[] | undefined, o?: number[], motion?: boolean) => number,
     cs: number, ctx: BuildContext,
   ): void {
     const raw = resolve(rawIn as FnValue<any>, target, i, n);
@@ -760,7 +856,7 @@ export class Animation extends Playable {
         kind: TRACK_MATRIX, arg: 0, ch: 16, out: 16, values: mats, unit: '',
         format: (at) => toMatrix3d(F64, at), first: toMatrix3d(mats, 0), last: toMatrix3d(mats, mats.length - 16),
       };
-      const idx = addTrack(t, undefined, this._times);
+      const idx = addTrack(t, undefined, this._times, true);
       const style = isEl ? (target as HTMLElement).style : null;
       part.b.push(custom(target, 'transform', idx, 0, style ? (at) => (style.transform = toMatrix3d(F64, at)) : (at) => ((target as any).transform = toMatrix3d(F64, at))));
       return;
@@ -820,7 +916,7 @@ export class Animation extends Playable {
         const vals = Array.isArray(raw[key]) ? raw[key] : [null, raw[key]];
         const read = () => readValue(target, key, Kind.Attr);
         const t = buildTrack(vals.map((v: any) => resolve(v, target, i, n)), read, (v) => v, cs);
-        const idx = addTrack(t, undefined);
+        const idx = addTrack(t, undefined, undefined, MOTION_ATTR.test(key));
         const b = bind(target, key, Kind.Attr, idx, false, t.unit, t.format);
         b.prop = 'attr:' + key;
         part.b.push(b);
@@ -831,13 +927,15 @@ export class Animation extends Playable {
       this._restore.push(snapshot(target, 'x', Kind.Transform));
       const spec: MotionPathOptions =
         isPlainObject(raw) && 'path' in raw ? (raw as MotionPathOptions) : { path: raw as PathSource };
+      let data = pathData(spec.path);
+      if (spec.align && isElement(target)) data = this._alignPath(data, spec, target as HTMLElement);
       const w = core();
-      const lut = w.ak_path_lut(writeStr(pathData(spec.path)), 0);
+      const lut = w.ak_path_lut(writeStr(data), 0);
       const t: TrackDef = {
         kind: TRACK_PATH, arg: lut, ch: 1, out: 3, values: [spec.start ?? 0, spec.end ?? 1], unit: '',
         format: () => 0, first: 0, last: 0,
       };
-      const idx = addTrack(t, undefined);
+      const idx = addTrack(t, undefined, undefined, true);
       // The LUT is copied into the animation; free the registry slot after creation.
       queueMicrotask(() => w.ak_path_lut_free(lut));
       const s = stateOf(target);
@@ -873,7 +971,7 @@ export class Animation extends Playable {
         first: writeMorph(tmpl, seq.frames[0]), last: writeMorph(tmpl, seq.frames[seq.frames.length - 1]),
       };
       if (isElement(el)) this._restore.push(snapshot(target, 'd', Kind.Attr));
-      const idx = addTrack(t, undefined, this._times);
+      const idx = addTrack(t, undefined, this._times, true);
       const write = isElement(el) ? (v: string) => el.setAttribute('d', v) : (v: string) => ((target as any).d = v);
       const mb = custom(target, 'd', idx, 0, (at) => write(writeMorph(tmpl, F64, at)));
       ((this as any)._dFmt ??= new Map()).set(mb, (at: number) => writeMorph(tmpl, F64, at));
@@ -915,6 +1013,32 @@ export class Animation extends Playable {
       }));
       return;
     }
+  }
+
+  /** Map path data from its SVG user space into `target`'s translate space. */
+  private _alignPath(data: string, spec: MotionPathOptions, target: HTMLElement): string {
+    const ref =
+      spec.align === true
+        ? typeof spec.path === 'string'
+          ? /^\s*[mM]/.test(spec.path) ? null : document.querySelector(spec.path)
+          : spec.path
+        : typeof spec.align === 'string'
+          ? document.querySelector(spec.align)
+          : (spec.align as Element);
+    const ctm = ref && typeof (ref as SVGGraphicsElement).getScreenCTM === 'function' ? (ref as SVGGraphicsElement).getScreenCTM() : null;
+    const [ox, oy] = spec.alignOrigin ?? [0.5, 0.5];
+    // Untransformed box of the target (one write, one read, restore).
+    const st = target.style;
+    const prev = st.transform;
+    st.transform = 'none';
+    const r = target.getBoundingClientRect();
+    st.transform = prev;
+    if (spec.rotate !== undefined && spec.rotate !== false) {
+      this._restore.push(snapshot(target, 'transformOrigin', Kind.Style));
+      st.transformOrigin = ox * 100 + '% ' + oy * 100 + '%';
+    }
+    const m = ctm ?? { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+    return transformPath(data, [m.a, m.b, m.c, m.d, m.e - (r.left + ox * r.width), m.f - (r.top + oy * r.height)]);
   }
 
   /** All properties of a part were taken over: free it. */

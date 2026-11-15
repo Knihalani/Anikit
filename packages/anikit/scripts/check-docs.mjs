@@ -31,7 +31,7 @@ export function undocumentedExports() {
   const external = new Set([
     'scene3d', 'Scene3D', 'tilt', 'parseTransform', 'toMatrix3d', 'mixTransforms', 'pointCloud', 'PointCloud', 'textPoints', 'glow', 'Glow',
     'emitter', 'Emitter', 'mesh', 'Mesh3D', 'instances', 'Instances', 'renderer3d', 'Renderer3D', 'composition', 'Composition',
-    'FrameBuffer', 'typeFx', 'exportWebM', 'muxWebM',
+    'FrameBuffer', 'typeFx', 'exportWebM', 'muxWebM', 'texture', 'Texture3D', 'shatter', 'Shards', 'flightPath', 'FlightPath',
   ]);
   const values = exportNames('value').filter((n) => !used.has(n) && !(external.has(n) && mentioned.has(n)));
   const types = exportNames('type').filter((n) => !mentioned.has(n));
