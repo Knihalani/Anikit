@@ -9,3 +9,4 @@ __pycache__/
 .pytest_cache/
 packages/anikit/src/generated/
 target/
+site-dist/

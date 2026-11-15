@@ -17,11 +17,13 @@
     "./lean": {
       "types": "./dist/types/index.d.ts",
       "import": "./dist/anikit.lean.js"
-    }
+    },
+    "./node": "./node/index.mjs"
   },
   "files": [
     "dist",
     "bin",
+    "node",
     "README.md",
     "AGENTS.md",
     "llms.txt",
@@ -62,6 +64,15 @@
     "vitest": "^5.1.0"
   },
   "bin": {
-    "anikit-record": "./bin/anikit-record.mjs"
+    "anikit-record": "./bin/anikit-record.mjs",
+    "anikit-render": "./bin/anikit-render.mjs"
+  },
+  "peerDependencies": {
+    "@napi-rs/canvas": ">=0.1.60"
+  },
+  "peerDependenciesMeta": {
+    "@napi-rs/canvas": {
+      "optional": true
+    }
   }
 }

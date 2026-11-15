@@ -407,3 +407,79 @@ testing.reset();
 - Warnings start with `anikit:` and include "did you mean" suggestions for misspelled easings, properties and effect names. `setWarnings(false)` silences them; `onWarning(fn)` routes them.
 - `engine.inspect()` returns a JSON-serialisable snapshot of everything running; it's also reachable as `globalThis.__ANIKIT__` for agents driving a headless browser.
 - `engine.speed` scales every animation, world, point cloud and `onFrame` `dt` together (bullet time).
+
+## Particle emitters
+
+`emitter(options)` spawns, simulates and ages particles in WebAssembly: continuous `rate` or `burst(n)`, from a `point`, `sphere`, `box` or `ring`, launched in a cone (`direction`, `spread`, `speed`), with `gravity`, `drag`, `turbulence` and an `attractor`; size and colour over life (`sizeStart`/`sizeEnd`, up to four `colors`).
+
+```ts
+const sparks = emitter({ rate: 0, life: 1.1, speed: 1500, spread: Math.PI, gravity: [0, -500, 0], drag: 1.6,
+  colors: ['#fff', '#ffd9a0', '#ff6a2a', '#200800'] });
+sparks.burst(9000);
+engine.onFrame(() => g.render(scene, sparks, { size: 2 }));   // light or ink, coloured by age
+sparks.set({ origin: [x, y, 0] });                              // live updates
+sparks.draw(ctx);                                               // or plain 2D dots
+```
+
+`positions`, `colors` and `sizes` are zero-copy views; `scene3d().project(emitter)` projects them in the core.
+
+## Audio analysis
+
+```ts
+const a = analyzeAudio(await decodeAudio('/track.mp3'));   // or analyzeAudio(monoFloat32, sampleRate)
+a.bpm; a.beats; a.onsets;                                  // tempo, beat grid, attacks (seconds)
+a.at(t);                                                   // loudness 0…1
+a.beatAt(t);                                               // { index, phase }
+a.onBeat(audioEl, (i) => effects.pulse('.logo'));          // live sync to <audio>/<video>
+```
+
+A radix-2 FFT, spectral-flux onsets, autocorrelation tempo and a least-squares beat-grid fit run in WebAssembly.
+
+## Video: compositions
+
+Compose a film in code and render it frame-exactly — in the browser (WebCodecs → WebM) or in Node (Skia + ffmpeg → MP4), at any resolution and frame rate, faster than real time.
+
+```ts
+const film = composition({ width: 1920, height: 1080, fps: 60, duration: 30, motionBlur: 3 });
+film.scene('intro', 0, 4, {
+  enter: () => cloud.morph(1, { duration: 2 }),      // start tweens/timelines/simulations
+  step: () => cloud.step(1 / 60),                    // runs every frame, drawn or not
+  draw: ({ ctx, t, local, width, height }) => {
+    g.render(scene, cloud); ctx.drawImage(g.canvas, 0, 0);
+    typeFx(ctx, 'Motion, compiled.', 80, height - 80, { size: 120, t, start: 1, effect: 'rise' });
+  },
+});
+film.append('next', 6, { draw: … });                  // a scene after the last one
+film.cue(12.5, () => sparks.burst(4000));             // a one-off at an exact time
+
+const webm = await exportWebM(film, { bitrate: 12e6 }); // browser
+```
+
+- Rendering runs anikit in manual time and ticks it exactly `1/fps` per frame, so output never depends on machine speed. Timelines created in `enter` start on schedule.
+- `motionBlur: n` (or `{ samples, shutter }`) renders `n` sub-frames across the shutter and averages them in WebAssembly.
+- `FrameBuffer` converts frames to I420 (BT.709) in WebAssembly — encoders receive 1.5 bytes/pixel and do no colour conversion.
+- `typeFx(ctx, text, x, y, { effect: 'rise' | 'wave' | 'type' | 'scramble' | 'fade', t, start, stagger, ease })` draws kinetic type deterministically.
+- `muxWebM(chunks, …)` is the built-in WebM muxer used by `exportWebM`.
+
+### Rendering in Node: `anikit/node` and `anikit-render`
+
+```js
+// film.mjs
+export default async ({ anikit, node }) => {
+  node.registerFont('./Inter-Black.otf', 'Display');
+  const film = anikit.composition({ width: 1920, height: 1080, fps: 60, duration: 60 });
+  const g = anikit.glow(node.glowTarget(1920, 1080), { mode: 'ink' });   // glow() into a Skia canvas
+  …
+  return film;
+};
+```
+
+```bash
+npx anikit-render film.mjs --out film.mp4 --workers 4 --audio track.wav --fade-in 0.3 --fade-out 0.8
+```
+
+```bash
+npx anikit-render film.mjs --preview 30 --out frames/
+```
+
+Each worker builds the same composition (randomness is seeded), simulates to its slice without drawing, pre-rolls half a second so trails match, renders and encodes; slices join without re-encoding and the audio is muxed in. Needs the optional peer dependency `@napi-rs/canvas` and ffmpeg. `loadAnikit()`, `renderToFile()` and `renderPreview()` are the programmatic equivalents.

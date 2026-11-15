@@ -33,3 +33,6 @@ Times are in seconds. Import from 'anikit'. Use `testing` + `engine.inspect()` t
 - Point clouds and glow
 - Capture: screenshots and recordings
 - Testing and diagnostics
+- Particle emitters
+- Audio analysis
+- Video: compositions

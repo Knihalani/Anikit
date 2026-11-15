@@ -16,6 +16,7 @@ import { core, writeStr, F64, f64Buf, views, W } from './wasm';
 import { engine } from './core';
 import { Batch } from './batch';
 import { PointCloud } from './cloud';
+import { Emitter } from './emitter';
 import { spring, inertia } from './spring';
 import { Targets, toTargets, stateOf, markDirty } from './props';
 import { VelocityTracker } from './utils';
@@ -164,7 +165,7 @@ export class Scene3D {
    * Project a batch (channels x/y/z) or a flat `[x, y, z, …]` array. Runs
    * entirely in the core; returns zero-copy views valid until the next call.
    */
-  project(source: Batch | PointCloud | ArrayLike<number>, o: { channels?: [string, string, string]; sort?: boolean } = {}): Projection {
+  project(source: Batch | PointCloud | Emitter | ArrayLike<number>, o: { channels?: [string, string, string]; sort?: boolean } = {}): Projection {
     const w = core();
     const mats = this.matrices();
     let n: number;
@@ -182,6 +183,10 @@ export class Scene3D {
     } else if (source instanceof PointCloud) {
       n = source.count;
       src = 2;
+      handle = source._h;
+    } else if (source instanceof Emitter) {
+      n = source.count;
+      src = 3;
       handle = source._h;
     } else {
       n = Math.floor(source.length / 3);
@@ -202,7 +207,7 @@ export class Scene3D {
   }
 
   /** Project and draw points on the scene's canvas (sorted, size by depth, fog). */
-  draw(source: Batch | PointCloud | ArrayLike<number>, o: DrawOptions = {}): Projection {
+  draw(source: Batch | PointCloud | Emitter | ArrayLike<number>, o: DrawOptions = {}): Projection {
     const proj = this.project(source, { channels: o.channels });
     const ctx = this.canvas?.getContext('2d');
     if (!ctx) return proj;

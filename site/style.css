@@ -138,7 +138,21 @@ main { position: relative; z-index: 1; }
 .rec p { margin: 0; max-width: 300px; }
 .rec img { height: 90px; border-radius: 8px; }
 
-/* ---- 09 Install ---- */
+/* ---- 09 Film ---- */
+.film { height: 160vh; --fg: var(--paper); --bgc: var(--ink); color: var(--paper); }
+.film-title { position: absolute; left: var(--gut); top: 14vh; font-size: 8.4vw; }
+.film-title em { color: var(--red); font-family: 'Display', system-ui; font-style: italic; }
+.film-title .ch { display: inline-block; }
+.film-frame { position: absolute; right: var(--gut); top: 14vh; width: min(58vw, calc(62vh * 16 / 9)); aspect-ratio: 16 / 9; background: #000; border: 1px solid rgba(236, 230, 218, 0.18); }
+.film-frame video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.film-sound { position: absolute; right: 14px; bottom: 14px; height: 40px; padding: 0 18px; font-size: 13px; }
+.film-copy { position: absolute; left: var(--gut); bottom: calc(var(--gut) + 64px); width: min(36vw, 560px); }
+.film-copy .mono { text-transform: none; font-size: 13px; letter-spacing: 0; margin: 0 0 18px; color: rgba(236, 230, 218, 0.85); }
+.film-code { margin: 0; font: 12px/1.6 'Mono', monospace; color: rgba(236, 230, 218, 0.8); white-space: pre-wrap; border-top: 1px solid rgba(236, 230, 218, 0.2); padding-top: 14px; }
+.film-code .k { color: var(--red); } .film-code .s { color: var(--lime); } .film-code .c { color: rgba(236, 230, 218, 0.45); }
+@media (max-width: 760px) { .film-frame { left: var(--gut); right: var(--gut); width: auto; top: 34vh; } .film-copy { display: none; } .film-title { font-size: 15vw; } }
+
+/* ---- 10 Install ---- */
 .install { height: 100vh; --fg: var(--ink); --bgc: var(--paper); }
 .outro { position: absolute; left: var(--gut); top: 16vh; font-size: 16vw; }
 .outro .ch { display: inline-block; }

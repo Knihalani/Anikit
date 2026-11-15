@@ -125,6 +125,8 @@ for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
     ['Split by line, word, char. Scramble. Type.', "splitText(el, { type: 'chars' })", 'steps(6)'],
     ['Morph anything into anything.', 'animate(path, { d: star(…) })', 'outCirc'],
     ['Frame-exact GIF, WebM and PNG.', "record('#hero', { duration: 2 })", 'rough(16, 1.4, 7, outQuad)'],
+    ['Compose films in code; render MP4 or WebM, frame-exact.', "composition({ fps: 60, motionBlur: 3 })", 'outBack'],
+    ['Beats, onsets and tempo, found in WebAssembly.', 'analyzeAudio(track).beats', 'spring(bounce: 0.7)'],
   ];
   const section = $('#manifesto');
   const stack = $('#m-stack');
@@ -373,7 +375,28 @@ for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
 }
 
 // ---------------------------------------------------------------------------
-// 09 · Install
+// 09 · Film: play while on screen; sound toggle
+// ---------------------------------------------------------------------------
+{
+  const v = $('#film-video');
+  const btn = $('#film-sound');
+  const title = chars($('.film-title'));
+  $('.film-title').dataset.gsplit = '1';
+  set(title, { yPercent: 100, opacity: 0 });
+  inView('#film', () => {
+    animate(title, { yPercent: 0, opacity: 1 }, { duration: 1, ease: 'spring(bounce: 0.25, duration: 0.8)', delay: stagger(0.03) });
+    v.play().catch(() => {});
+    return () => v.pause();
+  }, { amount: 0.3 });
+  btn.addEventListener('click', () => {
+    v.muted = !v.muted;
+    if (!v.muted) { v.currentTime = 0; v.play().catch(() => {}); }
+    btn.textContent = v.muted ? 'Sound on' : 'Sound off';
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 10 · Install
 // ---------------------------------------------------------------------------
 {
   const cs = chars($('#outro'));

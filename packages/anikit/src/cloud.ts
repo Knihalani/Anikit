@@ -24,6 +24,7 @@ import { engine } from './core';
 import { animate } from './animate';
 import { track } from './context';
 import type { Scene3D } from './scene';
+import { Emitter } from './emitter';
 import type { EasingInput } from './core';
 
 export type ShapeInput = ArrayLike<number> | ((i: number, count: number) => [number, number, number] | number[]);
@@ -359,6 +360,14 @@ export class Glow {
     // Project in CSS pixels; the splat scales to the buffer resolution.
     scene.width = this.width;
     scene.height = this.height;
+    if (source instanceof Emitter) {
+      // Emitters colour each particle by age: copy those colours in (both live in wasm memory).
+      source.shade();
+      const n = source.count;
+      const dst = w.ak_splat_colors(this.id, n);
+      const mem = W!.memory.buffer;
+      new Float32Array(mem, dst, n * 3).set(new Float32Array(mem, w.ak_emitter_colors(source._h), n * 3));
+    }
     const proj = scene.project(source, { sort: false });
     if (this.options.mode !== this.mode) {
       this.mode = this.options.mode;

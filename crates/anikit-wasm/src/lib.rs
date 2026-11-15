@@ -53,6 +53,16 @@ struct State {
     points: Vec<Vec<f32>>,
     clouds: Vec<Option<anikit_core::cloud::Cloud>>,
     splats: Vec<Option<anikit_core::splat::Splat>>,
+    videos: Vec<Option<VideoSlot>>,
+    emitters: Vec<Option<anikit_core::emitter::Emitter>>,
+    audio_in: Vec<f32>,
+    audio: anikit_core::audio::Analysis,
+}
+
+struct VideoSlot {
+    input: Vec<u8>,
+    mixer: anikit_core::video::FrameMixer,
+    yuv: Vec<u8>,
 }
 
 struct Global(UnsafeCell<State>);
@@ -72,6 +82,10 @@ static STATE: Global = Global(UnsafeCell::new(State {
     points: Vec::new(),
     clouds: Vec::new(),
     splats: Vec::new(),
+    videos: Vec::new(),
+    emitters: Vec::new(),
+    audio_in: Vec::new(),
+    audio: anikit_core::audio::Analysis { hop: 0.0, envelope: Vec::new(), flux: Vec::new(), onsets: Vec::new(), bpm: 0.0, beats: Vec::new() },
 }));
 
 #[inline(always)]
@@ -1249,6 +1263,11 @@ pub extern "C" fn ak_project(id: u32, source: u32, handle: u32, stride: u32, ox:
             Some(Some(c)) => &c.pos,
             _ => return core::ptr::null(),
         }
+    } else if source == 3 {
+        match s.emitters.get(handle as usize) {
+            Some(Some(e)) => &e.pos,
+            _ => return core::ptr::null(),
+        }
     } else {
         match s.points.get(id as usize) {
             Some(v) => v,
@@ -1507,4 +1526,233 @@ pub extern "C" fn ak_splat_mode(id: u32, ink: u32) {
     if let Some(sp) = splat(id) {
         sp.ink = ink != 0;
     }
+}
+
+// ---------------------------------------------------------------------------
+// Video frames: motion-blur accumulation and RGBA → I420 conversion
+// ---------------------------------------------------------------------------
+
+fn video(id: u32) -> Option<&'static mut VideoSlot> {
+    st().videos.get_mut(id as usize).and_then(|v| v.as_mut())
+}
+#[no_mangle]
+pub extern "C" fn ak_video_create(w: u32, h: u32) -> u32 {
+    let (w, h) = (w as usize, h as usize);
+    let slot = VideoSlot {
+        input: alloc::vec![0; w * h * 4],
+        mixer: anikit_core::video::FrameMixer::new(w, h),
+        yuv: alloc::vec![0; anikit_core::video::i420_len(w, h)],
+    };
+    let s = st();
+    if let Some(i) = s.videos.iter().position(|v| v.is_none()) {
+        s.videos[i] = Some(slot);
+        return i as u32;
+    }
+    s.videos.push(Some(slot));
+    (s.videos.len() - 1) as u32
+}
+#[no_mangle]
+pub extern "C" fn ak_video_free(id: u32) {
+    if let Some(v) = st().videos.get_mut(id as usize) {
+        *v = None;
+    }
+}
+/// Writable RGBA input frame (`w * h * 4` bytes).
+#[no_mangle]
+pub extern "C" fn ak_video_input(id: u32) -> *mut u8 {
+    video(id).map(|v| v.input.as_mut_ptr()).unwrap_or(core::ptr::null_mut())
+}
+/// Accumulate the input frame for motion blur; returns the sample count.
+#[no_mangle]
+pub extern "C" fn ak_video_add(id: u32) -> u32 {
+    match video(id) {
+        Some(v) => {
+            v.mixer.add(&v.input);
+            v.mixer.count
+        }
+        None => 0,
+    }
+}
+/// Average the accumulated samples into the input frame and reset.
+#[no_mangle]
+pub extern "C" fn ak_video_resolve(id: u32) {
+    if let Some(v) = video(id) {
+        if v.mixer.count > 0 {
+            let out = v.mixer.resolve();
+            v.input.copy_from_slice(out);
+            v.mixer.reset();
+        }
+    }
+}
+/// Convert the input frame to I420 (`order`: 0 RGBA, 1 BGRA); returns the address.
+#[no_mangle]
+pub extern "C" fn ak_video_i420(id: u32, order: u32) -> *const u8 {
+    match video(id) {
+        Some(v) => {
+            let o = if order == 1 { anikit_core::video::Order::Bgra } else { anikit_core::video::Order::Rgba };
+            anikit_core::video::rgba_to_i420(&v.input, v.mixer.width, v.mixer.height, o, &mut v.yuv);
+            v.yuv.as_ptr()
+        }
+        None => core::ptr::null(),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Particle emitters
+// ---------------------------------------------------------------------------
+
+fn emitter(id: u32) -> Option<&'static mut anikit_core::emitter::Emitter> {
+    st().emitters.get_mut(id as usize).and_then(|e| e.as_mut())
+}
+#[no_mangle]
+pub extern "C" fn ak_emitter_create(capacity: u32, seed: u32) -> u32 {
+    let e = anikit_core::emitter::Emitter::new(capacity as usize, seed);
+    let s = st();
+    if let Some(i) = s.emitters.iter().position(|e| e.is_none()) {
+        s.emitters[i] = Some(e);
+        return i as u32;
+    }
+    s.emitters.push(Some(e));
+    (s.emitters.len() - 1) as u32
+}
+#[no_mangle]
+pub extern "C" fn ak_emitter_free(id: u32) {
+    if let Some(e) = st().emitters.get_mut(id as usize) {
+        *e = None;
+    }
+}
+/// f64 buffer: `[rate, life, lifeVar, ox, oy, oz, shape, sx, sy, sz, dx, dy, dz, speed, speedVar, spread,
+/// gx, gy, gz, drag, turbulence, frequency, ax, ay, az, attract, sizeStart, sizeEnd]`.
+#[no_mangle]
+pub extern "C" fn ak_emitter_params(id: u32) {
+    use anikit_core::emitter::{EmitterParams, SpawnShape};
+    let b = &st().f64_buf;
+    if b.len() < 28 {
+        return;
+    }
+    let f = |i: usize| b[i] as f32;
+    let p = EmitterParams {
+        rate: f(0),
+        life: f(1),
+        life_var: f(2),
+        origin: [f(3), f(4), f(5)],
+        shape: match b[6] as u32 {
+            1 => SpawnShape::Sphere,
+            2 => SpawnShape::Box,
+            3 => SpawnShape::Ring,
+            _ => SpawnShape::Point,
+        },
+        size: [f(7), f(8), f(9)],
+        direction: [f(10), f(11), f(12)],
+        speed: f(13),
+        speed_var: f(14),
+        spread: f(15),
+        gravity: [f(16), f(17), f(18)],
+        drag: f(19),
+        turbulence: f(20),
+        frequency: f(21),
+        attractor: [f(22), f(23), f(24)],
+        attract: f(25),
+        size_start: f(26),
+        size_end: f(27),
+    };
+    if let Some(e) = emitter(id) {
+        e.params = p;
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_emitter_burst(id: u32, n: u32) {
+    if let Some(e) = emitter(id) {
+        e.burst(n as usize);
+    }
+}
+/// Step and return the live count.
+#[no_mangle]
+pub extern "C" fn ak_emitter_step(id: u32, dt: f64) -> u32 {
+    match emitter(id) {
+        Some(e) => {
+            e.step(dt as f32);
+            e.len() as u32
+        }
+        None => 0,
+    }
+}
+/// Colour/size over life; f64 buffer: 4 RGB stops (12 values).
+#[no_mangle]
+pub extern "C" fn ak_emitter_shade(id: u32) {
+    let b = &st().f64_buf;
+    if b.len() < 12 {
+        return;
+    }
+    let g: anikit_core::emitter::Gradient = core::array::from_fn(|k| [b[k * 3] as f32, b[k * 3 + 1] as f32, b[k * 3 + 2] as f32]);
+    if let Some(e) = emitter(id) {
+        e.shade(&g);
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_emitter_len(id: u32) -> u32 {
+    emitter(id).map(|e| e.len() as u32).unwrap_or(0)
+}
+#[no_mangle]
+pub extern "C" fn ak_emitter_ptr(id: u32) -> *const f32 {
+    emitter(id).map(|e| e.pos.as_ptr()).unwrap_or(core::ptr::null())
+}
+#[no_mangle]
+pub extern "C" fn ak_emitter_colors(id: u32) -> *const f32 {
+    emitter(id).map(|e| e.colors.as_ptr()).unwrap_or(core::ptr::null())
+}
+#[no_mangle]
+pub extern "C" fn ak_emitter_sizes(id: u32) -> *const f32 {
+    emitter(id).map(|e| e.sizes.as_ptr()).unwrap_or(core::ptr::null())
+}
+#[no_mangle]
+pub extern "C" fn ak_emitter_clear(id: u32) {
+    if let Some(e) = emitter(id) {
+        e.clear();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Audio analysis (beats, onsets, tempo, envelope)
+// ---------------------------------------------------------------------------
+
+/// Writable mono sample buffer of `n` f32 values.
+#[no_mangle]
+pub extern "C" fn ak_audio_input(n: u32) -> *mut f32 {
+    let s = st();
+    s.audio_in.resize(n as usize, 0.0);
+    s.audio_in.as_mut_ptr()
+}
+/// Analyse the input buffer at `rate` Hz; returns the tempo in BPM.
+#[no_mangle]
+pub extern "C" fn ak_audio_analyze(rate: f64) -> f64 {
+    let s = st();
+    s.audio = anikit_core::audio::analyze(&s.audio_in, rate as f32);
+    s.audio_in = Vec::new();
+    s.audio.bpm as f64
+}
+#[no_mangle]
+pub extern "C" fn ak_audio_hop() -> f64 {
+    st().audio.hop as f64
+}
+/// Result series: 0 envelope, 1 flux, 2 onsets, 3 beats.
+#[no_mangle]
+pub extern "C" fn ak_audio_result(kind: u32) -> *const f32 {
+    let a = &st().audio;
+    match kind {
+        0 => a.envelope.as_ptr(),
+        1 => a.flux.as_ptr(),
+        2 => a.onsets.as_ptr(),
+        _ => a.beats.as_ptr(),
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_audio_result_len(kind: u32) -> u32 {
+    let a = &st().audio;
+    (match kind {
+        0 => a.envelope.len(),
+        1 => a.flux.len(),
+        2 => a.onsets.len(),
+        _ => a.beats.len(),
+    }) as u32
 }

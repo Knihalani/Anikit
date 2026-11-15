@@ -48,7 +48,7 @@
   <!-- 02 · MANIFESTO (ink) -->
   <section class="scene manifesto station" id="manifesto" data-shape="ribbon" data-bg="#0c0c0c" data-mode="light" data-tint="1,0.32,0.14" data-exposure="0.55" data-name="Everything">
     <div class="pin" id="manifesto-pin">
-      <div class="m-label mono"><span id="m-index">01</span> / 10<br /><span class="m-desc" id="m-desc">Any property, any target.</span><br /><code id="m-code">animate(el, { x: 400 })</code></div>
+      <div class="m-label mono"><span id="m-index">01</span> / 12<br /><span class="m-desc" id="m-desc">Any property, any target.</span><br /><code id="m-code">animate(el, { x: 400 })</code></div>
       <div class="m-stack" id="m-stack">
         <div class="m-word">Tweens</div>
         <div class="m-word">Springs</div>
@@ -60,6 +60,8 @@
         <div class="m-word">Text</div>
         <div class="m-word">Paths</div>
         <div class="m-word">Capture</div>
+        <div class="m-word">Video</div>
+        <div class="m-word">Audio</div>
       </div>
     </div>
   </section>
@@ -131,7 +133,28 @@
     </div>
   </section>
 
-  <!-- 09 · INSTALL (paper) -->
+  <!-- 09 · FILM (black) -->
+  <section class="scene film station" id="film" data-shape="grid" data-bg="#050505" data-mode="light" data-tint="1,0.6,0.4" data-exposure="0.12" data-name="Film">
+    <div class="pin">
+      <h2 class="giant film-title">Films,<br /><em>compiled.</em></h2>
+      <div class="film-frame">
+        <video id="film-video" src="film/anikit-film.mp4" poster="film/poster.jpg" muted loop playsinline preload="metadata" aria-label="ANIKIT — a 60 second film rendered by anikit"></video>
+        <button class="pill solid film-sound" id="film-sound" data-cursor="Sound">Sound on</button>
+      </div>
+      <div class="film-copy">
+        <p class="mono">This film — music included — was composed in code and rendered by anikit in Node. No browser, no editor, no stock footage: particles, physics, 3D, type and beat-synced cuts, frame-exact at 1080p60, on four CPU cores.</p>
+<pre class="film-code"><span class="k">const</span> film = composition({ width: 1920, height: 1080, fps: 60, duration: 60, motionBlur: 3 });
+film.scene(<span class="s">'drop'</span>, 18, 28, {
+  enter: () =&gt; cloud.morph(knot, { duration: 1.3 }),
+  draw: ({ ctx, t }) =&gt; { glow.render(camera, cloud); typeFx(ctx, <span class="s">'WASM.'</span>, 80, 980, { t }); },
+});
+<span class="k">const</span> { beats } = analyzeAudio(track);   <span class="c">// cut on the beat</span>
+<span class="c">// $ anikit-render film.mjs --audio track.wav --workers 4</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · INSTALL (paper) -->
   <section class="scene install station" id="install" data-shape="outro" data-bg="#ece6da" data-mode="ink" data-tint="0.05,0.78,0.95" data-exposure="1.1" data-name="Install">
     <div class="pin">
       <p class="giant outro" id="outro">Make it<br />move.</p>

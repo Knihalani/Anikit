@@ -18,11 +18,13 @@ extern crate alloc;
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
+pub mod audio;
 pub mod bezier;
 pub mod cloud;
 pub mod color;
 pub mod css;
 pub mod easing;
+pub mod emitter;
 pub mod engine;
 pub mod gif;
 pub mod math;
@@ -35,6 +37,7 @@ pub mod spring;
 pub mod stagger;
 pub mod timing;
 pub mod util;
+pub mod video;
 pub mod world;
 
 pub use easing::Easing;

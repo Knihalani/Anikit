@@ -2,7 +2,13 @@
   "name": "anikit-film",
   "private": true,
   "type": "module",
-  "description": "A title-sequence film rendered by the anikit engine in Node (no browser).",
-  "scripts": { "render": "node render.mjs" },
-  "dependencies": { "@napi-rs/canvas": "^0.1.80" }
+  "description": "ANIKIT \u2014 a 60 s film (music included) composed in code and rendered by anikit in Node.",
+  "scripts": {
+    "soundtrack": "node soundtrack.mjs soundtrack.wav",
+    "preview": "node ../packages/anikit/bin/anikit-render.mjs film.mjs --preview 30 --out preview/",
+    "render": "npm run soundtrack && node ../packages/anikit/bin/anikit-render.mjs film.mjs --out anikit-film.mp4 --audio soundtrack.wav --workers 3 --fade-in 0.25 --fade-out 0.9 --fade-color 0xece6da"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.80"
+  }
 }
