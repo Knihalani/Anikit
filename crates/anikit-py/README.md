@@ -475,6 +475,48 @@ scale] * n`) any number of times, then `glow.resolve()`. Frames are row-major
 RGBA `bytes` of `width * height * 4`; with Pillow, `Image.frombytes("RGBA",
 glow.size, frame)` turns one into an image (see the GIF recipe below).
 
+## Solid 3D, camera flights and the film grade (numpy)
+
+`anikit.raster` is the same CPU renderer as the TypeScript `renderer3d`:
+z-buffered, instanced, per-pixel lit triangles (chrome reflections,
+iridescence, glowing UV lines and pulses, fog), mirror floors and light
+points. `anikit.video` is the composition's film grade. Both need numpy
+(`pip install anikit[numpy]`); frames are `(height, width, 4)` uint8 arrays.
+
+```python
+import numpy as np
+import anikit
+from anikit import raster, video
+from anikit.transform import Camera
+
+r3 = raster.Renderer3D(1280, 720)
+knot = raster.torus_knot(p=2, q=3, radius=300, tube=58, segments=600, sides=28)
+towers = raster.instances(900, x=xs, z=zs, sy=heights, sx=80, sz=80, color=(0.04, 0.045, 0.06))  # vectorised
+towers.positions[:, 1] = heights / 2                       # (n, 15) float32 rows, edit in place
+
+cam = Camera((0, 300, 2000), (0, 0, 0), fov=45)            # Camera(..., roll=deg) banks the view
+frame = r3.render(cam, [
+    raster.Item(knot, material=raster.Material(metal=0.9, iridescence=0.25, specular=1.4, shininess=120,
+                                               lines=1.2, line_color=(0.3, 0.8, 1.6), grid=(0, 6),
+                                               pulse=2.5, pulse_count=3, pulse_phase=t)),
+    raster.Item(raster.cube(), towers, {"lines": 1.6, "grid": (1, 1), "line_color": (1.4, 0.35, 0.9)}),
+    raster.Item(raster.plane(), raster.instances(1, y=-400, scale=20000), mirror=True),   # the floor
+    raster.Points(stars, colors=star_rgb, size=3, intensity=2.5, streak=1.5),            # (n, 3) arrays
+    raster.Item(beam, beams, {"emissive": 1}, blend="additive"),
+], background="#04050a", mirror=-400, fog=(1800, 5200),
+   sky=(0.05, 0.07, 0.16), horizon=(0.9, 0.5, 0.95), strips=(2.2, 2.3, 2.6))
+
+video.post(frame, bloom=0.8, bloom_threshold=0.55, streaks=0.5, vignette=0.45, grain=4, seed=i)  # in place
+```
+
+- Meshes: `cube()`, `sphere(rings, segments)`, `torus(...)`, `torus_knot(p, q, radius, spread, tube, segments, sides)`, `plane(cells)`, `cylinder(segments, caps)`, `heightfield(w, d, heights | f(x, z), skip=)`, `custom(positions, normals, indices, uvs)`; `mesh.positions` / `.indices` read them back.
+- `Material` has every core field (`ambient` … `rim`, `emissive`, `metal`, `iridescence`, `hue`, `lines`, `line_color`, `grid`, `line_width`, `pulse*`, `texture`, `texture_mode`, `texture_repeat`, `texture_gain`); `raster.texture(image)` uploads an `(h, w, 4)` array. Lighting is `Lighting(...)` or keyword arguments of `render`.
+- `mirror=y` (or `Mirror(y, strength)`) draws the scene reflected about `y`, then items with `mirror=True` glossily over it, then the scene — exactly the TypeScript pass. `reflect=False` keeps an item out of the reflection.
+- `raster.shatter(mesh, transform=dict(rx=20, scale=1.2), force=900, spin=540)` breaks a mesh into shards; `shards.update(t)` poses them (numpy-vectorised, same numbers as TypeScript); draw `shards.item()`.
+- `anikit.flight_path(points, look_ahead=, bank=, max_bank=, closed=)`: `.point(s)`, `.at(s)` (eye, target, roll, forward), `.apply(camera, s, extra_roll)`, `.timing([(sec, fraction), …])` — a pure-Python port with the TypeScript numbers.
+- `video.PostFx(**options)` keeps scratch buffers; options may be functions of time (`grade(frame, t=..., seed=i)`). `video.rgba_to_i420(frame)` feeds encoders; `video.MotionBlur(w, h)` averages sub-frames.
+- `render()` returns a new array backed by one copy of the colour buffer; grading such a frame is zero-copy. Instance arrays are bytearray-backed, so a render passes them to the core without an extra Python-side copy. See `examples/knot_mirror.py`.
+
 ## Driving the engine
 
 ```python
