@@ -225,11 +225,14 @@ export function cosmos({ reduced = false } = {}) {
   }
 
   // ---- Frame loop -----------------------------------------------------------
+  // Frame cost is measured on a real clock even when time is virtualised
+  // (frame-exact video capture installs fake timers; pass the real clock in).
+  const realNow = globalThis.__ANIKIT_REAL_NOW__ || (() => performance.now());
   const stats = { ms: 0, frames: 0, fps: 60, acc: 0, last: performance.now(), lastFrame: performance.now() };
   let t = 0;
   engine.onFrame((_time, dt) => {
     const now = performance.now();
-    const t0 = now;
+    const t0 = realNow();
     t += dt / 1000;
     const { a, b, m } = blend();
     if (!intro) {
@@ -254,7 +257,7 @@ export function cosmos({ reduced = false } = {}) {
       exposure: exposure * Math.min(1, (1 - g.options.trail) / 0.5),
       maxRadius: 5,
     });
-    stats.acc += performance.now() - t0;
+    stats.acc += realNow() - t0;
     stats.frames++;
     if (now - stats.last > 500) {
       stats.ms = stats.acc / stats.frames;

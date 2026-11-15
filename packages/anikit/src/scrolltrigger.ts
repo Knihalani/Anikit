@@ -335,7 +335,14 @@ export class ScrollTrigger {
       if (kind >= 0) this.fire(kind as 0 | 1 | 2 | 3);
     }
     o.onUpdate?.(this);
-    if (o.snap && this.isActive) this.scheduleSnap();
+    if (o.snap) {
+      if (this.isActive) this.scheduleSnap();
+      else if (this.snapTimer) {
+        // Scrolled out of range before the snap fired: don't pull the page back.
+        clearTimeout(this.snapTimer);
+        this.snapTimer = null;
+      }
+    }
   }
 
   private applySmooth(): void {
@@ -414,6 +421,10 @@ export class ScrollTrigger {
   }
 
   private doSnap(): void {
+    this.snapTimer = null;
+    // Only snap while the scroll position is inside the trigger's range.
+    const pos0 = scrollPos(this.scroller, this.horizontal);
+    if (pos0 < this.start || pos0 > this.end) return;
     const raw = this.o.snap!;
     const cfg = typeof raw === 'object' && !Array.isArray(raw) ? raw : { to: raw };
     const p = this.progress;

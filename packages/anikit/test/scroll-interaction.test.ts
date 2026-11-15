@@ -30,6 +30,22 @@ describe('scrollTrigger', () => {
     st.kill();
   });
 
+  it('does not snap back after scrolling past the end', () => {
+    vi.useFakeTimers();
+    try {
+      const s = scroller();
+      const st = scrollTrigger({ scroller: s, start: 100, end: 300, snap: 0.5 });
+      scrollTo(s, 240); // inside: a snap is scheduled
+      scrollTo(s, 900); // ...but we leave before it fires
+      vi.advanceTimersByTime(400);
+      advance(1);
+      expect(s.scrollTop).toBe(900);
+      st.kill();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('fires callbacks and toggle actions in both directions', () => {
     const s = scroller();
     const el = box();
