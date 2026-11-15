@@ -80,13 +80,13 @@ pub fn srgb_to_linear(c: f64) -> f64 {
         v
     }
 }
-/// sRGB transfer function (encode). Uses a fast polynomial `pow` — relative
-/// error < 1e-7, i.e. ~1e-5 of an 8-bit step — because this runs per
-/// colour channel per frame.
+/// sRGB transfer function (encode). Uses a dedicated polynomial for
+/// `a^(1/2.4)` ([`crate::math::pow_5_12`], relative error < 5e-9, i.e. about
+/// 1e-6 of an 8-bit step) because this runs per colour channel per frame.
 #[inline]
 pub fn linear_to_srgb(c: f64) -> f64 {
     let a = if c < 0.0 { -c } else { c };
-    let v = if a <= 0.0031308 { a * 12.92 } else { 1.055 * crate::math::fast_pow(a, 1.0 / 2.4) - 0.055 };
+    let v = if a <= 0.0031308 { a * 12.92 } else { 1.055 * crate::math::pow_5_12(a) - 0.055 };
     if c < 0.0 {
         -v
     } else {
@@ -553,6 +553,33 @@ mod tests {
     fn close(a: Rgba, b: Rgba, eps: f64) -> bool {
         (a.r - b.r).abs() < eps && (a.g - b.g).abs() < eps && (a.b - b.b).abs() < eps && (a.a - b.a).abs() < 1e-6
     }
+    #[test]
+    fn srgb_encode_matches_exact_pow() {
+        // Against libm's pow: ~1e-6 of an 8-bit step (was ~3e-5 with the
+        // generic fast_pow), across the encode range and out-of-gamut values.
+        let exact = |c: f64| if c <= 0.0031308 { c * 12.92 } else { 1.055 * libm::pow(c, 1.0 / 2.4) - 0.055 };
+        let mut worst: f64 = 0.0;
+        for i in 0..=200_000 {
+            let c = i as f64 / 100_000.0;
+            worst = worst.max((linear_to_srgb(c) - exact(c)).abs() * 255.0);
+            assert_eq!(linear_to_srgb(-c), -linear_to_srgb(c));
+        }
+        assert!(worst < 2e-6, "{worst}");
+        // OKLab interpolation end to end: within 1e-5 of the exact-pow result.
+        let a = to_space(Rgba::new(255.0, 30.0, 0.0, 1.0), ColorSpace::Oklab);
+        let b = to_space(Rgba::new(0.0, 90.0, 255.0, 0.5), ColorSpace::Oklab);
+        for k in 0..=100 {
+            let t = k as f64 / 100.0;
+            let v: [f64; 4] = core::array::from_fn(|j| a[j] + (b[j] - a[j]) * t);
+            let got = from_space(&v, ColorSpace::Oklab);
+            let inv = 1.0 / v[3];
+            let l = oklab_to_linear(v[0] * inv, v[1] * inv, v[2] * inv);
+            for (g, l) in [got.r, got.g, got.b].into_iter().zip(l) {
+                assert!((g - exact(l).clamp(0.0, 1.0) * 255.0).abs() < 1e-5);
+            }
+        }
+    }
+
     #[test]
     fn named_sorted() {
         for w in NAMED.windows(2) {

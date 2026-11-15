@@ -231,6 +231,51 @@ pub fn fast_pow(x: f64, y: f64) -> f64 {
     fast_exp2(y * fast_log2(x))
 }
 
+/// `x^(5/12)` (= `x^(1/2.4)`, the sRGB encode exponent) for positive normal
+/// `x`, relative error < 5e-9 — about 20× tighter than [`fast_pow`] and
+/// several times cheaper: no log/exp, no division, no floor. Splits
+/// `x = m·2^e`, so `x^(5/12) = m^(5/12) · 2^(5e/12)`; with `5e = 12q + r`
+/// the second factor is `2^q` (exponent bits) times a 12-entry table, and
+/// `m^(5/12)` on `[1, 2)` is a degree-8 Chebyshev fit evaluated with
+/// Estrin's scheme (short dependency chains).
+#[inline(always)]
+pub fn pow_5_12(x: f64) -> f64 {
+    const TWELFTHS: [f64; 12] = [
+        1.0,
+        1.0594630943592953,
+        1.122462048309373,
+        1.189207115002721,
+        1.2599210498948732,
+        1.3348398541700344,
+        core::f64::consts::SQRT_2,
+        1.4983070768766815,
+        1.5874010519681994,
+        1.681792830507429,
+        1.7817974362806785,
+        1.8877486253633868,
+    ];
+    const C: [f64; 9] = [
+        1.184053586836625,
+        0.3289037087059427,
+        -0.0639534049887947,
+        0.022505612795755314,
+        -0.009691795145395442,
+        0.004580285364930706,
+        -0.0023205301721254943,
+        0.0015018739497418565,
+        -0.0008479898563599124,
+    ];
+    let bits = x.to_bits();
+    let e = ((bits >> 52) & 0x7ff) as i32 - 1023;
+    let u = f64::from_bits((bits & 0x000F_FFFF_FFFF_FFFF) | 0x3FF0_0000_0000_0000) - 1.5;
+    let k = 5 * e;
+    let (q, r) = (k.div_euclid(12), k.rem_euclid(12) as usize);
+    let u2 = u * u;
+    let u4 = u2 * u2;
+    let p = (C[0] + C[1] * u) + u2 * (C[2] + C[3] * u) + u4 * ((C[4] + C[5] * u) + u2 * (C[6] + C[7] * u) + u4 * C[8]);
+    p * TWELFTHS[r] * f64::from_bits(((q + 1023) as u64) << 52)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -245,6 +290,26 @@ mod tests {
         }
         assert!(worst < 1e-7, "{worst}");
         assert!((fast_exp2(-3.5) - libm::exp2(-3.5)).abs() < 1e-12);
+    }
+
+    #[test]
+    fn pow_5_12_accuracy() {
+        // The sRGB encode range (and well beyond, for out-of-gamut values).
+        let mut worst: f64 = 0.0;
+        let mut x = 0.0031308;
+        while x < 1e6 {
+            let exact = libm::pow(x, 5.0 / 12.0);
+            worst = worst.max((pow_5_12(x) - exact).abs() / exact);
+            x *= 1.000_37;
+        }
+        for i in 0..100_000 {
+            let x = 0.0031308 + i as f64 / 100_000.0;
+            let exact = libm::pow(x, 1.0 / 2.4);
+            worst = worst.max((pow_5_12(x) - exact).abs() / exact);
+        }
+        assert!(worst < 5e-9, "{worst}");
+        assert!((pow_5_12(1.0) - 1.0).abs() < 5e-9);
+        assert!(pow_5_12(f64::INFINITY).is_finite());
     }
 
     #[test]
