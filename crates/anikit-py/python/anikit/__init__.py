@@ -4,7 +4,11 @@ Animate plain Python objects (dicts, objects, lists of them), drive the world
 with :func:`tick` or :func:`render`, and export to CSS/WAAPI. Also: a fast 2D
 physics :class:`World` (bodies, ropes, cloth, attractors), 3D transforms /
 projection in :mod:`anikit.transform`, and particle clouds that morph between
-shapes (:class:`PointCloud`) rendered as glowing light (:class:`Splat`)::
+shapes (:class:`PointCloud`) rendered as glowing light (:class:`Splat`).
+With numpy installed: solid 3D rendering into numpy frames in
+:mod:`anikit.raster` (meshes, instancing, materials, mirror floors,
+:func:`~anikit.raster.shatter`) and the film grade in :mod:`anikit.video`;
+camera flights with :func:`flight_path`::
 
     import anikit
 
@@ -93,6 +97,17 @@ __all__ = [
     "export",
     "transform",
 ]
+
+# Submodules that need numpy load on first access (``anikit.raster``, ``anikit.video``).
+_LAZY = ("raster", "video")
+
+
+def __getattr__(name: str) -> Any:
+    if name in _LAZY:
+        import importlib
+
+        return importlib.import_module(f".{name}", __name__)
+    raise AttributeError(f"module 'anikit' has no attribute {name!r}")
 
 
 def tick(dt: float, *, engine: Optional[Engine] = None) -> None:
