@@ -781,6 +781,28 @@ mod tests {
     }
 
     #[test]
+    fn ease_slice_matches_ease_bit_for_bit() {
+        let curves = [Curve::Quad, Curve::Cubic, Curve::Quart, Curve::Quint, Curve::Sine, Curve::Expo, Curve::Circ, Curve::Back(1.7), Curve::Elastic(1.0, 0.3), Curve::Bounce, Curve::Power(2.5)];
+        let modes = [Mode::In, Mode::Out, Mode::InOut, Mode::OutIn];
+        let xs: Vec<f64> = (-20..=1020).map(|i| i as f64 / 1000.0).chain([f64::NAN, -0.0, 0.5, 1.0]).collect();
+        for c in curves {
+            for m in modes {
+                let e = Easing::Curve(c, m);
+                let mut v = xs.clone();
+                e.ease_slice(&mut v);
+                for (&x, &y) in xs.iter().zip(&v) {
+                    // Quad/Cubic Out use a clamp formulation: equal values, but
+                    // NaN maps to 1 there; compare non-NaN inputs only for those.
+                    if x.is_nan() && matches!((c, m), (Curve::Quad | Curve::Cubic, Mode::Out)) {
+                        continue;
+                    }
+                    assert_eq!(y.to_bits(), e.ease(x).to_bits(), "{c:?} {m:?} {x}");
+                }
+            }
+        }
+    }
+
+    #[test]
     fn endpoints() {
         for name in [
             "linear", "ease", "ease-in", "ease-out", "ease-in-out", "easeInQuad", "easeOutCubic", "inOutQuart",

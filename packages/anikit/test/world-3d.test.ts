@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { world, scene3d, batch, animate, parseTransform, mixTransforms, toMatrix3d, engine } from '../src/index';
 import { setup, advance, box } from './setup';
+import { core } from '../src/wasm';
 
 beforeAll(setup);
 
@@ -48,7 +49,91 @@ describe('physics world', () => {
   });
 });
 
+describe('physics world (wasm)', () => {
+  it('reproduces the native golden scenario bit for bit', () => {
+    // Same scenario as `golden_scenario` in crates/anikit-core/src/world.rs.
+    const w = core();
+    const f64 = (v: number[]) => new Float64Array(w.memory.buffer, w.ak_f64_buf(v.length), v.length).set(v);
+    let h = 0x811c9dc5;
+    const fold = (id: number) => {
+      const n = w.ak_world_len(id);
+      const words = [...new Uint32Array(w.memory.buffer, w.ak_world_ptr(id), n * 3)];
+      const f = new Float32Array(1);
+      const u = new Uint32Array(f.buffer);
+      for (let i = 0; i < n; i++) {
+        const p = w.ak_world_velocity(id, i);
+        const v = new Float64Array(w.memory.buffer, p, 2);
+        const [vx, vy] = [v[0], v[1]];
+        f[0] = vx;
+        words.push(u[0]);
+        f[0] = vy;
+        words.push(u[0]);
+      }
+      for (const x of words) h = Math.imul(h ^ x, 16777619) >>> 0;
+    };
+    const a = w.ak_world_create(0, 980, 0.0625, 4, 2, 0.25, 0.375, 0.125);
+    w.ak_world_bounds(a, 0, 0, 800, 600);
+    const bodies: number[] = [];
+    for (let i = 0; i < 600; i++) bodies.push(20 + (i % 30) * 25, 20 + Math.floor(i / 30) * 25, 6 + ((i * 7) % 5), 1 + (i % 3));
+    f64(bodies);
+    w.ak_world_add(a, 600);
+    w.ak_world_box(a, 300, 400, 500, 450);
+    w.ak_world_set_pinned(a, 0, 1);
+    const rope: number[] = [];
+    for (let k = 0; k < 20; k++) rope.push(100 + k * 10, 50, 3, 0.5);
+    f64(rope);
+    const first = w.ak_world_add(a, 20);
+    for (let k = 0; k < 19; k++) w.ak_world_constraint(a, first + k, first + k + 1, -1, 1, 3);
+    w.ak_world_set_pinned(a, first, 1);
+    f64([400, 300, 2000, 150]);
+    w.ak_world_attractors(a, 1);
+    for (let step = 0; step < 90; step++) {
+      if (step === 30) w.ak_world_impulse(a, 400, 300, 200, 500);
+      if (step === 45) w.ak_world_set_velocity(a, 10, 300, -200);
+      w.ak_world_step(a, 1 / 60);
+    }
+    fold(a);
+    const b = w.ak_world_create(0, 200, 0.0625, 2, 2, 0.25, 0.375, 0.125);
+    const cluster: number[] = [];
+    for (let i = 0; i < 400; i++) cluster.push((i % 20) * 9, Math.floor(i / 20) * 9, 5, 1);
+    f64(cluster);
+    w.ak_world_add(b, 400);
+    for (let step = 0; step < 60; step++) w.ak_world_step(b, 1 / 60);
+    fold(b);
+    w.ak_world_free(a);
+    w.ak_world_free(b);
+    expect(h).toBe(108870945);
+  });
+});
+
 describe('3D', () => {
+  it('wasm projection + depth sort match the native golden scene bit for bit', () => {
+    // Same scene as `projector_golden_hash` in crates/anikit-core/src/space.rs:
+    // the wasm build takes the SIMD projection path, the native test the scalar one.
+    const w = core();
+    const n = 1001;
+    const pid = w.ak_projector_create();
+    const pts = new Float32Array(w.memory.buffer, w.ak_projector_points(pid, n * 3), n * 3);
+    const f = (i: number, k: number, m: number) => ((i * k) % m) / m;
+    for (let i = 0; i < n; i++) {
+      pts[i * 3] = (f(i, 7919, 997) - 0.5) * 900;
+      pts[i * 3 + 1] = (f(i, 104729, 991) - 0.5) * 700;
+      pts[i * 3 + 2] = i % 50 === 7 ? 995 : i % 61 === 3 ? 1500 : (f(i, 31, 89) - 0.5) * 600;
+    }
+    pts[15] = NaN;
+    pts[29] = Infinity;
+    const model = [0.94, 0, -0.34, 0, 0, 1, 0, 0, 0.34, 0, 0.94, 0, 15, 0, 0, 1];
+    const vp = [1.7171274, 0, 0, 0, 0, 2.7474039, 0, 0, 0, 0, -1.0033389, -1, 0, 0, 983.3055, 1000];
+    const buf = [...model, ...vp];
+    new Float64Array(w.memory.buffer, w.ak_f64_buf(32), 32).set(buf);
+    const out = w.ak_project(pid, 1, 0, 3, 0, 1, 2, n, 1440, 900, 1);
+    const words = [...new Uint32Array(w.memory.buffer, out, n * 4), ...new Uint32Array(w.memory.buffer, w.ak_projector_order(pid), n)];
+    let h = 0x811c9dc5;
+    for (const v of words) h = Math.imul(h ^ v, 16777619) >>> 0;
+    w.ak_projector_free(pid);
+    expect(h).toBe(1261226152);
+  });
+
   it('parses, mixes and animates transforms like browsers', () => {
     const m = parseTransform('translate(10px, 20px)');
     expect(m[12]).toBe(10);

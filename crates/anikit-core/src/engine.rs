@@ -160,7 +160,7 @@ impl Anim {
     fn out(&self) -> &[f64] {
         &self.buf[self.out_at..]
     }
-    #[inline]
+    #[inline(always)]
     fn eval(&mut self, easings: &[Easing], p: f64) {
         let (data, out) = self.buf.split_at_mut(self.out_at);
         Anim::eval_into(&mut self.tracks, data, easings, p, out);
@@ -187,6 +187,8 @@ struct Batch {
     eases: Box<[u32]>,
     values: Box<[f64]>,
     delays: Box<[f64]>,
+    /// Every delay is zero (set at creation; delays never change).
+    no_delays: bool,
     scratch: Box<[f64]>,
     seg: Box<[u32]>,
     out: Box<[f32]>,
@@ -211,9 +213,51 @@ impl Batch {
     fn eval(&mut self, easings: &[Easing], t: f64) {
         let (n, ch, nkf) = (self.n, self.ch, self.nkf);
         let tm = self.timing;
+        let single = nkf == 2 && self.offsets[0] == 0.0 && self.offsets[1] == 1.0;
+        if single && self.no_delays {
+            // No stagger: every instance has the same progress, so time and
+            // ease it once (the per-instance results would all be equal),
+            // then lerp all channels.
+            let mut e = [tm.eval(t).progress];
+            if tm.easing != LINEAR {
+                if let Some(ez) = easings.get(tm.easing as usize) {
+                    ez.ease_slice(&mut e);
+                }
+            }
+            if let Some(&id) = self.eases.first() {
+                if let Some(ez) = easings.get(id as usize) {
+                    ez.ease_slice(&mut e);
+                }
+            }
+            let e = e[0];
+            for (v, o) in self.values.chunks_exact(2 * ch).zip(self.out.chunks_exact_mut(ch)) {
+                let (a, b) = v.split_at(ch);
+                for ((o, &a), &b) in o.iter_mut().zip(a).zip(b) {
+                    *o = (a + (b - a) * e) as f32;
+                }
+            }
+            return;
+        }
         // 1. Per-instance progress (shared timing, own delay).
-        for (p, &d) in self.scratch.iter_mut().zip(self.delays.iter()) {
-            *p = tm.eval(t - d).progress;
+        if tm.iterations == 1.0 && tm.direction == crate::timing::Direction::Normal && tm.delay == 0.0 && tm.duration > 0.0 {
+            // What `Timing::eval` computes for one forward iteration with no
+            // delay (before: 0, active: at / duration, after: 1), as selects
+            // so the loop vectorises.
+            let dur = tm.duration;
+            for (p, &d) in self.scratch.iter_mut().zip(self.delays.iter()) {
+                let at = t - d;
+                *p = if at < 0.0 {
+                    0.0
+                } else if at < dur {
+                    at / dur
+                } else {
+                    1.0
+                };
+            }
+        } else {
+            for (p, &d) in self.scratch.iter_mut().zip(self.delays.iter()) {
+                *p = tm.eval(t - d).progress;
+            }
         }
         // 2. Timing easing over the whole slice (one dispatch).
         if tm.easing != LINEAR {
@@ -221,20 +265,18 @@ impl Batch {
                 e.ease_slice(&mut self.scratch);
             }
         }
-        if nkf == 2 && self.offsets[0] == 0.0 && self.offsets[1] == 1.0 {
+        if single {
             // 3a. Single segment: ease the slice, then lerp all channels.
             if let Some(&id) = self.eases.first() {
                 if let Some(e) = easings.get(id as usize) {
                     e.ease_slice(&mut self.scratch);
                 }
             }
-            let stride = 2 * ch;
-            for i in 0..n {
-                let e = self.scratch[i];
-                let v = &self.values[i * stride..i * stride + stride];
-                let o = &mut self.out[i * ch..i * ch + ch];
-                for k in 0..ch {
-                    o[k] = (v[k] + (v[ch + k] - v[k]) * e) as f32;
+            let it = self.values.chunks_exact(2 * ch).zip(self.out.chunks_exact_mut(ch)).zip(self.scratch.iter());
+            for ((v, o), &e) in it {
+                let (a, b) = v.split_at(ch);
+                for ((o, &a), &b) in o.iter_mut().zip(a).zip(b) {
+                    *o = (a + (b - a) * e) as f32;
                 }
             }
             return;
@@ -403,7 +445,7 @@ fn ease_by(easings: &[Easing], id: u32, t: f64) -> f64 {
 
 impl Anim {
     /// Evaluate every enabled track at (eased) iteration progress `p` into `out`.
-    #[inline]
+    #[inline(always)]
     fn eval_into(tracks: &mut [Track], data: &[f64], easings: &[Easing], p: f64, out: &mut [f64]) {
         for tr in tracks.iter_mut() {
             if !tr.enabled {
@@ -428,89 +470,98 @@ impl Anim {
                 }
                 continue;
             }
-            let n = tr.nkf as usize;
-            let ch = tr.ch as usize;
-            let off = &data[tr.off_at as usize..tr.off_at as usize + n];
-            let vals = &data[tr.val_at as usize..tr.val_at as usize + n * ch];
-            let o = &mut out[tr.out_at as usize..tr.out_at as usize + tr.out_ch as usize];
-            // Segment search with a temporal-coherence cursor: amortised O(1).
-            let (i, e) = if tr.seg1 {
-                (0usize, ease_by(easings, tr.ease0, p))
-            } else if n <= 1 {
-                (0usize, 0.0)
-            } else {
-                let mut i = (tr.cursor as usize).min(n - 2);
-                while i > 0 && p < off[i] {
-                    i -= 1;
-                }
-                while i < n - 2 && p >= off[i + 1] {
-                    i += 1;
-                }
-                tr.cursor = i as u32;
-                let span = off[i + 1] - off[i];
-                let local = if span > 0.0 {
-                    (p - off[i]) / span
-                } else if p >= off[i + 1] {
-                    1.0
-                } else {
-                    0.0
-                };
-                let id = match tr.ease_n {
-                    0 => LINEAR,
-                    1 => tr.ease0,
-                    _ => data[tr.ease_at as usize + i] as u32,
-                };
-                (i, ease_by(easings, id, local))
-            };
-            if n <= 1 {
-                match tr.kind {
-                    TrackKind::Color(space) => {
-                        let c = color::from_space(&vals[..4], space);
-                        o.copy_from_slice(&c.to_array());
-                    }
-                    TrackKind::Path => {
-                        let lut = &data[tr.lut_at as usize..(tr.lut_at + tr.lut_len) as usize];
-                        o.copy_from_slice(&sample_lut(lut, vals.first().copied().unwrap_or(0.0)));
-                    }
-                    TrackKind::Matrix => {
-                        let mut d = [0.0; 17];
-                        d.copy_from_slice(&vals[..17]);
-                        o.copy_from_slice(&crate::space::recompose(&d));
-                    }
-                    _ => o.copy_from_slice(&vals[..ch.min(o.len())]),
-                }
-                continue;
+            Anim::eval_track(tr, data, easings, p, out);
+        }
+    }
+
+    /// The general track evaluation (keyframe segments, colour, path,
+    /// matrix, discrete): out of line so the single-segment fast path in
+    /// [`eval_into`](Self::eval_into) can be inlined into the frame loop
+    /// without duplicating all of this.
+    #[inline(never)]
+    fn eval_track(tr: &mut Track, data: &[f64], easings: &[Easing], p: f64, out: &mut [f64]) {
+        let n = tr.nkf as usize;
+        let ch = tr.ch as usize;
+        let off = &data[tr.off_at as usize..tr.off_at as usize + n];
+        let vals = &data[tr.val_at as usize..tr.val_at as usize + n * ch];
+        let o = &mut out[tr.out_at as usize..tr.out_at as usize + tr.out_ch as usize];
+        // Segment search with a temporal-coherence cursor: amortised O(1).
+        let (i, e) = if tr.seg1 {
+            (0usize, ease_by(easings, tr.ease0, p))
+        } else if n <= 1 {
+            (0usize, 0.0)
+        } else {
+            let mut i = (tr.cursor as usize).min(n - 2);
+            while i > 0 && p < off[i] {
+                i -= 1;
             }
-            let a = &vals[i * ch..i * ch + ch];
-            let b = &vals[(i + 1) * ch..(i + 1) * ch + ch];
+            while i < n - 2 && p >= off[i + 1] {
+                i += 1;
+            }
+            tr.cursor = i as u32;
+            let span = off[i + 1] - off[i];
+            let local = if span > 0.0 {
+                (p - off[i]) / span
+            } else if p >= off[i + 1] {
+                1.0
+            } else {
+                0.0
+            };
+            let id = match tr.ease_n {
+                0 => LINEAR,
+                1 => tr.ease0,
+                _ => data[tr.ease_at as usize + i] as u32,
+            };
+            (i, ease_by(easings, id, local))
+        };
+        if n <= 1 {
             match tr.kind {
-                TrackKind::Number => {
-                    // Tight loop: auto-vectorised (wasm simd128 / SSE / NEON).
-                    for ((o, &a), &b) in o.iter_mut().zip(a).zip(b) {
-                        *o = a + (b - a) * e;
-                    }
-                }
                 TrackKind::Color(space) => {
-                    let mut c = [0.0; 4];
-                    for k in 0..4 {
-                        c[k] = a[k] + (b[k] - a[k]) * e;
-                    }
-                    o.copy_from_slice(&color::from_space(&c, space).to_array());
-                }
-                TrackKind::Discrete => {
-                    o[0] = if e < 0.5 { a[0] } else { b[0] };
-                }
-                TrackKind::Matrix => {
-                    let mut da = [0.0; 17];
-                    let mut db = [0.0; 17];
-                    da.copy_from_slice(a);
-                    db.copy_from_slice(b);
-                    o.copy_from_slice(&crate::space::recompose(&crate::space::mix_decomposed(&da, &db, e)));
+                    let c = color::from_space(&vals[..4], space);
+                    o.copy_from_slice(&c.to_array());
                 }
                 TrackKind::Path => {
                     let lut = &data[tr.lut_at as usize..(tr.lut_at + tr.lut_len) as usize];
-                    o.copy_from_slice(&sample_lut(lut, a[0] + (b[0] - a[0]) * e));
+                    o.copy_from_slice(&sample_lut(lut, vals.first().copied().unwrap_or(0.0)));
                 }
+                TrackKind::Matrix => {
+                    let mut d = [0.0; 17];
+                    d.copy_from_slice(&vals[..17]);
+                    o.copy_from_slice(&crate::space::recompose(&d));
+                }
+                _ => o.copy_from_slice(&vals[..ch.min(o.len())]),
+            }
+            return;
+        }
+        let a = &vals[i * ch..i * ch + ch];
+        let b = &vals[(i + 1) * ch..(i + 1) * ch + ch];
+        match tr.kind {
+            TrackKind::Number => {
+                // Tight loop: auto-vectorised (wasm simd128 / SSE / NEON).
+                for ((o, &a), &b) in o.iter_mut().zip(a).zip(b) {
+                    *o = a + (b - a) * e;
+                }
+            }
+            TrackKind::Color(space) => {
+                let mut c = [0.0; 4];
+                for k in 0..4 {
+                    c[k] = a[k] + (b[k] - a[k]) * e;
+                }
+                o.copy_from_slice(&color::from_space(&c, space).to_array());
+            }
+            TrackKind::Discrete => {
+                o[0] = if e < 0.5 { a[0] } else { b[0] };
+            }
+            TrackKind::Matrix => {
+                let mut da = [0.0; 17];
+                let mut db = [0.0; 17];
+                da.copy_from_slice(a);
+                db.copy_from_slice(b);
+                o.copy_from_slice(&crate::space::recompose(&crate::space::mix_decomposed(&da, &db, e)));
+            }
+            TrackKind::Path => {
+                let lut = &data[tr.lut_at as usize..(tr.lut_at + tr.lut_len) as usize];
+                o.copy_from_slice(&sample_lut(lut, a[0] + (b[0] - a[0]) * e));
             }
         }
     }
@@ -809,6 +860,7 @@ impl Engine {
             offsets: offsets.into_boxed_slice(),
             eases: spec.easings.into_boxed_slice(),
             values: spec.values.into_boxed_slice(),
+            no_delays: delays.iter().all(|&d| d == 0.0),
             delays: delays.into_boxed_slice(),
             scratch: alloc::vec![0.0; n].into_boxed_slice(),
             seg: alloc::vec![0; n].into_boxed_slice(),
@@ -2265,6 +2317,81 @@ mod tests {
         let expect = crate::space::mix_matrix(&a, &b, 0.5);
         for k in 0..16 {
             assert!((mid[k] - expect[k]).abs() < 1e-9);
+        }
+    }
+
+    #[test]
+    fn uniform_batches_match_per_instance_eval_bit_for_bit() {
+        // The no-delay fast path times and eases once; it must equal the
+        // per-instance evaluation (timing easing, segment easing, repeats,
+        // alternate direction, before/after phases).
+        let mut e = Engine::new();
+        let te = e.easing("inOutSine").unwrap();
+        let se = e.easing("outBack").unwrap();
+        let (n, ch) = (257, 3);
+        let values: Vec<f64> = (0..n * ch * 2).map(|i| ((i * 7919) % 1000) as f64 * 0.37 - 100.0).collect();
+        let timing = Timing { duration: 300.0, iterations: 2.5, direction: crate::timing::Direction::Alternate, easing: te, ..Default::default() };
+        let mk = |e: &mut Engine, delays: Vec<f64>| {
+            let spec = BatchSpec { count: n, channels: ch, offsets: vec![], easings: vec![se], values: values.clone(), delays };
+            let h = e.create_batch(timing, spec, flags::DEFAULT).unwrap();
+            e.play(h).unwrap();
+            h
+        };
+        let h = mk(&mut e, vec![]);
+        // The previous per-instance evaluation, verbatim (single segment).
+        let reference = |e: &Engine, t: f64| -> Vec<f32> {
+            let Kind::Batch(b) = &e.nodes[Engine::handle_index(h) as usize].kind else { unreachable!() };
+            let tm = b.timing;
+            let mut scratch: Vec<f64> = b.delays.iter().map(|&d| tm.eval(t - d).progress).collect();
+            e.easings[te as usize].ease_slice(&mut scratch);
+            e.easings[se as usize].ease_slice(&mut scratch);
+            let mut out = vec![0.0f32; n * ch];
+            for i in 0..n {
+                let v = &b.values[i * 2 * ch..i * 2 * ch + 2 * ch];
+                for k in 0..ch {
+                    out[i * ch + k] = (v[k] + (v[ch + k] - v[k]) * scratch[i]) as f32;
+                }
+            }
+            out
+        };
+        let mut t = 0.0;
+        while t < 900.0 {
+            let want = reference(&e, e.time(h).unwrap());
+            let got = e.batch_values(h).unwrap();
+            assert_eq!(got.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), want.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), "t = {t}");
+            e.tick(17.0);
+            t += 17.0;
+        }
+    }
+
+    #[test]
+    fn staggered_batch_progress_matches_timing_eval() {
+        let mut rng = crate::math::Rng(3);
+        for &(duration, iterations, dir) in &[(300.0, 1.0, 0u8), (300.0, 2.5, 2), (0.0, 1.0, 0), (f64::INFINITY, 1.0, 0), (250.0, 1.0, 1)] {
+            let tm = Timing { duration, iterations, direction: crate::timing::Direction::from_u8(dir), ..Default::default() };
+            let n = 300;
+            let delays: Vec<f64> = (0..n).map(|i| if i % 9 == 0 { 0.0 } else { rng.next_f64() * 400.0 - 50.0 }).collect();
+            let mut b = Batch {
+                n,
+                ch: 1,
+                nkf: 3,
+                timing: tm,
+                offsets: vec![0.0, 0.5, 1.0].into_boxed_slice(),
+                eases: Box::new([]),
+                values: (0..n * 3).map(|i| i as f64).collect(),
+                delays: delays.clone().into_boxed_slice(),
+                no_delays: false,
+                scratch: vec![0.0; n].into_boxed_slice(),
+                seg: vec![0; n].into_boxed_slice(),
+                out: vec![0.0; n].into_boxed_slice(),
+            };
+            for k in -5..60 {
+                let t = k as f64 * 13.7;
+                b.eval(&[], t);
+                for (i, &d) in delays.iter().enumerate() {
+                    assert_eq!(b.scratch[i].to_bits(), tm.eval(t - d).progress.to_bits(), "{duration} {iterations} {dir} t={t} d={d}");
+                }
+            }
         }
     }
 

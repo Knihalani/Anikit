@@ -27,7 +27,36 @@ fn bench(name: &str, n: usize, mut setup: impl FnMut(&mut Engine), frames: usize
     );
 }
 
+/// ns per `Easing::ease` call: a monotonic sweep (one animation's frames:
+/// branch-predictable) and shuffled progress values (many staggered
+/// animations evaluated in one tick).
+fn bench_easing(name: &str) {
+    let e = anikit_core::Easing::parse(name).unwrap();
+    let n = 1 << 20;
+    let sweep: Vec<f64> = (0..n).map(|i| i as f64 / n as f64).collect();
+    let mut rng = anikit_core::math::Rng(1);
+    let shuffled: Vec<f64> = (0..n).map(|_| rng.next_f64()).collect();
+    let mut row = format!("{:<44}", format!("ease: {name}"));
+    for xs in [&sweep, &shuffled] {
+        let mut sum = 0.0;
+        let mut best = f64::INFINITY;
+        for _ in 0..5 {
+            let t = Instant::now();
+            for &x in xs.iter() {
+                sum += e.ease(std::hint::black_box(x));
+            }
+            best = best.min(t.elapsed().as_secs_f64() * 1e9 / n as f64);
+        }
+        std::hint::black_box(sum);
+        row += &format!(" {best:>6.1}");
+    }
+    println!("{row} ns/call (sweep, shuffled)");
+}
+
 fn main() {
+    for name in ["outCubic", "cubic-bezier(0.25, 0.1, 0.25, 1)", "inOutSine", "outElastic", "spring(200, 12)", "steps(5)"] {
+        bench_easing(name);
+    }
     let long = Timing { duration: 1e9, ..Default::default() };
     for n in [1_000usize, 10_000] {
         bench("tween (cache-resident sizes)", n, |e| {

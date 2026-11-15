@@ -67,6 +67,50 @@ pub struct Splat {
 /// Points up to this buffer-pixel radius use the 4-tap bilinear splat.
 const BILINEAR_MAX: f32 = 1.6;
 
+/// `x.max(0.0)` as a compare + select. `f32::max` has IEEE `maxNum`
+/// semantics, which wasm's `f32x4.max` doesn't implement, so LLVM
+/// scalarised it inside the vectorised loops below (dozens of
+/// `extract_lane`/`replace_lane`); this form lowers to a vector compare +
+/// select. Same result for every input, NaN included (→ 0).
+#[inline(always)]
+fn max0(x: f32) -> f32 {
+    if x > 0.0 {
+        x
+    } else {
+        0.0
+    }
+}
+/// `x.min(m)` for a non-NaN `m` as a compare + select (→ `f32x4.pmin`).
+#[inline(always)]
+fn min_sel(x: f32, m: f32) -> f32 {
+    if x < m {
+        x
+    } else {
+        m
+    }
+}
+/// "Any light" accumulator: bits of a non-negative float order like the
+/// float, so an integer max replaces the float max reduction (which doesn't
+/// vectorise). `> 0` exactly when some channel is `> 0` for non-negative light.
+#[inline(always)]
+fn any_bits(any: i32, r: f32, g: f32, b: f32) -> i32 {
+    any.max(r.to_bits() as i32).max(g.to_bits() as i32).max(b.to_bits() as i32)
+}
+
+/// One splat, resolved (see [`Splat::draw`]): bilinear (`i0` = top-left
+/// pixel, `w` = the four weights) or disc (`i0`..=`x1`, `y0`..=`y1` box,
+/// `w` = centre x, y and 1/r²); `c` = per-channel energy.
+#[derive(Clone, Copy, Default)]
+struct Op {
+    disc: bool,
+    i0: usize,
+    y0: usize,
+    x1: usize,
+    y1: usize,
+    w: [f32; 4],
+    c: [f32; 3],
+}
+
 impl Splat {
     pub fn new(width: usize, height: usize) -> Self {
         let mut s = Self::default();
@@ -105,12 +149,18 @@ impl Splat {
             if k <= 0.0 {
                 p.iter_mut().for_each(|v| *v = 0.0);
             } else if k < 1.0 {
-                p.iter_mut().for_each(|v| *v = (*v * k - 1e-4).max(0.0));
+                p.iter_mut().for_each(|v| *v = max0(*v * k - 1e-4));
             }
         }
     }
 
     /// Splat `n` projected points (`[sx, sy, depth, scale] * n`).
+    ///
+    /// Two phases per block of points: work out every splat's pixels,
+    /// weights and colour first, then apply the read-modify-writes in point
+    /// order (so every pixel sums in the same order as before). The apply
+    /// loop is short, so the CPU keeps many of its scattered cache misses in
+    /// flight at once instead of a few points' worth.
     pub fn draw(&mut self, proj: &[f32], n: usize, p: &SplatParams) {
         let n = n.min(proj.len() / 4);
         let Splat { r: pr, g: pg, b: pb, colors, width, height, touched, .. } = self;
@@ -124,89 +174,106 @@ impl Splat {
         let maxr = p.max_radius.max(BILINEAR_MAX);
         let has_colors = colors.len() >= n * 3;
         let size = p.size * p.scale;
-        for (i, o) in proj[..n * 4].chunks_exact(4).enumerate() {
-            let sc = o[3];
-            // `!(sc > 0)` also rejects NaN; garbage positions are skipped too.
-            if !(sc > 0.0 && sc.is_finite() && o[0].is_finite() && o[1].is_finite()) {
-                continue;
+        const BLOCK: usize = 64;
+        let mut ops = [Op::default(); BLOCK];
+        for (bi, block) in proj[..n * 4].chunks(BLOCK * 4).enumerate() {
+            let mut k = 0;
+            for (j, o) in block.chunks_exact(4).enumerate() {
+                let i = bi * BLOCK + j;
+                let sc = o[3];
+                // `!(sc > 0)` also rejects NaN; garbage positions are skipped too.
+                if !(sc > 0.0 && sc.is_finite() && o[0].is_finite() && o[1].is_finite()) {
+                    continue;
+                }
+                let (mut x, mut y) = (o[0], o[1]);
+                let mut e = p.intensity;
+                if fog {
+                    let f = 1.0 - (o[2] - p.fog_near) * inv_fog;
+                    if f <= 0.0 {
+                        continue;
+                    }
+                    e *= f.min(1.0);
+                }
+                if lens {
+                    let (dx, dy) = (x - lx, y - ly);
+                    let d2 = dx * dx + dy * dy;
+                    if d2 < lr2 && d2 > 1e-6 {
+                        let dl = sqrtf(d2);
+                        let q = 1.0 - dl / lr;
+                        let push = ls * q * q / dl;
+                        x += dx * push;
+                        y += dy * push;
+                        e *= 1.0 + q * 1.5;
+                    }
+                }
+                let (cr, cg, cb) = if has_colors { (colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]) } else { (1.0, 1.0, 1.0) };
+                let (cr, cg, cb) = (cr * p.tint[0], cg * p.tint[1], cb * p.tint[2]);
+                let bx = x * p.scale - 0.5;
+                let by = y * p.scale - 0.5;
+                let rad = (size * sc).min(maxr);
+                if rad <= BILINEAR_MAX {
+                    // Bilinear splat: exact sub-pixel placement, energy-conserving.
+                    if !(bx >= 0.0 && by >= 0.0 && bx < wf - 1.0 && by < hf - 1.0) {
+                        continue;
+                    }
+                    let (ix, iy) = (bx as usize, by as usize);
+                    let (fx, fy) = (bx - ix as f32, by - iy as f32);
+                    let (w1, w3) = (fx * (1.0 - fy), fx * fy);
+                    let (w0, w2) = ((1.0 - fy) - w1, fy - w3);
+                    touched[iy] = true;
+                    touched[iy + 1] = true;
+                    ops[k] = Op { disc: false, i0: iy * width + ix, w: [w0, w1, w2, w3], c: [cr * e, cg * e, cb * e], ..Op::default() };
+                    k += 1;
+                } else {
+                    // Cull in float space first: casting huge coordinates to usize
+                    // wraps on 32-bit targets (wasm32) and broke the range checks.
+                    if bx + rad < 0.0 || by + rad < 0.0 || bx - rad >= wf || by - rad >= hf {
+                        continue;
+                    }
+                    // Soft disc; energy grows ~linearly with radius so near points read as bokeh.
+                    let x0 = (bx - rad).max(0.0) as usize;
+                    let y0 = (by - rad).max(0.0) as usize;
+                    let x1 = (ceilf(bx + rad) as isize).min(width as isize - 1);
+                    let y1 = (ceilf(by + rad) as isize).min(height as isize - 1);
+                    if x1 < 0 || y1 < 0 || x0 as isize > x1 || y0 as isize > y1 {
+                        continue;
+                    }
+                    touched[y0..=y1 as usize].iter_mut().for_each(|t| *t = true);
+                    let inv = 1.0 / (rad * rad);
+                    let kk = e * 2.0 / rad;
+                    ops[k] = Op { disc: true, i0: x0, w: [bx, by, inv, 0.0], c: [cr * kk, cg * kk, cb * kk], y0, x1: x1 as usize, y1: y1 as usize };
+                    k += 1;
+                }
             }
-            let (mut x, mut y) = (o[0], o[1]);
-            let mut e = p.intensity;
-            if fog {
-                let f = 1.0 - (o[2] - p.fog_near) * inv_fog;
-                if f <= 0.0 {
-                    continue;
-                }
-                e *= f.min(1.0);
-            }
-            if lens {
-                let (dx, dy) = (x - lx, y - ly);
-                let d2 = dx * dx + dy * dy;
-                if d2 < lr2 && d2 > 1e-6 {
-                    let dl = sqrtf(d2);
-                    let q = 1.0 - dl / lr;
-                    let push = ls * q * q / dl;
-                    x += dx * push;
-                    y += dy * push;
-                    e *= 1.0 + q * 1.5;
-                }
-            }
-            let (cr, cg, cb) = if has_colors { (colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]) } else { (1.0, 1.0, 1.0) };
-            let (cr, cg, cb) = (cr * p.tint[0], cg * p.tint[1], cb * p.tint[2]);
-            let bx = x * p.scale - 0.5;
-            let by = y * p.scale - 0.5;
-            let rad = (size * sc).min(maxr);
-            if rad <= BILINEAR_MAX {
-                // Bilinear splat: exact sub-pixel placement, energy-conserving.
-                if !(bx >= 0.0 && by >= 0.0 && bx < wf - 1.0 && by < hf - 1.0) {
-                    continue;
-                }
-                let (ix, iy) = (bx as usize, by as usize);
-                let (fx, fy) = (bx - ix as f32, by - iy as f32);
-                let (w1, w3) = (fx * (1.0 - fy), fx * fy);
-                let (w0, w2) = ((1.0 - fy) - w1, fy - w3);
-                touched[iy] = true;
-                touched[iy + 1] = true;
-                let i0 = iy * width + ix;
-                let i2 = i0 + width;
-                for (plane, c) in [(&mut *pr, cr * e), (&mut *pg, cg * e), (&mut *pb, cb * e)] {
-                    let a = &mut plane[i0..i0 + 2];
-                    a[0] += c * w0;
-                    a[1] += c * w1;
-                    let b = &mut plane[i2..i2 + 2];
-                    b[0] += c * w2;
-                    b[1] += c * w3;
-                }
-            } else {
-                // Cull in float space first: casting huge coordinates to usize
-                // wraps on 32-bit targets (wasm32) and broke the range checks.
-                if bx + rad < 0.0 || by + rad < 0.0 || bx - rad >= wf || by - rad >= hf {
-                    continue;
-                }
-                // Soft disc; energy grows ~linearly with radius so near points read as bokeh.
-                let x0 = (bx - rad).max(0.0) as usize;
-                let y0 = (by - rad).max(0.0) as usize;
-                let x1 = (ceilf(bx + rad) as isize).min(width as isize - 1);
-                let y1 = (ceilf(by + rad) as isize).min(height as isize - 1);
-                if x1 < 0 || y1 < 0 || x0 as isize > x1 || y0 as isize > y1 {
-                    continue;
-                }
-                touched[y0..=y1 as usize].iter_mut().for_each(|t| *t = true);
-                let inv = 1.0 / (rad * rad);
-                let k = e * 2.0 / rad;
-                let (er, eg, eb) = (cr * k, cg * k, cb * k);
-                for yy in y0..=y1 as usize {
-                    let dy = yy as f32 - by;
-                    let dy2 = dy * dy;
-                    let row = yy * width;
-                    for xx in x0..=x1 as usize {
-                        let dx = xx as f32 - bx;
-                        let q = 1.0 - (dx * dx + dy2) * inv;
-                        if q > 0.0 {
-                            let q = q * q;
-                            pr[row + xx] += er * q;
-                            pg[row + xx] += eg * q;
-                            pb[row + xx] += eb * q;
+            for op in &ops[..k] {
+                if !op.disc {
+                    let (i0, [w0, w1, w2, w3]) = (op.i0, op.w);
+                    let i2 = i0 + width;
+                    for (plane, c) in [(&mut *pr, op.c[0]), (&mut *pg, op.c[1]), (&mut *pb, op.c[2])] {
+                        let a = &mut plane[i0..i0 + 2];
+                        a[0] += c * w0;
+                        a[1] += c * w1;
+                        let b = &mut plane[i2..i2 + 2];
+                        b[0] += c * w2;
+                        b[1] += c * w3;
+                    }
+                } else {
+                    let (x0, y0, x1, y1) = (op.i0, op.y0, op.x1, op.y1);
+                    let [bx, by, inv, _] = op.w;
+                    let [er, eg, eb] = op.c;
+                    for yy in y0..=y1 {
+                        let dy = yy as f32 - by;
+                        let dy2 = dy * dy;
+                        let row = yy * width;
+                        for xx in x0..=x1 {
+                            let dx = xx as f32 - bx;
+                            let q = 1.0 - (dx * dx + dy2) * inv;
+                            if q > 0.0 {
+                                let q = q * q;
+                                pr[row + xx] += er * q;
+                                pg[row + xx] += eg * q;
+                                pb[row + xx] += eb * q;
+                            }
                         }
                     }
                 }
@@ -246,7 +313,7 @@ impl Splat {
             }
             self.touched[y] = false;
             let span = y * w..(y + 1) * w;
-            let mut any = 0.0f32;
+            let mut any = 0i32;
             let pixels = self.rgba[span.clone()]
                 .iter_mut()
                 .zip(self.r[span.clone()].iter_mut())
@@ -256,29 +323,29 @@ impl Splat {
                 // Ink absorbs: transmittance 1 / (1 + c) per channel.
                 for (((px, r), g), b) in pixels {
                     let (cr, cg, cb) = (*r * s, *g * s, *b * s);
-                    any = any.max(*r + *g + *b);
+                    any = any_bits(any, *r, *g, *b);
                     let vr = br / (1.0 + cr) + 0.5;
                     let vg = bgc / (1.0 + cg) + 0.5;
                     let vb = bb / (1.0 + cb) + 0.5;
                     *px = (vr as i32 as u32) | ((vg as i32 as u32) << 8) | ((vb as i32 as u32) << 16) | 0xff00_0000;
-                    *r = (*r * keep - floor).max(0.0);
-                    *g = (*g * keep - floor).max(0.0);
-                    *b = (*b * keep - floor).max(0.0);
+                    *r = max0(*r * keep - floor);
+                    *g = max0(*g * keep - floor);
+                    *b = max0(*b * keep - floor);
                 }
             } else {
                 for (((px, r), g), b) in pixels {
                     let (cr, cg, cb) = (*r * s, *g * s, *b * s);
-                    any = any.max(*r + *g + *b);
-                    let vr = (kr * cr / (1.0 + cr)).min(mr) + br + 0.5;
-                    let vg = (kg * cg / (1.0 + cg)).min(mg) + bgc + 0.5;
-                    let vb = (kb * cb / (1.0 + cb)).min(mb) + bb + 0.5;
+                    any = any_bits(any, *r, *g, *b);
+                    let vr = min_sel(kr * cr / (1.0 + cr), mr) + br + 0.5;
+                    let vg = min_sel(kg * cg / (1.0 + cg), mg) + bgc + 0.5;
+                    let vb = min_sel(kb * cb / (1.0 + cb), mb) + bb + 0.5;
                     *px = (vr as i32 as u32) | ((vg as i32 as u32) << 8) | ((vb as i32 as u32) << 16) | 0xff00_0000;
-                    *r = (*r * keep - floor).max(0.0);
-                    *g = (*g * keep - floor).max(0.0);
-                    *b = (*b * keep - floor).max(0.0);
+                    *r = max0(*r * keep - floor);
+                    *g = max0(*g * keep - floor);
+                    *b = max0(*b * keep - floor);
                 }
             }
-            self.lit[y] = any > 0.0;
+            self.lit[y] = any > 0;
         }
     }
 
@@ -291,6 +358,393 @@ impl Splat {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The previous planar implementation, kept verbatim as the reference
+    /// the select-clamp version must match bit for bit.
+    #[allow(dead_code)]
+    mod reference {
+        use crate::math::{ceilf, sqrtf};
+        use crate::splat::SplatParams;
+        use alloc::vec;
+        use alloc::vec::Vec;
+        const BILINEAR_MAX: f32 = 1.6;
+        #[derive(Debug, Default)]
+        pub struct Planar {
+            pub width: usize,
+            pub height: usize,
+            pub r: Vec<f32>,
+            pub g: Vec<f32>,
+            pub b: Vec<f32>,
+            pub rgba: Vec<u32>,
+            pub colors: Vec<f32>,
+            touched: Vec<bool>,
+            lit: Vec<bool>,
+            last_bg: Option<u32>,
+            pub ink: bool,
+            last_ink: bool,
+        }
+        impl Planar {
+            pub fn new(width: usize, height: usize) -> Self {
+                let mut s = Self::default();
+                s.resize(width, height);
+                s
+            }
+
+            pub fn resize(&mut self, width: usize, height: usize) {
+                self.width = width.max(1);
+                self.height = height.max(1);
+                let n = self.width * self.height;
+                self.r = vec![0.0; n];
+                self.g = vec![0.0; n];
+                self.b = vec![0.0; n];
+                self.rgba = vec![0; n];
+                self.touched = vec![true; self.height];
+                self.lit = vec![true; self.height];
+                self.last_bg = None;
+            }
+
+            /// RGBA bytes of the last [`Splat::resolve`].
+            pub fn bytes(&self) -> impl Iterator<Item = u8> + '_ {
+                self.rgba.iter().flat_map(|p| p.to_le_bytes())
+            }
+
+            /// Light accumulated at pixel `(x, y)` (linear RGB).
+            pub fn light(&self, x: usize, y: usize) -> [f32; 3] {
+                let i = y * self.width + x;
+                [self.r[i], self.g[i], self.b[i]]
+            }
+
+            /// Multiply accumulated light by `k` (0 clears; 0.8 leaves trails).
+            pub fn fade(&mut self, k: f32) {
+                self.touched.iter_mut().for_each(|t| *t = true);
+                for p in [&mut self.r, &mut self.g, &mut self.b] {
+                    if k <= 0.0 {
+                        p.iter_mut().for_each(|v| *v = 0.0);
+                    } else if k < 1.0 {
+                        p.iter_mut().for_each(|v| *v = (*v * k - 1e-4).max(0.0));
+                    }
+                }
+            }
+
+            /// Splat `n` projected points (`[sx, sy, depth, scale] * n`).
+            pub fn draw(&mut self, proj: &[f32], n: usize, p: &SplatParams) {
+                let n = n.min(proj.len() / 4);
+                let Planar { r: pr, g: pg, b: pb, colors, width, height, touched, .. } = self;
+                let (width, height) = (*width, *height);
+                let (wf, hf) = (width as f32, height as f32);
+                let fog = p.fog_far.is_finite();
+                let inv_fog = 1.0 / (p.fog_far - p.fog_near).max(1e-3);
+                let [lx, ly, lr, ls] = p.lens;
+                let lens = lr > 0.0 && ls != 0.0;
+                let lr2 = lr * lr;
+                let maxr = p.max_radius.max(BILINEAR_MAX);
+                let has_colors = colors.len() >= n * 3;
+                let size = p.size * p.scale;
+                for (i, o) in proj[..n * 4].chunks_exact(4).enumerate() {
+                    let sc = o[3];
+                    // `!(sc > 0)` also rejects NaN; garbage positions are skipped too.
+                    if !(sc > 0.0 && sc.is_finite() && o[0].is_finite() && o[1].is_finite()) {
+                        continue;
+                    }
+                    let (mut x, mut y) = (o[0], o[1]);
+                    let mut e = p.intensity;
+                    if fog {
+                        let f = 1.0 - (o[2] - p.fog_near) * inv_fog;
+                        if f <= 0.0 {
+                            continue;
+                        }
+                        e *= f.min(1.0);
+                    }
+                    if lens {
+                        let (dx, dy) = (x - lx, y - ly);
+                        let d2 = dx * dx + dy * dy;
+                        if d2 < lr2 && d2 > 1e-6 {
+                            let dl = sqrtf(d2);
+                            let q = 1.0 - dl / lr;
+                            let push = ls * q * q / dl;
+                            x += dx * push;
+                            y += dy * push;
+                            e *= 1.0 + q * 1.5;
+                        }
+                    }
+                    let (cr, cg, cb) = if has_colors { (colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]) } else { (1.0, 1.0, 1.0) };
+                    let (cr, cg, cb) = (cr * p.tint[0], cg * p.tint[1], cb * p.tint[2]);
+                    let bx = x * p.scale - 0.5;
+                    let by = y * p.scale - 0.5;
+                    let rad = (size * sc).min(maxr);
+                    if rad <= BILINEAR_MAX {
+                        // Bilinear splat: exact sub-pixel placement, energy-conserving.
+                        if !(bx >= 0.0 && by >= 0.0 && bx < wf - 1.0 && by < hf - 1.0) {
+                            continue;
+                        }
+                        let (ix, iy) = (bx as usize, by as usize);
+                        let (fx, fy) = (bx - ix as f32, by - iy as f32);
+                        let (w1, w3) = (fx * (1.0 - fy), fx * fy);
+                        let (w0, w2) = ((1.0 - fy) - w1, fy - w3);
+                        touched[iy] = true;
+                        touched[iy + 1] = true;
+                        let i0 = iy * width + ix;
+                        let i2 = i0 + width;
+                        for (plane, c) in [(&mut *pr, cr * e), (&mut *pg, cg * e), (&mut *pb, cb * e)] {
+                            let a = &mut plane[i0..i0 + 2];
+                            a[0] += c * w0;
+                            a[1] += c * w1;
+                            let b = &mut plane[i2..i2 + 2];
+                            b[0] += c * w2;
+                            b[1] += c * w3;
+                        }
+                    } else {
+                        // Cull in float space first: casting huge coordinates to usize
+                        // wraps on 32-bit targets (wasm32) and broke the range checks.
+                        if bx + rad < 0.0 || by + rad < 0.0 || bx - rad >= wf || by - rad >= hf {
+                            continue;
+                        }
+                        // Soft disc; energy grows ~linearly with radius so near points read as bokeh.
+                        let x0 = (bx - rad).max(0.0) as usize;
+                        let y0 = (by - rad).max(0.0) as usize;
+                        let x1 = (ceilf(bx + rad) as isize).min(width as isize - 1);
+                        let y1 = (ceilf(by + rad) as isize).min(height as isize - 1);
+                        if x1 < 0 || y1 < 0 || x0 as isize > x1 || y0 as isize > y1 {
+                            continue;
+                        }
+                        touched[y0..=y1 as usize].iter_mut().for_each(|t| *t = true);
+                        let inv = 1.0 / (rad * rad);
+                        let k = e * 2.0 / rad;
+                        let (er, eg, eb) = (cr * k, cg * k, cb * k);
+                        for yy in y0..=y1 as usize {
+                            let dy = yy as f32 - by;
+                            let dy2 = dy * dy;
+                            let row = yy * width;
+                            for xx in x0..=x1 as usize {
+                                let dx = xx as f32 - bx;
+                                let q = 1.0 - (dx * dx + dy2) * inv;
+                                if q > 0.0 {
+                                    let q = q * q;
+                                    pr[row + xx] += er * q;
+                                    pg[row + xx] += eg * q;
+                                    pb[row + xx] += eb * q;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            /// Tone-map the accumulator over background `bg` (0xRRGGBB) into
+            /// [`Splat::rgba`], then multiply the accumulator by `keep` (trails; 0
+            /// clears) ready for the next frame.
+            pub fn resolve_fade(&mut self, exposure: f32, bg: u32, keep: f32) {
+                let ch = |shift: u32| ((bg >> shift) & 255) as f32;
+                let (br, bgc, bb) = (ch(16), ch(8), ch(0));
+                let (kr, kg, kb) = ((255.0 - br) * 1.125, (255.0 - bgc) * 1.125, (255.0 - bb) * 1.125);
+                let (mr, mg, mb) = (255.0 - br, 255.0 - bgc, 255.0 - bb);
+                let s = exposure.max(0.0);
+                let keep = keep.clamp(0.0, 1.0);
+                let floor = if keep < 1.0 { 1e-4 } else { 0.0 };
+                // One pass: Reinhard c / (1 + c) rescaled so very bright light reaches
+                // white, then decay the light for the next frame. Branch-free so it
+                // vectorises (f32x4 on wasm simd128). Subtracting a floor keeps
+                // decaying light out of denormal range (~100x slower arithmetic) and
+                // lets trails end.
+                if self.last_bg != Some(bg) || self.last_ink != self.ink {
+                    self.last_ink = self.ink;
+                    // Background changed (or first frame): every row must be written.
+                    self.lit.iter_mut().for_each(|l| *l = true);
+                    self.last_bg = Some(bg);
+                }
+                let w = self.width;
+                for y in 0..self.height {
+                    // A row with no light now and none at the last resolve already
+                    // shows plain background: skip it (most of the frame for sparse
+                    // shapes — this pass is memory-bound).
+                    if !self.touched[y] && !self.lit[y] {
+                        continue;
+                    }
+                    self.touched[y] = false;
+                    let span = y * w..(y + 1) * w;
+                    let mut any = 0.0f32;
+                    let pixels = self.rgba[span.clone()]
+                        .iter_mut()
+                        .zip(self.r[span.clone()].iter_mut())
+                        .zip(self.g[span.clone()].iter_mut())
+                        .zip(self.b[span].iter_mut());
+                    if self.ink {
+                        // Ink absorbs: transmittance 1 / (1 + c) per channel.
+                        for (((px, r), g), b) in pixels {
+                            let (cr, cg, cb) = (*r * s, *g * s, *b * s);
+                            any = any.max(*r + *g + *b);
+                            let vr = br / (1.0 + cr) + 0.5;
+                            let vg = bgc / (1.0 + cg) + 0.5;
+                            let vb = bb / (1.0 + cb) + 0.5;
+                            *px = (vr as i32 as u32) | ((vg as i32 as u32) << 8) | ((vb as i32 as u32) << 16) | 0xff00_0000;
+                            *r = (*r * keep - floor).max(0.0);
+                            *g = (*g * keep - floor).max(0.0);
+                            *b = (*b * keep - floor).max(0.0);
+                        }
+                    } else {
+                        for (((px, r), g), b) in pixels {
+                            let (cr, cg, cb) = (*r * s, *g * s, *b * s);
+                            any = any.max(*r + *g + *b);
+                            let vr = (kr * cr / (1.0 + cr)).min(mr) + br + 0.5;
+                            let vg = (kg * cg / (1.0 + cg)).min(mg) + bgc + 0.5;
+                            let vb = (kb * cb / (1.0 + cb)).min(mb) + bb + 0.5;
+                            *px = (vr as i32 as u32) | ((vg as i32 as u32) << 8) | ((vb as i32 as u32) << 16) | 0xff00_0000;
+                            *r = (*r * keep - floor).max(0.0);
+                            *g = (*g * keep - floor).max(0.0);
+                            *b = (*b * keep - floor).max(0.0);
+                        }
+                    }
+                    self.lit[y] = any > 0.0;
+                }
+            }
+
+            /// Tone-map without fading.
+            pub fn resolve(&mut self, exposure: f32, bg: u32) {
+                self.resolve_fade(exposure, bg, 1.0);
+            }
+        }
+    }
+
+    /// A fixed scene rendered through the projector + splat pipeline, hashed
+    /// (FNV-1a over the RGBA words of every frame). `test/cloud.test.ts`
+    /// renders the same scene through the WebAssembly build and expects the
+    /// same hash, which pins the wasm build's vectorised tone map to native.
+    pub(crate) fn golden_scene_hash<D, R>(mut draw: D, mut resolve: R) -> u32
+    where
+        D: FnMut(&[f32], usize, &SplatParams),
+        R: FnMut(f32, u32, f32, bool) -> alloc::vec::Vec<u32>,
+    {
+        let n = 400;
+        let mut pts = alloc::vec::Vec::with_capacity(n * 3);
+        for i in 0..n {
+            let z = 1.0 + ((i * 31) % 97) as f64 / 97.0 * 3.0;
+            let x = (((i * 7919) % 997) as f64 / 997.0 * 2.4 - 1.2) * z;
+            let y = (((i * 104_729) % 991) as f64 / 991.0 * 2.4 - 1.2) * z;
+            pts.extend_from_slice(&[x as f32, y as f32, z as f32]);
+        }
+        // Clip w = z: a bare perspective divide.
+        let mut vp = crate::space::IDENTITY;
+        vp[11] = 1.0;
+        vp[15] = 0.0;
+        let mut pr = crate::space::Projector::default();
+        pr.project(&pts, 3, [0, 1, 2], n, &crate::space::IDENTITY, &vp, 37.0, 23.0, false);
+        let mut h = 0x811c_9dc5u32;
+        for frame in 0..8 {
+            let p = SplatParams {
+                size: 0.25,
+                intensity: 0.75,
+                fog_near: 1.5,
+                fog_far: if frame % 2 == 0 { 4.5 } else { f32::INFINITY },
+                scale: 1.0,
+                lens: [18.0, 11.0, 6.0, if frame == 1 { 2.0 } else { 0.0 }],
+                max_radius: 3.0,
+                tint: [1.0, 0.75, 0.5],
+            };
+            if frame != 3 {
+                draw(&pr.out, n, &p);
+            }
+            let keep = [0.5, 0.0, 1.0, 0.75][frame % 4];
+            let bg = if frame < 4 { 0x07080b } else { 0xeeddcc };
+            for w in resolve(1.0 + frame as f32 * 0.25, bg, keep, frame >= 5) {
+                h = (h ^ w).wrapping_mul(16_777_619);
+            }
+        }
+        h
+    }
+
+    pub(crate) const GOLDEN_COLORS: fn(usize) -> f32 = |i| (((i * 104_729) % 1000) as f64 / 1000.0) as f32;
+
+    #[test]
+    fn golden_scene_matches_reference() {
+        use core::cell::RefCell;
+        let colors: alloc::vec::Vec<f32> = (0..400 * 3).map(GOLDEN_COLORS).collect();
+        let a = RefCell::new(Splat::new(37, 23));
+        a.borrow_mut().colors = colors.clone();
+        let got = golden_scene_hash(
+            |pr, n, p| a.borrow_mut().draw(pr, n, p),
+            |e, bg, keep, ink| {
+                let mut s = a.borrow_mut();
+                s.ink = ink;
+                s.resolve_fade(e, bg, keep);
+                s.rgba.clone()
+            },
+        );
+        let b = RefCell::new(reference::Planar::new(37, 23));
+        b.borrow_mut().colors = colors;
+        let want = golden_scene_hash(
+            |pr, n, p| b.borrow_mut().draw(pr, n, p),
+            |e, bg, keep, ink| {
+                let mut s = b.borrow_mut();
+                s.ink = ink;
+                s.resolve_fade(e, bg, keep);
+                s.rgba.clone()
+            },
+        );
+        assert_eq!(got, want);
+        assert_eq!(got, GOLDEN_HASH, "update GOLDEN_HASH here and in test/cloud.test.ts only if the output is meant to change");
+    }
+    const GOLDEN_HASH: u32 = 4_017_498_113;
+
+    #[test]
+    fn matches_planar_reference_bit_for_bit() {
+        use reference::Planar;
+        let mut rng = crate::math::Rng(12345);
+        let mut f = || rng.next_f64() as f32;
+        // Odd widths and heights catch any row-stride mistakes.
+        for &(w, h, ink) in &[(37usize, 23usize, false), (64, 40, false), (37, 23, true)] {
+            let mut a = Splat::new(w, h);
+            let mut b = Planar::new(w, h);
+            a.ink = ink;
+            b.ink = ink;
+            let n = 600;
+            let colors: Vec<f32> = (0..n * 3).map(|_| f()).collect();
+            a.colors = colors.clone();
+            b.colors = colors;
+            for frame in 0..12 {
+                // Mix of bilinear points, discs (some straddling the edges),
+                // off-screen, culled and fogged points.
+                let mut proj = Vec::with_capacity(n * 4);
+                for _ in 0..n {
+                    let sx = f() * (w as f32 + 10.0) - 5.0;
+                    let sy = f() * (h as f32 + 10.0) - 5.0;
+                    let depth = 500.0 + f() * 2500.0;
+                    let sc = if f() < 0.1 { 0.0 } else { f() * f() * 6.0 };
+                    proj.extend_from_slice(&[sx, sy, depth, sc]);
+                }
+                let p = SplatParams {
+                    size: 1.0 + frame as f32 * 0.1,
+                    intensity: 0.4,
+                    fog_near: 700.0,
+                    fog_far: if frame % 2 == 0 { 2600.0 } else { f32::INFINITY },
+                    scale: 0.9,
+                    lens: [w as f32 * 0.5, h as f32 * 0.5, 8.0, if frame % 3 == 0 { 3.0 } else { 0.0 }],
+                    max_radius: 5.0,
+                    tint: [1.0, 0.8, 0.6],
+                };
+                // Draw sometimes skips a frame so untouched/lit row skipping runs.
+                if frame % 4 != 3 {
+                    a.draw(&proj, n, &p);
+                    b.draw(&proj, n, &p);
+                }
+                let bg = if frame < 6 { 0x07080b } else { 0x203040 };
+                let keep = [0.5, 0.0, 1.0, 0.85][frame % 4];
+                a.resolve_fade(1.0 + frame as f32 * 0.25, bg, keep);
+                b.resolve_fade(1.0 + frame as f32 * 0.25, bg, keep);
+                assert_eq!(a.rgba, b.rgba, "rgba differs at frame {frame} ({w}x{h}, ink {ink})");
+                for y in 0..h {
+                    for x in 0..w {
+                        let i = y * w + x;
+                        assert_eq!(a.light(x, y), [b.r[i], b.g[i], b.b[i]], "light differs at frame {frame}");
+                    }
+                }
+                if frame == 8 {
+                    a.fade(0.7);
+                    b.fade(0.7);
+                }
+            }
+        }
+    }
+
 
     #[test]
     fn bilinear_conserves_energy_and_tone_maps() {

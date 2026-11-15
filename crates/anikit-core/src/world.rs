@@ -813,6 +813,73 @@ impl World {
 mod tests {
     use super::*;
 
+    /// FNV-1a over a world's `[x, y, angle]` output and velocities.
+    fn fold(h: &mut u32, w: &World) {
+        let vel = (0..w.len()).flat_map(|i| w.velocity(i));
+        for v in w.output().iter().copied().chain(vel) {
+            *h = (*h ^ v.to_bits()).wrapping_mul(16_777_619);
+        }
+    }
+
+    /// A fixed scenario covering the dense grid (bounded world: stacking,
+    /// boxes, a tearing rope, a pinned body, an attractor, an impulse,
+    /// restitution + friction) and the hashed grid (unbounded world). The
+    /// hash was recorded on the current solver, so a future optimisation
+    /// must reproduce its arithmetic exactly; `test/world-3d.test.ts` runs
+    /// the same scenario through the wasm build.
+    /// All inputs are exact in `f32` so the JS side passes identical values.
+    fn golden_scenario() -> u32 {
+        let dt = (1.0f64 / 60.0) as f32;
+        let mut h = 0x811c_9dc5u32;
+        let cfg = WorldConfig {
+            gravity: [0.0, 980.0],
+            damping: 0.0625,
+            substeps: 4,
+            iterations: 2,
+            restitution: 0.25,
+            wall_restitution: 0.375,
+            friction: 0.125,
+            bounds: [0.0, 0.0, 800.0, 600.0],
+        };
+        let mut w = World::new(cfg);
+        for i in 0..600 {
+            w.add_body((20 + (i % 30) * 25) as f32, (20 + (i / 30) * 25) as f32, (6 + (i * 7) % 5) as f32, (1 + i % 3) as f32);
+        }
+        w.add_box(300.0, 400.0, 500.0, 450.0);
+        w.set_pinned(0, true);
+        let first = w.add_bodies(&(0..20).flat_map(|k| [(100 + k * 10) as f32, 50.0, 3.0, 0.5]).collect::<Vec<f32>>());
+        for k in 0..19 {
+            w.add_constraint(first + k, first + k + 1, -1.0, 1.0, 3.0);
+        }
+        w.set_pinned(first as usize, true);
+        w.set_attractors(&[Attractor { x: 400.0, y: 300.0, strength: 2000.0, radius: 150.0 }]);
+        for step in 0..90 {
+            if step == 30 {
+                w.impulse(400.0, 300.0, 200.0, 500.0);
+            }
+            if step == 45 {
+                w.set_velocity(10, 300.0, -200.0);
+            }
+            w.step(dt);
+        }
+        fold(&mut h, &w);
+        let mut u = World::new(WorldConfig { gravity: [0.0, 200.0], damping: 0.0625, substeps: 2, iterations: 2, restitution: 0.25, wall_restitution: 0.375, friction: 0.125, ..Default::default() });
+        for i in 0..400 {
+            u.add_body(((i % 20) * 9) as f32, ((i / 20) * 9) as f32, 5.0, 1.0);
+        }
+        for _ in 0..60 {
+            u.step(dt);
+        }
+        fold(&mut h, &u);
+        h
+    }
+
+    #[test]
+    fn solver_matches_recorded_golden_hash() {
+        assert_eq!(golden_scenario(), WORLD_GOLDEN);
+    }
+    const WORLD_GOLDEN: u32 = 108_870_945;
+
     fn boxed_world() -> World {
         World::new(WorldConfig { bounds: [0.0, 0.0, 400.0, 400.0], ..Default::default() })
     }

@@ -416,8 +416,8 @@ pub extern "C" fn ak_decay_create(
 pub extern "C" fn ak_sim_target(h: u32, ch: u32) -> i32 {
     let s = st();
     let ch = (ch as usize).min(s.f64_buf.len());
-    let t = s.f64_buf[..ch].to_vec();
-    code(s.engine.sim_set_target(h, &t))
+    // Disjoint fields: read the targets in place (no per-call allocation).
+    code(s.engine.sim_set_target(h, &s.f64_buf[..ch]))
 }
 
 /// Jump a simulation; f64 buffer `[pos * ch, (vel * ch)?]`.
@@ -428,9 +428,8 @@ pub extern "C" fn ak_sim_position(h: u32, ch: u32, has_vel: u32) -> i32 {
     if s.f64_buf.len() < ch * if has_vel != 0 { 2 } else { 1 } {
         return 3;
     }
-    let pos = s.f64_buf[..ch].to_vec();
-    let vel = if has_vel != 0 { Some(s.f64_buf[ch..ch * 2].to_vec()) } else { None };
-    code(s.engine.sim_set_position(h, &pos, vel.as_deref()))
+    let vel = if has_vel != 0 { Some(&s.f64_buf[ch..ch * 2]) } else { None };
+    code(s.engine.sim_set_position(h, &s.f64_buf[..ch], vel))
 }
 
 #[no_mangle]
@@ -977,8 +976,7 @@ pub extern "C" fn ak_physics_create(ch: u32, friction: f64, restitution: f64, li
 pub extern "C" fn ak_sim_acceleration(h: u32, ch: u32) -> i32 {
     let s = st();
     let ch = (ch as usize).min(s.f64_buf.len());
-    let a = s.f64_buf[..ch].to_vec();
-    code(s.engine.sim_set_acceleration(h, &a))
+    code(s.engine.sim_set_acceleration(h, &s.f64_buf[..ch]))
 }
 
 /// Evaluate an animation at raw iteration progress `p` (timing easing applied)
@@ -1085,12 +1083,19 @@ pub extern "C" fn ak_world_constraint(id: u32, a: u32, b: u32, length: f64, stif
 /// Constraint states into the f64 buffer `[a, b, alive] * n`; returns n.
 #[no_mangle]
 pub extern "C" fn ak_world_constraints(id: u32) -> u32 {
-    let v: Vec<f64> = match world(id) {
-        Some(w) => w.constraints().iter().flat_map(|c| [c.a as f64, c.b as f64, c.alive as u8 as f64]).collect(),
-        None => return 0,
-    };
-    write_f64(&v);
-    (v.len() / 3) as u32
+    let s = st();
+    let Some(Some(w)) = s.worlds.get(id as usize) else { return 0 };
+    let cs = w.constraints();
+    // Written straight into the scratch buffer (no temporary Vec per call).
+    if s.f64_buf.len() < cs.len() * 3 {
+        s.f64_buf.resize(cs.len() * 3, 0.0);
+    }
+    for (o, c) in s.f64_buf.chunks_exact_mut(3).zip(cs) {
+        o[0] = c.a as f64;
+        o[1] = c.b as f64;
+        o[2] = c.alive as u8 as f64;
+    }
+    cs.len() as u32
 }
 /// Attractors from the f64 buffer `[x, y, strength, radius] * n`.
 #[no_mangle]
