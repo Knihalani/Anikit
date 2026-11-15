@@ -19,7 +19,9 @@ export function extractSnippets(file) {
   const lines = readFileSync(file, 'utf8').split('\n');
   const out = [];
   let html = null;
+  let heading = '';
   for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith('## ')) heading = lines[i].slice(3).trim();
     const open = /^```(\w+)?\s*(.*)$/.exec(lines[i]);
     if (!open) continue;
     const start = i;
@@ -32,7 +34,7 @@ export function extractSnippets(file) {
       html = code;
       continue;
     }
-    out.push({ file, line: start + 1, lang, flags, code, html: lang === 'ts' ? html : null });
+    out.push({ file, line: start + 1, heading, lang, flags, code, html: lang === 'ts' ? html : null });
     if (lang === 'ts') html = null;
   }
   return out;

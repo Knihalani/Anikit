@@ -193,13 +193,15 @@ export class Timeline extends Playable {
   }
 
   /** Animate from the given values to the current/chained ones. */
-  from(targets: Targets, values: Props, options: AnimateOptions = {}, position?: Position): this {
+  from(targets: Targets, values: Props, options: AnimateOptions | Position = {}, position?: Position): this {
+    if (typeof options !== 'object') [position, options] = [options, {}];
     const kf: Props = {};
     for (const k of Object.keys(values)) kf[k] = [values[k], null] as PropValue;
     return this.add(targets, kf, { immediateRender: true, ...options }, position);
   }
 
-  fromTo(targets: Targets, fromValues: Props, toValues: Props, options: AnimateOptions = {}, position?: Position): this {
+  fromTo(targets: Targets, fromValues: Props, toValues: Props, options: AnimateOptions | Position = {}, position?: Position): this {
+    if (typeof options !== 'object') [position, options] = [options, {}];
     const kf: Props = {};
     for (const k of Object.keys(toValues)) kf[k] = k in fromValues ? ([fromValues[k], toValues[k]] as PropValue) : toValues[k];
     return this.add(targets, kf, { immediateRender: true, ...options }, position);

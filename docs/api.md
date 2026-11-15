@@ -62,7 +62,7 @@ animate(obj, { value: 1 }, { onUpdate: () => render(obj.value) }); // plain obje
 
 ### Controller (`Animation`, `Timeline`, `Batch`)
 
-`play()`, `pause()`, `reverse()`, `restart()`, `seek(seconds)`, `complete()` (jump to the end), `cancel()` (back to the start values), `kill()`/`stop()` (stop where it is), `revert()` (stop and restore the original inline styles). Properties: `progress` (get/set, 0–1), `time` (get/set, seconds), `duration`, `speed` (get/set), `state` (`'idle' | 'running' | 'paused' | 'finished'`) and `iteration`. Controllers are thenables: `await animate(...)`, or use `.finished`. All of these are `Playable`s.
+`play()`, `pause()`, `reverse()`, `restart()`, `seek(seconds)`, `complete()` (jump to the end), `cancel()` (pause and return to the start), `kill()`/`stop()` (stop where it is), `revert()` (stop and restore the original inline styles). Properties: `progress` (get/set, 0–1), `time` (get/set, seconds), `duration`, `speed` (get/set), `state` (`'idle' | 'running' | 'paused' | 'finished'`) and `iteration`. Controllers are thenables: `await animate(...)`, or use `.finished`. All of these are `Playable`s.
 
 ```ts
 const a = animate('.box', { x: 200 }, { duration: 1, autoplay: false });
@@ -201,7 +201,7 @@ const b = batch(50_000, { x: (i) => [0, i % 500], y: [0, 300], a: [0, 1] },
 `engine.manual(true)` with `engine.tick(ms)` drives the engine yourself (tests, video export). Also available:
 
 - `engine.speed = 0.5`: global time scale (also scales physics worlds, point clouds and `onFrame` `dt`);
-- `engine.lagSmoothing(threshold, adjusted)` (ms): after a long frame, advance only `adjusted` ms; `lagSmoothing(0)` turns it off;
+- `engine.lagSmoothing(threshold = 500, adjusted = 33)` (ms): a frame gap above `threshold` (tab switch, debugger) advances only `adjusted` ms; `lagSmoothing(0)` turns it off;
 - `engine.fps = 30`: frame‑rate cap;
 - `engine.onFrame((timeMs, dtMs) => …)`: per‑frame callback after the frame's DOM writes, in **milliseconds**; returns an unsubscribe function;
 - `engine.time`: elapsed engine time (ms);

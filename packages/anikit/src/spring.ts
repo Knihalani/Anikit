@@ -212,7 +212,7 @@ export class PhysicsAnimation implements PromiseLike<void> {
  */
 export function spring(targets: Targets, props: Record<string, number | string>, options: PhysicsOptions = {}): PhysicsAnimation {
   checkKeys('spring()', options, SPRING_KEYS);
-  checkSeconds('spring()', 'duration', options.duration, 20);
+  checkSeconds('spring()', 'duration', options.duration);
   const ctl = new PhysicsAnimation();
   whenReady(() => {
     const w = core();

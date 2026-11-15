@@ -11,7 +11,7 @@ import { Playable } from './playable';
 import { Targets, toTargets } from './props';
 import { spring, PhysicsAnimation } from './spring';
 import { whenReady } from './wasm';
-import { checkKeys, checkTargets } from './debug';
+import { checkKeys, checkTargets, checkSeconds } from './debug';
 import type { OptionKeys } from './debug';
 
 type Edge = string | number;
@@ -54,6 +54,7 @@ const SCROLL_KEYS: OptionKeys<ScrollOptions> = { target: 0, container: 0, axis: 
  */
 export function scroll(subject: Playable | ((progress: number) => void), options: ScrollOptions = {}): () => void {
   checkKeys('scroll()', options, SCROLL_KEYS);
+  checkSeconds('scroll()', 'smooth', options.smooth, 10);
   if (typeof window === 'undefined') return () => {};
   const container = options.container ?? window;
   const isWin = container === window;

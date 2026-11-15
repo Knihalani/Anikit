@@ -1,6 +1,6 @@
 # Anikit recipes
 
-Task-oriented, copy-paste-ready examples. Every TypeScript block here is type-checked against the real API, and the ones with an HTML fixture also run in a test (`packages/anikit/test/recipes.test.ts`); the Python blocks run under pytest. Reference: [api.md](api.md).
+Task-oriented, copy-paste-ready examples. Every TypeScript block here is type-checked against the real API (`npm run typecheck`). The ones with an HTML fixture are loaded in happy-dom with no warnings allowed (`test/recipes.test.ts`), and in headless Chromium, where most are also clicked, dragged, hovered and scrolled with assertions (`npm run docs:browser`). The Python blocks run under pytest. Reference: [api.md](api.md).
 
 Three rules cover most surprises:
 
@@ -201,25 +201,26 @@ import { draggable, animate } from 'anikit';
 const track = document.querySelector<HTMLElement>('.track')!;
 const width = 320;
 const count = track.children.length;
-const minX = -(count - 1) * width;
+let index = 0;
 
-const [drag] = draggable(track, {
+draggable(track, {
   type: 'x',
-  bounds: { minX, maxX: 0 },     // transform px; or an element: bounds: '.carousel'
-  inertia: true,                 // throw with momentum…
-  snap: { x: width },            // …and come to rest on a slide
+  bounds: { minX: -(count - 1) * width, maxX: 0 },   // transform px; or an element: bounds: '.carousel'
+  inertia: true,                                     // throw with momentum…
+  snap: { x: width },                                // …and come to rest on a slide
   edgeResistance: 0.5,
+  onThrowUpdate: (d) => { index = Math.round(-d.x / width); },   // follow the glide to its slide
 });
 
 const go = (dir: number) => {
-  const x = Math.round(drag.x / width) * width - dir * width;
-  animate(track, { x: Math.max(minX, Math.min(0, x)) }, { duration: 0.5, ease: 'outCubic' });
+  index = Math.max(0, Math.min(count - 1, index + dir));
+  animate(track, { x: -index * width }, { duration: 0.5, ease: 'outCubic' });
 };
 document.querySelector('.prev')!.addEventListener('click', () => go(-1));
 document.querySelector('.next')!.addEventListener('click', () => go(1));
 ```
 
-`draggable()` returns an array (one `Draggable` per element), hence `const [drag]`. It reads the element's current transform on every press, so animating `x` from buttons and dragging mix freely.
+`draggable()` returns an array (one `Draggable` per element): `const [drag] = draggable(el)`. It reads the element's transform on every press, so animating `x` from the buttons and dragging mix freely; keep your own `index` (a `Draggable`'s `x` only updates while it is pressed or thrown).
 
 ## Physics toy
 

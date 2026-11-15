@@ -231,9 +231,9 @@ function checkValues(prop: string, kind: Kind, raw: unknown[], target: unknown):
       else if (canonical === '' && unit !== '%') warn(`"${prop}" is a unitless factor (1 = 100%), but got "${v}". Use e.g. ${prop}: 1.5.`);
       else if ((canonical === 'px' || canonical === '%') && angleUnit) warn(`"${prop}" is a length, but got "${v}". Use a number (px) or a length unit; for rotation use "rotate".`);
     }
-  } else if (prop === 'opacity') {
+  } else if (prop === 'opacity' && isElement(target)) {
     const big = raw.find((v) => typeof v === 'number' && v > 1);
-    if (big !== undefined) warn(`opacity goes from 0 to 1, but got ${big}${isElement(target) ? ` on ${describe(target)}` : ''}. Did you mean ${+((big as number) / 100).toFixed(3)}?`);
+    if (big !== undefined) warn(`opacity goes from 0 to 1, but got ${big} on ${describe(target)}. Did you mean ${+((big as number) / 100).toFixed(3)}?`);
   }
 }
 
