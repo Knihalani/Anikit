@@ -87,6 +87,13 @@ describe('animate() guidance', () => {
     expect(() => animate(box(), { x: 1 }, { ease: 'power2.outt' })).toThrow(/unknown easing/);
   });
 
+  it('accepts per-target keyframes from a function', () => {
+    const els = [box(), box()];
+    animate(els, { x: (_el: unknown, i: number) => [i * 10, 100 + i * 10] }, { duration: 1, ease: 'linear' }).seek(0.5);
+    expect(els.map(tf)).toEqual(['translate(50px,0px)', 'translate(60px,0px)']);
+    expect(warnings).toEqual([]);
+  });
+
   it('suggests effects for a preset name passed as keyframes', () => {
     animate(box(), 'fadeIn' as any);
     expect(has('second argument must be an object', 'effects.fadeIn(targets)')).toBe(true);

@@ -48,7 +48,7 @@ Calls work immediately: the WebAssembly core loads in the background and queues 
 - **Properties:**
   - **Transforms:** `x`, `y`, `z`, `rotate`, `rotateX`/`Y`, `scale`, `scaleX`/`Y`, `skew`, `xPercent`/`yPercent`, `perspective`. Composed per element and written once per frame; use them for motion instead of `left`/`top`. Numbers are px / deg / unitless.
   - **Everything else:** any CSS property in camelCase (`backgroundColor`), CSS variables (`'--hue'`), `attr: {…}`, plain-object keys, `textContent` counters, `text` typewriter/scramble, `d` morphing, `path` motion paths, `draw` stroke drawing, and `transform` (whole transform strings).
-- **Values:** a single value means "from current to this"; `[from, to]` or `[a, b, c]` are keyframes (`null` = current); `'+=50'` is relative; `(el, i, count) => v` and `'random(0, 100)'` run per target.
+- **Values:** a single value means "from current to this"; `[from, to]` or `[a, b, c]` are keyframes (`null` = current); `'+=50'` is relative; `(el, i, count) => v` and `'random(0, 100)'` run per target (a function may also return keyframes: `(el, i) => [0, i * 10]`).
 - **Options** go in the third argument (`{ duration, ease, delay, repeat, yoyo, autoplay, onComplete }`) or among the properties. Unknown keys warn with a suggestion.
 - **Easing:** CSS (`'ease-out'`, `'cubic-bezier(…)'`, `'steps(4)'`), Penner (`'outCubic'`), GSAP (`'power2.inOut'`, `'back.out(1.7)'`), springs (`'spring(bounce: 0.3, duration: 0.6)'` or `{ stiffness, damping }`), `'custom(M0,0 C…)'`, or a function. Default `'outQuad'`, duration `0.5`.
 - **Overwrite:** a new animation on the same property takes it over (`overwrite: false` to opt out), so re-triggering is safe.

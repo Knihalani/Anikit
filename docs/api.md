@@ -28,7 +28,7 @@ animate(els, { x: (el, i, n) => i * 20 }, { delay: stagger(0.05, { from: 'center
 animate(obj, { value: 1 }, { onUpdate: () => render(obj.value) }); // plain objects
 ```
 
-**Values:** numbers (with the default unit: `px` for lengths, `deg` for angles), strings with units, colours in any CSS syntax, complex strings (`'0 4px 12px rgba(0,0,0,.2)'`), discrete strings, `null` for "the current value", relative values (`'+=10'`, `'-=10'`, `'*=2'`) and `(target, index, count) => value` functions. Options may also be written inside the keyframes object (GSAP style).
+**Values:** numbers (with the default unit: `px` for lengths, `deg` for angles), strings with units, colours in any CSS syntax, complex strings (`'0 4px 12px rgba(0,0,0,.2)'`), discrete strings, `null` for "the current value", relative values (`'+=10'`, `'-=10'`, `'*=2'`) and `(target, index, count) => value` functions (which may return keyframes: `y: (el, i) => [0, i * 10]`). Options may also be written inside the keyframes object (GSAP style).
 
 **Special properties**
 

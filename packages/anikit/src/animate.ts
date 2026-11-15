@@ -37,7 +37,7 @@ import { writeStr } from './wasm';
 export type FnValue<T> = T | ((target: any, index: number, count: number) => T);
 export type Scalar = number | string;
 export type PropValue =
-  | FnValue<Scalar | null>
+  | FnValue<Scalar | null | Array<Scalar | null>>
   | Array<FnValue<Scalar | null>>
   | { to?: FnValue<Scalar>; from?: FnValue<Scalar>; value?: Array<FnValue<Scalar | null>>; ease?: EasingInput | EasingInput[] }
   | MotionPathOptions
@@ -63,7 +63,7 @@ export interface MotionPathOptions {
  * Every value may be: a single end value (`100`), keyframes (`[0, 100]`,
  * `[null, 50, 0]` where `null` is the current value), a relative value
  * (`'+=50'`, `'-=50'`, `'*=2'`), `'random(0, 100)'`, or a function
- * `(target, index, count) => value` evaluated per target.
+ * `(target, index, count) => value` evaluated per target (it may return keyframes too: `(el, i) => [0, i * 10]`).
  */
 export interface TransformProps {
   /** translateX. Number = px; any length or `%` of the element (`'50%'`, `'2rem'`). Prefer over `left`. */
@@ -569,7 +569,9 @@ export class Animation extends Playable {
           const hint = !s ? '' : OPTION_KEYS.has(s) ? ` Did you mean the option "${s}"? (Options can go in the third argument or among the properties.)` : ` Did you mean "${s}"?`;
           warn(`"${prop}" is not a CSS property of ${describe(target)}; it will be written as an inline style anyway.${hint}`);
         }
-        const raw = spec.values.map((v) => resolve(v, target, i, n));
+        let raw = spec.values.map((v) => resolve(v, target, i, n));
+        // A function may return keyframes for its target: `y: (el, i) => [0, i * 10]`.
+        if (raw.length === 2 && raw[0] === null && Array.isArray(raw[1])) raw = raw[1] as Array<Scalar | null>;
         if (i === 0 && warningsOn()) checkValues(prop, kind, raw, target);
         if (raw[0] !== null && raw[0] !== undefined && raw.length > 1) hasExplicitFrom = true;
         const chained = ctx.chain?.get(target)?.get(prop);

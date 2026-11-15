@@ -124,7 +124,7 @@
     x: (i) => [W / 2, W / 2 + Math.cos(i * 2.399) * Math.sqrt(i / N) * W * 0.48],
     y: (i) => [H / 2, H / 2 + Math.sin(i * 2.399) * Math.sqrt(i / N) * H * 0.48],
   }, {
-    duration: 1.6, ease: 'outBack', delay: stagger(1.2 / N), repeat: Infinity, yoyo: true, repeatDelay: 0.6,
+    duration: 1.6, ease: 'outBack', delay: stagger(1.2 / N), repeat: Infinity, yoyo: true,
     onUpdate: () => {
       const d = b.data;
       px.fill(0xff120d0b);
@@ -150,7 +150,7 @@
   for (let i = 0; i < 8; i++) { const d = document.createElement('div'); d.textContent = i + 1; cards.appendChild(d); }
   const reveal = () => timeline({ defaults: { duration: 0.5, ease: 'outBack' } })
     .add(cards.children, { y: [30, 0], opacity: [0, 1] }, { delay: stagger(0.06) })
-    .add(cards.children, { rotate: [0, 360] }, { delay: stagger(0.04, { from: 'end' }), duration: 0.8, ease: 'inOutCubic' }, '-=0.2');
+    .add(cards.children, { rotate: [0, 360] }, { delay: stagger(0.04, { from: 'last' }), duration: 0.8, ease: 'inOutCubic' }, '-=0.2');
   reveal();
   document.getElementById('replay').onclick = reveal;
   document.getElementById('flip').onclick = () =>
