@@ -171,3 +171,13 @@ html.gravity-on, html.gravity-on body { overflow: hidden; }
   #hud-stats { display: none; }
   .agents .giant, .paths .giant { font-size: 17vw; }
 }
+
+/* 08 · Flight: a live WebAssembly 3D canvas, scroll-driven */
+.fly { height: 420vh; color: #f3ecff; }
+.fly canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.fly .pin::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: radial-gradient(ellipse 70% 55% at 18% 18%, rgba(3, 4, 10, 0.78), rgba(3, 4, 10, 0) 70%), linear-gradient(to top, rgba(3, 4, 10, 0.7), rgba(3, 4, 10, 0) 28%); }
+.fly-title, .fly .corner { z-index: 2; }
+.fly-title { position: absolute; left: var(--gut); top: calc(var(--gut) + 40px); margin: 0; font-size: 10vw; line-height: 0.86; color: #f3ecff; text-shadow: 0 2px 30px rgba(0, 0, 0, 0.6); }
+.fly-title em { color: #ff6ad5; }
+.fly .corner { color: #e9e2ff; text-shadow: 0 1px 12px rgba(0, 0, 0, 0.8); }

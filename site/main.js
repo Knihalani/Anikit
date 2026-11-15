@@ -5,6 +5,7 @@ import {
 } from '../packages/anikit/dist/anikit.js';
 import { cosmos, bulletTime } from './cosmos.js';
 import { gravity } from './gravity.js';
+import { flight } from './flight.js';
 
 await ready;
 engine.reducedMotion = 'user';
@@ -298,6 +299,18 @@ for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
     ride.progress = p;
   });
   animate('.blob', { rotate: 360 }, { duration: 40, ease: 'linear', repeat: Infinity });
+}
+
+// ---------------------------------------------------------------------------
+// 08 · Flight: scroll flies a camera through a city rendered live in WebAssembly
+// ---------------------------------------------------------------------------
+{
+  const section = $('#fly');
+  flight({
+    canvas: $('#fly-canvas'), stats: $('#fly-stats'), reduced,
+    onProgress: (fn) => pinned(section, fn),
+    whileVisible: (fn) => whileVisible(section, fn),
+  });
 }
 
 // ---------------------------------------------------------------------------

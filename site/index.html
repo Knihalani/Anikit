@@ -121,7 +121,17 @@
     </div>
   </section>
 
-  <!-- 08 · AGENTS (black) -->
+  <!-- 08 · FLIGHT (night) -->
+  <section class="scene fly station" id="fly" data-shape="grid" data-bg="#03040a" data-mode="light" data-tint="0.9,0.35,0.8" data-exposure="0" data-name="Flight">
+    <div class="pin">
+      <canvas id="fly-canvas" aria-label="A neon city flown through as you scroll, rendered live in WebAssembly"></canvas>
+      <h2 class="giant fly-title">Solid 3D.<br /><em>No WebGL.</em></h2>
+      <p class="mono corner bl">Scroll to fly. Every frame is rasterised in WebAssembly:<br />per-pixel chrome, hex-lit towers, a mirror floor,<br />light trails and stars that streak as you move.</p>
+      <p class="mono corner br" id="fly-stats">warming up…</p>
+    </div>
+  </section>
+
+  <!-- 09 · AGENTS (black) -->
   <section class="scene agents station" id="agents" data-shape="grid" data-bg="#0c0c0c" data-mode="light" data-tint="0.82,1,0.24" data-exposure="0.45" data-name="Agents">
     <div class="pin">
       <h2 class="giant">Machines<br />read it<br />too.</h2>
@@ -133,7 +143,7 @@
     </div>
   </section>
 
-  <!-- 09 · FILM (black) -->
+  <!-- 10 · FILM (black) -->
   <section class="scene film station" id="film" data-shape="grid" data-bg="#050505" data-mode="light" data-tint="1,0.6,0.4" data-exposure="0.12" data-name="Film">
     <div class="pin">
       <h2 class="giant film-title">Films,<br /><em>compiled.</em></h2>
@@ -153,7 +163,7 @@ film.scene(<span class="s">'one take'</span>, 0, 24.5, {
     </div>
   </section>
 
-  <!-- 10 · INSTALL (paper) -->
+  <!-- 11 · INSTALL (paper) -->
   <section class="scene install station" id="install" data-shape="outro" data-bg="#ece6da" data-mode="ink" data-tint="0.05,0.78,0.95" data-exposure="1.1" data-name="Install">
     <div class="pin">
       <p class="giant outro" id="outro">Make it<br />move.</p>
