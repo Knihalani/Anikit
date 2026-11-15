@@ -27,6 +27,7 @@ from ._animation import Animation, Position, Timeline, animate, timeline
 from ._cloud import PointCloud, ShapeInput, Splat
 from ._easing import Easing, EasingLike, ease
 from ._engine import Engine, default_engine, resolve_engine, set_default_engine
+from ._flight import FlightPath, FlightPose, flight_path
 from ._noise import Noise
 from ._path import ClosestPoint, Morph, MorphSequence, MotionPath, Path, PathLike, morph, morph_many, motion_path
 from ._physics import PhysicsAnimation, SpringAnimation, inertia, physics, spring
@@ -66,6 +67,10 @@ __all__ = [
     "PointCloud",
     "ShapeInput",
     "Splat",
+    # camera flights
+    "FlightPath",
+    "FlightPose",
+    "flight_path",
     # easing
     "Easing",
     "EasingLike",

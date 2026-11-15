@@ -423,9 +423,11 @@ class Camera:
 
     ``fov`` is the vertical field of view in degrees; ``near``/``far`` clip
     depth. Points behind the camera (or nearer than ``near``) are culled.
+    ``roll`` rotates the camera about its viewing axis in degrees (banking,
+    barrel rolls; see :class:`anikit.FlightPath`).
     """
 
-    __slots__ = ("position", "target", "up", "fov", "near", "far")
+    __slots__ = ("position", "target", "up", "fov", "near", "far", "roll")
 
     def __init__(
         self,
@@ -436,6 +438,7 @@ class Camera:
         fov: float = 50.0,
         near: float = 1.0,
         far: float = 100000.0,
+        roll: float = 0.0,
     ) -> None:
         self.position = _vec3(position, "position")
         self.target = _vec3(target, "target")
@@ -443,6 +446,7 @@ class Camera:
         self.fov = float(fov)
         self.near = float(near)
         self.far = float(far)
+        self.roll = float(roll)
 
     @property
     def view(self) -> Matrix:
@@ -452,7 +456,20 @@ class Camera:
         return Matrix.projection(self.fov, aspect, self.near, self.far)
 
     def view_projection(self, aspect: float) -> Matrix:
-        return self.projection(aspect) @ self.view
+        """``projection · view``, rolled by :attr:`roll` about the view axis."""
+        vp = self.projection(aspect) @ self.view
+        if not self.roll:
+            return vp
+        # P·Rz·V = (P·Rz·P⁻¹)·(P·V): on clip x/y an aspect-corrected rotation of
+        # the first two rows (exactly what the TypeScript Scene3D does).
+        a = math.radians(self.roll)
+        cs, sn = math.cos(a), math.sin(a)
+        m = list(vp.values)
+        for col in range(4):
+            x, y = m[col * 4], m[col * 4 + 1]
+            m[col * 4] = cs * x - (sn / aspect) * y
+            m[col * 4 + 1] = aspect * sn * x + cs * y
+        return Matrix._raw(m)
 
     def orbit(self, yaw: float, pitch: float = 0.0, distance: Optional[float] = None) -> "Camera":
         """Place the camera on a sphere around ``target`` (degrees; yaw about y,
@@ -469,7 +486,8 @@ class Camera:
         return self
 
     def __repr__(self) -> str:
-        return f"Camera(position={self.position}, target={self.target}, fov={self.fov:g})"
+        roll = f", roll={self.roll:g}" if self.roll else ""
+        return f"Camera(position={self.position}, target={self.target}, fov={self.fov:g}{roll})"
 
 
 class Projection:
