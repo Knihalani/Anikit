@@ -123,11 +123,11 @@ All numbers are from a shared 4‑core cloud VM, so treat them as indicative. Re
 
 | Workload | Items | ms/frame | per item |
 |---|---:|---:|---:|
-| Tween, 1 track, `outCubic` | 100,000 | 1.5–1.7 | ~16 ns |
-| Timeline with 50k children | 50,000 | 0.56 | ~11 ns |
-| Springs, 2 channels | 100,000 | 1.2 | ~12 ns |
-| x, y, opacity + OKLab colour | 50,000 | 5.9 | ~118 ns |
-| 290‑channel shape morph | 2,000 | 0.5 | ~250 ns |
+| Tween, 1 track, `outCubic` | 100,000 | 1.6 | ~16 ns |
+| Timeline with 50k children | 50,000 | 0.54–0.61 | ~11 ns |
+| Springs, 2 channels | 100,000 | 1.3 | ~13 ns |
+| x, y, opacity + OKLab colour | 50,000 | 3.2–3.3 | ~65 ns |
+| 290‑channel shape morph | 2,000 | 0.5 | ~245 ns |
 
 The optimizations behind these numbers were all measured, not assumed:
 - a compacted per‑animation memory layout (data and outputs in one allocation): −35%;
@@ -136,7 +136,7 @@ The optimizations behind these numbers were all measured, not assumed:
 - idle timeline children cost a single timing evaluation;
 - one spring transition matrix per configuration per frame;
 - slice‑wise easing for batches;
-- a polynomial `pow` for the sRGB transfer function (error under 1e‑7);
+- a dedicated `x^(1/2.4)` polynomial for the sRGB transfer function (relative error under 5e‑9, and ~3× faster than the generic fast `pow` it replaced);
 - an O(1) `group_add`.
 
 **Against alternatives.** These are where moving work into WebAssembly pays off. Each row comes from a script in `packages/anikit/scripts/`, run on the same VM.
@@ -146,8 +146,8 @@ The optimizations behind these numbers were all measured, not assumed:
 | 2D physics, 250 colliding bodies, per step | 0.09 ms | matter.js 3.9–5.4 ms | 43–60× | `bench-physics.mjs` |
 | 2D physics, 1,000 bodies | 0.28–0.47 ms | matter.js 7.2–7.4 ms | 16–26× | 〃 |
 | 2D physics, 5,000 bodies | 1.3 ms | matter.js 11.3–11.9 ms | ~9× | 〃 |
-| 3D project + depth sort, 100k points | 3.2 ms | optimised plain JS 35.6 ms | 11× | `bench-3d.mjs` |
-| 3D project + depth sort, 500k points | 13.8 ms | plain JS 217 ms | 16× | 〃 |
+| 3D project + depth sort, 100k points | 1.5–1.7 ms | optimised plain JS 34–35 ms | 20–22× | `bench-3d.mjs` |
+| 3D project + depth sort, 500k points | 8.8–8.9 ms | plain JS 209–214 ms | ~24× | 〃 |
 | 2,000 animated DOM elements, real Chromium | 56–59 fps | GSAP 26–27 fps | ~2.2× fps | `bench-dom.mjs` |
 
 Physics numbers vary between runs at small sizes (matter.js's per‑step overhead dominates there), so ranges are shown. In the DOM benchmark at 5,000 elements Anikit ran at 26–32 fps against GSAP's 19, and Motion was 3–5× slower than both. Most of a DOM frame is the browser's own style, layout and paint work, which no library can skip; Anikit wins by doing less JS and skipping unchanged writes.
@@ -156,11 +156,11 @@ Physics numbers vary between runs at small sizes (matter.js's per‑step overhea
 
 | Particles | Simulate | Render | Total |
 |---:|---:|---:|---:|
-| 50,000 | 0.6 ms | 8.4 ms | 9.0 ms |
-| 150,000 | 2.1 ms | 11.4 ms | 13.4 ms |
-| 300,000 | 4.7 ms | 16.5 ms | 21.2 ms |
+| 50,000 | 0.6 ms | 3.2–3.6 ms | 3.8–4.2 ms |
+| 150,000 | 1.8 ms | 6.6–7.2 ms | 8.3–9.1 ms |
+| 300,000 | 3.5 ms | 11.7–12.0 ms | 15–17 ms |
 
-On this VM the tone‑map pass is memory‑bandwidth bound (the same loop runs in ~3 ms natively here). Desktop machines with more memory bandwidth are faster, and `glow({ budget })` lowers the resolution automatically where they aren't.
+Render time roughly halved after the tone‑map loop was made to vectorise on WebAssembly (Rust's `f32::max`/`min` had been scalarised inside it) and the projection gained a SIMD path and a cheaper radix sort; [`docs/perf-notes.md`](docs/perf-notes.md) has the before/after measurements. Very large canvases are memory‑bandwidth bound, and `glow({ budget })` lowers the resolution automatically where needed.
 
 One fix sped up everything that uses square roots or floors: libm's `sqrt`/`floor` compile to software routines on `wasm32` unless nightly‑only features are enabled. The core now calls the stable SIMD intrinsics on one lane, which lower to the native instructions. The particle simulation became 3.4× faster, and the physics speed‑up over matter.js went from 7–27× to 9–44× (up to 60×) in the same benchmark.
 
@@ -168,14 +168,14 @@ One fix sped up everything that uses square roots or floors: libm's `sqrt`/`floo
 
 | Case | N | Anikit | GSAP 3 |
 |---|---:|---:|---:|
-| 3 numbers per object | 10,000 | ~1.9 ms | ~0.6–0.9 ms |
-| colour string | 10,000 | ~2.0–2.6 ms | ~1.0 ms |
-| **`batch()`**, 3 channels | 100,000 | **~1.3 ms** | 7.9 ms (objects) |
+| 3 numbers per object | 10,000 | ~1.5–1.7 ms | ~0.6 ms |
+| colour string | 10,000 | ~1.9–2.1 ms | ~1.1–1.2 ms |
+| **`batch()`**, 3 channels | 100,000 | **~0.4 ms** | 6.4–7.4 ms (objects) |
 
 These results are mixed, and the reasons matter:
 
 - **Writing a property onto a JS object costs the same for every library.** A good JIT is already close to the hardware limit there. Anikit's per‑object bookkeeping (core handle → record → bindings) currently makes plain‑object tweening **2–3× slower than GSAP** in this synthetic test. With DOM targets, the style writes, style recalc and paint dominate a frame, so this difference is a small share of real frame time.
-- **The architecture wins when JS stops touching every object.** `batch()` is ~6× faster than GSAP animating equivalent objects. The heavy‑math features (OKLab colour, morphing, exact springs, long timelines) run in WASM at native‑like speed, and `compositor()` moves work off the main thread entirely.
+- **The architecture wins when JS stops touching every object.** `batch()` is ~17× faster than GSAP animating equivalent objects. The heavy‑math features (OKLab colour, morphing, exact springs, long timelines) run in WASM at native‑like speed, and `compositor()` moves work off the main thread entirely.
 
 Bundle sizes: the default entry embeds the WASM module (zero config, 214 KB gz in total). `anikit/lean` is **41 KB gz of JS** that streams a separate **129 KB gz** `.wasm`, which is cacheable and compiles while it downloads. The JS side is ES modules marked side‑effect free, so bundlers drop the features you don't import (scroll, interaction, effects, inspector, …).
 
@@ -210,7 +210,7 @@ cd crates/anikit-py && python -m venv .venv && . .venv/bin/activate && pip insta
 
 To see the demos, build the TS package and serve the repo root (for example `python -m http.server`). `/site/` is the landing page, `/examples/` shows the core features and `/examples/scroll.html` the scroll and interaction suite.
 
-Benchmarks: `npm run bench`, `npm run bench:physics`, `npm run bench:3d`, `npm run bench:dom`, `npm run bench:cloud` (in `packages/anikit`) and `cargo run --release -p anikit-core --example bench` / `physics_bench` / `cloud_bench`.
+Benchmarks: `npm run bench`, `npm run bench:physics`, `npm run bench:3d`, `npm run bench:dom`, `npm run bench:cloud` and `node scripts/bench-wasm.mjs` (the core's kernels through the WebAssembly exports; in `packages/anikit`) and `cargo run --release -p anikit-core --example bench` / `physics_bench` / `cloud_bench`. Before/after notes for the core's optimisations: [`docs/perf-notes.md`](docs/perf-notes.md).
 
 ## Status and limitations
 
