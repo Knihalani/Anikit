@@ -13,6 +13,7 @@ jobs:
           components: clippy
       - run: cargo test -p anikit-core
       - run: cargo clippy -p anikit-core -p anikit-wasm -- -D warnings
+      - run: cargo build --release -p anikit-core --features std --examples
 
   typescript:
     runs-on: ubuntu-latest
@@ -29,8 +30,29 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npm test
-      - run: npx tsc --noEmit
+      - run: npm run typecheck   # tsc + every export documented with a type-checked example + JSDoc
       - run: node scripts/build.mjs
+
+  render:
+    # Smoke-test the Node video pipeline: both film templates render a frame.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/anikit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: npm ci && npm i --no-save @napi-rs/canvas
+      - run: node scripts/build-wasm.mjs && node scripts/build.mjs
+      - run: node bin/anikit-render.mjs templates/journey.mjs --still 5 --out /tmp/journey.png
+      - run: node bin/anikit-render.mjs templates/film.mjs --still 2 --out /tmp/film.png
+      - run: node scripts/bench-raster.mjs
 
   python:
     runs-on: ubuntu-latest
