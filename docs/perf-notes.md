@@ -61,9 +61,9 @@ End to end:
 
 | Script | Case | `e73317e` | now |
 |---|---|---:|---:|
-| `bench-cloud.mjs` (Chromium) | render, 50k particles | 8.6–8.8 ms | 3.2–3.6 ms |
-| 〃 | render, 150k | 12.3–12.7 ms | 6.6–7.2 ms |
-| 〃 | render, 300k | 18.1–18.3 ms | 11.7–12.0 ms |
+| `bench-cloud.mjs` (Chromium) | render, 50k particles | 8.6–8.8 ms | 3.1–3.2 ms |
+| 〃 | render, 150k | 12.3–12.7 ms | 6.2–6.8 ms |
+| 〃 | render, 300k | 18.1–18.3 ms | 10.5–10.6 ms |
 | `bench-3d.mjs` | project + sort, 100k | 2.63–2.70 ms | 1.53–1.72 ms |
 | 〃 | project + sort, 500k | 13.8–14.4 ms | 8.8–8.9 ms |
 | `bench.mjs` | `batch()` 3 channels, 100k | 1.14–1.17 ms | 0.36–0.39 ms |

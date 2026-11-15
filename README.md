@@ -156,9 +156,9 @@ Physics numbers vary between runs at small sizes (matter.js's per‑step overhea
 
 | Particles | Simulate | Render | Total |
 |---:|---:|---:|---:|
-| 50,000 | 0.6 ms | 3.2–3.6 ms | 3.8–4.2 ms |
-| 150,000 | 1.8 ms | 6.6–7.2 ms | 8.3–9.1 ms |
-| 300,000 | 3.5 ms | 11.7–12.0 ms | 15–17 ms |
+| 50,000 | 0.6–0.7 ms | 3.1–3.2 ms | 3.7–3.9 ms |
+| 150,000 | 1.8 ms | 6.2–6.8 ms | 8.1–8.6 ms |
+| 300,000 | 3.5 ms | 10.5–10.6 ms | 14.1 ms |
 
 Render time roughly halved after the tone‑map loop was made to vectorise on WebAssembly (Rust's `f32::max`/`min` had been scalarised inside it) and the projection gained a SIMD path and a cheaper radix sort; [`docs/perf-notes.md`](docs/perf-notes.md) has the before/after measurements. Very large canvases are memory‑bandwidth bound, and `glow({ budget })` lowers the resolution automatically where needed.
 
