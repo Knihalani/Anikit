@@ -1,7 +1,8 @@
 // Code blocks of the Markdown docs, so they can be type-checked and run.
 //
 // A ```ts block is checked; add `no-check` to the info string to skip it and
-// `no-run` to only type-check it. An ```html block right before a ts block is
+// `no-run` to only type-check it, `browser` to run it in Chromium only (not
+// happy-dom). An ```html block right before a ts block is
 // its DOM fixture: blocks with a fixture also run in happy-dom
 // (test/recipes.test.ts).
 import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
