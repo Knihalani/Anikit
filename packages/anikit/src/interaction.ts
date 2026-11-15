@@ -13,6 +13,7 @@ import { Targets, toTargets, stateOf, composeTransform, TargetState } from './pr
 import { inertia, PhysicsAnimation } from './spring';
 import { VelocityTracker } from './utils';
 import { track } from './context';
+import { prefersReduced } from './core';
 
 // ---------------------------------------------------------------------------
 // Draggable
@@ -217,11 +218,12 @@ export class Draggable {
       const r = resolveSnap(per(axis), v);
       return Math.min(max ?? Infinity, Math.max(min ?? -Infinity, r));
     };
+    const fling = this.o.inertia && !prefersReduced();
     if (type === 'rotate') {
-      props.rotate = { velocity: this.o.inertia ? this.vr.velocity : 0, min: L.minRotation, max: L.maxRotation, snap: per('rotation') !== undefined ? clampSnap('rotation', L.minRotation, L.maxRotation) : undefined };
+      props.rotate = { velocity: fling ? this.vr.velocity : 0, min: L.minRotation, max: L.maxRotation, snap: per('rotation') !== undefined ? clampSnap('rotation', L.minRotation, L.maxRotation) : undefined };
     } else {
-      if (type !== 'y') props.x = { velocity: this.o.inertia ? this.vx.velocity : 0, min: L.minX, max: L.maxX, snap: per('x') !== undefined ? clampSnap('x', L.minX, L.maxX) : undefined };
-      if (type !== 'x') props.y = { velocity: this.o.inertia ? this.vy.velocity : 0, min: L.minY, max: L.maxY, snap: per('y') !== undefined ? clampSnap('y', L.minY, L.maxY) : undefined };
+      if (type !== 'y') props.x = { velocity: fling ? this.vx.velocity : 0, min: L.minX, max: L.maxX, snap: per('x') !== undefined ? clampSnap('x', L.minX, L.maxX) : undefined };
+      if (type !== 'x') props.y = { velocity: fling ? this.vy.velocity : 0, min: L.minY, max: L.maxY, snap: per('y') !== undefined ? clampSnap('y', L.minY, L.maxY) : undefined };
     }
     const outOfBounds =
       this.x < (L.minX ?? -Infinity) || this.x > (L.maxX ?? Infinity) ||

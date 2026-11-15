@@ -34,7 +34,7 @@ animate(obj, { value: 1 }, { onUpdate: () => render(obj.value) }); // plain obje
 | `'--name'` | CSS custom property. |
 | `attr: { r: 20, cx: 50 }` | Attributes. Non‑CSS attributes of SVG elements are detected automatically. |
 | `d: pathData \| element \| selector` | Shape morph between any two paths. |
-| `path: pathData \| { path, start?, end?, rotate? }` | Motion along a path. `rotate: true` (or an angle offset) follows the tangent. |
+| `path: pathData \| { path, start?, end?, rotate?, align?, alignOrigin? }` | Motion along a path. `rotate: true` (or an angle offset) follows the tangent. `align: true` puts the target exactly on the path as drawn on the page (SVG user space, viewBox and all, mapped to the target's coordinates), with `alignOrigin` (default `[0.5, 0.5]`) on the line; pass an SVG element as `align` when `path` is raw data in its coordinates. |
 | `draw: [0, 1]` or `['0 0', '0.2 0.8']` | Visible stroke segment as fractions of the length. |
 
 **Options** (`AnimateOptions`)
@@ -97,7 +97,7 @@ tl.seek('spin'); tl.playFrom(0.5);
 - `'+=0.5'` / `'-=0.5'`: relative to the timeline end;
 - a label, optionally with an offset (`'label'`, `'label+=0.3'`).
 
-With no position, a child goes at the end of the timeline. Options: `delay`, `repeat`, `repeatDelay`, `yoyo`, `speed`, `ease` (applied to the overall progress), `autoplay` and `defaults`. Sequential tweens of the same property chain their start values.
+With no position, a child goes at the end of the timeline. Options: `delay`, `repeat`, `repeatDelay`, `yoyo`, `speed`, `ease` (applied to the overall progress), `autoplay`, `defaults` and the callbacks (`onStart`, `onUpdate`, `onComplete`, `onRepeat`, `onReverseComplete`). `onUpdate` fires once per frame while the playhead moves (playing or seeking), after that frame's DOM writes. Sequential tweens of the same property chain their start values.
 
 ---
 
@@ -121,7 +121,12 @@ const stop = scroll(animate('.bar', { scaleX: [0, 1] }, { ease: 'linear' }));   
 scroll(animate(img, { y: [-80, 80] }), { target: img, offset: ['start end', 'end start'], smooth: 0.1 });
 scroll((p) => (counter.textContent = Math.round(p * 100) + '%'), { container: panel });
 inView('.reveal', (el) => { animate(el, { opacity: [0, 1] }); return () => animate(el, { opacity: 0 }); }, { amount: 0.3 });
+scroll(compositor('.hero', { scale: [1, 1.15], opacity: [1, 0] }, { ease: 'linear' }), { target: hero, offset: ['start start', 'end start'] });
 ```
+
+Give `scroll()` a `compositor()` animation and it's attached to a native `ScrollTimeline` where the browser has one: the browser scrubs it in step with the scroll, and no JavaScript runs while scrolling. The `offset` range is measured from layout (and again on resize), so it means the same as on the JavaScript path. Without `ScrollTimeline`, or with `smooth`, it's scrubbed from the scroll event instead (`native: false` forces that).
+
+`compositor()` animations honour `engine.reducedMotion` (they jump to the end), and `revert()` cancels them and puts back the inline styles from before.
 
 ---
 
@@ -137,7 +142,11 @@ inView('.reveal', (el) => { animate(el, { opacity: [0, 1] }); return () => anima
 const { chars, words, lines, revert } = splitText('h1', { type: 'lines,words,chars' });
 animate(chars, { y: ['100%', 0], opacity: [0, 1] }, { delay: stagger(0.02) });
 
-flip('.item', () => grid.classList.toggle('dense'), { duration: 0.6, ease: 'spring(bounce: .2)' });
+// Lines rising from behind a mask; re-split (and the animation handed over) when the width changes
+splitText('.lede', { type: 'lines', mask: 'lines', autoSplit: true,
+  onSplit: ({ lines }) => animate(lines, { yPercent: [100, 0] }, { delay: stagger(0.08), ease: 'outCubic' }) });
+
+flip('.item', () => grid.classList.toggle('dense'), { duration: 0.6, ease: 'spring(bounce: .2)' }); // see "Layout transitions"
 
 compositor('.toast', { y: [20, 0], opacity: [0, 1] }, { ease: 'spring(bounce: .4)' }); // compositor thread
 
@@ -146,7 +155,65 @@ const b = batch(50_000, { x: (i) => [0, i % 500], y: [0, 300], a: [0, 1] },
 // b.data: Float32Array (count * stride), e.g. gl.bufferSubData(gl.ARRAY_BUFFER, 0, b.data)
 ```
 
+`splitText` options: `mask: 'lines' | 'words' | 'chars'` wraps each unit in an `overflow: clip` element (returned in `masks`; class via `maskClass`). `autoSplit: true` splits again when an element's width changes and once web fonts have loaded, so lines match the layout. `onSplit(result)` runs after every split; return the animation that uses the pieces, and on a re-split it's reverted and the new one is moved to the same time. `result.split()` re-splits on demand, and `revert()` restores the markup (a `context()` does this too).
+
 ---
+
+## Layout transitions: `flip`
+
+`flip(targets, mutate, options?)` records where elements are, runs `mutate`, and animates every element from its old box to its new one using only transforms. It returns a `Timeline` holding every animation it started, so `await flip(...)` waits for all of them.
+
+```ts
+flip('.item', () => grid.classList.toggle('dense'), { duration: 0.6, ease: 'spring(bounce: .2)' });
+flip('.card', () => applyFilter(), { fade: true });                    // removed cards fade out in place, new ones fade in
+flip('.card', () => list.prepend(card), { enter: { scale: [0.6, 1], opacity: [0, 1] }, leave: { scale: 0.6, opacity: 0 } });
+flip('[data-flip-id]', () => { thumb.hidden = true; modal.hidden = false; });  // shared element: modal grows out of the thumbnail
+const state = flip.capture('.item'); reorder(); flip.from(state, { duration: 0.4 }); // manual capture
+```
+
+- **Re-queried targets:** when `targets` is a selector it's queried again after `mutate`, so elements added by the change are found. Pass `targets` in the options to name them explicitly.
+- **Entering elements** (new, or hidden before) play `enter` keyframes, or `{ opacity: [0, 1] }` with `fade: true`, or whatever `onEnter(els)` returns.
+- **Leaving elements** (removed from the DOM or hidden by the change) are put back at their last box with `position: absolute`, so their siblings reflow straight away. They play `leave` (or a fade, or `onLeave(els)`) and are then removed or hidden for real, with their inline styles restored. If a later change brings one back mid-exit, the exit is cancelled and it animates from where it is.
+- **Shared elements:** two different elements with the same `data-flip-id` (or the same `id(el)`) are treated as one: the incoming one starts on the outgoing one's box. If both stay visible they cross-fade (`crossfade: false` to turn it off).
+- **Interrupted flips** start from where the elements are on screen and end on their own transforms.
+- `scale: false` animates position only. `correctRadius: true` counter-scales `border-radius` every frame so rounded corners don't stretch while an element scales. It's off by default because it adds a style recalc and a repaint per element per frame, while transforms alone stay on the compositor.
+- Layout is read once for all elements (transforms off, measure, transforms back) rather than once per element.
+
+## Presence: enter and exit
+
+The DOM has no "about to be removed" phase. These helpers animate first and remove afterwards, and cope with an element coming back halfway through its exit.
+
+```ts
+exit('.toast', { opacity: 0, y: 20 }, { duration: 0.3 });  // animate out, then remove (after: 'hide' sets `hidden` instead)
+enter('.panel', { opacity: [0, 1], y: [12, 0] });            // un-hide and animate in; turns a running exit() around
+
+const list = presence('#todos', { enter: { opacity: [0, 1], y: [-8, 0] }, exit: { opacity: 0, scale: 0.9 }, duration: 0.3 });
+list.add(item);                         // insert (at the end, or before a node) and animate in
+list.remove(item);                      // animate out, then remove
+list.toggle(item, false);               // same, but keep it in the DOM with `hidden`
+await list.replace(oldView, newView, { mode: 'wait' });  // 'sync' (default) runs both at once
+```
+
+With `layout: true` (the default) siblings slide into their new places through `flip()`, and a leaving child leaves the flow at once, pinned where it was while it animates out. With `layout: false` a leaving child stays in the flow until it's removed. Adding a child that is still animating out turns it around from where it is. Reduced motion skips the animations but still inserts and removes.
+
+## View Transitions
+
+`viewTransition(update, options?)` runs `update` (which changes the DOM) through `document.startViewTransition`, so the browser cross-fades and morphs snapshots on the compositor. Anikit adds:
+
+- **Timing:** `duration`, `delay` and `ease` apply to every transition group. Any Anikit easing works, and springs and custom curves become native `linear()`.
+- **Temporary names:** `names: { hero: el }` gives an element a `view-transition-name` for this transition only. A pair `[before, after]` names one element in the old state and another in the new one, so the browser morphs one into the other.
+- **Custom snapshots:** `old` / `new` take WAAPI keyframes for the outgoing and incoming snapshot of `scope` (default `'root'`).
+- **Fallback:** without the API, the named elements are animated with `flip()` (`fallback: 'none'` just runs the update). With reduced motion the update runs straight away.
+
+```ts
+await viewTransition(() => openDetail(id), {
+  duration: 0.5, ease: 'spring(bounce: 0.2, duration: 0.5)',
+  names: { hero: [thumb, () => document.querySelector('.detail img')] },
+});
+viewTransition(() => route(next), { old: { opacity: [1, 0] }, new: { transform: ['translateY(24px)', 'none'], opacity: [0, 1] }, types: ['forward'] });
+```
+
+The handle mirrors `ViewTransition`: `updateCallbackDone`, `ready`, `finished`, `skipTransition()`, plus `native` (whether the browser API ran it). Awaiting it waits for `finished`.
 
 ## Engine
 
@@ -181,7 +248,23 @@ animate(label, { text: 'Hello world' });                                       /
 animate(label, { text: { value: 'DECRYPTED', type: 'scramble', chars: 'upper' } });
 animate(el, { xPercent: -50, yPercent: -50 });                                 // translate(-50%, -50%)
 animate(path, { d: [null, circle(50, 50, 40), star(50, 50, 6, 45, 20)] });     // morph through N shapes
+animate(panel, { height: open ? 'auto' : 0 }, { ease: 'outCubic' });            // accordions
 ```
+
+Complex values (shadows, filters, gradients, `clip-path`, anything with numbers and colours in it) interpolate number by number. Two refinements apply:
+
+- **Colours inside them** blend like solid colours: in `colorSpace` (OKLab by default) with premultiplied alpha, so a shadow fading in from `transparent` doesn't go dark on the way.
+- **Lists that don't line up as written are reconciled:**
+  - Filter lists get the missing functions at their identity values (`'none'` → `'brightness(1.5) blur(4px)'` starts from `brightness(1) blur(0px)`, not black). Percentages become numbers, and bare zeros get units.
+  - Shadow lists are rewritten as `[inset] x y blur spread color`, which matches the colour-first form that computed styles use, and shorter lists are padded with transparent shadows.
+
+```ts
+animate(card, { boxShadow: '0 12px 32px rgba(0,0,0,.25), inset 0 0 0 1px #fff3' });  // from the stylesheet's shadow
+animate(img, { filter: 'blur(4px) saturate(2)' });                                    // from 'none' or a different list
+animate(hero, { backgroundImage: 'linear-gradient(90deg, #f0c, #0cf)' });             // stops blend in OKLab
+```
+
+`'auto'` works for `height`, `width`, `maxHeight`, `maxWidth`, `blockSize` and `inlineSize`, as a target, as a start value, or as a keyframe. The size is measured when the animation is built, and the property is written back as `auto` (`none` for max sizes) whenever the value sits on that size, so the element stays responsive after the animation ends or is reversed. Add `overflow: hidden` (or `clip`) yourself if the content shouldn't spill while it grows.
 
 ## Control, cleanup and accessibility
 
@@ -189,6 +272,7 @@ animate(path, { d: [null, circle(50, 50, 40), star(50, 50, 6, 45, 20)] });     /
 - `context(fn, scope?)` collects everything created inside `fn` (animations, timelines, scroll triggers, draggables, observers…), scopes selector lookups to `scope`, and offers `ctx.revert()` / `ctx.kill()`. `fn` may return a cleanup function. It's the natural fit for component lifecycles in React, Vue or Svelte.
 - `matchMedia().add('(min-width: 800px)', setup)` runs `setup` while the query matches and reverts it automatically when it stops matching. `add({ wide: '…', reduce: '(prefers-reduced-motion: reduce)' }, ({ wide, reduce }) => …)` takes several named conditions.
 - `engine.reducedMotion = 'user' | 'always' | 'never'`: when motion is reduced, animations jump straight to their end state, while callbacks and promises still fire.
+- `engine.reducedMotionMode = 'fade'` takes out only the movement: transforms, motion paths, shape morphs and layout properties (sizes, offsets, margins, SVG geometry attributes) hold their end values, while opacity, colours and filters animate with their normal timing. With it, `flip()` and `presence()` still cross-fade, but nothing slides. The default, `'instant'`, jumps everything. `compositor()` animations always jump. In both modes `spring()` arrives at once, and `inertia()`, `draggable` throws and `gesture` flings don't glide.
 - `quickSetter(el, 'x')` returns a fast setter; `quickTo(el, 'x', opts)` returns a function that re‑targets a tween on each call.
 - `delayedCall(seconds, fn)` runs `fn` on engine time, so it respects the global speed and pausing.
 
@@ -266,6 +350,20 @@ press('.btn', (el) => { animate(el, { scale: 0.95 }); return () => animate(el, {
 
 `Draggable` exposes `x`, `y`, `rotation`, `isDragging`, `enable()`, `disable()`, `setPosition()`, `kill()` and `revert()`.
 
+### Pinch, rotate and pan: `gesture`
+
+```ts
+const [g] = gesture('#photo', { minScale: 1, maxScale: 6, bounds: { minX: -400, maxX: 400, minY: -300, maxY: 300 } });
+gesture('.sticker', { type: 'pinch,rotate', onChange: (g) => save(g.scale, g.rotation) });
+gesture(canvas, { apply: false, onChange: ({ x, y, scale }) => view.set(x, y, scale) });   // drive anything
+```
+
+Two fingers zoom and rotate about their midpoint, and the point under the fingers stays there. One finger pans, and lifting a finger mid-gesture carries on smoothly with the other. Ctrl/⌘ + wheel (trackpad pinch) zooms about the pointer. A plain wheel still scrolls.
+
+- **Limits:** `minScale`, `maxScale` and `bounds` are rubber-banded while held (`edgeResistance`, default 0.35; scale resists in log space). On release the scale springs back about the last finger position, or the element glides with momentum (`inertia: false` to stop dead).
+- **Options:** `type` is any of `'pan,pinch,rotate'`. `apply: false` only reports through callbacks: `onStart`, `onChange`, `onEnd` (fingers up) and `onRest` (settled).
+- **The `Gesture` object** has `x`, `y`, `scale`, `rotation`, `pointers`, `isActive`, `set({ x, y, scale, rotation })`, `enable()`, `disable()`, `kill()` and `revert()`.
+
 ## Dev tools
 
 `inspector(animationOrTimeline)` opens a floating panel to play, pause, scrub, restart, loop, change speed and jump to labels. Space toggles playback.
@@ -277,7 +375,7 @@ press('.btn', (el) => { animate(el, { scale: 0.95 }); return () => animate(el, {
 | `interpolate([0, 100, 200], [0, 1, 0], { ease, clamp })` | Map through stops. Outputs can be numbers, colours or values with units. |
 | `distribute({ base, amount, from, grid, ease })` | Spread any value across targets. |
 | `noise2(x, y, seed)`, `noise3`, `fbm(x, y, z?, { octaves })`, `noiseMany(xyz)`, `wander({ speed, amplitude })` | Seeded simplex noise. |
-| `trimPath(d, 0.2, 0.8)`, `pathThrough(points, { curviness, closed })`, `simplifyPath(d, tolerance, smooth)`, `pathArea(d)`, `flattenPath(d, tol)` | Path operations. |
+| `trimPath(d, 0.2, 0.8)`, `pathThrough(points, { curviness, closed })`, `simplifyPath(d, tolerance, smooth)`, `pathArea(d)`, `flattenPath(d, tol)`, `transformPath(d, [a, b, c, d, e, f])` | Path operations. |
 | `MotionPath.closest(x, y)`, `.atLength(px)`, `.points(n)` | Path queries. |
 | `VelocityTracker`, `shuffle`, `pipe`, `splitColor`, `getUnit`, `roundTo`, `normalize`, `toArray` | Helpers. |
 
