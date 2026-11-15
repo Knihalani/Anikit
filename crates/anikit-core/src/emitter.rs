@@ -208,11 +208,11 @@ impl Emitter {
         self.burst(n);
         let damp = 1.0 - (p.drag * dt).min(1.0);
         let (f, t) = (p.frequency, self.time);
+        // Pass 1: age, and swap-remove the dead (keeps the live set contiguous).
         let mut i = 0;
         while i < self.age.len() {
             self.age[i] += dt;
             if self.age[i] >= self.life[i] {
-                // Swap-remove keeps the live set contiguous.
                 let last = self.age.len() - 1;
                 self.age.swap_remove(i);
                 self.life.swap_remove(i);
@@ -224,27 +224,50 @@ impl Emitter {
                 self.vel.truncate(last * 3);
                 continue;
             }
-            let o = i * 3;
-            let (x, y, z) = (self.pos[o], self.pos[o + 1], self.pos[o + 2]);
-            let mut a = p.gravity;
-            if p.turbulence != 0.0 {
-                a[0] += p.turbulence * fsin(f * y + t * 1.3 + i as f32 * 0.37);
-                a[1] += p.turbulence * fsin(f * z + t * 1.1 + i as f32 * 0.61);
-                a[2] += p.turbulence * fsin(f * x + t * 0.9 + i as f32 * 0.17);
-            }
-            if p.attract != 0.0 {
-                let (dx, dy, dz) = (p.attractor[0] - x, p.attractor[1] - y, p.attractor[2] - z);
-                let d = sqrtf(dx * dx + dy * dy + dz * dz).max(20.0);
-                let s = p.attract / d;
-                a[0] += dx * s;
-                a[1] += dy * s;
-                a[2] += dz * s;
-            }
-            for (k, ak) in a.iter().enumerate() {
-                self.vel[o + k] = (self.vel[o + k] + ak * dt) * damp;
-                self.pos[o + k] += self.vel[o + k] * dt;
-            }
             i += 1;
+        }
+        // Pass 2: integrate. A particle is only ever moved into the slot
+        // being examined, so each one ends at the slot index the fused loop
+        // integrated it at: identical results, but a tight bounds-check-free
+        // loop. Turbulence/attractor variants are separate loops.
+        let pv = self.pos.chunks_exact_mut(3).zip(self.vel.chunks_exact_mut(3));
+        let integrate = |o: &mut [f32], v: &mut [f32], a: [f32; 3]| {
+            for k in 0..3 {
+                v[k] = (v[k] + a[k] * dt) * damp;
+                o[k] += v[k] * dt;
+            }
+        };
+        let turb = |a: &mut [f32; 3], i: usize, x: f32, y: f32, z: f32| {
+            a[0] += p.turbulence * fsin(f * y + t * 1.3 + i as f32 * 0.37);
+            a[1] += p.turbulence * fsin(f * z + t * 1.1 + i as f32 * 0.61);
+            a[2] += p.turbulence * fsin(f * x + t * 0.9 + i as f32 * 0.17);
+        };
+        let attract = |a: &mut [f32; 3], x: f32, y: f32, z: f32| {
+            let (dx, dy, dz) = (p.attractor[0] - x, p.attractor[1] - y, p.attractor[2] - z);
+            let d = sqrtf(dx * dx + dy * dy + dz * dz).max(20.0);
+            let s = p.attract / d;
+            a[0] += dx * s;
+            a[1] += dy * s;
+            a[2] += dz * s;
+        };
+        match (p.turbulence != 0.0, p.attract != 0.0) {
+            (false, false) => pv.for_each(|(o, v)| integrate(o, v, p.gravity)),
+            (true, false) => pv.enumerate().for_each(|(i, (o, v))| {
+                let mut a = p.gravity;
+                turb(&mut a, i, o[0], o[1], o[2]);
+                integrate(o, v, a);
+            }),
+            (false, true) => pv.for_each(|(o, v)| {
+                let mut a = p.gravity;
+                attract(&mut a, o[0], o[1], o[2]);
+                integrate(o, v, a);
+            }),
+            (true, true) => pv.enumerate().for_each(|(i, (o, v))| {
+                let mut a = p.gravity;
+                turb(&mut a, i, o[0], o[1], o[2]);
+                attract(&mut a, o[0], o[1], o[2]);
+                integrate(o, v, a);
+            }),
         }
     }
 
@@ -279,6 +302,86 @@ impl Emitter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    /// The previous fused step, verbatim, as the bit-exact reference.
+    fn reference_step(this: &mut Emitter, dt: f32) {
+        let dt = dt.clamp(0.0, 0.1);
+        this.time += dt;
+        let p = this.params;
+        // Continuous emission with fractional carry.
+        this.carry += p.rate.max(0.0) * dt;
+        let n = this.carry as usize;
+        this.carry -= n as f32;
+        this.burst(n);
+        let damp = 1.0 - (p.drag * dt).min(1.0);
+        let (f, t) = (p.frequency, this.time);
+        let mut i = 0;
+        while i < this.age.len() {
+            this.age[i] += dt;
+            if this.age[i] >= this.life[i] {
+                // Swap-remove keeps the live set contiguous.
+                let last = this.age.len() - 1;
+                this.age.swap_remove(i);
+                this.life.swap_remove(i);
+                for k in (0..3).rev() {
+                    this.pos.swap(i * 3 + k, last * 3 + k);
+                    this.vel.swap(i * 3 + k, last * 3 + k);
+                }
+                this.pos.truncate(last * 3);
+                this.vel.truncate(last * 3);
+                continue;
+            }
+            let o = i * 3;
+            let (x, y, z) = (this.pos[o], this.pos[o + 1], this.pos[o + 2]);
+            let mut a = p.gravity;
+            if p.turbulence != 0.0 {
+                a[0] += p.turbulence * fsin(f * y + t * 1.3 + i as f32 * 0.37);
+                a[1] += p.turbulence * fsin(f * z + t * 1.1 + i as f32 * 0.61);
+                a[2] += p.turbulence * fsin(f * x + t * 0.9 + i as f32 * 0.17);
+            }
+            if p.attract != 0.0 {
+                let (dx, dy, dz) = (p.attractor[0] - x, p.attractor[1] - y, p.attractor[2] - z);
+                let d = sqrtf(dx * dx + dy * dy + dz * dz).max(20.0);
+                let s = p.attract / d;
+                a[0] += dx * s;
+                a[1] += dy * s;
+                a[2] += dz * s;
+            }
+            for (k, ak) in a.iter().enumerate() {
+                this.vel[o + k] = (this.vel[o + k] + ak * dt) * damp;
+                this.pos[o + k] += this.vel[o + k] * dt;
+            }
+            i += 1;
+        }
+    }
+
+    #[test]
+    fn step_matches_reference_bit_for_bit() {
+        for (turbulence, attract) in [(0.0, 0.0), (80.0, 0.0), (0.0, 2000.0), (80.0, 2000.0)] {
+            let mk = || {
+                let mut e = Emitter::new(5000, 11);
+                e.params.rate = 3000.0;
+                e.params.life = 0.6;
+                e.params.life_var = 0.5;
+                e.params.shape = SpawnShape::Sphere;
+                e.params.size = [40.0, 0.0, 0.0];
+                e.params.turbulence = turbulence;
+                e.params.attract = attract;
+                e.params.attractor = [50.0, 100.0, 0.0];
+                e
+            };
+            let (mut a, mut b) = (mk(), mk());
+            for frame in 0..120 {
+                let dt = if frame % 7 == 0 { 0.05 } else { 1.0 / 60.0 };
+                a.step(dt);
+                reference_step(&mut b, dt);
+                assert_eq!(a.len(), b.len());
+                for (x, y) in a.pos.iter().zip(&b.pos).chain(a.vel.iter().zip(&b.vel)).chain(a.age.iter().zip(&b.age)) {
+                    assert_eq!(x.to_bits(), y.to_bits(), "frame {frame}");
+                }
+            }
+            assert!(a.len() > 1000);
+        }
+    }
 
     #[test]
     fn emits_ages_and_dies() {
