@@ -237,8 +237,25 @@ impl Batch {
             return;
         }
         // 1. Per-instance progress (shared timing, own delay).
-        for (p, &d) in self.scratch.iter_mut().zip(self.delays.iter()) {
-            *p = tm.eval(t - d).progress;
+        if tm.iterations == 1.0 && tm.direction == crate::timing::Direction::Normal && tm.delay == 0.0 && tm.duration > 0.0 {
+            // What `Timing::eval` computes for one forward iteration with no
+            // delay (before: 0, active: at / duration, after: 1), as selects
+            // so the loop vectorises.
+            let dur = tm.duration;
+            for (p, &d) in self.scratch.iter_mut().zip(self.delays.iter()) {
+                let at = t - d;
+                *p = if at < 0.0 {
+                    0.0
+                } else if at < dur {
+                    at / dur
+                } else {
+                    1.0
+                };
+            }
+        } else {
+            for (p, &d) in self.scratch.iter_mut().zip(self.delays.iter()) {
+                *p = tm.eval(t - d).progress;
+            }
         }
         // 2. Timing easing over the whole slice (one dispatch).
         if tm.easing != LINEAR {
@@ -2332,6 +2349,36 @@ mod tests {
             assert_eq!(got.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), want.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), "t = {t}");
             e.tick(17.0);
             t += 17.0;
+        }
+    }
+
+    #[test]
+    fn staggered_batch_progress_matches_timing_eval() {
+        let mut rng = crate::math::Rng(3);
+        for &(duration, iterations, dir) in &[(300.0, 1.0, 0u8), (300.0, 2.5, 2), (0.0, 1.0, 0), (f64::INFINITY, 1.0, 0), (250.0, 1.0, 1)] {
+            let tm = Timing { duration, iterations, direction: crate::timing::Direction::from_u8(dir), ..Default::default() };
+            let n = 300;
+            let delays: Vec<f64> = (0..n).map(|i| if i % 9 == 0 { 0.0 } else { rng.next_f64() * 400.0 - 50.0 }).collect();
+            let mut b = Batch {
+                n,
+                ch: 1,
+                nkf: 3,
+                timing: tm,
+                offsets: vec![0.0, 0.5, 1.0].into_boxed_slice(),
+                eases: Box::new([]),
+                values: (0..n * 3).map(|i| i as f64).collect(),
+                delays: delays.clone().into_boxed_slice(),
+                scratch: vec![0.0; n].into_boxed_slice(),
+                seg: vec![0; n].into_boxed_slice(),
+                out: vec![0.0; n].into_boxed_slice(),
+            };
+            for k in -5..60 {
+                let t = k as f64 * 13.7;
+                b.eval(&[], t);
+                for (i, &d) in delays.iter().enumerate() {
+                    assert_eq!(b.scratch[i].to_bits(), tm.eval(t - d).progress.to_bits(), "{duration} {iterations} {dir} t={t} d={d}");
+                }
+            }
         }
     }
 
