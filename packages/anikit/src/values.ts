@@ -135,13 +135,28 @@ function zeroLike(t: PComplex): PComplex {
   return { k: 'complex', parts: t.parts, slots: t.slots, nums };
 }
 
+// Opaque colour strings are cached in a small direct-mapped table keyed by the
+// packed 24-bit colour: animated colours repeat a lot (gradients, many targets
+// in sync), and reusing the string avoids an allocation per write.
+const COLOR_SLOTS = 4096;
+const colorKeys = new Int32Array(COLOR_SLOTS).fill(-1);
+const colorStrs: string[] = new Array(COLOR_SLOTS).fill('');
 function fmtColor(o: number[] | Float64Array, i: number): string {
   const a = o[i + 3];
-  const r = Math.round(o[i]);
-  const g = Math.round(o[i + 1]);
-  const b = Math.round(o[i + 2]);
-  return a >= 1 ? 'rgb(' + r + ',' + g + ',' + b + ')' : 'rgba(' + r + ',' + g + ',' + b + ',' + r3(a) + ')';
+  const r = Math.min(255, Math.max(0, Math.round(o[i])));
+  const g = Math.min(255, Math.max(0, Math.round(o[i + 1])));
+  const b = Math.min(255, Math.max(0, Math.round(o[i + 2])));
+  if (a < 1) return 'rgba(' + r + ',' + g + ',' + b + ',' + r3(a) + ')';
+  const key = (r << 16) | (g << 8) | b;
+  const slot = (key ^ (key >>> 12)) & (COLOR_SLOTS - 1);
+  if (colorKeys[slot] === key) return colorStrs[slot];
+  const str = 'rgb(' + r + ',' + g + ',' + b + ')';
+  colorKeys[slot] = key;
+  colorStrs[slot] = str;
+  return str;
 }
+/** One shared formatter for every colour track (a monomorphic call site in the write loop). */
+const formatColor = (at: number): string => fmtColor(F64, at);
 
 // ---------------------------------------------------------------------------
 // Tracks
@@ -242,7 +257,7 @@ export function buildTrack(
     for (const p of parsed as PColor[]) values.push(p.c[0], p.c[1], p.c[2], p.c[3]);
     return {
       kind: TRACK_COLOR, arg: colorSpace, ch: 4, out: 4, values, unit: '',
-      format: (at) => fmtColor(F64, at),
+      format: formatColor,
       first: fmtColor(values, 0), last: fmtColor(values, (n - 1) * 4),
     };
   }

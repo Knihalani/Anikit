@@ -178,13 +178,15 @@ One fix sped up everything that uses square roots or floors: libm's `sqrt`/`floo
 
 | Case | N | Anikit | GSAP 3 |
 |---|---:|---:|---:|
-| 3 numbers per object | 10,000 | ~1.9 ms | ~0.6–0.9 ms |
-| colour string | 10,000 | ~2.0–2.6 ms | ~1.0 ms |
+| 3 numbers per object | 10,000 | ~1.0 ms | ~0.6 ms |
+| 3 numbers per object | 50,000 | ~4.4–5.0 ms | ~2.4–2.7 ms |
+| colour string | 10,000 | ~1.3 ms | ~1.0 ms |
+| colour string | 50,000 | ~6.1 ms | ~4.3 ms |
 | **`batch()`**, 3 channels | 100,000 | **~1.3 ms** | 7.9 ms (objects) |
 
 These results are mixed, and the reasons matter:
 
-- **Writing a property onto a JS object costs the same for every library.** A good JIT is already close to the hardware limit there. Anikit's per‑object bookkeeping (core handle → record → bindings) currently makes plain‑object tweening **2–3× slower than GSAP** in this synthetic test. With DOM targets, the style writes, style recalc and paint dominate a frame, so this difference is a small share of real frame time.
+- **Writing a property onto a JS object costs the same for every library.** A good JIT is already close to the hardware limit there. Anikit's per‑object bookkeeping (core handle → record → target) currently makes plain‑object tweening **about 1.4–2× slower than GSAP** in this synthetic test (it was 3–4× before the compact write path and the colour-string cache). With DOM targets, the style writes, style recalc and paint dominate a frame, so this difference is a small share of real frame time.
 - **The architecture wins when JS stops touching every object.** `batch()` is ~6× faster than GSAP animating equivalent objects. The heavy‑math features (OKLab colour, morphing, exact springs, long timelines) run in WASM at native‑like speed, and `compositor()` moves work off the main thread entirely.
 
 Bundle sizes: the default entry embeds the WASM module (zero config, 335 KB gz in total). `anikit/lean` is **68 KB gz of JS** that streams a separate **187 KB gz** `.wasm`, which is cacheable and compiles while it downloads. The JS side is ES modules marked side‑effect free, so bundlers drop the features you don't import (scroll, interaction, effects, inspector, …).

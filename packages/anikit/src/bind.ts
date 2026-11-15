@@ -100,9 +100,14 @@ export function apply(b: Binding, at: number): void {
       }
       return;
     }
-    case M_PROP_FMT:
-      b.target[b.key] = b.fmt!(at);
+    case M_PROP_FMT: {
+      const v = b.fmt!(at);
+      if (v !== b.ls) {
+        b.ls = v;
+        b.target[b.key] = v;
+      }
       return;
+    }
     default:
       b.fn!(at);
   }
