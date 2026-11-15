@@ -1159,7 +1159,8 @@ impl Raster {
         self.vel.resize(bw * bh, 0);
         self.blur_src.clear();
         self.blur_src.resize(bw * bh, 0);
-        let pack = |lin: f32, len: f32| (lin.to_bits() & 0xffff_0000) | ((len.clamp(0.5, 255.0) * 256.0) as u32).min(0xffff);
+        // Packed: bf16 view distance | 1/speed in 1.15 fixed point (speed ≥ 0.5 px → 1/speed ≤ 2).
+        let pack = |lin: f32, len: f32| (lin.to_bits() & 0xffff_0000) | (((1.0 / len.clamp(0.5, 255.0)) * 32767.0) as u32).min(0xffff);
         let mut any = false;
         for by in 0..bh {
             for bx in 0..bw {
@@ -1231,7 +1232,8 @@ impl Raster {
         // 3. Half-res reconstruction into `light` (reused as an RGB f32 buffer).
         self.light.clear();
         self.light.resize(bw * bh * 3, 0.0);
-        let unpack = |v: u32| (f32::from_bits(v & 0xffff_0000), (v & 0xffff) as f32 * (1.0 / 256.0));
+        // (view distance, 1/speed)
+        let unpack = |v: u32| (f32::from_bits(v & 0xffff_0000), (v & 0xffff) as f32 * (1.0 / 32767.0));
         let (src, vel) = (&self.blur_src, &self.vel);
         let (wi, hi) = (bw as isize - 1, bh as isize - 1);
         const N: usize = 8;
@@ -1256,8 +1258,7 @@ impl Raster {
                     continue;
                 }
                 let ln = crate::math::sqrtf(ln2);
-                let (zc, lc) = unpack(vel[j]);
-                let ilc = 1.0 / lc;
+                let (zc, ilc) = unpack(vel[j]);
                 let kz = 1.0 / (0.02 * zc.abs().max(1.0));
                 let mut acc = [(c0 & 255) as f32 * ilc, ((c0 >> 8) & 255) as f32 * ilc, ((c0 >> 16) & 255) as f32 * ilc];
                 let mut tot = ilc;
@@ -1266,9 +1267,8 @@ impl Raster {
                     let half = ((k as f32 + 0.5 + jit * 0.95) / N as f32 - 0.5) * 2.0 * 0.5;
                     let (sx, sy) = (bx as f32 + 0.5 + vn[0] * half, by as f32 + 0.5 + vn[1] * half);
                     let m = (sy.clamp(0.0, hi as f32) as usize) * bw + sx.clamp(0.0, wi as f32) as usize;
-                    let (zs, ls) = unpack(vel[m]);
+                    let (zs, ils) = unpack(vel[m]);
                     let dist = (half * ln).abs();
-                    let ils = 1.0 / ls;
                     let fg = ((zc - zs) * kz + 0.5).clamp(0.0, 1.0);
                     let wgt = fg * (1.0 - dist * ils).max(0.0) + (1.0 - fg) * (1.0 - dist * ilc).max(0.0) + (10.5 - dist * 10.0 * ils).clamp(0.0, 1.0) * (10.5 - dist * 10.0 * ilc).clamp(0.0, 1.0) * 2.0;
                     if wgt <= 0.0 {
