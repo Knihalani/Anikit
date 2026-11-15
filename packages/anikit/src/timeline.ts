@@ -54,16 +54,21 @@ type Child = { ctl: Playable | null; start: number; end: number; h: number };
  * writes), each one whose time moved is queued for `onUpdate`. Only attached
  * (playing or recently seeked) timelines are in the set.
  */
-const updating = new Set<Timeline>();
+// (An array with an index loop: flush must not allocate.)
+const updating: Timeline[] = [];
+function watch(tl: Timeline, on: boolean): void {
+  const i = updating.indexOf(tl);
+  if (on && i < 0) updating.push(tl);
+  else if (!on && i >= 0) updating.splice(i, 1);
+}
 onFlush(() => {
-  if (updating.size === 0) return;
+  const n = updating.length;
+  if (n === 0) return;
   const w = W;
   if (!w) return;
-  for (const tl of updating) {
-    if (!tl._h) {
-      updating.delete(tl);
-      continue;
-    }
+  for (let i = 0; i < n; i++) {
+    const tl = updating[i];
+    if (!tl._h) continue;
     const t = w.ak_time(tl._h);
     if (t !== tl._lastTime) {
       tl._lastTime = t;
@@ -101,7 +106,7 @@ export class Timeline extends Playable {
       const rec: NodeRecord & Linked = { h: this._h, at: 0, ctl: this, event: (k: number) => rec.ctl?._event(k) };
       register(rec);
       this._links.push(rec);
-      if (o.onUpdate) updating.add(this);
+      if (o.onUpdate) watch(this, true);
       if (o.speed !== undefined) w.ak_set_rate(this._h, o.speed);
       if (o.repeatDelay) {
         // An invisible marker keeps the group's (auto) duration past the content.
@@ -350,15 +355,15 @@ export class Timeline extends Playable {
 
   override _attach(): void {
     super._attach();
-    if (this._cb.onUpdate && this._h) updating.add(this);
+    if (this._cb.onUpdate && this._h) watch(this, true);
   }
   protected override _detach(): void {
     super._detach();
-    updating.delete(this);
+    watch(this, false);
   }
 
   protected _kill(): void {
-    updating.delete(this);
+    watch(this, false);
     for (const c of this._cleanups) c();
     this._cleanups = [];
     for (const l of this._links) unregister(l as unknown as NodeRecord);

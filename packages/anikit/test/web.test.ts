@@ -448,6 +448,21 @@ describe('splitText masks and autoSplit', () => {
     expect(el.hasAttribute('aria-label')).toBe(false);
   });
 
+  it('context kill keeps the split, revert restores it', () => {
+    const el = box();
+    el.textContent = 'ab';
+    const ctx = context(() => {
+      splitText(el, { type: 'chars' });
+    });
+    ctx.kill();
+    expect(el.children.length).toBe(2);
+    const ctx2 = context(() => {
+      splitText(el, { type: 'chars' });
+    });
+    ctx2.revert();
+    expect(el.children.length).toBe(2); // back to the first split's markup
+  });
+
   it('masks lines', () => {
     const el = box();
     el.textContent = 'one two three';

@@ -54,6 +54,8 @@ export interface SplitResult {
   split(): void;
   /** Restore the original markup (and stop auto-splitting). */
   revert(): void;
+  /** Stop auto-splitting, keeping the split markup. */
+  kill(): void;
 }
 
 function span(cls: string | undefined, text?: string): HTMLSpanElement {
@@ -189,6 +191,10 @@ export function splitText(targets: Targets, options: SplitOptions = {}): SplitRe
         anim = a;
         if (time !== null && time > 0) a.seek(time);
       }
+    },
+    kill: () => {
+      done = true;
+      ro?.disconnect();
     },
     revert: () => {
       done = true;
