@@ -502,7 +502,10 @@ export default async ({ anikit: A }) => {
   const path = flightPath([[0, 400, 3000], [0, 80, -3000], [250, 120, -9000], [0, 150, -20000]], { lookAhead: 900, bank: 1.3 });
   const s = path.timing([[0, 0], [2, 0.4], [4, 0.75], [6, 1]]);
   // 2. The world: dark bodies, colour in light.
+  // Meshes and instances are created once, outside draw().
   const towers = instances(400, (i) => ({ x: (i % 2 ? 1 : -1) * (300 + (i * 37) % 900), y: 300, z: -Math.floor(i / 2) * 150, sx: 100, sy: 1200, sz: 100, color: [0.03, 0.035, 0.05] }));
+  const cube = mesh.cube(), floor = mesh.plane(1);
+  const floorAt = instances(1, () => ({ y: -300, z: -10000, sx: 12000, sz: 30000, color: [0.02, 0.02, 0.03] }));
   const film = composition({ width: W, height: H, fps: 60, duration: 6, motionBlur: 1,
     post: { aa: 1, bloom: 0.9, bloomThreshold: 0.5, streaks: 0.5, rays: 0.8, vignette: 0.45, grain: 4, contrast: 1.06 } });
   let clock = 0, prev = 0;
@@ -512,8 +515,8 @@ export default async ({ anikit: A }) => {
       path.apply(cam, s(prev)); const prevCamera = cam.viewProjection().matrix;
       path.apply(cam, s(clock));
       const px = r3.render(cam, [
-        { mirror: true, mesh: mesh.plane(1), instances: instances(1, () => ({ y: -300, z: -10000, sx: 12000, sz: 30000, color: [0.02, 0.02, 0.03] })), material: { lines: 1.4, lineColor: [0.3, 0.55, 1.6], grid: [60, 150], lineWidth: 0.03 } },
-        { mesh: mesh.cube(), instances: towers, material: { metal: 0.6, lines: 1.6, pattern: 'hex', grid: [3, 12], lineColor: [1.6, 0.3, 1], pulse: 2, pulsePhase: clock * 2 } },
+        { mirror: true, mesh: floor, instances: floorAt, material: { lines: 1.4, lineColor: [0.3, 0.55, 1.6], grid: [60, 150], lineWidth: 0.03 } },
+        { mesh: cube, instances: towers, material: { metal: 0.6, lines: 1.6, pattern: 'hex', grid: [3, 12], lineColor: [1.6, 0.3, 1], pulse: 2, pulsePhase: clock * 2 } },
       ], { background: '#03040a', fog: [8000, 24000], fogColor: [0.18, 0.06, 0.2], sky: [0.02, 0.02, 0.08], horizon: [0.95, 0.35, 0.7], ground: [0.01, 0.01, 0.02],
            strips: [1.8, 1.8, 2.2], key: [0, 0.14, -1], keyColor: [1, 0.7, 0.9], skybox: { sun: 2.2 }, mirror: { y: -300, strength: 0.45 }, motionBlur: { shutter: 0.55 }, prevCamera });
       ctx.putImageData(new globalThis.ImageData(px, W, H), 0, 0);
