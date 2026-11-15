@@ -1,16 +1,37 @@
 # Anikit
 
-> High-performance web animation engine: Rust/WebAssembly core with a TypeScript API (and Python bindings). Tweens, keyframes, timelines, springs, physics worlds, 3D, scroll triggers, SVG morphing, text effects, effects library.
+> High-performance web animation engine: Rust/WebAssembly core with a TypeScript API (and Python bindings). Tweens, keyframes, timelines, springs, scroll triggers, SVG morphing, text effects, an effects library, physics worlds, 3D, particles, GIF/video capture and Node video rendering.
 
-Times are in seconds. Import from 'anikit'. Use `testing` + `engine.inspect()` to verify headlessly.
+Import from 'anikit'. Times are in seconds (only `engine.onFrame`/`engine.tick` use ms). Mistakes print `anikit:` warnings that name the fix; `testing` + `engine.inspect()` verify animations headlessly.
 
 ## Docs
-- [Agent playbook](AGENTS.md): rules of thumb, recipes, verification, common mistakes
-- [Full reference](llms-full.txt): every API in one file
+- [Agent playbook](AGENTS.md): "want X → use Y" table, rules, snippets, verification, common mistakes and fixes
+- [Recipes](llms-full.txt): task-sized, tested examples (16 tasks + Python)
+- [Full reference](llms-full.txt): playbook + recipes + every API in one file
+
+## Recipes
+- Hero entrance
+- Staggered list
+- Reveal on scroll
+- Scroll-scrubbed pinned section
+- Page transition
+- Draggable carousel
+- Physics toy
+- SVG morph and line drawing
+- Number counter
+- Hover and press
+- Pointer follower
+- Layout change (FLIP)
+- Components and reduced motion
+- Testing an animation
+- Recording a GIF or MP4
+- Rendering a video in Node
+- Python
 
 ## Reference sections
 - `animate(targets, keyframes, options?) → Animation`
 - Easings
+- Stagger
 - `timeline(options?) → Timeline`
 - Physics
 - Scroll & viewport
@@ -36,3 +57,4 @@ Times are in seconds. Import from 'anikit'. Use `testing` + `engine.inspect()` t
 - Particle emitters
 - Audio analysis
 - Video: compositions
+- Export index
