@@ -28,7 +28,11 @@ def test_no_options_is_a_no_op():
 
 
 def test_bloom_streaks_rays_spread_light():
-    for opts in ({"bloom": 1.5, "bloom_threshold": 0.5, "bloom_radius": 8}, {"streaks": 1.5, "streak_length": 40}, {"rays": 1.5, "rays_center": (0.5, 0.5)}):
+    for opts in (
+        {"bloom": 1.5, "bloom_threshold": 0.5, "bloom_radius": 8},
+        {"streaks": 1.5, "streak_length": 40},
+        {"rays": 1.5, "rays_center": (0.5, 0.5)},
+    ):
         f = bright_spot()
         before = f.copy()
         video.post(f, **opts)
@@ -93,7 +97,9 @@ def test_postfx_options_overrides_and_time_functions():
 def test_render_then_grade_in_place_without_copy():
     r3 = raster.Renderer3D(80, 60)
     cam = Camera((0, 0, 600))
-    f = r3.render(cam, [raster.Item(raster.cube(), raster.instances(1, scale=200, ry=30, rx=20), material={"emissive": 1.5})])
+    f = r3.render(
+        cam, [raster.Item(raster.cube(), raster.instances(1, scale=200, ry=30, rx=20), material={"emissive": 1.5})]
+    )
     ptr = f.__array_interface__["data"][0]
     assert video._frame_bytearray(f) is not None
     before = f.copy()

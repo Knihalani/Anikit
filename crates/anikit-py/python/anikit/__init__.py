@@ -23,7 +23,7 @@ All public times are in **seconds**.
 
 from __future__ import annotations
 
-from typing import Any, Iterator, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Tuple
 
 from . import color, export, transform
 from ._anikit import __version__
@@ -99,15 +99,16 @@ __all__ = [
 ]
 
 # Submodules that need numpy load on first access (``anikit.raster``, ``anikit.video``).
-_LAZY = ("raster", "video")
+if TYPE_CHECKING:
+    from . import raster, video
+else:
 
+    def __getattr__(name: str) -> Any:
+        if name in ("raster", "video"):
+            import importlib
 
-def __getattr__(name: str) -> Any:
-    if name in _LAZY:
-        import importlib
-
-        return importlib.import_module(f".{name}", __name__)
-    raise AttributeError(f"module 'anikit' has no attribute {name!r}")
+            return importlib.import_module(f".{name}", __name__)
+        raise AttributeError(f"module 'anikit' has no attribute {name!r}")
 
 
 def tick(dt: float, *, engine: Optional[Engine] = None) -> None:

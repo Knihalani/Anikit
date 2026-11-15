@@ -159,8 +159,8 @@ class FlightPath:
         h = max(1.0, self.length * 1e-4)
         a, b = self.point(s - h), self.point(s + h)
         d = (b[0] - a[0], b[1] - a[1], b[2] - a[2])
-        l = math.hypot(*d) or 1.0
-        return (d[0] / l, d[1] / l, d[2] / l)
+        n = math.hypot(*d) or 1.0
+        return (d[0] / n, d[1] / n, d[2] / n)
 
     def at(self, s: float, *, look_ahead: Optional[float] = None, bank: Optional[float] = None) -> FlightPose:
         """Camera pose at arc length ``s``: position, look-at target ahead, and bank."""
@@ -221,7 +221,9 @@ class FlightPath:
             if sl[i - 1] * sl[i] <= 0:
                 m[i] = 0.0
             else:
-                m[i] = (3 * (dx[i - 1] + dx[i])) / ((2 * dx[i] + dx[i - 1]) / sl[i - 1] + (dx[i] + 2 * dx[i - 1]) / sl[i])
+                m[i] = (3 * (dx[i - 1] + dx[i])) / (
+                    (2 * dx[i] + dx[i - 1]) / sl[i - 1] + (dx[i] + 2 * dx[i - 1]) / sl[i]
+                )
         for i in range(n - 1):
             if sl[i] == 0:
                 m[i] = 0.0

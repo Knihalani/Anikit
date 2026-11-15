@@ -39,7 +39,10 @@ import time
 from dataclasses import dataclass
 from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple, Union
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError as e:  # pragma: no cover - depends on the environment
+    raise ImportError("anikit.raster needs numpy: pip install 'anikit[numpy]'") from e
 
 from ._anikit import NativeMesh, NativeRaster, NativeTexture
 from ._cloud import _rgb
@@ -181,7 +184,9 @@ def torus_knot(
     sides: int = 16,
 ) -> Mesh:
     """A (p, q) torus knot tube; ``u`` runs along the tube and ``v`` around it."""
-    return Mesh(NativeMesh.torus_knot(float(p), float(q), float(radius), float(spread), float(tube), int(segments), int(sides)))
+    return Mesh(
+        NativeMesh.torus_knot(float(p), float(q), float(radius), float(spread), float(tube), int(segments), int(sides))
+    )
 
 
 def plane(cells: Union[int, Tuple[int, int]] = 1) -> Mesh:
@@ -225,7 +230,9 @@ def heightfield(
         hs = np.asarray(heights, dtype=np.float64)
         if hs.size != w * d:
             raise ValueError(f"heightfield needs {w * d} heights ({w} x {d}), got {hs.size}")
-    return Mesh(NativeMesh.heightfield(w, d, _f32(hs.reshape(-1), "heights"), -math.inf if skip is None else float(skip)))
+    return Mesh(
+        NativeMesh.heightfield(w, d, _f32(hs.reshape(-1), "heights"), -math.inf if skip is None else float(skip))
+    )
 
 
 def custom(positions: Any, normals: Any, indices: Any, uvs: Any = None) -> Mesh:
@@ -797,8 +804,8 @@ class Renderer3D:
         t0 = time.perf_counter()
         nat = self._native
         bg = _bg(background)
-        hexrgb = (round(bg[0] * 255) << 16) | (round(bg[1] * 255) << 8) | round(bg[2] * 255)
-        nat.clear(max(0, min(0xFFFFFF, hexrgb)), 0 if transparent else 255)
+        r8, g8, b8 = (max(0, min(255, round(c * 255))) for c in bg)
+        nat.clear((r8 << 16) | (g8 << 8) | b8, 0 if transparent else 255)
         vp, eye = self.view(camera)
         lights = lighting if lighting is not None else Lighting()
         if light:
@@ -811,7 +818,9 @@ class Renderer3D:
         meshes = [it for it in its if isinstance(it, Item)]
         tris = 0
 
-        def draw(it: Item, m: List[float], e: Vec3, *, flip: bool = False, blend: Optional[str] = None, gloss: float = 0.5) -> int:
+        def draw(
+            it: Item, m: List[float], e: Vec3, *, flip: bool = False, blend: Optional[str] = None, gloss: float = 0.5
+        ) -> int:
             mat = _material(it.material)
             tex = mat.texture.native if mat.texture is not None else None
             return int(
@@ -910,7 +919,19 @@ class Shards:
     same numbers as the TypeScript ``shatter``).
     """
 
-    __slots__ = ("mesh", "instances", "count", "force", "spread", "spin", "gravity", "drag", "ripple", "_base", "_motion")
+    __slots__ = (
+        "mesh",
+        "instances",
+        "count",
+        "force",
+        "spread",
+        "spin",
+        "gravity",
+        "drag",
+        "ripple",
+        "_base",
+        "_motion",
+    )
 
     def __init__(
         self,
@@ -983,7 +1004,9 @@ class Shards:
         self.mesh = _unit_triangle()
         self.instances = Instances(nt)
         if callable(color):
-            cols = np.asarray([_rgb(color(i, tuple(float(v) for v in cents[i]))) for i in range(nt)], np.float64).reshape(-1, 3)
+            cols = np.asarray(
+                [_rgb(color(i, tuple(float(v) for v in cents[i]))) for i in range(nt)], np.float64
+            ).reshape(-1, 3)
         else:
             cols = _colors(color if color is not None else tf.get("color"))
         self.instances.colors[:] = np.broadcast_to(cols, (nt, 3))

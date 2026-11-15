@@ -34,7 +34,12 @@ def write_png(path: pathlib.Path, rgba: np.ndarray) -> None:
         return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
 
     ihdr = struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0)
-    path.write_bytes(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", zlib.compress(raw.tobytes(), 6)) + chunk(b"IEND", b""))
+    path.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", ihdr)
+        + chunk(b"IDAT", zlib.compress(raw.tobytes(), 6))
+        + chunk(b"IEND", b"")
+    )
 
 
 def main() -> None:
@@ -83,7 +88,9 @@ def main() -> None:
             cam,
             [
                 raster.Item(knot, spin, chrome),
-                raster.Item(floor, raster.instances(1, y=FLOOR_Y, scale=12000, color=(0.04, 0.04, 0.05)), floor_mat, mirror=True),
+                raster.Item(
+                    floor, raster.instances(1, y=FLOOR_Y, scale=12000, color=(0.04, 0.04, 0.05)), floor_mat, mirror=True
+                ),
             ],
             background="#04050a",
             mirror=raster.Mirror(FLOOR_Y, strength=0.55),

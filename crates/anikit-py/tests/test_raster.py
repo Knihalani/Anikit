@@ -153,6 +153,10 @@ def test_render_returns_independent_writable_frames():
     assert np.all(g == np.array([255, 0, 0, 0], np.uint8)) and not np.any(f)
     assert r3.size == (W, H) and r3.pixel(0, 0) == (255, 0, 0, 0)
     assert np.array_equal(r3.frame(), g)
+    # Hot background channels clamp per channel; 0xRRGGBB ints work too.
+    assert r3.render(cam(), [], background=(1.2, 0.5, -1))[0, 0].tolist() == [255, 128, 0, 255]
+    assert r3.render(cam(), [], background=0x00FF80)[0, 0].tolist() == [0, 255, 128, 255]
+    assert anikit.raster is raster  # lazy submodule
 
 
 def test_cube_renders_lit_and_coloured():
@@ -206,7 +210,9 @@ def test_textures():
     tex = raster.texture(img)
     assert (tex.width, tex.height) == (8, 8)
     quad = raster.instances(1, rx=90, scale=500)
-    plain = r3.render(cam(), [raster.Item(raster.plane(), quad, material={"ambient": 0, "diffuse": 0, "specular": 0, "rim": 0})])
+    plain = r3.render(
+        cam(), [raster.Item(raster.plane(), quad, material={"ambient": 0, "diffuse": 0, "specular": 0, "rim": 0})]
+    )
     glow = r3.render(
         cam(),
         [
@@ -229,7 +235,9 @@ def test_additive_and_cull():
     r3 = raster.Renderer3D(W, H)
     wall = raster.Item(raster.cube(), raster.instances(1, z=-200, scale=(1), sx=600, sy=600, color=(0.2, 0.2, 0.2)))
     base = r3.render(cam(), [wall])
-    beam = raster.Item(raster.cube(), raster.instances(1, scale=150, color=(1, 0.2, 0.1)), material={"emissive": 1}, blend="additive")
+    beam = raster.Item(
+        raster.cube(), raster.instances(1, scale=150, color=(1, 0.2, 0.1)), material={"emissive": 1}, blend="additive"
+    )
     added = r3.render(cam(), [wall, beam])
     diff = added.astype(int) - base.astype(int)
     assert diff.min() >= 0 and diff.max() > 0
@@ -243,7 +251,9 @@ def test_additive_and_cull():
 def test_mirror_floor_reflects_the_scene():
     r3 = raster.Renderer3D(W, H)
     c = Camera((0, 150, 700), (0, -40, 0), fov=50)
-    ball = raster.Item(raster.sphere(12, 16), raster.instances(1, y=60, scale=90, color="#ff4020"), material={"emissive": 0.6})
+    ball = raster.Item(
+        raster.sphere(12, 16), raster.instances(1, y=60, scale=90, color="#ff4020"), material={"emissive": 0.6}
+    )
     floor = raster.Item(raster.plane(), raster.instances(1, y=-100, scale=4000, color=(0.1, 0.1, 0.12)), mirror=True)
     plain = r3.render(c, [ball, floor])
     mirrored = r3.render(c, [ball, floor], mirror=-100)
@@ -259,7 +269,9 @@ def test_mirror_floor_reflects_the_scene():
     # Strength scales the gloss; reflect=False removes the ball from the reflection.
     weak = r3.render(c, [ball, floor], mirror=raster.Mirror(-100, strength=0.1))
     assert (weak[..., 0].astype(int) - plain[..., 0]).max() < red_gain.max()
-    hidden = r3.render(c, [raster.Item(ball.mesh, ball.instances, ball.material, reflect=False), floor], mirror={"y": -100})
+    hidden = r3.render(
+        c, [raster.Item(ball.mesh, ball.instances, ball.material, reflect=False), floor], mirror={"y": -100}
+    )
     assert (hidden[..., 0].astype(int) - plain[..., 0]).max() < red_gain.max()
     assert np.array_equal(mirrored, r3.render(c, [ball, floor], mirror=(-100, 0.5)))
 
@@ -299,7 +311,9 @@ def test_points_and_streaks():
 def test_shatter_matches_typescript():
     ref = json.loads((DATA / "shatter" / "shatter_ref.json").read_text())
     src = raster.torus(100, 30, 12, 6)
-    a = raster.shatter(src, transform=dict(rx=20, ry=-35, scale=1.2, x=30, y=-10, z=5, color=(0.2, 0.4, 0.9)), force=900, spin=540)
+    a = raster.shatter(
+        src, transform=dict(rx=20, ry=-35, scale=1.2, x=30, y=-10, z=5, color=(0.2, 0.4, 0.9)), force=900, spin=540
+    )
     assert a.count == ref["a"]["count"] == src.triangle_count
     assert np.allclose(a.instances.data[0, 12:], ref["a"]["colors"])
     pick = np.arange(a.count) % 9 == 0

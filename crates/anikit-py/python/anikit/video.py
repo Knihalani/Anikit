@@ -25,7 +25,10 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError as e:  # pragma: no cover - depends on the environment
+    raise ImportError("anikit.video needs numpy: pip install 'anikit[numpy]'") from e
 
 from ._anikit import NativeFrameMixer, NativePostFx
 from ._anikit import rgba_to_i420 as _rgba_to_i420
@@ -128,7 +131,9 @@ class PostFx:
         self.options: Dict[str, Any] = dict(options)
         self._native = NativePostFx()
 
-    def apply(self, frame: np.ndarray, *, t: Optional[float] = None, seed: int = 0, **overrides: PostValue) -> np.ndarray:
+    def apply(
+        self, frame: np.ndarray, *, t: Optional[float] = None, seed: int = 0, **overrides: PostValue
+    ) -> np.ndarray:
         """Grade ``frame`` (``(height, width, 4)`` uint8) in place and return
         it. ``seed`` re-seeds the grain (use the frame index so parallel
         renders match); ``overrides`` replace options for this call."""
