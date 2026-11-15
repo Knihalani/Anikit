@@ -17,7 +17,8 @@ import { Targets, toTargets } from './props';
 import { spring, PhysicsAnimation } from './spring';
 import { animate, AnimateOptions, Animation } from './animate';
 import { track } from './context';
-import { warn } from './debug';
+import { warn, warningsOn, checkKeys, checkSeconds, checkTargets, didYouMean, selectorHint } from './debug';
+import type { OptionKeys } from './debug';
 import { Timeline } from './timeline';
 
 type Action = 'play' | 'pause' | 'resume' | 'reset' | 'restart' | 'complete' | 'reverse' | 'none';
@@ -146,6 +147,37 @@ function parseEdge(tok: string, size: number): number {
   return v;
 }
 
+const SCROLLTRIGGER_KEYS: OptionKeys<ScrollTriggerOptions> = {
+  trigger: 0, scroller: 0, horizontal: 0, start: 0, end: 0, animation: 0, scrub: 0, toggleActions: 0, pin: 0,
+  pinSpacing: 0, snap: 0, toggleClass: 0, markers: 0, once: 0, onEnter: 0, onLeave: 0, onEnterBack: 0,
+  onLeaveBack: 0, onToggle: 0, onUpdate: 0, onRefresh: 0,
+};
+const ACTIONS = ['play', 'pause', 'resume', 'reverse', 'restart', 'reset', 'complete', 'none'];
+const POS_TOKEN = /^(?:[+-]=)?(?:top|center|bottom|left|right|-?[\d.]+(?:px|%)?)(?:[+-]=?[\d.]+(?:px|%)?)?$/i;
+
+/** Construction-time checks with actionable messages (warnings on only). */
+function checkScrollTrigger(o: ScrollTriggerOptions, api = 'scrollTrigger()'): void {
+  checkKeys(api, o, SCROLLTRIGGER_KEYS);
+  for (const name of ['start', 'end'] as const) {
+    const v = o[name];
+    if (typeof v !== 'string') continue;
+    for (const tok of v.trim().split(/\s+/)) {
+      if (!POS_TOKEN.test(tok)) {
+        warn(`${api}: "${tok}" in ${name}: "${v}" isn't understood. Write "<trigger edge> <viewport edge>" with top / center / bottom (left / right when horizontal), px or %, e.g. "top 80%", "center center", "bottom+=100 top", or "+=600" for an end relative to the start.${didYouMean(tok.replace(/[+-]=?.*$/, ''), Object.keys(EDGE))}`);
+      }
+    }
+  }
+  if (o.toggleActions !== undefined) {
+    const parts = o.toggleActions.trim().split(/\s+/);
+    const bad = parts.filter((p) => !ACTIONS.includes(p));
+    if (parts.length > 4 || bad.length) {
+      warn(`${api}: toggleActions "${o.toggleActions}" should be four of ${ACTIONS.join(' / ')} (for onEnter, onLeave, onEnterBack, onLeaveBack), e.g. "play none none reverse".${bad[0] ? didYouMean(bad[0], ACTIONS) : ''}`);
+    }
+    if (o.scrub) warn(`${api}: toggleActions is ignored when scrub is set (the scroll position drives the animation).`);
+  }
+  if (typeof o.scrub === 'number') checkSeconds(api, 'scrub', o.scrub, 10);
+}
+
 // ---------------------------------------------------------------------------
 // ScrollTrigger
 // ---------------------------------------------------------------------------
@@ -203,12 +235,18 @@ export class ScrollTrigger {
   private smoothOpts: Parameters<typeof spring>[2];
 
   constructor(options: ScrollTriggerOptions) {
+    if (warningsOn()) checkScrollTrigger(options);
+    if (typeof options.animation === 'function') {
+      throw new Error('anikit: scrollTrigger({ animation }) takes an animation or timeline (created with autoplay: false), not a function. For one trigger per element with a factory, use scrollTriggerBatch(targets, { animation: (el) => … }).');
+    }
     this.o = options;
     this.scroller = resolveScroller(options.scroller);
     this.horizontal = !!options.horizontal;
     const tr = options.trigger;
     this.trigger = typeof tr === 'string' ? document.querySelector(tr) : tr ?? null;
-    if (typeof tr === 'string' && !this.trigger) warn(`scrollTrigger: trigger "${tr}" matched no element; using the whole scroll range.`);
+    if (typeof tr === 'string' && !this.trigger) warn(`scrollTrigger: trigger "${tr}" matched no element; using the whole scroll range.${selectorHint(tr)}`);
+    else if (tr === null) warn('scrollTrigger: trigger is null (a querySelector() or ref that found nothing?); using the whole scroll range.');
+    if (options.pin === true && !this.trigger) warn('scrollTrigger: pin: true pins the trigger element, but there is no trigger; nothing is pinned. Pass trigger, or pin: element.');
     options.animation?.pause();
     this.smoothOpts = {
       duration: (typeof options.scrub === 'number' ? options.scrub : 0) * 4, bounce: 0, restDelta: 1e-4, restSpeed: 1e-3,
@@ -499,7 +537,12 @@ export function scrollTrigger(options: ScrollTriggerOptions): ScrollTrigger {
  * its own animation built by `animation(el, index)`.
  */
 export function scrollTriggerBatch(targets: Targets, options: Omit<ScrollTriggerOptions, 'trigger' | 'animation'> & { animation?: (el: Element, i: number) => Playable }): ScrollTrigger[] {
-  return (toTargets(targets) as Element[]).map((el, i) => new ScrollTrigger({ ...options, trigger: el, animation: options.animation?.(el, i) }));
+  if (options.animation !== undefined && typeof options.animation !== 'function') {
+    throw new Error('anikit: scrollTriggerBatch({ animation }) takes a function (el, index) => animation, called once per element. To control one existing animation, use scrollTrigger({ trigger, animation }).');
+  }
+  const els = toTargets(targets) as Element[];
+  checkTargets('scrollTriggerBatch()', targets, els.length);
+  return els.map((el, i) => new ScrollTrigger({ ...options, trigger: el, animation: options.animation?.(el, i) }));
 }
 
 // ---------------------------------------------------------------------------
@@ -525,6 +568,7 @@ export function scrollTo(target: number | Element | string | 'max', options: Scr
   else if (target === 'max') pos = maxScroll(container, h);
   else {
     const t = typeof target === 'string' ? document.querySelector(target) : target;
+    if (!t) warn(typeof target === 'string' ? `scrollTo(): "${target}" matched no element; not scrolling.${selectorHint(target)}` : 'scrollTo(): the target element is null; not scrolling.');
     if (!t) pos = scrollPos(container, h);
     else {
       const r = t.getBoundingClientRect();
@@ -579,12 +623,15 @@ export interface SmoothScrollOptions {
   onUpdate?: (scroll: number) => void;
 }
 
+const SMOOTH_KEYS: OptionKeys<SmoothScrollOptions> = { smooth: 0, wheelMultiplier: 0, touch: 0, onUpdate: 0 };
+
 /**
  * Inertial page scrolling for wheel/trackpad input (Lenis-style): the wheel
  * sets a target that the real scroll position follows with a critically
  * damped spring. Keyboard, scrollbar and anchor jumps keep working.
  */
 export function smoothScroll(options: SmoothScrollOptions = {}) {
+  checkKeys('smoothScroll()', options, SMOOTH_KEYS);
   if (typeof window === 'undefined') return { stop() {}, start() {}, scrollTo() {}, destroy() {}, revert() {} };
   const el = (document.scrollingElement || document.documentElement) as Element;
   const proxy = { y: window.scrollY };

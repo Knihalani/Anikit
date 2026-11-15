@@ -16,6 +16,8 @@ import { core, whenReady, F64, f64Buf, W, views } from './wasm';
 import { engine } from './core';
 import { Targets, toTargets, stateOf, markDirty, flushTransforms, TargetState } from './props';
 import { track } from './context';
+import { warn, checkKeys, selectorHint } from './debug';
+import type { OptionKeys } from './debug';
 
 export interface WorldOptions {
   /** px/s² (default `[0, 980]`). */
@@ -39,6 +41,10 @@ export interface WorldOptions {
   /** Step automatically every frame (default true). */
   autoStep?: boolean;
 }
+
+const WORLD_KEYS: OptionKeys<WorldOptions> = {
+  gravity: 0, damping: 0, substeps: 0, iterations: 0, restitution: 0, wallRestitution: 0, friction: 0, container: 0, bounds: 0, autoStep: 0,
+};
 
 export interface BodyInit {
   x: number;
@@ -75,11 +81,13 @@ export class World {
   readonly links: Array<[number, number]> = [];
 
   constructor(private o: WorldOptions = {}) {
+    checkKeys('world()', o, WORLD_KEYS);
     const w = core();
     const g = o.gravity ?? [0, 980];
     this.id = w.ak_world_create(g[0], g[1], o.damping ?? 0.05, o.substeps ?? 4, o.iterations ?? 2, o.restitution ?? 0.2, o.wallRestitution ?? 0.3, o.friction ?? 0.05);
     const c = o.container;
     this.container = typeof c === 'string' ? document.querySelector(c) : c ?? null;
+    if (typeof c === 'string' && !this.container) warn(`world(): container "${c}" matched no element, so the world has no DOM coordinate space or bounds.${selectorHint(c)}`);
     this.refreshBounds();
     if (this.container && typeof window !== 'undefined') {
       const onResize = () => this.refreshBounds();

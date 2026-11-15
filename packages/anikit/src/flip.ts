@@ -10,6 +10,7 @@
  */
 import { Animation, AnimateOptions, Props } from './animate';
 import { Targets, toTargets, stateOf, flushTransforms } from './props';
+import { checkTargets } from './debug';
 
 export interface FlipState {
   els: Element[];
@@ -69,7 +70,7 @@ function fromState(state: FlipState, options: FlipOptions = {}): Animation {
       ((_t: unknown, i: number) => (kf[i][k] as number[])[1]) as any,
     ];
   }
-  const a = new Animation(els, resolved, { duration: 0.5, ease: 'outCubic', immediateRender: true, ...anim });
+  const a = new Animation(els, resolved, { duration: 0.5, ease: 'outCubic', immediateRender: true, ...anim }, { quiet: true });
   // Render the inverted state before the next paint.
   a.seek(0);
   flushTransforms();
@@ -78,7 +79,9 @@ function fromState(state: FlipState, options: FlipOptions = {}): Animation {
 
 /** Record positions, run `mutate`, then animate from the old layout to the new one. */
 export function flip(targets: Targets, mutate: () => void, options?: FlipOptions): Animation {
+  if (typeof mutate !== 'function') throw new Error('anikit: flip(targets, mutate, options?) needs a function that changes the layout as its second argument, e.g. flip(\'.item\', () => grid.classList.toggle(\'dense\')). For a captured state use flip.from(state, options).');
   const state = capture(targets);
+  checkTargets('flip()', targets, state.els.length);
   mutate();
   return fromState({ ...state, els: state.els }, options);
 }

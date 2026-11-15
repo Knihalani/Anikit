@@ -4,6 +4,8 @@
  */
 import { core, F64, views } from './wasm';
 import { easingId, EasingInput, LINEAR } from './core';
+import { warn, warningsOn, checkKeys, didYouMean } from './debug';
+import type { OptionKeys } from './debug';
 
 export interface StaggerOptions {
   /** Value added to every result (e.g. a base delay in seconds). */
@@ -25,6 +27,7 @@ export interface StaggerOptions {
 export type StaggerFn = ((target: unknown, index: number, count: number) => number) & { __stagger: true };
 
 const FROM: Record<string, number> = { first: 0, last: 1, center: 2, edges: 3, random: 4 };
+const STAGGER_KEYS: OptionKeys<StaggerOptions> = { start: 0, total: 0, from: 0, grid: 0, axis: 0, ease: 0, seed: 0 };
 
 /** Compute stagger values for `count` items (seconds in, seconds out). */
 export function staggerValues(count: number, each: number, o: StaggerOptions = {}): number[] {
@@ -45,6 +48,21 @@ export function staggerValues(count: number, each: number, o: StaggerOptions = {
  * Works for any numeric option or property value, e.g. `x: stagger(20)`.
  */
 export function stagger(each = 0.1, options: StaggerOptions = {}): StaggerFn {
+  if (typeof each === 'object' && each !== null) {
+    // GSAP habit: `stagger({ each: 0.1, from: 'center' })`.
+    const o = each as StaggerOptions & { each?: number; amount?: number };
+    warn(`stagger() takes (each, options): write stagger(${o.each ?? 0.1}, { … }) instead of stagger({ each, … }).`);
+    options = { ...o, total: o.total ?? o.amount };
+    delete (options as any).each;
+    delete (options as any).amount;
+    each = o.each ?? 0.1;
+  }
+  if (warningsOn()) {
+    checkKeys('stagger()', options, STAGGER_KEYS);
+    if (typeof options.from === 'string' && !(options.from in FROM)) {
+      warn(`stagger(): unknown from "${options.from}"; using "first". Use an index or one of: ${Object.keys(FROM).join(', ')}.${didYouMean(options.from, Object.keys(FROM))}`);
+    }
+  }
   let cacheN = -1;
   let cache: number[] = [];
   const fn = ((_t: unknown, i: number, n: number) => {

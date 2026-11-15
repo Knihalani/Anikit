@@ -19,7 +19,8 @@ import {
 import { parseValue, parseColor, r3 } from './values';
 import { Binding, bind, apply, custom } from './bind';
 import { track } from './context';
-import { describe } from './debug';
+import { describe, checkKeys, checkSeconds, checkTargets } from './debug';
+import type { OptionKeys } from './debug';
 import { snapshot } from './props';
 
 export interface PhysicsOptions {
@@ -39,6 +40,12 @@ export interface PhysicsOptions {
   onUpdate?: () => void;
   onComplete?: () => void;
 }
+
+const SPRING_KEYS: OptionKeys<PhysicsOptions> = {
+  stiffness: 0, damping: 0, mass: 0, duration: 0, bounce: 0, velocity: 0, restDelta: 0, restSpeed: 0, onUpdate: 0, onComplete: 0,
+};
+const INERTIA_KEYS: OptionKeys<Omit<InertiaOptions, keyof PhysicsOptions>> = { power: 0, timeConstant: 0, bounceStiffness: 0, bounceDamping: 0 };
+const BALLISTIC_KEYS: OptionKeys<BallisticOptions> = { friction: 0, restitution: 0, life: 0, onUpdate: 0, onComplete: 0 };
 
 function params(o: PhysicsOptions): [number, number, number] {
   if (o.bounce !== undefined || (o.duration !== undefined && o.stiffness === undefined)) {
@@ -199,12 +206,16 @@ export class PhysicsAnimation implements PromiseLike<void> {
  * retargets the running simulation, preserving momentum.
  */
 export function spring(targets: Targets, props: Record<string, number | string>, options: PhysicsOptions = {}): PhysicsAnimation {
+  checkKeys('spring()', options, SPRING_KEYS);
+  checkSeconds('spring()', 'duration', options.duration, 20);
   const ctl = new PhysicsAnimation();
   whenReady(() => {
     const w = core();
     const [k, c, m] = params(options);
     const list: Sim[] = [];
-    for (const target of toTargets(targets)) {
+    const ts = toTargets(targets);
+    checkTargets('spring()', targets, ts.length);
+    for (const target of ts) {
       let map = sims.get(target);
       if (!map) sims.set(target, (map = new Map()));
       for (const prop of Object.keys(props)) {
@@ -274,13 +285,16 @@ export interface InertiaOptions extends PhysicsOptions {
 
 /** Glide with momentum, slowing down naturally; bounce off bounds; snap. */
 export function inertia(targets: Targets, props: Record<string, InertiaProp | number>, options: InertiaOptions = {}): PhysicsAnimation {
+  checkKeys('inertia()', options, SPRING_KEYS, INERTIA_KEYS);
   const ctl = new PhysicsAnimation();
   whenReady(() => {
     const w = core();
     const power = options.power ?? 0.8;
     const tc = (options.timeConstant ?? 0.35) * 1000;
     const list: Sim[] = [];
-    for (const target of toTargets(targets)) {
+    const ts = toTargets(targets);
+    checkTargets('inertia()', targets, ts.length);
+    for (const target of ts) {
       let map = sims.get(target);
       if (!map) sims.set(target, (map = new Map()));
       for (const prop of Object.keys(props)) {
@@ -358,11 +372,15 @@ export interface BallisticOptions {
  * ```
  */
 export function physics(targets: Targets, props: Record<string, PhysicsProp | number>, options: BallisticOptions = {}): PhysicsAnimation {
+  checkKeys('physics()', options, BALLISTIC_KEYS);
+  checkSeconds('physics()', 'life', options.life);
   const ctl = new PhysicsAnimation();
   whenReady(() => {
     const w = core();
     const list: Sim[] = [];
-    for (const target of toTargets(targets)) {
+    const ts = toTargets(targets);
+    checkTargets('physics()', targets, ts.length);
+    for (const target of ts) {
       let map = sims.get(target);
       if (!map) sims.set(target, (map = new Map()));
       for (const prop of Object.keys(props)) {

@@ -12,7 +12,7 @@
  */
 import { engine, clearRecords } from './core';
 import { core, ready, W } from './wasm';
-import { onWarning, setWarnings } from './debug';
+import { onWarning, setWarnings, resetWarnings } from './debug';
 
 export const testing = {
   /** Wait for the WebAssembly core (needed once in async test setups). */
@@ -41,16 +41,23 @@ export const testing = {
     }
     return t;
   },
-  /** Stop and forget everything (between tests). Values stay where they are. */
+  /** Stop and forget everything (between tests), including which warnings were shown. Values stay where they are. */
   reset(): void {
+    resetWarnings();
     if (!W) return;
     core().ak_clear();
     clearRecords();
   },
-  /** Collect warnings instead of printing them; returns the live array. */
+  /**
+   * Collect warnings instead of printing them; returns the live array. Call it
+   * *before* the code you want to check. Each call starts a fresh list and
+   * forgets which messages were already shown, so repeats are captured again.
+   * `onWarning(null)` restores console output.
+   */
   captureWarnings(): string[] {
     const list: string[] = [];
     setWarnings(true);
+    resetWarnings();
     onWarning((m) => list.push(m));
     return list;
   },

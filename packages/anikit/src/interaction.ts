@@ -13,6 +13,8 @@ import { Targets, toTargets, stateOf, composeTransform, TargetState } from './pr
 import { inertia, PhysicsAnimation } from './spring';
 import { VelocityTracker } from './utils';
 import { track } from './context';
+import { checkKeys, checkTargets } from './debug';
+import type { OptionKeys } from './debug';
 
 // ---------------------------------------------------------------------------
 // Draggable
@@ -265,9 +267,17 @@ export class Draggable {
   }
 }
 
+const DRAGGABLE_KEYS: OptionKeys<DraggableOptions> = {
+  type: 0, bounds: 0, edgeResistance: 0, inertia: 0, snap: 0, handle: 0, lockAxis: 0, minimumMovement: 0, cursor: 0,
+  onPress: 0, onDragStart: 0, onDrag: 0, onDragEnd: 0, onRelease: 0, onThrowUpdate: 0, onThrowComplete: 0,
+};
+
 /** Make elements draggable. Returns one {@link Draggable} per element. */
 export function draggable(targets: Targets, options?: DraggableOptions): Draggable[] {
-  return (toTargets(targets) as HTMLElement[]).map((el) => new Draggable(el, options));
+  checkKeys('draggable()', options, DRAGGABLE_KEYS);
+  const els = toTargets(targets) as HTMLElement[];
+  checkTargets('draggable()', targets, els.length);
+  return els.map((el) => new Draggable(el, options));
 }
 
 // ---------------------------------------------------------------------------
@@ -304,6 +314,11 @@ export interface ObserverOptions {
   onStop?: (e: ObserverEvent) => void;
 }
 
+const OBSERVER_KEYS: OptionKeys<ObserverOptions> = {
+  target: 0, type: 0, tolerance: 0, preventDefault: 0, wheelSpeed: 0, onUp: 0, onDown: 0, onLeft: 0, onRight: 0,
+  onChange: 0, onPress: 0, onRelease: 0, onDrag: 0, onStop: 0,
+};
+
 /**
  * Normalise wheel, touch, pointer and scroll input into intent callbacks
  * (`onUp`/`onDown`/`onLeft`/`onRight`) with deltas and velocities — the basis
@@ -312,6 +327,7 @@ export interface ObserverOptions {
  * below is `onDown`.
  */
 export function observer(options: ObserverOptions) {
+  checkKeys('observer()', options, OBSERVER_KEYS);
   const target: Element | Window =
     typeof options.target === 'string' ? document.querySelector(options.target) ?? window : options.target ?? window;
   const types = new Set((options.type ?? 'wheel,touch,pointer').split(/[\s,]+/));

@@ -333,8 +333,11 @@ export function easingId(e: EasingInput, fallback = 'outQuad'): number {
     let id = fnCache.get(e);
     if (id === undefined) {
       const n = 1024;
+      // Sample first: user code must not run while the scratch buffer is reserved.
+      const samples = new Float64Array(n);
+      for (let i = 0; i < n; i++) samples[i] = e(i / (n - 1));
       const at = f64Buf(n);
-      for (let i = 0; i < n; i++) F64[at + i] = e(i / (n - 1));
+      F64.set(samples, at);
       id = core().ak_easing_table(n) >>> 0;
       fnCache.set(e, id);
     }

@@ -11,6 +11,8 @@ import { Playable } from './playable';
 import { Targets, toTargets } from './props';
 import { spring, PhysicsAnimation } from './spring';
 import { whenReady } from './wasm';
+import { checkKeys, checkTargets } from './debug';
+import type { OptionKeys } from './debug';
 
 type Edge = string | number;
 export interface ScrollOptions {
@@ -43,11 +45,14 @@ function parseOffset(o: string): [string, string] {
   return [p[0] ?? 'start', p[1] ?? p[0] ?? 'start'];
 }
 
+const SCROLL_KEYS: OptionKeys<ScrollOptions> = { target: 0, container: 0, axis: 0, offset: 0, smooth: 0 };
+
 /**
  * Drive an animation's progress (or call a function with progress 0–1) from
  * scroll position. Returns a cleanup function.
  */
 export function scroll(subject: Playable | ((progress: number) => void), options: ScrollOptions = {}): () => void {
+  checkKeys('scroll()', options, SCROLL_KEYS);
   if (typeof window === 'undefined') return () => {};
   const container = options.container ?? window;
   const isWin = container === window;
@@ -130,6 +135,8 @@ export interface InViewOptions {
   once?: boolean;
 }
 
+const INVIEW_KEYS: OptionKeys<InViewOptions> = { root: 0, margin: 0, amount: 0, once: 0 };
+
 /**
  * Call `onEnter(element, entry)` when targets enter the viewport. If it
  * returns a function, that is called when the element leaves. Returns a
@@ -140,6 +147,7 @@ export function inView(
   onEnter: (el: Element, entry: IntersectionObserverEntry) => void | ((entry: IntersectionObserverEntry) => void),
   options: InViewOptions = {},
 ): () => void {
+  checkKeys('inView()', options, INVIEW_KEYS);
   if (typeof IntersectionObserver === 'undefined') return () => {};
   const threshold = options.amount === 'all' ? 1 : options.amount === 'some' || options.amount === undefined ? 0 : options.amount;
   const leaves = new WeakMap<Element, (e: IntersectionObserverEntry) => void>();
@@ -160,6 +168,8 @@ export function inView(
     },
     { root: options.root as Element | null | undefined, rootMargin: options.margin, threshold },
   );
-  for (const el of toTargets(targets)) io.observe(el as Element);
+  const els = toTargets(targets);
+  checkTargets('inView()', targets, els.length);
+  for (const el of els) io.observe(el as Element);
   return () => io.disconnect();
 }

@@ -22,7 +22,8 @@ import {
   claim, unclaim, Owner, stateOf, markDirty, transformUnit, TargetState, snapshot, composeTransform, kebab, computed, camel,
 } from './props';
 import { Playable, Callbacks, Linked } from './playable';
-import { warn, didYouMean, describe, cssPropertyNames } from './debug';
+import { warn, didYouMean, describe, cssPropertyNames, suggest, warningsOn, checkSeconds, checkTargets } from './debug';
+import type { OptionKeys } from './debug';
 import { Binding, bind, apply, custom, transformSlot, M_PROP, M_TRANSFORM, M_TRANSFORM2, M_STYLE_NUM, M_STYLE_FMT, M_VAR, M_CUSTOM } from './bind';
 import { pathData, PathSource, writeMorph, elementLength, morphSequence } from './svg';
 import { parseTransform, toMatrix3d } from './scene';
@@ -98,17 +99,64 @@ export interface AnimateOptions extends Callbacks<Animation> {
   locale?: string;
 }
 
-const OPTION_KEYS = new Set([
-  'duration', 'delay', 'endDelay', 'ease', 'repeat', 'repeatDelay', 'yoyo', 'direction', 'speed', 'autoplay',
-  'times', 'colorSpace', 'fillMode', 'overwrite', 'immediateRender', 'onStart', 'onUpdate', 'onComplete',
-  'onRepeat', 'onReverseComplete', 'snap', 'round', 'modifiers', 'format', 'locale',
-]);
+/** Every `AnimateOptions` key (compiler-checked; used for "unknown option" warnings). */
+export const ANIMATE_KEYS: OptionKeys<AnimateOptions> = {
+  duration: 0, delay: 0, endDelay: 0, ease: 0, repeat: 0, repeatDelay: 0, yoyo: 0, direction: 0, speed: 0, autoplay: 0,
+  times: 0, colorSpace: 0, fillMode: 0, overwrite: 0, immediateRender: 0, onStart: 0, onUpdate: 0, onComplete: 0,
+  onRepeat: 0, onReverseComplete: 0, snap: 0, round: 0, modifiers: 0, format: 0, locale: 0,
+};
+const OPTION_KEYS = new Set(Object.keys(ANIMATE_KEYS));
 
 const DIRECTIONS = { normal: 0, reverse: 1, alternate: 2, 'alternate-reverse': 3 } as const;
 /** Options accepted for compatibility / by wrappers (not warned about). */
 const EXTRA_OPTION_KEYS = new Set(['stagger', 'distance', 'from', 'intensity', 'loop', 'axis', 'at', 'charDelay', 'start', 'to', 'chars', 'delimiter', 'text', 'size', 'color']);
 const TRANSFORM_PROPS = ['x', 'y', 'z', 'rotate', 'rotateX', 'rotateY', 'rotateZ', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'skew', 'skewX', 'skewY', 'perspective', 'xPercent', 'yPercent'];
 const SPECIAL_PROPS = ['path', 'draw', 'd', 'attr', 'text', 'transform'];
+const FILL_MODES = ['both', 'forwards', 'backwards', 'none'];
+const ANGLE_UNITS = ['', 'deg', 'rad', 'turn', 'grad'];
+
+/** Construction-time validation of animation options (only while warnings are on). */
+function checkAnimateOptions(given: AnimateOptions, o: AnimateOptions): void {
+  for (const k of Object.keys(given)) {
+    if (!OPTION_KEYS.has(k) && !EXTRA_OPTION_KEYS.has(k)) warn(`unknown animation option "${k}"; it is ignored.${didYouMean(k, OPTION_KEYS)}`);
+  }
+  checkSeconds('animate()', 'duration', o.duration);
+  checkSeconds('animate()', 'delay', o.delay);
+  checkSeconds('animate()', 'repeatDelay', o.repeatDelay);
+  checkSeconds('animate()', 'endDelay', o.endDelay);
+  if (o.colorSpace !== undefined && !(o.colorSpace in COLOR_SPACES)) {
+    warn(`unknown colorSpace "${o.colorSpace}"; using "oklab". Use one of: ${Object.keys(COLOR_SPACES).join(', ')}.${didYouMean(String(o.colorSpace), Object.keys(COLOR_SPACES))}`);
+  }
+  if (o.direction !== undefined && !(o.direction in DIRECTIONS)) {
+    warn(`unknown direction "${o.direction}"; using "normal". Use one of: ${Object.keys(DIRECTIONS).join(', ')}.${didYouMean(String(o.direction), Object.keys(DIRECTIONS))}`);
+  }
+  if (o.fillMode !== undefined && !FILL_MODES.includes(o.fillMode)) {
+    warn(`unknown fillMode "${o.fillMode}"; using "both". Use one of: ${FILL_MODES.join(', ')}.`);
+  }
+  if (typeof o.repeat === 'number' && o.repeat > 0 && o.repeat !== Infinity && !Number.isInteger(o.repeat)) {
+    warn(`repeat is ${o.repeat}; it counts extra iterations and should be a whole number (or Infinity / -1 to loop).`);
+  }
+}
+
+/** Unit / range sanity checks for one property's values (first target only). */
+function checkValues(prop: string, kind: Kind, raw: unknown[], target: unknown): void {
+  if (kind === Kind.Transform) {
+    const canonical = transformUnit(prop);
+    for (const v of raw) {
+      if (typeof v !== 'string') continue;
+      const unit = /^\s*[-+*]?=?\s*-?[\d.]+(?:e[-+]?\d+)?\s*([a-z%]*)\s*$/i.exec(v)?.[1]?.toLowerCase();
+      if (unit === undefined || unit === '') continue;
+      const angleUnit = ANGLE_UNITS.includes(unit);
+      if (canonical === 'deg' && !angleUnit) warn(`"${prop}" is an angle, but got "${v}". Use a number (degrees) or deg / rad / turn.`);
+      else if (canonical === '' && unit !== '%') warn(`"${prop}" is a unitless factor (1 = 100%), but got "${v}". Use e.g. ${prop}: 1.5.`);
+      else if ((canonical === 'px' || canonical === '%') && angleUnit) warn(`"${prop}" is a length, but got "${v}". Use a number (px) or a length unit; for rotation use "rotate".`);
+    }
+  } else if (prop === 'opacity') {
+    const big = raw.find((v) => typeof v === 'number' && v > 1);
+    if (big !== undefined) warn(`opacity goes from 0 to 1, but got ${big}${isElement(target) ? ` on ${describe(target)}` : ''}. Did you mean ${+((big as number) / 100).toFixed(3)}?`);
+  }
+}
+
 function isKnownStyle(el: HTMLElement, prop: string): boolean {
   const st = el.style as any;
   return !st || prop in st || camel(prop) in st || prop.startsWith('--');
@@ -193,6 +241,8 @@ export interface BuildContext {
   chain?: Chain;
   /** Force zero-duration "set" semantics. */
   set?: boolean;
+  /** Don't warn about an empty target list (e.g. flip() when nothing moved). */
+  quiet?: boolean;
 }
 
 const RANDOM_RE = /^\s*random\((.*)\)\s*$/;
@@ -371,11 +421,18 @@ export class Animation extends Playable {
   _end = 0;
 
   constructor(targets: Targets, keyframes: Props | Keyframe[], options: AnimateOptions = {}, ctx: BuildContext = {}) {
-    const [props, opts] = normalize(keyframes, options);
-    super(opts);
-    for (const k of Object.keys(options)) {
-      if (!OPTION_KEYS.has(k) && !EXTRA_OPTION_KEYS.has(k)) warn(`unknown animation option "${k}".${didYouMean(k, OPTION_KEYS)}`);
+    if (typeof options === 'number') {
+      // `animate(el, props, 0.5)`: anime.js / jQuery habit. Accept it as the duration.
+      warn(`animate(): the third argument is an options object; got the number ${options}. Treating it as { duration: ${options} } (seconds).`);
+      options = { duration: options };
     }
+    if (keyframes === null || typeof keyframes !== 'object') {
+      warn(`animate(): the second argument must be an object of properties ({ x: 100, opacity: 0 }) or a keyframe list; got ${typeof keyframes === 'string' ? `"${keyframes}"` : String(keyframes)}.${typeof keyframes === 'string' ? ' For presets, use effects.' + keyframes + '(targets).' : ''}`);
+      keyframes = {};
+    }
+    const [props, opts] = normalize(keyframes, options ?? {});
+    super(opts);
+    if (warningsOn()) checkAnimateOptions(options ?? {}, opts);
     this._times = opts.times;
     whenReady(() => this._build(targets, props, opts, ctx));
   }
@@ -384,8 +441,7 @@ export class Animation extends Playable {
     const w = core();
     const targets = (this.targets = toTargets(targetsIn));
     const n = targets.length;
-    if (n === 0 && typeof targetsIn === 'string') warn(`selector "${targetsIn}" matched no elements, so nothing was animated.`);
-    else if (n === 0 && targetsIn != null) warn('animate() received an empty target list.');
+    if (!ctx.quiet) checkTargets('animate()', targetsIn, n);
     const claims = !ctx.child && o.overwrite !== false;
     const cs = COLOR_SPACES[o.colorSpace ?? 'oklab'] ?? 2;
     const reduce = prefersReduced();
@@ -429,9 +485,12 @@ export class Animation extends Playable {
         }
         const kind = classify(target, prop);
         if (kind === Kind.Style && i === 0 && !isKnownStyle(target as HTMLElement, prop)) {
-          warn(`"${prop}" is not a CSS property of ${describe(target)}; it will be written as an inline style anyway.${didYouMean(prop, [...cssPropertyNames(), ...TRANSFORM_PROPS, ...SPECIAL_PROPS])}`);
+          const s = suggest(prop, [...cssPropertyNames(), ...TRANSFORM_PROPS, ...SPECIAL_PROPS, ...OPTION_KEYS]);
+          const hint = !s ? '' : OPTION_KEYS.has(s) ? ` Did you mean the option "${s}"? (Options can go in the third argument or among the properties.)` : ` Did you mean "${s}"?`;
+          warn(`"${prop}" is not a CSS property of ${describe(target)}; it will be written as an inline style anyway.${hint}`);
         }
         const raw = spec.values.map((v) => resolve(v, target, i, n));
+        if (i === 0 && warningsOn()) checkValues(prop, kind, raw, target);
         if (raw[0] !== null && raw[0] !== undefined && raw.length > 1) hasExplicitFrom = true;
         const chained = ctx.chain?.get(target)?.get(prop);
         const read = () => (chained !== undefined ? chained : readValue(target, prop, kind));
@@ -440,7 +499,10 @@ export class Animation extends Playable {
         const conv = (v: number, f: string, t: string) => convertUnit(el, prop, v, f, t);
         let track = buildTrack(raw, read, conv, cs, du);
         if (kind === Kind.Transform) {
-          if (track.kind !== TRACK_NUMBER || track.ch !== 1) continue;
+          if (track.kind !== TRACK_NUMBER || track.ch !== 1) {
+            if (i === 0) warn(`"${prop}" needs a single number (optionally with a unit, e.g. 100 or '50%'); got ${raw.map((v) => JSON.stringify(v)).join(' → ')}, so it was skipped. For a full transform string use the "transform" property.`);
+            continue;
+          }
           // Angles/scales always use their canonical unit; x/y/z keep any length unit.
           du = transformUnit(prop);
           if (du !== 'px' && track.unit !== du) {
@@ -491,6 +553,7 @@ export class Animation extends Playable {
         dur = d > 0 ? d : 0.5;
       } else dur = 0.5;
       const delay = ctx.set || reduce ? 0 : resolve(o.delay ?? 0, target, i, n);
+      if (i > 0 && i === n - 1 && typeof o.delay === 'function' && delay >= 100) warn(`animate(): the delay function gives the last target a delay of ${delay} seconds. Times in anikit are in seconds: use stagger(0.05), not stagger(50).`);
       let durMs = Math.max(0, dur * 1000);
       const rd = (o.repeatDelay ?? 0) * 1000;
       if (rd > 0 && durMs > 0) {

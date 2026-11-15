@@ -9,6 +9,8 @@
  * ```
  */
 import { Targets, toTargets } from './props';
+import { checkKeys, checkTargets, warn, didYouMean } from './debug';
+import type { OptionKeys } from './debug';
 
 export interface SplitOptions {
   /** Comma separated: 'chars', 'words', 'lines' (default 'words,chars'). */
@@ -34,9 +36,14 @@ function span(cls: string | undefined, text?: string): HTMLSpanElement {
   return s;
 }
 
+const SPLIT_KEYS: OptionKeys<SplitOptions> = { type: 0, charClass: 0, wordClass: 0, lineClass: 0 };
+const SPLIT_TYPES = ['chars', 'words', 'lines'];
+
 /** Split every target; results are concatenated across targets. */
 export function splitText(targets: Targets, options: SplitOptions = {}): SplitResult {
-  const types = new Set((options.type ?? 'words,chars').split(/[\s,]+/));
+  checkKeys('splitText()', options, SPLIT_KEYS);
+  const types = new Set((options.type ?? 'words,chars').split(/[\s,]+/).filter(Boolean));
+  for (const t of types) if (!SPLIT_TYPES.includes(t)) warn(`splitText(): unknown type "${t}"; use 'chars', 'words' and/or 'lines' (e.g. type: 'lines,words,chars').${didYouMean(t, SPLIT_TYPES)}`);
   const wantChars = types.has('chars');
   const wantWords = types.has('words') || types.has('lines') || !wantChars;
   const wantLines = types.has('lines');
@@ -46,7 +53,9 @@ export function splitText(targets: Targets, options: SplitOptions = {}): SplitRe
     typeof Intl !== 'undefined' && (Intl as any).Segmenter ? new (Intl as any).Segmenter(undefined, { granularity: 'grapheme' }) : null;
   const graphemes = (s: string): string[] => (seg ? Array.from(seg.segment(s), (x: any) => x.segment) : Array.from(s));
 
-  for (const t of toTargets(targets)) {
+  const els = toTargets(targets);
+  checkTargets('splitText()', targets, els.length);
+  for (const t of els) {
     const el = t as HTMLElement;
     const original = el.innerHTML;
     const hadLabel = el.getAttribute('aria-label');

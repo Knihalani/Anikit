@@ -18,6 +18,15 @@ export function onWarning(fn: ((msg: string) => void) | null): void {
   sink = fn;
 }
 
+/** Whether warnings are on (cheap guard so validation costs nothing in production). */
+export function warningsOn(): boolean {
+  return enabled;
+}
+/** Forget which messages were already shown (each unique message is shown once). */
+export function resetWarnings(): void {
+  seen.clear();
+}
+
 /** Warn once per unique message. */
 export function warn(msg: string): void {
   if (!enabled || seen.has(msg)) return;
@@ -97,4 +106,72 @@ export function cssPropertyNames(): string[] {
     for (const k in st) if (typeof st[k] === 'string' && !/^\d/.test(k)) cssProps.push(k);
   }
   return cssProps;
+}
+
+/**
+ * Every key of an options interface, checked by the compiler in both
+ * directions: `const KEYS: OptionKeys<TimelineOptions> = { delay: 0, … }`
+ * fails to compile when a key is missing or unknown, so lists can't drift.
+ */
+export type OptionKeys<T> = { readonly [K in keyof Required<T>]: 0 };
+
+/**
+ * Warn about option keys `api` doesn't know (`checkKeys('timeline()', opts, KEYS)`),
+ * with a "did you mean" suggestion. Only runs while warnings are on.
+ */
+export function checkKeys(api: string, opts: unknown, ...known: Array<Readonly<Record<string, 0>>>): void {
+  if (!enabled || !opts || typeof opts !== 'object' || Array.isArray(opts)) return;
+  for (const k of Object.keys(opts)) {
+    if (known.some((o) => Object.prototype.hasOwnProperty.call(o, k))) continue;
+    warn(`${api}: unknown option "${k}"; it is ignored.${didYouMean(k, known.flatMap((o) => Object.keys(o)))}`);
+  }
+}
+
+/**
+ * Times in anikit are seconds. Flag values that look like milliseconds
+ * (`duration: 600`), the most common mistake when coming from other libraries.
+ */
+export function checkSeconds(api: string, name: string, v: unknown, limit = 100): void {
+  if (enabled && typeof v === 'number' && v >= limit && v !== Infinity) {
+    warn(`${api}: ${name} is ${v} seconds. Times in anikit are in seconds; did you mean ${name}: ${+(v / 1000).toFixed(3)}?`);
+  }
+}
+
+/** Explain an empty target list: `null` (a querySelector that found nothing), a selector, or an empty list. */
+export function checkTargets(api: string, targets: unknown, found: number): void {
+  if (!enabled || found > 0) return;
+  if (targets === null || targets === undefined) {
+    warn(`${api} received ${targets} as its target, so nothing was animated. Did a querySelector() or ref return ${targets}? Pass an element, a selector string, a list, or a plain object.`);
+  } else if (typeof targets === 'string') {
+    warn(`${api}: selector "${targets}" matched no elements, so nothing was animated.${selectorHint(targets)}`);
+  } else {
+    warn(`${api} received an empty target list, so nothing was animated.`);
+  }
+}
+
+/** Why a selector might have matched nothing, and what would have. */
+export function selectorHint(sel: string): string {
+  if (typeof document === 'undefined') return ' There is no `document` here: selectors only work with a DOM. Pass objects instead.';
+  if (/^[A-Za-z][\w-]*$/.test(sel)) {
+    for (const alt of ['.' + sel, '#' + sel]) {
+      try {
+        if (document.querySelector(alt)) return ` Did you mean "${alt}"?`;
+      } catch {
+        /* not a valid selector either */
+      }
+    }
+  }
+  if (document.readyState === 'loading') {
+    return ' The document is still loading: run this after DOMContentLoaded (or from a module script, which is deferred).';
+  }
+  return '';
+}
+
+/** `querySelectorAll` with an actionable error for invalid selectors. */
+export function queryAll(root: ParentNode, sel: string): Element[] {
+  try {
+    return Array.from(root.querySelectorAll(sel));
+  } catch {
+    throw new Error(`anikit: "${sel}" is not a valid CSS selector. Pass an element, a list of elements, or a selector such as ".card" or "#hero".`);
+  }
 }
