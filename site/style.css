@@ -140,10 +140,10 @@ main { position: relative; z-index: 1; }
 
 /* ---- 09 Film ---- */
 .film { height: 160vh; --fg: var(--paper); --bgc: var(--ink); color: var(--paper); }
-.film-title { position: absolute; left: var(--gut); top: 14vh; font-size: 8.4vw; }
+.film-title { position: absolute; left: var(--gut); top: 14vh; font-size: min(6.6vw, 11vh); z-index: 2; }
 .film-title em { color: var(--red); font-family: 'Display', system-ui; font-style: italic; }
 .film-title .ch { display: inline-block; }
-.film-frame { position: absolute; right: var(--gut); top: 14vh; width: min(58vw, calc(62vh * 16 / 9)); aspect-ratio: 16 / 9; background: #000; border: 1px solid rgba(236, 230, 218, 0.18); }
+.film-frame { position: absolute; right: var(--gut); top: 14vh; width: min(56vw, calc(62vh * 16 / 9)); aspect-ratio: 16 / 9; background: #000; border: 1px solid rgba(236, 230, 218, 0.18); }
 .film-frame video { display: block; width: 100%; height: 100%; object-fit: cover; }
 .film-sound { position: absolute; right: 14px; bottom: 14px; height: 40px; padding: 0 18px; font-size: 13px; }
 .film-copy { position: absolute; left: var(--gut); bottom: calc(var(--gut) + 64px); width: min(36vw, 560px); }

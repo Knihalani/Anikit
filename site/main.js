@@ -133,6 +133,7 @@ for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
   const words = $$('.m-word', stack);
   const wordChars = words.map((w) => chars(w));
   let active = -1;
+  let descTween = null;
   let wordH = words[0].getBoundingClientRect().height;
   addEventListener('resize', () => (wordH = words[0].getBoundingClientRect().height));
   const activate = (i) => {
@@ -142,7 +143,8 @@ for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
     words.forEach((w, k) => w.classList.toggle('on', k === i));
     const [desc, code, ease] = items[i];
     $('#m-index').textContent = String(i + 1).padStart(2, '0');
-    animate('#m-desc', { text: { value: desc, type: 'scramble', chars: 'lower' } }, { duration: 0.3, ease: 'linear' });
+    descTween?.kill();
+    descTween = animate('#m-desc', { text: { value: desc, type: 'scramble', chars: 'lower' } }, { duration: 0.3, ease: 'linear' });
     $('#m-code').textContent = `${code}  // ease: '${ease}'`;
     const dir = prev < i ? 1 : -1;
     const three = i === 5;
