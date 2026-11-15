@@ -485,6 +485,7 @@ npx anikit-render film.mjs --out film.mp4 --workers 4 --fade-in 0.3 --fade-out 0
 
 ```bash
 npx anikit-render film.mjs --preview 30 --out frames/
+npx anikit-render film.mjs --review review/   # contact sheet + pacing report (holds, flat frames, cuts)
 ```
 
 Each worker builds the same composition (randomness is seeded), simulates to its slice without drawing, pre-rolls half a second so trails match, renders and encodes; slices join without re-encoding and the audio is muxed in. Needs the optional peer dependency `@napi-rs/canvas` and ffmpeg. `loadAnikit()`, `renderToFile()` and `renderPreview()` are the programmatic equivalents.

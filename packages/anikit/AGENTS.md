@@ -155,6 +155,7 @@ The module default-exports `async ({ anikit, node }) => composition`. Building b
 5. Type must contrast with what's behind it — paper on dark, or a scrim (`createLinearGradient`) behind it.
 
 **Verify like a picky editor**
+- `npx anikit-render film.mjs --review review/` renders the film once at 10 samples/s and writes `sheet.jpg` (graded frames every 0.5 s with timestamps — the whole film in one image), `pacing.txt` (motion energy, **holds** where little moves for ≥ 1 s, flat frames, cuts) and `pacing.csv`. Look at the sheet; fix every hold the user didn't ask for.
 - Preview at `--preview 15` and look at every frame; then render and pull strips around each cut/impact with ffmpeg (`-ss t -frames:v 14 -vf scale=240:-1,tile=14x1`).
 - Watch for: empty or flat frames, type over same-tone content, shots that hold still for more than ~1 s.
 - `ffprobe` the output: duration, frame count, and whether an audio stream should be there.

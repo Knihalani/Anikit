@@ -4,6 +4,7 @@
 //   anikit-render film.mjs --out film.mp4 [--workers 4] [--crf 18] [--preset medium]
 //                [--audio track.wav] [--from 0 --to 10] [--fade-in 0.3 --fade-out 0.8]
 //   anikit-render film.mjs --preview 30 --out frames/
+//   anikit-render film.mjs --review --out review/   (contact sheet + pacing report)
 //
 // The module default-exports `async ({ anikit, node }) => composition`. Every
 // worker builds the same composition (randomness is seeded), simulates up to
@@ -46,6 +47,20 @@ async function build() {
 
 const node = await import(join(here, '../node/index.mjs'));
 const enc = { crf: opt('crf', 18), preset: opt('preset', 'medium'), codec: opt('codec', 'libx264') };
+
+if (opt('review')) {
+  // One pass: contact sheet + pacing report, so an agent can judge a film without watching it.
+  const { comp } = await build();
+  const rv = opt('review');
+  const dir = rv && !rv.startsWith('--') ? resolve(rv) : args.includes('--out') ? out : resolve('review');
+  mkdirSync(dir, { recursive: true });
+  const r = await node.reviewFilm(comp, { every: opt('every') && +opt('every'), sheetEvery: opt('sheet-every') && +opt('sheet-every'), from: opt('from') && +opt('from'), to: opt('to') && +opt('to') });
+  writeFileSync(join(dir, 'sheet.jpg'), r.sheet);
+  writeFileSync(join(dir, 'pacing.txt'), r.report + '\n');
+  writeFileSync(join(dir, 'pacing.csv'), r.csv + '\n');
+  console.log(r.report + `\nreview → ${dir}/sheet.jpg, pacing.txt, pacing.csv`);
+  process.exit(0);
+}
 
 if (opt('preview')) {
   const { comp } = await build();
