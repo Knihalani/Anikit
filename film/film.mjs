@@ -1,394 +1,218 @@
-// ANIKIT — a 20-second title film, composed in code and rendered by anikit.
+// ANIKIT — ONE TAKE. A 24-second film in a single unbroken camera move,
+// composed in code and rendered entirely by anikit (no browser, no WebGL).
 //
 //   anikit-render film.mjs --out anikit-film.mp4 --workers 3
 //
-// One grammar throughout: hard cuts on impacts (flash frame + camera shake),
-// whips that carry the outgoing camera's motion, and shape match cuts where
-// the particle cloud flows straight into the next form. Every pixel is
-// anikit — particles simulated and lit in WebAssembly, rigid bodies, 3D
-// projection and depth sorting, tweens on every camera, slammed type,
-// emitters, and the transitions themselves — with motion blur.
+// A pool of 3,000 solid, lit cubes (anikit's WebAssembly rasterizer) morphs
+// between formations — a voxel wordmark, a sea of springs, rings around a
+// glossy torus knot, a tunnel — while 120,000 particles (pointCloud + glow)
+// detonate into a galaxy. One camera flies through all of it on a Hermite
+// path. Impacts, a slow-motion speed ramp, motion blur and the film grade
+// (bloom, aberration, vignette, grain) come from anikit's composition.
 export default async function film({ anikit: A, node }) {
-  const { animate, pointCloud, glow, scene3d, textPoints, world, ease, delayedCall, emitter, typeFx, composition } = A;
+  const { pointCloud, glow, scene3d, ease, typeFx, composition, mesh, instances, renderer3d } = A;
   const W = 1920, H = 1080;
   const FONT = '/usr/share/fonts';
   node.registerFont(`${FONT}/opentype/inter/InterDisplay-Black.otf`, 'Display');
   node.registerFont(`${FONT}/opentype/inter/InterDisplay-BlackItalic.otf`, 'DisplayItalic');
   node.registerFont(`${FONT}/truetype/jetbrains-mono/JetBrainsMono-Regular.ttf`, 'Mono');
 
-  const C = { paper: '#ece6da', ink: '#0c0c0c', red: '#ff3b14', blue: '#1f2bff', lime: '#d2ff3c', black: '#050505' };
+  const PAPER = [0.93, 0.9, 0.85], RED = [1, 0.23, 0.08], INK = [0.12, 0.12, 0.13], BLUE = [0.12, 0.17, 1];
   const TAU = Math.PI * 2;
   const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
-
-  // ---- Cut list (seconds): every cut lands on a 130 BPM half-beat grid -------------
-  const T = { open: 0, knot: 2.31, sand: 4.38, spring: 6.69, ease: 8.54, depth: 10.15, galaxy: 12.46, sparks: 14.77, sign: 16.62, end: 19.8 };
-
-  // ---- Impacts (shake) and flash frames ---------------------------------------------
-  const impacts = [], flashes = [];
-  const hit = (t, amp = 26, flashColor = '#fff', k = 34) => { impacts.push({ t, amp }); if (flashColor) flashes.push({ t, color: flashColor, k }); };
-  const shake = (t) => {
-    let x = 0, y = 0;
-    impacts.forEach((s, i) => {
-      if (t < s.t) return;
-      const a = s.amp * Math.exp(-(t - s.t) * 10);
-      x += a * Math.sin(t * 97 + i * 7.1); y += a * Math.cos(t * 83 + i * 3.3);
-    });
-    return [x, y];
-  };
-  const frame = (ctx, t, bg, content) => {
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-    const [sx, sy] = shake(t);
-    ctx.save();
-    if (sx || sy) { ctx.translate(W / 2 + sx, H / 2 + sy); ctx.scale(1.035, 1.035); ctx.translate(-W / 2, -H / 2); }
-    content();
-    ctx.restore();
-  };
-  const flashOver = (ctx, t) => {
-    for (const f of flashes) {
-      if (t < f.t) continue;
-      const a = 0.85 * Math.exp(-(t - f.t) * f.k);
-      if (a < 0.01) continue;
-      ctx.globalAlpha = a; ctx.fillStyle = f.color; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
-    }
-  };
-  const slam = (ctx, s, x, y, size, color, start, t, o = {}) => typeFx(ctx, s, x, y, { size, color, start, t, effect: 'slam', font: o.italic ? 'DisplayItalic' : 'Display', align: o.align ?? 'center', ...o });
-  const caption = (ctx, s, color, align = 'left') => {
-    ctx.font = '400 16px Mono'; ctx.textAlign = align; ctx.textBaseline = 'alphabetic';
-    ctx.globalAlpha = 0.8; ctx.fillStyle = color; ctx.fillText(s.toUpperCase(), align === 'left' ? 86 : W - 86, H - 58); ctx.globalAlpha = 1;
-  };
-  const steppers = {};
-  const stepDt = (key, t) => { const d = Math.max(0, Math.min(0.05, t - (steppers[key] ?? t))); steppers[key] = t; return d; };
-
-  // ---- One particle cloud, one glow ------------------------------------------------------
-  const target = node.glowTarget(W, H);
-  const g = glow(target, { resolution: 0.9, background: C.paper, mode: 'ink', trail: 0.45, budget: 0 });
-  g.resize(W, H);
-  const N = 160_000;
-  let seed = 11;
+  const mix = (a, b, t) => a + (b - a) * t;
+  const mix3 = (a, b, t) => [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)];
+  let seed = 5;
   const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
-  const gauss = () => (rnd() + rnd() + rnd() - 1.5) * 1.15;
-  const make = (fn) => { const a = new Float32Array(N * 3); for (let i = 0; i < N; i++) fn(i, a, i * 3); return a; };
-  const fib = (i, n) => { const y = 1 - ((i + 0.5) / n) * 2, r = Math.sqrt(1 - y * y), t = i * 2.399963; return [Math.cos(t) * r, y, Math.sin(t) * r]; };
-  const text = (s, width, dy = 0, depth = 12) => { const t = textPoints(s, N, { font: 'Display', weight: 900, width, depth }); for (let i = 1; i < t.length; i += 3) t[i] += dy; return t; };
-  const shapes = {
-    // A storm of ink around and in front of the camera: the opening frame.
-    storm: make((i, a, o) => { const c = fib(i, N), r = 250 + Math.pow(rnd(), 0.6) * 1500; a[o] = c[0] * r * 1.6; a[o + 1] = c[1] * r; a[o + 2] = c[2] * r + 300; }),
-    title: text('anikit', 1000, 90, 200),
-    knot: make((i, a, o) => {
-      const t = (i / N) * TAU, p = 2, q = 5, R = 300, rr = 130, r = R + rr * Math.cos(q * t), tube = 34 * Math.sqrt(rnd()), ang = rnd() * TAU;
-      a[o] = r * Math.cos(p * t) + tube * Math.cos(ang); a[o + 1] = r * Math.sin(p * t) + tube * Math.sin(ang) - 40; a[o + 2] = rr * 1.8 * Math.sin(q * t) + tube * Math.cos(ang * 1.7);
-    }),
-    galaxy: make((i, a, o) => {
-      if (i % 9 === 0) { const c = fib(i, N), r = 90 * Math.pow(rnd(), 1.5); a[o] = c[0] * r; a[o + 1] = c[1] * r * 0.6; a[o + 2] = c[2] * r; return; }
-      const arm = i % 4, d = Math.pow(rnd(), 0.7), r = 40 + d * 1250, ang = (arm / 4) * TAU + d * 5.2 + gauss() * 0.22 * (1.1 - d);
-      a[o] = Math.cos(ang) * r + gauss() * 22; a[o + 1] = gauss() * (26 * (1 - d) + 5); a[o + 2] = Math.sin(ang) * r + gauss() * 22;
-    }),
-    wordmark: text('anikit', 1100, 150, 30),
-  };
-  const names = Object.keys(shapes);
-  const S = Object.fromEntries(names.map((n, i) => [n, i]));
-  const cloud = pointCloud(N, { autoStep: false, shapes: names.map((n) => shapes[n]), stiffness: 34, damping: 7.5, spread: 0.6, noise: 1.6, swirl: 60, frequency: 0.012 });
-  cloud.snap(S.storm);
-  g.colors(N, () => { const r = rnd(); const k = r < 0.05 ? 1.7 : 0.5 + rnd() * 0.5; return [k, k, k]; });
-  const flow = (to, dur, e = 'inOutCubic') => { cloud.from = cloud.mix >= 0.5 ? cloud.to : cloud.from; cloud.to = S[to]; cloud.mix = 0; animate(cloud, { mix: 1 }, { duration: dur, ease: e }); };
-  let look = '';
-  const particles = (ctx, cam, mode, bg, o = {}) => {
-    if (look !== mode + bg) { look = mode + bg; g.options.mode = mode; const k = g.options.trail; g.options.trail = 0; g.render(cam, cloud, { exposure: 0 }); g.options.trail = k; }
-    g.options.background = bg;
-    const ink = mode === 'ink';
-    g.render(cam, cloud, { size: ink ? 2.1 : 1.3, intensity: o.intensity ?? (ink ? 1.8 : 0.5), fog: [300, 4800], tint: o.tint, maxRadius: 8 });
-    ctx.drawImage(target.canvas, 0, 0, W, H);
-  };
-  const cloudStep = ({ t }) => cloud.step(stepDt('cloud', t));
 
-  // Sparks (emitters), drawn as light or ink.
-  const drawSparks = (ctx, cam, em, light, base = 2.4) => {
-    if (!em.count) return;
-    em.shade();
-    const p = cam.project(em, { sort: false }), col = em.colors, sz = em.sizes;
-    ctx.save();
-    if (light) ctx.globalCompositeOperation = 'lighter';
-    for (let i = 0; i < p.count; i++) {
-      const sc = p.data[i * 4 + 3];
-      if (sc <= 0) continue;
-      const r = base * sz[i] * sc;
-      if (r < 0.2 || r > 40) continue;
-      ctx.fillStyle = `rgb(${(col[i * 3] * 255) | 0},${(col[i * 3 + 1] * 255) | 0},${(col[i * 3 + 2] * 255) | 0})`;
-      ctx.fillRect(p.data[i * 4] - r, p.data[i * 4 + 1] - r, r * 2, r * 2);
+  // ---- Voxel wordmark: 'anikit' sampled on a grid, three layers deep ----------------
+  const vox = [];
+  {
+    const cw = 118, chh = 34, cv = node.createCanvas(cw, chh), c = cv.getContext('2d');
+    c.font = '900 33px Display'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#fff';
+    c.fillText('anikit', cw / 2, chh / 2 + 1);
+    const img = c.getImageData(0, 0, cw, chh).data, cell = 15;
+    for (let y = 0; y < chh; y++) for (let x = 0; x < cw; x++) if (img[(y * cw + x) * 4 + 3] > 120)
+      for (let d = 0; d < 3; d++) vox.push([(x - cw / 2) * cell, -(y - chh / 2) * cell + 40, (d - 1) * cell, x / cw]);
+  }
+  const K = vox.length; // ≈ 3,000 cubes in the pool
+  const order = vox.map((v, i) => [Math.hypot(v[0], v[1]), i]).sort((a, b) => a[0] - b[0]);
+  const rank = new Float32Array(K); order.forEach(([, i], r) => (rank[i] = r / K));
+  const jitter = Float32Array.from({ length: K }, () => rnd());
+
+  // ---- Formations: each returns [x, y, z, rx, ry, rz, sx, sy, sz, r, g, b] --------------
+  const strikes = [5.0, 5.55, 6.05, 6.5, 6.85, 7.2, 7.5];
+  const spots = [[0, 0], [-700, 300], [650, -250], [-300, -420], [760, 380], [150, 100], [-560, -60]];
+  const COLS = 60, ROWS = Math.ceil(K / 60), GAP = 58;
+  const F = {
+    vortex: (i) => { const a = jitter[i] * TAU * 3, r = 1400 + jitter[(i * 7) % K] * 1800; return [Math.cos(a) * r, (jitter[(i * 13) % K] - 0.5) * 1600, Math.sin(a) * r - 600, i * 37, i * 53, 0, 14, 14, 14, ...PAPER]; },
+    word: (i) => { const v = vox[i], c = v[3] > 0.82 ? RED : mix3(PAPER, [1, 0.62, 0.45], clamp((v[3] - 0.55) * 1.6)); return [v[0], v[1], v[2], 0, 0, 0, 13.6, 13.6, 13.6, ...c]; },
+    wave: (i, t) => {
+      const c = i % COLS, r = Math.floor(i / COLS), x = (c - COLS / 2) * GAP, z = (r - ROWS / 2) * GAP - 200;
+      let h = 0;
+      strikes.forEach((s, k) => {
+        const [sx, sz] = spots[k % spots.length], d = Math.hypot(x - sx, z - sz), tau = t - s - d / 1700;
+        if (tau > 0 && tau < 1.6) h += 330 * Math.exp(-d / 700) * ease('outCubic', Math.min(1, tau / 0.12)) * (1 - ease('spring(bounce: 0.62, duration: 1.4)', tau / 1.6));
+      });
+      const lift = clamp(h / 220);
+      return [x, -420 + h, z, 0, 0, 0, 48, 48 + h * 0.15, 48, ...mix3(INK.map((v) => v * 2.2), lift > 0.55 ? RED : PAPER, clamp(lift * 1.4))];
+    },
+    orbit: (i, t) => {
+      const ring = i % 6, a = (i / K) * TAU * 6 + t * (0.5 + ring * 0.12) * (ring % 2 ? 1 : -1), R = 560 + ring * 95, tilt = (ring - 2.5) * 0.32;
+      const x = Math.cos(a) * R, y0 = Math.sin(a) * R * 0.2, z0 = Math.sin(a) * R;
+      return [x, y0 * Math.cos(tilt) - z0 * Math.sin(tilt), y0 * Math.sin(tilt) + z0 * Math.cos(tilt), t * 90 + i, t * 70, 0, 16, 16, 16, ...(i % 11 === 0 ? RED : PAPER)];
+    },
+    belt: (i, t) => { const a = (i / K) * TAU + t * 0.25, R = 1500 + (jitter[i] - 0.5) * 300; return [Math.cos(a) * R, (jitter[(i * 3) % K] - 0.5) * 60, Math.sin(a) * R, i, i, 0, 9, 9, 9, ...(i % 9 === 0 ? RED : PAPER)]; },
+    tunnel: (i) => {
+      const ringN = 14, ring = Math.floor(i / ringN), j = i % ringN, a = (j / ringN) * TAU + ring * 0.16, R = 430;
+      return [Math.cos(a) * R, Math.sin(a) * R, 2600 - ring * 78, 0, 0, (a * 180) / Math.PI + 90, 170, 22, 52, ...(ring % 9 === 0 ? RED : j % 7 === 0 ? [1, 0.75, 0.6] : PAPER)];
+    },
+  };
+  // Morph schedule on the film clock: [start, duration, from, to, stagger].
+  const morphs = [
+    [0.0, 1.0, 'vortex', 'word', 0.35],
+    [3.5, 1.3, 'word', 'wave', 0.5],
+    [8.3, 1.3, 'wave', 'orbit', 0.45],
+    [12.7, 1.1, 'orbit', 'belt', 0.4],
+    [16.5, 1.1, 'belt', 'tunnel', 0.5],
+    [20.4, 1.2, 'tunnel', 'word', 0.45],
+  ];
+  const cubes = instances(K);
+  const place = (t) => {
+    let m = morphs[0];
+    for (const x of morphs) if (t >= x[0]) m = x;
+    const [s, d, from, to, st] = m;
+    for (let i = 0; i < K; i++) {
+      const p = ease('inOutCubic', clamp((t - s - rank[i] * st * d) / (d * (1 - st))));
+      const a = F[from](i, t), b = p >= 1 ? null : F[to](i, t), q = p >= 1 ? F[to](i, t) : null;
+      const v = q ?? a.map((av, k) => mix(av, b[k], p));
+      const arc = p > 0 && p < 1 ? Math.sin(p * Math.PI) * 220 * (jitter[i] - 0.3) : 0; // a little lift mid-flight
+      cubes.set(i, { x: v[0], y: v[1] + arc, z: v[2], rx: v[3], ry: v[4], rz: v[5], sx: v[6], sy: v[7], sz: v[8], color: [v[9], v[10], v[11]] });
     }
-    ctx.restore();
   };
 
-  const film = composition({ width: W, height: H, fps: 60, duration: T.end, motionBlur: { samples: 3, shutter: 0.5 } });
+  // ---- The knot (solid) and the particles it becomes ------------------------------------
+  const knot = mesh.torusKnot({ p: 2, q: 5, radius: 250, spread: 105, tube: 46, segments: 460, sides: 20 });
+  const knotInst = instances(1);
+  const cube = mesh.cube();
+  const N = 120_000;
+  const knotPts = new Float32Array(N * 3), galaxy = new Float32Array(N * 3), core = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const t = (i / N) * TAU, k = 250 + 105 * Math.cos(5 * t), ang = rnd() * TAU, rr = 46 * Math.sqrt(rnd());
+    knotPts.set([k * Math.cos(2 * t) + rr * Math.cos(ang), k * Math.sin(2 * t) + rr * Math.sin(ang), 105 * 1.6 * Math.sin(5 * t) + rr * Math.cos(ang * 1.3)], i * 3);
+    const arm = i % 4, d = Math.pow(rnd(), 0.7), r = 60 + d * 1300, a = (arm / 4) * TAU + d * 5 + (rnd() - 0.5) * 0.5 * (1.1 - d);
+    galaxy.set([Math.cos(a) * r, (rnd() - 0.5) * (50 * (1 - d) + 8), Math.sin(a) * r], i * 3);
+    core.set([(rnd() - 0.5) * 6, (rnd() - 0.5) * 6, (rnd() - 0.5) * 6], i * 3);
+  }
+  const cloud = pointCloud(N, { autoStep: false, shapes: [knotPts, galaxy, core], stiffness: 30, damping: 6.5, spread: 0.5, noise: 1.4, swirl: 70 });
+  cloud.snap(0);
+  const gt = node.glowTarget(W, H);
+  const g = glow(gt, { resolution: 0.85, background: '#000000', mode: 'light', trail: 0.55, budget: 0 });
+  g.resize(W, H);
+  g.colors(N, (i) => (i % 7 === 0 ? [1, 0.55, 0.32] : i % 13 === 0 ? [0.55, 0.62, 1] : [1, 0.92, 0.84]));
 
-  // 01 · OPEN (0–2.31): a storm of ink rushes in and slams into a 3D
-  //      wordmark while the camera whips around it.
-  const camA = scene3d({ fov: 42, camera: { z: 1000 }, width: W, height: H, near: 4, far: 30000 });
-  hit(0.35, 34, '#fff', 26);
-  film.scene('open', T.open, T.knot, {
-    enter() {
-      // Frame 0: the 3D wordmark, the camera already whipping around it.
-      // At 0.35 s it detonates toward the lens; its springs pull it back.
-      cloud.snap(S.title);
-      cloud.from = cloud.to = S.title; cloud.mix = 0;
-      delayedCall(0.35, () => cloud.explode(0, 90, -500, 3400));
-      animate(camA.rotation, { y: [-80, 20], x: [30, 6] }, { duration: 1.6, ease: 'outExpo' });
-      animate(camA.camera, { z: [760, 1080] }, { duration: 2.0, ease: 'outExpo' });
-    },
-    step: cloudStep,
-    draw({ ctx, t }) {
-      frame(ctx, t, C.paper, () => particles(ctx, camA, 'ink', C.paper, { intensity: 1.9 }));
-      slam(ctx, 'Motion,', 90, H - 214, 140, C.ink, 1.05, t, { align: 'left' });
-      slam(ctx, 'compiled.', 90, H - 80, 140, C.red, 1.2, t, { align: 'left', italic: true });
-      flashOver(ctx, t);
-    },
+  // ---- One camera, one unbroken Hermite path --------------------------------------------
+  // [clock, eye xyz, target xyz, roll°]
+  const keys = [
+    [0.0, [-1500, 260, 900], [0, 40, 0], 0],
+    [1.1, [-420, 120, 1250], [0, 40, 0], 0],
+    [3.4, [480, 60, 1300], [0, 40, 0], 0],
+    [5.0, [900, 120, 1350], [0, -300, -200], 0],
+    [7.6, [-700, 260, 1100], [0, -380, -400], 0],
+    [9.4, [0, 420, 1700], [0, 0, 0], 0],
+    [11.0, [900, 300, 700], [0, 0, 0], 0],
+    [12.0, [180, 60, 160], [-200, 0, -600], 0],
+    [12.9, [0, 300, 1300], [0, 0, 0], 0],
+    [14.6, [0, 1500, 2600], [0, 0, 0], 0],
+    [16.5, [0, 160, 420], [0, 0, -400], 0],
+    [17.4, [0, 0, 3600], [0, 0, 2000], 0],
+    [20.2, [0, 0, -800], [0, 0, -2600], 220],
+    [21.6, [0, 120, 1500], [0, 40, 0], 360],
+    [24.0, [-260, 80, 1150], [0, 40, 0], 360],
+  ];
+  const hermite = (t) => {
+    let i = 0;
+    while (i < keys.length - 2 && t > keys[i + 1][0]) i++;
+    const k0 = keys[Math.max(0, i - 1)], k1 = keys[i], k2 = keys[i + 1], k3 = keys[Math.min(keys.length - 1, i + 2)];
+    const u = clamp((t - k1[0]) / (k2[0] - k1[0]));
+    const s = ease('inOutSine', u) * 0.35 + u * 0.65;
+    const h00 = 2 * s ** 3 - 3 * s ** 2 + 1, h10 = s ** 3 - 2 * s ** 2 + s, h01 = -2 * s ** 3 + 3 * s ** 2, h11 = s ** 3 - s ** 2;
+    const dt = k2[0] - k1[0];
+    const tan = (a, b, ta, tb, j, f) => ((b[f][j] - a[f][j]) / Math.max(1e-3, tb - ta)) * dt;
+    const at = (f, j) => h00 * k1[f][j] + h10 * tan(k0, k2, k0[0], k2[0], j, f) + h01 * k2[f][j] + h11 * tan(k1, k3, k1[0], k3[0], j, f);
+    return { eye: [0, 1, 2].map((j) => at(1, j)), target: [0, 1, 2].map((j) => at(2, j)), roll: mix(k1[3], k2[3], ease('inOutCubic', u)) };
+  };
+  const cam = scene3d({ fov: 46, width: W, height: H, near: 8, far: 40000 });
+  const r3 = renderer3d({ width: W, height: H });
+
+  // ---- The film ----------------------------------------------------------------------------
+  const film = composition({
+    width: W, height: H, fps: 60, duration: 24.5, motionBlur: { samples: 2, shutter: 0.5 },
+    post: { bloom: 0.55, bloomThreshold: 0.72, bloomRadius: 36, vignette: 0.42, grain: 5, aberration: 0.5 },
   });
+  // Impacts on composition time (the slow-mo stretches clock time after 17.9).
+  film.impact(1.0, { shake: 34, flash: '#ffffff', flashOpacity: 0.55, aberration: 7 });
+  for (const s of strikes) film.impact(s, { shake: 10, aberration: 2.5 });
+  film.impact(12.75, { shake: 40, flash: '#ffffff', flashOpacity: 0.7, aberration: 9 });
+  // The bullet-time ramp lags the film clock by ∫0.88·e^(−x²) = 0.88·0.55·√π ≈ 0.86 s.
+  film.impact(21.6 + 0.86, { shake: 30, flash: '#ff3b14', flashOpacity: 0.35, aberration: 6 });
 
-  // 02 · KNOT (2.31–4.38): hard cut to vermilion; the wordmark flows into a
-  //      torus knot while the camera spins around it.
-  const camB = scene3d({ fov: 42, camera: { z: 1000 }, width: W, height: H, near: 4, far: 30000 });
-  hit(T.knot, 22, C.red, 40);
-  film.scene('knot', T.knot, T.sand, {
-    enter() {
-      flow('knot', 0.75, 'outExpo');
-      animate(camB.rotation, { y: [0, 400], x: [10, 38, 18] }, { duration: 2.3, ease: 'inQuad' });
-      animate(camB.camera, { z: [1150, 820] }, { duration: 2.1, ease: 'inOutSine' });
+  let clock = 0;
+  const S = { wordmark: false };
+  film.scene('one take', 0, 24.5, {
+    // Bullet time inside the tunnel: the whole engine (and the film clock) drops to 12%.
+    timeScale: (t) => 1 - 0.88 * Math.exp(-Math.pow((t - 18.7) / 0.55, 2)),
+    step({ dt }) {
+      clock += dt;
+      cloud.step(dt);
+      // Particle choreography (clock-driven).
+      if (clock >= 12.72 && cloud.to !== 1 && clock < 16.4) { cloud.explode(0, 0, 0, 2600); cloud.from = 0; cloud.to = 1; cloud.mix = 0; S.flowT = clock; }
+      if (cloud.to === 1 && S.flowT !== undefined) cloud.mix = ease('outCubic', clamp((clock - S.flowT) / 1.6));
+      if (clock >= 16.4 && cloud.to !== 2) { cloud.from = 1; cloud.to = 2; cloud.mix = 0; S.coreT = clock; }
+      if (cloud.to === 2) cloud.mix = ease('inExpo', clamp((clock - S.coreT) / 0.9));
     },
-    step: cloudStep,
     draw({ ctx, t }) {
-      frame(ctx, t, C.red, () => particles(ctx, camB, 'ink', C.red, { intensity: 1.85 }));
-      slam(ctx, '160,000 PARTICLES.', W / 2, 190, 150, C.paper, T.knot + 0.3, t);
-      caption(ctx, 'simulated + lit in webassembly · one spring each', C.paper);
-      flashOver(ctx, t);
-    },
-  });
-
-  // 03 · SAND (4.38–6.69): whip in; a word of 9,000 rigid bodies drops,
-  //      then time runs backwards.
-  let sand = null;
-  hit(T.sand + 0.7, 26, null); hit(T.sand + 1.5, 12, C.red, 40);
-  film.scene('sand', T.sand, T.spring, {
-    transition: { duration: 0.3, type: 'whip', direction: 'left' },
-    enter() {
-      const off = node.createCanvas(W, H), o = off.getContext('2d');
-      o.font = '900 430px Display'; o.textAlign = 'center'; o.textBaseline = 'middle'; o.fillStyle = '#fff';
-      o.fillText('MOTION', W / 2, H / 2 + 20);
-      const img = o.getImageData(0, 0, W, H).data, pts = [], sp = 5.2;
-      for (let y = 0; y < H; y += sp) for (let x = 0; x < W; x += sp) if (img[(Math.round(y) * W + Math.round(x)) * 4 + 3] > 140) pts.push({ x: x + (rnd() - 0.5) * 0.6, y: y + (rnd() - 0.5) * 0.6, r: 2.45, mass: 1 });
-      const w = world({ bounds: [0, -4000, W, H - 40], gravity: [0, 0], substeps: 3, iterations: 2, restitution: 0.08, friction: 0.35, damping: 0.03 });
-      w.addMany(pts);
-      sand = { w, n: pts.length, hist: [], mode: 'hold', k: 0, last: -1 };
-      delayedCall(0.4, () => { sand.mode = 'fall'; w.set({ gravity: [0, 3600] }); for (let i = 0; i < sand.n; i++) w.setVelocity(i, (rnd() - 0.5) * 300, -rnd() * 300); });
-      delayedCall(1.5, () => { sand.mode = 'rewind'; w.pause(); sand.k = sand.hist.length - 1; animate(sand, { k: 0 }, { duration: 0.6, ease: 'inOutExpo', onComplete: () => (sand.mode = 'done') }); });
-    },
-    step({ frame: f }) {
-      const s = sand;
-      if (f === s.last) return;
-      s.last = f;
-      if (s.mode === 'fall' || (s.mode === 'hold' && !s.hist.length)) {
-        const d = s.w.data, snap = new Float32Array(s.n * 2);
-        for (let i = 0; i < s.n; i++) { snap[i * 2] = d[i * 3]; snap[i * 2 + 1] = d[i * 3 + 1]; }
-        s.hist.push(snap);
+      const c = clock;
+      // Camera.
+      const k = hermite(c);
+      Object.assign(cam.camera, { x: k.eye[0], y: k.eye[1], z: k.eye[2] });
+      Object.assign(cam.target, { x: k.target[0], y: k.target[1], z: k.target[2] });
+      cam.rotation.z = k.roll;
+      // Solid geometry.
+      place(c);
+      const items = [];
+      const cubesVisible = !(c > 13.6 && c < 16.6);
+      if (cubesVisible) items.push({ mesh: cube, instances: cubes, material: { ambient: 0.16, diffuse: 0.9, specular: 0.55, shininess: 30, rim: 0.45 } });
+      const ks = c < 8.5 ? 0 : c < 12.72 ? ease('elastic.out(1, 0.4)', clamp((c - 8.5) / 1.4)) : 0;
+      if (ks > 0.01) {
+        knotInst.set(0, { rx: c * 22, ry: c * 31, scale: ks, color: RED });
+        items.push({ mesh: knot, instances: knotInst, material: { ambient: 0.12, diffuse: 0.75, specular: 1.1, shininess: 70, rim: 0.9 } });
+      }
+      const px = r3.render(cam, items, { background: '#06070a', fog: [1400, 5200], key: [0.5, 0.9, 0.4], keyColor: [1, 0.95, 0.9], fill: [-0.7, -0.3, 0.5], fillColor: [0.12, 0.16, 0.45], rimColor: [1, 0.4, 0.25] });
+      ctx.putImageData(new globalThis.ImageData(px, W, H), 0, 0);
+      // Particles as light, added over the solids.
+      const pOn = c > 12.6 && c < 17.6;
+      if (pOn) {
+        g.render(cam, cloud, { size: 1.4, intensity: 0.55, fog: [200, 6000], maxRadius: 9, exposure: clamp((17.4 - c) / 0.6) });
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.drawImage(gt.canvas, 0, 0, W, H); ctx.restore();
+      }
+      // Type: paper on the dark world, over a soft scrim where the scene is busy.
+      const scrim = (y0, y1) => { const gr = ctx.createLinearGradient(0, y0, 0, y1); gr.addColorStop(0, 'rgba(6,7,10,0.72)'); gr.addColorStop(1, 'rgba(6,7,10,0)'); ctx.fillStyle = gr; ctx.fillRect(0, Math.min(y0, y1), W, Math.abs(y1 - y0)); };
+      if ((c > 5.0 && c < 8.3) || (c > 9.6 && c < 12.7) || (c > 13.4 && c < 16.4)) scrim(0, 420);
+      const slam = (s, x, y, size, color, start, o = {}) => typeFx(ctx, s, x, y, { size, color, start, t: c, effect: 'slam', font: o.italic ? 'DisplayItalic' : 'Display', align: o.align ?? 'center', ...o });
+      const cap = (s, a = 1) => { ctx.globalAlpha = 0.75 * a; ctx.font = '400 16px Mono'; ctx.textAlign = 'left'; ctx.fillStyle = '#ece6da'; ctx.fillText(s.toUpperCase(), 86, H - 58); ctx.globalAlpha = 1; };
+      if (c > 1.2 && c < 3.6) { slam('Motion,', 90, H - 200, 120, '#ece6da', 1.3, { align: 'left' }); slam('compiled.', 90, H - 84, 120, '#ff3b14', 1.45, { align: 'left', italic: true }); }
+      if (c > 1.2 && c < 3.6) cap(`${K.toLocaleString('en-US')} solid cubes · lit + depth-tested in webassembly`);
+      if (c > 5.0 && c < 8.3) { slam('SPRINGS.', W / 2, 200, 190, '#ece6da', 5.1); cap('every cube rides a spring · retargeted on every strike'); }
+      if (c > 9.6 && c < 12.7) { slam('SOLID 3D.', W / 2, 190, 170, '#ece6da', 9.7); slam('NO WEBGL.', W / 2, 330, 120, '#ff3b14', 9.9); cap(`${(knot.triangles).toLocaleString('en-US')}-triangle knot · ${K.toLocaleString('en-US')} orbiting instances`); }
+      if (c > 13.4 && c < 16.4) { slam('120,000 PARTICLES.', W / 2, 200, 150, '#ece6da', 13.5); cap('simulated + lit in webassembly · one spring each'); }
+      if (c > 17.6 && c < 20.3) { slam('BULLET TIME.', W / 2, H / 2 + 60, 170, '#ece6da', 18.3); cap('one clock · engine.speed slows everything together'); }
+      if (c > 21.8) {
+        slam('Motion,', 90, H - 200, 120, '#ece6da', 22.0, { align: 'left' }); slam('compiled.', 90, H - 84, 120, '#ff3b14', 22.15, { align: 'left', italic: true });
+        const a = clamp((c - 22.7) / 0.4);
+        if (a > 0) { ctx.globalAlpha = a; ctx.textAlign = 'right'; ctx.fillStyle = '#ece6da'; ctx.font = '400 30px Mono'; ctx.fillText('NPM INSTALL ANIKIT', W - 86, H - 124); ctx.font = '400 16px Mono'; ctx.fillText('RUST · WEBASSEMBLY · TYPESCRIPT · PYTHON', W - 86, H - 84); ctx.globalAlpha = 1; }
       }
     },
-    draw({ ctx, t }) {
-      const s = sand, fr = s.mode === 'rewind' || s.mode === 'done' ? s.hist[Math.round(s.k)] : s.hist[s.hist.length - 1];
-      frame(ctx, t, C.lime, () => {
-        ctx.fillStyle = C.ink;
-        for (let i = 0; i < s.n; i++) ctx.fillRect(fr[i * 2] - 2.25, fr[i * 2 + 1] - 2.25, 4.5, 4.5);
-      });
-      if (s.mode === 'rewind') slam(ctx, '◀◀ REWIND', W / 2, 200, 120, C.red, T.sand + 1.5, t, { duration: 0.2 });
-      if (s.mode === 'done') slam(ctx, 'DETERMINISTIC.', W / 2, 200, 150, C.ink, (s.at ??= t), t);
-      caption(ctx, `${s.n.toLocaleString('en-US')} rigid bodies · one physics world`, C.ink);
-      flashOver(ctx, t);
-    },
   });
-
-  // 04 · SPRINGS (6.69–8.54): hard cut; the camera swoops over a sheet of
-  //      3,080 springs struck faster and faster.
-  const camC = scene3d({ fov: 40, camera: { z: 1300 }, width: W, height: H, near: 4, far: 30000 });
-  let sheet = null;
-  hit(T.spring, 20, '#fff', 40);
-  film.scene('springs', T.spring, T.ease, {
-    enter() {
-      const cols = 70, rows = 44, pts = [];
-      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) pts.push({ x: (c / (cols - 1) - 0.5) * 2300, z: (r / (rows - 1) - 0.5) * 1600, h: 0 });
-      const spots = [[0, 0], [-640, 300], [560, -260], [-300, -420], [720, 380], [180, 120], [-560, -60], [400, 320], [0, -320], [-220, 400]];
-      const hits = [];
-      for (let k = 0, at = 0.05, gap = 0.3; at < 1.9; k++, at += gap, gap = Math.max(0.1, gap * 0.85)) hits.push({ x: spots[k % spots.length][0], z: spots[k % spots.length][1], at, amp: k === 0 ? 480 : 300 });
-      sheet = { cols, rows, pts, xyz: new Float32Array(cols * rows * 3), hits: hits.map((h) => ({ ...h, d: pts.map((p) => Math.hypot(p.x - h.x, p.z - h.z)) })) };
-      animate(camC.rotation, { x: [46, 26], y: [-40, 34] }, { duration: 2.3, ease: 'inOutCubic' });
-      animate(camC.camera, { z: [1050, 760] }, { duration: 2.3, ease: 'inOutCubic' });
-    },
-    draw({ ctx, t }) {
-      const lt = t - T.spring;
-      frame(ctx, t, C.blue, () => {
-        const { cols, rows, pts, xyz } = sheet;
-        for (let i = 0; i < pts.length; i++) {
-          let h = 0;
-          for (const s of sheet.hits) {
-            const tau = lt - s.at - s.d[i] / 1900;
-            if (tau <= 0 || tau > 1.5) continue;
-            h -= s.amp * Math.exp(-s.d[i] / 650) * ease('outCubic', Math.min(1, tau / 0.1)) * (1 - ease('spring(bounce: 0.62, duration: 1.3)', tau / 1.5));
-          }
-          pts[i].h = h;
-          xyz[i * 3] = pts[i].x; xyz[i * 3 + 1] = -h; xyz[i * 3 + 2] = pts[i].z;
-        }
-        const p = camC.project(xyz, { sort: false }), X = (i) => p.data[i * 4], Y = (i) => p.data[i * 4 + 1];
-        ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(236,230,218,0.55)';
-        ctx.beginPath();
-        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) { const i = r * cols + c; if (c === 0) ctx.moveTo(X(i), Y(i)); else ctx.lineTo(X(i), Y(i)); }
-        for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) { const i = r * cols + c; if (r === 0) ctx.moveTo(X(i), Y(i)); else ctx.lineTo(X(i), Y(i)); }
-        ctx.stroke();
-        for (let i = 0; i < pts.length; i++) {
-          const sc = p.data[i * 4 + 3];
-          if (sc <= 0) continue;
-          const lift = clamp(-pts[i].h / 140);
-          ctx.fillStyle = lift > 0.2 ? C.lime : C.paper;
-          const r = (1.8 + lift * 3.6) * sc;
-          ctx.fillRect(X(i) - r, Y(i) - r, r * 2, r * 2);
-        }
-      });
-      slam(ctx, 'SPRINGS.', W / 2, 230, 230, C.paper, T.spring + 0.2, t);
-      caption(ctx, '3,080 springs · retargeted mid-flight', C.paper);
-      flashOver(ctx, t);
-    },
-  });
-
-  // 05 · EASE (8.54–10.15): whip (carrying the swoop); curves drawn at once.
-  const curves = ['outExpo', 'spring(bounce: 0.55)', 'outBounce', 'elastic.out(1, 0.3)', 'steps(8)', 'custom(M0,0 C0.2,1.4 0.5,-0.4 1,1)'];
-  film.scene('ease', T.ease, T.depth, {
-    transition: { duration: 0.3, type: 'whip', direction: 'left' },
-    draw({ ctx, t }) {
-      const lt = t - T.ease;
-      frame(ctx, t, C.paper, () => {
-        const x0 = 860, x1 = W - 90, top = 60, lane = 160;
-        curves.forEach((name, k) => {
-          const yb = top + (k + 1) * lane, amp = 110, pr = clamp((lt - 0.12 - k * 0.03) / 0.75);
-          ctx.strokeStyle = 'rgba(12,12,12,0.14)'; ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.moveTo(x0, yb); ctx.lineTo(x1, yb); ctx.stroke();
-          ctx.strokeStyle = C.red; ctx.lineWidth = 6; ctx.lineJoin = 'round';
-          ctx.beginPath();
-          const steps = Math.floor(pr * 200);
-          for (let j = 0; j <= steps; j++) { const u = j / 200, x = x0 + (x1 - x0) * u, y = yb - ease(name, u) * amp; if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
-          ctx.stroke();
-          ctx.fillStyle = C.ink;
-          ctx.beginPath(); ctx.arc(x0 + (x1 - x0) * pr, yb - ease(name, pr) * amp, 12, 0, TAU); ctx.fill();
-          ctx.font = '400 16px Mono'; ctx.textAlign = 'right'; ctx.fillText(name.toUpperCase(), x0 - 26, yb - 6);
-        });
-      });
-      slam(ctx, 'EASE.', 80, 640, 250, C.ink, T.ease + 0.15, t, { align: 'left' });
-      flashOver(ctx, t);
-    },
-  });
-
-  // 06 · DEPTH (10.15–12.46): hard cut; a flight through 1,400 cards.
-  const camD = scene3d({ fov: 52, camera: { z: 1400 }, width: W, height: H, near: 4, far: 30000 });
-  let tunnel = null;
-  hit(T.depth, 22, '#fff', 40);
-  film.scene('depth', T.depth, T.galaxy, {
-    enter() {
-      const n = 1400, xyz = new Float32Array(n * 3), meta = [];
-      for (let i = 0; i < n; i++) { const a = i * 0.29, r = 360 + (i % 4) * 75; xyz[i * 3] = Math.cos(a) * r; xyz[i * 3 + 1] = Math.sin(a) * r; xyz[i * 3 + 2] = -i * 7.2; meta.push({ a, hot: i % 7 === 0 }); }
-      tunnel = { xyz, meta };
-      animate(camD.camera, { z: [900, -9300] }, { duration: 2.5, ease: 'inQuad' });
-      animate(camD.target, { z: [-100, -10300] }, { duration: 2.5, ease: 'inQuad' });
-      animate(camD.rotation, { z: [0, 240] }, { duration: 2.5, ease: 'inQuad' });
-    },
-    draw({ ctx, t }) {
-      frame(ctx, t, C.red, () => {
-        const p = camD.project(tunnel.xyz), roll = (camD.rotation.z * Math.PI) / 180;
-        for (let k = 0; k < p.count; k++) {
-          const i = p.order[k], sc = p.data[i * 4 + 3];
-          if (sc <= 0) continue;
-          const d = p.data[i * 4 + 2];
-          if (d < 30) continue;
-          const w = 64 * sc, h = 90 * sc;
-          if (w < 0.6 || w > 2600) continue;
-          ctx.save();
-          ctx.globalAlpha = clamp(1.15 - d / 6500);
-          ctx.translate(p.data[i * 4], p.data[i * 4 + 1]);
-          ctx.rotate(tunnel.meta[i].a + roll);
-          ctx.fillStyle = tunnel.meta[i].hot ? C.paper : C.ink;
-          ctx.fillRect(-w / 2, -h / 2, w, h);
-          ctx.restore();
-        }
-      });
-      // Clear space for the type: a solid ink band.
-      const a = clamp((t - T.depth - 0.25) / 0.12);
-      if (a > 0) { ctx.fillStyle = C.ink; ctx.fillRect(0, H / 2 - 150 * a, W, 300 * a); }
-      slam(ctx, 'DEPTH-SORTED.', W / 2, H / 2 + 70, 200, C.red, T.depth + 0.32, t);
-      caption(ctx, '1,400 cards · projected + radix-sorted in webassembly, every frame', C.paper);
-      flashOver(ctx, t);
-    },
-  });
-
-  // 07 · GALAXY (12.46–14.77): hard cut to black; the knot flows into a
-  //      galaxy as the camera falls into its core.
-  const camE = scene3d({ fov: 40, camera: { y: 1900, z: 2600 }, width: W, height: H, near: 4, far: 30000 });
-  hit(T.galaxy, 18, '#fff', 30);
-  film.scene('galaxy', T.galaxy, T.sparks, {
-    enter() {
-      flow('galaxy', 0.9, 'outExpo');
-      animate(camE.camera, { y: [1100, 260], z: [1500, 700] }, { duration: 2.4, ease: 'inOutCubic' });
-      animate(camE.rotation, { y: [0, 110] }, { duration: 2.4, ease: 'inOutSine' });
-    },
-    step: cloudStep,
-    draw({ ctx, t }) {
-      frame(ctx, t, C.black, () => particles(ctx, camE, 'light', C.black, { tint: [0.86, 0.9, 1], intensity: 0.55 }));
-      slam(ctx, 'ONE ENGINE.', W / 2, 220, 200, C.paper, T.galaxy + 0.4, t);
-      caption(ctx, 'rust → webassembly · typescript · python', C.paper);
-      flashOver(ctx, t);
-    },
-  });
-
-  // 08 · SPARKS (14.77–16.62): hard cut; 12,000 sparks burst at the camera.
-  const camF = scene3d({ fov: 46, camera: { z: 900 }, width: W, height: H, near: 4, far: 30000 });
-  const fire = emitter({ capacity: 22000, rate: 0, autoStep: false, life: 1.7, lifeVariation: 0.5, speed: 1500, speedVariation: 0.7, spread: Math.PI, gravity: [0, -650, 0], drag: 1.4, turbulence: 1200, frequency: 0.006, colors: ['#ffffff', '#ffd9a0', '#ff6a2a', '#300a00'] });
-  hit(T.sparks, 34, '#fff', 22);
-  hit(T.sparks + 0.95, 26, null);
-  film.scene('sparks', T.sparks, T.sign, {
-    enter() {
-      fire.burst(12000);
-      delayedCall(0.95, () => fire.burst(10000));
-      animate(camF.rotation, { y: [-30, 70], x: [12, -8] }, { duration: 1.9, ease: 'inOutCubic' });
-    },
-    step({ t }) { fire.step(stepDt('fire', t)); },
-    draw({ ctx, t }) {
-      frame(ctx, t, C.black, () => drawSparks(ctx, camF, fire, true, 2.6));
-      slam(ctx, 'EMITTERS.', W / 2, H - 120, 190, C.paper, T.sparks + 0.25, t);
-      flashOver(ctx, t);
-    },
-  });
-
-  // 09 · SIGNATURE (16.62–19.8): revealed through an 'a'; the galaxy flows
-  //      into the wordmark.
-  const camG = scene3d({ fov: 42, camera: { z: 1000 }, width: W, height: H, near: 4, far: 30000 });
-  const inkSpray = emitter({ capacity: 10000, rate: 0, autoStep: false, life: 1.2, lifeVariation: 0.4, speed: 1700, speedVariation: 0.6, spread: Math.PI, gravity: [0, -800, 0], drag: 1.6, turbulence: 900, frequency: 0.008, origin: [0, 150, 0], colors: ['#ff3b14', '#ff3b14', '#0c0c0c', '#ece6da'] });
-  hit(T.sign + 0.55, 24, null);
-  film.scene('signature', T.sign, T.end, {
-    transition: { duration: 0.55, type: 'mask', text: 'a', origin: [0.5, 0.56] },
-    enter() {
-      flow('wordmark', 1.0, 'outExpo');
-      animate(camG.rotation, { y: [-24, 0], x: [10, 0] }, { duration: 1.6, ease: 'outExpo' });
-      delayedCall(0.55, () => inkSpray.burst(9000));
-    },
-    step(f) { cloudStep(f); inkSpray.step(stepDt('ink', f.t)); },
-    draw({ ctx, t }) {
-      frame(ctx, t, C.paper, () => { particles(ctx, camG, 'ink', C.paper, { intensity: 1.95 }); drawSparks(ctx, camG, inkSpray, false, 2.6); });
-      slam(ctx, 'Motion,', 90, H - 214, 140, C.ink, T.sign + 1.0, t, { align: 'left' });
-      slam(ctx, 'compiled.', 90, H - 80, 140, C.red, T.sign + 1.15, t, { align: 'left', italic: true });
-      const a = clamp((t - T.sign - 1.7) / 0.35);
-      if (a > 0) {
-        ctx.globalAlpha = a; ctx.textAlign = 'right'; ctx.fillStyle = C.ink;
-        ctx.font = '400 30px Mono'; ctx.fillText('NPM INSTALL ANIKIT', W - 86, H - 124);
-        ctx.font = '400 16px Mono'; ctx.fillText('RUST · WEBASSEMBLY · TYPESCRIPT · PYTHON', W - 86, H - 84);
-        ctx.globalAlpha = 1;
-      }
-      flashOver(ctx, t);
-    },
-  });
-
   return film;
 }

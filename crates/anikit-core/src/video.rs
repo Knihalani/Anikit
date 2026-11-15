@@ -102,6 +102,162 @@ pub fn rgba_to_i420(src: &[u8], w: usize, h: usize, order: Order, out: &mut [u8]
     }
 }
 
+/// Film-look post-processing parameters (all off at 0).
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Post {
+    /// Bloom: brightness threshold (0…1), strength, and blur radius in pixels.
+    pub bloom_threshold: f32,
+    pub bloom: f32,
+    pub bloom_radius: f32,
+    /// Radial chromatic aberration: red/blue offset in pixels at the corners.
+    pub aberration: f32,
+    /// Vignette strength (0…1).
+    pub vignette: f32,
+    /// Film grain amplitude in 8-bit levels, re-seeded per frame.
+    pub grain: f32,
+    pub seed: u32,
+}
+
+/// Scratch buffers for [`Post`], reused across frames.
+#[derive(Debug, Default)]
+pub struct PostFx {
+    small: Vec<f32>,
+    tmp: Vec<f32>,
+    copy: Vec<u8>,
+}
+
+impl PostFx {
+    /// Apply `p` to an RGBA frame in place.
+    pub fn apply(&mut self, rgba: &mut [u8], w: usize, h: usize, p: &Post) {
+        if p.aberration > 0.0 {
+            self.aberrate(rgba, w, h, p.aberration);
+        }
+        if p.bloom > 0.0 {
+            self.bloom(rgba, w, h, p);
+        }
+        if p.vignette > 0.0 || p.grain > 0.0 {
+            let (cx, cy) = (w as f32 * 0.5, h as f32 * 0.5);
+            let inv = 1.0 / (cx * cx + cy * cy);
+            let mut s = p.seed.wrapping_mul(2_654_435_761) | 1;
+            for y in 0..h {
+                let dy = y as f32 - cy;
+                let row = &mut rgba[y * w * 4..(y + 1) * w * 4];
+                for (x, px) in row.chunks_exact_mut(4).enumerate() {
+                    let dx = x as f32 - cx;
+                    let r2 = (dx * dx + dy * dy) * inv;
+                    let k = 1.0 - p.vignette * r2 * r2 * 1.4;
+                    s ^= s << 13;
+                    s ^= s >> 17;
+                    s ^= s << 5;
+                    let n = ((s >> 24) as f32 / 255.0 - 0.5) * 2.0 * p.grain;
+                    for c in px[..3].iter_mut() {
+                        *c = (*c as f32 * k + n).clamp(0.0, 255.0) as u8;
+                    }
+                }
+            }
+        }
+    }
+
+    fn aberrate(&mut self, rgba: &mut [u8], w: usize, h: usize, amount: f32) {
+        self.copy.clear();
+        self.copy.extend_from_slice(rgba);
+        let (cx, cy) = (w as f32 * 0.5, h as f32 * 0.5);
+        let norm = amount / crate::math::sqrtf(cx * cx + cy * cy).max(1.0);
+        for y in 0..h {
+            let dy = y as f32 - cy;
+            for x in 0..w {
+                let dx = x as f32 - cx;
+                // Red pushed outward, blue pulled inward, proportional to radius.
+                let (ox, oy) = (dx * norm, dy * norm);
+                let sample = |sx: f32, sy: f32, c: usize| -> u8 {
+                    let ix = (crate::math::floorf(sx + 0.5) as isize).clamp(0, w as isize - 1) as usize;
+                    let iy = (crate::math::floorf(sy + 0.5) as isize).clamp(0, h as isize - 1) as usize;
+                    self.copy[(iy * w + ix) * 4 + c]
+                };
+                let i = (y * w + x) * 4;
+                rgba[i] = sample(x as f32 - ox, y as f32 - oy, 0);
+                rgba[i + 2] = sample(x as f32 + ox, y as f32 + oy, 2);
+            }
+        }
+    }
+
+    #[allow(clippy::needless_range_loop)]
+    fn bloom(&mut self, rgba: &mut [u8], w: usize, h: usize, p: &Post) {
+        // Bright pass at quarter resolution, two box blurs (≈ gaussian), add back.
+        let (sw, sh) = (w.div_ceil(4), h.div_ceil(4));
+        self.small.resize(sw * sh * 3, 0.0);
+        self.tmp.resize(sw * sh * 3, 0.0);
+        let th = p.bloom_threshold * 255.0;
+        for sy in 0..sh {
+            for sx in 0..sw {
+                let mut acc = [0.0f32; 3];
+                let mut n = 0.0;
+                for y in sy * 4..(sy * 4 + 4).min(h) {
+                    for x in sx * 4..(sx * 4 + 4).min(w) {
+                        let px = &rgba[(y * w + x) * 4..(y * w + x) * 4 + 3];
+                        let l = 0.2126 * px[0] as f32 + 0.7152 * px[1] as f32 + 0.0722 * px[2] as f32;
+                        let k = ((l - th) / (255.0 - th + 1.0)).max(0.0);
+                        for c in 0..3 {
+                            acc[c] += px[c] as f32 * k;
+                        }
+                        n += 1.0;
+                    }
+                }
+                let o = (sy * sw + sx) * 3;
+                for c in 0..3 {
+                    self.small[o + c] = acc[c] / n;
+                }
+            }
+        }
+        let r = (crate::math::floorf(p.bloom_radius / 4.0 + 0.5) as usize).max(1);
+        for _ in 0..2 {
+            box_blur(&self.small, &mut self.tmp, sw, sh, r, true);
+            box_blur(&self.tmp, &mut self.small, sw, sh, r, false);
+        }
+        for y in 0..h {
+            let sy = (y / 4).min(sh - 1);
+            for x in 0..w {
+                let sx = (x / 4).min(sw - 1);
+                let o = (sy * sw + sx) * 3;
+                let i = (y * w + x) * 4;
+                for c in 0..3 {
+                    rgba[i + c] = (rgba[i + c] as f32 + self.small[o + c] * p.bloom).min(255.0) as u8;
+                }
+            }
+        }
+    }
+}
+
+/// Running-sum box blur of an RGB f32 image along x (`horizontal`) or y.
+#[allow(clippy::needless_range_loop)]
+fn box_blur(src: &[f32], dst: &mut [f32], w: usize, h: usize, r: usize, horizontal: bool) {
+    let (len, lines) = if horizontal { (w, h) } else { (h, w) };
+    let idx = |line: usize, k: usize| if horizontal { (line * w + k) * 3 } else { (k * w + line) * 3 };
+    let norm = 1.0 / (2 * r + 1) as f32;
+    for line in 0..lines {
+        let mut sum = [0.0f32; 3];
+        for k in 0..=r.min(len - 1) {
+            for c in 0..3 {
+                sum[c] += src[idx(line, k) + c];
+            }
+        }
+        for c in 0..3 {
+            sum[c] += src[idx(line, 0) + c] * r as f32;
+        }
+        for k in 0..len {
+            let o = idx(line, k);
+            for c in 0..3 {
+                dst[o + c] = sum[c] * norm;
+            }
+            let add = idx(line, (k + r + 1).min(len - 1));
+            let sub = idx(line, k.saturating_sub(r));
+            for c in 0..3 {
+                sum[c] += src[add + c] - src[sub + c];
+            }
+        }
+    }
+}
+
 /// Luma for 8 pixels per step with 128-bit WebAssembly SIMD (safe intrinsics).
 /// Returns how many pixels were converted; the caller finishes the tail.
 #[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
@@ -150,6 +306,33 @@ mod tests {
         m.reset();
         m.add(&[7, 8, 9, 10]);
         assert_eq!(m.resolve(), &[7, 8, 9, 10]);
+    }
+
+    #[test]
+    fn post_effects_behave() {
+        let (w, h) = (16, 8);
+        let mut px = alloc::vec![0u8; w * h * 4];
+        // One bright pixel in the middle; bloom spreads light to its neighbours.
+        let c = (4 * w + 8) * 4;
+        px[c..c + 4].copy_from_slice(&[255, 255, 255, 255]);
+        let mut fx = PostFx::default();
+        fx.apply(&mut px, w, h, &Post { bloom: 2.0, bloom_threshold: 0.5, bloom_radius: 8.0, ..Default::default() });
+        assert!(px[c - 4 * 2] > 0, "bloom should light neighbours");
+        // Vignette darkens corners more than the centre.
+        let mut v = alloc::vec![200u8; w * h * 4];
+        fx.apply(&mut v, w, h, &Post { vignette: 0.8, ..Default::default() });
+        assert!(v[0] < v[(4 * w + 8) * 4]);
+        // Grain is deterministic per seed.
+        let mut a = alloc::vec![128u8; w * h * 4];
+        let mut b = a.clone();
+        fx.apply(&mut a, w, h, &Post { grain: 10.0, seed: 3, ..Default::default() });
+        fx.apply(&mut b, w, h, &Post { grain: 10.0, seed: 3, ..Default::default() });
+        assert_eq!(a, b);
+        // Aberration leaves the centre column's green untouched.
+        let mut ab = alloc::vec![0u8; w * h * 4];
+        for (i, p) in ab.chunks_exact_mut(4).enumerate() { p[0] = (i % w * 16) as u8; p[1] = 77; }
+        fx.apply(&mut ab, w, h, &Post { aberration: 4.0, ..Default::default() });
+        assert!(ab.chunks_exact(4).all(|p| p[1] == 77));
     }
 
     #[test]

@@ -148,6 +148,21 @@ export class Scene3D {
     return this;
   }
 
+  /**
+   * The scene's combined (view·projection·rotation) matrix and the camera
+   * position in model space — what renderers need to draw into this view.
+   */
+  viewProjection(): { matrix: number[]; eye: [number, number, number] } {
+    const m = this.matrices();
+    const model = m.slice(0, 16), vp = m.slice(16);
+    const out = new Array<number>(16).fill(0);
+    for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) out[c * 4 + r] += vp[k * 4 + r] * model[c * 4 + k];
+    // Model is a pure rotation: its inverse is its transpose.
+    const e = [this.camera.x, this.camera.y, this.camera.z];
+    const eye: [number, number, number] = [0, 1, 2].map((i) => model[i * 4] * e[0] + model[i * 4 + 1] * e[1] + model[i * 4 + 2] * e[2]) as [number, number, number];
+    return { matrix: out, eye };
+  }
+
   private matrices(): number[] {
     const w = core();
     const r = this.rotation;

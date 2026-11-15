@@ -149,6 +149,18 @@ export interface Exports {
   ak_video_add(id: number): number;
   ak_video_resolve(id: number): void;
   ak_video_i420(id: number, order: number): number;
+  ak_video_post(id: number, seed: number): void;
+  ak_mesh_builtin(kind: number): number;
+  ak_mesh_custom(nverts: number, ntris: number): number;
+  ak_mesh_ptr(id: number, which: number): number;
+  ak_mesh_free(id: number): void;
+  ak_raster_create(w: number, h: number): number;
+  ak_raster_free(id: number): void;
+  ak_raster_resize(id: number, w: number, h: number): void;
+  ak_raster_clear(id: number, rgb: number, alpha: number): void;
+  ak_raster_instances(id: number, n: number): number;
+  ak_raster_draw(id: number, mesh: number, n: number, cullBack: number): number;
+  ak_raster_ptr(id: number): number;
   ak_emitter_create(capacity: number, seed: number): number;
   ak_emitter_free(id: number): void;
   ak_emitter_params(id: number): void;

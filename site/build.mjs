@@ -25,7 +25,7 @@ if (film && existsSync(film)) {
   const web = join(out, 'film/anikit-film.mp4');
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', film, '-c:v', 'libx264', '-preset', 'slow', '-crf', '27', '-maxrate', '2400k', '-bufsize', '4800k',
     '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', web]);
-  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', '6.4', '-i', film, '-frames:v', '1', '-q:v', '3', '-vf', 'scale=1280:-2', join(out, 'film/poster.jpg')]);
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', '10.6', '-i', film, '-frames:v', '1', '-q:v', '3', '-vf', 'scale=1280:-2', join(out, 'film/poster.jpg')]);
   console.log('film:', (statSync(web).size / 1048576).toFixed(1), 'MiB');
 }
 writeFileSync(join(out, '_headers'), `/fonts/*\n  Cache-Control: public, max-age=31536000, immutable\n/film/*\n  Cache-Control: public, max-age=86400\n/vendor/*\n  Cache-Control: public, max-age=3600\n`);

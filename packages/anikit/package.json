@@ -24,6 +24,7 @@
     "dist",
     "bin",
     "node",
+    "templates",
     "README.md",
     "AGENTS.md",
     "llms.txt",

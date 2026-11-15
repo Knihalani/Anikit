@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { ready, composition, FrameBuffer, emitter, analyzeAudio, muxWebM, animate, delayedCall } from '../src/index';
+import { ready, composition, FrameBuffer, emitter, analyzeAudio, muxWebM, animate, delayedCall, mesh, instances, renderer3d, scene3d } from '../src/index';
 
 beforeAll(async () => { await ready; });
 
@@ -120,5 +120,51 @@ describe('muxWebM', () => {
     expect(Array.from(bytes.slice(0, 4))).toEqual([0x1a, 0x45, 0xdf, 0xa3]);
     expect(new TextDecoder().decode(bytes).includes('webm')).toBe(true);
     expect(new TextDecoder().decode(bytes).includes('V_VP9')).toBe(true);
+  });
+});
+
+describe('composition extras', () => {
+  it('explains mistakes', () => {
+    const c = composition({ width: 4, height: 2, duration: 2 });
+    expect(() => c.scene('a', 1, 1, { draw() {} })).toThrow(/must be after start/);
+    expect(() => c.scene('a', 0, 1, {} as any)).toThrow(/needs a draw/);
+    c.scene('a', 0, 1, { draw() {} });
+    expect(() => c.scene('b', 0.5, 2, { draw() {} })).toThrow(/overlaps "a".*transition/);
+    expect(() => c.scene('b', 0.5, 2, { draw() {}, transition: { duration: 0.5 } })).not.toThrow();
+  });
+
+  it('impacts are pure functions of time', () => {
+    const c = composition({ width: 4, height: 2, duration: 2 }).impact(1, { shake: 20, flash: '#fff', aberration: 5 });
+    expect(c.impactAt(0.5)).toEqual({ x: 0, y: 0, flash: '', flashAlpha: 0, aberration: 0 });
+    const a = c.impactAt(1.01), b = c.impactAt(1.01);
+    expect(a).toEqual(b);
+    expect(a.flashAlpha).toBeGreaterThan(0.5);
+    expect(c.impactAt(1.8).aberration).toBeLessThan(a.aberration);
+  });
+
+  it('timeScale ramps engine time and passes dt to steps', async () => {
+    const c = composition({ width: 4, height: 2, fps: 10, duration: 1 });
+    let clock = 0;
+    const o = { x: 0 };
+    c.scene('s', 0, 1, { enter: () => { animate(o, { x: 100 }, { duration: 1, ease: 'linear' }); }, timeScale: () => 0.5, step: ({ dt }) => (clock += dt), draw() {} });
+    const cv: any = { width: 4, height: 2, getContext: () => ({ fillRect() {}, getImageData: () => ({ data: new Uint8ClampedArray(32) }) }) };
+    await c.render({ canvas: cv, onFrame: () => {} });
+    expect(clock).toBeCloseTo(0.5, 5);
+    expect(o.x).toBeCloseTo(50, 0);
+  });
+});
+
+describe('renderer3d', () => {
+  it('rasterises lit, depth-tested instanced meshes', () => {
+    const r = renderer3d({ width: 64, height: 48 });
+    const cam = scene3d({ width: 64, height: 48, camera: { z: 300 } });
+    const inst = instances(2, (i) => ({ x: i * 1000, scale: 80, rx: 20, ry: 30, color: '#ff3b14' }));
+    const px = r.render(cam, [{ mesh: mesh.cube(), instances: inst }], { background: '#000000' });
+    expect(px.length).toBe(64 * 48 * 4);
+    const c = (32 * 64 + 32) * 4;
+    expect(px[c]).toBeGreaterThan(60); // red face in the middle
+    expect(px[0]).toBe(0); // background
+    expect(r.triangles).toBeGreaterThan(0);
+    expect(mesh.torusKnot({ segments: 64, sides: 8 }).triangles).toBe(64 * 8 * 2);
   });
 });

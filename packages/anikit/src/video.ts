@@ -20,7 +20,7 @@
  * sub-frames across a shutter in WebAssembly; frames convert to I420 in
  * WebAssembly too, so encoders get 1.5 bytes per pixel and no conversion work.
  */
-import { core, W, ready } from './wasm';
+import { core, W, ready, F64, f64Buf } from './wasm';
 import { engine, isManual } from './core';
 import { ease } from './utils';
 import type { EasingInput } from './core';
@@ -43,6 +43,11 @@ export interface FrameInfo {
   width: number;
   height: number;
   scene: SceneDef;
+  /**
+   * Engine seconds advanced by this tick (scaled by the scene's `timeScale`;
+   * one motion-blur sample's worth when blurring). Step simulations with it.
+   */
+  dt: number;
 }
 export interface SceneHooks {
   /** Once, when the scene starts (start tweens, timelines, simulations here). */
@@ -57,6 +62,10 @@ export interface SceneHooks {
    * their own offscreen canvases and are composited.
    */
   transition?: Transition;
+  /** Speed ramp: engine time scale as a function of scene-local seconds (1 = real time, 0 = frozen). */
+  timeScale?: (local: number) => number;
+  /** Motion-blur samples for this scene (overrides the composition; 1 = off for static shots). */
+  motionBlur?: number;
 }
 
 /** Composite `from` and `to` at progress `p` (0…1, already eased). */
@@ -94,6 +103,34 @@ export interface CompositionOptions {
   background?: string;
   /** Motion blur: sub-frames per frame, or `{ samples, shutter }` (shutter 0…1, default 0.5 = 180°). */
   motionBlur?: number | { samples: number; shutter?: number };
+  /**
+   * Film-look grade applied in WebAssembly to every finished frame: bloom
+   * (`bloom`, `bloomThreshold`, `bloomRadius`), radial chromatic `aberration`
+   * (px at the corners; impacts add to it), `vignette` and per-frame `grain`.
+   */
+  post?: PostOptions;
+}
+
+export interface PostOptions {
+  bloom?: number;
+  bloomThreshold?: number;
+  bloomRadius?: number;
+  aberration?: number;
+  vignette?: number;
+  grain?: number;
+}
+
+/** A hit: camera shake, a flash frame and an aberration kick, all decaying. */
+export interface ImpactOptions {
+  /** Shake amplitude in px (default 24). */
+  shake?: number;
+  /** Flash colour (default none) and peak opacity (default 0.85). */
+  flash?: string;
+  flashOpacity?: number;
+  /** Extra chromatic aberration in px at the hit (default 0). */
+  aberration?: number;
+  /** Decay rate per second (default 10; higher = shorter). */
+  decay?: number;
 }
 
 export interface RenderedFrame {
@@ -148,6 +185,11 @@ export class FrameBuffer {
   rgba(): Uint8Array {
     return new Uint8Array(W!.memory.buffer, core().ak_video_input(this.id), this.width * this.height * 4);
   }
+  /** Film grade (reads its parameters from the f64 scratch buffer; see Composition). */
+  post(seed: number): this {
+    core().ak_video_post(this.id, seed >>> 0);
+    return this;
+  }
   /** I420 of the current frame (view, valid until the next call). */
   i420(order: 'rgba' | 'bgra' = 'rgba'): Uint8Array {
     const p = core().ak_video_i420(this.id, order === 'bgra' ? 1 : 0);
@@ -166,6 +208,7 @@ export class Composition {
   readonly duration: number;
   readonly scenes: SceneDef[] = [];
   private cues: Array<{ t: number; fn: () => void }> = [];
+  private impacts: Array<Required<ImpactOptions> & { t: number }> = [];
 
   constructor(readonly options: CompositionOptions) {
     this.width = options.width;
@@ -176,6 +219,15 @@ export class Composition {
 
   /** Add a scene from `start` to `end` seconds. */
   scene(name: string, start: number, end: number, hooks: SceneHooks): this {
+    const where = `anikit composition: scene "${name}"`;
+    if (!(end > start)) throw new Error(`${where}: end (${end}) must be after start (${start})`);
+    if (typeof hooks?.draw !== 'function') throw new Error(`${where} needs a draw({ ctx, t, local, dt }) function`);
+    if (start < 0 || start >= this.duration) throw new Error(`${where} starts at ${start}s, outside the composition (0–${this.duration}s)`);
+    const clash = this.scenes.find((s) => start < s.end - 1e-9 && end > s.start + 1e-9 && !(hooks.transition && start >= s.start));
+    if (clash && !hooks.transition) {
+      throw new Error(`${where} (${start}–${end}s) overlaps "${clash.name}" (${clash.start}–${clash.end}s). Make them adjacent, or give "${name}" a transition: { duration, type } to overlap on purpose.`);
+    }
+    if (hooks.transition && !(hooks.transition.duration > 0)) throw new Error(`${where}: transition.duration must be > 0`);
     this.scenes.push({ name, start, end, ...hooks });
     this.scenes.sort((a, b) => a.start - b.start);
     return this;
@@ -193,6 +245,32 @@ export class Composition {
     this.cues.push({ t, fn });
     this.cues.sort((a, b) => a.t - b.t);
     return this;
+  }
+
+  /**
+   * An impact at `t`: decaying camera shake, an optional flash frame and an
+   * aberration kick, applied to the finished frame (after transitions).
+   */
+  impact(t: number, o: ImpactOptions = {}): this {
+    this.impacts.push({ t, shake: o.shake ?? 24, flash: o.flash ?? '', flashOpacity: o.flashOpacity ?? 0.85, aberration: o.aberration ?? 0, decay: o.decay ?? 10 });
+    return this;
+  }
+
+  /** Shake offset, flash and aberration at `t` (a pure function of time). */
+  impactAt(t: number): { x: number; y: number; flash: string; flashAlpha: number; aberration: number } {
+    let x = 0, y = 0, fa = 0, fl = '', ab = 0;
+    this.impacts.forEach((s, i) => {
+      if (t < s.t) return;
+      const k = Math.exp(-(t - s.t) * s.decay);
+      x += s.shake * k * Math.sin(t * 97 + i * 7.1);
+      y += s.shake * k * Math.cos(t * 83 + i * 3.3);
+      ab += s.aberration * k;
+      if (s.flash) {
+        const a = s.flashOpacity * Math.exp(-(t - s.t) * s.decay * 3);
+        if (a > fa) { fa = a; fl = s.flash; }
+      }
+    });
+    return { x, y, flash: fl, flashAlpha: fa, aberration: ab };
   }
 
   get frames(): number {
@@ -239,9 +317,44 @@ export class Composition {
     const make = o.createCanvas ?? defaultCanvas;
     const bufs: CanvasLike[] = [];
     const buf = (k: number) => (bufs[k] ??= make(w, h));
-    const info = (t: number, frame: number, s: SceneDef, c: Ctx2D = ctx): FrameInfo => ({
-      ctx: c, t, frame, width: w, height: h, scene: s, local: t - s.start, progress: Math.min(1, Math.max(0, (t - s.start) / (s.end - s.start))),
+    const info = (t: number, frame: number, s: SceneDef, c: Ctx2D = ctx, step = 0): FrameInfo => ({
+      ctx: c, t, frame, width: w, height: h, scene: s, local: t - s.start, progress: Math.min(1, Math.max(0, (t - s.start) / (s.end - s.start))), dt: step,
     });
+    const post = this.options.post;
+    const postOn = !!post && Object.values(post).some((v) => v);
+    /** Shake + flash on the finished frame (after any transition compositing). */
+    const finish = (t: number) => {
+      if (!this.impacts.length) return;
+      const im = this.impactAt(t);
+      if (Math.abs(im.x) + Math.abs(im.y) > 0.05) {
+        const c = buf(3), x = c.getContext('2d') as Ctx2D;
+        x.setTransform(1, 0, 0, 1, 0, 0);
+        x.drawImage(o.canvas as unknown as CanvasImageSource, 0, 0, w, h);
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        const sc = 1 + (Math.max(Math.abs(im.x), Math.abs(im.y)) * 2.2) / Math.min(w, h);
+        ctx.translate(w / 2 + im.x, h / 2 + im.y);
+        ctx.scale(sc, sc);
+        ctx.drawImage(c as unknown as CanvasImageSource, -w / 2, -h / 2, w, h);
+        ctx.restore();
+      }
+      if (im.flashAlpha > 0.005) {
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = im.flashAlpha;
+        ctx.fillStyle = im.flash;
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
+      }
+    };
+    /** The film grade, once per output frame (not per motion-blur sample). */
+    const grade = (f: number, t: number) => {
+      const ab = (post?.aberration ?? 0) + (this.impacts.length ? this.impactAt(t).aberration : 0);
+      if (!postOn && ab <= 0) return;
+      const at = f64Buf(6);
+      F64.set([post?.bloomThreshold ?? 0.7, post?.bloom ?? 0, post?.bloomRadius ?? 24, ab, post?.vignette ?? 0, post?.grain ?? 0], at);
+      fb.post(f);
+    };
     const bg = (c: Ctx2D) => {
       if (!this.options.background) return;
       c.fillStyle = this.options.background;
@@ -252,6 +365,7 @@ export class Composition {
       if (!b || !b.transition) {
         bg(ctx);
         (b ?? a).draw(info(t, f, b ?? a));
+        finish(t);
         return;
       }
       const ca = buf(0), cb = buf(1);
@@ -266,11 +380,13 @@ export class Composition {
       bg(ctx);
       composite(ctx, ca, cb, p, w, h, tr, () => buf(2));
       ctx.restore();
+      finish(t);
     };
     const enterAll = (t: number, f: number, act: SceneDef[]) => {
       for (const s of act) if (!entered.has(s)) { entered.add(s); s.enter?.(info(t, f, s)); }
     };
     const stepAll = (fi: (s: SceneDef) => FrameInfo, act: SceneDef[]) => { for (const s of act) s.step?.(fi(s)); };
+    const defSamples = samples;
     try {
       for (let f = 0; f < last; f++) {
         const t = f / fps;
@@ -281,34 +397,35 @@ export class Composition {
         await null;
         const visible = f >= first && (f - first) % every === 0;
         const warm = f >= pre && f < first;
-        // The tick schedule is identical whether or not a frame is drawn, so
-        // simulations evolve the same in every worker and every slice.
-        const sub = samples > 1 ? (dt * shutter) / samples : dt;
-        const blur = samples > 1 && visible;
-        for (let k = 0; k < samples; k++) {
-          engine.tick(sub);
+        // Everything below is a pure function of the frame index, so ticks —
+        // and therefore simulations — are identical in every worker/slice.
+        const lead = act[act.length - 1];
+        const n = Math.max(1, (lead?.motionBlur ?? defSamples) | 0);
+        const scale = lead?.timeScale ? Math.max(0, lead.timeScale(t - lead.start)) : 1;
+        const sub = n > 1 ? (dt * shutter) / n : dt;
+        const blur = n > 1 && visible;
+        for (let k = 0; k < n; k++) {
+          engine.tick(sub * scale);
           const ts = t + (k * sub) / 1000;
-          stepAll((s) => info(ts, f, s), act);
+          stepAll((s) => info(ts, f, s, ctx, (sub * scale) / 1000), act);
           if (!act.length) continue;
           if (blur) {
             paint(ts, f, act);
             fb.write(read(ctx, w, h));
             fb.accumulate();
-          } else if (warm || (visible && k === samples - 1)) paint(ts, f, act); // warm: same renders as drawn frames, so trails match
+          } else if (warm || (visible && k === n - 1)) paint(ts, f, act); // warm: same renders as drawn frames, so trails match
         }
-        if (samples > 1) engine.tick(dt - sub * samples);
+        if (n > 1) {
+          const rest = (dt - sub * n) * scale;
+          engine.tick(rest);
+          // The closed part of the shutter still advances simulations.
+          stepAll((s) => info(t + (sub * n) / 1000, f, s, ctx, rest / 1000), act);
+        }
         if (!visible || !act.length) continue;
-        if (blur) {
-          fb.resolve();
-          await o.onFrame({ index: f, t, ctx, rgba: () => fb.rgba(), i420: () => fb.i420(order) });
-        } else {
-          let rgba: Uint8Array | null = null;
-          await o.onFrame({
-            index: f, t, ctx,
-            rgba: () => rgba ?? (rgba = fb.write(read(ctx, w, h)).rgba()),
-            i420: () => (rgba ? fb : fb.write(read(ctx, w, h))).i420(order),
-          });
-        }
+        if (blur) fb.resolve();
+        else fb.write(read(ctx, w, h));
+        grade(f, t);
+        await o.onFrame({ index: f, t, ctx, rgba: () => fb.rgba(), i420: () => fb.i420(order) });
       }
     } finally {
       fb.free();

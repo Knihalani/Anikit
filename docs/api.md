@@ -488,3 +488,33 @@ npx anikit-render film.mjs --preview 30 --out frames/
 ```
 
 Each worker builds the same composition (randomness is seeded), simulates to its slice without drawing, pre-rolls half a second so trails match, renders and encodes; slices join without re-encoding and the audio is muxed in. Needs the optional peer dependency `@napi-rs/canvas` and ffmpeg. `loadAnikit()`, `renderToFile()` and `renderPreview()` are the programmatic equivalents.
+
+### Solid 3D: `renderer3d`, `mesh`, `instances`
+
+A z-buffered, lit, instanced triangle rasterizer in WebAssembly — no WebGL. Per-vertex Blinn–Phong with key and fill lights, a fresnel rim and depth fog; instances are drawn front-to-back.
+
+```ts
+const r3 = renderer3d({ width: 1920, height: 1080 });     // or a canvas (drawn into automatically)
+const cubes = instances(3000, (i) => ({ x, y, z, rx, ry, rz, scale: 14, color: i % 9 ? '#ece6da' : '#ff3b14' }));
+const knot = mesh.torusKnot({ p: 2, q: 5, radius: 250, tube: 46 });
+const px = r3.render(scene, [
+  { mesh: mesh.cube(), instances: cubes, material: { specular: 0.5, rim: 0.4 } },
+  { mesh: knot, material: { specular: 1.1, shininess: 70, rim: 0.9 } },
+], { background: '#06070a', fog: [1400, 5200], keyColor: [1, 0.95, 0.9], rimColor: [1, 0.4, 0.25] });
+```
+
+`mesh.custom(positions, normals, indices)` takes your own geometry. `r3.triangles` and `r3.lastMs` report the last frame. `scene.viewProjection()` gives the matrix and model-space eye for your own renderers.
+
+### Film grade, impacts and speed ramps
+
+```ts
+const film = composition({ …, motionBlur: { samples: 2 }, post: { bloom: 0.55, bloomThreshold: 0.72, aberration: 0.5, vignette: 0.4, grain: 5 } });
+film.impact(12.75, { shake: 40, flash: '#fff', flashOpacity: 0.7, aberration: 9 });  // shake + flash + aberration kick
+film.scene('flight', 16, 24, { timeScale: (t) => 1 - 0.88 * Math.exp(-((t - 18.7) / 0.55) ** 2), step: ({ dt }) => sim.step(dt), draw });
+```
+
+- `post` runs in WebAssembly once per output frame (after motion blur); grain is seeded by frame index, so parallel slices match.
+- `impact()` shakes and flashes the finished frame (after transitions); `impactAt(t)` is its pure function of time.
+- `timeScale(local)` scales engine time for that scene — tweens, particles and physics all slow together; `step()` receives the scaled `dt`.
+- Per-scene `motionBlur` (samples) overrides the composition: use 1 for static shots and more for fast ones.
+- Mistakes throw readable errors (overlapping scenes without a transition, missing `draw`, scenes outside the duration).

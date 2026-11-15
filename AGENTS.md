@@ -6,7 +6,7 @@ Anikit is an animation engine: a `no_std` Rust core compiled to WebAssembly (Typ
 
 | Path | What | Verify with |
 |---|---|---|
-| `crates/anikit-core` | Engine: timing, easing, springs, colour, paths, morph, timelines, batches, physics `world`, 3D `space`, particle `cloud`, `splat` renderer, `gif` encoder, noise | `cargo test -p anikit-core` · `cargo clippy -p anikit-core -- -D warnings` |
+| `crates/anikit-core` | Engine: timing, easing, springs, colour, paths, morph, timelines, batches, physics `world`, 3D `space`, particle `cloud`, `splat` renderer, `raster` (solid 3D), `emitter`, `audio`, `video` (blur, I420, grade), `gif` encoder, noise | `cargo test -p anikit-core` · `cargo clippy -p anikit-core -- -D warnings` |
 | `crates/anikit-wasm` | C‑ABI WebAssembly shim (`ak_*` exports, no wasm‑bindgen). Inputs go through a scratch buffer; outputs are read from linear memory. | `cargo clippy -p anikit-wasm -- -D warnings` |
 | `packages/anikit` | TypeScript API + DOM layer (`src/`), vitest + happy‑dom tests (`test/`), build and bench scripts | `npm test` · `npx tsc --noEmit` · `node scripts/build.mjs` |
 | `crates/anikit-py` | PyO3 bindings + high‑level Python API | `. .venv/bin/activate && maturin develop --release && pytest` |

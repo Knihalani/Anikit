@@ -115,3 +115,41 @@ const warnings = testing.captureWarnings(); // typos come with "did you mean" su
 | Timeline children start from the wrong value | Sequential tweens chain automatically. For parallel tweens on the same property, give explicit `[from, to]`. |
 | Scroll animation plays on load | Pass `autoplay: false`. Triggers pause their animation automatically. |
 | Styles remain after unmount | Use `context()` and `ctx.revert()`. |
+
+## Making videos (compositions)
+
+Use this when asked for a video, trailer, title sequence, product film or animated clip. Output is frame-exact MP4/WebM; nothing depends on machine speed.
+
+```bash
+npx anikit-render --init film.mjs                    # a working starter: 3D cubes + particles + type + impact + grade
+npx anikit-render film.mjs --preview 15 --out pv/    # every 15th frame as JPEG, fast; look at these before rendering
+npx anikit-render film.mjs --out film.mp4 --workers 4 [--audio track.wav] [--fade-out 0.5]
+```
+
+The module default-exports `async ({ anikit, node }) => composition`. Building blocks, all rendered in WebAssembly:
+
+| Want | Use |
+|---|---|
+| Scenes, timing | `composition({ width, height, fps, duration, motionBlur, post })`, `.scene(name, start, end, { enter, step, draw, transition, timeScale, motionBlur })`, `.cue(t, fn)` |
+| Punch | `.impact(t, { shake, flash, flashOpacity, aberration, decay })` — applied to the finished frame |
+| Film look | `post: { bloom, bloomThreshold, bloomRadius, aberration, vignette, grain }` |
+| Slow motion / bullet time | scene `timeScale: (local) => 0.1…1` — slows tweens, particles, physics together |
+| Solid 3D | `renderer3d({ width, height })`, `mesh.cube() / sphere() / torus() / torusKnot() / custom()`, `instances(n, i => ({ x, y, z, rx, ry, rz, scale, color }))`, `render(scene3d, [{ mesh, instances, material }], { background, fog, keyColor, rimColor })` |
+| Particles as light or ink | `pointCloud(n, { shapes })` + `glow(node.glowTarget(w, h), { mode: 'light' | 'ink' })` |
+| Sparks | `emitter({ rate, life, speed, spread, gravity, colors })`, `.burst(n)` |
+| Physics | `world({ bounds, gravity })` |
+| Type | `typeFx(ctx, text, x, y, { t, start, effect: 'slam' | 'rise' | 'wave' | 'type' | 'scramble' | 'fade' })`; `textPoints(text, n)` for type made of particles |
+| Transitions between scenes | `transition: { duration, type: 'whip' | 'push' | 'iris' | 'slice' | 'zoom' | 'flash' | 'mask' | fn }` |
+| Music sync | `analyzeAudio(samples, rate)` → `bpm`, `beats`, `onsets`, `at(t)` |
+
+**Rules that keep films correct**
+1. Start tweens and simulations in `enter()`; advance simulations in `step(f)` with **`f.dt`** (engine seconds, already scaled by `timeScale`). `draw()` only reads state — with motion blur it runs several times per frame.
+2. Don't read wall-clock time. `Math.random` is seeded by `anikit-render`, so parallel workers produce identical frames.
+3. Solid 3D: draw the renderer's pixels first (`ctx.putImageData(new ImageData(px, w, h), 0, 0)`), then particles with `globalCompositeOperation = 'lighter'`, then type.
+4. One shared `scene3d` per shot; scenes that overlap in a transition must not share mutable state (cameras, glow targets).
+5. Type must contrast with what's behind it — paper on dark, or a scrim (`createLinearGradient`) behind it.
+
+**Verify like a picky editor**
+- Preview at `--preview 15` and look at every frame; then render and pull strips around each cut/impact with ffmpeg (`-ss t -frames:v 14 -vf scale=240:-1,tile=14x1`).
+- Watch for: empty or flat frames, type over same-tone content, shots that hold still for more than ~1 s.
+- `ffprobe` the output: duration, frame count, and whether an audio stream should be there.

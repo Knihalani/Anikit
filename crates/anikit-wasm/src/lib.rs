@@ -57,9 +57,12 @@ struct State {
     emitters: Vec<Option<anikit_core::emitter::Emitter>>,
     audio_in: Vec<f32>,
     audio: anikit_core::audio::Analysis,
+    meshes: Vec<Option<anikit_core::raster::Mesh>>,
+    rasters: Vec<Option<(anikit_core::raster::Raster, Vec<f32>)>>,
 }
 
 struct VideoSlot {
+    post: anikit_core::video::PostFx,
     input: Vec<u8>,
     mixer: anikit_core::video::FrameMixer,
     yuv: Vec<u8>,
@@ -86,6 +89,8 @@ static STATE: Global = Global(UnsafeCell::new(State {
     emitters: Vec::new(),
     audio_in: Vec::new(),
     audio: anikit_core::audio::Analysis { hop: 0.0, envelope: Vec::new(), flux: Vec::new(), onsets: Vec::new(), bpm: 0.0, beats: Vec::new() },
+    meshes: Vec::new(),
+    rasters: Vec::new(),
 }));
 
 #[inline(always)]
@@ -1539,6 +1544,7 @@ fn video(id: u32) -> Option<&'static mut VideoSlot> {
 pub extern "C" fn ak_video_create(w: u32, h: u32) -> u32 {
     let (w, h) = (w as usize, h as usize);
     let slot = VideoSlot {
+        post: anikit_core::video::PostFx::default(),
         input: alloc::vec![0; w * h * 4],
         mixer: anikit_core::video::FrameMixer::new(w, h),
         yuv: alloc::vec![0; anikit_core::video::i420_len(w, h)],
@@ -1582,6 +1588,28 @@ pub extern "C" fn ak_video_resolve(id: u32) {
             v.input.copy_from_slice(out);
             v.mixer.reset();
         }
+    }
+}
+/// Film-look post pass on the input frame. f64 buffer:
+/// `[bloomThreshold, bloom, bloomRadius, aberration, vignette, grain]`.
+#[no_mangle]
+pub extern "C" fn ak_video_post(id: u32, seed: u32) {
+    let b = &st().f64_buf;
+    if b.len() < 6 {
+        return;
+    }
+    let p = anikit_core::video::Post {
+        bloom_threshold: b[0] as f32,
+        bloom: b[1] as f32,
+        bloom_radius: b[2] as f32,
+        aberration: b[3] as f32,
+        vignette: b[4] as f32,
+        grain: b[5] as f32,
+        seed,
+    };
+    if let Some(v) = video(id) {
+        let (w, h) = (v.mixer.width, v.mixer.height);
+        v.post.apply(&mut v.input, w, h, &p);
     }
 }
 /// Convert the input frame to I420 (`order`: 0 RGBA, 1 BGRA); returns the address.
@@ -1755,4 +1783,122 @@ pub extern "C" fn ak_audio_result_len(kind: u32) -> u32 {
         2 => a.onsets.len(),
         _ => a.beats.len(),
     }) as u32
+}
+
+// ---------------------------------------------------------------------------
+// 3D meshes + software rasterizer
+// ---------------------------------------------------------------------------
+
+fn push_slot<T>(v: &mut Vec<Option<T>>, x: T) -> u32 {
+    if let Some(i) = v.iter().position(|e| e.is_none()) {
+        v[i] = Some(x);
+        return i as u32;
+    }
+    v.push(Some(x));
+    (v.len() - 1) as u32
+}
+
+/// Built-in mesh. 0 cube; 1 sphere [rings, segments]; 2 torus knot tube
+/// [p, q, R, r, tubeRadius, segments, sides]; 3 torus [R, r, segments, sides].
+#[no_mangle]
+pub extern "C" fn ak_mesh_builtin(kind: u32) -> u32 {
+    use anikit_core::raster::*;
+    let s = st();
+    let b = |i: usize| s.f64_buf.get(i).copied().unwrap_or(0.0) as f32;
+    let m = match kind {
+        1 => sphere((b(0) as usize).max(3), (b(1) as usize).max(3)),
+        2 => torus_knot(b(0), b(1), b(2), b(3), b(4), (b(5) as usize).max(8), (b(6) as usize).max(3)),
+        3 => torus(b(0), b(1), (b(2) as usize).max(8), (b(3) as usize).max(3)),
+        _ => cube(),
+    };
+    push_slot(&mut s.meshes, m)
+}
+/// Custom mesh storage: write positions/normals (xyz) and indices, then draw.
+#[no_mangle]
+pub extern "C" fn ak_mesh_custom(nverts: u32, ntris: u32) -> u32 {
+    let m = anikit_core::raster::Mesh { pos: alloc::vec![0.0; nverts as usize * 3], nrm: alloc::vec![0.0; nverts as usize * 3], idx: alloc::vec![0; ntris as usize * 3] };
+    push_slot(&mut st().meshes, m)
+}
+/// Pointer into a mesh: 0 positions, 1 normals (f32), 2 indices (u32); 3/4/5 = counts.
+#[no_mangle]
+pub extern "C" fn ak_mesh_ptr(id: u32, which: u32) -> usize {
+    match st().meshes.get_mut(id as usize).and_then(|m| m.as_mut()) {
+        Some(m) => match which {
+            0 => m.pos.as_mut_ptr() as usize,
+            1 => m.nrm.as_mut_ptr() as usize,
+            2 => m.idx.as_mut_ptr() as usize,
+            3 => m.pos.len() / 3,
+            4 => m.idx.len() / 3,
+            _ => 0,
+        },
+        None => 0,
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_mesh_free(id: u32) {
+    if let Some(m) = st().meshes.get_mut(id as usize) {
+        *m = None;
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_raster_create(w: u32, h: u32) -> u32 {
+    push_slot(&mut st().rasters, (anikit_core::raster::Raster::new(w as usize, h as usize), Vec::new()))
+}
+#[no_mangle]
+pub extern "C" fn ak_raster_free(id: u32) {
+    if let Some(r) = st().rasters.get_mut(id as usize) {
+        *r = None;
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_raster_resize(id: u32, w: u32, h: u32) {
+    if let Some(Some((r, _))) = st().rasters.get_mut(id as usize) {
+        r.resize(w as usize, h as usize);
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_raster_clear(id: u32, rgb: u32, alpha: u32) {
+    if let Some(Some((r, _))) = st().rasters.get_mut(id as usize) {
+        r.clear(rgb, alpha.min(255) as u8);
+    }
+}
+/// Writable instance buffer: `n * 15` f32 (3×4 affine + rgb).
+#[no_mangle]
+pub extern "C" fn ak_raster_instances(id: u32, n: u32) -> *mut f32 {
+    match st().rasters.get_mut(id as usize) {
+        Some(Some((_, inst))) => {
+            inst.resize(n as usize * anikit_core::raster::INSTANCE_STRIDE, 0.0);
+            inst.as_mut_ptr()
+        }
+        _ => core::ptr::null_mut(),
+    }
+}
+/// Draw `n` instances of `mesh`. f64 buffer: viewProj(16), eye(3), material(ambient, diffuse,
+/// specular, shininess, rim), key(3), keyColor(3), fill(3), fillColor(3), rimColor(3), fog(2), fogColor(3).
+/// Returns triangles rasterised.
+#[no_mangle]
+pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32) -> u32 {
+    use anikit_core::raster::*;
+    let s = st();
+    if s.f64_buf.len() < 46 {
+        return 0;
+    }
+    let b: Vec<f32> = s.f64_buf[..46].iter().map(|v| *v as f32).collect();
+    let vp: M4 = core::array::from_fn(|i| b[i]);
+    let eye = [b[16], b[17], b[18]];
+    let mat = Material { ambient: b[19], diffuse: b[20], specular: b[21], shininess: b[22], rim: b[23] };
+    let v3 = |i: usize| [b[i], b[i + 1], b[i + 2]];
+    let light = Lighting { key: v3(24), key_color: v3(27), fill: v3(30), fill_color: v3(33), rim_color: v3(36), fog: [b[39], if b[40] > 0.0 { b[40] } else { f32::INFINITY }], fog_color: v3(41) };
+    let Some(Some(m)) = s.meshes.get(mesh as usize) else { return 0 };
+    let Some(Some((r, inst))) = s.rasters.get_mut(id as usize) else { return 0 };
+    let k = (n as usize * INSTANCE_STRIDE).min(inst.len());
+    r.draw(m, &inst[..k], &vp, eye, &mat, &light, cull_back != 0);
+    r.drawn as u32
+}
+#[no_mangle]
+pub extern "C" fn ak_raster_ptr(id: u32) -> *const u32 {
+    match st().rasters.get(id as usize) {
+        Some(Some((r, _))) => r.color.as_ptr(),
+        _ => core::ptr::null(),
+    }
 }
