@@ -50,8 +50,9 @@ the wasm build in vitest, so the two targets are checked against each other.
 | batch: `inOutQuad`, staggered delays | 100k instances | 1.25–1.30 | 0.63–0.71 |
 | project | 150k points | 1.61–1.74 | 0.37–0.40 |
 | project + depth sort | 150k points | 3.87–4.07 | 2.21–2.41 |
-| splat draw + tone map (trail 0.5), 1080×675 | 150k points | 10.4–11.3 | 6.6–6.9 |
-| splat draw + tone map (trail 0.5), 1920×1080 | 120k points | 30.4–30.6 | 18.2–19.4 |
+| splat draw, 1080×675 (all bilinear) | 150k points | 5.3–5.6 | 4.5–5.2 |
+| splat draw + tone map (trail 0.5), 1080×675 | 150k points | 10.2–10.8 | 5.8 |
+| splat draw + tone map (trail 0.5), 1920×1080 (65% discs) | 120k points | 30.4–31.0 | 17.8–19.0 |
 | emitter step (turbulence + attractor) | 100k | 2.64–2.85 | 1.42–1.60 |
 | world step (settled pile) | 1k / 5k / 20k bodies | unchanged | unchanged |
 | cloud step | 150k | unchanged (1.57–1.70) | unchanged |
@@ -73,7 +74,8 @@ End to end:
 path (the core's share of a 10k-object tick is ~0.2 ms of ~1.7 ms), which was
 out of scope here, so core changes don't move it.
 
-Wasm size: 397,170 → 398,281 bytes after `wasm-opt` (+1.1 KB).
+Wasm size: 397,170 → 403,063 bytes after `wasm-opt` (+5.9 KB, of which 4.8 KB
+is the two-phase splat draw, §1).
 
 ## 1. Splat tone map: clamps as compare + select
 
@@ -97,6 +99,15 @@ matching vitest in `test/cloud.test.ts` (wasm vs native).
 | wasm draw + resolve 1080×675 | 10.4–11.3 ms | 6.6–6.9 ms |
 | wasm draw + resolve 1920×1080 | 30.4–30.6 ms | 18.2–19.4 ms |
 | native tone map | unchanged | unchanged |
+
+**Two-phase draw.** Each block of 64 points is first resolved into small
+"ops" (bilinear: top-left pixel, four weights, colour; disc: box, centre,
+1/r², colour), then the read-modify-writes are applied in point order, so
+every pixel still sums in the same order (same bit-exact tests). The apply
+loop is short, so more of its scattered cache misses are in flight at once.
+wasm, against the previous commit: draw 1080×675 5.43–5.50 → 4.48–4.92 ms,
+draw + resolve 6.61–6.79 → 5.70–5.90 ms; 1080p (mostly discs) draw + resolve
+18.2–19.0 → 17.3–18.3 ms. Native: unchanged. Costs 4.8 KB of wasm.
 
 **Tried, kept in history, reverted:** an interleaved `[r, g, b]` accumulator
 plus a hand-written `simd128` tone map (commit `ed6dde0`). It was faster on

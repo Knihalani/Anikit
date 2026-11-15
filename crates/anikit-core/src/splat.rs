@@ -97,6 +97,20 @@ fn any_bits(any: i32, r: f32, g: f32, b: f32) -> i32 {
     any.max(r.to_bits() as i32).max(g.to_bits() as i32).max(b.to_bits() as i32)
 }
 
+/// One splat, resolved (see [`Splat::draw`]): bilinear (`i0` = top-left
+/// pixel, `w` = the four weights) or disc (`i0`..=`x1`, `y0`..=`y1` box,
+/// `w` = centre x, y and 1/r²); `c` = per-channel energy.
+#[derive(Clone, Copy, Default)]
+struct Op {
+    disc: bool,
+    i0: usize,
+    y0: usize,
+    x1: usize,
+    y1: usize,
+    w: [f32; 4],
+    c: [f32; 3],
+}
+
 impl Splat {
     pub fn new(width: usize, height: usize) -> Self {
         let mut s = Self::default();
@@ -141,6 +155,12 @@ impl Splat {
     }
 
     /// Splat `n` projected points (`[sx, sy, depth, scale] * n`).
+    ///
+    /// Two phases per block of points: work out every splat's pixels,
+    /// weights and colour first, then apply the read-modify-writes in point
+    /// order (so every pixel sums in the same order as before). The apply
+    /// loop is short, so the CPU keeps many of its scattered cache misses in
+    /// flight at once instead of a few points' worth.
     pub fn draw(&mut self, proj: &[f32], n: usize, p: &SplatParams) {
         let n = n.min(proj.len() / 4);
         let Splat { r: pr, g: pg, b: pb, colors, width, height, touched, .. } = self;
@@ -154,89 +174,106 @@ impl Splat {
         let maxr = p.max_radius.max(BILINEAR_MAX);
         let has_colors = colors.len() >= n * 3;
         let size = p.size * p.scale;
-        for (i, o) in proj[..n * 4].chunks_exact(4).enumerate() {
-            let sc = o[3];
-            // `!(sc > 0)` also rejects NaN; garbage positions are skipped too.
-            if !(sc > 0.0 && sc.is_finite() && o[0].is_finite() && o[1].is_finite()) {
-                continue;
+        const BLOCK: usize = 64;
+        let mut ops = [Op::default(); BLOCK];
+        for (bi, block) in proj[..n * 4].chunks(BLOCK * 4).enumerate() {
+            let mut k = 0;
+            for (j, o) in block.chunks_exact(4).enumerate() {
+                let i = bi * BLOCK + j;
+                let sc = o[3];
+                // `!(sc > 0)` also rejects NaN; garbage positions are skipped too.
+                if !(sc > 0.0 && sc.is_finite() && o[0].is_finite() && o[1].is_finite()) {
+                    continue;
+                }
+                let (mut x, mut y) = (o[0], o[1]);
+                let mut e = p.intensity;
+                if fog {
+                    let f = 1.0 - (o[2] - p.fog_near) * inv_fog;
+                    if f <= 0.0 {
+                        continue;
+                    }
+                    e *= f.min(1.0);
+                }
+                if lens {
+                    let (dx, dy) = (x - lx, y - ly);
+                    let d2 = dx * dx + dy * dy;
+                    if d2 < lr2 && d2 > 1e-6 {
+                        let dl = sqrtf(d2);
+                        let q = 1.0 - dl / lr;
+                        let push = ls * q * q / dl;
+                        x += dx * push;
+                        y += dy * push;
+                        e *= 1.0 + q * 1.5;
+                    }
+                }
+                let (cr, cg, cb) = if has_colors { (colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]) } else { (1.0, 1.0, 1.0) };
+                let (cr, cg, cb) = (cr * p.tint[0], cg * p.tint[1], cb * p.tint[2]);
+                let bx = x * p.scale - 0.5;
+                let by = y * p.scale - 0.5;
+                let rad = (size * sc).min(maxr);
+                if rad <= BILINEAR_MAX {
+                    // Bilinear splat: exact sub-pixel placement, energy-conserving.
+                    if !(bx >= 0.0 && by >= 0.0 && bx < wf - 1.0 && by < hf - 1.0) {
+                        continue;
+                    }
+                    let (ix, iy) = (bx as usize, by as usize);
+                    let (fx, fy) = (bx - ix as f32, by - iy as f32);
+                    let (w1, w3) = (fx * (1.0 - fy), fx * fy);
+                    let (w0, w2) = ((1.0 - fy) - w1, fy - w3);
+                    touched[iy] = true;
+                    touched[iy + 1] = true;
+                    ops[k] = Op { disc: false, i0: iy * width + ix, w: [w0, w1, w2, w3], c: [cr * e, cg * e, cb * e], ..Op::default() };
+                    k += 1;
+                } else {
+                    // Cull in float space first: casting huge coordinates to usize
+                    // wraps on 32-bit targets (wasm32) and broke the range checks.
+                    if bx + rad < 0.0 || by + rad < 0.0 || bx - rad >= wf || by - rad >= hf {
+                        continue;
+                    }
+                    // Soft disc; energy grows ~linearly with radius so near points read as bokeh.
+                    let x0 = (bx - rad).max(0.0) as usize;
+                    let y0 = (by - rad).max(0.0) as usize;
+                    let x1 = (ceilf(bx + rad) as isize).min(width as isize - 1);
+                    let y1 = (ceilf(by + rad) as isize).min(height as isize - 1);
+                    if x1 < 0 || y1 < 0 || x0 as isize > x1 || y0 as isize > y1 {
+                        continue;
+                    }
+                    touched[y0..=y1 as usize].iter_mut().for_each(|t| *t = true);
+                    let inv = 1.0 / (rad * rad);
+                    let kk = e * 2.0 / rad;
+                    ops[k] = Op { disc: true, i0: x0, w: [bx, by, inv, 0.0], c: [cr * kk, cg * kk, cb * kk], y0, x1: x1 as usize, y1: y1 as usize };
+                    k += 1;
+                }
             }
-            let (mut x, mut y) = (o[0], o[1]);
-            let mut e = p.intensity;
-            if fog {
-                let f = 1.0 - (o[2] - p.fog_near) * inv_fog;
-                if f <= 0.0 {
-                    continue;
-                }
-                e *= f.min(1.0);
-            }
-            if lens {
-                let (dx, dy) = (x - lx, y - ly);
-                let d2 = dx * dx + dy * dy;
-                if d2 < lr2 && d2 > 1e-6 {
-                    let dl = sqrtf(d2);
-                    let q = 1.0 - dl / lr;
-                    let push = ls * q * q / dl;
-                    x += dx * push;
-                    y += dy * push;
-                    e *= 1.0 + q * 1.5;
-                }
-            }
-            let (cr, cg, cb) = if has_colors { (colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]) } else { (1.0, 1.0, 1.0) };
-            let (cr, cg, cb) = (cr * p.tint[0], cg * p.tint[1], cb * p.tint[2]);
-            let bx = x * p.scale - 0.5;
-            let by = y * p.scale - 0.5;
-            let rad = (size * sc).min(maxr);
-            if rad <= BILINEAR_MAX {
-                // Bilinear splat: exact sub-pixel placement, energy-conserving.
-                if !(bx >= 0.0 && by >= 0.0 && bx < wf - 1.0 && by < hf - 1.0) {
-                    continue;
-                }
-                let (ix, iy) = (bx as usize, by as usize);
-                let (fx, fy) = (bx - ix as f32, by - iy as f32);
-                let (w1, w3) = (fx * (1.0 - fy), fx * fy);
-                let (w0, w2) = ((1.0 - fy) - w1, fy - w3);
-                touched[iy] = true;
-                touched[iy + 1] = true;
-                let i0 = iy * width + ix;
-                let i2 = i0 + width;
-                for (plane, c) in [(&mut *pr, cr * e), (&mut *pg, cg * e), (&mut *pb, cb * e)] {
-                    let a = &mut plane[i0..i0 + 2];
-                    a[0] += c * w0;
-                    a[1] += c * w1;
-                    let b = &mut plane[i2..i2 + 2];
-                    b[0] += c * w2;
-                    b[1] += c * w3;
-                }
-            } else {
-                // Cull in float space first: casting huge coordinates to usize
-                // wraps on 32-bit targets (wasm32) and broke the range checks.
-                if bx + rad < 0.0 || by + rad < 0.0 || bx - rad >= wf || by - rad >= hf {
-                    continue;
-                }
-                // Soft disc; energy grows ~linearly with radius so near points read as bokeh.
-                let x0 = (bx - rad).max(0.0) as usize;
-                let y0 = (by - rad).max(0.0) as usize;
-                let x1 = (ceilf(bx + rad) as isize).min(width as isize - 1);
-                let y1 = (ceilf(by + rad) as isize).min(height as isize - 1);
-                if x1 < 0 || y1 < 0 || x0 as isize > x1 || y0 as isize > y1 {
-                    continue;
-                }
-                touched[y0..=y1 as usize].iter_mut().for_each(|t| *t = true);
-                let inv = 1.0 / (rad * rad);
-                let k = e * 2.0 / rad;
-                let (er, eg, eb) = (cr * k, cg * k, cb * k);
-                for yy in y0..=y1 as usize {
-                    let dy = yy as f32 - by;
-                    let dy2 = dy * dy;
-                    let row = yy * width;
-                    for xx in x0..=x1 as usize {
-                        let dx = xx as f32 - bx;
-                        let q = 1.0 - (dx * dx + dy2) * inv;
-                        if q > 0.0 {
-                            let q = q * q;
-                            pr[row + xx] += er * q;
-                            pg[row + xx] += eg * q;
-                            pb[row + xx] += eb * q;
+            for op in &ops[..k] {
+                if !op.disc {
+                    let (i0, [w0, w1, w2, w3]) = (op.i0, op.w);
+                    let i2 = i0 + width;
+                    for (plane, c) in [(&mut *pr, op.c[0]), (&mut *pg, op.c[1]), (&mut *pb, op.c[2])] {
+                        let a = &mut plane[i0..i0 + 2];
+                        a[0] += c * w0;
+                        a[1] += c * w1;
+                        let b = &mut plane[i2..i2 + 2];
+                        b[0] += c * w2;
+                        b[1] += c * w3;
+                    }
+                } else {
+                    let (x0, y0, x1, y1) = (op.i0, op.y0, op.x1, op.y1);
+                    let [bx, by, inv, _] = op.w;
+                    let [er, eg, eb] = op.c;
+                    for yy in y0..=y1 {
+                        let dy = yy as f32 - by;
+                        let dy2 = dy * dy;
+                        let row = yy * width;
+                        for xx in x0..=x1 {
+                            let dx = xx as f32 - bx;
+                            let q = 1.0 - (dx * dx + dy2) * inv;
+                            if q > 0.0 {
+                                let q = q * q;
+                                pr[row + xx] += er * q;
+                                pg[row + xx] += eg * q;
+                                pb[row + xx] += eb * q;
+                            }
                         }
                     }
                 }
