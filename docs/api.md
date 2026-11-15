@@ -899,14 +899,19 @@ The Python package (`crates/anikit-py`) exposes the same renderer and grade on n
 | `renderer3d({ width, height })` | `raster.Renderer3D(width, height)` |
 | `r3.render(scene, items, { background, mirror, …light })` | `r3.render(camera, items, background=, transparent=, mirror=, lighting=, **light)` → `(h, w, 4)` uint8 array |
 | `mesh.cube()`, `sphere`, `torus`, `torusKnot({…})`, `plane`, `cylinder`, `heightfield`, `custom` | `raster.cube()`, `sphere`, `torus`, `torus_knot(p=, q=, radius=, spread=, tube=, segments=, sides=)`, `plane`, `cylinder`, `heightfield(w, d, heights \| f(x, z), skip=)`, `custom(positions, normals, indices, uvs=None)` |
+| `mesh.tube(points, { radius, sides, radii, taper })` | `raster.tube(points, radius=10, sides=8, radii=None, taper=None)` (`(n, 3)`, flat or a list of points; `(n - 1) * sides * 2` triangles) |
 | `instances(n, (i) => ({ x, ry, scale, color }))`, `inst.set(i, {…})` | `raster.instances(n, x=xs, ry=angles, scale=12, color=…)` (vectorised) or `instances(n, lambda i: {...})`; `inst.set(index, **fields)`; `inst.data` is `(n, 15)` float32, `inst.positions` / `inst.colors` are writable views |
 | `{ mesh, instances, material, cull, blend, mirror, reflect }` | `raster.Item(mesh, instances, material, cull=, blend="opaque" \| "additive" \| "gloss", mirror=, reflect=)` or a dict |
+| `{ …, castShadow: false }` | `raster.Item(…, cast_shadow=False)` |
+| `material: { pattern: 'hex' }` | `raster.Material(pattern="grid" \| "hex" \| "dots" \| "circuit")` (`raster.PATTERNS`) |
+| `groundFog: { bottom, top, range }` | `ground_fog=(bottom, top, range)` or a dict (render keyword or `Lighting` field) |
+| `r3.render(…, { skybox, shadows, dof, motionBlur })`, `r3.resetMotion()` | `r3.render(…, skybox=True \| sun, shadows=raster.Shadows(extent, center=, size=, strength=, bias=) \| extent \| dict, dof=focus \| dict(focus=, aperture=, max=), motion_blur=True \| shutter \| dict(shutter=, max=))`, `r3.reset_motion()` |
 | `{ points, colors, size, intensity, streak, fog }` | `raster.Points(points, colors, size=, intensity=, streak=, fog=)` (`(n, 3)` arrays or a `PointCloud`) |
 | `material: { metal, lineColor, pulsePhase, texture, textureMode, … }` | `raster.Material(metal=, line_color=, pulse_phase=, texture=, texture_mode=, …)` or a dict |
 | `texture(imageData)` | `raster.texture(array)` (`(h, w, 4)` or `(h, w, 3)`, uint8 or 0–1 floats) |
 | `shatter(mesh, { transform, force, … })`, `shards.update(t)` | `raster.shatter(mesh, transform=dict(…), force=, …)`, `shards.update(t)`, `shards.item()` |
 | `scene.camera` / `scene.target` / `scene.roll` | `anikit.transform.Camera(position, target, fov=, near=, far=, roll=)` |
-| `flightPath(points, { lookAhead, bank, maxBank, closed })` | `anikit.flight_path(points, look_ahead=, bank=, max_bank=, closed=)`: `.point(s)`, `.tangent(s)`, `.at(s)`, `.apply(camera, s, extra_roll)`, `.timing(keys)` |
+| `flightPath(points, { lookAhead, bank, maxBank, closed })` | `anikit.flight_path(points, look_ahead=, bank=, max_bank=, closed=)`: `.point(s)`, `.tangent(s)`, `.at(s)`, `.apply(camera, s, extra_roll)`, `.timing(keys)`, `.points(n, from_=0, to=None)` |
 | `composition({ post: { bloom, bloomThreshold, … } })` | `video.post(frame, bloom=, bloom_threshold=, …, seed=)` or `video.PostFx(**options)(frame, t=, seed=)` |
 
 ```python
@@ -939,7 +944,8 @@ for i in range(150):
 - **Frames**: `render()` returns a new writable array backed by one copy of the colour buffer; `video.post` grades it in place without another copy (any other C-contiguous uint8 `(h, w, 4)` array is copied in and back). The native draw releases the GIL.
 - **Mirror floors**: `mirror=y`, `(y, strength)`, a dict or `raster.Mirror(y, strength)` runs the same passes as TypeScript: the scene reflected about `y` (winding flipped; additive, mirror and `reflect=False` items skipped), a depth clear, the `mirror=True` items blended glossily over the reflection, then the scene.
 - **Points** streak along their motion since the previous `render()` of the same renderer.
-- **Grade options**: `bloom`, `bloom_threshold`, `bloom_radius`, `aberration`, `vignette`, `grain`, `streaks`, `streak_length`, `streak_tint`, `zoom_blur`, `zoom_center`, `rays`, `rays_center`, `rays_length`, `exposure`, `contrast`, `saturation`, `shadows`, `highlights` (`video.POST_OPTIONS`); each may be a function of `t`. Misspelt options raise with a "did you mean".
+- **Pass order** matches TypeScript: shadow map (opaque, non-mirror items with `cast_shadow=True`; `center` defaults to `Camera.target` and is required for a `(matrix, eye)` camera), mirror passes, opaque items, `skybox`, then additive items and points in item order, then `dof`, then `motion_blur` (against the previous `render()`'s camera; none on the first frame or after `reset_motion()`).
+- **Grade options**: `bloom`, `bloom_threshold`, `bloom_radius`, `aberration`, `vignette`, `grain`, `streaks`, `streak_length`, `streak_tint`, `zoom_blur`, `zoom_center`, `rays`, `rays_center`, `rays_length`, `aa`, `exposure`, `contrast`, `saturation`, `shadows`, `highlights` (`video.POST_OPTIONS`); each may be a function of `t`. Misspelt options raise with a "did you mean".
 - `video.MotionBlur(w, h)`: `add(frame)` up to 257 sub-frames, `resolve()` the average.
 - Not in Python: `mesh.text()` (needs a canvas to rasterise the font; build a `heightfield` from your own glyph bitmap instead).
 - Example: `crates/anikit-py/examples/knot_mirror.py` writes PNG frames with numpy and the standard library.

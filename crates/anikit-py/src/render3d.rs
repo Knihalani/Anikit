@@ -19,11 +19,13 @@ use crate::{f32_bytes, finite, u32_bytes, F32Data};
 
 /// Floats per material: ambient, diffuse, specular, shininess, rim, emissive,
 /// metal, iridescence, hue, lines, line_color(3), grid(2), line_width, pulse,
-/// pulse_count, pulse_phase, pulse_dir(3), tex_mode, tex_repeat(2), tex_gain.
-const MATERIAL_LEN: usize = 26;
+/// pulse_count, pulse_phase, pulse_dir(3), tex_mode, tex_repeat(2), tex_gain,
+/// pattern (0 grid, 1 hex, 2 dots, 3 circuit).
+const MATERIAL_LEN: usize = 27;
 /// Floats per lighting: key(3), key_color(3), fill(3), fill_color(3),
-/// rim_color(3), fog(2), fog_color(3), sky(3), horizon(3), ground(3), strips(3).
-const LIGHTING_LEN: usize = 32;
+/// rim_color(3), fog(2), fog_color(3), sky(3), horizon(3), ground(3), strips(3),
+/// ground_fog(3: bottom, top, range).
+const LIGHTING_LEN: usize = 35;
 /// Largest vertex grid a mesh builder accepts (keeps typos from allocating gigabytes).
 const MAX_CELLS: usize = 1 << 24;
 
@@ -155,6 +157,34 @@ impl NativeMesh {
     fn plane(nx: usize, nz: usize) -> PyResult<NativeMesh> {
         check_cells("plane", nx + 1, nz + 1)?;
         Ok(mesh(raster::plane(nx.max(1), nz.max(1))))
+    }
+
+    /// An open tube of `radius` along a polyline (`points`: flat xyz, at least
+    /// two points) with twist-free frames; `radii` (one scale per point, or
+    /// empty) thins it. `u` runs along it (0…1 by arc length), `v` around.
+    #[staticmethod]
+    #[pyo3(signature = (points, radii=None, radius=10.0, sides=8))]
+    fn tube(points: F32Data<'_>, radii: Option<F32Data<'_>>, radius: f32, sides: usize) -> PyResult<NativeMesh> {
+        let pts = points.into_vec()?;
+        if !pts.len().is_multiple_of(3) {
+            return Err(PyValueError::new_err("points must be flat [x, y, z] * n"));
+        }
+        let n = pts.len() / 3;
+        if n < 2 {
+            return Err(PyValueError::new_err(format!("tube needs at least 2 points, got {n}")));
+        }
+        let rs = match radii {
+            Some(r) => r.into_vec()?,
+            None => Vec::new(),
+        };
+        if !rs.is_empty() && rs.len() != n {
+            return Err(PyValueError::new_err(format!("radii need one value per point ({n}), got {}", rs.len())));
+        }
+        check_cells("tube", n, sides.max(3) + 1)?;
+        all_finite("points", &pts)?;
+        all_finite("radii", &rs)?;
+        finite("radius", radius)?;
+        Ok(mesh(raster::tube_path(&pts, &rs, radius, sides.max(3))))
     }
 
     /// Capped cylinder of radius 1 and height 1 (Y −0.5…0.5).
@@ -303,6 +333,10 @@ fn material(v: &[f32]) -> PyResult<Material> {
     if !(tex_mode == 0.0 || tex_mode == 1.0 || tex_mode == 2.0) {
         return Err(PyValueError::new_err(format!("texture mode must be 0, 1 or 2, got {tex_mode}")));
     }
+    let pattern = v[26];
+    if !(pattern == 0.0 || pattern == 1.0 || pattern == 2.0 || pattern == 3.0) {
+        return Err(PyValueError::new_err(format!("pattern must be 0 (grid), 1 (hex), 2 (dots) or 3 (circuit), got {pattern}")));
+    }
     let v3 = |i: usize| [v[i], v[i + 1], v[i + 2]];
     // Every field is set; `..Default` keeps this building if the core adds fields.
     #[allow(clippy::needless_update)]
@@ -327,6 +361,7 @@ fn material(v: &[f32]) -> PyResult<Material> {
         tex_mode: tex_mode as u8,
         tex_repeat: [v[23], v[24]],
         tex_gain: v[25],
+        pattern: pattern as u8,
         ..Material::default()
     })
 }
@@ -354,6 +389,7 @@ fn lighting(v: &[f32]) -> PyResult<Lighting> {
         horizon: v3(23),
         ground: v3(26),
         strips: v3(29),
+        ground_fog: v3(32),
         ..Lighting::default()
     })
 }
@@ -365,6 +401,27 @@ pub struct NativeRaster {
     inst: Vec<f32>,
     pts: Vec<f32>,
     rgb: Vec<f32>,
+}
+
+impl NativeRaster {
+    /// Read `instances` into the reusable instance buffer (`None` = one
+    /// identity white instance).
+    fn read_instances(&mut self, instances: Option<F32Data<'_>>) -> PyResult<()> {
+        match instances {
+            Some(d) => {
+                d.read_into(&mut self.inst)?;
+                if !self.inst.len().is_multiple_of(INSTANCE_STRIDE) {
+                    return Err(PyValueError::new_err(format!("instances must be {INSTANCE_STRIDE} floats each (3x4 affine + rgb)")));
+                }
+                all_finite("instances", &self.inst)?;
+            }
+            None => {
+                self.inst.clear();
+                self.inst.extend_from_slice(&[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0]);
+            }
+        }
+        Ok(())
+    }
 }
 
 #[pymethods]
@@ -454,19 +511,7 @@ impl NativeRaster {
         let mat = self::material(&material)?;
         let light = self::lighting(&lighting)?;
         let gloss = finite("gloss", gloss)?.clamp(0.0, 1.0);
-        match instances {
-            Some(d) => {
-                d.read_into(&mut self.inst)?;
-                if !self.inst.len().is_multiple_of(INSTANCE_STRIDE) {
-                    return Err(PyValueError::new_err(format!("instances must be {INSTANCE_STRIDE} floats each (3x4 affine + rgb)")));
-                }
-                all_finite("instances", &self.inst)?;
-            }
-            None => {
-                self.inst.clear();
-                self.inst.extend_from_slice(&[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0]);
-            }
-        }
+        self.read_instances(instances)?;
         let m = &mesh.get().m;
         let tex = texture.map(|t| &t.get().t);
         let (r, inst) = (&mut self.r, &self.inst);
@@ -530,6 +575,63 @@ impl NativeRaster {
         Ok(())
     }
 
+    /// Start a key-light shadow map from the light's (orthographic)
+    /// `light_view_projection` at `size × size` texels: draw casters with
+    /// [`shadow_draw`](Self::shadow_draw), then the scene as usual; occluded
+    /// pixels lose `strength` (0…1) of the key light. `clear()` ends it.
+    #[pyo3(signature = (light_view_projection, size=2048, bias=0.0015, strength=0.8))]
+    fn shadow_begin(&mut self, light_view_projection: [f32; 16], size: usize, bias: f32, strength: f32) -> PyResult<()> {
+        let vp = mat16("light_view_projection", light_view_projection)?;
+        let bias = finite("bias", bias)?;
+        let strength = finite("strength", strength)?;
+        self.r.shadow_begin(&vp, size, bias, strength);
+        Ok(())
+    }
+
+    /// Render `mesh` instances (as for `draw`; `None` = one identity
+    /// instance) into the shadow map started by `shadow_begin` (no culling).
+    fn shadow_draw(&mut self, py: Python<'_>, mesh: &Bound<'_, NativeMesh>, instances: Option<F32Data<'_>>) -> PyResult<()> {
+        self.read_instances(instances)?;
+        let m = &mesh.get().m;
+        let (r, inst) = (&mut self.r, &self.inst);
+        py.detach(|| r.shadow_draw(m, inst, false));
+        Ok(())
+    }
+
+    /// Fill every pixel no geometry covered with the environment (the
+    /// lighting's sky / horizon / ground gradient, meeting the fog at the
+    /// horizon) and, with `sun > 0`, a sun disc + halo towards `key`.
+    #[pyo3(signature = (view_projection, lighting, sun=0.0))]
+    fn sky(&mut self, py: Python<'_>, view_projection: [f32; 16], lighting: Vec<f32>, sun: f32) -> PyResult<()> {
+        let vp = mat16("view_projection", view_projection)?;
+        let light = self::lighting(&lighting)?;
+        let sun = finite("sun", sun)?.max(0.0);
+        let r = &mut self.r;
+        py.detach(|| r.sky(&vp, &light, sun));
+        Ok(())
+    }
+
+    /// Depth of field from the depth buffer: sharp at `focus` (distance from
+    /// the camera), `aperture` px of blur at infinity, capped at `max_px`.
+    fn depth_of_field(&mut self, py: Python<'_>, view_projection: [f32; 16], focus: f32, aperture: f32, max_px: f32) -> PyResult<()> {
+        let vp = mat16("view_projection", view_projection)?;
+        let (focus, aperture, max_px) = (finite("focus", focus)?, finite("aperture", aperture)?, finite("max_px", max_px)?);
+        let r = &mut self.r;
+        py.detach(|| r.depth_of_field(&vp, focus, aperture, max_px));
+        Ok(())
+    }
+
+    /// Camera motion blur from the depth buffer against `prev_view_projection`
+    /// (the previous frame's camera): `shutter` 0…1 of a frame, capped at `max_px`.
+    fn motion_blur(&mut self, py: Python<'_>, view_projection: [f32; 16], prev_view_projection: [f32; 16], shutter: f32, max_px: f32) -> PyResult<()> {
+        let vp = mat16("view_projection", view_projection)?;
+        let prev = mat16("prev_view_projection", prev_view_projection)?;
+        let (shutter, max_px) = (finite("shutter", shutter)?, finite("max_px", max_px)?);
+        let r = &mut self.r;
+        py.detach(|| r.motion_blur(&vp, &prev, shutter, max_px));
+        Ok(())
+    }
+
     /// The frame as a new `bytearray` of RGBA (`width * height * 4`, row-major).
     fn rgba<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyByteArray>> {
         PyByteArray::new_with(py, self.r.color.len() * 4, |buf| {
@@ -576,8 +678,8 @@ fn opt(name: &str, v: Option<f32>, d: f32) -> PyResult<f32> {
     v.map_or(Ok(d), |x| finite(name, x))
 }
 
-/// Film-look post pass (bloom, streaks, god rays, zoom blur, chromatic
-/// aberration, colour grade, vignette, grain) with reusable scratch buffers.
+/// Film-look post pass (bloom, streaks, god rays, zoom blur, edge
+/// antialiasing, chromatic aberration, colour grade, vignette, grain) with reusable scratch buffers.
 #[pyclass(module = "anikit._anikit", name = "NativePostFx")]
 #[derive(Default)]
 pub struct NativePostFx {
@@ -596,7 +698,7 @@ impl NativePostFx {
     #[pyo3(signature = (
         frame, width, height, *, seed=0, bloom=None, bloom_threshold=None, bloom_radius=None, aberration=None,
         vignette=None, grain=None, streaks=None, streak_length=None, streak_tint=None, zoom_blur=None,
-        zoom_center=None, rays=None, rays_center=None, rays_length=None, exposure=None, contrast=None,
+        zoom_center=None, rays=None, rays_center=None, rays_length=None, aa=None, exposure=None, contrast=None,
         saturation=None, shadows=None, highlights=None
     ))]
     #[allow(clippy::too_many_arguments)]
@@ -620,6 +722,7 @@ impl NativePostFx {
         rays: Option<f32>,
         rays_center: Option<(f32, f32)>,
         rays_length: Option<f32>,
+        aa: Option<f32>,
         exposure: Option<f32>,
         contrast: Option<f32>,
         saturation: Option<f32>,
@@ -648,6 +751,7 @@ impl NativePostFx {
             rays: opt("rays", rays, d.rays)?,
             rays_center: xy("rays_center", rays_center, d.rays_center)?,
             rays_length: opt("rays_length", rays_length, d.rays_length)?,
+            aa: opt("aa", aa, d.aa)?,
             exposure: opt("exposure", exposure, d.exposure)?,
             contrast: opt("contrast", contrast, d.contrast)?,
             saturation: opt("saturation", saturation, d.saturation)?,
