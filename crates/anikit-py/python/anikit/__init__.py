@@ -2,8 +2,9 @@
 
 Animate plain Python objects (dicts, objects, lists of them), drive the world
 with :func:`tick` or :func:`render`, and export to CSS/WAAPI. Also: a fast 2D
-physics :class:`World` (bodies, ropes, cloth, attractors) and 3D transforms /
-projection in :mod:`anikit.transform`::
+physics :class:`World` (bodies, ropes, cloth, attractors), 3D transforms /
+projection in :mod:`anikit.transform`, and particle clouds that morph between
+shapes (:class:`PointCloud`) rendered as glowing light (:class:`Splat`)::
 
     import anikit
 
@@ -23,6 +24,7 @@ from typing import Any, Iterator, Mapping, Optional, Tuple
 from . import color, export, transform
 from ._anikit import __version__
 from ._animation import Animation, Position, Timeline, animate, timeline
+from ._cloud import PointCloud, ShapeInput, Splat
 from ._easing import Easing, EasingLike, ease
 from ._engine import Engine, default_engine, resolve_engine, set_default_engine
 from ._noise import Noise
@@ -60,6 +62,10 @@ __all__ = [
     "Cloth",
     "Link",
     "Attractor",
+    # point clouds
+    "PointCloud",
+    "ShapeInput",
+    "Splat",
     # easing
     "Easing",
     "EasingLike",

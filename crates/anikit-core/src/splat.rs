@@ -119,7 +119,8 @@ impl Splat {
         let size = p.size * p.scale;
         for (i, o) in proj[..n * 4].chunks_exact(4).enumerate() {
             let sc = o[3];
-            if sc <= 0.0 {
+            // `!(sc > 0)` also rejects NaN; garbage positions are skipped too.
+            if !(sc > 0.0 && sc.is_finite() && o[0].is_finite() && o[1].is_finite()) {
                 continue;
             }
             let (mut x, mut y) = (o[0], o[1]);
@@ -293,6 +294,14 @@ mod tests {
         // A big disc straddling the edge is clipped, not dropped.
         s.draw(&[7.0, 4.0, 1.0, 9.0], 1, &SplatParams { size: 1.0, ..Default::default() });
         assert!(s.r.iter().any(|v| *v > 0.0));
+    }
+
+    #[test]
+    fn skips_non_finite_points() {
+        let mut s = Splat::new(8, 8);
+        let n = f32::NAN;
+        s.draw(&[4.0, 4.0, 1.0, n, n, 4.0, 1.0, 9.0, 4.0, f32::INFINITY, 1.0, 9.0], 3, &SplatParams::default());
+        assert!(s.r.iter().all(|v| *v == 0.0));
     }
 
     #[test]

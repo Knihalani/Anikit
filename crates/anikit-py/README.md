@@ -438,6 +438,43 @@ intermediate keyframes (`0deg`, `120deg`, `240deg`, `360deg`) for full turns.
 Strings that are not transform lists keep the generic number-template
 interpolation.
 
+## Point clouds and glow rendering
+
+`PointCloud` keeps its particles natively; each one spring-follows a blend
+between two target shapes with its own timing (so transitions ripple) plus a
+turbulence field. `Splat` renders projected points as additive light (sub-pixel
+splats, bokeh discs, fog, lens, trails, tone mapping) into RGBA bytes.
+
+```python
+import math, anikit
+from anikit.transform import Camera
+
+def sphere(i, n, r=200):
+    y = 1 - 2 * (i + 0.5) / n
+    a = i * 2.39996
+    return (r * math.cos(a) * math.sqrt(1 - y * y), r * y, r * math.sin(a) * math.sqrt(1 - y * y))
+
+cloud = anikit.PointCloud(20_000, shapes=[sphere, [(x, 0, 0) for x in range(-10_000, 10_000)]],
+                          stiffness=60, damping=9, spread=0.6, noise=2, swirl=40)  # all live properties
+cloud.shape(2, flat_xyz_array)          # (x, y, z) tuples, flat list / array('f'), bytes or fn(i, n)
+cloud.morph(1, duration=2.0, ease="inOutCubic")   # step() advances the blend...
+cloud.mix = scroll_progress             # ...or drive it yourself (cloud.from_, cloud.to, cloud.mix)
+cloud.step(1 / 60)                      # also step(dt, from_, to, mix), run(seconds), snap(k)
+cloud.explode(0, 0, 0, strength=400)    # radial kick; the springs bring particles home
+cloud.positions, cloud.speed            # array('f') [x, y, z] * n, mean speed
+
+glow = anikit.Splat(640, 360, background="#05060a", exposure=1.0, trail=0.6)
+glow.colors(lambda i: (0.5, 0.6, 1.0), count=len(cloud))     # or (r, g, b) tuples / CSS strings
+frame = glow.render(cloud, camera=Camera(position=(0, 0, 900), fov=40),
+                    size=1.4, intensity=0.25, fog=(600, 1300), lens=(320, 180))  # RGBA bytes
+```
+
+`render()` is project → draw → resolve; for control, call
+`glow.draw(project_points(...))` (a `Projection` or flat `[sx, sy, depth,
+scale] * n`) any number of times, then `glow.resolve()`. Frames are row-major
+RGBA `bytes` of `width * height * 4`; with Pillow, `Image.frombytes("RGBA",
+glow.size, frame)` turns one into an image (see the GIF recipe below).
+
 ## Driving the engine
 
 ```python
@@ -513,5 +550,5 @@ updated, values, events = core.step(16.0)   # tick + changed handles + their val
 
 Track kinds: `TRACK_NUMBER`, `TRACK_COLOR`, `TRACK_DISCRETE`, `TRACK_PATH` and
 `TRACK_MATRIX` (16 `matrix3d` channels per keyframe). The physics world and
-projector are `NativeWorld` / `NativeProjector` (indices, flat native-endian
-`f32` bytes); matrix helpers are `transform_*`, `mat4_*` and `quat_*`.
+projector are `NativeWorld` / `NativeProjector`, point clouds and splatting
+`NativeCloud` / `NativeSplat` (indices, flat native-endian `f32` bytes); matrix helpers are `transform_*`, `mat4_*` and `quat_*`.

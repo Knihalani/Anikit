@@ -16,6 +16,7 @@ use pyo3::exceptions::{PyIndexError, PyKeyError, PyMemoryError, PyRuntimeError, 
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 
+use anikit_core::cloud::Cloud;
 use anikit_core::color::{self, ColorSpace, Rgba};
 use anikit_core::css;
 use anikit_core::easing::Easing;
@@ -24,6 +25,7 @@ use anikit_core::morph::{self, MorphPlan, MorphSeq};
 use anikit_core::noise::Noise;
 use anikit_core::path::{Path, PathLut};
 use anikit_core::space::{self, Mat4, Projector};
+use anikit_core::splat::{Splat, SplatParams};
 use anikit_core::spring::SpringParams;
 use anikit_core::stagger::{self as core_stagger, Axis, Stagger, StaggerFrom};
 use anikit_core::timing::{Direction, Timing};
@@ -1997,6 +1999,364 @@ impl NativeProjector {
 }
 
 // ---------------------------------------------------------------------------
+// Point clouds and additive splatting
+// ---------------------------------------------------------------------------
+
+/// Particle cloud spring-following a blend between target shapes. Shapes and
+/// positions are flat `[x, y, z] * n`; bulk outputs are native-endian `f32` bytes.
+#[pyclass(module = "anikit._anikit", name = "NativeCloud")]
+pub struct NativeCloud {
+    c: Cloud,
+}
+
+impl NativeCloud {
+    fn check_shape(&self, k: usize) -> PyResult<usize> {
+        if k < self.c.shape_count() {
+            Ok(k)
+        } else {
+            Err(PyIndexError::new_err(format!("shape index {k} out of range ({} shapes)", self.c.shape_count())))
+        }
+    }
+}
+
+#[pymethods]
+impl NativeCloud {
+    #[new]
+    #[pyo3(signature = (n, shapes=0, seed=1))]
+    fn new(n: usize, shapes: usize, seed: u32) -> PyResult<Self> {
+        if n.checked_mul(3 * 4).is_none_or(|b| b > isize::MAX as usize) || shapes > 1 << 16 {
+            return Err(PyMemoryError::new_err("point cloud too large"));
+        }
+        Ok(NativeCloud { c: Cloud::new(n, shapes, seed) })
+    }
+
+    // ---- parameters --------------------------------------------------------
+
+    #[getter]
+    fn get_stiffness(&self) -> f32 {
+        self.c.params.stiffness
+    }
+    #[setter]
+    fn set_stiffness(&mut self, v: f32) -> PyResult<()> {
+        self.c.params.stiffness = finite("stiffness", v)?.max(0.0);
+        Ok(())
+    }
+    #[getter]
+    fn get_damping(&self) -> f32 {
+        self.c.params.damping
+    }
+    #[setter]
+    fn set_damping(&mut self, v: f32) -> PyResult<()> {
+        self.c.params.damping = finite("damping", v)?.max(0.0);
+        Ok(())
+    }
+    #[getter]
+    fn get_spread(&self) -> f32 {
+        self.c.params.spread
+    }
+    #[setter]
+    fn set_spread(&mut self, v: f32) -> PyResult<()> {
+        self.c.params.spread = finite("spread", v)?.max(0.0);
+        Ok(())
+    }
+    #[getter]
+    fn get_noise(&self) -> f32 {
+        self.c.params.noise
+    }
+    #[setter]
+    fn set_noise(&mut self, v: f32) -> PyResult<()> {
+        self.c.params.noise = finite("noise", v)?;
+        Ok(())
+    }
+    #[getter]
+    fn get_swirl(&self) -> f32 {
+        self.c.params.swirl
+    }
+    #[setter]
+    fn set_swirl(&mut self, v: f32) -> PyResult<()> {
+        self.c.params.swirl = finite("swirl", v)?;
+        Ok(())
+    }
+    #[getter]
+    fn get_frequency(&self) -> f32 {
+        self.c.params.frequency
+    }
+    #[setter]
+    fn set_frequency(&mut self, v: f32) -> PyResult<()> {
+        self.c.params.frequency = finite("frequency", v)?;
+        Ok(())
+    }
+
+    // ---- shapes ------------------------------------------------------------
+
+    fn __len__(&self) -> usize {
+        self.c.len()
+    }
+
+    fn shape_count(&self) -> usize {
+        self.c.shape_count()
+    }
+
+    /// Define shape `k` from flat `[x, y, z] * n`. `k` may be at most
+    /// `shape_count()` (replace a shape or append the next one).
+    fn set_shape(&mut self, k: usize, data: F32Data<'_>) -> PyResult<()> {
+        if k > self.c.shape_count() {
+            return Err(PyIndexError::new_err(format!(
+                "shape index {k} skips ahead: define shapes in order (next is {})",
+                self.c.shape_count()
+            )));
+        }
+        let v = data.into_vec()?;
+        if v.len() != self.c.len() * 3 {
+            return Err(PyValueError::new_err(format!(
+                "shape needs {} values ([x, y, z] * {}), got {}",
+                self.c.len() * 3,
+                self.c.len(),
+                v.len()
+            )));
+        }
+        if v.iter().any(|x| !x.is_finite()) {
+            return Err(PyValueError::new_err("shape values must be finite"));
+        }
+        self.c.shape_mut(k).copy_from_slice(&v);
+        Ok(())
+    }
+
+    /// Shape `k` as native-endian `f32` bytes.
+    fn shape<'py>(&mut self, py: Python<'py>, k: usize) -> PyResult<Bound<'py, PyBytes>> {
+        let k = self.check_shape(k)?;
+        f32_bytes(py, self.c.shape_mut(k).iter().copied())
+    }
+
+    /// Put every particle on shape `k` with zero velocity.
+    fn snap(&mut self, k: usize) -> PyResult<()> {
+        let k = self.check_shape(k)?;
+        self.c.snap(k);
+        Ok(())
+    }
+
+    // ---- simulation ----------------------------------------------------------
+
+    /// Advance `steps` times by `dt` seconds each (each step is clamped to 1/20 s
+    /// by the core) following the blend `from_ → to` at `mix ∈ [0, 1]`.
+    /// Releases the GIL. A cloud without shapes does not move.
+    #[pyo3(signature = (dt, from_, to, mix, steps=1))]
+    fn step(&mut self, py: Python<'_>, dt: f32, from_: usize, to: usize, mix: f32, steps: u32) -> PyResult<()> {
+        let dt = finite("dt", dt)?;
+        let mix = finite("mix", mix)?;
+        if self.c.shape_count() == 0 {
+            return Ok(());
+        }
+        let (from_, to) = (self.check_shape(from_)?, self.check_shape(to)?);
+        let c = &mut self.c;
+        py.detach(|| {
+            for _ in 0..steps {
+                c.step(dt, from_, to, mix);
+            }
+        });
+        Ok(())
+    }
+
+    /// Radial velocity kick away from `(x, y, z)` (scaled by 1/distance);
+    /// negative strength pulls in.
+    fn explode(&mut self, x: f32, y: f32, z: f32, strength: f32) -> PyResult<()> {
+        self.c.explode(finite("x", x)?, finite("y", y)?, finite("z", z)?, finite("strength", strength)?);
+        Ok(())
+    }
+
+    /// Mean particle speed (units/s).
+    #[getter]
+    fn mean_speed(&self) -> f32 {
+        self.c.mean_speed()
+    }
+
+    /// `[x, y, z] * n` as native-endian `f32` bytes.
+    fn positions<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
+        f32_bytes(py, self.c.pos.iter().copied())
+    }
+
+    fn __repr__(&self) -> String {
+        format!("NativeCloud(points={}, shapes={})", self.c.len(), self.c.shape_count())
+    }
+}
+
+/// Additive point renderer: projected points (`[sx, sy, depth, scale] * n`,
+/// e.g. from `NativeProjector.project`) accumulate as light, then tone-map to
+/// RGBA bytes.
+#[pyclass(module = "anikit._anikit", name = "NativeSplat")]
+pub struct NativeSplat {
+    s: Splat,
+}
+
+fn check_size(width: usize, height: usize) -> PyResult<()> {
+    if width.checked_mul(height).and_then(|n| n.checked_mul(16)).is_none_or(|b| b > isize::MAX as usize) {
+        return Err(PyMemoryError::new_err("splat buffer too large"));
+    }
+    Ok(())
+}
+
+#[pymethods]
+impl NativeSplat {
+    /// A `width × height` buffer (each at least 1).
+    #[new]
+    fn new(width: usize, height: usize) -> PyResult<Self> {
+        check_size(width, height)?;
+        Ok(NativeSplat { s: Splat::new(width, height) })
+    }
+
+    #[getter]
+    fn width(&self) -> usize {
+        self.s.width
+    }
+    #[getter]
+    fn height(&self) -> usize {
+        self.s.height
+    }
+
+    /// Resize (clears the accumulated light).
+    fn resize(&mut self, width: usize, height: usize) -> PyResult<()> {
+        check_size(width, height)?;
+        self.s.resize(width, height);
+        Ok(())
+    }
+
+    /// Multiply the accumulated light by `k` (0 clears; 0.8 leaves trails).
+    fn fade(&mut self, k: f32) -> PyResult<()> {
+        self.s.fade(finite("k", k)?);
+        Ok(())
+    }
+
+    /// Per-point linear RGB in [0, 1], flat `[r, g, b] * n` (empty = all white).
+    /// Colours apply only when they cover every drawn point.
+    fn set_colors(&mut self, data: F32Data<'_>) -> PyResult<()> {
+        let v = data.into_vec()?;
+        if !v.len().is_multiple_of(3) {
+            return Err(PyValueError::new_err("colors expects flat [r, g, b] * n"));
+        }
+        if v.iter().any(|x| !x.is_finite()) {
+            return Err(PyValueError::new_err("colour values must be finite"));
+        }
+        self.s.colors = v;
+        Ok(())
+    }
+
+    /// Number of points with a colour.
+    fn color_count(&self) -> usize {
+        self.s.colors.len() / 3
+    }
+
+    /// Splat projected points `[sx, sy, depth, scale] * n` (`scale <= 0` is
+    /// culled). `fog_far = None` disables fog; `lens = (x, y, radius,
+    /// strength)` pushes points away from a projected point (radius 0 = off).
+    /// Releases the GIL.
+    #[pyo3(signature = (proj, size=1.0, intensity=0.3, fog_near=0.0, fog_far=None, scale=1.0, lens=(0.0, 0.0, 0.0, 0.0), max_radius=6.0))]
+    #[allow(clippy::too_many_arguments)]
+    fn draw(
+        &mut self,
+        py: Python<'_>,
+        proj: F32Data<'_>,
+        size: f32,
+        intensity: f32,
+        fog_near: f32,
+        fog_far: Option<f32>,
+        scale: f32,
+        lens: (f32, f32, f32, f32),
+        max_radius: f32,
+    ) -> PyResult<()> {
+        let mut proj = proj.into_vec()?;
+        if !proj.len().is_multiple_of(4) {
+            return Err(PyValueError::new_err("draw expects flat [sx, sy, depth, scale] * n"));
+        }
+        // Cull points with a non-finite position or scale (the core would draw
+        // a NaN scale as a max-radius disc). Depth may be infinite (culled).
+        for o in proj.chunks_exact_mut(4) {
+            if !(o[0].is_finite() && o[1].is_finite() && o[3].is_finite()) {
+                o[3] = 0.0;
+            }
+        }
+        let fog_far = match fog_far {
+            None => f32::INFINITY,
+            Some(f) if f.is_nan() => return Err(PyValueError::new_err("fog_far must not be NaN")),
+            Some(f) => f,
+        };
+        let scale = finite("scale", scale)?;
+        if scale <= 0.0 {
+            return Err(PyValueError::new_err("scale must be > 0"));
+        }
+        let p = SplatParams {
+            size: finite("size", size)?.max(0.0),
+            intensity: finite("intensity", intensity)?,
+            fog_near: finite("fog_near", fog_near)?,
+            fog_far,
+            scale,
+            lens: [finite("lens", lens.0)?, finite("lens", lens.1)?, finite("lens", lens.2)?, finite("lens", lens.3)?],
+            max_radius: finite("max_radius", max_radius)?,
+        };
+        let n = proj.len() / 4;
+        let s = &mut self.s;
+        py.detach(|| s.draw(&proj, n, &p));
+        Ok(())
+    }
+
+    /// Tone-map the light over `background` (0xRRGGBB) and return the frame as
+    /// RGBA bytes (`width * height * 4`, row-major, alpha 255). Afterwards the
+    /// light is multiplied by `keep` (1 = keep, 0 = clear, 0.85 = trails).
+    #[pyo3(signature = (exposure=1.0, background=0, keep=1.0))]
+    fn resolve<'py>(&mut self, py: Python<'py>, exposure: f32, background: u32, keep: f32) -> PyResult<Bound<'py, PyBytes>> {
+        let (exposure, keep) = (finite("exposure", exposure)?, finite("keep", keep)?);
+        let s = &mut self.s;
+        py.detach(|| s.resolve_fade(exposure, background & 0xff_ffff, keep));
+        self.rgba(py)
+    }
+
+    /// RGBA bytes of the last `resolve` (all zero before the first).
+    fn rgba<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
+        PyBytes::new_with(py, self.s.rgba.len() * 4, |buf| {
+            for (chunk, b) in buf.iter_mut().zip(self.s.bytes()) {
+                *chunk = b;
+            }
+            Ok(())
+        })
+    }
+
+    /// `(r, g, b, a)` of the last `resolve` at pixel `(x, y)`.
+    fn pixel(&self, x: usize, y: usize) -> PyResult<(u8, u8, u8, u8)> {
+        if x >= self.s.width || y >= self.s.height {
+            return Err(PyIndexError::new_err(format!("pixel ({x}, {y}) outside {}x{}", self.s.width, self.s.height)));
+        }
+        let [r, g, b, a] = self.s.rgba[y * self.s.width + x].to_le_bytes();
+        Ok((r, g, b, a))
+    }
+
+    /// Linear light accumulated at pixel `(x, y)`.
+    fn light(&self, x: usize, y: usize) -> PyResult<(f32, f32, f32)> {
+        if x >= self.s.width || y >= self.s.height {
+            return Err(PyIndexError::new_err(format!("pixel ({x}, {y}) outside {}x{}", self.s.width, self.s.height)));
+        }
+        let [r, g, b] = self.s.light(x, y);
+        Ok((r, g, b))
+    }
+
+    /// Sum of the accumulated light over all pixels `(r, g, b)`.
+    fn total_light(&self) -> (f64, f64, f64) {
+        let mut t = (0.0, 0.0, 0.0);
+        for y in 0..self.s.height {
+            for x in 0..self.s.width {
+                let [r, g, b] = self.s.light(x, y);
+                t.0 += r as f64;
+                t.1 += g as f64;
+                t.2 += b as f64;
+            }
+        }
+        t
+    }
+
+    fn __repr__(&self) -> String {
+        format!("NativeSplat({}x{})", self.s.width, self.s.height)
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Module
 // ---------------------------------------------------------------------------
 
@@ -2010,6 +2370,8 @@ fn _anikit(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NativeNoise>()?;
     m.add_class::<NativeWorld>()?;
     m.add_class::<NativeProjector>()?;
+    m.add_class::<NativeCloud>()?;
+    m.add_class::<NativeSplat>()?;
     m.add_function(wrap_pyfunction!(ease, m)?)?;
     m.add_function(wrap_pyfunction!(easing_css, m)?)?;
     m.add_function(wrap_pyfunction!(spring_settle_time, m)?)?;
