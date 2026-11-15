@@ -69,3 +69,5 @@ export { screenshot, record, rasterize, encodeGif, GifWriter } from './capture';
 export type { CaptureTarget, RasterOptions, RecordOptions, Recording } from './capture';
 export { presence, Presence, enter, exit } from './presence';
 export type { PresenceOptions } from './presence';
+export { viewTransition } from './viewtransition';
+export type { ViewTransitionOptions, ViewTransitionHandle } from './viewtransition';

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { animate, timeline, flip, presence, enter, exit, engine } from '../src/index';
+import { animate, timeline, flip, presence, enter, exit, engine, viewTransition } from '../src/index';
 import { setup, advance, box } from './setup';
 
 beforeAll(setup);
@@ -292,5 +292,60 @@ describe('presence', () => {
     advance(0.6);
     await done;
     expect(b.style.opacity).toBe('1');
+  });
+});
+
+describe('viewTransition', () => {
+  it('names elements for the transition, times it with any easing, and cleans up', async () => {
+    const thumb = box();
+    const big = box();
+    const seen: Record<string, string> = {};
+    let css = '';
+    const doc = document as any;
+    doc.startViewTransition = (cb: () => Promise<void>) => {
+      seen.before = thumb.style.getPropertyValue('view-transition-name');
+      css = document.head.querySelector('style[id^="anikit-vt"]')?.textContent ?? '';
+      const updateCallbackDone = Promise.resolve().then(cb).then(() => {
+        seen.thumbAfter = thumb.style.getPropertyValue('view-transition-name');
+        seen.bigAfter = big.style.getPropertyValue('view-transition-name');
+      });
+      return { updateCallbackDone, ready: updateCallbackDone, finished: updateCallbackDone, skipTransition() {} };
+    };
+    try {
+      let ran = false;
+      const vt = viewTransition(() => {
+        ran = true;
+      }, { duration: 0.5, ease: 'spring(bounce: 0.3, duration: 0.5)', names: { hero: [thumb, () => big] } });
+      expect(vt.native).toBe(true);
+      await vt;
+      expect(ran).toBe(true);
+      expect(seen).toEqual({ before: 'hero', thumbAfter: '', bigAfter: 'hero' });
+      expect(css).toContain('animation-duration:0.5s');
+      expect(css).toMatch(/animation-timing-function:linear\(/);
+      // Everything temporary is gone.
+      expect(big.style.getPropertyValue('view-transition-name')).toBe('');
+      expect(document.head.querySelector('style[id^="anikit-vt"]')).toBe(null);
+    } finally {
+      delete doc.startViewTransition;
+    }
+  });
+
+  it('falls back to FLIP when the API is missing', async () => {
+    const thumb = box();
+    const big = box();
+    big.hidden = true;
+    layout(thumb, { x: 0, y: 0, w: 50, h: 50 });
+    layout(big, { x: 100, y: 100, w: 200, h: 200 });
+    const vt = viewTransition(() => {
+      thumb.hidden = true;
+      big.hidden = false;
+    }, { duration: 1, ease: 'linear', names: { hero: [thumb, big] } });
+    expect(vt.native).toBe(false);
+    await vt.updateCallbackDone;
+    await tick();
+    expect(big.style.transform).toMatch(/^translate\(-175px,-175px\) scale\(0.25,0.25\)/);
+    advance(1.1);
+    await vt;
+    expect(big.style.transform).toBe('none');
   });
 });

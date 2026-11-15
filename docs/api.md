@@ -185,6 +185,25 @@ await list.replace(oldView, newView, { mode: 'wait' });  // 'sync' (default) run
 
 With `layout: true` (the default) siblings slide into their new places through `flip()`, and a leaving child leaves the flow at once, pinned where it was while it animates out. With `layout: false` a leaving child stays in the flow until it's removed. Adding a child that is still animating out turns it around from where it is. Reduced motion skips the animations but still inserts and removes.
 
+## View Transitions
+
+`viewTransition(update, options?)` runs `update` (which changes the DOM) through `document.startViewTransition`, so the browser cross-fades and morphs snapshots on the compositor. Anikit adds:
+
+- **Timing:** `duration`, `delay` and `ease` apply to every transition group. Any Anikit easing works, and springs and custom curves become native `linear()`.
+- **Temporary names:** `names: { hero: el }` gives an element a `view-transition-name` for this transition only. A pair `[before, after]` names one element in the old state and another in the new one, so the browser morphs one into the other.
+- **Custom snapshots:** `old` / `new` take WAAPI keyframes for the outgoing and incoming snapshot of `scope` (default `'root'`).
+- **Fallback:** without the API, the named elements are animated with `flip()` (`fallback: 'none'` just runs the update). With reduced motion the update runs straight away.
+
+```ts
+await viewTransition(() => openDetail(id), {
+  duration: 0.5, ease: 'spring(bounce: 0.2, duration: 0.5)',
+  names: { hero: [thumb, () => document.querySelector('.detail img')] },
+});
+viewTransition(() => route(next), { old: { opacity: [1, 0] }, new: { transform: ['translateY(24px)', 'none'], opacity: [0, 1] }, types: ['forward'] });
+```
+
+The handle mirrors `ViewTransition`: `updateCallbackDone`, `ready`, `finished`, `skipTransition()`, plus `native` (whether the browser API ran it). Awaiting it waits for `finished`.
+
 ## Engine
 
 `engine.manual(true)` with `engine.tick(ms)` drives the engine yourself (tests, video export). Also available:
