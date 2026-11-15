@@ -130,9 +130,28 @@ export interface MaterialOptions {
   emissive?: number;
   /** Chrome: mirror reflection of the sky/horizon/ground environment (0–1). */
   metal?: number;
-  /** Thin-film rainbow sheen by viewing angle (0–1), and its hue offset. */
+  /** Thin-film rainbow sheen by viewing angle (0–1; tints reflections), and its hue offset. */
   iridescence?: number;
   hue?: number;
+  /**
+   * Glowing grid lines in the mesh's UV space (antialiased): intensity, colour,
+   * cells along `[u, v]` (0 = no lines that way; u runs along tubes/knots, v around them; each cube face is 0–1),
+   * and half-width in cells. Pair with a dark body and the film grade's bloom.
+   */
+  lines?: number;
+  lineColor?: string | V3;
+  grid?: [number, number];
+  lineWidth?: number;
+  /**
+   * Light pulses travelling along u in `lineColor`: intensity, pulses per unit u,
+   * and phase (animate it, e.g. `pulsePhase: t * 0.8`). `pulseDir` offsets each
+   * instance's phase by `dot(position, pulseDir)`, so a pulse sweeps through a
+   * field of instances as a wave.
+   */
+  pulse?: number;
+  pulseCount?: number;
+  pulsePhase?: number;
+  pulseDir?: V3;
 }
 export interface LightOptions {
   key?: V3;
@@ -147,6 +166,8 @@ export interface LightOptions {
   sky?: string | V3;
   horizon?: string | V3;
   ground?: string | V3;
+  /** Colour of sharp studio light strips in the environment: gives chrome crisp highlights. */
+  strips?: string | V3;
 }
 export interface DrawItem {
   mesh: Mesh3D;
@@ -206,11 +227,14 @@ export class Renderer3D {
       new Float32Array(W!.memory.buffer, ptr, inst.count * STRIDE).set(inst.data.subarray(0, inst.count * STRIDE));
       const m = it.material ?? {};
       const kc = rgb(o.keyColor), fc = rgb(o.fillColor, [0.25, 0.28, 0.35]), rc = rgb(o.rimColor), fog = o.fog ?? [0, 0], fogc = rgb(o.fogColor, bg);
-      const at = f64Buf(59);
-      F64.set([...matrix, ...eye, m.ambient ?? 0.22, m.diffuse ?? 0.85, m.specular ?? 0.5, m.shininess ?? 40, m.rim ?? 0.35,
+      const vals = [...matrix, ...eye, m.ambient ?? 0.22, m.diffuse ?? 0.85, m.specular ?? 0.5, m.shininess ?? 40, m.rim ?? 0.35,
         ...(o.key ?? [0.4, 0.8, 0.6]), ...kc, ...(o.fill ?? [-0.6, -0.2, 0.4]), ...fc, ...rc, fog[0], fog[1], ...fogc,
-        m.emissive ?? 0, m.metal ?? 0, m.iridescence ?? 0, m.hue ?? 0, ...rgb(o.sky, [0.25, 0.3, 0.55]), ...rgb(o.horizon, [1, 0.85, 0.7]), ...rgb(o.ground, [0.05, 0.05, 0.07])], at);
-      this.triangles += w.ak_raster_draw(this.id, it.mesh.id, inst.count, it.cull === false ? 0 : 1);
+        m.emissive ?? 0, m.metal ?? 0, m.iridescence ?? 0, m.hue ?? 0, ...rgb(o.sky, [0.25, 0.3, 0.55]), ...rgb(o.horizon, [1, 0.85, 0.7]), ...rgb(o.ground, [0.05, 0.05, 0.07]),
+        m.lines ?? 0, ...rgb(m.lineColor, [1, 1, 1]), ...(m.grid ?? [8, 8]), m.lineWidth ?? 0.04,
+        m.pulse ?? 0, m.pulseCount ?? 1, m.pulsePhase ?? 0, ...(m.pulseDir ?? [0, 0, 0]), ...rgb(o.strips, [0, 0, 0])];
+      const at = f64Buf(vals.length); // may grow memory: reserve before touching F64
+      F64.set(vals, at);
+      this.triangles += w.ak_raster_draw(this.id, it.mesh.id, inst.count, it.cull === false ? 0 : 1, vals.length);
     }
     const px = new Uint8ClampedArray(W!.memory.buffer, w.ak_raster_ptr(this.id), this.width * this.height * 4);
     const ctx = 'getContext' in this.target ? this.target.getContext('2d') : null;

@@ -163,8 +163,21 @@ describe('renderer3d', () => {
     expect(px.length).toBe(64 * 48 * 4);
     const c = (32 * 64 + 32) * 4;
     expect(px[c]).toBeGreaterThan(60); // red face in the middle
+    expect(px[c]).toBeGreaterThan(px[c + 1] * 2); // and still red: the material block lines up with the wasm ABI
     expect(px[0]).toBe(0); // background
     expect(r.triangles).toBeGreaterThan(0);
     expect(mesh.torusKnot({ segments: 64, sides: 8 }).triangles).toBe(64 * 8 * 2);
+  });
+
+  it('applies chrome, grid lines and pulses per pixel', () => {
+    const r = renderer3d({ width: 64, height: 48 });
+    const cam = scene3d({ width: 64, height: 48, camera: { z: 300 } });
+    const inst = instances(1, () => ({ scale: 120, rx: 20, ry: 30, color: [0.05, 0.05, 0.05] }));
+    const sum = (px: Uint8ClampedArray, ch: number) => { let s = 0; for (let i = ch; i < px.length; i += 4) s += px[i]; return s; };
+    const plain = sum(r.render(cam, [{ mesh: mesh.cube(), instances: inst }], {}).slice(), 2);
+    const lined = sum(r.render(cam, [{ mesh: mesh.cube(), instances: inst, material: { lines: 2, lineColor: [0, 0, 1], grid: [3, 3] } }], {}).slice(), 2);
+    expect(lined).toBeGreaterThan(plain * 1.5);
+    const chrome = r.render(cam, [{ mesh: mesh.cube(), instances: inst, material: { metal: 1 } }], { sky: [0, 1, 0], horizon: [0, 1, 0], ground: [0, 1, 0] }).slice();
+    expect(sum(chrome, 1)).toBeGreaterThan(sum(chrome, 0) * 3); // reflects the green environment
   });
 });

@@ -29,7 +29,7 @@ fn main() {
         }
         let proj = t.elapsed().as_secs_f64() * 1e3 / k as f64;
         let mut s = Splat::new(1080, 675);
-        let sp = SplatParams { size: 1.15, intensity: 0.3, fog_near: 700.0, fog_far: 2600.0, scale: 0.75, lens: [700.0, 400.0, 150.0, 46.0], max_radius: 5.0 };
+        let sp = SplatParams { size: 1.15, intensity: 0.3, fog_near: 700.0, fog_far: 2600.0, scale: 0.75, lens: [700.0, 400.0, 150.0, 46.0], max_radius: 5.0, tint: [1.0; 3] };
         let t = Instant::now();
         for _ in 0..k {
             s.draw(&p.out, n, &sp);

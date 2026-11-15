@@ -1816,10 +1816,10 @@ pub extern "C" fn ak_mesh_builtin(kind: u32) -> u32 {
 /// Custom mesh storage: write positions/normals (xyz) and indices, then draw.
 #[no_mangle]
 pub extern "C" fn ak_mesh_custom(nverts: u32, ntris: u32) -> u32 {
-    let m = anikit_core::raster::Mesh { pos: alloc::vec![0.0; nverts as usize * 3], nrm: alloc::vec![0.0; nverts as usize * 3], idx: alloc::vec![0; ntris as usize * 3] };
+    let m = anikit_core::raster::Mesh { pos: alloc::vec![0.0; nverts as usize * 3], nrm: alloc::vec![0.0; nverts as usize * 3], uv: alloc::vec![0.0; nverts as usize * 2], idx: alloc::vec![0; ntris as usize * 3] };
     push_slot(&mut st().meshes, m)
 }
-/// Pointer into a mesh: 0 positions, 1 normals (f32), 2 indices (u32); 3/4/5 = counts.
+/// Pointer into a mesh: 0 positions, 1 normals (f32), 2 indices (u32), 5 uvs (f32); 3/4 = vertex/triangle counts.
 #[no_mangle]
 pub extern "C" fn ak_mesh_ptr(id: u32, which: u32) -> usize {
     match st().meshes.get_mut(id as usize).and_then(|m| m.as_mut()) {
@@ -1829,6 +1829,7 @@ pub extern "C" fn ak_mesh_ptr(id: u32, which: u32) -> usize {
             2 => m.idx.as_mut_ptr() as usize,
             3 => m.pos.len() / 3,
             4 => m.idx.len() / 3,
+            5 => m.uv.as_mut_ptr() as usize,
             _ => 0,
         },
         None => 0,
@@ -1873,27 +1874,50 @@ pub extern "C" fn ak_raster_instances(id: u32, n: u32) -> *mut f32 {
         _ => core::ptr::null_mut(),
     }
 }
-/// Draw `n` instances of `mesh`. f64 buffer: viewProj(16), eye(3), material(ambient, diffuse,
-/// specular, shininess, rim), key(3), keyColor(3), fill(3), fillColor(3), rimColor(3), fog(2), fogColor(3).
-/// Returns triangles rasterised.
+/// Draw `n` instances of `mesh`. The f64 buffer holds `nf` floats:
+/// [0..44) viewProj(16), eye(3), material(ambient, diffuse, specular, shininess, rim), key(3),
+/// keyColor(3), fill(3), fillColor(3), rimColor(3), fog(2), fogColor(3);
+/// optional [44..57) emissive, metal, iridescence, hue, sky(3), horizon(3), ground(3);
+/// optional [57..73) lines, lineColor(3), grid(2), lineWidth, pulse, pulseCount, pulsePhase,
+/// pulseDir(3), strips(3). Returns triangles rasterised.
 #[no_mangle]
-pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32) -> u32 {
+pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf: u32) -> u32 {
     use anikit_core::raster::*;
     let s = st();
-    if s.f64_buf.len() < 46 {
+    let nf = (nf as usize).min(s.f64_buf.len());
+    if nf < 44 {
         return 0;
     }
-    // Optional extended block: emissive, metal, iridescence, hue, sky(3), horizon(3), ground(3).
-    let nb = if s.f64_buf.len() >= 59 { 59 } else { 46 };
+    const DEFAULTS: [f32; 29] = [
+        0.0, 0.0, 0.0, 0.0, 0.25, 0.3, 0.55, 1.0, 0.85, 0.7, 0.05, 0.05, 0.07, // emissive … ground
+        0.0, 1.0, 1.0, 1.0, 8.0, 8.0, 0.04, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, // lines … strips
+    ];
+    let nb = if nf >= 73 { 73 } else if nf >= 57 { 57 } else { 44 };
     let mut b: Vec<f32> = s.f64_buf[..nb].iter().map(|v| *v as f32).collect();
-    if nb == 46 {
-        b.extend_from_slice(&[0.0, 0.0, 0.0, 0.0, 0.25, 0.3, 0.55, 1.0, 0.85, 0.7, 0.05, 0.05, 0.07]);
-    }
+    b.extend_from_slice(&DEFAULTS[nb - 44..]);
     let vp: M4 = core::array::from_fn(|i| b[i]);
     let eye = [b[16], b[17], b[18]];
-    let mat = Material { ambient: b[19], diffuse: b[20], specular: b[21], shininess: b[22], rim: b[23], emissive: b[46], metal: b[47], iridescence: b[48], hue: b[49] };
     let v3 = |i: usize| [b[i], b[i + 1], b[i + 2]];
-    let light = Lighting { key: v3(24), key_color: v3(27), fill: v3(30), fill_color: v3(33), rim_color: v3(36), fog: [b[39], if b[40] > 0.0 { b[40] } else { f32::INFINITY }], fog_color: v3(41), sky: v3(50), horizon: v3(53), ground: v3(56) };
+    let mat = Material {
+        ambient: b[19],
+        diffuse: b[20],
+        specular: b[21],
+        shininess: b[22],
+        rim: b[23],
+        emissive: b[44],
+        metal: b[45],
+        iridescence: b[46],
+        hue: b[47],
+        lines: b[57],
+        line_color: v3(58),
+        grid: [b[61], b[62]],
+        line_width: b[63],
+        pulse: b[64],
+        pulse_count: b[65],
+        pulse_phase: b[66],
+        pulse_dir: v3(67),
+    };
+    let light = Lighting { key: v3(24), key_color: v3(27), fill: v3(30), fill_color: v3(33), rim_color: v3(36), fog: [b[39], if b[40] > 0.0 { b[40] } else { f32::INFINITY }], fog_color: v3(41), sky: v3(48), horizon: v3(51), ground: v3(54), strips: v3(70) };
     let Some(Some(m)) = s.meshes.get(mesh as usize) else { return 0 };
     let Some(Some((r, inst))) = s.rasters.get_mut(id as usize) else { return 0 };
     let k = (n as usize * INSTANCE_STRIDE).min(inst.len());
