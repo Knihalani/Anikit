@@ -36,7 +36,9 @@ the wasm build in vitest, so the two targets are checked against each other.
 
 ## Summary
 
-`bench-wasm.mjs`, ms per call, three interleaved runs each:
+`bench-wasm.mjs`, ms per call (median of 7 batches), three interleaved runs
+each (the splat and emitter-shade rows were re-measured the same way after
+their later commits):
 
 | Kernel | Size | `e73317e` | now |
 |---|---:|---:|---:|
