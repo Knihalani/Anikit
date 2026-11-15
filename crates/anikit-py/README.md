@@ -3,9 +3,11 @@
 Python bindings for **Anikit**, a high-performance animation engine with a Rust
 core. Animate plain Python objects — dicts, objects, lists of them — with
 tweens, keyframes, timelines, springs, inertia and ballistic physics;
-interpolate colours in OKLab; measure, edit, follow and morph SVG paths;
-generate smooth noise; and export animations to CSS `@keyframes` or the Web
-Animations API.
+interpolate colours in OKLab and 3D CSS transforms like browsers do; measure,
+edit, follow and morph SVG paths; simulate thousands of colliding bodies,
+ropes and cloth in a 2D physics world; project 3D point clouds; generate
+smooth noise; and export animations to CSS `@keyframes` or the Web Animations
+API.
 
 All public times are in **seconds**.
 
@@ -236,6 +238,8 @@ Property values:
 | keyframes | `[0, 100]`, `[None, 120, 80]`, `[{"value": 1, "ease": "inQuad", "offset": .3}]` | `None` first = current value |
 | from/to dict | `{"from": 0, "to": 1, "ease": "linear"}` | |
 | callable | `lambda target, index, total: index * 10` | evaluated per target |
+| `"transform"`: CSS transform lists | `["rotateY(0deg)", "rotateY(180deg) translateZ(100px)"]` | `matrix3d(...)` string |
+| `transform.Matrix` (any key) | `Matrix.rotate_z(90)` | `Matrix` object |
 | `Path` / `motion_path(...)` | | `(x, y, angle)` / separate keys |
 | two `Path`s / `morph(a, b)` | | path data string |
 | anything else | `True`, `"hidden"` | switches half-way (discrete) |
@@ -317,6 +321,123 @@ A simulation finishes when it is at rest (slower than `rest_speed`, default
 or when `life` runs out. Motion that is accelerated with no bound in its way,
 or bounces elastically without friction, never rests — give it a `life`.
 
+## Physics world (2D)
+
+A native, position-based 2D physics world: circles, static boxes, distance
+constraints (ropes, cloth, soft bodies), attractors/repulsors and bounds.
+Collisions use a grid broadphase and sub-stepping, so tens of thousands of
+bodies run in real time; stepping releases the GIL.
+
+```python
+from anikit import World
+
+world = World(gravity=(0, 980), bounds=(0, 0, 800, 600),   # all keyword-only:
+              damping=0.05, substeps=4, iterations=2,      # drag/s, solver quality
+              restitution=0.2, wall_restitution=0.3, friction=0.05)
+
+ball = world.add_body(400, 50, radius=12, mass=1, velocity=(200, 0))   # -> Body handle
+ball.position, ball.velocity, ball.rotation      # rotation: rolling angle (degrees)
+ball.push(0, -500); ball.move_to(100, 100); ball.pinned = True
+world.add_body(400, 500, radius=40, mass=0)      # mass <= 0: static
+world.add_box(100, 400, 300, 420)                # static platform
+
+# Bulk: one native call, no per-body Python objects.
+ids = world.add_bodies([(x, 0, 4) for x in range(0, 800, 10)])  # (x, y[, r[, mass]]) -> range
+world.add_bodies(array("f", flat_xyrm))          # or flat [x, y, r, mass] * n
+world.step(1 / 60)                               # dt > 1/20 s is split into equal steps
+world.run(2.0, fps=60)                           # fixed-step simulation, one native call
+pos = world.positions()                          # array('f') [x0, y0, x1, y1, ...]
+out = world.output()                             # array('f') [x, y, angle_rad] * n
+world.settle()                                   # run until everything is at rest
+
+# Constraints: ropes, cloth, custom links.
+rope = world.rope([(400 + 10 * i, 100) for i in range(30)])   # first body pinned
+rope.end.push(300, 0); rope.length, rope.points(), rope.broken
+cloth = world.cloth(20, 15, spacing=12, origin=(200, 50), pin_top=True, tear=2.5)
+world.connect(a, b, length=None, stiffness=1, tear=0)        # None: current distance
+
+# Forces.
+mouse = world.attract(x, y, strength=3000, radius=200)       # live: mouse.move_to(x, y)
+world.repel(400, 300, strength=5000, radius=150)
+world.impulse(400, 300, radius=200, strength=800)            # explosion
+world.pick(x, y)                                             # Body under the pointer or None
+
+# Drive Python objects: written after every step.
+world.bind(ball, sprite)                                     # sprite.x / .y / .rotation
+world.bind(ball, el, x="left", y="top", rotation=None, offset=(-12, -12))
+world.bind_many(ids, sprites)
+for frame, t in world.render(fps=30, duration=3):            # frame 0 = current state
+    draw(sprites)
+```
+
+Configuration attributes (`world.gravity`, `world.bounds`, ...) can be
+changed while the world runs. Bodies resting on bounds keep a tiny residual
+velocity from the wall restitution, so rest checks should use a small speed
+threshold (`settle(speed=5)`) rather than zero energy.
+
+## 3D transforms and projection
+
+`anikit.transform` works with 4×4 matrices in CSS `matrix3d()` order
+(column-major, px, degrees):
+
+```python
+from anikit.transform import Matrix, Quaternion, Camera, mix_transforms, project_points
+
+m = Matrix.from_css("perspective(800px) translateZ(-50px) rotateY(30deg)")
+m.to_css()                       # 'matrix3d(...)'  (to_css(prefer_2d=True) → 'matrix(...)' when 2D)
+m @ Matrix.rotate_x(10)          # multiply: like writing "m rotateX(10deg)" in CSS
+m.invert(), m.transform_point((10, 20, 0)), m.determinant
+m.decompose()                    # {'translate', 'scale', 'skew', 'perspective', 'quaternion', 'rotate'}
+Matrix.recompose(parts)
+Matrix.translate(x, y, z), Matrix.scale(2), Matrix.rotate((1, 1, 0), 45), Matrix.skew(10, 0)
+
+mix_transforms("rotateY(0deg)", "rotateY(180deg) translateZ(100px)", 0.5)   # 'matrix3d(...)'
+Matrix.from_css(a).mix(b, t)     # browser interpolation: decompose → lerp + slerp → recompose
+
+q = Quaternion.from_euler(30, 45, 0)          # rotateX(30deg) rotateY(45deg)
+q.slerp(Quaternion.from_axis_angle((0, 1, 0), 90), 0.5).to_matrix()
+q.axis_angle(), q.to_css()                    # (x, y, z, deg), 'rotate3d(...)'
+```
+
+Bulk projection of point clouds (native, radix depth sort, GIL released):
+
+```python
+cam = Camera(position=(0, 0, 800), target=(0, 0, 0), fov=50)
+cam.orbit(yaw=t * 30, pitch=20)
+proj = project_points(points, camera=cam, size=(640, 480), model="rotateY(20deg)")
+proj.points                      # array('f') [screen_x, screen_y, depth, scale] * n
+proj.order                       # array('I') indices far → near (painter's order)
+for i, x, y, depth, scale in proj.sorted():   # visible points, far → near
+    draw_circle(x, y, radius * scale)
+```
+
+`points` may be `(x, y, z)` tuples, a flat list / `array('f')` (with `stride`
+and channel `offsets`), or raw `f32` bytes. Points behind the camera get
+`scale == 0`. Use a `Projector()` to reuse buffers between frames.
+
+### Animating 3D transforms
+
+The `transform` property accepts CSS transform lists; they are interpolated
+like browsers interpolate mismatched transform lists (decomposition + quaternion
+slerp) and written back as `matrix3d(...)` strings. `Matrix` keyframes work on
+any property and write `Matrix` objects.
+
+```python
+card = {"transform": "none"}
+flip = anikit.animate(card, {"transform": ["rotateY(0deg)", "rotateY(180deg) translateZ(100px)"]},
+               duration=0.8, ease="inOutCubic")
+anikit.animate(card, {"transform": "rotateX(60deg) scale(1.2)"})      # from the current value
+anikit.animate(node, {"matrix": [Matrix(), Matrix.rotate_y(90)]})     # Matrix objects
+
+flip.to_css_keyframes("flip", ".card")   # transform: matrix3d(...) keyframes (+ x/y shorthands first)
+```
+
+Because the interpolation goes through matrices, rotations take the shortest
+arc between keyframes: `rotate(0deg)` → `rotate(360deg)` does not spin — add
+intermediate keyframes (`0deg`, `120deg`, `240deg`, `360deg`) for full turns.
+Strings that are not transform lists keep the generic number-template
+interpolation.
+
 ## Driving the engine
 
 ```python
@@ -372,7 +493,8 @@ Keyframes are emitted at the animation's own offsets with each segment's easing
 as a native CSS timing function (springs and bounces become `linear()`); when
 properties use different keyframes or easings, values are sampled densely
 instead (`samples=` forces this). `x`/`y`/`rotate`/`scale`/... are composed into
-`transform`; `background_color` becomes `background-color`.
+`transform` (followed by an animated `transform` property's `matrix3d(...)`);
+`background_color` becomes `background-color`.
 
 ## Low-level API
 
@@ -388,3 +510,8 @@ h = core.create_anim([(ak.TRACK_NUMBER, 2, [0, 0, 100, 50], [], [core.easing("ou
 core.play(h)
 updated, values, events = core.step(16.0)   # tick + changed handles + their values + events
 ```
+
+Track kinds: `TRACK_NUMBER`, `TRACK_COLOR`, `TRACK_DISCRETE`, `TRACK_PATH` and
+`TRACK_MATRIX` (16 `matrix3d` channels per keyframe). The physics world and
+projector are `NativeWorld` / `NativeProjector` (indices, flat native-endian
+`f32` bytes); matrix helpers are `transform_*`, `mat4_*` and `quat_*`.

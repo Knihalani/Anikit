@@ -1,0 +1,30 @@
+# Anikit
+
+> High-performance web animation engine: Rust/WebAssembly core with a TypeScript API (and Python bindings). Tweens, keyframes, timelines, springs, physics worlds, 3D, scroll triggers, SVG morphing, text effects, effects library.
+
+Times are in seconds. Import from 'anikit'. Use `testing` + `engine.inspect()` to verify headlessly.
+
+## Docs
+- [Agent playbook](AGENTS.md): rules of thumb, recipes, verification, common mistakes
+- [Full reference](llms-full.txt): every API in one file
+
+## Reference sections
+- `animate(targets, keyframes, options?) → Animation`
+- Easings
+- `timeline(options?) → Timeline`
+- Physics
+- Scroll & viewport
+- SVG
+- Text, layout, compositor, batches
+- Engine
+- More easings
+- More values
+- Control, cleanup and accessibility
+- Timeline extras
+- Ballistic physics
+- Bake to CSS
+- Effects
+- Scroll
+- Interaction
+- Dev tools
+- More utilities

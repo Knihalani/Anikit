@@ -11,7 +11,8 @@ Property names are converted to CSS (``background_color`` / ``backgroundColor``
 → ``background-color``). Transform shorthands are composed into one
 ``transform``: ``x``, ``y``, ``z`` (px), ``rotate``/``rotation``,
 ``rotate_x``/``rotate_y`` (deg), ``scale``, ``scale_x``, ``scale_y``,
-``skew_x``, ``skew_y`` (deg). Unitless numbers get ``px`` except for known
+``skew_x``, ``skew_y`` (deg); an animated ``transform`` (CSS transform lists,
+written as ``matrix3d(...)``) is appended after them. Unitless numbers get ``px`` except for known
 unitless properties (opacity, z-index, ...).
 """
 
@@ -130,7 +131,10 @@ def _css_props(values: Sequence[Tuple[str, Any]]) -> Dict[str, Any]:
         else:
             out[name] = str(v)
     if transforms:
-        out["transform"] = " ".join(f"{fn}({transforms[fn]})" for fn in _TRANSFORM_ORDER if fn in transforms)
+        composed = " ".join(f"{fn}({transforms[fn]})" for fn in _TRANSFORM_ORDER if fn in transforms)
+        # An explicit `transform` (e.g. a matrix3d() track) applies after the shorthands.
+        base = out.get("transform")
+        out["transform"] = composed if not base or base == "none" else f"{composed} {base}"
     return out
 
 

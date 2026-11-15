@@ -12,8 +12,9 @@
 //!   single call so the Python side never polls idle animations.
 //! * Easings, paths and morph plans are native objects, parsed once.
 
-use pyo3::exceptions::{PyKeyError, PyMemoryError, PyRuntimeError, PyTypeError, PyValueError};
+use pyo3::exceptions::{PyIndexError, PyKeyError, PyMemoryError, PyRuntimeError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
+use pyo3::types::PyBytes;
 
 use anikit_core::color::{self, ColorSpace, Rgba};
 use anikit_core::css;
@@ -22,9 +23,11 @@ use anikit_core::engine::{self as core_engine, Error, Handle, PlayState, TrackKi
 use anikit_core::morph::{self, MorphPlan, MorphSeq};
 use anikit_core::noise::Noise;
 use anikit_core::path::{Path, PathLut};
+use anikit_core::space::{self, Mat4, Projector};
 use anikit_core::spring::SpringParams;
 use anikit_core::stagger::{self as core_stagger, Axis, Stagger, StaggerFrom};
 use anikit_core::timing::{Direction, Timing};
+use anikit_core::world::{Attractor, World, WorldConfig};
 
 // ---------------------------------------------------------------------------
 // Errors
@@ -901,7 +904,8 @@ fn stagger(
 
 /// One track: `(kind, channels, values, offsets, easings, color_space, path)`.
 ///
-/// * `kind`: 0 number, 1 colour, 2 discrete, 3 path
+/// * `kind`: 0 number, 1 colour, 2 discrete, 3 path, 4 matrix (16 channels, `matrix3d` order;
+///   interpolated by decomposition like browsers do)
 /// * `values`: `keyframes * channels` floats (colour: r, g, b 0–255, a 0–1)
 /// * `offsets`: empty (evenly spaced) or one per keyframe in `[0, 1]`
 /// * `easings`: empty (linear), one, or `keyframes - 1` easing ids
@@ -977,6 +981,7 @@ impl Engine {
                 1 => TrackKind::Color(ColorSpace::from_u8(space)),
                 2 => TrackKind::Discrete,
                 3 => TrackKind::Path,
+                4 => TrackKind::Matrix,
                 k => return Err(PyValueError::new_err(format!("unknown track kind {k}"))),
             };
             let lut = match (kind, path) {
@@ -1390,6 +1395,608 @@ impl Engine {
 }
 
 // ---------------------------------------------------------------------------
+// Flat f32 buffers
+// ---------------------------------------------------------------------------
+
+/// Flat `f32` input: native-endian `bytes` (e.g. `array('f').tobytes()`) or any
+/// sequence of numbers.
+#[derive(FromPyObject)]
+enum F32Data<'py> {
+    Bytes(Bound<'py, PyBytes>),
+    Seq(Vec<f32>),
+}
+
+impl F32Data<'_> {
+    fn into_vec(self) -> PyResult<Vec<f32>> {
+        match self {
+            F32Data::Seq(v) => Ok(v),
+            F32Data::Bytes(b) => {
+                let raw = b.as_bytes();
+                if !raw.len().is_multiple_of(4) {
+                    return Err(PyValueError::new_err("f32 byte buffers must be a multiple of 4 bytes long"));
+                }
+                Ok(raw.chunks_exact(4).map(|c| f32::from_ne_bytes([c[0], c[1], c[2], c[3]])).collect())
+            }
+        }
+    }
+}
+
+/// Native-endian `bytes` holding `vals` (`array('f').frombytes(...)` reads it back).
+fn f32_bytes<'py>(py: Python<'py>, vals: impl ExactSizeIterator<Item = f32>) -> PyResult<Bound<'py, PyBytes>> {
+    let n = vals.len();
+    PyBytes::new_with(py, n * 4, |buf| {
+        for (chunk, v) in buf.chunks_exact_mut(4).zip(vals) {
+            chunk.copy_from_slice(&v.to_ne_bytes());
+        }
+        Ok(())
+    })
+}
+
+fn u32_bytes<'py>(py: Python<'py>, vals: &[u32]) -> PyResult<Bound<'py, PyBytes>> {
+    PyBytes::new_with(py, vals.len() * 4, |buf| {
+        for (chunk, v) in buf.chunks_exact_mut(4).zip(vals) {
+            chunk.copy_from_slice(&v.to_ne_bytes());
+        }
+        Ok(())
+    })
+}
+
+// ---------------------------------------------------------------------------
+// 2D physics world
+// ---------------------------------------------------------------------------
+
+type Bounds4 = (f32, f32, f32, f32);
+
+fn bounds_of(b: Option<Bounds4>) -> PyResult<[f32; 4]> {
+    match b {
+        None => Ok([f32::NEG_INFINITY, f32::NEG_INFINITY, f32::INFINITY, f32::INFINITY]),
+        Some((x0, y0, x1, y1)) => {
+            if [x0, y0, x1, y1].iter().any(|v| v.is_nan()) {
+                return Err(PyValueError::new_err("bounds must not be NaN"));
+            }
+            Ok([x0.min(x1), y0.min(y1), x0.max(x1), y0.max(y1)])
+        }
+    }
+}
+
+fn finite(name: &str, v: f32) -> PyResult<f32> {
+    if v.is_finite() {
+        Ok(v)
+    } else {
+        Err(PyValueError::new_err(format!("{name} must be finite, got {v}")))
+    }
+}
+
+/// 2D position-based physics world: circles, static boxes, distance
+/// constraints, attractors and bounds. Bodies are integer indices; bulk
+/// outputs are native-endian `f32` bytes.
+#[pyclass(module = "anikit._anikit", name = "NativeWorld")]
+pub struct NativeWorld {
+    w: World,
+}
+
+impl NativeWorld {
+    fn check(&self, i: usize) -> PyResult<usize> {
+        if i < self.w.len() {
+            Ok(i)
+        } else {
+            Err(PyIndexError::new_err(format!("body index {i} out of range ({} bodies)", self.w.len())))
+        }
+    }
+}
+
+#[pymethods]
+impl NativeWorld {
+    #[new]
+    #[pyo3(signature = (gravity=(0.0, 980.0), damping=0.05, substeps=4, iterations=2, restitution=0.2, wall_restitution=0.3, friction=0.05, bounds=None))]
+    #[allow(clippy::too_many_arguments)]
+    fn new(
+        gravity: (f32, f32),
+        damping: f32,
+        substeps: u32,
+        iterations: u32,
+        restitution: f32,
+        wall_restitution: f32,
+        friction: f32,
+        bounds: Option<Bounds4>,
+    ) -> PyResult<Self> {
+        let config = WorldConfig {
+            gravity: [finite("gravity", gravity.0)?, finite("gravity", gravity.1)?],
+            damping: finite("damping", damping)?.max(0.0),
+            substeps: substeps.max(1),
+            iterations: iterations.max(1),
+            restitution: finite("restitution", restitution)?,
+            wall_restitution: finite("wall_restitution", wall_restitution)?,
+            friction: finite("friction", friction)?,
+            bounds: bounds_of(bounds)?,
+        };
+        Ok(NativeWorld { w: World::new(config) })
+    }
+
+    // ---- configuration -----------------------------------------------------
+
+    #[getter]
+    fn get_gravity(&self) -> (f32, f32) {
+        (self.w.config.gravity[0], self.w.config.gravity[1])
+    }
+    #[setter]
+    fn set_gravity(&mut self, g: (f32, f32)) -> PyResult<()> {
+        self.w.config.gravity = [finite("gravity", g.0)?, finite("gravity", g.1)?];
+        Ok(())
+    }
+    #[getter]
+    fn get_damping(&self) -> f32 {
+        self.w.config.damping
+    }
+    #[setter]
+    fn set_damping(&mut self, v: f32) -> PyResult<()> {
+        self.w.config.damping = finite("damping", v)?.max(0.0);
+        Ok(())
+    }
+    #[getter]
+    fn get_substeps(&self) -> u32 {
+        self.w.config.substeps
+    }
+    #[setter]
+    fn set_substeps(&mut self, v: u32) {
+        self.w.config.substeps = v.max(1);
+    }
+    #[getter]
+    fn get_iterations(&self) -> u32 {
+        self.w.config.iterations
+    }
+    #[setter]
+    fn set_iterations(&mut self, v: u32) {
+        self.w.config.iterations = v.max(1);
+    }
+    #[getter]
+    fn get_restitution(&self) -> f32 {
+        self.w.config.restitution
+    }
+    #[setter]
+    fn set_restitution(&mut self, v: f32) -> PyResult<()> {
+        self.w.config.restitution = finite("restitution", v)?;
+        Ok(())
+    }
+    #[getter]
+    fn get_wall_restitution(&self) -> f32 {
+        self.w.config.wall_restitution
+    }
+    #[setter]
+    fn set_wall_restitution(&mut self, v: f32) -> PyResult<()> {
+        self.w.config.wall_restitution = finite("wall_restitution", v)?;
+        Ok(())
+    }
+    #[getter]
+    fn get_friction(&self) -> f32 {
+        self.w.config.friction
+    }
+    #[setter]
+    fn set_friction(&mut self, v: f32) -> PyResult<()> {
+        self.w.config.friction = finite("friction", v)?;
+        Ok(())
+    }
+    /// `(min_x, min_y, max_x, max_y)` or `None` (unbounded).
+    #[getter]
+    fn get_bounds(&self) -> Option<Bounds4> {
+        let [x0, y0, x1, y1] = self.w.config.bounds;
+        if [x0, y0, x1, y1].iter().all(|v| v.is_infinite()) {
+            None
+        } else {
+            Some((x0, y0, x1, y1))
+        }
+    }
+    #[setter]
+    fn set_bounds(&mut self, b: Option<Bounds4>) -> PyResult<()> {
+        self.w.config.bounds = bounds_of(b)?;
+        Ok(())
+    }
+
+    // ---- bodies ------------------------------------------------------------
+
+    fn __len__(&self) -> usize {
+        self.w.len()
+    }
+
+    /// Add a circle; `mass <= 0` makes it static. Returns its index.
+    fn add_body(&mut self, x: f32, y: f32, radius: f32, mass: f32) -> PyResult<u32> {
+        Ok(self.w.add_body(finite("x", x)?, finite("y", y)?, finite("radius", radius)?, finite("mass", mass)?))
+    }
+
+    /// Add bodies from flat `[x, y, radius, mass] * n`; returns the first index.
+    fn add_bodies(&mut self, data: F32Data<'_>) -> PyResult<u32> {
+        let v = data.into_vec()?;
+        if !v.len().is_multiple_of(4) {
+            return Err(PyValueError::new_err("add_bodies expects flat [x, y, radius, mass] * n"));
+        }
+        if v.iter().any(|x| !x.is_finite()) {
+            return Err(PyValueError::new_err("body values must be finite"));
+        }
+        Ok(self.w.add_bodies(&v))
+    }
+
+    #[pyo3(signature = (i, x, y, keep_velocity=false))]
+    fn set_position(&mut self, i: usize, x: f32, y: f32, keep_velocity: bool) -> PyResult<()> {
+        let i = self.check(i)?;
+        self.w.set_position(i, finite("x", x)?, finite("y", y)?, keep_velocity);
+        Ok(())
+    }
+
+    /// Move many bodies: flat `[x, y] * n` starting at body `first`.
+    #[pyo3(signature = (data, first=0, keep_velocity=false))]
+    fn set_positions(&mut self, data: F32Data<'_>, first: usize, keep_velocity: bool) -> PyResult<()> {
+        let v = data.into_vec()?;
+        if !v.len().is_multiple_of(2) || first + v.len() / 2 > self.w.len() {
+            return Err(PyValueError::new_err("set_positions expects flat [x, y] pairs for existing bodies"));
+        }
+        for (k, c) in v.chunks_exact(2).enumerate() {
+            self.w.set_position(first + k, c[0], c[1], keep_velocity);
+        }
+        Ok(())
+    }
+
+    fn set_velocity(&mut self, i: usize, vx: f32, vy: f32) -> PyResult<()> {
+        let i = self.check(i)?;
+        self.w.set_velocity(i, finite("vx", vx)?, finite("vy", vy)?);
+        Ok(())
+    }
+
+    fn position(&self, i: usize) -> PyResult<(f32, f32)> {
+        let [x, y] = self.w.position(self.check(i)?);
+        Ok((x, y))
+    }
+
+    fn velocity(&self, i: usize) -> PyResult<(f32, f32)> {
+        let [x, y] = self.w.velocity(self.check(i)?);
+        Ok((x, y))
+    }
+
+    /// Rolling angle in radians.
+    fn angle(&self, i: usize) -> PyResult<f32> {
+        let i = self.check(i)?;
+        Ok(self.w.output()[i * 3 + 2])
+    }
+
+    fn set_pinned(&mut self, i: usize, pinned: bool) -> PyResult<()> {
+        let i = self.check(i)?;
+        self.w.set_pinned(i, pinned);
+        Ok(())
+    }
+
+    fn set_radius(&mut self, i: usize, r: f32) -> PyResult<()> {
+        let i = self.check(i)?;
+        self.w.set_radius(i, finite("radius", r)?);
+        Ok(())
+    }
+
+    fn set_active(&mut self, i: usize, on: bool) -> PyResult<()> {
+        let i = self.check(i)?;
+        self.w.set_active(i, on);
+        Ok(())
+    }
+
+    /// Instantaneous radial velocity change (units/s at the centre, fading to 0 at `radius`).
+    fn impulse(&mut self, x: f32, y: f32, radius: f32, strength: f32) {
+        self.w.impulse(x, y, radius, strength)
+    }
+
+    /// Index of the topmost body under a point, or `None`.
+    fn pick(&self, x: f32, y: f32) -> Option<u32> {
+        match self.w.pick(x, y) {
+            u32::MAX => None,
+            i => Some(i),
+        }
+    }
+
+    // ---- boxes, constraints, attractors -------------------------------------
+
+    fn add_box(&mut self, x0: f32, y0: f32, x1: f32, y1: f32) -> u32 {
+        self.w.add_box(x0, y0, x1, y1)
+    }
+
+    fn clear_boxes(&mut self) {
+        self.w.clear_boxes()
+    }
+
+    /// Distance constraint; `length < 0` uses the current distance.
+    #[pyo3(signature = (a, b, length=-1.0, stiffness=1.0, tear=0.0))]
+    fn add_constraint(&mut self, a: u32, b: u32, length: f32, stiffness: f32, tear: f32) -> PyResult<u32> {
+        self.check(a as usize)?;
+        self.check(b as usize)?;
+        Ok(self.w.add_constraint(a, b, finite("length", length)?, finite("stiffness", stiffness)?, finite("tear", tear)?))
+    }
+
+    /// Add many constraints from flat `[a, b, length, stiffness, tear] * n`; returns the first index.
+    fn add_constraints(&mut self, data: Vec<f64>) -> PyResult<u32> {
+        if !data.len().is_multiple_of(5) {
+            return Err(PyValueError::new_err("add_constraints expects flat [a, b, length, stiffness, tear] * n"));
+        }
+        let first = self.w.constraints().len() as u32;
+        let n = self.w.len() as f64;
+        for c in data.chunks_exact(5) {
+            if !(c[0] >= 0.0 && c[0] < n && c[1] >= 0.0 && c[1] < n) {
+                return Err(PyIndexError::new_err("constraint body index out of range"));
+            }
+            self.w.add_constraint(c[0] as u32, c[1] as u32, c[2] as f32, c[3] as f32, c[4] as f32);
+        }
+        Ok(first)
+    }
+
+    /// `(a, b, length, stiffness, tear, alive)` per constraint.
+    fn constraints(&self) -> Vec<(u32, u32, f32, f32, f32, bool)> {
+        self.w.constraints().iter().map(|c| (c.a, c.b, c.length, c.stiffness, c.tear, c.alive)).collect()
+    }
+
+    fn constraint_count(&self) -> usize {
+        self.w.constraints().len()
+    }
+
+    /// Replace all attractors: `(x, y, strength, radius)`; negative strength repels.
+    fn set_attractors(&mut self, items: Vec<(f32, f32, f32, f32)>) {
+        let a: Vec<Attractor> = items.into_iter().map(|(x, y, strength, radius)| Attractor { x, y, strength, radius }).collect();
+        self.w.set_attractors(&a);
+    }
+
+    // ---- simulation ------------------------------------------------------------
+
+    /// Advance `steps` times by `dt` seconds each (each step is clamped to 1/20 s
+    /// by the core). Releases the GIL.
+    #[pyo3(signature = (dt, steps=1))]
+    fn step(&mut self, py: Python<'_>, dt: f32, steps: u32) -> PyResult<()> {
+        let dt = finite("dt", dt)?;
+        let w = &mut self.w;
+        py.detach(|| {
+            for _ in 0..steps {
+                w.step(dt);
+            }
+        });
+        Ok(())
+    }
+
+    /// `[x, y, angle] * n` as native-endian `f32` bytes (positions are current
+    /// even after `set_position`; the core's render buffer only refreshes on `step`).
+    fn output<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
+        let (w, out) = (&self.w, self.w.output());
+        f32_bytes(py, (0..w.len() * 3).map(|k| if k % 3 == 2 { out[k] } else { w.position(k / 3)[k % 3] }))
+    }
+
+    /// `[x, y] * n` as native-endian `f32` bytes.
+    fn positions<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
+        let w = &self.w;
+        f32_bytes(py, (0..w.len() * 2).map(|k| w.position(k / 2)[k % 2]))
+    }
+
+    /// `[vx, vy] * n` as native-endian `f32` bytes.
+    fn velocities<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
+        let n = self.w.len();
+        let w = &self.w;
+        f32_bytes(py, (0..n * 2).map(|k| w.velocity(k / 2)[k % 2]))
+    }
+
+    #[getter]
+    fn kinetic_energy(&self) -> f32 {
+        self.w.kinetic_energy()
+    }
+
+    /// Broadphase pair tests performed by the last step (diagnostics).
+    #[getter]
+    fn pair_tests(&self) -> u64 {
+        self.w.pair_tests
+    }
+
+    fn __repr__(&self) -> String {
+        format!("NativeWorld(bodies={}, constraints={})", self.w.len(), self.w.constraints().len())
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 3D: matrices, quaternions, CSS transforms, projection
+// ---------------------------------------------------------------------------
+
+type Vec3 = (f64, f64, f64);
+type Quat4 = (f64, f64, f64, f64);
+
+fn mat(v: Vec<f64>) -> PyResult<Mat4> {
+    v.try_into().map_err(|v: Vec<f64>| PyValueError::new_err(format!("a 4x4 matrix needs 16 values, got {}", v.len())))
+}
+
+fn decomposed(v: Vec<f64>) -> PyResult<space::Decomposed> {
+    v.try_into().map_err(|v: Vec<f64>| PyValueError::new_err(format!("a decomposed transform needs 17 values, got {}", v.len())))
+}
+
+fn quat(q: Quat4) -> space::Quat {
+    [q.0, q.1, q.2, q.3]
+}
+
+fn quat4(q: space::Quat) -> Quat4 {
+    (q[0], q[1], q[2], q[3])
+}
+
+/// Parse a CSS `transform` list into a column-major 4×4 matrix (`matrix3d` order);
+/// `None` when it is not a valid transform.
+#[pyfunction]
+fn transform_parse(css: &str) -> Option<Vec<f64>> {
+    space::parse_transform(css).map(|m| m.to_vec())
+}
+
+/// Browser-style interpolation of two CSS transforms; `None` if either is invalid.
+#[pyfunction]
+fn transform_mix(a: &str, b: &str, t: f64) -> Option<Vec<f64>> {
+    let (a, b) = (space::parse_transform(a)?, space::parse_transform(b)?);
+    Some(space::mix_matrix(&a, &b, t).to_vec())
+}
+
+/// `[tx, ty, tz, sx, sy, sz, skew_xy, skew_xz, skew_yz, p0, p1, p2, p3, qx, qy, qz, qw]`,
+/// or `None` for singular matrices.
+#[pyfunction]
+fn mat4_decompose(m: Vec<f64>) -> PyResult<Option<Vec<f64>>> {
+    Ok(space::decompose(&mat(m)?).map(|d| d.to_vec()))
+}
+
+#[pyfunction]
+fn mat4_recompose(d: Vec<f64>) -> PyResult<Vec<f64>> {
+    Ok(space::recompose(&decomposed(d)?).to_vec())
+}
+
+#[pyfunction]
+fn mat4_mix(a: Vec<f64>, b: Vec<f64>, t: f64) -> PyResult<Vec<f64>> {
+    Ok(space::mix_matrix(&mat(a)?, &mat(b)?, t).to_vec())
+}
+
+#[pyfunction]
+fn mat4_mix_decomposed(a: Vec<f64>, b: Vec<f64>, t: f64) -> PyResult<Vec<f64>> {
+    Ok(space::mix_decomposed(&decomposed(a)?, &decomposed(b)?, t).to_vec())
+}
+
+/// `a × b` (apply `b` first, then `a`).
+#[pyfunction]
+fn mat4_mul(a: Vec<f64>, b: Vec<f64>) -> PyResult<Vec<f64>> {
+    Ok(space::mul(&mat(a)?, &mat(b)?).to_vec())
+}
+
+/// Inverse, or `None` when singular.
+#[pyfunction]
+fn mat4_invert(m: Vec<f64>) -> PyResult<Option<Vec<f64>>> {
+    Ok(space::invert(&mat(m)?).map(|m| m.to_vec()))
+}
+
+#[pyfunction]
+fn mat4_determinant(m: Vec<f64>) -> PyResult<f64> {
+    Ok(space::determinant(&mat(m)?))
+}
+
+/// Homogeneous `(x, y, z, w)` of `m × (x, y, z, 1)`.
+#[pyfunction]
+fn mat4_transform_point(m: Vec<f64>, p: Vec3) -> PyResult<(f64, f64, f64, f64)> {
+    let r = space::transform_point(&mat(m)?, [p.0, p.1, p.2]);
+    Ok((r[0], r[1], r[2], r[3]))
+}
+
+#[pyfunction]
+fn mat4_translate(x: f64, y: f64, z: f64) -> Vec<f64> {
+    space::translate(x, y, z).to_vec()
+}
+
+#[pyfunction]
+fn mat4_scale(x: f64, y: f64, z: f64) -> Vec<f64> {
+    space::scale(x, y, z).to_vec()
+}
+
+/// Rotation of `deg` degrees about the `axis` vector (CSS `rotate3d`).
+#[pyfunction]
+fn mat4_rotate(axis: Vec3, deg: f64) -> Vec<f64> {
+    let m = if axis == (1.0, 0.0, 0.0) {
+        space::rotate_x(deg)
+    } else if axis == (0.0, 1.0, 0.0) {
+        space::rotate_y(deg)
+    } else if axis == (0.0, 0.0, 1.0) {
+        space::rotate_z(deg)
+    } else {
+        space::rotate_axis(axis.0, axis.1, axis.2, deg)
+    };
+    m.to_vec()
+}
+
+#[pyfunction]
+fn mat4_skew(ax_deg: f64, ay_deg: f64) -> Vec<f64> {
+    space::skew(ax_deg, ay_deg).to_vec()
+}
+
+/// CSS `perspective(d)`.
+#[pyfunction]
+fn mat4_perspective_css(d: f64) -> Vec<f64> {
+    space::perspective_css(d).to_vec()
+}
+
+/// Right-handed look-at view matrix.
+#[pyfunction]
+fn mat4_look_at(eye: Vec3, target: Vec3, up: Vec3) -> Vec<f64> {
+    space::look_at([eye.0, eye.1, eye.2], [target.0, target.1, target.2], [up.0, up.1, up.2]).to_vec()
+}
+
+/// OpenGL-style perspective projection.
+#[pyfunction]
+fn mat4_perspective(fov_y_deg: f64, aspect: f64, near: f64, far: f64) -> Vec<f64> {
+    space::perspective(fov_y_deg, aspect, near, far).to_vec()
+}
+
+/// Quaternion `(x, y, z, w)` from Euler angles in degrees (CSS `rotateX() rotateY() rotateZ()`).
+#[pyfunction]
+fn quat_euler(x: f64, y: f64, z: f64) -> Quat4 {
+    quat4(space::quat_euler(x, y, z))
+}
+
+#[pyfunction]
+fn quat_axis_angle(x: f64, y: f64, z: f64, deg: f64) -> Quat4 {
+    quat4(space::quat_axis_angle(x, y, z, deg))
+}
+
+#[pyfunction]
+fn quat_mul(a: Quat4, b: Quat4) -> Quat4 {
+    quat4(space::quat_mul(&quat(a), &quat(b)))
+}
+
+/// Spherical interpolation along the shortest arc.
+#[pyfunction]
+fn quat_slerp(a: Quat4, b: Quat4, t: f64) -> Quat4 {
+    quat4(space::slerp(&quat(a), &quat(b), t))
+}
+
+#[pyfunction]
+fn quat_to_matrix(q: Quat4) -> Vec<f64> {
+    space::to_matrix(&quat(q)).to_vec()
+}
+
+/// Bulk perspective projector with radix depth sorting (buffers are reused).
+#[pyclass(module = "anikit._anikit", name = "NativeProjector")]
+#[derive(Default)]
+pub struct NativeProjector {
+    p: Projector,
+}
+
+#[pymethods]
+impl NativeProjector {
+    #[new]
+    fn new() -> Self {
+        Self::default()
+    }
+
+    /// Project `n` points (read from flat `src` at `stride` with x/y/z channel
+    /// `offsets`) by `model` then `view_proj` into a `width × height` viewport.
+    /// Returns `(out, order)` as native-endian bytes: `f32 [sx, sy, depth, scale] * n`
+    /// and `u32` indices far → near (culled points: scale 0, sorted first).
+    #[pyo3(signature = (src, stride, offsets, model, view_proj, width, height, sort=true))]
+    #[allow(clippy::too_many_arguments)]
+    fn project<'py>(
+        &mut self,
+        py: Python<'py>,
+        src: F32Data<'_>,
+        stride: usize,
+        offsets: (usize, usize, usize),
+        model: Vec<f64>,
+        view_proj: Vec<f64>,
+        width: f64,
+        height: f64,
+        sort: bool,
+    ) -> PyResult<(Bound<'py, PyBytes>, Bound<'py, PyBytes>)> {
+        let src = src.into_vec()?;
+        let offs = [offsets.0, offsets.1, offsets.2];
+        if stride == 0 || offs.iter().any(|&o| o >= stride) {
+            return Err(PyValueError::new_err("offsets must be smaller than stride"));
+        }
+        let (model, vp) = (mat(model)?, mat(view_proj)?);
+        let n = src.len() / stride;
+        let p = &mut self.p;
+        py.detach(|| p.project(&src, stride, offs, n, &model, &vp, width, height, sort));
+        Ok((f32_bytes(py, self.p.out[..n * 4].iter().copied())?, u32_bytes(py, &self.p.order[..n])?))
+    }
+
+    fn __repr__(&self) -> String {
+        "NativeProjector()".to_string()
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Module
 // ---------------------------------------------------------------------------
 
@@ -1401,6 +2008,8 @@ fn _anikit(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NativeMorph>()?;
     m.add_class::<NativeMorphSeq>()?;
     m.add_class::<NativeNoise>()?;
+    m.add_class::<NativeWorld>()?;
+    m.add_class::<NativeProjector>()?;
     m.add_function(wrap_pyfunction!(ease, m)?)?;
     m.add_function(wrap_pyfunction!(easing_css, m)?)?;
     m.add_function(wrap_pyfunction!(spring_settle_time, m)?)?;
@@ -1414,6 +2023,28 @@ fn _anikit(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(color_space_id, m)?)?;
     m.add_function(wrap_pyfunction!(morph_write, m)?)?;
     m.add_function(wrap_pyfunction!(stagger, m)?)?;
+    m.add_function(wrap_pyfunction!(transform_parse, m)?)?;
+    m.add_function(wrap_pyfunction!(transform_mix, m)?)?;
+    m.add_function(wrap_pyfunction!(mat4_decompose, m)?)?;
+    m.add_function(wrap_pyfunction!(mat4_recompose, m)?)?;
+    m.add_function(wrap_pyfunction!(mat4_mix, m)?)?;
+    m.add_function(wrap_pyfunction!(mat4_mix_decomposed, m)?)?;
+    m.add_function(wrap_pyfunction!(mat4_mul, m)?)?;
+    m.add_function(wrap_pyfunction!(mat4_invert, m)?)?;
+    m.add_function(wrap_pyfunction!(mat4_determinant, m)?)?;
+    m.add_function(wrap_pyfunction!(mat4_transform_point, m)?)?;
+    m.add_function(wrap_pyfunction!(mat4_translate, m)?)?;
+    m.add_function(wrap_pyfunction!(mat4_scale, m)?)?;
+    m.add_function(wrap_pyfunction!(mat4_rotate, m)?)?;
+    m.add_function(wrap_pyfunction!(mat4_skew, m)?)?;
+    m.add_function(wrap_pyfunction!(mat4_perspective_css, m)?)?;
+    m.add_function(wrap_pyfunction!(mat4_look_at, m)?)?;
+    m.add_function(wrap_pyfunction!(mat4_perspective, m)?)?;
+    m.add_function(wrap_pyfunction!(quat_euler, m)?)?;
+    m.add_function(wrap_pyfunction!(quat_axis_angle, m)?)?;
+    m.add_function(wrap_pyfunction!(quat_mul, m)?)?;
+    m.add_function(wrap_pyfunction!(quat_slerp, m)?)?;
+    m.add_function(wrap_pyfunction!(quat_to_matrix, m)?)?;
 
     m.add("LINEAR", LINEAR)?;
     m.add("NONE", NONE)?;
@@ -1435,6 +2066,7 @@ fn _anikit(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("TRACK_COLOR", 1u8)?;
     m.add("TRACK_DISCRETE", 2u8)?;
     m.add("TRACK_PATH", 3u8)?;
+    m.add("TRACK_MATRIX", 4u8)?;
     // Play states.
     m.add("STATE_IDLE", 0u8)?;
     m.add("STATE_PLAYING", 1u8)?;

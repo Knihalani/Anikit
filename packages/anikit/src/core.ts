@@ -21,7 +21,11 @@ export const FL_FILL_FORWARDS = 2;
 export const FL_IMMEDIATE = 4;
 export const FL_AUTO_RELEASE = 8;
 
+import { didYouMean, EASING_NAMES } from './debug';
+
 export interface NodeRecord {
+  /** Description for `engine.inspect()`. */
+  info?(): Record<string, unknown>;
   /** Engine handle. */
   h: number;
   /** F64 index of the node's output values (0 if none). */
@@ -131,7 +135,9 @@ const raf: (cb: (t: number) => void) => number =
 const now = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
 let running = false;
-let manual = false;
+/** Recorders (e.g. `anikit-record`) set `__ANIKIT_MANUAL__` before load to start in manual time. */
+let manual = !!(globalThis as any).__ANIKIT_MANUAL__;
+export const isManual = (): boolean => manual;
 let last = 0;
 let clock = 0;
 let maxFps = 0;
@@ -236,6 +242,31 @@ export const engine = {
     wake();
     return () => frameCallbacks.delete(cb);
   },
+  /**
+   * JSON-serialisable snapshot of everything the engine is running — what is
+   * animating which target, its state and progress. Handy for debugging (and
+   * for coding agents driving a headless browser).
+   */
+  inspect(): Array<Record<string, unknown>> {
+    const out: Array<Record<string, unknown>> = [];
+    if (!W) return out;
+    const states = ['idle', 'running', 'paused', 'finished'];
+    for (const r of records) {
+      if (!r || !r.info) continue;
+      const h = r.h;
+      if (!W.ak_alive(h)) continue;
+      const dur = W.ak_duration(h);
+      out.push({
+        id: h & INDEX_MASK,
+        state: states[W.ak_state(h)] ?? 'unknown',
+        time: Math.round(W.ak_time(h)) / 1000,
+        duration: Number.isFinite(dur) ? Math.round(dur) / 1000 : 'infinite',
+        progress: Math.round((W.ak_progress(h) || 0) * 1000) / 1000,
+        ...r.info(),
+      });
+    }
+    return out;
+  },
   /** Live engine statistics. */
   stats(): { active: number; nodes: number; time: number } {
     if (!W) return { active: 0, nodes: 0, time: clock };
@@ -275,7 +306,10 @@ export function easingId(e: EasingInput, fallback = 'outQuad'): number {
     if (id === undefined) {
       const w = core();
       id = w.ak_easing_parse(writeStr(e)) >>> 0;
-      if (id === EASING_ERROR) throw new Error(`anikit: unknown easing "${e}"`);
+      if (id === EASING_ERROR) {
+        const head = e.replace(/\(.*$/, '').trim();
+        throw new Error(`anikit: unknown easing "${e}".${didYouMean(head, EASING_NAMES)} See docs/api.md#easings for every accepted syntax.`);
+      }
       easingCache.set(e, id);
     }
     return id;
@@ -305,3 +339,12 @@ export function easingDuration(id: number): number {
 }
 
 export { LINEAR };
+
+/** Forget every record (used by `testing.reset()` after the core is cleared). */
+export function clearRecords(): void {
+  records.length = 0;
+}
+
+// Global handle for tools (anikit-record CLI, devtools, coding agents):
+// `__ANIKIT__.tick(ms)`, `__ANIKIT__.inspect()`, `__ANIKIT__.manual()`.
+(globalThis as any).__ANIKIT__ ??= engine;

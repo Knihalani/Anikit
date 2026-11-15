@@ -19,6 +19,7 @@ import {
 import { parseValue, parseColor, r3 } from './values';
 import { Binding, bind, apply, custom } from './bind';
 import { track } from './context';
+import { describe } from './debug';
 import { snapshot } from './props';
 
 export interface PhysicsOptions {
@@ -78,6 +79,9 @@ class Sim implements NodeRecord, Owner {
   }
   release(): void {
     this.dispose();
+  }
+  info(): Record<string, unknown> {
+    return { type: 'physics', target: describe(this.target), props: [this.prop] };
   }
   dispose(): void {
     if (!this.h) return;

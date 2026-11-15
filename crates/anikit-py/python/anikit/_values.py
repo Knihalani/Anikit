@@ -13,6 +13,11 @@ A property value may be:
   ``{"value": v, "ease": e, "offset": o}`` (``ease`` applies to the segment
   *arriving* at that keyframe)
 * ``{"from": a, "to": b, "ease": e}``
+* for the ``transform`` property: CSS transform lists (``"rotateY(45deg)
+  translateZ(100px)"``) or :class:`~anikit.transform.Matrix` objects (any
+  property) → a matrix track interpolated like browsers do (decompose →
+  lerp + quaternion slerp → recompose); writes ``matrix3d(...)`` strings (or
+  ``Matrix`` objects when the keyframes are ``Matrix`` objects)
 * a :class:`~anikit.Path` (motion: writes ``(x, y, angle)``), a
   :class:`~anikit.MotionPath`, or a :class:`~anikit.Morph` /
   :class:`~anikit.MorphSequence` / list of two or more paths (shape morphing:
@@ -31,11 +36,13 @@ from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 from . import _anikit
 from ._easing import Easing, EasingLike
 from ._path import Morph, MorphSequence, MotionPath, Path
+from .transform import Matrix
 
 TRACK_NUMBER = _anikit.TRACK_NUMBER
 TRACK_COLOR = _anikit.TRACK_COLOR
 TRACK_DISCRETE = _anikit.TRACK_DISCRETE
 TRACK_PATH = _anikit.TRACK_PATH
+TRACK_MATRIX = _anikit.TRACK_MATRIX
 
 
 class _Missing:
@@ -230,6 +237,23 @@ class MorphKind(Kind):
         return self.morph.write(vals[off : off + self.channels])
 
 
+class MatrixKind(Kind):
+    """3D transform: 16 matrix channels written as ``matrix3d(...)`` (or a
+    :class:`~anikit.transform.Matrix` when ``as_matrix``)."""
+
+    __slots__ = ("as_matrix",)
+    track = TRACK_MATRIX
+    channels = 16
+    out_channels = 16
+
+    def __init__(self, as_matrix: bool) -> None:
+        self.as_matrix = as_matrix
+
+    def decode(self, vals: Sequence[float], off: int) -> Any:
+        m = Matrix._raw(tuple(vals[off : off + 16]))
+        return m if self.as_matrix else m.to_css()
+
+
 # ---------------------------------------------------------------------------
 # Keyframe resolution
 # ---------------------------------------------------------------------------
@@ -248,7 +272,7 @@ _CURRENT: Any = object()  # keyframe placeholder: read the current value
 
 
 def resolve_callable(v: Any, target: Any, index: int, total: int) -> Any:
-    if callable(v) and not isinstance(v, (Easing, Path, Morph, MorphSequence, MotionPath, type)):
+    if callable(v) and not isinstance(v, (Easing, Path, Morph, MorphSequence, MotionPath, Matrix, type)):
         return v(target, index, total)
     return v
 
@@ -495,6 +519,46 @@ class TrackPlan:
         return k.decode(self.rows[-1], 0)
 
 
+def _matrix_of(v: Any) -> Optional[Matrix]:
+    if isinstance(v, Matrix):
+        return v
+    if isinstance(v, str):
+        vals = _anikit.transform_parse(v)
+        return None if vals is None else Matrix._raw(vals)
+    return None
+
+
+def _plan_matrix(key: str, frames: List[Frame], current: Any) -> Optional[TrackPlan]:
+    """A matrix track for ``transform`` strings / ``Matrix`` keyframes, else ``None``."""
+    explicit = [f.value for f in frames if f.value is not _CURRENT]
+    has_matrix = any(isinstance(v, Matrix) for v in explicit)
+    if not has_matrix and (key != "transform" or not all(isinstance(v, str) for v in explicit)):
+        return None
+    parsed = [_matrix_of(v) for v in explicit]
+    for v, pm in zip(explicit, parsed):
+        if pm is None:
+            if not has_matrix:
+                return None  # not a transform list: keep the generic (template) interpolation
+            raise ValueError(f"cannot animate {key!r} to {v!r}: not a CSS transform or Matrix")
+    it = iter(parsed)
+    mats: List[Matrix] = []
+    for f in frames:
+        if f.value is not _CURRENT:
+            nxt = next(it)
+            assert nxt is not None
+            mats.append(nxt)
+        elif current is MISSING or current is None or (isinstance(current, str) and not current.strip()):
+            mats.append(Matrix())
+        else:
+            cm = _matrix_of(current)
+            if cm is None:
+                raise ValueError(f"cannot animate {key!r} from its current value {current!r}: not a CSS transform")
+            mats.append(cm)
+    kind = MatrixKind(isinstance(explicit[-1], Matrix))
+    rows = [list(mt.values) for mt in mats]
+    return TrackPlan(key, kind, rows, fill_offsets(frames), [f.ease for f in frames[1:]], kind.decode(rows[-1], 0))
+
+
 def plan_track(
     key: str,
     raw: Any,
@@ -521,6 +585,9 @@ def plan_track(
         return TrackPlan(key, mk, rows, [], [None] * (len(rows) - 1), mk.decode(rows[-1], 0))
 
     frames = frames_of(raw, target, index, total)
+    mplan = _plan_matrix(key, frames, current)
+    if mplan is not None:
+        return mplan
     if any(isinstance(f.value, Path) for f in frames):
         shapes = [f.value for f in frames]
         if shapes[0] is _CURRENT:

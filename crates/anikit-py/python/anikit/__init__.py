@@ -1,7 +1,9 @@
 """Anikit — a high-performance animation engine with a Rust core.
 
 Animate plain Python objects (dicts, objects, lists of them), drive the world
-with :func:`tick` or :func:`render`, and export to CSS/WAAPI::
+with :func:`tick` or :func:`render`, and export to CSS/WAAPI. Also: a fast 2D
+physics :class:`World` (bodies, ropes, cloth, attractors) and 3D transforms /
+projection in :mod:`anikit.transform`::
 
     import anikit
 
@@ -18,7 +20,7 @@ from __future__ import annotations
 
 from typing import Any, Iterator, Mapping, Optional, Tuple
 
-from . import color, export
+from . import color, export, transform
 from ._anikit import __version__
 from ._animation import Animation, Position, Timeline, animate, timeline
 from ._easing import Easing, EasingLike, ease
@@ -27,6 +29,7 @@ from ._noise import Noise
 from ._path import ClosestPoint, Morph, MorphSequence, MotionPath, Path, PathLike, morph, morph_many, motion_path
 from ._physics import PhysicsAnimation, SpringAnimation, inertia, physics, spring
 from ._stagger import Stagger, stagger
+from ._world import Attractor, Body, Cloth, Link, Rope, World
 
 __all__ = [
     "__version__",
@@ -50,6 +53,13 @@ __all__ = [
     "physics",
     "SpringAnimation",
     "PhysicsAnimation",
+    # 2D physics world
+    "World",
+    "Body",
+    "Rope",
+    "Cloth",
+    "Link",
+    "Attractor",
     # easing
     "Easing",
     "EasingLike",
@@ -70,6 +80,7 @@ __all__ = [
     "Noise",
     "color",
     "export",
+    "transform",
 ]
 
 

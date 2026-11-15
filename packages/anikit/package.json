@@ -21,15 +21,23 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "bin",
+    "README.md",
+    "AGENTS.md",
+    "llms.txt",
+    "llms-full.txt"
   ],
   "sideEffects": false,
   "scripts": {
     "build:wasm": "node scripts/build-wasm.mjs",
-    "build": "node scripts/build-wasm.mjs && node scripts/build.mjs",
+    "build": "node scripts/build-wasm.mjs && node scripts/build.mjs && node scripts/build-llms.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/build-wasm.mjs && vitest run",
-    "bench": "node scripts/bench.mjs"
+    "bench": "node scripts/bench.mjs",
+    "bench:physics": "node scripts/bench-physics.mjs",
+    "bench:dom": "node scripts/bench-dom.mjs",
+    "bench:3d": "node scripts/bench-3d.mjs",
+    "record": "node bin/anikit-record.mjs"
   },
   "keywords": [
     "animation",
@@ -51,5 +59,8 @@
     "motion": "^12.43.0",
     "typescript": "^5.9.3",
     "vitest": "^5.1.0"
+  },
+  "bin": {
+    "anikit-record": "./bin/anikit-record.mjs"
   }
 }

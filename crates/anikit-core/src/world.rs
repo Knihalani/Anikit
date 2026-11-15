@@ -219,6 +219,10 @@ impl World {
         self.y[i] = y;
         self.px[i] = x;
         self.py[i] = y;
+        if let Some(o) = self.out.get_mut(i * 3..i * 3 + 2) {
+            o[0] = x;
+            o[1] = y;
+        }
         if !keep_velocity {
             self.vx[i] = 0.0;
             self.vy[i] = 0.0;
@@ -607,9 +611,11 @@ impl World {
     }
 
     /// Push bodies out of bounds and boxes; returns per-body wall normal via callback.
-    fn solve_walls(&mut self) {
+    fn solve_walls(&mut self, h: f32) {
         let [bx0, by0, bx1, by1] = self.config.bounds;
-        let e = self.config.wall_restitution;
+        let e_cfg = self.config.wall_restitution;
+        // Slow impacts don't bounce (avoids perpetual micro-bounces at rest).
+        let rest = 40.0 * h;
         let fr = 1.0 - self.config.friction;
         for i in 0..self.len() {
             if self.inv_m[i] == 0.0 || self.active[i] == 0 {
@@ -619,22 +625,26 @@ impl World {
             // Bounds: clamp position, reflect the implied velocity via `prev`.
             if self.x[i] - r < bx0 {
                 let v = self.x[i] - self.px[i];
+                let e = if v.abs() > rest { e_cfg } else { 0.0 };
                 self.x[i] = bx0 + r;
                 self.px[i] = self.x[i] + v * e;
                 self.py[i] = self.y[i] - (self.y[i] - self.py[i]) * fr;
             } else if self.x[i] + r > bx1 {
                 let v = self.x[i] - self.px[i];
+                let e = if v.abs() > rest { e_cfg } else { 0.0 };
                 self.x[i] = bx1 - r;
                 self.px[i] = self.x[i] + v * e;
                 self.py[i] = self.y[i] - (self.y[i] - self.py[i]) * fr;
             }
             if self.y[i] - r < by0 {
                 let v = self.y[i] - self.py[i];
+                let e = if v.abs() > rest { e_cfg } else { 0.0 };
                 self.y[i] = by0 + r;
                 self.py[i] = self.y[i] + v * e;
                 self.px[i] = self.x[i] - (self.x[i] - self.px[i]) * fr;
             } else if self.y[i] + r > by1 {
                 let v = self.y[i] - self.py[i];
+                let e = if v.abs() > rest { e_cfg } else { 0.0 };
                 self.y[i] = by1 - r;
                 self.py[i] = self.y[i] + v * e;
                 self.px[i] = self.x[i] - (self.x[i] - self.px[i]) * fr;
@@ -671,6 +681,7 @@ impl World {
                 self.x[i] += nx * pen;
                 self.y[i] += ny * pen;
                 let vn = vx * nx + vy * ny;
+                let e = if vn.abs() > rest { e_cfg } else { 0.0 };
                 if vn < 0.0 {
                     let (tx, ty) = (vx - vn * nx, vy - vn * ny);
                     let (nvx, nvy) = (tx * fr - vn * e * nx, ty * fr - vn * e * ny);
@@ -733,7 +744,7 @@ impl World {
             for _ in 0..self.config.iterations.max(1) {
                 self.solve_constraints();
             }
-            self.solve_walls();
+            self.solve_walls(h);
             // Velocities from positions.
             let inv_h = 1.0 / h;
             for i in 0..n {
@@ -816,6 +827,18 @@ mod tests {
         let [_, y] = w.position(b);
         assert!((y - 390.0).abs() < 0.5, "{y}");
         assert!(w.velocity(b)[1].abs() < 5.0);
+    }
+
+    #[test]
+    fn comes_fully_to_rest() {
+        let mut w = boxed_world();
+        let b = w.add_body(100.0, 100.0, 10.0, 1.0) as usize;
+        for _ in 0..900 {
+            w.step(1.0 / 60.0);
+        }
+        assert!(w.velocity(b)[1].abs() < 1e-3, "{:?}", w.velocity(b));
+        w.set_position(b, 50.0, 60.0, false);
+        assert_eq!(&w.output()[..2], &[50.0, 60.0]);
     }
 
     #[test]

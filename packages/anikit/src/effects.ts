@@ -15,6 +15,7 @@ import { animate, AnimateOptions, Animation, Props } from './animate';
 import { Targets } from './props';
 import { stagger } from './stagger';
 import { Playable } from './playable';
+import { didYouMean } from './debug';
 
 export interface EffectOptions extends AnimateOptions {
   /** Seconds between targets (shorthand for `delay: stagger(n)`). */
@@ -42,7 +43,7 @@ export function registerEffect(name: string, fn: EffectFn, defaults: EffectOptio
 /** Run a registered effect by name. */
 export function effect(name: string, targets: Targets, options: EffectOptions = {}): Playable {
   const e = registry.get(name);
-  if (!e) throw new Error(`anikit: unknown effect "${name}"`);
+  if (!e) throw new Error(`anikit: unknown effect "${name}".${didYouMean(name, registry.keys())} Available: ${Array.from(registry.keys()).join(', ')}.`);
   return e.fn(targets, { ...e.defaults, ...options });
 }
 

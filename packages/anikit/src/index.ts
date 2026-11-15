@@ -52,3 +52,7 @@ export { world, World } from './world';
 export type { WorldOptions, BodyInit } from './world';
 export { scene3d, Scene3D, tilt, parseTransform, toMatrix3d, mixTransforms } from './scene';
 export type { SceneOptions, Projection, DrawOptions, TiltOptions, Vec3, Matrix } from './scene';
+export { testing } from './testing';
+export { setWarnings, onWarning } from './debug';
+export { screenshot, record, rasterize, encodeGif, GifWriter } from './capture';
+export type { CaptureTarget, RasterOptions, RecordOptions, Recording } from './capture';

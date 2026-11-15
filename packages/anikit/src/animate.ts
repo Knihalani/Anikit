@@ -19,9 +19,10 @@ import {
 } from './values';
 import {
   Target, Targets, toTargets, classify, Kind, readValue, writer, convertUnit, defaultUnit, isElement,
-  claim, unclaim, Owner, stateOf, markDirty, transformUnit, TargetState, snapshot, composeTransform, kebab, computed,
+  claim, unclaim, Owner, stateOf, markDirty, transformUnit, TargetState, snapshot, composeTransform, kebab, computed, camel,
 } from './props';
 import { Playable, Callbacks, Linked } from './playable';
+import { warn, didYouMean, describe, cssPropertyNames } from './debug';
 import { Binding, bind, apply, custom, transformSlot, M_PROP, M_TRANSFORM, M_TRANSFORM2, M_STYLE_NUM, M_STYLE_FMT, M_VAR, M_CUSTOM } from './bind';
 import { pathData, PathSource, writeMorph, elementLength, morphSequence } from './svg';
 import { parseTransform, toMatrix3d } from './scene';
@@ -104,6 +105,14 @@ const OPTION_KEYS = new Set([
 ]);
 
 const DIRECTIONS = { normal: 0, reverse: 1, alternate: 2, 'alternate-reverse': 3 } as const;
+/** Options accepted for compatibility / by wrappers (not warned about). */
+const EXTRA_OPTION_KEYS = new Set(['stagger', 'distance', 'from', 'intensity', 'loop', 'axis', 'at', 'charDelay', 'start', 'to', 'chars', 'delimiter', 'text', 'size', 'color']);
+const TRANSFORM_PROPS = ['x', 'y', 'z', 'rotate', 'rotateX', 'rotateY', 'rotateZ', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'skew', 'skewX', 'skewY', 'perspective', 'xPercent', 'yPercent'];
+const SPECIAL_PROPS = ['path', 'draw', 'd', 'attr', 'text', 'transform'];
+function isKnownStyle(el: HTMLElement, prop: string): boolean {
+  const st = el.style as any;
+  return !st || prop in st || camel(prop) in st || prop.startsWith('--');
+}
 
 // ---------------------------------------------------------------------------
 // Internals
@@ -149,6 +158,13 @@ class Part implements NodeRecord, Owner, Linked {
     }
   }
   event?: (kind: number) => void;
+  info(): Record<string, unknown> {
+    return {
+      type: 'tween',
+      target: this.b[0] ? describe(this.b[0].target) : undefined,
+      props: Array.from(new Set(this.b.filter((x) => x.on).map((x) => x.prop))),
+    };
+  }
   /** Another animation took `prop`: stop writing it. */
   release(prop: string): void {
     let live = 0;
@@ -357,6 +373,9 @@ export class Animation extends Playable {
   constructor(targets: Targets, keyframes: Props | Keyframe[], options: AnimateOptions = {}, ctx: BuildContext = {}) {
     const [props, opts] = normalize(keyframes, options);
     super(opts);
+    for (const k of Object.keys(options)) {
+      if (!OPTION_KEYS.has(k) && !EXTRA_OPTION_KEYS.has(k)) warn(`unknown animation option "${k}".${didYouMean(k, OPTION_KEYS)}`);
+    }
     this._times = opts.times;
     whenReady(() => this._build(targets, props, opts, ctx));
   }
@@ -365,6 +384,8 @@ export class Animation extends Playable {
     const w = core();
     const targets = (this.targets = toTargets(targetsIn));
     const n = targets.length;
+    if (n === 0 && typeof targetsIn === 'string') warn(`selector "${targetsIn}" matched no elements, so nothing was animated.`);
+    else if (n === 0 && targetsIn != null) warn('animate() received an empty target list.');
     const claims = !ctx.child && o.overwrite !== false;
     const cs = COLOR_SPACES[o.colorSpace ?? 'oklab'] ?? 2;
     const reduce = prefersReduced();
@@ -407,6 +428,9 @@ export class Animation extends Playable {
           continue;
         }
         const kind = classify(target, prop);
+        if (kind === Kind.Style && i === 0 && !isKnownStyle(target as HTMLElement, prop)) {
+          warn(`"${prop}" is not a CSS property of ${describe(target)}; it will be written as an inline style anyway.${didYouMean(prop, [...cssPropertyNames(), ...TRANSFORM_PROPS, ...SPECIAL_PROPS])}`);
+        }
         const raw = spec.values.map((v) => resolve(v, target, i, n));
         if (raw[0] !== null && raw[0] !== undefined && raw.length > 1) hasExplicitFrom = true;
         const chained = ctx.chain?.get(target)?.get(prop);

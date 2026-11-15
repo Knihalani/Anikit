@@ -1254,3 +1254,82 @@ pub extern "C" fn ak_project(id: u32, source: u32, handle: u32, stride: u32, ox:
 pub extern "C" fn ak_projector_order(id: u32) -> *const u32 {
     st().projectors.get(id as usize).and_then(|p| p.as_ref()).map(|p| p.order.as_ptr()).unwrap_or(core::ptr::null())
 }
+
+// ---------------------------------------------------------------------------
+// GIF encoding (screenshots / recordings)
+// ---------------------------------------------------------------------------
+
+struct GifSlot {
+    enc: Option<anikit_core::gif::GifEncoder>,
+    frame: Vec<u8>,
+    done: Vec<u8>,
+}
+
+struct Gifs(UnsafeCell<Vec<GifSlot>>);
+// SAFETY: single-threaded wasm, as above.
+unsafe impl Sync for Gifs {}
+static GIFS: Gifs = Gifs(UnsafeCell::new(Vec::new()));
+#[allow(clippy::mut_from_ref)]
+fn gifs() -> &'static mut Vec<GifSlot> {
+    // SAFETY: single-threaded; no re-entrancy while held.
+    unsafe { &mut *GIFS.0.get() }
+}
+
+/// Start a GIF of `w × h` pixels (`loop_count` 0 = forever). Returns an id.
+#[no_mangle]
+pub extern "C" fn ak_gif_new(w: u32, h: u32, loop_count: u32) -> u32 {
+    let g = gifs();
+    let slot = GifSlot {
+        enc: Some(anikit_core::gif::GifEncoder::new(w as u16, h as u16, loop_count as u16)),
+        frame: alloc::vec![0; (w * h * 4) as usize],
+        done: Vec::new(),
+    };
+    if let Some(i) = g.iter().position(|s| s.enc.is_none() && s.done.is_empty()) {
+        g[i] = slot;
+        i as u32
+    } else {
+        g.push(slot);
+        (g.len() - 1) as u32
+    }
+}
+/// RGBA buffer to fill with the next frame (`w * h * 4` bytes).
+#[no_mangle]
+pub extern "C" fn ak_gif_frame_ptr(id: u32) -> *mut u8 {
+    gifs().get_mut(id as usize).map(|s| s.frame.as_mut_ptr()).unwrap_or(core::ptr::null_mut())
+}
+/// Encode the frame buffer with a delay in hundredths of a second.
+#[no_mangle]
+pub extern "C" fn ak_gif_add(id: u32, delay_cs: u32) {
+    if let Some(s) = gifs().get_mut(id as usize) {
+        if let Some(e) = s.enc.as_mut() {
+            e.add_frame(&s.frame, delay_cs.min(65535) as u16);
+        }
+    }
+}
+/// Finish; returns the byte length (read from `ak_gif_ptr`).
+#[no_mangle]
+pub extern "C" fn ak_gif_finish(id: u32) -> u32 {
+    match gifs().get_mut(id as usize) {
+        Some(s) => {
+            if let Some(e) = s.enc.take() {
+                s.done = e.finish();
+                s.frame = Vec::new();
+            }
+            s.done.len() as u32
+        }
+        None => 0,
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_gif_ptr(id: u32) -> *const u8 {
+    gifs().get(id as usize).map(|s| s.done.as_ptr()).unwrap_or(core::ptr::null())
+}
+/// Free a finished GIF's memory.
+#[no_mangle]
+pub extern "C" fn ak_gif_free(id: u32) {
+    if let Some(s) = gifs().get_mut(id as usize) {
+        s.enc = None;
+        s.frame = Vec::new();
+        s.done = Vec::new();
+    }
+}

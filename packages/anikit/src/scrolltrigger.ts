@@ -17,6 +17,7 @@ import { Targets, toTargets } from './props';
 import { spring, PhysicsAnimation } from './spring';
 import { animate, AnimateOptions, Animation } from './animate';
 import { track } from './context';
+import { warn } from './debug';
 import { Timeline } from './timeline';
 
 type Action = 'play' | 'pause' | 'resume' | 'reset' | 'restart' | 'complete' | 'reverse' | 'none';
@@ -207,6 +208,7 @@ export class ScrollTrigger {
     this.horizontal = !!options.horizontal;
     const tr = options.trigger;
     this.trigger = typeof tr === 'string' ? document.querySelector(tr) : tr ?? null;
+    if (typeof tr === 'string' && !this.trigger) warn(`scrollTrigger: trigger "${tr}" matched no element; using the whole scroll range.`);
     options.animation?.pause();
     this.smoothOpts = {
       duration: (typeof options.scrub === 'number' ? options.scrub : 0) * 4, bounce: 0, restDelta: 1e-4, restSpeed: 1e-3,

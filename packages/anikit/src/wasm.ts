@@ -126,6 +126,12 @@ export interface Exports {
   ak_projector_points(id: number, len: number): number;
   ak_project(id: number, source: number, handle: number, stride: number, ox: number, oy: number, oz: number, n: number, w: number, h: number, sort: number): number;
   ak_projector_order(id: number): number;
+  ak_gif_new(w: number, h: number, loop: number): number;
+  ak_gif_frame_ptr(id: number): number;
+  ak_gif_add(id: number, delayCs: number): void;
+  ak_gif_finish(id: number): number;
+  ak_gif_ptr(id: number): number;
+  ak_gif_free(id: number): void;
   ak_path_lut(len: number, samples: number): number;
   ak_path_lut_free(id: number): void;
   ak_path_lut_length(id: number): number;
