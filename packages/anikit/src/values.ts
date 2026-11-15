@@ -171,6 +171,8 @@ export interface TrackDef {
    * chosen colour space, premultiplied, like solid colours).
    */
   segs?: TrackDef[];
+  /** Built from a template string (`blur(4px)`): never write it as a bare number. */
+  complex?: boolean;
 }
 
 export type Converter = (value: number, from: string, to: string) => number;
@@ -257,8 +259,12 @@ export function buildTrack(
     const fixed = harmonize(parsed.map(toText));
     if (fixed) {
       const reparsed = fixed.map(parseValue);
-      lifted = liftComplex(reparsed);
-      if (lifted) parsed.splice(0, parsed.length, ...reparsed);
+      // Adopt the rewrite only if it lines up (otherwise keep what we had).
+      const again = liftComplex(reparsed);
+      if (again) {
+        lifted = again;
+        parsed.splice(0, parsed.length, ...reparsed);
+      }
     }
   }
   if (lifted) {
@@ -283,7 +289,7 @@ export function buildTrack(
     const def: TrackDef = {
       kind: TRACK_NUMBER, arg: 0, ch, out: ch, values, unit: '',
       format: (at) => build(F64, at),
-      first: build(values, 0), last: build(values, (n - 1) * ch),
+      first: build(values, 0), last: build(values, (n - 1) * ch), complex: true,
     };
     if (slots.includes(1)) splitColors(def, lifted, colorSpace);
     return def;

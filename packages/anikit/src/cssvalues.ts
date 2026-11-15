@@ -60,7 +60,13 @@ function parseFilters(s: string): Fn[] | null {
 
 function normFilterArg(name: string, arg: string): string {
   if (arg === '') return FILTER_IDENTITY[name];
-  if (name === 'drop-shadow') return normShadow(arg, 3) ?? arg;
+  if (name === 'drop-shadow') {
+    // Same shape as the identity: three lengths, then the colour.
+    const sh = parseShadow(arg);
+    if (!sh || sh.inset || sh.lengths.length > 3) return arg;
+    while (sh.lengths.length < 3) sh.lengths.push('0px');
+    return sh.lengths.join(' ') + ' ' + (sh.color === 'currentcolor' ? 'currentcolor' : sh.color);
+  }
   const m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)([a-z%]*)$/i.exec(arg);
   if (!m) return arg;
   const n = parseFloat(m[1]);
@@ -147,12 +153,6 @@ function parseShadow(s: string): Shadow | null {
   }
   if (lengths.length < 2 || lengths.length > 4) return null;
   return { inset, lengths, color: color || 'currentcolor' };
-}
-
-function normShadow(s: string, maxLengths: number): string | null {
-  const sh = parseShadow(s);
-  if (!sh || sh.lengths.length > maxLengths) return null;
-  return (sh.inset ? 'inset ' : '') + sh.lengths.join(' ') + ' ' + sh.color;
 }
 
 function harmonizeShadows(strs: string[]): string[] | null {

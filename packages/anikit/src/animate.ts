@@ -520,7 +520,7 @@ export class Animation extends Playable {
         const conv = (v: number, f: string, t: string) => convertUnit(el, prop, v, f, t);
         let track = buildTrack(raw, read, conv, cs, du);
         if (kind === Kind.Transform) {
-          if (track.kind !== TRACK_NUMBER || track.ch !== 1 || track.segs) continue;
+          if (track.kind !== TRACK_NUMBER || track.ch !== 1 || track.complex) continue;
           // Angles/scales always use their canonical unit; x/y/z keep any length unit.
           du = transformUnit(prop);
           if (du !== 'px' && track.unit !== du) {
@@ -530,7 +530,8 @@ export class Animation extends Playable {
           }
         }
         const idx = addTrack(track, spec.ease, spec.offsets, kind === Kind.Transform || (kind === Kind.Style && MOTION_STYLE.test(camel(prop))));
-        const numeric = track.kind === TRACK_NUMBER && track.ch === 1 && !track.segs;
+        // (A one-number template such as `blur(4px)` is not a plain number.)
+        const numeric = track.kind === TRACK_NUMBER && track.ch === 1 && !track.complex;
         if (kind !== Kind.Transform || !snappedTransform) this._restore.push(snapshot(target, prop, kind));
         if (kind === Kind.Transform) snappedTransform = true;
         const post = postFor(prop, o);

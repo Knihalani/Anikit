@@ -530,6 +530,23 @@ describe('complex values', () => {
     expect(v).toBe('0px 6px 18px 0px rgba(0,0,0,0.3), inset 0px 0px 0px 1px rgba(255,0,0,0.5)');
     expect(at('none', '2px 2px red', 0.5)).toBe('1px 1px rgba(255,0,0,0.5)');
   });
+
+  it('writes one-number templates as strings (blur(), circle())', () => {
+    // These used to be written as a bare number, which CSS ignores.
+    const o = { f: '' };
+    animate(o, { f: ['blur(12px)', 'blur(0px)'] }, { duration: 1, ease: 'linear' });
+    const el = box();
+    animate(el, { clipPath: ['circle(0%)', 'circle(50%)'] }, { duration: 1, ease: 'linear' });
+    advance(0.5);
+    expect(o.f).toBe('blur(6px)');
+    expect(el.style.clipPath).toBe('circle(25%)');
+  });
+
+  it('keeps interpolating values the list rules cannot reshape', () => {
+    expect(at('none', 'blur(1rem)', 0.5)).toBe('blur(0.5rem)');
+    expect(at('none', '0 4px 12px currentcolor', 0.5)).toBe('0 2px 6px currentcolor');
+    expect(at('none', 'drop-shadow(2px 4px red)', 0.5)).toBe('drop-shadow(1px 2px 0px rgba(255,0,0,0.5))');
+  });
 });
 
 describe('gesture', () => {
