@@ -428,6 +428,8 @@ export class Animation extends Playable {
       part.upd = !!o.onUpdate;
       const tracks: TrackDef[] = [];
       let hasExplicitFrom = false;
+      // One transform snapshot per target covers every transform component.
+      let snappedTransform = false;
 
       const addTrack = (t: TrackDef, ease: EasingInput | EasingInput[] | undefined, offsets?: number[]) => {
         const nk = t.values.length / t.ch;
@@ -488,7 +490,8 @@ export class Animation extends Playable {
         }
         const idx = addTrack(track, spec.ease, spec.offsets);
         const numeric = track.kind === TRACK_NUMBER && track.ch === 1;
-        this._restore.push(snapshot(target, prop, kind));
+        if (kind !== Kind.Transform || !snappedTransform) this._restore.push(snapshot(target, prop, kind));
+        if (kind === Kind.Transform) snappedTransform = true;
         const post = postFor(prop, o);
         if (autoPx && numeric && track.unit === 'px') {
           // Write `auto` whenever the value sits on the measured size (start

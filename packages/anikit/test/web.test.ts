@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { animate, timeline } from '../src/index';
+import { animate, timeline, flip } from '../src/index';
 import { setup, advance, box } from './setup';
 
 beforeAll(setup);
@@ -50,5 +50,158 @@ describe("size: 'auto'", () => {
     expect(el.style.maxHeight).toBe('25px');
     advance(0.5);
     expect(el.style.maxHeight).toBe('none');
+  });
+});
+
+// happy-dom has no layout: give elements a mutable box.
+type Box = { x: number; y: number; w: number; h: number };
+function layout(el: Element, b: Box): Box {
+  const box = { ...b };
+  (el as any).getBoundingClientRect = () => {
+    const st = (el as HTMLElement).style;
+    if (!el.isConnected || ((el as HTMLElement).hidden && !st.display) || st.display === 'none') return { left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0, x: 0, y: 0 } as DOMRect;
+    // Popped-out elements are positioned with left/top relative to the origin.
+    const ox = st.position === 'absolute' ? parseFloat(st.left) || 0 : 0;
+    const oy = st.position === 'absolute' ? parseFloat(st.top) || 0 : 0;
+    const x = st.position === 'absolute' ? ox : box.x;
+    const y = st.position === 'absolute' ? oy : box.y;
+    return { left: x, top: y, width: box.w, height: box.h, right: x + box.w, bottom: y + box.h, x, y } as DOMRect;
+  };
+  return box;
+}
+const settle = () => new Promise((r) => setTimeout(r, 0));
+
+describe('flip', () => {
+  it('moves elements with one batched measurement and ends on their own transform', async () => {
+    const a = box();
+    const b = layout(a, { x: 0, y: 0, w: 100, h: 100 });
+    const tl = flip(a, () => {
+      b.x = 200;
+    }, { duration: 1, ease: 'linear' });
+    expect(a.style.transform).toBe('translate(-200px,0px)');
+    await tick();
+    advance(0.5);
+    expect(a.style.transform).toBe('translate(-100px,0px)');
+    advance(0.6);
+    expect(a.style.transform).toBe('none');
+    await settle();
+    expect(tl.state).toBe('finished');
+  });
+
+  it('scales size changes and keeps border-radius undistorted', async () => {
+    const a = box({ borderRadius: '10px' });
+    const b = layout(a, { x: 0, y: 0, w: 100, h: 50 });
+    flip(a, () => {
+      b.w = 200;
+      b.h = 100;
+    }, { duration: 1, ease: 'linear' });
+    expect(a.style.transform).toBe('translate(-50px,-25px) scale(0.5,0.5)');
+    expect(a.style.borderRadius).toBe('20px');
+    await tick();
+    advance(1.1);
+    expect(a.style.transform).toBe('none');
+    expect(a.style.borderRadius).toBe('10px');
+  });
+
+  it('pops leaving elements out, animates them, then removes them', async () => {
+    const list = document.createElement('div');
+    list.className = 'flip-list';
+    document.body.appendChild(list);
+    const items = [0, 1, 2].map((i) => {
+      const el = document.createElement('div');
+      el.className = 'it';
+      list.appendChild(el);
+      layout(el, { x: 0, y: i * 50, w: 100, h: 40 });
+      return el;
+    });
+    const [, mid, last] = items;
+    const lastBox = layout(last, { x: 0, y: 100, w: 100, h: 40 });
+    const added = document.createElement('div');
+    added.className = 'it';
+    layout(added, { x: 0, y: 100, w: 100, h: 40 });
+    flip('.flip-list .it', () => {
+      mid.remove();
+      lastBox.y = 50;
+      list.appendChild(added);
+    }, { duration: 1, ease: 'linear', fade: true });
+    // Leaving: back in place, out of the flow, fading.
+    expect(mid.isConnected).toBe(true);
+    expect(mid.style.position).toBe('absolute');
+    expect(mid.style.top).toBe('50px');
+    expect(last.style.transform).toBe('translate(0px,50px)');
+    expect(added.style.opacity).toBe('0');
+    await tick();
+    advance(0.5);
+    expect(parseFloat(mid.style.opacity)).toBeLessThan(1);
+    expect(parseFloat(added.style.opacity)).toBeGreaterThan(0);
+    advance(0.6);
+    expect(mid.isConnected).toBe(false);
+    expect(mid.getAttribute('style')).toBe(null);
+    expect(last.style.transform).toBe('none');
+  });
+
+  it('cancels an exit when the element comes back mid-way', async () => {
+    const list = document.createElement('div');
+    list.className = 'flip-list2';
+    document.body.appendChild(list);
+    const el = document.createElement('div');
+    el.className = 'it';
+    list.appendChild(el);
+    layout(el, { x: 0, y: 0, w: 100, h: 40 });
+    flip('.flip-list2 .it', () => el.remove(), { duration: 1, ease: 'linear', fade: true });
+    await tick();
+    advance(0.5);
+    const op = parseFloat(el.style.opacity);
+    expect(op).toBeGreaterThan(0);
+    expect(op).toBeLessThan(1);
+    flip('.flip-list2 .it', () => list.appendChild(el), { duration: 1, ease: 'linear', fade: true });
+    expect(el.style.position).toBe('');
+    expect(parseFloat(el.style.opacity)).toBeCloseTo(op, 3);
+    await tick();
+    advance(1.1);
+    expect(el.isConnected).toBe(true);
+    expect(el.style.opacity).toBe('1');
+  });
+
+  it('keeps removing an element that is removed again while leaving', async () => {
+    const list = document.createElement('div');
+    list.className = 'flip-list3';
+    document.body.appendChild(list);
+    const a = document.createElement('div');
+    const b = document.createElement('div');
+    a.className = b.className = 'it';
+    list.append(a, b);
+    layout(a, { x: 0, y: 0, w: 100, h: 40 });
+    const bb = layout(b, { x: 0, y: 50, w: 100, h: 40 });
+    flip('.flip-list3 .it', () => a.remove(), { duration: 1, ease: 'linear', fade: true });
+    await tick();
+    advance(0.3);
+    // A second change while `a` is still fading out.
+    flip('.flip-list3 .it', () => {
+      bb.y = 0;
+    }, { duration: 1, ease: 'linear', fade: true });
+    expect(a.isConnected).toBe(true);
+    expect(a.style.position).toBe('absolute');
+    await tick();
+    advance(1.1);
+    expect(a.isConnected).toBe(false);
+  });
+
+  it('morphs between shared elements (data-flip-id)', async () => {
+    const thumb = box();
+    const modal = box();
+    thumb.dataset.flipId = modal.dataset.flipId = 'photo';
+    modal.hidden = true;
+    layout(thumb, { x: 10, y: 10, w: 50, h: 50 });
+    layout(modal, { x: 100, y: 100, w: 200, h: 200 });
+    flip([thumb, modal], () => {
+      thumb.hidden = true;
+      modal.hidden = false;
+    }, { duration: 1, ease: 'linear' });
+    // Modal starts exactly over the thumbnail.
+    expect(modal.style.transform).toBe('translate(-165px,-165px) scale(0.25,0.25)');
+    await tick();
+    advance(1.1);
+    expect(modal.style.transform).toBe('none');
   });
 });

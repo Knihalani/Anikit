@@ -137,7 +137,7 @@ inView('.reveal', (el) => { animate(el, { opacity: [0, 1] }); return () => anima
 const { chars, words, lines, revert } = splitText('h1', { type: 'lines,words,chars' });
 animate(chars, { y: ['100%', 0], opacity: [0, 1] }, { delay: stagger(0.02) });
 
-flip('.item', () => grid.classList.toggle('dense'), { duration: 0.6, ease: 'spring(bounce: .2)' });
+flip('.item', () => grid.classList.toggle('dense'), { duration: 0.6, ease: 'spring(bounce: .2)' }); // see "Layout transitions"
 
 compositor('.toast', { y: [20, 0], opacity: [0, 1] }, { ease: 'spring(bounce: .4)' }); // compositor thread
 
@@ -147,6 +147,26 @@ const b = batch(50_000, { x: (i) => [0, i % 500], y: [0, 300], a: [0, 1] },
 ```
 
 ---
+
+## Layout transitions: `flip`
+
+`flip(targets, mutate, options?)` records where elements are, runs `mutate`, and animates every element from its old box to its new one using only transforms. It returns a `Timeline` holding every animation it started, so `await flip(...)` waits for all of them.
+
+```ts
+flip('.item', () => grid.classList.toggle('dense'), { duration: 0.6, ease: 'spring(bounce: .2)' });
+flip('.card', () => applyFilter(), { fade: true });                    // removed cards fade out in place, new ones fade in
+flip('.card', () => list.prepend(card), { enter: { scale: [0.6, 1], opacity: [0, 1] }, leave: { scale: 0.6, opacity: 0 } });
+flip('[data-flip-id]', () => { thumb.hidden = true; modal.hidden = false; });  // shared element: modal grows out of the thumbnail
+const state = flip.capture('.item'); reorder(); flip.from(state, { duration: 0.4 }); // manual capture
+```
+
+- **Re-queried targets:** when `targets` is a selector it's queried again after `mutate`, so elements added by the change are found. Pass `targets` in the options to name them explicitly.
+- **Entering elements** (new, or hidden before) play `enter` keyframes, or `{ opacity: [0, 1] }` with `fade: true`, or whatever `onEnter(els)` returns.
+- **Leaving elements** (removed from the DOM or hidden by the change) are put back at their last box with `position: absolute`, so their siblings reflow straight away. They play `leave` (or a fade, or `onLeave(els)`) and are then removed or hidden for real, with their inline styles restored. If a later change brings one back mid-exit, the exit is cancelled and it animates from where it is.
+- **Shared elements:** two different elements with the same `data-flip-id` (or the same `id(el)`) are treated as one: the incoming one starts on the outgoing one's box. If both stay visible they cross-fade (`crossfade: false` to turn it off).
+- **Interrupted flips** start from where the elements are on screen and end on their own transforms.
+- `scale: false` animates position only. With scale on, `border-radius` is counter-scaled every frame so corners don't stretch (`correctRadius: false` to skip it).
+- Layout is read once for all elements (transforms off, measure, transforms back) rather than once per element.
 
 ## Engine
 
