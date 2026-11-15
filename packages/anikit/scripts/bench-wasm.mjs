@@ -92,6 +92,21 @@ bench('springs: retarget 2 ch + tick (pointer follow)', 10000, 'springs', () => 
   w.ak_tick(16);
 });
 
+// Instanced batch: [duration, iterations, direction, endDelay, easing, flags, count, ch, nkf,
+//   hasOffsets, (offsets), nEases, eases..., hasDelays, (delays), values...]
+for (const stagger of [false, true]) {
+  const n = 100000;
+  bench(`batch: 3 channels, outCubic${stagger ? ', staggered delays' : ''}`, n, 'instances', () => {
+    const enc = [1000, 1, 0, 0, -1, 3, n, 3, 2, 0, 1, outCubic, stagger ? 1 : 0];
+    if (stagger) for (let i = 0; i < n; i++) enc.push(i * 0.002);
+    for (let i = 0; i < n; i++) enc.push(0, 0, 1, i, 300, 0);
+    f64(enc);
+    const h = w.ak_batch_create(enc.length);
+    w.ak_play(h);
+    return { h, t: 0, done: () => { w.ak_release(h); w.ak_tick(0); } };
+  }, (c) => { w.ak_tick(c.t++ % 50 === 0 ? 0 : 1); });
+}
+
 // --- Physics ----------------------------------------------------------------
 for (const [n, subs] of [[1000, 4], [5000, 4], [20000, 2]]) {
   bench(`world: ${subs} substeps (settled pile)`, n, 'bodies', () => {

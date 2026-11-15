@@ -211,6 +211,31 @@ impl Batch {
     fn eval(&mut self, easings: &[Easing], t: f64) {
         let (n, ch, nkf) = (self.n, self.ch, self.nkf);
         let tm = self.timing;
+        let single = nkf == 2 && self.offsets[0] == 0.0 && self.offsets[1] == 1.0;
+        if single && self.delays.iter().all(|&d| d == 0.0) {
+            // No stagger: every instance has the same progress, so time and
+            // ease it once (the per-instance results would all be equal),
+            // then lerp all channels.
+            let mut e = [tm.eval(t).progress];
+            if tm.easing != LINEAR {
+                if let Some(ez) = easings.get(tm.easing as usize) {
+                    ez.ease_slice(&mut e);
+                }
+            }
+            if let Some(&id) = self.eases.first() {
+                if let Some(ez) = easings.get(id as usize) {
+                    ez.ease_slice(&mut e);
+                }
+            }
+            let e = e[0];
+            for (v, o) in self.values.chunks_exact(2 * ch).zip(self.out.chunks_exact_mut(ch)) {
+                let (a, b) = v.split_at(ch);
+                for ((o, &a), &b) in o.iter_mut().zip(a).zip(b) {
+                    *o = (a + (b - a) * e) as f32;
+                }
+            }
+            return;
+        }
         // 1. Per-instance progress (shared timing, own delay).
         for (p, &d) in self.scratch.iter_mut().zip(self.delays.iter()) {
             *p = tm.eval(t - d).progress;
@@ -221,20 +246,18 @@ impl Batch {
                 e.ease_slice(&mut self.scratch);
             }
         }
-        if nkf == 2 && self.offsets[0] == 0.0 && self.offsets[1] == 1.0 {
+        if single {
             // 3a. Single segment: ease the slice, then lerp all channels.
             if let Some(&id) = self.eases.first() {
                 if let Some(e) = easings.get(id as usize) {
                     e.ease_slice(&mut self.scratch);
                 }
             }
-            let stride = 2 * ch;
-            for i in 0..n {
-                let e = self.scratch[i];
-                let v = &self.values[i * stride..i * stride + stride];
-                let o = &mut self.out[i * ch..i * ch + ch];
-                for k in 0..ch {
-                    o[k] = (v[k] + (v[ch + k] - v[k]) * e) as f32;
+            let it = self.values.chunks_exact(2 * ch).zip(self.out.chunks_exact_mut(ch)).zip(self.scratch.iter());
+            for ((v, o), &e) in it {
+                let (a, b) = v.split_at(ch);
+                for ((o, &a), &b) in o.iter_mut().zip(a).zip(b) {
+                    *o = (a + (b - a) * e) as f32;
                 }
             }
             return;
@@ -2265,6 +2288,50 @@ mod tests {
         let expect = crate::space::mix_matrix(&a, &b, 0.5);
         for k in 0..16 {
             assert!((mid[k] - expect[k]).abs() < 1e-9);
+        }
+    }
+
+    #[test]
+    fn uniform_batches_match_per_instance_eval_bit_for_bit() {
+        // The no-delay fast path times and eases once; it must equal the
+        // per-instance evaluation (timing easing, segment easing, repeats,
+        // alternate direction, before/after phases).
+        let mut e = Engine::new();
+        let te = e.easing("inOutSine").unwrap();
+        let se = e.easing("outBack").unwrap();
+        let (n, ch) = (257, 3);
+        let values: Vec<f64> = (0..n * ch * 2).map(|i| ((i * 7919) % 1000) as f64 * 0.37 - 100.0).collect();
+        let timing = Timing { duration: 300.0, iterations: 2.5, direction: crate::timing::Direction::Alternate, easing: te, ..Default::default() };
+        let mk = |e: &mut Engine, delays: Vec<f64>| {
+            let spec = BatchSpec { count: n, channels: ch, offsets: vec![], easings: vec![se], values: values.clone(), delays };
+            let h = e.create_batch(timing, spec, flags::DEFAULT).unwrap();
+            e.play(h).unwrap();
+            h
+        };
+        let h = mk(&mut e, vec![]);
+        // The previous per-instance evaluation, verbatim (single segment).
+        let reference = |e: &Engine, t: f64| -> Vec<f32> {
+            let Kind::Batch(b) = &e.nodes[Engine::handle_index(h) as usize].kind else { unreachable!() };
+            let tm = b.timing;
+            let mut scratch: Vec<f64> = b.delays.iter().map(|&d| tm.eval(t - d).progress).collect();
+            e.easings[te as usize].ease_slice(&mut scratch);
+            e.easings[se as usize].ease_slice(&mut scratch);
+            let mut out = vec![0.0f32; n * ch];
+            for i in 0..n {
+                let v = &b.values[i * 2 * ch..i * 2 * ch + 2 * ch];
+                for k in 0..ch {
+                    out[i * ch + k] = (v[k] + (v[ch + k] - v[k]) * scratch[i]) as f32;
+                }
+            }
+            out
+        };
+        let mut t = 0.0;
+        while t < 900.0 {
+            let want = reference(&e, e.time(h).unwrap());
+            let got = e.batch_values(h).unwrap();
+            assert_eq!(got.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), want.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), "t = {t}");
+            e.tick(17.0);
+            t += 17.0;
         }
     }
 
