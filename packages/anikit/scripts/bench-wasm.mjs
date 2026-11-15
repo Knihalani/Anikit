@@ -73,6 +73,25 @@ bench('tick: x,y,opacity + OKLab colour', 50000, 'anims', () => anims(50000, [
 ]), tick);
 bench('tick: 8 keyframes, spring easing', 50000, 'anims', () => anims(50000, [() => [0, 0, 1, 8, 0, 0, 10, 20, 30, 40, 50, 60, 70, 1, springE]]), tick);
 
+bench('springs: retarget 2 ch + tick (pointer follow)', 10000, 'springs', () => {
+  const hs = [];
+  for (let i = 0; i < 10000; i++) {
+    f64([0, 0, 0, 0, i, 1]);
+    hs.push(w.ak_spring_create(2, 170, 26, 1));
+  }
+  return { hs, k: 0, done: () => { for (const h of hs) w.ak_release(h); w.ak_tick(0); } };
+}, (c) => {
+  c.k++;
+  for (let i = 0; i < c.hs.length; i++) {
+    const p = w.ak_f64_buf(2) >>> 3;
+    const F = new Float64Array(w.memory.buffer);
+    F[p] = c.k + i;
+    F[p + 1] = -c.k;
+    w.ak_sim_target(c.hs[i], 2);
+  }
+  w.ak_tick(16);
+});
+
 // --- Physics ----------------------------------------------------------------
 for (const [n, subs] of [[1000, 4], [5000, 4], [20000, 2]]) {
   bench(`world: ${subs} substeps (settled pile)`, n, 'bodies', () => {
