@@ -531,8 +531,10 @@ impl Projector {
             let cx = mf[0] * x + mf[4] * y + mf[8] * z + mf[12];
             let cy = mf[1] * x + mf[5] * y + mf[9] * z + mf[13];
             let cw = mf[3] * x + mf[7] * y + mf[11] * z + mf[15];
+            let cz = mf[2] * x + mf[6] * y + mf[10] * z + mf[14];
             let o = &mut self.out[i * 4..i * 4 + 4];
-            if cw <= 1e-4 {
+            // Behind the eye, or in front of the near plane (clip z < −w).
+            if cw <= 1e-4 || cz < -cw {
                 o[0] = 0.0;
                 o[1] = 0.0;
                 o[2] = f32::INFINITY;
@@ -642,6 +644,16 @@ mod tests {
         assert!((mid[12] - 50.0).abs() < 1e-9 && (mid[0] - 1.5).abs() < 1e-9);
         // Quaternion helpers agree with matrices.
         assert!(close(&to_matrix(&quat_euler(0.0, 0.0, 30.0)), &rotate_z(30.0), 1e-9));
+    }
+
+    #[test]
+    fn culls_points_in_front_of_the_near_plane() {
+        let vp = mul(&perspective(40.0, 1.0, 10.0, 1000.0), &look_at([0.0, 0.0, 100.0], [0.0; 3], [0.0, 1.0, 0.0]));
+        let mut p = Projector::default();
+        // 95 is 5 units from the eye (inside the near plane of 10); 0 is fine.
+        p.project(&[0.3, 0.2, 95.0, 0.0, 0.0, 0.0], 3, [0, 1, 2], 2, &IDENTITY, &vp, 100.0, 100.0, false);
+        assert_eq!(p.out[3], 0.0);
+        assert!(p.out[7] > 0.0);
     }
 
     #[test]

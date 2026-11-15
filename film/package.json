@@ -1,0 +1,8 @@
+{
+  "name": "anikit-film",
+  "private": true,
+  "type": "module",
+  "description": "A title-sequence film rendered by the anikit engine in Node (no browser).",
+  "scripts": { "render": "node render.mjs" },
+  "dependencies": { "@napi-rs/canvas": "^0.1.80" }
+}

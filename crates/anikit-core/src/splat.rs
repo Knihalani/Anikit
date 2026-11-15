@@ -178,6 +178,11 @@ impl Splat {
                     b[1] += c * w3;
                 }
             } else {
+                // Cull in float space first: casting huge coordinates to usize
+                // wraps on 32-bit targets (wasm32) and broke the range checks.
+                if bx + rad < 0.0 || by + rad < 0.0 || bx - rad >= wf || by - rad >= hf {
+                    continue;
+                }
                 // Soft disc; energy grows ~linearly with radius so near points read as bokeh.
                 let x0 = (bx - rad).max(0.0) as usize;
                 let y0 = (by - rad).max(0.0) as usize;
@@ -326,6 +331,16 @@ mod tests {
         let n = f32::NAN;
         s.draw(&[4.0, 4.0, 1.0, n, n, 4.0, 1.0, 9.0, 4.0, f32::INFINITY, 1.0, 9.0], 3, &SplatParams::default());
         assert!(s.r.iter().all(|v| *v == 0.0));
+    }
+
+    #[test]
+    fn huge_coordinates_are_culled_not_wrapped() {
+        // A point just in front of the camera can project billions of pixels away.
+        let mut s = Splat::new(64, 48);
+        let proj = [3.6e9f32, 20.0, 1.0, 9.0, 20.0, 3.6e9, 1.0, 9.0, -3.6e9, -3.6e9, 1.0, 9.0, 3.0e9, 3.0e9, 1.0, 1e6];
+        s.draw(&proj, 4, &SplatParams { max_radius: 7.0, ..Default::default() });
+        assert!(s.r.iter().all(|v| *v == 0.0));
+        s.resolve(1.0, 0);
     }
 
     #[test]

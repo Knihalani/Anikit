@@ -289,6 +289,7 @@ export class Glow {
   private img: ImageData | null = null;
   private imgPtr = 0;
   private imgBuf: ArrayBuffer | null = null;
+  private imgShared = false;
   private bw = 0;
   private bh = 0;
   /** Milliseconds the last `render()` spent in WebAssembly + putImageData. */
@@ -375,10 +376,13 @@ export class Glow {
     // Tone-map and decay the light for the next frame in one pass.
     const ptr = w.ak_splat_resolve(this.id, o.exposure ?? this.options.exposure, parseHex(this.options.background), this.options.trail);
     const buf = W!.memory.buffer;
-    if (!this.img || this.imgPtr !== ptr || this.imgBuf !== buf) {
+    if (!this.img || this.imgPtr !== ptr || this.imgBuf !== buf || !this.imgShared) {
       this.img = new ImageData(new Uint8ClampedArray(buf, ptr, this.bw * this.bh * 4), this.bw, this.bh);
       this.imgPtr = ptr;
       this.imgBuf = buf;
+      // Browsers wrap the pixels in place; some canvas implementations (e.g.
+      // native Node canvases) copy them, in which case re-wrap every frame.
+      this.imgShared = this.img.data.buffer === buf;
     }
     this.ctx.putImageData(this.img, 0, 0);
     const ms = performance.now() - t0;
