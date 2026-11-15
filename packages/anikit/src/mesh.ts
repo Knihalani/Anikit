@@ -335,6 +335,10 @@ export interface DrawItem {
    * occluding. Draw additive items after the opaque ones.
    */
   blend?: 'opaque' | 'additive';
+  /** This item is the glossy surface for the render's `mirror` option (e.g. the floor plane). */
+  mirror?: boolean;
+  /** Leave this item out of the mirrored pass (default: everything opaque reflects). */
+  reflect?: boolean;
 }
 type CanvasLike = { width: number; height: number; getContext(t: '2d'): CanvasRenderingContext2D | null };
 
@@ -369,7 +373,7 @@ export class Renderer3D {
    * (when it has one) and returns the RGBA pixels (a view into WebAssembly
    * memory, valid until the next call).
    */
-  render(scene: Scene3D, items: (DrawItem | PointsItem)[], o: LightOptions & { background?: string; transparent?: boolean } = {}): Uint8ClampedArray {
+  render(scene: Scene3D, items: (DrawItem | PointsItem)[], o: LightOptions & { background?: string; transparent?: boolean; mirror?: { y: number; strength?: number } } = {}): Uint8ClampedArray {
     const t0 = performance.now();
     const w = core();
     const bg = rgb(o.background, [0, 0, 0]);
@@ -380,26 +384,42 @@ export class Renderer3D {
     const { matrix, eye } = scene.viewProjection();
     scene.width = sw; scene.height = sh;
     this.triangles = 0;
-    for (const item of items) {
-      if ('points' in item) {
-        this.drawPoints(item, matrix, eye);
-        continue;
-      }
-      const it = item;
+    const drawMesh = (it: DrawItem, mat: number[], ey: number[], extra: number, gloss = 0.5) => {
       const inst = it.instances ?? this.single;
       const ptr = w.ak_raster_instances(this.id, inst.count);
       new Float32Array(W!.memory.buffer, ptr, inst.count * STRIDE).set(inst.data.subarray(0, inst.count * STRIDE));
       const m = it.material ?? {};
       const kc = rgb(o.keyColor), fc = rgb(o.fillColor, [0.25, 0.28, 0.35]), rc = rgb(o.rimColor), fog = o.fog ?? [0, 0], fogc = rgb(o.fogColor, bg);
-      const vals = [...matrix, ...eye, m.ambient ?? 0.22, m.diffuse ?? 0.85, m.specular ?? 0.5, m.shininess ?? 40, m.rim ?? 0.35,
+      const vals = [...mat, ...ey, m.ambient ?? 0.22, m.diffuse ?? 0.85, m.specular ?? 0.5, m.shininess ?? 40, m.rim ?? 0.35,
         ...(o.key ?? [0.4, 0.8, 0.6]), ...kc, ...(o.fill ?? [-0.6, -0.2, 0.4]), ...fc, ...rc, fog[0], fog[1], ...fogc,
         m.emissive ?? 0, m.metal ?? 0, m.iridescence ?? 0, m.hue ?? 0, ...rgb(o.sky, [0.25, 0.3, 0.55]), ...rgb(o.horizon, [1, 0.85, 0.7]), ...rgb(o.ground, [0.05, 0.05, 0.07]),
         m.lines ?? 0, ...rgb(m.lineColor, [1, 1, 1]), ...(m.grid ?? [8, 8]), m.lineWidth ?? 0.04,
         m.pulse ?? 0, m.pulseCount ?? 1, m.pulsePhase ?? 0, ...(m.pulseDir ?? [0, 0, 0]), ...rgb(o.strips, [0, 0, 0]),
-        m.texture ? m.texture.id + 1 : 0, m.texture ? (m.textureMode === 'emissive' ? 2 : 1) : 0, ...(m.textureRepeat ?? [1, 1]), m.textureGain ?? 1];
+        m.texture ? m.texture.id + 1 : 0, m.texture ? (m.textureMode === 'emissive' ? 2 : 1) : 0, ...(m.textureRepeat ?? [1, 1]), m.textureGain ?? 1, gloss];
       const at = f64Buf(vals.length); // may grow memory: reserve before touching F64
       F64.set(vals, at);
-      this.triangles += w.ak_raster_draw(this.id, it.mesh.id, inst.count, (it.cull === false ? 0 : 1) | (it.blend === 'additive' ? 2 : 0), vals.length);
+      const flags = (it.cull === false ? 0 : 1) | (it.blend === 'additive' ? 2 : 0) | extra;
+      this.triangles += w.ak_raster_draw(this.id, it.mesh.id, inst.count, flags, vals.length);
+    };
+    const meshes = items.filter((it): it is DrawItem => !('points' in it));
+    if (o.mirror) {
+      // 1. The scene reflected about y = mirror.y (winding flips), 2. clear depth,
+      // 3. the glossy surface blended over the reflection, 4. the scene itself.
+      const Y = o.mirror.y;
+      const mr = matrix.slice();
+      for (let r = 0; r < 4; r++) { mr[4 + r] = -matrix[4 + r]; mr[12 + r] = matrix[12 + r] + 2 * Y * matrix[4 + r]; }
+      const er = [eye[0], 2 * Y - eye[1], eye[2]];
+      for (const it of meshes) if (!it.mirror && it.reflect !== false && it.blend !== 'additive') drawMesh(it, mr, er, 8);
+      w.ak_raster_clear_depth(this.id);
+      for (const it of meshes) if (it.mirror) drawMesh(it, matrix, eye, 4, o.mirror.strength ?? 0.5);
+    }
+    for (const item of items) {
+      if ('points' in item) {
+        this.drawPoints(item, matrix, eye);
+        continue;
+      }
+      if (o.mirror && item.mirror) continue;
+      drawMesh(item, matrix, eye, 0);
     }
     this.prevMatrix = matrix;
     const px = new Uint8ClampedArray(W!.memory.buffer, w.ak_raster_ptr(this.id), this.width * this.height * 4);

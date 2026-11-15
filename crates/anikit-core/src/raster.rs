@@ -233,6 +233,10 @@ pub struct Raster {
     /// Triangles drawn by the last call (diagnostics).
     pub drawn: usize,
     queue: Queue,
+    /// Reflection strength for [`Blend::Gloss`] draws (0…1).
+    pub gloss: f32,
+    /// Cull front faces instead of back faces (mirrored cameras flip winding).
+    pub flip_winding: bool,
     /// Additive light accumulation for [`Raster::points`] (RGB f32, allocated on first use).
     light: Vec<f32>,
     /// Pixels shaded by the last call (diagnostics).
@@ -504,6 +508,11 @@ impl Raster {
         self.depth.iter_mut().for_each(|d| *d = f32::INFINITY);
     }
 
+    /// Reset depth only (keep the colour): draw a mirrored pass, then the real scene over it.
+    pub fn clear_depth(&mut self) {
+        self.depth.iter_mut().for_each(|d| *d = f32::INFINITY);
+    }
+
     #[inline(always)]
     fn to_screen(&self, c: [f32; 4], a: &[f32; NV]) -> Sv {
         let (hw, hh) = (self.width as f32 * 0.5, self.height as f32 * 0.5);
@@ -664,6 +673,15 @@ impl Raster {
                     }
                 }
             }
+            Blend::Gloss => {
+                for oi in 0..count {
+                    let ii = self.order[oi] as usize;
+                    let inst = &instances[ii * INSTANCE_STRIDE..(ii + 1) * INSTANCE_STRIDE];
+                    sh.set_base([inst[12], inst[13], inst[14]]);
+                    sh.phase = mat.pulse_phase + dot([inst[9], inst[10], inst[11]], mat.pulse_dir);
+                    self.tris::<GLOSS>(mesh, oi * nv, cull_back, &sh);
+                }
+            }
             Blend::Additive => {
                 for oi in 0..count {
                     let ii = self.order[oi] as usize;
@@ -722,7 +740,7 @@ impl Raster {
         // The shading inputs (base colour, pulse phase) change per instance.
         if MODE != DEPTH {
             self.shaded += self.queue.n;
-            flush::<MODE>(&mut self.queue, &mut self.color, sh);
+            flush::<MODE>(&mut self.queue, &mut self.color, sh, (self.gloss.clamp(0.0, 1.0) * 256.0) as u32);
         }
     }
 
@@ -731,7 +749,7 @@ impl Raster {
     fn tri<const MODE: u8>(&mut self, p0: &Sv, p1: &Sv, p2: &Sv, cull_back: bool, sh: &Shade) {
         let (x0, y0, x1, y1, x2, y2) = (p0.x, p0.y, p1.x, p1.y, p2.x, p2.y);
         let area = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
-        if area.is_nan() || area.abs() < 1e-6 || (cull_back && area > 0.0) {
+        if area.is_nan() || area.abs() < 1e-6 || (cull_back && (area > 0.0) != self.flip_winding) {
             return;
         }
         let (w, h) = (self.width as isize, self.height as isize);
@@ -805,6 +823,7 @@ impl Raster {
             let q0 = b0 * p0.q + b1 * p1.q + b2 * p2.q;
             let s0: [f32; NV] = core::array::from_fn(|k| b0 * p0.a[k] + b1 * p1.a[k] + b2 * p2.a[k]);
             // Split borrows so the span loop keeps everything in locals.
+            let gl = (self.gloss.clamp(0.0, 1.0) * 256.0) as u32;
             let (depth, color, qu) = (&mut self.depth[a0..=a1], &mut self.color, &mut self.queue);
             let len = depth.len();
             let mut k = 0;
@@ -823,14 +842,14 @@ impl Raster {
                     continue; // hidden: the common case under overdraw
                 }
                 if pass[0] && pass[1] && pass[2] && pass[3] {
-                    if MODE == SHADE_LT {
+                    if MODE == SHADE_LT || MODE == GLOSS {
                         d4.copy_from_slice(&zs);
                     }
                     // A queued pixel from an earlier (farther) triangle must not land on top later.
                     let (g0, g1) = (a0 + k, a0 + k + 4);
                     if (0..qu.n).any(|l| (g0..g1).contains(&qu.idx[l])) {
                         self.shaded += qu.n;
-                        flush::<MODE>(qu, color, sh);
+                        flush::<MODE>(qu, color, sh, gl);
                     }
                     let kk = V4::new(kf, kf + 1.0, kf + 2.0, kf + 3.0);
                     let iw = 1.0 / (kk * dq + q0);
@@ -838,7 +857,7 @@ impl Raster {
                     let px = pack4(sh.px4([a[0], a[1], a[2]], [a[3], a[4], a[5]], a[6], a[7], V4::splat(fwu), V4::splat(fwv)));
                     let dst = &mut color[a0 + k..a0 + k + 4];
                     for l in 0..4 {
-                        dst[l] = if MODE == ADD { add_packed(dst[l], px[l]) } else { px[l] };
+                        put::<MODE>(&mut dst[l], px[l], gl);
                     }
                     self.shaded += 4;
                 } else {
@@ -846,7 +865,7 @@ impl Raster {
                         if !pass[l] {
                             continue;
                         }
-                        if MODE == SHADE_LT {
+                        if MODE == SHADE_LT || MODE == GLOSS {
                             d4[l] = zs[l];
                         }
                         let kf = (k + l) as f32;
@@ -861,7 +880,7 @@ impl Raster {
                         qu.n = qi + 1;
                         if qi == 3 {
                             self.shaded += 4;
-                            flush::<MODE>(qu, color, sh);
+                            flush::<MODE>(qu, color, sh, gl);
                         }
                     }
                 }
@@ -878,7 +897,7 @@ impl Raster {
                 if !ok {
                     continue;
                 }
-                if MODE == SHADE_LT {
+                if MODE == SHADE_LT || MODE == GLOSS {
                     *dp = z;
                 }
                 let l = qu.n & 3;
@@ -892,7 +911,7 @@ impl Raster {
                 qu.n = l + 1;
                 if l == 3 {
                     self.shaded += 4;
-                    flush::<MODE>(qu, color, sh);
+                    flush::<MODE>(qu, color, sh, gl);
                 }
             }
         }
@@ -902,7 +921,7 @@ impl Raster {
 /// Shade the queued pixels (up to four) in one SIMD group and store them.
 #[inline(always)]
 #[allow(clippy::needless_range_loop)]
-fn flush<const MODE: u8>(q: &mut Queue, color: &mut [u32], sh: &Shade) {
+fn flush<const MODE: u8>(q: &mut Queue, color: &mut [u32], sh: &Shade, gl: u32) {
     let n = q.n;
     if n == 0 {
         return;
@@ -915,7 +934,7 @@ fn flush<const MODE: u8>(q: &mut Queue, color: &mut [u32], sh: &Shade) {
     for l in 0..n.min(4) {
         let i = q.idx[l];
         if let Some(dst) = color.get_mut(i) {
-            *dst = if MODE == ADD { add_packed(*dst, px[l]) } else { px[l] };
+            put::<MODE>(dst, px[l], gl);
         }
     }
     q.n = 0;
@@ -1096,6 +1115,21 @@ const DEPTH: u8 = 0;
 const SHADE_EQ: u8 = 1;
 const ADD: u8 = 2;
 const SHADE_LT: u8 = 3;
+const GLOSS: u8 = 4;
+
+/// Write a shaded pixel according to the mode.
+#[inline(always)]
+fn put<const MODE: u8>(dst: &mut u32, px: u32, gloss: u32) {
+    *dst = match MODE {
+        ADD => add_packed(*dst, px),
+        GLOSS => {
+            // px·(1 − g) + dst·g per channel, g in 1/256ths.
+            let ch = |s: u32| ((((px >> s) & 255) * (256 - gloss) + ((*dst >> s) & 255) * gloss) >> 8) << s;
+            ch(0) | ch(8) | ch(16) | 0xff00_0000
+        }
+        _ => px,
+    }
+}
 
 /// Saturating per-channel add of two packed RGBA words (alpha kept from `dst`).
 #[inline(always)]
@@ -1112,6 +1146,9 @@ pub enum Blend {
     Opaque,
     /// Added to the frame (light: beams, holograms, glowing wire); depth-tested, no depth write.
     Additive,
+    /// Opaque, but blended over what is already in the colour buffer by
+    /// [`Raster::gloss`]: a glossy floor over a mirrored render of the scene.
+    Gloss,
 }
 
 // ---------------------------------------------------------------------------

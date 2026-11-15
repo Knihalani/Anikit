@@ -97,4 +97,17 @@ describe('mesh builders', () => {
     expect(blue).toBeGreaterThan(20);
     expect(() => texture({ width: 4, height: 4, data: [1, 2, 3] })).toThrow(/expected 64/);
   });
+
+  it('reflects the scene in a glossy mirror surface', () => {
+    const r = renderer3d({ width: 48, height: 48 });
+    const cam = scene3d({ width: 48, height: 48, camera: { x: 0, y: 60, z: 400 }, target: { x: 0, y: 0, z: 0 } });
+    const items = [
+      { mirror: true, mesh: mesh.plane(), instances: instances(1, () => ({ y: -50, scale: 4000, color: [0.02, 0.02, 0.02] })), material: { specular: 0, rim: 0 } },
+      { mesh: mesh.cube(), instances: instances(1, () => ({ y: 20, scale: 80, color: [1, 0, 0] })), material: { emissive: 1 } },
+    ];
+    const red = (px: Uint8ClampedArray) => { let n = 0; for (let y = 36; y < 48; y++) for (let x = 0; x < 48; x++) if (px[(y * 48 + x) * 4] > 60) n++; return n; };
+    const plain = red(r.render(cam, items, {}).slice());
+    const mirrored = red(r.render(cam, items, { mirror: { y: -50, strength: 0.6 } }).slice());
+    expect(mirrored).toBeGreaterThan(plain + 5); // the red cube shows up in the floor below it
+  });
 });

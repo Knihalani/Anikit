@@ -524,6 +524,8 @@ const px = r3.render(scene, [
 
 Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [near, far]`, `fogColor`, environment `sky`, `horizon`, `ground`, `strips`. Items draw in order; per item `cull: false` shows back faces (tumbling shards), `blend: 'additive'` adds light.
 
+**Mirror floors**: `render(scene, items, { mirror: { y, strength } })` renders the scene reflected about the plane `y`, then draws items marked `mirror: true` (the floor) glossily over that reflection (`strength` 0–1), then everything else. Neon on wet asphalt. The mirror item should cover the view below the horizon; `reflect: false` keeps an item out of the reflection. Costs a second pass.
+
 **Meshes**: `mesh.cube()`, `sphere(rings, segments)`, `torus(radius, tube, segments, sides)`, `torusKnot({ p, q, radius, spread, tube, segments, sides })`, `plane(cells)` (XZ, faces +Y — floors that run to the horizon with `grid`), `cylinder(segments, caps)`, `heightfield(w, d, heights | (x, z) => h, { skip })`, `text(str, { font, depth, bevel, resolution })` (solid bevelled 3D text in any font; stand it up with `rx: 90` and use `sz: size * mesh.aspect`), `custom(positions, normals, indices, uvs?)`.
 
 **Light points** (`{ points, colors?, size, intensity, streak, fog }`): `points` is a flat xyz array or a live `emitter()` / `pointCloud()`. `streak` stretches each point along its screen motion since the previous `render()` (1 = shutter-accurate, 3+ = warp).

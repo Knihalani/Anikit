@@ -1957,10 +1957,19 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
     let light = Lighting { key: v3(24), key_color: v3(27), fill: v3(30), fill_color: v3(33), rim_color: v3(36), fog: [b[39], if b[40] > 0.0 { b[40] } else { f32::INFINITY }], fog_color: v3(41), sky: v3(48), horizon: v3(51), ground: v3(54), strips: v3(70) };
     let Some(Some(m)) = s.meshes.get(mesh as usize) else { return 0 };
     let tex = (b[73] as usize).checked_sub(1).and_then(|t| s.textures.get(t)).and_then(|t| t.as_ref());
+    let gloss = if nf > 78 { s.f64_buf[78] as f32 } else { 0.5 };
     let Some(Some((r, inst))) = s.rasters.get_mut(id as usize) else { return 0 };
     let k = (n as usize * INSTANCE_STRIDE).min(inst.len());
-    // Flags: bit 0 back-face culling, bit 1 additive blending.
-    let blend = if cull_back & 2 != 0 { Blend::Additive } else { Blend::Opaque };
+    // Flags: bit 0 back-face culling, bit 1 additive, bit 2 gloss (strength f64[78]), bit 3 flip winding.
+    let blend = if cull_back & 2 != 0 {
+        Blend::Additive
+    } else if cull_back & 4 != 0 {
+        Blend::Gloss
+    } else {
+        Blend::Opaque
+    };
+    r.gloss = gloss;
+    r.flip_winding = cull_back & 8 != 0;
     r.draw_with(m, &inst[..k], &vp, eye, &mat, &light, cull_back & 1 != 0, blend, tex);
     r.drawn as u32
 }
@@ -1976,6 +1985,13 @@ pub extern "C" fn ak_texture_create(w: u32, h: u32) -> u32 {
 pub extern "C" fn ak_texture_free(id: u32) {
     if let Some(t) = st().textures.get_mut(id as usize) {
         *t = None;
+    }
+}
+/// Reset the depth buffer only (mirror passes).
+#[no_mangle]
+pub extern "C" fn ak_raster_clear_depth(id: u32) {
+    if let Some(Some((r, _))) = st().rasters.get_mut(id as usize) {
+        r.clear_depth();
     }
 }
 /// Writable point buffer for [`ak_raster_points`]: `n * 6` f32 (xyz, rgb).
