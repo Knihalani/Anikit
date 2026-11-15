@@ -558,6 +558,15 @@ def animate(
 
     Callbacks receive the :class:`Animation` if they take an argument.
     Values are written by :func:`tick` (or :func:`render`).
+
+    Other options: ``ease`` (default ``"outQuad"``; any :class:`Easing` spec
+    such as ``"outCubic"``, ``"power2.inOut"``, ``"spring(bounce: 0.3)"`` or a
+    callable), ``speed`` (playback rate, default 1), ``autoplay`` (default
+    ``True``), ``color_space`` (``"oklab"`` default, ``"srgb"``, ``"linear"``,
+    ``"oklch"``, ``"hsl"``), ``immediate_render`` (write the first keyframe at
+    once, even while delayed), the callbacks ``on_start``, ``on_update``,
+    ``on_complete``, ``on_repeat`` and ``on_reverse_complete``, and ``engine``
+    (default: the default engine).
     """
     return Animation(
         targets,
@@ -834,7 +843,14 @@ def timeline(
     engine: Optional[Engine] = None,
 ) -> Timeline:
     """Create a :class:`Timeline`. ``defaults`` (e.g. ``{"duration": 0.3,
-    "ease": "outCubic"}``) apply to every tween added to it."""
+    "ease": "outCubic"}``) apply to every tween added to it.
+
+    ``delay`` (seconds before it starts), ``repeat`` (extra iterations; ``-1``
+    forever), ``yoyo`` (alternate direction), ``repeat_delay`` (seconds between
+    iterations), ``speed`` (playback rate), ``autoplay`` (default ``True``) and
+    the callbacks ``on_start``, ``on_update``, ``on_complete``, ``on_repeat``,
+    ``on_reverse_complete``. Add steps with ``tl.add(targets, props,
+    position, **options)``: the position is the third argument."""
     return Timeline(
         engine=engine,
         delay=delay,

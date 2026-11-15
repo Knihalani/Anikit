@@ -201,7 +201,8 @@ def spring(
     velocity, which makes repeated calls (e.g. following a pointer) smooth.
 
     Settles when within ``rest_delta`` of the target moving slower than
-    ``rest_speed`` (defaults 0.005 / 0.05).
+    ``rest_speed`` (defaults 0.005 / 0.05). ``props`` maps property names to
+    target values. ``on_update``/``on_complete`` are called every frame while moving / once at rest (with the controller if they take an argument).
     """
     engine = resolve_engine(engine)
     k, c, m = _spring_params(stiffness, damping, mass, bounce, duration)
@@ -307,6 +308,9 @@ def inertia(
     number, a list of snap points (nearest to the natural end wins) or
     ``fn(natural_end) -> value``. The natural end is
     ``value + power * velocity * time_constant``.
+
+    ``targets`` is a dict, an object or a list of them. ``rest_delta`` /
+    ``rest_speed`` decide when it has settled. ``on_update``/``on_complete`` are called every frame while moving / once at rest (with the controller if they take an argument).
     """
     engine = resolve_engine(engine)
     tl = as_targets(targets)
@@ -463,6 +467,7 @@ def physics(
     overrides. ``friction`` (1/s) applies exponential drag: velocity decays by
     ``e^(-friction·t)`` and terminal velocity is ``acceleration / friction``.
     ``restitution`` is 0 (stop dead) … 1 (perfectly elastic).
+    ``targets`` is a dict, an object or a list of them. ``on_update``/``on_complete`` are called every frame while moving / once at rest (with the controller if they take an argument).
 
     Integration is exact (frame-rate independent). A simulation finishes when
     it comes to rest (slower than ``rest_speed``, default 0.05 units/s, with no
