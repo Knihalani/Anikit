@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { world, scene3d, batch, animate, parseTransform, mixTransforms, toMatrix3d, engine } from '../src/index';
 import { setup, advance, box } from './setup';
+import { core } from '../src/wasm';
 
 beforeAll(setup);
 
@@ -49,6 +50,33 @@ describe('physics world', () => {
 });
 
 describe('3D', () => {
+  it('wasm projection + depth sort match the native golden scene bit for bit', () => {
+    // Same scene as `projector_golden_hash` in crates/anikit-core/src/space.rs:
+    // the wasm build takes the SIMD projection path, the native test the scalar one.
+    const w = core();
+    const n = 1001;
+    const pid = w.ak_projector_create();
+    const pts = new Float32Array(w.memory.buffer, w.ak_projector_points(pid, n * 3), n * 3);
+    const f = (i: number, k: number, m: number) => ((i * k) % m) / m;
+    for (let i = 0; i < n; i++) {
+      pts[i * 3] = (f(i, 7919, 997) - 0.5) * 900;
+      pts[i * 3 + 1] = (f(i, 104729, 991) - 0.5) * 700;
+      pts[i * 3 + 2] = i % 50 === 7 ? 995 : i % 61 === 3 ? 1500 : (f(i, 31, 89) - 0.5) * 600;
+    }
+    pts[15] = NaN;
+    pts[29] = Infinity;
+    const model = [0.94, 0, -0.34, 0, 0, 1, 0, 0, 0.34, 0, 0.94, 0, 15, 0, 0, 1];
+    const vp = [1.7171274, 0, 0, 0, 0, 2.7474039, 0, 0, 0, 0, -1.0033389, -1, 0, 0, 983.3055, 1000];
+    const buf = [...model, ...vp];
+    new Float64Array(w.memory.buffer, w.ak_f64_buf(32), 32).set(buf);
+    const out = w.ak_project(pid, 1, 0, 3, 0, 1, 2, n, 1440, 900, 1);
+    const words = [...new Uint32Array(w.memory.buffer, out, n * 4), ...new Uint32Array(w.memory.buffer, w.ak_projector_order(pid), n)];
+    let h = 0x811c9dc5;
+    for (const v of words) h = Math.imul(h ^ v, 16777619) >>> 0;
+    w.ak_projector_free(pid);
+    expect(h).toBe(1261226152);
+  });
+
   it('parses, mixes and animates transforms like browsers', () => {
     const m = parseTransform('translate(10px, 20px)');
     expect(m[12]).toBe(10);

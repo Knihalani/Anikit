@@ -525,27 +525,19 @@ impl Projector {
         let fy = view_proj[5] as f32 * hh;
         self.out.resize(n * 4, 0.0);
         let n = n.min(src.len() / stride.max(1));
-        for i in 0..n {
-            let b = i * stride;
-            let (x, y, z) = (src[b + offs[0]], src[b + offs[1]], src[b + offs[2]]);
-            let cx = mf[0] * x + mf[4] * y + mf[8] * z + mf[12];
-            let cy = mf[1] * x + mf[5] * y + mf[9] * z + mf[13];
-            let cw = mf[3] * x + mf[7] * y + mf[11] * z + mf[15];
-            let cz = mf[2] * x + mf[6] * y + mf[10] * z + mf[14];
-            let o = &mut self.out[i * 4..i * 4 + 4];
-            // Behind the eye, or in front of the near plane (clip z < −w).
-            if cw <= 1e-4 || cz < -cw {
-                o[0] = 0.0;
-                o[1] = 0.0;
-                o[2] = f32::INFINITY;
-                o[3] = 0.0;
-                continue;
+        if stride == 3 && offs == [0, 1, 2] {
+            // Packed xyz (clouds, emitters, point buffers): bounds-check-free
+            // chunks, 4 points per step with simd128 on wasm.
+            let k = project_xyz_simd(&src[..n * 3], &mut self.out[..n * 4], &mf, hw, hh, fy);
+            for (p, o) in src[k * 3..n * 3].chunks_exact(3).zip(self.out[k * 4..n * 4].chunks_exact_mut(4)) {
+                project_one(&mf, hw, hh, fy, p[0], p[1], p[2], o);
             }
-            let iw = 1.0 / cw;
-            o[0] = hw + cx * iw * hw;
-            o[1] = hh - cy * iw * hh;
-            o[2] = cw;
-            o[3] = fy * iw;
+        } else {
+            for i in 0..n {
+                let b = i * stride;
+                let (x, y, z) = (src[b + offs[0]], src[b + offs[1]], src[b + offs[2]]);
+                project_one(&mf, hw, hh, fy, x, y, z, &mut self.out[i * 4..i * 4 + 4]);
+            }
         }
         if sort {
             self.sort_far_to_near(n);
@@ -555,24 +547,201 @@ impl Projector {
         }
     }
 
-    /// LSD radix sort (3 × 11-bit passes) on depth, descending.
+    /// Stable LSD radix sort on depth, descending (culled points first).
+    ///
+    /// Keys are rebased onto the range actually present (`key - min + 1`,
+    /// culled = 0 stays smallest), which preserves their order, so only the
+    /// significant bits are sorted, split into equal digits of at most 11
+    /// bits: a typical cloud (depths within a few octaves) takes three 8-bit
+    /// passes, whose 256 write streams scatter far better than 2048. A pass
+    /// whose digit is the same for every key is a stable no-op and is
+    /// skipped. The resulting order is identical to a full 32-bit sort.
     fn sort_far_to_near(&mut self, n: usize) {
+        const BITS: u32 = 11;
         self.keys.resize(n, 0);
         self.order.resize(n, 0);
         self.tmp_keys.resize(n, 0);
         self.tmp_idx.resize(n, 0);
-        for i in 0..n {
-            let d = self.out[i * 4 + 2];
+        if n == 0 {
+            return;
+        }
+        let (mut lo, mut hi) = (u32::MAX, 0u32);
+        for (k, d) in self.keys.iter_mut().zip(self.out.chunks_exact(4).map(|o| o[2])) {
             // Positive floats sort like their bits; invert for descending order.
             let bits = if d.is_finite() { d.max(0.0).to_bits() } else { u32::MAX };
-            self.keys[i] = !bits;
-            self.order[i] = i as u32;
+            let key = !bits;
+            *k = key;
+            // Culled points (key 0) don't widen the range.
+            if key != 0 {
+                lo = lo.min(key);
+            }
+            hi = hi.max(key);
         }
+        if hi == 0 {
+            // Everything culled: already in (stable) order.
+            self.order.iter_mut().enumerate().for_each(|(i, o)| *o = i as u32);
+            return;
+        }
+        let range = hi - lo + 1;
+        let sig = 32 - range.leading_zeros();
+        let passes = sig.div_ceil(BITS);
+        let width = sig.div_ceil(passes);
+        let mask = (1u32 << width) - 1;
+        let mut hist = [[0u32; 1 << BITS]; 3];
+        for ((k, o), i) in self.keys.iter_mut().zip(self.order.iter_mut()).zip(0u32..) {
+            let r = if *k == 0 { 0 } else { *k - lo + 1 };
+            *k = r;
+            *o = i;
+            for (p, h) in hist.iter_mut().enumerate().take(passes as usize) {
+                h[((r >> (p as u32 * width)) & mask) as usize] += 1;
+            }
+        }
+        for (pass, hist) in hist.iter_mut().enumerate().take(passes as usize) {
+            let shift = pass as u32 * width;
+            if hist[((self.keys[0] >> shift) & mask) as usize] as usize == n {
+                continue;
+            }
+            let mut sum = 0;
+            for h in hist.iter_mut() {
+                let c = *h;
+                *h = sum;
+                sum += c;
+            }
+            for (&k, &o) in self.keys.iter().zip(self.order.iter()) {
+                let slot = &mut hist[((k >> shift) & mask) as usize];
+                self.tmp_keys[*slot as usize] = k;
+                self.tmp_idx[*slot as usize] = o;
+                *slot += 1;
+            }
+            core::mem::swap(&mut self.keys, &mut self.tmp_keys);
+            core::mem::swap(&mut self.order, &mut self.tmp_idx);
+        }
+    }
+}
+
+/// Project one point into `o = [screen_x, screen_y, depth, size_scale]`.
+#[inline(always)]
+#[allow(clippy::too_many_arguments)]
+fn project_one(mf: &[f32; 16], hw: f32, hh: f32, fy: f32, x: f32, y: f32, z: f32, o: &mut [f32]) {
+    let cx = mf[0] * x + mf[4] * y + mf[8] * z + mf[12];
+    let cy = mf[1] * x + mf[5] * y + mf[9] * z + mf[13];
+    let cw = mf[3] * x + mf[7] * y + mf[11] * z + mf[15];
+    let cz = mf[2] * x + mf[6] * y + mf[10] * z + mf[14];
+    // Behind the eye, or in front of the near plane (clip z < −w).
+    if cw <= 1e-4 || cz < -cw {
+        o[0] = 0.0;
+        o[1] = 0.0;
+        o[2] = f32::INFINITY;
+        o[3] = 0.0;
+        return;
+    }
+    let iw = 1.0 / cw;
+    o[0] = hw + cx * iw * hw;
+    o[1] = hh - cy * iw * hh;
+    o[2] = cw;
+    o[3] = fy * iw;
+}
+
+/// [`project_one`] for four packed xyz points per step with WebAssembly SIMD:
+/// de-interleave 12 floats into x/y/z vectors, project, cull with a select,
+/// transpose back to 4 × `[sx, sy, depth, scale]`. Same operations in the
+/// same order, so results are bit-identical. Returns the points done.
+#[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
+fn project_xyz_simd(src: &[f32], out: &mut [f32], mf: &[f32; 16], hw: f32, hh: f32, fy: f32) -> usize {
+    use core::arch::wasm32::*;
+    let n = (src.len() / 3).min(out.len() / 4) / 4 * 4;
+    let m: [v128; 16] = core::array::from_fn(|i| f32x4_splat(mf[i]));
+    let row = |r: usize, x: v128, y: v128, z: v128| {
+        f32x4_add(f32x4_add(f32x4_add(f32x4_mul(m[r], x), f32x4_mul(m[4 + r], y)), f32x4_mul(m[8 + r], z)), m[12 + r])
+    };
+    let (hwv, hhv, fyv, one, eps) = (f32x4_splat(hw), f32x4_splat(hh), f32x4_splat(fy), f32x4_splat(1.0), f32x4_splat(1e-4));
+    let zero = f32x4_splat(0.0);
+    let inf = f32x4_splat(f32::INFINITY);
+    for (p, o) in src[..n * 3].chunks_exact(12).zip(out[..n * 4].chunks_exact_mut(16)) {
+        let a = f32x4(p[0], p[1], p[2], p[3]);
+        let b = f32x4(p[4], p[5], p[6], p[7]);
+        let c = f32x4(p[8], p[9], p[10], p[11]);
+        let x = i32x4_shuffle::<0, 1, 2, 5>(i32x4_shuffle::<0, 3, 6, 0>(a, b), c);
+        let y = i32x4_shuffle::<0, 1, 2, 6>(i32x4_shuffle::<1, 4, 7, 0>(a, b), c);
+        let z = i32x4_shuffle::<0, 1, 4, 7>(i32x4_shuffle::<2, 5, 0, 0>(a, b), c);
+        let (cx, cy, cz, cw) = (row(0, x, y, z), row(1, x, y, z), row(2, x, y, z), row(3, x, y, z));
+        let cull = v128_or(f32x4_le(cw, eps), f32x4_lt(cz, f32x4_neg(cw)));
+        let iw = f32x4_div(one, cw);
+        let o0 = v128_bitselect(zero, f32x4_add(hwv, f32x4_mul(f32x4_mul(cx, iw), hwv)), cull);
+        let o1 = v128_bitselect(zero, f32x4_sub(hhv, f32x4_mul(f32x4_mul(cy, iw), hhv)), cull);
+        let o2 = v128_bitselect(inf, cw, cull);
+        let o3 = v128_bitselect(zero, f32x4_mul(fyv, iw), cull);
+        // 4×4 transpose: lane k of o0..o3 → point k.
+        let t0 = i32x4_shuffle::<0, 4, 1, 5>(o0, o1);
+        let t1 = i32x4_shuffle::<2, 6, 3, 7>(o0, o1);
+        let t2 = i32x4_shuffle::<0, 4, 1, 5>(o2, o3);
+        let t3 = i32x4_shuffle::<2, 6, 3, 7>(o2, o3);
+        let pts = [
+            i32x4_shuffle::<0, 1, 4, 5>(t0, t2),
+            i32x4_shuffle::<2, 3, 6, 7>(t0, t2),
+            i32x4_shuffle::<0, 1, 4, 5>(t1, t3),
+            i32x4_shuffle::<2, 3, 6, 7>(t1, t3),
+        ];
+        for (q, v) in o.chunks_exact_mut(4).zip(pts) {
+            q[0] = f32x4_extract_lane::<0>(v);
+            q[1] = f32x4_extract_lane::<1>(v);
+            q[2] = f32x4_extract_lane::<2>(v);
+            q[3] = f32x4_extract_lane::<3>(v);
+        }
+    }
+    n
+}
+#[cfg(not(all(target_arch = "wasm32", target_feature = "simd128")))]
+#[inline(always)]
+fn project_xyz_simd(_src: &[f32], _out: &mut [f32], _mf: &[f32; 16], _hw: f32, _hh: f32, _fy: f32) -> usize {
+    0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The previous projector, verbatim, as the bit-exact reference.
+    #[allow(clippy::too_many_arguments)]
+    fn reference_project(src: &[f32], stride: usize, offs: [usize; 3], n: usize, model: &Mat4, view_proj: &Mat4, w: f64, h: f64, sort: bool) -> (Vec<f32>, Vec<u32>) {
+        let m = mul(view_proj, model);
+        let mf: [f32; 16] = core::array::from_fn(|i| m[i] as f32);
+        let (hw, hh) = ((w * 0.5) as f32, (h * 0.5) as f32);
+        let fy = view_proj[5] as f32 * hh;
+        let mut out = alloc::vec![0.0f32; n * 4];
+        let n = n.min(src.len() / stride.max(1));
+        for i in 0..n {
+            let b = i * stride;
+            let (x, y, z) = (src[b + offs[0]], src[b + offs[1]], src[b + offs[2]]);
+            let cx = mf[0] * x + mf[4] * y + mf[8] * z + mf[12];
+            let cy = mf[1] * x + mf[5] * y + mf[9] * z + mf[13];
+            let cw = mf[3] * x + mf[7] * y + mf[11] * z + mf[15];
+            let cz = mf[2] * x + mf[6] * y + mf[10] * z + mf[14];
+            let o = &mut out[i * 4..i * 4 + 4];
+            if cw <= 1e-4 || cz < -cw {
+                o.copy_from_slice(&[0.0, 0.0, f32::INFINITY, 0.0]);
+                continue;
+            }
+            let iw = 1.0 / cw;
+            o[0] = hw + cx * iw * hw;
+            o[1] = hh - cy * iw * hh;
+            o[2] = cw;
+            o[3] = fy * iw;
+        }
+        if !sort {
+            return (out, (0..n as u32).collect());
+        }
+        let mut keys: Vec<u32> = (0..n).map(|i| {
+            let d = out[i * 4 + 2];
+            !(if d.is_finite() { d.max(0.0).to_bits() } else { u32::MAX })
+        }).collect();
+        let mut order: Vec<u32> = (0..n as u32).collect();
+        let (mut tk, mut ti) = (alloc::vec![0u32; n], alloc::vec![0u32; n]);
         let mut hist = [0u32; 2048];
         for pass in 0..3 {
             let shift = pass * 11;
             hist.iter_mut().for_each(|h| *h = 0);
-            for &k in &self.keys {
+            for &k in &keys {
                 hist[((k >> shift) & 2047) as usize] += 1;
             }
             let mut sum = 0;
@@ -582,21 +751,101 @@ impl Projector {
                 sum += c;
             }
             for i in 0..n {
-                let k = self.keys[i];
+                let k = keys[i];
                 let slot = &mut hist[((k >> shift) & 2047) as usize];
-                self.tmp_keys[*slot as usize] = k;
-                self.tmp_idx[*slot as usize] = self.order[i];
+                tk[*slot as usize] = k;
+                ti[*slot as usize] = order[i];
                 *slot += 1;
             }
-            core::mem::swap(&mut self.keys, &mut self.tmp_keys);
-            core::mem::swap(&mut self.order, &mut self.tmp_idx);
+            core::mem::swap(&mut keys, &mut tk);
+            core::mem::swap(&mut order, &mut ti);
         }
+        (out, order)
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+    /// Points for the projector tests: a spread around the origin with some
+    /// behind the camera, some inside the near plane, duplicate depths and
+    /// non-finite values.
+    pub(crate) fn projector_scene(n: usize) -> Vec<f32> {
+        let mut v = Vec::with_capacity(n * 3);
+        for i in 0..n {
+            let f = |k: usize, m: usize| ((i * k) % m) as f64 / m as f64;
+            let x = (f(7919, 997) - 0.5) * 900.0;
+            let y = (f(104_729, 991) - 0.5) * 700.0;
+            let z = if i % 50 == 7 { 995.0 } else if i % 61 == 3 { 1500.0 } else { (f(31, 89) - 0.5) * 600.0 };
+            v.extend_from_slice(&[x as f32, y as f32, z as f32]);
+        }
+        v[3 * 5] = f32::NAN;
+        v[3 * 9 + 2] = f32::INFINITY;
+        v
+    }
+
+    /// Camera for the projector tests, as decimal literals so
+    /// `test/world-3d.test.ts` can pass bit-identical matrices to the wasm
+    /// build: a y-rotation-ish model and a 40° perspective looking down -z
+    /// from z = 1000.
+    pub(crate) fn projector_camera() -> (Mat4, Mat4) {
+        let model = [0.94, 0.0, -0.34, 0.0, 0.0, 1.0, 0.0, 0.0, 0.34, 0.0, 0.94, 0.0, 15.0, 0.0, 0.0, 1.0];
+        let vp = [1.7171274, 0.0, 0.0, 0.0, 0.0, 2.7474039, 0.0, 0.0, 0.0, 0.0, -1.0033389, -1.0, 0.0, 0.0, 983.3055, 1000.0];
+        (model, vp)
+    }
+
+    #[test]
+    fn projector_matches_reference_bit_for_bit() {
+        let (model, vp) = projector_camera();
+        let pts = projector_scene(1001);
+        let mut p = Projector::default();
+        for &(stride, offs, sort) in &[(3, [0, 1, 2], true), (3, [0, 1, 2], false), (4, [1, 2, 3], true), (3, [2, 1, 0], true)] {
+            let n = pts.len() / stride;
+            p.project(&pts, stride, offs, n, &model, &vp, 1440.0, 900.0, sort);
+            let (out, order) = reference_project(&pts, stride, offs, n, &model, &vp, 1440.0, 900.0, sort);
+            assert_eq!(p.out.len(), out.len());
+            for (a, b) in p.out.iter().zip(&out) {
+                assert_eq!(a.to_bits(), b.to_bits());
+            }
+            assert_eq!(p.order, order);
+        }
+        // Depth = z: wide ranges (three passes), narrow ranges (one pass),
+        // duplicates, culled points and all-culled sets.
+        let mut wvp = IDENTITY;
+        wvp[11] = 1.0;
+        wvp[15] = 0.0;
+        let mut rng = crate::math::Rng(5);
+        for &(lo, hi, culled) in &[(1e-3, 1e7, 0.1), (500.0, 1500.0, 0.0), (999.0, 1001.0, 0.3), (1.0, 1.0 + 1e-4, 0.0), (-5.0, -1.0, 1.0)] {
+            let pts: Vec<f32> = (0..4000)
+                .flat_map(|i| {
+                    let u = rng.next_f64();
+                    let z = if u < culled { -1.0 } else if i % 7 == 0 { lo } else { lo * libm::pow(hi / lo, rng.next_f64()) };
+                    [0.0, 0.0, z as f32]
+                })
+                .collect();
+            p.project(&pts, 3, [0, 1, 2], 4000, &IDENTITY, &wvp, 100.0, 100.0, true);
+            let (_, order) = reference_project(&pts, 3, [0, 1, 2], 4000, &IDENTITY, &wvp, 100.0, 100.0, true);
+            assert_eq!(p.order, order, "range {lo}..{hi}");
+        }
+        // Uniform depths: every radix pass is skippable; order stays stable.
+        let flat: Vec<f32> = (0..300).flat_map(|i| [i as f32, 0.0, 0.0]).collect();
+        p.project(&flat, 3, [0, 1, 2], 300, &IDENTITY, &vp, 100.0, 100.0, true);
+        assert_eq!(p.order, (0..300).collect::<Vec<u32>>());
+        let (_, order) = reference_project(&flat, 3, [0, 1, 2], 300, &IDENTITY, &vp, 100.0, 100.0, true);
+        assert_eq!(p.order, order);
+    }
+
+    #[test]
+    fn projector_golden_hash() {
+        // `test/world-3d.test.ts` projects the same scene through the wasm
+        // build (SIMD path) and expects this hash.
+        let (model, vp) = projector_camera();
+        let pts = projector_scene(1001);
+        let mut p = Projector::default();
+        p.project(&pts, 3, [0, 1, 2], 1001, &model, &vp, 1440.0, 900.0, true);
+        let mut h = 0x811c_9dc5u32;
+        for w in p.out.iter().map(|v| v.to_bits()).chain(p.order.iter().copied()) {
+            h = (h ^ w).wrapping_mul(16_777_619);
+        }
+        assert_eq!(h, PROJECTOR_GOLDEN);
+    }
+    const PROJECTOR_GOLDEN: u32 = 1_261_226_152;
 
     fn close(a: &Mat4, b: &Mat4, eps: f64) -> bool {
         a.iter().zip(b).all(|(x, y)| (x - y).abs() < eps)
