@@ -96,6 +96,13 @@ const CHECKS = {
     await wait(page, 600);
     expect((await tx(page, '.btn')) !== 'none', 'hover scales the button');
   },
+  'Recording a GIF or MP4': async (page, logs) => {
+    for (let i = 0; i < 100 && !logs.some((l) => /^\d+ \d+$/.test(l)); i++) await wait(page, 100);
+    const line = logs.find((l) => /^\d+ \d+$/.test(l));
+    expect(line, 'the recording finished and logged its frame count and PNG size');
+    const [frames, bytes] = line.split(' ').map(Number);
+    expect(frames > 0 && bytes > 0, `recorded ${frames} frames, PNG ${bytes} bytes`);
+  },
   'Layout change (FLIP)': async (page) => {
     await page.click('.toggle');
     await wait(page, 100);
@@ -121,12 +128,13 @@ for (const r of recipes) {
   const page = await browser.newPage({ viewport: { width: 1000, height: 700 } });
   const problems = [];
   page.on('pageerror', (e) => problems.push('error: ' + e.message));
-  page.on('console', (m) => m.text().startsWith('anikit:') && problems.push(m.text()));
+  const logs = [];
+  page.on('console', (m) => (m.text().startsWith('anikit:') ? problems.push(m.text()) : logs.push(m.text())));
   await page.setContent(`<!doctype html><html><body style="margin: 0; min-height: 3000px">${r.html}</body></html>`);
   await page.addScriptTag({ type: 'module', content: out.outputFiles[0].text });
   await wait(page, 100);
   try {
-    if (CHECKS[r.heading]) await CHECKS[r.heading](page);
+    if (CHECKS[r.heading]) await CHECKS[r.heading](page, logs);
     else {
       await page.mouse.move(200, 200);
       await page.mouse.wheel(0, 600);

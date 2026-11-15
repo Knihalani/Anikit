@@ -20,7 +20,7 @@ afterEach(() => {
 writeSnippets();
 const runnable = (CHECKED_DOCS as string[]).flatMap((doc) =>
   (extractSnippets(doc) as Array<{ line: number; lang: string; flags: Set<string>; html: string | null }>)
-    .filter((s) => s.lang === 'ts' && s.html && !s.flags.has('no-run') && !s.flags.has('no-check'))
+    .filter((s) => s.lang === 'ts' && s.html && !s.flags.has('no-run') && !s.flags.has('no-check') && !s.flags.has('browser'))
     .map((s) => ({ doc: basename(doc), line: s.line, html: s.html!, file: join(OUT_DIR, `${basename(doc, '.md').toLowerCase()}-${s.line}.ts`) })),
 );
 

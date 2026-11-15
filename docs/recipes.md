@@ -422,7 +422,13 @@ In a real browser (Playwright), `window.__ANIKIT__` is the engine: `__ANIKIT__.m
 
 In the page (frame-exact; time is advanced exactly `1 / fps` per frame):
 
-```ts no-run
+```html
+<div id="stage" style="position: relative; width: 360px; height: 80px; background: #111">
+  <div class="box" style="width: 40px; height: 40px; background: #f60"></div>
+</div>
+```
+
+```ts browser
 import { record, screenshot, timeline } from 'anikit';
 
 const tl = timeline({ autoplay: false }).add('#stage .box', { x: [0, 300] }, { duration: 2 });
