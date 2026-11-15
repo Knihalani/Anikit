@@ -18,6 +18,7 @@ import { VelocityTracker } from './utils';
 import { inertia, spring, PhysicsAnimation } from './spring';
 import { track } from './context';
 import type { Bounds } from './interaction';
+import { prefersReduced } from './core';
 
 export interface GestureOptions {
   /** Comma separated: 'pan', 'pinch', 'rotate' (default all three). */
@@ -241,7 +242,7 @@ export class Gesture {
     window.removeEventListener('pointercancel', this.up);
     this.isActive = false;
     this.o.onEnd?.(this);
-    this.settle(this.last, this.o.inertia !== false);
+    this.settle(this.last, this.o.inertia !== false && !prefersReduced());
   };
 
   private onWheel = (e: WheelEvent): void => {

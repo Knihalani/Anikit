@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { animate, timeline, flip, presence, enter, exit, engine, viewTransition, compositor, scroll, splitText, mixColor, gesture, transformPath, context } from '../src/index';
+import { animate, timeline, flip, presence, enter, exit, engine, viewTransition, compositor, scroll, splitText, mixColor, gesture, transformPath, context, spring, inertia } from '../src/index';
 import { setup, advance, box } from './setup';
 
 beforeAll(setup);
@@ -669,6 +669,21 @@ describe("reduced motion: 'fade' mode", () => {
     } finally {
       engine.reducedMotion = 'never';
       engine.reducedMotionMode = 'instant';
+    }
+  });
+
+  it('springs arrive at once and inertia does not glide', () => {
+    engine.reducedMotion = 'always';
+    try {
+      const o = { x: 0, y: 0 };
+      spring(o, { x: 100 }, { stiffness: 100, damping: 5 });
+      advance(0.05);
+      expect(o.x).toBe(100);
+      inertia(o, { y: { velocity: 2000 } });
+      advance(1);
+      expect(o.y).toBe(0);
+    } finally {
+      engine.reducedMotion = 'never';
     }
   });
 
