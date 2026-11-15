@@ -245,6 +245,8 @@ pub struct Raster {
     blur_src: Vec<u32>,
     vel: Vec<u32>,
     tiles: Vec<[f32; 2]>,
+    alpha: Vec<f32>,
+    row_px: Vec<u32>,
     /// Additive light accumulation for [`Raster::points`] (RGB f32, allocated on first use).
     light: Vec<f32>,
     /// Pixels shaded by the last call (diagnostics).
@@ -1095,7 +1097,7 @@ impl Raster {
                 for k in 0..N {
                     let half = ((k as f32 + 0.5 + jit * 0.95) / N as f32 - 0.5) * 2.0 * 0.5;
                     let (sx, sy) = (bx as f32 + 0.5 + vn[0] * half, by as f32 + 0.5 + vn[1] * half);
-                    let m = ((sy as isize).clamp(0, hi) as usize) * bw + (sx as isize).clamp(0, wi) as usize;
+                    let m = (sy.clamp(0.0, hi as f32) as usize) * bw + sx.clamp(0.0, wi as f32) as usize;
                     let (zs, ls) = unpack(vel[m]);
                     let dist = (half * ln).abs();
                     let ils = 1.0 / ls;
@@ -1116,41 +1118,16 @@ impl Raster {
                 self.light[o + 2] = acc[2] * it;
             }
         }
-        // 4. Blend the bilinear-upsampled blur over the sharp frame by local speed
+        // 4. Blend the upsampled blur over the sharp frame by local speed
         //    (sharp where still, fully blurred from ~3 px of motion).
-        // Blend factor per tile (speed in full-res px).
-        let alpha: Vec<f32> = self.tiles.iter().map(|t| ((crate::math::sqrtf(t[0] * t[0] + t[1] * t[1]) * 2.0 - 0.75) / 2.25).clamp(0.0, 1.0)).collect();
-        let lt = &self.light;
-        let span = T * 2; // tile width in full-res px
-        for y in 0..h {
-            let fy = ((y as f32 + 0.5) * 0.5 - 0.5).clamp(0.0, (bh - 1) as f32);
-            let y0 = fy as usize;
-            let y1 = (y0 + 1).min(bh - 1);
-            let ty = fy - y0 as f32;
-            let arow = &alpha[((y / 2).min(bh - 1) / T).min(th - 1) * tw..][..tw];
-            for x in 0..w {
-                let a = arow[(x / span).min(tw - 1)];
-                if a <= 0.0 {
-                    continue;
-                }
-                let fx = ((x as f32 + 0.5) * 0.5 - 0.5).clamp(0.0, (bw - 1) as f32);
-                let x0 = fx as usize;
-                let x1 = (x0 + 1).min(bw - 1);
-                let tx = fx - x0 as f32;
-                let i = y * w + x;
-                let c = self.color[i];
-                let mut out = c & 0xff00_0000;
-                for ch in 0..3 {
-                    let s = |yy: usize, xx: usize| lt[(yy * bw + xx) * 3 + ch];
-                    let top = s(y0, x0) + (s(y0, x1) - s(y0, x0)) * tx;
-                    let bot = s(y1, x0) + (s(y1, x1) - s(y1, x0)) * tx;
-                    let b = top + (bot - top) * ty;
-                    let o = ((c >> (8 * ch)) & 255) as f32;
-                    out |= (((o + (b - o) * a) + 0.5) as u32).min(255) << (8 * ch);
-                }
-                self.color[i] = out;
-            }
-        }
+        let mut alpha = core::mem::take(&mut self.alpha);
+        alpha.clear();
+        alpha.extend((0..bw * bh).map(|j| {
+            let t = self.tiles[((j / bw) / T).min(th - 1) * tw + ((j % bw) / T).min(tw - 1)];
+            ((crate::math::sqrtf(t[0] * t[0] + t[1] * t[1]) * 2.0 - 0.75) / 2.25).clamp(0.0, 1.0)
+        }));
+        self.blend_half(bw, bh, &alpha);
+        self.alpha = alpha;
     }
 }
 
@@ -1165,54 +1142,65 @@ impl Raster {
         let Some(inv) = crate::space::invert(&m64) else { return };
         let inv: M4 = core::array::from_fn(|i| inv[i] as f32);
         let (w, h) = (self.width, self.height);
-        let (hw, hh) = (w as f32 * 0.5, h as f32 * 0.5);
         let key = norm3(light.key);
+        // View rays are linear in screen space for a perspective camera: the
+        // far-plane point minus the near-plane point at three corners spans them.
         let un = |nx: f32, ny: f32, nz: f32| {
             let cw = inv[3] * nx + inv[7] * ny + inv[11] * nz + inv[15];
             let iw = 1.0 / cw;
             [(inv[0] * nx + inv[4] * ny + inv[8] * nz + inv[12]) * iw, (inv[1] * nx + inv[5] * ny + inv[9] * nz + inv[13]) * iw, (inv[2] * nx + inv[6] * ny + inv[10] * nz + inv[14]) * iw]
         };
+        let ray = |nx: f32, ny: f32| {
+            let (a, b) = (un(nx, ny, -1.0), un(nx, ny, 1.0));
+            [b[0] - a[0], b[1] - a[1], b[2] - a[2]]
+        };
+        let (r00, r10, r01) = (ray(-1.0, 1.0), ray(1.0, 1.0), ray(-1.0, -1.0));
+        let dx: [f32; 3] = core::array::from_fn(|k| (r10[k] - r00[k]) / w as f32);
+        let dy: [f32; 3] = core::array::from_fn(|k| (r01[k] - r00[k]) / h as f32);
         let fog = light.fog_color;
-        let blend_fog = light.fog[1].is_finite();
+        let fog_k = if light.fog[1].is_finite() { 0.6 } else { 0.0 };
+        let sun_k = 400.0 / (sun * sun).max(1e-6);
+        let lanes = V4::new(0.5, 1.5, 2.5, 3.5);
         for y in 0..h {
-            let ny = 1.0 - (y as f32 + 0.5) / hh;
-            for x in 0..w {
-                let i = y * w + x;
-                if self.depth[i].is_finite() {
+            let fy = y as f32 + 0.5;
+            let base: [f32; 3] = core::array::from_fn(|k| r00[k] + dy[k] * fy);
+            let mut x = 0;
+            while x < w {
+                let n = (w - x).min(4);
+                let row = y * w + x;
+                if (0..n).all(|l| self.depth[row + l].is_finite()) {
+                    x += 4;
                     continue;
                 }
-                let nx = (x as f32 + 0.5) / hw - 1.0;
-                let (a, b) = (un(nx, ny, -1.0), un(nx, ny, 1.0));
-                let d = norm3([b[0] - a[0], b[1] - a[1], b[2] - a[2]]);
+                let fx = lanes + x as f32;
+                let d = [fx * dx[0] + base[0], fx * dx[1] + base[1], fx * dx[2] + base[2]];
+                let inv_len = 1.0 / dot3(&d, &d).sqrt().maxf(1e-12);
+                let d = [d[0] * inv_len, d[1] * inv_len, d[2] * inv_len];
                 let up = d[1].clamp(-1.0, 1.0);
-                // Horizon band, sky above, ground below.
-                let band = {
-                    let t = up * 3.0;
-                    let q = 1.0 / (1.0 + t * t);
-                    q * q
-                };
-                let mut c: [f32; 3] = core::array::from_fn(|k| {
-                    let sg = if up > 0.0 { light.sky[k] } else { light.ground[k] };
-                    sg + (light.horizon[k] - sg) * band
-                });
-                if blend_fog {
+                let band = peak4(up, 3.0);
+                let above = up.gtf(0.0);
+                let mut c: [V4; 3] = core::array::from_fn(|k| {
+                    let sg = V4::select(above, V4::splat(light.sky[k]), V4::splat(light.ground[k]));
+                    let v = sg + (light.horizon[k] - sg) * band;
                     // Towards the horizon the sky meets the fog colour, so distant geometry dissolves into it.
-                    let f = band * 0.6;
-                    for k in 0..3 {
-                        c[k] += (fog[k] - c[k]) * f;
-                    }
-                }
+                    v + (fog[k] - v) * band * fog_k
+                });
                 if sun > 0.0 {
-                    let cs = dot(d, key).max(0.0);
-                    // Disc + halo: sharp core, wide glow.
-                    let t = (1.0 - cs) * (400.0 / (sun * sun));
+                    let cs = (d[0] * key[0] + d[1] * key[1] + d[2] * key[2]).maxf(0.0);
+                    let t = (1.0 - cs) * sun_k;
                     let disc = (1.0 - t).clamp(0.0, 1.0);
-                    let halo = 0.25 / (1.0 + t * 0.6);
+                    let halo = 0.25 / (t * 0.6 + 1.0);
                     for k in 0..3 {
-                        c[k] += light.key_color[k] * (disc * 3.0 + halo);
+                        c[k] = c[k] + (disc * 3.0 + halo) * light.key_color[k];
                     }
                 }
-                self.color[i] = pack4([V4::splat(c[0]), V4::splat(c[1]), V4::splat(c[2])])[0];
+                let px = pack4(c);
+                for l in 0..n {
+                    if !self.depth[row + l].is_finite() {
+                        self.color[row + l] = px[l];
+                    }
+                }
+                x += 4;
             }
         }
     }
@@ -1271,12 +1259,13 @@ impl Raster {
         // Gather.
         self.light.clear();
         self.light.resize(bw * bh * 3, 0.0);
-        const N: usize = 16;
+        const N: usize = 14;
         let golden = 2.399_963;
-        let taps: [(f32, f32); N] = core::array::from_fn(|k| {
+        // (x, y, radius) of a golden-angle disc.
+        let taps: [(f32, f32, f32); N] = core::array::from_fn(|k| {
             let r = crate::math::sqrtf((k as f32 + 0.5) / N as f32);
             let a = k as f32 * golden;
-            (r * libm::cosf(a), r * libm::sinf(a))
+            (r * libm::cosf(a), r * libm::sinf(a), r)
         });
         let (wi, hi) = (bw as isize - 1, bh as isize - 1);
         let src = &self.blur_src;
@@ -1294,11 +1283,11 @@ impl Raster {
                 }
                 let mut acc = [(c0 & 255) as f32, ((c0 >> 8) & 255) as f32, ((c0 >> 16) & 255) as f32];
                 let mut tot = 1.0;
-                for &(tx, ty) in &taps {
+                for &(tx, ty, tr) in &taps {
                     let (sx, sy) = (bx as f32 + 0.5 + tx * rc, by as f32 + 0.5 + ty * rc);
-                    let m = ((sy as isize).clamp(0, hi) as usize) * bw + (sx as isize).clamp(0, wi) as usize;
+                    let m = (sy.clamp(0.0, hi as f32) as usize) * bw + sx.clamp(0.0, wi as f32) as usize;
                     // A tap only contributes if it is itself blurry enough to reach us.
-                    let dist = rc * crate::math::sqrtf(tx * tx + ty * ty);
+                    let dist = rc * tr;
                     let wgt = ((coc[m] - dist) + 1.0).clamp(0.0, 1.0);
                     if wgt <= 0.0 {
                         continue;
@@ -1316,33 +1305,60 @@ impl Raster {
             }
         }
         // Blend over the sharp frame by blur amount.
+        let mut alpha = core::mem::take(&mut self.alpha);
+        alpha.clear();
+        alpha.extend(coc.iter().map(|c| ((c - 0.25) * 1.5).clamp(0.0, 1.0)));
+        self.blend_half(bw, bh, &alpha);
+        self.alpha = alpha;
+    }
+}
+
+impl Raster {
+    /// Blend the half-resolution RGB image in `self.light` over the frame,
+    /// upsampled 2× bilinearly with fixed phase weights (output pixel 2i + k
+    /// sits at i − 0.25 + k/2), by the half-res `alpha`.
+    #[allow(clippy::needless_range_loop)]
+    fn blend_half(&mut self, bw: usize, bh: usize, alpha: &[f32]) {
+        let (w, h) = (self.width, self.height);
+        // Vertically blended source row, quantised to packed RGB (integer from here on).
+        self.row_px.clear();
+        self.row_px.resize(bw, 0);
         let lt = &self.light;
-        for y in 0..h {
-            let fy = ((y as f32 + 0.5) * 0.5 - 0.5).clamp(0.0, (bh - 1) as f32);
-            let y0 = fy as usize;
-            let y1 = (y0 + 1).min(bh - 1);
-            let ty = fy - y0 as f32;
-            for x in 0..w {
-                let a = ((coc[(y / 2).min(bh - 1) * bw + (x / 2).min(bw - 1)] - 0.25) * 1.5).clamp(0.0, 1.0);
+        for y in 0..h.min(bh * 2) {
+            let by = y / 2;
+            let ny = if y & 1 == 0 { by.saturating_sub(1) } else { (by + 1).min(bh - 1) };
+            let arow = &alpha[by * bw..(by + 1) * bw];
+            if arow.iter().all(|a| *a <= 0.0) {
+                continue;
+            }
+            let (r0, r1) = (&lt[by * bw * 3..(by + 1) * bw * 3], &lt[ny * bw * 3..(ny + 1) * bw * 3]);
+            for (bx, o) in self.row_px.iter_mut().enumerate() {
+                let q = |k: usize| {
+                    let v = r0[bx * 3 + k] * 0.75 + r1[bx * 3 + k] * 0.25 + 0.5;
+                    (v.clamp(0.0, 255.0)) as u32
+                };
+                *o = q(0) | q(1) << 8 | q(2) << 16;
+            }
+            let rb = &self.row_px;
+            let out = &mut self.color[y * w..y * w + (bw * 2).min(w)];
+            for (x, px) in out.iter_mut().enumerate() {
+                let bx = x / 2;
+                let a = arow[bx];
                 if a <= 0.0 {
                     continue;
                 }
-                let fx = ((x as f32 + 0.5) * 0.5 - 0.5).clamp(0.0, (bw - 1) as f32);
-                let x0 = fx as usize;
-                let x1 = (x0 + 1).min(bw - 1);
-                let tx = fx - x0 as f32;
-                let i = y * w + x;
-                let c = self.color[i];
-                let mut out = c & 0xff00_0000;
-                for ch in 0..3 {
-                    let s = |yy: usize, xx: usize| lt[(yy * bw + xx) * 3 + ch];
-                    let top = s(y0, x0) + (s(y0, x1) - s(y0, x0)) * tx;
-                    let bot = s(y1, x0) + (s(y1, x1) - s(y1, x0)) * tx;
-                    let b = top + (bot - top) * ty;
-                    let o = ((c >> (8 * ch)) & 255) as f32;
-                    out |= (((o + (b - o) * a) + 0.5) as u32).min(255) << (8 * ch);
+                let ai = (a * 256.0) as u32;
+                let nx = if x & 1 == 0 { bx.saturating_sub(1) } else { (bx + 1).min(bw - 1) };
+                let (p0, p1, c) = (rb[bx], rb[nx], *px);
+                let mut o = c & 0xff00_0000;
+                for sh in [0u32, 8, 16] {
+                    // 0.75 / 0.25 horizontal phase, then lerp from the sharp pixel by alpha.
+                    let bv = ((p0 >> sh & 255) * 3 + (p1 >> sh & 255) + 2) >> 2;
+                    let sv = c >> sh & 255;
+                    let v = (sv * (256 - ai) + bv * ai + 128) >> 8;
+                    o |= v.min(255) << sh;
                 }
-                self.color[i] = out;
+                *px = o;
             }
         }
     }
