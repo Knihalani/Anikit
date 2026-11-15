@@ -2,11 +2,10 @@
   "name": "anikit-film",
   "private": true,
   "type": "module",
-  "description": "ANIKIT \u2014 a 60 s film (music included) composed in code and rendered by anikit in Node.",
+  "description": "ANIKIT \u2014 a 20 s title film composed in code and rendered by anikit in Node.",
   "scripts": {
-    "soundtrack": "node soundtrack.mjs soundtrack.wav",
     "preview": "node ../packages/anikit/bin/anikit-render.mjs film.mjs --preview 30 --out preview/",
-    "render": "npm run soundtrack && node ../packages/anikit/bin/anikit-render.mjs film.mjs --out anikit-film.mp4 --audio soundtrack.wav --workers 3 --fade-in 0.25 --fade-out 0.9 --fade-color 0xece6da"
+    "render": "node ../packages/anikit/bin/anikit-render.mjs film.mjs --out anikit-film.mp4 --workers 3 --fade-out 0.6 --fade-color 0xece6da"
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.80"

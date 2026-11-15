@@ -381,7 +381,6 @@ for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
 // ---------------------------------------------------------------------------
 {
   const v = $('#film-video');
-  const btn = $('#film-sound');
   const title = chars($('.film-title'));
   $('.film-title').dataset.gsplit = '1';
   set(title, { yPercent: 100, opacity: 0 });
@@ -390,11 +389,6 @@ for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
     v.play().catch(() => {});
     return () => v.pause();
   }, { amount: 0.3 });
-  btn.addEventListener('click', () => {
-    v.muted = !v.muted;
-    if (!v.muted) { v.currentTime = 0; v.play().catch(() => {}); }
-    btn.textContent = v.muted ? 'Sound on' : 'Sound off';
-  });
 }
 
 // ---------------------------------------------------------------------------

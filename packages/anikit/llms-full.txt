@@ -574,6 +574,10 @@ film.scene('intro', 0, 4, {
 });
 film.append('next', 6, { draw: … });                  // a scene after the last one
 film.cue(12.5, () => sparks.burst(4000));             // a one-off at an exact time
+film.scene('next', 4, 8, {                             // overlaps the previous scene by 0.4 s
+  transition: { duration: 0.4, type: 'whip', direction: 'left' },   // fade · iris · push · whip · slice · zoom · flash · mask · fn
+  draw: …,
+});
 
 const webm = await exportWebM(film, { bitrate: 12e6 }); // browser
 ```
@@ -581,7 +585,8 @@ const webm = await exportWebM(film, { bitrate: 12e6 }); // browser
 - Rendering runs anikit in manual time and ticks it exactly `1/fps` per frame, so output never depends on machine speed. Timelines created in `enter` start on schedule.
 - `motionBlur: n` (or `{ samples, shutter }`) renders `n` sub-frames across the shutter and averages them in WebAssembly.
 - `FrameBuffer` converts frames to I420 (BT.709) in WebAssembly — encoders receive 1.5 bytes/pixel and do no colour conversion.
-- `typeFx(ctx, text, x, y, { effect: 'rise' | 'wave' | 'type' | 'scramble' | 'fade', t, start, stagger, ease })` draws kinetic type deterministically.
+- Transitions: the incoming scene's `transition` keeps the previous scene running for `duration`; both draw to offscreen canvases (`createCanvas` render option; supplied automatically in Node) and are composited — `mask` reveals the next scene through a growing letterform (`text`), `whip` adds a directional smear, `slice` staggers bands.
+- `typeFx(ctx, text, x, y, { effect: 'rise' | 'wave' | 'type' | 'scramble' | 'fade' | 'slam', t, start, stagger, ease })` draws kinetic type deterministically.
 - `muxWebM(chunks, …)` is the built-in WebM muxer used by `exportWebM`.
 
 ### Rendering in Node: `anikit/node` and `anikit-render`
@@ -598,7 +603,7 @@ export default async ({ anikit, node }) => {
 ```
 
 ```bash
-npx anikit-render film.mjs --out film.mp4 --workers 4 --audio track.wav --fade-in 0.3 --fade-out 0.8
+npx anikit-render film.mjs --out film.mp4 --workers 4 --fade-in 0.3 --fade-out 0.8   # --audio track.wav to mux a soundtrack
 ```
 
 ```bash
