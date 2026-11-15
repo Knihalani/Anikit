@@ -2,7 +2,7 @@
 
 **A web animation engine with a Rust core.** One `no_std` Rust engine for timing, easing, springs, colours, paths, morphing, timelines, 2D physics, 3D maths, particle clouds and GIF encoding. It compiles to WebAssembly for the browser (TypeScript API) and to a native extension for Python.
 
-The landing page in [`site/`](site/) is built entirely with Anikit: 140,000 particles flow behind the page from shape to shape as you scroll, every word can be dropped into a physics world, and holding Space slows the whole engine down.
+The landing page in [`site/`](site/) is built entirely with Anikit: a scroll-driven "poster film" where 150,000 particles print as ink on paper and glow as light on dark, colour fields flood from scene to scene, giant letters fall into a physics world full of sand, every word on screen can be dropped and thrown, and holding Space slows the whole engine down. [`site/demo/record-demo.mjs`](site/demo/record-demo.mjs) renders a directed, frame-exact 1080p60 film of it (virtual time, motion blur, camera moves).
 
 ```ts
 import { animate, timeline, stagger, spring, scroll, splitText, star, world, pointCloud, textPoints, glow, scene3d, engine, record } from 'anikit';

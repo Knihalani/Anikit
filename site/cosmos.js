@@ -103,8 +103,15 @@ export async function cosmos({ reduced = false } = {}) {
     }),
     burst: () => make((i, a, o) => {
       const y = 2 * rnd() - 1, t = rnd() * TAU, r = Math.sqrt(1 - y * y);
-      const spike = i % 4 === 0 ? 1 + Math.pow(rnd(), 2.5) * 3.2 : 1 + gauss() * 0.02;
-      const R = 190 * spike;
+      // A spiky starburst: a third of the particles stream out along 90 rays.
+      if (i % 3 === 0) {
+        const ray = Math.floor(rnd() * 90), yy = 1 - (2 * ray + 1) / 90, rr = Math.sqrt(1 - yy * yy), tt = ray * 2.39996;
+        const d = 150 + Math.pow(rnd(), 1.6) * 420;
+        a[o] = rr * Math.cos(tt) * d + W() * 0.2 + gauss() * 2; a[o + 1] = yy * d + 60 + gauss() * 2; a[o + 2] = rr * Math.sin(tt) * d + gauss() * 2;
+        return;
+      }
+      const spike = 1 + gauss() * 0.02;
+      const R = 150 * spike;
       a[o] = r * Math.cos(t) * R + W() * 0.2; a[o + 1] = y * R + 60; a[o + 2] = r * Math.sin(t) * R;
     }),
     vortex: () => make((i, a, o) => {
@@ -230,8 +237,10 @@ export async function cosmos({ reduced = false } = {}) {
     cloud.step(dt / 1000);
     const ink = g.options.mode === 'ink';
     g.render(scene, cloud, {
-      size: 1.1,
-      intensity: ink ? (small ? 1.8 : 1.15) : small ? 0.45 : 0.28,
+      // Ink particles render as soft discs so dense shapes print solid.
+      size: ink ? 2.1 : 1.1,
+      // Ink must cover more pixels on bigger screens to print as solid black.
+      intensity: ink ? (small ? 1.8 : 1.15) * Math.max(1, (vw * vh) / (1440 * 900)) : small ? 0.45 : 0.28,
       fog: [650, 2700],
       lens: ptr.x > -9000 ? { x: ptr.x, y: ptr.y, radius: 180, strength: 30 } : null,
       exposure: exposure * Math.min(1, (1 - g.options.trail) / 0.45),

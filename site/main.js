@@ -140,7 +140,7 @@ for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
     words.forEach((w, k) => w.classList.toggle('on', k === i));
     const [desc, code, ease] = items[i];
     $('#m-index').textContent = String(i + 1).padStart(2, '0');
-    animate('#m-desc', { text: { value: desc, type: 'scramble', chars: 'lower' } }, { duration: 0.5, ease: 'linear' });
+    animate('#m-desc', { text: { value: desc, type: 'scramble', chars: 'lower' } }, { duration: 0.3, ease: 'linear' });
     $('#m-code').textContent = `${code}  // ease: '${ease}'`;
     const dir = prev < i ? 1 : -1;
     const three = i === 5;
@@ -175,18 +175,20 @@ for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
   });
   let w = null, firstGrain = 0, grains = 0, started = false;
   const letterIds = new Set();
+  const bodies = [];
   const fit = () => {
     canvas.width = pin.clientWidth * dpr;
     canvas.height = pin.clientHeight * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    w?.refreshBounds();
+    w?.set({ bounds: [0, -3000, pin.clientWidth, pin.clientHeight - 26] });
   };
   const start = () => {
     if (started) return;
     started = true;
     fit();
     addEventListener('resize', fit);
-    w = world({ container: pin, gravity: [0, 2200], substeps: 4, iterations: 3, restitution: 0.25, friction: 0.12, damping: 0.02 });
+    // Open top (letters fall in from above), floor slightly above the fold so glyphs rest fully in view.
+    w = world({ container: pin, bounds: [0, -3000, pin.clientWidth, pin.clientHeight - 26], gravity: [0, 2200], substeps: 4, iterations: 3, restitution: 0.25, friction: 0.12, damping: 0.02 });
     // Letters enter one by one from above, spread across the width.
     const W = pin.clientWidth;
     letters.forEach((el, i) => {
@@ -195,11 +197,29 @@ for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
     });
     flush();
     letterIds.clear();
+    // Each letter is a rigid pair of circles stacked over the glyph's cap
+    // height, so tall letters stand, tip and tumble like real objects.
+    const host = pin.getBoundingClientRect();
     letters.forEach((el, i) => setTimeout(() => {
-      const [id] = w.bind(el, { rotate: true, radius: (e) => { const r = e.getBoundingClientRect(); return Math.min(r.width, r.height * 0.78) * 0.5; }, mass: 40 });
-      letterIds.add(id);
-      w.setVelocity(id, (Math.random() - 0.5) * 300, 200);
+      const b = el.getBoundingClientRect();
+      const capH = b.height * 0.72;
+      const r = Math.min(b.width * 0.46, capH * 0.32);
+      const cx = b.left - host.left + b.width / 2, cy = b.top - host.top + b.height * 0.53;
+      const off = capH / 2 - r;
+      const top = w.add(cx, cy - off, r, 40), bot = w.add(cx, cy + off, r, 40);
+      w.link(top, bot, { stiffness: 1 });
+      letterIds.add(top).add(bot);
+      bodies.push({ el, top, bot, w: b.width, h: b.height });
+      w.setVelocity(top, (Math.random() - 0.5) * 300, 200);
+      w.setVelocity(bot, (Math.random() - 0.5) * 300, 200);
     }, reduced ? 0 : 140 * i));
+    w.onStep(() => {
+      for (const o of bodies) {
+        const x = (w.x(o.top) + w.x(o.bot)) / 2, y = (w.y(o.top) + w.y(o.bot)) / 2;
+        const ang = Math.atan2(w.x(o.top) - w.x(o.bot), w.y(o.bot) - w.y(o.top));
+        set(o.el, { x: x - o.w / 2, y: y - o.h * 0.53, rotate: (ang * 180) / Math.PI });
+      }
+    });
     w.pointer({ mode: 'repel', radius: 130, strength: 9000 });
     w.dragging({ hitSlop: 20 });
     pin.addEventListener('click', (e) => {
