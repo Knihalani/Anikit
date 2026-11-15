@@ -71,3 +71,5 @@ export { presence, Presence, enter, exit } from './presence';
 export type { PresenceOptions } from './presence';
 export { viewTransition } from './viewtransition';
 export type { ViewTransitionOptions, ViewTransitionHandle } from './viewtransition';
+export { gesture, Gesture } from './gesture';
+export type { GestureOptions } from './gesture';

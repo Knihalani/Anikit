@@ -349,6 +349,20 @@ press('.btn', (el) => { animate(el, { scale: 0.95 }); return () => animate(el, {
 
 `Draggable` exposes `x`, `y`, `rotation`, `isDragging`, `enable()`, `disable()`, `setPosition()`, `kill()` and `revert()`.
 
+### Pinch, rotate and pan: `gesture`
+
+```ts
+const [g] = gesture('#photo', { minScale: 1, maxScale: 6, bounds: { minX: -400, maxX: 400, minY: -300, maxY: 300 } });
+gesture('.sticker', { type: 'pinch,rotate', onChange: (g) => save(g.scale, g.rotation) });
+gesture(canvas, { apply: false, onChange: ({ x, y, scale }) => view.set(x, y, scale) });   // drive anything
+```
+
+Two fingers zoom and rotate about their midpoint, and the point under the fingers stays there. One finger pans, and lifting a finger mid-gesture carries on smoothly with the other. Ctrl/⌘ + wheel (trackpad pinch) zooms about the pointer. A plain wheel still scrolls.
+
+- **Limits:** `minScale`, `maxScale` and `bounds` are rubber-banded while held (`edgeResistance`, default 0.35; scale resists in log space). On release the scale springs back about the last finger position, or the element glides with momentum (`inertia: false` to stop dead).
+- **Options:** `type` is any of `'pan,pinch,rotate'`. `apply: false` only reports through callbacks: `onStart`, `onChange`, `onEnd` (fingers up) and `onRest` (settled).
+- **The `Gesture` object** has `x`, `y`, `scale`, `rotation`, `pointers`, `isActive`, `set({ x, y, scale, rotation })`, `enable()`, `disable()`, `kill()` and `revert()`.
+
 ## Dev tools
 
 `inspector(animationOrTimeline)` opens a floating panel to play, pause, scrub, restart, loop, change speed and jump to labels. Space toggles playback.

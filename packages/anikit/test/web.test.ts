@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { animate, timeline, flip, presence, enter, exit, engine, viewTransition, compositor, scroll, splitText, mixColor } from '../src/index';
+import { animate, timeline, flip, presence, enter, exit, engine, viewTransition, compositor, scroll, splitText, mixColor, gesture } from '../src/index';
 import { setup, advance, box } from './setup';
 
 beforeAll(setup);
@@ -529,5 +529,93 @@ describe('complex values', () => {
     const v = at('rgba(0, 0, 0, 0.2) 0px 4px 12px 0px', '0 8px 24px rgba(0,0,0,.4), inset 0 0 0 2px rgb(255,0,0)', 0.5);
     expect(v).toBe('0px 6px 18px 0px rgba(0,0,0,0.3), inset 0px 0px 0px 1px rgba(255,0,0,0.5)');
     expect(at('none', '2px 2px red', 0.5)).toBe('1px 1px rgba(255,0,0,0.5)');
+  });
+});
+
+describe('gesture', () => {
+  /** A 200×200 box at the origin whose rect follows its translate/scale. */
+  function stage() {
+    const el = box();
+    (el as any).getBoundingClientRect = () => {
+      const m = /translate\(([-\d.]+)px,([-\d.]+)px\)/.exec(el.style.transform);
+      const sc = /scale\(([-\d.]+)/.exec(el.style.transform);
+      const t = [m ? +m[1] : 0, m ? +m[2] : 0, sc ? +sc[1] : 1];
+      const w = 200 * t[2];
+      const cx = 100 + t[0];
+      const cy = 100 + t[1];
+      return { left: cx - w / 2, top: cy - w / 2, width: w, height: w, right: cx + w / 2, bottom: cy + w / 2 } as DOMRect;
+    };
+    return el;
+  }
+  const ptr = (type: string, id: number, x: number, y: number, target: EventTarget = window) =>
+    target.dispatchEvent(new PointerEvent(type, { pointerId: id, clientX: x, clientY: y, bubbles: true, button: 0 }));
+
+  it('pinches about the fingers, keeping that point fixed', () => {
+    const el = stage();
+    const changes: number[] = [];
+    const [g] = gesture(el, { onChange: (s) => changes.push(s.scale) });
+    ptr('pointerdown', 1, 150, 150, el);
+    ptr('pointerdown', 2, 170, 150, el);
+    ptr('pointermove', 1, 140, 150);
+    ptr('pointermove', 2, 180, 150);
+    expect(g.scale).toBeCloseTo(2, 9);
+    expect(g.x).toBeCloseTo(-60, 9);
+    expect(g.y).toBeCloseTo(-50, 9);
+    expect(el.style.transform).toBe('translate(-60px,-50px) scale(2,2)');
+    ptr('pointerup', 1, 140, 150);
+    ptr('pointerup', 2, 180, 150);
+    expect(changes.length).toBeGreaterThan(0);
+    g.kill();
+  });
+
+  it('rotates with two fingers and pans with one', () => {
+    const el = stage();
+    const [g] = gesture(el, { inertia: false });
+    ptr('pointerdown', 1, 100, 50, el);
+    ptr('pointerdown', 2, 100, 150, el);
+    ptr('pointermove', 1, 50, 100);
+    ptr('pointermove', 2, 150, 100);
+    expect(g.rotation).toBeCloseTo(-90, 9);
+    expect(g.x).toBeCloseTo(0, 9);
+    ptr('pointerup', 2, 150, 100);
+    // One finger left: it pans from here.
+    ptr('pointermove', 1, 80, 130);
+    expect(g.x).toBeCloseTo(30, 9);
+    expect(g.y).toBeCloseTo(30, 9);
+    ptr('pointerup', 1, 80, 130);
+    g.kill();
+  });
+
+  it('rubber-bands past maxScale and springs back on release', () => {
+    const el = stage();
+    const [g] = gesture(el, { maxScale: 2, inertia: false });
+    ptr('pointerdown', 1, 90, 100, el);
+    ptr('pointerdown', 2, 110, 100, el);
+    ptr('pointermove', 1, 60, 100);
+    ptr('pointermove', 2, 140, 100); // ×4 requested
+    expect(g.scale).toBeCloseTo(2 * Math.pow(2, 0.35), 6);
+    ptr('pointerup', 1, 60, 100);
+    ptr('pointerup', 2, 140, 100);
+    advance(1.5);
+    expect(g.scale).toBeCloseTo(2, 2);
+    expect(el.style.transform).toMatch(/scale\(2,2\)|scale\(1\.99\d*,1\.99\d*\)/);
+    g.kill();
+  });
+
+  it('zooms with Ctrl + wheel about the pointer', () => {
+    const el = stage();
+    const [g] = gesture(el, { wheelSpeed: 0.01 });
+    const ev = new WheelEvent('wheel', { deltaY: -100, ctrlKey: true, clientX: 100, clientY: 100, cancelable: true });
+    // (happy-dom's WheelEvent drops modifier keys)
+    Object.defineProperties(ev, { ctrlKey: { value: true }, clientX: { value: 100 }, clientY: { value: 100 } });
+    el.dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBe(true);
+    expect(g.scale).toBeCloseTo(Math.E, 6);
+    expect(g.x).toBeCloseTo(0, 9);
+    // A plain wheel scrolls the page as usual.
+    const plain = new WheelEvent('wheel', { deltaY: -100, cancelable: true });
+    el.dispatchEvent(plain);
+    expect(plain.defaultPrevented).toBe(false);
+    g.kill();
   });
 });
