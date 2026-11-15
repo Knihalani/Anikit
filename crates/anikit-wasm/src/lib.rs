@@ -2028,6 +2028,18 @@ pub extern "C" fn ak_raster_sky(id: u32, sun: f64) {
         r.sky(&vp, &light, sun as f32);
     }
 }
+/// Depth of field (see `Raster::depth_of_field`). f64 buffer: viewProj(16).
+#[no_mangle]
+pub extern "C" fn ak_raster_dof(id: u32, focus: f64, aperture: f64, max_px: f64) {
+    let s = st();
+    if s.f64_buf.len() < 16 {
+        return;
+    }
+    let vp: anikit_core::raster::M4 = core::array::from_fn(|i| s.f64_buf[i] as f32);
+    if let Some(Some((r, _))) = s.rasters.get_mut(id as usize) {
+        r.depth_of_field(&vp, focus as f32, aperture as f32, max_px as f32);
+    }
+}
 /// Reset the depth buffer only (mirror passes).
 #[no_mangle]
 pub extern "C" fn ak_raster_clear_depth(id: u32) {

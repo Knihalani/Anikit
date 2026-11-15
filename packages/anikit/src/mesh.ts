@@ -421,6 +421,12 @@ export class Renderer3D {
      * (angular size, ~1–4). Drawn after opaque geometry, before additive items and points.
      */
     skybox?: boolean | { sun?: number };
+    /**
+     * Depth of field: `focus` = distance from the camera that is sharp, `aperture` = blur in
+     * px for things at infinity (≈ 8–40), `max` caps the blur (default 3% of the width).
+     * Applied after everything is drawn (points too), before motion blur.
+     */
+    dof?: { focus: number; aperture?: number; max?: number };
   } = {}): Uint8ClampedArray {
     const t0 = performance.now();
     const w = core();
@@ -479,6 +485,11 @@ export class Renderer3D {
       if (!light(item)) continue;
       if ('points' in item) this.drawPoints(item, matrix, eye);
       else drawMesh(item, matrix, eye, 0);
+    }
+    if (o.dof) {
+      const at = f64Buf(16);
+      F64.set(matrix, at);
+      w.ak_raster_dof(this.id, o.dof.focus, o.dof.aperture ?? 16, o.dof.max ?? this.width * 0.03);
     }
     if (o.motionBlur && this.prevMatrix) {
       const mb = o.motionBlur === true ? {} : o.motionBlur;

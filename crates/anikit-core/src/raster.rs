@@ -1218,6 +1218,136 @@ impl Raster {
     }
 }
 
+impl Raster {
+    /// Depth of field: a thin-lens blur whose circle of confusion is
+    /// `aperture · |d − focus| / d` pixels (d = view distance from the depth
+    /// buffer; background counts as infinitely far), capped at `max_px`.
+    /// Gathered at half resolution with a 16-tap golden-angle disc, taps
+    /// weighted by their own blur so sharp foreground doesn't bleed into the
+    /// background, then blended over the sharp frame by each pixel's blur.
+    #[allow(clippy::needless_range_loop)]
+    pub fn depth_of_field(&mut self, vp: &M4, focus: f32, aperture: f32, max_px: f32) {
+        let m64: crate::space::Mat4 = core::array::from_fn(|i| vp[i] as f64);
+        let Some(inv) = crate::space::invert(&m64) else { return };
+        let inv: M4 = core::array::from_fn(|i| inv[i] as f32);
+        let (w, h) = (self.width, self.height);
+        if w < 4 || h < 4 {
+            return;
+        }
+        let (bw, bh) = (w / 2, h / 2);
+        let (fw, fh) = (w as f32 * 0.5, h as f32 * 0.5);
+        // CoC in half-res pixels per half-res pixel + half-res colour.
+        self.blur_src.clear();
+        self.blur_src.resize(bw * bh, 0);
+        let mut coc = vec![0f32; bw * bh];
+        let cmax = max_px * 0.5;
+        let mut any = false;
+        for by in 0..bh {
+            for bx in 0..bw {
+                let (x, y) = (bx * 2, by * 2);
+                let i = y * w + x;
+                let q = [self.color[i], self.color[i + 1], self.color[i + w], self.color[i + w + 1]];
+                let ch = |s: u32| ((q[0] >> s & 255) + (q[1] >> s & 255) + (q[2] >> s & 255) + (q[3] >> s & 255) + 2) >> 2;
+                self.blur_src[by * bw + bx] = ch(0) | ch(8) << 8 | ch(16) << 16;
+                let d = self.depth[i].min(self.depth[i + 1]).min(self.depth[i + w]).min(self.depth[i + w + 1]);
+                let c = if d.is_finite() {
+                    let (nx, ny) = ((x as f32 + 1.0) / fw - 1.0, 1.0 - (y as f32 + 1.0) / fh);
+                    let cw = inv[3] * nx + inv[7] * ny + inv[11] * d + inv[15];
+                    let iw = 1.0 / cw;
+                    let (wx, wy, wz) = ((inv[0] * nx + inv[4] * ny + inv[8] * d + inv[12]) * iw, (inv[1] * nx + inv[5] * ny + inv[9] * d + inv[13]) * iw, (inv[2] * nx + inv[6] * ny + inv[10] * d + inv[14]) * iw);
+                    let lin = (vp[3] * wx + vp[7] * wy + vp[11] * wz + vp[15]).max(1e-3);
+                    aperture * 0.5 * (lin - focus).abs() / lin
+                } else {
+                    aperture * 0.5
+                };
+                let c = c.min(cmax);
+                any |= c > 0.5;
+                coc[by * bw + bx] = c;
+            }
+        }
+        if !any {
+            return;
+        }
+        // Gather.
+        self.light.clear();
+        self.light.resize(bw * bh * 3, 0.0);
+        const N: usize = 16;
+        let golden = 2.399_963;
+        let taps: [(f32, f32); N] = core::array::from_fn(|k| {
+            let r = crate::math::sqrtf((k as f32 + 0.5) / N as f32);
+            let a = k as f32 * golden;
+            (r * libm::cosf(a), r * libm::sinf(a))
+        });
+        let (wi, hi) = (bw as isize - 1, bh as isize - 1);
+        let src = &self.blur_src;
+        for by in 0..bh {
+            for bx in 0..bw {
+                let j = by * bw + bx;
+                let c0 = src[j];
+                let rc = coc[j];
+                let o = j * 3;
+                if rc < 0.5 {
+                    self.light[o] = (c0 & 255) as f32;
+                    self.light[o + 1] = ((c0 >> 8) & 255) as f32;
+                    self.light[o + 2] = ((c0 >> 16) & 255) as f32;
+                    continue;
+                }
+                let mut acc = [(c0 & 255) as f32, ((c0 >> 8) & 255) as f32, ((c0 >> 16) & 255) as f32];
+                let mut tot = 1.0;
+                for &(tx, ty) in &taps {
+                    let (sx, sy) = (bx as f32 + 0.5 + tx * rc, by as f32 + 0.5 + ty * rc);
+                    let m = ((sy as isize).clamp(0, hi) as usize) * bw + (sx as isize).clamp(0, wi) as usize;
+                    // A tap only contributes if it is itself blurry enough to reach us.
+                    let dist = rc * crate::math::sqrtf(tx * tx + ty * ty);
+                    let wgt = ((coc[m] - dist) + 1.0).clamp(0.0, 1.0);
+                    if wgt <= 0.0 {
+                        continue;
+                    }
+                    let c = src[m];
+                    acc[0] += (c & 255) as f32 * wgt;
+                    acc[1] += ((c >> 8) & 255) as f32 * wgt;
+                    acc[2] += ((c >> 16) & 255) as f32 * wgt;
+                    tot += wgt;
+                }
+                let it = 1.0 / tot;
+                self.light[o] = acc[0] * it;
+                self.light[o + 1] = acc[1] * it;
+                self.light[o + 2] = acc[2] * it;
+            }
+        }
+        // Blend over the sharp frame by blur amount.
+        let lt = &self.light;
+        for y in 0..h {
+            let fy = ((y as f32 + 0.5) * 0.5 - 0.5).clamp(0.0, (bh - 1) as f32);
+            let y0 = fy as usize;
+            let y1 = (y0 + 1).min(bh - 1);
+            let ty = fy - y0 as f32;
+            for x in 0..w {
+                let a = ((coc[(y / 2).min(bh - 1) * bw + (x / 2).min(bw - 1)] - 0.25) * 1.5).clamp(0.0, 1.0);
+                if a <= 0.0 {
+                    continue;
+                }
+                let fx = ((x as f32 + 0.5) * 0.5 - 0.5).clamp(0.0, (bw - 1) as f32);
+                let x0 = fx as usize;
+                let x1 = (x0 + 1).min(bw - 1);
+                let tx = fx - x0 as f32;
+                let i = y * w + x;
+                let c = self.color[i];
+                let mut out = c & 0xff00_0000;
+                for ch in 0..3 {
+                    let s = |yy: usize, xx: usize| lt[(yy * bw + xx) * 3 + ch];
+                    let top = s(y0, x0) + (s(y0, x1) - s(y0, x0)) * tx;
+                    let bot = s(y1, x0) + (s(y1, x1) - s(y1, x0)) * tx;
+                    let b = top + (bot - top) * ty;
+                    let o = ((c >> (8 * ch)) & 255) as f32;
+                    out |= (((o + (b - o) * a) + 0.5) as u32).min(255) << (8 * ch);
+                }
+                self.color[i] = out;
+            }
+        }
+    }
+}
+
 /// Light points drawn into a [`Raster`] (stars, dust, sparks): additive,
 /// depth-tested against the solid geometry already drawn, and optionally
 /// streaked along their screen motion since the previous camera.
@@ -1905,5 +2035,26 @@ mod tests {
         assert_eq!(r.color[16 * 32 + 16] & 0xffffff, 0, "geometry untouched");
         assert!((r.color[0] >> 16) & 255 > 0 || r.color[0] & 255 > 0, "sky above");
         assert!((r.color[31 * 32] >> 8) & 255 > 0 || r.color[31 * 32] & 255 > 0, "ground below");
+    }
+
+    #[test]
+    fn depth_of_field_blurs_out_of_focus_only() {
+        let mut r = Raster::new(64, 64);
+        r.clear(0, 255);
+        // Stripes on a near cube: in focus they stay crisp, out of focus they blur.
+        let mut inst = ID.to_vec();
+        inst.extend_from_slice(&[1.0, 1.0, 1.0]);
+        let mat = Material { ambient: 0.0, diffuse: 0.0, specular: 0.0, rim: 0.0, lines: 4.0, line_color: [1.0; 3], grid: [6.0, 0.0], line_width: 0.15, ..Material::default() };
+        r.draw(&cube(), &inst, &vp(), [0.0, 0.0, 5.0], &mat, &Lighting::default(), true);
+        let row = |r: &Raster| (16..48).map(|x| (r.color[32 * 64 + x] & 255) as i32).collect::<Vec<_>>();
+        let contrast = |v: &[i32]| v.iter().max().unwrap() - v.iter().min().unwrap();
+        let sharp = contrast(&row(&r));
+        let mut a = Raster::new(64, 64);
+        a.color = r.color.clone();
+        a.depth = r.depth.clone();
+        a.depth_of_field(&vp(), 4.5, 0.0, 10.0);
+        assert_eq!(contrast(&row(&a)), sharp, "no aperture, no blur");
+        r.depth_of_field(&vp(), 40.0, 40.0, 10.0);
+        assert!(contrast(&row(&r)) < sharp, "out of focus blurs");
     }
 }
