@@ -322,17 +322,47 @@ export const engine = {
 // ---------------------------------------------------------------------------
 
 export type EasingFn = (t: number) => number;
+/**
+ * A spring used as an easing. Give either physical parameters
+ * (`stiffness`/`damping`/`mass`) or perceptual ones (`bounce`/`duration`).
+ */
 export interface SpringOptions {
+  /** Spring constant. Default 100; higher is snappier. */
   stiffness?: number;
+  /** Friction. Default 10; higher settles with less oscillation. */
   damping?: number;
+  /** Mass. Default 1; heavier is slower and swings further. */
   mass?: number;
+  /** Initial velocity, in units of the whole distance per second. Default 0. */
   velocity?: number;
   /** Perceptual: approximate visual duration in seconds. */
   duration?: number;
   /** Perceptual: 0 (no bounce) … 1 (very bouncy). */
   bounce?: number;
 }
-export type EasingInput = string | EasingFn | [number, number, number, number] | SpringOptions | undefined;
+type EaseCurve = 'Quad' | 'Cubic' | 'Quart' | 'Quint' | 'Sine' | 'Expo' | 'Circ' | 'Back' | 'Elastic' | 'Bounce';
+type GsapCurve = 'power1' | 'power2' | 'power3' | 'power4' | 'sine' | 'expo' | 'circ' | 'back' | 'elastic' | 'bounce';
+type SpringPreset = 'gentle' | 'wobbly' | 'stiff' | 'slow' | 'molasses' | 'snappy' | 'bouncy';
+/**
+ * Easing names with editor autocomplete. Any string the parser accepts also
+ * works (`EasingInput` allows every string): function forms such as
+ * `'cubic-bezier(.2,.8,.2,1)'`, `'steps(4, jump-start)'`, `'back.out(1.7)'`,
+ * `'spring(bounce: 0.3, duration: 0.6)'`, `'custom(M0,0 C…)'`, `'mirror(outBack)'`.
+ * Unknown names throw with a "did you mean" suggestion.
+ */
+export type EasingName =
+  | 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'step-start' | 'step-end'
+  | `${'in' | 'out' | 'inOut' | 'outIn'}${EaseCurve}`
+  | `ease${'In' | 'Out' | 'InOut'}${EaseCurve}`
+  | GsapCurve | `${GsapCurve}.${'in' | 'out' | 'inOut'}`
+  | 'spring' | SpringPreset | `spring.${SpringPreset}`
+  | 'anticipate' | 'wiggle' | 'shake' | 'slowmo' | 'rough';
+/**
+ * Anything accepted as an easing: a name or function string (see {@link EasingName}),
+ * a `(t) => number` function, a cubic-bezier `[x1, y1, x2, y2]`, or spring
+ * options `{ stiffness, damping, mass }` / `{ bounce, duration }`.
+ */
+export type EasingInput = EasingName | (string & {}) | EasingFn | [number, number, number, number] | SpringOptions | undefined;
 
 const easingCache = new Map<string, number>();
 const fnCache = new WeakMap<EasingFn, number>();
@@ -357,8 +387,11 @@ export function easingId(e: EasingInput, fallback = 'outQuad'): number {
     let id = fnCache.get(e);
     if (id === undefined) {
       const n = 1024;
+      // Sample first: user code must not run while the scratch buffer is reserved.
+      const samples = new Float64Array(n);
+      for (let i = 0; i < n; i++) samples[i] = e(i / (n - 1));
       const at = f64Buf(n);
-      for (let i = 0; i < n; i++) F64[at + i] = e(i / (n - 1));
+      F64.set(samples, at);
       id = core().ak_easing_table(n) >>> 0;
       fnCache.set(e, id);
     }

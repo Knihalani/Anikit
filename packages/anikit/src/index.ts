@@ -6,7 +6,7 @@
  * DOM with batched, dirty-only writes.
  */
 export { animate, from, fromTo, set, Animation } from './animate';
-export type { AnimateOptions, Props, PropValue, Keyframe, MotionPathOptions, FnValue, Scalar, TextOptions } from './animate';
+export type { AnimateOptions, Props, PropValue, Keyframe, MotionPathOptions, FnValue, Scalar, TextOptions, TransformProps } from './animate';
 export { resolveRandom } from './animate';
 export { timeline, Timeline, sequence, delayedCall } from './timeline';
 export type { TimelineOptions, Position, SequenceStep } from './timeline';
@@ -24,7 +24,7 @@ export { flip } from './flip';
 export type { FlipOptions, FlipState } from './flip';
 export { compositor, CompositorAnimation, cssEasing } from './compositor';
 export { engine, flush } from './core';
-export type { EasingInput, EasingFn, SpringOptions } from './core';
+export type { EasingInput, EasingName, EasingFn, SpringOptions } from './core';
 export { ready, init } from './wasm';
 export {
   morph, morphPlan, morphSequence, shapeToPath, pathData, pathLength, pathBounds, normalizePath, MotionPath,
@@ -40,7 +40,7 @@ export { context, matchMedia, Context } from './context';
 export type { Revertible } from './context';
 export { quickTo, quickSetter } from './quick';
 export { effects, effect, registerEffect, effectNames } from './effects';
-export type { EffectOptions, EffectFn } from './effects';
+export type { EffectOptions, EffectFn, EffectName } from './effects';
 export type { Playable, PlayState } from './playable';
 export { scrollTrigger, scrollTriggerBatch, ScrollTrigger, scrollTo, smoothScroll, refreshAll as refreshScrollTriggers } from './scrolltrigger';
 export type { ScrollTriggerOptions, ScrollToOptions, SmoothScrollOptions } from './scrolltrigger';

@@ -13,6 +13,8 @@ import { Targets, toTargets, stateOf, composeTransform, TargetState } from './pr
 import { inertia, PhysicsAnimation } from './spring';
 import { VelocityTracker } from './utils';
 import { track } from './context';
+import { checkKeys, checkTargets } from './debug';
+import type { OptionKeys } from './debug';
 import { prefersReduced } from './core';
 
 // ---------------------------------------------------------------------------
@@ -20,11 +22,17 @@ import { prefersReduced } from './core';
 // ---------------------------------------------------------------------------
 
 export interface Bounds {
+  /** Smallest x (transform px). */
   minX?: number;
+  /** Largest x (transform px). */
   maxX?: number;
+  /** Smallest y (transform px). */
   minY?: number;
+  /** Largest y (transform px). */
   maxY?: number;
+  /** Smallest rotation (degrees) for `type: 'rotate'`. */
   minRotation?: number;
+  /** Largest rotation (degrees) for `type: 'rotate'`. */
   maxRotation?: number;
 }
 
@@ -47,13 +55,21 @@ export interface DraggableOptions {
   lockAxis?: boolean;
   /** Minimum movement (px) before a drag starts — lets clicks through. Default 3. */
   minimumMovement?: number;
+  /** CSS cursor while hovering / dragging. Default `'grab'` / `'grabbing'`. */
   cursor?: string;
+  /** Pointer down on the target (before any movement). */
   onPress?: (d: Draggable, e: PointerEvent) => void;
+  /** Movement passed `minimumMovement`: the drag begins. */
   onDragStart?: (d: Draggable, e: PointerEvent) => void;
+  /** Every pointer move while dragging (`d.x`, `d.y`, `d.rotation` are current). */
   onDrag?: (d: Draggable, e: PointerEvent) => void;
+  /** Pointer released after a drag (before any inertia). */
   onDragEnd?: (d: Draggable, e: PointerEvent) => void;
+  /** Pointer released, whether or not it dragged. */
   onRelease?: (d: Draggable, e: PointerEvent) => void;
+  /** Every frame of the inertia glide. */
   onThrowUpdate?: (d: Draggable) => void;
+  /** The inertia glide came to rest. */
   onThrowComplete?: (d: Draggable) => void;
 }
 
@@ -267,9 +283,17 @@ export class Draggable {
   }
 }
 
+const DRAGGABLE_KEYS: OptionKeys<DraggableOptions> = {
+  type: 0, bounds: 0, edgeResistance: 0, inertia: 0, snap: 0, handle: 0, lockAxis: 0, minimumMovement: 0, cursor: 0,
+  onPress: 0, onDragStart: 0, onDrag: 0, onDragEnd: 0, onRelease: 0, onThrowUpdate: 0, onThrowComplete: 0,
+};
+
 /** Make elements draggable. Returns one {@link Draggable} per element. */
 export function draggable(targets: Targets, options?: DraggableOptions): Draggable[] {
-  return (toTargets(targets) as HTMLElement[]).map((el) => new Draggable(el, options));
+  checkKeys('draggable()', options, DRAGGABLE_KEYS);
+  const els = toTargets(targets) as HTMLElement[];
+  checkTargets('draggable()', targets, els.length);
+  return els.map((el) => new Draggable(el, options));
 }
 
 // ---------------------------------------------------------------------------
@@ -277,14 +301,20 @@ export function draggable(targets: Targets, options?: DraggableOptions): Draggab
 // ---------------------------------------------------------------------------
 
 export interface ObserverEvent {
+  /** Horizontal movement since the last event (px). */
   deltaX: number;
+  /** Vertical movement since the last event (px). */
   deltaY: number;
+  /** Horizontal velocity (px/s). */
   velocityX: number;
+  /** Vertical velocity (px/s). */
   velocityY: number;
+  /** The DOM event that produced this one. */
   event: Event;
 }
 
 export interface ObserverOptions {
+  /** Element (or selector) to listen on. Default: the window. */
   target?: Element | Window | string;
   /** Comma separated: 'wheel', 'touch', 'pointer', 'scroll'. Default 'wheel,touch,pointer'. */
   type?: string;
@@ -292,19 +322,32 @@ export interface ObserverOptions {
   tolerance?: number;
   /** Prevent default browser handling (e.g. page scroll) for wheel/touch. */
   preventDefault?: boolean;
-  /** Invert wheel direction semantics. */
+  /** Multiplier on wheel deltas (default 1; negative inverts). */
   wheelSpeed?: number;
+  /** Intent to see what is above (wheel up, swipe down). */
   onUp?: (e: ObserverEvent) => void;
+  /** Intent to see what is below (wheel down, swipe up). */
   onDown?: (e: ObserverEvent) => void;
+  /** Intent to see what is to the left. */
   onLeft?: (e: ObserverEvent) => void;
+  /** Intent to see what is to the right. */
   onRight?: (e: ObserverEvent) => void;
+  /** Any movement (deltas and velocities in `e`). */
   onChange?: (e: ObserverEvent) => void;
+  /** Pointer / touch down. */
   onPress?: (e: ObserverEvent) => void;
+  /** Pointer / touch up. */
   onRelease?: (e: ObserverEvent) => void;
+  /** Pointer / touch move while pressed. */
   onDrag?: (e: ObserverEvent) => void;
   /** Fires once input has been quiet for 150ms. */
   onStop?: (e: ObserverEvent) => void;
 }
+
+const OBSERVER_KEYS: OptionKeys<ObserverOptions> = {
+  target: 0, type: 0, tolerance: 0, preventDefault: 0, wheelSpeed: 0, onUp: 0, onDown: 0, onLeft: 0, onRight: 0,
+  onChange: 0, onPress: 0, onRelease: 0, onDrag: 0, onStop: 0,
+};
 
 /**
  * Normalise wheel, touch, pointer and scroll input into intent callbacks
@@ -314,6 +357,7 @@ export interface ObserverOptions {
  * below is `onDown`.
  */
 export function observer(options: ObserverOptions) {
+  checkKeys('observer()', options, OBSERVER_KEYS);
   const target: Element | Window =
     typeof options.target === 'string' ? document.querySelector(options.target) ?? window : options.target ?? window;
   const types = new Set((options.type ?? 'wheel,touch,pointer').split(/[\s,]+/));

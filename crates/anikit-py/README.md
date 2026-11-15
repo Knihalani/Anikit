@@ -22,6 +22,16 @@ for frame, t in anikit.render(fps=30):   # advances the engine, writes values
     print(frame, round(t, 3), box)
 ```
 
+Differences from the TypeScript API that trip people up:
+
+- Options are keyword arguments in `snake_case` (`repeat_delay`, `on_complete`, `color_space`); a typo raises `TypeError` with a suggestion.
+- `timeline.add(targets, props, position, **options)`: the **position is the third argument** (`"-=0.2"`, `"<"`, `"label+=0.1"`).
+- `stagger(0.05, from_="center")` (`from` is a Python keyword); an `int` first argument is a count and returns a list: `stagger(5, 0.1)`.
+- Nothing moves until you advance time: `anikit.tick(dt)`, `anikit.render(fps)` or `anikit.run_until_idle()`.
+- Unknown easings raise `ValueError` with the nearest name; durations of 100 s or more warn (they are usually milliseconds).
+
+Task-sized examples: the Python section of [docs/recipes.md](../../docs/recipes.md#python).
+
 ## Building
 
 The package is a [maturin](https://www.maturin.rs) mixed Rust/Python project

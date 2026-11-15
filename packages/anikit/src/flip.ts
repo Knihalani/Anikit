@@ -19,15 +19,20 @@
  * const state = flip.capture('.item'); reorder(); flip.from(state);
  * ```
  */
-import { Animation, AnimateOptions, Props } from './animate';
+import { Animation, AnimateOptions, Props, ANIMATE_KEYS } from './animate';
+import { checkTargets, checkKeys } from './debug';
+import type { OptionKeys } from './debug';
 import { Timeline } from './timeline';
 import { Playable } from './playable';
 import { Targets, toTargets, stateOf, flushTransforms, computed, isElement, markDirty } from './props';
 import { r3 } from './values';
 
 export interface FlipState {
+  /** The captured elements. */
   els: Element[];
+  /** Their boxes at capture time. */
   rects: DOMRect[];
+  /** Their inline opacity at capture time. */
   opacity: string[];
   /** Whether each element was rendered (not `display: none` / detached) at capture. */
   visible: boolean[];
@@ -35,6 +40,7 @@ export interface FlipState {
   ids: Array<string | null>;
   /** Where each element lived, so removed elements can animate out in place. */
   parents: Array<Node | null>;
+  /** Their next siblings at capture time (to put removed elements back for their exit). */
   nexts: Array<Node | null>;
   /** Computed `display` at capture (used to show hidden leaving elements). */
   display: string[];
@@ -68,6 +74,10 @@ export interface FlipOptions extends AnimateOptions {
    */
   correctRadius?: boolean;
 }
+
+const FLIP_KEYS: OptionKeys<Omit<FlipOptions, keyof AnimateOptions>> = {
+  scale: 0, fade: 0, enter: 0, leave: 0, onEnter: 0, onLeave: 0, targets: 0, id: 0, crossfade: 0, correctRadius: 0,
+};
 
 const defaultId = (el: Element) => el.getAttribute('data-flip-id');
 
@@ -523,7 +533,10 @@ function fromState(state: FlipState, options: FlipOptions = {}): Timeline {
  * animations (`await flip(...)` waits for all of them).
  */
 export function flip(targets: Targets, mutate: () => void, options?: FlipOptions): Timeline {
+  if (typeof mutate !== 'function') throw new Error('anikit: flip(targets, mutate, options?) needs a function that changes the layout as its second argument, e.g. flip(\'.item\', () => grid.classList.toggle(\'dense\')). For a captured state use flip.from(state, options).');
+  checkKeys('flip()', options, ANIMATE_KEYS, FLIP_KEYS);
   const state = capture(targets, options);
+  checkTargets('flip()', targets, state.els.length);
   mutate();
   return fromState(state, options);
 }

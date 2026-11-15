@@ -25,7 +25,9 @@ export interface FlightPathOptions {
 }
 
 export interface FlightPose {
+  /** Camera position on the path. */
   eye: [number, number, number];
+  /** Point the camera looks at, `lookAhead` further along. */
   target: [number, number, number];
   /** Bank angle in degrees (apply as the camera's `roll`). */
   roll: number;
@@ -111,7 +113,12 @@ export class FlightPath {
   }
 
   /** Camera pose at arc length `s`: position, look-at target ahead, and bank. */
-  at(s: number, o: { lookAhead?: number; bank?: number } = {}): FlightPose {
+  at(s: number, o: {
+    /** Look-at distance ahead along the path (default: the path's `lookAhead`). */
+    lookAhead?: number;
+    /** Banking strength (default: the path's `bank`). */
+    bank?: number;
+  } = {}): FlightPose {
     const ahead = o.lookAhead ?? this.o.lookAhead;
     const eye = this.point(s);
     const end = this.o.closed ? Infinity : this.length;

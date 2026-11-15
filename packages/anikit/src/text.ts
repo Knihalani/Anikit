@@ -15,14 +15,19 @@
  * ```
  */
 import { Targets, toTargets } from './props';
+import { checkKeys, checkTargets, warn, didYouMean } from './debug';
+import type { OptionKeys } from './debug';
 import { track } from './context';
 import type { Playable } from './playable';
 
 export interface SplitOptions {
-  /** Comma separated: 'chars', 'words', 'lines' (default 'words,chars'). */
+  /** Comma separated: `'chars'`, `'words'`, `'lines'`. Default `'words,chars'`. Lines are measured from the layout at split time. */
   type?: string;
+  /** Class added to every character span. */
   charClass?: string;
+  /** Class added to every word span. */
   wordClass?: string;
+  /** Class added to every line wrapper (with `type` including `'lines'`). */
   lineClass?: string;
   /**
    * Wrap every line / word / char in a clipping element (`overflow: clip`),
@@ -45,8 +50,11 @@ export interface SplitOptions {
 }
 
 export interface SplitResult {
+  /** One span per character (grapheme). */
   chars: HTMLElement[];
+  /** One span per word. */
   words: HTMLElement[];
+  /** One wrapper per rendered line (when `type` includes `'lines'`). */
   lines: HTMLElement[];
   /** Clipping wrappers (with `mask`). */
   masks: HTMLElement[];
@@ -169,9 +177,19 @@ function splitOne(el: HTMLElement, options: SplitOptions, out: Pieces): () => vo
   };
 }
 
+const SPLIT_KEYS: OptionKeys<SplitOptions> = {
+  type: 0, charClass: 0, wordClass: 0, lineClass: 0, mask: 0, maskClass: 0, autoSplit: 0, onSplit: 0,
+};
+const SPLIT_TYPES = ['chars', 'words', 'lines'];
+
 /** Split every target; results are concatenated across targets. */
 export function splitText(targets: Targets, options: SplitOptions = {}): SplitResult {
+  checkKeys('splitText()', options, SPLIT_KEYS);
+  for (const t of (options.type ?? 'words,chars').split(/[\s,]+/).filter(Boolean)) {
+    if (!SPLIT_TYPES.includes(t)) warn(`splitText(): unknown type "${t}"; use 'chars', 'words' and/or 'lines' (e.g. type: 'lines,words,chars').${didYouMean(t, SPLIT_TYPES)}`);
+  }
   const els = toTargets(targets) as HTMLElement[];
+  checkTargets('splitText()', targets, els.length);
   let restores: Array<() => void> = [];
   let anim: Playable | null = null;
   let ro: ResizeObserver | null = null;

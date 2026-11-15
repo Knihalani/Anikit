@@ -20,6 +20,8 @@ import { Animation, AnimateOptions, Props, Keyframe, Chain, PropValue } from './
 import type { Targets as _T } from './props';
 import { Playable, Callbacks, Linked } from './playable';
 import { Targets } from './props';
+import { warn, warningsOn, checkKeys, checkSeconds } from './debug';
+import type { OptionKeys } from './debug';
 
 /**
  * Where to place a child (seconds):
@@ -31,20 +33,28 @@ import { Targets } from './props';
 export type Position = number | string;
 
 export interface TimelineOptions extends Callbacks<Timeline> {
+  /** Seconds before the timeline starts. Default 0. */
   delay?: number;
   /** Extra iterations (`Infinity` / -1 loops forever). */
   repeat?: number;
   /** Pause after each iteration (seconds). */
   repeatDelay?: number;
+  /** Play every other iteration backwards (with `repeat`). Default false. */
   yoyo?: boolean;
+  /** Playback rate. Default 1; negative plays backwards. */
   speed?: number;
   /** Easing applied to the timeline's overall progress. */
   ease?: EasingInput;
   /** Start automatically (default true). */
   autoplay?: boolean;
-  /** Default options for every child animation. */
+  /** Default options for every child added with `add()` / `to()` / `from()`, e.g. `{ duration: 0.4, ease: 'outCubic' }`. */
   defaults?: AnimateOptions;
 }
+
+const TIMELINE_KEYS: OptionKeys<TimelineOptions> = {
+  delay: 0, repeat: 0, repeatDelay: 0, yoyo: 0, speed: 0, ease: 0, autoplay: 0, defaults: 0,
+  onStart: 0, onUpdate: 0, onComplete: 0, onRepeat: 0, onReverseComplete: 0,
+};
 
 type Child = { ctl: Playable | null; start: number; end: number; h: number };
 
@@ -94,6 +104,12 @@ export class Timeline extends Playable {
   constructor(options: TimelineOptions = {}) {
     super(options);
     this._opts = options;
+    if (warningsOn()) {
+      checkKeys('timeline()', options, TIMELINE_KEYS);
+      checkSeconds('timeline()', 'delay', options.delay);
+      checkSeconds('timeline()', 'repeatDelay', options.repeatDelay);
+      if (options.defaults && 'at' in options.defaults) warn('timeline(): "at" is a sequence() step option, not a default; it is ignored.');
+    }
     whenReady(() => {
       const o = options;
       const repeat = o.repeat === undefined ? 0 : o.repeat < 0 ? Infinity : o.repeat;
@@ -169,11 +185,18 @@ export class Timeline extends Playable {
 
   /**
    * Add an animation (or a nested timeline / existing animation / function).
-   * `add(targets, keyframes, options?, position?)`, `add(animation, position?)`,
+   * `add(targets, keyframes, options?, position?)` (or `add(targets, keyframes, position)`),
+   * `add(animation, position?)`,
    * `add(() => {...}, position?)`.
    */
-  add(targets: Targets | Playable | (() => void), keyframes?: Props | Keyframe[] | Position, options?: AnimateOptions, position?: Position): this {
+  add(targets: Targets | Playable | (() => void), keyframes?: Props | Keyframe[] | Position, options?: AnimateOptions | Position, position?: Position): this {
     if (typeof targets === 'function') return this.call(targets as () => void, keyframes as Position);
+    // GSAP habit: `tl.add(el, { x: 100 }, '-=0.2')`; a position in the options slot.
+    if (typeof options === 'string' || typeof options === 'number') {
+      if (position !== undefined) warn(`timeline.add(): got two positions (${JSON.stringify(options)} and ${JSON.stringify(position)}); the third argument should be the options object.`);
+      position = options;
+      options = undefined;
+    }
     if (targets instanceof Playable) {
       const child = targets;
       const pos = keyframes as Position | undefined;
@@ -197,18 +220,20 @@ export class Timeline extends Playable {
   }
 
   /** Alias of {@link add}. */
-  to(targets: Targets, keyframes: Props | Keyframe[], options?: AnimateOptions, position?: Position): this {
+  to(targets: Targets, keyframes: Props | Keyframe[], options?: AnimateOptions | Position, position?: Position): this {
     return this.add(targets, keyframes, options, position);
   }
 
   /** Animate from the given values to the current/chained ones. */
-  from(targets: Targets, values: Props, options: AnimateOptions = {}, position?: Position): this {
+  from(targets: Targets, values: Props, options: AnimateOptions | Position = {}, position?: Position): this {
+    if (typeof options !== 'object') [position, options] = [options, {}];
     const kf: Props = {};
     for (const k of Object.keys(values)) kf[k] = [values[k], null] as PropValue;
     return this.add(targets, kf, { immediateRender: true, ...options }, position);
   }
 
-  fromTo(targets: Targets, fromValues: Props, toValues: Props, options: AnimateOptions = {}, position?: Position): this {
+  fromTo(targets: Targets, fromValues: Props, toValues: Props, options: AnimateOptions | Position = {}, position?: Position): this {
+    if (typeof options !== 'object') [position, options] = [options, {}];
     const kf: Props = {};
     for (const k of Object.keys(toValues)) kf[k] = k in fromValues ? ([fromValues[k], toValues[k]] as PropValue) : toValues[k];
     return this.add(targets, kf, { immediateRender: true, ...options }, position);

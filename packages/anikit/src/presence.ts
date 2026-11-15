@@ -15,7 +15,9 @@
  * exit('.toast');                 // standalone: fade out, then remove
  * ```
  */
-import { animate, AnimateOptions, Animation, Props } from './animate';
+import { animate, AnimateOptions, Animation, Props, ANIMATE_KEYS } from './animate';
+import { checkKeys, selectorHint } from './debug';
+import type { OptionKeys } from './debug';
 import { flip, FlipOptions, cancelLeave, isLeaving } from './flip';
 import { Playable } from './playable';
 import { track } from './context';
@@ -189,7 +191,10 @@ export class Presence {
    * Swap `oldEl` for `newEl`. `mode: 'sync'` (default) runs exit and entrance
    * together; `'wait'` lets the exit finish first.
    */
-  async replace(oldEl: Element, newEl: Element, options: { mode?: 'sync' | 'wait' } = {}): Promise<void> {
+  async replace(oldEl: Element, newEl: Element, options: {
+    /** `'sync'` (default): out and in together; `'wait'`: out, then in. */
+    mode?: 'sync' | 'wait';
+  } = {}): Promise<void> {
     const next = oldEl.nextSibling;
     if (options.mode === 'wait') {
       await this.remove(oldEl);
@@ -225,8 +230,11 @@ export class Presence {
  * Manage enter/exit animations for the children of `container`.
  * See {@link Presence} for `add`, `remove`, `toggle` and `replace`.
  */
+const PRESENCE_KEYS: OptionKeys<Omit<PresenceOptions, keyof AnimateOptions>> = { enter: 0, exit: 0, layout: 0, after: 0 };
+
 export function presence(container: Element | string, options?: PresenceOptions): Presence {
+  checkKeys('presence()', options, ANIMATE_KEYS, PRESENCE_KEYS);
   const el = typeof container === 'string' ? document.querySelector(container) : container;
-  if (!el) throw new Error(`anikit: presence() container "${String(container)}" not found.`);
+  if (!el) throw new Error(`anikit: presence() container "${String(container)}" not found.${typeof container === 'string' ? selectorHint(container) : ' (got null: a querySelector() or ref that found nothing?)'}`);
   return new Presence(el, options);
 }

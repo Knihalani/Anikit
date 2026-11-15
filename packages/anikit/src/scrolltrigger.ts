@@ -17,17 +17,23 @@ import { Targets, toTargets } from './props';
 import { spring, PhysicsAnimation } from './spring';
 import { animate, AnimateOptions, Animation } from './animate';
 import { track } from './context';
-import { warn } from './debug';
+import { warn, warningsOn, checkKeys, checkSeconds, checkTargets, didYouMean, selectorHint } from './debug';
+import type { OptionKeys } from './debug';
 import { Timeline } from './timeline';
 
 type Action = 'play' | 'pause' | 'resume' | 'reset' | 'restart' | 'complete' | 'reverse' | 'none';
-type Pos = string | number | ((self: ScrollTrigger) => number);
+type Edge = 'top' | 'center' | 'bottom';
+/** `"<trigger edge> <viewport edge>"` (autocompletes the common pairs; offsets such as `'top+=20 80%'` or `'+=600'` work too), px, or a function. */
+type Pos = `${Edge} ${Edge}` | `${Edge} ${number}%` | (string & {}) | number | ((self: ScrollTrigger) => number);
+/** Four actions for onEnter, onLeave, onEnterBack, onLeaveBack. */
+type ToggleActions = `${Action} ${Action} ${Action} ${Action}` | (string & {});
 
 export interface ScrollTriggerOptions {
   /** Element whose position defines start/end (default: the scroller itself, i.e. page progress). */
   trigger?: Element | string;
   /** Scroll container (default: the page). */
   scroller?: Element | Window | string;
+  /** Measure along the x axis (horizontal scrollers). Default false. */
   horizontal?: boolean;
   /**
    * `"<trigger edge> <viewport edge>"`, edges: top/center/bottom (left/right
@@ -37,12 +43,20 @@ export interface ScrollTriggerOptions {
   start?: Pos;
   /** As `start`, or `'+=500'` relative to the start. Default `'bottom top'`. */
   end?: Pos;
-  /** Animation / timeline controlled by this trigger. */
+  /**
+   * Animation or timeline controlled by this trigger (it is paused for you; creating it with `autoplay: false` avoids a first-frame flash).
+   * One per trigger; for one trigger per element use `scrollTriggerBatch()`.
+   */
   animation?: Playable;
   /** Link progress to scroll: `true`, or a smoothing lag in seconds. */
   scrub?: boolean | number;
-  /** `onEnter onLeave onEnterBack onLeaveBack` actions, e.g. `'play pause resume reset'`. */
-  toggleActions?: string;
+  /**
+   * Four actions for `onEnter onLeave onEnterBack onLeaveBack`, each one of
+   * play / pause / resume / reverse / restart / reset / complete / none.
+   * Default `'play none none none'`. Ignored with `scrub`.
+   * @example toggleActions: 'play none none reverse'   // reverse when scrolling back above the start
+   */
+  toggleActions?: ToggleActions;
   /** Pin an element (default the trigger) while active. */
   pin?: boolean | Element | string;
   /** Add padding so following content waits for the pin (default true). */
@@ -55,12 +69,19 @@ export interface ScrollTriggerOptions {
   markers?: boolean | { color?: string };
   /** Run once, then kill the trigger after the first enter. */
   once?: boolean;
+  /** Scrolling down past `start`. */
   onEnter?: (self: ScrollTrigger) => void;
+  /** Scrolling down past `end`. */
   onLeave?: (self: ScrollTrigger) => void;
+  /** Scrolling up past `end` (back into the range). */
   onEnterBack?: (self: ScrollTrigger) => void;
+  /** Scrolling up past `start` (out of the range). */
   onLeaveBack?: (self: ScrollTrigger) => void;
+  /** `isActive` changed. */
   onToggle?: (self: ScrollTrigger) => void;
+  /** Progress changed (`self.progress`, 0–1; `self.direction` 1 or -1). */
   onUpdate?: (self: ScrollTrigger) => void;
+  /** Positions were re-measured (load, resize, `refreshScrollTriggers()`). */
   onRefresh?: (self: ScrollTrigger) => void;
 }
 
@@ -146,6 +167,37 @@ function parseEdge(tok: string, size: number): number {
   return v;
 }
 
+const SCROLLTRIGGER_KEYS: OptionKeys<ScrollTriggerOptions> = {
+  trigger: 0, scroller: 0, horizontal: 0, start: 0, end: 0, animation: 0, scrub: 0, toggleActions: 0, pin: 0,
+  pinSpacing: 0, snap: 0, toggleClass: 0, markers: 0, once: 0, onEnter: 0, onLeave: 0, onEnterBack: 0,
+  onLeaveBack: 0, onToggle: 0, onUpdate: 0, onRefresh: 0,
+};
+const ACTIONS = ['play', 'pause', 'resume', 'reverse', 'restart', 'reset', 'complete', 'none'];
+const POS_TOKEN = /^(?:[+-]=)?(?:top|center|bottom|left|right|-?[\d.]+(?:px|%)?)(?:[+-]=?[\d.]+(?:px|%)?)?$/i;
+
+/** Construction-time checks with actionable messages (warnings on only). */
+function checkScrollTrigger(o: ScrollTriggerOptions, api = 'scrollTrigger()'): void {
+  checkKeys(api, o, SCROLLTRIGGER_KEYS);
+  for (const name of ['start', 'end'] as const) {
+    const v = o[name];
+    if (typeof v !== 'string') continue;
+    for (const tok of v.trim().split(/\s+/)) {
+      if (!POS_TOKEN.test(tok)) {
+        warn(`${api}: "${tok}" in ${name}: "${v}" isn't understood. Write "<trigger edge> <viewport edge>" with top / center / bottom (left / right when horizontal), px or %, e.g. "top 80%", "center center", "bottom+=100 top", or "+=600" for an end relative to the start.${didYouMean(tok.replace(/[+-]=?.*$/, ''), Object.keys(EDGE))}`);
+      }
+    }
+  }
+  if (o.toggleActions !== undefined) {
+    const parts = o.toggleActions.trim().split(/\s+/);
+    const bad = parts.filter((p) => !ACTIONS.includes(p));
+    if (parts.length > 4 || bad.length) {
+      warn(`${api}: toggleActions "${o.toggleActions}" should be four of ${ACTIONS.join(' / ')} (for onEnter, onLeave, onEnterBack, onLeaveBack), e.g. "play none none reverse".${bad[0] ? didYouMean(bad[0], ACTIONS) : ''}`);
+    }
+    if (o.scrub) warn(`${api}: toggleActions is ignored when scrub is set (the scroll position drives the animation).`);
+  }
+  if (typeof o.scrub === 'number') checkSeconds(api, 'scrub', o.scrub, 10);
+}
+
 // ---------------------------------------------------------------------------
 // ScrollTrigger
 // ---------------------------------------------------------------------------
@@ -203,12 +255,18 @@ export class ScrollTrigger {
   private smoothOpts: Parameters<typeof spring>[2];
 
   constructor(options: ScrollTriggerOptions) {
+    if (warningsOn()) checkScrollTrigger(options);
+    if (typeof options.animation === 'function') {
+      throw new Error('anikit: scrollTrigger({ animation }) takes an animation or timeline (created with autoplay: false), not a function. For one trigger per element with a factory, use scrollTriggerBatch(targets, { animation: (el) => … }).');
+    }
     this.o = options;
     this.scroller = resolveScroller(options.scroller);
     this.horizontal = !!options.horizontal;
     const tr = options.trigger;
     this.trigger = typeof tr === 'string' ? document.querySelector(tr) : tr ?? null;
-    if (typeof tr === 'string' && !this.trigger) warn(`scrollTrigger: trigger "${tr}" matched no element; using the whole scroll range.`);
+    if (typeof tr === 'string' && !this.trigger) warn(`scrollTrigger: trigger "${tr}" matched no element; using the whole scroll range.${selectorHint(tr)}`);
+    else if (tr === null) warn('scrollTrigger: trigger is null (a querySelector() or ref that found nothing?); using the whole scroll range.');
+    if (options.pin === true && !this.trigger) warn('scrollTrigger: pin: true pins the trigger element, but there is no trigger; nothing is pinned. Pass trigger, or pin: element.');
     options.animation?.pause();
     this.smoothOpts = {
       duration: (typeof options.scrub === 'number' ? options.scrub : 0) * 4, bounce: 0, restDelta: 1e-4, restSpeed: 1e-3,
@@ -499,7 +557,12 @@ export function scrollTrigger(options: ScrollTriggerOptions): ScrollTrigger {
  * its own animation built by `animation(el, index)`.
  */
 export function scrollTriggerBatch(targets: Targets, options: Omit<ScrollTriggerOptions, 'trigger' | 'animation'> & { animation?: (el: Element, i: number) => Playable }): ScrollTrigger[] {
-  return (toTargets(targets) as Element[]).map((el, i) => new ScrollTrigger({ ...options, trigger: el, animation: options.animation?.(el, i) }));
+  if (options.animation !== undefined && typeof options.animation !== 'function') {
+    throw new Error('anikit: scrollTriggerBatch({ animation }) takes a function (el, index) => animation, called once per element. To control one existing animation, use scrollTrigger({ trigger, animation }).');
+  }
+  const els = toTargets(targets) as Element[];
+  checkTargets('scrollTriggerBatch()', targets, els.length);
+  return els.map((el, i) => new ScrollTrigger({ ...options, trigger: el, animation: options.animation?.(el, i) }));
 }
 
 // ---------------------------------------------------------------------------
@@ -507,7 +570,9 @@ export function scrollTriggerBatch(targets: Targets, options: Omit<ScrollTrigger
 // ---------------------------------------------------------------------------
 
 export interface ScrollToOptions extends AnimateOptions {
+  /** Element (or selector) to scroll. Default: the page. */
   container?: Element | Window | string;
+  /** Scroll along x. Default false. */
   horizontal?: boolean;
   /** Pixels to subtract from an element target (e.g. a fixed header). */
   offset?: number;
@@ -525,6 +590,7 @@ export function scrollTo(target: number | Element | string | 'max', options: Scr
   else if (target === 'max') pos = maxScroll(container, h);
   else {
     const t = typeof target === 'string' ? document.querySelector(target) : target;
+    if (!t) warn(typeof target === 'string' ? `scrollTo(): "${target}" matched no element; not scrolling.${selectorHint(target)}` : 'scrollTo(): the target element is null; not scrolling.');
     if (!t) pos = scrollPos(container, h);
     else {
       const r = t.getBoundingClientRect();
@@ -576,8 +642,11 @@ export interface SmoothScrollOptions {
   wheelMultiplier?: number;
   /** Also smooth touch scrolling (default false: native touch momentum is better). */
   touch?: boolean;
+  /** Called with the scroll position (px) every frame it moves. */
   onUpdate?: (scroll: number) => void;
 }
+
+const SMOOTH_KEYS: OptionKeys<SmoothScrollOptions> = { smooth: 0, wheelMultiplier: 0, touch: 0, onUpdate: 0 };
 
 /**
  * Inertial page scrolling for wheel/trackpad input (Lenis-style): the wheel
@@ -585,6 +654,7 @@ export interface SmoothScrollOptions {
  * damped spring. Keyboard, scrollbar and anchor jumps keep working.
  */
 export function smoothScroll(options: SmoothScrollOptions = {}) {
+  checkKeys('smoothScroll()', options, SMOOTH_KEYS);
   if (typeof window === 'undefined') return { stop() {}, start() {}, scrollTo() {}, destroy() {}, revert() {} };
   const el = (document.scrollingElement || document.documentElement) as Element;
   const proxy = { y: window.scrollY };

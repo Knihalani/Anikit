@@ -12,7 +12,8 @@
 import { core, readStr, whenReady } from './wasm';
 import { easingId, easingDuration, EasingInput, LINEAR, prefersReduced } from './core';
 import { track } from './context';
-import { AnimateOptions, Props, FnValue, Scalar } from './animate';
+import { AnimateOptions, Props, FnValue, Scalar, ANIMATE_KEYS } from './animate';
+import { checkKeys, checkSeconds, checkTargets } from './debug';
 import { Targets, toTargets, classify, Kind, readValue, stateOf, composeTransform, TargetState, isTransform, transformUnit, kebab } from './props';
 import { parseValue } from './values';
 
@@ -140,11 +141,14 @@ export class CompositorAnimation implements PromiseLike<void> {
 
 /** Animate on the compositor thread (transform, opacity, filter, colours, …). */
 export function compositor(targets: Targets, props: Props, options: AnimateOptions = {}): CompositorAnimation {
+  checkKeys('compositor()', options, ANIMATE_KEYS);
+  checkSeconds('compositor()', 'duration', options.duration);
   const ctl = new CompositorAnimation();
   whenReady(() => {
     const list: globalThis.Animation[] = [];
     const els = toTargets(targets).filter((t): t is Element => typeof Element !== 'undefined' && t instanceof Element);
     const n = els.length;
+    checkTargets('compositor()', targets, n);
     const ease = (Array.isArray(options.ease) && typeof options.ease[0] !== 'number' ? options.ease[0] : options.ease) as EasingInput;
     const easing = cssEasing(ease ?? 'outQuad');
     const reduce = prefersReduced();

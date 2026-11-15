@@ -8,7 +8,7 @@ Anikit is an animation engine: a `no_std` Rust core compiled to WebAssembly (Typ
 |---|---|---|
 | `crates/anikit-core` | Engine: timing, easing, springs, colour, paths, morph, timelines, batches, physics `world`, 3D `space`, particle `cloud`, `splat` renderer, `raster` (solid 3D), `emitter`, `audio`, `video` (blur, I420, grade), `gif` encoder, noise | `cargo test -p anikit-core` · `cargo clippy -p anikit-core -- -D warnings` |
 | `crates/anikit-wasm` | C‑ABI WebAssembly shim (`ak_*` exports, no wasm‑bindgen). Inputs go through a scratch buffer; outputs are read from linear memory. | `cargo clippy -p anikit-wasm -- -D warnings` |
-| `packages/anikit` | TypeScript API + DOM layer (`src/`), vitest + happy‑dom tests (`test/`), build and bench scripts | `npm test` · `npx tsc --noEmit` · `node scripts/build.mjs` |
+| `packages/anikit` | TypeScript API + DOM layer (`src/`), vitest + happy‑dom tests (`test/`), build and bench scripts | `npm test` · `npm run typecheck` (tsc + doc examples + JSDoc) · `node scripts/build.mjs` |
 | `crates/anikit-py` | PyO3 bindings + high‑level Python API | `. .venv/bin/activate && maturin develop --release && pytest` |
 | `examples/`, `site/` | Browser demos and the landing page (import `../packages/anikit/dist/anikit.js`) | build the TS package, then open in a browser (Playwright works headless) |
 
@@ -20,7 +20,10 @@ Anikit is an animation engine: a `no_std` Rust core compiled to WebAssembly (Typ
    - bulk data goes through `ak_f64_buf` / `ak_u8_buf`;
    - results are written to the f64 buffer, or exposed as pointers into stable buffers.
 3. Add the typing in `packages/anikit/src/wasm.ts` (`Exports`), and build the TS API in its own module. Export it from `src/index.ts` and add a vitest test.
-4. Run `node scripts/build-wasm.mjs` before TS tests whenever Rust changed. It regenerates `src/generated/wasm-bytes.ts`, which is gitignored.
+   - Document every new export in `docs/api.md` with an example: `npm run typecheck` fails otherwise (it runs `scripts/check-docs.mjs`, which type-checks the examples in `docs/api.md`, `docs/recipes.md` and `packages/anikit/AGENTS.md`, and `scripts/check-jsdoc.mjs`, which requires JSDoc on every member of exported interfaces).
+   - New option keys go in the interface **and** its `OptionKeys<T>` table next to it (e.g. `ANIMATE_KEYS`, `TIMELINE_KEYS`); the compiler keeps them in sync, and the table drives the "unknown option" warnings.
+   - Validate user input at construction with the helpers in `src/debug.ts` (`checkKeys`, `checkSeconds`, `checkTargets`, `warn`); never in `tick`/`render`/`apply`/`flush`. Test warnings with `testing.captureWarnings()`.
+4. Run `node scripts/build-wasm.mjs` before TS tests whenever Rust changed. It regenerates `src/generated/wasm-bytes.ts`, which is gitignored. After doc changes, `node scripts/build-llms.mjs` regenerates `llms.txt`/`llms-full.txt`; `npm run docs:browser` runs the recipes in Chromium.
 5. Python: bind it in `crates/anikit-py/src/lib.rs`, then the high‑level API in `python/anikit/`. Keep `_anikit.pyi` in sync.
 
 ## Invariants (don't break these)

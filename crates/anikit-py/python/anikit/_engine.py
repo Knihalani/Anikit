@@ -11,7 +11,7 @@ import weakref
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, List, Mapping, Optional, Sequence, Set, Tuple
 
 from . import _anikit
-from ._easing import Easing, EasingLike
+from ._easing import Easing, EasingLike, _parse
 from ._values import MISSING, Kind, MotionKind, plan_track, read, setter_for
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -220,7 +220,11 @@ class Engine:
         if e is None:
             return _LINEAR
         if isinstance(e, str):
-            return self.core.easing(e)
+            try:
+                return self.core.easing(e)
+            except ValueError:
+                _parse(e)  # raises with a "did you mean" suggestion
+                raise
         if isinstance(e, Easing):
             native = e.native
         elif isinstance(e, _anikit.NativeEasing):

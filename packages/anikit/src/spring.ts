@@ -19,16 +19,20 @@ import {
 import { parseValue, parseColor, r3 } from './values';
 import { Binding, bind, apply, custom } from './bind';
 import { track } from './context';
-import { describe } from './debug';
+import { describe, checkKeys, checkSeconds, checkTargets } from './debug';
+import type { OptionKeys } from './debug';
 import { snapshot } from './props';
 
 export interface PhysicsOptions {
+  /** Spring constant. Default 100; higher is snappier (pointer followers: ~300). */
   stiffness?: number;
+  /** Friction. Default 10; higher settles with less overshoot (critically damped ≈ 2·√(stiffness·mass)). */
   damping?: number;
+  /** Mass. Default 1. */
   mass?: number;
-  /** Perceptual alternative: visual duration in seconds… */
+  /** Perceptual alternative to stiffness/damping: approximate settle time in seconds (not ms)… */
   duration?: number;
-  /** …and bounciness 0–1. */
+  /** …and bounciness, 0 (none) to 1 (very bouncy). Default 0.25 when either is given. */
   bounce?: number;
   /** Initial velocity (units/s); a number or per-property map. Defaults to the current velocity. */
   velocity?: number | Record<string, number>;
@@ -36,9 +40,17 @@ export interface PhysicsOptions {
   restDelta?: number;
   /** Speed considered at rest (units/s). */
   restSpeed?: number;
+  /** Every frame while moving. */
   onUpdate?: () => void;
+  /** Came to rest (the controller is also awaitable: `await spring(…)`). */
   onComplete?: () => void;
 }
+
+const SPRING_KEYS: OptionKeys<PhysicsOptions> = {
+  stiffness: 0, damping: 0, mass: 0, duration: 0, bounce: 0, velocity: 0, restDelta: 0, restSpeed: 0, onUpdate: 0, onComplete: 0,
+};
+const INERTIA_KEYS: OptionKeys<Omit<InertiaOptions, keyof PhysicsOptions>> = { power: 0, timeConstant: 0, bounceStiffness: 0, bounceDamping: 0 };
+const BALLISTIC_KEYS: OptionKeys<BallisticOptions> = { friction: 0, restitution: 0, life: 0, onUpdate: 0, onComplete: 0 };
 
 function params(o: PhysicsOptions): [number, number, number] {
   if (o.bounce !== undefined || (o.duration !== undefined && o.stiffness === undefined)) {
@@ -199,12 +211,16 @@ export class PhysicsAnimation implements PromiseLike<void> {
  * retargets the running simulation, preserving momentum.
  */
 export function spring(targets: Targets, props: Record<string, number | string>, options: PhysicsOptions = {}): PhysicsAnimation {
+  checkKeys('spring()', options, SPRING_KEYS);
+  checkSeconds('spring()', 'duration', options.duration);
   const ctl = new PhysicsAnimation();
   whenReady(() => {
     const w = core();
     const [k, c, m] = params(options);
     const list: Sim[] = [];
-    for (const target of toTargets(targets)) {
+    const ts = toTargets(targets);
+    checkTargets('spring()', targets, ts.length);
+    for (const target of ts) {
       let map = sims.get(target);
       if (!map) sims.set(target, (map = new Map()));
       for (const prop of Object.keys(props)) {
@@ -264,8 +280,11 @@ export function spring(targets: Targets, props: Record<string, number | string>,
 }
 
 export interface InertiaProp {
+  /** Initial velocity in units per second (e.g. a pointer's release velocity). */
   velocity: number;
+  /** Lower bound: the value springs back if it glides past. */
   min?: number;
+  /** Upper bound: the value springs back if it glides past. */
   max?: number;
   /** Snap the resting point: a step, a list of points, or a function. */
   snap?: number | number[] | ((natural: number) => number);
@@ -278,18 +297,22 @@ export interface InertiaOptions extends PhysicsOptions {
   timeConstant?: number;
   /** Spring used when hitting a bound. */
   bounceStiffness?: number;
+  /** Damping of that bound spring (default 40). */
   bounceDamping?: number;
 }
 
 /** Glide with momentum, slowing down naturally; bounce off bounds; snap. */
 export function inertia(targets: Targets, props: Record<string, InertiaProp | number>, options: InertiaOptions = {}): PhysicsAnimation {
+  checkKeys('inertia()', options, SPRING_KEYS, INERTIA_KEYS);
   const ctl = new PhysicsAnimation();
   whenReady(() => {
     const w = core();
     const power = options.power ?? 0.8;
     const tc = (options.timeConstant ?? 0.35) * 1000;
     const list: Sim[] = [];
-    for (const target of toTargets(targets)) {
+    const ts = toTargets(targets);
+    checkTargets('inertia()', targets, ts.length);
+    for (const target of ts) {
       let map = sims.get(target);
       if (!map) sims.set(target, (map = new Map()));
       for (const prop of Object.keys(props)) {
@@ -346,6 +369,7 @@ export interface PhysicsProp {
   acceleration?: number;
   /** Bounds that the value bounces off (see `restitution`). */
   min?: number;
+  /** Upper bound the value bounces off. */
   max?: number;
 }
 
@@ -356,7 +380,9 @@ export interface BallisticOptions {
   restitution?: number;
   /** Stop after this many seconds. */
   life?: number;
+  /** Every frame while moving. */
   onUpdate?: () => void;
+  /** Came to rest (or `life` ran out). */
   onComplete?: () => void;
 }
 
@@ -369,11 +395,15 @@ export interface BallisticOptions {
  * ```
  */
 export function physics(targets: Targets, props: Record<string, PhysicsProp | number>, options: BallisticOptions = {}): PhysicsAnimation {
+  checkKeys('physics()', options, BALLISTIC_KEYS);
+  checkSeconds('physics()', 'life', options.life);
   const ctl = new PhysicsAnimation();
   whenReady(() => {
     const w = core();
     const list: Sim[] = [];
-    for (const target of toTargets(targets)) {
+    const ts = toTargets(targets);
+    checkTargets('physics()', targets, ts.length);
+    for (const target of ts) {
       let map = sims.get(target);
       if (!map) sims.set(target, (map = new Map()));
       for (const prop of Object.keys(props)) {

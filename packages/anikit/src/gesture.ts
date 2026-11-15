@@ -19,6 +19,8 @@ import { inertia, spring, PhysicsAnimation } from './spring';
 import { track } from './context';
 import type { Bounds } from './interaction';
 import { prefersReduced } from './core';
+import { checkKeys, checkTargets } from './debug';
+import type { OptionKeys } from './debug';
 
 export interface GestureOptions {
   /** Comma separated: 'pan', 'pinch', 'rotate' (default all three). */
@@ -27,6 +29,7 @@ export interface GestureOptions {
   apply?: boolean;
   /** Scale limits; past them the scale is rubber-banded and springs back on release. */
   minScale?: number;
+  /** Upper scale limit (see `minScale`). */
   maxScale?: number;
   /** Translation limits (`minX`, `maxX`, `minY`, `maxY`, in px), rubber-banded the same way. */
   bounds?: Bounds;
@@ -38,7 +41,9 @@ export interface GestureOptions {
   wheel?: boolean;
   /** Wheel zoom speed (default 0.01 per wheel pixel, exponential). */
   wheelSpeed?: number;
+  /** A gesture began (first pointer down / wheel). */
   onStart?: (g: Gesture) => void;
+  /** Every change of `x`, `y`, `scale` or `rotation`. */
   onChange?: (g: Gesture) => void;
   /** Fingers lifted (momentum or a spring back may follow). */
   onEnd?: (g: Gesture) => void;
@@ -344,7 +349,16 @@ export class Gesture {
   // --- control --------------------------------------------------------------
 
   /** Set the transform directly (e.g. a "reset zoom" button: animate it with `animate(el, …)` instead). */
-  set(values: { x?: number; y?: number; scale?: number; rotation?: number }): void {
+  set(values: {
+    /** Translation x (px). */
+    x?: number;
+    /** Translation y (px). */
+    y?: number;
+    /** Scale factor. */
+    scale?: number;
+    /** Rotation (degrees). */
+    rotation?: number;
+  }): void {
     this.stopAnims();
     if (values.x !== undefined) this.x = values.x;
     if (values.y !== undefined) this.y = values.y;
@@ -375,7 +389,15 @@ export class Gesture {
   }
 }
 
+const GESTURE_KEYS: OptionKeys<GestureOptions> = {
+  type: 0, apply: 0, minScale: 0, maxScale: 0, bounds: 0, edgeResistance: 0, inertia: 0, wheel: 0, wheelSpeed: 0,
+  onStart: 0, onChange: 0, onEnd: 0, onRest: 0,
+};
+
 /** Pan / pinch / rotate gestures on each target. Returns one {@link Gesture} per element. */
 export function gesture(targets: Targets, options?: GestureOptions): Gesture[] {
-  return (toTargets(targets) as HTMLElement[]).map((el) => new Gesture(el, options));
+  checkKeys('gesture()', options, GESTURE_KEYS);
+  const els = toTargets(targets) as HTMLElement[];
+  checkTargets('gesture()', targets, els.length);
+  return els.map((el) => new Gesture(el, options));
 }

@@ -2,10 +2,11 @@
 // N plain objects animated by Anikit (Rust/WASM core) and GSAP 3 (pure JS).
 // Each case runs in a fresh engine; reported value is the median over runs.
 // Usage: node scripts/bench.mjs [N...]
-import { animate, engine, ready } from '../dist/anikit.js';
+import { animate, engine, ready, setWarnings } from '../dist/anikit.js';
 import gsap from 'gsap';
 
 await ready;
+setWarnings(false); // 1000 s durations on purpose (nothing finishes mid-run): no milliseconds hint
 engine.manual(true);
 engine.lagSmoothing(0);
 gsap.ticker.lagSmoothing(0);

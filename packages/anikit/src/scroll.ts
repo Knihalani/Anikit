@@ -12,6 +12,8 @@ import { Playable } from './playable';
 import { Targets, toTargets } from './props';
 import { spring, PhysicsAnimation } from './spring';
 import { whenReady } from './wasm';
+import { checkKeys, checkTargets, checkSeconds } from './debug';
+import type { OptionKeys } from './debug';
 import { CompositorAnimation } from './compositor';
 
 type Edge = string | number;
@@ -20,6 +22,7 @@ export interface ScrollOptions {
   target?: Element;
   /** Scroll container (default: the page). */
   container?: Element | Window;
+  /** Scroll axis. Default `'y'`. */
   axis?: 'x' | 'y';
   /**
    * `[startOffset, endOffset]`, each `"<target edge> <container edge>"`. Edges:
@@ -51,6 +54,8 @@ function parseOffset(o: string): [string, string] {
   return [p[0] ?? 'start', p[1] ?? p[0] ?? 'start'];
 }
 
+const SCROLL_KEYS: OptionKeys<ScrollOptions> = { target: 0, container: 0, axis: 0, offset: 0, smooth: 0, native: 0 };
+
 /**
  * Drive an animation's progress (or call a function with progress 0–1) from
  * scroll position. Returns a cleanup function.
@@ -60,6 +65,8 @@ function parseOffset(o: string): [string, string] {
  * no JavaScript runs while scrolling.
  */
 export function scroll(subject: Playable | CompositorAnimation | ((progress: number) => void), options: ScrollOptions = {}): () => void {
+  checkKeys('scroll()', options, SCROLL_KEYS);
+  checkSeconds('scroll()', 'smooth', options.smooth, 10);
   if (typeof window === 'undefined') return () => {};
   const container = options.container ?? window;
   const isWin = container === window;
@@ -181,6 +188,7 @@ function nativeScroll(
 }
 
 export interface InViewOptions {
+  /** Scrolling ancestor used as the viewport. Default: the browser viewport. */
   root?: Element | Document;
   /** Root margin, e.g. `"0px 0px -20% 0px"`. */
   margin?: string;
@@ -189,6 +197,8 @@ export interface InViewOptions {
   /** Only fire once per element. */
   once?: boolean;
 }
+
+const INVIEW_KEYS: OptionKeys<InViewOptions> = { root: 0, margin: 0, amount: 0, once: 0 };
 
 /**
  * Call `onEnter(element, entry)` when targets enter the viewport. If it
@@ -200,6 +210,7 @@ export function inView(
   onEnter: (el: Element, entry: IntersectionObserverEntry) => void | ((entry: IntersectionObserverEntry) => void),
   options: InViewOptions = {},
 ): () => void {
+  checkKeys('inView()', options, INVIEW_KEYS);
   if (typeof IntersectionObserver === 'undefined') return () => {};
   const threshold = options.amount === 'all' ? 1 : options.amount === 'some' || options.amount === undefined ? 0 : options.amount;
   const leaves = new WeakMap<Element, (e: IntersectionObserverEntry) => void>();
@@ -220,6 +231,8 @@ export function inView(
     },
     { root: options.root as Element | null | undefined, rootMargin: options.margin, threshold },
   );
-  for (const el of toTargets(targets)) io.observe(el as Element);
+  const els = toTargets(targets);
+  checkTargets('inView()', targets, els.length);
+  for (const el of els) io.observe(el as Element);
   return () => io.disconnect();
 }

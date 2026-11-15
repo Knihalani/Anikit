@@ -22,7 +22,10 @@ import {
   claim, unclaim, Owner, stateOf, markDirty, transformUnit, TargetState, snapshot, composeTransform, kebab, computed, camel,
 } from './props';
 import { Playable, Callbacks, Linked } from './playable';
-import { warn, didYouMean, describe, cssPropertyNames } from './debug';
+import { warn, didYouMean, describe, cssPropertyNames, suggest, warningsOn, checkSeconds, checkTargets } from './debug';
+import { stagger as staggerFn } from './stagger';
+import type { StaggerOptions } from './stagger';
+import type { OptionKeys } from './debug';
 import { Binding, bind, apply, custom, transformSlot, M_PROP, M_TRANSFORM, M_TRANSFORM2, M_STYLE_NUM, M_STYLE_FMT, M_VAR, M_CUSTOM } from './bind';
 import { pathData, PathSource, writeMorph, elementLength, morphSequence, transformPath } from './svg';
 import { parseTransform, toMatrix3d } from './scene';
@@ -36,7 +39,7 @@ import { writeStr } from './wasm';
 export type FnValue<T> = T | ((target: any, index: number, count: number) => T);
 export type Scalar = number | string;
 export type PropValue =
-  | FnValue<Scalar | null>
+  | FnValue<Scalar | null | Array<Scalar | null>>
   | Array<FnValue<Scalar | null>>
   | { to?: FnValue<Scalar>; from?: FnValue<Scalar>; value?: Array<FnValue<Scalar | null>>; ease?: EasingInput | EasingInput[] }
   | MotionPathOptions
@@ -48,6 +51,7 @@ export interface MotionPathOptions {
   path: PathSource;
   /** Progress along the path to travel from / to (0–1). Default 0 → 1. */
   start?: number;
+  /** Progress along the path to stop at (0–1). Default 1. */
   end?: number;
   /** Rotate the target to follow the path tangent; a number adds an angle offset. */
   rotate?: boolean | number;
@@ -62,62 +66,208 @@ export interface MotionPathOptions {
   alignOrigin?: [number, number];
 }
 
-export type Props = Record<string, PropValue>;
+/**
+ * The properties anikit treats specially (documented here so editor hover
+ * explains them). Any other key is a CSS property in camelCase
+ * (`backgroundColor`), a CSS variable (`'--hue'`), or a property of a plain
+ * object target.
+ *
+ * Every value may be: a single end value (`100`), keyframes (`[0, 100]`,
+ * `[null, 50, 0]` where `null` is the current value), a relative value
+ * (`'+=50'`, `'-=50'`, `'*=2'`), `'random(0, 100)'`, or a function
+ * `(target, index, count) => value` evaluated per target (it may return keyframes too: `(el, i) => [0, i * 10]`).
+ */
+export interface TransformProps {
+  /** translateX. Number = px; any length or `%` of the element (`'50%'`, `'2rem'`). Prefer over `left`. */
+  x?: PropValue;
+  /** translateY. Number = px; any length or `%`. Prefer over `top`. */
+  y?: PropValue;
+  /** translateZ in px (needs `perspective` on the element or a parent to be visible). */
+  z?: PropValue;
+  /** 2D rotation. Number = degrees; also `'1turn'`, `'0.5rad'`. Relative: `'+=90'`. */
+  rotate?: PropValue;
+  /** 3D rotation around X. Number = degrees. */
+  rotateX?: PropValue;
+  /** 3D rotation around Y. Number = degrees. */
+  rotateY?: PropValue;
+  /** Same as `rotate`. Number = degrees. */
+  rotateZ?: PropValue;
+  /** Uniform scale factor (1 = natural size; unitless). */
+  scale?: PropValue;
+  /** Horizontal scale factor (unitless). */
+  scaleX?: PropValue;
+  /** Vertical scale factor (unitless). */
+  scaleY?: PropValue;
+  /** Skew on both axes. Number = degrees. */
+  skew?: PropValue;
+  /** Horizontal skew. Number = degrees. */
+  skewX?: PropValue;
+  /** Vertical skew. Number = degrees. */
+  skewY?: PropValue;
+  /** translateX as a percentage of the element's own width (`xPercent: -50` centres it). */
+  xPercent?: PropValue;
+  /** translateY as a percentage of the element's own height. */
+  yPercent?: PropValue;
+  /** Perspective (px) applied in this element's own transform, for its 3D rotations. */
+  perspective?: PropValue;
+  /** Opacity, 0–1 (not 0–100). */
+  opacity?: PropValue;
+  /** A full CSS transform list, interpolated like browsers do: `'rotateY(180deg) translateZ(40px)'`. */
+  transform?: PropValue;
+  /** SVG shape morph: path data, a `<path>`/shape element or a selector. Arrays morph through several shapes. */
+  d?: PropValue;
+  /** Motion along a path: path data, a selector, an element, or `{ path, start, end, rotate }`. */
+  path?: PropValue;
+  /** Visible stroke segment as fractions of the length: `[0, 1]` draws a line in; `['0 0', '0 1']` explicit. */
+  draw?: PropValue;
+  /** Attributes: `attr: { r: 20, cx: 50, viewBox: '0 0 10 10' }`. */
+  attr?: Record<string, PropValue>;
+  /** Typewriter / scramble text: `'Hello'` or `{ value: 'Hello', type: 'scramble', chars: 'upper' }`. */
+  text?: PropValue;
+  /** Number counter written as text; combine with the `format` / `round` options. */
+  textContent?: PropValue;
+}
+
+/** Properties to animate: see {@link TransformProps} for the special keys. Any CSS property, CSS variable or object key also works. */
+export type Props = TransformProps & Record<string, PropValue | Record<string, PropValue>>;
 export type Keyframe = Record<string, Scalar | null | undefined> & { offset?: number; ease?: EasingInput };
 
 export interface AnimateOptions extends Callbacks<Animation> {
-  /** Seconds (default 0.5; spring easings default to their natural duration). */
+  /**
+   * Length of one iteration, in **seconds** (not ms). Default `0.5`; with a
+   * spring easing, the spring's natural settle time. Can be a function
+   * `(target, index, count) => seconds`.
+   * @example animate('.box', { x: 100 }, { duration: 0.8 })
+   */
   duration?: FnValue<number>;
-  /** Seconds before starting (accepts `stagger()`). */
+  /**
+   * Wait before starting, in **seconds**. Use `stagger(0.05)` to offset each target.
+   * @example animate('.item', { opacity: [0, 1] }, { delay: stagger(0.05, { from: 'center' }) })
+   */
   delay?: FnValue<number>;
-  /** Seconds to hold after finishing (before `finished` resolves). */
+  /** Seconds to hold after the last iteration before `finished` resolves. Default 0. */
   endDelay?: number;
-  /** Easing for each keyframe segment, or one per segment. */
+  /**
+   * Easing. Default `'outQuad'`. Names (`'outCubic'`, `'power2.inOut'`, `'ease-in-out'`),
+   * functions (`'cubic-bezier(.2,.8,.2,1)'`, `'steps(4)'`, `'back.out(1.7)'`),
+   * springs (`'spring(bounce: 0.3)'`, `{ stiffness: 200, damping: 20 }`), `[x1, y1, x2, y2]`
+   * or `(t) => number`. An array gives one easing per keyframe segment.
+   */
   ease?: EasingInput | EasingInput[];
-  /** Extra iterations (`Infinity` or `-1` loops forever). */
+  /** Extra iterations after the first (`1` plays twice). `Infinity` or `-1` loops forever. Default 0. */
   repeat?: number;
-  /** Pause between iterations (seconds). */
+  /** Pause between iterations, in seconds. Default 0. */
   repeatDelay?: number;
-  /** Alternate direction every iteration. */
+  /** Alternate direction every iteration (same as `direction: 'alternate'`). Default false. */
   yoyo?: boolean;
+  /** Iteration direction, as in CSS. Default `'normal'`. */
   direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse';
-  /** Playback rate (default 1). */
+  /** Playback rate: `2` is twice as fast, negative plays backwards. Default 1. */
   speed?: number;
-  /** Start immediately (default true). */
+  /** Start playing immediately. Default true; pass `false` for scroll triggers and manual control. */
   autoplay?: boolean;
-  /** Keyframe offsets (0–1) for array values. */
+  /** Keyframe offsets (0–1) for array values, e.g. `{ x: [0, 100, 50] }` with `times: [0, 0.3, 1]`. */
   times?: number[];
-  /** Colour interpolation space (default 'oklab'). */
+  /** Colour interpolation space. Default `'oklab'` (perceptually even, no grey midpoints). */
   colorSpace?: ColorSpaceName;
-  /** Which values to keep outside the active period (default 'both'). */
+  /** Which values apply outside the active period. Default `'both'`. (Named `fillMode` so `fill` stays the SVG property.) */
   fillMode?: 'both' | 'forwards' | 'backwards' | 'none';
-  /** Take properties over from running animations (default true). */
+  /** Take the animated properties over from animations already running on the same targets. Default true. */
   overwrite?: boolean;
-  /** Render the first keyframe immediately even when delayed. */
+  /** Render the first keyframe right away, before the delay ends. Default: on for delayed animations with explicit start values. */
   immediateRender?: boolean;
-  /** Snap numeric values to a step (or list of values); a number applies to all properties. */
+  /** Snap numeric values to a step (or the nearest of a list); a number applies to every property: `{ snap: { x: 50 } }`. */
   snap?: number | Record<string, number | number[]>;
-  /** Round to integers: `true` for all properties or a list of property names. */
+  /** Round to integers: `true` for every property, or a list of property names. */
   round?: boolean | string[];
-  /** Transform each value right before it is applied, e.g. `{ x: (v) => v % 500 }`. */
+  /** Transform each value right before it is written, e.g. `{ x: (v) => v % 500 }` for wrapping. */
   modifiers?: Record<string, (value: any, target: any) => any>;
-  /** Format numbers written as text (counters): Intl options or a function. */
+  /**
+   * Format numbers written as text (counters): `Intl.NumberFormat` options or a function.
+   * @example animate('#price', { textContent: 12499 }, { format: { style: 'currency', currency: 'USD' } })
+   */
   format?: Intl.NumberFormatOptions | ((value: number) => string);
-  /** Locale used by `format` (default: the user's). */
+  /** Locale used by `format`. Default: the user's. */
   locale?: string;
+  /**
+   * Shorthand for `delay: stagger(each)` (GSAP style). The object form takes the
+   * stagger options plus `each` / `amount`: `{ each: 0.05, from: 'center' }`.
+   */
+  stagger?: number | (StaggerOptions & { each?: number; amount?: number });
+  /** `true` loops forever (same as `repeat: Infinity`). */
+  loop?: boolean;
 }
 
-const OPTION_KEYS = new Set([
-  'duration', 'delay', 'endDelay', 'ease', 'repeat', 'repeatDelay', 'yoyo', 'direction', 'speed', 'autoplay',
-  'times', 'colorSpace', 'fillMode', 'overwrite', 'immediateRender', 'onStart', 'onUpdate', 'onComplete',
-  'onRepeat', 'onReverseComplete', 'snap', 'round', 'modifiers', 'format', 'locale',
-]);
+/** Every `AnimateOptions` key (compiler-checked; used for "unknown option" warnings). */
+export const ANIMATE_KEYS: OptionKeys<AnimateOptions> = {
+  duration: 0, delay: 0, endDelay: 0, ease: 0, repeat: 0, repeatDelay: 0, yoyo: 0, direction: 0, speed: 0, autoplay: 0,
+  times: 0, colorSpace: 0, fillMode: 0, overwrite: 0, immediateRender: 0, onStart: 0, onUpdate: 0, onComplete: 0,
+  onRepeat: 0, onReverseComplete: 0, snap: 0, round: 0, modifiers: 0, format: 0, locale: 0, stagger: 0, loop: 0,
+};
+const OPTION_KEYS = new Set(Object.keys(ANIMATE_KEYS));
 
 const DIRECTIONS = { normal: 0, reverse: 1, alternate: 2, 'alternate-reverse': 3 } as const;
 /** Options accepted for compatibility / by wrappers (not warned about). */
-const EXTRA_OPTION_KEYS = new Set(['stagger', 'distance', 'from', 'intensity', 'loop', 'axis', 'at', 'charDelay', 'start', 'to', 'chars', 'delimiter', 'text', 'size', 'color']);
+const EXTRA_OPTION_KEYS = new Set(['distance', 'from', 'intensity', 'axis', 'at', 'charDelay', 'start', 'to', 'chars', 'delimiter', 'text', 'size', 'color']);
 const TRANSFORM_PROPS = ['x', 'y', 'z', 'rotate', 'rotateX', 'rotateY', 'rotateZ', 'scale', 'scaleX', 'scaleY', 'scaleZ', 'skew', 'skewX', 'skewY', 'perspective', 'xPercent', 'yPercent'];
 const SPECIAL_PROPS = ['path', 'draw', 'd', 'attr', 'text', 'transform'];
+/** Option names from other libraries (Web Animations, anime.js, GSAP, Motion) → the anikit form. */
+const OPTION_ALIASES: Record<string, string> = {
+  easing: 'ease', iterations: 'repeat (extra iterations: iterations - 1; Infinity loops)', fill: 'fillMode', paused: 'autoplay: false',
+  playbackRate: 'speed', reversed: "direction: 'reverse'", onEnd: 'onComplete', onFinish: 'onComplete', onBegin: 'onStart',
+  onPlay: 'onStart', onLoop: 'onRepeat', startDelay: 'delay', iterationStart: 'seek()', keyframes: 'the second argument (keyframes)',
+};
+const FILL_MODES = ['both', 'forwards', 'backwards', 'none'];
+/** Elements whose position was already checked (one style read per element, not per call). */
+const positionChecked = new WeakSet<Element>();
+const ANGLE_UNITS = ['', 'deg', 'rad', 'turn', 'grad'];
+
+/** Construction-time validation of animation options (only while warnings are on). */
+function checkAnimateOptions(given: AnimateOptions, o: AnimateOptions): void {
+  for (const k of Object.keys(given)) {
+    if (OPTION_KEYS.has(k) || EXTRA_OPTION_KEYS.has(k)) continue;
+    const alias = OPTION_ALIASES[k];
+    warn(`unknown animation option "${k}"; it is ignored.${alias ? ` Use ${alias} instead.` : didYouMean(k, OPTION_KEYS)}`);
+  }
+  checkSeconds('animate()', 'duration', o.duration);
+  checkSeconds('animate()', 'delay', o.delay);
+  checkSeconds('animate()', 'repeatDelay', o.repeatDelay);
+  checkSeconds('animate()', 'endDelay', o.endDelay);
+  if (o.colorSpace !== undefined && !(o.colorSpace in COLOR_SPACES)) {
+    warn(`unknown colorSpace "${o.colorSpace}"; using "oklab". Use one of: ${Object.keys(COLOR_SPACES).join(', ')}.${didYouMean(String(o.colorSpace), Object.keys(COLOR_SPACES))}`);
+  }
+  if (o.direction !== undefined && !(o.direction in DIRECTIONS)) {
+    warn(`unknown direction "${o.direction}"; using "normal". Use one of: ${Object.keys(DIRECTIONS).join(', ')}.${didYouMean(String(o.direction), Object.keys(DIRECTIONS))}`);
+  }
+  if (o.fillMode !== undefined && !FILL_MODES.includes(o.fillMode)) {
+    warn(`unknown fillMode "${o.fillMode}"; using "both". Use one of: ${FILL_MODES.join(', ')}.`);
+  }
+  if (typeof o.repeat === 'number' && o.repeat > 0 && o.repeat !== Infinity && !Number.isInteger(o.repeat)) {
+    warn(`repeat is ${o.repeat}; it counts extra iterations and should be a whole number (or Infinity / -1 to loop).`);
+  }
+}
+
+/** Unit / range sanity checks for one property's values (first target only). */
+function checkValues(prop: string, kind: Kind, raw: unknown[], target: unknown): void {
+  if (kind === Kind.Transform) {
+    const canonical = transformUnit(prop);
+    for (const v of raw) {
+      if (typeof v !== 'string') continue;
+      const unit = /^\s*[-+*]?=?\s*-?[\d.]+(?:e[-+]?\d+)?\s*([a-z%]*)\s*$/i.exec(v)?.[1]?.toLowerCase();
+      if (unit === undefined || unit === '') continue;
+      const angleUnit = ANGLE_UNITS.includes(unit);
+      if (canonical === 'deg' && !angleUnit) warn(`"${prop}" is an angle, but got "${v}". Use a number (degrees) or deg / rad / turn.`);
+      else if (canonical === '' && unit !== '%') warn(`"${prop}" is a unitless factor (1 = 100%), but got "${v}". Use e.g. ${prop}: 1.5.`);
+      else if ((canonical === 'px' || canonical === '%') && angleUnit) warn(`"${prop}" is a length, but got "${v}". Use a number (px) or a length unit; for rotation use "rotate".`);
+    }
+  } else if ((prop === 'left' || prop === 'top' || prop === 'right' || prop === 'bottom') && isElement(target) && !positionChecked.has(target) && positionChecked.add(target) && computed(target, 'position') === 'static') {
+    warn(`"${prop}" has no effect on ${describe(target)} because it is position: static. Animate x / y (transforms, faster) instead, or give it position: relative.`);
+  } else if (prop === 'opacity' && isElement(target)) {
+    const big = raw.find((v) => typeof v === 'number' && v > 1);
+    if (big !== undefined) warn(`opacity goes from 0 to 1, but got ${big} on ${describe(target)}. Did you mean ${+((big as number) / 100).toFixed(3)}?`);
+  }
+}
+
 function isKnownStyle(el: HTMLElement, prop: string): boolean {
   const st = el.style as any;
   return !st || prop in st || camel(prop) in st || prop.startsWith('--');
@@ -240,6 +390,8 @@ export interface BuildContext {
   chain?: Chain;
   /** Force zero-duration "set" semantics. */
   set?: boolean;
+  /** Don't warn about an empty target list (e.g. flip() when nothing moved). */
+  quiet?: boolean;
 }
 
 const RANDOM_RE = /^\s*random\((.*)\)\s*$/;
@@ -418,11 +570,27 @@ export class Animation extends Playable {
   _end = 0;
 
   constructor(targets: Targets, keyframes: Props | Keyframe[], options: AnimateOptions = {}, ctx: BuildContext = {}) {
-    const [props, opts] = normalize(keyframes, options);
-    super(opts);
-    for (const k of Object.keys(options)) {
-      if (!OPTION_KEYS.has(k) && !EXTRA_OPTION_KEYS.has(k)) warn(`unknown animation option "${k}".${didYouMean(k, OPTION_KEYS)}`);
+    if (typeof options === 'number') {
+      // `animate(el, props, 0.5)`: anime.js / jQuery habit. Accept it as the duration.
+      warn(`animate(): the third argument is an options object; got the number ${options}. Treating it as { duration: ${options} } (seconds).`);
+      options = { duration: options };
     }
+    if (keyframes === null || typeof keyframes !== 'object') {
+      warn(`animate(): the second argument must be an object of properties ({ x: 100, opacity: 0 }) or a keyframe list; got ${typeof keyframes === 'string' ? `"${keyframes}"` : String(keyframes)}.${typeof keyframes === 'string' ? ' For presets, use effects.' + keyframes + '(targets).' : ''}`);
+      keyframes = {};
+    }
+    const [props, opts] = normalize(keyframes, options ?? {});
+    const st = opts.stagger;
+    if (st !== undefined && opts.delay === undefined) {
+      if (typeof st === 'number') opts.delay = staggerFn(st);
+      else {
+        const { each, amount, ...rest } = st;
+        opts.delay = staggerFn(each ?? 0.1, { ...rest, total: rest.total ?? amount });
+      }
+    }
+    if (opts.loop === true && opts.repeat === undefined) opts.repeat = Infinity;
+    super(opts);
+    if (warningsOn()) checkAnimateOptions(options ?? {}, opts);
     this._times = opts.times;
     whenReady(() => this._build(targets, props, opts, ctx));
   }
@@ -431,8 +599,7 @@ export class Animation extends Playable {
     const w = core();
     const targets = (this.targets = toTargets(targetsIn));
     const n = targets.length;
-    if (n === 0 && typeof targetsIn === 'string') warn(`selector "${targetsIn}" matched no elements, so nothing was animated.`);
-    else if (n === 0 && targetsIn != null) warn('animate() received an empty target list.');
+    if (!ctx.quiet) checkTargets(ctx.child ? 'timeline.add()' : ctx.set ? 'set()' : 'animate()', targetsIn, n);
     const claims = !ctx.child && o.overwrite !== false;
     const cs = COLOR_SPACES[o.colorSpace ?? 'oklab'] ?? 2;
     // Reduced motion: everything jumps ('instant'), or only movement does ('fade').
@@ -495,9 +662,14 @@ export class Animation extends Playable {
         }
         const kind = classify(target, prop);
         if (kind === Kind.Style && i === 0 && !isKnownStyle(target as HTMLElement, prop)) {
-          warn(`"${prop}" is not a CSS property of ${describe(target)}; it will be written as an inline style anyway.${didYouMean(prop, [...cssPropertyNames(), ...TRANSFORM_PROPS, ...SPECIAL_PROPS])}`);
+          const s = suggest(prop, [...cssPropertyNames(), ...TRANSFORM_PROPS, ...SPECIAL_PROPS, ...OPTION_KEYS]);
+          const hint = !s ? '' : OPTION_KEYS.has(s) ? ` Did you mean the option "${s}"? (Options can go in the third argument or among the properties.)` : ` Did you mean "${s}"?`;
+          warn(`"${prop}" is not a CSS property of ${describe(target)}; it will be written as an inline style anyway.${hint}`);
         }
-        const raw = spec.values.map((v) => resolve(v, target, i, n));
+        let raw = spec.values.map((v) => resolve(v, target, i, n));
+        // A function may return keyframes for its target: `y: (el, i) => [0, i * 10]`.
+        if (raw.length === 2 && raw[0] === null && Array.isArray(raw[1])) raw = raw[1] as Array<Scalar | null>;
+        if (i === 0 && warningsOn()) checkValues(prop, kind, raw, target);
         if (raw[0] !== null && raw[0] !== undefined && raw.length > 1) hasExplicitFrom = true;
         // `height: 'auto'` (and width, min/max sizes): animate to the measured
         // size, then hand the property back to layout as `auto`.
@@ -520,7 +692,10 @@ export class Animation extends Playable {
         const conv = (v: number, f: string, t: string) => convertUnit(el, prop, v, f, t);
         let track = buildTrack(raw, read, conv, cs, du);
         if (kind === Kind.Transform) {
-          if (track.kind !== TRACK_NUMBER || track.ch !== 1 || track.complex) continue;
+          if (track.kind !== TRACK_NUMBER || track.ch !== 1 || track.complex) {
+            if (i === 0) warn(`"${prop}" needs a single number (optionally with a unit, e.g. 100 or '50%'); got ${raw.map((v) => JSON.stringify(v)).join(' → ')}, so it was skipped. For a full transform string use the "transform" property.`);
+            continue;
+          }
           // Angles/scales always use their canonical unit; x/y/z keep any length unit.
           du = transformUnit(prop);
           if (du !== 'px' && track.unit !== du) {
@@ -587,6 +762,7 @@ export class Animation extends Playable {
         dur = d > 0 ? d : 0.5;
       } else dur = 0.5;
       const delay = ctx.set || reduce ? 0 : resolve(o.delay ?? 0, target, i, n);
+      if (i > 0 && i === n - 1 && typeof o.delay === 'function' && delay >= 100) warn(`animate(): the delay function gives the last target a delay of ${delay} seconds. Times in anikit are in seconds: use stagger(0.05), not stagger(50).`);
       let durMs = Math.max(0, dur * 1000);
       const rd = (o.repeatDelay ?? 0) * 1000;
       if (rd > 0 && durMs > 0) {
@@ -880,7 +1056,14 @@ export class Animation extends Playable {
    * keyframe set works); transforms, styles and CSS variables are included.
    * One block per target (`name-0`, `name-1`, …) when there are several.
    */
-  toCSS(options: { name?: string; selector?: string; samples?: number } = {}): string {
+  toCSS(options: {
+    /** `@keyframes` name (default `'anikit'`; `-0`, `-1`… per target). */
+    name?: string;
+    /** Selector for the rule that runs it (default `.<name>`). */
+    selector?: string;
+    /** Keyframes sampled from the engine (default 30). */
+    samples?: number;
+  } = {}): string {
     const w = core();
     const name = options.name ?? 'anikit';
     const samples = Math.max(2, options.samples ?? 30);

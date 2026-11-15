@@ -5,6 +5,7 @@
  */
 import { onFlush } from './core';
 import { r3 } from './values';
+import { queryAll } from './debug';
 
 export type Target = Element | Record<string, any>;
 
@@ -497,7 +498,7 @@ export function toTargets(t: Targets): Target[] {
   if (t === null || t === undefined) return [];
   if (typeof t === 'string') {
     if (typeof document === 'undefined') return [];
-    return Array.from((selectorRoot ?? document).querySelectorAll(t));
+    return queryAll(selectorRoot ?? document, t);
   }
   if (isElement(t)) return [t];
   if (Array.isArray(t)) {

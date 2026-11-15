@@ -17,6 +17,8 @@
 import { core, whenReady, F64, f64Buf, W } from './wasm';
 import { register, unregister, wake, easingId, EasingInput, LINEAR, NodeRecord, FL_FILL_BACKWARDS, FL_FILL_FORWARDS } from './core';
 import { Playable, Callbacks, Linked } from './playable';
+import { checkKeys, checkSeconds } from './debug';
+import type { OptionKeys } from './debug';
 
 /** Keyframes for one channel: shared list, or a function of the instance index. */
 export type BatchValue = number | number[] | ((index: number, count: number) => number | number[]);
@@ -24,15 +26,26 @@ export type BatchValue = number | number[] | ((index: number, count: number) => 
 export interface BatchOptions extends Callbacks<Batch> {
   /** Seconds per instance (default 0.5). */
   duration?: number;
-  /** Per-instance start delay in seconds: number, `stagger()` or `(i, count) => s`. */
+  /** Per-instance start delay in seconds: a number, `stagger(each)` or `(_, index, count) => seconds` (the first argument is always null). */
   delay?: number | ((target: unknown, index: number, count: number) => number);
+  /** Easing (default `'outQuad'`), or one per keyframe segment. */
   ease?: EasingInput | EasingInput[];
+  /** Extra iterations; `Infinity` loops. */
   repeat?: number;
+  /** Alternate direction every iteration. */
   yoyo?: boolean;
+  /** Keyframe offsets (0–1). */
   times?: number[];
+  /** Start immediately (default true). */
   autoplay?: boolean;
+  /** Playback rate (default 1). */
   speed?: number;
 }
+
+const BATCH_KEYS: OptionKeys<BatchOptions> = {
+  duration: 0, delay: 0, ease: 0, repeat: 0, yoyo: 0, times: 0, autoplay: 0, speed: 0,
+  onStart: 0, onUpdate: 0, onComplete: 0, onRepeat: 0, onReverseComplete: 0,
+};
 
 export class Batch extends Playable {
   /** Channel index of each property within an instance's stride. */
@@ -45,6 +58,8 @@ export class Batch extends Playable {
 
   constructor(count: number, props: Record<string, BatchValue>, o: BatchOptions = {}) {
     super(o);
+    checkKeys('batch()', o, BATCH_KEYS);
+    checkSeconds('batch()', 'duration', o.duration);
     this.count = count;
     const keys = Object.keys(props);
     keys.forEach((k, i) => (this.channels[k] = i));

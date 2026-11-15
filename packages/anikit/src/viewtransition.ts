@@ -14,6 +14,8 @@
 import { cssEasing } from './compositor';
 import { EasingInput, prefersReduced } from './core';
 import { flip } from './flip';
+import { checkKeys } from './debug';
+import type { OptionKeys } from './debug';
 
 type ElementRef = Element | string | (() => Element | null | undefined);
 
@@ -77,11 +79,14 @@ function nameIt(el: Element | null, name: string): () => void {
 
 let uid = 0;
 
+const VT_KEYS: OptionKeys<ViewTransitionOptions> = { duration: 0, ease: 0, delay: 0, names: 0, old: 0, new: 0, scope: 0, types: 0, fallback: 0 };
+
 /**
  * Run `update` (which changes the DOM) as a View Transition. Returns a handle
  * that is awaitable and mirrors `ViewTransition`.
  */
 export function viewTransition(update: () => void | Promise<void>, options: ViewTransitionOptions = {}): ViewTransitionHandle {
+  checkKeys('viewTransition()', options, VT_KEYS);
   const doc: any = typeof document !== 'undefined' ? document : null;
   const names = options.names ?? {};
   const undo: Array<() => void> = [];

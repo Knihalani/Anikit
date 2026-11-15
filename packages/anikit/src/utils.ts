@@ -76,7 +76,14 @@ type Interp = number | string;
 export function interpolate(
   input: number[],
   output: Interp[],
-  options: { clamp?: boolean; ease?: EasingInput | EasingInput[]; colorSpace?: ColorSpaceName } = {},
+  options: {
+    /** Hold the end values outside the input range (default true). */
+    clamp?: boolean;
+    /** Easing for every segment, or one per segment. */
+    ease?: EasingInput | EasingInput[];
+    /** Colour mixing space (default `'oklab'`). */
+    colorSpace?: ColorSpaceName;
+  } = {},
 ): (v: number) => Interp {
   if (input.length !== output.length || input.length < 2) throw new Error('anikit: interpolate needs ≥2 matching stops');
   const clampIt = options.clamp !== false;
@@ -131,7 +138,22 @@ export { toTargets as toArray } from './props';
  * Like `stagger()` but for any value (GSAP's `distribute`): spread `amount`
  * across targets from `base`, e.g. `scale: distribute({ base: 0.5, amount: 1, from: 'center' })`.
  */
-export function distribute(o: { base?: number; amount?: number; each?: number; from?: StaggerOptions['from']; grid?: [number, number]; axis?: 'x' | 'y'; ease?: EasingInput } = {}) {
+export function distribute(o: {
+  /** Value of the first target (default 0). */
+  base?: number;
+  /** Total spread across all targets (default 1). */
+  amount?: number;
+  /** Step per target instead of `amount`. */
+  each?: number;
+  /** Origin, as in `stagger()`. */
+  from?: StaggerOptions['from'];
+  /** `[columns, rows]` for 2D distance. */
+  grid?: [number, number];
+  /** With `grid`: one axis only. */
+  axis?: 'x' | 'y';
+  /** Easing across the distribution. */
+  ease?: EasingInput;
+} = {}) {
   return stagger(o.each ?? 0, { start: o.base ?? 0, total: o.each === undefined ? o.amount ?? 1 : undefined, from: o.from, grid: o.grid, axis: o.axis, ease: o.ease });
 }
 

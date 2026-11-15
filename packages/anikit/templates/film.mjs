@@ -1,4 +1,5 @@
 // A starter anikit film. Render it:
+//   npx anikit-render film.mjs --still 1.5 --out still.png     (one frame, a few seconds)
 //   npx anikit-render film.mjs --preview 15 --out preview/     (contact frames, seconds)
 //   npx anikit-render film.mjs --out film.mp4 --workers 4      (1080p60, frame-exact)
 //
@@ -47,6 +48,12 @@ export default async function film({ anikit: A, node }) {
       ctx.putImageData(new globalThis.ImageData(px, W, H), 0, 0);
       g.render(cam, cloud, { size: 1.3, intensity: 0.4 });
       ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.drawImage(gt.canvas, 0, 0, W, H); ctx.restore();
+      // A scrim keeps the type readable over bright cubes (paper on dark).
+      const scrim = ctx.createLinearGradient(0, H - 360, 0, H);
+      scrim.addColorStop(0, 'rgba(7,8,11,0)');
+      scrim.addColorStop(1, 'rgba(7,8,11,0.85)');
+      ctx.fillStyle = scrim;
+      ctx.fillRect(0, H - 360, W, 360);
       typeFx(ctx, 'Hello, anikit.', W / 2, H - 120, { t, start: 1.0, effect: 'slam', size: 120, color: '#ece6da', align: 'center' });
     },
   });

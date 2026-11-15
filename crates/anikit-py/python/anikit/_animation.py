@@ -44,6 +44,13 @@ def _seconds(name: str, v: Any, allow_negative: bool = False) -> float:
         raise TypeError(f"{name} must be a number of seconds, got {v!r}") from None
     if math.isnan(x) or (x < 0 and not allow_negative):
         raise ValueError(f"{name} must be >= 0, got {v!r}")
+    if 100 <= x < math.inf:
+        import warnings
+
+        warnings.warn(
+            f"anikit: {name} is {x:g} seconds. Times in anikit are seconds; did you mean {name}={x / 1000:g}?",
+            stacklevel=4,
+        )
     return x
 
 
@@ -453,7 +460,11 @@ def _merge_options(base: Mapping[str, Any], opts: Dict[str, Any]) -> Dict[str, A
     out.update(base)
     for k, v in opts.items():
         if k not in _OPTION_DEFAULTS:
-            raise TypeError(f"unexpected option {k!r}")
+            import difflib
+
+            near = difflib.get_close_matches(k, list(_OPTION_DEFAULTS), n=1)
+            hint = f" Did you mean {near[0]!r}?" if near else f" Options: {', '.join(sorted(_OPTION_DEFAULTS))}."
+            raise TypeError(f"unexpected option {k!r}.{hint}")
         out[k] = v
     return out
 
@@ -547,6 +558,15 @@ def animate(
 
     Callbacks receive the :class:`Animation` if they take an argument.
     Values are written by :func:`tick` (or :func:`render`).
+
+    Other options: ``ease`` (default ``"outQuad"``; any :class:`Easing` spec
+    such as ``"outCubic"``, ``"power2.inOut"``, ``"spring(bounce: 0.3)"`` or a
+    callable), ``speed`` (playback rate, default 1), ``autoplay`` (default
+    ``True``), ``color_space`` (``"oklab"`` default, ``"srgb"``, ``"linear"``,
+    ``"oklch"``, ``"hsl"``), ``immediate_render`` (write the first keyframe at
+    once, even while delayed), the callbacks ``on_start``, ``on_update``,
+    ``on_complete``, ``on_repeat`` and ``on_reverse_complete``, and ``engine``
+    (default: the default engine).
     """
     return Animation(
         targets,
@@ -657,7 +677,8 @@ class Timeline(_Controller):
         if isinstance(position, (int, float)):
             return max(0.0, float(position))
         if not isinstance(position, str):
-            raise TypeError(f"position must be a number or a string, got {type(position).__name__}")
+            hint = " (options are keyword arguments: tl.add(target, props, \"-=0.2\", duration=0.5))" if isinstance(position, Mapping) else ""
+            raise TypeError(f"position must be a number or a string, got {type(position).__name__}{hint}")
         p = position.strip()
         try:
             return max(0.0, float(p))
@@ -822,7 +843,14 @@ def timeline(
     engine: Optional[Engine] = None,
 ) -> Timeline:
     """Create a :class:`Timeline`. ``defaults`` (e.g. ``{"duration": 0.3,
-    "ease": "outCubic"}``) apply to every tween added to it."""
+    "ease": "outCubic"}``) apply to every tween added to it.
+
+    ``delay`` (seconds before it starts), ``repeat`` (extra iterations; ``-1``
+    forever), ``yoyo`` (alternate direction), ``repeat_delay`` (seconds between
+    iterations), ``speed`` (playback rate), ``autoplay`` (default ``True``) and
+    the callbacks ``on_start``, ``on_update``, ``on_complete``, ``on_repeat``,
+    ``on_reverse_complete``. Add steps with ``tl.add(targets, props,
+    position, **options)``: the position is the third argument."""
     return Timeline(
         engine=engine,
         delay=delay,

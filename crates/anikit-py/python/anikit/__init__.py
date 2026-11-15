@@ -102,21 +102,23 @@ def render(
     max_duration: float = 600.0,
     engine: Optional[Engine] = None,
 ) -> Iterator[Tuple[int, float]]:
-    """Iterate frames ``(frame_index, time)`` while advancing the engine; see :meth:`Engine.render`."""
+    """Iterate frames ``(frame_index, time)`` at ``fps`` while advancing the engine: for
+    ``duration`` seconds, or until nothing is playing (at most ``max_duration``). See :meth:`Engine.render`."""
     return resolve_engine(engine).render(fps, duration, max_duration=max_duration)
 
 
 def run_until_idle(
     fps: float = 60.0, *, max_time: float = 600.0, realtime: bool = False, engine: Optional[Engine] = None
 ) -> float:
-    """Tick until nothing is playing; returns the simulated seconds. See :meth:`Engine.run_until_idle`."""
+    """Tick at ``fps`` until nothing is playing (at most ``max_time`` seconds; ``realtime=True``
+    sleeps between frames); returns the simulated seconds. See :meth:`Engine.run_until_idle`."""
     return resolve_engine(engine).run_until_idle(fps, max_time=max_time, realtime=realtime)
 
 
 def set(  # noqa: A001 - mirrors the animation API's `set`
     targets: Any, props: Mapping[str, Any], *, color_space: str = "oklab", engine: Optional[Engine] = None
 ) -> None:
-    """Write property values immediately (no animation)."""
+    """Write ``props`` on ``targets`` immediately (no animation); ``color_space`` as in :func:`animate`."""
     resolve_engine(engine).set(targets, props, color_space=color_space)
 
 

@@ -20,6 +20,7 @@ export interface ShatterOptions {
   center?: V3;
   /** Outward speed in units/s (default 600), and its random spread 0–1 (default 0.5). */
   force?: number;
+  /** Random spread of the outward speed, 0–1 (default 0.5). */
   spread?: number;
   /** Tumble in degrees/s (default 360). */
   spin?: number;

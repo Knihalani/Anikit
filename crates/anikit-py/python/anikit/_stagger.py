@@ -57,7 +57,7 @@ def stagger(
 
 @overload
 def stagger(
-    count: None = None,
+    count: Optional[float] = None,
     each: float = 0.1,
     *,
     total: Optional[float] = None,
@@ -71,7 +71,7 @@ def stagger(
 
 
 def stagger(
-    count: Union[int, Sequence[Any], None] = None,
+    count: Union[int, float, Sequence[Any], None] = None,
     each: float = 0.1,
     *,
     total: Optional[float] = None,
@@ -91,13 +91,19 @@ def stagger(
     * ``ease`` — eases the distribution; ``seed`` — for ``"random"``
 
     ``count`` may also be a sequence of targets (its length is used). Without
-    ``count`` a :class:`Stagger` callable is returned, sized lazily.
+    ``count`` a :class:`Stagger` callable is returned, sized lazily. A lone
+    float is taken as ``each`` (``stagger(0.05)``, as in the TypeScript API).
 
     >>> stagger(4, 0.1)
     [0.0, 0.1, 0.2, 0.30000000000000004]
     >>> stagger(5, 1, from_="center")
     [2.0, 1.0, 0.0, 1.0, 2.0]
+    >>> stagger(0.05, from_="center")
+    Stagger(each=0.05, total=None, start=0.0, from_='center', grid=None, axis=None, ease=None, seed=1)
     """
+    if isinstance(count, float):
+        # `stagger(0.05)`: the TypeScript signature (each first). Seconds, not a count.
+        count, each = None, count
     if count is None:
         return Stagger(each=each, total=total, start=start, from_=from_, grid=grid, axis=axis, ease=ease, seed=seed)
     n = count if isinstance(count, int) else len(count)

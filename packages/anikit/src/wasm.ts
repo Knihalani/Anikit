@@ -244,8 +244,18 @@ function install(instance: WebAssembly.Instance): void {
   W = instance.exports as unknown as Exports;
   views();
   readyResolve();
-  // Flush operations requested before the core was ready, in order.
-  for (let i = 0; i < queue.length; i++) queue[i]();
+  // Flush operations requested before the core was ready, in order. One bad
+  // call (an unknown easing, say) must not drop everything queued after it,
+  // and its error must still surface.
+  for (let i = 0; i < queue.length; i++) {
+    try {
+      queue[i]();
+    } catch (e) {
+      setTimeout(() => {
+        throw e;
+      });
+    }
+  }
   queue.length = 0;
 }
 
@@ -305,7 +315,12 @@ export function whenReady(fn: () => void): void {
 /** Get the exports, booting synchronously if needed (throws if unavailable). */
 export function core(): Exports {
   if (!W) boot();
-  if (!W) throw new Error('anikit: WebAssembly core is still loading — await `ready` first');
+  if (!W) {
+    throw new Error(
+      'anikit: the WebAssembly core is still loading. animate()/timeline() calls queue until it is ready, but functions that return a value right away ' +
+        '(ease(), morph(), pathLength(), …) need it loaded: `await ready` (or `await init()` with anikit/lean) first.',
+    );
+  }
   return W;
 }
 
