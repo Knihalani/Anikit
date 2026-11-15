@@ -62,6 +62,12 @@ animate(obj, { value: 1 }, { onUpdate: () => render(obj.value) }); // plain obje
 
 `from(targets, values, options)`, `fromTo(targets, fromValues, toValues, options)` and `set(targets, values)` (instant) are shorthands.
 
+```ts
+from('.card', { y: 40, opacity: 0 });                            // from these values to the current ones
+fromTo('.bar', { scaleX: 0 }, { scaleX: 1 }, { duration: 0.8 });
+set('.panel', { x: -20, opacity: 0 });                           // instantly, no animation
+```
+
 ### Controller (`Animation`, `Timeline`, `Batch`)
 
 `play()`, `pause()`, `reverse()`, `restart()`, `seek(seconds)`, `complete()` (jump to the end), `cancel()` (pause and return to the start), `kill()`/`stop()` (stop where it is), `revert()` (stop and restore the original inline styles). Properties: `progress` (get/set, 0–1), `time` (get/set, seconds), `duration`, `speed` (get/set), `state` (`'idle' | 'running' | 'paused' | 'finished'`) and `iteration`. Controllers are thenables: `await animate(...)`, or use `.finished`. All of these are `Playable`s.
@@ -253,6 +259,11 @@ flush();   // apply pending values right now (e.g. before measuring layout)
 ```
 
 `flush()` applies pending results synchronously. `ready` is a promise for the core; `init(urlOrBytes?)` loads it from a URL or bytes instead of the embedded copy (`anikit/lean` does this from `./anikit.wasm` automatically).
+
+```ts
+await ready;                              // the core is loaded (rarely needed: calls queue until then)
+await init('/assets/anikit.wasm');        // anikit/lean: load the module from your own URL, before other calls
+```
 
 Utilities: `stagger(each, { from, grid, axis, ease, total, start, seed })`, `staggerValues(count, each, opts)`, `mixColor(a, b, t, space)`, `parseColor(s)`, `clamp`, `lerp`, `mapRange`, `wrap`, `snap` and `random(min, max, seed?)`.
 

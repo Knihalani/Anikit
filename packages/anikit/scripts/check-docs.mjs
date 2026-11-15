@@ -19,7 +19,15 @@ export function undocumentedExports() {
   // Protected sections (3D, particles, video) are documented elsewhere; their
   // exports only need a mention.
   const used = new Set();
-  for (const s of checkedSnippets()) for (const id of s.code.match(/[A-Za-z_$][\w$]*/g) ?? []) used.add(id);
+  for (const s of checkedSnippets()) {
+    // Count real uses only: not in comments, imports, strings, `key:` or `.member` positions.
+    const code = s.code
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '')
+      .replace(/^\s*import[\s\S]*?from\s*['"][^'"]+['"];?/gm, '')
+      .replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"/g, "''");
+    for (const m of code.matchAll(/(?<![.\w$])([A-Za-z_$][\w$]*)(?!\s*:(?!:))/g)) used.add(m[1]);
+  }
   const external = new Set([
     'scene3d', 'Scene3D', 'tilt', 'parseTransform', 'toMatrix3d', 'mixTransforms', 'pointCloud', 'PointCloud', 'textPoints', 'glow', 'Glow',
     'emitter', 'Emitter', 'mesh', 'Mesh3D', 'instances', 'Instances', 'renderer3d', 'Renderer3D', 'composition', 'Composition',
