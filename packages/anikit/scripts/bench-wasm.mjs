@@ -94,10 +94,10 @@ bench('springs: retarget 2 ch + tick (pointer follow)', 10000, 'springs', () => 
 
 // Instanced batch: [duration, iterations, direction, endDelay, easing, flags, count, ch, nkf,
 //   hasOffsets, (offsets), nEases, eases..., hasDelays, (delays), values...]
-for (const stagger of [false, true]) {
+for (const [stagger, ez, name] of [[false, outCubic, 'outCubic'], [true, outCubic, 'outCubic'], [true, inOutQuad, 'inOutQuad']]) {
   const n = 100000;
-  bench(`batch: 3 channels, outCubic${stagger ? ', staggered delays' : ''}`, n, 'instances', () => {
-    const enc = [1000, 1, 0, 0, -1, 3, n, 3, 2, 0, 1, outCubic, stagger ? 1 : 0];
+  bench(`batch: 3 channels, ${name}${stagger ? ', staggered delays' : ''}`, n, 'instances', () => {
+    const enc = [1000, 1, 0, 0, -1, 3, n, 3, 2, 0, 1, ez, stagger ? 1 : 0];
     if (stagger) for (let i = 0; i < n; i++) enc.push(i * 0.002);
     for (let i = 0; i < n; i++) enc.push(0, 0, 1, i, 300, 0);
     f64(enc);
