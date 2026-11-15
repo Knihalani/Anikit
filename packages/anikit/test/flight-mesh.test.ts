@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { ready, flightPath, scene3d, mesh, instances, renderer3d, shatter } from '../src/index';
+import { ready, flightPath, scene3d, mesh, instances, renderer3d, shatter, texture } from '../src/index';
 
 beforeAll(async () => { await ready; });
 
@@ -81,5 +81,20 @@ describe('mesh builders', () => {
     expect(moved).toBeGreaterThan(150);
     const b = shatter(src, { transform: { scale: 100 }, force: 500 }).update(1);
     expect(Array.from(b.instances.data)).toEqual(Array.from(d));
+  });
+
+  it('maps textures onto meshes (emissive screens)', () => {
+    const data: number[] = [];
+    for (let i = 0; i < 64; i++) data.push(...(i < 32 ? [255, 0, 0, 255] : [0, 0, 255, 255]));
+    const tex = texture({ width: 64, height: 1, data });
+    expect([tex.width, tex.height]).toEqual([64, 1]);
+    const r = renderer3d({ width: 32, height: 32 });
+    const cam = scene3d({ width: 32, height: 32, camera: { x: 0, y: 400, z: 1 }, target: { x: 0, y: 0, z: 0 } });
+    const px = r.render(cam, [{ mesh: mesh.plane(), instances: instances(1, () => ({ scale: 2000, color: [0, 0, 0] })), material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: tex, textureMode: 'emissive' } }], {});
+    let red = 0, blue = 0;
+    for (let i = 0; i < px.length; i += 4) { if (px[i] > 150 && px[i + 2] < 80) red++; if (px[i + 2] > 150 && px[i] < 80) blue++; }
+    expect(red).toBeGreaterThan(20);
+    expect(blue).toBeGreaterThan(20);
+    expect(() => texture({ width: 4, height: 4, data: [1, 2, 3] })).toThrow(/expected 64/);
   });
 });

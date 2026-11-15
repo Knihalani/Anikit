@@ -519,6 +519,7 @@ const px = r3.render(scene, [
 | `iridescence` (0–1), `hue` | thin-film rainbow tint on reflections, shifting with viewing angle |
 | `lines`, `lineColor`, `grid: [u, v]`, `lineWidth` | antialiased glowing lines in UV space; `0` cells = none that way. Cube faces are 0–1 (edge outlines with `[1, 1]`); tubes/knots run `u` along and `v` around |
 | `pulse`, `pulseCount`, `pulsePhase`, `pulseDir` | bright pulses travelling along `u` (animate `pulsePhase`); `pulseDir` offsets each instance's phase by its position, so a wave sweeps through a field |
+| `texture`, `textureMode`, `textureRepeat`, `textureGain` | an image from `texture(imageData | canvas)` mapped by UV: `'albedo'` tints the lit colour, `'emissive'` glows unlit (screens, signs); mipmapped, so it doesn't shimmer when small |
 
 Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [near, far]`, `fogColor`, environment `sky`, `horizon`, `ground`, `strips`. Items draw in order; per item `cull: false` shows back faces (tumbling shards), `blend: 'additive'` adds light.
 

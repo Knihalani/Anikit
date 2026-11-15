@@ -43,6 +43,11 @@ pub struct Material {
     pub pulse_count: f32,
     pub pulse_phase: f32,
     pub pulse_dir: [f32; 3],
+    /// How the draw's [`Texture`] (if any) is used: 0 none, 1 albedo (multiplies the lit
+    /// colour), 2 emissive (added unlit, × `tex_gain`: screens, signs). UVs × `tex_repeat`.
+    pub tex_mode: u8,
+    pub tex_repeat: [f32; 2],
+    pub tex_gain: f32,
 }
 
 impl Default for Material {
@@ -65,6 +70,9 @@ impl Default for Material {
             pulse_count: 1.0,
             pulse_phase: 0.0,
             pulse_dir: [0.0; 3],
+            tex_mode: 0,
+            tex_repeat: [1.0, 1.0],
+            tex_gain: 1.0,
         }
     }
 }
@@ -115,6 +123,82 @@ pub struct Mesh {
     pub nrm: Vec<f32>,
     pub uv: Vec<f32>,
     pub idx: Vec<u32>,
+}
+
+/// An RGBA image with a mip chain, sampled bilinearly (wrapping) at the mip
+/// level matching each pixel's screen footprint, so minified textures don't
+/// shimmer.
+#[derive(Debug, Default, Clone)]
+pub struct Texture {
+    /// (width, height, packed RGBA words) per level, largest first.
+    levels: Vec<(usize, usize, Vec<u32>)>,
+}
+
+impl Texture {
+    /// From 8-bit RGBA pixels, row 0 at the top (v = 0).
+    pub fn from_rgba(w: usize, h: usize, data: &[u8]) -> Self {
+        let (w, h) = (w.max(1), h.max(1));
+        let mut base = vec![0u32; w * h];
+        for (i, px) in data.chunks_exact(4).take(w * h).enumerate() {
+            base[i] = px[0] as u32 | (px[1] as u32) << 8 | (px[2] as u32) << 16 | (px[3] as u32) << 24;
+        }
+        let mut levels = vec![(w, h, base)];
+        while levels.len() < 14 {
+            let (pw, ph, prev) = levels.last().unwrap();
+            let (pw, ph) = (*pw, *ph);
+            if pw == 1 && ph == 1 {
+                break;
+            }
+            let (nw, nh) = ((pw / 2).max(1), (ph / 2).max(1));
+            let mut next = vec![0u32; nw * nh];
+            for y in 0..nh {
+                for x in 0..nw {
+                    let mut acc = [0u32; 4];
+                    for (dx, dy) in [(0, 0), (1, 0), (0, 1), (1, 1)] {
+                        let c = prev[(y * 2 + dy).min(ph - 1) * pw + (x * 2 + dx).min(pw - 1)];
+                        for (k, a) in acc.iter_mut().enumerate() {
+                            *a += (c >> (8 * k)) & 255;
+                        }
+                    }
+                    next[y * nw + x] = (0..4).fold(0, |o, k| o | ((acc[k] + 2) / 4) << (8 * k));
+                }
+            }
+            levels.push((nw, nh, next));
+        }
+        Self { levels }
+    }
+
+    pub fn width(&self) -> usize {
+        self.levels.first().map_or(0, |l| l.0)
+    }
+    pub fn height(&self) -> usize {
+        self.levels.first().map_or(0, |l| l.1)
+    }
+
+    /// Bilinear sample (0…1 RGBA) at `u, v` (wrapping) with a footprint of
+    /// `fw` base-level texels per pixel.
+    #[inline]
+    fn sample(&self, u: f32, v: f32, fw: f32) -> [f32; 4] {
+        let Some(top) = self.levels.first() else { return [1.0; 4] };
+        // floor(log2(fw)) from the float exponent.
+        let lv = if fw > 1.0 { (((fw.to_bits() >> 23) & 255) as i32 - 127).clamp(0, self.levels.len() as i32 - 1) as usize } else { 0 };
+        let (w, h, px) = (&self.levels[lv].0, &self.levels[lv].1, &self.levels[lv].2);
+        let _ = top;
+        let fx = (u - crate::math::floorf(u)) * *w as f32 - 0.5;
+        let fy = (v - crate::math::floorf(v)) * *h as f32 - 0.5;
+        let (x0f, y0f) = (crate::math::floorf(fx), crate::math::floorf(fy));
+        let (tx, ty) = (fx - x0f, fy - y0f);
+        let wrap = |i: isize, n: usize| i.rem_euclid(n as isize) as usize;
+        let (x0, y0) = (wrap(x0f as isize, *w), wrap(y0f as isize, *h));
+        let (x1, y1) = ((x0 + 1) % *w, (y0 + 1) % *h);
+        let (a, b, c, d) = (px[y0 * w + x0], px[y0 * w + x1], px[y1 * w + x0], px[y1 * w + x1]);
+        core::array::from_fn(|k| {
+            let ch = |q: u32| ((q >> (8 * k)) & 255) as f32;
+            let top = ch(a) + (ch(b) - ch(a)) * tx;
+            let bot = ch(c) + (ch(d) - ch(c)) * tx;
+            (top + (bot - top) * ty) * (1.0 / 255.0)
+        })
+    }
 }
 
 /// Per-instance data: a 3×4 affine (column-major, `[r00 r10 r20 r01 r11 r21 r02 r12 r22 tx ty tz]`) and RGB.
@@ -177,6 +261,7 @@ struct Shade<'a> {
     pattern_on: bool,
     /// Per-instance lighting terms: base×(ambient+emissive), base×diffuse×key, base×diffuse×fill.
     lit: [[f32; 3]; 3],
+    tex: Option<&'a Texture>,
 }
 
 impl Shade<'_> {
@@ -293,6 +378,17 @@ impl Shade<'_> {
         e
     }
 
+    /// Sample the texture for four lanes (RGBA as V4s).
+    #[inline(always)]
+    fn sample4(&self, t: &Texture, u: V4, v: V4, fwu: V4, fwv: V4) -> [V4; 4] {
+        let m = self.m;
+        let (ru, rv) = (m.tex_repeat[0], m.tex_repeat[1]);
+        let (tw, th) = (t.width() as f32 * ru, t.height() as f32 * rv);
+        let (u, v, fu, fv) = ((u * ru).to_array(), (v * rv).to_array(), (fwu * tw).to_array(), (fwv * th).to_array());
+        let s: [[f32; 4]; 4] = core::array::from_fn(|l| t.sample(u[l], v[l], fu[l].max(fv[l])));
+        core::array::from_fn(|k| V4::new(s[0][k], s[1][k], s[2][k], s[3][k]))
+    }
+
     /// Shade four pixels at once.
     #[inline(always)]
     #[allow(clippy::needless_range_loop)]
@@ -319,7 +415,21 @@ impl Shade<'_> {
         let fr = 1.0 - ndv;
         let rim = fr * fr * fr * m.rim;
         let (ka, kk, kf) = (&self.lit[0], &self.lit[1], &self.lit[2]);
-        let mut c: [V4; 3] = core::array::from_fn(|k| ka[k] + dk * kk[k] + df * kf[k] + sp * l.key_color[k] + rim * l.rim_color[k]);
+        let texel = match self.tex {
+            Some(t) if m.tex_mode != 0 => Some(self.sample4(t, u, v, fwu, fwv)),
+            _ => None,
+        };
+        let mut c: [V4; 3] = match (texel, m.tex_mode) {
+            // Albedo: the texture tints the lit (diffuse + ambient) colour.
+            (Some(tx), 1) => core::array::from_fn(|k| tx[k] * (dk * kk[k] + df * kf[k] + ka[k]) + sp * l.key_color[k] + rim * l.rim_color[k]),
+            _ => core::array::from_fn(|k| ka[k] + dk * kk[k] + df * kf[k] + sp * l.key_color[k] + rim * l.rim_color[k]),
+        };
+        if let (Some(tx), 2) = (texel, m.tex_mode) {
+            // Emissive: added unlit (screens, signs), scaled by alpha.
+            for k in 0..3 {
+                c[k] = c[k] + tx[k] * tx[3] * m.tex_gain;
+            }
+        }
         if self.env_on {
             let r = [2.0 * ndv * n[0] - vd[0], 2.0 * ndv * n[1] - vd[1], 2.0 * ndv * n[2] - vd[2]];
             let mut e = self.env4(&r);
@@ -405,7 +515,7 @@ impl Raster {
     /// `eye` the camera position (for specular, rim, reflections and fog).
     #[allow(clippy::too_many_arguments)]
     pub fn draw(&mut self, mesh: &Mesh, instances: &[f32], vp: &M4, eye: [f32; 3], mat: &Material, light: &Lighting, cull_back: bool) {
-        self.draw_with(mesh, instances, vp, eye, mat, light, cull_back, Blend::Opaque);
+        self.draw_with(mesh, instances, vp, eye, mat, light, cull_back, Blend::Opaque, None);
     }
 
     /// [`Raster::draw`] with a blend mode.
@@ -415,7 +525,7 @@ impl Raster {
     /// already drawn but don't write depth.
     #[allow(clippy::too_many_arguments)]
     #[allow(clippy::needless_range_loop)]
-    pub fn draw_with(&mut self, mesh: &Mesh, instances: &[f32], vp: &M4, eye: [f32; 3], mat: &Material, light: &Lighting, cull_back: bool, blend: Blend) {
+    pub fn draw_with(&mut self, mesh: &Mesh, instances: &[f32], vp: &M4, eye: [f32; 3], mat: &Material, light: &Lighting, cull_back: bool, blend: Blend, tex: Option<&Texture>) {
         let nv = mesh.pos.len() / 3;
         let has_uv = mesh.uv.len() >= nv * 2;
         self.drawn = 0;
@@ -436,6 +546,7 @@ impl Raster {
             strips_on: light.strips[0] + light.strips[1] + light.strips[2] > 0.0,
             pattern_on: mat.lines > 0.0 || mat.pulse > 0.0,
             lit: [[0.0; 3]; 3],
+            tex,
         };
         // Front-to-back: nearer instances fill the depth buffer first, so the
         // depth test rejects hidden pixels early.
@@ -1361,5 +1472,27 @@ mod tests {
         r.draw(&cube(), &inst, &vp(), [0.0, 0.0, 5.0], &Material::default(), &Lighting::default(), true);
         // Only the cube in view is rasterised (behind the camera and far to the side are culled).
         assert!(r.drawn >= 2 && r.drawn <= 6, "{}", r.drawn);
+    }
+
+    #[test]
+    fn textures_tint_and_glow() {
+        // 2×2 texture: red, green / blue, white.
+        let t = Texture::from_rgba(2, 2, &[255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255]);
+        assert_eq!((t.width(), t.height()), (2, 2));
+        let mut r = Raster::new(32, 32);
+        r.clear(0, 255);
+        let mut inst = ID.to_vec();
+        inst.extend_from_slice(&[1.0, 1.0, 1.0]);
+        let mat = Material { ambient: 0.0, diffuse: 0.0, specular: 0.0, rim: 0.0, tex_mode: 2, tex_gain: 1.0, ..Material::default() };
+        r.draw_with(&cube(), &inst, &vp(), [0.0, 0.0, 5.0], &mat, &Lighting::default(), true, Blend::Opaque, Some(&t));
+        // The front face shows all four colours (unlit, emissive).
+        let mut seen = [false; 3];
+        for c in &r.color {
+            let (red, green, blue) = (c & 255, (c >> 8) & 255, (c >> 16) & 255);
+            if red > 150 && green < 80 && blue < 80 { seen[0] = true; }
+            if green > 150 && red < 80 && blue < 80 { seen[1] = true; }
+            if blue > 150 && red < 80 && green < 80 { seen[2] = true; }
+        }
+        assert!(seen.iter().all(|s| *s), "{seen:?}");
     }
 }

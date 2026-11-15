@@ -28,6 +28,41 @@ function rgb(c: string | V3 | undefined, d: V3 = [1, 1, 1]): V3 {
   return p ? [p[0] / 255, p[1] / 255, p[2] / 255] : d;
 }
 
+/** An image living in WebAssembly memory, mipmapped, for `material.texture`. */
+export class Texture3D {
+  constructor(readonly id: number, readonly width: number, readonly height: number) {}
+  free(): void {
+    core().ak_texture_free(this.id);
+  }
+}
+
+type ImageLike = { width: number; height: number; data: ArrayLike<number> };
+
+/**
+ * Upload an image for 3D materials: `ImageData`, `{ width, height, data }`
+ * (RGBA bytes), or a canvas (its current pixels). Row 0 is the top (v = 0).
+ *
+ * ```ts
+ * const screen = texture(uiCanvas);
+ * { mesh: mesh.plane(), instances, material: { texture: screen, textureMode: 'emissive', textureGain: 1.4 } }
+ * ```
+ */
+export function texture(src: ImageLike | CanvasLike): Texture3D {
+  let img: ImageLike;
+  if ('data' in src) img = src;
+  else {
+    const ctx = src.getContext('2d');
+    if (!ctx) throw new Error('anikit: texture() needs ImageData, { width, height, data } or a canvas with a 2d context');
+    img = ctx.getImageData(0, 0, src.width, src.height);
+  }
+  const n = img.width * img.height * 4;
+  if (img.data.length < n) throw new Error(`anikit: texture() got ${img.data.length} bytes, expected ${n} (width × height × 4)`);
+  const w = core();
+  const ptr = w.ak_u8_buf(n);
+  new Uint8Array(W!.memory.buffer, ptr, n).set(img.data.length === n ? img.data : Array.prototype.slice.call(img.data, 0, n));
+  return new Texture3D(w.ak_texture_create(img.width, img.height), img.width, img.height);
+}
+
 /** A mesh living in WebAssembly memory. */
 export class Mesh3D {
   /** Depth/width ratio for meshes built from images (`mesh.text`): use it as the instance's `sz`/`sy` factor. */
@@ -240,6 +275,15 @@ export interface MaterialOptions {
   pulseCount?: number;
   pulsePhase?: number;
   pulseDir?: V3;
+  /**
+   * An image from `texture()`, mapped by the mesh's UVs (× `textureRepeat`).
+   * `'albedo'` (default) tints the lit colour; `'emissive'` adds it unlit ×
+   * `textureGain` — screens, signs, holograms.
+   */
+  texture?: Texture3D;
+  textureMode?: 'albedo' | 'emissive';
+  textureRepeat?: [number, number];
+  textureGain?: number;
 }
 export interface LightOptions {
   key?: V3;
@@ -351,7 +395,8 @@ export class Renderer3D {
         ...(o.key ?? [0.4, 0.8, 0.6]), ...kc, ...(o.fill ?? [-0.6, -0.2, 0.4]), ...fc, ...rc, fog[0], fog[1], ...fogc,
         m.emissive ?? 0, m.metal ?? 0, m.iridescence ?? 0, m.hue ?? 0, ...rgb(o.sky, [0.25, 0.3, 0.55]), ...rgb(o.horizon, [1, 0.85, 0.7]), ...rgb(o.ground, [0.05, 0.05, 0.07]),
         m.lines ?? 0, ...rgb(m.lineColor, [1, 1, 1]), ...(m.grid ?? [8, 8]), m.lineWidth ?? 0.04,
-        m.pulse ?? 0, m.pulseCount ?? 1, m.pulsePhase ?? 0, ...(m.pulseDir ?? [0, 0, 0]), ...rgb(o.strips, [0, 0, 0])];
+        m.pulse ?? 0, m.pulseCount ?? 1, m.pulsePhase ?? 0, ...(m.pulseDir ?? [0, 0, 0]), ...rgb(o.strips, [0, 0, 0]),
+        m.texture ? m.texture.id + 1 : 0, m.texture ? (m.textureMode === 'emissive' ? 2 : 1) : 0, ...(m.textureRepeat ?? [1, 1]), m.textureGain ?? 1];
       const at = f64Buf(vals.length); // may grow memory: reserve before touching F64
       F64.set(vals, at);
       this.triangles += w.ak_raster_draw(this.id, it.mesh.id, inst.count, (it.cull === false ? 0 : 1) | (it.blend === 'additive' ? 2 : 0), vals.length);

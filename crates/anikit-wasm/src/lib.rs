@@ -59,6 +59,7 @@ struct State {
     audio: anikit_core::audio::Analysis,
     meshes: Vec<Option<anikit_core::raster::Mesh>>,
     rasters: Vec<Option<(anikit_core::raster::Raster, Vec<f32>)>>,
+    textures: Vec<Option<anikit_core::raster::Texture>>,
 }
 
 struct VideoSlot {
@@ -91,6 +92,7 @@ static STATE: Global = Global(UnsafeCell::new(State {
     audio: anikit_core::audio::Analysis { hop: 0.0, envelope: Vec::new(), flux: Vec::new(), onsets: Vec::new(), bpm: 0.0, beats: Vec::new() },
     meshes: Vec::new(),
     rasters: Vec::new(),
+    textures: Vec::new(),
 }));
 
 #[inline(always)]
@@ -1906,7 +1908,8 @@ pub extern "C" fn ak_raster_instances(id: u32, n: u32) -> *mut f32 {
 /// keyColor(3), fill(3), fillColor(3), rimColor(3), fog(2), fogColor(3);
 /// optional [44..57) emissive, metal, iridescence, hue, sky(3), horizon(3), ground(3);
 /// optional [57..73) lines, lineColor(3), grid(2), lineWidth, pulse, pulseCount, pulsePhase,
-/// pulseDir(3), strips(3). Returns triangles rasterised.
+/// pulseDir(3), strips(3); optional [73..78) texture id + 1 (0 = none), mode, repeat u, v, gain.
+/// Returns triangles rasterised.
 #[no_mangle]
 pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf: u32) -> u32 {
     use anikit_core::raster::*;
@@ -1915,11 +1918,12 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
     if nf < 44 {
         return 0;
     }
-    const DEFAULTS: [f32; 29] = [
+    const DEFAULTS: [f32; 34] = [
         0.0, 0.0, 0.0, 0.0, 0.25, 0.3, 0.55, 1.0, 0.85, 0.7, 0.05, 0.05, 0.07, // emissive … ground
         0.0, 1.0, 1.0, 1.0, 8.0, 8.0, 0.04, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, // lines … strips
+        0.0, 0.0, 1.0, 1.0, 1.0, // texture id + 1, mode, repeat u, v, gain
     ];
-    let nb = if nf >= 73 { 73 } else if nf >= 57 { 57 } else { 44 };
+    let nb = if nf >= 78 { 78 } else if nf >= 73 { 73 } else if nf >= 57 { 57 } else { 44 };
     let mut b: Vec<f32> = s.f64_buf[..nb].iter().map(|v| *v as f32).collect();
     b.extend_from_slice(&DEFAULTS[nb - 44..]);
     let vp: M4 = core::array::from_fn(|i| b[i]);
@@ -1943,15 +1947,33 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
         pulse_count: b[65],
         pulse_phase: b[66],
         pulse_dir: v3(67),
+        tex_mode: b[74] as u8,
+        tex_repeat: [b[75], b[76]],
+        tex_gain: b[77],
     };
     let light = Lighting { key: v3(24), key_color: v3(27), fill: v3(30), fill_color: v3(33), rim_color: v3(36), fog: [b[39], if b[40] > 0.0 { b[40] } else { f32::INFINITY }], fog_color: v3(41), sky: v3(48), horizon: v3(51), ground: v3(54), strips: v3(70) };
     let Some(Some(m)) = s.meshes.get(mesh as usize) else { return 0 };
+    let tex = (b[73] as usize).checked_sub(1).and_then(|t| s.textures.get(t)).and_then(|t| t.as_ref());
     let Some(Some((r, inst))) = s.rasters.get_mut(id as usize) else { return 0 };
     let k = (n as usize * INSTANCE_STRIDE).min(inst.len());
     // Flags: bit 0 back-face culling, bit 1 additive blending.
     let blend = if cull_back & 2 != 0 { Blend::Additive } else { Blend::Opaque };
-    r.draw_with(m, &inst[..k], &vp, eye, &mat, &light, cull_back & 1 != 0, blend);
+    r.draw_with(m, &inst[..k], &vp, eye, &mat, &light, cull_back & 1 != 0, blend, tex);
     r.drawn as u32
+}
+/// A texture from `w * h * 4` RGBA bytes in the u8 scratch buffer (mipmapped); returns its id.
+#[no_mangle]
+pub extern "C" fn ak_texture_create(w: u32, h: u32) -> u32 {
+    let s = st();
+    let n = (w as usize * h as usize * 4).min(s.u8_buf.len());
+    let t = anikit_core::raster::Texture::from_rgba(w as usize, h as usize, &s.u8_buf[..n]);
+    push_slot(&mut s.textures, t)
+}
+#[no_mangle]
+pub extern "C" fn ak_texture_free(id: u32) {
+    if let Some(t) = st().textures.get_mut(id as usize) {
+        *t = None;
+    }
 }
 /// Writable point buffer for [`ak_raster_points`]: `n * 6` f32 (xyz, rgb).
 #[no_mangle]
