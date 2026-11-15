@@ -195,6 +195,11 @@ export function wake(): void {
 // ---------------------------------------------------------------------------
 
 let reduced: 'never' | 'always' | 'user' = 'never';
+let reducedMode: 'instant' | 'fade' = 'instant';
+/** How reduced motion is applied (see `engine.reducedMotionMode`). */
+export function reducedMotionMode(): 'instant' | 'fade' {
+  return reducedMode;
+}
 /** True when animations should be reduced (see `engine.reducedMotion`). */
 export function prefersReduced(): boolean {
   if (reduced === 'always') return true;
@@ -213,6 +218,25 @@ export const engine = {
   },
   set reducedMotion(v: 'never' | 'always' | 'user') {
     reduced = v;
+  },
+  /**
+   * What "reduced" means. `'instant'` (default): every animation jumps to its
+   * end. `'fade'`: only movement is removed — transforms, motion paths, shape
+   * morphs and layout properties (sizes, offsets, margins) jump to their end
+   * values, while opacity, colours, filters and the like still animate with
+   * their normal timing. Fades and colour changes don't trigger vestibular
+   * symptoms and keep interfaces readable, so this is often the better choice.
+   *
+   * ```ts
+   * engine.reducedMotion = 'user';
+   * engine.reducedMotionMode = 'fade';
+   * ```
+   */
+  get reducedMotionMode(): 'instant' | 'fade' {
+    return reducedMode;
+  },
+  set reducedMotionMode(v: 'instant' | 'fade') {
+    reducedMode = v;
   },
   /**
    * Drive the engine yourself (tests, SSR, video export, custom loops).

@@ -619,3 +619,37 @@ describe('gesture', () => {
     g.kill();
   });
 });
+
+describe("reduced motion: 'fade' mode", () => {
+  it('holds movement at its end value but still animates opacity and colour', () => {
+    engine.reducedMotion = 'always';
+    engine.reducedMotionMode = 'fade';
+    try {
+      const el = box();
+      const o = { c: 'rgb(255,0,0)' };
+      animate(el, { x: [0, 100], scale: [0.5, 1], opacity: [0, 1], height: [0, 50] }, { duration: 1, ease: 'linear' });
+      animate(o, { c: 'rgb(0,0,255)' }, { duration: 1, ease: 'linear', colorSpace: 'srgb' });
+      advance(0.5);
+      expect(el.style.transform).toBe('translate(100px,0px)');
+      expect(el.style.height).toBe('50px');
+      expect(el.style.opacity).toBe('0.5');
+      expect(o.c).toBe('rgb(128,0,128)');
+    } finally {
+      engine.reducedMotion = 'never';
+      engine.reducedMotionMode = 'instant';
+    }
+  });
+
+  it("'instant' (default) still jumps everything", () => {
+    engine.reducedMotion = 'always';
+    try {
+      const el = box();
+      animate(el, { x: [0, 100], opacity: [0, 1] }, { duration: 1, ease: 'linear' });
+      advance(0.05);
+      expect(el.style.transform).toBe('translate(100px,0px)');
+      expect(el.style.opacity).toBe('1');
+    } finally {
+      engine.reducedMotion = 'never';
+    }
+  });
+});

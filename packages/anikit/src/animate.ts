@@ -11,7 +11,7 @@
  */
 import { core, F64, LINEAR, f64Buf, whenReady, views } from './wasm';
 import {
-  register, unregister, wake, flush, easingId, easingDuration, NodeRecord, EasingInput, prefersReduced,
+  register, unregister, wake, flush, easingId, easingDuration, NodeRecord, EasingInput, prefersReduced, reducedMotionMode,
   FL_FILL_BACKWARDS, FL_FILL_FORWARDS, FL_IMMEDIATE,
 } from './core';
 import {
@@ -112,6 +112,21 @@ const SPECIAL_PROPS = ['path', 'draw', 'd', 'attr', 'text', 'transform'];
 function isKnownStyle(el: HTMLElement, prop: string): boolean {
   const st = el.style as any;
   return !st || prop in st || camel(prop) in st || prop.startsWith('--');
+}
+
+/** Layout properties whose animation moves things (held still under reduced motion 'fade'). */
+const MOTION_STYLE = /^(width|height|(min|max)(Width|Height)|blockSize|inlineSize|top|left|right|bottom|inset.*|margin.*|padding.*|translate|rotate|scale|offset(Distance|Path|Rotate)?|backgroundPosition.*|objectPosition|transform|perspective|gap|rowGap|columnGap|letterSpacing|wordSpacing|lineHeight|fontSize)$/;
+
+const MOTION_ATTR = /^(x|y|cx|cy|r|rx|ry|x1|x2|y1|y2|dx|dy|width|height|points|transform|d|offset)$/;
+
+/** Collapse a track onto its last keyframe (values stay, motion doesn't). */
+function stillTrack(t: TrackDef): void {
+  const ch = t.ch;
+  const last = t.values.slice(-ch);
+  const nk = t.values.length / ch;
+  const v: number[] = [];
+  for (let k = 0; k < nk; k++) v.push(...last);
+  t.values = v;
 }
 
 /** Size properties that accept `'auto'` as an animation value. */
@@ -411,7 +426,10 @@ export class Animation extends Playable {
     else if (n === 0 && targetsIn != null) warn('animate() received an empty target list.');
     const claims = !ctx.child && o.overwrite !== false;
     const cs = COLOR_SPACES[o.colorSpace ?? 'oklab'] ?? 2;
-    const reduce = prefersReduced();
+    // Reduced motion: everything jumps ('instant'), or only movement does ('fade').
+    const reducedAny = prefersReduced();
+    const reduce = reducedAny && reducedMotionMode() === 'instant';
+    const still = reducedAny && !reduce;
     const repeat = reduce || o.repeat === undefined ? 0 : o.repeat < 0 ? Infinity : o.repeat;
     const direction =
       o.direction !== undefined ? DIRECTIONS[o.direction] ?? 0 : o.yoyo ? DIRECTIONS.alternate : 0;
@@ -431,7 +449,12 @@ export class Animation extends Playable {
       // One transform snapshot per target covers every transform component.
       let snappedTransform = false;
 
-      const addTrack = (t: TrackDef, ease: EasingInput | EasingInput[] | undefined, offsets?: number[]) => {
+      const addTrack = (t: TrackDef, ease: EasingInput | EasingInput[] | undefined, offsets?: number[], motion = false) => {
+        if (still && motion) {
+          // Hold the end value for the whole animation: no movement, same timing.
+          stillTrack(t);
+          if (t.segs) t.segs.forEach(stillTrack);
+        }
         const nk = t.values.length / t.ch;
         if (offsets && offsets.length === nk) t.offsets = offsets;
         const e = ease ?? (easeList ? easeList : baseEase);
@@ -497,7 +520,7 @@ export class Animation extends Playable {
             track.unit = du;
           }
         }
-        const idx = addTrack(track, spec.ease, spec.offsets);
+        const idx = addTrack(track, spec.ease, spec.offsets, kind === Kind.Transform || (kind === Kind.Style && MOTION_STYLE.test(camel(prop))));
         const numeric = track.kind === TRACK_NUMBER && track.ch === 1 && !track.segs;
         if (kind !== Kind.Transform || !snappedTransform) this._restore.push(snapshot(target, prop, kind));
         if (kind === Kind.Transform) snappedTransform = true;
@@ -628,7 +651,7 @@ export class Animation extends Playable {
   /** Special properties: motion `path`, morph `d`, stroke `draw`, `attr`. */
   private _special(
     prop: string, rawIn: unknown, target: Target, i: number, n: number, part: Part, tracks: TrackDef[],
-    addTrack: (t: TrackDef, e: EasingInput | EasingInput[] | undefined, o?: number[]) => number,
+    addTrack: (t: TrackDef, e: EasingInput | EasingInput[] | undefined, o?: number[], motion?: boolean) => number,
     cs: number, ctx: BuildContext,
   ): void {
     const raw = resolve(rawIn as FnValue<any>, target, i, n);
@@ -647,7 +670,7 @@ export class Animation extends Playable {
         kind: TRACK_MATRIX, arg: 0, ch: 16, out: 16, values: mats, unit: '',
         format: (at) => toMatrix3d(F64, at), first: toMatrix3d(mats, 0), last: toMatrix3d(mats, mats.length - 16),
       };
-      const idx = addTrack(t, undefined, this._times);
+      const idx = addTrack(t, undefined, this._times, true);
       const style = isEl ? (target as HTMLElement).style : null;
       part.b.push(custom(target, 'transform', idx, 0, style ? (at) => (style.transform = toMatrix3d(F64, at)) : (at) => ((target as any).transform = toMatrix3d(F64, at))));
       return;
@@ -707,7 +730,7 @@ export class Animation extends Playable {
         const vals = Array.isArray(raw[key]) ? raw[key] : [null, raw[key]];
         const read = () => readValue(target, key, Kind.Attr);
         const t = buildTrack(vals.map((v: any) => resolve(v, target, i, n)), read, (v) => v, cs);
-        const idx = addTrack(t, undefined);
+        const idx = addTrack(t, undefined, undefined, MOTION_ATTR.test(key));
         const b = bind(target, key, Kind.Attr, idx, false, t.unit, t.format);
         b.prop = 'attr:' + key;
         part.b.push(b);
@@ -724,7 +747,7 @@ export class Animation extends Playable {
         kind: TRACK_PATH, arg: lut, ch: 1, out: 3, values: [spec.start ?? 0, spec.end ?? 1], unit: '',
         format: () => 0, first: 0, last: 0,
       };
-      const idx = addTrack(t, undefined);
+      const idx = addTrack(t, undefined, undefined, true);
       // The LUT is copied into the animation; free the registry slot after creation.
       queueMicrotask(() => w.ak_path_lut_free(lut));
       const s = stateOf(target);
@@ -760,7 +783,7 @@ export class Animation extends Playable {
         first: writeMorph(tmpl, seq.frames[0]), last: writeMorph(tmpl, seq.frames[seq.frames.length - 1]),
       };
       if (isElement(el)) this._restore.push(snapshot(target, 'd', Kind.Attr));
-      const idx = addTrack(t, undefined, this._times);
+      const idx = addTrack(t, undefined, this._times, true);
       const write = isElement(el) ? (v: string) => el.setAttribute('d', v) : (v: string) => ((target as any).d = v);
       const mb = custom(target, 'd', idx, 0, (at) => write(writeMorph(tmpl, F64, at)));
       ((this as any)._dFmt ??= new Map()).set(mb, (at: number) => writeMorph(tmpl, F64, at));
