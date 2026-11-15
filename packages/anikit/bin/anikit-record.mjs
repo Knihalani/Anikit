@@ -1,15 +1,7 @@
 #!/usr/bin/env node
 // anikit-record — frame-exact screenshots / recordings of pages animated with
-// Anikit, headlessly (Playwright + Chromium).
-//
-//   anikit-record <url|file> [--out clip.gif|clip.mp4|clip.webm|frames/] [--duration 3] [--fps 30]
-//                 [--size 1280x720] [--selector '#hero'] [--scale 1] [--wait 0] [--realtime]
-//   anikit-record <url|file> --screenshot shot.png [--at 1.5]
-//
-// The page's Anikit engine is started in manual time and advanced exactly
-// 1/fps per frame, so recordings are perfect regardless of machine speed.
-// Local files are served from the current directory (ES modules work).
-// GIFs are encoded by Anikit's WebAssembly encoder; MP4/WebM need ffmpeg.
+// Anikit, headlessly (Playwright + Chromium). `anikit-record --help` prints the
+// usage. GIFs are encoded by anikit's WebAssembly encoder; MP4/WebM need ffmpeg.
 import { createRequire } from 'node:module';
 import { readFileSync, existsSync, mkdirSync, writeFileSync, statSync } from 'node:fs';
 import { join, extname, resolve, relative, dirname } from 'node:path';
@@ -17,23 +9,79 @@ import { spawn, spawnSync } from 'node:child_process';
 import { inflateSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
-const args = process.argv.slice(2);
-const opt = (name, d) => {
-  const i = args.indexOf('--' + name);
-  return i >= 0 ? args[i + 1] : d;
+const HELP = `anikit-record — frame-exact recordings and screenshots of pages animated with anikit (headless Chromium)
+
+Usage
+  anikit-record <url|file.html> [--out clip.gif|clip.mp4|clip.webm|frames/] [options]
+  anikit-record <url|file.html> --screenshot shot.png [--at 1.5]
+
+Options
+  --out <path>         .gif (encoded by anikit), .mp4/.webm (need ffmpeg) or a directory of PNGs. Default anikit.gif
+  --duration <s>       seconds to record (default 3)
+  --fps <n>            frames per second (default 30)
+  --size <WxH>         viewport size (default 1280x720)
+  --selector <css>     record only this element's box (e.g. '#hero')
+  --scale <n>          device pixel ratio (default 1)
+  --wait <s>           animation seconds to skip before the first frame (default 0)
+  --screenshot <png>   write one PNG instead of a recording; --at <s> picks the moment
+  --realtime           record in wall-clock time (pages without anikit, or to check real performance)
+  -h, --help           show this help
+
+The page's engine runs in manual time and advances exactly 1/fps per frame, so
+recordings never depend on machine speed. Local files are served from the
+current directory, so ES modules work without a server.
+Needs Playwright: npm i -D playwright && npx playwright install chromium`;
+
+const VALUE = ['out', 'duration', 'fps', 'size', 'selector', 'scale', 'wait', 'screenshot', 'at'];
+const BOOL = ['realtime', 'help'];
+const fail = (msg) => {
+  console.error(`anikit-record: ${msg}\nRun "anikit-record --help" for usage.`);
+  process.exit(1);
 };
-const flag = (name) => args.includes('--' + name);
-const target = args.find((a, i) => !a.startsWith('--') && (i === 0 || !args[i - 1].startsWith('--') || ['--realtime'].includes(args[i - 1])));
-if (!target || flag('help')) {
-  console.log(readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 12).map((l) => l.replace(/^\/\/ ?/, '')).join('\n'));
-  process.exit(target ? 0 : 1);
+const args = process.argv.slice(2);
+const opts = {};
+const positional = [];
+for (let i = 0; i < args.length; i++) {
+  const a = args[i];
+  if (a === '-h') { opts.help = true; continue; }
+  if (!a.startsWith('--')) { positional.push(a); continue; }
+  const eq = a.indexOf('=');
+  const name = a.slice(2, eq < 0 ? undefined : eq);
+  if (BOOL.includes(name)) { opts[name] = true; continue; }
+  if (!VALUE.includes(name)) {
+    const near = [...VALUE, ...BOOL].find((c) => c.startsWith(name.slice(0, 3)) || [...c].sort().join('') === [...name].sort().join(''));
+    fail(`unknown option --${name}.${near ? ` Did you mean --${near}?` : ''}`);
+  }
+  const val = eq >= 0 ? a.slice(eq + 1) : args[++i];
+  if (val === undefined || (eq < 0 && val.startsWith('--'))) fail(`--${name} needs a value.`);
+  opts[name] = val;
 }
-const fps = Number(opt('fps', 30));
-const duration = Number(opt('duration', 3));
+const opt = (name, d) => opts[name] ?? d;
+const flag = (name) => !!opts[name];
+const number = (name, d, positive = false) => {
+  const n = Number(opt(name, d));
+  if (!Number.isFinite(n) || n < 0 || (positive && n === 0)) fail(`--${name} must be a ${positive ? 'positive' : 'non-negative'} number, got "${opts[name]}".`);
+  return n;
+};
+if (flag('help')) {
+  console.log(HELP);
+  process.exit(0);
+}
+const target = positional[0];
+if (!target) {
+  console.log(HELP);
+  process.exit(1);
+}
+if (positional.length > 1) fail(`unexpected argument "${positional[1]}". Options start with -- (e.g. --out ${positional[1]}).`);
+if (!/^https?:\/\//.test(target) && !existsSync(resolve(target))) fail(`${target} not found. Pass a URL (http://localhost:5173) or a local .html file.`);
+const fps = number('fps', 30, true);
+const duration = number('duration', 3, true);
+if (!/^\d+x\d+$/.test(opt('size', '1280x720'))) fail(`--size takes WIDTHxHEIGHT, e.g. 1280x720; got "${opts.size}".`);
 const [vw, vh] = opt('size', '1280x720').split('x').map(Number);
-const scale = Number(opt('scale', 1));
+const scale = number('scale', 1, true);
 const selector = opt('selector');
-const wait = Number(opt('wait', 0));
+const wait = number('wait', 0);
+number('at', 0);
 const shot = opt('screenshot');
 const out = opt('out', shot ? undefined : 'anikit.gif');
 const realtime = flag('realtime');

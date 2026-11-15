@@ -5,6 +5,7 @@
 //   const film = anikit.composition({ width: 1920, height: 1080, fps: 60, duration: 10 });
 //   …
 //   await renderToFile(film, { out: 'film.mp4' });
+//   await renderStill(film, { t: 2, out: 'frame.png' });   // one frame, for a quick look
 //
 // Or put the composition in a module and use the CLI (parallel workers):
 //   npx anikit-render film.mjs --out film.mp4 --workers 4 [--audio track.wav]
@@ -25,7 +26,7 @@ function canvasLib(from = process.cwd()) {
       return napi;
     } catch { /* try next */ }
   }
-  throw new Error('anikit/node: install the optional peer dependency "@napi-rs/canvas"');
+  throw new Error('anikit/node: install the optional peer dependency "@napi-rs/canvas" (npm i -D @napi-rs/canvas); it draws the frames in Node');
 }
 
 /**
@@ -49,7 +50,10 @@ export async function loadAnikit(o = {}) {
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   }
-  const anikit = await import(join(here, '../dist/anikit.js'));
+  const dist = join(here, '../dist/anikit.js');
+  const { existsSync } = await import('node:fs');
+  if (!existsSync(dist)) throw new Error(`anikit/node: ${dist} is missing; build the package first (npm run build in packages/anikit)`);
+  const anikit = await import(dist);
   await anikit.ready;
   return { anikit, node: nodeHelpers(lib) };
 }
@@ -111,6 +115,27 @@ export async function renderToFile(comp, o) {
   ff.stdin.end();
   await done;
   return { frames: n, seconds: (Date.now() - t0) / 1000 };
+}
+
+/**
+ * Render the single frame at `t` seconds to an image (`.png`, or `.jpg`/`.jpeg`).
+ * Everything before `t` is simulated (not drawn), so the frame matches the video.
+ */
+export async function renderStill(comp, o) {
+  const { writeFileSync } = await import('node:fs');
+  const canvas = o.canvas ?? canvasLib().createCanvas(comp.width, comp.height);
+  const t = Math.max(0, Math.min(o.t, comp.duration - 1 / comp.fps));
+  const jpeg = /\.jpe?g$/i.test(o.out);
+  let wrote = false;
+  await comp.render({
+    canvas, from: t, to: t + 1 / comp.fps, readPixels, createCanvas: (w, h) => canvasLib().createCanvas(w, h),
+    onFrame: () => {
+      if (wrote) return;
+      writeFileSync(o.out, jpeg ? canvas.toBuffer('image/jpeg', 90) : canvas.toBuffer('image/png'));
+      wrote = true;
+    },
+  });
+  return o.out;
 }
 
 /** Write every Nth frame as a JPEG (quick previews). */
