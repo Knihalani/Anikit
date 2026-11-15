@@ -95,7 +95,13 @@ export async function renderToFile(comp, o) {
     '-r', String(fps), '-movflags', '+faststart', o.out];
   const ff = spawn('ffmpeg', args, { stdio: ['pipe', 'inherit', 'inherit'] });
   const done = new Promise((res, rej) => ff.on('close', (c) => (c ? rej(new Error(`ffmpeg exited ${c}`)) : res())));
-  const write = (b) => new Promise((r) => (ff.stdin.write(b) ? r() : ff.stdin.once('drain', r)));
+  // Keep up to `o.queue` frames (default 3) buffered for ffmpeg so encoding
+  // overlaps rendering instead of waiting for each frame to drain.
+  const frameBytes = w * h * 1.5, maxQueued = frameBytes * (o.queue ?? 3);
+  const write = (b) => {
+    ff.stdin.write(b);
+    return ff.stdin.writableLength > maxQueued ? new Promise((r) => ff.stdin.once('drain', r)) : null;
+  };
   const canvas = o.canvas ?? canvasLib().createCanvas(w, h);
   const t0 = Date.now();
   let n = 0;
@@ -103,7 +109,8 @@ export async function renderToFile(comp, o) {
     canvas, from: o.from, to: o.to, preroll: o.preroll, readPixels, createCanvas: (w, h) => canvasLib().createCanvas(w, h),
     onFrame: async (fr) => {
       // Copy out of wasm memory: the pipe may not drain before the next frame.
-      await write(Buffer.from(fr.i420()));
+      const wait = write(Buffer.from(fr.i420()));
+      if (wait) await wait;
       n++;
       o.onProgress?.(fr, n, (Date.now() - t0) / 1000);
     },
