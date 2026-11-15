@@ -142,6 +142,10 @@ Give `scroll()` a `compositor()` animation and it's attached to a native `Scroll
 const { chars, words, lines, revert } = splitText('h1', { type: 'lines,words,chars' });
 animate(chars, { y: ['100%', 0], opacity: [0, 1] }, { delay: stagger(0.02) });
 
+// Lines rising from behind a mask; re-split (and the animation handed over) when the width changes
+splitText('.lede', { type: 'lines', mask: 'lines', autoSplit: true,
+  onSplit: ({ lines }) => animate(lines, { yPercent: [100, 0] }, { delay: stagger(0.08), ease: 'outCubic' }) });
+
 flip('.item', () => grid.classList.toggle('dense'), { duration: 0.6, ease: 'spring(bounce: .2)' }); // see "Layout transitions"
 
 compositor('.toast', { y: [20, 0], opacity: [0, 1] }, { ease: 'spring(bounce: .4)' }); // compositor thread
@@ -150,6 +154,8 @@ const b = batch(50_000, { x: (i) => [0, i % 500], y: [0, 300], a: [0, 1] },
                 { duration: 2, delay: stagger(0.00005), onUpdate: () => draw(b.data, b.stride) });
 // b.data: Float32Array (count * stride), e.g. gl.bufferSubData(gl.ARRAY_BUFFER, 0, b.data)
 ```
+
+`splitText` options: `mask: 'lines' | 'words' | 'chars'` wraps each unit in an `overflow: clip` element (returned in `masks`; class via `maskClass`). `autoSplit: true` splits again when an element's width changes and once web fonts have loaded, so lines match the layout. `onSplit(result)` runs after every split; return the animation that uses the pieces, and on a re-split it's reverted and the new one is moved to the same time. `result.split()` re-splits on demand, and `revert()` restores the markup (a `context()` does this too).
 
 ---
 

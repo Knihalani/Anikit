@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { animate, timeline, flip, presence, enter, exit, engine, viewTransition, compositor, scroll } from '../src/index';
+import { animate, timeline, flip, presence, enter, exit, engine, viewTransition, compositor, scroll, splitText } from '../src/index';
 import { setup, advance, box } from './setup';
 
 beforeAll(setup);
@@ -425,6 +425,78 @@ describe('compositor + scroll', () => {
       expect(made[0].playState).toBe('idle');
     } finally {
       engine.reducedMotion = 'never';
+    }
+  });
+});
+
+describe('splitText masks and autoSplit', () => {
+  it('wraps units in clipping masks', () => {
+    const el = box();
+    el.innerHTML = 'Hello <b>big</b> world';
+    const s = splitText(el, { type: 'words', mask: 'words', maskClass: 'm' });
+    expect(s.words.length).toBe(3);
+    expect(s.masks.length).toBe(3);
+    for (let i = 0; i < 3; i++) {
+      expect(s.words[i].parentElement).toBe(s.masks[i]);
+      expect(s.masks[i].style.overflow).toBe('clip');
+      expect(s.masks[i].className).toBe('m');
+    }
+    expect(el.querySelector('b')!.textContent).toBe('big');
+    expect(el.getAttribute('aria-label')).toBe('Hello big world');
+    s.revert();
+    expect(el.innerHTML).toBe('Hello <b>big</b> world');
+    expect(el.hasAttribute('aria-label')).toBe(false);
+  });
+
+  it('masks lines', () => {
+    const el = box();
+    el.textContent = 'one two three';
+    const s = splitText(el, { type: 'lines', mask: 'lines' });
+    expect(s.lines.length).toBe(1); // no layout in happy-dom: a single line
+    expect(s.masks[0].style.display).toBe('block');
+    expect(s.lines[0].parentElement).toBe(s.masks[0]);
+  });
+
+  it('re-splits on width changes and hands the animation over', async () => {
+    const G = globalThis as any;
+    const RO = G.ResizeObserver;
+    let fire: ((entries: any[]) => void) | null = null;
+    G.ResizeObserver = class {
+      constructor(cb: (e: any[]) => void) {
+        fire = cb;
+      }
+      observe() {}
+      disconnect() {}
+    };
+    try {
+      const el = box();
+      el.textContent = 'ab cd';
+      const anims: any[] = [];
+      const s = splitText(el, {
+        type: 'chars', autoSplit: true,
+        onSplit: (r) => {
+          const a = animate(r.chars, { opacity: [0, 1] }, { duration: 1, ease: 'linear' });
+          anims.push(a);
+          return a;
+        },
+      });
+      const firstChars = s.chars.slice();
+      expect(anims.length).toBe(1);
+      advance(0.5);
+      fire!([{ target: el, contentRect: { width: 300 } }]);
+      fire!([{ target: el, contentRect: { width: 200 } }]);
+      await new Promise((r) => setTimeout(r, 50));
+      expect(anims.length).toBe(2);
+      expect(s.chars.length).toBe(4);
+      expect(s.chars[0]).not.toBe(firstChars[0]);
+      expect(firstChars[0].isConnected).toBe(false);
+      // The new animation continues from the same time.
+      expect(anims[1].time).toBeCloseTo(0.5, 1);
+      s.revert();
+      expect(el.textContent).toBe('ab cd');
+      expect(el.children.length).toBe(0);
+    } finally {
+      G.ResizeObserver = RO;
     }
   });
 });
