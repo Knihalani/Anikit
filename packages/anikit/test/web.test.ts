@@ -88,6 +88,17 @@ describe('flip', () => {
     expect(tl.state).toBe('finished');
   });
 
+  it('resolves when nothing moved', async () => {
+    const a = box();
+    layout(a, { x: 0, y: 0, w: 10, h: 10 });
+    const tl = flip(a, () => {});
+    advance(0.05);
+    let done = false;
+    tl.then(() => (done = true));
+    await settle();
+    expect(done).toBe(true);
+  });
+
   it('scales size changes and keeps border-radius undistorted', async () => {
     const a = box({ borderRadius: '10px' });
     const b = layout(a, { x: 0, y: 0, w: 100, h: 50 });
@@ -463,6 +474,17 @@ describe('splitText masks and autoSplit', () => {
     expect(el.children.length).toBe(2); // back to the first split's markup
   });
 
+  it('a mask implies its unit type', () => {
+    const el = box();
+    el.textContent = 'ab cd';
+    const s = splitText(el, { mask: 'chars' }); // default type is words,chars
+    expect(s.masks.length).toBe(4);
+    s.revert();
+    const t = splitText(el, { type: 'words', mask: 'lines' });
+    expect(t.lines.length).toBe(1);
+    expect(t.masks.length).toBe(1);
+  });
+
   it('masks lines', () => {
     const el = box();
     el.textContent = 'one two three';
@@ -555,6 +577,12 @@ describe('complex values', () => {
     advance(0.5);
     expect(o.f).toBe('blur(6px)');
     expect(el.style.clipPath).toBe('circle(25%)');
+  });
+
+  it('leaves plain length lists alone (no shadow rewrite)', () => {
+    expect(at('5px 5px', '10px 20px 30px', 1)).toBe('10px 20px 30px');
+    expect(at('100px 200px', '100px 200px 300px', 1)).toBe('100px 200px 300px');
+    expect(at('1 1', '2 1 100px', 1)).toBe('2 1 100px');
   });
 
   it('keeps interpolating values the list rules cannot reshape', () => {

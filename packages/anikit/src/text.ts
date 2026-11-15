@@ -71,6 +71,8 @@ type Pieces = { chars: HTMLElement[]; words: HTMLElement[]; lines: HTMLElement[]
 /** Split one element; returns its restore function. */
 function splitOne(el: HTMLElement, options: SplitOptions, out: Pieces): () => void {
   const types = new Set((options.type ?? 'words,chars').split(/[\s,]+/));
+  // A mask needs the units it wraps.
+  if (options.mask) types.add(options.mask);
   const wantChars = types.has('chars');
   const wantLines = types.has('lines');
   const wantWords = types.has('words') || wantLines || !wantChars || options.mask === 'words';

@@ -128,6 +128,9 @@ function harmonizeFilters(strs: string[]): string[] | null {
 
 type Shadow = { inset: boolean; lengths: string[]; color: string };
 
+/** Whether a token is a colour (set by `harmonize`; the parser lives in the core). */
+let isColor: (s: string) => boolean = () => false;
+
 const LENGTH = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?([a-z%]*)$/i;
 
 function parseShadow(s: string): Shadow | null {
@@ -152,7 +155,10 @@ function parseShadow(s: string): Shadow | null {
     colorAt = lengths.length;
   }
   if (lengths.length < 2 || lengths.length > 4) return null;
-  return { inset, lengths, color: color || 'currentcolor' };
+  // A shadow names its colour; without one this is just a list of lengths
+  // (margin, padding, flex, grid tracks…), which must not grow a colour.
+  if (!color || !(color.toLowerCase() === 'currentcolor' || isColor(color))) return null;
+  return { inset, lengths, color };
 }
 
 function harmonizeShadows(strs: string[]): string[] | null {
@@ -198,7 +204,8 @@ function harmonizeShadows(strs: string[]): string[] | null {
 }
 
 /** Rewrite keyframe strings into one interpolable shape, or `null`. */
-export function harmonize(strs: string[]): string[] | null {
+export function harmonize(strs: string[], colorTest: (s: string) => boolean): string[] | null {
+  isColor = colorTest;
   const t = strs.map((s) => s.trim());
   return harmonizeFilters(t) ?? harmonizeShadows(t);
 }

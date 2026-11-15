@@ -256,7 +256,7 @@ export function buildTrack(
     // Lists that don't line up as written (filter functions in a different
     // set or order, shadow lists of different lengths or token order):
     // rewrite them into one shape and try again.
-    const fixed = harmonize(parsed.map(toText));
+    const fixed = harmonize(parsed.map(toText), (s) => parseColor(s) !== null);
     if (fixed) {
       const reparsed = fixed.map(parseValue);
       // Adopt the rewrite only if it lines up (otherwise keep what we had).
