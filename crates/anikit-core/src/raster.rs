@@ -219,18 +219,6 @@ impl Texture {
         let fy = (v - crate::math::floorf(v)) * *h as f32 - 0.5;
         let (x0f, y0f) = (crate::math::floorf(fx), crate::math::floorf(fy));
         let (tx, ty) = (fx - x0f, fy - y0f);
-        // Wrap without dividing: u − floor(u) ∈ [0, 1] puts the index in −1 … n − 1
-        // (`rem_euclid` for anything else, e.g. huge or NaN coordinates).
-        #[inline(always)]
-        fn wrap(i: isize, n: usize) -> usize {
-            if (i as usize) < n {
-                i as usize
-            } else if i == -1 {
-                n - 1
-            } else {
-                i.rem_euclid(n as isize) as usize
-            }
-        }
         let (x0, y0) = (wrap(x0f as isize, *w), wrap(y0f as isize, *h));
         let (x1, y1) = (if x0 + 1 == *w { 0 } else { x0 + 1 }, if y0 + 1 == *h { 0 } else { y0 + 1 });
         let (a, b, c, d) = (px[y0 * w + x0], px[y0 * w + x1], px[y1 * w + x0], px[y1 * w + x1]);
@@ -238,6 +226,97 @@ impl Texture {
         let top = a + (b - a) * tx;
         let bot = c + (d - c) * tx;
         (top + (bot - top) * ty) * (1.0 / 255.0)
+    }
+
+    /// [`Texture::sample_v`] for four pixels at once (lanes), channels as the four
+    /// vectors: the same arithmetic per lane and channel, so the same bits. The
+    /// texel addressing stays per lane; coordinates, weights and the blend are SIMD.
+    #[inline]
+    fn sample_lanes(&self, u: V4, v: V4, fw: V4) -> [V4; 4] {
+        if self.levels.is_empty() {
+            return [V4::splat(1.0); 4];
+        }
+        let nl = self.levels.len() as i32;
+        let fwa = fw.to_array();
+        let lv: [usize; 4] = core::array::from_fn(|l| {
+            let f = fwa[l];
+            if f > 1.0 {
+                (((f.to_bits() >> 23) & 255) as i32 - 127).clamp(0, nl - 1) as usize
+            } else {
+                0
+            }
+        });
+        let lev = lv.map(|k| &self.levels[k]);
+        let wf = V4::new(lev[0].0 as f32, lev[1].0 as f32, lev[2].0 as f32, lev[3].0 as f32);
+        let hf = V4::new(lev[0].1 as f32, lev[1].1 as f32, lev[2].1 as f32, lev[3].1 as f32);
+        let fx = (u - u.floor()) * wf - 0.5;
+        let fy = (v - v.floor()) * hf - 0.5;
+        let (x0f, y0f) = (fx.floor(), fy.floor());
+        let (tx, ty) = (fx - x0f, fy - y0f);
+        let (xa, ya) = (x0f.to_array(), y0f.to_array());
+        let mut q = [[0u32; 4]; 4];
+        for l in 0..4 {
+            let (w, h, px) = (lev[l].0, lev[l].1, &lev[l].2);
+            let (x0, y0) = (wrap(xa[l] as isize, w), wrap(ya[l] as isize, h));
+            let (x1, y1) = (if x0 + 1 == w { 0 } else { x0 + 1 }, if y0 + 1 == h { 0 } else { y0 + 1 });
+            q[0][l] = px[y0 * w + x0];
+            q[1][l] = px[y0 * w + x1];
+            q[2][l] = px[y1 * w + x0];
+            q[3][l] = px[y1 * w + x1];
+        }
+        core::array::from_fn(|k| {
+            let ch = |p: [u32; 4]| V4::from_u32_masked(p.map(|x| x >> (8 * k)), 255);
+            let (a, b, c, d) = (ch(q[0]), ch(q[1]), ch(q[2]), ch(q[3]));
+            let top = a + (b - a) * tx;
+            let bot = c + (d - c) * tx;
+            (top + (bot - top) * ty) * (1.0 / 255.0)
+        })
+    }
+
+    /// [`Texture::sample_aniso`] for four pixels at once (channels as the four
+    /// vectors), bit for bit; `None` when an input isn't finite (the per-lane
+    /// version handles those).
+    #[inline]
+    fn sample_aniso_lanes(&self, u: V4, v: V4, ax: [V4; 2], ay: [V4; 2]) -> Option<[V4; 4]> {
+        let Some(top) = self.levels.first() else { return Some([V4::splat(1.0); 4]) };
+        let fin = |x: V4| x.to_array().iter().all(|v| v.is_finite());
+        if !(fin(u) && fin(v) && fin(ax[0]) && fin(ax[1]) && fin(ay[0]) && fin(ay[1])) {
+            return None;
+        }
+        let (w, h) = (top.0 as f32, top.1 as f32);
+        let (xu, xv, yu, yv) = (ax[0] * w, ax[1] * h, ay[0] * w, ay[1] * h);
+        let (lx2, ly2) = (xu * xu + xv * xv, yu * yu + yv * yv);
+        let sel = ly2.le(lx2); // lx2 >= ly2
+        let (mj2, mn2) = (V4::select(sel, lx2, ly2), V4::select(sel, ly2, lx2));
+        let (du, dv) = (V4::select(sel, ax[0], ay[0]), V4::select(sel, ax[1], ay[1]));
+        let (maj, min) = (mj2.sqrt(), mn2.sqrt());
+        if !(fin(maj) && fin(min)) {
+            return None;
+        }
+        // Both ≥ 0 and finite: max is f32::max.
+        let fw = min.max(maj * (1.0 / ANISO_MAX));
+        let span = fw * 1.5;
+        let many = maj.gt(span);
+        // ceil(x) = −floor(−x), exactly; ceil(maj / span) is never NaN where `many` holds.
+        let nf = V4::select(many, (-(-(maj / span)).floor()).min(V4::splat(ANISO_TAPS)), V4::splat(1.0));
+        let na = nf.to_array();
+        let nmax = na.iter().fold(1.0f32, |m, &x| m.max(x)) as usize;
+        if nmax <= 1 {
+            return Some(self.sample_lanes(u, v, fw));
+        }
+        let step = V4::splat(1.0) / nf;
+        let single = nf.le(V4::splat(1.0)); // one tap: sampled at (u, v) itself, like the scalar early return
+        let mut acc = [V4::splat(0.0); 4];
+        for k in 0..nmax {
+            let o = (V4::splat(k as f32) + 0.5) * step - 0.5;
+            let active = V4::splat(k as f32).lt(nf); // k < n (lanes past their taps add nothing)
+            let (uk, vk) = (V4::select(single, u, u + du * o), V4::select(single, v, v + dv * o));
+            let s = self.sample_lanes(uk, vk, fw);
+            for c in 0..4 {
+                acc[c] = acc[c] + V4::select(active, s[c], V4::splat(0.0));
+            }
+        }
+        Some(acc.map(|a| a * step))
     }
 
     /// Anisotropic sample at `u, v` (wrapping): `ax`/`ay` are the UV steps of one
@@ -267,6 +346,19 @@ impl Texture {
             acc = acc + self.sample_v(u + du * o, v + dv * o, fw);
         }
         acc * step
+    }
+}
+
+/// Wrap a texel index without dividing: u − floor(u) ∈ [0, 1] puts the index in
+/// −1 … n − 1 (`rem_euclid` for anything else, e.g. huge or NaN coordinates).
+#[inline(always)]
+fn wrap(i: isize, n: usize) -> usize {
+    if (i as usize) < n {
+        i as usize
+    } else if i == -1 {
+        n - 1
+    } else {
+        i.rem_euclid(n as isize) as usize
     }
 }
 
@@ -615,13 +707,24 @@ impl Shade<'_> {
         let m = self.m;
         let (ru, rv) = (m.tex_repeat[0], m.tex_repeat[1]);
         if let Some(d) = d {
-            let (u, v) = ((u * ru).to_array(), (v * rv).to_array());
-            let (ux, vx, uy, vy) = ((d[0] * ru).to_array(), (d[1] * rv).to_array(), (d[2] * ru).to_array(), (d[3] * rv).to_array());
+            let (u, v) = (u * ru, v * rv);
+            let (ux, vx, uy, vy) = (d[0] * ru, d[1] * rv, d[2] * ru, d[3] * rv);
+            if let Some(c) = t.sample_aniso_lanes(u, v, [ux, vx], [uy, vy]) {
+                return c;
+            }
+            let (u, v) = (u.to_array(), v.to_array());
+            let (ux, vx, uy, vy) = (ux.to_array(), vx.to_array(), uy.to_array(), vy.to_array());
             return V4::transpose(core::array::from_fn(|l| t.sample_aniso(u[l], v[l], [ux[l], vx[l]], [uy[l], vy[l]])));
         }
         let (tw, th) = (t.width() as f32 * ru, t.height() as f32 * rv);
-        let (u, v, fu, fv) = ((u * ru).to_array(), (v * rv).to_array(), (fwu * tw).to_array(), (fwv * th).to_array());
-        V4::transpose(core::array::from_fn(|l| t.sample_v(u[l], v[l], fu[l].max(fv[l]))))
+        let (u, v, fu, fv) = (u * ru, v * rv, fwu * tw, fwv * th);
+        // f32::max ignores a NaN operand where the SIMD max may not: lanes path only when both are numbers.
+        let (fua, fva) = (fu.to_array(), fv.to_array());
+        if fua.iter().chain(&fva).all(|x| !x.is_nan()) {
+            return t.sample_lanes(u, v, fu.max(fv));
+        }
+        let (u, v) = (u.to_array(), v.to_array());
+        V4::transpose(core::array::from_fn(|l| t.sample_v(u[l], v[l], fua[l].max(fva[l]))))
     }
 
     /// Shade four pixels at once.
@@ -3043,6 +3146,44 @@ mod tests {
                 i += 1;
             }
         }
+    }
+
+    #[test]
+    fn lane_texture_sampling_matches_the_scalar_samplers_bit_for_bit() {
+        // Odd, non-square textures (wrapping at every mip), coordinates outside 0…1,
+        // footprints from sub-texel to whole-texture, anisotropy from none to extreme.
+        let mut seed = 12345u32;
+        let mut rnd = || {
+            seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
+            (seed >> 8) as f32 / 16777216.0
+        };
+        for (tw, th) in [(37usize, 21usize), (64, 64), (5, 130), (1, 1)] {
+            let data: Vec<u8> = (0..tw * th * 4).map(|i| (i.wrapping_mul(2654435761) >> 7) as u8).collect();
+            let t = Texture::from_rgba(tw, th, &data);
+            for _ in 0..4000 {
+                let g = |r: &mut dyn FnMut() -> f32| V4::new(r(), r(), r(), r());
+                let u = g(&mut || rnd() * 6.0 - 3.0);
+                let v = g(&mut || rnd() * 6.0 - 3.0);
+                let scale = [1e-4f32, 0.003, 0.03, 0.4][(rnd() * 4.0) as usize];
+                let d: [V4; 4] = core::array::from_fn(|_| g(&mut || (rnd() * 2.0 - 1.0) * scale * if rnd() < 0.3 { 20.0 } else { 1.0 }));
+                let fw = g(&mut || rnd() * 300.0);
+                let want = V4::transpose(core::array::from_fn(|l| t.sample_v(u.to_array()[l], v.to_array()[l], fw.to_array()[l])));
+                let got = t.sample_lanes(u, v, fw);
+                for c in 0..4 {
+                    assert_eq!(got[c].to_array().map(f32::to_bits), want[c].to_array().map(f32::to_bits), "{tw}x{th} linear");
+                }
+                let (ua, va) = (u.to_array(), v.to_array());
+                let da = d.map(|x| x.to_array());
+                let want = V4::transpose(core::array::from_fn(|l| t.sample_aniso(ua[l], va[l], [da[0][l], da[1][l]], [da[2][l], da[3][l]])));
+                let got = t.sample_aniso_lanes(u, v, [d[0], d[1]], [d[2], d[3]]).expect("finite inputs");
+                for c in 0..4 {
+                    assert_eq!(got[c].to_array().map(f32::to_bits), want[c].to_array().map(f32::to_bits), "{tw}x{th} aniso");
+                }
+            }
+        }
+        // Non-finite input: the lanes version declines (the per-lane one handles it).
+        let t = Texture::from_rgba(2, 2, &[255; 16]);
+        assert!(t.sample_aniso_lanes(V4::splat(f32::NAN), V4::splat(0.5), [V4::splat(0.1); 2], [V4::splat(0.0); 2]).is_none());
     }
 
     #[test]
