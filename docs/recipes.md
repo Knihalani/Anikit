@@ -541,6 +541,7 @@ Pitfalls that cost a render:
 - **Bullet time shifts every later beat.** Choreograph on the scene clock (`FrameInfo.clock`, or your own sum of `dt`), and place impacts with `film.timeAt('scene', clockSeconds)`: a 0.6 s dip moves everything after it by 0.6 s of composition time. `post` functions receive composition time; convert with `film.clockAt('scene', t)`.
 - **Unwind roll the short way.** Barrel rolls add up (three rolls = 1080°). Before easing `cam.roll` back to level for a landing, wrap it: `cam.roll = ((((cam.roll + 180) % 360) + 360) % 360 - 180) * (1 - k)`, otherwise the camera spins three times on arrival.
 - **End the route past the last stop.** `path.apply()` at the very end of a path has nothing to look ahead at. Add one waypoint beyond where the camera stops, and stop the timing short of it.
+- **`pulse` is two things.** Any `pulse > 0` makes the pattern's lines flare as the pulse passes; the value itself is how strongly the *whole surface* glows with it. On large patterned bodies (towers, walls) keep it small (≈ 0.3–0.5) so the light runs along the lines; save big values for trails, rings and hero objects.
 - **Metal reflects the horizon.** Large `metal` faces mirror the sky, so a bright `horizon` turns them into flat slabs of colour. Keep big bodies at `metal` ≤ 0.3 and save chrome for heroes (gates, knots, type).
 
 ## Python
