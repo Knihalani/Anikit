@@ -339,6 +339,7 @@
                     "$use": "device",
                     "with": {
                       "kind": "{{f.image || i % 2 == 0 ? 'browser' : 'phone'}}",
+                      "screen": "{{['dashboard', 'chat', 'feed', 'settings'][i % 4]}}",
                       "src": "{{f.image}}",
                       "url": "{{url}}",
                       "x": "{{vx}}",
@@ -437,12 +438,16 @@
                 "grid": false,
                 "endLabel": false,
                 "delay": 0.4,
-                "duration": 1.6
+                "duration": 1.6,
+                "width": "{{fmt.u * 0.6}}",
+                "colors": [
+                  "{{brand.colors.secondary}}"
+                ]
               },
               "y": "{{fmt.portrait ? '72%' : '82%'}}",
               "width": "{{fmt.safe.w}}",
               "height": "{{fmt.u * 16}}",
-              "opacity": 0.55
+              "opacity": 0.9
             },
             {
               "$use": "grain"
