@@ -701,13 +701,39 @@ function buildGround() {
   return { pos, nor, idx, sh };
 }
 
+// Eroded ridged multifractal: each octave is damped by the slope accumulated so far, so fine detail
+// survives on the crests (sharp aretes) and is washed out of the gullies between them.
+const ND = [0, 0, 0];
+function vnoised(x, y, s) {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const du = 6 * xf * (1 - xf), dv = 6 * yf * (1 - yf);
+  const a = hash2(xi, yi, s), b = hash2(xi + 1, yi, s), c = hash2(xi, yi + 1, s), d = hash2(xi + 1, yi + 1, s);
+  const k = a - b - c + d;
+  ND[0] = (a + (b - a) * u + (c - a) * v + k * u * v) * 2 - 1;
+  ND[1] = 2 * du * ((b - a) + k * v);
+  ND[2] = 2 * dv * ((c - a) + k * u);
+}
+function eroded(x, y, oct, s) {
+  let sum = 0, gx = 0, gy = 0, amp = 0.55, f = 1;
+  for (let i = 0; i < oct; i++) {
+    vnoised(x * f, y * f, s + i * 31);
+    const n = ND[0], sg = n < 0 ? -1 : 1, rr = 1 - Math.abs(n);
+    // ridge value and its gradient (in base-frequency units)
+    const dx = -sg * ND[1] * f * 2 * rr, dy = -sg * ND[2] * f * 2 * rr;
+    sum += amp * rr * rr / (1 + 0.55 * (gx * gx + gy * gy));
+    gx += amp * dx; gy += amp * dy;
+    f *= 2.07; amp *= 0.5;
+  }
+  return sum;
+}
 const GIANTS = [];
 for (const [az, r, hgt, rad] of [[-0.66, 21000, 3100, 2500], [0.66, 25000, 3000, 2900]]) GIANTS.push(Math.sin(az) * r, -Math.cos(az) * r, hgt, rad);
 const farH = (x, z) => {
   const r = Math.hypot(x, z);
   // a mask decides where the big massifs stand; elsewhere the land stays under the clouds
   const m = Math.max(0, fbm(x / 7000, z / 7000, 3, 21) + 0.18);
-  const peaks = ridged(x / 2600, z / 2600, 6, 33);
+  const peaks = Math.pow(eroded(x / 2600, z / 2600, 7, 33) * 1.55, 1.9);
   const far = 1 + Math.max(0, r - 9000) / 6000;
   let h = DECK_Y - 800 + peaks * (480 + 3000 * m * m) * far;
   h += fbm(x / 900, z / 900, 3, 44) * 120;
