@@ -48,7 +48,7 @@ export const tests = [
       await page.mouse.click(box[0] + 10, box[1] + 10);
       ok((await page.evaluate(() => clicks)) === 1, 'click on empty space ignored');
       // animate() drives plain Vector3 fields
-      await page.evaluate(async () => { await ak.animate(cube.position, { y: 2, duration: 0.05 }).finished; });
+      await page.evaluate(async () => { await ak.animate(cube.position, { y: 2 }, { duration: 0.05 }).finished; });
       near(await page.evaluate(() => cube.position.y), 2, 1e-6, 'animated position');
     },
   },

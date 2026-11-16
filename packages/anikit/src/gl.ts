@@ -9,7 +9,7 @@
  * const s = scene('#c', { camera: { fov: 45, position: [0, 2, 6] }, environment: 'studio', shadows: true, bloom: true });
  * const ball = s.add(sphere(1, 64), { material: 'chrome', position: [0, 1, 0] });
  * s.add(plane(20, 20), { material: { color: '#222', roughness: 0.9 } });
- * ball.on('click', () => animate(ball.position, { y: 2, duration: 0.6, ease: 'outBack' }));
+ * ball.on('click', () => animate(ball.position, { y: 2 }, { duration: 0.6, ease: 'outBack' }));
  * s.orbit({ autoRotate: 10 });
  * ```
  */
