@@ -368,7 +368,7 @@ fn incremental_matches_full_render() {
         prev_full = Some(yi.clone());
     }
     assert_eq!(kinds[0], Update::Full);
-    assert!(matches!(kinds[1], Update::Partial(_)), "{kinds:?}");
+    assert!(matches!(kinds[1], Update::Partial { .. }), "{kinds:?}");
     assert_eq!(kinds[5], Update::Full);
     assert_eq!(kinds[7], Update::Unchanged);
 }

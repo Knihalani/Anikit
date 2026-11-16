@@ -2,7 +2,7 @@
 
 use kurbo::{BezPath, ParamCurve, ParamCurveArclen, PathSeg, Point};
 
-const ACCURACY: f64 = 1e-3;
+const ACCURACY: f64 = 0.02;
 
 /// Write the part of `src` between fractions `t0..t1` of its total length into `out`.
 /// `lens` is reusable scratch.

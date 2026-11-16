@@ -160,13 +160,13 @@ impl Renderer {
 
     /// Render `list` and return the frame (premultiplied RGBA8).
     pub fn render(&mut self, list: &DisplayList) -> &FrameRgba {
-        self.render_region(list, None);
+        self.render_region(list, None, true, None);
         &self.frame
     }
 
     /// Render all of `list`, or only the pixels of `region` (`[x0, y0, x1, y1)`,
     /// clipped to the frame) — the rest of the frame keeps its previous pixels.
-    pub(crate) fn render_region(&mut self, list: &DisplayList, region: Option<[u32; 4]>) {
+    pub(crate) fn render_region(&mut self, list: &DisplayList, region: Option<[u32; 4]>, new_frame: bool, rects: Option<&[Option<Rect>]>) {
         let (w, h) = (list.width.clamp(1, u16::MAX as u32) as u16, list.height.clamp(1, u16::MAX as u32) as u16);
         if self.ctx.width() != w || self.ctx.height() != h {
             self.ctx = RenderContext::new(w, h);
@@ -179,8 +179,10 @@ impl Renderer {
             Some([x0, y0, x1, y1]) => x0 == 0 && y0 == 0 && x1 == w as u32 && y1 == h as u32,
         };
         let st = &mut self.st;
-        st.frame_no += 1;
-        st.cache_hits = 0;
+        if new_frame {
+            st.frame_no += 1;
+            st.cache_hits = 0;
+        }
         st.frame_size = (w as u32, h as u32);
         let assets = self.assets.clone();
         let settings = RasterizerSettings { target_init: TargetInit::Clear(color(list.background)), ..Default::default() };
@@ -201,7 +203,8 @@ impl Renderer {
             let rctx = self.rctx.get_or_insert_with(|| RenderContext::new(rw, rh));
             rctx.reset_and_resize(rw, rh);
             st.org = (x0 as i32, y0 as i32);
-            draw_ops(st, &assets, rctx, &list.ops, Affine::translate((-(x0 as f64), -(y0 as f64))));
+            let cull = rects.map(|rects| Cull { region: Rect::new(0.0, 0.0, rw as f64, rh as f64), rects, org: (x0 as f64, y0 as f64) });
+            draw_ops_culled(st, &assets, rctx, &list.ops, Affine::translate((-(x0 as f64), -(y0 as f64))), cull);
             rctx.flush();
             self.rpix.resize(rw, rh);
             rctx.render_with(&mut self.rpix, &mut st.res, settings);
@@ -265,15 +268,41 @@ fn matching_pop(ops: &[Op]) -> usize {
 }
 
 fn draw_ops(st: &mut State, assets: &Assets, ctx: &mut RenderContext, ops: &[Op], base: Affine) {
+    draw_ops_culled(st, assets, ctx, ops, base, None)
+}
+
+/// Culling for partial renders: the region (in the context's coordinates)
+/// and each op's frame-space bounds (`None` = draws nothing), offset by `org`.
+#[derive(Clone, Copy)]
+pub(crate) struct Cull<'a> {
+    pub region: Rect,
+    pub rects: &'a [Option<Rect>],
+    pub org: (f64, f64),
+}
+
+/// As [`draw_ops`], skipping top-level ops and layers whose bounds miss the cull region.
+fn draw_ops_culled(st: &mut State, assets: &Assets, ctx: &mut RenderContext, ops: &[Op], base: Affine, cull: Option<Cull>) {
+    let misses = |a: usize, b: usize| -> bool {
+        let Some(c) = cull else { return false };
+        let reg = c.region + kurbo::Vec2::new(c.org.0, c.org.1);
+        !c.rects[a..b.min(c.rects.len())]
+            .iter()
+            .flatten()
+            .any(|r| r.x1 > reg.x0 && r.y1 > reg.y0 && r.x0 < reg.x1 && r.y0 < reg.y1)
+    };
     let mut i = 0;
     while i < ops.len() {
         match &ops[i] {
             Op::PushLayer { opacity, blend, filters, clip, cache_key } => {
                 let end = i + matching_pop(&ops[i..]);
                 let inner = &ops[i + 1..end.min(ops.len())];
+                let start = i;
                 i = end + 1;
                 let opacity = opacity.clamp(0.0, 1.0);
                 if opacity <= 0.0 || inner.is_empty() {
+                    continue;
+                }
+                if misses(start + 1, end) {
                     continue;
                 }
                 if let [dl::Filter::Shadow { dx, dy, blur, color: sc }] = filters.as_slice() {
@@ -309,7 +338,9 @@ fn draw_ops(st: &mut State, assets: &Assets, ctx: &mut RenderContext, ops: &[Op]
             }
             Op::PopLayer => i += 1, // stray pop: ignore
             op => {
-                draw_op(st, assets, ctx, op, base);
+                if !misses(i, i + 1) {
+                    draw_op(st, assets, ctx, op, base);
+                }
                 i += 1;
             }
         }
@@ -566,6 +597,18 @@ pub(crate) fn ops_bounds(ops: &[Op], base: Affine) -> Option<Rect> {
             Op::Fill { path, transform, .. } => Some((base * affine(transform)).transform_rect_bbox(path.bounding_box())),
             Op::Stroke { path, transform, stroke, .. } => {
                 let t = base * affine(transform);
+                let trimmed;
+                let path = if stroke.trim[0] > 0.0 || stroke.trim[1] < 1.0 {
+                    let mut p = BezPath::new();
+                    trim::trim_path(path, stroke.trim[0], stroke.trim[1], &mut p, &mut Vec::new());
+                    if p.is_empty() {
+                        continue;
+                    }
+                    trimmed = p;
+                    &trimmed
+                } else {
+                    path
+                };
                 let s = t.as_coeffs();
                 let scale = (s[0].abs() + s[1].abs()).max(s[2].abs() + s[3].abs());
                 let k = if stroke.join == 0 { stroke.miter_limit.max(1.5) } else { 1.5 } as f64;
