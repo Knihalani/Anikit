@@ -132,33 +132,42 @@ impl Assets for Host {
     }
 
     fn text(&self, s: &str, st: &TextStyle, x: f32, y: f32) -> (Vec<Op>, f32) {
-        if s.is_empty() {
-            return (Vec::new(), 0.0);
-        }
-        let l = self.fonts.layout(&spec_for(s, st));
-        let base = l.lines.first().map(|u| u.baseline).unwrap_or(st.size * 0.8);
-        let mut ops = l.to_ops([1.0, 0.0, 0.0, 1.0, x, y - base]);
-        let paint = st.paint_at(x, y - base);
-        for op in &mut ops {
-            match op {
-                Op::Glyphs { paint: p, .. } | Op::RoundRect { paint: p, .. } => *p = paint.clone(),
-                _ => {}
-            }
-        }
-        (ops, l.width)
+        draw_text(&self.fonts, s, st, x, y)
     }
 
     fn measure(&self, s: &str, st: &TextStyle) -> f32 {
-        if s.is_empty() {
-            return 0.0;
-        }
-        // Layout drops trailing whitespace; measure it via a bracketing glyph.
-        let trail = s.len() - s.trim_end().len();
-        if trail == 0 {
-            return self.fonts.layout(&spec_for(s, st)).width;
-        }
-        let with = self.fonts.layout(&spec_for(&format!("{s}|"), st)).width;
-        let bar = self.fonts.layout(&spec_for("|", st)).width;
-        with - bar
+        measure_text(&self.fonts, s, st)
     }
+}
+
+/// [`Assets::text`] over a TEXT [`FontStore`]: laid out once per (string,
+/// style) in white, then recoloured (solid or gradient) per call. Other
+/// `Assets` implementations (the evaluator's) should delegate here.
+pub fn draw_text(fonts: &FontStore, s: &str, st: &TextStyle, x: f32, y: f32) -> (Vec<Op>, f32) {
+    if s.is_empty() {
+        return (Vec::new(), 0.0);
+    }
+    let l = fonts.layout(&spec_for(s, st));
+    let base = l.lines.first().map(|u| u.baseline).unwrap_or(st.size * 0.8);
+    let mut ops = l.to_ops([1.0, 0.0, 0.0, 1.0, x, y - base]);
+    let paint = st.paint_at(x, y - base);
+    for op in &mut ops {
+        if let Op::Glyphs { paint: p, .. } | Op::RoundRect { paint: p, .. } = op {
+            *p = paint.clone();
+        }
+    }
+    (ops, l.width)
+}
+
+/// [`Assets::measure`] over a TEXT [`FontStore`], counting trailing spaces.
+pub fn measure_text(fonts: &FontStore, s: &str, st: &TextStyle) -> f32 {
+    if s.is_empty() {
+        return 0.0;
+    }
+    // Layout drops trailing whitespace; measure it via a bracketing glyph.
+    if s.len() == s.trim_end().len() {
+        return fonts.layout(&spec_for(s, st)).width;
+    }
+    let with = fonts.layout(&spec_for(&format!("{s}|"), st)).width;
+    with - fonts.layout(&spec_for("|", st)).width
 }
