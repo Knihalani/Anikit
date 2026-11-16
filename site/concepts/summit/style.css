@@ -1,0 +1,30 @@
+:root { color-scheme: light; }
+* { box-sizing: border-box; margin: 0; }
+/* First paint: the same sky the mountain renders, so the canvas fades in over it. */
+html { background: #f3cfa3; }
+body {
+  font: 500 14px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; color: #24303f; overflow-x: hidden;
+  background: linear-gradient(180deg, #6f8fc6 0%, #a7b2cf 40%, #f2c99e 64%, #fbe3c4 72%, #eef1f6 73%, #ffffff 100%) fixed;
+}
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.track { height: 600vh; }
+.sky, #mountain, #hall, #hands, #overlay { position: fixed; inset: 0; width: 100%; height: 100%; }
+.sky { display: grid; place-items: center; pointer-events: none; }
+.sky-word { font: 800 clamp(64px, 18vw, 260px)/1 system-ui, -apple-system, sans-serif; letter-spacing: -0.04em; color: rgba(255, 255, 255, 0.92); transform: translateY(-14vh); text-shadow: 0 0 40px rgba(255, 255, 255, 0.6); }
+#mountain, #hands { pointer-events: none; display: block; }
+#mountain { opacity: 0; transition: opacity 0.8s ease; }
+html.live #mountain { opacity: 1; }
+#hall { visibility: hidden; display: block; touch-action: none; }
+html.in-hall #hall { visibility: visible; clip-path: none !important; }
+html.in-hall #hands, html.in-hall #mountain, html.in-hall .sky { visibility: hidden; }
+#overlay { pointer-events: none; z-index: 3; }
+#overlay > * { pointer-events: none; }
+.top { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; z-index: 5; font-size: 14px; }
+.top .brand { font-weight: 700; letter-spacing: -0.01em; color: #fff; text-shadow: 0 1px 8px rgba(40, 50, 80, 0.35); }
+.top a { color: #fff; text-decoration: none; opacity: 0.85; text-shadow: 0 1px 8px rgba(40, 50, 80, 0.35); }
+.top a:hover { opacity: 1; }
+.cue { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); color: #fff; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; z-index: 4; text-shadow: 0 1px 8px rgba(40, 50, 80, 0.4); transition: opacity 0.6s; }
+html.scrolled .cue { opacity: 0; }
+.back { position: fixed; left: 20px; bottom: 20px; z-index: 6; font: inherit; font-size: 13px; padding: 9px 14px; border: 0; border-radius: 999px; background: rgba(255, 250, 242, 0.92); color: #2a2018; box-shadow: 0 4px 18px rgba(80, 50, 20, 0.18); cursor: pointer; opacity: 0; visibility: hidden; transition: opacity 0.5s; }
+html.in-hall .back { opacity: 1; visibility: visible; }
+html.in-hall, html.in-hall body { overflow: hidden; }

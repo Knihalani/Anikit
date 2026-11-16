@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Anikit — animation engine</title>
+<meta name="description" content="A web animation engine with a Rust core compiled to WebAssembly: timelines, springs, physics, particles and scroll." />
+<meta name="theme-color" content="#7f9cc9" />
+<link rel="modulepreload" href="../../../packages/anikit/dist/anikit.lean.js" />
+<link rel="modulepreload" href="hands.js" />
+<link rel="modulepreload" href="hall.js" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="sky" aria-hidden="true"><span class="sky-word">anikit</span></div>
+<canvas id="mountain" aria-hidden="true"></canvas>
+<canvas id="hall" aria-hidden="true"></canvas>
+<canvas id="hands" aria-hidden="true"></canvas>
+<div id="overlay"></div>
+
+<header class="top">
+  <span class="brand">anikit</span>
+  <a href="https://github.com/knihalani/anikit">GitHub</a>
+</header>
+<h1 class="sr">anikit — an animation engine for the web with a Rust core compiled to WebAssembly</h1>
+<p class="cue" aria-hidden="true">Scroll</p>
+<button class="back" type="button" data-ui>↑ summit</button>
+<div class="track" aria-hidden="true"></div>
+<script type="module" src="main.js"></script>
+</body>
+</html>
