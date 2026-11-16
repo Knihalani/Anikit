@@ -48,6 +48,13 @@ export interface FrameInfo {
    * one motion-blur sample's worth when blurring). Step simulations with it.
    */
   dt: number;
+  /**
+   * The scene's own clock: engine seconds since it started, slowed by its
+   * `timeScale` (the sum of every `dt` so far). Choreograph bullet-time shots
+   * on it instead of keeping a counter in `step()`; `composition.timeAt()`
+   * maps a clock value back to composition time (for impacts and cues).
+   */
+  clock: number;
 }
 export interface SceneHooks {
   /** Once, when the scene starts (start tweens, timelines, simulations here). */
@@ -291,6 +298,39 @@ export class Composition {
     return this;
   }
 
+  /**
+   * The scene clock (`FrameInfo.clock`) at composition time `t`: seconds since
+   * scene `name` started, slowed by its `timeScale`. A pure function of time.
+   *
+   * ```ts
+   * film.impact(film.timeAt('knot', 4.2), { shake: 30 }); // when the knot's slowed clock reads 4.2 s
+   * ```
+   */
+  clockAt(name: string, t: number): number {
+    const s = this.sceneNamed(name), fps = this.fps;
+    let c = 0;
+    for (let f = Math.ceil(s.start * fps - 1e-9); f / fps <= t + 1e-9 && f / fps < s.end; f++) {
+      const local = f / fps - s.start;
+      c += Math.max(0, s.timeScale ? s.timeScale(local) : 1) / fps;
+    }
+    return c;
+  }
+  /** The composition time (seconds, on a frame) when scene `name`'s clock reaches `clock`; see `clockAt()`. */
+  timeAt(name: string, clock: number): number {
+    const s = this.sceneNamed(name), fps = this.fps;
+    let c = 0, f = Math.ceil(s.start * fps - 1e-9);
+    for (; f / fps < s.end; f++) {
+      c += Math.max(0, s.timeScale ? s.timeScale(f / fps - s.start) : 1) / fps;
+      if (c >= clock - 1e-9) break;
+    }
+    return Math.min(f, Math.round(s.end * fps)) / fps;
+  }
+  private sceneNamed(name: string): SceneDef {
+    const s = this.scenes.find((x) => x.name === name);
+    if (!s) throw new Error(`anikit composition: no scene named "${name}" (scenes: ${this.scenes.map((x) => x.name).join(', ') || 'none'})`);
+    return s;
+  }
+
   /** Shake offset, flash and aberration at `t` (a pure function of time). */
   impactAt(t: number): { x: number; y: number; flash: string; flashAlpha: number; aberration: number } {
     let x = 0, y = 0, fa = 0, fl = '', ab = 0;
@@ -352,8 +392,10 @@ export class Composition {
     const make = o.createCanvas ?? defaultCanvas;
     const bufs: CanvasLike[] = [];
     const buf = (k: number) => (bufs[k] ??= make(w, h));
+    const clocks = new Map<SceneDef, number>();
     const info = (t: number, frame: number, s: SceneDef, c: Ctx2D = ctx, step = 0): FrameInfo => ({
       ctx: c, t, frame, width: w, height: h, scene: s, local: t - s.start, progress: Math.min(1, Math.max(0, (t - s.start) / (s.end - s.start))), dt: step,
+      clock: clocks.get(s) ?? 0,
     });
     const post = this.options.post;
     const postOn = !!post && Object.values(post).some((v) => v);
@@ -428,7 +470,9 @@ export class Composition {
     const enterAll = (t: number, f: number, act: SceneDef[]) => {
       for (const s of act) if (!entered.has(s)) { entered.add(s); s.enter?.(info(t, f, s)); }
     };
-    const stepAll = (fi: (s: SceneDef) => FrameInfo, act: SceneDef[]) => { for (const s of act) s.step?.(fi(s)); };
+    const stepAll = (fi: (s: SceneDef) => FrameInfo, act: SceneDef[], d: number) => {
+      for (const s of act) { clocks.set(s, (clocks.get(s) ?? 0) + d); s.step?.(fi(s)); }
+    };
     const defSamples = samples;
     try {
       for (let f = 0; f < last; f++) {
@@ -450,7 +494,7 @@ export class Composition {
         for (let k = 0; k < n; k++) {
           engine.tick(sub * scale);
           const ts = t + (k * sub) / 1000;
-          stepAll((s) => info(ts, f, s, ctx, (sub * scale) / 1000), act);
+          stepAll((s) => info(ts, f, s, ctx, (sub * scale) / 1000), act, (sub * scale) / 1000);
           if (!act.length) continue;
           if (blur) {
             paint(ts, f, act);
@@ -462,7 +506,7 @@ export class Composition {
           const rest = (dt - sub * n) * scale;
           engine.tick(rest);
           // The closed part of the shutter still advances simulations.
-          stepAll((s) => info(t + (sub * n) / 1000, f, s, ctx, rest / 1000), act);
+          stepAll((s) => info(t + (sub * n) / 1000, f, s, ctx, rest / 1000), act, rest / 1000);
         }
         if (!visible || !act.length) continue;
         if (blur) fb.resolve();

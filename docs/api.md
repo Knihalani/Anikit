@@ -889,6 +889,16 @@ film.scene('flight', 16, 24, { timeScale: (t) => 1 - 0.88 * Math.exp(-((t - 18.7
 - `post` runs in WebAssembly once per output frame (after motion blur); grain is seeded by frame index, so parallel slices match. Every value may be a function of composition time, so the grade can follow the edit.
 - `impact()` shakes and flashes the finished frame (after transitions); `impactAt(t)` is its pure function of time.
 - `timeScale(local)` scales engine time for that scene — tweens, particles and physics all slow together; `step()` receives the scaled `dt`.
+- Choreograph bullet time on the scene's own clock: `FrameInfo.clock` is the sum of those `dt`s (seconds since the scene started, slowed by `timeScale`). `film.clockAt(name, t)` gives it as a pure function of composition time, and `film.timeAt(name, clock)` maps it back, so impacts and cues land on story beats:
+
+```ts
+const HIT = 6; // the knot breaks when the slowed clock reads 6 s
+film.scene('knot', 0, 10, {
+  timeScale: (t) => 1 - 0.8 * Math.exp(-(((t - 6.4) / 0.4) ** 2)),
+  draw: ({ clock }) => { path.apply(cam, s(clock)); /* … shards.update(clock - HIT) … */ },
+});
+film.impact(film.timeAt('knot', HIT), { shake: 30, flash: '#fff' });
+```
 - Per-scene `motionBlur` (samples) overrides the composition: use 1 for static shots and more for fast ones.
 - Mistakes throw readable errors (overlapping scenes without a transition, missing `draw`, scenes outside the duration).
 

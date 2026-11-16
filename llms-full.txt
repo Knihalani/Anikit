@@ -1699,6 +1699,8 @@ Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [nea
 
 **Sky and atmosphere**: `render(…, { skybox: { sun: 2.5 }, key: [0, 0.12, -1], keyColor, sky, horizon, ground, fog, fogColor, groundFog: { bottom, top, range } })` paints every uncovered pixel with the environment gradient (meeting the fog at the horizon) and a sun disc + halo towards `key`; `groundFog` pools fog near the floor. Pair the sun with the grade's `rays` aimed at it.
 
+**Point lights**: `render(…, { lights: [{ position, color, radius, intensity }] })` — up to 8 coloured local lights (diffuse + specular, smooth falloff) for neon pools on glossy floors, glowing trails that light the walls, muzzle flashes.
+
 **Shadows**: `render(…, { key, shadows: { extent, center, size, strength, bias } })` renders the opaque items from the key light into a shadow map (orthographic, covering `extent` around `center`) and dims the key light where it's blocked (2×2 PCF). `castShadow: false` opts an item out.
 
 **Depth of field**: `render(…, { dof: { focus, aperture, max } })` blurs by distance from the focal plane (thin lens; `aperture` = blur in px at infinity). Animate `focus` for rack-focus shots.
@@ -1742,6 +1744,16 @@ film.scene('flight', 16, 24, { timeScale: (t) => 1 - 0.88 * Math.exp(-((t - 18.7
 - `post` runs in WebAssembly once per output frame (after motion blur); grain is seeded by frame index, so parallel slices match. Every value may be a function of composition time, so the grade can follow the edit.
 - `impact()` shakes and flashes the finished frame (after transitions); `impactAt(t)` is its pure function of time.
 - `timeScale(local)` scales engine time for that scene — tweens, particles and physics all slow together; `step()` receives the scaled `dt`.
+- Choreograph bullet time on the scene's own clock: `FrameInfo.clock` is the sum of those `dt`s (seconds since the scene started, slowed by `timeScale`). `film.clockAt(name, t)` gives it as a pure function of composition time, and `film.timeAt(name, clock)` maps it back, so impacts and cues land on story beats:
+
+```ts
+const HIT = 6; // the knot breaks when the slowed clock reads 6 s
+film.scene('knot', 0, 10, {
+  timeScale: (t) => 1 - 0.8 * Math.exp(-(((t - 6.4) / 0.4) ** 2)),
+  draw: ({ clock }) => { path.apply(cam, s(clock)); /* … shards.update(clock - HIT) … */ },
+});
+film.impact(film.timeAt('knot', HIT), { shake: 30, flash: '#fff' });
+```
 - Per-scene `motionBlur` (samples) overrides the composition: use 1 for static shots and more for fast ones.
 - Mistakes throw readable errors (overlapping scenes without a transition, missing `draw`, scenes outside the duration).
 
@@ -1803,6 +1815,7 @@ for i in range(150):
 - **Grade options**: `bloom`, `bloom_threshold`, `bloom_radius`, `aberration`, `vignette`, `grain`, `streaks`, `streak_length`, `streak_tint`, `zoom_blur`, `zoom_center`, `rays`, `rays_center`, `rays_length`, `aa`, `exposure`, `contrast`, `saturation`, `shadows`, `highlights` (`video.POST_OPTIONS`); each may be a function of `t`. Misspelt options raise with a "did you mean".
 - `video.MotionBlur(w, h)`: `add(frame)` up to 257 sub-frames, `resolve()` the average.
 - Not in Python: `mesh.text()` (needs a canvas to rasterise the font; build a `heightfield` from your own glyph bitmap instead).
+- Point lights: `Lighting(lights=[{"position": (x, y, z), "color": …, "radius": 500, "intensity": 1}])` (or `render(..., lights=[...])`), up to 8.
 - Example: `crates/anikit-py/examples/knot_mirror.py` writes PNG frames with numpy and the standard library.
 
 ---

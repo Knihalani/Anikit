@@ -152,6 +152,22 @@ describe('composition extras', () => {
     expect(clock).toBeCloseTo(0.5, 5);
     expect(o.x).toBeCloseTo(50, 0);
   });
+
+  it('keeps a scene clock and maps it back to composition time', async () => {
+    const c = composition({ width: 4, height: 2, fps: 10, duration: 2, motionBlur: 3 });
+    const ramp = (l: number) => (l < 1 ? 1 : 0.25);
+    const seen: number[] = [];
+    let own = 0;
+    c.scene('s', 0, 2, { timeScale: ramp, step: ({ dt }) => (own += dt), draw: ({ clock }) => { seen.push(clock); expect(clock).toBeCloseTo(own, 9); } });
+    const cv: any = { width: 4, height: 2, getContext: () => ({ fillRect() {}, drawImage() {}, getImageData: () => ({ data: new Uint8ClampedArray(32) }) }) };
+    await c.render({ canvas: cv, onFrame: () => {} });
+    expect(seen.length).toBeGreaterThan(0);
+    expect(c.clockAt('s', 0.9)).toBeCloseTo(1, 6);
+    expect(c.clockAt('s', 1.9)).toBeCloseTo(1.25, 6);
+    expect(c.timeAt('s', 1.25)).toBeCloseTo(1.9, 6);
+    expect(c.timeAt('s', 0.5)).toBeCloseTo(0.4, 6);
+    expect(() => c.timeAt('nope', 1)).toThrow(/no scene named "nope".*scenes: s/);
+  });
 });
 
 describe('renderer3d', () => {
