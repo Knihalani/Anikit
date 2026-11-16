@@ -196,7 +196,7 @@ void main() {
     dir = normalize(vnow + 1e-4);
     len = clamp(length(vnow) * 0.035, 2.0 * uScale, 26.0 * uScale);
     wid = (0.9 + 1.4 * h3) * uScale * (1.0 - life * 0.6);
-    bright = (1.0 - life) * (1.0 - life) * (0.7 + 0.8 * h2);
+    bright = (1.0 - life) * (1.0 - life) * (1.0 + 1.4 * h2);
     col = mix(vec3(1.0, 0.32, 0.05), vec3(1.0, 0.7, 0.3), (1.0 - life) * h2);
   }
   vec2 side = vec2(-dir.y, dir.x);
@@ -218,7 +218,7 @@ void main() {
   float across = 1.0 - abs(vUv.y * 2.0 - 1.0);
   float along = (1.0 - vUv.x);              // bright head, fading tail
   float a = across * across * along * along * vI;
-  vec3 c = vC * a * 1.2 + vec3(1.0, 0.85, 0.6) * a * a * 0.25;
+  vec3 c = vC * a * 1.25 + vec3(1.0, 0.8, 0.5) * a * a * 0.18;
   outColor = vec4(c, 0.0);                  // pure added light over whatever is below
 }`;
 
@@ -377,7 +377,7 @@ export function createHands(canvas) {
     .add(portal, { arc: [0, 1] }, { duration: 1.9, ease: 'inOutSine' }, 5.3)
     .add(portal, { glow: [0, 0.6, 1] }, { duration: 2.4, ease: 'linear' }, 5.2)
     .add(portal, { size: [0.18, 1] }, { duration: 2.3, ease: 'inOutCubic' }, 5.2)
-    .add(portal, { open: [0, 1] }, { duration: 1.0, ease: 'inOutSine' }, 6.5)
+    .add(portal, { open: [0, 1] }, { duration: 0.7, ease: 'inOutSine' }, 6.8)
     // Step through (7.5 → 10): the portal grows past the screen, the arms drop away.
     .add(portal, { grow: [0, 1] }, { duration: 2.5, ease: 'inCubic' }, 7.5)
     .add(Lh, { x: -0.2, y: -0.5, z: -0.45, pitch: 30, curl: 0.4, spread: 0.3, ey: -0.6 }, { duration: 1.6, ease: 'inCubic' }, 8.0)
@@ -607,7 +607,7 @@ export function createHands(canvas) {
       gl.useProgram(SPARK.p);
       gl.uniform2f(SPARK.u.uRes, Wd, Hd);
       gl.uniform4f(SPARK.u.uRing, px * k, py * k, ringR * k, portal.arc);
-      gl.uniform4f(SPARK.u.uP, t, 1, portal.glow * fade, 0.28 * portal.glow);
+      gl.uniform4f(SPARK.u.uP, t, 1, portal.glow * fade, 0.4 * portal.glow);
       gl.uniform1f(SPARK.u.uDepth, portalDepth());
       gl.uniform1f(SPARK.u.uScale, k);
       gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, NSPARK);
