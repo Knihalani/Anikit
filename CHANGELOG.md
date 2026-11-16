@@ -1,5 +1,40 @@
 # Changelog
 
+## Final round (2026-11-16, to 13:15 UTC): unfairly fast
+
+Numbers from `packages/anikit/scripts/` (ms per frame, median of 5 runs × 60 frames after 100 warm-up frames; the machine was rendering a film at the same time), detail in `docs/perf-notes.md` "Fifth round".
+
+### Web animation: faster than GSAP in every per-frame case of `scripts/bench.mjs`
+
+| case | 1k | 10k | 50k |
+|---|---|---|---|
+| 3 numbers | 4.4× | 3.1× | 3.4× |
+| colour strings | 2.6× | 1.1× | 2.1× |
+| unit strings (`'100px'`) | 1.4× | 1.3× | 1.3× |
+| 8 keyframes | 1.6× | 1.5× | 1.5× |
+
+- **Group evaluation in the core**: the children of one `animate()` call that share timing are evaluated once per frame from dense arrays (`ak_group_pack`), and the flush loop writes through dense handle/target/offset tables. 8 keyframes at 50k 1.5–1.8 → 0.74–0.89 ms; 1000-step timelines 0.54–1.13 → 0.28–0.34 ms per frame. Tested against the ungrouped path through seeks, reversal, rate changes, takeovers, release and removal.
+- Unit strings: one concatenation and the last string reused.
+- `spring()` retargeting no longer keeps a completion hook alive per call (a leak: ~1 KB per call): 10k retargets + frame 35–61 → 8–10 ms; `magnetic`, `smoothScroll` and smoothed scroll links benefit.
+- `marquee` skips writes off screen and when unchanged (100 rows 0.23–0.50 → 0.03 ms/frame); scrubbed `scrollTrigger` 0.18 → 0.12–0.16 ms per scroll event at 200 triggers; `splitText` measures in one layout pass (100 paragraphs 768–1076 → 477–654 ms, GSAP SplitText 763–1078 ms).
+- GIF encoder: palette search sorted by green from the previous pixel's answer, byte-identical output, gradient frames ~3× faster.
+- Measured against GSAP for the first time: `flip()` 15–17 ms vs 137–143 ms (200 boxes); 500 scroll triggers created in 36 ms vs 173 ms, refreshed in 11 ms vs 60 ms.
+- **Still behind GSAP: creation.** One `animate()` over 10k objects costs ~60 ms (first frame included) against GSAP's 4–7 ms; about half of it is garbage collection. Deferring set-up to the first tick was tried and made 10k separate calls 2× slower, so it was not kept.
+
+### Video rendering
+
+- `render(…, { sort: 'near' })` draws opaque items nearest first with exact depth-tie handling, so the picture is bit-identical in any order: the terrain bench's opaque pass ~300 → ~190 ms.
+- The half-resolution mirror pass renders after the scene and only where it shows.
+- `FrameInfo.pixels(px)` hands a finished frame straight to the grade and encoder (skips `putImageData` + read-back, ~19 ms at 1080p).
+- `anikit-render --preroll <s>` (0 skips the unseen warm-up frames each worker drew) and `--chunk <s>` (work-stealing jobs).
+- Earlier today: opt-in anisotropic filtering, a faster bilinear sampler, an unlit fast path (sky domes 128 → 67 ms), skipping triangles that cover no pixel centre; material `fog`, `Renderer3D.depth()`, soft `flightPath` banking with `bankWindow`.
+
+### Films and site
+
+- `film/film.mjs`: ONE WORLD, THREE LOOKS (golden-hour photographic, neon, printed comic) — one flight, six depth- and mask-driven transitions, the frame split three ways at the start and the end.
+- `film/film2.mjs`: EVENT HORIZON — a hyperspace tunnel, a monolith shattering in bullet time, a black hole with a Doppler-beamed disk, a supernova.
+- The landing page is rebuilt around one chrome knot (anikit's own CPU 3D renderer) that breaks into seven pieces, each beside a live demo, and re-forms above the install command; the lean bundle streams the wasm (hero 3D visible ~1.3 s → ~0.2 s unthrottled, 524 → 359 KB). No video on the site.
+
 ## Afternoon session (2026-11-16): three looks, faster everything
 
 Benchmark numbers come from `packages/anikit/scripts/` and `docs/perf-notes.md` ("Fourth round (a)" and "(b)"); the machine was shared between two optimisation passes and renders, so figures are ranges over interleaved runs.
