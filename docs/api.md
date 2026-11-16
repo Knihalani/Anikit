@@ -507,6 +507,51 @@ effectNames();                           // ['fadeIn', 'fadeOut', …, 'glow']
 effects.glow('.star');
 ```
 
+## HTML in canvas: `htmlCanvas`, `htmlEffect`
+
+Draw live DOM into a 2D canvas or a WebGL texture, and run shader effects on real page content in one line.
+
+- **Native path.** When the browser implements the WICG [HTML-in-Canvas](https://github.com/WICG/html-in-canvas) proposal (`drawElementImage`; Chrome origin trial / `chrome://flags/#canvas-draw-element`, or `--enable-experimental-web-platform-features`) *and* the element is a direct child of `<canvas layoutsubtree>` (or `content="drawable"`), `htmlCanvas` draws it on every `paint` event with `drawElementImage`, or uploads it with `texElementSubImage2D` / `texElementImage2D`. Pixels are exact, and the element stays live, focusable, hit-testable and accessible. `htmlCanvasSupported()` tells you whether the API exists.
+- **Fallback (every browser).** The subtree is cloned with computed styles inlined; same-origin images, `background-image`s, canvases, the current video frame and `@font-face` fonts are embedded as data URLs, and the clone is drawn through SVG `<foreignObject>`. The canvas is never tainted: cross-origin resources are skipped with an `anikit:` warning. With `live: true` (the default), `MutationObserver`, `ResizeObserver`, `input`/`change` and font loads trigger a throttled re-raster (`throttle`, default 50 ms). Fonts and images are cached, so a re-raster is mostly a style walk plus one SVG decode (a few ms for a card, tens of ms for a large section).
+- **Fallback limits** (measured in Chromium): `:hover`/`:focus` states and the caret are not captured (computed styles are snapshotted at raster time, so a hover *is* captured if a mutation re-rasters while hovering); `::before`/`::after` content is not copied; iframes become empty boxes; video is a still of the current frame (call `refresh()` to update it); form controls show their value and checked state, rendered with default UA styling; cross-origin images and fonts are omitted.
+- **Cost per frame.** Nothing allocates per frame. Textures are uploaded only when the content changed (`version` increments on each new image).
+
+```ts
+const gl = document.querySelector<HTMLCanvasElement>('#scene')!.getContext('webgl')!;
+const card = htmlCanvas('#card', { target: gl, live: true, scale: 2 });
+await card.ready;                       // first image is in card.texture
+gl.bindTexture(gl.TEXTURE_2D, card.texture);
+// …draw your mesh; the texture refreshes itself when #card changes
+const snap = htmlCanvas('#receipt', { live: false });
+await snap.ready;
+document.body.append(snap.canvas);      // a 2D canvas copy of the element
+snap.dispose();
+if (htmlCanvasSupported()) console.log('native HTML-in-Canvas');
+const { url, width, height } = await htmlToSvg(document.querySelector('#card')!); // the SVG data URL itself
+```
+
+`htmlEffect(element, effect, options)` rasterises the element into a fixed-position WebGL overlay, animates the effect with anikit and puts the real element back. While it plays, the real element stays in place at `opacity: 0` and the overlay has `pointer-events: none`, so clicks and hovers still reach the element.
+
+| Effect | Default mode | What it does |
+|---|---|---|
+| `ripple` | pulse | Radial water ripple from `origin` |
+| `wave` | pulse | Flag-like sine wave through the mesh |
+| `glass` | pulse | Refraction with chromatic split |
+| `pixelate` | pulse | Blocks grow, then resolve |
+| `dissolve` | out | Noise burn with glowing `color` edges |
+| `shatter` | out | Element breaks into tumbling triangles from `origin` |
+| `curl` | out | Page peels away from the `origin` corner (default bottom-right) |
+
+Options: `duration` (s, default 1.2), `delay`, `ease` (any easing or spring), `mode` (`'out'` hides the element at the end until `revert()`; `'in'` plays backwards to reveal it; `'pulse'` goes 0→1→0), `intensity`, `origin` (`[x, y]` in 0–1), `padding` (px of room around the element for flying pieces), `scale`, `color`, `onComplete`. The controller has `finished`, `progress` + `render()` for scrubbing, `revert()` and `kill()`, and is tracked by `context()`.
+
+```ts
+htmlEffect('.hero', 'ripple', { origin: [0.3, 0.6] });
+await htmlEffect('#card', 'shatter', { duration: 1.4 }).finished;
+htmlEffect('#modal', 'dissolve', { mode: 'in', color: '#7cf', ease: 'outCubic' });
+const peel = htmlEffect('#page', 'curl', { duration: 0.9 });
+peel.finished.then(() => peel.revert()); // bring the page back
+```
+
 ## Scroll
 
 ```ts
@@ -1148,6 +1193,7 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Marquees](#marquees-marquee) | `marquee`, `Marquee` | `MarqueeOptions` |
 | [Magnetic and parallax](#magnetic-and-parallax-magnetic-parallax) | `magnetic`, `parallax` | `MagneticOptions`, `ParallaxOptions`, `PointerFx` |
 | [Effects](#effects) | `effects`, `effect`, `registerEffect`, `effectNames` | `EffectOptions`, `EffectFn`, `EffectName` |
+| [HTML in canvas](#html-in-canvas-htmlcanvas-htmleffect) | `htmlCanvas`, `htmlEffect`, `htmlCanvasSupported`, `htmlToSvg` | `HtmlCanvas`, `HtmlCanvasOptions`, `HtmlEffect`, `HtmlEffectOptions`, `HtmlEffectName` |
 | [Layout transitions](#layout-transitions-flip), [presence](#presence-enter-and-exit) and [View Transitions](#view-transitions) | `flip`, `presence`, `Presence`, `enter`, `exit`, `viewTransition` | `FlipOptions`, `FlipState`, `PresenceOptions`, `ViewTransitionOptions`, `ViewTransitionHandle` |
 | [Interaction](#interaction) | `draggable`, `Draggable`, `observer`, `hover`, `press`, `gesture`, `Gesture` | `DraggableOptions`, `Bounds`, `ObserverOptions`, `ObserverEvent`, `GestureOptions` |
 | [Engine](#engine) | `engine`, `flush`, `ready`, `init` | |

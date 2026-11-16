@@ -296,6 +296,7 @@ class HtmlCanvasImpl implements HtmlCanvas {
   private paintFn: (() => void) | null = null;
   private resolveReady!: (h: HtmlCanvas) => void;
   private texW = 0;
+  private live = true;
   private texH = 0;
 
   constructor(el: Element, o: HtmlCanvasOptions) {
@@ -316,7 +317,11 @@ class HtmlCanvasImpl implements HtmlCanvas {
     }
     const parent = el.parentElement;
     const nativeOk = o.native !== false && htmlCanvasSupported() && parent instanceof HTMLCanvasElement &&
-      (parent.hasAttribute('layoutsubtree') || parent.getAttribute('content') === 'drawable');
+      (parent.hasAttribute('layoutsubtree') || parent.getAttribute('content') === 'drawable') &&
+      // WebGL: the element must belong to the GL canvas; Chrome 153's texElementImage2D needs WebGL 2 (RGBA8).
+      (!this.gl || ((this.gl.canvas as Element) === parent &&
+        (typeof (this.gl as unknown as Record<string, unknown>).texElementSubImage2D === 'function' ||
+          (typeof WebGL2RenderingContext !== 'undefined' && this.gl instanceof WebGL2RenderingContext))));
     if (nativeOk) {
       this.native = true;
       this.canvas = parent as HTMLCanvasElement;
@@ -328,26 +333,30 @@ class HtmlCanvasImpl implements HtmlCanvas {
       }
       this.paintFn = () => this.paintNative();
       parent.addEventListener('paint', this.paintFn);
+      this.live = o.live !== false;
       this.requestPaint();
-      if (o.live === false) {
-        // one image only
-      }
     } else {
       this.canvas = t instanceof HTMLCanvasElement ? t : document.createElement('canvas');
-      this.ctx = this.canvas.getContext('2d');
-      if (o.live !== false) {
-        this.mo = new MutationObserver(() => this.schedule());
-        this.mo.observe(el, { subtree: true, childList: true, attributes: true, characterData: true });
-        if (typeof ResizeObserver !== 'undefined') {
-          this.ro = new ResizeObserver(() => this.schedule());
-          this.ro.observe(el);
-        }
-        document.fonts?.addEventListener?.('loadingdone', this.onFonts);
-        el.addEventListener('input', this.onInput, true);
-        el.addEventListener('change', this.onInput, true);
-      }
-      void this.refresh();
+      this.startFallback(o.live !== false);
     }
+  }
+
+  private startFallback(live: boolean) {
+    const el = this.element;
+    this.native = false;
+    this.ctx = this.canvas.getContext('2d');
+    if (live) {
+      this.mo = new MutationObserver(() => this.schedule());
+      this.mo.observe(el, { subtree: true, childList: true, attributes: true, characterData: true });
+      if (typeof ResizeObserver !== 'undefined') {
+        this.ro = new ResizeObserver(() => this.schedule());
+        this.ro.observe(el);
+      }
+      document.fonts?.addEventListener?.('loadingdone', this.onFonts);
+      el.addEventListener('input', this.onInput, true);
+      el.addEventListener('change', this.onInput, true);
+    }
+    void this.refresh();
   }
 
   private onFonts = () => {
@@ -380,7 +389,8 @@ class HtmlCanvasImpl implements HtmlCanvas {
           }
           gl.texElementSubImage2D(gl.TEXTURE_2D, 0, 0, 0, el);
         } else {
-          gl.texElementImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, el);
+          // Earlier Chrome shape (measured in Chrome 153): texElementImage2D(target, internalformat, element).
+          gl.texElementImage2D(gl.TEXTURE_2D, 0x8058 /* RGBA8 */, el);
         }
       } else if (this.ctx) {
         const c = this.ctx.canvas;
@@ -389,7 +399,11 @@ class HtmlCanvasImpl implements HtmlCanvas {
           .drawElementImage(el, 0, 0, c.width, c.height);
       }
     } catch (e) {
-      warn(`htmlCanvas: native draw failed (${(e as Error).message}).`);
+      warn(`htmlCanvas: native draw failed (${(e as Error).message}); using the foreignObject fallback.`);
+      if (this.paintFn) this.element.parentElement?.removeEventListener('paint', this.paintFn);
+      this.paintFn = null;
+      this.canvas = document.createElement('canvas');
+      this.startFallback(this.live);
       return;
     }
     this.version++;
@@ -565,6 +579,7 @@ const EFFECTS: HtmlEffectName[] = ['ripple', 'shatter', 'dissolve', 'curl', 'pix
 const EFFECT_ID: Record<HtmlEffectName, number> = { ripple: 0, shatter: 1, dissolve: 2, curl: 3, pixelate: 4, wave: 5, glass: 6 };
 
 const VS = `
+precision highp float; precision highp int;
 attribute vec2 a_uv; attribute vec2 a_c; attribute float a_r;
 uniform vec2 u_size; uniform vec2 u_pad; uniform vec2 u_view; uniform float u_p; uniform float u_k; uniform int u_fx; uniform vec2 u_o; uniform float u_t;
 varying vec2 v_uv; varying float v_a; varying float v_shade;
@@ -597,7 +612,7 @@ void main(){
 }`;
 
 const FS = `
-precision highp float;
+precision highp float; precision highp int;
 uniform sampler2D u_tex; uniform float u_p; uniform float u_k; uniform int u_fx; uniform vec2 u_size; uniform vec2 u_o; uniform float u_t; uniform vec3 u_col;
 varying vec2 v_uv; varying float v_a; varying float v_shade;
 float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
@@ -688,6 +703,7 @@ class HtmlEffectImpl implements HtmlEffect {
     gl.attachShader(prog, compile(gl, gl.VERTEX_SHADER, VS));
     gl.attachShader(prog, compile(gl, gl.FRAGMENT_SHADER, FS));
     gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error('htmlEffect shader: ' + gl.getProgramInfoLog(prog));
     gl.useProgram(prog);
     for (const u of ['u_size', 'u_pad', 'u_view', 'u_p', 'u_k', 'u_fx', 'u_o', 'u_t', 'u_col', 'u_tex']) this.loc[u] = gl.getUniformLocation(prog, u);
     // A grid of independent triangles: uv, triangle centroid, random.
