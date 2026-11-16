@@ -31,6 +31,10 @@
       "types": "./dist/scene.d.ts",
       "import": "./dist/scene.js"
     },
+    "./video": {
+      "types": "./dist/types/video/index.d.ts",
+      "import": "./dist/video.js"
+    },
     "./node": "./node/index.mjs",
     "./react": {
       "types": "./dist/types/react.d.ts",

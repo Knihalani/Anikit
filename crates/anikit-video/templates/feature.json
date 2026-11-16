@@ -1,0 +1,403 @@
+{
+  "name": "feature",
+  "title": "Feature announcement",
+  "description": "A 12–20 s spotlight on one new feature: a 'New' kicker and headline as the hook, an optional screenshot in a browser frame, 1–3 supporting points that build in, and a call to action.",
+  "duration": "12–20 s",
+  "tags": [
+    "feature",
+    "announcement",
+    "release",
+    "update"
+  ],
+  "params": {
+    "product": {
+      "type": "string",
+      "default": "{{brand.name}}",
+      "maxWords": 3,
+      "description": "Product name shown on the end card.",
+      "example": "Anikit Video"
+    },
+    "kicker": {
+      "type": "string",
+      "default": "New",
+      "maxWords": 3,
+      "description": "Small label above the headline.",
+      "example": "New in 2.0"
+    },
+    "headline": {
+      "type": "string",
+      "required": true,
+      "maxWords": 7,
+      "description": "The feature as a benefit, readable in 2 s.",
+      "example": "Render stills in 40 ms"
+    },
+    "subhead": {
+      "type": "string",
+      "maxWords": 14,
+      "description": "One sentence that explains the headline.",
+      "example": "Preview any frame instantly, straight from your agent."
+    },
+    "screenshot": {
+      "type": "image",
+      "description": "Optional screenshot of the feature (16:10 works best), shown in a browser frame.",
+      "example": "screenshot.png"
+    },
+    "url": {
+      "type": "string",
+      "default": "{{brand.voice.url}}",
+      "maxChars": 32,
+      "description": "Address in the browser bar and on the end card.",
+      "example": "anikit.dev"
+    },
+    "points": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "description": "1–3 short supporting points, most important first.",
+      "items": {
+        "type": "string",
+        "maxWords": 7
+      },
+      "example": [
+        "Any frame, any time",
+        "PNG or base64 for agents",
+        "Contact sheets in one call"
+      ]
+    },
+    "cta": {
+      "type": "string",
+      "default": "{{brand.voice.cta}}",
+      "maxWords": 4,
+      "description": "Call to action on the end card.",
+      "example": "Try it now"
+    },
+    "music": {
+      "type": "string",
+      "description": "Optional music file (MP3/WAV)."
+    }
+  },
+  "spec": {
+    "size": [
+      "{{fmt.w}}",
+      "{{fmt.h}}"
+    ],
+    "fps": "{{fmt.fps}}",
+    "theme": {
+      "$use": "theme"
+    },
+    "background": "radial-gradient(circle at 50% 35%, $bg, $bgDeep)",
+    "transition": {
+      "type": "crossfade",
+      "duration": 0.5
+    },
+    "scenes": [
+      {
+        "id": "headline",
+        "duration": "{{max(2.8, readtime(kicker + ' ' + headline + ' ' + (subhead ?? '')) + 0.6)}}",
+        "camera": {
+          "animate": [
+            {
+              "from": {
+                "zoom": 1.05
+              },
+              "to": {
+                "zoom": 1
+              },
+              "duration": 3,
+              "ease": "outCubic"
+            }
+          ]
+        },
+        "layers": [
+          {
+            "$use": "glows",
+            "with": {
+              "strength": 0.85
+            }
+          },
+          {
+            "type": "box",
+            "id": "kicker-pill",
+            "y": "{{fmt.square ? (subhead ? '27%' : '33%') : (subhead ? '33%' : '38%')}}",
+            "style": {
+              "padding": [
+                "{{fmt.u * 0.9}}",
+                "{{fmt.u * 2.4}}"
+              ],
+              "radius": 999,
+              "background": "{{alpha(brand.colors.accent, 0.14)}}",
+              "border": "1px {{alpha(brand.colors.accent, 0.5)}}"
+            },
+            "enter": {
+              "preset": "popIn",
+              "duration": 0.45
+            },
+            "children": [
+              {
+                "text": "{{kicker}}",
+                "style": "label"
+              }
+            ]
+          },
+          {
+            "id": "headline",
+            "text": "{{headline}}",
+            "style": "title",
+            "y": "{{fmt.square ? (subhead ? '45%' : '52%') : (subhead ? '47%' : '52%')}}",
+            "width": "{{fmt.safe.w}}",
+            "split": "words",
+            "enter": {
+              "preset": "fadeUp",
+              "stagger": 0.08,
+              "delay": 0.15,
+              "duration": 0.7,
+              "ease": "outExpo"
+            }
+          },
+          {
+            "$if": "subhead",
+            "then": {
+              "id": "subhead",
+              "text": "{{subhead}}",
+              "style": "subtitle",
+              "y": "{{fmt.portrait ? '61%' : (fmt.square ? '69%' : '64%')}}",
+              "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.6}}",
+              "enter": {
+                "preset": "fadeUp",
+                "delay": 0.7
+              }
+            }
+          }
+        ]
+      },
+      {
+        "$if": "screenshot",
+        "then": {
+          "id": "screenshot",
+          "transition": {
+            "type": "push",
+            "direction": "{{fmt.portrait ? 'up' : 'left'}}",
+            "duration": 0.6,
+            "ease": "inOutQuart"
+          },
+          "duration": "{{fmt.landscape ? 3.4 : max(3.4, readtime(headline) + 1.4)}}",
+          "camera": {
+            "animate": [
+              {
+                "to": {
+                  "zoom": 1.05
+                },
+                "duration": 3.4,
+                "ease": "inOutSine"
+              }
+            ]
+          },
+          "layers": [
+            {
+              "$use": "glows",
+              "with": {
+                "gx": "50%",
+                "gy": "50%",
+                "strength": 0.7
+              }
+            },
+            {
+              "$if": "!fmt.landscape",
+              "then": {
+                "id": "shot-title",
+                "text": "{{headline}}",
+                "style": "heading",
+                "y": "{{fmt.portrait ? '30%' : '19%'}}",
+                "width": "{{fmt.safe.w}}",
+                "enter": {
+                  "preset": "fadeUp",
+                  "duration": 0.6,
+                  "ease": "outExpo"
+                }
+              }
+            },
+            {
+              "$use": "browser",
+              "with": {
+                "src": "{{screenshot}}",
+                "url": "{{url}}",
+                "width": "{{fmt.landscape ? fmt.w * 0.7 : (fmt.square ? fmt.safe.w * 0.84 : fmt.safe.w)}}",
+                "height": "{{(fmt.landscape ? fmt.w * 0.7 : (fmt.square ? fmt.safe.w * 0.84 : fmt.safe.w)) * 0.6}}"
+              },
+              "enter": {
+                "preset": "slideUp",
+                "duration": 0.9
+              },
+              "y": "{{fmt.landscape ? '50%' : (fmt.square ? '60%' : '58%')}}"
+            }
+          ]
+        }
+      },
+      {
+        "$if": "points",
+        "then": {
+          "id": "points",
+          "transition": {
+            "type": "push",
+            "direction": "{{fmt.portrait ? 'up' : 'left'}}",
+            "duration": 0.6,
+            "ease": "inOutQuart"
+          },
+          "duration": "{{readtime(points) + 0.4 * len(points) + 0.8}}",
+          "layers": [
+            {
+              "$use": "glows",
+              "with": {
+                "gx": "90%",
+                "hx": "10%",
+                "strength": 0.6
+              }
+            },
+            {
+              "id": "points-kicker",
+              "text": "{{kicker}}",
+              "style": "label",
+              "y": "{{fmt.cy + fmt.u * (fmt.portrait ? 4 : 5) - ((len(points) - 1) / 2) * fmt.u * (fmt.portrait ? 17 : 13) - fmt.u * (fmt.portrait ? 14 : 11)}}",
+              "enter": {
+                "preset": "fadeIn",
+                "duration": 0.5
+              }
+            },
+            {
+              "$each": "points",
+              "as": "pt",
+              "index": "i",
+              "do": {
+                "type": "box",
+                "id": "point-{{i + 1}}",
+                "style": {
+                  "direction": "row",
+                  "gap": "{{fmt.u * 2.4}}",
+                  "align": "center",
+                  "justify": "start",
+                  "padding": [
+                    "{{fmt.u * 2.4}}",
+                    "{{fmt.u * 3}}"
+                  ],
+                  "background": "$surface",
+                  "radius": "{{brand.radius * fmt.s}}",
+                  "border": "1px $border"
+                },
+                "enter": {
+                  "preset": "fadeUp",
+                  "duration": 0.6,
+                  "ease": "outExpo",
+                  "delay": "{{0.15 + i * 0.35}}"
+                },
+                "children": [
+                  {
+                    "type": "box",
+                    "width": "{{fmt.u * 5}}",
+                    "height": "{{fmt.u * 5}}",
+                    "style": {
+                      "radius": 999,
+                      "background": "$primary",
+                      "justify": "center"
+                    },
+                    "children": [
+                      {
+                        "type": "shape",
+                        "shape": "path",
+                        "width": "{{fmt.u * 2.4}}",
+                        "height": "{{fmt.u * 2.4}}",
+                        "d": "M{{fmt.u * 0.2}} {{fmt.u * 1.3}} L{{fmt.u * 0.9}} {{fmt.u * 2}} L{{fmt.u * 2.2}} {{fmt.u * 0.5}}",
+                        "stroke": {
+                          "color": "$onPrimary",
+                          "width": "{{fmt.u * 0.45}}",
+                          "cap": "round",
+                          "join": "round"
+                        },
+                        "fill": "none",
+                        "enter": {
+                          "preset": "drawOn",
+                          "delay": "{{0.4 + i * 0.35}}",
+                          "duration": 0.4
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "text": "{{pt}}",
+                    "style": "body",
+                    "align": "left",
+                    "weight": 600,
+                    "width": "{{(fmt.landscape ? fmt.w * 0.62 : fmt.safe.w) - fmt.u * 13.4}}"
+                  }
+                ],
+                "width": "{{fmt.landscape ? fmt.w * 0.62 : fmt.safe.w}}",
+                "y": "{{fmt.cy + fmt.u * (fmt.portrait ? 4 : 5) + (i - (count - 1) / 2) * fmt.u * (fmt.portrait ? 17 : 13)}}"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "cta",
+        "transition": {
+          "type": "blur",
+          "duration": 0.6
+        },
+        "duration": "{{max(3.4, readtime(product + ' ' + cta + ' ' + (url ?? '')) + 1.2)}}",
+        "layers": [
+          {
+            "$use": "glows",
+            "with": {
+              "gx": "30%",
+              "gy": "20%",
+              "hx": "70%",
+              "hy": "85%"
+            }
+          },
+          {
+            "$use": "wordmark",
+            "with": {
+              "y": "{{fmt.portrait ? '38%' : '34%'}}",
+              "height": "{{fmt.u * 10}}",
+              "enter": "scaleIn"
+            }
+          },
+          {
+            "$if": "brand.logo",
+            "then": {
+              "text": "{{product}}",
+              "style": "heading",
+              "y": "{{fmt.portrait ? '46%' : '48%'}}",
+              "enter": {
+                "preset": "fadeUp",
+                "delay": 0.2
+              }
+            }
+          },
+          {
+            "$use": "button",
+            "with": {
+              "label": "{{cta}}",
+              "delay": 0.45
+            },
+            "y": "{{fmt.portrait ? '56%' : '62%'}}"
+          },
+          {
+            "$if": "url",
+            "then": {
+              "text": "{{url}}",
+              "style": "caption",
+              "y": "{{fmt.portrait ? '64%' : '74%'}}",
+              "enter": {
+                "preset": "fadeIn",
+                "delay": 0.8
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "audio": {
+      "$use": "music"
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "size": "16:9",
+  "fps": 30,
+  "theme": { "colors": { "primary": "#7c5cff", "accent": "#ff5ca8" } },
+  "markers": { "drop": 4.0 },
+  "scenes": [
+    {
+      "id": "intro",
+      "duration": 3,
+      "background": "radial-gradient(#1c1640, $bg)",
+      "camera": { "animate": [ { "to": { "zoom": 1.08 }, "duration": 3, "ease": "inOutSine" } ] },
+      "layers": [
+        { "shape": "circle", "width": 420, "height": 420, "fill": "$primary", "opacity": 0.3, "blur": 60, "loop": "breathe" },
+        { "text": "Anikit Video", "style": "title", "split": "chars", "enter": { "preset": "popIn", "stagger": 0.03 } },
+        { "text": "JSON in. MP4 out.", "y": "64%", "style": "subtitle", "enter": { "preset": "fadeUp", "delay": 0.6 }, "exit": "fadeOut" },
+        { "shape": "line", "points": [[0, 0], [360, 0]], "y": "72%", "stroke": { "color": "$accent", "width": 6, "cap": "round" }, "enter": { "preset": "drawOn", "delay": 0.8 } }
+      ]
+    },
+    {
+      "id": "features",
+      "duration": 3.5,
+      "transition": { "type": "push", "direction": "left", "duration": 0.6 },
+      "camera": { "shake": { "amount": 10, "at": "@drop", "duration": 0.4 } },
+      "layers": [
+        { "type": "box", "style": { "direction": "row", "gap": 32 }, "stagger": 0.12, "children": [
+          { "type": "box", "style": { "padding": 40, "background": "$surface", "border": "2px #ffffff20" }, "enter": "slideUp",
+            "children": [ { "text": "Fast", "style": "heading" } ] },
+          { "type": "box", "style": { "padding": 40, "background": "$surface" }, "enter": "slideUp",
+            "children": [ { "text": "Native", "style": "heading" } ] },
+          { "type": "box", "style": { "padding": 40, "background": "linear-gradient(135deg, $primary, $accent)" }, "enter": "slideUp",
+            "children": [ { "text": "Agent-first", "style": "heading" } ] }
+        ] },
+        { "text": "{value:,}+ frames/s", "value": 1200, "y": "80%", "style": "subtitle", "enter": { "preset": "countUp", "delay": 0.5 } },
+        { "shape": "star", "width": 80, "height": 80, "x": "=50% + 500 * cos(t * 2)", "y": "=25% + 60 * sin(t * 3)", "fill": "$accent", "rotation": "=t * 90" }
+      ]
+    },
+    {
+      "id": "outro",
+      "duration": 2,
+      "transition": "iris",
+      "layers": [
+        { "text": "anikit.dev", "style": "heading", "enter": "blurIn", "animate": [ { "keyframes": { "scale": [1, 1.1, 1] }, "at": 1, "duration": 0.6, "ease": "inOutSine" } ] }
+      ]
+    }
+  ]
+}

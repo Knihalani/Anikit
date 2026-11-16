@@ -1,0 +1,8 @@
+{
+  "name": "Anikit Video",
+  "theme": "dark",
+  "colors": { "primary": "#7C5CFF", "secondary": "#22D3EE", "accent": "#FF5CA8", "background": "#0B0B12" },
+  "fonts": { "heading": "Inter Display", "body": "Inter", "mono": "JetBrains Mono" },
+  "radius": 28,
+  "voice": { "tone": "confident, precise, playful", "avoid": ["revolutionary", "seamless", "unlock"], "cta": "npm i anikit", "url": "anikit.dev/video" }
+}

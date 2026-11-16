@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "anikit-video": { "command": "anikit-video", "args": ["mcp"] }
+  }
+}

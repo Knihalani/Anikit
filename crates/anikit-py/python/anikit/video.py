@@ -317,3 +317,10 @@ class VideoWriter:
 
     def __repr__(self) -> str:
         return f"VideoWriter({self.path!r}, {self.width}x{self.height} @ {self.fps:g} fps, {self.frames} frames)"
+
+# The spec builder for the native renderer (pure Python; see anikit/_video_builder.py).
+from ._video_builder import (  # noqa: E402
+    PRESET_ALIASES, AnikitVideoError, LayerList, SceneBuilder, Video, absolutize, render, template, video,
+)
+
+__all__ += ["video", "Video", "SceneBuilder", "LayerList", "template", "render", "absolutize", "PRESET_ALIASES", "AnikitVideoError"]

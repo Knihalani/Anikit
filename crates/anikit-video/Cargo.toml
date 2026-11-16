@@ -16,6 +16,31 @@ path = "src/bin/anikit-video.rs"
 [dependencies]
 anikit-core = { path = "../anikit-core", features = ["std"] }
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde_json = { version = "1", features = ["preserve_order"] }
 rayon = "1"
 kurbo = "0.13"
+schemars = "1"
+serde_ignored = "0.1.14"
+serde_path_to_error = "0.1.20"
+serde_norway = "0.9.42"
+taffy = { version = "0.15.1", features = ["parse"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+vello_cpu = "0.4.0"
+parley = "0.13.0"
+skrifa = "0.49"
+glifo = { version = "0.5", default-features = false }
+ak264 = { path = "../ak264" }
+symphonia = { version = "0.5", default-features = false, features = ["mp3", "wav", "pcm", "ogg", "vorbis", "flac", "aac", "isomp4"] }
+two-face = { version = "0.5.2", default-features = false }
+syntect = { version = "5.3.0", default-features = false, features = ["parsing"] }
+
+[dev-dependencies]
+png = "0.18.1"
+ak264 = { path = "../ak264" }
+vello_cpu = "0.4.0"
+
+[features]
+default = ["onig"]
+# Code highlighting regex engine: Oniguruma (fast, C) or fancy-regex (pure Rust, e.g. for wasm).
+onig = ["syntect/regex-onig", "two-face/syntect-onig"]
+fancy-regex = ["syntect/regex-fancy", "two-face/syntect-fancy"]
