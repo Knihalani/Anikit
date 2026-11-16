@@ -9,7 +9,7 @@
     "name": { "type": "string", "default": "{{brand.name}}", "maxWords": 3, "description": "Wordmark text, used when the brand kit has no logo.", "example": "Anikit" },
     "tagline": { "type": "string", "maxWords": 8, "description": "Optional line under the logo.", "example": "Motion, compiled." },
     "duration": { "type": "seconds", "default": 4, "minimum": 3, "maximum": 6, "description": "Total length in seconds.", "example": 4 },
-    "music": { "type": "string", "description": "Optional sting or whoosh sound.", "example": "sting.wav" }
+    "music": { "type": "string", "description": "Optional sting or whoosh sound." }
   },
   "defs": {
     "mark": {

@@ -65,7 +65,7 @@ A 15–35 s walkthrough: a title hook, then 2–5 steps, each a screenshot in a 
 ```bash
 anikit-video new demo --brand brand.json            # scaffolds demo/params.json from this example
 anikit-video templates expand demo demo/params.json --brand brand.json --format 16:9 -o demo/spec.json
-anikit-video critique demo/spec.json && anikit-video sheet demo/spec.json -o demo/sheet.png
+anikit-video critique demo/spec.json && anikit-video preview demo/spec.json -o demo/sheet.png
 anikit-video render demo/spec.json -o demo.mp4
 ```
 

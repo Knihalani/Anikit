@@ -60,7 +60,7 @@ A 12–25 s release recap: a version badge as the hook, then 3–6 changes build
 ```bash
 anikit-video new changelog --brand brand.json            # scaffolds changelog/params.json from this example
 anikit-video templates expand changelog changelog/params.json --brand brand.json --format 16:9 -o changelog/spec.json
-anikit-video critique changelog/spec.json && anikit-video sheet changelog/spec.json -o changelog/sheet.png
+anikit-video critique changelog/spec.json && anikit-video preview changelog/spec.json -o changelog/sheet.png
 anikit-video render changelog/spec.json -o changelog.mp4
 ```
 

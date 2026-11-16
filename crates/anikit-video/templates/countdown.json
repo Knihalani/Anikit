@@ -13,7 +13,7 @@
     "live": { "type": "boolean", "default": true, "description": "true: end on 'Live now' (for the start of a stream). false: end on a save-the-date card.", "example": true },
     "liveText": { "type": "string", "default": "Live now", "maxWords": 3, "description": "End card headline when live is true.", "example": "We're live" },
     "cta": { "type": "string", "maxWords": 4, "description": "Optional button on the end card.", "example": "Join the stream" },
-    "music": { "type": "string", "description": "Optional music; a track with a clear downbeat makes each number land.", "example": "music.mp3" }
+    "music": { "type": "string", "description": "Optional music; a track with a clear downbeat makes each number land." }
   },
   "spec": {
     "size": ["{{fmt.w}}", "{{fmt.h}}"],

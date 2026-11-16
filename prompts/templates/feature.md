@@ -31,6 +31,7 @@ A 12–20 s spotlight on one new feature: a 'New' kicker and headline as the hoo
   "kicker": "New in 2.0",
   "headline": "Render stills in 40 ms",
   "subhead": "Preview any frame instantly, straight from your agent.",
+  "screenshot": "screenshot.png",
   "url": "anikit.dev",
   "points": [
     "Any frame, any time",
@@ -46,7 +47,7 @@ A 12–20 s spotlight on one new feature: a 'New' kicker and headline as the hoo
 ```bash
 anikit-video new feature --brand brand.json            # scaffolds feature/params.json from this example
 anikit-video templates expand feature feature/params.json --brand brand.json --format 16:9 -o feature/spec.json
-anikit-video critique feature/spec.json && anikit-video sheet feature/spec.json -o feature/sheet.png
+anikit-video critique feature/spec.json && anikit-video preview feature/spec.json -o feature/sheet.png
 anikit-video render feature/spec.json -o feature.mp4
 ```
 

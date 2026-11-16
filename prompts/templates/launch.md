@@ -62,7 +62,7 @@ A 20–35 s launch film: a 2-second hook, the product reveal (logo, name, taglin
 ```bash
 anikit-video new launch --brand brand.json            # scaffolds launch/params.json from this example
 anikit-video templates expand launch launch/params.json --brand brand.json --format 16:9 -o launch/spec.json
-anikit-video critique launch/spec.json && anikit-video sheet launch/spec.json -o launch/sheet.png
+anikit-video critique launch/spec.json && anikit-video preview launch/spec.json -o launch/sheet.png
 anikit-video render launch/spec.json -o launch.mp4
 ```
 

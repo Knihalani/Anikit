@@ -59,8 +59,7 @@ A title card, then 2–6 steps, each with a step number, a one-line explanation 
   ],
   "recap": "Your first video, in under a minute.",
   "cta": "Read the docs",
-  "url": "anikit.dev/docs",
-  "music": "music.mp3"
+  "url": "anikit.dev/docs"
 }
 ```
 
@@ -69,7 +68,7 @@ A title card, then 2–6 steps, each with a step number, a one-line explanation 
 ```bash
 anikit-video new tutorial --brand brand.json            # scaffolds tutorial/params.json from this example
 anikit-video templates expand tutorial tutorial/params.json --brand brand.json --format 16:9 -o tutorial/spec.json
-anikit-video critique tutorial/spec.json && anikit-video sheet tutorial/spec.json -o tutorial/sheet.png
+anikit-video critique tutorial/spec.json && anikit-video preview tutorial/spec.json -o tutorial/sheet.png
 anikit-video render tutorial/spec.json -o tutorial.mp4
 ```
 

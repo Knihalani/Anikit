@@ -34,8 +34,7 @@ An event intro (name, date, place), a big N…1 countdown where each number pops
   "from": 5,
   "live": true,
   "liveText": "We're live",
-  "cta": "Join the stream",
-  "music": "music.mp3"
+  "cta": "Join the stream"
 }
 ```
 
@@ -44,7 +43,7 @@ An event intro (name, date, place), a big N…1 countdown where each number pops
 ```bash
 anikit-video new countdown --brand brand.json            # scaffolds countdown/params.json from this example
 anikit-video templates expand countdown countdown/params.json --brand brand.json --format 16:9 -o countdown/spec.json
-anikit-video critique countdown/spec.json && anikit-video sheet countdown/spec.json -o countdown/sheet.png
+anikit-video critique countdown/spec.json && anikit-video preview countdown/spec.json -o countdown/sheet.png
 anikit-video render countdown/spec.json -o countdown.mp4
 ```
 

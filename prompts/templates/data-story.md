@@ -71,7 +71,7 @@ A 15–30 s data narrative: a headline hook, 1–3 bar charts that grow in with 
 ```bash
 anikit-video new data-story --brand brand.json            # scaffolds data-story/params.json from this example
 anikit-video templates expand data-story data-story/params.json --brand brand.json --format 16:9 -o data-story/spec.json
-anikit-video critique data-story/spec.json && anikit-video sheet data-story/spec.json -o data-story/sheet.png
+anikit-video critique data-story/spec.json && anikit-video preview data-story/spec.json -o data-story/sheet.png
 anikit-video render data-story/spec.json -o data-story.mp4
 ```
 

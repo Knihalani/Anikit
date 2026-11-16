@@ -43,8 +43,7 @@ description: How to fill the 'testimonial' template well.
     }
   ],
   "cta": "Join them",
-  "url": "fieldnote.app",
-  "music": "music.mp3"
+  "url": "fieldnote.app"
 }
 ```
 
@@ -53,7 +52,7 @@ description: How to fill the 'testimonial' template well.
 ```bash
 anikit-video new testimonial --brand brand.json            # scaffolds testimonial/params.json from this example
 anikit-video templates expand testimonial testimonial/params.json --brand brand.json --format 16:9 -o testimonial/spec.json
-anikit-video critique testimonial/spec.json && anikit-video sheet testimonial/spec.json -o testimonial/sheet.png
+anikit-video critique testimonial/spec.json && anikit-video preview testimonial/spec.json -o testimonial/sheet.png
 anikit-video render testimonial/spec.json -o testimonial.mp4
 ```
 

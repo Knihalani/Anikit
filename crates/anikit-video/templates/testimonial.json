@@ -26,19 +26,19 @@
     },
     "cta": { "type": "string", "default": "{{brand.voice.cta}}", "maxWords": 4, "description": "Call to action on the end card.", "example": "Join them" },
     "url": { "type": "string", "default": "{{brand.voice.url}}", "maxChars": 32, "description": "Address on the end card.", "example": "fieldnote.app" },
-    "music": { "type": "string", "description": "Optional music file. Warm, mid-tempo (80–110 BPM) suits testimonials.", "example": "music.mp3" }
+    "music": { "type": "string", "description": "Optional music file. Warm, mid-tempo (80–110 BPM) suits testimonials." }
   },
   "defs": {
     "stars": {
-      "type": "box", "id": "stars", "style": { "direction": "row", "gap": "{{fmt.u * 1}}" }, "stagger": 0.07,
+      "type": "box", "id": "stars", "style": { "direction": "row", "gap": "{{fmt.u * 1}}", "padding": ["{{fmt.u * 2.5}}", 0, 0, 0] }, "stagger": 0.07,
       "children": {
         "$each": "range(rating)", "as": "s",
         "do": { "shape": "star", "sides": 5, "innerRadius": 0.46, "width": "{{fmt.u * (fmt.portrait ? 5 : 4)}}", "height": "{{fmt.u * (fmt.portrait ? 5 : 4)}}", "fill": "$accent", "enter": { "preset": "popIn", "delay": "{{delay}}", "duration": 0.45 } }
       }
     },
     "author": {
-      "type": "box", "id": "author", "style": { "direction": "row", "gap": "{{fmt.u * 2.2}}", "align": "center" },
-      "enter": { "preset": "fadeUp", "delay": "{{delay}}", "duration": 0.6 },
+      "type": "box", "id": "author", "style": { "direction": "row", "gap": "{{fmt.u * 2.2}}", "align": "center", "padding": ["{{fmt.u * 2.5}}", 0, 0, 0] },
+      "enter": { "preset": "fadeIn", "delay": "{{delay}}", "duration": 0.6 },
       "children": [
         { "$if": "q.avatar", "then": { "src": "{{q.avatar}}", "width": "{{fmt.u * (fmt.portrait ? 12 : 9)}}", "height": "{{fmt.u * (fmt.portrait ? 12 : 9)}}", "fit": "cover", "radius": "{{fmt.u * (fmt.portrait ? 6 : 4.5)}}" } },
         {
@@ -85,13 +85,13 @@
             "layers": [
               { "$use": "glows", "with": { "strength": 0.6, "gx": "{{i % 2 ? '88%' : '12%'}}", "gy": "15%", "hx": "{{i % 2 ? '15%' : '85%'}}", "hy": "92%" } },
               {
-                "type": "box", "id": "card", "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.72}}",
+                "type": "box", "id": "card", "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.76}}",
                 "style": { "direction": "column", "gap": "{{fmt.u * (fmt.portrait ? 4 : 3)}}", "align": "center" },
                 "children": [
-                  { "id": "mark", "text": "“", "font": "$heading", "weight": 800, "size": "{{fmt.portrait ? '30vmin' : '24vmin'}}", "lineHeight": 0.7, "color": "$accent", "height": "{{fmt.u * (fmt.portrait ? 15 : 12)}}", "enter": { "preset": "popIn", "duration": 0.5 } },
+                  { "id": "mark", "text": "“", "font": "Instrument Serif", "size": "{{fmt.portrait ? '34vmin' : '28vmin'}}", "lineHeight": 0.75, "color": "$accent", "height": "{{fmt.u * (fmt.portrait ? 14 : 11)}}", "enter": { "preset": "popIn", "duration": 0.5 } },
                   {
                     "id": "quote", "text": "{{q.quote}}", "style": "heading", "width": "100%",
-                    "size": "{{long ? (fmt.portrait ? '5.8vmin' : '4.6vmin') : (fmt.portrait ? '7.4vmin' : '6.2vmin')}}",
+                    "size": "{{long ? (fmt.portrait ? '6.4vmin' : '5.4vmin') : (fmt.portrait ? '8.2vmin' : '7.2vmin')}}",
                     "weight": "{{long ? 600 : 700}}", "lineHeight": "{{long ? 1.3 : 1.15}}",
                     "split": "words", "enter": { "preset": "fadeUp", "stagger": "{{stag}}", "delay": 0.25, "duration": 0.6, "ease": "outCubic", "distance": "{{fmt.u * 2.5}}" }
                   },

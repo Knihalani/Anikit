@@ -26,8 +26,7 @@ A restrained 3–6 s brand sting: the logo (or the name as a wordmark) revealed 
   "style": "glow",
   "name": "Anikit",
   "tagline": "Motion, compiled.",
-  "duration": 4,
-  "music": "sting.wav"
+  "duration": 4
 }
 ```
 
@@ -36,7 +35,7 @@ A restrained 3–6 s brand sting: the logo (or the name as a wordmark) revealed 
 ```bash
 anikit-video new logo-reveal --brand brand.json            # scaffolds logo-reveal/params.json from this example
 anikit-video templates expand logo-reveal logo-reveal/params.json --brand brand.json --format 16:9 -o logo-reveal/spec.json
-anikit-video critique logo-reveal/spec.json && anikit-video sheet logo-reveal/spec.json -o logo-reveal/sheet.png
+anikit-video critique logo-reveal/spec.json && anikit-video preview logo-reveal/spec.json -o logo-reveal/sheet.png
 anikit-video render logo-reveal/spec.json -o logo-reveal.mp4
 ```
 

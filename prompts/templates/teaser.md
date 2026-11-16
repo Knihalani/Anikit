@@ -43,7 +43,7 @@ A 6–12 s vertical teaser for Reels, TikTok and Shorts: rapid kinetic words, on
 ```bash
 anikit-video new teaser --brand brand.json            # scaffolds teaser/params.json from this example
 anikit-video templates expand teaser teaser/params.json --brand brand.json --format 16:9 -o teaser/spec.json
-anikit-video critique teaser/spec.json && anikit-video sheet teaser/spec.json -o teaser/sheet.png
+anikit-video critique teaser/spec.json && anikit-video preview teaser/spec.json -o teaser/sheet.png
 anikit-video render teaser/spec.json -o teaser.mp4
 ```
 
