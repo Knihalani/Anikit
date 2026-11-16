@@ -11,7 +11,7 @@
  */
 import { core, F64, LINEAR, f64Buf, whenReady, views } from './wasm';
 import {
-  register, unregister, wake, flush, easingId, easingDuration, NodeRecord, EasingInput, prefersReduced, reducedMotionMode,
+  register, unregister, wake, flush, easingId, easingDuration, NodeRecord, Runner, INDEX_MASK, EasingInput, prefersReduced, reducedMotionMode,
   FL_FILL_BACKWARDS, FL_FILL_FORWARDS, FL_IMMEDIATE,
 } from './core';
 import {
@@ -334,19 +334,37 @@ export function _setCodegen(on: boolean | undefined): boolean | undefined {
   compactCache.clear();
   return prev;
 }
-function makeWriter(keys: string[], offs: Int32Array): Writer | null {
+function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner] | null {
   if (codegen === false) return null;
   // Strict, like this module: writing to a frozen target or a getter-only
   // property throws here exactly as it does in the generic loop.
-  let body = '"use strict";';
+  let stores = '';
   for (let i = 0; i < keys.length; i++) {
     if (typeof keys[i] !== 'string') return null;
-    body += `t[${JSON.stringify(keys[i])}]=f[a+${offs[i]}];`;
+    stores += `t[${JSON.stringify(keys[i])}]=f[a+${offs[i]}];`;
   }
   try {
-    const fn = new Function('t', 'f', 'a', body) as Writer;
+    const fn = new Function('t', 'f', 'a', '"use strict";' + stores) as Writer;
+    // The same stores as a loop over consecutive updated Parts that use
+    // this writer (see `flush`): what `Part.render` does for each of them
+    // in the compact case (`pm === 1`, no `onUpdate`), without a call per
+    // Part and with one store site per key for this property set only.
+    // A single property at offset 0 reads the engine's first-output array
+    // instead (same number, `Engine::first_outputs`): consecutive targets
+    // of one call are consecutive there, not one buffer each. Both loops
+    // stop if a setter grew memory (detached views) or, for that array,
+    // created animations (it may have moved: `ak_out0_epoch_ptr`).
+    const one = keys.length === 1 && offs[0] === 0;
+    const run = new Function(
+      'return function run(R,U,up,i,n,f,w){"use strict";' +
+        (one ? 'const v0=w.ak_out0_ptr()>>>3,ep=w.ak_out0_epoch_ptr()>>>2,e0=U[ep];' : '') +
+        `for(;i<n;i++){${one ? 'if(U[ep]!==e0)break;' : 'if(f.length===0)break;'}` +
+        `const h=U[up+i];const r=R[h&${INDEX_MASK}];` +
+        'if(r===undefined||r.h!==h||r.run!==run||r.pm!==1||r.upd)break;' +
+        `const t=r.pt,a=r.at;${one ? `t[${JSON.stringify(keys[0])}]=f[v0+(h&${INDEX_MASK})];` : stores}}return i;}`,
+    )() as Runner;
     codegen = true;
-    return fn;
+    return [fn, run];
   } catch {
     // Content-Security-Policy without 'unsafe-eval': probe once, then use the loop.
     codegen = false;
@@ -354,8 +372,8 @@ function makeWriter(keys: string[], offs: Int32Array): Writer | null {
   }
 }
 
-/** Key/offset arrays (and their writer) shared by Parts with the same property set (see `Part.prep`). */
-const compactCache = new Map<string, [string[], Int32Array, Writer | null]>();
+/** Key/offset arrays (and their writer and runner) shared by Parts with the same property set (see `Part.prep`). */
+const compactCache = new Map<string, [string[], Int32Array, Writer | null, Runner | null]>();
 
 /** Per-target engine node. */
 class Part implements NodeRecord, Owner, Linked {
@@ -381,6 +399,8 @@ class Part implements NodeRecord, Owner, Linked {
   pk: string[] | null = null;
   po: Int32Array | null = null;
   pw: Writer | null = null;
+  /** The writer's batch form, used by `flush` (see `makeWriter`). */
+  run: Runner | null = null;
   /** 0 = not checked yet, 1 = compact path, 2 = general path. */
   pm = 0;
   private prep(): void {
@@ -396,13 +416,15 @@ class Part implements NodeRecord, Owner, Linked {
     let shared = compactCache.get(sig);
     if (shared === undefined) {
       const keys = b.map((x) => x.key), offs = Int32Array.from(b, (x) => x.off);
-      shared = [keys, offs, makeWriter(keys, offs)];
+      const w = makeWriter(keys, offs);
+      shared = [keys, offs, w && w[0], w && w[1]];
       compactCache.set(sig, shared);
     }
     this.pt = t;
     this.pk = shared[0];
     this.po = shared[1];
     this.pw = shared[2];
+    this.run = shared[3];
     this.pm = 1;
   }
   render(): void {

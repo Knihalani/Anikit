@@ -185,20 +185,20 @@ One fix sped up everything that uses square roots or floors: libm's `sqrt`/`floo
 
 | Case | N | Anikit | GSAP 3 | Ratio |
 |---|---:|---:|---:|---:|
-| 3 numbers per object | 1,000 | 0.02–0.06 ms | 0.07–0.08 ms | 1.4–3.3× faster |
-| 3 numbers per object | 10,000 | 0.37–0.44 ms | 0.51–0.69 ms | 1.3–1.9× faster |
-| 3 numbers per object | 50,000 | 1.85–2.03 ms | 2.53–2.76 ms | 1.3–1.4× faster |
-| colour string | 10,000 | 0.69–0.73 ms | 0.89–0.98 ms | 1.2–1.4× faster |
-| colour string | 50,000 | 3.39–3.55 ms | 4.54–4.94 ms | 1.3–1.5× faster |
-| 8 keyframes | 10,000 | 0.44–0.46 ms | 0.27–0.31 ms | 0.6–0.7× (slower) |
-| 8 keyframes | 50,000 | 2.19–2.31 ms | 1.21–1.45 ms | 0.5–0.7× (slower) |
+| 3 numbers per object | 1,000 | 0.019–0.022 ms | 0.07–0.08 ms | 3.5–3.8× faster |
+| 3 numbers per object | 10,000 | 0.36–0.38 ms | 0.48–0.54 ms | 1.3–1.5× faster |
+| 3 numbers per object | 50,000 | 1.78–1.98 ms | 2.54–2.96 ms | 1.4–1.5× faster |
+| colour string | 10,000 | 0.72–0.89 ms | 0.90–1.05 ms | 1.0–1.4× faster |
+| colour string | 50,000 | 3.65–4.68 ms | 4.54–5.07 ms | 1.0–1.4× faster |
+| 8 keyframes | 10,000 | 0.33–0.35 ms | 0.23–0.33 ms | 0.65–1.0× (slower) |
+| 8 keyframes | 50,000 | 1.42–1.50 ms | 1.22–1.27 ms | 0.83–0.88× (slower) |
 | **`batch()`**, 3 channels | 100,000 | **~0.4 ms** | 5.8 ms (3 numbers, objects) | ~16× |
 
 What moved these numbers, and what still limits them:
 
 - **Plain-object writes go through one generated writer per property set.** `t["x"] = f[a]; t["y"] = f[a + 1]; …` is compiled once per distinct key set (shared by every target with that shape) instead of one keyed-store loop for all keys, which V8 handles as a megamorphic store that boxes every double. That made the JS write path ~3× faster at 50k objects. Under a Content-Security-Policy without `'unsafe-eval'` the generic loop is used instead (one probe, then no further attempts).
 - **The core does per-frame work once, not once per target.** The children of one `animate()` call share timing, so after one child is evaluated the others with bit-identical timing take a short path; the last easing result and the last colour conversion are reused when the next target asks for the same input; simple from/to tweens skip the track table. All of these are exact (same inputs, same results, tested bit for bit). Staggered targets don't share progress, so they benefit less.
-- **Keyframes on plain objects are still slower than GSAP.** About half of the frame is the WebAssembly tick (~20 ns per target: node, track and keyframe data live in separate allocations) and half is the JS write. In this test the keyframe array in the props object (`{ x: [0, 50, …] }`) also gives V8's shared `{ x }` object shape a tagged `x` field, so every double written to the targets is boxed in a new heap number, for both libraries. With DOM targets, style writes, recalc and paint dominate a frame, so these per-object costs are a small share of real frame time.
+- **Keyframes on plain objects are still slower than GSAP**, though ~35% faster than before: evenly spaced keyframes share their segment lookup across targets, runs of targets with one property set are written by one generated loop, and single-property writes read their values from one contiguous array. About half of the frame is the WebAssembly tick (~15 ns per target, mostly per-node bookkeeping) and half is the JS write. In this test the keyframe array in the props object (`{ x: [0, 50, …] }`) also gives V8's shared `{ x }` object shape a tagged `x` field, so every double written to the targets is boxed in a new heap number, for both libraries. With DOM targets, style writes, recalc and paint dominate a frame, so these per-object costs are a small share of real frame time.
 - **The architecture wins most when JS stops touching every object.** `batch()` is ~16× faster than GSAP animating equivalent objects. The heavy‑math features (OKLab colour, morphing, exact springs, long timelines) run in WASM at native‑like speed, and `compositor()` moves work off the main thread entirely.
 
 [`docs/perf-notes.md`](docs/perf-notes.md) has the before/after measurements of each change.

@@ -150,10 +150,18 @@ describe('animate: plain-object write path', () => {
   // code generation is allowed, else through a generic loop (CSP fallback).
   const run = (): number[][] => {
     const objs = Array.from({ length: 6 }, (_, i) => ({ x: 0, y: i, o: 1, 'a-b': 0 }));
+    // A setter in the middle of a run of same-key-set targets: same writes, same order.
+    const log: number[] = [];
+    const acc = { get x() { return 0; }, set x(v: number) { log.push(v); }, y: 0, o: 1, 'a-b': 0 };
+    let updates = 0;
     const frames: number[][] = [];
-    const snap = () => frames.push(objs.flatMap((o) => [o.x, o.y, o.o, o['a-b']]));
-    const a = animate(objs, { x: 500, y: [10, 300], o: 0, 'a-b': 3 }, { duration: 1, ease: 'outCubic' });
+    const snap = () => frames.push([...objs.flatMap((o) => [o.x, o.y, o.o, o['a-b']]), ...log, -1, updates]);
+    const a = animate([...objs.slice(0, 3), acc, ...objs.slice(3)], { x: 500, y: [10, 300], o: 0, 'a-b': 3 }, { duration: 1, ease: 'outCubic' });
     advance(0.25);
+    snap();
+    // Parts with `onUpdate` interleaved with the run (they take `o` over on two targets).
+    animate([objs[1], objs[4]], { o: [0.5, 1] }, { duration: 0.3, ease: 'linear', onUpdate: () => updates++ });
+    advance(0.1);
     snap();
     // Take `y` over on one target: its part leaves the shared key set mid-animation.
     animate(objs[2], { y: -50 }, { duration: 0.5, ease: 'linear' });
@@ -175,7 +183,9 @@ describe('animate: plain-object write path', () => {
     expect(_setCodegen(prev)).toBe(true); // the generated path was really used
     expect(gen).toEqual(loop);
     expect(loop[0][0]).toBeGreaterThan(0);
-    expect(loop[1][2 * 4 + 1]).toBeLessThan(loop[1][1 * 4 + 1]);
+    expect(loop[2][2 * 4 + 1]).toBeLessThan(loop[2][1 * 4 + 1]);
+    expect(loop[0][24]).toBeGreaterThan(0); // the setter was called
+    expect(loop[1][loop[1].length - 1]).toBeGreaterThan(0); // and onUpdate
   });
   it('both paths are strict: a frozen target throws the same way', () => {
     const attempt = (): string => {

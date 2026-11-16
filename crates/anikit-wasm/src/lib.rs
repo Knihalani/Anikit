@@ -569,6 +569,16 @@ pub extern "C" fn ak_updated_ptr() -> *const u32 {
 pub extern "C" fn ak_updated_len() -> u32 {
     st().engine.updated().len() as u32
 }
+/// First output of every animation by node index (see `Engine::first_outputs`).
+#[no_mangle]
+pub extern "C" fn ak_out0_ptr() -> *const f64 {
+    st().engine.first_outputs().as_ptr()
+}
+/// Address of a u32 bumped whenever the `ak_out0_ptr` array moves.
+#[no_mangle]
+pub extern "C" fn ak_out0_epoch_ptr() -> *const u32 {
+    st().engine.out0_epoch_ptr()
+}
 #[no_mangle]
 pub extern "C" fn ak_events_ptr() -> *const u32 {
     st().engine.events().as_ptr()

@@ -67,6 +67,8 @@ export interface Exports {
   ak_tick(dt: number): number;
   ak_updated_ptr(): number;
   ak_updated_len(): number;
+  ak_out0_ptr(): number;
+  ak_out0_epoch_ptr(): number;
   ak_events_ptr(): number;
   ak_events_len(): number;
   ak_clear_frame(): void;
