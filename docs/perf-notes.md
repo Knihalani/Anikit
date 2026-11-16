@@ -924,3 +924,99 @@ unit strings at 50k). This is the colour gain in the
 | `claim`/`unclaim` with one state lookup per target, and `set(prop, undefined)` instead of `Map.delete` | 0–5% slower creation in three interleaved rounds of a development creation loop. |
 | Pinning benchmark processes to one CPU (`taskset`) | did not remove the 2x process-to-process modes under the shared load. |
 | Typed OM transforms (`setTypedOM(true)`) | slower than the string path now: `MANUAL=1 LIBS=anikit,anikit-typed,gsap bench-dom.mjs`, one run, 0.41 / 1.85 / 4.31 (strings) vs 0.77 / 2.87 / 9.66 ms (Typed OM) at 500 / 2000 / 5000. Still off by default. |
+
+## Fifth round: one evaluation per `animate()` call
+
+Goal: the "8 keyframes" row of `scripts/bench.mjs` ahead of GSAP at 10k and
+50k objects; it was 0.56–0.65x. Starting point: `165a22b` (base below:
+`origin/claude/epic-ramanujan-qe7x4w` at `86b471c`, the same core plus the
+unit formatter `32e3718`).
+
+Where the time went (50k targets, `ak_tick` and the rest of `engine.tick`
+timed separately, Node): tick ~0.87 ms, flush ~0.88 ms, against ~0.6–1.1
+ms for GSAP's whole frame. Per target the cost doubled from 1k to 10k
+(9 → 24 ns in the tick): memory traffic, not arithmetic. The tick read
+each child's node (two to three cache lines on wasm32) and its own buffer;
+the flush read the record and the Part before the target.
+
+### 1. Dense slot tables in `flush()` (JS)
+
+Each compact key set keeps dense arrays by node index: the handle of the
+Part writing through its runner there, its target and its output offset.
+Parts enter them on the compact path without `onUpdate` and leave on
+`release` and `dispose`; the generated run loop checks one handle and
+writes one target per record (the generation guards reused indices), so
+it no longer loads the record or the Part. Flush, 8 keyframes, two
+interleaved rounds: 10k 0.27–0.28 → 0.12–0.13 ms, 50k 1.02–1.07 → 0.71 ms.
+Test: single-property runs match the generic loop through takeovers,
+`onUpdate` Parts, kills and reused indices (dropping the slot clear in
+`release` fails it).
+
+### 2. Packed groups (core)
+
+`Engine::group_pack` (`ak_group_pack`, called by `animate()` once the
+children are added) copies the children of a group that share timing,
+start, rate, flags, playback state and layout (all `simple` with the same
+track count and easing, or all `kf` numbers with generated offsets, the
+same count and easing) into dense arrays. While the first member stays in
+the active iteration it was in, a frame renders it in full and computes the
+others from the dense arrays (segment and eased progress from the memo it
+just filled), writing only the pack's outputs, `first_outputs` and the
+updated list: no member node or buffer is touched. Member times and `kf`
+cursors are written back before anything reads them (`time`, `progress`,
+any non-dense frame); outputs live in the pack (`values()` points there and
+`animate()` re-reads each Part's offset). A member changed on its own
+(track toggled by a takeover, timing, start, rate) is excluded and rendered
+in full; a change to the child list stops the dense path. Staggered
+children (different delays) and colours are not packed.
+`ak_tick`, 8 keyframes: 10k 0.17 → 0.04 ms, 50k 0.87 → 0.26 ms. Tests:
+`packed_groups_match_unpacked` (values, first outputs, updated lists,
+events and public node state against an unpacked engine, and the member
+nodes once written back, through seeks, reversal, rate changes, takeovers
+of the leader and others, member rate/start changes, release and removal;
+dropping the same-iteration check fails it) and the JS packed/unpacked
+comparison (dropping the offset re-read fails it).
+
+### Results
+
+`bench.mjs`, three interleaved rounds (base / now), x GSAP (higher is
+better):
+
+| Case | N | base | now |
+|---|---:|---:|---:|
+| 3 numbers, `outCubic` | 1k | 0.28–2.90x | 3.34–4.90x |
+| 〃 | 10k | 0.86–1.01x | 2.57–3.51x |
+| 〃 | 50k | 0.81–1.05x | 2.87–3.18x |
+| colour string | 1k | 1.59–3.04x | 1.66–2.21x |
+| 〃 | 10k | 1.35–1.51x | 1.16–1.25x |
+| 〃 | 50k | 1.96–2.11x | 1.33–1.69x |
+| unit string | 1k | 1.08–1.85x | 0.97–1.34x |
+| 〃 | 10k | 0.57–0.64x | 0.95–1.31x |
+| 〃 | 50k | 0.64–0.67x | 1.07–1.36x |
+| 8 keyframes, `inOutSine` | 1k | 0.89–1.19x | 1.67–1.88x |
+| 〃 | 10k | 0.63–0.76x | 1.55–1.72x |
+| 〃 | 50k | 0.57–0.79x | 1.35–1.78x |
+
+Anikit ms in the same runs, 8 keyframes: 10k 0.31–0.41 → 0.14–0.16, 50k
+1.52–1.81 → 0.74–0.89; 3 numbers 50k 2.68–3.17 → 0.76. The colour rows are
+not packed and their code did not change; their Anikit times overlap (50k
+2.99–3.08 vs 3.13–3.68 ms) while GSAP's moved. Measured on its own after
+five rounds of the 3-number case at 50k (what precedes it in `bench.mjs`),
+two interleaved rounds: colour 50k frame 3.17–3.53 → 2.47–2.56 ms.
+Staggered cases (added locally, delay `i * 0.001` s), x GSAP: 3 numbers
+50k 0.77–0.93 → 2.37–2.55x, 8 keyframes 50k 2.77–4.76 → 7.62–10.46x (the
+flush tables; staggered children are not packed).
+
+`bench-create.mjs` (N = 10k, five interleaved rounds, ms, median and
+range): one `animate()` of 3 numbers 61.5 (53.3–75.1) → 67.0 (52.7–78.6),
+10k `animate()` calls 93.8 (51.9–115.0) → 91.0 (73.3–107.9), one
+`animate()` of 8 keyframes 37.9 (22.8–60.3) → 29.5 (24.2–44.1); retained
+heap per target unchanged (1.52 → 1.53 KB, 0.88 KB). The pack's copy and
+the offset re-read are O(n) at creation; a CPU profile of the one-call case
+is dominated by the garbage collector (~half), then `_build`, with every
+wasm function together under 15%, so creating the children in one wasm call
+was not attempted. Frames in the same script: timeline of 1000 steps x 10
+targets 0.54–1.13 → 0.28–0.34 ms, 10k staggered targets 0.13–0.28 →
+0.14–0.29 ms. `MANUAL=1 bench-dom.mjs`, two interleaved rounds, anikit ms
+per frame: 500 0.43–0.56 / 0.46–0.48, 2000 2.13–2.16 / 1.61–2.09, 5000
+5.11–6.10 / 5.06–5.84 (base / now; DOM writes are not on the compact path).
