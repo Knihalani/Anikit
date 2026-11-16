@@ -46,8 +46,13 @@ export abstract class Playable implements PromiseLike<void> {
   _dirty = false;
   _killed = false;
   private _registered = false;
-  private _done!: Promise<void>;
-  private _resolve!: () => void;
+  /**
+   * Completion promise, created on first use (`finished`/`then`): most
+   * animations are never awaited, and a promise with its resolver is a few
+   * hundred bytes and GC work per animation.
+   */
+  private _done: Promise<void> | null = null;
+  private _resolve: (() => void) | null = null;
   private _settled = false;
 
   constructor(cb: Callbacks<any>) {
@@ -58,18 +63,23 @@ export abstract class Playable implements PromiseLike<void> {
 
   private _fresh(): void {
     this._settled = false;
-    this._done = new Promise<void>((r) => (this._resolve = r));
+    this._done = null;
+    this._resolve = null;
   }
 
   /** Resolves when the animation finishes playing (re-armed on replay). */
   get finished(): Promise<void> {
-    return this._done;
+    let d = this._done;
+    if (d === null) {
+      d = this._done = this._settled ? Promise.resolve() : new Promise<void>((r) => (this._resolve = r));
+    }
+    return d;
   }
   then<A = void, B = never>(
     ok?: ((v: void) => A | PromiseLike<A>) | null,
     err?: ((e: unknown) => B | PromiseLike<B>) | null,
   ): Promise<A | B> {
-    return this._done.then(ok, err);
+    return this.finished.then(ok, err);
   }
 
   /** Run `fn` against the core once built and alive. */
@@ -210,7 +220,9 @@ export abstract class Playable implements PromiseLike<void> {
   _finish(): void {
     if (!this._settled) {
       this._settled = true;
-      this._resolve();
+      const r = this._resolve;
+      this._resolve = null;
+      if (r !== null) r();
     }
   }
 

@@ -347,6 +347,37 @@ describe('animate: playback', () => {
     await expect(a.finished).resolves.toBeUndefined();
   });
 
+  it('completion promises: pending before the end, one per run, re-armed by a replay', async () => {
+    const o = { x: 0 };
+    const a = animate(o, { x: 10 }, { duration: 0.1 });
+    const early = a.finished;
+    expect(a.finished).toBe(early);
+    let done = 0;
+    void early.then(() => done++);
+    void a.then(() => done++);
+    await Promise.resolve();
+    expect(done).toBe(0);
+    advance(0.2);
+    await early;
+    expect(done).toBe(2);
+    expect(a.finished).toBe(early);
+    // Never awaited before finishing: still resolves.
+    const b = animate({ y: 0 }, { y: 1 }, { duration: 0.05 });
+    advance(0.1);
+    await expect(b.finished).resolves.toBeUndefined();
+    // A replay re-arms: a new promise that is pending until the new end.
+    a.restart();
+    const again = a.finished;
+    expect(again).not.toBe(early);
+    let redone = false;
+    void again.then(() => (redone = true));
+    await Promise.resolve();
+    expect(redone).toBe(false);
+    advance(0.2);
+    await again;
+    expect(redone).toBe(true);
+  });
+
   it('overwrites properties and frees fully replaced animations', () => {
     const el = box();
     const before = engine.stats().nodes;
