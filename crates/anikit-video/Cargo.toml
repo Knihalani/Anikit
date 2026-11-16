@@ -25,3 +25,4 @@ serde_path_to_error = "0.1.20"
 serde_norway = "0.9.42"
 taffy = "0.15.1"
 image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "webp", "gif"] }
+vello_cpu = "0.4"

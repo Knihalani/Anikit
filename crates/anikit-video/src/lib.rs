@@ -14,3 +14,4 @@
 pub mod dl;
 pub mod spec;
 pub mod eval;
+pub mod render;
