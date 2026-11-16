@@ -1,7 +1,7 @@
 {
   "name": "feature",
   "title": "Feature announcement",
-  "description": "A 12–20 s spotlight on one new feature: a 'New' kicker and headline as the hook, an optional screenshot in a browser frame, 1–3 supporting points that build in, and a call to action.",
+  "description": "A 12–20 s spotlight on one new feature: a 'New' badge and kinetic headline beside the product in a browser (your screenshot or a generated UI), the points checking off next to it with a success toast, then a CTA that bursts into confetti.",
   "duration": "12–20 s",
   "tags": [
     "feature",
@@ -39,7 +39,7 @@
     },
     "screenshot": {
       "type": "image",
-      "description": "Optional screenshot of the feature (16:10 works best), shown in a browser frame.",
+      "description": "Optional screenshot (16:10). Without it, a generated product UI in the brand colours is shown.",
       "example": "screenshot.png"
     },
     "url": {
@@ -85,15 +85,15 @@
     "theme": {
       "$use": "theme"
     },
-    "background": "radial-gradient(circle at 50% 35%, $bg, $bgDeep)",
+    "background": "$bgDeep",
     "transition": {
       "type": "crossfade",
       "duration": 0.5
     },
     "scenes": [
       {
-        "id": "headline",
-        "duration": "{{max(2.8, readtime(kicker + ' ' + headline + ' ' + (subhead ?? '')) + 0.6)}}",
+        "id": "intro",
+        "duration": "{{readtime(headline + ' ' + (subhead ?? '')) + 2.2}}",
         "camera": {
           "animate": [
             {
@@ -110,128 +110,93 @@
         },
         "layers": [
           {
-            "$use": "glows",
+            "$use": "backdrop",
             "with": {
-              "strength": 0.85
+              "seed": 4,
+              "floor": true,
+              "intensity": 0.36
             }
           },
           {
-            "type": "box",
-            "id": "kicker-pill",
-            "y": "{{fmt.square ? (subhead ? '27%' : '33%') : (subhead ? '33%' : '38%')}}",
-            "style": {
-              "padding": [
-                "{{fmt.u * 0.9}}",
-                "{{fmt.u * 2.4}}"
-              ],
-              "radius": 999,
-              "background": "{{alpha(brand.colors.accent, 0.14)}}",
-              "border": "1px {{alpha(brand.colors.accent, 0.5)}}"
+            "$let": {
+              "tw": "fmt.landscape ? fmt.w * 0.38 : fmt.safe.w",
+              "ts": "fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4",
+              "lines": "ceil(len(headline) * 0.52 * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) / (fmt.landscape ? fmt.w * 0.38 : fmt.safe.w))",
+              "top": "fmt.landscape ? fmt.h * 0.5 - (ceil(len(headline) * 0.52 * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) / (fmt.landscape ? fmt.w * 0.38 : fmt.safe.w)) * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) * 1.1 + fmt.u * 14) / 2 : (fmt.portrait ? fmt.h * 0.15 : fmt.h * 0.11)",
+              "ax": "fmt.landscape ? fmt.safe.left : fmt.cx",
+              "an": "fmt.landscape ? 'topLeft' : 'top'",
+              "al": "fmt.landscape ? 'left' : 'center'"
             },
-            "enter": {
-              "preset": "popIn",
-              "duration": 0.45
-            },
-            "children": [
+            "in": [
               {
-                "text": "{{kicker}}",
-                "style": "label"
-              }
-            ]
-          },
-          {
-            "id": "headline",
-            "text": "{{headline}}",
-            "style": "title",
-            "y": "{{fmt.square ? (subhead ? '45%' : '52%') : (subhead ? '47%' : '52%')}}",
-            "width": "{{fmt.safe.w}}",
-            "split": "words",
-            "enter": {
-              "preset": "fadeUp",
-              "stagger": 0.08,
-              "delay": 0.15,
-              "duration": 0.7,
-              "ease": "outExpo"
-            }
-          },
-          {
-            "$if": "subhead",
-            "then": {
-              "id": "subhead",
-              "text": "{{subhead}}",
-              "style": "subtitle",
-              "y": "{{fmt.portrait ? '61%' : (fmt.square ? '69%' : '64%')}}",
-              "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.6}}",
-              "enter": {
-                "preset": "fadeUp",
-                "delay": 0.7
-              }
-            }
-          }
-        ]
-      },
-      {
-        "$if": "screenshot",
-        "then": {
-          "id": "screenshot",
-          "transition": {
-            "type": "push",
-            "direction": "{{fmt.portrait ? 'up' : 'left'}}",
-            "duration": 0.6,
-            "ease": "inOutQuart"
-          },
-          "duration": "{{fmt.landscape ? 3.4 : max(3.4, readtime(headline) + 1.4)}}",
-          "camera": {
-            "animate": [
-              {
-                "to": {
-                  "zoom": 1.05
+                "type": "component",
+                "component": "badge",
+                "props": {
+                  "label": "{{kicker ?? 'New'}}",
+                  "dot": true,
+                  "solid": true,
+                  "size": "{{fmt.portrait ? fmt.u * 3 : fmt.u * 2.4}}",
+                  "delay": 0.1
                 },
-                "duration": 3.4,
-                "ease": "inOutSine"
-              }
-            ]
-          },
-          "layers": [
-            {
-              "$use": "glows",
-              "with": {
-                "gx": "50%",
-                "gy": "50%",
-                "strength": 0.7
-              }
-            },
-            {
-              "$if": "!fmt.landscape",
-              "then": {
-                "id": "shot-title",
+                "x": "{{ax}}",
+                "anchor": "{{an}}",
+                "y": "{{top - fmt.u * 1.5}}",
+                "width": "{{fmt.u * 40}}",
+                "height": "{{fmt.u * 6}}"
+              },
+              {
                 "text": "{{headline}}",
                 "style": "heading",
-                "y": "{{fmt.portrait ? '30%' : '19%'}}",
-                "width": "{{fmt.safe.w}}",
-                "enter": {
-                  "preset": "fadeUp",
-                  "duration": 0.6,
-                  "ease": "outExpo"
+                "weight": 750,
+                "width": "{{tw}}",
+                "align": "{{al}}",
+                "x": "{{ax}}",
+                "anchor": "{{an}}",
+                "y": "{{top + fmt.u * 4.5}}",
+                "enter": "mask by word up"
+              },
+              {
+                "$if": "subhead",
+                "then": {
+                  "text": "{{subhead}}",
+                  "style": "subtitle",
+                  "width": "{{tw * 0.95}}",
+                  "align": "{{al}}",
+                  "x": "{{ax}}",
+                  "anchor": "{{an}}",
+                  "y": "{{top + fmt.u * 4.5 + lines * ts * 1.1 + fmt.u * 2.5}}",
+                  "enter": {
+                    "preset": "fadeUp",
+                    "delay": 0.35
+                  }
                 }
               }
+            ]
+          },
+          {
+            "$let": {
+              "vx": "fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.25 : fmt.cx",
+              "vy": "fmt.landscape ? fmt.h * 0.5 : (fmt.portrait ? fmt.h * 0.6 : fmt.h * 0.66)",
+              "vw": "fmt.landscape ? fmt.w * 0.5 : (fmt.portrait ? fmt.safe.w : fmt.w * 0.7)"
             },
-            {
-              "$use": "browser",
+            "in": {
+              "$use": "device",
               "with": {
+                "kind": "browser",
                 "src": "{{screenshot}}",
                 "url": "{{url}}",
-                "width": "{{fmt.landscape ? fmt.w * 0.7 : (fmt.square ? fmt.safe.w * 0.84 : fmt.safe.w)}}",
-                "height": "{{(fmt.landscape ? fmt.w * 0.7 : (fmt.square ? fmt.safe.w * 0.84 : fmt.safe.w)) * 0.6}}"
-              },
-              "enter": {
-                "preset": "slideUp",
-                "duration": 0.9
-              },
-              "y": "{{fmt.landscape ? '50%' : (fmt.square ? '60%' : '58%')}}"
+                "delay": 0.5,
+                "x": "{{vx}}",
+                "y": "{{vy}}",
+                "width": "{{vw}}",
+                "height": "{{vw / 1.6 + fmt.u * 6}}"
+              }
             }
-          ]
-        }
+          },
+          {
+            "$use": "grain"
+          }
+        ]
       },
       {
         "$if": "points",
@@ -243,95 +208,74 @@
             "duration": 0.6,
             "ease": "inOutQuart"
           },
-          "duration": "{{readtime(points) + 0.4 * len(points) + 0.8}}",
+          "duration": "{{readtime(join(points, ' ')) + 2.4}}",
           "layers": [
             {
-              "$use": "glows",
+              "$use": "backdrop",
               "with": {
-                "gx": "90%",
-                "hx": "10%",
-                "strength": 0.6
+                "seed": 9
               }
             },
             {
-              "id": "points-kicker",
-              "text": "{{kicker}}",
-              "style": "label",
-              "y": "{{fmt.cy + fmt.u * (fmt.portrait ? 4 : 5) - ((len(points) - 1) / 2) * fmt.u * (fmt.portrait ? 17 : 13) - fmt.u * (fmt.portrait ? 14 : 11)}}",
-              "enter": {
-                "preset": "fadeIn",
-                "duration": 0.5
+              "$let": {
+                "cw": "fmt.landscape ? fmt.w * 0.4 : fmt.safe.w",
+                "fs": "fmt.portrait ? fmt.u * 4 : fmt.u * 3.4"
+              },
+              "in": {
+                "type": "component",
+                "component": "checklist",
+                "props": {
+                  "items": "{{points}}",
+                  "stagger": 0.35,
+                  "checkAfter": 0.3,
+                  "fontSize": "{{fs}}",
+                  "delay": 0.3
+                },
+                "x": "{{fmt.landscape ? fmt.safe.left + cw / 2 : fmt.cx}}",
+                "y": "{{fmt.landscape ? fmt.h * 0.5 : fmt.h * 0.25}}",
+                "width": "{{cw}}",
+                "height": "{{len(points) * fs * 2.4}}"
               }
             },
             {
-              "$each": "points",
-              "as": "pt",
-              "index": "i",
-              "do": {
-                "type": "box",
-                "id": "point-{{i + 1}}",
-                "style": {
-                  "direction": "row",
-                  "gap": "{{fmt.u * 2.4}}",
-                  "align": "center",
-                  "justify": "start",
-                  "padding": [
-                    "{{fmt.u * 2.4}}",
-                    "{{fmt.u * 3}}"
-                  ],
-                  "background": "$surface",
-                  "radius": "{{brand.radius * fmt.s}}",
-                  "border": "1px $border"
-                },
-                "enter": {
-                  "preset": "fadeUp",
-                  "duration": 0.6,
-                  "ease": "outExpo",
-                  "delay": "{{0.15 + i * 0.35}}"
-                },
-                "children": [
-                  {
-                    "type": "box",
-                    "width": "{{fmt.u * 5}}",
-                    "height": "{{fmt.u * 5}}",
-                    "style": {
-                      "radius": 999,
-                      "background": "$primary",
-                      "justify": "center"
-                    },
-                    "children": [
-                      {
-                        "type": "shape",
-                        "shape": "path",
-                        "width": "{{fmt.u * 2.4}}",
-                        "height": "{{fmt.u * 2.4}}",
-                        "d": "M{{fmt.u * 0.2}} {{fmt.u * 1.3}} L{{fmt.u * 0.9}} {{fmt.u * 2}} L{{fmt.u * 2.2}} {{fmt.u * 0.5}}",
-                        "stroke": {
-                          "color": "$onPrimary",
-                          "width": "{{fmt.u * 0.45}}",
-                          "cap": "round",
-                          "join": "round"
-                        },
-                        "fill": "none",
-                        "enter": {
-                          "preset": "drawOn",
-                          "delay": "{{0.4 + i * 0.35}}",
-                          "duration": 0.4
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "text": "{{pt}}",
-                    "style": "body",
-                    "align": "left",
-                    "weight": 600,
-                    "width": "{{(fmt.landscape ? fmt.w * 0.62 : fmt.safe.w) - fmt.u * 13.4}}"
+              "$let": {
+                "vx": "fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.25 : fmt.cx",
+                "vy": "fmt.landscape ? fmt.h * 0.5 : (fmt.portrait ? fmt.h * 0.6 : fmt.h * 0.66)",
+                "vw": "fmt.landscape ? fmt.w * 0.5 : (fmt.portrait ? fmt.safe.w : fmt.w * 0.7)"
+              },
+              "in": [
+                {
+                  "$use": "device",
+                  "with": {
+                    "kind": "browser",
+                    "src": "{{screenshot}}",
+                    "url": "{{url}}",
+                    "delay": 0,
+                    "x": "{{vx}}",
+                    "y": "{{fmt.portrait ? fmt.h * 0.6 : vy}}",
+                    "width": "{{vw}}",
+                    "height": "{{vw / 1.6 + fmt.u * 6}}"
                   }
-                ],
-                "width": "{{fmt.landscape ? fmt.w * 0.62 : fmt.safe.w}}",
-                "y": "{{fmt.cy + fmt.u * (fmt.portrait ? 4 : 5) + (i - (count - 1) / 2) * fmt.u * (fmt.portrait ? 17 : 13)}}"
-              }
+                },
+                {
+                  "type": "component",
+                  "component": "toast",
+                  "props": {
+                    "title": "{{headline}}",
+                    "kind": "success",
+                    "delay": "{{0.6 + len(points) * 0.35}}",
+                    "from": "{{fmt.landscape ? 'right' : 'bottom'}}",
+                    "width": "{{fmt.u * 50}}"
+                  },
+                  "x": "{{vx}}",
+                  "y": "{{(fmt.portrait ? fmt.h * 0.6 : vy) + vw * 0.3}}",
+                  "width": "{{fmt.u * 54}}",
+                  "height": "{{fmt.u * 14}}"
+                }
+              ]
+            },
+            {
+              "$use": "grain"
             }
           ]
         }
@@ -342,56 +286,62 @@
           "type": "blur",
           "duration": 0.6
         },
-        "duration": "{{max(3.4, readtime(product + ' ' + cta + ' ' + (url ?? '')) + 1.2)}}",
+        "duration": "{{max(3.8, readtime(product + ' ' + cta + ' ' + (url ?? '')) + 1.6)}}",
         "layers": [
           {
-            "$use": "glows",
+            "$use": "backdrop",
             "with": {
-              "gx": "30%",
-              "gy": "20%",
-              "hx": "70%",
-              "hy": "85%"
-            }
-          },
-          {
-            "$use": "wordmark",
-            "with": {
-              "y": "{{fmt.portrait ? '38%' : '34%'}}",
-              "height": "{{fmt.u * 10}}",
-              "enter": "scaleIn"
+              "seed": 31,
+              "floor": true,
+              "intensity": 0.42
             }
           },
           {
             "$if": "brand.logo",
             "then": {
-              "text": "{{product}}",
-              "style": "heading",
-              "y": "{{fmt.portrait ? '46%' : '48%'}}",
-              "enter": {
-                "preset": "fadeUp",
-                "delay": 0.2
-              }
+              "src": "{{brand.logo}}",
+              "height": "{{fmt.u * 10}}",
+              "fit": "contain",
+              "y": "{{fmt.portrait ? '33%' : '28%'}}",
+              "enter": "scaleIn"
             }
           },
           {
-            "$use": "button",
+            "text": "{{product}}",
+            "style": "title",
+            "y": "42%",
+            "width": "{{fmt.safe.w}}",
+            "enter": "rise"
+          },
+          {
+            "$use": "ctaButton",
             "with": {
               "label": "{{cta}}",
-              "delay": 0.45
-            },
-            "y": "{{fmt.portrait ? '56%' : '62%'}}"
+              "y": "{{fmt.portrait ? '53%' : '58%'}}",
+              "press": 1.5
+            }
           },
           {
             "$if": "url",
             "then": {
               "text": "{{url}}",
               "style": "caption",
-              "y": "{{fmt.portrait ? '64%' : '74%'}}",
+              "y": "{{fmt.portrait ? '61%' : '70%'}}",
               "enter": {
                 "preset": "fadeIn",
-                "delay": 0.8
+                "delay": 0.9
               }
             }
+          },
+          {
+            "$use": "confetti",
+            "with": {
+              "at": 1.5,
+              "oy": "{{fmt.portrait ? 0.53 : 0.58}}"
+            }
+          },
+          {
+            "$use": "grain"
           }
         ]
       }
