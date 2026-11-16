@@ -57,6 +57,8 @@ export type { InspectorOptions } from './inspector';
 export { world, World } from './world';
 export type { WorldOptions, BodyInit } from './world';
 export { pointCloud, PointCloud, textPoints, glow, Glow } from './cloud';
+export { splats, SplatLayer, packSplats, SPLAT_STRIDE } from './splats';
+export type { SplatSet, SplatColor, SplatSourceOptions, SplatFx, SplatCamera, SplatTransform, SplatsOptions, SplatMorphOptions, SplatEffectOptions, SplatStats } from './splats';
 export { blackHole, BlackHole } from './blackhole';
 export type { BlackHoleOptions, BlackHoleFrame, BlackHoleStats } from './blackhole';
 export { emitter, Emitter } from './emitter';

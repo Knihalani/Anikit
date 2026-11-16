@@ -26,6 +26,7 @@ pub mod color;
 pub mod css;
 pub mod easing;
 pub mod emitter;
+pub mod gsplat;
 pub mod engine;
 pub mod gif;
 pub mod math;

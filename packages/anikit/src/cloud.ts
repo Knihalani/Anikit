@@ -212,7 +212,8 @@ export function textPoints(
   const lines = text.split('\n');
   const fontPx = 200;
   const c = document.createElement('canvas');
-  const ctx = c.getContext('2d', { willReadFrequently: true } as CanvasRenderingContext2DSettings)!;
+  const ctx = c.getContext('2d', { willReadFrequently: true } as CanvasRenderingContext2DSettings);
+  if (!ctx) return out;
   const font = `${o.weight ?? 800} ${fontPx}px ${o.font ?? 'Inter, system-ui, sans-serif'}`;
   ctx.font = font;
   const lh = fontPx * (o.lineHeight ?? 1.05);
