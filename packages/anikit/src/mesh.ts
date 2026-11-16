@@ -415,7 +415,12 @@ export class Renderer3D {
   render(scene: Scene3D, items: (DrawItem | PointsItem)[], o: LightOptions & {
     background?: string;
     transparent?: boolean;
-    mirror?: { y: number; strength?: number };
+    /**
+     * A mirror floor at height `y`: the scene is drawn reflected, then items marked
+     * `mirror: true` are blended over it with `strength` (0–1, default 0.5). The
+     * reflection renders at half resolution (`resolution: 'full'` for sharp ones).
+     */
+    mirror?: { y: number; strength?: number; resolution?: 'half' | 'full' };
     /**
      * Camera motion blur from the depth buffer, against the camera of the previous
      * `render()`: smooth, ghost-free blur for fast flights in one pass. `shutter` 0–1
@@ -525,8 +530,12 @@ export class Renderer3D {
       const mr = matrix.slice();
       for (let r = 0; r < 4; r++) { mr[4 + r] = -matrix[4 + r]; mr[12 + r] = matrix[12 + r] + 2 * Y * matrix[4 + r]; }
       const er = [eye[0], 2 * Y - eye[1], eye[2]];
+      // Reflections render at half resolution (a quarter of the shading; the glossy surface softens them anyway).
+      const half = o.mirror.resolution !== 'full';
+      if (half) w.ak_raster_reflection_begin(this.id, hex, o.transparent ? 0 : 255);
       for (const it of meshes) if (!it.mirror && it.reflect !== false && it.blend !== 'additive') drawMesh(it, mr, er, 8);
-      w.ak_raster_clear_depth(this.id);
+      if (half) w.ak_raster_reflection_end(this.id);
+      else w.ak_raster_clear_depth(this.id);
       for (const it of meshes) if (it.mirror) drawMesh(it, matrix, eye, 4, o.mirror.strength ?? 0.5);
     }
     const light = (it: DrawItem | PointsItem) => 'points' in it || it.blend === 'additive';

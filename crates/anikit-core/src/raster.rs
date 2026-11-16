@@ -259,6 +259,9 @@ pub struct Raster {
     row_px: Vec<u32>,
     /// Half-resolution packed RGB written by the blur passes for [`Raster::blend_half`].
     half_px: Vec<u32>,
+    /// Half-resolution target for a planar reflection pass (see [`Raster::reflection_begin`]).
+    reflection: Option<alloc::boxed::Box<Raster>>,
+    reflecting: bool,
     /// Depth-of-field scratch: circle of confusion per half-res pixel, and
     /// integer tap offsets per quantised radius.
     coc: Vec<f32>,
@@ -709,6 +712,49 @@ impl Raster {
     /// Reset depth only (keep the colour): draw a mirrored pass, then the real scene over it.
     pub fn clear_depth(&mut self) {
         self.depth.iter_mut().for_each(|d| *d = f32::INFINITY);
+    }
+
+    /// Start a planar reflection pass rendered at half resolution: until
+    /// [`Raster::reflection_end`], [`Raster::target`] returns a half-size raster
+    /// cleared to `rgb`. Reflections are seen through a glossy surface, so the
+    /// softer half-res image looks right and costs a quarter of the shading.
+    pub fn reflection_begin(&mut self, rgb: u32, alpha: u8) {
+        let (hw, hh) = ((self.width / 2).max(1), (self.height / 2).max(1));
+        let sub = self.reflection.get_or_insert_with(Default::default);
+        if sub.width != hw || sub.height != hh {
+            sub.resize(hw, hh);
+        }
+        sub.clear(rgb, alpha);
+        self.reflecting = true;
+    }
+    /// The raster draws should go to: the half-res reflection target during a
+    /// reflection pass, otherwise this one.
+    pub fn target(&mut self) -> &mut Raster {
+        match (self.reflecting, self.reflection.is_some()) {
+            (true, true) => self.reflection.as_deref_mut().expect("checked above"),
+            _ => self,
+        }
+    }
+    /// End the reflection pass: upsample it over the whole frame (bilinear) and
+    /// clear depth, ready for the glossy surface and the scene itself.
+    pub fn reflection_end(&mut self) {
+        if !self.reflecting {
+            return;
+        }
+        self.reflecting = false;
+        let Some(sub) = self.reflection.take() else { return };
+        let (bw, bh) = (sub.width, sub.height);
+        if self.width >= 2 && self.height >= 2 {
+            self.half_px.clear();
+            self.half_px.extend(sub.color.iter().map(|c| c & 0x00ff_ffff));
+            let mut alpha = core::mem::take(&mut self.alpha);
+            alpha.clear();
+            alpha.resize(bw * bh, 1.0);
+            self.blend_half(bw, bh, &alpha);
+            self.alpha = alpha;
+        }
+        self.reflection = Some(sub);
+        self.clear_depth();
     }
 
     #[inline(always)]
@@ -2393,5 +2439,25 @@ mod tests {
         let green = r.color.iter().filter(|c| (**c >> 8) & 255 > 20).count();
         assert!(red > 20 && red < 64 * 64 / 2, "a pool, not a flood: {red}");
         assert_eq!(green, 0, "the light is red");
+    }
+
+    #[test]
+    fn half_res_reflection_upsamples_into_the_frame() {
+        let m = mul(&perspective(60.0, 1.0, 0.5, 100.0), &look_at([0.0, 0.0, 6.0], [0.0; 3], [0.0, 1.0, 0.0]));
+        let vp: M4 = core::array::from_fn(|i| m[i] as f32);
+        let cube_at = [2.0f32, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.1, 0.1];
+        let mat = Material { ambient: 1.0, diffuse: 0.0, specular: 0.0, rim: 0.0, ..Material::default() };
+        let mut r = Raster::new(64, 48);
+        r.clear(0x000010, 255);
+        r.reflection_begin(0x000010, 255);
+        r.target().draw(&cube(), &cube_at, &vp, [0.0, 0.0, 6.0], &mat, &Lighting::default(), true);
+        assert!(r.depth.iter().all(|d| d.is_infinite()), "draws went to the half-res target");
+        r.reflection_end();
+        let c = r.color[24 * 64 + 32];
+        assert!(c & 255 > 150 && (c >> 8) & 255 < 60, "centre is the red cube: {c:08x}");
+        assert_eq!(r.color[0] & 0x00ff_ffff, 0x100000, "background kept outside it");
+        assert_eq!(r.color[0] >> 24, 255, "alpha kept");
+        assert!(r.depth.iter().all(|d| d.is_infinite()), "depth cleared for the glossy surface");
+        assert!(core::ptr::eq(r.target(), &r as *const Raster), "back to the frame");
     }
 }

@@ -1997,10 +1997,25 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
     } else {
         Blend::Opaque
     };
+    let r = r.target();
     r.gloss = gloss;
     r.flip_winding = cull_back & 8 != 0;
     r.draw_with(m, &inst[..k], &vp, eye, &mat, &light, cull_back & 1 != 0, blend, tex);
     r.drawn as u32
+}
+/// Start a half-resolution reflection pass (draws go to a half-size target cleared to `rgb`/`alpha`).
+#[no_mangle]
+pub extern "C" fn ak_raster_reflection_begin(id: u32, rgb: u32, alpha: u32) {
+    if let Some(Some((r, _))) = st().rasters.get_mut(id as usize) {
+        r.reflection_begin(rgb, alpha.min(255) as u8);
+    }
+}
+/// End the reflection pass: upsample it into the frame and clear depth.
+#[no_mangle]
+pub extern "C" fn ak_raster_reflection_end(id: u32) {
+    if let Some(Some((r, _))) = st().rasters.get_mut(id as usize) {
+        r.reflection_end();
+    }
 }
 /// A texture from `w * h * 4` RGBA bytes in the u8 scratch buffer (mipmapped); returns its id.
 #[no_mangle]
