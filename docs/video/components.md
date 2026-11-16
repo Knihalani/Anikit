@@ -10,6 +10,8 @@ High-level blocks for Anikit Video specs: code, charts, devices, UI, backgrounds
 
 **The box:** a component draws inside its layer's `width × height`, which defaults to the whole frame. The layer's position, transforms, `enter`/`exit` and `opacity` apply on top.
 
+**Sizes** are in output pixels; the defaults are tuned for 1080p.
+
 **Time:** `t` is seconds since the layer started. Most components have their own entrance, controlled by:
 - `delay`: when the entrance starts, in seconds;
 - `out`: when the exit starts, in seconds (leave it out and the component stays);
@@ -32,7 +34,7 @@ The window has syntax highlighting (TypeScript, JavaScript, Rust, Python, Go, Ba
 | `code` | | Source text. |
 | `language` | `"typescript"` | Language name or extension. |
 | `title` | `""` | File name shown in the title bar. |
-| `fontSize` | `22` | |
+| `fontSize` | `26` | |
 | `lineNumbers` | `true` | |
 | `chrome` | `"mac"` | `mac` (traffic lights), `minimal` or `none`. |
 | `typing` | `0` | Characters per second; `0` shows the code at once. |
@@ -51,7 +53,7 @@ Lines starting with `$ ` or `> ` are typed. Other lines print one after another,
 |---|---|---|
 | `lines` | | Commands and output. |
 | `title` | | |
-| `fontSize` | `20` | |
+| `fontSize` | `26` | |
 | `typing` | `28` | Characters per second. |
 | `pause` | `0.35` | Pause after a command. |
 | `lineDelay` | `0.06` | Delay between output lines. |
@@ -75,7 +77,7 @@ Charts build on with springs.
 | `valuesShown` | `true` | |
 | `grid` | `true` | |
 | `barWidth` | `0.62` | |
-| `fontSize` | `16` | |
+| `fontSize` | `22` | |
 | `format` | | `{ "prefix": "$", "suffix": "%", "decimals": 1, "compact": true }` |
 | `delay`, `duration`, `stagger` | | |
 
@@ -92,7 +94,7 @@ Charts build on with springs.
 | `smooth` | `true` | |
 | `min`, `max` | | |
 | `grid` | `true` | |
-| `width` | `3` | Line width. |
+| `width` | `4` | Line width. |
 | `format`, `fontSize`, `delay`, `duration`, `stagger` | | |
 
 ### `donutChart` and `pieChart`
@@ -115,7 +117,7 @@ Charts build on with springs.
 | `decimals` | | |
 | `compact` | `false` | Abbreviations: 12K, 3.4M. |
 | `separator` | `true` | Thousands separators. |
-| `size` | `120` | |
+| `size` | `160` | |
 | `weight` | `700` | |
 | `color` | | |
 | `gradient` | | `[top, bottom]` |

@@ -57,7 +57,7 @@ pub struct Chat {
 }
 impl Default for Chat {
     fn default() -> Self {
-        Chat { messages: Vec::new(), font_size: 20.0, stream: 12.0, thinking: 0.7, gap: 0.5, delay: 0.0, max_width: 0.72, times: Vec::new() }
+        Chat { messages: Vec::new(), font_size: 30.0, stream: 12.0, thinking: 0.7, gap: 0.5, delay: 0.0, max_width: 0.72, times: Vec::new() }
     }
 }
 impl Chat {
@@ -178,7 +178,7 @@ pub struct Prompt {
 }
 impl Default for Prompt {
     fn default() -> Self {
-        Prompt { text: String::new(), placeholder: "Ask anything…".into(), typing: 30.0, delay: 0.0, send_at: None, font_size: 24.0, glow: true, end: 0.0 }
+        Prompt { text: String::new(), placeholder: "Ask anything…".into(), typing: 30.0, delay: 0.0, send_at: None, font_size: 30.0, glow: true, end: 0.0 }
     }
 }
 impl Prepare for Prompt {
@@ -271,7 +271,7 @@ pub struct Checklist {
 }
 impl Default for Checklist {
     fn default() -> Self {
-        Checklist { items: Vec::new(), stagger: 0.35, check_after: 0.25, font_size: 28.0, color: None, delay: 0.0, strike: false }
+        Checklist { items: Vec::new(), stagger: 0.35, check_after: 0.25, font_size: 36.0, color: None, delay: 0.0, strike: false }
     }
 }
 impl Prepare for Checklist {}
@@ -337,7 +337,7 @@ pub struct Quote {
 }
 impl Default for Quote {
     fn default() -> Self {
-        Quote { text: String::new(), name: String::new(), title: String::new(), avatar: None, font_size: 34.0, stars: 0, delay: 0.0, reveal: 10.0 }
+        Quote { text: String::new(), name: String::new(), title: String::new(), avatar: None, font_size: 44.0, stars: 0, delay: 0.0, reveal: 10.0 }
     }
 }
 impl Prepare for Quote {}
@@ -451,7 +451,7 @@ pub struct Table {
 }
 impl Default for Table {
     fn default() -> Self {
-        Table { columns: Vec::new(), rows: Vec::new(), highlight: None, font_size: 22.0, delay: 0.0, stagger: 0.12 }
+        Table { columns: Vec::new(), rows: Vec::new(), highlight: None, font_size: 28.0, delay: 0.0, stagger: 0.12 }
     }
 }
 impl Prepare for Table {
@@ -572,7 +572,7 @@ pub struct Timeline {
 }
 impl Default for Timeline {
     fn default() -> Self {
-        Timeline { items: Vec::new(), current: None, vertical: false, font_size: 20.0, delay: 0.0, step: 0.45 }
+        Timeline { items: Vec::new(), current: None, vertical: false, font_size: 26.0, delay: 0.0, step: 0.45 }
     }
 }
 impl Prepare for Timeline {}
@@ -667,7 +667,7 @@ pub struct Marquee {
 }
 impl Default for Marquee {
     fn default() -> Self {
-        Marquee { items: Vec::new(), images: false, speed: 80.0, font_size: 32.0, gap: 64.0, fade: true, separator: "•".into(), color: None }
+        Marquee { items: Vec::new(), images: false, speed: 90.0, font_size: 40.0, gap: 80.0, fade: true, separator: "•".into(), color: None }
     }
 }
 impl Prepare for Marquee {

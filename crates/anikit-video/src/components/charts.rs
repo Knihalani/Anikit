@@ -78,7 +78,7 @@ pub struct BarChart {
 }
 impl Default for BarChart {
     fn default() -> Self {
-        BarChart { values: Vec::new(), labels: Vec::new(), colors: Vec::new(), multicolor: false, horizontal: false, max: None, delay: 0.0, duration: 0.9, stagger: 0.08, values_shown: true, grid: true, highlight: None, format: Format::default(), bar_width: 0.62, font_size: 16.0 }
+        BarChart { values: Vec::new(), labels: Vec::new(), colors: Vec::new(), multicolor: false, horizontal: false, max: None, delay: 0.0, duration: 0.9, stagger: 0.08, values_shown: true, grid: true, highlight: None, format: Format::default(), bar_width: 0.62, font_size: 22.0 }
     }
 }
 impl Prepare for BarChart {
@@ -216,7 +216,7 @@ pub struct LineChart {
 }
 impl Default for LineChart {
     fn default() -> Self {
-        LineChart { series: Vec::new(), names: Vec::new(), labels: Vec::new(), colors: Vec::new(), area: None, dots: false, end_label: true, smooth: true, min: None, max: None, grid: true, delay: 0.0, duration: 1.6, stagger: 0.2, width: 3.0, format: Format::default(), font_size: 16.0 }
+        LineChart { series: Vec::new(), names: Vec::new(), labels: Vec::new(), colors: Vec::new(), area: None, dots: false, end_label: true, smooth: true, min: None, max: None, grid: true, delay: 0.0, duration: 1.6, stagger: 0.2, width: 4.0, format: Format::default(), font_size: 22.0 }
     }
 }
 impl Prepare for LineChart {
@@ -390,7 +390,7 @@ pub struct DonutChart {
 }
 impl Default for DonutChart {
     fn default() -> Self {
-        DonutChart { values: Vec::new(), labels: Vec::new(), colors: Vec::new(), hole: None, gap: 1.5, center: None, center_label: String::new(), legend: true, percents: true, delay: 0.0, duration: 1.3, format: Format::default(), font_size: 16.0 }
+        DonutChart { values: Vec::new(), labels: Vec::new(), colors: Vec::new(), hole: None, gap: 1.5, center: None, center_label: String::new(), legend: true, percents: true, delay: 0.0, duration: 1.3, format: Format::default(), font_size: 22.0 }
     }
 }
 impl Prepare for DonutChart {
@@ -549,7 +549,7 @@ pub struct Counter {
 }
 impl Default for Counter {
     fn default() -> Self {
-        Counter { from: 0.0, to: 100.0, prefix: String::new(), suffix: String::new(), decimals: 0, compact: false, separator: true, size: 120.0, color: None, gradient: None, weight: 700, delay: 0.0, duration: 1.8, align: 0.5, label: String::new() }
+        Counter { from: 0.0, to: 100.0, prefix: String::new(), suffix: String::new(), decimals: 0, compact: false, separator: true, size: 160.0, color: None, gradient: None, weight: 700, delay: 0.0, duration: 1.8, align: 0.5, label: String::new() }
     }
 }
 impl Prepare for Counter {}
