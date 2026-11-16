@@ -295,8 +295,14 @@ const FINGERS = [
 // A pose: wrist position (view space), hand orientation, finger state.
 const makePose = (side) => ({ x: side * 0.2, y: -0.5, z: -0.38, yaw: 0, pitch: 20, roll: 0, curl: 0.55, spread: 0.1, thumb: 0.2, tcurl: 0.4, ex: side * 0.26, ey: -0.55, ez: -0.12 });
 
-export function createHands(canvas) {
-  const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: (globalThis.devicePixelRatio || 1) < 2, depth: true, powerPreference: 'high-performance' });
+// This module can draw into a WebGL2 context shared with the rest of the page (see CONTRACT.md).
+export const SHARED_GL = true;
+
+export function createHands(target) {
+  // A shared context: draw over what is already there. A canvas: our own transparent overlay.
+  const shared = typeof WebGL2RenderingContext !== 'undefined' && target instanceof WebGL2RenderingContext;
+  const canvas = shared ? target.canvas : target;
+  const gl = shared ? target : canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: (globalThis.devicePixelRatio || 1) < 2, depth: true, powerPreference: 'high-performance' });
   if (!gl) return { resize() {}, frame() { return NOOP; } };
   const NOOP = { portal: { x: 0, y: 0, r: 0 } };
 
@@ -507,7 +513,7 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
   const off = (globalThis.__summitOff) || {};
   function resize(w, h, dpr) {
     cssW = w; cssH = h; dprK = Math.min(dpr || 1, 2);
-    canvas.width = Math.max(2, Math.round(w * dprK)); canvas.height = Math.max(2, Math.round(h * dprK));
+    if (!shared) { canvas.width = Math.max(2, Math.round(w * dprK)); canvas.height = Math.max(2, Math.round(h * dprK)); }
     aspect = w / h;
     fov = 62 * Math.PI / 180 * (aspect < 1 ? 1.25 : 1);
     tanH = Math.tan(fov / 2);
@@ -533,8 +539,8 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
   function draw(sparkOn, cx, cy, ringR, arc, a0, closed, gr, power) {
     const Wd = canvas.width, Hd = canvas.height, k = dprK;
     gl.viewport(0, 0, Wd, Hd);
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    if (shared) gl.clear(gl.DEPTH_BUFFER_BIT);
+    else { gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); }
     if (n > 0 && !off.hands) {
       gl.enable(gl.DEPTH_TEST); gl.depthMask(true); gl.disable(gl.BLEND);
       gl.enable(gl.CULL_FACE); gl.cullFace(gl.FRONT);
@@ -599,11 +605,18 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
       gl.uniform1f(SPARK.u.uFloor, cssH * 0.88 * k);
       gl.uniform1f(SPARK.u.uDepth, portalDepth());
       gl.uniform1f(SPARK.u.uScale, k);
-      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, NSPARK);
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, sparkCount);
       gl.depthMask(true);
       gl.disable(gl.BLEND);
     }
+    // Leave the shared state as we found it.
+    gl.disable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE); gl.disable(gl.SCISSOR_TEST); gl.disable(gl.BLEND);
+    gl.depthMask(true);
+    gl.bindVertexArray(null);
   }
+  let sparkCount = NSPARK;
+  // Quality governor hook: 0 full, 1 fewer embers' glow, 2 fewer sparks.
+  function setQuality(level) { sparkCount = level >= 2 ? 5000 : level >= 1 ? 7000 : NSPARK; }
 
   const sparkOn0 = (D) => D.f * FORM > ARC_FROM && portal.glow > 0.001;
   function frame(t, dt, g, look) {
@@ -679,13 +692,25 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
 
     const sparkOn = sparkOn0(D) && arc > 0.001;
     if (n === 0 && !sparkOn) {
-      if (drewLast) { gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); drewLast = false; }
+      if (drewLast && !shared) { gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); }
+      drewLast = false; pend.on = false;
       return out;
     }
     drewLast = true;
-    draw(sparkOn, cx, cy, ringR, arc, ph, closed, gr, power);
+    pend.on = true; pend.sparkOn = sparkOn; pend.cx = cx; pend.cy = cy; pend.ringR = ringR; pend.arc = arc; pend.ph = ph; pend.closed = closed; pend.gr = gr; pend.power = power;
+    if (!deferred) render();
     return out;
   }
+  // In shared-context mode main.js calls update() first (it needs the portal for the mountain and the hall)
+  // and render() last, over everything else.
+  const pend = { on: false, sparkOn: false, cx: 0, cy: 0, ringR: 0, arc: 0, ph: 0, closed: 0, gr: 0, power: 0 };
+  let deferred = false;
+  function render() {
+    if (!pend.on) return;
+    pend.on = false;
+    draw(pend.sparkOn, pend.cx, pend.cy, pend.ringR, pend.arc, pend.ph, pend.closed, pend.gr, pend.power);
+  }
+  function update(t, dt, g, look) { deferred = true; const o = frame(t, dt, g, look); deferred = false; return o; }
 
   // Pre-warm: run every program once at load so the portal never stalls when it first opens.
   {
@@ -696,5 +721,5 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
     n = saveN; ringN = 0;
     gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   }
-  return { resize, frame };
+  return { resize, frame, update, render, setQuality };
 }

@@ -40,57 +40,48 @@ Import anikit from `'../../../packages/anikit/dist/anikit.lean.js'`. The build r
 cd packages/anikit && npm install && node scripts/build-wasm.mjs && node scripts/build.mjs
 ```
 
-## Layering (`main.js`; bottom to top, all `position: fixed`, full screen)
+## One canvas, one WebGL2 context (main.js owns it)
 
-1. `<canvas id="mountain">`: WebGL2. Stops rendering once the portal covers the screen.
-2. `<canvas id="hall">`: WebGL2.
-   - Visible only inside the portal, through CSS `clip-path: circle(Rpx at Xpx Ypx)`.
-   - `main.js` sets the clip-path from `hands.frame()`'s return value.
-   - Hidden (`visibility: hidden`, not rendered) while R = 0.
-3. `<canvas id="hands">`: WebGL2.
-   - Transparent: `premultipliedAlpha: true`, clears to 0, `pointer-events: none`.
-4. DOM overlay: minimal text and the hall HUD.
-
-## Interfaces
-
-All times are in seconds. All sizes are in CSS px unless stated. Each module creates its own WebGL2 context on the canvas it is given.
+Three stacked full-screen canvases cost three full-screen compositor blends at DPR 2 every frame on an integrated GPU, before any shading. So there is **one** `<canvas id="gl">` and one context, created by `main.js`:
 
 ```js
-// mountain.js
-export function createMountain(canvas) → {
-  resize(cssW, cssH, dpr),
-  // p: scroll progress 0..1 for the whole intro
-  // look: smoothed pointer -1..1
-  // push: 0..1 forward dolly as you step through
-  frame(t, dt, p, look, push),
-}
-
-// hands.js
-export function createHands(canvas) → {
-  resize(cssW, cssH, dpr),
-  // g: gesture progress 0..1
-  //   0      arms out of view
-  //   0.25   arms raised
-  //   0.4    ring hand forward
-  //   0.55   other hand circles
-  //   0.75   portal fully open
-  //   1      arms lowered or out of view as you step through
-  // returns the same object every call (no allocation);
-  // portal.r = 0 while closed; r grows to cover the screen at g = 1
-  frame(t, dt, g, look) → { portal: { x, y, r } },
-}
-
-// hall.js
-export function createHall(canvas, overlayEl) → {
-  resize(cssW, cssH, dpr),
-  // the hall seen through the portal from just outside the doorway;
-  // k: 0..1 approach, 1 = standing inside at the spawn point
-  preview(t, dt, k),
-  enter(),        // take control: input listeners, HUD in overlayEl, pointer lock on click
-  exit(),         // release control (back to scroll)
-  frame(t, dt),   // while active
-}
+gl = canvas.getContext('webgl2', { antialias: false, alpha: false, depth: true, stencil: false, premultipliedAlpha: false, powerPreference: 'high-performance', desynchronized: true });
 ```
+
+Each module exports `export const SHARED_GL = true` once it supports this. Until every module does, `main.js` falls back to the old per-canvas layering, so the page never breaks mid-migration.
+
+### Per frame (`main.js`)
+
+`main.js` binds the default framebuffer, sets `viewport(0, 0, W, H)`, and resets state to the defaults below. It then calls, in order:
+
+1. `mountain.frame(t, dt, p, look, push, portal)`. Draws the whole screen; it's the only module that clears colour. It's skipped once the portal covers more than about 70% of the screen (main then clears to the hall's fog colour if needed).
+2. `hall.preview(t, dt, k, rect, portal)`. Draws only inside `rect` (device px, top-left origin: `{ x, y, w, h }`), using `gl.scissor` on every pass. Its final composite to the default framebuffer discards fragments outside the circle `portal` (`{ x, y, r }`, device px, top-left origin), so there's no CSS clip-path. Inside the hall, `hall.frame(t, dt)` draws the full screen.
+3. `hands.frame(t, dt, g, look)`. Clears depth only, draws the silhouettes, then the sparks (blended) inside their bounds.
+
+### State contract
+
+Defaults on entry to every module: no blend, no depth test, depth mask true, no cull, no scissor, viewport = full canvas, default framebuffer bound, no VAO bound, `UNPACK_FLIP_Y` false. A module may change anything, but it must restore these defaults before returning. Offscreen targets (haze, bloom, mirror) belong to the module, are allocated in `resize()`, and are never reallocated per frame.
+
+### Interfaces (shared mode)
+
+```js
+createMountain(gl)            → { resize(cssW, cssH, dpr), frame(t, dt, p, look, push, portal) }
+createHall(gl, overlayEl)     → { resize, preview(t, dt, k, rect, portal), enter(), exit(), frame(t, dt) }
+createHands(gl)               → { resize, frame(t, dt, g, look) → { portal: { x, y, r, ring, power, formed, step } } }
+```
+
+- Every module's `resize(cssW, cssH, dpr)` receives the canvas's real pixel ratio, `canvas.width / cssW`. `main.js` sizes the canvas; modules never set `canvas.width`.
+- Modules may still accept a canvas (the legacy path); detect it with `x instanceof WebGL2RenderingContext`.
+- Portal numbers from `hands` are in CSS px; `main.js` converts them to device px for the hall.
+
+### Quality governor (`main.js`)
+
+`main.js` measures the real frame time (p90 over 90 frames). Above 17.5 ms it steps down one tier, at most once every 3 s; it steps back up only after 10 s under 12 ms. Modules may expose `setQuality(level)` with level 0 (full) to 2 (lowest):
+
+- level 1 drops optional passes (haze, bloom quality, glow resolution);
+- level 2 lowers particle counts.
+
+The last resort, a render scale of 0.85, is applied by `main.js`.
 
 ## Scroll timeline (`main.js`)
 

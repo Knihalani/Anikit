@@ -1,9 +1,10 @@
-// Summit: the page. One loop (Anikit's frame clock) drives three canvases:
-// the mountain at the bottom, the hall seen through the portal, the hands on top.
+// Summit: the page. One loop (Anikit's frame clock) drives the mountain, the hall seen through the portal
+// and the hands on top: in ONE shared WebGL2 context once every module supports it (CONTRACT.md),
+// otherwise on three stacked canvases.
 // Scroll progress is smoothed with an Anikit spring and mapped to p, g, push and k (see CONTRACT.md).
 import { ready, spring, engine, animate } from '../../../packages/anikit/dist/anikit.lean.js';
-import { createHands } from './hands.js';
-import { createHall } from './hall.js';
+import * as HandsM from './hands.js';
+import * as HallM from './hall.js';
 
 const root = document.documentElement;
 const $ = (s) => document.querySelector(s);
@@ -49,27 +50,44 @@ function stubMountain(canvas) {
 }
 
 await ready;
-let createMountain = stubMountain;
-try { ({ createMountain } = await import('./mountain.js')); } catch { /* the stand-in until mountain.js lands */ }
+let MountainM = { createMountain: stubMountain };
+try { MountainM = await import('./mountain.js'); } catch { /* the stand-in until mountain.js lands */ }
 
 // ?perf shows real frame times per phase; ?perf=no-sparks,no-hall,no-mountain,no-hands switches passes off to rank their cost.
 const perfArg = new URLSearchParams(location.search).get('perf');
+const urlParams = new URLSearchParams(location.search);
 const OFF = {};
 if (perfArg) for (const k of perfArg.split(',')) if (k.startsWith('no-')) OFF[k.slice(3)] = true;
 globalThis.__summitOff = OFF;
 
-const mountainCanvas = $('#mountain'), hallCanvas = $('#hall'), handsCanvas = $('#hands');
-const mountain = createMountain(mountainCanvas);
-const hall = createHall(hallCanvas, $('#overlay'));
-const hands = createHands(handsCanvas);
+const params = new URLSearchParams(location.search);
+const SHARED = !!(MountainM.SHARED_GL && HallM.SHARED_GL && HandsM.SHARED_GL) && !params.has('legacy');
+const mountainCanvas = $('#mountain'), hallCanvas = $('#hall'), handsCanvas = $('#hands'), glCanvas = $('#gl');
+let gl = null;
+if (SHARED) {
+  root.classList.add('shared');
+  gl = glCanvas.getContext('webgl2', { antialias: false, alpha: false, depth: true, stencil: false, premultipliedAlpha: false, powerPreference: 'high-performance', desynchronized: true });
+}
+const mountain = MountainM.createMountain(SHARED ? gl : mountainCanvas);
+const hall = HallM.createHall(SHARED ? gl : hallCanvas, $('#overlay'));
+const hands = HandsM.createHands(SHARED ? gl : handsCanvas);
+const modules = [mountain, hall, hands];
 
-// Resolution is chosen at load; only a real width change re-sizes.
-let lastW = 0;
+// Resolution is chosen at load; only a real width change (or the quality governor's last tier) re-sizes.
+let lastW = 0, renderScale = 1;
 function resize(force) {
   if (!force && innerWidth === lastW) return;
   lastW = innerWidth;
-  const w = innerWidth, h = innerHeight, d = devicePixelRatio || 1;
-  mountain.resize(w, h, d); hall.resize(w, h, d); hands.resize(w, h, d);
+  const w = innerWidth, h = innerHeight;
+  if (SHARED) {
+    const d = Math.min(devicePixelRatio || 1, 2) * renderScale;
+    glCanvas.width = Math.max(2, Math.round(w * d)); glCanvas.height = Math.max(2, Math.round(h * d));
+    const real = glCanvas.width / w;
+    for (const m of modules) m.resize(w, h, real);
+  } else {
+    const d = devicePixelRatio || 1;
+    mountain.resize(w, h, d); hall.resize(w, h, d); hands.resize(w, h, d);
+  }
 }
 resize(true);
 
@@ -160,10 +178,67 @@ let clipKey = '', hallShown = false, mountainOn = true;
 const hallRect = { x: 0, y: 0, w: 1, h: 1 };
 const status = { frames: 0, p: 0, r: 0, inHall: false };
 window.__summit = status;
+const portalDev = { x: 0, y: 0, r: 0 };
+function frameShared(t, dt, dtMs) {
+  const W = innerWidth, H = innerHeight, k = glCanvas.width / W;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+  if (inHall) { hall.frame(t, dt); status.inHall = true; governor(dtMs); if (perf) perfTick(dtMs, 2); return; }
+  status.inHall = false;
+  mapProgress(clamp01(sp.p));
+  status.p = io.p;
+  const portal = hands.update(t, dt, io.g, look).portal;
+  status.r = portal.r;
+  io.push = io.k = portal.step;
+  const cover = portal.r > 0 && portal.r >= Math.hypot(Math.max(portal.x, W - portal.x), Math.max(portal.y, H - portal.y));
+  // 1. The mountain (only while some of it shows).
+  if (!cover && !OFF.mountain) mountain.frame(t, dt, io.p, look, io.push, portal);
+  else if (!cover) { gl.clearColor(0.7, 0.75, 0.8, 1); gl.clear(gl.COLOR_BUFFER_BIT); }
+  // 2. The hall, inside the portal only.
+  if (portal.r > 0.5 && !OFF.hall) {
+    const x0 = Math.max(0, portal.x - portal.r), y0 = Math.max(0, portal.y - portal.r);
+    hallRect.x = Math.floor(x0 * k); hallRect.y = Math.floor(y0 * k);
+    hallRect.w = Math.ceil((Math.min(W, portal.x + portal.r) - x0) * k); hallRect.h = Math.ceil((Math.min(H, portal.y + portal.r) - y0) * k);
+    portalDev.x = portal.x * k; portalDev.y = portal.y * k; portalDev.r = cover ? 1e6 : portal.r * k;
+    hall.preview(t, dt, io.k, hallRect, portalDev);
+  }
+  gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+  // 3. Hands and sparks on top.
+  hands.render();
+  if (portal.step < 0.9) armed = true;
+  if (armed && portal.step >= 0.97 && io.p >= 0.85) enterHall();
+  governor(dtMs);
+  if (perf) perfTick(dtMs, portal.r > 0 || portal.ring > 0 ? 1 : 0);
+}
+
+// Quality governor: real frame times, p90 over 90 frames; step down above 17.5 ms (at most every 3 s),
+// back up only after 10 s under 12 ms. Tier 1-2: modules' setQuality; tier 3: render scale 0.85.
+const gov = { buf: new Float32Array(90), scratch: new Float32Array(90), n: 0, at: 0, tier: 0, last: 0, good: 0 };
+function governor(dtMs) {
+  if (dtMs <= 0 || dtMs > 250) return;     // tab switches and stalls say nothing about steady cost
+  gov.buf[gov.at] = dtMs; gov.at = (gov.at + 1) % 90; gov.n = Math.min(90, gov.n + 1);
+  if (gov.n < 90 || gov.at % 15) return;
+  gov.scratch.set(gov.buf); gov.scratch.sort();
+  const p90 = gov.scratch[80];
+  const now = performance.now();
+  if (p90 > 17.5) { gov.good = 0; if (gov.tier < 3 && now - gov.last > 3000) setTier(gov.tier + 1, p90); }
+  else if (p90 < 12) { if (!gov.good) gov.good = now; else if (gov.tier > 0 && now - gov.good > 10000 && now - gov.last > 10000) { setTier(gov.tier - 1, p90); gov.good = now; } }
+  else gov.good = 0;
+}
+function setTier(tier, p90) {
+  gov.tier = tier; gov.last = performance.now(); gov.n = 0;
+  for (const m of modules) if (m.setQuality) m.setQuality(Math.min(2, tier));
+  const scale = tier >= 3 ? 0.85 : 1;
+  if (SHARED && scale !== renderScale) { renderScale = scale; resize(true); }
+  if (perf) console.info(`anikit summit: quality tier ${tier} (p90 ${p90.toFixed(1)} ms)`);
+  status.tier = tier;
+}
+
 function frame(timeMs, dtMs) {
   const t = timeMs / 1000, dt = Math.min(dtMs, 50) / 1000;
   status.frames++;
-  if (inHall) { hall.frame(t, dt); status.inHall = true; if (perf) perfTick(dtMs, 2); return; }
+  if (SHARED) { frameShared(t, dt, dtMs); return; }
+  if (inHall) { hall.frame(t, dt); status.inHall = true; governor(dtMs); if (perf) perfTick(dtMs, 2); return; }
   status.inHall = false;
   mapProgress(clamp01(sp.p));
   status.p = io.p;
@@ -193,16 +268,18 @@ function frame(timeMs, dtMs) {
   // After leaving, the hall re-arms only once the camera has backed out of the doorway.
   if (portal.step < 0.9) armed = true;
   if (armed && portal.step >= 0.97 && io.p >= 0.85) enterHall();
+  governor(dtMs);
   if (perf) perfTick(dtMs, inHall ? 2 : portal.r > 0 || portal.ring > 0 ? 1 : 0);
 }
 
 if (reduced) {
   // Reduced motion: no journey, a cross-fade straight into the hall.
   engine.reducedMotion = 'always';
-  hallCanvas.style.opacity = '0';
-  hallCanvas.style.transition = 'opacity 0.8s ease';
+  const fadeEl = SHARED ? glCanvas : hallCanvas;
+  fadeEl.style.opacity = '0';
+  fadeEl.style.transition = 'opacity 0.8s ease';
   enterHall();
-  requestAnimationFrame(() => { hallCanvas.style.opacity = '1'; });
+  requestAnimationFrame(() => { fadeEl.style.opacity = '1'; });
 }
 engine.onFrame(frame);
 root.classList.add('live');
