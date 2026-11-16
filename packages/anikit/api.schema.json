@@ -524,6 +524,71 @@
       },
       "additionalProperties": false
     },
+    "BloomOptions": {
+      "type": "object",
+      "description": "Bloom options.",
+      "x-module": "anikit",
+      "properties": {
+        "strength": {
+          "type": "number",
+          "description": "Strength (default 0.6).",
+          "tsType": "number | undefined"
+        },
+        "threshold": {
+          "type": "number",
+          "description": "HDR threshold (default 1).",
+          "tsType": "number | undefined"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CameraOptions": {
+      "type": "object",
+      "description": "Camera options.",
+      "x-module": "anikit",
+      "properties": {
+        "fov": {
+          "type": "number",
+          "description": "Vertical field of view in degrees (default 45).",
+          "tsType": "number | undefined"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "tsType": "readonly [number, number, number]"
+            },
+            {
+              "tsType": "{ x: number; y: number; z: number; }"
+            }
+          ],
+          "description": "Eye position (default `[0, 2, 6]`).",
+          "tsType": "Vec3Like | undefined"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "tsType": "readonly [number, number, number]"
+            },
+            {
+              "tsType": "{ x: number; y: number; z: number; }"
+            }
+          ],
+          "description": "Look-at target (default origin).",
+          "tsType": "Vec3Like | undefined"
+        },
+        "near": {
+          "type": "number",
+          "description": "Near plane (default 0.05).",
+          "tsType": "number | undefined"
+        },
+        "far": {
+          "type": "number",
+          "description": "Far plane (default 200).",
+          "tsType": "number | undefined"
+        }
+      },
+      "additionalProperties": false
+    },
     "CloudOptions": {
       "type": "object",
       "x-module": "anikit",
@@ -930,6 +995,24 @@
         "seed": {
           "type": "number",
           "description": "Seed for `'random'` (default 1).",
+          "tsType": "number | undefined"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DofOptions": {
+      "type": "object",
+      "description": "Depth-of-field options.",
+      "x-module": "anikit",
+      "properties": {
+        "focus": {
+          "type": "number",
+          "description": "Focus distance from the camera (default: the camera target distance).",
+          "tsType": "number | undefined"
+        },
+        "aperture": {
+          "type": "number",
+          "description": "Blur growth per unit away from focus (default 0.15).",
           "tsType": "number | undefined"
         }
       },
@@ -2128,6 +2211,146 @@
       },
       "additionalProperties": false
     },
+    "HtmlCanvasOptions": {
+      "type": "object",
+      "description": "Options for {@link htmlCanvas}.",
+      "x-module": "anikit",
+      "properties": {
+        "target": {
+          "anyOf": [
+            {
+              "tsType": "HTMLCanvasElement"
+            },
+            {
+              "tsType": "WebGLRenderingContext"
+            },
+            {
+              "tsType": "WebGL2RenderingContext"
+            }
+          ],
+          "description": "Where pixels go: a 2D canvas (drawn at 0,0, sized to the element), or a WebGL context (a texture is created and filled). Default: a new offscreen 2D canvas.",
+          "tsType": "HTMLCanvasElement | GL | undefined"
+        },
+        "live": {
+          "type": "boolean",
+          "description": "Keep the image in sync with the element (mutations, resizes, font loads). Default true.",
+          "tsType": "boolean | undefined"
+        },
+        "scale": {
+          "type": "number",
+          "description": "Pixel scale of the raster (default `devicePixelRatio`, capped at 2).",
+          "tsType": "number | undefined"
+        },
+        "throttle": {
+          "type": "number",
+          "description": "Minimum ms between live re-rasters on the fallback path (default 50).",
+          "tsType": "number | undefined"
+        },
+        "native": {
+          "type": "boolean",
+          "description": "Use the native HTML-in-Canvas API when available (default true).",
+          "tsType": "boolean | undefined"
+        },
+        "onUpdate": {
+          "tsType": "((hc: HtmlCanvas) => void) | undefined",
+          "x-function": true,
+          "description": "Called after every new image (and texture upload)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "HtmlEffectOptions": {
+      "type": "object",
+      "description": "Options for {@link htmlEffect}.",
+      "x-module": "anikit",
+      "properties": {
+        "duration": {
+          "type": "number",
+          "description": "Seconds (default 1.2).",
+          "tsType": "number | undefined"
+        },
+        "delay": {
+          "type": "number",
+          "description": "Start delay in seconds (default 0).",
+          "tsType": "number | undefined"
+        },
+        "ease": {
+          "anyOf": [
+            {
+              "type": "string",
+              "examples": [
+                "linear",
+                "ease",
+                "ease-in",
+                "ease-out",
+                "ease-in-out",
+                "step-start",
+                "step-end",
+                "inQuad",
+                "inCubic",
+                "inQuart",
+                "inQuint",
+                "inSine"
+              ]
+            },
+            {
+              "tsType": "string & {}"
+            },
+            {
+              "tsType": "EasingFn",
+              "x-function": true
+            },
+            {
+              "tsType": "[number, number, number, number]"
+            },
+            {
+              "tsType": "SpringOptions"
+            }
+          ],
+          "description": "Easing or spring for the progress (default: per effect).",
+          "tsType": "EasingInput"
+        },
+        "mode": {
+          "enum": [
+            "in",
+            "out",
+            "pulse"
+          ],
+          "description": "'out': the element leaves through the effect and stays hidden (`revert()` shows it).\n'in': the effect plays backwards and reveals the element.\n'pulse': 0→1→0, the element is unchanged afterwards.\nDefault: 'out' for shatter/dissolve/curl, 'pulse' for the rest.",
+          "tsType": "\"in\" | \"out\" | \"pulse\" | undefined"
+        },
+        "intensity": {
+          "type": "number",
+          "description": "Effect strength multiplier (default 1).",
+          "tsType": "number | undefined"
+        },
+        "origin": {
+          "tsType": "[number, number] | undefined",
+          "description": "Effect origin in element-relative 0–1 coordinates (default [0.5, 0.5]; curl: [1, 1])."
+        },
+        "padding": {
+          "type": "number",
+          "description": "Extra room around the element for pieces that fly out, in px (default: shatter 400, curl 200, wave 40, else 0).",
+          "tsType": "number | undefined"
+        },
+        "scale": {
+          "type": "number",
+          "description": "Raster scale (default `devicePixelRatio`, capped at 2).",
+          "tsType": "number | undefined"
+        },
+        "color": {
+          "type": "string",
+          "description": "Tint for dissolve edges / curl backside, CSS colour (default '#ffb347').",
+          "tsType": "string | undefined"
+        },
+        "onComplete": {
+          "tsType": "(() => void) | undefined",
+          "x-function": true,
+          "description": "Called when the effect ends."
+        }
+      },
+      "additionalProperties": false
+    },
     "ImpactOptions": {
       "type": "object",
       "description": "A hit: camera shake, a flash frame and an aberration kick, all decaying.",
@@ -2775,6 +2998,106 @@
       },
       "additionalProperties": false
     },
+    "ObjectOptions": {
+      "type": "object",
+      "description": "Options for `scene.add(geometry, options)`.",
+      "x-module": "anikit",
+      "properties": {
+        "position": {
+          "anyOf": [
+            {
+              "tsType": "readonly [number, number, number]"
+            },
+            {
+              "tsType": "{ x: number; y: number; z: number; }"
+            }
+          ],
+          "description": "Position (default origin).",
+          "tsType": "Vec3Like | undefined"
+        },
+        "rotation": {
+          "anyOf": [
+            {
+              "tsType": "readonly [number, number, number]"
+            },
+            {
+              "tsType": "{ x: number; y: number; z: number; }"
+            }
+          ],
+          "description": "Euler rotation in radians, XYZ order.",
+          "tsType": "Vec3Like | undefined"
+        },
+        "scale": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "tsType": "readonly [number, number, number]"
+            },
+            {
+              "tsType": "{ x: number; y: number; z: number; }"
+            }
+          ],
+          "description": "Uniform or per-axis scale.",
+          "tsType": "number | Vec3Like | undefined"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "const": "emissive"
+            },
+            {
+              "tsType": "SceneMaterialOptions"
+            },
+            {
+              "const": "chrome"
+            },
+            {
+              "const": "gold"
+            },
+            {
+              "const": "copper"
+            },
+            {
+              "const": "glass"
+            },
+            {
+              "const": "plastic"
+            },
+            {
+              "const": "ceramic"
+            },
+            {
+              "const": "rubber"
+            },
+            {
+              "const": "toon"
+            },
+            {
+              "tsType": "Material"
+            }
+          ],
+          "description": "A preset name, options, or a shared {@link Material}.",
+          "tsType": "SceneMaterialOptions | MaterialPreset | Material | undefined"
+        },
+        "castShadow": {
+          "type": "boolean",
+          "description": "Casts a shadow (default true).",
+          "tsType": "boolean | undefined"
+        },
+        "visible": {
+          "type": "boolean",
+          "description": "Visible (default true).",
+          "tsType": "boolean | undefined"
+        },
+        "parent": {
+          "tsType": "Object3D | undefined",
+          "description": "Parent object (transforms compose)."
+        }
+      },
+      "additionalProperties": false
+    },
     "ObserverOptions": {
       "type": "object",
       "x-module": "anikit",
@@ -2858,6 +3181,37 @@
           "tsType": "((e: ObserverEvent) => void) | undefined",
           "x-function": true,
           "description": "Fires once input has been quiet for 150ms."
+        }
+      },
+      "additionalProperties": false
+    },
+    "OrbitOptions": {
+      "type": "object",
+      "description": "Orbit-control options.",
+      "x-module": "anikit",
+      "properties": {
+        "autoRotate": {
+          "type": "number",
+          "description": "Auto-rotation in degrees per second (default 0).",
+          "tsType": "number | undefined"
+        },
+        "damping": {
+          "type": "number",
+          "description": "Inertia: fraction of velocity kept per 1/60 s (default 0.92).",
+          "tsType": "number | undefined"
+        },
+        "zoom": {
+          "type": "boolean",
+          "description": "Wheel / pinch zoom (default true).",
+          "tsType": "boolean | undefined"
+        },
+        "distance": {
+          "tsType": "[number, number] | undefined",
+          "description": "Distance limits (default `[0.5, 100]`)."
+        },
+        "pitch": {
+          "tsType": "[number, number] | undefined",
+          "description": "Pitch limits in degrees (default `[-85, 85]`)."
         }
       },
       "additionalProperties": false
@@ -4081,6 +4435,107 @@
       },
       "additionalProperties": false
     },
+    "SceneMaterialOptions": {
+      "type": "object",
+      "description": "Material options (all optional; start from `preset`).",
+      "x-module": "anikit",
+      "properties": {
+        "preset": {
+          "enum": [
+            "emissive",
+            "chrome",
+            "gold",
+            "copper",
+            "glass",
+            "plastic",
+            "ceramic",
+            "rubber",
+            "toon"
+          ],
+          "description": "Start from a preset, then apply the other keys.",
+          "tsType": "MaterialPreset | undefined"
+        },
+        "color": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          ],
+          "description": "Base colour (`#rrggbb` or sRGB `[r, g, b]` in 0–1).",
+          "tsType": "string | readonly number[] | undefined"
+        },
+        "metalness": {
+          "type": "number",
+          "description": "0 = dielectric, 1 = metal.",
+          "tsType": "number | undefined"
+        },
+        "roughness": {
+          "type": "number",
+          "description": "0 = mirror, 1 = fully rough.",
+          "tsType": "number | undefined"
+        },
+        "emissive": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          ],
+          "description": "Emitted colour (glows with bloom).",
+          "tsType": "string | readonly number[] | undefined"
+        },
+        "emissiveIntensity": {
+          "type": "number",
+          "description": "Multiplier on `emissive` (HDR: values > 1 bloom).",
+          "tsType": "number | undefined"
+        },
+        "opacity": {
+          "type": "number",
+          "description": "0–1. Below 1 the object is drawn in the transparent pass.",
+          "tsType": "number | undefined"
+        },
+        "toon": {
+          "type": "boolean",
+          "description": "Cel-shaded bands and a rim light instead of PBR.",
+          "tsType": "boolean | undefined"
+        },
+        "glass": {
+          "type": "boolean",
+          "description": "Glass: Fresnel-weighted transparency with refraction-tinted environment.",
+          "tsType": "boolean | undefined"
+        },
+        "map": {
+          "anyOf": [
+            {
+              "tsType": "HTMLCanvasElement"
+            },
+            {
+              "tsType": "HTMLImageElement"
+            },
+            {
+              "tsType": "ImageBitmap"
+            },
+            {
+              "tsType": "{ readonly canvas: HTMLCanvasElement; readonly version: number; readonly element?: Element | undefined; readonly width?: number | undefined; readonly height?: number | undefined; }"
+            }
+          ],
+          "description": "Colour texture, multiplied into `color` (and `emissive`, so a black, emissive material shows it unlit like a screen).\nA canvas or image (uploaded once), or a live source with `canvas` + `version` such as `htmlTexture(el)` /\n`htmlCanvas(el)` (re-uploaded only when `version` changes; pointer events on the mesh are forwarded to the element).\nUV (0, 0) is the image's top-left.",
+          "tsType": "MapSource | null | undefined"
+        }
+      },
+      "additionalProperties": false
+    },
     "SceneOptions": {
       "type": "object",
       "x-module": "anikit",
@@ -4816,6 +5271,31 @@
       },
       "additionalProperties": false
     },
+    "SdfOptions": {
+      "type": "object",
+      "description": "Options for {@link sdfMesh}.",
+      "x-module": "anikit",
+      "properties": {
+        "bounds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "tsType": "readonly [number, number, number]"
+            }
+          ],
+          "description": "Half-size of the sampled box around the origin: a number (cube) or `[x, y, z]` (default 1.5).",
+          "tsType": "number | readonly [number, number, number] | undefined"
+        },
+        "resolution": {
+          "type": "number",
+          "description": "Cells along the longest axis (default 48). Cost grows with the cube of this.",
+          "tsType": "number | undefined"
+        }
+      },
+      "additionalProperties": false
+    },
     "ShatterOptions": {
       "type": "object",
       "x-module": "anikit",
@@ -5079,6 +5559,39 @@
         "seed": {
           "type": "number",
           "description": "Seed for `from: 'random'`.",
+          "tsType": "number | undefined"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Text3dOptions": {
+      "type": "object",
+      "description": "Options for {@link text3d}.",
+      "x-module": "anikit",
+      "properties": {
+        "font": {
+          "type": "string",
+          "description": "CSS font (default `'bold 100px sans-serif'`). The size only sets raster detail.",
+          "tsType": "string | undefined"
+        },
+        "size": {
+          "type": "number",
+          "description": "Height of a capital letter in scene units (default 1).",
+          "tsType": "number | undefined"
+        },
+        "depth": {
+          "type": "number",
+          "description": "Extrusion depth (default 0.3).",
+          "tsType": "number | undefined"
+        },
+        "bevel": {
+          "type": "number",
+          "description": "Rounded bevel radius (default 0.04).",
+          "tsType": "number | undefined"
+        },
+        "resolution": {
+          "type": "number",
+          "description": "Mesh cells along the text width (default 160).",
           "tsType": "number | undefined"
         }
       },
