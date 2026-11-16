@@ -35,6 +35,16 @@ describe('blackHole', () => {
     bh.destroy();
   });
 
+  it('steps the resolution down when over its frame budget', () => {
+    const bh = blackHole({ width: 80, height: 50, budget: 1e-6, minScale: 0.5 });
+    for (let i = 0; i < 40; i++) bh.render({ time: i / 60 });
+    expect(bh.currentScale).toBe(0.5);
+    expect(bh.stats.width).toBe(40);
+    bh.resize(100, 60, 1);
+    expect(bh.render().length).toBe(100 * 60 * 4);
+    bh.destroy();
+  });
+
   it('warns about unknown options', () => {
     const w = testing.captureWarnings();
     const bh = blackHole({ width: 16, height: 16, mdoe: 'physical' } as any);

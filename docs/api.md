@@ -814,7 +814,7 @@ A radix-2 FFT, spectral-flux onsets, autocorrelation tempo and a least-squares b
 `blackHole({ width, height, canvas, mode, scale })` renders a scientifically accurate, animated Schwarzschild black hole straight into pixels: exact null geodesics, a Page–Thorne accretion disk coloured by the blackbody at the Doppler- and gravitationally shifted temperature g·T with g⁴ beaming, the lensed image arcing over and under the shadow, the photon ring, a lensed star catalogue and Milky Way, orbiting hot-spot flares that shear as they go, and an infalling observer who can cross the horizon. `mode: 'cinematic'` drops the Doppler colour and softens beaming, as *Interstellar* did. The physics and references are in [`docs/black-hole.md`](black-hole.md).
 
 ```ts
-const bh: BlackHole = blackHole({ width: 1280, height: 800, canvas: '#hero', mode: 'physical', scale: 1 });
+const bh: BlackHole = blackHole({ width: 1280, height: 800, canvas: '#hero', mode: 'physical', scale: 1, budget: 14, minScale: 0.5 });
 engine.onFrame((t) => {
   bh.render({ time: t / 1000, distance: 30, inclination: 84, fov: 34, azimuth: t / 400, hotSpots: 1, jet: 0.4 });
 });
@@ -829,7 +829,8 @@ bh.destroy();
 | Member | Purpose |
 |---|---|
 | `render(frame)` → `Uint8ClampedArray` | Render one frame (RGBA, a view into WebAssembly memory) and draw it into the canvas. `frame` is a `BlackHoleFrame`: `distance` (M), `inclination`, `fov`, `time`, `exposure`, `bloom`, `grain`, `hotSpots`, `jet`, `azimuth`, `look`, `roll`, `fall`, `temperature`, `diskOuter`, `stars`, `speed`, `nebula`. |
-| `resize(width, height, scale?)` | Change the output size; `scale` renders at a fraction of it. |
+| `resize(width, height, scale?)` | Change the output size; `scale` renders at a fraction of it (size the canvas with CSS). |
+| `budget`, `minScale` (options), `currentScale` | Adaptive resolution: over `budget` ms per frame (e.g. while the camera moves during a scroll journey) the internal scale steps down to at most `minScale`, and back up when frames are fast again. |
 | `stats` | `BlackHoleStats`: samples per image order, stars drawn, whether the geodesic table or pixel geometry was rebuilt, shadow radius, `ms`. |
 | `destroy()` / `kill()` / `revert()` | Free the WebAssembly memory (also via `context()`). |
 

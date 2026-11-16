@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Tuple
 from . import color, export, transform
 from ._anikit import __version__
 from ._animation import Animation, Position, Timeline, animate, timeline
+from ._blackhole import BlackHole
 from ._cloud import PointCloud, ShapeInput, Splat
 from ._easing import Easing, EasingLike, ease
 from ._engine import Engine, default_engine, resolve_engine, set_default_engine
@@ -67,6 +68,8 @@ __all__ = [
     "Cloth",
     "Link",
     "Attractor",
+    # black hole
+    "BlackHole",
     # point clouds
     "PointCloud",
     "ShapeInput",

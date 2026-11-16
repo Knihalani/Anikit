@@ -31,6 +31,15 @@ export interface BlackHoleOptions {
   scale?: number;
   /** Seed for the disk turbulence, stars and nebula (default 1). */
   seed?: number;
+  /**
+   * Frame budget in ms (default 0 = off). When `render()` is consistently
+   * slower — typically while the camera moves, which rebuilds the lensing
+   * geometry — the internal scale steps down (to at most `minScale`), and
+   * steps back up once frames are comfortably fast again.
+   */
+  budget?: number;
+  /** Lowest scale the adaptive budget may use (default 0.5). */
+  minScale?: number;
 }
 
 /** Per-frame parameters for {@link BlackHole.render}. Every field is optional. */
@@ -93,7 +102,7 @@ export interface BlackHoleStats {
   height: number;
 }
 
-const OPTION_KEYS: OptionKeys<BlackHoleOptions> = { width: 0, height: 0, canvas: 0, mode: 0, scale: 0, seed: 0 };
+const OPTION_KEYS: OptionKeys<BlackHoleOptions> = { width: 0, height: 0, canvas: 0, mode: 0, scale: 0, seed: 0, budget: 0, minScale: 0 };
 const FRAME_KEYS: OptionKeys<BlackHoleFrame> = {
   distance: 0, inclination: 0, fov: 0, time: 0, exposure: 0, bloom: 0, grain: 0, hotSpots: 0, jet: 0,
   azimuth: 0, look: 0, roll: 0, fall: 0, temperature: 0, diskOuter: 0, stars: 0, speed: 0, nebula: 0,
@@ -111,6 +120,11 @@ export class BlackHole {
   private cssW: number;
   private cssH: number;
   private scale: number;
+  private baseScale: number;
+  private budget: number;
+  private minScale: number;
+  private ema = 0;
+  private sinceAdapt = 0;
   private ctx: CanvasRenderingContext2D | null = null;
   private img: ImageData | null = null;
   private checked = false;
@@ -139,6 +153,9 @@ export class BlackHole {
       warn(`blackHole(): scale must be > 0, got ${o.scale}`);
       this.scale = 1;
     }
+    this.baseScale = this.scale;
+    this.budget = o.budget ?? 0;
+    this.minScale = Math.min(this.scale, o.minScale ?? 0.5);
     const [w, h] = this.size();
     this.id = core().ak_bh_create(w, h, o.seed ?? 1);
     this.setSize(w, h);
@@ -160,10 +177,15 @@ export class BlackHole {
   }
 
   /** Change the output size (and optionally the internal `scale`). */
-  resize(width: number, height: number, scale = this.scale): this {
+  resize(width: number, height: number, scale = this.baseScale): this {
     this.cssW = width;
     this.cssH = height;
-    this.scale = scale > 0 ? scale : this.scale;
+    if (scale > 0) this.baseScale = this.scale = scale;
+    this.minScale = Math.min(this.minScale, this.baseScale);
+    return this.applySize();
+  }
+
+  private applySize(): this {
     const [w, h] = this.size();
     if (w !== this.w || h !== this.h) {
       if (this.id >= 0) core().ak_bh_resize(this.id, w, h);
@@ -216,8 +238,28 @@ export class BlackHole {
       }
       this.ctx.putImageData(this.img, 0, 0);
     }
-    this.last.ms = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0;
+    const ms = (this.last.ms = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0);
+    if (this.budget > 0) this.adapt(ms);
     return px;
+  }
+
+  private adapt(ms: number): void {
+    this.ema = this.ema ? this.ema * 0.8 + ms * 0.2 : ms;
+    if (++this.sinceAdapt < 8) return;
+    let next = this.scale;
+    if (this.ema > this.budget * 1.1 && this.scale > this.minScale) next = Math.max(this.minScale, this.scale * 0.85);
+    else if (this.ema < this.budget * 0.55 && this.scale < this.baseScale && this.sinceAdapt > 60) next = Math.min(this.baseScale, this.scale / 0.85);
+    if (next !== this.scale) {
+      this.scale = next;
+      this.sinceAdapt = 0;
+      this.ema = 0;
+      this.applySize();
+    }
+  }
+
+  /** Current internal scale (lower than the requested one while the frame budget is exceeded). */
+  get currentScale(): number {
+    return this.scale;
   }
 
   /** Counters and timing from the last frame. */

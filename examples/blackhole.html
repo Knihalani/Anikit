@@ -30,7 +30,7 @@
   let bh;
   const make = () => {
     bh?.destroy();
-    bh = blackHole({ canvas: '#c', width: innerWidth, height: innerHeight, mode, scale });
+    bh = blackHole({ canvas: '#c', width: innerWidth, height: innerHeight, mode, scale, budget: Number(params.get('budget') || 14), minScale: 0.45 });
     document.getElementById('mode').textContent = mode === 'physical' ? 'cinematic' : 'physical';
   };
   make();
