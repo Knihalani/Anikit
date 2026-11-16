@@ -871,7 +871,9 @@ export class Scene {
       if (i !== gl.INVALID_INDEX) gl.uniformBlockBinding(p, i, 0);
     }
     this.emptyVao = gl.createVertexArray()!;
-    if (this.shadows) this.makeShadowMap();
+    // Without shadows, a 1×1 depth texture still backs the sampler2DShadow (a colour texture on its unit is a GL error).
+    if (!this.shadows) this.shadowSize = 1;
+    this.makeShadowMap();
 
     // Size: read layout once, then follow ResizeObserver (no per-frame layout reads).
     this.dpr = Math.min(this.maxDpr, typeof devicePixelRatio === 'number' ? devicePixelRatio : 1);
@@ -1130,6 +1132,19 @@ export class Scene {
     this.render();
   }
 
+  /**
+   * The pixel ratio the scene renders at (at most `devicePixelRatio`, capped at 2).
+   * Set it to run your own quality governor (with `adaptive: false`).
+   */
+  get pixelRatio(): number {
+    return this.dpr;
+  }
+  set pixelRatio(r: number) {
+    const base = Math.min(2, typeof devicePixelRatio === 'number' ? devicePixelRatio : 1);
+    this.dpr = Math.max(0.25, Math.min(base, r));
+    this.resize();
+  }
+
   private govern(): void {
     const ms = this.stats.frameMs;
     if (ms > 22) { this.slow++; this.fast = 0; } else if (ms < 17.5) { this.fast++; this.slow = 0; } else { this.slow = this.fast = 0; }
@@ -1373,10 +1388,8 @@ export class Scene {
       gl.uniform4f(prog.u.uColor, m.color[0], m.color[1], m.color[2], Math.max(0, Math.min(1, m.opacity)));
       gl.uniform4f(prog.u.uPbr, m.metalness, m.roughness, m.emissiveIntensity, m.glass ? 2 : m.toon ? 1 : 0);
       gl.uniform3f(prog.u.uEmissive, m.emissive[0], m.emissive[1], m.emissive[2]);
-      if (this.shadows) {
-        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.shadowTex);
-        gl.uniform1i(prog.u.uShadow, 0);
-      }
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.shadowTex);
+      gl.uniform1i(prog.u.uShadow, 0);
       this.stats.triangles += (g.count / 3) * (isI ? (o as InstancedMesh).count : 1);
     }
     if (isI) gl.drawElementsInstanced(gl.TRIANGLES, g.count, g.type, 0, (o as InstancedMesh).count);

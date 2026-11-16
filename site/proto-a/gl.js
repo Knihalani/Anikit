@@ -39,7 +39,7 @@ void main() {
   vec3 base = mix(side, uInk, face);
   float lit = mix(1.0, 0.62 + 0.55 * d, uE);
   vec3 h = normalize(L + vec3(0.0, 0.0, 1.0));
-  float spec = pow(max(dot(n, h), 0.0), 40.0) * 0.35 * uE * (1.0 - face * 0.6);
+  float spec = pow(max(dot(n, h), 0.0), 40.0) * 0.35 * uE * (1.0 - face);
   o = vec4(base * lit + spec, 1.0);
 }`;
 
@@ -133,8 +133,8 @@ function compile(gl, vs, fs) {
 
 const hex = (h) => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255];
 
-export function createGL(canvas) {
-  const gl = canvas.getContext('webgl2', { antialias: true, alpha: true, premultipliedAlpha: false, powerPreference: 'high-performance' });
+export function createGL(canvas, shared) {
+  const gl = shared || canvas.getContext('webgl2', { antialias: true, alpha: true, premultipliedAlpha: false, powerPreference: 'high-performance' });
   if (!gl) return null;
   const letter = compile(gl, LETTER_VS, LETTER_FS);
   const ripple = compile(gl, RIPPLE_VS, RIPPLE_FS);
@@ -171,7 +171,7 @@ export function createGL(canvas) {
     resize(vw, vh, scale) {
       dpr = scale;
       const w = Math.round(vw * dpr), h = Math.round(vh * dpr);
-      if (w !== W || h !== H) { W = canvas.width = w; H = canvas.height = h; }
+      if (!shared && (w !== W || h !== H)) { W = canvas.width = w; H = canvas.height = h; }
       view[0] = vw; view[1] = vh; view[2] = (vh / 2) / Math.tan((22 * Math.PI) / 180);
     },
     /** Upload a mesh from anikit (`Mesh3D.arrays()`). */
@@ -273,7 +273,7 @@ export function createGL(canvas) {
       gl.uniform4f(u.uRect, x, y, w, h);
       gl.uniform4fv(u.uRip, ripData);
       gl.uniform1i(u.uN, n);
-      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, codeTex); gl.uniform1i(u.uTex, 0);
+      gl.activeTexture(gl.TEXTURE12); gl.bindTexture(gl.TEXTURE_2D, codeTex); gl.uniform1i(u.uTex, 12); gl.activeTexture(gl.TEXTURE0);
       gl.bindVertexArray(quad);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     },
@@ -285,7 +285,7 @@ export function createGL(canvas) {
       gl.uniform4f(u.uRect, x, y, w, h);
       gl.uniform1f(u.uE, e);
       gl.uniform2f(u.uO, ox, oy);
-      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, panelTex); gl.uniform1i(u.uTex, 0);
+      gl.activeTexture(gl.TEXTURE12); gl.bindTexture(gl.TEXTURE_2D, panelTex); gl.uniform1i(u.uTex, 12); gl.activeTexture(gl.TEXTURE0);
       gl.bindVertexArray(s.vao);
       gl.drawArrays(gl.TRIANGLES, 0, s.count);
     },

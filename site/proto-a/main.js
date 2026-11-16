@@ -1,4 +1,4 @@
-import { init, engine, animate, timeline, stagger, splitText, scrollTrigger, world, flip, mesh, htmlCanvas } from '../../packages/anikit/dist/anikit.lean.js';
+import { init, engine, animate, timeline, stagger, splitText, scrollTrigger, world, flip, mesh, htmlCanvas, scene } from '../../packages/anikit/dist/anikit.lean.js';
 import { createGL } from './gl.js';
 import { paint } from './paint.js';
 
@@ -22,11 +22,19 @@ await document.fonts.ready;
 
 // ─── WebGL overlay ─────────────────────────────────────────────────────────
 const canvas = $('#gl');
-const G = createGL(canvas);
+// anikit scene() owns the one WebGL2 context and the frame; the letters, the
+// ripple and the shatter draw into it as scene layers.
+let S = null;
+try {
+  S = scene(canvas, { background: 'transparent', shadows: false, bloom: false, fxaa: false, adaptive: false, autoRender: false,
+    environment: 'studio', camera: { fov: 44, near: 20, far: 10000, position: [0, 0, 1000], target: [0, 0, 0] } });
+} catch { S = null; }
+const G = createGL(canvas, S ? canvas.getContext('webgl2') : null);
 let vw = innerWidth, vh = innerHeight;
 let quality = 0; // 0 best … 4: governor steps down effects before resolution
 const dprFor = () => Math.min(devicePixelRatio || 1, 2) * (quality >= 4 ? 0.6 : quality >= 3 ? 0.8 : 1);
 G?.resize(vw, vh, dprFor());
+function setDpr() { G?.resize(vw, vh, dprFor()); if (S) S.pixelRatio = dprFor(); }
 
 // ─── Perf: frame times and the quality governor ────────────────────────────
 const N = 120, times = new Float64Array(N), sorted = new Float64Array(N);
@@ -46,8 +54,8 @@ function perf(now) {
   if (filled < 60 || now - govClock < 1000) return;
   govClock = now;
   const [p50, p95, max] = stat();
-  if (p95 > 22 && quality < 4 && document.visibilityState === 'visible') { quality++; G?.resize(vw, vh, dprFor()); filled = 0; }
-  else if (p95 < 17.5 && quality > 0 && now - perfText > 6000) { quality--; G?.resize(vw, vh, dprFor()); perfText = now; filled = 0; }
+  if (p95 > 22 && quality < 4 && document.visibilityState === 'visible') { quality++; setDpr(); filled = 0; }
+  else if (p95 < 17.5 && quality > 0 && now - perfText > 6000) { quality--; setDpr(); perfText = now; filled = 0; }
   if (PERF) perfEl.textContent = `p50 ${p50.toFixed(1)} ms\np95 ${p95.toFixed(1)} ms\nmax ${max.toFixed(1)} ms\nquality ${quality}  dpr ${G ? G.dpr.toFixed(2) : '-'}`;
 }
 
@@ -87,9 +95,10 @@ async function buildLetters() {
     await idle();
     const m3 = mesh.text(L.el.textContent, { font, resolution: 110, depth: 0.1, bevel: 0.35 });
     L.aspect = m3.aspect;
-    L.mesh = G.mesh(m3.arrays());
-    m3.free();
     L.sy = L.sx * L.aspect;
+    const arr = m3.arrays();
+    m3.free();
+    L.mesh = G.mesh(arr);
   }
 }
 
@@ -340,7 +349,12 @@ addEventListener('scroll', () => (sy = scrollY), { passive: true });
 let heroRect = { top: 0, bottom: 0 }, codeTop = 0, codeLeft = 0, codeW = 0, codeH = 0;
 function layout() {
   vw = innerWidth; vh = innerHeight;
-  G?.resize(vw, vh, dprFor());
+  setDpr();
+  if (S) {
+    const D = (vh / 2) / Math.tan((22 * Math.PI) / 180);
+    S.camera.position.set(vw / 2, -vh / 2, D);
+    S.camera.target.set(vw / 2, -vh / 2, 0);
+  }
   const h = $('#hero').getBoundingClientRect();
   heroRect = { top: h.top + scrollY, bottom: h.bottom + scrollY };
   const c = src.getBoundingClientRect();
@@ -353,7 +367,24 @@ function layout() {
 let resizeT = 0;
 addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(layout, 120); });
 
-let ready = false;
+let ready = false, drewLast = false;
+const frameState = { letters: false, rip: false, sh: false, e: 0 };
+let panelRect = { left: 0, top: 0, width: 1, height: 1 };
+function drawLayers() {
+  if (frameState.letters) {
+    for (const L of letters) {
+      if (!L.live || !L.mesh) continue;
+      const depth = L.fs * 0.1 * L.e;
+      const cy = L.cy - sy;
+      G.letter(L.mesh, L.cx - scrollX, cy, L.sx, L.sy, depth, L.rx, L.ry, L.e, 1);
+      if (L.e > 1e-3) G.letter(L.mesh, L.cx - scrollX, cy, L.sx, L.sy, depth, L.rx, L.ry, L.e, -1);
+      G.clearDepth();
+    }
+  }
+  if (frameState.rip) G.ripple(codeLeft - scrollX, codeTop - sy, codeW, codeH, rips, quality >= 1 ? 6 : MAXR);
+  if (frameState.sh) G.shatter(shards, panelRect.left, panelRect.top, panelRect.width, panelRect.height, frameState.e, origin[0], origin[1]);
+}
+if (S) S.add({ render() { drawLayers(); } });
 engine.onFrame((now, dtMs) => {
   perf(now);
   const dt = Math.min(dtMs, 50) / 1000;
@@ -369,25 +400,20 @@ engine.onFrame((now, dtMs) => {
   const e = Math.max(fe * 0.55, burst.e);
   const sh = e > 1e-4 && panelPainted;
   if (sh !== shatterOn) { shatterOn = sh; panel.classList.toggle('live', sh); if (sh && burst.e < 1e-4) origin = [vw * 0.5, vh * 0.55]; }
+  if (shatterOn) panelRect = panel.getBoundingClientRect();
   writeCards();
   drawFold();
   if (!G) return;
+  frameState.rip = ripOn; frameState.sh = shatterOn; frameState.e = e;
+  frameState.letters = lettersLive;
+  if (S) {
+    const any = lettersLive || ripOn || shatterOn;
+    if (any || drewLast) S.render();
+    drewLast = any;
+    return;
+  }
   G.begin();
-  if (lettersLive) {
-    for (const L of letters) {
-      if (!L.live || !L.mesh) continue;
-      const depth = L.fs * 0.1 * L.e;
-      const cy = L.cy - sy;
-      G.letter(L.mesh, L.cx - scrollX, cy, L.sx, L.sy, depth, L.rx, L.ry, L.e, 1);
-      if (L.e > 1e-3) G.letter(L.mesh, L.cx - scrollX, cy, L.sx, L.sy, depth, L.rx, L.ry, L.e, -1);
-      G.clearDepth();
-    }
-  }
-  if (ripOn) G.ripple(codeLeft - scrollX, codeTop - sy, codeW, codeH, rips, quality >= 1 ? 6 : MAXR);
-  if (shatterOn) {
-    const r = panel.getBoundingClientRect();
-    G.shatter(shards, r.left, r.top, r.width, r.height, e, origin[0], origin[1]);
-  }
+  drawLayers();
 });
 
 // ─── Start: paint first, pre-warm everything, then come alive ──────────────
@@ -398,11 +424,22 @@ if (G) {
   await idle(); await paintCode();
   await idle(); await paintPanel();
   // Pre-warm every program once, off-screen, so the first real frame doesn't compile.
-  G.begin();
-  G.letter(letters[0].mesh, -9999, -9999, 1, 1, 1, 0, 0, 1, 1);
-  G.ripple(-9999, -9999, 1, 1, rips, 1);
-  G.shatter(shards, -9999, -9999, 1, 1, 0.5, 0, 0);
-  G.begin();
+  if (S) {
+    // Pre-warm every program once, off-screen, then clear.
+    const keep = [letters[0].cx, codeLeft];
+    letters[0].cx = -99999; codeLeft = -99999; letters[0].live = true;
+    frameState.letters = frameState.rip = frameState.sh = true; panelRect = { left: -99999, top: -99999, width: 1, height: 1 };
+    S.render();
+    [letters[0].cx, codeLeft] = keep; letters[0].live = false;
+    frameState.letters = frameState.rip = frameState.sh = false;
+    S.render();
+  } else {
+    G.begin();
+    G.letter(letters[0].mesh, -9999, -9999, 1, 1, 1, 0, 0, 1, 1);
+    G.ripple(-9999, -9999, 1, 1, rips, 1);
+    G.shatter(shards, -9999, -9999, 1, 1, 0.5, 0, 0);
+    G.begin();
+  }
   ready = true;
   if (!reduce) {
     // The introduction: letters rise out of the paper, turn once, and settle back.
@@ -410,4 +447,4 @@ if (G) {
     animate(intro, { on: [0, 1, 1, 0] }, { duration: 3.4, ease: 'inOutSine', delay: 0.2 });
   }
 }
-window.__proto = { addRipple, drop, tidy, letters, cards, foldState, fin, burst, get quality() { return quality; } };
+window.__proto = { S, addRipple, drop, tidy, letters, cards, foldState, fin, burst, get quality() { return quality; } };
