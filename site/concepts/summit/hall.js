@@ -15,18 +15,23 @@ const SUN = [0.72, -0.62, -0.3];
 const FOG = [0.55, 0.49, 0.42];
 const SPAWN = [0, 1.7, 12];
 const PI2 = Math.PI * 2;
+// floor contact shadows under station bases: x, z, radius, strength
+const BLOBS = new Float32Array([
+  -4.6, 4.2, 1.4, 0.3,   5.4, 4.2, 1.9, 0.35,   -6.35, -6.5, 2.0, 0.35,
+  4.6, -6.5, 2.3, 0.3,   0, -16, 1.8, 0.35,     0, -25.6, 3.2, 0.25,
+]);
 
 // hall extents
 const HX = 8, HZ0 = -28, HZ1 = 16, HY = 12;
 
 // stations (positions in metres)
 const ST = [
-  { id: 'springs', name: 'Springs', hint: 'Walk past — they follow · E to scatter', x: -4.6, z: 4.2, r: 4.2 },
-  { id: 'bench', name: 'Benchmarks', hint: 'Numbers from README.md · E to replay', x: 4.8, z: 4.2, r: 3.6 },
-  { id: 'physics', name: 'Physics · world()', hint: 'Click or E to throw the balls', x: -5.2, z: -6.5, r: 3.8 },
-  { id: 'blocks', name: 'Timeline + stagger', hint: 'Click or E for the next wave', x: 4.6, z: -6.5, r: 3.8 },
-  { id: 'cloud', name: 'Particles · 100k points', hint: 'Click or E to morph', x: 0, z: -16, r: 4.8 },
-  { id: 'text', name: 'Keyframes', hint: 'Click or E to play the letters', x: 0, z: -23.2, r: 4.6 },
+  { id: 'springs', name: 'Springs', hint: 'Walk past — they follow · E to scatter', x: -4.6, z: 4.2, r: 4.2, ring: 1.75 },
+  { id: 'bench', name: 'Benchmarks', hint: 'Numbers from README.md · E to replay', x: 4.8, z: 4.2, r: 3.6, ring: 0 },
+  { id: 'physics', name: 'Physics · world()', hint: 'Click or E to throw the balls', x: -5.2, z: -6.5, r: 3.8, ring: 0 },
+  { id: 'blocks', name: 'Timeline + stagger', hint: 'Click or E for the next wave', x: 4.6, z: -6.5, r: 3.8, ring: 2.95 },
+  { id: 'cloud', name: 'Particles · 100k points', hint: 'Click or E to morph', x: 0, z: -16, r: 4.8, ring: 2.2 },
+  { id: 'text', name: 'Keyframes', hint: 'Click or E to play the letters', x: 0, z: -23.2, r: 4.6, ring: 0 },
 ];
 
 export function createHall(canvas, overlayEl) {
@@ -545,6 +550,10 @@ export function createHall(canvas, overlayEl) {
       setCommon(progFloor, 1);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.uniform4fv(progFloor.u.uBlob, BLOBS);
+      let ri = 0;
+      for (let i = 1; i < ST.length; i++) if (wake[i].v > wake[ri].v) ri = i;
+      gl.uniform4f(progFloor.u.uRing, ST[ri].x, ST[ri].z, ST[ri].ring, ST[ri].ring > 0 ? wake[ri].v : 0);
       gl.bindVertexArray(floorVao);
       gl.disable(gl.CULL_FACE);
       gl.drawArrays(gl.TRIANGLES, 0, 6);

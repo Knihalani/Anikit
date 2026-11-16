@@ -109,6 +109,8 @@ void main() { vW = vec3(aXZ.x, 0.0, aXZ.y); gl_Position = uVP * vec4(vW, 1.0); }
 export const FLOOR_FS = /* glsl */ `#version 300 es
 precision highp float;
 ${LIGHT}
+uniform vec4 uBlob[6];
+uniform vec4 uRing;
 in vec3 vW;
 out vec4 o;
 float h(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -130,7 +132,18 @@ void main() {
   // grout
   vec2 g = abs(fract(p / 2.0) - 0.5);
   a *= mix(0.82, 1.0, smoothstep(0.485, 0.47, max(g.x, g.y)));
-  vec3 col = shade(vW, vec3(0, 1, 0), a * a, 0.0, 0.0, length(uEye - vW));
+  // contact shadows: columns (analytic grid) and station bases
+  float zc = floor((p.y - 11.0) / 5.0 + 0.5) * 5.0 + 11.0;
+  float dc = length(vec2(abs(p.x) - 7.0, p.y - zc));
+  float sh = mix(0.5, 1.0, smoothstep(0.55, 1.7, dc));
+  for (int i = 0; i < 6; i++) {
+    float d = length(p - uBlob[i].xy);
+    sh *= mix(1.0 - uBlob[i].w, 1.0, smoothstep(uBlob[i].z * 0.7, uBlob[i].z * 1.35, d));
+  }
+  vec3 col = shade(vW, vec3(0, 1, 0), a * a * sh, 0.0, 0.0, length(uEye - vW));
+  // a soft ring of light around the station you are at
+  float dr = abs(length(p - uRing.xy) - uRing.z);
+  col += vec3(1.0, 0.62, 0.28) * uRing.w * (exp(-dr * dr * 900.0) * 1.1 + exp(-dr * 7.0) * 0.12);
   vec3 V = normalize(uEye - vW);
   float fres = pow(1.0 - V.y, 5.0);
   float refl = clamp(0.14 + 0.32 * fres, 0.0, 0.42) * (1.0 - 0.35 * chk);
