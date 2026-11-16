@@ -10,6 +10,7 @@
 //! composited as an image; a `cache_key` keeps that bitmap for the next frame.
 
 pub mod assets;
+pub mod blur;
 pub mod diff;
 pub mod filter;
 pub mod trim;
