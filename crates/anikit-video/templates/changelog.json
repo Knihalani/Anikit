@@ -236,7 +236,7 @@
                   {
                     "text": "{{product}} {{version}}",
                     "style": "label",
-                    "y": "{{fmt.cy + fmt.u * 4 - (len(group) * (fmt.portrait ? 19 : 11.5) + (len(group) - 1) * 2.2) * fmt.u / 2 - fmt.u * 6}}",
+                    "y": "{{fmt.cy + fmt.u * 4 - (len(group) * (fmt.portrait ? 19 : 13) + (len(group) - 1) * 2.2) * fmt.u / 2 - fmt.u * 6}}",
                     "enter": "fadeIn"
                   },
                   {
@@ -269,7 +269,7 @@
                               "align": "{{fmt.portrait ? 'start' : 'center'}}",
                               "justify": "start",
                               "padding": [
-                                "{{fmt.u * (fmt.portrait ? 2.6 : 3)}}",
+                                "{{fmt.u * (fmt.portrait ? 2.6 : 3.4)}}",
                                 "{{fmt.u * 3.2}}"
                               ],
                               "background": "$surface",
@@ -284,7 +284,7 @@
                             "children": [
                               {
                                 "type": "box",
-                                "width": "{{fmt.u * (fmt.portrait ? 25 : 20)}}",
+                                "width": "{{fmt.u * (fmt.portrait ? 27 : 21)}}",
                                 "style": {
                                   "padding": [
                                     "{{fmt.u * 0.7}}",
@@ -299,6 +299,8 @@
                                   {
                                     "text": "{{kind}}",
                                     "style": "label",
+                                    "size": "{{fmt.portrait ? '3vmin' : '2.3vmin'}}",
+                                    "letterSpacing": "0.1em",
                                     "color": "{{mix(c, brand.colors.text, 0.5)}}"
                                   }
                                 ]
@@ -308,8 +310,8 @@
                                 "style": "body",
                                 "weight": 600,
                                 "align": "left",
-                                "width": "{{fmt.portrait ? fmt.safe.w - fmt.u * 6.4 : fmt.w * 0.66 - fmt.u * 29}}",
-                                "size": "{{fmt.portrait ? '4.6vmin' : '3.7vmin'}}"
+                                "width": "{{fmt.portrait ? fmt.safe.w - fmt.u * 6.4 : fmt.w * 0.66 - fmt.u * 31}}",
+                                "size": "{{fmt.portrait ? '4.6vmin' : '4.4vmin'}}"
                               }
                             ]
                           }

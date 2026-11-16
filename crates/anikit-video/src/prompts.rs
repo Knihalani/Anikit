@@ -120,8 +120,8 @@ pub fn template_guide(t: &Template) -> String {
         }
     }
     out += &format!(
-        "\n## Example parameters\n\n```json\n{}\n```\n\n## Make it\n\n```bash\nanikit-video new {name} --brand brand.json            # scaffolds {name}/params.json from this example\nanikit-video templates expand {name} {name}/params.json --brand brand.json --format 16:9 -o {name}/spec.json\nanikit-video critique {name}/spec.json && anikit-video preview {name}/spec.json -o {name}/sheet.png\nanikit-video render {name}/spec.json -o {name}.mp4\n```\n\nMCP: `create_from_template` with `{{\"template\": \"{name}\", \"params\": {{…}}, \"brand\": {{…}}, \"format\": \"9:16\"}}`.\n",
-        serde_json::to_string_pretty(&t.example_params()).unwrap_or_default(),
+        "\n## Example\n\n```json\n{}\n```\n\nCreate: MCP `create_from_template {{template: \"{name}\", params, brand, format}}`, or `anikit-video templates expand {name} params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.\n",
+        t.example_params().to_string(),
         name = t.name
     );
     if let Some(tips) = d.get("tips").and_then(|x| x.as_array()) {
@@ -130,7 +130,6 @@ pub fn template_guide(t: &Template) -> String {
             out += &format!("- {tip}\n");
         }
     }
-    out += "\n## Copy rules (all templates)\n\n- The hook or first line is readable within 2 s: 3–7 words, never \"Introducing…\".\n- Every limit above is a reading-time budget: about 3 words per second plus 1 s. Cut words; don't shrink type.\n- Benefits with real numbers; no filler (seamless, revolutionary, unlock, leverage).\n- Run `anikit-video critique` and fix every warning before rendering.\n";
     out
 }
 

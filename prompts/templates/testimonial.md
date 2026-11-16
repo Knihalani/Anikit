@@ -24,43 +24,10 @@ description: How to fill the 'testimonial' template well.
 | `url` | string |  | ≤ 32 chars | Address on the end card. Default: the brand kit's `voice.url`. |
 | `music` | string |  |  | Optional music file. Warm, mid-tempo (80–110 BPM) suits testimonials. |
 
-## Example parameters
+## Example
 
 ```json
-{
-  "headline": "Loved by 4,000 teams",
-  "quotes": [
-    {
-      "quote": "We replaced a week of motion work with one prompt. The renders are faster than our preview used to be.",
-      "author": "Maya Okafor",
-      "role": "Head of Growth, Fieldnote",
-      "rating": 5
-    },
-    {
-      "quote": "It just does what the spec says. Every time.",
-      "author": "Jonas Berg",
-      "role": "Staff Engineer, Tiller"
-    }
-  ],
-  "cta": "Join them",
-  "url": "fieldnote.app"
-}
+{"headline":"Loved by 4,000 teams","quotes":[{"quote":"We replaced a week of motion work with one prompt. The renders are faster than our preview used to be.","author":"Maya Okafor","role":"Head of Growth, Fieldnote","rating":5},{"quote":"It just does what the spec says. Every time.","author":"Jonas Berg","role":"Staff Engineer, Tiller"}],"cta":"Join them","url":"fieldnote.app"}
 ```
 
-## Make it
-
-```bash
-anikit-video new testimonial --brand brand.json            # scaffolds testimonial/params.json from this example
-anikit-video templates expand testimonial testimonial/params.json --brand brand.json --format 16:9 -o testimonial/spec.json
-anikit-video critique testimonial/spec.json && anikit-video preview testimonial/spec.json -o testimonial/sheet.png
-anikit-video render testimonial/spec.json -o testimonial.mp4
-```
-
-MCP: `create_from_template` with `{"template": "testimonial", "params": {…}, "brand": {…}, "format": "9:16"}`.
-
-## Copy rules (all templates)
-
-- The hook or first line is readable within 2 s: 3–7 words, never "Introducing…".
-- Every limit above is a reading-time budget: about 3 words per second plus 1 s. Cut words; don't shrink type.
-- Benefits with real numbers; no filler (seamless, revolutionary, unlock, leverage).
-- Run `anikit-video critique` and fix every warning before rendering.
+Create: MCP `create_from_template {template: "testimonial", params, brand, format}`, or `anikit-video templates expand testimonial params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.

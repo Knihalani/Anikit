@@ -27,56 +27,10 @@ A title card, then 2–6 steps, each with a step number, a one-line explanation 
 | `url` | string |  | ≤ 32 chars | Address on the end card. Default: the brand kit's `voice.url`. |
 | `music` | string |  |  | Optional music file. Calm and low (lo-fi, 70–95 BPM) so it doesn't fight the reading. |
 
-## Example parameters
+## Example
 
 ```json
-{
-  "title": "Render a video from JSON in 3 steps",
-  "subtitle": "No browser, no timeline editor. Two minutes.",
-  "language": "bash",
-  "steps": [
-    {
-      "title": "Install the CLI",
-      "body": "One binary, no browser to download.",
-      "code": "cargo install anikit-video",
-      "language": "bash"
-    },
-    {
-      "title": "Describe your video",
-      "body": "Scenes and layers in plain JSON.",
-      "code": "{\n  \"scenes\": [\n    { \"layers\": [\n      { \"text\": \"Hello\", \"enter\": \"fadeUp\" }\n    ] }\n  ]\n}",
-      "language": "json",
-      "highlight": [
-        4
-      ]
-    },
-    {
-      "title": "Render it",
-      "body": "Every core, straight to MP4.",
-      "code": "anikit-video render hello.json -o hello.mp4",
-      "language": "bash"
-    }
-  ],
-  "recap": "Your first video, in under a minute.",
-  "cta": "Read the docs",
-  "url": "anikit.dev/docs"
-}
+{"title":"Render a video from JSON in 3 steps","subtitle":"No browser, no timeline editor. Two minutes.","language":"bash","steps":[{"title":"Install the CLI","body":"One binary, no browser to download.","code":"cargo install anikit-video","language":"bash"},{"title":"Describe your video","body":"Scenes and layers in plain JSON.","code":"{\n  \"scenes\": [\n    { \"layers\": [\n      { \"text\": \"Hello\", \"enter\": \"fadeUp\" }\n    ] }\n  ]\n}","language":"json","highlight":[4]},{"title":"Render it","body":"Every core, straight to MP4.","code":"anikit-video render hello.json -o hello.mp4","language":"bash"}],"recap":"Your first video, in under a minute.","cta":"Read the docs","url":"anikit.dev/docs"}
 ```
 
-## Make it
-
-```bash
-anikit-video new tutorial --brand brand.json            # scaffolds tutorial/params.json from this example
-anikit-video templates expand tutorial tutorial/params.json --brand brand.json --format 16:9 -o tutorial/spec.json
-anikit-video critique tutorial/spec.json && anikit-video preview tutorial/spec.json -o tutorial/sheet.png
-anikit-video render tutorial/spec.json -o tutorial.mp4
-```
-
-MCP: `create_from_template` with `{"template": "tutorial", "params": {…}, "brand": {…}, "format": "9:16"}`.
-
-## Copy rules (all templates)
-
-- The hook or first line is readable within 2 s: 3–7 words, never "Introducing…".
-- Every limit above is a reading-time budget: about 3 words per second plus 1 s. Cut words; don't shrink type.
-- Benefits with real numbers; no filler (seamless, revolutionary, unlock, leverage).
-- Run `anikit-video critique` and fix every warning before rendering.
+Create: MCP `create_from_template {template: "tutorial", params, brand, format}`, or `anikit-video templates expand tutorial params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.

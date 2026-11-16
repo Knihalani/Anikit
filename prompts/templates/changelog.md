@@ -24,51 +24,10 @@ A 12–25 s release recap: a version badge as the hook, then 3–6 changes build
 | `url` | string |  | ≤ 32 chars | Where to read the full notes. Default: the brand kit's `voice.url`. |
 | `music` | string |  |  | Optional music file (MP3/WAV). |
 
-## Example parameters
+## Example
 
 ```json
-{
-  "product": "Anikit",
-  "version": "v2.4",
-  "title": "What's new",
-  "date": "November 2026",
-  "items": [
-    {
-      "type": "new",
-      "text": "Vertical video templates"
-    },
-    {
-      "type": "new",
-      "text": "MCP server for agents"
-    },
-    {
-      "type": "improved",
-      "text": "Stills render in 40 ms"
-    },
-    {
-      "type": "fixed",
-      "text": "Emoji in captions"
-    }
-  ],
-  "cta": "Update now",
-  "url": "anikit.dev/changelog"
-}
+{"product":"Anikit","version":"v2.4","title":"What's new","date":"November 2026","items":[{"type":"new","text":"Vertical video templates"},{"type":"new","text":"MCP server for agents"},{"type":"improved","text":"Stills render in 40 ms"},{"type":"fixed","text":"Emoji in captions"}],"cta":"Update now","url":"anikit.dev/changelog"}
 ```
 
-## Make it
-
-```bash
-anikit-video new changelog --brand brand.json            # scaffolds changelog/params.json from this example
-anikit-video templates expand changelog changelog/params.json --brand brand.json --format 16:9 -o changelog/spec.json
-anikit-video critique changelog/spec.json && anikit-video preview changelog/spec.json -o changelog/sheet.png
-anikit-video render changelog/spec.json -o changelog.mp4
-```
-
-MCP: `create_from_template` with `{"template": "changelog", "params": {…}, "brand": {…}, "format": "9:16"}`.
-
-## Copy rules (all templates)
-
-- The hook or first line is readable within 2 s: 3–7 words, never "Introducing…".
-- Every limit above is a reading-time budget: about 3 words per second plus 1 s. Cut words; don't shrink type.
-- Benefits with real numbers; no filler (seamless, revolutionary, unlock, leverage).
-- Run `anikit-video critique` and fix every warning before rendering.
+Create: MCP `create_from_template {template: "changelog", params, brand, format}`, or `anikit-video templates expand changelog params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.

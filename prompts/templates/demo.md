@@ -26,54 +26,10 @@ A 15–35 s walkthrough: a title hook, then 2–5 steps, each a screenshot in a 
 | `cta` | string |  | ≤ 4 words | Call to action on the end card. Default: the brand kit's `voice.cta`. |
 | `music` | string |  |  | Optional music file (MP3/WAV). |
 
-## Example parameters
+## Example
 
 ```json
-{
-  "product": "Anikit Studio",
-  "title": "From prompt to video in 3 clicks",
-  "device": "browser",
-  "url": "studio.anikit.dev",
-  "steps": [
-    {
-      "image": "step1.png",
-      "title": "Pick a template",
-      "callout": "Launch",
-      "x": 0.3,
-      "y": 0.4
-    },
-    {
-      "image": "step2.png",
-      "title": "Drop in your brand kit",
-      "x": 0.7,
-      "y": 0.6
-    },
-    {
-      "image": "step3.png",
-      "title": "Render in seconds",
-      "callout": "Render",
-      "x": 0.82,
-      "y": 0.18
-    }
-  ],
-  "cta": "Try the demo"
-}
+{"product":"Anikit Studio","title":"From prompt to video in 3 clicks","device":"browser","url":"studio.anikit.dev","steps":[{"image":"step1.png","title":"Pick a template","callout":"Launch","x":0.3,"y":0.4},{"image":"step2.png","title":"Drop in your brand kit","x":0.7,"y":0.6},{"image":"step3.png","title":"Render in seconds","callout":"Render","x":0.82,"y":0.18}],"cta":"Try the demo"}
 ```
 
-## Make it
-
-```bash
-anikit-video new demo --brand brand.json            # scaffolds demo/params.json from this example
-anikit-video templates expand demo demo/params.json --brand brand.json --format 16:9 -o demo/spec.json
-anikit-video critique demo/spec.json && anikit-video preview demo/spec.json -o demo/sheet.png
-anikit-video render demo/spec.json -o demo.mp4
-```
-
-MCP: `create_from_template` with `{"template": "demo", "params": {…}, "brand": {…}, "format": "9:16"}`.
-
-## Copy rules (all templates)
-
-- The hook or first line is readable within 2 s: 3–7 words, never "Introducing…".
-- Every limit above is a reading-time budget: about 3 words per second plus 1 s. Cut words; don't shrink type.
-- Benefits with real numbers; no filler (seamless, revolutionary, unlock, leverage).
-- Run `anikit-video critique` and fix every warning before rendering.
+Create: MCP `create_from_template {template: "demo", params, brand, format}`, or `anikit-video templates expand demo params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.

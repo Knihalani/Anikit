@@ -19,31 +19,10 @@ A restrained 3–6 s brand sting: the logo (or the name as a wordmark) revealed 
 | `duration` | seconds |  |  | Total length in seconds. Default: `4`. |
 | `music` | string |  |  | Optional sting or whoosh sound. |
 
-## Example parameters
+## Example
 
 ```json
-{
-  "style": "glow",
-  "name": "Anikit",
-  "tagline": "Motion, compiled.",
-  "duration": 4
-}
+{"style":"glow","name":"Anikit","tagline":"Motion, compiled.","duration":4}
 ```
 
-## Make it
-
-```bash
-anikit-video new logo-reveal --brand brand.json            # scaffolds logo-reveal/params.json from this example
-anikit-video templates expand logo-reveal logo-reveal/params.json --brand brand.json --format 16:9 -o logo-reveal/spec.json
-anikit-video critique logo-reveal/spec.json && anikit-video preview logo-reveal/spec.json -o logo-reveal/sheet.png
-anikit-video render logo-reveal/spec.json -o logo-reveal.mp4
-```
-
-MCP: `create_from_template` with `{"template": "logo-reveal", "params": {…}, "brand": {…}, "format": "9:16"}`.
-
-## Copy rules (all templates)
-
-- The hook or first line is readable within 2 s: 3–7 words, never "Introducing…".
-- Every limit above is a reading-time budget: about 3 words per second plus 1 s. Cut words; don't shrink type.
-- Benefits with real numbers; no filler (seamless, revolutionary, unlock, leverage).
-- Run `anikit-video critique` and fix every warning before rendering.
+Create: MCP `create_from_template {template: "logo-reveal", params, brand, format}`, or `anikit-video templates expand logo-reveal params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.

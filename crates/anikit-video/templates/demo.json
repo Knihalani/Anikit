@@ -82,8 +82,8 @@
         "do": {
           "$let": {
             "phone": "device == 'phone'",
-            "devY": "fmt.h * (fmt.landscape ? 0.585 : 0.56)",
-            "dw": "phone ? (fmt.landscape ? fmt.h * 0.3 : (fmt.portrait ? fmt.safe.w * 0.62 : fmt.h * 0.3)) * 0.93 : (fmt.landscape ? fmt.w * 0.6 : fmt.safe.w)",
+            "devY": "fmt.h * (fmt.landscape ? 0.59 : (fmt.portrait ? 0.53 : 0.56))",
+            "dw": "phone ? (fmt.landscape ? fmt.h * 0.3 : (fmt.portrait ? fmt.safe.w * 0.62 : fmt.h * 0.3)) * 0.93 : (fmt.landscape ? fmt.w * 0.54 : fmt.safe.w)",
             "pw": "dw / 0.93",
             "dh": "phone ? pw * 1.98 : dw * 0.6",
             "bar": "fmt.u * 4.4",
@@ -101,8 +101,8 @@
             "duration": "{{readtime(st.title + ' ' + (st.callout ?? '')) + 2.2}}",
             "layers": [
               { "$use": "glows", "with": { "strength": 0.5, "gx": "50%", "gy": "60%" } },
-              { "id": "step-label", "text": "Step {{i + 1}}", "style": "label", "y": "{{fmt.safe.top + fmt.u * 1.5}}", "enter": "fadeUp" },
-              { "id": "step-title", "text": "{{st.title}}", "style": "heading", "y": "{{fmt.safe.top + fmt.u * (fmt.portrait ? 9 : 7.5)}}", "width": "{{fmt.safe.w}}", "enter": { "preset": "fadeUp", "delay": 0.1, "ease": "outExpo" } },
+              { "id": "step-label", "text": "Step {{i + 1}}", "style": "label", "y": "{{fmt.portrait ? fmt.h * 0.25 : fmt.safe.top + fmt.u * 1.5}}", "enter": "fadeUp" },
+              { "id": "step-title", "text": "{{st.title}}", "style": "heading", "y": "{{fmt.portrait ? fmt.h * 0.25 + fmt.u * 8 : fmt.safe.top + fmt.u * 7.5}}", "width": "{{fmt.safe.w}}", "enter": { "preset": "fadeUp", "delay": 0.1, "ease": "outExpo" } },
               {
                 "$if": "phone",
                 "then": { "$use": "phone", "with": { "src": "{{st.image}}", "width": "{{pw}}" }, "y": "{{devY}}", "enter": { "$if": "i == 0", "then": { "preset": "slideUp", "duration": 0.8 } } },

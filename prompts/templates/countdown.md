@@ -23,35 +23,10 @@ An event intro (name, date, place), a big N…1 countdown where each number pops
 | `cta` | string |  | ≤ 4 words | Optional button on the end card. |
 | `music` | string |  |  | Optional music; a track with a clear downbeat makes each number land. |
 
-## Example parameters
+## Example
 
 ```json
-{
-  "event": "Launch Week Day 1",
-  "kicker": "Live stream",
-  "date": "Thu 12 Dec · 17:00 UTC",
-  "location": "youtube.com/@anikit",
-  "from": 5,
-  "live": true,
-  "liveText": "We're live",
-  "cta": "Join the stream"
-}
+{"event":"Launch Week Day 1","kicker":"Live stream","date":"Thu 12 Dec · 17:00 UTC","location":"youtube.com/@anikit","from":5,"live":true,"liveText":"We're live","cta":"Join the stream"}
 ```
 
-## Make it
-
-```bash
-anikit-video new countdown --brand brand.json            # scaffolds countdown/params.json from this example
-anikit-video templates expand countdown countdown/params.json --brand brand.json --format 16:9 -o countdown/spec.json
-anikit-video critique countdown/spec.json && anikit-video preview countdown/spec.json -o countdown/sheet.png
-anikit-video render countdown/spec.json -o countdown.mp4
-```
-
-MCP: `create_from_template` with `{"template": "countdown", "params": {…}, "brand": {…}, "format": "9:16"}`.
-
-## Copy rules (all templates)
-
-- The hook or first line is readable within 2 s: 3–7 words, never "Introducing…".
-- Every limit above is a reading-time budget: about 3 words per second plus 1 s. Cut words; don't shrink type.
-- Benefits with real numbers; no filler (seamless, revolutionary, unlock, leverage).
-- Run `anikit-video critique` and fix every warning before rendering.
+Create: MCP `create_from_template {template: "countdown", params, brand, format}`, or `anikit-video templates expand countdown params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.

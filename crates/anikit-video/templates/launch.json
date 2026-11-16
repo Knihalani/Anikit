@@ -19,9 +19,8 @@
     },
     "hook": {
       "type": "string",
-      "required": true,
       "maxWords": 7,
-      "description": "The first line: a tension, a promise or a surprising fact, readable in 2 s. Not the product name.",
+      "description": "Optional opening line: a tension, a promise or a surprising fact, readable in 2 s. Without it the video opens on the product reveal.",
       "example": "Video, without the browser."
     },
     "tagline": {
@@ -135,44 +134,47 @@
     },
     "scenes": [
       {
-        "id": "hook",
-        "duration": "{{max(2.4, readtime(hook) + 0.6 + 0.09 * words(hook))}}",
-        "camera": {
-          "animate": [
+        "$if": "hook",
+        "then": {
+          "id": "hook",
+          "duration": "{{max(2.4, readtime(hook) + 0.6 + 0.09 * words(hook))}}",
+          "camera": {
+            "animate": [
+              {
+                "from": {
+                  "zoom": 1.06
+                },
+                "to": {
+                  "zoom": 1
+                },
+                "duration": "{{max(2.4, readtime(hook) + 0.6 + 0.09 * words(hook))}}",
+                "ease": "outCubic"
+              }
+            ]
+          },
+          "layers": [
             {
-              "from": {
-                "zoom": 1.06
-              },
-              "to": {
-                "zoom": 1
-              },
-              "duration": "{{max(2.4, readtime(hook) + 0.6 + 0.09 * words(hook))}}",
-              "ease": "outCubic"
+              "$use": "glows",
+              "with": {
+                "strength": 0.8
+              }
+            },
+            {
+              "id": "hook",
+              "text": "{{hook}}",
+              "style": "hero",
+              "width": "{{fmt.safe.w}}",
+              "split": "words",
+              "enter": {
+                "preset": "fadeUp",
+                "stagger": 0.09,
+                "duration": 0.7,
+                "ease": "outExpo",
+                "distance": "{{fmt.u * 5}}"
+              }
             }
           ]
-        },
-        "layers": [
-          {
-            "$use": "glows",
-            "with": {
-              "strength": 0.8
-            }
-          },
-          {
-            "id": "hook",
-            "text": "{{hook}}",
-            "style": "hero",
-            "width": "{{fmt.safe.w}}",
-            "split": "words",
-            "enter": {
-              "preset": "fadeUp",
-              "stagger": 0.09,
-              "duration": 0.7,
-              "ease": "outExpo",
-              "distance": "{{fmt.u * 5}}"
-            }
-          }
-        ]
+        }
       },
       {
         "id": "reveal",

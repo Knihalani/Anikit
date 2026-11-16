@@ -22,10 +22,8 @@ use crate::{agent_cli, prompts};
 
 const PROTOCOL: &str = "2025-06-18";
 
-const INSTRUCTIONS: &str = "Anikit Video renders MP4s from a JSON spec, natively and fast. \
-Workflow: 1) list_templates, then get_template_schema; 2) create_from_template (with a brand kit and a format: 16:9, 9:16 or 1:1) or write a spec yourself \
-(read resource anikit://docs/spec); 3) validate_spec and critique_spec, fixing every warning; 4) render_contact_sheet or render_still to look at it \
-(cheap); 5) render_video. For a launch video, get_prompt('launch-video-generator') first. Motion rules: get_prompt('motion-rules').";
+const INSTRUCTIONS: &str = "JSON spec → MP4, rendered natively. Flow: list_templates → get_template_schema → create_from_template (returns a spec path) → \
+fix listed issues → render_contact_sheet (look) → render_video. Custom specs: resource anikit://docs/spec. Rules: get_prompt('motion-rules').";
 
 /// Serve until stdin closes.
 pub fn serve_stdio() -> std::io::Result<()> {
@@ -136,15 +134,15 @@ impl Server {
 
     fn call(&mut self, name: &str, a: &Value) -> Result<Vec<Value>, String> {
         match name {
-            "list_templates" => {
-                let v: Vec<Value> = BUILTIN.iter().filter_map(|(n, _)| Template::builtin(n).ok()).map(|t| t.summary()).collect();
-                Ok(vec![text(&pretty(&Value::Array(v)))])
-            }
+            "list_templates" => Ok(vec![text(&BUILTIN.iter().filter_map(|(n, _)| Template::builtin(n).ok()).map(|t| t.one_line()).collect::<Vec<_>>().join("\n"))]),
             "get_template_schema" => {
                 let t = Template::builtin(str_arg(a, "name")?)?;
-                let mut s = t.param_schema();
-                s["example"] = t.example_params();
-                Ok(vec![text(&pretty(&s)), text(&prompts::template_guide(&t))])
+                if a.get("full") == Some(&Value::Bool(true)) {
+                    let mut s = t.param_schema();
+                    s["example"] = t.example_params();
+                    return Ok(vec![text(&s.to_string())]);
+                }
+                Ok(vec![text(&t.compact_params())])
             }
             "create_from_template" => {
                 let t = Template::builtin(str_arg(a, "template")?)?;
@@ -153,41 +151,52 @@ impl Server {
                     Some(v @ Value::Object(_)) => Brand::from_value(v)?,
                     _ => Brand::default(),
                 };
-                let format = Format::parse(a.get("format").and_then(|f| f.as_str()).unwrap_or("16:9"))?;
+                let fmt_s = a.get("format").and_then(|f| f.as_str()).unwrap_or("16:9");
+                let format = Format::parse(fmt_s)?;
                 let params = a.get("params").cloned().unwrap_or(json!({}));
-                let spec = t.expand(&params, &brand, format).map_err(|e| format!("template parameters need fixing:\n- {}", e.join("\n- ")))?;
-                let r = critique(&spec);
-                let v = validate(spec.clone(), &std::env::current_dir().unwrap_or_default());
-                let mut out = vec![];
-                if let Some(p) = a.get("out").and_then(|o| o.as_str()) {
-                    write_file(Path::new(p), &pretty(&spec))?;
-                    out.push(text(&format!("wrote {p}")));
-                } else {
-                    out.push(text(&pretty(&spec)));
+                let spec = t.expand(&params, &brand, format).map_err(|e| e.join("\n"))?;
+                let out = match a.get("out").and_then(|o| o.as_str()) {
+                    Some(p) => PathBuf::from(p),
+                    None => {
+                        self.counter += 1;
+                        self.workdir.join(format!("{}-{}-{}.json", t.name, fmt_s.replace(':', "x"), self.counter))
+                    }
+                };
+                write_file(&out, &pretty(&spec))?;
+                let base = std::env::current_dir().unwrap_or_default();
+                let mut lines = vec![summary_line(&spec, &base, &out)];
+                lines.extend(issue_lines(&spec, &base));
+                if a.get("return_spec") == Some(&Value::Bool(true)) {
+                    lines.push(spec.to_string());
                 }
-                let issues: Vec<String> = ["errors", "warnings"].iter().flat_map(|k| v[*k].as_array().cloned().unwrap_or_default()).map(|d| format!("{}: {}", d["path"].as_str().unwrap_or(""), d["message"].as_str().unwrap_or(""))).collect();
-                if !issues.is_empty() {
-                    out.push(text(&format!("spec check (asset paths resolve against the server's working directory):\n{}", issues.join("\n"))));
-                }
-                out.push(text(&format!("duration {:.1} s · critique {}/100\n{}", r.duration, r.score, r.notes.iter().map(|n| format!("{} {}: {} → {}", n.severity, n.path, n.message, n.fix)).collect::<Vec<_>>().join("\n"))));
-                Ok(out)
+                Ok(vec![text(&lines.join("\n"))])
             }
             "critique_spec" => {
                 let (spec, _) = self.spec_arg(a)?;
                 let r = critique(&spec);
-                Ok(vec![text(&r.to_text()), text(&pretty(&serde_json::to_value(&r).unwrap()))])
+                let mut lines = vec![format!("score {}/100 · {:.1} s", r.score, r.duration)];
+                lines.extend(r.notes.iter().map(|n| format!("{} {}: {} → {}", n.severity, n.path, n.message, n.fix)));
+                Ok(vec![text(&lines.join("\n"))])
             }
             "validate_spec" => {
                 let (spec, path) = self.spec_arg(a)?;
                 let base = path.parent().map(Path::to_path_buf).unwrap_or_default();
-                Ok(vec![text(&pretty(&validate(spec, &base)))])
+                let v = validate(spec, &base);
+                let mut lines = vec![if v["ok"] == true {
+                    format!("ok · {:.1} s · {} frames · {} scenes", v["duration"].as_f64().unwrap_or(0.0), v["frames"], v["scenes"].as_array().map_or(0, |a| a.len()))
+                } else {
+                    "invalid".to_string()
+                }];
+                lines.extend(diag_lines(&v));
+                Ok(vec![text(&lines.join("\n"))])
             }
             "render_still" => {
                 let (spec, path) = self.spec_arg(a)?;
                 let at = a.get("at").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
                 let out = self.out_path(a, "png");
                 let p = crate::preview::Preview::new(spec, path.parent().unwrap_or(Path::new(".")))?;
-                let img = p.frame(at, a.get("width").and_then(|v| v.as_u64()).map(|w| w as u32));
+                let w = a.get("width").and_then(|v| v.as_u64()).map(|w| w as u32).or((a.get("inline") == Some(&Value::Bool(true))).then_some(640));
+                let img = p.frame(at, w);
                 write_bytes(&out, &crate::preview::png(&img))?;
                 self.image_result(&out, a)
             }
@@ -201,12 +210,12 @@ impl Server {
                     let d = p.ev.duration;
                     Some((0..n).map(|i| (i as f32 + 0.5) * d / n as f32).collect())
                 });
-                let cell = a.get("width").and_then(|v| v.as_u64()).unwrap_or(480) as u32;
+                let cell = a.get("width").and_then(|v| v.as_u64()).unwrap_or(400) as u32;
                 let img = p.sheet(times, cell);
                 write_bytes(&out, &crate::preview::png(&img))?;
                 let mut res = self.image_result(&out, a)?;
-                let scenes: Vec<String> = p.ev.scenes().iter().map(|s| format!("{} {:.1}–{:.1} s", s.id, s.start, s.end)).collect();
-                res.insert(1, text(&format!("frames at each scene's settled moment (70%): {}", scenes.join(" · "))));
+                let scenes: Vec<String> = p.ev.scenes().iter().map(|s| format!("{} {:.1}-{:.1}", s.id, s.start, s.end)).collect();
+                res[0] = text(&format!("{} (scenes: {})", out.display(), scenes.join(", ")));
                 Ok(res)
             }
             "render_video" => {
@@ -270,18 +279,49 @@ impl Server {
 
     /// A path, plus the PNG inline when `inline` is not false and it is small (< 1.5 MB).
     fn image_result(&self, out: &Path, a: &Value) -> Result<Vec<Value>, String> {
-        let mut v = vec![text(&format!("wrote {}", out.display()))];
-        if a.get("inline") != Some(&Value::Bool(false)) {
-            if let Ok(bytes) = std::fs::read(out) {
-                if bytes.len() < 1_500_000 {
-                    v.push(json!({ "type": "image", "data": base64(&bytes), "mimeType": "image/png" }));
-                } else {
-                    v.push(text("image too large to inline; pass a smaller \"width\" or read the file"));
-                }
+        let mut v = vec![text(&out.display().to_string())];
+        if a.get("inline") == Some(&Value::Bool(true)) {
+            let bytes = std::fs::read(out).map_err(|e| e.to_string())?;
+            if bytes.len() < 1_500_000 {
+                v.push(json!({ "type": "image", "data": base64(&bytes), "mimeType": "image/png" }));
+            } else {
+                v.push(text("too large to inline; pass a smaller width"));
             }
         }
         Ok(v)
     }
+}
+
+/// `spec.json · 25.1 s · 6 scenes · valid · critique 100/100`.
+fn summary_line(spec: &Value, base: &Path, out: &Path) -> String {
+    let v = validate(spec.clone(), base);
+    let r = critique(spec);
+    format!(
+        "{} · {:.1} s · {} scenes · {} · critique {}/100",
+        out.display(),
+        r.duration,
+        spec["scenes"].as_array().map_or(0, |a| a.len()),
+        if v["ok"] == true { "valid" } else { "INVALID" },
+        r.score
+    )
+}
+
+/// One line per validation diagnostic, then per critique note (tips omitted).
+fn issue_lines(spec: &Value, base: &Path) -> Vec<String> {
+    let mut l = diag_lines(&validate(spec.clone(), base));
+    l.extend(critique(spec).notes.iter().filter(|n| n.severity != "tip").map(|n| format!("{} {}: {} → {}", n.severity, n.path, n.message, n.fix)));
+    l
+}
+
+fn diag_lines(v: &Value) -> Vec<String> {
+    ["errors", "warnings"]
+        .iter()
+        .flat_map(|k| v[*k].as_array().cloned().unwrap_or_default().into_iter().map(move |d| (k, d)))
+        .map(|(k, d)| {
+            let sug = d["suggestion"].as_str().map(|s| format!(" (did you mean '{s}'?)")).unwrap_or_default();
+            format!("{} {}: {}{sug}", &k[..k.len() - 1], d["path"].as_str().unwrap_or(""), d["message"].as_str().unwrap_or(""))
+        })
+        .collect()
 }
 
 /// Validate a spec with the real parser and compiler (assets are checked for
@@ -317,14 +357,6 @@ const RESOURCES: &[(&str, &str, &str, &str)] = &[
     ("anikit://prompts/motion-rules", "Motion rules", "Timing, hierarchy, easing, reading time, safe areas.", include_str!("../../../../prompts/motion-rules.md")),
 ];
 
-fn spec_input() -> Value {
-    json!({
-        "spec": { "type": "object", "description": "The spec as a JSON object (see resource anikit://docs/spec)." },
-        "path": { "type": "string", "description": "Or: path to a spec file." },
-        "base_dir": { "type": "string", "description": "Directory that relative asset paths in an inline spec are resolved against (default: the server's working directory)." }
-    })
-}
-
 fn with(mut base: Value, extra: Value) -> Value {
     if let (Some(b), Some(e)) = (base.as_object_mut(), extra.as_object()) {
         b.extend(e.clone());
@@ -335,35 +367,23 @@ fn with(mut base: Value, extra: Value) -> Value {
 /// Tool declarations.
 pub fn tools() -> Vec<Value> {
     let obj = |props: Value, req: &[&str]| json!({ "type": "object", "properties": props, "required": req });
+    let spec = || json!({ "path": { "type": "string", "description": "spec file (preferred)" }, "spec": { "type": "object", "description": "or inline spec" } });
+    let img = |extra: Value| with(with(spec(), json!({ "inline": { "type": "boolean", "description": "also return base64 PNG (default false)" }, "width": { "type": "integer" }, "out": { "type": "string" } })), extra);
     vec![
-        json!({ "name": "list_templates", "description": "List the video templates (launch, feature, changelog, demo, teaser, data-story, testimonial, tutorial, countdown, logo-reveal) with their required parameters.", "inputSchema": obj(json!({}), &[]) }),
-        json!({ "name": "get_template_schema", "description": "JSON Schema of a template's parameters, with example values, word limits and a guide to writing them well.", "inputSchema": obj(json!({ "name": { "type": "string", "description": "Template name, e.g. 'launch'." } }), &["name"]) }),
-        json!({ "name": "create_from_template", "description": "Expand a template with parameters, a brand kit and a format into a complete spec. Returns the spec (or writes it to 'out') plus a critique. Errors name the parameter and suggest fixes.", "inputSchema": obj(json!({
-            "template": { "type": "string" },
-            "params": { "type": "object", "description": "Parameter values (see get_template_schema)." },
-            "brand": { "description": "Brand kit object ({name, theme, colors{primary,…}, fonts, logo, voice}) or a path to brand.json.", "type": ["object", "string"] },
-            "format": { "type": "string", "description": "16:9 (default), 9:16, 1:1, 4:5, 720p, 4k or WxH." },
-            "out": { "type": "string", "description": "Optional path to write spec.json." }
+        json!({ "name": "list_templates", "description": "Template names, one line each.", "inputSchema": obj(json!({}), &[]) }),
+        json!({ "name": "get_template_schema", "description": "A template's parameters (compact) with an example.", "inputSchema": obj(json!({ "name": { "type": "string" }, "full": { "type": "boolean", "description": "JSON Schema instead" } }), &["name"]) }),
+        json!({ "name": "create_from_template", "description": "Template + params + brand → spec file. Returns path, duration, validity, critique issues.", "inputSchema": obj(json!({
+            "template": { "type": "string" }, "params": { "type": "object" },
+            "brand": { "type": ["object", "string"], "description": "{name, colors:{primary}, logo, voice:{cta,url}} or brand.json path" },
+            "format": { "type": "string", "description": "16:9 | 9:16 | 1:1" }, "out": { "type": "string" },
+            "return_spec": { "type": "boolean" }
         }), &["template", "params"]) }),
-        json!({ "name": "validate_spec", "description": "Validate a spec: errors and warnings with JSON paths and 'did you mean' suggestions, plus duration and scene timings.", "inputSchema": obj(spec_input(), &[]) }),
-        json!({ "name": "critique_spec", "description": "Heuristic design review with no rendering: reading time per text (about 3 words/s + 1 s), the hook within 2 s, contrast, safe areas, font sizes, pacing and density. Returns a score and fixes.", "inputSchema": obj(spec_input(), &[]) }),
-        json!({ "name": "render_still", "description": "Render one frame to PNG and return it (inline when small). Cheap: use it to look at your work.", "inputSchema": obj(with(spec_input(), json!({
-            "at": { "type": "number", "description": "Time in seconds (default 1)." },
-            "width": { "type": "integer", "description": "Downscale to this width (e.g. 480) for a cheap preview." },
-            "inline": { "type": "boolean", "description": "Return the image inline (default true)." },
-            "out": { "type": "string" }
-        })), &[]) }),
-        json!({ "name": "render_contact_sheet", "description": "Render a grid of frames, one per scene at its settled moment, as one PNG: the fastest way to review a whole video.", "inputSchema": obj(with(spec_input(), json!({
-            "frames": { "type": "integer", "description": "Number of evenly spaced frames (default: one per scene, at its settled moment)." },
-            "times": { "type": "array", "items": { "type": "number" }, "description": "Exact times in seconds instead." },
-            "width": { "type": "integer", "description": "Width of each cell (default 480)." },
-            "inline": { "type": "boolean" }, "out": { "type": "string" }
-        })), &[]) }),
-        json!({ "name": "render_video", "description": "Render the final video (MP4 by default; the extension of 'out' picks the format). Returns the path.", "inputSchema": obj(with(spec_input(), json!({
-            "out": { "type": "string", "description": "Output path, e.g. out.mp4." },
-            "quality": { "type": "string", "description": "draft, standard (default) or high." }
-        })), &[]) }),
-        json!({ "name": "get_prompt", "description": "Get a prompt from the library: launch-video-generator, script-writer, storyboarder, critic, copy-guard, brand-kit, motion-rules, or template:<name> guides.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &["name"]) }),
+        json!({ "name": "validate_spec", "description": "Errors/warnings, one line each, with did-you-mean.", "inputSchema": obj(spec(), &[]) }),
+        json!({ "name": "critique_spec", "description": "Design review without rendering: reading time, hook, contrast, safe areas, pacing. One line per issue with a fix.", "inputSchema": obj(spec(), &[]) }),
+        json!({ "name": "render_still", "description": "One frame → PNG path.", "inputSchema": obj(img(json!({ "at": { "type": "number", "description": "seconds" } })), &[]) }),
+        json!({ "name": "render_contact_sheet", "description": "One frame per scene in one PNG → path. Cheapest full review.", "inputSchema": obj(img(json!({ "frames": { "type": "integer" } })), &[]) }),
+        json!({ "name": "render_video", "description": "Final render → path.", "inputSchema": obj(with(spec(), json!({ "out": { "type": "string", "description": "e.g. out.mp4" }, "quality": { "type": "string", "description": "draft|standard|high" } })), &[]) }),
+        json!({ "name": "get_prompt", "description": "Prompt library: launch-video-generator, script-writer, storyboarder, critic, copy-guard, brand-kit, motion-rules, template:<name>.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &["name"]) }),
     ]
 }
 
@@ -479,45 +499,47 @@ mod tests {
     #[test]
     fn template_tools_round_trip() {
         let mut s = server();
+        let t = |r: &Value| r["result"]["content"][0]["text"].as_str().unwrap().to_string();
         let r = call(&mut s, "tools/call", json!({ "name": "list_templates", "arguments": {} }));
-        let list: Value = serde_json::from_str(r["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
-        assert_eq!(list.as_array().unwrap().len(), BUILTIN.len());
+        assert_eq!(t(&r).lines().count(), BUILTIN.len());
+        assert!(t(&r).starts_with("launch — "), "{}", t(&r));
 
         let r = call(&mut s, "tools/call", json!({ "name": "get_template_schema", "arguments": { "name": "launch" } }));
-        let schema: Value = serde_json::from_str(r["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
-        assert_eq!(schema["required"], json!(["hook", "tagline", "features"]));
+        assert!(t(&r).contains("* tagline: string ≤10w"), "{}", t(&r));
+        let r = call(&mut s, "tools/call", json!({ "name": "get_template_schema", "arguments": { "name": "launch", "full": true } }));
+        let schema: Value = serde_json::from_str(&t(&r)).unwrap();
+        assert_eq!(schema["required"], json!(["tagline", "features"]));
 
-        let params = schema["example"].clone();
-        let r = call(&mut s, "tools/call", json!({ "name": "create_from_template", "arguments": { "template": "launch", "params": params, "format": "9:16", "brand": { "name": "Acme", "colors": { "primary": "#FF5500" } } } }));
+        let out = s.workdir.join("t.json");
+        let r = call(&mut s, "tools/call", json!({ "name": "create_from_template", "arguments": { "template": "launch", "params": schema["example"], "format": "9:16", "out": out, "brand": { "name": "Acme", "colors": { "primary": "#FF5500" } } } }));
         assert_eq!(r["result"]["isError"], false, "{r}");
-        let spec: Value = serde_json::from_str(r["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+        assert!(t(&r).contains("valid · critique 100/100"), "{}", t(&r));
+        let spec: Value = serde_json::from_str(&std::fs::read_to_string(&out).unwrap()).unwrap();
         assert_eq!(spec["size"], json!([1080, 1920]));
         assert_eq!(spec["theme"]["colors"]["primary"], "#FF5500");
 
         let r = call(&mut s, "tools/call", json!({ "name": "validate_spec", "arguments": { "spec": { "scenes": [ { "layers": [ { "type": "txt", "text": "x" } ] } ] } } }));
-        let v: Value = serde_json::from_str(r["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
-        assert_eq!(v["ok"], false, "{v}");
-        assert!(v["errors"][0]["path"].as_str().unwrap().contains("layers[0]"), "{v}");
-        let r = call(&mut s, "tools/call", json!({ "name": "critique_spec", "arguments": { "spec": spec } }));
-        assert!(r["result"]["content"][0]["text"].as_str().unwrap().starts_with("score"));
+        assert!(t(&r).starts_with("invalid\nerror scenes[0].layers[0]"), "{}", t(&r));
+        let r = call(&mut s, "tools/call", json!({ "name": "critique_spec", "arguments": { "path": out } }));
+        assert!(t(&r).starts_with("score 100/100"), "{}", t(&r));
 
         // Errors are tool errors with actionable text, not protocol errors.
         let r = call(&mut s, "tools/call", json!({ "name": "create_from_template", "arguments": { "template": "lanch", "params": {} } }));
         assert_eq!(r["result"]["isError"], true);
-        assert!(r["result"]["content"][0]["text"].as_str().unwrap().contains("did you mean 'launch'"));
+        assert!(t(&r).contains("did you mean 'launch'"));
         let r = call(&mut s, "tools/call", json!({ "name": "create_from_template", "arguments": { "template": "launch", "params": { "hok": "x" } } }));
-        assert!(r["result"]["content"][0]["text"].as_str().unwrap().contains("did you mean 'hook'"));
+        assert!(t(&r).contains("did you mean 'hook'"));
     }
 
     #[test]
     fn previews_render_in_process() {
         let mut s = server();
         let spec = json!({ "size": [320, 180], "scenes": [ { "duration": 1, "layers": [ { "text": "Hi" } ] }, { "duration": 1, "layers": [ { "text": "There" } ] } ] });
-        let r = call(&mut s, "tools/call", json!({ "name": "render_contact_sheet", "arguments": { "spec": spec, "width": 160 } }));
+        let r = call(&mut s, "tools/call", json!({ "name": "render_contact_sheet", "arguments": { "spec": spec, "width": 160, "inline": true } }));
         assert_eq!(r["result"]["isError"], false, "{r}");
         let c = r["result"]["content"].as_array().unwrap();
         assert!(c.iter().any(|x| x["type"] == "image" && x["mimeType"] == "image/png"), "{r}");
-        let r = call(&mut s, "tools/call", json!({ "name": "render_still", "arguments": { "spec": spec, "at": 0.5, "inline": false } }));
+        let r = call(&mut s, "tools/call", json!({ "name": "render_still", "arguments": { "spec": spec, "at": 0.5 } }));
         assert_eq!(r["result"]["content"].as_array().unwrap().len(), 1, "{r}");
     }
 

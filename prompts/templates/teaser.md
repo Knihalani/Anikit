@@ -19,39 +19,10 @@ A 6–12 s vertical teaser for Reels, TikTok and Shorts: rapid kinetic words, on
 | `flash` | boolean |  |  | Flash every third beat to the brand colour for energy. Default: `true`. |
 | `music` | string |  |  | Optional music file; a strong beat is what makes a teaser work. |
 
-## Example parameters
+## Example
 
 ```json
-{
-  "words": [
-    "No browser.",
-    "No waiting.",
-    "Just",
-    "JSON",
-    "in.",
-    "Video",
-    "out."
-  ],
-  "beat": 0.6,
-  "payoff": "Out now · anikit.dev",
-  "flash": true
-}
+{"words":["No browser.","No waiting.","Just","JSON","in.","Video","out."],"beat":0.6,"payoff":"Out now · anikit.dev","flash":true}
 ```
 
-## Make it
-
-```bash
-anikit-video new teaser --brand brand.json            # scaffolds teaser/params.json from this example
-anikit-video templates expand teaser teaser/params.json --brand brand.json --format 16:9 -o teaser/spec.json
-anikit-video critique teaser/spec.json && anikit-video preview teaser/spec.json -o teaser/sheet.png
-anikit-video render teaser/spec.json -o teaser.mp4
-```
-
-MCP: `create_from_template` with `{"template": "teaser", "params": {…}, "brand": {…}, "format": "9:16"}`.
-
-## Copy rules (all templates)
-
-- The hook or first line is readable within 2 s: 3–7 words, never "Introducing…".
-- Every limit above is a reading-time budget: about 3 words per second plus 1 s. Cut words; don't shrink type.
-- Benefits with real numbers; no filler (seamless, revolutionary, unlock, leverage).
-- Run `anikit-video critique` and fix every warning before rendering.
+Create: MCP `create_from_template {template: "teaser", params, brand, format}`, or `anikit-video templates expand teaser params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.

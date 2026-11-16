@@ -244,6 +244,25 @@ impl Template {
         Value::Object(out)
     }
 
+    /// `launch — Product launch, 20–35 s. needs: tagline, features[2–4]`.
+    pub fn one_line(&self) -> String {
+        let d = &self.doc;
+        let title = d.get("title").and_then(|x| x.as_str()).unwrap_or(&self.name);
+        let dur = d.get("duration").and_then(|x| x.as_str()).map(|x| format!(", {x}")).unwrap_or_default();
+        let req: Vec<String> = self.params().iter().filter(|(_, p)| p.get("required") == Some(&Value::Bool(true))).map(|(k, p)| param_short_name(k, p)).collect();
+        format!("{} — {title}{dur}. needs: {}", self.name, if req.is_empty() { "nothing".into() } else { req.join(", ") })
+    }
+
+    /// Parameters, one line each (`*` = required), plus a minified example.
+    pub fn compact_params(&self) -> String {
+        let mut out = vec![format!("{} params (* required):", self.name)];
+        for (k, p) in self.params() {
+            out.push(format!("{}{}", if p.get("required") == Some(&Value::Bool(true)) { "* " } else { "  " }, param_line(&k, &p)));
+        }
+        out.push(format!("example: {}", self.example_params()));
+        out.join("\n")
+    }
+
     /// JSON Schema for the parameters (draft 2020-12 subset).
     pub fn param_schema(&self) -> Value {
         let mut props = Map::new();
@@ -338,6 +357,60 @@ impl Template {
         sc.push(&p);
         let spec = self.doc.get("spec").unwrap();
         expand_value(spec, &mut sc, &defs, "spec").map(|v| v.unwrap_or(Value::Null)).map_err(|e| vec![format!("template '{}': {e}", self.name)])
+    }
+}
+
+fn param_short_name(k: &str, p: &Value) -> String {
+    match (p.get("minItems"), p.get("maxItems")) {
+        (Some(a), Some(b)) => format!("{k}[{a}–{b}]"),
+        _ => k.to_string(),
+    }
+}
+
+/// `title: string ≤5w — Benefit, not feature` (descriptions cut to the first sentence).
+fn param_line(k: &str, p: &Value) -> String {
+    let ty = p.get("type").and_then(|t| t.as_str()).unwrap_or("string");
+    let mut s = format!("{}: ", param_short_name(k, p));
+    s += &match ty {
+        "enum" => p.get("values").and_then(|v| v.as_array()).map(|v| v.iter().filter_map(|x| x.as_str()).collect::<Vec<_>>().join("|")).unwrap_or_default(),
+        "array" => {
+            let items = p.get("items").cloned().unwrap_or(Value::Null);
+            match items.get("properties").and_then(|x| x.as_object()) {
+                Some(props) => format!(
+                    "[{{{}}}]",
+                    props.iter().map(|(sk, sp)| format!("{sk}{}{}", if sp.get("required") == Some(&Value::Bool(true)) { "*" } else { "" }, limit_suffix(sp))).collect::<Vec<_>>().join(", ")
+                ),
+                None => format!("[{}{}]", items.get("type").and_then(|x| x.as_str()).unwrap_or("string"), limit_suffix(&items)),
+            }
+        }
+        "object" => p
+            .get("properties")
+            .and_then(|x| x.as_object())
+            .map(|props| format!("{{{}}}", props.iter().map(|(sk, sp)| format!("{sk}{}{}", if sp.get("required") == Some(&Value::Bool(true)) { "*" } else { "" }, limit_suffix(sp))).collect::<Vec<_>>().join(", ")))
+            .unwrap_or_else(|| "object".into()),
+        t => format!("{t}{}", limit_suffix(p)),
+    };
+    if let Some(d) = p.get("default") {
+        let shown = match d.as_str() {
+            Some(x) if x.starts_with("{{") => x.trim_matches(|c| c == '{' || c == '}').to_string(),
+            _ => d.to_string(),
+        };
+        s += &format!(" ={shown}");
+    }
+    if let Some(desc) = p.get("description").and_then(|x| x.as_str()) {
+        let first = desc.split(". ").next().unwrap_or(desc).trim_end_matches('.');
+        s += &format!(" — {first}");
+    }
+    s
+}
+
+fn limit_suffix(p: &Value) -> String {
+    if let Some(n) = p.get("maxWords") {
+        format!(" ≤{n}w")
+    } else if let Some(n) = p.get("maxChars") {
+        format!(" ≤{n}c")
+    } else {
+        String::new()
     }
 }
 

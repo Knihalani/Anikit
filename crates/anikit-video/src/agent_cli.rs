@@ -16,7 +16,7 @@ Agent commands:
   anikit-video new <template> [--brand brand.json] [--from README.md] [--format 16:9] [--dir DIR]
                                     scaffold a project: params.json, brand.json, spec.json, NEXT.md
   anikit-video templates            list templates
-  anikit-video templates schema <name>          JSON Schema of a template's parameters
+  anikit-video templates schema <name> [--json] a template's parameters (compact; --json: JSON Schema)
   anikit-video templates guide <name>           how to fill it well (markdown)
   anikit-video templates expand <name> [params.json] [--brand brand.json] [--format 9:16] [-o spec.json]
   anikit-video prompt [name]        list prompts, or print one (e.g. launch-video-generator)
@@ -142,17 +142,18 @@ fn cmd_templates(args: &[String]) -> Result<(), String> {
                 print!("{}", pretty(&Value::Array(v)));
             } else {
                 for (n, _) in BUILTIN {
-                    let t = Template::builtin(n)?;
-                    let d = t.doc.get("description").and_then(|x| x.as_str()).unwrap_or("");
-                    println!("{n:<13} {}", d.split(". ").next().unwrap_or(d));
+                    println!("{}", Template::builtin(n)?.one_line());
                 }
-                println!("\nanikit-video templates guide <name> · anikit-video new <name> --brand brand.json");
             }
             Ok(())
         }
         Some("schema") => {
-            let t = Template::builtin(a.pos.get(1).ok_or("usage: templates schema <name>")?)?;
-            print!("{}", pretty(&t.param_schema()));
+            let t = Template::builtin(a.pos.get(1).ok_or("usage: templates schema <name> [--json]")?)?;
+            if a.has("json") {
+                print!("{}", pretty(&t.param_schema()));
+            } else {
+                println!("{}", t.compact_params());
+            }
             Ok(())
         }
         Some("guide") => {

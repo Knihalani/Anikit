@@ -30,56 +30,10 @@ A 15–30 s data narrative: a headline hook, 1–3 bar charts that grow in with 
 | `source` | string |  | ≤ 60 chars | Data source, shown small on the last scene. |
 | `music` | string |  |  | Optional music file (MP3/WAV). |
 
-## Example parameters
+## Example
 
 ```json
-{
-  "kicker": "2026 in numbers",
-  "headline": "Rendering got 10× faster this year",
-  "charts": [
-    {
-      "title": "Frames per second at 1080p",
-      "suffix": "",
-      "bars": [
-        {
-          "label": "Browser",
-          "value": 24
-        },
-        {
-          "label": "Canvas",
-          "value": 61
-        },
-        {
-          "label": "Anikit",
-          "value": 250
-        }
-      ]
-    }
-  ],
-  "stat": {
-    "value": 10,
-    "suffix": "×",
-    "label": "faster than a headless browser"
-  },
-  "takeaway": "No browser in the loop means minutes become seconds.",
-  "source": "Source: internal benchmarks, 4-core laptop"
-}
+{"kicker":"2026 in numbers","headline":"Rendering got 10× faster this year","charts":[{"title":"Frames per second at 1080p","suffix":"","bars":[{"label":"Browser","value":24},{"label":"Canvas","value":61},{"label":"Anikit","value":250}]}],"stat":{"value":10,"suffix":"×","label":"faster than a headless browser"},"takeaway":"No browser in the loop means minutes become seconds.","source":"Source: internal benchmarks, 4-core laptop"}
 ```
 
-## Make it
-
-```bash
-anikit-video new data-story --brand brand.json            # scaffolds data-story/params.json from this example
-anikit-video templates expand data-story data-story/params.json --brand brand.json --format 16:9 -o data-story/spec.json
-anikit-video critique data-story/spec.json && anikit-video preview data-story/spec.json -o data-story/sheet.png
-anikit-video render data-story/spec.json -o data-story.mp4
-```
-
-MCP: `create_from_template` with `{"template": "data-story", "params": {…}, "brand": {…}, "format": "9:16"}`.
-
-## Copy rules (all templates)
-
-- The hook or first line is readable within 2 s: 3–7 words, never "Introducing…".
-- Every limit above is a reading-time budget: about 3 words per second plus 1 s. Cut words; don't shrink type.
-- Benefits with real numbers; no filler (seamless, revolutionary, unlock, leverage).
-- Run `anikit-video critique` and fix every warning before rendering.
+Create: MCP `create_from_template {template: "data-story", params, brand, format}`, or `anikit-video templates expand data-story params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.
