@@ -438,6 +438,8 @@ anikit-video schema [-o spec.schema.json]
 
 ## Notes for implementers
 
-- `spec` (serde types + schema) → `eval::Evaluator::new(spec, assets)` resolves themes, units, presets, stagger and expressions into per-property tracks once; `eval(t)` produces a `dl::DisplayList`.
-- Expressions with `%`/`vw`/`vh` units inside (e.g. `"=50% + 200*cos(t)"`) are resolved against the property's reference length.
-- Component plugins implement `eval::Component` (see `crates/anikit-video/src/eval/component.rs`).
+- `spec::parse_str` / `parse_json` / `parse_yaml` → `Parsed { spec, warnings }` (unknown keys, with paths and suggestions).
+- `eval::Evaluator::new(&spec, Options { base_dir, fonts, load_assets })` compiles once: themes, units, text layout (TEXT's `FontStore`), box layout, presets, stagger and expressions become per-property keyframe tracks. Errors come back as `SpecErrors` (every diagnostic); warnings stay in `evaluator.diagnostics`.
+- `eval_into(t, &mut DisplayList)` is pure and cheap (a few µs per frame). `is_static(t0, t1)` is a conservative "nothing changes in this span".
+- `evaluator.assets` (`SharedAssets`) holds fonts and images (user images, decoded video frames, component-generated images), implements `components::Assets`, and hands renderers versioned `render::Assets` snapshots.
+- `pipeline::render_video(&ev, &RenderOptions, &mut dyn Encoder)`: parallel batches, one `Renderer` per worker thread, dedupe of identical display lists, changed-macroblock hints for ak264, and the encoder on its own thread.

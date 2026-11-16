@@ -148,7 +148,6 @@ impl Track {
         v0 + (v1 - v0) * e
     }
     /// True if no segment is animating within `[a, b]`.
-    #[allow(dead_code)]
     fn still(&self, a: f32, b: f32) -> bool {
         self.segs.iter().all(|g| g.t1 <= a || g.t0 >= b || (g.v0 == g.v1 && !g.v0.is_nan()))
     }
@@ -397,6 +396,33 @@ impl Evaluator {
     /// Start time of a scene by id.
     pub fn scene_start(&self, id: &str) -> Option<f32> {
         self.scenes.iter().find(|s| s.id == id).map(|s| s.start)
+    }
+
+    /// True if every frame in `[t0, t1]` is guaranteed identical (no scene
+    /// change, transition, visibility change or animation in that span).
+    /// Conservative: `false` means "may change".
+    pub fn is_static(&self, t0: f32, t1: f32) -> bool {
+        let (t0, t1) = (t0.max(0.0), t1.min(self.duration));
+        if t1 < t0 {
+            return true;
+        }
+        // Scene and transition boundaries.
+        for (i, s) in self.scenes.iter().enumerate() {
+            let edges = [s.start, s.start + s.trans.dur, s.start + s.dur];
+            if i > 0 && edges.iter().any(|e| *e > t0 && *e <= t1) {
+                return false;
+            }
+            if i > 0 && s.trans.kind != TransKind::Cut && t0 >= s.start && t0 < s.start + s.trans.dur {
+                return false;
+            }
+        }
+        let cur = self.scenes.iter().rposition(|s| s.start <= t0).unwrap_or(0);
+        let s = &self.scenes[cur];
+        let (a, b) = (t0 - s.start, t1 - s.start);
+        if s.shake.is_some_and(|(amount, _, at, dur, _)| amount != 0.0 && (dur <= 0.0 || (at < b && at + dur > a))) {
+            return false;
+        }
+        node_static(&s.camera, a, b) && s.layers.iter().all(|n| node_static(n, a, b)) && self.overlay.iter().all(|n| node_static(n, t0, t1))
     }
 
     /// The display list at time `t` (seconds).
@@ -884,6 +910,32 @@ impl Evaluator {
 }
 
 /// Emit glyphs `range` (indices into `layout.glyphs`) below `limit`, one op per run.
+/// Is a node (and its subtree) unchanged over scene times `[a, b]`?
+fn node_static(n: &Node, a: f32, b: f32) -> bool {
+    // Appears or disappears inside the span.
+    if (n.start > a && n.start <= b) || (n.end > a && n.end <= b) {
+        return false;
+    }
+    if b < n.start || a >= n.end {
+        return true; // invisible throughout
+    }
+    let (la, lb) = (a - n.start, b - n.start);
+    if n.exprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
+        return false;
+    }
+    match &n.kind {
+        Kind::Group { children } | Kind::Box { children, .. } => children.iter().all(|c| node_static(c, a, b)),
+        Kind::Text { kinetic: Some(_), .. } => false,
+        Kind::Text { split: Some(sp), .. } => {
+            let md = sp.delays.iter().cloned().fold(0.0, f32::max);
+            sp.tracks.iter().all(|t| t.still(la - md, lb))
+        }
+        Kind::Video { frames, .. } => frames.len() <= 1,
+        Kind::Component(c, _) => c.duration().is_some_and(|d| la >= d),
+        _ => true,
+    }
+}
+
 fn emit_glyphs(out: &mut Vec<Op>, layout: &TextLayout, range: std::ops::Range<u32>, limit: u32, fill: Option<&Paint>, alpha: f32, xf: &Affine) {
     let mut i = range.start;
     let end = range.end.min(limit);
