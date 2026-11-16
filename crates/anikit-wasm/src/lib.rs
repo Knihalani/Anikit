@@ -60,6 +60,9 @@ struct State {
     meshes: Vec<Option<anikit_core::raster::Mesh>>,
     rasters: Vec<Option<(anikit_core::raster::Raster, Vec<f32>)>>,
     textures: Vec<Option<anikit_core::raster::Texture>>,
+    gs_data: Vec<f32>,
+    gs_packed: Vec<u32>,
+    gs_sorters: Vec<Option<anikit_core::gsplat::Sorter>>,
 }
 
 struct VideoSlot {
@@ -93,6 +96,9 @@ static STATE: Global = Global(UnsafeCell::new(State {
     meshes: Vec::new(),
     rasters: Vec::new(),
     textures: Vec::new(),
+    gs_data: Vec::new(),
+    gs_packed: Vec::new(),
+    gs_sorters: Vec::new(),
 }));
 
 #[inline(always)]
@@ -1548,6 +1554,21 @@ pub extern "C" fn ak_cloud_explode(id: u32, x: f64, y: f64, z: f64, strength: f6
         c.explode(x as f32, y as f32, z as f32, strength as f32);
     }
 }
+/// Local brush. f64 buffer: `[cx, cy, cz, ax, ay, az, radius, strength, vx, vy, vz]`
+/// (a cylinder of `radius` around the line through `c` along unit axis `a`).
+#[no_mangle]
+pub extern "C" fn ak_cloud_push(id: u32) {
+    let b = &st().f64_buf;
+    if b.len() < 11 {
+        return;
+    }
+    let f = |i: usize| b[i] as f32;
+    let (c, a, v) = ([f(0), f(1), f(2)], [f(3), f(4), f(5)], [f(8), f(9), f(10)]);
+    let (r, s) = (f(6), f(7));
+    if let Some(cl) = cloud(id) {
+        cl.push(c, a, r, s, v);
+    }
+}
 #[no_mangle]
 pub extern "C" fn ak_cloud_speed(id: u32) -> f64 {
     cloud(id).map(|c| c.mean_speed() as f64).unwrap_or(0.0)
@@ -2434,4 +2455,118 @@ pub extern "C" fn ak_bh_stats(id: u32) {
     }
     let v = [s.samples[0] as f64, s.samples[1] as f64, s.samples[2] as f64, s.stars as f64, s.table_built as f64, s.geometry_built as f64, s.shadow as f64];
     buf[..7].copy_from_slice(&v);
+}
+
+// ---------------------------------------------------------------------------
+// SDF meshing (surface nets)
+// ---------------------------------------------------------------------------
+
+/// Mesh a sampled signed distance field: `nx·ny·nz` samples (x fastest) in the
+/// f64 buffer, grid spacing `s`, first sample at `(ox, oy, oz)`. Returns a mesh
+/// handle (read it with `ak_mesh_ptr`, free it with `ak_mesh_free`), or `u32::MAX`.
+#[no_mangle]
+pub extern "C" fn ak_surface_nets(nx: u32, ny: u32, nz: u32, ox: f64, oy: f64, oz: f64, s: f64) -> u32 {
+    let n = nx as usize * ny as usize * nz as usize;
+    let state = st();
+    if n == 0 || state.f64_buf.len() < n {
+        return u32::MAX;
+    }
+    let d: Vec<f32> = state.f64_buf[..n].iter().map(|&v| v as f32).collect();
+    let m = anikit_core::sdf::surface_nets(&d, nx as usize, ny as usize, nz as usize, [ox as f32, oy as f32, oz as f32], s as f32);
+    push_slot(&mut state.meshes, m)
+}
+
+// ---------------------------------------------------------------------------
+// Gaussian splats (WebGL renderer): parsing, packing, depth sorting
+// ---------------------------------------------------------------------------
+
+/// Parse `len` bytes of the u8 scratch buffer (`kind` 0 = `.ply`, 1 = `.splat`)
+/// into the canonical splat buffer (`ak_gs_data_ptr`). Returns the splat
+/// count, or a negative error: −1 not a PLY, −2 unsupported format,
+/// −3 no positions, −4 truncated.
+#[no_mangle]
+pub extern "C" fn ak_gs_parse(kind: u32, len: u32) -> i32 {
+    use anikit_core::gsplat::{parse_ply, parse_splat, PlyError, STRIDE};
+    let s = st();
+    let bytes = &s.u8_buf[..(len as usize).min(s.u8_buf.len())];
+    let r = if kind == 0 { parse_ply(bytes) } else { Ok(parse_splat(bytes)) };
+    match r {
+        Ok(v) => {
+            s.gs_data = v;
+            (s.gs_data.len() / STRIDE) as i32
+        }
+        Err(PlyError::NotPly) => -1,
+        Err(PlyError::Format) => -2,
+        Err(PlyError::MissingPosition) => -3,
+        Err(PlyError::Truncated) => -4,
+    }
+}
+
+/// The canonical splat buffer, resized for `n` splats (14 floats each).
+#[no_mangle]
+pub extern "C" fn ak_gs_data(n: u32) -> *mut f32 {
+    let s = st();
+    s.gs_data.resize(n as usize * anikit_core::gsplat::STRIDE, 0.0);
+    s.gs_data.as_mut_ptr()
+}
+
+/// Pack the canonical buffer into 8 `u32` words per splat; returns their address.
+#[no_mangle]
+pub extern "C" fn ak_gs_pack() -> *const u32 {
+    use anikit_core::gsplat::{pack, PACKED, STRIDE};
+    let s = st();
+    let n = s.gs_data.len() / STRIDE;
+    s.gs_packed.resize(n * PACKED, 0);
+    pack(&s.gs_data, &mut s.gs_packed);
+    s.gs_packed.as_ptr()
+}
+
+/// New depth sorter; returns its id.
+#[no_mangle]
+pub extern "C" fn ak_gs_sorter_create() -> u32 {
+    let s = st();
+    let v = Some(anikit_core::gsplat::Sorter::default());
+    if let Some(i) = s.gs_sorters.iter().position(|c| c.is_none()) {
+        s.gs_sorters[i] = v;
+        return i as u32;
+    }
+    s.gs_sorters.push(v);
+    (s.gs_sorters.len() - 1) as u32
+}
+
+#[no_mangle]
+pub extern "C" fn ak_gs_sorter_free(id: u32) {
+    if let Some(c) = st().gs_sorters.get_mut(id as usize) {
+        *c = None;
+    }
+}
+
+/// Centre buffer (`x y z` per splat) of set `set` (0 = A, 1 = morph target B)
+/// resized for `n` splats; `n = 0` on set 1 drops the morph target.
+#[no_mangle]
+pub extern "C" fn ak_gs_sorter_centers(id: u32, n: u32, set: u32) -> *mut f32 {
+    match st().gs_sorters.get_mut(id as usize).and_then(|c| c.as_mut()) {
+        Some(so) if set == 0 => {
+            so.resize(n as usize);
+            so.a.as_mut_ptr()
+        }
+        Some(so) => {
+            so.b.resize(n as usize * 3, 0.0);
+            so.b.as_mut_ptr()
+        }
+        None => core::ptr::null_mut(),
+    }
+}
+
+/// Sort back to front by `d = vx·x + vy·y + vz·z + vw` (larger = nearer);
+/// returns the address of the order (`u32` per splat, furthest first).
+#[no_mangle]
+pub extern "C" fn ak_gs_sort(id: u32, vx: f64, vy: f64, vz: f64, vw: f64, mix: f64) -> *const u32 {
+    match st().gs_sorters.get_mut(id as usize).and_then(|c| c.as_mut()) {
+        Some(so) => {
+            so.sort([vx as f32, vy as f32, vz as f32, vw as f32], mix as f32);
+            so.order.as_ptr()
+        }
+        None => core::ptr::null(),
+    }
 }

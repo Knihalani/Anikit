@@ -86,3 +86,42 @@ export type { ViewTransitionOptions, ViewTransitionHandle } from './viewtransiti
 export { gesture, Gesture } from './gesture';
 export type { GestureOptions } from './gesture';
 export { transformPath } from './svg';
+
+// Warm the core's hot paths once, in a task of its own before `ready`
+// resolves (see `_setWarmup`): the first animate() on a page otherwise pays
+// for compiling them inside the page's own set-up task.
+import { _setWarmup } from './wasm';
+import { animate as warmAnimate } from './animate';
+import { spring as warmSpring } from './spring';
+import { timeline as warmTimeline } from './timeline';
+_setWarmup(() => {
+  const o = { v: 0 };
+  const a = warmAnimate(o, { v: [0, 1] }, { duration: 1 });
+  a.progress = 0.5;
+  a.kill();
+  warmSpring(o, { v: 2 }).stop();
+  warmTimeline().add(o, { v: 3 }, 0).kill();
+});
+export { htmlCanvas, htmlEffect, htmlTexture, htmlCanvasSupported, htmlToSvg } from './htmlcanvas';
+export type { HtmlCanvas, HtmlCanvasOptions, HtmlEffect, HtmlEffectOptions, HtmlEffectName } from './htmlcanvas';
+export {
+  scene, Scene, Object3D, InstancedMesh, Material, material, Orbit, Vector3, linearColor,
+} from './gl';
+export type {
+  SceneInit, CameraOptions, BloomOptions, DofOptions, OrbitOptions, Camera, SceneMaterialOptions, MaterialPreset, MapSource,
+  ObjectOptions, InstanceState, EnvironmentName, LayerContext, SceneLayer, RayHit, SceneStats, ScenePointerEvent,
+  ScenePointerType, PrimitiveName, Vec3Like,
+} from './gl';
+export {
+  box, roundedBox, sphere, cylinder, capsule, torus, plane, lathe, extrude, tube, triangulate, smoothNormals, subdivide,
+  sdfMesh, sdSphere, sdBox, sdTorus, smoothUnion, smoothSubtract, text3d,
+} from './geometry';
+export type { Geometry, SdfOptions, Text3dOptions } from './geometry';
+export { loadGLTF, parseGLTF } from './gltf';
+export type { GltfModel } from './gltf';
+export { recipe, recipeNames } from './recipe';
+export type { RecipeName, RecipeOptions, RecipeHandle } from './recipe';
+export { variants, Variants } from './variants';
+export type { Variant, VariantDef, VariantTransition, VariantsOptions } from './variants';
+export { customBounce, customWiggle } from './customease';
+export type { CustomBounceOptions, CustomWiggleOptions } from './customease';

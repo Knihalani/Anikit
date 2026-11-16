@@ -13,12 +13,38 @@
       "import": "./dist/anikit.js",
       "require": "./dist/anikit.cjs"
     },
+    "./splats": {
+      "types": "./dist/types/splats.d.ts",
+      "import": "./dist/splats.js"
+    },
     "./anikit.wasm": "./dist/anikit.wasm",
     "./lean": {
       "types": "./dist/types/index.d.ts",
       "import": "./dist/anikit.lean.js"
     },
-    "./node": "./node/index.mjs"
+    "./tween": {
+      "types": "./dist/types/tween.d.ts",
+      "import": "./dist/anikit.tween.js"
+    },
+    "./anikit.tween.wasm": "./dist/anikit.tween.wasm",
+    "./scene": {
+      "types": "./dist/scene.d.ts",
+      "import": "./dist/scene.js"
+    },
+    "./node": "./node/index.mjs",
+    "./react": {
+      "types": "./dist/types/react.d.ts",
+      "import": "./dist/react.js"
+    },
+    "./api.schema.json": "./api.schema.json",
+    "./vue": {
+      "types": "./dist/types/vue.d.ts",
+      "import": "./dist/vue.js"
+    },
+    "./svelte": {
+      "types": "./dist/types/svelte.d.ts",
+      "import": "./dist/svelte.js"
+    }
   },
   "files": [
     "dist",
@@ -28,13 +54,14 @@
     "README.md",
     "AGENTS.md",
     "llms.txt",
-    "llms-full.txt"
+    "llms-full.txt",
+    "api.schema.json"
   ],
   "sideEffects": false,
   "scripts": {
     "build:wasm": "node scripts/build-wasm.mjs",
     "build": "node scripts/build-wasm.mjs && node scripts/build.mjs && node scripts/build-llms.mjs",
-    "typecheck": "tsc --noEmit && node scripts/check-docs.mjs && node scripts/check-jsdoc.mjs",
+    "typecheck": "tsc --noEmit && node scripts/check-docs.mjs && node scripts/check-jsdoc.mjs && node scripts/build-schema.mjs --check",
     "docs": "node scripts/check-docs.mjs && node scripts/build-llms.mjs",
     "docs:browser": "node scripts/check-recipes-browser.mjs",
     "test:browser": "node scripts/test-browser.mjs",
@@ -45,7 +72,11 @@
     "bench:dom": "node scripts/bench-dom.mjs",
     "bench:3d": "node scripts/bench-3d.mjs",
     "record": "node bin/anikit-record.mjs",
-    "bench:cloud": "node scripts/bench-cloud.mjs"
+    "bench:cloud": "node scripts/bench-cloud.mjs",
+    "bench:scene": "node scripts/bench-scene.mjs",
+    "bench:splats": "node scripts/bench-splats.mjs",
+    "schema": "node scripts/build-schema.mjs",
+    "treeshake": "node scripts/check-treeshake.mjs"
   },
   "keywords": [
     "animation",
@@ -59,24 +90,34 @@
     "motion"
   ],
   "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "binaryen": "^132.0.0",
     "esbuild": "^0.28.2",
     "gsap": "^3.15.1",
     "happy-dom": "^21.0.4",
     "matter-js": "^0.20.0",
     "motion": "^12.43.0",
+    "three": "^0.187.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "typescript": "^5.9.3",
     "vitest": "^5.1.0"
   },
   "bin": {
+    "anikit": "./bin/anikit.mjs",
     "anikit-record": "./bin/anikit-record.mjs",
     "anikit-render": "./bin/anikit-render.mjs"
   },
   "peerDependencies": {
-    "@napi-rs/canvas": ">=0.1.60"
+    "@napi-rs/canvas": ">=0.1.60",
+    "react": ">=18"
   },
   "peerDependenciesMeta": {
     "@napi-rs/canvas": {
+      "optional": true
+    },
+    "react": {
       "optional": true
     }
   }

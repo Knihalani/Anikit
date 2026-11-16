@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>anikit — an animation engine in Rust and WebAssembly</title>
+<meta name="description" content="Tweens, springs, physics and 3D from a no_std Rust core compiled to WebAssembly, driven from TypeScript.">
+<link rel="preload" href="../fonts/InterDisplay-Black.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fonts/Inter-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<link rel="modulepreload" href="../../packages/anikit/dist/anikit.lean.js">
+</head>
+<body>
+<canvas id="gl" aria-hidden="true"></canvas>
+
+<header class="nav">
+  <a class="mark" href="#">anikit</a>
+  <nav>
+    <a href="https://github.com/knihalani/anikit/blob/main/docs/api.md">API</a>
+    <a href="../../examples/">Examples</a>
+    <a href="https://github.com/knihalani/anikit">GitHub</a>
+  </nav>
+  <button class="pill copy" data-copy="npm i anikit"><code>npm i anikit</code></button>
+</header>
+
+<main>
+  <section class="hero" id="hero">
+    <p class="eyebrow">Animation engine · Rust core · WebAssembly</p>
+    <h1 class="word" id="word">anikit</h1>
+    <div class="hero-foot">
+      <p class="lede">Tweens, springs, physics and 3D, computed in a <code>no_std</code> Rust core and driven from TypeScript. Everything on this page is HTML, animated by anikit.</p>
+      <div class="actions">
+        <a class="btn primary" href="https://github.com/knihalani/anikit#readme">Get started</a>
+        <a class="btn" href="https://github.com/knihalani/anikit/blob/main/docs/api.md">Read the API</a>
+      </div>
+    </div>
+    <p class="hint" id="hint-word">Drag across the letters</p>
+  </section>
+
+  <section class="fold-wrap" id="fold-wrap">
+    <div class="fold" id="fold">
+      <div class="sheet" id="sheet">
+        <h2>What's inside</h2>
+        <div class="cols">
+          <article><span class="num">01</span><h3>Timing</h3><p>Timelines, labels, staggers and scroll scrubbing. Thirty easings, plus springs that keep their velocity when retargeted.</p></article>
+          <article><span class="num">02</span><h3>Physics</h3><p>A 2D world with sub-stepped constraints: ropes, cloth, dragging and throwing. Bind it to DOM elements or draw it.</p></article>
+          <article><span class="num">03</span><h3>3D</h3><p>Meshes, extruded type, point clouds and glow, projected and depth-sorted in WebAssembly.</p></article>
+        </div>
+        <p class="small">Keep scrolling. This sheet folds along three creases.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cards" id="cards">
+    <div class="cards-head">
+      <h2>Cards are bodies</h2>
+      <p>Grab one and throw it. They stay HTML the whole time: select the text, press the buttons.</p>
+      <div class="actions">
+        <button class="btn primary" id="drop">Drop them</button>
+        <button class="btn" id="tidy" disabled>Tidy up</button>
+      </div>
+    </div>
+    <div class="grid" id="grid">
+      <div class="card c1"><code>animate()</code><p>Any CSS property, SVG attribute or object key.</p><button class="mini">Try</button></div>
+      <div class="card c2"><code>spring()</code><p>Interruptible motion that keeps its velocity.</p><button class="mini">Try</button></div>
+      <div class="card c3"><code>world()</code><p>Rigid bodies, links, ropes and cloth.</p><button class="mini">Try</button></div>
+      <div class="card c4"><code>timeline()</code><p>Sequence, overlap, label and scrub.</p><button class="mini">Try</button></div>
+      <div class="card c5"><code>flip()</code><p>Animate any layout change.</p><button class="mini">Try</button></div>
+      <div class="card c6"><code>splitText()</code><p>Lines, words and characters.</p><button class="mini">Try</button></div>
+    </div>
+  </section>
+
+  <section class="code" id="code-sec">
+    <div class="code-copy">
+      <h2>Eleven lines</h2>
+      <p>The physics above, in short. Move your pointer over the source.</p>
+    </div>
+<pre class="src" id="src"><code><span class="k">import</span> { world } <span class="k">from</span> <span class="s">'anikit'</span>;
+
+<span class="k">const</span> w = <span class="f">world</span>({ container: <span class="s">'#cards'</span>, gravity: [<span class="n">0</span>, <span class="n">1800</span>] });
+
+<span class="k">for</span> (<span class="k">const</span> card <span class="k">of</span> cards) {
+  <span class="c">// each card: six circles, rigidly linked</span>
+  <span class="k">const</span> ids = card.cells.<span class="f">map</span>(([x, y]) =&gt; w.<span class="f">add</span>(x, y, r));
+  <span class="f">pairs</span>(ids).<span class="f">forEach</span>(([a, b]) =&gt; w.<span class="f">link</span>(a, b));
+}
+
+w.<span class="f">dragging</span>();   <span class="c">// grab, swing and throw</span></code></pre>
+  </section>
+
+  <section class="finale" id="finale">
+    <div class="stick" id="stick">
+      <div class="panel" id="panel">
+        <p class="eyebrow">MIT licensed · TypeScript · Python</p>
+        <h2 class="big">Start with<br>one line.</h2>
+        <button class="pill copy big-pill" data-copy="npm i anikit"><code>npm i anikit</code></button>
+        <div class="foot">
+          <a href="https://github.com/knihalani/anikit">GitHub</a>
+          <a href="https://github.com/knihalani/anikit/blob/main/docs/api.md">API reference</a>
+          <a href="https://github.com/knihalani/anikit/blob/main/docs/recipes.md">Recipes</a>
+        </div>
+        <p class="hint" id="hint-end">Scroll on, or <button class="link" id="breakit">break the page</button></p>
+      </div>
+    </div>
+  </section>
+</main>
+<div id="perf" hidden></div>
+<script type="module" src="main.js"></script>
+</body>
+</html>

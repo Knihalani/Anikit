@@ -6,7 +6,7 @@ Anikit is an animation engine: a `no_std` Rust core compiled to WebAssembly (Typ
 
 | Path | What | Verify with |
 |---|---|---|
-| `crates/anikit-core` | Engine: timing, easing, springs, colour, paths, morph, timelines, batches, physics `world`, 3D `space`, particle `cloud`, `splat` renderer, `raster` (solid 3D), `emitter`, `audio`, `video` (blur, I420, grade), `gif` encoder, noise | `cargo test -p anikit-core` · `cargo clippy -p anikit-core -- -D warnings` |
+| `crates/anikit-core` | Engine: timing, easing, springs, colour, paths, morph, timelines, batches, physics `world`, 3D `space`, particle `cloud`, `splat` renderer, `raster` (solid 3D), `sdf` (surface nets), `emitter`, `audio`, `video` (blur, I420, grade), `gif` encoder, noise | `cargo test -p anikit-core` · `cargo clippy -p anikit-core -- -D warnings` |
 | `crates/anikit-wasm` | C‑ABI WebAssembly shim (`ak_*` exports, no wasm‑bindgen). Inputs go through a scratch buffer; outputs are read from linear memory. | `cargo clippy -p anikit-wasm -- -D warnings` |
 | `crates/anikit-node` | The same `ak_*` exports as a native N‑API addon for Node (`node scripts/build-native.mjs` → `packages/anikit/native/anikit.node`, built for this CPU; `anikit/node` loads it when present, `ANIKIT_NATIVE=0` forces wasm). Wrappers are generated from `anikit-wasm`'s signatures; all allocations come from one arena exposed as one `ArrayBuffer`, so JS offsets work unchanged. | `cargo clippy -p anikit-node -- -D warnings` · `npm run test:native` (whole vitest suite on the native core) |
 | `packages/anikit` | TypeScript API + DOM layer (`src/`), vitest + happy‑dom tests (`test/`), build and bench scripts | `npm test` · `npm run typecheck` (tsc + doc examples + JSDoc) · `node scripts/build.mjs` |

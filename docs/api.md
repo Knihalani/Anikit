@@ -6,13 +6,14 @@ Times are in **seconds**. Every function accepts targets as a CSS selector, an e
 import { animate, timeline, stagger, spring, inertia, scroll, inView, splitText, flip,
          compositor, batch, set, from, fromTo, engine, ready } from 'anikit';
 // or: import ... from 'anikit/lean'  (streams anikit.wasm instead of embedding it)
+// or: import ... from 'anikit/tween' (animate, timeline, stagger, spring, inertia only: ~121 KB min+gzip with its core)
 ```
 
 The WebAssembly core starts compiling on import. Calls made before it's ready are queued and run in order, so you rarely need it, but `await ready` is available. Functions that return a computed value right away (`ease()`, `morph()`, `pathLength()`, `staggerValues()`, `world()`, …) need the core loaded: with `anikit/lean`, `await init()` (or `await ready`) first.
 
 **Units:** times are **seconds** everywhere (`duration`, `delay`, `stagger(0.05)`, `seek(1.2)`), except the low-level clock: `engine.tick(ms)`, `engine.time` and `engine.onFrame((timeMs, dtMs) => …)` are milliseconds. Numbers default to `px` for lengths, `deg` for angles; `scale` and `opacity` are unitless (opacity 0–1).
 
-Task-oriented examples: [recipes.md](recipes.md). Mistakes are reported as `anikit:` warnings with fixes (see [Testing and diagnostics](#testing-and-diagnostics)).
+Task-oriented examples: [recipes.md](recipes.md). One-call patterns: [`recipe()`](#recipes-recipe). Feature comparison with GSAP, Motion and anime.js: [parity.md](parity.md). Every options object as JSON Schema (descriptions included): [api.schema.json](api.schema.json), also shipped as `anikit/api.schema.json` (regenerate with `npm run schema`). Mistakes are reported as `anikit:` warnings with fixes (see [Testing and diagnostics](#testing-and-diagnostics)).
 
 ---
 
@@ -485,6 +486,116 @@ physics(ball, { x: { velocity: 300 }, y: { velocity: -600, acceleration: 1500, m
 
 `anim.toCSS({ name, selector, samples })` produces `@keyframes` plus an `animation:` rule, sampled from the engine. Any easing, spring, colour space or keyframe set works. Use it for SSR, HTML emails or zero‑JS pages.
 
+## Recipes: `recipe`
+
+`recipe(name, targets, options?)` builds a polished, common pattern in one call from the primitives above, with good-looking defaults. It returns a handle with `animations`, `finished`, `revert()` (restores styles and split markup) and `kill()`; an enclosing `context()` reverts it too. `recipeNames()` lists them.
+
+| Name | What it does | Useful options |
+|---|---|---|
+| `'hero-reveal'` | Splits the headline (`h1, h2` inside the element) into masked words or chars that rise in, then fades the rest of the children up. | `headline`, `by: 'words' \| 'chars'`, `stagger`, `duration` |
+| `'scroll-story'` | Each `section` (or `children`) fades and slides up as it scrolls into view (`scrollTriggerBatch`). | `children`, `distance`, `once: false` (reverse on the way back) |
+| `'magnetic-buttons'` | Buttons and links inside lean towards the pointer and spring back (`magnetic`). | `strength`, `distance` (radius) |
+| `'text-scramble'` | Decodes the text through random glyphs. | `text`, `chars`, `duration`, `onScroll` |
+| `'parallax-gallery'` | Images drift at alternating depths while scrolling (`parallax`). | `children`, `strength` |
+| `'stagger-in'` | Children fade, rise and scale in, staggered, when the list enters the viewport. | `children`, `stagger`, `onScroll: false` |
+| `'draw-svg'` | Strokes of every shape inside draw in on enter. | `stagger`, `duration` |
+| `'count-up'` | Counts from 0 to the number already written in the element on enter. | `duration`, `text` |
+| `'tilt-cards'` | Cards tilt in 3D under the pointer and spring flat on leave. | `children`, `strength` |
+
+Shared options (`RecipeOptions`): `duration`, `delay`, `stagger`, `ease`, `children`, `headline`, `by`, `text`, `chars`, `distance`, `strength`, `onScroll`, `once`. An unknown name throws with a "did you mean"; an unknown option warns with a link back here.
+
+```ts
+recipe('hero-reveal', '.hero');
+recipe('scroll-story', 'main', { children: 'section' });
+recipe('magnetic-buttons', '.cta');
+recipe('text-scramble', '#title', { text: 'HELLO WORLD' });
+const gallery = recipe('parallax-gallery', '.gallery', { strength: 0.3 });
+recipeNames();       // ['hero-reveal', 'scroll-story', …]
+gallery.revert();
+```
+
+## React: `anikit/react`
+
+Hooks and an exit-animation component. Every hook collects what it creates in a `context()` and reverts it on unmount; selectors inside `useAnikit`/`useAnimate` match only inside the returned ref.
+
+| Hook / component | Does |
+|---|---|
+| `useAnikit(setup, deps?)` → ref | Runs `setup` in a scoped `context()` after mount; reverted on unmount or when `deps` change. |
+| `useAnimate()` → `[ref, animate]` | Motion-style: call `animate()` from events; every animation is reverted on unmount. |
+| `useRecipe(name, ref, options?)` | `recipe()` on `ref.current` after mount. |
+| `useMotionValue(initial)` | A `MotionValue` that lives as long as the component. |
+| `useSpring(target \| motionValue, physics?)` | A `MotionValue` springing to a number prop or following another value. |
+| `useTransform(value, input, output)` | `value.map(input, output)`. |
+| `useScroll({ target?, container?, offset? })` | `{ scrollYProgress, scrollXProgress }` motion values (refs accepted). |
+| `<Presence enter exit options initial>` | Keyed children animate in when added and out before React removes them. |
+
+```tsx no-check
+import { useRef, useState } from 'react';
+import { useAnikit, useAnimate, useRecipe, useSpring, useScroll, Presence } from 'anikit/react';
+import { animate, bindValues } from 'anikit';
+
+function Hero() {
+  const hero = useRef<HTMLElement>(null);
+  useRecipe('hero-reveal', hero);
+  const scope = useAnikit(() => { animate('.badge', { scale: [0.8, 1] }, { ease: 'spring(bounce: 0.5)' }); });
+  const [box, run] = useAnimate();
+  const [open, setOpen] = useState(true);
+  const { scrollYProgress } = useScroll();
+  const smooth = useSpring(scrollYProgress, { stiffness: 120, damping: 20 });
+  useAnikit(() => { bindValues('.bar', { scaleX: smooth }); });
+  return <header ref={hero}>
+    <h1>Hello</h1>
+    <div ref={scope}><span className="badge">new</span></div>
+    <button onClick={() => run(box.current, { rotate: [0, 360] })}>Spin</button>
+    <Presence exit={{ opacity: 0, y: -8 }}>{open && <p key="note" onClick={() => setOpen(false)}>Dismiss me</p>}</Presence>
+  </header>;
+}
+```
+
+## Variants: `variants`
+
+Motion-style named states. `variants(targets, states, options?)` returns a `Variants` controller: `.animate(name, overrides?)` animates to a state and returns an awaitable timeline (replacing a running transition), `.set(name)` jumps there, `.current` is the state name, `.names` lists the states, `revert()`/`kill()` as usual (tracked by `context()`).
+
+A state is the properties to animate to (end values or keyframes, as for `animate()`) plus an optional `transition` (animation options plus `delayChildren`, `staggerChildren`, `when: 'beforeChildren' | 'afterChildren'`). A state can also be a function `(el, index) => state`. Options: `initial` (applied at once), `transition` (default for every state), `children` (controllers that follow every state change, orchestrated by the parent's transition). Unknown state names and transition keys warn with a suggestion.
+
+```ts
+const items = variants('.menu li', {
+  closed: { opacity: 0, x: -12 },
+  open: (el, i) => ({ opacity: 1, x: 0, transition: { ease: 'spring(bounce: 0.3)', delay: i * 0.01 } }),
+}, { initial: 'closed' });
+const menu: Variants = variants('.menu', {
+  closed: { opacity: 0, y: -8, transition: { duration: 0.2, when: 'afterChildren' } },
+  open: { opacity: 1, y: 0, transition: { duration: 0.25, staggerChildren: 0.04, delayChildren: 0.05 } },
+}, { initial: 'closed', children: items });
+await menu.animate('open');
+menu.animate(menu.current === 'open' ? 'closed' : 'open');
+```
+
+## Custom bounce and wiggle: `customBounce`, `customWiggle`
+
+`customBounce({ strength?, squash?, endAtStart? })` returns `{ ease, squash }`: a bounce whose rebounds each last `strength` (0–1, default 0.7) of the previous one, and a companion ease that pulses 0 → 1 → 0 at each impact (scaled by impact speed) for squash and stretch. `customWiggle(wiggles, { type?, seed? })` swings around the start value and settles there; `type` is `'easeOut'` (default), `'easeInOut'`, `'anticipate'`, `'uniform'` or `'random'`. Both are plain `(t) => number` functions, usable anywhere an `ease` is.
+
+```ts
+const ball = document.createElement('div');
+const { ease, squash } = customBounce({ strength: 0.6, squash: 2 });
+animate(ball, { y: [-200, 0] }, { duration: 1.6, ease });
+animate(ball, { scaleY: [1, 0.7], scaleX: [1, 1.25] }, { duration: 1.6, ease: squash });
+animate(ball, { rotate: 15 }, { duration: 0.8, ease: customWiggle(5, { type: 'easeInOut' }) });
+```
+
+## Vue and Svelte: `anikit/vue`, `anikit/svelte`
+
+No framework import needed. Both take a recipe name (or `{ name, options }`) and a setup function run in a `context()` scoped to the element, reverted when the element goes away.
+
+- **Vue:** directives `vRecipe` and `vAnikit`. Register with `app.directive('recipe', vRecipe)` (or use them directly in `<script setup>`), then `<header v-recipe="'hero-reveal'">` and `<div v-anikit="(el) => animate(el, { x: 100 })">`.
+- **Svelte:** actions `recipe` and `anikit`: `<header use:recipe={'hero-reveal'}>`, `<section use:recipe={{ name: 'scroll-story', options: { children: '.card' } }}>`, `<div use:anikit={(el) => { animate(el, { x: 100 }); }}>`.
+
+```ts no-check
+import { createApp } from 'vue';
+import { vRecipe, vAnikit } from 'anikit/vue';
+createApp(App).directive('recipe', vRecipe).directive('anikit', vAnikit).mount('#app');
+```
+
 ## Effects
 
 Over 35 presets. Every one accepts the usual animation options plus `stagger`, `distance`, `from`, `intensity` and `loop`:
@@ -505,6 +616,51 @@ registerEffect('glow', (t, o) => animate(t, { filter: ['drop-shadow(0 0 0 gold)'
 effect('glow', '.star', { size: 20 });   // by name
 effectNames();                           // ['fadeIn', 'fadeOut', …, 'glow']
 effects.glow('.star');
+```
+
+## HTML in canvas: `htmlCanvas`, `htmlEffect`
+
+Draw live DOM into a 2D canvas or a WebGL texture, and run shader effects on real page content in one line.
+
+- **Native path.** When the browser implements the WICG [HTML-in-Canvas](https://github.com/WICG/html-in-canvas) proposal (`drawElementImage`; Chrome origin trial / `chrome://flags/#canvas-draw-element`, or `--enable-experimental-web-platform-features`) *and* the element is a direct child of `<canvas layoutsubtree>` (or `content="drawable"`), `htmlCanvas` draws it on every `paint` event with `drawElementImage`, or uploads it with `texElementSubImage2D` / `texElementImage2D`. Pixels are exact, and the element stays live, focusable, hit-testable and accessible. `htmlCanvasSupported()` tells you whether the API exists.
+- **Fallback (every browser).** The subtree is cloned with computed styles inlined; same-origin images, `background-image`s, canvases, the current video frame and `@font-face` fonts are embedded as data URLs, and the clone is drawn through SVG `<foreignObject>`. The canvas is never tainted: cross-origin resources are skipped with an `anikit:` warning. With `live: true` (the default), `MutationObserver`, `ResizeObserver`, `input`/`change` and font loads trigger a throttled re-raster (`throttle`, default 50 ms). Fonts and images are cached, so a re-raster is mostly a style walk plus one SVG decode (about 4 ms for a ~40-node card in headless Chromium; it grows with the number of elements).
+- **Fallback limits** (measured in Chromium): `:hover`/`:focus` states and the caret are not captured (computed styles are snapshotted at raster time, so a hover *is* captured if a mutation re-rasters while hovering); `::before`/`::after` content is not copied; iframes become empty boxes; video is a still of the current frame (call `refresh()` to update it); form controls show their value and checked state, rendered with default UA styling; cross-origin images and fonts are omitted.
+- **Cost per frame.** Nothing allocates per frame. Textures are uploaded only when the content changed (`version` increments on each new image).
+
+```ts
+const gl = document.querySelector<HTMLCanvasElement>('#scene')!.getContext('webgl')!;
+const card = htmlCanvas('#card', { target: gl, live: true, scale: 2 });
+await card.ready;                       // first image is in card.texture
+gl.bindTexture(gl.TEXTURE_2D, card.texture);
+// …draw your mesh; the texture refreshes itself when #card changes
+const snap = htmlCanvas('#receipt', { live: false });
+await snap.ready;
+document.body.append(snap.canvas);      // a 2D canvas copy of the element
+snap.dispose();
+if (htmlCanvasSupported()) console.log('native HTML-in-Canvas');
+const { url, width, height } = await htmlToSvg(document.querySelector('#card')!); // the SVG data URL itself
+```
+
+`htmlEffect(element, effect, options)` rasterises the element into a fixed-position WebGL overlay, animates the effect with anikit and puts the real element back. While it plays, the real element stays in place at `opacity: 0` and the overlay has `pointer-events: none`, so clicks and hovers still reach the element.
+
+| Effect | Default mode | What it does |
+|---|---|---|
+| `ripple` | pulse | Radial water ripple from `origin` |
+| `wave` | pulse | Flag-like sine wave through the mesh |
+| `glass` | pulse | Refraction with chromatic split |
+| `pixelate` | pulse | Blocks grow, then resolve |
+| `dissolve` | out | Noise burn with glowing `color` edges |
+| `shatter` | out | Element breaks into tumbling triangles from `origin` |
+| `curl` | out | Page peels away from the `origin` corner (default bottom-right) |
+
+Options: `duration` (s, default 1.2), `delay`, `ease` (any easing or spring), `mode` (`'out'` hides the element at the end until `revert()`; `'in'` plays backwards to reveal it; `'pulse'` goes 0→1→0), `intensity`, `origin` (`[x, y]` in 0–1), `padding` (px of room around the element for flying pieces), `scale`, `color`, `onComplete`. The controller has `finished`, `progress` + `render()` for scrubbing, `revert()` and `kill()`, and is tracked by `context()`.
+
+```ts
+htmlEffect('.hero', 'ripple', { origin: [0.3, 0.6] });
+await htmlEffect('#card', 'shatter', { duration: 1.4 }).finished;
+htmlEffect('#modal', 'dissolve', { mode: 'in', color: '#7cf', ease: 'outCubic' });
+const peel = htmlEffect('#page', 'curl', { duration: 0.9 });
+peel.finished.then(() => peel.revert()); // bring the page back
 ```
 
 ## Scroll
@@ -672,6 +828,112 @@ const { data, order, count } = scene.project(points); // [sx, sy, depth, scale] 
 - `parseTransform(css)`, `toMatrix3d(m)` and `mixTransforms(a, b, t)` expose the same maths.
 - `scene.project()` transforms and depth-sorts (LSD radix sort) entirely in WebAssembly. Sources: a `batch()` with `x`/`y`/`z` channels, a `pointCloud()`, or a flat `[x, y, z, …]` array.
 
+## Real-time GPU 3D: `scene`
+
+`scene()` is a WebGL2 renderer for real-time sites: physically based materials, procedural image-based lighting, a PCF shadow map, optional bloom / depth of field / FXAA, instancing, frustum culling and raycast picking. It renders through anikit's single rAF loop, so `animate()`, `spring()` and timelines drive objects directly. It is also exported as `anikit/scene`.
+
+```ts
+const s = scene('#c', {
+  camera: { fov: 45, position: [0, 2, 6], target: [0, 0.5, 0] },
+  environment: 'studio',          // 'studio' | 'sunset' | 'night'
+  shadows: true,                  // PCF shadow map from the key light
+  bloom: true,                    // HDR post chain: bloom + ACES + FXAA
+});
+s.add(plane(20, 20), { material: { color: '#333', roughness: 0.9 } });
+const ball = s.add(sphere(0.6, 64), { material: 'chrome', position: [0, 0.6, 0] });
+const ring = s.add('torus', { material: 'gold', position: [1.6, 0.5, 0], scale: 1.4 });
+
+animate(ball.position, { y: 1.5 }, { duration: 0.8, yoyo: true, repeat: -1, ease: 'inOutSine' });
+animate(ring.rotation, { y: Math.PI * 2 }, { duration: 6, repeat: -1, ease: 'linear' });
+spring(ring.scale, { x: 1.6, y: 1.6, z: 1.6 });
+timeline().to(ball.material, { roughness: 0.6 }, { duration: 1 }).to(s, { exposure: 1.4 }, { duration: 1 });
+
+ball.on('click', (e) => console.log('hit', e.point));     // also pointerenter/leave/down/up/move
+const orbit: Orbit = s.orbit({ autoRotate: 8, damping: 0.92 });
+```
+
+- **Setup.** `scene(canvas | selector, options)`. Options: `camera` (`fov`, `position`, `target`, `near`, `far`), `environment`, `background` (`'environment'`, a `#rrggbb` colour or `'transparent'`), `shadows` (default true), `bloom` (`true` or `{ strength, threshold }`), `dof` (`true` or `{ focus, aperture }`), `fxaa`, `exposure`, `dpr` (max pixel ratio, capped at 2), `adaptive` (lower the pixel ratio when frames run slow; default true) (with `adaptive: false`, set `s.pixelRatio` from your own quality governor) and `autoRender` (default true; otherwise call `s.render()`). Without post effects it renders straight to the canvas with MSAA and tonemaps in the material shader.
+- **Objects.** `s.add(geometry | 'box' | 'sphere' | 'cylinder' | 'torus' | 'plane' | 'capsule' | 'roundedBox' | null, options)` returns an `Object3D` with animatable `position`, `rotation` (radians, XYZ) and `scale` (`Vector3`s), a `material`, `visible`, `castShadow`, `children` and `data`. Options are `ObjectOptions`: `position`, `rotation`, `scale`, `material`, `castShadow`, `visible` and `parent` (transforms compose). `null` makes an empty group. `obj.remove()` takes it out of the scene.
+- **Camera.** `s.camera` (`Camera`) has `position` and `target` (`Vector3`), `fov`, `roll`, `near` and `far`, all animatable. `s.fly(path, s)` puts it on a `flightPath()` (eye, look-ahead target and bank).
+- **Lights.** `s.lightDir`, `s.lightIntensity`, `s.envIntensity`, `s.exposure`, `s.bloomStrength` and `s.focus` are plain numbers or vectors, so animate them too.
+- **Layers.** `s.add(layer)` accepts any `SceneLayer` (`{ render(ctx: LayerContext), dispose?() }`): it draws after opaque objects in the scene's framebuffer with the camera matrices. Use it to host a Gaussian-splat renderer or custom WebGL.
+- **Picking.** `s.raycast(x, y)` returns a `RayHit` (`object`, `instance`, `point`, `distance`) or null. Meshes are tested exactly (triangles); instances use per-instance bounding spheres. Event handlers receive a `ScenePointerEvent` (`ScenePointerType`: `click`, `pointerdown`, `pointerup`, `pointerenter`, `pointerleave`, `pointermove`), bubble to parents, and set `cursor: pointer` over clickable objects.
+- **Stats and cleanup.** `s.stats` (`SceneStats`) has `drawCalls`, `triangles`, `culled`, `frameMs` and `dpr`. `s.revert()` stops rendering and frees all GPU resources; scenes and orbit controls register with `context()`.
+
+- **Performance.** Every frame reuses its matrices, render lists and uniform buffer (no per-frame allocation, no layout reads; size comes from a `ResizeObserver`). Opaque draws are sorted by program, geometry and material. Transparent draws are sorted back to front. Shaders are compiled when the scene is created. `scripts/bench-scene.mjs` compares against three.js. Headless Chromium here renders WebGL with SwiftShader (CPU), and for 10k instanced boxes with shadows at 960×540 it measured: start-up 870 ms vs 876 ms, frame time 670 ms vs 552 ms (three.js 0.187 is about 20% faster per frame on the CPU rasteriser), 3 draw calls each. Run it with `--gpu` on a machine with a GPU for representative numbers.
+
+### Materials
+
+```ts
+const glass = material('glass');
+const brushed = material({ preset: 'chrome', roughness: 0.35 });
+const neon: Material = material({ preset: 'emissive', emissive: '#61dafb', emissiveIntensity: 6 });
+const lin = linearColor('#ff8800');         // sRGB hex → linear [r, g, b]
+animate(neon, { emissiveIntensity: 1 }, { duration: 1, yoyo: true, repeat: -1 });
+brushed.set({ color: '#c0c4cc' });
+```
+
+`MaterialPreset`: `chrome`, `gold`, `copper`, `glass`, `plastic`, `ceramic`, `rubber`, `emissive` and `toon`. `SceneMaterialOptions`: `preset`, `color`, `metalness`, `roughness`, `emissive`, `emissiveIntensity`, `opacity` (below 1 draws in the back-to-front transparent pass), `toon` and `glass`. Lighting is metal/roughness GGX with a split-sum environment term. The `EnvironmentName` environments are analytic, so they are prefiltered per roughness in closed form: no textures, no load-time cost.
+
+### Live HTML on a mesh: `htmlTexture`
+
+`map` (a `MapSource`) puts a texture on any material: a canvas or image (uploaded once), or a live source with `canvas` and `version` such as `htmlTexture(el)`, which is re-uploaded only when the element changed. UV (0, 0) is the image's top-left, so `plane()` rotated `[Math.PI / 2, 0, 0]` shows it upright, facing the camera. A black material with a white `emissive` shows the HTML unlit, like a screen; a coloured or metallic one lights it like printed material. Pointer events on the mesh (`click`, `pointerdown`, `pointerup`, `pointermove`) are re-dispatched to the element under the hit's UV, and focusable targets are focused on click, so buttons and inputs on a 3D card still work. `RayHit.uv` and `ScenePointerEvent.uv` expose the UV. Keep the source element rendered, for example off-screen with `position: fixed; left: -10000px`, not `display: none`. See [HTML in canvas](#html-in-canvas-htmlcanvas-htmleffect) for what the fallback raster captures.
+
+```ts
+const s3 = scene('#stage', { camera: { position: [0, 0, 3] } });
+const ui = htmlTexture('#panel');                                   // live, re-rasterised on change
+const screen = s3.add(plane(1.6, 1), { rotation: [Math.PI / 2, 0, 0], material: { color: '#000', emissive: '#fff', map: ui } });
+const cube = s3.add(roundedBox(1, 1, 1, 0.1), { position: [2, 0, 0], material: { map: ui, roughness: 0.6 } });
+screen.on('click', (e) => console.log('hit the screen at', e.uv));  // the element under e.uv got the click too
+animate(screen.rotation, { y: Math.PI * 2 }, { duration: 8, repeat: -1, ease: 'linear' });
+```
+
+### glTF models
+
+```ts
+const s4 = scene(canvas);
+const model: import('anikit').GltfModel = await loadGLTF(s4, '/models/robot.glb');
+model.root.position.y = 1;
+const stop = model.play(model.animations[0] ?? 0, { loop: true, speed: 1 });
+const parsed = parseGLTF(s4, { asset: { version: '2.0' } }, []);   // JSON + buffers you fetched yourself
+```
+
+`loadGLTF(scene, url)` loads `.gltf` files (with embedded or external buffers) and `.glb` files. It reads triangle meshes (with smooth normals when the file has none), metal/roughness factors, emissive colour and strength, and the node hierarchy. It also reads translation/rotation/scale animations with linear, step or cubic-spline keys (cubic-spline keys are interpolated linearly). Textures, skinning and morph targets are not loaded yet.
+
+### Geometry and instancing
+
+```ts
+const vase = lathe([[0, 0], [0.4, 0.05], [0.25, 0.8], [0.3, 1.2]], 64);
+const letterL = extrude([[0, 0], [2, 0], [2, 1], [1, 1], [1, 2], [0, 2]], 0.4);
+const knot = tube((t) => [Math.cos(t * 12), Math.sin(t * 18) * 0.3, Math.sin(t * 12)], 0.08, 256, 12);
+const pill = capsule(0.3, 1.2);
+const soft = subdivide(box(1, 1, 1), 2, 0.5);           // midpoint subdivision + Laplacian smoothing
+const blob: import('anikit').Geometry = sdfMesh((x, y, z) => smoothUnion(sdSphere(x - 0.3, y, z, 0.5), sdTorus(x + 0.3, y, z, 0.4, 0.12), 0.25), { resolution: 64 });
+const carved = sdfMesh((x, y, z) => smoothSubtract(sdBox(x, y, z, 0.6, 0.6, 0.6, 0.1), sdSphere(x, y, z, 0.75), 0.05));
+const shapes = [roundedBox(1, 1, 1, 0.15), sphere(1, 48), cylinder(0.3, 0.5, 1), torus(1, 0.3), plane(4, 4), smoothNormals(vase)];
+const tri = triangulate([[0, 0], [1, 0], [0, 1]]);       // ear clipping → index triples
+const title = text3d('anikit', { font: 'bold 120px Inter, sans-serif', size: 0.6, depth: 0.2, bevel: 0.03 });
+
+const s2 = scene(canvas);
+const grid: InstancedMesh = s2.instances(box(0.1, 0.1, 0.1), 10000, (i, o) => {
+  o.position.set((i % 100) - 50, 0, Math.floor(i / 100) - 50);
+  o.color[0] = i / 10000;                            // per-instance tint
+}, { material: 'plastic' });
+engine.onFrame((t) => grid.update((i, o: import('anikit').InstanceState) => {
+  o.position.set((i % 100) - 50, Math.sin(t / 500 + i * 0.1), Math.floor(i / 100) - 50);
+}));
+const v = new Vector3(1, 2, 3);
+const node: Object3D = s2.add(null, { position: v });
+let sc: Scene = s2;
+let hit: import('anikit').RayHit | null = sc.raycast(10, 10);
+```
+
+- All generators return a `Geometry` (`positions`, `normals`, `uvs`, `indices` as typed arrays) with counter-clockwise front faces and unit normals.
+- `sdfMesh(f, SdfOptions)` meshes a signed distance function with surface nets: one vertex per surface cell, with gradient normals. JavaScript samples `f` on the grid, and the WebAssembly core (`anikit-core::sdf`) extracts the mesh. A JS fallback runs if the core isn't loaded. `resolution` sets the cells along the longest axis (default 48). `bounds` is the half-size of the sampled box: a number or `[x, y, z]` (default 1.5). Build fields from `sdSphere`, `sdBox`, `sdTorus`, `smoothUnion` and `smoothSubtract`.
+- `text3d(text, Text3dOptions)` turns glyph outlines into rounded-bevel 3D text. It rasterises the text with Canvas 2D, takes an exact Euclidean distance transform, and extrudes that 2D field with a bevel, meshed by `sdfMesh` (browser only). Options: `font` (CSS font), `size` (cap height), `depth`, `bevel` and `resolution` (cells along the width, default 160).
+- `instances(geometry, count, fn, options)` draws every copy in one call. `fn(i, o)` sets the `InstanceState` (`position`, `rotation`, `scale` and `color`). `grid.update(fn)` reruns the callback without allocating. You can also write `grid.matrices` and `grid.colors` directly and then call `grid.needsUpdate()`.
+- `Vec3Like` is `[x, y, z]` or `{ x, y, z }`. `PrimitiveName` lists the string shorthands.
+
 ## Point clouds and glow
 
 `pointCloud(count, options)` keeps particles in WebAssembly. Each one spring-follows a blend between target shapes with its own timing, plus a turbulence field, so morphs ripple through the cloud and can be scrubbed, interrupted or blasted apart. `glow(canvas, options)` renders projected points as additive light straight into pixels: sub-pixel bilinear splats, soft bokeh for near points, depth fog, a pointer lens, motion trails and tone mapping. JavaScript does one `putImageData` per frame.
@@ -697,7 +959,7 @@ cloud.explode(0, 0, 0, 1200);                        // shockwave; particles fin
 | `shape(k, xyzOrFn)`, `snap(k)` | Define / jump to shapes. |
 | `from`, `to`, `mix`, `morph(k, { duration, ease, from })` | Blend state. |
 | `set({ stiffness, damping, spread, noise, swirl, frequency })` | Tune the motion. |
-| `step(dt)` (automatic unless `autoStep: false`), `explode(x, y, z, strength)`, `positions`, `speed` | Simulation. |
+| `step(dt)` (automatic unless `autoStep: false`), `explode(x, y, z, strength)`, `push(x, y, z, radius, strength, vx, vy, vz, ax, ay, az)` (local brush along an axis, e.g. the pointer ray), `positions`, `speed` | Simulation. |
 | `textPoints(text, count, { font, weight, width, depth })` | Sample points from rendered text. |
 | `glow.render(scene, source, { size, intensity, fog, lens, exposure, maxRadius })` | Draw a frame. |
 | `glow.colors(count, rgbOrFn)`, `glow.resize(w, h)`, `glow.options.trail`, `glow.lastMs`, `glow.avgMs` | Colours, size, trails, timing. |
@@ -705,6 +967,59 @@ cloud.explode(0, 0, 0, 1200);                        // shockwave; particles fin
 `mode: 'ink'` renders particles as pigment absorbing a light background (`bg / (1 + c)` per channel) instead of adding light; point colours are then absorption per channel (`[1, 1, 1]` = black ink, `[0.05, 0.78, 0.95]` = vermilion). Both `glow.options.mode` and `glow.options.background` can change every frame, and `render({ tint: [r, g, b] })` recolours every point at no cost.
 
 `budget` (ms, default 7) enables adaptive quality: if rendering stays over budget, the pixel resolution steps down (to `minResolution`) so slower machines keep their frame rate.
+
+## Gaussian splats: `splats`
+
+`splats` is a separate entry, so importing `animate` never pulls in the renderer: `import { splats } from 'anikit/splats'` (it shares the core and engine with `anikit`). `splats(canvasOrSelector, set, options)` renders real-time 3D Gaussian splats with WebGL2 and returns a `SplatLayer`. A `SplatSet` is plain data: `count` splats of `SPLAT_STRIDE` (14) floats each: position, linear scale, rotation quaternion (w x y z), colour and opacity. Load captured scenes (`.ply` from 3DGS training or a coloured point cloud, binary little-endian; antimatter15 `.splat`), or make them procedurally, so a scene needs no downloads:
+
+```ts
+import { splats, packSplats, SPLAT_STRIDE, SplatLayer } from 'anikit/splats';
+import { animate, scroll, engine } from 'anikit';
+
+const word = splats.fromText('anikit', { count: 120_000, width: 2.4, color: '#9ab' });
+const ball = splats.fromSDF((x, y, z) => Math.hypot(x, y, z) - 0.9, {
+  count: 120_000, color: (i, x, y, z) => [0.5 + x / 2, 0.5 + y / 2, 1],
+});
+const pts = splats.fromPoints([0, 0, 0, 1, 0, 0], { size: 0.05, color: [1, 0.4, 0.2] });
+const quad = splats.fromMesh([0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0], [0, 1, 2, 0, 2, 3], { count: 5000 });
+const both = splats.merge(pts, quad);
+const scan = await splats.load('/scenes/garden.ply'); // or splats.parse(arrayBuffer, 'splat')
+
+const layer = splats('#stage', word, { background: '#07080b', orbit: true });
+layer.morph(ball, { duration: 2.4, ease: 'inOutCubic', spread: 0.8 }); // GPU morph, staggered
+layer.explode({ to: 1.5, duration: 1 });                             // and back: explode({ to: 0 })
+layer.swirl({ to: 0.5 });
+layer.dissolve({ to: 1, duration: 2 });
+layer.reveal({ duration: 1.5 });
+animate(layer.transform, { rotateY: 360 }, { duration: 12, repeat: -1, ease: 'linear' });
+animate(layer.camera, { z: 2 }, { duration: 3 });
+scroll(animate(layer.fx, { reveal: [0, 1] }, { duration: 1 })); // scroll-driven reveal
+
+// Per-splat motion: write new centres every frame (springs, physics, pointCloud().positions).
+const xyz = new Float32Array(word.count * 3);
+engine.onFrame((t) => { for (let i = 0; i < xyz.length; i++) xyz[i] = word.data[(i / 3 | 0) * SPLAT_STRIDE + i % 3] + Math.sin(t / 300 + i) * 0.01; layer.positions(xyz); });
+
+const texels: Uint32Array = packSplats(word);   // the GPU layout (8 u32 per splat)
+console.log(word.data.length / SPLAT_STRIDE, layer instanceof SplatLayer, layer.stats.sortMs);
+```
+
+Every splat is projected to a 2D covariance in the vertex shader and drawn as an instanced quad with Gaussian falloff, premultiplied and sorted back to front. Splats live in one `RGBA32UI` texture (32 bytes each: centre, `rgba8`, 3D covariance as six halves; `packSplats(set)` produces it). The depth sort is a 16-bit counting sort in the WebAssembly core, running in a Web Worker (main-thread fallback when workers are unavailable), and runs again only when the view or the morph moves past `sortThreshold`. Effects are uniforms: `layer.fx` (`morph`, `spread`, `explode`, `swirl`, `dissolve`, `reveal`, `size`, `opacity`), `layer.camera` (`x y z`, target `tx ty tz`, `fov`, `near`, `far`) and `layer.transform` (`x y z`, `rotateX/Y/Z` in degrees, `scale`) are plain objects, so tweens, springs, timelines and scroll drive them with no per-frame allocation.
+
+| Member | Purpose |
+|---|---|
+| `morph(set, { duration, ease, delay, spread })` | GPU morph to another set (resampled to this layer's count); the target becomes `set` when done. |
+| `positions(xyz, start?, count?)` | Move splats per frame: only the changed texture rows are uploaded, and the worker re-sorts from the new centres (re-sent at most every 100 ms). |
+| `explode()`, `swirl()`, `dissolve()`, `reveal()` (`{ to, duration, ease, delay }`) | Tween one effect uniform. |
+| `setSplats(set)`, `set`, `stats` (`count`, `sorts`, `sortMs`, `frames`, `worker`), `sorted` | Data and diagnostics. |
+| `render()` (automatic unless `autoRender: false`), `resize()`, `orbit()` | Own-canvas rendering. |
+| `draw(view, proj)` | Draw into the bound framebuffer of the layer's context with your own column-major matrices: the hook for other WebGL2 scenes (create the layer with `splats(gl, set)`). |
+| `kill()` / `revert()` | Free the GPU resources and the worker. |
+
+Options (`SplatsOptions`): `camera`, `transform`, `fx`, `background`, `autoRender`, `pixelRatio`, `worker`, `sortThreshold`, `orbit`, `maxRadius`, `governor`.
+
+Crisp by default: each splat is cut off at 2.5σ, its on-screen radius is clamped to `maxRadius` (48 CSS px σ by default) so splats near the camera don't smear, and procedural sources pick their scale from the point density (about half the sample spacing). The quality governor (on for self-rendering layers) watches the frame interval: below `governor.fps` (default 50) it draws a random subset of the splats, down to `governor.min` (default 0.25), and enlarges the ones it keeps to cover the gaps. It recovers when there is headroom. `stats.quality` is the fraction currently drawn; pass `governor: false` for exact output, e.g. in tests or recordings. Types: `SplatSet`, `SplatColor`, `SplatSourceOptions`, `SplatFx`, `SplatCamera`, `SplatTransform`, `SplatMorphOptions`, `SplatEffectOptions`, `SplatStats`.
+
+Limits: colour is view-independent (spherical-harmonic bands above degree 0 are skipped when parsing); `.ksplat` is not supported yet; effects that move splats far (`explode`, `swirl`) are sorted by their resting positions, so heavy overlap mid-effect can blend slightly out of order.
 
 ## Capture: screenshots and recordings
 
@@ -1009,7 +1324,7 @@ A sky dome that the fog leaves alone: `{ mesh: dome, cull: false, material: { am
 
 **Meshes**: `mesh.cube()`, `sphere(rings, segments)`, `torus(radius, tube, segments, sides)`, `torusKnot({ p, q, radius, spread, tube, segments, sides })`, `plane(cells)` (XZ, faces +Y — floors that run to the horizon with `grid`), `cylinder(segments, caps)`, `heightfield(w, d, heights | (x, z) => h, { skip })`, `text(str, { font, depth, bevel, resolution })` (solid bevelled 3D text in any font; stand it up with `rx: 90` and use `sz: size * mesh.aspect`), `custom(positions, normals, indices, uvs?)`.
 
-**Animated geometry**: don't create meshes inside `draw()`. Change one in place with `m.update(positions, normals?, uvs?)` (same vertex count), or rebuild a tube into an existing mesh with `mesh.tube(points, { into: m })` (any size). `m.free()` is safe to call twice, and a freed mesh is skipped when drawn.
+**Animated geometry**: don't create meshes inside `draw()`. Change one in place with `m.update(positions, normals?, uvs?)` (same vertex count), or rebuild a tube into an existing mesh with `mesh.tube(points, { into: m })` (any size). `m.free()` is safe to call twice, and a freed mesh is skipped when drawn. `m.arrays()` returns copies of the geometry (`positions`, `normals`, `uvs`, `indices`) for your own renderer, such as a WebGL buffer.
 
 ```ts
 const pos = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]), nrm = new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1]);
@@ -1158,13 +1473,21 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Marquees](#marquees-marquee) | `marquee`, `Marquee` | `MarqueeOptions` |
 | [Magnetic and parallax](#magnetic-and-parallax-magnetic-parallax) | `magnetic`, `parallax` | `MagneticOptions`, `ParallaxOptions`, `PointerFx` |
 | [Effects](#effects) | `effects`, `effect`, `registerEffect`, `effectNames` | `EffectOptions`, `EffectFn`, `EffectName` |
+| [HTML in canvas](#html-in-canvas-htmlcanvas-htmleffect) | `htmlCanvas`, `htmlEffect`, `htmlTexture`, `htmlCanvasSupported`, `htmlToSvg` | `HtmlCanvas`, `HtmlCanvasOptions`, `HtmlEffect`, `HtmlEffectOptions`, `HtmlEffectName` |
+| [Variants](#variants-variants) | `variants`, `Variants` | `Variant`, `VariantDef`, `VariantTransition`, `VariantsOptions` |
+| [Custom easings](#custom-bounce-and-wiggle-custombounce-customwiggle) | `customBounce`, `customWiggle` | `CustomBounceOptions`, `CustomWiggleOptions` |
+| [Recipes](#recipes-recipe) | `recipe`, `recipeNames` | `RecipeName`, `RecipeOptions`, `RecipeHandle` |
+| [Vue and Svelte](#vue-and-svelte-anikitvue-anikitsvelte) (`anikit/vue`, `anikit/svelte`) | `vRecipe`, `vAnikit`; actions `recipe`, `anikit` | `RecipeParam`, `Directive`, `Binding`, `ActionReturn` |
+| [React](#react-anikitreact) (`anikit/react`) | `useAnikit`, `useAnimate`, `useRecipe`, `useMotionValue`, `useSpring`, `useTransform`, `useScroll`, `Presence` | `PresenceProps`, `ScopedAnimate` |
 | [Layout transitions](#layout-transitions-flip), [presence](#presence-enter-and-exit) and [View Transitions](#view-transitions) | `flip`, `presence`, `Presence`, `enter`, `exit`, `viewTransition` | `FlipOptions`, `FlipState`, `PresenceOptions`, `ViewTransitionOptions`, `ViewTransitionHandle` |
 | [Interaction](#interaction) | `draggable`, `Draggable`, `observer`, `hover`, `press`, `gesture`, `Gesture` | `DraggableOptions`, `Bounds`, `ObserverOptions`, `ObserverEvent`, `GestureOptions` |
 | [Engine](#engine) | `engine`, `flush`, `ready`, `init` | |
 | [Dev tools](#dev-tools) and [testing](#testing-and-diagnostics) | `inspector`, `testing`, `setWarnings`, `onWarning` | `InspectorOptions` |
 | [Physics worlds](#physics-worlds) | `world`, `World` | `WorldOptions`, `BodyInit` |
 | [3D](#3d) | `scene3d`, `Scene3D`, `tilt`, `parseTransform`, `toMatrix3d`, `mixTransforms` | `SceneOptions`, `Projection`, `DrawOptions`, `TiltOptions`, `Vec3`, `Matrix` |
+| [Real-time GPU 3D](#real-time-gpu-3d-scene) | `scene`, `Scene`, `Object3D`, `InstancedMesh`, `Material`, `material`, `Orbit`, `Vector3`, `linearColor`, `box`, `roundedBox`, `sphere`, `cylinder`, `capsule`, `torus`, `plane`, `lathe`, `extrude`, `tube`, `triangulate`, `smoothNormals`, `subdivide`, `sdfMesh`, `sdSphere`, `sdBox`, `sdTorus`, `smoothUnion`, `smoothSubtract`, `text3d`, `loadGLTF`, `parseGLTF` | `GltfModel`, `SceneInit`, `CameraOptions`, `BloomOptions`, `DofOptions`, `OrbitOptions`, `Camera`, `SceneMaterialOptions`, `MaterialPreset`, `ObjectOptions`, `InstanceState`, `EnvironmentName`, `LayerContext`, `SceneLayer`, `RayHit`, `SceneStats`, `ScenePointerEvent`, `ScenePointerType`, `PrimitiveName`, `Vec3Like`, `Geometry`, `SdfOptions`, `Text3dOptions` |
 | [Point clouds and glow](#point-clouds-and-glow) | `pointCloud`, `PointCloud`, `textPoints`, `glow`, `Glow` | `CloudOptions`, `ShapeInput`, `GlowOptions`, `GlowRenderOptions` |
+| [Gaussian splats](#gaussian-splats-splats) (`anikit/splats`) | `splats`, `SplatLayer`, `packSplats`, `SPLAT_STRIDE` | `SplatSet`, `SplatColor`, `SplatSourceOptions`, `SplatFx`, `SplatCamera`, `SplatTransform`, `SplatsOptions`, `SplatMorphOptions`, `SplatEffectOptions`, `SplatStats` |
 | [Particle emitters](#particle-emitters) | `emitter`, `Emitter` | `EmitterOptions`, `SpawnShape` |
 | [Solid 3D](#solid-3d-renderer3d-mesh-instances) | `renderer3d`, `Renderer3D`, `mesh`, `Mesh3D`, `instances`, `Instances`, `texture`, `Texture3D`, `shatter`, `Shards`, `flightPath`, `FlightPath` | `InstanceInit`, `MaterialOptions`, `LightOptions`, `DrawItem`, `PointsItem`, `ShatterOptions`, `FlightPathOptions`, `FlightPose`, `Point3` |
 | [Audio](#audio-analysis) | `analyzeAudio`, `decodeAudio` | `AudioAnalysis` |
