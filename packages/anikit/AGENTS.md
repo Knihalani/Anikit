@@ -21,6 +21,7 @@ Calls work immediately: the WebAssembly core loads in the background and queues 
 | Natural, interruptible motion (pointer, toggles) | `spring(el, { x, y }, { stiffness, damping })` (retargets keep velocity) |
 | One value driving many properties (progress, drag, slider) | `const p = motionValue(0); bindValues(el, { x: p.map([0, 1], [0, 300]), opacity: p }); p.spring(0.5)` |
 | Endless logo / ticker row | `marquee('.logos', { speed: 60, pauseOnHover: true, scrollBoost: 0.5 })` |
+| Buttons that lean towards the cursor; layered parallax | `magnetic('.cta', { strength: 0.35 })`; `parallax('.bg', { speed: -0.4 })` |
 | A timed spring inside a timeline | `ease: 'spring(bounce: 0.3, duration: 0.6)'` |
 | Throw / glide with momentum | `inertia(el, { x: { velocity, min, max, snap } })` or `draggable(el, { inertia: true })` |
 | Play when visible | `inView(sel, (el) => { … }, { once: true })`, or `scrollTriggerBatch(sel, { animation: (el) => animate(…, { autoplay: false }) })` |

@@ -43,6 +43,8 @@ export { motionValue, MotionValue, derived, bindValues } from './motionvalue';
 export type { ValueBinding } from './motionvalue';
 export { marquee, Marquee } from './marquee';
 export type { MarqueeOptions } from './marquee';
+export { magnetic, parallax } from './pointerfx';
+export type { MagneticOptions, ParallaxOptions, PointerFx } from './pointerfx';
 export { effects, effect, registerEffect, effectNames } from './effects';
 export type { EffectOptions, EffectFn, EffectName } from './effects';
 export type { Playable, PlayState } from './playable';

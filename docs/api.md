@@ -266,6 +266,21 @@ m.revert();         // removes the clones and the track, restores the container
 
 Options: `speed` (px/s, default 80; negative reverses), `axis` (`'x'` or `'y'`), `gap` (px; or set CSS `gap` on the container), `pauseOnHover`, `hoverSpeed` (multiplier while hovered), `scrollBoost` (speeds up and follows the page's scroll direction), `smoothing`. It re-measures on resize (`m.measure()` after changing the content), stands still under reduced motion, and is cleaned up by `context().revert()`. The `Marquee` controller exposes `offset` and the eased `velocity`.
 
+## Magnetic and parallax: `magnetic`, `parallax`
+
+```ts
+import { magnetic, parallax, PointerFx } from 'anikit';
+
+magnetic('.cta', { strength: 0.35, radius: 120, spring: { stiffness: 300, damping: 18 } });
+const bg: PointerFx = parallax('.hero-bg', { speed: -0.4 });     // lags behind the page
+parallax('.hero-fg', { speed: 0.2, smooth: 0.15 });              // runs slightly ahead
+bg.revert();
+```
+
+- `magnetic(targets, { strength, radius, spring })`: elements lean towards the pointer (`strength` × its offset from their centre) once it is within `radius` px of their edge, and spring back when it leaves. Uses `x`/`y`, so it composes with other transforms.
+- `parallax(targets, { speed, axis, smooth })`: a scroll-linked drift while each element crosses the viewport; `speed` is relative to the page (−0.5 lags, 0.5 leads). Built on `scroll()`, so it scrubs both ways.
+- Both return a `PointerFx` (`revert()`, `kill()`), are cleaned up by `context().revert()`, and do nothing under reduced motion.
+
 ## Layout transitions: `flip`
 
 `flip(targets, mutate, options?)` records where elements are, runs `mutate`, and animates every element from its old box to its new one using only transforms. It returns a `Timeline` holding every animation it started, so `await flip(...)` waits for all of them.
@@ -1039,6 +1054,7 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Cleanup](#control-cleanup-and-accessibility) | `context`, `Context`, `matchMedia`, `quickTo`, `quickSetter` | `Revertible` |
 | [Reactive values](#reactive-values-motionvalue) | `motionValue`, `MotionValue`, `derived`, `bindValues` | `ValueBinding` |
 | [Marquees](#marquees-marquee) | `marquee`, `Marquee` | `MarqueeOptions` |
+| [Magnetic and parallax](#magnetic-and-parallax-magnetic-parallax) | `magnetic`, `parallax` | `MagneticOptions`, `ParallaxOptions`, `PointerFx` |
 | [Effects](#effects) | `effects`, `effect`, `registerEffect`, `effectNames` | `EffectOptions`, `EffectFn`, `EffectName` |
 | [Layout transitions](#layout-transitions-flip), [presence](#presence-enter-and-exit) and [View Transitions](#view-transitions) | `flip`, `presence`, `Presence`, `enter`, `exit`, `viewTransition` | `FlipOptions`, `FlipState`, `PresenceOptions`, `ViewTransitionOptions`, `ViewTransitionHandle` |
 | [Interaction](#interaction) | `draggable`, `Draggable`, `observer`, `hover`, `press`, `gesture`, `Gesture` | `DraggableOptions`, `Bounds`, `ObserverOptions`, `ObserverEvent`, `GestureOptions` |
