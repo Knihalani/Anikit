@@ -481,6 +481,18 @@ impl NativeRaster {
         self.r.clear_depth();
     }
 
+    /// Start a half-resolution reflection pass: draws go to a half-size
+    /// target cleared to `rgb`/`alpha` until :meth:`reflection_end`.
+    #[pyo3(signature = (rgb=0, alpha=255))]
+    fn reflection_begin(&mut self, rgb: u32, alpha: u8) {
+        self.r.reflection_begin(rgb & 0xff_ffff, alpha);
+    }
+
+    /// End the reflection pass: upsample it into the frame and clear depth.
+    fn reflection_end(&mut self) {
+        self.r.reflection_end();
+    }
+
     /// Draw `mesh` once per instance (`instances`: flat `f32`, 15 per instance:
     /// a column-major 3×4 affine then rgb; `None` = one identity white
     /// instance). `blend` is "opaque", "additive" or "gloss" (opaque blended
@@ -517,11 +529,11 @@ impl NativeRaster {
         self.read_instances(instances)?;
         let m = &mesh.get().m;
         let tex = texture.map(|t| &t.get().t);
-        let (r, inst) = (&mut self.r, &self.inst);
+        let (r, inst) = (self.r.target(), &self.inst);
         r.gloss = gloss;
         r.flip_winding = flip_winding;
         py.detach(|| r.draw_with(m, inst, &vp, eye, &mat, &light, cull, blend, tex));
-        Ok(self.r.drawn)
+        Ok(r.drawn)
     }
 
     /// Additive light points (`positions`: flat xyz; `colors`: flat rgb or

@@ -711,10 +711,13 @@ class Points:
 @dataclass
 class Mirror:
     """A mirror floor: the scene reflected about the plane ``y``, under items
-    marked ``mirror=True`` drawn glossily with ``strength`` (0–1)."""
+    marked ``mirror=True`` drawn glossily with ``strength`` (0–1). The
+    reflection renders at half ``resolution`` (a quarter of the shading, and
+    softer like a real glossy floor); ``"full"`` keeps it sharp."""
 
     y: float
     strength: float = 0.5
+    resolution: str = "half"
 
 
 @dataclass
@@ -811,7 +814,7 @@ def _mirror(m: Any) -> Optional[Mirror]:
     if isinstance(m, Mapping):
         return Mirror(**m)
     y, *rest = m
-    return Mirror(float(y), *(float(v) for v in rest))
+    return Mirror(float(y), *(float(v) for v in rest[:1]), *(str(v) for v in rest[1:2]))
 
 
 def _material(m: Any) -> Material:
@@ -1055,10 +1058,16 @@ class Renderer3D:
             # 3. the glossy surface blended over the reflection, 4. the scene itself.
             mr = _mirror_matrix(vp, mir.y)
             er = (eye[0], 2 * mir.y - eye[1], eye[2])
+            half = mir.resolution != "full"
+            if half:
+                nat.reflection_begin((r8 << 16) | (g8 << 8) | b8, 0 if transparent else 255)
             for it in meshes:
                 if not it.mirror and it.reflect and it.blend != "additive":
                     tris += draw(it, mr, er, flip=True, blend="opaque")
-            nat.clear_depth()
+            if half:
+                nat.reflection_end()
+            else:
+                nat.clear_depth()
             for it in meshes:
                 if it.mirror:
                     tris += draw(it, vp, eye, blend="gloss", gloss=mir.strength)
