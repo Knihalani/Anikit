@@ -61,6 +61,7 @@ Import from 'anikit'. Times are in seconds (only `engine.onFrame`/`engine.tick` 
 - More utilities
 - Physics worlds
 - 3D
+- Real-time GPU 3D: `scene`
 - Point clouds and glow
 - Gaussian splats: `splats`
 - Capture: screenshots and recordings

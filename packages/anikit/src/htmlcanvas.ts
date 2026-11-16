@@ -104,7 +104,12 @@ function sameOrigin(url: string): boolean {
 /** Fetch a same-origin URL as a data URL (cached). Cross-origin: null + one warning. */
 function toDataURL(url: string): Promise<string | null> {
   if (url.startsWith('data:')) return Promise.resolve(url);
-  const abs = new URL(url, location.href).href;
+  let abs: string;
+  try {
+    abs = new URL(url, location.href).href;
+  } catch {
+    return Promise.resolve(null);
+  }
   let p = dataCache.get(abs);
   if (p) return p;
   if (!sameOrigin(abs)) {
@@ -134,7 +139,15 @@ async function inlineUrls(css: string, base?: string): Promise<string> {
   for (const m of css.matchAll(URL_RE)) if (!m[2].startsWith('data:') && !m[2].startsWith('#')) urls.add(m[2]);
   if (!urls.size) return css;
   const map = new Map<string, string | null>();
-  await Promise.all([...urls].map(async (u) => map.set(u, await toDataURL(base ? new URL(u, base).href : u))));
+  await Promise.all([...urls].map(async (u) => {
+    let abs = u;
+    try {
+      if (base) abs = new URL(u, base).href;
+    } catch {
+      /* keep as is */
+    }
+    map.set(u, await toDataURL(abs));
+  }));
   return css.replace(URL_RE, (all, _q, u: string) => {
     if (!map.has(u)) return all;
     const d = map.get(u);
@@ -442,7 +455,14 @@ class HtmlCanvasImpl implements HtmlCanvas {
   private async raster(): Promise<void> {
     if (this.dead) return;
     this.last = performance.now();
-    const { url, width, height } = await htmlToSvg(this.element);
+    let svg: { url: string; width: number; height: number };
+    try {
+      svg = await htmlToSvg(this.element);
+    } catch (e) {
+      warn(`htmlCanvas: the element could not be serialised (${(e as Error).message}).`);
+      return;
+    }
+    const { url, width, height } = svg;
     if (this.dead) return;
     const img = this.img ?? (this.img = new Image());
     img.src = url;
@@ -891,4 +911,21 @@ export function _resetHtmlCanvasCache(): void {
   dataCache.clear();
   fontCss = null;
   warnedCross = new Set();
+}
+
+/**
+ * A live HTML texture for `scene()` materials: `material({ map: htmlTexture('#card') })`.
+ * The element is rasterised (natively when possible), re-uploaded to the GPU only
+ * when it changes, and pointer events on the mesh are forwarded to the element
+ * under the hit's UV. Keep the element rendered (e.g. off-screen with
+ * `position: fixed; left: -10000px`), not `display: none`.
+ *
+ * ```ts
+ * const s = scene('#c');
+ * const ui = htmlTexture('#panel');
+ * s.add(plane(1.6, 1), { rotation: [Math.PI / 2, 0, 0], material: { color: '#000', emissive: '#fff', map: ui } });
+ * ```
+ */
+export function htmlTexture(element: Element | string, options: Omit<HtmlCanvasOptions, 'target'> = {}): HtmlCanvas {
+  return htmlCanvas(element, { live: true, ...options });
 }

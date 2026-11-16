@@ -20,20 +20,20 @@ const filter = process.argv[2] || '';
 
 const dir = mkdtempSync(join(tmpdir(), 'anikit-browser-'));
 await build({
-  stdin: { contents: "import * as ak from './src/index'; import * as sp from './src/splats'; window.ak = { ...ak, ...sp };", resolveDir: pkg, loader: 'ts' },
+  stdin: { contents: "import * as ak from './src/index'; window.ak = ak;", resolveDir: pkg, loader: 'ts' },
   bundle: true, format: 'iife', outfile: join(dir, 'ak.js'), logLevel: 'error',
 });
 const bundle = readFileSync(join(dir, 'ak.js'), 'utf8');
 
 const files = readdirSync(join(pkg, 'test/browser')).filter((f) => f.endsWith('.mjs')).sort();
-const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
-const browser = await chromium.launch({ args: GL });
+const GL_ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
+const browser = await chromium.launch({ args: GL_ARGS });
 // Tests with `args` (Chromium flags, e.g. experimental web platform features) get their own browser.
 const flagged = new Map();
 const browserFor = async (args) => {
   if (!args?.length) return browser;
   const key = args.join(' ');
-  if (!flagged.has(key)) flagged.set(key, await chromium.launch({ args: [...GL, ...args] }));
+  if (!flagged.has(key)) flagged.set(key, await chromium.launch({ args: [...GL_ARGS, ...args] }));
   return flagged.get(key);
 };
 let failed = 0;
