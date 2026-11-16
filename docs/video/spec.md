@@ -378,7 +378,7 @@ warning scenes[0].layers[1].colour: unknown key, did you mean 'color'?
 warning scenes[2].layers[3].start: 4.5 s is after the scene ends (4 s); the layer is never visible
 ```
 
-With `--json`, the output is `{ "ok": bool, "errors": [{ "path", "message", "suggestion" }], "warnings": [...], "duration": s, "frames": n, "scenes": [{ "id", "start", "end" }] }`.
+With `--json`, the output is one compact line: `{ "ok": bool, "errors": ["scenes[1].layers[0].type: unknown layer type 'txt', did you mean 'text'?"], "warnings": [...], "duration": s, "frames": n, "scenes": [{ "id", "start", "end" }] }`.
 
 ## CLI
 

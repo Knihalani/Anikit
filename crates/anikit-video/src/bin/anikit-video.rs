@@ -121,16 +121,25 @@ fn build(path: &str, json: bool, load_assets: bool) -> Result<(Evaluator, Vec<Di
 
 fn report(d: &[Diagnostic], json: bool, ev: Option<&Evaluator>) {
     if json {
-        let errors: Vec<_> = d.iter().filter(|x| x.severity == Severity::Error).collect();
-        let warnings: Vec<_> = d.iter().filter(|x| x.severity == Severity::Warning).collect();
+        // Compact (token-efficient): one string per issue, "path: message, did you mean 'x'?".
+        let line = |x: &Diagnostic| {
+            let mut s = if x.path.is_empty() { x.message.clone() } else { format!("{}: {}", x.path, x.message) };
+            if let Some(g) = &x.suggestion {
+                s += &format!(", did you mean '{g}'?");
+            }
+            s
+        };
+        let errors: Vec<String> = d.iter().filter(|x| x.severity == Severity::Error).map(line).collect();
+        let warnings: Vec<String> = d.iter().filter(|x| x.severity == Severity::Warning).map(line).collect();
         let mut v = serde_json::json!({ "ok": errors.is_empty(), "errors": errors, "warnings": warnings });
         if let Some(ev) = ev {
             v["width"] = ev.width.into();
             v["height"] = ev.height.into();
             v["fps"] = ev.fps.into();
-            v["duration"] = ev.duration.into();
+            let r = |x: f32| ((x as f64) * 1000.0).round() / 1000.0;
+            v["duration"] = r(ev.duration).into();
             v["frames"] = ev.frames().into();
-            v["scenes"] = serde_json::to_value(ev.scenes()).unwrap();
+            v["scenes"] = ev.scenes().iter().map(|s| serde_json::json!({ "id": s.id, "start": r(s.start), "end": r(s.end) })).collect();
         }
         println!("{v}");
     } else {
