@@ -1685,6 +1685,8 @@ impl Raster {
         self.half_px.resize(bw * bh, 0);
         const N: usize = 14;
         const NS: usize = 7;
+        // Table stride: N rounded up to whole groups of four.
+        const NP: usize = 16;
         const Q: f32 = 4.0;
         let golden = 2.399_963;
         let disc = |k: usize, n: usize| {
@@ -1698,8 +1700,13 @@ impl Raster {
         for l in 0..levels {
             let rq = l as f32 / Q;
             let n = if rq < 3.0 { NS } else { N };
-            for k in 0..N {
-                let (tx, ty, tr) = if k < n { disc(k, n) } else { (0.0, 0.0, 0.0) };
+            for k in 0..NP {
+                if k >= n {
+                    // Padding (taps go four at a time): too far for any blur to reach.
+                    tab.push((0, 0, 1e9));
+                    continue;
+                }
+                let (tx, ty, tr) = disc(k, n);
                 tab.push((crate::math::floorf(0.5 + tx * rq) as i32, crate::math::floorf(0.5 + ty * rq) as i32, rq * tr));
             }
         }
@@ -1716,21 +1723,27 @@ impl Raster {
                 }
                 let lv = ((rc * Q + 0.5) as usize).min(levels - 1);
                 let n = if (lv as f32) < 3.0 * Q { NS } else { N };
-                let mut acc = [(c0 & 255) as f32, ((c0 >> 8) & 255) as f32, ((c0 >> 16) & 255) as f32];
-                let mut tot = 1.0;
-                for &(ox, oy, dist) in &tab[lv * N..lv * N + n] {
-                    let m = (by as i32 + oy).clamp(0, hi) as usize * bw + (bx as i32 + ox).clamp(0, wi) as usize;
-                    // A tap only contributes if it is itself blurry enough to reach us.
-                    let wgt = ((coc[m] - dist) + 1.0).clamp(0.0, 1.0);
-                    if wgt <= 0.0 {
-                        continue;
+                // Four taps per step: scalar gathers, weights and sums in SIMD lanes.
+                let mut acc4 = [V4::splat(0.0); 3];
+                let mut tot4 = V4::splat(0.0);
+                for g in tab[lv * NP..lv * NP + n.next_multiple_of(4)].chunks_exact(4) {
+                    let mut cq = [0u32; 4];
+                    let mut rq = [0f32; 4];
+                    let mut dq = [0f32; 4];
+                    for (l, &(ox, oy, dist)) in g.iter().enumerate() {
+                        let m = (by as i32 + oy).clamp(0, hi) as usize * bw + (bx as i32 + ox).clamp(0, wi) as usize;
+                        cq[l] = src[m];
+                        rq[l] = coc[m];
+                        dq[l] = dist;
                     }
-                    let c = src[m];
-                    acc[0] += (c & 255) as f32 * wgt;
-                    acc[1] += ((c >> 8) & 255) as f32 * wgt;
-                    acc[2] += ((c >> 16) & 255) as f32 * wgt;
-                    tot += wgt;
+                    // A tap only contributes if it is itself blurry enough to reach us.
+                    let wgt = (V4::from_array(rq) - V4::from_array(dq) + 1.0).clamp(0.0, 1.0);
+                    let [r, gg, b] = V4::unpack_rgb(cq);
+                    acc4 = [acc4[0] + r * wgt, acc4[1] + gg * wgt, acc4[2] + b * wgt];
+                    tot4 = tot4 + wgt;
                 }
+                let acc = [(c0 & 255) as f32 + acc4[0].sum(), ((c0 >> 8) & 255) as f32 + acc4[1].sum(), ((c0 >> 16) & 255) as f32 + acc4[2].sum()];
+                let tot = 1.0 + tot4.sum();
                 let it = 1.0 / tot;
                 let q = |v: f32| ((v * it + 0.5) as u32).min(255);
                 self.half_px[j] = q(acc[0]) | q(acc[1]) << 8 | q(acc[2]) << 16;
