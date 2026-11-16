@@ -26,7 +26,7 @@ await build({
 const bundle = readFileSync(join(dir, 'ak.js'), 'utf8');
 
 const files = readdirSync(join(pkg, 'test/browser')).filter((f) => f.endsWith('.mjs')).sort();
-const browser = await chromium.launch();
+const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 // Tests with `args` (Chromium flags, e.g. experimental web platform features) get their own browser.
 const flagged = new Map();
 const browserFor = async (args) => {
