@@ -249,6 +249,9 @@ pub struct BlackHole {
     /// Eye adaptation: exposure gain that compensates the redshifted sky
     /// seen looking back out while falling in.
     adapt: f32,
+    // Scratch lookup tables reused across geometry rebuilds (no per-frame allocation).
+    ulut: Vec<[f32; 5]>,
+    tlut: Vec<[f32; 3]>,
     /// The bloom accumulators hold no previous frame yet (first frame or
     /// after a resize): build them from this frame before bloom.
     prime: bool,
@@ -553,6 +556,8 @@ impl BlackHole {
             frame: 0,
             cam: None,
             adapt: 1.0,
+            ulut: Vec::new(),
+            tlut: Vec::new(),
             prime: true,
         };
         bh.build_static(seed);
@@ -961,7 +966,8 @@ impl BlackHole {
         // Radial profile over u: temperature, edge fade, texture x.
         const UN: usize = 2048;
         // [T, fade, texture x, √(1 − 3u), Ω]
-        let mut ulut = vec![[0.0f32; 5]; UN + 2];
+        let mut ulut = core::mem::take(&mut self.ulut);
+        ulut.resize(UN + 2, [0.0; 5]);
         for (i, e) in ulut.iter_mut().enumerate() {
             let u = u_lo + (u_hi - u_lo) * i as f32 / UN as f32;
             let r = 1.0 / u;
@@ -972,7 +978,8 @@ impl BlackHole {
         }
         let u_k = UN as f32 / (u_hi - u_lo);
         // Orbit-plane quantities per θ bin: φ0 column, azimuth (texels), L_z/b.
-        let mut tlut = vec![[0.0f32; 3]; TH_BINS];
+        let mut tlut = core::mem::take(&mut self.tlut);
+        tlut.resize(TH_BINS, [0.0; 3]);
         for (i, e) in tlut.iter_mut().enumerate() {
             let (st, ct) = sincosf(i as f32 / TH_BINS as f32 * TAU);
             let sv = [ct * cam.pr[0] + st * cam.pu[0], ct * cam.pr[1] + st * cam.pu[1], ct * cam.pr[2] + st * cam.pu[2]];
@@ -1079,6 +1086,8 @@ impl BlackHole {
                 l.gain.push(gain * fade * cover * norm_k);
             }
         }
+        self.ulut = ulut;
+        self.tlut = tlut;
         // Eye adaptation from the energy factor of the outermost escaping ray.
         let d_back = self.dobs[ROWS - 1].max(0.05);
         self.adapt = if self.first_escape < ROWS { (1.0 / (d_back * d_back * d_back)).clamp(1.0, 10.0) } else { 1.0 };
