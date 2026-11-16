@@ -181,6 +181,7 @@ export interface Exports {
   ak_mesh_ptr(id: number, which: number): number;
   ak_mesh_bounds(id: number): number;
   ak_mesh_free(id: number): void;
+  ak_surface_nets(nx: number, ny: number, nz: number, ox: number, oy: number, oz: number, s: number): number;
   ak_mesh_replace(dst: number, src: number): number;
   ak_raster_mask_begin(id: number): void;
   ak_raster_mask_draw(id: number, mesh: number, n: number, cull: number): void;

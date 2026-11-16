@@ -71,4 +71,60 @@ export const tests = [
       await page.evaluate(() => s.revert());
     },
   },
+  {
+    name: 'loadGLTF(): meshes, materials, hierarchy and a TRS animation from an embedded .gltf',
+    html,
+    async run(page) {
+      const r = await page.evaluate(async () => {
+        const pos = new Float32Array([-1, -1, 0, 1, -1, 0, 0, 1, 0]);
+        const times = new Float32Array([0, 1]), trans = new Float32Array([0, 0, 0, 2, 0, 0]);
+        const bytes = new Uint8Array(pos.byteLength + 8 + 24);
+        bytes.set(new Uint8Array(pos.buffer), 0); bytes.set(new Uint8Array(times.buffer), 36); bytes.set(new Uint8Array(trans.buffer), 44);
+        const b64 = btoa(String.fromCharCode(...bytes));
+        const gltf = {
+          asset: { version: '2.0' }, scene: 0, scenes: [{ nodes: [0] }],
+          nodes: [{ children: [1], translation: [0, 0, 0] }, { mesh: 0, translation: [0, 0, -1] }],
+          meshes: [{ primitives: [{ attributes: { POSITION: 0 }, material: 0 }] }],
+          materials: [{ pbrMetallicRoughness: { baseColorFactor: [0, 1, 0, 1], metallicFactor: 0, roughnessFactor: 0.5 } }],
+          buffers: [{ byteLength: bytes.length, uri: 'data:application/octet-stream;base64,' + b64 }],
+          bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: 36 }, { buffer: 0, byteOffset: 36, byteLength: 8 }, { buffer: 0, byteOffset: 44, byteLength: 24 }],
+          accessors: [
+            { bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' },
+            { bufferView: 1, componentType: 5126, count: 2, type: 'SCALAR' },
+            { bufferView: 2, componentType: 5126, count: 2, type: 'VEC3' },
+          ],
+          animations: [{ name: 'slide', samplers: [{ input: 1, output: 2 }], channels: [{ sampler: 0, target: { node: 0, path: 'translation' } }] }],
+        };
+        const url = 'data:model/gltf+json;base64,' + btoa(JSON.stringify(gltf));
+        window.s = ak.scene('#c', { dpr: 1, adaptive: false, autoRender: false, shadows: false, camera: { position: [0, 0, 4] } });
+        const m = await ak.loadGLTF(s, url);
+        const hit = s.raycast(160, 120);
+        const out = { names: m.animations, hit: hit && hit.point, green: hit && hit.object.material.color[1] };
+        m.play('slide');
+        await new Promise((res) => setTimeout(res, 1300));
+        out.after = s.raycast(160, 120);
+        return out;
+      });
+      ok(r.names[0] === 'slide', 'animation names');
+      ok(r.hit && Math.abs(r.hit[2] + 1) < 1e-4, `triangle hit at z = -1 (${r.hit})`);
+      ok(r.green === 1, 'material colour');
+      ok(r.after === null, 'animation slid the triangle away from the centre');
+    },
+  },
+  {
+    name: 'text3d(): bevelled glyph extrusion has the requested height and depth',
+    async run(page) {
+      const r = await page.evaluate(() => {
+        const t0 = performance.now();
+        const g = ak.text3d('Hi', { size: 1, depth: 0.4, bevel: 0.05, resolution: 80 });
+        const p = g.positions; let lx = 1e9, hx = -1e9, ly = 1e9, hy = -1e9, lz = 1e9, hz = -1e9;
+        for (let i = 0; i < p.length; i += 3) { lx = Math.min(lx, p[i]); hx = Math.max(hx, p[i]); ly = Math.min(ly, p[i + 1]); hy = Math.max(hy, p[i + 1]); lz = Math.min(lz, p[i + 2]); hz = Math.max(hz, p[i + 2]); }
+        return { tris: g.indices.length / 3, w: hx - lx, h: hy - ly, d: hz - lz, ms: performance.now() - t0 };
+      });
+      ok(r.tris > 1000, `meshed (${r.tris} triangles in ${r.ms.toFixed(0)} ms)`);
+      near(r.h, 1, 0.2, 'cap height ≈ size');
+      near(r.d, 0.4, 0.04, 'depth');
+      ok(r.w > r.h, 'wider than tall');
+    },
+  },
 ];
