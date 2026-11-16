@@ -1269,6 +1269,8 @@ impl Raster {
         let cm: M4 = core::array::from_fn(|i| c64[i] as f32);
         let mut any = false;
         let (sx, sy) = (fw * 0.5 * shutter, fh * 0.5 * shutter);
+        const RB: u32 = 0x00ff_00ff;
+        let lanes2 = V4::new(0.0, 2.0, 4.0, 6.0);
         for by in 0..bh {
             let y = by * 2;
             let ny = 1.0 - (y as f32 + 1.0) / fh;
@@ -1277,45 +1279,63 @@ impl Raster {
             let (kx, ky, kq) = (cm[4] * ny + cm[12], cm[5] * ny + cm[13], cm[7] * ny + cm[15]);
             let row = y * w;
             let trow = (by / T) * tw;
-            for bx in 0..bw {
-                let x = bx * 2;
-                let i = row + x;
-                let q = [self.color[i], self.color[i + 1], self.color[i + w], self.color[i + w + 1]];
-                let ch = |s: u32| ((q[0] >> s & 255) + (q[1] >> s & 255) + (q[2] >> s & 255) + (q[3] >> s & 255) + 2) >> 2;
-                self.blur_src[by * bw + bx] = ch(0) | ch(8) << 8 | ch(16) << 16;
-                // Nearest of the four depths: edges belong to the foreground.
-                let d = self.depth[i].min(self.depth[i + 1]).min(self.depth[i + w]).min(self.depth[i + w + 1]);
-                let nz = if d.is_finite() { d } else { 0.9999 };
-                let nx = (x as f32 + 1.0) / fw - 1.0;
-                let cw = inv[3] * nx + inv[11] * nz + kw;
-                if cw.abs() < 1e-12 {
-                    continue;
+            // Four half-res pixels per step: colour and depth gathered as
+            // scalars, the reprojection (two divides and a square root) in SIMD.
+            let (crow, crow2) = (&self.color[row..row + w], &self.color[row + w..row + 2 * w]);
+            let (drow, drow2) = (&self.depth[row..row + w], &self.depth[row + w..row + 2 * w]);
+            let mut bx0 = 0;
+            while bx0 < bw {
+                let nl = (bw - bx0).min(4);
+                let mut dq = [0.9999f32; 4];
+                for l in 0..nl {
+                    let x = (bx0 + l) * 2;
+                    // 2×2 mean in packed lanes: red+blue share a word, green another.
+                    let q = [crow[x], crow[x + 1], crow2[x], crow2[x + 1]];
+                    let rb = ((q[0] & RB) + (q[1] & RB) + (q[2] & RB) + (q[3] & RB) + 0x0002_0002) >> 2 & RB;
+                    let g = (((q[0] >> 8) & 255) + ((q[1] >> 8) & 255) + ((q[2] >> 8) & 255) + ((q[3] >> 8) & 255) + 2) >> 2;
+                    self.blur_src[by * bw + bx0 + l] = rb | g << 8;
+                    // Nearest of the four depths: edges belong to the foreground.
+                    let d = drow[x].min(drow[x + 1]).min(drow2[x]).min(drow2[x + 1]);
+                    if d.is_finite() {
+                        dq[l] = d;
+                    }
                 }
+                let nx = (lanes2 + (bx0 * 2) as f32 + 1.0) / fw - 1.0;
+                let nz = V4::from_array(dq);
+                let cw = nx * inv[3] + nz * inv[11] + kw;
                 let lin = 1.0 / cw;
-                let qw = cm[3] * nx + cm[11] * nz + kq;
-                // Behind the previous camera (w ≤ 0 after the cw divide): treat as still.
-                if qw * lin <= 1e-6 {
-                    self.vel[by * bw + bx] = pack(lin, 0.5);
-                    continue;
-                }
+                let qw = nx * cm[3] + nz * cm[11] + kq;
                 let iq = 1.0 / qw;
-                let px = (cm[0] * nx + cm[8] * nz + kx) * iq;
-                let py = (cm[1] * nx + cm[9] * nz + ky) * iq;
+                let px = (nx * cm[0] + nz * cm[8] + kx) * iq;
+                let py = (nx * cm[1] + nz * cm[9] + ky) * iq;
                 // Velocity in half-res pixels.
-                let (mut vx, mut vy) = ((nx - px) * sx, (py - ny) * sy);
-                let l2 = vx * vx + vy * vy;
-                let mut len = crate::math::sqrtf(l2);
-                if len > max_b {
-                    vx *= max_b / len;
-                    vy *= max_b / len;
-                    len = max_b;
+                let (vx, vy) = ((nx - px) * sx, (py - ny) * sy);
+                let len = (vx * vx + vy * vy).sqrt();
+                let (cw, lin, qw, vx, vy, len) = (cw.to_array(), lin.to_array(), qw.to_array(), vx.to_array(), vy.to_array(), len.to_array());
+                for l in 0..nl {
+                    let bx = bx0 + l;
+                    if cw[l].abs() < 1e-12 {
+                        continue;
+                    }
+                    // Behind the previous camera (w ≤ 0 after the cw divide): treat as still.
+                    if qw[l] * lin[l] <= 1e-6 {
+                        self.vel[by * bw + bx] = pack(lin[l], 0.5);
+                        continue;
+                    }
+                    let (mut vx, mut vy, mut len) = (vx[l], vy[l], len[l]);
+                    if len > max_b {
+                        vx *= max_b / len;
+                        vy *= max_b / len;
+                        len = max_b;
+                    }
+                    any |= len > 0.5;
+                    self.vel[by * bw + bx] = pack(lin[l], len);
+                    let t = &mut self.tiles[trow + bx / T];
+                    if len * len > t[0] * t[0] + t[1] * t[1] {
+                        *t = [vx, vy];
+                    }
                 }
-                any |= len > 0.5;
-                self.vel[by * bw + bx] = pack(lin, len);
-                let t = &mut self.tiles[trow + bx / T];
-                if len * len > t[0] * t[0] + t[1] * t[1] {
-                    *t = [vx, vy];
-                }
+                bx0 += 4;
             }
         }
         if !any {
