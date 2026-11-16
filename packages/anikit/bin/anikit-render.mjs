@@ -19,6 +19,7 @@ Usage
   anikit-render <film.mjs> --still <t> [--out f.png]  one frame at t seconds, as PNG (or .jpg): a quick check
   anikit-render <film.mjs> --review [dir/]            contact sheet + pacing report (default dir: review/)
   anikit-render <film.mjs> --preview <N> --out dir/   every Nth frame as JPEG
+  anikit-render <film.mjs> --profile [--every N]      where render time goes, per frame and per 3D pass
   anikit-render <film.mjs> --out film.mp4 [options]   render the video
 
 Options
@@ -32,7 +33,7 @@ Options
   --preset <name>       x264 speed/size trade-off (default medium)
   --codec <name>        ffmpeg video codec (default libx264)
   --template <name>     with --init: film (default) or journey
-  --every <n>           with --review: analyse every nth frame
+  --every <n>           with --review: analyse every nth frame; with --profile: time every nth (default 1/s)
   --sheet-every <n>     with --review: one contact-sheet tile every nth frame
   -h, --help            show this help
 
@@ -44,7 +45,7 @@ Workflow: --still 2 to look at one frame, --review to check pacing and the whole
 film at a glance (or --preview 15 for full frames), then render. Output never depends on machine speed.`;
 
 const VALUE = ['out', 'workers', 'from', 'to', 'audio', 'fade-in', 'fade-out', 'fade-color', 'crf', 'preset', 'codec', 'preview', 'still', 'template', 'every', 'sheet-every'];
-const BOOL = ['help', 'init'];
+const BOOL = ['help', 'init', 'profile'];
 /** Flags whose value is optional (`--review` or `--review dir/`). */
 const OPTIONAL = ['review'];
 const fail = (msg) => {
@@ -153,6 +154,14 @@ if (opts.review !== undefined) {
   writeFileSync(join(dir, 'pacing.txt'), r.report + '\n');
   writeFileSync(join(dir, 'pacing.csv'), r.csv + '\n');
   console.log(r.report + `\nreview → ${dir}/sheet.jpg, pacing.txt, pacing.csv`);
+  process.exit(0);
+}
+
+if (opts.profile) {
+  // Where the time goes: steps, draws (and each renderer3d pass), read-back, grade.
+  const { comp } = await build();
+  const p = await node.profileFilm(comp, { every: num('every') });
+  console.log(node.formatProfile(p));
   process.exit(0);
 }
 

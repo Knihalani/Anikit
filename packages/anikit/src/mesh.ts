@@ -17,6 +17,7 @@ import { core, F64, f64Buf, W } from './wasm';
 import { parseColor } from './values';
 import { track } from './context';
 import type { Scene3D } from './scene';
+import { addPass } from './profile';
 
 type V3 = [number, number, number];
 const STRIDE = 15;
@@ -388,6 +389,8 @@ export class Renderer3D {
   triangles = 0;
   /** Milliseconds the last render took. */
   lastMs = 0;
+  /** Milliseconds per pass of the last render: `setup` (clear + shadow map), `mirror`, `opaque`, `sky`, `light` (additive + points), `dof`, `motionBlur`, `output`. Where to optimise. */
+  stats: Record<string, number> = {};
   private id: number;
   private img: ImageData | null = null;
   private single = new Instances(1);
@@ -456,6 +459,9 @@ export class Renderer3D {
     shadows?: { extent: number; center?: V3; size?: number; strength?: number; bias?: number };
   } = {}): Uint8ClampedArray {
     const t0 = performance.now();
+    const stats: Record<string, number> = (this.stats = {});
+    let lap = t0;
+    const pass = (name: string) => { const now = performance.now(); stats[name] = (stats[name] ?? 0) + now - lap; addPass(name, now - lap); lap = now; };
     const w = core();
     const bg = rgb(o.background, [0, 0, 0]);
     const hex = (Math.round(bg[0] * 255) << 16) | (Math.round(bg[1] * 255) << 8) | Math.round(bg[2] * 255);
@@ -523,6 +529,7 @@ export class Renderer3D {
         w.ak_raster_shadow_draw(this.id, it.mesh.id, inst.count);
       }
     }
+    pass('setup');
     if (o.mirror) {
       // 1. The scene reflected about y = mirror.y (winding flips), 2. clear depth,
       // 3. the glossy surface blended over the reflection, 4. the scene itself.
@@ -537,18 +544,21 @@ export class Renderer3D {
       if (half) w.ak_raster_reflection_end(this.id);
       else w.ak_raster_clear_depth(this.id);
       for (const it of meshes) if (it.mirror) drawMesh(it, matrix, eye, 4, o.mirror.strength ?? 0.5);
+      pass('mirror');
     }
     const light = (it: DrawItem | PointsItem) => 'points' in it || it.blend === 'additive';
     for (const item of items) {
       if (light(item) || (o.mirror && (item as DrawItem).mirror)) continue;
       drawMesh(item as DrawItem, matrix, eye, 0);
     }
+    pass('opaque');
     if (o.skybox) {
       const sb = o.skybox === true ? {} : o.skybox;
       const vals = [...matrix, ...(o.key ?? [0.4, 0.8, 0.6]), ...rgb(o.keyColor), ...rgb(o.sky, [0.25, 0.3, 0.55]), ...rgb(o.horizon, [1, 0.85, 0.7]), ...rgb(o.ground, [0.05, 0.05, 0.07]), ...rgb(o.fogColor, bg), ...(o.fog ?? [0, 0])];
       const at = f64Buf(vals.length);
       F64.set(vals, at);
       w.ak_raster_sky(this.id, sb.sun ?? 0);
+      pass('sky');
     }
     // Light last: additive geometry and points add onto everything (incl. the sky).
     for (const item of items) {
@@ -556,10 +566,12 @@ export class Renderer3D {
       if ('points' in item) this.drawPoints(item, matrix, eye, o.prevCamera);
       else drawMesh(item, matrix, eye, 0);
     }
+    pass('light');
     if (o.dof) {
       const at = f64Buf(16);
       F64.set(matrix, at);
       w.ak_raster_dof(this.id, o.dof.focus, o.dof.aperture ?? 16, o.dof.max ?? this.width * 0.03);
+      pass('dof');
     }
     const prev = o.prevCamera ?? this.prevMatrix;
     if (o.motionBlur && prev) {
@@ -567,6 +579,7 @@ export class Renderer3D {
       const at = f64Buf(32);
       F64.set([...matrix, ...prev], at);
       w.ak_raster_motion_blur(this.id, mb.shutter ?? 0.5, mb.max ?? this.width * 0.06);
+      pass('motionBlur');
     }
     this.prevMatrix = matrix;
     const px = new Uint8ClampedArray(W!.memory.buffer, w.ak_raster_ptr(this.id), this.width * this.height * 4);
@@ -577,6 +590,7 @@ export class Renderer3D {
       else this.img = new ImageData(px, this.width, this.height);
       ctx.putImageData(this.img, 0, 0);
     }
+    pass('output');
     this.lastMs = performance.now() - t0;
     return px;
   }

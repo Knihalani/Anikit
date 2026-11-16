@@ -252,6 +252,7 @@ The module default-exports `async ({ anikit, node }) => composition`. Building b
 - Preview at `--preview 15` and look at every frame; then render and pull strips around each cut/impact with ffmpeg (`-ss t -frames:v 14 -vf scale=240:-1,tile=14x1`).
 - Watch for: empty or flat frames, type over same-tone content, shots that hold still for more than ~1 s.
 - `ffprobe` the output: duration, frame count, and whether an audio stream should be there.
+- Slow render? `npx anikit-render film.mjs --profile` shows where each frame's time goes (your `step`/`draw` hooks, each `renderer3d` pass, the grade). Fix the biggest line first: fewer motion-blur samples on calm shots, `mirror` only where the floor is visible, gate heavy items by time.
 
 
 ---
@@ -1665,6 +1666,19 @@ npx anikit-render film.mjs --out film.mp4 --workers 4 --fade-in 0.3 --fade-out 0
 ```bash
 npx anikit-render film.mjs --preview 30 --out frames/
 npx anikit-render film.mjs --review review/   # contact sheet + pacing report (holds, flat frames, cuts)
+npx anikit-render film.mjs --profile          # where render time goes: steps, draws, each 3D pass, the grade
+```
+
+`--profile` times one frame per second (`--every N` for more) and prints a table per frame plus the mean, the biggest costs and the estimated render time. The same numbers are on every delivered frame as `frame.timing`, a `FrameTiming` (`{ step, draw, read, post, passes }`, milliseconds; `passes` splits `renderer3d` work into `setup`, `mirror`, `opaque`, `sky`, `light`, `dof`, `motionBlur`, `output`), and `r3.stats` holds the last render's passes:
+
+```ts
+const r3 = renderer3d({ width: 640, height: 360 });
+const film = composition({ width: 640, height: 360, duration: 2 });
+film.scene('s', 0, 2, { draw: () => { r3.render(scene3d({ width: 640, height: 360 }), []); } });
+await film.render({
+  canvas: document.createElement('canvas'),
+  onFrame: ({ t, timing }) => console.log(t, timing.draw, timing.post, timing.passes.opaque, r3.stats.output),
+});
 ```
 
 Each worker builds the same composition (randomness is seeded), simulates to its slice without drawing, pre-rolls half a second so trails match, renders and encodes; slices join without re-encoding and the audio is muxed in. Needs the optional peer dependency `@napi-rs/canvas` and ffmpeg. `loadAnikit()`, `renderToFile()` and `renderPreview()` are the programmatic equivalents.

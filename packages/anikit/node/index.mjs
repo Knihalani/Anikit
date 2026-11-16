@@ -162,6 +162,49 @@ export async function renderPreview(comp, o) {
 }
 
 /**
+ * Profile a film: renders every `every`-th frame (default one per second) and
+ * reports where the time goes — scene steps, draws, pixel read-back, the
+ * grade, and each `renderer3d` pass inside the draws — per sampled frame and
+ * on average, with an estimate of the full render time.
+ *
+ *   anikit-render film.mjs --profile        (prints the table)
+ *
+ * Returns `{ frames: [{ t, step, draw, read, post, passes }], mean, estimate }`
+ * (milliseconds; `estimate` in seconds for one worker, without encoding).
+ */
+export async function profileFilm(comp, o = {}) {
+  const lib = canvasLib();
+  const every = o.every ?? comp.fps;
+  const frames = [];
+  const canvas = lib.createCanvas(comp.width, comp.height);
+  await comp.render({
+    canvas, every, readPixels, createCanvas: (w, h) => lib.createCanvas(w, h),
+    onFrame: (fr) => { frames.push({ t: fr.t, ...fr.timing, passes: { ...fr.timing.passes } }); },
+  });
+  const keys = ['step', 'draw', 'read', 'post'];
+  const passKeys = [...new Set(frames.flatMap((f) => Object.keys(f.passes)))];
+  const avg = (get) => frames.reduce((a, f) => a + get(f), 0) / Math.max(1, frames.length);
+  const mean = Object.fromEntries(keys.map((k) => [k, avg((f) => f[k])]));
+  mean.passes = Object.fromEntries(passKeys.map((k) => [k, avg((f) => f.passes[k] ?? 0)]));
+  const per = keys.reduce((a, k) => a + mean[k], 0);
+  return { frames, mean, perFrame: per, estimate: (per * comp.frames) / 1000, passKeys };
+}
+
+/** Format `profileFilm()`'s result as a table. */
+export function formatProfile(p) {
+  const cols = ['step', 'draw', 'read', 'post', ...p.passKeys.map((k) => `3d:${k}`)];
+  const cell = (v) => (v >= 100 ? v.toFixed(0) : v.toFixed(1)).padStart(8);
+  const val = (f, c) => (c.startsWith('3d:') ? f.passes[c.slice(3)] ?? 0 : f[c]);
+  const lines = [`${'t (s)'.padStart(7)} ${cols.map((c) => c.padStart(8)).join(' ')}   total ms`];
+  for (const f of p.frames) lines.push(`${f.t.toFixed(2).padStart(7)} ${cols.map((c) => cell(val(f, c))).join(' ')}   ${cell(f.step + f.draw + f.read + f.post)}`);
+  lines.push(`${'mean'.padStart(7)} ${cols.map((c) => cell(val(p.mean, c))).join(' ')}   ${cell(p.perFrame)}`);
+  const hot = [...['step', 'read', 'post'].map((k) => [k, p.mean[k]]), ...Object.entries(p.mean.passes).map(([k, v]) => [`3d:${k}`, v])].sort((a, b) => b[1] - a[1]).slice(0, 3);
+  lines.push('', `≈ ${p.perFrame.toFixed(0)} ms per frame → ${p.estimate.toFixed(0)} s for the whole film on one worker (divide by --workers; encoding not included).`);
+  lines.push(`biggest costs: ${hot.map(([k, v]) => `${k} ${v.toFixed(0)} ms`).join(', ')}. ('draw' includes the 3d passes; 'step' is your step() hooks and simulations.)`);
+  return lines.join('\n');
+}
+
+/**
  * Review a film without watching it: renders every `every`-th frame once
  * (default 6, i.e. 10 per second at 60 fps), and returns
  * - a contact sheet (JPEG buffer): graded frames every `sheetEvery` seconds

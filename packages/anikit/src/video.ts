@@ -23,6 +23,7 @@
 import { core, W, ready, F64, f64Buf } from './wasm';
 import { engine, isManual } from './core';
 import { ease } from './utils';
+import { passTimes } from './profile';
 import type { EasingInput } from './core';
 
 type Ctx2D = CanvasRenderingContext2D;
@@ -174,10 +175,25 @@ export interface ImpactOptions {
   decay?: number;
 }
 
+/** Where one delivered frame's time went (milliseconds). */
+export interface FrameTiming {
+  /** Scene `step()` hooks and engine ticks (all sub-frames). */
+  step: number;
+  /** Scene `draw()` hooks, transitions and impacts (all motion-blur sub-frames). */
+  draw: number;
+  /** Reading pixels back from the canvas and accumulating motion blur. */
+  read: number;
+  /** The film grade (`post`). */
+  post: number;
+  /** `renderer3d` passes inside `draw`, summed over its renders (see `Renderer3D.stats`). */
+  passes: Record<string, number>;
+}
 export interface RenderedFrame {
   index: number;
   t: number;
   ctx: Ctx2D;
+  /** Where this frame's time went: see `anikit-render --profile`. */
+  timing: FrameTiming;
   /** RGBA pixels of the (motion-blurred) frame. */
   rgba(): Uint8Array;
   /** Planar YUV 4:2:0 (BT.709), converted in WebAssembly. */
@@ -491,28 +507,41 @@ export class Composition {
         const scale = lead?.timeScale ? Math.max(0, lead.timeScale(t - lead.start)) : 1;
         const sub = n > 1 ? (dt * shutter) / n : dt;
         const blur = n > 1 && visible;
+        const tm: FrameTiming = { step: 0, draw: 0, read: 0, post: 0, passes: {} };
+        for (const k in passTimes) delete passTimes[k];
+        let c0 = performance.now(), c1 = c0;
         for (let k = 0; k < n; k++) {
           engine.tick(sub * scale);
           const ts = t + (k * sub) / 1000;
           stepAll((s) => info(ts, f, s, ctx, (sub * scale) / 1000), act, (sub * scale) / 1000);
+          c1 = performance.now(); tm.step += c1 - c0; c0 = c1;
           if (!act.length) continue;
           if (blur) {
             paint(ts, f, act);
+            c1 = performance.now(); tm.draw += c1 - c0; c0 = c1;
             fb.write(read(ctx, w, h));
             fb.accumulate();
-          } else if (warm || (visible && k === n - 1)) paint(ts, f, act); // warm: same renders as drawn frames, so trails match
+            c1 = performance.now(); tm.read += c1 - c0; c0 = c1;
+          } else if (warm || (visible && k === n - 1)) {
+            paint(ts, f, act); // warm: same renders as drawn frames, so trails match
+            c1 = performance.now(); tm.draw += c1 - c0; c0 = c1;
+          }
         }
         if (n > 1) {
           const rest = (dt - sub * n) * scale;
           engine.tick(rest);
           // The closed part of the shutter still advances simulations.
           stepAll((s) => info(t + (sub * n) / 1000, f, s, ctx, rest / 1000), act, rest / 1000);
+          c1 = performance.now(); tm.step += c1 - c0; c0 = c1;
         }
         if (!visible || !act.length) continue;
         if (blur) fb.resolve();
         else fb.write(read(ctx, w, h));
+        c1 = performance.now(); tm.read += c1 - c0; c0 = c1;
         grade(f, t);
-        await o.onFrame({ index: f, t, ctx, rgba: () => fb.rgba(), i420: () => fb.i420(order) });
+        tm.post = performance.now() - c0;
+        Object.assign(tm.passes, passTimes);
+        await o.onFrame({ index: f, t, ctx, timing: tm, rgba: () => fb.rgba(), i420: () => fb.i420(order) });
       }
     } finally {
       fb.free();

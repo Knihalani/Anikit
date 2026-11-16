@@ -153,6 +153,23 @@ describe('composition extras', () => {
     expect(o.x).toBeCloseTo(50, 0);
   });
 
+  it('reports where each frame\'s time went, down to renderer3d passes', async () => {
+    const c = composition({ width: 32, height: 16, fps: 10, duration: 0.3, post: { vignette: 0.3 } });
+    const r = renderer3d({ width: 32, height: 16 });
+    const cam = scene3d({ width: 32, height: 16, camera: { z: 300 } });
+    const inst = instances(1, () => ({ scale: 80 }));
+    c.scene('s', 0, 0.3, { draw: () => { r.render(cam, [{ mesh: mesh.cube(), instances: inst }], { skybox: true }); } });
+    const timings: any[] = [];
+    const cv: any = { width: 32, height: 16, getContext: () => ({ fillRect() {}, drawImage() {}, getImageData: () => ({ data: new Uint8ClampedArray(32 * 16 * 4) }) }) };
+    await c.render({ canvas: cv, onFrame: (f) => { timings.push(f.timing); } });
+    expect(timings).toHaveLength(3);
+    for (const t of timings) {
+      for (const k of ['step', 'draw', 'read', 'post'] as const) expect(t[k]).toBeGreaterThanOrEqual(0);
+      expect(Object.keys(t.passes)).toEqual(expect.arrayContaining(['opaque', 'sky']));
+    }
+    expect(Object.keys(r.stats)).toEqual(expect.arrayContaining(['setup', 'opaque', 'sky', 'output']));
+  });
+
   it('keeps a scene clock and maps it back to composition time', async () => {
     const c = composition({ width: 4, height: 2, fps: 10, duration: 2, motionBlur: 3 });
     const ramp = (l: number) => (l < 1 ? 1 : 0.25);

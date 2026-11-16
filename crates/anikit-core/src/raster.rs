@@ -265,6 +265,8 @@ pub struct Raster {
     /// Depth-of-field scratch: circle of confusion per half-res pixel, and
     /// integer tap offsets per quantised radius.
     coc: Vec<f32>,
+    /// Sky: which half-res grid samples border an uncovered pixel.
+    sky_need: Vec<u8>,
     dof_taps: Vec<(i32, i32, f32)>,
     /// Shadow map from the key light (see [`Raster::shadow_begin`]).
     shadow_depth: Vec<f32>,
@@ -1445,19 +1447,47 @@ impl Raster {
         let fog = light.fog_color;
         let fog_k = if light.fog[1].is_finite() { 0.6 } else { 0.0 };
         let sun_k = 400.0 / (sun * sun).max(1e-6);
-        let lanes = V4::new(0.5, 1.5, 2.5, 3.5);
+        // The sky is smooth (only the sun's rim has detail, and bloom softens
+        // it), so shade it on a half-resolution grid of samples at even pixels
+        // and interpolate. Only samples next to an uncovered pixel are shaded.
+        let (gw, gh) = (w / 2 + 2, h / 2 + 2);
+        let mut need = core::mem::take(&mut self.sky_need);
+        need.clear();
+        need.resize(gw * gh, 0);
+        let mut any = false;
         for y in 0..h {
-            let fy = y as f32 + 0.5;
+            let j = y / 2;
+            for (x, d) in self.depth[y * w..(y + 1) * w].iter().enumerate() {
+                if !d.is_finite() {
+                    let i = j * gw + x / 2;
+                    need[i] = 1;
+                    need[i + 1] = 1;
+                    need[i + gw] = 1;
+                    need[i + gw + 1] = 1;
+                    any = true;
+                }
+            }
+        }
+        if !any {
+            self.sky_need = need;
+            return;
+        }
+        let mut grid = core::mem::take(&mut self.half_px);
+        grid.clear();
+        grid.resize(gw * gh, 0);
+        let lanes = V4::new(0.5, 2.5, 4.5, 6.5);
+        for j in 0..gh {
+            let fy = (2 * j) as f32 + 0.5;
             let base: [f32; 3] = core::array::from_fn(|k| r00[k] + dy[k] * fy);
-            let mut x = 0;
-            while x < w {
-                let n = (w - x).min(4);
-                let row = y * w + x;
-                if (0..n).all(|l| self.depth[row + l].is_finite()) {
-                    x += 4;
+            let mut i = 0;
+            while i < gw {
+                let n = (gw - i).min(4);
+                let row = j * gw + i;
+                if need[row..row + n].iter().all(|v| *v == 0) {
+                    i += 4;
                     continue;
                 }
-                let fx = lanes + x as f32;
+                let fx = lanes + (2 * i) as f32;
                 let d = [fx * dx[0] + base[0], fx * dx[1] + base[1], fx * dx[2] + base[2]];
                 let inv_len = 1.0 / dot3(&d, &d).sqrt().maxf(1e-12);
                 let d = [d[0] * inv_len, d[1] * inv_len, d[2] * inv_len];
@@ -1480,14 +1510,30 @@ impl Raster {
                     }
                 }
                 let px = pack4(c);
-                for l in 0..n {
-                    if !self.depth[row + l].is_finite() {
-                        self.color[row + l] = px[l];
-                    }
-                }
-                x += 4;
+                grid[row..row + n].copy_from_slice(&px[..n]);
+                i += 4;
             }
         }
+        // Fill uncovered pixels: even pixels take their sample, odd ones the
+        // mean of the two or four around them (packed-integer averages).
+        const RB: u32 = 0x00ff_00ff;
+        for y in 0..h {
+            let (j, oy) = (y / 2, y & 1);
+            let (g0, g1) = (&grid[j * gw..(j + 1) * gw], &grid[(j + oy) * gw..(j + oy + 1) * gw]);
+            let (crow, drow) = (&mut self.color[y * w..(y + 1) * w], &self.depth[y * w..(y + 1) * w]);
+            for (x, (c, d)) in crow.iter_mut().zip(drow).enumerate() {
+                if d.is_finite() {
+                    continue;
+                }
+                let (i, ox) = (x / 2, x & 1);
+                let q = [g0[i], g0[i + ox], g1[i], g1[i + ox]];
+                let rb = ((q[0] & RB) + (q[1] & RB) + (q[2] & RB) + (q[3] & RB) + 0x0002_0002) >> 2 & RB;
+                let g = (((q[0] >> 8) & 255) + ((q[1] >> 8) & 255) + ((q[2] >> 8) & 255) + ((q[3] >> 8) & 255) + 2) >> 2;
+                *c = 0xff00_0000 | rb | g << 8;
+            }
+        }
+        self.half_px = grid;
+        self.sky_need = need;
     }
 }
 
