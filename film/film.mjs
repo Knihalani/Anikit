@@ -171,7 +171,9 @@ export default async function film({ anikit: A, node }) {
   const pose = (c) => {
     path.apply(cam, timing(c),
       // Extra roll: a slow half-turn in the tunnel, a barrel roll through the gap, a spiral in the vortex.
-      360 * smooth(0.6, 2.9, c) + 360 * smooth(5.45, 6.25, c) + 360 * smooth(14.4, 16.9, c));
+      360 * smooth(0.6, 2.9, c) + 360 * smooth(5.45, 6.25, c) + 360 * smooth(14.4, 16.9, c),
+      // A handheld wobble at speed, a kick after the hit, still for the landing.
+      { shake: (5 * smooth(2.8, 3.4, c) + 16 * bell(c, HIT + 0.5, 0.5)) * (1 - smooth(LAND - 1.2, LAND - 0.2, c)), time: c, rate: 2.5 });
     // Around the knot, keep it in frame.
     const w = smooth(9.3, 10.2, c) * (1 - smooth(12.7, 13.6, c));
     if (w > 0) {

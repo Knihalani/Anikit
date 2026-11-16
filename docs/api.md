@@ -927,7 +927,7 @@ Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [nea
 
 **Shatter**: `shatter(mesh, { transform, force, spread, spin, gravity, drag, ripple, color })` turns every triangle into a flying shard; `shards.update(secondsSinceHit)` poses them; draw `{ mesh: shards.mesh, instances: shards.instances, cull: false }`. Deterministic, so parallel render workers agree.
 
-**Camera flights**: `flightPath(points, { lookAhead, bank, maxBank, closed })` is a smooth (centripetal Catmull–Rom) path with an arc-length table. `path.apply(scene, s, extraRoll)` places the camera at distance `s`, looking `lookAhead` ahead and banking into turns; `path.timing([[sec, fraction], …])` returns a monotone, smoothly accelerating seconds→distance function (hold a fraction to stop). `scene.roll` rolls any camera about its view axis.
+**Camera flights**: `flightPath(points, { lookAhead, bank, maxBank, closed })` is a smooth (centripetal Catmull–Rom) path with an arc-length table. `path.apply(scene, s, extraRoll, { shake })` places the camera at distance `s`, looking `lookAhead` ahead and banking into turns (`shake`, a `FlightShake`, adds a deterministic handheld wobble of that many world units that quickens with speed); `path.timing([[sec, fraction], …])` returns a monotone, smoothly accelerating seconds→distance function (hold a fraction to stop). `scene.roll` rolls any camera about its view axis.
 
 ```ts
 const path = flightPath([[0, 300, 2000], [0, 120, -2000], [180, 60, -8000], [0, 400, -26000]], { lookAhead: 900, bank: 1.4 });

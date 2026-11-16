@@ -4,6 +4,22 @@ import { ready, flightPath, scene3d, mesh, instances, renderer3d, shatter, textu
 beforeAll(async () => { await ready; });
 
 describe('flightPath', () => {
+  it('adds a deterministic handheld shake to flights', () => {
+    const path = flightPath([[0, 0, 0], [0, 0, -1000], [0, 0, -2000]], { lookAhead: 200 });
+    const cam = scene3d({ width: 64, height: 36 });
+    path.apply(cam, 500);
+    const still = { ...cam.camera };
+    path.apply(cam, 500, 0, { shake: 20 });
+    const a = { ...cam.camera };
+    path.apply(cam, 500, 0, { shake: 20 });
+    expect(cam.camera).toEqual(a); // same input, same pose
+    const d = Math.hypot(a.x - still.x, a.y - still.y, a.z - still.z);
+    expect(d).toBeGreaterThan(0.5);
+    expect(d).toBeLessThan(40);
+    path.apply(cam, 520, 0, { shake: 20 });
+    expect(Math.hypot(cam.camera.x - a.x, cam.camera.y - a.y)).toBeLessThan(10); // smooth: nearby distances, nearby poses
+  });
+
   it('passes through its points with arc-length parameterisation', () => {
     const p = flightPath([[0, 0, 0], [0, 0, -1000], [0, 0, -2000]]);
     expect(p.length).toBeCloseTo(2000, 0);

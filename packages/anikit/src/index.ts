@@ -71,7 +71,7 @@ export { scene3d, Scene3D, tilt, parseTransform, toMatrix3d, mixTransforms } fro
 export { flightPath, FlightPath } from './flight';
 export { shatter, Shards } from './shatter';
 export type { ShatterOptions } from './shatter';
-export type { FlightPathOptions, FlightPose, Point3 } from './flight';
+export type { FlightPathOptions, FlightPose, FlightShake, Point3 } from './flight';
 export type { SceneOptions, Projection, DrawOptions, TiltOptions, Vec3, Matrix } from './scene';
 export { testing } from './testing';
 export { setWarnings, onWarning } from './debug';

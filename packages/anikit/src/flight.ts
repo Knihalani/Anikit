@@ -24,6 +24,16 @@ export interface FlightPathOptions {
   closed?: boolean;
 }
 
+/** Handheld wobble for `FlightPath.apply()`. */
+export interface FlightShake {
+  /** Strength in world units (0 = none). */
+  shake?: number;
+  /** Seconds driving the noise (default: distance flown / 600, so it quickens with speed). */
+  time?: number;
+  /** Speed multiplier for the wobble (default 1). */
+  rate?: number;
+}
+
 export interface FlightPose {
   /** Camera position on the path. */
   eye: [number, number, number];
@@ -149,12 +159,27 @@ export class FlightPath {
     return { eye, target, roll, forward: fwd };
   }
 
-  /** Put `scene`'s camera at arc length `s` (adds `extraRoll` degrees, e.g. a barrel roll). */
-  apply(scene: Scene3D, s: number, extraRoll = 0): FlightPose {
+  /**
+   * Put `scene`'s camera at arc length `s` (adds `extraRoll` degrees, e.g. a barrel roll).
+   * `shake` adds a handheld wobble: smooth noise on the camera, its aim and roll, `shake`
+   * world units strong, varying with `time` (seconds; default the distance flown, so it
+   * quickens with speed). Deterministic: the same `s`/`time` always gives the same pose.
+   */
+  apply(scene: Scene3D, s: number, extraRoll = 0, o: FlightShake = {}): FlightPose {
     const p = this.at(s);
-    Object.assign(scene.camera, { x: p.eye[0], y: p.eye[1], z: p.eye[2] });
-    Object.assign(scene.target, { x: p.target[0], y: p.target[1], z: p.target[2] });
-    scene.roll = p.roll + extraRoll;
+    let [ex, ey, ez] = p.eye, [tx, ty, tz] = p.target, roll = p.roll + extraRoll;
+    const amp = o.shake ?? 0;
+    if (amp) {
+      const t = (o.time ?? s / 600) * (o.rate ?? 1);
+      // Sums of incommensurate sines: smooth, never repeating, cheap.
+      const n = (k: number) => Math.sin(t * 1.7 + k * 1.3) * 0.5 + Math.sin(t * 3.1 + k * 2.9) * 0.3 + Math.sin(t * 7.3 + k * 4.1) * 0.2;
+      ex += n(1) * amp; ey += n(2) * amp; ez += n(3) * amp * 0.3;
+      tx += n(4) * amp * 2; ty += n(5) * amp * 2;
+      roll += n(6) * amp * 0.04;
+    }
+    Object.assign(scene.camera, { x: ex, y: ey, z: ez });
+    Object.assign(scene.target, { x: tx, y: ty, z: tz });
+    scene.roll = roll;
     return p;
   }
 
