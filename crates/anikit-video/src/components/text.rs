@@ -34,11 +34,14 @@ pub struct TextStyle {
     pub tracking: f32,
     /// Tabular (fixed-width) digits, for counters.
     pub tabular: bool,
+    /// Linear gradient fill `(from, to, p0, p1)` with `p0`/`p1` in the same
+    /// coordinates as the draw position (overrides `color`, keeps its alpha).
+    pub gradient: Option<(Rgba, Rgba, [f32; 2], [f32; 2])>,
 }
 
 impl TextStyle {
     pub fn new(face: Face, size: f32, weight: u16, color: Rgba) -> TextStyle {
-        TextStyle { face, size, weight, color, tracking: 0.0, tabular: false }
+        TextStyle { face, size, weight, color, tracking: 0.0, tabular: false, gradient: None }
     }
     pub fn tracking(mut self, em: f32) -> TextStyle {
         self.tracking = em;
@@ -47,6 +50,21 @@ impl TextStyle {
     pub fn tabular(mut self) -> TextStyle {
         self.tabular = true;
         self
+    }
+    pub fn gradient(mut self, a: Rgba, b: Rgba, p0: [f32; 2], p1: [f32; 2]) -> TextStyle {
+        self.gradient = Some((a, b, p0, p1));
+        self
+    }
+    /// The paint for a run drawn with local origin `(ox, oy)`.
+    pub fn paint_at(&self, ox: f32, oy: f32) -> crate::dl::Paint {
+        match self.gradient {
+            Some((a, b, p0, p1)) => {
+                let k = self.color.0[3];
+                let al = |c: Rgba| Rgba([c.0[0], c.0[1], c.0[2], c.0[3] * k]);
+                crate::dl::Paint::Linear { p0: [p0[0] - ox, p0[1] - oy], p1: [p1[0] - ox, p1[1] - oy], stops: vec![(0.0, al(a)), (1.0, al(b))] }
+            }
+            None => crate::dl::Paint::Solid(self.color),
+        }
     }
     pub fn color(mut self, c: Rgba) -> TextStyle {
         self.color = c;
@@ -142,7 +160,7 @@ impl Assets for StubAssets {
         let mut word_start: Option<f32> = None;
         let flush = |ops: &mut Vec<Op>, from: f32, to: f32| {
             if to > from {
-                ops.push(Op::RoundRect { x: from, y: y - xh, w: to - from, h: xh, radius: xh * 0.3, paint: crate::dl::Paint::Solid(st.color), transform: crate::dl::IDENTITY });
+                ops.push(Op::RoundRect { x: from, y: y - xh, w: to - from, h: xh, radius: xh * 0.3, paint: st.paint_at(0.0, 0.0), transform: crate::dl::IDENTITY });
             }
         };
         for c in s.chars() {

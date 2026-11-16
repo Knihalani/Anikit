@@ -22,8 +22,11 @@
 use crate::dl::{self, Affine, ImageId, Op, Rgba};
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
+#[cfg(test)]
+use std::sync::Arc;
 
 pub mod style;
+pub mod host;
 pub mod text;
 
 pub mod backgrounds;
@@ -214,7 +217,8 @@ pub const COMMON_KEYS: &[&str] = &["type", "kind", "id", "x", "y", "width", "hei
 /// Build a component from its kind and the spec object (which may still
 /// contain `type`, `kind` and the other [`COMMON_KEYS`]).
 pub fn build(kind: &str, params: &Value) -> Result<Placed, Error> {
-    let Some(k) = KINDS.iter().find(|k| k.name == kind) else {
+    let kebab = kebab(kind);
+    let Some(k) = KINDS.iter().find(|k| k.name == kebab) else {
         let names: Vec<&str> = KINDS.iter().map(|k| k.name).collect();
         return Err(Error(match style::closest(kind, &names) {
             Some(s) => format!("unknown component kind `{kind}`; did you mean `{s}`?"),
@@ -244,8 +248,66 @@ pub fn build(kind: &str, params: &Value) -> Result<Placed, Error> {
     for key in ["type", "kind", "id"] {
         obj.remove(key);
     }
+    let obj = snake_keys(obj);
     let component = (k.build)(Value::Object(obj)).map_err(|e| Error(format!("component `{kind}`: {}", suggest_field(&e.0))))?;
     Ok(Placed { component, x, y, w, h, theme })
+}
+
+/// camelCase keys → snake_case, recursively (except inside `data`, which is
+/// foreign JSON such as a Lottie file).
+fn snake_keys(m: Map<String, Value>) -> Map<String, Value> {
+    fn conv(v: Value) -> Value {
+        match v {
+            Value::Object(m) => Value::Object(snake_keys(m)),
+            Value::Array(a) => Value::Array(a.into_iter().map(conv).collect()),
+            v => v,
+        }
+    }
+    m.into_iter()
+        .map(|(k, v)| {
+            let sk = kebab(&k).replace('-', "_");
+            if k == "data" {
+                (k, v)
+            } else {
+                (sk, conv(v))
+            }
+        })
+        .collect()
+}
+
+/// `barChart` / `BarChart` / `bar_chart` → `bar-chart`.
+pub fn kebab(name: &str) -> String {
+    let mut out = String::with_capacity(name.len() + 4);
+    for (i, c) in name.chars().enumerate() {
+        if c.is_ascii_uppercase() {
+            if i > 0 && !out.ends_with('-') {
+                out.push('-');
+            }
+            out.push(c.to_ascii_lowercase());
+        } else if c == '_' || c == ' ' {
+            out.push('-');
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
+/// `bar-chart` → `barChart` (the spelling the JSON spec uses).
+pub fn camel(name: &str) -> String {
+    let mut out = String::with_capacity(name.len());
+    let mut up = false;
+    for c in name.chars() {
+        if c == '-' {
+            up = true;
+        } else if up {
+            out.push(c.to_ascii_uppercase());
+            up = false;
+        } else {
+            out.push(c);
+        }
+    }
+    out
 }
 
 /// Turn serde's "unknown field `colour`, expected one of `a`, `b`" into a
@@ -253,11 +315,13 @@ pub fn build(kind: &str, params: &Value) -> Result<Placed, Error> {
 fn suggest_field(msg: &str) -> String {
     if let Some(rest) = msg.strip_prefix("unknown field `") {
         if let Some((bad, tail)) = rest.split_once('`') {
-            let options: Vec<&str> = tail.split('`').skip(1).step_by(2).collect();
-            if let Some(s) = style::closest(bad, &options) {
+            let options: Vec<String> = tail.split('`').skip(1).step_by(2).map(|o| camel(&o.replace('_', "-"))).collect();
+            let opts: Vec<&str> = options.iter().map(|s| s.as_str()).collect();
+            let bad = camel(&bad.replace('_', "-"));
+            if let Some(s) = style::closest(&bad, &opts) {
                 return format!("unknown parameter `{bad}`; did you mean `{s}`?");
             }
-            return format!("unknown parameter `{bad}`; expected one of {}", options.join(", "));
+            return format!("unknown parameter `{bad}`; expected one of {}", opts.join(", "));
         }
     }
     msg.to_string()
@@ -305,23 +369,90 @@ mod tests {
     #[test]
     fn every_kind_builds_and_evaluates() {
         let theme = Theme::default();
-        let assets = text::StubAssets::default();
+        let assets = preview::host();
         for k in KINDS {
             let v: Value = serde_json::from_str(k.example).unwrap();
             let p = build(k.name, &v).unwrap_or_else(|e| panic!("{}: {e}", k.name));
             let end = p.component.duration().unwrap_or(3.0);
             for t in [0.0, end * 0.5, end, end + 1.0] {
-                let ops = p.eval(t, 1280.0, 720.0, 30.0, &theme, &assets);
+                let ops = p.eval(t, 1280.0, 720.0, 30.0, &theme, assets);
                 preview::validate(&ops).unwrap_or_else(|e| panic!("{} at t={t}: {e}", k.name));
             }
         }
     }
 
     #[test]
+    fn gallery_example_builds() {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/video/examples/components.json");
+        let spec: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        let mut n = 0;
+        for scene in spec["scenes"].as_array().unwrap() {
+            for layer in scene["layers"].as_array().unwrap() {
+                if let Some(kind) = layer["component"].as_str() {
+                    build(kind, &layer["props"]).unwrap_or_else(|e| panic!("{kind}: {e}"));
+                    n += 1;
+                }
+            }
+            if let Some(tr) = scene.get("transition").filter(|t| t.is_object()) {
+                let tr: transitions::Transition = serde_json::from_value(tr.clone()).unwrap();
+                tr.validate().unwrap();
+            }
+        }
+        assert!(n > 20);
+    }
+
+    #[test]
     fn errors_suggest() {
         let e = build("bar-chrt", &Value::Null).err().unwrap();
         assert!(e.0.contains("did you mean `bar-chart`"), "{e}");
+        assert!(build("barChart", &serde_json::json!({"values": [1], "fontSize": 20, "format": {"prefix": "$"}})).is_ok());
+        let e = build("code", &serde_json::json!({"lineNumbrs": false})).err().unwrap();
+        assert!(e.0.contains("did you mean `lineNumbers`"), "{e}");
+        assert_eq!(camel("avatar-stack"), "avatarStack");
+        assert_eq!(kebab("avatarStack"), "avatar-stack");
         let e = build("bar-chart", &serde_json::json!({"valuess": [1]})).err().unwrap();
         assert!(e.0.contains("did you mean `values`"), "{e}");
+    }
+}
+
+#[cfg(test)]
+mod bench {
+    use super::*;
+
+    /// `cargo test --release -p anikit-video components::bench -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn per_frame_cost_1080p() {
+        let theme = Theme::default();
+        let host = preview::host();
+        let mut rows = Vec::new();
+        let only = std::env::var("BENCH_KINDS").unwrap_or_default();
+        for k in KINDS.iter().filter(|k| only.is_empty() || only.split(',').any(|o| o == k.name)) {
+            let v: Value = serde_json::from_str(k.example).unwrap();
+            let p = build(k.name, &v).unwrap();
+            // Warm caches (text layouts, images) over the first frames.
+            for f in 0..10 {
+                let _ = p.eval(f as f32 / 60.0, 1920.0, 1080.0, 60.0, &theme, host);
+            }
+            let n = 60;
+            let t0 = std::time::Instant::now();
+            let mut lists = Vec::new();
+            for f in 10..10 + n {
+                lists.push(p.eval(f as f32 / 60.0, 1920.0, 1080.0, 60.0, &theme, host));
+            }
+            let eval_ms = t0.elapsed().as_secs_f64() * 1000.0 / n as f64;
+            let mut r = crate::render::Renderer::new(Arc::new(host.render_assets(None)));
+            let t1 = std::time::Instant::now();
+            for ops in &lists {
+                let dl = dl::DisplayList { width: 1920, height: 1080, background: theme.background, ops: ops.clone() };
+                r.render(&dl);
+            }
+            let render_ms = t1.elapsed().as_secs_f64() * 1000.0 / n as f64;
+            rows.push((k.name, eval_ms, render_ms, lists[0].len()));
+        }
+        rows.sort_by(|a, b| (b.1 + b.2).total_cmp(&(a.1 + a.2)));
+        for (name, e, r, n) in rows {
+            println!("{name:16} eval {e:7.3} ms  render {r:7.2} ms  ops {n}");
+        }
     }
 }
