@@ -18,7 +18,7 @@ const BLUR = 'blur(5px)';
 const D0 = small ? 30 : 60, DMIN = 2.12, BAND = 0.9, ELEV = (4.5 * Math.PI) / 180;
 const tex = diskTexture();
 const bloom = document.createElement('canvas'), bctx = bloom.getContext('2d', { alpha: false });
-let budget = small ? 150_000 : 230_000;
+let budget = small ? 180_000 : 480_000;
 let vw = innerWidth, vh = innerHeight;
 const layers = ['#sky-a', '#sky-b'].map((s) => ({ el: $(s), ctx: null, img: null, out: null, lens: null, band: -1, scale: 1 }));
 let F0 = 1, front = 0, gen = null, genLayer = -1, genBand = -1, fadeUntil = 0;

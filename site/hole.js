@@ -84,21 +84,26 @@ for (let i = 0; i < BB_N; i++) { const c = blackbody(BB_MIN + ((BB_MAX - BB_MIN)
 const CELL = 0.006; // star cells: a 3D lattice around the unit sky sphere
 function starAt(dx, dy, dz, sig, out) {
   out[0] = 0; out[1] = 0; out[2] = 0;
-  const cx = Math.floor(dx / CELL), cy = Math.floor(dy / CELL), cz = Math.floor(dz / CELL);
-  if (hash3(cx, cy, cz) > 0.016) return;
-  // The star sits near the middle of its cell, projected onto the sphere.
-  let sx = cx + 0.4 + 0.2 * hash3(cx, cy, cz + 7), sy = cy + 0.4 + 0.2 * hash3(cx + 3, cy, cz), sz = cz + 0.4 + 0.2 * hash3(cx, cy + 5, cz);
-  const l = Math.hypot(sx, sy, sz);
-  sx /= l; sy /= l; sz /= l;
-  const d2 = ((dx - sx) ** 2 + (dy - sy) ** 2 + (dz - sz) ** 2) / (CELL * CELL), s2 = sig * sig;
-  if (d2 > 9 * s2) return;
-  // Magnitudes: a steep power law, so most stars are faint and a few are bright.
-  const h = hash3(cy, cz, cx);
-  const m = Math.pow(h, 8) * 30 + 0.16;
-  const k = m * Math.exp(-d2 / (2 * s2)) * 0.55;
-  let ti = ((2800 + Math.pow(hash3(cz, cx, cy), 1.4) * 12000 - BB_MIN) / (BB_MAX - BB_MIN)) * (BB_N - 1);
-  ti = Math.min(BB_N - 1, Math.max(0, ti)) | 0;
-  out[0] += BB[ti * 3] * k; out[1] += BB[ti * 3 + 1] * k; out[2] += BB[ti * 3 + 2] * k;
+  // Look in the 2×2×2 cells around the ray, so stars near a cell edge stay round.
+  const bx = Math.floor(dx / CELL - 0.5), by = Math.floor(dy / CELL - 0.5), bz = Math.floor(dz / CELL - 0.5);
+  const s2 = sig * sig;
+  for (let i = 0; i < 8; i++) {
+    const cx = bx + (i & 1), cy = by + ((i >> 1) & 1), cz = bz + (i >> 2);
+    if (hash3(cx, cy, cz) > 0.016) continue;
+    // The star sits near the middle of its cell, projected onto the sphere.
+    let sx = cx + 0.4 + 0.2 * hash3(cx, cy, cz + 7), sy = cy + 0.4 + 0.2 * hash3(cx + 3, cy, cz), sz = cz + 0.4 + 0.2 * hash3(cx, cy + 5, cz);
+    const l = Math.hypot(sx, sy, sz);
+    sx /= l; sy /= l; sz /= l;
+    const d2 = ((dx - sx) ** 2 + (dy - sy) ** 2 + (dz - sz) ** 2) / (CELL * CELL);
+    if (d2 > 9 * s2) continue;
+    // Magnitudes: a steep power law, so most stars are faint and a few are bright.
+    const h = hash3(cy, cz, cx);
+    const m = Math.pow(h, 8) * 30 + 0.16;
+    const k = m * Math.exp(-d2 / (2 * s2)) * 0.55;
+    let ti = ((2800 + Math.pow(hash3(cz, cx, cy), 1.4) * 12000 - BB_MIN) / (BB_MAX - BB_MIN)) * (BB_N - 1);
+    ti = Math.min(BB_N - 1, Math.max(0, ti)) | 0;
+    out[0] += BB[ti * 3] * k; out[1] += BB[ti * 3 + 1] * k; out[2] += BB[ti * 3 + 2] * k;
+  }
 }
 
 // ---------------------------------------------------------------------------
