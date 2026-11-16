@@ -253,3 +253,48 @@ fn uhd_4k_and_ntsc_rate() {
     let out = String::from_utf8_lossy(&o.stdout);
     assert!(out.contains("30000/1001"), "{out}");
 }
+
+#[test]
+fn large_motion_vectors_via_hints() {
+    // A textured block jumps 150 px right / 40 px down each frame.
+    let (w, h) = (640u32, 360u32);
+    let mut frames = Vec::new();
+    let mut hints = vec![FrameHints::default()];
+    for t in 0..4u32 {
+        let mut f = YuvBuffer::new(w, h);
+        let (x0, y0) = (16 + 150 * t as usize, 16 + 40 * t as usize);
+        for y in 0..64 {
+            for x in 0..96 {
+                f.y[(y0 + y) * w as usize + x0 + x] = ((x * 7 + y * 13) % 200 + 30) as u8;
+            }
+        }
+        if t > 0 {
+            hints.push(FrameHints {
+                changed: None,
+                motions: vec![MotionHint { x: x0 as u32, y: y0 as u32, w: 96, h: 64, dx: 150, dy: 40 }],
+            });
+        }
+        frames.push(f);
+    }
+    for cabac in [true, false] {
+        let c = EncoderConfig { cabac, ..cfg(w, h) };
+        let mut e = Encoder::new(c);
+        let mut stream = Vec::new();
+        let mut recon = Vec::new();
+        for (f, hi) in frames.iter().zip(&hints) {
+            stream.extend_from_slice(e.encode(&f.frame(), hi));
+            recon.extend_from_slice(&e.reconstruction().to_bytes());
+            if !e.last_stats().idr {
+                // the 4x3 macroblocks fully inside the moved block follow the hint
+                let st = e.last_stats();
+                assert!(st.changed - st.intra16 - st.intra4 >= 12, "hinted motion should be inter: {st:?}");
+            }
+        }
+        if !have_ffmpeg() {
+            return;
+        }
+        let (err, dec) = decode(&stream, "bigmv");
+        assert!(err.is_empty(), "{err}");
+        assert!(dec == recon);
+    }
+}
