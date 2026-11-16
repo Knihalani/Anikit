@@ -11,6 +11,20 @@ import { animate, timeline, stagger, spring, scrollTrigger, effects, testing } f
 
 Calls work immediately: the WebAssembly core loads in the background and queues `animate()`/`timeline()` work until it's ready. Helpers that return a value at once (`ease()`, `morph()`, `pathLength()`, `staggerValues()`, `world()`) need it loaded, so `await ready` first in code that runs at startup.
 
+## Quick start: a polished page in five lines
+
+```ts
+import { recipe } from 'anikit';
+recipe('hero-reveal', '.hero');                              // masked headline rise + subtitle fade
+recipe('magnetic-buttons', '.hero');                         // buttons lean towards the cursor
+recipe('scroll-story', 'main', { children: 'section' });     // sections rise in on scroll
+recipe('parallax-gallery', '.gallery');                      // images drift at different depths
+```
+
+Or start from a working project: `npx anikit new vanilla my-site` (no build step), `npx anikit new vite my-site`, or `npx anikit new react my-site`. `recipeNames()` lists every recipe (`hero-reveal`, `scroll-story`, `magnetic-buttons`, `text-scramble`, `parallax-gallery`, `stagger-in`, `draw-svg`, `count-up`, `tilt-cards`); each returns a handle with `revert()`. Every option of every API is in `docs/api.schema.json` (JSON Schema). Unknown options and recipe names produce an `anikit:` warning or error with a "did you mean" and a `docs/api.md#…` link.
+
+In React, `import { useRecipe, useAnimate, useAnikit, useSpring, useScroll, Presence } from 'anikit/react'`: everything a hook creates is reverted on unmount.
+
 ## Want X → use Y
 
 | Want | Use |
@@ -39,6 +53,8 @@ Calls work immediately: the WebAssembly core loads in the background and queues 
 | 3D points / tilt / transform strings | `scene3d()`, `tilt(el)`, `{ transform: 'rotateY(180deg)' }` |
 | 100k particles | `pointCloud()` + `glow()` |
 | Off-main-thread transform/opacity | `compositor(el, props, options)` |
+| A polished pattern in one call | `recipe('hero-reveal' \| 'scroll-story' \| 'magnetic-buttons' \| 'text-scramble' \| …, el, options)` |
+| React | `anikit/react`: `useAnikit(() => { … })` (scoped, reverted on unmount), `useAnimate()`, `useRecipe()`, `useSpring()`, `useScroll()`, `<Presence>` |
 | Cleanup in React/Vue/Svelte | `const ctx = context(() => { … }, rootEl); return () => ctx.revert()` |
 | Respect "reduce motion" | `engine.reducedMotion = 'user'` once at startup |
 | GIF / WebM / PNG of a page | `record(el, { duration, fps })`, `screenshot(el)`, CLI `npx anikit-record` |

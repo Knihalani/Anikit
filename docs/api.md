@@ -485,6 +485,72 @@ physics(ball, { x: { velocity: 300 }, y: { velocity: -600, acceleration: 1500, m
 
 `anim.toCSS({ name, selector, samples })` produces `@keyframes` plus an `animation:` rule, sampled from the engine. Any easing, spring, colour space or keyframe set works. Use it for SSR, HTML emails or zero‑JS pages.
 
+## Recipes: `recipe`
+
+`recipe(name, targets, options?)` builds a polished, common pattern in one call from the primitives above, with good-looking defaults. It returns a handle with `animations`, `finished`, `revert()` (restores styles and split markup) and `kill()`; an enclosing `context()` reverts it too. `recipeNames()` lists them.
+
+| Name | What it does | Useful options |
+|---|---|---|
+| `'hero-reveal'` | Splits the headline (`h1, h2` inside the element) into masked words or chars that rise in, then fades the rest of the children up. | `headline`, `by: 'words' \| 'chars'`, `stagger`, `duration` |
+| `'scroll-story'` | Each `section` (or `children`) fades and slides up as it scrolls into view (`scrollTriggerBatch`). | `children`, `distance`, `once: false` (reverse on the way back) |
+| `'magnetic-buttons'` | Buttons and links inside lean towards the pointer and spring back (`magnetic`). | `strength`, `distance` (radius) |
+| `'text-scramble'` | Decodes the text through random glyphs. | `text`, `chars`, `duration`, `onScroll` |
+| `'parallax-gallery'` | Images drift at alternating depths while scrolling (`parallax`). | `children`, `strength` |
+| `'stagger-in'` | Children fade, rise and scale in, staggered, when the list enters the viewport. | `children`, `stagger`, `onScroll: false` |
+| `'draw-svg'` | Strokes of every shape inside draw in on enter. | `stagger`, `duration` |
+| `'count-up'` | Counts from 0 to the number already written in the element on enter. | `duration`, `text` |
+| `'tilt-cards'` | Cards tilt in 3D under the pointer and spring flat on leave. | `children`, `strength` |
+
+Shared options (`RecipeOptions`): `duration`, `delay`, `stagger`, `ease`, `children`, `headline`, `by`, `text`, `chars`, `distance`, `strength`, `onScroll`, `once`. An unknown name throws with a "did you mean"; an unknown option warns with a link back here.
+
+```ts
+recipe('hero-reveal', '.hero');
+recipe('scroll-story', 'main', { children: 'section' });
+recipe('magnetic-buttons', '.cta');
+recipe('text-scramble', '#title', { text: 'HELLO WORLD' });
+const gallery = recipe('parallax-gallery', '.gallery', { strength: 0.3 });
+recipeNames();       // ['hero-reveal', 'scroll-story', …]
+gallery.revert();
+```
+
+## React: `anikit/react`
+
+Hooks and an exit-animation component. Every hook collects what it creates in a `context()` and reverts it on unmount; selectors inside `useAnikit`/`useAnimate` match only inside the returned ref.
+
+| Hook / component | Does |
+|---|---|
+| `useAnikit(setup, deps?)` → ref | Runs `setup` in a scoped `context()` after mount; reverted on unmount or when `deps` change. |
+| `useAnimate()` → `[ref, animate]` | Motion-style: call `animate()` from events; every animation is reverted on unmount. |
+| `useRecipe(name, ref, options?)` | `recipe()` on `ref.current` after mount. |
+| `useMotionValue(initial)` | A `MotionValue` that lives as long as the component. |
+| `useSpring(target \| motionValue, physics?)` | A `MotionValue` springing to a number prop or following another value. |
+| `useTransform(value, input, output)` | `value.map(input, output)`. |
+| `useScroll({ target?, container?, offset? })` | `{ scrollYProgress, scrollXProgress }` motion values (refs accepted). |
+| `<Presence enter exit options initial>` | Keyed children animate in when added and out before React removes them. |
+
+```tsx no-check
+import { useRef, useState } from 'react';
+import { useAnikit, useAnimate, useRecipe, useSpring, useScroll, Presence } from 'anikit/react';
+import { animate, bindValues } from 'anikit';
+
+function Hero() {
+  const hero = useRef<HTMLElement>(null);
+  useRecipe('hero-reveal', hero);
+  const scope = useAnikit(() => { animate('.badge', { scale: [0.8, 1] }, { ease: 'spring(bounce: 0.5)' }); });
+  const [box, run] = useAnimate();
+  const [open, setOpen] = useState(true);
+  const { scrollYProgress } = useScroll();
+  const smooth = useSpring(scrollYProgress, { stiffness: 120, damping: 20 });
+  useAnikit(() => { bindValues('.bar', { scaleX: smooth }); });
+  return <header ref={hero}>
+    <h1>Hello</h1>
+    <div ref={scope}><span className="badge">new</span></div>
+    <button onClick={() => run(box.current, { rotate: [0, 360] })}>Spin</button>
+    <Presence exit={{ opacity: 0, y: -8 }}>{open && <p key="note" onClick={() => setOpen(false)}>Dismiss me</p>}</Presence>
+  </header>;
+}
+```
+
 ## Effects
 
 Over 35 presets. Every one accepts the usual animation options plus `stagger`, `distance`, `from`, `intensity` and `loop`:
@@ -1148,6 +1214,8 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Marquees](#marquees-marquee) | `marquee`, `Marquee` | `MarqueeOptions` |
 | [Magnetic and parallax](#magnetic-and-parallax-magnetic-parallax) | `magnetic`, `parallax` | `MagneticOptions`, `ParallaxOptions`, `PointerFx` |
 | [Effects](#effects) | `effects`, `effect`, `registerEffect`, `effectNames` | `EffectOptions`, `EffectFn`, `EffectName` |
+| [Recipes](#recipes-recipe) | `recipe`, `recipeNames` | `RecipeName`, `RecipeOptions`, `RecipeHandle` |
+| [React](#react-anikitreact) (`anikit/react`) | `useAnikit`, `useAnimate`, `useRecipe`, `useMotionValue`, `useSpring`, `useTransform`, `useScroll`, `Presence` | `PresenceProps`, `ScopedAnimate` |
 | [Layout transitions](#layout-transitions-flip), [presence](#presence-enter-and-exit) and [View Transitions](#view-transitions) | `flip`, `presence`, `Presence`, `enter`, `exit`, `viewTransition` | `FlipOptions`, `FlipState`, `PresenceOptions`, `ViewTransitionOptions`, `ViewTransitionHandle` |
 | [Interaction](#interaction) | `draggable`, `Draggable`, `observer`, `hover`, `press`, `gesture`, `Gesture` | `DraggableOptions`, `Bounds`, `ObserverOptions`, `ObserverEvent`, `GestureOptions` |
 | [Engine](#engine) | `engine`, `flush`, `ready`, `init` | |
