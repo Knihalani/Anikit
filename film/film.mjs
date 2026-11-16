@@ -456,11 +456,10 @@ export default async function film({ anikit: A }) {
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
         const u = x * nx + y * ny, s = (edge - u);
         const i = y * W + x, o = i * 4;
-        const k = clamp(s / 60 + 0.5);
-        const hot = Math.exp(-((s / 40) ** 2)) * 255 * 0.35 + Math.exp(-((s / 160) ** 2)) * 30;
-        // The image just behind the edge is dragged along it (a smear).
-        const sm = s > 0 && s < 200 ? Math.round((1 - s / 200) * 24) : 0;
-        const ob = (y * W + Math.max(0, x - sm)) * 4;
+        // A clean, soft edge with a thin warm line of daylight along it.
+        const k = clamp(s / 90 + 0.5);
+        const hot = Math.exp(-((s / 6) ** 2)) * 255 * 0.22 * (1 - smooth(0.8, 1, e));
+        const ob = o;
         frame[o] = mix(pa[o], pb[ob], k) + hot;
         frame[o + 1] = mix(pa[o + 1], pb[ob + 1], k) + hot * 0.92;
         frame[o + 2] = mix(pa[o + 2], pb[ob + 2], k) + hot * 0.8;
