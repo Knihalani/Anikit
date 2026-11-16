@@ -1,7 +1,7 @@
 // Prototype B: a living splat sculpture.
 // The particles live in anikit's pointCloud() (WebAssembly springs + morphs);
 // this file wires scroll, pointer and captions to it and draws one WebGL canvas.
-import { ready, engine, pointCloud, animate, spring, timeline, stagger, set, htmlCanvas } from '../../packages/anikit/dist/anikit.lean.js';
+import { ready, engine, pointCloud, animate, spring, timeline, stagger, set, htmlCanvas } from '../../packages/anikit/dist/anikit.js';
 import { SplatRenderer } from './splat-gl.js';
 import * as S from './shapes.js';
 
@@ -73,7 +73,7 @@ const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a
 // ---------------------------------------------------------------------------
 let gl;
 try {
-  gl = new SplatRenderer(canvas, N);
+  if (!q.has('nogl')) gl = new SplatRenderer(canvas, N);
 } catch (e) {
   document.documentElement.classList.add('no-gl');
 }
@@ -82,21 +82,28 @@ await ready;
 await Promise.race([document.fonts.load('900 100px Display'), new Promise((r) => setTimeout(r, 700))]);
 
 const narrow = () => innerWidth < 700;
+const yieldTask = () => new Promise((r) => setTimeout(r, 0));
+await yieldTask();
 const cloud = pointCloud(N, { ...FEEL[0] });
 // shape 0..5 are the forms; DUST holds the waiting fog
 cloud.shape(DUST, S.dust(N));
+await yieldTask();
 { const t0 = performance.now(); cloud.shape(0, S.lettering(N, 'anikit', 'Display', 900, 1000)); mark('letter', t0); }
 cloud.snap(DUST);
 
 // The other forms are built one per frame after first paint, so no long task.
+// Each step stays well under 50 ms; a form is ready when its last step lands.
+const gal = new Float32Array(N * 3);
 const builders = [
-  () => cloud.shape(1, S.flower(N)),
+  ...S.flowerSteps(N, (xyz) => cloud.shape(1, xyz)),
   () => cloud.shape(2, S.flock(N)),
   () => cloud.shape(3, S.wave(N)),
-  () => cloud.shape(4, S.galaxy(N)),
+  () => S.galaxy(N, gal, 0, N >> 1),
+  () => cloud.shape(4, S.galaxy(N, gal, N >> 1, N)),
   () => cloud.shape(5, S.lettering(N, 'npm i anikit', 'Mono', 400, 1050)),
 ];
-let built = 1;
+const FORM_AT = [0, 4, 5, 6, 8, 9]; // builders done when form k is ready
+let built = 0;
 function buildNext() {
   if (!builders.length) return;
   const t0 = performance.now();
@@ -323,11 +330,14 @@ function frameBody(time, dtMs) {
   if (st.intro < 1) {
     cloud.from = DUST; cloud.to = k; cloud.mix = st.intro;
   } else {
-    cloud.from = k; cloud.to = Math.min(STAGES - 1, k + 1); cloud.mix = mix;
+    // never aim at a form that is not built yet (only in the first ~0.3 s)
+    let avail = 0;
+    while (avail < STAGES - 1 && built >= FORM_AT[avail + 1]) avail++;
+    cloud.from = Math.min(k, avail); cloud.to = Math.min(STAGES - 1, k + 1, avail); cloud.mix = mix;
   }
   const near = Math.round(s);
   const ns = Math.min(STAGES - 1, Math.max(0, near));
-  if (ns !== feelStage && built > ns) { feelStage = ns; cloud.set(FEEL[ns]); }
+  if (ns !== feelStage && built >= FORM_AT[ns]) { feelStage = ns; cloud.set(FEEL[ns]); }
   if (st.intro >= 0.6) showCaption(ns);
 
   // weights of each form (for camera pose)

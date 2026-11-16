@@ -1,6 +1,7 @@
 // Target shapes for the sculpture. Each returns a Float32Array [x, y, z] * n in
 // model space (y up, about ±550 wide). Deterministic, allocation once.
-import { splats, staggerValues } from '../../packages/anikit/dist/anikit.lean.js';
+import { staggerValues } from '../../packages/anikit/dist/anikit.js';
+import { splats } from '../../packages/anikit/dist/splats.js';
 
 const TAU = Math.PI * 2;
 function rng(seed) {
@@ -45,7 +46,7 @@ export function lettering(n, text, font, weight, width) {
  * A flower: petals as a triangle mesh sampled by splats.fromMesh, a domed
  * centre from splats.fromSDF, a stem from splats.fromPoints; merged.
  */
-export function flower(n) {
+export function flowerSteps(n, done) {
   const tilt = -0.42, ct = Math.cos(tilt), st = Math.sin(tilt), lift = 60;
   const pos = [], idx = [];
   const put = (x, y, z) => { pos.push(x, y * ct - z * st + lift, y * st + z * ct); return pos.length / 3 - 1; };
@@ -69,7 +70,12 @@ export function flower(n) {
       }
     }
   }
-  const petals = splats.fromMesh(pos, idx, { count: Math.round(n * 0.84), seed: 3 });
+  const parts = [];
+  const half = Math.round(n * 0.42);
+  return [
+    () => parts.push(splats.fromMesh(pos, idx, { count: half, seed: 3 })),
+    () => parts.push(splats.fromMesh(pos, idx, { count: half, seed: 4 })),
+    () => {
   // centre: a squashed sphere, then tipped like the petals
   const centre = splats.fromSDF((x, y, z) => (Math.hypot(x / 62, y / 62, (z - 26) / 36) - 1) * 36, { count: Math.round(n * 0.11), bounds: 100, seed: 5 });
   const cd = centre.data;
@@ -77,14 +83,17 @@ export function flower(n) {
     const y = cd[k + 1], z = cd[k + 2];
     cd[k + 1] = y * ct - z * st + lift; cd[k + 2] = y * st + z * ct;
   }
-  const r = rng(13), stemN = n - petals.count - centre.count, stem = new Float32Array(Math.max(0, stemN) * 3);
+  const r = rng(13), stemN = n - parts[0].count - parts[1].count - centre.count, stem = new Float32Array(Math.max(0, stemN) * 3);
   for (let i = 0; i < stemN; i++) {
     const t = r();
     stem[i * 3] = Math.sin(t * 2.2) * 40 + gauss(r) * 5;
     stem[i * 3 + 1] = -t * 420 + lift - 30;
     stem[i * 3 + 2] = gauss(r) * 5 - 40;
   }
-  return positionsOf(splats.merge(petals, centre, splats.fromPoints(stem)), n);
+  parts.push(centre, splats.fromPoints(stem));
+    },
+    () => done(positionsOf(splats.merge(...parts), n)),
+  ];
 }
 
 /** A flock: birds along a ribbon, wing phases spread with staggerValues(). */
@@ -137,10 +146,10 @@ export function wave(n) {
 }
 
 /** A barred spiral galaxy in the model's xz plane. */
-export function galaxy(n) {
-  const o = new Float32Array(n * 3), r = rng(41);
+export function galaxy(n, o = new Float32Array(n * 3), from = 0, to = n) {
+  const r = rng(41 + from);
   const arms = 3, R = 560;
-  for (let i = 0; i < n; i++) {
+  for (let i = from; i < to; i++) {
     let x, y, z;
     if (r() < 0.16) {
       const a = r() * TAU, rr = Math.abs(gauss(r)) * 55;
