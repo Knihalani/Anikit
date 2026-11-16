@@ -22,7 +22,7 @@ import {
   claimAll, unclaimAll, Owner, stateOf, TEXT_PROPS, markDirty, transformUnit, TargetState, snapshot, composeTransform, kebab, computed, camel,
 } from './props';
 import { Playable, Callbacks, Linked } from './playable';
-import { warn, didYouMean, describe, cssPropertyNames, suggest, warningsOn, checkSeconds, checkTargets } from './debug';
+import { warn, didYouMean, describe, cssPropertyNames, suggest, warningsOn, checkSeconds, checkTargets, docLink } from './debug';
 import { stagger as staggerFn } from './stagger';
 import type { StaggerOptions } from './stagger';
 import type { OptionKeys } from './debug';
@@ -227,7 +227,7 @@ function checkAnimateOptions(given: AnimateOptions, o: AnimateOptions): void {
   for (const k of Object.keys(given)) {
     if (OPTION_KEYS.has(k) || EXTRA_OPTION_KEYS.has(k)) continue;
     const alias = OPTION_ALIASES[k];
-    warn(`unknown animation option "${k}"; it is ignored.${alias ? ` Use ${alias} instead.` : didYouMean(k, OPTION_KEYS)}`);
+    warn(`unknown animation option "${k}"; it is ignored.${alias ? ` Use ${alias} instead.` : didYouMean(k, OPTION_KEYS)} See ${docLink('animate()')}`);
   }
   checkSeconds('animate()', 'duration', o.duration);
   checkSeconds('animate()', 'delay', o.delay);
@@ -1145,7 +1145,7 @@ export class Animation extends Playable {
         if (kind === Kind.Style && i === 0 && !isKnownStyle(target as HTMLElement, prop)) {
           const s = suggest(prop, [...cssPropertyNames(), ...TRANSFORM_PROPS, ...SPECIAL_PROPS, ...OPTION_KEYS]);
           const hint = !s ? '' : OPTION_KEYS.has(s) ? ` Did you mean the option "${s}"? (Options can go in the third argument or among the properties.)` : ` Did you mean "${s}"?`;
-          warn(`"${prop}" is not a CSS property of ${describe(target)}; it will be written as an inline style anyway.${hint}`);
+          warn(`"${prop}" is not a CSS property of ${describe(target)}; it will be written as an inline style anyway.${hint} See ${docLink('animate()')}`);
         }
         let raw = dynamic[pi] ? spec.values.map((v) => resolve(v, target, i, n)) : (spec.values as Array<Scalar | null>);
         // A function may return keyframes for its target: `y: (el, i) => [0, i * 10]`.
