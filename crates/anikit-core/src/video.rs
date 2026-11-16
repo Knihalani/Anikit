@@ -194,6 +194,8 @@ pub struct PostFx {
     streak: Vec<f32>,
     rays: Vec<f32>,
     luma: Vec<u8>,
+    /// 256×256 grain noise in −0.5…0.5, built once; each frame reads it at a seeded offset.
+    grain_tab: Vec<f32>,
     flare: Vec<f32>,
     copy: Vec<u8>,
     /// Zoom blur: half-res packed RGB and its copy for the second pass.
@@ -684,6 +686,18 @@ impl PostFx {
         let vig = p.vignette * 1.4;
         let grain = p.grain * 2.0 / 255.0;
         let seed = p.seed.wrapping_mul(0x9E37_79B9);
+        if grain > 0.0 && self.grain_tab.is_empty() {
+            self.grain_tab = (0..256u32 * 256)
+                .map(|i| {
+                    let mut hs = (i & 255).wrapping_mul(0x85EB_CA77) ^ (i >> 8).wrapping_mul(0xC2B2_AE3D);
+                    hs ^= hs >> 15;
+                    hs = hs.wrapping_mul(0x2C1B_3C6D);
+                    hs ^= hs >> 12;
+                    (hs >> 24) as f32 / 255.0 - 0.5
+                })
+                .collect();
+        }
+        let (gox, goy) = ((seed >> 8) & 255, (seed >> 20) & 255);
         let (wi, hi) = (w as isize - 1, h as isize - 1);
         let phase = V4::new(0.375, 0.125, 0.125, 0.375);
         let lanes = V4::new(0.0, 1.0, 2.0, 3.0);
@@ -763,15 +777,11 @@ impl PostFx {
                 let r2 = (dx * dx + dy2) * inv_r2;
                 let k = 1.0 - r2 * r2 * vig;
                 let n = if grain > 0.0 {
-                    // Grain: an independent hash per pixel (no serial RNG chain).
-                    let g4: [f32; 4] = core::array::from_fn(|l| {
-                        let mut hs = ((x0 + l) as u32).wrapping_mul(0x85EB_CA77) ^ (y as u32).wrapping_mul(0xC2B2_AE3D) ^ seed;
-                        hs ^= hs >> 15;
-                        hs = hs.wrapping_mul(0x2C1B_3C6D);
-                        hs ^= hs >> 12;
-                        ((hs >> 24) as f32 / 255.0 - 0.5) * grain
-                    });
-                    V4::from_array(g4)
+                    // Grain: a tile of hashed noise read at this frame's offset
+                    // (four loads instead of four hashes; deterministic per seed).
+                    let tr = &self.grain_tab[(((y as u32 + goy) & 255) as usize) << 8..][..256];
+                    let gx = x0 as u32 + gox;
+                    V4::new(tr[(gx & 255) as usize], tr[((gx + 1) & 255) as usize], tr[((gx + 2) & 255) as usize], tr[((gx + 3) & 255) as usize]) * grain
                 } else {
                     V4::splat(0.0)
                 };
