@@ -9,6 +9,7 @@
  * ```
  */
 import { track } from './context';
+import { engine } from './core';
 import { Playable } from './playable';
 import { Targets, toTargets } from './props';
 import { spring, PhysicsAnimation } from './spring';
@@ -149,11 +150,16 @@ export function scroll(subject: Playable | CompositorAnimation | ((progress: num
   };
   measure();
   proxy.p = read();
-  whenReady(() => apply(proxy.p));
+  // The first apply waits for a microtask, batched with every link created in
+  // the same task: each link measures (reads) here, and writing between two
+  // links' measurements made the browser lay the page out once per link.
+  let live = true;
+  whenReady(() => firstApply(() => live && apply(proxy.p)));
   const evTarget: EventTarget = isWin ? window : scroller;
   const off = linkScroll(evTarget, scroller, { axis, update });
   window.addEventListener('resize', onResize, { passive: true });
   return tracked(() => {
+    live = false;
     off();
     window.removeEventListener('resize', onResize);
     smoother?.stop();
@@ -174,6 +180,27 @@ function tracked(cleanup: () => void): () => void {
   };
   track({ revert: stop, kill: stop });
   return stop;
+}
+
+let pendingApplies: Array<() => void> | null = null;
+/** Run `f` in a microtask, with every other first apply queued in this task. */
+function firstApply(f: () => void): void {
+  if (!pendingApplies) {
+    const list: Array<() => void> = (pendingApplies = []);
+    let done = false;
+    let off: (() => void) | null = null;
+    // Whichever comes first: the microtask, or an engine frame (manual time).
+    const drain = () => {
+      if (done) return;
+      done = true;
+      off?.();
+      if (pendingApplies === list) pendingApplies = null;
+      for (const g of list) g();
+    };
+    queueMicrotask(drain);
+    off = engine.onFrame(drain);
+  }
+  pendingApplies.push(f);
 }
 
 interface Link {
