@@ -61,8 +61,10 @@ pub fn pred16(e: &Edges<16>, mode: u8, out: &mut [u8; 256]) {
             let b = (5 * h + 32) >> 6;
             let c = (5 * v + 32) >> 6;
             for y in 0..16 {
+                let base = a + c * (y as i32 - 7) - 7 * b + 16;
+                let row = &mut out[y * 16..y * 16 + 16];
                 for x in 0..16 {
-                    out[y * 16 + x] = clip((a + b * (x as i32 - 7) + c * (y as i32 - 7) + 16) >> 5);
+                    row[x] = ((base + b * x as i32) >> 5).clamp(0, 255) as u8;
                 }
             }
         }

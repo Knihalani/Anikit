@@ -3,13 +3,17 @@
 use crate::bits::BitWriter;
 use crate::cabac_tables::*;
 
+/// Byte-oriented CABAC encoder. `low` holds the spec's 10-bit codILow window
+/// plus `queue + 8` not-yet-output bits above it; output bytes whose value may
+/// still change by a carry (0xff runs) are counted in `outstanding`.
 pub struct Cabac {
     low: u32,
     range: u32,
+    queue: i32,
     outstanding: u32,
-    first: bool,
     /// Context states: (pStateIdx << 1) | valMPS.
     ctx: [u8; 460],
+    pub out: Vec<u8>,
 }
 
 /// Residual block categories (ctxBlockCat).
@@ -37,87 +41,98 @@ impl Cabac {
             let pre = (((m as i32 * qp) >> 4) + n as i32).clamp(1, 126);
             *c = if pre <= 63 { ((63 - pre) << 1) as u8 } else { (((pre - 64) << 1) | 1) as u8 };
         }
-        Cabac { low: 0, range: 510, outstanding: 0, first: true, ctx }
+        Cabac { low: 0, range: 510, queue: -9, outstanding: 0, ctx, out: Vec::with_capacity(4096) }
     }
 
     #[inline(always)]
-    fn put_bit(&mut self, w: &mut BitWriter, b: u32) {
-        if self.first {
-            self.first = false;
-        } else {
-            w.put(1, b);
-        }
-        while self.outstanding > 0 {
-            let n = self.outstanding.min(32);
-            w.put(n, if b == 0 { u32::MAX } else { 0 });
-            self.outstanding -= n;
-        }
-    }
-
-    #[inline(always)]
-    fn renorm(&mut self, w: &mut BitWriter) {
-        while self.range < 256 {
-            if self.low < 256 {
-                self.put_bit(w, 0);
-            } else if self.low >= 512 {
-                self.low -= 512;
-                self.put_bit(w, 1);
-            } else {
-                self.low -= 256;
+    fn putbyte(&mut self) {
+        if self.queue >= 0 {
+            let out = self.low >> (self.queue + 10);
+            self.low &= (0x400 << self.queue) - 1;
+            self.queue -= 8;
+            if out & 0xff == 0xff {
                 self.outstanding += 1;
+            } else {
+                let carry = (out >> 8) as u8;
+                if let Some(last) = self.out.last_mut() {
+                    *last = last.wrapping_add(carry);
+                }
+                for _ in 0..self.outstanding {
+                    self.out.push(0xffu8.wrapping_add(carry));
+                }
+                self.outstanding = 0;
+                self.out.push(out as u8);
             }
-            self.range <<= 1;
-            self.low <<= 1;
         }
     }
 
     #[inline(always)]
-    pub fn decision(&mut self, w: &mut BitWriter, ctx: usize, bin: u32) {
+    fn renorm(&mut self) {
+        let shift = self.range.leading_zeros() as i32 - 23;
+        self.range <<= shift;
+        self.low <<= shift;
+        self.queue += shift;
+        self.putbyte();
+    }
+
+    #[inline(always)]
+    pub fn decision(&mut self, _w: &mut BitWriter, ctx: usize, bin: u32) {
         let s = self.ctx[ctx];
-        let (state, mps) = ((s >> 1) as usize, (s & 1) as u32);
+        let state = (s >> 1) as usize;
         let lps = RANGE_LPS[state][((self.range >> 6) & 3) as usize] as u32;
         self.range -= lps;
-        if bin != mps {
+        if bin != (s & 1) as u32 {
             self.low += self.range;
             self.range = lps;
-            let nmps = if state == 0 { 1 - mps } else { mps };
-            self.ctx[ctx] = (TRANS[state][0] << 1) | nmps as u8;
+            let nmps = (s & 1) ^ (state == 0) as u8;
+            self.ctx[ctx] = (TRANS[state][0] << 1) | nmps;
         } else {
-            self.ctx[ctx] = (TRANS[state][1] << 1) | mps as u8;
+            self.ctx[ctx] = (TRANS[state][1] << 1) | (s & 1);
         }
-        self.renorm(w);
+        self.renorm();
     }
 
     #[inline(always)]
-    pub fn bypass(&mut self, w: &mut BitWriter, bin: u32) {
+    pub fn bypass(&mut self, _w: &mut BitWriter, bin: u32) {
         self.low <<= 1;
         if bin != 0 {
             self.low += self.range;
         }
-        if self.low >= 1024 {
-            self.put_bit(w, 1);
-            self.low -= 1024;
-        } else if self.low < 512 {
-            self.put_bit(w, 0);
-        } else {
-            self.low -= 512;
-            self.outstanding += 1;
-        }
+        self.queue += 1;
+        self.putbyte();
     }
 
-    pub fn terminate(&mut self, w: &mut BitWriter, bin: u32) {
+    /// end_of_slice_flag / I_PCM terminate bin. A 1 also flushes the engine (the
+    /// final bit written is the rbsp_stop_one_bit); the caller then byte-aligns.
+    pub fn terminate(&mut self, _w: &mut BitWriter, bin: u32) {
         self.range -= 2;
-        if bin != 0 {
-            self.low += self.range;
-            // flush
-            self.range = 2;
-            self.renorm(w);
-            let b = (self.low >> 9) & 1;
-            self.put_bit(w, b);
-            w.put(2, ((self.low >> 7) & 3) | 1);
-        } else {
-            self.renorm(w);
+        if bin == 0 {
+            self.renorm();
+            return;
         }
+        self.low += self.range;
+        // EncodeFlush: range = 2, renormalise (7 bits), then the window's top three
+        // bits leave as output with the last one forced to 1 (the stop bit).
+        self.range = 2;
+        self.renorm();
+        self.low |= 1 << 7;
+        self.low <<= 3;
+        self.queue += 3;
+        self.putbyte();
+        // pad the final partial byte with zeros
+        while self.queue > -8 {
+            if self.queue < 0 {
+                let pad = -self.queue;
+                self.low <<= pad;
+                self.queue = 0;
+            }
+            self.putbyte();
+        }
+        // no carry can arrive any more
+        for _ in 0..self.outstanding {
+            self.out.push(0xff);
+        }
+        self.outstanding = 0;
     }
 
     /// k-th order Exp-Golomb suffix in bypass bins.

@@ -70,6 +70,22 @@ pub fn fdct<const N: usize>(r: &mut Soa<N>) {
 pub fn quant<const N: usize>(c: &mut Soa<N>, q: &QuantS, intra: bool, from: usize) -> [u8; N] {
     let b = &q.bias[!intra as usize];
     let mut cnt = [0i16; N];
+    #[cfg(target_arch = "x86_64")]
+    {
+        if N % 8 == 0 && crate::simd::level() >= 1 {
+            for k in from..16 {
+                for h in (0..N).step_by(8) {
+                    // SAFETY: SSE4.1 detected; slices are 8 lanes.
+                    unsafe { crate::simd::quant8_sse41(&mut c[k][h..h + 8], q.m[k], b[k], &mut cnt[h..h + 8]) };
+                }
+            }
+            let mut nz = [0u8; N];
+            for l in 0..N {
+                nz[l] = cnt[l] as u8;
+            }
+            return nz;
+        }
+    }
     for k in from..16 {
         let (m, bk) = (q.m[k], b[k]);
         let row = &mut c[k];

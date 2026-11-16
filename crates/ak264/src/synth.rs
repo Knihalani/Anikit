@@ -1,5 +1,6 @@
 //! Synthetic motion-graphics content for tests and benchmarks.
 
+use crate::encoder::{FrameHints, MotionHint};
 use crate::frame::YuvBuffer;
 
 /// A deterministic test scene: a gradient background, rounded "cards" that slide,
@@ -168,5 +169,44 @@ impl Scene {
             }
         }
         f
+    }
+
+    /// What a renderer knows about frame `t` (t > 0): the macroblocks touched by
+    /// anything that moved or changed, and the cards' (rounded) translations.
+    pub fn hints(&self, t: u32) -> FrameHints {
+        let (w, h) = (self.width as i32, self.height as i32);
+        let (mbw, mbh) = ((w as usize).div_ceil(16), (h as usize).div_ceil(16));
+        if self.moving_bg {
+            return FrameHints { changed: Some(vec![true; mbw * mbh]), motions: vec![] };
+        }
+        let mut ch = vec![false; mbw * mbh];
+        let mut mark = |x0: i32, y0: i32, x1: i32, y1: i32| {
+            let (x0, y0) = (x0.clamp(0, w) as usize / 16, y0.clamp(0, h) as usize / 16);
+            let (x1, y1) = ((x1.clamp(0, w) as usize).div_ceil(16), (y1.clamp(0, h) as usize).div_ceil(16));
+            for my in y0..y1.min(mbh) {
+                for mx in x0..x1.min(mbw) {
+                    ch[my * mbw + mx] = true;
+                }
+            }
+        };
+        let mut motions = vec![];
+        for (a, b) in self.cards_at(t.saturating_sub(1)).iter().zip(self.cards_at(t)) {
+            mark(a.0, a.1, a.0 + a.2, a.1 + a.3);
+            mark(b.0, b.1, b.0 + b.2, b.1 + b.3);
+            motions.push(MotionHint {
+                x: b.0.max(0) as u32,
+                y: b.1.max(0) as u32,
+                w: b.2 as u32,
+                h: b.3 as u32,
+                dx: b.0 - a.0,
+                dy: b.1 - a.1,
+            });
+        }
+        if self.fade > 0.0 {
+            let pw = (w as f32 * self.fade) as i32;
+            let (px, py, ph) = (w - pw - w / 20, h / 12, h / 3);
+            mark(px, py, px + pw, py + ph);
+        }
+        FrameHints { changed: Some(ch), motions }
     }
 }
