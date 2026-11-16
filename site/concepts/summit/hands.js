@@ -70,6 +70,11 @@ uniform float uTime;
 out vec4 outColor;
 float hash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 vec3 aces(vec3 x) { return clamp(x * (2.51 * x + 0.03) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
+float vnoise(vec3 p) {
+  vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(hash(i), hash(i + vec3(1, 0, 0)), f.x), mix(hash(i + vec3(0, 1, 0)), hash(i + vec3(1, 1, 0)), f.x), f.y),
+             mix(mix(hash(i + vec3(0, 0, 1)), hash(i + vec3(1, 0, 1)), f.x), mix(hash(i + vec3(0, 1, 1)), hash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
 void main() {
   vec3 n = normalize(vN);
   vec3 V = normalize(-vPos);
@@ -86,7 +91,7 @@ void main() {
   vec3 portC = vec3(1.0, 0.48, 0.12) * uPortal.w * 1.6;
   float m = vMat;
   vec3 col;
-  if (m > 3.5) {
+  if (m > 3.5 && m < 4.5) {
     // Polished gold: the sky above, the bright horizon, a hard sun glint.
     vec3 r = reflect(-V, n);
     float up = r.y;
@@ -130,10 +135,20 @@ void main() {
     // Skin: sun behind the hands, so a cool sky fill on the faces we see, warm light through the edges.
     vec3 alb = vec3(0.68, 0.42, 0.30);
     float joint = 1.0 - smoothstep(0.0, 0.2, min(vLocal.x, 1.0 - vLocal.x));
-    float tipK = m > 2.5 ? smoothstep(0.4, 1.0, vLocal.x) : 0.0;
+    float tipK = (m > 2.5 && m < 4.5) ? smoothstep(0.4, 1.0, vLocal.x) : 0.0;
+    // Blotchy variation in the skin.
+    float nz = vnoise(vPos * 160.0) * 0.6 + vnoise(vPos * 520.0) * 0.4;
+    alb *= 0.9 + 0.2 * nz;
+    alb = mix(alb, vec3(0.72, 0.38, 0.3), 0.25 * smoothstep(0.55, 0.85, vnoise(vPos * 60.0 + 3.0)));
     alb = mix(alb, vec3(0.70, 0.34, 0.26), joint * 0.4 + tipK * 0.45);
     float nail = 0.0;
-    if (m > 2.5) {
+    // Veins on the back of the hand, faint and blue-green under the skin.
+    if (m > 4.5) {
+      float dors = smoothstep(0.2, 0.8, cos(vLocal.y));
+      float vein = 1.0 - smoothstep(0.0, 0.07, abs(sin(vLocal.y * 2.0 + vLocal.x * 2.5 + 0.8 * sin(vLocal.x * 6.0 + vPos.x * 90.0))));
+      alb = mix(alb, vec3(0.48, 0.42, 0.45), vein * dors * 0.35 * smoothstep(0.1, 0.4, vLocal.x) * (1.0 - smoothstep(0.75, 0.95, vLocal.x)));
+    }
+    if (m > 2.5 && m < 4.5) {
       float c = cos(vLocal.y);
       nail = smoothstep(0.5, 0.72, c) * smoothstep(0.18, 0.38, vLocal.x) * (1.0 - smoothstep(1.02, 1.2, vLocal.x));
       alb = mix(alb, vec3(0.9, 0.74, 0.7), nail);
@@ -143,7 +158,10 @@ void main() {
     vec3 diff = sunC * wrap * wrap * 0.75 + skyC * (0.55 + 0.3 * n.y) + snowC * 0.35 * max(-n.y, 0.0) + vec3(0.2, 0.18, 0.17);
     col = alb * diff * 0.6;
     // Knuckle creases: a touch darker and redder where segments meet.
-    col *= 1.0 - 0.16 * joint * (1.0 - nail);
+    col *= 1.0 - 0.24 * joint * (1.0 - nail);
+    // Fine crease lines across the back of each finger joint.
+    float cr = min(vLocal.x, 1.0 - vLocal.x);
+    col *= 1.0 - 0.18 * (1.0 - smoothstep(0.0, 0.035, abs(cr - 0.06))) * smoothstep(0.3, 0.8, cos(vLocal.y)) * step(m, 3.5) * (1.0 - nail);
     // Subsurface: red light through the thin edges and the fingertips, against the sun.
     float sss = pow(edge, 1.6) * (0.35 + 1.1 * back) + tipK * back * 0.35;
     col += vec3(1.0, 0.36, 0.18) * sss * 0.42;
@@ -186,7 +204,7 @@ void main() {
   bool ember = h4 < uP.w;
   vec2 pos, dir; float len, wid, bright;
   vec3 col;
-  float band = 3.0 * uScale + R * 0.035;
+  float band = 3.0 * uScale + R * 0.03;
   if (!ember) {
     // Ring sparks: a dense band running round the circle, each at its own speed, trailing a streak.
     float speed = 0.7 + 0.9 * h2;
@@ -198,8 +216,8 @@ void main() {
     len = (8.0 + 46.0 * h2 * h2) * uScale * (0.45 + 0.55 * min(1.0, R / (260.0 * uScale)));
     wid = (0.9 + 1.4 * h1 * h1) * uScale;
     float core = 1.0 - min(1.0, abs(jr) * 2.4);
-    bright = (0.5 + 1.3 * h1 * h1 * h1) * (0.35 + 0.65 * core);
-    col = mix(vec3(1.0, 0.33, 0.04), vec3(1.0, 0.72, 0.3), h2 * h2 * core);
+    bright = (0.3 + 0.8 * h1 * h1 * h1) * (0.4 + 0.6 * core);
+    col = mix(vec3(1.0, 0.45, 0.12), vec3(1.0, 0.6, 0.235), h2 * core);
     // While the arc is being drawn its head, at the fingertip, burns brightest.
     if (arc < 0.999) bright *= 0.55 + 1.6 * smoothstep(0.82, 1.0, h1);
   } else {
@@ -210,16 +228,17 @@ void main() {
     vec2 p0 = C + vec2(cos(a0), -sin(a0)) * (R + (h1 - 0.5) * band);
     vec2 tang = vec2(-sin(a0), -cos(a0));
     vec2 out0 = vec2(cos(a0), -sin(a0));
-    float v = (110.0 + 250.0 * h2) * uScale;
+    // Most embers stay close to the rim; a few long ones fly far.
+    float v = (0.18 + 0.25 * h2 + 1.2 * step(0.92, h2)) * R + 20.0 * uScale;
     vec2 vel = (tang * (0.75 + 0.5 * h1) * uA.y + tang * 0.25 + out0 * (h1 - 0.3) * 0.7) * v;
     float drag = (1.0 - exp(-life * 2.4)) / 2.4;
-    vec2 g = vec2(0.0, 420.0 * uScale);
+    vec2 g = vec2(0.0, 0.5 * R + 120.0 * uScale);
     pos = p0 + vel * drag + g * life * life * 0.5;
     vec2 vnow = vel * exp(-life * 2.4) + g * life;
     dir = normalize(vnow + 1e-4);
     len = clamp(length(vnow) * 0.03, 2.0 * uScale, 22.0 * uScale);
     wid = (0.9 + 1.2 * h3) * uScale * (1.0 - life * 0.6);
-    bright = (1.0 - life) * (1.0 - life) * (0.9 + 1.4 * h2);
+    bright = (1.0 - life) * (1.0 - life) * (0.6 + 1.0 * h2);
     col = mix(vec3(1.0, 0.28, 0.03), vec3(1.0, 0.62, 0.22), (1.0 - life) * h2);
   }
   vec2 side = vec2(-dir.y, dir.x);
@@ -241,8 +260,9 @@ void main() {
   float across = 1.0 - abs(vUv.y * 2.0 - 1.0);
   float along = (1.0 - vUv.x);              // bright head, fading tail
   float a = across * across * along * along * vI;
-  vec3 c = vC * a * 1.15 + vec3(1.0, 0.82, 0.5) * a * a * 0.22;
-  outColor = vec4(c, 0.0);                  // pure added light over whatever is below
+  // Partly opaque so the orange holds against a bright sky; the rest is added light.
+  float al = min(1.0, a * 0.75);
+  outColor = vec4(vC * a, al);
 }`;
 
 // Glow: a tight orange halo with a hot core line around the drawn arc, transparent inside.
@@ -285,16 +305,18 @@ void main() {
   float core = exp(-x * x / (1.6 + band * 0.3));
   float halo = exp(-abs(x) / (6.0 + band * 1.2));
   float heat = exp(-pow(max(x, 0.0) / (10.0 + band * 2.0), 2.0)) * step(0.0, x) * (0.6 + 0.4 * shimmer);
-  vec3 c = vec3(1.0, 0.85, 0.55) * core * 0.65 + vec3(1.0, 0.4, 0.07) * halo * 0.28 + vec3(1.0, 0.36, 0.06) * heat * 0.08;
+  float hot = exp(-x * x / 0.7);
+  vec3 c = vec3(1.0, 0.6, 0.24) * core * 0.45 + vec3(1.0, 0.95, 0.8) * hot * 0.35 + vec3(1.0, 0.42, 0.1) * halo * 0.22 + vec3(1.0, 0.36, 0.06) * heat * 0.06;
   c *= drawn;
   // The opening tears outwards with a hot, flickering lip.
   if (uHole > 0.5) {
     float hx = (r - uHole) / (uScale * (2.0 + 1.5 * shimmer));
     float lip = exp(-hx * hx) * (1.0 - smoothstep(0.85, 1.0, uHole / R));
-    c += vec3(1.0, 0.6, 0.22) * lip * 0.9;
+    c += vec3(1.0, 0.55, 0.18) * lip * 0.55;
   }
   c *= uP.z;
-  outColor = vec4(c, 0.0);
+  float al = clamp((core * 0.55 + halo * 0.18) * drawn * uP.z, 0.0, 0.85);
+  outColor = vec4(c, al);
 }`;
 
 // ---------------------------------------------------------------------------
@@ -329,10 +351,10 @@ function torusMesh(seg = 28, sides = 10) {
 // ---------------------------------------------------------------------------
 const FINGERS = [
   // knuckle u, w; segment lengths; radii at knuckle, PIP, DIP, tip; spread angle
-  { u: 0.031, w: 0.092, len: [0.043, 0.025, 0.021], r: [0.0121, 0.0107, 0.0094, 0.0079], spread: 0.16 },
-  { u: 0.010, w: 0.097, len: [0.047, 0.029, 0.022], r: [0.0125, 0.0110, 0.0096, 0.0082], spread: 0.03 },
-  { u: -0.010, w: 0.093, len: [0.044, 0.028, 0.022], r: [0.0119, 0.0104, 0.0091, 0.0077], spread: -0.11 },
-  { u: -0.029, w: 0.083, len: [0.034, 0.021, 0.019], r: [0.0106, 0.0092, 0.0082, 0.0070], spread: -0.25 },
+  { u: 0.031, w: 0.092, len: [0.043, 0.025, 0.021], r: [0.0118, 0.0100, 0.0084, 0.0066], spread: 0.16 },
+  { u: 0.010, w: 0.097, len: [0.047, 0.029, 0.022], r: [0.0122, 0.0103, 0.0087, 0.0069], spread: 0.03 },
+  { u: -0.010, w: 0.093, len: [0.044, 0.028, 0.022], r: [0.0116, 0.0098, 0.0083, 0.0065], spread: -0.11 },
+  { u: -0.029, w: 0.083, len: [0.034, 0.021, 0.019], r: [0.0102, 0.0086, 0.0074, 0.0059], spread: -0.25 },
 ];
 
 // A pose: wrist position (view space), hand orientation, finger state.
@@ -478,7 +500,7 @@ export function createHands(canvas) {
       const fi = FINGERS[f];
       toView(tmpA, fi.u * 0.55, 0.0, 0.016);
       toView(tmpB, fi.u, 0.0015, fi.w - 0.004);
-      push(tmpA, 0.0155, tmpB, fi.r[0] * 1.1, D, 0);
+      push(tmpA, 0.0155, tmpB, fi.r[0] * 1.1, D, 5);
     }
     toView(tmpA, 0.004, -0.006, 0.03); toView(tmpB, -0.002, -0.006, 0.072); push(tmpA, 0.026, tmpB, 0.024, D, 0);
     toView(tmpA, -0.018, -0.004, 0.035); toView(tmpB, -0.022, -0.004, 0.07); push(tmpA, 0.018, tmpB, 0.016, D, 0);
@@ -627,7 +649,7 @@ export function createHands(canvas) {
       gl.useProgram(SPARK.p);
       gl.uniform2f(SPARK.u.uRes, Wd, Hd);
       gl.uniform4f(SPARK.u.uRing, cx * k, cy * k, ringR * k, arc);
-      gl.uniform4f(SPARK.u.uP, timeNow, spinAcc, portal.glow * fade, 0.3 + 0.12 * spinOn);
+      gl.uniform4f(SPARK.u.uP, timeNow, spinAcc, portal.glow * fade, 0.12 + 0.06 * spinOn);
       gl.uniform2f(SPARK.u.uA, a0, spinOn);
       gl.uniform1f(SPARK.u.uDepth, portalDepth());
       gl.uniform1f(SPARK.u.uScale, k);
