@@ -41,7 +41,7 @@ const U_CAPTURED: f32 = 2.0;
 /// Value stored after a ray has escaped (negative: never the disk).
 const U_ESCAPED: f32 = -0.25;
 /// Disk texture: radial texels (ln r) and azimuthal texels.
-pub const TEX_X: usize = 192;
+pub const TEX_X: usize = 256;
 pub const TEX_A: usize = 1024;
 const TEX_R0: f32 = 4.5;
 const BB_N: usize = 1024;
@@ -560,10 +560,10 @@ impl BlackHole {
         let mut noise = vec![0.0f32; TEX_X * (TEX_A + 1)];
         for x in 0..TEX_X {
             for a in 0..TEX_A {
-                let fx = x as f32 / TEX_X as f32 * 32.0;
-                let fa = a as f32 / TEX_A as f32 * 28.0;
+                let fx = x as f32 / TEX_X as f32 * 24.0;
+                let fa = a as f32 / TEX_A as f32 * 14.0;
                 // Clumpy fine structure on top of broad lanes and gaps.
-                let n = fbm(fx, fa, 32, 28, 4, seed);
+                let n = fbm(fx, fa, 24, 14, 4, seed);
                 let m = fbm(fx * 0.25 + 3.1, fa * 0.2, 8, 8, 3, seed ^ 0x55);
                 let v = (n * 2.3 - 0.68 + (m - 0.5) * 0.7).max(0.0);
                 noise[x * (TEX_A + 1) + a] = v * sqrtf(v) * 1.35;
@@ -1192,6 +1192,51 @@ impl BlackHole {
                     let a = (ac as i32 + da).rem_euclid(TEX_A as i32) as usize;
                     let d = (floorf(ac) + da as f32 - ac) / sig_a;
                     row[a] += amp * wx * exp_neg(d * d);
+                }
+            }
+        }
+        // Infalling gas streams: two trailing spirals that wind in from the
+        // outer disk, rotating with the gas at their radius, with clumps
+        // sliding inward along them; each fades in and out over its life.
+        if p.hot_spots > 0.0 {
+            for i in 0..2u32 {
+                let life = 420.0;
+                let c = t / life + i as f32 * 0.5;
+                let cf = floorf(c);
+                let hs = |k: u32| hashf(i + 17, cf as i32 as u32, k);
+                let env = {
+                    let s = libm::sinf(PI * (c - cf));
+                    s * s
+                };
+                let amp = p.hot_spots * 0.9 * env;
+                let az0 = hs(1) * TAU;
+                let pitch = 2.2 + hs(2) * 1.2;
+                let age = (c - cf) * life;
+                let sig_a = 0.16 * tex_per_rad;
+                let span = (3.0 * sig_a) as i32 + 1;
+                for x in 0..TEX_X - 1 {
+                    let lr = lx0 + (lx1 - lx0) * x as f32 / (TEX_X - 2) as f32;
+                    let r = libm::expf(lr);
+                    if r < ISCO {
+                        continue;
+                    }
+                    let om = 1.0 / (r * sqrtf(r));
+                    // Trailing spiral: azimuth grows inward; the whole stream
+                    // is carried around at the local orbital speed.
+                    let along = lx1 - lr;
+                    let clump = 0.55 + 0.45 * libm::sinf(along * 9.0 + age * 0.06);
+                    let w = amp * clump * smooth(lx1, lx1 - 0.25, lr) * smooth(libm::logf(ISCO), libm::logf(ISCO) + 0.3, lr);
+                    if w <= 0.0 {
+                        continue;
+                    }
+                    let mut ac = (az0 + pitch * along + om * age - az_off) * tex_per_rad;
+                    ac -= floorf(ac / TEX_A as f32) * TEX_A as f32;
+                    let row = &mut self.disk[x * (TEX_A + 1)..(x + 1) * (TEX_A + 1)];
+                    for da in -span..=span {
+                        let a = (ac as i32 + da).rem_euclid(TEX_A as i32) as usize;
+                        let d = (floorf(ac) + da as f32 - ac) / sig_a;
+                        row[a] += w * exp_neg(d * d);
+                    }
                 }
             }
         }
