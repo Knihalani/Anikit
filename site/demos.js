@@ -2,7 +2,7 @@
 // first near the viewport and runs per-frame work only while it is visible.
 import {
   engine, animate, set, spring, stagger, splitText, inView, magnetic, timeline, world, flush,
-  circle, star, rect, pathThrough, noise2, pointCloud, glow, scene3d, flip, marquee, effects,
+  circle, star, rect, pathThrough, noise2, pointCloud, glow, scene3d, flip, effects,
 } from '../packages/anikit/dist/anikit.lean.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -51,7 +51,7 @@ export function start({ reduced, fine, small }) {
       for (let i = 0; i < n; i++) set(dots[i], { x: pos[i].x, y: pos[i].y });
     });
     $$('#springs .mag').forEach((b, i) => b.addEventListener('click', () => { cfg = presets[i]; effects.pop(b, { duration: 0.3 }); }));
-    if (fine) magnetic('#springs .mag, .actions .pill, #copy', { strength: 0.3, radius: 70 });
+    if (fine) magnetic('#springs .mag, #copy', { strength: 0.3, radius: 70 });
   });
 
   // 02 · Text: split, then stagger.
@@ -161,7 +161,7 @@ export function start({ reduced, fine, small }) {
       return true;
     });
   });
-  jobs.push(() => { g = glow('#cloud-canvas', { resolution: small ? 0.7 : 0.75, background: '#05060a', trail: 0.4, budget: 4 }); return true; });
+  jobs.push(() => { g = glow('#cloud-canvas', { resolution: small ? 0.7 : 0.75, background: '#000000', trail: 0.4, budget: 4 }); return true; });
   {
     let i = 0, cols = null;
     jobs.push((deadline) => {
@@ -240,7 +240,6 @@ export function start({ reduced, fine, small }) {
 
   // Install: the feature ticker follows the scroll; copy button.
   once('#install', () => {
-    marquee('#ticker', { speed: 60, pauseOnHover: true, scrollBoost: 0.6 });
     const copy = $('#copy');
     copy.addEventListener('click', async () => {
       try { await navigator.clipboard.writeText('npm install anikit'); } catch { /* clipboard blocked */ }
