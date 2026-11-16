@@ -280,10 +280,33 @@ const FILE_BASE = typeof location !== 'undefined' && location.href ? location.hr
 /** Resolves once the WebAssembly core is instantiated. */
 export const ready: Promise<void> = new Promise<void>((r) => (readyResolve = r));
 
+let warmup: (() => void) | null = null;
+/**
+ * @internal Set by the entry point: exercises the hot paths (create, evaluate,
+ * kill) once. The first call into the module pays for compiling those
+ * functions (~45 ms on a 4x-throttled CPU); run in a task of its own before
+ * `ready` resolves, it no longer lands in the page's set-up task.
+ */
+export function _setWarmup(fn: () => void): void {
+  warmup = fn;
+}
+
 function install(instance: WebAssembly.Instance): void {
   W = instance.exports as unknown as Exports;
   views();
-  readyResolve();
+  const warm = warmup;
+  if (warm && !queue.length && typeof setTimeout === 'function') {
+    // Nothing waiting on the core yet: warm up in a task of its own, then
+    // resolve `ready` in the next one (so `ready.then(setup)` starts a new task).
+    setTimeout(() => {
+      try {
+        warm();
+      } catch {
+        /* a warm-up must never break the page */
+      }
+      setTimeout(readyResolve, 0);
+    }, 0);
+  } else readyResolve();
   // Flush operations requested before the core was ready, in order. One bad
   // call (an unknown easing, say) must not drop everything queued after it,
   // and its error must still surface.
@@ -303,10 +326,17 @@ let started = false;
 function boot(): void {
   if (started) return;
   if (!WASM_BASE64) {
-    // Lean build: stream the module that ships next to this file. If that
-    // fails (no fetch for it, a bundler that moved the file), an explicit
-    // `init(source)` can still load the core.
-    init(new URL('./anikit.wasm', import.meta.url)).catch(() => {
+    // Lean build: stream the module that ships next to this file. Re-bundled
+    // into a script without import.meta (an IIFE), there is no "next to this
+    // file": wait for the app's init(url) instead of throwing at load. If the
+    // fetch fails, an explicit `init(source)` can still load the core.
+    let url: URL;
+    try {
+      url = new URL('./anikit.wasm', import.meta.url);
+    } catch {
+      return;
+    }
+    init(url).catch(() => {
       if (!W) started = false;
     });
     return;

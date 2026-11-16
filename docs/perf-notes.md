@@ -1721,9 +1721,8 @@ of building an array every frame.
   end state at once and setting `progress` does nothing after that (the
   `'instant'` build in `animate.ts`). Scroll-linked progress is user-driven;
   it probably should opt out.
-- `animate(el, { y })` on an element whose inline style is
-  `transform: translateX(10px)` writes `translate(0px, 5px)`: the inline
-  `translateX` is not read into the transform state (`props.ts`).
+- (Fixed in the ninth round, §4.) `animate(el, { y })` on an element whose
+  inline style is `transform: translateX(10px)` wrote `translate(0px, 5px)`.
 - `flip()`: a `scrollTo` inside `mutate` and scroll changes inside scrolling
   containers between `flip.capture()` and `flip.from()` are not compensated
   (the page scroll is). Dragging inside a CSS-scaled parent moves by screen
@@ -2061,3 +2060,108 @@ far from the 40x gap to GSAP's `kill()`).
 GSAP), 10k separate calls (~2x), the 1000-step timeline (~1.7x), timeline
 `kill()` (GSAP does almost no work there), stagger-delay creation (not on
 the batched path), and bundle size (the wasm core is most of it).
+
+## Ninth round (DOM): against Motion
+
+Goal: every DOM feature against Motion 12.43 (vanilla `motion`) as well as
+GSAP, in real Chromium frames. New script `scripts/bench-motion.mjs`
+(staggered entrance, spring followers, scroll-linked sections; set-up ms and
+main-thread ms per frame from Chrome's Performance metrics). Results and the
+GSAP-only rows (flip, split, drag, triggers) are in `docs/scoreboard-dom.md`.
+Anikit has the lowest per-frame cost in every row; it loses some set-up
+rows (staggered entrance and scroll links vs Motion, 200 springs vs GSAP's
+plain tween).
+
+### 1. `scroll()`: batched first apply
+
+Each `scroll()` link measured its target and applied its first progress
+straight away, so the next link's measurement forced a layout: 200 links
+created in one go laid the page out 200 times. The first apply now waits for
+a microtask or the next engine frame (whichever comes first), batched with
+every link created in the same task. 200 links: set-up 23.5 → 13.1 ms
+(Motion 10.1, GSAP 56.7); 50: 10.1 → 7.3. A link removed before its first
+apply writes nothing. Browser test: `round9 › scroll(): the batched first
+apply…` (applied by the first frame, in order).
+
+### Profiled, not changed
+
+`spring()` set-up (10 000 calls on 2000 elements, 56 ms): mostly native style
+access; in JS the largest item is the revert snapshot taken per call
+(`snapshot()`, ~6%). Skipping it on retargets would change what a retarget
+controller's `revert()` restores, so it stays.
+
+### Bug hunt
+
+The only source changes since the eighth round were the core's `animate()`
+creation fast paths. All 67 earlier browser cases pass on them; new cases
+cover a 1000-element staggered entrance (end values and `revert()`), the
+batched first apply, and `flip()` with a target listed twice. No new bugs
+found.
+
+### 2. A realistic landing page (`scripts/bench-page.mjs`)
+
+Same page with Anikit (embedded core and lean), GSAP and Motion; numbers in
+`docs/scoreboard-dom.md`. Anikit does the least main-thread work per scroll
+frame (0.80 ms vs GSAP 1.05, Motion 1.30, CPU 4× throttled) but loses load
+time, blocking time, heap and size to Motion (the 256 KB WebAssembly core,
+and synchronous trigger measurement at creation).
+
+Bug found: the lean build bundled again into a plain script has no
+`import.meta.url`, and its automatic boot threw "Invalid URL" at load, so the
+page's `init(url)` never ran. The boot now waits for `init()` in that case.
+`test-browser.mjs` gained `lean: true` cases (dist/anikit.lean.js re-bundled
+as an IIFE, `anikit.wasm` served next to the page).
+
+### 3. `spring()` set-up (asked: under GSAP's 2.0 ms for 200)
+
+Not done. A first `spring()` on a fresh element costs ~13.6 µs (2000 in
+27 ms, CPU profile): most of it is native work in reading the element's
+transform into the shared transform state (`stateOf`/`readTransform` in
+`props.ts`, owned by the core session), then `resolveProp`. The revert
+snapshot is a copy of that state plus one inline `style.transform` read
+(~2% here), not computed-style reads, so taking it lazily would not close
+the gap.
+
+### 4. `readTransform`: inline transforms that are not a matrix
+
+(Core's `props.ts`, changed with the core session's OK.) `readTransform`
+already took the inline `style.transform` before `getComputedStyle`, but
+parsed it only as `matrix(…)`: an inline `translateX(10px)` or
+`rotate(30deg)` failed the match and the element was treated as untransformed,
+so `animate(el, { y })` wrote `translate(0px, 5px)` and dropped the 10px.
+A non-matrix inline value now falls back to the computed matrix. The
+computed read for elements with no inline transform stays (a stylesheet may
+set one), so this does not speed up `spring()` set-up on fresh elements.
+Browser test `transform-read › …` fails on the old code.
+
+### 5. Where the landing page's set-up time goes
+
+Timed inside the Anikit lean page (CPU 4×, two loads): `splitText` 1–7 ms,
+**the first `animate()` (13 words) 45–48 ms**, the next six `animate()`s
+(48 cards) 7–8 ms, six `scrollTrigger`s 7 ms, the pinned trigger 6 ms,
+`magnetic` + `marquee` 5 ms. Trigger measurement is a small part, so making it
+lazy would not remove the long task. The cost is the first call into the
+core: likely its WebAssembly functions being compiled on first use, which
+belongs to the core session's split-wasm work. Re-run after the
+`readTransform` fix (median of 5): Anikit ready 150 ms / TBT 43 ms / busy
+0.76 ms per frame; lean 214 / 49 / 0.74; GSAP 146 / 65 / 0.92; Motion 81 / 0 /
+1.19.
+
+### 6. Warm-up before `ready` (asynchronous instantiation)
+
+When the core is instantiated asynchronously (the lean build streaming
+`anikit.wasm`, or the embedded build where the browser refuses a synchronous
+compile), `ready` now resolves two tasks later: the first exercises the hot
+paths once (an `animate()` seeked and killed, a stopped `spring()`, a killed
+`timeline()` on a plain object), the second resolves `ready`. The first call
+into the core pays for compiling those functions; it now lands in a task of
+its own instead of the page's `ready.then(setup)` task. Skipped when calls
+are already queued, and when the core compiled synchronously at import (the
+hook is not registered yet: Node, and the embedded build in this benchmark).
+
+A hand-written warm-up in the page first (median of 5, CPU 4×): TBT 54 → 0 ms,
+long tasks 1 → 0, ready 163 → 172 ms. Built in, lean build: TBT 49 → 11 ms,
+long tasks 2 → 1, **ready 214 → 269 ms** (the warm-up's cost now comes before
+`ready` rather than inside the set-up). Kept for the blocking time, which is
+what input responsiveness feels; the trade-off is a later `ready`. The
+embedded build is unchanged (TBT 43–55, ready 150–170 across runs).
