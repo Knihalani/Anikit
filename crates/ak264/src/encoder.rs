@@ -1770,8 +1770,26 @@ impl Encoder {
                     }
                 }
                 None => {
-                    for (mby, row) in self.changed.chunks_mut(mbw).enumerate() {
-                        crate::diff::load_row(y, u, v, f, mby, mbw, row);
+                    // Read-only flags (in parallel across rows when slices are used),
+                    // then an exact compare + copy of the flagged macroblocks.
+                    {
+                        let (yr, ur, vr) = (&*y, &*u, &*v);
+                        if self.writers.len() > 1 {
+                            use rayon::prelude::*;
+                            self.changed
+                                .par_chunks_mut(mbw)
+                                .enumerate()
+                                .for_each(|(mby, row)| crate::diff::flag_row(yr, ur, vr, f, mby, row));
+                        } else {
+                            for (mby, row) in self.changed.chunks_mut(mbw).enumerate() {
+                                crate::diff::flag_row(yr, ur, vr, f, mby, row);
+                            }
+                        }
+                    }
+                    for (i, ch) in self.changed.iter_mut().enumerate() {
+                        if *ch {
+                            *ch = crate::diff::load_mb(y, u, v, f, i % mbw, i / mbw, true);
+                        }
                     }
                 }
             }
