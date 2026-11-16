@@ -11,6 +11,8 @@
 //!
 //! See `docs/video/ARCHITECTURE.md` for ownership and contracts.
 
+pub mod audio;
+pub mod components;
 pub mod dl;
 pub mod spec;
 pub mod eval;
