@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { animate, from, fromTo, set, stagger, engine, flush, FrameBuffer } from '../src/index';
 import { setup, advance, box } from './setup';
 import { _setCodegen } from '../src/animate';
+import { _recordCount } from '../src/core';
 
 beforeAll(setup);
 
@@ -142,6 +143,24 @@ describe('animate: values', () => {
     set(s, { x: 5, y: 6, opacity: 0.3 });
     expect(tf(s)).toBe('translate(5px,6px)');
     expect(s.style.opacity).toBe('0.3');
+  });
+});
+
+describe('animate: memory', () => {
+  it('kill() unregisters every record, the group record of a multi-target animation included', () => {
+    flush();
+    const before = _recordCount();
+    const a = animate(Array.from({ length: 4 }, () => ({ x: 0 })), { x: 10 }, { duration: 1 });
+    advance(0.1);
+    expect(_recordCount()).toBe(before + 5); // 4 parts + the group
+    a.kill();
+    flush();
+    expect(_recordCount()).toBe(before);
+    const b = animate({ x: 0 }, { x: 10 }, { duration: 1 });
+    advance(0.1);
+    b.revert();
+    flush();
+    expect(_recordCount()).toBe(before);
   });
 });
 

@@ -68,6 +68,13 @@ export function unregister(rec: NodeRecord): void {
   if (records[i] === rec) records[i] = undefined;
 }
 
+/** Testing hook: how many node records are registered (a killed controller should leave none behind). */
+export function _recordCount(): number {
+  let n = 0;
+  for (let i = 0; i < records.length; i++) if (records[i] !== undefined) n++;
+  return n;
+}
+
 // ---------------------------------------------------------------------------
 // Post-render hooks (transform flushing etc.) and deferred user callbacks
 // ---------------------------------------------------------------------------

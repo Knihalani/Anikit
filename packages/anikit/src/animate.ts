@@ -496,6 +496,11 @@ class Part implements NodeRecord, Owner, Linked {
   }
 }
 
+/** `Part.onEmpty` for `part` of `anim` (a closure over just these two). */
+function emptyHandler(anim: Animation, part: Part): () => void {
+  return () => anim._partEmpty(part);
+}
+
 /** Per-timeline/animation chain of last written values (timeline sequencing). */
 export type Chain = WeakMap<object, Map<string, Scalar>>;
 
@@ -677,6 +682,8 @@ export class Animation extends Playable {
   targets: Target[] = [];
   _parts: Part[] = [];
   private _group = 0;
+  /** The group's node record (registered while the group exists). */
+  private _grec: NodeRecord | null = null;
   private _immediate = false;
   /** Restorers for `revert()` (captured before the first write). */
   _restore: Array<() => void> = [];
@@ -906,7 +913,9 @@ export class Animation extends Playable {
       if (!part.h) throw new Error('anikit: failed to create animation (invalid keyframes)');
       register(part);
       if (claims) for (const b of part.b) claim(target, b.prop, part);
-      part.onEmpty = () => this._partEmpty(part);
+      // Built outside this loop's scope: a closure created here would keep
+      // the whole per-target scope (the track definitions) alive with the Part.
+      part.onEmpty = emptyHandler(this, part);
       this._parts.push(part);
       this._links.push(part);
     }
@@ -925,6 +934,7 @@ export class Animation extends Playable {
         event: (k: number) => rec.ctl?._event(k),
       };
       register(rec);
+      this._grec = rec;
       this._links.push(rec);
     } else {
       this._finish();
@@ -1157,7 +1167,7 @@ export class Animation extends Playable {
   }
 
   /** All properties of a part were taken over: free it. */
-  private _partEmpty(part: Part): void {
+  _partEmpty(part: Part): void {
     if (this._parts.every((p) => p.b.every((b) => !b.on))) {
       this.kill();
       return;
@@ -1236,7 +1246,10 @@ export class Animation extends Playable {
   protected _kill(): void {
     const w = core();
     for (const p of this._parts) p.dispose();
-    if (this._group) unregister({ h: this._group, at: 0 });
+    // (`unregister` matches the record itself: the group's own record, so a
+    // killed animation is not kept alive by the record table.)
+    if (this._grec) unregister(this._grec);
+    this._grec = null;
     // Releasing the root frees the whole subtree (group + parts).
     if (this._h) w.ak_release(this._h);
     this._parts = [];
@@ -1245,12 +1258,12 @@ export class Animation extends Playable {
 
   protected _cleanup(): () => void {
     const parts = this._parts;
-    const group = this._group;
+    const grec = this._grec;
     const root = this._h;
     return () => {
       const w = core();
       for (const p of parts) p.dispose();
-      if (group) unregister({ h: group, at: 0 });
+      if (grec) unregister(grec);
       if (root) w.ak_release(root);
     };
   }
