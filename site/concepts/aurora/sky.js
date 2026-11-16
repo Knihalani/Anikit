@@ -87,7 +87,7 @@ vec3 aurora(vec3 ro, vec3 rd, float steps, float dither){
     if (float(i) > steps) break;
     float t = t0 + (float(i) + dither - .5) * dt;
     vec3 p = ro + rd * t;
-    float fade = exp(-t / 3800.);
+    float fade = exp(-t / 3000.);
     vec2 sq = p.xz + curl(p.xz * .0026 + vec2(T * .03, -T * .018)) * (40. + 35. * uStorm);
     for (int k = 0; k < 3; k++){
       float fk = float(k);
@@ -121,7 +121,8 @@ vec3 aurora(vec3 ro, vec3 rd, float steps, float dither){
       acc += uCorona * ring * rays * (GREEN * g * 1.6 + RED * r * .38 + VIOLET * exp(-pow(hgt / .12, 2.)) * .3) * dt * .012;
     }
   }
-  return acc * .028 * (.6 + .8 * uStorm);
+  // extinction: aurora low on the horizon is dimmed by a long path through the air
+  return acc * .028 * (.6 + .8 * uStorm) * smoothstep(.0, .16, rd.y + .02 * uCorona);
 }
 
 vec3 stars(vec3 rd){
@@ -168,7 +169,7 @@ vec3 skyBase(vec3 rd, out float mountain){
   col += stars(rd) * smoothstep(-.01, .08, e) * (.55 + .45 * uNight);
   mountain = 0.;
   float az = atan(rd.x, rd.z);
-  float far = .012 + .12 * pow(ridge(az * .7 + 1., 1.3, 4.), 1.8);
+  float far = .03 + .13 * pow(ridge(az * .7 + 1., 1.3, 4.), 1.5);
   float near = .004 + .2 * pow(ridge(az * .55 + 3., 1.0, 9.), 2.2) * smoothstep(.2, .6, vnoise(vec2(az * .9, 2.)));
   if (e < far){
     float lit = smoothstep(far - .012, far, e) * (.6 + .4 * vnoise(vec2(az * 12., 1.)));
@@ -231,7 +232,7 @@ void main(){
     float frost = smoothstep(.45, .8, fbm(g * .05 + 3.));
     float rough = .006 + .05 * frost + .03 * crack;
     // normal: gentle undulation + tilt into cracks; fades with distance
-    vec2 grad = vec2(vnoise(g * .7) - .5, vnoise(g * .7 + 5.) - .5) * .05 * (1. - lod);
+    vec2 grad = vec2(vnoise(g * .7) - .5, vnoise(g * .7 + 5.) - .5) * .028 * (1. - lod);
     grad += (vec2(vnoise(g * 3.1), vnoise(g * 3.1 + 9.)) - .5) * rough * 1.6 * (1. - lod);
     vec3 n = normalize(vec3(grad.x, 1., grad.y));
     vec3 rr = reflect(rd, n);
@@ -246,7 +247,7 @@ void main(){
     col = base + refl * mix(.22, 1., F) * (1. - frost * .5);
     // frosted patches and crack walls scatter the aurora light
     vec3 lit = vec3(.05, .06, .075) * (.3 + .7 * uNight) + uAmb * .5;
-    col += lit * (frost * .03 + crack * .12);
+    col += lit * (frost * .03 + crack * .2);
     // ground fog: breathes slowly over the ice
     float fogN = fbm(g * .03 + vec2(uT * .04, -uT * .03));
     float breath = .75 + .25 * sin(uT * .35 + fogN * 4.);
@@ -254,6 +255,7 @@ void main(){
     col = mix(col, vec3(.004, .006, .009) + uAmb * .035, clamp(fog, 0., 1.) * .35);
   }
   col *= uExposure;
+  col = max(col - .008, 0.) * 1.02;   // black point: night ice and rock stay black
   col = aces(col);
   col = pow(col, vec3(1. / 2.2));
   vec2 q = gl_FragCoord.xy / uRes;
