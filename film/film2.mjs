@@ -327,8 +327,8 @@ export default async function film2({ anikit: A, node }) {
   const hourHand = dauphine(88, 7.5, 6), minuteHand = dauphine(132, 6.2, 6);
   const secondHand = (() => { const b = new MB(); b.box(0, -40, PI / 2, 182, 1.5, 0, 1.0); disc(b, 0, 0, 4, -0.3, 1.6, 32); disc(b, 0, 36, 4.2, 0, 1.0, 32); return b.build(); })();
   const crownMesh = gear({ n: 36, rp: 24, add: 0.9, ded: 1.2, rIn: 0, y0: -12, y1: 12, per: 8, tw: 0.55 });
-  const lugPts = []; for (let i = 0; i <= 24; i++) { const u = i / 24; lugPts.push([0, 62 - 26 * u * u - 6 * u, 176 + 66 * u]); }
-  const lugMesh = mesh.tube(lugPts, { radius: 17, sides: 24, radii: lugPts.map((_, i) => 1 - 0.2 * (i / 24)) });
+  const lugPts = []; for (let i = 0; i <= 24; i++) { const u = i / 24; lugPts.push([0, 60 - 16 * u * u - 4 * u, 170 + 56 * u]); } // short, tapering horns
+  const lugMesh = mesh.tube(lugPts, { radius: 12.5, sides: 24, radii: lugPts.map((_, i) => 1 - 0.3 * (i / 24)) });
   const lugEnd = lugPts[24];
   const floor = mesh.plane(1);
 
@@ -492,7 +492,7 @@ export default async function film2({ anikit: A, node }) {
       hand(I.hh, 78.2, 305, 11.2, -70); hand(I.mh, 80.6, 60, 11.45, 80);
       hand(I.sh, 83.2, 0.75 * s + 200, 11.7, 0);
       put(I.crown, 0, chain(T(226, 46, 0), Rz(PI / 2)), STEEL); put(I.stem, 0, chain(T(208, 46, 0), Rz(PI / 2), S(5, 18, 5)), STEEL);
-      [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz], i) => { put(I.lugs, i, chain(T(sx * 104, 0, 0), S(1, 1, sz)), STEEL); put(I.lugCaps, i, chain(T(sx * 104, lugEnd[1], sz * lugEnd[2]), S(27.2)), STEEL); });
+      [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz], i) => { put(I.lugs, i, chain(T(sx * 104, 0, 0), S(1, 1, sz)), STEEL); put(I.lugCaps, i, chain(T(sx * 104, lugEnd[1], sz * lugEnd[2]), S(17.5)), STEEL); });
       put(I.floor, 0, chain(T(0, 0, 0), S(40000, 1, 40000)), [0.02, 0.02, 0.022]);
 
       const items = [];
