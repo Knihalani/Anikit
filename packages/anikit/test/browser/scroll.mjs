@@ -222,4 +222,32 @@ export const tests = [
       near(await page.evaluate(() => o.v), 40, 0.5, 'cleaned up: no more updates');
     },
   },
+  {
+    name: 'context().revert() stops scroll() links and inView(): the next scroll does not re-apply styles',
+    html: `${tall(1)}<div id="a" style="height:100px">a</div><div id="b" style="height:100px">b</div>${tall(4)}`,
+    async run(page, h) {
+      await page.evaluate(() => {
+        window.seen = { fn: 0, enter: 0 };
+        window.ctx = ak.context(() => {
+          ak.scroll(ak.animate('#a', { x: [0, 100] }, { ease: 'linear', autoplay: false }), { target: document.getElementById('a') });
+          ak.scroll(ak.animate('#b', { opacity: [1, 0.2] }, { ease: 'linear', autoplay: false }), { smooth: 0.1 });
+          ak.scroll(() => seen.fn++);
+          ak.inView('#b', () => { seen.enter++; });
+        });
+      });
+      await scrollWin(page, h, 400);
+      await h.wait(300);
+      const mid = await page.evaluate(() => [document.getElementById('a').style.transform, document.getElementById('b').style.opacity]);
+      ok(mid[0] !== '' && mid[1] !== '', `linked before revert: ${mid}`);
+      await page.evaluate(() => ctx.revert());
+      const n = await page.evaluate(() => ({ ...seen }));
+      await scrollWin(page, h, 0);
+      await scrollWin(page, h, 900);
+      await h.wait(300);
+      const after = await page.evaluate(() => [document.getElementById('a').style.transform, document.getElementById('b').style.opacity, seen.fn, seen.enter]);
+      ok(after[0] === '' && after[1] === '', `styles stay reverted: ${after}`);
+      ok(after[2] === n.fn, `function link not called after revert (${n.fn} -> ${after[2]})`);
+      ok(after[3] === n.enter, `inView not called after revert (${n.enter} -> ${after[3]})`);
+    },
+  },
 ];

@@ -8,6 +8,7 @@
  * inView('.card', (el) => { animate(el, { opacity: [0, 1] }); });
  * ```
  */
+import { track } from './context';
 import { Playable } from './playable';
 import { Targets, toTargets } from './props';
 import { spring, PhysicsAnimation } from './spring';
@@ -99,7 +100,7 @@ export function scroll(subject: Playable | CompositorAnimation | ((progress: num
     const G = globalThis as any;
     if (options.native !== false && !options.smooth && typeof G.ScrollTimeline === 'function') {
       measure();
-      return nativeScroll(subject, scroller, axis, measure, () => [start, end]);
+      return tracked(nativeScroll(subject, scroller, axis, measure, () => [start, end]));
     }
   }
   // Animations: links outside their range read the same clamped 0 or 1 on
@@ -152,11 +153,27 @@ export function scroll(subject: Playable | CompositorAnimation | ((progress: num
   const evTarget: EventTarget = isWin ? window : scroller;
   const off = linkScroll(evTarget, scroller, { axis, update });
   window.addEventListener('resize', onResize, { passive: true });
-  return () => {
+  return tracked(() => {
     off();
     window.removeEventListener('resize', onResize);
     smoother?.stop();
+  });
+}
+
+/**
+ * Register a cleanup with the active `context()`, so `ctx.revert()` stops the
+ * link (otherwise the next scroll event drives the reverted animation again).
+ * Returns the cleanup, safe to call more than once.
+ */
+function tracked(cleanup: () => void): () => void {
+  let done = false;
+  const stop = () => {
+    if (done) return;
+    done = true;
+    cleanup();
   };
+  track({ revert: stop, kill: stop });
+  return stop;
 }
 
 interface Link {
@@ -290,5 +307,5 @@ export function inView(
   const els = toTargets(targets);
   checkTargets('inView()', targets, els.length);
   for (const el of els) io.observe(el as Element);
-  return () => io.disconnect();
+  return tracked(() => io.disconnect());
 }
