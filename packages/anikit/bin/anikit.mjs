@@ -140,7 +140,7 @@ export function templateFiles(template, name = 'anikit-app') {
     case 'react':
       return {
         'package.json': vitePkg(name, true),
-        'vite.config.js': `import { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\n\nexport default defineConfig({ plugins: [react()] });\n`,
+        'vite.config.js': `import { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\n\n// dedupe: one React even when anikit is linked locally (npm link, file:).\nexport default defineConfig({ plugins: [react()], resolve: { dedupe: ['react', 'react-dom'] } });\n`,
         'index.html': `<!doctype html>\n<html lang="en">\n<head>\n  <meta charset="utf-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1">\n  <title>anikit + React</title>\n</head>\n<body>\n  <div id="root"></div>\n  <script type="module" src="/src/main.jsx"></script>\n</body>\n</html>\n`,
         'style.css': CSS,
         'src/main.jsx': `import { createRoot } from 'react-dom/client';\nimport App from './App.jsx';\nimport '../style.css';\n\ncreateRoot(document.getElementById('root')).render(<App />);\n`,
