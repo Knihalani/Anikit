@@ -145,7 +145,7 @@ export default async function film2({ anikit: A }) {
       streaks: (t) => 0.45 + 0.35 * smooth(10, 13, t), streakLength: 340,
       rays: (t) => 0.7 * smooth(7.5, 10, t), raysCenter: (t) => holeScreen.get(Math.round(t * FPS)) ?? [0.5, 0.45], raysLength: 0.5,
       flares: 0,
-      aberration: (t) => 0.6 + 0.9 * (1 - smooth(0, 4.4, t)), zoomBlur: (t) => 0.1 * (1 - smooth(3.8, 4.8, t)),
+      aberration: (t) => 0.6 + 0.9 * (1 - smooth(0, 4.4, t)), zoomBlur: (t) => 0.04 * (1 - smooth(3.8, 4.8, t)),
       vignette: 0.5, grain: 3.5, contrast: 1.08, saturation: 1.12, exposure: 1.02,
       shadows: [0.0, 0.004, 0.02], highlights: [0.03, 0.012, -0.01],
     },
@@ -214,7 +214,7 @@ export default async function film2({ anikit: A }) {
         background: '#020207', fog: [14000, 60000], fogColor: [0.01, 0.008, 0.025],
         sky: [0.02, 0.02, 0.06], horizon: [0.3, 0.12, 0.35], ground: [0.01, 0.01, 0.02], strips: [1.6 * stripK, 1.6 * stripK, 2.0 * stripK],
         key: [0.2, 0.5, 1], keyColor: [0.5, 0.45, 0.7], fill: [0, -1, 0], fillColor: [0.05, 0.05, 0.12], rimColor: [0.6, 0.9, 1.6], lights,
-        mirror: { y: FLOOR, strength: 0.3 }, motionBlur: { shutter: c < 4.6 ? 0.28 : 0.45, max: c < 4.6 ? 36 : 80 }, prevCamera,
+        mirror: { y: FLOOR, strength: 0.3 }, motionBlur: { shutter: c < 4.6 ? 0.2 : 0.45, max: c < 4.6 ? 24 : 80 }, prevCamera,
       });
       ctx.putImageData(new globalThis.ImageData(px, W, H), 0, 0);
     },
