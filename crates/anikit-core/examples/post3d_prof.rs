@@ -16,8 +16,7 @@ fn main() {
     let mut r = Raster::new(w, h);
     r.clear(0, 255);
     r.draw(&cube(), &inst, &vp, [300.0, 250.0, 1350.0], &Material::default(), &Lighting::default(), true);
-    let (c0, d0) = (r.color.clone(), ());
-    let _ = d0;
+    let c0 = r.color.clone();
     for _ in 0..2 {
         r.color.copy_from_slice(&c0);
         r.depth_of_field(&vp, 1500.0, 14.0, 60.0);

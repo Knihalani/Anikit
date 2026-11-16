@@ -257,6 +257,12 @@ pub struct Raster {
     tiles: Vec<[f32; 2]>,
     alpha: Vec<f32>,
     row_px: Vec<u32>,
+    /// Half-resolution packed RGB written by the blur passes for [`Raster::blend_half`].
+    half_px: Vec<u32>,
+    /// Depth-of-field scratch: circle of confusion per half-res pixel, and
+    /// integer tap offsets per quantised radius.
+    coc: Vec<f32>,
+    dof_taps: Vec<(i32, i32, f32)>,
     /// Shadow map from the key light (see [`Raster::shadow_begin`]).
     shadow_depth: Vec<f32>,
     shadow_size: usize,
@@ -1161,38 +1167,51 @@ impl Raster {
         self.blur_src.resize(bw * bh, 0);
         // Packed: bf16 view distance | 1/speed in 1.15 fixed point (speed ≥ 0.5 px → 1/speed ≤ 2).
         let pack = |lin: f32, len: f32| (lin.to_bits() & 0xffff_0000) | (((1.0 / len.clamp(0.5, 255.0)) * 32767.0) as u32).min(0xffff);
+        // Reprojection in one matrix: an NDC point (nx, ny, nz, 1) is the world
+        // point inv·ndc / cw, so its previous clip position is (prev·inv)·ndc / cw
+        // and its current view distance is 1 / cw. The cw cancels in the divide.
+        let p64: crate::space::Mat4 = core::array::from_fn(|i| prev_vp[i] as f64);
+        let inv64 = crate::space::invert(&m64).unwrap_or(m64);
+        let c64 = crate::space::mul(&p64, &inv64);
+        let cm: M4 = core::array::from_fn(|i| c64[i] as f32);
         let mut any = false;
+        let (sx, sy) = (fw * 0.5 * shutter, fh * 0.5 * shutter);
         for by in 0..bh {
+            let y = by * 2;
+            let ny = 1.0 - (y as f32 + 1.0) / fh;
+            // Row constants: each projected coordinate is affine in (nx, nz) along a row.
+            let kw = inv[7] * ny + inv[15];
+            let (kx, ky, kq) = (cm[4] * ny + cm[12], cm[5] * ny + cm[13], cm[7] * ny + cm[15]);
+            let row = y * w;
+            let trow = (by / T) * tw;
             for bx in 0..bw {
-                let (x, y) = (bx * 2, by * 2);
-                let i = y * w + x;
+                let x = bx * 2;
+                let i = row + x;
                 let q = [self.color[i], self.color[i + 1], self.color[i + w], self.color[i + w + 1]];
                 let ch = |s: u32| ((q[0] >> s & 255) + (q[1] >> s & 255) + (q[2] >> s & 255) + (q[3] >> s & 255) + 2) >> 2;
                 self.blur_src[by * bw + bx] = ch(0) | ch(8) << 8 | ch(16) << 16;
                 // Nearest of the four depths: edges belong to the foreground.
                 let d = self.depth[i].min(self.depth[i + 1]).min(self.depth[i + w]).min(self.depth[i + w + 1]);
                 let nz = if d.is_finite() { d } else { 0.9999 };
-                let (nx, ny) = ((x as f32 + 1.0) / fw - 1.0, 1.0 - (y as f32 + 1.0) / fh);
-                let cw = inv[3] * nx + inv[7] * ny + inv[11] * nz + inv[15];
+                let nx = (x as f32 + 1.0) / fw - 1.0;
+                let cw = inv[3] * nx + inv[11] * nz + kw;
                 if cw.abs() < 1e-12 {
                     continue;
                 }
-                let iw = 1.0 / cw;
-                let wx = (inv[0] * nx + inv[4] * ny + inv[8] * nz + inv[12]) * iw;
-                let wy = (inv[1] * nx + inv[5] * ny + inv[9] * nz + inv[13]) * iw;
-                let wz = (inv[2] * nx + inv[6] * ny + inv[10] * nz + inv[14]) * iw;
-                let lin = vp[3] * wx + vp[7] * wy + vp[11] * wz + vp[15];
-                let pw = prev_vp[3] * wx + prev_vp[7] * wy + prev_vp[11] * wz + prev_vp[15];
-                if pw <= 1e-6 {
+                let lin = 1.0 / cw;
+                let qw = cm[3] * nx + cm[11] * nz + kq;
+                // Behind the previous camera (w ≤ 0 after the cw divide): treat as still.
+                if qw * lin <= 1e-6 {
                     self.vel[by * bw + bx] = pack(lin, 0.5);
                     continue;
                 }
-                let ipw = 1.0 / pw;
-                let px = (prev_vp[0] * wx + prev_vp[4] * wy + prev_vp[8] * wz + prev_vp[12]) * ipw;
-                let py = (prev_vp[1] * wx + prev_vp[5] * wy + prev_vp[9] * wz + prev_vp[13]) * ipw;
+                let iq = 1.0 / qw;
+                let px = (cm[0] * nx + cm[8] * nz + kx) * iq;
+                let py = (cm[1] * nx + cm[9] * nz + ky) * iq;
                 // Velocity in half-res pixels.
-                let (mut vx, mut vy) = ((nx - px) * fw * 0.5 * shutter, (py - ny) * fh * 0.5 * shutter);
-                let mut len = crate::math::sqrtf(vx * vx + vy * vy);
+                let (mut vx, mut vy) = ((nx - px) * sx, (py - ny) * sy);
+                let l2 = vx * vx + vy * vy;
+                let mut len = crate::math::sqrtf(l2);
                 if len > max_b {
                     vx *= max_b / len;
                     vy *= max_b / len;
@@ -1200,7 +1219,7 @@ impl Raster {
                 }
                 any |= len > 0.5;
                 self.vel[by * bw + bx] = pack(lin, len);
-                let t = &mut self.tiles[(by / T) * tw + bx / T];
+                let t = &mut self.tiles[trow + bx / T];
                 if len * len > t[0] * t[0] + t[1] * t[1] {
                     *t = [vx, vy];
                 }
@@ -1230,8 +1249,8 @@ impl Raster {
             }
         }
         // 3. Half-res reconstruction into `light` (reused as an RGB f32 buffer).
-        self.light.clear();
-        self.light.resize(bw * bh * 3, 0.0);
+        self.half_px.clear();
+        self.half_px.resize(bw * bh, 0);
         // (view distance, 1/speed)
         let unpack = |v: u32| (f32::from_bits(v & 0xffff_0000), (v & 0xffff) as f32 * (1.0 / 32767.0));
         let (src, vel) = (&self.blur_src, &self.vel);
@@ -1241,7 +1260,6 @@ impl Raster {
             for bx in 0..bw {
                 let j = by * bw + bx;
                 let c0 = src[j];
-                let o = j * 3;
                 let mut hs = (bx as u32).wrapping_mul(0x9E37_79B1) ^ (by as u32).wrapping_mul(0x85EB_CA77);
                 hs ^= hs >> 15;
                 hs = hs.wrapping_mul(0x2C1B_3C6D);
@@ -1252,9 +1270,7 @@ impl Raster {
                 let vn = self.tiles[ty * tw + tx];
                 let ln2 = vn[0] * vn[0] + vn[1] * vn[1];
                 if ln2 < 0.25 {
-                    self.light[o] = (c0 & 255) as f32;
-                    self.light[o + 1] = ((c0 >> 8) & 255) as f32;
-                    self.light[o + 2] = ((c0 >> 16) & 255) as f32;
+                    self.half_px[j] = c0 & 0x00ff_ffff;
                     continue;
                 }
                 let ln = crate::math::sqrtf(ln2);
@@ -1263,14 +1279,27 @@ impl Raster {
                 let mut acc = [(c0 & 255) as f32 * ilc, ((c0 >> 8) & 255) as f32 * ilc, ((c0 >> 16) & 255) as f32 * ilc];
                 let mut tot = ilc;
                 let jit = (hs >> 8) as f32 * (1.0 / 16_777_216.0) - 0.5;
-                for k in 0..N {
-                    let half = ((k as f32 + 0.5 + jit * 0.95) / N as f32 - 0.5) * 2.0 * 0.5;
-                    let (sx, sy) = (bx as f32 + 0.5 + vn[0] * half, by as f32 + 0.5 + vn[1] * half);
-                    let m = (sy.clamp(0.0, hi as f32) as usize) * bw + sx.clamp(0.0, wi as f32) as usize;
+                // Taps spaced ≤ ~2.5 half-res px apart (jittered), 3 to N of them.
+                let n = ((ln * 0.4) as usize + 3).min(N);
+                let inv_n = 1.0 / n as f32;
+                // Taps march along the tile velocity in 16.16 fixed point: one
+                // float→int conversion per pixel instead of two per tap.
+                let h0 = (0.5 + jit * 0.95) * inv_n - 0.5;
+                let fx0 = ((bx as f32 + 0.5 + vn[0] * h0) * 65536.0) as i32;
+                let fy0 = ((by as f32 + 0.5 + vn[1] * h0) * 65536.0) as i32;
+                let (dfx, dfy) = ((vn[0] * inv_n * 65536.0) as i32, (vn[1] * inv_n * 65536.0) as i32);
+                let (dd, d0) = (inv_n * ln, h0 * ln);
+                let (mut fx, mut fy, mut dh) = (fx0, fy0, d0);
+                for _ in 0..n {
+                    let m = (fy >> 16).clamp(0, hi as i32) as usize * bw + (fx >> 16).clamp(0, wi as i32) as usize;
+                    let dist = dh.abs();
+                    fx = fx.wrapping_add(dfx);
+                    fy = fy.wrapping_add(dfy);
+                    dh += dd;
                     let (zs, ils) = unpack(vel[m]);
-                    let dist = (half * ln).abs();
+                    let (ds, dc) = (dist * ils, dist * ilc);
                     let fg = ((zc - zs) * kz + 0.5).clamp(0.0, 1.0);
-                    let wgt = fg * (1.0 - dist * ils).max(0.0) + (1.0 - fg) * (1.0 - dist * ilc).max(0.0) + (10.5 - dist * 10.0 * ils).clamp(0.0, 1.0) * (10.5 - dist * 10.0 * ilc).clamp(0.0, 1.0) * 2.0;
+                    let wgt = fg * (1.0 - ds).max(0.0) + (1.0 - fg) * (1.0 - dc).max(0.0) + (10.5 - ds * 10.0).clamp(0.0, 1.0) * (10.5 - dc * 10.0).clamp(0.0, 1.0) * 2.0;
                     if wgt <= 0.0 {
                         continue;
                     }
@@ -1281,9 +1310,8 @@ impl Raster {
                     tot += wgt;
                 }
                 let it = 1.0 / tot;
-                self.light[o] = acc[0] * it;
-                self.light[o + 1] = acc[1] * it;
-                self.light[o + 2] = acc[2] * it;
+                let q = |v: f32| ((v * it + 0.5) as u32).min(255);
+                self.half_px[j] = q(acc[0]) | q(acc[1]) << 8 | q(acc[2]) << 16;
             }
         }
         // 4. Blend the upsampled blur over the sharp frame by local speed
@@ -1395,23 +1423,26 @@ impl Raster {
         // CoC in half-res pixels per half-res pixel + half-res colour.
         self.blur_src.clear();
         self.blur_src.resize(bw * bh, 0);
-        let mut coc = vec![0f32; bw * bh];
+        let mut coc = core::mem::take(&mut self.coc);
+        coc.clear();
+        coc.resize(bw * bh, 0.0);
         let cmax = max_px * 0.5;
         let mut any = false;
         for by in 0..bh {
+            let y = by * 2;
+            let ny = 1.0 - (y as f32 + 1.0) / fh;
+            let kw = inv[7] * ny + inv[15];
             for bx in 0..bw {
-                let (x, y) = (bx * 2, by * 2);
+                let x = bx * 2;
                 let i = y * w + x;
                 let q = [self.color[i], self.color[i + 1], self.color[i + w], self.color[i + w + 1]];
                 let ch = |s: u32| ((q[0] >> s & 255) + (q[1] >> s & 255) + (q[2] >> s & 255) + (q[3] >> s & 255) + 2) >> 2;
                 self.blur_src[by * bw + bx] = ch(0) | ch(8) << 8 | ch(16) << 16;
                 let d = self.depth[i].min(self.depth[i + 1]).min(self.depth[i + w]).min(self.depth[i + w + 1]);
                 let c = if d.is_finite() {
-                    let (nx, ny) = ((x as f32 + 1.0) / fw - 1.0, 1.0 - (y as f32 + 1.0) / fh);
-                    let cw = inv[3] * nx + inv[7] * ny + inv[11] * d + inv[15];
-                    let iw = 1.0 / cw;
-                    let (wx, wy, wz) = ((inv[0] * nx + inv[4] * ny + inv[8] * d + inv[12]) * iw, (inv[1] * nx + inv[5] * ny + inv[9] * d + inv[13]) * iw, (inv[2] * nx + inv[6] * ny + inv[10] * d + inv[14]) * iw);
-                    let lin = (vp[3] * wx + vp[7] * wy + vp[11] * wz + vp[15]).max(1e-3);
+                    // View distance of an NDC point is 1 / (inv·ndc).w (vp·inv = I).
+                    let nx = (x as f32 + 1.0) / fw - 1.0;
+                    let lin = (1.0 / (inv[3] * nx + inv[11] * d + kw)).max(1e-3);
                     aperture * 0.5 * (lin - focus).abs() / lin
                 } else {
                     aperture * 0.5
@@ -1422,40 +1453,52 @@ impl Raster {
             }
         }
         if !any {
+            self.coc = coc;
             return;
         }
-        // Gather.
-        self.light.clear();
-        self.light.resize(bw * bh * 3, 0.0);
+        // Gather over a golden-angle disc. Radii are quantised to ¼ px so the
+        // integer tap offsets come from a table (no float→int per tap); small
+        // circles use the first half of a 7-tap disc.
+        self.half_px.clear();
+        self.half_px.resize(bw * bh, 0);
         const N: usize = 14;
+        const NS: usize = 7;
+        const Q: f32 = 4.0;
         let golden = 2.399_963;
-        // (x, y, radius) of a golden-angle disc.
-        let taps: [(f32, f32, f32); N] = core::array::from_fn(|k| {
-            let r = crate::math::sqrtf((k as f32 + 0.5) / N as f32);
+        let disc = |k: usize, n: usize| {
+            let r = crate::math::sqrtf((k as f32 + 0.5) / n as f32);
             let a = k as f32 * golden;
             (r * libm::cosf(a), r * libm::sinf(a), r)
-        });
-        let (wi, hi) = (bw as isize - 1, bh as isize - 1);
+        };
+        let levels = (cmax * Q) as usize + 2;
+        let mut tab = core::mem::take(&mut self.dof_taps);
+        tab.clear();
+        for l in 0..levels {
+            let rq = l as f32 / Q;
+            let n = if rq < 3.0 { NS } else { N };
+            for k in 0..N {
+                let (tx, ty, tr) = if k < n { disc(k, n) } else { (0.0, 0.0, 0.0) };
+                tab.push((crate::math::floorf(0.5 + tx * rq) as i32, crate::math::floorf(0.5 + ty * rq) as i32, rq * tr));
+            }
+        }
+        let (wi, hi) = (bw as i32 - 1, bh as i32 - 1);
         let src = &self.blur_src;
         for by in 0..bh {
             for bx in 0..bw {
                 let j = by * bw + bx;
                 let c0 = src[j];
                 let rc = coc[j];
-                let o = j * 3;
                 if rc < 0.5 {
-                    self.light[o] = (c0 & 255) as f32;
-                    self.light[o + 1] = ((c0 >> 8) & 255) as f32;
-                    self.light[o + 2] = ((c0 >> 16) & 255) as f32;
+                    self.half_px[j] = c0 & 0x00ff_ffff;
                     continue;
                 }
+                let lv = ((rc * Q + 0.5) as usize).min(levels - 1);
+                let n = if (lv as f32) < 3.0 * Q { NS } else { N };
                 let mut acc = [(c0 & 255) as f32, ((c0 >> 8) & 255) as f32, ((c0 >> 16) & 255) as f32];
                 let mut tot = 1.0;
-                for &(tx, ty, tr) in &taps {
-                    let (sx, sy) = (bx as f32 + 0.5 + tx * rc, by as f32 + 0.5 + ty * rc);
-                    let m = (sy.clamp(0.0, hi as f32) as usize) * bw + sx.clamp(0.0, wi as f32) as usize;
+                for &(ox, oy, dist) in &tab[lv * N..lv * N + n] {
+                    let m = (by as i32 + oy).clamp(0, hi) as usize * bw + (bx as i32 + ox).clamp(0, wi) as usize;
                     // A tap only contributes if it is itself blurry enough to reach us.
-                    let dist = rc * tr;
                     let wgt = ((coc[m] - dist) + 1.0).clamp(0.0, 1.0);
                     if wgt <= 0.0 {
                         continue;
@@ -1467,31 +1510,34 @@ impl Raster {
                     tot += wgt;
                 }
                 let it = 1.0 / tot;
-                self.light[o] = acc[0] * it;
-                self.light[o + 1] = acc[1] * it;
-                self.light[o + 2] = acc[2] * it;
+                let q = |v: f32| ((v * it + 0.5) as u32).min(255);
+                self.half_px[j] = q(acc[0]) | q(acc[1]) << 8 | q(acc[2]) << 16;
             }
         }
+        self.dof_taps = tab;
         // Blend over the sharp frame by blur amount.
         let mut alpha = core::mem::take(&mut self.alpha);
         alpha.clear();
         alpha.extend(coc.iter().map(|c| ((c - 0.25) * 1.5).clamp(0.0, 1.0)));
         self.blend_half(bw, bh, &alpha);
         self.alpha = alpha;
+        self.coc = coc;
     }
 }
 
 impl Raster {
-    /// Blend the half-resolution RGB image in `self.light` over the frame,
+    /// Blend the half-resolution packed RGB image in `self.half_px` over the frame,
     /// upsampled 2× bilinearly with fixed phase weights (output pixel 2i + k
     /// sits at i − 0.25 + k/2), by the half-res `alpha`.
     #[allow(clippy::needless_range_loop)]
     fn blend_half(&mut self, bw: usize, bh: usize, alpha: &[f32]) {
         let (w, h) = (self.width, self.height);
-        // Vertically blended source row, quantised to packed RGB (integer from here on).
+        // Packed-integer (SWAR) from here on: red+blue share one u32 in 16-bit
+        // lanes, green another, so each tap is two multiply-adds, not three.
+        const RB: u32 = 0x00ff_00ff;
         self.row_px.clear();
         self.row_px.resize(bw, 0);
-        let lt = &self.light;
+        let hp = &self.half_px;
         for y in 0..h.min(bh * 2) {
             let by = y / 2;
             let ny = if y & 1 == 0 { by.saturating_sub(1) } else { (by + 1).min(bh - 1) };
@@ -1499,13 +1545,12 @@ impl Raster {
             if arow.iter().all(|a| *a <= 0.0) {
                 continue;
             }
-            let (r0, r1) = (&lt[by * bw * 3..(by + 1) * bw * 3], &lt[ny * bw * 3..(ny + 1) * bw * 3]);
-            for (bx, o) in self.row_px.iter_mut().enumerate() {
-                let q = |k: usize| {
-                    let v = r0[bx * 3 + k] * 0.75 + r1[bx * 3 + k] * 0.25 + 0.5;
-                    (v.clamp(0.0, 255.0)) as u32
-                };
-                *o = q(0) | q(1) << 8 | q(2) << 16;
+            // Vertical 0.75 / 0.25 phase.
+            let (r0, r1) = (&hp[by * bw..(by + 1) * bw], &hp[ny * bw..(ny + 1) * bw]);
+            for ((o, &a), &b) in self.row_px.iter_mut().zip(r0).zip(r1) {
+                let rb = (((a & RB) * 3 + (b & RB) + 0x0002_0002) >> 2) & RB;
+                let g = ((((a >> 8) & 255) * 3 + ((b >> 8) & 255) + 2) >> 2) << 8;
+                *o = rb | g;
             }
             let rb = &self.row_px;
             let out = &mut self.color[y * w..y * w + (bw * 2).min(w)];
@@ -1518,15 +1563,13 @@ impl Raster {
                 let ai = (a * 256.0) as u32;
                 let nx = if x & 1 == 0 { bx.saturating_sub(1) } else { (bx + 1).min(bw - 1) };
                 let (p0, p1, c) = (rb[bx], rb[nx], *px);
-                let mut o = c & 0xff00_0000;
-                for sh in [0u32, 8, 16] {
-                    // 0.75 / 0.25 horizontal phase, then lerp from the sharp pixel by alpha.
-                    let bv = ((p0 >> sh & 255) * 3 + (p1 >> sh & 255) + 2) >> 2;
-                    let sv = c >> sh & 255;
-                    let v = (sv * (256 - ai) + bv * ai + 128) >> 8;
-                    o |= v.min(255) << sh;
-                }
-                *px = o;
+                // Horizontal 0.75 / 0.25 phase, then lerp from the sharp pixel by alpha.
+                let b_rb = (((p0 & RB) * 3 + (p1 & RB) + 0x0002_0002) >> 2) & RB;
+                let b_g = (((p0 >> 8) & 255) * 3 + ((p1 >> 8) & 255) + 2) >> 2;
+                let (s_rb, s_g) = (c & RB, (c >> 8) & 255);
+                let o_rb = ((s_rb * (256 - ai) + b_rb * ai + 0x0080_0080) >> 8) & RB;
+                let o_g = ((s_g * (256 - ai) + b_g * ai + 128) >> 8) & 255;
+                *px = (c & 0xff00_0000) | o_rb | o_g << 8;
             }
         }
     }
