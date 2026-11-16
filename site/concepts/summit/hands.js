@@ -45,7 +45,7 @@ void main() {
     float s = clamp(slope, -0.95, 0.95), c0 = sqrt(1.0 - s * s);
     vec3 dir;
     vec3 C; float r;
-    if (t <= 0.0) { C = iA.xyz; r = iA.w; float l = mix(-1.5707963, asin(-s), (lat + 1.5707963) / 1.5707963); dir = cos(l) * radial + sin(l) * Z; }
+    if (t <= 0.0) { C = iA.xyz; r = iA.w; float l = mix(-1.5707963, asin(-s), lat / 1.5707963); dir = cos(l) * radial + sin(l) * Z; }
     else if (t >= 1.0) { C = iB.xyz; r = iB.w; float l = mix(asin(-s), 1.5707963, lat / 1.5707963); dir = cos(l) * radial + sin(l) * Z; }
     else { dir = c0 * radial - s * Z; C = mix(iA.xyz - Z * iA.w * s, iB.xyz - Z * iB.w * s, t); r = mix(iA.w, iB.w, t) * c0; }
     if (t > 0.0 && t < 1.0) p = C + radial * r; else p = C + dir * r;
@@ -99,7 +99,7 @@ void main() {
       n = normalize(n + Z * (fold - 0.4) * 0.55 + cross(Z, n) * 0.15 * sin(th * 5.0 + t * 9.0));
     } else {
       vec3 X = normalize(cross(Z, n) + 1e-5);
-      n = normalize(n + X * 0.35 * sin(th * 34.0));
+      n = normalize(n + X * 0.3 * sin(th * 34.0) * step(t, 0.999) * step(0.001, t));
     }
     vec3 base = m < 1.5 ? vec3(0.085, 0.095, 0.12) : vec3(0.06, 0.065, 0.08);
     float d = max(dot(n, L) * 0.6 + 0.4, 0.0);
@@ -132,7 +132,7 @@ void main() {
     col += vec3(1.0, 0.82, 0.62) * rim * 0.32 * (0.5 + 0.5 * n.y);
     // The portal lights the hands from in front.
     float pl = max(dot(n, Lp), 0.0);
-    col += alb * portC * (pl * 0.8 + 0.6 * rim) + portC * rim * 0.25;
+    col += alb * portC * (pl * 0.35 + 0.35 * rim) + portC * rim * 0.12;
     // Crease shading near joints (vLocal.x at the sphere caps).
   }
   col = aces(col * 0.82);
@@ -568,7 +568,7 @@ export function createHands(canvas) {
     const sparkOn = portal.arc > 0.001 && portal.glow > 0.001;
     if (n > 0) {
       gl.enable(gl.DEPTH_TEST); gl.depthMask(true); gl.disable(gl.BLEND);
-      gl.enable(gl.CULL_FACE); gl.cullFace(gl.BACK);
+      gl.enable(gl.CULL_FACE); gl.cullFace(gl.FRONT);
       gl.useProgram(MESH.p);
       gl.uniformMatrix4fv(MESH.u.uProj, false, proj);
       gl.uniform3f(MESH.u.uSun, sun[0], sun[1], sun[2]);
