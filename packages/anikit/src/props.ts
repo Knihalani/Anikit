@@ -4,7 +4,7 @@
  * DOM work. Transforms are composed per element and flushed once per frame.
  */
 import { onFlush } from './core';
-import { r3 } from './values';
+import { r3, s3 } from './values';
 import { queryAll } from './debug';
 
 export type Target = Element | Record<string, any>;
@@ -54,7 +54,15 @@ export class TargetState {
   u: string[] = ['px', 'px', 'px'];
   dirty = false;
   owners = new Map<string, Owner>();
-  constructor(public el: Target) {}
+  /**
+   * The element's inline style declaration (`null` for plain objects), read
+   * once: `el.style` always returns the same object, and the getter is a
+   * DOM call the transform flush would otherwise make per element per frame.
+   */
+  st: CSSStyleDeclaration | null;
+  constructor(public el: Target) {
+    this.st = ((el as HTMLElement).style as CSSStyleDeclaration | undefined) ?? null;
+  }
 }
 
 /** Something that can be told it lost a property to a newer animation. */
@@ -132,26 +140,30 @@ function readTransform(el: Element, s: TargetState): void {
   s.t[9] = r3(sy);
 }
 
-/** Compose the transform string, omitting identity parts. */
+/**
+ * Compose the transform string, omitting identity parts. Parts are joined
+ * with a separator as they are appended (no trailing space to slice off,
+ * which would flatten and copy the string once more per element per frame).
+ */
 export function composeTransform(s: TargetState): string {
   const t = s.t;
   let out = '';
-  if (t[11]) out += 'perspective(' + r3(t[11]) + 'px) ';
-  if (t[12] || t[13]) out += 'translate(' + r3(t[12]) + '%,' + r3(t[13]) + '%) ';
+  if (t[11]) out = 'perspective(' + s3(t[11]) + 'px)';
+  if (t[12] || t[13]) out += (out === '' ? 'translate(' : ' translate(') + s3(t[12]) + '%,' + s3(t[13]) + '%)';
   if (t[0] || t[1] || t[2]) {
     out += t[2]
-      ? 'translate3d(' + r3(t[0]) + s.u[0] + ',' + r3(t[1]) + s.u[1] + ',' + r3(t[2]) + s.u[2] + ') '
-      : 'translate(' + r3(t[0]) + s.u[0] + ',' + r3(t[1]) + s.u[1] + ') ';
+      ? (out === '' ? 'translate3d(' : ' translate3d(') + s3(t[0]) + s.u[0] + ',' + s3(t[1]) + s.u[1] + ',' + s3(t[2]) + s.u[2] + ')'
+      : (out === '' ? 'translate(' : ' translate(') + s3(t[0]) + s.u[0] + ',' + s3(t[1]) + s.u[1] + ')';
   }
-  if (t[3]) out += 'rotate(' + r3(t[3]) + 'deg) ';
-  if (t[4]) out += 'rotateX(' + r3(t[4]) + 'deg) ';
-  if (t[5]) out += 'rotateY(' + r3(t[5]) + 'deg) ';
-  if (t[6] || t[7]) out += 'skew(' + r3(t[6]) + 'deg,' + r3(t[7]) + 'deg) ';
+  if (t[3]) out += (out === '' ? 'rotate(' : ' rotate(') + s3(t[3]) + 'deg)';
+  if (t[4]) out += (out === '' ? 'rotateX(' : ' rotateX(') + s3(t[4]) + 'deg)';
+  if (t[5]) out += (out === '' ? 'rotateY(' : ' rotateY(') + s3(t[5]) + 'deg)';
+  if (t[6] || t[7]) out += (out === '' ? 'skew(' : ' skew(') + s3(t[6]) + 'deg,' + s3(t[7]) + 'deg)';
   if (t[8] !== 1 || t[9] !== 1) out += t[10] !== 1
-    ? 'scale3d(' + r3(t[8]) + ',' + r3(t[9]) + ',' + r3(t[10]) + ') '
-    : 'scale(' + r3(t[8]) + ',' + r3(t[9]) + ') ';
-  else if (t[10] !== 1) out += 'scaleZ(' + r3(t[10]) + ') ';
-  return out === '' ? 'none' : out.slice(0, -1);
+    ? (out === '' ? 'scale3d(' : ' scale3d(') + s3(t[8]) + ',' + s3(t[9]) + ',' + s3(t[10]) + ')'
+    : (out === '' ? 'scale(' : ' scale(') + s3(t[8]) + ',' + s3(t[9]) + ')';
+  else if (t[10] !== 1) out += (out === '' ? 'scaleZ(' : ' scaleZ(') + s3(t[10]) + ')';
+  return out === '' ? 'none' : out;
 }
 
 export function markDirty(s: TargetState): void {
@@ -229,8 +241,9 @@ export function flushTransforms(): void {
   for (let i = 0; i < dirty.length; i++) {
     const s = dirty[i];
     s.dirty = false;
+    const st = s.st;
+    if (st === null) continue;
     const el = s.el as HTMLElement;
-    if (!el.style) continue;
     const map = TYPED ? (el as any).attributeStyleMap : null;
     if (map) {
       const key = shapeKey(s);
@@ -242,9 +255,9 @@ export function flushTransforms(): void {
         for (let k = 0; k < tt.slots.length; k++) tt.slots[k][0].value = s.t[tt.slots[k][1]];
       }
       if (tt.value) map.set('transform', tt.value);
-      else el.style.transform = 'none';
+      else st.transform = 'none';
     } else {
-      el.style.transform = composeTransform(s);
+      st.transform = composeTransform(s);
     }
   }
   dirty.length = 0;

@@ -9,7 +9,7 @@
  */
 import { animate, AnimateOptions, Animation } from './animate';
 import { classify, Kind, writer, stateOf, composeTransform, defaultUnit, Target, toTargets, Targets } from './props';
-import { r3 } from './values';
+import { r3, s3 } from './values';
 
 /** A function that writes a property immediately (transforms composed correctly). */
 export function quickSetter(targets: Targets, prop: string, unit?: string): (value: number | string) => void {
@@ -27,7 +27,7 @@ export function quickSetter(targets: Targets, prop: string, unit?: string): (val
       };
     }
     const numeric = kind === Kind.Prop && !u;
-    return (v: number | string) => w(typeof v === 'number' && !numeric ? r3(v) + u : v);
+    return (v: number | string) => w(typeof v === 'number' && !numeric ? s3(v) + u : v);
   });
   return (v) => {
     for (const s of setters) s(v);

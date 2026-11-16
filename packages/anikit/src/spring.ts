@@ -16,7 +16,7 @@ import {
   Target, Targets, toTargets, classify, Kind, readValue, writer, convertUnit, defaultUnit, isElement,
   claim, unclaim, Owner, transformUnit,
 } from './props';
-import { parseValue, parseColor, r3 } from './values';
+import { parseValue, parseColor, r3, s3 } from './values';
 import { Binding, bind, apply, custom } from './bind';
 import { track } from './context';
 import { describe, checkKeys, checkSeconds, checkTargets } from './debug';
@@ -143,7 +143,7 @@ function resolveProp(target: Target, prop: string, value: unknown): Resolved & {
   if (p.k === 'num' && p.unit && p.unit !== unit) to = convertUnit(el, prop, to, p.unit, unit);
   let from = cur.k === 'num' ? cur.n : 0;
   if (cur.k === 'num' && cur.unit && unit && cur.unit !== unit) from = convertUnit(el, prop, from, cur.unit, unit);
-  const fmt = (at: number) => r3(F64[at]) + unit;
+  const fmt = (at: number) => s3(F64[at]) + unit;
   return {
     values: [to],
     current: [from],
@@ -323,7 +323,7 @@ export function inertia(targets: Targets, props: Record<string, InertiaProp | nu
         const cur = parseValue(readValue(target, prop, kind));
         const pos = cur.k === 'num' ? cur.n : 0;
         const unit = kind === Kind.Transform ? transformUnit(prop) : defaultUnit(prop, kind);
-        const b = bind(target, prop, kind, 0, true, unit, (at: number) => r3(F64[at]) + unit);
+        const b = bind(target, prop, kind, 0, true, unit, (at: number) => s3(F64[at]) + unit);
         let target_: number | undefined;
         if (spec.snap !== undefined) {
           const natural = pos + power * spec.velocity * (tc / 1000);
@@ -411,7 +411,7 @@ export function physics(targets: Targets, props: Record<string, PhysicsProp | nu
         const kind = classify(target, prop);
         const cur = parseValue(readValue(target, prop, kind));
         const unit = kind === Kind.Transform ? transformUnit(prop) : defaultUnit(prop, kind);
-        const b = bind(target, prop, kind, 0, true, unit, (at: number) => r3(F64[at]) + unit);
+        const b = bind(target, prop, kind, 0, true, unit, (at: number) => s3(F64[at]) + unit);
         map.get(prop)?.dispose();
         const hasMin = spec.min !== undefined;
         const hasMax = spec.max !== undefined;

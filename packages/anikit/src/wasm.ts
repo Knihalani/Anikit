@@ -233,15 +233,25 @@ export function views(): void {
   }
 }
 
-function decodeBase64(s: string): Uint8Array {
-  if (typeof atob === 'function') {
-    const bin = atob(s);
-    const out = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-    return out;
+/**
+ * Decode the embedded module. Startup cost: `atob` plus a copy loop takes
+ * ~5–9 ms in Chromium and ~8 ms in Node (where `atob` is JavaScript), the
+ * native decoders ~1 ms. `via` (tests) forces one method.
+ */
+export function decodeBase64(s: string, via?: 'native' | 'node' | 'atob'): Uint8Array {
+  const U8 = Uint8Array as unknown as { fromBase64?: (s: string) => Uint8Array };
+  if (via === undefined ? typeof U8.fromBase64 === 'function' : via === 'native') return U8.fromBase64!(s);
+  const g = globalThis as any;
+  // Node's own Buffer only (a bundler's Buffer polyfill decodes in JavaScript).
+  const node = typeof g.process === 'object' && g.process !== null && !!g.process.versions?.node && typeof g.Buffer === 'function';
+  if (via === undefined ? node || typeof atob !== 'function' : via === 'node') {
+    const b = g.Buffer.from(s, 'base64');
+    return new Uint8Array(b.buffer, b.byteOffset, b.length);
   }
-  // Node without atob (very old) — Buffer exists there.
-  return new Uint8Array((globalThis as any).Buffer.from(s, 'base64'));
+  const bin = atob(s);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
 }
 
 const queue: Array<() => void> = [];

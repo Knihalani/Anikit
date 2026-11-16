@@ -47,3 +47,18 @@ it('queues work before ready and keeps going past a failing call', async () => {
     globalThis.setTimeout = realSetTimeout;
   }
 });
+
+it('decodes the embedded module the same way with every base64 decoder', async () => {
+  const { decodeBase64 } = await import('../src/wasm');
+  const { WASM_BASE64 } = await import('../src/generated/wasm-bytes');
+  const all = new Uint8Array(256 * 3 + 2).map((_, i) => (i * 7 + (i >> 8)) & 255);
+  const samples = [WASM_BASE64, '', 'AA==', 'AAE=', 'AAEC', Buffer.from(all).toString('base64'), Buffer.from(all.subarray(1)).toString('base64')];
+  const vias = ['node', 'atob', undefined] as const;
+  const hasNative = typeof (Uint8Array as any).fromBase64 === 'function';
+  for (const s of samples) {
+    const ref = Array.from(Buffer.from(s, 'base64'));
+    for (const via of vias) expect(Array.from(decodeBase64(s, via))).toEqual(ref);
+    if (hasNative) expect(Array.from(decodeBase64(s, 'native'))).toEqual(ref);
+  }
+  expect(new WebAssembly.Module(decodeBase64(WASM_BASE64) as BufferSource)).toBeInstanceOf(WebAssembly.Module);
+});

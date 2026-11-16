@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { animate, from, fromTo, set, stagger, engine, flush, FrameBuffer } from '../src/index';
 import { setup, advance, box } from './setup';
-import { _setCodegen } from '../src/animate';
+import { _setCodegen, _setNumberTracks, _setCompactFmt } from '../src/animate';
+import { timeline } from '../src/timeline';
+import { _recordCount } from '../src/core';
+import { r3, s3 } from '../src/values';
 
 beforeAll(setup);
 
@@ -145,6 +148,125 @@ describe('animate: values', () => {
   });
 });
 
+describe('animate: plain-number track path', () => {
+  // Number keyframes (and `null` = current value) skip the general value
+  // parser; every scenario must build the same tracks either way.
+  const run = (): unknown[] => {
+    const out: unknown[] = [];
+    const objs = Array.from({ length: 4 }, (_, i) => ({ x: i * 10, y: -i, s: '5px', z: i === 2 ? '7em' : 3, q: 1 }));
+    const els = [
+      box({ transform: 'translate(12px, 4px) rotate(30deg) scale(1.5)', opacity: '0.4', width: '40px' }),
+      box({ transform: 'translateX(50%)', marginLeft: '2em' }),
+    ];
+    const anims = [
+      animate(objs, { x: 100, y: [null, 50, -20], s: 40, z: 10, q: [2, null] }, { duration: 1, ease: 'outCubic' }),
+      animate(els, { x: 100, y: [0, 30], rotate: 270, scale: 2, skewX: [null, 15], opacity: 1, width: 200, marginLeft: 10 }, { duration: 1, ease: 'linear', repeatDelay: 0.2, repeat: 1 }),
+      animate(objs[3], { x: '+=5', y: (_: unknown, i: number) => i + 1, q: 'random(3, 3)' }, { duration: 0.5, delay: 0.1 }),
+      animate([{ v: NaN }, { v: -0 }, { v: undefined as unknown as number }], { v: [null, 1] }, { duration: 0.5 }),
+    ];
+    // Timeline children read the value the previous step left (`chain`).
+    const solo = { x: 1 };
+    const el3 = box({ transform: 'rotate(10deg)' });
+    const tl = timeline({ autoplay: false }).add(solo, { x: 5 }, { duration: 0.2 }).add(solo, { x: [null, 9] }, { duration: 0.2 }).add(el3, { x: [null, 40], rotate: 2 }, { duration: 0.2 });
+    tl.play();
+    for (let f = 0; f < 6; f++) {
+      advance(0.27);
+      out.push(JSON.stringify(objs), els.map((e) => e.getAttribute('style')), solo.x, el3.getAttribute('style'));
+    }
+    for (const a of anims) {
+      a.revert();
+    }
+    tl.revert();
+    flush();
+    out.push(JSON.stringify(objs), els.map((e) => e.getAttribute('style')));
+    return out;
+  };
+  it('builds the same tracks as the general path', () => {
+    const prev = _setNumberTracks(false);
+    const general = run();
+    _setNumberTracks(true);
+    const fast = run();
+    _setNumberTracks(prev);
+    expect(fast).toEqual(general);
+    expect(general[0]).not.toBe(general[2]);
+  });
+});
+
+describe('s3 (output number formatting)', () => {
+  it('equals String(r3(v)) everywhere', () => {
+    const edge = [0, -0, 1, -1, 0.0004, -0.0004, 0.0005, -0.0005, 0.0015, 2.5e-4, 0.1 + 0.2, 1 / 3, -2 / 3, 999.9995,
+      2147483.647, 2147483.648, -2147483.647, -2147483.648, 1e6 + 0.001, 1e9, 1e21, -1e21, 1e300, 5e-324,
+      NaN, Infinity, -Infinity, Number.MAX_SAFE_INTEGER, 0.1, 0.01, 0.001, 12.34, 300, -300.05];
+    for (const v of edge) expect(s3(v)).toBe(String(r3(v)));
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+    for (let i = 0; i < 200000; i++) {
+      const v = (rnd() - 0.5) * Math.pow(10, (i % 12) - 3);
+      if (s3(v) !== String(r3(v))) expect(s3(v)).toBe(String(r3(v)));
+    }
+  });
+});
+
+describe('animate: formatted single-property path', () => {
+  // Parts writing one formatted plain property (colours, '12px', complex
+  // strings) skip the binding loop; same writes, same order, same skipping
+  // of unchanged values either way.
+  const run = (): unknown[] => {
+    const out: unknown[] = [];
+    const log: unknown[] = [];
+    const cols = Array.from({ length: 5 }, () => ({ c: '#ff0000' }));
+    const pxs = Array.from({ length: 5 }, (_, i) => ({ w: i + 'px' }));
+    const cx = [{ f: 'blur(0px) brightness(1)' }, { f: 'blur(2px) brightness(0.5)' }];
+    const setter = { get c() { return '#00ff00'; }, set c(v: string) { log.push(v); } };
+    let updates = 0;
+    const a = animate([...cols.slice(0, 2), setter, ...cols.slice(2)], { c: '#0000ff' }, { duration: 1, ease: 'linear' });
+    const b = animate(pxs, { w: '100px' }, { duration: 1, ease: 'outCubic', onUpdate: () => updates++ });
+    const c = animate(cx, { f: 'blur(8px) brightness(2)' }, { duration: 1, ease: 'linear' });
+    // Steps: the value repeats for whole frames, so unchanged writes are skipped.
+    const d = animate([{ s: 'a' }, setter], { c: ['#000000', '#ffffff'] }, { duration: 1, ease: 'steps(3)' });
+    const snap = () => out.push(JSON.stringify([cols, pxs, cx]), log.length, log[log.length - 1], updates);
+    advance(0.2); snap();
+    animate(cols[1], { c: '#00ff00' }, { duration: 0.5 }); // takes c over on one target mid-run
+    animate(pxs.slice(2), { w: ['5px', '7px'] }, { duration: 0.3, ease: 'linear' });
+    advance(0.2); snap();
+    a.seek(0.1); b.seek(0.9); flush(); snap();
+    advance(0.5); snap();
+    advance(1); snap();
+    for (const x of [a, b, c, d]) x.revert();
+    flush(); snap();
+    out.push(log.slice());
+    return out;
+  };
+  it('writes exactly what the binding loop writes', () => {
+    const prev = _setCompactFmt(false);
+    const general = run();
+    _setCompactFmt(true);
+    const fast = run();
+    _setCompactFmt(prev);
+    expect(fast).toEqual(general);
+    expect((general[general.length - 1] as unknown[]).length).toBeGreaterThan(3); // the setter was written to
+    expect(general[0]).not.toEqual(general[4]);
+  });
+});
+
+describe('animate: memory', () => {
+  it('kill() unregisters every record, the group record of a multi-target animation included', () => {
+    flush();
+    const before = _recordCount();
+    const a = animate(Array.from({ length: 4 }, () => ({ x: 0 })), { x: 10 }, { duration: 1 });
+    advance(0.1);
+    expect(_recordCount()).toBe(before + 5); // 4 parts + the group
+    a.kill();
+    flush();
+    expect(_recordCount()).toBe(before);
+    const b = animate({ x: 0 }, { x: 10 }, { duration: 1 });
+    advance(0.1);
+    b.revert();
+    flush();
+    expect(_recordCount()).toBe(before);
+  });
+});
+
 describe('animate: plain-object write path', () => {
   // Plain-property parts write through a generated per-key-set writer when
   // code generation is allowed, else through a generic loop (CSP fallback).
@@ -267,6 +389,37 @@ describe('animate: playback', () => {
     await expect(a.finished).resolves.toBeUndefined();
   });
 
+  it('completion promises: pending before the end, one per run, re-armed by a replay', async () => {
+    const o = { x: 0 };
+    const a = animate(o, { x: 10 }, { duration: 0.1 });
+    const early = a.finished;
+    expect(a.finished).toBe(early);
+    let done = 0;
+    void early.then(() => done++);
+    void a.then(() => done++);
+    await Promise.resolve();
+    expect(done).toBe(0);
+    advance(0.2);
+    await early;
+    expect(done).toBe(2);
+    expect(a.finished).toBe(early);
+    // Never awaited before finishing: still resolves.
+    const b = animate({ y: 0 }, { y: 1 }, { duration: 0.05 });
+    advance(0.1);
+    await expect(b.finished).resolves.toBeUndefined();
+    // A replay re-arms: a new promise that is pending until the new end.
+    a.restart();
+    const again = a.finished;
+    expect(again).not.toBe(early);
+    let redone = false;
+    void again.then(() => (redone = true));
+    await Promise.resolve();
+    expect(redone).toBe(false);
+    advance(0.2);
+    await again;
+    expect(redone).toBe(true);
+  });
+
   it('overwrites properties and frees fully replaced animations', () => {
     const el = box();
     const before = engine.stats().nodes;
@@ -280,6 +433,33 @@ describe('animate: playback', () => {
     expect(a.state).toBe('idle'); // killed: all props taken over
     advance(2);
     expect(engine.stats().nodes).toBeLessThanOrEqual(before + 2);
+  });
+
+  it('a multi-target animation is freed once every target was taken over, not before', () => {
+    const objs = Array.from({ length: 30 }, () => ({ x: 0, y: 0 }));
+    const a = animate(objs, { x: 100, y: 50 }, { duration: 1, ease: 'linear' });
+    advance(0.1);
+    // Take x over everywhere: y still runs on every target.
+    animate(objs, { x: -1 }, { duration: 1 });
+    advance(0.1);
+    expect(a.state).toBe('running');
+    // Take y over on all but the last target, in an order other than the parts'.
+    animate(objs.slice(0, 29).reverse(), { y: -1 }, { duration: 1 });
+    advance(0.1);
+    expect(a.state).toBe('running');
+    const y = objs[29].y;
+    advance(0.1);
+    expect(objs[29].y).toBeGreaterThan(y);
+    // The last one: now nothing is left.
+    animate(objs[29], { y: -2 }, { duration: 1 });
+    flush();
+    expect(a.state).toBe('idle');
+    // The same target twice in one call: the second part takes it over from the first.
+    const o = { x: 0 };
+    const b = animate([o, { x: 0 }, o], { x: 10 }, { duration: 1, ease: 'linear' });
+    advance(0.5);
+    expect(b.state).toBe('running');
+    expect(o.x).toBeCloseTo(5, 5);
   });
 
   it('kill() releases engine nodes', () => {

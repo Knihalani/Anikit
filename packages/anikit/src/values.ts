@@ -21,6 +21,35 @@ export const COLOR_SPACES: Record<ColorSpaceName, number> = { srgb: 0, linear: 1
 /** Round for output: 3 decimals keeps strings short and sub-pixel accurate. */
 export const r3 = (v: number): number => Math.round(v * 1000) / 1000;
 
+/** `'.001'` … `'.999'` without trailing zeros (`FRAC3[500] === '.5'`), `''` for 0. */
+const FRAC3: string[] = [''];
+for (let i = 1; i < 1000; i++) {
+  let f = String(i).padStart(3, '0');
+  while (f.endsWith('0')) f = f.slice(0, -1);
+  FRAC3.push('.' + f);
+}
+/**
+ * `String(r3(v))`, built from the integer `Math.round(v * 1000)`: an integer
+ * part and a table lookup instead of the general double-to-string
+ * conversion (about 3x cheaper; transform strings are built for every
+ * moving element every frame). Identical output: below 2^31 thousandths the
+ * shortest representation of `k / 1000` is exactly these digits; anything
+ * else (large, NaN, infinite) takes the general conversion.
+ */
+export function s3(v: number): string {
+  let k = Math.round(v * 1000);
+  if (k >= 0 && k < 2147483648) {
+    const ip = (k / 1000) | 0;
+    return ip + FRAC3[k - ip * 1000];
+  }
+  if (k < 0 && k > -2147483648) {
+    k = -k;
+    const ip = (k / 1000) | 0;
+    return '-' + ip + FRAC3[k - ip * 1000];
+  }
+  return '' + Math.round(v * 1000) / 1000;
+}
+
 // ---------------------------------------------------------------------------
 // Parsed values
 // ---------------------------------------------------------------------------
@@ -146,7 +175,7 @@ function fmtColor(o: number[] | Float64Array, i: number): string {
   const r = Math.min(255, Math.max(0, Math.round(o[i])));
   const g = Math.min(255, Math.max(0, Math.round(o[i + 1])));
   const b = Math.min(255, Math.max(0, Math.round(o[i + 2])));
-  if (a < 1) return 'rgba(' + r + ',' + g + ',' + b + ',' + r3(a) + ')';
+  if (a < 1) return 'rgba(' + r + ',' + g + ',' + b + ',' + s3(a) + ')';
   const key = (r << 16) | (g << 8) | b;
   const slot = (key ^ (key >>> 12)) & (COLOR_SLOTS - 1);
   if (colorKeys[slot] === key) return colorStrs[slot];
@@ -194,6 +223,60 @@ export type Converter = (value: number, from: string, to: string) => number;
 
 /** Units that need no conversion between each other. */
 const sameUnit = (a: string, b: string) => a === b || a === '' || b === '';
+
+/** Output formatters of plain-number tracks, one per unit (shared by every track with that unit). */
+const numberFormats = new Map<string, (at: number) => string | number>();
+function numberFormat(unit: string): (at: number) => string | number {
+  let f = numberFormats.get(unit);
+  if (f === undefined) {
+    f = unit ? (at: number) => s3(F64[at]) + unit : (at: number) => r3(F64[at]);
+    numberFormats.set(unit, f);
+  }
+  return f;
+}
+
+/**
+ * `buildTrack` for the common case: every keyframe is a number or
+ * `null`/`undefined` (the current value `cur`, which must then be a number or
+ * a plain number string such as `'0px'`). Builds the same track as the
+ * general path without the parsed-value objects; returns `null` when the
+ * general path is needed. `cur` is only looked at when a keyframe uses it.
+ */
+export function numberTrack(raw: readonly unknown[], cur: unknown, defaultUnit = ''): TrackDef | null {
+  const one = raw.length === 1;
+  let usesCur = one;
+  for (let i = 0; i < raw.length; i++) {
+    const v = raw[i];
+    if (v === null || v === undefined) usesCur = true;
+    else if (typeof v !== 'number') return null;
+  }
+  let cn = 0;
+  let unit = '';
+  if (usesCur) {
+    if (typeof cur === 'number') cn = cur;
+    else {
+      const p = parseValue(cur);
+      if (p.k !== 'num' || p.rel) return null;
+      cn = p.n;
+      unit = p.unit;
+    }
+  }
+  // Numbers carry no unit, so the current value's unit (if any) is the last explicit one.
+  if (!unit) unit = defaultUnit;
+  const values: number[] = [];
+  if (one) values.push(cn, raw[0] === null || raw[0] === undefined ? cn : (raw[0] as number));
+  else {
+    for (let i = 0; i < raw.length; i++) {
+      const v = raw[i];
+      values.push(v === null || v === undefined ? cn : (v as number));
+    }
+  }
+  const n = values.length;
+  return {
+    kind: TRACK_NUMBER, arg: 0, ch: 1, out: 1, values, format: numberFormat(unit), unit,
+    first: unit ? values[0] + unit : values[0], last: unit ? values[n - 1] + unit : values[n - 1],
+  };
+}
 
 /**
  * Build a track from raw keyframe values. `current` is the live value used
@@ -245,9 +328,8 @@ export function buildTrack(
     }
     if (!unit) unit = defaultUnit;
     const values = nums.map((p) => (sameUnit(p.unit, unit) ? p.n : convert(p.n, p.unit, unit)));
-    const fmt = unit ? (at: number) => r3(F64[at]) + unit : (at: number) => r3(F64[at]);
     return {
-      kind: TRACK_NUMBER, arg: 0, ch: 1, out: 1, values, format: fmt, unit,
+      kind: TRACK_NUMBER, arg: 0, ch: 1, out: 1, values, format: numberFormat(unit), unit,
       first: unit ? values[0] + unit : values[0], last: unit ? values[n - 1] + unit : values[n - 1],
     };
   }
@@ -292,7 +374,7 @@ export function buildTrack(
       let s = parts[0];
       let i = at;
       for (let k = 0; k < slots.length; k++) {
-        if (slots[k] === 0) s += r3(src[i++]);
+        if (slots[k] === 0) s += s3(src[i++]);
         else {
           s += fmtColor(src, i);
           i += 4;

@@ -124,6 +124,38 @@ describe('control', () => {
     engine.reducedMotion = 'never';
   });
 
+  it("reduced motion 'user' follows the media query live, with one query object", () => {
+    const g = globalThis as any;
+    const real = g.matchMedia;
+    let reduce = false;
+    let made = 0;
+    g.matchMedia = vi.fn((q: string) => {
+      made++;
+      return { media: q, get matches() { return reduce; } };
+    });
+    try {
+      engine.reducedMotion = 'user';
+      const a = box(), b = box(), c = box();
+      animate(a, { x: 100 }, { duration: 5 });
+      advance(0.05);
+      expect(tf(a)).not.toBe('translate(100px,0px)');
+      reduce = true; // the user turns "reduce motion" on
+      animate(b, { x: 100 }, { duration: 5 });
+      advance(0.05);
+      expect(tf(b)).toBe('translate(100px,0px)');
+      expect(made).toBe(1);
+      // A different matchMedia (tests, polyfills) is asked again.
+      g.matchMedia = vi.fn(() => ({ matches: false }));
+      animate(c, { x: 100 }, { duration: 5 });
+      advance(0.05);
+      expect(tf(c)).not.toBe('translate(100px,0px)');
+      expect(g.matchMedia).toHaveBeenCalledTimes(1);
+    } finally {
+      engine.reducedMotion = 'never';
+      g.matchMedia = real;
+    }
+  });
+
   it('quickSetter and quickTo', () => {
     const el = box();
     const setX = quickSetter(el, 'x');

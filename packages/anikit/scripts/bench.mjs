@@ -41,6 +41,11 @@ const CASES = {
     ak: (t) => animate(t, { c: '#0000ff' }, { duration: 1000, ease: 'linear' }),
     gs: (t) => gsap.to(t, { c: '#0000ff', duration: 1000, ease: 'none' }),
   },
+  'unit string': {
+    make: () => ({ w: '0px' }),
+    ak: (t) => animate(t, { w: '100px' }, { duration: 1000, ease: 'outCubic' }),
+    gs: (t) => gsap.to(t, { w: '100px', duration: 1000, ease: 'power2.out' }),
+  },
   '8 keyframes': {
     make: () => ({ x: 0 }),
     ak: (t) => animate(t, { x: [0, 50, 10, 80, 20, 90, 30, 100] }, { duration: 1000, ease: 'inOutSine' }),

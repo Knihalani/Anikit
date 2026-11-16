@@ -15,7 +15,7 @@ import {
   FL_FILL_BACKWARDS, FL_FILL_FORWARDS, FL_IMMEDIATE,
 } from './core';
 import {
-  buildTrack, TrackDef, TRACK_NUMBER, TRACK_PATH, TRACK_MATRIX, COLOR_SPACES, ColorSpaceName, r3,
+  buildTrack, numberTrack, TrackDef, TRACK_NUMBER, TRACK_PATH, TRACK_MATRIX, COLOR_SPACES, ColorSpaceName, r3, s3,
 } from './values';
 import {
   Target, Targets, toTargets, classify, Kind, readValue, writer, convertUnit, defaultUnit, isElement,
@@ -26,7 +26,7 @@ import { warn, didYouMean, describe, cssPropertyNames, suggest, warningsOn, chec
 import { stagger as staggerFn } from './stagger';
 import type { StaggerOptions } from './stagger';
 import type { OptionKeys } from './debug';
-import { Binding, bind, apply, custom, transformSlot, M_PROP, M_TRANSFORM, M_TRANSFORM2, M_STYLE_NUM, M_STYLE_FMT, M_VAR, M_CUSTOM } from './bind';
+import { Binding, bind, apply, custom, transformSlot, M_PROP, M_PROP_FMT, M_TRANSFORM, M_TRANSFORM2, M_STYLE_NUM, M_STYLE_FMT, M_VAR, M_CUSTOM } from './bind';
 import { pathData, PathSource, writeMorph, elementLength, morphSequence, transformPath } from './svg';
 import { parseTransform, toMatrix3d } from './scene';
 import { writeStr } from './wasm';
@@ -332,6 +332,7 @@ export function _setCodegen(on: boolean | undefined): boolean | undefined {
   const prev = codegen;
   codegen = on;
   compactCache.clear();
+  lastCompact = null;
   return prev;
 }
 function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner] | null {
@@ -372,8 +373,26 @@ function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner] | null {
   }
 }
 
+/** `false`: formatted single-property Parts take the general binding loop (tests compare both). */
+let compactFmt = true;
+/** Testing hook: turn path 3 of `Part` off/on; returns the previous state. Applies to Parts prepared afterwards. */
+export function _setCompactFmt(on: boolean): boolean {
+  const prev = compactFmt;
+  compactFmt = on;
+  return prev;
+}
+
 /** Key/offset arrays (and their writer and runner) shared by Parts with the same property set (see `Part.prep`). */
-const compactCache = new Map<string, [string[], Int32Array, Writer | null, Runner | null]>();
+type Compact = [string[], Int32Array, Writer | null, Runner | null];
+const compactCache = new Map<string, Compact>();
+/** The entry used last: consecutive Parts (the targets of one call) usually share it, so no signature string is built for them. */
+let lastCompact: Compact | null = null;
+function sameCompact(b: Binding[], c: Compact): boolean {
+  const keys = c[0], offs = c[1];
+  if (keys.length !== b.length) return false;
+  for (let i = 0; i < b.length; i++) if (b[i].key !== keys[i] || b[i].off !== offs[i]) return false;
+  return true;
+}
 
 /** Per-target engine node. */
 class Part implements NodeRecord, Owner, Linked {
@@ -401,24 +420,52 @@ class Part implements NodeRecord, Owner, Linked {
   pw: Writer | null = null;
   /** The writer's batch form, used by `flush` (see `makeWriter`). */
   run: Runner | null = null;
-  /** 0 = not checked yet, 1 = compact path, 2 = general path. */
+  /**
+   * One formatted plain property (`pm === 3`: colour, `'12px'`, complex
+   * strings on objects): its key, output offset, formatter and the value
+   * last written, copied from the binding so the frame loop touches the Part
+   * and the target only, not the bindings array and the Binding (at 50k
+   * targets those dependent loads were ~half of the frame). `last` is the
+   * binding's `ls` while this path is on and goes back to it on `release`.
+   */
+  pk1 = '';
+  po1 = 0;
+  pf: ((at: number) => string | number) | null = null;
+  last: unknown = undefined;
+  /** 0 = not checked yet, 1 = compact path, 2 = general path, 3 = one formatted property. */
   pm = 0;
   private prep(): void {
     const b = this.b;
     this.pm = 2;
     if (b.length === 0 || b.length > 16) return;
     const t = b[0].target;
+    if (b.length === 1 && compactFmt) {
+      const x = b[0];
+      if (x.on && x.mode === M_PROP_FMT) {
+        this.pt = t;
+        this.pk1 = x.key;
+        this.po1 = x.off;
+        this.pf = x.fmt;
+        this.last = x.ls;
+        this.pm = 3;
+        return;
+      }
+    }
     for (let i = 0; i < b.length; i++) {
       const x = b[i];
       if (!x.on || x.mode !== M_PROP || x.target !== t) return;
     }
-    const sig = b.map((x) => x.key + ':' + x.off).join(',');
-    let shared = compactCache.get(sig);
-    if (shared === undefined) {
-      const keys = b.map((x) => x.key), offs = Int32Array.from(b, (x) => x.off);
-      const w = makeWriter(keys, offs);
-      shared = [keys, offs, w && w[0], w && w[1]];
-      compactCache.set(sig, shared);
+    let shared = lastCompact;
+    if (shared === null || !sameCompact(b, shared)) {
+      const sig = b.map((x) => x.key + ':' + x.off).join(',');
+      let c = compactCache.get(sig);
+      if (c === undefined) {
+        const keys = b.map((x) => x.key), offs = Int32Array.from(b, (x) => x.off);
+        const w = makeWriter(keys, offs);
+        c = [keys, offs, w && w[0], w && w[1]];
+        compactCache.set(sig, c);
+      }
+      lastCompact = shared = c;
     }
     this.pt = t;
     this.pk = shared[0];
@@ -438,6 +485,19 @@ class Part implements NodeRecord, Owner, Linked {
         else {
           const t = this.pt, k = this.pk!, o = this.po!;
           for (let i = 0; i < k.length; i++) t[k[i]] = f[at + o[i]];
+        }
+        if (this.upd) {
+          const c = this.ctl;
+          if (c !== null) c._touch();
+        }
+        return;
+      }
+      if (this.pm === 3) {
+        // Same as `apply` for an M_PROP_FMT binding.
+        const v = this.pf!(at + this.po1);
+        if (v !== this.last) {
+          this.last = v;
+          this.pt[this.pk1] = v;
         }
         if (this.upd) {
           const c = this.ctl;
@@ -478,6 +538,8 @@ class Part implements NodeRecord, Owner, Linked {
   }
   /** Another animation took `prop`: stop writing it. */
   release(prop: string): void {
+    // Hand the last written value back to the binding before leaving path 3.
+    if (this.pm === 3) this.b[0].ls = this.last;
     this.pm = 0; // re-check the compact path
     let live = 0;
     for (const x of this.b) {
@@ -490,10 +552,48 @@ class Part implements NodeRecord, Owner, Linked {
     if (live === 0) this.onEmpty?.();
   }
   onEmpty?: () => void;
+  /** Every binding was released (counted once by the animation). */
+  gone = false;
   dispose(): void {
     for (const x of this.b) if (this.claims) unclaim(x.target, x.prop, this);
     unregister(this);
   }
+}
+
+/**
+ * One shared `easings` array per easing id (and one empty one for linear):
+ * tracks only read them, and the one place that appends (`repeatDelay`)
+ * only touches lists of more than one easing.
+ */
+const NO_EASINGS: number[] = [];
+const singleEasings = new Map<number, number[]>();
+function singleEasing(id: number): number[] {
+  if (id === LINEAR) return NO_EASINGS;
+  let a = singleEasings.get(id);
+  if (a === undefined) singleEasings.set(id, (a = [id]));
+  return a;
+}
+
+/** "Not read yet" marker for the current value in `_build`. */
+const UNREAD: unknown = {};
+/** Whether `buildTrack` reads the current value for these keyframes (a lone value or a `null` one). */
+function usesCurrent(raw: readonly unknown[]): boolean {
+  if (raw.length === 1) return true;
+  for (let i = 0; i < raw.length; i++) if (raw[i] === null || raw[i] === undefined) return true;
+  return false;
+}
+/** `false`: always use the general `buildTrack` (tests compare both paths). */
+let numberTracks = true;
+/** Testing hook: turn the plain-number track path off/on; returns the previous state. */
+export function _setNumberTracks(on: boolean): boolean {
+  const prev = numberTracks;
+  numberTracks = on;
+  return prev;
+}
+
+/** `Part.onEmpty` for `part` of `anim` (a closure over just these two). */
+function emptyHandler(anim: Animation, part: Part): () => void {
+  return () => anim._partEmpty(part);
 }
 
 /** Per-timeline/animation chain of last written values (timeline sequencing). */
@@ -677,6 +777,10 @@ export class Animation extends Playable {
   targets: Target[] = [];
   _parts: Part[] = [];
   private _group = 0;
+  /** Parts that still write at least one property (see `_partEmpty`). */
+  private _live = 0;
+  /** The group's node record (registered while the group exists). */
+  private _grec: NodeRecord | null = null;
   private _immediate = false;
   /** Restorers for `revert()` (captured before the first write). */
   _restore: Array<() => void> = [];
@@ -730,6 +834,11 @@ export class Animation extends Playable {
     else if (o.fillMode === 'none') fill = 0;
     const easeList = Array.isArray(o.ease) && !(o.ease.length === 4 && typeof o.ease[0] === 'number') ? o.ease : null;
     const baseEase = easeList ? undefined : (o.ease as EasingInput);
+    // Per-property work that does not depend on the target, done once.
+    const entries = [...props];
+    const posts = entries.map(([prop, spec]) => (spec.raw === undefined ? postFor(prop, o) : null));
+    // Values with no per-target functions or `random()` strings resolve to themselves.
+    const dynamic = entries.map(([, spec]) => spec.values.some((v) => typeof v === 'function' || (typeof v === 'string' && RANDOM_RE.test(v))));
 
     for (let i = 0; i < n; i++) {
       const target = targets[i];
@@ -755,7 +864,7 @@ export class Animation extends Playable {
           t.easings = ids;
         } else {
           const id = easingId(e as EasingInput);
-          t.easings = id === LINEAR ? [] : [id];
+          t.easings = singleEasing(id);
         }
         tracks.push(t);
         const idx = tracks.length - 1;
@@ -770,7 +879,8 @@ export class Animation extends Playable {
         return idx;
       };
 
-      for (const [prop, spec] of props) {
+      for (let pi = 0; pi < entries.length; pi++) {
+        const prop = entries[pi][0], spec = entries[pi][1];
         if (spec.raw !== undefined) {
           this._special(prop, spec.raw, target, i, n, part, tracks, addTrack, cs, ctx);
           continue;
@@ -781,7 +891,7 @@ export class Animation extends Playable {
           const hint = !s ? '' : OPTION_KEYS.has(s) ? ` Did you mean the option "${s}"? (Options can go in the third argument or among the properties.)` : ` Did you mean "${s}"?`;
           warn(`"${prop}" is not a CSS property of ${describe(target)}; it will be written as an inline style anyway.${hint}`);
         }
-        let raw = spec.values.map((v) => resolve(v, target, i, n));
+        let raw = dynamic[pi] ? spec.values.map((v) => resolve(v, target, i, n)) : (spec.values as Array<Scalar | null>);
         // A function may return keyframes for its target: `y: (el, i) => [0, i * 10]`.
         if (raw.length === 2 && raw[0] === null && Array.isArray(raw[1])) raw = raw[1] as Array<Scalar | null>;
         if (i === 0 && warningsOn()) checkValues(prop, kind, raw, target);
@@ -795,17 +905,28 @@ export class Animation extends Playable {
           if (raw.some((v, k) => v === 'auto' || (inlineAuto && k === 0 && (v === null || v === undefined)))) {
             const px = measureAuto(el, prop);
             autoPx = [px];
+            raw = raw.slice(); // (may be the shared spec values)
             for (let k = 0; k < raw.length; k++) {
               if (raw[k] === 'auto' || (k === 0 && inlineAuto && (raw[k] === null || raw[k] === undefined))) raw[k] = px + 'px';
             }
           }
         }
         const chained = ctx.chain?.get(target)?.get(prop);
-        const read = () => (chained !== undefined ? chained : readValue(target, prop, kind));
         const el = isElement(target) ? target : null;
         let du = defaultUnit(prop, kind);
-        const conv = (v: number, f: string, t: string) => convertUnit(el, prop, v, f, t);
-        let track = buildTrack(raw, read, conv, cs, du);
+        // Plain numbers (the common case) skip the general parser and its
+        // closures; the current value is read at most once either way.
+        let cur: unknown = UNREAD;
+        let track: TrackDef | null = null;
+        if (numberTracks) {
+          if (usesCurrent(raw)) cur = chained !== undefined ? chained : readValue(target, prop, kind);
+          track = numberTrack(raw, cur, du);
+        }
+        if (track === null) {
+          const read = cur !== UNREAD ? () => cur : () => (chained !== undefined ? chained : readValue(target, prop, kind));
+          const conv = (v: number, f: string, t: string) => convertUnit(el, prop, v, f, t);
+          track = buildTrack(raw, read, conv, cs, du);
+        }
         if (kind === Kind.Transform) {
           if (track.kind !== TRACK_NUMBER || track.ch !== 1 || track.complex) {
             if (i === 0) warn(`"${prop}" needs a single number (optionally with a unit, e.g. 100 or '50%'); got ${raw.map((v) => JSON.stringify(v)).join(' → ')}, so it was skipped. For a full transform string use the "transform" property.`);
@@ -824,7 +945,7 @@ export class Animation extends Playable {
         const numeric = track.kind === TRACK_NUMBER && track.ch === 1 && !track.complex;
         if (kind !== Kind.Transform || !snappedTransform) this._restore.push(snapshot(target, prop, kind));
         if (kind === Kind.Transform) snappedTransform = true;
-        const post = postFor(prop, o);
+        const post = posts[pi];
         if (autoPx && numeric && track.unit === 'px') {
           // Write `auto` whenever the value sits on the measured size (start
           // or end): identical on screen, and the element stays responsive.
@@ -835,7 +956,7 @@ export class Animation extends Playable {
           const b = custom(target, prop, idx, 0, (at) => {
             let v = F64[at];
             if (post) v = post(v, target);
-            const s = Math.abs(v - ap) < 1e-3 ? kw : r3(v) + 'px';
+            const s = Math.abs(v - ap) < 1e-3 ? kw : s3(v) + 'px';
             if (style[key] !== s) style[key] = s;
           });
           part.b.push(b);
@@ -847,7 +968,7 @@ export class Animation extends Playable {
           part.b.push(custom(target, prop, idx, 0, numeric
             ? (at) => {
                 const v = post(F64[at], target);
-                write(typeof v === 'number' && !raw ? r3(v) + unit : v);
+                write(typeof v === 'number' && !raw ? s3(v) + unit : v);
               }
             : (at) => write(post(fmt(at), target))));
         } else {
@@ -906,8 +1027,11 @@ export class Animation extends Playable {
       if (!part.h) throw new Error('anikit: failed to create animation (invalid keyframes)');
       register(part);
       if (claims) for (const b of part.b) claim(target, b.prop, part);
-      part.onEmpty = () => this._partEmpty(part);
+      // Built outside this loop's scope: a closure created here would keep
+      // the whole per-target scope (the track definitions) alive with the Part.
+      part.onEmpty = emptyHandler(this, part);
       this._parts.push(part);
+      if (part.b.some((b) => b.on)) this._live++;
       this._links.push(part);
     }
 
@@ -925,6 +1049,7 @@ export class Animation extends Playable {
         event: (k: number) => rec.ctl?._event(k),
       };
       register(rec);
+      this._grec = rec;
       this._links.push(rec);
     } else {
       this._finish();
@@ -1123,8 +1248,8 @@ export class Animation extends Playable {
         const s = Math.min(a, b);
         const e = Math.max(a, b);
         (el as any).__akDraw = [a, b];
-        style.strokeDasharray = r3((e - s) * len) + 'px ' + r3(len + 1) + 'px';
-        style.strokeDashoffset = r3(-s * len) + 'px';
+        style.strokeDasharray = s3((e - s) * len) + 'px ' + s3(len + 1) + 'px';
+        style.strokeDashoffset = s3(-s * len) + 'px';
       }));
       return;
     }
@@ -1156,13 +1281,16 @@ export class Animation extends Playable {
     return transformPath(data, [m.a, m.b, m.c, m.d, m.e - (r.left + ox * r.width), m.f - (r.top + oy * r.height)]);
   }
 
-  /** All properties of a part were taken over: free it. */
-  private _partEmpty(part: Part): void {
-    if (this._parts.every((p) => p.b.every((b) => !b.on))) {
-      this.kill();
-      return;
-    }
-    void part;
+  /**
+   * All properties of a part were taken over: once no part writes anything,
+   * free the animation. Counted (bindings only ever turn off), not rescanned:
+   * a new animation taking over all n targets of this one used to scan the
+   * parts from the start for each of them, O(n²).
+   */
+  _partEmpty(part: Part): void {
+    if (part.gone) return;
+    part.gone = true;
+    if (--this._live <= 0) this.kill();
   }
 
   /**
@@ -1236,7 +1364,10 @@ export class Animation extends Playable {
   protected _kill(): void {
     const w = core();
     for (const p of this._parts) p.dispose();
-    if (this._group) unregister({ h: this._group, at: 0 });
+    // (`unregister` matches the record itself: the group's own record, so a
+    // killed animation is not kept alive by the record table.)
+    if (this._grec) unregister(this._grec);
+    this._grec = null;
     // Releasing the root frees the whole subtree (group + parts).
     if (this._h) w.ak_release(this._h);
     this._parts = [];
@@ -1245,12 +1376,12 @@ export class Animation extends Playable {
 
   protected _cleanup(): () => void {
     const parts = this._parts;
-    const group = this._group;
+    const grec = this._grec;
     const root = this._h;
     return () => {
       const w = core();
       for (const p of parts) p.dispose();
-      if (group) unregister({ h: group, at: 0 });
+      if (grec) unregister(grec);
       if (root) w.ak_release(root);
     };
   }
@@ -1292,7 +1423,7 @@ export function createAnim(
     f[at++] = t.offsets ? 1 : 0;
     if (t.offsets) for (let k = 0; k < nk; k++) f[at++] = t.offsets[k];
     for (let k = 0; k < t.values.length; k++) f[at++] = t.values[k];
-    const e = t.easings ?? [];
+    const e = t.easings ?? NO_EASINGS;
     f[at++] = e.length;
     for (let k = 0; k < e.length; k++) f[at++] = e[k] === LINEAR ? -1 : e[k];
   }
