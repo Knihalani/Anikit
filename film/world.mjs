@@ -245,7 +245,7 @@ export async function buildWorld(A) {
 
   // ---- Bakes ---------------------------------------------------------------------------------
   const T = 4096;
-  const tex = await cached('terrain4', () => bakeTerrain(T, heightAt, groundAt, gh, GN, GS, trees, centerX, log));
+  const tex = await cached('terrain5', () => bakeTerrain(T, heightAt, groundAt, gh, GN, GS, trees, centerX, log));
   const wallTex = await cached('walls4', () => bakeWalls(heightAt, groundAt, walls.tris, log));
   const farTex = await cached('far2', () => bakeFar(4096, farH, FE));
   const sky = await cached('sky', () => bakeSky(4096, 2048, false));
@@ -558,7 +558,7 @@ function bakeTerrain(T, heightAt, groundAt, gh, GN, GS, trees, centerX, log) {
       comic[k * 4 + 3] = 255;
       // Neon: contour lines every 8 m (a brighter one every 40 m), a shoreline, a faint 50 m grid.
       const grad = Math.hypot(gx, gz) * ts;
-      const line = (period, width) => { const f = h / period, d = Math.abs(f - Math.round(f)) * period; return clamp(1 - d / Math.max(0.05, width * (grad + 0.06))); };
+      const line = (period, width) => { const f = h / period, d = Math.abs(f - Math.round(f)) * period; return clamp(1 - d / Math.max(0.05, width * (Math.min(grad, 0.35) + 0.06))); }; // steep banks: thin lines, not stretched bands
       // On flat ground contours turn into blobs: there a clean street grid takes over.
       const flatK = 1 - smooth(0.05, 0.16, gmc);
       const minor = line(8, 1.4) * (1 - flatK), major = line(40, 2.2) * (1 - flatK * 0.85);
