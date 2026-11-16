@@ -373,14 +373,24 @@ export class Glow {
       this.mode = this.options.mode;
       w.ak_splat_mode(this.id, this.mode === 'ink' ? 1 : 0);
     }
-    const tint = o.tint ?? [1, 1, 1];
+    // Written straight into the buffer: this runs every frame.
+    const tint = o.tint;
     const at = f64Buf(13);
     const l = o.lens;
-    const fog = o.fog ?? [0, 0];
-    F64.set(
-      [o.size ?? 1, o.intensity ?? 0.25, fog[0], fog[1], this.options.resolution, l ? l.x : 0, l ? l.y : 0, l ? l.radius ?? 140 : 0, l ? l.strength ?? 40 : 0, o.maxRadius ?? 6, tint[0], tint[1], tint[2]],
-      at,
-    );
+    const fog = o.fog;
+    F64[at] = o.size ?? 1;
+    F64[at + 1] = o.intensity ?? 0.25;
+    F64[at + 2] = fog ? fog[0] : 0;
+    F64[at + 3] = fog ? fog[1] : 0;
+    F64[at + 4] = this.options.resolution;
+    F64[at + 5] = l ? l.x : 0;
+    F64[at + 6] = l ? l.y : 0;
+    F64[at + 7] = l ? l.radius ?? 140 : 0;
+    F64[at + 8] = l ? l.strength ?? 40 : 0;
+    F64[at + 9] = o.maxRadius ?? 6;
+    F64[at + 10] = tint ? tint[0] : 1;
+    F64[at + 11] = tint ? tint[1] : 1;
+    F64[at + 12] = tint ? tint[2] : 1;
     w.ak_splat_draw(this.id, scene._pid, proj.count);
     // Tone-map and decay the light for the next frame in one pass.
     const ptr = w.ak_splat_resolve(this.id, o.exposure ?? this.options.exposure, parseHex(this.options.background), this.options.trail);
