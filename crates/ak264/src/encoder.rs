@@ -1287,21 +1287,25 @@ fn cabac_residual(
     intra: bool,
 ) {
     use crate::cabac::Cat;
-    let ext = |m: &Option<MbInfo>, f: &dyn Fn(&MbInfo) -> bool| match m {
-        None => intra as usize,
-        Some(m) => f(m) as usize,
-    };
+    // condTermFlag of a neighbouring macroblock's block: unavailable → intra
+    #[inline(always)]
+    fn ext(m: &Option<MbInfo>, intra: bool, f: impl Fn(&MbInfo) -> bool) -> usize {
+        match m {
+            None => intra as usize,
+            Some(m) => f(m) as usize,
+        }
+    }
     let mut scan = [0i32; 16];
     if i16 {
         for k in 0..16 {
             scan[k] = cd.dc[ZIGZAG[k]];
         }
-        let inc = ext(a, &|m| m.dcf & 1 != 0) + 2 * ext(b, &|m| m.dcf & 1 != 0);
+        let inc = ext(a, intra, |m| m.dcf & 1 != 0) + 2 * ext(b, intra, |m| m.dcf & 1 != 0);
         cb.residual(w, &scan, Cat::LumaDc, inc);
     }
     let luma_inc = |bx: usize, by: usize| -> usize {
-        let ia = if bx > 0 { (cd.nz[by * 4 + bx - 1] > 0) as usize } else { ext(a, &|m| m.nz[by * 4 + 3] > 0) };
-        let ib = if by > 0 { (cd.nz[(by - 1) * 4 + bx] > 0) as usize } else { ext(b, &|m| m.nz[12 + bx] > 0) };
+        let ia = if bx > 0 { (cd.nz[by * 4 + bx - 1] > 0) as usize } else { ext(a, intra, |m| m.nz[by * 4 + 3] > 0) };
+        let ib = if by > 0 { (cd.nz[(by - 1) * 4 + bx] > 0) as usize } else { ext(b, intra, |m| m.nz[12 + bx] > 0) };
         ia + 2 * ib
     };
     for k in 0..16 {
@@ -1329,7 +1333,7 @@ fn cabac_residual(
     if cbpc != 0 {
         for comp in 0..2 {
             let bitn = 1 << (1 + comp);
-            let inc = ext(a, &|m| m.dcf & bitn != 0) + 2 * ext(b, &|m| m.dcf & bitn != 0);
+            let inc = ext(a, intra, |m| m.dcf & bitn != 0) + 2 * ext(b, intra, |m| m.dcf & bitn != 0);
             cb.residual(w, &cd.cdc[comp], Cat::ChromaDc, inc);
         }
     }
@@ -1338,8 +1342,8 @@ fn cabac_residual(
             for blk in 0..4 {
                 let (bx, by) = (blk & 1, blk >> 1);
                 let ia =
-                    if bx > 0 { (cd.nzc[comp][by * 2] > 0) as usize } else { ext(a, &|m| m.nzc[comp][by * 2 + 1] > 0) };
-                let ib = if by > 0 { (cd.nzc[comp][bx] > 0) as usize } else { ext(b, &|m| m.nzc[comp][2 + bx] > 0) };
+                    if bx > 0 { (cd.nzc[comp][by * 2] > 0) as usize } else { ext(a, intra, |m| m.nzc[comp][by * 2 + 1] > 0) };
+                let ib = if by > 0 { (cd.nzc[comp][bx] > 0) as usize } else { ext(b, intra, |m| m.nzc[comp][2 + bx] > 0) };
                 let src = &cd.cac[comp][blk];
                 for j in 0..15 {
                     scan[j] = src[ZIGZAG[j + 1]] as i32;
@@ -1796,9 +1800,14 @@ impl Encoder {
                             }
                         }
                     }
-                    for (i, ch) in self.changed.iter_mut().enumerate() {
-                        if *ch {
-                            *ch = crate::diff::load_mb(y, u, v, f, i % mbw, i / mbw, true);
+                    // Inner macroblocks were compared exactly; edge ones were only flagged.
+                    let full_cols = (w / 16).min(cw / 8);
+                    let full_rows = (h / 16).min(ch / 8);
+                    for (i, chg) in self.changed.iter_mut().enumerate() {
+                        if *chg {
+                            let (mx, my) = (i % mbw, i / mbw);
+                            let exact = mx < full_cols && my < full_rows && crate::simd::level() >= 2;
+                            *chg = crate::diff::load_mb(y, u, v, f, mx, my, !exact);
                         }
                     }
                 }
