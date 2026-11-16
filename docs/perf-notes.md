@@ -1565,3 +1565,162 @@ for the base; Anikit ms per frame within noise of the base
 - Cost tracks the number of properties (1-property rows 15–20 ms, the
   3-property row ~30–55 ms), so per-property work (Binding, track, owner-map
   entry, revert slot) is the next target; not profiled further this round.
+
+
+## Eighth round (DOM)
+
+Goal: the DOM and interaction layer (scroll, triggers, drag, gestures, text,
+flip, presence, pointer effects, `world()`'s pointer handlers) measured in
+Chromium against GSAP's plugins where installed, and debugged in a real
+browser. Starting point: `e8e4e30`. No Rust change; the core tween engine
+(`animate`, timelines, `props.ts`, `values.ts`) and the video engine were left
+alone (other sessions).
+
+**Method.** Shared four-core VM with other sessions' builds running. Every
+before/after is interleaved with a copy of the `e8e4e30` source (`PKG=` for
+`bench-scroll.mjs`, `DIST=` for the dist-based scripts): base, new, base,
+new…, and given as the range over the rounds. GSAP's column in the same runs
+is the noise gauge.
+
+**New: real-browser tests.** `node scripts/test-browser.mjs [filter]`
+(`npm run test:browser`) bundles `src/` once and runs every
+`test/browser/*.mjs` case in its own Chromium page with real layout and real
+pointer input; a page error or an unexpected `anikit:` warning fails the case.
+70 cases this round: scroll triggers (pin + resize + refresh, spacing, nested
+scroller in a scrolled page, horizontal scroller and window, smoothed scrub
+past the end, inline styles of the pinned element), `scroll()` link sharing,
+`draggable` (bounds, inertia, snap, axis lock, mouse and touch, a second
+finger, `kill()`/`revert()` mid-drag), `gesture()`, `flip` (nested with and
+without scale, grandchildren, scrolled container, scrolled page, fixed
+elements), `splitText` (ZWJ emoji, flags, skin tones, combining marks, RTL,
+mixed bidi, Arabic joining, nested markup across lines, mask, re-split on
+resize, exact `revert()`), presence under random rapid add/remove (with and
+without layout), reduced motion, `context().revert()` of the DOM controllers,
+`world()` pointer handlers, `tilt()`.
+
+### Results
+
+`bench-scroll.mjs` (Chromium, ms per scroll event in the page's scroll
+listeners, median of 3 × 200 events; three interleaved rounds; `gsap` is GSAP
+3's ScrollTrigger with `scrub: true` plus the `ScrollTrigger.update()` it
+otherwise defers to the next frame):
+
+| mode | N | `e8e4e30` | now | GSAP |
+|---|---|---|---|---|
+| `trigger` (scrub) | 10 | 0.036–0.041 | 0.009–0.015 | 0.010–0.016 |
+| | 50 | 0.059–0.121 | 0.013–0.018 | 0.011–0.018 |
+| | 200 | 0.151–0.218 | 0.010–0.024 | 0.015–0.029 |
+| `trigger-smooth` (scrub 0.5) | 10 | 0.022–0.039 | 0.008–0.012 | |
+| | 50 | 0.056–0.125 | 0.009–0.021 | |
+| | 200 | 0.235–0.304 | 0.014–0.017 | |
+| `scroll` | 10 | 0.043–0.077 | 0.017–0.025 | |
+| | 50 | 0.156–0.179 | 0.015–0.029 | |
+| | 200 | 0.373–0.392 | 0.017–0.020 | |
+| `scroll-smooth` (0.3) | 10 | 0.027–0.033 | 0.017–0.019 | |
+| | 50 | 0.110–0.166 | 0.012–0.023 | |
+| | 200 | 0.382–0.628 | 0.012–0.019 | |
+
+Before this round a page of 200 scrubbed triggers cost 5–10× GSAP per scroll
+event; it is now level with it.
+
+`bench-spring.mjs` (Node, 1000 springs, ms per frame, median of 3; two
+interleaved rounds), the new case `retarget, new onUpdate` (every frame
+retargets every spring with a new `{ onUpdate }` literal): 1.75–2.27 → 0.59–1.18.
+`retarget all + frame` (same options object) unchanged within the noise
+(0.91–1.05 → 0.88–1.26).
+
+`bench-drag.mjs` (Chromium, µs per synthetic pointer move, median of 5 pages,
+three interleaved rounds), 0 / 2000 siblings: 11.2–16.8 / 14.2–16.2 →
+11.4–13.4 / 10.6–13.4 (the `VelocityTracker` change; within the noise at 0).
+GSAP's Draggable reads 5.2–8.6, **but it does not write the transform on the
+move**: it renders on its ticker (the box's transform is unchanged after six
+synthetic moves). With `FORCE=0` (handler only, no forced layout) Anikit
+6.4–9.2 vs GSAP 4.6–6.6. Anikit writes on the move itself; Chromium already
+aligns `pointermove` to frames, so that is one write per frame.
+
+No change within the noise (two interleaved rounds each, `e8e4e30` → now):
+`bench-trigger.mjs` create/refresh 500 (31.1–39.6 / 6.8–9.2 → 29.2–32.9 /
+8.3–9.2 ms; GSAP 140–201 / 53–57), `PIN=1` 500 (86.8 / 43.3 → 78.0 / 52.6;
+GSAP 306–347 / 128–133); `bench-magnetic.mjs` 200 buttons 0.66–0.77 →
+0.64–0.69 ms per move + frame; `bench-marquee.mjs` 100 rows 0.047 →
+0.030–0.043 ms per frame; `bench-text.mjs` flip 1000 boxes 47–62 → 50–64 ms
+(GSAP Flip 3093–3650), split 100 paragraphs 519–572 → 525–617 ms (GSAP
+785–1043; the line rebuild for nested markup, §8, costs up to ~10%).
+
+### 1. One scroll read per event per scroller
+
+Every `scrollTrigger` and every `scroll()` link read the scroll position
+itself (`scrollY`, `scrollTop`). After the previous trigger's style writes,
+that read makes Chromium recalculate style and layout, so N links laid the
+page out N times per scroll event. One listener per scroller now reads the
+position once (per axis) and hands it to every trigger or link. `scroll()`
+links share a listener per event target the same way (removed with the last
+link). This is the whole of the table above.
+
+### 2. Smoothed links outside their range; `spring()` listeners
+
+- A smoothed link (`scroll({ smooth })`, `scrollTrigger({ scrub: n })`)
+  outside its range retargeted its spring on every scroll event with the same
+  clamped 0 or 1. It now calls `spring()` only when the target changes.
+- `scroll()` links driving an animation skip seeking to the same progress (the
+  fifth round tried this and saw no gain: the reads hid it). A function
+  subject is still called on every event.
+- `spring()` kept every options object that carried `onUpdate` until the
+  simulation rested, so a follower passing a new `{ onUpdate }` per event
+  called more and more listeners per frame. Each simulation now keeps one
+  `onUpdate`, the latest call's; distinct `onComplete` callbacks are kept (a
+  repeated function fires once). `smoothScroll()` built a new options literal
+  per wheel event, so it wrote `scrollTop` (and called `onUpdate`) once per
+  pending wheel event per frame; it reuses one object.
+
+### 3. Pointer paths without allocation
+
+`VelocityTracker` (every drag and gesture move, twice) kept a `[time, value]`
+pair per sample and `shift()`ed old ones; it now keeps two plain arrays and a
+head index (same velocities: a test replays 5000 irregular samples against
+the old code). `gesture()` no longer builds an array of pointers per move.
+`world().pointer()`/`dragging()` update coordinates and velocity in place and
+write attractors straight into the scratch buffer. `observer()` keeps one
+`onStop` timer per quiet period instead of clearing and setting one per event.
+
+### 4. Bugs found in the browser (each with a test)
+
+| Area | Symptom | Cause / fix |
+|---|---|---|
+| `scrollTrigger` pin | an element with an inline `height` collapsed to its content when pinned; spacing and later triggers measured wrong; an inline margin was dropped from the pinned width | refresh cleared the element's inline `width`/`height`/`margin`/`transform`; their inline values are now kept and restored around each measurement, and the pinned size is the layout box (without the element's own rotation) |
+| `scrollTrigger` pin in a scrolling element | `refresh()` mid-pin moved `start`/`end` by the whole pin range | the scroll position was read before the spacing was removed, and scroll anchoring then moved it; it is read after |
+| `draggable` | a second finger restarted, moved and ended the drag | the first pointer owns the drag |
+| `draggable` | `kill()` mid-drag left `isPressed`/`isDragging` set and a `pointercancel` listener | all listeners removed, state reset |
+| `draggable`, `gesture` `revert()` | set the position to 0 (a starting transform was lost) and left `touch-action`/`cursor`/`user-select` | restores the inline transform, the transform state and the handle styles |
+| `flip` nested | a child of a moving (scaling) parent started with the parent's offset twice | start boxes go through the nearest moving ancestor's start transform, any depth |
+| `flip.capture()` + page scroll + `flip.from()` | elements started off by the scroll distance | old boxes shifted by the scroll difference (fixed elements left alone) |
+| `splitText` lines | with nested `<b>`/`<a>`, a line wrapper landed inside the inline element and pulled outside words into it | lines rebuilt as direct children; markup spanning lines continued by an id-less copy |
+| `splitText` bidi | a Hebrew phrase in English text came out in reversed word order; split chars scrambled | runs against the paragraph direction wrapped in `dir` + `unicode-bidi: isolate` (only when the text has RTL characters or a `dir`) |
+| `splitText` Arabic chars | letters lost their joined forms (the word grew 28% wider) | zero-width joiners on joined pairs (Arabic, Syriac, N'Ko) |
+| presence (no layout) | remove mid-entrance then re-add left the element at ~0.04 opacity for good | interrupted entrance remembered across chained exits and finished after the reversal |
+| presence (layout) | re-adding a leaving element stuck at ~0.55 opacity | `add()` finishes the entrance's end values |
+| `marquee` reduced motion | eased down from full speed (~94 px of movement) | stops at once |
+| `magnetic().revert()`, `tilt().revert()` | wiped the element's own transform / left the tilt on it | springs stopped, inline and cached transform restored |
+| `bindValues().revert()` | a later `animate()` wrote the bound values back | cached transform reset too |
+| `world().dragging()` | pressing a body without moving threw it again at the previous drag's speed | velocity reset on press |
+
+### Tried and not kept (eighth round)
+
+| Idea | Result |
+|---|---|
+| `will-change: transform` on a `draggable` while dragging (a layer, like GSAP's `force3D`) | no gain with a forced layout per move (11.8–14.2 µs either way). Reverted. |
+
+### Found, not fixed (other sessions' code or out of scope)
+
+- Reduced motion with `engine.reducedMotion = 'user'` and the OS set to
+  reduce: an `animate(…, { autoplay: false })` driven by `scroll()` shows its
+  end state at once and setting `progress` does nothing after that (the
+  `'instant'` build in `animate.ts`). Scroll-linked progress is user-driven;
+  it probably should opt out.
+- `animate(el, { y })` on an element whose inline style is
+  `transform: translateX(10px)` writes `translate(0px, 5px)`: the inline
+  `translateX` is not read into the transform state (`props.ts`).
+- `flip()`: a `scrollTo` inside `mutate` and scroll changes inside scrolling
+  containers between `flip.capture()` and `flip.from()` are not compensated
+  (the page scroll is). Dragging inside a CSS-scaled parent moves by screen
+  pixels, not the parent's units.
