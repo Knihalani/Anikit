@@ -148,16 +148,16 @@
     <div class="pin">
       <h2 class="giant film-title">Films,<br /><em>compiled.</em></h2>
       <div class="film-frame">
-        <video id="film-video" src="film/anikit-film.mp4" poster="film/poster.jpg" muted loop playsinline preload="metadata" aria-label="ANIKIT — One Take: a 24 second film rendered by anikit"></video>
+        <video id="film-video" src="film/anikit-film.mp4" poster="film/poster.jpg" muted loop playsinline preload="metadata" aria-label="ANIKIT — Velocity: a 22 second 3D flight rendered by anikit"></video>
       </div>
       <div class="film-copy">
-        <p class="mono">One take, no cuts: 3,000 solid lit cubes and a glossy torus knot rasterised by anikit's own 3D renderer, 120,000 particles that detonate into a galaxy, bullet time, motion blur and a film grade — composed in code and rendered by anikit in Node. No browser, no WebGL, no editor.</p>
-<pre class="film-code"><span class="k">const</span> film = composition({ fps: 60, duration: 24.5, motionBlur: 2, post: { bloom: 0.55, grain: 5 } });
-film.impact(12.75, { shake: 40, flash: <span class="s">'#fff'</span>, aberration: 9 });
-film.scene(<span class="s">'one take'</span>, 0, 24.5, {
+        <p class="mono">One flight, no cuts: a tunnel of circuit rings, a neon city on a mirror floor, chrome gates, a knot that shatters in bullet time, a vortex of light — rasterised by anikit's own 3D renderer with camera motion blur, depth of field, lens flares and a shockwave, composed in code and rendered in Node. No browser, no WebGL, no editor.</p>
+<pre class="film-code"><span class="k">const</span> film = composition({ fps: 60, duration: 21.8, motionBlur: 1, post: { bloom: 0.85, flares: 0.6, aa: 1 } });
+film.scene(<span class="s">'velocity'</span>, 0, 21.8, {
   timeScale: (t) =&gt; bulletTime(t),               <span class="c">// slows everything together</span>
-  draw: ({ ctx }) =&gt; r3.render(camera, [{ mesh: cube, instances }]),
+  draw: ({ clock }) =&gt; r3.render(path.apply(cam, s(clock)) &amp;&amp; cam, items, { mirror, motionBlur }),
 });
+film.impact(film.timeAt(<span class="s">'velocity'</span>, HIT), { shake: 34, shockwave: 40 });
 <span class="c">// $ anikit-render film.mjs --workers 4</span></pre>
       </div>
     </div>
@@ -166,6 +166,9 @@ film.scene(<span class="s">'one take'</span>, 0, 24.5, {
   <!-- 11 · INSTALL (paper) -->
   <section class="scene install station" id="install" data-shape="outro" data-bg="#ece6da" data-mode="ink" data-tint="0.05,0.78,0.95" data-exposure="1.1" data-name="Install">
     <div class="pin">
+      <div class="ticker mono" id="ticker" aria-label="Features">
+        <span>tweens</span><span>springs</span><span>timelines</span><span>scroll triggers</span><span>physics worlds</span><span>3D renderer</span><span>camera motion blur</span><span>lens flares</span><span>shockwaves</span><span>motion values</span><span>marquees</span><span>SVG morphs</span><span>split text</span><span>100k particles</span><span>films in Node</span><span>Python</span>
+      </div>
       <p class="giant outro" id="outro">Make it<br />move.</p>
       <div class="install-row">
         <code class="mono" id="install-cmd">npm install anikit</code>

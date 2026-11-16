@@ -181,3 +181,7 @@ html.gravity-on, html.gravity-on body { overflow: hidden; }
 .fly-title { position: absolute; left: var(--gut); top: calc(var(--gut) + 40px); margin: 0; font-size: 10vw; line-height: 0.86; color: #f3ecff; text-shadow: 0 2px 30px rgba(0, 0, 0, 0.6); }
 .fly-title em { color: #ff6ad5; }
 .fly .corner { color: #e9e2ff; text-shadow: 0 1px 12px rgba(0, 0, 0, 0.8); }
+
+/* Feature ticker (marquee) */
+.ticker { position: absolute; left: 0; right: 0; top: 9vh; display: flex; gap: 2.4rem; font-size: clamp(14px, 1.6vw, 22px); letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.75; transform: rotate(-2deg); white-space: nowrap; }
+.ticker span::after { content: '✳'; margin-left: 2.4rem; opacity: 0.5; }

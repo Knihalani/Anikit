@@ -1,7 +1,7 @@
 // Anikit — a kinetic poster film. Every frame on this page runs on anikit.
 import {
   ready, engine, animate, set, timeline, stagger, spring, scroll, inView, splitText, effects, world,
-  record, noise2, circle, star, rect, pathThrough, flush,
+  record, noise2, circle, star, rect, pathThrough, flush, marquee, magnetic,
 } from '../packages/anikit/dist/anikit.js';
 import { cosmos, bulletTime } from './cosmos.js';
 import { gravity } from './gravity.js';
@@ -421,3 +421,8 @@ for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
 }
 
 window.anikit = await import('../packages/anikit/dist/anikit.js');
+
+// Feature ticker: an endless marquee that speeds up with scrolling; magnetic buttons.
+const tick = $('#ticker');
+if (tick) marquee(tick, { speed: 70, pauseOnHover: true, scrollBoost: 0.6 });
+if (fine) magnetic('.pill, .f-btn', { strength: 0.25, radius: 60 });
