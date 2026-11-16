@@ -48,8 +48,8 @@ function diskTexture() {
       // Long arcs (few cells around the orbit, many across it), then finer filaments.
       const n1 = vnoise(c * 4.5 + 11, s * 4.5 + 7, lr * 18);
       const n2 = vnoise(c * 13 + 3, s * 13 + 5, lr * 46 + 9);
-      const n3 = vnoise(c * 36 + 1, s * 36 + 2, lr * 120 + 4);
-      let v = 0.6 * n1 + 0.27 * n2 + 0.13 * n3;
+      const n3 = vnoise(c * 24 + 1, s * 24 + 2, lr * 90 + 4);
+      let v = 0.62 * n1 + 0.28 * n2 + 0.1 * n3;
       v = (v - 0.22) * 1.7;
       v = v < 0.12 ? 0.12 : v;
       // Faint ring structure across the radius.
@@ -72,7 +72,7 @@ function blackbody(T) {
   const c = (v) => { v = Math.min(255, Math.max(0, v)) / 255; return v * v * 0.6 + v * 0.4; }; // to linear-ish
   r = c(r); g = c(g); b = c(b);
   const m = Math.max(r, g, b);
-  return [(r / m) ** 1.35, (g / m) ** 1.35, (b / m) ** 1.35];
+  return [(r / m) ** 1.7, (g / m) ** 1.7, (b / m) ** 1.7];
 }
 const BB_N = 256, BB_MIN = 1200, BB_MAX = 24000;
 const BB = new Float32Array(BB_N * 3);
@@ -85,7 +85,7 @@ const CELL = 0.006; // star cells: a 3D lattice around the unit sky sphere
 function starAt(dx, dy, dz, sig, out) {
   out[0] = 0; out[1] = 0; out[2] = 0;
   const cx = Math.floor(dx / CELL), cy = Math.floor(dy / CELL), cz = Math.floor(dz / CELL);
-  if (hash3(cx, cy, cz) > 0.02) return;
+  if (hash3(cx, cy, cz) > 0.016) return;
   // The star sits near the middle of its cell, projected onto the sphere.
   let sx = cx + 0.4 + 0.2 * hash3(cx, cy, cz + 7), sy = cy + 0.4 + 0.2 * hash3(cx + 3, cy, cz), sz = cz + 0.4 + 0.2 * hash3(cx, cy + 5, cz);
   const l = Math.hypot(sx, sy, sz);
@@ -95,7 +95,7 @@ function starAt(dx, dy, dz, sig, out) {
   // Magnitudes: a steep power law, so most stars are faint and a few are bright.
   const h = hash3(cy, cz, cx);
   const m = Math.pow(h, 8) * 30 + 0.16;
-  const k = m * Math.exp(-d2 / (2 * s2)) * 0.7;
+  const k = m * Math.exp(-d2 / (2 * s2)) * 0.55;
   let ti = ((2800 + Math.pow(hash3(cz, cx, cy), 1.4) * 12000 - BB_MIN) / (BB_MAX - BB_MIN)) * (BB_N - 1);
   ti = Math.min(BB_N - 1, Math.max(0, ti)) | 0;
   out[0] += BB[ti * 3] * k; out[1] += BB[ti * 3 + 1] * k; out[2] += BB[ti * 3 + 2] * k;
@@ -212,7 +212,7 @@ export class Lens {
           const cp = Math.cos(phEnd), sp = Math.sin(phEnd);
           const dx = sp * nx, dy = cp * se + sp * (ny), dz = cp * ce + sp * nz;
           // Star size follows the local magnification: sigma in cells per screen pixel.
-          starAt(dx, dy, dz, Math.min(0.12, Math.max(0.04, 0.36 / F / CELL)), star);
+          starAt(dx, dy, dz, 0.5 / F / CELL, star);
           px[o] = star[0] * trans; px[o + 1] = star[1] * trans; px[o + 2] = star[2] * trans;
         } else { px[o] = 0; px[o + 1] = 0; px[o + 2] = 0; }
       }
@@ -226,7 +226,7 @@ export class Lens {
  * `exposure`, star tint and disk gain come from the scroll choreography.
  */
 const GRAIN = new Float32Array(8192);
-for (let i = 0; i < GRAIN.length; i++) GRAIN[i] = (Math.random() + Math.random() - 1) * 9;
+for (let i = 0; i < GRAIN.length; i++) GRAIN[i] = (Math.random() + Math.random() - 1) * 4.5;
 export function shade(lens, tex, out, t, exposure, sr, sg, sb, disk, seed = 0) {
   const px = lens.px, n = lens.w * lens.h;
   const go = (seed * 2971) & 4095;

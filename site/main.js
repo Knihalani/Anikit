@@ -63,7 +63,7 @@ const depth = (p) => {
   return p <= a ? D0 * (DM / D0) ** ((p / a) ** 1.25) : DM * (DMIN / DM) ** ((p - a) / (1 - a));
 };
 
-let t = 0, exposure = 1.7;
+let t = 0, exposure = 2.4;
 const draw = (L, D, p) => {
   // Blue shift and aberration as the fall speeds up; time near the hole runs slow.
   const sb = 1 + 0.9 * p * p, sr = 1 - 0.45 * p * p;
@@ -125,8 +125,8 @@ const frame = (dt) => {
   const ms = performance.now() - t0;
   stats.ms = stats.ms * 0.9 + ms * 0.1; stats.last = ms; stats.w = F.lens.w; stats.h = F.lens.h; stats.band = F.band;
   // Adaptive resolution: once, early, while the hero is idle.
-  if (++frames < 90 && !gen && sy < 2) worst = Math.max(worst, frames > 20 ? stats.ms : 0);
-  if (frames === 90 && worst > 7.5) { budget = Math.round(budget * Math.min(0.8, 6 / worst)); alloc(); startBuild(bandFor(D)); }
+  // (EMA of the shading cost after warm-up; V8 and the GPU process settle first.)
+  if (++frames === 150 && !gen && sy < 2 && stats.ms > 8) { worst = stats.ms; budget = Math.round(budget * Math.min(0.8, 6 / worst)); alloc(); startBuild(bandFor(D)); while (gen && !gen.next().done); finishBuild(); }
 };
 
 // ---------------------------------------------------------------------------
