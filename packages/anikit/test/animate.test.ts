@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { animate, from, fromTo, set, stagger, engine, flush, FrameBuffer } from '../src/index';
 import { setup, advance, box } from './setup';
-import { _setCodegen, _setNumberTracks } from '../src/animate';
+import { _setCodegen, _setNumberTracks, _setCompactFmt } from '../src/animate';
 import { timeline } from '../src/timeline';
 import { _recordCount } from '../src/core';
 import { r3, s3 } from '../src/values';
@@ -204,6 +204,48 @@ describe('s3 (output number formatting)', () => {
       const v = (rnd() - 0.5) * Math.pow(10, (i % 12) - 3);
       if (s3(v) !== String(r3(v))) expect(s3(v)).toBe(String(r3(v)));
     }
+  });
+});
+
+describe('animate: formatted single-property path', () => {
+  // Parts writing one formatted plain property (colours, '12px', complex
+  // strings) skip the binding loop; same writes, same order, same skipping
+  // of unchanged values either way.
+  const run = (): unknown[] => {
+    const out: unknown[] = [];
+    const log: unknown[] = [];
+    const cols = Array.from({ length: 5 }, () => ({ c: '#ff0000' }));
+    const pxs = Array.from({ length: 5 }, (_, i) => ({ w: i + 'px' }));
+    const cx = [{ f: 'blur(0px) brightness(1)' }, { f: 'blur(2px) brightness(0.5)' }];
+    const setter = { get c() { return '#00ff00'; }, set c(v: string) { log.push(v); } };
+    let updates = 0;
+    const a = animate([...cols.slice(0, 2), setter, ...cols.slice(2)], { c: '#0000ff' }, { duration: 1, ease: 'linear' });
+    const b = animate(pxs, { w: '100px' }, { duration: 1, ease: 'outCubic', onUpdate: () => updates++ });
+    const c = animate(cx, { f: 'blur(8px) brightness(2)' }, { duration: 1, ease: 'linear' });
+    // Steps: the value repeats for whole frames, so unchanged writes are skipped.
+    const d = animate([{ s: 'a' }, setter], { c: ['#000000', '#ffffff'] }, { duration: 1, ease: 'steps(3)' });
+    const snap = () => out.push(JSON.stringify([cols, pxs, cx]), log.length, log[log.length - 1], updates);
+    advance(0.2); snap();
+    animate(cols[1], { c: '#00ff00' }, { duration: 0.5 }); // takes c over on one target mid-run
+    animate(pxs.slice(2), { w: ['5px', '7px'] }, { duration: 0.3, ease: 'linear' });
+    advance(0.2); snap();
+    a.seek(0.1); b.seek(0.9); flush(); snap();
+    advance(0.5); snap();
+    advance(1); snap();
+    for (const x of [a, b, c, d]) x.revert();
+    flush(); snap();
+    out.push(log.slice());
+    return out;
+  };
+  it('writes exactly what the binding loop writes', () => {
+    const prev = _setCompactFmt(false);
+    const general = run();
+    _setCompactFmt(true);
+    const fast = run();
+    _setCompactFmt(prev);
+    expect(fast).toEqual(general);
+    expect((general[general.length - 1] as unknown[]).length).toBeGreaterThan(3); // the setter was written to
+    expect(general[0]).not.toEqual(general[4]);
   });
 });
 

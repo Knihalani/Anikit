@@ -26,7 +26,7 @@ import { warn, didYouMean, describe, cssPropertyNames, suggest, warningsOn, chec
 import { stagger as staggerFn } from './stagger';
 import type { StaggerOptions } from './stagger';
 import type { OptionKeys } from './debug';
-import { Binding, bind, apply, custom, transformSlot, M_PROP, M_TRANSFORM, M_TRANSFORM2, M_STYLE_NUM, M_STYLE_FMT, M_VAR, M_CUSTOM } from './bind';
+import { Binding, bind, apply, custom, transformSlot, M_PROP, M_PROP_FMT, M_TRANSFORM, M_TRANSFORM2, M_STYLE_NUM, M_STYLE_FMT, M_VAR, M_CUSTOM } from './bind';
 import { pathData, PathSource, writeMorph, elementLength, morphSequence, transformPath } from './svg';
 import { parseTransform, toMatrix3d } from './scene';
 import { writeStr } from './wasm';
@@ -373,6 +373,15 @@ function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner] | null {
   }
 }
 
+/** `false`: formatted single-property Parts take the general binding loop (tests compare both). */
+let compactFmt = true;
+/** Testing hook: turn path 3 of `Part` off/on; returns the previous state. Applies to Parts prepared afterwards. */
+export function _setCompactFmt(on: boolean): boolean {
+  const prev = compactFmt;
+  compactFmt = on;
+  return prev;
+}
+
 /** Key/offset arrays (and their writer and runner) shared by Parts with the same property set (see `Part.prep`). */
 type Compact = [string[], Int32Array, Writer | null, Runner | null];
 const compactCache = new Map<string, Compact>();
@@ -411,13 +420,37 @@ class Part implements NodeRecord, Owner, Linked {
   pw: Writer | null = null;
   /** The writer's batch form, used by `flush` (see `makeWriter`). */
   run: Runner | null = null;
-  /** 0 = not checked yet, 1 = compact path, 2 = general path. */
+  /**
+   * One formatted plain property (`pm === 3`: colour, `'12px'`, complex
+   * strings on objects): its key, output offset, formatter and the value
+   * last written, copied from the binding so the frame loop touches the Part
+   * and the target only, not the bindings array and the Binding (at 50k
+   * targets those dependent loads were ~half of the frame). `last` is the
+   * binding's `ls` while this path is on and goes back to it on `release`.
+   */
+  pk1 = '';
+  po1 = 0;
+  pf: ((at: number) => string | number) | null = null;
+  last: unknown = undefined;
+  /** 0 = not checked yet, 1 = compact path, 2 = general path, 3 = one formatted property. */
   pm = 0;
   private prep(): void {
     const b = this.b;
     this.pm = 2;
     if (b.length === 0 || b.length > 16) return;
     const t = b[0].target;
+    if (b.length === 1 && compactFmt) {
+      const x = b[0];
+      if (x.on && x.mode === M_PROP_FMT) {
+        this.pt = t;
+        this.pk1 = x.key;
+        this.po1 = x.off;
+        this.pf = x.fmt;
+        this.last = x.ls;
+        this.pm = 3;
+        return;
+      }
+    }
     for (let i = 0; i < b.length; i++) {
       const x = b[i];
       if (!x.on || x.mode !== M_PROP || x.target !== t) return;
@@ -459,6 +492,19 @@ class Part implements NodeRecord, Owner, Linked {
         }
         return;
       }
+      if (this.pm === 3) {
+        // Same as `apply` for an M_PROP_FMT binding.
+        const v = this.pf!(at + this.po1);
+        if (v !== this.last) {
+          this.last = v;
+          this.pt[this.pk1] = v;
+        }
+        if (this.upd) {
+          const c = this.ctl;
+          if (c !== null) c._touch();
+        }
+        return;
+      }
     }
     const b = this.b;
     for (let i = 0; i < b.length; i++) {
@@ -492,6 +538,8 @@ class Part implements NodeRecord, Owner, Linked {
   }
   /** Another animation took `prop`: stop writing it. */
   release(prop: string): void {
+    // Hand the last written value back to the binding before leaving path 3.
+    if (this.pm === 3) this.b[0].ls = this.last;
     this.pm = 0; // re-check the compact path
     let live = 0;
     for (const x of this.b) {
