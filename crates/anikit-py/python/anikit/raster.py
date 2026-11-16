@@ -110,7 +110,7 @@ def _u32(a: Any, name: str) -> bytes:
 
 
 class Mesh:
-    """An immutable triangle mesh (positions, normals, UVs, triangles).
+    """A triangle mesh (positions, normals, UVs, triangles); change it in place with :meth:`update`.
 
     Build one with :func:`cube`, :func:`sphere`, :func:`torus`,
     :func:`torus_knot`, :func:`plane`, :func:`cylinder`, :func:`heightfield`
@@ -157,6 +157,32 @@ class Mesh:
     def indices(self) -> np.ndarray:
         """``(triangle_count, 3)`` uint32 vertex indices."""
         return np.frombuffer(self._native.indices(), np.uint32).reshape(-1, 3)
+
+    def update(self, positions: Any, normals: Any = None, uvs: Any = None) -> "Mesh":
+        """Change the geometry in place (parity with TypeScript ``mesh.update``):
+        new ``positions`` and optionally ``normals`` / ``uvs`` for the same
+        vertex count (the triangles stay), or another :class:`Mesh` to take
+        its geometry (any size). Returns ``self``."""
+        if isinstance(positions, Mesh):
+            self._native = positions._native
+            return self
+        nv = self.vertex_count
+        p = np.asarray(positions, dtype=np.float32).reshape(-1)
+        n = self.normals.reshape(-1) if normals is None else np.asarray(normals, dtype=np.float32).reshape(-1)
+        u = None if uvs is None else np.asarray(uvs, dtype=np.float32).reshape(-1)
+        for arr, k, name in ((p, 3, "position"), (n, 3, "normal"), (u, 2, "uv")):
+            if arr is not None and arr.size != nv * k:
+                raise ValueError(
+                    f"update() got {arr.size} {name} values, expected {nv * k} ({nv} vertices x {k}); "
+                    "pass a Mesh to change the vertex count"
+                )
+        if u is None and self.uvs.size:
+            u = self.uvs.reshape(-1)
+        self._native = NativeMesh.custom(
+            _f32(p, "positions"), _f32(n, "normals"), _u32(self.indices.reshape(-1), "indices"),
+            None if u is None else _f32(u, "uvs"),
+        )
+        return self
 
     def __repr__(self) -> str:
         return f"Mesh(vertices={self.vertex_count}, triangles={self.triangle_count})"
@@ -214,6 +240,7 @@ def tube(
     sides: int = 8,
     radii: Any = None,
     taper: Optional[Tuple[float, float]] = None,
+    into: Optional[Mesh] = None,
 ) -> Mesh:
     """An open tube along a path of points (light trails, energy streams,
     cables) with twist-free frames. ``u`` runs along it (0…1 by length, so a
@@ -223,7 +250,8 @@ def tube(
     ``path.points(200)`` of a :func:`flight_path`), at least two points.
     ``radii`` scales the radius per point (overrides ``taper``); ``taper=(a,
     b)`` scales it from ``a`` at the start to ``b`` at the end, eased with a
-    smoothstep (``(0, 1)`` for a comet). ``(n - 1) * sides * 2`` triangles::
+    smoothstep (``(0, 1)`` for a comet). ``into`` rebuilds into an existing
+    mesh (returned) instead of a new one. ``(n - 1) * sides * 2`` triangles::
 
         trail = raster.tube(path.points(200), radius=12, taper=(0, 1))
         raster.Item(trail, blend="additive", material=raster.Material(emissive=1, pulse=3, pulse_phase=t * 4))
@@ -241,9 +269,10 @@ def tube(
         rs = a + (b - a) * (k * k * (3 - 2 * k))
     else:
         rs = None
-    return Mesh(
+    m = Mesh(
         NativeMesh.tube(_f32(pts, "points"), None if rs is None else _f32(rs, "radii"), float(radius), int(sides))
     )
+    return into.update(m) if into is not None else m
 
 
 def heightfield(

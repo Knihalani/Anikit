@@ -1101,6 +1101,38 @@ impl Raster {
         self.clip.resize(total, [0.0; 4]);
         self.var.resize(total, [0.0; NV]);
         self.sv.resize(total, Sv::default());
+        if blend == Blend::DepthOnly {
+            // Depth only (shadow maps): rasterising reads screen x, y and z, never the
+            // varyings, so skip normals, UVs and the perspective-divided attributes.
+            // The clip coordinates and screen positions are computed exactly as below.
+            let (hw, hh) = (self.width as f32 * 0.5, self.height as f32 * 0.5);
+            for oi in 0..count {
+                let ii = self.order[oi] as usize;
+                let m = &instances[ii * INSTANCE_STRIDE..ii * INSTANCE_STRIDE + 12];
+                let off = oi * nv;
+                for (v, p) in mesh.pos.chunks_exact(3).enumerate() {
+                    let (px, py, pz) = (p[0], p[1], p[2]);
+                    let wx = m[0] * px + m[3] * py + m[6] * pz + m[9];
+                    let wy = m[1] * px + m[4] * py + m[7] * pz + m[10];
+                    let wz = m[2] * px + m[5] * py + m[8] * pz + m[11];
+                    let c = [
+                        vp[0] * wx + vp[4] * wy + vp[8] * wz + vp[12],
+                        vp[1] * wx + vp[5] * wy + vp[9] * wz + vp[13],
+                        vp[2] * wx + vp[6] * wy + vp[10] * wz + vp[14],
+                        vp[3] * wx + vp[7] * wy + vp[11] * wz + vp[15],
+                    ];
+                    self.clip[off + v] = c;
+                    if c[2] >= -c[3] && c[3] > 0.0 {
+                        let q = 1.0 / c[3];
+                        self.sv[off + v] = Sv { x: hw + c[0] * q * hw, y: hh - c[1] * q * hh, z: c[2] * q, q, a: [0.0; NV] };
+                    }
+                }
+            }
+            for oi in 0..count {
+                self.tris::<DEPTH>(mesh, oi * nv, cull_back, &sh);
+            }
+            return;
+        }
         for oi in 0..count {
             let ii = self.order[oi] as usize;
             let m = &instances[ii * INSTANCE_STRIDE..ii * INSTANCE_STRIDE + 12];
@@ -1340,8 +1372,20 @@ impl Raster {
             // Depth along the span is evaluated as z0 + dz·k in every mode, so a
             // pre-pass and the shading pass agree bit for bit.
             if MODE == DEPTH {
-                for (k, dp) in self.depth[a0..=a1].iter_mut().enumerate() {
-                    let z = z0 + dz * k as f32;
+                // Four at a time (the lane values equal the scalar z0 + dz·k: k + l is
+                // exact in f32), then the tail.
+                let span = &mut self.depth[a0..=a1];
+                let (zv0, dzv, lanes) = (V4::splat(z0), V4::splat(dz), V4::new(0.0, 1.0, 2.0, 3.0));
+                let mut k = 0;
+                while k + 4 <= span.len() {
+                    let zv = zv0 + dzv * (V4::splat(k as f32) + lanes);
+                    let d4 = &mut span[k..k + 4];
+                    let dv = V4::new(d4[0], d4[1], d4[2], d4[3]);
+                    d4.copy_from_slice(&V4::select(zv.lt(dv), zv, dv).to_array());
+                    k += 4;
+                }
+                for (kk, dp) in span[k..].iter_mut().enumerate() {
+                    let z = z0 + dz * (k + kk) as f32;
                     if z < *dp {
                         *dp = z;
                     }
@@ -3146,6 +3190,43 @@ mod tests {
                 }
             }
             assert!(lit > 50 && lit < n * n * 3 / 4, "pattern {kind}: {lit}");
+        }
+    }
+
+    #[test]
+    fn depth_only_matches_the_opaque_depth() {
+        // The depth-only path (shadow maps) skips the varyings and fills spans four at a
+        // time: its depth must equal an opaque draw's, also through near-plane clipping
+        // (the camera sits inside the torus) and at odd sizes (span tails).
+        for (w, h, eye) in [(81usize, 63usize, [0.0, 0.3, 0.0]), (64, 64, [0.0, 3.0, 5.0]), (33, 18, [0.4, 0.0, 0.2])] {
+            let m = mul(&perspective(70.0, w as f64 / h as f64, 0.1, 50.0), &look_at(eye, [1.0, 0.0, -1.0], [0.0, 1.0, 0.0]));
+            let vp: M4 = core::array::from_fn(|i| m[i] as f32);
+            let ti = [1.0f32, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0];
+            let tor = torus(1.0, 0.45, 40, 16);
+            let mut a = Raster::new(w, h);
+            a.clear(0, 255);
+            a.draw_with(&tor, &ti, &vp, eye.map(|x| x as f32), &Material::default(), &Lighting::default(), false, Blend::DepthOnly, None);
+            let mut b = Raster::new(w, h);
+            b.clear(0, 255);
+            b.draw_with(&tor, &ti, &vp, eye.map(|x| x as f32), &Material::default(), &Lighting::default(), false, Blend::Opaque, None);
+            assert!(a.depth.iter().any(|z| z.is_finite()), "{w}x{h}: nothing drawn");
+            assert!(a.depth.iter().zip(&b.depth).all(|(x, y)| x.to_bits() == y.to_bits()), "{w}x{h}: depth differs");
+        }
+    }
+
+    #[test]
+    fn nan_vertices_draw_nothing_and_do_not_poison_depth() {
+        let m = mul(&perspective(60.0, 1.0, 0.5, 100.0), &look_at([0.0, 0.0, 5.0], [0.0; 3], [0.0, 1.0, 0.0]));
+        let vp: M4 = core::array::from_fn(|i| m[i] as f32);
+        let mut bad = cube();
+        bad.pos[0] = f32::NAN;
+        bad.pos[4] = f32::INFINITY;
+        let inst = [1.0f32, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0];
+        for blend in [Blend::Opaque, Blend::DepthOnly, Blend::Additive] {
+            let mut r = Raster::new(32, 32);
+            r.clear(0, 255);
+            r.draw_with(&bad, &inst, &vp, [0.0, 0.0, 5.0], &Material::default(), &Lighting::default(), true, blend, None);
+            assert!(r.depth.iter().all(|z| !z.is_nan()), "{blend:?}: NaN in depth");
         }
     }
 

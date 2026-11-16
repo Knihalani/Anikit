@@ -1918,6 +1918,18 @@ pub extern "C" fn ak_mesh_bounds(id: u32) -> u32 {
     }
     1
 }
+/// Move mesh `src`'s geometry into mesh `dst` (its id stays valid) and free `src`.
+/// Returns 0 when either id is not a live mesh, or they are the same.
+#[no_mangle]
+pub extern "C" fn ak_mesh_replace(dst: u32, src: u32) -> u32 {
+    let s = st();
+    if dst == src || !matches!(s.meshes.get(dst as usize), Some(Some(_))) {
+        return 0;
+    }
+    let Some(m) = s.meshes.get_mut(src as usize).and_then(|m| m.take()) else { return 0 };
+    s.meshes[dst as usize] = Some(m);
+    1
+}
 #[no_mangle]
 pub extern "C" fn ak_mesh_free(id: u32) {
     if let Some(m) = st().meshes.get_mut(id as usize) {

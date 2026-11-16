@@ -523,7 +523,7 @@ export class Composition {
       churn = made > 0 ? churn + 1 : 0;
       if (churn >= 3 && !churnWarned) {
         churnWarned = true;
-        warn(`composition: scene "${act.map((s) => s.name).join('" / "')}" creates ${made} mesh${made === 1 ? '' : 'es'} or instance buffers in every draw(). Create them once, outside draw(), and update them in place (instances.set(i, …)): each one stays in memory for the whole render.`);
+        warn(`composition: scene "${act.map((s) => s.name).join('" / "')}" creates ${made} mesh${made === 1 ? '' : 'es'} or instance buffers in every draw(). Create them once, outside draw(), and update them in place (instances.set(i, …), mesh.update(positions), mesh.tube(points, { into })), or free() the previous mesh: each mesh stays in WebAssembly memory until freed.`);
       }
     };
     const paintFrame = (t: number, f: number, act: SceneDef[]) => {

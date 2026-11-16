@@ -77,7 +77,56 @@ export class Mesh3D {
   get triangles(): number {
     return core().ak_mesh_ptr(this.id, 4);
   }
+  /** True once `free()` was called: the mesh can't be drawn or updated any more. */
+  get freed(): boolean {
+    return this.dead;
+  }
+  private dead = false;
+  /**
+   * Change the geometry in place, without creating a mesh: new `positions`
+   * (xyz per vertex), and optionally `normals` and `uvs`, for the same vertex
+   * count (the triangles stay). Or pass another mesh to take its geometry
+   * (any size; that mesh is freed). Animate custom geometry this way inside
+   * `draw()` instead of creating a mesh per frame.
+   *
+   * ```ts
+   * const sheet = mesh.custom(pos, nrm, idx);
+   * // per frame: move the vertices, then
+   * sheet.update(pos, nrm);
+   * // or rebuild a tube along new points (same as mesh.tube(pts, { into: hair })):
+   * hair.update(mesh.tube(pts, { radius: 0.3 }));
+   * ```
+   */
+  update(positions: ArrayLike<number> | Mesh3D, normals?: ArrayLike<number>, uvs?: ArrayLike<number>): this {
+    if (this.dead) throw new Error('anikit: mesh.update() on a freed mesh');
+    const w = core();
+    if (positions instanceof Mesh3D) {
+      if (positions === this) return this;
+      if (positions.dead) throw new Error('anikit: mesh.update(other) got a freed mesh');
+      w.ak_mesh_replace(this.id, positions.id);
+      positions.dead = true;
+      created.meshes--;
+      boundsCache.delete(this);
+      return this;
+    }
+    const nv = w.ak_mesh_ptr(this.id, 3);
+    const check = (a: ArrayLike<number> | undefined, k: number, name: string) => {
+      if (a && a.length !== nv * k) throw new Error(`anikit: mesh.update() got ${a.length} ${name} values, expected ${nv * k} (${nv} vertices × ${k}); pass a mesh to change the vertex count`);
+    };
+    check(positions, 3, 'position'); check(normals, 3, 'normal'); check(uvs, 2, 'uv');
+    const mem = W!.memory.buffer;
+    new Float32Array(mem, w.ak_mesh_ptr(this.id, 0), nv * 3).set(positions);
+    if (normals) new Float32Array(mem, w.ak_mesh_ptr(this.id, 1), nv * 3).set(normals);
+    if (uvs) new Float32Array(mem, w.ak_mesh_ptr(this.id, 5), nv * 2).set(uvs);
+    boundsCache.delete(this);
+    return this;
+  }
+  /** Release the geometry (safe to call twice: the slot may already hold another mesh). */
   free(): void {
+    if (this.dead) return;
+    this.dead = true;
+    created.meshes--;
+    boundsCache.delete(this);
     core().ak_mesh_free(this.id);
   }
 }
@@ -138,6 +187,8 @@ export const mesh = {
     radii?: ArrayLike<number>;
     /** Radius scale at the start and end, eased along the tube (e.g. `[0, 1]` for a comet). */
     taper?: [number, number];
+    /** Rebuild into this mesh instead of creating one (animated tubes inside `draw()`). */
+    into?: Mesh3D;
   } = {}): Mesh3D {
     const flat: number[] = Array.isArray(points[0]) ? (points as [number, number, number][]).flat() : Array.from(points as ArrayLike<number>);
     const n = Math.floor(flat.length / 3);
@@ -145,7 +196,13 @@ export const mesh = {
     const vals = [n, o.radius ?? 10, o.sides ?? 8, radii ? 1 : 0, ...flat.slice(0, n * 3), ...(radii ?? [])];
     const at = f64Buf(vals.length);
     F64.set(vals, at);
-    return new Mesh3D(core().ak_mesh_builtin(7));
+    const id = core().ak_mesh_builtin(7);
+    if (o.into && !o.into.freed) {
+      core().ak_mesh_replace(o.into.id, id);
+      boundsCache.delete(o.into);
+      return o.into;
+    }
+    return new Mesh3D(id);
   },
   /** Capped cylinder, radius 1, height 1 (Y −0.5…0.5). `u` runs around, `v` along. */
   cylinder: (segments = 32, caps = true) => builtin(5, [segments, caps ? 1 : 0]),
@@ -507,6 +564,7 @@ export class Renderer3D {
     scene.width = sw; scene.height = sh;
     this.triangles = 0;
     const drawMesh = (it: DrawItem, mat: number[], ey: number[], extra: number, gloss = 0.5) => {
+      if (it.mesh.freed) return; // its slot may already hold another mesh
       const inst = it.instances ?? this.single;
       const ptr = w.ak_raster_instances(this.id, inst.count);
       new Float32Array(W!.memory.buffer, ptr, inst.count * STRIDE).set(inst.data.subarray(0, inst.count * STRIDE));
@@ -559,6 +617,7 @@ export class Renderer3D {
     const pointLights: number[] = [pls.length];
     for (const pl of pls) pointLights.push(...pl.position, ...rgb(pl.color), pl.radius ?? 500, pl.intensity ?? 1);
     if (o.shadows) {
+      pass('setup');
       // Orthographic light camera looking along −key at the centre.
       const sh = o.shadows, e = sh.extent;
       const k = o.key ?? [0.4, 0.8, 0.6], kl = Math.hypot(k[0], k[1], k[2]) || 1, d = [k[0] / kl, k[1] / kl, k[2] / kl];
@@ -585,12 +644,13 @@ export class Renderer3D {
       F64.set(lvp, at);
       w.ak_raster_shadow_begin(this.id, sh.size ?? 2048, sh.bias ?? 0.0015, sh.strength ?? 0.8);
       for (const it of meshes) {
-        if (it.castShadow === false || it.blend === 'additive' || it.mirror) continue;
+        if (it.castShadow === false || it.blend === 'additive' || it.mirror || it.mesh.freed) continue;
         const inst = it.instances ?? this.single;
         const ptr = w.ak_raster_instances(this.id, inst.count);
         new Float32Array(W!.memory.buffer, ptr, inst.count * STRIDE).set(inst.data.subarray(0, inst.count * STRIDE));
         w.ak_raster_shadow_draw(this.id, it.mesh.id, inst.count);
       }
+      pass('shadow');
     }
     pass('setup');
     const light = (it: DrawItem | PointsItem) => 'points' in it || it.blend === 'additive';
