@@ -141,7 +141,27 @@ export function createHall(canvas, overlayEl) {
   gl.bindVertexArray(null);
 
   const st = { ready: false, active: false, near: -1 };
-  ready.then(() => { demos.start(); st.ready = true; });
+  ready.then(() => {
+    demos.start(); st.ready = true;
+    // warm each exhibit once (JIT, first uploads, first draws), one per idle slot so the
+    // warm-up itself never makes a long task
+    const views = [[4.2, 9.5, 0], [-2.6, -3.2, 1.45], [2.4, -3.2, -1.57], [0, -9.5, 0], [0, -18, 0]];
+    let k = 0;
+    const idle = globalThis.requestIdleCallback || ((f) => setTimeout(f, 16));
+    const step = () => {
+      if (k >= views.length || st.active) return;
+      const [x, z, yaw] = views[k++];
+      const ex = cam.eye[0], ey = cam.eye[1], ez = cam.eye[2], yw = cam.yaw, pt = cam.pitch;
+      cam.eye[0] = x; cam.eye[1] = 1.7; cam.eye[2] = z; cam.yaw = yaw; cam.pitch = 0.05;
+      updateCamera(cam);
+      for (let i = 0; i < 3; i++) demos.update(time, 1 / 60, x, z, true);
+      if (rtScene) render();
+      demos.update(time, 1 / 60, 0, 99, false);
+      cam.eye[0] = ex; cam.eye[1] = ey; cam.eye[2] = ez; cam.yaw = yw; cam.pitch = pt;
+      idle(step);
+    };
+    idle(step);
+  });
 
   // ---------- controls & HUD ----------
   const ctl = createControls(canvas, overlayEl, {
@@ -186,6 +206,7 @@ export function createHall(canvas, overlayEl) {
     if (u.uTime) gl.uniform1f(u.uTime, time);
     if (u.uPx) gl.uniform1f(u.uPx, pxScale);
     if (u.uPool) gl.uniform4fv(u.uPool, POOLS);
+    if (u.uGlassL) gl.uniform4fv(u.uGlassL, demos.glassLight);
   }
 
   let time = 0, baseFov = 1.12;
@@ -194,8 +215,8 @@ export function createHall(canvas, overlayEl) {
   function updatePools() {
     for (let i = 0; i < ST.length; i++) {
       POOLS[i * 4] = ST[i].x; POOLS[i * 4 + 1] = ST[i].z;
-      POOLS[i * 4 + 2] = 2.6;
-      POOLS[i * 4 + 3] = ST[i].pool * (0.45 + 0.65 * wake[i].v);
+      POOLS[i * 4 + 2] = ST[i].spot || 2.4;
+      POOLS[i * 4 + 3] = ST[i].pool * (0.7 + 0.5 * wake[i].v);
     }
   }
   // safety net for weak GPUs: if frames stay slow, drop the mirror pass (not the resolution)
@@ -369,6 +390,7 @@ export function createHall(canvas, overlayEl) {
   const api = {
     _ctl: ctl,
     _quality: quality,
+    _demos: demos,
     resize(cssW, cssH, dpr) {
       // native resolution (DPR capped at 2): the budget is earned by technique, not pixels
       const d = Math.min(dpr || 1, 2);

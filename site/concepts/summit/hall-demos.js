@@ -19,11 +19,11 @@ const PLAIN = 0, METAL = 6, WALNUT = 10, LACQUER = 12, GLASS = 14;
 const BRONZE = [0.78, 0.55, 0.32], WOOD = [0.42, 0.29, 0.2], STEEL = [0.2, 0.2, 0.22];
 
 export const STATIONS = [
-  { id: 'curtain', name: 'Bead curtain', feature: 'world() · 41 ropes, 902 beads', hint: 'Walk through it · E for a gust', x: 0, z: 5, r: 3.0, ring: 0, pool: 0.5 },
-  { id: 'fireflies', name: 'Fireflies', feature: 'spring() swarm · 2,500 lights', hint: 'They follow your gaze · E to scatter', x: -4.9, z: -3.2, r: 3.6, ring: 0, pool: 0 },
-  { id: 'glass', name: 'Glass', feature: 'timeline() seek · 420 shards', hint: 'Walk in to assemble, back away to shatter · wheel scrubs · E', x: 4.7, z: -3.2, r: 5.2, ring: 1.25, pool: 0.9 },
-  { id: 'sand', name: 'Sandfall', feature: '200,000 points · spring repulsion', hint: 'Walk into it · E to burst', x: 0, z: -14, r: 3.4, ring: 2.65, pool: 0.6 },
-  { id: 'pins', name: 'Pin wall', feature: 'batch() + stagger · 1,008 pins', hint: 'Come closer · E sends a ripple', x: 0, z: -23, r: 5.5, ring: 0, pool: 0.7 },
+  { id: 'curtain', name: 'Bead forest', feature: 'world() · 48 ropes, 816 beads', hint: 'Walk through it · E for a gust', x: 4.2, z: 5.1, r: 3.8, ring: 0, pool: 1.2, spot: 3.4 },
+  { id: 'fireflies', name: 'Fireflies', feature: 'spring() swarm · 2,500 lights', hint: 'They follow your gaze · E to scatter', x: -4.9, z: -3.2, r: 3.6, ring: 0, pool: 0, spot: 2 },
+  { id: 'glass', name: 'Glass', feature: 'timeline() seek · 420 shards', hint: 'Walk in to assemble, back away to shatter · wheel scrubs · E', x: 4.7, z: -3.2, r: 5.2, ring: 1.25, pool: 1.3, spot: 1.9 },
+  { id: 'sand', name: 'Sandfall', feature: '200,000 points · spring repulsion', hint: 'Walk into it · E to burst', x: 0, z: -14, r: 3.4, ring: 2.65, pool: 1.4, spot: 3.0 },
+  { id: 'pins', name: 'Pin wall', feature: 'batch() + stagger · 1,008 pins', hint: 'Come closer · E sends a ripple', x: 0, z: -26.2, r: 8.5, ring: 0, pool: 1.2, spot: 5.0 },
 ];
 
 // ---------------- shaders for the two point systems ----------------
@@ -33,23 +33,31 @@ layout(location=0) in vec4 aS;
 uniform mat4 uVP; uniform float uMirror; uniform float uTime; uniform float uPx;
 uniform vec3 uC1; uniform vec3 uC2; uniform vec3 uShockC; uniform float uShock; uniform float uSpread;
 out vec3 vC; out float vA;
+// a murmuration: seven sub-flocks loop around the swarm centre on their own paths;
+// each firefly trails its sub-flock leader by a little time, so they stream in ribbons
+vec3 lead(float f, float t) {
+  return vec3(sin(t * 0.61 + f * 1.7) * 1.3 + sin(t * 1.13 + f * 4.1) * 0.35,
+              sin(t * 0.83 + f * 2.3) * 0.55,
+              cos(t * 0.57 + f * 2.9) * 1.3 + cos(t * 1.31 + f * 1.3) * 0.35);
+}
 void main() {
-  float a = uTime * (0.35 + 0.7 * aS.y) + aS.x * 6.2832;
-  float b = uTime * (0.25 + 0.5 * aS.z) + aS.w * 6.2832;
-  float r = (0.35 + 1.5 * pow(aS.z, 0.7)) * uSpread;
-  vec3 c = mix(uC1, uC2, aS.w);
-  vec3 p = c + vec3(cos(a) * cos(b), sin(b) * 0.6, sin(a) * cos(b)) * r;
-  p += 0.22 * vec3(sin(uTime * 1.7 + aS.x * 40.0), sin(uTime * 1.3 + aS.y * 31.0), sin(uTime * 1.1 + aS.z * 23.0));
+  float f = floor(aS.x * 7.0);
+  float lag = aS.y * 1.4;
+  vec3 c = mix(uC1, uC2, aS.y);
+  vec3 p = c + lead(f, uTime - lag) * uSpread;
+  float a = uTime * (1.2 + 1.5 * aS.z) + aS.w * 6.2832;
+  float rr = 0.06 + 0.22 * aS.z * aS.z;
+  p += vec3(cos(a), sin(a * 1.3) * 0.6, sin(a)) * rr;
   vec3 d = p - uShockC;
   float l = length(d) + 1e-3;
-  p += d / l * uShock * (1.6 + 3.2 * aS.y);
+  p += d / l * uShock * (1.4 + 3.0 * aS.w);
   p.y = max(p.y, 0.25);
   vec4 cp = uVP * vec4(p.x, p.y * uMirror, p.z, 1.0);
   gl_Position = cp;
-  gl_PointSize = clamp(uPx * 0.05 / cp.w, 2.0, 18.0);
-  float bl = 0.5 + 0.5 * sin(uTime * (1.5 + 2.5 * aS.x) + aS.y * 50.0);
-  vA = 0.15 + 0.85 * bl * bl * bl;
-  vC = mix(vec3(1.0, 0.82, 0.35), vec3(0.55, 1.0, 0.75), step(0.82, aS.y));
+  gl_PointSize = clamp(uPx * 0.022 / cp.w, 1.5, 7.0);
+  float bl = 0.5 + 0.5 * sin(uTime * (1.5 + 2.5 * aS.z) + aS.w * 50.0);
+  vA = 0.25 + 0.75 * bl * bl;
+  vC = mix(vec3(1.0, 0.72, 0.28), vec3(0.6, 1.0, 0.55), step(0.86, aS.w)) * 0.75;
 }`;
 const FF_FS = /* glsl */ `#version 300 es
 precision mediump float;
@@ -58,7 +66,7 @@ void main() {
   vec2 q = gl_PointCoord * 2.0 - 1.0;
   float r = dot(q, q);
   if (r > 1.0) discard;
-  float g = exp(-r * 9.0) * 1.6 + exp(-r * 2.5) * 0.25;
+  float g = exp(-r * 7.0) + exp(-r * 2.0) * 0.12;
   o = vec4(vC * g * vA, 0.0);
 }`;
 
@@ -67,32 +75,48 @@ layout(location=0) in vec4 aS;
 uniform mat4 uVP; uniform float uMirror; uniform float uTime; uniform float uPx; uniform vec3 uEye; uniform vec3 uFog;
 uniform vec3 uC; uniform vec2 uP; uniform float uPart; uniform float uBurst;
 out vec3 vC; out float vFog;
+float h1(float n) { return fract(sin(n * 127.1) * 43758.5453); }
 void main() {
-  float ph = fract(uTime * (0.16 + 0.06 * aS.w) + aS.x);
   float top = 11.7;
-  float y = top * (1.0 - (0.62 * ph + 0.38 * ph * ph));
-  float sy = aS.y - 0.5, sz = (aS.z - 0.5) * (aS.z - 0.5) * sign(aS.z - 0.5) * 2.0;
-  vec3 p = vec3(uC.x + sy * 2.8 * (1.0 + ph * 0.15), y, uC.z + sz * 0.45 * (1.0 + ph * 0.8));
-  // part around the player: a soft cylinder, body height
+  vec3 p;
+  float bright;
+  vec2 o;
+  if (aS.w < 0.82) {
+    // falling streams: 26 ropes of sand of varying width and weight
+    float sid = floor(aS.y * 26.0);
+    float sx = (sid + 0.5) / 26.0 - 0.5 + (h1(sid) - 0.5) * 0.03;
+    float wdt = 0.012 + 0.05 * h1(sid + 7.0);
+    float rate = 0.15 + 0.08 * h1(sid + 3.0);
+    float ph = fract(uTime * rate + aS.x);
+    float y = top * (1.0 - (0.55 * ph + 0.45 * ph * ph));
+    float spread = 1.0 + ph * 0.5;
+    p = vec3(uC.x + sx * 2.9 + (aS.z - 0.5) * wdt * 6.0 * spread, y, uC.z + (h1(sid + 11.0) - 0.5) * 0.5 + (fract(aS.z * 13.7) - 0.5) * wdt * 4.0 * spread);
+    // density bands sliding down the streams
+    bright = 0.65 + 0.55 * smoothstep(0.4, 1.0, sin(ph * 40.0 + sid * 3.0)) + 0.4 * h1(sid + 5.0);
+  } else {
+    // the splash cloud: arcs thrown up and out at the base
+    float ph = fract(uTime * 0.7 + aS.x);
+    float ang = aS.y * 6.2832;
+    float sp = 0.4 + 1.2 * aS.z;
+    o = vec2(cos(ang), sin(ang) * 0.45);
+    p = vec3(uC.x + (aS.y - 0.5) * 2.9 + o.x * sp * ph, max(0.03, (2.2 * ph - 2.6 * ph * ph) * (0.4 + 0.6 * aS.z)), uC.z + o.y * sp * ph);
+    bright = 0.9 * (1.0 - ph);
+  }
+  // part around the player: a soft cylinder at body height
   vec2 d = p.xz - uP;
   float l = length(d) + 1e-4;
   float R = 0.62 * uPart;
-  float push = R * exp(-(l * l) / (R * R + 0.02)) * smoothstep(2.3, 1.6, p.y);
-  p.xz += d / l * push * 1.6;
-  // splash at the bottom
-  float lo = 1.0 - smoothstep(0.0, 0.45, p.y);
-  vec2 o = p.xz - uC.xz;
-  p.xz += normalize(o + vec2(1e-3)) * lo * (0.4 + 1.6 * aS.w) * 0.45;
-  p.y = max(p.y, 0.03 + 0.12 * aS.w * lo);
-  // burst
-  vec3 bd = normalize(vec3(o.x, 0.6 + aS.w, o.y) + 0.001);
+  p.xz += d / l * R * exp(-(l * l) / (R * R + 0.02)) * smoothstep(2.3, 1.6, p.y) * 1.6;
+  vec2 oc = p.xz - uC.xz;
+  vec3 bd = normalize(vec3(oc.x, 0.6 + aS.w, oc.y) + 0.001);
   p += bd * uBurst * (1.0 + 3.0 * aS.w) * (0.5 + 0.5 * sin(aS.x * 40.0));
   vec4 cp = uVP * vec4(p.x, p.y * uMirror, p.z, 1.0);
   gl_Position = cp;
-  gl_PointSize = clamp(uPx * (0.011 + 0.01 * aS.w) / cp.w, 1.0, 5.0);
-  float sp = pow(fract(aS.x * 91.7 + uTime * 0.6), 24.0);
-  vec3 c = mix(vec3(1.0, 0.76, 0.38), vec3(0.92, 0.48, 0.2), aS.w * aS.w) * (0.85 + 0.25 * aS.z) + vec3(1.0, 0.95, 0.8) * sp * 1.4;
-  vC = c * (0.62 + 0.5 * uBurst);
+  gl_PointSize = clamp(uPx * (0.012 + 0.01 * aS.z) / cp.w, 1.0, 4.5);
+  float sp = pow(fract(aS.x * 91.7 + uTime * 0.6), 30.0);
+  vec3 c = mix(vec3(1.0, 0.74, 0.36), vec3(0.95, 0.5, 0.22), aS.z * aS.z) * bright;
+  c *= 0.75 + 0.5 * smoothstep(4.0, 0.0, p.y);       // warmer, brighter in the spotlight near the base
+  vC = (c + vec3(1.0, 0.95, 0.8) * sp * 1.2) * (0.6 + 0.5 * uBurst);
   vFog = (1.0 - exp(-length(uEye - p) * 0.014)) * 0.7;
 }`;
 const SAND_FS = /* glsl */ `#version 300 es
@@ -125,67 +149,84 @@ export function createDemos(ctx) {
   // =====================================================================
   // 1. Bead curtain — world() ropes
   // =====================================================================
-  const CZ = 5, CX0 = -6.4, CTOP = 6.6, STR = 41, SEG = 21;
-  const NBEAD = STR * (SEG + 1);
+  // four rows of strands make a 5 × 5 m block of beads in the front-right bay; each row
+  // is its own strip of one world(), with your body as four kinematic circles in it
+  const ROWS = 4, STR = 12, SEG = 16, CX0 = 2.1, CTOP = 6.3, SPX = 0.38, LINK = 0.36;
+  const ROWZ = [2.6, 4.25, 5.9, 7.55];
+  const NBEAD = ROWS * STR * (SEG + 1);
   const beads = group(gl, sphLo, NBEAD);
-  const strings = group(gl, cube, STR * SEG);
+  const strings = group(gl, cube, ROWS * STR * SEG);
   let cw = null, beadFirst = 0, playerFirst = 0;
   const beadZ = new Float32Array(NBEAD);
-  box(ctx.archBox, 0, CTOP + 0.06, CZ, 13.4, 0.12, 0.14, METAL + 0.6, ...BRONZE);
+  const CXW = (STR - 1) * SPX;
+  for (const z of ROWZ) box(ctx.archBox, CX0 + CXW / 2, CTOP + 0.06, z, CXW + 0.5, 0.1, 0.12, METAL + 0.6, ...BRONZE);
+  for (const x of [CX0 - 0.3, CX0 + CXW + 0.3]) {
+    box(ctx.archBox, x, CTOP + 0.16, (ROWZ[0] + ROWZ[3]) / 2, 0.14, 0.14, ROWZ[3] - ROWZ[0] + 0.5, METAL + 0.6, ...BRONZE);
+    for (const z of [ROWZ[0] - 0.25, ROWZ[3] + 0.25]) box(ctx.archBox, x, (CTOP + 0.2) / 2, z, 0.12, CTOP + 0.2, 0.12, METAL + 0.6, ...BRONZE, 0, true);
+  }
   let gustT = 0;
   function initCurtain() {
     cw = world({ gravity: [0, 980], bounds: false, damping: 0.6, substeps: 4, iterations: 3, restitution: 0.1, friction: 0.2 });
     playerFirst = cw.add(-900, 0, 26, 0);
-    for (let k = 1; k < 4; k++) cw.add(-900, 0, 26, 0);
-    for (let s = 0; s < STR; s++) {
-      const x = s * 32;
-      const idx = cw.rope([[x, 0], [x, SEG * 28]], { segments: SEG, radius: 4, pinStart: true, stiffness: 1 });
-      if (s === 0) beadFirst = idx[0];
+    for (let k = 1; k < ROWS * 4; k++) cw.add(-900, 0, 26, 0);
+    for (let r = 0; r < ROWS; r++) for (let s = 0; s < STR; s++) {
+      const x = r * 1000 + s * SPX * 100;
+      const idx = cw.rope([[x, 0], [x, SEG * LINK * 100]], { segments: SEG, radius: 4, pinStart: true, stiffness: 1 });
+      if (r === 0 && s === 0) beadFirst = idx[0];
     }
   }
   const PY = [0.45, 0.9, 1.35, 1.75];
   function updateCurtain(t, dt, px, pz, active) {
     if (!cw) return;
-    const near = active && Math.abs(pz - CZ) < 0.42;
-    for (let k = 0; k < 4; k++) {
-      if (near) cw.setPosition(playerFirst + k, (px - CX0) * 100, (CTOP - PY[k]) * 100);
-      else cw.setPosition(playerFirst + k, -900, k * 60);
+    for (let r = 0; r < ROWS; r++) {
+      const near = active && Math.abs(pz - ROWZ[r]) < 0.42;
+      for (let k = 0; k < 4; k++) {
+        if (near) cw.setPosition(playerFirst + r * 4 + k, r * 1000 + (px - CX0) * 100, (CTOP - PY[k]) * 100);
+        else cw.setPosition(playerFirst + r * 4 + k, -900 - r * 300, k * 60);
+      }
     }
     gustT -= dt;
-    if (gustT <= 0) { gustT = 1.6 + rnd() * 2; cw.impulse(rnd() * 1280, 300 + rnd() * 250, 220, 60); }
-    if (!sees(cam, 0, 3.4, CZ, 7.5)) { beads.visible = strings.visible = false; return; }
+    if (gustT <= 0) { gustT = 1.4 + rnd() * 1.8; cw.impulse(((rnd() * ROWS) | 0) * 1000 + rnd() * CXW * 100, 250 + rnd() * 250, 200, 55); }
+    if (!sees(cam, CX0 + CXW / 2, 3.2, 5.1, 5.5)) { beads.visible = strings.visible = false; return; }
     beads.visible = strings.visible = true;
     const d = cw.data;
-    const side = pz > CZ ? -1 : 1;
     const wk = wake[0].v;
     beads.count = NBEAD;
-    strings.count = STR * SEG;
     let si = 0;
-    for (let s = 0; s < STR; s++) {
-      for (let k = 0; k <= SEG; k++) {
-        const i = s * (SEG + 1) + k, b = (beadFirst + i) * 3;
-        const x = CX0 + d[b] / 100, y = CTOP - d[b + 1] / 100;
-        // a soft depth bulge away from the body, eased per bead
-        const dx = x - px, dy = y - 1.1;
-        const want = near || Math.abs(pz - CZ) < 1.2 ? side * 0.55 * Math.exp(-(dx * dx) / 0.35 - (dy * dy) / 1.6) * clamp(1.4 - Math.abs(pz - CZ), 0, 1) : 0;
-        beadZ[i] += (want - beadZ[i]) * Math.min(1, dt * 10);
-        const z = CZ + beadZ[i];
-        const h = k / SEG;
-        const sc = k === 0 ? 0.03 : 0.062 + 0.012 * ((s + k) % 3);
-        beads.put(i, x, y, z, 0, sc, sc, sc, LACQUER + 0.95,
-          1.0, 0.62 + 0.25 * h, 0.22 + 0.45 * h, 0.04 + 0.25 * wk * h);
-        if (k > 0) {
-          const pb = b - 3;
-          const x0 = CX0 + d[pb] / 100, y0 = CTOP - d[pb + 1] / 100;
-          const ex = x - x0, ey = y - y0, len = Math.hypot(ex, ey);
-          strings.put(si++, (x + x0) / 2, (y + y0) / 2, CZ + (beadZ[i] + beadZ[i - 1]) / 2, 0, 0.007, len, 0.007, METAL + 0.5,
-            0.75, 0.6, 0.4, 0, 0, Math.atan2(-ex, ey));
+    for (let r = 0; r < ROWS; r++) {
+      const rz = ROWZ[r], dzr = pz - rz;
+      const side = dzr > 0 ? -1 : 1;
+      const prox = active ? clamp(1.3 - Math.abs(dzr), 0, 1) : 0;
+      for (let s = 0; s < STR; s++) {
+        for (let k = 0; k <= SEG; k++) {
+          const i = (r * STR + s) * (SEG + 1) + k, b = (beadFirst + i) * 3;
+          const x = CX0 + (d[b] - r * 1000) / 100, y = CTOP - d[b + 1] / 100;
+          const dx = x - px, dy = y - 1.1;
+          const want = prox > 0 ? side * 0.5 * prox * Math.exp(-(dx * dx) / 0.35 - (dy * dy) / 1.6) : 0;
+          beadZ[i] += (want - beadZ[i]) * Math.min(1, dt * 10);
+          const h = k / SEG;
+          const sc = k === 0 ? 0.03 : 0.07 + 0.014 * ((s + k + r) % 3);
+          beads.put(i, x, y, rz + beadZ[i], 0, sc, sc, sc, LACQUER + 0.95,
+            1.0, 0.6 + 0.28 * h, 0.2 + 0.5 * h, 0.04 + 0.25 * wk * h);
+          if (k > 0) {
+            const pb = b - 3;
+            const x0 = CX0 + (d[pb] - r * 1000) / 100, y0 = CTOP - d[pb + 1] / 100;
+            const ex = x - x0, ey = y - y0, len = Math.hypot(ex, ey);
+            strings.put(si++, (x + x0) / 2, (y + y0) / 2, rz + (beadZ[i] + beadZ[i - 1]) / 2, 0, 0.007, len, 0.007, METAL + 0.5,
+              0.75, 0.6, 0.4, 0, 0, Math.atan2(-ex, ey));
+          }
         }
       }
     }
+    strings.count = si;
     beads.upload(); strings.upload(si);
   }
-  function useCurtain(px) { if (cw) cw.impulse((px - CX0) * 100, 250, 380, 520); }
+  function useCurtain(px, pz) {
+    if (!cw) return;
+    let r = 0;
+    for (let k = 1; k < ROWS; k++) if (Math.abs(pz - ROWZ[k]) < Math.abs(pz - ROWZ[r])) r = k;
+    for (let k = 0; k < ROWS; k++) cw.impulse(k * 1000 + (px - CX0) * 100, 260, k === r ? 380 : 260, k === r ? 520 : 260);
+  }
 
   // =====================================================================
   // 2. Fireflies — spring() swarm in a dark alcove
@@ -248,6 +289,10 @@ export function createDemos(ctx) {
   archCyl.push(GX, 0.45, GZ, 0, 1.1, 0.9, 1.1, WALNUT + 0.5, ...WOOD, 0);
   archCyl.push(GX, 0.92, GZ, 0, 1.16, 0.05, 1.16, METAL + 0.7, ...BRONZE, 0);
   colliders.push(GX - 0.6, GZ - 0.6, GX + 0.6, GZ + 0.6);
+  // a warm light slot in the wall behind the sculpture: the shards glint against it
+  box(ctx.archBox, 7.93, 3.0, GZ, 0.04, 3.6, 0.5, PLAIN, 1.0, 0.82, 0.55, 1.9);
+  box(ctx.archBox, 7.9, 3.0, GZ, 0.08, 3.8, 0.7, METAL + 0.6, ...BRONZE);
+  const glassLight = new Float32Array([7.5, 3.0, GZ, 0.8]);
   const shards = group(gl, cube, NG);
   const sh = []; // per shard: assembled + exploded transforms
   {
@@ -381,7 +426,7 @@ export function createDemos(ctx) {
     });
   }
   function updatePins(t, dt, px, pz, active) {
-    const on = Math.hypot(px, pz - PWZ) < 10.5 && pz < -16;
+    const on = Math.hypot(px, pz - PWZ) < 12 && pz < -15.5;
     if (on !== logoOn) { logoOn = on; spring(logo, { m: on ? 1 : 0 }, { stiffness: 26, damping: 8 }); }
     if (!sees(cam, 0, PY0 + 2, PWZ, 7.5)) { pins.visible = rods.visible = false; return; }
     pins.visible = rods.visible = true;
@@ -417,6 +462,7 @@ export function createDemos(ctx) {
   // =====================================================================
   return {
     stations: STATIONS,
+    glassLight,
     wake,
     blobs: new Float32Array([
       GX, GZ, 0.9, 0.4,   SX, SZ, 2.7, 0.2,   FX, FZ, 2.6, 0.25,
@@ -442,7 +488,7 @@ export function createDemos(ctx) {
     use(i, t, px, pz) {
       if (!ready) return;
       const id = STATIONS[i].id;
-      if (id === 'curtain') useCurtain(px);
+      if (id === 'curtain') useCurtain(px, pz);
       else if (id === 'fireflies') useFireflies();
       else if (id === 'glass') useGlass(t);
       else if (id === 'sand') useSand();

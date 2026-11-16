@@ -20,6 +20,7 @@ uniform vec3 uSun;     // direction the key light travels
 uniform vec3 uFog;
 uniform float uTime;
 uniform vec4 uPool[6]; // x, z, radius, intensity
+uniform vec4 uGlassL;  // backlight behind the glass: position, intensity
 
 float winMask(vec3 w) {
   float t = (w.x + 8.0) / max(uSun.x, 0.05);
@@ -54,18 +55,19 @@ vec3 env(vec3 r) {
 vec3 shade(vec3 w, vec3 n, vec3 alb, float gloss, float metal, float emis, float fogDist) {
   vec3 V = normalize(uEye - w);
   float hemi = 0.5 + 0.5 * n.y;
-  vec3 amb = mix(vec3(0.26, 0.22, 0.2), vec3(0.62, 0.62, 0.66), hemi);
+  vec3 amb = mix(vec3(0.22, 0.19, 0.17), vec3(0.53, 0.53, 0.57), hemi);
   float ao = aoAt(w);
   float wm = winMask(w);
-  vec3 keyC = vec3(1.0, 0.78, 0.52) * 4.0;
+  vec3 keyC = vec3(1.0, 0.78, 0.52) * 3.5;
   float nd = max(dot(n, -uSun), 0.0);
   vec3 fillC = vec3(0.55, 0.66, 0.9) * 0.42;
   float fd = max(dot(n, normalize(vec3(-1.0, 0.35, 0.15))), 0.0);
   vec3 lit = amb * ao + keyC * wm * nd + fillC * fd * ao;
   for (int i = 0; i < 6; i++) {
     vec2 d = w.xz - uPool[i].xy;
-    float f = exp(-dot(d, d) / (uPool[i].z * uPool[i].z)) * uPool[i].w;
-    lit += vec3(1.0, 0.86, 0.66) * f * (0.35 + 0.65 * max(n.y, 0.0)) * smoothstep(8.0, 2.0, w.y);
+    float l = length(d), R = uPool[i].z;
+    float f = (smoothstep(R, R * 0.6, l) * 0.75 + exp(-l * l / (R * R)) * 0.35) * uPool[i].w;
+    lit += vec3(1.0, 0.84, 0.62) * f * (0.3 + 0.7 * max(n.y, 0.0)) * smoothstep(9.0, 2.0, w.y);
   }
   vec3 H = normalize(V - uSun);
   float spec = pow(max(dot(n, H), 0.0), 20.0 + 140.0 * gloss) * wm * (0.2 + 2.0 * gloss);
@@ -77,6 +79,12 @@ vec3 shade(vec3 w, vec3 n, vec3 alb, float gloss, float metal, float emis, float
     float spec2 = pow(max(dot(n, H), 0.0), 220.0) * (0.4 + 3.0 * wm);
     vec3 sky = mix(vec3(0.45, 0.5, 0.58), vec3(1.05, 1.04, 1.0), smoothstep(-0.5, 0.7, R.y));
     col = alb * lit * 0.12 + sky * (0.15 + 0.85 * fr) * alb + vec3(1.0, 0.92, 0.8) * spec2 * 2.5;
+    // the warm backlight: light seen through the glass, and glints off rotating faces
+    vec3 Lg = uGlassL.xyz - w;
+    float lg = length(Lg); Lg /= lg;
+    float through = pow(max(dot(-V, Lg), 0.0), 5.0);
+    float glint = pow(max(dot(reflect(-Lg, n), V), 0.0), 48.0) + pow(max(dot(reflect(Lg, n), V), 0.0), 48.0);
+    col += vec3(1.0, 0.8, 0.52) * uGlassL.w * (through * 0.25 + glint * 3.5) / (1.0 + 0.05 * lg * lg);
   } else if (metal > 0.5) {
     col = alb * (lit * 0.22 + env(R) * (0.55 + 0.45 * gloss)) + alb * keyC * spec * 0.6;
   } else {
