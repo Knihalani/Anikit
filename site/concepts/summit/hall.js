@@ -602,10 +602,10 @@ export function createHall(canvas, overlayEl) {
       time = t;
       const e = k * k * (3 - 2 * k);
       cam.eye[0] = Math.sin(t * 0.21) * 0.25 * (1 - e);
-      cam.eye[1] = 2.3 - 0.6 * e + Math.sin(t * 0.5) * 0.04;
+      cam.eye[1] = 2.3 - 0.6 * e + Math.sin(t * 0.5) * 0.04 * (1 - e);
       cam.eye[2] = 15.4 - 3.4 * e;
       cam.yaw = Math.sin(t * 0.17) * 0.05 * (1 - e);
-      cam.pitch = -0.02 + 0.03 * (1 - e);
+      cam.pitch = 0.02 * (1 - e);
       ctl.place(cam.eye, cam.yaw, cam.pitch);
       updateCamera(cam);
       if (st.ready) updateStations(t, Math.min(dt, 0.05), cam.eye[0], cam.eye[2]);
