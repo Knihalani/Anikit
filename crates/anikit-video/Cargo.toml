@@ -19,3 +19,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rayon = "1"
 kurbo = "0.13"
+parley = "0.13.0"
+vello_cpu = "0.4.0"
+taffy = "0.15.1"
+syntect = { version = "5.3.0", default-features = false, features = ["default-syntaxes", "default-themes", "regex-fancy", "parsing", "html"] }
+skrifa = "0.49"
