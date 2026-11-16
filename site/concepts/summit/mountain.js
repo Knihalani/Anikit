@@ -172,18 +172,18 @@ uniform vec2 uDrift;
 out vec4 o;
 void main() {
   vec3 v = vW - uEye; float dist = length(v); vec3 dir = v / dist;
-  vec2 q = vW.xz / 900.0 + uDrift;
+  vec2 q = vW.xz / 520.0 + uDrift;
   vec3 a = vnoised(q), b = vnoised(q * 2.3 + 5.0), c = vnoised(q * 5.1 + 9.0);
   float h = a.x * 0.55 + b.x * 0.3 + c.x * 0.15;
   vec2 g = a.yz * 0.55 + b.yz * 0.3 * 2.3 + c.yz * 0.15 * 5.1;
   vec3 N = normalize(vec3(-g.x * 1.4, 1.0, -g.y * 1.4));
   float lit = clamp(dot(N, uSun) * 3.0 + 0.3, 0.0, 1.3);
   vec3 sunC = mix(vec3(1.35, 1.2, 1.0), vec3(1.55, 1.08, 0.7), uWarm);
-  vec3 shade = vec3(0.46, 0.5, 0.76);
-  vec3 col = mix(shade, sunC * 0.95, clamp(lit * (0.35 + 0.65 * h), 0.0, 1.0));
+  vec3 shade = vec3(0.4, 0.45, 0.72);
+  vec3 col = mix(shade, sunC * 0.9, clamp(lit * (0.15 + 0.85 * h * h * 1.6), 0.0, 1.0));
   float fwd = pow(max(dot(dir, uSun), 0.0), 8.0);
   col += vec3(0.5, 0.32, 0.15) * fwd;
-  col = haze(col, dir, dist, 0.00008);
+  col = haze(col, dir, dist, 0.00005);
   o = vec4(tonemap(col), 1.0);
 }`;
 
@@ -244,33 +244,35 @@ void main() {
   vec2 q = vUV * 1.7 + vS.x * 37.0;
   float n = vnoise(q) * 0.6 + vnoise(q * 2.3 + 4.0) * 0.4;
   float rr = sqrt(r2) + (n - 0.5) * 0.35;
-  float a = smoothstep(1.0, 0.35, rr) * vS.y;
+  float a = (uWordMode > 0.5 ? smoothstep(1.0, 0.35, rr) : smoothstep(0.95, 0.6, rr) * smoothstep(-0.55, -0.1, vUV.y + (n - 0.5) * 0.3)) * vS.y;
   if (a < 0.004) discard;
   vec3 N = vec3(vUV, sqrt(max(1.0 - r2, 0.0)));
   float ndl = dot(N, uSunV);
-  float lit = clamp(ndl * 0.6 + 0.55, 0.0, 1.0);
+  float lit = clamp(ndl * 0.75 + 0.5, 0.0, 1.0);
   // silver lining: thin edges facing the sun glow
   float rim = pow(clamp(1.0 - N.z, 0.0, 1.0), 2.0) * clamp(dot(normalize(vUV + 1e-4), normalize(uSunV.xy + 1e-4)), 0.0, 1.0);
   vec3 sunC = mix(vec3(1.45, 1.3, 1.1), vec3(1.7, 1.18, 0.72), uWarm);
-  vec3 shade = uWordMode > 0.5 ? vec3(0.62, 0.68, 0.9) : vec3(0.6, 0.64, 0.85);
+  vec3 shade = uWordMode > 0.5 ? vec3(0.52, 0.6, 0.86) : vec3(0.5, 0.55, 0.8);
   vec3 sunW = uWordMode > 0.5 ? mix(vec3(1.25, 1.02, 0.72), vec3(1.4, 0.92, 0.5), uWarm) : sunC;
   vec3 col = mix(shade, sunW, lit) * vS.z + vec3(1.0, 0.7, 0.38) * rim * 0.9;
   if (uWordMode > 0.5) col *= mix(vec3(0.93, 0.97, 1.06), vec3(1.12, 0.96, 0.78), vWarmX);
-  col = haze(col, vDir, vDist, uWordMode > 0.5 ? 0.00004 : 0.00008);
+  col = haze(col, vDir, vDist, uWordMode > 0.5 ? 0.00004 : 0.00005);
   o = vec4(tonemap(col) * a, a);
 }`;
 
 // --- foreground snow and rock ---
 const groundVS = HEAD + `
 layout(location = 0) in vec3 aP;
-layout(location = 1) in vec3 aN;
+layout(location = 1) in vec4 aN;
 uniform mat4 uVP;
 out vec3 vW;
 out vec3 vN;
-void main() { vW = aP; vN = aN; gl_Position = uVP * vec4(aP, 1.0); }`;
+out float vRock;
+void main() { vW = aP; vN = aN.xyz; vRock = aN.w; gl_Position = uVP * vec4(aP, 1.0); }`;
 const groundFS = HEAD + COMMON + `
 in vec3 vW;
 in vec3 vN;
+in float vRock;
 uniform vec3 uEye;
 uniform float uT;
 out vec4 o;
@@ -279,11 +281,22 @@ void main() {
   float fade = 1.0 - smoothstep(10.0, 80.0, dist);
   // detail normals: two octaves with analytic derivatives
   vec3 d1 = vnoised(vW.xz * 1.1), d2 = vnoised(vW.xz * 4.7 + 3.0), d3 = vnoised(vW.xz * 0.27 + 9.0);
-  vec2 g = d1.yz * 0.22 + d2.yz * 0.07 * fade + d3.yz * 0.35;
-  vec3 N = normalize(vN + vec3(-g.x, 0.0, -g.y) * (0.35 + 0.65 * fade));
+  vec2 g = d1.yz * 0.2 + d2.yz * 0.07 * fade + d3.yz * 0.24;
+  float crag = smoothstep(0.15, 0.6, vRock);
+  vec3 d4 = vnoised(vW.xz * 2.3 + vW.y * 0.7);
+  g += d4.yz * 0.5 * crag;
+  vec3 N = normalize(vN + vec3(-g.x, 0.0, -g.y) * (0.35 + 0.65 * fade + crag));
+  vec3 d6 = vnoised(vec2(vW.x * 0.9 + vW.z * 2.6, vW.z * 0.4 - vW.x * 0.3) * 2.2);
+  N = normalize(N + vec3(-d6.y * 0.06, 0.0, -d6.y * 0.17) * (1.0 - smoothstep(2.0, 14.0, dist)));
   // snow on gentle slopes, rock on steep ones; noise breaks the boundary
   float rn = d3.x * 0.6 + d1.x * 0.4;
   float snow = smoothstep(0.76, 0.9, normalize(vN).y + (rn - 0.5) * 0.4);
+  // rock breaks through on the outcrops, snow still caps their flatter tops
+  vec3 d5 = vnoised(vW.xz * 9.0 + vW.y * 3.0);
+  float edge = vRock + (d4.x - 0.5) * 0.5 + (d5.x - 0.5) * 0.25;
+  float crag2 = smoothstep(0.5, 0.56, edge) * smoothstep(3.0, 9.0, dist);
+  snow *= 1.0 - crag2 * smoothstep(0.93, 0.78, normalize(vN).y + d5.x * 0.12);
+  N = normalize(N + vec3(-d5.y, 0.0, -d5.z) * 0.05 * fade * (0.3 + crag2));
   vec3 L = uSun;
   vec3 sunC = mix(vec3(1.6, 1.42, 1.18), vec3(1.85, 1.3, 0.85), uWarm);
   vec3 sky = vec3(0.45, 0.58, 0.88);
@@ -298,8 +311,8 @@ void main() {
   float glint = step(0.993, hsh) * step(0.4, tw) * pow(max(dot(N, H), 0.0), 3.0) * (1.0 - smoothstep(4.0, 22.0, dist));
   sn += vec3(2.2, 2.0, 1.8) * glint;
   // rock: warm granite with lichen-ish variation
-  vec3 ra = mix(vec3(0.24, 0.20, 0.18), vec3(0.42, 0.36, 0.30), d2.x) * (0.8 + 0.4 * d1.x);
-  vec3 rk = ra * (sunC * max(dot(N, L), 0.0) * 1.1 + sky * 0.5);
+  vec3 ra = mix(vec3(0.13, 0.12, 0.12), vec3(0.3, 0.26, 0.23), d2.x * 0.7 + d5.x * 0.3) * (0.75 + 0.5 * d4.x);
+  vec3 rk = ra * (sunC * max(dot(N, L), 0.0) * 1.6 + sky * 0.45);
   vec3 col = mix(rk, sn, snow);
   col = haze(col, dir, dist, 0.0009);
   o = vec4(tonemap(col), 1.0);
@@ -402,6 +415,7 @@ function attrib(gl, loc, buf, size, stride = 0, offset = 0, divisor = 0) {
 // ---------------------------------------------------------------------------
 const EYE_Y = 1.7;
 const DECK_Y = -720;
+let lastRock = 0;
 const groundH = (x, z) => {
   const d = Math.hypot(x, z);
   const az = Math.atan2(x, -z);
@@ -413,7 +427,9 @@ const groundH = (x, z) => {
   h += fbm(x * 0.045, z * 0.045, 4, 3) * Math.min(1, d / 6) * (1.0 + d * 0.035);
   h += ridged(x * 0.11, z * 0.11, 3, 8) * Math.min(1, d / 10) * 1.6;
   // rock outcrops breaking through the snow
-  h += Math.max(0, fbm(x * 0.16, z * 0.16, 4, 9) - 0.12) * Math.min(1, d / 4) * Math.max(0, 1 - d / 40) * 3.2;
+  const oc = Math.max(0, fbm(x * 0.16, z * 0.16, 4, 9) - 0.08) * Math.min(1, d / 3) * Math.max(0, 1 - d / 45);
+  lastRock = oc;
+  h += oc * 3.4;
   h += fbm(x * 0.6, z * 0.6, 3, 5) * 0.12;
   return h;
 };
@@ -422,8 +438,9 @@ function buildGround() {
   const NR = 150, NA = 240;
   const r0 = 0.5, r1 = 170;
   const a0 = -1.9, a1 = 1.9;
-  const pos = new Float32Array(NR * NA * 3), nor = new Float32Array(NR * NA * 3);
+  const pos = new Float32Array(NR * NA * 3), nor = new Float32Array(NR * NA * 4);
   const e = 0.05;
+  let kn = 0;
   let k = 0;
   for (let i = 0; i < NR; i++) {
     const r = r0 * Math.pow(r1 / r0, i / (NR - 1));
@@ -431,13 +448,14 @@ function buildGround() {
       const az = a0 + (a1 - a0) * j / (NA - 1);
       const x = Math.sin(az) * r, z = -Math.cos(az) * r;
       const h = groundH(x, z);
+      const rock = lastRock;
       const s = e * Math.max(1, r * 0.04);
       const hx = (groundH(x + s, z) - groundH(x - s, z)) / (2 * s);
       const hz = (groundH(x, z + s) - groundH(x, z - s)) / (2 * s);
       const l = Math.hypot(hx, 1, hz);
       pos[k] = x; pos[k + 1] = h; pos[k + 2] = z;
-      nor[k] = -hx / l; nor[k + 1] = 1 / l; nor[k + 2] = -hz / l;
-      k += 3;
+      nor[kn] = -hx / l; nor[kn + 1] = 1 / l; nor[kn + 2] = -hz / l; nor[kn + 3] = Math.min(1, rock * 9);
+      k += 3; kn += 4;
     }
   }
   const idx = new Uint32Array((NR - 1) * (NA - 1) * 6);
@@ -601,7 +619,7 @@ export function createMountain(canvas) {
 
   const G = buildGround();
   const vGround = gl.createVertexArray(); gl.bindVertexArray(vGround);
-  attrib(gl, 0, vbo(gl, G.pos), 3); attrib(gl, 1, vbo(gl, G.nor), 3);
+  attrib(gl, 0, vbo(gl, G.pos), 3); attrib(gl, 1, vbo(gl, G.nor), 4);
   vbo(gl, G.idx, gl.ELEMENT_ARRAY_BUFFER);
   const groundCount = G.idx.length;
 
