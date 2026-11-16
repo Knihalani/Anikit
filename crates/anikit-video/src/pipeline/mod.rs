@@ -340,88 +340,104 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
     let n = f1 - f0;
     let threads = rayon::current_num_threads().max(1) as u32;
     let batch = (threads * 4).max(8);
-    let mut prev_hash = None;
-    let mut last_dl: Option<DisplayList> = None;
-    let mut prev_frame: Option<Arc<YuvFrame>> = None;
-    let mut deduped = 0;
-    let mut done = 0u32;
-    let mut last_report = Instant::now();
-    let mut start = f0;
-    while start < f1 {
-        let end = (start + batch).min(f1);
-        // Evaluate the batch (cheap) and hash for dedupe.
-        let lists: Vec<(DisplayList, u64)> = (start..end)
-            .into_par_iter()
-            .map(|i| {
-                let mut dl = DisplayList::default();
-                eval_frame(ev, i, opts.scale, &mut dl);
-                let h = hash_list(&dl);
-                (dl, h)
-            })
-            .collect();
-        // Changed-macroblock maps from display-list diffs (for renderer-aware encoders).
-        let hints: Vec<Option<Vec<bool>>> = if enc.wants_hints() {
-            (0..lists.len())
+    let wants_hints = enc.wants_hints();
+    type Item = (Arc<YuvFrame>, bool, Option<Vec<bool>>);
+    // The encoder runs on its own thread, one batch behind the renderers.
+    let (tx, rx) = std::sync::mpsc::sync_channel::<Vec<Item>>(1);
+    let encr: &mut dyn Encoder = &mut *enc;
+    let (deduped, enc_result) = std::thread::scope(|sc| {
+        let writer = sc.spawn(move || -> Result<(), String> {
+            for items in rx {
+                for (f, repeat, hint) in items {
+                    encr.write(&f, repeat, hint)?;
+                }
+            }
+            Ok(())
+        });
+        let mut prev_hash = None;
+        let mut last_dl: Option<DisplayList> = None;
+        let mut prev_frame: Option<Arc<YuvFrame>> = None;
+        let mut deduped = 0u32;
+        let mut done = 0u32;
+        let mut last_report = Instant::now();
+        let mut start = f0;
+        while start < f1 {
+            let end = (start + batch).min(f1);
+            // Evaluate the batch (cheap) and hash for dedupe.
+            let lists: Vec<(DisplayList, u64)> = (start..end)
+                .into_par_iter()
+                .map(|i| {
+                    let mut dl = DisplayList::default();
+                    eval_frame(ev, i, opts.scale, &mut dl);
+                    let h = hash_list(&dl);
+                    (dl, h)
+                })
+                .collect();
+            let mut same = vec![false; lists.len()];
+            let mut ph = prev_hash;
+            for (k, (_, h)) in lists.iter().enumerate() {
+                same[k] = ph == Some(*h);
+                ph = Some(*h);
+            }
+            prev_hash = ph;
+            // Render changed frames; diff display lists for renderer-aware encoders.
+            let frames: Vec<(Option<YuvFrame>, Option<Vec<bool>>)> = (0..lists.len())
                 .into_par_iter()
                 .map(|k| {
-                    let prev = if k == 0 { last_dl.as_ref()? } else { &lists[k - 1].0 };
-                    let mut m = crate::render::MbMap::new(0, 0);
-                    crate::render::diff::diff_mb_ops(prev, &lists[k].0, &mut m);
-                    Some((0..m.mb_width * m.mb_height).map(|i| m.get(i % m.mb_width, i / m.mb_width)).collect())
+                    if same[k] {
+                        return (None, None);
+                    }
+                    let dl = &lists[k].0;
+                    let hint = if wants_hints {
+                        let prev = if k == 0 { last_dl.as_ref() } else { Some(&lists[k - 1].0) };
+                        prev.map(|prev| {
+                            let mut m = crate::render::MbMap::new(0, 0);
+                            crate::render::diff::diff_mb_ops(prev, dl, &mut m);
+                            (0..m.mb_width * m.mb_height).map(|i| m.get(i % m.mb_width, i / m.mb_width)).collect()
+                        })
+                    } else {
+                        None
+                    };
+                    let f = with_renderer(ev, |r, _| {
+                        let mut f = YuvFrame::new(dl.width, dl.height);
+                        r.render_yuv(dl, &mut f);
+                        f
+                    });
+                    (Some(f), hint)
                 })
-                .collect()
-        } else {
-            vec![None; lists.len()]
-        };
-        let mut same = vec![false; lists.len()];
-        let mut ph = prev_hash;
-        for (k, (_, h)) in lists.iter().enumerate() {
-            same[k] = ph == Some(*h);
-            ph = Some(*h);
-        }
-        prev_hash = ph;
-        let frames: Vec<Option<YuvFrame>> = lists
-            .par_iter()
-            .zip(same.par_iter())
-            .map(|((dl, _), &s)| {
-                if s {
-                    return None;
+                .collect();
+            let mut items = Vec::with_capacity(frames.len());
+            for (f, hint) in frames {
+                match f {
+                    Some(f) => {
+                        let a = Arc::new(f);
+                        prev_frame = Some(a.clone());
+                        items.push((a, false, hint));
+                    }
+                    None => {
+                        deduped += 1;
+                        if let Some(a) = prev_frame.clone() {
+                            items.push((a, true, None));
+                        }
+                    }
                 }
-                Some(with_renderer(ev, |r, _| {
-                    let mut f = YuvFrame::new(dl.width, dl.height);
-                    r.render_yuv(dl, &mut f);
-                    f
-                }))
-            })
-            .collect();
-        let mut hints = hints.into_iter();
-        for f in frames {
-            let hint = hints.next().flatten();
-            let f = match f {
-                Some(f) => {
-                    let a = Arc::new(f);
-                    prev_frame = Some(a.clone());
-                    enc.write(&a, false, hint)?;
-                    a
-                }
-                None => {
-                    deduped += 1;
-                    let a = prev_frame.clone().ok_or("dedupe without a previous frame")?;
-                    enc.write(&a, true, None)?;
-                    a
-                }
-            };
-            drop(f);
-            done += 1;
+                done += 1;
+            }
+            last_dl = lists.into_iter().last().map(|x| x.0);
+            if tx.send(items).is_err() {
+                break; // the encoder failed; its error is reported below
+            }
+            if opts.progress && (last_report.elapsed().as_secs_f32() > 0.5 || end == f1) {
+                last_report = Instant::now();
+                let el = t0.elapsed().as_secs_f32();
+                eprint!("\rrender {done}/{n} frames  {:.0} fps  {:.1}s", done as f32 / el.max(1e-6), el);
+            }
+            start = end;
         }
-        last_dl = lists.into_iter().last().map(|x| x.0);
-        if opts.progress && (last_report.elapsed().as_secs_f32() > 0.5 || end == f1) {
-            last_report = Instant::now();
-            let el = t0.elapsed().as_secs_f32();
-            eprint!("\rrender {done}/{n} frames  {:.0} fps  {:.1}s", done as f32 / el.max(1e-6), el);
-        }
-        start = end;
-    }
+        drop(tx);
+        (deduped, writer.join().unwrap_or_else(|_| Err("encoder thread panicked".into())))
+    });
+    enc_result?;
     let bytes = enc.finish()?;
     if opts.progress {
         eprintln!();

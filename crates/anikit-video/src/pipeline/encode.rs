@@ -85,7 +85,7 @@ impl Quality {
 }
 
 /// Consumes frames in order.
-pub trait Encoder {
+pub trait Encoder: Send {
     /// Append a frame. `repeat` is true when it's identical to the previous one;
     /// `changed` (if given) flags the 16×16 macroblocks that may differ from it.
     fn write(&mut self, f: &YuvFrame, repeat: bool, changed: Option<Vec<bool>>) -> Result<(), String>;
