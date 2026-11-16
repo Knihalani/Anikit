@@ -20,6 +20,7 @@ extern crate std;
 
 pub mod audio;
 pub mod bezier;
+pub mod blackhole;
 pub mod cloud;
 pub mod color;
 pub mod css;

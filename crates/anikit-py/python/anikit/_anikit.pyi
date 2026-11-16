@@ -336,6 +336,38 @@ class NativeProjector:
     ) -> Tuple[bytes, bytes]: ...
 
 @final
+class NativeBlackHole:
+    """Schwarzschild black-hole renderer; frames are RGBA bytes."""
+
+    def __new__(cls, width: int, height: int, mode: int = 0, seed: int = 1) -> NativeBlackHole: ...
+    @property
+    def width(self) -> int: ...
+    @property
+    def height(self) -> int: ...
+    def resize(self, width: int, height: int) -> None: ...
+    def render(
+        self,
+        distance: float = 30.0,
+        inclination: float = 80.0,
+        fov: float = 40.0,
+        time: float = 0.0,
+        exposure: float = 1.0,
+        bloom: float = 1.0,
+        grain: float = 1.0,
+        hot_spots: float = 1.0,
+        jet: float = 0.0,
+        azimuth: float = 0.0,
+        look: float = 0.0,
+        roll: float = 0.0,
+        fall: float = 0.0,
+        temperature: Optional[float] = None,
+        disk_outer: float = 22.0,
+        stars: float = 1.0,
+        speed: float = 1.0,
+        nebula: float = 1.0,
+    ) -> bytes: ...
+    def stats(self) -> Tuple[Tuple[int, int, int], int, bool, bool, float]: ...
+
 class NativeCloud:
     """Particle cloud morphing between shapes; bulk data native-endian ``f32`` bytes."""
 

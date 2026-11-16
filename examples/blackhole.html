@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anikit — black hole</title>
+<style>
+  html, body { margin: 0; background: #000; color: #c9cfff; font: 12px/1.4 ui-monospace, monospace; }
+  canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+  #hud { position: fixed; left: 16px; bottom: 14px; opacity: 0.85; white-space: pre; }
+  #ui { position: fixed; right: 16px; top: 14px; display: flex; gap: 8px; }
+  button { background: #111a; color: inherit; border: 1px solid #4458; padding: 4px 10px; font: inherit; cursor: pointer; }
+  #track { height: 600vh; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="track"></div>
+<div id="ui"><button id="mode">cinematic</button></div>
+<div id="hud"></div>
+<script type="module">
+  // Scroll to fall in: hover at 30M, dive past the photon sphere, cross the
+  // horizon and look back out at the sky. Everything is rendered in WebAssembly.
+  import { ready, blackHole, engine } from '../packages/anikit/dist/anikit.js';
+  await ready;
+  const hud = document.getElementById('hud');
+  const params = new URLSearchParams(location.search);
+  let mode = params.get('mode') || 'physical';
+  const scale = Number(params.get('scale') || 1);
+  let bh;
+  const make = () => {
+    bh?.destroy();
+    bh = blackHole({ canvas: '#c', width: innerWidth, height: innerHeight, mode, scale, budget: Number(params.get('budget') || 14), minScale: 0.45 });
+    document.getElementById('mode').textContent = mode === 'physical' ? 'cinematic' : 'physical';
+  };
+  make();
+  document.getElementById('mode').onclick = () => { mode = mode === 'physical' ? 'cinematic' : 'physical'; make(); };
+  addEventListener('resize', () => bh.resize(innerWidth, innerHeight, scale));
+  const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  let frames = 0, acc = 0, shown = 0;
+  engine.onFrame((t) => {
+    const p = Number(params.get('p') ?? (scrollY / Math.max(1, document.body.scrollHeight - innerHeight)));
+    // 30M → 2.6M outside, then through the horizon to 1.2M; turn around near the end.
+    const distance = p < 0.85 ? 30 * Math.pow(2.6 / 30, p / 0.85) : 2.6 - 1.4 * smooth(0.85, 1, p);
+    const frame = {
+      time: t / 1000,
+      distance,
+      inclination: 84 - 10 * p,
+      fov: 34 + 70 * smooth(0.3, 0.95, p),
+      azimuth: t / 300,
+      fall: smooth(0.2, 0.6, p),
+      look: 180 * smooth(0.93, 1, p),
+      jet: 0.35,
+    };
+    bh.render(frame);
+    const s = bh.stats;
+    frames++; acc += s.ms;
+    if (t - shown > 500) {
+      hud.textContent = `${s.width}×${s.height} ${mode}  ${(acc / frames).toFixed(1)} ms/frame  r = ${distance.toFixed(2)} M  samples ${s.samples.join('/')}  stars ${s.stars}`;
+      frames = 0; acc = 0; shown = t;
+    }
+  });
+</script>
+</body>
+</html>

@@ -57,6 +57,8 @@ export type { InspectorOptions } from './inspector';
 export { world, World } from './world';
 export type { WorldOptions, BodyInit } from './world';
 export { pointCloud, PointCloud, textPoints, glow, Glow } from './cloud';
+export { blackHole, BlackHole } from './blackhole';
+export type { BlackHoleOptions, BlackHoleFrame, BlackHoleStats } from './blackhole';
 export { emitter, Emitter } from './emitter';
 export { mesh, Mesh3D, instances, Instances, renderer3d, Renderer3D, texture, Texture3D } from './mesh';
 export type { InstanceInit, MaterialOptions, LightOptions, DrawItem, PointsItem } from './mesh';

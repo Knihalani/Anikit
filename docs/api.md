@@ -809,6 +809,33 @@ a.onBeat(audioEl, (i) => effects.pulse('.logo'));          // live sync to <audi
 
 A radix-2 FFT, spectral-flux onsets, autocorrelation tempo and a least-squares beat-grid fit run in WebAssembly.
 
+## Black hole
+
+`blackHole({ width, height, canvas, mode, scale })` renders a scientifically accurate, animated Schwarzschild black hole straight into pixels: exact null geodesics, a Page–Thorne accretion disk coloured by the blackbody at the Doppler- and gravitationally shifted temperature g·T with g⁴ beaming, the lensed image arcing over and under the shadow, the photon ring, a lensed star catalogue and Milky Way, orbiting hot-spot flares that shear as they go, and an infalling observer who can cross the horizon. `mode: 'cinematic'` drops the Doppler colour and softens beaming, as *Interstellar* did. The physics and references are in [`docs/black-hole.md`](black-hole.md).
+
+```ts
+const bh: BlackHole = blackHole({ width: 1280, height: 800, canvas: '#hero', mode: 'physical', scale: 1, budget: 14, minScale: 0.5 });
+engine.onFrame((t) => {
+  bh.render({ time: t / 1000, distance: 30, inclination: 84, fov: 34, azimuth: t / 400, hotSpots: 1, jet: 0.4 });
+});
+// A scroll journey: fall in (raindrop observer) and look back out from inside the horizon.
+const fallIn = (p: number) => bh.render({ distance: 30 - 29 * p, fall: 1, fov: 40 + 60 * p, look: p > 0.95 ? 180 * (p - 0.95) * 20 : 0 });
+fallIn(0.5);
+const { samples, shadowRadius, ms } = bh.stats; // BlackHoleStats
+bh.resize(innerWidth, innerHeight, 0.75);
+bh.destroy();
+```
+
+| Member | Purpose |
+|---|---|
+| `render(frame)` → `Uint8ClampedArray` | Render one frame (RGBA, a view into WebAssembly memory) and draw it into the canvas. `frame` is a `BlackHoleFrame`: `distance` (M), `inclination`, `fov`, `time`, `exposure`, `bloom`, `grain`, `hotSpots`, `jet`, `azimuth`, `look`, `roll`, `fall`, `temperature`, `diskOuter`, `stars`, `speed`, `nebula`. |
+| `resize(width, height, scale?)` | Change the output size; `scale` renders at a fraction of it (size the canvas with CSS). |
+| `budget`, `minScale` (options), `currentScale` | Adaptive resolution: over `budget` ms per frame (e.g. while the camera moves during a scroll journey) the internal scale steps down to at most `minScale`, and back up when frames are fast again. |
+| `stats` | `BlackHoleStats`: samples per image order, stars drawn, whether the geodesic table or pixel geometry was rebuilt, shadow radius, `ms`. |
+| `destroy()` / `kill()` / `revert()` | Free the WebAssembly memory (also via `context()`). |
+
+Only `distance`, `fall`, `fov`, `inclination`, `look`, `roll`, `temperature`, `diskOuter` and the size rebuild the lensing geometry; animating `time` and orbiting with `azimuth` reuse it, which is what makes 1280×800 at 60 fps possible. `BlackHoleOptions` are the construction options.
+
 ## Video: compositions
 
 Compose a film in code and render it frame-exactly — in the browser (WebCodecs → WebM) or in Node (Skia + ffmpeg → MP4), at any resolution and frame rate, faster than real time.
@@ -1117,5 +1144,6 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Particle emitters](#particle-emitters) | `emitter`, `Emitter` | `EmitterOptions`, `SpawnShape` |
 | [Solid 3D](#solid-3d-renderer3d-mesh-instances) | `renderer3d`, `Renderer3D`, `mesh`, `Mesh3D`, `instances`, `Instances`, `texture`, `Texture3D`, `shatter`, `Shards`, `flightPath`, `FlightPath` | `InstanceInit`, `MaterialOptions`, `LightOptions`, `DrawItem`, `PointsItem`, `ShatterOptions`, `FlightPathOptions`, `FlightPose`, `Point3` |
 | [Audio](#audio-analysis) | `analyzeAudio`, `decodeAudio` | `AudioAnalysis` |
+| [Black hole](#black-hole) | `blackHole`, `BlackHole` | `BlackHoleOptions`, `BlackHoleFrame`, `BlackHoleStats` |
 | [Video](#video-compositions) | `composition`, `Composition`, `FrameBuffer`, `typeFx`, `exportWebM`, `muxWebM` | `CompositionOptions`, `SceneHooks`, `SceneDef`, `FrameInfo`, `RenderOptions`, `RenderedFrame`, `TypeFxOptions`, `Transition`, `TransitionFn`, `PostOptions`, `PostValue`, `PostColor`, `ImpactOptions` |
 | [Capture](#capture-screenshots-and-recordings) | `screenshot`, `record`, `rasterize`, `encodeGif`, `GifWriter` | `CaptureTarget`, `RasterOptions`, `RecordOptions`, `Recording` |

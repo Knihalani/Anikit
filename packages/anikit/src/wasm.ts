@@ -139,6 +139,15 @@ export interface Exports {
   ak_cloud_ptr(id: number): number;
   ak_cloud_explode(id: number, x: number, y: number, z: number, strength: number): void;
   ak_cloud_speed(id: number): number;
+  ak_bh_create(w: number, h: number, seed: number): number;
+  ak_bh_free(id: number): void;
+  ak_bh_resize(id: number, w: number, h: number): void;
+  /** Params in the f64 buffer (19 values); returns a pointer to RGBA8 pixels. */
+  ak_bh_render(id: number): number;
+  /** Writes 7 counters to the f64 buffer. */
+  ak_bh_stats(id: number): void;
+  /** Profiling: run one pipeline stage alone. */
+  ak_bh_stage(id: number, k: number): void;
   ak_splat_create(w: number, h: number): number;
   ak_splat_free(id: number): void;
   ak_splat_resize(id: number, w: number, h: number): void;

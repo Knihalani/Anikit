@@ -2024,6 +2024,98 @@ impl NativeProjector {
 }
 
 // ---------------------------------------------------------------------------
+// Black hole
+// ---------------------------------------------------------------------------
+
+/// Physically based Schwarzschild black-hole renderer (see docs/black-hole.md).
+#[pyclass(module = "anikit._anikit", name = "NativeBlackHole")]
+pub struct NativeBlackHole {
+    b: anikit_core::blackhole::BlackHole,
+    mode: u32,
+}
+
+#[pymethods]
+impl NativeBlackHole {
+    #[new]
+    #[pyo3(signature = (width, height, mode=0, seed=1))]
+    fn new(width: usize, height: usize, mode: u32, seed: u32) -> PyResult<Self> {
+        if width == 0 || height == 0 || width * height > 64 << 20 {
+            return Err(PyValueError::new_err("black hole size out of range"));
+        }
+        Ok(NativeBlackHole { b: anikit_core::blackhole::BlackHole::new(width, height, seed), mode: mode.min(1) })
+    }
+    #[getter]
+    fn width(&self) -> usize {
+        self.b.w
+    }
+    #[getter]
+    fn height(&self) -> usize {
+        self.b.h
+    }
+    fn resize(&mut self, width: usize, height: usize) -> PyResult<()> {
+        if width == 0 || height == 0 || width * height > 64 << 20 {
+            return Err(PyValueError::new_err("black hole size out of range"));
+        }
+        self.b.resize(width, height);
+        Ok(())
+    }
+    /// Render one frame; returns RGBA bytes.
+    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (distance=30.0, inclination=80.0, fov=40.0, time=0.0, exposure=1.0, bloom=1.0, grain=1.0, hot_spots=1.0, jet=0.0, azimuth=0.0, look=0.0, roll=0.0, fall=0.0, temperature=None, disk_outer=22.0, stars=1.0, speed=1.0, nebula=1.0))]
+    fn render<'py>(
+        &mut self,
+        py: Python<'py>,
+        distance: f32,
+        inclination: f32,
+        fov: f32,
+        time: f32,
+        exposure: f32,
+        bloom: f32,
+        grain: f32,
+        hot_spots: f32,
+        jet: f32,
+        azimuth: f32,
+        look: f32,
+        roll: f32,
+        fall: f32,
+        temperature: Option<f32>,
+        disk_outer: f32,
+        stars: f32,
+        speed: f32,
+        nebula: f32,
+    ) -> Bound<'py, PyBytes> {
+        let p = anikit_core::blackhole::Params {
+            distance,
+            inclination,
+            fov,
+            time,
+            exposure,
+            bloom,
+            grain,
+            hot_spots,
+            jet,
+            azimuth,
+            look,
+            roll,
+            fall,
+            mode: self.mode,
+            temperature: temperature.unwrap_or(if self.mode == 1 { 6500.0 } else { 7000.0 }),
+            disk_outer,
+            stars,
+            speed,
+            nebula,
+        };
+        self.b.render(&p);
+        PyBytes::new(py, &self.b.out)
+    }
+    /// `(samples, stars, table_built, geometry_built, shadow_radius)`.
+    fn stats(&self) -> ((u32, u32, u32), u32, bool, bool, f32) {
+        let s = self.b.stats;
+        ((s.samples[0], s.samples[1], s.samples[2]), s.stars, s.table_built == 1, s.geometry_built == 1, s.shadow)
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Point clouds and additive splatting
 // ---------------------------------------------------------------------------
 
@@ -2397,6 +2489,7 @@ fn _anikit(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NativeWorld>()?;
     m.add_class::<NativeProjector>()?;
     m.add_class::<NativeCloud>()?;
+    m.add_class::<NativeBlackHole>()?;
     m.add_class::<NativeSplat>()?;
     render3d::register(m)?;
     m.add_function(wrap_pyfunction!(ease, m)?)?;
