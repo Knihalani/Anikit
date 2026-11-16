@@ -136,9 +136,16 @@ export async function renderStill(comp, o) {
   let wrote = false;
   await comp.render({
     canvas, from: t, to: t + 1 / comp.fps, readPixels, createCanvas: (w, h) => canvasLib().createCanvas(w, h),
-    onFrame: () => {
+    onFrame: (fr) => {
       if (wrote) return;
-      writeFileSync(o.out, jpeg ? canvas.toBuffer('image/jpeg', 90) : canvas.toBuffer('image/png'));
+      // The graded frame (motion blur, impacts, bloom, flares, grade…), exactly as in the video;
+      // `raw: true` saves the canvas before the grade instead.
+      let src = canvas;
+      if (!o.raw) {
+        src = canvasLib().createCanvas(comp.width, comp.height);
+        src.getContext('2d').putImageData(new globalThis.ImageData(new Uint8ClampedArray(fr.rgba()), comp.width, comp.height), 0, 0);
+      }
+      writeFileSync(o.out, jpeg ? src.toBuffer('image/jpeg', 90) : src.toBuffer('image/png'));
       wrote = true;
     },
   });
