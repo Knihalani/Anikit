@@ -255,6 +255,8 @@ pub struct Raster {
     blur_src: Vec<u32>,
     vel: Vec<u32>,
     tiles: Vec<[f32; 2]>,
+    /// Per-tile 16.16 sample step and start offset for the motion-blur cleanup pass.
+    tile_step: Vec<[i32; 4]>,
     alpha: Vec<f32>,
     row_px: Vec<u32>,
     /// Half-resolution packed RGB written by the blur passes for [`Raster::blend_half`].
@@ -1415,6 +1417,60 @@ impl Raster {
                 let q = |v: f32| ((v * it + 0.5) as u32).min(255);
                 self.half_px[j] = q(acc[0]) | q(acc[1]) << 8 | q(acc[2]) << 16;
             }
+        }
+        // 3b. The jittered taps leave grain inside long smears (taps there are
+        //     several pixels apart). Average four samples of the result spread
+        //     over 1.5 tap spacings along the tile velocity: the smear is
+        //     already that long, so this only removes the noise. Packed SWAR.
+        {
+            const RB: u32 = 0x00ff_00ff;
+            // Per tile: the 16.16 step between samples and the first sample's offset (0 step = still).
+            self.tile_step.clear();
+            self.tile_step.extend(self.tiles.iter().map(|vn| {
+                let ln2 = vn[0] * vn[0] + vn[1] * vn[1];
+                if ln2 < 0.25 {
+                    return [0; 4];
+                }
+                let s = 0.375 / ((crate::math::sqrtf(ln2) * 0.4) as usize + 3).min(N) as f32;
+                let (sx, sy) = (vn[0] * s, vn[1] * s);
+                [(sx * 65536.0) as i32, (sy * 65536.0) as i32, ((0.5 - sx * 3.5) * 65536.0) as i32, ((0.5 - sy * 3.5) * 65536.0) as i32]
+            }));
+            let (hp, out, steps) = (&self.half_px, &mut self.blur_src, &self.tile_step);
+            for by in 0..bh {
+                let trow = (by / T) * tw;
+                let (orow, hrow) = (&mut out[by * bw..(by + 1) * bw], &hp[by * bw..(by + 1) * bw]);
+                for (bx, (o, &c)) in orow.iter_mut().zip(hrow).enumerate() {
+                    let [sx, sy, ox, oy] = steps[trow + bx / T];
+                    if sx == 0 && sy == 0 {
+                        *o = c;
+                        continue;
+                    }
+                    let (mut fx, mut fy) = (((bx as i32) << 16) + ox, ((by as i32) << 16) + oy);
+                    let (mut arb, mut ag) = (0u32, 0u32);
+                    // Clamp per sample only when the footprint leaves the image.
+                    let (ex, ey) = (fx.wrapping_add(sx * 7), fy.wrapping_add(sy * 7));
+                    let inside = fx.min(ex) >= 0 && fy.min(ey) >= 0 && (fx.max(ex) >> 16) <= wi as i32 && (fy.max(ey) >> 16) <= hi as i32;
+                    if inside {
+                        for _ in 0..8 {
+                            let v = hp[(fy >> 16) as usize * bw + (fx >> 16) as usize];
+                            arb += v & RB;
+                            ag += (v >> 8) & 255;
+                            fx += sx;
+                            fy += sy;
+                        }
+                    } else {
+                        for _ in 0..8 {
+                            let v = hp[(fy >> 16).clamp(0, hi as i32) as usize * bw + (fx >> 16).clamp(0, wi as i32) as usize];
+                            arb += v & RB;
+                            ag += (v >> 8) & 255;
+                            fx = fx.wrapping_add(sx);
+                            fy = fy.wrapping_add(sy);
+                        }
+                    }
+                    *o = ((arb + 0x0004_0004) >> 3 & RB) | ((ag + 4) >> 3) << 8;
+                }
+            }
+            core::mem::swap(&mut self.half_px, &mut self.blur_src);
         }
         // 4. Blend the upsampled blur over the sharp frame by local speed
         //    (sharp where still, fully blurred from ~3 px of motion).
