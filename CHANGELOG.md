@@ -1,5 +1,81 @@
 # Changelog
 
+## Eighth round (2026-11-16, to 18:05 UTC)
+
+Details and interleaved before/after runs are in `docs/perf-notes.md` under "Eighth round (core)", "(DOM)" and "(video)".
+
+### Core
+- **Creation is about 2× cheaper.** The core can now create an animation from borrowed data with one exact allocation, and creates many in one call (`ak_anim_create_many`). Plain objects and numbers take a fast path, timeline steps included.
+  - One `animate()` over 10k objects: 22.6–27.2 → 11.5–14.5 ms.
+  - 10k separate calls: 31.5–37.0 → 24.7–30.3 ms.
+  - 8 keyframes: ~13 → ~7 ms.
+  - GSAP is still faster at creation (3.3–4.1 ms for one call over 10k objects).
+- **Per frame**, `bench.mjs` stays ahead of GSAP in all 12 cases (1.08–4.21×).
+- **Bugs fixed:**
+  - handles of generation 2048 or more became negative int32 in JS, so those animations never rendered (hit after about 2k create/kill cycles on one slot);
+  - `animate([o, o])` killed itself at build but kept running.
+- **New tests:** a fuzz test that compares every fast path, frame for frame, against the slow path and a reference timing model.
+
+### DOM and interaction
+- **One scroll read per event per scroller.** Per scroll event:
+
+  | Case | Before | After |
+  |---|---|---|
+  | 200 `scroll()` links | 0.37–0.39 ms | 0.017–0.020 ms |
+  | 200 scrubbed triggers | 0.15–0.22 ms | 0.010–0.024 ms (GSAP ScrollTrigger: 0.015–0.029 ms) |
+  | Smoothed modes | 0.24–0.63 ms | 0.012–0.019 ms |
+
+- `spring()` keeps one `onUpdate` per simulation.
+- No allocation on drag, gesture or world pointer moves.
+- **Bugs fixed:**
+  - pinning wiped the element's inline styles;
+  - refreshing during a pin shifted triggers;
+  - `scroll()` and `inView()` were not tracked by `context()`;
+  - draggable multi-touch hijacking, and kill/revert during a drag;
+  - nested and scrolled `flip`s, and overlapping `flip`s;
+  - `splitText` with markup across lines, mixed bidi text and Arabic joining;
+  - presence under rapid add/remove;
+  - marquee under reduced motion;
+  - `magnetic`, `tilt` and `bindValues` revert;
+  - `world().dragging()` click handling.
+- **New real-browser test runner:** `npm run test:browser`, 67 cases.
+
+### Video and 3D
+- **New APIs:**
+  - `mesh.update()` and `tube(points, { into })` animate geometry in place (also in Python);
+  - `free()` is idempotent. A double free used to free a slot that had been reused.
+- **Speed**, with output bit-identical at even frame sizes:
+  - the mirror pass skips fully covered rows: 82–87 → 65–68 ms;
+  - FXAA: about 22 → 17.5 ms;
+  - shadow-map fill four wide: 4.3 → 3.2 ms.
+- **Other fixes:**
+  - odd frame sizes now encode correctly;
+  - `--check` no longer reports false spikes on short videos;
+  - `--profile` honours `--from` and `--to`.
+
+### Films
+| Film | Length | Frames | Render time, 4 workers |
+|---|---|---|---|
+| ONE WORLD THREE LOOKS | 21.5 s | 1288 | 464 s |
+| CALIBRE | 17.5 s | 1050 | 363 s |
+
+- **CALIBRE:**
+  - a pooled hairspring (no meshes built per draw);
+  - a slimmer case with a polished bevel, and a domed crystal;
+  - the 9 s highlight spike is gone.
+- **ONE WORLD THREE LOOKS:**
+  - inked comic water;
+  - a swell on the photographic lake;
+  - needle-textured conifers.
+
+### Site
+The landing page is now `site/concepts/summit/`:
+- you stand on a mountain summit in first person, with "anikit" written in clouds;
+- your hands open a spark portal;
+- you walk into a hall of live demos: physics, a particle sculpture, springs, a stagger wave, keyframed letters and the benchmark board.
+
+Everything that moves is animated by anikit, and rendering is hand-written WebGL2. `site/build.mjs` serves it at the root.
+
 ## Final round (2026-11-16, to 13:15 UTC): unfairly fast
 
 Numbers from `packages/anikit/scripts/` (ms per frame, median of 5 runs × 60 frames after 100 warm-up frames; the machine was rendering a film at the same time), detail in `docs/perf-notes.md` "Fifth round".
