@@ -59,7 +59,8 @@ vec3 aces(vec3 x){ return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59)
 
 void main(){
   vec2 frag = gl_FragCoord.xy + uJitter;
-  vec2 uv = (frag - 0.5 * uRes) / uRes.y;
+  float side = min(uRes.y, uRes.x * 0.8);   // portrait screens see wider, not narrower
+  vec2 uv = (frag - 0.5 * uRes) / side;
   float n0 = hash(gl_FragCoord.xy + uSeed * 17.0);
   vec3 rd = normalize(uFwd + (uv.x * uRight + uv.y * uUp) * uFov);
   vec3 ro = uEye;
@@ -78,7 +79,7 @@ void main(){
   float t = 0.0, tmax = 6.0;
   float b = dot(ro, rd), c = dot(ro, ro) - 1.44, disc = b * b - c;
   bool hit = false; float glow = 0.0; vec4 trap = vec4(0.0); int steps = 0;
-  float pix = uFov / uRes.y;
+  float pix = uFov / side;
   if (disc > 0.0) {
     t = max(0.0, -b - sqrt(disc)); tmax = -b + sqrt(disc);
     t += n0 * 0.02 * S; // dithered start hides banding

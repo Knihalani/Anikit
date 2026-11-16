@@ -118,7 +118,7 @@ function steer(timeMs) {
 // Reduced motion: no flight; the camera sits at the station of the section in view.
 function snapScroll() {
   let best = 0;
-  for (let i = 1; i < keys.length; i++) if (scrollY >= keys[i][0] - innerHeight * 0.5) best = i;
+  for (let i = 1; i < keys.length; i += 2) if (scrollY >= keys[i][0] - innerHeight * 0.6) best = i;
   return keys[best][0];
 }
 
@@ -179,8 +179,8 @@ scroll((p) => {
 
 // Run a demo only while its chamber is near the viewport.
 function whileNear(sec, fn) {
-  let off = 0, last = 0, on = false;
-  const tick = (now) => { off = 0; const dt = last ? Math.min(50, now - last) : 16.7; last = now; fn(dt / 1000); };
+  let last = 0, on = false;
+  const tick = (now) => { const dt = last ? Math.min(50, now - last) : 16.7; last = now; fn(dt / 1000); };
   inView(sec, () => {
     on = true; last = 0;
     const stop = engine.onFrame((t) => tick(t));
