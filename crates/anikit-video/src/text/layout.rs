@@ -468,7 +468,7 @@ impl FontStore {
             let line_g0 = out.glyphs.len() as u32;
             let mut pen = m.offset + m.inline_min_coord;
             let mut word_open = false;
-            let mut line_text = usize::MAX..0;
+            let mut line_text = Range { start: usize::MAX, end: 0 };
             for run in line.runs() {
                 let fd = run.font();
                 let coords = run.normalized_coords();

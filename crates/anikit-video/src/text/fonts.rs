@@ -50,6 +50,7 @@ pub mod bundled {
     pub const INTER: &[u8] = include_bytes!("../../fonts/InterVariable.ttf");
     pub const INTER_ITALIC: &[u8] = include_bytes!("../../fonts/InterVariable-Italic.ttf");
     pub const JETBRAINS_MONO: &[u8] = include_bytes!("../../fonts/JetBrainsMono-Variable.ttf");
+    pub const JETBRAINS_MONO_ITALIC: &[u8] = include_bytes!("../../fonts/JetBrainsMono-Italic-Variable.ttf");
     pub const INSTRUMENT_SERIF: &[u8] = include_bytes!("../../fonts/InstrumentSerif-Regular.ttf");
     pub const INSTRUMENT_SERIF_ITALIC: &[u8] = include_bytes!("../../fonts/InstrumentSerif-Italic.ttf");
     pub const TWEMOJI: &[u8] = include_bytes!("../../fonts/Twemoji.ttf");
@@ -100,6 +101,7 @@ impl FontStore {
         let sans = store.add_font_bytes(bundled::INTER.to_vec());
         store.add_font_bytes(bundled::INTER_ITALIC.to_vec());
         let mono = store.add_font_bytes(bundled::JETBRAINS_MONO.to_vec());
+        store.add_font_bytes(bundled::JETBRAINS_MONO_ITALIC.to_vec());
         let serif = store.add_font_bytes(bundled::INSTRUMENT_SERIF.to_vec());
         store.add_font_bytes(bundled::INSTRUMENT_SERIF_ITALIC.to_vec());
         let emoji = store.add_font_bytes(bundled::TWEMOJI.to_vec());
