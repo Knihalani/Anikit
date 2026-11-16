@@ -719,6 +719,18 @@ brushed.set({ color: '#c0c4cc' });
 
 `MaterialPreset`: `chrome`, `gold`, `copper`, `glass`, `plastic`, `ceramic`, `rubber`, `emissive` and `toon`. `SceneMaterialOptions`: `preset`, `color`, `metalness`, `roughness`, `emissive`, `emissiveIntensity`, `opacity` (below 1 draws in the back-to-front transparent pass), `toon` and `glass`. Lighting is metal/roughness GGX with a split-sum environment term. The `EnvironmentName` environments are analytic, so they are prefiltered per roughness in closed form: no textures, no load-time cost.
 
+### glTF models
+
+```ts
+const s4 = scene(canvas);
+const model: import('anikit').GltfModel = await loadGLTF(s4, '/models/robot.glb');
+model.root.position.y = 1;
+const stop = model.play(model.animations[0] ?? 0, { loop: true, speed: 1 });
+const parsed = parseGLTF(s4, { asset: { version: '2.0' } }, []);   // JSON + buffers you fetched yourself
+```
+
+`loadGLTF(scene, url)` loads `.gltf` files (with embedded or external buffers) and `.glb` files. It reads triangle meshes (with smooth normals when the file has none), metal/roughness factors, emissive colour and strength, and the node hierarchy. It also reads translation/rotation/scale animations with linear, step or cubic-spline keys (cubic-spline keys are interpolated linearly). Textures, skinning and morph targets are not loaded yet.
+
 ### Geometry and instancing
 
 ```ts
@@ -1233,7 +1245,7 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Dev tools](#dev-tools) and [testing](#testing-and-diagnostics) | `inspector`, `testing`, `setWarnings`, `onWarning` | `InspectorOptions` |
 | [Physics worlds](#physics-worlds) | `world`, `World` | `WorldOptions`, `BodyInit` |
 | [3D](#3d) | `scene3d`, `Scene3D`, `tilt`, `parseTransform`, `toMatrix3d`, `mixTransforms` | `SceneOptions`, `Projection`, `DrawOptions`, `TiltOptions`, `Vec3`, `Matrix` |
-| [Real-time GPU 3D](#real-time-gpu-3d-scene) | `scene`, `Scene`, `Object3D`, `InstancedMesh`, `Material`, `material`, `Orbit`, `Vector3`, `linearColor`, `box`, `roundedBox`, `sphere`, `cylinder`, `capsule`, `torus`, `plane`, `lathe`, `extrude`, `tube`, `triangulate`, `smoothNormals`, `subdivide`, `sdfMesh`, `sdSphere`, `sdBox`, `sdTorus`, `smoothUnion`, `smoothSubtract` | `SceneInit`, `CameraOptions`, `BloomOptions`, `DofOptions`, `OrbitOptions`, `Camera`, `SceneMaterialOptions`, `MaterialPreset`, `ObjectOptions`, `InstanceState`, `EnvironmentName`, `LayerContext`, `SceneLayer`, `RayHit`, `SceneStats`, `ScenePointerEvent`, `ScenePointerType`, `PrimitiveName`, `Vec3Like`, `Geometry`, `SdfOptions` |
+| [Real-time GPU 3D](#real-time-gpu-3d-scene) | `scene`, `Scene`, `Object3D`, `InstancedMesh`, `Material`, `material`, `Orbit`, `Vector3`, `linearColor`, `box`, `roundedBox`, `sphere`, `cylinder`, `capsule`, `torus`, `plane`, `lathe`, `extrude`, `tube`, `triangulate`, `smoothNormals`, `subdivide`, `sdfMesh`, `sdSphere`, `sdBox`, `sdTorus`, `smoothUnion`, `smoothSubtract`, `loadGLTF`, `parseGLTF` | `GltfModel`, `SceneInit`, `CameraOptions`, `BloomOptions`, `DofOptions`, `OrbitOptions`, `Camera`, `SceneMaterialOptions`, `MaterialPreset`, `ObjectOptions`, `InstanceState`, `EnvironmentName`, `LayerContext`, `SceneLayer`, `RayHit`, `SceneStats`, `ScenePointerEvent`, `ScenePointerType`, `PrimitiveName`, `Vec3Like`, `Geometry`, `SdfOptions` |
 | [Point clouds and glow](#point-clouds-and-glow) | `pointCloud`, `PointCloud`, `textPoints`, `glow`, `Glow` | `CloudOptions`, `ShapeInput`, `GlowOptions`, `GlowRenderOptions` |
 | [Particle emitters](#particle-emitters) | `emitter`, `Emitter` | `EmitterOptions`, `SpawnShape` |
 | [Solid 3D](#solid-3d-renderer3d-mesh-instances) | `renderer3d`, `Renderer3D`, `mesh`, `Mesh3D`, `instances`, `Instances`, `texture`, `Texture3D`, `shatter`, `Shards`, `flightPath`, `FlightPath` | `InstanceInit`, `MaterialOptions`, `LightOptions`, `DrawItem`, `PointsItem`, `ShatterOptions`, `FlightPathOptions`, `FlightPose`, `Point3` |

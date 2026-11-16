@@ -99,3 +99,5 @@ export {
   sdfMesh, sdSphere, sdBox, sdTorus, smoothUnion, smoothSubtract,
 } from './geometry';
 export type { Geometry, SdfOptions } from './geometry';
+export { loadGLTF, parseGLTF } from './gltf';
+export type { GltfModel } from './gltf';
