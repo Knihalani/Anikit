@@ -12,7 +12,7 @@ The WebAssembly core starts compiling on import. Calls made before it's ready ar
 
 **Units:** times are **seconds** everywhere (`duration`, `delay`, `stagger(0.05)`, `seek(1.2)`), except the low-level clock: `engine.tick(ms)`, `engine.time` and `engine.onFrame((timeMs, dtMs) => …)` are milliseconds. Numbers default to `px` for lengths, `deg` for angles; `scale` and `opacity` are unitless (opacity 0–1).
 
-Task-oriented examples: [recipes.md](recipes.md). Mistakes are reported as `anikit:` warnings with fixes (see [Testing and diagnostics](#testing-and-diagnostics)).
+Task-oriented examples: [recipes.md](recipes.md). One-call patterns: [`recipe()`](#recipes-recipe). Feature comparison with GSAP, Motion and anime.js: [parity.md](parity.md). Every options object as JSON Schema (descriptions included): [api.schema.json](api.schema.json), also shipped as `anikit/api.schema.json` (regenerate with `npm run schema`). Mistakes are reported as `anikit:` warnings with fixes (see [Testing and diagnostics](#testing-and-diagnostics)).
 
 ---
 

@@ -52,6 +52,8 @@ Import from 'anikit'. Times are in seconds (only `engine.onFrame`/`engine.tick` 
 - Timeline extras
 - Ballistic physics
 - Bake to CSS
+- Recipes: `recipe`
+- React: `anikit/react`
 - Effects
 - Scroll
 - Interaction

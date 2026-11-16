@@ -22,7 +22,8 @@
     "./react": {
       "types": "./dist/types/react.d.ts",
       "import": "./dist/react.js"
-    }
+    },
+    "./api.schema.json": "./api.schema.json"
   },
   "files": [
     "dist",
@@ -32,13 +33,14 @@
     "README.md",
     "AGENTS.md",
     "llms.txt",
-    "llms-full.txt"
+    "llms-full.txt",
+    "api.schema.json"
   ],
   "sideEffects": false,
   "scripts": {
     "build:wasm": "node scripts/build-wasm.mjs",
     "build": "node scripts/build-wasm.mjs && node scripts/build.mjs && node scripts/build-llms.mjs",
-    "typecheck": "tsc --noEmit && node scripts/check-docs.mjs && node scripts/check-jsdoc.mjs",
+    "typecheck": "tsc --noEmit && node scripts/check-docs.mjs && node scripts/check-jsdoc.mjs && node scripts/build-schema.mjs --check",
     "docs": "node scripts/check-docs.mjs && node scripts/build-llms.mjs",
     "docs:browser": "node scripts/check-recipes-browser.mjs",
     "test:browser": "node scripts/test-browser.mjs",
@@ -48,7 +50,8 @@
     "bench:dom": "node scripts/bench-dom.mjs",
     "bench:3d": "node scripts/bench-3d.mjs",
     "record": "node bin/anikit-record.mjs",
-    "bench:cloud": "node scripts/bench-cloud.mjs"
+    "bench:cloud": "node scripts/bench-cloud.mjs",
+    "schema": "node scripts/build-schema.mjs"
   },
   "keywords": [
     "animation",
