@@ -85,7 +85,15 @@ Approximation: the interior uses the Schwarzschild metric, i.e. an eternal, non-
 - **Tone map.** The ACES filmic fit (Narkowicz 2015) runs in `f32x4` SIMD, followed by an sRGB lookup table and mid-tone-weighted film grain, giving RGBA8.
 - **Cost split.** Moving the camera (distance, inclination, field of view, look, fall) rebuilds the table and the per-pixel geometry. Animating `time` or orbiting with `azimuth` reuses them: a frame is then one texture build, one lookup per disk sample, the star inversion, bloom and tone map.
 
-Benchmarks are in `packages/anikit/scripts/bench-blackhole.mjs` (wasm in Node) and `cargo run --release -p anikit-core --features std --example blackhole` (native, with per-stage timings).
+Benchmarks are in `packages/anikit/scripts/bench-blackhole.mjs` (wasm in Node) and `cargo run --release -p anikit-core --features std --example blackhole` (native, with per-stage timings, and reference PPMs when given an output directory). `examples/blackhole.html` is the scroll journey; add `?p=0.5` to pin the progress, `&mode=cinematic`, `&scale=0.75` or `&budget=0`.
+
+## Reference renders
+
+| | |
+|---|---|
+| ![Edge-on, physical](images/blackhole/edge-30m.jpg) 84°, 30M, physical: the approaching side is brighter and bluer, the receding side dim and orange; the far side is lensed over and under the shadow. | ![Edge-on, cinematic](images/blackhole/edge-30m-cinematic.jpg) The same view, cinematic (*Interstellar*) mode. |
+| ![EHT-like](images/blackhole/eht-17.jpg) 17°, 40M: the near-face-on, EHT-like view; a photon ring of radius ≈ √27 M. | ![10M](images/blackhole/near-10m.jpg) 10M, 80°, field of view 70°. |
+| ![2.2M falling](images/blackhole/horizon-2.2m.jpg) Falling (raindrop), 2.2M: the shadow fills the view, the disk and sky are squeezed into a ring. | ![Inside](images/blackhole/inside-1.5m.jpg) Inside the horizon (1.5M), looking up and back: the aberrated, redshifted outside sky. |
 
 ## References
 
@@ -99,3 +107,41 @@ Benchmarks are in `packages/anikit/scripts/bench-blackhole.mjs` (wasm in Node) a
 - GRAVITY Collaboration, "Detection of orbital motions near the last stable circular orbit of the massive black hole SgrA*", *A&A* 618, L10 (2018).
 - C. Wyman, P.-P. Sloan, P. Shirley, "Simple analytic approximations to the CIE XYZ color matching functions", *JCGT* 2(2) (2013).
 - K. Narkowicz, "ACES filmic tone mapping curve" (2015).
+
+## Status
+
+*As of 2026-11-16, 14:35 UTC, branch `claude/epic-ramanujan-qe7x4w-blackhole`.*
+
+**Done**
+
+- **Core** (`crates/anikit-core/src/blackhole.rs`) implements everything above: the geodesic table, the per-pixel lensing geometry with three image orders, the Page–Thorne disk with exact g, blackbody colour and g⁴ beaming, both modes, the flowing sheared turbulence, hot spots, lensed stars (inverted through the lens, with magnification), the lensed Milky Way and nebulae, a jet glow, the infalling (raindrop) observer inside and outside the horizon, bloom, ACES tone mapping and grain.
+- **Unit tests** cover: the shadow edge at b = 3√3 M from far away; the Synge shadow angle at 10M and 30M; periapsis ≈ 3M for the critical ray; the ISCO and Page–Thorne peak; g against the analytic formula; raindrop against static-plus-aberration; blackbody colours; continuity of the turbulence in time (across resets too); fast log2/sincos accuracy; and an end-to-end render.
+- **WebAssembly**: `ak_bh_create/free/resize/render/stats` (parameters through the f64 scratch buffer, output pointer into a stable RGBA buffer), plus `ak_bh_stage` for per-stage profiling.
+- **TypeScript**: `blackHole({ width, height, canvas, mode, scale, seed, budget, minScale })` returns `render(frame)`, `resize`, `stats`, `currentScale` and `destroy/kill/revert`. It is registered with `track()`, has `OptionKeys` tables with unknown-key warnings, JSDoc, a type-checked example in `docs/api.md` and vitest tests.
+- **Python**: `anikit.BlackHole(width, height, mode)` with `render(**params)` returning RGBA bytes, `resize`, `stats` and `size`; pytest passes.
+- **Demo and benchmark**: the demo page is `examples/blackhole.html`; the benchmark is `packages/anikit/scripts/bench-blackhole.mjs`.
+
+**Performance** (measured on this sandbox VM, which is slow: a plain 1M-element `Float32Array` multiply–add loop in Node takes about 2.5 ms here, roughly 3–4× a current laptop):
+
+| 1280×800 (1.02 Mpx) | Node wasm, steady (time + azimuth animating) | Node wasm, camera moving | Chromium headless, incl. `putImageData` |
+|---|---|---|---|
+| scale 1, edge-on 30M | 24.6 ms | 100 ms | 29 ms |
+| scale 0.75 | – | – | 16.4 ms |
+| scale 0.6 | 10.4 ms | 41 ms | – |
+| `budget: 14` (adaptive), mid-journey (7M) | – | – | 9.2 ms at 576×360 |
+
+- **The ≤ 8 ms at 1 Mpx target is not met on this VM.** Steady frames are 24.6 ms in wasm here. If the 3–4× ratio above carries over, that would be roughly 6–8 ms on a current desktop, but this was not measured on one; it needs confirming on real hardware.
+- **Camera moves are about 4× a steady frame.** Moving the camera re-integrates the table (about 4 ms) and rebuilds the per-pixel geometry. Orbiting with `azimuth` and animating `time` reuse the geometry.
+- **The scroll journey should use `budget`** (for example 14 ms with `minScale: 0.5`). The scale then drops automatically while the camera moves and recovers once it settles.
+- **Where the steady frame goes (wasm, per stage, ms):** disk texture 0.8, shading 8–9, stars 2, bloom and sky 4, tone map 12. Every stage is memory-bound on this VM.
+
+**Not done, or approximated**
+
+- **Spin.** The hole is non-rotating (Schwarzschild). A Kerr hole, with its frame dragging and the asymmetric, flattened shadow DNGR shows, would need a two-parameter geodesic table.
+- **Thin disk only.** The disk has no vertical thickness and no volumetric optical depth, and there is no corona. The plunging region inside the ISCO is dark.
+- **Jet.** It is a 2D glow along the projected axis at bloom resolution. It is not lensed or ray-marched.
+- **Sky resolution.** The Milky Way and nebulae are looked up at quarter resolution. Stars are inverted per image (primary, secondary and one more winding) and splatted at full resolution.
+- **Eye adaptation.** Looking back out from inside the horizon, the sky is physically dimmed (redshifted by about 1/(1 + β)). The renderer raises exposure there by up to 10× (eye adaptation) so the finale is visible.
+- **Temperature scale.** Disk temperatures are scaled to the visible: 7000 K peak by default in physical mode, against about 10⁵ K for a real disk around a supermassive hole. Colours are therefore representative, not literal.
+- **Performance.** It falls short of the stated target on this VM; see above. The remaining cost is per-pixel memory traffic: three HDR planes plus transmittance, roughly 16 bytes per disk sample, and the tone-map pass. Possible next steps: f16 or packed HDR, merging shading into the tone-map pass for the direct image, and computing camera-move geometry at half resolution.
+
