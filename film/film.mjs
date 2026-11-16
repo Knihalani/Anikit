@@ -100,14 +100,22 @@ export default async function film({ anikit: A }) {
   const domeAt = one();
   const sunBall = mesh.sphere(12, 24), sunAt = instances(1, () => ({ color: [1, 0.86, 0.62] }));
   const cube = mesh.cube();
-  const tm = world.treeMesh;
-  const treeSet = (col) => instances(trees.length, (i) => {
-    const t = trees[i], c = col(t);
+  // Trees in three silhouettes (fir, spruce, broadleaf), each with its own colour range.
+  const TM = world.treeMeshes;
+  const byKind = [0, 1, 2].map((k) => trees.filter((t) => t.kind === k));
+  const treeSet = (col) => byKind.map((list) => instances(list.length, (i) => {
+    const t = list[i], c = col(t);
     return { x: t.x, y: t.y, z: t.z, sx: t.h * t.w, sy: t.h, sz: t.h * t.w, ry: t.ry, color: c };
+  }));
+  const TREE_R = [[0.035, 0.1, 0.045], [0.03, 0.085, 0.07], [0.08, 0.15, 0.045]];
+  const treesR = treeSet((t) => {
+    const v = 0.45 + 0.55 * world.visAt(t.x, t.z), k = 0.75 + 0.5 * t.tint, base = TREE_R[t.kind];
+    const autumn = t.kind === 2 && t.tint > 0.88 ? [2.2, 1.0, 0.5] : [1, 1, 1];
+    return [base[0] * v * k * autumn[0], base[1] * v * (0.85 + 0.3 * t.tint) * autumn[1], base[2] * v * autumn[2]];
   });
-  const treesR = treeSet((t) => { const v = 0.5 + 0.5 * world.visAt(t.x, t.z), k = 0.8 + 0.45 * t.tint; return [0.11 * v * k, 0.16 * v * (0.9 + 0.2 * t.tint), 0.075 * v]; });
   const treesN = treeSet((t) => (t.tint > 0.5 ? [0.0, 0.035, 0.05] : [0.04, 0.0, 0.045]));
-  const treesC = treeSet((t) => (t.tint > 0.75 ? [0.2, 0.62, 0.28] : t.tint > 0.35 ? [0.12, 0.5, 0.3] : [0.1, 0.42, 0.26]));
+  const TREE_C = [[[0.12, 0.5, 0.3], [0.1, 0.42, 0.26]], [[0.1, 0.44, 0.36], [0.08, 0.36, 0.32]], [[0.5, 0.72, 0.22], [0.92, 0.6, 0.2]]];
+  const treesC = treeSet((t) => TREE_C[t.kind][t.tint > 0.6 ? 1 : 0]);
   // Boulders along the shores and the lower slopes near the flight line.
   const rockMesh = boulder(mesh, 3.1);
   const rocks = [];
@@ -172,8 +180,9 @@ export default async function film({ anikit: A }) {
   const items = {
     R: [
       { mesh: world.terrainMesh, instances: terrainAt, material: { ...baked, texture: TX.real, textureFilter: 'aniso' } },
+      { mesh: world.wallMesh, instances: terrainAt, material: { ...baked, texture: TX.wallReal, textureFilter: 'aniso' } },
       { mesh: rockMesh, instances: rocksR, material: { ambient: 0.32, diffuse: 1.05, specular: 0.12, shininess: 10, rim: 0.15 } },
-      { mesh: tm, instances: treesR, material: { ambient: 0.3, diffuse: 1.0, specular: 0.08, shininess: 6, rim: 0.45 } },
+      ...TM.map((m, k) => ({ mesh: m, instances: treesR[k], material: { ambient: 0.5, diffuse: 1.0, specular: 0.06, shininess: 6, rim: 0.22 } })),
       ...towersR.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 0.85, diffuse: 0.9, specular: 0.5, shininess: 60, rim: 0.2, texture: TX.windows, textureRepeat: CLS[c] } })),
       { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farReal } },
       { mesh: dome, instances: domeAt, cull: false, reflect: true, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.sky, textureMode: 'emissive', fog: 0 } },
@@ -183,19 +192,21 @@ export default async function film({ anikit: A }) {
     ],
     N: [
       { mesh: world.terrainMesh, instances: terrainAt, material: { ambient: 1, diffuse: 0.9, specular: 0, rim: 0, texture: TX.neon, textureMode: 'emissive', textureGain: 1.25, textureFilter: 'aniso' } },
+      { mesh: world.wallMesh, instances: terrainAt, material: { ambient: 1, diffuse: 0.9, specular: 0, rim: 0, texture: TX.wallNeon, textureMode: 'emissive', textureGain: 1.25, textureFilter: 'aniso' } },
       { mesh: rockMesh, instances: rocksN, material: { ambient: 1, diffuse: 0.4, specular: 0.6, shininess: 30, rim: 0.9 } },
       ...towersN.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 1, diffuse: 0.6, specular: 0.9, shininess: 80, rim: 0.3, texture: TX.windowsNeon, textureMode: 'emissive', textureGain: 1.5, textureRepeat: CLS[c], lines: 1.1, lineColor: [1.5, 0.35, 1.1], grid: [1, 1], lineWidth: 0.012 } })),
       { mesh: world.farMesh, instances: farAt, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0, texture: TX.farNeon, textureMode: 'emissive', textureGain: 1.3 } },
       { mesh: dome, instances: domeAt, cull: false, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.skyNeon, textureMode: 'emissive', fog: 0 } },
       { mesh: water, instances: waterAt, mirror: true, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0 } },
       ...lanes.map((m, k) => ({ mesh: m, blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 0.12, pulse: 2.1, pulseCount: k === 0 ? 34 : 48, pulsePhase: 0, lineColor: laneCol[k] } })),
-      { mesh: tm, instances: treesN, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0.85 } },
+      ...TM.map((m, k) => ({ mesh: m, instances: treesN[k], material: { ambient: 1, diffuse: 0, specular: 0, rim: 0.85 } })),
       { points: motes, colors: moteColN, size: 0.09, intensity: 1.8, streak: 1, fog: [6, 120] },
     ],
     C: [
       { mesh: world.terrainMesh, instances: terrainAt, material: { ...baked, texture: TX.comic, textureFilter: 'aniso' } },
+      { mesh: world.wallMesh, instances: terrainAt, material: { ...baked, texture: TX.wallComic, textureFilter: 'aniso' } },
       { mesh: rockMesh, instances: rocksC, material: { ambient: 0.6, diffuse: 0.7, specular: 0, rim: 0 } },
-      { mesh: tm, instances: treesC, material: { ambient: 0.6, diffuse: 0.7, specular: 0, rim: 0 } },
+      ...TM.map((m, k) => ({ mesh: m, instances: treesC[k], material: { ambient: 0.6, diffuse: 0.7, specular: 0, rim: 0 } })),
       ...towersC.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 0.62, diffuse: 0.6, specular: 0, rim: 0, texture: TX.windowsComic, textureRepeat: CLS[c] } })),
       { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farComic } },
       { mesh: dome, instances: domeAt, cull: false, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.skyComic, textureMode: 'emissive', fog: 0 } },
@@ -214,6 +225,7 @@ export default async function film({ anikit: A }) {
   items.N.find((it) => it.mesh === world.farMesh).instances = farNAt;
   const terrNAt = instances(1, () => ({ color: [0.02, 0.018, 0.035] }));
   items.N.find((it) => it.mesh === world.terrainMesh).instances = terrNAt;
+  items.N.find((it) => it.mesh === world.wallMesh).instances = terrNAt;
 
   const opts = {
     R: {

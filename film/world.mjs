@@ -9,6 +9,8 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CACHE = path.join(HERE, '.cache');
 const VERSION = 'w23';
+const WALL_NY = 0.6;                                // cells steeper than this (normal y) are cliffs
+const WT = 4096, WY0 = -12, WY1 = 470;               // the wall atlas: 4 strips (one per facing), y from WY1 down to WY0
 
 export const clamp = (v, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
 export const mix = (a, b, t) => a + (b - a) * t;
@@ -152,15 +154,28 @@ export async function buildWorld(A) {
   // would float above the water as a ceiling).
   const under = (i, j) => gh[j * GN + i] < -0.3 && gh[j * GN + i + 1] < -0.3 && gh[(j + 1) * GN + i] < -0.3 && gh[(j + 1) * GN + i + 1] < -0.3;
   const gpos = (i, j) => [-EXT + i * GS, gh[j * GN + i], -EXT + j * GS], guv = (i, j) => [i / (GN - 1), j / (GN - 1)];
-  const terrainMesh = gridMesh(mesh, GN, GN, gpos, guv, under);
+  // Steep cells (cliffs) get their own mesh with wall-space UVs, so their texture isn't
+  // stretched down the face: grouped by the way they face, mapped (z, y) or (x, y).
+  const wallGroup = new Int8Array((GN - 1) * (GN - 1)).fill(-1);
+  for (let j = 0; j < GN - 1; j++) for (let i = 0; i < GN - 1; i++) {
+    const a = gh[j * GN + i], b = gh[j * GN + i + 1], c = gh[(j + 1) * GN + i], d = gh[(j + 1) * GN + i + 1];
+    if (Math.min(a, b, c, d) < -0.3) continue;
+    const dx = (b + d - a - c) / (2 * GS), dz = (c + d - a - b) / (2 * GS);
+    if (1 / Math.hypot(dx, 1, dz) > WALL_NY) continue;
+    wallGroup[j * (GN - 1) + i] = Math.abs(dx) > Math.abs(dz) ? (dx < 0 ? 0 : 1) : (dz < 0 ? 2 : 3);
+  }
+  const isWall = (i, j) => wallGroup[j * (GN - 1) + i] >= 0;
+  const terrainMesh = gridMesh(mesh, GN, GN, gpos, guv, (i, j) => under(i, j) || isWall(i, j));
   const terrainBelow = gridMesh(mesh, GN, GN, gpos, guv, (i, j) => !under(i, j));
+  const walls = wallMesh(mesh, GN, GS, gh, wallGroup);
   log('terrain mesh');
 
   // ---- Far mountains (a ring around the valley, 40 km across) -------------------------------
-  const FN = 161, FE = 20000, FS = (2 * FE) / (FN - 1);
+  const FN = 321, FE = 20000, FS = (2 * FE) / (FN - 1);
   const farH = (x, z) => {
     const r = Math.hypot(x, z);
-    let h = 120 + 1500 * ridged(x / 5200 + 1.3, z / 5200 + 7.7, 6) * smooth(1500, 9000, r) + 260 * ridged(x / 1500, z / 1500, 4);
+    let h = 120 + 1500 * ridged(x / 5200 + 1.3, z / 5200 + 7.7, 6) * smooth(1500, 9000, r) + 260 * ridged(x / 1500, z / 1500, 4)
+      + 240 * ridged(x / 650 + 3.3, z / 650 - 2.1, 3) * smooth(1800, 5000, r);
     // Meet the valley terrain at its edge (no shards where the two meshes join).
     const k = smooth(EXT - 200, EXT + 2600, Math.max(Math.abs(x), Math.abs(z)));
     if (k < 1) h = mix(heightAt(clamp(x, -EXT, EXT), clamp(z, -EXT, EXT)) - 4, h, k);
@@ -196,7 +211,13 @@ export async function buildWorld(A) {
       const dens = 0.62 + 0.9 * fbm(x / 240, z / 240, 3, N4) - sl * 0.4 - (h > 220 ? (h - 220) / 90 : 0);
       if (rnd() > dens) continue;
       const ht = 11 + 13 * rnd();
-      trees.push({ x, y: h - 1, z, h: ht, w: 0.75 + 0.35 * rnd(), ry: rnd() * 360, tint: rnd() });
+      const tr = { x, y: h - 1, z, h: ht, w: 0.75 + 0.35 * rnd(), ry: rnd() * 360, tint: rnd() };
+      // Three silhouettes: fir, slender spruce (higher up), broadleaf (low, by the water).
+      const kh = hash(trees.length * 7 + 3);
+      tr.kind = h < 45 && kh < 0.3 + 0.2 * smooth(30, 5, h) ? 2 : kh > (h > 120 ? 0.45 : 0.72) ? 1 : 0;
+      if (tr.kind === 2) { tr.h *= 0.7; tr.w *= 1.1; }
+      if (tr.kind === 1) { tr.h *= 1.12; tr.w *= 0.8; }
+      trees.push(tr);
     }
   }
   log(`${trees.length} trees`);
@@ -224,8 +245,9 @@ export async function buildWorld(A) {
 
   // ---- Bakes ---------------------------------------------------------------------------------
   const T = 4096;
-  const tex = await cached('terrain', () => bakeTerrain(T, heightAt, groundAt, gh, GN, GS, trees, centerX, log));
-  const farTex = await cached('far', () => bakeFar(2048, farH, FE));
+  const tex = await cached('terrain2', () => bakeTerrain(T, heightAt, groundAt, gh, GN, GS, trees, centerX, log));
+  const wallTex = await cached('walls3', () => bakeWalls(heightAt, groundAt, walls.tris, log));
+  const farTex = await cached('far2', () => bakeFar(4096, farH, FE));
   const sky = await cached('sky', () => bakeSky(4096, 2048, false));
   const skyComic = await cached('skycomic', () => bakeSky(2048, 1024, true));
   const skyNeon = await cached('skyneon', () => bakeNeonSky(4096, 2048));
@@ -233,6 +255,7 @@ export async function buildWorld(A) {
   const mk = (img) => texture(img);
   const textures = {
     real: mk(tex.real), comic: mk(tex.comic), neon: mk(tex.neon),
+    wallReal: mk(wallTex.real), wallComic: mk(wallTex.comic), wallNeon: mk(wallTex.neon),
     farReal: mk(farTex.real), farComic: mk(farTex.comic), farNeon: mk(farTex.neon), skyNeon: mk(skyNeon.real),
     sky: mk(sky.real), skyComic: mk(skyComic.real),
     windows: mk(windows(256, 512, 'real')), windowsNeon: mk(windows(256, 512, 'neon')), windowsComic: mk(windows(256, 512, 'comic')),
@@ -247,7 +270,7 @@ export async function buildWorld(A) {
     return sunVis[j * VN + i];
   };
 
-  return { path: path3, heightAt, groundAt, centerX, profile, terrainMesh, terrainBelow, farMesh, trees, towers, textures, visAt, treeMesh: conifer(mesh), log };
+  return { path: path3, heightAt, groundAt, centerX, profile, terrainMesh, wallMesh: walls.mesh, terrainBelow, farMesh, trees, towers, textures, visAt, treeMesh: conifer(mesh), treeMeshes: [conifer(mesh), conifer(mesh, true), broadleaf(mesh)], log };
 }
 
 // ---- Geometry helpers ------------------------------------------------------------------------
@@ -274,9 +297,9 @@ function gridMesh(mesh, nx, nz, pos, uv, skipCell) {
 }
 
 // A conifer: a trunk and six ragged, drooping tiers of branches, unit height (y 0 … 1).
-function conifer(mesh) {
+function conifer(mesh, slender = false) {
   const P = [], NR = [], U = [], I = [];
-  const S = 11;
+  const S = 9;
   const tier = (y0, y1, r0, seed) => {
     const base = P.length / 3;
     for (let k = 0; k <= S; k++) {
@@ -299,8 +322,39 @@ function conifer(mesh) {
     }
     for (let k = 0; k < 6; k++) { const a = base + k * 2; I.push(a, a + 1, a + 3, a, a + 3, a + 2); }
   }
-  const T = [[0.14, 0.4, 0.26], [0.27, 0.52, 0.23], [0.4, 0.64, 0.19], [0.52, 0.76, 0.15], [0.64, 0.88, 0.11], [0.76, 1.0, 0.07]];
+  const T = slender
+    ? [[0.1, 0.3, 0.2], [0.2, 0.4, 0.185], [0.3, 0.5, 0.165], [0.4, 0.6, 0.145], [0.5, 0.7, 0.12], [0.6, 0.8, 0.095], [0.7, 0.9, 0.07], [0.8, 1.0, 0.045]]
+    : [[0.14, 0.4, 0.26], [0.27, 0.52, 0.23], [0.4, 0.64, 0.19], [0.52, 0.76, 0.15], [0.64, 0.88, 0.11], [0.76, 1.0, 0.07]];
   T.forEach(([y0, y1, r], i) => tier(y0, y1, r, i * 1.7 + 0.3));
+  return mesh.custom(new Float32Array(P), new Float32Array(NR), new Uint32Array(I), new Float32Array(U));
+}
+
+// A broadleaf tree: a short trunk and a crown of lumpy overlapping blobs, unit height.
+function broadleaf(mesh) {
+  const P = [], NR = [], U = [], I = [];
+  const blob = (cx, cy, cz, r, seed) => {
+    const R = 8, S = 12, base = P.length / 3;
+    for (let i = 0; i <= R; i++) {
+      const th = (i / R) * Math.PI;
+      for (let j = 0; j <= S; j++) {
+        const ph = (j / S) * Math.PI * 2, d = [Math.sin(th) * Math.cos(ph), Math.cos(th), Math.sin(th) * Math.sin(ph)];
+        const k = 1 + 0.22 * N3(d[0] * 2.1 + seed, d[2] * 2.1 + d[1] * 1.7) + 0.1 * N4(d[0] * 5 + seed, d[1] * 5 - d[2] * 3);
+        P.push(cx + d[0] * r * k, cy + d[1] * r * k * 0.85, cz + d[2] * r * k);
+        NR.push(...norm([d[0], d[1] * 1.2 + 0.25, d[2]]));
+        U.push(j / S, i / R);
+      }
+    }
+    for (let i = 0; i < R; i++) for (let j = 0; j < S; j++) { const a = base + i * (S + 1) + j, b = a + S + 1; I.push(a, b, b + 1, a, b + 1, a + 1); }
+  };
+  {
+    const base = P.length / 3;
+    for (let k = 0; k <= 6; k++) {
+      const a = (k / 6) * Math.PI * 2, c = Math.cos(a), s = Math.sin(a);
+      P.push(c * 0.05, 0, s * 0.05, c * 0.03, 0.5, s * 0.03); NR.push(c, 0, s, c, 0, s); U.push(k / 6, 0, k / 6, 1);
+    }
+    for (let k = 0; k < 6; k++) { const a = base + k * 2; I.push(a, a + 1, a + 3, a, a + 3, a + 2); }
+  }
+  blob(0, 0.62, 0, 0.3, 1.3); blob(0.17, 0.5, 0.08, 0.22, 4.1); blob(-0.15, 0.52, -0.1, 0.23, 7.7); blob(0.02, 0.8, -0.04, 0.2, 9.2); blob(-0.05, 0.5, 0.18, 0.2, 2.6);
   return mesh.custom(new Float32Array(P), new Float32Array(NR), new Uint32Array(I), new Float32Array(U));
 }
 
@@ -473,7 +527,8 @@ function bakeTerrain(T, heightAt, groundAt, gh, GN, GS, trees, centerX, log) {
       const cav = clamp(1 + (midAt(b1, x, z) - h) * -0.05) * clamp(1 + (midAt(b2, x, z) - h) * -0.012, 0.35, 1);
       // Materials.
       const n1 = fbm(x / 26, z / 26, 3, N1), n2 = N2(x / 5.5, z / 5.5), n3 = fbm(x / 140, z / 140, 2, N4);
-      const rock = smooth(0.38, 0.62, slope + 0.12 * n1);
+      const gmc = Math.hypot(groundAt(x + 3.3, z) - groundAt(x - 3.3, z), groundAt(x, z + 3.3) - groundAt(x, z - 3.3)) / 6.6;
+      const rock = Math.max(smooth(0.38, 0.62, slope + 0.12 * n1), smooth(0.95, 1.2, gmc + 0.15 * n1)); // rock wherever the mesh nears a cliff (meets the wall atlas)
       const sand = (1 - smooth(0.4, 1.6, h + n2 * 0.6)) * (1 - rock);
       const forest = clamp(canopy[k] * 1.4 + 0.5 * smooth(0.1, 0.6, fbm(x / 240, z / 240, 3, N4) + 0.3)) * (1 - rock) * (1 - sand);
       const dry = smooth(-0.05, 0.35, n3) * (1 - forest) * (1 - rock) * (1 - sand);
@@ -533,19 +588,31 @@ function bakeFar(T, farH, FE) {
     let gx = (farH(x + e, z) - farH(x - e, z)) / (2 * e), gz = (farH(x, z + e) - farH(x, z - e)) / (2 * e);
     // Fine relief the coarse mesh can't hold: gullies and ridges for the shading.
     gx += 0.35 * N1(x / 160, z / 160) + 0.18 * N3(x / 60, z / 60); gz += 0.35 * N2(x / 160, z / 160) + 0.18 * N4(x / 60, z / 60);
+    // Erosion gullies running down the fall line: ridged noise stretched along the slope.
+    {
+      const gl = Math.hypot(gx, gz) + 1e-6, ax = gx / gl, az = gz / gl;
+      const along = x * ax + z * az, across = -x * az + z * ax;
+      const gul = Math.abs(N3(across / 90, along / 420)), steepK = smooth(0.15, 0.6, gl);
+      const d = (Math.exp(-((gul / 0.12) ** 2)) - 0.3) * 0.9 * steepK;
+      gx += -az * d * Math.sign(N3(across / 90 + 0.05, along / 420) - N3(across / 90 - 0.05, along / 420)); gz += ax * d * Math.sign(N3(across / 90 + 0.05, along / 420) - N3(across / 90 - 0.05, along / 420));
+    }
     const il = 1 / Math.hypot(gx, 1, gz), nx = -gx * il, ny = il, nz = -gz * il;
     const ndl = Math.max(0, nx * SUN[0] + ny * SUN[1] + nz * SUN[2]);
     const slope = 1 - ny, n1 = fbm(x / 300, z / 300, 3, N3);
-    const snow = smooth(850, 1050, h + 140 * n1) * (1 - smooth(0.45, 0.6, slope));
-    const rock = smooth(0.25, 0.45, slope + 0.1 * n1) * (1 - snow);
-    const forest = (1 - snow - rock) * (1 - smooth(500, 800, h)) * smooth(-0.15, 0.25, fbm(x / 700, z / 700, 3, N4) + 0.1);
+    const n2 = N2(x / 45, z / 45), n4 = fbm(x / 120, z / 120, 3, N1);
+    const snow = smooth(820, 1000, h + 160 * n1 + 60 * n2) * (1 - smooth(0.5, 0.68, slope + 0.1 * n2));
+    const rock = smooth(0.18, 0.36, slope + 0.12 * n1 + 0.08 * n2 + smooth(500, 900, h) * 0.12) * (1 - snow);
+    const scree = rock * smooth(0.1, 0.4, n4) * (1 - smooth(0.4, 0.6, slope));
+    const forest = (1 - snow - rock) * (1 - smooth(450, 750, h + 80 * n1)) * smooth(-0.2, 0.1, fbm(x / 700, z / 700, 3, N4) + 0.15 + 0.25 * n4);
     const grass = Math.max(0, 1 - snow - rock - forest);
     const alb = [0, 0, 0], cpal = [0, 0, 0];
     const add = (w, c, cc) => { for (let q = 0; q < 3; q++) { alb[q] += w * c[q]; cpal[q] += w * cc[q]; } };
-    add(snow, [0.75, 0.76, 0.8], [0.97, 0.97, 1]);
-    add(rock, [0.2, 0.18, 0.16], [0.62, 0.52, 0.5]);
-    add(forest, [0.04, 0.065, 0.04], [0.15, 0.45, 0.3]);
-    add(grass, [0.12, 0.14, 0.06], [0.45, 0.66, 0.3]);
+    const rv = 0.85 + 0.3 * n2;
+    add(snow, [0.78, 0.79, 0.84], [0.97, 0.97, 1]);
+    add(rock - scree, [0.19 * rv, 0.165 * rv, 0.145 * rv], [0.62, 0.52, 0.5]);
+    add(scree, [0.27, 0.25, 0.22], [0.7, 0.62, 0.56]);
+    add(forest, [0.03 * (0.8 + 0.4 * n4), 0.05, 0.032], [0.15, 0.45, 0.3]);
+    add(grass, [0.11 + 0.04 * n4, 0.12 + 0.02 * n4, 0.055], [0.45, 0.66, 0.3]);
     const water = h < 0 ? 1 : 0;
     for (let q = 0; q < 3; q++) {
       const lin = alb[q] * (SUNC[q] * ndl * 1.7 + SKYC[q] * (0.5 + 0.5 * ny) * 1.2);
@@ -682,4 +749,132 @@ function windows(W, H, style) {
     data[o + 3] = 255;
   }
   return { width: W, height: H, data };
+}
+
+// ---- Cliff walls: their own mesh and textures in wall space ---------------------------------------
+// u runs along the wall (z for walls facing ±x, x for walls facing ±z), v down the height; one strip
+// of the atlas per facing, so the two sides of the valley never share texels.
+function wallMesh(mesh, GN, GS, gh, wallGroup) {
+  const H = (i, j) => gh[clamp(j, 0, GN - 1) * GN + clamp(i, 0, GN - 1)];
+  const nrm = (i, j) => { const dx = (H(i + 1, j) - H(i - 1, j)) / (2 * GS), dz = (H(i, j + 1) - H(i, j - 1)) / (2 * GS), l = Math.hypot(dx, 1, dz); return [-dx / l, 1 / l, -dz / l]; };
+  const P = [], NR = [], U = [], I = [], tris = [];
+  for (let j = 0; j < GN - 1; j++) for (let i = 0; i < GN - 1; i++) {
+    const g = wallGroup[j * (GN - 1) + i];
+    if (g < 0) continue;
+    const base = P.length / 3, vs = [];
+    for (const [a, b] of [[0, 0], [1, 0], [1, 1], [0, 1]]) {
+      const x = -EXT + (i + a) * GS, z = -EXT + (j + b) * GS, y = H(i + a, j + b), n = nrm(i + a, j + b);
+      const u = ((g < 2 ? z : x) + EXT) / (2 * EXT), v = (g + clamp((WY1 - y) / (WY1 - WY0))) / 4;
+      P.push(x, y, z); NR.push(...n); U.push(u, v); vs.push([x, y, z, ...n, u, v, g]);
+    }
+    // Same diagonal as the terrain grid (a, c, b / a, d, c with a = (0,0), b = (1,0), c = (1,1), d = (0,1)).
+    I.push(base, base + 2, base + 1, base, base + 3, base + 2);
+    tris.push(...vs[0], ...vs[2], ...vs[1], ...vs[0], ...vs[3], ...vs[2]);
+  }
+  return { mesh: mesh.custom(new Float32Array(P), new Float32Array(NR), new Uint32Array(I), new Float32Array(U)), tris: new Float32Array(tris) };
+}
+
+function bakeWalls(heightAt, groundAt, tris, log) {
+  const T = WT, n = T * T;
+  const real = new Uint8ClampedArray(n * 4), comic = new Uint8ClampedArray(n * 4), neon = new Uint8ClampedArray(n * 4);
+  const done = new Uint8Array(n);
+  const SUNC = [1.75, 1.05, 0.55], SKYC = [0.24, 0.28, 0.46];
+  const hz = Math.hypot(SUN[0], SUN[2]);
+  const vy = (WY1 - WY0) / (T / 4);  // metres per texel row
+  const shadeTexel = (k, x, y, z, nx, ny, nz, g) => {
+    const u = g < 2 ? z : x;          // metres along the wall
+    // Rock: sedimentary bands in y (wavy), blocky joints, dark vertical streaks (water stains).
+    const w1 = N1(u / 38, y / 38) * 3 + N2(u / 9, y / 9) * 0.8;
+    const band = Math.sin((y + w1) * 0.62) * 0.5 + 0.5, band2 = Math.sin((y + w1 * 0.6) * 2.3 + 1.7) * 0.5 + 0.5;
+    const streak = clamp(0.5 + 1.3 * N3(u / 2.6, y / 34 + g * 7) + 0.5 * N4(u / 0.9, y / 12)) ** 2;
+    const joint = 1 - Math.exp(-((Math.abs(N4(u / 7 + g * 3, y / 70)) / 0.025) ** 2)) * 0.55 * clamp(N1(u / 15, y / 25) + 0.6);
+    const grit = 0.82 + 0.18 * N2(u / 0.45, y / 0.45) + 0.12 * N1(u / 1.6, y / 1.6);
+    const warm = N3(u / 70 + 5, y / 50);
+    // Bump from the same patterns: ledges at the bands, relief along the joints.
+    const bh = (uu, yy) => 0.35 * Math.sin((yy + N1(uu / 38, yy / 38) * 3) * 0.62) + 0.55 * N2(uu / 4, yy / 4) + 0.3 * N4(uu / 1.3, yy / 1.3);
+    const e = 0.35, du = (bh(u + e, y) - bh(u - e, y)) / (2 * e), dv = (bh(u, y + e) - bh(u, y - e)) / (2 * e);
+    const tu = g < 2 ? [0, 0, 1] : [1, 0, 0];
+    let mx = nx - 0.55 * du * tu[0], my = ny - 0.55 * dv, mz = nz - 0.55 * du * tu[2];
+    const ml = Math.hypot(mx, my, mz); mx /= ml; my /= ml; mz /= ml;
+    const ndl = Math.max(0, mx * SUN[0] + my * SUN[1] + mz * SUN[2]);
+    // Sun visibility: march from the face towards the sun over the terrain mesh.
+    let sv = ndl > 0 ? 1 : 0;
+    if (sv > 0) {
+      const ox = x + nx * 1.2, oy = y + ny * 1.2, oz = z + nz * 1.2;
+      for (let t = 2; t < 1600; t *= 1.13) {
+        const px = ox + SUN[0] * t, pz = oz + SUN[2] * t;
+        if (Math.abs(px) > EXT || Math.abs(pz) > EXT) break;
+        const ex = groundAt(px, pz) - (oy + SUN[1] * t);
+        if (ex > 0) { sv = 0; break; }
+        sv = Math.min(sv, -ex / (0.03 * t + 0.4));
+      }
+      sv = clamp(sv);
+    }
+    // Moss / grass on the ledges (faces turned up), lichen patches.
+    const ledge = smooth(0.5, 0.72, my + 0.2 * N2(u / 6, y / 6)) * (1 - smooth(260, 330, y));
+    const s = 0.3 * band + 0.15 * band2 + 0.55 * warm;
+    let alb = [0.25 + 0.1 * s, 0.205 + 0.075 * s, 0.165 + 0.05 * s];
+    alb = alb.map((v, q) => v * grit * mix(1, [0.55, 0.52, 0.5][q], streak * 0.75) * joint);
+    alb = alb.map((v, q) => mix(v, [0.07, 0.1, 0.04][q] * (0.8 + 0.4 * grit), ledge));
+    const cav = 0.55 + 0.45 * joint * clamp(0.75 + 0.5 * band2);
+    const sky = (0.55 + 0.45 * my) * cav;
+    for (let q = 0; q < 3; q++) real[k * 4 + q] = toByte(tone(alb[q] * (SUNC[q] * ndl * sv * 1.9 + SKYC[q] * sky * 1.25 + 0.05 * SUNC[q] * cav)));
+    // Comic: flat rock in two light bands, inked strata and cracks with varying weight.
+    const lit = smooth(0.08, 0.14, ndl * sv);
+    const cr = [0.84 - 0.1 * band, 0.6 - 0.08 * band, 0.44 - 0.06 * band];
+    const cg = ledge > 0.5 ? [0.3, 0.62, 0.3] : cr;
+    const shadeT = [0.5, 0.48, 0.72];
+    const strata = Math.abs(Math.sin((y + w1) * 0.62 * 0.5)) < 0.05 + 0.04 * clamp(N3(u / 20, y / 20) + 0.4) ? 1 : 0;
+    const crack = N1(u / 40, y / 40) > 0.05 && Math.abs(N4(u / 7 + g * 3, y / 70)) < 0.006 + 0.01 * clamp(N1(u / 9, y / 5) + 0.3) ? 1 : 0;
+    const ink = (strata && N2(u / 60, y / 4) > -0.25) || crack ? 0.1 : 1;
+    for (let q = 0; q < 3; q++) comic[k * 4 + q] = Math.round(255 * clamp(cg[q] * mix(shadeT[q], 1.03, lit) * ink));
+    // Neon: contour lines every 8 m (brighter every 40 m) run as crisp horizontal lines.
+    const line = (period, width) => { const f = y / period, d = Math.abs(f - Math.round(f)) * period; return clamp(1 - d / width); };
+    const hn = clamp((y + 5) / 260);
+    const col = [mix(1.0, 0.15, hn), mix(0.18, 0.8, hn), mix(0.75, 1.0, hn)];
+    const em = line(8, 0.32) * 0.45 + line(40, 0.55);
+    for (let q = 0; q < 3; q++) neon[k * 4 + q] = Math.round(255 * clamp(col[q] * em));
+    real[k * 4 + 3] = comic[k * 4 + 3] = neon[k * 4 + 3] = 255;
+    done[k] = 1;
+  };
+  // Rasterise every wall triangle in atlas space; shade each texel at its world position.
+  const S = 9;
+  for (let t = 0; t < tris.length; t += S * 3) {
+    const A = t, B = t + S, C = t + 2 * S;
+    const ax = tris[A + 6] * T - 0.5, ay = tris[A + 7] * T - 0.5, bx = tris[B + 6] * T - 0.5, by = tris[B + 7] * T - 0.5, cx = tris[C + 6] * T - 0.5, cy = tris[C + 7] * T - 0.5;
+    const den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
+    if (Math.abs(den) < 1e-9) continue;
+    const g = tris[A + 8];
+    const x0 = Math.max(0, Math.floor(Math.min(ax, bx, cx)) - 1), x1 = Math.min(T - 1, Math.ceil(Math.max(ax, bx, cx)) + 1);
+    const y0 = Math.max(0, Math.floor(Math.min(ay, by, cy)) - 1), y1 = Math.min(T - 1, Math.ceil(Math.max(ay, by, cy)) + 1);
+    for (let py = y0; py <= y1; py++) for (let px = x0; px <= x1; px++) {
+      let w0 = ((by - cy) * (px - cx) + (cx - bx) * (py - cy)) / den, w1 = ((cy - ay) * (px - cx) + (ax - cx) * (py - cy)) / den, w2 = 1 - w0 - w1;
+      const eps = -0.02;
+      if (w0 < eps || w1 < eps || w2 < eps) continue;
+      const k = py * T + px;
+      if (done[k]) continue;
+      w0 = Math.max(0, w0); w1 = Math.max(0, w1); w2 = Math.max(0, w2); const ws = w0 + w1 + w2; w0 /= ws; w1 /= ws; w2 /= ws;
+      const at = (o) => tris[A + o] * w0 + tris[B + o] * w1 + tris[C + o] * w2;
+      let nx = at(3), ny = at(4), nz = at(5); const l = Math.hypot(nx, ny, nz); nx /= l; ny /= l; nz /= l;
+      shadeTexel(k, at(0), at(1), at(2), nx, ny, nz, g);
+    }
+  }
+  log && log('walls shaded');
+  void vy; void heightAt; void hz;
+  // Grow the painted texels outwards a few texels (filtering at triangle edges never reads black).
+  for (let pass = 0; pass < 4; pass++) {
+    const add = [];
+    for (let py = 0; py < T; py++) for (let px = 0; px < T; px++) {
+      const k = py * T + px;
+      if (done[k]) continue;
+      const nb = px > 0 && done[k - 1] ? k - 1 : px < T - 1 && done[k + 1] ? k + 1 : py > 0 && done[k - T] ? k - T : py < T - 1 && done[k + T] ? k + T : -1;
+      if (nb >= 0) add.push(k, nb);
+    }
+    for (let a = 0; a < add.length; a += 2) {
+      const k = add[a], s = add[a + 1];
+      for (let q = 0; q < 4; q++) { real[k * 4 + q] = real[s * 4 + q]; comic[k * 4 + q] = comic[s * 4 + q]; neon[k * 4 + q] = neon[s * 4 + q]; }
+      done[k] = 1;
+    }
+  }
+  return { real: { width: T, height: T, data: real }, comic: { width: T, height: T, data: comic }, neon: { width: T, height: T, data: neon } };
 }
