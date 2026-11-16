@@ -35,7 +35,11 @@ pub mod charts;
 pub mod code;
 pub mod devices;
 pub mod lottie;
+pub mod metaballs;
+pub mod morph;
+pub mod particle_text;
 pub mod particles;
+pub mod rays;
 pub mod three;
 pub mod transitions;
 pub mod ui;
@@ -202,6 +206,12 @@ kinds! {
     "sparks" => particles::Sparks, "Bright sparks bursting out with trails.", r##"{}"##;
     "snow" => particles::Snow, "Gently falling snow or dust.", r##"{}"##;
     "dust" => particles::Dust, "Floating glowing dust motes.", r##"{}"##;
+    "particle-text" => particle_text::ParticleText, "Thousands of glowing particles fly in, form a word, hold, re-form into the next word and blow away.", r##"{"text":"Hello"}"##;
+    // Shapes and light
+    "morph" => morph::Morph, "Smooth gradient shape morphing between named shapes (circle, square, star, heart, blob, triangle) or SVG paths.", r##"{"shapes":["circle","star","heart"]}"##;
+    "metaballs" => metaballs::Metaballs, "Liquid gooey blobs that drift, merge and split, with a gradient fill and glow.", r##"{}"##;
+    "god-rays" => rays::GodRays, "Volumetric light rays from a point, slowly turning, with dust motes in the beams.", r##"{}"##;
+    "lens-flare" => rays::LensFlare, "Anamorphic lens flare: streak, halo and ghosts along the axis through the centre; `at` can travel a path.", r##"{"at":[0.3,0.3]}"##;
     // 3D
     "model" => three::Model, "Product spin/orbit of a 3D primitive (rounded box, sphere, torus, knot, extruded logo).", r##"{"shape":"torus"}"##;
     // Transitions
