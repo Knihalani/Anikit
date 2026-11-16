@@ -2006,9 +2006,13 @@ fn put<const MODE: u8>(dst: &mut u32, px: u32, gloss: u32) {
     *dst = match MODE {
         ADD => add_packed(*dst, px),
         GLOSS => {
-            // px·(1 − g) + dst·g per channel, g in 1/256ths.
-            let ch = |s: u32| ((((px >> s) & 255) * (256 - gloss) + ((*dst >> s) & 255) * gloss) >> 8) << s;
-            ch(0) | ch(8) | ch(16) | 0xff00_0000
+            // px·(1 − g) + dst·g per channel, g in 1/256ths; red and blue
+            // share one word in 16-bit lanes (each sum ≤ 255·256 fits).
+            const RB: u32 = 0x00ff_00ff;
+            let d = *dst;
+            let rb = (((px & RB) * (256 - gloss) + (d & RB) * gloss) >> 8) & RB;
+            let g = ((((px >> 8) & 255) * (256 - gloss) + ((d >> 8) & 255) * gloss) >> 8) << 8;
+            rb | g | 0xff00_0000
         }
         _ => px,
     }
