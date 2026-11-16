@@ -573,6 +573,11 @@ pub struct Engine {
     lag_threshold: f64,
     lag_adjusted: f64,
     released_scratch: Vec<u32>,
+    /// The first output of every animation node, by node index (see
+    /// [`first_outputs`](Self::first_outputs)).
+    out0: Vec<f64>,
+    /// Bumped whenever `out0` moves (see [`out0_epoch_ptr`](Self::out0_epoch_ptr)).
+    out0_epoch: u32,
     /// Easing memo for the frame loop (see [`EaseMemo`]).
     memo: EaseMemo,
     /// Tests: render every group child in full (reference for the lane).
@@ -845,6 +850,8 @@ impl Engine {
             lag_threshold: 500.0,
             lag_adjusted: 33.0,
             released_scratch: Vec::new(),
+            out0: Vec::new(),
+            out0_epoch: 0,
             memo: EaseMemo::EMPTY,
             #[cfg(test)]
             lane_off: false,
@@ -889,6 +896,11 @@ impl Engine {
                 return Err(Error::Capacity);
             }
             self.nodes.push(Node::empty());
+            let cap = self.out0.capacity();
+            self.out0.push(0.0);
+            if self.out0.capacity() != cap {
+                self.out0_epoch = self.out0_epoch.wrapping_add(1);
+            }
             self.nodes.len() - 1
         };
         let gen = self.nodes[idx].gen;
@@ -1072,7 +1084,9 @@ impl Engine {
         anim.classify();
         // Pre-fill outputs with the start values so readers never see zeros.
         anim.eval(&self.easings, &mut EaseMemo::EMPTY.clone(), 0.0);
+        let first = anim.out().first().copied().unwrap_or(0.0);
         let idx = self.alloc(Kind::Anim(anim), sanitize(timing), fl)?;
+        self.out0[idx] = first;
         Ok(self.handle_of(idx))
     }
 
@@ -1777,6 +1791,21 @@ impl Engine {
         self.values(h).map(|v| v.as_ptr()).unwrap_or(core::ptr::null())
     }
 
+    /// The first output of every animation, by node index (`handle &
+    /// INDEX_MASK`): always equal to `values(h)[0]` of a live animation with
+    /// outputs. Children of one `animate()` call are usually allocated in
+    /// order, so their values are contiguous here (one sequential read per
+    /// target for single-property writers) where each animation's own
+    /// outputs sit in its own buffer.
+    pub fn first_outputs(&self) -> &[f64] {
+        &self.out0
+    }
+    /// Pointer to a counter bumped whenever [`first_outputs`](Self::first_outputs)
+    /// moves (its address is stable for the engine's lifetime).
+    pub fn out0_epoch_ptr(&self) -> *const u32 {
+        &self.out0_epoch
+    }
+
     /// Output offset of each track within [`values`](Self::values).
     pub fn track_offsets(&self, h: Handle) -> Result<Vec<u32>, Error> {
         let i = self.resolve(h)?;
@@ -2000,6 +2029,9 @@ impl Engine {
                 if should_render {
                     let p = ease_memo(&self.easings, &mut self.memo, te, st.progress);
                     a.eval(&self.easings, &mut self.memo, p);
+                    if let Some(&v) = a.out().first() {
+                        self.out0[i] = v;
+                    }
                     self.updated.push(h);
                     if st.phase == Phase::Active {
                         return p;
@@ -2112,6 +2144,9 @@ impl Engine {
         let h = (n.gen << INDEX_BITS) | i as u32;
         if let Kind::Anim(a) = &mut n.kind {
             a.eval(&self.easings, &mut self.memo, p);
+            if let Some(&v) = a.out().first() {
+                self.out0[i] = v;
+            }
         }
         self.updated.push(h);
         true
@@ -2984,6 +3019,75 @@ mod tests {
         e.set_track_enabled(hs[0], 1, true).unwrap();
         assert_eq!(simple(&e, hs[0]), 3);
         check(&mut e);
+    }
+
+    #[test]
+    fn first_outputs_track_values() {
+        // `first_outputs()[index]` equals `values(h)[0]` for every live
+        // animation after creation, ticks (full renders and the group lane),
+        // seeks, reversal, and node reuse.
+        let mut e = Engine::new();
+        let ease = e.easing("outCubic").unwrap();
+        let mut live: Vec<Handle> = Vec::new();
+        let g = e.create_group(Timing::default(), true, flags::DEFAULT).unwrap();
+        let mut mk = |e: &mut Engine, k: usize| -> Handle {
+            // Group children (even k) share timing and start: the lane renders most of them.
+            let tm = Timing { duration: if k % 2 == 0 { 300.0 } else { 300.0 + (k % 3) as f64 * 50.0 }, ..Default::default() };
+            let spec = match k % 4 {
+                0 => vec![TrackSpec::number(vec![0.0, 50.0, 10.0, 80.0, 20.0], 1).with_easings(vec![ease])],
+                1 => vec![TrackSpec::number(vec![k as f64, 500.0], 1).with_easings(vec![ease]), TrackSpec::number(vec![1.0, 0.0], 1)],
+                2 => vec![TrackSpec::number(vec![1.0, 2.0, 3.0, 4.0], 2)],
+                _ => {
+                    let mut c = TrackSpec::number(vec![255.0, 0.0, 0.0, 1.0, 0.0, 0.0, 255.0, 1.0], 4);
+                    c.kind = TrackKind::Color(ColorSpace::Oklab);
+                    vec![c]
+                }
+            };
+            e.create_anim(tm, &spec, flags::DEFAULT).unwrap()
+        };
+        for k in 0..40 {
+            let h = mk(&mut e, k);
+            if k % 2 == 0 {
+                e.group_add(g, h, if k < 30 { 0.0 } else { 10.0 }).unwrap();
+            } else {
+                e.play(h).unwrap();
+            }
+            live.push(h);
+        }
+        e.play(g).unwrap();
+        let check = |e: &Engine, live: &[Handle]| {
+            for &h in live {
+                if let Ok(v) = e.values(h) {
+                    assert_eq!(e.first_outputs()[Engine::handle_index(h) as usize].to_bits(), v[0].to_bits());
+                }
+            }
+        };
+        check(&e, &live);
+        for f in 0..60 {
+            match f {
+                10 => {
+                    e.seek(g, 120.0).unwrap();
+                }
+                20 => {
+                    e.reverse(g).unwrap();
+                }
+                30 => {
+                    // Release some, create more (reused indices).
+                    for h in live.drain(..10) {
+                        e.release(h).unwrap();
+                    }
+                    for k in 0..10 {
+                        let h = mk(&mut e, k);
+                        e.play(h).unwrap();
+                        live.push(h);
+                    }
+                }
+                _ => {}
+            }
+            e.tick(17.0);
+            check(&e, &live);
+            e.clear_frame();
+        }
     }
 
     #[test]

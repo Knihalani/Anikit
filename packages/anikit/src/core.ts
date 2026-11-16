@@ -4,6 +4,7 @@
  * core reports as updated are touched.
  */
 import { W, F64, U32, views, core, whenReady, writeStr, f64Buf, LINEAR, EASING_ERROR } from './wasm';
+import type { Exports } from './wasm';
 
 export const INDEX_MASK = (1 << 20) - 1;
 
@@ -43,12 +44,13 @@ export interface NodeRecord {
 }
 
 /**
- * `run(records, U32, up, i, n, F64)`: apply updated records from index `i`
- * (of `n`, list at `U32[up]`) while they take this same runner; returns the
- * index of the first one not applied (`i` if none).
+ * `run(records, U32, up, i, n, F64, exports)`: apply updated records from
+ * index `i` (of `n`, list at `U32[up]`) while they take this same runner;
+ * returns the index of the first one not applied (`i` if none).
  */
 export type Runner = (
   records: Array<NodeRecord | undefined>, u: Uint32Array, up: number, i: number, n: number, f: Float64Array,
+  w: Exports,
 ) => number;
 
 const records: Array<NodeRecord | undefined> = [];
@@ -115,7 +117,7 @@ export function flush(): void {
           // there is no call per record.
           const run = r.run;
           if (run !== undefined && run !== null) {
-            const j = run(records, U32, up, i, n, F64);
+            const j = run(records, U32, up, i, n, F64, w);
             if (j > i) {
               i = j;
               continue;

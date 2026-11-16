@@ -349,11 +349,19 @@ function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner] | null {
     // this writer (see `flush`): what `Part.render` does for each of them
     // in the compact case (`pm === 1`, no `onUpdate`), without a call per
     // Part and with one store site per key for this property set only.
+    // A single property at offset 0 reads the engine's first-output array
+    // instead (same number, `Engine::first_outputs`): consecutive targets
+    // of one call are consecutive there, not one buffer each. Both loops
+    // stop if a setter grew memory (detached views) or, for that array,
+    // created animations (it may have moved: `ak_out0_epoch_ptr`).
+    const one = keys.length === 1 && offs[0] === 0;
     const run = new Function(
-      'return function run(R,U,up,i,n,f){"use strict";for(;i<n;i++){' +
+      'return function run(R,U,up,i,n,f,w){"use strict";' +
+        (one ? 'const v0=w.ak_out0_ptr()>>>3,ep=w.ak_out0_epoch_ptr()>>>2,e0=U[ep];' : '') +
+        `for(;i<n;i++){${one ? 'if(U[ep]!==e0)break;' : 'if(f.length===0)break;'}` +
         `const h=U[up+i];const r=R[h&${INDEX_MASK}];` +
         'if(r===undefined||r.h!==h||r.run!==run||r.pm!==1||r.upd)break;' +
-        `const t=r.pt,a=r.at;${stores}}return i;}`,
+        `const t=r.pt,a=r.at;${one ? `t[${JSON.stringify(keys[0])}]=f[v0+(h&${INDEX_MASK})];` : stores}}return i;}`,
     )() as Runner;
     codegen = true;
     return [fn, run];
