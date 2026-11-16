@@ -79,6 +79,8 @@ pub(crate) struct MbInfo {
     /// 0 = inter (incl. skip), 1 = I16, 2 = I4x4
     pub kind: u8,
     pub skip: bool,
+    /// Went through mode decision (not a copy of the reference).
+    pub coded: bool,
     pub mv: (i16, i16),
     /// Total coefficients per 4×4 luma block (raster), for nC and deblocking.
     pub nz: [u8; 16],
@@ -145,6 +147,7 @@ pub(crate) struct FrameCtx<'a> {
     pub src: &'a Pic,
     pub refp: &'a Pic,
     pub changed: &'a [bool],
+    pub stale: &'a [bool],
     pub hint: &'a [(i16, i16)],
     pub idr: bool,
     pub max_mvy: i32,
@@ -495,15 +498,25 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
 
     /// Unchanged macroblock: copy the co-located reference (MV 0, no residual).
     fn code_copy(&mut self, mbx: usize, mby: usize, mvp: (i32, i32), skip_mv: (i32, i32)) {
-        // recon = ref at mv 0
-        self.copy_pred(mbx, mby, (0, 0));
+        // recon = ref at mv 0 (already equal unless stale)
+        if self.c.stale[mby * self.c.mbw + mbx] {
+            self.copy_pred(mbx, mby, (0, 0));
+        }
         let mut skip = skip_mv == (0, 0);
         if !skip && self.pred_equals_zero(mbx, mby, skip_mv) {
             skip = true;
         }
         let mv = if skip { skip_mv } else { (0, 0) };
         let i = (mby - self.b.mby0) * self.c.mbw + mbx;
-        self.b.info[i] = MbInfo { kind: 0, skip, mv: (mv.0 as i16, mv.1 as i16), nz: [0; 16], nzc: [[0; 4]; 2], m4: [2; 16] };
+        self.b.info[i] = MbInfo {
+            kind: 0,
+            skip,
+            coded: false,
+            mv: (mv.0 as i16, mv.1 as i16),
+            nz: [0; 16],
+            nzc: [[0; 4]; 2],
+            m4: [2; 16],
+        };
         if skip {
             self.skip_run += 1;
             self.stats.skip += 1;
@@ -593,7 +606,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let skip = cd.cbp == 0 && mv == skip_mv;
         let i = (mby - self.b.mby0) * self.c.mbw + mbx;
         self.b.info[i] =
-            MbInfo { kind: 0, skip, mv: (mv.0 as i16, mv.1 as i16), nz: cd.nz, nzc: cd.nzc, m4: [2; 16] };
+            MbInfo { kind: 0, skip, coded: true, mv: (mv.0 as i16, mv.1 as i16), nz: cd.nz, nzc: cd.nzc, m4: [2; 16] };
         if skip {
             self.skip_run += 1;
             self.stats.skip += 1;
@@ -854,6 +867,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         self.b.info[i] = MbInfo {
             kind: if is16 { 1 } else { 2 },
             skip: false,
+            coded: true,
             mv: (0, 0),
             nz: cd.nz,
             nzc: cd.nzc,
@@ -1213,6 +1227,11 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
     let mut src_c = [[0u8; 64]; 2];
     for mby in mby0..mby1 {
         for mbx in 0..c.mbw {
+            if !c.idr && !c.changed[mby * c.mbw + mbx] {
+                let (mvp, skip_mv) = s.mv_pred(mbx, mby);
+                s.code_copy(mbx, mby, mvp, skip_mv);
+                continue;
+            }
             let o = sy.off(mbx as isize * 16, mby as isize * 16);
             for y in 0..16 {
                 src_y[y * 16..y * 16 + 16].copy_from_slice(&sy.data[o + y * sy.stride..o + y * sy.stride + 16]);
@@ -1243,7 +1262,8 @@ pub struct Encoder {
     lambda: i32,
     level: u8,
     cur: Pic,
-    prev: Pic,
+    /// Macroblocks where `recon` (the picture before the reference) differs from `refp`.
+    stale: Vec<bool>,
     recon: Pic,
     refp: Pic,
     info: Vec<MbInfo>,
@@ -1283,7 +1303,7 @@ impl Encoder {
             lambda,
             level,
             cur: Pic::new(mbw, mbh, 0),
-            prev: Pic::new(mbw, mbh, 0),
+            stale: vec![true; mbw * mbh],
             recon: Pic::new(mbw, mbh, PAD),
             refp: Pic::new(mbw, mbh, PAD),
             info: vec![MbInfo::default(); mbw * mbh],
@@ -1341,9 +1361,6 @@ impl Encoder {
         assert_eq!((f.width, f.height), (self.cfg.width, self.cfg.height), "ak264: frame size mismatch");
         let (w, h) = (f.width as usize, f.height as usize);
         let (cw, ch) = (w / 2, h / 2);
-        self.cur.y.load(f.y, f.y_stride, w, h);
-        self.cur.u.load(f.u, f.c_stride, cw, ch);
-        self.cur.v.load(f.v, f.c_stride, cw, ch);
         let idr = self.frame_in_gop == 0 || self.cfg.gop <= 1 || self.frame_in_gop >= self.cfg.gop as u64;
         if idr {
             self.frame_in_gop = 0;
@@ -1352,13 +1369,26 @@ impl Encoder {
         let mut stats = FrameStats { idr, ..Default::default() };
         let nmb = self.mbw * self.mbh;
         let mut any_changed = true;
-        if !idr {
+        if idr {
+            self.cur.y.load(f.y, f.y_stride, w, h);
+            self.cur.u.load(f.u, f.c_stride, cw, ch);
+            self.cur.v.load(f.v, f.c_stride, cw, ch);
+        } else {
+            let mbw = self.mbw;
+            let Pic { y, u, v } = &mut self.cur;
             match &hints.changed {
                 Some(c) => {
                     assert_eq!(c.len(), nmb, "ak264: changed map must have one entry per macroblock");
                     self.changed.copy_from_slice(c);
+                    for (i, _) in c.iter().enumerate().filter(|x| *x.1) {
+                        crate::diff::load_mb(y, u, v, f, i % mbw, i / mbw, false);
+                    }
                 }
-                None => crate::diff::changed_map(&self.cur, &self.prev, self.mbw, self.mbh, &mut self.changed),
+                None => {
+                    for (i, ch) in self.changed.iter_mut().enumerate() {
+                        *ch = crate::diff::load_mb(y, u, v, f, i % mbw, i / mbw, true);
+                    }
+                }
             }
             any_changed = self.changed.iter().any(|&c| c);
             self.hint.fill(NO_HINT);
@@ -1408,9 +1438,11 @@ impl Encoder {
             stats.skip = nmb as u32;
         } else {
             self.encode_slices(idr, frame_num, &mut stats);
+            for (st, inf) in self.stale.iter_mut().zip(&self.info) {
+                *st = inf.coded;
+            }
             if self.cfg.deblock {
-                let rows = self.slice_rows();
-                crate::deblock::deblock(&mut self.recon, &self.info, self.mbw, self.mbh, &self.q, rows);
+                crate::deblock::deblock(&mut self.recon, &self.info, self.mbw, self.mbh, &self.q, &mut self.stale);
             }
             self.recon.extend();
             std::mem::swap(&mut self.recon, &mut self.refp);
@@ -1418,7 +1450,6 @@ impl Encoder {
         if idr {
             self.idr_count = self.idr_count.wrapping_add(1);
         }
-        std::mem::swap(&mut self.cur, &mut self.prev);
         self.frame_in_gop += 1;
         stats.bytes = self.out.len();
         self.last = stats;
@@ -1439,6 +1470,7 @@ impl Encoder {
             src: &self.cur,
             refp: &self.refp,
             changed: &self.changed,
+            stale: &self.stale,
             hint: &self.hint,
             idr,
             max_mvy: max_mv_y(self.level),

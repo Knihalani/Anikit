@@ -114,17 +114,35 @@ fn filter_line(d: &mut [u8], o: usize, xs: usize, ls: usize, n: usize, bs: u8, p
 }
 
 /// Deblock a whole reconstructed picture in decoding order.
-pub(crate) fn deblock(p: &mut Pic, info: &[MbInfo], mbw: usize, mbh: usize, q: &Quant, _slices: Vec<(usize, usize)>) {
+/// Marks every macroblock whose samples may change in `touched`.
+pub(crate) fn deblock(p: &mut Pic, info: &[MbInfo], mbw: usize, mbh: usize, q: &Quant, touched: &mut [bool]) {
     let lp = params(q.qp);
     let cpar = params(chroma_qp(q.qp));
     for mby in 0..mbh {
         for mbx in 0..mbw {
-            deblock_mb(p, info, mbw, mbx, mby, &lp, &cpar);
+            let i = mby * mbw + mbx;
+            let cur = &info[i];
+            // Fast path: copies next to copies with the same motion have bS 0 everywhere.
+            if !cur.coded
+                && (mbx == 0 || (!info[i - 1].coded && info[i - 1].mv == cur.mv))
+                && (mby == 0 || (!info[i - mbw].coded && info[i - mbw].mv == cur.mv))
+            {
+                continue;
+            }
+            let (l, t) = deblock_mb(p, info, mbw, mbx, mby, &lp, &cpar);
+            touched[i] = true;
+            if l {
+                touched[i - 1] = true;
+            }
+            if t {
+                touched[i - mbw] = true;
+            }
         }
     }
 }
 
-fn deblock_mb(p: &mut Pic, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize, lp: &Params, cp: &Params) {
+/// Returns whether the left / top macroblock edges were filtered.
+fn deblock_mb(p: &mut Pic, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize, lp: &Params, cp: &Params) -> (bool, bool) {
     let cur = &info[mby * mbw + mbx];
     // bS[dir][edge][segment]
     let mut b = [[[0u8; 4]; 4]; 2];
@@ -156,7 +174,7 @@ fn deblock_mb(p: &mut Pic, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize, 
         }
     }
     if !any {
-        return;
+        return (false, false);
     }
     let lum = &mut p.y;
     let (s, base) = (lum.stride, lum.off(mbx as isize * 16, mby as isize * 16));
@@ -173,6 +191,7 @@ fn deblock_mb(p: &mut Pic, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize, 
     for pl in [&mut p.u, &mut p.v] {
         chroma_mb(pl, mbx, mby, &b, cp);
     }
+    (b[0][0].iter().any(|&v| v != 0), b[1][0].iter().any(|&v| v != 0))
 }
 
 fn chroma_mb(pl: &mut Plane, mbx: usize, mby: usize, b: &[[[u8; 4]; 4]; 2], cp: &Params) {

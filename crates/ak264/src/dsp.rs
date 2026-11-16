@@ -19,29 +19,17 @@ pub fn sad16_scalar(a: &[u8], sa: usize, b: &[u8], sb: usize) -> u32 {
     s
 }
 
-/// SATD (4×4 Hadamard, sum |coef| / 2) of a w×h block, contiguous rows of width `w`.
+/// SATD (sum of |4×4 Hadamard| / 2) of a w×h block, contiguous rows of width `w`.
 #[inline]
 pub fn satd(a: &[u8], b: &[u8], w: usize, h: usize) -> u32 {
-    let mut s = 0;
-    for by in (0..h).step_by(4) {
-        for bx in (0..w).step_by(4) {
-            s += satd4(a, b, w, bx, by);
-        }
-    }
-    s
+    crate::simd::satd_sum(a, w, b, w, w, h) >> 1
 }
 
+/// SATD of one 4×4 block.
 #[inline(always)]
 pub fn satd4(a: &[u8], b: &[u8], w: usize, bx: usize, by: usize) -> u32 {
-    let mut d = [0i32; 16];
-    for y in 0..4 {
-        for x in 0..4 {
-            let i = (by + y) * w + bx + x;
-            d[y * 4 + x] = a[i] as i32 - b[i] as i32;
-        }
-    }
-    let h = crate::transform::hadamard4(&d);
-    (h.iter().map(|v| v.unsigned_abs()).sum::<u32>() + 1) >> 1
+    let o = by * w + bx;
+    crate::simd::satd_sum_scalar(&a[o..], w, &b[o..], w, 4, 4) >> 1
 }
 
 /// Exact equality of a w×h region.
