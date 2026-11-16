@@ -287,6 +287,7 @@ export class Object3D {
   /** @internal */ gpu: GpuGeometry | null;
   /** @internal */ handlers: Map<string, Set<(e: ScenePointerEvent) => void>> | null = null;
   /** @internal */ scene: Scene | null = null;
+  /** @internal squared camera distance (transparent sort) */ depth = 0;
   constructor(gpu: GpuGeometry | null, o: ObjectOptions, mat: Material) {
     this.gpu = gpu;
     this.position = vec(o.position, 0);
@@ -799,10 +800,11 @@ export class Scene {
   private view = m4(); private proj = m4(); private vp = m4(); private ivp = m4(); private lightVP = m4();
   private lv = m4(); private lp = m4(); private tmp = m4();
   private planes = new Float32Array(24);
+  private lEye = new Vector3(); private lAt = new Vector3();
+  private layerCtx: LayerContext | null = null;
   private opaque: Object3D[] = [];
   private transparent: Object3D[] = [];
   private casters: Object3D[] = [];
-  private depthKey = new Map<Object3D, number>();
   private layers: SceneLayer[] = [];
   private shadowFb: WebGLFramebuffer | null = null;
   private shadowTex: WebGLTexture | null = null;
@@ -1008,8 +1010,7 @@ export class Scene {
     this.stats.culled = 0;
     for (const o of this.objects) this.collect(o, null);
     const ce = this.camera.position;
-    this.depthKey.clear();
-    for (const o of this.transparent) this.depthKey.set(o, (o.world[12] - ce.x) ** 2 + (o.world[13] - ce.y) ** 2 + (o.world[14] - ce.z) ** 2);
+    for (const o of this.transparent) o.depth = (o.world[12] - ce.x) ** 2 + (o.world[13] - ce.y) ** 2 + (o.world[14] - ce.z) ** 2;
     this.opaque.sort(byState);
     this.transparent.sort(this.byDepth);
     this.writeUbo();
@@ -1028,7 +1029,7 @@ export class Scene {
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.post ? this.msFb : null);
     gl.viewport(0, 0, this.w, this.h);
     const bg = this.bg;
-    if (bg) gl.clearColor(...this.bgOut(bg)); else gl.clearColor(0, 0, 0, 0);
+    if (bg) gl.clearColor(this.clear[0], this.clear[1], this.clear[2], 1); else gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     if (!bg && !this.transparentBg) {
       gl.disable(gl.DEPTH_TEST); gl.depthMask(false);
@@ -1044,7 +1045,8 @@ export class Scene {
     gl.disable(gl.BLEND);
     for (const o of this.opaque) this.draw(o, false);
     if (this.layers.length) {
-      const ctx: LayerContext = { gl, view: this.view, proj: this.proj, viewProj: this.vp, eye: this.camera.position, width: this.w, height: this.h, hdr: this.post };
+      const ctx = (this.layerCtx ??= { gl, view: this.view, proj: this.proj, viewProj: this.vp, eye: this.camera.position, width: 0, height: 0, hdr: this.post });
+      ctx.width = this.w; ctx.height = this.h;
       for (const l of this.layers) l.render(ctx);
       gl.bindVertexArray(null);
     }
@@ -1142,12 +1144,15 @@ export class Scene {
     return obj;
   }
 
-  private bgOut(c: number[]): [number, number, number, number] {
-    // The clear colour bypasses the shader: tonemap it the same way when rendering to the screen.
-    if (this.post) return [c[0], c[1], c[2], 1];
-    const g = (x: number) => Math.pow(Math.min(1, Math.max(0, x)), 1 / 2.2);
-    return [g(c[0]), g(c[1]), g(c[2]), 1];
+  /** Clear colour: linear for the HDR chain, gamma-encoded when drawing straight to the canvas. */
+  private get clear(): number[] {
+    const c = this.bg!;
+    if (this.post) return c;
+    const g = this.clearOut;
+    for (let i = 0; i < 3; i++) g[i] = Math.pow(Math.min(1, Math.max(0, c[i])), 1 / 2.2);
+    return g;
   }
+  private clearOut = [0, 0, 0];
 
   private frame(t: number): void {
     const dt = this.lastT ? t - this.lastT : 16.7;
@@ -1393,8 +1398,8 @@ export class Scene {
       const cx = (lx + hx) / 2, cy = (ly + hy) / 2, cz = (lz + hz) / 2;
       const r = Math.max(0.5, Math.hypot(hx - lx, hy - ly, hz - lz) / 2);
       const L = this.lightDir, ll = Math.hypot(L.x, L.y, L.z) || 1;
-      const eye = { x: cx + (L.x / ll) * r * 2, y: cy + (L.y / ll) * r * 2, z: cz + (L.z / ll) * r * 2 } as Vector3;
-      lookAt(this.lv, eye, { x: cx, y: cy, z: cz } as Vector3, 0);
+      this.lEye.set(cx + (L.x / ll) * r * 2, cy + (L.y / ll) * r * 2, cz + (L.z / ll) * r * 2);
+      lookAt(this.lv, this.lEye, this.lAt.set(cx, cy, cz), 0);
       const P = this.lp; P.fill(0);
       // Orthographic: depth [0, 4r] in front of the light maps to [-1, 1].
       P[0] = 1 / r; P[5] = 1 / r; P[10] = -2 / (4 * r); P[14] = -1; P[15] = 1;
@@ -1480,7 +1485,7 @@ export class Scene {
     return e.tex;
   }
 
-  private byDepth = (a: Object3D, b: Object3D) => this.depthKey.get(b)! - this.depthKey.get(a)!;
+  private byDepth = (a: Object3D, b: Object3D) => b.depth - a.depth;
 
   private makeShadowMap(): void {
     const gl = this.gl, n = this.shadowSize;
@@ -1733,8 +1738,8 @@ export class Orbit {
     const x = p.x - t.x, y = p.y - t.y, z = p.z - t.z;
     let r = Math.hypot(x, y, z) || 1;
     let yaw = Math.atan2(x, z), pitch = Math.asin(Math.max(-1, Math.min(1, y / r)));
-    const [pl, ph] = this.o.pitch ?? [-85, 85];
-    const [dl, dh] = this.o.distance ?? [0.5, 100];
+    const pl = this.o.pitch?.[0] ?? -85, ph = this.o.pitch?.[1] ?? 85;
+    const dl = this.o.distance?.[0] ?? 0.5, dh = this.o.distance?.[1] ?? 100;
     yaw += dyaw;
     pitch = Math.max((pl * Math.PI) / 180, Math.min((ph * Math.PI) / 180, pitch + dpitch));
     r = Math.max(dl, Math.min(dh, r * (1 + dzoom)));
