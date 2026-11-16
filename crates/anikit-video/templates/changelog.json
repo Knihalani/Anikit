@@ -219,7 +219,7 @@
                 "id": "changes-{{g + 1}}",
                 "transition": {
                   "type": "push",
-                  "direction": "{{fmt.portrait ? 'up' : 'left'}}",
+                  "direction": "{{!fmt.landscape ? 'up' : 'left'}}",
                   "duration": 0.6,
                   "ease": "inOutQuart"
                 },
@@ -236,7 +236,7 @@
                   {
                     "text": "{{product}} {{version}}",
                     "style": "label",
-                    "y": "{{fmt.cy + fmt.u * 4 - (len(group) * (fmt.portrait ? 19 : 13) + (len(group) - 1) * 2.2) * fmt.u / 2 - fmt.u * 6}}",
+                    "y": "{{fmt.cy + fmt.u * 4 - (len(group) * (!fmt.landscape ? 19 : 13) + (len(group) - 1) * 2.2) * fmt.u / 2 - fmt.u * 6}}",
                     "enter": "fadeIn"
                   },
                   {
@@ -264,12 +264,12 @@
                             "type": "box",
                             "id": "item-{{g * per + i + 1}}",
                             "style": {
-                              "direction": "{{fmt.portrait ? 'column' : 'row'}}",
-                              "gap": "{{fmt.u * (fmt.portrait ? 1.2 : 2.4)}}",
-                              "align": "{{fmt.portrait ? 'start' : 'center'}}",
+                              "direction": "{{!fmt.landscape ? 'column' : 'row'}}",
+                              "gap": "{{fmt.u * (!fmt.landscape ? 1.2 : 2.4)}}",
+                              "align": "{{!fmt.landscape ? 'start' : 'center'}}",
                               "justify": "start",
                               "padding": [
-                                "{{fmt.u * (fmt.portrait ? 2.6 : 3.4)}}",
+                                "{{fmt.u * (!fmt.landscape ? 2.6 : 3.4)}}",
                                 "{{fmt.u * 3.2}}"
                               ],
                               "background": "$surface",
@@ -284,7 +284,7 @@
                             "children": [
                               {
                                 "type": "box",
-                                "width": "{{fmt.u * (fmt.portrait ? 27 : 21)}}",
+                                "width": "{{fmt.u * (!fmt.landscape ? 27 : 21)}}",
                                 "style": {
                                   "padding": [
                                     "{{fmt.u * 0.7}}",
@@ -299,7 +299,7 @@
                                   {
                                     "text": "{{kind}}",
                                     "style": "label",
-                                    "size": "{{fmt.portrait ? '3vmin' : '2.3vmin'}}",
+                                    "size": "{{!fmt.landscape ? '3vmin' : '2.3vmin'}}",
                                     "letterSpacing": "0.1em",
                                     "color": "{{mix(c, brand.colors.text, 0.5)}}"
                                   }
@@ -310,8 +310,8 @@
                                 "style": "body",
                                 "weight": 600,
                                 "align": "left",
-                                "width": "{{fmt.portrait ? fmt.safe.w - fmt.u * 6.4 : fmt.w * 0.66 - fmt.u * 31}}",
-                                "size": "{{fmt.portrait ? '4.6vmin' : '4.4vmin'}}"
+                                "width": "{{!fmt.landscape ? fmt.safe.w - fmt.u * 6.4 : fmt.w * 0.66 - fmt.u * 31}}",
+                                "size": "{{!fmt.landscape ? '4.6vmin' : '4.4vmin'}}"
                               }
                             ]
                           }
