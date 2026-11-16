@@ -67,7 +67,7 @@ let t = 0, exposure = 2.4;
 const draw = (L, D, p) => {
   // Blue shift and aberration as the fall speeds up; time near the hole runs slow.
   const sb = 1 + 0.9 * p * p, sr = 1 - 0.45 * p * p;
-  shade(L.lens, tex, L.out, t, exposure * (1 + p * 0.5), sr * (1 + 1.5 * p * p), (1 + 1.2 * p * p), sb * (1 + 1.5 * p * p), 1, frames);
+  shade(L.lens, tex, L.out, t, exposure * (1 + p * 0.1), sr * (1 + 1.5 * p * p), (1 + 1.2 * p * p), sb * (1 + 1.5 * p * p), 1, frames);
   L.ctx.putImageData(L.img, 0, 0);
   // Bloom: blur a quarter-size copy, then screen it back over the frame.
   bctx.filter = BLUR;
