@@ -163,6 +163,8 @@ pub(crate) struct FrameCtx<'a> {
     pub qc: Quant,
     pub qs: QuantS,
     pub qcs: QuantS,
+    /// SAD bounds (luma 16×16, chroma 8×8) under which inter residuals are all zero.
+    pub zero_sad: (u32, u32),
     pub lambda: i32,
     pub src: &'a Pic,
     pub refp: &'a Pic,
@@ -323,11 +325,14 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             return;
         }
         let (w00, w01, w10, w11) = ((8 - fx) * (8 - fy), fx * (8 - fy), (8 - fx) * fy, fx * fy);
+        let (w00, w01, w10, w11) = (w00 as u16, w01 as u16, w10 as u16, w11 as u16);
         for y in 0..8 {
+            let r0: &[u8; 9] = d[o + y * s..o + y * s + 9].try_into().unwrap();
+            let r1: &[u8; 9] = d[o + (y + 1) * s..o + (y + 1) * s + 9].try_into().unwrap();
+            let row = &mut out[y * 8..y * 8 + 8];
             for x in 0..8 {
-                let i = o + y * s + x;
-                let v = w00 * d[i] as i32 + w01 * d[i + 1] as i32 + w10 * d[i + s] as i32 + w11 * d[i + s + 1] as i32;
-                out[y * 8 + x] = ((v + 32) >> 6) as u8;
+                let v = w00 * r0[x] as u16 + w01 * r0[x + 1] as u16 + w10 * r1[x] as u16 + w11 * r1[x + 1] as u16;
+                row[x] = ((v + 32) >> 6) as u8;
             }
         }
     }
@@ -401,6 +406,17 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
         self.stats.changed += 1;
 
+        // Early inter: the predicted candidates already match (typical for layers
+        // moving coherently) → no intra analysis, no search.
+        if !c.idr {
+            let q = self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, true);
+            if q.sad <= lambda as u32 * 24 {
+                self.code_inter(mbx, mby, src_y, src_c, &q);
+                return;
+            }
+            inter = Some(q);
+        }
+
         // Intra 16x16 decision.
         let e16 = self.edges16(mbx, mby);
         let mut pred = [0u8; 256];
@@ -418,12 +434,12 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
         }
         let cost16 = best16.0 + lambda as u32 * if c.idr { 4 } else { 8 };
-        // Motion search unless intra prediction is already near-perfect.
-        if !c.idr {
-            // Full search unless intra prediction is already near-perfect (then only
-            // the predicted / zero / hint candidates).
-            let quick = best16.0 <= lambda as u32 * 4;
-            inter = Some(self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, quick));
+        // Full motion search unless intra prediction is already near-perfect.
+        if !c.idr && best16.0 > lambda as u32 * 4 {
+            let full = self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, false);
+            if full.cost < inter.as_ref().map_or(u32::MAX, |q| q.cost) {
+                inter = Some(full);
+            }
         }
 
         let mut kind = Kind::I16(best16.1);
@@ -676,10 +692,16 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         self.mc_chroma(1, mbx, mby, mv, &mut predc[1]);
         let mut cd = Coded::new();
 
-        let mut recon = [0u8; 256];
-        luma_inter(src_y, &pred, &self.c.qs, &mut cd, &mut recon);
-        let mut reconc = [[0u8; 64]; 2];
-        chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, false, &mut cd, &mut reconc);
+        // Residuals that provably quantise to zero are not transformed.
+        let mut recon = pred;
+        if crate::simd::sad16(src_y, 16, &pred, 16) > self.c.zero_sad.0 {
+            luma_inter(src_y, &pred, &self.c.qs, &mut cd, &mut recon);
+        }
+        let mut reconc = predc;
+        let zc = self.c.zero_sad.1;
+        if crate::simd::sad64(&src_c[0], &predc[0]) > zc || crate::simd::sad64(&src_c[1], &predc[1]) > zc {
+            chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, false, &mut cd, &mut reconc);
+        }
         self.store_recon(mbx, mby, &recon, &reconc);
         let skip = cd.cbp == 0 && mv == skip_mv;
         let mvd = if skip { (0, 0) } else { (mv.0 - mvp.0, mv.1 - mvp.1) };
@@ -1847,6 +1869,7 @@ impl Encoder {
             qc: self.qc,
             qs: QuantS::new(&self.q),
             qcs: QuantS::new(&self.qc),
+            zero_sad: crate::soa::zero_sad_bounds(&self.q, &QuantS::new(&self.q), &self.qc, &QuantS::new(&self.qc)),
             lambda: self.lambda,
             src: &self.cur,
             refp: &self.refp,

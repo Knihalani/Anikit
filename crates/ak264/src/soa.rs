@@ -34,6 +34,28 @@ impl QuantS {
 
 pub type Soa<const N: usize> = [[i16; N]; 16];
 
+impl QuantS {
+    /// Largest |coefficient| that quantises to 0 at every position `from..16` (inter).
+    pub fn zero_coef(&self, from: usize) -> u32 {
+        (from..16).map(|k| (65535 / self.m[k] as u32).saturating_sub(self.bias[1][k] as u32)).min().unwrap_or(0)
+    }
+}
+
+/// Bounds on the SAD of a 16×16 luma block / one 8×8 chroma block below which an
+/// inter residual provably quantises to all zeros (|coef| ≤ 4·SAD; chroma DC ≤ SAD).
+pub fn zero_sad_bounds(q: &Quant, qs: &QuantS, qc: &Quant, qcs: &QuantS) -> (u32, u32) {
+    let luma = qs.zero_coef(0) / 4;
+    let f = q.f_inter; // unused for luma (the 16-bit quantiser is used there)
+    let _ = f;
+    let dc_lim = {
+        let num = (1i64 << (qc.qbits + 1)) - 2 * qc.f_inter as i64;
+        // |h| * mf0 < num  <=>  |h| <= (num - 1) / mf0
+        ((num - 1) / qc.mf[0] as i64).max(0) as u32
+    };
+    let chroma = (qcs.zero_coef(1) / 4).min(dc_lim);
+    (luma, chroma)
+}
+
 /// Forward 4×4 core transform, lane-wise.
 #[inline(always)]
 pub fn fdct<const N: usize>(r: &mut Soa<N>) {
