@@ -380,6 +380,26 @@ mod tests {
     }
 
     #[test]
+    fn gallery_example_builds() {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/video/examples/components.json");
+        let spec: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        let mut n = 0;
+        for scene in spec["scenes"].as_array().unwrap() {
+            for layer in scene["layers"].as_array().unwrap() {
+                if let Some(kind) = layer["component"].as_str() {
+                    build(kind, &layer["props"]).unwrap_or_else(|e| panic!("{kind}: {e}"));
+                    n += 1;
+                }
+            }
+            if let Some(tr) = scene.get("transition").filter(|t| t.is_object()) {
+                let tr: transitions::Transition = serde_json::from_value(tr.clone()).unwrap();
+                tr.validate().unwrap();
+            }
+        }
+        assert!(n > 20);
+    }
+
+    #[test]
     fn errors_suggest() {
         let e = build("bar-chrt", &Value::Null).err().unwrap();
         assert!(e.0.contains("did you mean `bar-chart`"), "{e}");

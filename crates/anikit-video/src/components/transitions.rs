@@ -39,7 +39,7 @@ pub const KINDS: &[&str] = &["fade", "wipe", "slide", "push", "zoom", "iris", "g
 
 impl Transition {
     pub fn validate(&self) -> Result<(), String> {
-        if !KINDS.contains(&self.kind.as_str()) {
+        if !KINDS.contains(&super::kebab(&self.kind).as_str()) {
             return Err(match closest(&self.kind, KINDS) {
                 Some(s) => format!("unknown transition `{}`; did you mean `{s}`?", self.kind),
                 None => format!("unknown transition `{}`; use one of {}", self.kind, KINDS.join(", ")),
@@ -126,7 +126,7 @@ pub fn apply(tr: &Transition, p: f32, w: f32, h: f32, from: Vec<Op>, to: Vec<Op>
     let e = ease_in_out(p);
     let (dx, dy) = tr.dir();
     let mut o = Vec::new();
-    match tr.kind.as_str() {
+    match super::kebab(&tr.kind).as_str() {
         "wipe" => {
             let angle = tr.angle.unwrap_or(match tr.direction.as_str() {
                 "right" => 0.0,
@@ -428,6 +428,7 @@ mod tests {
         }
         preview::validate(&sheet).unwrap();
         preview::snapshot("transitions", 960, 216, th.background, sheet, a);
+        assert!(Transition { kind: "lightLeak".into(), ..Default::default() }.validate().is_ok());
         let bad = Transition { kind: "wip".into(), ..Default::default() };
         assert!(bad.validate().unwrap_err().contains("did you mean `wipe`"));
     }
