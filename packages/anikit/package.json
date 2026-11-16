@@ -37,6 +37,7 @@
     "typecheck": "tsc --noEmit && node scripts/check-docs.mjs && node scripts/check-jsdoc.mjs",
     "docs": "node scripts/check-docs.mjs && node scripts/build-llms.mjs",
     "docs:browser": "node scripts/check-recipes-browser.mjs",
+    "test:browser": "node scripts/test-browser.mjs",
     "test": "node scripts/build-wasm.mjs && vitest run",
     "bench": "node scripts/bench.mjs",
     "bench:physics": "node scripts/bench-physics.mjs",
