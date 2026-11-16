@@ -5,7 +5,7 @@
 // movement, batch() + stagger waves, timeline()/keyframes for the letters, animate()
 // for the point-sculpture morphs, HUD fades and station wake-ups.
 
-import { ready, world, spring, animate, batch, stagger, timeline } from '../../../packages/anikit/dist/anikit.lean.js';
+import { ready, world, spring, animate, batch, stagger, timeline, textPoints } from '../../../packages/anikit/dist/anikit.lean.js';
 import { program, cubeMesh, cylinderMesh, sphereMesh, group, camera, updateCamera, sees } from './hall-gl.js';
 import * as S from './hall-shaders.js';
 import { createControls } from './hall-controls.js';
@@ -225,8 +225,14 @@ export function createHall(canvas, overlayEl) {
     cloud.mix = 0;
     cloud.idle = 0;
     animate(cloud, { mix: [0, 1] }, { duration: 2.6, ease: 'inOutCubic' });
-    // a spin kick that settles on a spring
-    spring(cloud.spinV, { v: 0.12 }, { stiffness: 30, damping: 6, velocity: 2.4 });
+    if (cloud.next === shapes.TEXT) {
+      // the word must face you: settle the spin on the next whole turn
+      spring(cloud.spinV, { v: 0 }, { stiffness: 20, damping: 9 });
+      animate(cloud, { spin: Math.ceil(cloud.spin / PI2 + 0.15) * PI2 }, { duration: 2.6, ease: 'inOutCubic' });
+    } else {
+      // a spin kick that settles on a spring
+      spring(cloud.spinV, { v: 0.12 }, { stiffness: 30, damping: 6, velocity: 2.4 });
+    }
   }
 
   // ---- benchmark panel (canvas texture) ----
@@ -649,7 +655,11 @@ function makeShapes(n) {
     a[i * 3] = Math.cos(th) * r * R; a[i * 3 + 1] = y * R; a[i * 3 + 2] = Math.sin(th) * r * R;
   }
   out.push(a);
-  // 2. torus knot (2,3)
+  // 2. the word, sampled from rendered text by anikit's textPoints()
+  const tp = textPoints('anikit', n, { width: 4.2, depth: 0.35, weight: 800 });
+  out.push(tp);
+  out.TEXT = 1;
+  // 3. torus knot (2,3)
   const b = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
     const t = (i / n) * Math.PI * 2;
