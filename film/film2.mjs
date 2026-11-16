@@ -557,7 +557,7 @@ export default async function film2({ anikit: A, node }) {
   film.scene('tick', 1.2, 5.2, { draw, motionBlur: 4 });
   film.scene('glide', 5.2, 8.6, { draw });
   // The flip sweeps the studio strips across every flat bridge at once: blur it like a shutter would.
-  film.scene('flip', 8.6, 10.8, { draw, motionBlur: 3 });
+  film.scene('flip', 8.6, 10.8, { draw, motionBlur: 6 });
   film.scene('hero', 10.8, D, { draw });
   return film;
 }
