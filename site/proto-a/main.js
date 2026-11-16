@@ -1,4 +1,4 @@
-import { init, engine, animate, timeline, stagger, splitText, scrollTrigger, world, flip, mesh } from '../../packages/anikit/dist/anikit.lean.js';
+import { init, engine, animate, timeline, stagger, splitText, scrollTrigger, world, flip, mesh, htmlCanvas } from '../../packages/anikit/dist/anikit.lean.js';
 import { createGL } from './gl.js';
 import { paint } from './paint.js';
 
@@ -294,10 +294,22 @@ function stepRipples(dt) {
   if (live !== ripLive) { ripLive = live; src.classList.toggle('live', live); }
   return live;
 }
-function paintCode() {
-  for (const s of src.querySelectorAll('span')) s.dataset.paintColor = getComputedStyle(s).color;
-  const c = paint(src, Math.min(devicePixelRatio || 1, 2), { boxes: false });
-  G.upload('code', c);
+// htmlCanvas() rasterises the real element into a texture in our WebGL context;
+// the small painter in paint.js is the stand-in if that ever fails.
+const html = {};
+async function capture(which, el) {
+  const scale = Math.min(devicePixelRatio || 1, 2);
+  try {
+    if (!html[which]) html[which] = htmlCanvas(el, { target: G.gl, live: false, scale });
+    else await html[which].refresh();
+    await html[which].ready;
+    G.use(which, html[which].texture);
+  } catch {
+    G.upload(which, paint(el, scale));
+  }
+}
+async function paintCode() {
+  await capture('code', src);
   codePainted = true;
 }
 
@@ -305,8 +317,8 @@ function paintCode() {
 const panel = $('#panel');
 const fin = { p: 0 }, burst = { e: 0 };
 let shards = null, panelPainted = false, shatterOn = false, origin = [0.5, 0.6];
-function paintPanel() {
-  G.upload('panel', paint(panel, Math.min(devicePixelRatio || 1, 2)));
+async function paintPanel() {
+  await capture('panel', panel);
   panelPainted = true;
 }
 $('#breakit').addEventListener('click', (e) => {
@@ -383,8 +395,8 @@ layout();
 if (G) {
   shards = G.shards(14, 9);
   await buildLetters();
-  await idle(); paintCode();
-  await idle(); paintPanel();
+  await idle(); await paintCode();
+  await idle(); await paintPanel();
   // Pre-warm every program once, off-screen, so the first real frame doesn't compile.
   G.begin();
   G.letter(letters[0].mesh, -9999, -9999, 1, 1, 1, 0, 0, 1, 1);

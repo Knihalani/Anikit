@@ -73,7 +73,8 @@ void main() {
   float dl = dot(n, L) - L.z;
   vec3 sc = dl > 0.0 ? vec3(1.0, 0.99, 0.95) : vec3(0.22, 0.32, 0.85);
   float sa = clamp(abs(dl) * (dl > 0.0 ? 3.0 : 1.0), 0.0, 0.32);
-  o = vec4(mix(sc, t.rgb, t.a), t.a + sa * (1.0 - t.a));
+  vec3 base = t.a > 0.0 ? t.rgb / t.a : vec3(0.0);
+  o = vec4(mix(base, sc, sa), t.a);
 }`;
 
 const SHARD_VS = HEAD + `
@@ -105,6 +106,7 @@ uniform sampler2D uTex; uniform float uE;
 out vec4 o;
 void main() {
   vec4 t = texture(uTex, vUV);
+  t.rgb = t.a > 0.0 ? t.rgb / t.a : t.rgb;
   float edge = min(vB.x, min(vB.y, vB.z));
   float crack = (1.0 - smoothstep(0.0, 0.035, edge)) * min(uE * 10.0, 1.0);
   vec3 col = t.rgb * vShade;
@@ -161,7 +163,7 @@ export function createGL(canvas) {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
     return t;
   }
-  const codeTex = texture(), panelTex = texture();
+  let codeTex = texture(), panelTex = texture();
 
   return {
     gl,
@@ -229,9 +231,12 @@ export function createGL(canvas) {
     },
     upload(which, source) {
       gl.bindTexture(gl.TEXTURE_2D, which === 'code' ? codeTex : panelTex);
-      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     },
+    /** Use a texture made elsewhere in this context (htmlCanvas). Premultiplied, row 0 at the top. */
+    use(which, tex) { if (which === 'code') codeTex = tex; else panelTex = tex; },
     begin() {
       gl.viewport(0, 0, W, H);
       gl.clearColor(0, 0, 0, 0);
