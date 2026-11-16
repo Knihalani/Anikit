@@ -180,4 +180,46 @@ export const tests = [
       ok(a === 'width:50%;height:150px;position:relative;top:5px;transform:rotate(3deg);background:#9cf', `restored: ${a}`);
     },
   },
+  {
+    name: 'scroll(): many links share one listener; cleanup inside a callback; x and y in one container',
+    html: `<div id="sc" style="width:400px;height:300px;overflow:auto"><div style="width:2400px;height:1800px"></div></div>${tall(4)}`,
+    async run(page, h) {
+      await page.evaluate(() => {
+        const sc = document.getElementById('sc');
+        window.seen = { y: [], x: [], w: [], gone: 0 };
+        window.offs = [];
+        offs.push(ak.scroll((p) => seen.y.push(p), { container: sc }));
+        offs.push(ak.scroll((p) => seen.x.push(p), { container: sc, axis: 'x' }));
+        // Removes itself on its first call: the others still run.
+        // (it is called once at creation, before `off` exists)
+        let off = null;
+        off = ak.scroll(() => { if (off) { seen.gone++; off(); } }, { container: sc });
+        offs.push(ak.scroll((p) => seen.w.push(p)));
+        window.o = { v: 0 };
+        window.a = ak.animate(o, { v: [0, 100] }, { duration: 1, ease: 'linear', autoplay: false });
+        offs.push(ak.scroll(a, { container: sc }));
+      });
+      await page.$eval('#sc', (el) => { el.scrollTop = 750; el.scrollLeft = 1000; });
+      await h.frames(3);
+      await page.$eval('#sc', (el) => { el.scrollTop = 1500; });
+      await h.frames(3);
+      const r = await page.evaluate(() => ({ ...seen, v: o.v }));
+      ok(r.gone === 1, `self-removing link ran once (${r.gone})`);
+      near(r.y[r.y.length - 1], 1, 1e-6, 'y progress at the end');
+      ok(r.x.some((p) => Math.abs(p - 0.5) < 1e-6), `x progress half way: ${r.x}`);
+      near(r.v, 100, 0.01, 'animation at the end');
+      ok(r.w.length <= 1, 'window link not called by the container scrolling');
+      await scrollWin(page, h, 300);
+      const w = await page.evaluate(() => seen.w[seen.w.length - 1]);
+      ok(w > 0 && w < 1, `window link follows the window (${w})`);
+      // Seeking the animation elsewhere, then scrolling inside the range: it follows again.
+      await page.$eval('#sc', (el) => { el.scrollTop = 600; });
+      await h.frames(3);
+      near(await page.evaluate(() => o.v), 40, 0.5, 'back inside the range');
+      await page.evaluate(() => offs.forEach((f) => f()));
+      await page.$eval('#sc', (el) => { el.scrollTop = 0; });
+      await h.frames(3);
+      near(await page.evaluate(() => o.v), 40, 0.5, 'cleaned up: no more updates');
+    },
+  },
 ];

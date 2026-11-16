@@ -119,7 +119,17 @@ function listen(st: ScrollTrigger): void {
     set = new Set();
     groups.set(st.scroller, set);
     const s = set;
-    st.scroller.addEventListener('scroll', () => s.forEach((t) => t.update()), { passive: true });
+    const sc = st.scroller;
+    // Read the position once per event: a read after the previous trigger's
+    // style writes would make the browser lay the page out again, per trigger.
+    sc.addEventListener('scroll', () => {
+      let y = NaN;
+      let x = NaN;
+      for (const t of s) {
+        if (t.horizontal) t.update(x === x ? x : (x = scrollPos(sc, true)));
+        else t.update(y === y ? y : (y = scrollPos(sc, false)));
+      }
+    }, { passive: true });
   }
   set.add(st);
   if (!resizeBound && typeof window !== 'undefined') {
@@ -384,10 +394,10 @@ export class ScrollTrigger {
     this.update();
   }
 
-  /** Apply the current scroll position (called by the shared listener). */
-  update(): void {
+  /** Apply the current scroll position (the shared listener passes the position it read once for all triggers). */
+  update(pos?: number): void {
     if (!this.enabled || this.dead) return;
-    const s = scrollPos(this.scroller, this.horizontal);
+    const s = pos ?? scrollPos(this.scroller, this.horizontal);
     if (s === this.last) return;
     this.direction = s >= this.last ? 1 : -1;
     const span = this.end - this.start;

@@ -102,9 +102,15 @@ export function scroll(subject: Playable | CompositorAnimation | ((progress: num
       return nativeScroll(subject, scroller, axis, measure, () => [start, end]);
     }
   }
+  // Animations: links outside their range read the same clamped 0 or 1 on
+  // every event; seeking to the same progress again is skipped. A function
+  // subject is still called on every event.
+  let last = NaN;
   const apply: (p: number) => void =
     subject instanceof Playable || subject instanceof CompositorAnimation
       ? (p) => {
+          if (p === last) return;
+          last = p;
           subject.progress = p;
         }
       : subject;
@@ -113,8 +119,8 @@ export function scroll(subject: Playable | CompositorAnimation | ((progress: num
   // Optional smoothing through a spring on a plain object.
   const proxy = { p: 0 };
   let smoother: PhysicsAnimation | null = null;
-  const read = () => {
-    const s = axis === 'y' ? scroller.scrollTop : scroller.scrollLeft;
+  const read = (pos?: number) => {
+    const s = pos ?? (axis === 'y' ? scroller.scrollTop : scroller.scrollLeft);
     const span = end - start;
     return span > 0 ? Math.min(1, Math.max(0, (s - start) / span)) : s >= end ? 1 : 0;
   };
@@ -128,8 +134,8 @@ export function scroll(subject: Playable | CompositorAnimation | ((progress: num
   // Smoothed: the last target given to the spring. Outside the range every
   // scroll event reads the same clamped 0 or 1, and the spring already heads there.
   let aim = NaN;
-  const update = () => {
-    const p = read();
+  const update = (pos?: number) => {
+    const p = read(pos);
     if (!options.smooth) apply(p);
     else if (p !== aim) {
       aim = p;
@@ -144,12 +150,56 @@ export function scroll(subject: Playable | CompositorAnimation | ((progress: num
   proxy.p = read();
   whenReady(() => apply(proxy.p));
   const evTarget: EventTarget = isWin ? window : scroller;
-  evTarget.addEventListener('scroll', update, { passive: true });
+  const off = linkScroll(evTarget, scroller, { axis, update });
   window.addEventListener('resize', onResize, { passive: true });
   return () => {
-    evTarget.removeEventListener('scroll', update);
+    off();
     window.removeEventListener('resize', onResize);
     smoother?.stop();
+  };
+}
+
+interface Link {
+  axis: 'x' | 'y';
+  update: (pos: number) => void;
+}
+interface LinkGroup {
+  links: Set<Link>;
+  onScroll: () => void;
+}
+/** Links per scroll event target (the window or a scrolling element), served by one listener. */
+const linkGroups = new Map<EventTarget, LinkGroup>();
+
+/**
+ * One 'scroll' listener per event target: it reads the position once per
+ * event and hands it to every link. Each link reading it itself, after the
+ * previous link's style writes, made the browser lay the page out again per
+ * link.
+ */
+function linkScroll(evTarget: EventTarget, scroller: Element, link: Link): () => void {
+  let g = linkGroups.get(evTarget);
+  if (!g) {
+    const links = new Set<Link>();
+    const onScroll = () => {
+      let y = NaN;
+      let x = NaN;
+      for (const l of links) {
+        if (l.axis === 'y') l.update(y === y ? y : (y = scroller.scrollTop));
+        else l.update(x === x ? x : (x = scroller.scrollLeft));
+      }
+    };
+    g = { links, onScroll };
+    linkGroups.set(evTarget, g);
+    evTarget.addEventListener('scroll', onScroll, { passive: true });
+  }
+  const group = g;
+  group.links.add(link);
+  return () => {
+    group.links.delete(link);
+    if (!group.links.size && linkGroups.get(evTarget) === group) {
+      evTarget.removeEventListener('scroll', group.onScroll);
+      linkGroups.delete(evTarget);
+    }
   };
 }
 
