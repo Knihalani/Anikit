@@ -998,14 +998,25 @@ better):
 | 〃 | 50k | 0.57–0.79x | 1.35–1.78x |
 
 Anikit ms in the same runs, 8 keyframes: 10k 0.31–0.41 → 0.14–0.16, 50k
-1.52–1.81 → 0.74–0.89; 3 numbers 50k 2.68–3.17 → 0.76. The colour rows are
-not packed and their code did not change; their Anikit times overlap (50k
-2.99–3.08 vs 3.13–3.68 ms) while GSAP's moved. Measured on its own after
-five rounds of the 3-number case at 50k (what precedes it in `bench.mjs`),
-two interleaved rounds: colour 50k frame 3.17–3.53 → 2.47–2.56 ms.
-Staggered cases (added locally, delay `i * 0.001` s), x GSAP: 3 numbers
-50k 0.77–0.93 → 2.37–2.55x, 8 keyframes 50k 2.77–4.76 → 7.62–10.46x (the
-flush tables; staggered children are not packed).
+1.52–1.81 → 0.74–0.89; 3 numbers 50k 2.68–3.17 → 0.76.
+
+**Unresolved: colour at 50k is ~10–25% slower in the full `bench.mjs`
+sequence.** Colours are not packed and their code path did not change, but
+in three more interleaved full runs colour 50k went 2.53–2.75 → 2.97–3.42 ms
+(still 1.5–1.9x GSAP). It comes with the packs made earlier in the process:
+with the same build and packing turned off in JS (`packGroups = false`),
+two rounds of "3 numbers then colour" at 1k/10k/50k gave base 2.70–2.71,
+no packs 2.61–2.73, packs 3.08–3.17 ms. In a process that runs only the
+50k sizes it does not show (base 3.08–3.16, now 2.79–3.20 ms), nor after
+five 50k 3-number runs alone (3.17–3.53 → 2.47–2.56 ms). The suspect is
+the wasm heap layout after the pack allocations are freed (the wasm code is
+identical with and without packs); not resolved.
+
+Staggered cases (added locally with `delay: stagger(0.001)`, three
+interleaved rounds, Anikit ms): 3 numbers 50k 0.60–0.61 → 0.56–0.60, 10k
+0.18–0.22 → 0.18–0.20; 8 keyframes 50k 0.53–0.67 → 0.57–0.74, 10k
+0.18–0.20 → 0.14–0.16. Staggered children are not packed (different
+delays); within noise.
 
 `bench-create.mjs` (N = 10k, five interleaved rounds, ms, median and
 range): one `animate()` of 3 numbers 61.5 (53.3–75.1) → 67.0 (52.7–78.6),

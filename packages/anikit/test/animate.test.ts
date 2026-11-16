@@ -386,6 +386,8 @@ describe('animate: plain-object write path', () => {
       const b = animate(objs, { y: 300, o: 0 }, { duration: 0.8, ease: 'outCubic' });
       const c = animate(objs, { w: (_: unknown, i: number) => `${100 + i}px` }, { duration: 0.6, ease: 'linear' });
       const d = animate(els, { x: [0, 40, 10, 90], rotate: 30 }, { duration: 0.7, ease: 'outQuad' });
+      // Transforms read from a pack (two single-segment tracks per element).
+      const e = animate(els, { y: 100, scale: 2 }, { duration: 0.9, ease: 'outCubic' });
       advance(0.2);
       snap();
       // Takeovers (one target of each), an onUpdate animation, and seeks/reversal.
@@ -411,6 +413,7 @@ describe('animate: plain-object write path', () => {
       snap();
       a.kill();
       b.kill();
+      e.kill();
       return frames;
     };
     const prev = _setPackGroups(false);
