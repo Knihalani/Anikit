@@ -245,12 +245,12 @@ export async function buildWorld(A) {
 
   // ---- Bakes ---------------------------------------------------------------------------------
   const T = 4096;
-  const tex = await cached('terrain2', () => bakeTerrain(T, heightAt, groundAt, gh, GN, GS, trees, centerX, log));
+  const tex = await cached('terrain4', () => bakeTerrain(T, heightAt, groundAt, gh, GN, GS, trees, centerX, log));
   const wallTex = await cached('walls4', () => bakeWalls(heightAt, groundAt, walls.tris, log));
   const farTex = await cached('far2', () => bakeFar(4096, farH, FE));
   const sky = await cached('sky', () => bakeSky(4096, 2048, false));
   const skyComic = await cached('skycomic', () => bakeSky(2048, 1024, true));
-  const skyNeon = await cached('skyneon', () => bakeNeonSky(4096, 2048));
+  const skyNeon = await cached('skyneon3', () => bakeNeonSky(4096, 2048));
   log('bakes');
   const mk = (img) => texture(img);
   const textures = {
@@ -559,9 +559,11 @@ function bakeTerrain(T, heightAt, groundAt, gh, GN, GS, trees, centerX, log) {
       // Neon: contour lines every 8 m (a brighter one every 40 m), a shoreline, a faint 50 m grid.
       const grad = Math.hypot(gx, gz) * ts;
       const line = (period, width) => { const f = h / period, d = Math.abs(f - Math.round(f)) * period; return clamp(1 - d / Math.max(0.05, width * (grad + 0.06))); };
-      const minor = line(8, 1.4), major = line(40, 2.2);
-      const gl = (q) => { const f = q / 50, d = Math.abs(f - Math.round(f)) * 50; return clamp(1 - d / 0.9); };
-      const grid = Math.max(gl(x), gl(z)) * 0.18;
+      // On flat ground contours turn into blobs: there a clean street grid takes over.
+      const flatK = 1 - smooth(0.05, 0.16, gmc);
+      const minor = line(8, 1.4) * (1 - flatK), major = line(40, 2.2) * (1 - flatK * 0.85);
+      const gl = (q, per, w) => { const f = q / per, d = Math.abs(f - Math.round(f)) * per; return clamp(1 - d / w); };
+      const grid = Math.max(gl(x, 50, 0.9), gl(z, 50, 0.9)) * mix(0.18, 0.75, flatK) + Math.max(gl(x, 10, 0.35), gl(z, 10, 0.35)) * 0.22 * flatK * (h > 0.5 ? 1 : 0);
       const hn = clamp((h + 5) / 260);
       const col = [mix(1.0, 0.15, hn), mix(0.18, 0.8, hn), mix(0.75, 1.0, hn)];
       const shore = clamp(1 - Math.abs(h - 0.2) / 0.9) * (h > -1.4 ? 1 : 0);
@@ -695,7 +697,20 @@ function bakeNeonSky(TW, TH) {
       const ph = ((i + 0.5) / TW) * Math.PI * 2;
       const el = Math.max(0, dy);
       // Gradient: hot magenta at the horizon, violet, then near-black.
+      let neonStreak = 0;
       let c = [mix(0.85, 0.02, clamp(el * 4) ** 0.6), mix(0.12, 0.005, clamp(el * 3) ** 0.7), mix(0.55, 0.06, clamp(el * 2.5) ** 0.8)];
+      // A nebula of magenta and cyan glow high up, and long dusk cloud streaks low over the horizon.
+      {
+        const nb = clamp(fbm(ph * 2.2 + 4, th * 5, 5, N2) * 1.6 + 0.1) ** 2 * smooth(0.08, 0.35, el) * (1 - smooth(0.55, 0.95, el));
+        const hue = clamp(0.5 + 1.6 * N3(ph * 1.3, th * 3));
+        const nc = [mix(0.9, 0.1, hue), mix(0.1, 0.55, hue), mix(0.75, 1.0, hue)];
+        c = c.map((v, q) => v + nb * nc[q] * 0.5);
+        const st = clamp(fbm(ph * 3 + 9, el * 46, 4, N4) * 2.2 - 0.15) * smooth(0.012, 0.03, el) * (1 - smooth(0.1, 0.2, el));
+        const nearSun = Math.exp(-(((Math.atan2(Math.sin(ph - Math.atan2(SUN[2], SUN[0])), Math.cos(ph - Math.atan2(SUN[2], SUN[0])))) / 0.5) ** 2));
+        const sc = [0.08 + 0.9 * nearSun, 0.02 + 0.2 * nearSun, 0.12 + 0.35 * nearSun];
+        c = c.map((v, q) => mix(v, sc[q], st * 0.85));
+        neonStreak = st;
+      }
       // Stars.
       const sx = Math.floor(ph * 900), sy = Math.floor(th * 900), hs = hash(sx * 7919 + sy * 104729);
       if (hs > 0.9965 && el > 0.05) { const b = 0.35 + 0.65 * hash(sx + sy * 31); c = c.map((v) => v + b * smooth(0.05, 0.3, el)); }
@@ -707,7 +722,7 @@ function bakeNeonSky(TW, TH) {
         const v = clamp(0.5 - ey / 0.16);
         const band = ey < 0.02 ? (Math.sin((ey + 0.1) * 260 - (0.02 - ey) * 40) > -0.2 + 1.6 * (0.02 - ey) / 0.1 ? 1 : 0) : 1;
         const sc = [1.0, mix(0.95, 0.15, v), mix(0.35, 0.65, v)];
-        if (band) c = sc;
+        if (band) c = sc.map((v) => v * (1 - 0.75 * neonStreak));
       }
       const glow = Math.exp(-Math.max(0, r - 1) * 1.6) * 0.5 * (dy > -0.01 ? 1 : 0);
       c = [c[0] + glow * 1.0, c[1] + glow * 0.25, c[2] + glow * 0.6];
