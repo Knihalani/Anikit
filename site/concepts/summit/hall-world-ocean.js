@@ -72,16 +72,18 @@ vec3 skyCol(vec3 d) {
 }`;
 
 const SKY_VS = /* glsl */ `#version 300 es
+uniform vec3 uF, uR, uU;  // camera basis
+uniform vec2 uTan;        // tan(fov/2) * aspect, tan(fov/2)
+out vec3 vDir;
 void main() {
-  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
-  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2)) * 2.0 - 1.0;
+  vDir = uF + p.x * uTan.x * uR + p.y * uTan.y * uU;
+  gl_Position = vec4(p, 0.0, 1.0);
 }`;
 
 const SKY_FS = /* glsl */ `#version 300 es
 precision highp float;
-uniform vec4 uVp;         // viewport x, y, w, h (device px)
-uniform vec3 uF, uR, uU;  // camera basis
-uniform vec2 uTan;        // tan(fov/2) * aspect, tan(fov/2)
+in vec3 vDir;
 uniform vec3 uClip;       // portal circle x, y, r (device px); r <= 0: off
 uniform float uT;
 out vec4 o;
@@ -89,8 +91,7 @@ ${SKY_GLSL}
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 void main() {
   if (uClip.z > 0.0 && distance(gl_FragCoord.xy, uClip.xy) > uClip.z) discard;
-  vec2 ndc = (gl_FragCoord.xy - uVp.xy) / uVp.zw * 2.0 - 1.0;
-  vec3 d = normalize(uF + ndc.x * uTan.x * uR + ndc.y * uTan.y * uU);
+  vec3 d = normalize(vDir);
   vec3 c = skyCol(d);
   if (d.y > 0.08) {
     // stars on a direction grid, twinkling slowly
@@ -278,7 +279,6 @@ export function createWorld(gl) {
   const lv = new Float32Array(LEVELS * 4);
   const rip = new Float32Array(RIPPLES * 4);
   const clip = new Float32Array(3);
-  const vpRect = new Float32Array(4);
   let W = 1, H = 1, dpr = 1, quality = 0;
 
   // ripples: a ring of slots; each amplitude is a plain object an anikit spring() drives
@@ -305,8 +305,8 @@ export function createWorld(gl) {
     r[0] = cy; r[1] = 0; r[2] = -sy;
     u[0] = r[1] * f[2] - r[2] * f[1]; u[1] = r[2] * f[0] - r[0] * f[2]; u[2] = r[0] * f[1] - r[1] * f[0];
   }
-  function matrices(aspect) {
-    const t = 1 / Math.tan(FOV / 2);
+  function matrices(aspect, tanY) {
+    const t = 1 / tanY;
     const a = t / aspect, b = t, c = (FAR + NEAR) / (NEAR - FAR), d = (2 * FAR * NEAR) / (NEAR - FAR);
     const ex = -(r[0] * eye[0] + r[1] * eye[1] + r[2] * eye[2]);
     const ey = -(u[0] * eye[0] + u[1] * eye[1] + u[2] * eye[2]);
@@ -347,19 +347,21 @@ export function createWorld(gl) {
 
   function draw(t, x, y, w, h, clipOn) {
     gl.viewport(x, y, w, h);
-    const aspect = w / h;
-    matrices(aspect);
+    if (!clipOn) clip[2] = 0;
+    passes(t, w / h, Math.tan(FOV / 2), h);
+    gl.disable(gl.BLEND);
+  }
+
+  // the two passes into whatever is bound; camera in eye/f/r/u; leaves blend on
+  function passes(t, aspect, tanY, h) {
+    matrices(aspect, tanY);
     levels();
     const nr = packRipples();
-    const tanY = Math.tan(FOV / 2);
-    vpRect[0] = x; vpRect[1] = y; vpRect[2] = w; vpRect[3] = h;
-    if (!clipOn) clip[2] = 0;
     gl.bindVertexArray(vao);
     gl.disable(gl.DEPTH_TEST);
     gl.disable(gl.BLEND);
 
     gl.useProgram(sky.p);
-    gl.uniform4fv(sky.u.uVp, vpRect);
     gl.uniform3fv(sky.u.uF, f); gl.uniform3fv(sky.u.uR, r); gl.uniform3fv(sky.u.uU, u);
     gl.uniform2f(sky.u.uTan, tanY * aspect, tanY);
     gl.uniform3fv(sky.u.uClip, clip);
@@ -374,7 +376,7 @@ export function createWorld(gl) {
     gl.uniform3fv(pts.u.uEye, eye);
     gl.uniform1f(pts.u.uT, t);
     gl.uniform1f(pts.u.uSizeK, (0.5 * h) / tanY);
-    gl.uniform1f(pts.u.uMaxPx, Math.min((quality ? 12 : 22) * dpr, h * 0.04));
+    gl.uniform1f(pts.u.uMaxPx, Math.min((quality ? 12 : 22) * dpr, h * 0.04, (quality ? 0.008 : 0.014) * h + 4));
     gl.uniform1f(pts.u.uKeep, quality > 1 ? 0.5 : 1.01);
     gl.uniform4fv(pts.u.uLv, lv);
     gl.uniform4fv(pts.u.uRip, rip);
@@ -383,18 +385,57 @@ export function createWorld(gl) {
     gl.uniform3fv(pts.u.uSun, sun);
     gl.uniform3fv(pts.u.uClip, clip);
     gl.drawArrays(gl.POINTS, 0, LEVELS * N * N);
-
-    // restore the baseline the hall expects
-    gl.disable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ZERO);
     gl.bindVertexArray(null);
     gl.useProgram(null);
   }
 
+  // ---- the hall's world interface (hall.js): the hall owns the camera, stencil and post
+  let hallActive = false, lastHX = NaN, lastHZ = 0, hallWalked = 0;
+  function update(t, dt, pos, active) {
+    nowT = t;
+    if (active) {
+      if (!hallActive) { lastHX = NaN; hallWalked = 0; }
+      const step = Number.isNaN(lastHX) ? 0 : Math.hypot(pos[0] - lastHX, pos[2] - lastHZ);
+      if (step < 5) hallWalked += step;
+      lastHX = pos[0]; lastHZ = pos[2];
+      if (hallWalked > 1.5) { hallWalked = 0; ripple(pos[0], pos[2], 0.09); }
+    } else {
+      auto -= dt;   // rain while seen through the portal
+      if (auto <= 0) {
+        auto = 1.1 + Math.random() * 0.9;
+        const d = 5 + Math.random() * 16, a = (Math.random() - 0.5) * 1.2;
+        ripple(pos[0] - Math.sin(a) * d, pos[2] - Math.cos(a) * d, 0.25 + Math.random() * 0.25);
+      }
+    }
+    hallActive = active;
+  }
+  function use(kind, pos, fw) {
+    let d = 30;
+    if (fw[1] < -0.02) d = Math.min(45, pos[1] / -fw[1]);
+    ripple(pos[0] + fw[0] * d, pos[2] + fw[2] * d, kind === 'pull' ? -0.6 : 0.75);
+  }
+  function hallDraw(cam) {
+    for (let i = 0; i < 3; i++) { eye[i] = cam.eye[i]; f[i] = cam.f[i]; r[i] = cam.r[i]; u[i] = cam.u[i]; }
+    clip[2] = 0;
+    const depth = gl.isEnabled(gl.DEPTH_TEST);
+    gl.disable(gl.DEPTH_TEST);
+    passes(cam.time, cam.aspect, cam.tanH, 2 * cam.px * cam.tanH);
+    gl.disable(gl.BLEND);
+    if (depth) gl.enable(gl.DEPTH_TEST);
+  }
+
   const world = {
-    name: 'ocean',
+    id: 'ocean',
+    name: 'Particle ocean',
+    feature: 'spring() · 200k points, 16 ripples',
+    hint: 'Walk on the water · click to drop a stone',
+    fly: false, walk: true, radius: 600,
     tint: [1.0, 0.62, 0.42],
+    fog: [0.62, 0.36, 0.52],
     spawn: [0, 1.7, 0, 0],
+    spawnYaw: 0,
+    start() {}, update, use, draw: hallDraw,
 
     resize(cssW, cssH, d) {
       dpr = Math.min(d || 1, 2);

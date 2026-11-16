@@ -40,24 +40,25 @@ vec3 skyCol(vec3 d) {
   return c;
 }`;
 
-const FS_TRI = /* glsl */ `#version 300 es
+const SKY_VS = /* glsl */ `#version 300 es
+uniform vec3 uF, uR, uU;
+uniform vec2 uTan;
+out vec3 vDir;
 void main() {
-  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
-  gl_Position = vec4(p * 2.0 - 1.0, 1.0, 1.0);   // at the far plane: drawn after geometry, LEQUAL
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2)) * 2.0 - 1.0;
+  vDir = uF + p.x * uTan.x * uR + p.y * uTan.y * uU;
+  gl_Position = vec4(p, 1.0, 1.0);   // at the far plane: drawn after geometry, LEQUAL
 }`;
 
 const SKY_FS = /* glsl */ `#version 300 es
 precision highp float;
-uniform vec4 uVp;
-uniform vec3 uF, uR, uU;
-uniform vec2 uTan;
+in vec3 vDir;
 uniform float uT;
 out vec4 o;
 ${SKY_GLSL}
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 void main() {
-  vec2 ndc = (gl_FragCoord.xy - uVp.xy) / uVp.zw * 2.0 - 1.0;
-  vec3 d = normalize(uF + ndc.x * uTan.x * uR + ndc.y * uTan.y * uU);
+  vec3 d = normalize(vDir);
   vec3 c = skyCol(d);
   float mu = dot(d, uMoon);
   float disc = smoothstep(0.99935, 0.9996, mu);
@@ -382,7 +383,7 @@ const PATTERNS = [
 
 export function createWorld(gl) {
   // ---- programs
-  const sky = compile(gl, FS_TRI, SKY_FS);
+  const sky = compile(gl, SKY_VS, SKY_FS);
   const ground = compile(gl, GROUND_VS, GROUND_FS);
   const tower = compile(gl, TOWER_VS, TOWER_FS, ['aPos', 'aNrm', 'aStat', 'aA', 'aB']);
   const towerZ = compile(gl, TOWER_VS, DEPTH_FS, ['aPos', 'aNrm', 'aStat', 'aA', 'aB']);
@@ -578,7 +579,13 @@ export function createWorld(gl) {
     f[0] = -sy * cp; f[1] = sp; f[2] = -cy * cp;
     r[0] = cy; r[1] = 0; r[2] = -sy;
     u[0] = r[1] * f[2] - r[2] * f[1]; u[1] = r[2] * f[0] - r[0] * f[2]; u[2] = r[0] * f[1] - r[1] * f[0];
-    const t = 1 / Math.tan(FOV / 2);
+    matrices(aspect, Math.tan(FOV / 2));
+  }
+  let tanNow = Math.tan(FOV / 2), aspNow = 1;
+  function matrices(aspect, tanY) {
+    tanNow = tanY; aspNow = aspect;
+    const px = eye[0], py = eye[1], pz = eye[2];
+    const t = 1 / tanY;
     const a = t / aspect, b = t, c = (FAR + NEAR) / (NEAR - FAR), dd = (2 * FAR * NEAR) / (NEAR - FAR);
     for (let i = 0; i < 3; i++) {
       vp[i * 4] = a * r[i]; vp[i * 4 + 1] = b * u[i]; vp[i * 4 + 2] = -c * f[i]; vp[i * 4 + 3] = f[i];
@@ -633,7 +640,7 @@ export function createWorld(gl) {
   }
   alloc(W, H);
 
-  const clip = new Float32Array(3), rect = new Float32Array(4), vpr = new Float32Array(4);
+  const clip = new Float32Array(3), rect = new Float32Array(4);
 
   // scissor a target to the rect (scaled to its size), with a margin so blurs don't read stale texels
   function region(t, x, y, w, h, margin) {
@@ -655,25 +662,11 @@ export function createWorld(gl) {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  function draw(t, x, y, w, h, clipOn) {
-    if (dirty) {
-      gl.bindBuffer(gl.ARRAY_BUFFER, db);
-      gl.bufferSubData(gl.ARRAY_BUFFER, 0, dyn);
-      gl.bindBuffer(gl.ARRAY_BUFFER, null);
-      dirty = false;
-    }
-    gl.enable(gl.SCISSOR_TEST);
-    // 1. scene → full-res target (alpha = emissive)
-    const M = 12;   // margin in full-res px, cleared so blurs read black
-    region(scene, x, y, w, h, M);
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.viewport(x, y, w, h);
-    gl.scissor(x, y, w, h);
+  // towers (depth pre-pass, then shaded), ground, sky; into whatever is bound, at its viewport
+  function scenePasses(t) {
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
     gl.enable(gl.CULL_FACE);
-
     gl.bindVertexArray(vao);
     // depth pre-pass: at street level towers hide each other, so shade each pixel once
     gl.colorMask(false, false, false, false);
@@ -706,16 +699,32 @@ export function createWorld(gl) {
     gl.depthFunc(gl.LEQUAL);
     gl.depthMask(false);
     gl.useProgram(sky.p);
-    vpr[0] = x; vpr[1] = y; vpr[2] = w; vpr[3] = h;
-    gl.uniform4fv(sky.u.uVp, vpr);
     gl.uniform3fv(sky.u.uF, f); gl.uniform3fv(sky.u.uR, r); gl.uniform3fv(sky.u.uU, u);
-    const tanY = Math.tan(FOV / 2);
-    gl.uniform2f(sky.u.uTan, tanY * (w / h), tanY);
+    gl.uniform2f(sky.u.uTan, tanNow * aspNow, tanNow);
     gl.uniform1f(sky.u.uT, t);
     gl.uniform3fv(sky.u.uMoon, moon);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     gl.depthMask(true);
     gl.depthFunc(gl.LESS);
+  }
+
+  function draw(t, x, y, w, h, clipOn) {
+    if (dirty) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, db);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, dyn);
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
+      dirty = false;
+    }
+    gl.enable(gl.SCISSOR_TEST);
+    // 1. scene → full-res target (alpha = emissive)
+    const M = 12;   // margin in full-res px, cleared so blurs read black
+    region(scene, x, y, w, h, M);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.viewport(x, y, w, h);
+    gl.scissor(x, y, w, h);
+    scenePasses(t);
+
     gl.disable(gl.DEPTH_TEST);
 
     // 2. bloom: extract + blur at half res, then again at quarter res for the wide glow
@@ -754,11 +763,44 @@ export function createWorld(gl) {
     gl.useProgram(null);
   }
 
+  // ---- the hall's world interface (hall.js): the hall owns the camera, stencil and post
+  let hx = NaN, hz = 0;
+  function update(t, dt, pos, active) {
+    const moved = active && !Number.isNaN(hx) ? Math.min(5, Math.hypot(pos[0] - hx, pos[2] - hz)) : 0;
+    hx = active ? pos[0] : NaN; hz = pos[2];
+    eye[0] = pos[0]; eye[1] = pos[1]; eye[2] = pos[2];
+    pump();
+    triggers(dt, moved);
+  }
+  function use(kind, pos, fw) {
+    let dd = 60;
+    if (fw[1] < -0.01) dd = Math.min(110, pos[1] / -fw[1]);
+    wave(pos[0] + fw[0] * dd, pos[2] + fw[2] * dd);
+  }
+  function hallDraw(cam) {
+    for (let i = 0; i < 3; i++) { eye[i] = cam.eye[i]; f[i] = cam.f[i]; r[i] = cam.r[i]; u[i] = cam.u[i]; }
+    yawNow = Math.atan2(-f[0], -f[2]);
+    matrices(cam.aspect, cam.tanH);
+    if (dirty) { gl.bindBuffer(gl.ARRAY_BUFFER, db); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dyn); gl.bindBuffer(gl.ARRAY_BUFFER, null); dirty = false; }
+    const cull = gl.isEnabled(gl.CULL_FACE), depth = gl.isEnabled(gl.DEPTH_TEST);
+    scenePasses(cam.time);
+    if (!cull) gl.disable(gl.CULL_FACE);
+    if (!depth) gl.disable(gl.DEPTH_TEST);
+    gl.bindVertexArray(null);
+    gl.useProgram(null);
+  }
+
   const world = {
-    name: 'city',
+    id: 'city',
+    name: 'Kinetic city',
+    feature: 'timeline() · stagger() · 3600 keyframed towers',
+    hint: 'Walk the avenues · click sends a wave',
+    fly: false, walk: true, radius: 600,
+    fog: [0.17, 0.14, 0.25],
+    spawnYaw: 0,
+    start() {}, update, use, draw: hallDraw,
     tint: [1.0, 0.66, 0.32],
-    spawn: [0, 1.7, 0, 0],
-    eyeLift: 2.6,   // the walker sees from a little above street level
+    spawn: [0, 4.3, 0, 0],    // eye a little above street level
 
     resize(cssW, cssH, d) {
       dpr = Math.min(d || 1, 2);
@@ -785,7 +827,7 @@ export function createWorld(gl) {
     frame(t, dt, input) {
       const p = input.pos;
       yawNow = input.yaw;
-      camera(p[0], p[1] + world.eyeLift, p[2], input.yaw, input.pitch, W / H);
+      camera(p[0], p[1], p[2], input.yaw, input.pitch, W / H);
       const moved = Number.isNaN(lastX) ? 0 : Math.min(5, Math.hypot(p[0] - lastX, p[2] - lastZ));
       lastX = p[0]; lastZ = p[2];
       if (input.click) {

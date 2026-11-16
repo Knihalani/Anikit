@@ -15,7 +15,7 @@
 <body>
 <canvas id="c"></canvas>
 <div id="hud"></div>
-<div id="nav"><a href="?w=ocean">ocean</a><a href="?w=city">city</a><a href="?w=ocean&preview">ocean preview</a><a href="?w=city&preview">city preview</a></div>
+<div id="nav"><a href="?w=ocean">ocean</a><a href="?w=city">city</a><a href="?w=ocean&preview">ocean preview</a><a href="?w=city&preview">city preview</a><a href="?w=ocean&hall">ocean (hall api)</a><a href="?w=city&hall">city (hall api)</a></div>
 <script type="module">
   // Runs one world full-screen. Click to lock the pointer, WASD/arrows to walk, Shift to run,
   // click (while locked) to interact, wheel passes through. ?preview draws it through a portal circle.
@@ -43,7 +43,12 @@
   input.pos[0] = world.spawn[0]; input.pos[1] = world.spawn[1]; input.pos[2] = world.spawn[2]; input.yaw = world.spawn[3];
   if (q.has('at')) { const [x, z, yaw, pitch] = q.get('at').split(',').map(Number); input.pos[0] = x; input.pos[2] = z; input.yaw = yaw || 0; input.pitch = pitch || 0; }
   const preview = q.has('preview');
-  if (!preview) world.enter();
+  // ?hall drives the world the way hall.js does: update / use / draw(cam) with the hall's camera
+  const hallMode = q.has('hall');
+  const { camera, updateCamera } = await import('./hall-gl.js');
+  const cam = camera();
+  if (!preview && !hallMode) world.enter();
+  if (hallMode) world.start();
 
   const keys = new Set();
   addEventListener('keydown', (e) => keys.add(e.code));
@@ -84,7 +89,20 @@
 
     let q0 = null;
     if (tq) { q0 = gl.createQuery(); gl.beginQuery(tq.TIME_ELAPSED_EXT, q0); }
-    if (preview) {
+    if (hallMode) {
+      cam.eye[0] = input.pos[0]; cam.eye[1] = input.pos[1]; cam.eye[2] = input.pos[2];
+      cam.yaw = input.yaw; cam.pitch = input.pitch; cam.aspect = canvas.width / canvas.height; cam.near = 0.05; cam.far = 400;
+      cam.time = t; cam.px = (canvas.height * 0.5) / Math.tan(cam.fov / 2);
+      updateCamera(cam);
+      world.update(t, dt, input.pos, true);
+      if (input.click) world.use('push', input.pos, cam.f);
+      gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE);
+      gl.clearColor(1, 0, 1, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      world.draw(cam, false);
+      gl.disable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE);
+      if (q.has('glerr')) { const e = gl.getError(); if (e) console.error('gl error', e); }
+    } else if (preview) {
       gl.clearColor(0.9, 0.86, 0.8, 1); gl.clear(gl.COLOR_BUFFER_BIT);
       const r = Math.min(canvas.width, canvas.height) * 0.36;
       // top-left origin, device px (CONTRACT.md); off-centre and above the middle so a flipped y shows
