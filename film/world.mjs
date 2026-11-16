@@ -273,25 +273,53 @@ function gridMesh(mesh, nx, nz, pos, uv, skipCell) {
   return mesh.custom(P, NR, new Uint32Array(idx), U);
 }
 
-// A conifer: a trunk and three stacked cones, unit height (y 0 … 1).
+// A conifer: a trunk and six ragged, drooping tiers of branches, unit height (y 0 … 1).
 function conifer(mesh) {
   const P = [], NR = [], U = [], I = [];
-  const S = 7;
-  const cone = (y0, y1, r0, r1) => {
-    const base = P.length / 3, slope = (r0 - r1) / (y1 - y0);
+  const S = 11;
+  const tier = (y0, y1, r0, seed) => {
+    const base = P.length / 3;
     for (let k = 0; k <= S; k++) {
-      const a = (k / S) * Math.PI * 2, c = Math.cos(a), s = Math.sin(a);
-      const n = norm([c, slope, s]);
-      P.push(c * r0, y0, s * r0, c * r1, y1, s * r1);
-      NR.push(...n, ...n);
+      const a = (k / S) * Math.PI * 2 + seed, c = Math.cos(a), s = Math.sin(a);
+      const j = 0.72 + 0.5 * hash((k % S) * 7 + seed * 131), r = r0 * j;
+      const droop = (y1 - y0) * 0.22 * j; // branch tips hang below the tier's base
+      const n = norm([c, (r / (y1 - y0)) * 0.9, s]);
+      P.push(c * r, y0 - droop, s * r, c * r * 0.08, y1, s * r * 0.08);
+      NR.push(...n, n[0] * 0.4, 1, n[2] * 0.4);
       U.push(k / S, 0, k / S, 1);
     }
     for (let k = 0; k < S; k++) { const a = base + k * 2; I.push(a, a + 1, a + 3, a, a + 3, a + 2); }
   };
-  cone(0, 0.22, 0.035, 0.03);
-  cone(0.12, 0.55, 0.22, 0.07);
-  cone(0.38, 0.8, 0.165, 0.04);
-  cone(0.6, 1.0, 0.11, 0.0);
+  // Trunk.
+  {
+    const base = P.length / 3;
+    for (let k = 0; k <= 6; k++) {
+      const a = (k / 6) * Math.PI * 2, c = Math.cos(a), s = Math.sin(a);
+      P.push(c * 0.03, 0, s * 0.03, c * 0.02, 0.3, s * 0.02); NR.push(c, 0, s, c, 0, s); U.push(k / 6, 0, k / 6, 1);
+    }
+    for (let k = 0; k < 6; k++) { const a = base + k * 2; I.push(a, a + 1, a + 3, a, a + 3, a + 2); }
+  }
+  const T = [[0.14, 0.4, 0.26], [0.27, 0.52, 0.23], [0.4, 0.64, 0.19], [0.52, 0.76, 0.15], [0.64, 0.88, 0.11], [0.76, 1.0, 0.07]];
+  T.forEach(([y0, y1, r], i) => tier(y0, y1, r, i * 1.7 + 0.3));
+  return mesh.custom(new Float32Array(P), new Float32Array(NR), new Uint32Array(I), new Float32Array(U));
+}
+
+// A boulder: a lumpy, flattened sphere, unit radius.
+export function boulder(mesh, seed) {
+  const R = 9, S = 14, P = [], NR = [], U = [], I = [];
+  const f = (x, y, z) => 1 + 0.28 * N3(x * 1.3 + seed, z * 1.3 + y) + 0.12 * N4(x * 3 + y, z * 3 - seed);
+  for (let i = 0; i <= R; i++) {
+    const th = (i / R) * Math.PI;
+    for (let j = 0; j <= S; j++) {
+      const ph = (j / S) * Math.PI * 2;
+      const d = [Math.sin(th) * Math.cos(ph), Math.cos(th), Math.sin(th) * Math.sin(ph)];
+      const k = f(...d);
+      P.push(d[0] * k, d[1] * k * 0.62, d[2] * k);
+      NR.push(...norm([d[0], d[1] * 1.4, d[2]]));
+      U.push(j / S, i / R);
+    }
+  }
+  for (let i = 0; i < R; i++) for (let j = 0; j < S; j++) { const a = i * (S + 1) + j, b = a + S + 1; I.push(a, b, b + 1, a, b + 1, a + 1); }
   return mesh.custom(new Float32Array(P), new Float32Array(NR), new Uint32Array(I), new Float32Array(U));
 }
 
