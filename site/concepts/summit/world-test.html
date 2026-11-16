@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>World test</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #hud { position: fixed; left: 10px; top: 8px; font: 12px ui-monospace, monospace; color: #fff; opacity: .8; pointer-events: none; text-shadow: 0 1px 2px #000; }
+  #nav { position: fixed; right: 10px; top: 8px; font: 13px system-ui, sans-serif; }
+  #nav a { color: #fff; opacity: .75; margin-left: 10px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="nav"><a href="?w=ocean">ocean</a><a href="?w=city">city</a><a href="?w=ocean&preview">ocean preview</a><a href="?w=city&preview">city preview</a></div>
+<script type="module">
+  // Runs one world full-screen. Click to lock the pointer, WASD/arrows to walk, Shift to run,
+  // click (while locked) to interact, wheel passes through. ?preview draws it through a portal circle.
+  // ?at=x,z,yaw,pitch places the walker; ?t=seconds freezes time (for screenshots).
+  import { ready, engine } from '../../../packages/anikit/dist/anikit.lean.js';
+  await ready;
+  const q = new URLSearchParams(location.search);
+  const name = q.get('w') || 'ocean';
+  const { createWorld } = await import(name === 'city' ? './hall-world-city.js' : './hall-world-ocean.js');
+  const canvas = document.getElementById('c');
+  const gl = canvas.getContext('webgl2', { alpha: false, antialias: false, depth: true, stencil: false, powerPreference: 'high-performance' });
+  const t0 = performance.now();
+  const world = createWorld(gl);
+  const buildMs = performance.now() - t0;
+  const hud = document.getElementById('hud');
+
+  let dpr = Math.min(devicePixelRatio || 1, +(q.get('dpr') || 2));
+  function resize() {
+    canvas.width = Math.round(innerWidth * dpr); canvas.height = Math.round(innerHeight * dpr);
+    world.resize(innerWidth, innerHeight, dpr);
+  }
+  addEventListener('resize', resize); resize();
+
+  const input = { pos: new Float32Array(3), yaw: 0, pitch: 0, click: false, wheel: 0 };
+  input.pos[0] = world.spawn[0]; input.pos[1] = world.spawn[1]; input.pos[2] = world.spawn[2]; input.yaw = world.spawn[3];
+  if (q.has('at')) { const [x, z, yaw, pitch] = q.get('at').split(',').map(Number); input.pos[0] = x; input.pos[2] = z; input.yaw = yaw || 0; input.pitch = pitch || 0; }
+  const preview = q.has('preview');
+  if (!preview) world.enter();
+
+  const keys = new Set();
+  addEventListener('keydown', (e) => keys.add(e.code));
+  addEventListener('keyup', (e) => keys.delete(e.code));
+  addEventListener('blur', () => keys.clear());
+  canvas.addEventListener('click', () => {
+    if (document.pointerLockElement === canvas) input.click = true;
+    else canvas.requestPointerLock?.();
+  });
+  addEventListener('mousemove', (e) => {
+    if (document.pointerLockElement !== canvas) return;
+    input.yaw -= e.movementX * 0.0022;
+    input.pitch = Math.max(-1.3, Math.min(1.3, input.pitch - e.movementY * 0.0022));
+  });
+  addEventListener('wheel', (e) => { input.wheel += e.deltaY; }, { passive: true });
+  window.__input = input;   // for headless scripting
+  window.__world = world;
+
+  // GPU timing where the browser exposes it
+  const tq = gl.getExtension('EXT_disjoint_timer_query_webgl2');
+  const queries = []; let gpuMs = 0;
+  let frames = 0, acc = 0, fps = 0, fixedT = q.has('t') ? +q.get('t') : null;
+  let vf = 0, vs = 0;
+  const sc = { x: 0, y: 0, w: 0, h: 0 }, portal = { x: 0, y: 0, r: 0 };
+
+  engine.onFrame((timeMs, dtMs) => {
+    const dt = Math.min(0.1, dtMs / 1000);
+    const t = fixedT ?? timeMs / 1000;
+    // crisp movement: velocity eases in over ~80 ms, stops as fast
+    const run = keys.has('ShiftLeft') || keys.has('ShiftRight') ? 2.2 : 1;
+    const tf = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
+    const ts = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
+    const k = Math.min(1, dt * 14);
+    vf += (tf * 4.2 * run - vf) * k; vs += (ts * 4.2 * run - vs) * k;
+    const sy = Math.sin(input.yaw), cy = Math.cos(input.yaw);
+    input.pos[0] += (-sy * vf + cy * vs) * dt;
+    input.pos[2] += (-cy * vf - sy * vs) * dt;
+
+    let q0 = null;
+    if (tq) { q0 = gl.createQuery(); gl.beginQuery(tq.TIME_ELAPSED_EXT, q0); }
+    if (preview) {
+      gl.clearColor(0.9, 0.86, 0.8, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+      const r = Math.min(canvas.width, canvas.height) * 0.36;
+      portal.x = canvas.width / 2; portal.y = canvas.height / 2; portal.r = r;
+      sc.x = Math.floor(portal.x - r); sc.y = Math.floor(portal.y - r); sc.w = sc.h = Math.ceil(2 * r);
+      world.preview(t, dt, sc, portal);
+    } else {
+      world.frame(t, dt, input);
+    }
+    if (tq) { gl.endQuery(tq.TIME_ELAPSED_EXT); queries.push(q0); }
+    while (queries.length && gl.getQueryParameter(queries[0], gl.QUERY_RESULT_AVAILABLE)) {
+      const qq = queries.shift();
+      if (!gl.getParameter(tq.GPU_DISJOINT_EXT)) gpuMs = gpuMs * 0.9 + (gl.getQueryParameter(qq, gl.QUERY_RESULT) / 1e6) * 0.1;
+      gl.deleteQuery(qq);
+    }
+    input.click = false; input.wheel = 0;
+    frames++; acc += dt;
+    if (acc > 0.5) { fps = frames / acc; frames = 0; acc = 0;
+      hud.textContent = `${name} · ${fps.toFixed(0)} fps${tq ? ' · gpu ' + gpuMs.toFixed(2) + ' ms' : ''} · ${canvas.width}×${canvas.height} · build ${buildMs.toFixed(0)} ms · click to look, WASD`;
+    }
+  });
+</script>
+</body>
+</html>
