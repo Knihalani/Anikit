@@ -72,7 +72,7 @@ let maxScroll = 1;
 const measure = () => { maxScroll = Math.max(1, root.scrollHeight - innerHeight); };
 measure();
 const sp = { p: clamp01(scrollY / maxScroll) };
-const SPRING = { stiffness: 55, damping: 2 * Math.sqrt(55) };
+const SPRING = { stiffness: 170, damping: 2 * Math.sqrt(170) };
 function onScroll() {
   if (inHall) return;
   const target = clamp01(scrollY / maxScroll);
@@ -107,7 +107,7 @@ function exitHall() {
   armed = false;
   root.classList.remove('in-hall');
   // Back to just outside the portal; the spring carries the camera back from there.
-  const p = 0.86;
+  const p = 0.8;
   scrollTo({ top: p * maxScroll, behavior: 'instant' });
   spring(sp, { p }, SPRING);
 }
@@ -118,8 +118,8 @@ addEventListener('keydown', (e) => { if (e.key === 'Escape' && inHall && !docume
 const io = { p: 0, g: 0, push: 0, k: 0 };
 function mapProgress(p) {
   io.p = p;
-  io.g = p < 0.15 ? 0 : p < 0.75 ? ((p - 0.15) / 0.6) * 0.75 : 0.75 + clamp01((p - 0.75) / 0.17) * 0.25;
-  io.push = clamp01((p - 0.75) / 0.17);
+  io.g = p < 0.06 ? 0 : p < 0.7 ? ((p - 0.06) / 0.64) * 0.75 : 0.75 + clamp01((p - 0.7) / 0.22) * 0.25;
+  io.push = clamp01((p - 0.7) / 0.22);
   io.k = io.push;
 }
 
@@ -147,7 +147,7 @@ function frame(timeMs, dtMs) {
     hall.preview(t, dt, io.k);
   } else if (hallShown) { hallShown = false; hallCanvas.style.visibility = ''; clipKey = ''; }
   // After leaving, the hall re-arms only once the camera has backed out of the doorway.
-  if (io.p < 0.93) armed = true;
+  if (io.p < 0.9) armed = true;
   if (armed && io.p >= 0.95) enterHall();
 }
 

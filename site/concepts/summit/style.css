@@ -7,7 +7,7 @@ body {
   background: linear-gradient(180deg, #82b0d3 0%, #a3c0d8 22%, #bdcbdb 42%, #c7ccd6 52%, #b4bfd0 62%, #d1d1d9 76%, #d6d6de 100%) fixed;
 }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-.track { height: 600vh; }
+.track { height: 260vh; }
 .sky, #mountain, #hall, #hands, #overlay { position: fixed; inset: 0; width: 100%; height: 100%; }
 .sky { display: none; }
 .sky-word { font: 800 clamp(64px, 18vw, 260px)/1 system-ui, -apple-system, sans-serif; letter-spacing: -0.04em; color: rgba(255, 255, 255, 0.92); transform: translateY(-14vh); text-shadow: 0 0 40px rgba(255, 255, 255, 0.6); }

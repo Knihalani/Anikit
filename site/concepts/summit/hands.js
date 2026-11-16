@@ -64,130 +64,50 @@ in vec3 vAxis;
 in vec3 vRef;
 in vec2 vLocal;
 flat in float vMat;
-uniform vec3 uSun;        // direction to the sun: low, in front, over the golden horizon
+uniform vec3 uSun;        // direction to the sun: low, in front of you
 uniform vec4 uPortal;     // portal centre (view space), glow strength
 uniform float uTime;
 out vec4 outColor;
-float hash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
-vec3 aces(vec3 x) { return clamp(x * (2.51 * x + 0.03) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
-float vnoise(vec3 p) {
-  vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(mix(hash(i), hash(i + vec3(1, 0, 0)), f.x), mix(hash(i + vec3(0, 1, 0)), hash(i + vec3(1, 1, 0)), f.x), f.y),
-             mix(mix(hash(i + vec3(0, 0, 1)), hash(i + vec3(1, 0, 1)), f.x), mix(hash(i + vec3(0, 1, 1)), hash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
-}
+// Backlit silhouettes: the sun is in front, so the hands are near-black shapes
+// with a thin warm rim, red light through the thin edges and the portal's glow on them.
 void main() {
   vec3 n = normalize(vN);
   vec3 V = normalize(-vPos);
   vec3 L = normalize(uSun);
-  vec3 sunC = vec3(1.0, 0.76, 0.5) * 2.6;
-  vec3 skyC = vec3(0.50, 0.62, 0.92);
-  vec3 snowC = vec3(0.92, 0.94, 1.0);
   float ndv = max(dot(n, V), 0.0);
   float edge = 1.0 - ndv;
-  // Light passing the silhouette towards us from the sun in front.
-  float back = pow(max(dot(-V, L), 0.0), 2.0);
-  vec3 Lp = uPortal.xyz - vPos;
-  float dp = length(Lp); Lp /= dp;
-  vec3 portC = vec3(1.0, 0.48, 0.12) * uPortal.w * 1.6;
+  float back = pow(max(dot(-V, L), 0.0), 1.5);
+  vec3 Lp = normalize(uPortal.xyz - vPos);
+  float pl = max(dot(n, Lp), 0.0);
   float m = vMat;
-  vec3 col;
-  if (m > 3.5 && m < 4.5) {
-    // Polished gold: the sky above, the bright horizon, a hard sun glint.
+  bool skin = m < 0.5 || (m > 2.5 && m < 3.5) || m > 4.5;
+  bool metal = m > 3.5 && m < 4.5;
+  vec3 col = (skin ? vec3(0.03, 0.022, 0.022) : vec3(0.016, 0.017, 0.021)) * (0.55 + 0.45 * max(n.y, 0.0));
+  // A thin rim where the low sun grazes the edge.
+  float rim = pow(edge, 5.0) * smoothstep(-0.4, 0.5, dot(n, L) + 0.35);
+  col += vec3(1.0, 0.66, 0.36) * rim * (0.5 + 0.9 * back) * (skin ? 1.0 : 0.6);
+  // Light through the skin at the silhouette.
+  if (skin) col += vec3(0.85, 0.16, 0.05) * pow(edge, 2.2) * back * 0.3;
+  // The portal's fire on the edges that face it.
+  col += uPortal.w * vec3(1.0, 0.42, 0.1) * (pow(edge, 2.0) * pl * 1.3 + pl * 0.06);
+  if (metal) {
     vec3 r = reflect(-V, n);
-    float up = r.y;
-    vec3 env = mix(vec3(0.95, 0.93, 0.95), vec3(0.45, 0.58, 0.9), smoothstep(0.0, 0.8, up));
-    env = mix(vec3(0.35, 0.36, 0.4), env, smoothstep(-0.25, 0.0, up));
-    env += vec3(1.0, 0.75, 0.45) * 2.0 * exp(-pow(up / 0.08, 2.0));
-    env += vec3(6.0, 5.2, 4.0) * pow(max(dot(r, L), 0.0), 140.0);
-    env += portC * pow(max(dot(r, Lp), 0.0), 6.0) * 2.0;
-    float f = pow(edge, 5.0);
-    col = env * mix(vec3(1.0, 0.76, 0.42), vec3(1.0), f);
-  } else if (m > 0.5 && m < 2.5) {
-    // Technical shell jacket: dark, faint ripstop grid, a stitched seam; knit cuff ribs.
-    vec3 Z = normalize(vAxis);
-    float t = vLocal.x, th = vLocal.y;
-    vec3 base;
-    float tex = 1.0;
-    if (m < 1.5) {
-      float fold = sin(t * 16.0 + 1.8 * sin(th * 2.0 + t * 3.0)) * 0.5 + 0.5;
-      fold = pow(fold, 1.5);
-      n = normalize(n + Z * (fold - 0.4) * 0.7 + cross(Z, n) * 0.12 * sin(th * 5.0 + t * 9.0));
-      vec2 q = vec2(t * 260.0, th * 42.0);
-      vec2 gq = abs(fract(q) - 0.5);
-      tex = 1.0 + 0.07 * step(0.44, max(gq.x, gq.y));
-      base = vec3(0.05, 0.056, 0.07) * (0.85 + 0.3 * fold);
-      float seam = smoothstep(0.992, 0.999, cos(th - 2.4));
-      float stitch = step(0.45, fract(t * 140.0));
-      base += vec3(0.08, 0.085, 0.09) * seam * stitch;
-      base *= 1.0 - 0.45 * smoothstep(0.96, 0.99, cos(th - 2.35)) * (1.0 - seam);
-    } else {
-      vec3 X = normalize(cross(Z, n) + 1e-5);
-      n = normalize(n + X * 0.3 * sin(th * 34.0) * step(t, 0.999) * step(0.001, t));
-      base = vec3(0.028, 0.03, 0.036);
-    }
-    float d = max(dot(n, L) * 0.5 + 0.5, 0.0);
-    col = base * tex * (sunC * d * d * 0.8 + skyC * (0.55 + 0.35 * n.y) + snowC * 0.3 * max(-n.y, 0.0));
-    col += vec3(1.0, 0.72, 0.48) * pow(edge, 2.5) * (0.12 + 0.3 * back);
-    col += sunC * 0.05 * pow(max(dot(reflect(-V, n), L), 0.0), 6.0);
-    col += vec3(0.55, 0.6, 0.7) * pow(edge, 2.5) * 0.05;
-    col += base * portC * max(dot(n, Lp), 0.0) * 2.0;
-    col *= 0.93 + 0.07 * hash(floor(vPos * 1400.0));
-  } else {
-    // Skin: sun behind the hands, so a cool sky fill on the faces we see, warm light through the edges.
-    vec3 alb = vec3(0.68, 0.42, 0.30);
-    float joint = 1.0 - smoothstep(0.0, 0.2, min(vLocal.x, 1.0 - vLocal.x));
-    float tipK = (m > 2.5 && m < 4.5) ? smoothstep(0.4, 1.0, vLocal.x) : 0.0;
-    // Blotchy variation in the skin.
-    float nz = vnoise(vPos * 160.0) * 0.6 + vnoise(vPos * 520.0) * 0.4;
-    alb *= 0.9 + 0.2 * nz;
-    alb = mix(alb, vec3(0.72, 0.38, 0.3), 0.25 * smoothstep(0.55, 0.85, vnoise(vPos * 60.0 + 3.0)));
-    alb = mix(alb, vec3(0.70, 0.34, 0.26), joint * 0.4 + tipK * 0.45);
-    float nail = 0.0;
-    // Veins on the back of the hand, faint and blue-green under the skin.
-    if (m > 4.5) {
-      float dors = smoothstep(0.2, 0.8, cos(vLocal.y));
-      float vein = 1.0 - smoothstep(0.0, 0.07, abs(sin(vLocal.y * 2.0 + vLocal.x * 2.5 + 0.8 * sin(vLocal.x * 6.0 + vPos.x * 90.0))));
-      alb = mix(alb, vec3(0.48, 0.42, 0.45), vein * dors * 0.35 * smoothstep(0.1, 0.4, vLocal.x) * (1.0 - smoothstep(0.75, 0.95, vLocal.x)));
-    }
-    if (m > 2.5 && m < 4.5) {
-      float c = cos(vLocal.y);
-      nail = smoothstep(0.5, 0.72, c) * smoothstep(0.18, 0.38, vLocal.x) * (1.0 - smoothstep(1.02, 1.2, vLocal.x));
-      alb = mix(alb, vec3(0.9, 0.74, 0.7), nail);
-    }
-    float ndl = dot(n, L);
-    float wrap = max((ndl + 0.4) / 1.4, 0.0);
-    vec3 diff = sunC * wrap * wrap * 0.75 + skyC * (0.55 + 0.3 * n.y) + snowC * 0.35 * max(-n.y, 0.0) + vec3(0.2, 0.18, 0.17);
-    col = alb * diff * 0.6;
-    // Knuckle creases: a touch darker and redder where segments meet.
-    col *= 1.0 - 0.24 * joint * (1.0 - nail);
-    // Fine crease lines across the back of each finger joint.
-    float cr = min(vLocal.x, 1.0 - vLocal.x);
-    col *= 1.0 - 0.18 * (1.0 - smoothstep(0.0, 0.035, abs(cr - 0.06))) * smoothstep(0.3, 0.8, cos(vLocal.y)) * step(m, 3.5) * (1.0 - nail);
-    // Subsurface: red light through the thin edges and the fingertips, against the sun.
-    float sss = pow(edge, 1.6) * (0.35 + 1.1 * back) + tipK * back * 0.35;
-    col += vec3(1.0, 0.36, 0.18) * sss * 0.42;
-    // A crisp warm rim where the sun grazes the edge.
-    col += sunC * 0.35 * pow(edge, 4.0) * smoothstep(-0.2, 0.4, ndl + 0.3);
-    vec3 H = normalize(L + V);
-    float spec = pow(max(dot(n, H), 0.0), mix(16.0, 120.0, nail)) * mix(0.05, 0.8, nail);
-    col += sunC * spec;
-    // Sky glints on the nails.
-    col += skyC * nail * pow(max(reflect(-V, n).y, 0.0), 4.0) * 0.35;
-    float pl = max(dot(n, Lp), 0.0);
-    col += alb * portC * (pl * 0.4 + 0.3 * edge) + portC * pow(edge, 3.0) * 0.12;
+    col = vec3(0.05, 0.04, 0.03) + vec3(1.0, 0.8, 0.5) * 3.0 * pow(max(dot(r, L), 0.0), 40.0) + uPortal.w * vec3(1.0, 0.5, 0.15) * 1.5 * pow(max(dot(r, Lp), 0.0), 6.0);
   }
-  col = aces(col * 0.95);
+  col = col / (1.0 + col);
   col = pow(col, vec3(1.0 / 2.2));
   outColor = vec4(col, 1.0);
 }`;
 
-// Sparks: one instanced quad per spark, laid out in screen pixels around the portal.
+// Sparks: one instanced quad per spark, in screen pixels around the portal.
+// Three counter-rotating layers of streaks, flicker, and embers shed in long arcs that bounce on the snow.
 const sparkVert = `#version 300 es
 precision highp float;
 uniform vec2 uRes;          // device px
 uniform vec4 uRing;         // centre px (y down), radius px, arc fraction 0..1
-uniform vec4 uP;            // time, accumulated spin, intensity, ember amount
+uniform vec4 uP;            // time, accumulated spin, intensity, ember fraction
 uniform vec2 uA;            // start angle of the drawn arc, spin on (0..1)
+uniform float uFloor;       // snow line, device px from the top
 uniform float uDepth;       // NDC depth of the portal plane
 uniform float uScale;       // device px per CSS px
 out vec2 vUv;
@@ -198,49 +118,51 @@ void main() {
   int id = gl_InstanceID;
   float f = float(id);
   vec2 corner = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1));
-  float h1 = h(f + 0.13), h2 = h(f * 1.7 + 3.1), h3 = h(f * 2.3 + 7.7), h4 = h(f * 0.37 + 1.9);
+  float h1 = h(f + 0.13), h2 = h(f * 1.7 + 3.1), h3 = h(f * 2.3 + 7.7), h4 = h(f * 0.37 + 1.9), h5 = h(f * 3.1 + 0.7);
   float t = uP.x, R = uRing.z, arc = uRing.w;
   vec2 C = uRing.xy;
   float TAU = 6.2831853;
   bool ember = h4 < uP.w;
   vec2 pos, dir; float len, wid, bright;
   vec3 col;
-  float band = 3.0 * uScale + R * 0.03;
+  float band = 4.0 * uScale + R * 0.05;
   if (!ember) {
-    // Ring sparks: a dense band running round the circle, each at its own speed, trailing a streak.
-    float speed = 0.7 + 0.9 * h2;
+    float layer = floor(h5 * 3.0);
+    float speed = layer < 0.5 ? 1.6 + 0.8 * h2 : layer < 1.5 ? -(0.9 + 0.5 * h2) : 2.8 + 1.4 * h2;
+    float rOff = layer < 0.5 ? 0.0 : layer < 1.5 ? 0.35 : -0.3;
     float a = uA.x + h1 * arc * TAU + uP.y * speed * uA.y;
     float jr = h3 - 0.5;
-    float r = R + jr * abs(jr) * 4.0 * band + (h(f + floor(t * 14.0)) - 0.5) * 1.5 * uScale;
+    float r = R + (rOff + jr * abs(jr) * 3.0) * band + (h(f + floor(t * 20.0)) - 0.5) * 2.0 * uScale;
     pos = C + vec2(cos(a), -sin(a)) * r;
-    dir = vec2(-sin(a), -cos(a));
-    len = (8.0 + 46.0 * h2 * h2) * uScale * (0.45 + 0.55 * min(1.0, R / (260.0 * uScale)));
-    wid = (0.9 + 1.4 * h1 * h1) * uScale;
-    float core = 1.0 - min(1.0, abs(jr) * 2.4);
-    bright = (0.3 + 0.8 * h1 * h1 * h1) * (0.4 + 0.6 * core);
-    col = mix(vec3(1.0, 0.45, 0.12), vec3(1.0, 0.6, 0.235), h2 * core);
-    // While the arc is being drawn its head, at the fingertip, burns brightest.
-    if (arc < 0.999) bright *= 0.55 + 1.6 * smoothstep(0.82, 1.0, h1);
+    dir = vec2(-sin(a), -cos(a)) * sign(speed * uA.y + 0.001 * (1.0 - uA.y));
+    len = (10.0 + 70.0 * h2 * h2) * uScale * (0.5 + 0.5 * uA.y) * (0.45 + 0.55 * min(1.0, R / (260.0 * uScale)));
+    wid = (0.9 + 1.6 * h1 * h1) * uScale;
+    float core = 1.0 - min(1.0, abs(jr) * 2.2);
+    float flick = 0.55 + 0.45 * sin(t * (18.0 + 30.0 * h3) + f);
+    bright = (0.35 + 1.0 * h1 * h1 * h1) * (0.4 + 0.6 * core) * flick;
+    col = mix(vec3(1.0, 0.36, 0.06), vec3(1.0, 0.66, 0.26), h2 * core);
+    if (arc < 0.999) bright *= 0.5 + 1.8 * smoothstep(0.85, 1.0, h1);
   } else {
-    // Embers: thrown off tangentially from the rim, slowing, then falling under gravity.
-    float rate = 0.55 + 0.8 * h2;
+    // Embers: shed tangentially, falling in long glowing arcs, bouncing once on the snow.
+    float rate = 0.35 + 0.5 * h2;
     float life = fract(t * rate + h1 * 7.0);
-    float a0 = uA.x + h3 * arc * TAU + uP.y * 0.9 * uA.y;
+    float a0 = uA.x + h3 * arc * TAU + (uP.y - life / rate * 2.0 * uA.y) * 2.0 * uA.y;
     vec2 p0 = C + vec2(cos(a0), -sin(a0)) * (R + (h1 - 0.5) * band);
     vec2 tang = vec2(-sin(a0), -cos(a0));
     vec2 out0 = vec2(cos(a0), -sin(a0));
-    // Most embers stay close to the rim; a few long ones fly far.
-    float v = (0.18 + 0.25 * h2 + 1.2 * step(0.92, h2)) * R + 20.0 * uScale;
-    vec2 vel = (tang * (0.75 + 0.5 * h1) * uA.y + tang * 0.25 + out0 * (h1 - 0.3) * 0.7) * v;
-    float drag = (1.0 - exp(-life * 2.4)) / 2.4;
-    vec2 g = vec2(0.0, 0.5 * R + 120.0 * uScale);
-    pos = p0 + vel * drag + g * life * life * 0.5;
-    vec2 vnow = vel * exp(-life * 2.4) + g * life;
+    float v = (0.35 + 0.6 * h2 + 0.8 * step(0.85, h2)) * R + 40.0 * uScale;
+    vec2 vel = (tang * (0.8 + 0.4 * h1) * (0.3 + 0.7 * uA.y) + out0 * (h1 - 0.25) * 0.5) * v;
+    float T = life * 2.2;
+    float drag = (1.0 - exp(-T * 1.4)) / 1.4;
+    vec2 g = vec2(0.0, 1.1 * R + 260.0 * uScale);
+    pos = p0 + vel * drag + g * T * T * 0.5;
+    vec2 vnow = vel * exp(-T * 1.4) + g * T;
+    if (pos.y > uFloor) { pos.y = uFloor - (pos.y - uFloor) * 0.28; vnow.y = -vnow.y * 0.28; }
     dir = normalize(vnow + 1e-4);
-    len = clamp(length(vnow) * 0.03, 2.0 * uScale, 22.0 * uScale);
-    wid = (0.9 + 1.2 * h3) * uScale * (1.0 - life * 0.6);
-    bright = (1.0 - life) * (1.0 - life) * (0.6 + 1.0 * h2);
-    col = mix(vec3(1.0, 0.28, 0.03), vec3(1.0, 0.62, 0.22), (1.0 - life) * h2);
+    len = clamp(length(vnow) * 0.05, 3.0 * uScale, 60.0 * uScale);
+    wid = (1.0 + 1.4 * h3) * uScale * (1.0 - life * 0.5);
+    bright = (1.0 - life) * (1.0 - life) * (0.8 + 1.4 * h2) * (0.7 + 0.3 * sin(t * 25.0 + f));
+    col = mix(vec3(1.0, 0.26, 0.03), vec3(1.0, 0.6, 0.2), (1.0 - life) * h2);
   }
   vec2 side = vec2(-dir.y, dir.x);
   vec2 q = pos - dir * len * corner.x + side * wid * (corner.y - 0.5) * 2.0;
@@ -259,14 +181,13 @@ in vec3 vC;
 out vec4 outColor;
 void main() {
   float across = 1.0 - abs(vUv.y * 2.0 - 1.0);
-  float along = (1.0 - vUv.x);              // bright head, fading tail
+  float along = (1.0 - vUv.x);
   float a = across * across * along * along * vI;
-  // Partly opaque so the orange holds against a bright sky; the rest is added light.
-  float al = min(1.0, a * 0.75);
-  outColor = vec4(vC * a, al);
+  float al = min(1.0, a * 0.7);
+  outColor = vec4(vC * a + vec3(1.0, 0.85, 0.6) * a * a * 0.15, al);
 }`;
 
-// Glow: a tight orange halo with a hot core line around the drawn arc, transparent inside.
+// Glow: a thick molten band with a hot core, heat shimmer outside, a bright inner lip once open.
 const glowVert = `#version 300 es
 precision highp float;
 uniform vec2 uRes;
@@ -276,7 +197,7 @@ uniform float uScale;
 out vec2 vPx;
 void main() {
   vec2 corner = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 2.0 - 1.0;
-  float ext = uRing.z * 1.12 + 70.0 * uScale;
+  float ext = uRing.z * 1.2 + 90.0 * uScale;
   vec2 q = uRing.xy + corner * ext;
   vPx = q;
   gl_Position = vec4(q.x / uRes.x * 2.0 - 1.0, 1.0 - q.y / uRes.y * 2.0, uDepth, 1.0);
@@ -294,30 +215,54 @@ void main() {
   vec2 d = vPx - uRing.xy;
   float r = length(d), R = max(uRing.z, 1.0);
   float x = (r - R) / uScale;
-  if (abs(x) > 70.0 && uHole < 0.5) discard;
   float ang = atan(-d.y, d.x);
   float TAU = 6.2831853;
-  // Only the part of the circle drawn so far glows; the head is brightest.
   float rel = mod(ang - uA.x, TAU) / TAU;
   float arc = uRing.w;
   float drawn = arc >= 0.999 ? 1.0 : (1.0 - smoothstep(arc - 0.004, arc + 0.004, rel)) * (0.5 + 0.8 * smoothstep(arc - 0.12, arc, rel));
-  float shimmer = 0.5 + 0.5 * sin(ang * 23.0 + r * 0.09 / uScale - uP.x * 7.0) * sin(ang * 9.0 - uP.x * 3.1);
-  float band = 3.0 + R / uScale * 0.035;
-  float core = exp(-x * x / (1.6 + band * 0.3));
-  float halo = exp(-abs(x) / (6.0 + band * 1.2));
-  float heat = exp(-pow(max(x, 0.0) / (10.0 + band * 2.0), 2.0)) * step(0.0, x) * (0.6 + 0.4 * shimmer);
-  float hot = exp(-x * x / 0.7);
-  vec3 c = vec3(1.0, 0.6, 0.24) * core * 0.45 + vec3(1.0, 0.95, 0.8) * hot * 0.35 + vec3(1.0, 0.42, 0.1) * halo * 0.22 + vec3(1.0, 0.36, 0.06) * heat * 0.06;
+  float t = uP.x;
+  // Heat: wavy bands that crawl outwards.
+  float sh = sin(ang * 31.0 + r * 0.11 / uScale - t * 9.0) * sin(ang * 13.0 - t * 4.3 + r * 0.05 / uScale);
+  float band = 4.0 + R / uScale * 0.05;
+  float core = exp(-x * x / (2.0 + band * 0.6));
+  float halo = exp(-abs(x) / (8.0 + band * 1.4));
+  float heat = exp(-pow(max(x, 0.0) / (14.0 + band * 2.5), 2.0)) * step(0.0, x);
+  vec3 c = vec3(1.0, 0.62, 0.26) * core * 0.6 + vec3(1.0, 0.95, 0.8) * exp(-x * x / 1.2) * 0.35
+         + vec3(1.0, 0.4, 0.07) * halo * 0.32 + vec3(1.0, 0.45, 0.12) * heat * (0.05 + 0.07 * sh);
   c *= drawn;
-  // The opening tears outwards with a hot, flickering lip.
+  float al = clamp((core * 0.6 + halo * 0.2) * drawn, 0.0, 0.9);
+  // Heat haze just outside the rim: alternating light and shade so the scenery behind seems to waver.
+  al += heat * 0.08 * max(sh, 0.0) * drawn;
+  // Inside: the bright inner lip of the opening and a warm falloff into the hall.
   if (uHole > 0.5) {
-    float hx = (r - uHole) / (uScale * (2.0 + 1.5 * shimmer));
-    float lip = exp(-hx * hx) * (1.0 - smoothstep(0.85, 1.0, uHole / R));
-    c += vec3(1.0, 0.55, 0.18) * lip * 0.55;
+    float hx = (r - uHole) / uScale;
+    float lip = exp(-hx * hx / 6.0);
+    float inner = exp(-max(-hx, 0.0) / 40.0) * step(hx, 0.0);
+    c += vec3(1.0, 0.82, 0.55) * lip * 0.8 + vec3(1.0, 0.5, 0.15) * inner * 0.08;
+    al = max(al, lip * 0.6);
   }
-  c *= uP.z;
-  float al = clamp((core * 0.55 + halo * 0.18) * drawn * uP.z, 0.0, 0.85);
+  c *= uP.z; al *= uP.z;
   outColor = vec4(c, al);
+}`;
+
+// Light: the portal lights the scene — a warm wash in the air, a pool of glow on the snow, and a flash as it opens.
+const lightFrag = `#version 300 es
+precision highp float;
+uniform vec2 uRes;
+uniform vec4 uRing;     // centre px, radius px, intensity
+uniform vec2 uL;        // flash, snow line (device px from the top)
+out vec4 outColor;
+void main() {
+  vec2 px = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
+  vec2 d = px - uRing.xy;
+  float R = max(uRing.z, 1.0);
+  float r = length(d);
+  float air = exp(-max(r - R, 0.0) / (R * 0.6)) * step(R, r) * 0.07;
+  vec2 g = vec2(d.x / (R * 1.8), (px.y - uL.y) / (R * 0.45));
+  float snow = exp(-dot(g, g)) * smoothstep(uL.y - R * 0.3, uL.y + R * 0.1, px.y) * 0.35;
+  float flash = uL.x * (0.6 * exp(-r / R) + 0.1);
+  vec3 c = vec3(1.0, 0.45, 0.12) * (air + snow) * uRing.w + vec3(1.0, 0.8, 0.55) * flash;
+  outColor = vec4(c, 0.0);
 }`;
 
 // ---------------------------------------------------------------------------
@@ -378,6 +323,8 @@ export function createHands(canvas) {
   const MESH = compile(meshVert, meshFrag);
   const SPARK = compile(sparkVert, sparkFrag);
   const GLOW = compile(glowVert, glowFrag);
+  const LIGHT = compile(`#version 300 es
+void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4.0 - 1.0; gl_Position = vec4(c, 0.0, 1.0); }`, lightFrag);
 
   // Instance buffer: 12 floats per capsule.
   const MAXI = 64;
@@ -416,34 +363,31 @@ export function createHands(canvas) {
 
   // -------------------------------------------------------------------------
   // The gesture: one Anikit timeline over two poses and the portal, scrubbed by g (0..1 → 0..10 s).
+  // The hands stay low at the sides, silhouettes framing the portal rather than covering it.
   // -------------------------------------------------------------------------
   const Lh = makePose(-1), Rh = makePose(1);
-  const portal = { arc: 0, size: 0, open: 0, grow: 0, glow: 0 };
+  Lh.x = -0.36; Lh.y = -0.62; Rh.x = 0.36; Rh.y = -0.62;
+  const portal = { arc: 0, size: 0, open: 0, grow: 0, glow: 0, flash: 0 };
   const circle = { phase: 0, amp: 0 };
   const io = 'inOutCubic', oo = 'outCubic';
   const TURNS = 2.5;
   const tl = timeline({ autoplay: false })
-    // Arms rise into view (0 → 2.5).
-    .add(Lh, { x: [-0.2, -0.13], y: [-0.5, -0.11], z: [-0.38, -0.43], pitch: [20, 38], yaw: [10, 16], roll: [-30, -12], curl: [0.55, 0.34], ex: [-0.26, -0.22], ey: [-0.55, -0.5] }, { duration: 2.5, ease: oo }, 0)
-    .add(Rh, { x: [0.2, 0.13], y: [-0.5, -0.13], z: [-0.38, -0.42], pitch: [20, 30], yaw: [-10, -16], roll: [30, 14], curl: [0.55, 0.38], ex: [0.26, 0.22], ey: [-0.55, -0.5] }, { duration: 2.7, ease: oo }, 0.15)
-    // The ring hand reaches forward and a little left, palm out, fingers relaxed and spread: the anchor (2.4 → 4).
-    .add(Lh, { x: -0.13, y: -0.035, z: -0.6, pitch: 80, yaw: 20, roll: -4, curl: [0.34, 0.12], spread: [0.1, 0.75], thumb: [0.2, 0.8], tcurl: [0.4, 0.12], ex: -0.23, ey: -0.46, ez: -0.27 }, { duration: 1.6, ease: io }, 2.4)
-    // The drawing hand comes up beside it, index leading (3.0 → 4.1).
-    .add(Rh, { x: 0.075, y: -0.075, z: -0.5, pitch: 58, yaw: -10, roll: 12, curl: 0.24, spread: 0.3, thumb: 0.45, tcurl: 0.35, ex: 0.25, ey: -0.47, ez: -0.24 }, { duration: 1.1, ease: io }, 3.0)
-    // Two and a half big circles (4.0 → 7.0); the first one draws the ring, the rest spin it up.
-    .add(circle, { amp: [0, 1] }, { duration: 0.45, ease: 'inOutSine' }, 3.95)
-    .add(circle, { phase: [0, Math.PI * 2 * TURNS] }, { duration: 3.0, ease: 'inOutSine' }, 4.0)
-    .add(portal, { glow: [0, 1] }, { duration: 0.5, ease: 'outSine' }, 4.0)
-    // Both hands pull back and apart as the ring expands to full size (7.0 → 7.6).
-    .add(circle, { amp: 0 }, { duration: 0.5, ease: 'inOutSine' }, 7.0)
-    .add(portal, { size: [0, 1] }, { duration: 0.65, ease: io }, 6.95)
-    .add(Lh, { x: -0.18, y: -0.07, z: -0.5, yaw: 26, curl: 0.2 }, { duration: 0.65, ease: io }, 7.0)
-    .add(Rh, { x: 0.17, y: -0.1, z: -0.45, yaw: -20, curl: 0.3 }, { duration: 0.65, ease: io }, 7.0)
-    .add(portal, { open: [0, 1] }, { duration: 0.55, ease: 'inOutSine' }, 7.0)
-    // Step through (7.6 → 10): the portal grows past the screen, the arms drop away.
-    .add(portal, { grow: [0, 1] }, { duration: 2.4, ease: 'inCubic' }, 7.6)
-    .add(Lh, { x: -0.22, y: -0.52, z: -0.45, pitch: 30, curl: 0.4, spread: 0.3, ey: -0.62 }, { duration: 1.6, ease: 'inCubic' }, 8.0)
-    .add(Rh, { x: 0.22, y: -0.52, z: -0.45, pitch: 30, curl: 0.4, ey: -0.62 }, { duration: 1.5, ease: 'inCubic' }, 7.9);
+    // Forearms rise from the bottom corners (0 → 1.8).
+    .add(Lh, { x: [-0.36, -0.33], y: [-0.62, -0.3], z: [-0.48, -0.5], pitch: [30, 78], yaw: [25, 28], roll: [-20, -6], curl: [0.5, 0.12], spread: [0.1, 0.7], thumb: [0.2, 0.7], tcurl: [0.4, 0.15], ex: -0.44, ey: -0.68, ez: -0.3 }, { duration: 1.8, ease: oo }, 0)
+    .add(Rh, { x: [0.36, 0.3], y: [-0.62, -0.31], z: [-0.48, -0.5], pitch: [30, 64], yaw: [-25, -22], roll: [20, 10], curl: [0.5, 0.22], spread: 0.3, thumb: 0.45, tcurl: 0.35, ex: 0.44, ey: -0.68, ez: -0.3 }, { duration: 1.9, ease: oo }, 0.1)
+    // The right hand circles; the first turn draws the ring, the rest spin it up (1.8 → 6.2).
+    .add(circle, { amp: [0, 1] }, { duration: 0.4, ease: 'inOutSine' }, 1.6)
+    .add(circle, { phase: [0, Math.PI * 2 * TURNS] }, { duration: 4.4, ease: 'inOutSine' }, 1.8)
+    .add(portal, { glow: [0, 1] }, { duration: 0.5, ease: 'outSine' }, 1.8)
+    .add(portal, { size: [0, 1] }, { duration: 3.0, ease: io }, 3.4)
+    .add(circle, { amp: 0 }, { duration: 0.4, ease: 'inOutSine' }, 6.2)
+    // It tears open with a flash (6.0 → 7.0).
+    .add(portal, { open: [0, 1] }, { duration: 1.0, ease: 'inOutSine' }, 6.0)
+    .add(portal, { flash: [0, 1, 0] }, { duration: 0.6, ease: 'outSine' }, 6.1)
+    // Step through (7.2 → 10): the portal grows past the screen, the arms drop away.
+    .add(portal, { grow: [0, 1] }, { duration: 2.8, ease: 'inCubic' }, 7.2)
+    .add(Lh, { y: -0.66, pitch: 40, curl: 0.4, ey: -0.8 }, { duration: 1.4, ease: 'inCubic' }, 7.4)
+    .add(Rh, { y: -0.66, pitch: 40, curl: 0.4, ey: -0.8 }, { duration: 1.3, ease: 'inCubic' }, 7.3);
   const TL = 10;
   // g is spring-smoothed so fast scrolling never makes the hands jerk.
   const gS = { v: 0 };
@@ -576,15 +520,14 @@ export function createHands(canvas) {
   // -------------------------------------------------------------------------
   const out = { portal: { x: 0, y: 0, r: 0 } };
   const proj = new Float32Array(16);
-  let cssW = 1, cssH = 1, dprK = 1, fov = 0, tanH = 0.6;
-  const NSPARK = 4800;
+  let cssW = 1, cssH = 1, dprK = 1, fov = 0, tanH = 0.6, aspect = 1;
+  const NSPARK = 14000;
   // The sun is low over the horizon in front of you.
   const sun = [0.18, 0.2, -1];
   function resize(w, h, dpr) {
     cssW = w; cssH = h; dprK = Math.min(dpr || 1, 2);
     canvas.width = Math.max(2, Math.round(w * dprK)); canvas.height = Math.max(2, Math.round(h * dprK));
-    // Vertical field of view: a natural first-person 62°, wider on portrait screens.
-    const aspect = w / h;
+    aspect = w / h;
     fov = 62 * Math.PI / 180 * (aspect < 1 ? 1.25 : 1);
     tanH = Math.tan(fov / 2);
     const f = 1 / tanH, near = 0.03, far = 20;
@@ -595,31 +538,23 @@ export function createHands(canvas) {
 
   const PORTAL_Z = -1.6;
   const portalDepth = () => { const z = PORTAL_Z; return (proj[10] * z + proj[14]) / -z; };
-  // View space → CSS px.
-  const scr = [0, 0, 0];
-  function project(x, y, z) {
-    const k = 1 / (-z * tanH);
-    scr[0] = (x * k / (cssW / cssH) * 0.5 + 0.5) * cssW;
-    scr[1] = (0.5 - y * k * 0.5) * cssH;
-    scr[2] = k * 0.5 * cssH;   // px per metre at this depth
-  }
-  const CIRCLE_R = 0.085;      // metres, the drawing fingertip's circle
-  let spinAcc = 0, drewLast = true;
+  const CIRCLE_R = 0.035;      // metres, the circling hand's loop
+  let spinAcc = 0, drewLast = true, timeNow = 0;
 
   function draw(sparkOn, cx, cy, ringR, arc, a0, spinOn, gr, hole) {
-    const Wd = canvas.width, Hd = canvas.height;
+    const Wd = canvas.width, Hd = canvas.height, k = dprK;
     gl.viewport(0, 0, Wd, Hd);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    const lightK = sparkOn ? portal.glow * Math.min(1, 0.3 + arc) * (1 - gr) : 0;
     if (n > 0) {
       gl.enable(gl.DEPTH_TEST); gl.depthMask(true); gl.disable(gl.BLEND);
       gl.enable(gl.CULL_FACE); gl.cullFace(gl.FRONT);
       gl.useProgram(MESH.p);
       gl.uniformMatrix4fv(MESH.u.uProj, false, proj);
       gl.uniform3f(MESH.u.uSun, sun[0], sun[1], sun[2]);
-      // The portal lights the hands: its centre unprojected onto the portal plane.
-      const vx = ((cx / cssW) * 2 - 1) * tanH * (cssW / cssH) * -PORTAL_Z, vy = (1 - (cy / cssH) * 2) * tanH * -PORTAL_Z;
-      gl.uniform4f(MESH.u.uPortal, vx, vy, PORTAL_Z, sparkOn ? portal.glow * (1 - gr * 0.5) * (0.4 + 0.6 * Math.min(1, arc * 1.5)) : 0);
+      const vx = ((cx / cssW) * 2 - 1) * tanH * aspect * -PORTAL_Z, vy = (1 - (cy / cssH) * 2) * tanH * -PORTAL_Z;
+      gl.uniform4f(MESH.u.uPortal, vx, vy, PORTAL_Z, lightK * 1.4 + portal.flash);
       gl.uniform1f(MESH.u.uTime, 0);
       gl.bindBuffer(gl.ARRAY_BUFFER, instBuf);
       gl.bufferSubData(gl.ARRAY_BUFFER, 0, inst, 0, n * 12);
@@ -634,11 +569,17 @@ export function createHands(canvas) {
       gl.disable(gl.CULL_FACE);
     }
     if (sparkOn) {
-      gl.enable(gl.DEPTH_TEST); gl.depthMask(false);
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
       gl.bindVertexArray(emptyVao);
+      // Light cast on the air and the snow, behind everything.
+      gl.disable(gl.DEPTH_TEST); gl.depthMask(false);
+      gl.useProgram(LIGHT.p);
+      gl.uniform2f(LIGHT.u.uRes, Wd, Hd);
+      gl.uniform4f(LIGHT.u.uRing, cx * k, cy * k, Math.max(ringR, cssH * 0.12) * k, lightK);
+      gl.uniform2f(LIGHT.u.uL, portal.flash * 0.3, cssH * 0.84 * k);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.enable(gl.DEPTH_TEST);
       const fade = 1 - gr * gr;
-      const k = dprK;
       gl.useProgram(GLOW.p);
       gl.uniform2f(GLOW.u.uRes, Wd, Hd);
       gl.uniform4f(GLOW.u.uRing, cx * k, cy * k, ringR * k, arc);
@@ -651,8 +592,9 @@ export function createHands(canvas) {
       gl.useProgram(SPARK.p);
       gl.uniform2f(SPARK.u.uRes, Wd, Hd);
       gl.uniform4f(SPARK.u.uRing, cx * k, cy * k, ringR * k, arc);
-      gl.uniform4f(SPARK.u.uP, timeNow, spinAcc, portal.glow * fade, 0.12 + 0.06 * spinOn);
+      gl.uniform4f(SPARK.u.uP, timeNow, spinAcc, portal.glow * fade, 0.1 + 0.16 * spinOn);
       gl.uniform2f(SPARK.u.uA, a0, spinOn);
+      gl.uniform1f(SPARK.u.uFloor, cssH * 0.86 * k);
       gl.uniform1f(SPARK.u.uDepth, portalDepth());
       gl.uniform1f(SPARK.u.uScale, k);
       gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, NSPARK);
@@ -660,54 +602,45 @@ export function createHands(canvas) {
       gl.disable(gl.BLEND);
     }
   }
-  let timeNow = 0;
 
   function frame(t, dt, g, look) {
     timeNow = t;
     g = Math.min(1, Math.max(0, g || 0));
-    // Spring-smooth the gesture (retarget only when g actually moves).
-    if (Math.abs(g - gTarget) > 0.0005) { gTarget = g; spring(gS, { v: g }, { stiffness: 90, damping: 19 }); }
+    if (Math.abs(g - gTarget) > 0.0005) { gTarget = g; spring(gS, { v: g }, { stiffness: 140, damping: 2 * Math.sqrt(140) }); }
     const gv = Math.min(1, Math.max(0, gS.v));
     if (Math.abs(gv - lastSeek) > 1e-5) { tl.seek(gv * TL); lastSeek = gv; }
 
-    // The drawing hand runs round a big circle in the screen plane.
     const lx = look ? look.x || 0 : 0, ly = look ? look.y || 0 : 0;
     const sway = Math.sin(t * 0.9) * 0.004, bob = Math.sin(t * 1.4) * 0.003;
-    const ph = circle.phase - Math.PI / 2;   // start at the bottom of the circle
+    const ph = circle.phase - Math.PI / 2;
     const ca = Math.cos(ph), sa = Math.sin(ph);
-    const cx3 = ca * CIRCLE_R * circle.amp, cy3 = (sa + 1) * CIRCLE_R * circle.amp;
-    const rx = Rh.x, ry = Rh.y, lxp = Lh.x, lyp = Lh.y;
-    Rh.x += cx3 - lx * 0.012 + sway; Rh.y += cy3 - ly * 0.008 + bob;
-    Lh.x += -lx * 0.012 - sway * 0.7; Lh.y += -ly * 0.008 + bob * 0.8;
+    // Narrow screens pull the hands in so they stay in the corners.
+    const xs = Math.min(1, Math.max(0.42, aspect / 1.6));
+    const rx = Rh.x, ry = Rh.y, lxp = Lh.x, lyp = Lh.y, rex = Rh.ex, lex = Lh.ex;
+    Rh.x = Rh.x * xs + ca * CIRCLE_R * circle.amp - lx * 0.01 + sway; Rh.y += (sa + 1) * CIRCLE_R * circle.amp - ly * 0.008 + bob; Rh.ex *= xs;
+    Lh.x = Lh.x * xs - lx * 0.01 - sway * 0.7; Lh.y += -ly * 0.008 + bob * 0.8; Lh.ex *= xs;
     n = 0; ringN = 0;
-    if (Lh.y > -0.49 || Rh.y > -0.49) {
+    if (Lh.y > -0.58 || Rh.y > -0.58) {
       buildHand(Lh, -1, true, t);
       buildHand(Rh, 1, false, t);
     }
-    Rh.x = rx; Rh.y = ry; Lh.x = lxp; Lh.y = lyp;
+    Rh.x = rx; Rh.y = ry; Lh.x = lxp; Lh.y = lyp; Rh.ex = rex; Lh.ex = lex;
 
-    // The ring being drawn: the circle the index fingertip traces, in screen px.
     const arc = Math.min(1, circle.phase / (Math.PI * 2));
-    project(TIP[0] - ca * CIRCLE_R * circle.amp, TIP[1] - sa * CIRCLE_R * circle.amp, TIP[2]);
-    const dX = scr[0], dY = scr[1], dR = CIRCLE_R * scr[2];
-    // The finished portal, and beyond it the screen-filling step through.
     const minS = Math.min(cssW, cssH);
-    const R0 = Math.min(cssW * 0.4, cssH * 0.36);
+    const R0 = Math.min(cssW * 0.36, cssH * 0.4);
     const cover = Math.hypot(cssW, cssH) * 0.62;
     const s = portal.size, gr = portal.grow;
-    const fx = cssW * 0.5 + lx * minS * 0.02, fy = lerpR(cssH * 0.44, cssH * 0.5, gr) + ly * minS * 0.015;
-    const cx = lerpR(dX, fx, s), cy = lerpR(dY, fy, s);
-    const ringR = lerpR(lerpR(dR, R0, s), cover * 1.08, gr);
-    // Head of the arc sits at the fingertip; once closed, the ring spins up.
+    const cx = cssW * 0.5 + lx * minS * 0.02, cy = lerpR(cssH * 0.42, cssH * 0.5, gr) + ly * minS * 0.015;
+    const ringR = lerpR(R0 * lerpR(0.5, 1, s), cover * 1.08, gr);
     const a0 = ph - arc * Math.PI * 2;
     const spinOn = arc < 0.85 ? 0 : arc >= 1 ? 1 : (arc - 0.85) / 0.15;
-    spinAcc += dt * (1.2 + 2.0 * s) * spinOn;
+    spinAcc += dt * (2.0 + 2.5 * s) * spinOn;
     const P = out.portal;
     P.x = cx; P.y = cy;
     P.r = portal.open <= 0.001 ? 0 : ringR * 0.985 * portal.open;
 
     const sparkOn = arc > 0.001 && portal.glow > 0.001;
-    // Nothing to show: clear once, then skip drawing entirely.
     if (n === 0 && !sparkOn) {
       if (drewLast) { gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); drewLast = false; }
       return out;
