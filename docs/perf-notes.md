@@ -413,3 +413,126 @@ Test: `simple_anims_match_track_evaluation`. `ak_tick`, 3 numbers: 50k
 | Indexed instead of `chunks_exact` loop for simple anims | within noise natively. |
 | Generated per-key-set loop over runs of same-writer records in `flush()` | not attempted: the direct-write table above removed the same indirection without a gain. |
 
+
+## Third round: keyframes on plain objects
+
+Goal: the "8 keyframes" row of `scripts/bench.mjs`. Starting point:
+`067c4a2`. What the row compares: Anikit evaluates one keyframed track per
+target with `inOutSine` on each of the 7 evenly spaced segments; GSAP turns
+`keyframes: { x: [...] }` into a timeline of 8 tweens over all targets (one
+per segment, `power1.inOut` each by default, `ease: 'none'` over the whole),
+so per frame only the active segment's tween renders: one ease call, then
+`start + change * ratio` and a store per target.
+
+Where the time went (50k targets, `ak_tick` and `flush()` timed separately,
+Node): tick ~1.05 ms (~187 instructions per child natively, callgrind, of
+which ~45 are the segment search and lerp), flush ~0.95 ms when the
+keyframes run first in the process and ~1.2 ms after the "3 numbers" case
+(see 2). Flush experiments on one build: the record lookup loop alone
+0.27 ms; plus reading each value from its animation's buffer 0.49 ms; with a
+Smi store instead of the value 0.36 ms; the real store 0.88–0.93 ms (the
+boxed heap number, see above, is ~0.4 ms of it, and GSAP pays it too).
+Calling the writer from `flush()` or writing `r.pt.x` inline instead of
+`r.render()` made no difference.
+
+### Results
+
+`bench.mjs`, ms per frame, three runs each:
+
+| Case | N | `067c4a2` | GSAP | now | GSAP | now vs GSAP |
+|---|---:|---:|---:|---:|---:|---:|
+| 3 numbers, `outCubic` | 1k | 0.019–0.039 | 0.066–0.068 | 0.019–0.022 | 0.068–0.083 | 3.5–3.8x faster |
+| 〃 | 10k | 0.374–0.387 | 0.489–0.531 | 0.363–0.377 | 0.475–0.535 | 1.3–1.5x faster |
+| 〃 | 50k | 1.860–1.968 | 2.509–2.643 | 1.775–1.975 | 2.542–2.956 | 1.4–1.5x faster |
+| colour string | 1k | 0.047–0.051 | 0.074–0.087 | 0.055–0.062 | 0.084–0.105 | 1.5–1.9x faster |
+| 〃 | 10k | 0.678–0.700 | 0.841–0.916 | 0.717–0.885 | 0.896–1.053 | 1.0–1.4x faster |
+| 〃 | 50k | 3.341–3.683 | 4.348–5.495 | 3.652–4.679 | 4.542–5.069 | 1.0–1.4x faster |
+| 8 keyframes, `inOutSine` | 1k | 0.030–0.033 | 0.023 | 0.021–0.026 | 0.025–0.028 | 1.0–1.3x |
+| 〃 | 10k | 0.442–0.485 | 0.245–0.282 | 0.330–0.351 | 0.230–0.329 | 0.65–1.0x |
+| 〃 | 50k | 2.253–2.380 | 1.249–1.475 | 1.421–1.497 | 1.224–1.266 | 0.83–0.88x |
+| `batch()` 3 channels | 50k | 0.182–0.215 | — | 0.180–0.195 | — | |
+
+The keyframes row is ~35% faster at 50k and still behind GSAP above 1k.
+
+Interleaved with the `067c4a2` build (three rounds, base / now, ms):
+keyframes 1k 0.029–0.034 / 0.021–0.034, 10k 0.425–0.462 / 0.318–0.333, 50k
+2.11–2.19 / 1.34–1.45; 3 numbers 50k 1.83–1.97 / 1.70–1.83; colour 50k
+3.36–3.59 / 3.36–3.60, colour 1k 0.047–0.057 / 0.053–0.060, **colour 10k
+0.688–0.701 / 0.734–0.873**. The colour 10k row is slower (still faster
+than GSAP in every run, 1.07–1.41x). In 10k-only runs (three rounds, base /
+after change 2 / now): 0.686–0.739 / 0.734–0.843 / 0.701–0.793, so it came
+with change 2's `flush()` loop (colour Parts take `Part.render` as before;
+the loop's extra `r.run` check, or the larger `flush()` being optimised
+differently, are the suspects); not resolved.
+
+Kernels, one run each, `067c4a2` vs now: `bench-wasm.mjs` "8 keyframes,
+spring easing" 1.25 → 1.16 ms, cubic-bezier tween 1.96 → 1.98 ms, "x, y,
+opacity + OKLab colour" 2.07 → 2.26 ms (this row moved 2.09–2.39 between
+runs before). Native `bench`, two interleaved runs (very noisy on this VM):
+"animate(): group of 50k, 8 kf" 0.76–0.80 → 0.71–0.77 ms, "group of 50k x 3
+tracks" 0.80–0.92 → 0.84–0.93 ms. Standalone tweens (no group), which also
+write the first-output array of 3 below: `bench-wasm.mjs` "tween 1 number,
+outCubic" 100k, two interleaved rounds, 1.82–2.00 → 1.86–1.99 ms (no
+change); natively, three interleaved rounds, 100k 1.39–1.50 → 1.41–1.89 ms
+and 10k 0.127–0.146 → 0.133–0.156 ms (overlapping, at most a few % slower).
+
+### 1. Keyframed single numbers skip the track table (core)
+
+Like the simple from/to animations of the second round: an animation whose
+only track is an enabled keyframed number with at most one segment easing
+has a fixed layout (offsets at 0, values at `n`, output 0), so `Anim::eval`
+handles it without reading the track struct. When the engine generated the
+offsets (`k / (n - 1)`, strictly increasing), the segment and its eased
+local progress depend only on (bits of the progress, keyframe count,
+easing), so the frame memo keeps the last one and the targets of one
+`animate()` call share it. NaN progress never uses it (the search then stops
+wherever each cursor is). The cursor lives in the `Anim` while this path is
+on and goes back to the track on reclassification and around `sample()`.
+Test: `kf_anims_match_track_evaluation` (outputs and cursors vs `eval_into`
+on private track copies, one memo shared across animations of different
+keyframe counts and easings, per-animation progress before NaN steps,
+`sample()` calls, track toggles; dropping the NaN guard or the count from
+the memo key fails it). `ak_tick`, 50k x 8 keyframes: 1.03–1.07 → 0.74–0.75
+ms (three interleaved rounds); callgrind 187 → 129 instructions per child;
+"3 numbers" and colour unchanged.
+
+### 2. A generated loop per key set in `flush()` (JS)
+
+The writer call in `Part.render` (`w(this.pt, f, at)`) went polymorphic once
+two key sets had been used in a process: the 8-keyframe flush took ~1.2 ms
+after the "3 numbers" case instead of ~0.95 ms (also with differently named
+keys, so it is not V8 shape sharing). Each key set now also gets a generated
+loop over consecutive updated records that use it (compact path, no
+`onUpdate`); `flush()` calls it once per run, and anything else ends the run
+and goes through `Part.render`. Same values, same order. (This is the
+"generated per-key-set loop" the second round did not attempt.) Flush after
+the other cases, three interleaved rounds: keyframes 1.12–1.23 → 0.88–0.93
+ms, 3 numbers 0.89–0.92 → 0.81–0.91 ms. The write-path test now has a setter
+target inside a run and `onUpdate` Parts interleaved with it (dropping
+either guard from the loop fails it).
+
+### 3. First outputs in one array (core + JS)
+
+Each animation's outputs sit at the end of its own buffer, so the flush read
+one cache line per target for one number. The engine now also keeps the
+first output of every animation node in one array indexed by node index
+(`Engine::first_outputs`, `ak_out0_ptr`), written next to every output write,
+so it always equals `values(h)[0]` (test: `first_outputs_track_values`: full
+renders, the lane, seek, reverse, node reuse; dropping the lane's write
+fails it). The targets of one call get consecutive node indices, so the
+generated loop for a single property at offset 0 reads consecutive numbers.
+It stops if that array moved (a counter at `ak_out0_epoch_ptr`, bumped when
+it reallocates) or memory grew. Keyframes flush 0.90 → 0.65 ms; `bench.mjs`
+interleaved with the build before it: 8 keyframes 50k 1.59–1.65 → 1.41–1.52
+ms. The first version fetched the two pointers in `flush()` itself, and the
+colour row went from 3.5–3.8 to 4.4–4.9 ms (interleaved, twice) with no
+change in its own code path; fetching them inside the generated loop fixed
+that, which points at `flush()`'s optimisation budget.
+
+### Tried and not kept (third round)
+
+| Idea | Result |
+|---|---|
+| Lane leader's time, iteration and timing copied into locals instead of re-read from its node per child | 10 fewer instructions per child natively, no measurable change in wasm (`ak_tick` 0.73–0.82 ms vs 0.74–0.96 ms before, seven interleaved rounds). |
+| `r.pt.x = F64[r.at]` (or `r.pw(...)`) inline in `flush()` instead of `r.render()` | no change (0.88–1.11 vs 0.96–1.01 ms): the call isn't the cost. |
+| Matching GSAP's structure (one tween per segment) | not attempted: with the segment memo the per-target core work is a compare, two loads and a lerp; what remains is per-node bookkeeping (lane checks, the updated list) and the JS store. |
