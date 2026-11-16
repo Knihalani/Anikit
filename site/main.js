@@ -97,8 +97,8 @@ const visibility = (y) => {
   const F = 0.3 * vh;
   const o = L.open, c = L.calibre, z = L.close;
   const out1 = 1 - sstep(o.top + o.h - vh - F * 0.4, o.top + o.h - vh + F * 1.6, y);
-  const in2 = sstep(c.top - F * 0.3, c.top + F * 1.5, y), out2 = 1 - sstep(c.top + c.h - vh - F * 1.9, c.top + c.h - vh + F * 0.1, y);
-  const in3 = sstep(z.top - F * 0.3, z.top + F * 1.5, y);
+  const in2 = sstep(c.top + F * 0.3, c.top + F * 1.9, y), out2 = 1 - sstep(c.top + c.h - vh - F * 1.9, c.top + c.h - vh + F * 0.1, y);
+  const in3 = sstep(z.top + F * 0.3, z.top + F * 1.9, y);
   if (y < c.top - F * 2) return out1;
   if (y < z.top - F * 2) return in2 * out2;
   return in3;
@@ -115,11 +115,11 @@ function story(y) {
   } else if (!near('close')) {
     // Into the movement.
     const u = prog('calibre', y);
-    state.explode = 1; state.dive = sstep(0.0, 0.42, u); state.glide = sstep(0.4, 0.8, u); state.lift = 0; state.turn = 0;
+    state.explode = 1; state.dive = sstep(0.08, 0.45, u); state.glide = sstep(0.43, 0.8, u); state.lift = 0; state.turn = 0;
   } else {
     // Reassembly above the install command.
     const u = prog('close', y);
-    state.explode = 1 - sstep(0.02, 0.6, u); state.dive = 0; state.lift = 20 - 100 * sstep(0.02, 0.6, u); state.turn = -0.4 * (1 - sstep(0.02, 0.7, u)) + (reduced ? 0 : 0.09 * Math.sin(performance.now() / 2600) * sstep(0.5, 0.9, u));
+    state.explode = 1 - sstep(0.12, 0.62, u); state.dive = 0; state.lift = 20 - 100 * sstep(0.12, 0.62, u); state.turn = -0.2 * (1 - sstep(0.12, 0.7, u)) + (reduced ? 0 : 0.09 * Math.sin(performance.now() / 2600) * sstep(0.5, 0.9, u));
   }
 }
 
