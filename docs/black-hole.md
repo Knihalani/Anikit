@@ -143,7 +143,7 @@ engine.onFrame((t) => {
 
 ## Status
 
-*As of 2026-11-16, 15:00 UTC, branch `claude/epic-ramanujan-qe7x4w-blackhole`.*
+*As of 2026-11-16, 15:02 UTC, branch `claude/epic-ramanujan-qe7x4w-blackhole` (base: `claude/epic-ramanujan-qe7x4w`).*
 
 **Done**
 
@@ -168,12 +168,21 @@ engine.onFrame((t) => {
 - **Python**: `anikit.BlackHole(width, height, mode)` with `render(**params)` returning RGBA bytes, `resize`, `stats` and `size`; the full pytest suite passes (395).
 - **Demo and benchmark**: the demo page is `examples/blackhole.html`, the benchmark `packages/anikit/scripts/bench-blackhole.mjs`, and the reference renders are in `docs/images/blackhole/`.
 - **Gates**: all of them pass (cargo test and clippy, npm test, typecheck, build, pytest).
+- **Late fixes:**
+  - single-frame renders (Python stills, the first frame after a resize) now include bloom and the lensed sky; previously they read an empty "previous frame" downsample;
+  - camera moves no longer allocate.
+
+**For the site**
+
+- **Hero:** use `mode: 'cinematic'` (or `'physical'` for the EHT/Luminet look) with a fixed `distance`/`inclination`/`fov`, and animate `time` and `azimuth`.
+- **Journey:** use `budget: 14, minScale: 0.5` and the mapping in "Using it on a page".
+- **Finale:** inside the horizon, `look` around 120–180° shows the squeezed outside sky. Straight down, ψ < arccos(1/β), is black.
 
 **Performance** (measured on this sandbox VM, which is slow: a plain 1M-element `Float32Array` multiply–add loop in Node takes about 2.5 ms here, roughly 3–4× a current laptop):
 
 | 1280×800, edge-on, 30M | Node wasm, steady (time + azimuth animating) | Node wasm, camera moving | Chromium headless, incl. `putImageData` |
 |---|---|---|---|
-| scale 1 (1.02 Mpx) | 25 ms | 100–115 ms | 31.6 ms |
+| scale 1 (1.02 Mpx) | 24–25 ms | 95–115 ms | 31.6 ms |
 | scale 0.75 (0.58 Mpx) | 15–17 ms | 59–67 ms | 17.0 ms |
 | `budget: 14` (adaptive), mid-journey | – | – | 9.3 ms at 576×360 |
 
