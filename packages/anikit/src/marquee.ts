@@ -57,7 +57,7 @@ export class Marquee {
   private visible = true;
   /** The offset the track's transform shows (NaN: not written yet). */
   private shown = NaN;
-  /** Container size and repeat length of the last measure (resizes that change neither skip re-cloning). */
+  /** Container box at the last measure: the resize observer's reports of that same size skip re-cloning. */
   private measured = '';
 
   constructor(readonly el: HTMLElement, private o: MarqueeOptions) {
@@ -93,10 +93,10 @@ export class Marquee {
       this.off.push(() => window.removeEventListener('scroll', onScroll));
     }
     if (typeof ResizeObserver !== 'undefined') {
-      // The first callback (on observe) and resizes that leave the sizes as
-      // they were need no new clones.
+      // The first callback (on observe) reports the size measure() just
+      // saw: no new clones for that.
       const ro = new ResizeObserver(() => {
-        if (this.sizes() !== this.measured) this.measure();
+        if (this.box() !== this.measured) this.measure();
       });
       ro.observe(el);
       this.off.push(() => ro.disconnect());
@@ -127,6 +127,7 @@ export class Marquee {
     // One repeat = the items plus one gap, so the wrap is seamless.
     this.length = items.reduce((a, e) => a + size(e), 0) + gap * items.length;
     const view = size(this.el);
+    this.measured = this.box();
     if (!(this.length > 0)) return;
     const copies = Math.max(1, Math.ceil((view * 2) / this.length));
     for (let k = 0; k < copies; k++) {
@@ -139,14 +140,11 @@ export class Marquee {
         this.clones.push(c);
       }
     }
-    this.measured = this.sizes();
     this.render();
   }
-  /** Container size and the size of the original items with the clones (layout reads only). */
-  private sizes(): string {
-    const ax = this.o.axis ?? 'x';
-    const size = (e: Element) => (ax === 'x' ? (e as HTMLElement).offsetWidth : (e as HTMLElement).offsetHeight);
-    return `${size(this.el)} ${size(this.track)} ${this.track.children.length}`;
+  /** The container's box (read with the other sizes, before any clone is added). */
+  private box(): string {
+    return `${this.el.offsetWidth}x${this.el.offsetHeight}`;
   }
   /** Stop moving (eases to a stop over `smoothing`). */
   pause(): this {
@@ -161,6 +159,9 @@ export class Marquee {
   /** Stop updating; keep the current markup and position. */
   kill(): void {
     for (const f of this.off.splice(0)) f();
+    // Killed off screen: leave the track where the marquee had got to.
+    this.visible = true;
+    this.render();
   }
   /** Stop, remove the clones and the track, and restore the container. */
   revert(): void {

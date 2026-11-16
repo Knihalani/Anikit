@@ -976,20 +976,20 @@ Only the retarget rows changed beyond the noise. GSAP has no spring, and its
 InertiaPlugin does not register under Node (it reported "Missing plugin"),
 so there is no competitor column here.
 
-`bench-marquee.mjs` (Chromium, ms per frame of `engine.tick` plus the style
-and layout it forces; median of 3 pages):
+`bench-marquee.mjs` (Chromium, median of 3 pages, three interleaved rounds
+with the final code and script; set-up = `marquee()` on every row plus a
+forced layout):
 
-| M rows | `86b471c` (3 rounds) | now |
-|---:|---:|---:|
-| 20 | 0.0467–0.0473 | 0.0173 |
-| 100 | 0.250–0.267 | 0.0307 |
+| M rows | ms/frame `86b471c` | ms/frame now | set-up `86b471c` | set-up now |
+|---:|---:|---:|---:|---:|
+| 20 | 0.051–0.073 | **0.020–0.023** | 10.0–13.6 | 7.4–13.2 |
+| 100 | 0.232–0.500 | **0.030–0.034** | 36.9–56.3 | 37.8–64.6 |
 
-The "now" column is from after the observer margin (below) and a longer wait
-for the observers in the script; the three interleaved rounds before those
-two changes read 0.0463–0.0483 / 0.232–0.242 in two rounds (the observers had
-not reported when timing started) and 0.0197 / 0.0487 in the third. Set-up
-time did not change (7.2–8.3 vs 7.4–8.3 ms at 20 rows): the saved re-clone
-happens in the resize observer's first callback, after the timed region.
+Set-up is within the noise; the saved re-clone happens in the resize
+observer's first callback, after the timed region. (A first version compared
+the container and track sizes after adding the clones, a second forced
+layout per marquee that read 41.0–44.5 vs 34.9–41.1 ms at 100 rows; the
+final one reads the container's box with the other sizes, before cloning.)
 
 `bench-scroll.mjs` (Chromium, ms per scroll event in the scroll listeners,
 three interleaved rounds, `SIZES=50,200`):
@@ -1082,8 +1082,10 @@ write while an `IntersectionObserver` says it is off screen, with a
 callback arrives a frame late); it also skips the write when the offset did
 not change (paused, reduced motion). The resize observer's first report,
 which always arrives right after `observe()`, re-cloned all the content for
-nothing: resizes now re-clone only when the container size, track size or
-child count changed (`measure()` called directly still always re-clones).
+nothing: a report re-clones only when the container's box differs from the
+one the last measure saw (`measure()` called directly still always
+re-clones). `kill()` off screen writes the current offset once, so the track
+is left where the marquee had got to.
 
 ### 3. Scrubbed triggers outside their range
 

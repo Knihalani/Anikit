@@ -63,6 +63,10 @@ describe('marquee', () => {
       expect(offset(el)).toBeCloseTo(100, 0); // shown at once on entry
       m.measure(); // an explicit measure still re-clones
       expect(track.lastElementChild).not.toBe(first);
+      io[0]([{ isIntersecting: false }]);
+      advance(0.2);
+      m.kill(); // killed off screen: the track shows where it had got to
+      expect(offset(el)).toBeCloseTo(m.offset, 1);
       m.revert();
     } finally {
       G.IntersectionObserver = prevIO;
