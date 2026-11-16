@@ -11,7 +11,7 @@ precision highp float;
 out vec4 o;
 uniform vec2 uRes;
 uniform vec3 uEye, uRight, uUp, uFwd;
-uniform float uFov, uScale, uPower, uTime, uDepth, uAperture, uFocus, uFade, uSeed, uSteps;
+uniform float uHero, uFov, uScale, uPower, uTime, uDepth, uAperture, uFocus, uFade, uSeed, uSteps;
 uniform vec2 uJitter;
 
 float hash(vec2 p){ p = fract(p * vec2(443.897, 441.423)); p += dot(p, p.yx + 19.19); return fract((p.x + p.y) * p.x); }
@@ -123,7 +123,7 @@ void main(){
   float fogT = hit ? t : tmax;
   float fog = 1.0 - exp(-fogT / (S * 9.0 + 0.05));
   col = mix(col, bg, hit ? fog * 0.85 : 1.0);
-  col += pal(0.68 + 0.1 * sin(uTime * 0.05)) * glow * 0.4;
+  col += pal(0.68 + 0.1 * sin(uTime * 0.05)) * glow * (0.4 + 0.55 * uHero);
   col = mix(col, vec3(0.012, 0.013, 0.02), uFade);
   col = aces(col * 1.05);
   col = pow(col, vec3(0.4545));
@@ -162,7 +162,7 @@ export function createFractal(canvas, { quality, initial } = {}) {
   gl.enableVertexAttribArray(0);
   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
   const U = {};
-  for (const n of ['uRes', 'uEye', 'uRight', 'uUp', 'uFwd', 'uFov', 'uScale', 'uPower', 'uTime', 'uDepth', 'uAperture', 'uFocus', 'uFade', 'uSeed', 'uSteps', 'uJitter']) U[n] = gl.getUniformLocation(prog, n);
+  for (const n of ['uHero', 'uRes', 'uEye', 'uRight', 'uUp', 'uFwd', 'uFov', 'uScale', 'uPower', 'uTime', 'uDepth', 'uAperture', 'uFocus', 'uFade', 'uSeed', 'uSteps', 'uJitter']) U[n] = gl.getUniformLocation(prog, n);
 
   const mobile = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 600;
   const fixed = quality != null;                       // ?q=… pins the resolution (for captures)
@@ -170,7 +170,7 @@ export function createFractal(canvas, { quality, initial } = {}) {
   let scale = fixed ? quality : mobile ? 0.4 : 0.55;     // start low: first frame fast
   const steps = mobile ? 90 : 130;
   let ceil = maxScale;
-  const state = { eye: [0.4, 0.5, 3.1], forward: [0, 0, -1], up: [0, 1, 0], power: 8, fade: 0, focus: 2, time: 0, depth: 0 };
+  const state = { eye: [0.4, 0.5, 3.1], forward: [0, 0, -1], up: [0, 1, 0], power: 8, hero: 0, fade: 0, focus: 2, time: 0, depth: 0 };
   Object.assign(state, initial);
   let prev = null, n = 0, frame = 0, running = false, raf = 0, w = 0, h = 0, last = 0, slow = 0, fast = 0, cool = 0, idle = false;
 
@@ -209,7 +209,8 @@ export function createFractal(canvas, { quality, initial } = {}) {
     gl.uniform1f(U.uPower, state.power);
     gl.uniform1f(U.uTime, state.time);
     gl.uniform1f(U.uDepth, state.depth);
-    gl.uniform1f(U.uAperture, S * 0.035 * still);
+    gl.uniform1f(U.uAperture, S * (0.035 + 0.05 * state.hero) * still);
+    gl.uniform1f(U.uHero, state.hero);
     gl.uniform1f(U.uFocus, state.focus);
     gl.uniform1f(U.uFade, state.fade);
     gl.uniform1f(U.uSeed, (frame % 64) + 1);

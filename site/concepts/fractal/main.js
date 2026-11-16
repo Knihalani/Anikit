@@ -21,7 +21,7 @@ const norm = (a) => mul(a, 1 / (len(a) || 1));
 const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 const march = (ro, rd) => { let t = 0; for (let i = 0; i < 400 && t < 8; i++) { const d = de(...add(ro, mul(rd, t))); if (d < 1e-6 + t * 1e-5) return t; t += d * 0.9; } return Infinity; };
 
-const START = [0.75, 0.95, 3.1];
+const START = [0.74, 0.94, 3.1];
 const AIM = norm(sub([0.22, 0.42, 0.45], START));
 const P = add(START, mul(AIM, march(START, AIM)));     // the point we dive towards
 const N = mul(AIM, -1);                                // back out towards the start
@@ -45,7 +45,7 @@ for (let k = 1; k < STATIONS; k++) {
 }
 pts.push(add(P, mul(sub(pts[STATIONS - 1], P), 0.35)));   // a point beyond the last station for look-ahead
 // 2 · The fractal draws its first frame now, before anikit has loaded.
-const fr = createFractal($('#fractal'), { quality: q ? +q : undefined, initial: { eye: START, forward: norm(add(mul(norm(sub(pts[1], START)), 0.35), mul(norm(sub(P, START)), 0.65))) } });
+const fr = createFractal($('#fractal'), { quality: q ? +q : undefined, initial: { eye: START, hero: 1, forward: (() => { const c = norm(sub([0, innerWidth > innerHeight ? -0.08 : -0.42, 0], START)), sd = norm(cross(c, [0, 1, 0])); return norm(add(c, mul(sd, innerWidth > innerHeight ? -0.2 : 0))); })() } });
 const { init, engine, animate, timeline, stagger, spring, magnetic, splitText, scroll, smoothScroll, inView, flip, flightPath, world, pointCloud, glow, scene3d, circle, star, rect } = await ak;
 const path = flightPath(pts, { lookAhead: 0.4, bank: 0.55, maxBank: 16, bankWindow: 0.9 });
 
@@ -98,6 +98,14 @@ function steer(timeMs) {
   const dist = len(sub(eye0, P));
   // Look mostly at P so the point we dive towards stays centred behind the panels.
   let fwd = norm(add(mul(norm(sub(pose.target, eye0)), 0.35), mul(norm(sub(P, eye0)), 0.65)));
+  // Hero: frame the whole bulb, pushed right (wide screens) so the copy sits lower-left on dark space.
+  const hero = 1 - Math.min(1, s / (stationS[1] * 0.7));
+  const heroK = hero * hero * (3 - 2 * hero);
+  if (heroK > 0) {
+    const toC = norm(sub([0, innerWidth > innerHeight ? -0.08 : -0.42, 0], eye0)), side = norm(cross(toC, [0, 1, 0]));
+    const look = norm(add(toC, mul(side, innerWidth > innerHeight ? -0.2 : 0)));
+    fwd = norm(add(mul(fwd, 1 - heroK), mul(look, heroK)));
+  }
   const roll = ((reduced ? 0 : pose.roll * 0.8) + (reduced ? 0 : Math.sin(t * 0.07) * 2.5)) * (Math.PI / 180);
   let r = norm(cross(fwd, [0, 1, 0])), u = cross(r, fwd);
   const up = add(mul(u, Math.cos(roll)), mul(r, Math.sin(roll)));
@@ -112,7 +120,7 @@ function steer(timeMs) {
   const z = D0 / Math.max(dist, 1e-6);
   const zt = z < 10 ? z.toFixed(1) : Math.round(z).toLocaleString('en-US');
   if (zt !== zoomText) { zoomText = zt; zoomEl.textContent = '×' + zt; }
-  fr.set({ eye, forward: fwd, up, power: 8 + breathe, fade, focus: len(sub(P, eye)) * 0.9, time: t, depth: Math.log2(D0 / Math.max(dist, 1e-6)) / 10 });
+  fr.set({ eye, forward: fwd, up, power: 8 + breathe, fade, hero: heroK, focus: len(sub(P, eye)) * 0.9, time: t, depth: Math.log2(D0 / Math.max(dist, 1e-6)) / 10 });
 }
 
 // Reduced motion: no flight; the camera sits at the station of the section in view.
@@ -149,7 +157,8 @@ if (!reduced && !small) {
     .add(chars, { yPercent: [60, 0], opacity: [0, 1], rotateX: [-50, 0] }, { duration: 1.4, ease: 'outExpo', delay: stagger(0.06) })
     .add('#lede', { opacity: [0, 1], y: [14, 0] }, { duration: 1.2 }, '-=0.9')
     .add('#cue', { opacity: [0, 1] }, { duration: 1.2 }, '-=0.6');
-  scroll(animate('.hero-in', { opacity: [1, 1, 0], scale: [1, 1, 0.94], y: [0, 0, -40] }, { autoplay: false, ease: 'linear' }), { target: $('.hero'), offset: ['start start', 'end start'] });
+  // Fades while the hero is still pinned (its last 50vh), so the copy and its shade never scroll away visibly.
+  scroll(animate('.hero-in', { opacity: [1, 0], y: [0, -30] }, { autoplay: false, ease: 'inOutSine' }), { target: $('.hero'), offset: ['start start', 'end end'] });
 }
 
 // Every chamber panel eases in over ~50vh, holds, and eases out over ~40vh.
