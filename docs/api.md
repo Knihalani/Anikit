@@ -425,6 +425,7 @@ off();
 - `get()`, `set(v)` (stops a running tween/spring), `on(fn)` → unsubscribe, `velocity` (units/s), `stop()`, `destroy()`.
 - `to(target, options)` returns the `Animation`; `spring(target, options)` returns the `PhysicsAnimation` and keeps momentum when called again mid-flight (pointer following).
 - `map(input, output, { clamp, ease })` and `derived(sources, fn)` return values that recompute when their sources change.
+- `scrollProgress(options)` is scroll progress as a motion value (the `scroll()` options: `target`, `offset`, `container`, `axis`, `smooth`); its `velocity` is the scroll speed: `bindValues(hero, { opacity: scrollProgress({ target: hero, offset: ['start start', 'end start'] }).map([0, 1], [1, 0]) })`.
 - `bindValues(targets, { prop: value })` writes any property `animate()` understands (transforms compose), immediately and on every change; it returns a `ValueBinding` (`kill()`, `revert()` restores the inline style from before) and is cleaned up by `context().revert()`.
 
 ## Control, cleanup and accessibility
@@ -1055,7 +1056,7 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Utilities](#more-utilities) | `mixColor`, `parseColor`, `splitColor`, `clamp`, `lerp`, `mapRange`, `wrap`, `snap`, `random`, `interpolate`, `normalize`, `roundTo`, `pipe`, `shuffle`, `getUnit`, `toArray`, `VelocityTracker` | |
 | [Noise](#more-utilities) | `noise2`, `noise3`, `fbm`, `noiseMany`, `wander` | |
 | [Cleanup](#control-cleanup-and-accessibility) | `context`, `Context`, `matchMedia`, `quickTo`, `quickSetter` | `Revertible` |
-| [Reactive values](#reactive-values-motionvalue) | `motionValue`, `MotionValue`, `derived`, `bindValues` | `ValueBinding` |
+| [Reactive values](#reactive-values-motionvalue) | `motionValue`, `MotionValue`, `derived`, `bindValues`, `scrollProgress` | `ValueBinding` |
 | [Marquees](#marquees-marquee) | `marquee`, `Marquee` | `MarqueeOptions` |
 | [Magnetic and parallax](#magnetic-and-parallax-magnetic-parallax) | `magnetic`, `parallax` | `MagneticOptions`, `ParallaxOptions`, `PointerFx` |
 | [Effects](#effects) | `effects`, `effect`, `registerEffect`, `effectNames` | `EffectOptions`, `EffectFn`, `EffectName` |

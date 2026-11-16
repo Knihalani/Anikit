@@ -21,6 +21,7 @@ import { quickSetter } from './quick';
 import { toTargets, Targets } from './props';
 import { track } from './context';
 import { checkTargets, warn } from './debug';
+import { scroll, ScrollOptions } from './scroll';
 
 type Listener = (v: number) => void;
 
@@ -104,11 +105,15 @@ export class MotionValue {
     const f = interpolate(input, output, options) as (v: number) => number;
     return derived([this], (v) => f(v));
   }
-  /** Stop animating and drop every subscriber. */
+  /** Stop animating, drop every subscriber and any source (e.g. `scrollProgress()`'s listener). */
   destroy(): void {
     this.stop();
     this.subs.clear();
+    this._cleanup?.();
+    this._cleanup = undefined;
   }
+  /** @internal Disconnect from a source on destroy(). */
+  _cleanup?: () => void;
 
   private write(v: number): void {
     if (v === this.v) return;
@@ -187,4 +192,20 @@ export function bindValues(targets: Targets, props: Record<string, MotionValue>)
       });
     },
   });
+}
+
+/**
+ * Scroll progress as a motion value (0 → 1 through `options`' range, same
+ * options as `scroll()`: `target`, `offset`, `container`, `axis`, `smooth`).
+ * Its `velocity` is the scroll speed in progress per second.
+ *
+ * ```ts
+ * const p = scrollProgress({ target: hero, offset: ['start start', 'end start'] });
+ * bindValues(hero, { opacity: p.map([0, 1], [1, 0]), scale: p.map([0, 1], [1, 0.9]) });
+ * ```
+ */
+export function scrollProgress(options: ScrollOptions = {}): MotionValue {
+  const v = new MotionValue(0);
+  v._cleanup = scroll((p) => v._derive(p), options);
+  return v;
 }

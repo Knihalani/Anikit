@@ -39,7 +39,7 @@ export { noise2, noise3, fbm, noiseMany, wander } from './noise';
 export { context, matchMedia, Context } from './context';
 export type { Revertible } from './context';
 export { quickTo, quickSetter } from './quick';
-export { motionValue, MotionValue, derived, bindValues } from './motionvalue';
+export { motionValue, MotionValue, derived, bindValues, scrollProgress } from './motionvalue';
 export type { ValueBinding } from './motionvalue';
 export { marquee, Marquee } from './marquee';
 export type { MarqueeOptions } from './marquee';

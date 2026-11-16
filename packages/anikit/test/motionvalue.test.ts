@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { motionValue, derived, bindValues, context, testing } from '../src/index';
+import { motionValue, derived, bindValues, scrollProgress, MotionValue, context, testing } from '../src/index';
 import { setup, advance, box } from './setup';
 
 beforeAll(setup);
@@ -92,5 +92,12 @@ describe('motionValue', () => {
     const warnings = testing.captureWarnings();
     bindValues(el, { opacity: 0.5 as never });
     expect(warnings.some((w) => /"opacity" is not a motionValue/.test(w))).toBe(true);
+  });
+
+  it('scrollProgress() is a motion value fed by scroll()', () => {
+    const p = scrollProgress({ offset: ['start start', 'end end'] });
+    expect(p).toBeInstanceOf(MotionValue);
+    expect(p.get()).toBeGreaterThanOrEqual(0);
+    expect(() => p.destroy()).not.toThrow();
   });
 });
