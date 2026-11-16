@@ -473,7 +473,7 @@ pub const FUNCTIONS: &[(&str, &str)] = &[
     ("str(x) / num(x)", "conversions"),
 ];
 
-fn arg<'v>(a: &'v [Value], i: usize) -> &'v Value {
+fn arg(a: &[Value], i: usize) -> &Value {
     a.get(i).unwrap_or(&Value::Null)
 }
 
