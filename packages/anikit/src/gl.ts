@@ -719,6 +719,8 @@ void main() {
   }
   c += texture(uBloom, vUv).rgb * uPost.x;
   c = pow(aces(c * uPost.w), vec3(1.0 / 2.2));
+  // ±0.5 LSB dither: smooth studio gradients would otherwise band in 8 bits.
+  c += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;
   o = vec4(c, dot(c, vec3(0.299, 0.587, 0.114)));
 }`;
 const FXAA_FS = `#version 300 es
@@ -1445,8 +1447,12 @@ export class Scene {
       // Always on unit 1: a 2D and a shadow sampler may not share unit 0, even unused.
       gl.uniform1i(prog.u.uMap, 1);
       if (tex) { gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, tex); gl.activeTexture(gl.TEXTURE0); }
-      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.shadowTex);
-      gl.uniform1i(prog.u.uShadow, 0);
+      // Bind the shadow map whenever it exists, even with shadows switched off at
+      // runtime: the sampler must always see a depth texture (the shader skips it).
+      if (this.shadowTex) {
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.shadowTex);
+        gl.uniform1i(prog.u.uShadow, 0);
+      }
       this.stats.triangles += (g.count / 3) * (isI ? (o as InstancedMesh).count : 1);
     }
     if (isI) gl.drawElementsInstanced(gl.TRIANGLES, g.count, g.type, 0, (o as InstancedMesh).count);
