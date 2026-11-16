@@ -1565,8 +1565,8 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
             }
         }
     }
-    if s.cabac.is_some() {
-        s.w.align_zero();
+    if let Some(cb) = s.cabac.take() {
+        s.w.append_bytes(&cb.out);
         return s.stats;
     }
     if s.skip_run > 0 {
@@ -1772,8 +1772,7 @@ impl Encoder {
                         cb.decision(&mut cw, 11, 1);
                         cb.terminate(&mut cw, (i + 1 == nmb) as u32);
                     }
-                    cw.align_zero();
-                    self.skip_cache = cw.buf;
+                    self.skip_cache = cb.out;
                 }
                 w.append_bytes(&self.skip_cache);
             } else {
