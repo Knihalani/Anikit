@@ -1,61 +1,15 @@
-//! In-process previews (stills and contact sheets) for agents: spec → eval
-//! (with the real text engine) → render → PNG. Used by `anikit-video preview`
-//! and as the MCP fallback while the pipeline's `still`/`sheet` commands are
-//! unavailable. Not the production pipeline: single-threaded and RGBA only.
+//! In-process previews for agents (the `preview` command and the MCP
+//! `render_still` / `render_contact_sheet` tools): the real pipeline's
+//! `render_rgba`, plus a contact sheet that shows each scene at its settled
+//! moment (70% through), which is what a reviewer needs to see.
 
 use std::path::Path;
 use std::sync::Arc;
 
 use serde_json::Value;
 
-use crate::dl::{FontId, ImageId};
-use crate::eval::text::{PGlyph, TextBlock, TextEngine, TextReq};
 use crate::eval::{Evaluator, Options};
-use crate::render::{Assets, Renderer};
-use crate::text::layout::{Align, TextSpec, TextStyle};
-use crate::text::FontStore;
-
-/// Adapts the text system to the evaluator's [`TextEngine`].
-pub struct Text(pub Arc<FontStore>);
-
-impl TextEngine for Text {
-    fn layout(&self, r: &TextReq) -> TextBlock {
-        let style = TextStyle {
-            font: r.family.to_string(),
-            weight: r.weight,
-            italic: r.italic,
-            size: r.size,
-            // TextReq is in px, TextStyle in em.
-            letter_spacing: if r.size > 0.0 { r.letter_spacing / r.size } else { 0.0 },
-            line_height: r.line_height,
-            ..TextStyle::default()
-        };
-        let spec = TextSpec {
-            text: r.text.to_string(),
-            style,
-            width: r.max_width,
-            align: match r.align {
-                0 => Align::Left,
-                2 => Align::Right,
-                _ => Align::Center,
-            },
-            max_lines: r.max_lines,
-            ..TextSpec::default()
-        };
-        let l = self.0.layout(&spec);
-        let glyphs = l
-            .glyphs
-            .iter()
-            .map(|g| {
-                let run = &l.runs[g.run as usize];
-                let gl = run.glyphs[g.index as usize];
-                PGlyph { font: run.font, id: gl.id, x: gl.x, y: gl.y, advance: self.0.advance(run.font, gl.id, run.size), char_index: g.char, word: g.word, line: g.line }
-            })
-            .collect();
-        // Aligned text is positioned inside its wrap width, so that is the block's width.
-        TextBlock { size: [r.max_width.unwrap_or(l.width).max(l.width), l.height], glyphs, chars: l.chars.len() as u32, words: l.words.len() as u32, lines: l.lines.len() as u32, font_size: l.font_size }
-    }
-}
+use crate::pipeline;
 
 /// A rendered frame: straight-alpha RGBA8.
 pub struct Image {
@@ -67,17 +21,19 @@ pub struct Image {
 /// A compiled spec ready to render frames.
 pub struct Preview {
     pub ev: Evaluator,
-    fonts: Arc<FontStore>,
 }
 
 impl Preview {
     /// Compile a spec value; asset paths resolve against `base_dir`.
     pub fn new(spec: Value, base_dir: &Path) -> Result<Preview, String> {
         let parsed = crate::spec::parse::from_value(spec).map_err(|d| d.iter().map(|x| x.to_string()).collect::<Vec<_>>().join("\n"))?;
-        let fonts = Arc::new(FontStore::new());
-        let opts = Options { base_dir: base_dir.to_path_buf(), text: Some(Arc::new(Text(fonts.clone()))), load_assets: true, ..Options::default() };
+        let fonts = crate::text::FontStore::new();
+        for (name, file) in parsed.spec.fonts.iter().flatten() {
+            fonts.add_font_file(base_dir.join(file)).map_err(|e| format!("fonts.{name}: can't load {file}: {e}"))?;
+        }
+        let opts = Options { base_dir: base_dir.to_path_buf(), fonts: Some(Arc::new(fonts)), load_assets: true };
         let ev = Evaluator::new(&parsed.spec, opts).map_err(|e| e.to_string())?;
-        Ok(Preview { ev, fonts })
+        Ok(Preview { ev })
     }
 
     /// One settled frame per scene (70% through it).
@@ -85,37 +41,14 @@ impl Preview {
         self.ev.scenes().iter().map(|s| s.start + (s.end - s.start) * 0.7).collect()
     }
 
-    /// Render the frame at `t`, downscaled by an integer factor so it is at most `max_width` wide.
+    /// Render the frame at `t`, scaled down to at most `max_width` wide.
     pub fn frame(&self, t: f32, max_width: Option<u32>) -> Image {
-        let list = self.ev.eval(t.clamp(0.0, (self.ev.duration - 1e-3).max(0.0)));
-        // Fonts are interned during layout, so build the asset table after eval.
-        let mut assets = Assets::default();
-        for (i, img) in self.ev.images.iter().enumerate() {
-            let _ = assets.images.insert_rgba8(ImageId(i as u32), img.width, img.height, img.rgba.to_vec());
-        }
-        for i in 0..self.fonts.face_count() as u32 {
-            assets.fonts.insert(FontId(i), self.fonts.face(FontId(i)).data.clone());
-        }
-        let mut r = Renderer::new(Arc::new(assets));
-        let px = r.render(&list);
-        let (w, h) = (self.ev.width, self.ev.height);
-        let mut rgba = px.data_as_u8_slice().to_vec();
-        for p in rgba.chunks_mut(4) {
-            let a = p[3] as u32;
-            if a > 0 && a < 255 {
-                for c in &mut p[..3] {
-                    *c = ((*c as u32 * 255 + a / 2) / a).min(255) as u8;
-                }
-            }
-        }
-        let img = Image { width: w, height: h, rgba };
-        match max_width {
-            Some(mw) if mw < w => downscale(&img, w.div_ceil(mw)),
-            _ => img,
-        }
+        let scale = max_width.map_or(1.0, |m| (m as f32 / self.ev.width as f32).min(1.0));
+        let (width, height, rgba) = pipeline::render_rgba(&self.ev, t.clamp(0.0, (self.ev.duration - 1e-3).max(0.0)), scale);
+        Image { width, height, rgba }
     }
 
-    /// A grid of frames (default: one per scene), each downscaled to `cell_width`.
+    /// A grid of frames (default: one per scene), each `cell_width` wide.
     pub fn sheet(&self, times: Option<Vec<f32>>, cell_width: u32) -> Image {
         let times = times.unwrap_or_else(|| self.scene_times());
         let frames: Vec<Image> = times.iter().map(|&t| self.frame(t, Some(cell_width))).collect();
@@ -131,39 +64,15 @@ impl Preview {
         }
         for (k, f) in frames.iter().enumerate() {
             let (ox, oy) = (gap + (k % cols) * (cw + gap), gap + (k / cols) * (ch + gap));
-            for y in 0..f.height as usize {
+            let w = (f.width as usize).min(cw);
+            for y in 0..(f.height as usize).min(ch) {
                 let s = y * f.width as usize * 4;
                 let d = ((oy + y) * sw + ox) * 4;
-                rgba[d..d + f.width as usize * 4].copy_from_slice(&f.rgba[s..s + f.width as usize * 4]);
+                rgba[d..d + w * 4].copy_from_slice(&f.rgba[s..s + w * 4]);
             }
         }
         Image { width: sw as u32, height: sh as u32, rgba }
     }
-}
-
-/// Box-filter downscale by an integer factor.
-fn downscale(img: &Image, k: u32) -> Image {
-    let (w, h) = (img.width / k, img.height / k);
-    let mut out = vec![0u8; (w * h * 4) as usize];
-    let n = k * k;
-    for y in 0..h {
-        for x in 0..w {
-            let mut acc = [0u32; 4];
-            for dy in 0..k {
-                for dx in 0..k {
-                    let s = (((y * k + dy) * img.width + x * k + dx) * 4) as usize;
-                    for (c, a) in acc.iter_mut().enumerate() {
-                        *a += img.rgba[s + c] as u32;
-                    }
-                }
-            }
-            let d = ((y * w + x) * 4) as usize;
-            for c in 0..4 {
-                out[d + c] = (acc[c] / n) as u8;
-            }
-        }
-    }
-    Image { width: w, height: h, rgba: out }
 }
 
 /// Encode as PNG.

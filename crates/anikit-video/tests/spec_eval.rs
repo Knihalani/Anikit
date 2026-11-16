@@ -134,3 +134,13 @@ fn all_doc_examples_parse() {
     }
     assert!(n >= 3);
 }
+
+
+#[test]
+fn shorthand() {
+    let ev = build(r##"{ "scenes": [ "Launch day | Everything ships", { "layers": [ "plain text", { "text": "x", "animate": "rise" }, { "shape": "rect", "animate": { "to": { "x": 10 } } } ] } ] }"##);
+    assert_eq!(ev.scenes().len(), 2);
+    assert!(ev.diagnostics.is_empty(), "{:?}", ev.diagnostics);
+    let e = errors(r#"{ "scenes": [ { "layers": [ { "text": "x", "animate": "rize" } ] } ] }"#);
+    assert!(e.iter().any(|m| m.contains("did you mean 'rise'") || m.contains("did you mean")), "{e:?}");
+}

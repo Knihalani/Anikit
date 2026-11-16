@@ -6,6 +6,7 @@ use crate::dsp;
 use crate::frame::{Pic, YuvFrame};
 use crate::headers::*;
 use crate::intra::{self, Edges, Edges4};
+use crate::soa::{self, QuantS};
 use crate::transform::*;
 
 /// Border (in luma samples) kept around reference pictures for motion compensation.
@@ -79,6 +80,8 @@ pub(crate) struct MbInfo {
     /// 0 = inter (incl. skip), 1 = I16, 2 = I4x4
     pub kind: u8,
     pub skip: bool,
+    /// Went through mode decision (not a copy of the reference).
+    pub coded: bool,
     pub mv: (i16, i16),
     /// Total coefficients per 4×4 luma block (raster), for nC and deblocking.
     pub nz: [u8; 16],
@@ -141,10 +144,13 @@ pub(crate) struct FrameCtx<'a> {
     pub mbw: usize,
     pub q: Quant,
     pub qc: Quant,
+    pub qs: QuantS,
+    pub qcs: QuantS,
     pub lambda: i32,
     pub src: &'a Pic,
     pub refp: &'a Pic,
     pub changed: &'a [bool],
+    pub stale: &'a [bool],
     pub hint: &'a [(i16, i16)],
     pub idr: bool,
     pub max_mvy: i32,
@@ -495,15 +501,25 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
 
     /// Unchanged macroblock: copy the co-located reference (MV 0, no residual).
     fn code_copy(&mut self, mbx: usize, mby: usize, mvp: (i32, i32), skip_mv: (i32, i32)) {
-        // recon = ref at mv 0
-        self.copy_pred(mbx, mby, (0, 0));
+        // recon = ref at mv 0 (already equal unless stale)
+        if self.c.stale[mby * self.c.mbw + mbx] {
+            self.copy_pred(mbx, mby, (0, 0));
+        }
         let mut skip = skip_mv == (0, 0);
         if !skip && self.pred_equals_zero(mbx, mby, skip_mv) {
             skip = true;
         }
         let mv = if skip { skip_mv } else { (0, 0) };
         let i = (mby - self.b.mby0) * self.c.mbw + mbx;
-        self.b.info[i] = MbInfo { kind: 0, skip, mv: (mv.0 as i16, mv.1 as i16), nz: [0; 16], nzc: [[0; 4]; 2], m4: [2; 16] };
+        self.b.info[i] = MbInfo {
+            kind: 0,
+            skip,
+            coded: false,
+            mv: (mv.0 as i16, mv.1 as i16),
+            nz: [0; 16],
+            nzc: [[0; 4]; 2],
+            m4: [2; 16],
+        };
         if skip {
             self.skip_run += 1;
             self.stats.skip += 1;
@@ -586,14 +602,14 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mut cd = Coded::new();
         let q = self.c.q;
         let mut recon = [0u8; 256];
-        luma_inter(src_y, &pred, &q, &mut cd, &mut recon);
+        luma_inter(src_y, &pred, &self.c.qs, &mut cd, &mut recon);
         let mut reconc = [[0u8; 64]; 2];
-        chroma_resid(src_c, &predc, &self.c.qc, false, &mut cd, &mut reconc);
+        chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, false, &mut cd, &mut reconc);
         self.store_recon(mbx, mby, &recon, &reconc);
         let skip = cd.cbp == 0 && mv == skip_mv;
         let i = (mby - self.b.mby0) * self.c.mbw + mbx;
         self.b.info[i] =
-            MbInfo { kind: 0, skip, mv: (mv.0 as i16, mv.1 as i16), nz: cd.nz, nzc: cd.nzc, m4: [2; 16] };
+            MbInfo { kind: 0, skip, coded: true, mv: (mv.0 as i16, mv.1 as i16), nz: cd.nz, nzc: cd.nzc, m4: [2; 16] };
         if skip {
             self.skip_run += 1;
             self.stats.skip += 1;
@@ -707,7 +723,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                     continue;
                 }
                 intra::pred4(&e, m, &mut pred);
-                let s = dsp::satd4(&s4, &pred, 4, 0, 0) + lambda * if m == pm { 1 } else { 4 };
+                let s = (crate::simd::satd4x4_sum(&s4, &pred) >> 1) + lambda * if m == pm { 1 } else { 4 };
                 if s < best.0 {
                     best = (s, m);
                     best_pred = pred;
@@ -770,7 +786,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 src[y * 16..y * 16 + 16].copy_from_slice(&self.c.src.y.data[base + y * ss..base + y * ss + 16]);
             }
             let mut recon = [0u8; 256];
-            luma_i16(&src, &pred, &q, cd, &mut recon);
+            luma_i16(&src, &pred, &q, &self.c.qs, cd, &mut recon);
             let base = self.yi(mbx * 16, mby * 16);
             for y in 0..16 {
                 self.b.y[base + y * self.ys..base + y * self.ys + 16].copy_from_slice(&recon[y * 16..y * 16 + 16]);
@@ -803,7 +819,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
         let cmode = best.1;
         let mut reconc = [[0u8; 64]; 2];
-        chroma_resid(src_c, &predc, &self.c.qc, true, cd, &mut reconc);
+        chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, true, cd, &mut reconc);
         let base = self.ci(mbx * 8, mby * 8);
         let cs = self.cs;
         for y in 0..8 {
@@ -854,6 +870,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         self.b.info[i] = MbInfo {
             kind: if is16 { 1 } else { 2 },
             skip: false,
+            coded: true,
             mv: (0, 0),
             nz: cd.nz,
             nzc: cd.nzc,
@@ -999,26 +1016,41 @@ fn decimate_score(c: &[i32; 16]) -> u32 {
     score
 }
 
-fn luma_inter(src: &[u8; 256], pred: &[u8; 256], q: &Quant, cd: &mut Coded, recon: &mut [u8; 256]) {
-    let mut score8 = [0u32; 4];
-    for by in 0..4 {
-        for bx in 0..4 {
-            let mut r = [0i32; 16];
-            for y in 0..4 {
-                for x in 0..4 {
-                    let i = (by * 4 + y) * 16 + bx * 4 + x;
-                    r[y * 4 + x] = src[i] as i32 - pred[i] as i32;
+/// Compile `$impl` twice (AVX2 and baseline) and dispatch at run time.
+macro_rules! multiversion {
+    ($name:ident => $imp:ident ( $($a:ident : $t:ty),* )) => {
+        fn $name($($a: $t),*) {
+            #[cfg(target_arch = "x86_64")]
+            {
+                if crate::simd::level() >= 2 {
+                    #[target_feature(enable = "avx2")]
+                    unsafe fn f($($a: $t),*) { $imp($($a),*) }
+                    // SAFETY: AVX2 was detected at run time.
+                    return unsafe { f($($a),*) };
                 }
             }
-            let mut c = fdct4(&r);
-            let n = quant4(&mut c, q, false, false);
-            clamp_levels(&mut c);
-            let bi = by * 4 + bx;
-            cd.luma[bi] = c;
-            cd.nz[bi] = n as u8;
-            if n > 0 {
-                score8[(by / 2) * 2 + bx / 2] += decimate_score(&c);
+            $imp($($a),*)
+        }
+    };
+}
+
+multiversion!(luma_inter => luma_inter_impl(src: &[u8; 256], pred: &[u8; 256], qs: &QuantS, cd: &mut Coded, recon: &mut [u8; 256]));
+multiversion!(luma_i16 => luma_i16_impl(src: &[u8; 256], pred: &[u8; 256], q: &Quant, qs: &QuantS, cd: &mut Coded, recon: &mut [u8; 256]));
+multiversion!(chroma_resid => chroma_resid_impl(src: &[[u8; 64]; 2], pred: &[[u8; 64]; 2], qc: &Quant, qcs: &QuantS, intra: bool, cd: &mut Coded, recon: &mut [[u8; 64]; 2]));
+
+#[inline(always)]
+fn luma_inter_impl(src: &[u8; 256], pred: &[u8; 256], qs: &QuantS, cd: &mut Coded, recon: &mut [u8; 256]) {
+    let (mut c, ps) = soa::gather16(src, pred);
+    soa::fdct(&mut c);
+    let nz = soa::quant(&mut c, qs, false, 0);
+    let mut score8 = [0u32; 4];
+    for b in 0..16 {
+        cd.nz[b] = nz[b];
+        if nz[b] > 0 {
+            for k in 0..16 {
+                cd.luma[b][k] = c[k][b] as i32;
             }
+            score8[(b >> 3) * 2 + ((b & 3) >> 1)] += decimate_score(&cd.luma[b]);
         }
     }
     let total: u32 = score8.iter().sum();
@@ -1030,50 +1062,40 @@ fn luma_inter(src: &[u8; 256], pred: &[u8; 256], q: &Quant, cd: &mut Coded, reco
             for &b in &blks {
                 cd.luma[b] = [0; 16];
                 cd.nz[b] = 0;
+                for row in c.iter_mut() {
+                    row[b] = 0;
+                }
             }
         } else if any {
             cd.cbp |= 1 << b8;
         }
     }
-    *recon = *pred;
-    for bi in 0..16 {
-        if cd.nz[bi] == 0 {
-            continue;
-        }
-        let mut c = cd.luma[bi];
-        dequant4(&mut c, q, false);
-        let res = idct4(&c);
-        let (bx, by) = (bi & 3, bi >> 2);
-        for y in 0..4 {
-            for x in 0..4 {
-                let i = (by * 4 + y) * 16 + bx * 4 + x;
-                recon[i] = (pred[i] as i32 + res[y * 4 + x]).clamp(0, 255) as u8;
-            }
-        }
+    if cd.cbp & 15 == 0 {
+        *recon = *pred;
+        return;
     }
+    let res = soa::dequant_idct(&c, qs, 0);
+    soa::scatter16(&res, &ps, recon);
 }
 
-fn luma_i16(src: &[u8; 256], pred: &[u8; 256], q: &Quant, cd: &mut Coded, recon: &mut [u8; 256]) {
+#[inline(always)]
+fn luma_i16_impl(src: &[u8; 256], pred: &[u8; 256], q: &Quant, qs: &QuantS, cd: &mut Coded, recon: &mut [u8; 256]) {
+    let (mut c, ps) = soa::gather16(src, pred);
+    soa::fdct(&mut c);
     let mut dc = [0i32; 16];
+    for b in 0..16 {
+        dc[b] = c[0][b] as i32;
+    }
+    let nz = soa::quant(&mut c, qs, true, 1);
+    c[0] = [0; 16];
     let mut any_ac = false;
-    for by in 0..4 {
-        for bx in 0..4 {
-            let mut r = [0i32; 16];
-            for y in 0..4 {
-                for x in 0..4 {
-                    let i = (by * 4 + y) * 16 + bx * 4 + x;
-                    r[y * 4 + x] = src[i] as i32 - pred[i] as i32;
-                }
+    for b in 0..16 {
+        cd.nz[b] = nz[b];
+        if nz[b] > 0 {
+            any_ac = true;
+            for k in 0..16 {
+                cd.luma[b][k] = c[k][b] as i32;
             }
-            let mut c = fdct4(&r);
-            let bi = by * 4 + bx;
-            dc[bi] = c[0];
-            let n = quant4(&mut c, q, true, true);
-            c[0] = 0;
-            clamp_levels(&mut c);
-            cd.luma[bi] = c;
-            cd.nz[bi] = n as u8;
-            any_ac |= n > 0;
         }
     }
     let mut dcl = luma_dc_forward(&dc, q);
@@ -1081,76 +1103,59 @@ fn luma_i16(src: &[u8; 256], pred: &[u8; 256], q: &Quant, cd: &mut Coded, recon:
     cd.dc = dcl;
     if any_ac {
         cd.cbp |= 15;
-    } else {
-        cd.nz = [0; 16];
     }
     let dcy = luma_dc_inverse(&dcl, q.qp, q.v0);
-    for bi in 0..16 {
-        let mut c = cd.luma[bi];
-        dequant4(&mut c, q, true);
-        c[0] = dcy[bi];
-        let res = idct4(&c);
-        let (bx, by) = (bi & 3, bi >> 2);
-        for y in 0..4 {
-            for x in 0..4 {
-                let i = (by * 4 + y) * 16 + bx * 4 + x;
-                recon[i] = (pred[i] as i32 + res[y * 4 + x]).clamp(0, 255) as u8;
-            }
-        }
+    for b in 0..16 {
+        c[0][b] = dcy[b] as i16;
     }
+    let res = soa::dequant_idct(&c, qs, 1);
+    soa::scatter16(&res, &ps, recon);
 }
 
-fn chroma_resid(
+#[inline(always)]
+fn chroma_resid_impl(
     src: &[[u8; 64]; 2],
     pred: &[[u8; 64]; 2],
     qc: &Quant,
+    qcs: &QuantS,
     intra: bool,
     cd: &mut Coded,
     recon: &mut [[u8; 64]; 2],
 ) {
-    let mut any_dc = false;
-    let mut any_ac = false;
-    for comp in 0..2 {
-        let mut dc = [0i32; 4];
-        for b in 0..4 {
-            let (bx, by) = (b & 1, b >> 1);
-            let mut r = [0i32; 16];
-            for y in 0..4 {
-                for x in 0..4 {
-                    let i = (by * 4 + y) * 8 + bx * 4 + x;
-                    r[y * 4 + x] = src[comp][i] as i32 - pred[comp][i] as i32;
-                }
+    let (mut c, ps) = soa::gather8x2(src, pred);
+    soa::fdct(&mut c);
+    let mut dc = [[0i32; 4]; 2];
+    for l in 0..8 {
+        dc[l >> 2][l & 3] = c[0][l] as i32;
+    }
+    let nz = soa::quant(&mut c, qcs, intra, 1);
+    c[0] = [0; 8];
+    let mut score = 0;
+    for l in 0..8 {
+        let (comp, b) = (l >> 2, l & 3);
+        cd.nzc[comp][b] = nz[l];
+        if nz[l] > 0 {
+            for k in 0..16 {
+                cd.cac[comp][b][k] = c[k][l] as i32;
             }
-            let mut c = fdct4(&r);
-            dc[b] = c[0];
-            let n = quant4(&mut c, qc, intra, true);
-            c[0] = 0;
-            clamp_levels(&mut c);
-            cd.cac[comp][b] = c;
-            cd.nzc[comp][b] = n as u8;
+            if !intra {
+                score += decimate_score(&cd.cac[comp][b]);
+            }
         }
-        let l = chroma_dc_forward(&dc, qc, intra);
-        let l = l.map(|v| v.clamp(-2047, 2047));
+    }
+    let mut any_dc = false;
+    for comp in 0..2 {
+        let l = chroma_dc_forward(&dc[comp], qc, intra).map(|v| v.clamp(-2047, 2047));
         cd.cdc[comp] = l;
         any_dc |= l.iter().any(|&v| v != 0);
     }
+    let mut any_ac = nz.iter().any(|&n| n != 0);
     // Inter: drop sparse chroma AC (x264-style decimation).
-    if !intra {
-        let mut score = 0;
-        for comp in 0..2 {
-            for b in 0..4 {
-                if cd.nzc[comp][b] != 0 {
-                    score += decimate_score(&cd.cac[comp][b]);
-                }
-            }
-        }
-        if score < 7 {
-            cd.cac = [[[0; 16]; 4]; 2];
-            cd.nzc = [[0; 4]; 2];
-        }
-    }
-    for comp in 0..2 {
-        any_ac |= cd.nzc[comp].iter().any(|&n| n != 0);
+    if any_ac && !intra && score < 7 {
+        cd.cac = [[[0; 16]; 4]; 2];
+        cd.nzc = [[0; 4]; 2];
+        c = [[0; 8]; 16];
+        any_ac = false;
     }
     let cbpc = if any_ac {
         2
@@ -1160,25 +1165,18 @@ fn chroma_resid(
         0
     };
     cd.cbp |= cbpc << 4;
-    if cbpc < 2 {
-        cd.nzc = [[0; 4]; 2];
+    if cbpc == 0 {
+        *recon = *pred;
+        return;
     }
     for comp in 0..2 {
         let dcs = chroma_dc_inverse(&cd.cdc[comp], qc.qp, qc.v0);
         for b in 0..4 {
-            let (bx, by) = (b & 1, b >> 1);
-            let mut c = cd.cac[comp][b];
-            dequant4(&mut c, qc, true);
-            c[0] = dcs[b];
-            let res = if c.iter().all(|&v| v == 0) { [0; 16] } else { idct4(&c) };
-            for y in 0..4 {
-                for x in 0..4 {
-                    let i = (by * 4 + y) * 8 + bx * 4 + x;
-                    recon[comp][i] = (pred[comp][i] as i32 + res[y * 4 + x]).clamp(0, 255) as u8;
-                }
-            }
+            c[0][comp * 4 + b] = dcs[b] as i16;
         }
     }
+    let res = soa::dequant_idct(&c, qcs, 1);
+    soa::scatter8x2(&res, &ps, recon);
 }
 
 /// Encode one slice (rows `band.mby0..band.mby1`) into `w` as a complete RBSP.
@@ -1213,6 +1211,11 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
     let mut src_c = [[0u8; 64]; 2];
     for mby in mby0..mby1 {
         for mbx in 0..c.mbw {
+            if !c.idr && !c.changed[mby * c.mbw + mbx] {
+                let (mvp, skip_mv) = s.mv_pred(mbx, mby);
+                s.code_copy(mbx, mby, mvp, skip_mv);
+                continue;
+            }
             let o = sy.off(mbx as isize * 16, mby as isize * 16);
             for y in 0..16 {
                 src_y[y * 16..y * 16 + 16].copy_from_slice(&sy.data[o + y * sy.stride..o + y * sy.stride + 16]);
@@ -1243,7 +1246,8 @@ pub struct Encoder {
     lambda: i32,
     level: u8,
     cur: Pic,
-    prev: Pic,
+    /// Macroblocks where `recon` (the picture before the reference) differs from `refp`.
+    stale: Vec<bool>,
     recon: Pic,
     refp: Pic,
     info: Vec<MbInfo>,
@@ -1283,7 +1287,7 @@ impl Encoder {
             lambda,
             level,
             cur: Pic::new(mbw, mbh, 0),
-            prev: Pic::new(mbw, mbh, 0),
+            stale: vec![true; mbw * mbh],
             recon: Pic::new(mbw, mbh, PAD),
             refp: Pic::new(mbw, mbh, PAD),
             info: vec![MbInfo::default(); mbw * mbh],
@@ -1341,9 +1345,6 @@ impl Encoder {
         assert_eq!((f.width, f.height), (self.cfg.width, self.cfg.height), "ak264: frame size mismatch");
         let (w, h) = (f.width as usize, f.height as usize);
         let (cw, ch) = (w / 2, h / 2);
-        self.cur.y.load(f.y, f.y_stride, w, h);
-        self.cur.u.load(f.u, f.c_stride, cw, ch);
-        self.cur.v.load(f.v, f.c_stride, cw, ch);
         let idr = self.frame_in_gop == 0 || self.cfg.gop <= 1 || self.frame_in_gop >= self.cfg.gop as u64;
         if idr {
             self.frame_in_gop = 0;
@@ -1352,13 +1353,26 @@ impl Encoder {
         let mut stats = FrameStats { idr, ..Default::default() };
         let nmb = self.mbw * self.mbh;
         let mut any_changed = true;
-        if !idr {
+        if idr {
+            self.cur.y.load(f.y, f.y_stride, w, h);
+            self.cur.u.load(f.u, f.c_stride, cw, ch);
+            self.cur.v.load(f.v, f.c_stride, cw, ch);
+        } else {
+            let mbw = self.mbw;
+            let Pic { y, u, v } = &mut self.cur;
             match &hints.changed {
                 Some(c) => {
                     assert_eq!(c.len(), nmb, "ak264: changed map must have one entry per macroblock");
                     self.changed.copy_from_slice(c);
+                    for (i, _) in c.iter().enumerate().filter(|x| *x.1) {
+                        crate::diff::load_mb(y, u, v, f, i % mbw, i / mbw, false);
+                    }
                 }
-                None => crate::diff::changed_map(&self.cur, &self.prev, self.mbw, self.mbh, &mut self.changed),
+                None => {
+                    for (i, ch) in self.changed.iter_mut().enumerate() {
+                        *ch = crate::diff::load_mb(y, u, v, f, i % mbw, i / mbw, true);
+                    }
+                }
             }
             any_changed = self.changed.iter().any(|&c| c);
             self.hint.fill(NO_HINT);
@@ -1408,9 +1422,11 @@ impl Encoder {
             stats.skip = nmb as u32;
         } else {
             self.encode_slices(idr, frame_num, &mut stats);
+            for (st, inf) in self.stale.iter_mut().zip(&self.info) {
+                *st = inf.coded;
+            }
             if self.cfg.deblock {
-                let rows = self.slice_rows();
-                crate::deblock::deblock(&mut self.recon, &self.info, self.mbw, self.mbh, &self.q, rows);
+                crate::deblock::deblock(&mut self.recon, &self.info, self.mbw, self.mbh, &self.q, &mut self.stale);
             }
             self.recon.extend();
             std::mem::swap(&mut self.recon, &mut self.refp);
@@ -1418,7 +1434,6 @@ impl Encoder {
         if idr {
             self.idr_count = self.idr_count.wrapping_add(1);
         }
-        std::mem::swap(&mut self.cur, &mut self.prev);
         self.frame_in_gop += 1;
         stats.bytes = self.out.len();
         self.last = stats;
@@ -1435,10 +1450,13 @@ impl Encoder {
             mbw: self.mbw,
             q: self.q,
             qc: self.qc,
+            qs: QuantS::new(&self.q),
+            qcs: QuantS::new(&self.qc),
             lambda: self.lambda,
             src: &self.cur,
             refp: &self.refp,
             changed: &self.changed,
+            stale: &self.stale,
             hint: &self.hint,
             idr,
             max_mvy: max_mv_y(self.level),

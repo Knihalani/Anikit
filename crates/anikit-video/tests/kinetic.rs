@@ -20,6 +20,13 @@ fn styles() -> Vec<(&'static str, Kinetic)> {
         ("wave", k(KineticStyle::Wave { amplitude: 0.2, wavelength: 8.0, speed: 0.8 }, UnitKind::Char)),
         ("highlight", Kinetic { stagger: Some(0.25), ..k(KineticStyle::HighlightSweep { color: Color::rgba(0.49, 0.36, 1.0, 0.55), padding: 0.08, radius: 0.12 }, UnitKind::Word) }),
         ("mask", k(KineticStyle::MaskReveal { direction: Direction::Up }, UnitKind::Word)),
+        ("flip", Kinetic { unit: None, ..k(KineticStyle::Flip, UnitKind::Char) }),
+        ("tracking", Kinetic { unit: None, ..k(KineticStyle::Tracking { spread: 0.6 }, UnitKind::Char) }),
+        ("drop", Kinetic { unit: None, ..k(KineticStyle::Drop { distance: 1.2 }, UnitKind::Char) }),
+        ("slide", k(KineticStyle::Slide { distance: 0.8 }, UnitKind::Word)),
+        ("glitch", k(KineticStyle::Glitch { amount: 0.12, seed: 0 }, UnitKind::Word)),
+        ("draw", k(KineticStyle::Draw { width: 0.022 }, UnitKind::Word)),
+        ("underline", Kinetic { unit: Some(UnitKind::Word), ..k(KineticStyle::Underline { color: None, thickness: 0.07 }, UnitKind::Word) }),
     ]
 }
 
@@ -64,13 +71,16 @@ fn kinetic_start_mid_end() {
         assert!((ae - total as f32).abs() < 1e-3, "{name} end alpha");
         // Start: nothing visible, except continuous styles.
         match name {
-            "wave" | "highlight" => assert_eq!(n0, total),
+            "wave" | "highlight" | "underline" => assert_eq!(n0, total),
+            "tracking" => {}
             _ => assert!(n0 <= 1, "{name} start shows {n0}"),
         }
         // Mid: partially there.
-        if name == "blur" || name == "mask" {
+        if name == "draw" {
+            assert!(om.iter().any(|o| matches!(o, Op::Stroke { .. })), "draw mid has strokes");
+        } else if name == "blur" || name == "mask" {
             assert!(om.iter().any(|o| matches!(o, Op::PushLayer { .. })), "{name} mid has no layer");
-        } else if !matches!(name, "wave" | "highlight" | "type" | "scramble") {
+        } else if !matches!(name, "wave" | "highlight" | "type" | "scramble" | "underline" | "tracking" | "glitch") {
             assert!(am > 0.0 && am < total as f32, "{name} mid alpha {am}");
         }
     }
@@ -152,4 +162,63 @@ fn shorthand_and_json() {
     let k: Kinetic = "wave 2s".parse().unwrap();
     let j = serde_json::to_string(&k).unwrap();
     assert_eq!(serde_json::from_str::<Kinetic>(&j).unwrap(), k);
+}
+
+#[test]
+fn karaoke_with_word_times() {
+    let fonts = store();
+    let l = fonts.layout(&spec()); // "Make videos in code"
+    let k: Kinetic = serde_json::from_str(r##"{"style": {"type": "karaoke", "active": "#ff0000"}, "times": [0, 0.5, 1.0, 1.5]}"##).unwrap();
+    let plan = KineticPlan::new(fonts, l.clone(), &k);
+    let colours = |t: f32| -> Vec<[f32; 4]> {
+        let mut o = vec![];
+        plan.ops(t, anikit_video::dl::IDENTITY, &mut o);
+        o.iter()
+            .filter_map(|op| match op {
+                Op::Glyphs { paint: anikit_video::dl::Paint::Solid(c), .. } => Some(c.0),
+                _ => None,
+            })
+            .collect()
+    };
+    let c = colours(0.75);
+    assert_eq!(c.len(), 4);
+    assert_eq!(c[1], [1.0, 0.0, 0.0, 1.0], "word 2 is active");
+    assert!((c[3][3] - 0.35).abs() < 1e-3, "word 4 dim");
+    assert_eq!(c[0], [1.0, 1.0, 1.0, 1.0], "word 1 spoken");
+    let c = colours(10.0);
+    assert!(c.iter().all(|x| *x == [1.0, 1.0, 1.0, 1.0]) || c[3] == [1.0, 0.0, 0.0, 1.0]);
+}
+
+#[test]
+fn text_block_enter_exit_anchor() {
+    let fonts = store();
+    let b = TextBlock::new(fonts, &spec(), Some(&"rise".parse().unwrap()), Some((&"fade".parse().unwrap(), 3.0)), [0.5, 0.5]);
+    assert!((b.offset[0] + b.layout.width * 0.5).abs() < 1e-3);
+    let n = |t: f32| {
+        let mut o = vec![];
+        b.ops(t, anikit_video::dl::IDENTITY, &mut o);
+        glyph_alpha_sum(&o)
+    };
+    assert_eq!(n(0.0).0, 0);
+    assert_eq!(n(2.0), (16, 16.0));
+    assert_eq!(n(3.0).0, 16);
+    assert_eq!(n(30.0).0, 0);
+}
+
+#[test]
+fn shareable_across_render_threads() {
+    fn assert_sync<T: Send + Sync>() {}
+    assert_sync::<FontStore>();
+    assert_sync::<TextLayout>();
+    assert_sync::<KineticPlan>();
+    assert_sync::<TextBlock>();
+    assert_sync::<CounterPlan>();
+    assert_sync::<anikit_video::text::Face>();
+    // Frames evaluate in parallel: same result as sequential.
+    use rayon::prelude::*;
+    let fonts = store();
+    let plan = KineticPlan::new(fonts, fonts.layout(&spec()), &"pop by char".parse().unwrap());
+    let seq: Vec<usize> = (0..60).map(|f| { let mut o = vec![]; plan.ops(f as f32 / 60.0, anikit_video::dl::IDENTITY, &mut o); o.len() }).collect();
+    let par: Vec<usize> = (0..60).into_par_iter().map(|f| { let mut o = vec![]; plan.ops(f as f32 / 60.0, anikit_video::dl::IDENTITY, &mut o); o.len() }).collect();
+    assert_eq!(seq, par);
 }

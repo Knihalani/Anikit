@@ -52,6 +52,139 @@ pub struct TextStyle {
     pub strikethrough: bool,
     /// OpenType features in CSS syntax, e.g. `"tnum" on, "ss01" on`.
     pub features: Option<String>,
+    /// Outline the glyphs (`{ "width": 0.03, "hollow": true }`; width in em).
+    pub outline: Option<Outline>,
+    /// Colour for `==accent==` markup.
+    pub accent: Color,
+    /// A rounded box behind each line (captions, labels).
+    pub background: Option<LineBackground>,
+    /// Drop shadow: `{ "x": 0, "y": 8, "blur": 24, "color": "#0008" }`.
+    pub shadow: Option<Shadow>,
+    /// Soft glow: `{ "radius": 16, "intensity": 0.8, "color": "#8b7bff" }`.
+    pub glow: Option<Glow>,
+    /// Gradient fill across the whole block (overrides span colours):
+    /// `["#7c5cff", "#ff6ad5"]` or `{ "colors": [...], "angle": 135 }`.
+    pub gradient: Option<Gradient>,
+}
+
+/// Box behind each line.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct LineBackground {
+    pub color: Color,
+    /// Horizontal and vertical padding in em.
+    pub padding: [f32; 2],
+    /// Corner radius in em.
+    pub radius: f32,
+}
+
+impl Default for LineBackground {
+    fn default() -> Self {
+        LineBackground { color: Color::rgba(0.0, 0.0, 0.0, 0.7), padding: [0.3, 0.08], radius: 0.18 }
+    }
+}
+
+/// Drop shadow (px).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Shadow {
+    pub x: f32,
+    pub y: f32,
+    pub blur: f32,
+    pub color: Color,
+}
+
+impl Default for Shadow {
+    fn default() -> Self {
+        Shadow { x: 0.0, y: 6.0, blur: 18.0, color: Color::rgba(0.0, 0.0, 0.0, 0.5) }
+    }
+}
+
+/// Glow (px).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Glow {
+    pub radius: f32,
+    pub intensity: f32,
+    pub color: Option<Color>,
+}
+
+impl Default for Glow {
+    fn default() -> Self {
+        Glow { radius: 16.0, intensity: 0.8, color: None }
+    }
+}
+
+/// Glyph outline stroke.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Outline {
+    /// Stroke width in em.
+    pub width: f32,
+    /// Stroke colour (defaults to the text colour).
+    pub color: Option<Color>,
+    /// Draw only the outline, no fill.
+    pub hollow: bool,
+}
+
+impl Default for Outline {
+    fn default() -> Self {
+        Outline { width: 0.025, color: None, hollow: true }
+    }
+}
+
+/// A linear gradient: CSS angle convention (0 = upwards, 90 = to the right).
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct Gradient {
+    pub colors: Vec<Color>,
+    pub angle: f32,
+}
+
+impl<'de> Deserialize<'de> for Gradient {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Raw {
+            Colors(Vec<Color>),
+            Full {
+                colors: Vec<Color>,
+                #[serde(default = "deg90")]
+                angle: f32,
+            },
+        }
+        fn deg90() -> f32 {
+            90.0
+        }
+        Ok(match Raw::deserialize(d)? {
+            Raw::Colors(colors) => Gradient { colors, angle: 90.0 },
+            Raw::Full { colors, angle } => Gradient { colors, angle },
+        })
+    }
+}
+
+impl Gradient {
+    /// The paint over a `w × h` box at the origin.
+    pub fn paint(&self, w: f32, h: f32, alpha: f32) -> Paint {
+        let a = self.angle.to_radians();
+        let (dx, dy) = (a.sin(), -a.cos());
+        let half = (w * 0.5 * dx).abs() + (h * 0.5 * dy).abs();
+        let (cx, cy) = (w * 0.5, h * 0.5);
+        let n = self.colors.len().max(2) - 1;
+        Paint::Linear {
+            p0: [cx - dx * half, cy - dy * half],
+            p1: [cx + dx * half, cy + dy * half],
+            stops: self
+                .colors
+                .iter()
+                .enumerate()
+                .map(|(i, c)| {
+                    let mut v = c.0 .0;
+                    v[3] *= alpha;
+                    (i as f32 / n as f32, Rgba(v))
+                })
+                .collect(),
+        }
+    }
 }
 
 impl Default for TextStyle {
@@ -67,6 +200,12 @@ impl Default for TextStyle {
             underline: false,
             strikethrough: false,
             features: None,
+            accent: Color(Rgba([0.55, 0.48, 1.0, 1.0])),
+            outline: None,
+            background: None,
+            shadow: None,
+            glow: None,
+            gradient: None,
         }
     }
 }
@@ -111,9 +250,9 @@ impl Default for Fit {
     }
 }
 
-/// A block of rich text.
+/// A block of rich text. Deserialises from an object or just a string.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase", remote = "Self")]
 pub struct TextSpec {
     /// Plain text (used when `spans` is empty).
     pub text: String,
@@ -128,16 +267,83 @@ pub struct TextSpec {
     pub ellipsis: Option<bool>,
     /// Shrink to fit a box (wraps at `fit.width` unless `width` is set).
     pub fit: Option<Fit>,
+    /// Inline markup in `text`/spans: `**bold**`, `*italic*`, `` `code` ``,
+    /// `==accent==` (in `style.accent`). On by default; only paired markers
+    /// count, and `\*` escapes.
+    pub markup: Option<bool>,
+}
+
+impl Serialize for TextSpec {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        TextSpec::serialize(self, s)
+    }
+}
+
+impl<'de> Deserialize<'de> for TextSpec {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let v = serde_json::Value::deserialize(d)?;
+        if let Some(s) = v.as_str() {
+            return Ok(TextSpec { text: s.to_string(), ..Default::default() });
+        }
+        TextSpec::deserialize(v).map_err(serde::de::Error::custom)
+    }
 }
 
 impl TextSpec {
+    /// Literal text in one style (markup off: safe for code and labels).
     pub fn plain(text: impl Into<String>, style: TextStyle) -> Self {
-        TextSpec { text: text.into(), style, ..Default::default() }
+        TextSpec { text: text.into(), style, markup: Some(false), ..Default::default() }
+    }
+
+    /// Text with inline markup (`**bold**`, `*italic*`, `` `code` ``, `==accent==`).
+    pub fn rich(text: impl Into<String>, style: TextStyle) -> Self {
+        TextSpec { text: text.into(), style, markup: Some(true), ..Default::default() }
+    }
+
+    /// Expand CSS `font` shorthands (`"italic 800 72px/1.1 Inter Display"`) into fields.
+    pub fn normalized(&self) -> TextSpec {
+        let mut s = self.clone();
+        if let Some(f) = parse_font(&s.style.font) {
+            s.style.font = f.family;
+            s.style.weight = f.weight.unwrap_or(s.style.weight);
+            s.style.size = f.size.unwrap_or(s.style.size);
+            s.style.line_height = f.line_height.unwrap_or(s.style.line_height);
+            s.style.italic |= f.italic;
+        }
+        if s.markup != Some(false) {
+            let src: Vec<Span> = if s.spans.is_empty() { vec![Span::new(s.text.clone())] } else { s.spans.clone() };
+            if src.iter().any(|sp| has_markup(&sp.text)) {
+                s.spans = src.iter().flat_map(|sp| markup_spans(sp, &s.style)).collect();
+                s.text.clear();
+            }
+        }
+        for sp in &mut s.spans {
+            if let Some(f) = sp.font.as_deref().and_then(parse_font) {
+                sp.font = Some(f.family);
+                sp.weight = sp.weight.or(f.weight);
+                sp.size = sp.size.or(f.size);
+                if f.italic {
+                    sp.italic = Some(true);
+                }
+            }
+        }
+        s
     }
 
     fn cache_key(&self) -> u64 {
+        // Stream the serialisation into the hasher: no allocation.
+        struct W<'a>(&'a mut std::collections::hash_map::DefaultHasher);
+        impl std::io::Write for W<'_> {
+            fn write(&mut self, b: &[u8]) -> std::io::Result<usize> {
+                self.0.write(b);
+                Ok(b.len())
+            }
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
         let mut h = std::collections::hash_map::DefaultHasher::new();
-        serde_json::to_vec(self).unwrap_or_default().hash(&mut h);
+        let _ = serde_json::to_writer(W(&mut h), self);
         h.finish()
     }
 
@@ -217,6 +423,16 @@ pub struct TextLayout {
     pub font_size: f32,
     /// True when `max_lines` cut the text.
     pub truncated: bool,
+    /// Block-wide fill overriding run colours (gradient text).
+    pub fill: Option<Gradient>,
+    /// Outline stroke: one path per run in layout coordinates, plus style.
+    pub outline: Option<(Vec<dl::Path>, dl::Stroke, Option<Rgba>, bool)>,
+    /// Content hash of the spec (stable cache key for layer caching).
+    pub key: u64,
+    /// Line background boxes `([x, y, w, h], radius, colour)`.
+    pub backgrounds: Vec<([f32; 4], f32, Rgba)>,
+    /// Layer filters (shadow, glow) wrapping the glyphs.
+    pub filters: Vec<dl::Filter>,
 }
 
 /// Unit granularity for per-unit addressing and animation.
@@ -246,17 +462,63 @@ impl TextLayout {
         (r, r.glyphs[g.index as usize])
     }
 
-    /// Static ops for the whole block: decorations, then glyph runs.
+    /// The paint for a run's glyphs with an extra alpha factor.
+    #[inline]
+    pub fn paint(&self, run: &GlyphRun, alpha: f32) -> Paint {
+        match &self.fill {
+            Some(g) => g.paint(self.width, self.height, alpha),
+            None => {
+                let mut c = run.color.0;
+                c[3] *= alpha;
+                Paint::Solid(Rgba(c))
+            }
+        }
+    }
+
+    /// Emit line backgrounds and open the effects layer (if any).
+    pub fn begin_effects(&self, transform: Affine, out: &mut Vec<Op>) {
+        for (r, rad, c) in &self.backgrounds {
+            out.push(Op::RoundRect { x: r[0], y: r[1], w: r[2], h: r[3], radius: *rad, paint: Paint::Solid(*c), transform });
+        }
+        if !self.filters.is_empty() {
+            out.push(Op::PushLayer { opacity: 1.0, blend: dl::Blend::Normal, filters: self.filters.clone(), clip: None, cache_key: None });
+        }
+    }
+
+    /// Close the effects layer opened by [`Self::begin_effects`].
+    pub fn end_effects(&self, out: &mut Vec<Op>) {
+        if !self.filters.is_empty() {
+            out.push(Op::PopLayer);
+        }
+    }
+
+    /// Static ops for the whole block: backgrounds, decorations, glyph runs, effects.
     pub fn ops(&self, transform: Affine, out: &mut Vec<Op>) {
+        self.begin_effects(transform, out);
+        self.body_ops(transform, out);
+        self.end_effects(out);
+    }
+
+    pub(crate) fn body_ops(&self, transform: Affine, out: &mut Vec<Op>) {
         for d in &self.decorations {
             out.push(rect_op(d.rect, d.color, transform));
+        }
+        if let Some((paths, stroke, color, hollow)) = &self.outline {
+            for (r, p) in self.runs.iter().zip(paths) {
+                if !hollow {
+                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: r.glyphs.clone(), paint: self.paint(r, 1.0), transform });
+                }
+                let paint = color.map_or_else(|| self.paint(r, 1.0), Paint::Solid);
+                out.push(Op::Stroke { path: p.clone(), paint, stroke: stroke.clone(), transform });
+            }
+            return;
         }
         for r in &self.runs {
             out.push(Op::Glyphs {
                 font: r.font,
                 size: r.size,
                 glyphs: r.glyphs.clone(),
-                paint: Paint::Solid(r.color),
+                paint: self.paint(r, 1.0),
                 transform,
             });
         }
@@ -270,6 +532,11 @@ impl TextLayout {
     }
 }
 
+/// A round-joined stroke for glyph outlines.
+pub fn text_stroke(width: f32) -> dl::Stroke {
+    dl::Stroke { width, cap: 1, join: 1, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0, trim: [0.0, 1.0] }
+}
+
 pub(crate) fn rect_op(r: [f32; 4], color: Rgba, transform: Affine) -> Op {
     Op::RoundRect { x: r[0], y: r[1], w: r[2], h: r[3], radius: 0.0, paint: Paint::Solid(color), transform }
 }
@@ -278,16 +545,19 @@ impl FontStore {
     /// Lay out a text block (cached by content; cheap to call again).
     pub fn layout(&self, spec: &TextSpec) -> Arc<TextLayout> {
         let key = spec.cache_key();
-        if let Some(l) = self.cache.lock().unwrap().get(&key) {
+        if let Some(l) = self.cache.read().unwrap().get(&key) {
             return l.clone();
         }
-        let l = Arc::new(self.layout_uncached(spec));
-        self.cache.lock().unwrap().insert(key, l.clone());
+        let mut l = self.layout_uncached(spec);
+        l.key = key;
+        let l = Arc::new(l);
+        self.cache.write().unwrap().insert(key, l.clone());
         l
     }
 
     /// Lay out without touching the cache.
     pub fn layout_uncached(&self, spec: &TextSpec) -> TextLayout {
+        let spec = &spec.normalized();
         let (text, spans) = spec.joined();
         let width = spec.width.or(spec.fit.as_ref().map(|f| f.width));
         let max_lines = spec.max_lines.map(|m| m.max(1) as usize);
@@ -296,18 +566,22 @@ impl FontStore {
         if let Some(fit) = &spec.fit {
             let hi = fit.max_size.unwrap_or(base) / base;
             let lo = (fit.min_size / base).min(hi);
-            let fits = |s: f32| {
-                let l = self.parley_layout(spec, &text, &spans, s, width);
-                let lines = l.len();
-                l.height() <= fit.height + 0.01
-                    && l.lines().all(|ln| ln.metrics().advance - ln.metrics().hanging_advance <= fit.width + 0.01)
+            // Shape once at scale 1. Scaling all sizes by `s` and wrapping at `W`
+            // breaks lines exactly like scale 1 wrapped at `W / s`, so each probe
+            // is a cheap re-break instead of a re-shape.
+            let mut l1 = self.parley_layout(spec, &text, &spans, 1.0, None);
+            let mut fits = |s: f32| {
+                l1.break_all_lines(Some(fit.width / s));
+                let lines = l1.len();
+                l1.height() * s <= fit.height + 0.01
+                    && l1.lines().all(|ln| (ln.metrics().advance - ln.metrics().hanging_advance) * s <= fit.width + 0.01)
                     && max_lines.is_none_or(|m| lines <= m)
             };
             scale = if fits(hi) {
                 hi
             } else {
                 let (mut a, mut b) = (lo, hi);
-                for _ in 0..14 {
+                for _ in 0..20 {
                     let m = 0.5 * (a + b);
                     if fits(m) {
                         a = m
@@ -320,6 +594,17 @@ impl FontStore {
                 }
                 a
             };
+            // Verify at the real size (rounding and hinting are not perfectly linear).
+            for _ in 0..4 {
+                let l = self.parley_layout(spec, &text, &spans, scale, width);
+                let ok = l.height() <= fit.height + 0.5
+                    && l.lines().all(|ln| ln.metrics().advance - ln.metrics().hanging_advance <= fit.width + 0.5)
+                    && max_lines.is_none_or(|m| l.len() <= m);
+                if ok || scale <= lo {
+                    break;
+                }
+                scale = (scale * 0.985).max(lo);
+            }
         }
         let mut layout = self.parley_layout(spec, &text, &spans, scale, width);
         let mut text = text;
@@ -328,9 +613,12 @@ impl FontStore {
             if layout.len() > m {
                 truncated = true;
                 let ellipsis = spec.ellipsis.unwrap_or(true);
-                let cut_end = layout.get(m - 1).map_or(text.len(), |l| l.text_range().end);
-                // Candidate cut points: char boundaries up to the end of line m.
-                let cands: Vec<usize> = text[..cut_end].char_indices().map(|(i, _)| i).chain([cut_end]).collect();
+                let last = layout.get(m - 1);
+                let cut_end = last.as_ref().map_or(text.len(), |l| l.text_range().end);
+                let cut_start = last.as_ref().map_or(0, |l| l.text_range().start);
+                // Candidate cut points: char boundaries on the last kept line.
+                let cands: Vec<usize> =
+                    text[cut_start..cut_end].char_indices().map(|(i, _)| cut_start + i).chain([cut_end]).collect();
                 let make = |k: usize| -> String {
                     let mut t = text[..k].trim_end().to_string();
                     if ellipsis {
@@ -339,6 +627,51 @@ impl FontStore {
                     t
                 };
                 let (mut lo, mut hi) = (0usize, cands.len() - 1);
+                // Fast path: measure the last line's clusters and the ellipsis once,
+                // and cut where both fit; verified by one layout below.
+                let avail = width.unwrap_or(f32::MAX);
+                if let Some(line) = last.as_ref() {
+                    let ell_w = if ellipsis {
+                        let sp: Vec<(Range<usize>, &Span)> = spans
+                            .iter()
+                            .rfind(|(r, _)| r.start < cut_end)
+                            .map(|(_, s)| vec![(0..'…'.len_utf8(), *s)])
+                            .unwrap_or_default();
+                        self.parley_layout(spec, "…", &sp, scale, None).width()
+                    } else {
+                        0.0
+                    };
+                    let mut x = 0.0;
+                    let mut best = cut_start;
+                    for run in line.runs() {
+                        for cl in run.visual_clusters() {
+                            x += cl.advance();
+                            let end = cl.text_range().end;
+                            if x + ell_w <= avail && !cl.is_space_or_nbsp() {
+                                best = best.max(end);
+                            }
+                        }
+                    }
+                    if let Ok(i) = cands.binary_search(&best) {
+                        // Bracket the search tightly around the estimate.
+                        let t = make(cands[i]);
+                        let sp = clip_spans(&spans, t.len(), cands[i]);
+                        if self.parley_layout(spec, &t, &sp, scale, width).len() <= m {
+                            lo = i;
+                            hi = (i + 1).min(cands.len() - 1);
+                            let t2 = make(cands[hi]);
+                            let sp2 = clip_spans(&spans, t2.len(), cands[hi]);
+                            if hi == i || self.parley_layout(spec, &t2, &sp2, scale, width).len() > m {
+                                hi = i;
+                            } else {
+                                lo = hi;
+                                hi = cands.len() - 1;
+                            }
+                        } else {
+                            hi = i.saturating_sub(1);
+                        }
+                    }
+                }
                 // Largest k whose truncated text fits in m lines.
                 while lo < hi {
                     let mid = (lo + hi).div_ceil(2);
@@ -358,8 +691,43 @@ impl FontStore {
             }
         }
         let mut out = self.extract(&layout, &text);
+        out.fill = spec.style.gradient.clone().filter(|g| !g.colors.is_empty());
+        let em = base * scale;
+        if let Some(bg) = &spec.style.background {
+            let (px, py, rad) = (bg.padding[0] * em, bg.padding[1] * em, bg.radius * em);
+            out.backgrounds = out
+                .lines
+                .iter()
+                .filter(|l| l.rect[2] > 0.0)
+                .map(|l| ([l.rect[0] - px, l.rect[1] - py, l.rect[2] + 2.0 * px, l.rect[3] + 2.0 * py], rad, bg.color.0))
+                .collect();
+        }
+        if let Some(sh) = &spec.style.shadow {
+            out.filters.push(dl::Filter::Shadow { dx: sh.x, dy: sh.y, blur: sh.blur, color: sh.color.0 });
+        }
+        if let Some(g) = &spec.style.glow {
+            let c = g.color.unwrap_or(spec.style.color).0;
+            out.filters.push(dl::Filter::Glow { radius: g.radius, intensity: g.intensity, color: c });
+        }
+        if let Some(o) = &spec.style.outline {
+            let paths = out.runs.iter().map(|r| self.run_path(r, &r.glyphs)).collect();
+            out.outline = Some((paths, text_stroke(o.width * base * scale), o.color.map(|c| c.0), o.hollow));
+        }
         out.font_size = base * scale;
         out.truncated = truncated;
+        out
+    }
+
+    /// The outlines of `glyphs` (from `run`) as one path in layout coordinates.
+    pub fn run_path(&self, run: &GlyphRun, glyphs: &[dl::Glyph]) -> dl::Path {
+        let mut out = dl::Path::new();
+        for g in glyphs {
+            let p = self.glyph_path(run.font, g.id, run.size);
+            let t = kurbo::Affine::translate((g.x as f64, g.y as f64));
+            for el in p.elements() {
+                out.push(t * *el);
+            }
+        }
         out
     }
 
@@ -440,7 +808,6 @@ impl FontStore {
             }
         }
         let mut layout: Layout<Rgba> = b.build(text);
-        layout.break_all_lines(width);
         let align = match spec.align {
             Align::Left => Alignment::Left,
             Align::Center => Alignment::Center,
@@ -448,7 +815,6 @@ impl FontStore {
             Align::Justify => Alignment::Justify,
         };
         layout.set_alignment(align, AlignmentOptions { align_when_overflowing: true, ..Default::default() });
-        // Alignment applies on the next line break pass.
         layout.break_all_lines(width);
         layout
     }
@@ -637,4 +1003,147 @@ fn clip_spans<'a>(spans: &[(Range<usize>, &'a Span)], new_len: usize, cut: usize
         last.0.end = new_len;
     }
     v
+}
+
+/// A parsed CSS `font` shorthand.
+#[derive(Debug, PartialEq)]
+pub struct FontShorthand {
+    pub family: String,
+    pub weight: Option<f32>,
+    pub size: Option<f32>,
+    pub line_height: Option<f32>,
+    pub italic: bool,
+}
+
+/// Parse `[italic] [weight] [size[/line-height]] family` (each part optional;
+/// weights may be numbers or names like `bold`, `semibold`, `black`).
+/// Returns `None` when the string is just a family name.
+pub fn parse_font(s: &str) -> Option<FontShorthand> {
+    let mut out = FontShorthand { family: String::new(), weight: None, size: None, line_height: None, italic: false };
+    let mut fam: Vec<&str> = Vec::new();
+    let mut any = false;
+    for t in s.split_whitespace() {
+        if !fam.is_empty() {
+            fam.push(t);
+            continue;
+        }
+        let l = t.to_lowercase();
+        let w = match l.as_str() {
+            "thin" | "hairline" => Some(100.0),
+            "extralight" | "ultralight" => Some(200.0),
+            "light" => Some(300.0),
+            "regular" | "normal" | "book" => Some(400.0),
+            "medium" => Some(500.0),
+            "semibold" | "demibold" => Some(600.0),
+            "bold" => Some(700.0),
+            "extrabold" | "ultrabold" | "heavy" => Some(800.0),
+            "black" => Some(900.0),
+            _ => None,
+        };
+        if l == "italic" || l == "oblique" {
+            out.italic = true;
+        } else if let Some(w) = w {
+            out.weight = Some(w);
+        } else if let Ok(n) = l.parse::<f32>() {
+            out.weight = Some(n);
+        } else if l.chars().next().is_some_and(|c| c.is_ascii_digit() || c == '.') {
+            let (sz, lh) = l.split_once('/').map_or((l.as_str(), None), |(a, b)| (a, Some(b)));
+            out.size = Some(sz.trim_end_matches("px").parse().ok()?);
+            if let Some(lh) = lh {
+                out.line_height = Some(lh.parse().ok()?);
+            }
+        } else {
+            fam.push(t);
+            continue;
+        }
+        any = true;
+    }
+    if !any {
+        return None;
+    }
+    out.family = if fam.is_empty() { "Inter".into() } else { fam.join(" ") };
+    Some(out)
+}
+
+fn has_markup(t: &str) -> bool {
+    t.contains("**") || t.contains("==") || t.contains('`') || t.contains('*') || t.contains('\\')
+}
+
+/// Split one span on inline markup into styled spans.
+fn markup_spans(base: &Span, style: &TextStyle) -> Vec<Span> {
+    const MARKS: [&str; 4] = ["**", "==", "`", "*"];
+    let t = &base.text;
+    let mut out: Vec<Span> = Vec::new();
+    let mut cur = String::new();
+    // Active flags: bold, accent, code, italic.
+    let mut on = [false; 4];
+    let flush = |cur: &mut String, on: &[bool; 4], out: &mut Vec<Span>| {
+        if cur.is_empty() {
+            return;
+        }
+        let mut sp = Span { text: std::mem::take(cur), ..base.clone() };
+        if on[0] {
+            sp.weight = Some((sp.weight.unwrap_or(style.weight) + 300.0).clamp(700.0, 900.0));
+        }
+        if on[1] {
+            sp.color = Some(style.accent);
+        }
+        if on[2] {
+            sp.font = Some("JetBrains Mono".into());
+        }
+        if on[3] {
+            sp.italic = Some(true);
+        }
+        out.push(sp);
+    };
+    let mut i = 0;
+    let b = t.as_bytes();
+    while i < t.len() {
+        if b[i] == b'\\' && i + 1 < t.len() {
+            let c = t[i + 1..].chars().next().unwrap();
+            cur.push(c);
+            i += 1 + c.len_utf8();
+            continue;
+        }
+        let mut matched = false;
+        for (k, m) in MARKS.iter().enumerate() {
+            if !t[i..].starts_with(m) || (on[2] && k != 2) {
+                continue;
+            }
+            // `*` must not be the first half of `**`.
+            if k == 3 && t[i..].starts_with("**") {
+                continue;
+            }
+            if on[k] {
+                flush(&mut cur, &on, &mut out);
+                on[k] = false;
+                i += m.len();
+                matched = true;
+                break;
+            }
+            // Opening: only if a closing marker follows (and content is non-empty).
+            let rest = &t[i + m.len()..];
+            let close = if k == 3 {
+                rest.char_indices().find(|(j, c)| *c == '*' && !rest[*j..].starts_with("**") && (*j == 0 || !rest[..*j].ends_with('*'))).map(|x| x.0)
+            } else {
+                rest.find(m)
+            };
+            if let Some(j) = close {
+                if j > 0 && !rest.starts_with(' ') {
+                    flush(&mut cur, &on, &mut out);
+                    on[k] = true;
+                    i += m.len();
+                    matched = true;
+                    break;
+                }
+            }
+        }
+        if !matched {
+            let c = t[i..].chars().next().unwrap();
+            cur.push(c);
+            i += c.len_utf8();
+        }
+    }
+    flush(&mut cur, &on, &mut out);
+    out
 }

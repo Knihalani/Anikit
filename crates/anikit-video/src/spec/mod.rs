@@ -9,6 +9,7 @@
 
 #![allow(clippy::large_enum_variant)]
 
+mod de;
 pub mod parse;
 pub mod validate;
 
@@ -106,6 +107,8 @@ pub struct Spec {
     /// Colour tokens, fonts and text styles.
     pub theme: Option<Theme>,
     /// The scenes, in order.
+    #[serde(deserialize_with = "de::scenes")]
+    #[schemars(with = "Vec<de::SceneItem>")]
     pub scenes: Vec<Scene>,
     /// Default transition between scenes. Default crossfade 0.5 s.
     pub transition: Option<Transition>,
@@ -198,6 +201,8 @@ pub struct Scene {
     /// Times relative to the scene start.
     pub markers: Option<BTreeMap<String, Num>>,
     /// Drawn bottom to top.
+    #[serde(deserialize_with = "de::layers")]
+    #[schemars(with = "Vec<de::LayerItem>")]
     pub layers: Vec<Layer>,
     /// Audio cues relative to the scene start.
     pub audio: Option<Vec<AudioCue>>,
@@ -233,6 +238,8 @@ pub struct Camera {
     pub y: Option<Num>,
     pub zoom: Option<Num>,
     pub rotation: Option<Num>,
+    #[serde(default, deserialize_with = "de::opt_tweens")]
+    #[schemars(with = "Option<de::AnimateItem>")]
     pub animate: Option<Vec<Tween>>,
     pub shake: Option<Shake>,
 }
@@ -311,6 +318,8 @@ pub struct Layer {
     /// (for `video` layers, a bool: loop the clip).
     #[serde(rename = "loop")]
     pub loop_: Option<LoopValue>,
+    #[serde(default, deserialize_with = "de::opt_tweens")]
+    #[schemars(with = "Option<de::AnimateItem>")]
     pub animate: Option<Vec<Tween>>,
     /// Delay children's animations by index × seconds (group, box, split text).
     pub stagger: Option<Stagger>,
@@ -332,6 +341,8 @@ pub struct Layer {
     pub split: Option<String>,
     pub reveal: Option<Num>,
     pub value: Option<Num>,
+    /// Kinetic text animation (TEXT module): shorthand like `"pop by char from center 0.4s 30ms outBack"`, or an object.
+    pub kinetic: Option<serde_json::Value>,
 
     // ---- shape
     /// `rect`, `circle`, `ellipse`, `line`, `arrow`, `polygon`, `star`, `path`.
@@ -357,8 +368,12 @@ pub struct Layer {
 
     // ---- containers
     /// Children of a `group`.
+    #[serde(default, deserialize_with = "de::opt_layers")]
+    #[schemars(with = "Option<Vec<de::LayerItem>>")]
     pub layers: Option<Vec<Layer>>,
     /// Children of a `box`.
+    #[serde(default, deserialize_with = "de::opt_layers")]
+    #[schemars(with = "Option<Vec<de::LayerItem>>")]
     pub children: Option<Vec<Layer>>,
 
     // ---- component
@@ -630,11 +645,14 @@ pub struct Tween {
     pub yoyo: Option<bool>,
 }
 
-/// An audio cue.
+/// An audio cue: a file (`src`) or a built-in sound effect (`sfx`).
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AudioCue {
-    pub src: String,
+    /// Audio file (mp3, wav, ogg, flac, aac/m4a).
+    pub src: Option<String>,
+    /// Built-in effect: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `riser`, `drop`, `impact`, `ding`, `chime`, `typing`, `success`.
+    pub sfx: Option<String>,
     pub at: Option<Num>,
     /// 0..1 or `"-6dB"`.
     pub volume: Option<Num>,
@@ -644,8 +662,12 @@ pub struct AudioCue {
     pub fade_out: Option<f64>,
     #[serde(rename = "loop")]
     pub loop_: Option<bool>,
-    pub duck: Option<f64>,
+    /// Duck this track while voice plays: `true`, or the reduction in dB (default 12).
+    pub duck: Option<serde_json::Value>,
+    /// This track is a voice-over (others duck under it).
     pub voice: Option<bool>,
+    /// SFX pitch multiplier.
+    pub pitch: Option<f64>,
 }
 
 /// Captions: a list of cues, or a subtitle file with styling.

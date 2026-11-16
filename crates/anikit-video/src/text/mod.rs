@@ -16,4 +16,4 @@ pub mod layout;
 
 pub use color::Color;
 pub use fonts::{Face, FontStore};
-pub use layout::{Align, Fit, GlyphRun, Span, TextLayout, TextSpec, TextStyle, Unit, UnitKind};
+pub use layout::{parse_font, Align, Fit, FontShorthand, GlyphRun, Gradient, Span, TextLayout, TextSpec, TextStyle, Unit, UnitKind};

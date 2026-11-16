@@ -14,3 +14,7 @@ rayon = "1"
 [[example]]
 name = "bench"
 path = "examples/bench.rs"
+
+[[example]]
+name = "prof"
+path = "examples/prof.rs"

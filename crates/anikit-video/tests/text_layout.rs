@@ -180,3 +180,107 @@ fn golden_rich_paragraph() {
     let d = common::golden(&pm, "rich_paragraph");
     assert!(d < 0.5, "golden diff {d}");
 }
+
+#[test]
+fn font_shorthand_and_string_specs() {
+    let f = parse_font("italic 800 72px/1.1 Inter Display").unwrap();
+    assert_eq!((f.family.as_str(), f.weight, f.size, f.line_height, f.italic), ("Inter Display", Some(800.0), Some(72.0), Some(1.1), true));
+    assert_eq!(parse_font("JetBrains Mono"), None);
+    assert_eq!(parse_font("bold 32px mono").unwrap().weight, Some(700.0));
+    let spec: TextSpec = serde_json::from_str(r#""Hello""#).unwrap();
+    assert_eq!(spec.text, "Hello");
+    let spec: TextSpec = serde_json::from_str(r##"{"text": "Hi", "style": {"font": "black 100px serif", "color": "#ff0", "gradient": ["#7c5cff", "#ff6ad5"]}}"##).unwrap();
+    let l = store().layout(&spec);
+    assert_eq!(l.font_size, 100.0);
+    assert!(l.fill.is_some());
+    assert!(matches!(l.paint(&l.runs[0], 1.0), anikit_video::dl::Paint::Linear { .. }));
+}
+
+#[test]
+fn golden_gradient_title() {
+    let s = store();
+    let spec: TextSpec = serde_json::from_str(r##"{"text": "Gradient titles ✨", "style": {"font": "900 64px Inter Display", "letterSpacing": -0.02, "gradient": {"colors": ["#7c5cff", "#ff6ad5", "#ffcb6b"], "angle": 100}}}"##).unwrap();
+    let l = s.layout(&spec);
+    let mut dl = DisplayList { width: 640, height: 110, background: Rgba([0.04, 0.04, 0.07, 1.0]), ops: vec![] };
+    l.ops([1.0, 0.0, 0.0, 1.0, 20.0, 15.0], &mut dl.ops);
+    let pm = common::render(s, &dl);
+    let d = common::golden(&pm, "gradient_title");
+    assert!(d < 0.5, "golden diff {d}");
+    common::save(pm, "gradient_title");
+}
+
+#[test]
+fn inline_markup() {
+    let spec: TextSpec = serde_json::from_str(r#""Ship **faster** with `code` and ==style==, *really*. 2 * 3 = 6 \\*x""#).unwrap();
+    let n = spec.normalized();
+    let texts: Vec<&str> = n.spans.iter().map(|s| s.text.as_str()).collect();
+    assert_eq!(texts, ["Ship ", "faster", " with ", "code", " and ", "style", ", ", "really", ". 2 * 3 = 6 *x"]);
+    assert_eq!(n.spans[1].weight, Some(700.0));
+    assert_eq!(n.spans[3].font.as_deref(), Some("JetBrains Mono"));
+    assert_eq!(n.spans[5].color, Some(TextStyle::default().accent));
+    assert_eq!(n.spans[7].italic, Some(true));
+    let off = TextSpec { markup: Some(false), ..spec.clone() }.normalized();
+    assert!(off.spans.is_empty());
+    let l = store().layout(&spec);
+    assert_eq!(l.text, "Ship faster with code and style, really. 2 * 3 = 6 *x");
+}
+
+#[test]
+fn system_font_fallback_cjk() {
+    let s = FontStore::with_system_fonts();
+    let l = s.layout(&TextSpec::plain("Hello 日本語", TextStyle::default()));
+    // Every glyph resolved (no .notdef) when the system has a CJK font.
+    let has_cjk = s.family_names().iter().any(|n| n.contains("IPA") || n.contains("Noto Sans CJK") || n.contains("Gothic"));
+    eprintln!("cjk font present: {has_cjk}, runs: {}", l.runs.len());
+    if has_cjk {
+        assert!(l.glyphs.iter().all(|g| l.runs[g.run as usize].glyphs[g.index as usize].id != 0));
+        assert!(l.runs.len() >= 2, "fallback face used");
+    }
+    // Bundled-only store keeps Inter for Latin.
+    let b = store().layout(&TextSpec::plain("Hello", TextStyle::default()));
+    assert!(s.face(l.runs[0].font).data.data.len() == store().face(b.runs[0].font).data.data.len());
+}
+
+#[test]
+fn golden_outline_text() {
+    let s = store();
+    let spec: TextSpec = serde_json::from_str(r##"{"text": "OUTLINE *type*", "style": {"font": "900 72px Inter Display", "color": "#ffffff", "outline": {"width": 0.02}}}"##).unwrap();
+    let l = s.layout(&spec);
+    let ops = l.to_ops(anikit_video::dl::IDENTITY);
+    assert!(ops.iter().all(|o| matches!(o, anikit_video::dl::Op::Stroke { .. })), "hollow: strokes only");
+    let mut dl = DisplayList { width: 640, height: 110, background: Rgba([0.04, 0.04, 0.07, 1.0]), ops: vec![] };
+    l.ops([1.0, 0.0, 0.0, 1.0, 20.0, 12.0], &mut dl.ops);
+    let pm = common::render(s, &dl);
+    let d = common::golden(&pm, "outline_text");
+    assert!(d < 0.5, "golden diff {d}");
+    common::save(pm, "outline_text");
+}
+
+#[test]
+fn caption_background_and_effects() {
+    use anikit_video::dl::Op;
+    let s = store();
+    let spec: TextSpec = serde_json::from_str(r##"{"text": "Captions get a box per line, like social video.", "width": 560, "align": "center",
+        "style": {"font": "700 40px Inter", "background": {"color": "#000c"}, "shadow": {}, "glow": {"radius": 10}}}"##).unwrap();
+    let l = s.layout(&spec);
+    assert_eq!(l.backgrounds.len(), l.lines.len());
+    assert_eq!(l.filters.len(), 2);
+    let ops = l.to_ops(anikit_video::dl::IDENTITY);
+    assert!(matches!(ops[0], Op::RoundRect { .. }));
+    assert!(ops.iter().any(|o| matches!(o, Op::PushLayer { .. })));
+    assert!(matches!(ops.last(), Some(Op::PopLayer)));
+    // Kinetic output keeps the backgrounds and the layer balanced.
+    let plan = anikit_video::text::kinetic::KineticPlan::new(s, l.clone(), &"karaoke".parse().unwrap());
+    let mut o = vec![];
+    plan.ops(0.5, anikit_video::dl::IDENTITY, &mut o);
+    let push = o.iter().filter(|x| matches!(x, Op::PushLayer { .. })).count();
+    let pop = o.iter().filter(|x| matches!(x, Op::PopLayer)).count();
+    assert_eq!(push, pop);
+    assert!(matches!(o[0], Op::RoundRect { .. }));
+    let mut dl = DisplayList { width: 600, height: 200, background: Rgba([0.3, 0.4, 0.5, 1.0]), ops: vec![] };
+    plan.ops(0.9, [1.0, 0.0, 0.0, 1.0, 20.0, 30.0], &mut dl.ops);
+    let pm = common::render(s, &dl);
+    let d = common::golden(&pm, "caption");
+    assert!(d < 0.5, "golden diff {d}");
+    common::save(pm, "caption");
+}

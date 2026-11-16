@@ -24,6 +24,22 @@ You describe a video as one JSON (or YAML) document; `anikit-video render spec.j
 
 That is 1920×1080, 30 fps, 3 seconds, dark background, white Inter text in the centre that fades up.
 
+## Shorthand (fewest tokens)
+
+```json
+{ "scenes": [
+  "Launch day | Everything ships at once",
+  { "layers": [ { "text": "3× faster", "style": "title", "animate": "rise" }, "Built in Rust" ] },
+  { "layers": [ { "component": "bar-chart", "props": { "values": [3, 7, 5, 9] } } ] }
+] }
+```
+
+- A **scene** can be a string: a title card (`"Title | subtitle"`).
+- A **layer** can be a string: a centred body-text layer.
+- `"animate": "rise"` (a preset name) means `"enter": "rise"`; `animate` also takes one tween object instead of a list.
+- Preset aliases: `rise` (fadeUp), `drop` (fadeDown), `fade`, `pop`, `grow` (scaleIn), `zoom`, `blur`, `draw` (drawOn), `type` (typewriter), `count` (countUp), `wipe`, `slide` (slideUp), `bounce`; in `exit` they mean the exit form (`"exit": "fade"` = fadeOut).
+- On text, any kinetic style also works as `enter`/`animate`: `"animate": "scramble"`, `"enter": "pop by char from center"`.
+
 ## A complete example
 
 ```json
@@ -199,8 +215,8 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `letterSpacing` | length or `"0.05em"` | `0` | |
 | `uppercase` | bool | `false` | |
 | `maxLines` | integer | none | Truncates with an ellipsis. |
-| `stroke` | stroke | none | Outline text: `{ "color": "#fff", "width": 2 }`. |
 | `split` | `chars` / `words` / `lines` | none | Splits the text into units so `enter`/`exit` presets stagger across them (kinetic type). |
+| `kinetic` | string or object | none | A text animation from the text engine, as shorthand: `"rise"`, `"pop by char from center 0.4s 30ms outBack"`, `"scramble"`, `"typewriter"`, `"wave by word"`, `"highlight words"`, `"mask by line up"`. Styles: `rise`, `fade`, `blur`, `pop`, `typewriter`, `scramble`, `wave`, `highlight`, `mask`. An `enter` that isn't a layer preset (for example `"enter": "scramble"`) is treated as `kinetic`. |
 | `reveal` | 0..1 | `1` | Fraction of characters shown (animate it for a typewriter; the `typewriter` preset does). |
 | `value` | number | | With `"text": "{value}"` (or `"{value:0.0}"`, `"${value:,}"`), shows an animatable number. Animate `value` for counters. |
 
@@ -251,7 +267,9 @@ A flexbox container (CSS semantics) that lays out `children` automatically, so y
 
 ### `component`
 
-`{ "type": "component", "component": "barChart", "props": { ... } }` — a pluggable high-level block (code blocks, charts, device mockups, counters, particles, lower thirds, …). Components have their own guide (`docs/video/components.md`); `anikit-video info --components` lists them with their props. Common keys (position, transforms, `enter`, `animate`) apply. A component also exposes a `progress` property (0..1 over its lifetime by default) that you can animate.
+`{ "component": "bar-chart", "props": { "values": [3, 7, 5, 9], "labels": ["Q1", "Q2", "Q3", "Q4"] } }` — a ready-made block: `code`, `terminal`, `bar-chart`, `line-chart`, `area-chart`, `donut-chart`, `pie-chart`, `counter`, `stat`, `phone`, `laptop`, `browser`, `card`, `button`, `toggle`, `badge`, `avatar`, `avatar-stack`, `progress-bar`, `progress-ring`, `toast`, `cursor`, `tooltip`, `callout`, `arrow`, `lower-third`, `title-card`, backgrounds (`mesh-gradient`, `aurora`, `grain`, `grid`, `dots`, `light-leak`, `bokeh`, `starfield`, `gradient`), particles (`confetti`, `sparks`, `snow`, `dust`), `model` (3D) and `lottie`. camelCase names (`barChart`) work too. `anikit-video info --components` prints every kind with a minimal example of its `props`.
+
+The component draws into its box: `width` × `height` (default: the whole parent), placed like any layer (`x`, `y`, `anchor`). Its own animation runs on the layer's local time (from `start`); the layer's transforms, `opacity`, `enter`/`exit` and `animate` apply on top. Components use the theme's colours (`primary` is their accent).
 
 ## Animation
 
@@ -307,7 +325,7 @@ Three layers of control, from simplest to most precise.
 - `spring`: instead of `ease` + `duration`: a preset (`gentle`, `wobbly`, `stiff`, `slow`, `molasses`, `snappy`, `bouncy`) or `{ "stiffness": 180, "damping": 12, "mass": 1 }`; duration becomes the settle time.
 - `repeat` (count, `-1` = forever) and `yoyo` (bool) repeat a tween.
 
-**Animatable properties:** `x`, `y`, `width`, `height`, `scale`, `scaleX`, `scaleY`, `rotation`, `skewX`, `skewY`, `opacity`, `blur`, `radius`, `fill`/`color` (interpolated in OKLab), `stroke`(colour), `strokeWidth`, `trimStart`, `trimEnd`, `reveal`, `value`, `size` (text), `letterSpacing`, `progress` (components), `zoom` (camera).
+**Animatable properties:** `x`, `y`, `width`, `height`, `scale`, `scaleX`, `scaleY`, `rotation`, `skewX`, `skewY`, `opacity`, `blur`, `radius`, `fill`/`color` (interpolated in OKLab), `stroke`(colour), `strokeWidth`, `trimStart`, `trimEnd`, `reveal`, `value`, `wipe`, `zoom` (camera).
 
 **Easings:** `linear`, `ease`, `easeIn`, `easeOut`, `easeInOut`; Penner names as `in`/`out`/`inOut` + `Sine`, `Quad`, `Cubic`, `Quart`, `Quint`, `Expo`, `Circ`, `Back`, `Elastic`, `Bounce` (e.g. `outCubic`, `inOutBack`; `easeOutCubic` also works); `cubicBezier(0.2, 0, 0, 1)`; `steps(4)`; springs `gentle`, `wobbly`, `stiff`, `slow`, `molasses`, `snappy`, `bouncy`.
 
@@ -323,18 +341,20 @@ Variables: `t` (seconds since the layer's start), `T` (seconds since the scene's
 
 ### Stagger
 
-On a `group`/`box` (or a `split` text), `"stagger": 0.08` delays each child's animations (`enter`, `exit`, `animate`) by `index × 0.08 s`. Object form: `{ "each": 0.08, "from": "start" | "center" | "end" | "random", "ease": "inQuad" }`; or `"total": 0.6` to spread the delays over a fixed time.
+On a `group`/`box` (or a `split` text), `"stagger": 0.08` delays each child's `enter` and `animate` by `index × 0.08 s` (exits are not staggered). Object form: `{ "each": 0.08, "from": "start" | "center" | "end" | "random", "ease": "inQuad" }`; or `"total": 0.6` to spread the delays over a fixed time.
 
 ## Audio
 
 ```json
 "audio": [
-  { "src": "music.mp3", "volume": 0.7, "fadeIn": 0.5, "fadeOut": 1.5, "duck": 0.4 },
-  { "src": "whoosh.wav", "at": "@drop", "volume": 1 }
+  { "src": "music.mp3", "volume": 0.7, "fadeIn": 0.5, "fadeOut": 1.5, "duck": true },
+  { "src": "voiceover.wav", "at": 0.5, "voice": true },
+  { "sfx": "whoosh", "at": "@drop" },
+  { "sfx": "impact", "at": "@drop+0.2", "volume": "-3dB" }
 ]
 ```
 
-`src`, `at` (time, default `0`), `volume` (0..1, or `"-6dB"`), `trimStart`, `duration`, `fadeIn`, `fadeOut`, `loop`, `duck` (lower this track to this volume while voice tracks play), `voice` (bool, marks a voice-over track used for ducking and captions).
+A cue plays a file (`src`) or a built-in sound effect (`sfx`: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `riser`, `drop`, `impact`, `ding`, `chime`, `typing`, `success`; `pitch` and `duration` vary it). Keys: `at` (time, default `0`; inside a scene it's relative to the scene), `volume` (0..1 or `"-6dB"`), `trimStart`, `duration`, `fadeIn`, `fadeOut`, `loop`, `voice` (marks a voice-over), and `duck` (`true`, or a reduction in dB, default 12: this track dips while voice plays).
 
 ## Captions
 
@@ -343,7 +363,7 @@ On a `group`/`box` (or a `split` text), `"stagger": 0.08` delays each child's an
 "captions": [ { "text": "Meet Anikit Video", "at": 0.5, "end": 2.2 }, { "text": "JSON in, MP4 out", "at": 2.4, "end": 4 } ]
 ```
 
-Captions are text layers drawn over every scene. `highlight` colours the current word when word timings are known (`words: [[text, at, end], …]`).
+Captions are text layers drawn over every scene.
 
 ## Validation and messages
 
@@ -357,6 +377,20 @@ warning scenes[2].layers[3].start: 4.5 s is after the scene ends (4 s); the laye
 ```
 
 With `--json`, the output is `{ "ok": bool, "errors": [{ "path", "message", "suggestion" }], "warnings": [...], "duration": s, "frames": n, "scenes": [{ "id", "start", "end" }] }`.
+
+## CLI
+
+```
+anikit-video check  spec.json [--json]                      validate, print errors/warnings and timing
+anikit-video still  spec.json --at 2.5 -o f.png [--watch]   one frame (--at @sceneId works too)
+anikit-video sheet  spec.json -o sheet.png [--cols 4 --rows 3 --width 480]
+anikit-video render spec.json -o out.mp4 [--quality draft|good|best] [--from 2 --to 5] [--scale 0.5]
+                    [--codec h264|h265|vp9|av1|prores|gif|png]   (default from the extension: .webm vp9, .gif, .mov prores)
+anikit-video info [--components]                              encoders and the component catalogue
+anikit-video schema [-o spec.schema.json]
+```
+
+`--json` prints one machine-readable object on stdout; progress goes to stderr. `render --json` ends with `{ "ok": true, "summary": { "frames", "deduped", "seconds", "render_fps", "bytes", … } }`.
 
 ## Recipes
 

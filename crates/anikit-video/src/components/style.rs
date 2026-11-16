@@ -371,13 +371,26 @@ pub fn radial(cx: f32, cy: f32, r: f32, stops: Vec<(f32, Rgba)>) -> Paint {
     Paint::Radial { c: [cx, cy], r, stops }
 }
 
-/// Soft drop shadow under a rounded rect: a blurred copy in its own layer.
+/// Soft drop shadow under a rounded rect. Emitted as a `Shadow` layer around
+/// an opaque card silhouette (which the caller then paints over), the form
+/// the renderer draws from cached blurred sprites.
 pub fn shadow(out: &mut Vec<Op>, x: f32, y: f32, w: f32, h: f32, r: f32, dy: f32, blur: f32, a: f32) {
-    if a <= 0.001 {
+    if a <= 0.001 || w <= 0.0 || h <= 0.0 {
         return;
     }
-    out.push(Op::PushLayer { opacity: 1.0, blend: dl::Blend::Normal, filters: vec![dl::Filter::Blur(blur)], clip: None, cache_key: None });
-    out.push(rect(x, y + dy, w, h, r, solid(Rgba([0.0, 0.0, 0.0, a]))));
+    out.push(Op::PushLayer { opacity: 1.0, blend: dl::Blend::Normal, filters: vec![dl::Filter::Shadow { dx: 0.0, dy, blur, color: Rgba([0.0, 0.0, 0.0, a]) }], clip: None, cache_key: None });
+    out.push(rect(x, y, w, h, r, solid(Rgba([0.0, 0.0, 0.0, 1.0]))));
+    out.push(Op::PopLayer);
+}
+
+/// Coloured halo around a rounded rect (screen-blended), drawn through the
+/// renderer's cached shadow sprites: cheap even for big, moving cards.
+pub fn glow(out: &mut Vec<Op>, x: f32, y: f32, w: f32, h: f32, r: f32, blur: f32, c: Rgba) {
+    if c.0[3] <= 0.001 || w <= 0.0 || h <= 0.0 {
+        return;
+    }
+    out.push(Op::PushLayer { opacity: 1.0, blend: dl::Blend::Screen, filters: vec![dl::Filter::Shadow { dx: 0.0, dy: 0.0, blur, color: c }], clip: None, cache_key: None });
+    out.push(rect(x, y, w, h, r, solid(Rgba([0.0, 0.0, 0.0, 1.0]))));
     out.push(Op::PopLayer);
 }
 

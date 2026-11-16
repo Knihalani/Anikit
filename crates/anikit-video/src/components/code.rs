@@ -29,6 +29,8 @@ pub enum Tok {
 pub struct Span {
     pub text: String,
     pub kind: Tok,
+    /// Explicit colour (from the TEXT highlighter); `None` = theme colour for `kind`.
+    pub color: Option<Rgba>,
 }
 
 struct Lang {
@@ -105,7 +107,7 @@ pub fn highlight(code: &str, language: &str) -> Vec<Vec<Span>> {
                     return;
                 }
             }
-            spans.push(Span { text: s, kind: k });
+            spans.push(Span { text: s, kind: k, color: None });
         };
         let mut i = 0;
         let rest = |i: usize| chars[i..].iter().collect::<String>();
@@ -299,6 +301,9 @@ pub struct CodeBlock {
     pub glow: Option<Color>,
     #[serde(skip)]
     lines: Vec<Vec<Span>>,
+    /// Same lines coloured by the TEXT highlighter for [night, day] themes.
+    #[serde(skip)]
+    themed: Option<[Vec<Vec<Span>>; 2]>,
     #[serde(skip)]
     marks: Vec<i8>,
     #[serde(skip)]
@@ -325,6 +330,7 @@ impl Default for CodeBlock {
             background: None,
             glow: None,
             lines: Vec::new(),
+            themed: None,
             marks: Vec::new(),
             line_t: Vec::new(),
             total_t: 0.0,
@@ -351,6 +357,20 @@ impl Prepare for CodeBlock {
             src.push_str(body);
         }
         self.lines = highlight(&src, &self.language);
+        let rich = |theme: &str| -> Option<Vec<Vec<Span>>> {
+            let h = crate::text::code::highlight(&crate::text::code::CodeSpec { code: src.clone(), language: self.language.clone(), theme: theme.into(), tab_width: 4, ..Default::default() });
+            if h.syntax == "Plain Text" || h.lines.len() != self.lines.len() {
+                return None;
+            }
+            Some(h.lines.into_iter().map(|l| l.spans.into_iter().map(|sp| Span { text: sp.text, kind: Tok::Plain, color: Some(sp.color.0) }).collect()).collect())
+        };
+        if let (Some(n), Some(d)) = (rich("night"), rich("day")) {
+            // Only use them when the text matches line for line (typing relies on it).
+            let same = |a: &Vec<Vec<Span>>| a.iter().zip(&self.lines).all(|(x, y)| x.iter().map(|s| s.text.as_str()).collect::<String>() == y.iter().map(|s| s.text.as_str()).collect::<String>());
+            if same(&n) && same(&d) {
+                self.themed = Some([n, d]);
+            }
+        }
         // Typing schedule: deterministic human rhythm (pauses after
         // punctuation and at line ends; indentation appears at once).
         let mut t = 0.0;
@@ -416,9 +436,7 @@ impl Component for CodeBlock {
         let bg = self.background.map(|c| c.0).unwrap_or(if th.dark { parse_color("#0e0f14").unwrap() } else { Rgba([1.0, 1.0, 1.0, 1.0]) });
         let mut o = Vec::new();
         if let Some(g) = self.glow {
-            push_layer(&mut o, 0.55, crate::dl::Blend::Screen, vec![crate::dl::Filter::Blur(60.0)]);
-            o.push(rect(w * 0.1, h * 0.1, w * 0.8, h * 0.8, r, radial(w * 0.5, h * 0.5, w * 0.5, vec![(0.0, g.0), (1.0, alpha(g.0, 0.0))])));
-            o.push(Op::PopLayer);
+            glow(&mut o, 0.0, 0.0, w, h, r, 60.0, alpha(g.0, 0.5));
         }
         shadow(&mut o, 0.0, 0.0, w, h, r, 24.0, 48.0, if th.dark { 0.6 } else { 0.18 });
         o.push(rect(0.0, 0.0, w, h, r, solid(bg)));
@@ -480,7 +498,11 @@ impl Component for CodeBlock {
             }
         }
         let mut caret = None;
-        for (i, line) in self.lines.iter().enumerate() {
+        let lines = match &self.themed {
+            Some([n, d]) => if th.dark { n } else { d },
+            None => &self.lines,
+        };
+        for (i, line) in lines.iter().enumerate() {
             let y = body_y + (i as f32 - scroll) * lh;
             if y + lh < top || y > h {
                 continue;
@@ -513,7 +535,7 @@ impl Component for CodeBlock {
                 let n = s.text.chars().count();
                 let take = n.min(vis - shown);
                 let text: String = if take < n { s.text.chars().take(take).collect() } else { s.text.clone() };
-                let c = syntax_color(s.kind, th.dark);
+                let c = s.color.unwrap_or_else(|| syntax_color(s.kind, th.dark));
                 let c = if mark < 0 { alpha(c, 0.75) } else { c };
                 if !text.trim().is_empty() {
                     let (ops, _) = ctx.assets.text(&text, &st.clone().color(alpha(c, fade)), x, y + lh * 0.7);
@@ -661,7 +683,7 @@ impl Component for Terminal {
 
 #[cfg(test)]
 mod tests {
-    use super::super::{build, preview, text::StubAssets, Theme};
+    use super::super::{build, preview, Theme};
     use super::*;
     use serde_json::json;
 
@@ -669,7 +691,7 @@ mod tests {
     fn lexer() {
         let l = highlight("fn main() { let x = \"hi\"; // c\n}", "rust");
         let kinds: Vec<Tok> = l[0].iter().map(|s| s.kind).collect();
-        assert_eq!(l[0][0], Span { text: "fn".into(), kind: Tok::Keyword });
+        assert_eq!(l[0][0], Span { text: "fn".into(), kind: Tok::Keyword, color: None });
         assert!(kinds.contains(&Tok::Function) && kinds.contains(&Tok::String) && kinds.contains(&Tok::Comment));
         let l = highlight("/* a\nb */ x", "ts");
         assert_eq!(l[1][0].kind, Tok::Comment);
@@ -681,25 +703,25 @@ mod tests {
     #[test]
     fn gallery() {
         let th = Theme::default();
-        let a = StubAssets::default();
+        let a = preview::host();
         let code = "import { video } from \"anikit\";\n\n// One spec in, a film out.\nconst film = video({ width: 1920, height: 1080 });\nfilm.scene(\"intro\", { duration: 3 });\n-film.render(\"old.mp4\");\n+await film.render(\"launch.mp4\");";
         let c = build("code", &json!({"code": code, "title": "launch.ts", "typing": 40, "diff": true, "highlights": [{"lines": [4], "at": 3.5}], "glow": "#7c6cff"})).unwrap();
         let end = c.component.duration().unwrap();
         for (i, t) in [0.0, end * 0.4, end + 0.5].iter().enumerate() {
-            let ops = c.eval(*t, 960.0, 540.0, 30.0, &th, &a);
+            let ops = c.eval(*t, 960.0, 540.0, 30.0, &th, a);
             preview::validate(&ops).unwrap();
             if i > 0 {
                 let mut all = vec![super::super::style::rect(0.0, 0.0, 960.0, 540.0, 0.0, super::super::style::solid(th.background))];
                 let mut ops = ops;
                 super::super::transform_ops(&mut ops, &[0.85, 0.0, 0.0, 0.85, 72.0, 40.0]);
                 all.extend(ops);
-                preview::snapshot(&format!("code-{i}"), 960, 540, th.background, all, &a);
+                preview::snapshot(&format!("code-{i}"), 960, 540, th.background, all, a);
             }
         }
         let c = build("terminal", &json!({"lines": ["$ npm install anikit", "added 1 package in 0.4s", "$ npx anikit-video render launch.json", "✓ 1800 frames in 6.1s (295 fps)"], "title": "zsh"})).unwrap();
         let end = c.component.duration().unwrap();
-        let ops = c.eval(end, 720.0, 300.0, 30.0, &th, &a);
+        let ops = c.eval(end, 720.0, 300.0, 30.0, &th, a);
         preview::validate(&ops).unwrap();
-        preview::snapshot("code-terminal", 720, 300, th.background, ops, &a);
+        preview::snapshot("code-terminal", 720, 300, th.background, ops, a);
     }
 }

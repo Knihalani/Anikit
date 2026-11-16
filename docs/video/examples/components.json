@@ -1,0 +1,82 @@
+{
+  "size": "16:9",
+  "fps": 30,
+  "scenes": [
+    {
+      "id": "title",
+      "duration": 3,
+      "layers": [
+        { "type": "component", "component": "meshGradient", "props": { "speed": 1.2 } },
+        { "type": "component", "component": "titleCard", "props": { "eyebrow": "Component gallery", "title": "Everything an agent needs to make a launch video", "subtitle": "Code, charts, devices, UI, particles, 3D and Lottie.", "gradient": ["#ffffff", "#b4a8ff"] } },
+        { "type": "component", "component": "grain", "props": { "amount": 0.05 } }
+      ]
+    },
+    {
+      "id": "code",
+      "duration": 5,
+      "transition": { "type": "wipe", "direction": "left", "edge": "#9c8cff" },
+      "layers": [
+        { "type": "component", "component": "grid", "props": { "reveal": 1 } },
+        { "type": "component", "component": "code", "width": 1200, "height": 560, "props": {
+          "title": "launch.ts", "language": "ts", "typing": 45, "glow": "#7c6cff",
+          "code": "import { video } from \"anikit\";\n\nconst film = video({ size: \"16:9\", fps: 60 });\nfilm.scene(\"intro\", { duration: 3 });\nawait film.render(\"launch.mp4\");",
+          "highlights": [{ "lines": [3], "at": 3.6 }] } },
+        { "type": "component", "component": "cursor", "props": { "path": [[1500, 900], [1180, 760]], "times": [3.0, 3.6], "clicks": [3.7] } }
+      ]
+    },
+    {
+      "id": "charts",
+      "duration": 4,
+      "transition": "push",
+      "layers": [
+        { "type": "component", "component": "dots", "props": { "wave": true } },
+        { "type": "component", "component": "barChart", "x": "28%", "y": "34%", "width": 760, "height": 400, "props": { "values": [32, 54, 41, 78, 66, 92], "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"], "highlight": 5 } },
+        { "type": "component", "component": "lineChart", "x": "72%", "y": "34%", "width": 760, "height": 400, "props": { "series": [[12, 18, 15, 26, 31, 29, 42], [8, 10, 14, 13, 17, 22, 24]], "names": ["Native", "Browser"], "area": true } },
+        { "type": "component", "component": "donutChart", "x": "28%", "y": "78%", "width": 760, "height": 340, "props": { "values": [45, 30, 25], "labels": ["Render", "Encode", "Audio"], "centerLabel": "ms / frame" } },
+        { "type": "component", "component": "stat", "x": "62%", "y": "78%", "width": 380, "height": 240, "props": { "label": "Frames per second", "value": 935, "delta": 12.4, "spark": [3, 4, 3, 5, 6, 8] } },
+        { "type": "component", "component": "counter", "x": "84%", "y": "78%", "width": 360, "height": 240, "props": { "to": 12, "suffix": "×", "size": 140, "label": "faster", "gradient": ["#ffffff", "#9c8cff"] } }
+      ]
+    },
+    {
+      "id": "devices",
+      "duration": 4,
+      "transition": { "type": "zoom" },
+      "layers": [
+        { "type": "component", "component": "aurora" },
+        { "type": "component", "component": "laptop", "x": "60%", "width": 1100, "height": 700, "props": { "open": 0.8 } },
+        { "type": "component", "component": "phone", "x": "22%", "width": 420, "height": 860, "props": { "delay": 0.3, "float": 8 } },
+        { "type": "component", "component": "dust" }
+      ]
+    },
+    {
+      "id": "ui",
+      "duration": 4,
+      "transition": "lightLeak",
+      "layers": [
+        { "type": "component", "component": "gradient", "props": { "colors": ["#0b0c12", "#141028"], "angle": 120 } },
+        { "type": "component", "component": "card", "x": "26%", "y": "40%", "width": 520, "height": 300, "props": { "title": "Instant previews", "body": "Render any frame in under 100 ms, without a browser.", "icon": "bolt", "glow": true } },
+        { "type": "component", "component": "toast", "x": "74%", "y": "22%", "width": 420, "height": 120, "props": { "title": "Deployed to production", "body": "anikit.dev is live in 3 regions", "delay": 0.6, "hold": 2.5 } },
+        { "type": "component", "component": "progressRing", "x": "62%", "y": "62%", "width": 220, "height": 220, "props": { "to": 0.92, "size": 220, "delay": 0.4 } },
+        { "type": "component", "component": "avatarStack", "x": "82%", "y": "62%", "width": 300, "height": 80, "props": { "names": ["Ada Lovelace", "Grace Hopper", "Alan Turing", "Linus T", "Ken T"], "max": 4, "delay": 0.8 } },
+        { "type": "component", "component": "lowerThird", "props": { "title": "Ada Lovelace", "subtitle": "Founder, Analytical Engines", "delay": 1.2, "out": 3.4 } },
+        { "type": "component", "component": "confetti", "props": { "mode": "cannons", "at": 2.2 } }
+      ]
+    },
+    {
+      "id": "outro",
+      "duration": 3,
+      "transition": { "type": "iris" },
+      "layers": [
+        { "type": "component", "component": "starfield", "props": { "fly": true } },
+        { "type": "component", "component": "model", "width": 700, "height": 700, "props": { "shape": "torus", "spin": 40 } },
+        { "type": "component", "component": "titleCard", "y": "85%", "height": 200, "props": { "title": "anikit.dev", "size": 72 } }
+      ]
+    }
+  ],
+  "audio": [
+    { "src": "sfx:whoosh", "start": 2.8 },
+    { "src": { "sfx": "typing", "params": { "duration": 2.5 } }, "start": 3.3, "volume": 0.5 },
+    { "src": "sfx:click", "start": 6.7 },
+    { "src": "sfx:success", "start": 21.2 }
+  ]
+}

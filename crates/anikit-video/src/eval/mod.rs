@@ -6,13 +6,14 @@
 //! base property values and per-property keyframe tracks. [`Evaluator::eval_into`]
 //! then walks the tree and only interpolates.
 
-pub mod component;
+pub mod assets;
 mod compile;
 pub mod expr;
-pub mod text;
 pub mod theme;
 
 use crate::dl::{self, Affine, Blend, DisplayList, Filter, Glyph, ImageId, Op, Paint, Path, Rgba};
+use crate::text::{kinetic::KineticPlan, TextLayout, TextSpec, UnitKind};
+pub use assets::SharedAssets;
 use crate::spec::Diagnostic;
 use anikit_core::easing::Easing;
 use expr::{Expr, Vars};
@@ -204,22 +205,23 @@ pub(crate) enum LoopC {
 /// Per-unit animation of `split` text.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct SplitC {
-    /// 1 chars, 2 words, 3 lines.
-    pub by: u8,
+    pub by: UnitKind,
     /// Tracks in unit space (x/y offsets, scale, rotation, opacity, blur…).
     pub tracks: Vec<Track>,
     /// Delay per unit index.
     pub delays: Vec<f32>,
 }
 
+#[allow(clippy::large_enum_variant)]
 pub(crate) enum Kind {
     Text {
-        block: text::TextBlock,
+        layout: Arc<TextLayout>,
         paint: PaintC,
-        stroke: Option<(StrokeC, f32)>,
+        /// Use the runs' own colours (rich spans).
+        run_colors: bool,
         split: Option<SplitC>,
-        /// `{value}` template: (prefix, suffix, decimals, thousands) plus the layout request.
         counter: Option<Counter>,
+        kinetic: Option<KineticPlan>,
     },
     Shape {
         shape: ShapeKind,
@@ -241,7 +243,7 @@ pub(crate) enum Kind {
         bg: Option<PaintC>,
         border: Option<(f32, Rgba)>,
     },
-    Component(Box<dyn component::Component>),
+    Component(Box<dyn crate::components::Component>, Option<crate::components::Theme>),
 }
 
 pub(crate) struct Counter {
@@ -249,11 +251,8 @@ pub(crate) struct Counter {
     pub suffix: String,
     pub decimals: usize,
     pub thousands: bool,
-    pub family: String,
-    pub weight: f32,
-    pub italic: bool,
-    pub align: u8,
-    pub line_height: f32,
+    /// Layout template (its text is replaced per frame).
+    pub spec: TextSpec,
 }
 
 /// A compiled layer.
@@ -319,28 +318,6 @@ pub(crate) struct SceneC {
     pub layers: Vec<Node>,
 }
 
-/// A resolved audio cue (global times).
-#[derive(Clone, Debug, PartialEq, serde::Serialize)]
-pub struct AudioClip {
-    pub src: std::path::PathBuf,
-    pub at: f32,
-    pub volume: f32,
-    pub trim_start: f32,
-    pub duration: Option<f32>,
-    pub fade_in: f32,
-    pub fade_out: f32,
-    pub looped: bool,
-}
-
-/// A decoded image (straight-alpha RGBA8) for the renderer.
-#[derive(Clone, Debug)]
-pub struct ImageData {
-    pub width: u32,
-    pub height: u32,
-    pub rgba: Arc<Vec<u8>>,
-    pub src: String,
-}
-
 /// Timing summary of one scene.
 #[derive(Clone, Debug, serde::Serialize)]
 pub struct SceneInfo {
@@ -357,13 +334,15 @@ pub struct Evaluator {
     /// Total duration in seconds.
     pub duration: f32,
     pub diagnostics: Vec<Diagnostic>,
-    pub audio: Vec<AudioClip>,
-    pub images: Vec<ImageData>,
+    /// Audio tracks on the global timeline (paths resolved).
+    pub audio: Vec<crate::audio::Track>,
+    /// Fonts and images, shared with the renderers.
+    pub assets: Arc<SharedAssets>,
     pub(crate) easings: Vec<Easing>,
     pub(crate) scenes: Vec<SceneC>,
     pub(crate) overlay: Vec<Node>,
-    pub(crate) text: Arc<dyn text::TextEngine>,
     pub(crate) theme: theme::Theme,
+    pub(crate) ctheme: crate::components::Theme,
 }
 
 /// Errors from building an evaluator: all diagnostics, at least one an error.
@@ -453,7 +432,7 @@ impl Evaluator {
     fn emit_scene(&self, s: &SceneC, t: f32, xf: &Affine, bg_done: bool, out: &mut Vec<Op>) {
         let (w, h) = (self.width as f32, self.height as f32);
         if !bg_done || !matches!(s.bg, PaintC::Solid) {
-            let paint = self.paint(&s.bg, &solid_slots(s.bg_color), 0, [w, h], 1.0);
+            let paint = self.paint(&s.bg, &solid_slots(s.bg_color), prop::FILL, [w, h], 1.0);
             out.push(Op::RoundRect { x: 0.0, y: 0.0, w, h, radius: 0.0, paint, transform: *xf });
         }
         let lt = t - s.start;
@@ -650,7 +629,7 @@ impl Evaluator {
         let xf = dl::mul(parent, &local_xf(&v, n.anchor, w, h));
         let blur = v[prop::BLUR].max(0.0);
         let wipe = v[prop::WIPE].clamp(0.0, 1.0);
-        let is_leaf = matches!(n.kind, Kind::Text { .. } | Kind::Image { .. })
+        let is_leaf = matches!(n.kind, Kind::Text { kinetic: None, .. } | Kind::Image { .. })
             || matches!(&n.kind, Kind::Shape { fill, stroke, .. } if fill.is_none() || stroke.is_none());
         let needs_layer = blur > 0.05
             || n.blend != Blend::Normal
@@ -732,82 +711,68 @@ impl Evaluator {
                     }
                 }
             }
-            Kind::Text { block, paint, stroke, split, counter } => {
+            Kind::Text { layout, paint, run_colors, split, counter, kinetic } => {
                 let owned;
-                let block = if let Some(c) = counter {
-                    owned = self.layout_counter(c, v[prop::VALUE], block.font_size);
+                let layout = if let Some(c) = counter {
+                    owned = self.layout_counter(c, v[prop::VALUE]);
                     &owned
                 } else {
-                    block
+                    layout
                 };
-                // Centre the block in the layer box (it may differ when width is animated).
-                let ox = (w - block.size[0]) * 0.5;
-                let oy = (h - block.size[1]) * 0.5;
+                let lsize = [layout.width, layout.height];
+                // Centre the block in the layer box (it may differ when the box is wider).
+                let ox = (w - lsize[0]) * 0.5;
+                let oy = (h - lsize[1]) * 0.5;
                 let bxf = if ox.abs() > 0.01 || oy.abs() > 0.01 { dl::mul(&xf, &translate(ox, oy)) } else { xf };
-                let fill = self.paint(paint, &v, prop::FILL, block.size, alpha);
-                let stroke = stroke.as_ref().map(|(s, wdt)| (self.paint(&s.paint, &v, prop::STROKE, block.size, alpha), s, *wdt));
-                let reveal = v[prop::REVEAL].clamp(0.0, 1.0);
-                let max_char = if reveal >= 1.0 { u32::MAX } else { (reveal * block.chars as f32).floor() as u32 };
-                match split {
-                    None => emit_glyphs(out, block, &block.glyphs, max_char, &fill, stroke.as_ref(), &bxf),
-                    Some(sp) => {
-                        let units = match sp.by {
-                            1 => block.glyphs.len() as u32,
-                            2 => block.words,
-                            _ => block.lines,
-                        };
-                        let unit_of = |g: &text::PGlyph, k: usize| match sp.by {
-                            1 => k as u32,
-                            2 => g.word,
-                            _ => g.line,
-                        };
-                        let mut k0 = 0;
-                        for u in 0..units {
-                            // Glyph range of this unit (glyphs are in order).
-                            let mut k1 = k0;
-                            while k1 < block.glyphs.len() && unit_of(&block.glyphs[k1], k1) == u {
-                                k1 += 1;
-                            }
-                            if k1 == k0 {
-                                continue;
-                            }
-                            let gs = &block.glyphs[k0..k1];
-                            k0 = k1;
-                            let delay = sp.delays.get(u as usize).copied().unwrap_or(0.0);
-                            let mut uv = prop::DEFAULTS;
-                            for tr in &sp.tracks {
-                                let s = tr.slot as usize;
-                                uv[s] = tr.sample(lt - delay, uv[s], &self.easings);
-                            }
-                            let ua = uv[prop::OPACITY].clamp(0.0, 1.0);
-                            if ua <= 0.0005 {
-                                continue;
-                            }
-                            // Unit box: from first glyph x to last glyph x + advance, line box.
-                            let x0 = gs[0].x;
-                            let x1 = gs[gs.len() - 1].x + gs[gs.len() - 1].advance;
-                            let fsz = block.font_size;
-                            let y0 = gs.iter().map(|g| g.y).fold(f32::MAX, f32::min) - fsz * 0.8;
-                            let y1 = gs.iter().map(|g| g.y).fold(f32::MIN, f32::max) + fsz * 0.25;
-                            let (uw, uh) = (x1 - x0, y1 - y0);
-                            let mut uvv = uv;
-                            uvv[prop::X] = x0 + uw * 0.5 + uv[prop::X];
-                            uvv[prop::Y] = y0 + uh * 0.5 + uv[prop::Y];
-                            let uxf = dl::mul(&bxf, &dl::mul(&local_xf(&uvv, [0.5, 0.5], uw, uh), &translate(-x0, -y0)));
-                            let mut f2 = fill.clone();
-                            scale_alpha(&mut f2, ua);
-                            let s2 = stroke.as_ref().map(|(p, s, w)| {
-                                let mut p = p.clone();
-                                scale_alpha(&mut p, ua);
-                                (p, *s, *w)
-                            });
-                            let ublur = uv[prop::BLUR];
-                            if ublur > 0.05 {
-                                out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: vec![Filter::Blur(ublur)], clip: None, cache_key: None });
-                            }
-                            emit_glyphs(out, block, gs, max_char, &f2, s2.as_ref(), &uxf);
-                            if ublur > 0.05 {
-                                out.push(Op::PopLayer);
+                if let Some(k) = kinetic {
+                    let at = out.len();
+                    k.ops(lt, bxf, out);
+                    if alpha < 1.0 {
+                        for op in &mut out[at..] {
+                            retransform(op, &dl::IDENTITY, alpha);
+                        }
+                    }
+                } else {
+                    let fill = (!*run_colors).then(|| self.paint(paint, &v, prop::FILL, lsize, alpha));
+                    let reveal = v[prop::REVEAL].clamp(0.0, 1.0);
+                    let limit = if reveal >= 1.0 {
+                        u32::MAX
+                    } else {
+                        let k = (reveal * layout.chars.len() as f32).floor() as usize;
+                        layout.chars.get(k).map_or(u32::MAX, |u| u.glyphs.start)
+                    };
+                    match split {
+                        None => emit_glyphs(out, layout, 0..layout.glyphs.len() as u32, limit, fill.as_ref(), alpha, &bxf),
+                        Some(sp) => {
+                            for (u, unit) in layout.units(sp.by).iter().enumerate() {
+                                let delay = sp.delays.get(u).copied().unwrap_or(0.0);
+                                let mut uv = prop::DEFAULTS;
+                                for tr in &sp.tracks {
+                                    let s = tr.slot as usize;
+                                    uv[s] = tr.sample(lt - delay, uv[s], &self.easings);
+                                }
+                                let ua = uv[prop::OPACITY].clamp(0.0, 1.0);
+                                if ua <= 0.0005 {
+                                    continue;
+                                }
+                                let [x0, y0, uw, uh] = unit.rect;
+                                let mut uvv = uv;
+                                uvv[prop::X] = x0 + uw * 0.5 + uv[prop::X];
+                                uvv[prop::Y] = y0 + uh * 0.5 + uv[prop::Y];
+                                let uxf = dl::mul(&bxf, &dl::mul(&local_xf(&uvv, [0.5, 0.5], uw, uh), &translate(-x0, -y0)));
+                                let f2 = fill.as_ref().map(|f| {
+                                    let mut f = f.clone();
+                                    scale_alpha(&mut f, ua);
+                                    f
+                                });
+                                let ublur = uv[prop::BLUR];
+                                if ublur > 0.05 {
+                                    out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: vec![Filter::Blur(ublur)], clip: None, cache_key: None });
+                                }
+                                emit_glyphs(out, layout, unit.glyphs.clone(), limit, f2.as_ref(), alpha * ua, &uxf);
+                                if ublur > 0.05 {
+                                    out.push(Op::PopLayer);
+                                }
                             }
                         }
                     }
@@ -844,10 +809,11 @@ impl Evaluator {
                     self.emit_node(c, cx, &xf, [w, h], alpha, out);
                 }
             }
-            Kind::Component(c) => {
-                let ecx = component::EvalCtx { t: lt, progress: v[prop::PROGRESS], duration: n.end - n.start, fps: self.fps };
+            Kind::Component(c, th) => {
+                let ctx = crate::components::Ctx { width: w, height: h, fps: self.fps, theme: th.as_ref().unwrap_or(&self.ctheme), assets: &*self.assets };
+                let ops = c.eval(lt.max(0.0), &ctx);
                 let k = out.len();
-                c.eval(&ecx, out);
+                out.extend(ops);
                 for op in &mut out[k..] {
                     retransform(op, &xf, alpha);
                 }
@@ -858,21 +824,10 @@ impl Evaluator {
         }
     }
 
-    fn layout_counter(&self, c: &Counter, value: f32, size: f32) -> text::TextBlock {
-        let s = format_value(value as f64, c.decimals, c.thousands);
-        let text = format!("{}{}{}", c.prefix, s, c.suffix);
-        self.text.layout(&text::TextReq {
-            text: &text,
-            family: &c.family,
-            size,
-            weight: c.weight,
-            italic: c.italic,
-            align: c.align,
-            line_height: c.line_height,
-            letter_spacing: 0.0,
-            max_width: None,
-            max_lines: None,
-        })
+    fn layout_counter(&self, c: &Counter, value: f32) -> Arc<TextLayout> {
+        let mut spec = c.spec.clone();
+        spec.text = format!("{}{}{}", c.prefix, format_value(value as f64, c.decimals, c.thousands), c.suffix);
+        self.assets.fonts.layout(&spec)
     }
 
     /// Build a display-list paint; solid colours come from the colour slots.
@@ -904,35 +859,34 @@ impl Evaluator {
     }
 }
 
-fn emit_glyphs(
-    out: &mut Vec<Op>,
-    block: &text::TextBlock,
-    gs: &[text::PGlyph],
-    max_char: u32,
-    fill: &Paint,
-    stroke: Option<&(Paint, &StrokeC, f32)>,
-    xf: &Affine,
-) {
-    let mut i = 0;
-    while i < gs.len() {
-        let font = gs[i].font;
-        let mut j = i;
+/// Emit glyphs `range` (indices into `layout.glyphs`) below `limit`, one op per run.
+fn emit_glyphs(out: &mut Vec<Op>, layout: &TextLayout, range: std::ops::Range<u32>, limit: u32, fill: Option<&Paint>, alpha: f32, xf: &Affine) {
+    let mut i = range.start;
+    let end = range.end.min(limit);
+    while i < end {
+        let run = layout.glyphs[i as usize].run;
+        let r = &layout.runs[run as usize];
         let mut glyphs = Vec::new();
-        while j < gs.len() && gs[j].font == font {
-            if gs[j].char_index < max_char {
-                glyphs.push(Glyph { id: gs[j].id, x: gs[j].x, y: gs[j].y });
-            }
-            j += 1;
+        while i < end && layout.glyphs[i as usize].run == run {
+            let g = layout.glyphs[i as usize];
+            let gl = r.glyphs[g.index as usize];
+            glyphs.push(Glyph { id: gl.id, x: gl.x, y: gl.y });
+            i += 1;
         }
-        if !glyphs.is_empty() {
-            if let Some((p, _s, _w)) = stroke {
-                // Outline text: stroke drawn under the fill as a wider glyph run is not
-                // expressible in the display list yet; approximate with the stroke paint.
-                out.push(Op::Glyphs { font, size: block.font_size, glyphs: glyphs.clone(), paint: p.clone(), transform: *xf });
-            }
-            out.push(Op::Glyphs { font, size: block.font_size, glyphs, paint: fill.clone(), transform: *xf });
+        let paint = match fill {
+            Some(p) => p.clone(),
+            None => Paint::Solid(with_alpha(r.color, alpha)),
+        };
+        out.push(Op::Glyphs { font: r.font, size: r.size, glyphs, paint, transform: *xf });
+    }
+    if limit == u32::MAX && range.start == 0 && range.end as usize == layout.glyphs.len() {
+        for d in &layout.decorations {
+            let paint = match fill {
+                Some(p) => p.clone(),
+                None => Paint::Solid(with_alpha(d.color, alpha)),
+            };
+            out.push(Op::RoundRect { x: d.rect[0], y: d.rect[1], w: d.rect[2], h: d.rect[3], radius: 0.0, paint, transform: *xf });
         }
-        i = j;
     }
 }
 

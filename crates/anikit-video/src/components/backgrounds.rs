@@ -563,13 +563,13 @@ impl Component for Starfield {
 
 #[cfg(test)]
 mod tests {
-    use super::super::{build, preview, text::StubAssets, Theme};
+    use super::super::{build, preview, Theme};
     use serde_json::json;
 
     #[test]
     fn gallery() {
         let th = Theme::default();
-        let a = StubAssets::default();
+        let a = preview::host();
         for (name, p) in [
             ("mesh-gradient", json!({})),
             ("aurora", json!({})),
@@ -581,12 +581,12 @@ mod tests {
             ("gradient", json!({"colors": ["#0b1020", "#2a1060", "#c03a8a"], "angle": 30})),
         ] {
             let c = build(name, &p).unwrap();
-            let mut ops = c.eval(1.0, 960.0, 540.0, 30.0, &th, &a);
+            let mut ops = c.eval(1.0, 960.0, 540.0, 30.0, &th, a);
             if name == "aurora" || name == "mesh-gradient" {
-                ops.extend(build("grain", &json!({})).unwrap().eval(1.0, 960.0, 540.0, 30.0, &th, &a));
+                ops.extend(build("grain", &json!({})).unwrap().eval(1.0, 960.0, 540.0, 30.0, &th, a));
             }
             preview::validate(&ops).unwrap();
-            let px = preview::snapshot(&format!("bg-{name}"), 960, 540, th.background, ops, &a);
+            let px = preview::snapshot(&format!("bg-{name}"), 960, 540, th.background, ops, a);
             assert!(px.chunks(4).any(|p| p[0] as u32 + p[1] as u32 + p[2] as u32 > 30), "{name} drew nothing");
         }
     }

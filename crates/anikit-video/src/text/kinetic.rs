@@ -89,6 +89,73 @@ pub enum KineticStyle {
         #[serde(default)]
         direction: Direction,
     },
+    /// Flip up around the baseline (a 3D-ish card flip faked with a y-scale).
+    Flip,
+    /// Letters converge from wide tracking (`spread` em per unit from centre).
+    Tracking {
+        #[serde(default = "d_spread")]
+        spread: f32,
+    },
+    /// Fall from `distance` em above with a springy landing.
+    Drop {
+        #[serde(default = "d_drop")]
+        distance: f32,
+    },
+    /// Slide in horizontally from `distance` em (negative = from the right).
+    Slide {
+        #[serde(default = "d_slide")]
+        distance: f32,
+    },
+    /// Digital glitch: jittering RGB-split copies that settle.
+    Glitch {
+        #[serde(default = "d_glitch")]
+        amount: f32,
+        #[serde(default)]
+        seed: u32,
+    },
+    /// An underline draws on under each unit.
+    Underline {
+        #[serde(default)]
+        color: Option<Color>,
+        /// Thickness in em.
+        #[serde(default = "d_thick")]
+        thickness: f32,
+    },
+    /// Outlines trace on (stroke trim 0 → 1), then the fill fades in. Stroke width in em.
+    Draw {
+        #[serde(default = "d_draw")]
+        width: f32,
+    },
+    /// Captions: every unit is visible at `dim` alpha; the current unit takes
+    /// `active` colour, spoken units return to full colour. Pair with `times`.
+    Karaoke {
+        #[serde(default)]
+        active: Option<Color>,
+        #[serde(default = "d_dim")]
+        dim: f32,
+    },
+}
+
+fn d_dim() -> f32 {
+    0.35
+}
+fn d_draw() -> f32 {
+    0.022
+}
+fn d_spread() -> f32 {
+    0.6
+}
+fn d_drop() -> f32 {
+    1.2
+}
+fn d_slide() -> f32 {
+    0.8
+}
+fn d_glitch() -> f32 {
+    0.12
+}
+fn d_thick() -> f32 {
+    0.07
 }
 
 fn d_rise() -> f32 {
@@ -172,6 +239,9 @@ pub struct Kinetic {
     pub from: From,
     /// Play as an exit: units disappear in stagger order.
     pub exit: bool,
+    /// Explicit start time per unit in seconds (e.g. word timings from speech),
+    /// overriding `stagger`; units past the end continue at the stagger step.
+    pub times: Option<Vec<f32>>,
 }
 
 impl Default for Kinetic {
@@ -185,13 +255,17 @@ impl Default for Kinetic {
             ease: None,
             from: From::First,
             exit: false,
+            times: None,
         }
     }
 }
 
 /// Style names accepted in shorthand (and as `"style": "<name>"`).
 pub const STYLE_NAMES: &[&str] =
-    &["rise", "fade", "blur", "pop", "typewriter", "scramble", "wave", "highlight", "mask"];
+    &[
+    "rise", "fade", "blur", "pop", "typewriter", "scramble", "wave", "highlight", "mask", "flip", "tracking", "drop",
+    "slide", "glitch", "underline", "draw", "karaoke",
+];
 
 impl KineticStyle {
     /// A style with default parameters by name (`rise`, `blur-in`, `scalePop`, `decode`…).
@@ -209,6 +283,15 @@ impl KineticStyle {
                 KineticStyle::HighlightSweep { color: d_highlight(), padding: d_pad(), radius: d_radius() }
             }
             "mask" | "maskreveal" | "reveal" => KineticStyle::MaskReveal { direction: Direction::Up },
+            "flip" | "flipup" => KineticStyle::Flip,
+            "tracking" | "trackingin" | "spread" | "converge" => KineticStyle::Tracking { spread: d_spread() },
+            "drop" | "fall" | "bounce" => KineticStyle::Drop { distance: d_drop() },
+            "slide" | "slidein" | "slideright" => KineticStyle::Slide { distance: d_slide() },
+            "slideleft" => KineticStyle::Slide { distance: -d_slide() },
+            "glitch" => KineticStyle::Glitch { amount: d_glitch(), seed: 0 },
+            "underline" => KineticStyle::Underline { color: None, thickness: d_thick() },
+            "draw" | "trace" | "handwrite" | "sketch" => KineticStyle::Draw { width: d_draw() },
+            "karaoke" | "caption" | "captions" | "sing" => KineticStyle::Karaoke { active: None, dim: d_dim() },
             _ => return None,
         })
     }
@@ -361,6 +444,41 @@ fn split_tokens(s: &str) -> Vec<String> {
     out
 }
 
+impl TextLayout {
+    /// Ops for one unit (its glyphs, one op per run segment, and the
+    /// decorations under it), with an alpha factor and optional colour
+    /// override. Building block for custom per-unit animation.
+    pub fn unit_ops(&self, u: &Unit, alpha: f32, color: Option<Rgba>, transform: Affine, out: &mut Vec<Op>) {
+        if alpha <= 0.0 {
+            return;
+        }
+        let mut gi = u.glyphs.start;
+        while gi < u.glyphs.end {
+            let run = self.glyphs[gi as usize].run;
+            let mut glyphs = Vec::with_capacity((u.glyphs.end - gi) as usize);
+            while gi < u.glyphs.end && self.glyphs[gi as usize].run == run {
+                let g = self.glyphs[gi as usize];
+                glyphs.push(self.runs[run as usize].glyphs[g.index as usize]);
+                gi += 1;
+            }
+            let r = &self.runs[run as usize];
+            let paint = match color {
+                Some(c) => Paint::Solid(with_alpha(c, alpha)),
+                None => self.paint(r, alpha),
+            };
+            out.push(Op::Glyphs { font: r.font, size: r.size, glyphs, paint, transform });
+        }
+        let line = self.glyphs.get(u.glyphs.start as usize).map(|g| g.line);
+        for d in &self.decorations {
+            let x0 = d.rect[0].max(u.rect[0]);
+            let x1 = (d.rect[0] + d.rect[2]).min(u.rect[0] + u.rect[2]);
+            if x1 > x0 && line == Some(d.line) {
+                out.push(rect_op([x0, d.rect[1], x1 - x0, d.rect[3]], with_alpha(color.unwrap_or(d.color), alpha), transform));
+            }
+        }
+    }
+}
+
 /// Precomputed kinetic animation for one layout.
 pub struct KineticPlan {
     pub layout: Arc<TextLayout>,
@@ -374,6 +492,9 @@ pub struct KineticPlan {
     /// Scramble: per run, the charset's glyph ids and advances (same face and size).
     scramble: Vec<Vec<(u16, f32)>>,
     caret: Rgba,
+    accent: Rgba,
+    /// Draw style: outline path and stroke colour per unit.
+    paths: Vec<(dl::Path, Rgba)>,
 }
 
 impl KineticPlan {
@@ -389,6 +510,14 @@ impl KineticPlan {
             KineticStyle::Wave { .. } => (UnitKind::Char, 0.03, 0.4),
             KineticStyle::HighlightSweep { .. } => (UnitKind::Line, 0.3, 0.6),
             KineticStyle::MaskReveal { .. } => (UnitKind::Line, 0.12, 0.8),
+            KineticStyle::Karaoke { .. } => (UnitKind::Word, 0.35, 0.12),
+            KineticStyle::Flip => (UnitKind::Char, 0.035, 0.6),
+            KineticStyle::Tracking { .. } => (UnitKind::Char, 0.0, 1.2),
+            KineticStyle::Drop { .. } => (UnitKind::Char, 0.04, 0.8),
+            KineticStyle::Slide { .. } => (UnitKind::Word, 0.07, 0.7),
+            KineticStyle::Glitch { .. } => (UnitKind::Word, 0.08, 0.6),
+            KineticStyle::Underline { .. } => (UnitKind::Line, 0.25, 0.6),
+            KineticStyle::Draw { .. } => (UnitKind::Word, 0.15, 1.4),
         };
         let unit = match k.style {
             KineticStyle::Typewriter { .. } | KineticStyle::Scramble { .. } => UnitKind::Char,
@@ -401,6 +530,12 @@ impl KineticPlan {
             KineticStyle::Typewriter { .. } | KineticStyle::Wave { .. } => "linear",
             KineticStyle::HighlightSweep { .. } => "inOutCubic",
             KineticStyle::MaskReveal { .. } => "outExpo",
+            KineticStyle::Flip => "back.out(1.4)",
+            KineticStyle::Tracking { .. } => "outExpo",
+            KineticStyle::Drop { .. } => "spring(bounce: 0.35)",
+            KineticStyle::Slide { .. } => "outQuart",
+            KineticStyle::Underline { .. } => "inOutCubic",
+            KineticStyle::Draw { .. } => "inOutSine",
             _ => "outCubic",
         };
         let ease = k
@@ -416,10 +551,17 @@ impl KineticPlan {
             From::Edges => StaggerFrom::Edges,
             From::Random => StaggerFrom::Random(7),
         };
-        let starts = stagger(n, &Stagger { each: stagger_s as f64, from, ..Default::default() })
-            .into_iter()
-            .map(|d| k.delay + d as f32)
-            .collect();
+        let starts: Vec<f32> = match &k.times {
+            Some(ts) if !ts.is_empty() => (0..n)
+                .map(|i| {
+                    k.delay + ts.get(i).copied().unwrap_or_else(|| ts[ts.len() - 1] + (i + 1 - ts.len()) as f32 * stagger_s)
+                })
+                .collect(),
+            _ => stagger(n, &Stagger { each: stagger_s as f64, from, ..Default::default() })
+                .into_iter()
+                .map(|d| k.delay + d as f32)
+                .collect(),
+        };
         let scramble = match &k.style {
             KineticStyle::Scramble { charset, .. } => layout
                 .runs
@@ -442,7 +584,33 @@ impl KineticPlan {
             _ => layout.runs.first().map_or(Rgba([1.0; 4]), |r| r.color),
         };
         let em = layout.font_size;
-        KineticPlan { layout, k: k.clone(), unit, duration, em, ease, starts, scramble, caret }
+        let accent = Color::hex("#ffd166").unwrap_or_default().0;
+        let paths = match k.style {
+            KineticStyle::Draw { .. } => layout
+                .units(unit)
+                .iter()
+                .map(|u| {
+                    let mut path = dl::Path::new();
+                    let mut color = Rgba([1.0; 4]);
+                    let mut gi = u.glyphs.start;
+                    while gi < u.glyphs.end {
+                        let run = layout.glyphs[gi as usize].run as usize;
+                        let mut gl = Vec::new();
+                        while gi < u.glyphs.end && layout.glyphs[gi as usize].run as usize == run {
+                            gl.push(layout.runs[run].glyphs[layout.glyphs[gi as usize].index as usize]);
+                            gi += 1;
+                        }
+                        color = layout.runs[run].color;
+                        for el in fonts.run_path(&layout.runs[run], &gl).elements() {
+                            path.push(*el);
+                        }
+                    }
+                    (path, color)
+                })
+                .collect(),
+            _ => Vec::new(),
+        };
+        KineticPlan { layout, k: k.clone(), unit, duration, em, ease, starts, scramble, caret, accent, paths }
     }
 
     /// Time at which every unit has finished its entrance.
@@ -464,6 +632,12 @@ impl KineticPlan {
 
     /// Emit the ops for time `t` (seconds since the animation started).
     pub fn ops(&self, t: f32, transform: Affine, out: &mut Vec<Op>) {
+        self.layout.begin_effects(transform, out);
+        self.body(t, transform, out);
+        self.layout.end_effects(out);
+    }
+
+    fn body(&self, t: f32, transform: Affine, out: &mut Vec<Op>) {
         let l = &*self.layout;
         let units = l.units(self.unit);
         // Units at rest are batched into one op per glyph run.
@@ -489,7 +663,43 @@ impl KineticPlan {
                         transform,
                     });
                 }
-                l.ops(transform, out);
+                l.body_ops(transform, out);
+                return;
+            }
+            KineticStyle::Underline { color, thickness } => {
+                l.body_ops(transform, out);
+                let th = thickness * self.em;
+                for (i, u) in units.iter().enumerate() {
+                    let e = self.ease.ease(self.progress(i, t) as f64) as f32;
+                    if e <= 0.0 {
+                        continue;
+                    }
+                    let c = color.map(|c| c.0).unwrap_or(self.accent);
+                    let y = u.baseline + self.em * 0.14;
+                    out.push(Op::RoundRect { x: u.rect[0], y, w: u.rect[2] * e.min(1.0), h: th, radius: th * 0.5, paint: Paint::Solid(c), transform });
+                }
+                return;
+            }
+            KineticStyle::Karaoke { active, dim } => {
+                let act = active.map_or_else(|| l.runs.first().map_or(Rgba([1.0; 4]), |_| self.accent), |c| c.0);
+                for (i, u) in units.iter().enumerate() {
+                    let st = self.starts[i];
+                    let next = self.starts.get(i + 1).copied().unwrap_or(f32::INFINITY).max(st + self.duration);
+                    let fade = |x: f32| (x / self.duration.max(1e-3)).clamp(0.0, 1.0);
+                    if t < st {
+                        self.unit_ops(u, *dim, transform, out);
+                    } else if t < next {
+                        // Current: fade from dim to the active colour.
+                        let e = self.ease.ease(fade(t - st) as f64) as f32;
+                        let base = l.glyphs.get(u.glyphs.start as usize).map_or(act, |g| l.runs[g.run as usize].color);
+                        let c = lerp_rgba(with_alpha(base, *dim), act, e);
+                        l.unit_ops(u, 1.0, Some(c), transform, out);
+                    } else {
+                        let e = fade(t - next);
+                        let base = l.glyphs.get(u.glyphs.start as usize).map_or(act, |g| l.runs[g.run as usize].color);
+                        l.unit_ops(u, 1.0, Some(lerp_rgba(act, base, e)), transform, out);
+                    }
+                }
                 return;
             }
             KineticStyle::Wave { amplitude, wavelength, speed } => {
@@ -554,6 +764,50 @@ impl KineticPlan {
                     let tick = (t * rate).floor() as u32;
                     self.scrambled(u, i as u32, tick ^ seed.wrapping_mul(0x9e37_79b9), transform, out);
                 }
+                KineticStyle::Flip => {
+                    let sy = e.max(0.0);
+                    let by = u.baseline;
+                    let m = [1.0, 0.0, 0.0, sy, 0.0, by - sy * by];
+                    self.unit_ops(u, (p * 2.5).min(1.0), dl::mul(&transform, &m), out);
+                }
+                KineticStyle::Tracking { spread } => {
+                    // Each unit sits `spread` em further from the centre per index.
+                    let rel = i as f32 - (units.len() as f32 - 1.0) * 0.5;
+                    let dx = (1.0 - e) * spread * self.em * rel;
+                    self.unit_ops(u, p.min(1.0).powf(0.6), dl::mul(&transform, &translate(dx, 0.0)), out);
+                }
+                KineticStyle::Drop { distance } => {
+                    let dy = -(1.0 - e) * distance * self.em;
+                    self.unit_ops(u, (p * 4.0).min(1.0), dl::mul(&transform, &translate(0.0, dy)), out);
+                }
+                KineticStyle::Slide { distance } => {
+                    let dx = -(1.0 - e) * distance * self.em;
+                    self.unit_ops(u, (p * 2.0).min(1.0), dl::mul(&transform, &translate(dx, 0.0)), out);
+                }
+                KineticStyle::Glitch { amount, seed } => {
+                    // Jitter changes ~30 times a second and fades out with progress.
+                    let tick = (t * 30.0) as u32;
+                    let h = hash(tick ^ (i as u32).wrapping_mul(0x9e37_79b9) ^ seed);
+                    let j = (1.0 - e).max(0.0) * amount * self.em;
+                    let r1 = ((h & 0xff) as f32 / 127.5 - 1.0) * j;
+                    let r2 = (((h >> 8) & 0xff) as f32 / 127.5 - 1.0) * j * 0.4;
+                    let vis = if p < 0.5 && (h >> 16) & 3 == 0 { 0.0 } else { 1.0 };
+                    let a = (p * 3.0).min(1.0) * vis;
+                    l.unit_ops(u, a * 0.8, Some(Rgba([1.0, 0.1, 0.35, 1.0])), dl::mul(&transform, &translate(r1 - j, r2)), out);
+                    l.unit_ops(u, a * 0.8, Some(Rgba([0.1, 0.9, 1.0, 1.0])), dl::mul(&transform, &translate(-r1 + j, -r2)), out);
+                    self.unit_ops(u, a, dl::mul(&transform, &translate(r1 * 0.3, 0.0)), out);
+                }
+                KineticStyle::Draw { width } => {
+                    let (path, color) = &self.paths[i];
+                    let trace = (e / 0.75).clamp(0.0, 1.0);
+                    let fill = ((e - 0.55) / 0.45).clamp(0.0, 1.0);
+                    if fill > 0.0 {
+                        self.unit_ops(u, fill, transform, out);
+                    }
+                    let mut st = super::layout::text_stroke(width * self.em);
+                    st.trim = [0.0, trace];
+                    out.push(Op::Stroke { path: path.clone(), paint: Paint::Solid(with_alpha(*color, 1.0 - 0.6 * fill)), stroke: st, transform });
+                }
                 KineticStyle::MaskReveal { direction } => {
                     let r = u.rect;
                     let pad = r[3] * 0.25;
@@ -580,14 +834,17 @@ impl KineticPlan {
                     self.unit_ops(u, 1.0, dl::mul(&transform, &translate(dx, dy)), out);
                     out.push(Op::PopLayer);
                 }
-                KineticStyle::HighlightSweep { .. } | KineticStyle::Wave { .. } => unreachable!(),
+                KineticStyle::HighlightSweep { .. }
+                | KineticStyle::Wave { .. }
+                | KineticStyle::Karaoke { .. }
+                | KineticStyle::Underline { .. } => unreachable!(),
             }
         }
         if any_rest {
             for (ri, g) in rest.into_iter().enumerate() {
                 if !g.is_empty() {
                     let r = &l.runs[ri];
-                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: g, paint: Paint::Solid(r.color), transform });
+                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: g, paint: l.paint(r, 1.0), transform });
                 }
             }
         }
@@ -624,34 +881,9 @@ impl KineticPlan {
     }
 
     /// One op per glyph-run segment of a unit.
+    #[inline]
     fn unit_ops(&self, u: &Unit, alpha: f32, transform: Affine, out: &mut Vec<Op>) {
-        if alpha <= 0.0 {
-            return;
-        }
-        let l = &*self.layout;
-        let mut gi = u.glyphs.start;
-        while gi < u.glyphs.end {
-            let run = l.glyphs[gi as usize].run;
-            let mut glyphs = Vec::new();
-            while gi < u.glyphs.end && l.glyphs[gi as usize].run == run {
-                let g = l.glyphs[gi as usize];
-                glyphs.push(l.runs[run as usize].glyphs[g.index as usize]);
-                gi += 1;
-            }
-            let r = &l.runs[run as usize];
-            out.push(Op::Glyphs { font: r.font, size: r.size, glyphs, paint: Paint::Solid(with_alpha(r.color, alpha)), transform });
-        }
-        // Decorations under this unit.
-        for d in &l.decorations {
-            let ux0 = u.rect[0];
-            let ux1 = u.rect[0] + u.rect[2];
-            let x0 = d.rect[0].max(ux0);
-            let x1 = (d.rect[0] + d.rect[2]).min(ux1);
-            let line = l.glyphs.get(u.glyphs.start as usize).map(|g| g.line);
-            if x1 > x0 && line == Some(d.line) {
-                out.push(rect_op([x0, d.rect[1], x1 - x0, d.rect[3]], with_alpha(d.color, alpha), transform));
-            }
-        }
+        self.layout.unit_ops(u, alpha, None, transform, out);
     }
 
     fn scrambled(&self, u: &Unit, idx: u32, tick: u32, transform: Affine, out: &mut Vec<Op>) {
@@ -680,7 +912,7 @@ impl KineticPlan {
             font: r.font,
             size: r.size,
             glyphs: vec![dl::Glyph { id: gid, x, y: base.y }],
-            paint: Paint::Solid(with_alpha(r.color, 0.75)),
+            paint: l.paint(r, 0.75),
             transform,
         });
     }
@@ -696,6 +928,15 @@ fn with_alpha(c: Rgba, a: f32) -> Rgba {
     let mut v = c.0;
     v[3] *= a;
     Rgba(v)
+}
+
+#[inline]
+fn lerp_rgba(a: Rgba, b: Rgba, t: f32) -> Rgba {
+    let mut o = [0.0; 4];
+    for (i, v) in o.iter_mut().enumerate() {
+        *v = a.0[i] + (b.0[i] - a.0[i]) * t;
+    }
+    Rgba(o)
 }
 
 #[inline]
@@ -751,6 +992,8 @@ pub struct CounterPlan {
     font: FontId,
     size: f32,
     color: Rgba,
+    gradient: Option<super::layout::Gradient>,
+    height: f32,
     baseline: f32,
     /// Glyph and advance per char (digits, sign, point, separator, affixes).
     table: Vec<(char, u16, f32)>,
@@ -787,6 +1030,8 @@ impl CounterPlan {
             font: r.map_or(FontId(0), |r| r.font),
             size: r.map_or(c.style.size, |r| r.size),
             color: r.map_or(c.style.color.0, |r| r.color),
+            gradient: c.style.gradient.clone().filter(|g| !g.colors.is_empty()),
+            height: l.height,
             baseline: l.lines.first().map_or(c.style.size, |x| x.baseline),
             table,
         }
@@ -824,7 +1069,14 @@ impl CounterPlan {
         for g in &mut glyphs {
             g.x += shift;
         }
-        out.push(Op::Glyphs { font: self.font, size: self.size, glyphs, paint: Paint::Solid(self.color), transform });
+        let paint = match &self.gradient {
+            Some(g) => match g.paint(x, self.height, 1.0) {
+                Paint::Linear { p0, p1, stops } => Paint::Linear { p0: [p0[0] + shift, p0[1]], p1: [p1[0] + shift, p1[1]], stops },
+                p => p,
+            },
+            None => Paint::Solid(self.color),
+        };
+        out.push(Op::Glyphs { font: self.font, size: self.size, glyphs, paint, transform });
     }
 }
 
@@ -850,4 +1102,55 @@ pub fn format_number(v: f64, decimals: u32, sep: &str, prefix: &str, suffix: &st
     }
     out.push_str(suffix);
     out
+}
+
+/// A text block ready for evaluation: its layout plus optional enter and exit
+/// animations and an anchor. Build once at preprocessing; `ops(t)` per frame.
+pub struct TextBlock {
+    pub layout: Arc<TextLayout>,
+    enter: Option<KineticPlan>,
+    exit: Option<(f32, KineticPlan)>,
+    /// Offset applied so the anchor point lands on the transform's origin.
+    pub offset: [f32; 2],
+}
+
+impl TextBlock {
+    /// `anchor` is a fraction of the block's size (`[0, 0]` top-left,
+    /// `[0.5, 0.5]` centre); `exit_at` is when the exit animation starts.
+    pub fn new(
+        fonts: &FontStore,
+        spec: &TextSpec,
+        enter: Option<&Kinetic>,
+        exit: Option<(&Kinetic, f32)>,
+        anchor: [f32; 2],
+    ) -> Self {
+        let layout = fonts.layout(spec);
+        let offset = [-layout.width * anchor[0], -layout.height * anchor[1]];
+        let enter = enter.map(|k| KineticPlan::new(fonts, layout.clone(), k));
+        let exit = exit.map(|(k, at)| {
+            let mut k = k.clone();
+            k.exit = true;
+            (at, KineticPlan::new(fonts, layout.clone(), &k))
+        });
+        TextBlock { layout, enter, exit, offset }
+    }
+
+    /// Time the enter animation finishes.
+    pub fn enter_duration(&self) -> f32 {
+        self.enter.as_ref().map_or(0.0, |p| p.duration())
+    }
+
+    /// Ops at local time `t` (seconds since the block appeared).
+    pub fn ops(&self, t: f32, transform: Affine, out: &mut Vec<Op>) {
+        let tr = dl::mul(&transform, &translate(self.offset[0], self.offset[1]));
+        if let Some((at, p)) = &self.exit {
+            if t >= *at {
+                return p.ops(t - at, tr, out);
+            }
+        }
+        match &self.enter {
+            Some(p) => p.ops(t, tr, out),
+            None => self.layout.ops(tr, out),
+        }
+    }
 }

@@ -1,10 +1,9 @@
 //! Spec → compiled node tree (with diagnostics).
 #![allow(clippy::type_complexity)]
 
-use super::component::{BuildCtx, Registry};
 use super::expr::Expr;
-use super::text::{ApproxText, TextEngine, TextReq};
-use super::theme::{merge_style, parse_css_color, weight_value, Theme};
+use super::theme::{merge_style, weight_value, Theme};
+use crate::text::{self, FontStore};
 use super::*;
 use crate::spec::validate::{self as val, suggest};
 use crate::spec::{self, Layer, Num, PresetObj, Spec, StyleRef};
@@ -16,17 +15,15 @@ use std::path::PathBuf;
 pub struct Options {
     /// Directory that relative asset paths resolve against.
     pub base_dir: PathBuf,
-    /// Text engine (fonts + shaping). Defaults to a metrics-only stand-in.
-    pub text: Option<Arc<dyn TextEngine>>,
-    /// Available components.
-    pub components: Registry,
+    /// Fonts (bundled fonts by default; share one store across renders).
+    pub fonts: Option<Arc<FontStore>>,
     /// Decode images (off for `check`).
     pub load_assets: bool,
 }
 
 impl Default for Options {
     fn default() -> Self {
-        Options { base_dir: PathBuf::from("."), text: None, components: Registry::new(), load_assets: true }
+        Options { base_dir: PathBuf::from("."), fonts: None, load_assets: true }
     }
 }
 
@@ -81,9 +78,8 @@ struct C<'a> {
     smarkers: BTreeMap<String, f32>,
     scene_start: f32,
     scene_dur: f32,
-    images: Vec<ImageData>,
-    image_ids: HashMap<PathBuf, u32>,
-    text: Arc<dyn TextEngine>,
+    image_ids: HashMap<PathBuf, (u32, [f32; 2])>,
+    assets: Arc<SharedAssets>,
 }
 
 fn size_preset(s: &str) -> Option<[u32; 2]> {
@@ -131,9 +127,8 @@ impl Evaluator {
             smarkers: BTreeMap::new(),
             scene_start: 0.0,
             scene_dur: 3.0,
-            images: Vec::new(),
             image_ids: HashMap::new(),
-            text: opts.text.clone().unwrap_or_else(|| Arc::new(ApproxText)),
+            assets: Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new())))),
         };
         c.ease_ids.insert("linear".into(), 0);
         // Size & fps.
@@ -265,11 +260,11 @@ impl Evaluator {
             duration,
             diagnostics: Vec::new(),
             audio,
-            images: c.images,
+            assets: c.assets,
             easings: c.easings,
             scenes,
             overlay,
-            text: c.text,
+            ctheme: components_theme(&c.theme),
             theme: c.theme,
         };
         (Some(ev), c.d)
@@ -896,6 +891,20 @@ impl C<'_> {
     }
 
     fn layer(&mut self, l: &Layer, path: &str, pc: PCtx) -> Option<Node> {
+        // `"animate": "rise"` (a lone preset) means `"enter": "rise"`.
+        let norm;
+        let l = match &l.animate {
+            Some(a) if l.enter.is_none() && a.len() == 1 && a[0].preset.is_some() && a[0].at.is_none() && a[0].from.is_none() && a[0].to.is_none() && a[0].keyframes.is_none() => {
+                let t = &a[0];
+                norm = Layer {
+                    enter: Some(spec::Preset(PresetObj { preset: t.preset.clone(), duration: t.duration.clone(), ease: t.ease.clone(), spring: t.spring.clone(), ..Default::default() })),
+                    animate: None,
+                    ..l.clone()
+                };
+                &norm
+            }
+            _ => l,
+        };
         let kind = self.infer_kind(l, path)?;
         if l.visible == Some(false) {
             return None;
@@ -923,19 +932,20 @@ impl C<'_> {
         n.end = end;
         n.index = pc.index as f32;
         n.count = pc.count as f32;
-        let life = if end.is_finite() { end - start } else { (self.scene_dur - start).max(0.0) };
 
         // Size (explicit).
         let given_w = l.width.as_ref().map(|v| self.len_c(v, &format!("{path}.width"), pw, 16.0));
         let given_h = l.height.as_ref().map(|v| self.len_c(v, &format!("{path}.height"), ph, 16.0));
         let mut split_presets: Option<(Option<spec::Preset>, Option<spec::Preset>)> = None;
         let mut text_chars = 0usize;
+        let mut kinetic_enter = false;
 
         // Kind-specific.
         let (kind_v, nat) = match kind {
             "text" => {
                 let r = self.text_layer(l, path, given_w, &mut n, pc);
                 text_chars = r.2;
+                kinetic_enter = r.4;
                 if r.3 {
                     split_presets = Some((l.enter.clone(), l.exit.clone()));
                 }
@@ -957,7 +967,7 @@ impl C<'_> {
                 (Kind::Group { children: kids }, size)
             }
             "box" => self.box_layer(l, path, given_w, given_h, start, end, pc, &mut n),
-            _ => self.component_layer(l, path, given_w, given_h, life, &mut n)?,
+            _ => self.component_layer(l, path, given_w, given_h)?,
         };
         n.kind = kind_v;
         n.base[prop::W] = given_w.unwrap_or(nat[0]);
@@ -1079,7 +1089,7 @@ impl C<'_> {
         let life_end = if end.is_finite() { end - start } else { self.scene_dur - start };
         let pctx = PresetCx { life: life_end, chars: text_chars, refs, unit: false };
         if split_presets.is_none() {
-            if let Some(p) = &l.enter {
+            if let (Some(p), false) = (&l.enter, kinetic_enter) {
                 self.preset(&p.0, &format!("{path}.enter"), false, pc.delay, pctx, &mut tw, &mut n);
             }
             if let Some(p) = &l.exit {
@@ -1109,7 +1119,7 @@ impl C<'_> {
             }
         }
         // Components: progress 0 → 1 over the lifetime unless set.
-        if matches!(n.kind, Kind::Component(_)) && l.progress.is_none() && life_end.is_finite() {
+        if matches!(n.kind, Kind::Component(..)) && l.progress.is_none() && life_end.is_finite() {
             tw.insert(0, TweenC { at: 0.0, dur: life_end.max(1e-3), ease: 0, from: vec![(prop::PROGRESS, 1, ValS::Abs(0.0))], to: vec![(prop::PROGRESS, 1, ValS::Abs(1.0))], kf: vec![], repeat: 0, yoyo: false });
         }
         n.tracks = self.tracks(&n.base, &n.exprs, &mut tw, life_end);
@@ -1117,11 +1127,7 @@ impl C<'_> {
         // Split text: presets per unit.
         if let Some((enter, exit)) = split_presets {
             let units = match &n.kind {
-                Kind::Text { split: Some(sp), block, .. } => match sp.by {
-                    1 => block.glyphs.len(),
-                    2 => block.words as usize,
-                    _ => block.lines as usize,
-                },
+                Kind::Text { split: Some(sp), layout, .. } => layout.units(sp.by).len(),
                 _ => 0,
             };
             let mut utw = Vec::new();
@@ -1179,7 +1185,7 @@ impl C<'_> {
     }
 
     /// Returns (kind, natural size, char count, split?).
-    fn text_layer(&mut self, l: &Layer, path: &str, given_w: Option<f32>, n: &mut Node, pc: PCtx) -> (Kind, [f32; 2], usize, bool) {
+    fn text_layer(&mut self, l: &Layer, path: &str, given_w: Option<f32>, n: &mut Node, pc: PCtx) -> (Kind, [f32; 2], usize, bool, bool) {
         let style_name = match &l.style {
             Some(StyleRef::Name(s)) => s.clone(),
             Some(StyleRef::Box(_)) => {
@@ -1213,37 +1219,50 @@ impl C<'_> {
         let weight = st.weight.as_ref().and_then(weight_value).unwrap_or(400.0);
         let ls = st.letter_spacing.as_ref().map(|s| self.len_c(s, &format!("{path}.letterSpacing"), size, size)).unwrap_or(0.0);
         let align = match st.align.as_deref() {
-            None | Some("center") => 1,
-            Some("left") | Some("start") => 0,
-            Some("right") | Some("end") => 2,
+            None | Some("center") => text::Align::Center,
+            Some("left") | Some("start") => text::Align::Left,
+            Some("right") | Some("end") => text::Align::Right,
+            Some("justify") => text::Align::Justify,
             Some(a) => {
                 self.d.push(Diagnostic::error(format!("{path}.align"), format!("unknown align '{a}'")).suggest(suggest(a, val::ALIGNS)));
-                1
+                text::Align::Center
             }
         };
-        let mut text = l.text.clone().unwrap_or_default();
+        let mut raw = l.text.clone().unwrap_or_default();
         if st.uppercase == Some(true) {
-            text = text.to_uppercase();
+            raw = raw.to_uppercase();
         }
+        let col = st.color.clone().unwrap_or(spec::Paint::Css("$text".into()));
+        let (paint, c) = self.paint(&col, &format!("{path}.color")).unwrap_or((PaintC::Solid, Rgba([1.0; 4])));
+        n.base[prop::FILL..prop::FILL + 4].copy_from_slice(&rgba_to_oklab(c));
+        n.base[prop::SIZE] = size;
+        if l.stroke.is_some() {
+            self.d.push(Diagnostic::warning(format!("{path}.stroke"), "outlined text is not supported yet; ignored"));
+        }
+        let style = text::TextStyle {
+            font: family,
+            weight,
+            italic: st.italic.unwrap_or(false),
+            size,
+            color: text::Color(c),
+            letter_spacing: ls / size,
+            line_height: st.line_height.unwrap_or(1.2) as f32,
+            ..Default::default()
+        };
+        let (plain, spans) = self.markup(&raw, path);
+        let run_colors = !spans.is_empty();
+        let mut tspec = text::TextSpec { text: plain.clone(), spans, style, width: given_w, align, max_lines: l.max_lines, ..Default::default() };
         // Counter template.
         let mut counter = None;
-        if let Some(i) = text.find("{value") {
-            if let Some(j) = text[i..].find('}') {
-                let spec_s = &text[i + 6..i + j];
-                let fmt = spec_s.strip_prefix(':').unwrap_or("");
+        if let Some(i) = plain.find("{value") {
+            if let Some(j) = plain[i..].find('}') {
+                let fmt = plain[i + 6..i + j].strip_prefix(':').unwrap_or("").to_string();
                 let thousands = fmt.contains(',');
                 let decimals = fmt.find('.').map(|k| fmt[k + 1..].chars().filter(|c| *c == '0').count()).unwrap_or(0);
-                counter = Some(Counter {
-                    prefix: text[..i].to_string(),
-                    suffix: text[i + j + 1..].to_string(),
-                    decimals,
-                    thousands,
-                    family: family.clone(),
-                    weight,
-                    italic: st.italic.unwrap_or(false),
-                    align,
-                    line_height: st.line_height.unwrap_or(1.2) as f32,
-                });
+                tspec.spans.clear();
+                let mut cs = tspec.clone();
+                cs.style.features = Some("\"tnum\" on".into());
+                counter = Some(Counter { prefix: plain[..i].to_string(), suffix: plain[i + j + 1..].to_string(), decimals, thousands, spec: cs });
                 if l.value.is_none() {
                     self.d.push(Diagnostic::warning(format!("{path}.value"), "the text uses {value} but no 'value' is set (shows 0)"));
                 }
@@ -1258,54 +1277,131 @@ impl C<'_> {
                 self.d.push(Diagnostic::warning(format!("{path}.value"), "'value' is set but the text has no {value} placeholder"));
             }
         }
-        let layout_text = match &counter {
-            Some(c) => format!("{}{}{}", c.prefix, format_value(n.base[prop::VALUE] as f64, c.decimals, c.thousands), c.suffix),
-            None => text.clone(),
-        };
-        let block = self.text.layout(&TextReq {
-            text: &layout_text,
-            family: &family,
-            size,
-            weight,
-            italic: st.italic.unwrap_or(false),
-            align,
-            line_height: st.line_height.unwrap_or(1.2) as f32,
-            letter_spacing: ls,
-            max_width: given_w,
-            max_lines: l.max_lines,
-        });
-        let col = st.color.clone().unwrap_or(spec::Paint::Css("$text".into()));
-        let (paint, c) = self.paint(&col, &format!("{path}.color")).unwrap_or((PaintC::Solid, Rgba([1.0; 4])));
-        n.base[prop::FILL..prop::FILL + 4].copy_from_slice(&rgba_to_oklab(c));
-        n.base[prop::SIZE] = size;
-        let stroke = match &l.stroke {
-            Some(s) => self.stroke(&s.0, l.stroke_width.as_ref(), &format!("{path}.stroke")).map(|(sc, c, w)| {
-                n.base[prop::STROKE..prop::STROKE + 4].copy_from_slice(&rgba_to_oklab(c));
-                n.base[prop::SW] = w;
-                (sc, w)
-            }),
-            None => None,
+        let layout = match &counter {
+            Some(c) => {
+                let mut sp = c.spec.clone();
+                sp.text = format!("{}{}{}", c.prefix, format_value(n.base[prop::VALUE] as f64, c.decimals, c.thousands), c.suffix);
+                self.assets.fonts.layout(&sp)
+            }
+            None => self.assets.fonts.layout(&tspec),
         };
         self.set(n, prop::REVEAL, l.reveal.as_ref(), &format!("{path}.reveal"), 1.0);
+        // Kinetic text: an explicit `kinetic`, or an `enter` that is a TEXT animation (`"scramble"`, `"wave by word"`).
+        let mut from_enter = false;
+        let kin: Option<text::kinetic::Kinetic> = if let Some(k) = &l.kinetic {
+            match serde_json::from_value(k.clone()) {
+                Ok(k) => Some(k),
+                Err(e) => {
+                    self.d.push(Diagnostic::error(format!("{path}.kinetic"), e.to_string()));
+                    None
+                }
+            }
+        } else {
+            match &l.enter {
+                Some(p) if p.0.preset.as_deref().is_some_and(|x| !val::ENTER_PRESETS.contains(&val::canon_preset(x, false))) => {
+                    let name = p.0.preset.as_deref().unwrap();
+                    match text::kinetic::Kinetic::parse(name) {
+                        Ok(mut k) => {
+                            from_enter = true;
+                            if let Some(d) = &p.0.delay {
+                                k.delay += self.time_raw(d, &format!("{path}.enter.delay"));
+                            }
+                            if let Some(d) = &p.0.duration {
+                                k.duration = Some(self.time_raw(d, &format!("{path}.enter.duration")));
+                            }
+                            if let Some(e) = &p.0.ease {
+                                k.ease = Some(e.clone());
+                            }
+                            if let Some(st) = &p.0.stagger {
+                                k.stagger = st.0.each.map(|x| x as f32);
+                            }
+                            Some(k)
+                        }
+                        Err(_) => None,
+                    }
+                }
+                _ => None,
+            }
+        };
+        let kinetic = kin.map(|mut k| {
+            k.delay += pc.delay;
+            text::kinetic::KineticPlan::new(&self.assets.fonts, layout.clone(), &k)
+        });
         let split = match l.split.as_deref() {
             None => None,
-            Some("chars") => Some(1),
-            Some("words") => Some(2),
-            Some("lines") => Some(3),
+            Some("chars") => Some(text::UnitKind::Char),
+            Some("words") => Some(text::UnitKind::Word),
+            Some("lines") => Some(text::UnitKind::Line),
             Some(x) => {
                 self.d.push(Diagnostic::error(format!("{path}.split"), format!("unknown split '{x}'")).suggest(suggest(x, val::SPLITS)));
                 None
             }
         };
-        let chars = layout_text.chars().count();
-        let nat = block.size;
-        let has_split = split.is_some();
-        if has_split && counter.is_some() {
-            self.d.push(Diagnostic::warning(format!("{path}.split"), "split is ignored on counter text"));
+        let chars = layout.chars.len();
+        let nat = [layout.width, layout.height];
+        if split.is_some() && (counter.is_some() || kinetic.is_some()) {
+            self.d.push(Diagnostic::warning(format!("{path}.split"), "split is ignored on counters and kinetic text"));
         }
-        let split = if counter.is_some() { None } else { split.map(|by| SplitC { by, tracks: Vec::new(), delays: Vec::new() }) };
+        let split = if counter.is_some() || kinetic.is_some() { None } else { split.map(|by| SplitC { by, tracks: Vec::new(), delays: Vec::new() }) };
         let has_split = split.is_some();
-        (Kind::Text { block, paint, stroke, split, counter }, nat, chars, has_split)
+        (Kind::Text { layout, paint, run_colors, split, counter, kinetic }, nat, chars, has_split, from_enter)
+    }
+
+    /// Inline markup: `**bold**`, `*italic*`, `[text]{colour}`. Returns the plain text and spans (empty if none).
+    fn markup(&mut self, src: &str, path: &str) -> (String, Vec<text::Span>) {
+        if !src.contains('*') && !src.contains("]{") {
+            return (src.to_string(), Vec::new());
+        }
+        let mut spans: Vec<text::Span> = Vec::new();
+        let mut cur = text::Span::default();
+        let (mut bold, mut ital) = (false, false);
+        let b = src.as_bytes();
+        let mut i = 0;
+        let flush = |spans: &mut Vec<text::Span>, cur: &mut text::Span, bold: bool, ital: bool| {
+            if !cur.text.is_empty() {
+                let mut s = std::mem::take(cur);
+                if bold {
+                    s.weight = Some(700.0);
+                }
+                if ital {
+                    s.italic = Some(true);
+                }
+                spans.push(s);
+            }
+        };
+        while i < b.len() {
+            if src[i..].starts_with("**") {
+                flush(&mut spans, &mut cur, bold, ital);
+                bold = !bold;
+                i += 2;
+            } else if b[i] == b'*' {
+                flush(&mut spans, &mut cur, bold, ital);
+                ital = !ital;
+                i += 1;
+            } else if b[i] == b'[' {
+                if let Some(close) = src[i..].find("]{").map(|k| k + i) {
+                    if let Some(end) = src[close..].find('}').map(|k| k + close) {
+                        flush(&mut spans, &mut cur, bold, ital);
+                        let col = &src[close + 2..end];
+                        let mut sp = text::Span::new(&src[i + 1..close]);
+                        sp.color = self.color(col, path).map(text::Color);
+                        cur = sp;
+                        flush(&mut spans, &mut cur, bold, ital);
+                        i = end + 1;
+                        continue;
+                    }
+                }
+                cur.text.push('[');
+                i += 1;
+            } else {
+                let ch = src[i..].chars().next().unwrap();
+                cur.text.push(ch);
+                i += ch.len_utf8();
+            }
+        }
+        flush(&mut spans, &mut cur, bold, ital);
+        let plain: String = spans.iter().map(|s| s.text.as_str()).collect();
+        (plain, spans)
     }
 
     fn shape_layer(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>, n: &mut Node) -> (Kind, [f32; 2]) {
@@ -1468,27 +1564,28 @@ impl C<'_> {
             }
         };
         let full = self.o.base_dir.join(&src);
-        let (id, nat) = if let Some(&i) = self.image_ids.get(&full) {
-            (i, [self.images[i as usize].width as f32, self.images[i as usize].height as f32])
+        let (id, nat) = if let Some(&(i, nat)) = self.image_ids.get(&full) {
+            (i, nat)
         } else if !full.exists() {
             self.d.push(Diagnostic::error(format!("{path}.src"), format!("file not found: {}", full.display())));
-            (0, [gw.unwrap_or(100.0), gh.unwrap_or(100.0)])
+            (u32::MAX, [gw.unwrap_or(100.0), gh.unwrap_or(100.0)])
         } else if !self.o.load_assets {
             let dims = image::image_dimensions(&full).map(|(w, h)| [w as f32, h as f32]).unwrap_or([100.0, 100.0]);
-            (0, dims)
+            (u32::MAX, dims)
         } else {
-            match image::open(&full) {
-                Ok(img) => {
-                    let rgba = img.to_rgba8();
-                    let (w, h) = rgba.dimensions();
-                    let i = self.images.len() as u32;
-                    self.images.push(ImageData { width: w, height: h, rgba: Arc::new(rgba.into_raw()), src: src.clone() });
-                    self.image_ids.insert(full, i);
-                    (i, [w as f32, h as f32])
+            match image::open(&full).map_err(|e| e.to_string()).and_then(|img| {
+                let rgba = img.to_rgba8();
+                let (w, h) = rgba.dimensions();
+                self.assets.add_rgba(w, h, rgba.into_raw()).map(|id| (id, [w as f32, h as f32]))
+            }) {
+                Ok((id, nat)) => {
+                    self.assets.add_media(&src, id);
+                    self.image_ids.insert(full, (id.0, nat));
+                    (id.0, nat)
                 }
                 Err(e) => {
                     self.d.push(Diagnostic::error(format!("{path}.src"), format!("can't decode image: {e}")));
-                    (0, [100.0, 100.0])
+                    (u32::MAX, [100.0, 100.0])
                 }
             }
         };
@@ -1593,10 +1690,23 @@ impl C<'_> {
         let _ = tree.compute_layout(root, Size { width: AvailableSpace::MaxContent, height: AvailableSpace::MaxContent });
         for (c, id) in kids.iter_mut().zip(&ids) {
             let lay = tree.layout(*id).unwrap();
-            c.base[prop::W] = lay.size.width;
-            c.base[prop::H] = lay.size.height;
-            c.base[prop::X] = lay.location.x + c.anchor[0] * lay.size.width;
-            c.base[prop::Y] = lay.location.y + c.anchor[1] * lay.size.height;
+            let nv = [
+                (prop::W, lay.size.width),
+                (prop::H, lay.size.height),
+                (prop::X, lay.location.x + c.anchor[0] * lay.size.width),
+                (prop::Y, lay.location.y + c.anchor[1] * lay.size.height),
+            ];
+            for (slot, v) in nv {
+                // Tracks were built against the pre-layout base: move them with it.
+                let d = v - c.base[slot];
+                c.base[slot] = v;
+                for tr in c.tracks.iter_mut().filter(|t| t.slot as usize == slot) {
+                    for g in &mut tr.segs {
+                        g.v0 += d;
+                        g.v1 += d;
+                    }
+                }
+            }
         }
         let rl = tree.layout(root).unwrap();
         let size = [rl.size.width, rl.size.height];
@@ -1636,35 +1746,31 @@ impl C<'_> {
         (Kind::Box { children: kids, bg, border }, size)
     }
 
-    fn component_layer(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>, life: f32, _n: &mut Node) -> Option<(Kind, [f32; 2])> {
-        let name = l.component.clone().unwrap_or_default();
-        let Some(f) = self.o.components.get(&name).cloned() else {
-            let names = self.o.components.names();
-            let msg = if names.is_empty() {
-                format!("unknown component '{name}' (no components are registered)")
+    fn component_layer(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>) -> Option<(Kind, [f32; 2])> {
+        let raw = l.component.clone().unwrap_or_default();
+        // Accept camelCase (`barChart`) as well as the catalogue's kebab-case (`bar-chart`).
+        let mut name = String::new();
+        for ch in raw.chars() {
+            if ch.is_ascii_uppercase() {
+                name.push('-');
+                name.push(ch.to_ascii_lowercase());
             } else {
-                format!("unknown component '{name}' (available: {})", names.join(", "))
-            };
-            self.d.push(Diagnostic::error(format!("{path}.component"), msg).suggest(suggest(&name, &names)));
+                name.push(ch);
+            }
+        }
+        let names: Vec<&str> = crate::components::KINDS.iter().map(|k| k.name).collect();
+        if !names.contains(&name.as_str()) {
+            self.d.push(Diagnostic::error(format!("{path}.component"), format!("unknown component '{raw}'")).suggest(suggest(&name, &names)));
             return None;
-        };
+        }
         let props = l.props.clone().unwrap_or(serde_json::Value::Object(Default::default()));
-        let cx = BuildCtx {
-            frame: [self.w, self.h],
-            fps: self.fps,
-            theme: &self.theme,
-            size: [gw, gh],
-            duration: life.is_finite().then_some(life),
-            base_dir: &self.o.base_dir,
-            text: &*self.text,
-        };
-        match f.build(&props, &cx) {
-            Ok(c) => {
-                let s = c.size();
-                Some((Kind::Component(c), s))
+        match crate::components::build(&name, &props) {
+            Ok(p) => {
+                let size = [gw.or(p.w).unwrap_or(self.w), gh.or(p.h).unwrap_or(self.h)];
+                Some((Kind::Component(p.component, p.theme), size))
             }
             Err(e) => {
-                self.d.push(Diagnostic::error(format!("{path}.props"), e));
+                self.d.push(Diagnostic::error(format!("{path}.props"), e.0));
                 None
             }
         }
@@ -1919,7 +2025,7 @@ impl C<'_> {
 
     #[allow(clippy::too_many_arguments)]
     fn preset(&mut self, p: &PresetObj, path: &str, exit: bool, delay: f32, cx: PresetCx, tw: &mut Vec<TweenC>, n: &mut Node) {
-        let name = p.preset.clone().unwrap_or_default();
+        let name = val::canon_preset(p.preset.as_deref().unwrap_or_default(), exit).to_string();
         let list = if exit { val::EXIT_PRESETS } else { val::ENTER_PRESETS };
         if !list.contains(&name.as_str()) {
             let other = if exit { val::ENTER_PRESETS } else { val::EXIT_PRESETS };
@@ -1928,7 +2034,12 @@ impl C<'_> {
             } else {
                 String::new()
             };
-            self.d.push(Diagnostic::error(path, format!("unknown {} preset '{name}'{hint}", if exit { "exit" } else { "enter" })).suggest(suggest(&name, list)));
+            let mut cands: Vec<&str> = list.to_vec();
+            cands.extend(["rise", "drop", "fade", "pop", "grow", "zoom", "blur", "draw", "type", "count", "wipe", "slide", "bounce"]);
+            if matches!(n.kind, Kind::Text { .. }) && !exit {
+                cands.extend(crate::text::kinetic::STYLE_NAMES);
+            }
+            self.d.push(Diagnostic::error(path, format!("unknown {} preset '{name}'{hint}", if exit { "exit" } else { "enter" })).suggest(suggest(&name, &cands)));
             return;
         }
         let (h, w) = (self.h, self.w);
@@ -2047,37 +2158,71 @@ impl C<'_> {
 
     // ---------- audio & captions ----------
 
-    fn audio(&mut self, a: &spec::AudioCue, path: &str, scene_start: f32) -> Option<AudioClip> {
-        let full = self.o.base_dir.join(&a.src);
-        if !full.exists() {
-            self.d.push(Diagnostic::error(format!("{path}.src"), format!("file not found: {}", full.display())));
-        }
+    fn audio(&mut self, a: &spec::AudioCue, path: &str, scene_start: f32) -> Option<crate::audio::Track> {
+        use crate::audio::{Duck, Role, SfxParams, Source, SFX_NAMES};
+        let src = match (&a.src, &a.sfx) {
+            (Some(f), None) => {
+                let full = self.o.base_dir.join(f);
+                if !full.exists() {
+                    self.d.push(Diagnostic::error(format!("{path}.src"), format!("file not found: {}", full.display())));
+                }
+                Source::File(full.to_string_lossy().into_owned())
+            }
+            (None, Some(n)) => {
+                if !SFX_NAMES.contains(&n.as_str()) {
+                    self.d.push(Diagnostic::error(format!("{path}.sfx"), format!("unknown sound effect '{n}'")).suggest(suggest(n, SFX_NAMES)));
+                    return None;
+                }
+                let duration = a.duration.as_ref().map(|x| self.time_raw(x, &format!("{path}.duration")) as f64);
+                Source::Sfx { name: n.clone(), params: SfxParams { duration, pitch: a.pitch.unwrap_or(1.0), seed: 0 } }
+            }
+            (Some(_), Some(_)) => {
+                self.d.push(Diagnostic::error(path, "set either 'src' or 'sfx', not both"));
+                return None;
+            }
+            (None, None) => {
+                self.d.push(Diagnostic::error(path, "an audio cue needs 'src' (a file) or 'sfx' (a built-in effect)"));
+                return None;
+            }
+        };
         let at = scene_start + a.at.as_ref().map(|x| self.time_rel(x, &format!("{path}.at"), 0.0)).unwrap_or(0.0);
         let volume = match &a.volume {
             None => 1.0,
-            Some(Num::Num(v)) => *v as f32,
-            Some(Num::Str(s)) => match s.trim().strip_suffix("dB").or_else(|| s.trim().strip_suffix("db")).and_then(|x| x.trim().parse::<f32>().ok()) {
-                Some(db) => 10f32.powf(db / 20.0),
+            Some(Num::Num(v)) => *v,
+            Some(Num::Str(s)) => match s.trim().strip_suffix("dB").or_else(|| s.trim().strip_suffix("db")).and_then(|x| x.trim().parse::<f64>().ok()) {
+                Some(db) => crate::audio::db_to_gain(db),
                 None => {
                     self.d.push(Diagnostic::error(format!("{path}.volume"), format!("invalid volume '{s}' (0..1 or \"-6dB\")")));
                     1.0
                 }
             },
         };
-        let trim_start = a.trim_start.as_ref().map(|x| self.time_raw(x, &format!("{path}.trimStart"))).unwrap_or(0.0);
-        let duration = a.duration.as_ref().map(|x| self.time_raw(x, &format!("{path}.duration")));
-        if a.duck.is_some() || a.voice.is_some() {
-            self.d.push(Diagnostic::warning(path, "ducking is not supported yet; 'duck' and 'voice' are ignored"));
-        }
-        Some(AudioClip {
-            src: full,
-            at,
+        let trim_start = a.trim_start.as_ref().map(|x| self.time_raw(x, &format!("{path}.trimStart")) as f64);
+        let duration = match &a.sfx {
+            None => a.duration.as_ref().map(|x| self.time_raw(x, &format!("{path}.duration")) as f64),
+            Some(_) => None,
+        };
+        let duck = match &a.duck {
+            None | Some(serde_json::Value::Bool(false)) => None,
+            Some(serde_json::Value::Bool(true)) => Some(Duck::default()),
+            Some(serde_json::Value::Number(n)) => Some(Duck { amount_db: n.as_f64().unwrap_or(12.0).abs(), ..Default::default() }),
+            Some(v) => {
+                self.d.push(Diagnostic::error(format!("{path}.duck"), format!("expected true or a reduction in dB, got {v}")));
+                None
+            }
+        };
+        Some(crate::audio::Track {
+            src,
+            start: at as f64,
+            trim: trim_start.map(|t| [t, 0.0]),
             volume,
-            trim_start,
-            duration,
-            fade_in: a.fade_in.unwrap_or(0.0) as f32,
-            fade_out: a.fade_out.unwrap_or(0.0) as f32,
+            db: 0.0,
+            fade_in: a.fade_in.unwrap_or(0.0),
+            fade_out: a.fade_out.unwrap_or(0.0),
             looped: a.loop_.unwrap_or(false),
+            duration,
+            duck,
+            role: if a.voice == Some(true) { Some(Role::Voice) } else { None },
         })
     }
 
@@ -2168,7 +2313,37 @@ pub(crate) fn parse_srt(s: &str) -> Vec<spec::CaptionCue> {
     out
 }
 
-#[allow(dead_code)]
-fn _unused(_: &Option<serde_json::Value>) -> Option<f32> {
-    parse_css_color("#000").map(|c| c.0[0])
+/// Map the spec theme onto the components' theme.
+fn components_theme(t: &Theme) -> crate::components::Theme {
+    let mut c = crate::components::Theme::dark();
+    let get = |k: &str| t.colors.get(k).copied();
+    if let Some(v) = get("bg") {
+        c.dark = (v.0[0] + v.0[1] + v.0[2]) < 1.5;
+        if !c.dark {
+            c = crate::components::Theme::light();
+        }
+        c.background = v;
+    }
+    if let Some(v) = get("surface") {
+        c.surface = v;
+    }
+    if let Some(v) = get("text") {
+        c.text = v;
+    }
+    if let Some(v) = get("muted") {
+        c.muted = v;
+    }
+    if let Some(v) = get("primary") {
+        c.accent = v;
+    }
+    let mut pal: Vec<Rgba> = ["primary", "secondary", "accent"].iter().filter_map(|k| get(k)).collect();
+    for p in &c.palette {
+        if pal.len() >= 8 {
+            break;
+        }
+        pal.push(*p);
+    }
+    c.palette = pal;
+    c.radius = t.radius;
+    c
 }
