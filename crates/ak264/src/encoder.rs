@@ -126,10 +126,10 @@ const CBP_INTER: [u8; 48] = [
 /// Residual data of one macroblock (levels in raster order per 4×4 block).
 #[derive(Clone)]
 struct Coded {
-    luma: [[i32; 16]; 16],
+    luma: [[i16; 16]; 16],
     dc: [i32; 16],
     cdc: [[i32; 4]; 2],
-    cac: [[[i32; 16]; 4]; 2],
+    cac: [[[i16; 16]; 4]; 2],
     nz: [u8; 16],
     nzc: [[u8; 4]; 2],
     cbp: u8,
@@ -842,7 +842,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             let n = quant4(&mut co, &q, true, false);
             clamp_levels(&mut co);
             let bi = by * 4 + bx;
-            cd.luma[bi] = co;
+            cd.luma[bi] = co.map(|v| v as i16);
             cd.nz[bi] = n as u8;
             let mut out = best_pred;
             if n > 0 {
@@ -1190,7 +1190,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                     let (bx, by) = (BLK_X[k], BLK_Y[k]);
                     let blk = &cd.luma[by * 4 + bx];
                     for j in 0..15 {
-                        scan[j] = blk[ZIGZAG[j + 1]];
+                        scan[j] = blk[ZIGZAG[j + 1]] as i32;
                     }
                     let nc = self.nc_luma(mbx, mby, bx, by, &cd.nz);
                     write_block(self.w, &scan[..15], nc);
@@ -1204,7 +1204,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 let (bx, by) = (BLK_X[k], BLK_Y[k]);
                 let blk = &cd.luma[by * 4 + bx];
                 for j in 0..16 {
-                    scan[j] = blk[ZIGZAG[j]];
+                    scan[j] = blk[ZIGZAG[j]] as i32;
                 }
                 let nc = self.nc_luma(mbx, mby, bx, by, &cd.nz);
                 write_block(self.w, &scan, nc);
@@ -1221,7 +1221,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 for b in 0..4 {
                     let blk = &cd.cac[comp][b];
                     for j in 0..15 {
-                        scan[j] = blk[ZIGZAG[j + 1]];
+                        scan[j] = blk[ZIGZAG[j + 1]] as i32;
                     }
                     let nc = self.nc_chroma(mbx, mby, comp, b & 1, b >> 1, &cd.nzc[comp]);
                     write_block(self.w, &scan[..15], nc);
@@ -1302,7 +1302,7 @@ fn cabac_residual(
                 break;
             }
             for j in 0..15 {
-                scan[j] = blk[ZIGZAG[j + 1]];
+                scan[j] = blk[ZIGZAG[j + 1]] as i32;
             }
             cb.residual(w, &scan[..15], Cat::LumaAc, luma_inc(bx, by));
         } else {
@@ -1310,7 +1310,7 @@ fn cabac_residual(
                 continue;
             }
             for j in 0..16 {
-                scan[j] = blk[ZIGZAG[j]];
+                scan[j] = blk[ZIGZAG[j]] as i32;
             }
             cb.residual(w, &scan, Cat::Luma4x4, luma_inc(bx, by));
         }
@@ -1332,7 +1332,7 @@ fn cabac_residual(
                 let ib = if by > 0 { (cd.nzc[comp][bx] > 0) as usize } else { ext(b, &|m| m.nzc[comp][2 + bx] > 0) };
                 let src = &cd.cac[comp][blk];
                 for j in 0..15 {
-                    scan[j] = src[ZIGZAG[j + 1]];
+                    scan[j] = src[ZIGZAG[j + 1]] as i32;
                 }
                 cb.residual(w, &scan[..15], Cat::ChromaAc, ia + 2 * ib);
             }
@@ -1348,7 +1348,7 @@ fn clamp_levels(c: &mut [i32; 16]) {
 }
 
 /// x264-style decimation score of a 4×4 block (raster levels, scan order walk).
-fn decimate_score(c: &[i32; 16]) -> u32 {
+fn decimate_score(c: &[i16; 16]) -> u32 {
     const DS: [u32; 16] = [3, 2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     let mut i = 15isize;
     while i >= 0 && c[ZIGZAG[i as usize]] == 0 {
@@ -1403,7 +1403,7 @@ fn luma_inter_impl(src: &[u8; 256], pred: &[u8; 256], qs: &QuantS, cd: &mut Code
         cd.nz[b] = nz[b];
         if nz[b] > 0 {
             for k in 0..16 {
-                cd.luma[b][k] = c[k][b] as i32;
+                cd.luma[b][k] = c[k][b];
             }
             score8[(b >> 3) * 2 + ((b & 3) >> 1)] += decimate_score(&cd.luma[b]);
         }
@@ -1449,7 +1449,7 @@ fn luma_i16_impl(src: &[u8; 256], pred: &[u8; 256], q: &Quant, qs: &QuantS, cd: 
         if nz[b] > 0 {
             any_ac = true;
             for k in 0..16 {
-                cd.luma[b][k] = c[k][b] as i32;
+                cd.luma[b][k] = c[k][b];
             }
         }
     }
@@ -1491,7 +1491,7 @@ fn chroma_resid_impl(
         cd.nzc[comp][b] = nz[l];
         if nz[l] > 0 {
             for k in 0..16 {
-                cd.cac[comp][b][k] = c[k][l] as i32;
+                cd.cac[comp][b][k] = c[k][l];
             }
             if !intra {
                 score += decimate_score(&cd.cac[comp][b]);

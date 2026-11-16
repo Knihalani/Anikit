@@ -665,3 +665,24 @@ pub fn sad64(a: &[u8; 64], b: &[u8; 64]) -> u32 {
     #[cfg(not(target_arch = "x86_64"))]
     a.iter().zip(b).map(|(&x, &y)| (x as i32 - y as i32).unsigned_abs()).sum()
 }
+
+/// `clip((base + b*x) >> 5)` for x in 0..16.
+#[inline(always)]
+pub fn plane_row16(base: i32, b: i32) -> [u8; 16] {
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: SSE2 is baseline.
+    unsafe {
+        use std::arch::x86_64::*;
+        let v: [__m128i; 4] = core::array::from_fn(|k| {
+            let k = k as i32 * 4;
+            _mm_srai_epi32(_mm_setr_epi32(base + b * k, base + b * (k + 1), base + b * (k + 2), base + b * (k + 3)), 5)
+        });
+        let lo = _mm_packs_epi32(v[0], v[1]);
+        let hi = _mm_packs_epi32(v[2], v[3]);
+        let mut o = [0u8; 16];
+        _mm_storeu_si128(o.as_mut_ptr() as *mut __m128i, _mm_packus_epi16(lo, hi));
+        o
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    core::array::from_fn(|x| ((base + b * x as i32) >> 5).clamp(0, 255) as u8)
+}
