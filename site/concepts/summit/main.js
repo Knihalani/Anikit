@@ -138,7 +138,7 @@ function frame(timeMs, dtMs) {
   // The mountain stops once the portal covers the whole screen.
   const cover = portal.r > 0 && portal.r >= Math.hypot(Math.max(portal.x, innerWidth - portal.x), Math.max(portal.y, innerHeight - portal.y));
   if (cover === mountainOn) { mountainOn = !cover; mountainCanvas.style.visibility = cover ? 'hidden' : ''; }
-  if (mountainOn) mountain.frame(t, dt, io.p, look, io.push);
+  if (mountainOn) mountain.frame(t, dt, io.p, look, io.push, portal);
   // The hall shows only inside the portal.
   if (portal.r > 0.5) {
     const key = cover ? 'none' : `circle(${portal.r.toFixed(1)}px at ${portal.x.toFixed(1)}px ${portal.y.toFixed(1)}px)`;
