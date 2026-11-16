@@ -670,7 +670,9 @@ function lookAt(out: Float32Array, c: SplatCamera): void {
   out[3] = 0; out[7] = 0; out[11] = 0; out[15] = 1;
 }
 
-/** out = view · model(t) */
+const MODEL = new Float64Array(16);
+
+/** out = view · model(t) (no allocation). */
 function modelView(out: Float32Array, view: ArrayLike<number>, t: SplatTransform): void {
   const r = Math.PI / 180;
   const cx = Math.cos(t.rotateX * r), sx = Math.sin(t.rotateX * r);
@@ -681,7 +683,11 @@ function modelView(out: Float32Array, view: ArrayLike<number>, t: SplatTransform
   const m00 = cz * cy, m10 = sz * cy, m20 = -sy;
   const m01 = cz * sy * sx - sz * cx, m11 = sz * sy * sx + cz * cx, m21 = cy * sx;
   const m02 = cz * sy * cx + sz * sx, m12 = sz * sy * cx - cz * sx, m22 = cy * cx;
-  const M = [m00 * s, m10 * s, m20 * s, 0, m01 * s, m11 * s, m21 * s, 0, m02 * s, m12 * s, m22 * s, 0, t.x, t.y, t.z, 1];
+  const M = MODEL;
+  M[0] = m00 * s; M[1] = m10 * s; M[2] = m20 * s; M[3] = 0;
+  M[4] = m01 * s; M[5] = m11 * s; M[6] = m21 * s; M[7] = 0;
+  M[8] = m02 * s; M[9] = m12 * s; M[10] = m22 * s; M[11] = 0;
+  M[12] = t.x; M[13] = t.y; M[14] = t.z; M[15] = 1;
   for (let c = 0; c < 4; c++) {
     for (let rr = 0; rr < 4; rr++) {
       out[c * 4 + rr] = view[rr] * M[c * 4] + view[4 + rr] * M[c * 4 + 1] + view[8 + rr] * M[c * 4 + 2] + view[12 + rr] * M[c * 4 + 3];
