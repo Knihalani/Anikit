@@ -316,8 +316,46 @@ export function measureAuto(el: HTMLElement, prop: string): number {
 // ---------------------------------------------------------------------------
 
 
-/** Key/offset arrays shared by Parts with the same property set (see `Part.prep`). */
-const compactCache = new Map<string, [string[], Int32Array]>();
+/**
+ * Writer for one property set: `t["x"] = f[a + 0]; t["y"] = f[a + 1]; …`
+ * compiled once per distinct key/offset signature and shared by every Part
+ * with that signature. Constant keys make each store a monomorphic named
+ * store, where the generic `t[k[i]] = …` loop is a megamorphic keyed store
+ * (V8 boxes the double and probes the stub cache): ~3x faster at 50k objects.
+ * Same values, same order, so results are identical to the loop.
+ */
+type Writer = (t: any, f: Float64Array, at: number) => void;
+/** `undefined`: not probed yet; `false`: code generation is blocked (CSP) or disabled. */
+let codegen: boolean | undefined;
+/** Testing hook: force the generic loop (`false`) or re-probe (`undefined`); returns the previous state. */
+export function _setCodegen(on: boolean | undefined): boolean | undefined {
+  const prev = codegen;
+  codegen = on;
+  compactCache.clear();
+  return prev;
+}
+function makeWriter(keys: string[], offs: Int32Array): Writer | null {
+  if (codegen === false) return null;
+  // Strict, like this module: writing to a frozen target or a getter-only
+  // property throws here exactly as it does in the generic loop.
+  let body = '"use strict";';
+  for (let i = 0; i < keys.length; i++) {
+    if (typeof keys[i] !== 'string') return null;
+    body += `t[${JSON.stringify(keys[i])}]=f[a+${offs[i]}];`;
+  }
+  try {
+    const fn = new Function('t', 'f', 'a', body) as Writer;
+    codegen = true;
+    return fn;
+  } catch {
+    // Content-Security-Policy without 'unsafe-eval': probe once, then use the loop.
+    codegen = false;
+    return null;
+  }
+}
+
+/** Key/offset arrays (and their writer) shared by Parts with the same property set (see `Part.prep`). */
+const compactCache = new Map<string, [string[], Int32Array, Writer | null]>();
 
 /** Per-target engine node. */
 class Part implements NodeRecord, Owner, Linked {
@@ -342,6 +380,7 @@ class Part implements NodeRecord, Owner, Linked {
   pt: any = null;
   pk: string[] | null = null;
   po: Int32Array | null = null;
+  pw: Writer | null = null;
   /** 0 = not checked yet, 1 = compact path, 2 = general path. */
   pm = 0;
   private prep(): void {
@@ -356,12 +395,14 @@ class Part implements NodeRecord, Owner, Linked {
     const sig = b.map((x) => x.key + ':' + x.off).join(',');
     let shared = compactCache.get(sig);
     if (shared === undefined) {
-      shared = [b.map((x) => x.key), Int32Array.from(b, (x) => x.off)];
+      const keys = b.map((x) => x.key), offs = Int32Array.from(b, (x) => x.off);
+      shared = [keys, offs, makeWriter(keys, offs)];
       compactCache.set(sig, shared);
     }
     this.pt = t;
     this.pk = shared[0];
     this.po = shared[1];
+    this.pw = shared[2];
     this.pm = 1;
   }
   render(): void {
@@ -370,8 +411,12 @@ class Part implements NodeRecord, Owner, Linked {
     if (this.pm !== 2) {
       if (this.pm === 0) this.prep();
       if (this.pm === 1) {
-        const t = this.pt, k = this.pk!, o = this.po!;
-        for (let i = 0; i < k.length; i++) t[k[i]] = f[at + o[i]];
+        const w = this.pw;
+        if (w !== null) w(this.pt, f, at);
+        else {
+          const t = this.pt, k = this.pk!, o = this.po!;
+          for (let i = 0; i < k.length; i++) t[k[i]] = f[at + o[i]];
+        }
         if (this.upd) {
           const c = this.ctl;
           if (c !== null) c._touch();

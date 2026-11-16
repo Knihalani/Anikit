@@ -76,6 +76,8 @@ End to end:
 `bench.mjs` on plain objects is dominated by the TypeScript per-object write
 path (the core's share of a 10k-object tick is ~0.2 ms of ~1.7 ms), which was
 out of scope here, so core changes don't move it.
+The [second round](#second-round-plain-objects-end-to-end) below takes that
+path on.
 
 Wasm size: 397,170 → 403,742 bytes after `wasm-opt` (+6.6 KB, of which 4.8 KB
 is the two-phase splat draw, §1).
@@ -218,3 +220,196 @@ wasm OKLab tween tick (50k): 5.28–5.87 → 3.61–3.78 ms.
 | Physics: dense pair loop per body against contiguous neighbour runs; bounds-check-free integrate; `[x, y, r, w]` gather (all exact) | within noise on wasm, slower natively at 1k bodies (cells hold ~one body, so the per-run setup dominates). The world is pinned by a golden scenario test (native + wasm) for future attempts. |
 | `ease_slice` compiled per polynomial curve/mode (exact) | ~3% on a staggered `inOutQuad` batch for +3.3 KB of wasm. |
 | Inlining all of `eval_into` | same speed-up as the split, but +6 KB of wasm (two copies). |
+
+## Second round: plain objects end to end
+
+Goal: `scripts/bench.mjs` (N plain objects animated by one `animate()` call
+vs GSAP 3, ms per frame) at or below GSAP on every row. Starting point:
+`fc71751`. Same VM and caveats as above; every before/after pair below was
+measured interleaved, usually with a split harness that times `ak_tick` and
+`flush()` separately (wasm in Node, 50k objects, 60 frames, median of 5
+runs, several interleaved rounds).
+
+Where the time went at the start (50k objects x 3 numbers): `ak_tick` ~2.1 ms,
+`flush()` ~3.1 ms. In the core, ~250 instructions per object (callgrind):
+timing evaluation, phase bookkeeping, three easing calls and three track
+structs for three lerps. In JS, the keyed store `t[k[i]] = f[at + o[i]]`
+sees every key, goes megamorphic, and V8 boxes each double.
+
+### Results
+
+`bench.mjs`, ms per frame, median of 5 runs after 100 warm-up frames (the
+script used to warm up for 5 frames, see below). `fc71751`: one run; now:
+three runs.
+
+| Case | N | `fc71751` | now | GSAP 3 (now runs) | now vs GSAP |
+|---|---:|---:|---:|---:|---:|
+| 3 numbers, `outCubic` | 1k | 0.085 | 0.021–0.057 | 0.067–0.078 | 1.4–3.3x faster |
+| 〃 | 10k | 0.969 | 0.372–0.439 | 0.509–0.687 | 1.3–1.9x faster |
+| 〃 | 50k | 4.633 | 1.854–2.032 | 2.529–2.756 | 1.3–1.4x faster |
+| colour string | 1k | 0.075 | 0.052–0.060 | 0.088–0.123 | 1.5–2.4x faster |
+| 〃 | 10k | 0.941 | 0.688–0.727 | 0.886–0.978 | 1.2–1.4x faster |
+| 〃 | 50k | 4.676 | 3.390–3.547 | 4.543–4.944 | 1.3–1.5x faster |
+| 8 keyframes, `inOutSine` | 1k | 0.053 | 0.031–0.036 | 0.024–0.026 | 0.7–0.8x |
+| 〃 | 10k | 0.658 | 0.435–0.461 | 0.270–0.305 | 0.6–0.7x |
+| 〃 | 50k | 3.321 | 2.189–2.314 | 1.206–1.449 | 0.5–0.7x |
+
+At 100k (one run): 3 numbers 3.68 vs GSAP 5.85 ms, colour 7.85 vs 11.51 ms,
+8 keyframes 4.77 vs 2.61 ms, `batch()` 0.37 ms.
+
+**Keyframes stay behind GSAP.** After these changes a 50k-object keyframe
+frame is ~1.1 ms of wasm tick (~20 ns per object: the node, its track and its
+keyframe data are separate allocations, and the size sweep shows ~14 ns per
+object even when everything is cache resident) plus ~1.0–1.2 ms of JS writes.
+Part of the write cost is not ours to remove: the benchmark's props literal
+`{ x: [0, 50, …] }` shares V8's `{ x }` shape with the targets and makes its
+`x` field tagged (`--trace-generalization` shows it at `bench.mjs:46`), so
+every double written to a target allocates a heap number (32 scavenges vs 8
+for a single-segment `{ x: 500 }` over the same run). GSAP's targets share
+that shape too.
+
+**Warm-up.** `bench.mjs` now runs 100 untimed frames before each measurement
+for both libraries (`WARMUP=5` gives the old method). With 5 frames the first
+(1k) rows timed code V8 had not tiered up yet; the 50k rows are within noise
+either way (`fc71751`, 3 numbers 50k: 4.13 ms with 5, 4.63 ms with 100).
+
+**DOM** (`bench-dom.mjs`, Chromium, script ms per frame, two interleaved runs
+each, `fc71751` vs now): 500 elements 0.74 / 0.83 vs 0.76 / 0.87; 2,000
+3.29 / 2.58 vs 2.73 / 2.45; 5,000 8.75 / 7.59 vs 8.01 / 8.00, i.e. unchanged
+within noise (elements write through transform bindings, not the plain-object
+writers below).
+
+Kernel benchmarks, `fc71751` vs now (one run each, except the springs,
+batch, cloud and emitter rows: two interleaved runs each, which differ by
+VM noise only, as those code paths did not change; the rows marked * have
+every animation at the same progress or colour, so the memos hit on every
+animation after the first; staggered work doesn't get that):
+
+| Kernel | Size | `fc71751` | now |
+|---|---:|---:|---:|
+| `bench-wasm.mjs` tick: tween 1 number, `outCubic` * | 100k | 2.21 ms | 1.84 ms |
+| 〃 tween 1 number, cubic-bezier * | 100k | 5.09 ms | 1.99 ms |
+| 〃 x, y, opacity + OKLab colour * | 50k | 3.66 ms | 2.39 ms |
+| 〃 8 keyframes, spring easing * | 50k | 3.18 ms | 1.41 ms |
+| 〃 springs: retarget 2 ch + tick | 10k | 0.65–0.72 ms | 0.68–0.72 ms |
+| 〃 batch: 3 channels, `outCubic` | 100k | 0.35–0.38 ms | 0.38–0.50 ms |
+| 〃 cloud: step | 150k | 1.66–1.67 ms | 1.59–1.98 ms |
+| 〃 emitter: step | 100k | 1.42–1.43 ms | 1.45–1.47 ms |
+| native `bench`: tween 1 number, `outCubic` * | 100k | 1.48 ms | 1.38 ms |
+| 〃 x, y, opacity + OKLab colour * | 50k | 3.33 ms | 1.40 ms |
+| 〃 keyframes: 8 kf, spring * | 50k | 2.32 ms | 0.93 ms |
+| 〃 timeline: 1 group x 50k children (staggered starts) | 50k | 0.53 ms | 0.58 ms |
+| 〃 animate(): group of 50k x 3 tracks (new row) | 50k | — | 0.96 ms |
+| 〃 animate(): group of 50k, 8 kf (new row) | 50k | — | 0.77 ms |
+
+Wasm size: 657,280 → 665,608 bytes after `wasm-opt` (+8.3 KB).
+
+### 1. One generated writer per plain-object key set (JS)
+
+Parts whose bindings all write plain properties of one target already shared
+key/offset arrays. Each distinct key/offset signature now also gets a writer
+`t["x"]=f[a+0];t["y"]=f[a+1];…`, compiled once with `new Function` and shared
+by every Part with that signature, so each store is a monomorphic named store.
+Same values, same order. Code generation is probed once; under a CSP without
+`'unsafe-eval'` the first attempt fails, is remembered, and the generic loop
+is used (one violation report, not one per key set). This is one function per
+property-set shape, not a closure per binding: the `Binding` loop is
+untouched. Test: `animate: plain-object write path` runs one scenario
+(including a mid-animation overwrite that drops a target out of its key set,
+a seek and a second key set) through both paths and compares every value.
+
+| `flush()`, 50k x 3 numbers | before | after |
+|---|---:|---:|
+| one key set in the process | 3.07 ms | 0.89–0.92 ms |
+| four other key sets used first (polymorphic writer call) | 2.54–2.78 ms | 1.00–1.06 ms |
+| 8 keyframes, four other key sets used first | 1.43 ms | 1.23–1.25 ms |
+
+### 2. Easing memo (core)
+
+The children of one `animate()` call share their timing, so each frame every
+child and track evaluates the same easing at the same progress. The frame loop
+keeps the last `(easing id, bits of t) → result`; `Easing::ease` is pure and
+the registry append-only, so this is exact (bits, so `-0.0`/`0.0` and NaNs
+never alias). Test: `memoised_easing_matches_direct_evaluation_bit_for_bit`
+(90 children with staggered starts and delays, timing easings, repeats,
+alternate direction, five easing ids interleaved, vs a direct evaluation).
+
+| | before | after |
+|---|---:|---:|
+| `ak_tick`, 50k x 3 numbers | 2.08–2.26 ms | 1.66–1.69 ms |
+| `ak_tick`, 50k x 8 keyframes | 1.78–1.87 ms | 1.58–1.64 ms |
+
+`bench-wasm.mjs` rows whose anims all share one progress hit the memo too
+(cubic-bezier 100k 5.09 → 1.82 ms, 8 keyframes spring 50k 3.18 → 1.53 ms);
+staggered work doesn't get this.
+
+### 3. Timing lane for group children (core)
+
+After a group child is rendered in full in its active phase, the next child
+whose local time and timing are bit-identical and which is already steady in
+the same active iteration only sets its time, evaluates its tracks at the
+known eased progress and is reported updated: no timing evaluation, no phase
+or event bookkeeping (there would be no events). After 8 consecutive misses
+the lane stops being checked for the rest of that group. `render()` returns
+the progress as an `f64` (NaN = no lane) rather than an `Option`, which wasm32
+returns through memory. Test: `group_lane_matches_full_render` runs one
+scenario on two engines, one with the lane disabled, and compares values,
+updated lists, events and node state every frame (seek, reverse, rate
+changes, repeats, fill modes, a callback child); dropping the timing or the
+iteration check from the lane fails it.
+
+| `ak_tick`, 50k | before | after |
+|---|---:|---:|
+| 3 numbers | 1.71 (1.65–1.82) ms | 1.49 (1.45–1.55) ms |
+| 8 keyframes | 1.54–1.64 ms | 1.28–1.34 ms |
+| 3 numbers, staggered delays (never hits) | 1.52 (1.47–2.09) ms | 1.57 (1.54–2.13) ms |
+
+The staggered case came out slower in all three A/B rounds (+8%, +6%, then
++3.6% median / +4.7% minimum for the committed variant), so count it as ~4%
+slower, not noise. Natively the staggered `timeline: 1 group x 50k children`
+row measured 0.54–0.59 ms before and 0.54–0.72 ms after.
+
+### 4. Inline path for keyframed single numbers (core)
+
+A one-channel numeric track with keyframes went through the out-of-line
+general `eval_track` (~140 instructions per track: slicing, kind dispatch, a
+zip loop for one value). `eval_into` now handles it next to the
+single-segment path with the same cursor search, local progress, easing
+choice and lerp. Test: `keyframed_number_fast_path_matches_eval_track`
+(per-segment easings, duplicate and unsorted offsets, two keyframes off
+[0, 1], forward/backward/random/edge progress incl. -0 and NaN; outputs and
+cursors bit for bit). `ak_tick`, 50k x 8 keyframes: 1.34 (1.30–1.40) →
+1.08 (1.05–1.18) ms.
+
+### 5. Colour conversion memo (core)
+
+Targets animated between the same colours interpolate to the same colour in
+the track's space, and each converted it back to RGBA. The frame memo keeps
+the last conversion (space + bits of the four channels → RGBA); `from_space`
+is pure, so this is exact. Test:
+`memoised_colour_conversion_matches_from_space` (five spaces interleaved,
+shared and per-target colours, alpha 0). `ak_tick`, 50k colour strings:
+2.20 (2.16–2.28) → 1.12 (1.06–1.17) ms; `bench-wasm.mjs` "x,y,opacity +
+OKLab colour" (same colours): 3.56 → 2.09–2.39 ms.
+
+### 6. Simple from/to animations skip the track table (core)
+
+When every track is an enabled single-segment number of one channel with the
+same easing (`{ x: 500, y: 300, opacity: 0 }`), the data layout is fixed
+(track k: values at 4k + 2, output k), so `Anim::eval` evaluates the easing
+once and lerps straight from the buffer without reading the 56-byte track
+structs. The flag is set at creation and re-checked when a track is toggled.
+Test: `simple_anims_match_track_evaluation`. `ak_tick`, 3 numbers: 50k
+1.51 (1.42–1.52) → 0.99 (0.86–1.01) ms, 10k 0.27–0.32 → 0.19 ms.
+
+### Tried and not kept (second round)
+
+| Idea | Result |
+|---|---|
+| Direct-write table in `flush()`: target, writer and value offset in parallel arrays indexed by handle, so the loop never touches the record (Part) object | no gain (kf flush 0.99 → 1.06, 3 numbers 0.96 → 0.94 ms, interleaved): the Part load isn't the bottleneck. |
+| Hot `Part` fields first | inconclusive / within noise. |
+| Segment memo for evenly spaced keyframes (segment index and local progress shared across targets, exact) | 3–4% on the 8-keyframe tick, not worth the extra state. |
+| Outputs first in the animation buffer (to share a cache line with the first values) | slower: 3 numbers 0.93 → 1.02, keyframes 1.08 → 1.25, colour 1.16 → 1.28 ms. |
+| Indexed instead of `chunks_exact` loop for simple anims | within noise natively. |
+| Generated per-key-set loop over runs of same-writer records in `flush()` | not attempted: the direct-write table above removed the same indirection without a gain. |
+

@@ -176,20 +176,27 @@ Render time roughly halved after the tone‑map loop was made to vectorise on We
 
 One fix sped up everything that uses square roots or floors: libm's `sqrt`/`floor` compile to software routines on `wasm32` unless nightly‑only features are enabled. The core now calls the stable SIMD intrinsics on one lane, which lower to the native instructions. The particle simulation became 3.4× faster, and the physics speed‑up over matter.js went from 7–27× to 9–44× (up to 60×) in the same benchmark.
 
-**End to end in Node** (`cd packages/anikit && npm run bench`). This is WASM core plus the JS write path, compared with GSAP 3 animating the same plain objects:
+**End to end in Node** (`cd packages/anikit && npm run bench`). This is WASM core plus the JS write path, compared with GSAP 3 animating the same plain objects (ms per frame, median of 5 runs after 100 warm-up frames; ranges over three runs of the script):
 
-| Case | N | Anikit | GSAP 3 |
-|---|---:|---:|---:|
-| 3 numbers per object | 10,000 | ~1.0 ms | ~0.6 ms |
-| 3 numbers per object | 50,000 | ~4.4–5.0 ms | ~2.4–2.7 ms |
-| colour string | 10,000 | ~1.3 ms | ~1.0 ms |
-| colour string | 50,000 | ~6.1 ms | ~4.3 ms |
-| **`batch()`**, 3 channels | 100,000 | **~0.4 ms** | 6.4–7.4 ms (objects) |
+| Case | N | Anikit | GSAP 3 | Ratio |
+|---|---:|---:|---:|---:|
+| 3 numbers per object | 1,000 | 0.02–0.06 ms | 0.07–0.08 ms | 1.4–3.3× faster |
+| 3 numbers per object | 10,000 | 0.37–0.44 ms | 0.51–0.69 ms | 1.3–1.9× faster |
+| 3 numbers per object | 50,000 | 1.85–2.03 ms | 2.53–2.76 ms | 1.3–1.4× faster |
+| colour string | 10,000 | 0.69–0.73 ms | 0.89–0.98 ms | 1.2–1.4× faster |
+| colour string | 50,000 | 3.39–3.55 ms | 4.54–4.94 ms | 1.3–1.5× faster |
+| 8 keyframes | 10,000 | 0.44–0.46 ms | 0.27–0.31 ms | 0.6–0.7× (slower) |
+| 8 keyframes | 50,000 | 2.19–2.31 ms | 1.21–1.45 ms | 0.5–0.7× (slower) |
+| **`batch()`**, 3 channels | 100,000 | **~0.4 ms** | 5.8 ms (3 numbers, objects) | ~16× |
 
-These results are mixed, and the reasons matter:
+What moved these numbers, and what still limits them:
 
-- **Writing a property onto a JS object costs the same for every library.** A good JIT is already close to the hardware limit there. Anikit's per‑object bookkeeping (core handle → record → target) currently makes plain‑object tweening **about 1.4–2× slower than GSAP** in this synthetic test (it was 3–4× before the compact write path and the colour-string cache). With DOM targets, the style writes, style recalc and paint dominate a frame, so this difference is a small share of real frame time.
-- **The architecture wins when JS stops touching every object.** `batch()` is ~17× faster than GSAP animating equivalent objects. The heavy‑math features (OKLab colour, morphing, exact springs, long timelines) run in WASM at native‑like speed, and `compositor()` moves work off the main thread entirely.
+- **Plain-object writes go through one generated writer per property set.** `t["x"] = f[a]; t["y"] = f[a + 1]; …` is compiled once per distinct key set (shared by every target with that shape) instead of one keyed-store loop for all keys, which V8 handles as a megamorphic store that boxes every double. That made the JS write path ~3× faster at 50k objects. Under a Content-Security-Policy without `'unsafe-eval'` the generic loop is used instead (one probe, then no further attempts).
+- **The core does per-frame work once, not once per target.** The children of one `animate()` call share timing, so after one child is evaluated the others with bit-identical timing take a short path; the last easing result and the last colour conversion are reused when the next target asks for the same input; simple from/to tweens skip the track table. All of these are exact (same inputs, same results, tested bit for bit). Staggered targets don't share progress, so they benefit less.
+- **Keyframes on plain objects are still slower than GSAP.** About half of the frame is the WebAssembly tick (~20 ns per target: node, track and keyframe data live in separate allocations) and half is the JS write. In this test the keyframe array in the props object (`{ x: [0, 50, …] }`) also gives V8's shared `{ x }` object shape a tagged `x` field, so every double written to the targets is boxed in a new heap number, for both libraries. With DOM targets, style writes, recalc and paint dominate a frame, so these per-object costs are a small share of real frame time.
+- **The architecture wins most when JS stops touching every object.** `batch()` is ~16× faster than GSAP animating equivalent objects. The heavy‑math features (OKLab colour, morphing, exact springs, long timelines) run in WASM at native‑like speed, and `compositor()` moves work off the main thread entirely.
+
+[`docs/perf-notes.md`](docs/perf-notes.md) has the before/after measurements of each change.
 
 Bundle sizes: the default entry embeds the WASM module (zero config, 335 KB gz in total). `anikit/lean` is **68 KB gz of JS** that streams a separate **187 KB gz** `.wasm`, which is cacheable and compiles while it downloads. The JS side is ES modules marked side‑effect free, so bundlers drop the features you don't import (scroll, interaction, effects, inspector, …).
 

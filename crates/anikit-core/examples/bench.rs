@@ -107,6 +107,28 @@ fn main() {
         }
         e.play(g).unwrap();
     }, 100);
+    // What `animate(objects, ...)` builds: one group, one child per target.
+    bench("animate(): group of 50k x 3 tracks, outCubic", 50_000, |e| {
+        let ease = e.easing("outCubic").unwrap();
+        let g = e.create_group(Timing::default(), true, flags::DEFAULT).unwrap();
+        for _ in 0..50_000 {
+            let specs: Vec<TrackSpec> =
+                [(0.0, 500.0), (0.0, 300.0), (1.0, 0.0)].iter().map(|&(a, b)| TrackSpec::number(vec![a, b], 1).with_easings(vec![ease])).collect();
+            let h = e.create_anim(long, &specs, flags::DEFAULT).unwrap();
+            e.group_add(g, h, 0.0).unwrap();
+        }
+        e.play(g).unwrap();
+    }, 100);
+    bench("animate(): group of 50k, 8 kf, inOutSine", 50_000, |e| {
+        let ease = e.easing("inOutSine").unwrap();
+        let g = e.create_group(Timing::default(), true, flags::DEFAULT).unwrap();
+        for _ in 0..50_000 {
+            let s = TrackSpec::number(vec![0.0, 50.0, 10.0, 80.0, 20.0, 90.0, 30.0, 100.0], 1).with_easings(vec![ease]);
+            let h = e.create_anim(long, &[s], flags::DEFAULT).unwrap();
+            e.group_add(g, h, 0.0).unwrap();
+        }
+        e.play(g).unwrap();
+    }, 100);
     bench("springs: 2 channels (shared config)", 100_000, |e| {
         for i in 0..100_000 {
             e.create_spring(SpringParams::new(0.01, 0.0, 1.0), &[0.0, 0.0], &[], &[i as f64, 1e6]).unwrap();

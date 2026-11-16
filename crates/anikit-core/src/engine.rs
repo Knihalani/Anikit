@@ -143,6 +143,9 @@ struct Track {
     seg1: bool,
     /// Easing of the first segment (used by the fast path).
     ease0: u32,
+    /// Fast path: a numeric track of one channel with 3+ keyframes, or 2
+    /// keyframes not at offsets 0 and 1.
+    num1: bool,
 }
 
 /// A keyframe animation. Everything it needs per frame lives in two
@@ -153,6 +156,13 @@ struct Anim {
     tracks: Box<[Track]>,
     buf: Box<[f64]>,
     out_at: usize,
+    /// When every track is an enabled single-segment number of one channel
+    /// with the same easing (`{ x: 500, y: 300, opacity: 0 }`), the number of
+    /// tracks, else 0. Their data then sits at fixed places (track `k`: values
+    /// at `4k + 2`, output `k`), so [`eval`](Self::eval) skips the track table.
+    simple: u32,
+    /// The shared easing of a `simple` animation.
+    simple_ease: u32,
 }
 
 impl Anim {
@@ -161,9 +171,39 @@ impl Anim {
         &self.buf[self.out_at..]
     }
     #[inline(always)]
-    fn eval(&mut self, easings: &[Easing], p: f64) {
+    fn eval(&mut self, easings: &[Easing], memo: &mut EaseMemo, p: f64) {
         let (data, out) = self.buf.split_at_mut(self.out_at);
-        Anim::eval_into(&mut self.tracks, data, easings, p, out);
+        let n = self.simple as usize;
+        if n > 0 {
+            // The single-segment path of `eval_into` for every track, without
+            // reading the tracks (same easing call, same lerp).
+            let e = ease_memo(easings, memo, self.simple_ease, p);
+            if let (Some(d), Some(o)) = (data.get(..4 * n), out.get_mut(..n)) {
+                for (o, d) in o.iter_mut().zip(d.chunks_exact(4)) {
+                    *o = d[2] + (d[3] - d[2]) * e;
+                }
+            }
+            return;
+        }
+        Anim::eval_into(&mut self.tracks, data, easings, memo, p, out);
+    }
+
+    /// Recompute [`simple`](Self::simple) (after creation or a track toggle).
+    fn classify(&mut self) {
+        let t = &self.tracks;
+        let ok = !t.is_empty()
+            && t.iter().enumerate().all(|(k, tr)| {
+                tr.enabled
+                    && tr.single
+                    && tr.ch == 1
+                    && tr.off_at as usize == 4 * k
+                    && tr.val_at as usize == 4 * k + 2
+                    && tr.out_at as usize == k
+                    && tr.ease0 == t[0].ease0
+            })
+            && self.out_at >= 4 * t.len();
+        self.simple = if ok { t.len() as u32 } else { 0 };
+        self.simple_ease = if ok { t[0].ease0 } else { LINEAR };
     }
 }
 
@@ -356,6 +396,20 @@ enum Kind {
 
 const PHASE_UNKNOWN: u8 = 3;
 
+/// See [`Engine::render_children`].
+const LANE_MAX_MISSES: u32 = 8;
+
+/// Bit-for-bit timing equality (`==` would equate `0.0` and `-0.0`).
+#[inline(always)]
+fn same_timing(a: &Timing, b: &Timing) -> bool {
+    a.delay.to_bits() == b.delay.to_bits()
+        && a.duration.to_bits() == b.duration.to_bits()
+        && a.iterations.to_bits() == b.iterations.to_bits()
+        && a.end_delay.to_bits() == b.end_delay.to_bits()
+        && a.direction == b.direction
+        && a.easing == b.easing
+}
+
 #[derive(Debug)]
 struct Node {
     gen: u32,
@@ -423,6 +477,11 @@ pub struct Engine {
     lag_threshold: f64,
     lag_adjusted: f64,
     released_scratch: Vec<u32>,
+    /// Easing memo for the frame loop (see [`EaseMemo`]).
+    memo: EaseMemo,
+    /// Tests: render every group child in full (reference for the lane).
+    #[cfg(test)]
+    lane_off: bool,
 }
 
 impl Default for Engine {
@@ -443,17 +502,77 @@ fn ease_by(easings: &[Easing], id: u32, t: f64) -> f64 {
     }
 }
 
+/// One-entry memo of the last easing evaluated (`id`, bits of `t`, result).
+///
+/// The children of one `animate()` call usually share their timing, so the
+/// same easing is evaluated at the same progress for every child and track of
+/// a frame. `Easing::ease` is a pure function of `(id, t)` and the registry is
+/// append-only, so reusing the result is exact. Keyed on the bits of `t`, so
+/// `-0.0` and `0.0` (or two NaNs) never alias.
+///
+/// The same goes for colour tracks: targets animated between the same
+/// colours convert the same interpolated colour back to RGBA, so the last
+/// conversion (space and bits of the four channels in, RGBA out) is kept too.
+#[derive(Clone, Copy, Debug)]
+struct EaseMemo {
+    id: u32,
+    bits: u64,
+    v: f64,
+    col_space: Option<ColorSpace>,
+    col_in: [u64; 4],
+    col_out: [f64; 4],
+}
+
+impl EaseMemo {
+    /// Never matches: `LINEAR` is answered before the memo is consulted, and
+    /// no colour has been converted.
+    const EMPTY: EaseMemo = EaseMemo { id: LINEAR, bits: 0, v: 0.0, col_space: None, col_in: [0; 4], col_out: [0.0; 4] };
+
+    /// `color::from_space(c, space)` as an array, reusing the last result.
+    #[inline]
+    fn color(&mut self, c: &[f64; 4], space: ColorSpace) -> [f64; 4] {
+        let key = [c[0].to_bits(), c[1].to_bits(), c[2].to_bits(), c[3].to_bits()];
+        if self.col_space == Some(space) && self.col_in == key {
+            return self.col_out;
+        }
+        let out = color::from_space(c, space).to_array();
+        self.col_space = Some(space);
+        self.col_in = key;
+        self.col_out = out;
+        out
+    }
+}
+
+#[inline(always)]
+fn ease_memo(easings: &[Easing], memo: &mut EaseMemo, id: u32, t: f64) -> f64 {
+    if id == LINEAR {
+        return t;
+    }
+    let bits = t.to_bits();
+    if memo.id == id && memo.bits == bits {
+        return memo.v;
+    }
+    let v = match easings.get(id as usize) {
+        Some(e) => e.ease(t),
+        None => t,
+    };
+    memo.id = id;
+    memo.bits = bits;
+    memo.v = v;
+    v
+}
+
 impl Anim {
     /// Evaluate every enabled track at (eased) iteration progress `p` into `out`.
     #[inline(always)]
-    fn eval_into(tracks: &mut [Track], data: &[f64], easings: &[Easing], p: f64, out: &mut [f64]) {
+    fn eval_into(tracks: &mut [Track], data: &[f64], easings: &[Easing], memo: &mut EaseMemo, p: f64, out: &mut [f64]) {
         for tr in tracks.iter_mut() {
             if !tr.enabled {
                 continue;
             }
             if tr.single {
                 // Hot path: from → to tween. No segment search, no kind dispatch.
-                let e = ease_by(easings, tr.ease0, p);
+                let e = ease_memo(easings, memo, tr.ease0, p);
                 let va = tr.val_at as usize;
                 let oa = tr.out_at as usize;
                 let ch = tr.ch as usize;
@@ -470,7 +589,42 @@ impl Anim {
                 }
                 continue;
             }
-            Anim::eval_track(tr, data, easings, p, out);
+            if tr.num1 {
+                // Keyframed single number: the segment search of `eval_track`
+                // without the slicing and kind dispatch (same arithmetic).
+                let n = tr.nkf as usize;
+                let oa = tr.out_at as usize;
+                if let (Some(off), Some(vals), Some(o)) =
+                    (data.get(tr.off_at as usize..tr.off_at as usize + n), data.get(tr.val_at as usize..tr.val_at as usize + n), out.get_mut(oa))
+                {
+                    let mut i = (tr.cursor as usize).min(n - 2);
+                    while i > 0 && p < off[i] {
+                        i -= 1;
+                    }
+                    while i < n - 2 && p >= off[i + 1] {
+                        i += 1;
+                    }
+                    tr.cursor = i as u32;
+                    let span = off[i + 1] - off[i];
+                    let local = if span > 0.0 {
+                        (p - off[i]) / span
+                    } else if p >= off[i + 1] {
+                        1.0
+                    } else {
+                        0.0
+                    };
+                    let id = match tr.ease_n {
+                        0 => LINEAR,
+                        1 => tr.ease0,
+                        _ => data[tr.ease_at as usize + i] as u32,
+                    };
+                    let e = ease_memo(easings, memo, id, local);
+                    let (a, b) = (vals[i], vals[i + 1]);
+                    *o = a + (b - a) * e;
+                }
+                continue;
+            }
+            Anim::eval_track(tr, data, easings, memo, p, out);
         }
     }
 
@@ -479,7 +633,7 @@ impl Anim {
     /// [`eval_into`](Self::eval_into) can be inlined into the frame loop
     /// without duplicating all of this.
     #[inline(never)]
-    fn eval_track(tr: &mut Track, data: &[f64], easings: &[Easing], p: f64, out: &mut [f64]) {
+    fn eval_track(tr: &mut Track, data: &[f64], easings: &[Easing], memo: &mut EaseMemo, p: f64, out: &mut [f64]) {
         let n = tr.nkf as usize;
         let ch = tr.ch as usize;
         let off = &data[tr.off_at as usize..tr.off_at as usize + n];
@@ -487,7 +641,7 @@ impl Anim {
         let o = &mut out[tr.out_at as usize..tr.out_at as usize + tr.out_ch as usize];
         // Segment search with a temporal-coherence cursor: amortised O(1).
         let (i, e) = if tr.seg1 {
-            (0usize, ease_by(easings, tr.ease0, p))
+            (0usize, ease_memo(easings, memo, tr.ease0, p))
         } else if n <= 1 {
             (0usize, 0.0)
         } else {
@@ -512,7 +666,7 @@ impl Anim {
                 1 => tr.ease0,
                 _ => data[tr.ease_at as usize + i] as u32,
             };
-            (i, ease_by(easings, id, local))
+            (i, ease_memo(easings, memo, id, local))
         };
         if n <= 1 {
             match tr.kind {
@@ -547,7 +701,7 @@ impl Anim {
                 for k in 0..4 {
                     c[k] = a[k] + (b[k] - a[k]) * e;
                 }
-                o.copy_from_slice(&color::from_space(&c, space).to_array());
+                o.copy_from_slice(&memo.color(&c, space));
             }
             TrackKind::Discrete => {
                 o[0] = if e < 0.5 { a[0] } else { b[0] };
@@ -584,6 +738,9 @@ impl Engine {
             lag_threshold: 500.0,
             lag_adjusted: 33.0,
             released_scratch: Vec::new(),
+            memo: EaseMemo::EMPTY,
+            #[cfg(test)]
+            lane_off: false,
         }
     }
 
@@ -787,6 +944,10 @@ impl Engine {
                     && data[off_at as usize] == 0.0
                     && data[off_at as usize + 1] == 1.0,
                 seg1: nkf == 2 && data[off_at as usize] == 0.0 && data[off_at as usize + 1] == 1.0,
+                num1: spec.kind == TrackKind::Number
+                    && ch == 1
+                    && nkf >= 2
+                    && !(nkf == 2 && data[off_at as usize] == 0.0 && data[off_at as usize + 1] == 1.0),
                 ease0: if ease_n > 0 { eases[ease_at as usize] } else { LINEAR },
             });
             out_len += out_ch as u32;
@@ -799,9 +960,10 @@ impl Engine {
         data.extend(eases.iter().map(|&e| e as f64));
         let out_at = data.len();
         data.resize(out_at + out_len as usize, 0.0);
-        let mut anim = Anim { tracks: tracks.into_boxed_slice(), buf: data.into_boxed_slice(), out_at };
+        let mut anim = Anim { tracks: tracks.into_boxed_slice(), buf: data.into_boxed_slice(), out_at, simple: 0, simple_ease: LINEAR };
+        anim.classify();
         // Pre-fill outputs with the start values so readers never see zeros.
-        anim.eval(&self.easings, 0.0);
+        anim.eval(&self.easings, &mut EaseMemo::EMPTY.clone(), 0.0);
         let idx = self.alloc(Kind::Anim(anim), sanitize(timing), fl)?;
         Ok(self.handle_of(idx))
     }
@@ -1431,6 +1593,7 @@ impl Engine {
             Kind::Anim(a) => match a.tracks.get_mut(track) {
                 Some(t) => {
                     t.enabled = enabled;
+                    a.classify();
                     Ok(())
                 }
                 None => Err(Error::InvalidInput),
@@ -1560,7 +1723,7 @@ impl Engine {
                     return Err(Error::InvalidInput);
                 }
                 let data = &a.buf[..a.out_at];
-                Anim::eval_into(&mut a.tracks, data, &self.easings, pe, &mut out[..n]);
+                Anim::eval_into(&mut a.tracks, data, &self.easings, &mut EaseMemo::EMPTY.clone(), pe, &mut out[..n]);
                 Ok(())
             }
             _ => Err(Error::WrongKind),
@@ -1688,9 +1851,12 @@ impl Engine {
         }
     }
 
-    /// Render node `i` at local time `t`.
+    /// Render node `i` at local time `t`. Returns the eased progress when an
+    /// animation was evaluated in its active phase, else NaN (see
+    /// [`render_children`](Self::render_children); a scalar, not an
+    /// `Option`, so wasm returns it in a register).
     #[inline]
-    fn render(&mut self, i: usize, t: f64, backward: bool) {
+    fn render(&mut self, i: usize, t: f64, backward: bool) -> f64 {
         let n = &mut self.nodes[i];
         n.time = t;
         let mut st = n.timing.eval(t);
@@ -1704,7 +1870,7 @@ impl Engine {
         // Steady before/after the active phase: nothing to render or report.
         // (This is what makes long timelines cheap: idle children cost one eval.)
         if !changed && st.phase != Phase::Active {
-            return;
+            return f64::NAN;
         }
         let h = (n.gen << INDEX_BITS) | i as u32;
         let repeat = !changed && st.iteration != n.last_iter;
@@ -1724,9 +1890,12 @@ impl Engine {
         match &mut self.nodes[i].kind {
             Kind::Anim(a) => {
                 if should_render {
-                    let p = if te == LINEAR { st.progress } else { ease_by(&self.easings, te, st.progress) };
-                    a.eval(&self.easings, p);
+                    let p = ease_memo(&self.easings, &mut self.memo, te, st.progress);
+                    a.eval(&self.easings, &mut self.memo, p);
                     self.updated.push(h);
+                    if st.phase == Phase::Active {
+                        return p;
+                    }
                 }
             }
             Kind::Group(_) => {
@@ -1745,20 +1914,12 @@ impl Engine {
                         g.last_inner = inner;
                         (core::mem::take(&mut g.children), back)
                     }
-                    _ => return,
+                    _ => return f64::NAN,
                 };
                 if child_backward {
-                    for &c in children.iter().rev() {
-                        let cn = &self.nodes[c as usize];
-                        let ct = (inner - cn.start) * cn.rate;
-                        self.render(c as usize, ct, true);
-                    }
+                    self.render_children(children.iter().rev(), inner, true);
                 } else {
-                    for &c in children.iter() {
-                        let cn = &self.nodes[c as usize];
-                        let ct = (inner - cn.start) * cn.rate;
-                        self.render(c as usize, ct, false);
-                    }
+                    self.render_children(children.iter(), inner, false);
                 }
                 if let Kind::Group(g) = &mut self.nodes[i].kind {
                     g.children = children;
@@ -1777,6 +1938,75 @@ impl Engine {
             }
             Kind::Sim(_) | Kind::Free => {}
         }
+        f64::NAN
+    }
+
+    /// Render a group's children at group time `inner`, in iteration order.
+    ///
+    /// Children of one `animate()` call usually share start, rate and timing,
+    /// so they all reach the same timing state. After a child is rendered in
+    /// full, the next ones with bit-identical local time and timing that are
+    /// already steady in that active iteration take [`render_lane`]: no timing
+    /// evaluation, no phase bookkeeping, no events (there would be none).
+    ///
+    /// [`render_lane`]: Self::render_lane
+    #[inline(never)]
+    fn render_children<'a>(&mut self, children: impl Iterator<Item = &'a u32>, inner: f64, backward: bool) {
+        // (index of the last child rendered in full in its active phase, its eased progress)
+        let mut lane: Option<(usize, f64)> = None;
+        // Consecutive lane misses: staggered children never match, so after a
+        // few misses stop checking (the checks alone cost ~8% of their tick).
+        let mut misses = 0u32;
+        for &c in children {
+            let ci = c as usize;
+            let cn = &self.nodes[ci];
+            let ct = (inner - cn.start) * cn.rate;
+            #[cfg(test)]
+            if self.lane_off {
+                lane = None;
+            }
+            if let Some((li, p)) = lane {
+                if self.render_lane(ci, ct, li, p) {
+                    misses = 0;
+                    continue;
+                }
+                misses += 1;
+            }
+            let p = self.render(ci, ct, backward);
+            // NaN: not an active animation (or a NaN progress): keep the old lane.
+            if !p.is_nan() && misses < LANE_MAX_MISSES {
+                lane = Some((ci, p));
+            } else if misses >= LANE_MAX_MISSES {
+                lane = None;
+            }
+        }
+    }
+
+    /// The fast path of [`render`](Self::render) for animation `i` at time
+    /// `t` when node `li` was just rendered in full, in its active phase, at
+    /// eased progress `p` (its `time`, `timing` and `last_iter` are what that
+    /// render used and produced). `false` if it doesn't apply.
+    #[inline(always)]
+    fn render_lane(&mut self, i: usize, t: f64, li: usize, p: f64) -> bool {
+        let (l, n) = (&self.nodes[li], &self.nodes[i]);
+        if t.to_bits() != l.time.to_bits()
+            || n.last_phase != Phase::Active as u8
+            || n.last_iter != l.last_iter
+            || !matches!(n.kind, Kind::Anim(_))
+            || !same_timing(&n.timing, &l.timing)
+        {
+            return false;
+        }
+        let iteration = l.last_iter;
+        let n = &mut self.nodes[i];
+        n.time = t;
+        n.last_iter = iteration;
+        let h = (n.gen << INDEX_BITS) | i as u32;
+        if let Kind::Anim(a) = &mut n.kind {
+            a.eval(&self.easings, &mut self.memo, p);
+        }
+        self.updated.push(h);
+        true
     }
 
     fn step_sims(&mut self, dt: f64) {
@@ -2362,6 +2592,290 @@ mod tests {
             e.tick(17.0);
             t += 17.0;
         }
+    }
+
+    #[test]
+    fn memoised_easing_matches_direct_evaluation_bit_for_bit() {
+        // Children of one group: staggered starts and delays, timing easings
+        // on some, several easing ids interleaved across children and tracks,
+        // single-segment and keyframe tracks. Every rendered value must equal
+        // a direct evaluation that never reuses an easing result.
+        let mut e = Engine::new();
+        let ids = [
+            e.easing("outCubic").unwrap(),
+            e.easing("inOutSine").unwrap(),
+            e.easing("outBack").unwrap(),
+            e.easing("spring(200, 12)").unwrap(),
+            LINEAR,
+        ];
+        let te = e.easing("inOutQuad").unwrap();
+        let g = e.create_group(Timing::default(), true, flags::DEFAULT).unwrap();
+        struct Child {
+            h: Handle,
+            tracks: Vec<(Vec<f64>, Vec<u32>)>,
+        }
+        let mut kids = Vec::new();
+        for i in 0..90usize {
+            let fi = i as f64;
+            let tracks = vec![
+                (vec![fi, -2.0 * fi], vec![ids[i % 5]]),
+                (vec![0.0, 50.0 + fi, 10.0, 80.0], vec![ids[(i + 1) % 5], ids[(i + 2) % 5], ids[(i + 3) % 5]]),
+                (vec![1.0, 2.0], vec![ids[i % 5]]),
+                (vec![0.0, 10.0, 20.0, 5.0, 1.0], vec![ids[(i + 2) % 5]]),
+            ];
+            let specs: Vec<TrackSpec> = tracks.iter().map(|(v, es)| TrackSpec::number(v.clone(), 1).with_easings(es.clone())).collect();
+            let timing = Timing {
+                delay: (i % 7) as f64 * 20.0,
+                duration: 400.0 + (i % 3) as f64 * 100.0,
+                iterations: if i % 4 == 0 { 2.5 } else { 1.0 },
+                direction: crate::timing::Direction::from_u8(if i % 5 == 0 { 2 } else { 0 }),
+                easing: if i % 2 == 0 { te } else { LINEAR },
+                ..Default::default()
+            };
+            let h = e.create_anim(timing, &specs, flags::DEFAULT).unwrap();
+            e.group_add(g, h, (i % 3) as f64 * 30.0).unwrap();
+            kids.push(Child { h, tracks });
+        }
+        e.play(g).unwrap();
+        let direct = |e: &Engine, vals: &[f64], es: &[u32], p: f64| -> f64 {
+            let n = vals.len();
+            let off: Vec<f64> = (0..n).map(|k| k as f64 / (n - 1) as f64).collect();
+            let mut i = 0;
+            while i < n - 2 && p >= off[i + 1] {
+                i += 1;
+            }
+            let local = if n == 2 {
+                p
+            } else {
+                let span = off[i + 1] - off[i];
+                if span > 0.0 {
+                    (p - off[i]) / span
+                } else if p >= off[i + 1] {
+                    1.0
+                } else {
+                    0.0
+                }
+            };
+            let id = if es.len() == 1 { es[0] } else { es[i] };
+            let k = ease_by(&e.easings, id, local);
+            vals[i] + (vals[i + 1] - vals[i]) * k
+        };
+        let mut checked = 0;
+        for _ in 0..110 {
+            e.tick(17.0);
+            for c in &kids {
+                if !e.updated().contains(&c.h) {
+                    continue;
+                }
+                let n = &e.nodes[Engine::handle_index(c.h) as usize];
+                let p = ease_by(&e.easings, n.timing.easing, n.timing.eval(n.time).progress);
+                let got = e.values(c.h).unwrap();
+                for (k, (vals, es)) in c.tracks.iter().enumerate() {
+                    assert_eq!(got[k].to_bits(), direct(&e, vals, es, p).to_bits(), "child {} track {k}", c.h);
+                }
+                checked += 1;
+            }
+        }
+        assert!(checked > 3000, "{checked}");
+    }
+
+    #[test]
+    fn group_lane_matches_full_render() {
+        // Same scenario on two engines, one rendering every group child in
+        // full: values, updated lists, events and node state must agree.
+        fn build(lane_off: bool) -> (Engine, Handle, Vec<Handle>) {
+            let mut e = Engine::new();
+            e.lane_off = lane_off;
+            let ease = e.easing("outCubic").unwrap();
+            let sine = e.easing("inOutSine").unwrap();
+            let g = e.create_group(Timing { iterations: 2.0, direction: crate::timing::Direction::Alternate, ..Default::default() }, true, flags::DEFAULT)
+                .unwrap();
+            let mut kids = Vec::new();
+            for i in 0..64usize {
+                let timing = Timing {
+                    delay: if i % 16 == 15 { 50.0 } else { 0.0 },
+                    duration: if i % 11 == 10 { 300.0 } else { 500.0 },
+                    iterations: if i % 13 == 12 { 3.0 } else { 1.0 },
+                    easing: if i % 9 == 8 { sine } else { LINEAR },
+                    ..Default::default()
+                };
+                let specs = [
+                    TrackSpec::number(vec![0.0, 500.0 + i as f64], 1).with_easings(vec![ease]),
+                    TrackSpec::number(vec![0.0, 50.0, 10.0, 80.0, i as f64], 1).with_easings(vec![sine]),
+                ];
+                let fl = if i % 7 == 6 { flags::DEFAULT & !flags::FILL_FORWARDS } else { flags::DEFAULT };
+                let h = e.create_anim(timing, &specs, fl).unwrap();
+                e.group_add(g, h, if i % 10 == 9 { 40.0 } else { 0.0 }).unwrap();
+                kids.push(h);
+            }
+            // A callback and a nested group among the children.
+            let cb = e.create_callback().unwrap();
+            e.group_add(g, cb, 120.0).unwrap();
+            e.play(g).unwrap();
+            (e, g, kids)
+        }
+        let (mut a, g, kids) = build(false);
+        let (mut b, _, _) = build(true);
+        let snap = |e: &Engine| {
+            let mut v: Vec<u64> = Vec::new();
+            for &h in &kids {
+                v.extend(e.values(h).unwrap().iter().map(|x| x.to_bits()));
+                let n = &e.nodes[Engine::handle_index(h) as usize];
+                v.extend([n.time.to_bits(), n.last_phase as u64, n.last_iter.to_bits(), n.state as u64]);
+            }
+            (v, e.updated().to_vec(), e.events().to_vec())
+        };
+        for f in 0..140 {
+            match f {
+                30 => {
+                    a.seek(g, 200.0).unwrap();
+                    b.seek(g, 200.0).unwrap();
+                }
+                50 => {
+                    a.reverse(g).unwrap();
+                    b.reverse(g).unwrap();
+                }
+                70 => {
+                    a.set_rate(g, 2.5).unwrap();
+                    b.set_rate(g, 2.5).unwrap();
+                }
+                90 => {
+                    a.seek(g, 0.0).unwrap();
+                    b.seek(g, 0.0).unwrap();
+                    a.set_rate(g, 1.0).unwrap();
+                    b.set_rate(g, 1.0).unwrap();
+                }
+                _ => {}
+            }
+            a.tick(17.0);
+            b.tick(17.0);
+            assert_eq!(snap(&a), snap(&b), "frame {f}");
+        }
+    }
+
+    #[test]
+    fn keyframed_number_fast_path_matches_eval_track() {
+        let mut e = Engine::new();
+        let ids = [e.easing("outBack").unwrap(), e.easing("inOutSine").unwrap(), e.easing("steps(3)").unwrap()];
+        let specs = [
+            TrackSpec::number(vec![0.0, 50.0, 10.0, 80.0, 20.0, 90.0, 30.0, 100.0], 1).with_easings(vec![ids[0]]),
+            TrackSpec::number(vec![5.0, -5.0, 7.0, 1.0], 1).with_easings(vec![ids[0], ids[1], ids[2]]),
+            TrackSpec::number(vec![1.0, 2.0, 3.0, 4.0], 1).with_offsets(vec![0.0, 0.5, 0.5, 1.0]),
+            TrackSpec::number(vec![1.0, 9.0], 1).with_offsets(vec![0.2, 0.7]).with_easings(vec![ids[1]]),
+            TrackSpec::number(vec![3.0, 4.0, 6.0], 1).with_offsets(vec![0.3, 0.1, 0.9]),
+        ];
+        let h = e.create_anim(Timing::default(), &specs, flags::DEFAULT).unwrap();
+        let Kind::Anim(anim) = &mut e.nodes[Engine::handle_index(h) as usize].kind else { unreachable!() };
+        assert!(anim.tracks.iter().all(|t| t.num1));
+        let mut reference = anim.tracks.to_vec();
+        let mut rng = crate::math::Rng(7);
+        let mut ps: Vec<f64> = (0..200).map(|k| k as f64 / 150.0 - 0.2).collect();
+        ps.extend((0..200).map(|k| 1.1 - k as f64 / 160.0));
+        ps.extend((0..400).map(|_| rng.next_f64() * 1.6 - 0.3));
+        ps.extend([0.0, -0.0, 0.5, 1.0, 0.2, 0.7, f64::NAN, 0.4]);
+        let (data, out) = anim.buf.split_at_mut(anim.out_at);
+        let mut want = vec![0.0; out.len()];
+        for &p in &ps {
+            Anim::eval_into(&mut anim.tracks, data, &e.easings, &mut EaseMemo::EMPTY.clone(), p, out);
+            for tr in reference.iter_mut() {
+                Anim::eval_track(tr, data, &e.easings, &mut EaseMemo::EMPTY.clone(), p, &mut want);
+            }
+            assert_eq!(out.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), want.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), "p = {p}");
+            assert_eq!(anim.tracks.iter().map(|t| t.cursor).collect::<Vec<_>>(), reference.iter().map(|t| t.cursor).collect::<Vec<_>>());
+        }
+    }
+
+    #[test]
+    fn memoised_colour_conversion_matches_from_space() {
+        // Interleaved spaces and colours (shared and per-target), alpha 0,
+        // hue spaces: every output equals a fresh conversion.
+        let mut e = Engine::new();
+        let ease = e.easing("inOutQuad").unwrap();
+        let spaces = [ColorSpace::Oklab, ColorSpace::Srgb, ColorSpace::Oklch, ColorSpace::Hsl, ColorSpace::LinearSrgb];
+        let g = e.create_group(Timing::default(), true, flags::DEFAULT).unwrap();
+        let mut kids = Vec::new();
+        for i in 0..60usize {
+            let to_b = if i % 3 == 0 { i as f64 * 4.0 } else { 255.0 };
+            let alpha = if i % 11 == 0 { 0.0 } else { 1.0 };
+            let mut c = TrackSpec::number(vec![255.0, 0.0, 0.0, 1.0, 0.0, 30.0, to_b, alpha], 4).with_easings(vec![ease]);
+            let space = spaces[(i / 2) % spaces.len()];
+            c.kind = TrackKind::Color(space);
+            let mut c2 = TrackSpec::number(vec![10.0, 200.0, 30.0, 0.5, 250.0, 250.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], 4);
+            c2.kind = TrackKind::Color(spaces[i % spaces.len()]);
+            let h = e.create_anim(Timing { duration: 400.0 + (i % 2) as f64 * 100.0, ..Default::default() }, &[c, c2], flags::DEFAULT).unwrap();
+            e.group_add(g, h, 0.0).unwrap();
+            kids.push(h);
+        }
+        e.play(g).unwrap();
+        let mut checked = 0;
+        for _ in 0..40 {
+            e.tick(16.0);
+            for &h in &kids {
+                if !e.updated().contains(&h) {
+                    continue;
+                }
+                let Kind::Anim(a) = &e.nodes[Engine::handle_index(h) as usize].kind else { unreachable!() };
+                let n = &e.nodes[Engine::handle_index(h) as usize];
+                let p = n.timing.eval(n.time).progress;
+                let mut want = vec![0.0; 8];
+                let mut tracks = a.tracks.to_vec();
+                let data = &a.buf[..a.out_at];
+                for tr in tracks.iter_mut() {
+                    // eval_track with a fresh memo per track: no reuse across targets.
+                    Anim::eval_track(tr, data, &e.easings, &mut EaseMemo::EMPTY.clone(), p, &mut want);
+                }
+                let got = e.values(h).unwrap();
+                assert_eq!(got.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), want.iter().map(|v| v.to_bits()).collect::<Vec<_>>());
+                checked += 1;
+            }
+        }
+        assert!(checked > 1000, "{checked}");
+    }
+
+    #[test]
+    fn simple_anims_match_track_evaluation() {
+        // `simple` animations skip the track table; they must equal
+        // `eval_into` exactly, before and after tracks are toggled.
+        let mut e = Engine::new();
+        let ease = e.easing("outCubic").unwrap();
+        let other = e.easing("inOutSine").unwrap();
+        let mk = |e: &mut Engine, specs: &[TrackSpec]| e.create_anim(Timing::default(), specs, flags::DEFAULT).unwrap();
+        let n3 = |es: [u32; 3]| -> Vec<TrackSpec> {
+            [(0.0, 500.0), (-3.0, 300.0), (1.0, 0.0)].iter().zip(es).map(|(&(a, b), x)| TrackSpec::number(vec![a, b], 1).with_easings(vec![x])).collect()
+        };
+        let hs = [
+            mk(&mut e, &n3([ease; 3])),
+            mk(&mut e, &n3([LINEAR; 3])),
+            mk(&mut e, &n3([ease, other, ease])),
+            mk(&mut e, &[TrackSpec::number(vec![0.0, 1.0, 2.0, 3.0], 2)]),
+            mk(&mut e, &[TrackSpec::number(vec![5.0, 6.0], 1).with_easings(vec![ease])]),
+        ];
+        let simple = |e: &Engine, h: Handle| match &e.nodes[Engine::handle_index(h) as usize].kind {
+            Kind::Anim(a) => a.simple,
+            _ => unreachable!(),
+        };
+        assert_eq!(hs.iter().map(|&h| simple(&e, h)).collect::<Vec<_>>(), [3, 3, 0, 0, 1]);
+        let check = |e: &mut Engine| {
+            for &h in &hs {
+                for k in 0..=40 {
+                    let p = k as f64 / 32.0 - 0.1;
+                    let Kind::Anim(a) = &mut e.nodes[Engine::handle_index(h) as usize].kind else { unreachable!() };
+                    let mut want = a.out().to_vec();
+                    let (data, _) = a.buf.split_at(a.out_at);
+                    let mut tracks = a.tracks.to_vec();
+                    Anim::eval_into(&mut tracks, data, &e.easings, &mut EaseMemo::EMPTY.clone(), p, &mut want);
+                    a.eval(&e.easings, &mut EaseMemo::EMPTY.clone(), p);
+                    assert_eq!(a.out().iter().map(|v| v.to_bits()).collect::<Vec<_>>(), want.iter().map(|v| v.to_bits()).collect::<Vec<_>>());
+                }
+            }
+        };
+        check(&mut e);
+        e.set_track_enabled(hs[0], 1, false).unwrap();
+        assert_eq!(simple(&e, hs[0]), 0);
+        check(&mut e);
+        e.set_track_enabled(hs[0], 1, true).unwrap();
+        assert_eq!(simple(&e, hs[0]), 3);
+        check(&mut e);
     }
 
     #[test]

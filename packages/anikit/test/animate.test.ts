@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { animate, from, fromTo, set, stagger, engine, flush } from '../src/index';
 import { setup, advance, box } from './setup';
+import { _setCodegen } from '../src/animate';
 
 beforeAll(setup);
 
@@ -141,6 +142,62 @@ describe('animate: values', () => {
     set(s, { x: 5, y: 6, opacity: 0.3 });
     expect(tf(s)).toBe('translate(5px,6px)');
     expect(s.style.opacity).toBe('0.3');
+  });
+});
+
+describe('animate: plain-object write path', () => {
+  // Plain-property parts write through a generated per-key-set writer when
+  // code generation is allowed, else through a generic loop (CSP fallback).
+  const run = (): number[][] => {
+    const objs = Array.from({ length: 6 }, (_, i) => ({ x: 0, y: i, o: 1, 'a-b': 0 }));
+    const frames: number[][] = [];
+    const snap = () => frames.push(objs.flatMap((o) => [o.x, o.y, o.o, o['a-b']]));
+    const a = animate(objs, { x: 500, y: [10, 300], o: 0, 'a-b': 3 }, { duration: 1, ease: 'outCubic' });
+    advance(0.25);
+    snap();
+    // Take `y` over on one target: its part leaves the shared key set mid-animation.
+    animate(objs[2], { y: -50 }, { duration: 0.5, ease: 'linear' });
+    advance(0.25);
+    snap();
+    a.seek(0.9);
+    flush();
+    snap();
+    animate(objs.slice(3), { x: [1, 2, 3, 4] }, { duration: 0.4, ease: 'inOutSine' });
+    advance(0.6);
+    snap();
+    return frames;
+  };
+  it('generated writers and the generic loop write identical values', () => {
+    const prev = _setCodegen(false);
+    const loop = run();
+    _setCodegen(undefined);
+    const gen = run();
+    expect(_setCodegen(prev)).toBe(true); // the generated path was really used
+    expect(gen).toEqual(loop);
+    expect(loop[0][0]).toBeGreaterThan(0);
+    expect(loop[1][2 * 4 + 1]).toBeLessThan(loop[1][1 * 4 + 1]);
+  });
+  it('both paths are strict: a frozen target throws the same way', () => {
+    const attempt = (): string => {
+      const objs = [{ p: 0, q: 0 }, Object.freeze({ p: 0, q: 0 })];
+      let a: ReturnType<typeof animate> | undefined;
+      try {
+        a = animate(objs, { p: 10, q: 5 }, { duration: 1, ease: 'linear' });
+        advance(0.1);
+        return 'no error ' + objs[0].p;
+      } catch (e) {
+        return (e as Error).constructor.name;
+      } finally {
+        a?.kill();
+      }
+    };
+    const prev = _setCodegen(false);
+    const loop = attempt();
+    _setCodegen(undefined);
+    const gen = attempt();
+    _setCodegen(prev);
+    expect(loop).toBe('TypeError');
+    expect(gen).toBe(loop);
   });
 });
 
