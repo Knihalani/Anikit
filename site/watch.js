@@ -410,6 +410,8 @@ export async function createWatch({ width, height, canvas = null }) {
    */
   const ROTOR_AWAY = PI + TAU; // in the dive the rotor swings over the barrel, clear of the going train
   const GLIDE = [[G.BAL[0] + 6, G.BAL[1] + 4, 10, 1], [G.PAL[0], G.PAL[1], 6, 0.8], [G.E5[0], G.E5[1], 6, 0.85], [G.F4[0] - 10, G.F4[1], 10, 1.25]];
+  // Label anchors: [frame (0 watch, 1 dial, 2 movement, 3 case), x, explode offset, y, z].
+  const LABELS = [[0, 160, 560, 98, 0], [0, 178, 480, 92, 0], [0, 60, 370, 82, 0], [1, 150, 0, 0, 0], [2, 150, 0, 0, 0], [3, 200, 0, 30, 90], [0, 84, -200, -160, 250]];
   function render(s) {
     pi = 0;
     const t = s.t, ex = s.explode, dv = s.dive;
@@ -520,10 +522,9 @@ export async function createWatch({ width, height, canvas = null }) {
     // Screen positions (0–1) of the parts' right-hand edges, for the exploded-view labels.
     if (s.labels) {
       const m = cam.viewProjection().matrix, out = s.labels;
-      const pts = [[Gw, 160, exY(560) + 98], [Gw, 178, exY(480) + 92], [Gw, 60, exY(370) + 82], [Gd, 150, 0], [Gmov, 150, 0], [Gc, 210, 50], [Gw, 84, exY(-200) - 160]];
-      for (let i = 0; i < pts.length; i++) {
-        const [g, x, y] = pts[i];
-        const v = i === 6 ? xf(Gw, x, y, 250, tmp) : xf(g, x, y, 0, tmp);
+      for (let i = 0; i < 7; i++) {
+        const L = LABELS[i], g = L[0] === 1 ? Gd : L[0] === 2 ? Gmov : L[0] === 3 ? Gc : Gw;
+        const v = xf(g, L[1], exY(L[2]) + L[3], L[4], tmp);
         const cx = m[0] * v[0] + m[4] * v[1] + m[8] * v[2] + m[12], cy = m[1] * v[0] + m[5] * v[1] + m[9] * v[2] + m[13], cw = m[3] * v[0] + m[7] * v[1] + m[11] * v[2] + m[15];
         out[i * 2] = (cx / cw + 1) / 2; out[i * 2 + 1] = (1 - cy / cw) / 2;
       }
