@@ -1128,15 +1128,21 @@ impl Raster {
             // test (large faces, no overdraw) are shaded straight from
             // registers, out of line; the rest go through the queue.
             let mut run = usize::MAX;
+            let (zv0, dzv) = (V4::splat(z0), V4::splat(dz));
+            let lanes = V4::new(0.0, 1.0, 2.0, 3.0);
             while k + 4 <= len {
                 let kf = k as f32;
-                let zs = [z0 + dz * kf, z0 + dz * (kf + 1.0), z0 + dz * (kf + 2.0), z0 + dz * (kf + 3.0)];
+                // Same lane values as the scalar z0 + dz·k (k + l is exact in f32).
+                let zv = zv0 + dzv * (V4::splat(kf) + lanes);
                 let d4 = &mut depth[k..k + 4];
-                let pass: [bool; 4] = core::array::from_fn(|l| match MODE {
-                    SHADE_EQ => zs[l] <= d4[l],
-                    _ => zs[l] < d4[l],
-                });
-                if pass[0] && pass[1] && pass[2] && pass[3] {
+                let dv = V4::new(d4[0], d4[1], d4[2], d4[3]);
+                let bits = match MODE {
+                    SHADE_EQ => zv.le(dv),
+                    _ => zv.lt(dv),
+                }
+                .bits();
+                let zs = zv.to_array();
+                if bits == 15 {
                     if MODE == SHADE_LT || MODE == GLOSS {
                         d4.copy_from_slice(&zs);
                     }
@@ -1150,10 +1156,11 @@ impl Raster {
                     self.shaded += shade_run::<MODE>(qu, color, sh, gl, a0, run, k, q0, dq, &s0, &da, fwu, fwv);
                     run = usize::MAX;
                 }
-                if !(pass[0] || pass[1] || pass[2] || pass[3]) {
+                if bits == 0 {
                     k += 4;
                     continue; // hidden: the common case under overdraw
                 }
+                let pass: [bool; 4] = core::array::from_fn(|l| bits & (1 << l) != 0);
                 for l in 0..4 {
                     if !pass[l] {
                         continue;

@@ -73,6 +73,14 @@ mod imp {
         w::f32x4_gt(a, b)
     }
     #[inline(always)]
+    pub fn le(a: Raw, b: Raw) -> MaskRaw {
+        w::f32x4_le(a, b)
+    }
+    #[inline(always)]
+    pub fn bits(m: MaskRaw) -> u32 {
+        w::i32x4_bitmask(m) as u32
+    }
+    #[inline(always)]
     pub fn select(m: MaskRaw, a: Raw, b: Raw) -> Raw {
         w::v128_bitselect(a, b, m)
     }
@@ -168,6 +176,14 @@ mod imp {
         [a[0] > b[0], a[1] > b[1], a[2] > b[2], a[3] > b[3]]
     }
     #[inline(always)]
+    pub fn le(a: Raw, b: Raw) -> MaskRaw {
+        [a[0] <= b[0], a[1] <= b[1], a[2] <= b[2], a[3] <= b[3]]
+    }
+    #[inline(always)]
+    pub fn bits(m: MaskRaw) -> u32 {
+        m[0] as u32 | (m[1] as u32) << 1 | (m[2] as u32) << 2 | (m[3] as u32) << 3
+    }
+    #[inline(always)]
     pub fn select(m: MaskRaw, a: Raw, b: Raw) -> Raw {
         [if m[0] { a[0] } else { b[0] }, if m[1] { a[1] } else { b[1] }, if m[2] { a[2] } else { b[2] }, if m[3] { a[3] } else { b[3] }]
     }
@@ -189,6 +205,14 @@ pub struct V4(imp::Raw);
 /// Lane mask from a comparison.
 #[derive(Clone, Copy)]
 pub struct M4(imp::MaskRaw);
+
+impl M4 {
+    /// One bit per lane (lane 0 in bit 0).
+    #[inline(always)]
+    pub fn bits(self) -> u32 {
+        imp::bits(self.0)
+    }
+}
 
 impl V4 {
     #[inline(always)]
@@ -250,6 +274,10 @@ impl V4 {
     #[inline(always)]
     pub fn gt(self, o: Self) -> M4 {
         M4(imp::gt(self.0, o.0))
+    }
+    #[inline(always)]
+    pub fn le(self, o: Self) -> M4 {
+        M4(imp::le(self.0, o.0))
     }
     #[inline(always)]
     pub fn ltf(self, o: f32) -> M4 {
