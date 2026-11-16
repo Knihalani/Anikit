@@ -365,6 +365,20 @@ pub struct Raster {
     pub item: Option<u16>,
     /// Owner (list index) of each pixel's depth while drawing with [`Raster::item`].
     owner: Vec<u16>,
+    /// Occlusion culling (see [`Raster::occluded`]): the largest depth in each
+    /// 16×16 tile, valid where `hiz_dirty` is false. Every tile is marked dirty
+    /// when a draw starts (depth buffers are swapped and cleared between draws);
+    /// within a draw, triangles mark the tiles they write.
+    hiz: Vec<f32>,
+    hiz_dirty: Vec<bool>,
+    hiz_tw: usize,
+    /// Triangles mark tiles dirty (only while a draw culls by occlusion).
+    hiz_track: bool,
+    /// Instances skipped as hidden by the last call (diagnostics).
+    pub occluded: usize,
+    /// Tests: disable occlusion culling (to compare against it).
+    #[cfg(test)]
+    no_hiz: bool,
     /// Tests: always take the full shader (to check the fast paths against it).
     #[cfg(test)]
     full_shader: bool,
@@ -1140,10 +1154,18 @@ impl Raster {
             let s2 = (m[0] * m[0] + m[1] * m[1] + m[2] * m[2]).max(m[3] * m[3] + m[4] * m[4] + m[5] * m[5]).max(m[6] * m[6] + m[7] * m[7] + m[8] * m[8]);
             (c, br * crate::math::sqrtf(s2))
         };
-        if count > 1 && blend == Blend::Opaque {
+        if count > 1 && (blend == Blend::Opaque || blend == Blend::DepthOnly) {
+            // Depth-only draws (shadow maps, masks) keep the nearest depth whatever the
+            // order, so they are sorted too (by NDC depth: their camera may be orthographic).
+            let depth_only = blend == Blend::DepthOnly;
             let d2 = |i: u32| {
                 let b = i as usize * INSTANCE_STRIDE;
-                let (dx, dy, dz) = (instances[b + 9] - eye[0], instances[b + 10] - eye[1], instances[b + 11] - eye[2]);
+                let (tx, ty, tz) = (instances[b + 9], instances[b + 10], instances[b + 11]);
+                if depth_only {
+                    let w = vp[3] * tx + vp[7] * ty + vp[11] * tz + vp[15];
+                    return (vp[2] * tx + vp[6] * ty + vp[10] * tz + vp[14]) / w;
+                }
+                let (dx, dy, dz) = (tx - eye[0], ty - eye[1], tz - eye[2]);
                 dx * dx + dy * dy + dz * dz
             };
             // Keys indexed by instance (culled ones are never looked up).
@@ -1165,9 +1187,23 @@ impl Raster {
             // Depth only (shadow maps): rasterising reads screen x, y and z, never the
             // varyings, so skip normals, UVs and the perspective-divided attributes.
             // The clip coordinates and screen positions are computed exactly as below.
+            // Instances hidden behind depth already in the buffer are skipped (see `occluded`).
             let (hw, hh) = (self.width as f32 * 0.5, self.height as f32 * 0.5);
+            #[cfg(test)]
+            let hiz_on = count * nv >= 32 && !self.no_hiz;
+            #[cfg(not(test))]
+            let hiz_on = count * nv >= 32;
+            self.occluded = 0;
+            self.hiz_track = hiz_on;
+            if hiz_on {
+                self.hiz_begin();
+            }
             for oi in 0..count {
                 let ii = self.order[oi] as usize;
+                if hiz_on && self.occluded(sphere(ii).0, sphere(ii).1, vp) {
+                    self.occluded += 1;
+                    continue;
+                }
                 let m = &instances[ii * INSTANCE_STRIDE..ii * INSTANCE_STRIDE + 12];
                 let off = oi * nv;
                 for (v, p) in mesh.pos.chunks_exact(3).enumerate() {
@@ -1187,13 +1223,108 @@ impl Raster {
                         self.sv[off + v] = Sv { x: hw + c[0] * q * hw, y: hh - c[1] * q * hh, z: c[2] * q, q, a: [0.0; NV] };
                     }
                 }
+                self.tris::<DEPTH>(mesh, off, cull_back, &sh);
             }
-            for oi in 0..count {
-                self.tris::<DEPTH>(mesh, oi * nv, cull_back, &sh);
-            }
+            self.hiz_track = false;
             return;
         }
-        for oi in 0..count {
+        // Opaque draws (instances front to back) skip instances hidden behind what
+        // is already drawn, before transforming them: see `occluded`.
+        #[cfg(test)]
+        let hiz_on = blend == Blend::Opaque && !self.prepass && count * nv >= 32 && !self.no_hiz;
+        #[cfg(not(test))]
+        let hiz_on = blend == Blend::Opaque && !self.prepass && count * nv >= 32;
+        self.occluded = 0;
+        self.hiz_track = hiz_on;
+        if hiz_on {
+            self.hiz_begin();
+        } else {
+            for oi in 0..count {
+                self.transform(mesh, instances, vp, has_uv, oi);
+            }
+        }
+        match blend {
+            Blend::DepthOnly => {
+                for oi in 0..count {
+                    self.tris::<DEPTH>(mesh, oi * nv, cull_back, &sh);
+                }
+            }
+            Blend::Opaque => {
+                let pre = self.prepass;
+                let own = !pre && self.item.is_some();
+                if own {
+                    let n = self.width * self.height;
+                    if self.owner.len() != n {
+                        self.owner.clear();
+                        self.owner.resize(n, u16::MAX);
+                    }
+                }
+                if pre {
+                    for oi in 0..count {
+                        self.tris::<DEPTH>(mesh, oi * nv, cull_back, &sh);
+                    }
+                }
+                for oi in 0..count {
+                    let ii = self.order[oi] as usize;
+                    if hiz_on {
+                        let (c, r) = sphere(ii);
+                        if self.occluded(c, r, vp) {
+                            self.occluded += 1;
+                            continue;
+                        }
+                        self.transform(mesh, instances, vp, has_uv, oi);
+                    }
+                    let inst = &instances[ii * INSTANCE_STRIDE..(ii + 1) * INSTANCE_STRIDE];
+                    sh.set_base([inst[12], inst[13], inst[14]]);
+                    sh.phase = mat.pulse_phase + dot([inst[9], inst[10], inst[11]], mat.pulse_dir);
+                    if lights_on {
+                        let (c, r) = sphere(ii);
+                        sh.cull_lights(c, r);
+                    }
+                    if pre {
+                        self.tris::<SHADE_EQ>(mesh, oi * nv, cull_back, &sh);
+                    } else if own {
+                        self.tris::<SHADE_OWN>(mesh, oi * nv, cull_back, &sh);
+                    } else {
+                        self.tris::<SHADE_LT>(mesh, oi * nv, cull_back, &sh);
+                    }
+                }
+                self.hiz_track = false;
+            }
+            Blend::Gloss => {
+                for oi in 0..count {
+                    let ii = self.order[oi] as usize;
+                    let inst = &instances[ii * INSTANCE_STRIDE..(ii + 1) * INSTANCE_STRIDE];
+                    sh.set_base([inst[12], inst[13], inst[14]]);
+                    sh.phase = mat.pulse_phase + dot([inst[9], inst[10], inst[11]], mat.pulse_dir);
+                    if lights_on {
+                        let (c, r) = sphere(ii);
+                        sh.cull_lights(c, r);
+                    }
+                    self.tris::<GLOSS>(mesh, oi * nv, cull_back, &sh);
+                }
+            }
+            Blend::Additive => {
+                for oi in 0..count {
+                    let ii = self.order[oi] as usize;
+                    let inst = &instances[ii * INSTANCE_STRIDE..(ii + 1) * INSTANCE_STRIDE];
+                    sh.set_base([inst[12], inst[13], inst[14]]);
+                    sh.phase = mat.pulse_phase + dot([inst[9], inst[10], inst[11]], mat.pulse_dir);
+                    if lights_on {
+                        let (c, r) = sphere(ii);
+                        sh.cull_lights(c, r);
+                    }
+                    self.tris::<ADD>(mesh, oi * nv, cull_back, &sh);
+                }
+            }
+        }
+    }
+
+    /// Transform and project the vertices of the `oi`-th instance in draw order.
+    #[inline]
+    fn transform(&mut self, mesh: &Mesh, instances: &[f32], vp: &M4, has_uv: bool, oi: usize) {
+        let nv = mesh.pos.len() / 3;
+        {
             let ii = self.order[oi] as usize;
             let m = &instances[ii * INSTANCE_STRIDE..ii * INSTANCE_STRIDE + 12];
             let off = oi * nv;
@@ -1227,72 +1358,76 @@ impl Raster {
                 }
             }
         }
-        match blend {
-            Blend::DepthOnly => {
-                for oi in 0..count {
-                    self.tris::<DEPTH>(mesh, oi * nv, cull_back, &sh);
-                }
+    }
+
+    /// Start occlusion tests for a draw: size the tile grid, everything stale.
+    fn hiz_begin(&mut self) {
+        let (tw, th) = ((self.width + 15) >> 4, (self.height + 15) >> 4);
+        self.hiz_tw = tw;
+        self.hiz.resize(tw * th, f32::INFINITY);
+        self.hiz_dirty.clear();
+        self.hiz_dirty.resize(tw * th, true);
+    }
+
+    /// Whether an instance with bounding sphere `(c, r)` is certainly hidden:
+    /// its bounding cube lies wholly in front of the camera, and every pixel of
+    /// the screen rectangle it projects to already holds a depth nearer than the
+    /// cube's nearest point (with a margin far larger than any rounding in the
+    /// rasteriser, which never puts a fragment nearer than its vertices). Such
+    /// an instance cannot pass a single depth test, ties included: skipping it
+    /// leaves every pixel as it was.
+    fn occluded(&mut self, c: [f32; 3], r: f32, vp: &M4) -> bool {
+        let (hw, hh) = (self.width as f32 * 0.5, self.height as f32 * 0.5);
+        let (mut x0, mut y0, mut x1, mut y1, mut zmin) = (f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY, f32::INFINITY);
+        for k in 0..8 {
+            let p = [c[0] + if k & 1 != 0 { r } else { -r }, c[1] + if k & 2 != 0 { r } else { -r }, c[2] + if k & 4 != 0 { r } else { -r }];
+            let w = vp[3] * p[0] + vp[7] * p[1] + vp[11] * p[2] + vp[15];
+            let z = vp[2] * p[0] + vp[6] * p[1] + vp[10] * p[2] + vp[14];
+            // Behind or across the near plane (or not finite): don't guess.
+            if w.is_nan() || z.is_nan() || w <= 1e-3 || z < -w {
+                return false;
             }
-            Blend::Opaque => {
-                let pre = self.prepass;
-                let own = !pre && self.item.is_some();
-                if own {
-                    let n = self.width * self.height;
-                    if self.owner.len() != n {
-                        self.owner.clear();
-                        self.owner.resize(n, u16::MAX);
+            let q = 1.0 / w;
+            let sx = hw + (vp[0] * p[0] + vp[4] * p[1] + vp[8] * p[2] + vp[12]) * q * hw;
+            let sy = hh - (vp[1] * p[0] + vp[5] * p[1] + vp[9] * p[2] + vp[13]) * q * hh;
+            x0 = x0.min(sx);
+            x1 = x1.max(sx);
+            y0 = y0.min(sy);
+            y1 = y1.max(sy);
+            zmin = zmin.min(z * q);
+        }
+        if !(x0.is_finite() && x1.is_finite() && y0.is_finite() && y1.is_finite() && zmin.is_finite()) {
+            return false;
+        }
+        let (w, h) = (self.width as f32, self.height as f32);
+        // Off screen entirely: frustum culling's business (it keeps a margin).
+        if x1 < 0.0 || y1 < 0.0 || x0 > w || y0 > h {
+            return false;
+        }
+        let limit = zmin - (1e-5 + zmin.abs() * 1e-5);
+        let (px0, px1) = ((x0.max(0.0) as usize).min(self.width - 1), (x1.min(w - 1.0).max(0.0) as usize).min(self.width - 1));
+        let (py0, py1) = ((y0.max(0.0) as usize).min(self.height - 1), (y1.min(h - 1.0).max(0.0) as usize).min(self.height - 1));
+        for ty in (py0 >> 4)..=(py1 >> 4) {
+            for tx in (px0 >> 4)..=(px1 >> 4) {
+                let t = ty * self.hiz_tw + tx;
+                if self.hiz_dirty[t] {
+                    let (ax, bx) = (tx << 4, ((tx << 4) + 16).min(self.width));
+                    let mut m = f32::NEG_INFINITY;
+                    for y in (ty << 4)..((ty << 4) + 16).min(self.height) {
+                        // (A NaN depth fails every depth test: it hides like a near pixel, so max ignoring it is right.)
+                        for &d in &self.depth[y * self.width + ax..y * self.width + bx] {
+                            m = m.max(d);
+                        }
                     }
+                    self.hiz[t] = m;
+                    self.hiz_dirty[t] = false;
                 }
-                if pre {
-                    for oi in 0..count {
-                        self.tris::<DEPTH>(mesh, oi * nv, cull_back, &sh);
-                    }
-                }
-                for oi in 0..count {
-                    let ii = self.order[oi] as usize;
-                    let inst = &instances[ii * INSTANCE_STRIDE..(ii + 1) * INSTANCE_STRIDE];
-                    sh.set_base([inst[12], inst[13], inst[14]]);
-                    sh.phase = mat.pulse_phase + dot([inst[9], inst[10], inst[11]], mat.pulse_dir);
-                    if lights_on {
-                        let (c, r) = sphere(ii);
-                        sh.cull_lights(c, r);
-                    }
-                    if pre {
-                        self.tris::<SHADE_EQ>(mesh, oi * nv, cull_back, &sh);
-                    } else if own {
-                        self.tris::<SHADE_OWN>(mesh, oi * nv, cull_back, &sh);
-                    } else {
-                        self.tris::<SHADE_LT>(mesh, oi * nv, cull_back, &sh);
-                    }
-                }
-            }
-            Blend::Gloss => {
-                for oi in 0..count {
-                    let ii = self.order[oi] as usize;
-                    let inst = &instances[ii * INSTANCE_STRIDE..(ii + 1) * INSTANCE_STRIDE];
-                    sh.set_base([inst[12], inst[13], inst[14]]);
-                    sh.phase = mat.pulse_phase + dot([inst[9], inst[10], inst[11]], mat.pulse_dir);
-                    if lights_on {
-                        let (c, r) = sphere(ii);
-                        sh.cull_lights(c, r);
-                    }
-                    self.tris::<GLOSS>(mesh, oi * nv, cull_back, &sh);
-                }
-            }
-            Blend::Additive => {
-                for oi in 0..count {
-                    let ii = self.order[oi] as usize;
-                    let inst = &instances[ii * INSTANCE_STRIDE..(ii + 1) * INSTANCE_STRIDE];
-                    sh.set_base([inst[12], inst[13], inst[14]]);
-                    sh.phase = mat.pulse_phase + dot([inst[9], inst[10], inst[11]], mat.pulse_dir);
-                    if lights_on {
-                        let (c, r) = sphere(ii);
-                        sh.cull_lights(c, r);
-                    }
-                    self.tris::<ADD>(mesh, oi * nv, cull_back, &sh);
+                if self.hiz[t] >= limit {
+                    return false;
                 }
             }
         }
+        true
     }
 
     /// Rasterise one instance's triangles (vertices at `off`), clipping
@@ -1375,6 +1510,13 @@ impl Raster {
         let cy1 = (crate::math::floorf(y0.max(y1).max(y2) - 0.5 + M) as isize).min(maxy);
         if cx0 > cx1 || cy0 > cy1 {
             return;
+        }
+        if self.hiz_track && MODE != SHADE_EQ && MODE != ADD {
+            // This triangle may lower depth anywhere in its pixel-centre bounds.
+            for ty in (cy0 as usize >> 4)..=(cy1 as usize >> 4) {
+                let row = ty * self.hiz_tw;
+                self.hiz_dirty[row + (cx0 as usize >> 4)..=row + (cx1 as usize >> 4)].fill(true);
+            }
         }
         let inv = 1.0 / area;
         // Edge functions; per row, solve for the covered span directly, then
@@ -2899,6 +3041,67 @@ mod tests {
             } else {
                 c[i] = 0;
                 i += 1;
+            }
+        }
+    }
+
+    #[test]
+    fn occlusion_culling_changes_no_pixel() {
+        // A wall near the camera, then many instances behind it, partly behind
+        // its edges, coincident pairs (exact ties) and some in front; drawn as
+        // list-indexed items in both orders and plainly, at sizes that end
+        // mid-tile. Culling must skip instances and change no colour or depth bit.
+        let tf = |s: [f32; 3], x: f32, y: f32, z: f32, c: [f32; 3]| {
+            let mut v = vec![s[0], 0.0, 0.0, 0.0, s[1], 0.0, 0.0, 0.0, s[2], x, y, z];
+            v.extend_from_slice(&c);
+            v
+        };
+        let wall = tf([1.3, 1.1, 0.05], 0.1, -0.05, 1.0, [0.6, 0.6, 0.6]);
+        let mut crowd = Vec::new();
+        for i in 0..300 {
+            let h = |k: u32| ((i as u32).wrapping_mul(2654435761).wrapping_add(k * 40503) >> 8) as f32 / 16777216.0;
+            let (x, y, z) = (h(1) * 4.0 - 2.0, h(2) * 4.0 - 2.0, 1.6 - h(3) * 10.0);
+            let s = 0.05 + h(4) * 0.25;
+            crowd.extend(tf([s, s, s], x, y, z, [h(5), h(6), h(7)]));
+            if i % 7 == 0 {
+                crowd.extend(tf([s, s, s], x, y, z, [h(7), h(5), h(6)])); // coincident twin
+            }
+        }
+        // Small cubes just in front of the wall's middle: visible, over fully covered tiles.
+        for (k, z) in [1.12f32, 1.3, 1.6].iter().enumerate() {
+            for (x, y) in [(-0.5f32, -0.4f32), (0.0, 0.0), (0.45, 0.35)] {
+                crowd.extend(tf([0.04, 0.04, 0.04], x + k as f32 * 0.07, y, *z, [0.1, 0.9, 0.4]));
+            }
+        }
+        let front = tf([0.1, 0.1, 0.1], 0.3, 0.2, 2.5, [0.9, 0.2, 0.2]);
+        let items: [(Mesh, &[f32]); 4] = [(cube(), &wall), (cube(), &crowd), (sphere(6, 8), &crowd), (cube(), &front)];
+        let (mat, light) = (Material::default(), Lighting::default());
+        for (w, h) in [(160usize, 144usize), (163, 121), (201, 77)] {
+            for (order, indexed) in [([0usize, 1, 2, 3], false), ([0, 1, 2, 3], true), ([3, 2, 0, 1], true)] {
+                let mut out = [Raster::new(w, h), Raster::new(w, h)];
+                let mut culled = 0;
+                for (k, r) in out.iter_mut().enumerate() {
+                    r.no_hiz = k == 1;
+                    r.clear(0x101010, 255);
+                    // A shadow map (depth-only draws, sorted and culled too) shades the frame.
+                    let light_vp = {
+                        let m = mul(&perspective(50.0, 1.0, 1.0, 100.0), &look_at([1.5, 2.0, 6.0], [0.0; 3], [0.0, 1.0, 0.0]));
+                        core::array::from_fn(|i| m[i] as f32)
+                    };
+                    r.shadow_begin(&light_vp, 96, 0.0015, 0.8);
+                    for &i in &order {
+                        r.shadow_draw(&items[i].0, items[i].1, true);
+                        culled += r.occluded;
+                    }
+                    for &i in &order {
+                        r.item = indexed.then_some(i as u16);
+                        r.draw(&items[i].0, items[i].1, &vp(), [0.0, 0.0, 5.0], &mat, &light, true);
+                        culled += r.occluded;
+                    }
+                }
+                assert!(culled > 20, "{w}x{h} {order:?}: only {culled} instances culled");
+                assert!(out[0].color == out[1].color, "{w}x{h} {order:?}: colour differs");
+                assert!(out[0].depth.iter().zip(&out[1].depth).all(|(a, b)| a.to_bits() == b.to_bits()), "{w}x{h} {order:?}: depth differs");
             }
         }
     }
