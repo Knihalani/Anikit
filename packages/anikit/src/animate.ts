@@ -418,19 +418,34 @@ function sameCompact(b: Binding[], c: Compact): boolean {
   return true;
 }
 
+/** `Part.event` of an animation's only Part (its root): one shared function, called with the Part as `this`. */
+function rootEvent(this: Part, k: number): void {
+  this.ctl?._event(k);
+}
+
+/** `Part.tm` before the node is created. */
+const NO_TIMING: readonly [number, number, number, number] = Object.freeze([0, 0, 1, 0] as [number, number, number, number]);
+
 /** Per-target engine node. */
 class Part implements NodeRecord, Owner, Linked {
   h = 0;
   at = 0;
   b: Binding[] = [];
   ctl: Playable | null;
-  constructor(ctl: Playable, public claims: boolean) {
+  /**
+   * The animation told when every binding was released (`_partEmpty`). A
+   * field, not a closure per Part: `ctl` is cleared when the controller
+   * detaches, this stays (as the closure it replaces did).
+   */
+  own: Animation | null;
+  constructor(ctl: Playable, public claims: boolean, own: Animation | null) {
     this.ctl = ctl;
+    this.own = own;
   }
   /** Whether the controller wants per-frame `onUpdate` notifications. */
   upd = false;
-  /** Timing used to create the node: [delayMs, durationMs, iterations, direction]. */
-  tm: [number, number, number, number] = [0, 0, 1, 0];
+  /** Timing used to create the node: [delayMs, durationMs, iterations, direction] (shared, read-only). */
+  tm: readonly [number, number, number, number] = NO_TIMING;
   /**
    * Compact form when every binding writes a plain property of one target
    * (the common case for objects): the target plus key/offset arrays shared
@@ -602,9 +617,8 @@ class Part implements NodeRecord, Owner, Linked {
       }
       if (x.on) live++;
     }
-    if (live === 0) this.onEmpty?.();
+    if (live === 0) this.own?._partEmpty(this);
   }
-  onEmpty?: () => void;
   /** Every binding was released (counted once by the animation). */
   gone = false;
   dispose(): void {
@@ -653,10 +667,6 @@ export function _setPackGroups(on: boolean): boolean {
   return prev;
 }
 
-/** `Part.onEmpty` for `part` of `anim` (a closure over just these two). */
-function emptyHandler(anim: Animation, part: Part): () => void {
-  return () => anim._partEmpty(part);
-}
 
 /** Per-timeline/animation chain of last written values (timeline sequencing). */
 export type Chain = WeakMap<object, Map<string, Scalar>>;
@@ -846,6 +856,12 @@ export class Animation extends Playable {
   private _immediate = false;
   /** Restorers for `revert()` (captured before the first write). */
   _restore: Array<() => void> = [];
+  /**
+   * Plain-property values for `revert()`, flat: target, key, value. Kept
+   * apart from `_restore`; both are captured before any write, and they
+   * never cover the same target and key with different values.
+   */
+  _rp: unknown[] | null = null;
   private _times: number[] | undefined;
   /** Seconds; available once built. */
   _end = 0;
@@ -901,45 +917,49 @@ export class Animation extends Playable {
     const posts = entries.map(([prop, spec]) => (spec.raw === undefined ? postFor(prop, o) : null));
     // Values with no per-target functions or `random()` strings resolve to themselves.
     const dynamic = entries.map(([, spec]) => spec.values.some((v) => typeof v === 'function' || (typeof v === 'string' && RANDOM_RE.test(v))));
+    let tm: readonly [number, number, number, number] = NO_TIMING;
+    // The current target's track list (one `addTrack` per call, not per target).
+    let curTracks: TrackDef[] = [];
+    const addTrack = (t: TrackDef, ease: EasingInput | EasingInput[] | undefined, offsets?: number[], motion = false) => {
+      if (still && motion) {
+        // Hold the end value for the whole animation: no movement, same timing.
+        stillTrack(t);
+        if (t.segs) t.segs.forEach(stillTrack);
+      }
+      const nk = t.values.length / t.ch;
+      if (offsets && offsets.length === nk) t.offsets = offsets;
+      const e = ease ?? (easeList ? easeList : baseEase);
+      if (Array.isArray(e) && !(e.length === 4 && typeof e[0] === 'number')) {
+        const ids: number[] = [];
+        for (let k = 0; k < nk - 1; k++) ids.push(easingId((e as EasingInput[])[k] ?? baseEase));
+        t.easings = ids;
+      } else {
+        const id = easingId(e as EasingInput);
+        t.easings = singleEasing(id);
+      }
+      const tracks = curTracks;
+      tracks.push(t);
+      const idx = tracks.length - 1;
+      // Segments of a complex value follow it (same timing, contiguous outputs).
+      if (t.segs) {
+        for (const sg of t.segs) {
+          if (t.offsets) sg.offsets = t.offsets.slice();
+          sg.easings = t.easings ? t.easings.slice() : undefined;
+          tracks.push(sg);
+        }
+      }
+      return idx;
+    };
 
     for (let i = 0; i < n; i++) {
       const target = targets[i];
-      const part = new Part(this, claims);
+      const part = new Part(this, claims, this);
       part.upd = !!o.onUpdate;
-      const tracks: TrackDef[] = [];
+      const tracks: TrackDef[] = (curTracks = []);
       let hasExplicitFrom = false;
       // One transform snapshot per target covers every transform component.
       let snappedTransform = false;
 
-      const addTrack = (t: TrackDef, ease: EasingInput | EasingInput[] | undefined, offsets?: number[], motion = false) => {
-        if (still && motion) {
-          // Hold the end value for the whole animation: no movement, same timing.
-          stillTrack(t);
-          if (t.segs) t.segs.forEach(stillTrack);
-        }
-        const nk = t.values.length / t.ch;
-        if (offsets && offsets.length === nk) t.offsets = offsets;
-        const e = ease ?? (easeList ? easeList : baseEase);
-        if (Array.isArray(e) && !(e.length === 4 && typeof e[0] === 'number')) {
-          const ids: number[] = [];
-          for (let k = 0; k < nk - 1; k++) ids.push(easingId((e as EasingInput[])[k] ?? baseEase));
-          t.easings = ids;
-        } else {
-          const id = easingId(e as EasingInput);
-          t.easings = singleEasing(id);
-        }
-        tracks.push(t);
-        const idx = tracks.length - 1;
-        // Segments of a complex value follow it (same timing, contiguous outputs).
-        if (t.segs) {
-          for (const sg of t.segs) {
-            if (t.offsets) sg.offsets = t.offsets.slice();
-            sg.easings = t.easings ? t.easings.slice() : undefined;
-            tracks.push(sg);
-          }
-        }
-        return idx;
-      };
 
       for (let pi = 0; pi < entries.length; pi++) {
         const prop = entries[pi][0], spec = entries[pi][1];
@@ -1005,7 +1025,11 @@ export class Animation extends Playable {
         const idx = addTrack(track, spec.ease, spec.offsets, kind === Kind.Transform || (kind === Kind.Style && MOTION_STYLE.test(camel(prop))));
         // (A one-number template such as `blur(4px)` is not a plain number.)
         const numeric = track.kind === TRACK_NUMBER && track.ch === 1 && !track.complex;
-        if (kind !== Kind.Transform || !snappedTransform) this._restore.push(snapshot(target, prop, kind));
+        if (kind === Kind.Prop) {
+          // Plain properties: target, key and value, flat (no closure per property).
+          const rp = this._rp ?? (this._rp = []);
+          rp.push(target, prop, (target as any)[prop]);
+        } else if (kind !== Kind.Transform || !snappedTransform) this._restore.push(snapshot(target, prop, kind));
         if (kind === Kind.Transform) snappedTransform = true;
         const post = posts[pi];
         if (autoPx && numeric && track.unit === 'px') {
@@ -1082,18 +1106,24 @@ export class Animation extends Playable {
         this._immediate = true;
       }
 
-      part.tm = [delay * 1000, durMs, repeat + 1, direction];
+      // One timing array for every Part of the call that has the same timing.
+      const dm = delay * 1000;
+      if (tm[0] !== dm || tm[1] !== durMs || tm[2] !== repeat + 1 || tm[3] !== direction) tm = [dm, durMs, repeat + 1, direction];
+      part.tm = tm;
       part.h = createAnim(
         delay * 1000, durMs, repeat + 1, direction, (o.endDelay ?? 0) * 1000, flags, tracks,
       );
       if (!part.h) throw new Error('anikit: failed to create animation (invalid keyframes)');
       register(part);
       if (claims) for (const b of part.b) claim(target, b.prop, part);
-      // Built outside this loop's scope: a closure created here would keep
-      // the whole per-target scope (the track definitions) alive with the Part.
-      part.onEmpty = emptyHandler(this, part);
       this._parts.push(part);
-      if (part.b.some((b) => b.on)) this._live++;
+      const pb = part.b;
+      for (let k = 0; k < pb.length; k++) {
+        if (pb[k].on) {
+          this._live++;
+          break;
+        }
+      }
       this._links.push(part);
     }
 
@@ -1101,7 +1131,7 @@ export class Animation extends Playable {
     if (this._parts.length === 1) {
       const p = this._parts[0];
       this._h = p.h;
-      p.event = (k) => p.ctl?._event(k);
+      p.event = rootEvent;
     } else if (this._parts.length > 1) {
       this._group = w.ak_group_create(0, 0, 1, 0, 0, -1, FL_FILL_BACKWARDS | FL_FILL_FORWARDS, 1);
       for (const p of this._parts) w.ak_group_add(this._group, p.h, 0);
@@ -1423,6 +1453,9 @@ export class Animation extends Playable {
     whenReady(() => {
       this.kill();
       for (const r of this._restore.splice(0).reverse()) r();
+      const rp = this._rp;
+      this._rp = null;
+      if (rp !== null) for (let k = rp.length - 3; k >= 0; k -= 3) (rp[k] as any)[rp[k + 1] as string] = rp[k + 2];
     });
   }
 

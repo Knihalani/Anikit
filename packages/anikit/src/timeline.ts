@@ -87,11 +87,17 @@ onFlush(() => {
   }
 });
 
+function runCleanup(c: Playable | (() => void)): void {
+  if (typeof c === 'function') c();
+  else c.kill();
+}
+
 export class Timeline extends Playable {
   readonly labels = new Map<string, number>();
   private _chain: Chain = new WeakMap();
   private _children: Child[] = [];
-  private _cleanups: Array<() => void> = [];
+  /** Run on kill: a child to kill (no closure per child), or a function. */
+  private _cleanups: Array<Playable | (() => void)> = [];
   private _last: Child | null = null;
   private _endTime = 0;
   private _spacer = 0;
@@ -204,7 +210,7 @@ export class Timeline extends Playable {
       whenReady(() => {
         if (!this._h || !child._h) return;
         this._place(child, this._pos(pos));
-        this._cleanups.push(() => child.kill());
+        this._cleanups.push(child);
       });
       return this;
     }
@@ -214,7 +220,7 @@ export class Timeline extends Playable {
       if (!this._h) return;
       if (!anim._h) return; // nothing to animate
       this._place(anim, this._pos(position));
-      this._cleanups.push(() => anim.kill());
+      this._cleanups.push(anim);
     });
     return this;
   }
@@ -395,7 +401,7 @@ export class Timeline extends Playable {
     // remaining children: O(n²) for n children.
     if (this._h) core().ak_release(this._h);
     this._h = 0;
-    for (const c of this._cleanups) c();
+    for (const c of this._cleanups) runCleanup(c);
     this._cleanups = [];
     for (const l of this._links) unregister(l as unknown as NodeRecord);
   }
@@ -406,7 +412,7 @@ export class Timeline extends Playable {
     const h = this._h;
     return () => {
       if (h) core().ak_release(h);
-      for (const c of cleanups) c();
+      for (const c of cleanups) runCleanup(c);
       for (const l of links) unregister(l as unknown as NodeRecord);
     };
   }

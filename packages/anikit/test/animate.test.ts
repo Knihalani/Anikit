@@ -288,6 +288,49 @@ describe('animate: memory', () => {
   });
 });
 
+describe('animate: creation bookkeeping', () => {
+  it('revert() restores plain properties (the same target twice, mixed with elements and specials)', () => {
+    const o = { x: 1, y: 'a', z: 3, text: 'hi' };
+    const p = { x: 5, y: 6 };
+    const el = box({ opacity: '0.5' });
+    (el as any).scrollTop = 0;
+    const a = animate([o, p, o], { x: 100, y: 200 }, { duration: 1, ease: 'linear' });
+    const b = animate(o, { z: [10, 20], text: 'done' }, { duration: 1 });
+    const c = animate(el, { x: 50, opacity: 1 }, { duration: 1 });
+    advance(0.5);
+    expect(o.x).not.toBe(1);
+    expect(p.y).not.toBe(6);
+    for (const x of [a, b, c]) x.revert();
+    flush();
+    expect(o).toEqual({ x: 1, y: 'a', z: 3, text: 'hi' });
+    expect(p).toEqual({ x: 5, y: 6 });
+    expect(el.style.opacity).toBe('0.5');
+    expect(tf(el)).toBe('');
+    // A second revert has nothing left to restore.
+    o.x = 7;
+    a.revert();
+    flush();
+    expect(o.x).toBe(7);
+  });
+
+  it('a Part taken over after its animation finished still frees it; a single-target animation still gets its events', () => {
+    const o = { x: 0 };
+    let done = 0;
+    const a = animate(o, { x: 10 }, { duration: 0.1, onComplete: () => done++ });
+    advance(0.3);
+    expect(done).toBe(1);
+    expect(o.x).toBe(10);
+    const t = [{ x: 0 }, { x: 0 }];
+    const b = animate(t, { x: 10 }, { duration: 1 });
+    advance(0.1);
+    animate(t, { x: 20 }, { duration: 1 });
+    advance(0.1);
+    expect(b.state).toBe('idle');
+    expect((b as any)._killed).toBe(true);
+    void a;
+  });
+});
+
 describe('animate: plain-object write path', () => {
   // Plain-property parts write through a generated per-key-set writer when
   // code generation is allowed, else through a generic loop (CSP fallback).
