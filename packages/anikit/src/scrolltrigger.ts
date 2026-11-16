@@ -232,6 +232,8 @@ export class ScrollTrigger {
   private pinMargin = '';
   private pinItem: Record<string, string> = {};
   private pinSize = { w: 0, h: 0 };
+  /** The pinned element's inline values of the properties pinning writes. */
+  private pinOrig = { position: '', top: '', left: '', width: '', height: '', transform: '', margin: '', boxSizing: '' };
 
   /** Size the spacer like the pinned element's natural box. */
   private sizeSpacer(): void {
@@ -239,9 +241,19 @@ export class ScrollTrigger {
     const el = this.pinEl;
     if (!sp || !el) return;
     const st = sp.style;
-    el.style.margin = '';
+    // Measure the element's own box: its inline size and margin as the page set them.
+    const o = this.pinOrig;
+    el.style.margin = o.margin;
+    el.style.boxSizing = o.boxSizing;
+    el.style.width = o.width;
+    el.style.height = o.height;
     st.display = 'contents';
+    // The layout box: without the element's own transform (a rotation would
+    // grow the rect, and the pinned box with it).
+    const tf = el.style.transform;
+    el.style.transform = 'none';
     const r = el.getBoundingClientRect();
+    el.style.transform = tf;
     this.pinSize = { w: r.width, h: r.height };
     st.display = 'block';
     st.boxSizing = 'content-box';
@@ -300,6 +312,8 @@ export class ScrollTrigger {
     this.pinMargin = cs.margin;
     this.pinItem = { flex: cs.flex, alignSelf: cs.alignSelf, justifySelf: cs.justifySelf, gridArea: cs.gridArea, order: cs.order };
     const prev = el.getAttribute('style');
+    const o = this.pinOrig;
+    for (const k of Object.keys(o) as (keyof typeof o)[]) o[k] = el.style[k];
     this.pinRestore = () => {
       if (prev === null) el.removeAttribute('style');
       else el.setAttribute('style', prev);
@@ -313,15 +327,23 @@ export class ScrollTrigger {
     if (this.dead) return;
     const h = this.horizontal;
     const size = viewportSize(this.scroller, h);
-    const scroll = scrollPos(this.scroller, h);
     // Measure with the pin un-pinned.
     if (this.pinEl) {
       const st = this.pinEl.style;
-      st.position = '';
-      st.top = st.left = st.width = st.height = st.transform = '';
+      const o = this.pinOrig;
+      st.position = o.position;
+      st.top = o.top;
+      st.left = o.left;
+      // The counter-translation inside a scrolling element is ours; in the
+      // window the transform stays the page's (it may be animating it).
+      if (this.scroller !== window) st.transform = o.transform;
       if (this.spacer) this.spacer.style.paddingBottom = this.spacer.style.paddingRight = '';
       this.sizeSpacer();
     }
+    // Read after un-pinning: removing the spacing can make the browser's
+    // scroll anchoring move the scroll position, and every rect below is
+    // read in that same layout.
+    const scroll = scrollPos(this.scroller, h);
     let tStart = 0;
     let tSize = 0;
     if (this.trigger) {
@@ -456,8 +478,11 @@ export class ScrollTrigger {
     const h = this.horizontal;
     if (this.scroller === window) {
       if (s < this.start) {
-        st.position = '';
-        st.top = st.left = st.width = '';
+        const o = this.pinOrig;
+        st.position = o.position;
+        st.top = o.top;
+        st.left = o.left;
+        st.width = this.pinSize.w + 'px';
       } else if (s <= this.end) {
         if (st.position !== 'fixed') {
           const r = this.spacer!.getBoundingClientRect();
