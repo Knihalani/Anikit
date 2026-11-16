@@ -377,14 +377,14 @@ function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner, Slots | 
           'H', 'T',
           'return function run(R,U,up,i,n,f,w){"use strict";' +
             'const v0=w.ak_out0_ptr()>>>3,ep=w.ak_out0_epoch_ptr()>>>2,e0=U[ep];' +
-            `for(;i<n;i++){if(U[ep]!==e0)break;const h=U[up+i],x=h&${INDEX_MASK};if(H[x]!==h)break;` +
+            `for(;i<n;i++){if(U[ep]!==e0)break;const h=U[up+i]|0,x=h&${INDEX_MASK};if(H[x]!==h)break;` +
             `T[x][${JSON.stringify(keys[0])}]=f[v0+x];}return i;}`,
         )(slots.h, slots.t)
         : new Function(
           'H', 'T', 'A',
           'return function run(R,U,up,i,n,f,w){"use strict";' +
             'for(;i<n;i++){if(f.length===0)break;' +
-            `const h=U[up+i],x=h&${INDEX_MASK};if(H[x]!==h)break;` +
+            `const h=U[up+i]|0,x=h&${INDEX_MASK};if(H[x]!==h)break;` +
             `const t=T[x],a=A[x];${stores}}return i;}`,
         )(slots.h, slots.t, slots.a)
     ) as Runner;
@@ -395,6 +395,22 @@ function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner, Slots | 
     codegen = false;
     return null;
   }
+}
+
+/**
+ * Testing hook: entries of the compact writers' dense tables (`Slots`) whose
+ * node is no longer alive. Always 0 unless a Part outlived its node without
+ * leaving its table (a stale entry is written through if the slot's handle
+ * comes round again).
+ */
+export function _staleSlots(): number {
+  const w = core();
+  let n = 0;
+  compactCache.forEach((c) => {
+    const s = c[4];
+    if (s !== null) for (let x = 0; x < s.h.length; x++) if (s.h[x] !== 0 && !w.ak_alive(s.h[x])) n++;
+  });
+  return n;
 }
 
 /** `false`: formatted single-property Parts take the general binding loop (tests compare both). */
@@ -686,11 +702,14 @@ export function _setPackGroups(on: boolean): boolean {
  */
 function readFast(
   targets: Target[], keys: string[], specs: PropSpec[], cur: boolean[], rp: unknown[], vals: Float64Array,
+  chain: Chain | undefined,
 ): boolean {
   const n = targets.length, np = keys.length;
   for (let i = 0, r = 0, at = 0; i < n; i++) {
     const t = targets[i] as any;
     if (isElement(t)) return false;
+    // A timeline's earlier steps set where this one starts.
+    const ch = chain !== undefined ? chain.get(t) : undefined;
     for (let pi = 0; pi < np; pi++) {
       const key = keys[pi];
       const v = t[key];
@@ -700,8 +719,10 @@ function readFast(
       r += 3;
       let cn = 0;
       if (cur[pi]) {
-        if (typeof v !== 'number') return false;
-        cn = v;
+        const c = ch !== undefined ? ch.get(key) : undefined;
+        const x = c !== undefined ? c : v;
+        if (typeof x !== 'number') return false;
+        cn = x;
       }
       const raw = specs[pi].values as Array<number | null>;
       if (raw.length === 1) {
@@ -716,6 +737,28 @@ function readFast(
     }
   }
   return true;
+}
+
+const seen = new Set<unknown>();
+/** Whether a target list holds one target more than once. */
+function hasDuplicates(targets: Target[]): boolean {
+  let dup = false;
+  for (let i = 0; i < targets.length && !dup; i++) {
+    if (seen.has(targets[i])) dup = true;
+    else seen.add(targets[i]);
+  }
+  seen.clear();
+  return dup;
+}
+
+/** `Animation._fast`: each value's last keyframe is where the timeline's next step starts. */
+function fastChain(chain: Chain, targets: Target[], keys: string[], nks: number[], vals: Float64Array): void {
+  for (let i = 0, v = 0; i < targets.length; i++) {
+    for (let pi = 0; pi < keys.length; pi++) {
+      v += nks[pi];
+      chainSet(chain, targets[i], keys[pi], vals[v - 1]);
+    }
+  }
 }
 
 /** `Animation._fast`: one Part per target, handles read from the f64 buffer at `base`. */
@@ -1079,8 +1122,8 @@ export class Animation extends Playable {
       return idx;
     };
 
-    const fast = batchCreate && n > 0 && !ctx.chain && !ctx.set && (o.repeatDelay ?? 0) <= 0 &&
-      this._fast(targets, keys, specs, posts, dynamic, o, claims, reduce, repeat, direction, fill, easeList, baseEase);
+    const fast = batchCreate && n > 0 && !ctx.set && (o.repeatDelay ?? 0) <= 0 &&
+      this._fast(targets, keys, specs, posts, dynamic, o, ctx, claims, reduce, repeat, direction, fill, easeList, baseEase);
     if (!fast) for (let i = 0; i < n; i++) {
       const target = targets[i];
       const part = new Part(this, claims, this);
@@ -1321,7 +1364,7 @@ export class Animation extends Playable {
    */
   private _fast(
     targets: Target[], keys: string[], specs: PropSpec[], posts: Array<unknown>, dynamic: boolean[],
-    o: AnimateOptions, claims: boolean, reduce: boolean, repeat: number, direction: number, fill: number,
+    o: AnimateOptions, ctx: BuildContext, claims: boolean, reduce: boolean, repeat: number, direction: number, fill: number,
     easeList: readonly unknown[] | null, baseEase: EasingInput | undefined,
   ): boolean {
     const n = targets.length, np = keys.length;
@@ -1345,6 +1388,9 @@ export class Animation extends Playable {
       if (raw[0] !== null && raw[0] !== undefined && raw.length > 1) hasExplicitFrom = true;
       stride += nk;
     }
+    // A target listed twice in a timeline step starts its second part where
+    // the first ends (the general path chains them one by one).
+    if (ctx.chain && n > 1 && hasDuplicates(targets)) return false;
     // Current values (and the values `revert()` restores), read once.
     // (`vals` is shared between calls unless a getter re-enters.)
     const rp: unknown[] = new Array(3 * n * np);
@@ -1355,7 +1401,7 @@ export class Animation extends Playable {
     fastBusy = true;
     let ok: boolean;
     try {
-      ok = readFast(targets, keys, specs, cur, rp, vals);
+      ok = readFast(targets, keys, specs, cur, rp, vals, ctx.chain);
     } finally {
       fastBusy = busy;
     }
@@ -1389,7 +1435,7 @@ export class Animation extends Playable {
     const delay = reduce ? 0 : ((o.delay as number | undefined) ?? 0);
     const durMs = Math.max(0, dur * 1000);
     let flags = fill;
-    if (o.immediateRender ?? (hasExplicitFrom && delay > 0)) {
+    if (o.immediateRender ?? (!ctx.child && hasExplicitFrom && delay > 0)) {
       flags |= FL_IMMEDIATE;
       this._immediate = true;
     }
@@ -1432,6 +1478,7 @@ export class Animation extends Playable {
     const tm: readonly [number, number, number, number] = [delay * 1000, durMs, repeat + 1, direction];
     // (The per-target loops live in functions of their own: optimised during
     // one large call, the method would keep that code for every small one.)
+    if (ctx.chain) fastChain(ctx.chain, targets, keys, nks, vals);
     fastParts(this, targets, keys, base, tm, claims, !!o.onUpdate);
     if (n > 1) fastPack(w, g, this._parts, base);
     fastLink(this, targets, claims);

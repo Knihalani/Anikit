@@ -115,7 +115,9 @@ export function flush(): void {
       views();
       const up = w.ak_updated_ptr() >>> 2;
       while (i < n) {
-        const h = U32[up + i];
+        // (Read as int32: wasm returns handles as i32, so a generation of
+        // 2048 or more makes the handle a record holds negative.)
+        const h = U32[up + i] | 0;
         const r = records[h & INDEX_MASK];
         if (r !== undefined && r.h === h && r.render !== undefined) {
           // Runs of records with one generated writer (plain objects, one
@@ -145,7 +147,7 @@ export function flush(): void {
   if (ne > 0) {
     views();
     const ep = w.ak_events_ptr() >>> 2;
-    for (let i = 0; i < ne; i++) evScratch[i] = U32[ep + i];
+    for (let i = 0; i < ne; i++) evScratch[i] = U32[ep + i] | 0; // (handles as int32, see above)
     count = ne;
   }
   w.ak_clear_frame();

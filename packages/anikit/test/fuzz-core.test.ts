@@ -8,7 +8,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { animate, fromTo, from, set, stagger, engine, flush, setWarnings } from '../src/index';
 import { timeline } from '../src/timeline';
 import { setup, advance } from './setup';
-import { _setBatchCreate, _setPackGroups, _setCodegen, _setNumberTracks } from '../src/animate';
+import { _setBatchCreate, _setPackGroups, _setCodegen, _setNumberTracks, _staleSlots } from '../src/animate';
 import { _recordCount } from '../src/core';
 
 beforeAll(async () => {
@@ -99,6 +99,8 @@ function scenario(seed: number): unknown[] {
           const pos = r() < 0.5 ? undefined : Math.round(r() * 50) / 100;
           tl.add(subset(), props() as any, opts() as any, pos as any);
         }
+        // (Timelines autoplay on a microtask; this test runs synchronously.)
+        if (r() < 0.7) tl.play();
         ctls.push(tl as unknown as Ctl);
         snap('timeline');
       } else if (k < 0.55) {
@@ -166,6 +168,7 @@ describe('core fuzz: every fast path agrees with the general one', () => {
     for (let s = 0; s < 20; s++) scenario(5000 + s);
     advance(0.1);
     expect(_recordCount()).toBeLessThanOrEqual(before);
+    expect(_staleSlots()).toBe(0);
   });
 });
 
@@ -240,5 +243,64 @@ describe('core edge cases', () => {
         _setBatchCreate(prev);
       }
     }
+  });
+});
+
+describe('fast creation path: user code while reading values', () => {
+  it('a getter that starts another animation (re-entrant) and a getter that throws', () => {
+    const inner = [{ v: 0 }, { v: 0 }];
+    let nested: ReturnType<typeof animate> | undefined;
+    const tricky = {
+      get x() {
+        if (!nested) nested = animate(inner, { v: [0, 10] }, { duration: 1, ease: 'linear' });
+        return 5;
+      },
+      set x(_v: number) { /* ignored */ },
+    };
+    const plain = { x: 0 };
+    const a = animate([plain, tricky as unknown as { x: number }], { x: 100 }, { duration: 1, ease: 'linear' });
+    advance(0.5, 500);
+    expect(plain.x).toBeCloseTo(50, 6);
+    expect(inner[0].v).toBeCloseTo(5, 6);
+    expect(inner[1].v).toBeCloseTo(5, 6);
+    a.kill();
+    nested!.kill();
+    const bad = { get y(): number { throw new Error('boom'); } };
+    expect(() => animate([{ y: 0 }, bad as unknown as { y: number }], { y: 1 }, { duration: 1 })).toThrow('boom');
+    // The shared scratch is usable again afterwards.
+    const objs = [{ y: 0 }, { y: 10 }];
+    const b = animate(objs, { y: 20 }, { duration: 1, ease: 'linear' });
+    advance(0.5, 500);
+    expect(objs.map((o) => o.y)).toEqual([10, 15]);
+    b.kill();
+  });
+});
+
+describe('generational handles', () => {
+  it('animations still render and finish once a slot has been reused 2048+ times (negative int32 handles)', () => {
+    // Freed slots are reused last-in first-out, so one create/kill cycle at a
+    // time keeps landing in the same slot and its generation keeps rising;
+    // from 2048 on the handle's top bit is set (negative in JS).
+    const o = { x: 0 };
+    const objs = [{ x: 0 }, { x: 0 }];
+    let bad = 0, done = 0;
+    for (let k = 0; k < 4200; k++) {
+      o.x = 0;
+      const a = animate(o, { x: [0, 100] }, { duration: 0.1, ease: 'linear', onComplete: () => done++ });
+      advance(0.05, 50);
+      if (Math.abs(o.x - 50) > 1e-6) bad++;
+      advance(0.06, 60);
+      if (o.x !== 100) bad++;
+      a.kill();
+      if (k % 100 === 0) {
+        // A multi-target call too (group root + packed children + generated writer).
+        const b = animate(objs, { x: [0, 10] }, { duration: 0.1, ease: 'linear' });
+        advance(0.05, 50);
+        if (objs.some((t) => Math.abs(t.x - 5) > 1e-6)) bad++;
+        b.kill();
+      }
+    }
+    expect(bad).toBe(0);
+    expect(done).toBe(4200);
   });
 });
