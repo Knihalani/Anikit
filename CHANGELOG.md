@@ -1,5 +1,36 @@
 # Changelog
 
+## Ninth round: real-time GPU 3D (2026-11-16, to 20:15 UTC)
+
+### `scene()`: WebGL2 3D for the web (`anikit/scene`)
+- **One-call setup.** `scene(canvas, { camera, environment: 'studio' | 'sunset' | 'night', shadows, bloom, dof, fxaa, exposure })` renders through anikit's single rAF loop. It runs at native DPR (capped at 2), and an adaptive governor lowers the pixel ratio when frames run slow. Size comes from a `ResizeObserver`, so there are no per-frame layout reads.
+- **Rendering:**
+  - metal/roughness GGX materials with presets: chrome, gold, copper, glass, plastic, ceramic, rubber, emissive and toon;
+  - analytic procedural environments, prefiltered per roughness in closed form (no textures to load);
+  - split-sum IBL and a PCF shadow map;
+  - an HDR post chain (MSAA resolve, half-resolution bloom and depth of field, ACES, FXAA), or MSAA with in-shader tonemapping when post is off.
+- **Animation:**
+  - transforms (`position`, `rotation`, `scale`), the camera, lights, exposure and material numbers are plain properties, so `animate()`, `spring()` and timelines drive them;
+  - `s.fly(flightPath, s)` drives the camera along a flight path;
+  - `s.orbit()` gives drag/wheel controls with inertia.
+- **Picking.** `s.raycast(x, y)` tests triangles exactly. `obj.on('click' | 'pointerenter' | …)` events bubble through groups.
+- **Speed:** instanced draws (`s.instances(geometry, n, fn)`), frustum culling, state-sorted opaque draws, back-to-front transparent draws, one uniform block per frame, shaders compiled at creation, and no per-frame allocation in `render()`.
+- **Hosting.** `s.add(layer)` takes a custom `SceneLayer` (for example a Gaussian-splat renderer) that draws in the scene framebuffer with the camera matrices.
+- **Benchmark.** `scripts/bench-scene.mjs` compares against three.js 0.187 on SwiftShader (CPU WebGL), with 10k instanced boxes and shadows at 960×540. Start-up: 870 vs 876 ms. Frame: 670 vs 552 ms, so three.js is about 20% faster per frame here. Draw calls: 3 vs 3. GPU numbers are still to be measured (`--gpu`).
+
+### Modelling
+- Primitives: `box`, `roundedBox`, `sphere`, `cylinder`, `capsule`, `torus` and `plane`.
+- Generators: `lathe`, `extrude` (ear-clipping caps) and `tube` (parallel-transport frames).
+- Mesh tools: `smoothNormals` (seam-welded) and `subdivide` (midpoint subdivision plus Laplacian smoothing).
+- SDF modelling: `sdfMesh` with `sdSphere`, `sdBox`, `sdTorus`, `smoothUnion` and `smoothSubtract`. Meshing uses surface nets in the Rust core (`anikit-core::sdf`, `ak_surface_nets`), with a JS fallback.
+- `text3d(text, { font, size, depth, bevel })`: Canvas 2D glyphs, an exact EDT, then a rounded-bevel extrusion meshed by surface nets.
+- `loadGLTF` / `parseGLTF` load meshes, PBR factors, the node hierarchy and TRS animations. Textures and skinning are not loaded yet.
+
+### Not done yet
+- glTF textures and skinning.
+- Text from font outlines (glyphs are rasterised, so very small bevels are limited by `resolution`).
+- A cubemap/HDRI environment input.
+
 ## Eighth round (2026-11-16, to 18:05 UTC)
 
 Details and interleaved before/after runs are in `docs/perf-notes.md` under "Eighth round (core)", "(DOM)" and "(video)".
