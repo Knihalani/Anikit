@@ -2,7 +2,7 @@
 // first near the viewport and runs per-frame work only while it is visible.
 import {
   engine, animate, set, spring, stagger, splitText, inView, magnetic, timeline, world, flush,
-  circle, star, rect, pathThrough, noise2, pointCloud, glow, scene3d, textPoints, flip, marquee, effects,
+  circle, star, rect, pathThrough, noise2, pointCloud, glow, scene3d, flip, marquee, effects,
 } from '../packages/anikit/dist/anikit.lean.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -37,12 +37,15 @@ export function start({ reduced, fine, small }) {
     const home = () => { aim.x = box.clientWidth / 2; aim.y = box.clientHeight / 2; };
     home();
     pos.forEach((p) => { p.x = aim.x; p.y = aim.y; });
-    box.addEventListener('pointermove', (e) => { const r = box.getBoundingClientRect(); aim.x = e.clientX - r.left; aim.y = e.clientY - r.top; });
-    box.addEventListener('pointerleave', home);
+    let inside = false, bw = box.clientWidth, bh = box.clientHeight;
+    addEventListener('resize', () => { bw = box.clientWidth; bh = box.clientHeight; });
+    box.addEventListener('pointermove', (e) => { const r = box.getBoundingClientRect(); inside = true; aim.x = e.clientX - r.left; aim.y = e.clientY - r.top; });
+    box.addEventListener('pointerleave', () => { inside = false; });
     let idle = 0;
     whileVisible(box, (dt) => {
       // Without a pointer, the head draws a slow figure eight.
-      if (!fine) { idle += dt / 1000; aim.x = box.clientWidth / 2 + Math.sin(idle * 1.3) * box.clientWidth * 0.32; aim.y = box.clientHeight / 2 + Math.sin(idle * 2.6) * 60; }
+      // Without the pointer inside, the head traces a slow figure eight.
+      if (!inside) { idle += dt / 1000; aim.x = bw / 2 + Math.sin(idle * 1.3) * bw * 0.32; aim.y = bh / 2 + Math.sin(idle * 2.6) * bh * 0.25; }
       spring(pos[0], aim, cfg);
       for (let i = 1; i < n; i++) spring(pos[i], pos[i - 1], cfg);
       for (let i = 0; i < n; i++) set(dots[i], { x: pos[i].x, y: pos[i].y });
@@ -118,27 +121,67 @@ export function start({ reduced, fine, small }) {
   });
 
   // 05 · Particles: 100,000 points (40,000 on phones) morphing between shapes.
-  once('#cloud', () => {
-    const N = reduced ? 30_000 : small ? 40_000 : 100_000;
+  // The cloud and its shapes are built in idle time, one step per idle slot,
+  // long before the section arrives; the section itself only wires up rendering.
+  const N = reduced ? 30_000 : small ? 40_000 : 100_000;
+  let seed = 3;
+  const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const TAU = Math.PI * 2;
+  // Shape generators, filled in slices of a few milliseconds so no frame is ever blocked.
+  const shapes = [
+    (i, a, o) => { const u = rnd() * 2 - 1, th = rnd() * TAU, r = 230 * Math.cbrt(0.85 + rnd() * 0.15), q = Math.sqrt(1 - u * u); a[o] = Math.cos(th) * q * r; a[o + 1] = u * r; a[o + 2] = Math.sin(th) * q * r; },
+    (i, a, o) => { const th = rnd() * TAU, ph = rnd() * TAU, r = 70 * Math.sqrt(rnd()); const R = 250 + Math.cos(ph) * r; a[o] = Math.cos(th) * R; a[o + 1] = Math.sin(ph) * r; a[o + 2] = Math.sin(th) * R; },
+    // The same (2, 3) torus knot as the chrome object, as a glowing tube of points.
+    (i, a, o) => {
+      const t = (i / N) * TAU, r = 150 + 68 * Math.cos(3 * t);
+      const ph = rnd() * TAU, rr = 26 * Math.sqrt(rnd());
+      a[o] = r * Math.cos(2 * t) + Math.cos(ph) * rr; a[o + 1] = r * Math.sin(2 * t) + Math.sin(ph) * rr; a[o + 2] = -68 * Math.sin(3 * t) + Math.cos(ph * 1.7) * rr;
+    },
+  ];
+  let cloud = null, g = null;
+  const jobs = [];
+  jobs.push(() => { cloud = pointCloud(N, { autoStep: false, stiffness: 30, damping: 7, spread: 0.8, noise: 1.6, swirl: 60, frequency: 0.012 }); return true; });
+  shapes.forEach((fn, k) => {
+    let buf = null, i = 0;
+    jobs.push((deadline) => {
+      buf ??= new Float32Array(N * 3);
+      const end = performance.now() + Math.min(6, Math.max(2, deadline.timeRemaining() - 1));
+      while (i < N && performance.now() < end) { const stop = Math.min(N, i + 2000); for (; i < stop; i++) fn(i, buf, i * 3); }
+      if (i < N) return false;
+      cloud.shape(k, buf);
+      if (k === 0) cloud.snap(0);
+      return true;
+    });
+  });
+  jobs.push(() => { g = glow('#cloud-canvas', { resolution: small ? 0.7 : 0.85, background: '#05060a', trail: 0.4, budget: 4 }); return true; });
+  {
+    let i = 0, cols = null;
+    jobs.push((deadline) => {
+      cols ??= new Float32Array(N * 3);
+      const end = performance.now() + Math.min(6, Math.max(2, deadline.timeRemaining() - 1));
+      while (i < N && performance.now() < end) { const stop = Math.min(N, i + 4000); for (; i < stop; i++) { const k = rnd(); const c = k < 0.05 ? [1.6, 1.3, 1.8] : [0.55 + k * 0.4, 0.35 + k * 0.2, 1]; cols[i * 3] = c[0]; cols[i * 3 + 1] = c[1]; cols[i * 3 + 2] = c[2]; } }
+      if (i < N) return false;
+      g.colors(N, (j) => [cols[j * 3], cols[j * 3 + 1], cols[j * 3 + 2]]);
+      return true;
+    });
+  }
+  const cloudReady = new Promise((resolve) => {
+    const idle = window.requestIdleCallback || ((f) => setTimeout(() => f({ timeRemaining: () => 8 }), 30));
+    const run = (deadline) => {
+      if (!jobs.length) return resolve();
+      if (jobs[0](deadline)) jobs.shift();
+      idle(run, { timeout: 500 });
+    };
+    idle(run, { timeout: 500 });
+  });
+  once('#cloud', () => cloudReady.then(() => {
     $('#cloud-n').textContent = N.toLocaleString('en-US');
     $('.snippet', $('#cloud')).textContent = `pointCloud(${N.toLocaleString('en-US').replaceAll(',', '_')}).morph(1, { duration: 2 })`;
     const canvas = $('#cloud-canvas');
-    const g = glow(canvas, { resolution: small ? 0.7 : 0.9, background: '#05060a', trail: 0.4, budget: 5 });
     const scene = scene3d({ fov: 40, camera: { z: 1000 }, near: 10, far: 5000 });
     const fit = () => { const r = canvas.getBoundingClientRect(); g.resize(r.width, r.height); scene.resize(r.width, r.height, 1); };
     fit();
     addEventListener('resize', fit);
-    let seed = 3;
-    const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
-    const make = (fn) => { const a = new Float32Array(N * 3); for (let i = 0; i < N; i++) fn(i, a, i * 3); return a; };
-    const sphere = make((i, a, o) => { const u = rnd() * 2 - 1, th = rnd() * Math.PI * 2, r = 230 * Math.cbrt(0.85 + rnd() * 0.15), s = Math.sqrt(1 - u * u); a[o] = Math.cos(th) * s * r; a[o + 1] = u * r; a[o + 2] = Math.sin(th) * s * r; });
-    const ring = make((i, a, o) => { const th = rnd() * Math.PI * 2, ph = rnd() * Math.PI * 2, r = 70 * Math.sqrt(rnd()); const R = 250 + Math.cos(ph) * r; a[o] = Math.cos(th) * R; a[o + 1] = Math.sin(ph) * r; a[o + 2] = Math.sin(th) * R; });
-    const cloud = pointCloud(N, { stiffness: 30, damping: 7, spread: 0.8, noise: 1.6, swirl: 60, frequency: 0.012 });
-    cloud.shape(0, sphere);
-    cloud.shape(1, ring);
-    cloud.shape(2, textPoints('anikit', N, { width: 760, depth: 40, font: 'Display', weight: 900 }));
-    cloud.snap(0);
-    g.colors(N, (i) => { const k = rnd(); return k < 0.05 ? [1.6, 1.3, 1.8] : [0.55 + k * 0.4, 0.35 + k * 0.2, 1]; });
     let next = 1, timer = 0, rot = 0;
     const ptr = { x: 0, y: 0, on: false };
     canvas.addEventListener('pointermove', (e) => { const r = canvas.getBoundingClientRect(); ptr.x = e.clientX - r.left; ptr.y = e.clientY - r.top; ptr.on = true; });
@@ -146,12 +189,13 @@ export function start({ reduced, fine, small }) {
     canvas.addEventListener('click', () => cloud.explode(0, 0, 0, 900));
     whileVisible(canvas, (dt) => {
       timer += dt / 1000;
+      cloud.step(Math.min(dt, 50) / 1000);
       if (!reduced) rot += dt / 1000;
       if (timer > 3.2) { timer = 0; cloud.morph(next, { duration: 2, ease: 'inOutCubic' }); next = (next + 1) % 3; }
       scene.camera.x = Math.sin(rot * 0.25) * 1000; scene.camera.z = Math.cos(rot * 0.25) * 1000;
       g.render(scene, cloud, { size: 1.1, intensity: small ? 0.5 : 0.32, fog: [600, 2200], ...(ptr.on ? { lens: { x: ptr.x, y: ptr.y } } : {}) });
     });
-  });
+  }));
 
   // 06 · Layout: FLIP.
   once('#layout', () => {

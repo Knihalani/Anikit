@@ -35,10 +35,14 @@
       </div>
     </div>
     <p class="hero-meta mono" id="hero-meta">TypeScript · Python · MIT</p>
+    <div class="scroll-cue mono" aria-hidden="true"><span>Scroll</span><i></i></div>
   </header>
 
   <section class="break" id="break" aria-label="The knot breaks into seven pieces">
-    <p class="break-note mono" id="break-note">Scroll: the knot splits into seven pieces.<br />Each piece carries one part of the library.</p>
+    <div class="break-pin">
+      <h2 class="break-title" id="break-title">One engine.<br />Seven pieces.</h2>
+      <p class="break-note mono" id="break-note">Each piece of the knot carries one part of the library.</p>
+    </div>
   </section>
 
   <section class="demo" id="springs" data-side="left" data-accent="#ff6a3d">
@@ -91,7 +95,7 @@
       <p class="tag mono">05 · Particles</p>
       <h2><span id="cloud-n">100,000</span> particles</h2>
       <p>Each particle spring-follows a blend of target shapes through a turbulence field. Simulation, projection and the glow are computed in WebAssembly; JavaScript does one <code>putImageData</code>.</p>
-      <canvas class="cloud-canvas" id="cloud-canvas" aria-label="A particle cloud morphing between a sphere, a ring and the word anikit"></canvas>
+      <canvas class="cloud-canvas" id="cloud-canvas" aria-label="A particle cloud morphing between a sphere, a ring and the torus knot"></canvas>
       <code class="snippet mono">pointCloud(100_000).morph(1, { duration: 2 })</code>
     </div>
   </section>

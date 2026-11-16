@@ -2,7 +2,7 @@
 // breaks into seven pieces on scroll; each piece docks beside one demo and the
 // pieces re-form the knot above the install command. Every pose below is a pure
 // function of one smoothed scroll position, so scrubbing is continuous both ways.
-import { ready, engine, renderer3d, scene3d, mesh, instances, spring, inView } from '../packages/anikit/dist/anikit.lean.js';
+import { ready, engine, renderer3d, scene3d, mesh, instances, spring, inView, set, animate, splitText, stagger } from '../packages/anikit/dist/anikit.lean.js';
 
 await ready;
 engine.reducedMotion = 'user';
@@ -33,16 +33,24 @@ const accents = sections.map((s) => s.dataset.accent.match(/[0-9a-f]{2}/gi).map(
 sections.forEach((s) => s.style.setProperty('--accent', s.dataset.accent));
 
 // ---------------------------------------------------------------------------
-// Renderer: reduced internal resolution, adapted to hold ~7 ms per frame
+// Renderer: a fixed, reduced internal resolution (about 0.45 Mpx), upscaled by CSS.
+// It is chosen once (and lowered at most once, while the hero is idle), so the
+// buffers are never reallocated mid-scroll.
 // ---------------------------------------------------------------------------
 const canvas = $('#stage');
 const small = innerWidth < 760;
-let scale = small ? Math.max(0.8, Math.min(devicePixelRatio || 1, 3) * 0.5) : Math.min(devicePixelRatio || 1, 2) * 0.6;
+const dpr = Math.min(devicePixelRatio || 1, 3);
+const budgetPx = small ? 300_000 : 420_000;
+const pickScale = () => Math.min(dpr * (small ? 0.5 : 0.6), Math.sqrt(budgetPx / (innerWidth * innerHeight)), 1);
+let calFactor = 1;
+let scale = pickScale();
 let vw = innerWidth, vh = innerHeight, W = 0, H = 0;
 const cam = scene3d({ fov: 30, camera: { z: 1600 }, near: 20, far: 6000, width: 16, height: 9 });
 let r3 = null;
 const fit = () => {
-  W = Math.max(120, Math.round(vw * scale)); H = Math.max(120, Math.round(vh * scale));
+  const w = Math.max(120, Math.round(vw * scale)), h = Math.max(120, Math.round(vh * scale));
+  if (w === W && h === H && r3) return;
+  W = w; H = h;
   canvas.width = W; canvas.height = H;
   if (r3) r3.resize(W, H); else r3 = renderer3d(canvas);
   cam.width = W; cam.height = H;
@@ -62,7 +70,7 @@ const measure = () => {
   fit();
 };
 measure();
-addEventListener('resize', measure);
+addEventListener('resize', () => { scale = pickScale() * calFactor; measure(); });
 new ResizeObserver(() => measure()).observe(document.body);
 
 // ---------------------------------------------------------------------------
@@ -84,7 +92,7 @@ const rotate = (rx, ry, rz, p) => {
 
 let sy = scrollY, t = 0;
 const pose = (k, out) => {
-  const knotScale = small ? 0.62 : 0.95;
+  const knotScale = small ? 0.62 : 0.86;
   // A: assembled in the hero (screen-fixed), slowly turning, tilted by the pointer.
   const hx = small ? vw / 2 : vw * 0.66, hy = small ? vh * 0.3 : vh * 0.46;
   const [ax, ay] = toWorld(hx, hy);
@@ -102,12 +110,12 @@ const pose = (k, out) => {
   // D: docked beside section k, moving with it.
   const T = tops[k];
   const dock = (out2) => {
-    const px = small ? vw / 2 : vw / 2 + T.side * vw * 0.25;
+    const px = small ? vw / 2 : vw / 2 + T.side * vw * 0.235;
     const py = small ? T.top + vh * 0.22 - sy : T.top + T.h / 2 - sy;
     const [wx, wy] = toWorld(px, py);
     out2.x = wx; out2.y = wy; out2.z = 0;
     out2.rx = 25 + tilt.x * 0.6 + Math.sin(t * 0.7 + k) * 12; out2.ry = t * 24 + k * 50 + tilt.y * 0.6; out2.rz = k * 30;
-    out2.s = small ? 1.0 : 1.55;
+    out2.s = small ? 1.0 : 1.35;
   };
   const D = {};
   dock(D);
@@ -128,16 +136,56 @@ const pose = (k, out) => {
 };
 
 // ---------------------------------------------------------------------------
+// Page choreography, driven by the same smoothed scroll value as the knot
+// ---------------------------------------------------------------------------
+const heroEls = [...document.querySelectorAll('.hero-text, .hero-meta, .scroll-cue')];
+const titleChars = splitText('#break-title', { type: 'words,chars', charClass: 'ch', wordClass: 'gw' }).chars;
+const note = $('#break-note');
+const panels = sections.map((s) => s.querySelector('.panel'));
+const lastP = panels.map(() => -1);
+let lastHero = -1, lastTitle = -1;
+set(titleChars, { opacity: 0 });
+set(note, { opacity: 0 });
+if (!reduced) animate('.scroll-cue i', { scaleX: [0, 1, 1], x: [0, 0, 46], opacity: [1, 1, 0] }, { duration: 1.8, ease: 'inOutCubic', repeat: Infinity });
+const choreograph = () => {
+  // Hero copy lifts away as the knot starts to break.
+  const h = Math.round(clamp(sy / (vh * 0.6)) * 1000) / 1000;
+  if (h !== lastHero) { lastHero = h; set(heroEls, { opacity: 1 - h, y: -h * 70 }); }
+  // The pinned title assembles character by character, then dissolves as the pieces leave.
+  const a = (sy - (breakTop - vh * 0.55)) / (vh * 0.75), z = (sy - (breakTop + breakH - vh * 1.25)) / (vh * 0.4);
+  const tk = Math.round(clamp(a) * 1000) / 1000 + Math.round(clamp(z) * 1000) / 1000 * 2;
+  if (tk !== lastTitle) {
+    lastTitle = tk;
+    const n = titleChars.length;
+    for (let i = 0; i < n; i++) {
+      const pin = ease(clamp(a * 1.7 - (i / n) * 0.7)), pout = ease(clamp(z * 1.7 - ((n - 1 - i) / n) * 0.7));
+      set(titleChars[i], { opacity: pin * (1 - pout), y: (1 - pin) * 60 - pout * 60, rotateX: (1 - pin) * -70 });
+    }
+    set(note, { opacity: clamp(a * 2 - 1) * (1 - clamp(z * 2)), y: (1 - clamp(a * 2 - 1)) * 16 });
+  }
+  // Each demo panel rises into place as its section enters (a continuous scrub, no triggers).
+  for (let k = 0; k < panels.length; k++) {
+    const T = tops[k];
+    const r = Math.round(ease(clamp((sy + vh - T.top - (small ? vh * 0.3 : 0)) / (vh * 0.6))) * 1000) / 1000;
+    if (r === lastP[k]) continue;
+    lastP[k] = r;
+    set(panels[k], { opacity: 0.001 + r * 0.999, y: (1 - r) * 90, scale: 0.94 + r * 0.06 });
+  }
+};
+
+// ---------------------------------------------------------------------------
 // Frame loop
 // ---------------------------------------------------------------------------
 const items = pieces.map((p, k) => ({
   mesh: p.mesh, instances: p.inst, cull: false,
-  material: { metal: 0.92, iridescence: 0.45, hue: k / PIECES, specular: 1.6, shininess: 140, rim: 0.5, lines: 0, lineColor: accents[k] || [1.6, 1.6, 1.6], grid: [0, 5], lineWidth: 0.04, pulse: 0, pulseCount: 2, pulsePhase: 0 },
+  material: { metal: 0.92, iridescence: 0.45, hue: k / PIECES, specular: 1.6, shininess: 140, rim: 0.5, lines: 0, lineColor: accents[k] || [1.6, 1.6, 1.6], grid: [0, 4], lineWidth: 0.018 },
 }));
-const env = { background: '#06070b', sky: [0.05, 0.06, 0.12], horizon: [0.5, 0.42, 0.7], ground: [0.02, 0.02, 0.03], strips: [2.6, 2.6, 2.9], key: [-0.4, 0.6, 0.7], keyColor: [1, 0.95, 0.9], fill: [0.6, -0.2, 0.5], fillColor: [0.3, 0.4, 0.9], rimColor: [0.9, 0.5, 1] };
-let avg = 6, last = -1, stats = { ms: 0, w: 0, h: 0 };
+const env = { transparent: true, background: '#06070b', sky: [0.05, 0.06, 0.12], horizon: [0.5, 0.42, 0.7], ground: [0.02, 0.02, 0.03], strips: [2.6, 2.6, 2.9], key: [-0.4, 0.6, 0.7], keyColor: [1, 0.95, 0.9], fill: [0.6, -0.2, 0.5], fillColor: [0.3, 0.4, 0.9], rimColor: [0.9, 0.5, 1] };
+let avg = 6, last = -1, frames = 0, minMs = Infinity, calibrated = false, stats = { ms: 0, w: 0, h: 0 };
 window.__stage = stats;
+const slow = (window.__slow = []);
 const frame = (dt) => {
+  const f0 = performance.now();
   if (!reduced) t += Math.min(dt, 50) / 1000;
   sy += (scrollY - sy) * (reduced ? 1 : 1 - Math.exp(-dt / 70));
   if (Math.abs(scrollY - sy) < 0.5) sy = scrollY;
@@ -151,19 +199,27 @@ const frame = (dt) => {
     const m = items[k].material;
     // Docked pieces light up in their section's accent, with pulses running along them.
     glowing = Math.max(0, d - f);
-    m.lines = 1.4 * glowing; m.pulse = 2.2 * glowing; m.pulsePhase = t * 0.8 + k * 0.3;
+    m.lines = 1.1 * glowing;
   }
+  choreograph();
   const t0 = performance.now();
   r3.render(cam, items, env);
   const ms = performance.now() - t0;
   avg = avg * 0.9 + ms * 0.1;
-  stats.ms = avg; stats.w = W; stats.h = H;
-  const cap = small ? Math.max(0.9, Math.min(devicePixelRatio || 1, 3) * 0.55) : Math.min(devicePixelRatio || 1, 2) * 0.75;
-  const want = Math.min(cap, Math.max(0.32, scale * Math.sqrt(7 / Math.max(2, avg))));
-  if (Math.abs(want - scale) / scale > 0.12) { scale = want; fit(); }
+  stats.ms = avg; stats.w = W; stats.h = H; stats.last = ms; stats.passes = r3.stats;
+  // One calibration step: if even the fastest of the first 60 frames took over 7 ms
+  // (the minimum ignores frames slowed by other work), drop the resolution once.
+  if (frames < 60) minMs = Math.min(minMs, ms);
+  if (++frames === 60 && minMs > 7 && !calibrated) { calibrated = true; calFactor = Math.max(0.6, Math.sqrt(6 / minMs)); scale *= calFactor; fit(); }
   if (!canvas.classList.contains('on')) canvas.classList.add('on');
+  const total = performance.now() - f0;
+  if (total > 12 && slow.length < 50) slow.push({ y: scrollY, total: +total.toFixed(1), r3: +ms.toFixed(1), passes: r3.stats });
 };
 engine.onFrame((_t, dt) => frame(dt));
+if (location.search.includes('debug')) {
+  // Profiling hook: render the pose at scroll position y, n times, and return the times.
+  window.__at = (y, n = 5) => { const out = []; for (let i = 0; i < n; i++) { sy = y; for (let k = 0; k < PIECES; k++) pose(k, pieces[k].inst); const a = performance.now(); r3.render(cam, items, env); out.push(+(performance.now() - a).toFixed(1)); } return out; };
+}
 
 // ---------------------------------------------------------------------------
 // Demos load on approach (dynamic import keeps them off the critical path)

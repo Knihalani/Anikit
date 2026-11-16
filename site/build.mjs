@@ -20,5 +20,11 @@ for (const f of pages) {
   const p = join(out, f);
   writeFileSync(p, readFileSync(p, 'utf8').replaceAll('../packages/anikit/dist/', './vendor/'));
 }
+// Inline the stylesheet: one request fewer before first paint.
+{
+  const p = join(out, 'index.html');
+  const css = readFileSync(join(out, 'style.css'), 'utf8');
+  writeFileSync(p, readFileSync(p, 'utf8').replace('<link rel="stylesheet" href="style.css" />', () => `<style>${css}</style>`));
+}
 writeFileSync(join(out, '_headers'), `/fonts/*\n  Cache-Control: public, max-age=31536000, immutable\n/vendor/*\n  Cache-Control: public, max-age=3600\n/vendor/anikit.wasm\n  Content-Type: application/wasm\n`);
 console.log('site →', out);
