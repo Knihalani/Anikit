@@ -248,7 +248,7 @@ void main() {
   if (a < 0.004) discard;
   vec3 N = vec3(vUV, sqrt(max(1.0 - r2, 0.0)));
   float ndl = dot(N, uSunV);
-  float lit = clamp(ndl * 0.75 + 0.5, 0.0, 1.0);
+  float lit = clamp(ndl * 0.75 + 0.5 + (uWordMode > 0.5 ? 0.0 : N.y * 0.35 + vUV.x * 0.15), 0.0, 1.0);
   // silver lining: thin edges facing the sun glow
   float rim = pow(clamp(1.0 - N.z, 0.0, 1.0), 2.0) * clamp(dot(normalize(vUV + 1e-4), normalize(uSunV.xy + 1e-4)), 0.0, 1.0);
   vec3 sunC = mix(vec3(1.45, 1.3, 1.1), vec3(1.7, 1.18, 0.72), uWarm);
@@ -282,7 +282,7 @@ void main() {
   // detail normals: two octaves with analytic derivatives
   vec3 d1 = vnoised(vW.xz * 1.1), d2 = vnoised(vW.xz * 4.7 + 3.0), d3 = vnoised(vW.xz * 0.27 + 9.0);
   vec2 g = d1.yz * 0.2 + d2.yz * 0.07 * fade + d3.yz * 0.24;
-  float crag = smoothstep(0.15, 0.6, vRock);
+  float crag = smoothstep(0.15, 0.6, vRock) * smoothstep(4.0, 10.0, dist);
   vec3 d4 = vnoised(vW.xz * 2.3 + vW.y * 0.7);
   g += d4.yz * 0.5 * crag;
   vec3 N = normalize(vN + vec3(-g.x, 0.0, -g.y) * (0.35 + 0.65 * fade + crag));
@@ -294,7 +294,7 @@ void main() {
   // rock breaks through on the outcrops, snow still caps their flatter tops
   vec3 d5 = vnoised(vW.xz * 9.0 + vW.y * 3.0);
   float edge = vRock + (d4.x - 0.5) * 0.5 + (d5.x - 0.5) * 0.25;
-  float crag2 = smoothstep(0.5, 0.56, edge) * smoothstep(3.0, 9.0, dist);
+  float crag2 = smoothstep(0.5, 0.56, edge) * smoothstep(6.0, 14.0, dist);
   snow *= 1.0 - crag2 * smoothstep(0.93, 0.78, normalize(vN).y + d5.x * 0.12);
   N = normalize(N + vec3(-d5.y, 0.0, -d5.z) * 0.05 * fade * (0.3 + crag2));
   vec3 L = uSun;
@@ -335,7 +335,7 @@ void main() {
   float z = iA.y + sin(uT * 0.7 + iA.w * 20.0) * 0.8;
   float d = length(vec2(x, z));
   float gy = -0.17 * d - 0.00624 * d * d;
-  float y = gy + 0.15 + life * 1.6 * fract(iA.w * 7.3) + 0.3 * sin(uT * 2.0 + iA.w * 40.0);
+  float y = gy + 0.15 + life * 2.6 * fract(iA.w * 7.3) + 0.3 * sin(uT * 2.0 + iA.w * 40.0);
   vec3 c = vec3(x, y, z);
   float r = 0.025 + 0.05 * fract(iA.w * 13.1);
   gl_Position = uVP * vec4(c + (aC.x * uRight + aC.y * uUp) * r, 1.0);
@@ -746,13 +746,13 @@ export function createMountain(canvas) {
     curT = t;
     const lx = look ? look.x || 0 : 0, ly = look ? look.y || 0 : 0;
     // springs smooth the head turn and the dolly; retarget only when the input moves
-    if (Math.abs(lx - lastLookX) > 0.002 || Math.abs(ly - lastLookY) > 0.002) {
+    if (Math.abs(lx - lastLookX) > 0.02 || Math.abs(ly - lastLookY) > 0.02) {
       lastLookX = lx; lastLookY = ly;
       camTarget.yaw = lx * 0.075; camTarget.pitch = ly * 0.04; camTarget.x = lx * 0.25; camTarget.y = ly * 0.08;
       spring(cam, camTarget, { stiffness: 60, damping: 16 });
     }
     const pu = push || 0;
-    if (Math.abs(pu - lastPush) > 0.001) { lastPush = pu; pushTarget.push = pu; spring(cam, pushTarget, { stiffness: 120, damping: 22 }); }
+    if (Math.abs(pu - lastPush) > 0.008 || (pu !== lastPush && (pu === 0 || pu === 1))) { lastPush = pu; pushTarget.push = pu; spring(cam, pushTarget, { stiffness: 120, damping: 22 }); }
     windTl.seek(t % WIND_T);
 
     // time of day: the sun sinks a touch and warms as you scroll
@@ -762,7 +762,7 @@ export function createMountain(canvas) {
     curWarm = 0.55 + 0.35 * pp;
     driftX = t * 0.0025 + pp * 0.15; driftY = -t * 0.001;
 
-    const pitchBase = -0.02;
+    const pitchBase = aspect < 1 ? 0.05 : -0.02;
     const savedPitch = cam.pitch; cam.pitch = savedPitch + pitchBase;
     buildCamera(cam.push);
     cam.pitch = savedPitch;
