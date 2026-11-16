@@ -595,6 +595,9 @@ class Lighting:
     ``ground_fog=(bottom, top, range)`` (or a dict of those) adds fog in
     ``fog_color`` that is full below world ``y = bottom``, gone above ``top``,
     and reaches full strength over ``range`` units of distance.
+    ``lights`` is up to 8 point lights, each a dict ``{"position": (x, y, z),
+    "color": ..., "radius": 500, "intensity": 1}``: coloured pools of light
+    (diffuse + specular, falloff r² / (r² + d²), faded out by 4·radius).
     """
 
     key: Vec3 = (0.4, 0.8, 0.6)
@@ -609,6 +612,7 @@ class Lighting:
     ground: ColorLike = (0.05, 0.05, 0.07)
     strips: ColorLike = (0.0, 0.0, 0.0)
     ground_fog: Optional[Any] = None
+    lights: Optional[Sequence[Mapping[str, Any]]] = None
 
     def _pack(self, background: Vec3) -> List[float]:
         fog = (0.0, math.inf) if self.fog is None else _v2(self.fog, "fog")
@@ -636,7 +640,22 @@ class Lighting:
             *_rgb(self.ground),
             *_rgb(self.strips),
             *gfv,
+            *_pack_lights(self.lights),
         ]
+
+
+def _pack_lights(lights: Optional[Sequence[Mapping[str, Any]]]) -> List[float]:
+    lights = list(lights or [])
+    if len(lights) > 8:
+        raise ValueError(f"at most 8 point lights, got {len(lights)}")
+    out: List[float] = [float(len(lights))]
+    for pl in lights:
+        unknown = set(pl) - {"position", "color", "radius", "intensity"}
+        if unknown:
+            raise TypeError(f"point light keys are position, color, radius, intensity; got {sorted(unknown)}")
+        out += [*_v3(pl["position"], "position"), *_rgb(pl.get("color", (1.0, 1.0, 1.0))), float(pl.get("radius", 500.0)), float(pl.get("intensity", 1.0))]
+    out += [0.0] * (8 * (8 - len(lights)))
+    return out
 
 
 _BLENDS = ("opaque", "additive", "gloss")

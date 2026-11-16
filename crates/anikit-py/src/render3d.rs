@@ -24,8 +24,9 @@ use crate::{f32_bytes, finite, u32_bytes, F32Data};
 const MATERIAL_LEN: usize = 27;
 /// Floats per lighting: key(3), key_color(3), fill(3), fill_color(3),
 /// rim_color(3), fog(2), fog_color(3), sky(3), horizon(3), ground(3), strips(3),
-/// ground_fog(3: bottom, top, range).
-const LIGHTING_LEN: usize = 35;
+/// ground_fog(3: bottom, top, range), point light count, then 8 lights ×
+/// (position(3), colour(3), radius, intensity).
+const LIGHTING_LEN: usize = 100;
 /// Largest vertex grid a mesh builder accepts (keeps typos from allocating gigabytes).
 const MAX_CELLS: usize = 1 << 24;
 
@@ -390,6 +391,8 @@ fn lighting(v: &[f32]) -> PyResult<Lighting> {
         ground: v3(26),
         strips: v3(29),
         ground_fog: v3(32),
+        point_lights: core::array::from_fn(|i| core::array::from_fn(|k| v[36 + i * 8 + k])),
+        point_count: (v[35].max(0.0) as usize).min(8) as u8,
         ..Lighting::default()
     })
 }

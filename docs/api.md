@@ -950,6 +950,7 @@ for i in range(150):
 - **Grade options**: `bloom`, `bloom_threshold`, `bloom_radius`, `aberration`, `vignette`, `grain`, `streaks`, `streak_length`, `streak_tint`, `zoom_blur`, `zoom_center`, `rays`, `rays_center`, `rays_length`, `aa`, `exposure`, `contrast`, `saturation`, `shadows`, `highlights` (`video.POST_OPTIONS`); each may be a function of `t`. Misspelt options raise with a "did you mean".
 - `video.MotionBlur(w, h)`: `add(frame)` up to 257 sub-frames, `resolve()` the average.
 - Not in Python: `mesh.text()` (needs a canvas to rasterise the font; build a `heightfield` from your own glyph bitmap instead).
+- Point lights: `Lighting(lights=[{"position": (x, y, z), "color": …, "radius": 500, "intensity": 1}])` (or `render(..., lights=[...])`), up to 8.
 - Example: `crates/anikit-py/examples/knot_mirror.py` writes PNG frames with numpy and the standard library.
 
 ---

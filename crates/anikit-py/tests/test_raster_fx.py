@@ -367,3 +367,13 @@ def test_post_aa_smooths_edges_only():
     flat = np.full((H, W, 4), 90, np.uint8)
     assert np.array_equal(video.post(flat.copy(), aa=1), flat)
     assert np.array_equal(video.post(before.copy(), aa=0), before)
+
+
+def test_point_lights_add_coloured_light():
+    r = raster.Renderer3D(48, 48)
+    cam = Camera((0, 300, 1), (0, 0, 0), fov=50)
+    floor = raster.Item(raster.plane(), raster.instances(1, y=-50, scale=3000, color=(1, 1, 1)), material=raster.Material(ambient=0, diffuse=1, specular=0, rim=0))
+    dark = r.render(cam, [floor], key=(0, -1, 0), fill=(0, -1, 0)).copy()
+    lit = r.render(cam, [floor], key=(0, -1, 0), fill=(0, -1, 0), lights=[{"position": (0, 50, 0), "color": (0, 1, 0), "radius": 300, "intensity": 2}])
+    assert lit[..., 1].sum() > dark[..., 1].sum() + 1000
+    assert lit[..., 0].sum() < lit[..., 1].sum() / 4  # green light (hot cores burn slightly towards white)
