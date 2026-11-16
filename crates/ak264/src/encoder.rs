@@ -165,6 +165,7 @@ pub(crate) struct FrameCtx<'a> {
     pub qcs: QuantS,
     /// SAD bounds (luma 16×16, chroma 8×8) under which inter residuals are all zero.
     pub zero_sad: (u32, u32),
+    pub zero_sad_intra: (u32, u32),
     pub lambda: i32,
     pub src: &'a Pic,
     pub refp: &'a Pic,
@@ -879,8 +880,10 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
     ) {
         let q = self.c.q;
         if let (Kind::I16(_), Some((src, pred))) = (kind, i16) {
-            let mut recon = [0u8; 256];
-            luma_i16(src, pred, &q, &self.c.qs, cd, &mut recon);
+            let mut recon = *pred;
+            if crate::simd::sad16(src, 16, pred, 16) > self.c.zero_sad_intra.0 {
+                luma_i16(src, pred, &q, &self.c.qs, cd, &mut recon);
+            }
             let base = self.yi(mbx * 16, mby * 16);
             for y in 0..16 {
                 self.b.y[base + y * self.ys..base + y * self.ys + 16].copy_from_slice(&recon[y * 16..y * 16 + 16]);
@@ -921,7 +924,12 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
         let cmode = best.1;
         let mut reconc = [[0u8; 64]; 2];
-        chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, true, cd, &mut reconc);
+        let zc = self.c.zero_sad_intra.1;
+        if crate::simd::sad64(&src_c[0], &predc[0]) > zc || crate::simd::sad64(&src_c[1], &predc[1]) > zc {
+            chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, true, cd, &mut reconc);
+        } else {
+            reconc = predc;
+        }
         let base = self.ci(mbx * 8, mby * 8);
         let cs = self.cs;
         for y in 0..8 {
@@ -1907,7 +1915,8 @@ impl Encoder {
             qc: self.qc,
             qs: QuantS::new(&self.q),
             qcs: QuantS::new(&self.qc),
-            zero_sad: crate::soa::zero_sad_bounds(&self.q, &QuantS::new(&self.q), &self.qc, &QuantS::new(&self.qc)),
+            zero_sad: crate::soa::zero_sad_bounds(&self.q, &QuantS::new(&self.q), &self.qc, &QuantS::new(&self.qc), false),
+            zero_sad_intra: crate::soa::zero_sad_bounds(&self.q, &QuantS::new(&self.q), &self.qc, &QuantS::new(&self.qc), true),
             lambda: self.lambda,
             src: &self.cur,
             refp: &self.refp,
