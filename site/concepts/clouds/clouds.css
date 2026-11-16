@@ -35,7 +35,7 @@ main { position: relative; z-index: 2; }
 .hero h1 { font-size: clamp(64px, 11vw, 168px); text-shadow: 0 6px 40px rgba(40, 30, 60, 0.35); }
 .lede { font-size: clamp(16px, 1.4vw, 20px); margin: 18px 0 0; max-width: 30em; color: #fffaf3; text-shadow: 0 1px 3px rgba(30, 30, 60, 0.45), 0 1px 18px rgba(30, 30, 60, 0.55); }
 
-.bank { height: 120vh; }
+.bank { height: 90vh; }
 .bank.tall { height: 150vh; }
 .stop { height: 240vh; position: relative; }
 .above { height: 200vh; position: relative; }
