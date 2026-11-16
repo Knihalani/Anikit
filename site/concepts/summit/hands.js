@@ -101,7 +101,7 @@ void main() {
       vec3 X = normalize(cross(Z, n) + 1e-5);
       n = normalize(n + X * 0.3 * sin(th * 34.0) * step(t, 0.999) * step(0.001, t));
     }
-    vec3 base = m < 1.5 ? vec3(0.085, 0.095, 0.12) : vec3(0.06, 0.065, 0.08);
+    vec3 base = m < 1.5 ? vec3(0.05, 0.056, 0.072) : vec3(0.036, 0.04, 0.05);
     float d = max(dot(n, L) * 0.6 + 0.4, 0.0);
     float sheen = pow(1.0 - max(dot(n, V), 0.0), 2.5);
     col = base * (sunC * d * 0.9 + skyC * (0.35 + 0.25 * n.y));
@@ -110,7 +110,7 @@ void main() {
     col *= 0.92 + 0.08 * hash(floor(vPos * 900.0));
   } else {
     // Skin: wrapped diffuse with a warm red terminator, soft sheen, rim light.
-    vec3 alb = vec3(0.74, 0.47, 0.35);
+    vec3 alb = vec3(0.70, 0.43, 0.31);
     // Nails on the dorsal side of the fingertips.
     float nail = 0.0;
     if (m > 2.5) {
@@ -167,13 +167,15 @@ void main() {
     // Ring sparks: run round the circle, each at its own speed, trailing a streak.
     float speed = 1.6 + 1.6 * h2;
     float a = (h1 * arc) * TAU + t * uP.y * speed * 0.35;
-    float jitter = (h3 - 0.5) * 0.07 + (h(f + floor(t * 9.0)) - 0.5) * 0.012;
+    float jr = h3 - 0.5;
+    float jitter = jr * abs(jr) * 0.16 + (h(f + floor(t * 12.0)) - 0.5) * 0.01;
     float r = R * (1.0 + jitter);
     pos = C + vec2(cos(a), -sin(a)) * r;
     dir = vec2(sin(a), cos(a));                       // tangent, direction of travel
-    len = (10.0 + 50.0 * h2) * uScale * (0.4 + 0.6 * min(1.0, R / 300.0 / uScale));
-    wid = (1.1 + 1.6 * h3) * uScale;
-    bright = 0.55 + 0.9 * h3 * h3;
+    len = (6.0 + 40.0 * h2 * h2) * uScale * (0.4 + 0.6 * min(1.0, R / 300.0 / uScale));
+    wid = (0.8 + 1.3 * h1 * h1) * uScale;
+    bright = (0.45 + 1.4 * h1 * h1 * h1) * (1.0 - abs(jr) * 1.2);
+    col = mix(vec3(1.0, 0.36, 0.05), vec3(1.0, 0.78, 0.4), h2 * h2 * (1.0 - abs(jr) * 2.0));
     // Only the drawn part of the arc shows; the leading edge is brightest.
     float head = mod(h1 * arc + 1.0, 1.0);
     bright *= arc >= 0.999 ? 1.0 : smoothstep(0.0, 0.02, arc - h1 * arc) * (0.6 + 0.8 * smoothstep(0.8, 1.0, h1));
@@ -216,7 +218,7 @@ void main() {
   float across = 1.0 - abs(vUv.y * 2.0 - 1.0);
   float along = (1.0 - vUv.x);              // bright head, fading tail
   float a = across * across * along * along * vI;
-  vec3 c = vC * a * 0.9 + vec3(1.0, 0.9, 0.7) * a * a * 0.35;
+  vec3 c = vC * a * 1.2 + vec3(1.0, 0.85, 0.6) * a * a * 0.25;
   outColor = vec4(c, 0.0);                  // pure added light over whatever is below
 }`;
 
@@ -250,10 +252,10 @@ void main() {
   float edge = exp(-x * x / 60.0);
   float halo = exp(-abs(x) / (26.0 + R / uScale * 0.06));
   float outer = exp(-max(x, 0.0) / (90.0 + R / uScale * 0.2)) * step(0.0, x);
-  vec3 c = vec3(1.0, 0.45, 0.1) * (halo * 0.3 + outer * 0.1) + vec3(1.0, 0.62, 0.25) * edge * (0.12 + 0.2 * shimmer);
+  vec3 c = vec3(1.0, 0.42, 0.08) * (halo * 0.3 + outer * 0.1) + vec3(1.0, 0.58, 0.2) * edge * (0.12 + 0.2 * shimmer);
   // Inside, a faint warm wash so the edge of the opening reads as hot.
   float inside = (1.0 - smoothstep(-0.4, 0.0, x / (R / uScale))) * exp(-abs(x) / 50.0);
-  c += vec3(1.0, 0.45, 0.1) * inside * 0.25;
+  c += vec3(1.0, 0.45, 0.1) * inside * 0.06;
   float ext = uRing.z * 1.45 + 60.0;
   vec2 e = abs(d) / ext;
   c *= uP.z * (1.0 - smoothstep(0.6, 1.0, max(e.x, e.y)));
@@ -375,7 +377,7 @@ export function createHands(canvas) {
     .add(portal, { arc: [0, 1] }, { duration: 1.9, ease: 'inOutSine' }, 5.3)
     .add(portal, { glow: [0, 0.6, 1] }, { duration: 2.4, ease: 'linear' }, 5.2)
     .add(portal, { size: [0.18, 1] }, { duration: 2.3, ease: 'inOutCubic' }, 5.2)
-    .add(portal, { open: [0, 1] }, { duration: 1.2, ease: 'inOutSine' }, 6.3)
+    .add(portal, { open: [0, 1] }, { duration: 1.0, ease: 'inOutSine' }, 6.5)
     // Step through (7.5 → 10): the portal grows past the screen, the arms drop away.
     .add(portal, { grow: [0, 1] }, { duration: 2.5, ease: 'inCubic' }, 7.5)
     .add(Lh, { x: -0.2, y: -0.5, z: -0.45, pitch: 30, curl: 0.4, spread: 0.3, ey: -0.6 }, { duration: 1.6, ease: 'inCubic' }, 8.0)
@@ -511,7 +513,7 @@ export function createHands(canvas) {
   const out = { portal: { x: 0, y: 0, r: 0 } };
   const proj = new Float32Array(16);
   let cssW = 1, cssH = 1, dprK = 1, fov = 0;
-  const NSPARK = 5200;
+  const NSPARK = 4200;
   const sun = [-0.45, 0.55, 0.7];
   function resize(w, h, dpr) {
     cssW = w; cssH = h; dprK = Math.min(dpr || 1, 1.5);
@@ -558,7 +560,7 @@ export function createHands(canvas) {
     const ringR = lerpR(R0 * portal.size, cover * 1.08, gr);
     const P = out.portal;
     P.x = px; P.y = py;
-    P.r = portal.open <= 0.001 ? 0 : ringR * lerpR(0.0, 0.985, portal.open);
+    P.r = portal.open <= 0.001 ? 0 : ringR * 0.985 * portal.open;
 
     // Draw.
     const Wd = canvas.width, Hd = canvas.height;
