@@ -984,9 +984,10 @@ rounds):
 | 20 | 0.094–0.098 | 0.066–0.085 | 7–8 B | 23–26 B |
 | 200 | 0.694–1.003 | **0.547–0.674** | **811–818 B** | **26–29 B** |
 
-(At 20 buttons few are near the pointer at once, so little is retargeted;
-the 7–26 B per move there is within what this heap reading resolves, about
-15 KB over the run.) GSAP has no spring, and its
+The "now" heap column is a fixed ~15 KB over the run, not a per-move cost:
+with 6000 moves instead of 600 (one run of 3 pages) it reads 3 B (20
+buttons) and 4 B (200) per move, against 13 B and 36 B for `86b471c`, whose
+retained closures are freed only when a button's spring comes to rest. GSAP has no spring, and its
 InertiaPlugin does not register under Node (it reported "Missing plugin"),
 so there is no competitor column here.
 
@@ -1012,8 +1013,9 @@ three interleaved rounds, `SIZES=50,200`):
 |---|---:|---:|---:|
 | scrubbed `scrollTrigger` | 50 | 0.071–0.102 | 0.075–0.088 |
 | 〃 | 200 | 0.176–0.188 | **0.119–0.159** |
-| `scroll()` (code unchanged, see below) | 50 | 0.083–0.133 | 0.084–0.141 |
-| 〃 | 200 | 0.298–0.336 | 0.220–0.347 |
+
+(The `scroll()` rows of the same rounds measured an experiment that was
+reverted; see "Tried and not kept".)
 
 `bench-text.mjs` (Chromium, ms, median of 3 pages, three interleaved rounds
 on a quieter machine; an earlier set of rounds ran next to other benchmarks
@@ -1048,9 +1050,9 @@ the same runs):
 | `flip()` grid → list, start | 200 boxes | 14.8–16.5 | 136.7–143.4 | 8–10x |
 | 〃 | 1000 boxes | 52.1–84.7 | 3058–4282 | 37–59x |
 
-(`flip()` from `bench-text.mjs`: Anikit's capture is one batch of reads and
-its start is transforms only; GSAP's `Flip.from` at 1000 boxes spends seconds
-in its own measuring.)
+(`flip()` from `bench-text.mjs`, the time from capture to the started
+animation plus a forced layout. Anikit's capture is one batch of reads and
+its start writes transforms only; GSAP's side was not profiled.)
 
 `bench-drag.mjs` (code unchanged, one run, median of 3 pages, 500 synthetic
 moves): with a forced style + layout after every event, Anikit 10.6–11.2 µs
