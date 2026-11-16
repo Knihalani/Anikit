@@ -122,13 +122,16 @@ void main() {
 const rangeVS = HEAD + `
 layout(location = 0) in vec3 aP;
 layout(location = 1) in vec3 aN;
+layout(location = 2) in float aSh;
 uniform mat4 uVP;
 out vec3 vW;
 out vec3 vN;
-void main() { vW = aP; vN = aN; gl_Position = uVP * vec4(aP, 1.0); }`;
+out float vSh;
+void main() { vW = aP; vN = aN; vSh = aSh; gl_Position = uVP * vec4(aP, 1.0); }`;
 const rangeFS = HEAD + COMMON + `
 in vec3 vW;
 in vec3 vN;
+in float vSh;
 uniform vec3 uEye;
 uniform float uDeckY;
 out vec4 o;
@@ -143,6 +146,7 @@ void main() {
   vec3 sunC = uSunCol;
   vec3 sky = mix(uAmb, vec3(dot(uAmb, vec3(0.3, 0.5, 0.2))), 0.3) * 1.2;
   float ndl = dot(N, uSun);
+  sunC *= vSh;
   vec3 sn = vec3(0.93, 0.95, 1.0) * (sunC * 1.1 * clamp((ndl + 0.05) / 1.05, 0.0, 1.0) + sky * (0.28 + 0.2 * N.y));
   vec3 rk = vec3(0.2, 0.18, 0.19) * (0.7 + 0.6 * d2.x) * (sunC * max(ndl, 0.0) * 1.4 + sky * 0.4);
   vec3 col = mix(rk, sn, snow);
@@ -268,15 +272,18 @@ void main() {
 const groundVS = HEAD + `
 layout(location = 0) in vec3 aP;
 layout(location = 1) in vec4 aN;
+layout(location = 2) in float aSh;
 uniform mat4 uVP;
 out vec3 vW;
 out vec3 vN;
 out float vRock;
-void main() { vW = aP; vN = aN.xyz; vRock = aN.w; gl_Position = uVP * vec4(aP, 1.0); }`;
+out float vSh;
+void main() { vW = aP; vN = aN.xyz; vRock = aN.w; vSh = aSh; gl_Position = uVP * vec4(aP, 1.0); }`;
 const groundFS = HEAD + COMMON + `
 in vec3 vW;
 in vec3 vN;
 in float vRock;
+in float vSh;
 uniform vec3 uEye;
 uniform float uT;
 out vec4 o;
@@ -302,7 +309,7 @@ void main() {
   snow *= 1.0 - crag2 * smoothstep(0.93, 0.78, normalize(vN).y + d5.x * 0.12);
   N = normalize(N + vec3(-d5.y, 0.0, -d5.z) * 0.05 * fade * (0.3 + crag2));
   vec3 L = uSun;
-  vec3 sunC = uSunCol;
+  vec3 sunC = uSunCol * vSh;
   vec3 sky = mix(uAmb, vec3(dot(uAmb, vec3(0.3, 0.5, 0.2))), 0.4) * 1.9;
   // snow: wrapped diffuse (light scatters through) + cool sky fill + sparkle
   float wrap = clamp((dot(N, L) + 0.12) / 1.12, 0.0, 1.0);
@@ -532,15 +539,52 @@ const groundH = (x, z) => {
   const a = 0.17 - 0.04 * spine + 0.03 * Math.max(0, Math.sin(az));
   const b = 0.00624 * (1 - 0.35 * spine);
   let h = -a * d - b * d * d;
-  h += fbm(x * 0.045, z * 0.045, 4, 3) * Math.min(1, d / 6) * (1.0 + d * 0.035);
-  h += ridged(x * 0.11, z * 0.11, 3, 8) * Math.min(1, d / 10) * 1.6;
+  // relief fades in with distance so the summit under your feet stays a convex dome
+  const ss = (e0, e1) => { const t = Math.min(1, Math.max(0, (d - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+  h += fbm(x * 0.045, z * 0.045, 4, 3) * ss(3, 14) * (1.0 + d * 0.035);
+  h += (ridged(x * 0.11, z * 0.11, 3, 8) - 0.45) * ss(5, 18) * 1.6;
   // rock outcrops breaking through the snow
-  const oc = Math.max(0, fbm(x * 0.16, z * 0.16, 4, 9) - 0.08) * Math.min(1, d / 3) * Math.max(0, 1 - d / 45);
+  const oc = Math.max(0, fbm(x * 0.16, z * 0.16, 4, 9) - 0.08) * ss(6, 14) * Math.max(0, 1 - d / 45);
   lastRock = oc;
   h += oc * 3.4;
   h += fbm(x * 0.6, z * 0.6, 3, 5) * 0.12;
   return h;
 };
+
+// Soft sun shadows, baked per vertex: march toward the sun over the mesh's own polar heightfield
+// (bilinear lookups in (log r, azimuth)), tracking the closest miss for a penumbra.
+function bakeShadows(pos, NR, NA, r0, r1, a0, a1, sun, maxDist, steps, soft) {
+  const lr = Math.log(r1 / r0);
+  const hAt = (x, z) => {
+    const r = Math.hypot(x, z);
+    if (r < r0 || r > r1) return -1e9;
+    const az = Math.atan2(x, -z);
+    if (az < a0 || az > a1) return -1e9;
+    const fi = Math.log(r / r0) / lr * (NR - 1), fj = (az - a0) / (a1 - a0) * (NA - 1);
+    const i = Math.min(NR - 2, fi | 0), j = Math.min(NA - 2, fj | 0), u = fi - i, v = fj - j;
+    const k = (i * NA + j) * 3 + 1;
+    const h00 = pos[k], h01 = pos[k + 3], h10 = pos[k + NA * 3], h11 = pos[k + NA * 3 + 3];
+    return (h00 * (1 - v) + h01 * v) * (1 - u) + (h10 * (1 - v) + h11 * v) * u;
+  };
+  const n = NR * NA, out = new Float32Array(n);
+  const sx = sun[0], sy = sun[1], sz = sun[2];
+  for (let q = 0; q < n; q++) {
+    const x = pos[q * 3], y = pos[q * 3 + 1], z = pos[q * 3 + 2];
+    const r = Math.hypot(x, z);
+    let res = 1, t = Math.max(0.02 * r, 0.05);
+    const grow = Math.pow(maxDist / t, 1 / steps);
+    for (let s = 0; s < steps && res > 0.001; s++) {
+      const h = hAt(x + sx * t, z + sz * t);
+      const dy = y + sy * t - h;
+      res = Math.min(res, soft * dy / t);
+      t *= grow;
+    }
+    const v = Math.max(0, Math.min(1, res));
+    out[q] = v * v * (3 - 2 * v);
+  }
+  return out;
+}
+const BAKE_SUN = (() => { const el = 4.6 * Math.PI / 180, az = 0.66; return [Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el)]; })();
 
 function buildGround() {
   const NR = 150, NA = 240;
@@ -572,7 +616,8 @@ function buildGround() {
     const a = i * NA + j, b = a + 1, c = a + NA, d = c + 1;
     idx[k++] = a; idx[k++] = c; idx[k++] = b; idx[k++] = b; idx[k++] = c; idx[k++] = d;
   }
-  return { pos, nor, idx };
+  const sh = bakeShadows(pos, NR, NA, r0, r1, a0, a1, BAKE_SUN, 60, 30, 22);
+  return { pos, nor, idx, sh };
 }
 
 const GIANTS = [];
@@ -626,7 +671,8 @@ function buildRanges() {
     const a = i * NA + j, b = a + 1, c = a + NA, d = c + 1;
     idx[k++] = a; idx[k++] = c; idx[k++] = b; idx[k++] = b; idx[k++] = c; idx[k++] = d;
   }
-  return { pos, nor, idx };
+  const sh = bakeShadows(pos, NR, NA, r0, r1, a0, a1, BAKE_SUN, 26000, 48, 30);
+  return { pos, nor, idx, sh };
 }
 
 function buildSea() {
@@ -792,13 +838,13 @@ export function createMountain(canvas) {
 
   const G = buildGround();
   const vGround = gl.createVertexArray(); gl.bindVertexArray(vGround);
-  attrib(gl, 0, vbo(gl, G.pos), 3); attrib(gl, 1, vbo(gl, G.nor), 4);
+  attrib(gl, 0, vbo(gl, G.pos), 3); attrib(gl, 1, vbo(gl, G.nor), 4); attrib(gl, 2, vbo(gl, G.sh), 1);
   vbo(gl, G.idx, gl.ELEMENT_ARRAY_BUFFER);
   const groundCount = G.idx.length;
 
   const R = buildRanges();
   const vRange = gl.createVertexArray(); gl.bindVertexArray(vRange);
-  attrib(gl, 0, vbo(gl, R.pos), 3); attrib(gl, 1, vbo(gl, R.nor), 3);
+  attrib(gl, 0, vbo(gl, R.pos), 3); attrib(gl, 1, vbo(gl, R.nor), 3); attrib(gl, 2, vbo(gl, R.sh), 1);
   vbo(gl, R.idx, gl.ELEMENT_ARRAY_BUFFER);
   const rangeCount = R.idx.length;
 
