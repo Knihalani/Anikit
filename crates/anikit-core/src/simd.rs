@@ -559,6 +559,390 @@ pub fn dot3(a: &[V4; 3], b: &[V4; 3]) -> V4 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
 
+// ---------------------------------------------------------------------------
+// Eight lanes: one AVX register on x86-64 with AVX2, two `V4`s elsewhere. Every
+// operation is the `V4` one lane by lane (same operand order for min/max, same
+// reciprocal multiply for `/ f32`), so shading eight pixels gives the bits of
+// shading them four at a time.
+// ---------------------------------------------------------------------------
+
+#[cfg(all(target_arch = "x86_64", target_feature = "avx2", not(all(target_arch = "wasm32", target_feature = "simd128"))))]
+#[allow(unsafe_code, unused_unsafe)] // bit casts between AVX registers and arrays
+mod imp8 {
+    use super::V4;
+    use core::arch::x86_64 as x;
+    pub type Raw = x::__m256;
+    #[inline(always)]
+    pub fn splat(v: f32) -> Raw {
+        unsafe { x::_mm256_set1_ps(v) }
+    }
+    #[inline(always)]
+    pub fn from_array(a: [f32; 8]) -> Raw {
+        unsafe { core::mem::transmute::<[f32; 8], Raw>(a) }
+    }
+    #[inline(always)]
+    pub fn to_array(v: Raw) -> [f32; 8] {
+        unsafe { core::mem::transmute::<Raw, [f32; 8]>(v) }
+    }
+    #[inline(always)]
+    pub fn halves(v: Raw) -> (V4, V4) {
+        let a = to_array(v);
+        (V4::new(a[0], a[1], a[2], a[3]), V4::new(a[4], a[5], a[6], a[7]))
+    }
+    #[inline(always)]
+    pub fn from_halves(lo: V4, hi: V4) -> Raw {
+        let (l, h) = (lo.to_array(), hi.to_array());
+        from_array([l[0], l[1], l[2], l[3], h[0], h[1], h[2], h[3]])
+    }
+    #[inline(always)]
+    pub fn add(a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm256_add_ps(a, b) }
+    }
+    #[inline(always)]
+    pub fn sub(a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm256_sub_ps(a, b) }
+    }
+    #[inline(always)]
+    pub fn mul(a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm256_mul_ps(a, b) }
+    }
+    #[inline(always)]
+    pub fn div(a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm256_div_ps(a, b) }
+    }
+    #[inline(always)]
+    pub fn neg(a: Raw) -> Raw {
+        unsafe { x::_mm256_xor_ps(a, x::_mm256_set1_ps(-0.0)) }
+    }
+    #[inline(always)]
+    pub fn sqrt(a: Raw) -> Raw {
+        unsafe { x::_mm256_sqrt_ps(a) }
+    }
+    #[inline(always)]
+    pub fn floor(a: Raw) -> Raw {
+        unsafe { x::_mm256_floor_ps(a) }
+    }
+    #[inline(always)]
+    pub fn abs(a: Raw) -> Raw {
+        unsafe { x::_mm256_andnot_ps(x::_mm256_set1_ps(-0.0), a) }
+    }
+    #[inline(always)]
+    pub fn min(a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm256_min_ps(b, a) }
+    }
+    #[inline(always)]
+    pub fn max(a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm256_max_ps(b, a) }
+    }
+    #[inline(always)]
+    pub fn lt(a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm256_cmp_ps::<{ x::_CMP_LT_OS }>(a, b) }
+    }
+    #[inline(always)]
+    pub fn gt(a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm256_cmp_ps::<{ x::_CMP_GT_OS }>(a, b) }
+    }
+    #[inline(always)]
+    pub fn le(a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm256_cmp_ps::<{ x::_CMP_LE_OS }>(a, b) }
+    }
+    #[inline(always)]
+    pub fn bits(m: Raw) -> u32 {
+        unsafe { x::_mm256_movemask_ps(m) as u32 }
+    }
+    #[inline(always)]
+    pub fn select(m: Raw, a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm256_or_ps(x::_mm256_and_ps(m, a), x::_mm256_andnot_ps(m, b)) }
+    }
+    /// A mask with lanes `bits & (1 << l)` set.
+    #[inline(always)]
+    pub fn mask_from_bits(b: u32) -> Raw {
+        let a: [u32; 8] = core::array::from_fn(|l| if b & (1 << l) != 0 { u32::MAX } else { 0 });
+        unsafe { core::mem::transmute::<[u32; 8], Raw>(a) }
+    }
+}
+
+#[cfg(not(all(target_arch = "x86_64", target_feature = "avx2", not(all(target_arch = "wasm32", target_feature = "simd128")))))]
+mod imp8 {
+    use super::{M4, V4};
+    pub type Raw = (V4, V4);
+    #[inline(always)]
+    pub fn splat(v: f32) -> Raw {
+        (V4::splat(v), V4::splat(v))
+    }
+    #[inline(always)]
+    pub fn from_array(a: [f32; 8]) -> Raw {
+        (V4::new(a[0], a[1], a[2], a[3]), V4::new(a[4], a[5], a[6], a[7]))
+    }
+    #[inline(always)]
+    pub fn to_array(v: Raw) -> [f32; 8] {
+        let (l, h) = (v.0.to_array(), v.1.to_array());
+        [l[0], l[1], l[2], l[3], h[0], h[1], h[2], h[3]]
+    }
+    #[inline(always)]
+    pub fn halves(v: Raw) -> (V4, V4) {
+        v
+    }
+    #[inline(always)]
+    pub fn from_halves(lo: V4, hi: V4) -> Raw {
+        (lo, hi)
+    }
+    #[inline(always)]
+    pub fn add(a: Raw, b: Raw) -> Raw {
+        (a.0 + b.0, a.1 + b.1)
+    }
+    #[inline(always)]
+    pub fn sub(a: Raw, b: Raw) -> Raw {
+        (a.0 - b.0, a.1 - b.1)
+    }
+    #[inline(always)]
+    pub fn mul(a: Raw, b: Raw) -> Raw {
+        (a.0 * b.0, a.1 * b.1)
+    }
+    #[inline(always)]
+    pub fn div(a: Raw, b: Raw) -> Raw {
+        (a.0 / b.0, a.1 / b.1)
+    }
+    #[inline(always)]
+    pub fn neg(a: Raw) -> Raw {
+        (-a.0, -a.1)
+    }
+    #[inline(always)]
+    pub fn sqrt(a: Raw) -> Raw {
+        (a.0.sqrt(), a.1.sqrt())
+    }
+    #[inline(always)]
+    pub fn floor(a: Raw) -> Raw {
+        (a.0.floor(), a.1.floor())
+    }
+    #[inline(always)]
+    pub fn abs(a: Raw) -> Raw {
+        (a.0.abs(), a.1.abs())
+    }
+    #[inline(always)]
+    pub fn min(a: Raw, b: Raw) -> Raw {
+        (a.0.min(b.0), a.1.min(b.1))
+    }
+    #[inline(always)]
+    pub fn max(a: Raw, b: Raw) -> Raw {
+        (a.0.max(b.0), a.1.max(b.1))
+    }
+    // Masks as lanes of 1.0 / 0.0 (selected through V4's own masks).
+    #[inline(always)]
+    fn m(a: M4, b: M4) -> Raw {
+        let one = |k: M4| V4::select(k, V4::splat(1.0), V4::splat(0.0));
+        (one(a), one(b))
+    }
+    #[inline(always)]
+    pub fn lt(a: Raw, b: Raw) -> Raw {
+        m(a.0.lt(b.0), a.1.lt(b.1))
+    }
+    #[inline(always)]
+    pub fn gt(a: Raw, b: Raw) -> Raw {
+        m(a.0.gt(b.0), a.1.gt(b.1))
+    }
+    #[inline(always)]
+    pub fn le(a: Raw, b: Raw) -> Raw {
+        m(a.0.le(b.0), a.1.le(b.1))
+    }
+    #[inline(always)]
+    pub fn bits(k: Raw) -> u32 {
+        k.0.gtf(0.5).bits() | k.1.gtf(0.5).bits() << 4
+    }
+    #[inline(always)]
+    pub fn select(k: Raw, a: Raw, b: Raw) -> Raw {
+        (V4::select(k.0.gtf(0.5), a.0, b.0), V4::select(k.1.gtf(0.5), a.1, b.1))
+    }
+    #[inline(always)]
+    pub fn mask_from_bits(b: u32) -> Raw {
+        let a: [f32; 8] = core::array::from_fn(|l| if b & (1 << l) != 0 { 1.0 } else { 0.0 });
+        from_array(a)
+    }
+}
+
+/// Eight f32 lanes (see `imp8`).
+#[derive(Clone, Copy)]
+pub struct V8(imp8::Raw);
+/// Lane mask from a comparison of [`V8`]s.
+#[derive(Clone, Copy)]
+pub struct M8(imp8::Raw);
+
+impl M8 {
+    /// One bit per lane (lane 0 in bit 0).
+    #[inline(always)]
+    pub fn bits(self) -> u32 {
+        imp8::bits(self.0)
+    }
+    #[inline(always)]
+    pub fn from_bits(b: u32) -> Self {
+        Self(imp8::mask_from_bits(b))
+    }
+}
+
+impl M4 {
+    /// A mask with lane l set iff bit l of `b` is.
+    #[inline(always)]
+    pub fn from_bits(b: u32) -> Self {
+        V4::new((b & 1) as f32, ((b >> 1) & 1) as f32, ((b >> 2) & 1) as f32, ((b >> 3) & 1) as f32).gtf(0.5)
+    }
+}
+
+impl V8 {
+    pub const LANES: usize = 8;
+    #[inline(always)]
+    pub fn splat(x: f32) -> Self {
+        Self(imp8::splat(x))
+    }
+    #[inline(always)]
+    pub fn from_array(a: [f32; 8]) -> Self {
+        Self(imp8::from_array(a))
+    }
+    #[inline(always)]
+    pub fn to_array(self) -> [f32; 8] {
+        imp8::to_array(self.0)
+    }
+    /// Lanes 0–3 and 4–7.
+    #[inline(always)]
+    pub fn halves(self) -> (V4, V4) {
+        imp8::halves(self.0)
+    }
+    #[inline(always)]
+    pub fn from_halves(lo: V4, hi: V4) -> Self {
+        Self(imp8::from_halves(lo, hi))
+    }
+    #[inline(always)]
+    pub fn sqrt(self) -> Self {
+        Self(imp8::sqrt(self.0))
+    }
+    #[inline(always)]
+    pub fn floor(self) -> Self {
+        Self(imp8::floor(self.0))
+    }
+    #[inline(always)]
+    pub fn fract(self) -> Self {
+        self - self.floor()
+    }
+    #[inline(always)]
+    pub fn abs(self) -> Self {
+        Self(imp8::abs(self.0))
+    }
+    #[inline(always)]
+    pub fn min(self, o: Self) -> Self {
+        Self(imp8::min(self.0, o.0))
+    }
+    #[inline(always)]
+    pub fn max(self, o: Self) -> Self {
+        Self(imp8::max(self.0, o.0))
+    }
+    #[inline(always)]
+    pub fn minf(self, o: f32) -> Self {
+        self.min(Self::splat(o))
+    }
+    #[inline(always)]
+    pub fn maxf(self, o: f32) -> Self {
+        self.max(Self::splat(o))
+    }
+    #[inline(always)]
+    pub fn clamp(self, lo: f32, hi: f32) -> Self {
+        self.maxf(lo).minf(hi)
+    }
+    #[inline(always)]
+    pub fn lt(self, o: Self) -> M8 {
+        M8(imp8::lt(self.0, o.0))
+    }
+    #[inline(always)]
+    pub fn gt(self, o: Self) -> M8 {
+        M8(imp8::gt(self.0, o.0))
+    }
+    #[inline(always)]
+    pub fn le(self, o: Self) -> M8 {
+        M8(imp8::le(self.0, o.0))
+    }
+    #[inline(always)]
+    pub fn ltf(self, o: f32) -> M8 {
+        self.lt(Self::splat(o))
+    }
+    #[inline(always)]
+    pub fn gtf(self, o: f32) -> M8 {
+        self.gt(Self::splat(o))
+    }
+    /// `m ? a : b` per lane.
+    #[inline(always)]
+    pub fn select(m: M8, a: Self, b: Self) -> Self {
+        Self(imp8::select(m.0, a.0, b.0))
+    }
+    /// [`V4::pack_rgb`] for both halves.
+    #[inline(always)]
+    pub fn pack_rgb(r: Self, g: Self, b: Self) -> [u32; 8] {
+        let ((r0, r1), (g0, g1), (b0, b1)) = (r.halves(), g.halves(), b.halves());
+        let (lo, hi) = (V4::pack_rgb(r0, g0, b0), V4::pack_rgb(r1, g1, b1));
+        [lo[0], lo[1], lo[2], lo[3], hi[0], hi[1], hi[2], hi[3]]
+    }
+}
+
+macro_rules! v8_ops {
+    ($($tr:ident $f:ident),*) => {$(
+        impl $tr for V8 {
+            type Output = Self;
+            #[inline(always)]
+            fn $f(self, o: Self) -> Self {
+                Self(imp8::$f(self.0, o.0))
+            }
+        }
+        impl $tr<V8> for f32 {
+            type Output = V8;
+            #[inline(always)]
+            fn $f(self, o: V8) -> V8 {
+                V8::splat(self).$f(o)
+            }
+        }
+    )*};
+}
+v8_ops!(Add add, Sub sub, Mul mul, Div div);
+impl Add<f32> for V8 {
+    type Output = Self;
+    #[inline(always)]
+    fn add(self, o: f32) -> Self {
+        self + V8::splat(o)
+    }
+}
+impl Sub<f32> for V8 {
+    type Output = Self;
+    #[inline(always)]
+    fn sub(self, o: f32) -> Self {
+        self - V8::splat(o)
+    }
+}
+impl Mul<f32> for V8 {
+    type Output = Self;
+    #[inline(always)]
+    fn mul(self, o: f32) -> Self {
+        self * V8::splat(o)
+    }
+}
+impl Div<f32> for V8 {
+    type Output = Self;
+    /// Like `V4`: a multiply by the reciprocal.
+    #[inline(always)]
+    fn div(self, o: f32) -> Self {
+        self * (1.0 / o)
+    }
+}
+impl Neg for V8 {
+    type Output = Self;
+    #[inline(always)]
+    fn neg(self) -> Self {
+        Self(imp8::neg(self.0))
+    }
+}
+
+/// [`dot3`] for eight lanes.
+#[inline(always)]
+pub fn dot3_8(a: &[V8; 3], b: &[V8; 3]) -> V8 {
+    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+
+
 /// Lanes from packed integer data (gathered words decoded four at a time).
 impl V4 {
     /// The bit patterns `p & mask`, reinterpreted as f32.

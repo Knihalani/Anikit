@@ -378,3 +378,16 @@ def test_mesh_update_in_place_and_tube_into():
     hair = raster.tube(pts[:2], radius=1)
     assert raster.tube(pts, radius=1, into=hair) is hair
     np.testing.assert_array_equal(hair.positions, raster.tube(pts, radius=1).positions)
+
+
+def test_scissor_draws_exactly_the_full_render_inside():
+    r = raster.Renderer3D(W, H)
+    c = cam(300.0)
+    items = [raster.Item(raster.sphere(10, 14), raster.instances(1, lambda i: {"scale": 60})),
+             raster.Item(raster.cube(), raster.instances(12, lambda i: {"x": i * 18 - 100, "z": -40, "scale": 9}))]
+    full = r.render(c, items, background="#102030").copy()
+    part = r.render(c, items, background="#102030", scissor=(20, 5, 70, 50))
+    assert np.array_equal(part[5:50, 20:70], full[5:50, 20:70])
+    assert not lit(part[:, :20], (16, 32, 48)).any()
+    assert np.array_equal(r.render(c, items, background="#102030"), full)
+

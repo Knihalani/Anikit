@@ -465,6 +465,22 @@ impl NativeRaster {
         self.r.prepass = v;
     }
 
+    /// Rasterise only the pixel rectangle `(x0, y0, x1, y1)` (`x1`, `y1`
+    /// exclusive), or everything (`None`). Pixels inside come out exactly as in
+    /// a full draw; passes after the scene still run on the whole frame.
+    #[getter]
+    fn get_scissor(&self) -> Option<(usize, usize, usize, usize)> {
+        self.r.scissor.map(|s| (s[0], s[1], s[2], s[3]))
+    }
+
+    #[setter]
+    fn set_scissor(&mut self, v: Option<(usize, usize, usize, usize)>) {
+        self.r.scissor = v.and_then(|(x0, y0, x1, y1)| {
+            let (x1, y1) = (x1.min(self.r.width), y1.min(self.r.height));
+            (x1 > x0 && y1 > y0).then_some([x0, y0, x1, y1])
+        });
+    }
+
     /// Resize (contents are cleared to transparent black).
     fn resize(&mut self, width: usize, height: usize) -> PyResult<()> {
         check_frame(width, height)?;

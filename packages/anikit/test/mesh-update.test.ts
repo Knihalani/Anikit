@@ -95,3 +95,32 @@ describe('mesh.update / free / tube({ into })', () => {
     sail.free(); hair.free(); old.free();
   });
 });
+
+describe('render({ scissor })', () => {
+  it('pixels inside the rectangle equal a full render (colour and depth); nothing is drawn outside', () => {
+    const W = 96, H = 64;
+    const c = scene3d({ width: W, height: H, camera: { x: 30, y: 60, z: 260 } });
+    const cubes = { mesh: mesh.cube(), instances: instances(40, (i) => ({ x: (i % 8) * 25 - 90, y: (i % 3) * 10, z: -Math.floor(i / 8) * 30, scale: 9 + (i % 5), color: [(i % 7) / 7, 0.5, 0.8] })) };
+    const ball = { mesh: mesh.sphere(10, 14), instances: instances(1, () => ({ scale: 30 })) };
+    const items = [ball, cubes];
+    const full = renderer3d({ width: W, height: H });
+    const px = full.render(c, items, { sort: 'near', background: '#102030' }).slice();
+    const depth = full.depth().slice();
+    const r = renderer3d({ width: W, height: H });
+    for (const sc of [[0, 0, W, H], [31, 0, 70, H], [5, 9, 50, 40]] as const) {
+      const out = r.render(c, items, { sort: 'near', background: '#102030', scissor: [...sc] });
+      const d = r.depth();
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const i = y * W + x, inside = x >= sc[0] && x < sc[2] && y >= sc[1] && y < sc[3];
+        if (inside) {
+          expect([out[i * 4], out[i * 4 + 1], out[i * 4 + 2], d[i]]).toEqual([px[i * 4], px[i * 4 + 1], px[i * 4 + 2], depth[i]]);
+        } else {
+          expect(d[i]).toBe(Infinity);
+        }
+      }
+    }
+    // Without the option the next render is whole again.
+    expect(Array.from(r.render(c, items, { sort: 'near', background: '#102030' }))).toEqual(Array.from(px));
+  });
+});
+

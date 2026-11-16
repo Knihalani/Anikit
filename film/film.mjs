@@ -308,20 +308,33 @@ export default async function film({ anikit: A }) {
 
   // Render one look through the current camera into `slot` (0, 1, 2): pixels + distances.
   let prevVP = null, curT = 0;
-  const renderLook = (look, slot) => {
+  // `cols` = [x0, x1): only these columns are rendered (a triptych panel plus a margin wider
+  // than anything that reads neighbours: motion blur, mirror upsampling, ink, water). They come
+  // out exactly as in a full render; the rest of the buffer is not shown.
+  const renderLook = (look, slot, cols = [0, W]) => {
     const r = [rA, rB, rC][slot];
     const o = opts[look];
     const zc = cam.camera.z + 120;
     const its = items[look].filter((it) => it.zmin === undefined || it.zmin < zc);
     for (const it of laneItems) it.material.pulsePhase = curT * 4.2;
-    const px = r.render(cam, its, { ...o, sort: 'near', prevCamera: prevVP, motionBlur: look === 'C' ? undefined : o.motionBlur });
+    // The ink pass reads up to 6 px past the right edge, i.e. into the start of the next row:
+    // a comic panel on the right edge renders whole (left panels are never comic).
+    if (look === 'C' && cols[1] === W) cols = [0, W];
+    const scissor = cols[0] > 0 || cols[1] < W ? [cols[0], 0, cols[1], H] : undefined;
+    const px = r.render(cam, its, { ...o, sort: 'near', prevCamera: prevVP, motionBlur: look === 'C' ? undefined : o.motionBlur, scissor });
     const dist = r.depth(cam);
     const dst = slot === 0 ? bufA : slot === 1 ? bufB : frame;
-    if (look === 'C') { comic(px, dist, comicOut[slot], curT); distCopy[slot].set(dist); return { px: comicOut[slot], dist: distCopy[slot] }; }
+    if (look === 'C') { comic(px, dist, comicOut[slot], curT, cols); distCopy[slot].set(dist); return { px: comicOut[slot], dist: distCopy[slot] }; }
     dst.set(px);
     distCopy[slot].set(dist);
-    if (look === 'R') realWater(px, dst, distCopy[slot], curT);
+    if (look === 'R') realWater(px, dst, distCopy[slot], curT, cols);
     return { px: dst, dist: distCopy[slot] };
+  };
+  // The triptych's panels: seams at x1 and x2 slant by ±0.08 · H / 2 over the frame height.
+  const PANEL_MARGIN = Math.ceil(0.08 * H / 2) + 1 + 128;
+  const panelCols = (x1, x2) => {
+    const c = (a, b) => [Math.max(0, Math.floor(a - PANEL_MARGIN)), Math.min(W, Math.ceil(b + PANEL_MARGIN))];
+    return { left: c(-Infinity, x1), mid: c(x1, x2), right: c(x2, Infinity) };
   };
 
   // ---- The comic pass: ink outlines from depth and colour edges, flat colour bands, halftone ----
@@ -409,10 +422,10 @@ export default async function film({ anikit: A }) {
   }
   // Photographic water: a gentle swell bends the reflection (more up close), and looking down
   // the lake shows its own dark body instead of the mirror (Fresnel).
-  function realWater(src, dst, dist, t) {
+  function realWater(src, dst, dist, t, cols = [0, W]) {
     waterStrokes(dist, 'real', t);
     const DEEP = [22, 44, 50];
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    for (let y = 0; y < H; y++) for (let x = cols[0]; x < cols[1]; x++) {
       const i = y * W + x, vz = WVZ[i];
       if (vz === 0) continue;
       const sw = WSW[i];
@@ -428,17 +441,17 @@ export default async function film({ anikit: A }) {
   // drawn, Infinity for none) instead of per pixel. Same values, same test.
   const SPD = new Float64Array(720);
   const jump = (d, finite, n) => (finite !== (n < 1e30) ? 1 : finite ? Math.abs(d - n) / Math.min(d, n) : 0);
-  function comic(src, dist, out, t) {
+  function comic(src, dist, out, t, cols = [0, W]) {
     waterStrokes(dist);
     for (let a = 0; a < 720; a++) {
       const hsh = hash(a * 97 + Math.floor(t * 9 + hash(a * 13 + 1) * 9) * 7919);
       SPD[a] = hsh > 0.955 ? hash(a * 31 + 3) * 0.4 + 0.8 : Infinity;
     }
-    for (let i = 0; i < N_PIX; i++) { const o = i * 4; lum[i] = (src[o] * 0.299 + src[o + 1] * 0.587 + src[o + 2] * 0.114) / 255; }
+    for (let y = 0; y < H; y++) for (let i = y * W + cols[0]; i < y * W + cols[1]; i++) { const o = i * 4; lum[i] = (src[o] * 0.299 + src[o + 1] * 0.587 + src[o + 2] * 0.114) / 255; }
     const B = 16;
     for (let y = 0; y < H; y++) {
       const yy = Math.min(H - 4, Math.max(3, y));
-      for (let x = 0; x < W; x++) {
+      for (let x = cols[0]; x < cols[1]; x++) {
         const i = y * W + x, o = i * 4;
         const xx = Math.min(W - 4, Math.max(3, x)), c = yy * W + xx;
         const d = dist[c], finite = d < 1e30, sky = !finite || d > 9500; // the dome is 20 km away but its z-depth falls off-axis
@@ -596,8 +609,9 @@ export default async function film({ anikit: A }) {
     }
   }
   // The hook: three panels (neon | photographic | comic) slide in during the dive and out again.
+  const seams = (inn, out) => [W * mix(0, 1 / 3, inn) - W * 0.34 * out, W * mix(1, 2 / 3, inn) + W * 0.34 * out];
   function triptych(nP, rP, cP, inn, out) {
-    const x1 = W * mix(0, 1 / 3, inn) - W * 0.34 * out, x2 = W * mix(1, 2 / 3, inn) + W * 0.34 * out;
+    const [x1, x2] = seams(inn, out);
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const o = (y * W + x) * 4;
       // Slightly slanted seams.
@@ -663,7 +677,8 @@ export default async function film({ anikit: A }) {
       let out;
       if (s.tease !== undefined) {
         const mid = s.mid ?? 'R', right = s.right ?? 'C';
-        const n = renderLook('N', 0), rp = renderLook(right, 1), m = renderLook(mid, 2);
+        const pc = panelCols(...seams(s.inn, s.out));
+        const n = renderLook('N', 0, pc.left), rp = renderLook(right, 1, pc.right), m = renderLook(mid, 2, pc.mid);
         triptych(n.px, m.px, rp.px, s.inn, s.out);
         out = frame;
       } else if (s.look) {

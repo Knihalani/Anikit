@@ -190,6 +190,7 @@ export interface Exports {
   ak_raster_free(id: number): void;
   ak_raster_resize(id: number, w: number, h: number): void;
   ak_raster_clear(id: number, rgb: number, alpha: number): void;
+  ak_raster_scissor(id: number, x0: number, y0: number, x1: number, y1: number): void;
   ak_raster_instances(id: number, n: number): number;
   ak_raster_draw(id: number, mesh: number, n: number, cullBack: number, nf: number): number;
   ak_raster_point_buf(id: number, n: number): number;

@@ -2157,6 +2157,16 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
     r.draw_with(m, &inst[..k], &vp, eye, &mat, &light, cull_back & 1 != 0, blend, tex);
     r.drawn as u32
 }
+/// Rasterise only `[x0, x1) × [y0, y1)` from now on (pixels inside are exactly
+/// those of an unclipped render); `x1 <= x0` or `y1 <= y0` turns it off.
+#[no_mangle]
+pub extern "C" fn ak_raster_scissor(id: u32, x0: u32, y0: u32, x1: u32, y1: u32) {
+    if let Some(Some((r, _))) = st().rasters.get_mut(id as usize) {
+        let (w, h) = (r.width as u32, r.height as u32);
+        let (x1, y1) = (x1.min(w), y1.min(h));
+        r.scissor = (x1 > x0 && y1 > y0).then_some([x0 as usize, y0 as usize, x1 as usize, y1 as usize]);
+    }
+}
 /// Start a half-resolution reflection pass (draws go to a half-size target cleared to `rgb`/`alpha`).
 #[no_mangle]
 pub extern "C" fn ak_raster_reflection_begin(id: u32, rgb: u32, alpha: u32) {
