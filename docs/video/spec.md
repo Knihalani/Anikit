@@ -365,7 +365,12 @@ A cue plays a file (`src`) or a built-in sound effect (`sfx`: `click`, `tick`, `
 "captions": [ { "text": "Meet Anikit Video", "at": 0.5, "end": 2.2 }, { "text": "JSON in, MP4 out", "at": 2.4, "end": 4 } ]
 ```
 
-Captions are text layers drawn over every scene.
+Captions are text layers drawn over every scene. With word timings, the spoken word lights up in `highlight` (default `$accent`):
+
+```json
+"captions": { "highlight": "$accent", "cues": [
+  { "text": "", "at": 0.5, "end": 2.4, "words": [["Meet", 0.5, 0.8], ["Anikit", 0.8, 1.3], ["Video", 1.3, 2.0]] } ] }
+```
 
 ## Validation and messages
 

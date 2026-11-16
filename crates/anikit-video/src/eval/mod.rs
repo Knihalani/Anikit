@@ -209,6 +209,8 @@ pub(crate) struct SplitC {
     pub tracks: Vec<Track>,
     /// Delay per unit index.
     pub delays: Vec<f32>,
+    /// Per-unit tracks on the layer's own clock (e.g. caption word highlight colour).
+    pub unit_tracks: Vec<Vec<Track>>,
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -793,6 +795,14 @@ impl Evaluator {
                                     let s = tr.slot as usize;
                                     uv[s] = tr.sample(lt - delay, uv[s], &self.easings);
                                 }
+                                let mut own_fill = false;
+                                if let Some(ut) = sp.unit_tracks.get(u) {
+                                    for tr in ut {
+                                        let s = tr.slot as usize;
+                                        uv[s] = tr.sample(lt, uv[s], &self.easings);
+                                        own_fill |= (prop::FILL..prop::FILL + 4).contains(&s);
+                                    }
+                                }
                                 let ua = uv[prop::OPACITY].clamp(0.0, 1.0);
                                 if ua <= 0.0005 {
                                     continue;
@@ -802,11 +812,17 @@ impl Evaluator {
                                 uvv[prop::X] = x0 + uw * 0.5 + uv[prop::X];
                                 uvv[prop::Y] = y0 + uh * 0.5 + uv[prop::Y];
                                 let uxf = dl::mul(&bxf, &dl::mul(&local_xf(&uvv, [0.5, 0.5], uw, uh), &translate(-x0, -y0)));
-                                let f2 = fill.as_ref().map(|f| {
-                                    let mut f = f.clone();
-                                    scale_alpha(&mut f, ua);
-                                    f
-                                });
+                                let f2 = if own_fill {
+                                    let mut c = oklab_to_rgba([uv[prop::FILL], uv[prop::FILL + 1], uv[prop::FILL + 2], uv[prop::FILL + 3]]);
+                                    c.0[3] *= ua * alpha;
+                                    Some(Paint::Solid(c))
+                                } else {
+                                    fill.as_ref().map(|f| {
+                                        let mut f = f.clone();
+                                        scale_alpha(&mut f, ua);
+                                        f
+                                    })
+                                };
                                 let ublur = uv[prop::BLUR];
                                 if ublur > 0.05 {
                                     out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: vec![Filter::Blur(ublur)], clip: None, cache_key: None });
