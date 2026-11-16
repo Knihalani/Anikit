@@ -119,7 +119,7 @@ const tl = timeline({ autoplay: false })
   .add(rig, { dist: 86, lift: 3.2, yawOff: -0.3, pitchOff: 0.1, ty: 2.8 }, { duration: 2.6, ease: 'inOutCubic' }, 0.8)
   .add(explodeOrder, { e: 1 }, { duration: 1.8, ease: 'inOutCubic', delay: stagger(0.11) }, 1.2)
   .add(rig, { labels: 1 }, { duration: 0.6, ease: 'outCubic' }, 3.9)
-  .add(rig, { labels: 0 }, { duration: 0.4, ease: 'inCubic' }, 6)
+  .add(rig, { labels: 0 }, { duration: 0.35, ease: 'inCubic' }, 5.7)
   .add([...explodeOrder].reverse(), { e: 0 }, { duration: 1.3, ease: 'inOutCubic', delay: stagger(0.06) }, 6.1)
   .add(rig, { lift: 0, yawOff: 0, pitchOff: 0, dist: 60, ty: -0.6 }, { duration: 1.4, ease: 'inOutCubic' }, 6.2)
   .add(rig, { fin: 1 }, { duration: 2.6, ease: 'inOutSine' }, 7.4)
@@ -322,7 +322,24 @@ const captions = [...document.querySelectorAll('[data-at]')].map((el) => ({ el, 
 
 // ---------------------------------------------------------------- per frame
 let cssW = canvas.clientWidth, cssH = canvas.clientHeight, lastP = -1, F_TIME = 0;
-addEventListener('resize', () => { cssW = canvas.clientWidth; cssH = canvas.clientHeight; });
+// The captions own a text area the object and labels keep out of: a left
+// column on wide screens, a bottom band on small or portrait ones.
+const rigDrift = { yaw: 0, pitch: 0 };
+const FREE = { x0: 0, y0: 0, x1: 1, y1: 1, column: true };
+function measureFree() {
+  cssW = canvas.clientWidth; cssH = canvas.clientHeight;
+  let right = 0, top = cssH;
+  for (const sec of document.querySelectorAll('.captions section')) {
+    if (sec.matches(':last-child')) continue; // the finale card floats over the wave
+    const r = sec.getBoundingClientRect();
+    right = Math.max(right, r.right); top = Math.min(top, r.top);
+  }
+  FREE.column = cssW >= 900 && cssW / cssH > 1.15;
+  if (FREE.column) { FREE.x0 = right + 24; FREE.y0 = cssH < 560 ? 48 : 64; FREE.x1 = cssW; FREE.y1 = cssH; }
+  else { FREE.x0 = 0; FREE.y0 = cssH < 560 ? 48 : 64; FREE.x1 = cssW; FREE.y1 = top - 12; }
+}
+addEventListener('resize', measureFree);
+measureFree();
 const P = new Float32Array(3), VP = new Float32Array(16), LCTX = { gl: s.gl, hdr: false };
 const sideBuf = new Array(8).fill(null);
 function project(x, y, z) {
@@ -346,14 +363,19 @@ function layoutLabels() {
       const reach = 34 + 14 * lo;
       l.x = l.side < 0 ? l.ax - reach - l.w : l.ax + reach;
       l.y = l.ay - l.h * 0.5 - 18;
-      if (l.x < 4) l.x = 4; else if (l.x + l.w > cssW - 4) l.x = cssW - 4 - l.w;
-      l.o = cssW < 560 && l.minor ? 0 : lo;
+      const minX = Math.max(16, FREE.column ? FREE.x0 : 16);
+      if (l.x < minX) l.x = minX; else if (l.x + l.w > cssW - 16) l.x = cssW - 16 - l.w;
+      if (l.y < 56) l.y = 56;
+      l.o = (cssW < 560 || FREE.y1 - FREE.y0 < 420) && l.minor ? 0 : lo;
     }
     for (let side = -1; side <= 1; side += 2) {
       let n = 0;
       for (const l of labels) if (l.side === side && l.o > 0) sideBuf[n++] = l;
       for (let i = 1; i < n; i++) { const x = sideBuf[i]; let j = i - 1; while (j >= 0 && sideBuf[j].y > x.y) { sideBuf[j + 1] = sideBuf[j]; j--; } sideBuf[j + 1] = x; }
       for (let i = 1; i < n; i++) { const a = sideBuf[i - 1], b = sideBuf[i]; const min = a.y + a.h - 22; if (b.y < min) b.y = min; }
+      // Keep the stack above the text band: push it back up from the bottom if needed.
+      const bottom = (FREE.column ? cssH : FREE.y1) - 8;
+      for (let i = n - 1; i >= 0; i--) { const b = sideBuf[i]; const max = (i === n - 1 ? bottom : sideBuf[i + 1].y + 22) - b.h; if (b.y > max) b.y = max; }
     }
   }
 }
@@ -404,12 +426,16 @@ function update(dtMs) {
   }
 
   // Camera: orbit, blended into the crane path for the finale.
-  // Narrow screens: pull back so the width fits, and lift the object above the caption.
-  const aspect = cssW / cssH, narrow = Math.max(0, Math.min(1, (1.2 - aspect) / 0.6));
-  const fitK = aspect < 1.25 ? Math.pow(1.25 / aspect, 0.85) : 1;
-  const yaw = orbit.yaw + rig.yawOff, pitch = orbit.pitch + rig.pitchOff, d = rig.dist * fitK;
-  let ex = Math.sin(yaw) * Math.cos(pitch) * d, ey = rig.ty - narrow * 9 * (1 - rig.fin) + Math.sin(pitch) * d, ez = Math.cos(yaw) * Math.cos(pitch) * d;
-  let ty = rig.ty - narrow * 9 * (1 - rig.fin);
+  // Frame the object inside the free area: pull back until it fits, then shift it to its centre.
+  const freeW = Math.max(120, FREE.x1 - FREE.x0), freeH = Math.max(120, FREE.y1 - FREE.y0);
+  const fitK = Math.max(1, (1.3 * cssH) / freeW, (0.95 * cssH) / freeH);
+  // A slow cinematic drift, so the shot breathes even without dragging.
+  const drift = calm ? 0 : 1;
+  rigDrift.yaw = Math.sin(F_TIME * 0.11) * 0.09 * drift;
+  rigDrift.pitch = Math.sin(F_TIME * 0.083 + 1.3) * 0.035 * drift;
+  const yaw = orbit.yaw + rig.yawOff + rigDrift.yaw, pitch = orbit.pitch + rig.pitchOff + rigDrift.pitch, d = rig.dist * fitK * (1 + 0.015 * Math.sin(F_TIME * 0.07) * drift);
+  let ex = Math.sin(yaw) * Math.cos(pitch) * d, ey = rig.ty + Math.sin(pitch) * d, ez = Math.cos(yaw) * Math.cos(pitch) * d;
+  let ty = rig.ty;
   const fin = rig.fin;
   if (fin > 0) {
     const sc = fin * (CRANE_N - 1), k = Math.min(CRANE_N - 2, Math.floor(sc)), f = sc - k, o = k * 3;
@@ -419,10 +445,17 @@ function update(dtMs) {
     ty += (-24 - ty) * w;
   }
   // Wide screens: slide the camera sideways so the object sits right of the captions.
-  const shift = Math.max(0, Math.min(1, (cssW / cssH - 1.1) / 0.6)) * -7 * (1 - fin);
+  const wpp = (2 * d * Math.tan((30 * Math.PI) / 360)) / cssH; // world units per CSS px at the object
+  const keep = 1 - fin;
+  const shift = -((FREE.x0 + FREE.x1) / 2 - cssW / 2) * wpp * keep;
+  const lower = ((FREE.y0 + FREE.y1) / 2 - cssH / 2) * wpp * keep;
   const rl = Math.hypot(ex, ez) || 1, rx = ez / rl, rz = -ex / rl;
-  AX[0].set(ex + rx * shift, ey, ez + rz * shift);
-  AX[1].set(rx * shift, ty, rz * shift);
+  AX[0].set(ex + rx * shift, ey + lower, ez + rz * shift);
+  AX[1].set(rx * shift, ty + lower, rz * shift);
+
+  // The key light sweeps across the chrome as you scroll: highlights travel, shadows turn.
+  const sweepA = p * Math.PI * 1.6 - 0.4;
+  s.lightDir.set(Math.sin(sweepA) * 0.55, 1, 0.35 + Math.cos(sweepA) * 0.3);
 
   // Copies.
   const on = rig.appear > 0.001;
