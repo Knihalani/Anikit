@@ -85,6 +85,17 @@ General encoders spend their time discovering what changed (motion search, mode 
 - **`eval::Evaluator::new(spec)`** is preprocessing done once (fonts, images, text layout cache). Then `eval(t) -> DisplayList`, which must be pure and must not allocate on a steady state if possible.
 - **Spec:** JSON in `docs/video/spec.md`, with a schema in `docs/video/spec.schema.json`. A spec can be authored by hand, by the TS or Python builders, or from a template plus parameters.
 
+## Token efficiency (a user requirement)
+
+An agent should spend as few tokens as possible to get a great video.
+
+- **Shorthand spec:** `"animate": "rise"`, string durations, colour tokens, size presets. A good scene is 5–10 lines of JSON.
+- **Templates:** filled from a few essential fields.
+- **Compact tool output:** one line per issue; file paths rather than base64.
+- **Short docs:** a 1-page cheat sheet first.
+
+Track the cost of "make a launch video" end to end (prompt + spec + tool I/O) as a metric.
+
 ## Performance targets
 
 Measured on this 4-core machine, honestly, against Remotion or HyperFrames installed locally where possible.
