@@ -25,7 +25,7 @@ let update = r.render_yuv_incremental(&list, &mut yuv, &mut changed); // dirty r
 | `Fill` / `Stroke` | Non-zero and even-odd fills. Strokes support caps, joins, miter limit, dashes (odd dash lists repeat, SVG-style) and `trim` (trimmed by arc length to `[start, end]`). |
 | `RoundRect` | `radius` is clamped to half the shorter side; radius 0 uses vello's `fill_rect`. |
 | `Image` | `dst` is `[x, y, w, h]` in local coordinates. 1:1 images at integer positions are blitted directly. Axis-aligned scaled images that repeat across consecutive frames are resampled **once** with a tent filter (true area filtering when shrinking), then blitted. Anything else uses vello's bilinear filter. |
-| `Paint::Image` | `transform` maps local coordinates → image pixels. |
+| `Paint::Image` | `transform` maps local coordinates → image pixels. It **tiles** (repeat); `Op::Image` draws once. |
 | `Glyphs` | Drawn with the face instance in `FontStore` (`insert_face(id, Face { data, coords, embolden, skew })`): variable-font `coords` (F2Dot14 bits), synthetic bold (2% of the em per side) and oblique skew (degrees). Outlines are cached per (font, glyph). Each run is drawn as **one** path. Solid, translation-only runs are cached as bitmaps, keyed by content and quarter-pixel phase, and blitted. Colour fonts (COLR/CBDT/sbix) go through vello's glyph runs. |
 | `PushLayer` | A layer with no filter and no `cache_key` becomes a native vello layer, or nothing at all when opacity is 1, the blend is normal and there is no clip. A layer with filters or a `cache_key` is rendered offscreen, sized to its filter-expanded bounds ∩ view ∩ clip, filtered and composited. A `cache_key` keeps that bitmap while the key repeats. |
 | `Filter::Blur(σ)` | Gaussian σ, as in CSS. Three variance-matched box passes; every pass is a vectorised row operation (horizontal passes run on a transposed copy). Decimated 2/4/8× for σ ≥ 4/8/24. |
@@ -49,7 +49,7 @@ let update = r.render_yuv_incremental(&list, &mut yuv, &mut changed); // dirty r
 
 ### Dynamic images
 
-`Renderer::set_frame_image(id, Arc<Pixmap>)` overrides `Assets::images` for the following renders. Use it for decoded video frames and other per-frame textures; `clear_frame_image(id)` removes the override. Incremental renders track the identity of each `Arc`, so only the macroblocks under the image are re-rendered when a new frame is set.
+`Renderer::set_image_source(Arc<dyn DynamicImages>)` supplies images that are created while rendering, for ids not found in `Assets::images` (for example component images at ids ≥ `0x4000_0000` through `Host::pixmap`). The trait is `fn get(&self, ImageId) -> Option<Arc<Pixmap>>`, and any `Fn(ImageId) -> Option<Arc<Pixmap>> + Send + Sync` implements it. Return the same `Arc` while the pixels are unchanged. `Renderer::set_frame_image(id, Arc<Pixmap>)` overrides `Assets::images` for the following renders. Use it for decoded video frames and other per-frame textures; `clear_frame_image(id)` removes the override. Incremental renders track the identity of each `Arc`, so only the macroblocks under the image are re-rendered when a new frame is set.
 
 ### Incremental frames
 

@@ -345,7 +345,17 @@ impl Renderer {
         let mut inc = std::mem::take(&mut self.inc);
         std::mem::swap(&mut inc.prev, &mut inc.cur);
         let frame_images = self.frame_images.clone();
-        fingerprint(list, &mut inc.cur, &|id| frame_images.get(&id).map_or(0, |p| std::sync::Arc::as_ptr(p) as u64));
+        let (dynamic, shared) = (self.dynamic.clone(), self.assets.clone());
+        let image_gen = |id| -> u64 {
+            if let Some(p) = frame_images.get(&id) {
+                return std::sync::Arc::as_ptr(p) as u64;
+            }
+            if shared.images.get(id).is_some() {
+                return 0;
+            }
+            dynamic.as_ref().and_then(|d| d.get(id)).map_or(1, |p| std::sync::Arc::as_ptr(&p) as u64)
+        };
+        fingerprint(list, &mut inc.cur, &image_gen);
         let usable = inc.valid && inc.size == (w, h) && inc.bg == bg && yuv.width == w && yuv.height == h;
         inc.valid = true;
         inc.size = (w, h);

@@ -492,3 +492,34 @@ fn degenerate_inputs_do_not_panic() {
         r.render_yuv_incremental(&l, &mut y, &mut m);
     }
 }
+
+#[test]
+fn dynamic_image_source_and_tiling() {
+    use anikit_video::render::DynamicImages;
+    let tile = {
+        let mut p = vello_cpu::Pixmap::new(4, 4);
+        for (i, c) in p.data_as_u8_slice_mut().chunks_mut(4).enumerate() {
+            let on = (i % 4 < 2) ^ (i / 8 == 1);
+            c.copy_from_slice(if on { &[255, 255, 255, 255] } else { &[0, 0, 0, 255] });
+        }
+        Arc::new(p)
+    };
+    let t2 = tile.clone();
+    let src: Arc<dyn DynamicImages> = Arc::new(move |id: ImageId| (id.0 >= 0x4000_0000).then(|| t2.clone()));
+    let mut r = Renderer::new(Arc::new(Assets::default()));
+    r.set_image_source(src);
+    let id = ImageId(0x4000_0001);
+    let l = list(vec![
+        Op::Image { image: id, dst: [0.0, 0.0, 4.0, 4.0], opacity: 1.0, transform: IDENTITY },
+        // Tiled: a 4×4 pattern repeating across a 40×40 rect.
+        Op::Fill { path: kurbo::Rect::new(40.0, 40.0, 80.0, 80.0).to_path(0.1), paint: Paint::Image { image: id, transform: IDENTITY, opacity: 1.0 }, rule: FillRule::NonZero, transform: IDENTITY },
+    ]);
+    let px = r.render(&l).data_as_u8_slice().to_vec();
+    let at = |x: usize, y: usize| px[(y * W as usize + x) * 4];
+    assert_eq!(at(0, 0), 255);
+    assert_eq!(at(2, 0), 0);
+    // Repeats far from the origin (Pad would smear the edge pixel).
+    assert_eq!(at(72, 72), at(0, 0));
+    assert_eq!(at(74, 72), at(2, 0));
+    assert_eq!(at(72, 74), at(0, 2));
+}

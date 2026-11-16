@@ -40,11 +40,32 @@ use crate::dl::{self, Blend, DisplayList, FillRule, Op, Paint, Rgba};
 pub(crate) struct View<'a> {
     assets: &'a Assets,
     frame: &'a HashMap<dl::ImageId, Arc<Pixmap>>,
+    dynamic: Option<&'a dyn DynamicImages>,
+}
+
+/// A source of images made while rendering (component fields, 3D renders,
+/// video frames), consulted for ids not in [`Assets::images`] or the
+/// per-frame overrides. Must be thread-safe: every worker calls it.
+pub trait DynamicImages: Send + Sync {
+    /// The premultiplied RGBA8 image for `id`, if this source has it. Return
+    /// the same `Arc` while the pixels are unchanged (incremental renders key
+    /// on its identity) and a new one when they change.
+    fn get(&self, id: dl::ImageId) -> Option<Arc<Pixmap>>;
+}
+
+impl<F: Fn(dl::ImageId) -> Option<Arc<Pixmap>> + Send + Sync> DynamicImages for F {
+    fn get(&self, id: dl::ImageId) -> Option<Arc<Pixmap>> {
+        self(id)
+    }
 }
 
 impl View<'_> {
-    fn image(&self, id: dl::ImageId) -> Option<&Arc<Pixmap>> {
-        self.frame.get(&id).or_else(|| self.assets.images.get(id))
+    fn image(&self, id: dl::ImageId) -> Option<Arc<Pixmap>> {
+        self.frame
+            .get(&id)
+            .or_else(|| self.assets.images.get(id))
+            .cloned()
+            .or_else(|| self.dynamic.and_then(|d| d.get(id)))
     }
     fn face(&self, id: dl::FontId) -> Option<&Face> {
         self.assets.fonts.face(id)
@@ -119,6 +140,7 @@ pub struct Renderer {
     rpix: Pixmap,
     /// Per-frame image overrides (video frames, live textures).
     frame_images: Arc<HashMap<dl::ImageId, Arc<Pixmap>>>,
+    dynamic: Option<Arc<dyn DynamicImages>>,
     inc: incremental::Tracker,
     st: State,
 }
@@ -137,6 +159,7 @@ impl Renderer {
             rctx: None,
             rpix: Pixmap::new(1, 1),
             frame_images: Default::default(),
+            dynamic: None,
             inc: Default::default(),
             st: State {
                 res: Resources::new(),
@@ -173,6 +196,13 @@ impl Renderer {
     /// the `Arc`), so give each new frame its own `Arc`.
     pub fn set_frame_image(&mut self, id: dl::ImageId, pixmap: Arc<Pixmap>) {
         Arc::make_mut(&mut self.frame_images).insert(id, pixmap);
+    }
+
+    /// Dynamic-image hook: images not in the shared store (e.g. component
+    /// images at ids ≥ `0x4000_0000`) are fetched from `source` while rendering.
+    pub fn set_image_source(&mut self, source: Arc<dyn DynamicImages>) {
+        self.dynamic = Some(source);
+        self.invalidate();
     }
 
     /// Drop one per-frame override (falls back to the shared store).
@@ -218,7 +248,8 @@ impl Renderer {
         st.frame_size = (w as u32, h as u32);
         let shared = self.assets.clone();
         let frame_images = self.frame_images.clone();
-        let assets = View { assets: &shared, frame: &frame_images };
+        let dynamic = self.dynamic.clone();
+        let assets = View { assets: &shared, frame: &frame_images, dynamic: dynamic.as_deref() };
         let settings = RasterizerSettings { target_init: TargetInit::Clear(color(list.background)), ..Default::default() };
         if full {
             st.org = (0, 0);
@@ -878,8 +909,9 @@ fn set_paint(ctx: &mut RenderContext, assets: &View, paint: &Paint) -> bool {
                 return false;
             }
             ctx.set_paint(Image {
-                image: ImageSource::Pixmap(pix.clone()),
-                sampler: ImageSampler { alpha: opacity.min(1.0), quality: ImageQuality::Medium, ..Default::default() },
+                image: ImageSource::Pixmap(pix),
+                // `Paint::Image` tiles; `Op::Image` draws once.
+                sampler: ImageSampler { alpha: opacity.min(1.0), quality: ImageQuality::Medium, x_extend: Extend::Repeat, y_extend: Extend::Repeat },
             });
             ctx.set_paint_transform(inv);
         }
@@ -991,7 +1023,7 @@ fn draw_op(st: &mut State, assets: &View, ctx: &mut RenderContext, op: &Op, base
                 return;
             }
             let t = base * affine(transform);
-            if draw_image_fast(st, ctx, *image, pix, dst, *opacity, t) {
+            if draw_image_fast(st, ctx, *image, &pix, dst, *opacity, t) {
                 return;
             }
             let (iw, ih) = (pix.width() as f64, pix.height() as f64);
@@ -1027,6 +1059,17 @@ fn draw_op(st: &mut State, assets: &View, ctx: &mut RenderContext, op: &Op, base
                     ctx.fill_path(&st.run);
                 }
             } else {
+                // Colour glyphs (COLR/bitmap emoji) ignore paint alpha: apply it as a layer.
+                let alpha = match paint {
+                    Paint::Solid(c) => c.0[3].clamp(0.0, 1.0),
+                    _ => 1.0,
+                };
+                if alpha < 1.0 {
+                    if let Paint::Solid(c) = paint {
+                        ctx.set_paint(color(Rgba([c.0[0], c.0[1], c.0[2], 1.0])));
+                    }
+                    ctx.push_layer(None, None, Some(alpha), None, None);
+                }
                 let mut b = ctx.glyph_run(&mut st.res, &font.data).font_size(*size).hint(false).atlas_cache(true);
                 b = b.normalized_coords(&font.coords);
                 if let Some(a) = font.skew {
@@ -1037,6 +1080,9 @@ fn draw_op(st: &mut State, assets: &View, ctx: &mut RenderContext, op: &Op, base
                     b = b.font_embolden(glifo::FontEmbolden::new(kurbo::Diagonal2::new(e, e)));
                 }
                 let _ = b.fill_glyphs(glyphs.iter().map(|g| vello_cpu::Glyph { id: g.id as u32, x: g.x, y: g.y }));
+                if alpha < 1.0 {
+                    ctx.pop_layer();
+                }
             }
         }
         Op::PushLayer { .. } | Op::PopLayer => {}
