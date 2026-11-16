@@ -80,7 +80,7 @@
       "description": "The scenes, in order.",
       "type": "array",
       "items": {
-        "$ref": "#/$defs/Scene"
+        "$ref": "#/$defs/SceneItem"
       }
     },
     "size": {
@@ -135,6 +135,23 @@
           },
           "maxItems": 2,
           "minItems": 2
+        }
+      ]
+    },
+    "AnimateItem": {
+      "description": "Schema helper: `animate` as a preset name, one tween or a list.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/Tween"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Tween"
+          }
         }
       ]
     },
@@ -326,13 +343,15 @@
       "type": "object",
       "properties": {
         "animate": {
-          "type": [
-            "array",
-            "null"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnimateItem"
+            },
+            {
+              "type": "null"
+            }
           ],
-          "items": {
-            "$ref": "#/$defs/Tween"
-          }
+          "default": null
         },
         "rotation": {
           "anyOf": [
@@ -615,13 +634,15 @@
           ]
         },
         "animate": {
-          "type": [
-            "array",
-            "null"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnimateItem"
+            },
+            {
+              "type": "null"
+            }
           ],
-          "items": {
-            "$ref": "#/$defs/Tween"
-          }
+          "default": null
         },
         "blend": {
           "type": [
@@ -645,8 +666,9 @@
             "array",
             "null"
           ],
+          "default": null,
           "items": {
-            "$ref": "#/$defs/Layer"
+            "$ref": "#/$defs/LayerItem"
           }
         },
         "clip": {
@@ -800,8 +822,9 @@
             "array",
             "null"
           ],
+          "default": null,
           "items": {
-            "$ref": "#/$defs/Layer"
+            "$ref": "#/$defs/LayerItem"
           }
         },
         "letterSpacing": {
@@ -1177,6 +1200,17 @@
         }
       }
     },
+    "LayerItem": {
+      "description": "Schema helper: a layer or a string (text).",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/Layer"
+        }
+      ]
+    },
     "LoopValue": {
       "description": "`loop`: a preset (name or object), or a bool for video clips.",
       "anyOf": [
@@ -1405,7 +1439,7 @@
           "description": "Drawn bottom to top.",
           "type": "array",
           "items": {
-            "$ref": "#/$defs/Layer"
+            "$ref": "#/$defs/LayerItem"
           }
         },
         "markers": {
@@ -1432,6 +1466,17 @@
       },
       "required": [
         "layers"
+      ]
+    },
+    "SceneItem": {
+      "description": "Schema helper: a scene or a string (a title card).",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/Scene"
+        }
       ]
     },
     "Shadow": {

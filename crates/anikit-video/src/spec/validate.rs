@@ -39,6 +39,35 @@ pub const ANIM_PROPS: &[&str] = &[
     "progress", "zoom",
 ];
 
+/// Short preset aliases (`rise` = `fadeUp`, …). `exit` picks the exit form.
+pub fn canon_preset(name: &str, exit: bool) -> &str {
+    match (name, exit) {
+        ("rise", _) => "fadeUp",
+        ("drop", _) => "fadeDown",
+        ("fade", false) | ("appear", _) => "fadeIn",
+        ("fade", true) | ("disappear", _) => "fadeOut",
+        ("pop", false) => "popIn",
+        ("pop", true) => "popOut",
+        ("grow", _) | ("scale", false) => "scaleIn",
+        ("shrink", _) | ("scale", true) => "scaleOut",
+        ("zoom", false) => "zoomIn",
+        ("zoom", true) => "zoomOut",
+        ("blur", false) | ("focus", _) => "blurIn",
+        ("blur", true) => "blurOut",
+        ("draw", false) => "drawOn",
+        ("draw", true) => "drawOff",
+        ("type", _) | ("typing", _) => "typewriter",
+        ("count", _) => "countUp",
+        ("wipe", false) => "wipeIn",
+        ("wipe", true) => "wipeOut",
+        ("slide", _) => "slideUp",
+        ("bounce", _) => "bounceIn",
+        ("spinIn", _) | ("rotate", _) => "rotateIn",
+        ("flip", _) => "flipIn",
+        _ => name,
+    }
+}
+
 /// Canonical easing names (any Penner/CSS name `anikit-core` parses is accepted;
 /// these are the ones suggested).
 pub fn easings() -> &'static [String] {

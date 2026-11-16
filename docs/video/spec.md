@@ -24,6 +24,22 @@ You describe a video as one JSON (or YAML) document; `anikit-video render spec.j
 
 That is 1920×1080, 30 fps, 3 seconds, dark background, white Inter text in the centre that fades up.
 
+## Shorthand (fewest tokens)
+
+```json
+{ "scenes": [
+  "Launch day | Everything ships at once",
+  { "layers": [ { "text": "3× faster", "style": "title", "animate": "rise" }, "Built in Rust" ] },
+  { "layers": [ { "component": "bar-chart", "props": { "values": [3, 7, 5, 9] } } ] }
+] }
+```
+
+- A **scene** can be a string: a title card (`"Title | subtitle"`).
+- A **layer** can be a string: a centred body-text layer.
+- `"animate": "rise"` (a preset name) means `"enter": "rise"`; `animate` also takes one tween object instead of a list.
+- Preset aliases: `rise` (fadeUp), `drop` (fadeDown), `fade`, `pop`, `grow` (scaleIn), `zoom`, `blur`, `draw` (drawOn), `type` (typewriter), `count` (countUp), `wipe`, `slide` (slideUp), `bounce`; in `exit` they mean the exit form (`"exit": "fade"` = fadeOut).
+- On text, any kinetic style also works as `enter`/`animate`: `"animate": "scramble"`, `"enter": "pop by char from center"`.
+
 ## A complete example
 
 ```json

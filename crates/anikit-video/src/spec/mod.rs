@@ -9,6 +9,7 @@
 
 #![allow(clippy::large_enum_variant)]
 
+mod de;
 pub mod parse;
 pub mod validate;
 
@@ -106,6 +107,8 @@ pub struct Spec {
     /// Colour tokens, fonts and text styles.
     pub theme: Option<Theme>,
     /// The scenes, in order.
+    #[serde(deserialize_with = "de::scenes")]
+    #[schemars(with = "Vec<de::SceneItem>")]
     pub scenes: Vec<Scene>,
     /// Default transition between scenes. Default crossfade 0.5 s.
     pub transition: Option<Transition>,
@@ -198,6 +201,8 @@ pub struct Scene {
     /// Times relative to the scene start.
     pub markers: Option<BTreeMap<String, Num>>,
     /// Drawn bottom to top.
+    #[serde(deserialize_with = "de::layers")]
+    #[schemars(with = "Vec<de::LayerItem>")]
     pub layers: Vec<Layer>,
     /// Audio cues relative to the scene start.
     pub audio: Option<Vec<AudioCue>>,
@@ -233,6 +238,8 @@ pub struct Camera {
     pub y: Option<Num>,
     pub zoom: Option<Num>,
     pub rotation: Option<Num>,
+    #[serde(default, deserialize_with = "de::opt_tweens")]
+    #[schemars(with = "Option<de::AnimateItem>")]
     pub animate: Option<Vec<Tween>>,
     pub shake: Option<Shake>,
 }
@@ -311,6 +318,8 @@ pub struct Layer {
     /// (for `video` layers, a bool: loop the clip).
     #[serde(rename = "loop")]
     pub loop_: Option<LoopValue>,
+    #[serde(default, deserialize_with = "de::opt_tweens")]
+    #[schemars(with = "Option<de::AnimateItem>")]
     pub animate: Option<Vec<Tween>>,
     /// Delay children's animations by index × seconds (group, box, split text).
     pub stagger: Option<Stagger>,
@@ -359,8 +368,12 @@ pub struct Layer {
 
     // ---- containers
     /// Children of a `group`.
+    #[serde(default, deserialize_with = "de::opt_layers")]
+    #[schemars(with = "Option<Vec<de::LayerItem>>")]
     pub layers: Option<Vec<Layer>>,
     /// Children of a `box`.
+    #[serde(default, deserialize_with = "de::opt_layers")]
+    #[schemars(with = "Option<Vec<de::LayerItem>>")]
     pub children: Option<Vec<Layer>>,
 
     // ---- component

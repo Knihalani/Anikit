@@ -891,6 +891,20 @@ impl C<'_> {
     }
 
     fn layer(&mut self, l: &Layer, path: &str, pc: PCtx) -> Option<Node> {
+        // `"animate": "rise"` (a lone preset) means `"enter": "rise"`.
+        let norm;
+        let l = match &l.animate {
+            Some(a) if l.enter.is_none() && a.len() == 1 && a[0].preset.is_some() && a[0].at.is_none() && a[0].from.is_none() && a[0].to.is_none() && a[0].keyframes.is_none() => {
+                let t = &a[0];
+                norm = Layer {
+                    enter: Some(spec::Preset(PresetObj { preset: t.preset.clone(), duration: t.duration.clone(), ease: t.ease.clone(), spring: t.spring.clone(), ..Default::default() })),
+                    animate: None,
+                    ..l.clone()
+                };
+                &norm
+            }
+            _ => l,
+        };
         let kind = self.infer_kind(l, path)?;
         if l.visible == Some(false) {
             return None;
@@ -1284,7 +1298,7 @@ impl C<'_> {
             }
         } else {
             match &l.enter {
-                Some(p) if p.0.preset.as_deref().is_some_and(|x| !val::ENTER_PRESETS.contains(&x)) => {
+                Some(p) if p.0.preset.as_deref().is_some_and(|x| !val::ENTER_PRESETS.contains(&val::canon_preset(x, false))) => {
                     let name = p.0.preset.as_deref().unwrap();
                     match text::kinetic::Kinetic::parse(name) {
                         Ok(mut k) => {
@@ -2011,7 +2025,7 @@ impl C<'_> {
 
     #[allow(clippy::too_many_arguments)]
     fn preset(&mut self, p: &PresetObj, path: &str, exit: bool, delay: f32, cx: PresetCx, tw: &mut Vec<TweenC>, n: &mut Node) {
-        let name = p.preset.clone().unwrap_or_default();
+        let name = val::canon_preset(p.preset.as_deref().unwrap_or_default(), exit).to_string();
         let list = if exit { val::EXIT_PRESETS } else { val::ENTER_PRESETS };
         if !list.contains(&name.as_str()) {
             let other = if exit { val::ENTER_PRESETS } else { val::EXIT_PRESETS };
@@ -2020,7 +2034,12 @@ impl C<'_> {
             } else {
                 String::new()
             };
-            self.d.push(Diagnostic::error(path, format!("unknown {} preset '{name}'{hint}", if exit { "exit" } else { "enter" })).suggest(suggest(&name, list)));
+            let mut cands: Vec<&str> = list.to_vec();
+            cands.extend(["rise", "drop", "fade", "pop", "grow", "zoom", "blur", "draw", "type", "count", "wipe", "slide", "bounce"]);
+            if matches!(n.kind, Kind::Text { .. }) && !exit {
+                cands.extend(crate::text::kinetic::STYLE_NAMES);
+            }
+            self.d.push(Diagnostic::error(path, format!("unknown {} preset '{name}'{hint}", if exit { "exit" } else { "enter" })).suggest(suggest(&name, &cands)));
             return;
         }
         let (h, w) = (self.h, self.w);
