@@ -154,31 +154,31 @@ export default async function film({ anikit: A }) {
   const baked = { ambient: 1, diffuse: 0, specular: 0, rim: 0 };
   const items = {
     R: [
-      { mesh: dome, instances: domeAt, cull: false, reflect: true, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.sky, textureMode: 'emissive', fog: 0 } },
-      { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farReal } },
       { mesh: world.terrainMesh, instances: terrainAt, material: { ...baked, texture: TX.real, textureFilter: 'aniso' } },
       { mesh: tm, instances: treesR, material: { ambient: 0.3, diffuse: 1.0, specular: 0.08, shininess: 6, rim: 0.45 } },
       ...towersR.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 0.42, diffuse: 0.9, specular: 0.7, shininess: 60, rim: 0.12, texture: TX.windows, textureRepeat: CLS[c] } })),
+      { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farReal } },
+      { mesh: dome, instances: domeAt, cull: false, reflect: true, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.sky, textureMode: 'emissive', fog: 0 } },
       { mesh: water, instances: waterAt, mirror: true, material: { ...baked, ambient: 0.25 } },
       { mesh: sunBall, instances: sunAt, blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 2.6, fog: 0 } },
       { points: motes, colors: moteCol, size: 0.05, intensity: 0.9, streak: 1, fog: [6, 90] },
     ],
     N: [
-      { mesh: world.farMesh, instances: farAt, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0, texture: TX.farNeon, textureMode: 'emissive', textureGain: 1.3 } },
       { mesh: world.terrainMesh, instances: terrainAt, material: { ambient: 1, diffuse: 0.9, specular: 0, rim: 0, texture: TX.neon, textureMode: 'emissive', textureGain: 1.25, textureFilter: 'aniso' } },
-      { mesh: dome, instances: domeAt, cull: false, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.skyNeon, textureMode: 'emissive', fog: 0 } },
       ...towersN.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 1, diffuse: 0.6, specular: 0.9, shininess: 80, rim: 0.3, texture: TX.windowsNeon, textureMode: 'emissive', textureGain: 1.5, textureRepeat: CLS[c], lines: 1.1, lineColor: [1.5, 0.35, 1.1], grid: [1, 1], lineWidth: 0.012 } })),
+      { mesh: world.farMesh, instances: farAt, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0, texture: TX.farNeon, textureMode: 'emissive', textureGain: 1.3 } },
+      { mesh: dome, instances: domeAt, cull: false, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.skyNeon, textureMode: 'emissive', fog: 0 } },
       { mesh: water, instances: waterAt, mirror: true, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0 } },
       ...lanes.map((m, k) => ({ mesh: m, blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 0.12, pulse: 3.2, pulseCount: k === 0 ? 34 : 48, pulsePhase: 0, lineColor: laneCol[k] } })),
       { mesh: tm, instances: treesN, blend: 'additive', material: { ambient: 1, diffuse: 0, specular: 0, rim: 1.1 } },
       { points: motes, colors: moteColN, size: 0.09, intensity: 1.8, streak: 1, fog: [6, 120] },
     ],
     C: [
-      { mesh: dome, instances: domeAt, cull: false, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.skyComic, textureMode: 'emissive', fog: 0 } },
-      { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farComic } },
       { mesh: world.terrainMesh, instances: terrainAt, material: { ...baked, texture: TX.comic, textureFilter: 'aniso' } },
       { mesh: tm, instances: treesC, material: { ambient: 0.6, diffuse: 0.7, specular: 0, rim: 0 } },
       ...towersC.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 0.62, diffuse: 0.6, specular: 0, rim: 0, texture: TX.windowsComic, textureRepeat: CLS[c] } })),
+      { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farComic } },
+      { mesh: dome, instances: domeAt, cull: false, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.skyComic, textureMode: 'emissive', fog: 0 } },
       { mesh: water, instances: waterAt, mirror: true, material: { ...baked, ambient: 1 } },
     ],
   };
@@ -191,9 +191,9 @@ export default async function film({ anikit: A }) {
   waterN.instances = waterNAt; waterC.instances = waterCAt;
   void waterR;
   const farNAt = instances(1, () => ({ color: [0.02, 0.012, 0.035] }));
-  items.N[0].instances = farNAt;
+  items.N.find((it) => it.mesh === world.farMesh).instances = farNAt;
   const terrNAt = instances(1, () => ({ color: [0.02, 0.018, 0.035] }));
-  items.N[1].instances = terrNAt;
+  items.N.find((it) => it.mesh === world.terrainMesh).instances = terrNAt;
 
   const opts = {
     R: {
