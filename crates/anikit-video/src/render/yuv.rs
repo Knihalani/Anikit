@@ -68,65 +68,162 @@ const VG: i32 = -3268; // -0.454153 · …
 const VB: i32 = -330; // -0.045847 · …
 
 #[inline(always)]
-fn kernel(src: &[u8], w: usize, h: usize, out: &mut YuvFrame) {
-    let ys = out.y_stride;
-    let cs = out.c_stride;
-    let cw = w.div_ceil(2);
-    for cy in 0..h.div_ceil(2) {
-        let y0 = cy * 2;
-        let y1 = (y0 + 1).min(h - 1);
-        let r0 = &src[y0 * w * 4..(y0 + 1) * w * 4];
-        let r1 = &src[y1 * w * 4..(y1 + 1) * w * 4];
-        {
-            let (ya, yb) = out.y.split_at_mut((y0 + 1) * ys);
-            let ya = &mut ya[y0 * ys..y0 * ys + w];
-            for (o, p) in ya.iter_mut().zip(r0.chunks_exact(4)) {
-                let s = YR * p[0] as i32 + YG * p[1] as i32 + YB * p[2] as i32;
-                *o = ((s + (16 << 15) + (1 << 14)) >> 15) as u8;
-            }
-            if y0 + 1 < h {
-                let yb = &mut yb[..w];
-                for (o, p) in yb.iter_mut().zip(r1.chunks_exact(4)) {
-                    let s = YR * p[0] as i32 + YG * p[1] as i32 + YB * p[2] as i32;
-                    *o = ((s + (16 << 15) + (1 << 14)) >> 15) as u8;
-                }
-            }
-        }
-        let u = &mut out.u[cy * cs..cy * cs + cw];
-        let v = &mut out.v[cy * cs..cy * cs + cw];
-        let pairs = w / 2;
-        for i in 0..pairs {
-            let a = &r0[i * 8..i * 8 + 8];
-            let b = &r1[i * 8..i * 8 + 8];
-            let r = a[0] as i32 + a[4] as i32 + b[0] as i32 + b[4] as i32;
-            let g = a[1] as i32 + a[5] as i32 + b[1] as i32 + b[5] as i32;
-            let bl = a[2] as i32 + a[6] as i32 + b[2] as i32 + b[6] as i32;
-            u[i] = ((UR * r + UG * g + UB * bl + (128 << 15) + (1 << 14)) >> 15) as u8;
-            v[i] = ((VR * r + VG * g + VB * bl + (128 << 15) + (1 << 14)) >> 15) as u8;
-        }
-        if w % 2 == 1 {
-            let x = w - 1;
-            let a = &r0[x * 4..x * 4 + 4];
-            let b = &r1[x * 4..x * 4 + 4];
-            let r = 2 * (a[0] as i32 + b[0] as i32);
-            let g = 2 * (a[1] as i32 + b[1] as i32);
-            let bl = 2 * (a[2] as i32 + b[2] as i32);
-            u[pairs] = ((UR * r + UG * g + UB * bl + (128 << 15) + (1 << 14)) >> 15) as u8;
-            v[pairs] = ((VR * r + VG * g + VB * bl + (128 << 15) + (1 << 14)) >> 15) as u8;
+fn luma(p: &[u8]) -> u8 {
+    let s = YR * p[0] as i32 + YG * p[1] as i32 + YB * p[2] as i32;
+    ((s + (16 << 15) + (1 << 14)) >> 15) as u8
+}
+
+#[inline(always)]
+fn chroma(r: i32, g: i32, b: i32) -> (u8, u8) {
+    (
+        ((UR * r + UG * g + UB * b + (128 << 15) + (1 << 14)) >> 15) as u8,
+        ((VR * r + VG * g + VB * b + (128 << 15) + (1 << 14)) >> 15) as u8,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+/// Scalar conversion of one row pair from pixel `x0` (even) to `w`.
+/// `yb` is `None` for the last row of an odd-height frame.
+#[inline(always)]
+fn rows_scalar(r0: &[u8], r1: &[u8], ya: &mut [u8], yb: Option<&mut [u8]>, u: &mut [u8], v: &mut [u8], x0: usize, w: usize) {
+    for x in x0..w {
+        ya[x] = luma(&r0[x * 4..]);
+    }
+    if let Some(yb) = yb {
+        for x in x0..w {
+            yb[x] = luma(&r1[x * 4..]);
         }
     }
+    let mut x = x0;
+    while x < w {
+        let x1 = (x + 1).min(w - 1);
+        let (a0, a1, b0, b1) = (&r0[x * 4..], &r0[x1 * 4..], &r1[x * 4..], &r1[x1 * 4..]);
+        let c = |k: usize| a0[k] as i32 + a1[k] as i32 + b0[k] as i32 + b1[k] as i32;
+        let (cu, cv) = chroma(c(0), c(1), c(2));
+        u[x / 2] = cu;
+        v[x / 2] = cv;
+        x += 2;
+    }
+}
+
+#[inline(always)]
+fn kernel_with(src: &[u8], w: usize, h: usize, out: &mut YuvFrame, simd: impl Fn(&[u8], &[u8], &mut [u8], &mut [u8], &mut [u8], &mut [u8]) -> usize) {
+    let ys = out.y_stride;
+    let cs = out.c_stride;
+    for cy in 0..h.div_ceil(2) {
+        let y0 = cy * 2;
+        let r0 = &src[y0 * w * 4..(y0 + 1) * w * 4];
+        let u = &mut out.u[cy * cs..cy * cs + cs];
+        let v = &mut out.v[cy * cs..cy * cs + cs];
+        let (ya, rest) = out.y[y0 * ys..].split_at_mut(ys);
+        if y0 + 1 < h {
+            let r1 = &src[(y0 + 1) * w * 4..(y0 + 2) * w * 4];
+            let yb = &mut rest[..ys];
+            let done = simd(r0, r1, ya, yb, u, v);
+            rows_scalar(r0, r1, ya, Some(yb), u, v, done, w);
+        } else {
+            rows_scalar(r0, r0, ya, None, u, v, 0, w);
+        }
+    }
+}
+
+fn kernel(src: &[u8], w: usize, h: usize, out: &mut YuvFrame) {
+    kernel_with(src, w, h, out, |_, _, _, _, _, _| 0)
 }
 
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2")]
 unsafe fn kernel_avx2(src: &[u8], w: usize, h: usize, out: &mut YuvFrame) {
-    kernel(src, w, h, out)
+    kernel_with(src, w, h, out, |r0, r1, ya, yb, u, v| unsafe { avx2::rows(r0, r1, ya, yb, u, v) })
 }
 
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "sse4.1")]
 unsafe fn kernel_sse41(src: &[u8], w: usize, h: usize, out: &mut YuvFrame) {
     kernel(src, w, h, out)
+}
+
+#[cfg(target_arch = "x86_64")]
+mod avx2 {
+    use super::*;
+    use std::arch::x86_64::*;
+
+    /// Convert 16-pixel groups of a row pair; returns the number of pixels done.
+    /// Bit-identical to the scalar path (exact i32 `madd` arithmetic).
+    #[target_feature(enable = "avx2")]
+    pub unsafe fn rows(r0: &[u8], r1: &[u8], ya: &mut [u8], yb: &mut [u8], u: &mut [u8], v: &mut [u8]) -> usize {
+        let w = r0.len() / 4;
+        let n = w & !15;
+        let cy = _mm256_setr_epi16(
+            YR as i16, YG as i16, YB as i16, 0, YR as i16, YG as i16, YB as i16, 0,
+            YR as i16, YG as i16, YB as i16, 0, YR as i16, YG as i16, YB as i16, 0,
+        );
+        let cu = _mm256_setr_epi16(
+            UR as i16, UG as i16, UB as i16, 0, UR as i16, UG as i16, UB as i16, 0,
+            UR as i16, UG as i16, UB as i16, 0, UR as i16, UG as i16, UB as i16, 0,
+        );
+        let cv = _mm256_setr_epi16(
+            VR as i16, VG as i16, VB as i16, 0, VR as i16, VG as i16, VB as i16, 0,
+            VR as i16, VG as i16, VB as i16, 0, VR as i16, VG as i16, VB as i16, 0,
+        );
+        let ky = _mm256_set1_epi32((16 << 15) + (1 << 14));
+        let kc = _mm256_set1_epi32((128 << 15) + (1 << 14));
+        let order = _mm256_setr_epi32(0, 4, 1, 5, 2, 6, 3, 7);
+        let fix = _mm_setr_epi8(0, 1, 8, 9, 2, 3, 10, 11, 4, 5, 12, 13, 6, 7, 14, 15);
+        let mut x = 0;
+        while x < n {
+            let p0 = r0.as_ptr().add(x * 4);
+            let p1 = r1.as_ptr().add(x * 4);
+            let mut a = [_mm256_setzero_si256(); 4];
+            let mut b = [_mm256_setzero_si256(); 4];
+            for k in 0..4 {
+                a[k] = _mm256_cvtepu8_epi16(_mm_loadu_si128(p0.add(k * 16) as *const __m128i));
+                b[k] = _mm256_cvtepu8_epi16(_mm_loadu_si128(p1.add(k * 16) as *const __m128i));
+            }
+            let luma16 = |g: &[__m256i; 4]| {
+                let m: [__m256i; 4] = [
+                    _mm256_madd_epi16(g[0], cy),
+                    _mm256_madd_epi16(g[1], cy),
+                    _mm256_madd_epi16(g[2], cy),
+                    _mm256_madd_epi16(g[3], cy),
+                ];
+                // [p0 p1 p4 p5 | p2 p3 p6 p7], [p8 p9 p12 p13 | p10 p11 p14 p15]
+                let h01 = _mm256_srai_epi32::<15>(_mm256_add_epi32(_mm256_hadd_epi32(m[0], m[1]), ky));
+                let h23 = _mm256_srai_epi32::<15>(_mm256_add_epi32(_mm256_hadd_epi32(m[2], m[3]), ky));
+                let w16 = _mm256_packs_epi32(h01, h23); // [p0 p1 p4 p5 p8 p9 p12 p13 | p2 p3 p6 p7 p10 p11 p14 p15]
+                let b8 = _mm256_packus_epi16(w16, w16);
+                let q = _mm256_permute4x64_epi64::<0b1000>(b8); // low 128: lane0 low 8 bytes, lane1 low 8 bytes
+                _mm_shuffle_epi8(_mm256_castsi256_si128(q), fix)
+            };
+            _mm_storeu_si128(ya.as_mut_ptr().add(x) as *mut __m128i, luma16(&a));
+            _mm_storeu_si128(yb.as_mut_ptr().add(x) as *mut __m128i, luma16(&b));
+            let s = [
+                _mm256_add_epi16(a[0], b[0]),
+                _mm256_add_epi16(a[1], b[1]),
+                _mm256_add_epi16(a[2], b[2]),
+                _mm256_add_epi16(a[3], b[3]),
+            ];
+            let chroma8 = |c: __m256i, k: __m256i| {
+                let m0 = _mm256_madd_epi16(s[0], c);
+                let m1 = _mm256_madd_epi16(s[1], c);
+                let m2 = _mm256_madd_epi16(s[2], c);
+                let m3 = _mm256_madd_epi16(s[3], c);
+                let h01 = _mm256_hadd_epi32(m0, m1);
+                let h23 = _mm256_hadd_epi32(m2, m3);
+                // [c0 c2 c4 c6 | c1 c3 c5 c7]
+                let hh = _mm256_hadd_epi32(h01, h23);
+                let r = _mm256_srai_epi32::<15>(_mm256_add_epi32(hh, k));
+                _mm256_permutevar8x32_epi32(r, order)
+            };
+            let cuv = _mm256_packs_epi32(chroma8(cu, kc), chroma8(cv, kc)); // [u0..3 v0..3 | u4..7 v4..7]
+            let cuv = _mm256_permute4x64_epi64::<0b11011000>(cuv); // [u0..7 | v0..7]
+            let b8 = _mm256_packus_epi16(cuv, cuv);
+            _mm_storel_epi64(u.as_mut_ptr().add(x / 2) as *mut __m128i, _mm256_castsi256_si128(b8));
+            _mm_storel_epi64(v.as_mut_ptr().add(x / 2) as *mut __m128i, _mm256_extracti128_si256::<1>(b8));
+            x += 16;
+        }
+        n
+    }
 }
 
 /// Replicate the right and bottom edges into the macroblock padding.
