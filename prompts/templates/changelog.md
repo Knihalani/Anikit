@@ -5,7 +5,7 @@ description: How to fill the 'changelog' template well.
 
 # Template guide: Changelog / what's new (`changelog`)
 
-A 12–25 s release recap: a version badge as the hook, then 3–6 changes building in as a list (three per scene) with colour-coded New / Improved / Fixed pills, then an end card.
+A 12–25 s release recap: a version badge and kinetic title beside the product UI, then the changes as icon cards (New ✦, Improved ⚡, Fixed ✓) building in three at a time, then a CTA with confetti.
 
 **Typical length:** 12–25 s. **Formats:** 16:9, 9:16 and 1:1 (pass `--format`); the layout adapts automatically.
 

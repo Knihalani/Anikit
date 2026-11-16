@@ -461,6 +461,7 @@ pub const FUNCTIONS: &[(&str, &str)] = &[
     ("clamp(x, lo, hi)", "x limited to [lo, hi]"),
     ("round(x, digits?) / floor(x) / ceil(x) / abs(x)", "rounding"),
     ("sum(list)", "sum of numbers"),
+    ("argmax(list)", "index of the largest number"),
     ("range(n) / range(a, b)", "list of integers"),
     ("words(text)", "number of words"),
     ("readtime(text)", "seconds needed to read text: words/3 + 1, at least 1.5"),
@@ -505,6 +506,10 @@ fn call(name: &str, a: &[Value]) -> Result<Value, String> {
         "min" => num(nums(a, name)?.into_iter().fold(f64::INFINITY, f64::min)),
         "max" => num(nums(a, name)?.into_iter().fold(f64::NEG_INFINITY, f64::max)),
         "sum" => num(nums(a, name)?.into_iter().sum()),
+        "argmax" => {
+            let v = nums(a, name)?;
+            Value::from(v.iter().enumerate().fold((0usize, f64::NEG_INFINITY), |b, (i, &x)| if x > b.1 { (i, x) } else { b }).0)
+        }
         "clamp" => num(f(arg(a, 0), name)?.max(f(arg(a, 1), name)?).min(f(arg(a, 2), name)?)),
         "round" => {
             let p = 10f64.powi(f(arg(a, 1), name)? as i32);
@@ -640,6 +645,7 @@ mod tests {
         assert_eq!(ev("upper(name)", v.clone()), json!("ADA"));
         assert_eq!(ev("join(pick(list, 't'), ' / ')", v.clone()), json!("a b c / d"));
         assert_eq!(ev("max(1, 5, 3)", v.clone()), json!(5));
+        assert_eq!(ev("argmax([1, 5, 3])", v.clone()), json!(1));
         assert_eq!(ev("truncate('abcdefgh', 5)", v.clone()), json!("abcd…"));
         assert_eq!(ev("contrast('#111111')", v.clone()), json!("#FFFFFF"));
         assert_eq!(ev("alpha('#FF0000', 0.5)", v), json!("#FF000080"));
