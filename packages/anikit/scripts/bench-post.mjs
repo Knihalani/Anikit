@@ -3,7 +3,8 @@
 // (neon towers, a sun, a mirror floor — bright highlights for bloom and flares).
 //   node scripts/bench-post.mjs
 import { performance } from 'node:perf_hooks';
-const A = await import('../dist/anikit.js');
+// DIST=path/to/dist benchmarks another build (a saved baseline, for interleaved A/B runs).
+const A = await import(process.env.DIST ? new URL(`file://${process.env.DIST.replace(/\/$/, '')}/anikit.js`).href : '../dist/anikit.js');
 await A.ready;
 const W = 1920, H = 1080;
 // Input: one rendered frame.

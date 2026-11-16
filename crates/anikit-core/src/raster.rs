@@ -253,9 +253,10 @@ impl Texture {
         let (mj2, mn2, du, dv) = if lx2 >= ly2 { (lx2, ly2, ax[0], ax[1]) } else { (ly2, lx2, ay[0], ay[1]) };
         let (maj, min) = (crate::math::sqrtf(mj2), crate::math::sqrtf(mn2));
         let fw = min.max(maj * (1.0 / ANISO_MAX));
-        // Taps about one footprint apart along the major axis, at most ANISO_TAPS (each
-        // bilinear tap spans ~2 texels); NaN or a round footprint: one tap.
-        let n = if maj > fw { crate::math::ceilf(maj / fw).min(ANISO_TAPS) as usize } else { 1 };
+        // Taps at most 1.5 footprints apart along the major axis (each bilinear tap
+        // spans ~2 texels of the mip), at most ANISO_TAPS: a footprint up to 1.5×
+        // longer than wide (or NaN) takes one tap.
+        let n = if maj > fw * 1.5 { crate::math::ceilf(maj / (fw * 1.5)).min(ANISO_TAPS) as usize } else { 1 };
         if n <= 1 {
             return self.sample_v(u, v, fw);
         }
@@ -349,6 +350,9 @@ pub struct Raster {
     /// shaded once. Front-to-back instance order already keeps overdraw low,
     /// so this only pays off for heavily self-overlapping single meshes.
     pub prepass: bool,
+    /// Tests: always take the full shader (to check the fast paths against it).
+    #[cfg(test)]
+    full_shader: bool,
 }
 
 /// Motion-blur taps for one velocity tile: length, 1/count, spacing, count
@@ -382,6 +386,9 @@ struct Shade<'a> {
     tex: Option<&'a Texture>,
     /// Anisotropic texture filtering is on (needs per-pixel UV derivatives).
     aniso: bool,
+    /// No light reaches the material (no diffuse, specular, rim, reflections or
+    /// lines): sky domes and emissive backdrops take [`Shade::px4_unlit`].
+    unlit: bool,
     /// Shadow map: depth, size, light view-projection, bias, strength.
     shadow: Option<(&'a [f32], usize, M4, f32, f32)>,
     /// Point lights that can reach the current instance (see `cull_lights`).
@@ -593,6 +600,9 @@ impl Shade<'_> {
     #[allow(clippy::needless_range_loop)]
     #[allow(clippy::too_many_arguments)]
     fn px4(&self, n: [V4; 3], p: [V4; 3], u: V4, v: V4, fwu: V4, fwv: V4, d: Option<&[V4; 4]>) -> [V4; 3] {
+        if self.unlit {
+            return self.px4_unlit(p, u, v, fwu, fwv, d);
+        }
         let (m, l) = (self.m, self.l);
         let view = [self.eye[0] - p[0], self.eye[1] - p[1], self.eye[2] - p[2]];
         let d2 = dot3(&view, &view).maxf(1e-12);
@@ -738,6 +748,14 @@ impl Shade<'_> {
                 c[k] = c[k] + e * m.line_color[k];
             }
         }
+        self.fog4(&mut c, &p, d2, rd);
+        c
+    }
+
+    /// Distance fog and ground fog (`d2`, `rd`: squared distance to the eye and its inverse root).
+    #[inline(always)]
+    fn fog4(&self, c: &mut [V4; 3], p: &[V4; 3], d2: V4, rd: V4) {
+        let (m, l) = (self.m, self.l);
         if (self.fog_on || l.ground_fog[2] > 0.0) && m.fog > 0.0 {
             let dist = d2 * rd;
             let mut f = if self.fog_on { ((dist - l.fog[0]) * self.fog_inv).clamp(0.0, 1.0) } else { V4::splat(0.0) };
@@ -748,9 +766,37 @@ impl Shade<'_> {
                 f = f + (1.0 - f) * g;
             }
             let f = f * m.fog;
-            for k in 0..3 {
-                c[k] = c[k] + (l.fog_color[k] - c[k]) * f;
+            for (ck, fc) in c.iter_mut().zip(l.fog_color) {
+                *ck = *ck + (fc - *ck) * f;
             }
+        }
+    }
+
+    /// [`Shade::px4`] for unlit materials (see `Shade::unlit`): every lighting
+    /// term is exactly zero there, so the colour is base × (ambient + emissive),
+    /// tinted or added to by the texture, then fogged — the same values the
+    /// full shader computes, without the lighting maths.
+    #[inline(always)]
+    fn px4_unlit(&self, p: [V4; 3], u: V4, v: V4, fwu: V4, fwv: V4, d: Option<&[V4; 4]>) -> [V4; 3] {
+        let m = self.m;
+        let ka = &self.lit[0];
+        let texel = match self.tex {
+            Some(t) if m.tex_mode != 0 => Some(self.sample4(t, u, v, fwu, fwv, d)),
+            _ => None,
+        };
+        let mut c: [V4; 3] = match (texel, m.tex_mode) {
+            (Some(tx), 1) => core::array::from_fn(|k| tx[k] * ka[k]),
+            _ => core::array::from_fn(|k| V4::splat(ka[k])),
+        };
+        if let (Some(tx), 2) = (texel, m.tex_mode) {
+            for k in 0..3 {
+                c[k] = c[k] + tx[k] * tx[3] * m.tex_gain;
+            }
+        }
+        if (self.fog_on || self.l.ground_fog[2] > 0.0) && m.fog > 0.0 {
+            let view = [self.eye[0] - p[0], self.eye[1] - p[1], self.eye[2] - p[2]];
+            let d2 = dot3(&view, &view).maxf(1e-12);
+            self.fog4(&mut c, &p, d2, 1.0 / d2.sqrt());
         }
         c
     }
@@ -890,6 +936,10 @@ impl Raster {
     fn draw_inner(&mut self, mesh: &Mesh, instances: &[f32], vp: &M4, eye: [f32; 3], mat: &Material, light: &Lighting, cull_back: bool, blend: Blend, tex: Option<&Texture>, shadow_depth: &[f32]) {
         let nv = mesh.pos.len() / 3;
         let has_uv = mesh.uv.len() >= nv * 2;
+        #[cfg(test)]
+        let fast = !self.full_shader;
+        #[cfg(not(test))]
+        let fast = true;
         self.drawn = 0;
         self.shaded = 0;
         self.tested = 0;
@@ -910,6 +960,9 @@ impl Raster {
             lit: [[0.0; 3]; 3],
             tex,
             aniso: tex.is_some() && mat.tex_mode != 0 && mat.tex_filter == 1 && blend != Blend::DepthOnly,
+            // Zero diffuse, specular and rim make every lighting term exactly 0 (a finite
+            // shininess keeps the specular quotient finite, so 0 × it stays 0).
+            unlit: fast && mat.diffuse == 0.0 && mat.specular == 0.0 && mat.rim == 0.0 && mat.metal <= 0.0 && mat.iridescence <= 0.0 && mat.lines <= 0.0 && mat.pulse <= 0.0 && mat.shininess > 0.0 && mat.shininess < 1e4,
             shadow: if self.shadows_on && blend != Blend::DepthOnly { Some((shadow_depth, self.shadow_size, self.shadow_vp, self.shadow_bias, self.shadow_strength)) } else { None },
             pl: [[0.0; 8]; 8],
             npl: 0,
@@ -1144,6 +1197,18 @@ impl Raster {
         if MODE != DEPTH {
             self.drawn += 1;
         }
+        // No pixel centre inside the bounds (small and thin triangles between
+        // centres; far-away instances are full of them): nothing to draw. The
+        // 1/16 px margin keeps this conservative against rounding in the span
+        // solve below, so it only skips triangles that write nothing.
+        const M: f32 = 1.0 / 16.0;
+        let cx0 = (crate::math::ceilf(x0.min(x1).min(x2) - 0.5 - M) as isize).max(minx);
+        let cx1 = (crate::math::floorf(x0.max(x1).max(x2) - 0.5 + M) as isize).min(maxx);
+        let cy0 = (crate::math::ceilf(y0.min(y1).min(y2) - 0.5 - M) as isize).max(miny);
+        let cy1 = (crate::math::floorf(y0.max(y1).max(y2) - 0.5 + M) as isize).min(maxy);
+        if cx0 > cx1 || cy0 > cy1 {
+            return;
+        }
         let inv = 1.0 / area;
         // Edge functions; per row, solve for the covered span directly, then
         // walk it with incrementally interpolated depth (and, when shading,
@@ -1154,22 +1219,12 @@ impl Raster {
         let gx = [d[0] * sgn * inv, d[1] * sgn * inv, d[2] * sgn * inv];
         let lerp = |g: &[f32; 3], a: f32, b: f32, c: f32| g[0] * a + g[1] * b + g[2] * c;
         let dz = lerp(&gx, p0.z, p1.z, p2.z);
+        // Shading gradients, set up once the first row has a covered span.
         let (mut dq, mut da, mut fwu, mut fwv, mut tg) = (0.0, [0.0f32; NV], 0.0, 0.0, [0.0f32; 6]);
-        if MODE != DEPTH {
-            let gy = [(x2 - x1) * inv, (x0 - x2) * inv, (x1 - x0) * inv];
-            dq = lerp(&gx, p0.q, p1.q, p2.q);
-            da = core::array::from_fn(|k| lerp(&gx, p0.a[k], p1.a[k], p2.a[k]));
-            // UV footprint per pixel (affine estimate, constant over the triangle) for antialiasing.
-            let (u0, u1, u2) = (p0.a[6] / p0.q, p1.a[6] / p1.q, p2.a[6] / p2.q);
-            let (v0, v1, v2) = (p0.a[7] / p0.q, p1.a[7] / p1.q, p2.a[7] / p2.q);
-            fwu = lerp(&gx, u0, u1, u2).abs() + lerp(&gy, u0, u1, u2).abs();
-            fwv = lerp(&gx, v0, v1, v2).abs() + lerp(&gy, v0, v1, v2).abs();
-            if sh.aniso {
-                tg = [dq, lerp(&gy, p0.q, p1.q, p2.q), da[6], lerp(&gy, p0.a[6], p1.a[6], p2.a[6]), da[7], lerp(&gy, p0.a[7], p1.a[7], p2.a[7])];
-            }
-        }
+        let mut grads = MODE == DEPTH;
         let span = (maxx - minx) as f32;
-        for py in miny..=maxy {
+        // Rows outside cy0..=cy1 hold no pixel centre of the triangle.
+        for py in cy0..=cy1 {
             let fy = py as f32 + 0.5;
             let fx = minx as f32 + 0.5;
             let wv = [e(x1, y1, x2, y2, fx, fy) * sgn, e(x2, y2, x0, y0, fx, fy) * sgn, e(x0, y0, x1, y1, fx, fy) * sgn];
@@ -1188,6 +1243,20 @@ impl Raster {
             }
             if empty || lo > hi {
                 continue;
+            }
+            if !grads {
+                grads = true;
+                let gy = [(x2 - x1) * inv, (x0 - x2) * inv, (x1 - x0) * inv];
+                dq = lerp(&gx, p0.q, p1.q, p2.q);
+                da = core::array::from_fn(|k| lerp(&gx, p0.a[k], p1.a[k], p2.a[k]));
+                // UV footprint per pixel (affine estimate, constant over the triangle) for antialiasing.
+                let (u0, u1, u2) = (p0.a[6] / p0.q, p1.a[6] / p1.q, p2.a[6] / p2.q);
+                let (v0, v1, v2) = (p0.a[7] / p0.q, p1.a[7] / p1.q, p2.a[7] / p2.q);
+                fwu = lerp(&gx, u0, u1, u2).abs() + lerp(&gy, u0, u1, u2).abs();
+                fwv = lerp(&gx, v0, v1, v2).abs() + lerp(&gy, v0, v1, v2).abs();
+                if sh.aniso {
+                    tg = [dq, lerp(&gy, p0.q, p1.q, p2.q), da[6], lerp(&gy, p0.a[6], p1.a[6], p2.a[6]), da[7], lerp(&gy, p0.a[7], p1.a[7], p2.a[7])];
+                }
             }
             let (b0, b1, b2) = ((wv[0] + d[0] * lo) * sgn * inv, (wv[1] + d[1] * lo) * sgn * inv, (wv[2] + d[2] * lo) * sgn * inv);
             let z0 = b0 * p0.z + b1 * p1.z + b2 * p2.z;
@@ -2735,6 +2804,35 @@ mod tests {
             };
             let (a, b) = (t.sample(u, v, fw), sample_reference(&t, u, v, fw));
             assert_eq!(a.map(f32::to_bits), b.map(f32::to_bits), "u {u} v {v} fw {fw}");
+        }
+    }
+
+    #[test]
+    fn unlit_fast_path_matches_the_full_shader() {
+        let px: Vec<u8> = (0..16 * 8 * 4).map(|i| ((i * 37 + 11) % 256) as u8).collect();
+        let t = Texture::from_rgba(16, 8, &px);
+        let sphere = sphere(12, 16);
+        let mut inst = vec![1.2, 0.3, 0.0, -0.3, 1.2, 0.0, 0.0, 0.0, 1.25, 0.1, -0.2, 0.0, 0.8, 0.4, 0.9];
+        inst.extend_from_slice(&[0.6, 0.0, 0.0, 0.0, 0.6, 0.0, 0.0, 0.0, 0.6, 0.9, 0.5, 1.0, 0.2, 0.9, 0.3]);
+        let mut light = Lighting { fog: [3.0, 7.0], fog_color: [0.2, 0.3, 0.5], ground_fog: [-1.0, 0.5, 4.0], point_count: 1, ..Lighting::default() };
+        light.point_lights[0] = [0.5, 0.5, 2.0, 1.0, 0.5, 0.2, 1.5, 2.0];
+        let sun = { let m = mul(&perspective(30.0, 1.0, 1.0, 20.0), &look_at([3.0, 6.0, 4.0], [0.0; 3], [0.0, 1.0, 0.0])); core::array::from_fn::<f32, 16, _>(|i| m[i] as f32) };
+        for (mode, tex, fog, shadows, blend) in [(0u8, None, 1.0, false, Blend::Opaque), (1, Some(&t), 1.0, true, Blend::Opaque), (2, Some(&t), 0.0, false, Blend::Opaque), (2, Some(&t), 0.5, true, Blend::Additive), (1, Some(&t), 1.0, false, Blend::Gloss)] {
+            let mat = Material { ambient: 0.3, emissive: 0.4, diffuse: 0.0, specular: 0.0, rim: 0.0, tex_mode: mode, tex_repeat: [2.0, 1.0], tex_gain: 1.7, fog, ..Material::default() };
+            let render = |full: bool| {
+                let mut r = Raster::new(48, 48);
+                r.full_shader = full;
+                r.clear(0x102030, 255);
+                if shadows {
+                    r.shadow_begin(&sun, 64, 0.002, 0.8);
+                    r.shadow_draw(&sphere, &inst, true);
+                }
+                r.draw_with(&sphere, &inst, &vp(), [0.0, 0.0, 5.0], &mat, &light, false, blend, tex);
+                (r.color, r.depth.iter().map(|d| d.to_bits()).collect::<Vec<_>>())
+            };
+            let (fast, full) = (render(false), render(true));
+            assert!(fast.0.iter().filter(|c| **c != 0xff30_2010).count() > 300, "mode {mode}: nothing drawn");
+            assert_eq!(fast, full, "mode {mode}");
         }
     }
 
