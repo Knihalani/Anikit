@@ -248,13 +248,15 @@ void main() {
   if (a < 0.004) discard;
   vec3 N = vec3(vUV, sqrt(max(1.0 - r2, 0.0)));
   float ndl = dot(N, uSunV);
-  float lit = clamp(ndl * 0.75 + 0.5 + (uWordMode > 0.5 ? 0.0 : N.y * 0.35 + vUV.x * 0.15), 0.0, 1.0);
+  float lit = uWordMode > 0.5
+    ? clamp(ndl * 0.45 + 0.1 + 0.85 * vS.z, 0.0, 1.0)
+    : clamp(ndl * 0.75 + 0.5 + N.y * 0.35 + vUV.x * 0.15, 0.0, 1.0);
   // silver lining: thin edges facing the sun glow
   float rim = pow(clamp(1.0 - N.z, 0.0, 1.0), 2.0) * clamp(dot(normalize(vUV + 1e-4), normalize(uSunV.xy + 1e-4)), 0.0, 1.0);
   vec3 sunC = mix(vec3(1.45, 1.3, 1.1), vec3(1.7, 1.18, 0.72), uWarm);
-  vec3 shade = uWordMode > 0.5 ? vec3(0.52, 0.6, 0.86) : vec3(0.5, 0.55, 0.8);
+  vec3 shade = uWordMode > 0.5 ? vec3(0.6, 0.66, 0.9) : vec3(0.5, 0.55, 0.8);
   vec3 sunW = uWordMode > 0.5 ? mix(vec3(1.25, 1.02, 0.72), vec3(1.4, 0.92, 0.5), uWarm) : sunC;
-  vec3 col = mix(shade, sunW, lit) * vS.z + vec3(1.0, 0.7, 0.38) * rim * 0.9;
+  vec3 col = mix(shade, sunW, lit) * (uWordMode > 0.5 ? 0.92 + 0.12 * vS.z : vS.z) + vec3(1.0, 0.7, 0.38) * rim * (uWordMode > 0.5 ? 0.6 * vS.z + 0.2 : 0.9);
   if (uWordMode > 0.5) col *= mix(vec3(0.93, 0.97, 1.06), vec3(1.12, 0.96, 0.78), vWarmX);
   col = haze(col, vDir, vDist, uWordMode > 0.5 ? 0.00004 : 0.00005);
   o = vec4(tonemap(col) * a, a);
@@ -589,9 +591,17 @@ function buildWord() {
   const N = all.length;
   const f = new Float32Array(N * 8);
   // back-to-front by depth jitter
+  // light transmittance: march through the ink toward the sun (right and slightly up)
+  const lx = 0.93, ly = -0.36;
+  const trans = (x, y) => {
+    let n = 0;
+    for (let i = 1; i <= 36; i++) if (inside(x + lx * i * 3, y + ly * i * 3)) n++;
+    return Math.exp(-n * 0.07);
+  };
   const rows = all.map((q) => {
     const z = (rnd() - 0.5) * 0.02;
-    return [(q[0] - cx) / bw, -(q[1] - cy) / bw, z, q[2] / bw, rnd(), q[4] ? 0.35 * q[3] + 0.08 : 0.55 + 0.4 * Math.min(1, q[3] / 14), q[4] ? 1.0 : 0.95 + 0.1 * Math.min(1, q[3] / 14), q[4]];
+    const T = q[4] ? 0.85 : trans(q[0], q[1]);
+    return [(q[0] - cx) / bw, -(q[1] - cy) / bw, z, q[2] / bw, rnd(), q[4] ? 0.35 * q[3] + 0.08 : 0.7 + 0.3 * Math.min(1, q[3] / 10), T, q[4]];
   });
   rows.sort((a, b) => a[2] - b[2]);
   rows.forEach((r, i) => f.set(r, i * 8));
