@@ -147,6 +147,8 @@ export default async function film({ anikit: A, node }) {
       raysCenter: [0.5, 0.4], raysLength: 0.7,
       zoomBlur: (t) => { const c = clockOf(t); return 0.1 * smooth(0.5, 1.4, c) * (1 - smooth(2.6, 3.1, c)) + 0.08 * smooth(14.3, 15, c) * (1 - smooth(16.8, 17.4, c)); },
       aberration: (t) => 0.5 + 2.5 * bell(clockOf(t), 3.0, 0.15),
+      // Lens flares while the sun is in shot (city, gates, the plaza).
+      flares: (t) => { const c = clockOf(t); return 0.15 + 0.6 * smooth(3.0, 3.6, c) * (1 - smooth(9.2, 9.8, c)) + 0.75 * smooth(17.6, 18.6, c); },
       vignette: 0.42, grain: 3.5,
       contrast: 1.07, saturation: 1.12,
       shadows: [0.0, 0.012, 0.035], highlights: [0.05, 0.015, -0.02],
@@ -233,9 +235,9 @@ export default async function film({ anikit: A, node }) {
   });
   // Impacts land on story beats of the slowed clock.
   film.impact(0, { flash: '#ffffff', flashOpacity: 1, decay: 4, aberration: 6 }); // ignition: the film opens on a white flash
-  film.impact(film.timeAt('velocity', 3.0), { shake: 14, flash: '#8fe3ff', flashOpacity: 0.35, aberration: 5 });
-  film.impact(film.timeAt('velocity', HIT), { shake: 34, flash: '#ffd1ef', flashOpacity: 0.75, aberration: 10 });
+  film.impact(film.timeAt('velocity', 3.0), { shake: 14, flash: '#8fe3ff', flashOpacity: 0.35, aberration: 5, shockwave: 22 });
+  film.impact(film.timeAt('velocity', HIT), { shake: 34, flash: '#ffd1ef', flashOpacity: 0.75, aberration: 10, shockwave: 40, origin: [0.5, 0.45], shockSpeed: 0.8 });
   film.impact(film.timeAt('velocity', 14.25), { shake: 16, flash: '#ffffff', flashOpacity: 0.3, aberration: 6 });
-  film.impact(film.timeAt('velocity', LAND), { shake: 10, aberration: 3 });
+  film.impact(film.timeAt('velocity', LAND), { shake: 10, aberration: 3, shockwave: 16, origin: [0.5, 0.56], shockSpeed: 0.7 });
   return film;
 }

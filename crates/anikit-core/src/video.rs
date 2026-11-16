@@ -533,7 +533,11 @@ impl PostFx {
         self.flare.resize(sw * sh * 3, 0.0);
         let (fw, fh) = (sw as f32, sh as f32);
         let aspect = fw / fh;
-        let src = &self.small;
+        // Only the hottest lights cast ghosts: a knee well above the bloom
+        // threshold (a sun does, a lit sign doesn't).
+        self.tmp.clear();
+        self.tmp.extend(self.small.iter().map(|v| (v - 110.0).max(0.0) * 2.0));
+        let src = &self.tmp;
         let sample = |u: f32, v: f32| -> Option<usize> {
             if !(0.0..1.0).contains(&u) || !(0.0..1.0).contains(&v) {
                 return None;
@@ -574,6 +578,7 @@ impl PostFx {
         }
         // Soften: ghosts are out-of-focus images.
         let r = (sw / 120).max(2);
+        self.tmp.resize(sw * sh * 3, 0.0);
         box_blur(&self.flare, &mut self.tmp, sw, sh, r, true);
         box_blur(&self.tmp, &mut self.flare, sw, sh, r, false);
     }
