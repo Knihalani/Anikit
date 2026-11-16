@@ -2243,7 +2243,31 @@ pub extern "C" fn ak_bh_render(id: u32) -> *const u8 {
     if f.len() < 19 {
         return core::ptr::null();
     }
-    let p = anikit_core::blackhole::Params {
+    let p = bh_params(f);
+    match black_hole(id) {
+        Some(b) => {
+            b.render(&p);
+            b.out.as_ptr()
+        }
+        None => core::ptr::null(),
+    }
+}
+/// Profiling: run one stage with the params in the f64 buffer (see
+/// `BlackHole::stage`).
+#[no_mangle]
+pub extern "C" fn ak_bh_stage(id: u32, k: u32) {
+    let f = &st().f64_buf;
+    if f.len() < 19 {
+        return;
+    }
+    let p = bh_params(f);
+    if let Some(b) = black_hole(id) {
+        b.stage(&p, k);
+    }
+}
+
+fn bh_params(f: &[f64]) -> anikit_core::blackhole::Params {
+    anikit_core::blackhole::Params {
         distance: f[0] as f32,
         inclination: f[1] as f32,
         fov: f[2] as f32,
@@ -2263,15 +2287,9 @@ pub extern "C" fn ak_bh_render(id: u32) -> *const u8 {
         stars: f[16] as f32,
         speed: f[17] as f32,
         nebula: f[18] as f32,
-    };
-    match black_hole(id) {
-        Some(b) => {
-            b.render(&p);
-            b.out.as_ptr()
-        }
-        None => core::ptr::null(),
     }
 }
+
 /// Writes `[samples0, samples1, samples2, stars, tableBuilt, geometryBuilt,
 /// shadowRadius]` to the f64 buffer.
 #[no_mangle]

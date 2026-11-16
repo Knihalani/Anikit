@@ -61,7 +61,7 @@ export interface BlackHoleFrame {
   roll?: number;
   /** Observer infall: 0 = hovering (static), 1 = free fall from rest at infinity (raindrop). Inside the horizon the observer always falls. Default 0. */
   fall?: number;
-  /** Peak disk temperature in kelvin. Default 9000 (physical) / 6500 (cinematic). */
+  /** Peak disk temperature in kelvin. Default 7000 (physical) / 6500 (cinematic). */
   temperature?: number;
   /** Outer disk radius in M. Default 22. */
   diskOuter?: number;
@@ -201,7 +201,7 @@ export class BlackHole {
     F64[a + 11] = f.roll ?? 0;
     F64[a + 12] = f.fall ?? 0;
     F64[a + 13] = cine ? 1 : 0;
-    F64[a + 14] = f.temperature ?? (cine ? 6500 : 9000);
+    F64[a + 14] = f.temperature ?? (cine ? 6500 : 7000);
     F64[a + 15] = f.diskOuter ?? 22;
     F64[a + 16] = f.stars ?? 1;
     F64[a + 17] = f.speed ?? 1;

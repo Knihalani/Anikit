@@ -19,6 +19,8 @@ fn main() {
     let mut bh = BlackHole::new(w, h, 1);
     let shots: Vec<(&str, Params)> = vec![
         ("edge-30m", Params { distance: 30.0, inclination: 84.0, fov: 34.0, time: 3.0, ..Default::default() }),
+        ("edge-nospots", Params { distance: 30.0, inclination: 84.0, fov: 34.0, time: 3.0, hot_spots: 0.0, ..Default::default() }),
+        ("edge-t40", Params { distance: 30.0, inclination: 84.0, fov: 34.0, time: 40.0, hot_spots: 0.0, ..Default::default() }),
         ("edge-30m-cinematic", Params { distance: 30.0, inclination: 84.0, fov: 34.0, time: 3.0, mode: 1, temperature: 6500.0, ..Default::default() }),
         ("eht-17", Params { distance: 40.0, inclination: 17.0, fov: 30.0, time: 3.0, ..Default::default() }),
         ("near-10m", Params { distance: 10.0, inclination: 80.0, fov: 70.0, time: 3.0, ..Default::default() }),
@@ -36,6 +38,7 @@ fn main() {
             println!("{name}: {:?}", bh.stats);
         }
     }
+    println!("table build: {:.2} ms", table_time());
     // Timing: steady-state frames (time animating, camera fixed).
     for (name, p) in [&shots[0], &shots[1], &shots[3]] {
         let mut p = *p;
@@ -62,4 +65,14 @@ fn main() {
         println!("  stages {:?}", bh.profile(&p));
         println!("{name} {w}x{h}: {frame:.2} ms/frame, {moving:.2} ms/frame while the camera moves");
     }
+}
+
+#[allow(dead_code)]
+fn table_time() -> f64 {
+    let mut bh = BlackHole::new(64, 64, 1);
+    let t = Instant::now();
+    for i in 0..20 {
+        bh.build_table(30.0 - i as f32 * 0.01, 0.0, 0.5);
+    }
+    t.elapsed().as_secs_f64() * 1000.0 / 20.0
 }

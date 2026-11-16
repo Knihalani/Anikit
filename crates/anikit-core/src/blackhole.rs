@@ -50,6 +50,8 @@ const BB_T1: f32 = 100_000.0;
 const PANO_W: usize = 1024;
 const PANO_H: usize = 512;
 const SRGB_N: usize = 4096;
+/// Orbit-plane angle bins.
+const TH_BINS: usize = 16384;
 
 /// Innermost stable circular orbit of a Schwarzschild hole.
 pub const ISCO: f32 = 6.0;
@@ -115,7 +117,7 @@ impl Default for Params {
             roll: 0.0,
             fall: 0.0,
             mode: 0,
-            temperature: 9000.0,
+            temperature: 7000.0,
             disk_outer: 22.0,
             stars: 1.0,
             speed: 1.0,
@@ -139,28 +141,26 @@ pub struct Stats {
     pub shadow: f32,
 }
 
+/// Disk samples of one image order, 16 bytes each.
 #[derive(Default)]
 struct Layer {
+    /// Pixel index.
     pix: Vec<u32>,
-    tex: Vec<u32>,
-    fx: Vec<f32>,
-    fa: Vec<f32>,
-    r: Vec<f32>,
-    g: Vec<f32>,
-    b: Vec<f32>,
-    alpha: Vec<f32>,
+    /// Disk-texture coordinate: x in 8.8 fixed point (low 16 bits), azimuth
+    /// in 10.6 fixed point (high 16 bits).
+    txa: Vec<u32>,
+    /// Colour-table index (low 16 bits) and opacity × 65535 (high 16 bits).
+    ca: Vec<u32>,
+    /// Radiance multiplier.
+    gain: Vec<f32>,
 }
 
 impl Layer {
     fn clear(&mut self) {
         self.pix.clear();
-        self.tex.clear();
-        self.fx.clear();
-        self.fa.clear();
-        self.r.clear();
-        self.g.clear();
-        self.b.clear();
-        self.alpha.clear();
+        self.txa.clear();
+        self.ca.clear();
+        self.gain.clear();
     }
 }
 
@@ -177,6 +177,9 @@ struct Camera {
     fwd: [f32; 3],
     right: [f32; 3],
     up: [f32; 3],
+    /// Basis of the plane perpendicular to ĉ (the camera before `look`).
+    pr: [f32; 3],
+    pu: [f32; 3],
     tan_half: f32,
 }
 
@@ -195,6 +198,17 @@ pub struct BlackHole {
     first_escape: usize,
     table_key: [f32; 3],
     geom_key: Option<(Params, usize, usize)>,
+    // Per-pixel viewing angle ψ and orbit-plane angle θ (bins), cached per
+    // size / field of view / look.
+    scr_psi: Vec<f32>,
+    scr_th: Vec<u16>,
+    scr_key: Option<(usize, usize, f32, f32)>,
+    scr_psi_max: f32,
+    // Low-resolution bloom accumulators (filled by the tone-map pass).
+    ar: Vec<f32>,
+    ag: Vec<f32>,
+    ab: Vec<f32>,
+    at: Vec<f32>,
     // Static resources.
     noise: Vec<f32>,
     pano: Vec<[f32; 3]>,
@@ -231,6 +245,9 @@ pub struct BlackHole {
     pub stats: Stats,
     frame: u32,
     cam: Option<Camera>,
+    /// Eye adaptation: exposure gain that compensates the redshifted sky
+    /// seen looking back out while falling in.
+    adapt: f32,
 }
 
 // ---------------------------------------------------------------------------
@@ -269,9 +286,33 @@ fn acosf(x: f32) -> f32 {
     atan2f(sqrtf((1.0 - x * x).max(0.0)), x)
 }
 
+/// Fast (sin x, cos x), error ~2e-6.
 #[inline(always)]
 fn sincosf(x: f32) -> (f32, f32) {
-    (libm::sinf(x), libm::cosf(x))
+    // Reduce to [-π, π], then to [-π/2, π/2] by reflection.
+    let k = floorf(x * (1.0 / TAU) + 0.5);
+    let x = x - k * TAU;
+    let s = |x: f32| {
+        let x2 = x * x;
+        x * (1.0 + x2 * (-1.0 / 6.0 + x2 * (1.0 / 120.0 + x2 * (-1.0 / 5040.0 + x2 * (1.0 / 362_880.0 - x2 * (1.0 / 39_916_800.0))))))
+    };
+    let refl = |x: f32| if x > PI / 2.0 { PI - x } else if x < -PI / 2.0 { -PI - x } else { x };
+    let c = x + PI / 2.0;
+    let c = if c > PI { c - TAU } else { c };
+    (s(refl(x)), s(refl(c)))
+}
+
+/// log2 for positive normal floats (error < 1e-5).
+#[inline(always)]
+fn fast_log2(x: f32) -> f32 {
+    let b = x.to_bits();
+    let e = ((b >> 23) & 0xff) as i32 - 127;
+    let m = f32::from_bits((b & 0x007f_ffff) | 0x3f80_0000);
+    // log2(m), m in [1, 2): atanh series in t = (m − 1)/(m + 1), |t| <= 1/3.
+    let t = (m - 1.0) / (m + 1.0);
+    let t2 = t * t;
+    let p = t * (2.885_39 + t2 * (0.961_797 + t2 * (0.577_078 + t2 * 0.412_199)));
+    e as f32 + p
 }
 
 /// e^-x for x >= 0 (cheap, smooth, ~1e-3 accurate).
@@ -468,6 +509,14 @@ impl BlackHole {
             first_escape: ROWS,
             table_key: [-1.0; 3],
             geom_key: None,
+            scr_psi: Vec::new(),
+            scr_th: Vec::new(),
+            scr_key: None,
+            scr_psi_max: 1.0,
+            ar: Vec::new(),
+            ag: Vec::new(),
+            ab: Vec::new(),
+            at: Vec::new(),
             noise: Vec::new(),
             pano: Vec::new(),
             bb: Vec::new(),
@@ -498,6 +547,7 @@ impl BlackHole {
             stats: Stats::default(),
             frame: 0,
             cam: None,
+            adapt: 1.0,
         };
         bh.build_static(seed);
         bh.resize(w, h);
@@ -510,12 +560,13 @@ impl BlackHole {
         let mut noise = vec![0.0f32; TEX_X * (TEX_A + 1)];
         for x in 0..TEX_X {
             for a in 0..TEX_A {
-                let fx = x as f32 / TEX_X as f32 * 24.0;
-                let fa = a as f32 / TEX_A as f32 * 12.0;
-                let n = fbm(fx, fa, 24, 12, 6, seed);
-                let m = fbm(fx * 0.5 + 3.1, fa * 0.5, 12, 6, 3, seed ^ 0x55);
-                let v = (n * 1.9 - 0.45 + (m - 0.5) * 0.8).max(0.0);
-                noise[x * (TEX_A + 1) + a] = v * sqrtf(v) * 1.25;
+                let fx = x as f32 / TEX_X as f32 * 32.0;
+                let fa = a as f32 / TEX_A as f32 * 28.0;
+                // Clumpy fine structure on top of broad lanes and gaps.
+                let n = fbm(fx, fa, 32, 28, 4, seed);
+                let m = fbm(fx * 0.25 + 3.1, fa * 0.2, 8, 8, 3, seed ^ 0x55);
+                let v = (n * 2.3 - 0.68 + (m - 0.5) * 0.7).max(0.0);
+                noise[x * (TEX_A + 1) + a] = v * sqrtf(v) * 1.35;
             }
             noise[x * (TEX_A + 1) + TEX_A] = noise[x * (TEX_A + 1)];
         }
@@ -597,6 +648,9 @@ impl BlackHole {
                 let glow = band * (0.35 + 0.65 * n1) * (1.0 - 0.85 * dust);
                 let neb = smooth(0.55, 0.85, n2) * 0.5;
                 let neb2 = smooth(0.6, 0.9, n1) * 0.3;
+                // Fade structure out toward the poles (no equirect pinch).
+                let pole = smooth(0.82, 0.97, sla.abs());
+                let (glow, neb, neb2) = (glow + (0.2 - glow) * pole, neb * (1.0 - pole), neb2 * (1.0 - pole));
                 let k = 0.06;
                 pano[y * PANO_W + x] = [
                     k * (glow * 1.0 + neb * 0.9 + neb2 * 0.2),
@@ -629,6 +683,11 @@ impl BlackHole {
         self.lg = vec![0.0; m];
         self.lb = vec![0.0; m];
         self.lt = vec![0.0; m];
+        self.ar = vec![0.0; m];
+        self.ag = vec![0.0; m];
+        self.ab = vec![0.0; m];
+        self.at = vec![0.0; m];
+        self.scr_key = None;
         self.tmp = vec![0.0; m.max(self.bw.max(self.bh))];
         self.acc = vec![0.0; self.bw];
         self.wide = [vec![0.0; m], vec![0.0; m], vec![0.0; m]];
@@ -778,7 +837,7 @@ impl BlackHole {
         let fwd = [fwd0[0] * cl + up1[0] * sl, fwd0[1] * cl + up1[1] * sl, fwd0[2] * cl + up1[2] * sl];
         let up = [up1[0] * cl - fwd0[0] * sl, up1[1] * cl - fwd0[1] * sl, up1[2] * cl - fwd0[2] * sl];
         let tan_half = libm::tanf(p.fov.clamp(1.0, 170.0) * (PI / 360.0));
-        Camera { c, fwd, right: right1, up, tan_half }
+        Camera { c, fwd, right: right1, up, pr: right1, pu: up1, tan_half }
     }
 
     /// World direction of the ray through screen point (sx, sy) in units of
@@ -817,14 +876,51 @@ impl BlackHole {
 
     #[inline(always)]
     fn bb_at(&self, t: f32) -> [f32; 3] {
-        let lt0 = libm::logf(BB_T0);
-        let lt1 = libm::logf(BB_T1);
-        let x = ((libm::logf(t.max(BB_T0)) - lt0) / (lt1 - lt0) * (BB_N - 1) as f32).clamp(0.0, (BB_N - 1) as f32);
+        let lt0 = 9.228_819; // log2(600)
+        let lt1 = 16.609_64; // log2(100000)
+        let x = ((fast_log2(t.max(BB_T0)) - lt0) / (lt1 - lt0) * (BB_N - 1) as f32).clamp(0.0, (BB_N - 1) as f32);
         let i = (x as usize).min(BB_N - 2);
         let f = x - i as f32;
         let a = self.bb[i];
         let b = self.bb[i + 1];
         [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f]
+    }
+
+    /// Per-pixel ψ and θ for the current screen (size, fov, look).
+    fn build_screen(&mut self, cam: &Camera) {
+        let (w, h) = (self.w, self.h);
+        let half = h as f32 * 0.5;
+        let aspect = w as f32 / h as f32;
+        let mut psi_max = 0.0f32;
+        for (sx, sy) in [(-aspect, -1.0), (aspect, -1.0), (-aspect, 1.0), (aspect, 1.0), (0.0, 1.0), (0.0, -1.0), (aspect, 0.0), (-aspect, 0.0)] {
+            psi_max = psi_max.max(Self::orbit_plane(cam, Self::ray_dir(cam, sx, sy)).0);
+        }
+        self.scr_psi_max = (psi_max * 1.02 + 0.002).min(PI);
+        self.scr_psi.resize(w * h, 0.0);
+        self.scr_th.resize(w * h, 0);
+        let th_k = TH_BINS as f32 / TAU;
+        let straight = dot(cam.fwd, cam.c) < -0.999_999;
+        for y in 0..h {
+            let sy = (half - y as f32 - 0.5) / half;
+            for x in 0..w {
+                let sx = (x as f32 + 0.5 - w as f32 * 0.5) / half;
+                let (psi, th) = if straight {
+                    // Looking at the hole: ψ is radial, θ the screen angle.
+                    let rho = sqrtf(sx * sx + sy * sy) * cam.tan_half;
+                    (atan2f(rho, 1.0), atan2f(sy, sx))
+                } else {
+                    let d = Self::ray_dir(cam, sx, sy);
+                    let (psi, sv) = Self::orbit_plane(cam, d);
+                    (psi, atan2f(dot(sv, cam.pu), dot(sv, cam.pr)))
+                };
+                let mut b = th * th_k + 0.5;
+                if b < 0.0 {
+                    b += TH_BINS as f32;
+                }
+                self.scr_psi[y * w + x] = psi;
+                self.scr_th[y * w + x] = (b as usize % TH_BINS) as u16;
+            }
+        }
     }
 
     /// Rebuild the per-pixel lensing geometry for a camera.
@@ -833,16 +929,13 @@ impl BlackHole {
         let cam = Self::camera(p);
         self.cam = Some(cam);
         let (w, h) = (self.w, self.h);
-        let half = h as f32 * 0.5;
-        // Largest viewing angle on screen (corners).
-        let aspect = w as f32 / h as f32;
-        let mut psi_max = 0.0f32;
-        for (sx, sy) in [(-aspect, -1.0), (aspect, -1.0), (-aspect, 1.0), (aspect, 1.0), (0.0, 1.0), (0.0, -1.0), (aspect, 0.0), (-aspect, 0.0)] {
-            psi_max = psi_max.max(Self::orbit_plane(&cam, Self::ray_dir(&cam, sx, sy)).0);
+        let skey = (w, h, p.fov, p.look);
+        if self.scr_key != Some(skey) {
+            self.build_screen(&cam);
+            self.scr_key = Some(skey);
         }
-        let psi_max = (psi_max * 1.02 + 0.002).min(PI);
         let fall = p.fall.clamp(0.0, 1.0);
-        self.build_table(p.distance.max(1.0), fall, psi_max);
+        self.build_table(p.distance.max(1.0), fall, self.scr_psi_max);
         for l in self.layers.iter_mut() {
             l.clear();
         }
@@ -853,99 +946,103 @@ impl BlackHole {
         let lx0 = libm::logf(TEX_R0);
         let lx1 = libm::logf(rout * 1.06);
         let xs = (TEX_X - 2) as f32 / (lx1 - lx0);
-        // Temperature profile LUT over u (cheap per-sample lookup).
-        const TN: usize = 512;
-        let mut tlut = [0.0f32; TN + 1];
-        for (i, t) in tlut.iter_mut().enumerate() {
-            let u = u_lo + (u_hi - u_lo) * i as f32 / TN as f32;
-            *t = Self::temperature(p, 1.0 / u);
-        }
-        let row_scale = ROWS as f32 / self.psi_max;
         let cinematic = p.mode == 1;
         // Exposure is relative to the disk's peak (rest-frame) luminance.
         let peak = self.bb_at(p.temperature.max(BB_T0));
-        let norm_k = 0.5 / (0.2126 * peak[0] + 0.7152 * peak[1] + 0.0722 * peak[2]).max(1e-6);
-        for y in 0..h {
-            let sy = (half - y as f32 - 0.5) / half;
-            for x in 0..w {
-                let sx = (x as f32 + 0.5 - w as f32 * 0.5) / half;
-                let d = Self::ray_dir(&cam, sx, sy);
-                let (psi, s) = Self::orbit_plane(&cam, d);
-                let row = psi * row_scale - 0.5;
-                if row >= (ROWS - 1) as f32 {
+        let norm_k = if cinematic { 0.5 } else { 0.1 } / (0.2126 * peak[0] + 0.7152 * peak[1] + 0.0722 * peak[2]).max(1e-6);
+        // Radial profile over u: temperature, edge fade, texture x.
+        const UN: usize = 2048;
+        let mut ulut = vec![[0.0f32; 3]; UN + 2];
+        for (i, e) in ulut.iter_mut().enumerate() {
+            let u = u_lo + (u_hi - u_lo) * i as f32 / UN as f32;
+            let r = 1.0 / u;
+            let fade = smooth(rout, rout * 0.62, r) * smooth(ISCO * 0.86, ISCO * 1.02, r);
+            let tx = ((libm::logf(r) - lx0) * xs).clamp(0.0, (TEX_X - 2) as f32 - 0.01);
+            *e = [Self::temperature(p, r), fade, tx];
+        }
+        let u_k = UN as f32 / (u_hi - u_lo);
+        // Orbit-plane quantities per θ bin: φ0 column, azimuth (texels), L_z/b.
+        let mut tlut = vec![[0.0f32; 3]; TH_BINS];
+        for (i, e) in tlut.iter_mut().enumerate() {
+            let (st, ct) = sincosf(i as f32 / TH_BINS as f32 * TAU);
+            let sv = [ct * cam.pr[0] + st * cam.pu[0], ct * cam.pr[1] + st * cam.pu[1], ct * cam.pr[2] + st * cam.pu[2]];
+            let mut phi0 = atan2f(-ci, sv[2]);
+            if phi0 < 0.0 {
+                phi0 += PI;
+            }
+            if phi0 >= PI {
+                phi0 -= PI;
+            }
+            let (sp, cp) = sincosf(phi0);
+            let az0 = atan2f(cp * cam.c[1] + sp * sv[1], cp * cam.c[0] + sp * sv[0]);
+            let qz = -(cam.c[0] * sv[1] - cam.c[1] * sv[0]);
+            *e = [phi0 / H_PHI, az0 * (TEX_A as f32 / TAU), qz];
+        }
+        let lt0 = libm::log2f(BB_T0);
+        let bb_k = (BB_N - 1) as f32 / (libm::log2f(BB_T1) - lt0);
+        let row_scale = ROWS as f32 / self.psi_max;
+        let alpha_q = if cinematic { 0.92 * 65535.0 } else { 0.97 * 65535.0 };
+        for pix in 0..w * h {
+            let row = self.scr_psi[pix] * row_scale - 0.5;
+            if row >= (ROWS - 1) as f32 {
+                continue;
+            }
+            let row = row.max(0.0);
+            let [col0, az_t, qz] = tlut[self.scr_th[pix] as usize];
+            let ri = (row as usize).min(ROWS - 2);
+            let fr = row - ri as f32;
+            let bimp = self.imp[ri] + (self.imp[ri + 1] - self.imp[ri]) * fr;
+            let dob = self.dobs[ri] + (self.dobs[ri + 1] - self.dobs[ri]) * fr;
+            let lz = bimp * qz;
+            for k in 0..3 {
+                let u = self.lookup(row, col0 + (k * COLS_PER_PI) as f32);
+                if !(u > u_lo && u < u_hi) {
+                    // Escaped or captured before this crossing: no later ones.
+                    if u <= 0.0 || u >= 1.0 {
+                        break;
+                    }
                     continue;
                 }
-                let b = s[2];
-                let mut phi0 = atan2f(-ci, b);
-                if phi0 < 0.0 {
-                    phi0 += PI;
+                let ue = ulut[((u - u_lo) * u_k) as usize];
+                let (temp, fade, tx) = (ue[0], ue[1], ue[2]);
+                if temp < 1.0 || fade <= 0.0 {
+                    continue;
                 }
-                if phi0 >= PI {
-                    phi0 -= PI;
+                let g = redshift((1.0 / u).max(3.01), lz, dob);
+                let (t_obs, gain) = if cinematic {
+                    // Interstellar: no Doppler colour, beaming softened.
+                    let gg = g.clamp(0.2, 3.0);
+                    (temp, gg * sqrtf(gg) * 1.6)
+                } else {
+                    // I_ν(ν) = B_ν(ν; gT): a blackbody at g·T, ∝ g⁴T⁴.
+                    (temp * g, 1.0)
+                };
+                let ci_ = ((fast_log2(t_obs.max(BB_T0)) - lt0) * bb_k + 0.5).min((BB_N - 1) as f32) as u32;
+                let mut ta = az_t + (k * TEX_A / 2) as f32;
+                if ta >= TEX_A as f32 {
+                    ta -= TEX_A as f32;
                 }
-                let col0 = phi0 / H_PHI;
-                let (sp, cp) = sincosf(phi0);
-                let x0 = [cp * cam.c[0] + sp * s[0], cp * cam.c[1] + sp * s[1]];
-                let az0 = atan2f(x0[1], x0[0]);
-                // L_z/E of the photon: −b (ĉ × ŝ)·ẑ
-                let qz = -(cam.c[0] * s[1] - cam.c[1] * s[0]);
-                let ri = (row.max(0.0) as usize).min(ROWS - 2);
-                let fr = row.max(0.0) - ri as f32;
-                let bimp = self.imp[ri] + (self.imp[ri + 1] - self.imp[ri]) * fr;
-                let dob = self.dobs[ri] + (self.dobs[ri + 1] - self.dobs[ri]) * fr;
-                let lz = bimp * qz;
-                let pix = (y * w + x) as u32;
-                for k in 0..3 {
-                    let u = self.lookup(row, col0 + (k * COLS_PER_PI) as f32);
-                    if !(u > u_lo && u < u_hi) {
-                        continue;
-                    }
-                    let r = 1.0 / u;
-                    let g = redshift(r.max(3.01), lz, dob);
-                    let ti = ((u - u_lo) / (u_hi - u_lo) * TN as f32).clamp(0.0, TN as f32) as usize;
-                    let temp = tlut[ti];
-                    let fade = smooth(rout, rout * 0.62, r) * smooth(ISCO * 0.86, ISCO * 1.02, r);
-                    let (col, gain) = if cinematic {
-                        // Interstellar: no Doppler colour, beaming softened.
-                        let gg = g.clamp(0.2, 3.0);
-                        (self.bb_at(temp), gg * sqrtf(gg) * 1.6)
-                    } else {
-                        // I_ν(ν) = B_ν(ν; gT): a blackbody at g·T, ∝ g⁴T⁴.
-                        (self.bb_at(temp * g), 1.0)
-                    };
-                    if temp < 1.0 {
-                        continue;
-                    }
-                    let kk = gain * fade * norm_k;
-                    let az = az0 + k as f32 * PI;
-                    let mut ta = az * (TEX_A as f32 / TAU);
-                    ta -= floorf(ta / TEX_A as f32) * TEX_A as f32;
-                    let tx = ((libm::logf(r) - lx0) * xs).clamp(0.0, (TEX_X - 2) as f32);
-                    let (ix, ia) = (tx as usize, (ta as usize).min(TEX_A - 1));
-                    let l = &mut self.layers[k];
-                    l.pix.push(pix);
-                    l.tex.push((ix * (TEX_A + 1) + ia) as u32);
-                    l.fx.push(tx - ix as f32);
-                    l.fa.push(ta - ia as f32);
-                    l.r.push(col[0] * kk);
-                    l.g.push(col[1] * kk);
-                    l.b.push(col[2] * kk);
-                    l.alpha.push(fade * if cinematic { 0.92 } else { 0.97 });
+                if ta < 0.0 {
+                    ta += TEX_A as f32;
                 }
+                let txa = ((tx * 256.0) as u32).min(0xffff) | (((ta * 64.0) as u32).min(TEX_A as u32 * 64 - 1) << 16);
+                let l = &mut self.layers[k];
+                l.pix.push(pix as u32);
+                l.txa.push(txa);
+                l.ca.push(ci_ | (((fade * alpha_q) as u32) << 16));
+                l.gain.push(gain * fade * norm_k);
             }
         }
+        // Eye adaptation from the energy factor of the outermost escaping ray.
+        let d_back = self.dobs[ROWS - 1].max(0.05);
+        self.adapt = if self.first_escape < ROWS { (1.0 / (d_back * d_back * d_back)).clamp(1.0, 10.0) } else { 1.0 };
         // Low-resolution sky coordinates.
         let (bw, bhh) = (self.bw, self.bh);
-        let lhalf = bhh as f32 * 0.5 * (h as f32 / (bhh as f32 * 4.0));
-        let _ = lhalf;
         for by in 0..bhh {
-            let sy = (half - (by as f32 * 4.0 + 2.0)) / half;
             for bx in 0..bw {
-                let sx = (bx as f32 * 4.0 + 2.0 - w as f32 * 0.5) / half;
                 let i = by * bw + bx;
-                let d = Self::ray_dir(&cam, sx, sy);
-                let (psi, s) = Self::orbit_plane(&cam, d);
-                let row = (psi * row_scale - 0.5).max(0.0);
+                let pix = (by * 4 + 2).min(h - 1) * w + (bx * 4 + 2).min(w - 1);
+                let row = (self.scr_psi[pix] * row_scale - 0.5).max(0.0);
                 let ri = (row as usize).min(ROWS - 2);
                 let fr = row - ri as f32;
                 let (e0, e1) = (self.esc[ri], self.esc[ri + 1]);
@@ -953,10 +1050,12 @@ impl BlackHole {
                     self.sky_k[i] = 0.0;
                     continue;
                 }
+                let (st, ct) = sincosf(self.scr_th[pix] as f32 / TH_BINS as f32 * TAU);
+                let sv = [ct * cam.pr[0] + st * cam.pu[0], ct * cam.pr[1] + st * cam.pu[1], ct * cam.pr[2] + st * cam.pu[2]];
                 let phi = e0 + (e1 - e0) * fr;
                 let dob = self.dobs[ri] + (self.dobs[ri + 1] - self.dobs[ri]) * fr;
                 let (sp, cp) = sincosf(phi);
-                let dir = [cp * cam.c[0] + sp * s[0], cp * cam.c[1] + sp * s[1], cp * cam.c[2] + sp * s[2]];
+                let dir = [cp * cam.c[0] + sp * sv[0], cp * cam.c[1] + sp * sv[1], cp * cam.c[2] + sp * sv[2]];
                 let lon = atan2f(dir[1], dir[0]);
                 let lat = atan2f(dir[2], sqrtf(dir[0] * dir[0] + dir[1] * dir[1]));
                 self.sky_u[i] = lon * (PANO_W as f32 / TAU);
@@ -1017,7 +1116,7 @@ impl BlackHole {
         // Hot spots: compact flares on Keplerian orbits that shear as they go.
         let n_spots = if p.hot_spots > 0.0 { 5 } else { 0 };
         for i in 0..n_spots {
-            let life = 260.0;
+            let life = 150.0;
             let ph0 = i as f32 / n_spots as f32;
             let c = t / life + ph0;
             let cf = floorf(c);
@@ -1027,7 +1126,7 @@ impl BlackHole {
             if rs > rout * 0.8 {
                 continue;
             }
-            let amp = p.hot_spots * 3.0 * {
+            let amp = p.hot_spots * 1.6 * {
                 let s = libm::sinf(PI * (c - cf));
                 s * s
             } * (0.5 + hs(3));
@@ -1080,6 +1179,24 @@ impl BlackHole {
         self.tonemap(p);
     }
 
+    /// Run one pipeline stage alone (0 disk texture, 1 shading, 2 stars,
+    /// 3 bloom and sky, 4 tone map, 5 geometry), for profiling from a host
+    /// with a clock.
+    #[doc(hidden)]
+    pub fn stage(&mut self, p: &Params, k: u32) {
+        let cam = self.cam.unwrap_or_else(|| Self::camera(p));
+        let t = p.time * 11.5 * p.speed;
+        let az = p.azimuth * (PI / 180.0);
+        match k {
+            0 => self.build_disk(p, t, az),
+            1 => self.shade_disk(),
+            2 => self.draw_stars(p, &cam, az),
+            3 => self.bloom_and_sky(p, &cam, az),
+            4 => self.tonemap(p),
+            _ => self.build_geometry(p),
+        }
+    }
+
     /// Stage timings in ms (disk texture, shading, stars, bloom, tone map).
     #[cfg(feature = "std")]
     pub fn profile(&mut self, p: &Params) -> [f64; 5] {
@@ -1107,26 +1224,29 @@ impl BlackHole {
 
     fn shade_disk(&mut self) {
         let disk = &self.disk;
+        let bb = &self.bb;
         let (hr, hg, hb, tr) = (&mut self.hr, &mut self.hg, &mut self.hb, &mut self.trans);
+        const ROW: usize = TEX_A + 1;
         for (k, l) in self.layers.iter().enumerate() {
             self.stats.samples[k] = l.pix.len() as u32;
-            for i in 0..l.pix.len() {
-                let t = l.tex[i] as usize;
-                let (fx, fa) = (l.fx[i], l.fa[i]);
-                let a = disk[t];
-                let b = disk[t + 1];
-                let c = disk[t + TEX_A + 1];
-                let d = disk[t + TEX_A + 2];
+            for (((&p, &txa), &ca), &gain) in l.pix.iter().zip(&l.txa).zip(&l.ca).zip(&l.gain) {
+                let ix = ((txa & 0xffff) >> 8) as usize;
+                let fx = (txa & 0xff) as f32 * (1.0 / 256.0);
+                let ia = (txa >> 22) as usize;
+                let fa = ((txa >> 16) & 63) as f32 * (1.0 / 64.0);
+                let t = ix * ROW + ia;
+                let (a, b, c, d) = (disk[t], disk[t + 1], disk[t + ROW], disk[t + ROW + 1]);
                 let ab = a + (b - a) * fa;
                 let cd = c + (d - c) * fa;
                 let v = ab + (cd - ab) * fx;
-                let p = l.pix[i] as usize;
+                let p = p as usize;
                 let tt = tr[p];
-                let e = tt * v;
-                hr[p] += e * l.r[i];
-                hg[p] += e * l.g[i];
-                hb[p] += e * l.b[i];
-                tr[p] = tt * (1.0 - l.alpha[i] * v.min(1.0));
+                let e = tt * v * gain;
+                let col = bb[(ca & 0xffff) as usize];
+                hr[p] += e * col[0];
+                hg[p] += e * col[1];
+                hb[p] += e * col[2];
+                tr[p] = tt * (1.0 - (ca >> 16) as f32 * (1.0 / 65535.0) * v.min(1.0));
             }
         }
     }
@@ -1200,9 +1320,14 @@ impl BlackHole {
                     continue;
                 }
                 let d2 = dob * dob;
+                let k = p.stars * 3.0 * st.flux * mu * (d2 * d2).min(400.0);
+                if k < 2e-3 {
+                    // Below one grey level after tone mapping.
+                    continue;
+                }
                 let col = self.bb_at(st.temp * dob);
                 let lum = 0.2126 * col[0] + 0.7152 * col[1] + 0.0722 * col[2];
-                let k = p.stars * 0.9 * st.flux * mu * (d2 * d2).min(400.0) / lum.max(1e-6);
+                let k = k / lum.max(1e-6);
                 let (x0, y0) = (px as usize, py as usize);
                 let (fx, fy) = (px - x0 as f32, py - y0 as f32);
                 let wts = [(1.0 - fx) * (1.0 - fy), fx * (1.0 - fy), (1.0 - fx) * fy, fx * fy];
@@ -1270,29 +1395,17 @@ impl BlackHole {
 
     fn bloom_and_sky(&mut self, p: &Params, cam: &Camera, az_off: f32) {
         let (w, h, bw, bh) = (self.w, self.h, self.bw, self.bh);
-        // Downsample HDR and transmittance (4×4 boxes).
-        self.lr.fill(0.0);
-        self.lg.fill(0.0);
-        self.lb.fill(0.0);
-        self.lt.fill(0.0);
-        fn acc4(src: &[f32], dst: &mut [f32]) {
-            let mut it = src.chunks_exact(4);
-            for (d, c) in dst.iter_mut().zip(&mut it) {
-                *d += (c[0] + c[1]) + (c[2] + c[3]);
-            }
-            let rem = it.remainder();
-            if !rem.is_empty() {
-                dst[src.len() / 4] += rem.iter().sum::<f32>();
-            }
-        }
-        for y in 0..h {
-            let o = (y >> 2) * bw;
-            let s = y * w;
-            acc4(&self.hr[s..s + w], &mut self.lr[o..o + bw]);
-            acc4(&self.hg[s..s + w], &mut self.lg[o..o + bw]);
-            acc4(&self.hb[s..s + w], &mut self.lb[o..o + bw]);
-            acc4(&self.trans[s..s + w], &mut self.lt[o..o + bw]);
-        }
+        // Bloom source: the previous frame's 4×4-downsampled HDR, which the
+        // tone-map pass accumulated while it read the pixels anyway.
+        let _ = (w, h);
+        core::mem::swap(&mut self.lr, &mut self.ar);
+        core::mem::swap(&mut self.lg, &mut self.ag);
+        core::mem::swap(&mut self.lb, &mut self.ab);
+        core::mem::swap(&mut self.lt, &mut self.at);
+        self.ar.fill(0.0);
+        self.ag.fill(0.0);
+        self.ab.fill(0.0);
+        self.at.fill(0.0);
         let k = 1.0 / 16.0;
         // Bloom: a tight and a wide lobe (iterated box ≈ gaussian).
         let strength = p.bloom.max(0.0);
@@ -1307,8 +1420,8 @@ impl BlackHole {
             }
             let wide = &mut self.wide[c];
             wide.copy_from_slice(buf);
-            Self::blur(buf, &mut self.tmp, &mut self.acc, bw, bh, 1, 2);
-            Self::blur(wide, &mut self.tmp, &mut self.acc, bw, bh, 6, 3);
+            Self::blur(buf, &mut self.tmp, &mut self.acc, bw, bh, 1, 1);
+            Self::blur(wide, &mut self.tmp, &mut self.acc, bw, bh, 8, 2);
             for (b, wv) in buf.iter_mut().zip(wide.iter()) {
                 *b = strength * (0.05 * *b + 0.12 * wv);
             }
@@ -1419,7 +1532,7 @@ impl BlackHole {
         let mut row_a = core::mem::take(&mut self.row_a);
         let mut row_b = core::mem::take(&mut self.row_b);
         let mut cached = (usize::MAX, usize::MAX);
-        let ex = V4::splat(p.exposure.max(0.0) * 1.6);
+        let ex = V4::splat(p.exposure.max(0.0) * 1.6 * self.adapt);
         let grain = p.grain.max(0.0) * 0.035;
         let seed = hash(self.frame.wrapping_mul(0x9e37_79b9));
         let srgb = &self.srgb[..];
@@ -1450,24 +1563,42 @@ impl BlackHole {
             let hb = &mut self.hb[s..s + w];
             let out = &mut self.out[s * 4..(s + w) * 4];
             let go = (hash(y as u32 ^ seed) & 4095) as usize;
+            let lo = (y >> 2) * self.bw;
+            let (acr, acg, acb, act) = (&mut self.ar[lo..lo + self.bw], &mut self.ag[lo..lo + self.bw], &mut self.ab[lo..lo + self.bw], &mut self.at[lo..lo + self.bw]);
+            let trow = &mut self.trans[s..s + w];
+            // The bloom source samples one row in four (it is blurred anyway).
+            let acc_row = (y & 3) == 1 || (y + 1 == h && (y & 3) < 1);
             let g = V4::splat(grain);
             let mut x = 0;
             while x + 4 <= w {
                 let v = |pl: &[f32]| V4::from_array([pl[x], pl[x + 1], pl[x + 2], pl[x + 3]]);
-                let r = aces((v(hr) + v(ar) + (v(br) - v(ar)) * fy) * ex);
-                let gg = aces((v(hg) + v(ag) + (v(bg) - v(ag)) * fy) * ex);
-                let b = aces((v(hb) + v(ab) + (v(bb) - v(ab)) * fy) * ex);
+                let (vr, vg, vb) = (v(hr), v(hg), v(hb));
+                let sum = |q: V4| {
+                    let a = q.to_array();
+                    (a[0] + a[1]) + (a[2] + a[3])
+                };
+                if acc_row {
+                    let lx = x >> 2;
+                    acr[lx] += sum(vr) * 4.0;
+                    acg[lx] += sum(vg) * 4.0;
+                    acb[lx] += sum(vb) * 4.0;
+                    act[lx] += sum(v(trow)) * 4.0;
+                }
+                let r = aces((vr + v(ar) + (v(br) - v(ar)) * fy) * ex);
+                let gg = aces((vg + v(ag) + (v(bg) - v(ag)) * fy) * ex);
+                let b = aces((vb + v(ab) + (v(bb) - v(ab)) * fy) * ex);
                 let gi = (go + x) & 4095;
                 let n = V4::from_array([gtab[gi], gtab[gi + 1], gtab[gi + 2], gtab[gi + 3]]) * g;
-                // Film grain, strongest in the mid-tones.
-                let gr = |c: V4| ((c + n * ((c - c * c) * 3.0 + 0.15)).clamp(0.0, 1.0) * sn).to_array();
-                let (r, gg, b) = (gr(r), gr(gg), gr(b));
+                // Film grain, strongest in the mid-tones, then the sRGB curve
+                // (1.138√v − 0.138v, with the linear toe; within ~1/255 above v = 0.02).
+                let enc = |c: V4| {
+                    let c = (c + n * ((c - c * c) * 3.0 + 0.15)).clamp(0.0, 1.0);
+                    (c.sqrt() * 1.138 - c * 0.138).min(c * 12.92)
+                };
+                let q = V4::pack_rgb(enc(r), enc(gg), enc(b));
                 let o = &mut out[x * 4..x * 4 + 16];
-                for lane in 0..4 {
-                    o[lane * 4] = srgb[r[lane] as usize];
-                    o[lane * 4 + 1] = srgb[gg[lane] as usize];
-                    o[lane * 4 + 2] = srgb[b[lane] as usize];
-                    o[lane * 4 + 3] = 255;
+                for (lane, w) in q.iter().enumerate() {
+                    o[lane * 4..lane * 4 + 4].copy_from_slice(&w.to_le_bytes());
                 }
                 x += 4;
             }
@@ -1484,7 +1615,7 @@ impl BlackHole {
             hr.fill(0.0);
             hg.fill(0.0);
             hb.fill(0.0);
-            self.trans[s..s + w].fill(1.0);
+            trow.fill(1.0);
         }
         self.row_a = row_a;
         self.row_b = row_b;
@@ -1580,6 +1711,22 @@ mod tests {
     }
 
     #[test]
+    fn fast_log2_is_continuous_and_accurate() {
+        let mut x = 0.01f32;
+        while x < 1.0e6 {
+            assert!((fast_log2(x) - libm::log2f(x)).abs() < 2e-5, "{x}");
+            x *= 1.003;
+        }
+        for (a, b) in [(0.9999, 1.0001), (8191.9, 8192.1)] {
+            assert!((fast_log2(b) - fast_log2(a)).abs() < 1e-3);
+        }
+        let (s, c) = sincosf(2.5);
+        assert!((s - libm::sinf(2.5)).abs() < 1e-5 && (c - libm::cosf(2.5)).abs() < 1e-5);
+        let (s, c) = sincosf(-7.0);
+        assert!((s - libm::sinf(-7.0)).abs() < 1e-5 && (c - libm::cosf(-7.0)).abs() < 1e-5);
+    }
+
+    #[test]
     fn blackbody_colours() {
         let c = blackbody(6500.0);
         let y = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
@@ -1596,12 +1743,12 @@ mod tests {
         let p = Params::default();
         bh.build_disk(&p, 100.0, 0.0);
         let a = bh.disk.clone();
-        bh.build_disk(&p, 100.05, 0.0);
+        bh.build_disk(&p, 100.005, 0.0);
         let mut max = 0.0f32;
         for (x, y) in a.iter().zip(bh.disk.iter()) {
             max = max.max((x - y).abs());
         }
-        assert!(max < 0.08, "max change {max}");
+        assert!(max < 0.05, "max change {max}");
         // ...and crosses a turbulence reset smoothly too.
         let mut prev = {
             bh.build_disk(&p, 34.0, 0.0);
@@ -1609,10 +1756,10 @@ mod tests {
         };
         let mut t = 34.0;
         while t < 36.5 {
-            t += 0.05;
+            t += 0.005;
             bh.build_disk(&p, t, 0.0);
             let m = prev.iter().zip(bh.disk.iter()).map(|(a, b)| (a - b).abs()).fold(0.0f32, f32::max);
-            assert!(m < 0.1, "jump {m} at t={t}");
+            assert!(m < 0.05, "jump {m} at t={t}");
             prev = bh.disk.clone();
         }
     }
