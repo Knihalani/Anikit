@@ -1101,7 +1101,7 @@ fn shape_path(it: &Item, f: f32) -> Option<Path> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::{build, preview, text::StubAssets, Theme};
+    use super::super::{build, preview, Theme};
     use super::*;
     use serde_json::json;
 
@@ -1119,8 +1119,8 @@ mod tests {
 
     fn eval(l: &Lottie, t: f32, w: f32, h: f32) -> Vec<Op> {
         let th = Theme::default();
-        let a = StubAssets::default();
-        let ctx = Ctx { width: w, height: h, fps: 30.0, theme: &th, assets: &a };
+        let a = preview::host();
+        let ctx = Ctx { width: w, height: h, fps: 30.0, theme: &th, assets: a };
         l.eval(t, &ctx)
     }
 
@@ -1365,11 +1365,11 @@ mod tests {
     fn loads_src_and_validates_over_time() {
         let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/lottie-demo.json");
         let th = Theme::default();
-        let a = StubAssets::default();
+        let a = preview::host();
         let p = build("lottie", &json!({"src": path, "x": 20, "y": 10, "width": 300, "height": 200})).unwrap();
         for k in 0..=40 {
             let t = k as f32 * 0.07;
-            let ops = p.eval(t, 640.0, 360.0, 30.0, &th, &a);
+            let ops = p.eval(t, 640.0, 360.0, 30.0, &th, a);
             preview::validate(&ops).unwrap_or_else(|e| panic!("t={t}: {e}"));
             assert!(!ops.is_empty());
         }
@@ -1379,12 +1379,12 @@ mod tests {
     fn snapshots() {
         let l = lottie(json!({"data": demo()}));
         let th = Theme::default();
-        let a = StubAssets::default();
-        let ctx = Ctx { width: 400.0, height: 300.0, fps: 30.0, theme: &th, assets: &a };
+        let a = preview::host();
+        let ctx = Ctx { width: 400.0, height: 300.0, fps: 30.0, theme: &th, assets: a };
         for (i, t) in [0.0f32, 0.25, 0.5, 1.0, 1.5].iter().enumerate() {
             let ops = l.eval(*t, &ctx);
             preview::validate(&ops).unwrap();
-            let px = preview::snapshot(&format!("lottie-{i}"), 400, 300, th.background, ops, &a);
+            let px = preview::snapshot(&format!("lottie-{i}"), 400, 300, th.background, ops, a);
             assert!(px.chunks(4).any(|p| p[0] > 200 && p[1] < 120), "ball visible at t={t}");
         }
     }
