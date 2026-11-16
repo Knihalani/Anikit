@@ -1,6 +1,6 @@
 import {
   ready, engine, timeline, stagger, staggerValues, spring, inertia, animate,
-  motionValue, scrollProgress, flightPath, htmlCanvas, scene, material, linearColor,
+  motionValue, scrollProgress, flightPath, htmlCanvas, scene, material, linearColor, lathe,
 } from '../../packages/anikit/dist/anikit.lean.js';
 import { buildHeadphones, yieldTask, CUP_Y } from './model.js';
 
@@ -52,30 +52,22 @@ s.lightIntensity = 1.6;
 s.envIntensity = 1.0;
 s.exposure = 0.95;
 
-// A seamless photo-studio sweep: floor curving up into the wall.
-function sweepGeometry() {
-  const prof = [];
-  for (let z = 420; z > -60; z -= 30) prof.push([z, 0]);
-  for (let k = 0; k <= 16; k++) { const a = (k / 16) * (Math.PI / 2); prof.push([-60 - Math.sin(a) * 90, 90 - Math.cos(a) * 90]); }
-  prof.push([-150, 700]);
-  const X = [-700, -300, -100, 0, 100, 300, 700];
-  const n = prof.length, pos = [], nor = [], uvs = [], idx = [];
-  for (let i = 0; i < n; i++) {
-    const [z, y] = prof[i];
-    const a = prof[Math.max(0, i - 1)], b = prof[Math.min(n - 1, i + 1)];
-    let tz = b[0] - a[0], ty = b[1] - a[1]; const l = Math.hypot(tz, ty); tz /= l; ty /= l;
-    for (const x of X) { pos.push(x, y + FLOOR_Y, z); nor.push(0, -tz, ty); uvs.push(x / 100, i / n); }
-  }
-  // Normal: perpendicular to the profile, pointing up/forward.
-  for (let k = 0; k < nor.length; k += 3) { if (nor[k + 1] < 0 || (nor[k + 1] === 0 && nor[k + 2] < 0)) { nor[k + 1] *= -1; nor[k + 2] *= -1; } }
-  const W = X.length;
-  for (let i = 0; i < n - 1; i++) for (let j = 0; j < W - 1; j++) {
-    const a = i * W + j, b = a + W;
-    idx.push(a, a + 1, b, a + 1, b + 1, b);
-  }
-  return { positions: new Float32Array(pos), normals: new Float32Array(nor), uvs: new Float32Array(uvs), indices: new Uint32Array(idx) };
+// A seamless photo-studio cyclorama, lathed: a round floor curving up into a
+// wall all the way around, so orbiting never finds an edge.
+function cycloramaGeometry() {
+  const prof = [[0, 0]];
+  for (let r = 60; r <= 420; r += 60) prof.push([r, 0]);
+  for (let k = 1; k <= 18; k++) { const a = (k / 18) * (Math.PI / 2); prof.push([420 + Math.sin(a) * 150, 150 - Math.cos(a) * 150]); }
+  prof.push([570, 1300]);
+  const g = lathe(prof, 128);
+  // Seen from inside: flip normals and winding.
+  for (let i = 0; i < g.normals.length; i++) g.normals[i] = -g.normals[i];
+  const I = g.indices;
+  for (let i = 0; i < I.length; i += 3) { const t = I[i + 1]; I[i + 1] = I[i + 2]; I[i + 2] = t; }
+  for (let i = 1; i < g.positions.length; i += 3) g.positions[i] += FLOOR_Y;
+  return g;
 }
-const sweep = s.add(sweepGeometry(), { material: { color: '#f3f1ee', roughness: 0.95, metalness: 0 }, castShadow: false });
+const sweep = s.add(cycloramaGeometry(), { material: { color: '#f3f1ee', roughness: 0.95, metalness: 0 }, castShadow: false });
 void sweep;
 
 // 300 copies: a 20×15 grid around the hero (the hero itself is the real objects).
@@ -105,7 +97,7 @@ for (let i = 0; i < hero.length; i++) { const p = hero[i]; if (i % 4 === 3) awai
   const mat = material({ color: fin.color, metalness: fin.metalness, roughness: fin.roughness, opacity: fin.opacity ?? 1 });
   const obj = s.add(p.geometry, { material: mat, position: p.centre });
   const c = lin(fin.color);
-  const m = { r: c[0], g: c[1], b: c[2], metalness: fin.metalness, roughness: fin.roughness };
+  const m = { r: c[0], g: c[1], b: c[2], metalness: fin.metalness, roughness: fin.roughness, glow: 0 };
   const vary = p.group === 'cup';
   const cm = material({ color: vary ? '#ffffff' : fin.color, metalness: fin.metalness, roughness: fin.roughness });
   const inst = s.instances(lod[i].geometry, N - 1, (k, o) => {
@@ -178,6 +170,7 @@ const endDrag = (e) => {
 };
 canvas.addEventListener('pointerup', endDrag);
 canvas.addEventListener('pointercancel', endDrag);
+canvas.addEventListener('pointerleave', () => { hoverQueued = { clientX: -1e4, clientY: -1e4 }; });
 
 // ---------------------------------------------------------------- picking (scene.raycast): hover and click to change a finish
 const partOf = (hit) => hit && parts.find((p) => p.obj === hit.object);
@@ -185,11 +178,13 @@ let hovered = null, hoverQueued = null;
 function hover(e) { hoverQueued = e; }
 function pickHover() {
   const e = hoverQueued; hoverQueued = null;
-  if (!e || rig.appear > 0.02) return;
+  if (!e) return;
   const r = canvas.getBoundingClientRect();
-  const p = partOf(s.raycast(e.clientX - r.left, e.clientY - r.top));
+  const p = rig.appear > 0.02 || e.clientX < -1e3 ? null : partOf(s.raycast(e.clientX - r.left, e.clientY - r.top));
   const g = p ? p.group : null;
   if (g === hovered) return;
+  if (hovered) for (const q of groups[hovered]) spring(q.m, { glow: 0 }, { stiffness: 140, damping: 20 });
+  if (g) for (const q of groups[g]) spring(q.m, { glow: 1 }, { stiffness: 140, damping: 20 });
   hovered = g;
   canvas.style.cursor = g ? 'pointer' : '';
 }
@@ -405,6 +400,7 @@ function update(dtMs) {
     c[0] = Math.max(0, m.r); c[1] = Math.max(0, m.g); c[2] = Math.max(0, m.b);
     q.mat.metalness = Math.min(1, Math.max(0, m.metalness));
     q.mat.roughness = Math.min(1, Math.max(0.03, m.roughness));
+    const gl = Math.max(0, m.glow) * 0.07; q.mat.emissive[0] = gl; q.mat.emissive[1] = gl * 0.97; q.mat.emissive[2] = gl * 0.92;
   }
 
   // Camera: orbit, blended into the crane path for the finale.

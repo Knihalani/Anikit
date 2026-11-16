@@ -719,6 +719,8 @@ void main() {
   }
   c += texture(uBloom, vUv).rgb * uPost.x;
   c = pow(aces(c * uPost.w), vec3(1.0 / 2.2));
+  // ±0.5 LSB dither: smooth studio gradients would otherwise band in 8 bits.
+  c += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;
   o = vec4(c, dot(c, vec3(0.299, 0.587, 0.114)));
 }`;
 const FXAA_FS = `#version 300 es
