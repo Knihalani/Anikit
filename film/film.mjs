@@ -102,8 +102,14 @@ export default async function film({ anikit: A }) {
   const cube = mesh.cube();
   // Trees in three silhouettes (fir, spruce, broadleaf), each with its own colour range.
   const TM = world.treeMeshes;
-  const byKind = [0, 1, 2].map((k) => trees.filter((t) => t.kind === k));
-  const treeSet = (col) => byKind.map((list) => instances(list.length, (i) => {
+  // Chunked along z (the flight runs towards −z), so chunks wholly behind the camera are skipped.
+  const CHUNK = 160, chunks = [];
+  for (const k of [0, 1, 2]) {
+    const by = new Map();
+    for (const t of trees) if (t.kind === k) { const b = Math.floor(t.z / CHUNK); if (!by.has(b)) by.set(b, []); by.get(b).push(t); }
+    for (const list of by.values()) chunks.push({ kind: k, list, zmin: Math.min(...list.map((t) => t.z)), zmax: Math.max(...list.map((t) => t.z)) });
+  }
+  const treeSet = (col) => chunks.map(({ list }) => instances(list.length, (i) => {
     const t = list[i], c = col(t);
     return { x: t.x, y: t.y, z: t.z, sx: t.h * t.w, sy: t.h, sz: t.h * t.w, ry: t.ry, color: c };
   }));
@@ -205,7 +211,7 @@ export default async function film({ anikit: A }) {
       { mesh: world.terrainMesh, instances: terrainAt, material: { ...baked, texture: TX.real, textureFilter: 'aniso' } },
       { mesh: world.wallMesh, instances: terrainAt, material: { ...baked, texture: TX.wallReal, textureFilter: 'aniso' } },
       { mesh: rockMesh, instances: rocksR, material: { ambient: 0.32, diffuse: 1.05, specular: 0.12, shininess: 10, rim: 0.15 } },
-      ...TM.map((m, k) => ({ mesh: m, instances: treesR[k], material: { ambient: 0.5, diffuse: 1.0, specular: 0.06, shininess: 6, rim: 0.22 } })),
+      ...chunks.map((ch, k) => ({ mesh: TM[ch.kind], instances: treesR[k], zmin: ch.zmin, zmax: ch.zmax, material: { ambient: 0.5, diffuse: 1.0, specular: 0.06, shininess: 6, rim: 0.22 } })),
       ...towersR.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 0.85, diffuse: 0.9, specular: 0.5, shininess: 60, rim: 0.2, texture: TX.windows, textureRepeat: CLS[c] } })),
       { mesh: cube, instances: roofsR, material: { ambient: 0.7, diffuse: 0.9, specular: 0.1, shininess: 10, rim: 0.15 } },
       { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farReal } },
@@ -224,14 +230,14 @@ export default async function film({ anikit: A }) {
       { mesh: dome, instances: domeAt, cull: false, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.skyNeon, textureMode: 'emissive', fog: 0 } },
       { mesh: water, instances: waterAt, mirror: true, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0 } },
       ...lanes.map((m, k) => ({ mesh: m, blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 0.12, pulse: 2.1, pulseCount: k === 0 ? 34 : 48, pulsePhase: 0, lineColor: laneCol[k] } })),
-      ...TM.map((m, k) => ({ mesh: m, instances: treesN[k], material: { ambient: 1, diffuse: 0, specular: 0, rim: 0.85 } })),
+      ...chunks.map((ch, k) => ({ mesh: TM[ch.kind], instances: treesN[k], zmin: ch.zmin, zmax: ch.zmax, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0.85 } })),
       { points: motes, colors: moteColN, size: 0.09, intensity: 1.8, streak: 1, fog: [6, 120] },
     ],
     C: [
       { mesh: world.terrainMesh, instances: terrainAt, material: { ...baked, texture: TX.comic, textureFilter: 'aniso' } },
       { mesh: world.wallMesh, instances: terrainAt, material: { ...baked, texture: TX.wallComic, textureFilter: 'aniso' } },
       { mesh: rockMesh, instances: rocksC, material: { ambient: 0.6, diffuse: 0.7, specular: 0, rim: 0 } },
-      ...TM.map((m, k) => ({ mesh: m, instances: treesC[k], material: { ambient: 0.6, diffuse: 0.7, specular: 0, rim: 0 } })),
+      ...chunks.map((ch, k) => ({ mesh: TM[ch.kind], instances: treesC[k], zmin: ch.zmin, zmax: ch.zmax, material: { ambient: 0.6, diffuse: 0.7, specular: 0, rim: 0 } })),
       ...towersC.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 0.62, diffuse: 0.6, specular: 0, rim: 0, texture: TX.windowsComic, textureRepeat: CLS[c] } })),
       { mesh: cube, instances: roofsC, material: { ambient: 0.62, diffuse: 0.6, specular: 0, rim: 0 } },
       { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farComic } },
@@ -255,7 +261,7 @@ export default async function film({ anikit: A }) {
 
   const opts = {
     R: {
-      background: '#c9a888', fog: [60, 15000], fogColor: HAZE_DISPLAY,
+      background: '#c9a888', fog: [60, 15000], fogColor: HAZE_DISPLAY, groundFog: { bottom: 2, top: 70, range: 2600 },
       key: SUN, keyColor: [1.35, 1.0, 0.7], fill: [0, 1, 0], fillColor: [0.22, 0.28, 0.4], rimColor: [1.1, 0.72, 0.45], ...ENV_R,
       mirror: { y: WATER, strength: 0.78 },
       motionBlur: { shutter: 0.36, max: 70 },
@@ -285,7 +291,8 @@ export default async function film({ anikit: A }) {
   const renderLook = (look, slot) => {
     const r = [rA, rB, rC][slot];
     const o = opts[look];
-    const its = items[look];
+    const zc = cam.camera.z + 120;
+    const its = items[look].filter((it) => it.zmin === undefined || it.zmin < zc);
     for (const it of laneItems) it.material.pulsePhase = curT * 4.2;
     const px = r.render(cam, its, { ...o, sort: 'near', prevCamera: prevVP, motionBlur: look === 'C' ? undefined : o.motionBlur });
     const dist = r.depth(cam);

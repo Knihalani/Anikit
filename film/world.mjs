@@ -171,7 +171,7 @@ export async function buildWorld(A) {
   log('terrain mesh');
 
   // ---- Far mountains (a ring around the valley, 40 km across) -------------------------------
-  const FN = 321, FE = 20000, FS = (2 * FE) / (FN - 1);
+  const FN = 241, FE = 20000, FS = (2 * FE) / (FN - 1);
   const farH = (x, z) => {
     const r = Math.hypot(x, z);
     let h = 120 + 1500 * ridged(x / 5200 + 1.3, z / 5200 + 7.7, 6) * smooth(1500, 9000, r) + 260 * ridged(x / 1500, z / 1500, 4)
@@ -333,7 +333,7 @@ function conifer(mesh, slender = false) {
 function broadleaf(mesh) {
   const P = [], NR = [], U = [], I = [];
   const blob = (cx, cy, cz, r, seed) => {
-    const R = 8, S = 12, base = P.length / 3;
+    const R = 5, S = 7, base = P.length / 3;
     for (let i = 0; i <= R; i++) {
       const th = (i / R) * Math.PI;
       for (let j = 0; j <= S; j++) {
