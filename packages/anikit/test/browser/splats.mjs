@@ -115,4 +115,67 @@ export const tests = [
       await page.evaluate(() => layer.kill());
     },
   },
+  {
+    name: 'splats(): crisp by default (screen-radius clamp) and the governor sheds load',
+    html,
+    async run(page, h) {
+      const r = await page.evaluate(async () => {
+        const cover = () => {
+          const gl = layer.gl, w = gl.drawingBufferWidth, hh = gl.drawingBufferHeight;
+          const px = new Uint8Array(w * hh * 4);
+          gl.readPixels(0, 0, w, hh, gl.RGBA, gl.UNSIGNED_BYTE, px);
+          let n = 0;
+          for (let i = 3; i < px.length; i += 4) if (px[i] > 8) n++;
+          return n;
+        };
+        // One huge splat right in front of the camera: clamped to maxRadius.
+        const one = ak.splats.fromPoints([0, 0, 0], { size: 5, opacity: 1 });
+        window.layer = ak.splats('#c', one, { autoRender: false, pixelRatio: 1, maxRadius: 10, camera: { z: 2 } });
+        layer.render();
+        const clamped = cover();
+        layer.kill();
+        // Governor: an impossible fps target drives quality down.
+        const many = ak.splats.fromSDF((x, y, z) => Math.hypot(x, y, z) - 1, { count: 500 });
+        window.layer = ak.splats('#c', many, { governor: { fps: 100000, min: 0.3 } });
+        for (let i = 0; i < 400 && layer.stats.quality > 0.31; i++) await new Promise((r) => requestAnimationFrame(r));
+        const q = layer.stats.quality;
+        layer.kill();
+        return { clamped, q };
+      });
+      // 2.5 sigma of 10 px (CSS) is a disc of ~25 px radius: ~2000 px, far below the 200×200 canvas.
+      ok(r.clamped > 100 && r.clamped < 4000, `near splat clamped to maxRadius (${r.clamped} px)`);
+      ok(Math.abs(r.q - 0.3) < 1e-9, `governor reached its floor (${r.q})`);
+    },
+  },
+  {
+    name: 'splats(): positions() moves splats per frame and the depth order follows',
+    html,
+    async run(page) {
+      const r = await page.evaluate(async () => {
+        const set = ak.splats.fromPoints([0, 0, 0, 0, 0, 0.5], { size: 0.4, opacity: 0.99, color: (i) => (i === 0 ? [1, 0, 0] : [0, 0, 1]) });
+        window.layer = ak.splats('#c', set, { autoRender: false, governor: false, camera: { x: 0, y: 0, z: 3, tx: 0, ty: 0, tz: 0, fov: 40 } });
+        layer.render();
+        await layer.sorted;
+        layer.render();
+        const px = () => { const gl = layer.gl, o = new Uint8Array(4); gl.readPixels(gl.drawingBufferWidth >> 1, gl.drawingBufferHeight >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, o); return [...o]; };
+        const before = px();
+        // Move the blue splat behind the red one (only splat 1).
+        layer.positions(new Float32Array([0, 0, -0.5]), 1);
+        const s0 = layer.stats.sorts;
+        layer.render();
+        for (let i = 0; i < 200 && layer.stats.sorts === s0; i++) await new Promise((r) => setTimeout(r, 5));
+        layer.render();
+        const after = px();
+        // Move both far to the side: the centre empties.
+        layer.positions(new Float32Array([5, 0, 0, 5, 0, 0]));
+        layer.render();
+        const gone = px();
+        layer.kill();
+        return { before, after, gone };
+      });
+      ok(r.before[2] > 150, `blue in front first: ${r.before}`);
+      ok(r.after[0] > 150 && r.after[2] < 60, `red in front after moving blue behind: ${r.after}`);
+      ok(r.gone[3] < 10, `centre empty after moving both away: ${r.gone}`);
+    },
+  },
 ];
