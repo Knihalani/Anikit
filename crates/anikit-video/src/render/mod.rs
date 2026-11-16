@@ -13,6 +13,7 @@ pub mod assets;
 pub mod blur;
 pub mod diff;
 pub mod filter;
+pub mod glyphs;
 pub mod trim;
 pub mod yuv;
 
@@ -74,10 +75,13 @@ struct State {
     in_flight: Vec<Arc<Pixmap>>,
     cache: HashMap<u64, CacheEntry>,
     sprites: HashMap<u64, CacheEntry>,
+    text: HashMap<u64, CacheEntry>,
     frame_no: u64,
     path: BezPath,
     lens: Vec<f64>,
     filters: filter::FilterScratch,
+    glyphs: glyphs::GlyphCache,
+    run: BezPath,
     /// Layers rendered from cache in the last frame (for stats/tests).
     cache_hits: usize,
 }
@@ -108,10 +112,13 @@ impl Renderer {
                 in_flight: Vec::new(),
                 cache: HashMap::new(),
                 sprites: HashMap::new(),
+                text: HashMap::new(),
                 frame_no: 0,
                 path: BezPath::new(),
                 lens: Vec::new(),
                 filters: Default::default(),
+                glyphs: Default::default(),
+                run: BezPath::new(),
                 cache_hits: 0,
             },
         }
@@ -157,6 +164,7 @@ impl Renderer {
         }
         let now = st.frame_no;
         st.cache.retain(|_, e| e.last_used + 1 >= now);
+        st.text.retain(|_, e| e.last_used + 2 >= now);
         if st.sprites.len() > 256 {
             st.sprites.retain(|_, e| e.last_used + 30 >= now);
         }
@@ -300,6 +308,81 @@ fn blit(ctx: &mut RenderContext, pix: Arc<Pixmap>, x: f64, y: f64, alpha: f32) {
         sampler: ImageSampler { x_extend: Extend::Pad, y_extend: Extend::Pad, quality: ImageQuality::Low, alpha },
     });
     ctx.fill_rect(&Rect::new(0.0, 0.0, w, h));
+}
+
+/// Draw a solid-colour, translation-only glyph run from a cached bitmap
+/// (rendered once per content and quarter-pixel phase). Returns false if the
+/// run can't be cached (colour font) and must be drawn as outlines.
+#[allow(clippy::too_many_arguments)]
+fn draw_cached_run(
+    st: &mut State,
+    ctx: &mut RenderContext,
+    font_id: dl::FontId,
+    font: &vello_cpu::peniko::FontData,
+    size: f32,
+    glyphs: &[dl::Glyph],
+    c: Rgba,
+    tx: f64,
+    ty: f64,
+) -> bool {
+    let (fx, fy) = (tx.floor(), ty.floor());
+    let (qx, qy) = (((tx - fx) * 4.0).round() as u8, ((ty - fy) * 4.0).round() as u8);
+    let key = {
+        use std::hash::{Hash, Hasher};
+        let mut hs = std::collections::hash_map::DefaultHasher::new();
+        (font_id.0, size.to_bits(), qx, qy, c.0.map(f32::to_bits)).hash(&mut hs);
+        for g in glyphs {
+            (g.id, g.x.to_bits(), g.y.to_bits()).hash(&mut hs);
+        }
+        hs.finish()
+    };
+    let now = st.frame_no;
+    let (pix, x0, y0) = match st.text.get_mut(&key) {
+        Some(e) => {
+            e.last_used = now;
+            (e.pix.clone(), e.x, e.y)
+        }
+        None => {
+            let mut run = std::mem::take(&mut st.run);
+            if !st.glyphs.run_path(font_id, font, size, glyphs, &mut run) {
+                st.run = run;
+                return false;
+            }
+            let (ox, oy) = (qx as f64 / 4.0, qy as f64 / 4.0);
+            if run.is_empty() {
+                st.run = run;
+                return true;
+            }
+            let bb = run.bounding_box();
+            let (x0, y0) = ((bb.x0 + ox).floor() - 1.0, (bb.y0 + oy).floor() - 1.0);
+            let (w, h) = ((bb.x1 + ox).ceil() + 1.0 - x0, (bb.y1 + oy).ceil() + 1.0 - y0);
+            if w > 4096.0 || h > 4096.0 {
+                st.run = run;
+                return false;
+            }
+            let (w, h) = (w as u16, h as u16);
+            let mut sub = st.pool.pop().unwrap_or_else(|| RenderContext::new(w, h));
+            sub.reset_and_resize(w, h);
+            sub.set_paint(color(c));
+            sub.set_fill_rule(Fill::NonZero);
+            sub.set_transform(Affine::translate((ox - x0, oy - y0)));
+            sub.fill_path(&run);
+            sub.flush();
+            let mut pm = st.pix_pool.pop().unwrap_or_else(|| Pixmap::new(w, h));
+            pm.resize(w, h);
+            sub.render_with(&mut pm, &mut st.res, RasterizerSettings::default());
+            sub.reset();
+            st.pool.push(sub);
+            st.run = run;
+            pm.set_may_have_transparency(true);
+            let pix = Arc::new(pm);
+            let (x0, y0) = (x0 as i32, y0 as i32);
+            st.text.insert(key, CacheEntry { pix: pix.clone(), x: x0, y: y0, last_used: now });
+            (pix, x0, y0)
+        }
+    };
+    blit(ctx, pix, fx + x0 as f64, fy + y0 as f64, 1.0);
+    true
 }
 
 struct Card {
@@ -642,18 +725,35 @@ fn draw_op(st: &mut State, assets: &Assets, ctx: &mut RenderContext, op: &Op, ba
             );
             ctx.fill_rect(&Rect::new(dst[0] as f64, dst[1] as f64, (dst[0] + dst[2]) as f64, (dst[1] + dst[3]) as f64));
         }
-        Op::Glyphs { font, size, glyphs, paint, transform } => {
-            let Some(font) = assets.fonts.get(*font) else { return };
+        Op::Glyphs { font: font_id, size, glyphs, paint, transform } => {
+            let Some(font) = assets.fonts.get(*font_id) else { return };
             if glyphs.is_empty() || *size <= 0.0 || !set_paint(ctx, assets, paint) {
                 return;
             }
             ctx.set_transform(base * affine(transform));
             ctx.set_fill_rule(Fill::NonZero);
-            let _ = ctx
-                .glyph_run(&mut st.res, font)
-                .font_size(*size)
-                .hint(false)
-                .fill_glyphs(glyphs.iter().map(|g| vello_cpu::Glyph { id: g.id as u32, x: g.x, y: g.y }));
+            if let Paint::Solid(c) = paint {
+                let t = base * affine(transform);
+                let k = t.as_coeffs();
+                if k[0] == 1.0 && k[1] == 0.0 && k[2] == 0.0 && k[3] == 1.0 {
+                    if draw_cached_run(st, ctx, *font_id, font, *size, glyphs, *c, k[4], k[5]) {
+                        return;
+                    }
+                    ctx.set_transform(t);
+                }
+            }
+            if st.glyphs.run_path(*font_id, font, *size, glyphs, &mut st.run) {
+                if !st.run.is_empty() {
+                    ctx.fill_path(&st.run);
+                }
+            } else {
+                let _ = ctx
+                    .glyph_run(&mut st.res, font)
+                    .font_size(*size)
+                    .hint(false)
+                    .atlas_cache(true)
+                    .fill_glyphs(glyphs.iter().map(|g| vello_cpu::Glyph { id: g.id as u32, x: g.x, y: g.y }));
+            }
         }
         Op::PushLayer { .. } | Op::PopLayer => {}
     }
