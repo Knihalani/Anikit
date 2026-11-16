@@ -309,6 +309,51 @@ describe('animate: plain-object write path', () => {
     expect(loop[0][24]).toBeGreaterThan(0); // the setter was called
     expect(loop[1][loop[1].length - 1]).toBeGreaterThan(0); // and onUpdate
   });
+  it('single-property runs (dense slot tables) match the generic loop through takeovers, kills and reuse', () => {
+    const runOne = (): number[][] => {
+      const objs = Array.from({ length: 8 }, () => ({ x: 0 }));
+      const log: number[] = [];
+      const acc = { get x() { return 0; }, set x(v: number) { log.push(v); } };
+      let updates = 0;
+      const frames: number[][] = [];
+      const snap = () => frames.push([...objs.map((o) => o.x), ...log, -1, updates]);
+      const kf = [0, 50, 10, 80, 20, 90, 30, 100];
+      const a = animate([...objs.slice(0, 4), acc, ...objs.slice(4)], { x: kf }, { duration: 1, ease: 'inOutSine' });
+      advance(0.2);
+      snap();
+      // `onUpdate` Parts on the same key set interleaved with the run.
+      const u = animate([objs[1], objs[5]], { x: [5, 6] }, { duration: 0.3, ease: 'linear', onUpdate: () => updates++ });
+      advance(0.1);
+      snap();
+      // Take one target over without `onUpdate`, then kill the taker: its slot is cleared.
+      const b = animate(objs[2], { x: -50 }, { duration: 0.5, ease: 'linear' });
+      advance(0.2);
+      snap();
+      b.kill();
+      u.kill();
+      advance(0.1);
+      snap();
+      // Freed node indices reused by new Parts (other generations), staggered.
+      a.kill();
+      const c = animate(objs, { x: [1, 2, 3] }, { duration: 0.5, ease: 'linear', delay: stagger(0.05) });
+      advance(0.2);
+      snap();
+      a.seek(0.5); // a killed controller: nothing to write
+      advance(0.1);
+      snap();
+      c.kill();
+      return frames;
+    };
+    const prev = _setCodegen(false);
+    const loop = runOne();
+    _setCodegen(undefined);
+    const gen = runOne();
+    expect(_setCodegen(prev)).toBe(true);
+    expect(gen).toEqual(loop);
+    expect(loop[0][0]).toBeGreaterThan(0);
+    expect(loop[1][loop[1].length - 1]).toBeGreaterThan(0); // onUpdate ran
+    expect(loop[2][2]).toBeLessThan(0); // the takeover wrote objs[2]
+  });
   it('both paths are strict: a frozen target throws the same way', () => {
     const attempt = (): string => {
       const objs = [{ p: 0, q: 0 }, Object.freeze({ p: 0, q: 0 })];
