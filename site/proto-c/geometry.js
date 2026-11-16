@@ -212,7 +212,7 @@ export function buildHeadphones(detail = 1) {
       const r = 3.05 + 1.05 * Math.cos(a), h = -0.62 + 0.72 * Math.sin(a) * (Math.sin(a) > 0 ? 0.85 : 1);
       return [r, h];
     }).slice(0, -1);
-    add({ name: 'Ear cushion', group: 'pad', mesh: toSide(lathe(cushion, seg, true), s, s * CUP_X, CUP_Y, 0), explode: [s * -3.6, -2.2, 1.2], spin: [0, 1, 0, s * -30], mat: 'rubberSand' });
+    add({ name: 'Ear cushion', group: 'pad', mesh: toSide(lathe(cushion, seg, true), s, s * CUP_X, CUP_Y, 0), explode: [s * 1.0, -3.4, 6.5], spin: [0, 1, 0, s * -38], mat: 'rubberSand' });
   }
   for (const p of parts) {
     const v = p.mesh.v;

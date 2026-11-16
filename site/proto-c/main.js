@@ -1,6 +1,6 @@
 import {
   ready, engine, timeline, stagger, staggerValues, spring, inertia, animate,
-  motionValue, scrollProgress, flightPath,
+  motionValue, scrollProgress, flightPath, htmlCanvas,
 } from '../../packages/anikit/dist/anikit.lean.js';
 import { buildHeadphones } from './geometry.js';
 import { Studio } from './studio.js';
@@ -16,7 +16,7 @@ const FINISHES = {
   brushedMist: { label: 'anodised, mist', base: lin('#a9bcd6'), metal: 1, rough: 0.32, brushed: 1, glass: 0 },
   coral: { label: 'anodised, coral', base: lin('#ff8a6e'), metal: 1, rough: 0.3, brushed: 1, glass: 0 },
   sage: { label: 'matte sage', base: lin('#a8b8a0'), metal: 0, rough: 0.55, brushed: 0, glass: 0 },
-  glass: { label: 'frosted glass', base: lin('#f3f7fb'), metal: 0, rough: 0.3, brushed: 0, glass: 1 },
+  glass: { label: 'frosted glass', base: lin('#e2e9f0'), metal: 0, rough: 0.3, brushed: 0, glass: 1 },
   rubberSand: { label: 'soft rubber, sand', base: lin('#e4dbcf'), metal: 0, rough: 0.78, brushed: 0, glass: 0 },
   graphite: { label: 'soft rubber, graphite', base: lin('#4a4d53'), metal: 0, rough: 0.7, brushed: 0, glass: 0 },
   butter: { label: 'soft rubber, butter', base: lin('#f6d98a'), metal: 0, rough: 0.72, brushed: 0, glass: 0 },
@@ -34,6 +34,7 @@ const CYCLE = {
 
 // ---------------------------------------------------------------- frame state (reused every frame)
 const F = {
+  cssW: 1, cssH: 1, fogNear: 300, fogFar: 700,
   vp: new Float32Array(16), invVP: new Float32Array(16), shadowVP: new Float32Array(16),
   eye: new Float32Array(3), time: 0, appear: 0, wave: 0, floorY: -8.75, instances: 1,
   sky: new Float32Array(lin('#efedea')), floor: new Float32Array(lin('#e9e6e1')), envBoost: 1.0,
@@ -106,7 +107,7 @@ const inst = new Float32Array(N * 4);
   for (let j = 0; j < ROWS; j++) for (let i = 0; i < COLS; i++) {
     const idx = j * COLS + i, slot = idx === HERO ? 0 : k++;
     const o = slot * 4;
-    inst[o] = (i - 10) * 23 + (j % 2) * 6;
+    inst[o] = (i - 10) * 23 + (Math.abs(j - 7) % 2) * 7;
     inst[o + 1] = (j - 7) * 21;
     inst[o + 2] = idx === HERO ? 0 : 0.04 + (delays[idx] / maxDelay) * 0.95;
     inst[o + 3] = ((idx * 2654435761) % 1000) / 1000 * 0.8;
@@ -119,7 +120,7 @@ const parts = hero.map((p, i) => {
   const fin = FINISHES[p.mat];
   const m = { r: fin.base[0], g: fin.base[1], b: fin.base[2], metal: fin.metal, rough: fin.rough, brushed: fin.brushed, glass: fin.glass };
   return {
-    ...p, e: 0, hi: 0, finish: p.mat, m,
+    ...p, e: 0, hi: 0, vary: p.group === 'cup' ? 0.85 : p.group === 'pad' || p.group === 'bandpad' ? 0.0 : 0, finish: p.mat, m,
     gpu: studio.addMesh(p.mesh, inst), lod: studio.addMesh(lod[i].mesh, inst),
     rot: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]), offset: new Float32Array(3),
     mat: { base: new Float32Array(fin.base), params: new Float32Array([fin.metal, fin.rough, fin.brushed, fin.glass]) },
@@ -130,17 +131,17 @@ const groups = {};
 for (const p of parts) (groups[p.group] ||= []).push(p);
 
 // ---------------------------------------------------------------- choreography (one anikit timeline, scrubbed by scroll)
-const rig = { dist: 50, ty: -1.2, lift: 0, yawOff: 0, pitchOff: 0, labels: 0, fin: 0, appear: 0, wave: 0, fov: 30 };
+const rig = { dist: 60, ty: -0.6, lift: 0, yawOff: 0, pitchOff: 0, labels: 0, fin: 0, appear: 0, wave: 0, fov: 30 };
 const order = ['band', 'bandpad', 'slider', 'yoke', 'cup', 'glass', 'pad'];
 const explodeOrder = [...parts].sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group));
 const tl = timeline({ autoplay: false })
-  .add(rig, { dist: 66, lift: 3.2, yawOff: -0.55, pitchOff: 0.12, ty: 0 }, { duration: 3, ease: 'inOutCubic' }, 1)
+  .add(rig, { dist: 84, lift: 3.2, yawOff: -0.3, pitchOff: 0.1, ty: 2.6 }, { duration: 3, ease: 'inOutCubic' }, 1)
   .add(explodeOrder, { e: 1 }, { duration: 1.8, ease: 'inOutCubic', delay: stagger(0.11) }, 1.2)
   .add(rig, { labels: 1 }, { duration: 0.6, ease: 'outCubic' }, 3.9)
   .label('hold', 4.5)
   .add(rig, { labels: 0 }, { duration: 0.4, ease: 'inCubic' }, 6)
   .add([...explodeOrder].reverse(), { e: 0 }, { duration: 1.3, ease: 'inOutCubic', delay: stagger(0.06) }, 6.1)
-  .add(rig, { lift: 0, yawOff: 0, pitchOff: 0, dist: 50, ty: -1.2 }, { duration: 1.4, ease: 'inOutCubic' }, 6.2)
+  .add(rig, { lift: 0, yawOff: 0, pitchOff: 0, dist: 60, ty: -0.6 }, { duration: 1.4, ease: 'inOutCubic' }, 6.2)
   .add(rig, { fin: 1 }, { duration: 2.6, ease: 'inOutSine' }, 7.6)
   .add(rig, { appear: 1.05 }, { duration: 1.9, ease: 'linear' }, 7.9)
   .add(rig, { wave: 1 }, { duration: 1.4, ease: 'inOutSine' }, 8.6)
@@ -148,7 +149,7 @@ const tl = timeline({ autoplay: false })
 const TL_LEN = tl.duration;
 
 // Finale camera: a crane move along a smooth anikit flight path, sampled once.
-const crane = flightPath([[0, 6, 50], [26, 26, 92], [52, 62, 150], [64, 96, 200]], { lookAhead: 40, bank: 0 });
+const crane = flightPath([[0, 6, 60], [30, 50, 140], [70, 160, 280], [90, 250, 380]], { lookAhead: 40, bank: 0 });
 const CRANE_N = 240, craneXYZ = new Float32Array(CRANE_N * 3);
 crane.points(CRANE_N).forEach((p, i) => craneXYZ.set(p, i * 3));
 
@@ -209,34 +210,39 @@ function click(e) {
   if (label) animate(label.sub, { text: { value: fin.label, type: 'scramble' } }, { duration: 0.5 });
 }
 
-// ---------------------------------------------------------------- labels pinned in 3D (HTML, positioned per frame)
+// ---------------------------------------------------------------- labels: real HTML, drawn into the WebGL canvas
+// by anikit's htmlCanvas() (native HTML-in-Canvas where available, foreignObject
+// raster elsewhere) and pinned to each part's 3D position.
 const LABELS = [['band', 'Headband'], ['bandpad', 'Band cushion'], ['slider', 'Slider'], ['yoke', 'Yoke'], ['cup', 'Housing'], ['glass', 'Glass cap'], ['pad', 'Ear cushion']];
 const labelLayer = document.getElementById('labels');
 const labels = LABELS.map(([group, name]) => {
   const part = groups[group].find((p) => p.centre[0] < 0.5) || groups[group][0];
   const el = document.createElement('div');
   el.className = 'label';
-  el.innerHTML = `<b></b><span></span>`;
+  el.innerHTML = `<div class="card"><b></b><span></span></div>`;
   el.querySelector('b').textContent = name;
   const sub = el.querySelector('span');
   sub.textContent = FINISHES[part.finish].label;
   labelLayer.appendChild(el);
-  return { group, part, el, sub, x: 0, y: 0, o: -1 };
+  const hc = htmlCanvas(el, { target: studio.gl, live: true, scale: Math.min(2, devicePixelRatio || 1) });
+  return { group, part, el, sub, hc, tex: null, x: 0, y: 0, w: 0, h: 0, ax: 0, ay: 0, o: 0, side: 1 };
 });
+await Promise.all(labels.map((l) => l.hc.ready.catch(() => null)));
 
 // ---------------------------------------------------------------- captions
 const captions = [...document.querySelectorAll('[data-at]')].map((el) => ({ el, a: +el.dataset.at, b: +el.dataset.to, o: -1 }));
 
 // ---------------------------------------------------------------- frame
-let cssW = 0, cssH = 0;
+let cssW = 0, cssH = 0, lastP = -1;
 function resize() {
-  cssW = canvas.clientWidth; cssH = canvas.clientHeight;
+  cssW = F.cssW = canvas.clientWidth; cssH = F.cssH = canvas.clientHeight;
   studio.resize(cssW, cssH);
 }
 addEventListener('resize', resize);
 resize();
 
 const P = new Float32Array(4);
+const sideBuf = new Array(8).fill(null);
 function project(x, y, z) {
   const m = F.vp;
   const cx = m[0] * x + m[4] * y + m[8] * z + m[12], cy = m[1] * x + m[5] * y + m[9] * z + m[13], cw = m[3] * x + m[7] * y + m[11] * z + m[15];
@@ -247,11 +253,10 @@ function update(dtMs) {
   const dt = Math.min(0.05, dtMs / 1000);
   F.time += dt;
   const p = Math.min(1, Math.max(0, progress.get()));
-  tl.seek(p * TL_LEN);
+  if (p !== lastP) { tl.seek(p * TL_LEN); lastP = p; }
 
   // Idle drift on the hero only while nobody is dragging; eased in and out.
-  const idle = !drag && orbitAnims.every((a) => a.finished === undefined || true) ? 1 : 0;
-  orbit.drift += ((idle && p < 0.02 ? 1 : 0) - orbit.drift) * Math.min(1, dt * 1.5);
+  orbit.drift += ((!drag && p < 0.02 ? 1 : 0) - orbit.drift) * Math.min(1, dt * 1.5);
   if (!drag) orbit.yaw += orbit.drift * dt * 0.12;
 
   // Parts.
@@ -277,7 +282,7 @@ function update(dtMs) {
     const cs = Math.cos(orbit.yaw + 0.5), sn = Math.sin(orbit.yaw + 0.5);
     const w = fin * fin * (3 - 2 * fin);
     ex += (cx * cs + cz * sn - ex) * w; ey += (cy - 2 - ey) * w; ez += (-cx * sn + cz * cs - ez) * w;
-    ty += (-14 - ty) * w; tz += (-30 * cs - tz) * w * 0; tx += 0;
+    ty += (-24 - ty) * w; tz += (-30 * cs - tz) * w * 0; tx += 0;
   }
   F.eye[0] = ex; F.eye[1] = ey; F.eye[2] = ez;
   perspective(proj, (rig.fov * Math.PI) / 180, cssW / cssH, 1, 2000);
@@ -286,6 +291,7 @@ function update(dtMs) {
   invert(F.invVP, F.vp);
 
   F.appear = rig.appear; F.wave = rig.wave;
+  F.fogNear = 360; F.fogFar = 760;
   F.instances = rig.appear > 0.001 ? N : 1;
 
   // Contact-shadow window: tight around the hero, the whole field for the finale.
@@ -294,17 +300,27 @@ function update(dtMs) {
   F.shadowVP.fill(0);
   F.shadowVP[0] = 1 / half; F.shadowVP[9] = 1 / half; F.shadowVP[15] = 1;
 
-  // Labels: anchored to each exploded part, written only while visible.
+  // Labels: anchored to each exploded part, card offset away from the object.
   const lo = rig.labels;
+  project(0, rig.ty + rig.lift, 0);
+  const midX = P[0];
   for (const l of labels) {
     const q = l.part;
     project(q.centre[0] + q.offset[0], q.centre[1] + q.offset[1], q.centre[2] + q.offset[2]);
-    const o = lo < 0.01 ? 0 : lo;
-    if (o > 0 || l.o !== 0) {
-      l.el.style.transform = `translate3d(${P[0].toFixed(1)}px, ${P[1].toFixed(1)}px, 0) translate(-50%, -50%) scale(${(0.92 + 0.08 * o).toFixed(3)})`;
-      l.el.style.opacity = o.toFixed(3);
-      l.o = o;
-    }
+    l.ax = P[0]; l.ay = P[1];
+    l.side = l.ax < midX ? -1 : 1;
+    l.tex = l.hc.texture; l.w = l.hc.width; l.h = l.hc.height;
+    const reach = 34 + 14 * lo;
+    l.x = l.side < 0 ? l.ax - reach - l.w : l.ax + reach;
+    l.y = l.ay - l.h * 0.5 - 18;
+    l.o = lo;
+  }
+  // Keep cards apart vertically on each side (tiny insertion sort, no allocation).
+  for (let side = -1; side <= 1; side += 2) {
+    let n = 0;
+    for (const l of labels) if (l.side === side) sideBuf[n++] = l;
+    for (let i = 1; i < n; i++) { const x = sideBuf[i]; let j = i - 1; while (j >= 0 && sideBuf[j].y > x.y) { sideBuf[j + 1] = sideBuf[j]; j--; } sideBuf[j + 1] = x; }
+    for (let i = 1; i < n; i++) { const a = sideBuf[i - 1], b = sideBuf[i]; const min = a.y + a.h - 22; if (b.y < min) b.y = min; }
   }
   // Captions: cross-fade by timeline time.
   const t = p * TL_LEN;
@@ -340,7 +356,7 @@ function frame(now, dtMs) {
   if (lastT) { times[tn++ % 240] = now - lastT; }
   lastT = now;
   update(dtMs);
-  studio.render(F, parts);
+  studio.render(F, parts, labels);
   if (++warm > 3) govern(now);
   if (perfEl && now - lastReport > 500) {
     const [a, b, c] = stats();

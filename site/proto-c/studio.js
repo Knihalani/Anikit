@@ -24,8 +24,13 @@ uniform vec3 uFloor; // floor colour
 uniform float uEnvBoost;
 vec3 env(vec3 d, float r) {
   float soft = r * r * 1.6;
-  vec3 base = mix(uFloor * 0.75, uSky, smoothstep(-0.35 - soft, 0.25 + soft, d.y));
+  vec3 base = mix(uFloor * mix(0.32, 0.8, smoothstep(-1.0, -0.1, d.y)), uSky, smoothstep(-0.3 - soft, 0.2 + soft, d.y));
   base += uSky * 0.15 * smoothstep(0.3, 1.0, d.y);
+  // Black flags, as in a product shoot: they give chrome its edges.
+  float flag = box(d, normalize(vec3(-0.95, 0.12, -0.3)), normalize(vec3(-0.3, 0.0, 0.95)), vec3(0.0, 1.0, 0.0), vec2(0.22, 0.9), soft, 1.0).x;
+  flag += box(d, normalize(vec3(0.85, 0.05, -0.55)), normalize(vec3(0.55, 0.0, 0.85)), vec3(0.0, 1.0, 0.0), vec2(0.16, 0.7), soft, 1.0).x;
+  flag += box(d, normalize(vec3(0.15, 0.2, 1.0)), vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), vec2(0.06, 0.6), soft, 0.8).x;
+  base *= 1.0 - 0.82 * min(flag * (1.0 + soft * 6.0), 1.0);
   vec3 L = vec3(0.0);
   L += box(d, normalize(vec3(-0.55, 0.62, 0.56)), normalize(vec3(0.71, 0.0, 0.7)), normalize(vec3(0.3, 0.88, -0.36)), vec2(0.62, 0.42), soft, 9.0);
   L += box(d, normalize(vec3(0.75, 0.35, 0.56)), normalize(vec3(-0.6, 0.0, 0.8)), normalize(vec3(-0.2, 0.94, -0.26)), vec2(0.18, 0.75), soft, 5.0);
@@ -45,8 +50,9 @@ uniform mat3 uRot;     // part rotation (explode spin)
 uniform vec3 uPivot;   // part centre
 uniform vec3 uOffset;  // explode offset
 uniform float uTime, uAppear, uWave, uFloorY, uLift;
-out vec3 vPos; out vec3 vNrm; out vec3 vTan; out float vBrush; out float vScale;
+out vec3 vPos; out vec3 vNrm; out vec3 vTan; out float vBrush; out float vScale; out float vVar;
 void main() {
+  vVar = length(aInst.xy) > 0.001 ? aInst.w : -1.0;
   vec3 p = uRot * (aPos - uPivot) + uPivot + uOffset;
   vec3 n = uRot * aNrm;
   vec3 t = uRot * aTan.xyz;
@@ -67,9 +73,12 @@ void main() {
 }`;
 
 const OBJ_FS = COMMON + ENV + `
-in vec3 vPos; in vec3 vNrm; in vec3 vTan; in float vBrush; in float vScale;
+in vec3 vPos; in vec3 vNrm; in vec3 vTan; in float vBrush; in float vScale; in float vVar;
 uniform vec3 uEye;
 uniform vec3 uBase;
+uniform float uVary; // 1 for parts that take a colour per copy
+uniform float uFogNear, uFogFar;
+const vec3 PAL[5] = vec3[5](vec3(1.0, 0.25, 0.15), vec3(0.4, 0.5, 0.68), vec3(0.37, 0.48, 0.33), vec3(0.92, 0.7, 0.24), vec3(0.06, 0.065, 0.075));
 uniform vec4 uMat; // metal, rough, brushed, glass
 uniform float uHi;  // hover/selection highlight
 out vec4 o;
@@ -88,6 +97,7 @@ void main() {
   if (dot(N, V) < 0.0) N = -N;
   float metal = uMat.x, rough = uMat.y, brushed = uMat.z, glass = uMat.w;
   vec3 base = uBase;
+  if (vVar >= 0.0 && uVary > 0.0) base = mix(base, PAL[int(vVar * 6.24) % 5], uVary);
   // Brushed metal: fine lines along the brush coordinate and stretched highlights.
   if (brushed > 0.0) {
     float line = hash(floor(vBrush * 260.0)) * 0.5 + hash(floor(vBrush * 61.0)) * 0.5;
@@ -110,13 +120,16 @@ void main() {
   vec3 col = diff * ao + spec * mix(0.85, 1.0, ao);
   if (glass > 0.0) {
     // Frosted glass: blurred light through it, tinted, plus a sharp clear coat.
-    vec3 thru = env(normalize(-V + N * 0.35), 0.75) * base * 0.92;
+    vec3 thru = env(normalize(-V + N * 0.6), 0.7) * base * 0.8;
     float fr = 0.04 + 0.96 * pow(1.0 - nv, 5.0);
-    vec3 coat = env(R, 0.04) * fr;
-    vec3 inner = base * 0.35 * smoothstep(0.2, 1.0, nv);
-    col = mix(col, thru * (1.0 - fr) + coat + inner, glass);
+    vec3 coat = env(R, 0.03) * fr * 1.4;
+    float edge = pow(1.0 - nv, 1.5);
+    vec3 g = thru * (1.0 - 0.55 * edge) + coat + base * 0.18 * smoothstep(0.5, 1.0, nv);
+    col = mix(col, g, glass);
   }
   col += uHi * vec3(0.06, 0.05, 0.04) * (1.0 - nv);
+  // Far copies melt into the sweep.
+  col = mix(col, uSky * uEnvBoost, smoothstep(uFogNear, uFogFar, length(vPos - uEye)));
   o = vec4(col, 1.0);
 }`;
 
@@ -220,6 +233,40 @@ void main() {
   o = vec4(mix(uPaper, c, uFade), 1.0);
 }`;
 
+// Labels: HTML rasterised by anikit's htmlCanvas() into textures, drawn as
+// screen-aligned cards pinned to 3D anchors, with a leader line and a dot.
+const LABEL_VS = COMMON + `
+uniform vec4 uRect;   // x0, y0, x1, y1 in clip space
+uniform vec4 uLine;   // a.xy, b.xy in clip space (line mode)
+uniform vec2 uPx;     // one CSS pixel in clip space
+uniform float uMode;  // 0 card, 1 line, 2 dot
+out vec2 vUv;
+void main() {
+  vec2 c = vec2(gl_VertexID & 1, gl_VertexID >> 1);
+  vUv = vec2(c.x, 1.0 - c.y);
+  vec2 p;
+  if (uMode == 1.0) {
+    vec2 d = uLine.zw - uLine.xy;
+    vec2 n = normalize(vec2(-d.y, d.x) / uPx) * uPx * 0.75;
+    p = mix(uLine.xy, uLine.zw, c.x) + n * (c.y * 2.0 - 1.0);
+  } else p = mix(uRect.xy, uRect.zw, c);
+  gl_Position = vec4(p, 0.0, 1.0);
+}`;
+const LABEL_FS = COMMON + `
+in vec2 vUv;
+uniform sampler2D uTex;
+uniform float uMode, uAlpha;
+out vec4 o;
+void main() {
+  if (uMode == 0.0) o = texture(uTex, vUv) * uAlpha;
+  else if (uMode == 1.0) o = vec4(0.11, 0.11, 0.13, 1.0) * 0.45 * uAlpha;
+  else {
+    float r = length(vUv - 0.5) * 2.0;
+    float halo = 1.0 - smoothstep(0.8, 1.0, r), core = 1.0 - smoothstep(0.38, 0.5, r);
+    o = vec4(mix(vec3(1.0), vec3(0.11, 0.11, 0.13), core), 1.0) * halo * uAlpha;
+  }
+}`;
+
 function compile(gl, vs, fs) {
   const p = gl.createProgram();
   for (const [type, src] of [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]]) {
@@ -253,6 +300,7 @@ export class Studio {
       blur: compile(gl, BG_VS, BLUR_FS),
       bright: compile(gl, BG_VS, BRIGHT_FS),
       comp: compile(gl, BG_VS, COMP_FS),
+      label: compile(gl, LABEL_VS, LABEL_FS),
     };
     this.vao = gl.createVertexArray(); // empty VAO for full-screen triangles
     this.meshes = [];
@@ -380,6 +428,7 @@ export class Studio {
         gl.uniform3fv(u.uBase, part.mat.base);
         gl.uniform4fv(u.uMat, part.mat.params);
         gl.uniform1f(u.uHi, part.hi);
+        gl.uniform1f(u.uVary, part.vary);
       }
       if (isPick) gl.uniform1f(u.uId, i + 1);
       const mesh = f.instances > 1 ? part.lod : part.gpu;
@@ -395,7 +444,7 @@ export class Studio {
   }
 
   /** Render one frame. `f` is a reused frame-state object (no allocation here). */
-  render(f, parts) {
+  render(f, parts, labels) {
     const gl = this.gl, P = this.progs;
     gl.disable(gl.BLEND);
     gl.disable(gl.CULL_FACE);
@@ -457,6 +506,8 @@ export class Studio {
     gl.uniform3fv(ou.uSky, f.sky);
     gl.uniform3fv(ou.uFloor, f.floor);
     gl.uniform1f(ou.uEnvBoost, f.envBoost);
+    gl.uniform1f(ou.uFogNear, f.fogNear);
+    gl.uniform1f(ou.uFogFar, f.fogFar);
     this.drawParts(P.obj, f, parts, false);
     gl.disable(gl.DEPTH_TEST);
     if (ms) {
@@ -497,7 +548,7 @@ export class Studio {
     const cu = P.comp.u;
     gl.uniform1i(cu.uTex, 0);
     gl.uniform1i(cu.uBloom, 1);
-    gl.uniform1f(cu.uBloomK, bloom ? 0.9 : 0);
+    gl.uniform1f(cu.uBloomK, bloom ? 0.42 : 0);
     gl.uniform1f(cu.uFade, f.fade);
     gl.uniform3fv(cu.uPaper, f.paper);
     gl.activeTexture(gl.TEXTURE1);
@@ -505,7 +556,39 @@ export class Studio {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.hdr.tex);
     this.fullscreen();
+    if (labels && labels.length) this.drawLabels(labels, f);
     gl.bindVertexArray(null);
+  }
+
+  /** Cards in CSS px: { tex, x, y, w, h, ax, ay, o } (x, y = card top-left; ax, ay = anchor). */
+  drawLabels(list, f) {
+    const gl = this.gl, P = this.progs.label, u = P.u;
+    const sx = 2 / f.cssW, sy = 2 / f.cssH;
+    gl.useProgram(P.p);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.bindVertexArray(this.vao);
+    gl.uniform1i(u.uTex, 0);
+    gl.uniform2f(u.uPx, sx, sy);
+    gl.activeTexture(gl.TEXTURE0);
+    for (let i = 0; i < list.length; i++) {
+      const l = list[i];
+      if (l.o < 0.004 || !l.tex) continue;
+      gl.uniform1f(u.uAlpha, l.o);
+      // Leader from the anchor to the card's nearest edge.
+      const ex = l.x + (l.side < 0 ? l.w - 12 : 12), ey = l.y + l.h * 0.5;
+      gl.uniform1f(u.uMode, 1);
+      gl.uniform4f(u.uLine, l.ax * sx - 1, 1 - l.ay * sy, ex * sx - 1, 1 - ey * sy);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      gl.uniform1f(u.uMode, 2);
+      gl.uniform4f(u.uRect, (l.ax - 5) * sx - 1, 1 - (l.ay + 5) * sy, (l.ax + 5) * sx - 1, 1 - (l.ay - 5) * sy);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      gl.uniform1f(u.uMode, 0);
+      gl.bindTexture(gl.TEXTURE_2D, l.tex);
+      gl.uniform4f(u.uRect, l.x * sx - 1, 1 - (l.y + l.h) * sy, (l.x + l.w) * sx - 1, 1 - l.y * sy);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+    gl.disable(gl.BLEND);
   }
 
   /** Which part is under the pointer (1-based index, 0 for none). Runs on click only. */
