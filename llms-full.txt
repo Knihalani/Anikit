@@ -292,6 +292,44 @@ Contents: [Hero entrance](#hero-entrance) Â· [Staggered list](#staggered-list) Â
 
 ---
 
+## A whole landing page in a few calls
+
+`recipe()` packs the common patterns (hero reveal, scroll story, magnetic buttons, scramble, counters, parallax, SVG drawing, tilt cards) behind one call each, with good defaults. Each returns a handle whose `revert()` undoes it.
+
+```html
+<header class="hero">
+  <h1>Make it move</h1>
+  <p>Every pattern on this page is one call.</p>
+  <a class="cta" href="#more">Learn more</a>
+</header>
+<main id="more">
+  <section><h2 class="code">DECODED</h2></section>
+  <section><b class="stat">1200</b> <b class="stat">98</b></section>
+  <div class="gallery"><img alt=""><img alt=""><img alt=""></div>
+  <svg viewBox="0 0 100 20"><path d="M0 10 Q 25 0 50 10 T 100 10" fill="none" stroke="black"/></svg>
+</main>
+```
+
+```ts
+import { recipe, variants } from 'anikit';
+
+recipe('hero-reveal', '.hero');                                // masked words rise, the rest fades up
+recipe('magnetic-buttons', '.hero');                           // the CTA leans towards the cursor
+recipe('scroll-story', 'main', { children: 'section' });       // each section rises in on scroll
+recipe('text-scramble', '.code', { onScroll: true });          // decodes when it enters
+recipe('count-up', '.stat');                                   // counts to the number written in it
+recipe('parallax-gallery', '.gallery');                        // images drift at different depths
+recipe('draw-svg', 'svg');                                     // strokes draw in on enter
+
+// Named states with orchestration, for UI that toggles (menus, cards):
+const cta = variants('.cta', { rest: { scale: 1 }, hot: { scale: 1.06, transition: { ease: 'spring(bounce: 0.5)' } } }, { initial: 'rest' });
+document.querySelector('.cta')!.addEventListener('pointerenter', () => cta.animate('hot'));
+document.querySelector('.cta')!.addEventListener('pointerleave', () => cta.animate('rest'));
+```
+
+- Options shared by every recipe: `duration`, `delay`, `stagger`, `ease`, `children`, `distance`, `strength`, `onScroll`, `once`; unknown keys warn with a "did you mean" and a link.
+- Starting from nothing? `npx anikit new vanilla my-site` writes this page, ready to open.
+
 ## Hero entrance
 
 Split the headline into characters, rise them in with a stagger, then bring in the rest with overlaps.
