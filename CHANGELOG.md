@@ -30,6 +30,12 @@
 - glTF textures and skinning.
 - Text from font outlines (glyphs are rasterised, so very small bevels are limited by `resolution`).
 - A cubemap/HDRI environment input.
+## Gaussian splats
+
+- `splats(canvas, set)`: real-time 3D Gaussian splatting on WebGL2. Loads `.ply` (3DGS training output or coloured point clouds) and `.splat`; procedural sources `splats.fromPoints`, `fromMesh`, `fromText`, `fromSDF`, `merge`. Splats are packed into one `RGBA32UI` texture (32 bytes each), projected to 2D covariances in the vertex shader and blended premultiplied back to front.
+- Depth sort: a 16-bit counting sort in the Rust core (`gsplat::Sorter`), run in a Web Worker that instantiates the shared WebAssembly module (main-thread fallback), only when the view or morph moves past a threshold. About 1.5 ms for 100k splats in headless Chromium.
+- GPU effects driven by anikit tweens: `morph(otherSet)` (staggered, any counts), `explode`, `swirl`, `dissolve`, `reveal`, `fx.size`/`fx.opacity`; `camera` and `transform` are plain animatable objects. `draw(view, proj)` renders inside another WebGL2 scene.
+- `examples/splats/` (procedural, no downloads; open your own `.ply`/`.splat`), `scripts/bench-splats.mjs`.
 
 ## Eighth round (2026-11-16, to 18:05 UTC)
 
