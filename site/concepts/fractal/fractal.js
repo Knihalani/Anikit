@@ -169,6 +169,7 @@ export function createFractal(canvas, { quality, initial } = {}) {
   const maxScale = fixed ? quality : mobile ? 0.6 : 0.8;
   let scale = fixed ? quality : mobile ? 0.4 : 0.55;     // start low: first frame fast
   const steps = mobile ? 90 : 130;
+  let ceil = maxScale;
   const state = { eye: [0.4, 0.5, 3.1], forward: [0, 0, -1], up: [0, 1, 0], power: 8, fade: 0, focus: 2, time: 0, depth: 0 };
   Object.assign(state, initial);
   let prev = null, n = 0, frame = 0, running = false, raf = 0, w = 0, h = 0, last = 0, slow = 0, fast = 0, cool = 0, idle = false;
@@ -229,8 +230,8 @@ export function createFractal(canvas, { quality, initial } = {}) {
     if (!fixed && dt < 100) {
       if (dt > 19.5) { slow++; fast = 0; } else if (dt < 17.6) { fast++; slow = Math.max(0, slow - 1); }
       if (cool > 0) cool--;
-      else if (slow > 12 && scale > 0.22) { scale = Math.max(0.22, scale * 0.84); slow = 0; cool = 40; }
-      else if (fast > 150 && scale < maxScale) { scale = Math.min(maxScale, scale * 1.08); fast = 0; cool = 90; }
+      else if (slow > 12 && scale > 0.22) { ceil = Math.min(ceil, scale * 0.97); scale = Math.max(0.22, scale * 0.84); slow = 0; cool = 40; }
+      else if (fast > 150 && scale < ceil) { scale = Math.min(ceil, scale * 1.08); fast = 0; cool = 90; }   // never climb back to a level that was too slow
     }
     draw();
   }
