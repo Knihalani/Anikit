@@ -224,3 +224,12 @@ fn synthetic_scene_hints_are_exact() {
         assert!(psnr(&da, &db) > 45.0, "{name}");
     }
 }
+
+#[test]
+fn long_gop_frame_num_wraps() {
+    let s = Scene::new(48, 32);
+    let frames: Vec<_> = (0..300).map(|t| s.frame(t / 3)).collect();
+    let c = EncoderConfig { gop: 1000, ..cfg(48, 32) };
+    let (_, p) = roundtrip(c, &frames, "wrap");
+    assert!(p > 40.0);
+}
