@@ -52,6 +52,8 @@ pub struct TextStyle {
     pub strikethrough: bool,
     /// OpenType features in CSS syntax, e.g. `"tnum" on, "ss01" on`.
     pub features: Option<String>,
+    /// Colour for `==accent==` markup.
+    pub accent: Color,
     /// Gradient fill across the whole block (overrides span colours):
     /// `["#7c5cff", "#ff6ad5"]` or `{ "colors": [...], "angle": 135 }`.
     pub gradient: Option<Gradient>,
@@ -124,6 +126,7 @@ impl Default for TextStyle {
             underline: false,
             strikethrough: false,
             features: None,
+            accent: Color(Rgba([0.55, 0.48, 1.0, 1.0])),
             gradient: None,
         }
     }
@@ -186,6 +189,10 @@ pub struct TextSpec {
     pub ellipsis: Option<bool>,
     /// Shrink to fit a box (wraps at `fit.width` unless `width` is set).
     pub fit: Option<Fit>,
+    /// Inline markup in `text`/spans: `**bold**`, `*italic*`, `` `code` ``,
+    /// `==accent==` (in `style.accent`). On by default; only paired markers
+    /// count, and `\*` escapes.
+    pub markup: Option<bool>,
 }
 
 impl Serialize for TextSpec {
@@ -218,6 +225,13 @@ impl TextSpec {
             s.style.size = f.size.unwrap_or(s.style.size);
             s.style.line_height = f.line_height.unwrap_or(s.style.line_height);
             s.style.italic |= f.italic;
+        }
+        if s.markup != Some(false) {
+            let src: Vec<Span> = if s.spans.is_empty() { vec![Span::new(s.text.clone())] } else { s.spans.clone() };
+            if src.iter().any(|sp| has_markup(&sp.text)) {
+                s.spans = src.iter().flat_map(|sp| markup_spans(sp, &s.style)).collect();
+                s.text.clear();
+            }
         }
         for sp in &mut s.spans {
             if let Some(f) = sp.font.as_deref().and_then(parse_font) {
@@ -872,4 +886,87 @@ pub fn parse_font(s: &str) -> Option<FontShorthand> {
     }
     out.family = if fam.is_empty() { "Inter".into() } else { fam.join(" ") };
     Some(out)
+}
+
+fn has_markup(t: &str) -> bool {
+    t.contains("**") || t.contains("==") || t.contains('`') || t.contains('*') || t.contains('\\')
+}
+
+/// Split one span on inline markup into styled spans.
+fn markup_spans(base: &Span, style: &TextStyle) -> Vec<Span> {
+    const MARKS: [&str; 4] = ["**", "==", "`", "*"];
+    let t = &base.text;
+    let mut out: Vec<Span> = Vec::new();
+    let mut cur = String::new();
+    // Active flags: bold, accent, code, italic.
+    let mut on = [false; 4];
+    let flush = |cur: &mut String, on: &[bool; 4], out: &mut Vec<Span>| {
+        if cur.is_empty() {
+            return;
+        }
+        let mut sp = Span { text: std::mem::take(cur), ..base.clone() };
+        if on[0] {
+            sp.weight = Some((sp.weight.unwrap_or(style.weight) + 300.0).min(900.0).max(700.0));
+        }
+        if on[1] {
+            sp.color = Some(style.accent);
+        }
+        if on[2] {
+            sp.font = Some("JetBrains Mono".into());
+        }
+        if on[3] {
+            sp.italic = Some(true);
+        }
+        out.push(sp);
+    };
+    let mut i = 0;
+    let b = t.as_bytes();
+    while i < t.len() {
+        if b[i] == b'\\' && i + 1 < t.len() {
+            let c = t[i + 1..].chars().next().unwrap();
+            cur.push(c);
+            i += 1 + c.len_utf8();
+            continue;
+        }
+        let mut matched = false;
+        for (k, m) in MARKS.iter().enumerate() {
+            if !t[i..].starts_with(m) || (on[2] && k != 2) {
+                continue;
+            }
+            // `*` must not be the first half of `**`.
+            if k == 3 && t[i..].starts_with("**") {
+                continue;
+            }
+            if on[k] {
+                flush(&mut cur, &on, &mut out);
+                on[k] = false;
+                i += m.len();
+                matched = true;
+                break;
+            }
+            // Opening: only if a closing marker follows (and content is non-empty).
+            let rest = &t[i + m.len()..];
+            let close = if k == 3 {
+                rest.char_indices().find(|(j, c)| *c == '*' && !rest[*j..].starts_with("**") && (*j == 0 || !rest[..*j].ends_with('*'))).map(|x| x.0)
+            } else {
+                rest.find(m)
+            };
+            if let Some(j) = close {
+                if j > 0 && !rest.starts_with(' ') {
+                    flush(&mut cur, &on, &mut out);
+                    on[k] = true;
+                    i += m.len();
+                    matched = true;
+                    break;
+                }
+            }
+        }
+        if !matched {
+            let c = t[i..].chars().next().unwrap();
+            cur.push(c);
+            i += c.len_utf8();
+        }
+    }
+    flush(&mut cur, &on, &mut out);
+    out
 }

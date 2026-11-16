@@ -208,3 +208,19 @@ fn golden_gradient_title() {
     assert!(d < 0.5, "golden diff {d}");
     common::save(pm, "gradient_title");
 }
+
+#[test]
+fn inline_markup() {
+    let spec: TextSpec = serde_json::from_str(r#""Ship **faster** with `code` and ==style==, *really*. 2 * 3 = 6 \\*x""#).unwrap();
+    let n = spec.normalized();
+    let texts: Vec<&str> = n.spans.iter().map(|s| s.text.as_str()).collect();
+    assert_eq!(texts, ["Ship ", "faster", " with ", "code", " and ", "style", ", ", "really", ". 2 * 3 = 6 *x"]);
+    assert_eq!(n.spans[1].weight, Some(700.0));
+    assert_eq!(n.spans[3].font.as_deref(), Some("JetBrains Mono"));
+    assert_eq!(n.spans[5].color, Some(TextStyle::default().accent));
+    assert_eq!(n.spans[7].italic, Some(true));
+    let off = TextSpec { markup: Some(false), ..spec.clone() }.normalized();
+    assert!(off.spans.is_empty());
+    let l = store().layout(&spec);
+    assert_eq!(l.text, "Ship faster with code and style, really. 2 * 3 = 6 *x");
+}

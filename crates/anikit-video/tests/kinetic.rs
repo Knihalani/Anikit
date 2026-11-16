@@ -153,3 +153,28 @@ fn shorthand_and_json() {
     let j = serde_json::to_string(&k).unwrap();
     assert_eq!(serde_json::from_str::<Kinetic>(&j).unwrap(), k);
 }
+
+#[test]
+fn karaoke_with_word_times() {
+    let fonts = store();
+    let l = fonts.layout(&spec()); // "Make videos in code"
+    let k: Kinetic = serde_json::from_str(r##"{"style": {"type": "karaoke", "active": "#ff0000"}, "times": [0, 0.5, 1.0, 1.5]}"##).unwrap();
+    let plan = KineticPlan::new(fonts, l.clone(), &k);
+    let colours = |t: f32| -> Vec<[f32; 4]> {
+        let mut o = vec![];
+        plan.ops(t, anikit_video::dl::IDENTITY, &mut o);
+        o.iter()
+            .filter_map(|op| match op {
+                Op::Glyphs { paint: anikit_video::dl::Paint::Solid(c), .. } => Some(c.0),
+                _ => None,
+            })
+            .collect()
+    };
+    let c = colours(0.75);
+    assert_eq!(c.len(), 4);
+    assert_eq!(c[1], [1.0, 0.0, 0.0, 1.0], "word 2 is active");
+    assert!((c[3][3] - 0.35).abs() < 1e-3, "word 4 dim");
+    assert_eq!(c[0], [1.0, 1.0, 1.0, 1.0], "word 1 spoken");
+    let c = colours(10.0);
+    assert!(c.iter().all(|x| *x == [1.0, 1.0, 1.0, 1.0]) || c[3] == [1.0, 0.0, 0.0, 1.0]);
+}
