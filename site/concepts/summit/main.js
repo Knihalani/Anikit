@@ -90,7 +90,7 @@ addEventListener('pointermove', (e) => {
 }, { passive: true });
 
 // The hall: entered at the end of the scroll, left with Esc or the button.
-let inHall = false;
+let inHall = false, armed = true;
 const back = $('.back');
 function enterHall() {
   if (inHall) return;
@@ -104,10 +104,10 @@ function exitHall() {
   hall.exit();
   if (document.pointerLockElement) document.exitPointerLock();
   inHall = false;
+  armed = false;
   root.classList.remove('in-hall');
   // Back to just outside the portal; the spring carries the camera back from there.
   const p = 0.86;
-  sp.p = 0.94;
   scrollTo({ top: p * maxScroll, behavior: 'instant' });
   spring(sp, { p }, SPRING);
 }
@@ -146,7 +146,9 @@ function frame(timeMs, dtMs) {
     if (!hallShown) { hallShown = true; hallCanvas.style.visibility = 'visible'; }
     hall.preview(t, dt, io.k);
   } else if (hallShown) { hallShown = false; hallCanvas.style.visibility = ''; clipKey = ''; }
-  if (io.p >= 0.95 && sp.p >= 0.95) enterHall();
+  // After leaving, the hall re-arms only once the camera has backed out of the doorway.
+  if (io.p < 0.93) armed = true;
+  if (armed && io.p >= 0.95) enterHall();
 }
 
 if (reduced) {
