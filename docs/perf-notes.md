@@ -1083,3 +1083,266 @@ the old order.
 | Thin cone triangles | Not done: incremental edge stepping rounds differently, so it isn't bit-identical. |
 | The film grade | `bench-post.mjs`: full grade 93 (base) vs 80 ms (new, unchanged code) in one pair, so ±15% noise. aa 17–20, bloom 14–15, rays 21–23, flares 19–21 ms. Not changed this round. |
 | The film's own JS | `draw` minus the 3D passes is ~190 ms per frame on average in film.mjs, 270–290 ms in the comic look and ~500 ms in the tease. That is film code (the per-pixel `comic()` ink pass and the look `composite()` in JS), not the engine; it is the next largest cost after the 3D passes. |
+
+## Fifth round (web features)
+
+Goal: the web features that had never been benchmarked, against the obvious
+competitor where one is installed. Starting point: `86b471c`. The only Rust
+change is the GIF encoder (§5; output byte-identical; `anikit.wasm` 587.1 →
+595.0 KB, gzip 218.1 → 220.5 KB, for the sorted search and its sort); the
+core tween path (`animate`, timelines,
+`props.ts`) was left alone, another round works on it.
+
+**Method.** Same shared VM as the fourth round (four cores, other agents'
+builds and renders running). Every before/after is interleaved with a copy of
+the `86b471c` build (`DIST=` for the Node and dist-based scripts, `PKG=` for
+`bench-scroll.mjs`, which bundles the source): base, new, base, new, base,
+new, and given as the range over the three rounds. GSAP's own column in the
+same runs is the noise gauge: it moved up to 1.8x between rounds.
+
+New scripts (in `packages/anikit/scripts/`):
+
+| Script | What it measures |
+|---|---|
+| `node --expose-gc scripts/bench-spring.mjs [N...]` | `spring()` creation (3 props), the frame of N running springs, a pointer follower (all N springs retargeted every frame, then a tick) with the heap kept per retarget, `inertia()` with bounds and snapping |
+| `node scripts/bench-text.mjs` | Chromium: `splitText()` of P paragraphs into lines, words and chars, the re-split `autoSplit` does on a width change, and `flip()` of N boxes between two layouts; against GSAP's SplitText and Flip |
+| `node scripts/bench-trigger.mjs` (`PIN=1`) | Chromium: creating N scrubbed `scrollTrigger`s and `refreshScrollTriggers()`, against GSAP's ScrollTrigger |
+| `node scripts/bench-marquee.mjs` | Chromium: M `marquee()` rows down a long page (about 3 on screen), set-up and ms per frame including the style and layout work it causes |
+| `node scripts/bench-gif.mjs` | `encodeGif()` (what `record()` runs on its frames): flat UI frames and a full-frame moving gradient, ms per frame and file size |
+| `node scripts/bench-magnetic.mjs` | Chromium: M `magnetic()` buttons with the pointer sweeping across them, ms per move + frame and JS heap kept per move (after a GC, through the DevTools protocol) |
+| `node scripts/bench-drag.mjs` (`FORCE=0`) | Chromium: `draggable()` against GSAP's Draggable, µs per synthetic pointer move and ms for the release (throw set-up) |
+| `node scripts/bench-world-draw.mjs` | Chromium: `world().draw()` on a 2D canvas, N bodies, ms per frame including the raster |
+| `cargo run --release -p anikit-core --example gif_prof` | native GIF encoder on gradient frames (a callgrind target) |
+| `bench-scroll.mjs` | now takes `PKG=` (a copy of `packages/anikit`) to measure another version of the source, and has smoothed modes (`trigger-smooth`, `scroll-smooth`) |
+
+### Results
+
+`bench-spring.mjs` (Node, plain objects, ms; median of 3 runs per process,
+three interleaved rounds):
+
+| Case | N | `86b471c` | now |
+|---|---:|---:|---:|
+| **retarget all + frame** (pointer follower) | 1k | 2.45–4.67 | **0.61–0.68** |
+| 〃 | 10k | 35.2–61.1 | **7.89–9.61** |
+| **heap kept per retarget call while moving** | | **1090 bytes** (10k springs x 200 frames ran out of a 2 GB heap) | **0 bytes** |
+| create (3 props) + first frame | 1k | 4.8–10.0 | 7.8–11.1 |
+| 〃 | 10k | 62.7–120.2 | 53.3–64.3 |
+| frame, N running | 1k | 0.18–0.20 | 0.19–0.25 |
+| 〃 | 10k | 1.27–1.51 | 1.28–1.49 |
+| `inertia()` create + 10 frames | 1k | 4.1–11.5 | 3.6–12.0 |
+| 〃 | 10k | 61.2–98.0 | 48.8–98.3 |
+
+Only the retarget rows changed beyond the noise.
+
+The same fix on a DOM feature, `bench-magnetic.mjs` (Chromium, 600 pointer
+moves each followed by a frame, median of 3 pages, three interleaved
+rounds):
+
+| M buttons | ms/move+frame `86b471c` | now | heap kept per move `86b471c` | now |
+|---:|---:|---:|---:|---:|
+| 20 | 0.094–0.098 | 0.066–0.085 | 7–8 B | 23–26 B |
+| 200 | 0.694–1.003 | **0.547–0.674** | **811–818 B** | **26–29 B** |
+
+The "now" heap column is a fixed ~15 KB over the run, not a per-move cost:
+with 6000 moves instead of 600 (one run of 3 pages) it reads 3 B (20
+buttons) and 4 B (200) per move, against 13 B and 36 B for `86b471c`, whose
+retained closures are freed only when a button's spring comes to rest. GSAP has no spring, and its
+InertiaPlugin does not register under Node (it reported "Missing plugin"),
+so there is no competitor column here.
+
+`bench-marquee.mjs` (Chromium, median of 3 pages, three interleaved rounds
+with the final code and script; set-up = `marquee()` on every row plus a
+forced layout):
+
+| M rows | ms/frame `86b471c` | ms/frame now | set-up `86b471c` | set-up now |
+|---:|---:|---:|---:|---:|
+| 20 | 0.051–0.073 | **0.020–0.023** | 10.0–13.6 | 7.4–13.2 |
+| 100 | 0.232–0.500 | **0.030–0.034** | 36.9–56.3 | 37.8–64.6 |
+
+Set-up is within the noise; the saved re-clone happens in the resize
+observer's first callback, after the timed region. (A first version compared
+the container and track sizes after adding the clones, a second forced
+layout per marquee that read 41.0–44.5 vs 34.9–41.1 ms at 100 rows; the
+final one reads the container's box with the other sizes, before cloning.)
+
+`bench-scroll.mjs` (Chromium, ms per scroll event in the scroll listeners,
+three interleaved rounds, `SIZES=50,200`):
+
+| Mode | N | `86b471c` | now |
+|---|---:|---:|---:|
+| scrubbed `scrollTrigger` | 50 | 0.071–0.102 | 0.075–0.088 |
+| 〃 | 200 | 0.176–0.188 | **0.119–0.159** |
+
+(The `scroll()` rows of the same rounds measured an experiment that was
+reverted; see "Tried and not kept".)
+
+Smoothed links retarget a spring per link on every scroll event, so they get
+§1. New modes of `bench-scroll.mjs` (`MODES=trigger-smooth,scroll-smooth`:
+`scrub: 0.5` and `scroll({ smooth: 0.3 })`, one engine frame per scroll step
+outside the timed region), three interleaved rounds:
+
+| Mode | N | `86b471c` | now |
+|---|---:|---:|---:|
+| `scrollTrigger`, `scrub: 0.5` | 50 | 0.094–0.158 | 0.069–0.102 |
+| 〃 | 200 | 0.277–0.354 | **0.191–0.256** |
+| `scroll({ smooth: 0.3 })` | 50 | 0.166–0.193 | 0.076–0.206 |
+| 〃 | 200 | 0.485–0.545 | 0.348–0.498 |
+
+Next target there: a smoothed link outside its range still calls `spring()`
+on every scroll event with the same clamped target.
+
+`bench-text.mjs` (Chromium, ms, median of 3 pages, three interleaved rounds
+on a quieter machine; an earlier set of rounds ran next to other benchmarks
+and is not used):
+
+| Case | Size | `86b471c` | now | GSAP 3.15 (all rounds) |
+|---|---:|---:|---:|---:|
+| `splitText()` lines, words, chars | 20 paragraphs | 89.7–127.8 | 84.1–140.3 | 123.4–149.9 |
+| 〃 | 100 paragraphs | 768–1076 | 477–654 | 763–1078 |
+| re-split (`autoSplit` on a width change) | 20 | 122–176 | 104–131 | 155–236 |
+| 〃 | 100 | 836–1336 | 588–969 | 741–1828 |
+
+`bench-gif.mjs` (Node, 480x270, ms per frame, median of 3 runs, three
+interleaved rounds; output sizes identical, files byte-identical):
+
+| Scene | `86b471c` | now |
+|---|---:|---:|
+| flat UI, a moving card (69 KB for 60 frames) | 0.50–0.58 | 0.41–0.87 (noise: 0.42–0.52 vs 0.41–0.54 in three more rounds of 120 frames) |
+| **moving gradient with a glow** (1.3 MB) | **33.4–38.7** | **11.2–11.9** |
+
+Measured, code unchanged (one run each, median of 3 pages, against GSAP in
+the same runs):
+
+| Case | Size | Anikit | GSAP 3.15 | GSAP / Anikit |
+|---|---:|---:|---:|---:|
+| `scrollTrigger` create (scrubbed) | 100 | 13.1 | 30.2 | 2.3x |
+| 〃 | 500 | 35.7 | 173.1 | 4.9x |
+| `refreshScrollTriggers()` | 100 | 1.7 | 7.6 | 4.5x |
+| 〃 | 500 | 11.0 | 59.9 | 5.4x |
+| create, every 10th pinned (`PIN=1`) | 100 / 500 | 17.9 / 112.2 | 45.7 / 312.6 | 2.6x / 2.8x |
+| refresh, every 10th pinned | 100 / 500 | 5.0 / 37.4 | 14.8 / 194.2 | 3.0x / 5.2x |
+| `flip()` grid → list, start | 200 boxes | 14.8–16.5 | 136.7–143.4 | 8–10x |
+| 〃 | 1000 boxes | 52.1–84.7 | 3058–4282 | 37–59x |
+
+(`flip()` from `bench-text.mjs`, the time from capture to the started
+animation plus a forced layout. Anikit's capture is one batch of reads and
+its start writes transforms only; GSAP's side was not profiled.)
+
+`bench-drag.mjs` (code unchanged, one run, median of 3 pages, 500 synthetic
+moves): with a forced style + layout after every event, Anikit 10.6–11.2 µs
+per move vs GSAP 5.4–6.2 µs, because Anikit writes the transform inside the
+event (so `onDrag` sees the element where it is) and GSAP on its next tick;
+without the forced layout (`FORCE=0`, handler cost only) 5.2 vs 5.6 µs. Real
+pointer moves arrive once per frame in Chromium, where both pay one style
+recalc per frame. The release with `inertia` (velocity, bounds, throw start)
+takes 0.20–0.30 ms vs GSAP's 0.60–0.90 ms.
+
+### 1. Retargeted springs kept everything alive (memory leak)
+
+`spring()` is meant to be called on every pointer event (the docs' own
+pointer follower, `magnetic()`, `scrollTrigger` with a numeric `scrub`,
+`scroll({ smooth })`, `smoothScroll`). Each call made a `PhysicsAnimation`
+with a promise, pushed a completion closure onto the running simulation,
+took a snapshot and built a `Binding` it threw away. The closures lived until
+the spring came to rest, so a follower that never rests grew the heap by
+~1 KB per call. Now the promise and the completion hooks are made only when
+someone awaits the controller (`then`/`finished`): each simulation counts
+the times it came to rest or was disposed, and a controller compares that
+with the count when it took the simulation over, so an await before, during
+or after the motion still resolves at the same moment. Retargeting to a
+plain number also skips reading the current value (a computed-style read on
+CSS properties) and building the binding: the target is the number itself in
+the property's default unit, exactly what the full path computed. Covered by
+a new test (awaits before and after, a rested spring, 100 unawaited
+retargets).
+
+Not changed, but worth knowing: a `spring()` call whose options carry
+`onUpdate`/`onComplete` adds those options to the simulation's listener list
+unless it is the same options object, so a follower that passes a new
+`{ onUpdate }` literal on every event calls more and more listeners per frame
+until the spring rests. Reuse one options object (as `scrollTrigger` and
+`scroll()` do).
+
+### 2. Marquees off screen
+
+`marquee()` wrote its track's transform every frame wherever it was. It now
+keeps advancing its offset (so it is where it would have been) but skips the
+write while an `IntersectionObserver` says it is off screen, with a
+`rootMargin` of 50% so it is written again before it scrolls into view (the
+callback arrives a frame late); it also skips the write when the offset did
+not change (paused, reduced motion). The resize observer's first report,
+which always arrives right after `observe()`, re-cloned all the content for
+nothing: a report re-clones only when the container's box differs from the
+one the last measure saw (`measure()` called directly still always
+re-clones). `kill()` off screen writes the current offset once, so the track
+is left where the marquee had got to.
+
+### 3. Scrubbed triggers outside their range
+
+A scrubbed `scrollTrigger` above or below the viewport reads progress 0 or 1
+on every scroll event and set it again (`ak_set_progress` and a `flush()`).
+It now seeks only when the progress changes, and always on the first update
+and after a refresh.
+
+### 4. `splitText()`: one layout read for all elements
+
+With `type` including `'lines'`, each element was split (writes) and then
+measured (`offsetTop` of every word) before the next one was split, so the
+page was laid out again once per element. Now all elements are split first,
+then every word of every element is measured in one pass, then the line and
+mask wrappers are added. Pieces are cloned from a prepared span (class,
+`display: inline-block`, `aria-hidden`) instead of being built attribute by
+attribute, the grapheme segmenter is created once, and printable ASCII words
+skip it. The output is the same markup. A Chromium CPU profile of the split
+puts the layout (the `offsetTop` read and the forced layout after) at about
+70%, the JS at about 15%: the split is layout-bound, so the gain is small.
+
+### 5. GIF encoding: nearest colour without trying every entry
+
+`record()` hands its frames to the core's GIF encoder. On a gradient (every
+pixel changes, tens of thousands of distinct colours) a callgrind profile of
+the new `gif_prof` example put most of a frame in `nearest()`: every
+distinct colour tried all 256 palette entries. The palette is now kept
+sorted by green, the heaviest term of the distance (`2·dr² + 4·dg² + 3·db²`),
+and the search walks outwards from the pixel's green until `4·dg²` alone
+exceeds the best distance so far, starting with the previous pixel's answer
+as the bound (neighbouring pixels have similar colours, so the walk is
+short). Entries with an equal distance are still visited and the smaller
+index wins, as in the linear scan: the output is byte-identical (SHA-256 of
+`encodeGif()` on flat UI, gradient and noise frames, before and after) and a
+new test checks it against the linear search on random and tie-heavy
+palettes. Median cut also rescanned every box's pixels to find its widest
+channel at each of its 255 splits; that is now computed once per box (a
+smaller gain: 13.6 → 13.1 ms per gradient frame on its own).
+
+### Tried and not kept (fifth round)
+
+| Idea | Result |
+|---|---|
+| `scroll()` links skip setting the same progress again (as scrubbed triggers now do) | no clear gain: 200 links 0.298–0.336 → 0.220–0.347 ms per scroll event over three interleaved rounds; and `scroll(fn)` would no longer call the function on every event once it is clamped. Reverted. |
+| `world().draw()`: all circles in one path and one `fill()` for an opaque colour | slower at 5000 bodies (8.5–10.1 → 14.4–16.0 ms per frame including the raster): Skia rasterises one 5000-subpath path more slowly than 5000 ovals. Reverted. |
+| `world().draw()`: set the default colour once instead of per body | within the noise (5000 bodies 8.5–10.5 vs 8.0–10.0 ms): the frame is raster-bound. Reverted. |
+| GIF colour cache of 2¹⁸ entries instead of 2¹⁶ | gradient 13.1 → 11.4 ms per frame but flat UI frames slower (clearing the larger table every frame). Not kept. |
+| Further `splitText()` JS work | a Chromium CPU profile puts ~70% in layout (the one `offsetTop` read and the forced layout after) and ~15% in the split itself (`cloneNode`, `appendChild`, walking). |
+
+### Not measured in this round
+
+`gesture()` (read: one `getBoundingClientRect` per press, one transform
+write per move, no reads in the move path; ctrl-wheel pinch reads the box per
+event), `observer()`, `smoothScroll()` (retargets a spring per wheel event,
+so it gets §1), `parallax()` (a `scroll()` link
+per element), `presence`/`exit`, `bindValues`, the `effects` presets (thin
+wrappers over `animate()`, the other round's path).
+
+`world()`, `pointCloud` + `glow`, `scene3d` and motion values were not
+changed; for the record, one run each of their existing scripts on the final
+build: `bench-physics.mjs` (`world()` vs matter.js, ms per step)
+250 bodies 0.060 vs 4.82 (81x), 1000 0.361 vs 9.49 (26x), 2000 0.445 vs
+12.6 (28x), 5000 1.08 vs 14.1 (13x); `bench-3d.mjs` (projection vs plain JS)
+10k points 0.103 vs 2.06 ms (20x), 100k 1.23 vs 29.5 ms (24x), 500k 6.99 vs
+200 ms (29x); `bench-cloud.mjs` (Chromium, step + render at 1080×675, ms
+per frame) 10k particles 2.53, 50k 4.30, 150k 12.36, 300k 17.49 (100k sits
+between 50k and 150k, roughly half a 60 fps frame); `bench-create.mjs`
+`frame: motionValue -> 1000 derived + listeners` 0.098 ms (fourth round:
+0.068–0.103).
+

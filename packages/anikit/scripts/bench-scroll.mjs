@@ -3,7 +3,7 @@
 // or scroll(). Reports ms per scroll event spent in the page's 'scroll'
 // listeners (reads, progress, style writes and any layout they force),
 // median of 3 runs x 200 events after warm-up.
-// Usage: node scripts/bench-scroll.mjs   (SIZES=10,50,200 MODES=trigger,scroll)
+// Usage: node scripts/bench-scroll.mjs   (SIZES=10,50,200 MODES=trigger,scroll,trigger-smooth,scroll-smooth)
 import { build } from 'esbuild';
 import { createRequire } from 'node:module';
 import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
@@ -12,7 +12,8 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const pkg = join(here, '..');
+// PKG=path/to/a/copy/of/packages/anikit measures another version of the source.
+const pkg = process.env.PKG || join(here, '..');
 const dir = mkdtempSync(join(tmpdir(), 'anikit-scroll-'));
 await build({ entryPoints: [join(pkg, 'bench/scroll-entry.js')], bundle: true, format: 'iife', minify: true, outfile: join(dir, 'bundle.js'), logLevel: 'error' });
 writeFileSync(join(dir, 'index.html'), '<!doctype html><meta charset="utf-8"><style>body{margin:0} section{height:60vh;position:relative;border-top:1px solid #ddd} .b{position:absolute;left:20px;top:20px;width:40px;height:40px;background:#6ea8ff}</style><div id="stage"></div><script src="bundle.js"></script>');

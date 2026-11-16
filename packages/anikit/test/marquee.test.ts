@@ -39,6 +39,41 @@ describe('marquee', () => {
     m.revert();
   });
 
+  it('skips style writes off screen and catches up on entry; unchanged resizes keep the clones', () => {
+    const G = globalThis as any;
+    const prevIO = G.IntersectionObserver, prevRO = G.ResizeObserver;
+    const io: Array<(e: Array<{ isIntersecting: boolean }>) => void> = [];
+    const ro: Array<() => void> = [];
+    G.IntersectionObserver = class { constructor(cb: any) { io.push(cb); } observe() {} disconnect() {} };
+    G.ResizeObserver = class { constructor(cb: any) { ro.push(cb); } observe() {} disconnect() {} };
+    try {
+      const el = row(2);
+      const m = marquee(el, { speed: 100, smoothing: 0.001 });
+      const track = el.firstElementChild as HTMLElement;
+      const first = track.lastElementChild;
+      ro[0](); // the observer's first report: same sizes, so no new clones
+      expect(track.lastElementChild).toBe(first);
+      advance(0.5);
+      expect(offset(el)).toBeCloseTo(50, 0);
+      io[0]([{ isIntersecting: false }]);
+      advance(0.5);
+      expect(offset(el)).toBeCloseTo(50, 0); // not written while off screen…
+      expect(m.offset).toBeCloseTo(100, 0); // …but still moving
+      io[0]([{ isIntersecting: true }]);
+      expect(offset(el)).toBeCloseTo(100, 0); // shown at once on entry
+      m.measure(); // an explicit measure still re-clones
+      expect(track.lastElementChild).not.toBe(first);
+      io[0]([{ isIntersecting: false }]);
+      advance(0.2);
+      m.kill(); // killed off screen: the track shows where it had got to
+      expect(offset(el)).toBeCloseTo(m.offset, 1);
+      m.revert();
+    } finally {
+      G.IntersectionObserver = prevIO;
+      G.ResizeObserver = prevRO;
+    }
+  });
+
   it('reverses with negative speed, eases to a stop on pause, and reverts the markup', () => {
     const el = row(3);
     const m = marquee(el, { speed: -100, smoothing: 0.001 });

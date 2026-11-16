@@ -66,6 +66,8 @@ function params(o: PhysicsOptions): [number, number, number] {
 class Sim implements NodeRecord, Owner {
   h = 0;
   at = 0;
+  /** Times this simulation came to rest or was disposed (controllers compare it to their snapshot of it). */
+  rests = 0;
   done: Array<() => void> = [];
   listeners: PhysicsOptions[] = [];
   constructor(
@@ -81,6 +83,7 @@ class Sim implements NodeRecord, Owner {
   }
   event(kind: number): void {
     if (kind === EV_FINISH) {
+      this.rests++;
       const d = this.done;
       this.done = [];
       const ls = this.listeners;
@@ -107,6 +110,7 @@ class Sim implements NodeRecord, Owner {
 }
 
 const sims = new WeakMap<object, Map<string, Sim>>();
+const noop = (): void => {};
 
 interface Resolved {
   values: number[];
@@ -155,25 +159,50 @@ function resolveProp(target: Target, prop: string, value: unknown): Resolved & {
 export class PhysicsAnimation implements PromiseLike<void> {
   /** @internal */
   _sims: Sim[] = [];
-  private _done: Promise<void>;
-  private _resolve!: () => void;
+  /** @internal `rests` of each simulation when this controller took it over. */
+  _epochs: number[] = [];
+  /** @internal set once the simulations are known (after `ready`). */
+  _tracked = false;
+  // The promise and the per-simulation completion hooks are made on demand:
+  // a pointer follower retargets its springs on every event and never awaits
+  // the controllers, which then hold nothing and are collected at once.
+  private _done: Promise<void> | null = null;
+  private _resolve: () => void = noop;
   constructor() {
-    this._done = new Promise((r) => (this._resolve = r));
     track(this);
   }
   /** @internal */
   _track(list: Sim[]): void {
     this._sims = list;
-    for (const sm of list) this._restore.push(snapshot(sm.target, sm.prop, classify(sm.target, sm.prop)));
-    let left = list.length;
-    if (!left) this._resolve();
-    for (const s of list) s.done.push(() => --left === 0 && this._resolve());
+    const ep = this._epochs;
+    for (const sm of list) {
+      ep.push(sm.rests);
+      this._restore.push(snapshot(sm.target, sm.prop, classify(sm.target, sm.prop)));
+    }
+    this._tracked = true;
+    if (this._done) this._arm();
+  }
+  private _arm(): void {
+    const list = this._sims;
+    const ep = this._epochs;
+    const res = this._resolve;
+    let left = 0;
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].rests !== ep[i]) continue;
+      left++;
+      list[i].done.push(() => --left === 0 && res());
+    }
+    if (!left) res();
   }
   get finished(): Promise<void> {
+    if (!this._done) {
+      this._done = new Promise((r) => (this._resolve = r));
+      if (this._tracked) this._arm();
+    }
     return this._done;
   }
   then<A = void, B = never>(ok?: ((v: void) => A | PromiseLike<A>) | null, err?: ((e: unknown) => B | PromiseLike<B>) | null): Promise<A | B> {
-    return this._done.then(ok, err);
+    return this.finished.then(ok, err);
   }
   /** Current velocity per property (units/s) of the first target. */
   get velocity(): Record<string, number> {
@@ -224,15 +253,21 @@ export function spring(targets: Targets, props: Record<string, number | string>,
       let map = sims.get(target);
       if (!map) sims.set(target, (map = new Map()));
       for (const prop of Object.keys(props)) {
-        const r = resolveProp(target, prop, props[prop]);
-        const ch = r.values.length;
+        const value = props[prop];
+        let sim = map.get(prop);
+        // Retargeting to a plain number (a pointer follower, every event):
+        // the target is the number itself in the property's default unit,
+        // so skip reading the current value and building a binding.
+        const quick = typeof value === 'number' && sim !== undefined && sim.h !== 0 && sim.ch === 1;
+        const r = quick ? null : resolveProp(target, prop, value);
+        const ch = r ? r.values.length : 1;
         const vOpt = options.velocity;
         const vel = typeof vOpt === 'number' ? vOpt : vOpt?.[prop];
-        let sim = map.get(prop);
         if (sim && sim.h && sim.ch === ch) {
           // Retarget, keeping position and velocity.
           const at = f64Buf(ch);
-          for (let i = 0; i < ch; i++) F64[at + i] = r.values[i];
+          if (r) for (let i = 0; i < ch; i++) F64[at + i] = r.values[i];
+          else F64[at] = value as number;
           w.ak_sim_target(sim.h, ch);
           w.ak_sim_params(sim.h, k, c, m);
           if (vel !== undefined) {
@@ -246,13 +281,14 @@ export function spring(targets: Targets, props: Record<string, number | string>,
           }
         } else {
           sim?.dispose();
+          const rr = r!; // `quick` implies a running simulation of one channel
           const at = f64Buf(ch * 3);
           for (let i = 0; i < ch; i++) {
-            F64[at + i] = r.current[i];
+            F64[at + i] = rr.current[i];
             F64[at + ch + i] = vel ?? 0;
-            F64[at + 2 * ch + i] = r.values[i];
+            F64[at + 2 * ch + i] = rr.values[i];
           }
-          sim = new Sim(target, prop, ch, r.b);
+          sim = new Sim(target, prop, ch, rr.b);
           sim.h = w.ak_spring_create(ch, k, c, m);
           register(sim);
           claim(target, prop, sim);
@@ -262,7 +298,7 @@ export function spring(targets: Targets, props: Record<string, number | string>,
           // Reduced motion: arrive at once (at rest on the target).
           const b = f64Buf(ch * 2);
           for (let i = 0; i < ch; i++) {
-            F64[b + i] = r.values[i];
+            F64[b + i] = r ? r.values[i] : (value as number);
             F64[b + ch + i] = 0;
           }
           w.ak_sim_position(sim.h, ch, 1);
