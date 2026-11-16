@@ -157,12 +157,17 @@ impl Server {
                 let params = a.get("params").cloned().unwrap_or(json!({}));
                 let spec = t.expand(&params, &brand, format).map_err(|e| format!("template parameters need fixing:\n- {}", e.join("\n- ")))?;
                 let r = critique(&spec);
+                let v = validate(spec.clone(), &std::env::current_dir().unwrap_or_default());
                 let mut out = vec![];
                 if let Some(p) = a.get("out").and_then(|o| o.as_str()) {
                     write_file(Path::new(p), &pretty(&spec))?;
                     out.push(text(&format!("wrote {p}")));
                 } else {
                     out.push(text(&pretty(&spec)));
+                }
+                let issues: Vec<String> = ["errors", "warnings"].iter().flat_map(|k| v[*k].as_array().cloned().unwrap_or_default()).map(|d| format!("{}: {}", d["path"].as_str().unwrap_or(""), d["message"].as_str().unwrap_or(""))).collect();
+                if !issues.is_empty() {
+                    out.push(text(&format!("spec check (asset paths resolve against the server's working directory):\n{}", issues.join("\n"))));
                 }
                 out.push(text(&format!("duration {:.1} s · critique {}/100\n{}", r.duration, r.score, r.notes.iter().map(|n| format!("{} {}: {} → {}", n.severity, n.path, n.message, n.fix)).collect::<Vec<_>>().join("\n"))));
                 Ok(out)
@@ -178,25 +183,31 @@ impl Server {
                 Ok(vec![text(&pretty(&validate(spec, &base)))])
             }
             "render_still" => {
-                let (_, path) = self.spec_arg(a)?;
-                let at = a.get("at").and_then(|v| v.as_f64()).unwrap_or(1.0);
+                let (spec, path) = self.spec_arg(a)?;
+                let at = a.get("at").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
                 let out = self.out_path(a, "png");
-                let mut cmd = vec!["still".into(), path.display().to_string(), "--at".into(), at.to_string(), "-o".into(), out.display().to_string()];
-                if let Some(w) = a.get("width").and_then(|v| v.as_u64()) {
-                    cmd.extend(["--width".into(), w.to_string()]);
-                }
-                self.exe_run(&cmd)?;
+                let p = crate::preview::Preview::new(spec, path.parent().unwrap_or(Path::new(".")))?;
+                let img = p.frame(at, a.get("width").and_then(|v| v.as_u64()).map(|w| w as u32));
+                write_bytes(&out, &crate::preview::png(&img))?;
                 self.image_result(&out, a)
             }
             "render_contact_sheet" => {
-                let (_, path) = self.spec_arg(a)?;
+                let (spec, path) = self.spec_arg(a)?;
                 let out = self.out_path(a, "png");
-                let mut cmd = vec!["sheet".into(), path.display().to_string(), "-o".into(), out.display().to_string()];
-                if let Some(n) = a.get("frames").and_then(|v| v.as_u64()) {
-                    cmd.extend(["--frames".into(), n.to_string()]);
-                }
-                self.exe_run(&cmd)?;
-                self.image_result(&out, a)
+                let p = crate::preview::Preview::new(spec, path.parent().unwrap_or(Path::new(".")))?;
+                let times = a.get("times").and_then(|t| t.as_array()).map(|v| v.iter().filter_map(|x| x.as_f64()).map(|x| x as f32).collect());
+                let times = times.or_else(|| {
+                    let n = a.get("frames").and_then(|v| v.as_u64())? as usize;
+                    let d = p.ev.duration;
+                    Some((0..n).map(|i| (i as f32 + 0.5) * d / n as f32).collect())
+                });
+                let cell = a.get("width").and_then(|v| v.as_u64()).unwrap_or(480) as u32;
+                let img = p.sheet(times, cell);
+                write_bytes(&out, &crate::preview::png(&img))?;
+                let mut res = self.image_result(&out, a)?;
+                let scenes: Vec<String> = p.ev.scenes().iter().map(|s| format!("{} {:.1}–{:.1} s", s.id, s.start, s.end)).collect();
+                res.insert(1, text(&format!("frames at each scene's settled moment (70%): {}", scenes.join(" · "))));
+                Ok(res)
             }
             "render_video" => {
                 let (_, path) = self.spec_arg(a)?;
@@ -343,7 +354,9 @@ pub fn tools() -> Vec<Value> {
             "out": { "type": "string" }
         })), &[]) }),
         json!({ "name": "render_contact_sheet", "description": "Render a grid of frames, one per scene at its settled moment, as one PNG: the fastest way to review a whole video.", "inputSchema": obj(with(spec_input(), json!({
-            "frames": { "type": "integer", "description": "Number of frames (default: one per scene)." },
+            "frames": { "type": "integer", "description": "Number of evenly spaced frames (default: one per scene, at its settled moment)." },
+            "times": { "type": "array", "items": { "type": "number" }, "description": "Exact times in seconds instead." },
+            "width": { "type": "integer", "description": "Width of each cell (default 480)." },
             "inline": { "type": "boolean" }, "out": { "type": "string" }
         })), &[]) }),
         json!({ "name": "render_video", "description": "Render the final video (MP4 by default; the extension of 'out' picks the format). Returns the path.", "inputSchema": obj(with(spec_input(), json!({
@@ -382,6 +395,13 @@ fn absolutize(v: &mut Value, base: &Path) {
 
 fn is_relative_path(s: &str) -> bool {
     !s.is_empty() && !s.starts_with('/') && !s.contains("://") && !s.starts_with("data:") && !s.starts_with('$')
+}
+
+fn write_bytes(p: &Path, b: &[u8]) -> Result<(), String> {
+    if let Some(d) = p.parent() {
+        std::fs::create_dir_all(d).map_err(|e| format!("cannot create {}: {e}", d.display()))?;
+    }
+    std::fs::write(p, b).map_err(|e| format!("cannot write {}: {e}", p.display()))
 }
 
 fn write_file(p: &Path, s: &str) -> Result<(), String> {
@@ -425,6 +445,11 @@ pub fn base64(data: &[u8]) -> String {
 mod tests {
     use super::*;
 
+    fn server() -> Server {
+        let mut s = server();
+        s
+    }
+
     fn call(s: &mut Server, method: &str, params: Value) -> Value {
         let line = json!({ "jsonrpc": "2.0", "id": 7, "method": method, "params": params }).to_string();
         serde_json::from_str(&s.handle_line(&line).unwrap()).unwrap()
@@ -432,7 +457,7 @@ mod tests {
 
     #[test]
     fn handshake_and_listing() {
-        let mut s = Server::new();
+        let mut s = server();
         let r = call(&mut s, "initialize", json!({ "protocolVersion": "2025-03-26", "capabilities": {}, "clientInfo": { "name": "t", "version": "0" } }));
         assert_eq!(r["result"]["protocolVersion"], "2025-03-26");
         assert_eq!(r["result"]["serverInfo"]["name"], "anikit-video");
@@ -452,7 +477,7 @@ mod tests {
 
     #[test]
     fn template_tools_round_trip() {
-        let mut s = Server::new();
+        let mut s = server();
         let r = call(&mut s, "tools/call", json!({ "name": "list_templates", "arguments": {} }));
         let list: Value = serde_json::from_str(r["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
         assert_eq!(list.as_array().unwrap().len(), BUILTIN.len());
@@ -481,6 +506,18 @@ mod tests {
         assert!(r["result"]["content"][0]["text"].as_str().unwrap().contains("did you mean 'launch'"));
         let r = call(&mut s, "tools/call", json!({ "name": "create_from_template", "arguments": { "template": "launch", "params": { "hok": "x" } } }));
         assert!(r["result"]["content"][0]["text"].as_str().unwrap().contains("did you mean 'hook'"));
+    }
+
+    #[test]
+    fn previews_render_in_process() {
+        let mut s = server();
+        let spec = json!({ "size": [320, 180], "scenes": [ { "duration": 1, "layers": [ { "text": "Hi" } ] }, { "duration": 1, "layers": [ { "text": "There" } ] } ] });
+        let r = call(&mut s, "tools/call", json!({ "name": "render_contact_sheet", "arguments": { "spec": spec, "width": 160 } }));
+        assert_eq!(r["result"]["isError"], false, "{r}");
+        let c = r["result"]["content"].as_array().unwrap();
+        assert!(c.iter().any(|x| x["type"] == "image" && x["mimeType"] == "image/png"), "{r}");
+        let r = call(&mut s, "tools/call", json!({ "name": "render_still", "arguments": { "spec": spec, "at": 0.5, "inline": false } }));
+        assert_eq!(r["result"]["content"].as_array().unwrap().len(), 1, "{r}");
     }
 
     #[test]

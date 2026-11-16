@@ -96,6 +96,7 @@ htmlEffect('.hero', 'ripple', { origin: [0.3, 0.6] }); // also 'shatter' | 'diss
 | Live DOM as a WebGL texture / canvas | `const hc = htmlCanvas('#card', { target: gl }); await hc.ready; gl.bindTexture(gl.TEXTURE_2D, hc.texture)` (native HTML-in-Canvas when the element is a child of `<canvas layoutsubtree>` and the browser has it; SVG foreignObject fallback elsewhere) |
 | GIF / WebM / PNG of a page | `record(el, { duration, fps })`, `screenshot(el)`, CLI `npx anikit-record` |
 | A video file (MP4) rendered in Node | `npx anikit-render --init film.mjs` (see Making videos below) |
+| A launch / feature / changelog / demo / social video from JSON or a template, rendered natively (no browser) | `anikit-video new launch --brand brand.json`, or `import { video, template } from 'anikit/video'` (see `docs/video/AGENTS.md`) |
 | Verify headlessly | `testing.useFakeTime()`, `testing.advance(s)`, `engine.inspect()`, `testing.captureWarnings()` |
 
 ## Rules of thumb
@@ -267,6 +268,8 @@ Most of these print an `anikit:` warning that names the fix; read the console.
 | Python: `stagger(5)` gives a list; a timeline step lands at the wrong time | In Python an int first argument is a count (`stagger(5, 0.1)`); for a delay pass seconds (`delay=stagger(0.05, from_="center")`). `tl.add(target, props, "-=0.2", duration=0.5)`: the position is the third argument, options are keywords. |
 
 ## Making videos (compositions)
+
+> For motion-graphics videos built from text, shapes, screenshots and templates (launches, announcements, demos, social clips), prefer **Anikit Video** (`anikit-video` CLI, `anikit/video` builder, MCP server): a JSON spec rendered natively, with templates, brand kits and a design critic. See `docs/video/AGENTS.md`. Use compositions (below) for canvas/WebGL scenes drawn with anikit's runtime.
 
 Use this when asked for a video, trailer, title sequence, product film or animated clip. Output is frame-exact MP4/WebM; nothing depends on machine speed.
 

@@ -21,11 +21,13 @@ Agent commands:
   anikit-video templates expand <name> [params.json] [--brand brand.json] [--format 9:16] [-o spec.json]
   anikit-video prompt [name]        list prompts, or print one (e.g. launch-video-generator)
   anikit-video critique <spec.json> [--json]    heuristic review: reading time, contrast, safe areas, pacing
+  anikit-video preview <spec.json|template> [--at T] [--width W] [-o out.png] [--format 9:16] [--brand b.json] [--params p.json]
+                                    contact sheet (one frame per scene), or one still with --at
   anikit-video mcp                  Model Context Protocol server on stdio
 ";
 
 /// Commands this module handles.
-pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "prompts", "critique", "mcp"];
+pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "prompts", "critique", "preview", "mcp"];
 
 /// Run an agent command. `args` excludes the program name.
 pub fn run(args: &[String]) -> Option<i32> {
@@ -39,6 +41,7 @@ pub fn run(args: &[String]) -> Option<i32> {
         "templates" | "template" => cmd_templates(rest),
         "prompt" | "prompts" => cmd_prompt(rest),
         "critique" => cmd_critique(rest),
+        "preview" => cmd_preview(rest),
         "mcp" => mcp::serve_stdio().map_err(|e| e.to_string()),
         _ => unreachable!(),
     };
@@ -171,6 +174,13 @@ fn cmd_templates(args: &[String]) -> Result<(), String> {
                 Some(o) => {
                     write(Path::new(o), &pretty(&spec))?;
                     let r = critique(&spec);
+                    let base = Path::new(o).parent().map(Path::to_path_buf).unwrap_or_default();
+                    let v = mcp::validate(spec.clone(), &base);
+                    for k in ["errors", "warnings"] {
+                        for d in v[k].as_array().into_iter().flatten() {
+                            eprintln!("{} {}: {}", &k[..k.len() - 1], d["path"].as_str().unwrap_or(""), d["message"].as_str().unwrap_or(""));
+                        }
+                    }
                     eprintln!("wrote {o} ({:.1} s, critique {}/100)", r.duration, r.score);
                 }
                 None => print!("{}", pretty(&spec)),
@@ -215,6 +225,42 @@ fn cmd_critique(args: &[String]) -> Result<(), String> {
     } else {
         print!("{}", r.to_text());
     }
+    Ok(())
+}
+
+fn cmd_preview(args: &[String]) -> Result<(), String> {
+    let a = parse(args, &["at", "width", "o", "out", "format", "brand", "params"], &[])?;
+    let src = a.pos.first().ok_or("usage: preview <spec.json|template> [--at T] [--width W] [-o out.png]")?;
+    let (spec, base, stem) = if src.ends_with(".json") || src.ends_with(".yaml") || Path::new(src).exists() {
+        let text = read(src)?;
+        let spec = crate::spec::parse::parse_str(&text).map(|_| ()).map_err(|d| d.iter().map(|x| x.to_string()).collect::<Vec<_>>().join("\n"));
+        spec?;
+        let v: Value = if text.trim_start().starts_with('{') { serde_json::from_str(&text).map_err(|e| e.to_string())? } else { read_json(src)? };
+        let p = Path::new(src);
+        (v, p.parent().map(Path::to_path_buf).unwrap_or_default(), p.file_stem().unwrap_or_default().to_string_lossy().to_string())
+    } else {
+        let t = Template::builtin(src)?;
+        let params = match a.get("params") {
+            Some(p) => read_json(p)?,
+            None => t.example_params(),
+        };
+        let spec = t.expand(&params, &load_brand(a.get("brand"))?, Format::parse(a.get("format").unwrap_or("16:9"))?).map_err(|e| e.join("\n  "))?;
+        let base = a.get("params").and_then(|p| Path::new(p).parent()).map(Path::to_path_buf).unwrap_or_default();
+        (spec, base, src.clone())
+    };
+    let p = crate::preview::Preview::new(spec, &base)?;
+    let width = a.get("width").map(|w| w.parse::<u32>().map_err(|_| format!("--width: '{w}' is not a number"))).transpose()?;
+    let (img, default_out) = match a.get("at") {
+        Some(t) => {
+            let t: f32 = t.parse().map_err(|_| format!("--at: '{t}' is not a number of seconds"))?;
+            (p.frame(t, width), format!("{stem}-{t}s.png"))
+        }
+        None => (p.sheet(None, width.unwrap_or(480)), format!("{stem}-sheet.png")),
+    };
+    let out = a.get("o").or(a.get("out")).map(String::from).unwrap_or(default_out);
+    write(Path::new(&out), "")?;
+    std::fs::write(&out, crate::preview::png(&img)).map_err(|e| format!("cannot write {out}: {e}"))?;
+    println!("{out} ({}×{}, video {:.1} s)", img.width, img.height, p.ev.duration);
     Ok(())
 }
 
@@ -438,7 +484,7 @@ fn cmd_new(args: &[String]) -> Result<(), String> {
     let leftover: Vec<String> = params.as_object().unwrap().iter().filter(|(k, v)| example.get(k.as_str()) == Some(v)).map(|(k, _)| format!("`{k}`")).collect();
     let d = dir.display();
     let next = format!(
-        "# {name} video: next steps\n\nScaffolded by `anikit-video new {name}`{from}. Files:\n\n- `params.json`: the copy and options. **Edit this.** The schema is `anikit-video templates schema {name}`; the guide is `anikit-video templates guide {name}`.\n- `brand.json`: colours, fonts, logo and voice (`anikit-video prompt brand-kit`).\n- `spec.json`: generated; re-create it after every edit.\n\n## Loop\n\n```bash\nanikit-video templates expand {name} {d}/params.json --brand {d}/brand.json --format {fmt_flag} -o {d}/spec.json\nanikit-video critique {d}/spec.json        # fix every warning\nanikit-video sheet {d}/spec.json -o {d}/sheet.png   # look at it\nanikit-video render {d}/spec.json -o {d}/{name}.mp4\n```\n\nOther formats: `--format 9:16` and `--format 1:1` reuse the same params.\n\n## Writing the copy\n\n{todo}Follow `anikit-video prompt launch-video-generator` (steps 1–4) for the script and storyboard, and `anikit-video prompt critic` to review.\n\nCurrent critique: {score}/100, {dur:.1} s.\n",
+        "# {name} video: next steps\n\nScaffolded by `anikit-video new {name}`{from}. Files:\n\n- `params.json`: the copy and options. **Edit this.** The schema is `anikit-video templates schema {name}`; the guide is `anikit-video templates guide {name}`.\n- `brand.json`: colours, fonts, logo and voice (`anikit-video prompt brand-kit`).\n- `spec.json`: generated; re-create it after every edit.\n\n## Loop\n\n```bash\nanikit-video templates expand {name} {d}/params.json --brand {d}/brand.json --format {fmt_flag} -o {d}/spec.json\nanikit-video critique {d}/spec.json        # fix every warning\nanikit-video preview {d}/spec.json -o {d}/sheet.png   # look at it\nanikit-video render {d}/spec.json -o {d}/{name}.mp4\n```\n\nOther formats: `--format 9:16` and `--format 1:1` reuse the same params.\n\n## Writing the copy\n\n{todo}Follow `anikit-video prompt launch-video-generator` (steps 1–4) for the script and storyboard, and `anikit-video prompt critic` to review.\n\nCurrent critique: {score}/100, {dur:.1} s.\n",
         from = a.get("from").map(|f| format!(" from `{f}`")).unwrap_or_default(),
         todo = if facts.name.is_none() {
             "The params are the template's **example copy**: replace every value with your product's facts.\n\n".to_string()

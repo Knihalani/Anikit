@@ -120,7 +120,7 @@ pub fn template_guide(t: &Template) -> String {
         }
     }
     out += &format!(
-        "\n## Example parameters\n\n```json\n{}\n```\n\n## Make it\n\n```bash\nanikit-video new {name} --brand brand.json            # scaffolds {name}/params.json from this example\nanikit-video templates expand {name} {name}/params.json --brand brand.json --format 16:9 -o {name}/spec.json\nanikit-video critique {name}/spec.json && anikit-video sheet {name}/spec.json -o {name}/sheet.png\nanikit-video render {name}/spec.json -o {name}.mp4\n```\n\nMCP: `create_from_template` with `{{\"template\": \"{name}\", \"params\": {{…}}, \"brand\": {{…}}, \"format\": \"9:16\"}}`.\n",
+        "\n## Example parameters\n\n```json\n{}\n```\n\n## Make it\n\n```bash\nanikit-video new {name} --brand brand.json            # scaffolds {name}/params.json from this example\nanikit-video templates expand {name} {name}/params.json --brand brand.json --format 16:9 -o {name}/spec.json\nanikit-video critique {name}/spec.json && anikit-video preview {name}/spec.json -o {name}/sheet.png\nanikit-video render {name}/spec.json -o {name}.mp4\n```\n\nMCP: `create_from_template` with `{{\"template\": \"{name}\", \"params\": {{…}}, \"brand\": {{…}}, \"format\": \"9:16\"}}`.\n",
         serde_json::to_string_pretty(&t.example_params()).unwrap_or_default(),
         name = t.name
     );

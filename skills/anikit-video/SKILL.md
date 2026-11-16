@@ -19,7 +19,7 @@ You produce videos by writing data, not by driving a browser. Work in this order
    - `anikit-video templates expand <template> params.json --brand brand.json --format 16:9 -o spec.json`;
    - `anikit-video check spec.json`: fix every error;
    - `anikit-video critique spec.json`: fix every warning by changing copy or timing, never by shrinking type;
-   - `anikit-video sheet spec.json -o sheet.png`: then **look at the PNG**.
+   - `anikit-video preview spec.json -o sheet.png`: then **look at the PNG**.
 6. **Improve**: apply `anikit-video prompt critic`, making at most 3 exact edits per round and at most 2 rounds.
 7. **Render**: `anikit-video render spec.json -o out.mp4`. For other aspect ratios, re-expand with `--format 9:16` / `1:1` from the same params.
 

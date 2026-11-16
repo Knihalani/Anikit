@@ -92,7 +92,7 @@ Hand-write a spec (see `docs/video/spec.md`) only when the storyboard needs some
 
 1. `anikit-video check spec.json` must have no errors.
 2. `anikit-video critique spec.json` (MCP: `critique_spec`). Fix every warning, or write down why it's intentional.
-3. `anikit-video sheet spec.json -o sheet.png` (MCP: `render_contact_sheet`). Look at it: is the hook legible at thumbnail size? Is there one focal point per frame? Does anything collide or crowd the edges?
+3. `anikit-video preview spec.json -o sheet.png` (MCP: `render_contact_sheet`). Look at it: is the hook legible at thumbnail size? Is there one focal point per frame? Does anything collide or crowd the edges?
 4. Apply `anikit-video prompt critic` to the contact sheet and the spec. Make at most **three** changes per round, re-render, and stop after two rounds or when the critic has no high-severity findings.
 
 ### Step 7: render and deliver

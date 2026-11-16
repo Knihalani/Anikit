@@ -9,7 +9,7 @@ anikit-video new launch --brand brand.json --from README.md   # scaffold: params
 # edit launch/params.json (the copy), then:
 anikit-video templates expand launch launch/params.json --brand brand.json --format 16:9 -o launch/spec.json
 anikit-video critique launch/spec.json        # reading time, contrast, safe areas, pacing: fix every warning
-anikit-video sheet launch/spec.json -o sheet.png   # look at it
+anikit-video preview launch/spec.json -o sheet.png   # look at it
 anikit-video render launch/spec.json -o launch.mp4
 ```
 
@@ -27,7 +27,7 @@ anikit-video render launch/spec.json -o launch.mp4
 
 1. **Write the copy first**, with word budgets. A line held `h` seconds can carry `3 × (h − 1)` words. Templates enforce `maxWords` per slot and explain any overrun.
 2. **Expand or write the spec**, then run `check` (structure) and `critique` (design). Both print a JSON path and a fix for every finding.
-3. **Look, cheaply**: `sheet` renders one settled frame per scene into a single PNG, and `still --at 0.8` shows the hook. Don't render the full video to find a typo.
+3. **Look, cheaply**: `preview` renders one settled frame per scene into a single PNG, and `preview --at 0.8` shows the hook. Don't render the full video to find a typo.
 4. **Review like a designer**: `anikit-video prompt critic` gives a 10-point checklist and asks for at most 3 fixes per round, each an exact spec edit.
 5. **Render** the final video, plus the other aspect ratios from the same params.
 
