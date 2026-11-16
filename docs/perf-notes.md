@@ -1607,6 +1607,16 @@ film2.mjs `--profile --every 240`: the shadow map is now its own column
 mean frame, 350 ms at 4 s (macro shot, 4 motion-blur samples × 36 casters).
 Unchanged by this round within noise (see "Shadow maps" below).
 
+End to end, `--profile --every 240`, one run each (base, then new): film.mjs
+1125 → 1087 ms per frame (opaque 504 → 476, mirror 269 → 265, post 62.7 →
+61.2); film2.mjs 816 → 835 (post 65 → 55, the rest within noise). The films
+gain less than the benches: film.mjs's mirror cost is shading the reflected
+scene, and nearly every row of its frames has an uncovered (sky) pixel, so the
+row skip below rarely applies there. The next mirror step would be to reflect
+only the pixels the mirror surface will cover when a skybox is drawn (the sky
+overwrites the rest): it needs the mirror item's coverage before the
+reflection pass.
+
 ### 1. Mirror: skip rows the scene covers
 
 With `mirror` (half-res, after the scene), `reflection_after` scanned every

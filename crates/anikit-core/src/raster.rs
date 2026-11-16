@@ -2880,6 +2880,9 @@ mod tests {
         let mut cubes = tf(1.0, -1.2, 0.6, 0.0, [1.0, 0.2, 0.1]);
         cubes.extend(tf(0.7, 1.1, 0.4, -1.0, [0.2, 0.9, 0.3]));
         cubes.extend(tf(2.5, 0.0, 1.5, -6.0, [0.3, 0.3, 0.9]));
+        // A wall across the top of the frame: rows the scene covers entirely
+        // (the reflection skips them).
+        cubes.extend(tf(30.0, 0.0, 19.0, -25.0, [0.5, 0.4, 0.3]));
         let ball = tf(0.6, 0.3, 1.2, 1.0, [0.9, 0.9, 0.2]);
         let (mat, light) = (Material::default(), Lighting::default());
         for (w, h) in [(80, 60), (81, 63), (33, 18)] {
@@ -2906,6 +2909,8 @@ mod tests {
             assert!(a.depth.iter().zip(&b.depth).all(|(x, y)| x.to_bits() == y.to_bits()), "depth {w}x{h}");
             let sub = b.reflection.as_ref().expect("reflection target");
             assert!(sub.depth.iter().any(|z| *z == f32::NEG_INFINITY), "covered half-res pixels were skipped ({w}x{h})");
+            let full = b.depth.chunks_exact(w).filter(|r| !r.contains(&f32::INFINITY)).count();
+            assert!(full > 0 && full < h, "{full} of {h} rows fully covered ({w}x{h})");
         }
     }
 
