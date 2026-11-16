@@ -508,6 +508,51 @@ effectNames();                           // ['fadeIn', 'fadeOut', …, 'glow']
 effects.glow('.star');
 ```
 
+## HTML in canvas: `htmlCanvas`, `htmlEffect`
+
+Draw live DOM into a 2D canvas or a WebGL texture, and run shader effects on real page content in one line.
+
+- **Native path.** When the browser implements the WICG [HTML-in-Canvas](https://github.com/WICG/html-in-canvas) proposal (`drawElementImage`; Chrome origin trial / `chrome://flags/#canvas-draw-element`, or `--enable-experimental-web-platform-features`) *and* the element is a direct child of `<canvas layoutsubtree>` (or `content="drawable"`), `htmlCanvas` draws it on every `paint` event with `drawElementImage`, or uploads it with `texElementSubImage2D` / `texElementImage2D`. Pixels are exact, and the element stays live, focusable, hit-testable and accessible. `htmlCanvasSupported()` tells you whether the API exists.
+- **Fallback (every browser).** The subtree is cloned with computed styles inlined; same-origin images, `background-image`s, canvases, the current video frame and `@font-face` fonts are embedded as data URLs, and the clone is drawn through SVG `<foreignObject>`. The canvas is never tainted: cross-origin resources are skipped with an `anikit:` warning. With `live: true` (the default), `MutationObserver`, `ResizeObserver`, `input`/`change` and font loads trigger a throttled re-raster (`throttle`, default 50 ms). Fonts and images are cached, so a re-raster is mostly a style walk plus one SVG decode (about 4 ms for a ~40-node card in headless Chromium; it grows with the number of elements).
+- **Fallback limits** (measured in Chromium): `:hover`/`:focus` states and the caret are not captured (computed styles are snapshotted at raster time, so a hover *is* captured if a mutation re-rasters while hovering); `::before`/`::after` content is not copied; iframes become empty boxes; video is a still of the current frame (call `refresh()` to update it); form controls show their value and checked state, rendered with default UA styling; cross-origin images and fonts are omitted.
+- **Cost per frame.** Nothing allocates per frame. Textures are uploaded only when the content changed (`version` increments on each new image).
+
+```ts
+const gl = document.querySelector<HTMLCanvasElement>('#scene')!.getContext('webgl')!;
+const card = htmlCanvas('#card', { target: gl, live: true, scale: 2 });
+await card.ready;                       // first image is in card.texture
+gl.bindTexture(gl.TEXTURE_2D, card.texture);
+// …draw your mesh; the texture refreshes itself when #card changes
+const snap = htmlCanvas('#receipt', { live: false });
+await snap.ready;
+document.body.append(snap.canvas);      // a 2D canvas copy of the element
+snap.dispose();
+if (htmlCanvasSupported()) console.log('native HTML-in-Canvas');
+const { url, width, height } = await htmlToSvg(document.querySelector('#card')!); // the SVG data URL itself
+```
+
+`htmlEffect(element, effect, options)` rasterises the element into a fixed-position WebGL overlay, animates the effect with anikit and puts the real element back. While it plays, the real element stays in place at `opacity: 0` and the overlay has `pointer-events: none`, so clicks and hovers still reach the element.
+
+| Effect | Default mode | What it does |
+|---|---|---|
+| `ripple` | pulse | Radial water ripple from `origin` |
+| `wave` | pulse | Flag-like sine wave through the mesh |
+| `glass` | pulse | Refraction with chromatic split |
+| `pixelate` | pulse | Blocks grow, then resolve |
+| `dissolve` | out | Noise burn with glowing `color` edges |
+| `shatter` | out | Element breaks into tumbling triangles from `origin` |
+| `curl` | out | Page peels away from the `origin` corner (default bottom-right) |
+
+Options: `duration` (s, default 1.2), `delay`, `ease` (any easing or spring), `mode` (`'out'` hides the element at the end until `revert()`; `'in'` plays backwards to reveal it; `'pulse'` goes 0→1→0), `intensity`, `origin` (`[x, y]` in 0–1), `padding` (px of room around the element for flying pieces), `scale`, `color`, `onComplete`. The controller has `finished`, `progress` + `render()` for scrubbing, `revert()` and `kill()`, and is tracked by `context()`.
+
+```ts
+htmlEffect('.hero', 'ripple', { origin: [0.3, 0.6] });
+await htmlEffect('#card', 'shatter', { duration: 1.4 }).finished;
+htmlEffect('#modal', 'dissolve', { mode: 'in', color: '#7cf', ease: 'outCubic' });
+const peel = htmlEffect('#page', 'curl', { duration: 0.9 });
+peel.finished.then(() => peel.revert()); // bring the page back
+```
+
 ## Scroll
 
 ```ts
@@ -672,6 +717,98 @@ const { data, order, count } = scene.project(points); // [sx, sy, depth, scale] 
 - The `transform` property accepts any CSS transform list. Lists are decomposed (CSS Transforms 2), rotations slerped as quaternions, and recomposed to `matrix3d()` in the core.
 - `parseTransform(css)`, `toMatrix3d(m)` and `mixTransforms(a, b, t)` expose the same maths.
 - `scene.project()` transforms and depth-sorts (LSD radix sort) entirely in WebAssembly. Sources: a `batch()` with `x`/`y`/`z` channels, a `pointCloud()`, or a flat `[x, y, z, …]` array.
+
+## Real-time GPU 3D: `scene`
+
+`scene()` is a WebGL2 renderer for real-time sites: physically based materials, procedural image-based lighting, a PCF shadow map, optional bloom / depth of field / FXAA, instancing, frustum culling and raycast picking. It renders through anikit's single rAF loop, so `animate()`, `spring()` and timelines drive objects directly. It is also exported as `anikit/scene`.
+
+```ts
+const s = scene('#c', {
+  camera: { fov: 45, position: [0, 2, 6], target: [0, 0.5, 0] },
+  environment: 'studio',          // 'studio' | 'sunset' | 'night'
+  shadows: true,                  // PCF shadow map from the key light
+  bloom: true,                    // HDR post chain: bloom + ACES + FXAA
+});
+s.add(plane(20, 20), { material: { color: '#333', roughness: 0.9 } });
+const ball = s.add(sphere(0.6, 64), { material: 'chrome', position: [0, 0.6, 0] });
+const ring = s.add('torus', { material: 'gold', position: [1.6, 0.5, 0], scale: 1.4 });
+
+animate(ball.position, { y: 1.5 }, { duration: 0.8, yoyo: true, repeat: -1, ease: 'inOutSine' });
+animate(ring.rotation, { y: Math.PI * 2 }, { duration: 6, repeat: -1, ease: 'linear' });
+spring(ring.scale, { x: 1.6, y: 1.6, z: 1.6 });
+timeline().to(ball.material, { roughness: 0.6 }, { duration: 1 }).to(s, { exposure: 1.4 }, { duration: 1 });
+
+ball.on('click', (e) => console.log('hit', e.point));     // also pointerenter/leave/down/up/move
+const orbit: Orbit = s.orbit({ autoRotate: 8, damping: 0.92 });
+```
+
+- **Setup.** `scene(canvas | selector, options)`. Options: `camera` (`fov`, `position`, `target`, `near`, `far`), `environment`, `background` (`'environment'`, a `#rrggbb` colour or `'transparent'`), `shadows` (default true), `bloom` (`true` or `{ strength, threshold }`), `dof` (`true` or `{ focus, aperture }`), `fxaa`, `exposure`, `dpr` (max pixel ratio, capped at 2), `adaptive` (lower the pixel ratio when frames run slow; default true) and `autoRender` (default true; otherwise call `s.render()`). Without post effects it renders straight to the canvas with MSAA and tonemaps in the material shader.
+- **Objects.** `s.add(geometry | 'box' | 'sphere' | 'cylinder' | 'torus' | 'plane' | 'capsule' | 'roundedBox' | null, options)` returns an `Object3D` with animatable `position`, `rotation` (radians, XYZ) and `scale` (`Vector3`s), a `material`, `visible`, `castShadow`, `children` and `data`. Options are `ObjectOptions`: `position`, `rotation`, `scale`, `material`, `castShadow`, `visible` and `parent` (transforms compose). `null` makes an empty group. `obj.remove()` takes it out of the scene.
+- **Camera.** `s.camera` (`Camera`) has `position` and `target` (`Vector3`), `fov`, `roll`, `near` and `far`, all animatable. `s.fly(path, s)` puts it on a `flightPath()` (eye, look-ahead target and bank).
+- **Lights.** `s.lightDir`, `s.lightIntensity`, `s.envIntensity`, `s.exposure`, `s.bloomStrength` and `s.focus` are plain numbers or vectors, so animate them too.
+- **Layers.** `s.add(layer)` accepts any `SceneLayer` (`{ render(ctx: LayerContext), dispose?() }`): it draws after opaque objects in the scene's framebuffer with the camera matrices. Use it to host a Gaussian-splat renderer or custom WebGL.
+- **Picking.** `s.raycast(x, y)` returns a `RayHit` (`object`, `instance`, `point`, `distance`) or null. Meshes are tested exactly (triangles); instances use per-instance bounding spheres. Event handlers receive a `ScenePointerEvent` (`ScenePointerType`: `click`, `pointerdown`, `pointerup`, `pointerenter`, `pointerleave`, `pointermove`), bubble to parents, and set `cursor: pointer` over clickable objects.
+- **Stats and cleanup.** `s.stats` (`SceneStats`) has `drawCalls`, `triangles`, `culled`, `frameMs` and `dpr`. `s.revert()` stops rendering and frees all GPU resources; scenes and orbit controls register with `context()`.
+
+- **Performance.** Every frame reuses its matrices, render lists and uniform buffer (no per-frame allocation, no layout reads; size comes from a `ResizeObserver`). Opaque draws are sorted by program, geometry and material. Transparent draws are sorted back to front. Shaders are compiled when the scene is created. `scripts/bench-scene.mjs` compares against three.js. Headless Chromium here renders WebGL with SwiftShader (CPU), and for 10k instanced boxes with shadows at 960×540 it measured: start-up 870 ms vs 876 ms, frame time 670 ms vs 552 ms (three.js 0.187 is about 20% faster per frame on the CPU rasteriser), 3 draw calls each. Run it with `--gpu` on a machine with a GPU for representative numbers.
+
+### Materials
+
+```ts
+const glass = material('glass');
+const brushed = material({ preset: 'chrome', roughness: 0.35 });
+const neon: Material = material({ preset: 'emissive', emissive: '#61dafb', emissiveIntensity: 6 });
+const lin = linearColor('#ff8800');         // sRGB hex → linear [r, g, b]
+animate(neon, { emissiveIntensity: 1 }, { duration: 1, yoyo: true, repeat: -1 });
+brushed.set({ color: '#c0c4cc' });
+```
+
+`MaterialPreset`: `chrome`, `gold`, `copper`, `glass`, `plastic`, `ceramic`, `rubber`, `emissive` and `toon`. `SceneMaterialOptions`: `preset`, `color`, `metalness`, `roughness`, `emissive`, `emissiveIntensity`, `opacity` (below 1 draws in the back-to-front transparent pass), `toon` and `glass`. Lighting is metal/roughness GGX with a split-sum environment term. The `EnvironmentName` environments are analytic, so they are prefiltered per roughness in closed form: no textures, no load-time cost.
+
+### Live HTML on a mesh: `htmlTexture`
+
+`map` (a `MapSource`) puts a texture on any material: a canvas or image (uploaded once), or a live source with `canvas` and `version` such as `htmlTexture(el)`, which is re-uploaded only when the element changed. UV (0, 0) is the image's top-left, so `plane()` rotated `[Math.PI / 2, 0, 0]` shows it upright, facing the camera. A black material with a white `emissive` shows the HTML unlit, like a screen; a coloured or metallic one lights it like printed material. Pointer events on the mesh (`click`, `pointerdown`, `pointerup`, `pointermove`) are re-dispatched to the element under the hit's UV, and focusable targets are focused on click, so buttons and inputs on a 3D card still work. `RayHit.uv` and `ScenePointerEvent.uv` expose the UV. Keep the source element rendered, for example off-screen with `position: fixed; left: -10000px`, not `display: none`. See [HTML in canvas](#html-in-canvas-htmlcanvas-htmleffect) for what the fallback raster captures.
+
+```ts
+const s3 = scene('#stage', { camera: { position: [0, 0, 3] } });
+const ui = htmlTexture('#panel');                                   // live, re-rasterised on change
+const screen = s3.add(plane(1.6, 1), { rotation: [Math.PI / 2, 0, 0], material: { color: '#000', emissive: '#fff', map: ui } });
+const cube = s3.add(roundedBox(1, 1, 1, 0.1), { position: [2, 0, 0], material: { map: ui, roughness: 0.6 } });
+screen.on('click', (e) => console.log('hit the screen at', e.uv));  // the element under e.uv got the click too
+animate(screen.rotation, { y: Math.PI * 2 }, { duration: 8, repeat: -1, ease: 'linear' });
+```
+
+### Geometry and instancing
+
+```ts
+const vase = lathe([[0, 0], [0.4, 0.05], [0.25, 0.8], [0.3, 1.2]], 64);
+const letterL = extrude([[0, 0], [2, 0], [2, 1], [1, 1], [1, 2], [0, 2]], 0.4);
+const knot = tube((t) => [Math.cos(t * 12), Math.sin(t * 18) * 0.3, Math.sin(t * 12)], 0.08, 256, 12);
+const pill = capsule(0.3, 1.2);
+const soft = subdivide(box(1, 1, 1), 2, 0.5);           // midpoint subdivision + Laplacian smoothing
+const blob: import('anikit').Geometry = sdfMesh((x, y, z) => smoothUnion(sdSphere(x - 0.3, y, z, 0.5), sdTorus(x + 0.3, y, z, 0.4, 0.12), 0.25), { resolution: 64 });
+const carved = sdfMesh((x, y, z) => smoothSubtract(sdBox(x, y, z, 0.6, 0.6, 0.6, 0.1), sdSphere(x, y, z, 0.75), 0.05));
+const shapes = [roundedBox(1, 1, 1, 0.15), sphere(1, 48), cylinder(0.3, 0.5, 1), torus(1, 0.3), plane(4, 4), smoothNormals(vase)];
+const tri = triangulate([[0, 0], [1, 0], [0, 1]]);       // ear clipping → index triples
+
+const s2 = scene(canvas);
+const grid: InstancedMesh = s2.instances(box(0.1, 0.1, 0.1), 10000, (i, o) => {
+  o.position.set((i % 100) - 50, 0, Math.floor(i / 100) - 50);
+  o.color[0] = i / 10000;                            // per-instance tint
+}, { material: 'plastic' });
+engine.onFrame((t) => grid.update((i, o: import('anikit').InstanceState) => {
+  o.position.set((i % 100) - 50, Math.sin(t / 500 + i * 0.1), Math.floor(i / 100) - 50);
+}));
+const v = new Vector3(1, 2, 3);
+const node: Object3D = s2.add(null, { position: v });
+let sc: Scene = s2;
+let hit: import('anikit').RayHit | null = sc.raycast(10, 10);
+```
+
+- All generators return a `Geometry` (`positions`, `normals`, `uvs`, `indices` as typed arrays) with counter-clockwise front faces and unit normals.
+- `sdfMesh(f, SdfOptions)` meshes a signed distance function with surface nets: one vertex per surface cell, with gradient normals. `resolution` sets the cells per axis (default 48) and `bounds` the half-size of the sampled cube (default 1.5). Build fields from `sdSphere`, `sdBox`, `sdTorus`, `smoothUnion` and `smoothSubtract`.
+- `instances(geometry, count, fn, options)` draws every copy in one call. `fn(i, o)` sets the `InstanceState` (`position`, `rotation`, `scale` and `color`). `grid.update(fn)` reruns the callback without allocating. You can also write `grid.matrices` and `grid.colors` directly and then call `grid.needsUpdate()`.
+- `Vec3Like` is `[x, y, z]` or `{ x, y, z }`. `PrimitiveName` lists the string shorthands.
 
 ## Point clouds and glow
 
@@ -1149,12 +1286,14 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Marquees](#marquees-marquee) | `marquee`, `Marquee` | `MarqueeOptions` |
 | [Magnetic and parallax](#magnetic-and-parallax-magnetic-parallax) | `magnetic`, `parallax` | `MagneticOptions`, `ParallaxOptions`, `PointerFx` |
 | [Effects](#effects) | `effects`, `effect`, `registerEffect`, `effectNames` | `EffectOptions`, `EffectFn`, `EffectName` |
+| [HTML in canvas](#html-in-canvas-htmlcanvas-htmleffect) | `htmlCanvas`, `htmlEffect`, `htmlTexture`, `htmlCanvasSupported`, `htmlToSvg` | `HtmlCanvas`, `HtmlCanvasOptions`, `HtmlEffect`, `HtmlEffectOptions`, `HtmlEffectName` |
 | [Layout transitions](#layout-transitions-flip), [presence](#presence-enter-and-exit) and [View Transitions](#view-transitions) | `flip`, `presence`, `Presence`, `enter`, `exit`, `viewTransition` | `FlipOptions`, `FlipState`, `PresenceOptions`, `ViewTransitionOptions`, `ViewTransitionHandle` |
 | [Interaction](#interaction) | `draggable`, `Draggable`, `observer`, `hover`, `press`, `gesture`, `Gesture` | `DraggableOptions`, `Bounds`, `ObserverOptions`, `ObserverEvent`, `GestureOptions` |
 | [Engine](#engine) | `engine`, `flush`, `ready`, `init` | |
 | [Dev tools](#dev-tools) and [testing](#testing-and-diagnostics) | `inspector`, `testing`, `setWarnings`, `onWarning` | `InspectorOptions` |
 | [Physics worlds](#physics-worlds) | `world`, `World` | `WorldOptions`, `BodyInit` |
 | [3D](#3d) | `scene3d`, `Scene3D`, `tilt`, `parseTransform`, `toMatrix3d`, `mixTransforms` | `SceneOptions`, `Projection`, `DrawOptions`, `TiltOptions`, `Vec3`, `Matrix` |
+| [Real-time GPU 3D](#real-time-gpu-3d-scene) | `scene`, `Scene`, `Object3D`, `InstancedMesh`, `Material`, `material`, `Orbit`, `Vector3`, `linearColor`, `box`, `roundedBox`, `sphere`, `cylinder`, `capsule`, `torus`, `plane`, `lathe`, `extrude`, `tube`, `triangulate`, `smoothNormals`, `subdivide`, `sdfMesh`, `sdSphere`, `sdBox`, `sdTorus`, `smoothUnion`, `smoothSubtract` | `SceneInit`, `CameraOptions`, `BloomOptions`, `DofOptions`, `OrbitOptions`, `Camera`, `SceneMaterialOptions`, `MaterialPreset`, `ObjectOptions`, `InstanceState`, `EnvironmentName`, `LayerContext`, `SceneLayer`, `RayHit`, `SceneStats`, `ScenePointerEvent`, `ScenePointerType`, `PrimitiveName`, `Vec3Like`, `Geometry`, `SdfOptions` |
 | [Point clouds and glow](#point-clouds-and-glow) | `pointCloud`, `PointCloud`, `textPoints`, `glow`, `Glow` | `CloudOptions`, `ShapeInput`, `GlowOptions`, `GlowRenderOptions` |
 | [Particle emitters](#particle-emitters) | `emitter`, `Emitter` | `EmitterOptions`, `SpawnShape` |
 | [Solid 3D](#solid-3d-renderer3d-mesh-instances) | `renderer3d`, `Renderer3D`, `mesh`, `Mesh3D`, `instances`, `Instances`, `texture`, `Texture3D`, `shatter`, `Shards`, `flightPath`, `FlightPath` | `InstanceInit`, `MaterialOptions`, `LightOptions`, `DrawItem`, `PointsItem`, `ShatterOptions`, `FlightPathOptions`, `FlightPose`, `Point3` |

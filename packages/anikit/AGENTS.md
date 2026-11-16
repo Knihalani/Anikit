@@ -36,11 +36,15 @@ Calls work immediately: the WebAssembly core loads in the background and queues 
 | Drag, swipe, carousels | `draggable(el, { type: 'x', bounds, inertia: true, snap })`; `observer({ onUp, onDown })` for swipes/wheel |
 | Physics: falling, colliding, throwable things | `world({ container })`, `.bind(els)`, `.dragging()` |
 | Thousands of things on a canvas | `batch(n, props)` (one Float32Array) or `world().addMany()` |
+| Real-time 3D scene (WebGL2): PBR objects, shadows, bloom, clicks | `scene(canvas, { environment, shadows, bloom })`, `s.add(sphere(), { material: 'chrome' })`, `animate(obj.position, …)` (also `anikit/scene`) |
 | 3D points / tilt / transform strings | `scene3d()`, `tilt(el)`, `{ transform: 'rotateY(180deg)' }` |
 | 100k particles | `pointCloud()` + `glow()` |
 | Off-main-thread transform/opacity | `compositor(el, props, options)` |
 | Cleanup in React/Vue/Svelte | `const ctx = context(() => { … }, rootEl); return () => ctx.revert()` |
 | Respect "reduce motion" | `engine.reducedMotion = 'user'` once at startup |
+| Shader effect on real DOM (ripple, shatter, dissolve, curl, pixelate, wave, glass) | `htmlEffect('#card', 'shatter', { duration: 1.2 })`; `'out'` effects leave it hidden until `revert()`, or use `mode: 'in'` to reveal |
+| Live HTML on a 3D mesh (card, screen, cube face) with working clicks | `s.add(plane(1.6, 1), { rotation: [Math.PI / 2, 0, 0], material: { color: '#000', emissive: '#fff', map: htmlTexture('#panel') } })`; keep `#panel` rendered off-screen, not `display: none` |
+| Live DOM as a WebGL texture / canvas | `const hc = htmlCanvas('#card', { target: gl }); await hc.ready; gl.bindTexture(gl.TEXTURE_2D, hc.texture)` (native HTML-in-Canvas when the element is a child of `<canvas layoutsubtree>` and the browser has it; SVG foreignObject fallback elsewhere) |
 | GIF / WebM / PNG of a page | `record(el, { duration, fps })`, `screenshot(el)`, CLI `npx anikit-record` |
 | A video file (MP4) rendered in Node | `npx anikit-render --init film.mjs` (see Making videos below) |
 | Verify headlessly | `testing.useFakeTime()`, `testing.advance(s)`, `engine.inspect()`, `testing.captureWarnings()` |
@@ -92,7 +96,7 @@ effects.countUp('#revenue', { to: 128400, format: { style: 'currency', currency:
 ```
 
 ```ts
-import { world, batch, scene3d, engine, pointCloud, textPoints, glow, record } from 'anikit';
+import { world, batch, scene3d, engine, pointCloud, textPoints, glow, record, scene, plane, sphere, box, animate } from 'anikit';
 
 // Physics: DOM elements that fall, collide and can be thrown
 const w = world({ container: '#stage', restitution: 0.4 });
@@ -100,10 +104,18 @@ w.bind('#stage .ball', { rotate: true });
 w.dragging();
 w.pointer({ mode: 'repel' });
 
+// Real-time WebGL2 scene: PBR, shadows, bloom; objects animate like any target
+const s3 = scene('#gl', { camera: { position: [0, 2, 6] }, environment: 'studio', shadows: true, bloom: true });
+s3.add(plane(20, 20), { material: { color: '#333', roughness: 0.9 } });
+const orb = s3.add(sphere(0.6, 64), { material: 'gold', position: [0, 0.6, 0] });
+orb.on('click', () => animate(orb.position, { y: [0.6, 1.6, 0.6] }, { duration: 0.8 }));
+s3.instances(box(0.1, 0.1, 0.1), 5000, (i, o) => o.position.set((i % 70) - 35, 0, (i / 70 | 0) - 35));
+s3.orbit({ autoRotate: 8 });
+
 // 3D point cloud on a canvas
 const cloud = batch(20000, { x: (i) => [0, Math.cos(i) * 300], y: (i) => [0, Math.sin(i * 1.3) * 300], z: (i) => [0, Math.sin(i) * 300] }, { duration: 2 });
-const scene = scene3d({ canvas: '#c' }).orbit({ autoRotate: 10 });
-engine.onFrame(() => scene.draw(cloud, { size: 1.5, color: '#9cf' }));
+const view3d = scene3d({ canvas: '#c' }).orbit({ autoRotate: 10 });
+engine.onFrame(() => view3d.draw(cloud, { size: 1.5, color: '#9cf' }));
 
 // 100k glowing particles that morph between shapes (text → sphere) and part around the pointer
 const pc = pointCloud(100_000, { shapes: [textPoints('hello', 100_000, { width: 700 }), (i, n) => {
