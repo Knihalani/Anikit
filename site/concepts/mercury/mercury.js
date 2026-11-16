@@ -224,6 +224,8 @@ addEventListener('pointermove', (e) => {
   if (fine && !reduced) spring(light, { x: (e.clientX / vw) * 2 - 1, y: 1 - (e.clientY / vh) * 2 }, { stiffness: 30, damping: 11 });
 }, { passive: true });
 
+const textSize = () => Math.min(1, Math.max(0.4, text.glyphH / 0.28));
+let heroWeight = 1;
 // Hero: drops live inside the letters and bud off now and then; the pointer pulls one out.
 let pulled = -1, neckR = 0, neckBroken = false;
 function heroTarget(d, i, t, out) {
@@ -240,7 +242,8 @@ function heroTarget(d, i, t, out) {
   if (i === pulled && !neckBroken) { x = pointer.x; y = pointer.y; }
   else if (i === pulled) { x = pointer.x; y = pointer.y; }
   out.x = x; out.y = y;
-  out.r = Math.min(d.r, Math.max(0.012, h.depth * 1.15)) * (1 + 0.35 * bud) * (1 - 0.25 * m);
+  const ts = textSize();
+  out.r = ts * Math.min(d.r, Math.max(0.012, h.depth * 1.15)) * (1 + 0.35 * bud) * (1 - 0.25 * m);
   if (i === pulled) out.r = Math.max(out.r, 0.026);
 }
 
@@ -371,6 +374,7 @@ function frame(dtMs) {
   if (b.d < a.d) [a, b] = [b, a];
   const wRaw = a.d + b.d > 0 ? a.d / (a.d + b.d) : 0;
   const w = sstep(0.12, 0.88, wRaw);
+  heroWeight = a.kind === 'hero' ? 1 - w : b.kind === 'hero' ? w : 0;
 
   physicsToggle(physStop.d < 0.12, physStop);
   chainToggle(springStop.d < 0.2);
@@ -464,7 +468,7 @@ function render(a, b, t) {
   gl.uniform1f(U.uMelt, m);
   // Puddle under the melting letters, carried up with the page once it has formed.
   const lift = Math.max(0, scrollY - vh * 0.85) / vh;
-  const pr = text.ready ? sstep(0.1, 0.8, m) * text.hw * 0.7 * (1 - sstep(0.15, 0.75, lift)) : 0;
+  const pr = text.ready ? sstep(0.1, 0.8, m) * text.hw * 0.58 * (1 - sstep(0.15, 0.75, lift)) : 0;
   gl.uniform4f(U.uPool, text.cx, text.cy - text.hh * 0.62 + lift, pr, 0.006 + 0.006 * sstep(0.1, 0.8, m));
   rimUniform(U.uRimA, U.uRimAP, a);
   rimUniform(U.uRimB, U.uRimBP, b);
@@ -474,7 +478,7 @@ function render(a, b, t) {
   }
   gl.uniform1f(U.uNeckR, neckR);
   gl.uniform2f(U.uLight, light.x, light.y);
-  gl.uniform1f(U.uK, lerp(lerp(0.045, 0.016, state.wm), 0.024, state.chain));
+  gl.uniform1f(U.uK, lerp(lerp(lerp(0.045, 0.045 * textSize(), heroWeight), 0.016, state.wm), 0.024, state.chain));
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   stats.q = q; stats.w = canvas.width; stats.h = canvas.height; stats.ms = frameAvg;
 }

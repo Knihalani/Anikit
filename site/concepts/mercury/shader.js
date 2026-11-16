@@ -33,8 +33,9 @@ float hash(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); 
 float textD(vec2 p) {
   // Melting: each column stretches downward by its own amount and the letters thin out.
   float top = uTR.y + uTR.w;
-  float col = 0.5 + 0.5 * sin(p.x * 23.0 + 1.7) * sin(p.x * 9.0 - 0.4);
-  float a = uMelt * (0.15 + 1.0 * col * col);
+  float col = 0.5 + 0.5 * sin(p.x * 13.0 + 1.7) * sin(p.x * 5.0 - 0.4);
+  float a = uMelt * (0.12 + 0.9 * col * col);
+  if (p.y > top) a = 0.0;
   p.y = top - (top - p.y) / (1.0 + a);
   vec2 uv = (p - uTR.xy) / (2.0 * uTR.zw) + 0.5;
   vec2 cuv = clamp(uv, 0.0, 1.0);
@@ -74,7 +75,7 @@ float map(vec3 q) {
     d = smin(d, length(pa - ba * h) - r, 0.04);
   }
   if (uPool.z > 0.001) {
-    vec3 r = vec3(uPool.z, uPool.z * 0.62, uPool.w);
+    vec3 r = vec3(uPool.z, uPool.z * 0.42, uPool.w);
     vec3 p = q - vec3(uPool.xy, 0.0);
     float k0 = length(p / r), k1 = length(p / (r * r));
     d = smin(d, k0 * (k0 - 1.0) / k1, 0.05);
@@ -185,7 +186,7 @@ void main() {
     vec3 mirror = vec3(0.0);
     if (dF < 0.14) {
       sh = shadow(P + vec3(0.0, 0.0, 0.002), L);
-      ao = 0.25 + 0.75 * smoothstep(0.0, 0.07, map(P + vec3(0.0, 0.0, 0.015)));
+      ao = 0.3 + 0.7 * smoothstep(0.0, 0.04, map(P + vec3(0.0, 0.0, 0.012)));
       // The metal mirrored in the lacquer, softened with distance.
       float tt = 0.004;
       for (int i = 0; i < 18; i++) {

@@ -95,7 +95,6 @@ html.no-gl .install-row { border: 1px solid var(--line); }
   .wordmark { font-size: min(33.6vw, 44.8vh); top: 45%; }
   .n-stats { grid-template-columns: 1fr; gap: 10px; }
   .n-stat b { font-size: 30px; }
-  .n-stat p br { display: none; }
   .n-row { grid-template-columns: 7.5em 1fr 2.8em; font-size: 10.5px; }
   .numbers { gap: 12px; padding: 18px 5%; }
   .numbers > p, .n-chart .n-cap.dim { display: none; }
