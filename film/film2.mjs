@@ -251,12 +251,12 @@ export default async function film2({ anikit: A, node }) {
   const CROWNW = [-52, 58];
   // Plates: the mainplate (perlage) and the barrel bridge (Côtes de Genève as real normals).
   const BW = 17; // stripe width
-  const cotes = (x) => { const f = ((x / BW) % 1 + 1) % 1; const k = 0.26 * (f - 0.5) * 2; return [-k, 1, 0]; };
+  const cotes = (x) => { const f = ((x / BW) % 1 + 1) % 1; const k = 0.22 * Math.sin(TAU * f) + 0.06 * Math.sin(2 * TAU * f); return [-k, 1, 0]; };
   const mainplate = polar({ r0: 0, r1: 150, nr: 3, na: 160, y: 0, y0: -18, normal: () => [0, 1, 0], uvR: 150 });
   const mainBottom = polar({ r0: 0, r1: 150, nr: 3, na: 160, y: -18.4, walls: false, normal: () => [0, -1, 0], uvR: 150 }); // perlage dial side (seen after the flip)
   const barrelBridge = polar({ r0: 56, r1: 146, a0: 108 * DEG, a1: 252 * DEG, nr: 64, na: 240, y: 26, y0: 18, normal: (x) => cotes(x), uvR: 150 });
   // Rotor: a half disc with Côtes, and a heavy gold rim.
-  const rotorPlate = polar({ r0: 15, r1: 128, a0: -90 * DEG, a1: 90 * DEG, nr: 54, na: 220, y: 41, y0: 38, normal: (x, z) => { const f = (((z + 500) / BW) % 1); return [0, 1, -0.26 * (f - 0.5) * 2]; }, uvR: 150 });
+  const rotorPlate = polar({ r0: 15, r1: 128, a0: -90 * DEG, a1: 90 * DEG, nr: 54, na: 220, y: 41, y0: 38, normal: (x, z) => { const f = (((z + 500) / BW) % 1); return [0, 1, -(0.22 * Math.sin(TAU * f) + 0.06 * Math.sin(2 * TAU * f))]; }, uvR: 150 });
   const rotorRim = polar({ r0: 126, r1: 146, a0: -92 * DEG, a1: 92 * DEG, nr: 4, na: 160, y: 42, y0: 30, normal: (x, z, a, r) => [Math.cos(a) * (r - 136) * 0.04, 1, Math.sin(a) * (r - 136) * 0.04], uvR: 150 });
   const rotorHub = (() => { const b = new MB(); disc(b, 0, 0, 16, 36, 44, 64); return b.build(); })();
   // Bridges for the train and the balance cock: bars with round bosses.
@@ -376,8 +376,8 @@ export default async function film2({ anikit: A, node }) {
     [3.2, [PAL[0] + 30, YH + 55, PAL[1] - 72], W0(PAL, 5)],
     [4.4, [E5[0] + 58, YH + 52, E5[1] - 42], W0(lerp3([...E5, 0], [...F4, 0], 0.3), 8)],
     [5.4, [F4[0] + 78, YH + 58, F4[1] + 4], W0(F4, 10)],
-    [6.4, [T3[0] + 40, YH + 72, T3[1] + 72], W0([T3[0] * 0.5, T3[1] * 0.5], 6)],
-    [7.4, [-20, YH + 96, 92], W0([-70, 10], 28)],
+    [6.4, [T3[0] + 40, YH + 96, T3[1] + 92], W0([T3[0] * 0.4, T3[1] * 0.4], 6)],
+    [7.4, [-10, YH + 150, 150], W0([-62, 6], 26)],
   ];
   const orbit = (t) => {
     const az = (-16 + 4.4 * (t - 8.2)) * DEG;
