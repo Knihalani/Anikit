@@ -47,25 +47,21 @@ export default async function journey({ anikit: A }) {
   const film = composition({
     width: W, height: H, fps: 60, duration: D, motionBlur: 1, // camera motion blur comes from the renderer (depth-based)
     post: {
-      aa: 1, rays: 0.8, raysCenter: [0.5, 0.42],
+      aa: 1, rays: 0.8, raysCenter: [0.5, 0.42], flares: 0.5,
       bloom: 0.9, bloomThreshold: 0.5, bloomRadius: 44, streaks: 0.5, streakLength: 300,
       aberration: 0.7, vignette: 0.45, grain: 4, contrast: 1.06, saturation: 1.1,
 
     },
   });
-  film.impact(0, { flash: '#ffffff', flashOpacity: 0.8, decay: 6 });
-  film.impact(HIT, { shake: 30, flash: '#bfe3ff', flashOpacity: 0.6, aberration: 8 });
-  film.impact(7.2, { shake: 18, aberration: 4 });
-
-  // Choreography runs on a clock advanced by the *scaled* dt, so the
-  // scene's timeScale (bullet time) slows the camera and the shards too.
-  let clock = 0, prevClock = 0;
+  // Choreography runs on the scene's clock (FrameInfo.clock: seconds slowed by
+  // timeScale), so bullet time slows the camera and the shards together.
+  let prevClock = 0, lastClock = 0;
 
   film.scene('journey', 0, D, {
     // Bullet time right after the hit: everything slows together.
     timeScale: (t) => 1 - 0.75 * Math.exp(-(((t - HIT - 0.25) / 0.4) ** 2)),
-    step({ dt }) { prevClock = clock; clock += dt; },
-    draw({ ctx }) {
+    step({ clock }) { prevClock = lastClock; lastClock = clock; },
+    draw({ ctx, clock }) {
       const t = clock;
       const pose = (t) => {
         const roll = t > 5.5 && t < 6.5 ? (1 - Math.cos(((t - 5.5) / 1) * Math.PI)) * 180 : 0; // a barrel roll out of the blast
@@ -84,7 +80,7 @@ export default async function journey({ anikit: A }) {
       shards.update(t - HIT);
       const items = [
         { mirror: true, mesh: floor, instances: floorAt, material: { lines: 1.4, lineColor: [0.3, 0.55, 1.6], grid: [70, 220], lineWidth: 0.03 } },
-        { mesh: cube, instances: towers, material: { metal: 0.6, specular: 1, shininess: 80, lines: 1.6, pattern: 'hex', lineColor: [1.6, 0.3, 1.0], grid: [3, 12], lineWidth: 0.05, pulse: 2, pulsePhase: t * 2, pulseDir: [0, 0, 0.0004] } },
+        { mesh: cube, instances: towers, material: { metal: 0.3, rim: 0.15, specular: 1.1, shininess: 80, lines: 1.4, pattern: 'hex', lineColor: [1.6, 0.3, 1.0], grid: [3, 12], lineWidth: 0.05, pulse: 2, pulsePhase: t * 2, pulseDir: [0, 0, 0.0004] } },
         { mesh: ring, instances: gates, material: { metal: 1, iridescence: 0.7, specular: 1.5, shininess: 150, pulse: 3, lineColor: [0.4, 0.9, 1.8], pulseCount: 2, pulsePhase: t * 3 } },
         t < HIT
           ? { mesh: knotMesh, instances: knotAt.set(0, { ...KNOT, ry: t * 40 }), material: { metal: 0.9, iridescence: 0.3, specular: 1.4, shininess: 120, lines: 1.2, lineColor: [0.3, 0.8, 1.6], grid: [0, 6], pulse: 2.5, pulseCount: 3, pulsePhase: t * 2 } }
@@ -98,5 +94,9 @@ export default async function journey({ anikit: A }) {
       ctx.putImageData(new globalThis.ImageData(px, W, H), 0, 0);
     },
   });
+  // Impacts on story beats: timeAt() maps the slowed clock to film time.
+  film.impact(0, { flash: '#ffffff', flashOpacity: 0.8, decay: 6 });
+  film.impact(film.timeAt('journey', HIT), { shake: 30, flash: '#bfe3ff', flashOpacity: 0.6, aberration: 8, shockwave: 32, origin: [0.5, 0.45] });
+  film.impact(film.timeAt('journey', 7.2), { shake: 18, aberration: 4 });
   return film;
 }
