@@ -14,9 +14,9 @@
  *   .call(() => console.log('done'));
  * ```
  */
-import { core, whenReady, W } from './wasm';
+import { core, whenReady, readyNow, W } from './wasm';
 import { register, unregister, easingId, NodeRecord, EasingInput, EV_CALLBACK, FL_FILL_BACKWARDS, FL_FILL_FORWARDS, LINEAR, wake, onFlush } from './core';
-import { Animation, AnimateOptions, Props, Keyframe, Chain, PropValue } from './animate';
+import { Animation, AnimateOptions, Props, Keyframe, Chain, PropValue, BuildContext } from './animate';
 import type { Targets as _T } from './props';
 import { Playable, Callbacks, Linked } from './playable';
 import { Targets } from './props';
@@ -95,6 +95,8 @@ function runCleanup(c: Playable | (() => void)): void {
 export class Timeline extends Playable {
   readonly labels = new Map<string, number>();
   private _chain: Chain = new WeakMap();
+  /** Build context of every child added by `add()` (read-only, shared). */
+  private _childCtx: BuildContext = { child: true, chain: this._chain };
   private _children: Child[] = [];
   /** Run on kill: a child to kill (no closure per child), or a function. */
   private _cleanups: Array<Playable | (() => void)> = [];
@@ -215,14 +217,18 @@ export class Timeline extends Playable {
       return this;
     }
     const opts = { ...this._opts.defaults, ...options };
-    const anim = new Animation(targets as Targets, keyframes as Props, opts, { child: true, chain: this._chain });
-    whenReady(() => {
-      if (!this._h) return;
-      if (!anim._h) return; // nothing to animate
-      this._place(anim, this._pos(position));
-      this._cleanups.push(anim);
-    });
+    const anim = new Animation(targets as Targets, keyframes as Props, opts, this._childCtx);
+    // (No closure when the core is already there, the usual case.)
+    if (readyNow()) this._placeAnim(anim, position);
+    else whenReady(() => this._placeAnim(anim, position));
     return this;
+  }
+
+  private _placeAnim(anim: Animation, position: Position | undefined): void {
+    if (!this._h) return;
+    if (!anim._h) return; // nothing to animate
+    this._place(anim, this._pos(position));
+    this._cleanups.push(anim);
   }
 
   /** Alias of {@link add}. */
