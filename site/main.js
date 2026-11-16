@@ -115,7 +115,7 @@ function story(y) {
   } else if (!near('close')) {
     // Into the movement.
     const u = prog('calibre', y);
-    state.explode = 1; state.dive = sstep(0.0, 0.78, u); state.lift = 0; state.turn = 0;
+    state.explode = 1; state.dive = sstep(0.0, 0.42, u); state.glide = sstep(0.4, 0.8, u); state.lift = 0; state.turn = 0;
   } else {
     // Reassembly above the install command.
     const u = prog('close', y);
@@ -160,7 +160,7 @@ function frame(now) {
   const labelsOn = sy < L.calibre.top - vh ? clamp((state.explode - 0.82) / 0.15) * (1 - sstep(oEnd - 0.3 * vh, oEnd, sy)) : 0;
   state.wantLabels = labelsOn > 0;
   if (vis > 0) {
-    const key = reduced ? `${state.explode.toFixed(4)}${state.dive.toFixed(4)}${state.clock}${curSize[0]}` : '';
+    const key = reduced ? `${state.explode.toFixed(4)}${state.dive.toFixed(4)}${(state.glide ?? 0).toFixed(4)}${state.clock}${curSize[0]}` : '';
     if (!reduced || key !== lastKey || stats.frames < 30) { lastKey = key; R.render(state); }
   }
   labelsEl.style.opacity = String(Math.round(labelsOn * 100) / 100);

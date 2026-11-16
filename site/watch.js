@@ -408,7 +408,8 @@ export async function createWatch({ width, height, canvas = null }) {
    * t: seconds (page clock, drives the escapement); clock: local time in seconds since midnight;
    * explode 0–1; dive 0–1 (camera into the movement); yaw/pitch: pointer tilt (radians); turn: extra turn.
    */
-  const ROTOR_AWAY = G.ang(G.BAL, G.C0) + TAU; // in the dive the rotor swings to the far side of the balance
+  const ROTOR_AWAY = PI + TAU; // in the dive the rotor swings over the barrel, clear of the going train
+  const GLIDE = [[G.BAL[0] + 6, G.BAL[1] + 4, 10, 1], [G.PAL[0], G.PAL[1], 6, 0.8], [G.E5[0], G.E5[1], 6, 0.85], [G.F4[0] - 10, G.F4[1], 10, 1.25]];
   function render(s) {
     pi = 0;
     const t = s.t, ex = s.explode, dv = s.dive;
@@ -502,8 +503,12 @@ export async function createWatch({ width, height, canvas = null }) {
     cp[0] = tg[0] + camx * dist; cp[1] = tg[1] + camy * dist; cp[2] = tg[2] + camz * dist;
     if (d > 0) {
       // Macro: look at the balance from above its plane.
-      xf(Gmov, BAL[0] + 6, 10, BAL[1] + 4, tmp);
-      const mx = xf(Gmov, BAL[0] + 120, 150, BAL[1] + 150, tmp2);
+      // Glide along the going train: balance → pallet fork → escape wheel → fourth wheel.
+      const gl = clamp(s.glide ?? 0) * (GLIDE.length - 1), gi = Math.min(GLIDE.length - 2, Math.floor(gl)), gk = smooth(0, 1, gl - gi);
+      const A = GLIDE[gi], B = GLIDE[gi + 1];
+      const gx = lerp(A[0], B[0], gk), gz = lerp(A[1], B[1], gk), gy = lerp(A[2], B[2], gk), gr = lerp(A[3], B[3], gk);
+      xf(Gmov, gx, gy, gz, tmp);
+      const mx = xf(Gmov, gx + 120 * gr, 150 * gr, gz + 150 * gr, tmp2);
       const k = d * d * (3 - 2 * d);
       for (let i = 0; i < 3; i++) { tg[i] = lerp(tg[i], tmp[i], k); cp[i] = lerp(cp[i], mx[i], k); }
     }
