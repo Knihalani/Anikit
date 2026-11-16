@@ -7,8 +7,57 @@ use openh264::formats::YUVSlices;
 use std::process::Command;
 use std::time::Instant;
 
+/// Decode an ak264 stream with OpenH264's decoder and compare with ffmpeg's output.
+fn crosscheck(cabac: bool) {
+    use openh264::decoder::Decoder;
+    use openh264::formats::YUVSource;
+    let (w, h) = (320usize, 192usize);
+    let s = Scene::preset("typical", w as u32, h as u32);
+    let bufs: Vec<ak264::YuvBuffer> = (0..30).map(|t| s.frame(t)).collect();
+    let frames: Vec<ak264::YuvFrame> = bufs.iter().map(|b| b.frame()).collect();
+    let cfg = ak264::EncoderConfig { width: w as u32, height: h as u32, gop: 10, cabac, ..Default::default() };
+    let stream = ak264::encode_chunks(&cfg, &frames, &[]);
+    let mut dec = Decoder::new().unwrap();
+    let mut ours = Vec::new();
+    let mut push = |y: &dyn YUVSource| {
+        let (ys, us, vs) = y.strides();
+        for r in 0..h {
+            ours.extend_from_slice(&y.y()[r * ys..r * ys + w]);
+        }
+        for r in 0..h / 2 {
+            ours.extend_from_slice(&y.u()[r * us..r * us + w / 2]);
+        }
+        for r in 0..h / 2 {
+            ours.extend_from_slice(&y.v()[r * vs..r * vs + w / 2]);
+        }
+    };
+    for nal in openh264::nal_units(&stream) {
+        if let Ok(Some(f)) = dec.decode(nal) {
+            push(&f);
+        }
+    }
+    for f in dec.flush_remaining().unwrap() {
+        push(&f);
+    }
+    let p = std::env::temp_dir().join("xchk.h264");
+    std::fs::write(&p, &stream).unwrap();
+    let o = Command::new("ffmpeg").args(["-v", "error", "-i"]).arg(&p).args(["-f", "rawvideo", "-pix_fmt", "yuv420p", "-"]).output().unwrap();
+    println!(
+        "cross-check {}: OpenH264 decoded {} frames, ffmpeg {} frames, identical: {}",
+        if cabac { "CABAC/Main" } else { "CAVLC/Baseline" },
+        ours.len() / (w * h * 3 / 2),
+        o.stdout.len() / (w * h * 3 / 2),
+        ours == o.stdout
+    );
+}
+
 fn main() {
     let a: Vec<String> = std::env::args().collect();
+    if a.get(1).map(|s| s == "crosscheck").unwrap_or(false) {
+        crosscheck(false);
+        crosscheck(true);
+        return;
+    }
     let scene = a.get(1).cloned().unwrap_or("typical".into());
     let n: usize = a.get(2).and_then(|s| s.parse().ok()).unwrap_or(240);
     let qps: Vec<u8> = if a.len() > 3 { a[3..].iter().map(|s| s.parse().unwrap()).collect() } else { vec![26] };

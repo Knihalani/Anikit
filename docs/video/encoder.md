@@ -110,6 +110,9 @@ valid stream. Within a frame, slices can also run in parallel.
   off, quarter-pel on and off, multi-slice, every QP from 0 to 51, odd sizes
   (2×2, 18×18, 100×58, 202×34), chunk concatenation, change-map and motion hints,
   and the MP4 container (checked with ffprobe).
+- A second, independent decoder (Cisco OpenH264) decodes CABAC/Main and
+  CAVLC/Baseline streams to exactly the same frames as ffmpeg:
+  `cargo run --release --manifest-path crates/ak264/bench-openh264/Cargo.toml -- crosscheck`.
 - PSNR is above 40 dB at the default QP on every test (47–50 dB in practice).
 - Unit tests check the transforms, the I4x4 prediction against the spec equations,
   the SIMD kernels against their scalar versions, and Exp-Golomb and emulation
