@@ -1,0 +1,16 @@
+[package]
+name = "ak264"
+description = "A fast, renderer-aware H.264 (AVC) encoder in pure Rust: CAVLC, constant QP, change-map and motion hints, chunk-parallel."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+rayon = "1"
+
+[dev-dependencies]
+
+[[example]]
+name = "bench"
+path = "examples/bench.rs"

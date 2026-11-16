@@ -1,0 +1,640 @@
+//! Rich text layout (parley): spans in, positioned glyph runs, decorations and
+//! addressable units (chars, words, lines) out.
+//!
+//! Layout runs once at preprocessing and is cached by the spec's content
+//! (`(text, style, width)`), so frames only read the result.
+
+use std::borrow::Cow;
+use std::hash::{Hash, Hasher};
+use std::ops::Range;
+use std::sync::Arc;
+
+use parley::{
+    Alignment, AlignmentOptions, FontFamily, FontFeatures, FontStyle, FontVariations, FontWeight,
+    Layout, LineHeight, StyleProperty,
+};
+use serde::{Deserialize, Serialize};
+
+use super::color::Color;
+use super::fonts::FontStore;
+use crate::dl::{self, Affine, FontId, Op, Paint, Rgba};
+
+/// Horizontal alignment of lines within the wrapping width.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Align {
+    #[default]
+    Left,
+    Center,
+    Right,
+    Justify,
+}
+
+/// Base style of a text block (every field has a sensible default).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct TextStyle {
+    /// Family name or alias: `Inter`, `Inter Display`, `JetBrains Mono`,
+    /// `Instrument Serif`, `sans`, `serif`, `mono`, or any loaded family.
+    /// A comma-separated CSS list works too.
+    pub font: String,
+    /// 100..900 (any value on variable fonts).
+    pub weight: f32,
+    pub italic: bool,
+    /// Font size in px.
+    pub size: f32,
+    pub color: Color,
+    /// Extra space between letters, in em (CSS-like tracking, e.g. `-0.02`).
+    pub letter_spacing: f32,
+    /// Line height as a multiple of the font size.
+    pub line_height: f32,
+    pub underline: bool,
+    pub strikethrough: bool,
+    /// OpenType features in CSS syntax, e.g. `"tnum" on, "ss01" on`.
+    pub features: Option<String>,
+}
+
+impl Default for TextStyle {
+    fn default() -> Self {
+        TextStyle {
+            font: "Inter".into(),
+            weight: 400.0,
+            italic: false,
+            size: 48.0,
+            color: Color(Rgba([1.0, 1.0, 1.0, 1.0])),
+            letter_spacing: 0.0,
+            line_height: 1.2,
+            underline: false,
+            strikethrough: false,
+            features: None,
+        }
+    }
+}
+
+/// A run of text with optional style overrides.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Span {
+    pub text: String,
+    pub font: Option<String>,
+    pub weight: Option<f32>,
+    pub italic: Option<bool>,
+    pub size: Option<f32>,
+    pub color: Option<Color>,
+    pub letter_spacing: Option<f32>,
+    pub underline: Option<bool>,
+    pub strikethrough: Option<bool>,
+    pub features: Option<String>,
+}
+
+impl Span {
+    pub fn new(text: impl Into<String>) -> Self {
+        Span { text: text.into(), ..Default::default() }
+    }
+}
+
+/// Shrink-to-fit box: the font size is binary-searched so the text fits.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Fit {
+    pub width: f32,
+    pub height: f32,
+    /// Smallest allowed base size in px.
+    pub min_size: f32,
+    /// Largest allowed base size in px (defaults to the style's size).
+    pub max_size: Option<f32>,
+}
+
+impl Default for Fit {
+    fn default() -> Self {
+        Fit { width: 1000.0, height: 200.0, min_size: 8.0, max_size: None }
+    }
+}
+
+/// A block of rich text.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct TextSpec {
+    /// Plain text (used when `spans` is empty).
+    pub text: String,
+    pub spans: Vec<Span>,
+    pub style: TextStyle,
+    /// Wrapping width in px; `None` = no wrapping.
+    pub width: Option<f32>,
+    pub align: Align,
+    /// Truncate after this many lines.
+    pub max_lines: Option<u32>,
+    /// Append `…` when truncated (default true when `max_lines` is set).
+    pub ellipsis: Option<bool>,
+    /// Shrink to fit a box (wraps at `fit.width` unless `width` is set).
+    pub fit: Option<Fit>,
+}
+
+impl TextSpec {
+    pub fn plain(text: impl Into<String>, style: TextStyle) -> Self {
+        TextSpec { text: text.into(), style, ..Default::default() }
+    }
+
+    fn cache_key(&self) -> u64 {
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        serde_json::to_vec(self).unwrap_or_default().hash(&mut h);
+        h.finish()
+    }
+
+    fn joined(&self) -> (String, Vec<(Range<usize>, &Span)>) {
+        if self.spans.is_empty() {
+            return (self.text.clone(), Vec::new());
+        }
+        let mut s = String::new();
+        let mut v = Vec::with_capacity(self.spans.len());
+        for sp in &self.spans {
+            let a = s.len();
+            s.push_str(&sp.text);
+            v.push((a..s.len(), sp));
+        }
+        (s, v)
+    }
+}
+
+/// A run of glyphs sharing one face, size and colour (maps 1:1 to `Op::Glyphs`).
+#[derive(Clone, Debug, PartialEq)]
+pub struct GlyphRun {
+    pub font: FontId,
+    pub size: f32,
+    pub color: Rgba,
+    pub glyphs: Vec<dl::Glyph>,
+}
+
+/// Where a glyph sits.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct GlyphInfo {
+    /// Index of its [`GlyphRun`] and position inside it.
+    pub run: u32,
+    pub index: u32,
+    /// Char unit, word and line it belongs to.
+    pub char: u32,
+    pub word: u32,
+    pub line: u32,
+}
+
+/// An addressable unit (char, word or line): its box and its glyphs.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Unit {
+    /// `[x, y, w, h]` in layout coordinates (origin top-left of the block).
+    pub rect: [f32; 4],
+    /// Baseline y.
+    pub baseline: f32,
+    /// Range into [`TextLayout::glyphs`].
+    pub glyphs: Range<u32>,
+    /// Byte range in [`TextLayout::text`].
+    pub text: Range<usize>,
+}
+
+/// A filled rectangle (underline, strikethrough).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Decoration {
+    pub rect: [f32; 4],
+    pub color: Rgba,
+    pub line: u32,
+}
+
+/// The result of laying out a [`TextSpec`].
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct TextLayout {
+    /// The laid-out text (after truncation).
+    pub text: String,
+    pub runs: Vec<GlyphRun>,
+    /// Every visible glyph, in visual order (spaces and breaks are dropped).
+    pub glyphs: Vec<GlyphInfo>,
+    /// Grapheme clusters that draw something.
+    pub chars: Vec<Unit>,
+    pub words: Vec<Unit>,
+    pub lines: Vec<Unit>,
+    pub decorations: Vec<Decoration>,
+    pub width: f32,
+    pub height: f32,
+    /// Base font size actually used (differs from the style's after auto-fit).
+    pub font_size: f32,
+    /// True when `max_lines` cut the text.
+    pub truncated: bool,
+}
+
+/// Unit granularity for per-unit addressing and animation.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum UnitKind {
+    #[default]
+    Char,
+    Word,
+    Line,
+}
+
+impl TextLayout {
+    pub fn units(&self, kind: UnitKind) -> &[Unit] {
+        match kind {
+            UnitKind::Char => &self.chars,
+            UnitKind::Word => &self.words,
+            UnitKind::Line => &self.lines,
+        }
+    }
+
+    /// Glyph position (pen origin on the baseline) for glyph `i`.
+    #[inline]
+    pub fn glyph(&self, i: u32) -> (&GlyphRun, dl::Glyph) {
+        let g = self.glyphs[i as usize];
+        let r = &self.runs[g.run as usize];
+        (r, r.glyphs[g.index as usize])
+    }
+
+    /// Static ops for the whole block: decorations, then glyph runs.
+    pub fn ops(&self, transform: Affine, out: &mut Vec<Op>) {
+        for d in &self.decorations {
+            out.push(rect_op(d.rect, d.color, transform));
+        }
+        for r in &self.runs {
+            out.push(Op::Glyphs {
+                font: r.font,
+                size: r.size,
+                glyphs: r.glyphs.clone(),
+                paint: Paint::Solid(r.color),
+                transform,
+            });
+        }
+    }
+
+    /// Convenience: a fresh op list.
+    pub fn to_ops(&self, transform: Affine) -> Vec<Op> {
+        let mut v = Vec::with_capacity(self.runs.len() + self.decorations.len());
+        self.ops(transform, &mut v);
+        v
+    }
+}
+
+pub(crate) fn rect_op(r: [f32; 4], color: Rgba, transform: Affine) -> Op {
+    Op::RoundRect { x: r[0], y: r[1], w: r[2], h: r[3], radius: 0.0, paint: Paint::Solid(color), transform }
+}
+
+impl FontStore {
+    /// Lay out a text block (cached by content; cheap to call again).
+    pub fn layout(&self, spec: &TextSpec) -> Arc<TextLayout> {
+        let key = spec.cache_key();
+        if let Some(l) = self.cache.lock().unwrap().get(&key) {
+            return l.clone();
+        }
+        let l = Arc::new(self.layout_uncached(spec));
+        self.cache.lock().unwrap().insert(key, l.clone());
+        l
+    }
+
+    /// Lay out without touching the cache.
+    pub fn layout_uncached(&self, spec: &TextSpec) -> TextLayout {
+        let (text, spans) = spec.joined();
+        let width = spec.width.or(spec.fit.as_ref().map(|f| f.width));
+        let max_lines = spec.max_lines.map(|m| m.max(1) as usize);
+        let base = spec.style.size.max(0.1);
+        let mut scale = 1.0;
+        if let Some(fit) = &spec.fit {
+            let hi = fit.max_size.unwrap_or(base) / base;
+            let lo = (fit.min_size / base).min(hi);
+            let fits = |s: f32| {
+                let l = self.parley_layout(spec, &text, &spans, s, width);
+                let lines = l.len();
+                l.height() <= fit.height + 0.01
+                    && l.lines().all(|ln| ln.metrics().advance - ln.metrics().hanging_advance <= fit.width + 0.01)
+                    && max_lines.is_none_or(|m| lines <= m)
+            };
+            scale = if fits(hi) {
+                hi
+            } else {
+                let (mut a, mut b) = (lo, hi);
+                for _ in 0..14 {
+                    let m = 0.5 * (a + b);
+                    if fits(m) {
+                        a = m
+                    } else {
+                        b = m
+                    }
+                    if (b - a) * base < 0.05 {
+                        break;
+                    }
+                }
+                a
+            };
+        }
+        let mut layout = self.parley_layout(spec, &text, &spans, scale, width);
+        let mut text = text;
+        let mut truncated = false;
+        if let Some(m) = max_lines {
+            if layout.len() > m {
+                truncated = true;
+                let ellipsis = spec.ellipsis.unwrap_or(true);
+                let cut_end = layout.get(m - 1).map_or(text.len(), |l| l.text_range().end);
+                // Candidate cut points: char boundaries up to the end of line m.
+                let cands: Vec<usize> = text[..cut_end].char_indices().map(|(i, _)| i).chain([cut_end]).collect();
+                let make = |k: usize| -> String {
+                    let mut t = text[..k].trim_end().to_string();
+                    if ellipsis {
+                        t.push('…');
+                    }
+                    t
+                };
+                let (mut lo, mut hi) = (0usize, cands.len() - 1);
+                // Largest k whose truncated text fits in m lines.
+                while lo < hi {
+                    let mid = (lo + hi).div_ceil(2);
+                    let t = make(cands[mid]);
+                    let sp = clip_spans(&spans, t.len(), cands[mid]);
+                    let l = self.parley_layout(spec, &t, &sp, scale, width);
+                    if l.len() <= m {
+                        lo = mid
+                    } else {
+                        hi = mid - 1
+                    }
+                }
+                let t = make(cands[lo]);
+                let sp = clip_spans(&spans, t.len(), cands[lo]);
+                layout = self.parley_layout(spec, &t, &sp, scale, width);
+                text = t;
+            }
+        }
+        let mut out = self.extract(&layout, &text);
+        out.font_size = base * scale;
+        out.truncated = truncated;
+        out
+    }
+
+    fn parley_layout(
+        &self,
+        spec: &TextSpec,
+        text: &str,
+        spans: &[(Range<usize>, &Span)],
+        scale: f32,
+        width: Option<f32>,
+    ) -> Layout<Rgba> {
+        let mut guard = self.shaper.lock().unwrap();
+        let sh = &mut *guard;
+        let st = &spec.style;
+        let fam_base = family_css(sh, &st.font);
+        let fams: Vec<(String, bool)> = spans
+            .iter()
+            .map(|(_, s)| s.font.as_deref().map(|f| family_css(sh, f)).unwrap_or_else(|| fam_base.clone()))
+            .collect();
+        let mut b = sh.lcx.ranged_builder(&mut sh.fcx, text, 1.0, true);
+        let size = st.size * scale;
+        b.push_default(StyleProperty::FontFamily(FontFamily::Source(Cow::Borrowed(&fam_base.0))));
+        b.push_default(StyleProperty::FontSize(size));
+        b.push_default(StyleProperty::FontWeight(FontWeight::new(st.weight)));
+        if st.italic {
+            b.push_default(StyleProperty::FontStyle(FontStyle::Italic));
+        }
+        b.push_default(StyleProperty::Brush(st.color.0));
+        b.push_default(StyleProperty::LineHeight(LineHeight::FontSizeRelative(st.line_height)));
+        if st.letter_spacing != 0.0 {
+            b.push_default(StyleProperty::LetterSpacing(st.letter_spacing * size));
+        }
+        b.push_default(StyleProperty::FontVariations(opsz(fam_base.1)));
+        if st.underline {
+            b.push_default(StyleProperty::Underline(true));
+        }
+        if st.strikethrough {
+            b.push_default(StyleProperty::Strikethrough(true));
+        }
+        if let Some(f) = &st.features {
+            b.push_default(StyleProperty::FontFeatures(FontFeatures::Source(Cow::Borrowed(f))));
+        }
+        for ((r, s), fam) in spans.iter().zip(&fams) {
+            let r = r.clone();
+            if r.is_empty() {
+                continue;
+            }
+            if s.font.is_some() {
+                b.push(StyleProperty::FontFamily(FontFamily::Source(Cow::Borrowed(&fam.0))), r.clone());
+                b.push(StyleProperty::FontVariations(opsz(fam.1)), r.clone());
+            }
+            let ssize = s.size.map(|v| v * scale).unwrap_or(size);
+            if s.size.is_some() {
+                b.push(StyleProperty::FontSize(ssize), r.clone());
+            }
+            if let Some(w) = s.weight {
+                b.push(StyleProperty::FontWeight(FontWeight::new(w)), r.clone());
+            }
+            if let Some(i) = s.italic {
+                b.push(StyleProperty::FontStyle(if i { FontStyle::Italic } else { FontStyle::Normal }), r.clone());
+            }
+            if let Some(c) = s.color {
+                b.push(StyleProperty::Brush(c.0), r.clone());
+            }
+            if let Some(ls) = s.letter_spacing {
+                b.push(StyleProperty::LetterSpacing(ls * ssize), r.clone());
+            } else if s.size.is_some() && st.letter_spacing != 0.0 {
+                b.push(StyleProperty::LetterSpacing(st.letter_spacing * ssize), r.clone());
+            }
+            if let Some(u) = s.underline {
+                b.push(StyleProperty::Underline(u), r.clone());
+            }
+            if let Some(u) = s.strikethrough {
+                b.push(StyleProperty::Strikethrough(u), r.clone());
+            }
+            if let Some(f) = &s.features {
+                b.push(StyleProperty::FontFeatures(FontFeatures::Source(Cow::Borrowed(f))), r.clone());
+            }
+        }
+        let mut layout: Layout<Rgba> = b.build(text);
+        layout.break_all_lines(width);
+        let align = match spec.align {
+            Align::Left => Alignment::Left,
+            Align::Center => Alignment::Center,
+            Align::Right => Alignment::Right,
+            Align::Justify => Alignment::Justify,
+        };
+        layout.set_alignment(align, AlignmentOptions { align_when_overflowing: true, ..Default::default() });
+        // Alignment applies on the next line break pass.
+        layout.break_all_lines(width);
+        layout
+    }
+
+    fn extract(&self, layout: &Layout<Rgba>, text: &str) -> TextLayout {
+        let mut out = TextLayout { text: text.to_string(), ..Default::default() };
+        // Interned face per parley run, memoised by (blob, index, coords ptr).
+        let mut last_face: Option<(u64, u32, usize, FontId)> = None;
+        for (li, line) in layout.lines().enumerate() {
+            let m = *line.metrics();
+            let li = li as u32;
+            let line_g0 = out.glyphs.len() as u32;
+            let mut pen = m.offset + m.inline_min_coord;
+            let mut word_open = false;
+            let mut line_text = Range { start: usize::MAX, end: 0 };
+            for run in line.runs() {
+                let fd = run.font();
+                let coords = run.normalized_coords();
+                let syn = run.synthesis();
+                let fid = match last_face {
+                    Some((b, i, p, f)) if b == fd.data.id() && i == fd.index && p == coords.as_ptr() as usize => f,
+                    _ => {
+                        let c: Vec<i16> = coords.iter().map(|c| c.to_bits()).collect();
+                        let f = self.intern(fd, &c, syn.embolden(), syn.skew());
+                        last_face = Some((fd.data.id(), fd.index, coords.as_ptr() as usize, f));
+                        f
+                    }
+                };
+                let size = run.font_size();
+                let fm = *run.font_metrics();
+                let top = m.baseline - fm.ascent;
+                let h = fm.ascent + fm.descent;
+                for cl in run.visual_clusters() {
+                    let adv = cl.advance();
+                    let tr = cl.text_range();
+                    let space = cl.is_space_or_nbsp() || cl.is_hard_line_break();
+                    let style = cl.style();
+                    if !space {
+                        line_text.start = line_text.start.min(tr.start);
+                        line_text.end = line_text.end.max(tr.end);
+                        let color = style.brush;
+                        let ci = out.chars.len() as u32;
+                        if !word_open {
+                            out.words.push(Unit {
+                                rect: [pen, top, 0.0, h],
+                                baseline: m.baseline,
+                                glyphs: out.glyphs.len() as u32..out.glyphs.len() as u32,
+                                text: tr.clone(),
+                            });
+                            word_open = true;
+                        }
+                        let wi = out.words.len() as u32 - 1;
+                        let g0 = out.glyphs.len() as u32;
+                        let mut gx = pen;
+                        for g in cl.glyphs() {
+                            let run_i = match out.runs.last() {
+                                Some(r) if r.font == fid && r.size == size && r.color == color => out.runs.len() - 1,
+                                _ => {
+                                    out.runs.push(GlyphRun { font: fid, size, color, glyphs: Vec::new() });
+                                    out.runs.len() - 1
+                                }
+                            };
+                            let r = &mut out.runs[run_i];
+                            r.glyphs.push(dl::Glyph { id: g.id as u16, x: gx + g.x, y: m.baseline + g.y });
+                            out.glyphs.push(GlyphInfo {
+                                run: run_i as u32,
+                                index: r.glyphs.len() as u32 - 1,
+                                char: ci,
+                                word: wi,
+                                line: li,
+                            });
+                            gx += g.advance;
+                        }
+                        let g1 = out.glyphs.len() as u32;
+                        out.chars.push(Unit { rect: [pen, top, adv, h], baseline: m.baseline, glyphs: g0..g1, text: tr.clone() });
+                        let w = out.words.last_mut().unwrap();
+                        let x1 = (pen + adv).max(w.rect[0] + w.rect[2]);
+                        let y0 = w.rect[1].min(top);
+                        let y1 = (w.rect[1] + w.rect[3]).max(top + h);
+                        w.rect = [w.rect[0].min(pen), y0, x1 - w.rect[0].min(pen), y1 - y0];
+                        w.glyphs.end = g1;
+                        w.text.start = w.text.start.min(tr.start);
+                        w.text.end = w.text.end.max(tr.end);
+                    } else {
+                        word_open = false;
+                    }
+                    for (dec, is_under) in [(&style.underline, true), (&style.strikethrough, false)] {
+                        let Some(d) = dec else { continue };
+                        let (off, sz) = if is_under {
+                            (d.offset.unwrap_or(fm.underline_offset), d.size.unwrap_or(fm.underline_size))
+                        } else {
+                            (d.offset.unwrap_or(fm.strikethrough_offset), d.size.unwrap_or(fm.strikethrough_size))
+                        };
+                        let y = m.baseline - off;
+                        let color = d.brush;
+                        match out.decorations.last_mut() {
+                            Some(p) if p.line == li && p.color == color && (p.rect[1] - y).abs() < 0.01
+                                && (p.rect[0] + p.rect[2] - pen).abs() < 0.5 =>
+                            {
+                                p.rect[2] = pen + adv - p.rect[0];
+                            }
+                            _ => out.decorations.push(Decoration { rect: [pen, y, adv, sz.max(1.0)], color, line: li }),
+                        }
+                    }
+                    pen += adv;
+                }
+            }
+            let g1 = out.glyphs.len() as u32;
+            if line_text.start == usize::MAX {
+                line_text = line.text_range().start..line.text_range().start;
+            }
+            out.lines.push(Unit {
+                rect: [m.offset + m.inline_min_coord, m.block_min_coord, m.advance - m.hanging_advance, m.block_max_coord - m.block_min_coord],
+                baseline: m.baseline,
+                glyphs: line_g0..g1,
+                text: line_text,
+            });
+        }
+        // Trailing decorations over spaces at line ends look wrong; trim to the line's ink.
+        for d in &mut out.decorations {
+            let l = &out.lines[d.line as usize];
+            let end = l.rect[0] + l.rect[2];
+            if d.rect[0] + d.rect[2] > end {
+                d.rect[2] = (end - d.rect[0]).max(0.0);
+            }
+        }
+        out.decorations.retain(|d| d.rect[2] > 0.0);
+        out.width = layout.width();
+        out.height = layout.height();
+        out
+    }
+}
+
+fn opsz(display: bool) -> FontVariations<'static> {
+    if display {
+        FontVariations::Source(Cow::Borrowed("\"opsz\" 32"))
+    } else {
+        FontVariations::List(Cow::Borrowed(&[]))
+    }
+}
+
+/// Resolve a user family list to CSS (with emoji fallback) and whether it asks
+/// for Inter Display (Inter at optical size 32).
+fn family_css(sh: &mut super::fonts::Shaper, names: &str) -> (String, bool) {
+    let mut out = Vec::new();
+    let mut display = false;
+    for n in names.split(',') {
+        let n = n.trim().trim_matches(|c| c == '"' || c == '\'');
+        if n.is_empty() {
+            continue;
+        }
+        let lower = n.to_lowercase();
+        if lower == "inter display" && out.is_empty() {
+            display = true;
+        }
+        match lower.as_str() {
+            "serif" | "sans-serif" | "monospace" | "system-ui" | "cursive" | "fantasy" => out.push(lower.clone()),
+            _ => match sh.families.get(&lower) {
+                Some(f) => out.push(format!("\"{f}\"")),
+                // Unknown families are dropped so the default sans takes over.
+                None if sh.fcx.collection.family_id(n).is_some() => out.push(format!("\"{n}\"")),
+                None => {}
+            },
+        }
+    }
+    if out.is_empty() {
+        out.push("sans-serif".into());
+    }
+    if let Some(e) = &sh.emoji {
+        out.push(format!("\"{e}\""));
+    }
+    (out.join(", "), display)
+}
+
+/// Clip span ranges to a truncated text: bytes before `cut` keep their span;
+/// the appended ellipsis inherits the last kept span.
+fn clip_spans<'a>(spans: &[(Range<usize>, &'a Span)], new_len: usize, cut: usize) -> Vec<(Range<usize>, &'a Span)> {
+    let mut v: Vec<(Range<usize>, &Span)> = Vec::new();
+    for (r, s) in spans {
+        if r.start >= cut {
+            break;
+        }
+        v.push((r.start..r.end.min(cut), s));
+    }
+    if let Some(last) = v.last_mut() {
+        last.0.end = new_len;
+    }
+    v
+}
