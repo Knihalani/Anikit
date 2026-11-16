@@ -446,7 +446,8 @@ mod tests {
     use super::*;
 
     fn server() -> Server {
-        let mut s = server();
+        let mut s = Server::new();
+        s.workdir = std::env::temp_dir().join(format!("anikit-mcp-test-{}", std::process::id()));
         s
     }
 
