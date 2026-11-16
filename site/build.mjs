@@ -2,7 +2,7 @@
 //   node site/build.mjs   →  site-dist/
 // Copies the site, vendors the lean anikit bundle (which streams anikit.wasm)
 // and rewrites import paths.
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -19,6 +19,12 @@ for (const f of ['anikit.lean.js', 'anikit.wasm']) cpSync(join(root, 'packages/a
 for (const f of pages) {
   const p = join(out, f);
   writeFileSync(p, readFileSync(p, 'utf8').replaceAll('../packages/anikit/dist/', './vendor/'));
+}
+// Concept pages (site/concepts/<name>/…): copied as-is; their anikit imports point at the vendored bundle.
+if (existsSync(join(here, 'concepts'))) {
+  cpSync(join(here, 'concepts'), join(out, 'concepts'), { recursive: true });
+  const walk = (d) => { for (const f of readdirSync(d)) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p); else if (/\.(html|js|mjs)$/.test(f)) writeFileSync(p, readFileSync(p, 'utf8').replaceAll('../../../packages/anikit/dist/', '/vendor/')); } };
+  walk(join(out, 'concepts'));
 }
 // Inline the stylesheet: one request fewer before first paint.
 {
