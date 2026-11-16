@@ -310,14 +310,16 @@ impl PostFx {
         // 2×2 mean into packed RGB words (red+blue and green summed in 16-bit lanes).
         self.half.clear();
         self.half.resize(bw * bh, 0);
-        let word = |i: usize| u32::from_le_bytes([rgba[i], rgba[i + 1], rgba[i + 2], rgba[i + 3]]);
-        for by in 0..bh {
-            for bx in 0..bw {
-                let i = (by * 2 * w + bx * 2) * 4;
-                let q = [word(i), word(i + 4), word(i + w * 4), word(i + w * 4 + 4)];
+        let wd = |b: &[u8]| u32::from_le_bytes([b[0], b[1], b[2], b[3]]);
+        for (by, out) in self.half.chunks_exact_mut(bw).enumerate() {
+            // Two source rows, walked eight bytes (two pixels) at a time.
+            let r0 = &rgba[by * 2 * w * 4..][..bw * 8];
+            let r1 = &rgba[(by * 2 + 1) * w * 4..][..bw * 8];
+            for ((o, a), b) in out.iter_mut().zip(r0.chunks_exact(8)).zip(r1.chunks_exact(8)) {
+                let q = [wd(&a[..4]), wd(&a[4..]), wd(&b[..4]), wd(&b[4..])];
                 let rb = (q.iter().map(|v| v & RB).sum::<u32>() + 0x0002_0002) >> 2 & RB;
                 let g = (q.iter().map(|v| (v >> 8) & 255).sum::<u32>() + 2) >> 2;
-                self.half[by * bw + bx] = rb | g << 8;
+                *o = rb | g << 8;
             }
         }
         let (cx, cy) = (p.zoom_center[0] * bw as f32, p.zoom_center[1] * bh as f32);
