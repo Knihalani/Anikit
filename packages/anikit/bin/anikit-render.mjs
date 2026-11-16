@@ -256,6 +256,9 @@ const frames = Math.round((to - from) * fps);
 const per = opts.chunk !== undefined ? Math.max(1, Math.round(num('chunk') * fps)) : Math.ceil(frames / workers);
 const jobs = [];
 for (let fa = Math.round(from * fps); fa < Math.round(to * fps); fa += per) jobs.push([fa, Math.min(Math.round(to * fps), fa + per)]);
+// A fade must lie inside one job: fold a last (or first) job shorter than its fade into its neighbour.
+if (jobs.length > 1 && (jobs[jobs.length - 1][1] - jobs[jobs.length - 1][0]) / fps < +opt('fade-out', 0)) jobs[jobs.length - 2][1] = jobs.pop()[1];
+if (jobs.length > 1 && (jobs[0][1] - jobs[0][0]) / fps < +opt('fade-in', 0)) jobs[1][0] = jobs.shift()[0];
 const t0 = Date.now();
 const fadeIn = +opt('fade-in', 0), fadeOut = +opt('fade-out', 0), audio = opt('audio');
 const tmp = out + '.parts';

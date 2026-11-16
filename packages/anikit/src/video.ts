@@ -58,8 +58,9 @@ export interface FrameInfo {
    */
   clock: number;
   /**
-   * In `draw()`: this frame is `px` (RGBA, `width × height × 4`), as if put with
-   * `ctx.putImageData` as the draw's last step. On a plain frame the pixels go
+   * In `draw()`: this frame is `px` (opaque RGBA, `width × height × 4`), as if put
+   * with `ctx.putImageData` as the draw's last step (a canvas premultiplies
+   * translucent pixels and the direct path doesn't, so keep alpha at 255). On a plain frame the pixels go
    * straight to the grade and the encoder, skipping the canvas round trip
    * (`putImageData` + read-back, ~20 ms at 1080p in Node); in transitions and with
    * impacts they are put on the canvas. Use it for full-frame renders such as

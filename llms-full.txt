@@ -1763,7 +1763,7 @@ Faster renders, same pixels:
 
 - **`--preroll 0`** when `draw()` keeps no state between frames (a camera on a path, no trails). Each job otherwise draws 0.5 s unseen before its first frame so trails match. On `film/film.mjs`, a 30-frame slice took 68 s by default and 27 s with `--preroll 0`, to a byte-identical mp4.
 - **`--chunk 2`** splits the film into 2-second jobs that free workers take in turn, so a slow stretch doesn't hold up the whole render. With the default preroll, every job pays it, so pair it with `--preroll 0`.
-- **`pixels(px)`** hands a full-frame render to the composition instead of `ctx.putImageData`. On a plain frame it skips the canvas round trip (about 20 ms at 1080p in Node); in transitions and with impacts it puts the pixels on the canvas. Draw nothing on `ctx` after it.
+- **`pixels(px)`** hands a full-frame render of opaque pixels to the composition instead of `ctx.putImageData`. On a plain frame it skips the canvas round trip (about 20 ms at 1080p in Node); in transitions and with impacts it puts the pixels on the canvas. Draw nothing on `ctx` after it. Use it only for opaque frames: a canvas premultiplies translucent pixels and the direct path doesn't, so they would differ between plain and transition frames.
 
 ```js
 film.scene('flight', 0, 20, {
@@ -1844,7 +1844,7 @@ Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [nea
 
 **Camera motion blur**: `render(scene, items, { motionBlur: { shutter: 0.5, max } })` reprojects every pixel with the previous `render()`'s camera using the depth buffer and blurs along that motion (depth-aware, so near geometry smears over the background). Smooth, ghost-free speed from one render per frame — use it with composition `motionBlur: 1`, give points `streak: 0`–`0.5`, and call `r3.resetMotion()` after a cut. Pass `prevCamera` (the camera one frame earlier, `scene.viewProjection().matrix`) so previews and `--review`, which skip frames, blur exactly like the final render — see `templates/journey.mjs`.
 
-**Draw order**: `render(scene, items, { sort: 'near' })` draws the opaque items nearest first (by the far side of each item's bounds, so a sky dome around the camera goes last), in the mirror pass too: pixels hidden behind nearer items are rejected by the depth test instead of shaded and overwritten. The picture is bit-identical to list order, exact depth ties included (the item listed first still wins them). On a landscape (sky dome, two terrains, 12,000 trees, a lake), it took the opaque pass from 394 to 257 ms.
+**Draw order**: `render(scene, items, { sort: 'near' })` draws the opaque items nearest first (by the far side of each item's bounds, so a sky dome around the camera goes last), in the mirror pass too: pixels hidden behind nearer items are rejected by the depth test instead of shaded and overwritten. The picture is bit-identical to list order, exact depth ties included (the item listed first still wins them). On a landscape (sky dome, two terrains, 12,000 trees, a lake), it took the opaque pass from 316–341 ms to 188–199 ms (interleaved runs).
 
 ```ts
 import { renderer3d, scene3d, mesh, instances } from 'anikit';

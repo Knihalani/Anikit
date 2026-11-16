@@ -956,11 +956,20 @@ mirror change):
 
 | | base | new | new, `sort: 'near'` | final, `sort: 'near'` |
 |---|---|---|---|---|
-| one render | 479 · 512 | 449 · 451 | 355 · 335 | 325 |
-| … opaque pass | 316 · 341 | 297 · 303 | 199 · 188 | 194 |
-| … mirror pass | 100 · 108 | 95 · 93 | 97 · 87 | 74 |
-| … motion blur | 60 · 59 | 54 · 53 | 57 · 57 | 54 |
-| `depth(cam)` | 8.0 · 8.1 | 7.4 · 7.2 | 7.7 · 7.7 | 5.1 |
+| one render | 479 · 512 | 449 · 451 | 355 · 335 | 323 · 323 |
+| … opaque pass | 316 · 341 | 297 · 303 | 199 · 188 | 188 · 192 |
+| … mirror pass | 100 · 108 | 95 · 93 | 97 · 87 | 75 · 75 |
+| … motion blur | 60 · 59 | 54 · 53 | 57 · 57 | 57 · 53 |
+| `depth(cam)` | 8.0 · 8.1 | 7.4 · 7.2 | 7.7 · 7.7 | 5.5 · 5.4 |
+
+The final column comes from its own two pairs against the second commit's
+dist (mirror first), both with `--sort near`: one render 365 · 379 → 323 ·
+323, mirror 93 · 99 → 75 · 75, opaque 209 · 217 → 188 · 192. `depth(cam)`
+also dropped from 7.6 · 8.1 to 5.5 · 5.4 ms in those pairs, although its code
+didn't change. That drop is unexplained (perhaps the depth buffer is still in
+cache after the reflection's mask pass reads it). The
+first commit's message gave mirror 140 → 110 from single runs; the pairs show that part as
+noise.
 
 `bench-raster.mjs`: flat (film-like frame 266 · 282 base vs 270 · 278 new).
 The 3–5% untextured regression from the fourth round doesn't show above this
@@ -980,10 +989,12 @@ second commit (sort + pixels + pipeline); "final" adds the mirror change:
 | … post (grade) | 56 · 59 | 46 · 50 | 57 · 48 |
 
 So about −13% per film frame, from `sort: 'near'` and the canvas round
-trip. The mirror change is flat on the film within noise (−20 ms on
-`bench-terrain`). Its cost moves between columns: run first, the opaque pass
-reads 224–244 ms instead of 347–365, and the reflection after it reads 379–386
-instead of 234–237. That shift is not explained yet.
+trip. The mirror change helps `bench-terrain` (mirror 93–99 → 75 ms) and is
+flat on the film: mirror 234 · 237 → 244 · 224 ms, opaque 347 · 365 → 386 ·
+379 ms, within this machine's noise. The film's lake fills a small part of
+the frame, and its reflection was already cheap. (The `--profile` columns
+follow the pass order, so after this change `3d:opaque` comes before
+`3d:mirror`.)
 
 End to end (`anikit-render`, one worker, `film.mjs` with the base CLI and
 dist against the new CLI with `--preroll 0`; wall time including world setup
