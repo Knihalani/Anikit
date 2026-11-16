@@ -981,6 +981,10 @@ impl BlackHole {
         let lt0 = libm::log2f(BB_T0);
         let bb_k = (BB_N - 1) as f32 / (libm::log2f(BB_T1) - lt0);
         let row_scale = ROWS as f32 / self.psi_max;
+        // One pixel's angular size, in table rows.
+        let px_rows = 2.0 * cam.tan_half / h as f32 * row_scale;
+        // The thin images hug the shadow edge.
+        let edge_row = self.first_escape as f32;
         let alpha_q = if cinematic { 0.92 * 65535.0 } else { 0.97 * 65535.0 };
         // Walk the screen in 32×32 tiles: neighbouring pixels read
         // neighbouring table rows, which keeps the 3 MB table in cache.
@@ -1000,8 +1004,38 @@ impl BlackHole {
             let bimp = self.imp[ri] + (self.imp[ri + 1] - self.imp[ri]) * fr;
             let dob = self.dobs[ri] + (self.dobs[ri + 1] - self.dobs[ri]) * fr;
             let lz = bimp * qz;
+            // The crossings are whole half-turns apart: same column fraction,
+            // columns 128 apart, on the same two table rows.
+            let ci0 = (col0 as usize).min(COLS - 2 - 2 * COLS_PER_PI);
+            let fc = col0 - ci0 as f32;
+            let r0 = &self.table[ri * COLS + ci0..ri * COLS + COLS];
+            let r1 = &self.table[(ri + 1) * COLS + ci0..(ri + 1) * COLS + COLS];
             for k in 0..3 {
-                let u = self.lookup(row, col0 + (k * COLS_PER_PI) as f32);
+                let o = k * COLS_PER_PI;
+                let a = r0[o] + (r0[o + 1] - r0[o]) * fc;
+                let b = r1[o] + (r1[o + 1] - r1[o]) * fc;
+                let mut u = a + (b - a) * fr;
+                // The lensed images (k ≥ 1) are often thinner than a pixel:
+                // take the pixel's coverage from three ψ sub-samples.
+                let mut cover = 1.0;
+                if k > 0 && (row - edge_row).abs() < 10.0 * px_rows {
+                    let mut hits = 0u32;
+                    let mut first = -1.0f32;
+                    for d in [-0.33f32, 0.0, 0.33] {
+                        let rr = (row + d * px_rows).clamp(0.0, (ROWS - 1) as f32 - 1e-3);
+                        let us = self.lookup(rr, col0 + o as f32);
+                        if us > u_lo && us < u_hi {
+                            hits += 1;
+                            if first < 0.0 || d == 0.0 {
+                                first = us;
+                            }
+                        }
+                    }
+                    if hits > 0 {
+                        u = first;
+                        cover = hits as f32 / 3.0;
+                    }
+                }
                 if !(u > u_lo && u < u_hi) {
                     // Escaped or captured before this crossing: no later ones.
                     if u <= 0.0 || u >= 1.0 {
@@ -1035,8 +1069,8 @@ impl BlackHole {
                 let l = &mut self.layers[k];
                 l.pix.push(pix as u32);
                 l.txa.push(txa);
-                l.ca.push(ci_ | (((fade * alpha_q) as u32) << 16));
-                l.gain.push(gain * fade * norm_k);
+                l.ca.push(ci_ | (((fade * cover * alpha_q) as u32) << 16));
+                l.gain.push(gain * fade * cover * norm_k);
             }
         }
         // Eye adaptation from the energy factor of the outermost escaping ray.

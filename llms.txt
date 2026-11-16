@@ -64,6 +64,7 @@ Import from 'anikit'. Times are in seconds (only `engine.onFrame`/`engine.tick` 
 - Testing and diagnostics
 - Particle emitters
 - Audio analysis
+- Black hole
 - Video: compositions
 - Python: solid 3D, camera flights and film grade
 - Export index
