@@ -1,6 +1,6 @@
 # Components
 
-High-level blocks for Anikit Video specs: code, charts, devices, UI, backgrounds, particles, 3D, Lottie and transitions. Every component is a pure function of time, so frames render in any order on any core.
+High-level blocks for Anikit Video specs: code, charts, devices, UI, backgrounds, particles, media and motion graphics, 3D, Lottie and transitions. Every component is a pure function of time, so frames render in any order on any core.
 
 ```json
 { "type": "component", "component": "barChart", "props": { "values": [3, 7, 5, 9], "labels": ["Q1", "Q2", "Q3", "Q4"] }, "width": 900, "height": 500 }
@@ -216,6 +216,128 @@ Place backgrounds first in a scene's layers.
 | `sparks` | `bursts` (times), `origin`, `direction` and `spread` (degrees), `count`, `colors` (`[hot, cool]`), `power`, `gravity`, `life`, `glow`, `seed` |
 | `snow` | `count`, `color`, `speed`, `wind`, `size`, `seed` |
 | `dust` | `count`, `color`, `size`, `speed`, `glow`, `seed` |
+
+## Media and motion graphics
+
+### `visualizer`: audio visualiser
+```json
+{ "component": "visualizer", "props": { "src": "music.mp3", "style": "circle", "image": "logo.png", "beats": true } }
+```
+The audio is decoded once and analysed with an FFT at 60 Hz into a small table of log-spaced band levels (smoothed, with peak-hold), so frames only look values up. **Without a readable `src`** it analyses a built-in synthetic groove (120 BPM, looping every 8 s), so previews still move; check the path if the bars look like a generic beat.
+
+| Prop | Default | Meaning |
+|---|---|---|
+| `src` | synthetic | Audio file (mp3, wav, ogg, flac, m4a). |
+| `style` | `bars` | `bars` (rounded gradient bars with peak caps and a reflection), `wave` (smooth mirrored waveform, lows in the middle) or `circle` (radial bars around a ring). |
+| `bands` | 48 / 32 / 96 | Number of bars (bars / wave / circle). |
+| `colors` | accent → pink → cyan | Gradient, low → high. |
+| `beats` | `false` | Pulse (glow, ring, scale) on detected beats. |
+| `smoothing` | `0.6` | How slowly levels fall (0–1). |
+| `gain` | `1` | Level multiplier. |
+| `peaks` | `true` | Peak-hold caps (`bars`, not mirrored). |
+| `mirror` | `false` | `bars`: grow both ways from the centre line. |
+| `reflection` | `0.25` | `bars`: faded reflection below. |
+| `gap` | `0.38` | Gap between bars, as a fraction of each slot. |
+| `radius` | `0.42` | `circle`: ring radius as a fraction of the half-size. |
+| `image` | | `circle`: image (avatar, logo) cover-fitted inside the ring. |
+| `line` | `3` | `wave`: line width. |
+| `offset` | `0` | Seconds into the audio at the layer's start. |
+| `delay` | `0` | The bars grow in from here. |
+
+Put the same file in the spec's `audio` so you hear what you see; use `offset` when the audio track is trimmed.
+
+### `kenBurns`: photo with slow zoom and pan
+```json
+{ "component": "kenBurns", "props": { "src": "beach.jpg", "motion": "left" } }
+```
+| Prop | Default | Meaning |
+|---|---|---|
+| `src` | placeholder | Photo, cover-fitted. Without it, a generated dusk landscape. |
+| `motion` | `in` | `in`, `out`, `left`, `right`, `up` or `down` (direction the camera moves). |
+| `zoom` | `1.2` | Zoom amount for the presets. |
+| `from`, `to` | | `[x, y, w, h]` fractions of the image to frame at the start and end (override `motion`). |
+| `duration` | `8` | Seconds for the whole move. |
+| `delay` | `0` | |
+| `layers` | `[]` | Parallax cut-outs `[{ "src": "fg.png", "depth": 1 }]`, cover-fitted like the photo; `depth` 0 moves with it, 1 twice as much. |
+| `vignette` | `0.4` | Corner darkening (0–1). |
+| `film` | `0.3` | Warm highlights, teal shadows, lifted blacks (0–1). |
+| `colors` | | Placeholder sky `[top, horizon]`. |
+
+### `tileReveal`: tiles that reveal an image
+```json
+{ "component": "tileReveal", "props": { "src": "shot.png", "wave": "radial", "out": 3 } }
+```
+| Prop | Default | Meaning |
+|---|---|---|
+| `src` | | Image to reveal (cover-fitted across the grid); without it a gradient of `colors`. |
+| `colors` | accent → pink → cyan | |
+| `cols`, `rows` | `10`, from the aspect | |
+| `effect` | `flip` | `flip` (turns over from a tinted back face), `scale` (pops with a twist) or `fade` (rises and fades). |
+| `wave` | `diagonal` | Order: `diagonal`, `radial`, `random`, `left`, `right`, `top` or `bottom`. |
+| `duration` | `1.1` | Seconds for the wave to cross the grid. |
+| `tile` | `0.7` | Seconds for one tile. |
+| `gap`, `radius` | `6`, `10` | px. |
+| `delay` | `0` | |
+| `out` | | When the tiles leave again with the same wave. |
+| `reverse` | `false` | Start revealed and hide instead. |
+| `back` | tinted surface | Back-face colour for `flip`. |
+| `seed` | `1` | For `random`. |
+
+### `kineticGrid`: rippling grid backdrop
+```json
+{ "component": "kineticGrid", "props": { "shape": "dot", "wave": "interference" } }
+```
+| Prop | Default | Meaning |
+|---|---|---|
+| `cols` | `18` | Rows follow from the box aspect. |
+| `shape` | `rounded` | `rounded` (circles at rest, rounded squares at the crest), `square`, `dot` or `diamond`. |
+| `wave` | `radial` | `radial`, `diagonal`, `linear` or `interference` (two sources). |
+| `colors` | accent → pink → cyan | Cycled across the grid and over time. |
+| `speed` | `1` | |
+| `wavelength` | `7` | In cells. |
+| `size`, `min` | `0.8`, `0.16` | Shape size at the crest and trough, as fractions of a cell. |
+| `rotate` | `90` (`0` for dots) | Degrees of turn at the crest. |
+| `delay` | `0` | Cells pop in from the centre. |
+
+### `reactions`: live-stream reaction burst
+```json
+{ "component": "reactions", "props": { "kinds": ["heart", "fire", "100"], "rate": 6 } }
+```
+Emoji are vector drawings (no emoji font needed): `heart`, `like` (thumbs up), `fire`, `star`, `sparkles`, `100` and `laugh` (tears of joy). Aliases such as `thumbs`, `lol` and `hundred` work too. Each one pops in, floats up with a wobble and fades.
+
+| Prop | Default | Meaning |
+|---|---|---|
+| `kinds` | `heart`, `like`, `fire`, `star` | Picked at random per reaction. |
+| `count` | `24` | Reactions spread over `duration`… |
+| `duration` | `3` | …seconds (front-loaded a little). |
+| `rate` | | Reactions per second as an endless stream (overrides `count`). |
+| `origin` | `[0.82, 0.94]` | Start point as fractions of the box (bottom right, as on live streams). |
+| `size` | `72` | px (±25 %). |
+| `spread` | `150` | Horizontal drift and wobble, px. |
+| `rise` | `0.8` | How far up they float, as a fraction of the origin's height. |
+| `life` | `2.8` | Seconds each one lives. |
+| `delay`, `seed` | | |
+
+### `cardStack`: swiping stack of cards
+```json
+{ "component": "cardStack", "props": { "cards": ["Design", { "title": "Ship", "body": "One command.", "src": "ship.png" }], "interval": 2 } }
+```
+Cards behind are smaller, higher and darker; every `interval` the front card swipes away and the stack advances, the swiped card returning to the back.
+
+| Prop | Default | Meaning |
+|---|---|---|
+| `cards` | | Titles, or `{ "title", "body", "src", "color", "eyebrow" }`. Titled cards get a palette gradient and a number eyebrow; image cards are cover-fitted with the title over a scrim. |
+| `interval` | `2.2` | Seconds per card. |
+| `swipe` | `left` | `left`, `right`, `up` or `alternate`. |
+| `visible` | `3` | Cards shown in the stack. |
+| `aspect` | `1.5` | Card width / height. |
+| `size` | `0.62` | Card width as a fraction of the box (capped by the height). |
+| `depth` | `0.09` | Vertical step per depth, as a fraction of the card height. |
+| `darken` | `0.22` | Darkening per depth. |
+| `skew` | `-4` | Degrees of shear on the whole stack (a 2.5D tilt). |
+| `radius` | theme | |
+| `loop` | `true` | `false` stops on the last card. |
+| `delay` | `0` | The stack springs in from the back. |
 
 ## 3D
 
