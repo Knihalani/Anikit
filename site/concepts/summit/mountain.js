@@ -41,32 +41,28 @@ const COMMON = `
 uniform vec3 uSun;        // direction to the sun (world)
 uniform float uWarm;      // 0..1 golden-ness
 uniform float uExposure;
-vec3 skyCol(vec3 d) {
-  float e = d.y;
-  float s = max(dot(d, uSun), 0.0);
-  float az = max(dot(normalize(vec3(d.x, 0.0, d.z) + 1e-5), normalize(vec3(uSun.x, 0.0, uSun.z) + 1e-5)), 0.0);
-  vec3 zen = vec3(0.06, 0.20, 0.52);
-  vec3 mid = vec3(0.22, 0.45, 0.82);
-  vec3 hzSun = mix(vec3(1.0, 0.78, 0.52), vec3(1.1, 0.68, 0.38), uWarm);
-  vec3 hzAway = vec3(0.66, 0.66, 0.84);
-  vec3 hz = mix(hzAway, hzSun, pow(az, 2.0));
-  float eu = max(e, 0.0);
-  vec3 c = mix(hz, mid, smoothstep(0.0, 0.16, eu));
-  c = mix(c, zen, smoothstep(0.1, 0.55, eu));
-  // below the horizon: warm haze over the cloud sea
-  c = mix(c, hz * 0.95, smoothstep(0.0, -0.08, e));
-  // sun glow (Mie-like): broad warm halo + tighter core
-  c += vec3(1.0, 0.70, 0.40) * (0.35 * pow(s, 6.0) + 0.55 * pow(s, 48.0));
-  return c;
+uniform sampler2D uSkyLUT;  // sky radiance by (sun-relative azimuth, elevation), from single scattering
+uniform sampler2D uSkyLUT2; // the same for the lowest sun of the scroll
+uniform float uLutMix;
+uniform float uLutScale;
+uniform vec3 uSunCol;       // sunlight reaching the summit (after the atmosphere)
+uniform vec3 uAmb;          // sky irradiance on an upward surface
+vec2 lutUV(vec3 d) {
+  float e = asin(clamp(d.y, -1.0, 1.0));
+  float v = 0.5 + 0.5 * sign(e) * sqrt(abs(e) / 1.5707963);
+  vec2 h = normalize(d.xz + vec2(1e-6, 0.0)), hs = normalize(uSun.xz + vec2(1e-6, 0.0));
+  float phi = acos(clamp(dot(h, hs), -1.0, 1.0));
+  return vec2(sqrt(phi / 3.1415927), v);
 }
+vec3 skyCol(vec3 d) { vec2 uv = lutUV(d); return mix(texture(uSkyLUT, uv).rgb, texture(uSkyLUT2, uv).rgb, uLutMix) * uLutScale; }
+// aerial perspective: per-channel extinction (blue fades first) toward the in-scattered horizon light
 vec3 haze(vec3 col, vec3 dir, float dist, float k) {
-  float f = 1.0 - exp(-dist * k);
-  vec3 h = skyCol(vec3(dir.x, max(dir.y, 0.0) + 0.015, dir.z));
-  h = mix(vec3(0.52, 0.64, 0.86), h * 0.92, 0.45 + 0.55 * pow(max(dot(dir, uSun), 0.0), 4.0));
-  return mix(col, h, f);
+  vec3 T = exp(-dist * k * vec3(0.62, 0.86, 1.3));
+  vec3 h = skyCol(vec3(dir.x, max(dir.y, 0.0) + 0.012, dir.z));
+  return col * T + h * (1.0 - T);
 }
 vec3 tonemap(vec3 c) {
-  c *= uExposure;
+  c *= uExposure * vec3(0.93, 1.0, 1.16);
   c = (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);
   return pow(clamp(c, 0.0, 1.0), vec3(1.0 / 2.2));
 }
@@ -108,7 +104,7 @@ void main() {
   vec3 c = skyCol(d);
   // sun disc
   float s = dot(d, uSun);
-  c += vec3(1.6, 1.25, 0.9) * smoothstep(0.99955, 0.99975, s) * 3.0;
+  c += uSunCol * (smoothstep(0.99955, 0.99975, s) * 6.0 + 0.6 * pow(max(s, 0.0), 900.0) + 0.12 * pow(max(s, 0.0), 120.0) + 0.05 * pow(max(s, 0.0), 12.0));
   // high cirrus: stretched noise on a plane
   if (d.y > 0.02) {
     vec2 uv = d.xz / (d.y + 0.08) * 1.2 + vec2(uT * 0.004, 0.0);
@@ -116,8 +112,8 @@ void main() {
     float n = vnoise(q * 1.3) * 0.55 + vnoise(q * 2.9 + 3.1) * 0.28 + vnoise(q * 6.1 + 7.7) * 0.17;
     float band = vnoise(uv * 0.35 + 11.0);
     float cir = smoothstep(0.52, 0.85, n) * smoothstep(0.35, 0.75, band) * smoothstep(0.02, 0.2, d.y) * (1.0 - smoothstep(0.55, 0.9, d.y));
-    vec3 cc = mix(vec3(1.0, 0.96, 0.95), vec3(1.25, 0.9, 0.62), pow(max(s, 0.0), 4.0) * uWarm + 0.25 * uWarm);
-    c = mix(c, cc, cir * 0.55);
+    vec3 cc = uSunCol * (0.55 + 0.9 * pow(max(s, 0.0), 6.0)) + uAmb * 0.5;
+    c = mix(c, cc, cir * 0.22);
   }
   o = vec4(tonemap(c), 1.0);
 }`;
@@ -144,8 +140,8 @@ void main() {
   float alt = vW.y - uDeckY;
   // snow holds on slopes gentler than ~50 degrees; streaks follow the noise
   float snow = smoothstep(0.66, 0.8, N.y + (d1.x - 0.5) * 0.4 + (d2.x - 0.5) * 0.3);
-  vec3 sunC = mix(vec3(1.55, 1.38, 1.15), vec3(1.8, 1.25, 0.8), uWarm);
-  vec3 sky = vec3(0.42, 0.55, 0.85);
+  vec3 sunC = uSunCol;
+  vec3 sky = mix(uAmb, vec3(dot(uAmb, vec3(0.3, 0.5, 0.2))), 0.3) * 1.2;
   float ndl = dot(N, uSun);
   vec3 sn = vec3(0.93, 0.95, 1.0) * (sunC * 1.1 * clamp((ndl + 0.05) / 1.05, 0.0, 1.0) + sky * (0.28 + 0.2 * N.y));
   vec3 rk = vec3(0.2, 0.18, 0.19) * (0.7 + 0.6 * d2.x) * (sunC * max(ndl, 0.0) * 1.4 + sky * 0.4);
@@ -178,11 +174,11 @@ void main() {
   vec2 g = a.yz * 0.55 + b.yz * 0.3 * 2.3 + c.yz * 0.15 * 5.1;
   vec3 N = normalize(vec3(-g.x * 1.4, 1.0, -g.y * 1.4));
   float lit = clamp(dot(N, uSun) * 3.0 + 0.3, 0.0, 1.3);
-  vec3 sunC = mix(vec3(1.35, 1.2, 1.0), vec3(1.55, 1.08, 0.7), uWarm);
-  vec3 shade = vec3(0.4, 0.45, 0.72);
+  vec3 sunC = uSunCol * 0.85;
+  vec3 shade = uAmb * 3.2 + uSunCol * 0.12;
   vec3 col = mix(shade, sunC * 0.9, clamp(lit * (0.15 + 0.85 * h * h * 1.6), 0.0, 1.0));
   float fwd = pow(max(dot(dir, uSun), 0.0), 8.0);
-  col += vec3(0.5, 0.32, 0.15) * fwd;
+  col += uSunCol * vec3(0.3, 0.22, 0.14) * fwd;
   col = haze(col, dir, dist, 0.00005);
   o = vec4(tonemap(col), 1.0);
 }`;
@@ -259,10 +255,10 @@ void main() {
     : clamp(ndl * 0.75 + 0.5 + N.y * 0.35 + vUV.x * 0.15, 0.0, 1.0);
   // silver lining: thin edges facing the sun glow
   float rim = pow(clamp(1.0 - N.z, 0.0, 1.0), 2.0) * clamp(dot(normalize(vUV + 1e-4), normalize(uSunV.xy + 1e-4)), 0.0, 1.0);
-  vec3 sunC = mix(vec3(1.45, 1.3, 1.1), vec3(1.7, 1.18, 0.72), uWarm);
-  vec3 shade = uWordMode > 0.5 ? vec3(0.6, 0.66, 0.9) : vec3(0.5, 0.55, 0.8);
-  vec3 sunW = uWordMode > 0.5 ? mix(vec3(1.25, 1.02, 0.72), vec3(1.4, 0.92, 0.5), uWarm) : sunC;
-  vec3 col = mix(shade, sunW, lit) * (uWordMode > 0.5 ? 0.92 + 0.12 * vS.z : vS.z) + vec3(1.0, 0.7, 0.38) * rim * (uWordMode > 0.5 ? 0.6 * vS.z + 0.2 : 0.9);
+  vec3 sunC = uSunCol;
+  vec3 shade = uAmb * (uWordMode > 0.5 ? 4.2 : 3.6) + uSunCol * 0.16;
+  vec3 sunW = uWordMode > 0.5 ? uSunCol * 0.8 : sunC;
+  vec3 col = mix(shade, sunW, lit) * (uWordMode > 0.5 ? 0.92 + 0.12 * vS.z : vS.z) + uSunCol * 0.55 * rim * (uWordMode > 0.5 ? 0.6 * vS.z + 0.2 : 0.9);
   if (uWordMode > 0.5) col *= mix(vec3(0.93, 0.97, 1.06), vec3(1.12, 0.96, 0.78), vWarmX);
   col = mix(col, vHaze.rgb, vHaze.a);
   o = vec4(tonemap(col) * a, a);
@@ -306,8 +302,8 @@ void main() {
   snow *= 1.0 - crag2 * smoothstep(0.93, 0.78, normalize(vN).y + d5.x * 0.12);
   N = normalize(N + vec3(-d5.y, 0.0, -d5.z) * 0.05 * fade * (0.3 + crag2));
   vec3 L = uSun;
-  vec3 sunC = mix(vec3(1.6, 1.42, 1.18), vec3(1.85, 1.3, 0.85), uWarm);
-  vec3 sky = vec3(0.36, 0.52, 0.95);
+  vec3 sunC = uSunCol;
+  vec3 sky = mix(uAmb, vec3(dot(uAmb, vec3(0.3, 0.5, 0.2))), 0.4) * 1.9;
   // snow: wrapped diffuse (light scatters through) + cool sky fill + sparkle
   float wrap = clamp((dot(N, L) + 0.12) / 1.12, 0.0, 1.0);
   vec3 sn = vec3(0.92, 0.94, 1.0) * (sunC * wrap * 1.15 + sky * (0.42 + 0.2 * N.y));
@@ -395,6 +391,98 @@ void main() {
   vec3 c = vG.w < 0.5 ? vec3(1.0, 0.72, 0.42) : mix(vec3(0.55, 0.8, 1.0), vec3(1.0, 0.7, 0.4), fract(vG.w * 3.7));
   o = vec4(c * a * vG.z, 0.0);
 }`;
+
+// --- sky-view LUT: Rayleigh + Mie + ozone single scattering, seen from the summit (km units) ---
+const ATMOS_GLSL = `
+const float RG = 6360.0, RT = 6420.0, H0 = 4.6, PI = 3.1415927;
+const vec3 BR = vec3(5.802e-3, 13.558e-3, 33.1e-3);
+const float BM = 7.0e-3;
+const vec3 BO = vec3(0.65e-3, 1.881e-3, 0.085e-3);
+vec3 ext(float h) { return BR * exp(-h / 8.0) + vec3(BM * 1.11 * exp(-h / 2.2)) + BO * max(0.0, 1.0 - abs(h - 25.0) / 15.0); }
+float raySphere(vec3 o, vec3 d, float R) {
+  float b = dot(o, d), c = dot(o, o) - R * R, D = b * b - c;
+  if (D < 0.0) return -1.0;
+  float q = sqrt(D), t0 = -b - q, t1 = -b + q;
+  return t0 > 0.0 ? t0 : (t1 > 0.0 ? t1 : -1.0);
+}
+vec3 sunT(vec3 p, vec3 L) {
+  if (raySphere(p, L, RG) > 0.0) return vec3(0.0);
+  float t = raySphere(p, L, RT), dt = t / 8.0;
+  vec3 od = vec3(0.0);
+  for (int i = 0; i < 8; i++) { vec3 q = p + L * ((float(i) + 0.5) * dt); od += ext(length(q) - RG) * dt; }
+  return exp(-od);
+}
+vec3 scatter(vec3 d, vec3 L) {
+  vec3 o = vec3(0.0, RG + H0, 0.0);
+  float tMax = raySphere(o, d, RT), tg = raySphere(o, d, RG);
+  if (tg > 0.0) tMax = tg;
+  tMax = min(tMax, 600.0);
+  float mu = dot(d, L), g = 0.78;
+  float pR = 3.0 / (16.0 * PI) * (1.0 + mu * mu);
+  float pM = 3.0 / (8.0 * PI) * ((1.0 - g * g) * (1.0 + mu * mu)) / ((2.0 + g * g) * pow(1.0 + g * g - 2.0 * g * mu, 1.5));
+  vec3 T = vec3(1.0), S = vec3(0.0);
+  float tp = 0.0;
+  const int N = 28;
+  for (int i = 0; i < N; i++) {
+    float f = (float(i) + 1.0) / float(N), t = tMax * f * f, dt = t - tp;
+    vec3 p = o + d * (tp + 0.5 * dt);
+    tp = t;
+    float h = length(p) - RG;
+    vec3 e = ext(h);
+    vec3 sc = (BR * exp(-h / 8.0) * pR + vec3(BM * exp(-h / 2.2) * pM)) * sunT(p, L);
+    // a little multiple scattering keeps the shadowed sky from going grey
+    sc += (BR * exp(-h / 8.0) + BM * exp(-h / 2.2)) * 0.012 * (0.4 + max(L.y, 0.0));
+    vec3 Ts = exp(-e * dt);
+    S += T * (sc - sc * Ts) / e;
+    T *= Ts;
+  }
+  return S;
+}
+`;
+const lutVS = HEAD + `
+layout(location = 0) in vec2 aP;
+out vec2 vUV;
+void main() { vUV = aP * 0.5 + 0.5; gl_Position = vec4(aP, 0.0, 1.0); }`;
+const lutFS = HEAD + ATMOS_GLSL + `
+in vec2 vUV;
+uniform float uSunEl;
+uniform float uK;
+out vec4 o;
+void main() {
+  float phi = vUV.x * vUV.x * PI;
+  float v = vUV.y * 2.0 - 1.0;
+  float e = sign(v) * v * v * 1.5707963;
+  vec3 d = vec3(cos(e) * cos(phi), sin(e), cos(e) * sin(phi));
+  vec3 L = vec3(cos(uSunEl), sin(uSunEl), 0.0);
+  o = vec4(scatter(d, L) * uK, 1.0);
+}`;
+
+// The same model on the CPU (double precision), for the sun colour and sky ambient uniforms.
+const ATM = (() => {
+  const RG = 6360, RT = 6420, H0 = 4.6, BR = [5.802e-3, 13.558e-3, 33.1e-3], BM = 7.0e-3, BO = [0.65e-3, 1.881e-3, 0.085e-3];
+  const ext = (h, c) => BR[c] * Math.exp(-h / 8) + BM * 1.11 * Math.exp(-h / 2.2) + BO[c] * Math.max(0, 1 - Math.abs(h - 25) / 15);
+  const raySphere = (ox, oy, oz, dx, dy, dz, R) => {
+    const b = ox * dx + oy * dy + oz * dz, c = ox * ox + oy * oy + oz * oz - R * R, D = b * b - c;
+    if (D < 0) return -1;
+    const q = Math.sqrt(D), t0 = -b - q, t1 = -b + q;
+    return t0 > 0 ? t0 : (t1 > 0 ? t1 : -1);
+  };
+  // transmittance from the summit toward direction (dx, dy, dz), per channel, into out
+  function trans(dx, dy, dz, out) {
+    const oy = RG + H0;
+    if (raySphere(0, oy, 0, dx, dy, dz, RG) > 0) { out[0] = out[1] = out[2] = 0; return out; }
+    const t = raySphere(0, oy, 0, dx, dy, dz, RT), n = 64, dt = t / n;
+    let a = 0, b = 0, c = 0;
+    for (let i = 0; i < n; i++) {
+      const s = (i + 0.5) * dt, px = dx * s, py = oy + dy * s, pz = dz * s;
+      const h = Math.hypot(px, py, pz) - RG;
+      a += ext(h, 0) * dt; b += ext(h, 1) * dt; c += ext(h, 2) * dt;
+    }
+    out[0] = Math.exp(-a); out[1] = Math.exp(-b); out[2] = Math.exp(-c);
+    return out;
+  }
+  return { trans };
+})();
 
 // ---------------------------------------------------------------------------
 // GL helpers
@@ -645,6 +733,7 @@ export function createMountain(canvas) {
     ground: compile(gl, groundVS, groundFS),
     drift: compile(gl, driftVS, driftFS),
     glare: compile(gl, glareVS, glareFS),
+    lut: compile(gl, lutVS, lutFS),
   };
   for (const k in P) finish(gl, P[k], k);
 
@@ -653,6 +742,53 @@ export function createMountain(canvas) {
   const tri = vbo(gl, new Float32Array([-1, -1, 3, -1, -1, 3]));
 
   const vSky = gl.createVertexArray(); gl.bindVertexArray(vSky); attrib(gl, 0, tri, 2);
+
+  // --- atmosphere: two sky-view LUTs (start and end of the scroll's sunset), built once ---
+  const SUN_K = 1.9;                      // sun radiance scale (sets scene brightness with uExposure)
+  const SKY_GAIN = 4.0;                   // stands in for the multiple scattering the single-scatter LUT leaves out
+  const EL0 = 5.0 * Math.PI / 180, EL1 = 3.2 * Math.PI / 180, SUN_AZ = 0.66;
+  const LW = 192, LH = 108;
+  const floatOK = !!gl.getExtension('EXT_color_buffer_float');
+  const lutScale = floatOK ? 1 : 8;
+  const ambA = new Float32Array(3), ambB = new Float32Array(3);
+  const luts = [EL0, EL1].map((el, li) => {
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, floatOK ? gl.RGBA16F : gl.RGBA8, LW, LH, 0, gl.RGBA, floatOK ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    gl.viewport(0, 0, LW, LH);
+    gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
+    gl.useProgram(P.lut.p);
+    gl.uniform1f(P.lut.u.uSunEl, el);
+    gl.uniform1f(P.lut.u.uK, SUN_K * SKY_GAIN / lutScale);
+    gl.bindVertexArray(vSky); gl.drawArrays(gl.TRIANGLES, 0, 3);
+    // read it back once to integrate the sky's irradiance on an upward surface (ambient light)
+    const px = floatOK ? new Float32Array(LW * LH * 4) : new Uint8Array(LW * LH * 4);
+    gl.readPixels(0, 0, LW, LH, gl.RGBA, floatOK ? gl.FLOAT : gl.UNSIGNED_BYTE, px);
+    const k = floatOK ? 1 : lutScale / 255;
+    const out = li ? ambB : ambA;
+    let wsum = 0;
+    for (let y = LH / 2; y < LH; y++) {
+      const v = (y + 0.5) / LH * 2 - 1, e = v * v * Math.PI / 2;
+      const w = Math.sin(e) * Math.cos(e) * (2 * v * Math.PI / 2 / LH * 2);     // cos(theta) dω, per row
+      for (let x = 0; x < LW; x++) {
+        const u = (x + 0.5) / LW, dphi = 2 * u * Math.PI / LW;                   // d(phi) for this column
+        const i = (y * LW + x) * 4, ww = w * dphi * 2;                             // both sides of the sun
+        out[0] += px[i] * k * ww; out[1] += px[i + 1] * k * ww; out[2] += px[i + 2] * k * ww; wsum += ww;
+      }
+    }
+    // E / pi: the radiance a white Lambertian surface facing up reflects
+    out[0] /= Math.PI; out[1] /= Math.PI; out[2] /= Math.PI;
+    return tex;
+  });
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  const sunT = new Float64Array(3);
 
   const G = buildGround();
   const vGround = gl.createVertexArray(); gl.bindVertexArray(vGround);
@@ -767,7 +903,13 @@ export function createMountain(canvas) {
     const u = prog.u;
     if (u.uSun) gl.uniform3f(u.uSun, sun[0], sun[1], sun[2]);
     if (u.uWarm) gl.uniform1f(u.uWarm, curWarm);
-    if (u.uExposure) gl.uniform1f(u.uExposure, 0.82);
+    if (u.uSkyLUT) gl.uniform1i(u.uSkyLUT, 0);
+    if (u.uSkyLUT2) gl.uniform1i(u.uSkyLUT2, 1);
+    if (u.uLutMix) gl.uniform1f(u.uLutMix, curMix);
+    if (u.uLutScale) gl.uniform1f(u.uLutScale, lutScale);
+    if (u.uSunCol) gl.uniform3f(u.uSunCol, sunCol[0], sunCol[1], sunCol[2]);
+    if (u.uAmb) gl.uniform3f(u.uAmb, amb[0], amb[1], amb[2]);
+    if (u.uExposure) gl.uniform1f(u.uExposure, 1.0);
     if (u.uVP) gl.uniformMatrix4fv(u.uVP, false, VP);
     if (u.uEye) gl.uniform3f(u.uEye, eye[0], eye[1], eye[2]);
     if (u.uRight) gl.uniform3f(u.uRight, right[0], right[1], right[2]);
@@ -777,7 +919,9 @@ export function createMountain(canvas) {
     if (u.uWind) gl.uniform2f(u.uWind, wind.x, wind.y);
     if (u.uDrift) gl.uniform2f(u.uDrift, driftX, driftY);
   }
-  let curWarm = 0.6, curT = 0, driftX = 0, driftY = 0;
+  let curWarm = 0.6, curT = 0, driftX = 0, driftY = 0, curMix = 0;
+  const sunCol = new Float32Array(3), amb = new Float32Array(3);
+  const AMB_GAIN = 1.0;  // (the LUT already carries SKY_GAIN)
 
   function frame(t, dt, p, look, push) {
     curT = t;
@@ -794,9 +938,15 @@ export function createMountain(canvas) {
 
     // time of day: the sun sinks a touch and warms as you scroll
     const pp = Math.min(1, Math.max(0, p || 0));
-    const el = (5.0 - 1.8 * pp) * Math.PI / 180, az = 0.66;
+    const el = EL0 + (EL1 - EL0) * pp, az = SUN_AZ;
     sun[0] = Math.sin(az) * Math.cos(el); sun[1] = Math.sin(el); sun[2] = -Math.cos(az) * Math.cos(el);
     curWarm = 0.55 + 0.35 * pp;
+    curMix = pp;
+    ATM.trans(sun[0], sun[1], sun[2], sunT);
+    sunCol[0] = sunT[0] * SUN_K; sunCol[1] = sunT[1] * SUN_K; sunCol[2] = sunT[2] * SUN_K;
+    for (let c = 0; c < 3; c++) amb[c] = (ambA[c] + (ambB[c] - ambA[c]) * pp) * AMB_GAIN;
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, luts[0]);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, luts[1]);
     driftX = t * 0.0025 + pp * 0.15; driftY = -t * 0.001;
 
     const pitchBase = aspect < 1 ? 0.05 : -0.02;
@@ -879,5 +1029,6 @@ export function createMountain(canvas) {
     gl.disable(gl.BLEND);
   }
 
+  if (typeof window !== 'undefined') window.__mountainAtm = { ambA, ambB, floatOK };
   return { resize, frame };
 }
