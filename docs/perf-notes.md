@@ -2026,6 +2026,31 @@ move by up to ~1.5x.
   are read from disk in Node; a failed auto-load lets `init()` take over.
   Lean import → ready in Node: ~14 ms (GSAP import ~10–14 ms).
 
+**Timeline `kill()`** releases the subtree at once (nothing of it renders
+or fires again) and runs the children's own bookkeeping (records, writer
+tables, promises) together at the next flush or microtask, whichever comes
+first, draining nested timelines. 5000 steps: ~0.6 → ~0.17–0.21 ms (GSAP
+0.014–0.018); what is left is the core freeing the nodes.
+
+**`anikit/tween`** (`src/tween.ts`): animate/from/fromTo/set,
+timeline/sequence/delayedCall, stagger, spring/inertia. `build.mjs`
+collects the core exports that bundle calls (`ak_*` names in the minified
+JS; nothing builds an export name at run time), drops all others with
+`wasm-metadce` and runs `wasm-opt -Oz`; a smoke run of every entry point
+against the stripped core fails the build if one is missing. Min+gzip:
+28.9 KB JS + 92.1 KB wasm = **121 KB** (lean + full core: 339 KB; Motion's
+`animate`: 22 KB). Import → ready in Node: ~8–10 ms (GSAP ~10). Most of
+what remains is code `animate()` does reach (motion paths, morphing, the
+transform parser, colour spaces); getting near 30–50 KB needs those loaded
+lazily. `opt-level = "z"` for this build gave 92 → 83 KB but was not kept:
+not measured per frame in the time.
+
+Final scoreboard run, as committed: Anikit leads 24 of 34 rows. The
+machine was loaded during it: two rows whose code did not change moved
+between runs ten minutes apart (DOM 5000 elements 0.99x → 0.75x, the
+1000-step timeline 2.05 → 3.65 ms), so read single-run ratios near 1 as
+ties.
+
 **Tried and not kept:** allocating `_build1`'s general-path closure and
 arrays only when the batched path is not taken (three interleaved pairs,
 within noise); skipping the stale `ak_release` of each child after a
