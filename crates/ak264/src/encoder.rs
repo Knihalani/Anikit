@@ -436,7 +436,9 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
         let cost16 = best16.0 + lambda as u32 * if c.idr { 4 } else { 8 };
         // Full motion search unless intra prediction is already near-perfect.
-        if !c.idr && best16.0 > lambda as u32 * 4 {
+        // (Skipped too when the predicted candidates are far worse than intra.)
+        let hopeless = inter.as_ref().is_some_and(|q| q.sad > 4 * best16.0);
+        if !c.idr && best16.0 > lambda as u32 * 4 && !hopeless {
             let full = self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, false);
             if full.cost < inter.as_ref().map_or(u32::MAX, |q| q.cost) {
                 inter = Some(full);
