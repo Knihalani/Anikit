@@ -294,7 +294,7 @@ export default async function film2({ anikit: A, node }) {
   const roller = (() => { const b = new MB(); disc(b, 0, 0, 7, 6, 7.4, 40); disc(b, 0, 0, 1.2, -1, 24, 16); return b.build(); })();
   const HSY = 6.5; // hairspring plane
   const hairPts = (th) => { // the breathing spiral: the inner end turns with the balance, the outer end is pinned
-    const n = 1150, out = new Float32Array(n * 3), k = th / (270 * DEG);
+    const n = 1000, out = new Float32Array(n * 3), k = th / (270 * DEG);
     for (let i = 0; i < n; i++) {
       const u = i / (n - 1), a = u * 13.25 * TAU + th * (1 - u) * 0.98, r = (4.2 + 23.5 * u) * (1 + 0.055 * k * Math.sin(PI * u) * (1 - u));
       out[i * 3] = Math.cos(a) * r; out[i * 3 + 1] = HSY; out[i * 3 + 2] = Math.sin(a) * r;
@@ -306,11 +306,28 @@ export default async function film2({ anikit: A, node }) {
   const cyl = mesh.cylinder(40, true), cube = mesh.cube(), sph = mesh.sphere(18, 32);
 
   // ---- The watch (world space; the case lies on a black mirror at y = 0, 12 o'clock towards −z) ---
-  const caseMesh = lathe([[150, 80, 1], [153, 86, 1], [197, 87, 1], [205, 82, 1], [209, 70], [210, 52], [208, 30, 1], [200, 14, 1], [182, 6], [120, 3], [0, 2.5, 1]], 256);
+  // A slimmer middle case (a polished band with a bevel on top) over a recessed, stepped caseback.
+  const caseMesh = lathe([[150, 80, 1], [153, 86, 1], [194, 87.5, 1], [203, 84, 1], [207.5, 79, 1], [209.5, 70], [209, 60], [205, 53, 1], [196, 50, 1], [180, 48, 1], [178, 40], [176, 14, 1], [168, 7], [120, 3.5], [0, 3, 1]], 256);
   const caseFloor = polar({ r0: 0, r1: 152, nr: 1, na: 96, y: 4, walls: false, normal: () => [0, 1, 0] });
   const caseInner = lathe([[150, 4, 1], [150, 80, 1]], 192); // inner wall (faces inwards)
   const bezelMesh = lathe([[151, 85, 1], [152, 92, 1], [162, 96], [184, 95.5], [196, 91, 1], [199, 86, 1]], 256);
-  const crystal = polar({ r0: 0, r1: 152, nr: 16, na: 160, y: 0, walls: false, yAt: (x, z) => 98.5 - 3 * ((x * x + z * z) / (152 * 152)), normal: (x, z) => [x * 0.0026, 1, z * 0.0026] });
+  const crystal = polar({ r0: 0, r1: 152, nr: 16, na: 160, y: 0, walls: false, yAt: (x, z) => 106 - 10 * ((x * x + z * z) / (152 * 152)), normal: (x, z) => [x * 0.0017, 1, z * 0.0017] }); // domed
+  // A soft window reflection lying on the dome: a faint additive band across the crystal.
+  const streakMesh = (() => {
+    const b = new MB(), ang = 0.62, ca = Math.cos(ang), sa = Math.sin(ang), dome = (x, z) => 106.4 - 10 * ((x * x + z * z) / (152 * 152));
+    for (const [off, w] of [[-38, 26], [6, 9]]) {
+      let prev = null;
+      for (let i = 0; i <= 30; i++) {
+        const v = -150 + 300 * (i / 30), pts = [off - w / 2, off + w / 2].map((u) => { const x = u * ca - v * sa, z = u * sa + v * ca; return [x, z]; });
+        if (pts.some(([x, z]) => Math.hypot(x, z) > 146)) { prev = null; continue; }
+        const fade = Math.sin(PI * (i / 30));
+        const row = pts.map(([x, z], k) => b.v(x, dome(x, z), z, 0, 1, 0, k, fade));
+        if (prev) b.quad(prev[0], prev[1], row[1], row[0], [0, 1, 0]);
+        prev = row;
+      }
+    }
+    return b.build();
+  })();
   const dialR = 150;
   const dialTop = polar({ r0: 3, r1: dialR, nr: 1, na: 360, y: 0, flatSeg: true, uvR: dialR, normal: (x, z, a, r, j) => { const s = Math.sin(j * 12.9898 + 78.233) * 43758.5453, h = (s - Math.floor(s)) - 0.5; const tl = 0.13 * h; return [-Math.sin(a) * tl, 1, Math.cos(a) * tl]; } });
   const dialBody = (() => { const b = new MB(); disc(b, 0, 0, dialR - 0.5, -3, -1.2, 160); return b.build(); })();
@@ -355,7 +372,7 @@ export default async function film2({ anikit: A, node }) {
     rotor: one(), rotorRim: one(), rotorHub: one(),
     arbors: instances(5), jewels: instances(12), chatons: instances(12), screws: instances(14), slots: instances(14), balScrews: instances(12), stones: instances(3),
     case: one(), caseFloor: one(), caseInner: one(), bezel: one(), crystal: one(), dialTop: one(), dialBody: one(), indices: instances(13),
-    hh: one(), mh: one(), sh: one(), crown: one(), stem: one(), lugs: instances(4), lugCaps: instances(4), floor: one(), straps: instances(2),
+    hh: one(), mh: one(), sh: one(), crown: one(), stem: one(), lugs: instances(4), lugCaps: instances(4), floor: one(), straps: instances(2), streak: one(),
   };
   const JEWELS = [[C0, Y.bridge[1]], [T3, Y.bridge[1]], [F4, Y.bridge[1]], [E5, Y.bridge[1]], [PAL, Y.bridge[1]], [BAL, 27], [BARREL, 26], [CROWNW, 30]];
   const SCREWS = [[[112, 26], Y.bridge[1], 6.5, BLUE], [[104, -100], Y.bridge[1], 6.5, BLUE], [COCKF, 27, 7, BLUE], [[-100, 95], 26, 6, BLUE], [[-128, 40], 26, 6, BLUE], [[-128, -40], 26, 6, BLUE], [[-100, -95], 26, 6, BLUE], [[-62, -26], 26, 5.5, BLUE], [BARREL, 31.5, 9, STEEL], [CROWNW, 30, 5.5, STEEL], [[-57, 12], Y.bridge[1], 5, BLUE]];
@@ -371,7 +388,7 @@ export default async function film2({ anikit: A, node }) {
 
   // ---- Assembly choreography ---------------------------------------------------------------------
   const YH = 260, YSEAT = 53;
-  const flipA = (t) => PI * ease(8.5, 9.75, t);
+  const flipA = (t) => PI * smooth(8.45, 9.8, t); // gentle through the middle: the bridges turn away from the strips gradually
   const movY = (t) => lerp(YH, YSEAT, easeQ(9.45, 10.7, t));
   const eo = (a, b, x) => 1 - (1 - clamp((x - a) / (b - a))) ** 3; // fast in from out of frame, precise landing
   const dialY = (t) => lerp(650, 74, eo(10.35, 11.35, t));
@@ -446,7 +463,9 @@ export default async function film2({ anikit: A, node }) {
     floor: { ambient: 0.4, diffuse: 0.2, specular: 0.25, shininess: 300, rim: 0 },
   };
 
-  const hairCache = { m: null };
+  // The breathing hairspring, pre-built at 3° steps of the balance angle (no meshes made per frame).
+  const HAIR_N = 181, hairPool = Array.from({ length: HAIR_N }, (_, i) => mesh.tube(hairPts(((i / (HAIR_N - 1)) * 2 - 1) * 271 * DEG), { radius: 0.34, sides: 6 }));
+  const hairCache = { m: hairPool[(HAIR_N - 1) / 2] };
   const draw = ({ t, pixels }) => {
       const c = clockAt(t);
       const s = beats(c), th = balAngle(c);
@@ -456,7 +475,7 @@ export default async function film2({ anikit: A, node }) {
       const showMov = t < 11.45;
       const gearAt = (inst, p, phase, theta, col) => put(inst, 0, chain(G, P(p[0], p[1]), spin(phase + theta)), col);
       const thE = -12 * DEG * s, th4 = 0.75 * DEG * s, th3 = -0.1 * DEG * s, thC = 0.0125 * DEG * s;
-      put(I.plate, 0, G, [0.52, 0.52, 0.54]); put(I.plateB, 0, G, [0.82, 0.82, 0.85]);
+      put(I.plate, 0, G, [0.52, 0.52, 0.54]); put(I.plateB, 0, G, [0.74, 0.74, 0.77]);
       put(I.bbridge, 0, G, [0.86, 0.87, 0.9]); put(I.bars, 0, G, [0.84, 0.85, 0.88]); put(I.cock, 0, G, [0.84, 0.85, 0.88]);
       put(I.ratchet, 0, chain(G, P(BARREL[0], BARREL[1]), spin(0.02 * c)), STEEL);
       put(I.crownW, 0, chain(G, P(CROWNW[0], CROWNW[1]), spin(-0.05 * c)), STEEL);
@@ -475,8 +494,7 @@ export default async function film2({ anikit: A, node }) {
       put(I.bal, 0, Gb, GOLD); put(I.roller, 0, Gb, STEEL);
       put(I.stones, 2, chain(Gb, P(5.6, 0, 5), S(1.1, 2.4, 1.1)), RUBY);
       for (let k = 0; k < 12; k++) { const a = (k / 12) * TAU + PI / 12; put(I.balScrews, k, chain(Gb, P(Math.cos(a) * 39, Math.sin(a) * 39, 10.25), spin(a), Rz(PI / 2), S(1.7, 3.2, 1.7)), GOLD); }
-      if (hairCache.m) hairCache.m.free();
-      hairCache.m = mesh.tube(hairPts(th), { radius: 0.34, sides: 6 });
+      hairCache.m = hairPool[Math.round(clamp((th / (271 * DEG) + 1) / 2) * (HAIR_N - 1))];
       put(I.hair, 0, chain(G, P(BAL[0], BAL[1])), [0.55, 0.6, 0.72]);
       // Rotor
       const Gr = chain(G, spin(rotorA(t)));
@@ -494,6 +512,7 @@ export default async function film2({ anikit: A, node }) {
       put(I.case, 0, T(0, 0, 0), STEEL); put(I.caseFloor, 0, T(0, 0, 0), [0.3, 0.3, 0.32]); put(I.caseInner, 0, T(0, 0, 0), [0.6, 0.6, 0.62]);
       put(I.bezel, 0, T(0, bezelY(t), 0), STEEL);
       put(I.crystal, 0, T(0, crystalY(t), 0), [0.5, 0.52, 0.56]);
+      { const k = 0.24 * smooth(13.4, 14.2, t); put(I.streak, 0, T(0, crystalY(t), 0), [k, k * 1.02, k * 1.08]); }
       const dy = dialY(t);
       put(I.dialTop, 0, T(0, dy, 0), [1, 1, 1]); put(I.dialBody, 0, T(0, dy, 0), [0.02, 0.03, 0.06]);
       for (let h = 0; h < 12; h++) {
@@ -505,7 +524,7 @@ export default async function film2({ anikit: A, node }) {
       const hand = (inst, y, deg, t0, extra) => { const k = handDrop(t, t0); put(inst, 0, chain(T(0, y + 500 * (1 - k), 0), spin((deg + extra * (1 - k)) * DEG)), STEEL); };
       hand(I.hh, 78.2, 305, 11.2, -70); hand(I.mh, 80.6, 60, 11.45, 80);
       hand(I.sh, 83.2, 0.75 * s + 200, 11.7, 0);
-      put(I.crown, 0, chain(T(226, 46, 0), Rz(PI / 2)), STEEL); put(I.stem, 0, chain(T(208, 46, 0), Rz(PI / 2), S(5, 18, 5)), STEEL);
+      put(I.crown, 0, chain(T(226, 66, 0), Rz(PI / 2)), STEEL); put(I.stem, 0, chain(T(208, 66, 0), Rz(PI / 2), S(5, 18, 5)), STEEL);
       [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz], i) => { put(I.lugs, i, chain(T(sx * 104, 0, 0), S(1, 1, sz)), STEEL); put(I.lugCaps, i, chain(T(sx * 104, lugEnd[1], sz * lugEnd[2]), S(17.5)), STEEL); });
       put(I.floor, 0, chain(T(0, 0, 0), S(40000, 1, 40000)), [0.02, 0.02, 0.022]);
       put(I.straps, 0, T(0, 0, 0), [0.16, 0.075, 0.04]); put(I.straps, 1, S(1, 1, -1), [0.16, 0.075, 0.04]);
@@ -513,7 +532,7 @@ export default async function film2({ anikit: A, node }) {
       const items = [];
       if (showMov) items.push(
         { mesh: mainplate, instances: I.plate, material: mats.perlage },
-        { mesh: mainBottom, instances: I.plateB, material: { ...mats.perlage, metal: 0.4, diffuse: 0.9, specular: 1.0, shininess: 60 } },
+        { mesh: mainBottom, instances: I.plateB, material: { ...mats.perlage, metal: 0.15, diffuse: 0.95, specular: 0.5, shininess: 40 } },
         { mesh: barrelBridge, instances: I.bbridge, material: mats.cotes },
         { mesh: bars, instances: I.bars, material: mats.steel },
         { mesh: cock, instances: I.cock, material: mats.steel },
@@ -553,18 +572,20 @@ export default async function film2({ anikit: A, node }) {
       if (t > 11.0) items.push({ mesh: hourHand, instances: I.hh, material: mats.steel }, { mesh: minuteHand, instances: I.mh, material: mats.steel }, { mesh: secondHand, instances: I.sh, material: mats.steel });
       if (t > 12.1) items.push({ mesh: bezelMesh, instances: I.bezel, material: mats.steel });
       if (t > 12.5) items.push({ mesh: crystal, instances: I.crystal, blend: 'additive', material: mats.crystal });
+      if (t > 13.4) items.push({ mesh: streakMesh, instances: I.streak, blend: 'additive', cull: false, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 1 } });
 
       const [cp, tg] = camAt(t);
       Object.assign(cam.camera, { x: cp[0], y: cp[1], z: cp[2] }); Object.assign(cam.target, { x: tg[0], y: tg[1], z: tg[2] });
       const dist = Math.hypot(cp[0] - tg[0], cp[1] - tg[1], cp[2] - tg[2]);
       const macro = 1 - smooth(8.0, 11.0, t);
+      const flipEnv = smooth(8.6, 9.0, t) * (1 - smooth(9.4, 10.0, t)); // fill the environment while the movement turns over
       const px = r3.render(cam, items, {
         sort: 'near', background: '#040405',
         key: [-0.5, 0.85, 0.45], keyColor: [1.0, 0.96, 0.9], fill: [0.7, 0.35, -0.5], fillColor: [0.07, 0.08, 0.1], rimColor: [0.5, 0.55, 0.62],
-        sky: [0.6, 0.6, 0.62], horizon: [0.2, 0.2, 0.21], ground: [0.012, 0.012, 0.014], strips: [1.7, 1.66, 1.6],
+        sky: [0.6, 0.6, 0.62], horizon: lerp3([0.2, 0.2, 0.21], [0.36, 0.36, 0.38], flipEnv), ground: lerp3([0.012, 0.012, 0.014], [0.16, 0.16, 0.17], flipEnv), strips: [1.7, 1.66, 1.6],
         lights: [{ position: [cp[0] + 40 * Math.sin(t * 0.7), cp[1] + 30, cp[2] + 20], color: [1, 0.95, 0.88], radius: 60 + 400 * (1 - macro), intensity: 0.5 },
           // A soft light sweeps across the dial once the crystal is on.
-          { position: [lerp(-420, 420, smooth(14.0, 16.6, t)), 190, lerp(-120, 120, smooth(14.0, 16.6, t))], color: [1, 0.97, 0.92], radius: 170, intensity: 1.3 * smooth(13.6, 14.3, t) * (1 - smooth(16.4, 17.2, t)) }],
+          { position: [lerp(-420, 420, smooth(14.0, 16.6, t)), 190, lerp(-120, 120, smooth(14.0, 16.6, t))], color: [1, 0.97, 0.92], radius: 170, intensity: 0.75 * smooth(13.6, 14.3, t) * (1 - smooth(16.4, 17.2, t)) }],
         shadows: { extent: lerp(140, 300, 1 - macro), center: tg, size: 1536, strength: 0.75, bias: 0.004 },
         mirror: { y: 0, strength: 0.32 * smooth(9.0, 12.0, t) },
         dof: { focus: dist, aperture: lerp(30, 95, macro), max: lerp(14, 28, macro) },

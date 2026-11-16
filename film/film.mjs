@@ -120,7 +120,20 @@ export default async function film({ anikit: A }) {
     const t = list[i], c = col(t);
     return { x: t.x, y: t.y, z: t.z, sx: t.h * t.w, sy: t.h, sz: t.h * t.w, ry: t.ry, color: c };
   }));
-  const TREE_R = [[0.035, 0.1, 0.045], [0.03, 0.085, 0.07], [0.08, 0.15, 0.045]];
+  // Needles: streaky branches, lighter at the drooping tips (v = 0 is the tier's outer rim), dark inside.
+  const needleTex = (() => {
+    const TW = 128, data = new Uint8ClampedArray(TW * TW * 4);
+    for (let y = 0; y < TW; y++) for (let x = 0; x < TW; x++) {
+      const v = y / (TW - 1), u = x / TW;
+      const streak = 0.55 + 0.45 * hash(Math.floor(u * 48) * 13 + Math.floor(v * 6)) * (0.6 + 0.4 * Math.sin(u * 301 + v * 9));
+      const tip = 1.25 - 0.75 * v, gap = (hash(Math.floor(u * 11) * 7 + 3) < 0.25 && v > 0.15) ? 0.45 : 1;
+      const k = Math.max(0, Math.min(1, streak * tip * gap * 1.05));
+      const o = (y * TW + x) * 4;
+      data[o] = data[o + 1] = data[o + 2] = Math.round(255 * k); data[o + 3] = 255;
+    }
+    return A.texture({ width: TW, height: TW, data });
+  })();
+  const TREE_R = [[0.035, 0.13, 0.05], [0.03, 0.11, 0.08], [0.08, 0.16, 0.045]];
   const treesR = treeSet((t) => {
     const v = 0.45 + 0.55 * world.visAt(t.x, t.z), k = 0.75 + 0.5 * t.tint, base = TREE_R[t.kind];
     const autumn = t.kind === 2 && t.tint > 0.88 ? [2.2, 1.0, 0.5] : [1, 1, 1];
@@ -218,7 +231,7 @@ export default async function film({ anikit: A }) {
       { mesh: world.terrainMesh, instances: terrainAt, material: { ...baked, texture: TX.real, textureFilter: 'aniso' } },
       { mesh: world.wallMesh, instances: terrainAt, material: { ...baked, texture: TX.wallReal, textureFilter: 'aniso' } },
       { mesh: rockMesh, instances: rocksR, material: { ambient: 0.32, diffuse: 1.05, specular: 0.12, shininess: 10, rim: 0.15 } },
-      ...chunks.map((ch, k) => ({ mesh: TM[ch.kind], instances: treesR[k], zmin: ch.zmin, zmax: ch.zmax, material: { ambient: 0.5, diffuse: 1.0, specular: 0.06, shininess: 6, rim: 0.34 } })),
+      ...chunks.map((ch, k) => ({ mesh: TM[ch.kind], instances: treesR[k], zmin: ch.zmin, zmax: ch.zmax, material: { ambient: 0.55, diffuse: 1.0, specular: 0.06, shininess: 6, rim: 0.2, ...(ch.kind < 2 ? { texture: needleTex, textureRepeat: [2, 1] } : {}) } })),
       ...towersR.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 0.85, diffuse: 0.9, specular: 0.5, shininess: 60, rim: 0.2, texture: TX.windows, textureRepeat: CLS[c] } })),
       { mesh: cube, instances: roofsR, material: { ambient: 0.7, diffuse: 0.9, specular: 0.1, shininess: 10, rim: 0.15 } },
       { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farReal } },
@@ -283,7 +296,7 @@ export default async function film({ anikit: A }) {
     C: {
       background: '#9fd4ff', fog: [500, 26000], fogColor: [0.68, 0.86, 1.0],
       key: SUN, keyColor: [1.05, 1.0, 0.92], fill: [0, 1, 0], fillColor: [0.35, 0.38, 0.5], rimColor: [1, 1, 1], sky: [0.3, 0.6, 1], horizon: [0.7, 0.88, 1], ground: [0.3, 0.3, 0.3], strips: [0, 0, 0],
-      mirror: { y: WATER, strength: 0.42 },
+      // No mirror pass: printed water is flat ink with wave strokes (and it saves the reflection render).
     },
   };
 
@@ -307,6 +320,7 @@ export default async function film({ anikit: A }) {
     if (look === 'C') { comic(px, dist, comicOut[slot], curT); distCopy[slot].set(dist); return { px: comicOut[slot], dist: distCopy[slot] }; }
     dst.set(px);
     distCopy[slot].set(dist);
+    if (look === 'R') realWater(px, dst, distCopy[slot], curT);
     return { px: dst, dist: distCopy[slot] };
   };
 
@@ -336,7 +350,81 @@ export default async function film({ anikit: A }) {
     HA[i] = Math.abs(a - Math.round(a)) * 6; HB[i] = Math.abs(b - Math.round(b)) * 6.5;
     GRAIN[i] = 1 - 0.035 * (0.5 + 0.5 * noise(x / 1.7 + 50, y / 9)) - 0.03 * (0.5 + 0.5 * noise(x / 60, y / 45));
   }
+  // Water strokes: each pixel's ray is a linear function of its screen position (from the inverse
+  // view-projection); where the ray meets the lake at the depth the buffer holds, the pixel is water,
+  // and short inked wave dashes and white glints are drawn there, fixed in the world.
+  const inv4 = (m) => {
+    const a = m, o = new Array(16);
+    const b00 = a[0] * a[5] - a[1] * a[4], b01 = a[0] * a[6] - a[2] * a[4], b02 = a[0] * a[7] - a[3] * a[4], b03 = a[1] * a[6] - a[2] * a[5], b04 = a[1] * a[7] - a[3] * a[5], b05 = a[2] * a[7] - a[3] * a[6];
+    const b06 = a[8] * a[13] - a[9] * a[12], b07 = a[8] * a[14] - a[10] * a[12], b08 = a[8] * a[15] - a[11] * a[12], b09 = a[9] * a[14] - a[10] * a[13], b10 = a[9] * a[15] - a[11] * a[13], b11 = a[10] * a[15] - a[11] * a[14];
+    const det = 1 / (b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06);
+    o[0] = (a[5] * b11 - a[6] * b10 + a[7] * b09) * det; o[1] = (a[2] * b10 - a[1] * b11 - a[3] * b09) * det; o[2] = (a[13] * b05 - a[14] * b04 + a[15] * b03) * det; o[3] = (a[10] * b04 - a[9] * b05 - a[11] * b03) * det;
+    o[4] = (a[6] * b08 - a[4] * b11 - a[7] * b07) * det; o[5] = (a[0] * b11 - a[2] * b08 + a[3] * b07) * det; o[6] = (a[14] * b02 - a[12] * b05 - a[15] * b01) * det; o[7] = (a[8] * b05 - a[10] * b02 + a[11] * b01) * det;
+    o[8] = (a[4] * b10 - a[5] * b08 + a[7] * b06) * det; o[9] = (a[1] * b08 - a[0] * b10 - a[3] * b06) * det; o[10] = (a[12] * b04 - a[13] * b02 + a[15] * b00) * det; o[11] = (a[9] * b02 - a[8] * b04 - a[11] * b00) * det;
+    o[12] = (a[5] * b07 - a[4] * b09 - a[6] * b06) * det; o[13] = (a[0] * b09 - a[1] * b07 + a[2] * b06) * det; o[14] = (a[13] * b01 - a[12] * b03 - a[14] * b00) * det; o[15] = (a[8] * b03 - a[9] * b01 + a[10] * b00) * det;
+    return o;
+  };
+  const WAVE = new Uint8Array(N_PIX); // 0 none, 1 ink dash, 2 glint
+  const WSW = new Float32Array(N_PIX), WVZ = new Float32Array(N_PIX), WX = new Float32Array(N_PIX), WZ = new Float32Array(N_PIX), WDN = new Float32Array(N_PIX); // water: view depth (0 = not water), world x/z, how steeply we look down
+  function waterStrokes(dist, mode = 'comic', t = 0) {
+    WAVE.fill(0); WVZ.fill(0);
+    const c = cam.camera, ex = c.x, ey = c.y - WATER, ez = c.z;
+    if (ey < 0.2) return;
+    const iv = inv4(cam.viewProjection().matrix);
+    const tg = cam.target, fl = Math.hypot(tg.x - ex, tg.y - c.y, tg.z - ez), fx = (tg.x - ex) / fl, fy = (tg.y - c.y) / fl, fz = (tg.z - ez) / fl;
+    // Homogeneous far-plane point p(nx, ny) = iv · [nx, ny, 1, 1]; the ray is p.xyz − eye · p.w (linear in nx, ny).
+    const P = (nx, ny) => { const r = [0, 1, 2, 3].map((q) => iv[q] * nx + iv[4 + q] * ny + iv[8 + q] + iv[12 + q]); return [r[0] - ex * r[3], r[1] - c.y * r[3], r[2] - ez * r[3]]; };
+    const o0 = P(0, 0), ax = P(1, 0).map((v, q) => v - o0[q]), ay = P(0, 1).map((v, q) => v - o0[q]);
+    // Evaluated on 2×2 blocks (written to all four pixels): a quarter of the work.
+    for (let y = 0; y < H; y += 2) {
+      const ny = 1 - ((y + 1) / H) * 2;
+      const ry = o0[1] + ay[1] * ny;
+      if (ry - Math.abs(ax[1]) >= 0) continue; // the whole row looks above the horizon
+      for (let x = 0; x < W; x += 2) {
+        const nx = ((x + 1) / W) * 2 - 1;
+        const dy = ry + ax[1] * nx;
+        if (dy >= 0) continue;
+        const dx = o0[0] + ax[0] * nx + ay[0] * ny, dz = o0[2] + ax[2] * nx + ay[2] * ny;
+        const tt = -ey / dy, vz = tt * (dx * fx + dy * fy + dz * fz);
+        const i = y * W + x, d = dist[i];
+        if (vz > (mode === 'comic' ? 700 * Math.max(1, ey / 22) : 30000) || Math.abs(d - vz) > 0.03 * vz + 0.4) continue;
+        const wx = ex + dx * tt, wz = ez + dz * tt, dn = -dy / Math.sqrt(dx * dx + dy * dy + dz * dz);
+        let wv = 0;
+        if (mode !== 'comic') wv = Math.sin(wz * 0.55 + wx * 0.12 + t * 1.6) * 0.6 + Math.sin(wz * 1.7 - wx * 0.4 + t * 2.3) * 0.3 + Math.sin(wz * 0.31 - wx * 0.27 - t * 1.1) * 0.4;
+        if (mode === 'comic') {
+          const ws = Math.max(1, ey / 22), u = wx / (7 * ws), v = wz / (2.4 * ws), cu = Math.floor(u), cv = Math.floor(v), hh = hash(cu * 7919 + cv * 104729 + 13);
+          if (hh <= 0.42) {
+            const fu = u - cu, fv = v - cv - 0.5 - 0.12 * Math.sin(fu * Math.PI);
+            const len = 0.55 + 0.4 * hash(cu * 31 + cv * 17), du = (fu - 0.5) / (len * 0.5);
+            if (Math.abs(du) <= 1) {
+              const th = (hh < 0.3 ? 0.09 : 0.06) * (1 - du * du) * Math.min(1, 40 * Math.max(1, ey / 22) / vz + 0.35);
+              if (Math.abs(fv) < th) wv = hh < 0.3 ? 1 : 2;
+            }
+          }
+        }
+        const wc = mode === 'comic' ? wv : 0;
+        for (let q = 0; q < 4; q++) { const k = i + (q & 1) + (q >> 1) * W; if (k >= N_PIX) continue; WVZ[k] = vz; WX[k] = wx; WZ[k] = wz; WDN[k] = dn; WAVE[k] = wc; WSW[k] = wv; }
+      }
+    }
+  }
+  // Photographic water: a gentle swell bends the reflection (more up close), and looking down
+  // the lake shows its own dark body instead of the mirror (Fresnel).
+  function realWater(src, dst, dist, t) {
+    waterStrokes(dist, 'real', t);
+    const DEEP = [22, 44, 50];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x, vz = WVZ[i];
+      if (vz === 0) continue;
+      const sw = WSW[i];
+      const amp = Math.min(9, 260 / (vz + 20));
+      const sy = Math.min(H - 1, Math.max(0, Math.round(y + sw * amp))), sx = Math.min(W - 1, Math.max(0, Math.round(x + sw * amp * 0.25)));
+      const so = (sy * W + sx) * 4, o = i * 4;
+      const dn = WDN[i], fr = (0.08 + 0.5 * dn * Math.sqrt(dn)) * 0.75;
+      dst[o] = mix(src[so], DEEP[0], fr); dst[o + 1] = mix(src[so + 1], DEEP[1], fr); dst[o + 2] = mix(src[so + 2], DEEP[2], fr);
+    }
+  }
   function comic(src, dist, out, t) {
+    waterStrokes(dist);
     for (let i = 0; i < N_PIX; i++) { const o = i * 4; lum[i] = (src[o] * 0.299 + src[o + 1] * 0.587 + src[o + 2] * 0.114) / 255; }
     const B = 16;
     for (let y = 0; y < H; y++) {
@@ -395,6 +483,8 @@ export default async function film({ anikit: A }) {
           const a = ANG[i], hsh = hash(a * 97 + Math.floor(t * 9 + hash(a * 13 + 1) * 9) * 7919);
           if (hsh > 0.955 && hash(a * 31 + 3) * 0.4 + 0.8 < rad) { const w = smooth(0.8, 1.15, rad) * 0.85; cr = mix(cr, 16, w); cg = mix(cg, 14, w); cb = mix(cb, 22, w); }
         }
+        const wv = WAVE[i];
+        if (wv === 1) { cr = 14; cg = 26; cb = 70; } else if (wv === 2) { cr = PAPER[0]; cg = PAPER[1]; cb = PAPER[2]; }
         if (ink) { cr = 16; cg = 13; cb = 20; }
         const gr = GRAIN[i]; cr *= gr; cg *= gr; cb *= gr;
         out[o] = cr; out[o + 1] = cg; out[o + 2] = cb; out[o + 3] = 255;
