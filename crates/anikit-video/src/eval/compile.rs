@@ -2398,6 +2398,7 @@ impl C<'_> {
             duration,
             duck,
             role: if a.voice == Some(true) { Some(Role::Voice) } else { None },
+            ..Default::default()
         })
     }
 
