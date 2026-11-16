@@ -1496,10 +1496,16 @@ impl Raster {
         //    (sharp where still, fully blurred from ~3 px of motion).
         let mut alpha = core::mem::take(&mut self.alpha);
         alpha.clear();
-        alpha.extend((0..bw * bh).map(|j| {
-            let t = self.tiles[((j / bw) / T).min(th - 1) * tw + ((j % bw) / T).min(tw - 1)];
-            ((crate::math::sqrtf(t[0] * t[0] + t[1] * t[1]) * 2.0 - 0.75) / 2.25).clamp(0.0, 1.0)
-        }));
+        // One value per tile, computed once and repeated across its pixels.
+        let ta = |t: &[f32; 2]| ((crate::math::sqrtf(t[0] * t[0] + t[1] * t[1]) * 2.0 - 0.75) / 2.25).clamp(0.0, 1.0);
+        for by in 0..bh {
+            let trow = &self.tiles[(by / T).min(th - 1) * tw..][..tw];
+            for t in trow {
+                let a = ta(t);
+                alpha.extend(core::iter::repeat_n(a, T));
+            }
+            alpha.truncate((by + 1) * bw);
+        }
         self.blend_half(bw, bh, &alpha);
         self.alpha = alpha;
     }
