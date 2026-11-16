@@ -954,7 +954,7 @@ New scripts (in `packages/anikit/scripts/`):
 | `node scripts/bench-drag.mjs` (`FORCE=0`) | Chromium: `draggable()` against GSAP's Draggable, µs per synthetic pointer move and ms for the release (throw set-up) |
 | `node scripts/bench-world-draw.mjs` | Chromium: `world().draw()` on a 2D canvas, N bodies, ms per frame including the raster |
 | `cargo run --release -p anikit-core --example gif_prof` | native GIF encoder on gradient frames (a callgrind target) |
-| `bench-scroll.mjs` | now takes `PKG=` (a copy of `packages/anikit`) to measure another version of the source |
+| `bench-scroll.mjs` | now takes `PKG=` (a copy of `packages/anikit`) to measure another version of the source, and has smoothed modes (`trigger-smooth`, `scroll-smooth`) |
 
 ### Results
 
@@ -1016,6 +1016,21 @@ three interleaved rounds, `SIZES=50,200`):
 
 (The `scroll()` rows of the same rounds measured an experiment that was
 reverted; see "Tried and not kept".)
+
+Smoothed links retarget a spring per link on every scroll event, so they get
+§1. New modes of `bench-scroll.mjs` (`MODES=trigger-smooth,scroll-smooth`:
+`scrub: 0.5` and `scroll({ smooth: 0.3 })`, one engine frame per scroll step
+outside the timed region), three interleaved rounds:
+
+| Mode | N | `86b471c` | now |
+|---|---:|---:|---:|
+| `scrollTrigger`, `scrub: 0.5` | 50 | 0.094–0.158 | 0.069–0.102 |
+| 〃 | 200 | 0.277–0.354 | **0.191–0.256** |
+| `scroll({ smooth: 0.3 })` | 50 | 0.166–0.193 | 0.076–0.206 |
+| 〃 | 200 | 0.485–0.545 | 0.348–0.498 |
+
+Next target there: a smoothed link outside its range still calls `spring()`
+on every scroll event with the same clamped target.
 
 `bench-text.mjs` (Chromium, ms, median of 3 pages, three interleaved rounds
 on a quieter machine; an earlier set of rounds ran next to other benchmarks
@@ -1155,8 +1170,8 @@ smaller gain: 13.6 → 13.1 ms per gradient frame on its own).
 
 `gesture()` (read: one `getBoundingClientRect` per press, one transform
 write per move, no reads in the move path; ctrl-wheel pinch reads the box per
-event), `observer()`, `smoothScroll()` and `scroll({ smooth })` (both
-retarget a spring per event, so they get §1), `parallax()` (a `scroll()` link
+event), `observer()`, `smoothScroll()` (retargets a spring per wheel event,
+so it gets §1), `parallax()` (a `scroll()` link
 per element), `presence`/`exit`, `bindValues`, the `effects` presets (thin
 wrappers over `animate()`, the other round's path).
 

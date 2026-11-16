@@ -1,11 +1,15 @@
 // Bundled by scripts/bench-scroll.mjs. N sections, each with a box animated
 // by a scroll-linked animation: ?mode=trigger (scrollTrigger, scrub: true) or
-// ?mode=scroll (scroll(), progress over the section).
+// ?mode=scroll (scroll(), progress over the section); trigger-smooth
+// (scrub: 0.5) and scroll-smooth (smooth: 0.3) follow through a spring that
+// every scroll event retargets, with one engine frame per scroll step
+// (outside the timed region).
 import * as ak from '../src/index';
 
 const q = new URLSearchParams(location.search);
 const n = Number(q.get('n') || 50);
 const mode = q.get('mode') || 'trigger';
+const smooth = mode.endsWith('-smooth');
 const stage = document.getElementById('stage');
 const boxes = [];
 for (let i = 0; i < n; i++) {
@@ -22,6 +26,8 @@ window.start = async () => {
   for (const [s, b] of boxes) {
     const anim = ak.animate(b, { x: [0, 300], rotate: [0, 90], opacity: [1, 0.5] }, { duration: 1, ease: 'linear', autoplay: false });
     if (mode === 'trigger') ak.scrollTrigger({ trigger: s, start: 'top bottom', end: 'bottom top', scrub: true, animation: anim });
+    else if (mode === 'trigger-smooth') ak.scrollTrigger({ trigger: s, start: 'top bottom', end: 'bottom top', scrub: 0.5, animation: anim });
+    else if (mode === 'scroll-smooth') ak.scroll(anim, { target: s, offset: ['start end', 'end start'], smooth: 0.3 });
     else ak.scroll(anim, { target: s, offset: ['start end', 'end start'] });
   }
   void document.body.offsetWidth;
@@ -40,6 +46,7 @@ window.run = (frames, step) => {
     const t = performance.now();
     window.dispatchEvent(new Event('scroll'));
     acc += performance.now() - t;
+    if (smooth) ak.engine.tick(16);
     void document.body.offsetWidth;
   };
   for (let i = 0; i < 60; i++) one();

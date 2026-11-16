@@ -3,7 +3,7 @@
 // or scroll(). Reports ms per scroll event spent in the page's 'scroll'
 // listeners (reads, progress, style writes and any layout they force),
 // median of 3 runs x 200 events after warm-up.
-// Usage: node scripts/bench-scroll.mjs   (SIZES=10,50,200 MODES=trigger,scroll)
+// Usage: node scripts/bench-scroll.mjs   (SIZES=10,50,200 MODES=trigger,scroll,trigger-smooth,scroll-smooth)
 import { build } from 'esbuild';
 import { createRequire } from 'node:module';
 import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
