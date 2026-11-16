@@ -111,7 +111,7 @@ export default async function film2({ anikit: A }) {
   for (let z = 2400; z >= TUN_END; z -= 2000) pts.push([cx(z), cy(z), z]);
   pts.push([0, 0, -18500], [0, -20, -20800]);
   // A log-spiral towards the hole: 28° of orbit while the distance falls from 21 km to 3.8 km.
-  const spiral = (u) => { const th = (28 * Math.PI / 180) * u, d = 21000 * (3800 / 21000) ** u, h = -2900 + 4300 * (u * u * (3 - 2 * u)); return [BH[0] - d * Math.sin(th), BH[1] + h, BH[2] + d * Math.cos(th)]; };
+  const spiral = (u) => { const th = (28 * Math.PI / 180) * u, d = 21000 * (2700 / 21000) ** u, h = -2900 + 4300 * (u * u * (3 - 2 * u)); return [BH[0] - d * Math.sin(th), BH[1] + h, BH[2] + d * Math.cos(th)]; };
   for (let k = 0; k <= 8; k++) pts.push(spiral(k / 8));
   const path = flightPath(pts, { lookAhead: 900, bank: 0.15, maxBank: 16, bankWindow: 250 });
   const NP = 2000, PP = path.points(NP + 1);
@@ -203,7 +203,7 @@ export default async function film2({ anikit: A }) {
           const k = R * shV[i];
           shell[i * 3] = BH[0] + shDir[i * 3] * k; shell[i * 3 + 1] = BH[1] + shDir[i * 3 + 1] * k; shell[i * 3 + 2] = BH[2] + shDir[i * 3 + 2] * k;
         }
-        items.push({ points: shell, colors: shellCol, size: 15, intensity: 0.75 * smooth(0, 0.6, sn) * Math.exp(-Math.max(0, sn - 0.6) * 0.45), streak: 1 });
+        items.push({ points: shell, colors: shellCol, size: 15, intensity: 0.7 * smooth(0, 0.6, sn) * Math.exp(-Math.max(0, sn - 0.6) * 0.22), streak: 1 });
       }
       // Point lights travel with the camera through the tunnel, then sit by the monoliths.
       const lights = [
