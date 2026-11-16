@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { spring, smoothScroll, scroll, animate, scrollTrigger } from '../src/index';
+import { spring, smoothScroll, scroll, animate, scrollTrigger, VelocityTracker } from '../src/index';
 import { setup, advance } from './setup';
 
 beforeAll(setup);
@@ -110,5 +110,41 @@ describe('smoothed scroll links outside their range', () => {
     advance(2);
     expect(o.x).toBeCloseTo(25, 0);
     st.kill();
+  });
+});
+
+describe('VelocityTracker', () => {
+  it('matches the pair-list version on long irregular sequences', () => {
+    // The previous implementation, kept here as the reference.
+    class Ref {
+      s: Array<[number, number]> = [];
+      add(v: number, t: number) {
+        this.s.push([t, v]);
+        while (this.s.length > 2 && this.s[0][0] < t - 100) this.s.shift();
+      }
+      get velocity() {
+        const s = this.s;
+        if (s.length < 2) return 0;
+        const [t0, v0] = s[0];
+        const [t1, v1] = s[s.length - 1];
+        return t1 > t0 ? ((v1 - v0) / (t1 - t0)) * 1000 : 0;
+      }
+    }
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const a = new VelocityTracker();
+    const b = new Ref();
+    let t = 0;
+    for (let i = 0; i < 5000; i++) {
+      t += rnd() < 0.1 ? 150 : rnd() * 4; // bursts (many samples per window) and gaps
+      const v = Math.sin(i / 30) * 300 + rnd();
+      a.add(v, t);
+      b.add(v, t);
+      expect(a.velocity).toBe(b.velocity);
+      if (i === 2500) {
+        a.reset();
+        b.s.length = 0;
+      }
+    }
   });
 });

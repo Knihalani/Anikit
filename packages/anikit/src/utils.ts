@@ -159,22 +159,40 @@ export function distribute(o: {
 
 /** Tracks a value's velocity (units/s) over the last ~100ms of samples. */
 export class VelocityTracker {
-  private samples: Array<[number, number]> = [];
+  // Samples live in two plain arrays from `head` on (no pair per sample, no
+  // shift(): add() runs on every pointer move).
+  private ts: number[] = [];
+  private vs: number[] = [];
+  private head = 0;
   constructor(private window = 100) {}
   /** Record a value (timestamp defaults to now). */
   add(value: number, time = typeof performance !== 'undefined' ? performance.now() : Date.now()): void {
-    this.samples.push([time, value]);
+    const ts = this.ts;
+    const vs = this.vs;
+    ts.push(time);
+    vs.push(value);
     const cutoff = time - this.window;
-    while (this.samples.length > 2 && this.samples[0][0] < cutoff) this.samples.shift();
+    let h = this.head;
+    while (ts.length - h > 2 && ts[h] < cutoff) h++;
+    if (h > 32 && h * 2 > ts.length) {
+      ts.copyWithin(0, h);
+      vs.copyWithin(0, h);
+      ts.length = vs.length = ts.length - h;
+      h = 0;
+    }
+    this.head = h;
   }
   get velocity(): number {
-    const s = this.samples;
-    if (s.length < 2) return 0;
-    const [t0, v0] = s[0];
-    const [t1, v1] = s[s.length - 1];
-    return t1 > t0 ? ((v1 - v0) / (t1 - t0)) * 1000 : 0;
+    const ts = this.ts;
+    const h = this.head;
+    const n = ts.length - 1;
+    if (n - h < 1) return 0;
+    const t0 = ts[h];
+    const t1 = ts[n];
+    return t1 > t0 ? ((this.vs[n] - this.vs[h]) / (t1 - t0)) * 1000 : 0;
   }
   reset(): void {
-    this.samples.length = 0;
+    this.ts.length = this.vs.length = 0;
+    this.head = 0;
   }
 }
