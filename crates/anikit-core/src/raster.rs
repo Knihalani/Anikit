@@ -337,6 +337,8 @@ pub struct Raster {
     dof_taps: Vec<(i32, i32, f32)>,
     /// Shadow map from the key light (see [`Raster::shadow_begin`]).
     shadow_depth: Vec<f32>,
+    /// Reflection after the scene: rows with an uncovered pixel.
+    row_open: Vec<bool>,
     shadow_size: usize,
     shadow_vp: M4,
     shadow_bias: f32,
@@ -903,6 +905,9 @@ impl Raster {
         let mut row = vec![false; bw];
         for y in 0..h {
             let d = &self.depth[y * w..(y + 1) * w];
+            if !d.contains(&f32::INFINITY) {
+                continue; // a covered row needs nothing
+            }
             for (bx, r) in row.iter_mut().enumerate() {
                 let (x0, x1) = ((2 * bx).saturating_sub(1), (2 * bx + 3).min(w));
                 *r = d[x0.min(x1)..x1].contains(&f32::INFINITY);
@@ -948,17 +953,31 @@ impl Raster {
             alpha.clear();
             alpha.resize(bw * bh, 1.0);
             if after {
-                // Keep the opaque scene: blend everywhere, then restore covered pixels.
+                // Keep the opaque scene: blend, then restore covered pixels. Rows the
+                // scene covers entirely would be restored whole, so they're skipped.
+                let w = self.width;
+                let mut open = core::mem::take(&mut self.row_open);
+                open.clear();
+                open.extend(self.depth.chunks_exact(w).map(|d| d.contains(&f32::INFINITY)));
                 let mut saved = core::mem::take(&mut self.blur_src);
-                saved.clear();
-                saved.extend_from_slice(&self.color);
-                self.blend_half(bw, bh, &alpha);
-                for ((c, s), z) in self.color.iter_mut().zip(&saved).zip(&self.depth) {
-                    *c = if *z == f32::INFINITY { *c } else { *s };
+                if saved.len() != self.color.len() {
+                    saved.clear();
+                    saved.resize(self.color.len(), 0);
+                }
+                for (y, _) in open.iter().enumerate().filter(|(_, o)| **o) {
+                    saved[y * w..(y + 1) * w].copy_from_slice(&self.color[y * w..(y + 1) * w]);
+                }
+                self.blend_half(bw, bh, &alpha, &open);
+                for (y, _) in open.iter().enumerate().filter(|(_, o)| **o) {
+                    let r = y * w..(y + 1) * w;
+                    for ((c, s), z) in self.color[r.clone()].iter_mut().zip(&saved[r.clone()]).zip(&self.depth[r]) {
+                        *c = if *z == f32::INFINITY { *c } else { *s };
+                    }
                 }
                 self.blur_src = saved;
+                self.row_open = open;
             } else {
-                self.blend_half(bw, bh, &alpha);
+                self.blend_half(bw, bh, &alpha, &[]);
             }
             self.alpha = alpha;
         }
@@ -1904,7 +1923,7 @@ impl Raster {
             }
             alpha.truncate((by + 1) * bw);
         }
-        self.blend_half(bw, bh, &alpha);
+        self.blend_half(bw, bh, &alpha, &[]);
         self.alpha = alpha;
     }
 }
@@ -2158,7 +2177,7 @@ impl Raster {
         let mut alpha = core::mem::take(&mut self.alpha);
         alpha.clear();
         alpha.extend(coc.iter().map(|c| ((c - 0.25) * 1.5).clamp(0.0, 1.0)));
-        self.blend_half(bw, bh, &alpha);
+        self.blend_half(bw, bh, &alpha, &[]);
         self.alpha = alpha;
         self.coc = coc;
     }
@@ -2169,7 +2188,8 @@ impl Raster {
     /// upsampled 2× bilinearly with fixed phase weights (output pixel 2i + k
     /// sits at i − 0.25 + k/2), by the half-res `alpha`.
     #[allow(clippy::needless_range_loop)]
-    fn blend_half(&mut self, bw: usize, bh: usize, alpha: &[f32]) {
+    /// `rows`: only these full-res rows (empty = all).
+    fn blend_half(&mut self, bw: usize, bh: usize, alpha: &[f32], rows: &[bool]) {
         let (w, h) = (self.width, self.height);
         // Packed-integer (SWAR) from here on: red+blue share one u32 in 16-bit
         // lanes, green another, so each tap is two multiply-adds, not three.
@@ -2178,6 +2198,9 @@ impl Raster {
         self.row_px.resize(bw, 0);
         let hp = &self.half_px;
         for y in 0..h.min(bh * 2) {
+            if !rows.is_empty() && !rows[y] {
+                continue;
+            }
             let by = y / 2;
             let ny = if y & 1 == 0 { by.saturating_sub(1) } else { (by + 1).min(bh - 1) };
             let arow = &alpha[by * bw..(by + 1) * bw];

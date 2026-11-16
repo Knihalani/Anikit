@@ -207,6 +207,8 @@ pub struct PostFx {
     streak: Vec<f32>,
     rays: Vec<f32>,
     luma: Vec<u8>,
+    /// Antialiasing: per-row edge flags (1 = high local contrast).
+    edge: Vec<u8>,
     /// Lens flares: which quarter-res rows hold a light hot enough to cast ghosts.
     hot_rows: Vec<bool>,
     /// Running column sums for the vertical box blur.
@@ -271,14 +273,24 @@ impl PostFx {
             }
             // Row slices: the neighbourhood reads below need no bounds checks.
             let (up, row, dn) = (&l[(y - 1) * w..y * w], &l[y * w..(y + 1) * w], &l[(y + 1) * w..(y + 2) * w]);
+            // Edge test for the whole row first, branch-free on bytes (vectorises):
+            // most pixels are flat and skipped. Same test as before, in u8:
+            // range = hi − lo can't wrap, and max(16, hi >> 3) fits.
+            self.edge.clear();
+            self.edge.extend((1..w - 1).map(|x| {
+                let (c, n, s, e, wv) = (row[x], up[x], dn[x], row[x + 1], row[x - 1]);
+                let hi = c.max(n).max(s).max(e).max(wv);
+                let lo = c.min(n).min(s).min(e).min(wv);
+                (hi - lo >= 16.max(hi >> 3)) as u8
+            }));
             for x in 1..w - 1 {
+                if self.edge[x - 1] == 0 {
+                    continue;
+                }
                 let (c, n, s, e, wv) = (row[x] as i32, up[x] as i32, dn[x] as i32, row[x + 1] as i32, row[x - 1] as i32);
                 let hi = c.max(n).max(s).max(e).max(wv);
                 let lo = c.min(n).min(s).min(e).min(wv);
                 let range = hi - lo;
-                if range < 16.max(hi >> 3) {
-                    continue;
-                }
                 let i = y * w + x;
                 let (nw, ne, sw, se) = (up[x - 1] as i32, up[x + 1] as i32, dn[x - 1] as i32, dn[x + 1] as i32);
                 // Sub-pixel blend amount from the centre vs. its neighbourhood.

@@ -1,7 +1,7 @@
 // Film-grade cost per 1080p frame in WebAssembly (in Node): each post effect on
 // its own and the full grade used by film/film.mjs, on a rendered 3D frame
 // (neon towers, a sun, a mirror floor — bright highlights for bloom and flares).
-//   node scripts/bench-post.mjs
+//   node scripts/bench-post.mjs [--hash]   (--hash: FNV-1a of the last graded frame per case, to check output identity)
 import { performance } from 'node:perf_hooks';
 // DIST=path/to/dist benchmarks another build (a saved baseline, for interleaved A/B runs).
 const A = await import(process.env.DIST ? new URL(`file://${process.env.DIST.replace(/\/$/, '')}/anikit.js`).href : '../dist/anikit.js');
@@ -25,13 +25,17 @@ const cases = {
 };
 const cv = { width: W, height: H, getContext: () => ({ fillRect() {}, drawImage() {}, putImageData() {} }) };
 let base = 0;
+const HASH = process.argv.includes('--hash');
 for (const [name, post] of Object.entries(cases)) {
   const c = A.composition({ width: W, height: H, fps: 30, duration: 2, post });
   c.scene('s', 0, 2, { draw() {} });
-  let n = 0, t0 = 0;
+  let n = 0, t0 = 0, hash = '';
   const warm = 15;
-  await c.render({ canvas: cv, readPixels: () => px, onFrame: () => { if (++n === warm) t0 = performance.now(); } });
+  await c.render({ canvas: cv, readPixels: () => px, onFrame: (fr) => {
+    if (++n === warm) t0 = performance.now();
+    if (HASH && n === 60) { const b = fr.rgba(); let h = 2166136261; for (let i = 0; i < b.length; i++) h = Math.imul(h ^ b[i], 16777619); hash = `  hash ${(h >>> 0).toString(16).padStart(8, '0')}`; }
+  } });
   const ms = (performance.now() - t0) / (n - warm);
   if (!post) base = ms;
-  console.log(`${name.padEnd(26)} ${(post ? ms - base : ms).toFixed(1).padStart(6)} ms${post ? '' : ' (baseline, subtracted below)'}`);
+  console.log(`${name.padEnd(26)} ${(post ? ms - base : ms).toFixed(1).padStart(6)} ms${post ? '' : ' (baseline, subtracted below)'}${hash}`);
 }
