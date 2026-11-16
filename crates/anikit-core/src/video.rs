@@ -194,6 +194,8 @@ pub struct PostFx {
     streak: Vec<f32>,
     rays: Vec<f32>,
     luma: Vec<u8>,
+    /// Running column sums for the vertical box blur.
+    vsum: Vec<f32>,
     /// 256×256 grain noise in −0.5…0.5, built once; each frame reads it at a seeded offset.
     grain_tab: Vec<f32>,
     flare: Vec<f32>,
@@ -458,7 +460,7 @@ impl PostFx {
         }
         for _ in 0..2 {
             box_blur(&self.small, &mut self.tmp, sw, sh, r, true);
-            box_blur(&self.tmp, &mut self.small, sw, sh, r, false);
+            box_blur_v(&self.tmp, &mut self.small, sw, sh, r, &mut self.vsum);
         }
         if p.rays > 0.0 {
             self.god_rays(sw, sh, p);
@@ -607,7 +609,7 @@ impl PostFx {
         let r = (sw / 120).max(2);
         self.tmp.resize(sw * sh * 3, 0.0);
         box_blur(&self.flare, &mut self.tmp, sw, sh, r, true);
-        box_blur(&self.tmp, &mut self.flare, sw, sh, r, false);
+        box_blur_v(&self.tmp, &mut self.flare, sw, sh, r, &mut self.vsum);
     }
 
     /// Radial blur of the quarter-resolution bright pass towards the light
@@ -816,6 +818,35 @@ impl PostFx {
 
 /// Running-sum box blur of an RGB f32 image along x (`horizontal`) or y.
 #[allow(clippy::needless_range_loop)]
+/// Vertical running-sum box blur of an RGB f32 image, row by row: one running
+/// sum per column, so every step is a contiguous (vectorisable) row operation
+/// instead of a strided walk down each column. Same result as
+/// `box_blur(.., false)` (edges clamped).
+fn box_blur_v(src: &[f32], dst: &mut [f32], w: usize, h: usize, r: usize, sums: &mut Vec<f32>) {
+    let rw = w * 3;
+    if h == 0 || rw == 0 {
+        return;
+    }
+    let row = |k: usize| &src[k * rw..(k + 1) * rw];
+    sums.clear();
+    sums.extend(row(0).iter().map(|v| v * r as f32));
+    for k in 0..=r.min(h - 1) {
+        for (s, v) in sums.iter_mut().zip(row(k)) {
+            *s += v;
+        }
+    }
+    let norm = 1.0 / (2 * r + 1) as f32;
+    for k in 0..h {
+        for (d, s) in dst[k * rw..(k + 1) * rw].iter_mut().zip(sums.iter()) {
+            *d = s * norm;
+        }
+        let (add, sub) = (row((k + r + 1).min(h - 1)), row(k.saturating_sub(r)));
+        for ((s, a), b) in sums.iter_mut().zip(add).zip(sub) {
+            *s += a - b;
+        }
+    }
+}
+
 fn box_blur(src: &[f32], dst: &mut [f32], w: usize, h: usize, r: usize, horizontal: bool) {
     let (len, lines) = if horizontal { (w, h) } else { (h, w) };
     let idx = |line: usize, k: usize| if horizontal { (line * w + k) * 3 } else { (k * w + line) * 3 };
@@ -974,6 +1005,19 @@ mod tests {
         let mut g = alloc::vec![100u8, 50, 20, 255];
         fx.apply(&mut g, 1, 1, &Post { exposure: 1.5, saturation: 0.0, ..Default::default() });
         assert!(g[0] == g[1] && g[1] == g[2] && g[0] > 50, "{g:?}");
+    }
+
+    #[test]
+    fn vertical_box_blur_matches_the_column_walk() {
+        let (w, h) = (37usize, 23usize);
+        let src: Vec<f32> = (0..w * h * 3).map(|i| ((i * 2654435761usize) % 997) as f32 / 9.0).collect();
+        for r in [1usize, 4, 30] {
+            let (mut a, mut b, mut sums) = (vec![0.0; src.len()], vec![0.0; src.len()], Vec::new());
+            box_blur(&src, &mut a, w, h, r, false);
+            box_blur_v(&src, &mut b, w, h, r, &mut sums);
+            let worst = a.iter().zip(&b).map(|(x, y)| (x - y).abs()).fold(0.0f32, f32::max);
+            assert!(worst < 1e-3, "r = {r}: max difference {worst}");
+        }
     }
 
     #[test]
