@@ -38,7 +38,7 @@ function setupGL() {
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
   gl.enableVertexAttribArray(0);
   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-  for (const n of ['uRes', 'uTime', 'uD', 'uTex', 'uTR', 'uTA', 'uMelt', 'uRimA', 'uRimAP', 'uRimB', 'uRimBP', 'uNeck', 'uNeckR', 'uPool', 'uLight', 'uK']) U[n] = gl.getUniformLocation(prog, n);
+  for (const n of ['uRes', 'uTime', 'uD', 'uTex', 'uTR', 'uTA', 'uMelt', 'uRimA', 'uRimAP', 'uRimB', 'uRimBP', 'uNeck', 'uNeckR', 'uPool', 'uLight', 'uK', 'uBar']) U[n] = gl.getUniformLocation(prog, n);
   tex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, tex);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -179,6 +179,10 @@ function measure() {
       s.radius = s.kind === 'install' ? r.height / 2 : parseFloat(getComputedStyle(s.stage).borderTopLeftRadius) || 28;
     }
   }
+  {
+    const s = stops[stopIndex.numbers], sr = s.stage.getBoundingClientRect();
+    s.bars = $$('.n-row i', s.stage).map((el) => { const r = el.getBoundingClientRect(); return { x: r.left - sr.left, y: r.top - sr.top + r.height / 2, w: r.width * parseFloat(getComputedStyle(el.firstElementChild).getPropertyValue('--w')) }; });
+  }
   layoutText();
   sizeCanvas();
   if (phys) phys.set({ bounds: physBounds() });
@@ -214,6 +218,9 @@ const drops = Array.from({ length: N }, (_, i) => {
 for (const d of drops) { d.out.x = d.prev.x = d.pos.x; d.out.y = d.prev.y = d.pos.y; }
 
 const state = { form: 0, melt: 0, t: 0, wm: 0, chain: 0 };
+// Values the demos animate with anikit and the shader reads.
+const liquid = { bars: [{ v: 0 }, { v: 0 }, { v: 0 }] };
+const BAR = new Float32Array(12);
 const pointer = { x: vw / 2, y: vh / 2, at: -1e9, inHero: false };
 const light = { x: 0, y: 0 };
 const chainCfgs = [{ stiffness: 170, damping: 15 }, { stiffness: 120, damping: 6 }, { stiffness: 30, damping: 9 }];
@@ -494,7 +501,19 @@ function render(a, b, t) {
   }
   gl.uniform1f(U.uNeckR, neckR);
   gl.uniform2f(U.uLight, light.x, light.y);
-  gl.uniform1f(U.uK, lerp(lerp(lerp(0.045, 0.045 * textSize(), heroWeight), 0.016, state.wm), 0.024, state.chain));
+  {
+    const s = stops[stopIndex.numbers];
+    const f = 1 - sstep(0.04, 0.46, s.d);
+    BAR.fill(0);
+    if (f > 0.01 && s.bars) s.bars.forEach((b, i) => {
+      const v = liquid.bars[i].v, r = (Math.min(vh, 900) * 0.0075) * Math.min(1, v * 6) * sstep(0.3, 0.9, f);
+      if (r <= 0) return;
+      const x0 = s.sl + b.x + r, y = s.st + b.y;
+      BAR[i * 4] = x0 / vh; BAR[i * 4 + 1] = (vh - y) / vh; BAR[i * 4 + 2] = (x0 + Math.max(0, b.w * v - 2 * r)) / vh; BAR[i * 4 + 3] = r / vh;
+    });
+    gl.uniform4fv(U.uBar, BAR);
+  }
+  gl.uniform1f(U.uK, lerp(lerp(lerp(0.045, 0.045 * textSize(), heroWeight), 0.03, state.wm), 0.024, state.chain));
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   stats.q = q; stats.w = canvas.width; stats.h = canvas.height; stats.ms = frameAvg;
 }
@@ -522,4 +541,4 @@ let rz = 0;
 addEventListener('resize', () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(measure); });
 addEventListener('load', measure);
 document.fonts.ready.then(measure);
-startDemos({ reduced, fine, small, setChainPreset, inView });
+startDemos({ reduced, fine, small, setChainPreset, inView, liquid });

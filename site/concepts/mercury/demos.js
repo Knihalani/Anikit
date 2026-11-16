@@ -8,7 +8,7 @@ import {
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
-export function startDemos({ reduced, fine, small, setChainPreset, inView }) {
+export function startDemos({ reduced, fine, small, setChainPreset, inView, liquid }) {
   const near = (el, fn) => inView(el, () => { fn(); }, { amount: 0, once: true, margin: '0px 0px 60% 0px' });
   const whileVisible = (el, fn) => {
     let off = null;
@@ -145,11 +145,11 @@ export function startDemos({ reduced, fine, small, setChainPreset, inView }) {
   near('#numbers', () => {
     const section = $('#numbers');
     const counts = $$('.n-count', section);
-    const bars = $$('.n-row u', section);
-    set(bars, { scaleX: 0 });
+    // The bars are poured in metal by the canvas; anikit animates how full each one is.
+    const bars = liquid.bars;
     for (const c of counts) c.textContent = (0).toFixed(+c.dataset.dec);
     inView($('.stage', section), () => {
-      animate(bars, { scaleX: 1 }, { duration: 1.6, ease: 'spring(bounce: 0.15, duration: 1.3)', delay: stagger(0.15, { start: 0.3 }) });
+      animate(bars, { v: [0, 1] }, { duration: 1.8, ease: 'spring(bounce: 0.18, duration: 1.4)', delay: stagger(0.18, { start: 0.3 }) });
       counts.forEach((c, i) => { const d = +c.dataset.dec; animate(c, { textContent: +c.dataset.to }, { duration: 1.8, ease: 'outExpo', delay: 0.3 + i * 0.08, format: { minimumFractionDigits: d, maximumFractionDigits: d }, locale: 'en-US' }); });
     }, { amount: 0.6, once: true });
   });

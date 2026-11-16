@@ -23,6 +23,7 @@ uniform vec4 uNeck; uniform float uNeckR;
 uniform vec4 uPool;       // centre x, y, radius x, height
 uniform vec2 uLight;      // pointer parallax, -1..1
 uniform float uK;         // how readily drops merge
+uniform vec4 uBar[3];     // liquid bars: x0, y, x1, radius
 out vec4 outColor;
 
 float smin(float a, float b, float k) { float h = max(k - abs(a - b), 0.0) / k; return min(a, b) - h * h * k * 0.25; }
@@ -78,6 +79,15 @@ float map(vec3 q) {
     float h = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-6), 0.0, 1.0);
     float r = uNeckR * (1.0 - 0.45 * sin(h * 3.14159));
     d = smin(d, length(pa - ba * h) - r, 0.04);
+  }
+  for (int i = 0; i < 3; i++) {
+    vec4 B = uBar[i];
+    if (B.w <= 0.0) continue;
+    vec3 a = vec3(B.x, B.y, B.w * 0.55), b = vec3(max(B.z, B.x), B.y, B.w * 0.55);
+    vec3 pa = q - a, ba = b - a;
+    float h = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-6), 0.0, 1.0);
+    vec3 e = pa - ba * h;
+    d = min(d, (length(vec3(e.xy, e.z * 1.3)) - B.w) / 1.3);
   }
   if (uPool.z > 0.001) {
     vec3 r = vec3(uPool.z, uPool.z * 0.42, uPool.w);
