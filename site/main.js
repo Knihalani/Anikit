@@ -390,21 +390,6 @@ for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
 }
 
 // ---------------------------------------------------------------------------
-// 09 · Film: play while on screen; sound toggle
-// ---------------------------------------------------------------------------
-{
-  const v = $('#film-video');
-  const title = chars($('.film-title'));
-  $('.film-title').dataset.gsplit = '1';
-  set(title, { yPercent: 100, opacity: 0 });
-  inView('#film', () => {
-    animate(title, { yPercent: 0, opacity: 1 }, { duration: 1, ease: 'spring(bounce: 0.25, duration: 0.8)', delay: stagger(0.03) });
-    v.play().catch(() => {});
-    return () => v.pause();
-  }, { amount: 0.3 });
-}
-
-// ---------------------------------------------------------------------------
 // 10 · Install
 // ---------------------------------------------------------------------------
 {
