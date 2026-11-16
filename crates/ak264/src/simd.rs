@@ -586,3 +586,19 @@ mod soatests {
         assert_eq!(c, d);
     }
 }
+
+/// Rounded average of two 16-byte rows ((a + b + 1) >> 1).
+#[inline(always)]
+pub fn avg16(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: SSE2 is baseline on x86_64; arrays are 16 bytes.
+    unsafe {
+        use std::arch::x86_64::*;
+        let r = _mm_avg_epu8(_mm_loadu_si128(a.as_ptr() as *const __m128i), _mm_loadu_si128(b.as_ptr() as *const __m128i));
+        let mut o = [0u8; 16];
+        _mm_storeu_si128(o.as_mut_ptr() as *mut __m128i, r);
+        o
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    core::array::from_fn(|i| ((a[i] as u16 + b[i] as u16 + 1) >> 1) as u8)
+}

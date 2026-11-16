@@ -41,7 +41,7 @@ fn bs(p: &MbInfo, bp: usize, q: &MbInfo, bq: usize, mb_edge: bool) -> u8 {
     if p.nz[bp] != 0 || q.nz[bq] != 0 {
         return 2;
     }
-    (p.mv != q.mv) as u8
+    ((p.mv.0 - q.mv.0).abs() >= 4 || (p.mv.1 - q.mv.1).abs() >= 4) as u8
 }
 
 /// Filter up to 16 lines across one edge, branch-free and lane-wise.

@@ -10,6 +10,8 @@
 //! - A minimal MP4 muxer ([`mp4::mux`]).
 
 mod bits;
+mod cabac;
+mod cabac_tables;
 mod cavlc;
 mod deblock;
 mod diff;
@@ -18,6 +20,7 @@ mod encoder;
 mod frame;
 mod headers;
 mod intra;
+mod mc;
 pub mod mp4;
 mod simd;
 mod soa;

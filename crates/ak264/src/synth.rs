@@ -13,6 +13,8 @@ pub struct Scene {
     pub speed: i32,
     /// Moving background gradient (full-frame change).
     pub moving_bg: bool,
+    /// A panel (fraction of the frame width) whose brightness pulses every frame.
+    pub fade: f32,
 }
 
 fn hash(mut x: u32) -> u32 {
@@ -25,7 +27,31 @@ fn hash(mut x: u32) -> u32 {
 
 impl Scene {
     pub fn new(width: u32, height: u32) -> Self {
-        Scene { width, height, cards: 3, speed: 4, moving_bg: false }
+        Scene { width, height, cards: 3, speed: 4, moving_bg: false, fade: 0.0 }
+    }
+
+    /// Benchmark presets: `hold` (a small moving element over held text, ~3% of
+    /// macroblocks change), `typical` (cards sliding, a pulsing panel; ~15–25%
+    /// change), `full` (moving background: every macroblock changes).
+    pub fn preset(name: &str, width: u32, height: u32) -> Self {
+        let mut s = Scene::new(width, height);
+        match name {
+            "hold" => {
+                s.cards = 1;
+                s.speed = 2;
+            }
+            "full" => {
+                s.moving_bg = true;
+                s.cards = 6;
+                s.speed = 6;
+            }
+            _ => {
+                s.cards = 6;
+                s.speed = 5;
+                s.fade = 0.3;
+            }
+        }
+        s
     }
 
     /// Card rectangles at frame t: (x, y, w, h, luma, u, v), rounded outward to pixels.
@@ -70,6 +96,18 @@ impl Scene {
             for x in 0..cw {
                 f.u[y * cw + x] = (100 + (x + shift / 2) * 40 / cw.max(1)) as u8;
                 f.v[y * cw + x] = (140 - y * 30 / chh.max(1)) as u8;
+            }
+        }
+        if self.fade > 0.0 {
+            // a panel in the upper right whose brightness pulses
+            let pw = (w as f32 * self.fade) as usize;
+            let (px, py, ph) = (w - pw - w / 20, h / 12, h / 3);
+            let k = (t as f32 * 0.21).sin() * 0.5 + 0.5;
+            for y in py..(py + ph).min(h) {
+                for x in px..px + pw {
+                    let base = 90.0 + 60.0 * (x - px) as f32 / pw as f32;
+                    f.y[y * w + x] = (base + 70.0 * k) as u8;
+                }
             }
         }
         // "text": rows of glyph strokes in the lower third.
