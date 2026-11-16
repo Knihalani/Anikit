@@ -244,8 +244,13 @@ impl CaptionTrack {
                     ..Default::default()
                 };
                 let layout = fonts.layout(&spec);
-                let mut words: Vec<(f32, f32)> = cur.iter().map(|w| (w.start, w.end)).collect();
-                words.resize(layout.words.len(), (c.end, c.end));
+                // Timings are in reading order; layout words are visual (RTL differs).
+                let mut words = vec![(c.end, c.end); layout.words.len()];
+                for (rank, ui) in layout.logical_order(super::layout::UnitKind::Word).into_iter().enumerate() {
+                    if let Some(w) = cur.get(rank) {
+                        words[ui] = (w.start, w.end);
+                    }
+                }
                 pages.push(Page { start: cur[0].start, end: cur.last().unwrap().end, layout, words });
                 cur.clear();
             };

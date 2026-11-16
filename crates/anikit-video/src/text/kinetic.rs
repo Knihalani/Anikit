@@ -551,7 +551,7 @@ impl KineticPlan {
             From::Edges => StaggerFrom::Edges,
             From::Random => StaggerFrom::Random(7),
         };
-        let starts: Vec<f32> = match &k.times {
+        let by_order: Vec<f32> = match &k.times {
             Some(ts) if !ts.is_empty() => (0..n)
                 .map(|i| {
                     k.delay + ts.get(i).copied().unwrap_or_else(|| ts[ts.len() - 1] + (i + 1 - ts.len()) as f32 * stagger_s)
@@ -562,6 +562,13 @@ impl KineticPlan {
                 .map(|d| k.delay + d as f32)
                 .collect(),
         };
+        // Units are stored in visual order; sequence them in reading (logical)
+        // order so right-to-left text animates from its start.
+        let order = layout.logical_order(unit);
+        let mut starts = vec![0.0; n];
+        for (rank, &ui) in order.iter().enumerate() {
+            starts[ui] = by_order[rank];
+        }
         let scramble = match &k.style {
             KineticStyle::Scramble { charset, .. } => layout
                 .runs

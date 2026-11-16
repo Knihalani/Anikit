@@ -462,6 +462,15 @@ impl TextLayout {
         (r, r.glyphs[g.index as usize])
     }
 
+    /// Unit indices sorted by reading (logical text) order. Units are stored
+    /// in visual order, which differs inside right-to-left runs.
+    pub fn logical_order(&self, kind: UnitKind) -> Vec<usize> {
+        let u = self.units(kind);
+        let mut o: Vec<usize> = (0..u.len()).collect();
+        o.sort_by_key(|&i| (u[i].text.start, i));
+        o
+    }
+
     /// Box `[x, y, w, h]` around all lines in layout coordinates (aligned
     /// lines can start right of 0 when a wrap width is set).
     pub fn bounds(&self) -> [f32; 4] {
@@ -996,6 +1005,9 @@ fn family_css(sh: &mut super::fonts::Shaper, names: &str) -> (String, bool) {
     }
     if let Some(e) = &sh.emoji {
         out.push(format!("\"{e}\""));
+    }
+    for f in &sh.fallbacks {
+        out.push(format!("\"{f}\""));
     }
     (out.join(", "), display)
 }
