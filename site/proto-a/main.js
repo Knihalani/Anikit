@@ -385,6 +385,10 @@ let panelRect = { left: 0, top: 0, width: 1, height: 1 };
 function drawLayers() {
   if (frameState.letters) {
     for (const L of letters) {
+      if (!L.live || !L.mesh || L.e < 0.01) continue;
+      G.letter(L.mesh, L.cx - scrollX, L.cy - sy, L.sx, L.sy, L.fs * 0.1 * L.e, L.rx, L.ry, L.e, 1, 1);
+    }
+    for (const L of letters) {
       if (!L.live || !L.mesh) continue;
       const depth = L.fs * 0.1 * L.e;
       const cy = L.cy - sy;

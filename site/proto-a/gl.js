@@ -13,23 +13,26 @@ vec4 project(vec3 p) {
 
 const LETTER_VS = HEAD + `
 in vec3 aPos; in vec3 aNrm;
-uniform mat3 uRot; uniform vec3 uT; uniform vec3 uS; uniform float uHmax;
+uniform mat3 uRot; uniform vec3 uT; uniform vec3 uS; uniform float uHmax; uniform vec2 uShadow;
 out vec3 vN; out float vH;
 void main() {
   vec3 p = vec3(aPos.x * uS.x, aPos.z * uS.y, aPos.y * uS.z);
   float sz = abs(uS.z) < 1e-3 ? sign(uS.z + 1e-9) * 1e-3 : uS.z;
   vN = uRot * vec3(aNrm.x / uS.x, aNrm.z / uS.y, aNrm.y / sz);
   vH = aPos.y / uHmax;
-  gl_Position = project(uRot * p + uT);
+  vec3 w = uRot * p;
+  if (uShadow.x > 0.0) { w.xy += (w.z + uShadow.y) * vec2(0.28, 0.42); w.z = -4.0; }
+  gl_Position = project(w + uT);
 }`;
 const LETTER_FS = `#version 300 es
 precision highp float;
 in vec3 vN; in float vH;
-uniform float uE; uniform vec3 uInk; uniform vec3 uSideA; uniform vec3 uSideB;
+uniform float uE; uniform vec3 uInk; uniform vec3 uSideA; uniform vec3 uSideB; uniform vec2 uShadow;
 out vec4 o;
 void main() {
   float cut = mix(0.5, 0.07, smoothstep(0.0, 0.25, uE));
   if (vH < cut) discard;
+  if (uShadow.x > 0.0) { o = vec4(0.0, 0.0, 0.0, 0.1 * smoothstep(0.0, 0.6, uE)); return; }
   vec3 n = normalize(vN);
   if (!gl_FrontFacing) n = -n;
   vec3 L = normalize(vec3(-0.45, -0.6, 0.66));
@@ -244,10 +247,13 @@ export function createGL(canvas, shared) {
     },
     colors: { ink: hex('#1c1a17'), a: hex('#ff5b3a'), b: hex('#ffc23d') },
     /** One letter: rotation (rx, ry in radians), centre (px), size (px), extrusion in px. */
-    letter(m, cx, cy, sx, sy, depth, rx, ry, e, mirror) {
+    letter(m, cx, cy, sx, sy, depth, rx, ry, e, mirror, shadow = 0) {
       const { p, u } = letter;
       gl.useProgram(p);
-      gl.enable(gl.DEPTH_TEST); gl.disable(gl.BLEND); gl.disable(gl.CULL_FACE);
+      gl.disable(gl.CULL_FACE);
+      if (shadow) { gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendEquation(gl.MAX); }
+      else { gl.enable(gl.DEPTH_TEST); gl.disable(gl.BLEND); }
+      gl.uniform2f(u.uShadow, shadow, depth);
       const cxr = Math.cos(rx), sxr = Math.sin(rx), cyr = Math.cos(ry), syr = Math.sin(ry);
       // R = Rx * Ry, column-major
       rot[0] = cyr; rot[1] = sxr * syr; rot[2] = -cxr * syr;
@@ -262,6 +268,7 @@ export function createGL(canvas, shared) {
       gl.uniform3fv(u.uInk, this.colors.ink); gl.uniform3fv(u.uSideA, this.colors.a); gl.uniform3fv(u.uSideB, this.colors.b);
       gl.bindVertexArray(m.vao);
       gl.drawElements(gl.TRIANGLES, m.count, gl.UNSIGNED_INT, 0);
+      if (shadow) gl.blendEquation(gl.FUNC_ADD);
     },
     ripple(x, y, w, h, rips, n) {
       const { p, u } = ripple;
