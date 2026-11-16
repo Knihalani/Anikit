@@ -495,7 +495,7 @@ export async function createWatch({ width, height, canvas = null }) {
     // Camera: hero framing, pull back for the exploded view, then dive to the balance.
     const hero = s.rest ?? 1;
     xf(Gw, 0, exY(230), 0, tg);
-    let dist = lerp(1750, 2600, e);
+    let dist = lerp(1750, 2600, e) * Math.max(1, 0.72 / (W / H)); // portrait screens step back
     tg[1] += s.lift ?? 0;
     let el = lerp(8, 12, e) * DEG, az = lerp(0, 8, e) * DEG;
     const camx = Math.sin(az) * Math.cos(el), camy = Math.sin(el), camz = Math.cos(az) * Math.cos(el);
@@ -535,5 +535,7 @@ export async function createWatch({ width, height, canvas = null }) {
     get width() { return W; }, get height() { return H; },
     get triangles() { return r3.triangles; },
     get stats() { return r3.stats; },
+    /** Put the last frame on the canvas again (an OffscreenCanvas may not show a lone draw). */
+    present() { if (ctx && img) ctx.putImageData(img, 0, 0); },
   };
 }

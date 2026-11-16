@@ -50,14 +50,12 @@ async function createRenderer() {
   const { createWatch } = await import('./watch.js');
   const watch = await createWatch({ width: w, height: h, canvas });
   const labels = new Float32Array(14);
-  return {
-    render: (state) => {
+  const render = (state) => {
       if (state.wantLabels) state.labels = labels;
       const t0 = performance.now(); watch.render(state);
       onFrameStats({ ms: performance.now() - t0, w: watch.width, h: watch.height, tris: watch.triangles, labels: state.wantLabels ? labels : null });
-    },
-    resize: (W, H) => watch.resize(W, H),
   };
+  return { render, resize: (W, H) => { watch.resize(W, H); render(state); } };
 }
 const renderer = createRenderer();
 
@@ -99,7 +97,7 @@ const visibility = (y) => {
   const F = 0.3 * vh;
   const o = L.open, c = L.calibre, z = L.close;
   const out1 = 1 - sstep(o.top + o.h - vh - F * 0.4, o.top + o.h - vh + F * 1.6, y);
-  const in2 = sstep(c.top - F * 1.8, c.top + F * 0.2, y), out2 = 1 - sstep(c.top + c.h - vh - F * 0.4, c.top + c.h - vh + F * 1.6, y);
+  const in2 = sstep(c.top - F * 1.8, c.top + F * 0.2, y), out2 = 1 - sstep(c.top + c.h - vh - F * 1.9, c.top + c.h - vh + F * 0.1, y);
   const in3 = sstep(z.top - F * 1.8, z.top + F * 0.2, y);
   if (y < c.top - F * 2) return out1;
   if (y < z.top - F * 2) return in2 * out2;
@@ -160,8 +158,8 @@ function frame(now) {
   const labelsOn = sy < L.calibre.top - vh ? clamp((state.explode - 0.82) / 0.15) * (1 - sstep(oEnd - 0.3 * vh, oEnd, sy)) : 0;
   state.wantLabels = labelsOn > 0;
   if (vis > 0) {
-    const key = reduced ? `${state.explode.toFixed(4)}${state.dive.toFixed(4)}${state.clock}${vw}` : '';
-    if (!reduced || key !== lastKey) { lastKey = key; R.render(state); }
+    const key = reduced ? `${state.explode.toFixed(4)}${state.dive.toFixed(4)}${state.clock}${curSize[0]}` : '';
+    if (!reduced || key !== lastKey || stats.frames < 30) { lastKey = key; R.render(state); }
   }
   labelsEl.style.opacity = String(Math.round(labelsOn * 100) / 100);
   if (labelsOn > 0 && labelPos) for (let i = 0; i < labelEls.length; i++) labelEls[i].style.transform = `translate(${(labelPos[i * 2] * vw + 10).toFixed(1)}px, ${(labelPos[i * 2 + 1] * vh - 9).toFixed(1)}px)`;
@@ -185,7 +183,7 @@ function choreograph() {
     setOnce(captions[k], r, { opacity: r, y: (1 - r) * 24 });
   }
   // Install fades in under the reassembled watch.
-  { const u = prog('close', sy), r = Math.round(sstep(0.35, 0.7, u) * 1000) / 1000; setOnce(install, r, { opacity: r, y: (1 - r) * 24 }); install.style.pointerEvents = r > 0.5 ? 'auto' : 'none'; }
+  { const u = prog('close', sy), r = Math.round(sstep(0.3, 0.62, u) * 1000) / 1000; setOnce(install, r, { opacity: r, y: (1 - r) * 24 }); install.style.pointerEvents = r > 0.5 ? 'auto' : 'none'; }
   // Demo panels: rise in over ~45vh, hold, and rise out.
   for (let k = 0; k < panels.length; k++) {
     const T = L.stops[k];
