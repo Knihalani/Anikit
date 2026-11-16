@@ -236,11 +236,20 @@ impl PostFx {
         }
         self.luma.clear();
         self.luma.extend(rgba.chunks_exact(4).map(|p| ((54 * p[0] as u32 + 183 * p[1] as u32 + 19 * p[2] as u32) >> 8) as u8));
+        // Blends read the original colours. Rows below aren't written yet and the
+        // row above was saved before it changed, so two row copies replace a
+        // copy of the whole frame: `copy` holds [row y − 1 | row y], originals.
+        let rw = w * 4;
         self.copy.clear();
-        self.copy.extend_from_slice(rgba);
+        self.copy.extend_from_slice(&rgba[..2 * rw]);
         let l = &self.luma;
         let k = strength.clamp(0.0, 1.0);
         for y in 1..h - 1 {
+            if y > 1 {
+                // Shift: the previous "row y" becomes "row y − 1"; save the new row y.
+                self.copy.copy_within(rw..2 * rw, 0);
+                self.copy[rw..2 * rw].copy_from_slice(&rgba[y * rw..(y + 1) * rw]);
+            }
             // Row slices: the neighbourhood reads below need no bounds checks.
             let (up, row, dn) = (&l[(y - 1) * w..y * w], &l[y * w..(y + 1) * w], &l[(y + 1) * w..(y + 2) * w]);
             for x in 1..w - 1 {
@@ -272,9 +281,12 @@ impl PostFx {
                     i + 1
                 };
                 let ai = (amt * 256.0) as i32;
+                // Original colours: row y and y − 1 from the saved rows; row y + 1 is untouched.
+                let pa: [u8; 3] = [self.copy[rw + x * 4], self.copy[rw + x * 4 + 1], self.copy[rw + x * 4 + 2]];
+                let src = if j + w == i { &self.copy[x * 4..x * 4 + 3] } else if j == i + w { &rgba[j * 4..j * 4 + 3] } else { &self.copy[rw + (j - y * w) * 4..rw + (j - y * w) * 4 + 3] };
+                let pb: [u8; 3] = [src[0], src[1], src[2]];
                 for ch in 0..3 {
-                    let a = self.copy[i * 4 + ch] as i32;
-                    let b = self.copy[j * 4 + ch] as i32;
+                    let (a, b) = (pa[ch] as i32, pb[ch] as i32);
                     rgba[i * 4 + ch] = (a + (((b - a) * ai + 128) >> 8)) as u8;
                 }
             }
