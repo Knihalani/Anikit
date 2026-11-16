@@ -999,7 +999,7 @@ A sky dome that the fog leaves alone: `{ mesh: dome, cull: false, material: { am
 
 **Meshes**: `mesh.cube()`, `sphere(rings, segments)`, `torus(radius, tube, segments, sides)`, `torusKnot({ p, q, radius, spread, tube, segments, sides })`, `plane(cells)` (XZ, faces +Y — floors that run to the horizon with `grid`), `cylinder(segments, caps)`, `heightfield(w, d, heights | (x, z) => h, { skip })`, `text(str, { font, depth, bevel, resolution })` (solid bevelled 3D text in any font; stand it up with `rx: 90` and use `sz: size * mesh.aspect`), `custom(positions, normals, indices, uvs?)`.
 
-**Animated geometry**: don't create meshes inside `draw()`. Change one in place with `m.update(positions, normals?, uvs?)` (same vertex count), or rebuild a tube into an existing mesh with `mesh.tube(points, { into: m })` (any size). `m.free()` is safe to call twice, and a freed mesh is skipped when drawn.
+**Animated geometry**: don't create meshes inside `draw()`. Change one in place with `m.update(positions, normals?, uvs?)` (same vertex count), or rebuild a tube into an existing mesh with `mesh.tube(points, { into: m })` (any size). `m.free()` is safe to call twice, and a freed mesh is skipped when drawn. `m.arrays()` returns copies of the geometry (`positions`, `normals`, `uvs`, `indices`) for your own renderer, such as a WebGL buffer.
 
 ```ts
 const pos = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]), nrm = new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1]);

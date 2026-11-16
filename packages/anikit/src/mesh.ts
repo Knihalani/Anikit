@@ -122,6 +122,27 @@ export class Mesh3D {
     boundsCache.delete(this);
     return this;
   }
+  /**
+   * Copies of the geometry for your own renderer (a WebGL buffer, an exporter):
+   * xyz `positions` and `normals` per vertex, `uvs` pairs and three `indices` per triangle.
+   *
+   * ```ts
+   * const { positions, normals, indices } = mesh.text('hi').arrays();
+   * gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+   * ```
+   */
+  arrays(): { positions: Float32Array; normals: Float32Array; uvs: Float32Array; indices: Uint32Array } {
+    if (this.dead) throw new Error('anikit: mesh.arrays() on a freed mesh');
+    const w = core();
+    const nv = w.ak_mesh_ptr(this.id, 3), nt = w.ak_mesh_ptr(this.id, 4);
+    const mem = W!.memory.buffer;
+    return {
+      positions: new Float32Array(mem, w.ak_mesh_ptr(this.id, 0), nv * 3).slice(),
+      normals: new Float32Array(mem, w.ak_mesh_ptr(this.id, 1), nv * 3).slice(),
+      uvs: new Float32Array(mem, w.ak_mesh_ptr(this.id, 5), nv * 2).slice(),
+      indices: new Uint32Array(mem, w.ak_mesh_ptr(this.id, 2), nt * 3).slice(),
+    };
+  }
   /** Release the geometry (safe to call twice: the slot may already hold another mesh). */
   free(): void {
     if (this.dead) return;

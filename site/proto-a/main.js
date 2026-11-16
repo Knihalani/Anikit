@@ -1,0 +1,400 @@
+import { init, engine, animate, timeline, stagger, splitText, scrollTrigger, world, flip, mesh } from '../../packages/anikit/dist/anikit.lean.js';
+import { createGL } from './gl.js';
+import { paint } from './paint.js';
+
+const $ = (s) => document.querySelector(s);
+const PERF = new URLSearchParams(location.search).has('perf');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+// Copy buttons work before anything else loads.
+for (const b of document.querySelectorAll('[data-copy]')) b.addEventListener('click', () => {
+  navigator.clipboard?.writeText(b.dataset.copy).catch(() => {});
+  const c = b.querySelector('code'); const was = c.textContent;
+  c.textContent = 'copied'; setTimeout(() => (c.textContent = was), 1200);
+});
+
+const idle = () => new Promise((r) => (window.requestIdleCallback ? requestIdleCallback(() => r(), { timeout: 120 }) : setTimeout(r, 16)));
+
+await init();
+await document.fonts.ready;
+
+// ─── WebGL overlay ─────────────────────────────────────────────────────────
+const canvas = $('#gl');
+const G = createGL(canvas);
+let vw = innerWidth, vh = innerHeight;
+let quality = 0; // 0 best … 4: governor steps down effects before resolution
+const dprFor = () => Math.min(devicePixelRatio || 1, 2) * (quality >= 4 ? 0.6 : quality >= 3 ? 0.8 : 1);
+G?.resize(vw, vh, dprFor());
+
+// ─── Perf: frame times and the quality governor ────────────────────────────
+const N = 120, times = new Float64Array(N), sorted = new Float64Array(N);
+let ti = 0, filled = 0, lastT = 0, govClock = 0;
+const perfEl = $('#perf');
+if (PERF) perfEl.hidden = false;
+function stat() {
+  const n = filled;
+  sorted.set(times);
+  const v = sorted.subarray(0, n).sort();
+  return [v[(n * 0.5) | 0], v[Math.min(n - 1, (n * 0.95) | 0)], v[n - 1]];
+}
+let perfText = 0;
+function perf(now) {
+  if (lastT) { times[ti] = now - lastT; ti = (ti + 1) % N; if (filled < N) filled++; }
+  lastT = now;
+  if (filled < 60 || now - govClock < 1000) return;
+  govClock = now;
+  const [p50, p95, max] = stat();
+  if (p95 > 22 && quality < 4 && document.visibilityState === 'visible') { quality++; G?.resize(vw, vh, dprFor()); filled = 0; }
+  else if (p95 < 17.5 && quality > 0 && now - perfText > 6000) { quality--; G?.resize(vw, vh, dprFor()); perfText = now; filled = 0; }
+  if (PERF) perfEl.textContent = `p50 ${p50.toFixed(1)} ms\np95 ${p95.toFixed(1)} ms\nmax ${max.toFixed(1)} ms\nquality ${quality}  dpr ${G ? G.dpr.toFixed(2) : '-'}`;
+}
+
+// ─── 1. Hero: the headline extrudes into letters you can spin ──────────────
+const word = $('#word');
+const split = splitText(word, { type: 'chars' });
+const chars = split.chars;
+const letters = chars.map((el) => ({ el, mesh: null, cx: 0, cy: 0, sx: 0, sy: 0, fs: 0, e: 0, rx: 0, ry: 0, w: 0, live: false }));
+
+function measureLetters() {
+  const fs = parseFloat(getComputedStyle(word).fontSize);
+  const font = `900 ${fs}px InterDisplay`;
+  const probe = document.createElement('canvas').getContext('2d');
+  probe.font = font;
+  const marker = document.createElement('span');
+  marker.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
+  word.append(marker);
+  const base = marker.getBoundingClientRect().bottom + scrollY;
+  marker.remove();
+  const pad = 8;
+  for (const L of letters) {
+    const r = L.el.getBoundingClientRect();
+    const m = probe.measureText(L.el.textContent);
+    const tw = Math.ceil(m.width) + pad * 2;
+    const asc = m.actualBoundingBoxAscent, desc = m.actualBoundingBoxDescent;
+    const th = Math.ceil(asc + desc) + pad * 2;
+    L.cx = r.left + scrollX - pad + tw / 2;
+    L.cy = base - asc - pad + th / 2;
+    L.sx = tw; L.sy = tw * (L.mesh ? L.mesh.aspect : th / tw); L.fs = fs;
+  }
+  return font;
+}
+
+async function buildLetters() {
+  const font = measureLetters();
+  for (const L of letters) {
+    await idle();
+    const m3 = mesh.text(L.el.textContent, { font, resolution: 110, depth: 0.1, bevel: 0.35 });
+    L.aspect = m3.aspect;
+    L.mesh = G.mesh(m3.arrays());
+    m3.free();
+    L.sy = L.sx * L.aspect;
+  }
+}
+
+// Letter motion: spin velocity from the pointer, a spring home to a whole turn.
+let heroActive = 0, lastHeroInput = -1e9, scrollE = 0;
+const intro = { on: 0 };
+const ptr = { x: -1, y: -1, down: false, px: 0, vx: 0 };
+word.addEventListener('pointerdown', (e) => { ptr.down = true; ptr.px = e.clientX; word.setPointerCapture(e.pointerId); lastHeroInput = performance.now(); });
+word.addEventListener('pointermove', (e) => {
+  const dx = e.clientX - (ptr.px || e.clientX); ptr.px = e.clientX;
+  ptr.x = e.clientX; ptr.y = e.clientY + scrollY;
+  lastHeroInput = performance.now();
+  for (const L of letters) {
+    if (Math.abs(ptr.x + scrollX - L.cx) < L.sx * 0.5) L.w += dx * (ptr.down ? 0.0016 : 0.0006) * 60;
+  }
+});
+addEventListener('pointerup', () => (ptr.down = false));
+
+function stepLetters(dt) {
+  const now = performance.now();
+  const target = Math.max(intro.on, now - lastHeroInput < 2600 ? 1 : 0, scrollE);
+  let any = false;
+  for (let i = 0; i < letters.length; i++) {
+    const L = letters[i];
+    // Extrusion: critically damped toward the target.
+    L.e += (target - L.e) * (1 - Math.exp(-dt * 6));
+    if (Math.abs(target - L.e) < 1e-4) L.e = target;
+    // Spin: free while fast, then a spring to the nearest whole turn.
+    const home = Math.round(L.ry / (Math.PI * 2)) * Math.PI * 2;
+    const k = Math.abs(L.w) > 2.2 ? 0 : 38;
+    L.w += (-(L.ry - home) * k - L.w * (k ? 9 : 0.9)) * dt;
+    L.ry += L.w * dt;
+    if (Math.abs(L.w) < 1e-3 && Math.abs(L.ry - home) < 1e-4) { L.ry = home % (Math.PI * 2); L.w = 0; }
+    const tilt = scrollE * -0.5;
+    L.rx += (tilt - L.rx) * (1 - Math.exp(-dt * 10));
+    const live = L.e > 1e-3 || Math.abs(L.ry % (Math.PI * 2)) > 1e-3 || Math.abs(L.rx) > 1e-3;
+    if (live !== L.live) { L.live = live; L.el.style.color = live && L.mesh ? 'transparent' : ''; }
+    if (live) any = true;
+  }
+  return any;
+}
+
+// ─── 2. The sheet folds along three creases ────────────────────────────────
+const sheet = $('#sheet'), fold = $('#fold');
+const STRIPS = 4;
+let strips = [], stripsWrap = null, stripH = 0;
+function buildStrips() {
+  stripsWrap?.remove();
+  const r = sheet.getBoundingClientRect(), f = fold.getBoundingClientRect();
+  stripH = r.height / STRIPS;
+  stripsWrap = document.createElement('div');
+  stripsWrap.className = 'strips';
+  stripsWrap.setAttribute('aria-hidden', 'true');
+  stripsWrap.style.cssText = `left:${r.left - f.left}px;top:${r.top - f.top}px;width:${r.width}px;height:${r.height}px;transform-origin:50% 50%`;
+  strips = [];
+  for (let k = 0; k < STRIPS; k++) {
+    const s = document.createElement('div');
+    s.className = 'strip';
+    s.style.cssText = `top:${k * stripH}px;width:${r.width}px;height:${stripH + 0.5}px;transform-origin:50% 0`;
+    const c = sheet.cloneNode(true);
+    c.removeAttribute('id');
+    c.style.cssText = `top:${-k * stripH}px;width:${r.width}px;height:${r.height}px;border-radius:${k === 0 ? '6px 6px 0 0' : k === STRIPS - 1 ? '0 0 6px 6px' : '0'}`;
+    const shade = document.createElement('div');
+    shade.className = 'shade';
+    shade.style.background = k % 2 ? 'linear-gradient(#fff0, #fff8)' : 'linear-gradient(rgba(60,40,10,.0), rgba(60,40,10,.28))';
+    s.append(c, shade);
+    stripsWrap.append(s);
+    strips.push({ s, shade });
+  }
+  fold.append(stripsWrap);
+  stripsWrap.style.visibility = 'hidden';
+}
+const foldState = { p: 0 };
+let foldDrawn = -1;
+function drawFold() {
+  const p = foldState.p;
+  if (Math.abs(p - foldDrawn) < 1e-5) return;
+  foldDrawn = p;
+  const a = smooth(0.08, 0.62, p) * 1.36; // radians, ~78°
+  const on = a > 1e-4;
+  fold.classList.toggle('folding', on);
+  stripsWrap.style.visibility = on ? 'visible' : 'hidden';
+  if (!on) return;
+  const lift = smooth(0.5, 1, p);
+  const total = STRIPS * stripH;
+  const c = Math.cos(a), s = Math.sin(a);
+  for (let k = 0; k < STRIPS; k++) {
+    const { s: el, shade } = strips[k];
+    const z = k % 2 ? stripH * s : 0;
+    el.style.transform = `translate3d(0,${(k * stripH * (c - 1)).toFixed(2)}px,${z.toFixed(2)}px) rotateX(${((k % 2 ? -a : a) * 57.2958).toFixed(3)}deg)`;
+    shade.style.opacity = s.toFixed(3);
+  }
+  const packed = total * c;
+  stripsWrap.style.transform = `translate3d(0,${((total - packed) / 2 - lift * vh * 0.5).toFixed(2)}px,${(-lift * 300).toFixed(1)}px) rotateX(${(lift * 28).toFixed(2)}deg) rotateZ(${(-lift * 7).toFixed(2)}deg)`;
+}
+
+// ─── 3. Cards are rigid bodies (anikit world) ─────────────────────────────
+const stage = $('#cards'), grid = $('#grid');
+const cardEls = [...grid.querySelectorAll('.card')];
+const cards = cardEls.map((el) => ({ el, x: 0, y: 0, r: 0, base: 0, ox: 0, oy: 0, written: '' }));
+let W = null, physics = false;
+const dropBtn = $('#drop'), tidyBtn = $('#tidy');
+
+function drop() {
+  if (physics) return;
+  for (const c of cards) animate(c, { x: c.x, y: c.y, r: c.r }, { duration: 0.01 }); // stop any tidy-up in flight
+  W?.destroy();
+  W = world({ container: stage, gravity: [0, 2000], restitution: 0.25, friction: 0.35, substeps: 6, iterations: 3, damping: 0.02 });
+  const S = stage.getBoundingClientRect();
+  for (const c of cards) {
+    const r = c.el.getBoundingClientRect();
+    const w = c.el.offsetWidth, h = c.el.offsetHeight;
+    // Untransformed centre, in stage coordinates.
+    const cx = r.left + r.width / 2 - S.left, cy = r.top + r.height / 2 - S.top;
+    c.ox = cx - c.x; c.oy = cy - c.y;
+    const rad = Math.min(w / 6, h / 4);
+    const ca = Math.cos(c.r), sa = Math.sin(c.r);
+    const pts = [];
+    for (let j = 0; j < 2; j++) for (let i = 0; i < 3; i++) {
+      const lx = (i - 1) * (w / 3), ly = (j - 0.5) * (h / 2);
+      pts.push({ x: cx + lx * ca - ly * sa, y: cy + lx * sa + ly * ca, r: rad, mass: 1 });
+    }
+    c.base = W.addMany(pts);
+    for (let a = 0; a < 6; a++) for (let b = a + 1; b < 6; b++) W.link(c.base + a, c.base + b, { stiffness: 1 });
+    const kick = (Math.random() - 0.5) * 500;
+    for (let a = 0; a < 6; a++) W.setVelocity(c.base + a, kick + (a % 3 - 1) * 0, -300 - Math.random() * 300 + ((a % 3) - 1) * kick * 0.4);
+  }
+  W.dragging({ hitSlop: 24 });
+  physics = true;
+  dropBtn.disabled = true; tidyBtn.disabled = false;
+}
+function tidy() {
+  if (!physics) return;
+  physics = false;
+  W.pause();
+  for (const c of cards) {
+    // unwrap so the card turns the short way home
+    c.r = Math.atan2(Math.sin(c.r), Math.cos(c.r));
+  }
+  animate(cards, { x: 0, y: 0, r: 0 }, { ease: 'spring(bounce: 0.22, duration: 0.9)', delay: stagger(0.05) });
+  dropBtn.disabled = false; tidyBtn.disabled = true;
+}
+dropBtn.addEventListener('click', drop);
+tidyBtn.addEventListener('click', tidy);
+cardEls.forEach((el) => el.addEventListener('pointerdown', (e) => { if (!physics && !e.target.closest('button')) drop(); }));
+
+function readCards() {
+  if (!physics) return;
+  const d = W.data;
+  for (const c of cards) {
+    const b = c.base * 3;
+    let sx = 0, sy = 0;
+    for (let a = 0; a < 6; a++) { sx += d[b + a * 3]; sy += d[b + a * 3 + 1]; }
+    c.x = sx / 6 - c.ox; c.y = sy / 6 - c.oy;
+    c.r = Math.atan2(d[b + 7] - d[b + 1], d[b + 6] - d[b]);
+  }
+}
+function writeCards() {
+  for (const c of cards) {
+    const t = `translate3d(${c.x.toFixed(1)}px,${c.y.toFixed(1)}px,0) rotate(${(c.r * 57.2958).toFixed(2)}deg)`;
+    if (t !== c.written) { c.written = t; c.el.style.transform = c.x || c.y || c.r ? t : ''; }
+  }
+}
+
+// The small "Try" buttons each show off one function.
+const tries = cardEls.map((el) => el.querySelector('.mini'));
+tries[0].addEventListener('click', () => animate(cardEls[0].querySelector('code'), { x: [0, 18, -10, 0], color: ['#1c1a17', '#ff5b3a', '#1c1a17'] }, { duration: 0.7 }));
+tries[1].addEventListener('click', () => animate(cardEls[1].querySelector('code'), { scale: [1, 1.5, 1] }, { ease: 'spring(bounce: 0.5, duration: 0.8)' }));
+tries[2].addEventListener('click', () => (physics ? W.impulse(stage.clientWidth / 2, stage.clientHeight, 900, 1600) : drop()));
+tries[3].addEventListener('click', () => timeline({ defaults: { duration: 0.3, ease: 'outCubic' } })
+  .add(cardEls[3].querySelector('code'), { y: [0, -8] }).add(cardEls[3].querySelector('p'), { opacity: [1, 0.3] }, '-=0.15')
+  .add(cardEls[3].querySelector('code'), { y: 0 }).add(cardEls[3].querySelector('p'), { opacity: 1 }, '-=0.15'));
+tries[4].addEventListener('click', () => { if (!physics) flip(cardEls, () => grid.append(...cardEls.slice(1).concat(cardEls[0])), { duration: 0.7, ease: 'spring(bounce: 0.2, duration: 0.7)' }); });
+const sixP = cardEls[5].querySelector('p');
+tries[5].addEventListener('click', () => {
+  const s = splitText(sixP, { type: 'chars' });
+  animate(s.chars, { y: [0, -10, 0], color: ['#1c1a17', '#3157ff', '#1c1a17'] }, { duration: 0.6, delay: stagger(0.015), onComplete: () => s.revert() });
+});
+
+// ─── 4. The source ripples like water ──────────────────────────────────────
+const src = $('#src');
+const MAXR = 12, rips = new Float32Array(MAXR * 4);
+let ripHead = 0, ripLive = false, codePainted = false, lastRip = 0, lastRx = -1e9, lastRy = -1e9;
+function addRipple(x, y, amp) {
+  const k = ripHead++ % MAXR;
+  rips[k * 4] = x; rips[k * 4 + 1] = y; rips[k * 4 + 2] = 0; rips[k * 4 + 3] = amp;
+}
+src.addEventListener('pointermove', (e) => {
+  if (!codePainted) return;
+  const r = src.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  const now = performance.now();
+  if (now - lastRip > 70 && Math.hypot(x - lastRx, y - lastRy) > 18) { addRipple(x, y, 0.7 * (quality < 2 ? 1 : 0.8)); lastRip = now; lastRx = x; lastRy = y; }
+});
+src.addEventListener('pointerdown', (e) => { if (!codePainted) return; const r = src.getBoundingClientRect(); addRipple(e.clientX - r.left, e.clientY - r.top, 1.6); });
+function stepRipples(dt) {
+  let live = false;
+  for (let k = 0; k < MAXR; k++) {
+    if (rips[k * 4 + 3] <= 0) continue;
+    rips[k * 4 + 2] += dt;
+    if (rips[k * 4 + 2] > 3.2) rips[k * 4 + 3] = 0; else live = true;
+  }
+  if (live !== ripLive) { ripLive = live; src.classList.toggle('live', live); }
+  return live;
+}
+function paintCode() {
+  for (const s of src.querySelectorAll('span')) s.dataset.paintColor = getComputedStyle(s).color;
+  const c = paint(src, Math.min(devicePixelRatio || 1, 2), { boxes: false });
+  G.upload('code', c);
+  codePainted = true;
+}
+
+// ─── 5. The page shatters and comes back together ─────────────────────────
+const panel = $('#panel');
+const fin = { p: 0 }, burst = { e: 0 };
+let shards = null, panelPainted = false, shatterOn = false, origin = [0.5, 0.6];
+function paintPanel() {
+  G.upload('panel', paint(panel, Math.min(devicePixelRatio || 1, 2)));
+  panelPainted = true;
+}
+$('#breakit').addEventListener('click', (e) => {
+  const r = panel.getBoundingClientRect();
+  origin = [e.clientX - r.left, e.clientY - r.top];
+  timeline().add(burst, { e: [0, 1] }, { duration: 1.1, ease: 'outCubic' })
+    .add(burst, { e: 0 }, { ease: 'spring(bounce: 0.15, duration: 1.4)' }, '+=0.5');
+});
+
+// ─── Scroll: anikit scroll triggers drive the fold and the finale ─────────
+scrollTrigger({ trigger: '#fold-wrap', start: 'top top', end: 'bottom bottom', scrub: 0.5,
+  animation: animate(foldState, { p: [0, 1] }, { ease: 'linear', duration: 1, autoplay: false }) });
+scrollTrigger({ trigger: '#finale', start: 'top top', end: 'bottom bottom', scrub: 0.6,
+  animation: animate(fin, { p: [0, 1] }, { ease: 'linear', duration: 1, autoplay: false }) });
+
+// ─── Frame loop ────────────────────────────────────────────────────────────
+let sy = scrollY;
+addEventListener('scroll', () => (sy = scrollY), { passive: true });
+let heroRect = { top: 0, bottom: 0 }, codeTop = 0, codeLeft = 0, codeW = 0, codeH = 0;
+function layout() {
+  vw = innerWidth; vh = innerHeight;
+  G?.resize(vw, vh, dprFor());
+  const h = $('#hero').getBoundingClientRect();
+  heroRect = { top: h.top + scrollY, bottom: h.bottom + scrollY };
+  const c = src.getBoundingClientRect();
+  codeTop = c.top + scrollY; codeLeft = c.left + scrollX; codeW = c.width; codeH = c.height;
+  if (letters[0].mesh) measureLetters();
+  buildStrips(); foldDrawn = -1;
+  if (codePainted) paintCode();
+  if (panelPainted) paintPanel();
+}
+let resizeT = 0;
+addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(layout, 120); });
+
+let ready = false;
+engine.onFrame((now, dtMs) => {
+  perf(now);
+  const dt = Math.min(dtMs, 50) / 1000;
+  readCards();
+  if (!ready) { writeCards(); drawFold(); return; }
+  scrollE = smooth(0, vh * 0.7, sy);
+  const heroOn = sy < heroRect.bottom;
+  const lettersLive = heroOn ? stepLetters(dt) : false;
+  const ripOn = stepRipples(dt) && codeTop - sy < vh && codeTop + codeH - sy > 0;
+  const fe = smooth(0.12, 0.42, fin.p) * (1 - smooth(0.62, 0.92, fin.p));
+  const e = Math.max(fe, burst.e);
+  const sh = e > 1e-4 && panelPainted;
+  if (sh !== shatterOn) { shatterOn = sh; panel.classList.toggle('live', sh); if (sh && burst.e < 1e-4) origin = [vw * 0.5, vh * 0.55]; }
+  writeCards();
+  drawFold();
+  if (!G) return;
+  G.begin();
+  if (lettersLive) {
+    for (const L of letters) {
+      if (!L.live || !L.mesh) continue;
+      const depth = L.fs * 0.2 * L.e;
+      const cy = L.cy - sy;
+      G.letter(L.mesh, L.cx - scrollX, cy, L.sx, L.sy, depth, L.rx, L.ry, L.e, 1);
+      if (L.e > 1e-3) G.letter(L.mesh, L.cx - scrollX, cy, L.sx, L.sy, depth, L.rx, L.ry, L.e, -1);
+      G.clearDepth();
+    }
+  }
+  if (ripOn) G.ripple(codeLeft - scrollX, codeTop - sy, codeW, codeH, rips, quality >= 1 ? 6 : MAXR);
+  if (shatterOn) {
+    const r = panel.getBoundingClientRect();
+    G.shatter(shards, r.left, r.top, r.width, r.height, e, origin[0], origin[1]);
+  }
+});
+
+// ─── Start: paint first, pre-warm everything, then come alive ──────────────
+layout();
+if (G) {
+  shards = G.shards(14, 9);
+  await buildLetters();
+  await idle(); paintCode();
+  await idle(); paintPanel();
+  // Pre-warm every program once, off-screen, so the first real frame doesn't compile.
+  G.begin();
+  G.letter(letters[0].mesh, -9999, -9999, 1, 1, 1, 0, 0, 1, 1);
+  G.ripple(-9999, -9999, 1, 1, rips, 1);
+  G.shatter(shards, -9999, -9999, 1, 1, 0.5, 0, 0);
+  G.begin();
+  ready = true;
+  if (!reduce) {
+    // The introduction: letters rise out of the paper, turn once, and settle back.
+    letters.forEach((L, i) => setTimeout(() => (L.w = 9.5), 380 + i * 90));
+    animate(intro, { on: [0, 1, 1, 0] }, { duration: 3.4, ease: 'inOutSine', delay: 0.2 });
+  }
+}
+window.__proto = { letters, cards, foldState, fin, burst, get quality() { return quality; } };
