@@ -94,14 +94,14 @@ async function buildLetters() {
 }
 
 // Letter motion: spin velocity from the pointer, a spring home to a whole turn.
-let heroActive = 0, lastHeroInput = -1e9, scrollE = 0;
+let clock = 0, lastHeroInput = -1e9, scrollE = 0;
 const intro = { on: 0 };
 const ptr = { x: -1, y: -1, down: false, px: 0, vx: 0 };
-word.addEventListener('pointerdown', (e) => { ptr.down = true; ptr.px = e.clientX; word.setPointerCapture(e.pointerId); lastHeroInput = performance.now(); });
+word.addEventListener('pointerdown', (e) => { ptr.down = true; ptr.px = e.clientX; word.setPointerCapture(e.pointerId); lastHeroInput = clock; });
 word.addEventListener('pointermove', (e) => {
   const dx = e.clientX - (ptr.px || e.clientX); ptr.px = e.clientX;
   ptr.x = e.clientX; ptr.y = e.clientY + scrollY;
-  lastHeroInput = performance.now();
+  lastHeroInput = clock;
   for (const L of letters) {
     if (Math.abs(ptr.x + scrollX - L.cx) < L.sx * 0.5) L.w += dx * (ptr.down ? 0.0016 : 0.0006) * 60;
   }
@@ -109,8 +109,7 @@ word.addEventListener('pointermove', (e) => {
 addEventListener('pointerup', () => (ptr.down = false));
 
 function stepLetters(dt) {
-  const now = performance.now();
-  const target = Math.max(intro.on, now - lastHeroInput < 2600 ? 1 : 0, scrollE);
+  const target = Math.max(intro.on, clock - lastHeroInput < 2.6 ? 1 : 0, scrollE);
   let any = false;
   for (let i = 0; i < letters.length; i++) {
     const L = letters[i];
@@ -214,7 +213,7 @@ function drop() {
     }
     c.base = W.addMany(pts);
     for (let a = 0; a < 6; a++) for (let b = a + 1; b < 6; b++) W.link(c.base + a, c.base + b, { stiffness: 1 });
-    const kick = (Math.random() - 0.5) * 500;
+    const kick = (Math.random() - 0.35) * 1100;
     for (let a = 0; a < 6; a++) W.setVelocity(c.base + a, kick + (a % 3 - 1) * 0, -300 - Math.random() * 300 + ((a % 3) - 1) * kick * 0.4);
   }
   W.dragging({ hitSlop: 24 });
@@ -281,10 +280,10 @@ src.addEventListener('pointermove', (e) => {
   if (!codePainted) return;
   const r = src.getBoundingClientRect();
   const x = e.clientX - r.left, y = e.clientY - r.top;
-  const now = performance.now();
-  if (now - lastRip > 70 && Math.hypot(x - lastRx, y - lastRy) > 18) { addRipple(x, y, 0.7 * (quality < 2 ? 1 : 0.8)); lastRip = now; lastRx = x; lastRy = y; }
+  const now = clock;
+  if (now - lastRip > 0.07 && Math.hypot(x - lastRx, y - lastRy) > 18) { addRipple(x, y, 1.1); lastRip = now; lastRx = x; lastRy = y; }
 });
-src.addEventListener('pointerdown', (e) => { if (!codePainted) return; const r = src.getBoundingClientRect(); addRipple(e.clientX - r.left, e.clientY - r.top, 1.6); });
+src.addEventListener('pointerdown', (e) => { if (!codePainted) return; const r = src.getBoundingClientRect(); addRipple(e.clientX - r.left, e.clientY - r.top, 2.2); });
 function stepRipples(dt) {
   let live = false;
   for (let k = 0; k < MAXR; k++) {
@@ -346,6 +345,8 @@ let ready = false;
 engine.onFrame((now, dtMs) => {
   perf(now);
   const dt = Math.min(dtMs, 50) / 1000;
+  clock += dt;
+  sy = scrollY;
   readCards();
   if (!ready) { writeCards(); drawFold(); return; }
   scrollE = smooth(0, vh * 0.7, sy);
@@ -353,7 +354,7 @@ engine.onFrame((now, dtMs) => {
   const lettersLive = heroOn ? stepLetters(dt) : false;
   const ripOn = stepRipples(dt) && codeTop - sy < vh && codeTop + codeH - sy > 0;
   const fe = smooth(0.12, 0.42, fin.p) * (1 - smooth(0.62, 0.92, fin.p));
-  const e = Math.max(fe, burst.e);
+  const e = Math.max(fe * 0.55, burst.e);
   const sh = e > 1e-4 && panelPainted;
   if (sh !== shatterOn) { shatterOn = sh; panel.classList.toggle('live', sh); if (sh && burst.e < 1e-4) origin = [vw * 0.5, vh * 0.55]; }
   writeCards();
@@ -363,7 +364,7 @@ engine.onFrame((now, dtMs) => {
   if (lettersLive) {
     for (const L of letters) {
       if (!L.live || !L.mesh) continue;
-      const depth = L.fs * 0.2 * L.e;
+      const depth = L.fs * 0.1 * L.e;
       const cy = L.cy - sy;
       G.letter(L.mesh, L.cx - scrollX, cy, L.sx, L.sy, depth, L.rx, L.ry, L.e, 1);
       if (L.e > 1e-3) G.letter(L.mesh, L.cx - scrollX, cy, L.sx, L.sy, depth, L.rx, L.ry, L.e, -1);
@@ -393,8 +394,8 @@ if (G) {
   ready = true;
   if (!reduce) {
     // The introduction: letters rise out of the paper, turn once, and settle back.
-    letters.forEach((L, i) => setTimeout(() => (L.w = 9.5), 380 + i * 90));
+    letters.forEach((L, i) => animate(L, { w: 9.5 }, { duration: 0.01, delay: 0.4 + i * 0.09 }));
     animate(intro, { on: [0, 1, 1, 0] }, { duration: 3.4, ease: 'inOutSine', delay: 0.2 });
   }
 }
-window.__proto = { letters, cards, foldState, fin, burst, get quality() { return quality; } };
+window.__proto = { addRipple, drop, tidy, letters, cards, foldState, fin, burst, get quality() { return quality; } };

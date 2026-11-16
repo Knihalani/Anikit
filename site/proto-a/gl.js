@@ -28,7 +28,7 @@ in vec3 vN; in float vH;
 uniform float uE; uniform vec3 uInk; uniform vec3 uSideA; uniform vec3 uSideB;
 out vec4 o;
 void main() {
-  float cut = 0.5 * (1.0 - smoothstep(0.0, 0.25, uE));
+  float cut = mix(0.5, 0.07, smoothstep(0.0, 0.25, uE));
   if (vH < cut) discard;
   vec3 n = normalize(vN);
   if (!gl_FrontFacing) n = -n;
@@ -66,14 +66,14 @@ float hgt(vec2 p) {
 void main() {
   float h0 = hgt(vL), hx = hgt(vL + vec2(2.0, 0.0)), hy = hgt(vL + vec2(0.0, 2.0));
   vec2 g = vec2(hx - h0, hy - h0) * 0.5;
-  vec2 uv = (vL - g * 26.0) / uRect.zw;
+  vec2 uv = (vL - g * 70.0) / uRect.zw;
   vec4 t = texture(uTex, uv);
-  vec3 n = normalize(vec3(-g * 3.0, 1.0));
-  float caustic = pow(max(dot(n, normalize(vec3(-0.5, -0.6, 0.62))), 0.0), 18.0);
-  float tint = clamp(h0 * 0.6, -1.0, 1.0);
-  vec3 add = vec3(1.0, 0.98, 0.92) * caustic * 0.28 + vec3(0.19, 0.34, 1.0) * max(-tint, 0.0) * 0.05;
-  float a = max(t.a, clamp(caustic * 0.28 + max(-tint, 0.0) * 0.05, 0.0, 1.0));
-  o = vec4(t.rgb + add * (1.0 - t.a), a);
+  vec3 n = normalize(vec3(-g * 5.0, 1.0));
+  vec3 L = normalize(vec3(-0.5, -0.6, 0.62));
+  float dl = dot(n, L) - L.z;
+  vec3 sc = dl > 0.0 ? vec3(1.0, 0.99, 0.95) : vec3(0.22, 0.32, 0.85);
+  float sa = clamp(abs(dl) * (dl > 0.0 ? 3.0 : 1.0), 0.0, 0.32);
+  o = vec4(mix(sc, t.rgb, t.a), t.a + sa * (1.0 - t.a));
 }`;
 
 const SHARD_VS = HEAD + `
