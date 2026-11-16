@@ -1,12 +1,12 @@
 # Anikit
 
-> High-performance web animation engine: Rust/WebAssembly core with a TypeScript API (and Python bindings). Tweens, keyframes, timelines, springs, scroll triggers, SVG morphing, text effects, an effects library, physics worlds, 3D, particles, GIF/video capture and Node video rendering.
+> High-performance web animation engine: Rust/WebAssembly core with a TypeScript API (and Python bindings). Tweens, keyframes, timelines, springs, reactive motion values, scroll triggers, marquees, SVG morphing, text effects, an effects library, physics worlds, 3D, particles, a software 3D renderer with a film grade, GIF/video capture and Node video rendering.
 
 Import from 'anikit'. Times are in seconds (only `engine.onFrame`/`engine.tick` use ms). Mistakes print `anikit:` warnings that name the fix; `testing` + `engine.inspect()` verify animations headlessly.
 
 ## Docs
 - [Agent playbook](AGENTS.md): "want X → use Y" table, rules, snippets, verification, common mistakes and fixes
-- [Recipes](llms-full.txt): task-sized, tested examples (17 tasks + Python)
+- [Recipes](llms-full.txt): task-sized, tested examples (18 tasks + Python)
 - [Full reference](llms-full.txt): playbook + recipes + every API in one file
 
 ## Recipes
@@ -21,6 +21,7 @@ Import from 'anikit'. Times are in seconds (only `engine.onFrame`/`engine.tick` 
 - Number counter
 - Hover and press
 - Pointer follower
+- One value driving many properties (slider, scroll, marquee)
 - Layout change (FLIP)
 - Components and reduced motion
 - Testing an animation

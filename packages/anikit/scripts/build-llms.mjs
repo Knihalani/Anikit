@@ -14,7 +14,7 @@ const headings = (md) => [...md.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
 
 const index = (links) => `# Anikit
 
-> High-performance web animation engine: Rust/WebAssembly core with a TypeScript API (and Python bindings). Tweens, keyframes, timelines, springs, scroll triggers, SVG morphing, text effects, an effects library, physics worlds, 3D, particles, GIF/video capture and Node video rendering.
+> High-performance web animation engine: Rust/WebAssembly core with a TypeScript API (and Python bindings). Tweens, keyframes, timelines, springs, reactive motion values, scroll triggers, marquees, SVG morphing, text effects, an effects library, physics worlds, 3D, particles, a software 3D renderer with a film grade, GIF/video capture and Node video rendering.
 
 Import from 'anikit'. Times are in seconds (only \`engine.onFrame\`/\`engine.tick\` use ms). Mistakes print \`anikit:\` warnings that name the fix; \`testing\` + \`engine.inspect()\` verify animations headlessly.
 

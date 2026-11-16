@@ -333,6 +333,38 @@ const toY = quickTo('.dot', 'y', { duration: 0.4, ease: 'outCubic' });
 addEventListener('pointermove', (e) => { toX(e.clientX - 8); toY(e.clientY - 8); });
 ```
 
+## One value driving many properties (slider, scroll, marquee)
+
+```html
+<input id="amount" type="range" min="0" max="1" step="0.001" value="0" />
+<div class="card" style="width: 120px; height: 80px; background: #6ea8ff"></div>
+<div class="logos" style="display: flex; gap: 40px"><span>Northwind</span><span>Acme</span><span>Globex</span></div>
+```
+
+```ts
+import { motionValue, bindValues, scrollProgress, marquee, magnetic } from 'anikit';
+
+// One source of truth; every property follows it (springy when the slider moves).
+const amount = motionValue(0);
+bindValues('.card', {
+  x: amount.map([0, 1], [0, 400]),
+  rotate: amount.map([0, 1], [0, 90], { ease: 'inOutCubic' }),
+  opacity: amount.map([0, 0.5, 1], [0.4, 1, 0.4]),
+});
+document.querySelector<HTMLInputElement>('#amount')!.addEventListener('input', (e) => {
+  amount.spring(+(e.target as HTMLInputElement).value, { stiffness: 180, damping: 16 });
+});
+
+// Page scroll as a value: the card shrinks a little as you scroll.
+bindValues('.card', { scale: scrollProgress().map([0, 1], [1, 0.8]) });
+
+// An endless logo row that pauses on hover and speeds up with scrolling, and a magnetic card.
+marquee('.logos', { speed: 60, pauseOnHover: true, scrollBoost: 0.5 });
+magnetic('.card', { strength: 0.3 });
+```
+
+`bindValues()` writes on every change (transforms compose with other animations), and everything here is undone by `context().revert()`.
+
 ## Layout change (FLIP)
 
 Change the layout however you like; `flip()` animates elements from where they were.
