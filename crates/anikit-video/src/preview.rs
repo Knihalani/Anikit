@@ -152,8 +152,8 @@ fn downscale(img: &Image, k: u32) -> Image {
             for dy in 0..k {
                 for dx in 0..k {
                     let s = (((y * k + dy) * img.width + x * k + dx) * 4) as usize;
-                    for c in 0..4 {
-                        acc[c] += img.rgba[s + c] as u32;
+                    for (c, a) in acc.iter_mut().enumerate() {
+                        *a += img.rgba[s + c] as u32;
                     }
                 }
             }
