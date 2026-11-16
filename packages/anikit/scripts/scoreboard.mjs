@@ -109,7 +109,11 @@ function startup(code) {
   if (installed.includes('gsap')) comp.push(['gsap', startup(`const t=performance.now();await import('gsap');console.log(performance.now()-t)`)]);
   if (installed.includes('motion')) comp.push(['motion', startup(`const t=performance.now();await import('motion');console.log(performance.now()-t)`)]);
   comp.sort((a, b) => a[1] - b[1]);
-  if (comp.length) add('start-up', 'import → ready (Node; anikit includes wasm compile + instantiate)', ak, comp[0][0], comp[0][1], 'ms');
+  const lean = startup(`const t=performance.now();const a=await import('./dist/anikit.lean.js');await a.ready;console.log(performance.now()-t)`);
+  if (comp.length) {
+    add('start-up', 'import → ready, lean build (wasm read + compile + instantiate)', lean, comp[0][0], comp[0][1], 'ms');
+    add('start-up', 'import → ready, full build (wasm embedded as base64)', ak, comp[0][0], comp[0][1], 'ms');
+  }
 }
 
 // --- Output -----------------------------------------------------------------

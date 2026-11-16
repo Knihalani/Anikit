@@ -275,6 +275,8 @@ export function decodeBase64(s: string, via?: 'native' | 'node' | 'atob'): Uint8
 
 const queue: Array<() => void> = [];
 let readyResolve!: () => void;
+/** Base for resolving a relative `init()` URL when checking its scheme (relative strings are fetched as given). */
+const FILE_BASE = typeof location !== 'undefined' && location.href ? location.href : 'file:///';
 /** Resolves once the WebAssembly core is instantiated. */
 export const ready: Promise<void> = new Promise<void>((r) => (readyResolve = r));
 
@@ -301,8 +303,12 @@ let started = false;
 function boot(): void {
   if (started) return;
   if (!WASM_BASE64) {
-    // Lean build: stream the module that ships next to this file.
-    void init(new URL('./anikit.wasm', import.meta.url));
+    // Lean build: stream the module that ships next to this file. If that
+    // fails (no fetch for it, a bundler that moved the file), an explicit
+    // `init(source)` can still load the core.
+    init(new URL('./anikit.wasm', import.meta.url)).catch(() => {
+      if (!W) started = false;
+    });
     return;
   }
   started = true;
@@ -330,7 +336,14 @@ export async function init(source?: string | URL | Response | BufferSource): Pro
   if (started) return ready;
   started = true;
   let result: WebAssembly.WebAssemblyInstantiatedSource;
-  if (typeof source === 'string' || source instanceof URL) {
+  const url = typeof source === 'string' || source instanceof URL ? new URL(String(source), FILE_BASE) : null;
+  const g = globalThis as any;
+  if (url !== null && url.protocol === 'file:' && g.process?.versions?.node) {
+    // Node's fetch has no file: scheme; read the file instead.
+    const fs = 'node:fs/promises';
+    const bytes: Uint8Array = await (await import(/* @vite-ignore */ fs)).readFile(url);
+    result = await WebAssembly.instantiate(bytes as BufferSource, {});
+  } else if (typeof source === 'string' || source instanceof URL) {
     const res = fetch(source);
     result = WebAssembly.instantiateStreaming
       ? await WebAssembly.instantiateStreaming(res, {})
