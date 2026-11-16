@@ -111,4 +111,20 @@ export const tests = [
       ok(r.after === null, 'animation slid the triangle away from the centre');
     },
   },
+  {
+    name: 'text3d(): bevelled glyph extrusion has the requested height and depth',
+    async run(page) {
+      const r = await page.evaluate(() => {
+        const t0 = performance.now();
+        const g = ak.text3d('Hi', { size: 1, depth: 0.4, bevel: 0.05, resolution: 80 });
+        const p = g.positions; let lx = 1e9, hx = -1e9, ly = 1e9, hy = -1e9, lz = 1e9, hz = -1e9;
+        for (let i = 0; i < p.length; i += 3) { lx = Math.min(lx, p[i]); hx = Math.max(hx, p[i]); ly = Math.min(ly, p[i + 1]); hy = Math.max(hy, p[i + 1]); lz = Math.min(lz, p[i + 2]); hz = Math.max(hz, p[i + 2]); }
+        return { tris: g.indices.length / 3, w: hx - lx, h: hy - ly, d: hz - lz, ms: performance.now() - t0 };
+      });
+      ok(r.tris > 1000, `meshed (${r.tris} triangles in ${r.ms.toFixed(0)} ms)`);
+      near(r.h, 1, 0.2, 'cap height ≈ size');
+      near(r.d, 0.4, 0.04, 'depth');
+      ok(r.w > r.h, 'wider than tall');
+    },
+  },
 ];

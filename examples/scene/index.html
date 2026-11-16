@@ -13,7 +13,7 @@
 <div id="env"><button data-env="studio">studio</button> <button data-env="sunset">sunset</button> <button data-env="night">night</button></div>
 <div id="hud">click an object · drag to orbit · wheel to zoom</div>
 <script type="module">
-  import { scene, sphere, torus, roundedBox, lathe, tube, capsule, sdfMesh, sdSphere, sdTorus, smoothUnion, plane, animate, spring, timeline } from '../../packages/anikit/dist/anikit.js';
+  import { scene, sphere, torus, roundedBox, lathe, tube, capsule, sdfMesh, text3d, sdSphere, sdTorus, smoothUnion, plane, animate, spring, timeline } from '../../packages/anikit/dist/anikit.js';
 
   const env = new URLSearchParams(location.search).get('env') || 'studio';
   const s = scene('#c', { camera: { fov: 40, position: [0, 2.2, 7.5], target: [0, 0.8, 0] }, environment: env, shadows: true, bloom: true });
@@ -28,6 +28,9 @@
   const knot = s.add(tube((t) => { const a = t * Math.PI * 2; return [Math.sin(a) + 2 * Math.sin(2 * a), Math.cos(a) - 2 * Math.cos(2 * a), -Math.sin(3 * a)].map((v) => v * 0.28); }, 0.07, 256, 16),
     { material: 'copper', position: [0, 1.4, -3.4] });
   const neon = s.add(capsule(0.08, 1.6, 24), { material: { preset: 'emissive', emissive: '#61dafb' }, position: [-3.2, 0.8, -1.5] });
+
+  const title = s.add(text3d('anikit', { size: 0.55, depth: 0.18, bevel: 0.03 }), { material: 'chrome', position: [0, 2.7, -3.2] });
+  animate(title.rotation, { y: [-0.25, 0.25] }, { duration: 3, yoyo: true, repeat: -1, ease: 'inOutSine' });
 
   // 400 instanced pebbles in one draw call
   s.instances(sphere(1, 12), 400, (i, o) => {
