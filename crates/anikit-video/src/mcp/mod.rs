@@ -173,9 +173,9 @@ impl Server {
                 Ok(vec![text(&r.to_text()), text(&pretty(&serde_json::to_value(&r).unwrap()))])
             }
             "validate_spec" => {
-                let (_, path) = self.spec_arg(a)?;
-                let o = self.exe_run(&["check".into(), path.display().to_string(), "--json".into()])?;
-                Ok(vec![text(&o)])
+                let (spec, path) = self.spec_arg(a)?;
+                let base = path.parent().map(Path::to_path_buf).unwrap_or_default();
+                Ok(vec![text(&pretty(&validate(spec, &base)))])
             }
             "render_still" => {
                 let (_, path) = self.spec_arg(a)?;
@@ -271,6 +271,32 @@ impl Server {
         }
         Ok(v)
     }
+}
+
+/// Validate a spec with the real parser and compiler (assets are checked for
+/// existence, not decoded): `{ ok, errors, warnings, duration, frames, scenes }`.
+pub fn validate(spec: Value, base_dir: &Path) -> Value {
+    use crate::eval::{Evaluator, Options};
+    use crate::spec::parse::{from_value, Severity};
+    let (ev, diags) = match from_value(spec) {
+        Err(d) => (None, d),
+        Ok(p) => {
+            let (ev, mut d) = Evaluator::build(&p.spec, &Options { base_dir: base_dir.to_path_buf(), load_assets: false, ..Options::default() });
+            d.extend(p.warnings);
+            (ev, d)
+        }
+    };
+    let pick = |sev: Severity| diags.iter().filter(|d| d.severity == sev).map(|d| serde_json::to_value(d).unwrap()).collect::<Vec<_>>();
+    let errors = pick(Severity::Error);
+    json!({
+        "ok": errors.is_empty() && ev.is_some(),
+        "errors": errors,
+        "warnings": pick(Severity::Warning),
+        "duration": ev.as_ref().map(|e| e.duration),
+        "frames": ev.as_ref().map(|e| e.frames()),
+        "size": ev.as_ref().map(|e| [e.width, e.height]),
+        "scenes": ev.as_ref().map(|e| e.scenes()),
+    })
 }
 
 /// Resources served to clients.
@@ -442,6 +468,10 @@ mod tests {
         assert_eq!(spec["size"], json!([1080, 1920]));
         assert_eq!(spec["theme"]["colors"]["primary"], "#FF5500");
 
+        let r = call(&mut s, "tools/call", json!({ "name": "validate_spec", "arguments": { "spec": { "scenes": [ { "layers": [ { "type": "txt", "text": "x" } ] } ] } } }));
+        let v: Value = serde_json::from_str(r["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+        assert_eq!(v["ok"], false, "{v}");
+        assert!(v["errors"][0]["path"].as_str().unwrap().contains("layers[0]"), "{v}");
         let r = call(&mut s, "tools/call", json!({ "name": "critique_spec", "arguments": { "spec": spec } }));
         assert!(r["result"]["content"][0]["text"].as_str().unwrap().starts_with("score"));
 

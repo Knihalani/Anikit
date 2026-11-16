@@ -801,6 +801,33 @@ mod tests {
         }
     }
 
+    /// Expanded templates must pass the spec parser and compiler with no
+    /// diagnostics at all (missing example assets aside).
+    #[test]
+    fn builtin_templates_are_valid_specs() {
+        use crate::eval::{Evaluator, Options};
+        let mut bad = Vec::new();
+        for (name, _) in BUILTIN {
+            let t = Template::builtin(name).unwrap();
+            for f in ["16:9", "9:16", "1:1"] {
+                let b = brand::Brand::from_json(r##"{"theme":"light","colors":{"primary":"#0F766E"},"logo":"logo.svg"}"##).unwrap();
+                for brand in [brand::Brand::default(), b] {
+                    let spec = t.expand(&t.example_params(), &brand, Format::parse(f).unwrap()).unwrap();
+                    let diags = match crate::spec::parse::from_value(spec) {
+                        Err(d) => d,
+                        Ok(p) => {
+                            let (_, mut d) = Evaluator::build(&p.spec, &Options { load_assets: false, ..Options::default() });
+                            d.extend(p.warnings);
+                            d
+                        }
+                    };
+                    bad.extend(diags.iter().filter(|d| !d.message.contains("file not found")).map(|d| format!("{name} {f}: {d}")));
+                }
+            }
+        }
+        assert!(bad.is_empty(), "{}", bad.join("\n"));
+    }
+
     #[test]
     fn formats() {
         assert_eq!(Format::parse("9:16").unwrap().orientation(), "portrait");
