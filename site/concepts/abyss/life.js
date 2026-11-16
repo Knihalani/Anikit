@@ -20,7 +20,7 @@ function sprite(r, stops) {
 
 export function life(canvas, { reduced, small }) {
   const ctx = canvas.getContext('2d');
-  const dpr = Math.min(devicePixelRatio || 1, small ? 1.5 : 1.25);
+  const dpr = Math.min(devicePixelRatio || 1, small ? 1.5 : 1);
   let W = 0, H = 0;
   const resize = () => { W = innerWidth; H = innerHeight; canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); };
   resize();
@@ -37,7 +37,7 @@ export function life(canvas, { reduced, small }) {
   for (let k = 0; k < nJ; k++) {
     const R = (small ? 30 : 44) + ((k * 11) % 17) + (k === 1 ? 18 : 0);
     const j = {
-      x: W * (0.16 + 0.7 * ((k * 0.618) % 1)), y: H * (0.25 + 0.6 * ((k * 0.43 + 0.2) % 1)) + H * 0.6,
+      x: W * [0.12, 0.86, 0.24, 0.74][k % 4], y: H * (0.25 + 0.6 * ((k * 0.43 + 0.2) % 1)) + H * 0.6,
       R, ang: (k % 2 ? 1 : -1) * 0.25, v: 0, c: 0, cPrev: 0, seed: k * 13.7, col: palette[k % palette.length], tent: [],
     };
     const nT = small ? 7 : 10, seg = 14;
@@ -166,7 +166,10 @@ export function life(canvas, { reduced, small }) {
       j.phase = time + j.seed;
       const dc = Math.max(0, j.c - j.cPrev); j.cPrev = j.c;
       j.v += dc * 160; j.v *= Math.exp(-dt * 1.3);
-      const target = 0.35 * noise2(j.seed, time * 0.07);
+      // Wander, but keep out of the middle column where the demos are.
+      const mid = (j.x - W / 2) / (W * 0.3);
+      const away = Math.abs(mid) < 1 ? Math.sign(mid || 1) * (1 - Math.abs(mid)) * 0.5 : 0;
+      const target = 0.35 * noise2(j.seed, time * 0.07) + (small ? 0 : away);
       j.ang += (target - j.ang) * Math.min(1, dt * 0.6);
       const nx = Math.sin(j.ang), ny = -Math.cos(j.ang);
       j.x += nx * j.v * dt; 
@@ -183,7 +186,7 @@ export function life(canvas, { reduced, small }) {
     // Plankton: excited by the pointer, or by an unseen swimmer when it's idle.
     if (wake > 0.001) {
       const idle = performance.now() - ptr.last > 2500;
-      if (!idle && ptr.px > -1e3) excite(ptr.px, ptr.py, ptr.x, ptr.y, small ? 60 : 80, 0.02);
+      if (!idle && ptr.px > -1e3) excite(ptr.px, ptr.py, ptr.x, ptr.y, small ? 60 : 90, 0.02);
       ptr.px = ptr.x; ptr.py = ptr.y;
       if (idle && !reduced) {
         ghost.t += dt;
@@ -192,7 +195,7 @@ export function life(canvas, { reduced, small }) {
         excite(ghost.px, ghost.py, ghost.x, ghost.y, 60, 0.015);
       }
       ghost.px = ghost.x; ghost.py = ghost.y;
-      const decay = Math.exp(-dt * 0.9), damp = Math.exp(-dt * 2.2);
+      const decay = Math.exp(-dt * 0.5), damp = Math.exp(-dt * 2.2);
       for (let i = 0; i < N; i++) {
         let y = py[i] - ds * 0.8 * ps[i] - dt * 4 * ps[i];
         let x = px[i] + pvx[i] * dt + Math.sin(time * 0.3 + i) * dt * 2;
@@ -205,7 +208,7 @@ export function life(canvas, { reduced, small }) {
         const e = pe[i];
         const a = (0.02 * bio * ps[i] + e * 0.95) * wake;
         if (a < 0.02) continue;
-        const s = 1.6 + e * 4 * ps[i];
+        const s = 1.6 + e * 6 * ps[i];
         ctx.globalAlpha = Math.min(1, a);
         ctx.drawImage(dot, x - s, y - s, s * 2, s * 2);
       }

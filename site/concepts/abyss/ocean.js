@@ -128,7 +128,7 @@ void main(){
       vec2 d = f - o;
       float stretch = 1. + min(abs(uSpeed) * (0.4 + fl * 0.3), 6.);
       d.y /= stretch;
-      float sz = 0.06 + 0.05 * fl * fl;
+      float sz = 0.045 + 0.035 * fl * fl;
       float q2 = length(d) / sz; float m = exp(-q2 * q2 * 3.) * step(q2, 1.6) / sqrt(stretch);
       float tw = 0.6 + 0.4 * sin(t * (1. + r * 3.) + r * 40.);
       vec3 lit = vec3(0.7, 0.9, 1.) * (0.04 + 1.5 * lightLeft) * (0.3 + fl * 0.22);

@@ -108,7 +108,7 @@ export function start({ reduced, fine, small }) {
       W = canvas.clientWidth; H = canvas.clientHeight;
       canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
       w?.destroy();
-      w = world({ bounds: [0, 0, W, H], gravity: [0, -520], substeps: 4, iterations: 3, restitution: 0.35, friction: 0.04, damping: 0.03 });
+      w = world({ bounds: [10, 10, W - 10, H - 10], gravity: [0, -600], substeps: 4, iterations: 3, restitution: 0.35, friction: 0.04, damping: 0.03 });
       const n = small ? 34 : 56;
       const bodies = Array.from({ length: n }, (_, i) => ({ x: 20 + Math.random() * (W - 40), y: H * 0.5 + Math.random() * H * 0.5, r: (small ? 7 : 9) + Math.pow(Math.random(), 2.2) * (small ? 15 : 22) }));
       w.addMany(bodies);
@@ -117,14 +117,21 @@ export function start({ reduced, fine, small }) {
       if (fine) w.pointer({ mode: 'repel', radius: 90 });
     };
     let t = 0;
+    // The current turns over every few seconds: an Anikit tween on the gravity.
+    const current = { x: 0, y: -600 };
+    if (!reduced) {
+      timeline({ repeat: Infinity })
+        .add(current, { y: [-600, 600] }, { duration: 2.4, ease: 'inOutSine' }, 3.5)
+        .add(current, { y: [600, -600] }, { duration: 2.4, ease: 'inOutSine' }, '+=3.5');
+      animate(current, { x: [-140, 140] }, { duration: 7, ease: 'inOutSine', repeat: Infinity, yoyo: true });
+    }
     inView(canvas, () => { if (!w) build(); }, { amount: 0 });
     addEventListener('resize', () => { if (w && canvas.clientWidth !== W) build(); });
     canvas.addEventListener('click', (e) => { const r = canvas.getBoundingClientRect(); w?.impulse(e.clientX - r.left, e.clientY - r.top, 160, 1800); });
     whileVisible(canvas, (dt) => {
       if (!w) return;
       t += dt / 1000;
-      // The current turns slowly: the bodies sink, then rise again.
-      if (!reduced) { const a = Math.sin(t * 0.45); w.set({ gravity: [Math.sin(t * 0.21) * 160, -520 * Math.sign(a) * Math.min(1, Math.abs(a) * 3)], substeps: 4, iterations: 3, restitution: 0.35, friction: 0.04, damping: 0.03 }); }
+      w.set({ gravity: [current.x, current.y], substeps: 4, iterations: 3, restitution: 0.35, friction: 0.04, damping: 0.03 });
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
       ctx.globalCompositeOperation = 'lighter';
@@ -241,7 +248,7 @@ export function start({ reduced, fine, small }) {
       timer += dt / 1000;
       cloud.step(dt / 1000);
       if (!reduced) rot += dt / 1000;
-      if (timer > 6.5 && !reduced) go();
+      if (timer > 5.5 && !reduced) go();
       scene.camera.x = Math.sin(rot * 0.18) * 1100; scene.camera.z = Math.cos(rot * 0.18) * 1100; scene.camera.y = -160;
       g.render(scene, cloud, { size: 1.1, intensity: small ? 0.5 : 0.3, fog: [700, 2300], ...(ptr.on ? { lens: { x: ptr.x, y: ptr.y } } : {}) });
     });

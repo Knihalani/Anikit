@@ -84,7 +84,7 @@ main { position: relative; z-index: 2; }
 .n-stat p { font-size: 11px; color: var(--dim); margin: 8px 0 0; line-height: 1.5; }
 .n-chart { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
 .n-cap { font-size: 11px; margin: 0; color: var(--dim); }
-.n-row { display: grid; grid-template-columns: 9.5em 1fr 3.4em; align-items: center; gap: 12px; font-size: 12px; }
+.n-row { display: grid; grid-template-columns: 11.5em 1fr 3.4em; align-items: center; gap: 12px; font-size: 12px; }
 .n-row i { height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
 .n-row u { display: block; height: 100%; width: calc(var(--w) * 100%); background: rgba(200, 220, 230, 0.5); transform-origin: left; border-radius: 4px; }
 .n-row.me u { background: var(--hue); box-shadow: 0 0 14px var(--hue); }
@@ -97,8 +97,12 @@ main { position: relative; z-index: 2; }
 .foot { font-size: 12px; }
 
 @media (max-width: 640px) {
-  .gauge { right: 8px; }
-  .n-stats { grid-template-columns: 1fr; gap: 14px; }
+  .gauge { display: none; }
+  .panel { gap: 14px; }
+  .n-stats { gap: 8px; }
+  .n-stat b { font-size: 30px; }
+  .n-stat p { font-size: 9.5px; }
+  .panel.wide .dim { font-size: 13px; }
   .n-row { grid-template-columns: 8.2em 1fr 3em; font-size: 11px; }
   .tiles { width: 94%; gap: 7px; } .tiles.alt { width: 80%; }
   .install { padding: 14px 12px 14px 16px; gap: 10px; }
