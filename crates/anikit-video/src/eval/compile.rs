@@ -333,6 +333,7 @@ fn empty_node(kind: Kind) -> Node {
         shadow: None,
         glow: None,
         clip: false,
+        clip_path: None,
         wipe_dir: 0,
         index: 0.0,
         count: 1.0,
@@ -1089,14 +1090,17 @@ impl C<'_> {
         }
         match &l.clip {
             Some(spec::Clip::On(b)) => n.clip = *b,
-            Some(spec::Clip::Shape(_)) => {
-                self.d.push(Diagnostic::warning(format!("{path}.clip"), "clip shapes are not supported yet; clipping to the layer box"));
-                n.clip = true;
+            Some(spec::Clip::Shape(c)) => {
+                n.clip_path = self.clip_shape(c, &format!("{path}.clip"), [n.base[prop::W], n.base[prop::H]]);
             }
             None => {}
         }
-        if l.mask.is_some() {
-            self.d.push(Diagnostic::warning(format!("{path}.mask"), "masks are not supported yet; ignored"));
+        if let Some(m) = &l.mask {
+            if m.shape.is_some() && m.kind.as_deref().is_none_or(|k| k == "shape") {
+                n.clip_path = self.clip_shape(m, &format!("{path}.mask"), [n.base[prop::W], n.base[prop::H]]);
+            } else {
+                self.d.push(Diagnostic::warning(format!("{path}.mask"), "only shape masks are supported (as hard-edged clips); ignored"));
+            }
         }
 
         // Animation.
@@ -1299,7 +1303,17 @@ impl C<'_> {
                 sp.text = format!("{}{}{}", c.prefix, format_value(n.base[prop::VALUE] as f64, c.decimals, c.thousands), c.suffix);
                 self.assets.fonts.layout(&sp)
             }
-            None => self.assets.fonts.layout(&tspec),
+            None => {
+                let l0 = self.assets.fonts.layout(&tspec);
+                // No width given and wider than the parent: wrap at 90% of it.
+                let maxw = pc.size[0] * 0.9;
+                if given_w.is_none() && l0.width > maxw && !pc.in_box {
+                    tspec.width = Some(maxw);
+                    self.assets.fonts.layout(&tspec)
+                } else {
+                    l0
+                }
+            }
         };
         self.set(n, prop::REVEAL, l.reveal.as_ref(), &format!("{path}.reveal"), 1.0);
         // Kinetic text: an explicit `kinetic`, or an `enter` that is a TEXT animation (`"scramble"`, `"wave by word"`).
@@ -1760,6 +1774,35 @@ impl C<'_> {
             self.d.push(Diagnostic::warning(format!("{path}.fill"), "a box's colour is style.background").suggest(Some("style.background")));
         }
         (Kind::Box { children: kids, bg, border }, size)
+    }
+
+    /// A static clip path from a shape layer, in the local box of a layer of size `box_`.
+    fn clip_shape(&mut self, l: &Layer, path: &str, box_: [f32; 2]) -> Option<Path> {
+        let mut l = l.clone();
+        if l.shape.is_none() {
+            l.shape = Some("rect".into());
+        }
+        l.kind = Some("shape".into());
+        let pc = PCtx { size: box_, t0: 0.0, end: f32::INFINITY, delay: 0.0, index: 0, count: 1, in_box: false };
+        let n = self.layer(&l, path, pc)?;
+        if !n.tracks.is_empty() || !n.exprs.is_empty() {
+            self.d.push(Diagnostic::warning(path, "clip shapes are static; their animation is ignored"));
+        }
+        let (w, h) = (n.base[prop::W], n.base[prop::H]);
+        let mut p = match &n.kind {
+            Kind::Shape { shape: ShapeKind::Rect, .. } => {
+                let r = n.base[prop::RADIUS].min(w.min(h) * 0.5).max(0.0);
+                kurbo::Shape::to_path(&kurbo::RoundedRect::new(0.0, 0.0, w as f64, h as f64, r as f64), 0.1)
+            }
+            Kind::Shape { shape: ShapeKind::Ellipse, .. } => {
+                kurbo::Shape::to_path(&kurbo::Ellipse::new((w as f64 * 0.5, h as f64 * 0.5), (w as f64 * 0.5, h as f64 * 0.5), 0.0), 0.1)
+            }
+            Kind::Shape { path, .. } => path.clone(),
+            _ => return None,
+        };
+        let m = super::local_xf(&n.base, n.anchor, w, h);
+        p.apply_affine(kurbo::Affine::new(m.map(|x| x as f64)));
+        Some(p)
     }
 
     /// Decode a clip's frames for the layer's lifetime (once, via ffmpeg) into the shared image store.

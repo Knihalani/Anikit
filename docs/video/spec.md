@@ -189,8 +189,8 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `blend` | string | `"normal"` | `normal`, `add`, `multiply`, `screen`, `overlay`, `darken`, `lighten`, `softLight`, `difference`. |
 | `shadow` | shadow | none | `{ "x": 0, "y": 12, "blur": 32, "color": "#0008" }` or `true` for a soft default. |
 | `glow` | glow | none | `{ "radius": 24, "intensity": 1, "color": "$primary" }` or a colour string. |
-| `clip` | bool or shape | `false` | `true` clips children to the layer's box (with its `radius`); or a shape object `{ "shape": "circle", ... }` in the layer's local space. |
-| `mask` | layer | none | Another layer whose alpha masks this one. |
+| `clip` | bool or shape | `false` | `true` clips to the layer's box (with its `radius`); or a static shape `{ "shape": "circle", "width": 300, "height": 300 }` positioned in the layer's box (centred by default). |
+| `mask` | shape layer | none | A shape whose outline cuts this layer (hard-edged; same as a `clip` shape). |
 | `start` | time | `0` | When the layer appears (relative to the scene, or to the parent group). |
 | `end` / `duration` | time | scene end | When it disappears. |
 | `enter` | preset | none | Entrance animation, at `start`. |

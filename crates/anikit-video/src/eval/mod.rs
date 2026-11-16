@@ -280,6 +280,8 @@ pub(crate) struct Node {
     pub glow: Option<Filter>,
     /// Clip children to the box (with radius).
     pub clip: bool,
+    /// A clip path in the layer's local box (clip shapes, shape masks).
+    pub clip_path: Option<Path>,
     /// Wipe direction (0 left→right reveal, 1 right→left, 2 top→bottom, 3 bottom→top).
     pub wipe_dir: u8,
     pub index: f32,
@@ -645,6 +647,7 @@ impl Evaluator {
             || n.shadow.is_some()
             || n.glow.is_some()
             || n.clip
+            || n.clip_path.is_some()
             || wipe < 1.0
             || (opacity < 0.999 && !is_leaf);
         let mut alpha = opacity;
@@ -668,6 +671,8 @@ impl Evaluator {
                 };
                 let r = kurbo::Rect::new(r[0] as f64, r[1] as f64, r[2] as f64, r[3] as f64);
                 Some((kurbo::Shape::to_path(&r, 0.1), xf))
+            } else if let Some(p) = &n.clip_path {
+                Some((p.clone(), xf))
             } else if n.clip {
                 let rr = kurbo::RoundedRect::new(0.0, 0.0, w as f64, h as f64, v[prop::RADIUS].max(0.0) as f64);
                 Some((kurbo::Shape::to_path(&rr, 0.1), xf))
