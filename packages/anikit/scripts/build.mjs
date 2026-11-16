@@ -23,6 +23,14 @@ const lean = {
   },
 };
 await build({ ...common, format: 'esm', minify: true, outfile: 'dist/anikit.lean.js', plugins: [lean] });
+// anikit/react: imports the main bundle (one engine) and React, both external.
+const shareCore = {
+  name: 'share-core',
+  setup(b) {
+    b.onResolve({ filter: /^\.\// }, (a) => (a.importer.endsWith('react.ts') ? { path: './anikit.js', external: true } : undefined));
+  },
+};
+await build({ ...common, entryPoints: ['src/react.ts'], format: 'esm', outfile: 'dist/react.js', external: ['react'], plugins: [shareCore] });
 execFileSync('npx', ['tsc', '--emitDeclarationOnly', '--declaration', '--outDir', 'dist/types'], { stdio: 'inherit' });
 
 const kb = (n) => (n / 1024).toFixed(1) + ' KB';

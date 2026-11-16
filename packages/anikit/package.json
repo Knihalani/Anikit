@@ -18,7 +18,11 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/anikit.lean.js"
     },
-    "./node": "./node/index.mjs"
+    "./node": "./node/index.mjs",
+    "./react": {
+      "types": "./dist/types/react.d.ts",
+      "import": "./dist/react.js"
+    }
   },
   "files": [
     "dist",
@@ -58,24 +62,33 @@
     "motion"
   ],
   "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "binaryen": "^132.0.0",
     "esbuild": "^0.28.2",
     "gsap": "^3.15.1",
     "happy-dom": "^21.0.4",
     "matter-js": "^0.20.0",
     "motion": "^12.43.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "typescript": "^5.9.3",
     "vitest": "^5.1.0"
   },
   "bin": {
+    "anikit": "./bin/anikit.mjs",
     "anikit-record": "./bin/anikit-record.mjs",
     "anikit-render": "./bin/anikit-render.mjs"
   },
   "peerDependencies": {
-    "@napi-rs/canvas": ">=0.1.60"
+    "@napi-rs/canvas": ">=0.1.60",
+    "react": ">=18"
   },
   "peerDependenciesMeta": {
     "@napi-rs/canvas": {
+      "optional": true
+    },
+    "react": {
       "optional": true
     }
   }
