@@ -154,7 +154,7 @@ export default async function film({ anikit: A, node }) {
     width: W, height: H, fps: FPS, duration: DUR, motionBlur: 1,
     post: {
       aa: 1,
-      bloom: (t) => 0.85 + 0.6 * bell(t, 0.05, 0.3),
+      bloom: (t) => 0.85 + 0.6 * bell(t, 0.35, 0.3),
       bloomThreshold: 0.5, bloomRadius: 46,
       streaks: 0.45, streakLength: 300, streakTint: [0.7, 0.75, 1],
       rays: (t) => { const c = clockOf(t); return 0.35 + 0.55 * smooth(2.9, 3.4, c) * (1 - smooth(9.2, 9.8, c)) + 0.75 * smooth(17.4, 18.4, c); },
@@ -203,6 +203,7 @@ export default async function film({ anikit: A, node }) {
     },
     draw({ ctx, clock }) {
       const c = story(clock);
+      const ignite = 0.04 + 0.96 * smooth(0.28, 0.4, c); // the tunnel's circuits switch on with the flash
       pose(story(prevClock));
       const prevCamera = cam.viewProjection().matrix;
       pose(c);
@@ -210,7 +211,7 @@ export default async function film({ anikit: A, node }) {
       const items = [];
       const floorOn = z < -9600;
       if (floorOn) items.push({ mirror: true, mesh: floor, instances: floorAt, material: { ambient: 0.2, lines: 1.0, lineColor: [0.28, 0.5, 1.5], grid: [90, 150], lineWidth: 0.022, specular: 0.25 } });
-      if (z > -12500) items.push({ mesh: ringMesh, instances: rings, material: { metal: 0.85, iridescence: 0.25, specular: 1.3, shininess: 110, lines: 2.2, pattern: 'circuit', lineColor: CYAN, grid: [40, 3], lineWidth: 0.07, pulse: 3.2, pulseCount: 1, pulsePhase: c * 2.6, pulseDir: [0, 0, 0.0009] } });
+      if (z > -12500) items.push({ mesh: ringMesh, instances: rings, material: { metal: 0.85, iridescence: 0.25, specular: 1.3, shininess: 110, lines: 2.2 * ignite, pattern: 'circuit', lineColor: CYAN, grid: [40, 3], lineWidth: 0.07, pulse: 3.2 * ignite, pulseCount: 1, pulsePhase: c * 2.6, pulseDir: [0, 0, 0.0009] } });
       if (z < -9000 && z > -30500) {
         items.push({ mesh: cube, instances: towers, material: { metal: 0.28, rim: 0.15, specular: 1.2, shininess: 90, lines: 1.25, pattern: 'hex', lineColor: MAG, grid: [3, 14], lineWidth: 0.032, pulse: 2.2, pulsePhase: c * 1.8, pulseDir: [0, 0, 0.00035] } });
         items.push({ mesh: cube, instances: accents, material: { metal: 0.25, iridescence: 0.2, rim: 0.15, specular: 1.3, shininess: 120, lines: 2, pattern: 'circuit', lineColor: CYAN, grid: [4, 16], lineWidth: 0.04, pulse: 2.6, pulseCount: 2, pulsePhase: c * 2.2, pulseDir: [0, 0, 0.0005] } });
@@ -255,7 +256,7 @@ export default async function film({ anikit: A, node }) {
     },
   });
   // Impacts land on story beats of the slowed clock.
-  film.impact(0, { flash: '#ffffff', flashOpacity: 1, decay: 4, aberration: 6 }); // ignition: the film opens on a white flash
+  film.impact(beat(0.32), { flash: '#e8f6ff', flashOpacity: 0.85, decay: 5, aberration: 6, shockwave: 18 }); // ignition: the dark tunnel lights up
   film.impact(beat(3.0), { shake: 14, flash: '#8fe3ff', flashOpacity: 0.35, aberration: 5, shockwave: 22 });
   film.impact(beat(HIT), { shake: 34, flash: '#ffd1ef', flashOpacity: 0.75, aberration: 10, shockwave: 40, origin: [0.5, 0.45], shockSpeed: 0.8 });
   film.impact(beat(14.25), { shake: 16, flash: '#ffffff', flashOpacity: 0.3, aberration: 6 });
