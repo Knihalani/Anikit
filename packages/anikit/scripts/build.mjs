@@ -71,6 +71,8 @@ const shareCore = {
 for (const fw of ['react', 'vue', 'svelte']) {
   await build({ ...common, entryPoints: [`src/${fw}.ts`], format: 'esm', outfile: `dist/${fw}.js`, external: ['react'], plugins: [shareCore] });
 }
+// anikit/video: the spec builder for the native renderer (pure JS, no wasm).
+await build({ entryPoints: ['src/video/index.ts'], bundle: true, target: 'es2020', format: 'esm', platform: 'neutral', outfile: 'dist/video.js', logLevel: 'error' });
 execFileSync('npx', ['tsc', '--emitDeclarationOnly', '--declaration', '--outDir', 'dist/types'], { stdio: 'inherit' });
 
 const kb = (n) => (n / 1024).toFixed(1) + ' KB';

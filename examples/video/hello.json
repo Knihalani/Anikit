@@ -1,0 +1,14 @@
+{
+  "size": "16:9",
+  "theme": { "colors": { "primary": "#7C5CFF", "accent": "#FF5CA8" } },
+  "scenes": [
+    {
+      "duration": 3.6,
+      "background": "radial-gradient(circle at 50% 40%, #1C1640, $bg)",
+      "layers": [
+        { "text": "JSON in. MP4 out.", "style": "title", "split": "words", "enter": { "preset": "fadeUp", "stagger": 0.08, "ease": "outExpo" } },
+        { "text": "anikit-video render hello.json -o hello.mp4", "style": "code", "y": "64%", "enter": { "preset": "fadeIn", "delay": 0.6 } }
+      ]
+    }
+  ]
+}

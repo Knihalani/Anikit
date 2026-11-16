@@ -25,7 +25,8 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema> 
   check  spec.json              validate; print errors, warnings and timing
   info   [--components]         version, encoders, component catalogue
   schema [-o file]              print the JSON Schema of the spec
-common: --json (machine-readable output)";
+common: --json (machine-readable output)
+agents: new | templates | prompt | critique | preview | mcp   (anikit-video templates, anikit-video prompt)";
 
 struct Args {
     cmd: String,
@@ -159,6 +160,11 @@ fn resolve_time(ev: &Evaluator, s: &str) -> Result<f32, String> {
 }
 
 fn main() -> ExitCode {
+    // Agent commands (new, templates, prompt, critique, preview, mcp) live in the library.
+    let raw: Vec<String> = std::env::args().skip(1).collect();
+    if let Some(code) = anikit_video::agent_cli::run(&raw) {
+        return ExitCode::from(code as u8);
+    }
     let args = match Args::parse() {
         Ok(a) => a,
         Err(e) => {

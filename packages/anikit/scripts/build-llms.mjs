@@ -10,6 +10,8 @@ const root = join(pkg, '..', '..');
 const api = readFileSync(join(root, 'docs/api.md'), 'utf8');
 const recipes = readFileSync(join(root, 'docs/recipes.md'), 'utf8');
 const agents = readFileSync(join(pkg, 'AGENTS.md'), 'utf8');
+const videoAgents = readFileSync(join(root, 'docs/video/AGENTS.md'), 'utf8');
+const videoSpec = readFileSync(join(root, 'docs/video/spec.md'), 'utf8');
 const headings = (md) => [...md.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
 
 const index = (links) => `# Anikit
@@ -34,6 +36,12 @@ recipe('parallax-gallery', '.gallery');
 \`\`\`
 Scaffold: \`npx anikit new vanilla|vite|react <dir>\`. React hooks: \`anikit/react\` (useAnikit, useAnimate, useRecipe, useSpring, useScroll, Presence).
 
+## Video (anikit-video)
+Native programmatic video for agents: a JSON spec (or a template plus a brand kit) in, an MP4 out, no browser. Builders: \`anikit/video\` (TS), \`anikit.video\` (Python); MCP server: \`anikit-video mcp\`.
+${links.video ? `- [Video quick start for agents](${links.video.agents}): templates, the review loop, builders, MCP tools
+- [Video spec reference](${links.video.spec}): scenes, layers, animation presets, transitions, theme
+- [Prompt library](${links.video.prompts}): launch video generator, script writer, storyboarder, critic, copy guard, brand kit, motion rules
+` : '- Full guide and spec: section 4 of llms-full.txt\n'}
 ## Recipes
 ${headings(recipes).map((s) => `- ${s}`).join('\n')}
 
@@ -43,7 +51,7 @@ ${headings(api).map((s) => `- ${s}`).join('\n')}
 
 const full = `# Anikit — full reference for LLMs
 
-Contents: 1. Agent playbook · 2. Recipes · 3. API reference
+Contents: 1. Agent playbook · 2. Recipes · 3. API reference · 4. Video (anikit-video): quick start and spec
 
 ---
 
@@ -55,11 +63,19 @@ ${recipes}
 
 ---
 
-${api}`;
+${api}
+
+---
+
+${videoAgents}
+
+---
+
+${videoSpec}`;
 
 const targets = [
   { dir: pkg, links: { agents: 'AGENTS.md', recipes: 'llms-full.txt', full: 'llms-full.txt', schema: 'api.schema.json' } },
-  { dir: root, links: { agents: 'packages/anikit/AGENTS.md', recipes: 'docs/recipes.md', full: 'llms-full.txt', schema: 'docs/api.schema.json', parity: 'docs/parity.md' } },
+  { dir: root, links: { agents: 'packages/anikit/AGENTS.md', recipes: 'docs/recipes.md', full: 'llms-full.txt', schema: 'docs/api.schema.json', parity: 'docs/parity.md', video: { agents: 'docs/video/AGENTS.md', spec: 'docs/video/spec.md', prompts: 'prompts/' } } },
 ];
 for (const { dir, links } of targets) {
   writeFileSync(join(dir, 'llms.txt'), index(links));

@@ -20,6 +20,10 @@ recipe('parallax-gallery', '.gallery');
 ```
 Scaffold: `npx anikit new vanilla|vite|react <dir>`. React hooks: `anikit/react` (useAnikit, useAnimate, useRecipe, useSpring, useScroll, Presence).
 
+## Video (anikit-video)
+Native programmatic video for agents: a JSON spec (or a template plus a brand kit) in, an MP4 out, no browser. Builders: `anikit/video` (TS), `anikit.video` (Python); MCP server: `anikit-video mcp`.
+- Full guide and spec: section 4 of llms-full.txt
+
 ## Recipes
 - A whole landing page in a few calls
 - Hero entrance

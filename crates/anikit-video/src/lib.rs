@@ -14,6 +14,12 @@
 pub mod audio;
 pub mod components;
 pub mod dl;
+pub mod agent_cli;
+pub mod critique;
+pub mod mcp;
+pub mod preview;
+pub mod prompts;
+pub mod templates;
 pub mod spec;
 pub mod eval;
 pub mod render;
