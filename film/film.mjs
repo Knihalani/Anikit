@@ -207,6 +207,7 @@ export default async function film({ anikit: A, node }) {
       pose(story(prevClock));
       const prevCamera = cam.viewProjection().matrix;
       pose(c);
+      // Items switch on/off by camera z, always well outside the frame (or the fog) so nothing pops.
       const z = cam.camera.z;
       const items = [];
       const floorOn = z < -9600;
@@ -217,19 +218,19 @@ export default async function film({ anikit: A, node }) {
         items.push({ mesh: cube, instances: accents, material: { metal: 0.25, iridescence: 0.2, rim: 0.15, specular: 1.3, shininess: 120, lines: 2, pattern: 'circuit', lineColor: CYAN, grid: [4, 16], lineWidth: 0.04, pulse: 0.5, pulseCount: 2, pulsePhase: c * 2.2, pulseDir: [0, 0, 0.0005] } });
         trails.forEach((m, k) => items.push({ mesh: m, instances: trailAt[k], blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 0.12, pulse: 3.5, pulseCount: 10, pulsePhase: c * 1.6 + k * 0.5, lineColor: k ? ORANGE : CYAN } }));
       }
-      if (z < -26000 && z > -36500) items.push({ mesh: gateMesh, instances: gates, material: { metal: 1, iridescence: 0.75, hue: 0.1, specular: 1.6, shininess: 160, pulse: 3, pulseCount: 2, pulsePhase: c * 3.2, lineColor: CYAN } });
-      if (z < -31000 && z > -46000) {
+      if (z < -14000 && z > -46000) items.push({ mesh: gateMesh, instances: gates, material: { metal: 1, iridescence: 0.75, hue: 0.1, specular: 1.6, shininess: 160, pulse: 3, pulseCount: 2, pulsePhase: c * 3.2, lineColor: CYAN } });
+      if (z < -18000 && z > -46000) {
         if (c < HIT) items.push({ mesh: knot, instances: knotAt.set(0, { ...KNOT_AT, ry: c * KNOT_SPIN }), material: { metal: 0.92, iridescence: 0.3, specular: 1.5, shininess: 140, rim: 0.3, lines: 1.6, pattern: 'circuit', lineColor: CYAN, grid: [70, 5], lineWidth: 0.06, pulse: 2.8, pulseCount: 3, pulsePhase: c * 1.4 } });
         else {
           shards.update(c - HIT);
           items.push({ mesh: shards.mesh, instances: shards.instances, cull: false, material: { metal: 0.9, iridescence: 0.45, specular: 1.6, shininess: 140, emissive: 0.15 + 0.8 * Math.exp(-(c - HIT) * 1.5) } });
         }
       }
-      if (z < -39500 && z > -54500) {
+      if (z < -28000 && z > -54500) {
         placeVortex(c);
         items.push({ mesh: cube, instances: vortex, material: { ambient: 0.05, diffuse: 0.3, emissive: 0.9, metal: 0.55, specular: 1.3, shininess: 110, lines: 1.1, grid: [1, 1], lineWidth: 0.04, lineColor: WHITE, pulse: 1.6, pulsePhase: c * 3, pulseDir: [0, 0, 0.0006] } });
       }
-      if (z < -50000) items.push({ mesh: word, instances: wordAt, material: { metal: 1, iridescence: 0.4, specular: 1.9, shininess: 190, rim: 0.3, lines: 1.2, lineColor: [1.5, 1.2, 1.6], grid: [0, 0], lineWidth: 0.015, pulse: 1.8, pulseCount: 1, pulsePhase: c * 0.55 - 0.2, lineColor: [1.4, 0.9, 1.2] } });
+      if (z < -38000) items.push({ mesh: word, instances: wordAt, material: { metal: 1, iridescence: 0.4, specular: 1.9, shininess: 190, rim: 0.3, lines: 1.2, lineColor: [1.5, 1.2, 1.6], grid: [0, 0], lineWidth: 0.015, pulse: 1.8, pulseCount: 1, pulsePhase: c * 0.55 - 0.2, lineColor: [1.4, 0.9, 1.2] } });
       items.push({ points: stars, colors: starCol, size: 3.2, intensity: 2.3, streak: 0.5, fog: [9000, 24000] });
       if (c > HIT && c < HIT + 2.2) items.push({ points: sparks, size: 7, intensity: 4.5, streak: 0.9, fog: [6000, 14000] });
       const tunnel = z > -10400;
