@@ -74,26 +74,107 @@ function span(cls: string | undefined, text?: string): HTMLSpanElement {
   return s;
 }
 
+/**
+ * A prepared `<span class style="display:inline-block" aria-hidden>` to clone:
+ * one `cloneNode` per piece instead of creating the element, parsing its
+ * style and setting two attributes.
+ */
+function pieceTemplate(cls: string | undefined): HTMLSpanElement {
+  const s = span(cls);
+  s.setAttribute('aria-hidden', 'true');
+  return s;
+}
+
+let segmenter: any;
+/** Grapheme clusters of a word; printable ASCII is one per character. */
+function graphemes(s: string): string[] {
+  if (ASCII.test(s)) return s.split('');
+  if (segmenter === undefined) {
+    segmenter = typeof Intl !== 'undefined' && (Intl as any).Segmenter ? new (Intl as any).Segmenter(undefined, { granularity: 'grapheme' }) : null;
+  }
+  return segmenter ? Array.from(segmenter.segment(s), (x: any) => x.segment) : Array.from(s);
+}
+const ASCII = /^[\x21-\x7e]*$/;
+
 type Pieces = { chars: HTMLElement[]; words: HTMLElement[]; lines: HTMLElement[]; masks: HTMLElement[] };
 
-/** Split one element; returns its restore function. */
-function splitOne(el: HTMLElement, options: SplitOptions, out: Pieces): () => void {
+/** One element after the DOM writes of the split, before lines are measured. */
+interface Split {
+  words: HTMLElement[];
+  chars: HTMLElement[];
+  restore: () => void;
+}
+
+/**
+ * Split every element. All the writes come first, then one layout read of
+ * every word (for lines) across all the elements, then the line and mask
+ * wrappers: measuring each element right after splitting it laid the page
+ * out again once per element.
+ */
+function splitAll(els: HTMLElement[], options: SplitOptions, out: Pieces): Array<() => void> {
   const types = new Set((options.type ?? 'words,chars').split(/[\s,]+/));
   // A mask needs the units it wraps.
   if (options.mask) types.add(options.mask);
   const wantChars = types.has('chars');
   const wantLines = types.has('lines');
   const wantWords = types.has('words') || wantLines || !wantChars || options.mask === 'words';
-  const seg: any =
-    typeof Intl !== 'undefined' && (Intl as any).Segmenter ? new (Intl as any).Segmenter(undefined, { granularity: 'grapheme' }) : null;
-  const graphemes = (s: string): string[] => (seg ? Array.from(seg.segment(s), (x: any) => x.segment) : Array.from(s));
+  const tpl = { word: pieceTemplate(options.wordClass), char: pieceTemplate(options.charClass) };
+  const parts = els.map((el) => splitOne(el, wantWords, wantChars, tpl));
+  const tops = wantLines ? parts.map((p) => p.words.map((w) => w.offsetTop)) : null;
+  for (let k = 0; k < parts.length; k++) {
+    const { words, chars } = parts[k];
+    const lines: HTMLElement[] = [];
+    if (tops && words.length) group(words, tops[k], options, lines);
+    if (options.mask) {
+      const units = options.mask === 'lines' ? lines : options.mask === 'words' ? words : chars;
+      for (const u of units) {
+        const m = span(options.maskClass);
+        const st = m.style;
+        st.display = options.mask === 'lines' ? 'block' : 'inline-block';
+        st.overflow = 'clip';
+        if (options.mask !== 'lines') st.verticalAlign = 'top';
+        u.parentNode!.insertBefore(m, u);
+        m.appendChild(u);
+        out.masks.push(m);
+      }
+    }
+    for (const w of words) out.words.push(w);
+    for (const c of chars) out.chars.push(c);
+    for (const l of lines) out.lines.push(l);
+  }
+  return parts.map((p) => p.restore);
+}
 
+/** Group words into line wrappers by their measured vertical position. */
+function group(words: HTMLElement[], tops: number[], options: SplitOptions, lines: HTMLElement[]): void {
+  const groups: HTMLElement[][] = [];
+  let lastTop = NaN;
+  words.forEach((w, i) => {
+    if (groups.length === 0 || Math.abs(tops[i] - lastTop) > 1) groups.push([]);
+    groups[groups.length - 1].push(w);
+    lastTop = tops[i];
+  });
+  for (const g of groups) {
+    const line = span(options.lineClass);
+    line.style.display = 'block';
+    g[0].parentNode!.insertBefore(line, g[0]);
+    for (let i = 0; i < g.length; i++) {
+      const w = g[i];
+      const next = w.nextSibling;
+      line.appendChild(w);
+      if (i < g.length - 1 && next && next.nodeType === 3) line.appendChild(next);
+    }
+    lines.push(line);
+  }
+}
+
+/** Split one element into words and chars (writes only). */
+function splitOne(el: HTMLElement, wantWords: boolean, wantChars: boolean, tpl: { word: HTMLElement; char: HTMLElement }): Split {
   const original = el.innerHTML;
   const hadLabel = el.getAttribute('aria-label');
   el.setAttribute('aria-label', el.textContent ?? '');
   const words: HTMLElement[] = [];
   const chars: HTMLElement[] = [];
-  const lines: HTMLElement[] = [];
 
   const walk = (node: Node) => {
     for (const child of Array.from(node.childNodes)) {
@@ -106,16 +187,15 @@ function splitOne(el: HTMLElement, options: SplitOptions, out: Pieces): () => vo
             frag.appendChild(document.createTextNode(part));
             continue;
           }
-          const container: Node = wantWords ? span(options.wordClass) : frag;
+          const container: Node = wantWords ? tpl.word.cloneNode(false) : frag;
           if (wantWords) {
-            (container as HTMLElement).setAttribute('aria-hidden', 'true');
             words.push(container as HTMLElement);
             frag.appendChild(container);
           }
           if (wantChars) {
             for (const g of graphemes(part)) {
-              const c = span(options.charClass, g);
-              c.setAttribute('aria-hidden', 'true');
+              const c = tpl.char.cloneNode(false) as HTMLElement;
+              c.textContent = g;
               chars.push(c);
               container.appendChild(c);
             }
@@ -129,52 +209,12 @@ function splitOne(el: HTMLElement, options: SplitOptions, out: Pieces): () => vo
   };
   walk(el);
 
-  if (wantLines && words.length) {
-    // Group words by their rendered vertical position (one layout read).
-    const tops = words.map((w) => w.offsetTop);
-    const groups: HTMLElement[][] = [];
-    let lastTop = NaN;
-    words.forEach((w, i) => {
-      if (groups.length === 0 || Math.abs(tops[i] - lastTop) > 1) groups.push([]);
-      groups[groups.length - 1].push(w);
-      lastTop = tops[i];
-    });
-    for (const g of groups) {
-      const line = span(options.lineClass);
-      line.style.display = 'block';
-      g[0].parentNode!.insertBefore(line, g[0]);
-      for (let i = 0; i < g.length; i++) {
-        const w = g[i];
-        const next = w.nextSibling;
-        line.appendChild(w);
-        if (i < g.length - 1 && next && next.nodeType === 3) line.appendChild(next);
-      }
-      lines.push(line);
-    }
-  }
-
-  if (options.mask) {
-    const units = options.mask === 'lines' ? lines : options.mask === 'words' ? words : chars;
-    for (const u of units) {
-      const m = span(options.maskClass);
-      const st = m.style;
-      st.display = options.mask === 'lines' ? 'block' : 'inline-block';
-      st.overflow = 'clip';
-      if (options.mask !== 'lines') st.verticalAlign = 'top';
-      u.parentNode!.insertBefore(m, u);
-      m.appendChild(u);
-      out.masks.push(m);
-    }
-  }
-
-  out.words.push(...words);
-  out.chars.push(...chars);
-  out.lines.push(...lines);
-  return () => {
+  const restore = () => {
     el.innerHTML = original;
     if (hadLabel === null) el.removeAttribute('aria-label');
     else el.setAttribute('aria-label', hadLabel);
   };
+  return { words, chars, restore };
 }
 
 const SPLIT_KEYS: OptionKeys<SplitOptions> = {
@@ -205,7 +245,7 @@ export function splitText(targets: Targets, options: SplitOptions = {}): SplitRe
       anim = null;
       for (const r of restores.splice(0).reverse()) r();
       result.chars.length = result.words.length = result.lines.length = result.masks.length = 0;
-      restores = els.map((el) => splitOne(el, options, result));
+      restores = splitAll(els, options, result);
       const a = options.onSplit?.(result);
       if (a) {
         anim = a;
@@ -224,7 +264,7 @@ export function splitText(targets: Targets, options: SplitOptions = {}): SplitRe
       for (const r of restores.splice(0).reverse()) r();
     },
   };
-  restores = els.map((el) => splitOne(el, options, result));
+  restores = splitAll(els, options, result);
   const first = options.onSplit?.(result);
   if (first) anim = first;
 
