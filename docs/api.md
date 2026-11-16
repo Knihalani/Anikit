@@ -408,7 +408,7 @@ animate(hero, { backgroundImage: 'linear-gradient(90deg, #f0c, #0cf)' });       
 A number you can subscribe to, tween, spring, derive from and bind to styles: one source of truth (a scroll position, a drag, a slider) driving many properties.
 
 ```ts
-import { motionValue, derived, bindValues, MotionValue } from 'anikit';
+import { motionValue, derived, bindValues, scrollProgress, MotionValue } from 'anikit';
 
 const progress: MotionValue = motionValue(0);
 const opacity = progress.map([0, 0.5, 1], [0, 1, 0.4]);   // interpolate() stops, clamped
@@ -420,6 +420,8 @@ progress.to(1, { duration: 1.2, ease: 'inOutCubic' });   // tween (any animate()
 addEventListener('pointermove', (e) => progress.spring(e.clientX / innerWidth, { stiffness: 200 }));
 const off = area.on((v) => console.log(v, progress.velocity));
 off();
+const scrolled = scrollProgress({ offset: ['start start', 'end end'] });  // page scroll, 0 → 1
+bindValues('#bar', { scaleX: scrolled });
 ```
 
 - `get()`, `set(v)` (stops a running tween/spring), `on(fn)` → unsubscribe, `velocity` (units/s), `stop()`, `destroy()`.
