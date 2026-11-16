@@ -46,17 +46,19 @@ build nor Motion splits text (words split by hand, same markup).
 | | gzip KB | ready ms | TBT ms | long tasks | heap MB | p95 / max frame ms | main-thread ms per frame while scrolling |
 |---|---|---|---|---|---|---|---|
 | Anikit (embedded core) | 392.6 | 150 | 43 | 1 | 2.81 | 16.7 / 16.8 | 0.76 |
-| Anikit lean | 297.9 (JS 42 + wasm 256) | 214 | 49 | 2 | 1.93 | 16.8 / 16.8 | **0.74** |
+| Anikit lean | 298.0 (JS 42 + wasm 256) | 269 | 11 | 1 | 1.97 | 16.7 / 16.8 | 0.79 |
 | GSAP | 45.8 | 146 | 65 | 1 | 1.96 | 16.7 / 16.8 | 0.92 |
 | Motion | **26.3** | **81** | **0** | **0** | **1.80** | 16.8 / 16.8 | 1.19 |
 
 - Scrolling, every library holds 60 fps at 4× throttling (p95 = one frame);
-  Anikit does the least main-thread work per frame (0.74 vs 0.92 / 1.19 ms).
+  Anikit does the least main-thread work per frame (0.76–0.79 vs 0.92 / 1.19 ms).
 - **Loading, Motion wins** and Anikit loses (blocking time beats GSAP's):
   the WebAssembly core is 256 KB gzipped, and the page's first `animate()`
   call costs ~45 ms at 4× CPU (the next six cost 7 ms together; triggers
   ~13 ms in all), most likely the core's functions compiling on first use.
-  Motion defers its work and has no pinning.
+  Motion defers its work and has no pinning. The lean build now warms the
+  core in a task of its own before `ready` (perf notes, ninth round §6):
+  TBT 49 → 11 ms, at the cost of ready 214 → 269 ms.
 - Found while building it: the lean build re-bundled into a plain script
   (no `import.meta`) threw "Invalid URL" at load before the page could call
   `init(url)`. Fixed (it now waits for `init()`); browser test `lean › …`.

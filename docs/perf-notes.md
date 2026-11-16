@@ -2080,3 +2080,22 @@ belongs to the core session's split-wasm work. Re-run after the
 `readTransform` fix (median of 5): Anikit ready 150 ms / TBT 43 ms / busy
 0.76 ms per frame; lean 214 / 49 / 0.74; GSAP 146 / 65 / 0.92; Motion 81 / 0 /
 1.19.
+
+### 6. Warm-up before `ready` (asynchronous instantiation)
+
+When the core is instantiated asynchronously (the lean build streaming
+`anikit.wasm`, or the embedded build where the browser refuses a synchronous
+compile), `ready` now resolves two tasks later: the first exercises the hot
+paths once (an `animate()` seeked and killed, a stopped `spring()`, a killed
+`timeline()` on a plain object), the second resolves `ready`. The first call
+into the core pays for compiling those functions; it now lands in a task of
+its own instead of the page's `ready.then(setup)` task. Skipped when calls
+are already queued, and when the core compiled synchronously at import (the
+hook is not registered yet: Node, and the embedded build in this benchmark).
+
+A hand-written warm-up in the page first (median of 5, CPU 4×): TBT 54 → 0 ms,
+long tasks 1 → 0, ready 163 → 172 ms. Built in, lean build: TBT 49 → 11 ms,
+long tasks 2 → 1, **ready 214 → 269 ms** (the warm-up's cost now comes before
+`ready` rather than inside the set-up). Kept for the blocking time, which is
+what input responsiveness feels; the trade-off is a later `ready`. The
+embedded build is unchanged (TBT 43–55, ready 150–170 across runs).
