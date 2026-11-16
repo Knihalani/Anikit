@@ -1,218 +1,238 @@
-// ANIKIT — ONE TAKE. A 24-second film in a single unbroken camera move,
-// composed in code and rendered entirely by anikit (no browser, no WebGL).
+// ANIKIT — VELOCITY. A 22-second 3D journey in one continuous flight, composed
+// in code and rendered entirely by anikit (WebAssembly rasterizer, no WebGL):
 //
-//   anikit-render film.mjs --out anikit-film.mp4 --workers 3
+//   anikit-render film.mjs --review review/          (contact sheet + pacing report)
+//   anikit-render film.mjs --out anikit-film.mp4 --workers 3 --fade-out 0.6
 //
-// A pool of 3,000 solid, lit cubes (anikit's WebAssembly rasterizer) morphs
-// between formations — a voxel wordmark, a sea of springs, rings around a
-// glossy torus knot, a tunnel — while 120,000 particles (pointCloud + glow)
-// detonate into a galaxy. One camera flies through all of it on a Hermite
-// path. Impacts, a slow-motion speed ramp, motion blur and the film grade
-// (bloom, aberration, vignette, grain) come from anikit's composition.
+// Ignition → a tunnel of circuit-lit rings → a neon city on a mirror floor
+// (sunset sky, light trails, a barrel roll between two towers) → chrome gates
+// → a black-chrome knot that shatters in bullet time → a vortex of light cubes
+// → the wordmark, in chrome, on the mirror floor under the sun.
 export default async function film({ anikit: A, node }) {
-  const { pointCloud, glow, scene3d, ease, typeFx, composition, mesh, instances, renderer3d } = A;
-  const W = 1920, H = 1080;
-  const FONT = '/usr/share/fonts';
-  node.registerFont(`${FONT}/opentype/inter/InterDisplay-Black.otf`, 'Display');
-  node.registerFont(`${FONT}/opentype/inter/InterDisplay-BlackItalic.otf`, 'DisplayItalic');
-  node.registerFont(`${FONT}/truetype/jetbrains-mono/JetBrainsMono-Regular.ttf`, 'Mono');
+  const { composition, scene3d, renderer3d, mesh, instances, flightPath, shatter } = A;
+  const W = 1920, H = 1080, FPS = 60, D = 21.8;
+  node.registerFont('/usr/share/fonts/opentype/inter/InterDisplay-Black.otf', 'Display');
 
-  const PAPER = [0.93, 0.9, 0.85], RED = [1, 0.23, 0.08], INK = [0.12, 0.12, 0.13], BLUE = [0.12, 0.17, 1];
+  let seed = 20261116;
+  const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
   const TAU = Math.PI * 2;
   const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
   const mix = (a, b, t) => a + (b - a) * t;
-  const mix3 = (a, b, t) => [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)];
-  let seed = 5;
-  const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+  const bell = (x, c, w) => Math.exp(-(((x - c) / w) ** 2));
 
-  // ---- Voxel wordmark: 'anikit' sampled on a grid, three layers deep ----------------
-  const vox = [];
-  {
-    const cw = 118, chh = 34, cv = node.createCanvas(cw, chh), c = cv.getContext('2d');
-    c.font = '900 33px Display'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#fff';
-    c.fillText('anikit', cw / 2, chh / 2 + 1);
-    const img = c.getImageData(0, 0, cw, chh).data, cell = 15;
-    for (let y = 0; y < chh; y++) for (let x = 0; x < cw; x++) if (img[(y * cw + x) * 4 + 3] > 120)
-      for (let d = 0; d < 3; d++) vox.push([(x - cw / 2) * cell, -(y - chh / 2) * cell + 40, (d - 1) * cell, x / cw]);
+  // Palette: near-black bodies; the colour lives in light.
+  const BODY = [0.03, 0.035, 0.05];
+  const MAG = [1.6, 0.26, 0.92], CYAN = [0.28, 0.85, 1.7], ORANGE = [1.7, 0.62, 0.22], WHITE = [1.5, 1.5, 1.6];
+
+  // ---- Time: the choreography runs on a clock slowed by bullet time ------------------
+  const HIT = 12.55;  // clock time the knot shatters
+  const LAND = 18.9;  // clock time we arrive at the wordmark
+  const timeScale = (t) => 1 - 0.82 * bell(t, HIT + 0.42, 0.42);
+  const clockOf = (t) => film.clockAt('velocity', t); // the slowed scene clock at composition time t
+
+  // ---- The route ------------------------------------------------------------------------
+  const KNOT_C = [0, 320, -38000], ORBIT_R = 2000;
+  const orbit = [];
+  for (let k = 0; k <= 6; k++) {
+    const a = Math.PI / 2 + (k / 6) * Math.PI * 1.5; // 270° around the knot, starting in front of it
+    orbit.push([KNOT_C[0] + Math.cos(a) * ORBIT_R, KNOT_C[1] + 140 + Math.sin(k * 1.3) * 160, KNOT_C[2] + Math.sin(a) * ORBIT_R]);
   }
-  const K = vox.length; // ≈ 3,000 cubes in the pool
-  const order = vox.map((v, i) => [Math.hypot(v[0], v[1]), i]).sort((a, b) => a[0] - b[0]);
-  const rank = new Float32Array(K); order.forEach(([, i], r) => (rank[i] = r / K));
-  const jitter = Float32Array.from({ length: K }, () => rnd());
-
-  // ---- Formations: each returns [x, y, z, rx, ry, rz, sx, sy, sz, r, g, b] --------------
-  const strikes = [5.0, 5.55, 6.05, 6.5, 6.85, 7.2, 7.5];
-  const spots = [[0, 0], [-700, 300], [650, -250], [-300, -420], [760, 380], [150, 100], [-560, -60]];
-  const COLS = 60, ROWS = Math.ceil(K / 60), GAP = 58;
-  const F = {
-    vortex: (i) => { const a = jitter[i] * TAU * 3, r = 1400 + jitter[(i * 7) % K] * 1800; return [Math.cos(a) * r, (jitter[(i * 13) % K] - 0.5) * 1600, Math.sin(a) * r - 600, i * 37, i * 53, 0, 14, 14, 14, ...PAPER]; },
-    word: (i) => { const v = vox[i], c = v[3] > 0.82 ? RED : mix3(PAPER, [1, 0.62, 0.45], clamp((v[3] - 0.55) * 1.6)); return [v[0], v[1], v[2], 0, 0, 0, 13.6, 13.6, 13.6, ...c]; },
-    wave: (i, t) => {
-      const c = i % COLS, r = Math.floor(i / COLS), x = (c - COLS / 2) * GAP, z = (r - ROWS / 2) * GAP - 200;
-      let h = 0;
-      strikes.forEach((s, k) => {
-        const [sx, sz] = spots[k % spots.length], d = Math.hypot(x - sx, z - sz), tau = t - s - d / 1700;
-        if (tau > 0 && tau < 1.6) h += 330 * Math.exp(-d / 700) * ease('outCubic', Math.min(1, tau / 0.12)) * (1 - ease('spring(bounce: 0.62, duration: 1.4)', tau / 1.6));
-      });
-      const lift = clamp(h / 220);
-      return [x, -420 + h, z, 0, 0, 0, 48, 48 + h * 0.15, 48, ...mix3(INK.map((v) => v * 2.2), lift > 0.55 ? RED : PAPER, clamp(lift * 1.4))];
-    },
-    orbit: (i, t) => {
-      const ring = i % 6, a = (i / K) * TAU * 6 + t * (0.5 + ring * 0.12) * (ring % 2 ? 1 : -1), R = 560 + ring * 95, tilt = (ring - 2.5) * 0.32;
-      const x = Math.cos(a) * R, y0 = Math.sin(a) * R * 0.2, z0 = Math.sin(a) * R;
-      return [x, y0 * Math.cos(tilt) - z0 * Math.sin(tilt), y0 * Math.sin(tilt) + z0 * Math.cos(tilt), t * 90 + i, t * 70, 0, 16, 16, 16, ...(i % 11 === 0 ? RED : PAPER)];
-    },
-    belt: (i, t) => { const a = (i / K) * TAU + t * 0.25, R = 1500 + (jitter[i] - 0.5) * 300; return [Math.cos(a) * R, (jitter[(i * 3) % K] - 0.5) * 60, Math.sin(a) * R, i, i, 0, 9, 9, 9, ...(i % 9 === 0 ? RED : PAPER)]; },
-    tunnel: (i) => {
-      const ringN = 14, ring = Math.floor(i / ringN), j = i % ringN, a = (j / ringN) * TAU + ring * 0.16, R = 430;
-      return [Math.cos(a) * R, Math.sin(a) * R, 2600 - ring * 78, 0, 0, (a * 180) / Math.PI + 90, 170, 22, 52, ...(ring % 9 === 0 ? RED : j % 7 === 0 ? [1, 0.75, 0.6] : PAPER)];
-    },
-  };
-  // Morph schedule on the film clock: [start, duration, from, to, stagger].
-  const morphs = [
-    [0.0, 1.0, 'vortex', 'word', 0.35],
-    [3.5, 1.3, 'word', 'wave', 0.5],
-    [8.3, 1.3, 'wave', 'orbit', 0.45],
-    [12.7, 1.1, 'orbit', 'belt', 0.4],
-    [16.5, 1.1, 'belt', 'tunnel', 0.5],
-    [20.4, 1.2, 'tunnel', 'word', 0.45],
+  const waypoints = [
+    [0, 0, 900], [0, 0, -4500], [0, 0, -9800],                          // tunnel
+    [0, 110, -11600], [260, 60, -14200], [-300, 90, -17200],            // city
+    [0, 70, -20500], [320, 130, -23500], [-160, 170, -26400],           // the gap at −20500
+    [0, 190, -28600], [120, 220, -30800], [-60, 240, -33000],           // gates
+    ...orbit,                                                           // around the knot
+    [900, 300, -41000], [0, 250, -43400], [0, 250, -48000], [0, 260, -52400], // vortex
+    [0, 360, -55200], [0, 250, -57400], [0, 245, -59200],                 // the plaza (the last point only aims the camera)
   ];
-  const cubes = instances(K);
-  const place = (t) => {
-    let m = morphs[0];
-    for (const x of morphs) if (t >= x[0]) m = x;
-    const [s, d, from, to, st] = m;
-    for (let i = 0; i < K; i++) {
-      const p = ease('inOutCubic', clamp((t - s - rank[i] * st * d) / (d * (1 - st))));
-      const a = F[from](i, t), b = p >= 1 ? null : F[to](i, t), q = p >= 1 ? F[to](i, t) : null;
-      const v = q ?? a.map((av, k) => mix(av, b[k], p));
-      const arc = p > 0 && p < 1 ? Math.sin(p * Math.PI) * 220 * (jitter[i] - 0.3) : 0; // a little lift mid-flight
-      cubes.set(i, { x: v[0], y: v[1] + arc, z: v[2], rx: v[3], ry: v[4], rz: v[5], sx: v[6], sy: v[7], sz: v[8], color: [v[9], v[10], v[11]] });
+  const path = flightPath(waypoints, { lookAhead: 950, bank: 1.25, maxBank: 40 });
+  const samples = path.points(4000);
+  const sNear = (p) => {
+    let best = 0, bd = Infinity;
+    samples.forEach((q, i) => { const d = (q[0] - p[0]) ** 2 + (q[1] - p[1]) ** 2 + (q[2] - p[2]) ** 2; if (d < bd) { bd = d; best = i; } });
+    return best / (samples.length - 1);
+  };
+  const at = (i) => sNear(waypoints[i]);
+  const iOrbit0 = 12, iOrbit1 = 12 + orbit.length - 1, iVortex0 = iOrbit1 + 2, iVortex1 = iOrbit1 + 4;
+  const timing = path.timing([
+    [0, 0], [0.45, 0.004], [2.95, at(2)], [5.0, at(5)], [7.2, at(8)], [9.4, at(11)],
+    [11.4, at(iOrbit0 + 3)], [13.2, at(iOrbit1)], [14.2, at(iVortex0)], [16.9, at(iVortex1)], [LAND, at(iVortex1 + 2)], [D + 1, at(iVortex1 + 2)],
+  ]);
+
+  // ---- Zone A: a tunnel of circuit-lit rings ------------------------------------------
+  const ringMesh = mesh.torus(460, 30, 96, 16);
+  const rings = instances(38, (i) => ({ z: 300 - i * 270, rz: i * 17, color: BODY }));
+
+  // ---- Zone B: the city ----------------------------------------------------------------
+  const cube = mesh.cube();
+  const towersInit = [];
+  for (let z = -10600; z > -27400; z -= 170) {
+    const p = path.point(sNear([0, 0, z]) * path.length);
+    for (const side of [-1, 1]) {
+      const gap = Math.abs(z + 20500) < 260; // two towers pinch in: the barrel-roll gap
+      const off = gap ? 210 : 420 + rnd() * 1100;
+      const h = gap ? 1500 : 260 + rnd() * 1900;
+      const w = gap ? 150 : 100 + rnd() * 90;
+      towersInit.push({ x: p[0] + side * (off + w / 2), y: -300 + h / 2, z: z + (rnd() - 0.5) * 60, sx: w, sy: h, sz: w, color: BODY });
+    }
+  }
+  // One tower in four is a cyan circuit tower: two hues, more depth.
+  const isAccent = (i) => ((i >> 1) * 3 + (i & 1) * 2) % 4 === 1; // both sides of the street
+  const accentInit = towersInit.filter((_, i) => isAccent(i)), mainInit = towersInit.filter((_, i) => !isAccent(i));
+  const towers = instances(mainInit.length, (i) => mainInit[i]);
+  const accents = instances(accentInit.length, (i) => accentInit[i]);
+  const trailPts = (k, from, to) => samples.filter((q, i) => { const f = i / (samples.length - 1); return f > from && f < to; })
+    .map(([x, y, z], i) => [x + k * 240 + Math.sin(i * 0.11 + k) * 70, y - 150 + Math.cos(i * 0.09 + k * 2) * 50, z]);
+  const trails = [-1, 1].map((k) => mesh.tube(trailPts(k, at(3) - 0.01, at(11)), { radius: 11, sides: 8, taper: [0.15, 1] }));
+  const trailAt = [instances(1, () => ({ color: [0.3, 0.6, 1] })), instances(1, () => ({ color: [1, 0.45, 0.2] }))];
+
+  // ---- Zone C: chrome gates ----------------------------------------------------------
+  const gateZ = [-28300, -29300, -30300, -31300, -32300, -33300];
+  const gateMesh = mesh.torus(380, 34, 120, 18);
+  const gates = instances(gateZ.length, (i) => { const p = path.point(sNear([0, 0, gateZ[i]]) * path.length); return { x: p[0], y: p[1], z: p[2], color: [0.9, 0.92, 1] }; });
+
+  // ---- Zone D: the knot, and its shards --------------------------------------------
+  const knot = mesh.torusKnot({ p: 2, q: 3, radius: 880, spread: 340, tube: 170, segments: 640, sides: 28 });
+  const KNOT_AT = { x: KNOT_C[0], y: KNOT_C[1], z: KNOT_C[2], rx: 25, color: [0.05, 0.05, 0.065] };
+  const knotAt = instances(1, () => KNOT_AT);
+  const shards = shatter(knot, { transform: KNOT_AT, force: 1900, spread: 0.7, spin: 520, drag: 0.55, ripple: 0.25 });
+
+  // ---- Zone E: the vortex -------------------------------------------------------------
+  const NV = 2600;
+  const vortexInit = Array.from({ length: NV }, (_, i) => {
+    const f = i / NV, a = f * TAU * 26 + rnd() * 0.5, r = 650 + rnd() * 700, z = -41900 - f * 10900 + (rnd() - 0.5) * 200;
+    return { a, r, z, s: 50 + rnd() * 90, spin: rnd() * 360, c: f };
+  });
+  const vortex = instances(NV);
+  const placeVortex = (t) => {
+    for (let i = 0; i < NV; i++) {
+      const v = vortexInit[i], a = v.a + t * 0.9, c = v.c;
+      vortex.set(i, { x: Math.cos(a) * v.r, y: 250 + Math.sin(a) * v.r, z: v.z, rx: v.spin + t * 90, ry: v.spin * 1.7 + t * 60, scale: v.s,
+        color: [mix(CYAN[0], MAG[0], c) * 0.55, mix(CYAN[1], MAG[1], c) * 0.55, mix(CYAN[2], MAG[2], c) * 0.55] });
     }
   };
 
-  // ---- The knot (solid) and the particles it becomes ------------------------------------
-  const knot = mesh.torusKnot({ p: 2, q: 5, radius: 250, spread: 105, tube: 46, segments: 460, sides: 20 });
-  const knotInst = instances(1);
-  const cube = mesh.cube();
-  const N = 120_000;
-  const knotPts = new Float32Array(N * 3), galaxy = new Float32Array(N * 3), core = new Float32Array(N * 3);
-  for (let i = 0; i < N; i++) {
-    const t = (i / N) * TAU, k = 250 + 105 * Math.cos(5 * t), ang = rnd() * TAU, rr = 46 * Math.sqrt(rnd());
-    knotPts.set([k * Math.cos(2 * t) + rr * Math.cos(ang), k * Math.sin(2 * t) + rr * Math.sin(ang), 105 * 1.6 * Math.sin(5 * t) + rr * Math.cos(ang * 1.3)], i * 3);
-    const arm = i % 4, d = Math.pow(rnd(), 0.7), r = 60 + d * 1300, a = (arm / 4) * TAU + d * 5 + (rnd() - 0.5) * 0.5 * (1.1 - d);
-    galaxy.set([Math.cos(a) * r, (rnd() - 0.5) * (50 * (1 - d) + 8), Math.sin(a) * r], i * 3);
-    core.set([(rnd() - 0.5) * 6, (rnd() - 0.5) * 6, (rnd() - 0.5) * 6], i * 3);
-  }
-  const cloud = pointCloud(N, { autoStep: false, shapes: [knotPts, galaxy, core], stiffness: 30, damping: 6.5, spread: 0.5, noise: 1.4, swirl: 70 });
-  cloud.snap(0);
-  const gt = node.glowTarget(W, H);
-  const g = glow(gt, { resolution: 0.85, background: '#000000', mode: 'light', trail: 0.55, budget: 0 });
-  g.resize(W, H);
-  g.colors(N, (i) => (i % 7 === 0 ? [1, 0.55, 0.32] : i % 13 === 0 ? [0.55, 0.62, 1] : [1, 0.92, 0.84]));
+  // ---- Zone F: the wordmark --------------------------------------------------------
+  const word = mesh.text('anikit', { font: '900 200px Display', depth: 0.055, resolution: 900, bevel: 1.4 });
+  const WORD_Z = -60300;
+  const wordAt = instances(1, () => ({ x: 0, y: 330, z: WORD_Z, rx: 90, sx: 3600, sy: 3600, sz: 3600 * word.aspect, color: [0.92, 0.9, 1] }));
 
-  // ---- One camera, one unbroken Hermite path --------------------------------------------
-  // [clock, eye xyz, target xyz, roll°]
-  const keys = [
-    [0.0, [-1500, 260, 900], [0, 40, 0], 0],
-    [1.1, [-420, 120, 1250], [0, 40, 0], 0],
-    [3.4, [480, 60, 1300], [0, 40, 0], 0],
-    [5.0, [900, 120, 1350], [0, -300, -200], 0],
-    [7.6, [-700, 260, 1100], [0, -380, -400], 0],
-    [9.4, [0, 420, 1700], [0, 0, 0], 0],
-    [11.0, [900, 300, 700], [0, 0, 0], 0],
-    [12.0, [180, 60, 160], [-200, 0, -600], 0],
-    [12.9, [0, 300, 1300], [0, 0, 0], 0],
-    [14.6, [0, 1500, 2600], [0, 0, 0], 0],
-    [16.5, [0, 160, 420], [0, 0, -400], 0],
-    [17.4, [0, 0, 3600], [0, 0, 2000], 0],
-    [20.2, [0, 0, -800], [0, 0, -2600], 220],
-    [21.6, [0, 120, 1500], [0, 40, 0], 360],
-    [24.0, [-260, 80, 1150], [0, 40, 0], 360],
-  ];
-  const hermite = (t) => {
-    let i = 0;
-    while (i < keys.length - 2 && t > keys[i + 1][0]) i++;
-    const k0 = keys[Math.max(0, i - 1)], k1 = keys[i], k2 = keys[i + 1], k3 = keys[Math.min(keys.length - 1, i + 2)];
-    const u = clamp((t - k1[0]) / (k2[0] - k1[0]));
-    const s = ease('inOutSine', u) * 0.35 + u * 0.65;
-    const h00 = 2 * s ** 3 - 3 * s ** 2 + 1, h10 = s ** 3 - 2 * s ** 2 + s, h01 = -2 * s ** 3 + 3 * s ** 2, h11 = s ** 3 - s ** 2;
-    const dt = k2[0] - k1[0];
-    const tan = (a, b, ta, tb, j, f) => ((b[f][j] - a[f][j]) / Math.max(1e-3, tb - ta)) * dt;
-    const at = (f, j) => h00 * k1[f][j] + h10 * tan(k0, k2, k0[0], k2[0], j, f) + h01 * k2[f][j] + h11 * tan(k1, k3, k1[0], k3[0], j, f);
-    return { eye: [0, 1, 2].map((j) => at(1, j)), target: [0, 1, 2].map((j) => at(2, j)), roll: mix(k1[3], k2[3], ease('inOutCubic', u)) };
-  };
-  const cam = scene3d({ fov: 46, width: W, height: H, near: 8, far: 40000 });
+  // ---- Shared: floor, stars --------------------------------------------------------
+  const floor = mesh.plane(1);
+  const floorAt = instances(1, () => ({ y: -300, z: -36000, sx: 34000, sz: 56000, color: [0.025, 0.025, 0.035] }));
+  const NS = 26000, stars = new Float32Array(NS * 3), starCol = new Float32Array(NS * 3);
+  for (let i = 0; i < NS; i++) {
+    stars.set([(rnd() - 0.5) * 9000, -200 + rnd() * 4200, 3000 - rnd() * 66000], i * 3);
+    const w = rnd();
+    starCol.set(w < 0.12 ? [1.5, 0.5, 1.2] : w < 0.24 ? [0.5, 0.9, 1.6] : [1.1, 1.1, 1.2], i * 3);
+  }
+
+  const cam = scene3d({ fov: 66, width: W, height: H, near: 5, far: 60000 });
   const r3 = renderer3d({ width: W, height: H });
 
-  // ---- The film ----------------------------------------------------------------------------
+  // ---- The grade: functions of composition time (mapped onto the clock) -------------
   const film = composition({
-    width: W, height: H, fps: 60, duration: 24.5, motionBlur: { samples: 2, shutter: 0.5 },
-    post: { bloom: 0.55, bloomThreshold: 0.72, bloomRadius: 36, vignette: 0.42, grain: 5, aberration: 0.5 },
+    width: W, height: H, fps: FPS, duration: D, motionBlur: 1,
+    post: {
+      aa: 1,
+      bloom: (t) => 0.85 + 0.5 * bell(t, 0.4, 0.25),
+      bloomThreshold: 0.5, bloomRadius: 46,
+      streaks: 0.45, streakLength: 300, streakTint: [0.7, 0.75, 1],
+      rays: (t) => { const c = clockOf(t); return 0.35 + 0.55 * smooth(2.9, 3.4, c) * (1 - smooth(9.2, 9.8, c)) + 0.75 * smooth(17.4, 18.4, c); },
+      raysCenter: [0.5, 0.4], raysLength: 0.7,
+      zoomBlur: (t) => { const c = clockOf(t); return 0.1 * smooth(0.5, 1.4, c) * (1 - smooth(2.6, 3.1, c)) + 0.08 * smooth(14.3, 15, c) * (1 - smooth(16.8, 17.4, c)); },
+      aberration: (t) => 0.5 + 2.5 * bell(clockOf(t), 3.0, 0.15),
+      vignette: 0.42, grain: 3.5,
+      contrast: 1.07, saturation: 1.12,
+      shadows: [0.0, 0.012, 0.035], highlights: [0.05, 0.015, -0.02],
+    },
   });
-  // Impacts on composition time (the slow-mo stretches clock time after 17.9).
-  film.impact(1.0, { shake: 34, flash: '#ffffff', flashOpacity: 0.55, aberration: 7 });
-  for (const s of strikes) film.impact(s, { shake: 10, aberration: 2.5 });
-  film.impact(12.75, { shake: 40, flash: '#ffffff', flashOpacity: 0.7, aberration: 9 });
-  // The bullet-time ramp lags the film clock by ∫0.88·e^(−x²) = 0.88·0.55·√π ≈ 0.86 s.
-  film.impact(21.6 + 0.86, { shake: 30, flash: '#ff3b14', flashOpacity: 0.35, aberration: 6 });
+  const pose = (c) => {
+    path.apply(cam, timing(c),
+      // Extra roll: a slow half-turn in the tunnel, a barrel roll through the gap, a spiral in the vortex.
+      360 * smooth(0.6, 2.9, c) + 360 * smooth(5.45, 6.25, c) + 360 * smooth(14.4, 16.9, c));
+    // Around the knot, keep it in frame.
+    const w = smooth(9.3, 10.2, c) * (1 - smooth(12.7, 13.6, c));
+    if (w > 0) {
+      cam.target.x = mix(cam.target.x, KNOT_C[0], w);
+      cam.target.y = mix(cam.target.y, KNOT_C[1], w);
+      cam.target.z = mix(cam.target.z, KNOT_C[2], w);
+    }
+    // The landing: settle on the wordmark, then a slow push in.
+    if (c > LAND - 0.4) {
+      const k = smooth(LAND - 0.4, LAND + 0.5, c), push = smooth(LAND, D + 1, c);
+      cam.target.x = mix(cam.target.x, 0, k);
+      cam.target.y = mix(cam.target.y, 300, k);
+      cam.target.z = mix(cam.target.z, WORD_Z, k);
+      cam.roll = ((((cam.roll + 180) % 360) + 360) % 360 - 180) * (1 - k); // unwind the shortest way
+      cam.camera.z -= 260 * push;
+      cam.camera.y -= 40 * push;
+    }
+  };
 
-  let clock = 0;
-  const S = { wordmark: false };
-  film.scene('one take', 0, 24.5, {
-    // Bullet time inside the tunnel: the whole engine (and the film clock) drops to 12%.
-    timeScale: (t) => 1 - 0.88 * Math.exp(-Math.pow((t - 18.7) / 0.55, 2)),
-    step({ dt }) {
-      clock += dt;
-      cloud.step(dt);
-      // Particle choreography (clock-driven).
-      if (clock >= 12.72 && cloud.to !== 1 && clock < 16.4) { cloud.explode(0, 0, 0, 2600); cloud.from = 0; cloud.to = 1; cloud.mix = 0; S.flowT = clock; }
-      if (cloud.to === 1 && S.flowT !== undefined) cloud.mix = ease('outCubic', clamp((clock - S.flowT) / 1.6));
-      if (clock >= 16.4 && cloud.to !== 2) { cloud.from = 1; cloud.to = 2; cloud.mix = 0; S.coreT = clock; }
-      if (cloud.to === 2) cloud.mix = ease('inExpo', clamp((clock - S.coreT) / 0.9));
-    },
-    draw({ ctx, t }) {
+  let clock = 0, prevClock = 0;
+  film.scene('velocity', 0, D, {
+    timeScale, // bullet time as the knot breaks: camera, shards, pulses all slow together
+    step({ dt }) { prevClock = clock; clock += dt; },
+    draw({ ctx }) {
       const c = clock;
-      // Camera.
-      const k = hermite(c);
-      Object.assign(cam.camera, { x: k.eye[0], y: k.eye[1], z: k.eye[2] });
-      Object.assign(cam.target, { x: k.target[0], y: k.target[1], z: k.target[2] });
-      cam.rotation.z = k.roll;
-      // Solid geometry.
-      place(c);
+      pose(prevClock);
+      const prevCamera = cam.viewProjection().matrix;
+      pose(c);
+      const z = cam.camera.z;
       const items = [];
-      const cubesVisible = !(c > 13.6 && c < 16.6);
-      if (cubesVisible) items.push({ mesh: cube, instances: cubes, material: { ambient: 0.16, diffuse: 0.9, specular: 0.55, shininess: 30, rim: 0.45 } });
-      const ks = c < 8.5 ? 0 : c < 12.72 ? ease('elastic.out(1, 0.4)', clamp((c - 8.5) / 1.4)) : 0;
-      if (ks > 0.01) {
-        knotInst.set(0, { rx: c * 22, ry: c * 31, scale: ks, color: RED });
-        items.push({ mesh: knot, instances: knotInst, material: { ambient: 0.12, diffuse: 0.75, specular: 1.1, shininess: 70, rim: 0.9 } });
+      const floorOn = z < -9600;
+      if (floorOn) items.push({ mirror: true, mesh: floor, instances: floorAt, material: { ambient: 0.2, lines: 1.0, lineColor: [0.28, 0.5, 1.5], grid: [90, 150], lineWidth: 0.022, specular: 0.25 } });
+      if (z > -12500) items.push({ mesh: ringMesh, instances: rings, material: { metal: 0.85, iridescence: 0.25, specular: 1.3, shininess: 110, lines: 2.2, pattern: 'circuit', lineColor: CYAN, grid: [40, 3], lineWidth: 0.07, pulse: 3.2, pulseCount: 1, pulsePhase: c * 2.6, pulseDir: [0, 0, 0.0009] } });
+      if (z < -9000 && z > -30500) {
+        items.push({ mesh: cube, instances: towers, material: { metal: 0.28, rim: 0.15, specular: 1.2, shininess: 90, lines: 1.25, pattern: 'hex', lineColor: MAG, grid: [3, 14], lineWidth: 0.032, pulse: 2.2, pulsePhase: c * 1.8, pulseDir: [0, 0, 0.00035] } });
+        items.push({ mesh: cube, instances: accents, material: { metal: 0.25, iridescence: 0.2, rim: 0.15, specular: 1.3, shininess: 120, lines: 2, pattern: 'circuit', lineColor: CYAN, grid: [4, 16], lineWidth: 0.04, pulse: 2.6, pulseCount: 2, pulsePhase: c * 2.2, pulseDir: [0, 0, 0.0005] } });
+        trails.forEach((m, k) => items.push({ mesh: m, instances: trailAt[k], blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 0.12, pulse: 3.5, pulseCount: 10, pulsePhase: c * 1.6 + k * 0.5, lineColor: k ? ORANGE : CYAN } }));
       }
-      const px = r3.render(cam, items, { background: '#06070a', fog: [1400, 5200], key: [0.5, 0.9, 0.4], keyColor: [1, 0.95, 0.9], fill: [-0.7, -0.3, 0.5], fillColor: [0.12, 0.16, 0.45], rimColor: [1, 0.4, 0.25] });
+      if (z < -26000 && z > -36500) items.push({ mesh: gateMesh, instances: gates, material: { metal: 1, iridescence: 0.75, hue: 0.1, specular: 1.6, shininess: 160, pulse: 3, pulseCount: 2, pulsePhase: c * 3.2, lineColor: CYAN } });
+      if (z < -31000 && z > -46000) {
+        if (c < HIT) items.push({ mesh: knot, instances: knotAt.set(0, { ...KNOT_AT, ry: c * 24 }), material: { metal: 0.92, iridescence: 0.3, specular: 1.5, shininess: 140, rim: 0.3, lines: 1.6, pattern: 'circuit', lineColor: CYAN, grid: [70, 5], lineWidth: 0.06, pulse: 2.8, pulseCount: 3, pulsePhase: c * 1.4 } });
+        else {
+          shards.update(c - HIT);
+          items.push({ mesh: shards.mesh, instances: shards.instances, cull: false, material: { metal: 0.9, iridescence: 0.45, specular: 1.6, shininess: 140, emissive: 0.15 + 0.8 * Math.exp(-(c - HIT) * 1.5) } });
+        }
+      }
+      if (z < -39500 && z > -54500) {
+        placeVortex(c);
+        items.push({ mesh: cube, instances: vortex, material: { ambient: 0.15, emissive: 0.4, metal: 0.5, specular: 1.2, shininess: 80, lines: 1.2, pattern: 'dots', grid: [3, 3], lineWidth: 0.09, lineColor: WHITE, pulse: 1.6, pulsePhase: c * 3, pulseDir: [0, 0, 0.0006] } });
+      }
+      if (z < -50000) items.push({ mesh: word, instances: wordAt, material: { metal: 1, iridescence: 0.4, specular: 1.9, shininess: 190, rim: 0.3, lines: 1.2, lineColor: [1.5, 1.2, 1.6], grid: [0, 0], lineWidth: 0.015, pulse: 1.8, pulseCount: 1, pulsePhase: c * 0.55 - 0.2, lineColor: [1.4, 0.9, 1.2] } });
+      items.push({ points: stars, colors: starCol, size: 3.2, intensity: 2.3, streak: 0.5, fog: [9000, 24000] });
+      const tunnel = z > -10400;
+      const lights = [];
+      if (z < -10000 && z > -28000) {
+        // Neon pools: light from the trail heads on the floor and the towers they pass.
+        const p = path.point(timing(c) + 900);
+        lights.push({ position: [p[0] - 240, p[1] - 150, p[2]], color: CYAN, radius: 700, intensity: 1.6 });
+        lights.push({ position: [p[0] + 240, p[1] - 150, p[2]], color: ORANGE, radius: 700, intensity: 1.6 });
+      }
+      if (c > HIT && c < HIT + 2.2) lights.push({ position: KNOT_C, color: [1.6, 1.2, 1.5], radius: 2400, intensity: 3 * Math.exp(-(c - HIT) * 1.6) });
+      const near = c > 9.4 && c < 13.4 ? Math.hypot(cam.camera.x - KNOT_C[0], cam.camera.y - KNOT_C[1], cam.camera.z - KNOT_C[2]) : 0;
+      const px = r3.render(cam, items, {
+        background: '#020309', fog: tunnel ? [3000, 11000] : [9000, 30000], fogColor: [0.05, 0.018, 0.06],
+        key: [0, 0.25, -1], keyColor: [1, 0.72, 0.9], fill: [-0.4, 0.6, 0.6], fillColor: [0.1, 0.12, 0.3], rimColor: [0.7, 0.5, 1],
+        sky: [0.015, 0.015, 0.06], horizon: [0.95, 0.32, 0.68], ground: [0.01, 0.01, 0.02], strips: [1.8, 1.8, 2.2],
+        skybox: tunnel ? false : { sun: 1.5 },
+        mirror: floorOn ? { y: -300, strength: 0.48 } : undefined,
+        lights,
+        dof: near ? { focus: near, aperture: 10 } : c > LAND - 0.2 ? { focus: Math.abs(cam.camera.z - WORD_Z), aperture: 12 * smooth(LAND - 0.2, LAND + 1, c) } : undefined,
+        motionBlur: { shutter: 0.55, max: 110 }, prevCamera,
+      });
       ctx.putImageData(new globalThis.ImageData(px, W, H), 0, 0);
-      // Particles as light, added over the solids.
-      const pOn = c > 12.6 && c < 17.6;
-      if (pOn) {
-        g.render(cam, cloud, { size: 1.4, intensity: 0.55, fog: [200, 6000], maxRadius: 9, exposure: clamp((17.4 - c) / 0.6) });
-        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.drawImage(gt.canvas, 0, 0, W, H); ctx.restore();
-      }
-      // Type: paper on the dark world, over a soft scrim where the scene is busy.
-      const scrim = (y0, y1) => { const gr = ctx.createLinearGradient(0, y0, 0, y1); gr.addColorStop(0, 'rgba(6,7,10,0.72)'); gr.addColorStop(1, 'rgba(6,7,10,0)'); ctx.fillStyle = gr; ctx.fillRect(0, Math.min(y0, y1), W, Math.abs(y1 - y0)); };
-      if ((c > 5.0 && c < 8.3) || (c > 9.6 && c < 12.7) || (c > 13.4 && c < 16.4)) scrim(0, 420);
-      const slam = (s, x, y, size, color, start, o = {}) => typeFx(ctx, s, x, y, { size, color, start, t: c, effect: 'slam', font: o.italic ? 'DisplayItalic' : 'Display', align: o.align ?? 'center', ...o });
-      const cap = (s, a = 1) => { ctx.globalAlpha = 0.75 * a; ctx.font = '400 16px Mono'; ctx.textAlign = 'left'; ctx.fillStyle = '#ece6da'; ctx.fillText(s.toUpperCase(), 86, H - 58); ctx.globalAlpha = 1; };
-      if (c > 1.2 && c < 3.6) { slam('Motion,', 90, H - 200, 120, '#ece6da', 1.3, { align: 'left' }); slam('compiled.', 90, H - 84, 120, '#ff3b14', 1.45, { align: 'left', italic: true }); }
-      if (c > 1.2 && c < 3.6) cap(`${K.toLocaleString('en-US')} solid cubes · lit + depth-tested in webassembly`);
-      if (c > 5.0 && c < 8.3) { slam('SPRINGS.', W / 2, 200, 190, '#ece6da', 5.1); cap('every cube rides a spring · retargeted on every strike'); }
-      if (c > 9.6 && c < 12.7) { slam('SOLID 3D.', W / 2, 190, 170, '#ece6da', 9.7); slam('NO WEBGL.', W / 2, 330, 120, '#ff3b14', 9.9); cap(`${(knot.triangles).toLocaleString('en-US')}-triangle knot · ${K.toLocaleString('en-US')} orbiting instances`); }
-      if (c > 13.4 && c < 16.4) { slam('120,000 PARTICLES.', W / 2, 200, 150, '#ece6da', 13.5); cap('simulated + lit in webassembly · one spring each'); }
-      if (c > 17.6 && c < 20.3) { slam('BULLET TIME.', W / 2, H / 2 + 60, 170, '#ece6da', 18.3); cap('one clock · engine.speed slows everything together'); }
-      if (c > 21.8) {
-        slam('Motion,', 90, H - 200, 120, '#ece6da', 22.0, { align: 'left' }); slam('compiled.', 90, H - 84, 120, '#ff3b14', 22.15, { align: 'left', italic: true });
-        const a = clamp((c - 22.7) / 0.4);
-        if (a > 0) { ctx.globalAlpha = a; ctx.textAlign = 'right'; ctx.fillStyle = '#ece6da'; ctx.font = '400 30px Mono'; ctx.fillText('NPM INSTALL ANIKIT', W - 86, H - 124); ctx.font = '400 16px Mono'; ctx.fillText('RUST · WEBASSEMBLY · TYPESCRIPT · PYTHON', W - 86, H - 84); ctx.globalAlpha = 1; }
-      }
     },
   });
+  // Impacts land on story beats of the slowed clock.
+  film.impact(0.38, { flash: '#ffffff', flashOpacity: 0.9, decay: 5, aberration: 6 });
+  film.impact(film.timeAt('velocity', 3.0), { shake: 14, flash: '#8fe3ff', flashOpacity: 0.35, aberration: 5 });
+  film.impact(film.timeAt('velocity', HIT), { shake: 34, flash: '#ffd1ef', flashOpacity: 0.75, aberration: 10 });
+  film.impact(film.timeAt('velocity', 14.25), { shake: 16, flash: '#ffffff', flashOpacity: 0.3, aberration: 6 });
+  film.impact(film.timeAt('velocity', LAND), { shake: 10, aberration: 3 });
   return film;
 }
