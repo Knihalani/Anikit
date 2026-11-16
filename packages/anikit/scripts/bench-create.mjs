@@ -153,6 +153,29 @@ console.log('case'.padEnd(44), 'Anikit'.padStart(9), 'GSAP'.padStart(9), '  rati
 }
 
 {
+  // Re-triggering: a new animate() on the same targets and properties takes
+  // every one of them over from the running one (GSAP: overwrite 'auto').
+  const t = objs(N, () => ({ x: 0, y: 0 }));
+  const ak = [], gs = [];
+  for (let r = 0; r < WARM + RUNS; r++) {
+    const a = animate(t, { x: 100, y: 5 }, { duration: 1 });
+    akFrame();
+    let s = performance.now();
+    const b = animate(t, { x: 200, y: 9 }, { duration: 1 });
+    akFrame();
+    if (r >= WARM) ak.push(performance.now() - s);
+    a.kill(); b.kill(); akFrame();
+    gsap.to(t, { x: 100, y: 5, duration: 1 });
+    gsFrame();
+    s = performance.now();
+    gsap.to(t, { x: 200, y: 9, duration: 1, overwrite: 'auto' });
+    gsFrame();
+    if (r >= WARM) gs.push(performance.now() - s);
+    gsapKill();
+  }
+  row('create: animate() taking over a running one', median(ak), median(gs));
+}
+{
   // Teardown: kill() of a long timeline (each child is killed too).
   const M = Math.max(1, N / 2 | 0);
   const t = objs(M, () => ({ x: 0 }));

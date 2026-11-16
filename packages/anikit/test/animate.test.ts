@@ -393,6 +393,33 @@ describe('animate: playback', () => {
     expect(engine.stats().nodes).toBeLessThanOrEqual(before + 2);
   });
 
+  it('a multi-target animation is freed once every target was taken over, not before', () => {
+    const objs = Array.from({ length: 30 }, () => ({ x: 0, y: 0 }));
+    const a = animate(objs, { x: 100, y: 50 }, { duration: 1, ease: 'linear' });
+    advance(0.1);
+    // Take x over everywhere: y still runs on every target.
+    animate(objs, { x: -1 }, { duration: 1 });
+    advance(0.1);
+    expect(a.state).toBe('running');
+    // Take y over on all but the last target, in an order other than the parts'.
+    animate(objs.slice(0, 29).reverse(), { y: -1 }, { duration: 1 });
+    advance(0.1);
+    expect(a.state).toBe('running');
+    const y = objs[29].y;
+    advance(0.1);
+    expect(objs[29].y).toBeGreaterThan(y);
+    // The last one: now nothing is left.
+    animate(objs[29], { y: -2 }, { duration: 1 });
+    flush();
+    expect(a.state).toBe('idle');
+    // The same target twice in one call: the second part takes it over from the first.
+    const o = { x: 0 };
+    const b = animate([o, { x: 0 }, o], { x: 10 }, { duration: 1, ease: 'linear' });
+    advance(0.5);
+    expect(b.state).toBe('running');
+    expect(o.x).toBeCloseTo(5, 5);
+  });
+
   it('kill() releases engine nodes', () => {
     const start = engine.stats().nodes;
     const list = Array.from({ length: 50 }, () => box());

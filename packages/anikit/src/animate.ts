@@ -504,6 +504,8 @@ class Part implements NodeRecord, Owner, Linked {
     if (live === 0) this.onEmpty?.();
   }
   onEmpty?: () => void;
+  /** Every binding was released (counted once by the animation). */
+  gone = false;
   dispose(): void {
     for (const x of this.b) if (this.claims) unclaim(x.target, x.prop, this);
     unregister(this);
@@ -727,6 +729,8 @@ export class Animation extends Playable {
   targets: Target[] = [];
   _parts: Part[] = [];
   private _group = 0;
+  /** Parts that still write at least one property (see `_partEmpty`). */
+  private _live = 0;
   /** The group's node record (registered while the group exists). */
   private _grec: NodeRecord | null = null;
   private _immediate = false;
@@ -979,6 +983,7 @@ export class Animation extends Playable {
       // the whole per-target scope (the track definitions) alive with the Part.
       part.onEmpty = emptyHandler(this, part);
       this._parts.push(part);
+      if (part.b.some((b) => b.on)) this._live++;
       this._links.push(part);
     }
 
@@ -1228,13 +1233,16 @@ export class Animation extends Playable {
     return transformPath(data, [m.a, m.b, m.c, m.d, m.e - (r.left + ox * r.width), m.f - (r.top + oy * r.height)]);
   }
 
-  /** All properties of a part were taken over: free it. */
+  /**
+   * All properties of a part were taken over: once no part writes anything,
+   * free the animation. Counted (bindings only ever turn off), not rescanned:
+   * a new animation taking over all n targets of this one used to scan the
+   * parts from the start for each of them, O(n²).
+   */
   _partEmpty(part: Part): void {
-    if (this._parts.every((p) => p.b.every((b) => !b.on))) {
-      this.kill();
-      return;
-    }
-    void part;
+    if (part.gone) return;
+    part.gone = true;
+    if (--this._live <= 0) this.kill();
   }
 
   /**
