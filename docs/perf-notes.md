@@ -1565,3 +1565,143 @@ for the base; Anikit ms per frame within noise of the base
 - Cost tracks the number of properties (1-property rows 15–20 ms, the
   3-property row ~30–55 ms), so per-property work (Binding, track, owner-map
   entry, revert slot) is the next target; not profiled further this round.
+
+## Eighth round (core)
+
+Two goals: creation cost (`scripts/bench-create.mjs`, the last place GSAP
+led) and a bug hunt in the animation core (`animate.ts`, `timeline.ts`,
+`core.ts`, `wasm.ts`, the engine's creation path). Starting point: `e8e4e30`.
+
+**Method.** Shared VM, other agents running. The `e8e4e30` `dist` was saved
+and run alternately with the new one (base, new, …). A focused script
+(median of 40 creations after 10 warm-ups, first frame included, three cases:
+one `animate()` of 10k objects × 3 numbers, 10k single-target calls, a
+1000-step timeline) was used during development because 7-run medians moved
+by up to 1.5x between identical runs; the table below is from
+`bench-create.mjs` itself. CPU profiles (`--cpu-prof`) picked the work; no
+number below comes from a profile.
+
+### Where the time went (base, one `animate()` of 10k objects)
+
+GC ~21%, `_build` ~16% self, `createAnim` ~25% inclusive of which the wasm
+side ~21% (per animation: three `Vec`s copied out of the scratch buffer per
+track, then `data`/`eases` grown by push and shrunk into a box), claims ~7%.
+
+### Changes
+
+- **Core: `Engine::create_anim_ref`** builds an animation from borrowed
+  track data (`TrackRef`, easing ids as `u32` or the wasm `f64` encoding);
+  the node's buffer is sized exactly first and allocated once. `create_anim`
+  is a wrapper over it. `ak_anim_create` parses without copying (path LUTs
+  are borrowed, no longer cloned per track).
+- **`ak_anim_create_many(len, n, stride, group)`**: `n` animations of one
+  layout in one call — the first fully encoded, the others as values only —
+  each added to `group`; handles come back in the f64 buffer.
+  **`ak_values_ptrs(n)`**: output locations of `n` handles at once (after
+  the pack).
+- **`Animation._fast`**: plain-object targets, plain-number keyframes (no
+  per-target functions, units, `snap`/`round`/`modifiers`/`format`, special
+  properties, `repeatDelay` or function timing). No `TrackDef`, value arrays,
+  `numberTrack`, `addTrack` or per-target wasm call. All current values (the
+  only user code: getters) are read first into a reused JS-side scratch (a
+  fresh one if a getter re-enters), then the core buffer is filled and
+  consumed in one call. Timeline steps qualify too (chained start values);
+  a step listing one target twice keeps the general path, which chains its
+  second occurrence from the first. `_setBatchCreate(false)` turns it off
+  (tests compare both).
+- Two V8 details that mattered (each measured): handles and offsets read
+  back from the f64 buffer are stored as int32 (`| 0`, `>>> 3`) — a double
+  there changed `Part`'s field representation and slowed every later
+  creation; and `_fast`'s per-target loops are separate functions — when they
+  were inside it, code optimised during a 10k-target call made later
+  one-target calls ~1.5x slower than the general path.
+
+### Bugs found and fixed (each with a regression test)
+
+1. **Animations stopped rendering after a slot's 2048th reuse.** wasm
+   returns handles as i32; with 12 generation bits the handle is negative in
+   JS from generation 2048 on. `flush()` and the generated batch writers read
+   the core's update and event lists through a `Uint32Array` and compared
+   with `===`, so such nodes were never written and their callbacks
+   (`onComplete`, the promise) never fired. Freed slots are reused
+   last-in first-out, so a page that re-triggers an animation (hover,
+   scroll) reaches it after ~2k create/kill cycles, then alternates 2048
+   cycles broken / 2048 working. Found by the fuzz test as a result that
+   changed depending on how many scenarios ran before it. Fix: read handles
+   as int32. Test: 4200 create/kill cycles on one slot (4056 missed writes
+   before the fix).
+2. **A target listed twice killed its animation at creation.** The later
+   part took the property over from the earlier one, the earlier part's
+   "every property lost" check called `kill()` mid-build: the animation was
+   marked killed and resolved immediately, but the remaining part ran on,
+   `kill()` no longer stopped it, and its record leaked. The check now runs
+   after the build.
+
+Checked and found correct (no change): NaN / ±Infinity durations, delays,
+repeats and seeks; negative delays longer than the duration; zero-duration
+yoyo/repeat; `speed` 0 / negative; every operation on killed controllers and
+reused handles (stale handles only reach the core from a timeline's
+child kills right after the subtree was freed, one generation back: harmless);
+re-entrant `flush()` and `kill()` from `onUpdate`; heap after 10k–40k
+create/kill cycles of single, multi-target, stagger, keyframe, timeline,
+takeover and revert calls (growth does not scale with the cycle count; no
+records or writer-table entries left).
+
+**`test/fuzz-core.test.ts`**: 60 seeded random scenarios (1–6 objects, some
+listed twice; `animate`/`fromTo`/`from`/`set`/timelines with random
+keyframes, eases, zero durations, negative and staggered delays, repeat,
+yoyo, endDelay, `overwrite: false`; seeks, reversals, pause/play, kill,
+revert, restart, takeovers) run with batched creation, group packing,
+generated writers (the CSP fallback) and number tracks each turned off, and
+must match frame for frame and stay finite; single tweens against a
+reference timing model (150 cases); the cases above. During development the
+same scenarios ran with 600 seeds.
+
+### Numbers
+
+`bench-create.mjs`, N = 10k, three interleaved pairs (ms; base `e8e4e30` /
+new; GSAP's own column moved 1.0–1.25 ms … 10–15 ms between runs):
+
+| Case | Base | New | GSAP |
+|---|---|---|---|
+| one `animate()`, 3 numbers | 22.6–27.2 | 11.5–14.5 | 3.3–4.1 |
+| 10k `animate()` calls, 3 numbers | 31.5–37.0 | 24.7–30.3 | 10.0–14.8 |
+| one `animate()`, stagger delay | 10.0–13.3 | 8.8–11.4 | 6.2–6.9 |
+| one `animate()`, 8 keyframes | 11.2–14.5 | 6.5–7.6 | 31–33 |
+| one `animate()`, colour string | 15.3–19.9 | 13.7–15.4 | 27–28 |
+| timeline of 1000 steps | 3.8–4.7 | 2.0–3.8 | 1.0–1.25 |
+| `animate()` taking over a running one | 25.6–29.9 | 14.3–15.5 | 323–348 |
+| `kill()`: timeline of 5000 steps | 0.45–0.86 | 0.42–0.54 | 0.01 |
+
+Retained heap per target is unchanged after one fix found by this table
+(the fast path first kept its bindings arrays with the spare capacity of
+`push`: 0.86 → 0.97 KB; an exact-size copy, as the general path makes,
+brought it back to 0.86 KB with no change in time). Colour strings and
+stagger delays do not take the fast path; their moves are within the spread.
+
+Of the three rows that trailed GSAP: one `animate()` of 10k objects is about
+2x faster (GSAP still ~3.5x ahead), single-target calls ~1.2x (GSAP ~2.3x
+ahead), the 1000-step timeline about 1.5x in two pairs of three (GSAP ~2x
+ahead). The creation gap is **narrowed, not closed**.
+
+Per frame, `bench.mjs`, three interleaved pairs: the new build is ahead of
+GSAP in all 12 cases in every round (1.08–4.21x); the base, in the same
+runs, fell below GSAP in 4 of 36 (colour string 10k 0.88–1.00x, unit
+string 10k 0.92x): those two rows sit near 1x and move with load, as in
+earlier rounds. Anikit's own ms per frame are within the spread of the base
+(the frame loop is unchanged; Parts made by the fast path have the same
+shape and their arrays are packed).
+
+### Not done (eighth round)
+
+- **Elements, units, colours, stagger delays** still take the general path.
+  Per-target delays would need a per-animation timing slot in
+  `ak_anim_create_many` (the encoding has room: a per-target header).
+- **10k separate calls** are now dominated by per-call JS objects
+  (`normalize`'s `Map` and option spread, the `Animation`, its callbacks)
+  and GC, not by tracks or wasm.
+- **Generations** are still 12 bits, reused last-in first-out: stale
+  handles alias a live node after 4095 reuses of a slot. Nothing in the
+  core layer holds a stale handle that long now (the fuzz test counts
+  writer-table entries and records left behind), but FIFO reuse or retiring
+  a slot at the last generation would make the invariant unconditional.

@@ -776,7 +776,8 @@ function fastParts(
     // loop over bindings polymorphic.)
     const b: Binding[] = [];
     for (let pi = 0; pi < np; pi++) b.push(new Binding(target, keys[pi], pi, pi, M_PROP, null, keys[pi], '', 0, -1, null, null));
-    part.b = b;
+    // (Exact-size copy: the pushes leave spare capacity the Part would keep.)
+    part.b = b.slice();
     part.tm = tm;
     // (int32, as wasm returns handles: keeps the field a small integer.)
     part.h = F64[base + i] | 0;

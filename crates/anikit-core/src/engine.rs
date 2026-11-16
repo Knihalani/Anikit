@@ -3585,6 +3585,44 @@ mod tests {
     }
 
     #[test]
+    fn create_anim_ref_matches_owned_specs_and_sizes_exactly() {
+        // The borrowed path (wasm's encoding: f64 easing ids, -1 = linear)
+        // builds the same node as the owned one, in one exact allocation.
+        let mut e = Engine::new();
+        let ease = e.easing("outBack").unwrap();
+        let owned = [
+            TrackSpec::number(vec![0.0, 50.0, 10.0, 100.0], 1).with_offsets(vec![0.0, 0.2, 0.9, 1.0]).with_easings(vec![ease, LINEAR, ease]),
+            TrackSpec::number(vec![1.0, 2.0, 3.0, 4.0], 2).with_easings(vec![ease]),
+            TrackSpec { kind: TrackKind::Color(ColorSpace::Oklab), channels: 4, offsets: Vec::new(), values: vec![1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.5], easings: Vec::new(), path: None },
+        ];
+        let f = [ease as f64, -1.0, ease as f64];
+        let f1 = [ease as f64];
+        let refs = [
+            TrackRef { kind: TrackKind::Number, channels: 1, offsets: &owned[0].offsets, values: &owned[0].values, easings: EaseIds::F64(&f), path: None },
+            TrackRef { kind: TrackKind::Number, channels: 2, offsets: &[], values: &owned[1].values, easings: EaseIds::F64(&f1), path: None },
+            TrackRef { kind: owned[2].kind, channels: 4, offsets: &[], values: &owned[2].values, easings: EaseIds::U32(&[]), path: None },
+        ];
+        let t = Timing { duration: 1000.0, ..Default::default() };
+        let a = e.create_anim(t, &owned, flags::DEFAULT).unwrap();
+        let b = e.create_anim_ref(t, &refs, flags::DEFAULT).unwrap();
+        for h in [a, b] {
+            e.play(h).unwrap();
+        }
+        for _ in 0..12 {
+            e.tick(90.0);
+            assert_eq!(e.values(a).unwrap(), e.values(b).unwrap());
+        }
+        let Kind::Anim(x) = &e.nodes[Engine::handle_index(b) as usize].kind else { unreachable!() };
+        let Kind::Anim(y) = &e.nodes[Engine::handle_index(a) as usize].kind else { unreachable!() };
+        assert_eq!(x.buf.len(), y.buf.len());
+        // Malformed input is refused, not panicked on.
+        let bad = [TrackRef { kind: TrackKind::Number, channels: 1, offsets: &[0.0], values: &[1.0, 2.0], easings: EaseIds::U32(&[]), path: None }];
+        assert!(e.create_anim_ref(t, &bad, flags::DEFAULT).is_err());
+        let bad = [TrackRef { kind: TrackKind::Number, channels: 1, offsets: &[], values: &[1.0, 2.0, 3.0], easings: EaseIds::F64(&[1.0, 2.0, 3.0]), path: None }];
+        assert!(e.create_anim_ref(t, &bad, flags::DEFAULT).is_err());
+    }
+
+    #[test]
     fn simple_anims_match_track_evaluation() {
         // `simple` animations skip the track table; they must equal
         // `eval_into` exactly, before and after tracks are toggled.
