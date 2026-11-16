@@ -10,6 +10,7 @@
  * const blob = sdfMesh((x, y, z) => smoothUnion(sdSphere(x - 0.4, y, z, 0.6), sdSphere(x + 0.4, y, z, 0.5), 0.3));
  * ```
  */
+import { core, f64Buf, F64 } from './wasm';
 
 /** Indexed triangle mesh: positions/normals (xyz), uvs (uv), indices. */
 export interface Geometry {
@@ -390,6 +391,8 @@ export function sdfMesh(f: (x: number, y: number, z: number) => number, opts: Sd
   const ox = -Rx * s / 2, oy = -Ry * s / 2, oz = -Rz * s / 2;
   const d = new Float32Array(Nx * Ny * Nz);
   for (let k = 0; k < Nz; k++) for (let j = 0; j < Ny; j++) for (let i = 0; i < Nx; i++) d[i + Nx * (j + Ny * k)] = f(ox + i * s, oy + j * s, oz + k * s);
+  const fast = wasmNets(d, Nx, Ny, Nz, ox, oy, oz, s);
+  if (fast) return fast;
   const cell = new Int32Array(Rx * Ry * Rz).fill(-1);
   const pos: number[] = [], nor: number[] = [];
   const at = (i: number, j: number, k: number) => d[i + Nx * (j + Ny * k)];
@@ -432,6 +435,29 @@ export function sdfMesh(f: (x: number, y: number, z: number) => number, opts: Sd
   }
   const g: Geometry = { positions: new Float32Array(pos), normals: new Float32Array(nor), uvs: new Float32Array((pos.length / 3) * 2), indices: new Uint32Array(idx) };
   return fixWinding(g);
+}
+
+/**
+ * Surface-nets extraction in the WebAssembly core (the field is already
+ * sampled, so no user code runs between reserving the scratch buffer and the
+ * call). Returns null when the core isn't loaded; the JS path is the fallback.
+ */
+function wasmNets(d: Float32Array, nx: number, ny: number, nz: number, ox: number, oy: number, oz: number, s: number): Geometry | null {
+  let w;
+  try { w = core(); } catch { return null; }
+  const at = f64Buf(d.length);
+  F64.set(d, at);
+  const id = w.ak_surface_nets(nx, ny, nz, ox, oy, oz, s);
+  if (id === 0xffffffff) return null;
+  const nv = w.ak_mesh_ptr(id, 3), nt = w.ak_mesh_ptr(id, 4), buf = w.memory.buffer;
+  const g: Geometry = {
+    positions: new Float32Array(buf, w.ak_mesh_ptr(id, 0), nv * 3).slice(),
+    normals: new Float32Array(buf, w.ak_mesh_ptr(id, 1), nv * 3).slice(),
+    uvs: new Float32Array(nv * 2),
+    indices: new Uint32Array(buf, w.ak_mesh_ptr(id, 2), nt * 3).slice(),
+  };
+  w.ak_mesh_free(id);
+  return g;
 }
 
 /** Options for {@link text3d}. */
