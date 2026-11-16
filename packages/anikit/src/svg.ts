@@ -4,7 +4,7 @@
  */
 import { core, writeStr, f64Buf, F64, readStr, views } from './wasm';
 import { isElement } from './props';
-import { r3 } from './values';
+import { r3, s3 } from './values';
 import { warn, selectorHint } from './debug';
 
 /** Anything that resolves to path data. */
@@ -296,11 +296,11 @@ export function writeMorph(template: number[], v: ArrayLike<number>, at = 0): st
   for (let k = 0; k < nsub; k++) {
     const nseg = template[1 + k * 2];
     const closed = template[2 + k * 2];
-    s += 'M' + r3(v[i]) + ' ' + r3(v[i + 1]);
+    s += 'M' + s3(v[i]) + ' ' + s3(v[i + 1]);
     i += 2;
     if (nseg) s += 'C';
     for (let j = 0; j < nseg * 6; j++) {
-      s += (j ? ' ' : '') + r3(v[i++]);
+      s += (j ? ' ' : '') + s3(v[i++]);
     }
     if (closed) s += 'Z';
   }

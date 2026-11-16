@@ -8,7 +8,7 @@
  */
 import { F64 } from './wasm';
 import { Target, Kind, TargetState, stateOf, markDirty, camel, transformSlots } from './props';
-import { r3 } from './values';
+import { r3, s3 } from './values';
 
 export const M_PROP = 0;
 export const M_TRANSFORM = 1;
@@ -72,7 +72,10 @@ export function apply(b: Binding, at: number): void {
       const v = r3(F64[at]);
       if (v !== b.ln) {
         b.ln = v;
-        b.obj[b.key] = v + b.unit;
+        // Unitless (opacity, z-index, line-height…): the style setter turns the
+        // number into the same string `v + ''` would, about twice as cheaply
+        // in Chromium as passing a freshly built string.
+        b.obj[b.key] = b.unit === '' ? v : s3(v) + b.unit;
       }
       return;
     }

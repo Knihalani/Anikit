@@ -15,13 +15,21 @@ const require = createRequire(import.meta.url);
 let playwright;
 try { playwright = require('playwright'); } catch { playwright = require(join(process.execPath, '../../lib/node_modules/playwright')); }
 
-const libs = (process.env.LIBS || 'anikit,anikit-compositor,gsap,motion').split(',');
+// MANUAL=1: scripted frames instead of rAF (anikit and GSAP only): the time
+// of the library's frame function alone, median of 3 x 100 frames after
+// warm-up, style recalc forced between frames outside the timed region.
+// Much less noisy than the rAF metrics, which also move with the frame rate.
+const MANUAL = process.env.MANUAL === '1';
+const libs = (process.env.LIBS || (MANUAL ? 'anikit,gsap' : 'anikit,anikit-compositor,gsap,motion')).split(',');
 const sizes = (process.env.SIZES || '500,2000,5000').split(',').map(Number);
 const SECONDS = 3;
 const browser = await playwright.chromium.launch();
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.wasm': 'application/wasm' };
-console.log(`per-frame main-thread time over ${SECONDS}s (ms; lower is better)\n`);
-console.log('lib                   N      script   style+layout   fps');
+if (MANUAL) console.log('scripted frames: ms per frame in the library\'s frame function (lower is better)\n\nlib                   N    frame ms');
+else {
+  console.log(`per-frame main-thread time over ${SECONDS}s (ms; lower is better)\n`);
+  console.log('lib                   N      script   style+layout   fps');
+}
 for (const n of sizes) {
   for (const lib of libs) {
     const page = await browser.newPage({ viewport: { width: 1100, height: 900 } });
@@ -31,6 +39,13 @@ for (const n of sizes) {
       route.fulfill({ status: 200, contentType: types[extname(f)] || 'application/octet-stream', body: readFileSync(f) });
     });
     await page.goto(`http://bench.local/bench/dom.html?lib=${lib}&n=${n}&typed=${lib === 'anikit-typed' ? 1 : 0}`);
+    if (MANUAL) {
+      await page.evaluate(() => window.start());
+      const ms = await page.evaluate(() => window.manualFrames(100));
+      console.log(`${lib.padEnd(20)} ${String(n).padStart(5)}   ${ms.toFixed(3).padStart(8)}`);
+      await page.close();
+      continue;
+    }
     const cdp = await page.context().newCDPSession(page);
     await cdp.send('Performance.enable');
     await page.evaluate(() => window.start());

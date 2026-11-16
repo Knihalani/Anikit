@@ -21,6 +21,35 @@ export const COLOR_SPACES: Record<ColorSpaceName, number> = { srgb: 0, linear: 1
 /** Round for output: 3 decimals keeps strings short and sub-pixel accurate. */
 export const r3 = (v: number): number => Math.round(v * 1000) / 1000;
 
+/** `'.001'` … `'.999'` without trailing zeros (`FRAC3[500] === '.5'`), `''` for 0. */
+const FRAC3: string[] = [''];
+for (let i = 1; i < 1000; i++) {
+  let f = String(i).padStart(3, '0');
+  while (f.endsWith('0')) f = f.slice(0, -1);
+  FRAC3.push('.' + f);
+}
+/**
+ * `String(r3(v))`, built from the integer `Math.round(v * 1000)`: an integer
+ * part and a table lookup instead of the general double-to-string
+ * conversion (about 3x cheaper; transform strings are built for every
+ * moving element every frame). Identical output: below 2^31 thousandths the
+ * shortest representation of `k / 1000` is exactly these digits; anything
+ * else (large, NaN, infinite) takes the general conversion.
+ */
+export function s3(v: number): string {
+  let k = Math.round(v * 1000);
+  if (k >= 0 && k < 2147483648) {
+    const ip = (k / 1000) | 0;
+    return ip + FRAC3[k - ip * 1000];
+  }
+  if (k < 0 && k > -2147483648) {
+    k = -k;
+    const ip = (k / 1000) | 0;
+    return '-' + ip + FRAC3[k - ip * 1000];
+  }
+  return '' + Math.round(v * 1000) / 1000;
+}
+
 // ---------------------------------------------------------------------------
 // Parsed values
 // ---------------------------------------------------------------------------
@@ -146,7 +175,7 @@ function fmtColor(o: number[] | Float64Array, i: number): string {
   const r = Math.min(255, Math.max(0, Math.round(o[i])));
   const g = Math.min(255, Math.max(0, Math.round(o[i + 1])));
   const b = Math.min(255, Math.max(0, Math.round(o[i + 2])));
-  if (a < 1) return 'rgba(' + r + ',' + g + ',' + b + ',' + r3(a) + ')';
+  if (a < 1) return 'rgba(' + r + ',' + g + ',' + b + ',' + s3(a) + ')';
   const key = (r << 16) | (g << 8) | b;
   const slot = (key ^ (key >>> 12)) & (COLOR_SLOTS - 1);
   if (colorKeys[slot] === key) return colorStrs[slot];
@@ -200,7 +229,7 @@ const numberFormats = new Map<string, (at: number) => string | number>();
 function numberFormat(unit: string): (at: number) => string | number {
   let f = numberFormats.get(unit);
   if (f === undefined) {
-    f = unit ? (at: number) => r3(F64[at]) + unit : (at: number) => r3(F64[at]);
+    f = unit ? (at: number) => s3(F64[at]) + unit : (at: number) => r3(F64[at]);
     numberFormats.set(unit, f);
   }
   return f;
@@ -345,7 +374,7 @@ export function buildTrack(
       let s = parts[0];
       let i = at;
       for (let k = 0; k < slots.length; k++) {
-        if (slots[k] === 0) s += r3(src[i++]);
+        if (slots[k] === 0) s += s3(src[i++]);
         else {
           s += fmtColor(src, i);
           i += 4;

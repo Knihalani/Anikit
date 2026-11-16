@@ -4,6 +4,7 @@ import { setup, advance, box } from './setup';
 import { _setCodegen, _setNumberTracks } from '../src/animate';
 import { timeline } from '../src/timeline';
 import { _recordCount } from '../src/core';
+import { r3, s3 } from '../src/values';
 
 beforeAll(setup);
 
@@ -188,6 +189,21 @@ describe('animate: plain-number track path', () => {
     _setNumberTracks(prev);
     expect(fast).toEqual(general);
     expect(general[0]).not.toBe(general[2]);
+  });
+});
+
+describe('s3 (output number formatting)', () => {
+  it('equals String(r3(v)) everywhere', () => {
+    const edge = [0, -0, 1, -1, 0.0004, -0.0004, 0.0005, -0.0005, 0.0015, 2.5e-4, 0.1 + 0.2, 1 / 3, -2 / 3, 999.9995,
+      2147483.647, 2147483.648, -2147483.647, -2147483.648, 1e6 + 0.001, 1e9, 1e21, -1e21, 1e300, 5e-324,
+      NaN, Infinity, -Infinity, Number.MAX_SAFE_INTEGER, 0.1, 0.01, 0.001, 12.34, 300, -300.05];
+    for (const v of edge) expect(s3(v)).toBe(String(r3(v)));
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+    for (let i = 0; i < 200000; i++) {
+      const v = (rnd() - 0.5) * Math.pow(10, (i % 12) - 3);
+      if (s3(v) !== String(r3(v))) expect(s3(v)).toBe(String(r3(v)));
+    }
   });
 });
 

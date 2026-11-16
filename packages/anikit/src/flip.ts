@@ -25,7 +25,7 @@ import type { OptionKeys } from './debug';
 import { Timeline } from './timeline';
 import { Playable } from './playable';
 import { Targets, toTargets, stateOf, flushTransforms, computed, isElement, markDirty } from './props';
-import { r3 } from './values';
+import { r3, s3 } from './values';
 
 export interface FlipState {
   /** The captured elements. */
@@ -416,9 +416,9 @@ function fromState(state: FlipState, options: FlipOptions = {}): Timeline {
           r.fy = fy;
           const v = r.r;
           r.el.style.borderRadius = r.same
-            ? (fx === fy ? r3(v[0] * fx) + 'px' : r3(v[0] * fx) + 'px / ' + r3(v[0] * fy) + 'px')
-            : r3(v[0] * fx) + 'px ' + r3(v[2] * fx) + 'px ' + r3(v[4] * fx) + 'px ' + r3(v[6] * fx) + 'px / ' +
-              r3(v[1] * fy) + 'px ' + r3(v[3] * fy) + 'px ' + r3(v[5] * fy) + 'px ' + r3(v[7] * fy) + 'px';
+            ? (fx === fy ? s3(v[0] * fx) + 'px' : s3(v[0] * fx) + 'px / ' + s3(v[0] * fy) + 'px')
+            : s3(v[0] * fx) + 'px ' + s3(v[2] * fx) + 'px ' + s3(v[4] * fx) + 'px ' + s3(v[6] * fx) + 'px / ' +
+              s3(v[1] * fy) + 'px ' + s3(v[3] * fy) + 'px ' + s3(v[5] * fy) + 'px ' + s3(v[7] * fy) + 'px';
         }
       }
     : null;

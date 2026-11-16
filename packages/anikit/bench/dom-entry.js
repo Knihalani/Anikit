@@ -33,3 +33,31 @@ window.start = async () => {
     motionAnimate(els, { x: [0, 300], y: [0, 200], rotate: [0, 360], opacity: [1, 0.3] }, { duration: 2, ease: 'easeInOut', repeat: Infinity, repeatType: 'reverse', delay: (i) => delay(i) });
   }
 };
+
+// Scripted frames for `MANUAL=1 node scripts/bench-dom.mjs`: time only the
+// library's frame (anikit: engine.tick = core + writes; GSAP: updateRoot),
+// with style recalc forced outside the timed region. Returns ms per frame.
+window.manualFrames = (frames) => {
+  let tick;
+  if (lib === 'gsap') {
+    gsap.ticker.lagSmoothing(0);
+    gsap.ticker.sleep();
+    tick = () => gsap.updateRoot(gsap.globalTimeline.time() + 0.016);
+  } else if (lib === 'anikit' || lib === 'anikit-typed') {
+    ak.engine.manual(true);
+    tick = () => ak.engine.tick(16);
+  } else return NaN;
+  const run = (n) => {
+    let acc = 0;
+    for (let f = 0; f < n; f++) {
+      const t = performance.now();
+      tick();
+      acc += performance.now() - t;
+      void document.body.offsetWidth;
+    }
+    return acc / n;
+  };
+  run(100); // warm-up (V8 tiers JS and wasm up lazily)
+  const ts = [run(frames), run(frames), run(frames)].sort((a, b) => a - b);
+  return ts[1];
+};

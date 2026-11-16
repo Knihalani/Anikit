@@ -15,7 +15,7 @@ import {
   FL_FILL_BACKWARDS, FL_FILL_FORWARDS, FL_IMMEDIATE,
 } from './core';
 import {
-  buildTrack, numberTrack, TrackDef, TRACK_NUMBER, TRACK_PATH, TRACK_MATRIX, COLOR_SPACES, ColorSpaceName, r3,
+  buildTrack, numberTrack, TrackDef, TRACK_NUMBER, TRACK_PATH, TRACK_MATRIX, COLOR_SPACES, ColorSpaceName, r3, s3,
 } from './values';
 import {
   Target, Targets, toTargets, classify, Kind, readValue, writer, convertUnit, defaultUnit, isElement,
@@ -904,7 +904,7 @@ export class Animation extends Playable {
           const b = custom(target, prop, idx, 0, (at) => {
             let v = F64[at];
             if (post) v = post(v, target);
-            const s = Math.abs(v - ap) < 1e-3 ? kw : r3(v) + 'px';
+            const s = Math.abs(v - ap) < 1e-3 ? kw : s3(v) + 'px';
             if (style[key] !== s) style[key] = s;
           });
           part.b.push(b);
@@ -916,7 +916,7 @@ export class Animation extends Playable {
           part.b.push(custom(target, prop, idx, 0, numeric
             ? (at) => {
                 const v = post(F64[at], target);
-                write(typeof v === 'number' && !raw ? r3(v) + unit : v);
+                write(typeof v === 'number' && !raw ? s3(v) + unit : v);
               }
             : (at) => write(post(fmt(at), target))));
         } else {
@@ -1195,8 +1195,8 @@ export class Animation extends Playable {
         const s = Math.min(a, b);
         const e = Math.max(a, b);
         (el as any).__akDraw = [a, b];
-        style.strokeDasharray = r3((e - s) * len) + 'px ' + r3(len + 1) + 'px';
-        style.strokeDashoffset = r3(-s * len) + 'px';
+        style.strokeDasharray = s3((e - s) * len) + 'px ' + s3(len + 1) + 'px';
+        style.strokeDashoffset = s3(-s * len) + 'px';
       }));
       return;
     }
