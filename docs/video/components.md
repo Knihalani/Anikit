@@ -263,26 +263,28 @@ Scene transitions: `"transition": { "type": "wipe", "duration": 0.6, "direction"
 | `iris` | The iris closes and reopens. | `at`, `duration`, `hold`, `color`, `center` |
 | `glitch` | Glitch bars. | `at`, `duration`, `intensity`, `colors`, `seed` |
 
-## Audio (spec `audio` tracks)
+## Audio (`src/audio/`)
+
+The audio module implements the spec's `audio` tracks:
 
 ```json
 "audio": [
-  { "src": "music.mp3", "fadeIn": 1, "fadeOut": 2, "loop": true, "duck": { "under": "voice", "amountDb": 12 } },
-  { "src": "voiceover.wav", "start": 1.5, "role": "voice" },
-  { "src": "sfx:whoosh", "start": 3.0 },
-  { "src": { "sfx": "typing", "params": { "duration": 2 } }, "start": 4 }
+  { "src": "music.mp3", "fadeIn": 1, "fadeOut": 2, "loop": true, "duck": 0.4 },
+  { "src": "voiceover.wav", "at": 1.5, "voice": true },
+  { "src": "sfx:whoosh", "at": 3.0, "volume": "-6dB" },
+  { "src": { "sfx": "typing", "params": { "duration": 2 } }, "at": 4 }
 ]
 ```
 
 **Track keys:**
-- `start`: when the track starts, in timeline seconds;
-- `trim`: `[in, out]`, in source seconds;
-- `volume` (linear) or `db`;
-- `fadeIn`, `fadeOut`;
-- `loop`, `duration`;
-- `role`: `music`, `voice` or `sfx`;
-- `duck`: `{ under, amountDb, attack, release }`.
+- `at` (or `start`), `trimStart` (or `trim: [in, out]`), `duration`;
+- `volume`: linear, or `"-6dB"`; `db` adds gain;
+- `fadeIn`, `fadeOut` (equal-power), `loop`;
+- `voice: true` (or `role`: `music`, `voice` or `sfx`);
+- `duck`: the level to duck to (0–1), `true`, or `{ under, amountDb, attack, release }`.
 
-**Built-in SFX:** `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `drop`/`impact`, `ding`, `chime`, `typing`, `success`.
+Music ducks smoothly under voice tracks. The master bus has a soft limiter.
 
-**Music analysis** exposes `bpm`, `beats[]`, `downbeats[]`, `onsets[]` and `energy`, so you can snap cuts and animations to the beat.
+**Built-in SFX** (`"sfx:<name>"`) are synthesised procedurally, so no asset files are needed: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `drop`/`impact`, `ding`, `chime`, `typing`, `success`.
+
+**Music analysis** (`audio::analyze_pcm`) gives `bpm`, `beats[]`, `downbeats[]`, `onsets[]` and `energy` (100 values per second). Use it to snap cuts and animations to the beat.
