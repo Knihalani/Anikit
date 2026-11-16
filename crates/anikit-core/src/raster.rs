@@ -253,9 +253,10 @@ impl Texture {
         let (mj2, mn2, du, dv) = if lx2 >= ly2 { (lx2, ly2, ax[0], ax[1]) } else { (ly2, lx2, ay[0], ay[1]) };
         let (maj, min) = (crate::math::sqrtf(mj2), crate::math::sqrtf(mn2));
         let fw = min.max(maj * (1.0 / ANISO_MAX));
-        // Taps about one footprint apart along the major axis, at most ANISO_TAPS (each
-        // bilinear tap spans ~2 texels); NaN or a round footprint: one tap.
-        let n = if maj > fw { crate::math::ceilf(maj / fw).min(ANISO_TAPS) as usize } else { 1 };
+        // Taps at most 1.5 footprints apart along the major axis (each bilinear tap
+        // spans ~2 texels of the mip), at most ANISO_TAPS: a footprint up to 1.5×
+        // longer than wide (or NaN) takes one tap.
+        let n = if maj > fw * 1.5 { crate::math::ceilf(maj / (fw * 1.5)).min(ANISO_TAPS) as usize } else { 1 };
         if n <= 1 {
             return self.sample_v(u, v, fw);
         }
