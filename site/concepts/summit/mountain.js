@@ -1084,7 +1084,8 @@ export function createMountain(canvas) {
     curT = t;
     // the portal (optional): framebuffer px for light, NDC for suction
     const fbs = canvas.width / cssW;
-    const pr = portal ? portal.r || 0 : 0;
+    // effects follow the visible spark ring when the integrator provides it, else the opening radius
+    const pr = portal ? Math.max(portal.r || 0, portal.ring || 0) : 0;
     const pow = portal ? (portal.power !== undefined ? Math.min(1, Math.max(0, portal.power)) : Math.min(1, pr / 60)) : 0;
     portalOn = pow > 0.002;
     if (portalOn) {
