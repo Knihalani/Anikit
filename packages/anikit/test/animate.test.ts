@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { animate, from, fromTo, set, stagger, engine, flush, FrameBuffer } from '../src/index';
 import { setup, advance, box } from './setup';
-import { _setCodegen, _setNumberTracks, _setCompactFmt } from '../src/animate';
+import { _setCodegen, _setNumberTracks, _setCompactFmt, _setPackGroups } from '../src/animate';
 import { timeline } from '../src/timeline';
 import { _recordCount } from '../src/core';
 import { r3, s3, unitFormat } from '../src/values';
@@ -329,6 +329,101 @@ describe('animate: plain-object write path', () => {
     expect(loop[2][2 * 4 + 1]).toBeLessThan(loop[2][1 * 4 + 1]);
     expect(loop[0][24]).toBeGreaterThan(0); // the setter was called
     expect(loop[1][loop[1].length - 1]).toBeGreaterThan(0); // and onUpdate
+  });
+  it('single-property runs (dense slot tables) match the generic loop through takeovers, kills and reuse', () => {
+    const runOne = (): number[][] => {
+      const objs = Array.from({ length: 8 }, () => ({ x: 0 }));
+      const log: number[] = [];
+      const acc = { get x() { return 0; }, set x(v: number) { log.push(v); } };
+      let updates = 0;
+      const frames: number[][] = [];
+      const snap = () => frames.push([...objs.map((o) => o.x), ...log, -1, updates]);
+      const kf = [0, 50, 10, 80, 20, 90, 30, 100];
+      const a = animate([...objs.slice(0, 4), acc, ...objs.slice(4)], { x: kf }, { duration: 1, ease: 'inOutSine' });
+      advance(0.2);
+      snap();
+      // `onUpdate` Parts on the same key set interleaved with the run.
+      const u = animate([objs[1], objs[5]], { x: [5, 6] }, { duration: 0.3, ease: 'linear', onUpdate: () => updates++ });
+      advance(0.1);
+      snap();
+      // Take one target over without `onUpdate`, then kill the taker: its slot is cleared.
+      const b = animate(objs[2], { x: -50 }, { duration: 0.5, ease: 'linear' });
+      advance(0.2);
+      snap();
+      b.kill();
+      u.kill();
+      advance(0.1);
+      snap();
+      // Freed node indices reused by new Parts (other generations), staggered.
+      a.kill();
+      const c = animate(objs, { x: [1, 2, 3] }, { duration: 0.5, ease: 'linear', delay: stagger(0.05) });
+      advance(0.2);
+      snap();
+      a.seek(0.5); // a killed controller: nothing to write
+      advance(0.1);
+      snap();
+      c.kill();
+      return frames;
+    };
+    const prev = _setCodegen(false);
+    const loop = runOne();
+    _setCodegen(undefined);
+    const gen = runOne();
+    expect(_setCodegen(prev)).toBe(true);
+    expect(gen).toEqual(loop);
+    expect(loop[0][0]).toBeGreaterThan(0);
+    expect(loop[1][loop[1].length - 1]).toBeGreaterThan(0); // onUpdate ran
+    expect(loop[2][2]).toBeLessThan(0); // the takeover wrote objs[2]
+  });
+  it('packed groups (one evaluation per animate() call in the core) write what unpacked ones do', () => {
+    const scenario = (): unknown[][] => {
+      const objs = Array.from({ length: 10 }, (_, i) => ({ x: 0, y: i, o: 1, w: '0px' }));
+      const els = Array.from({ length: 4 }, () => box());
+      let updates = 0;
+      const frames: unknown[][] = [];
+      const snap = () => frames.push([...objs.flatMap((o) => [o.x, o.y, o.o, o.w]), ...els.map(tf), updates]);
+      const a = animate(objs, { x: [0, 50, 10, 80, 20, 90, 30, 100] }, { duration: 1, ease: 'inOutSine', repeat: 1, yoyo: true });
+      const b = animate(objs, { y: 300, o: 0 }, { duration: 0.8, ease: 'outCubic' });
+      const c = animate(objs, { w: (_: unknown, i: number) => `${100 + i}px` }, { duration: 0.6, ease: 'linear' });
+      const d = animate(els, { x: [0, 40, 10, 90], rotate: 30 }, { duration: 0.7, ease: 'outQuad' });
+      // Transforms read from a pack (two single-segment tracks per element).
+      const e = animate(els, { y: 100, scale: 2 }, { duration: 0.9, ease: 'outCubic' });
+      advance(0.2);
+      snap();
+      // Takeovers (one target of each), an onUpdate animation, and seeks/reversal.
+      animate(objs[2], { x: -50, y: 7 }, { duration: 0.5, ease: 'linear' });
+      animate([objs[4], objs[5]], { w: '9px' }, { duration: 0.3, onUpdate: () => updates++ });
+      advance(0.15);
+      snap();
+      a.reverse();
+      advance(0.1);
+      snap();
+      b.seek(0.1);
+      flush();
+      snap();
+      a.seek(1.5);
+      d.pause();
+      advance(0.2);
+      snap();
+      c.kill();
+      d.revert();
+      advance(0.3);
+      snap();
+      advance(2);
+      snap();
+      a.kill();
+      b.kill();
+      e.kill();
+      return frames;
+    };
+    const prev = _setPackGroups(false);
+    const plain = scenario();
+    _setPackGroups(true);
+    const packed = scenario();
+    _setPackGroups(prev);
+    expect(packed).toEqual(plain);
+    expect(plain[0][0]).not.toBe(0);
+    expect(plain[1][plain[1].length - 1]).toBeGreaterThan(0);
   });
   it('both paths are strict: a frozen target throws the same way', () => {
     const attempt = (): string => {

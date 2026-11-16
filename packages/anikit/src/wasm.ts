@@ -30,6 +30,8 @@ export interface Exports {
   ak_callback_create(): number;
   ak_group_add(g: number, c: number, start: number): number;
   ak_group_remove(c: number): number;
+  /** 1 if the group's children were packed (their `ak_values_ptr` moved), else 0. */
+  ak_group_pack(g: number): number;
   ak_spring_create(ch: number, k: number, c: number, m: number): number;
   ak_decay_create(
     ch: number, power: number, tc: number, k: number, c: number, m: number,

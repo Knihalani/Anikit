@@ -335,7 +335,20 @@ export function _setCodegen(on: boolean | undefined): boolean | undefined {
   lastCompact = null;
   return prev;
 }
-function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner] | null {
+/**
+ * Dense tables of a key set, by node index: the handle of the Part writing
+ * through that key set's runner there (0 if none), its target and its output
+ * offset. Only Parts on the compact path without `onUpdate` are entered
+ * (`Part.slot`), and they leave on `release` and `dispose`, so the runner
+ * checks one handle and writes one target per record without loading the
+ * record or the Part (the handle's generation guards reused indices).
+ */
+interface Slots {
+  h: number[];
+  t: unknown[];
+  a: number[];
+}
+function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner, Slots | null] | null {
   if (codegen === false) return null;
   // Strict, like this module: writing to a frozen target or a getter-only
   // property throws here exactly as it does in the generic loop.
@@ -354,18 +367,29 @@ function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner] | null {
     // instead (same number, `Engine::first_outputs`): consecutive targets
     // of one call are consecutive there, not one buffer each. Both loops
     // stop if a setter grew memory (detached views) or, for that array,
-    // created animations (it may have moved: `ak_out0_epoch_ptr`).
+    // created animations (it may have moved: `ak_out0_epoch_ptr`). That loop
+    // also reads the Parts from this key set's dense tables (`Slots`).
     const one = keys.length === 1 && offs[0] === 0;
-    const run = new Function(
-      'return function run(R,U,up,i,n,f,w){"use strict";' +
-        (one ? 'const v0=w.ak_out0_ptr()>>>3,ep=w.ak_out0_epoch_ptr()>>>2,e0=U[ep];' : '') +
-        `for(;i<n;i++){${one ? 'if(U[ep]!==e0)break;' : 'if(f.length===0)break;'}` +
-        `const h=U[up+i];const r=R[h&${INDEX_MASK}];` +
-        'if(r===undefined||r.h!==h||r.run!==run||r.pm!==1||r.upd)break;' +
-        `const t=r.pt,a=r.at;${one ? `t[${JSON.stringify(keys[0])}]=f[v0+(h&${INDEX_MASK})];` : stores}}return i;}`,
-    )() as Runner;
+    const slots: Slots = { h: [], t: [], a: [] };
+    const run = (
+      one
+        ? new Function(
+          'H', 'T',
+          'return function run(R,U,up,i,n,f,w){"use strict";' +
+            'const v0=w.ak_out0_ptr()>>>3,ep=w.ak_out0_epoch_ptr()>>>2,e0=U[ep];' +
+            `for(;i<n;i++){if(U[ep]!==e0)break;const h=U[up+i],x=h&${INDEX_MASK};if(H[x]!==h)break;` +
+            `T[x][${JSON.stringify(keys[0])}]=f[v0+x];}return i;}`,
+        )(slots.h, slots.t)
+        : new Function(
+          'H', 'T', 'A',
+          'return function run(R,U,up,i,n,f,w){"use strict";' +
+            'for(;i<n;i++){if(f.length===0)break;' +
+            `const h=U[up+i],x=h&${INDEX_MASK};if(H[x]!==h)break;` +
+            `const t=T[x],a=A[x];${stores}}return i;}`,
+        )(slots.h, slots.t, slots.a)
+    ) as Runner;
     codegen = true;
-    return [fn, run];
+    return [fn, run, slots];
   } catch {
     // Content-Security-Policy without 'unsafe-eval': probe once, then use the loop.
     codegen = false;
@@ -383,7 +407,7 @@ export function _setCompactFmt(on: boolean): boolean {
 }
 
 /** Key/offset arrays (and their writer and runner) shared by Parts with the same property set (see `Part.prep`). */
-type Compact = [string[], Int32Array, Writer | null, Runner | null];
+type Compact = [string[], Int32Array, Writer | null, Runner | null, Slots | null];
 const compactCache = new Map<string, Compact>();
 /** The entry used last: consecutive Parts (the targets of one call) usually share it, so no signature string is built for them. */
 let lastCompact: Compact | null = null;
@@ -462,7 +486,7 @@ class Part implements NodeRecord, Owner, Linked {
       if (c === undefined) {
         const keys = b.map((x) => x.key), offs = Int32Array.from(b, (x) => x.off);
         const w = makeWriter(keys, offs);
-        c = [keys, offs, w && w[0], w && w[1]];
+        c = [keys, offs, w && w[0], w && w[1], w && w[2]];
         compactCache.set(sig, c);
       }
       lastCompact = shared = c;
@@ -473,6 +497,34 @@ class Part implements NodeRecord, Owner, Linked {
     this.pw = shared[2];
     this.run = shared[3];
     this.pm = 1;
+    const s = shared[4];
+    if (s !== null && !this.upd) {
+      const x = this.h & INDEX_MASK;
+      // Grow the tables densely (holes would make them sparse arrays).
+      while (s.h.length <= x) {
+        s.h.push(0);
+        s.t.push(undefined);
+        s.a.push(0);
+      }
+      s.h[x] = this.h;
+      s.t[x] = t;
+      s.a[x] = this.at;
+      this.slot = s;
+    }
+  }
+  /** The dense tables this Part is entered in (see `Slots`), if any. */
+  slot: Slots | null = null;
+  /** Leave `slot` (before any change to the compact path, and on dispose). */
+  private unslot(): void {
+    const s = this.slot;
+    if (s !== null) {
+      const x = this.h & INDEX_MASK;
+      if (s.h[x] === this.h) {
+        s.h[x] = 0;
+        s.t[x] = undefined;
+      }
+      this.slot = null;
+    }
   }
   render(): void {
     const at = this.at;
@@ -540,6 +592,7 @@ class Part implements NodeRecord, Owner, Linked {
   release(prop: string): void {
     // Hand the last written value back to the binding before leaving path 3.
     if (this.pm === 3) this.b[0].ls = this.last;
+    this.unslot();
     this.pm = 0; // re-check the compact path
     let live = 0;
     for (const x of this.b) {
@@ -556,6 +609,7 @@ class Part implements NodeRecord, Owner, Linked {
   gone = false;
   dispose(): void {
     for (const x of this.b) if (this.claims) unclaim(x.target, x.prop, this);
+    this.unslot();
     unregister(this);
   }
 }
@@ -588,6 +642,14 @@ let numberTracks = true;
 export function _setNumberTracks(on: boolean): boolean {
   const prev = numberTracks;
   numberTracks = on;
+  return prev;
+}
+/** `false`: never pack a multi-target animation's group in the core (tests compare both). */
+let packGroups = true;
+/** Testing hook: turn group packing off/on for animations created afterwards; returns the previous state. */
+export function _setPackGroups(on: boolean): boolean {
+  const prev = packGroups;
+  packGroups = on;
   return prev;
 }
 
@@ -1043,6 +1105,9 @@ export class Animation extends Playable {
     } else if (this._parts.length > 1) {
       this._group = w.ak_group_create(0, 0, 1, 0, 0, -1, FL_FILL_BACKWARDS | FL_FILL_FORWARDS, 1);
       for (const p of this._parts) w.ak_group_add(this._group, p.h, 0);
+      // Children of one layout and timing are evaluated together; their
+      // outputs then live in the pack.
+      if (packGroups && w.ak_group_pack(this._group)) for (const p of this._parts) p.at = w.ak_values_ptr(p.h) >>> 3;
       this._h = this._group;
       const rec: NodeRecord & Linked = {
         h: this._group, at: 0, ctl: this,
