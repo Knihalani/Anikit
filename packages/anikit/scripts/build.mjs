@@ -27,10 +27,12 @@ await build({ ...common, format: 'esm', minify: true, outfile: 'dist/anikit.lean
 const shareCore = {
   name: 'share-core',
   setup(b) {
-    b.onResolve({ filter: /^\.\// }, (a) => (a.importer.endsWith('react.ts') ? { path: './anikit.js', external: true } : undefined));
+    b.onResolve({ filter: /^\.\// }, (a) => (/(react|vue|svelte)\.ts$/.test(a.importer) ? { path: './anikit.js', external: true } : undefined));
   },
 };
-await build({ ...common, entryPoints: ['src/react.ts'], format: 'esm', outfile: 'dist/react.js', external: ['react'], plugins: [shareCore] });
+for (const fw of ['react', 'vue', 'svelte']) {
+  await build({ ...common, entryPoints: [`src/${fw}.ts`], format: 'esm', outfile: `dist/${fw}.js`, external: ['react'], plugins: [shareCore] });
+}
 execFileSync('npx', ['tsc', '--emitDeclarationOnly', '--declaration', '--outDir', 'dist/types'], { stdio: 'inherit' });
 
 const kb = (n) => (n / 1024).toFixed(1) + ' KB';

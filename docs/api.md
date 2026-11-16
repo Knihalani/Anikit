@@ -582,6 +582,19 @@ animate(ball, { scaleY: [1, 0.7], scaleX: [1, 1.25] }, { duration: 1.6, ease: sq
 animate(ball, { rotate: 15 }, { duration: 0.8, ease: customWiggle(5, { type: 'easeInOut' }) });
 ```
 
+## Vue and Svelte: `anikit/vue`, `anikit/svelte`
+
+No framework import needed. Both take a recipe name (or `{ name, options }`) and a setup function run in a `context()` scoped to the element, reverted when the element goes away.
+
+- **Vue:** directives `vRecipe` and `vAnikit`. Register with `app.directive('recipe', vRecipe)` (or use them directly in `<script setup>`), then `<header v-recipe="'hero-reveal'">` and `<div v-anikit="(el) => animate(el, { x: 100 })">`.
+- **Svelte:** actions `recipe` and `anikit`: `<header use:recipe={'hero-reveal'}>`, `<section use:recipe={{ name: 'scroll-story', options: { children: '.card' } }}>`, `<div use:anikit={(el) => { animate(el, { x: 100 }); }}>`.
+
+```ts no-check
+import { createApp } from 'vue';
+import { vRecipe, vAnikit } from 'anikit/vue';
+createApp(App).directive('recipe', vRecipe).directive('anikit', vAnikit).mount('#app');
+```
+
 ## Effects
 
 Over 35 presets. Every one accepts the usual animation options plus `stagger`, `distance`, `from`, `intensity` and `loop`:
@@ -1248,6 +1261,7 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Variants](#variants-variants) | `variants`, `Variants` | `Variant`, `VariantDef`, `VariantTransition`, `VariantsOptions` |
 | [Custom easings](#custom-bounce-and-wiggle-custombounce-customwiggle) | `customBounce`, `customWiggle` | `CustomBounceOptions`, `CustomWiggleOptions` |
 | [Recipes](#recipes-recipe) | `recipe`, `recipeNames` | `RecipeName`, `RecipeOptions`, `RecipeHandle` |
+| [Vue and Svelte](#vue-and-svelte-anikitvue-anikitsvelte) (`anikit/vue`, `anikit/svelte`) | `vRecipe`, `vAnikit`; actions `recipe`, `anikit` | `RecipeParam`, `Directive`, `Binding`, `ActionReturn` |
 | [React](#react-anikitreact) (`anikit/react`) | `useAnikit`, `useAnimate`, `useRecipe`, `useMotionValue`, `useSpring`, `useTransform`, `useScroll`, `Presence` | `PresenceProps`, `ScopedAnimate` |
 | [Layout transitions](#layout-transitions-flip), [presence](#presence-enter-and-exit) and [View Transitions](#view-transitions) | `flip`, `presence`, `Presence`, `enter`, `exit`, `viewTransition` | `FlipOptions`, `FlipState`, `PresenceOptions`, `ViewTransitionOptions`, `ViewTransitionHandle` |
 | [Interaction](#interaction) | `draggable`, `Draggable`, `observer`, `hover`, `press`, `gesture`, `Gesture` | `DraggableOptions`, `Bounds`, `ObserverOptions`, `ObserverEvent`, `GestureOptions` |

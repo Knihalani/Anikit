@@ -177,7 +177,7 @@ Legend: ✅ supported · ⚠️ partial, or only with extra work · ❌ not avai
 | Feature | anikit | GSAP | Motion | anime.js |
 |---|---|---|---|---|
 | TypeScript types | ✅ | ✅ | ✅ | ✅ |
-| React / Vue bindings | ⚠️ `anikit/react`: `useAnikit`, `useAnimate`, `useRecipe`, `useSpring`, `useScroll`, `useTransform`, `useMotionValue`, `<Presence>`; no Vue/Svelte yet | ✅ `@gsap/react` (separate package) | ✅ React; Vue via `motion-v` | ❌ |
+| React / Vue bindings | ⚠️ `anikit/react`: `useAnikit`, `useAnimate`, `useRecipe`, `useSpring`, `useScroll`, `useTransform`, `useMotionValue`, `<Presence>`; `anikit/vue` directives (`v-recipe`, `v-anikit`); `anikit/svelte` actions (`use:recipe`, `use:anikit`) | ✅ `@gsap/react` (separate package) | ✅ React; Vue via `motion-v` | ❌ |
 | Unknown-option and unit warnings with "did you mean" | ✅ `anikit:` warnings | ⚠️ invalid-property warnings | ⚠️ some dev warnings | ❌ |
 | Deterministic fake time for tests | ✅ `testing.useFakeTime`, `advance` | ⚠️ seek the global timeline | ⚠️ `MotionGlobalConfig` skip / instant | ⚠️ manual engine loop |
 | Visual playback inspector | ⚠️ `inspector()` (play, scrub, speed, labels) | ✅ GSDevTools | ❌ | ❌ |
@@ -207,7 +207,7 @@ To ship a designer's After Effects animation, Lottie is still the right tool. an
 
 The honest remaining gaps in anikit, most important first:
 
-1. **Thin framework bindings, no declarative component API.** `anikit/react` has hooks and `<Presence>`, but there are no Vue/Svelte adapters, no `whileHover` / `whileInView` props on components. This is Motion's core audience.
+1. **Thin framework bindings, no declarative component API.** `anikit/react` has hooks and `<Presence>`, and Vue/Svelte get directives and actions, but there are no `whileHover` / `whileInView` props on components. This is Motion's core audience.
 2. **No Lottie / After Effects import.** Designer-authored motion can't be played: everything is code.
 3. **Layout animation is less complete than Motion's.** Box-shadow distortion isn't corrected, radius correction is opt-in, and there's no `Reorder`, no `popLayout` presence mode and no `Flip.fit()`.
 4. **Missing scroll features.** There's no `containerAnimation` for horizontal-scroll sections and no `scrollerProxy` / `normalizeScroll` (mobile address-bar jumps, third-party scrollers). `smoothScroll` has none of ScrollSmoother's `data-speed` / `data-lag` effects (`parallax()` partly covers them).

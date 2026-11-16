@@ -67,6 +67,7 @@ Scaffold: `npx anikit new vanilla|vite|react <dir>`. React hooks: `anikit/react`
 - React: `anikit/react`
 - Variants: `variants`
 - Custom bounce and wiggle: `customBounce`, `customWiggle`
+- Vue and Svelte: `anikit/vue`, `anikit/svelte`
 - Effects
 - Scroll
 - Interaction

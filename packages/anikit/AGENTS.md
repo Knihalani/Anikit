@@ -23,7 +23,7 @@ recipe('parallax-gallery', '.gallery');                      // images drift at 
 
 Or start from a working project: `npx anikit new vanilla my-site` (no build step), `npx anikit new vite my-site`, or `npx anikit new react my-site`. `recipeNames()` lists every recipe (`hero-reveal`, `scroll-story`, `magnetic-buttons`, `text-scramble`, `parallax-gallery`, `stagger-in`, `draw-svg`, `count-up`, `tilt-cards`); each returns a handle with `revert()`. Every option of every API is in `docs/api.schema.json` (JSON Schema). Unknown options and recipe names produce an `anikit:` warning or error with a "did you mean" and a `docs/api.md#…` link.
 
-In React, `import { useRecipe, useAnimate, useAnikit, useSpring, useScroll, Presence } from 'anikit/react'`: everything a hook creates is reverted on unmount.
+In React, `import { useRecipe, useAnimate, useAnikit, useSpring, useScroll, Presence } from 'anikit/react'`: everything a hook creates is reverted on unmount. Vue: `v-recipe` / `v-anikit` directives from `anikit/vue`; Svelte: `use:recipe` / `use:anikit` actions from `anikit/svelte`.
 
 ## Want X → use Y
 
