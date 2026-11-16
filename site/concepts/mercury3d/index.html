@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Anikit — animation engine</title>
+<meta name="description" content="A web animation engine with a Rust core compiled to WebAssembly: timelines, springs, physics, particles and scroll." />
+<meta name="theme-color" content="#030304" />
+<link rel="modulepreload" href="../../../packages/anikit/dist/anikit.lean.js" />
+<link rel="preload" href="../../fonts/InterDisplay-Black.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="../../fonts/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="stylesheet" href="style.css" />
+<script>
+  // Size the static first frame to match the camera before anything paints.
+  (function () { var a = innerWidth / innerHeight; document.documentElement.style.setProperty('--zoom', String(Math.max(1, 1.5 / a))); })();
+</script>
+</head>
+<body>
+<div class="still" aria-hidden="true"><div class="still-floor"></div><div class="still-word">anikit</div></div>
+<canvas id="gl" aria-hidden="true"></canvas>
+
+<header class="top">
+  <span class="brand mono">anikit</span>
+  <nav class="mono"><a href="https://github.com/knihalani/anikit">github</a></nav>
+</header>
+
+<h1 class="sr">anikit — an animation engine for the web, with a Rust core compiled to WebAssembly</h1>
+
+<div class="labels mono" aria-live="off">
+  <p data-beat="-1-7"><b>animation engine</b><span>rust → webassembly</span></p>
+  <p data-beat="7-23"><b>timeline</b><span>scrubbed by scroll</span></p>
+  <p data-beat="23-40"><b>stagger · easing</b><span>48 drops, outBack</span></p>
+  <p data-beat="40-57"><b>world() physics</b><span class="hint">drag a drop, throw it</span></p>
+  <p data-beat="64-79"><b>pointCloud()</b><span>100k points</span></p>
+  <p data-beat="79-88"><b>per frame</b><span>measured, scripts in repo</span></p>
+</div>
+
+<div class="bench mono" aria-hidden="true">
+  <span class="bench-label"><b>43–60×</b> physics vs matter.js</span>
+  <span class="bench-label"><b>20–22×</b> 3D sort vs plain JS</span>
+  <span class="bench-label"><b>3.5–3.8×</b> tweens vs GSAP</span>
+</div>
+
+<div class="install mono">
+  <div class="cmd"><code>npm i anikit</code><button class="copy" type="button">copy</button></div>
+  <a class="gh" href="https://github.com/knihalani/anikit">github →</a>
+</div>
+
+<p class="cue mono" aria-hidden="true">scroll</p>
+
+<main class="track" aria-hidden="true"></main>
+
+<noscript><p class="mono" style="position:fixed;bottom:2rem;left:2rem">npm i anikit</p></noscript>
+<script type="module" src="main.js"></script>
+</body>
+</html>

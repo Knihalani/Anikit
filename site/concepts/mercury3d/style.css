@@ -1,0 +1,52 @@
+@font-face { font-family: 'Inter Display'; src: url('../../fonts/InterDisplay-Black.woff2') format('woff2'); font-weight: 900; font-display: block; }
+@font-face { font-family: 'JetBrains Mono'; src: url('../../fonts/JetBrainsMono-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+:root { --ink: #d9dde4; --dim: #7d828c; --zoom: 1; color-scheme: dark; }
+* { box-sizing: border-box; margin: 0; }
+html { background: #040405; color: var(--ink); -webkit-font-smoothing: antialiased; }
+body { font: 14px/1.5 'JetBrains Mono', ui-monospace, monospace; overflow-x: hidden; }
+.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.track { display: block; height: 1100vh; }
+
+#gl, .still { position: fixed; inset: 0; width: 100%; height: 100%; }
+#gl { opacity: 0; display: block; touch-action: pan-y; }
+html.grabbing, html.grabbing #gl { cursor: grabbing; }
+
+/* The static first frame: the same horizon and wordmark the first rendered frame shows. */
+.still { background: radial-gradient(120% 60% at 50% 62%, #121318 0%, #07080a 45%, #040405 70%); overflow: hidden; }
+.still-floor { position: absolute; left: 0; right: 0; top: 58%; height: 1px; background: linear-gradient(90deg, transparent, #3a2c22 30%, #2b3446 70%, transparent); filter: blur(1px); }
+.still-word {
+  position: absolute; left: 50%; top: 41%; transform: translate(-50%, -50%);
+  font: 900 calc(31vh / var(--zoom)) / 1 'Inter Display', system-ui, sans-serif; letter-spacing: -0.04em;
+  background: linear-gradient(180deg, #f4f6fa 0%, #9aa0aa 38%, #1a1c21 52%, #6b707a 70%, #e9ecf1 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent; white-space: nowrap;
+}
+.no-gl .still { opacity: 1 !important; }
+
+.top { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 22px 28px; z-index: 5; font-size: 13px; letter-spacing: 0.02em; }
+.top .brand { color: var(--ink); }
+.top a { color: var(--dim); text-decoration: none; transition: color .2s; }
+.top a:hover { color: var(--ink); }
+
+.labels p { position: fixed; left: 28px; bottom: 28px; opacity: 0; display: flex; flex-direction: column; gap: 2px; pointer-events: none; z-index: 4; }
+.labels b { font-weight: 400; color: var(--ink); font-size: 13px; letter-spacing: 0.02em; }
+.labels span { color: var(--dim); font-size: 12px; }
+
+.bench-label { position: fixed; left: 0; top: 0; visibility: hidden; white-space: nowrap; font-size: 12px; color: var(--dim); z-index: 4; pointer-events: none; will-change: transform; }
+.bench-label b { color: var(--ink); font-weight: 400; margin-right: 0.6em; font-size: 15px; }
+
+.install { position: fixed; left: 50%; bottom: 9vh; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 14px; opacity: 0; pointer-events: none; z-index: 6; }
+.install.on { pointer-events: auto; }
+.install { margin-left: 0; }
+.cmd { display: flex; align-items: center; gap: 4px; padding: 6px 6px 6px 18px; border-radius: 999px; background: rgba(12, 13, 16, 0.62); border: 1px solid rgba(255,255,255,0.09); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.cmd code { font: inherit; font-size: 15px; color: var(--ink); margin-right: 10px; }
+.copy { font: inherit; font-size: 12px; color: #0a0b0d; background: #d8dce3; border: 0; border-radius: 999px; padding: 7px 14px; cursor: pointer; transition: background .2s; }
+.copy:hover { background: #fff; }
+.gh { color: var(--dim); text-decoration: none; font-size: 12px; }
+.gh:hover { color: var(--ink); }
+
+.cue { position: fixed; right: 28px; bottom: 28px; color: var(--dim); font-size: 12px; z-index: 4; animation: cue 2.4s ease-in-out infinite; }
+html.scrolled .cue { opacity: 0; transition: opacity .6s; animation: none; }
+@keyframes cue { 50% { transform: translateY(4px); opacity: .6; } }
+@media (prefers-reduced-motion: reduce) { .cue { animation: none; } }
+@media (max-width: 600px) { .labels p { left: 18px; bottom: 20px; } .top { padding: 16px 18px; } .cue { right: 18px; bottom: 20px; } }
