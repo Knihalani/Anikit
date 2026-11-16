@@ -19,3 +19,11 @@ Open `site/proto-c/` from a static server at the repo root, after `node scripts/
 - `InstancedMesh.update()` resets per-instance colours, so they are rewritten in the update callback.
 
 `main-standin.js`, `studio-standin.js` and `geometry-standin.js` are the hand-written WebGL stand-in used before `scene()` landed. They are kept for comparison and are not loaded by the page.
+
+## Verification (headless Chromium, SwiftShader)
+
+- No console errors or warnings across load, a full scroll down and back, clicks on parts, hover and drag.
+- First contentful paint is about 130 ms: the page background matches the studio, and the canvas fades in once the first frames are pre-warmed (copies and labels included).
+- Startup work yields between parts. The only long task left is the first one (module, WebAssembly and shader compile), about 200 ms under SwiftShader.
+- Frame times under SwiftShader say nothing about a real GPU. Use `?perf` on the target laptop. Hero: 34 draws, about 50k triangles. Finale: 299 copies × 12 parts as instanced draws, about 1.2M triangles, with copies left out of the shadow pass.
+- Library checks for the `gl.ts` fixes: `tsc --noEmit`, `vitest run test/scene-geometry.test.ts` (8/8), `node scripts/test-browser.mjs scene` (6/6).
