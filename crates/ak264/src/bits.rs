@@ -61,7 +61,7 @@ impl BitWriter {
         self.buf.len() * 8 + self.n as usize
     }
     pub fn byte_aligned(&self) -> bool {
-        self.n % 8 == 0
+        self.n.is_multiple_of(8)
     }
     /// rbsp_trailing_bits: a 1 then zeros to the byte boundary; flushes.
     pub fn trailing(&mut self) {

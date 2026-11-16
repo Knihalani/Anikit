@@ -39,7 +39,7 @@ pub struct EncoderConfig {
 
 impl Default for EncoderConfig {
     fn default() -> Self {
-        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: true, threads: 1, full_range: false, subpel: true, cabac: true }
+        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: false, cabac: true }
     }
 }
 
@@ -533,8 +533,8 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 pred[y * 16..y * 16 + 16].copy_from_slice(&r[y * rs..y * rs + 16]);
             }
         }
-        let mut cost = dsp::satd(src_y, &pred, 16, 16) + mvcost(base_q);
-        let mut mv = base_q;
+        let cost = dsp::satd(src_y, &pred, 16, 16) + mvcost(base_q);
+        let mv = base_q;
         let sad = best.0 - mvcost(base_q);
         Inter { mv, cost, mvp, skip_mv, pred, sad }
     }
@@ -657,7 +657,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         self.mc_chroma(0, mbx, mby, mv, &mut predc[0]);
         self.mc_chroma(1, mbx, mby, mv, &mut predc[1]);
         let mut cd = Coded::new();
-        let q = self.c.q;
+
         let mut recon = [0u8; 256];
         luma_inter(src_y, &pred, &self.c.qs, &mut cd, &mut recon);
         let mut reconc = [[0u8; 64]; 2];
@@ -941,10 +941,10 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
     }
 
     fn emit_skip(&mut self, mbx: usize, mby: usize) {
-        if self.cabac.is_some() {
-            let (a, b) = self.nbrs(mbx, mby);
+        let (a, b) = self.nbrs(mbx, mby);
+        if let Some(cb) = self.cabac.as_mut() {
             let inc = a.map_or(0, |m| !m.skip as usize) + b.map_or(0, |m| !m.skip as usize);
-            self.cabac.as_mut().unwrap().decision(self.w, 11 + inc, 1);
+            cb.decision(self.w, 11 + inc, 1);
         } else {
             self.skip_run += 1;
         }
@@ -1613,7 +1613,7 @@ impl Encoder {
     /// independently encoded chunks can be concatenated).
     pub fn with_idr_base(cfg: EncoderConfig, idr_base: u32) -> Self {
         assert!(cfg.width >= 2 && cfg.height >= 2, "ak264: frame size too small");
-        assert!(cfg.width % 2 == 0 && cfg.height % 2 == 0, "ak264: width and height must be even (4:2:0)");
+        assert!(cfg.width.is_multiple_of(2) && cfg.height.is_multiple_of(2), "ak264: width and height must be even (4:2:0)");
         assert!(cfg.qp <= 51, "ak264: qp must be 0..=51");
         let mbw = (cfg.width as usize).div_ceil(16);
         let mbh = (cfg.height as usize).div_ceil(16);
@@ -1741,7 +1741,6 @@ impl Encoder {
                     width: self.cfg.width,
                     height: self.cfg.height,
                     fps: self.cfg.fps,
-                    qp: self.cfg.qp,
                     full_range: self.cfg.full_range,
                     cabac: self.cfg.cabac,
                 },

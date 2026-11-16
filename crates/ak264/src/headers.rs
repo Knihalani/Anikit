@@ -10,7 +10,6 @@ pub(crate) struct SeqInfo {
     pub width: u32,
     pub height: u32,
     pub fps: f64,
-    pub qp: u8,
     pub full_range: bool,
     pub cabac: bool,
 }

@@ -1,3 +1,4 @@
+#![allow(clippy::needless_range_loop)]
 mod common;
 use ak264::synth::Scene;
 use ak264::*;
@@ -32,8 +33,9 @@ fn roundtrip(cfg: EncoderConfig, frames: &[YuvBuffer], name: &str) -> (Vec<u8>, 
 
 fn cfg(w: u32, h: u32) -> EncoderConfig {
     let deblock = std::env::var("AK264_DEBLOCK").map(|v| v != "0").unwrap_or(true);
+    let subpel = std::env::var("AK264_SUBPEL").map(|v| v != "0").unwrap_or(true);
     let cabac = std::env::var("AK264_CABAC").map(|v| v != "0").unwrap_or(true);
-    EncoderConfig { width: w, height: h, deblock, cabac, ..Default::default() }
+    EncoderConfig { width: w, height: h, deblock, cabac, subpel, ..Default::default() }
 }
 
 #[test]

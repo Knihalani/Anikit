@@ -48,7 +48,7 @@ fn bs(p: &MbInfo, bp: usize, q: &MbInfo, bq: usize, mb_edge: bool) -> u8 {
 /// `o` is the offset of q0 on the first line, `xs` the step across the edge,
 /// `ls` the step along it; `bs[l]` is the strength of line `l`.
 #[inline(always)]
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::manual_clamp)]
 fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: usize, ls: usize, seg: &[u8; 4], p: &Params) {
     let mut v = [[0i16; N]; 8]; // p3 p2 p1 p0 q0 q1 q2 q3
     let vertical = xs == 1;

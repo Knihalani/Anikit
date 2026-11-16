@@ -124,7 +124,7 @@ impl Scene {
                 line += 1;
                 continue;
             }
-            if hash(k * 3 + 1) % 7 != 0 && y0 + gh < h {
+            if !hash(k * 3 + 1).is_multiple_of(7) && y0 + gh < h {
                 let pat = hash(k * 5 + 2);
                 for yy in 0..gh {
                     for xx in 0..gw {

@@ -5,7 +5,7 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     let scene = args.get(1).cloned().unwrap_or("typical".into());
     let n: u32 = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(60);
-    let deblock = std::env::var("DEBLOCK").map(|v| v != "0").unwrap_or(true);
+    let deblock = std::env::var("DEBLOCK").map(|v| v == "1").unwrap_or(false);
     let (w, h) = (1920, 1080);
     let s = Scene::preset(&scene, w, h);
     let bufs: Vec<YuvBuffer> = (0..n).map(|t| s.frame(t)).collect();

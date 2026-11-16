@@ -9,16 +9,6 @@ use crate::frame::Plane;
 const W: usize = 18; // positions -1..=16
 const L: usize = 32; // padded lane count
 
-#[inline(always)]
-fn clip(v: i32) -> u8 {
-    v.clamp(0, 255) as u8
-}
-
-#[inline(always)]
-fn tap6(a: i32, b: i32, c: i32, d: i32, e: i32, f: i32) -> i32 {
-    a - 5 * b + 20 * c + 20 * d - 5 * e + f
-}
-
 pub struct Hpel {
     g: [[u8; L]; W], // G(x, y)          [y+1][x+1]
     b: [[u8; L]; W], // half between x and x+1 at row y
