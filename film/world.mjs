@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CACHE = path.join(HERE, '.cache');
-const VERSION = 'w15';
+const VERSION = 'w20';
 
 export const clamp = (v, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
 export const mix = (a, b, t) => a + (b - a) * t;
@@ -86,8 +86,8 @@ const TABLE = [
   [-420, -10, 30, 72, 112, 0],
   [-530, 40, 90, 160, 70, 3],
   [-700, 104, 150, 220, 50, 5],
-  [-860, 30, 400, 340, 40, 4],
-  [-1050, -30, 650, 450, 40, 0],
+  [-830, 22, 380, 340, 40, 4],
+  [-930, -30, 600, 420, 40, 0],
   [-1400, -30, 700, 450, 40, 0],
 ];
 function profile(z, k) {
@@ -161,19 +161,19 @@ export async function buildWorld(A) {
   const farH = (x, z) => {
     const r = Math.hypot(x, z);
     let h = 120 + 1500 * ridged(x / 5200 + 1.3, z / 5200 + 7.7, 6) * smooth(1500, 9000, r) + 260 * ridged(x / 1500, z / 1500, 4);
-    // The valley beyond the last ridge opens onto a long lake.
-    const vm = Math.exp(-(((x + 300 * Math.sin(z / 2500)) / 1700) ** 2)) * smooth(-900, -2200, z) * (1 - smooth(-11000, -16000, z));
-    h = mix(h, -25 + 30 * N2(x / 900, z / 900), vm);
     // Meet the valley terrain at its edge (no shards where the two meshes join).
     const k = smooth(EXT - 200, EXT + 2600, Math.max(Math.abs(x), Math.abs(z)));
     if (k < 1) h = mix(heightAt(clamp(x, -EXT, EXT), clamp(z, -EXT, EXT)) - 4, h, k);
+    // The valley beyond the last ridge opens onto a long lake (straight on from the valley's).
+    const vm = Math.exp(-(((x + 300 * Math.sin(z / 2500)) / 1500) ** 2)) * smooth(-1000, -1350, z) * (1 - smooth(-11000, -16000, z));
+    h = mix(h, -22 + 6 * N2(x / 900, z / 900), smooth(0.3, 0.7, vm));
     return h;
   };
   const fh = new Float32Array(FN * FN);
   for (let j = 0; j < FN; j++) for (let i = 0; i < FN; i++) fh[j * FN + i] = farH(-FE + i * FS, -FE + j * FS);
   // Cells inside the main terrain are cut out (they would reflect in the lake as a ceiling).
   const farMesh = gridMesh(mesh, FN, FN, (i, j) => [-FE + i * FS, fh[j * FN + i], -FE + j * FS], (i, j) => [i / (FN - 1), j / (FN - 1)],
-    (i, j) => Math.max(Math.abs(-FE + (i + 0.5) * FS), Math.abs(-FE + (j + 0.5) * FS)) < EXT - FS
+    (i, j) => Math.max(Math.abs(-FE + (i + 0.5) * FS), Math.abs(-FE + (j + 0.5) * FS)) < EXT + FS * 0.25
       || (fh[j * FN + i] < -1 && fh[j * FN + i + 1] < -1 && fh[(j + 1) * FN + i] < -1 && fh[(j + 1) * FN + i + 1] < -1));
   log('far mesh');
 
@@ -456,7 +456,7 @@ function bakeTerrain(T, heightAt, groundAt, gh, GN, GS, trees, centerX, log) {
       add(grass, [0.085 + 0.03 * n1, 0.13 + 0.03 * n1, 0.04], [0.36, 0.66, 0.24]);
       add(dry, [0.25, 0.20, 0.09], [0.86, 0.72, 0.32]);
       add(forest, [0.035, 0.06, 0.035], [0.12, 0.44, 0.26]);
-      add(rock, [0.24 + 0.09 * strata, 0.2 + 0.07 * strata, 0.16 + 0.05 * strata], [0.72 - 0.12 * strata, 0.55 - 0.1 * strata, 0.46 - 0.08 * strata]);
+      add(rock, [0.24 + 0.09 * strata, 0.2 + 0.07 * strata, 0.16 + 0.05 * strata], [0.82 - 0.12 * strata, 0.6 - 0.1 * strata, 0.42 - 0.08 * strata]);
       add(sand, [0.2, 0.17, 0.12], [0.96, 0.84, 0.58]);
       const v = 0.82 + 0.3 * (0.5 * n2 + 0.5 * n1);
       for (let q = 0; q < 3; q++) alb[q] *= v;
@@ -469,7 +469,7 @@ function bakeTerrain(T, heightAt, groundAt, gh, GN, GS, trees, centerX, log) {
       real[k * 4 + 3] = 255;
       // Comic: flat palette, two light bands (sun / shade tinted blue-violet).
       const lit = smooth(0.1, 0.16, ndl * sv);
-      const shadeT = [0.48, 0.5, 0.78];
+      const shadeT = [0.56, 0.54, 0.74];
       for (let q = 0; q < 3; q++) comic[k * 4 + q] = Math.round(255 * clamp(cpal[q] * mix(shadeT[q], 1.02, lit) * (0.8 + 0.2 * cav)));
       comic[k * 4 + 3] = 255;
       // Neon: contour lines every 8 m (a brighter one every 40 m), a shoreline, a faint 50 m grid.
@@ -518,7 +518,7 @@ function bakeFar(T, farH, FE) {
     const water = h < 0 ? 1 : 0;
     for (let q = 0; q < 3; q++) {
       const lin = alb[q] * (SUNC[q] * ndl * 1.7 + SKYC[q] * (0.5 + 0.5 * ny) * 1.2);
-      real[k * 4 + q] = water ? 30 : toByte(tone(lin));
+      real[k * 4 + q] = toByte(tone(lin * (water ? 0.75 : 1)));
       comic[k * 4 + q] = Math.round(255 * clamp(cpal[q] * (ndl > 0.12 ? 1 : 0.6)));
     }
     // Neon: contour lines every 60 m (brighter every 300 m), fading with distance from the valley.
