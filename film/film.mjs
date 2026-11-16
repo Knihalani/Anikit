@@ -307,6 +307,7 @@ export default async function film({ anikit: A }) {
     if (look === 'C') { comic(px, dist, comicOut[slot], curT); distCopy[slot].set(dist); return { px: comicOut[slot], dist: distCopy[slot] }; }
     dst.set(px);
     distCopy[slot].set(dist);
+    if (look === 'R') realWater(px, dst, distCopy[slot], curT);
     return { px: dst, dist: distCopy[slot] };
   };
 
@@ -351,8 +352,9 @@ export default async function film({ anikit: A }) {
     return o;
   };
   const WAVE = new Uint8Array(N_PIX); // 0 none, 1 ink dash, 2 glint
-  function waterStrokes(dist) {
-    WAVE.fill(0);
+  const WSW = new Float32Array(N_PIX), WVZ = new Float32Array(N_PIX), WX = new Float32Array(N_PIX), WZ = new Float32Array(N_PIX), WDN = new Float32Array(N_PIX); // water: view depth (0 = not water), world x/z, how steeply we look down
+  function waterStrokes(dist, mode = 'comic', t = 0) {
+    WAVE.fill(0); WVZ.fill(0);
     const c = cam.camera, ex = c.x, ey = c.y - WATER, ez = c.z;
     if (ey < 0.2) return;
     const iv = inv4(cam.viewProjection().matrix);
@@ -360,25 +362,52 @@ export default async function film({ anikit: A }) {
     // Homogeneous far-plane point p(nx, ny) = iv · [nx, ny, 1, 1]; the ray is p.xyz − eye · p.w (linear in nx, ny).
     const P = (nx, ny) => { const r = [0, 1, 2, 3].map((q) => iv[q] * nx + iv[4 + q] * ny + iv[8 + q] + iv[12 + q]); return [r[0] - ex * r[3], r[1] - c.y * r[3], r[2] - ez * r[3]]; };
     const o0 = P(0, 0), ax = P(1, 0).map((v, q) => v - o0[q]), ay = P(0, 1).map((v, q) => v - o0[q]);
-    for (let y = 0; y < H; y++) {
-      const ny = 1 - ((y + 0.5) / H) * 2;
-      for (let x = 0; x < W; x++) {
-        const nx = ((x + 0.5) / W) * 2 - 1;
-        let dy = o0[1] + ax[1] * nx + ay[1] * ny;
+    // Evaluated on 2×2 blocks (written to all four pixels): a quarter of the work.
+    for (let y = 0; y < H; y += 2) {
+      const ny = 1 - ((y + 1) / H) * 2;
+      const ry = o0[1] + ay[1] * ny;
+      if (ry - Math.abs(ax[1]) >= 0) continue; // the whole row looks above the horizon
+      for (let x = 0; x < W; x += 2) {
+        const nx = ((x + 1) / W) * 2 - 1;
+        const dy = ry + ax[1] * nx;
         if (dy >= 0) continue;
         const dx = o0[0] + ax[0] * nx + ay[0] * ny, dz = o0[2] + ax[2] * nx + ay[2] * ny;
         const tt = -ey / dy, vz = tt * (dx * fx + dy * fy + dz * fz);
         const i = y * W + x, d = dist[i];
-        if (vz > 700 || Math.abs(d - vz) > 0.03 * vz + 0.4) continue;
-        const wx = ex + dx * tt, wz = ez + dz * tt;
-        const u = wx / 7, v = wz / 2.4, cu = Math.floor(u), cv = Math.floor(v), hh = hash(cu * 7919 + cv * 104729 + 13);
-        if (hh > 0.42) continue;
-        const fu = u - cu, fv = v - cv - 0.5 - 0.12 * Math.sin(fu * Math.PI);
-        const len = 0.55 + 0.4 * hash(cu * 31 + cv * 17), du = (fu - 0.5) / (len * 0.5);
-        if (Math.abs(du) > 1) continue;
-        const th = (hh < 0.3 ? 0.09 : 0.06) * (1 - du * du) * Math.min(1, 40 / vz + 0.35);
-        if (Math.abs(fv) < th) WAVE[i] = hh < 0.3 ? 1 : 2;
+        if (vz > (mode === 'comic' ? 700 : 30000) || Math.abs(d - vz) > 0.03 * vz + 0.4) continue;
+        const wx = ex + dx * tt, wz = ez + dz * tt, dn = -dy / Math.sqrt(dx * dx + dy * dy + dz * dz);
+        let wv = 0;
+        if (mode !== 'comic') wv = Math.sin(wz * 0.55 + wx * 0.12 + t * 1.6) * 0.6 + Math.sin(wz * 1.7 - wx * 0.4 + t * 2.3) * 0.3 + Math.sin(wz * 0.31 - wx * 0.27 - t * 1.1) * 0.4;
+        if (mode === 'comic') {
+          const u = wx / 7, v = wz / 2.4, cu = Math.floor(u), cv = Math.floor(v), hh = hash(cu * 7919 + cv * 104729 + 13);
+          if (hh <= 0.42) {
+            const fu = u - cu, fv = v - cv - 0.5 - 0.12 * Math.sin(fu * Math.PI);
+            const len = 0.55 + 0.4 * hash(cu * 31 + cv * 17), du = (fu - 0.5) / (len * 0.5);
+            if (Math.abs(du) <= 1) {
+              const th = (hh < 0.3 ? 0.09 : 0.06) * (1 - du * du) * Math.min(1, 40 / vz + 0.35);
+              if (Math.abs(fv) < th) wv = hh < 0.3 ? 1 : 2;
+            }
+          }
+        }
+        const wc = mode === 'comic' ? wv : 0;
+        for (let q = 0; q < 4; q++) { const k = i + (q & 1) + (q >> 1) * W; if (k >= N_PIX) continue; WVZ[k] = vz; WX[k] = wx; WZ[k] = wz; WDN[k] = dn; WAVE[k] = wc; WSW[k] = wv; }
       }
+    }
+  }
+  // Photographic water: a gentle swell bends the reflection (more up close), and looking down
+  // the lake shows its own dark body instead of the mirror (Fresnel).
+  function realWater(src, dst, dist, t) {
+    waterStrokes(dist, 'real', t);
+    const DEEP = [16, 30, 34];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x, vz = WVZ[i];
+      if (vz === 0) continue;
+      const sw = WSW[i];
+      const amp = Math.min(9, 260 / (vz + 20));
+      const sy = Math.min(H - 1, Math.max(0, Math.round(y + sw * amp))), sx = Math.min(W - 1, Math.max(0, Math.round(x + sw * amp * 0.25)));
+      const so = (sy * W + sx) * 4, o = i * 4;
+      const dn = WDN[i], fr = (0.12 + 0.85 * dn * Math.sqrt(dn)) * 0.75;
+      dst[o] = mix(src[so], DEEP[0], fr); dst[o + 1] = mix(src[so + 1], DEEP[1], fr); dst[o + 2] = mix(src[so + 2], DEEP[2], fr);
     }
   }
   function comic(src, dist, out, t) {
