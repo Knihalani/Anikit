@@ -123,7 +123,7 @@ void main() {
   px += drift * e * uView.y / 900.0;
   float alpha = t.a * (1.0 - smoothstep(0.15, 0.85, e));
   vec3 col = t.a > 0.0 ? t.rgb / t.a : vec3(0.0);
-  col = mix(col, mix(uTint, vec3(1.0), 0.35), smoothstep(0.0, 0.45, e));
+  col = mix(col, mix(uTint, vec3(1.0), 0.25), smoothstep(0.0, 0.22, e));
   float r = uCell * (1.25 + e * 1.4);
   vec2 ndc = vec2(px.x / uView.x * 2.0 - 1.0, 1.0 - px.y / uView.y * 2.0);
   ndc += c * r * 2.0 / uView;
