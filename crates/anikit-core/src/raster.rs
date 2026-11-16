@@ -1196,6 +1196,18 @@ impl Raster {
         if MODE != DEPTH {
             self.drawn += 1;
         }
+        // No pixel centre inside the bounds (small and thin triangles between
+        // centres; far-away instances are full of them): nothing to draw. The
+        // 1/16 px margin keeps this conservative against rounding in the span
+        // solve below, so it only skips triangles that write nothing.
+        const M: f32 = 1.0 / 16.0;
+        let cx0 = (crate::math::ceilf(x0.min(x1).min(x2) - 0.5 - M) as isize).max(minx);
+        let cx1 = (crate::math::floorf(x0.max(x1).max(x2) - 0.5 + M) as isize).min(maxx);
+        let cy0 = (crate::math::ceilf(y0.min(y1).min(y2) - 0.5 - M) as isize).max(miny);
+        let cy1 = (crate::math::floorf(y0.max(y1).max(y2) - 0.5 + M) as isize).min(maxy);
+        if cx0 > cx1 || cy0 > cy1 {
+            return;
+        }
         let inv = 1.0 / area;
         // Edge functions; per row, solve for the covered span directly, then
         // walk it with incrementally interpolated depth (and, when shading,
@@ -1206,22 +1218,12 @@ impl Raster {
         let gx = [d[0] * sgn * inv, d[1] * sgn * inv, d[2] * sgn * inv];
         let lerp = |g: &[f32; 3], a: f32, b: f32, c: f32| g[0] * a + g[1] * b + g[2] * c;
         let dz = lerp(&gx, p0.z, p1.z, p2.z);
+        // Shading gradients, set up once the first row has a covered span.
         let (mut dq, mut da, mut fwu, mut fwv, mut tg) = (0.0, [0.0f32; NV], 0.0, 0.0, [0.0f32; 6]);
-        if MODE != DEPTH {
-            let gy = [(x2 - x1) * inv, (x0 - x2) * inv, (x1 - x0) * inv];
-            dq = lerp(&gx, p0.q, p1.q, p2.q);
-            da = core::array::from_fn(|k| lerp(&gx, p0.a[k], p1.a[k], p2.a[k]));
-            // UV footprint per pixel (affine estimate, constant over the triangle) for antialiasing.
-            let (u0, u1, u2) = (p0.a[6] / p0.q, p1.a[6] / p1.q, p2.a[6] / p2.q);
-            let (v0, v1, v2) = (p0.a[7] / p0.q, p1.a[7] / p1.q, p2.a[7] / p2.q);
-            fwu = lerp(&gx, u0, u1, u2).abs() + lerp(&gy, u0, u1, u2).abs();
-            fwv = lerp(&gx, v0, v1, v2).abs() + lerp(&gy, v0, v1, v2).abs();
-            if sh.aniso {
-                tg = [dq, lerp(&gy, p0.q, p1.q, p2.q), da[6], lerp(&gy, p0.a[6], p1.a[6], p2.a[6]), da[7], lerp(&gy, p0.a[7], p1.a[7], p2.a[7])];
-            }
-        }
+        let mut grads = MODE == DEPTH;
         let span = (maxx - minx) as f32;
-        for py in miny..=maxy {
+        // Rows outside cy0..=cy1 hold no pixel centre of the triangle.
+        for py in cy0..=cy1 {
             let fy = py as f32 + 0.5;
             let fx = minx as f32 + 0.5;
             let wv = [e(x1, y1, x2, y2, fx, fy) * sgn, e(x2, y2, x0, y0, fx, fy) * sgn, e(x0, y0, x1, y1, fx, fy) * sgn];
@@ -1240,6 +1242,20 @@ impl Raster {
             }
             if empty || lo > hi {
                 continue;
+            }
+            if !grads {
+                grads = true;
+                let gy = [(x2 - x1) * inv, (x0 - x2) * inv, (x1 - x0) * inv];
+                dq = lerp(&gx, p0.q, p1.q, p2.q);
+                da = core::array::from_fn(|k| lerp(&gx, p0.a[k], p1.a[k], p2.a[k]));
+                // UV footprint per pixel (affine estimate, constant over the triangle) for antialiasing.
+                let (u0, u1, u2) = (p0.a[6] / p0.q, p1.a[6] / p1.q, p2.a[6] / p2.q);
+                let (v0, v1, v2) = (p0.a[7] / p0.q, p1.a[7] / p1.q, p2.a[7] / p2.q);
+                fwu = lerp(&gx, u0, u1, u2).abs() + lerp(&gy, u0, u1, u2).abs();
+                fwv = lerp(&gx, v0, v1, v2).abs() + lerp(&gy, v0, v1, v2).abs();
+                if sh.aniso {
+                    tg = [dq, lerp(&gy, p0.q, p1.q, p2.q), da[6], lerp(&gy, p0.a[6], p1.a[6], p2.a[6]), da[7], lerp(&gy, p0.a[7], p1.a[7], p2.a[7])];
+                }
             }
             let (b0, b1, b2) = ((wv[0] + d[0] * lo) * sgn * inv, (wv[1] + d[1] * lo) * sgn * inv, (wv[2] + d[2] * lo) * sgn * inv);
             let z0 = b0 * p0.z + b1 * p1.z + b2 * p2.z;
