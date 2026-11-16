@@ -134,7 +134,7 @@ All numbers are from a shared 4‑core cloud VM, so treat them as indicative. Re
 
 Per pass in the film-like frame: mirror 41 (half-resolution reflection + glossy floor, drawn after the scene), opaque 118, sky 10, light 18, depth of field 42, camera motion blur 63 ms.
 
-**Film grade** (WebAssembly in Node, 1920×1080, `node packages/anikit/scripts/bench-post.mjs`), each effect on a rendered frame: FXAA 18 ms, bloom 27, streaks 28, god rays 31, lens flares 33, zoom blur 23, aberration 27, grade + vignette + grain 18; the full grade of `film/film.mjs` 99 ms. (The bloom-family rows include the ~17 ms composite pass they share.)
+**Film grade** (WebAssembly in Node, 1920×1080, `node packages/anikit/scripts/bench-post.mjs`), each effect on a rendered frame: FXAA 17–19 ms, bloom 16, streaks 19, god rays 23–24, lens flares 23, zoom blur 21, aberration 16–17, grade + vignette + grain 11; the full grade of `film/film.mjs` 84–85 ms. (The bloom-family rows include the ~11 ms composite pass they share.)
 
 **Core engine** (native, `cargo run --release -p anikit-core --example bench`), per animation per frame:
 

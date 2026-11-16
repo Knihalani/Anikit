@@ -33,7 +33,7 @@ Everything below is on `claude/epic-ramanujan-qe7x4w`. Benchmark numbers come fr
 
 - **Plain-object tweens vs GSAP** (`scripts/bench.mjs`, 100 warm-up frames): 3 numbers 1.3–3.3× faster, colour strings 1.2–1.5× faster; 8-keyframe tracks are still slower (0.5–0.8×). Generated per-shape writers, memoised easing and colour conversions, a timing "lane" for sibling tweens, a fast path for simple from/to tweens.
 - **3D renderer** (wasm, 1080p): camera motion blur 143 → ~55 ms (four taps per SIMD step, per-tile setup, SIMD reprojection, plus a smoothing pass that removes grain in long smears), depth of field −20%, half-resolution mirror reflections ~47 → ~20 ms, sky 23 → 10 ms (half-res grid), point lights culled per instance and per pixel group (~35 → ~20 ms), 3D text 500k → 182k triangles (flat runs merged, watertight-tested).
-- **Film grade** (wasm, 1080p, the full grade of `film/film.mjs`): 147 → ~95 ms (SIMD pixel unpack, fixed-point sampling, FXAA from two saved rows instead of a frame copy, span copies in zoom blur).
+- **Film grade** (wasm, 1080p, the full grade of `film/film.mjs`): 147 → ~84 ms (SIMD pixel unpack and 16-byte group loads, fixed-point sampling, FXAA from two saved rows instead of a frame copy, span copies and slice walks in zoom blur, row-wise box blurs, a grain tile).
 - New benches: `scripts/bench-post.mjs` (grade per effect), a film-like all-passes frame with a per-pass split in `scripts/bench-raster.mjs`, `examples/post3d_bench.rs`, `examples/post_prof.rs`.
 
 ### Developer and agent experience
