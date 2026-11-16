@@ -516,8 +516,7 @@ export function createHall(canvas, overlayEl) {
     if (u.uPool) gl.uniform4fv(u.uPool, POOLS);
   }
 
-  let time = 0, baseFov = 1.12, fovRun = false;
-  const fovK = { v: 0 };
+  let time = 0, baseFov = 1.12;
   // a pool of light over each station: x, z, radius, intensity (intensity follows wake)
   const POOLS = new Float32Array(24);
   function updatePools() {
@@ -724,7 +723,7 @@ export function createHall(canvas, overlayEl) {
     },
     preview(t, dt, k) {
       time = t;
-      const e = k * k * (2.5 - 1.5 * k);
+      const e = k * k * (3 - 2 * k);
       cam.eye[0] = Math.sin(t * 0.21) * 0.25 * (1 - e);
       cam.eye[1] = 2.3 - 0.6 * e + Math.sin(t * 0.5) * 0.04 * (1 - e);
       cam.eye[2] = 15.4 - 3.4 * e;
@@ -750,12 +749,12 @@ export function createHall(canvas, overlayEl) {
     frame(t, dt) {
       time = t;
       watch(dt);
+      // movement is frame-rate independent down to 10 fps; longer gaps (tab switch) are clamped
+      ctl.update(t, Math.min(dt, 0.1));
       dt = Math.min(dt, 0.05);
-      ctl.update(t, dt);
       cam.eye[0] = ctl.pos[0]; cam.eye[1] = ctl.pos[1]; cam.eye[2] = ctl.pos[2];
       cam.yaw = ctl.yaw; cam.pitch = ctl.pitch;
-      if (ctl.running !== fovRun) { fovRun = ctl.running; spring(fovK, { v: fovRun ? 1 : 0 }, { stiffness: 60, damping: 14 }); }
-      cam.fov = baseFov + 0.09 * fovK.v;
+      cam.fov = baseFov;
       updateCamera(cam);
       if (st.ready) {
         updateNear(ctl.pos[0], ctl.pos[2]);

@@ -5,7 +5,9 @@
 
 import { spring, animate } from '../../../packages/anikit/dist/anikit.lean.js';
 
-const WALK = 3.0, RUN = 5.6, EYE = 1.7, RAD = 0.35;
+const WALK = 4.5, RUN = 8.0, EYE = 1.7, RAD = 0.35;
+// stiff, critically damped: ~0.08 s to full speed (omega 50 → k = 2500, c = 2·omega)
+const MOVE = { stiffness: 2500, damping: 100 };
 
 export function createControls(canvas, overlayEl, opts) {
   const pos = new Float32Array([opts.spawn[0], opts.spawn[1], opts.spawn[2]]);
@@ -71,7 +73,7 @@ export function createControls(canvas, overlayEl, opts) {
       if (nf === tf && ns === ts) return;
       tf = nf; ts = ns;
     }
-    spring(mv, { f: tf, s: ts }, { stiffness: 70, damping: 15 });
+    spring(mv, { f: tf, s: ts }, MOVE);
   }
 
   const KEYMAP = { KeyW: 'f', ArrowUp: 'f', KeyS: 'b', ArrowDown: 'b', KeyA: 'l', ArrowLeft: 'l', KeyD: 'r', ArrowRight: 'r', ShiftLeft: 'run', ShiftRight: 'run' };
@@ -176,7 +178,7 @@ export function createControls(canvas, overlayEl, opts) {
         jKnob.style.transform = '';
         jBase.style.opacity = '0'; jKnob.style.opacity = '0';
         tf = ts = 0;
-        spring(mv, { f: 0, s: 0 }, { stiffness: 70, damping: 15 });
+        spring(mv, { f: 0, s: 0 }, MOVE);
       } else if (t.identifier === look.id) {
         if (look.moved < 10 && performance.now() - look.t0 < 300) opts.onUse();
         look.id = -1;
@@ -197,10 +199,7 @@ export function createControls(canvas, overlayEl, opts) {
     active = true;
     // start at the spawn point, looking down the hall
     pos[0] = opts.spawn[0]; pos[1] = opts.spawn[1]; pos[2] = opts.spawn[2];
-    ctl.yaw = 0; ctl.pitch = 0; mv.s = 0; tf = ts = 0;
-    // arrive with a short forward glide that eases into your control
-    mv.f = 1.3;
-    spring(mv, { f: 0, s: 0 }, { stiffness: 9, damping: 6 });
+    ctl.yaw = 0; ctl.pitch = 0; mv.f = mv.s = 0; tf = ts = 0;
     if (!hud.parentNode && overlayEl) overlayEl.appendChild(hud);
     animate(hud, { opacity: 1 }, { duration: 0.8, ease: 'outCubic' });
     tipShown = true; tip.style.opacity = '0.8';
@@ -261,10 +260,10 @@ export function createControls(canvas, overlayEl, opts) {
     const speed = Math.hypot(mv.f, mv.s);
     ctl.speed = speed;
     ctl.running = speed > WALK * 1.25;
-    // footstep-paced bob: one dip per ~0.72 m step
-    bob += speed * dt * Math.PI / 0.72;
+    // a barely-there footstep bob (one dip per ~0.8 m step)
+    bob += speed * dt * Math.PI / 0.8;
     const amp = Math.min(1, speed / WALK);
-    pos[1] = EYE - 0.045 * amp * (1 - Math.abs(Math.cos(bob))) + 0.012 * amp;
+    pos[1] = EYE - 0.012 * amp * (1 - Math.abs(Math.cos(bob)));
     void t;
   }
 
