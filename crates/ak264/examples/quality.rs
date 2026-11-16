@@ -37,6 +37,6 @@ fn main() {
             .output()
             .unwrap();
         let mse: f64 = o.stdout.iter().zip(&src).map(|(&x, &y)| (x as f64 - y as f64).powi(2)).sum::<f64>() / src.len() as f64;
-        println!("{name:28} {:6.0} fps {:6} KB  PSNR {:.2}", n as f64 / dt, out.len() / 1024, 10.0 * (65025.0 / mse).log10());
+        println!("{name:28} {:6.0} fps {:8} B  PSNR {:.3}", n as f64 / dt, out.len(), 10.0 * (65025.0 / mse).log10());
     }
 }
