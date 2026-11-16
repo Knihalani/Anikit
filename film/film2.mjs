@@ -79,8 +79,8 @@ export default async function film2({ anikit: A }) {
   const shards = shatter(monoMesh, { transform: MONO, force: 1500, spin: 700, drag: 0.6, gravity: 250, center: [0, 0, 0] });
 
   // ---- The black hole: a void, a photon ring, a lensed halo and a 100k-point disk ---------
-  const BH = [0, 3200, -45500], RS = 1300, TILT = (-9 * Math.PI) / 180;
-  const sphere = mesh.sphere(1, 64), holeAt = instances(1, () => ({ x: BH[0], y: BH[1], z: BH[2], scale: RS, color: [0, 0, 0] }));
+  const BH = [0, 3200, -45500], RS = 1700, TILT = (-9 * Math.PI) / 180;
+  const sphere = mesh.sphere(48, 96), holeAt = instances(1, () => ({ x: BH[0], y: BH[1], z: BH[2], scale: RS, color: [0, 0, 0] }));
   const photonAt = instances(1, () => ({ x: BH[0], y: BH[1], z: BH[2] + 200, scale: RS * 1.06, color: [1, 1, 1] }));
   const NDISK = 100000, dR = new Float32Array(NDISK), dA = new Float32Array(NDISK), dY = new Float32Array(NDISK), dV = new Float32Array(NDISK);
   const disk = new Float32Array(NDISK * 3), diskCol = new Float32Array(NDISK * 3);
@@ -98,7 +98,7 @@ export default async function film2({ anikit: A }) {
     const b = 1.4 * (1.2 - (hR[i] / RS - 1.12)) * (0.5 + 0.5 * rnd());
     haloCol.set([b, b * 0.75, b * 0.45], i * 3);
   }
-  const NSHELL = 40000, shDir = new Float32Array(NSHELL * 3), shV = new Float32Array(NSHELL), shell = new Float32Array(NSHELL * 3), shellCol = new Float32Array(NSHELL * 3);
+  const NSHELL = 60000, shDir = new Float32Array(NSHELL * 3), shV = new Float32Array(NSHELL), shell = new Float32Array(NSHELL * 3), shellCol = new Float32Array(NSHELL * 3);
   for (let i = 0; i < NSHELL; i++) {
     const u = rnd() * 2 - 1, a = rnd() * Math.PI * 2, s = Math.sqrt(1 - u * u);
     shDir.set([Math.cos(a) * s, u * 0.55, Math.sin(a) * s], i * 3); shV[i] = 0.7 + 0.3 * rnd() ** 0.5;
@@ -135,7 +135,7 @@ export default async function film2({ anikit: A }) {
       bloomThreshold: 0.42, bloomRadius: 50,
       streaks: (t) => 0.45 + 0.35 * smooth(10, 13, t), streakLength: 340,
       rays: (t) => 0.7 * smooth(7.5, 10, t), raysCenter: [0.5, 0.48], raysLength: 0.5,
-      flares: 0.12,
+      flares: 0,
       aberration: (t) => 0.6 + 0.9 * (1 - smooth(0, 4.4, t)), zoomBlur: (t) => 0.1 * (1 - smooth(3.8, 4.8, t)),
       vignette: 0.5, grain: 3.5, contrast: 1.08, saturation: 1.12, exposure: 1.02,
       shadows: [0.0, 0.004, 0.02], highlights: [0.03, 0.012, -0.01],
@@ -162,10 +162,10 @@ export default async function film2({ anikit: A }) {
       }
       for (let i = 0; i < NHALO; i++) {
         const a = hA[i] + 1.4 * c, r = hR[i] * (1 + sn * 0.5);
-        halo[i * 3] = BH[0] + r * Math.cos(a); halo[i * 3 + 1] = BH[1] + r * Math.sin(a) * 0.92; halo[i * 3 + 2] = BH[2] + 300;
+        halo[i * 3] = BH[0] + r * Math.cos(a); halo[i * 3 + 1] = BH[1] + r * Math.sin(a) * 0.92; halo[i * 3 + 2] = BH[2];
       }
       const items = [
-        { mirror: true, mesh: floor, instances: floorAt, material: { metal: 0.6, lines: 1.3, lineColor: [0.25, 0.5, 1.6], grid: [60, 72], lineWidth: 0.02, pulse: 2, pulseCount: 3, pulsePhase: c * 0.5, pulseDir: [0, 0, 0.0002] } },
+        { mirror: true, mesh: floor, instances: floorAt, material: { metal: 0.25, lines: 1.3, lineColor: [0.25, 0.5, 1.6], grid: [60, 72], lineWidth: 0.02, pulse: 2, pulseCount: 3, pulsePhase: c * 0.5, pulseDir: [0, 0, 0.0002] } },
         { mesh: cube, instances: blocks, material: { metal: 0.95, iridescence: 0.55, specular: 1.6, shininess: 140, rim: 0.3, lines: 1.2, lineColor: [0.3, 0.8, 1.8], grid: [1, 1], lineWidth: 0.04, pulse: 2.6, pulseCount: 4, pulsePhase: c * 2.2, pulseDir: [0, 0, 0.0005] } },
         { mesh: cube, instances: avenue, material: { metal: 0.95, iridescence: 0.4, specular: 1.6, shininess: 160, rim: 0.25, lines: 1.4, lineColor: [1.7, 0.35, 1.1], grid: [2, 7], lineWidth: 0.025, pulse: 2.4, pulsePhase: c * 1.5, pulseDir: [0, 0.0012, 0] } },
         c < HIT
@@ -176,7 +176,7 @@ export default async function film2({ anikit: A }) {
         { mesh: ring, instances: photonAt, blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 1.0 * (1 - smooth(SN, SN + 1.5, c)), fog: 0 } },
         { points: stars, colors: starCol, size: 70, intensity: 1.6, streak: 0.6 },
         { points: dust, colors: dustCol, size: 1.6, intensity: 1.6, streak: 3, fog: [1800, 4500] },
-        { points: disk, colors: diskCol, size: 11 + sn * 5, intensity: 0.4 * (1 + 1.5 * Math.exp(-sn * 2) * (sn > 0 ? 1 : 0)), streak: 1 },
+        { points: disk, colors: diskCol, size: 11 + sn * 5, intensity: 0.26 * (1 + 1.5 * Math.exp(-sn * 2) * (sn > 0 ? 1 : 0)), streak: 1 },
         { points: halo, colors: haloCol, size: 10, intensity: 0.5 * (1 - smooth(SN, SN + 1.2, c)) },
       ];
       if (sn > 0) {
@@ -185,7 +185,7 @@ export default async function film2({ anikit: A }) {
           const k = R * shV[i];
           shell[i * 3] = BH[0] + shDir[i * 3] * k; shell[i * 3 + 1] = BH[1] + shDir[i * 3 + 1] * k; shell[i * 3 + 2] = BH[2] + shDir[i * 3 + 2] * k;
         }
-        items.push({ points: shell, colors: shellCol, size: 12, intensity: 1.6 * Math.exp(-sn * 0.5), streak: 1 });
+        items.push({ points: shell, colors: shellCol, size: 15, intensity: 2.4 * Math.exp(-sn * 0.45), streak: 1 });
       }
       // Point lights travel with the camera through the tunnel, then sit by the monoliths.
       const lights = [
