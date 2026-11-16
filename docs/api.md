@@ -863,6 +863,7 @@ npx anikit-render film.mjs --review review/   # contact sheet + pacing report (h
 npx anikit-render film.mjs --profile          # where render time goes: steps, draws, each 3D pass, the grade
 npx anikit-render film.mjs --still 4.5 --watch # re-render that frame on every save (keep the PNG open in a viewer)
 npx anikit-render --check film.mp4            # frame-to-frame check of the rendered video: pops, seams, freezes
+npx anikit-render --doctor                    # can this machine render? Node, @napi-rs/canvas, ffmpeg, a fresh build, fonts
 ```
 
 `--profile` times one frame per second (`--every N` for more) and prints a table per frame plus the mean, the biggest costs and the estimated render time. The same numbers are on every delivered frame as `frame.timing`, a `FrameTiming` (`{ step, draw, read, post, passes }`, milliseconds; `passes` splits `renderer3d` work into `setup`, `mirror`, `opaque`, `sky`, `light`, `dof`, `motionBlur`, `output`), and `r3.stats` holds the last render's passes:

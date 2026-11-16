@@ -22,6 +22,7 @@ Usage
   anikit-render <film.mjs> --preview <N> --out dir/   every Nth frame as JPEG
   anikit-render <film.mjs> --profile [--every N]      where render time goes, per frame and per 3D pass
   anikit-render --check <video.mp4>                   frame-to-frame check of a rendered video: pops, seams, freezes
+  anikit-render --doctor                              check this machine can render (Node, canvas, ffmpeg, build, fonts)
   anikit-render <film.mjs> --out film.mp4 [options]   render the video
 
 Options
@@ -47,7 +48,7 @@ Workflow: --still 2 to look at one frame, --review to check pacing and the whole
 film at a glance (or --preview 15 for full frames), then render. Output never depends on machine speed.`;
 
 const VALUE = ['check', 'out', 'workers', 'from', 'to', 'audio', 'fade-in', 'fade-out', 'fade-color', 'crf', 'preset', 'codec', 'preview', 'still', 'template', 'every', 'sheet-every'];
-const BOOL = ['help', 'init', 'profile', 'watch'];
+const BOOL = ['help', 'init', 'profile', 'watch', 'doctor'];
 /** Flags whose value is optional (`--review` or `--review dir/`). */
 const OPTIONAL = ['review'];
 const fail = (msg) => {
@@ -111,6 +112,12 @@ if (opts.init) {
   copyFileSync(src, dest);
   console.log(`wrote ${dest} (template: ${tpl})\n  look:    npx anikit-render ${name} --still 1.5 --out still.png\n  review:  npx anikit-render ${name} --review review/\n  preview: npx anikit-render ${name} --preview 15 --out preview/\n  render:  npx anikit-render ${name} --out film.mp4`);
   process.exit(0);
+}
+if (opts.doctor) {
+  const node = await import(join(here, '../node/index.mjs'));
+  const r = await node.doctor({ from: process.cwd() });
+  console.log(r.lines.join('\n'));
+  process.exit(r.ok ? 0 : 1);
 }
 if (opts.check !== undefined) {
   // Check a rendered video (no composition module needed).

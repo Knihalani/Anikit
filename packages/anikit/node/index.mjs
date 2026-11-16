@@ -191,6 +191,46 @@ export async function renderPreview(comp, o) {
 }
 
 /**
+ * Check that this machine can render films: Node version, @napi-rs/canvas,
+ * ffmpeg/ffprobe, the built bundle (and, in a source checkout, that it is newer
+ * than the sources), and fonts. Returns `{ ok, lines }`; each failing line
+ * says how to fix it.
+ *
+ *   anikit-render --doctor
+ */
+export async function doctor(o = {}) {
+  const { execFileSync } = await import('node:child_process');
+  const lines = [];
+  let ok = true;
+  const check = (pass, label, fix) => { lines.push(`${pass ? '✓' : '✗'} ${label}${pass || !fix ? '' : `\n    → ${fix}`}`); if (!pass) ok = false; };
+  const major = +process.versions.node.split('.')[0];
+  check(major >= 18, `Node ${process.versions.node}`, 'use Node 18 or newer (22 recommended)');
+  let lib = null;
+  try { lib = canvasLib(o.from); } catch { /* reported below */ }
+  check(!!lib, '@napi-rs/canvas (draws frames in Node)', 'npm i -D @napi-rs/canvas  (in the folder of your film, or next to anikit)');
+  for (const tool of ['ffmpeg', 'ffprobe']) {
+    let v = '';
+    try { v = execFileSync(tool, ['-version']).toString().split('\n')[0].replace(/ Copyright.*/, ''); } catch { /* missing */ }
+    check(!!v, v || tool, `install ${tool} and put it on PATH (apt-get install ffmpeg · brew install ffmpeg · winget install ffmpeg)`);
+  }
+  const dist = join(here, '../dist/anikit.js');
+  check(require_fs.existsSync(dist), 'dist/anikit.js built', 'in packages/anikit: node scripts/build-wasm.mjs && node scripts/build.mjs');
+  if (require_fs.existsSync(dist)) {
+    const warned = [];
+    const orig = console.warn;
+    console.warn = (m) => warned.push(String(m));
+    try { warnIfStale(dist); } finally { console.warn = orig; }
+    check(!warned.length, 'build is up to date with the sources', warned[0]?.replace(/^anikit\/node: /, ''));
+  }
+  if (lib) {
+    const families = (lib.GlobalFonts?.families ?? []).length;
+    lines.push(`${families ? '✓' : '·'} ${families} font families available to ctx.font (register more with node.registerFont(path, family))`);
+  }
+  lines.push(ok ? 'ready: npx anikit-render --init film.mjs, then --still 1 --out still.png' : 'fix the ✗ lines, then run --doctor again');
+  return { ok, lines };
+}
+
+/**
  * Check a rendered video for things a contact sheet can't show: decodes it at
  * 160×90 greyscale with ffmpeg and measures the change between consecutive
  * frames. Reports **spikes** (a frame that changes far more than its

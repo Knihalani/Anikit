@@ -210,6 +210,7 @@ Most of these print an `anikit:` warning that names the fix; read the console.
 Use this when asked for a video, trailer, title sequence, product film or animated clip. Output is frame-exact MP4/WebM; nothing depends on machine speed.
 
 ```bash
+npx anikit-render --doctor                           # first time: checks Node, @napi-rs/canvas, ffmpeg and the build, with fixes
 npx anikit-render --init film.mjs                    # a working starter: 3D cubes + particles + type + impact + grade
 npx anikit-render --init fly.mjs --template journey  # a 3D fly-through: neon city, chrome gates, shattering knot, 3D wordmark
 npx anikit-render film.mjs --preview 15 --out pv/    # every 15th frame as JPEG, fast; look at these before rendering

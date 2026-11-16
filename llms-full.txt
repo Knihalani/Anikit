@@ -216,6 +216,7 @@ Most of these print an `anikit:` warning that names the fix; read the console.
 Use this when asked for a video, trailer, title sequence, product film or animated clip. Output is frame-exact MP4/WebM; nothing depends on machine speed.
 
 ```bash
+npx anikit-render --doctor                           # first time: checks Node, @napi-rs/canvas, ffmpeg and the build, with fixes
 npx anikit-render --init film.mjs                    # a working starter: 3D cubes + particles + type + impact + grade
 npx anikit-render --init fly.mjs --template journey  # a 3D fly-through: neon city, chrome gates, shattering knot, 3D wordmark
 npx anikit-render film.mjs --preview 15 --out pv/    # every 15th frame as JPEG, fast; look at these before rendering
@@ -1732,6 +1733,7 @@ npx anikit-render film.mjs --review review/   # contact sheet + pacing report (h
 npx anikit-render film.mjs --profile          # where render time goes: steps, draws, each 3D pass, the grade
 npx anikit-render film.mjs --still 4.5 --watch # re-render that frame on every save (keep the PNG open in a viewer)
 npx anikit-render --check film.mp4            # frame-to-frame check of the rendered video: pops, seams, freezes
+npx anikit-render --doctor                    # can this machine render? Node, @napi-rs/canvas, ffmpeg, a fresh build, fonts
 ```
 
 `--profile` times one frame per second (`--every N` for more) and prints a table per frame plus the mean, the biggest costs and the estimated render time. The same numbers are on every delivered frame as `frame.timing`, a `FrameTiming` (`{ step, draw, read, post, passes }`, milliseconds; `passes` splits `renderer3d` work into `setup`, `mirror`, `opaque`, `sky`, `light`, `dof`, `motionBlur`, `output`), and `r3.stats` holds the last render's passes:
