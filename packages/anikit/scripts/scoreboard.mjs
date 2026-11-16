@@ -141,5 +141,10 @@ for (const r of rows) {
   const mark = ratio >= 1 ? '' : ' 🔴';
   md += `| ${r.metric} | ${fmt(r.ak)} ${r.unit} | ${r.comp} ${fmt(r.best)} ${r.unit} | ${ratio.toFixed(2)}x${mark} | ${r.target} |\n`;
 }
+// Keep the 3D section that scripts/bench-scene.mjs --record writes (it needs Chromium + WebGL).
+if (existsSync(out)) {
+  const m = /<!-- scene:start -->[\s\S]*?<!-- scene:end -->\n?/.exec(readFileSync(out, 'utf8'));
+  if (m) md += '\n' + m[0];
+}
 writeFileSync(out, md);
 process.stdout.write(md);
