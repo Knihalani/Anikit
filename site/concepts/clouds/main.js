@@ -23,7 +23,8 @@ let sky = null;
 try { sky = createSky(canvas); } catch (e) { console.warn('anikit: sky shader unavailable', e.message); }
 const dprCap = small ? 1.25 : 1.5;
 let vw = innerWidth, vh = innerHeight;
-const fit = () => { const d = Math.min(dprCap, devicePixelRatio || 1); canvas.width = Math.round(vw * d); canvas.height = Math.round(vh * d); };
+let comp = 1; // composite resolution, lowered only when the clouds alone can't hold the frame rate
+const fit = () => { const d = Math.min(dprCap, devicePixelRatio || 1) * comp; canvas.width = Math.round(vw * d); canvas.height = Math.round(vh * d); };
 fit();
 if (sky) sky.scale = small ? 0.32 : 0.42;
 const SMAX = small ? 0.5 : 0.7, SMIN = 0.18;
@@ -125,6 +126,7 @@ function adapt(dt) {
   const ms = dt * 1000;
   if (ms > 19) { slowFor += dt; fastFor = 0; } else if (ms < 17.6) { fastFor += dt; slowFor = 0; }
   if (slowFor > 0.4 && sky.scale > SMIN) { sky.scale = Math.max(SMIN, sky.scale * 0.85); slowFor = 0; }
+  else if (slowFor > 1 && comp > 0.5) { comp = Math.max(0.5, comp * 0.8); fit(); slowFor = 0; }
   if (fastFor > 2.5 && sky.scale < SMAX) { sky.scale = Math.min(SMAX, sky.scale * 1.06); fastFor = 0; }
   stats.scale = sky.scale;
 }

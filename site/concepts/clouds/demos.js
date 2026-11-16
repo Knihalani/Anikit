@@ -151,7 +151,7 @@ export function start({ reduced, fine, small }) {
     let buf = null, i = 0;
     jobs.push((deadline) => {
       buf ??= new Float32Array(N * 3);
-      const end = performance.now() + Math.min(6, Math.max(2, deadline.timeRemaining() - 1));
+      const end = performance.now() + (deadline.didTimeout ? 14 : Math.min(8, Math.max(3, deadline.timeRemaining() - 1)));
       while (i < N && performance.now() < end) { const stop = Math.min(N, i + 2000); for (; i < stop; i++) fn(i, buf, i * 3); }
       if (i < N) return false;
       cloud.shape(k, buf);
@@ -164,7 +164,7 @@ export function start({ reduced, fine, small }) {
     let i = 0, cols = null;
     jobs.push((deadline) => {
       cols ??= new Float32Array(N * 3);
-      const end = performance.now() + Math.min(6, Math.max(2, deadline.timeRemaining() - 1));
+      const end = performance.now() + (deadline.didTimeout ? 14 : Math.min(8, Math.max(3, deadline.timeRemaining() - 1)));
       while (i < N && performance.now() < end) { const stop = Math.min(N, i + 4000); for (; i < stop; i++) { const u = i / N, k = rnd(); const sp = k < 0.04 ? 1.8 : 0.75 + k * 0.35; cols[i * 3] = (0.55 + 0.45 * Math.cos(TAU * u)) * sp; cols[i * 3 + 1] = (0.45 + 0.4 * Math.cos(TAU * (u - 0.33))) * sp; cols[i * 3 + 2] = (0.75 + 0.25 * Math.cos(TAU * (u - 0.66))) * sp; } }
       if (i < N) return false;
       g.colors(N, (j) => [cols[j * 3], cols[j * 3 + 1], cols[j * 3 + 2]]);
@@ -172,11 +172,11 @@ export function start({ reduced, fine, small }) {
     });
   }
   const cloudReady = new Promise((resolve) => {
-    const idle = window.requestIdleCallback || ((f) => setTimeout(() => f({ timeRemaining: () => 8 }), 30));
+    const idle = window.requestIdleCallback || ((f) => setTimeout(() => f({ timeRemaining: () => 8, didTimeout: false }), 30));
     const run = (deadline) => {
       if (!jobs.length) return resolve();
       if (jobs[0](deadline)) jobs.shift();
-      idle(run, { timeout: 500 });
+      idle(run, { timeout: 200 });
     };
     idle(run, { timeout: 500 });
   });
@@ -207,7 +207,7 @@ export function start({ reduced, fine, small }) {
   // 06 · Layout: FLIP.
   once('#layout', () => {
     const grid = $('#tiles');
-    const cols = ['#ff3d8b', '#ff6a3d', '#ffd23d', '#3dffb0', '#3d8bff', '#c86bff'];
+    const cols = ['#ffd2a1', '#f7a97e', '#e08c9b', '#a996d4', '#7d9ce0', '#f4e6cf'];
     for (let i = 0; i < 12; i++) {
       const t = document.createElement('div');
       t.className = 'tile';
