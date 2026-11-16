@@ -62,14 +62,16 @@ pub enum Order {
 
 /// Bytes needed for an I420 frame of `w × h` (even dimensions).
 pub fn i420_len(w: usize, h: usize) -> usize {
-    w * h + 2 * ((w / 2) * (h / 2))
+    w * h + 2 * (w.div_ceil(2) * h.div_ceil(2))
 }
 
 /// Convert packed RGBA/BGRA to planar I420 (Y, then U, then V), BT.709
-/// limited range. `w` and `h` must be even. `out` needs [`i420_len`] bytes.
+/// limited range. `out` needs [`i420_len`] bytes. Odd sizes round the chroma
+/// planes up (as ffmpeg and WebCodecs lay them out): the last column / row of
+/// chroma averages the edge pixels it covers.
 pub fn rgba_to_i420(src: &[u8], w: usize, h: usize, order: Order, out: &mut [u8]) {
     let (ri, bi) = if order == Order::Rgba { (0, 2) } else { (2, 0) };
-    let (ysz, csz) = (w * h, (w / 2) * (h / 2));
+    let (ysz, csz) = (w * h, w.div_ceil(2) * h.div_ceil(2));
     let (yp, rest) = out.split_at_mut(ysz);
     let (up, vp) = rest.split_at_mut(csz);
     // BT.709 limited-range coefficients × 256.
@@ -85,10 +87,12 @@ pub fn rgba_to_i420(src: &[u8], w: usize, h: usize, order: Order, out: &mut [u8]
             *yv = (((YR * r + YG * g + YB * b + 128) >> 8) + 16) as u8;
         }
     }
-    let cw = w / 2;
-    for cy in 0..h / 2 {
+    let cw = w.div_ceil(2);
+    for cy in 0..h.div_ceil(2) {
+        // An odd height pairs the last row with itself.
+        let y1 = (2 * cy + 1).min(h - 1);
         let r0 = &src[(2 * cy) * w * 4..(2 * cy + 1) * w * 4];
-        let r1 = &src[(2 * cy + 1) * w * 4..(2 * cy + 2) * w * 4];
+        let r1 = &src[y1 * w * 4..(y1 + 1) * w * 4];
         let uo = &mut up[cy * cw..(cy + 1) * cw];
         let vo = &mut vp[cy * cw..(cy + 1) * cw];
         for (((a, b), u), v) in r0.chunks_exact(8).zip(r1.chunks_exact(8)).zip(uo.iter_mut()).zip(vo.iter_mut()) {
@@ -98,6 +102,15 @@ pub fn rgba_to_i420(src: &[u8], w: usize, h: usize, order: Order, out: &mut [u8]
             let bl = (a[bi] as i32 + a[4 + bi] as i32 + b[bi] as i32 + b[4 + bi] as i32 + 2) >> 2;
             *u = (((-26 * r - 86 * g + 112 * bl + 128) >> 8) + 128).clamp(0, 255) as u8;
             *v = (((112 * r - 102 * g - 10 * bl + 128) >> 8) + 128).clamp(0, 255) as u8;
+        }
+        if w % 2 == 1 {
+            // An odd width: the last chroma column covers one pixel column (counted twice).
+            let (a, b) = (&r0[(w - 1) * 4..w * 4], &r1[(w - 1) * 4..w * 4]);
+            let r = (2 * a[ri] as i32 + 2 * b[ri] as i32 + 2) >> 2;
+            let g = (2 * a[1] as i32 + 2 * b[1] as i32 + 2) >> 2;
+            let bl = (2 * a[bi] as i32 + 2 * b[bi] as i32 + 2) >> 2;
+            uo[cw - 1] = (((-26 * r - 86 * g + 112 * bl + 128) >> 8) + 128).clamp(0, 255) as u8;
+            vo[cw - 1] = (((112 * r - 102 * g - 10 * bl + 128) >> 8) + 128).clamp(0, 255) as u8;
         }
     }
 }
@@ -994,6 +1007,38 @@ mod tests {
         for (i, p) in ab.chunks_exact_mut(4).enumerate() { p[0] = (i % w * 16) as u8; p[1] = 77; }
         fx.apply(&mut ab, w, h, &Post { aberration: 4.0, ..Default::default() });
         assert!(ab.chunks_exact(4).all(|p| p[1] == 77));
+    }
+
+    #[test]
+    fn i420_odd_sizes_round_chroma_up_and_match_even_blocks() {
+        // A 5×3 frame: chroma planes are 3×2 (ffmpeg's layout), and every chroma
+        // sample equals the one from the same frame padded to 6×4 by repeating the
+        // edge pixels (which is what averaging the covered pixels means).
+        let (w, h) = (5usize, 3usize);
+        let px: alloc::vec::Vec<u8> = (0..w * h * 4).map(|i| ((i * 53 + 7) % 251) as u8).collect();
+        assert_eq!(i420_len(w, h), 15 + 2 * 6);
+        let mut out = alloc::vec![0u8; i420_len(w, h)];
+        rgba_to_i420(&px, w, h, Order::Rgba, &mut out);
+        let (pw, ph) = (6usize, 4usize);
+        let mut pad = alloc::vec![0u8; pw * ph * 4];
+        for y in 0..ph {
+            for x in 0..pw {
+                let s = (y.min(h - 1) * w + x.min(w - 1)) * 4;
+                pad[(y * pw + x) * 4..(y * pw + x) * 4 + 4].copy_from_slice(&px[s..s + 4]);
+            }
+        }
+        let mut po = alloc::vec![0u8; i420_len(pw, ph)];
+        rgba_to_i420(&pad, pw, ph, Order::Rgba, &mut po);
+        assert_eq!(&out[15..15 + 6], &po[24..24 + 6], "U");
+        assert_eq!(&out[21..27], &po[30..36], "V");
+        for y in 0..h {
+            assert_eq!(&out[y * w..(y + 1) * w], &po[y * pw..y * pw + w], "Y row {y}");
+        }
+        // 1×1 and empty frames don't panic.
+        let mut one = alloc::vec![0u8; i420_len(1, 1)];
+        rgba_to_i420(&[255, 0, 0, 255], 1, 1, Order::Rgba, &mut one);
+        assert_eq!(one.len(), 3);
+        rgba_to_i420(&[], 0, 0, Order::Rgba, &mut []);
     }
 
     #[test]

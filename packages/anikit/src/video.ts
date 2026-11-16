@@ -278,7 +278,9 @@ export class FrameBuffer {
   /** I420 of the current frame (view, valid until the next call). */
   i420(order: 'rgba' | 'bgra' = 'rgba'): Uint8Array {
     const p = core().ak_video_i420(this.id, order === 'bgra' ? 1 : 0);
-    return new Uint8Array(W!.memory.buffer, p, this.width * this.height * 1.5);
+    // Chroma planes round up for odd sizes (ffmpeg's and WebCodecs' I420 layout).
+    const c = Math.ceil(this.width / 2) * Math.ceil(this.height / 2);
+    return new Uint8Array(W!.memory.buffer, p, this.width * this.height + 2 * c);
   }
   free(): void {
     if (this.id >= 0) core().ak_video_free(this.id);

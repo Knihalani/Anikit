@@ -179,8 +179,8 @@ def post(frame: np.ndarray, *, t: Optional[float] = None, seed: int = 0, **optio
 
 def rgba_to_i420(frame: np.ndarray, order: str = "rgba") -> np.ndarray:
     """Convert an RGBA (or ``order="bgra"``) frame to planar I420 — Y
-    (``w*h``), then U and V (``w/2 * h/2`` each), BT.709 limited range — as a
-    flat uint8 array. Width and height must be even."""
+    (``w*h``), then U and V (``ceil(w/2) * ceil(h/2)`` each, ffmpeg's layout
+    for odd sizes), BT.709 limited range — as a flat uint8 array."""
     _check_frame(frame)
     h, w = frame.shape[:2]
     buf = _frame_bytearray(frame)

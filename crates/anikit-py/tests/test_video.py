@@ -143,8 +143,14 @@ def test_rgba_to_i420():
     blue = frame(2, 2, 0)
     blue[..., 2] = 255
     assert np.array_equal(video.rgba_to_i420(red), video.rgba_to_i420(blue, order="bgra"))
-    with pytest.raises(ValueError):
-        video.rgba_to_i420(frame(3, 2))
+
+
+def test_rgba_to_i420_odd_sizes_use_ffmpeg_layout():
+    for w, h in [(5, 3), (1, 1), (63, 35)]:
+        yuv = video.rgba_to_i420(frame(w, h, 255))
+        c = ((w + 1) // 2) * ((h + 1) // 2)
+        assert yuv.shape == (w * h + 2 * c,)
+        assert (yuv[: w * h] == 235).all() and (yuv[w * h :] == 128).all()
     with pytest.raises(ValueError):
         video.rgba_to_i420(frame(2, 2), order="argb")
 
