@@ -157,16 +157,24 @@ export async function renderToFile(comp, o) {
   const canvas = o.canvas ?? canvasLib().createCanvas(w, h);
   const t0 = Date.now();
   let n = 0;
-  await comp.render({
-    canvas, from: o.from, to: o.to, preroll: o.preroll, readPixels, createCanvas: (w, h) => canvasLib().createCanvas(w, h),
-    onFrame: async (fr) => {
-      // Copy out of wasm memory: the pipe may not drain before the next frame.
-      const wait = write(Buffer.from(fr.i420()));
-      if (wait) await wait;
-      n++;
-      o.onProgress?.(fr, n, (Date.now() - t0) / 1000);
-    },
-  });
+  // `o.stopAfter(index)`: end the video after this frame (the CLI hands the rest of
+  // a slow slice to an idle worker); unwinds out of render() with a sentinel.
+  const STOP = Symbol('stop');
+  try {
+    await comp.render({
+      canvas, from: o.from, to: o.to, preroll: o.preroll, readPixels, createCanvas: (w, h) => canvasLib().createCanvas(w, h),
+      onFrame: async (fr) => {
+        // Copy out of wasm memory: the pipe may not drain before the next frame.
+        const wait = write(Buffer.from(fr.i420()));
+        if (wait) await wait;
+        n++;
+        o.onProgress?.(fr, n, (Date.now() - t0) / 1000);
+        if (o.stopAfter?.(fr.index)) throw STOP;
+      },
+    });
+  } catch (e) {
+    if (e !== STOP) throw e;
+  }
   ff.stdin.end();
   await done;
   return { frames: n, seconds: (Date.now() - t0) / 1000 };
