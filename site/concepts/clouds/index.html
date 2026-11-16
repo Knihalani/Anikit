@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Anikit — animation engine</title>
+<meta name="description" content="A web animation engine with a Rust/WebAssembly core: tweens, springs, timelines, physics, particles, solid 3D, scroll, SVG and text." />
+<meta name="theme-color" content="#1b2238" />
+<link rel="modulepreload" href="sky.js" />
+<link rel="modulepreload" href="../../../packages/anikit/dist/anikit.lean.js" />
+<link rel="preload" href="../../../packages/anikit/dist/anikit.wasm" as="fetch" type="application/wasm" crossorigin />
+<link rel="preload" href="../../fonts/Inter-Medium.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="stylesheet" href="clouds.css" />
+</head>
+<body>
+<canvas class="sky" id="sky" aria-hidden="true"></canvas>
+<p class="hud mono" id="hud"><span>Clouds ray marched live in your browser.</span> <span id="hud-live"></span></p>
+
+<nav class="nav">
+  <a class="brand" href="#top">anikit</a>
+  <div class="nav-links mono">
+    <a href="#physics">Demos</a>
+    <a href="#numbers">Benchmarks</a>
+    <a href="#install">Install</a>
+  </div>
+</nav>
+
+<main>
+  <header class="hero" id="top">
+    <h1>anikit</h1>
+    <p class="lede">An animation engine for the web, with a Rust core compiled to WebAssembly.</p>
+  </header>
+
+  <div class="bank" aria-hidden="true"></div>
+  <section class="demo stop" id="physics">
+    <div class="stick"><div class="panel">
+      <p class="kicker mono">01 · Physics</p>
+      <h2>Bodies</h2>
+      <div class="stage-box world-box" id="world-box"></div>
+      <div class="row"><span class="mono dim">Throw the letters</span></div>
+      <code class="snippet mono">world({ gravity: [0, 2200] }).dragging()</code>
+    </div></div>
+  </section>
+
+  <div class="bank" aria-hidden="true"></div>
+  <section class="demo stop" id="cloud">
+    <div class="stick"><div class="panel">
+      <p class="kicker mono">02 · Particles</p>
+      <h2><span id="cloud-n">100,000</span> particles</h2>
+      <div class="stage-box"><canvas class="cloud-canvas" id="cloud-canvas" aria-label="A particle cloud morphing between a sphere, a ring and a torus knot"></canvas></div>
+      <div class="row"><span class="mono dim">Click to scatter</span></div>
+      <code class="snippet mono">pointCloud(100_000).morph(1, { duration: 2 })</code>
+    </div></div>
+  </section>
+
+  <div class="bank" aria-hidden="true"></div>
+  <section class="demo stop" id="text">
+    <div class="stick"><div class="panel">
+      <p class="kicker mono">03 · Text</p>
+      <h2>Split text</h2>
+      <div class="stage-box text-box"><p class="reveal" id="reveal">Every letter starts a little later than the last.</p></div>
+      <div class="row"><button class="pill" id="reveal-btn">Replay</button><span class="mono dim" id="reveal-ease">ease: spring</span></div>
+      <code class="snippet mono">animate(splitText(el).chars, { yPercent: [110, 0] }, { delay: stagger(0.02) })</code>
+    </div></div>
+  </section>
+
+  <div class="bank" aria-hidden="true"></div>
+  <section class="demo stop" id="springs">
+    <div class="stick"><div class="panel">
+      <p class="kicker mono">04 · Springs</p>
+      <h2>Springs</h2>
+      <div class="stage-box" id="spring-box"></div>
+      <div class="row"><button class="pill mag">Stiff</button><button class="pill mag">Bouncy</button><button class="pill mag">Slow</button></div>
+      <code class="snippet mono">spring(dot, { x, y }, { stiffness: 260, damping: 16 })</code>
+    </div></div>
+  </section>
+
+  <div class="bank" aria-hidden="true"></div>
+  <section class="demo stop" id="svg">
+    <div class="stick"><div class="panel">
+      <p class="kicker mono">05 · SVG</p>
+      <h2>Morph, scrubbed by scroll</h2>
+      <div class="stage-box">
+        <svg class="svg-demo" viewBox="0 0 520 300" aria-hidden="true">
+          <path id="blob" />
+          <path id="trail" d="M10 250 C 120 40 220 300 300 150 S 440 30 510 120" />
+          <circle id="rider" r="9" />
+        </svg>
+      </div>
+      <div class="row"><span class="mono dim">Scroll to draw the path</span></div>
+      <code class="snippet mono">timeline().add(path, { d: star(…) }).add(path, { d: circle(…) })</code>
+    </div></div>
+  </section>
+
+  <div class="bank" aria-hidden="true"></div>
+  <section class="demo stop" id="layout">
+    <div class="stick"><div class="panel">
+      <p class="kicker mono">06 · Layout</p>
+      <h2>FLIP</h2>
+      <div class="stage-box tiles-box"><div class="tiles" id="tiles"></div></div>
+      <div class="row"><button class="pill" id="shuffle">Shuffle</button><button class="pill" id="regrid">Change layout</button></div>
+      <code class="snippet mono">flip('.tile', () => shuffle(grid), { ease: 'spring(bounce: .2)' })</code>
+    </div></div>
+  </section>
+
+  <div class="bank" aria-hidden="true"></div>
+  <section class="demo stop numbers" id="numbers">
+    <div class="stick"><div class="panel wide">
+      <p class="kicker mono">07 · Speed</p>
+      <h2>Benchmarks</h2>
+      <p class="dim">From the scripts in <code>packages/anikit/scripts</code>.</p>
+      <div class="n-stats">
+        <div class="n-stat"><b><span class="n-count" data-to="43" data-dec="0">43</span>×</b><p class="mono">faster than matter.js<br />250 colliding bodies · bench-physics.mjs</p></div>
+        <div class="n-stat"><b><span class="n-count" data-to="0.37" data-dec="2">0.37</span><small>ms</small></b><p class="mono">100,000 objects per frame<br />batch(), 3 channels · bench.mjs</p></div>
+        <div class="n-stat"><b><span class="n-count" data-to="150" data-dec="0">150</span>k</b><p class="mono">particles rendered in 6.2–6.8 ms<br />Chromium · bench-cloud.mjs</p></div>
+      </div>
+      <div class="n-chart" role="img" aria-label="100,000 objects, one frame: GSAP 3 5.85 ms, anikit animate() 3.68 ms, anikit batch() 0.37 ms">
+        <p class="mono n-cap">100,000 objects · one frame · ms (lower is faster)</p>
+        <div class="n-row"><span class="mono">GSAP 3</span><i><u style="--w:1"></u></i><em class="n-count" data-to="5.85" data-dec="2">5.85</em></div>
+        <div class="n-row me"><span class="mono">anikit animate()</span><i><u style="--w:0.629"></u></i><em class="n-count" data-to="3.68" data-dec="2">3.68</em></div>
+        <div class="n-row me"><span class="mono">anikit batch()</span><i><u style="--w:0.063"></u></i><em class="n-count" data-to="0.37" data-dec="2">0.37</em></div>
+        <p class="mono n-cap dim">bench.mjs, one run · docs/perf-notes.md</p>
+      </div>
+    </div></div>
+  </section>
+
+  <div class="bank tall" aria-hidden="true"></div>
+  <section class="above" id="install">
+    <div class="stick">
+      <div class="install" id="install-core">
+        <div class="install-row">
+          <code class="mono" id="install-cmd">npm install anikit</code>
+          <button class="pill solid" id="copy">Copy</button>
+        </div>
+        <p class="mono dim">pip install anikit · MIT</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
