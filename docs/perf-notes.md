@@ -950,6 +950,7 @@ New scripts (in `packages/anikit/scripts/`):
 | `node scripts/bench-trigger.mjs` (`PIN=1`) | Chromium: creating N scrubbed `scrollTrigger`s and `refreshScrollTriggers()`, against GSAP's ScrollTrigger |
 | `node scripts/bench-marquee.mjs` | Chromium: M `marquee()` rows down a long page (about 3 on screen), set-up and ms per frame including the style and layout work it causes |
 | `node scripts/bench-gif.mjs` | `encodeGif()` (what `record()` runs on its frames): flat UI frames and a full-frame moving gradient, ms per frame and file size |
+| `node scripts/bench-drag.mjs` (`FORCE=0`) | Chromium: `draggable()` against GSAP's Draggable, µs per synthetic pointer move and ms for the release (throw set-up) |
 | `node scripts/bench-world-draw.mjs` | Chromium: `world().draw()` on a 2D canvas, N bodies, ms per frame including the raster |
 | `cargo run --release -p anikit-core --example gif_prof` | native GIF encoder on gradient frames (a callgrind target) |
 | `bench-scroll.mjs` | now takes `PKG=` (a copy of `packages/anikit`) to measure another version of the source |
@@ -1036,6 +1037,15 @@ the same runs):
 (`flip()` from `bench-text.mjs`: Anikit's capture is one batch of reads and
 its start is transforms only; GSAP's `Flip.from` at 1000 boxes spends seconds
 in its own measuring.)
+
+`bench-drag.mjs` (code unchanged, one run, median of 3 pages, 500 synthetic
+moves): with a forced style + layout after every event, Anikit 10.6–11.2 µs
+per move vs GSAP 5.4–6.2 µs, because Anikit writes the transform inside the
+event (so `onDrag` sees the element where it is) and GSAP on its next tick;
+without the forced layout (`FORCE=0`, handler cost only) 5.2 vs 5.6 µs. Real
+pointer moves arrive once per frame in Chromium, where both pay one style
+recalc per frame. The release with `inertia` (velocity, bounds, throw start)
+takes 0.20–0.30 ms vs GSAP's 0.60–0.90 ms.
 
 ### 1. Retargeted springs kept everything alive (memory leak)
 
@@ -1125,9 +1135,9 @@ smaller gain: 13.6 → 13.1 ms per gradient frame on its own).
 
 ### Not measured in this round
 
-`draggable()`/`gesture()` (read: one `getBoundingClientRect` per press, one
-transform write per move, no reads in the move path; ctrl-wheel pinch reads
-the box per event), `observer()`, `smoothScroll()` and `scroll({ smooth })`
+`gesture()` (read: one `getBoundingClientRect` per press, one transform
+write per move, no reads in the move path; ctrl-wheel pinch reads the box per
+event), `observer()`, `smoothScroll()` and `scroll({ smooth })`
 (both retarget a spring per event, so they get §1), `magnetic()` (one
 `getBoundingClientRect` per element per pointer move, then a spring retarget:
 also §1), `parallax()` (a `scroll()` link per element), `presence`/`exit`,
@@ -1140,5 +1150,7 @@ For the record, one run each of the existing scripts on the final build
 250 bodies 0.060 vs 4.82 (81x), 1000 0.361 vs 9.49 (26x), 2000 0.445 vs
 12.6 (28x), 5000 1.08 vs 14.1 (13x); `bench-3d.mjs` (projection vs plain JS)
 10k points 0.103 vs 2.06 ms (20x), 100k 1.23 vs 29.5 ms (24x), 500k 6.99 vs
-200 ms (29x).
+200 ms (29x); `bench-cloud.mjs` (Chromium, step + render at 1080×675, ms
+per frame) 10k particles 2.53, 50k 4.30, 150k 12.36, 300k 17.49 (100k sits
+between 50k and 150k, roughly half a 60 fps frame).
 
