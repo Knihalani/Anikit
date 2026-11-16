@@ -257,6 +257,7 @@ pub struct Raster {
     tiles: Vec<[f32; 2]>,
     /// Per-tile 16.16 sample step and start offset for the motion-blur cleanup pass.
     tile_step: Vec<[i32; 4]>,
+    tile_taps: Vec<TileTaps>,
     alpha: Vec<f32>,
     row_px: Vec<u32>,
     /// Half-resolution packed RGB written by the blur passes for [`Raster::blend_half`].
@@ -287,6 +288,18 @@ pub struct Raster {
     /// shaded once. Front-to-back instance order already keeps overdraw low,
     /// so this only pays off for heavily self-overlapping single meshes.
     pub prepass: bool,
+}
+
+/// Motion-blur taps for one velocity tile: length, 1/count, spacing, count
+/// (0 = still) and the 16.16 step between taps.
+#[derive(Clone, Copy, Debug, Default)]
+struct TileTaps {
+    ln: f32,
+    inv_n: f32,
+    dd: f32,
+    n: u32,
+    dfx: i32,
+    dfy: i32,
 }
 
 /// Everything the pixel shader needs for one instance.
@@ -1370,6 +1383,20 @@ impl Raster {
         let (wi, hi) = (bw as isize - 1, bh as isize - 1);
         const N: usize = 8;
         let lanes = V4::new(0.0, 1.0, 2.0, 3.0);
+        // Per tile: tap count and spacing (shared by every pixel that picks the tile).
+        let mut taps = core::mem::take(&mut self.tile_taps);
+        taps.clear();
+        taps.extend(self.tiles.iter().map(|vn| {
+            let ln2 = vn[0] * vn[0] + vn[1] * vn[1];
+            if ln2 < 0.25 {
+                return TileTaps::default();
+            }
+            let ln = crate::math::sqrtf(ln2);
+            // Taps spaced ≤ ~2.5 half-res px apart (jittered), 3 to N of them.
+            let n = ((ln * 0.4) as usize + 3).min(N);
+            let inv_n = 1.0 / n as f32;
+            TileTaps { ln, inv_n, dd: inv_n * ln, n: n as u32, dfx: (vn[0] * inv_n * 65536.0) as i32, dfy: (vn[1] * inv_n * 65536.0) as i32 }
+        }));
         for by in 0..bh {
             for bx in 0..bw {
                 let j = by * bw + bx;
@@ -1381,26 +1408,22 @@ impl Raster {
                 let jy = ((hs >> 12) & 7) as isize - 4;
                 let tx = ((bx as isize + jx).clamp(0, wi) as usize) / T;
                 let ty = ((by as isize + jy).clamp(0, hi) as usize) / T;
-                let vn = self.tiles[ty * tw + tx];
-                let ln2 = vn[0] * vn[0] + vn[1] * vn[1];
-                if ln2 < 0.25 {
+                let tt = taps[ty * tw + tx];
+                if tt.n == 0 {
                     self.half_px[j] = c0 & 0x00ff_ffff;
                     continue;
                 }
-                let ln = crate::math::sqrtf(ln2);
+                let (vn, ln, n, inv_n, dd) = (self.tiles[ty * tw + tx], tt.ln, tt.n as usize, tt.inv_n, tt.dd);
                 let (zc, ilc) = unpack(vel[j]);
                 let kz = 1.0 / (0.02 * zc.abs().max(1.0));
                 let jit = (hs >> 8) as f32 * (1.0 / 16_777_216.0) - 0.5;
-                // Taps spaced ≤ ~2.5 half-res px apart (jittered), 3 to N of them.
-                let n = ((ln * 0.4) as usize + 3).min(N);
-                let inv_n = 1.0 / n as f32;
                 // Taps march along the tile velocity in 16.16 fixed point: one
                 // float→int conversion per pixel instead of two per tap.
                 let h0 = (0.5 + jit * 0.95) * inv_n - 0.5;
                 let fx0 = ((bx as f32 + 0.5 + vn[0] * h0) * 65536.0) as i32;
                 let fy0 = ((by as f32 + 0.5 + vn[1] * h0) * 65536.0) as i32;
-                let (dfx, dfy) = ((vn[0] * inv_n * 65536.0) as i32, (vn[1] * inv_n * 65536.0) as i32);
-                let (dd, d0) = (inv_n * ln, h0 * ln);
+                let (dfx, dfy) = (tt.dfx, tt.dfy);
+                let d0 = h0 * ln;
                 let (mut fx, mut fy) = (fx0, fy0);
                 // Four taps per step: scalar gathers, weights and accumulation
                 // in SIMD lanes (one lane per tap; lanes past n weigh zero).
@@ -1438,6 +1461,7 @@ impl Raster {
                 self.half_px[j] = q(acc[0]) | q(acc[1]) << 8 | q(acc[2]) << 16;
             }
         }
+        self.tile_taps = taps;
         // 3b. The jittered taps leave grain inside long smears (taps there are
         //     several pixels apart). Average four samples of the result spread
         //     over 1.5 tap spacings along the tile velocity: the smear is
