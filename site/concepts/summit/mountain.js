@@ -123,12 +123,12 @@ void main() {
   // high cirrus: stretched noise on a plane
   if (d.y > 0.02) {
     vec2 uv = d.xz / (d.y + 0.08) * 1.2 + vec2(uT * 0.004, 0.0);
-    vec2 q = uv * vec2(1.0, 4.5);
+    vec2 q = uv * vec2(1.0, 2.4);
     float n = vnoise(q * 1.3) * 0.55 + vnoise(q * 2.9 + 3.1) * 0.28 + vnoise(q * 6.1 + 7.7) * 0.17;
     float band = vnoise(uv * 0.35 + 11.0);
     float cir = smoothstep(0.52, 0.85, n) * smoothstep(0.35, 0.75, band) * smoothstep(0.02, 0.2, d.y) * (1.0 - smoothstep(0.55, 0.9, d.y));
     vec3 cc = uSunCol * (0.55 + 0.9 * pow(max(s, 0.0), 6.0)) + uAmb * 0.5;
-    c = mix(c, cc, cir * 0.22);
+    c = mix(c, cc, cir * 0.18);
   }
   o = vec4(tonemap(c), uSkyAlpha);
 }`;
@@ -1294,7 +1294,8 @@ onmessage = () => {
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, luts[1]);
     driftX = t * 0.0025 + pp * 0.15; driftY = -t * 0.001;
 
-    const pitchBase = aspect < 1 ? 0.05 : -0.02;
+    // a very slow breath (~0.3 degrees) so the view never feels like a still
+    const pitchBase = (aspect < 1 ? 0.05 : -0.02) + 0.0045 * Math.sin(t * 0.55) + 0.0015 * Math.sin(t * 0.23 + 1.0);
     const savedPitch = cam.pitch; cam.pitch = savedPitch + pitchBase;
     buildCamera(cam.push);
     cam.pitch = savedPitch;
@@ -1305,7 +1306,7 @@ onmessage = () => {
     const wH = wW * word.aspect;
     const maxH = 0.42 * 2 * dist * tanY; // never taller than ~42% of the height
     const wordS = wH > maxH ? wW * maxH / wH : wW;
-    const elev = Math.atan(0.5 * tanY) + pitchBase;
+    const elev = Math.atan(0.5 * tanY) + (aspect < 1 ? 0.05 : -0.02);
     wordC[0] = 0; wordC[1] = EYE_Y + Math.sin(elev) * dist; wordC[2] = -Math.cos(elev) * dist;
 
     gl.viewport(0, 0, canvas.width, canvas.height);
