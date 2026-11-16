@@ -5,6 +5,10 @@ import { gsap } from 'gsap';
 import { animate as motionAnimate } from 'motion';
 
 const q = new URLSearchParams(location.search);
+// Startup: when the core is usable, in ms since navigation (bundle parse,
+// base64 decode and WebAssembly compile included). Printed by MANUAL=1.
+window.readyAt = NaN;
+ak.ready.then(() => (window.readyAt = performance.now()));
 import { setTypedOM } from '../src/props';
 setTypedOM(q.get('typed') === '1');
 const lib = q.get('lib');

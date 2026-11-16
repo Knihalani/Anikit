@@ -42,7 +42,8 @@ for (const n of sizes) {
     if (MANUAL) {
       await page.evaluate(() => window.start());
       const ms = await page.evaluate(() => window.manualFrames(100));
-      console.log(`${lib.padEnd(20)} ${String(n).padStart(5)}   ${ms.toFixed(3).padStart(8)}`);
+      const readyAt = await page.evaluate(() => window.readyAt);
+      console.log(`${lib.padEnd(20)} ${String(n).padStart(5)}   ${ms.toFixed(3).padStart(8)}${lib.startsWith('anikit') ? `   (core ready ${readyAt.toFixed(1)} ms after navigation)` : ''}`);
       await page.close();
       continue;
     }
