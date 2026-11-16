@@ -13,7 +13,7 @@ const $ = (s) => document.querySelector(s);
 // ---------------------------------------------------------------------------
 // Geometry: a (2, 3) torus knot cut into seven tube pieces
 // ---------------------------------------------------------------------------
-const PIECES = 7, PER = 64, TUBE = 46;
+const PIECES = 7, PER = 64, OVER = 3, TUBE = 46;
 const knotAt = (t) => {
   const r = 210 + 95 * Math.cos(3 * t);
   return [r * Math.cos(2 * t), r * Math.sin(2 * t), -95 * Math.sin(3 * t)];
@@ -21,10 +21,12 @@ const knotAt = (t) => {
 const pieces = [];
 for (let k = 0; k < PIECES; k++) {
   const pts = [];
-  for (let j = 0; j <= PER; j++) pts.push(knotAt(((k + j / PER) / PIECES) * Math.PI * 2));
+  // Each piece runs OVER points into its neighbours, so its rounded caps hide inside
+  // them while the knot is whole, and it reads as a solid part once it leaves.
+  for (let j = -OVER; j <= PER + OVER; j++) pts.push(knotAt(((k + j / PER) / PIECES) * Math.PI * 2));
   const c = pts.reduce((a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length, a[2] + p[2] / pts.length], [0, 0, 0]);
-  // Rounded-off ends so each piece reads as a solid part once it leaves the knot.
-  const radii = pts.map((_, j) => { const e = Math.min(j, PER - j); return e === 0 ? 0.3 : e === 1 ? 0.78 : e === 2 ? 0.95 : 1; });
+  const caps = [0, 0.6, 0.85, 0.96];
+  const radii = pts.map((_, j) => caps[Math.min(j, pts.length - 1 - j)] ?? 1);
   const m = mesh.tube(pts.map((p) => [p[0] - c[0], p[1] - c[1], p[2] - c[2]]), { radius: TUBE, sides: 20, radii });
   pieces.push({ mesh: m, c, inst: instances(1), dir: (() => { const l = Math.hypot(...c) || 1; return [c[0] / l, c[1] / l, c[2] / l]; })() });
 }
@@ -90,7 +92,7 @@ const rotate = (rx, ry, rz, p) => {
   return [m[0] * p[0] + m[3] * p[1] + m[6] * p[2], m[1] * p[0] + m[4] * p[1] + m[7] * p[2], m[2] * p[0] + m[5] * p[1] + m[8] * p[2]];
 };
 
-let sy = scrollY, t = 0;
+let sy = scrollY, syRaw = scrollY, t = 0;
 const intro = { v: reduced || scrollY > 10 ? 0 : 1 };
 const pose = (k, out) => {
   const knotScale = small ? 0.62 : 0.86;
@@ -113,7 +115,7 @@ const pose = (k, out) => {
   const T = tops[k];
   const dock = (out2) => {
     const px = small ? vw / 2 : vw / 2 + T.side * vw * 0.235;
-    const py = small ? T.top + vh * 0.21 - sy : T.top + T.h / 2 - sy;
+    const py = small ? T.top + vh * 0.21 - syRaw : T.top + T.h / 2 - syRaw; // raw scroll: stays attached to its section
     const [wx, wy] = toWorld(px, py);
     out2.x = wx; out2.y = wy; out2.z = 0;
     out2.rx = 25 + tilt.x * 0.6 + Math.sin(t * 0.7 + k) * 12; out2.ry = t * 24 + k * 50 + tilt.y * 0.6; out2.rz = k * 30;
@@ -127,7 +129,7 @@ const pose = (k, out) => {
   // F: re-formed above the install command.
   const f = ease(clamp((sy - (installTop - vh * 1.05)) / (vh * 0.95)));
   if (f > 0) {
-    const [fx, fy] = toWorld(vw / 2, Math.max(vh * (small ? 0.25 : 0.27), installBottom - sy - vh * (small ? 0.75 : 0.73)));
+    const [fx, fy] = toWorld(vw / 2, Math.max(vh * (small ? 0.25 : 0.27), installBottom - syRaw - vh * (small ? 0.75 : 0.73)));
     const fs = small ? 0.46 : 0.52, frx = 58 + tilt.x, fry = t * 14 + tilt.y, frz = t * 6;
     const fc = rotate(frx, fry, frz, P.c);
     x = mix(x, fx + fc[0] * fs, f); y = mix(y, fy + fc[1] * fs, f); z = mix(z, fc[2] * fs, f);
@@ -198,11 +200,10 @@ const items = pieces.map((p, k) => ({
 const env = { transparent: true, background: '#06070b', sky: [0.05, 0.06, 0.12], horizon: [0.5, 0.42, 0.7], ground: [0.02, 0.02, 0.03], strips: [2.6, 2.6, 2.9], key: [-0.4, 0.6, 0.7], keyColor: [1, 0.95, 0.9], fill: [0.6, -0.2, 0.5], fillColor: [0.3, 0.4, 0.9], rimColor: [0.9, 0.5, 1] };
 let avg = 6, last = -1, frames = 0, minMs = Infinity, calibrated = false, stats = { ms: 0, w: 0, h: 0 };
 window.__stage = stats;
-const slow = (window.__slow = []);
 const frame = (dt) => {
-  const f0 = performance.now();
   if (!reduced) t += Math.min(dt, 50) / 1000;
-  sy += (scrollY - sy) * (reduced ? 1 : 1 - Math.exp(-dt / 70));
+  syRaw = scrollY;
+  sy += (syRaw - sy) * (reduced ? 1 : 1 - Math.exp(-dt / 70));
   if (Math.abs(scrollY - sy) < 0.5) sy = scrollY;
   if (reduced) {
     if (sy === last) return; // reduced motion: draw only when the scroll changes
@@ -221,20 +222,18 @@ const frame = (dt) => {
   r3.render(cam, items, env);
   const ms = performance.now() - t0;
   avg = avg * 0.9 + ms * 0.1;
-  stats.ms = avg; stats.w = W; stats.h = H; stats.last = ms; stats.passes = r3.stats;
+  stats.ms = avg; stats.w = W; stats.h = H; stats.last = ms;
   // One calibration step: if even the fastest of the first 60 frames took over 7 ms
   // (the minimum ignores frames slowed by other work), drop the resolution once.
   if (frames < 60) minMs = Math.min(minMs, ms);
   if (++frames === 60 && minMs > 7 && !calibrated) { calibrated = true; calFactor = Math.max(0.6, Math.sqrt(6 / minMs)); scale *= calFactor; fit(); }
   if (!canvas.classList.contains('on')) canvas.classList.add('on');
-  const total = performance.now() - f0;
-  if (total > 12 && slow.length < 50) slow.push({ y: scrollY, total: +total.toFixed(1), r3: +ms.toFixed(1), passes: r3.stats });
 };
 engine.onFrame((_t, dt) => frame(dt));
 if (intro.v) animate(intro, { v: 0 }, { duration: 1.6, ease: 'spring(bounce: 0.18, duration: 1.4)', delay: 0.1 });
 if (location.search.includes('debug')) {
   // Profiling hook: render the pose at scroll position y, n times, and return the times.
-  window.__at = (y, n = 5) => { const out = []; for (let i = 0; i < n; i++) { sy = y; for (let k = 0; k < PIECES; k++) pose(k, pieces[k].inst); const a = performance.now(); r3.render(cam, items, env); out.push(+(performance.now() - a).toFixed(1)); } return out; };
+  window.__at = (y, n = 5) => { const out = []; for (let i = 0; i < n; i++) { sy = syRaw = y; for (let k = 0; k < PIECES; k++) pose(k, pieces[k].inst); const a = performance.now(); r3.render(cam, items, env); out.push(+(performance.now() - a).toFixed(1)); } return out; };
 }
 
 // ---------------------------------------------------------------------------
