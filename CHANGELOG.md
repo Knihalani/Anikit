@@ -1,5 +1,17 @@
 # Changelog
 
+## Eighth round, developer experience (2026-11-16)
+
+- **`recipe(name, el, options)`**: nine one-call patterns composed from the primitives (`hero-reveal`, `scroll-story`, `magnetic-buttons`, `text-scramble`, `parallax-gallery`, `stagger-in`, `draw-svg`, `count-up`, `tilt-cards`), each revertible and tracked by `context()`.
+- **`variants()`**: Motion-style named states with `delayChildren`, `staggerChildren` and `when` orchestration.
+- **`customBounce()`** (with a squash companion ease) and **`customWiggle()`** (five wiggle types).
+- **Framework adapters**: `anikit/react` (`useAnikit`, `useAnimate`, `useRecipe`, `useMotionValue`, `useSpring`, `useTransform`, `useScroll`, `<Presence>`), `anikit/vue` directives and `anikit/svelte` actions. They import the main bundle, so there's one engine.
+- **`npx anikit new vanilla|vite|react <dir>`**: a scaffold that writes a working starter.
+- **Machine-readable docs**: `docs/api.schema.json`, a JSON Schema of all 52 options types generated from the TS types (`npm run schema`; `npm run typecheck` fails when it's stale, and it ships as `anikit/api.schema.json`); `llms.txt` has a quick start; `AGENTS.md` opens with a five-line page.
+- **Warnings link to the docs**: unknown-option warnings end with a `docs/api.md#…` link, and a test checks that every link target exists.
+- **`docs/parity.md`**: feature-by-feature comparison with GSAP (core and every plugin), Motion, anime.js v4 and Lottie, plus an honest list of gaps.
+- **`npm run treeshake`**: an esbuild metafile check, per entry, that small imports (`animate`, `timeline`, `recipe`, `spring`, `scrollTrigger`, the React hooks) don't pull in heavy modules.
+
 ## Eighth round (2026-11-16, to 18:05 UTC)
 
 Details and interleaved before/after runs are in `docs/perf-notes.md` under "Eighth round (core)", "(DOM)" and "(video)".

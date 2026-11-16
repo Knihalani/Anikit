@@ -76,3 +76,16 @@ describe('recipe()', () => {
     root.remove();
   });
 });
+
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { DOC_ANCHORS } from '../src/debug';
+describe('doc links in warnings', () => {
+  it('point at headings that exist in docs/api.md', () => {
+    const md = readFileSync(join(__dirname, '../../../docs/api.md'), 'utf8');
+    const slugs = new Set(md.split('\n').filter((l) => /^#{2,3} /.test(l)).map((l) =>
+      l.replace(/^#+ /, '').toLowerCase().replace(/[^\p{L}\p{N} _-]/gu, '').replace(/ /g, '-')));
+    const missing = Object.entries(DOC_ANCHORS).filter(([, a]) => !slugs.has(a));
+    expect(missing).toEqual([]);
+  });
+});
