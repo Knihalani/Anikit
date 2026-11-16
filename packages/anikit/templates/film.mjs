@@ -15,11 +15,12 @@ export default async function film({ anikit: A, node }) {
   const film = composition({
     width: W, height: H, fps: 60, duration: 6,
     motionBlur: { samples: 2, shutter: 0.5 },
-    post: { bloom: 0.5, bloomThreshold: 0.7, vignette: 0.35, grain: 4 },
+    post: { aa: 1, bloom: 0.8, bloomThreshold: 0.55, streaks: 0.35, vignette: 0.4, grain: 4, contrast: 1.06 },
   });
   film.impact(1.0, { shake: 24, flash: '#ffffff', flashOpacity: 0.5, aberration: 6 });
 
-  // Solid 3D: 2,000 lit cubes on a camera that orbits.
+  // Solid 3D: 2,000 cubes on a camera that orbits. Dark chrome bodies; the colour
+  // lives in light (glowing edges, a travelling pulse, a few emissive accents).
   const cam = scene3d({ fov: 45, width: W, height: H, near: 5, far: 20000 });
   const r3 = renderer3d({ width: W, height: H });
   const cube = mesh.cube();
@@ -42,9 +43,14 @@ export default async function film({ anikit: A, node }) {
       for (let i = 0; i < N; i++) {
         const p = ease('outExpo', Math.min(1, Math.max(0, (t - 0.2 - (i / N) * 0.6) / 0.8)));
         const [x, y, z] = target(i);
-        cubes.set(i, { x: x * p, y: y * p - (1 - p) * 900, z: z * p, rx: (1 - p) * 360, ry: i, scale: 18, color: i % 9 ? '#ece6da' : '#ff3b14' });
+        cubes.set(i, { x: x * p, y: y * p - (1 - p) * 900, z: z * p, rx: (1 - p) * 360, ry: i, scale: 18, color: i % 9 ? [0.05, 0.055, 0.07] : [1.6, 0.25, 0.08] });
       }
-      const px = r3.render(cam, [{ mesh: cube, instances: cubes }], { background: '#07080b', fog: [900, 4000] });
+      const material = { metal: 0.8, specular: 1.3, shininess: 100, emissive: 0.6, lines: 1.4, grid: [1, 1], lineWidth: 0.06, lineColor: [1.5, 0.55, 0.3], pulse: 2.2, pulsePhase: t * 1.5, pulseDir: [0, 0.006, 0] };
+      const px = r3.render(cam, [{ mesh: cube, instances: cubes, material }], {
+        background: '#07080b', fog: [900, 4000], fogColor: [0.03, 0.03, 0.05],
+        sky: [0.02, 0.025, 0.05], horizon: [0.35, 0.18, 0.2], ground: [0.01, 0.01, 0.015], strips: [1.6, 1.6, 1.8],
+        key: [0.3, 0.6, -0.7], keyColor: [1, 0.85, 0.75],
+      });
       ctx.putImageData(new globalThis.ImageData(px, W, H), 0, 0);
       g.render(cam, cloud, { size: 1.3, intensity: 0.4 });
       ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.drawImage(gt.canvas, 0, 0, W, H); ctx.restore();
