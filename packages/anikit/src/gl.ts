@@ -1445,7 +1445,6 @@ export class Scene {
     this.stats.drawCalls++;
   }
 
-  private byDepth = (a: Object3D, b: Object3D) => b.depth - a.depth;
   /** GPU texture for a map source; re-uploaded only when a live source's `version` changes. */
   private mapTexture(src: MapSource): WebGLTexture | null {
     const gl = this.gl;
@@ -1477,6 +1476,7 @@ export class Scene {
     return e.tex;
   }
 
+  private byDepth = (a: Object3D, b: Object3D) => b.depth - a.depth;
 
   private makeShadowMap(): void {
     const gl = this.gl, n = this.shadowSize;

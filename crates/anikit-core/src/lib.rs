@@ -12,7 +12,7 @@
 //! * [`stagger`] — 1D/2D stagger distributions
 //! * [`css`] — export easings to native CSS (`linear()`)
 #![no_std]
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 
 extern crate alloc;
 #[cfg(any(test, feature = "std"))]
@@ -26,6 +26,7 @@ pub mod color;
 pub mod css;
 pub mod easing;
 pub mod emitter;
+pub mod gsplat;
 pub mod engine;
 pub mod gif;
 pub mod math;
