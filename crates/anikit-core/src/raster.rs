@@ -301,9 +301,27 @@ struct Shade<'a> {
     tex: Option<&'a Texture>,
     /// Shadow map: depth, size, light view-projection, bias, strength.
     shadow: Option<(&'a [f32], usize, M4, f32, f32)>,
+    /// Point lights that can reach the current instance (see `cull_lights`).
+    pl: [[f32; 8]; 8],
+    npl: usize,
 }
 
 impl Shade<'_> {
+    /// Keep only the point lights whose reach (4 × radius, where the falloff
+    /// window ends) touches the instance's bounding sphere `(c, r)`.
+    #[inline]
+    fn cull_lights(&mut self, c: [f32; 3], r: f32) {
+        let l = self.l;
+        self.npl = 0;
+        for pl in &l.point_lights[..(l.point_count as usize).min(8)] {
+            let (dx, dy, dz) = (pl[0] - c[0], pl[1] - c[1], pl[2] - c[2]);
+            let reach = 4.0 * pl[6] + r;
+            if dx * dx + dy * dy + dz * dz < reach * reach {
+                self.pl[self.npl] = *pl;
+                self.npl += 1;
+            }
+        }
+    }
     #[inline(always)]
     fn set_base(&mut self, b: [f32; 3]) {
         let (m, l) = (self.m, self.l);
@@ -530,13 +548,17 @@ impl Shade<'_> {
             (Some(tx), 1) => core::array::from_fn(|k| tx[k] * (dk * kk[k] + df * kf[k] + ka[k]) + sp * l.key_color[k] + rim * l.rim_color[k]),
             _ => core::array::from_fn(|k| ka[k] + dk * kk[k] + df * kf[k] + sp * l.key_color[k] + rim * l.rim_color[k]),
         };
-        if l.point_count > 0 {
+        if self.npl > 0 {
             // Local lights: diffuse (tinted by the base / texture) + Schlick specular.
             let b = self.base;
-            for pl in &l.point_lights[..(l.point_count as usize).min(8)] {
+            for pl in &self.pl[..self.npl] {
                 let lv = [pl[0] - p[0], pl[1] - p[1], pl[2] - p[2]];
                 let d2 = dot3(&lv, &lv).maxf(1e-6);
                 let r2 = pl[6] * pl[6];
+                // All four pixels beyond the falloff window: nothing to add.
+                if d2.to_array().iter().all(|d| *d >= 16.0 * r2) {
+                    continue;
+                }
                 let win = (1.0 - d2 * (1.0 / (16.0 * r2))).clamp(0.0, 1.0);
                 let att = r2 / (d2 + r2) * win * win * pl[7];
                 let il = 1.0 / d2.sqrt();
@@ -742,6 +764,8 @@ impl Raster {
             lit: [[0.0; 3]; 3],
             tex,
             shadow: if self.shadows_on && blend != Blend::DepthOnly { Some((shadow_depth, self.shadow_size, self.shadow_vp, self.shadow_bias, self.shadow_strength)) } else { None },
+            pl: [[0.0; 8]; 8],
+            npl: 0,
         };
         // Front-to-back: nearer instances fill the depth buffer first, so the
         // depth test rejects hidden pixels early.
@@ -784,6 +808,13 @@ impl Raster {
         if count == 0 {
             return;
         }
+        let lights_on = light.point_count > 0 && blend != Blend::DepthOnly;
+        let sphere = |ii: usize| {
+            let m = &instances[ii * INSTANCE_STRIDE..ii * INSTANCE_STRIDE + 12];
+            let c = [m[0] * bc[0] + m[3] * bc[1] + m[6] * bc[2] + m[9], m[1] * bc[0] + m[4] * bc[1] + m[7] * bc[2] + m[10], m[2] * bc[0] + m[5] * bc[1] + m[8] * bc[2] + m[11]];
+            let s2 = (m[0] * m[0] + m[1] * m[1] + m[2] * m[2]).max(m[3] * m[3] + m[4] * m[4] + m[5] * m[5]).max(m[6] * m[6] + m[7] * m[7] + m[8] * m[8]);
+            (c, br * crate::math::sqrtf(s2))
+        };
         if count > 1 && blend == Blend::Opaque {
             let d2 = |i: u32| {
                 let b = i as usize * INSTANCE_STRIDE;
@@ -857,6 +888,10 @@ impl Raster {
                     let inst = &instances[ii * INSTANCE_STRIDE..(ii + 1) * INSTANCE_STRIDE];
                     sh.set_base([inst[12], inst[13], inst[14]]);
                     sh.phase = mat.pulse_phase + dot([inst[9], inst[10], inst[11]], mat.pulse_dir);
+                    if lights_on {
+                        let (c, r) = sphere(ii);
+                        sh.cull_lights(c, r);
+                    }
                     if pre {
                         self.tris::<SHADE_EQ>(mesh, oi * nv, cull_back, &sh);
                     } else {
@@ -870,6 +905,10 @@ impl Raster {
                     let inst = &instances[ii * INSTANCE_STRIDE..(ii + 1) * INSTANCE_STRIDE];
                     sh.set_base([inst[12], inst[13], inst[14]]);
                     sh.phase = mat.pulse_phase + dot([inst[9], inst[10], inst[11]], mat.pulse_dir);
+                    if lights_on {
+                        let (c, r) = sphere(ii);
+                        sh.cull_lights(c, r);
+                    }
                     self.tris::<GLOSS>(mesh, oi * nv, cull_back, &sh);
                 }
             }
@@ -879,6 +918,10 @@ impl Raster {
                     let inst = &instances[ii * INSTANCE_STRIDE..(ii + 1) * INSTANCE_STRIDE];
                     sh.set_base([inst[12], inst[13], inst[14]]);
                     sh.phase = mat.pulse_phase + dot([inst[9], inst[10], inst[11]], mat.pulse_dir);
+                    if lights_on {
+                        let (c, r) = sphere(ii);
+                        sh.cull_lights(c, r);
+                    }
                     self.tris::<ADD>(mesh, oi * nv, cull_back, &sh);
                 }
             }
@@ -1553,23 +1596,25 @@ impl Raster {
                 *o = rb | g;
             }
             let rb = &self.row_px;
-            let out = &mut self.color[y * w..y * w + (bw * 2).min(w)];
-            for (x, px) in out.iter_mut().enumerate() {
-                let bx = x / 2;
-                let a = arow[bx];
+            let out = &mut self.color[y * w..y * w + bw * 2];
+            // Output pixels come in pairs that share a source pixel and alpha:
+            // the left one leans towards bx − 1, the right one towards bx + 1.
+            let mix = |c: u32, p0: u32, p1: u32, ai: u32| {
+                let b_rb = (((p0 & RB) * 3 + (p1 & RB) + 0x0002_0002) >> 2) & RB;
+                let b_g = (((p0 >> 8) & 255) * 3 + ((p1 >> 8) & 255) + 2) >> 2;
+                let o_rb = (((c & RB) * (256 - ai) + b_rb * ai + 0x0080_0080) >> 8) & RB;
+                let o_g = ((((c >> 8) & 255) * (256 - ai) + b_g * ai + 128) >> 8) & 255;
+                (c & 0xff00_0000) | o_rb | o_g << 8
+            };
+            for (bx, (pair, &a)) in out.chunks_exact_mut(2).zip(arow).enumerate() {
                 if a <= 0.0 {
                     continue;
                 }
-                let ai = (a * 256.0) as u32;
-                let nx = if x & 1 == 0 { bx.saturating_sub(1) } else { (bx + 1).min(bw - 1) };
-                let (p0, p1, c) = (rb[bx], rb[nx], *px);
-                // Horizontal 0.75 / 0.25 phase, then lerp from the sharp pixel by alpha.
-                let b_rb = (((p0 & RB) * 3 + (p1 & RB) + 0x0002_0002) >> 2) & RB;
-                let b_g = (((p0 >> 8) & 255) * 3 + ((p1 >> 8) & 255) + 2) >> 2;
-                let (s_rb, s_g) = (c & RB, (c >> 8) & 255);
-                let o_rb = ((s_rb * (256 - ai) + b_rb * ai + 0x0080_0080) >> 8) & RB;
-                let o_g = ((s_g * (256 - ai) + b_g * ai + 128) >> 8) & 255;
-                *px = (c & 0xff00_0000) | o_rb | o_g << 8;
+                let ai = (a.min(1.0) * 256.0) as u32;
+                let p0 = rb[bx];
+                let (pl, pr) = (rb[bx.saturating_sub(1)], rb[(bx + 1).min(bw - 1)]);
+                pair[0] = mix(pair[0], p0, pl, ai);
+                pair[1] = mix(pair[1], p0, pr, ai);
             }
         }
     }
