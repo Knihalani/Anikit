@@ -22,8 +22,15 @@
 <script type="module">
 import { createMountain } from './mountain.js';
 const canvas = document.getElementById('mountain');
-const m = createMountain(canvas);
-const resize = () => m.resize(innerWidth, innerHeight, Math.min(2, devicePixelRatio));
+// ?shared: create the context like main.js does and hand it over (CONTRACT.md shared mode)
+const sharedMode = new URLSearchParams(location.search).has('shared');
+const gl = sharedMode ? canvas.getContext('webgl2', { antialias: false, alpha: false, depth: true, stencil: false, premultipliedAlpha: false, powerPreference: 'high-performance', desynchronized: true }) : null;
+const m = createMountain(sharedMode ? gl : canvas);
+const resize = () => {
+  const d = Math.min(2, devicePixelRatio);
+  if (sharedMode) { canvas.width = Math.round(innerWidth * d); canvas.height = Math.round(innerHeight * d); }
+  m.resize(innerWidth, innerHeight, sharedMode ? canvas.width / innerWidth : d);
+};
 resize(); addEventListener('resize', resize);
 const $ = (id) => document.getElementById(id);
 const look = { x: 0, y: 0 }, target = { x: 0, y: 0 };
@@ -46,6 +53,7 @@ function loop(now) {
   const t0 = performance.now();
   portal.r = +$('pr').value; portal.x = innerWidth * 0.5; portal.y = innerHeight * 0.52; portal.power = Math.min(1, portal.r / 60);
   $('prv').textContent = portal.r;
+  if (sharedMode) { gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, canvas.width, canvas.height); }
   m.frame(now / 1000, dt, p, look, push, portal);
   avg = avg * 0.95 + (performance.now() - t0) * 0.05;
   $('ms').textContent = avg.toFixed(2) + ' ms cpu';

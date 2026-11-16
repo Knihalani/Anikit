@@ -890,12 +890,17 @@ function buildWord() {
 // ---------------------------------------------------------------------------
 // createMountain
 // ---------------------------------------------------------------------------
-export function createMountain(canvas) {
+// Shared-context mode (CONTRACT.md "One canvas, one WebGL2 context"): main.js owns the canvas and context.
+export const SHARED_GL = true;
+
+export function createMountain(glOrCanvas) {
+  const shared = typeof WebGL2RenderingContext !== 'undefined' && glOrCanvas instanceof WebGL2RenderingContext;
+  const canvas = shared ? glOrCanvas.canvas : glOrCanvas;
   // ?perf=no-msaa,no-haze,no-clouds,no-shadows,... switches passes off for measurement
   const PERF = new Set(typeof location !== 'undefined' ? (new URLSearchParams(location.search).get('perf') || '').split(',') : []);
   // MSAA only below DPR 2: at 2x the pixels are small enough, and 4x samples of a retina canvas are expensive
   const wantMSAA = !PERF.has('no-msaa') && (typeof devicePixelRatio === 'undefined' || devicePixelRatio < 2);
-  const gl = canvas.getContext('webgl2', { antialias: wantMSAA, alpha: false, depth: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
+  const gl = shared ? glOrCanvas : canvas.getContext('webgl2', { antialias: wantMSAA, alpha: false, depth: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
   if (!gl) throw new Error('mountain: WebGL2 unavailable');
 
   // compile everything up front (parallel compile where supported)
@@ -1057,8 +1062,10 @@ onmessage = () => {
 
   function resize(w, h, dpr) {
     cssW = Math.max(1, w); cssH = Math.max(1, h);
-    const r = Math.min(dpr || 1, 2);
-    canvas.width = Math.round(cssW * r); canvas.height = Math.round(cssH * r);
+    if (!shared) {
+      const r = Math.min(dpr || 1, 2);
+      canvas.width = Math.round(cssW * r); canvas.height = Math.round(cssH * r);
+    }
     aspect = cssW / cssH;
     // portrait screens: widen the vertical FOV a little so the scene still reads
     const fov = aspect < 1 ? BASE_FOV * 1.25 : BASE_FOV;
@@ -1087,6 +1094,7 @@ onmessage = () => {
     gl.bindVertexArray(vSky); gl.drawArrays(gl.TRIANGLES, 0, 3);
     gl.disable(gl.SCISSOR_TEST);
     gl.bindVertexArray(null);
+    gl.activeTexture(gl.TEXTURE0);
   }
 
   function buildCamera(push) {
@@ -1148,6 +1156,7 @@ onmessage = () => {
   let curWarm = 0.6, curT = 0, driftX = 0, driftY = 0, curMix = 0;
   const portalPx = new Float32Array(4), portalNdc = new Float32Array(4);
   let portalOn = false, flicker = 1;
+  let quality = 0;   // 0 full, 1 drops the haze pass, 2 also halves the spindrift
   const sunCol = new Float32Array(3), amb = new Float32Array(3);
   const AMB_GAIN = 1.0;  // (the LUT already carries SKY_GAIN)
 
@@ -1262,7 +1271,7 @@ onmessage = () => {
 
     // 6. spindrift
     gl.useProgram(P.drift.p); setCommon(P.drift);
-    if (!PERF.has('no-drift')) { gl.bindVertexArray(vDrift); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, ND); }
+    if (!PERF.has('no-drift')) { gl.bindVertexArray(vDrift); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, quality >= 2 ? ND >> 1 : ND); }
 
     // 7. lens bloom and ghosts (screen space, additive)
     const sx = sR / (sF < 0 ? -sF : 1e-3), sy = sU / (sF < 0 ? -sF : 1e-3);
@@ -1277,7 +1286,7 @@ onmessage = () => {
     gl.uniform1f(P.glare.u.uVis, vis);
     if (!PERF.has('no-glare')) { gl.bindVertexArray(vGlare); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6); }
 
-    if (portalOn && !PERF.has('no-haze') && portalPx[2] > 4) {
+    if (portalOn && quality < 1 && !PERF.has('no-haze') && portalPx[2] > 4) {
       // copy only the ring band's bounding box (plus the refraction margin), redraw it refracted
       const W = canvas.width, H = canvas.height, R = portalPx[2] * 1.32 + 48;
       const x0 = Math.max(0, Math.floor(portalPx[0] - R)), y0 = Math.max(0, Math.floor(portalPx[1] - R));
@@ -1298,8 +1307,21 @@ onmessage = () => {
     gl.bindVertexArray(null);
     gl.depthMask(true);
     gl.disable(gl.BLEND);
+    // hand the shared context back in its default state
+    gl.disable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE); gl.disable(gl.SCISSOR_TEST);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.activeTexture(gl.TEXTURE0);
   }
 
   if (typeof window !== 'undefined') window.__mountainAtm = { ambA, ambB, floatOK };
-  return { resize, frame, get ready() { return geoReady && fadeK >= 1; } };
+  // restore defaults after the load-time work (LUT bake, pre-warm) too
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.bindVertexArray(null);
+  gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND); gl.disable(gl.CULL_FACE); gl.disable(gl.SCISSOR_TEST); gl.depthMask(true);
+  gl.activeTexture(gl.TEXTURE0);
+  return {
+    resize, frame,
+    setQuality(level) { quality = Math.max(0, Math.min(2, level | 0)); },
+    get ready() { return geoReady && fadeK >= 1; },
+  };
 }
