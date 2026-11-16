@@ -117,7 +117,7 @@ export default async function film2({ anikit: A, node }) {
     for (let i = 0; i < K; i++) { const a0 = (i / K) * TAU, a1 = ((i + 1) / K) * TAU; const p = [[a0, y0], [a1, y0], [a1, y1], [a0, y1]].map(([a, y]) => b.v(cx + Math.cos(a) * r, y, cz + Math.sin(a) * r, Math.cos(a), 0, Math.sin(a))); b.quad(p[0], p[1], p[2], p[3]); }
   };
   // A polar surface (annular sector) with a normal function: Côtes de Genève, sunray, domes.
-  const polar = ({ r0, r1, a0 = 0, a1 = TAU, nr, na, y, normal, flatSeg = false, yAt, uvR = r1, walls = true, y0 }) => {
+  const polar = ({ r0, r1, a0 = 0, a1 = TAU, nr, na, y, normal, flatSeg = false, yAt, uvR = r1, walls = true, y0, face = [0, 1, 0] }) => {
     const b = new MB(), full = Math.abs(a1 - a0 - TAU) < 1e-6;
     const hy = (x, z) => (yAt ? yAt(x, z) : y);
     if (!flatSeg) {
@@ -126,7 +126,7 @@ export default async function film2({ anikit: A, node }) {
         const r = lerp(r0, r1, i / nr), a = lerp(a0, a1, j / na), x = Math.cos(a) * r, z = Math.sin(a) * r;
         const n = normal(x, z, a, r, j); idx.push(b.v(x, hy(x, z), z, n[0], n[1], n[2], x / (2 * uvR) + 0.5, z / (2 * uvR) + 0.5));
       }
-      for (let i = 0; i < nr; i++) for (let j = 0; j < na; j++) { const p = i * (na + 1) + j; b.quad(idx[p], idx[p + 1], idx[p + na + 2], idx[p + na + 1], [0, 1, 0]); }
+      for (let i = 0; i < nr; i++) for (let j = 0; j < na; j++) { const p = i * (na + 1) + j; b.quad(idx[p], idx[p + 1], idx[p + na + 2], idx[p + na + 1], face); }
     } else {
       for (let j = 0; j < na; j++) { // one flat-shaded wedge per angular segment (crisp radial streaks)
         const aa = lerp(a0, a1, j / na), ab = lerp(a0, a1, (j + 1) / na), n = normal(0, 0, (aa + ab) / 2, 0, j);
@@ -253,7 +253,7 @@ export default async function film2({ anikit: A, node }) {
   const BW = 17; // stripe width
   const cotes = (x) => { const f = ((x / BW) % 1 + 1) % 1; const k = 0.22 * Math.sin(TAU * f) + 0.06 * Math.sin(2 * TAU * f); return [-k, 1, 0]; };
   const mainplate = polar({ r0: 0, r1: 150, nr: 3, na: 160, y: 0, y0: -18, normal: () => [0, 1, 0], uvR: 150 });
-  const mainBottom = polar({ r0: 0, r1: 150, nr: 3, na: 160, y: -18.4, walls: false, normal: () => [0, -1, 0], uvR: 150 }); // perlage dial side (seen after the flip)
+  const mainBottom = polar({ r0: 0, r1: 150, nr: 3, na: 160, y: -18.4, walls: false, normal: () => [0, -1, 0], uvR: 150, face: [0, -1, 0] }); // perlage dial side (seen after the flip)
   const barrelBridge = polar({ r0: 56, r1: 146, a0: 108 * DEG, a1: 252 * DEG, nr: 64, na: 240, y: 26, y0: 18, normal: (x) => cotes(x), uvR: 150 });
   // Rotor: a half disc with Côtes, and a heavy gold rim.
   const rotorPlate = polar({ r0: 15, r1: 128, a0: -90 * DEG, a1: 90 * DEG, nr: 54, na: 220, y: 41, y0: 38, normal: (x, z) => { const f = (((z + 500) / BW) % 1); return [0, 1, -(0.22 * Math.sin(TAU * f) + 0.06 * Math.sin(2 * TAU * f))]; }, uvR: 150 });
