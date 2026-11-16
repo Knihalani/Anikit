@@ -185,7 +185,7 @@ function buildStrips() {
 const foldState = { p: 0 };
 let foldDrawn = -1;
 function drawFold() {
-  const p = foldState.p;
+  const p = reduce ? 0 : foldState.p;
   if (Math.abs(p - foldDrawn) < 1e-5) return;
   foldDrawn = p;
   const a = smooth(0.08, 0.62, p) * 1.36; // radians, ~78°
@@ -337,7 +337,7 @@ async function paintCode() {
 // ─── 5. The page shatters and comes back together ─────────────────────────
 const panel = $('#panel');
 const fin = { p: 0 }, burst = { e: 0 };
-let shards = null, panelPainted = false, shatterOn = false, origin = [0.5, 0.6];
+let shards = null, shardsLow = null, panelPainted = false, shatterOn = false, origin = [0.5, 0.6];
 async function paintPanel() {
   await capture('panel', panel);
   panelPainted = true;
@@ -345,7 +345,7 @@ async function paintPanel() {
 $('#breakit').addEventListener('click', (e) => {
   const r = panel.getBoundingClientRect();
   origin = [e.clientX - r.left, e.clientY - r.top];
-  timeline().add(burst, { e: [0, 1] }, { duration: 1.1, ease: 'outCubic' })
+  timeline().add(burst, { e: [0, 0.85] }, { duration: 1.1, ease: 'outCubic' })
     .add(burst, { e: 0 }, { ease: 'spring(bounce: 0.15, duration: 1.4)' }, '+=0.5');
 });
 
@@ -389,12 +389,13 @@ function drawLayers() {
       const depth = L.fs * 0.1 * L.e;
       const cy = L.cy - sy;
       G.letter(L.mesh, L.cx - scrollX, cy, L.sx, L.sy, depth, L.rx, L.ry, L.e, 1);
-      if (L.e > 1e-3) G.letter(L.mesh, L.cx - scrollX, cy, L.sx, L.sy, depth, L.rx, L.ry, L.e, -1);
+      const turned = Math.abs(Math.sin(L.ry)) > 0.02 || Math.cos(L.ry) < 0 || Math.abs(L.rx) > 0.02;
+      if (L.e > 1e-3 && turned) G.letter(L.mesh, L.cx - scrollX, cy, L.sx, L.sy, depth, L.rx, L.ry, L.e, -1);
       G.clearDepth();
     }
   }
   if (frameState.rip) G.ripple(codeLeft - scrollX, codeTop - sy, codeW, codeH, rips, quality >= 1 ? 6 : MAXR);
-  if (frameState.sh) G.shatter(shards, panelRect.left, panelRect.top, panelRect.width, panelRect.height, frameState.e, origin[0], origin[1]);
+  if (frameState.sh) G.shatter(quality >= 2 ? shardsLow : shards, panelRect.left, panelRect.top, panelRect.width, panelRect.height, frameState.e, origin[0], origin[1]);
 }
 if (S) S.add({ render() { drawLayers(); } });
 engine.onFrame((now, dtMs) => {
@@ -404,12 +405,12 @@ engine.onFrame((now, dtMs) => {
   sy = scrollY;
   readCards();
   if (!ready) { writeCards(); drawFold(); return; }
-  scrollE = smooth(0, vh * 0.7, sy);
+  scrollE = reduce ? 0 : smooth(0, vh * 0.7, sy);
   const heroOn = sy < heroRect.bottom;
   const lettersLive = heroOn ? stepLetters(dt) : false;
   const ripOn = stepRipples(dt) && codeTop - sy < vh && codeTop + codeH - sy > 0;
   const fe = smooth(0.12, 0.42, fin.p) * (1 - smooth(0.62, 0.92, fin.p));
-  const e = Math.max(fe * 0.55, burst.e);
+  const e = Math.max(reduce ? 0 : fe * 0.55, burst.e);
   const sh = e > 1e-4 && panelPainted;
   if (sh !== shatterOn) { shatterOn = sh; panel.classList.toggle('live', sh); if (sh && burst.e < 1e-4) origin = [vw * 0.5, vh * 0.55]; }
   if (shatterOn) panelRect = panel.getBoundingClientRect();
@@ -434,6 +435,7 @@ layout();
 mark('layout');
 if (G) {
   shards = G.shards(14, 9);
+  shardsLow = G.shards(9, 6);
   await buildLetters();
   mark('letters');
   await idle(); await paintCode();

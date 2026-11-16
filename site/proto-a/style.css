@@ -98,4 +98,11 @@ h1, h2, h3 { margin: 0; }
   .code { grid-template-columns: 1fr; }
   .nav nav { display: none; }
   .hero-foot { gap: 24px; }
+  .sheet { padding: 22px; }
+  .cols { gap: 14px; margin-top: 20px; }
+  .cols h3 { font-size: 20px; margin: 4px 0; }
+  .cols p { font-size: 14px; line-height: 1.45; }
+  .small { margin-top: 18px; }
+  .src { font-size: 10.5px; padding: 20px; }
+  .fold-wrap { height: 170vh; }
 }
