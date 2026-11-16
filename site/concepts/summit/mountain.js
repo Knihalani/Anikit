@@ -61,6 +61,32 @@ vec3 haze(vec3 col, vec3 dir, float dist, float k) {
   vec3 h = skyCol(vec3(dir.x, max(dir.y, 0.0) + 0.012, dir.z));
   return col * T + h * (1.0 - T);
 }
+// the portal: its warm flickering light on nearby snow and cloud, and its pull on things around it
+uniform vec4 uPortalPx;   // centre x, y and radius in framebuffer px, power 0..1
+uniform vec4 uPortal;     // centre in NDC, radius in NDC-y units, power
+uniform float uFlicker;
+uniform float uAspect;
+vec3 portalGlow(vec2 fc) {
+  if (uPortalPx.w <= 0.001) return vec3(0.0);
+  float rr = max(uPortalPx.z, 1.0);
+  float x = max(length(fc - uPortalPx.xy) - rr, 0.0) / rr;
+  return vec3(1.0, 0.42, 0.1) * (uPortalPx.w * uFlicker * 1.4 / (1.0 + x * x * 5.0 + x * 1.5));
+}
+// spiral a projected point toward the portal; returns the weight used
+float portalPull(inout vec4 clipP, vec4 clipC, float strength, float phase) {
+  if (uPortal.w <= 0.001) return 0.0;
+  vec2 n = clipC.xy / clipC.w;
+  vec2 d = n - uPortal.xy; d.x *= uAspect;
+  float dist = length(d), R = max(uPortal.z, 1e-3);
+  float w = clamp(uPortal.w * strength * exp(-max(dist - R, 0.0) / (R * 0.75 + 0.05)), 0.0, 1.0);
+  w = w * w * (3.0 - 2.0 * w);
+  float ang = w * (1.9 + phase) * R / (dist + 0.3 * R + 0.02);
+  float cs = cos(ang), sn = sin(ang);
+  vec2 dr = vec2(cs * d.x - sn * d.y, sn * d.x + cs * d.y) * (1.0 - 0.6 * w);
+  dr.x /= uAspect;
+  clipP.xy += (uPortal.xy + dr - n) * clipP.w;
+  return w;
+}
 vec3 tonemap(vec3 c) {
   c *= uExposure * vec3(0.93, 1.0, 1.16);
   c = (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);
@@ -224,14 +250,19 @@ void main() {
   } else {
     c = iP.xyz + vec3(uDrift.x * 900.0, 0.0, uDrift.y * 900.0) * (0.6 + 0.4 * iS.x);
   }
-  vec3 p = c + (aC.x * uRight + aC.y * uUp) * r;
+  vec4 clipC = uVP * vec4(c, 1.0);
+  vec4 probe = clipC;
+  float pw = uWordMode > 0.5 ? portalPull(probe, clipC, 1.0, iS.x) : 0.0;
+  vec3 p = c + (aC.x * uRight + aC.y * uUp) * r * (1.0 - 0.45 * pw);
   vUV = aC; vS = iS;
+  vS.y *= 1.0 - 0.5 * pw * pw;
   vec3 v = c - uEye; vDist = length(v); vDir = v / vDist;
   float hk = uWordMode > 0.5 ? 0.00004 : 0.00005;
   vec3 hc = haze(vec3(0.0), vDir, vDist, hk);
   float hf = 1.0 - exp(-vDist * hk);
   vHaze = vec4(hf > 0.0001 ? hc / hf : vec3(0.0), hf);
   gl_Position = uVP * vec4(p, 1.0);
+  if (pw > 0.0) portalPull(gl_Position, clipC, 1.0, iS.x);
 }`;
 const puffFS = HEAD + COMMON + `
 in vec2 vUV;
@@ -265,6 +296,7 @@ void main() {
   vec3 col = mix(shade, sunW, lit) * (uWordMode > 0.5 ? 0.92 + 0.12 * vS.z : vS.z) + uSunCol * 0.55 * rim * (uWordMode > 0.5 ? 0.6 * vS.z + 0.2 : 0.9);
   if (uWordMode > 0.5) col *= mix(vec3(0.93, 0.97, 1.06), vec3(1.12, 0.96, 0.78), vWarmX);
   col = mix(col, vHaze.rgb, vHaze.a);
+  col += portalGlow(gl_FragCoord.xy) * (uWordMode > 0.5 ? 0.5 : 0.7);
   o = vec4(tonemap(col) * a, a);
 }`;
 
@@ -332,23 +364,24 @@ void main() {
   ra = mix(ra, vec3(0.85, 0.88, 0.95), dust * 0.6);
   vec3 rk = ra * (sunC * max(dot(Nr, L), 0.0) * 1.6 + sky * (0.4 + 0.25 * Nr.y));
   vec3 col = mix(rk, sn, snow);
+  col += portalGlow(gl_FragCoord.xy) * mix(ra * 1.5, vec3(0.9), snow) * (1.0 - smoothstep(20.0, 60.0, dist));
   col = haze(col, dir, dist, 0.0009);
   o = vec4(tonemap(col), 1.0);
 }`;
 
 // --- spindrift: wind-blown snow, procedural in the vertex shader ---
-const driftVS = HEAD + `
+const driftVS = HEAD + COMMON + `
 layout(location = 0) in vec2 aC;
 layout(location = 1) in vec4 iA;   // x0, z0, speed, seed
 uniform mat4 uVP;
 uniform vec3 uRight, uUp;
 uniform float uT;
 uniform vec2 uWind;
-uniform vec3 uSun;
 uniform vec3 uEye;
 out vec2 vUV;
 out float vA;
 out float vGlow;
+out float vHot;
 void main() {
   float span = 34.0;
   float life = fract(uT * iA.z * 0.09 + iA.w);
@@ -359,19 +392,24 @@ void main() {
   float y = gy + 0.15 + life * 2.6 * fract(iA.w * 7.3) + 0.3 * sin(uT * 2.0 + iA.w * 40.0);
   vec3 c = vec3(x, y, z);
   float r = 0.025 + 0.05 * fract(iA.w * 13.1);
-  gl_Position = uVP * vec4(c + (aC.x * uRight + aC.y * uUp) * r, 1.0);
+  vec4 clipC = uVP * vec4(c, 1.0);
+  gl_Position = uVP * vec4(c + (aC.x * uRight + aC.y * uUp) * r * (1.0 + 0.25 * uPortal.w), 1.0);
+  // the opening portal draws the blowing snow into a stream that spirals onto the ring
+  vHot = portalPull(gl_Position, clipC, 1.6 * (0.35 + 0.65 * life), fract(iA.w * 5.1) * 2.0);
   vUV = aC;
   vGlow = pow(max(dot(normalize(c - uEye), uSun), 0.0), 6.0);
   vA = sin(life * 3.14159) * (0.3 + 0.35 * fract(iA.w * 3.7)) * (0.7 + 0.3 * uWind.x);
 }`;
-const driftFS = HEAD + `
+const driftFS = HEAD + COMMON + `
 in vec2 vUV;
 in float vA;
 in float vGlow;
+in float vHot;
 out vec4 o;
 void main() {
-  float a = exp(-dot(vUV, vUV) * 3.0) * vA;
-  o = vec4(mix(vec3(0.95, 0.95, 1.0), vec3(1.6, 1.15, 0.7), vGlow) * a, a * 0.8);
+  float a = exp(-dot(vUV, vUV) * 3.0) * min(1.0, vA * (1.0 + 0.8 * vHot));
+  vec3 c = mix(mix(vec3(0.95, 0.95, 1.0), vec3(1.6, 1.15, 0.7), vGlow), vec3(1.5, 0.9, 0.45), vHot * 0.8);
+  o = vec4(c * a, a * 0.8);
 }`;
 
 // --- lens bloom around the sun, and faint ghosts (screen space, additive) ---
@@ -397,6 +435,32 @@ void main() {
   float a = vG.w < 0.5 ? exp(-r * r * 4.0) * 0.55 + exp(-r * 14.0) * 0.45 : smoothstep(1.0, 0.82, r) * (0.4 + 0.6 * r);
   vec3 c = vG.w < 0.5 ? vec3(1.0, 0.72, 0.42) : mix(vec3(0.55, 0.8, 1.0), vec3(1.0, 0.7, 0.4), fract(vG.w * 3.7));
   o = vec4(c * a * vG.z, 0.0);
+}`;
+
+// --- composite: the resolved scene, refracted by heat haze in a band around the portal ring ---
+const compVS = HEAD + `
+layout(location = 0) in vec2 aP;
+void main() { gl_Position = vec4(aP, 0.0, 1.0); }`;
+const compFS = HEAD + COMMON + `
+uniform sampler2D uScene;
+uniform vec2 uRes;
+uniform float uT;
+out vec4 o;
+void main() {
+  vec2 fc = gl_FragCoord.xy;
+  vec2 uv = fc / uRes;
+  vec2 rel = fc - uPortalPx.xy;
+  float d = length(rel), R = max(uPortalPx.z, 1.0);
+  float band = smoothstep(R * 0.88, R * 1.0, d) * (1.0 - smoothstep(R * 1.06, R * 1.32, d)) * uPortalPx.w;
+  if (band > 0.002) {
+    vec2 dir = rel / max(d, 1.0), tang = vec2(-dir.y, dir.x);
+    float a = atan(rel.y, rel.x);
+    vec2 q = vec2(a * 9.0 + uT * 0.7, d / R * 7.0 - uT * 4.0);
+    float n1 = vnoise(q) - 0.5, n2 = vnoise(q * 2.1 + 17.0) - 0.5;
+    vec2 off = (dir * n1 + tang * n2 * 0.7) * band * min(R * 0.07, 40.0);
+    uv += off / uRes;
+  }
+  o = vec4(texture(uScene, uv).rgb, 1.0);
 }`;
 
 // --- sky-view LUT: Rayleigh + Mie + ozone single scattering, seen from the summit (km units) ---
@@ -780,6 +844,7 @@ export function createMountain(canvas) {
     drift: compile(gl, driftVS, driftFS),
     glare: compile(gl, glareVS, glareFS),
     lut: compile(gl, lutVS, lutFS),
+    comp: compile(gl, compVS, compFS),
   };
   for (const k in P) finish(gl, P[k], k);
 
@@ -914,6 +979,38 @@ export function createMountain(canvas) {
     const fov = aspect < 1 ? BASE_FOV * 1.25 : BASE_FOV;
     tanY = Math.tan(fov / 2); tanX = tanY * aspect;
     wordFrac = aspect < 1 ? 0.86 : 0.6;
+    buildTargets();
+  }
+
+  // Offscreen targets for the heat-haze composite, built at resize (never per frame).
+  let msFbo = null, msColor = null, msDepth = null, rsFbo = null, rsTex = null;
+  function buildTargets() {
+    if (msFbo) { gl.deleteFramebuffer(msFbo); gl.deleteRenderbuffer(msColor); gl.deleteRenderbuffer(msDepth); gl.deleteFramebuffer(rsFbo); gl.deleteTexture(rsTex); }
+    const W = canvas.width, H = canvas.height;
+    const samples = Math.min(4, gl.getParameter(gl.MAX_SAMPLES) || 0);
+    msColor = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, msColor);
+    gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.RGBA8, W, H);
+    msDepth = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, msDepth);
+    gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.DEPTH_COMPONENT24, W, H);
+    msFbo = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, msFbo);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, msColor);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, msDepth);
+    rsTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, rsTex);
+    gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, W, H);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    rsFbo = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, rsFbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rsTex, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    // pre-warm the composite so its first real use doesn't hitch
+    gl.viewport(0, 0, W, H);
+    gl.useProgram(P.comp.p);
+    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, rsTex);
+    gl.uniform1i(P.comp.u.uScene, 2);
+    gl.bindVertexArray(vSky); gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.bindVertexArray(null);
   }
 
   function buildCamera(push) {
@@ -950,6 +1047,10 @@ export function createMountain(canvas) {
     if (u.uSun) gl.uniform3f(u.uSun, sun[0], sun[1], sun[2]);
     if (u.uWarm) gl.uniform1f(u.uWarm, curWarm);
     if (u.uSkyLUT) gl.uniform1i(u.uSkyLUT, 0);
+    if (u.uPortalPx) gl.uniform4f(u.uPortalPx, portalPx[0], portalPx[1], portalPx[2], portalPx[3]);
+    if (u.uPortal) gl.uniform4f(u.uPortal, portalNdc[0], portalNdc[1], portalNdc[2], portalNdc[3]);
+    if (u.uFlicker) gl.uniform1f(u.uFlicker, flicker);
+    if (u.uAspect) gl.uniform1f(u.uAspect, aspect);
     if (u.uSkyLUT2) gl.uniform1i(u.uSkyLUT2, 1);
     if (u.uLutMix) gl.uniform1f(u.uLutMix, curMix);
     if (u.uLutScale) gl.uniform1f(u.uLutScale, lutScale);
@@ -966,11 +1067,23 @@ export function createMountain(canvas) {
     if (u.uDrift) gl.uniform2f(u.uDrift, driftX, driftY);
   }
   let curWarm = 0.6, curT = 0, driftX = 0, driftY = 0, curMix = 0;
+  const portalPx = new Float32Array(4), portalNdc = new Float32Array(4);
+  let portalOn = false, flicker = 1;
   const sunCol = new Float32Array(3), amb = new Float32Array(3);
   const AMB_GAIN = 1.0;  // (the LUT already carries SKY_GAIN)
 
-  function frame(t, dt, p, look, push) {
+  function frame(t, dt, p, look, push, portal) {
     curT = t;
+    // the portal (optional): framebuffer px for light, NDC for suction
+    const fbs = canvas.width / cssW;
+    const pr = portal ? portal.r || 0 : 0;
+    const pow = pr > 0 ? (portal.power !== undefined ? Math.min(1, Math.max(0, portal.power)) : Math.min(1, pr / 60)) : 0;
+    portalOn = pow > 0.002;
+    if (portalOn) {
+      portalPx[0] = portal.x * fbs; portalPx[1] = (cssH - portal.y) * fbs; portalPx[2] = pr * fbs; portalPx[3] = pow;
+      portalNdc[0] = portal.x / cssW * 2 - 1; portalNdc[1] = 1 - portal.y / cssH * 2; portalNdc[2] = pr / cssH * 2; portalNdc[3] = pow;
+      flicker = 0.82 + 0.1 * Math.sin(t * 23.0) + 0.06 * Math.sin(t * 37.3 + 1.3) + 0.05 * Math.sin(t * 61.7 + 0.4);
+    } else { portalPx[3] = 0; portalNdc[3] = 0; }
     const lx = look ? look.x || 0 : 0, ly = look ? look.y || 0 : 0;
     // springs smooth the head turn and the dolly; retarget only when the input moves
     if (Math.abs(lx - lastLookX) > 0.02 || Math.abs(ly - lastLookY) > 0.02) {
@@ -1009,6 +1122,7 @@ export function createMountain(canvas) {
     const elev = Math.atan(0.5 * tanY) + pitchBase;
     wordC[0] = 0; wordC[1] = EYE_Y + Math.sin(elev) * dist; wordC[2] = -Math.cos(elev) * dist;
 
+    gl.bindFramebuffer(gl.FRAMEBUFFER, portalOn ? msFbo : null);
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0.8, 0.85, 0.95, 1);
     gl.clearDepth(1);
@@ -1069,6 +1183,21 @@ export function createMountain(canvas) {
     gl.uniform1f(P.glare.u.uAspect, aspect);
     gl.uniform1f(P.glare.u.uVis, vis);
     gl.bindVertexArray(vGlare); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6);
+
+    if (portalOn) {
+      // resolve MSAA, then composite to the screen with heat haze around the ring
+      const W = canvas.width, H = canvas.height;
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, msFbo);
+      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, rsFbo);
+      gl.blitFramebuffer(0, 0, W, H, 0, 0, W, H, gl.COLOR_BUFFER_BIT, gl.NEAREST);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.disable(gl.BLEND);
+      gl.useProgram(P.comp.p); setCommon(P.comp);
+      gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, rsTex);
+      gl.uniform1i(P.comp.u.uScene, 2);
+      gl.uniform2f(P.comp.u.uRes, W, H);
+      gl.bindVertexArray(vSky); gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
 
     gl.bindVertexArray(null);
     gl.depthMask(true);
