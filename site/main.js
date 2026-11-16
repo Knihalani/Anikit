@@ -62,11 +62,13 @@ const wpp = () => (2 * Math.tan((cam.fov * Math.PI) / 360) * cam.camera.z) / vh;
 const toWorld = (px, py) => [(px - vw / 2) * wpp(), -(py - vh / 2) * wpp()];
 
 // Section offsets, cached (no layout reads in the frame loop).
+let last = -1; // reduced motion: the scroll position last drawn
 let tops = [], installTop = 0, installBottom = 0, breakTop = 0, breakH = 1;
 const measure = () => {
   vw = innerWidth; vh = innerHeight;
   const y = scrollY;
   tops = sections.map((s) => { const b = s.getBoundingClientRect(); return { top: b.top + y, h: b.height, side: s.dataset.side === 'right' ? -1 : 1 }; });
+  last = -1; // reduced motion: a resize clears the canvas, so draw again
   const ib = $("#install").getBoundingClientRect(); installTop = ib.top + y; installBottom = ib.bottom + y;
   const bb = $('#break').getBoundingClientRect(); breakTop = bb.top + y; breakH = bb.height;
   fit();
@@ -198,7 +200,7 @@ const items = pieces.map((p, k) => ({
   material: { metal: 0.92, iridescence: 0.45, hue: k / PIECES, specular: 1.6, shininess: 140, rim: 0.5, lines: 0, lineColor: accents[k] || [1.6, 1.6, 1.6], grid: [0, 4], lineWidth: 0.018 },
 }));
 const env = { transparent: true, background: '#06070b', sky: [0.05, 0.06, 0.12], horizon: [0.5, 0.42, 0.7], ground: [0.02, 0.02, 0.03], strips: [2.6, 2.6, 2.9], key: [-0.4, 0.6, 0.7], keyColor: [1, 0.95, 0.9], fill: [0.6, -0.2, 0.5], fillColor: [0.3, 0.4, 0.9], rimColor: [0.9, 0.5, 1] };
-let avg = 6, last = -1, frames = 0, minMs = Infinity, calibrated = false, stats = { ms: 0, w: 0, h: 0 };
+let avg = 6, frames = 0, minMs = Infinity, calibrated = false, stats = { ms: 0, w: 0, h: 0 };
 window.__stage = stats;
 const frame = (dt) => {
   if (!reduced) t += Math.min(dt, 50) / 1000;

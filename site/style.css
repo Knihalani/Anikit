@@ -64,7 +64,7 @@ code.pill { font-family: Mono, monospace; font-size: 14px; cursor: text; user-se
 /* The break: a pinned title over the flying pieces */
 .break { height: 220vh; position: relative; }
 .break-pin { position: sticky; top: 0; height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; padding: 0 var(--gut); text-align: center; pointer-events: none; }
-.break-title { font-size: clamp(52px, 9vw, 150px); line-height: 0.92; text-shadow: 0 2px 24px rgba(6, 7, 11, 0.7); }
+.break-title { font-size: clamp(46px, 7.4vw, 124px); line-height: 0.95; max-width: 11em; text-shadow: 0 2px 24px rgba(6, 7, 11, 0.7); }
 .break-title .ch { display: inline-block; }
 .break-note { color: #cfd3dd; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 16px; margin: 0; }
 
@@ -82,7 +82,7 @@ code.pill { font-family: Mono, monospace; font-size: 14px; cursor: text; user-se
 .snippet { display: block; margin-top: 18px; padding: 12px 14px; background: #07080c; border: 1px solid var(--line); border-radius: 10px; color: #c9cfdc; line-height: 1.6; overflow-wrap: anywhere; }
 .hint { position: absolute; left: 14px; bottom: 12px; color: var(--dim); pointer-events: none; }
 
-.stage-box { position: relative; height: 240px; border-radius: 14px; background: #07080c; border: 1px solid var(--line); overflow: hidden; margin-bottom: 14px; touch-action: none; }
+.stage-box { position: relative; height: 240px; border-radius: 14px; background: #07080c; border: 1px solid var(--line); overflow: hidden; margin-bottom: 14px; touch-action: pan-y; }
 .dot { position: absolute; left: 0; top: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--accent); will-change: transform; }
 
 .reveal { font-family: Display, sans-serif; font-weight: 900; font-size: clamp(24px, 2.3vw, 32px) !important; line-height: 1.1 !important; color: var(--text) !important; letter-spacing: -0.02em; }
@@ -94,8 +94,8 @@ code.pill { font-family: Mono, monospace; font-size: 14px; cursor: text; user-se
 #trail { fill: none; stroke: #e9fff6; stroke-width: 3; stroke-linecap: round; }
 #rider { fill: #fff; transform-box: fill-box; transform-origin: center; }
 
-.world-box { position: relative; height: 300px; border-radius: 14px; background: #07080c; border: 1px solid var(--line); overflow: hidden; touch-action: none; user-select: none; }
-.w-letter { position: absolute; left: 0; top: 0; font-family: Display, sans-serif; font-weight: 900; font-size: 92px; line-height: 1; color: var(--accent); cursor: grab; will-change: transform; }
+.world-box { position: relative; height: 300px; border-radius: 14px; background: #07080c; border: 1px solid var(--line); overflow: hidden; touch-action: pan-y; user-select: none; }
+.w-letter { position: absolute; left: 0; top: 0; font-family: Display, sans-serif; font-weight: 900; font-size: 92px; line-height: 1; color: var(--accent); cursor: grab; will-change: transform; touch-action: none; }
 
 .cloud-canvas { display: block; width: 100%; aspect-ratio: 16 / 10; border-radius: 14px; border: 1px solid var(--line); background: #05060a; }
 

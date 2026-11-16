@@ -45,7 +45,7 @@ export function start({ reduced, fine, small }) {
     whileVisible(box, (dt) => {
       // Without a pointer, the head draws a slow figure eight.
       // Without the pointer inside, the head traces a slow figure eight.
-      if (!inside) { idle += dt / 1000; aim.x = bw / 2 + Math.sin(idle * 1.3) * bw * 0.32; aim.y = bh / 2 + Math.sin(idle * 2.6) * bh * 0.25; }
+      if (!inside && !reduced) { idle += dt / 1000; aim.x = bw / 2 + Math.sin(idle * 1.3) * bw * 0.32; aim.y = bh / 2 + Math.sin(idle * 2.6) * bh * 0.25; }
       spring(pos[0], aim, cfg);
       for (let i = 1; i < n; i++) spring(pos[i], pos[i - 1], cfg);
       for (let i = 0; i < n; i++) set(dots[i], { x: pos[i].x, y: pos[i].y });
@@ -161,7 +161,7 @@ export function start({ reduced, fine, small }) {
       return true;
     });
   });
-  jobs.push(() => { g = glow('#cloud-canvas', { resolution: small ? 0.7 : 0.85, background: '#05060a', trail: 0.4, budget: 4 }); return true; });
+  jobs.push(() => { g = glow('#cloud-canvas', { resolution: small ? 0.7 : 0.75, background: '#05060a', trail: 0.4, budget: 4 }); return true; });
   {
     let i = 0, cols = null;
     jobs.push((deadline) => {
@@ -199,7 +199,7 @@ export function start({ reduced, fine, small }) {
       timer += dt / 1000;
       cloud.step(Math.min(dt, 50) / 1000);
       if (!reduced) rot += dt / 1000;
-      if (timer > 3.2) { timer = 0; cloud.morph(next, { duration: 2, ease: 'inOutCubic' }); next = (next + 1) % 3; }
+      if (timer > 3.2 && !reduced) { timer = 0; cloud.morph(next, { duration: 2, ease: 'inOutCubic' }); next = (next + 1) % 3; }
       scene.camera.x = Math.sin(rot * 0.25) * 1000; scene.camera.z = Math.cos(rot * 0.25) * 1000;
       g.render(scene, cloud, { size: 1.1, intensity: small ? 0.5 : 0.32, fog: [600, 2200], ...(ptr.on ? { lens: { x: ptr.x, y: ptr.y } } : {}) });
     });
@@ -222,7 +222,7 @@ export function start({ reduced, fine, small }) {
     $('#shuffle').addEventListener('click', shuffle);
     $('#regrid').addEventListener('click', regrid);
     let n = 0, id = 0;
-    inView(grid, () => { id = setInterval(() => (++n % 3 ? shuffle() : regrid()), 2600); return () => clearInterval(id); }, { amount: 0.5 });
+    if (!reduced) inView(grid, () => { id = setInterval(() => (++n % 3 ? shuffle() : regrid()), 2600); return () => clearInterval(id); }, { amount: 0.5 });
   });
 
   // 07 · Benchmarks: counters and bars run in once.
@@ -241,10 +241,11 @@ export function start({ reduced, fine, small }) {
   // Install: the feature ticker follows the scroll; copy button.
   once('#install', () => {
     marquee('#ticker', { speed: 60, pauseOnHover: true, scrollBoost: 0.6 });
-    $('#copy').addEventListener('click', async (e) => {
+    const copy = $('#copy');
+    copy.addEventListener('click', async () => {
       try { await navigator.clipboard.writeText('npm install anikit'); } catch { /* clipboard blocked */ }
-      e.currentTarget.textContent = 'Copied';
-      effects.pop(e.currentTarget, { duration: 0.35 });
+      copy.textContent = 'Copied';
+      effects.pop(copy, { duration: 0.35 });
     });
   });
 }
