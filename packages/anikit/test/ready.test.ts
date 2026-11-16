@@ -3,7 +3,8 @@
 // what to do, and one failing queued call doesn't drop the others.
 import { it, expect, vi } from 'vitest';
 
-it('queues work before ready and keeps going past a failing call', async () => {
+// Exercises asynchronous WebAssembly loading: not applicable on the native core.
+it.skipIf(process.env.ANIKIT_TEST_NATIVE === '1')('queues work before ready and keeps going past a failing call', async () => {
   vi.resetModules();
   const realModule = WebAssembly.Module;
   const realInstantiate = WebAssembly.instantiate;

@@ -109,6 +109,23 @@ fn st() -> &'static mut State {
     unsafe { &mut *STATE.0.get() }
 }
 
+/// Subtracted from addresses the host reads out of buffers (`ak_values_ptrs`,
+/// `ak_mesh_ptr`): 0 in WebAssembly, where addresses are already offsets into
+/// linear memory; the native Node addon sets it to the base of its arena.
+pub static HOST_BASE: core::sync::atomic::AtomicUsize = core::sync::atomic::AtomicUsize::new(0);
+
+/// An address as the host sees it (0 stays 0).
+#[inline]
+fn host_addr<T>(p: *const T) -> usize {
+    let base = HOST_BASE.load(core::sync::atomic::Ordering::Relaxed);
+    // Null, and the dangling address of an empty buffer below the arena, read as 0.
+    if p.is_null() || (p as usize) < base {
+        0
+    } else {
+        p as usize - base
+    }
+}
+
 const ERR_EASING: u32 = 0xFFFF_FFFE;
 
 fn code(r: Result<(), Error>) -> i32 {
@@ -592,7 +609,7 @@ pub extern "C" fn ak_values_ptrs(n: u32) {
     let s = st();
     let n = (n as usize).min(s.f64_buf.len());
     for i in 0..n {
-        s.f64_buf[i] = s.engine.values_ptr(s.f64_buf[i] as u32) as usize as f64;
+        s.f64_buf[i] = host_addr(s.engine.values_ptr(s.f64_buf[i] as u32)) as f64;
     }
 }
 #[no_mangle]
@@ -1975,12 +1992,12 @@ pub extern "C" fn ak_mesh_custom(nverts: u32, ntris: u32) -> u32 {
 pub extern "C" fn ak_mesh_ptr(id: u32, which: u32) -> usize {
     match st().meshes.get_mut(id as usize).and_then(|m| m.as_mut()) {
         Some(m) => match which {
-            0 => m.pos.as_mut_ptr() as usize,
-            1 => m.nrm.as_mut_ptr() as usize,
-            2 => m.idx.as_mut_ptr() as usize,
+            0 => host_addr(m.pos.as_mut_ptr()),
+            1 => host_addr(m.nrm.as_mut_ptr()),
+            2 => host_addr(m.idx.as_mut_ptr()),
             3 => m.pos.len() / 3,
             4 => m.idx.len() / 3,
-            5 => m.uv.as_mut_ptr() as usize,
+            5 => host_addr(m.uv.as_mut_ptr()),
             _ => 0,
         },
         None => 0,
@@ -2431,6 +2448,25 @@ pub extern "C" fn ak_bh_stats(id: u32) {
 }
 
 // ---------------------------------------------------------------------------
+// SDF meshing (surface nets)
+// ---------------------------------------------------------------------------
+
+/// Mesh a sampled signed distance field: `nx·ny·nz` samples (x fastest) in the
+/// f64 buffer, grid spacing `s`, first sample at `(ox, oy, oz)`. Returns a mesh
+/// handle (read it with `ak_mesh_ptr`, free it with `ak_mesh_free`), or `u32::MAX`.
+#[no_mangle]
+pub extern "C" fn ak_surface_nets(nx: u32, ny: u32, nz: u32, ox: f64, oy: f64, oz: f64, s: f64) -> u32 {
+    let n = nx as usize * ny as usize * nz as usize;
+    let state = st();
+    if n == 0 || state.f64_buf.len() < n {
+        return u32::MAX;
+    }
+    let d: Vec<f32> = state.f64_buf[..n].iter().map(|&v| v as f32).collect();
+    let m = anikit_core::sdf::surface_nets(&d, nx as usize, ny as usize, nz as usize, [ox as f32, oy as f32, oz as f32], s as f32);
+    push_slot(&mut state.meshes, m)
+}
+
+// ---------------------------------------------------------------------------
 // Gaussian splats (WebGL renderer): parsing, packing, depth sorting
 // ---------------------------------------------------------------------------
 
@@ -2523,23 +2559,4 @@ pub extern "C" fn ak_gs_sort(id: u32, vx: f64, vy: f64, vz: f64, vw: f64, mix: f
         }
         None => core::ptr::null(),
     }
-}
-
-// ---------------------------------------------------------------------------
-// SDF meshing (surface nets)
-// ---------------------------------------------------------------------------
-
-/// Mesh a sampled signed distance field: `nx·ny·nz` samples (x fastest) in the
-/// f64 buffer, grid spacing `s`, first sample at `(ox, oy, oz)`. Returns a mesh
-/// handle (read it with `ak_mesh_ptr`, free it with `ak_mesh_free`), or `u32::MAX`.
-#[no_mangle]
-pub extern "C" fn ak_surface_nets(nx: u32, ny: u32, nz: u32, ox: f64, oy: f64, oz: f64, s: f64) -> u32 {
-    let n = nx as usize * ny as usize * nz as usize;
-    let state = st();
-    if n == 0 || state.f64_buf.len() < n {
-        return u32::MAX;
-    }
-    let d: Vec<f32> = state.f64_buf[..n].iter().map(|&v| v as f32).collect();
-    let m = anikit_core::sdf::surface_nets(&d, nx as usize, ny as usize, nz as usize, [ox as f32, oy as f32, oz as f32], s as f32);
-    push_slot(&mut state.meshes, m)
 }

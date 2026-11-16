@@ -287,8 +287,21 @@ export function decodeBase64(s: string, via?: 'native' | 'node' | 'atob'): Uint8
 
 const queue: Array<() => void> = [];
 let readyResolve!: () => void;
+/** Base for resolving a relative `init()` URL when checking its scheme (relative strings are fetched as given). */
+const FILE_BASE = typeof location !== 'undefined' && location.href ? location.href : 'file:///';
 /** Resolves once the WebAssembly core is instantiated. */
 export const ready: Promise<void> = new Promise<void>((r) => (readyResolve = r));
+
+let warmup: (() => void) | null = null;
+/**
+ * @internal Set by the entry point: exercises the hot paths (create, evaluate,
+ * kill) once. The first call into the module pays for compiling those
+ * functions (~45 ms on a 4x-throttled CPU); run in a task of its own before
+ * `ready` resolves, it no longer lands in the page's set-up task.
+ */
+export function _setWarmup(fn: () => void): void {
+  warmup = fn;
+}
 
 let MODULE: WebAssembly.Module | null = null;
 /** The compiled core module once ready (shared with workers), or null. */
@@ -300,7 +313,19 @@ function install(instance: WebAssembly.Instance, mod?: WebAssembly.Module): void
   if (mod) MODULE = mod;
   W = instance.exports as unknown as Exports;
   views();
-  readyResolve();
+  const warm = warmup;
+  if (warm && !queue.length && typeof setTimeout === 'function') {
+    // Nothing waiting on the core yet: warm up in a task of its own, then
+    // resolve `ready` in the next one (so `ready.then(setup)` starts a new task).
+    setTimeout(() => {
+      try {
+        warm();
+      } catch {
+        /* a warm-up must never break the page */
+      }
+      setTimeout(readyResolve, 0);
+    }, 0);
+  } else readyResolve();
   // Flush operations requested before the core was ready, in order. One bad
   // call (an unknown easing, say) must not drop everything queued after it,
   // and its error must still surface.
@@ -319,9 +344,28 @@ function install(instance: WebAssembly.Instance, mod?: WebAssembly.Module): void
 let started = false;
 function boot(): void {
   if (started) return;
+  // A native build of the same core (Node: the anikit-node addon, installed by
+  // anikit/node before this module loads): same exports, same memory contract.
+  const native = (globalThis as { __ANIKIT_NATIVE__?: Exports }).__ANIKIT_NATIVE__;
+  if (native) {
+    started = true;
+    install({ exports: native } as unknown as WebAssembly.Instance);
+    return;
+  }
   if (!WASM_BASE64) {
-    // Lean build: stream the module that ships next to this file.
-    void init(new URL('./anikit.wasm', import.meta.url));
+    // Lean build: stream the module that ships next to this file. Re-bundled
+    // into a script without import.meta (an IIFE), there is no "next to this
+    // file": wait for the app's init(url) instead of throwing at load. If the
+    // fetch fails, an explicit `init(source)` can still load the core.
+    let url: URL;
+    try {
+      url = new URL('./anikit.wasm', import.meta.url);
+    } catch {
+      return;
+    }
+    init(url).catch(() => {
+      if (!W) started = false;
+    });
     return;
   }
   started = true;
@@ -349,7 +393,16 @@ export async function init(source?: string | URL | Response | BufferSource): Pro
   if (started) return ready;
   started = true;
   let result: WebAssembly.WebAssemblyInstantiatedSource;
-  if (typeof source === 'string' || source instanceof URL) {
+  const url = typeof source === 'string' || source instanceof URL ? new URL(String(source), FILE_BASE) : null;
+  const g = globalThis as any;
+  if (url !== null && url.protocol === 'file:' && g.process?.versions?.node) {
+    // Node's fetch has no file: scheme; read the file instead.
+    // Built at run time so bundlers (which constant-fold a literal) never try
+    // to resolve a Node built-in for the browser.
+    const fs = ['node', 'fs/promises'].join(':');
+    const bytes: Uint8Array = await (await import(/* @vite-ignore */ /* webpackIgnore: true */ fs)).readFile(url);
+    result = await WebAssembly.instantiate(bytes as BufferSource, {});
+  } else if (typeof source === 'string' || source instanceof URL) {
     const res = fetch(source);
     result = WebAssembly.instantiateStreaming
       ? await WebAssembly.instantiateStreaming(res, {})

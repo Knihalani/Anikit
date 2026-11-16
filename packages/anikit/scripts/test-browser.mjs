@@ -24,6 +24,19 @@ await build({
   bundle: true, format: 'iife', outfile: join(dir, 'ak.js'), logLevel: 'error',
 });
 const bundle = readFileSync(join(dir, 'ak.js'), 'utf8');
+// `lean: true` tests get dist/anikit.lean.js re-bundled as a plain script (no
+// import.meta), with anikit.wasm served next to the page (run build.mjs first).
+let leanBundle = null;
+const leanOf = async () => {
+  if (leanBundle === null) {
+    await build({
+      stdin: { contents: "import * as ak from './dist/anikit.lean.js'; window.ak = ak;", resolveDir: pkg, loader: 'js' },
+      bundle: true, format: 'iife', outfile: join(dir, 'lean.js'), logLevel: 'error',
+    });
+    leanBundle = readFileSync(join(dir, 'lean.js'), 'utf8');
+  }
+  return leanBundle;
+};
 
 const files = readdirSync(join(pkg, 'test/browser')).filter((f) => f.endsWith('.mjs')).sort();
 const GL_ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
@@ -57,12 +70,18 @@ for (const f of files) {
       const s = m.text();
       if (s.includes('anikit:')) warnings.push(s);
     });
-    await page.route('http://test.local/**', (r) => r.fulfill({
-      status: 200, contentType: 'text/html',
-      body: `<!doctype html><meta charset="utf-8"><style>body{margin:0;font:16px/1.4 sans-serif}</style>${t.html ?? ''}<script>${bundle}</script>`,
-    }));
+    const src = t.lean ? await leanOf() : bundle;
+    await page.route('http://test.local/**', (r) => {
+      if (r.request().url().endsWith('/anikit.wasm')) {
+        return r.fulfill({ status: 200, contentType: 'application/wasm', body: readFileSync(join(pkg, 'dist/anikit.wasm')) });
+      }
+      return r.fulfill({
+        status: 200, contentType: 'text/html',
+        body: `<!doctype html><meta charset="utf-8"><style>body{margin:0;font:16px/1.4 sans-serif}</style>${t.html ?? ''}<script>${src}</script>`,
+      });
+    });
     await page.goto('http://test.local/index.html');
-    await page.evaluate(() => window.ak.ready);
+    if (!t.lean) await page.evaluate(() => window.ak.ready);
     const h = {
       warnings: () => { const w = warnings; warnings = []; return w; },
       wait: (ms) => page.waitForTimeout(ms),

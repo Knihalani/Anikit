@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/anikit-core", "crates/anikit-wasm", "crates/anikit-py"]
+members = ["crates/anikit-core", "crates/anikit-wasm", "crates/anikit-py", "crates/anikit-node"]
 default-members = ["crates/anikit-core"]
 
 [workspace.package]

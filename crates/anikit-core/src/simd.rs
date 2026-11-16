@@ -117,7 +117,131 @@ mod imp {
     }
 }
 
-#[cfg(not(all(target_arch = "wasm32", target_feature = "simd128")))]
+// x86-64 with SSE4.1 (native builds: the Node addon, Python, benches): one SSE
+// instruction per operation, with the WebAssembly semantics bit for bit
+// (pmin/pmax operand order, saturating float → int), so native renders match
+// the wasm ones exactly.
+#[cfg(all(target_arch = "x86_64", target_feature = "sse4.1", not(all(target_arch = "wasm32", target_feature = "simd128"))))]
+#[allow(unsafe_code, unused_unsafe)] // the only unsafe code in the core: bit casts between SSE registers and arrays
+mod imp {
+    use core::arch::x86_64 as x;
+    pub type Raw = x::__m128;
+    pub type MaskRaw = x::__m128;
+    #[inline(always)]
+    pub fn splat(v: f32) -> Raw {
+        unsafe { x::_mm_set1_ps(v) }
+    }
+    #[inline(always)]
+    pub fn new(a: f32, b: f32, c: f32, d: f32) -> Raw {
+        unsafe { x::_mm_setr_ps(a, b, c, d) }
+    }
+    #[inline(always)]
+    pub fn arr(v: Raw) -> [f32; 4] {
+        unsafe { core::mem::transmute::<Raw, [f32; 4]>(v) }
+    }
+    #[inline(always)]
+    pub fn add(a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm_add_ps(a, b) }
+    }
+    #[inline(always)]
+    pub fn sub(a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm_sub_ps(a, b) }
+    }
+    #[inline(always)]
+    pub fn mul(a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm_mul_ps(a, b) }
+    }
+    #[inline(always)]
+    pub fn div(a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm_div_ps(a, b) }
+    }
+    #[inline(always)]
+    pub fn neg(a: Raw) -> Raw {
+        unsafe { x::_mm_xor_ps(a, x::_mm_set1_ps(-0.0)) }
+    }
+    #[inline(always)]
+    pub fn sqrt(a: Raw) -> Raw {
+        unsafe { x::_mm_sqrt_ps(a) }
+    }
+    #[inline(always)]
+    pub fn floor(a: Raw) -> Raw {
+        unsafe { x::_mm_floor_ps(a) }
+    }
+    #[inline(always)]
+    pub fn abs(a: Raw) -> Raw {
+        unsafe { x::_mm_andnot_ps(x::_mm_set1_ps(-0.0), a) }
+    }
+    // wasm pmin(a, b) = b < a ? b : a, which is minps(b, a); pmax likewise.
+    #[inline(always)]
+    pub fn min(a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm_min_ps(b, a) }
+    }
+    #[inline(always)]
+    pub fn max(a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm_max_ps(b, a) }
+    }
+    #[inline(always)]
+    pub fn lt(a: Raw, b: Raw) -> MaskRaw {
+        unsafe { x::_mm_cmplt_ps(a, b) }
+    }
+    #[inline(always)]
+    pub fn gt(a: Raw, b: Raw) -> MaskRaw {
+        unsafe { x::_mm_cmpgt_ps(a, b) }
+    }
+    #[inline(always)]
+    pub fn le(a: Raw, b: Raw) -> MaskRaw {
+        unsafe { x::_mm_cmple_ps(a, b) }
+    }
+    #[inline(always)]
+    pub fn bits(m: MaskRaw) -> u32 {
+        unsafe { x::_mm_movemask_ps(m) as u32 }
+    }
+    #[inline(always)]
+    pub fn select(m: MaskRaw, a: Raw, b: Raw) -> Raw {
+        unsafe { x::_mm_or_ps(x::_mm_and_ps(m, a), x::_mm_andnot_ps(m, b)) }
+    }
+    /// wasm `i32x4.trunc_sat_f32x4`: NaN → 0, saturating at the i32 range.
+    #[inline(always)]
+    unsafe fn trunc_sat(v: Raw) -> x::__m128i {
+        let t = x::_mm_cvttps_epi32(v); // NaN and out of range → i32::MIN
+        let big = x::_mm_castps_si128(x::_mm_cmpge_ps(v, x::_mm_set1_ps(2147483648.0)));
+        let nan = x::_mm_castps_si128(x::_mm_cmpunord_ps(v, v));
+        let t = x::_mm_blendv_epi8(t, x::_mm_set1_epi32(i32::MAX), big);
+        x::_mm_andnot_si128(nan, t)
+    }
+    #[inline(always)]
+    pub fn pack(r: Raw, g: Raw, b: Raw) -> [u32; 4] {
+        unsafe {
+            let q = |v: Raw| x::_mm_min_epi32(trunc_sat(x::_mm_add_ps(x::_mm_mul_ps(v, x::_mm_set1_ps(255.0)), x::_mm_set1_ps(0.5))), x::_mm_set1_epi32(255));
+            let v = x::_mm_or_si128(x::_mm_or_si128(q(r), x::_mm_slli_epi32(q(g), 8)), x::_mm_or_si128(x::_mm_slli_epi32(q(b), 16), x::_mm_set1_epi32(0xff00_0000u32 as i32)));
+            core::mem::transmute::<x::__m128i, [u32; 4]>(v)
+        }
+    }
+    #[inline(always)]
+    pub fn bytes(p: u32) -> Raw {
+        unsafe { x::_mm_cvtepi32_ps(x::_mm_cvtepu8_epi32(x::_mm_cvtsi32_si128(p as i32))) }
+    }
+    #[inline(always)]
+    pub fn transpose(r: [Raw; 4]) -> [Raw; 4] {
+        unsafe {
+            let t0 = x::_mm_unpacklo_ps(r[0], r[1]);
+            let t1 = x::_mm_unpackhi_ps(r[0], r[1]);
+            let t2 = x::_mm_unpacklo_ps(r[2], r[3]);
+            let t3 = x::_mm_unpackhi_ps(r[2], r[3]);
+            [x::_mm_movelh_ps(t0, t2), x::_mm_movehl_ps(t2, t0), x::_mm_movelh_ps(t1, t3), x::_mm_movehl_ps(t3, t1)]
+        }
+    }
+    #[inline(always)]
+    pub fn unpack(p: [u32; 4]) -> [Raw; 3] {
+        unsafe {
+            let v = core::mem::transmute::<[u32; 4], x::__m128i>(p);
+            let m = x::_mm_set1_epi32(255);
+            [x::_mm_cvtepi32_ps(x::_mm_and_si128(v, m)), x::_mm_cvtepi32_ps(x::_mm_and_si128(x::_mm_srli_epi32(v, 8), m)), x::_mm_cvtepi32_ps(x::_mm_and_si128(x::_mm_srli_epi32(v, 16), m))]
+        }
+    }
+}
+
+#[cfg(not(any(all(target_arch = "wasm32", target_feature = "simd128"), all(target_arch = "x86_64", target_feature = "sse4.1"))))]
 mod imp {
     pub type Raw = [f32; 4];
     pub type MaskRaw = [bool; 4];
@@ -447,7 +571,8 @@ impl V4 {
         }
         #[cfg(not(all(target_arch = "wasm32", target_feature = "simd128")))]
         {
-            Self(core::array::from_fn(|i| f32::from_bits(p[i] & mask)))
+            let a: [f32; 4] = core::array::from_fn(|i| f32::from_bits(p[i] & mask));
+            Self(imp::new(a[0], a[1], a[2], a[3]))
         }
     }
     /// The integers `p & mask`, converted to f32.
@@ -460,7 +585,8 @@ impl V4 {
         }
         #[cfg(not(all(target_arch = "wasm32", target_feature = "simd128")))]
         {
-            Self(core::array::from_fn(|i| (p[i] & mask) as f32))
+            let a: [f32; 4] = core::array::from_fn(|i| (p[i] & mask) as f32);
+            Self(imp::new(a[0], a[1], a[2], a[3]))
         }
     }
     /// Sum of the four lanes, as (a + b) + (c + d).

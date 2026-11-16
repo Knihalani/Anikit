@@ -124,7 +124,12 @@ export function isElement(t: unknown): t is Element {
 /** Decompose an element's computed transform into the state (once per element). */
 function readTransform(el: Element, s: TargetState): void {
   const style = (el as HTMLElement).style;
-  const raw = style && style.transform ? style.transform : computed(el, 'transform');
+  const inline = style && style.transform ? style.transform : '';
+  // An inline function list (`translateX(50px) rotate(10deg)`) is read as
+  // written: exact, units kept. Anything else goes through the matrix.
+  if (inline && inline !== 'none' && !/matrix/.test(inline) && readFunctions(inline, s)) return;
+  let raw = inline && /matrix/.test(inline) ? inline : computed(el, 'transform');
+  if ((!raw || raw === 'none') && inline) raw = inline;
   if (!raw || raw === 'none') return;
   const m = /matrix(3d)?\(([^)]+)\)/.exec(raw);
   if (!m) return;
@@ -160,6 +165,77 @@ function readTransform(el: Element, s: TargetState): void {
   s.t[6] = r3(Math.atan(k) * deg);
   s.t[8] = r3(sx);
   s.t[9] = r3(sy);
+}
+
+const ANGLE_DEG: Record<string, number> = { deg: 1, rad: 180 / Math.PI, turn: 360, grad: 0.9, '': 1 };
+/**
+ * Read a CSS transform function list into the state's slots (as written,
+ * in the state's fixed order). False, with nothing written, if a function
+ * or unit is not one the state holds; the caller then uses the matrix.
+ */
+function readFunctions(css: string, s: TargetState): boolean {
+  const t = IDENTITY.slice();
+  const u = s.u.slice();
+  const re = /([a-zA-Z0-9]+)\(([^)]*)\)/g;
+  let m: RegExpExecArray | null;
+  let any = false;
+  const num = (x: string): [number, string] | null => {
+    const r = /^\s*(-?[\d.]+(?:e[-+]?\d+)?)\s*([a-z%]*)\s*$/i.exec(x);
+    return r ? [parseFloat(r[1]), r[2].toLowerCase()] : null;
+  };
+  const len = (x: string, slot: number, pct: number): boolean => {
+    const v = num(x);
+    if (!v) return false;
+    if (v[1] === '%' && pct >= 0) t[pct] = v[0];
+    else if (v[1] === '%' || v[1] === '' && v[0] !== 0) return false;
+    else {
+      t[slot] = v[0];
+      if (slot <= 2 && v[1]) u[slot] = v[1];
+    }
+    return true;
+  };
+  const ang = (x: string, slot: number): boolean => {
+    const v = num(x);
+    if (!v || !(v[1] in ANGLE_DEG) || (v[1] === '' && v[0] !== 0)) return false;
+    t[slot] = v[0] * ANGLE_DEG[v[1]];
+    return true;
+  };
+  const sc = (x: string, slot: number): boolean => {
+    const v = num(x);
+    if (!v || (v[1] !== '' && v[1] !== '%')) return false;
+    t[slot] = v[1] === '%' ? v[0] / 100 : v[0];
+    return true;
+  };
+  while ((m = re.exec(css)) !== null) {
+    const f = m[1];
+    const a = m[2].split(',');
+    let ok: boolean;
+    switch (f) {
+      case 'translateX': ok = len(a[0], 0, 12); break;
+      case 'translateY': ok = len(a[0], 1, 13); break;
+      case 'translateZ': ok = len(a[0], 2, -1); break;
+      case 'translate': ok = len(a[0], 0, 12) && (a.length < 2 || len(a[1], 1, 13)); break;
+      case 'translate3d': ok = a.length === 3 && len(a[0], 0, 12) && len(a[1], 1, 13) && len(a[2], 2, -1); break;
+      case 'rotate': case 'rotateZ': ok = ang(a[0], 3); break;
+      case 'rotateX': ok = ang(a[0], 4); break;
+      case 'rotateY': ok = ang(a[0], 5); break;
+      case 'skewX': ok = ang(a[0], 6); break;
+      case 'skewY': ok = ang(a[0], 7); break;
+      case 'skew': ok = ang(a[0], 6) && (a.length < 2 || ang(a[1], 7)); break;
+      case 'scale': ok = sc(a[0], 8) && sc(a.length < 2 ? a[0] : a[1], 9); break;
+      case 'scaleX': ok = sc(a[0], 8); break;
+      case 'scaleY': ok = sc(a[0], 9); break;
+      case 'scaleZ': ok = sc(a[0], 10); break;
+      case 'perspective': ok = len(a[0], 11, -1); break;
+      default: ok = false;
+    }
+    if (!ok) return false;
+    any = true;
+  }
+  if (!any) return false;
+  for (let i = 0; i < t.length; i++) s.t[i] = t[i];
+  for (let i = 0; i < 3; i++) s.u[i] = u[i];
+  return true;
 }
 
 /**
