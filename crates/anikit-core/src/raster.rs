@@ -50,6 +50,9 @@ pub struct Material {
     pub tex_gain: f32,
     /// What `lines` draws: 0 grid lines (default), 1 hexagons, 2 dots, 3 circuit traces.
     pub pattern: u8,
+    /// How much distance fog / ground fog applies (1 = fully, 0 = none: sky domes, backdrops
+    /// painted with their own haze).
+    pub fog: f32,
 }
 
 impl Default for Material {
@@ -76,6 +79,7 @@ impl Default for Material {
             tex_repeat: [1.0, 1.0],
             tex_gain: 1.0,
             pattern: 0,
+            fog: 1.0,
         }
     }
 }
@@ -237,7 +241,8 @@ pub struct Raster {
     pub height: usize,
     /// RGBA words (little endian), `width * height`.
     pub color: Vec<u32>,
-    depth: Vec<f32>,
+    /// Depth per pixel: NDC z (−1 near … 1 far) of the nearest surface, `inf` where nothing was drawn.
+    pub depth: Vec<f32>,
     // Scratch per mesh draw.
     clip: Vec<[f32; 4]>,
     var: Vec<[f32; NV]>,
@@ -656,7 +661,7 @@ impl Shade<'_> {
                 c[k] = c[k] + e * m.line_color[k];
             }
         }
-        if self.fog_on || l.ground_fog[2] > 0.0 {
+        if (self.fog_on || l.ground_fog[2] > 0.0) && m.fog > 0.0 {
             let dist = d2 * rd;
             let mut f = if self.fog_on { ((dist - l.fog[0]) * self.fog_inv).clamp(0.0, 1.0) } else { V4::splat(0.0) };
             if l.ground_fog[2] > 0.0 {
@@ -665,6 +670,7 @@ impl Shade<'_> {
                 let g = low * low * (dist * (1.0 / gf[2])).minf(1.0);
                 f = f + (1.0 - f) * g;
             }
+            let f = f * m.fog;
             for k in 0..3 {
                 c[k] = c[k] + (l.fog_color[k] - c[k]) * f;
             }

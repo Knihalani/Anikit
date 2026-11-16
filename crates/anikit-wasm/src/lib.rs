@@ -1980,20 +1980,21 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
         tex_repeat: [b[75], b[76]],
         tex_gain: b[77],
         pattern: if nf > 82 { s.f64_buf[82] as u8 } else { 0 },
+        fog: if nf > 83 { s.f64_buf[83] as f32 } else { 1.0 },
     };
     let light = Lighting { key: v3(24), key_color: v3(27), fill: v3(30), fill_color: v3(33), rim_color: v3(36), fog: [b[39], if b[40] > 0.0 { b[40] } else { f32::INFINITY }], fog_color: v3(41), sky: v3(48), horizon: v3(51), ground: v3(54), strips: v3(70), ground_fog: [0.0; 3], ..Lighting::default() };
     let Some(Some(m)) = s.meshes.get(mesh as usize) else { return 0 };
     let tex = (b[73] as usize).checked_sub(1).and_then(|t| s.textures.get(t)).and_then(|t| t.as_ref());
     let gloss = if nf > 78 { s.f64_buf[78] as f32 } else { 0.5 };
     let ground_fog = if nf > 81 { [s.f64_buf[79] as f32, s.f64_buf[80] as f32, s.f64_buf[81] as f32] } else { [0.0; 3] };
-    // [83] point light count, then 8 floats per light (position, colour, radius, intensity).
+    // [83] material fog, [84] point light count, then 8 floats per light (position, colour, radius, intensity).
     let mut point_lights = [[0.0f32; 8]; 8];
     let mut point_count = 0u8;
-    if nf > 83 {
-        let n = (s.f64_buf[83] as usize).min(8).min((nf - 84) / 8);
+    if nf > 84 {
+        let n = (s.f64_buf[84] as usize).min(8).min((nf - 85) / 8);
         for (i, pl) in point_lights.iter_mut().enumerate().take(n) {
             for (k, v) in pl.iter_mut().enumerate() {
-                *v = s.f64_buf[84 + i * 8 + k] as f32;
+                *v = s.f64_buf[85 + i * 8 + k] as f32;
             }
         }
         point_count = n as u8;
@@ -2137,6 +2138,14 @@ pub extern "C" fn ak_raster_points(id: u32, n: u32, has_prev: u32) {
     let n = (n as usize).min(buf.len() / 6);
     let (pos, rgb) = buf[..n * 6].split_at(n * 3);
     r.points(pos, rgb, &vp, if has_prev != 0 { Some(&prev) } else { None }, [b[32], b[33], b[34]], &style);
+}
+/// The depth buffer (one f32 per pixel: NDC z of the nearest surface, `inf` where nothing was drawn).
+#[no_mangle]
+pub extern "C" fn ak_raster_depth_ptr(id: u32) -> *const f32 {
+    match st().rasters.get(id as usize) {
+        Some(Some((r, _))) => r.depth.as_ptr(),
+        _ => core::ptr::null(),
+    }
 }
 #[no_mangle]
 pub extern "C" fn ak_raster_ptr(id: u32) -> *const u32 {

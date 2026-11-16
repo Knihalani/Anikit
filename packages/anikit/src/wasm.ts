@@ -175,6 +175,7 @@ export interface Exports {
   ak_raster_motion_blur(id: number, shutter: number, maxPx: number): void;
   ak_raster_points(id: number, n: number, hasPrev: number): void;
   ak_raster_ptr(id: number): number;
+  ak_raster_depth_ptr(id: number): number;
   ak_emitter_create(capacity: number, seed: number): number;
   ak_emitter_free(id: number): void;
   ak_emitter_params(id: number): void;

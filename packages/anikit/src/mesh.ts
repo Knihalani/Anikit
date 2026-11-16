@@ -318,6 +318,11 @@ export interface MaterialOptions {
   textureMode?: 'albedo' | 'emissive';
   textureRepeat?: [number, number];
   textureGain?: number;
+  /**
+   * How much the render's `fog` / `groundFog` applies to this material (default 1;
+   * 0 = none): sky domes and backdrops painted with their own haze.
+   */
+  fog?: number;
 }
 export interface LightOptions {
   key?: V3;
@@ -488,6 +493,7 @@ export class Renderer3D {
         m.texture ? m.texture.id + 1 : 0, m.texture ? (m.textureMode === 'emissive' ? 2 : 1) : 0, ...(m.textureRepeat ?? [1, 1]), m.textureGain ?? 1, gloss,
         o.groundFog?.bottom ?? 0, o.groundFog?.top ?? 0, o.groundFog?.range ?? 0,
         ({ grid: 0, hex: 1, dots: 2, circuit: 3 } as const)[m.pattern ?? 'grid'] ?? 0,
+        m.fog ?? 1,
         ...pointLights];
       const at = f64Buf(vals.length); // may grow memory: reserve before touching F64
       F64.set(vals, at);
@@ -604,6 +610,34 @@ export class Renderer3D {
   }
 
   private prevMatrix: number[] | null = null;
+  private dist: Float32Array | null = null;
+
+  /**
+   * The depth buffer of the last `render()`: one value per pixel, `Infinity` where
+   * nothing was drawn (sky). Without arguments it is NDC z (−1 near … 1 far), a view
+   * into WebAssembly memory valid until the next call. Pass the scene that was
+   * rendered to get the distance along the view direction in world units instead
+   * (a buffer reused between calls). Drive post effects by depth: outlines,
+   * fog, transitions that sweep from the horizon towards the camera.
+   *
+   * ```ts
+   * const dist = r3.depth(cam);   // after r3.render(cam, items)
+   * const centre = dist[(r3.height >> 1) * r3.width + (r3.width >> 1)];
+   * ```
+   */
+  depth(scene?: Scene3D): Float32Array {
+    const n = this.width * this.height;
+    const z = new Float32Array(W!.memory.buffer, core().ak_raster_depth_ptr(this.id), n);
+    if (!scene) return z;
+    if (!this.dist || this.dist.length !== n) this.dist = new Float32Array(n);
+    const out = this.dist, near = scene.near, far = scene.far;
+    const a = 2 * far * near, b = far + near, c = far - near;
+    for (let i = 0; i < n; i++) {
+      const v = z[i];
+      out[i] = v === Infinity ? Infinity : a / (b - v * c);
+    }
+    return out;
+  }
 
   /** Forget the previous camera (after a cut), so motion blur and point streaks don't smear across it. */
   resetMotion(): this {
