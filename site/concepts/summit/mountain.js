@@ -48,8 +48,8 @@ vec3 skyCol(vec3 d) {
   vec3 zen = vec3(0.06, 0.20, 0.52);
   vec3 mid = vec3(0.22, 0.45, 0.82);
   vec3 hzSun = mix(vec3(1.0, 0.78, 0.52), vec3(1.1, 0.68, 0.38), uWarm);
-  vec3 hzAway = vec3(0.62, 0.70, 0.86);
-  vec3 hz = mix(hzAway, hzSun, pow(az, 3.0));
+  vec3 hzAway = vec3(0.56, 0.64, 0.82);
+  vec3 hz = mix(hzAway, hzSun, pow(az, 2.0));
   float eu = max(e, 0.0);
   vec3 c = mix(hz, mid, smoothstep(0.0, 0.16, eu));
   c = mix(c, zen, smoothstep(0.12, 0.7, eu));
@@ -62,7 +62,7 @@ vec3 skyCol(vec3 d) {
 vec3 haze(vec3 col, vec3 dir, float dist, float k) {
   float f = 1.0 - exp(-dist * k);
   vec3 h = skyCol(vec3(dir.x, max(dir.y, 0.0) + 0.015, dir.z));
-  h = mix(vec3(0.50, 0.62, 0.84), h, 0.55 + 0.45 * pow(max(dot(dir, uSun), 0.0), 4.0));
+  h = mix(vec3(0.52, 0.64, 0.86), h * 0.92, 0.45 + 0.55 * pow(max(dot(dir, uSun), 0.0), 4.0));
   return mix(col, h, f);
 }
 vec3 tonemap(vec3 c) {
@@ -122,37 +122,38 @@ void main() {
   o = vec4(tonemap(c), 1.0);
 }`;
 
-// --- distant ranges: vertical strips with ridged tops ---
+// --- distant mountains: a big polar heightfield with peaks poking through the cloud sea ---
 const rangeVS = HEAD + `
 layout(location = 0) in vec3 aP;
-layout(location = 1) in vec3 aA;   // (lateral slope, top height, layer)
+layout(location = 1) in vec3 aN;
 uniform mat4 uVP;
-uniform vec3 uEye;
 out vec3 vW;
-out vec3 vA;
-void main() { vW = aP; vA = aA; gl_Position = uVP * vec4(aP, 1.0); }`;
+out vec3 vN;
+void main() { vW = aP; vN = aN; gl_Position = uVP * vec4(aP, 1.0); }`;
 const rangeFS = HEAD + COMMON + `
 in vec3 vW;
-in vec3 vA;
+in vec3 vN;
 uniform vec3 uEye;
+uniform float uDeckY;
 out vec4 o;
 void main() {
   vec3 v = vW - uEye; float dist = length(v); vec3 dir = v / dist;
-  float below = vA.y - vW.y;                       // metres below the ridge line
-  vec2 st = vec2(atan(vW.x, -vW.z) * 900.0, vW.y);
-  float n = vnoise(st * vec2(0.03, 0.012)) * 0.6 + vnoise(st * vec2(0.09, 0.03)) * 0.4;
-  // snow on the upper part, streaky gullies further down
-  float snow = 1.0 - smoothstep(120.0 + n * 260.0, 360.0 + n * 420.0, below);
-  snow = max(snow, smoothstep(0.66, 0.8, vnoise(st * vec2(0.08, 0.02))) * 0.7 * (1.0 - smoothstep(300.0, 900.0, below)));
-  // lateral facing: slope sign tells whether this face turns toward the sun
-  vec3 tang = normalize(vec3(-dir.z, 0.0, dir.x));
-  vec3 N = normalize(vec3(0.0, 1.0, 0.0) * 0.55 - tang * vA.x * 1.6 - dir * 0.6);
-  float lit = clamp(dot(N, uSun) * 1.2 + 0.25, 0.0, 1.0);
-  vec3 rock = vec3(0.30, 0.27, 0.27);
-  vec3 alb = mix(rock, vec3(0.95), snow);
-  vec3 sunC = mix(vec3(1.5, 1.3, 1.05), vec3(1.75, 1.2, 0.75), uWarm);
-  vec3 col = alb * (sunC * lit + vec3(0.40, 0.50, 0.75) * 0.65);
-  col = haze(col, dir, dist, 0.00009);
+  vec3 d1 = vnoised(vW.xz * 0.012), d2 = vnoised(vW.xz * 0.05 + 7.0);
+  vec2 g = d1.yz * 0.012 * 9.0 + d2.yz * 0.05 * 2.0;
+  vec3 N = normalize(normalize(vN) + vec3(-g.x, 0.0, -g.y) * 0.5);
+  float alt = vW.y - uDeckY;
+  // snow holds on slopes gentler than ~50 degrees; streaks follow the noise
+  float snow = smoothstep(0.66, 0.8, N.y + (d1.x - 0.5) * 0.4 + (d2.x - 0.5) * 0.3);
+  vec3 sunC = mix(vec3(1.55, 1.38, 1.15), vec3(1.8, 1.25, 0.8), uWarm);
+  vec3 sky = vec3(0.42, 0.55, 0.85);
+  float ndl = dot(N, uSun);
+  vec3 sn = vec3(0.93, 0.95, 1.0) * (sunC * 1.1 * clamp((ndl + 0.05) / 1.05, 0.0, 1.0) + sky * (0.28 + 0.2 * N.y));
+  vec3 rk = vec3(0.2, 0.18, 0.19) * (0.7 + 0.6 * d2.x) * (sunC * max(ndl, 0.0) * 1.4 + sky * 0.4);
+  vec3 col = mix(rk, sn, snow);
+  // cloud fringe where the peaks meet the sea
+  float fringe = 1.0 - smoothstep(0.0, 90.0 + 80.0 * d1.x, alt);
+  col = mix(col, vec3(1.0, 0.92, 0.88), fringe * 0.6);
+  col = haze(col, dir, dist, 0.000075);
   o = vec4(tonemap(col), 1.0);
 }`;
 
@@ -175,14 +176,14 @@ void main() {
   vec3 a = vnoised(q), b = vnoised(q * 2.3 + 5.0), c = vnoised(q * 5.1 + 9.0);
   float h = a.x * 0.55 + b.x * 0.3 + c.x * 0.15;
   vec2 g = a.yz * 0.55 + b.yz * 0.3 * 2.3 + c.yz * 0.15 * 5.1;
-  vec3 N = normalize(vec3(-g.x * 0.6, 1.0, -g.y * 0.6));
-  float lit = clamp(dot(N, uSun) * 2.2 + 0.35, 0.0, 1.3);
+  vec3 N = normalize(vec3(-g.x * 1.4, 1.0, -g.y * 1.4));
+  float lit = clamp(dot(N, uSun) * 3.0 + 0.3, 0.0, 1.3);
   vec3 sunC = mix(vec3(1.35, 1.2, 1.0), vec3(1.55, 1.08, 0.7), uWarm);
-  vec3 shade = vec3(0.62, 0.66, 0.86);
-  vec3 col = mix(shade, sunC, lit * (0.6 + 0.4 * h));
+  vec3 shade = vec3(0.46, 0.5, 0.76);
+  vec3 col = mix(shade, sunC * 0.95, clamp(lit * (0.35 + 0.65 * h), 0.0, 1.0));
   float fwd = pow(max(dot(dir, uSun), 0.0), 8.0);
   col += vec3(0.5, 0.32, 0.15) * fwd;
-  col = haze(col, dir, dist, 0.00011);
+  col = haze(col, dir, dist, 0.00008);
   o = vec4(tonemap(col), 1.0);
 }`;
 
@@ -203,8 +204,10 @@ out vec2 vUV;
 out vec4 vS;
 out vec3 vDir;
 out float vDist;
+out float vWarmX;
 void main() {
   vec3 c;
+  vWarmX = 0.5;
   float r = iP.w;
   if (uWordMode > 0.5) {
     // drift in the wind: each puff sways with its own phase, wisps (kind > 0.5) stream more
@@ -214,6 +217,7 @@ void main() {
     vec2 w = uWind * (0.004 + 0.012 * iS.w) * (0.6 + 0.4 * sin(ph));
     vec2 q = iP.xy + sway + w;
     r *= 1.0 + 0.06 * sin(uT * 0.4 + ph * 3.0);
+    vWarmX = clamp(0.45 + q.x * 1.1 + q.y * 0.6, 0.0, 1.0);
     c = uWordC + (q.x * uRight + q.y * uUp - iP.z * uFwd) * uWordS;
     r *= uWordS;
   } else {
@@ -229,6 +233,7 @@ in vec2 vUV;
 in vec4 vS;
 in vec3 vDir;
 in float vDist;
+in float vWarmX;
 uniform vec3 uSunV;    // sun in billboard space (right, up, toward-camera)
 uniform float uWordMode;
 out vec4 o;
@@ -247,9 +252,11 @@ void main() {
   // silver lining: thin edges facing the sun glow
   float rim = pow(clamp(1.0 - N.z, 0.0, 1.0), 2.0) * clamp(dot(normalize(vUV + 1e-4), normalize(uSunV.xy + 1e-4)), 0.0, 1.0);
   vec3 sunC = mix(vec3(1.45, 1.3, 1.1), vec3(1.7, 1.18, 0.72), uWarm);
-  vec3 shade = uWordMode > 0.5 ? vec3(0.78, 0.82, 0.98) : vec3(0.6, 0.64, 0.85);
-  vec3 col = mix(shade, sunC, lit) * vS.z + vec3(1.0, 0.75, 0.45) * rim * 0.7;
-  col = haze(col, vDir, vDist, uWordMode > 0.5 ? 0.00004 : 0.00011);
+  vec3 shade = uWordMode > 0.5 ? vec3(0.62, 0.68, 0.9) : vec3(0.6, 0.64, 0.85);
+  vec3 sunW = uWordMode > 0.5 ? mix(vec3(1.25, 1.02, 0.72), vec3(1.4, 0.92, 0.5), uWarm) : sunC;
+  vec3 col = mix(shade, sunW, lit) * vS.z + vec3(1.0, 0.7, 0.38) * rim * 0.9;
+  if (uWordMode > 0.5) col *= mix(vec3(0.93, 0.97, 1.06), vec3(1.12, 0.96, 0.78), vWarmX);
+  col = haze(col, vDir, vDist, uWordMode > 0.5 ? 0.00004 : 0.00008);
   o = vec4(tonemap(col) * a, a);
 }`;
 
@@ -276,20 +283,20 @@ void main() {
   vec3 N = normalize(vN + vec3(-g.x, 0.0, -g.y) * (0.35 + 0.65 * fade));
   // snow on gentle slopes, rock on steep ones; noise breaks the boundary
   float rn = d3.x * 0.6 + d1.x * 0.4;
-  float snow = smoothstep(0.72, 0.86, normalize(vN).y + (rn - 0.5) * 0.45);
+  float snow = smoothstep(0.76, 0.9, normalize(vN).y + (rn - 0.5) * 0.4);
   vec3 L = uSun;
   vec3 sunC = mix(vec3(1.6, 1.42, 1.18), vec3(1.85, 1.3, 0.85), uWarm);
   vec3 sky = vec3(0.45, 0.58, 0.88);
   // snow: wrapped diffuse (light scatters through) + cool sky fill + sparkle
-  float wrap = clamp((dot(N, L) + 0.35) / 1.35, 0.0, 1.0);
-  vec3 sn = vec3(0.92, 0.94, 1.0) * (sunC * wrap * 0.85 + sky * (0.35 + 0.3 * N.y));
+  float wrap = clamp((dot(N, L) + 0.12) / 1.12, 0.0, 1.0);
+  vec3 sn = vec3(0.92, 0.94, 1.0) * (sunC * wrap * 1.15 + sky * (0.3 + 0.22 * N.y));
   vec3 H = normalize(L - dir);
   sn += sunC * 0.25 * pow(max(dot(N, H), 0.0), 24.0);
-  vec2 cell = floor(vW.xz * 38.0);
+  vec2 cell = floor(vW.xz * 70.0);
   float hsh = hash12(cell);
   float tw = hash12(cell + floor(uT * 3.0 + hsh * 7.0));
-  float glint = step(0.985, hsh) * step(0.4, tw) * pow(max(dot(N, H), 0.0), 3.0) * (1.0 - smoothstep(4.0, 22.0, dist));
-  sn += vec3(3.5, 3.2, 2.8) * glint;
+  float glint = step(0.993, hsh) * step(0.4, tw) * pow(max(dot(N, H), 0.0), 3.0) * (1.0 - smoothstep(4.0, 22.0, dist));
+  sn += vec3(2.2, 2.0, 1.8) * glint;
   // rock: warm granite with lichen-ish variation
   vec3 ra = mix(vec3(0.24, 0.20, 0.18), vec3(0.42, 0.36, 0.30), d2.x) * (0.8 + 0.4 * d1.x);
   vec3 rk = ra * (sunC * max(dot(N, L), 0.0) * 1.1 + sky * 0.5);
@@ -403,8 +410,10 @@ const groundH = (x, z) => {
   const a = 0.17 - 0.04 * spine + 0.03 * Math.max(0, Math.sin(az));
   const b = 0.00624 * (1 - 0.35 * spine);
   let h = -a * d - b * d * d;
-  h += fbm(x * 0.045, z * 0.045, 4, 3) * Math.min(1, d / 6) * (1.2 + d * 0.12);
+  h += fbm(x * 0.045, z * 0.045, 4, 3) * Math.min(1, d / 6) * (1.0 + d * 0.035);
   h += ridged(x * 0.11, z * 0.11, 3, 8) * Math.min(1, d / 10) * 1.6;
+  // rock outcrops breaking through the snow
+  h += Math.max(0, fbm(x * 0.16, z * 0.16, 4, 9) - 0.12) * Math.min(1, d / 4) * Math.max(0, 1 - d / 40) * 3.2;
   h += fbm(x * 0.6, z * 0.6, 3, 5) * 0.12;
   return h;
 };
@@ -440,46 +449,49 @@ function buildGround() {
   return { pos, nor, idx };
 }
 
+const farH = (x, z) => {
+  const r = Math.hypot(x, z);
+  // a mask decides where the big massifs stand; elsewhere the land stays under the clouds
+  const m = Math.max(0, fbm(x / 7000, z / 7000, 3, 21) + 0.18);
+  const peaks = ridged(x / 2600, z / 2600, 6, 33);
+  let h = DECK_Y - 800 + peaks * (480 + 3000 * m * m);
+  h += fbm(x / 900, z / 900, 3, 44) * 120;
+  // nothing stands higher than the summit: peaks rise towards the horizon only far away
+  const t = Math.min(1, Math.max(0, (r - 600) / 6000));
+  const cap = DECK_Y - 20 + 820 * t * t * (3 - 2 * t) + r * 0.004;
+  const k = 1 / 140;
+  const hi = Math.max(h, cap), lo = Math.min(h, cap);
+  h = lo - Math.log(1 + Math.exp(-k * (hi - lo))) / k;
+  return h;
+};
 function buildRanges() {
-  // layers: distance, base height of the ridge line, amplitude, frequency
-  const layers = [
-    [1500, -520, 420, 9, 0.45],
-    [2600, -380, 560, 7, 0.55],
-    [4200, -300, 650, 6, 0.7],
-    [7000, -260, 900, 5, 0.85],
-    [11500, -200, 1200, 4, 1.0],
-    [17000, -150, 1300, 3.2, 1.0],
-  ];
-  const NA = 360, a0 = -2.1, a1 = 2.1;
-  const verts = [];
-  const idx = [];
-  let base = 0;
-  layers.forEach(([D, H0, A, F, cov], li) => {
+  const NR = 200, NA = 340;
+  const r0 = 650, r1 = 30000;
+  const a0 = -2.0, a1 = 2.0;
+  const pos = new Float32Array(NR * NA * 3), nor = new Float32Array(NR * NA * 3);
+  let k = 0;
+  for (let i = 0; i < NR; i++) {
+    const r = r0 * Math.pow(r1 / r0, i / (NR - 1));
     for (let j = 0; j < NA; j++) {
       const az = a0 + (a1 - a0) * j / (NA - 1);
-      const top = (az) => {
-        const u = az * F;
-        let h = ridged(u, li * 7.3, 5, 40 + li) - 0.45;
-        // sparse dominant peaks
-        h += Math.max(0, vnoise(u * 0.35, li * 3.1, 90 + li)) * 0.9;
-        // gaps where the cloud sea shows through
-        const m = (vnoise(u * 0.5, li * 1.7, 70 + li) + 1) * 0.5;
-        return H0 + A * h * (0.25 + 0.75 * Math.min(1, m / cov + 0.2));
-      };
-      const h = top(az);
-      const dh = (top(az + 0.002) - top(az - 0.002)) / (0.004 * D);
-      const dd = D * (1 + 0.08 * vnoise(az * 3, li, 5));
-      const x = Math.sin(az) * dd, z = -Math.cos(az) * dd;
-      verts.push(x, h, z, dh, h, li, x, -1600, z, dh, h, li);
+      const x = Math.sin(az) * r, z = -Math.cos(az) * r;
+      const h = farH(x, z);
+      const s = 25;
+      const hx = (farH(x + s, z) - farH(x - s, z)) / (2 * s);
+      const hz = (farH(x, z + s) - farH(x, z - s)) / (2 * s);
+      const l = Math.hypot(hx, 1, hz);
+      pos[k] = x; pos[k + 1] = h; pos[k + 2] = z;
+      nor[k] = -hx / l; nor[k + 1] = 1 / l; nor[k + 2] = -hz / l;
+      k += 3;
     }
-    for (let j = 0; j < NA - 1; j++) {
-      const a = base + j * 2;
-      idx.push(a, a + 1, a + 2, a + 2, a + 1, a + 3);
-    }
-    base += NA * 2;
-  });
-  // draw near layers first (early-z)
-  return { verts: new Float32Array(verts), idx: new Uint32Array(idx) };
+  }
+  const idx = new Uint32Array((NR - 1) * (NA - 1) * 6);
+  k = 0;
+  for (let i = 0; i < NR - 1; i++) for (let j = 0; j < NA - 1; j++) {
+    const a = i * NA + j, b = a + 1, c = a + NA, d = c + 1;
+    idx[k++] = a; idx[k++] = c; idx[k++] = b; idx[k++] = b; idx[k++] = c; idx[k++] = d;
+  }
+  return { pos, nor, idx };
 }
 
 function buildSea() {
@@ -595,8 +607,7 @@ export function createMountain(canvas) {
 
   const R = buildRanges();
   const vRange = gl.createVertexArray(); gl.bindVertexArray(vRange);
-  const rb = vbo(gl, R.verts);
-  attrib(gl, 0, rb, 3, 24, 0); attrib(gl, 1, rb, 3, 24, 12);
+  attrib(gl, 0, vbo(gl, R.pos), 3); attrib(gl, 1, vbo(gl, R.nor), 3);
   vbo(gl, R.idx, gl.ELEMENT_ARRAY_BUFFER);
   const rangeCount = R.idx.length;
 
@@ -744,7 +755,7 @@ export function createMountain(canvas) {
     const wH = wW * word.aspect;
     const maxH = 0.42 * 2 * dist * tanY; // never taller than ~42% of the height
     const wordS = wH > maxH ? wW * maxH / wH : wW;
-    const elev = Math.atan(0.58 * tanY) + pitchBase;
+    const elev = Math.atan(0.5 * tanY) + pitchBase;
     wordC[0] = 0; wordC[1] = EYE_Y + Math.sin(elev) * dist; wordC[2] = -Math.cos(elev) * dist;
 
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -761,7 +772,7 @@ export function createMountain(canvas) {
     gl.useProgram(P.ground.p); setCommon(P.ground);
     gl.bindVertexArray(vGround); gl.drawElements(gl.TRIANGLES, groundCount, gl.UNSIGNED_INT, 0);
     // 2. ranges
-    gl.useProgram(P.range.p); setCommon(P.range);
+    gl.useProgram(P.range.p); setCommon(P.range); gl.uniform1f(P.range.u.uDeckY, DECK_Y);
     gl.bindVertexArray(vRange); gl.drawElements(gl.TRIANGLES, rangeCount, gl.UNSIGNED_INT, 0);
     // 3. cloud deck
     gl.useProgram(P.deck.p); setCommon(P.deck); gl.uniform1f(P.deck.u.uDeckY, DECK_Y);
@@ -785,7 +796,7 @@ export function createMountain(canvas) {
     gl.bindVertexArray(vSea); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, seaCount);
     // the word: lit from the sun's side in screen space (it sits low and to the right)
     const wl = Math.hypot(sR, sU) || 1;
-    gl.uniform3f(pu2.uSunV, 0.82 * sR / wl, 0.82 * (sU / wl) * 0.6 - 0.1, 0.45);
+    gl.uniform3f(pu2.uSunV, 0.9 * sR / wl, -0.15, 0.4);
     gl.uniform1f(pu2.uWordMode, 1);
     gl.uniform3f(pu2.uWordC, wordC[0], wordC[1], wordC[2]);
     gl.uniform1f(pu2.uWordS, wordS);
