@@ -51,7 +51,8 @@
     "bench:3d": "node scripts/bench-3d.mjs",
     "record": "node bin/anikit-record.mjs",
     "bench:cloud": "node scripts/bench-cloud.mjs",
-    "schema": "node scripts/build-schema.mjs"
+    "schema": "node scripts/build-schema.mjs",
+    "treeshake": "node scripts/check-treeshake.mjs"
   },
   "keywords": [
     "animation",
