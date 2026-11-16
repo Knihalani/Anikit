@@ -6,7 +6,7 @@ Import from 'anikit'. Times are in seconds (only `engine.onFrame`/`engine.tick` 
 
 ## Docs
 - [Agent playbook](AGENTS.md): "want X → use Y" table, rules, snippets, verification, common mistakes and fixes
-- [Recipes](llms-full.txt): task-sized, tested examples (19 tasks + Python)
+- [Recipes](llms-full.txt): task-sized, tested examples (20 tasks + Python)
 - [Full reference](llms-full.txt): playbook + recipes + every API in one file
 - [Options schema](api.schema.json): JSON Schema of every options object, with descriptions
 

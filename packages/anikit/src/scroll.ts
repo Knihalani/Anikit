@@ -138,7 +138,11 @@ export function scroll(subject: Playable | CompositorAnimation | ((progress: num
   let aim = NaN;
   const update = (pos?: number) => {
     const p = read(pos);
-    if (!options.smooth) apply(p);
+    if (!options.smooth) {
+      // Keep the latest progress, so a still-pending first apply uses it.
+      proxy.p = p;
+      apply(p);
+    }
     else if (p !== aim) {
       aim = p;
       smoother = spring(proxy, { p }, springOpts);

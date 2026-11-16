@@ -396,8 +396,10 @@ export async function init(source?: string | URL | Response | BufferSource): Pro
   const g = globalThis as any;
   if (url !== null && url.protocol === 'file:' && g.process?.versions?.node) {
     // Node's fetch has no file: scheme; read the file instead.
-    const fs = 'node:fs/promises';
-    const bytes: Uint8Array = await (await import(/* @vite-ignore */ fs)).readFile(url);
+    // Built at run time so bundlers (which constant-fold a literal) never try
+    // to resolve a Node built-in for the browser.
+    const fs = ['node', 'fs/promises'].join(':');
+    const bytes: Uint8Array = await (await import(/* @vite-ignore */ /* webpackIgnore: true */ fs)).readFile(url);
     result = await WebAssembly.instantiate(bytes as BufferSource, {});
   } else if (typeof source === 'string' || source instanceof URL) {
     const res = fetch(source);
