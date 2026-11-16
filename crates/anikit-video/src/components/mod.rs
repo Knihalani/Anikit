@@ -215,7 +215,8 @@ pub const COMMON_KEYS: &[&str] = &["type", "kind", "id", "x", "y", "width", "hei
 /// Build a component from its kind and the spec object (which may still
 /// contain `type`, `kind` and the other [`COMMON_KEYS`]).
 pub fn build(kind: &str, params: &Value) -> Result<Placed, Error> {
-    let Some(k) = KINDS.iter().find(|k| k.name == kind) else {
+    let kebab = kebab(kind);
+    let Some(k) = KINDS.iter().find(|k| k.name == kebab) else {
         let names: Vec<&str> = KINDS.iter().map(|k| k.name).collect();
         return Err(Error(match style::closest(kind, &names) {
             Some(s) => format!("unknown component kind `{kind}`; did you mean `{s}`?"),
@@ -245,8 +246,66 @@ pub fn build(kind: &str, params: &Value) -> Result<Placed, Error> {
     for key in ["type", "kind", "id"] {
         obj.remove(key);
     }
+    let obj = snake_keys(obj);
     let component = (k.build)(Value::Object(obj)).map_err(|e| Error(format!("component `{kind}`: {}", suggest_field(&e.0))))?;
     Ok(Placed { component, x, y, w, h, theme })
+}
+
+/// camelCase keys → snake_case, recursively (except inside `data`, which is
+/// foreign JSON such as a Lottie file).
+fn snake_keys(m: Map<String, Value>) -> Map<String, Value> {
+    fn conv(v: Value) -> Value {
+        match v {
+            Value::Object(m) => Value::Object(snake_keys(m)),
+            Value::Array(a) => Value::Array(a.into_iter().map(conv).collect()),
+            v => v,
+        }
+    }
+    m.into_iter()
+        .map(|(k, v)| {
+            let sk = kebab(&k).replace('-', "_");
+            if k == "data" {
+                (k, v)
+            } else {
+                (sk, conv(v))
+            }
+        })
+        .collect()
+}
+
+/// `barChart` / `BarChart` / `bar_chart` → `bar-chart`.
+pub fn kebab(name: &str) -> String {
+    let mut out = String::with_capacity(name.len() + 4);
+    for (i, c) in name.chars().enumerate() {
+        if c.is_ascii_uppercase() {
+            if i > 0 && !out.ends_with('-') {
+                out.push('-');
+            }
+            out.push(c.to_ascii_lowercase());
+        } else if c == '_' || c == ' ' {
+            out.push('-');
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
+/// `bar-chart` → `barChart` (the spelling the JSON spec uses).
+pub fn camel(name: &str) -> String {
+    let mut out = String::with_capacity(name.len());
+    let mut up = false;
+    for c in name.chars() {
+        if c == '-' {
+            up = true;
+        } else if up {
+            out.push(c.to_ascii_uppercase());
+            up = false;
+        } else {
+            out.push(c);
+        }
+    }
+    out
 }
 
 /// Turn serde's "unknown field `colour`, expected one of `a`, `b`" into a
@@ -254,11 +313,13 @@ pub fn build(kind: &str, params: &Value) -> Result<Placed, Error> {
 fn suggest_field(msg: &str) -> String {
     if let Some(rest) = msg.strip_prefix("unknown field `") {
         if let Some((bad, tail)) = rest.split_once('`') {
-            let options: Vec<&str> = tail.split('`').skip(1).step_by(2).collect();
-            if let Some(s) = style::closest(bad, &options) {
+            let options: Vec<String> = tail.split('`').skip(1).step_by(2).map(|o| camel(&o.replace('_', "-"))).collect();
+            let opts: Vec<&str> = options.iter().map(|s| s.as_str()).collect();
+            let bad = camel(&bad.replace('_', "-"));
+            if let Some(s) = style::closest(&bad, &opts) {
                 return format!("unknown parameter `{bad}`; did you mean `{s}`?");
             }
-            return format!("unknown parameter `{bad}`; expected one of {}", options.join(", "));
+            return format!("unknown parameter `{bad}`; expected one of {}", opts.join(", "));
         }
     }
     msg.to_string()
@@ -322,6 +383,11 @@ mod tests {
     fn errors_suggest() {
         let e = build("bar-chrt", &Value::Null).err().unwrap();
         assert!(e.0.contains("did you mean `bar-chart`"), "{e}");
+        assert!(build("barChart", &serde_json::json!({"values": [1], "fontSize": 20, "format": {"prefix": "$"}})).is_ok());
+        let e = build("code", &serde_json::json!({"lineNumbrs": false})).err().unwrap();
+        assert!(e.0.contains("did you mean `lineNumbers`"), "{e}");
+        assert_eq!(camel("avatar-stack"), "avatarStack");
+        assert_eq!(kebab("avatarStack"), "avatar-stack");
         let e = build("bar-chart", &serde_json::json!({"valuess": [1]})).err().unwrap();
         assert!(e.0.contains("did you mean `values`"), "{e}");
     }

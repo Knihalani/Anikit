@@ -29,6 +29,8 @@ pub enum Tok {
 pub struct Span {
     pub text: String,
     pub kind: Tok,
+    /// Explicit colour (from the TEXT highlighter); `None` = theme colour for `kind`.
+    pub color: Option<Rgba>,
 }
 
 struct Lang {
@@ -105,7 +107,7 @@ pub fn highlight(code: &str, language: &str) -> Vec<Vec<Span>> {
                     return;
                 }
             }
-            spans.push(Span { text: s, kind: k });
+            spans.push(Span { text: s, kind: k, color: None });
         };
         let mut i = 0;
         let rest = |i: usize| chars[i..].iter().collect::<String>();
@@ -299,6 +301,9 @@ pub struct CodeBlock {
     pub glow: Option<Color>,
     #[serde(skip)]
     lines: Vec<Vec<Span>>,
+    /// Same lines coloured by the TEXT highlighter for [night, day] themes.
+    #[serde(skip)]
+    themed: Option<[Vec<Vec<Span>>; 2]>,
     #[serde(skip)]
     marks: Vec<i8>,
     #[serde(skip)]
@@ -325,6 +330,7 @@ impl Default for CodeBlock {
             background: None,
             glow: None,
             lines: Vec::new(),
+            themed: None,
             marks: Vec::new(),
             line_t: Vec::new(),
             total_t: 0.0,
@@ -351,6 +357,20 @@ impl Prepare for CodeBlock {
             src.push_str(body);
         }
         self.lines = highlight(&src, &self.language);
+        let rich = |theme: &str| -> Option<Vec<Vec<Span>>> {
+            let h = crate::text::code::highlight(&crate::text::code::CodeSpec { code: src.clone(), language: self.language.clone(), theme: theme.into(), tab_width: 4, ..Default::default() });
+            if h.syntax == "Plain Text" || h.lines.len() != self.lines.len() {
+                return None;
+            }
+            Some(h.lines.into_iter().map(|l| l.spans.into_iter().map(|sp| Span { text: sp.text, kind: Tok::Plain, color: Some(sp.color.0) }).collect()).collect())
+        };
+        if let (Some(n), Some(d)) = (rich("night"), rich("day")) {
+            // Only use them when the text matches line for line (typing relies on it).
+            let same = |a: &Vec<Vec<Span>>| a.iter().zip(&self.lines).all(|(x, y)| x.iter().map(|s| s.text.as_str()).collect::<String>() == y.iter().map(|s| s.text.as_str()).collect::<String>());
+            if same(&n) && same(&d) {
+                self.themed = Some([n, d]);
+            }
+        }
         // Typing schedule: deterministic human rhythm (pauses after
         // punctuation and at line ends; indentation appears at once).
         let mut t = 0.0;
@@ -480,7 +500,11 @@ impl Component for CodeBlock {
             }
         }
         let mut caret = None;
-        for (i, line) in self.lines.iter().enumerate() {
+        let lines = match &self.themed {
+            Some([n, d]) => if th.dark { n } else { d },
+            None => &self.lines,
+        };
+        for (i, line) in lines.iter().enumerate() {
             let y = body_y + (i as f32 - scroll) * lh;
             if y + lh < top || y > h {
                 continue;
@@ -513,7 +537,7 @@ impl Component for CodeBlock {
                 let n = s.text.chars().count();
                 let take = n.min(vis - shown);
                 let text: String = if take < n { s.text.chars().take(take).collect() } else { s.text.clone() };
-                let c = syntax_color(s.kind, th.dark);
+                let c = s.color.unwrap_or_else(|| syntax_color(s.kind, th.dark));
                 let c = if mark < 0 { alpha(c, 0.75) } else { c };
                 if !text.trim().is_empty() {
                     let (ops, _) = ctx.assets.text(&text, &st.clone().color(alpha(c, fade)), x, y + lh * 0.7);
@@ -669,7 +693,7 @@ mod tests {
     fn lexer() {
         let l = highlight("fn main() { let x = \"hi\"; // c\n}", "rust");
         let kinds: Vec<Tok> = l[0].iter().map(|s| s.kind).collect();
-        assert_eq!(l[0][0], Span { text: "fn".into(), kind: Tok::Keyword });
+        assert_eq!(l[0][0], Span { text: "fn".into(), kind: Tok::Keyword, color: None });
         assert!(kinds.contains(&Tok::Function) && kinds.contains(&Tok::String) && kinds.contains(&Tok::Comment));
         let l = highlight("/* a\nb */ x", "ts");
         assert_eq!(l[1][0].kind, Tok::Comment);
