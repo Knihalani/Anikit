@@ -82,7 +82,7 @@ fn limits(p: &Value) -> String {
         v.push(format!("{a}–{b} items"));
     }
     if let Some(vals) = p.get("values").and_then(|x| x.as_array()) {
-        v.push(vals.iter().filter_map(|x| x.as_str()).collect::<Vec<_>>().join(" | "));
+        v.push(vals.iter().filter_map(|x| x.as_str()).collect::<Vec<_>>().join(" / "));
     }
     v.join(", ")
 }
@@ -103,7 +103,11 @@ pub fn template_guide(t: &Template) -> String {
         let req = if p.get("required") == Some(&Value::Bool(true)) { "yes" } else { "" };
         let mut what = p.get("description").and_then(|x| x.as_str()).unwrap_or("").to_string();
         if let Some(def) = p.get("default") {
-            what += &format!(" Default: `{}`.", def);
+            let shown = match def.as_str() {
+                Some(d) if d.starts_with("{{brand.") => format!("the brand kit's `{}`", d.trim_start_matches("{{brand.").trim_end_matches("}}")),
+                _ => format!("`{def}`"),
+            };
+            what += &format!(" Default: {shown}.");
         }
         out += &format!("| `{k}` | {ty} | {req} | {} | {what} |\n", limits(&p));
         if let Some(props) = p.get("items").and_then(|i| i.get("properties")).or_else(|| p.get("properties")).and_then(|x| x.as_object()) {
@@ -143,5 +147,20 @@ mod tests {
         let g = get("template:launch").unwrap();
         assert!(g.contains("`hook`") && g.contains("≤ 7 words"), "{g}");
         assert!(get("launch-video-generater").unwrap_err().contains("did you mean 'launch-video-generator'"));
+    }
+}
+
+#[cfg(test)]
+mod sync {
+    /// `prompts/templates/<name>.md` are generated; regenerate with
+    /// `for n in …; do anikit-video templates guide $n > prompts/templates/$n.md; done`.
+    #[test]
+    fn template_guides_are_up_to_date() {
+        for (n, _) in crate::templates::BUILTIN {
+            let path = format!("{}/../../prompts/templates/{n}.md", env!("CARGO_MANIFEST_DIR"));
+            let on_disk = std::fs::read_to_string(&path).unwrap_or_default();
+            let fresh = super::template_guide(&crate::templates::Template::builtin(n).unwrap());
+            assert!(on_disk == fresh, "{path} is stale: run `anikit-video templates guide {n} > prompts/templates/{n}.md`");
+        }
     }
 }
