@@ -249,4 +249,5 @@ The module default-exports `async ({ anikit, node }) => composition`. Building b
 - Preview at `--preview 15` and look at every frame; then render and pull strips around each cut/impact with ffmpeg (`-ss t -frames:v 14 -vf scale=240:-1,tile=14x1`).
 - Watch for: empty or flat frames, type over same-tone content, shots that hold still for more than ~1 s.
 - `ffprobe` the output: duration, frame count, and whether an audio stream should be there.
+- `npx anikit-render --check film.mp4` compares every frame with the last and lists **spikes** (single-frame pops, things switching on in view, worker-slice seams) and frozen frames, with timestamps. Every spike should be a flash, cut or impact you placed; fix the rest (usually an item gated on by camera position while in frame).
 - Slow render? `npx anikit-render film.mjs --profile` shows where each frame's time goes (your `step`/`draw` hooks, each `renderer3d` pass, the grade). Fix the biggest line first: fewer motion-blur samples on calm shots, `mirror` only where the floor is visible, gate heavy items by time.

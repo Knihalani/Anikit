@@ -191,6 +191,51 @@ export async function renderPreview(comp, o) {
 }
 
 /**
+ * Check a rendered video for things a contact sheet can't show: decodes it at
+ * 160×90 greyscale with ffmpeg and measures the change between consecutive
+ * frames. Reports **spikes** (a frame that changes far more than its
+ * neighbours: pops, single-frame glitches, worker-slice seams, cuts and
+ * flashes — check each against the impacts you placed) and **freezes**
+ * (identical consecutive frames).
+ *
+ *   anikit-render --check film.mp4
+ *
+ * Returns `{ fps, frames, diffs, spikes: [{ t, frame, diff, ratio }], freezes: [{ t, frame }], report }`.
+ */
+export async function checkVideo(file, o = {}) {
+  const { execFileSync } = await import('node:child_process');
+  const [w, h] = [160, 90];
+  const probe = execFileSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', '-of', 'csv=p=0', file]).toString().trim();
+  const [n, d] = probe.split('/').map(Number);
+  const fps = d ? n / d : n || 60;
+  const raw = execFileSync('ffmpeg', ['-v', 'error', '-i', file, '-vf', `scale=${w}:${h}:flags=area,format=gray`, '-f', 'rawvideo', '-'], { maxBuffer: 1 << 30 });
+  const size = w * h, frames = Math.floor(raw.length / size);
+  const diffs = new Float64Array(Math.max(0, frames - 1));
+  for (let f = 1; f < frames; f++) {
+    let sum = 0;
+    const a = (f - 1) * size, b = f * size;
+    for (let i = 0; i < size; i++) sum += Math.abs(raw[b + i] - raw[a + i]);
+    diffs[f - 1] = sum / size;
+  }
+  const ratio = o.ratio ?? 3, floor = o.floor ?? 4, win = Math.round(fps * 0.25);
+  const spikes = [], freezes = [];
+  for (let i = 0; i < diffs.length; i++) {
+    const around = [];
+    for (let k = Math.max(0, i - win); k <= Math.min(diffs.length - 1, i + win); k++) if (Math.abs(k - i) > 1) around.push(diffs[k]);
+    around.sort((x, y) => x - y);
+    const med = around.length ? around[around.length >> 1] : 0;
+    if (diffs[i] > floor && diffs[i] > ratio * Math.max(med, 0.5)) spikes.push({ t: +((i + 1) / fps).toFixed(3), frame: i + 1, diff: +diffs[i].toFixed(2), ratio: +(diffs[i] / Math.max(med, 0.5)).toFixed(1) });
+    if (diffs[i] === 0 && i > 0 && i < diffs.length - 1) freezes.push({ t: +((i + 1) / fps).toFixed(3), frame: i + 1 });
+  }
+  const mean = diffs.reduce((x, y) => x + y, 0) / Math.max(1, diffs.length);
+  const lines = [`${file}: ${frames} frames @ ${fps} fps, mean change ${mean.toFixed(2)} (0-255 per pixel per frame)`];
+  lines.push(spikes.length ? `SPIKES (a frame changes ${ratio}x+ more than its neighbours; confirm each is a cut/flash/impact you meant):` : 'no spikes: every frame flows from the last');
+  for (const s of spikes) lines.push(`  ${s.t.toFixed(3)} s (frame ${s.frame}): change ${s.diff} = ${s.ratio}x its neighbours`);
+  if (freezes.length) lines.push(`FROZEN frames (identical to the previous one): ${freezes.slice(0, 12).map((f) => f.t.toFixed(3)).join(', ')}${freezes.length > 12 ? ', …' : ''}`);
+  return { fps, frames, diffs: Array.from(diffs), spikes, freezes, report: lines.join('\n') };
+}
+
+/**
  * Profile a film: renders every `every`-th frame (default one per second) and
  * reports where the time goes — scene steps, draws, pixel read-back, the
  * grade, and each `renderer3d` pass inside the draws — per sampled frame and

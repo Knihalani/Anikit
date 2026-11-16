@@ -21,6 +21,7 @@ Usage
   anikit-render <film.mjs> --review [dir/]            contact sheet + pacing report (default dir: review/)
   anikit-render <film.mjs> --preview <N> --out dir/   every Nth frame as JPEG
   anikit-render <film.mjs> --profile [--every N]      where render time goes, per frame and per 3D pass
+  anikit-render --check <video.mp4>                   frame-to-frame check of a rendered video: pops, seams, freezes
   anikit-render <film.mjs> --out film.mp4 [options]   render the video
 
 Options
@@ -45,7 +46,7 @@ for a complete example. Needs ffmpeg on PATH and the peer dependency
 Workflow: --still 2 to look at one frame, --review to check pacing and the whole
 film at a glance (or --preview 15 for full frames), then render. Output never depends on machine speed.`;
 
-const VALUE = ['out', 'workers', 'from', 'to', 'audio', 'fade-in', 'fade-out', 'fade-color', 'crf', 'preset', 'codec', 'preview', 'still', 'template', 'every', 'sheet-every'];
+const VALUE = ['check', 'out', 'workers', 'from', 'to', 'audio', 'fade-in', 'fade-out', 'fade-color', 'crf', 'preset', 'codec', 'preview', 'still', 'template', 'every', 'sheet-every'];
 const BOOL = ['help', 'init', 'profile', 'watch'];
 /** Flags whose value is optional (`--review` or `--review dir/`). */
 const OPTIONAL = ['review'];
@@ -109,6 +110,14 @@ if (opts.init) {
   if (existsSync(dest)) fail(`--init: ${dest} already exists; pass another name: anikit-render --init my-film.mjs`);
   copyFileSync(src, dest);
   console.log(`wrote ${dest} (template: ${tpl})\n  look:    npx anikit-render ${name} --still 1.5 --out still.png\n  review:  npx anikit-render ${name} --review review/\n  preview: npx anikit-render ${name} --preview 15 --out preview/\n  render:  npx anikit-render ${name} --out film.mp4`);
+  process.exit(0);
+}
+if (opts.check !== undefined) {
+  // Check a rendered video (no composition module needed).
+  const video = resolve(String(opts.check));
+  if (!existsSync(video)) fail(`--check: ${video} not found.`);
+  const node = await import(join(here, '../node/index.mjs'));
+  console.log((await node.checkVideo(video)).report);
   process.exit(0);
 }
 const file = positional[0];

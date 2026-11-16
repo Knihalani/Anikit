@@ -255,6 +255,7 @@ The module default-exports `async ({ anikit, node }) => composition`. Building b
 - Preview at `--preview 15` and look at every frame; then render and pull strips around each cut/impact with ffmpeg (`-ss t -frames:v 14 -vf scale=240:-1,tile=14x1`).
 - Watch for: empty or flat frames, type over same-tone content, shots that hold still for more than ~1 s.
 - `ffprobe` the output: duration, frame count, and whether an audio stream should be there.
+- `npx anikit-render --check film.mp4` compares every frame with the last and lists **spikes** (single-frame pops, things switching on in view, worker-slice seams) and frozen frames, with timestamps. Every spike should be a flash, cut or impact you placed; fix the rest (usually an item gated on by camera position while in frame).
 - Slow render? `npx anikit-render film.mjs --profile` shows where each frame's time goes (your `step`/`draw` hooks, each `renderer3d` pass, the grade). Fix the biggest line first: fewer motion-blur samples on calm shots, `mirror` only where the floor is visible, gate heavy items by time.
 
 
@@ -1730,6 +1731,7 @@ npx anikit-render film.mjs --preview 30 --out frames/
 npx anikit-render film.mjs --review review/   # contact sheet + pacing report (holds, flat frames, cuts)
 npx anikit-render film.mjs --profile          # where render time goes: steps, draws, each 3D pass, the grade
 npx anikit-render film.mjs --still 4.5 --watch # re-render that frame on every save (keep the PNG open in a viewer)
+npx anikit-render --check film.mp4            # frame-to-frame check of the rendered video: pops, seams, freezes
 ```
 
 `--profile` times one frame per second (`--every N` for more) and prints a table per frame plus the mean, the biggest costs and the estimated render time. The same numbers are on every delivered frame as `frame.timing`, a `FrameTiming` (`{ step, draw, read, post, passes }`, milliseconds; `passes` splits `renderer3d` work into `setup`, `mirror`, `opaque`, `sky`, `light`, `dof`, `motionBlur`, `output`), and `r3.stats` holds the last render's passes:
