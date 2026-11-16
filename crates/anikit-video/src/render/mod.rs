@@ -30,11 +30,47 @@ use vello_cpu::peniko::{
 };
 use vello_cpu::{Image, ImageSource, Pixmap, RasterizerSettings, RenderContext, Resources, TargetInit};
 
-pub use assets::{Assets, FontStore, ImageError, ImageStore};
+pub use assets::{Assets, Face, FontStore, ImageError, ImageStore};
 pub use diff::{diff_mb, MbMap};
 pub use yuv::{rgba_to_yuv420, YuvFrame};
 
 use crate::dl::{self, Blend, DisplayList, FillRule, Op, Paint, Rgba};
+
+/// Shared assets plus this renderer's per-frame image overrides.
+pub(crate) struct View<'a> {
+    assets: &'a Assets,
+    frame: &'a HashMap<dl::ImageId, Arc<Pixmap>>,
+    dynamic: Option<&'a dyn DynamicImages>,
+}
+
+/// A source of images made while rendering (component fields, 3D renders,
+/// video frames), consulted for ids not in [`Assets::images`] or the
+/// per-frame overrides. Must be thread-safe: every worker calls it.
+pub trait DynamicImages: Send + Sync {
+    /// The premultiplied RGBA8 image for `id`, if this source has it. Return
+    /// the same `Arc` while the pixels are unchanged (incremental renders key
+    /// on its identity) and a new one when they change.
+    fn get(&self, id: dl::ImageId) -> Option<Arc<Pixmap>>;
+}
+
+impl<F: Fn(dl::ImageId) -> Option<Arc<Pixmap>> + Send + Sync> DynamicImages for F {
+    fn get(&self, id: dl::ImageId) -> Option<Arc<Pixmap>> {
+        self(id)
+    }
+}
+
+impl View<'_> {
+    fn image(&self, id: dl::ImageId) -> Option<Arc<Pixmap>> {
+        self.frame
+            .get(&id)
+            .or_else(|| self.assets.images.get(id))
+            .cloned()
+            .or_else(|| self.dynamic.and_then(|d| d.get(id)))
+    }
+    fn face(&self, id: dl::FontId) -> Option<&Face> {
+        self.assets.fonts.face(id)
+    }
+}
 
 /// A rendered frame: premultiplied RGBA8, `width × height`, tightly packed.
 pub type FrameRgba = Pixmap;
@@ -102,6 +138,9 @@ pub struct Renderer {
     /// Context and pixmap for partial (dirty-region) renders.
     rctx: Option<RenderContext>,
     rpix: Pixmap,
+    /// Per-frame image overrides (video frames, live textures).
+    frame_images: Arc<HashMap<dl::ImageId, Arc<Pixmap>>>,
+    dynamic: Option<Arc<dyn DynamicImages>>,
     inc: incremental::Tracker,
     st: State,
 }
@@ -119,6 +158,8 @@ impl Renderer {
             frame: Pixmap::new(1, 1),
             rctx: None,
             rpix: Pixmap::new(1, 1),
+            frame_images: Default::default(),
+            dynamic: None,
             inc: Default::default(),
             st: State {
                 res: Resources::new(),
@@ -148,6 +189,27 @@ impl Renderer {
         &self.assets
     }
 
+    /// Dynamic-image hook: draw `pixmap` (premultiplied RGBA8) for `id` in the
+    /// following renders, overriding [`Assets::images`] — for decoded video
+    /// frames or other per-frame textures. Set it before each frame whose
+    /// image changes; incremental renders notice the new pixels (identity of
+    /// the `Arc`), so give each new frame its own `Arc`.
+    pub fn set_frame_image(&mut self, id: dl::ImageId, pixmap: Arc<Pixmap>) {
+        Arc::make_mut(&mut self.frame_images).insert(id, pixmap);
+    }
+
+    /// Dynamic-image hook: images not in the shared store (e.g. component
+    /// images at ids ≥ `0x4000_0000`) are fetched from `source` while rendering.
+    pub fn set_image_source(&mut self, source: Arc<dyn DynamicImages>) {
+        self.dynamic = Some(source);
+        self.invalidate();
+    }
+
+    /// Drop one per-frame override (falls back to the shared store).
+    pub fn clear_frame_image(&mut self, id: dl::ImageId) {
+        Arc::make_mut(&mut self.frame_images).remove(&id);
+    }
+
     /// Number of cached layers composited without re-rendering in the last frame.
     pub fn last_cache_hits(&self) -> usize {
         self.st.cache_hits
@@ -160,13 +222,13 @@ impl Renderer {
 
     /// Render `list` and return the frame (premultiplied RGBA8).
     pub fn render(&mut self, list: &DisplayList) -> &FrameRgba {
-        self.render_region(list, None);
+        self.render_region(list, None, true, None);
         &self.frame
     }
 
     /// Render all of `list`, or only the pixels of `region` (`[x0, y0, x1, y1)`,
     /// clipped to the frame) — the rest of the frame keeps its previous pixels.
-    pub(crate) fn render_region(&mut self, list: &DisplayList, region: Option<[u32; 4]>) {
+    pub(crate) fn render_region(&mut self, list: &DisplayList, region: Option<[u32; 4]>, new_frame: bool, rects: Option<&[Option<Rect>]>) {
         let (w, h) = (list.width.clamp(1, u16::MAX as u32) as u16, list.height.clamp(1, u16::MAX as u32) as u16);
         if self.ctx.width() != w || self.ctx.height() != h {
             self.ctx = RenderContext::new(w, h);
@@ -179,10 +241,15 @@ impl Renderer {
             Some([x0, y0, x1, y1]) => x0 == 0 && y0 == 0 && x1 == w as u32 && y1 == h as u32,
         };
         let st = &mut self.st;
-        st.frame_no += 1;
-        st.cache_hits = 0;
+        if new_frame {
+            st.frame_no += 1;
+            st.cache_hits = 0;
+        }
         st.frame_size = (w as u32, h as u32);
-        let assets = self.assets.clone();
+        let shared = self.assets.clone();
+        let frame_images = self.frame_images.clone();
+        let dynamic = self.dynamic.clone();
+        let assets = View { assets: &shared, frame: &frame_images, dynamic: dynamic.as_deref() };
         let settings = RasterizerSettings { target_init: TargetInit::Clear(color(list.background)), ..Default::default() };
         if full {
             st.org = (0, 0);
@@ -201,7 +268,8 @@ impl Renderer {
             let rctx = self.rctx.get_or_insert_with(|| RenderContext::new(rw, rh));
             rctx.reset_and_resize(rw, rh);
             st.org = (x0 as i32, y0 as i32);
-            draw_ops(st, &assets, rctx, &list.ops, Affine::translate((-(x0 as f64), -(y0 as f64))));
+            let cull = rects.map(|rects| Cull { region: Rect::new(0.0, 0.0, rw as f64, rh as f64), rects, org: (x0 as f64, y0 as f64) });
+            draw_ops_culled(st, &assets, rctx, &list.ops, Affine::translate((-(x0 as f64), -(y0 as f64))), cull);
             rctx.flush();
             self.rpix.resize(rw, rh);
             rctx.render_with(&mut self.rpix, &mut st.res, settings);
@@ -264,16 +332,42 @@ fn matching_pop(ops: &[Op]) -> usize {
     ops.len()
 }
 
-fn draw_ops(st: &mut State, assets: &Assets, ctx: &mut RenderContext, ops: &[Op], base: Affine) {
+fn draw_ops(st: &mut State, assets: &View, ctx: &mut RenderContext, ops: &[Op], base: Affine) {
+    draw_ops_culled(st, assets, ctx, ops, base, None)
+}
+
+/// Culling for partial renders: the region (in the context's coordinates)
+/// and each op's frame-space bounds (`None` = draws nothing), offset by `org`.
+#[derive(Clone, Copy)]
+pub(crate) struct Cull<'a> {
+    pub region: Rect,
+    pub rects: &'a [Option<Rect>],
+    pub org: (f64, f64),
+}
+
+/// As [`draw_ops`], skipping top-level ops and layers whose bounds miss the cull region.
+fn draw_ops_culled(st: &mut State, assets: &View, ctx: &mut RenderContext, ops: &[Op], base: Affine, cull: Option<Cull>) {
+    let misses = |a: usize, b: usize| -> bool {
+        let Some(c) = cull else { return false };
+        let reg = c.region + kurbo::Vec2::new(c.org.0, c.org.1);
+        !c.rects[a..b.min(c.rects.len())]
+            .iter()
+            .flatten()
+            .any(|r| r.x1 > reg.x0 && r.y1 > reg.y0 && r.x0 < reg.x1 && r.y0 < reg.y1)
+    };
     let mut i = 0;
     while i < ops.len() {
         match &ops[i] {
             Op::PushLayer { opacity, blend, filters, clip, cache_key } => {
                 let end = i + matching_pop(&ops[i..]);
                 let inner = &ops[i + 1..end.min(ops.len())];
+                let start = i;
                 i = end + 1;
-                let opacity = opacity.clamp(0.0, 1.0);
+                let opacity = if op_ok(&ops[start], base) { opacity.clamp(0.0, 1.0) } else { 0.0 };
                 if opacity <= 0.0 || inner.is_empty() {
+                    continue;
+                }
+                if misses(start + 1, end) {
                     continue;
                 }
                 if let [dl::Filter::Shadow { dx, dy, blur, color: sc }] = filters.as_slice() {
@@ -309,7 +403,9 @@ fn draw_ops(st: &mut State, assets: &Assets, ctx: &mut RenderContext, ops: &[Op]
             }
             Op::PopLayer => i += 1, // stray pop: ignore
             op => {
-                draw_op(st, assets, ctx, op, base);
+                if !misses(i, i + 1) {
+                    draw_op(st, assets, ctx, op, base);
+                }
                 i += 1;
             }
         }
@@ -386,7 +482,7 @@ fn draw_cached_run(
     st: &mut State,
     ctx: &mut RenderContext,
     font_id: dl::FontId,
-    font: &vello_cpu::peniko::FontData,
+    font: &Face,
     size: f32,
     glyphs: &[dl::Glyph],
     c: Rgba,
@@ -558,14 +654,68 @@ fn push_layer(ctx: &mut RenderContext, base: Affine, clip: Option<&(dl::Path, dl
 }
 
 /// Conservative device-space bounds of `ops` (with nested filter margins added).
+/// Largest device coordinate we draw (anything beyond is degenerate input).
+const MAX_COORD: f64 = 1e6;
+
+fn rect_ok(r: Rect) -> bool {
+    [r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite() && v.abs() <= MAX_COORD)
+}
+
+/// Whether an op's numbers are sane enough to hand to the rasteriser:
+/// finite transform, finite geometry within ±1e6 px. Ops failing this are skipped.
+pub(crate) fn op_ok(op: &Op, base: Affine) -> bool {
+    let fin = |v: &[f32]| v.iter().all(|x| x.is_finite());
+    let dev = |t: &dl::Affine, r: Rect| fin(t) && rect_ok((base * affine(t)).transform_rect_bbox(r));
+    match op {
+        Op::Fill { path, transform, .. } => dev(transform, path.bounding_box()),
+        Op::Stroke { path, transform, stroke, .. } => {
+            let w = stroke.width as f64;
+            stroke.width.is_finite() && stroke.width >= 0.0 && dev(transform, path.bounding_box().inflate(w, w))
+        }
+        Op::RoundRect { x, y, w, h, radius, transform, .. } => {
+            fin(&[*x, *y, *w, *h, *radius]) && dev(transform, Rect::new(*x as f64, *y as f64, (*x + *w) as f64, (*y + *h) as f64))
+        }
+        Op::Image { dst, opacity, transform, .. } => {
+            fin(dst) && opacity.is_finite() && dev(transform, Rect::new(dst[0] as f64, dst[1] as f64, (dst[0] + dst[2]) as f64, (dst[1] + dst[3]) as f64))
+        }
+        Op::Glyphs { size, glyphs, transform, .. } => {
+            size.is_finite()
+                && glyphs.iter().all(|g| g.x.is_finite() && g.y.is_finite())
+                && glyphs.first().is_none_or(|g| {
+                    let s = *size as f64 * 2.0;
+                    dev(transform, Rect::new(g.x as f64 - s, g.y as f64 - s, g.x as f64 + s, g.y as f64 + s))
+                })
+        }
+        Op::PushLayer { opacity, clip, .. } => {
+            opacity.is_finite() && clip.as_ref().is_none_or(|(p, t)| fin(t) && { let b = p.bounding_box(); [b.x0, b.y0, b.x1, b.y1].iter().all(|v| v.is_finite()) })
+        }
+        Op::PopLayer => true,
+    }
+}
+
 pub(crate) fn ops_bounds(ops: &[Op], base: Affine) -> Option<Rect> {
     let mut acc: Option<Rect> = None;
     let mut extra = [0f32; 4];
     for op in ops {
+        if !matches!(op, Op::PushLayer { .. } | Op::PopLayer) && !op_ok(op, base) {
+            continue;
+        }
         let r = match op {
             Op::Fill { path, transform, .. } => Some((base * affine(transform)).transform_rect_bbox(path.bounding_box())),
             Op::Stroke { path, transform, stroke, .. } => {
                 let t = base * affine(transform);
+                let trimmed;
+                let path = if stroke.trim[0] > 0.0 || stroke.trim[1] < 1.0 {
+                    let mut p = BezPath::new();
+                    trim::trim_path(path, stroke.trim[0], stroke.trim[1], &mut p, &mut Vec::new());
+                    if p.is_empty() {
+                        continue;
+                    }
+                    trimmed = p;
+                    &trimmed
+                } else {
+                    path
+                };
                 let s = t.as_coeffs();
                 let scale = (s[0].abs() + s[1].abs()).max(s[2].abs() + s[3].abs());
                 let k = if stroke.join == 0 { stroke.miter_limit.max(1.5) } else { 1.5 } as f64;
@@ -623,7 +773,7 @@ pub(crate) fn ops_bounds(ops: &[Op], base: Affine) -> Option<Rect> {
 #[allow(clippy::too_many_arguments)]
 fn draw_offscreen(
     st: &mut State,
-    assets: &Assets,
+    assets: &View,
     ctx: &mut RenderContext,
     inner: &[Op],
     base: Affine,
@@ -713,7 +863,7 @@ fn stops(stops: &[(f32, Rgba)]) -> ColorStops {
 }
 
 /// Set `paint` on `ctx`. Returns false when there is nothing to draw.
-fn set_paint(ctx: &mut RenderContext, assets: &Assets, paint: &Paint) -> bool {
+fn set_paint(ctx: &mut RenderContext, assets: &View, paint: &Paint) -> bool {
     ctx.reset_paint_transform();
     match paint {
         Paint::Solid(c) => {
@@ -753,19 +903,31 @@ fn set_paint(ctx: &mut RenderContext, assets: &Assets, paint: &Paint) -> bool {
             });
         }
         Paint::Image { image, transform, opacity } => {
-            let Some(pix) = assets.images.get(*image) else { return false };
+            let Some(pix) = assets.image(*image) else { return false };
             let Some(inv) = invert(affine(transform)) else { return false };
             if *opacity <= 0.0 {
                 return false;
             }
             ctx.set_paint(Image {
-                image: ImageSource::Pixmap(pix.clone()),
-                sampler: ImageSampler { alpha: opacity.min(1.0), quality: ImageQuality::Medium, ..Default::default() },
+                image: ImageSource::Pixmap(pix),
+                // `Paint::Image` tiles; `Op::Image` draws once.
+                sampler: ImageSampler { alpha: opacity.min(1.0), quality: ImageQuality::Medium, x_extend: Extend::Repeat, y_extend: Extend::Repeat },
             });
             ctx.set_paint_transform(inv);
         }
     }
     true
+}
+
+fn el_points(el: &kurbo::PathEl) -> impl Iterator<Item = kurbo::Point> {
+    use kurbo::PathEl::*;
+    let v: [Option<kurbo::Point>; 3] = match *el {
+        MoveTo(a) | LineTo(a) => [Some(a), None, None],
+        QuadTo(a, b) => [Some(a), Some(b), None],
+        CurveTo(a, b, c) => [Some(a), Some(b), Some(c)],
+        ClosePath => [None, None, None],
+    };
+    v.into_iter().flatten()
 }
 
 fn invert(a: Affine) -> Option<Affine> {
@@ -776,7 +938,10 @@ fn invert(a: Affine) -> Option<Affine> {
     }
 }
 
-fn draw_op(st: &mut State, assets: &Assets, ctx: &mut RenderContext, op: &Op, base: Affine) {
+fn draw_op(st: &mut State, assets: &View, ctx: &mut RenderContext, op: &Op, base: Affine) {
+    if !op_ok(op, base) {
+        return;
+    }
     match op {
         Op::Fill { path, paint, rule, transform } => {
             if !set_paint(ctx, assets, paint) {
@@ -806,7 +971,20 @@ fn draw_op(st: &mut State, assets: &Assets, ctx: &mut RenderContext, op: &Op, ba
                 })
                 .with_miter_limit(stroke.miter_limit.max(1.0) as f64);
             let dash_sum: f32 = stroke.dash.iter().map(|d| d.max(0.0)).sum();
-            if !stroke.dash.is_empty() && dash_sum > 1e-3 {
+            // Guard against dash patterns that would produce millions of dashes.
+            let t = base * affine(transform);
+            let c = t.as_coeffs();
+            let scale = (c[0].abs() + c[1].abs()).max(c[2].abs() + c[3].abs()).max(1e-9);
+            let mut len = 0.0;
+            let mut last = kurbo::Point::ZERO;
+            for el in path.elements() {
+                for p in el_points(el) {
+                    len += p.distance(last);
+                    last = p;
+                }
+            }
+            let dashes = len * scale / (dash_sum as f64 * scale).max(1e-9);
+            if !stroke.dash.is_empty() && dash_sum > 1e-3 && stroke.dash.iter().all(|d| d.is_finite()) && dashes < 20_000.0 {
                 let reps = if stroke.dash.len() % 2 == 1 { 2 } else { 1 };
                 let pat = (0..reps).flat_map(|_| stroke.dash.iter().map(|d| d.max(0.0) as f64));
                 ks = ks.with_dashes(stroke.dash_offset as f64, pat);
@@ -840,12 +1018,12 @@ fn draw_op(st: &mut State, assets: &Assets, ctx: &mut RenderContext, op: &Op, ba
             }
         }
         Op::Image { image, dst, opacity, transform } => {
-            let Some(pix) = assets.images.get(*image) else { return };
+            let Some(pix) = assets.image(*image) else { return };
             if *opacity <= 0.0 || dst[2] <= 0.0 || dst[3] <= 0.0 {
                 return;
             }
             let t = base * affine(transform);
-            if draw_image_fast(st, ctx, *image, pix, dst, *opacity, t) {
+            if draw_image_fast(st, ctx, *image, &pix, dst, *opacity, t) {
                 return;
             }
             let (iw, ih) = (pix.width() as f64, pix.height() as f64);
@@ -860,7 +1038,7 @@ fn draw_op(st: &mut State, assets: &Assets, ctx: &mut RenderContext, op: &Op, ba
             ctx.fill_rect(&Rect::new(dst[0] as f64, dst[1] as f64, (dst[0] + dst[2]) as f64, (dst[1] + dst[3]) as f64));
         }
         Op::Glyphs { font: font_id, size, glyphs, paint, transform } => {
-            let Some(font) = assets.fonts.get(*font_id) else { return };
+            let Some(font) = assets.face(*font_id) else { return };
             if glyphs.is_empty() || *size <= 0.0 || !set_paint(ctx, assets, paint) {
                 return;
             }
@@ -881,12 +1059,30 @@ fn draw_op(st: &mut State, assets: &Assets, ctx: &mut RenderContext, op: &Op, ba
                     ctx.fill_path(&st.run);
                 }
             } else {
-                let _ = ctx
-                    .glyph_run(&mut st.res, font)
-                    .font_size(*size)
-                    .hint(false)
-                    .atlas_cache(true)
-                    .fill_glyphs(glyphs.iter().map(|g| vello_cpu::Glyph { id: g.id as u32, x: g.x, y: g.y }));
+                // Colour glyphs (COLR/bitmap emoji) ignore paint alpha: apply it as a layer.
+                let alpha = match paint {
+                    Paint::Solid(c) => c.0[3].clamp(0.0, 1.0),
+                    _ => 1.0,
+                };
+                if alpha < 1.0 {
+                    if let Paint::Solid(c) = paint {
+                        ctx.set_paint(color(Rgba([c.0[0], c.0[1], c.0[2], 1.0])));
+                    }
+                    ctx.push_layer(None, None, Some(alpha), None, None);
+                }
+                let mut b = ctx.glyph_run(&mut st.res, &font.data).font_size(*size).hint(false).atlas_cache(true);
+                b = b.normalized_coords(&font.coords);
+                if let Some(a) = font.skew {
+                    b = b.glyph_transform(Affine::skew(-(a as f64).to_radians().tan(), 0.0));
+                }
+                if font.embolden {
+                    let e = 0.02 * *size as f64;
+                    b = b.font_embolden(glifo::FontEmbolden::new(kurbo::Diagonal2::new(e, e)));
+                }
+                let _ = b.fill_glyphs(glyphs.iter().map(|g| vello_cpu::Glyph { id: g.id as u32, x: g.x, y: g.y }));
+                if alpha < 1.0 {
+                    ctx.pop_layer();
+                }
             }
         }
         Op::PushLayer { .. } | Op::PopLayer => {}

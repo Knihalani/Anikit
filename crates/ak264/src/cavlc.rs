@@ -112,5 +112,3 @@ pub fn write_block(w: &mut BitWriter, coeffs: &[i32], nc: i32) -> u32 {
     total
 }
 
-/// Largest level magnitude the escape code can carry at suffixLength 0 (Baseline).
-pub const MAX_LEVEL: i32 = 2063;

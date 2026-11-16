@@ -42,7 +42,15 @@ pub fn sad16(a: &[u8], sa: usize, b: &[u8], sb: usize) -> u32 {
     }
     #[cfg(not(target_arch = "x86_64"))]
     {
-        crate::dsp::sad16_scalar(a, sa, b, sb)
+        {
+        let mut s = 0u32;
+        for y in 0..16 {
+            for x in 0..16 {
+                s += (a[y * sa + x] as i32 - b[y * sb + x] as i32).unsigned_abs();
+            }
+        }
+        s
+    }
     }
 }
 
@@ -64,13 +72,13 @@ unsafe fn sad16_sse2(a: *const u8, sa: usize, b: *const u8, sb: usize) -> u32 {
 pub fn satd_sum(a: &[u8], sa: usize, b: &[u8], sb: usize, w: usize, h: usize) -> u32 {
     #[cfg(target_arch = "x86_64")]
     {
-        assert!(a.len() >= (h - 1) * sa + w && b.len() >= (h - 1) * sb + w && h % 4 == 0);
+        assert!(a.len() >= (h - 1) * sa + w && b.len() >= (h - 1) * sb + w && h.is_multiple_of(4));
         let l = level();
         if l == 2 && w == 16 {
             // SAFETY: AVX2 detected; bounds checked.
             return unsafe { satd16_avx2(a.as_ptr(), sa, b.as_ptr(), sb, h) };
         }
-        if l >= 1 && w % 8 == 0 {
+        if l >= 1 && w.is_multiple_of(8) {
             let mut s = 0;
             for x in (0..w).step_by(8) {
                 // SAFETY: SSE4.1 detected; bounds checked.
@@ -585,4 +593,37 @@ mod soatests {
         unsoa8x2_u8(&v, &mut d);
         assert_eq!(c, d);
     }
+}
+
+/// Rounded average of two 16-byte rows ((a + b + 1) >> 1).
+#[inline(always)]
+pub fn avg16(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: SSE2 is baseline on x86_64; arrays are 16 bytes.
+    unsafe {
+        use std::arch::x86_64::*;
+        let r = _mm_avg_epu8(_mm_loadu_si128(a.as_ptr() as *const __m128i), _mm_loadu_si128(b.as_ptr() as *const __m128i));
+        let mut o = [0u8; 16];
+        _mm_storeu_si128(o.as_mut_ptr() as *mut __m128i, r);
+        o
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    core::array::from_fn(|i| ((a[i] as u16 + b[i] as u16 + 1) >> 1) as u8)
+}
+
+/// Saturating pack of 16 i16 lanes to u8.
+#[inline(always)]
+pub fn pack16(v: &[i16; 16]) -> [u8; 16] {
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: SSE2 is baseline; arrays are 32 / 16 bytes.
+    unsafe {
+        use std::arch::x86_64::*;
+        let a = _mm_loadu_si128(v.as_ptr() as *const __m128i);
+        let b = _mm_loadu_si128(v.as_ptr().add(8) as *const __m128i);
+        let mut o = [0u8; 16];
+        _mm_storeu_si128(o.as_mut_ptr() as *mut __m128i, _mm_packus_epi16(a, b));
+        o
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    core::array::from_fn(|i| v[i].clamp(0, 255) as u8)
 }

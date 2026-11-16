@@ -86,6 +86,7 @@ fn family(f: CFace) -> &'static str {
         CFace::Sans => "Inter",
         CFace::Display => "Inter Display",
         CFace::Mono => "JetBrains Mono",
+        CFace::Serif => "Instrument Serif",
     }
 }
 

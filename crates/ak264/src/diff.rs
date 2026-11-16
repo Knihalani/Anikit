@@ -61,21 +61,30 @@ fn block(p: &mut Plane, src: &[u8], ss: usize, w: usize, h: usize, x0: usize, y0
 
 #[inline(always)]
 fn blocks_equal(a: &[u8], sa: usize, b: &[u8], sb: usize, n: usize) -> bool {
-    if n == 16 {
-        let mut acc = 0u128;
-        for y in 0..16 {
-            let x = u128::from_ne_bytes(a[y * sa..y * sa + 16].try_into().unwrap());
-            let z = u128::from_ne_bytes(b[y * sb..y * sb + 16].try_into().unwrap());
-            acc |= x ^ z;
+    assert!(a.len() >= (n - 1) * sa + n && b.len() >= (n - 1) * sb + n);
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: bounds asserted above; SSE2 is baseline on x86_64.
+    unsafe {
+        use std::arch::x86_64::*;
+        let (pa, pb) = (a.as_ptr(), b.as_ptr());
+        let mut acc = _mm_setzero_si128();
+        if n == 16 {
+            for y in 0..16 {
+                let x = _mm_loadu_si128(pa.add(y * sa) as *const __m128i);
+                let z = _mm_loadu_si128(pb.add(y * sb) as *const __m128i);
+                acc = _mm_or_si128(acc, _mm_xor_si128(x, z));
+            }
+        } else {
+            for y in 0..n {
+                let x = _mm_loadl_epi64(pa.add(y * sa) as *const __m128i);
+                let z = _mm_loadl_epi64(pb.add(y * sb) as *const __m128i);
+                acc = _mm_or_si128(acc, _mm_xor_si128(x, z));
+            }
         }
-        acc == 0
-    } else {
-        let mut acc = 0u64;
-        for y in 0..n {
-            let x = u64::from_ne_bytes(a[y * sa..y * sa + 8].try_into().unwrap());
-            let z = u64::from_ne_bytes(b[y * sb..y * sb + 8].try_into().unwrap());
-            acc |= x ^ z;
-        }
-        acc == 0
+        _mm_movemask_epi8(_mm_cmpeq_epi8(acc, _mm_setzero_si128())) == 0xffff
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        (0..n).all(|y| a[y * sa..y * sa + n] == b[y * sb..y * sb + n])
     }
 }

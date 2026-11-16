@@ -10,6 +10,8 @@ High-level blocks for Anikit Video specs: code, charts, devices, UI, backgrounds
 
 **The box:** a component draws inside its layer's `width × height`, which defaults to the whole frame. The layer's position, transforms, `enter`/`exit` and `opacity` apply on top.
 
+**Sizes** are in output pixels; the defaults are tuned for 1080p.
+
 **Time:** `t` is seconds since the layer started. Most components have their own entrance, controlled by:
 - `delay`: when the entrance starts, in seconds;
 - `out`: when the exit starts, in seconds (leave it out and the component stays);
@@ -32,7 +34,7 @@ The window has syntax highlighting (TypeScript, JavaScript, Rust, Python, Go, Ba
 | `code` | | Source text. |
 | `language` | `"typescript"` | Language name or extension. |
 | `title` | `""` | File name shown in the title bar. |
-| `fontSize` | `22` | |
+| `fontSize` | `26` | |
 | `lineNumbers` | `true` | |
 | `chrome` | `"mac"` | `mac` (traffic lights), `minimal` or `none`. |
 | `typing` | `0` | Characters per second; `0` shows the code at once. |
@@ -51,7 +53,7 @@ Lines starting with `$ ` or `> ` are typed. Other lines print one after another,
 |---|---|---|
 | `lines` | | Commands and output. |
 | `title` | | |
-| `fontSize` | `20` | |
+| `fontSize` | `26` | |
 | `typing` | `28` | Characters per second. |
 | `pause` | `0.35` | Pause after a command. |
 | `lineDelay` | `0.06` | Delay between output lines. |
@@ -75,7 +77,7 @@ Charts build on with springs.
 | `valuesShown` | `true` | |
 | `grid` | `true` | |
 | `barWidth` | `0.62` | |
-| `fontSize` | `16` | |
+| `fontSize` | `22` | |
 | `format` | | `{ "prefix": "$", "suffix": "%", "decimals": 1, "compact": true }` |
 | `delay`, `duration`, `stagger` | | |
 
@@ -92,7 +94,7 @@ Charts build on with springs.
 | `smooth` | `true` | |
 | `min`, `max` | | |
 | `grid` | `true` | |
-| `width` | `3` | Line width. |
+| `width` | `4` | Line width. |
 | `format`, `fontSize`, `delay`, `duration`, `stagger` | | |
 
 ### `donutChart` and `pieChart`
@@ -115,7 +117,7 @@ Charts build on with springs.
 | `decimals` | | |
 | `compact` | `false` | Abbreviations: 12K, 3.4M. |
 | `separator` | `true` | Thousands separators. |
-| `size` | `120` | |
+| `size` | `160` | |
 | `weight` | `700` | |
 | `color` | | |
 | `gradient` | | `[top, bottom]` |
@@ -169,14 +171,28 @@ Devices keep their aspect ratio and are centred in the box. Screen props are sha
 | `lowerThird` | `title`, `subtitle`, `accent`, `size`, `align` (`left` or `center`), `margin`, `delay`, `out` |
 | `titleCard` | `title`, `eyebrow`, `subtitle`, `size`, `gradient` (`[from, to]`), `reveal` (`word`, `line`, `fade`), `stagger`, `align`, `delay`, `out` |
 
+## Content blocks
+
+| Kind | Props |
+|---|---|
+| `chat` | `messages` (`[{ "from": "user" \| "assistant" \| name, "text", "at"? }]`), `fontSize`, `stream` (words per second for replies), `thinking` (seconds of typing dots), `gap`, `delay`, `maxWidth`. Replies stream word by word; the thread scrolls up. |
+| `prompt` | `text`, `placeholder`, `typing` (characters per second), `delay`, `sendAt`, `fontSize`, `glow` (an animated gradient rim). It types, presses send and clears. |
+| `checklist` | `items`, `stagger`, `checkAfter`, `fontSize`, `color`, `strike` (to-do style), `delay` |
+| `quote` | `text`, `name`, `title`, `avatar` (src), `stars` (0–5), `reveal` (words per second), `fontSize`, `delay` |
+| `table` | `columns`, `rows` (cells are text, or `true`/`false`/`"✓"`/`"✗"` for icons), `highlight` (index of the column to emphasise), `fontSize`, `delay`, `stagger` |
+| `timeline` | `items` (`[{ "label", "title", "body" }]`), `current` (pulses; later items dim), `vertical`, `fontSize`, `step` (seconds per milestone), `delay` |
+| `spotlight` | `targets` (`[[x, y, w, h], ...]` in box px), `times`, `dim` (0–1), `radius`, `padding`, `color`, `delay`, `out`. Everything outside the focus darkens; the focus glides between targets. |
+| `keys` | `keys` (e.g. `["⌘", "K"]`), `press` (times), `size`, `delay`, `out` |
+| `marquee` | `items` (words, or image srcs with `images: true`), `speed` (px/s), `fontSize`, `gap`, `separator`, `fade`, `color` |
+
 ## Backgrounds
 
 Place backgrounds first in a scene's layers.
 
 | Kind | Props |
 |---|---|
-| `meshGradient` | `colors` (3–6 blobs), `base`, `speed`, `warp` (0 gives round blobs, 1 gives swirls), `seed`, `detail` |
-| `aurora` | `colors` (ribbons), `sky` (`[top, horizon]`), `speed`, `intensity`, `seed` |
+| `meshGradient` | `colors` (3–6 blobs), `base`, `speed`, `warp` (0 gives round blobs, 1 gives swirls), `intensity` (default 0.75), `seed`, `detail`, `rate` (field keyframes per second, blended in between; default 12) |
+| `aurora` | `colors` (ribbons), `sky` (`[top, horizon]`), `speed`, `intensity`, `seed`, `rate` (default 15) |
 | `gradient` | `colors`, `kind` (`linear` or `radial`), `angle`, `spin` (degrees per second) |
 | `grain` | `amount` (0.03–0.1 is subtle), `size`, `rate` (new patterns per second), `seed`. Put it last, as an overlay. |
 | `grid` | `cell`, `color`, `lineWidth`, `fade`, `perspective` (receding floor), `horizon`, `speed` (scroll), `reveal` (seconds to draw on) |
@@ -251,26 +267,28 @@ Scene transitions: `"transition": { "type": "wipe", "duration": 0.6, "direction"
 | `iris` | The iris closes and reopens. | `at`, `duration`, `hold`, `color`, `center` |
 | `glitch` | Glitch bars. | `at`, `duration`, `intensity`, `colors`, `seed` |
 
-## Audio (spec `audio` tracks)
+## Audio (`src/audio/`)
+
+The audio module implements the spec's `audio` tracks:
 
 ```json
 "audio": [
-  { "src": "music.mp3", "fadeIn": 1, "fadeOut": 2, "loop": true, "duck": { "under": "voice", "amountDb": 12 } },
-  { "src": "voiceover.wav", "start": 1.5, "role": "voice" },
-  { "src": "sfx:whoosh", "start": 3.0 },
-  { "src": { "sfx": "typing", "params": { "duration": 2 } }, "start": 4 }
+  { "src": "music.mp3", "fadeIn": 1, "fadeOut": 2, "loop": true, "duck": 0.4 },
+  { "src": "voiceover.wav", "at": 1.5, "voice": true },
+  { "src": "sfx:whoosh", "at": 3.0, "volume": "-6dB" },
+  { "src": { "sfx": "typing", "params": { "duration": 2 } }, "at": 4 }
 ]
 ```
 
 **Track keys:**
-- `start`: when the track starts, in timeline seconds;
-- `trim`: `[in, out]`, in source seconds;
-- `volume` (linear) or `db`;
-- `fadeIn`, `fadeOut`;
-- `loop`, `duration`;
-- `role`: `music`, `voice` or `sfx`;
-- `duck`: `{ under, amountDb, attack, release }`.
+- `at` (or `start`), `trimStart` (or `trim: [in, out]`), `duration`;
+- `volume`: linear, or `"-6dB"`; `db` adds gain;
+- `fadeIn`, `fadeOut` (equal-power), `loop`;
+- `voice: true` (or `role`: `music`, `voice` or `sfx`);
+- `duck`: the level to duck to (0–1), `true`, or `{ under, amountDb, attack, release }`.
 
-**Built-in SFX:** `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `drop`/`impact`, `ding`, `chime`, `typing`, `success`.
+Music ducks smoothly under voice tracks. The master bus has a soft limiter.
 
-**Music analysis** exposes `bpm`, `beats[]`, `downbeats[]`, `onsets[]` and `energy`, so you can snap cuts and animations to the beat.
+**Built-in SFX** (`"sfx:<name>"`) are synthesised procedurally, so no asset files are needed: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `drop`/`impact`, `ding`, `chime`, `typing`, `success`.
+
+**Music analysis** (`audio::analyze_pcm`) gives `bpm`, `beats[]`, `downbeats[]`, `onsets[]` and `energy` (100 values per second). Use it to snap cuts and animations to the beat.

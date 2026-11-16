@@ -235,6 +235,15 @@ pub(crate) enum Kind {
         /// 0 contain, 1 cover, 2 fill, 3 none.
         fit: u8,
     },
+    /// Decoded clip frames at `rate` frames per clip-second.
+    Video {
+        frames: Vec<ImageId>,
+        natural: [f32; 2],
+        fit: u8,
+        rate: f32,
+        speed: f32,
+        looped: bool,
+    },
     Group {
         children: Vec<Node>,
     },
@@ -271,6 +280,8 @@ pub(crate) struct Node {
     pub glow: Option<Filter>,
     /// Clip children to the box (with radius).
     pub clip: bool,
+    /// A clip path in the layer's local box (clip shapes, shape masks).
+    pub clip_path: Option<Path>,
     /// Wipe direction (0 left→right reveal, 1 right→left, 2 top→bottom, 3 bottom→top).
     pub wipe_dir: u8,
     pub index: f32,
@@ -629,13 +640,14 @@ impl Evaluator {
         let xf = dl::mul(parent, &local_xf(&v, n.anchor, w, h));
         let blur = v[prop::BLUR].max(0.0);
         let wipe = v[prop::WIPE].clamp(0.0, 1.0);
-        let is_leaf = matches!(n.kind, Kind::Text { kinetic: None, .. } | Kind::Image { .. })
+        let is_leaf = matches!(n.kind, Kind::Text { kinetic: None, .. } | Kind::Image { .. } | Kind::Video { .. })
             || matches!(&n.kind, Kind::Shape { fill, stroke, .. } if fill.is_none() || stroke.is_none());
         let needs_layer = blur > 0.05
             || n.blend != Blend::Normal
             || n.shadow.is_some()
             || n.glow.is_some()
             || n.clip
+            || n.clip_path.is_some()
             || wipe < 1.0
             || (opacity < 0.999 && !is_leaf);
         let mut alpha = opacity;
@@ -659,6 +671,8 @@ impl Evaluator {
                 };
                 let r = kurbo::Rect::new(r[0] as f64, r[1] as f64, r[2] as f64, r[3] as f64);
                 Some((kurbo::Shape::to_path(&r, 0.1), xf))
+            } else if let Some(p) = &n.clip_path {
+                Some((p.clone(), xf))
             } else if n.clip {
                 let rr = kurbo::RoundedRect::new(0.0, 0.0, w as f64, h as f64, v[prop::RADIUS].max(0.0) as f64);
                 Some((kurbo::Shape::to_path(&rr, 0.1), xf))
@@ -781,6 +795,14 @@ impl Evaluator {
             Kind::Image { image, natural, fit } => {
                 let dst = fit_rect(*natural, [w, h], *fit);
                 out.push(Op::Image { image: *image, dst, opacity: alpha, transform: xf });
+            }
+            Kind::Video { frames, natural, fit, rate, speed, looped } => {
+                if !frames.is_empty() {
+                    let k = (lt * speed * rate).floor().max(0.0) as usize;
+                    let k = if *looped { k % frames.len() } else { k.min(frames.len() - 1) };
+                    let dst = fit_rect(*natural, [w, h], *fit);
+                    out.push(Op::Image { image: frames[k], dst, opacity: alpha, transform: xf });
+                }
             }
             Kind::Group { children } => {
                 let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt };

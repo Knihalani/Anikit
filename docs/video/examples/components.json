@@ -74,9 +74,9 @@
     }
   ],
   "audio": [
-    { "src": "sfx:whoosh", "start": 2.8 },
-    { "src": { "sfx": "typing", "params": { "duration": 2.5 } }, "start": 3.3, "volume": 0.5 },
-    { "src": "sfx:click", "start": 6.7 },
-    { "src": "sfx:success", "start": 21.2 }
+    { "src": "sfx:whoosh", "at": 2.8 },
+    { "src": "sfx:typing", "at": 3.3, "volume": 0.5, "duration": 2.5 },
+    { "src": "sfx:click", "at": 6.7 },
+    { "src": "sfx:success", "at": 21.2 }
   ]
 }

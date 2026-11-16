@@ -203,7 +203,7 @@ impl FfmpegEncoder {
                 Quality::Best => 19,
             };
             let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(8);
-            ak264::Encoder::new(ak264::EncoderConfig { width: w, height: h, fps: fps as f64, qp, gop: (fps * 4.0) as u32, deblock: true, threads, full_range: false })
+            ak264::Encoder::new(ak264::EncoderConfig { width: w, height: h, fps: fps as f64, qp, gop: (fps * 4.0) as u32, deblock: true, threads, full_range: false, cabac: q != Quality::Draft, subpel: q == Quality::Best })
         });
         Ok(FfmpegEncoder { child: Some(child), stdin, out: out.to_path_buf(), w, h, buf: Vec::new(), name: codec.name().into(), ak })
     }

@@ -52,7 +52,7 @@ fn main() {
     // ak264 encode alone (single stream, sequential).
     let frames: Vec<YuvFrame> = lists.iter().map(|l| { let mut f = YuvFrame::new(ev.width, ev.height); r.render_yuv(l, &mut f); f }).collect();
     let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(8);
-    let mut e = ak264::Encoder::new(ak264::EncoderConfig { width: ev.width, height: ev.height, fps: ev.fps as f64, qp: 23, gop: 120, deblock: true, threads, full_range: false });
+    let mut e = ak264::Encoder::new(ak264::EncoderConfig { width: ev.width, height: ev.height, fps: ev.fps as f64, qp: 23, gop: 120, deblock: true, threads, full_range: false, ..Default::default() });
     let t = Instant::now();
     let mut bytes = 0;
     for f in &frames {

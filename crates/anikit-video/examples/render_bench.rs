@@ -147,7 +147,10 @@ fn main() {
         let t0 = Instant::now();
         let mut mbs = 0;
         for l in &lists {
-            r.render_yuv_incremental(l, &mut yuv, &mut changed);
+            let u = r.render_yuv_incremental(l, &mut yuv, &mut changed);
+            if std::env::var_os("AK_TRACE").is_some() {
+                eprintln!("{u:?}");
+            }
             mbs += changed.count();
         }
         let inc = frames as f64 / t0.elapsed().as_secs_f64();

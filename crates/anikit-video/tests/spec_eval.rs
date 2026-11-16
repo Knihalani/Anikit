@@ -144,3 +144,19 @@ fn shorthand() {
     let e = errors(r#"{ "scenes": [ { "layers": [ { "text": "x", "animate": "rize" } ] } ] }"#);
     assert!(e.iter().any(|m| m.contains("did you mean 'rise'") || m.contains("did you mean")), "{e:?}");
 }
+
+#[test]
+fn long_text_wraps_by_default() {
+    let ev = build(r#"{ "size": "9:16", "scenes": [ { "layers": [ { "text": "A rather long sentence that would never fit across a vertical frame at title size", "style": "title" } ] } ] }"#);
+    let dl = ev.eval(1.0);
+    let ys: std::collections::BTreeSet<i32> = dl.ops.iter().filter_map(|o| match o { Op::Glyphs { glyphs, .. } => Some(glyphs.iter().map(|g| g.y as i32).collect::<Vec<_>>()), _ => None }).flatten().collect();
+    assert!(ys.len() >= 3, "expected several lines, got {ys:?}");
+}
+
+#[test]
+fn clip_shapes() {
+    let ev = build(r#"{ "scenes": [ { "layers": [ { "shape": "rect", "width": 400, "height": 400, "clip": { "shape": "circle", "width": 200, "height": 200 } } ] } ] }"#);
+    let dl = ev.eval(1.0);
+    let clip = dl.ops.iter().find_map(|o| match o { Op::PushLayer { clip: Some((p, _)), .. } => Some(kurbo::Shape::bounding_box(p)), _ => None }).expect("clip");
+    assert!((clip.x0 - 100.0).abs() < 0.5 && (clip.x1 - 300.0).abs() < 0.5, "{clip:?}");
+}

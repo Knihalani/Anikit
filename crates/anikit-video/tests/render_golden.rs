@@ -368,7 +368,158 @@ fn incremental_matches_full_render() {
         prev_full = Some(yi.clone());
     }
     assert_eq!(kinds[0], Update::Full);
-    assert!(matches!(kinds[1], Update::Partial(_)), "{kinds:?}");
+    assert!(matches!(kinds[1], Update::Partial { .. }), "{kinds:?}");
     assert_eq!(kinds[5], Update::Full);
     assert_eq!(kinds[7], Update::Unchanged);
+}
+
+/// Variable-font coordinates, synthetic bold and oblique change the ink.
+#[test]
+fn font_variations_and_synthesis() {
+    use anikit_video::render::Face;
+    let path = std::env::var("AK_VARFONT").unwrap_or_else(|_| format!("{}/fonts/InterVariable.ttf", env!("CARGO_MANIFEST_DIR")));
+    let Ok(bytes) = std::fs::read(&path) else {
+        eprintln!("skipping: no variable font at {path}");
+        return;
+    };
+    let data = vello_cpu::peniko::FontData::new(vello_cpu::peniko::Blob::from(bytes), 0);
+    // Inter's axes are [opsz, wght]; wght 400 → 0.0, 900 → 1.0 (F2Dot14 16384).
+    let fref = skrifa::FontRef::new(data.data.data()).unwrap();
+    use skrifa::MetadataProvider;
+    let axes: Vec<String> = fref.axes().iter().map(|a| a.tag().to_string()).collect();
+    let wi = axes.iter().position(|t| t == "wght").expect("wght axis");
+    let mut heavy = vec![0i16; axes.len()];
+    heavy[wi] = 16384;
+    let mut assets = Assets::default();
+    let face = |coords: Vec<i16>, embolden: bool, skew: Option<f32>| Face { data: data.clone(), coords: coords.into(), embolden, skew };
+    assets.fonts.insert_face(FontId(0), face(vec![], false, None));
+    assets.fonts.insert_face(FontId(1), face(heavy, false, None));
+    assets.fonts.insert_face(FontId(2), face(vec![], true, None));
+    assets.fonts.insert_face(FontId(3), face(vec![], false, Some(12.0)));
+    let mut r = Renderer::new(Arc::new(assets));
+    // Inter glyph ids for a few letters, drawn both via the run cache (solid) and outlines (gradient).
+    let glyphs: Vec<Glyph> = (0..6).map(|k| Glyph { id: 40 + k as u16 * 3, x: k as f32 * 14.0, y: 0.0 }).collect();
+    let ink = |r: &mut Renderer, font: u32, paint: Paint| -> (u64, Vec<u8>) {
+        let l = list(vec![Op::Glyphs { font: FontId(font), size: 22.0, glyphs: glyphs.clone(), paint, transform: [1.0, 0.0, 0.0, 1.0, 4.0, 50.0] }]);
+        let px = r.render(&l).data_as_u8_slice().to_vec();
+        let bg = (0.1f32 * 255.0 + 0.5) as u64;
+        (px.chunks(4).map(|p| (p[1] as u64).saturating_sub(bg)).sum(), px)
+    };
+    let grad = Paint::Linear { p0: [0.0, 0.0], p1: [90.0, 0.0], stops: vec![(0.0, rgba(0.0, 1.0, 0.0, 1.0)), (1.0, rgba(0.0, 1.0, 0.0, 1.0))] };
+    for paint in [solid(0.0, 1.0, 0.0), grad] {
+        let (base, bp) = ink(&mut r, 0, paint.clone());
+        let (bold, _) = ink(&mut r, 1, paint.clone());
+        let (emb, _) = ink(&mut r, 2, paint.clone());
+        let (obl, op) = ink(&mut r, 3, paint.clone());
+        assert!(bold as f64 > base as f64 * 1.3, "wght 900 should add ink: {base} → {bold}");
+        assert!(emb as f64 > base as f64 * 1.1, "embolden should add ink: {base} → {emb}");
+        assert!((obl as f64 - base as f64).abs() < base as f64 * 0.1 && op != bp, "oblique moves ink, keeps area");
+    }
+}
+
+#[test]
+fn dynamic_frame_images() {
+    use anikit_video::render::incremental::Update;
+    use anikit_video::render::{MbMap, YuvFrame};
+    let mut r = Renderer::new(Arc::new(Assets::default()));
+    let frame = |v: u8| {
+        let mut p = vello_cpu::Pixmap::new(32, 32);
+        p.data_as_u8_slice_mut().chunks_mut(4).for_each(|c| c.copy_from_slice(&[v, v / 2, 255 - v, 255]));
+        Arc::new(p)
+    };
+    let l = DisplayList {
+        width: 128,
+        height: 64,
+        background: rgba(0.0, 0.0, 0.0, 1.0),
+        ops: vec![
+            card(70.0, 10.0, 40.0, 40.0, solid(1.0, 1.0, 1.0)),
+            Op::Image { image: ImageId(77), dst: [4.0, 4.0, 48.0, 48.0], opacity: 1.0, transform: IDENTITY },
+        ],
+    };
+    let (mut yuv, mut changed) = (YuvFrame::default(), MbMap::default());
+    r.set_frame_image(ImageId(77), frame(10));
+    assert_eq!(r.render_yuv_incremental(&l, &mut yuv, &mut changed), Update::Full);
+    let a = r.frame().data_as_u8_slice()[(20 * 128 + 20) * 4];
+    assert_eq!(r.render_yuv_incremental(&l, &mut yuv, &mut changed), Update::Unchanged);
+    r.set_frame_image(ImageId(77), frame(200));
+    assert!(matches!(r.render_yuv_incremental(&l, &mut yuv, &mut changed), Update::Partial { .. }));
+    let b = r.frame().data_as_u8_slice()[(20 * 128 + 20) * 4];
+    assert!(a < 30 && b > 180, "{a} {b}");
+    assert!(changed.get(0, 0) && !changed.get(5, 1), "only the image's macroblocks change");
+    let mut fresh = Renderer::new(Arc::new(Assets::default()));
+    fresh.set_frame_image(ImageId(77), frame(200));
+    assert_eq!(fresh.render(&l).data_as_u8_slice(), r.frame().data_as_u8_slice());
+}
+
+/// Degenerate input must never panic (a panicking worker kills the render).
+#[test]
+fn degenerate_inputs_do_not_panic() {
+    use anikit_video::render::{MbMap, YuvFrame};
+    let nan = f32::NAN;
+    let inf = f32::INFINITY;
+    let empty = BezPath::new();
+    let mut wild = BezPath::new();
+    wild.move_to((1e12, -1e12));
+    wild.line_to((f64::NAN, 3.0));
+    wild.curve_to((1e30, 1e30), (-1e30, 0.0), (5.0, 5.0));
+    let mut ops = vec![];
+    for t in [[nan, 0.0, 0.0, 1.0, 0.0, 0.0], [0.0; 6], [1e9, 0.0, 0.0, 1e9, -1e12, 1e12], [inf, 0.0, 0.0, inf, 0.0, 0.0], IDENTITY] {
+        for p in [circle(10.0, 10.0, 5.0), empty.clone(), wild.clone()] {
+            ops.push(Op::Fill { path: p.clone(), paint: Paint::Solid(rgba(nan, 2.0, -1.0, 0.5)), rule: FillRule::EvenOdd, transform: t });
+            ops.push(Op::Stroke { path: p.clone(), paint: solid(1.0, 1.0, 1.0), stroke: Stroke { width: nan, dash: vec![0.0, 0.0], trim: [nan, 2.0], ..stroke(2.0) }, transform: t });
+            ops.push(Op::Stroke { path: p, paint: solid(1.0, 1.0, 1.0), stroke: Stroke { dash: vec![1e-9, 1e-9], trim: [0.9, 0.1], ..stroke(1e6) }, transform: t });
+        }
+        ops.push(Op::RoundRect { x: nan, y: 0.0, w: 1e30, h: -5.0, radius: inf, paint: Paint::Linear { p0: [0.0, 0.0], p1: [0.0, 0.0], stops: vec![] }, transform: t });
+        ops.push(Op::RoundRect { x: 0.0, y: 0.0, w: 50.0, h: 50.0, radius: 5.0, paint: Paint::Radial { c: [nan, 0.0], r: -1.0, stops: vec![(nan, rgba(1.0, 0.0, 0.0, 1.0)), (2.0, rgba(0.0, 1.0, 0.0, 1.0))] }, transform: t });
+        ops.push(Op::Image { image: ImageId(999), dst: [0.0, 0.0, 10.0, 10.0], opacity: 1.0, transform: t });
+        ops.push(Op::Glyphs { font: FontId(999), size: 12.0, glyphs: vec![Glyph { id: 5, x: 0.0, y: 0.0 }], paint: solid(1.0, 1.0, 1.0), transform: t });
+        ops.push(layer(nan, Blend::Overlay, vec![Filter::Blur(nan), Filter::Blur(1e9), Filter::Shadow { dx: inf, dy: nan, blur: -3.0, color: rgba(0.0, 0.0, 0.0, 1.0) }, Filter::Glow { radius: 1e6, intensity: nan, color: rgba(1.0, 1.0, 1.0, 1.0) }], Some((wild.clone(), t)), Some(1)));
+        ops.push(card(0.0, 0.0, 40.0, 40.0, solid(1.0, 1.0, 1.0)));
+        ops.push(Op::PopLayer);
+        ops.push(layer(1.0, Blend::Normal, vec![Filter::Shadow { dx: 1e9, dy: 0.0, blur: 2.0, color: rgba(0.0, 0.0, 0.0, 1.0) }], None, None));
+        ops.push(Op::RoundRect { x: 0.0, y: 0.0, w: 1e7, h: 1e7, radius: 3.0, paint: solid(1.0, 1.0, 1.0), transform: t });
+        ops.push(Op::PopLayer);
+    }
+    ops.push(Op::PopLayer); // stray
+    ops.push(layer(1.0, Blend::Normal, vec![Filter::Blur(2.0)], None, None)); // unclosed
+    ops.push(card(5.0, 5.0, 10.0, 10.0, solid(1.0, 0.0, 0.0)));
+    let mut r = Renderer::new(Arc::new(Assets::default()));
+    let (mut y, mut m) = (YuvFrame::default(), MbMap::default());
+    for (w, h) in [(W, H), (1, 1), (17, 3), (0, 0)] {
+        let l = DisplayList { width: w, height: h, background: rgba(nan, 0.0, 0.0, 1.0), ops: ops.clone() };
+        r.render(&l);
+        r.render_yuv_incremental(&l, &mut y, &mut m);
+        r.render_yuv_incremental(&l, &mut y, &mut m);
+    }
+}
+
+#[test]
+fn dynamic_image_source_and_tiling() {
+    use anikit_video::render::DynamicImages;
+    let tile = {
+        let mut p = vello_cpu::Pixmap::new(4, 4);
+        for (i, c) in p.data_as_u8_slice_mut().chunks_mut(4).enumerate() {
+            let on = (i % 4 < 2) ^ (i / 8 == 1);
+            c.copy_from_slice(if on { &[255, 255, 255, 255] } else { &[0, 0, 0, 255] });
+        }
+        Arc::new(p)
+    };
+    let t2 = tile.clone();
+    let src: Arc<dyn DynamicImages> = Arc::new(move |id: ImageId| (id.0 >= 0x4000_0000).then(|| t2.clone()));
+    let mut r = Renderer::new(Arc::new(Assets::default()));
+    r.set_image_source(src);
+    let id = ImageId(0x4000_0001);
+    let l = list(vec![
+        Op::Image { image: id, dst: [0.0, 0.0, 4.0, 4.0], opacity: 1.0, transform: IDENTITY },
+        // Tiled: a 4×4 pattern repeating across a 40×40 rect.
+        Op::Fill { path: kurbo::Rect::new(40.0, 40.0, 80.0, 80.0).to_path(0.1), paint: Paint::Image { image: id, transform: IDENTITY, opacity: 1.0 }, rule: FillRule::NonZero, transform: IDENTITY },
+    ]);
+    let px = r.render(&l).data_as_u8_slice().to_vec();
+    let at = |x: usize, y: usize| px[(y * W as usize + x) * 4];
+    assert_eq!(at(0, 0), 255);
+    assert_eq!(at(2, 0), 0);
+    // Repeats far from the origin (Pad would smear the edge pixel).
+    assert_eq!(at(72, 72), at(0, 0));
+    assert_eq!(at(74, 72), at(2, 0));
+    assert_eq!(at(72, 74), at(0, 2));
 }
