@@ -194,6 +194,8 @@ pub struct PostFx {
     streak: Vec<f32>,
     rays: Vec<f32>,
     luma: Vec<u8>,
+    /// Lens flares: which quarter-res rows hold a light hot enough to cast ghosts.
+    hot_rows: Vec<bool>,
     /// Running column sums for the vertical box blur.
     vsum: Vec<f32>,
     /// 256×256 grain noise in −0.5…0.5, built once; each frame reads it at a seeded offset.
@@ -566,12 +568,23 @@ impl PostFx {
         // threshold (a sun does, a lit sign doesn't).
         self.tmp.clear();
         self.tmp.extend(self.small.iter().map(|v| (v - 110.0).max(0.0) * 2.0));
-        let src = &self.tmp;
+        // Hot pixels are rare (a sun, a flash): note which source rows have any,
+        // and skip every sample that would read a cold row — or the whole pass.
+        self.hot_rows.clear();
+        self.hot_rows.extend(self.tmp.chunks_exact(sw * 3).map(|r| r.iter().any(|v| *v > 0.0)));
+        if !self.hot_rows.iter().any(|h| *h) {
+            return;
+        }
+        let (src, hot) = (&self.tmp, &self.hot_rows);
         let sample = |u: f32, v: f32| -> Option<usize> {
             if !(0.0..1.0).contains(&u) || !(0.0..1.0).contains(&v) {
                 return None;
             }
-            Some(((v * fh) as usize).min(sh - 1) * sw + ((u * fw) as usize).min(sw - 1))
+            let row = ((v * fh) as usize).min(sh - 1);
+            if !hot[row] {
+                return None;
+            }
+            Some(row * sw + ((u * fw) as usize).min(sw - 1))
         };
         for y in 0..sh {
             let v = (y as f32 + 0.5) / fh;
