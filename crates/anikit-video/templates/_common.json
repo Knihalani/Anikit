@@ -352,41 +352,53 @@
         "amount": 0.04
       }
     },
-    "device": {
-      "id": "{{id ?? 'device'}}",
-      "type": "component",
-      "component": "{{kind ?? 'browser'}}",
-      "props": {
-        "$merge": [
-          {
-            "delay": "{{delay ?? 0.3}}",
-            "float": "{{fmt.u * 0.6}}"
-          },
-          {
-            "$if": "src",
-            "then": {
-              "src": "{{src}}"
-            },
-            "else": {
-              "colors": [
-                "{{brand.colors.primary}}",
-                "{{brand.colors.secondary}}"
-              ]
-            }
-          },
-          {
-            "$if": "(kind ?? 'browser') == 'browser' && url",
-            "then": {
-              "url": "{{url}}"
-            }
-          }
-        ]
+    "device": [
+      {
+        "$if": "src",
+        "then": {
+          "id": "{{(id ?? 'device') + '-asset'}}",
+          "src": "{{src}}",
+          "width": 2,
+          "height": 2,
+          "opacity": 0
+        }
       },
-      "x": "{{x ?? '50%'}}",
-      "y": "{{y ?? '50%'}}",
-      "width": "{{width}}",
-      "height": "{{height}}"
-    },
+      {
+        "id": "{{id ?? 'device'}}",
+        "type": "component",
+        "component": "{{kind ?? 'browser'}}",
+        "props": {
+          "$merge": [
+            {
+              "delay": "{{delay ?? 0.3}}",
+              "float": "{{fmt.u * 0.6}}"
+            },
+            {
+              "$if": "src",
+              "then": {
+                "src": "{{src}}"
+              },
+              "else": {
+                "colors": [
+                  "{{brand.colors.primary}}",
+                  "{{brand.colors.secondary}}"
+                ]
+              }
+            },
+            {
+              "$if": "(kind ?? 'browser') == 'browser' && url",
+              "then": {
+                "url": "{{url}}"
+              }
+            }
+          ]
+        },
+        "x": "{{x ?? '50%'}}",
+        "y": "{{y ?? '50%'}}",
+        "width": "{{width}}",
+        "height": "{{height}}"
+      }
+    ],
     "ctaButton": {
       "id": "cta-button",
       "type": "component",
