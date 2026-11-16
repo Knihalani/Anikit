@@ -25,6 +25,7 @@ fn styles() -> Vec<(&'static str, Kinetic)> {
         ("drop", Kinetic { unit: None, ..k(KineticStyle::Drop { distance: 1.2 }, UnitKind::Char) }),
         ("slide", k(KineticStyle::Slide { distance: 0.8 }, UnitKind::Word)),
         ("glitch", k(KineticStyle::Glitch { amount: 0.12, seed: 0 }, UnitKind::Word)),
+        ("draw", k(KineticStyle::Draw { width: 0.022 }, UnitKind::Word)),
         ("underline", Kinetic { unit: Some(UnitKind::Word), ..k(KineticStyle::Underline { color: None, thickness: 0.07 }, UnitKind::Word) }),
     ]
 }
@@ -75,7 +76,9 @@ fn kinetic_start_mid_end() {
             _ => assert!(n0 <= 1, "{name} start shows {n0}"),
         }
         // Mid: partially there.
-        if name == "blur" || name == "mask" {
+        if name == "draw" {
+            assert!(om.iter().any(|o| matches!(o, Op::Stroke { .. })), "draw mid has strokes");
+        } else if name == "blur" || name == "mask" {
             assert!(om.iter().any(|o| matches!(o, Op::PushLayer { .. })), "{name} mid has no layer");
         } else if !matches!(name, "wave" | "highlight" | "type" | "scramble" | "underline" | "tracking" | "glitch") {
             assert!(am > 0.0 && am < total as f32, "{name} mid alpha {am}");

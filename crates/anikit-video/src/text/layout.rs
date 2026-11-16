@@ -52,11 +52,31 @@ pub struct TextStyle {
     pub strikethrough: bool,
     /// OpenType features in CSS syntax, e.g. `"tnum" on, "ss01" on`.
     pub features: Option<String>,
+    /// Outline the glyphs (`{ "width": 0.03, "hollow": true }`; width in em).
+    pub outline: Option<Outline>,
     /// Colour for `==accent==` markup.
     pub accent: Color,
     /// Gradient fill across the whole block (overrides span colours):
     /// `["#7c5cff", "#ff6ad5"]` or `{ "colors": [...], "angle": 135 }`.
     pub gradient: Option<Gradient>,
+}
+
+/// Glyph outline stroke.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Outline {
+    /// Stroke width in em.
+    pub width: f32,
+    /// Stroke colour (defaults to the text colour).
+    pub color: Option<Color>,
+    /// Draw only the outline, no fill.
+    pub hollow: bool,
+}
+
+impl Default for Outline {
+    fn default() -> Self {
+        Outline { width: 0.025, color: None, hollow: true }
+    }
 }
 
 /// A linear gradient: CSS angle convention (0 = upwards, 90 = to the right).
@@ -127,6 +147,7 @@ impl Default for TextStyle {
             strikethrough: false,
             features: None,
             accent: Color(Rgba([0.55, 0.48, 1.0, 1.0])),
+            outline: None,
             gradient: None,
         }
     }
@@ -330,6 +351,10 @@ pub struct TextLayout {
     pub truncated: bool,
     /// Block-wide fill overriding run colours (gradient text).
     pub fill: Option<Gradient>,
+    /// Outline stroke: one path per run in layout coordinates, plus style.
+    pub outline: Option<(Vec<dl::Path>, dl::Stroke, Option<Rgba>, bool)>,
+    /// Content hash of the spec (stable cache key for layer caching).
+    pub key: u64,
 }
 
 /// Unit granularity for per-unit addressing and animation.
@@ -377,6 +402,16 @@ impl TextLayout {
         for d in &self.decorations {
             out.push(rect_op(d.rect, d.color, transform));
         }
+        if let Some((paths, stroke, color, hollow)) = &self.outline {
+            for (r, p) in self.runs.iter().zip(paths) {
+                if !hollow {
+                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: r.glyphs.clone(), paint: self.paint(r, 1.0), transform });
+                }
+                let paint = color.map_or_else(|| self.paint(r, 1.0), Paint::Solid);
+                out.push(Op::Stroke { path: p.clone(), paint, stroke: stroke.clone(), transform });
+            }
+            return;
+        }
         for r in &self.runs {
             out.push(Op::Glyphs {
                 font: r.font,
@@ -396,6 +431,11 @@ impl TextLayout {
     }
 }
 
+/// A round-joined stroke for glyph outlines.
+pub fn text_stroke(width: f32) -> dl::Stroke {
+    dl::Stroke { width, cap: 1, join: 1, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0, trim: [0.0, 1.0] }
+}
+
 pub(crate) fn rect_op(r: [f32; 4], color: Rgba, transform: Affine) -> Op {
     Op::RoundRect { x: r[0], y: r[1], w: r[2], h: r[3], radius: 0.0, paint: Paint::Solid(color), transform }
 }
@@ -407,7 +447,9 @@ impl FontStore {
         if let Some(l) = self.cache.lock().unwrap().get(&key) {
             return l.clone();
         }
-        let l = Arc::new(self.layout_uncached(spec));
+        let mut l = self.layout_uncached(spec);
+        l.key = key;
+        let l = Arc::new(l);
         self.cache.lock().unwrap().insert(key, l.clone());
         l
     }
@@ -549,8 +591,25 @@ impl FontStore {
         }
         let mut out = self.extract(&layout, &text);
         out.fill = spec.style.gradient.clone().filter(|g| !g.colors.is_empty());
+        if let Some(o) = &spec.style.outline {
+            let paths = out.runs.iter().map(|r| self.run_path(r, &r.glyphs)).collect();
+            out.outline = Some((paths, text_stroke(o.width * base * scale), o.color.map(|c| c.0), o.hollow));
+        }
         out.font_size = base * scale;
         out.truncated = truncated;
+        out
+    }
+
+    /// The outlines of `glyphs` (from `run`) as one path in layout coordinates.
+    pub fn run_path(&self, run: &GlyphRun, glyphs: &[dl::Glyph]) -> dl::Path {
+        let mut out = dl::Path::new();
+        for g in glyphs {
+            let p = self.glyph_path(run.font, g.id, run.size);
+            let t = kurbo::Affine::translate((g.x as f64, g.y as f64));
+            for el in p.elements() {
+                out.push(t * *el);
+            }
+        }
         out
     }
 

@@ -121,6 +121,11 @@ pub enum KineticStyle {
         #[serde(default = "d_thick")]
         thickness: f32,
     },
+    /// Outlines trace on (stroke trim 0 → 1), then the fill fades in. Stroke width in em.
+    Draw {
+        #[serde(default = "d_draw")]
+        width: f32,
+    },
     /// Captions: every unit is visible at `dim` alpha; the current unit takes
     /// `active` colour, spoken units return to full colour. Pair with `times`.
     Karaoke {
@@ -133,6 +138,9 @@ pub enum KineticStyle {
 
 fn d_dim() -> f32 {
     0.35
+}
+fn d_draw() -> f32 {
+    0.022
 }
 fn d_spread() -> f32 {
     0.6
@@ -256,7 +264,7 @@ impl Default for Kinetic {
 pub const STYLE_NAMES: &[&str] =
     &[
     "rise", "fade", "blur", "pop", "typewriter", "scramble", "wave", "highlight", "mask", "flip", "tracking", "drop",
-    "slide", "glitch", "underline", "karaoke",
+    "slide", "glitch", "underline", "draw", "karaoke",
 ];
 
 impl KineticStyle {
@@ -281,7 +289,8 @@ impl KineticStyle {
             "slide" | "slidein" | "slideright" => KineticStyle::Slide { distance: d_slide() },
             "slideleft" => KineticStyle::Slide { distance: -d_slide() },
             "glitch" => KineticStyle::Glitch { amount: d_glitch(), seed: 0 },
-            "underline" | "draw" => KineticStyle::Underline { color: None, thickness: d_thick() },
+            "underline" => KineticStyle::Underline { color: None, thickness: d_thick() },
+            "draw" | "trace" | "handwrite" | "sketch" => KineticStyle::Draw { width: d_draw() },
             "karaoke" | "caption" | "captions" | "sing" => KineticStyle::Karaoke { active: None, dim: d_dim() },
             _ => return None,
         })
@@ -484,6 +493,8 @@ pub struct KineticPlan {
     scramble: Vec<Vec<(u16, f32)>>,
     caret: Rgba,
     accent: Rgba,
+    /// Draw style: outline path and stroke colour per unit.
+    paths: Vec<(dl::Path, Rgba)>,
 }
 
 impl KineticPlan {
@@ -506,6 +517,7 @@ impl KineticPlan {
             KineticStyle::Slide { .. } => (UnitKind::Word, 0.07, 0.7),
             KineticStyle::Glitch { .. } => (UnitKind::Word, 0.08, 0.6),
             KineticStyle::Underline { .. } => (UnitKind::Line, 0.25, 0.6),
+            KineticStyle::Draw { .. } => (UnitKind::Word, 0.15, 1.4),
         };
         let unit = match k.style {
             KineticStyle::Typewriter { .. } | KineticStyle::Scramble { .. } => UnitKind::Char,
@@ -523,6 +535,7 @@ impl KineticPlan {
             KineticStyle::Drop { .. } => "spring(bounce: 0.35)",
             KineticStyle::Slide { .. } => "outQuart",
             KineticStyle::Underline { .. } => "inOutCubic",
+            KineticStyle::Draw { .. } => "inOutSine",
             _ => "outCubic",
         };
         let ease = k
@@ -572,7 +585,32 @@ impl KineticPlan {
         };
         let em = layout.font_size;
         let accent = Color::hex("#ffd166").unwrap_or_default().0;
-        KineticPlan { layout, k: k.clone(), unit, duration, em, ease, starts, scramble, caret, accent }
+        let paths = match k.style {
+            KineticStyle::Draw { .. } => layout
+                .units(unit)
+                .iter()
+                .map(|u| {
+                    let mut path = dl::Path::new();
+                    let mut color = Rgba([1.0; 4]);
+                    let mut gi = u.glyphs.start;
+                    while gi < u.glyphs.end {
+                        let run = layout.glyphs[gi as usize].run as usize;
+                        let mut gl = Vec::new();
+                        while gi < u.glyphs.end && layout.glyphs[gi as usize].run as usize == run {
+                            gl.push(layout.runs[run].glyphs[layout.glyphs[gi as usize].index as usize]);
+                            gi += 1;
+                        }
+                        color = layout.runs[run].color;
+                        for el in fonts.run_path(&layout.runs[run], &gl).elements() {
+                            path.push(*el);
+                        }
+                    }
+                    (path, color)
+                })
+                .collect(),
+            _ => Vec::new(),
+        };
+        KineticPlan { layout, k: k.clone(), unit, duration, em, ease, starts, scramble, caret, accent, paths }
     }
 
     /// Time at which every unit has finished its entrance.
@@ -752,6 +790,17 @@ impl KineticPlan {
                     l.unit_ops(u, a * 0.8, Some(Rgba([1.0, 0.1, 0.35, 1.0])), dl::mul(&transform, &translate(r1 - j, r2)), out);
                     l.unit_ops(u, a * 0.8, Some(Rgba([0.1, 0.9, 1.0, 1.0])), dl::mul(&transform, &translate(-r1 + j, -r2)), out);
                     self.unit_ops(u, a, dl::mul(&transform, &translate(r1 * 0.3, 0.0)), out);
+                }
+                KineticStyle::Draw { width } => {
+                    let (path, color) = &self.paths[i];
+                    let trace = (e / 0.75).clamp(0.0, 1.0);
+                    let fill = ((e - 0.55) / 0.45).clamp(0.0, 1.0);
+                    if fill > 0.0 {
+                        self.unit_ops(u, fill, transform, out);
+                    }
+                    let mut st = super::layout::text_stroke(width * self.em);
+                    st.trim = [0.0, trace];
+                    out.push(Op::Stroke { path: path.clone(), paint: Paint::Solid(with_alpha(*color, 1.0 - 0.6 * fill)), stroke: st, transform });
                 }
                 KineticStyle::MaskReveal { direction } => {
                     let r = u.rect;

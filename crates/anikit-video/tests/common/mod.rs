@@ -57,6 +57,31 @@ pub fn render(fonts: &FontStore, dl: &DisplayList) -> Pixmap {
                 }
                 let _ = b.fill_glyphs(glyphs.iter().map(|g| vello_cpu::Glyph { id: g.id as u32, x: g.x, y: g.y }));
             }
+            Op::Stroke { path, paint, stroke, transform } => {
+                ctx.set_transform(aff(transform));
+                set_paint(&mut ctx, paint);
+                ctx.set_stroke(vello_cpu::kurbo::Stroke::new(stroke.width as f64).with_join(vello_cpu::kurbo::Join::Round).with_caps(vello_cpu::kurbo::Cap::Round));
+                // Trim: keep the first `trim[1]` of the path's length.
+                if stroke.trim[1] < 1.0 {
+                    let total: f64 = vello_cpu::kurbo::ParamCurveArclen::arclen(&FlatLen(path), 0.1);
+                    let keep = total * stroke.trim[1] as f64;
+                    let mut acc = 0.0;
+                    let mut out = vello_cpu::kurbo::BezPath::new();
+                    for seg in path.segments() {
+                        let l = vello_cpu::kurbo::ParamCurveArclen::arclen(&seg, 0.1);
+                        if acc >= keep {
+                            break;
+                        }
+                        let s = if acc + l > keep { vello_cpu::kurbo::ParamCurve::subsegment(&seg, 0.0..((keep - acc) / l)) } else { seg };
+                        out.move_to(vello_cpu::kurbo::ParamCurve::start(&s));
+                        out.push(s.as_path_el());
+                        acc += l;
+                    }
+                    ctx.stroke_path(&out);
+                } else {
+                    ctx.stroke_path(path);
+                }
+            }
             Op::PushLayer { opacity, clip, filters, .. } => {
                 let clip_path = clip.as_ref().map(|(p, a)| aff(a) * p.clone());
                 ctx.set_transform(kurbo::Affine::IDENTITY);
@@ -98,4 +123,19 @@ pub fn golden(pm: &Pixmap, name: &str) -> f64 {
     let old = old.data_as_u8_slice();
     assert_eq!(old.len(), cur.len(), "golden {name}: size changed");
     old.iter().zip(cur).map(|(a, b)| (*a as i32 - *b as i32).unsigned_abs() as f64).sum::<f64>() / cur.len() as f64
+}
+
+struct FlatLen<'a>(&'a vello_cpu::kurbo::BezPath);
+impl vello_cpu::kurbo::ParamCurve for FlatLen<'_> {
+    fn eval(&self, _t: f64) -> vello_cpu::kurbo::Point {
+        vello_cpu::kurbo::Point::ZERO
+    }
+    fn subsegment(&self, _r: std::ops::Range<f64>) -> Self {
+        FlatLen(self.0)
+    }
+}
+impl vello_cpu::kurbo::ParamCurveArclen for FlatLen<'_> {
+    fn arclen(&self, acc: f64) -> f64 {
+        self.0.segments().map(|s| s.arclen(acc)).sum()
+    }
 }

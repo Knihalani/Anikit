@@ -240,3 +240,18 @@ fn system_font_fallback_cjk() {
     let b = store().layout(&TextSpec::plain("Hello", TextStyle::default()));
     assert!(s.face(l.runs[0].font).data.data.len() == store().face(b.runs[0].font).data.data.len());
 }
+
+#[test]
+fn golden_outline_text() {
+    let s = store();
+    let spec: TextSpec = serde_json::from_str(r##"{"text": "OUTLINE *type*", "style": {"font": "900 72px Inter Display", "color": "#ffffff", "outline": {"width": 0.02}}}"##).unwrap();
+    let l = s.layout(&spec);
+    let ops = l.to_ops(anikit_video::dl::IDENTITY);
+    assert!(ops.iter().all(|o| matches!(o, anikit_video::dl::Op::Stroke { .. })), "hollow: strokes only");
+    let mut dl = DisplayList { width: 640, height: 110, background: Rgba([0.04, 0.04, 0.07, 1.0]), ops: vec![] };
+    l.ops([1.0, 0.0, 0.0, 1.0, 20.0, 12.0], &mut dl.ops);
+    let pm = common::render(s, &dl);
+    let d = common::golden(&pm, "outline_text");
+    assert!(d < 0.5, "golden diff {d}");
+    common::save(pm, "outline_text");
+}
