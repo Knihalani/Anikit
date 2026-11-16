@@ -1453,3 +1453,105 @@ targets 0.54–1.13 → 0.28–0.34 ms, 10k staggered targets 0.13–0.28 →
 0.14–0.29 ms. `MANUAL=1 bench-dom.mjs`, two interleaved rounds, anikit ms
 per frame: 500 0.43–0.56 / 0.46–0.48, 2000 2.13–2.16 / 1.61–2.09, 5000
 5.11–6.10 / 5.06–5.84 (base / now; DOM writes are not on the compact path).
+
+## Sixth round (creation)
+
+Goal: animation **creation** cost, the one place GSAP still led
+(`node --expose-gc scripts/bench-create.mjs`, N = 10k, first frame included).
+Starting point: `583b4fb`. JavaScript only (`animate.ts`, `timeline.ts`,
+`props.ts`, `wasm.ts`); no Rust change.
+
+**Method.** Same shared 4-core VM, load 2–6 during the runs (other agents).
+The `583b4fb` build and the final build were copied side by side and run
+alternately: base, new, base, new, base, new. Single runs of the same build
+moved by up to 2x (one animate(), 3 numbers: 40–63 ms on the base alone), so
+only the retained-heap column and differences larger than the spread count.
+A development CPU profile (`--cpu-prof`, 40 creations of 10k targets) was used
+to pick the work; it is not the source of any number below.
+
+**Where the time went** (profile of one `animate()` over 10k objects at the
+start): garbage collector ~29%, `_build` ~17% self, all wasm functions
+together ~15%, `_kill` + `unclaim` ~9%. Inside `_build`, once the closures
+below were gone, the hottest lines were pushing the revert data into one
+growing array (~18% of `_build`) and spreading the property `Map`
+(`[...props]`, ~16% of `_build` for single-target calls).
+
+### Changes (behaviour unchanged)
+
+- **Per-target closures removed.** `Part.onEmpty` (one closure per Part) is a
+  field holding the animation (`own`; not `ctl`, which is cleared when the
+  controller detaches, while the closure kept the animation strongly). The
+  only Part of a single-target animation forwards events through one shared
+  function instead of a closure per animation. `addTrack` is created once per
+  call, not per target.
+- **`revert()` data for plain properties** (`Kind.Prop`) is stored flat
+  (target, key, value) in one array per animation, sized once per call,
+  instead of one closure per property per target. It is read at the same
+  point as before (before any write, before `f64Buf`). Restores of other kinds
+  stay closures; both are captured before any write and never cover the same
+  target and key with different values, so their relative order does not
+  matter.
+- **Shared, read-only arrays and objects:** `Part.tm` (one array per call when
+  the timing repeats, a frozen default), the default build context, a
+  timeline's child build context, one track-offset array per call.
+- **Overwrite claims** look each target's state up once per Part
+  (`claimAll`/`unclaimAll`) instead of once per property; release order is
+  unchanged.
+- **No build closure** when the core is ready (`readyNow()`; `whenReady` is
+  still used before it is), in `animate()` and `timeline.add()`.
+- **Property map** read into two arrays with `forEach` instead of `[...props]`.
+- **Exact-size binding arrays** per Part (the pushes left capacity for 17).
+- **Timelines** keep their children for `kill()` directly instead of a closure
+  per child.
+
+Tests added (`animate: creation bookkeeping`): `revert()` of plain properties
+with the same target twice, mixed with an element and the `text` special
+property, and a second `revert()` restoring nothing; a takeover freeing a
+multi-target animation, and a finished single-target animation's events.
+
+### Results
+
+`bench-create.mjs`, N = 10k, three interleaved rounds (ms; GSAP's range from
+the same runs; retained = heap kept per target):
+
+| Case | base `583b4fb` | now | GSAP | retained base → now (GSAP) |
+|---|---|---|---|---|
+| one `animate()`, 3 numbers | 52.0 · 53.1 · 63.5 | 30.3 · 48.1 · 55.8 | 4.3–5.7 | 1.53 → **0.86 KB** (0.47) |
+| 10k `animate()` calls, 3 numbers | 60.6 · 66.3 · 66.8 | 58.5 · 65.6 · 89.2 | 13.2–30.2 | 2.48 → **1.66 KB** (1.14) |
+| one `animate()`, stagger delay | 21.8 · 22.7 · 25.6 | 15.0 · 16.7 · 19.7 | 7.1–10.4 | 0.89 → **0.54 KB** (0.51) |
+| one `animate()`, 8 keyframes | 24.0 · 24.4 · 27.0 | **17.0 · 18.0 · 20.0** | 33.8–37.2 | 0.88 → **0.45 KB** (0.53) |
+| one `animate()`, colour string | 28.8 · 31.6 · 35.4 | 24.9 · 25.6 · 32.0 | 31.8–38.1 | 0.87 → **0.44 KB** (0.41) |
+| timeline of 1000 steps | 6.0 · 6.3 · 6.5 | **4.5 · 4.7 · 5.5** | 1.1–1.8 | 2.67 → **1.83–1.87 KB** (1.09) |
+| `animate()` taking over a running one | 46.9 · 47.9 · 48.5 | **38.4 · 39.6 · 44.1** | 347–376 | |
+| `kill()`: timeline of 5000 steps | 1.03 · 1.07 · 1.10 | 0.79 · 0.82 · 0.92 | 0.02 | |
+
+An earlier set of three rounds, before the binding-array change, read the
+same way (one `animate()` 40.2–62.6 → 46.2–55.8 ms, retained 1.53 → 0.97 KB).
+
+So: the heap kept per target dropped by 35–50% in every case, and the 8
+keyframes, timeline, takeover and staggered rows are faster by more than the
+spread. The two rows that matter most against GSAP, one `animate()` of 3
+numbers and 10k separate calls, overlap with the base in these runs: the
+gap to GSAP (about 10x and 3–4x) is **not closed**.
+
+Per frame, `scripts/bench.mjs`, three interleaved rounds: Anikit still ahead
+of GSAP in all 12 cases in every round, now 1.08–4.91x against 1.06–4.93x
+for the base; Anikit ms per frame within the base's range in every case
+(e.g. 3 numbers 50k 0.73–0.75 → 0.75–0.80, 8 keyframes 50k 0.70–0.75 →
+0.68–0.71, colour 50k 3.05–3.24 → 3.00–3.18). The frame rows of
+`bench-create.mjs` moved likewise within noise.
+
+### Not done (sixth round)
+
+- **One wasm call for all targets** of a call (one encoded record with
+  per-target delays, straight into a pack): not attempted. The wasm functions
+  together are ~15% of the one-call profile; GC and JS bookkeeping dominate.
+- **Bindings per target.** Each Part still keeps one `Binding` per property
+  (15 fields plus a boxed `ln` double): with the Part itself, the largest
+  part of the 0.86 KB left. A struct-of-arrays form per call touches
+  `prep`, `release`, `dispose`, `info` and `toCSS`.
+- **Shared track encoding** when all targets have identical static values:
+  with an implicit start value (`{ x: 500 }`) every target's track differs in
+  its first value, so it needs an encoding with a per-target start slot.
+- `numberTrack`'s per-target `TrackDef` and value arrays are short-lived and
+  still allocated per property per target.
