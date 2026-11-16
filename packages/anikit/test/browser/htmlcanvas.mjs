@@ -57,6 +57,10 @@ export const tests = [
       ok(after.vis === 'hidden' && after.overlays === 0, `after: ${JSON.stringify(after)}`);
       await page.evaluate(() => fx.revert());
       ok((await page.evaluate(() => document.getElementById('card').style.visibility)) === '', 'restored');
+      // mode 'in' reveals a hidden element and leaves it visible.
+      await page.evaluate(() => { document.getElementById('card').style.visibility = 'hidden'; return ak.htmlEffect('#card', 'shatter', { mode: 'in', duration: 0.3 }).finished; });
+      const vis = await page.evaluate(() => { const c = getComputedStyle(document.getElementById('card')); return c.visibility + ' ' + c.opacity; });
+      ok(vis === 'visible 1', `revealed: ${vis}`);
     },
   },
   {
