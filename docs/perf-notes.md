@@ -1721,9 +1721,8 @@ of building an array every frame.
   end state at once and setting `progress` does nothing after that (the
   `'instant'` build in `animate.ts`). Scroll-linked progress is user-driven;
   it probably should opt out.
-- `animate(el, { y })` on an element whose inline style is
-  `transform: translateX(10px)` writes `translate(0px, 5px)`: the inline
-  `translateX` is not read into the transform state (`props.ts`).
+- (Fixed in the ninth round, §4.) `animate(el, { y })` on an element whose
+  inline style is `transform: translateX(10px)` wrote `translate(0px, 5px)`.
 - `flip()`: a `scrollTo` inside `mutate` and scroll changes inside scrolling
   containers between `flip.capture()` and `flip.from()` are not compensated
   (the page scroll is). Dragging inside a CSS-scaled parent moves by screen
@@ -2056,3 +2055,15 @@ transform into the shared transform state (`stateOf`/`readTransform` in
 snapshot is a copy of that state plus one inline `style.transform` read
 (~2% here), not computed-style reads, so taking it lazily would not close
 the gap.
+
+### 4. `readTransform`: inline transforms that are not a matrix
+
+(Core's `props.ts`, changed with the core session's OK.) `readTransform`
+already took the inline `style.transform` before `getComputedStyle`, but
+parsed it only as `matrix(…)`: an inline `translateX(10px)` or
+`rotate(30deg)` failed the match and the element was treated as untransformed,
+so `animate(el, { y })` wrote `translate(0px, 5px)` and dropped the 10px.
+A non-matrix inline value now falls back to the computed matrix. The
+computed read for elements with no inline transform stays (a stylesheet may
+set one), so this does not speed up `spring()` set-up on fresh elements.
+Browser test `transform-read › …` fails on the old code.

@@ -124,7 +124,12 @@ export function isElement(t: unknown): t is Element {
 /** Decompose an element's computed transform into the state (once per element). */
 function readTransform(el: Element, s: TargetState): void {
   const style = (el as HTMLElement).style;
-  const raw = style && style.transform ? style.transform : computed(el, 'transform');
+  // The inline string when it is already a matrix (what the engine writes is
+  // not; a matrix() the page set is); otherwise the computed value, which is
+  // always a matrix. An inline `translateX(10px)` used to fail the match below
+  // and be ignored.
+  const inline = style ? style.transform : '';
+  const raw = inline && inline.startsWith('matrix') ? inline : inline === 'none' ? 'none' : computed(el, 'transform');
   if (!raw || raw === 'none') return;
   const m = /matrix(3d)?\(([^)]+)\)/.exec(raw);
   if (!m) return;
