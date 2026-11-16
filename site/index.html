@@ -155,7 +155,7 @@
 <pre class="film-code"><span class="k">const</span> film = composition({ fps: 60, duration: 20.4, motionBlur: 1, post: { bloom: 0.85, flares: 0.6, aa: 1 } });
 film.scene(<span class="s">'velocity'</span>, 0, 20.4, {
   timeScale: (t) =&gt; bulletTime(t),               <span class="c">// slows everything together</span>
-  draw: ({ clock }) =&gt; r3.render(path.apply(cam, s(clock)) &amp;&amp; cam, items, { mirror, motionBlur }),
+  draw: ({ clock }) =&gt; { path.apply(cam, s(clock)); r3.render(cam, items, { mirror, motionBlur }); },
 });
 film.impact(film.timeAt(<span class="s">'velocity'</span>, HIT), { shake: 34, shockwave: 40 });
 <span class="c">// $ anikit-render film.mjs --workers 4</span></pre>

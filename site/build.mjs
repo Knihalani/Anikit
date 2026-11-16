@@ -23,7 +23,7 @@ const film = process.argv[2];
 if (film && existsSync(film)) {
   mkdirSync(join(out, 'film'), { recursive: true });
   const web = join(out, 'film/anikit-film.mp4');
-  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', film, '-c:v', 'libx264', '-preset', 'slow', '-crf', '27', '-maxrate', '2400k', '-bufsize', '4800k',
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', film, '-c:v', 'libx264', '-preset', 'slow', '-crf', '22', '-maxrate', '7000k', '-bufsize', '14000k',
     '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', web]);
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', '10.6', '-i', film, '-frames:v', '1', '-q:v', '3', '-vf', 'scale=1280:-2', join(out, 'film/poster.jpg')]);
   console.log('film:', (statSync(web).size / 1048576).toFixed(1), 'MiB');
