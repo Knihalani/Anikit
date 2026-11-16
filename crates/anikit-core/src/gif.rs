@@ -104,6 +104,7 @@ impl GifEncoder {
             sample.push([rgba[p], rgba[p + 1], rgba[p + 2]]);
         }
         let palette = build_palette(&mut sample, if delta { 255 } else { 256 });
+        let mut finder = Finder::new(&palette);
 
         // Map pixels to palette indices, caching exact 24-bit colours in an
         // open-addressed table (a lossy RGB555 key would merge near colours).
@@ -127,7 +128,7 @@ impl GifEncoder {
                         break vals[h];
                     }
                     if keys[h] == u32::MAX {
-                        let c = nearest(&palette, r, g, b) as u8;
+                        let c = finder.nearest(r, g, b) as u8;
                         if used < CAP / 2 {
                             keys[h] = key;
                             vals[h] = c;
@@ -177,6 +178,76 @@ impl GifEncoder {
     }
 }
 
+/// Nearest palette colour, the same answer as [`nearest`] (smallest distance,
+/// then smallest index) without trying all 256 entries: the entries are
+/// sorted by green, the heaviest term of the distance, and the search walks
+/// out from the pixel's green in both directions until the green term alone
+/// exceeds the best distance found. Smooth gradients have tens of thousands
+/// of distinct colours per frame, each needing one search.
+struct Finder {
+    /// `g << 24 | r << 16 | b << 8 | index`, sorted (so by green first).
+    sorted: Vec<u32>,
+    /// The same entries by palette index.
+    by_index: Vec<u32>,
+    /// The previous answer: neighbouring pixels have similar colours, so its
+    /// distance is a tight first bound that narrows the search at once.
+    hint: usize,
+}
+
+impl Finder {
+    fn new(pal: &[[u8; 3]]) -> Finder {
+        // Palettes have at most 256 entries, so an index fits in a byte.
+        let by_index: Vec<u32> =
+            pal.iter().take(256).enumerate().map(|(i, c)| (c[1] as u32) << 24 | (c[0] as u32) << 16 | (c[2] as u32) << 8 | i as u32).collect();
+        let mut sorted = by_index.clone();
+        sorted.sort_unstable();
+        Finder { sorted, by_index, hint: 0 }
+    }
+
+    fn nearest(&mut self, r: u8, g: u8, b: u8) -> usize {
+        let s = &self.sorted;
+        if s.is_empty() {
+            return 0;
+        }
+        let (r, g, b) = (r as i32, g as i32, b as i32);
+        let start = s.partition_point(|&e| ((e >> 24) as i32) < g);
+        let (mut best, mut bd) = (usize::MAX, i32::MAX);
+        let visit = |e: u32, bd: &mut i32, best: &mut usize| -> bool {
+            let dg = (e >> 24) as i32 - g;
+            let lower = 4 * dg * dg;
+            // Equal distances still matter (a smaller index wins), so stop
+            // only once the green term alone is larger.
+            if lower > *bd {
+                return false;
+            }
+            let (dr, db) = ((e >> 16 & 0xFF) as i32 - r, (e >> 8 & 0xFF) as i32 - b);
+            let d = 2 * dr * dr + lower + 3 * db * db;
+            let i = (e & 0xFF) as usize;
+            if d < *bd || (d == *bd && i < *best) {
+                *bd = d;
+                *best = i;
+            }
+            true
+        };
+        // Every entry within the bound is still visited, so the answer is
+        // the same (the hint is visited again and keeps its place on ties).
+        visit(self.by_index[self.hint], &mut bd, &mut best);
+        for &e in &s[start..] {
+            if !visit(e, &mut bd, &mut best) {
+                break;
+            }
+        }
+        for &e in s[..start].iter().rev() {
+            if !visit(e, &mut bd, &mut best) {
+                break;
+            }
+        }
+        self.hint = best;
+        best
+    }
+}
+
+#[cfg_attr(not(test), allow(dead_code))]
 fn nearest(pal: &[[u8; 3]], r: u8, g: u8, b: u8) -> usize {
     let mut best = 0;
     let mut bd = i32::MAX;
@@ -231,24 +302,31 @@ fn median_cut(px: &mut [[u8; 3]], n: usize) -> Vec<[u8; 3]> {
     if px.is_empty() {
         return alloc::vec![[0, 0, 0]];
     }
+    // Widest channel and its range of a box, computed once when the box is
+    // made (rescanning every box's pixels for every split made this
+    // quadratic in the palette size).
+    let widest = |px: &[[u8; 3]]| -> (usize, u8) {
+        if px.len() < 2 {
+            return (0, 0);
+        }
+        let (mut lo, mut hi) = ([255u8; 3], [0u8; 3]);
+        for p in px {
+            for c in 0..3 {
+                lo[c] = lo[c].min(p[c]);
+                hi[c] = hi[c].max(p[c]);
+            }
+        }
+        (0..3).map(|c| (c, hi[c] - lo[c])).max_by_key(|&(_, r)| r).unwrap_or((0, 0))
+    };
     let mut boxes: Vec<(usize, usize)> = alloc::vec![(0, px.len())];
+    let mut stats: Vec<(usize, u8)> = alloc::vec![widest(px)];
     while boxes.len() < n {
         // Split the box with the largest channel range (weighted by size).
         let mut best = None;
         let mut best_score = 0u64;
         for (bi, &(s, e)) in boxes.iter().enumerate() {
-            if e - s < 2 {
-                continue;
-            }
-            let (mut lo, mut hi) = ([255u8; 3], [0u8; 3]);
-            for p in &px[s..e] {
-                for c in 0..3 {
-                    lo[c] = lo[c].min(p[c]);
-                    hi[c] = hi[c].max(p[c]);
-                }
-            }
-            let (ch, range) = (0..3).map(|c| (c, hi[c] - lo[c])).max_by_key(|&(_, r)| r).unwrap_or((0, 0));
-            if range == 0 {
+            let (ch, range) = stats[bi];
+            if e - s < 2 || range == 0 {
                 continue;
             }
             let score = range as u64 * (e - s) as u64;
@@ -262,7 +340,9 @@ fn median_cut(px: &mut [[u8; 3]], n: usize) -> Vec<[u8; 3]> {
         px[s..e].sort_unstable_by_key(|p| p[ch]);
         let m = s + (e - s) / 2;
         boxes[bi] = (s, m);
+        stats[bi] = widest(&px[s..m]);
         boxes.push((m, e));
+        stats.push(widest(&px[m..e]));
     }
     boxes
         .iter()
@@ -475,6 +555,25 @@ mod tests {
         let desc = second + 8;
         assert_eq!(bytes[desc], 0x2C);
         assert_eq!(u16::from_le_bytes([bytes[desc + 5], bytes[desc + 6]]), 1); // width 1
+    }
+
+    #[test]
+    fn finder_matches_the_linear_search() {
+        let mut rng = crate::math::Rng(7);
+        let mut byte = || (rng.next_u32() >> 24) as u8;
+        for case in 0..60 {
+            // Small palettes with repeated colours (ties), and full ones.
+            let n = if case % 3 == 0 { 1 + case % 7 } else { 256 };
+            let pal: Vec<[u8; 3]> = (0..n).map(|_| if case % 2 == 0 { [byte() & 0xF0, byte() & 0xF0, byte() & 0xF0] } else { [byte(), byte(), byte()] }).collect();
+            let mut f = Finder::new(&pal);
+            for _ in 0..2000 {
+                let (r, g, b) = (byte(), byte(), byte());
+                assert_eq!(f.nearest(r, g, b), nearest(&pal, r, g, b));
+            }
+            for c in &pal {
+                assert_eq!(f.nearest(c[0], c[1], c[2]), nearest(&pal, c[0], c[1], c[2]));
+            }
+        }
     }
 
     #[test]
