@@ -11,7 +11,6 @@ export function createControls(canvas, overlayEl, opts) {
   const pos = new Float32Array([opts.spawn[0], opts.spawn[1], opts.spawn[2]]);
   const ctl = {
     pos, yaw: 0, pitch: 0,
-    place(eye, yaw, pitch) { /* preview: keep spawn for enter() */ void eye; void yaw; void pitch; },
     enable, disable, update, setStation,
   };
   const keys = { f: 0, b: 0, l: 0, r: 0, run: 0 };
@@ -46,7 +45,6 @@ export function createControls(canvas, overlayEl, opts) {
   useBtn.textContent = 'Use';
   useBtn.style.cssText = 'position:absolute;right:22px;bottom:22px;width:76px;height:76px;border-radius:50%;border:0;background:rgba(255,252,246,.9);color:#2a2018;font:700 16px system-ui,sans-serif;box-shadow:0 4px 18px rgba(80,50,20,.18);pointer-events:auto;opacity:0;display:' + (touch ? 'block' : 'none');
   hud.append(cross, card, tip, jBase, jKnob, useBtn);
-  const cardS = { o: 0 }, hudS = { o: 0 }, tipS = { o: 1 };
 
   function setStation(n, h) {
     if (n) hideTip();
@@ -54,7 +52,6 @@ export function createControls(canvas, overlayEl, opts) {
     animate(card, { opacity: n ? 1 : 0, y: n ? [8, 0] : 0 }, { duration: n ? 0.45 : 0.3, ease: 'outCubic' });
     animate(useBtn, { opacity: n ? 1 : 0.35, scale: n ? 1 : 0.9 }, { duration: 0.35, ease: 'outBack' });
     animate(cross, { scale: n ? 1.8 : 1 }, { duration: 0.35, ease: 'outBack' });
-    void cardS;
   }
 
   function retarget() {
@@ -193,7 +190,6 @@ export function createControls(canvas, overlayEl, opts) {
     if (!tipShown) return;
     tipShown = false;
     animate(tip, { opacity: 0 }, { duration: 0.6, ease: 'outCubic' });
-    void tipS;
   }
 
   function enable() {
@@ -217,7 +213,6 @@ export function createControls(canvas, overlayEl, opts) {
     addEventListener('touchend', onTouchEnd);
     addEventListener('touchcancel', onTouchEnd);
     useBtn.addEventListener('pointerdown', onUseBtn);
-    void hudS;
   }
   function disable() {
     if (!active) return;

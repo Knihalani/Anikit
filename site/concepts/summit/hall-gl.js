@@ -34,18 +34,13 @@ export function cubeMesh() {
     [1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1],
   ];
   for (const [nx, ny, nz] of faces) {
-    // two tangents
-    const ux = ny !== 0 ? 1 : 0, uy = 0, uz = ny !== 0 ? 0 : (nx !== 0 ? 1 : 0);
-    const tx = ny !== 0 ? 0 : (nz !== 0 ? 1 : 0);
-    // build u, w so that u x w = n (ccw from outside)
-    let a = [ux, uy, uz];
-    if (nz !== 0) a = [1, 0, 0];
-    const b = [ny * a[2] - nz * a[1], nz * a[0] - nx * a[2], nx * a[1] - ny * a[0]]; // n x a
+    // any a ⟂ n; with b = n × a, a × b = n, so the corners below wind CCW from outside
+    const a = nx !== 0 ? [0, 0, 1] : [1, 0, 0];
+    const b = [ny * a[2] - nz * a[1], nz * a[0] - nx * a[2], nx * a[1] - ny * a[0]];
     const base = v.length / 6;
     for (const [s, t] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
       v.push(0.5 * (nx + s * a[0] + t * b[0]), 0.5 * (ny + s * a[1] + t * b[1]), 0.5 * (nz + s * a[2] + t * b[2]), nx, ny, nz);
     }
-    void tx;
     idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
   }
   return { v: new Float32Array(v), i: new Uint16Array(idx) };

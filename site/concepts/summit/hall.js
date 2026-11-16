@@ -213,7 +213,7 @@ export function createHall(canvas, overlayEl) {
   gl.bindBuffer(gl.ARRAY_BUFFER, pS); gl.bufferData(gl.ARRAY_BUFFER, seeds, gl.STATIC_DRAW);
   gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 0, 0);
   gl.bindVertexArray(null);
-  const cloud = { mix: 0, cur: 0, next: 1, spin: 0, spinV: { v: 0.12 }, busy: false, idle: 0 };
+  const cloud = { mix: 0, cur: 0, next: 1, spin: 0, spinV: { v: 0.12 }, idle: 0 };
   const CLOUD_C = [0, 2.75, -16];
 
   function morph() {
@@ -389,7 +389,6 @@ export function createHall(canvas, overlayEl) {
     // physics balls
     if (wld && sees(cam, PC.x, (PC.y0 + PC.y1) / 2, (PC.z0 + PC.z1) / 2, 2.5)) {
       const d = wld.data;
-      const zc = (PC.z0 + PC.z1) / 2;
       balls.count = NB;
       for (let i = 0; i < NB; i++) {
         const bx = d[i * 3], by = d[i * 3 + 1], r = ballR[i] * 0.02;
@@ -397,7 +396,6 @@ export function createHall(canvas, overlayEl) {
         balls.put(i, PC.x + depth, PC.y1 - by * 0.01, PC.z0 + bx * 0.01, 0, r, r, r, 0.9,
           ballCol[i * 3], ballCol[i * 3 + 1], ballCol[i * 3 + 2], 0.1);
       }
-      void zc;
       balls.upload();
       balls.visible = true;
     } else balls.visible = false;
@@ -618,8 +616,7 @@ export function createHall(canvas, overlayEl) {
       cam.eye[2] = 15.4 - 3.4 * e;
       cam.yaw = Math.sin(t * 0.17) * 0.05 * (1 - e);
       cam.pitch = 0.02 * (1 - e);
-      ctl.place(cam.eye, cam.yaw, cam.pitch);
-      updateCamera(cam);
+        updateCamera(cam);
       if (st.ready) updateStations(t, Math.min(dt, 0.05), cam.eye[0], cam.eye[2]);
       render();
     },
