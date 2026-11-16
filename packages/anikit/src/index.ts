@@ -114,6 +114,8 @@ export type {
 } from './gl';
 export {
   box, roundedBox, sphere, cylinder, capsule, torus, plane, lathe, extrude, tube, triangulate, smoothNormals, subdivide,
-  sdfMesh, sdSphere, sdBox, sdTorus, smoothUnion, smoothSubtract,
+  sdfMesh, sdSphere, sdBox, sdTorus, smoothUnion, smoothSubtract, text3d,
 } from './geometry';
-export type { Geometry, SdfOptions } from './geometry';
+export type { Geometry, SdfOptions, Text3dOptions } from './geometry';
+export { loadGLTF, parseGLTF } from './gltf';
+export type { GltfModel } from './gltf';

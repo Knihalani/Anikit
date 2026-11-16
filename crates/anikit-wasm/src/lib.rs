@@ -2408,3 +2408,22 @@ pub extern "C" fn ak_bh_stats(id: u32) {
     let v = [s.samples[0] as f64, s.samples[1] as f64, s.samples[2] as f64, s.stars as f64, s.table_built as f64, s.geometry_built as f64, s.shadow as f64];
     buf[..7].copy_from_slice(&v);
 }
+
+// ---------------------------------------------------------------------------
+// SDF meshing (surface nets)
+// ---------------------------------------------------------------------------
+
+/// Mesh a sampled signed distance field: `nx·ny·nz` samples (x fastest) in the
+/// f64 buffer, grid spacing `s`, first sample at `(ox, oy, oz)`. Returns a mesh
+/// handle (read it with `ak_mesh_ptr`, free it with `ak_mesh_free`), or `u32::MAX`.
+#[no_mangle]
+pub extern "C" fn ak_surface_nets(nx: u32, ny: u32, nz: u32, ox: f64, oy: f64, oz: f64, s: f64) -> u32 {
+    let n = nx as usize * ny as usize * nz as usize;
+    let state = st();
+    if n == 0 || state.f64_buf.len() < n {
+        return u32::MAX;
+    }
+    let d: Vec<f32> = state.f64_buf[..n].iter().map(|&v| v as f32).collect();
+    let m = anikit_core::sdf::surface_nets(&d, nx as usize, ny as usize, nz as usize, [ox as f32, oy as f32, oz as f32], s as f32);
+    push_slot(&mut state.meshes, m)
+}

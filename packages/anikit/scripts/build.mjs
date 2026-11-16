@@ -69,9 +69,9 @@ for (const f of ['dist/anikit.min.js', 'dist/anikit.lean.js', 'dist/anikit.wasm'
 {
   const { writeFileSync } = await import('node:fs');
   const names = [];
-  for (const f of ['src/gl.ts', 'src/geometry.ts']) {
+  for (const f of ['src/gl.ts', 'src/geometry.ts', 'src/gltf.ts']) {
     for (const m of readFileSync(f, 'utf8').matchAll(/^export (?:function|class|const) ([A-Za-z_$][\w$]*)/gm)) names.push(m[1]);
   }
   writeFileSync('dist/scene.js', `// Real-time WebGL2 3D (see docs/api.md, "Real-time GPU 3D").\nexport { ${names.join(', ')} } from './anikit.js';\n`);
-  writeFileSync('dist/scene.d.ts', "export * from './types/gl';\nexport * from './types/geometry';\n");
+  writeFileSync('dist/scene.d.ts', "export * from './types/gl';\nexport * from './types/geometry';\nexport * from './types/gltf';\n");
 }
