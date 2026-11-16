@@ -8,6 +8,7 @@ Anikit is an animation engine: a `no_std` Rust core compiled to WebAssembly (Typ
 |---|---|---|
 | `crates/anikit-core` | Engine: timing, easing, springs, colour, paths, morph, timelines, batches, physics `world`, 3D `space`, particle `cloud`, `splat` renderer, `raster` (solid 3D), `sdf` (surface nets), `emitter`, `audio`, `video` (blur, I420, grade), `gif` encoder, noise | `cargo test -p anikit-core` · `cargo clippy -p anikit-core -- -D warnings` |
 | `crates/anikit-wasm` | C‑ABI WebAssembly shim (`ak_*` exports, no wasm‑bindgen). Inputs go through a scratch buffer; outputs are read from linear memory. | `cargo clippy -p anikit-wasm -- -D warnings` |
+| `crates/anikit-node` | The same `ak_*` exports as a native N‑API addon for Node (`node scripts/build-native.mjs` → `packages/anikit/native/anikit.node`, built for this CPU; `anikit/node` loads it when present, `ANIKIT_NATIVE=0` forces wasm). Wrappers are generated from `anikit-wasm`'s signatures; all allocations come from one arena exposed as one `ArrayBuffer`, so JS offsets work unchanged. | `cargo clippy -p anikit-node -- -D warnings` · `npm run test:native` (whole vitest suite on the native core) |
 | `packages/anikit` | TypeScript API + DOM layer (`src/`), vitest + happy‑dom tests (`test/`), build and bench scripts | `npm test` · `npm run typecheck` (tsc + doc examples + JSDoc) · `node scripts/build.mjs` |
 | `crates/anikit-py` | PyO3 bindings + high‑level Python API | `. .venv/bin/activate && maturin develop --release && pytest` |
 | `examples/`, `site/` | Browser demos and the landing page (import `../packages/anikit/dist/anikit.js`) | build the TS package, then open in a browser (Playwright works headless) |
@@ -44,6 +45,7 @@ Anikit is an animation engine: a `no_std` Rust core compiled to WebAssembly (Typ
 - **Honesty:** benchmark claims in `README.md` must come from the scripts in `packages/anikit/scripts/`.
 - **Maths on wasm:** use `crate::math::{sqrt, sqrtf, floor, floorf, ceil, ceilf}`, never `libm::sqrt*`/`floor*`/`ceil*` directly. On wasm32, libm's versions are *software* routines unless nightly features are on; `math.rs` routes them to the hardware instructions. Check with `wasm-dis dist/anikit.wasm | grep -c f32.sqrt` (should be non-zero).
 - **Pixel loops:** keep them branch-free over planar `f32` slices so LLVM vectorises them (`f32x4` on wasm), and keep decaying values out of denormal range (subtract a small floor). Denormals made one loop ~100× slower.
+- **Native = wasm, bit for bit:** `simd.rs` has wasm, SSE4.1 and AVX2 (`V8`) backends with the same per-lane semantics (pmin/pmax operand order, saturating float→int, `V4 / f32` is a reciprocal multiply). New lane code must keep them equal; `node scripts/check-films.mjs --base <saved build>` compares the reference film stills (also with `NEW_ENV=ANIKIT_NATIVE=0`).
 
 ## Benchmarks
 
