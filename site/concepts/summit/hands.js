@@ -507,7 +507,7 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
   // -------------------------------------------------------------------------
   // Frame
   // -------------------------------------------------------------------------
-  const out = { portal: { x: 0, y: 0, r: 0, power: 0 } };
+  const out = { portal: { x: 0, y: 0, r: 0, power: 0, ring: 0 } };
   const proj = new Float32Array(16);
   let cssW = 1, cssH = 1, dprK = 1, fov = 0, tanH = 0.6, aspect = 1;
   const NSPARK = 9000;
@@ -582,6 +582,13 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
       gl.uniform1f(GLOW.u.uDepth, portalDepth());
       gl.uniform1f(GLOW.u.uScale, k);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 322);
+      // The tear sends one shockwave ring outwards.
+      const sh = portal.open;
+      if (sh > 0.01 && sh < 0.99) {
+        gl.uniform4f(GLOW.u.uRing, cx * k, cy * k, ringR * (1 + 0.7 * sh) * k, 1);
+        gl.uniform4f(GLOW.u.uP, timeNow, spinAcc, 1.6 * (1 - sh) * (1 - sh) * fade, 0);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 322);
+      }
       gl.useProgram(SPARK.p);
       gl.uniform2f(SPARK.u.uRes, Wd, Hd);
       gl.uniform4f(SPARK.u.uRing, cx * k, cy * k, ringR * k, arc);
@@ -596,6 +603,7 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
     }
   }
 
+  const sparkOn0 = (pt, D) => D.arc > 0.001 && pt.glow > 0.001;
   function frame(t, dt, g, look) {
     timeNow = t;
     dt = Math.min(0.05, Math.max(0, dt || 0));
@@ -658,6 +666,7 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
     P.x = cx; P.y = cy;
     P.r = portal.open <= 0.001 ? 0 : ringR * 0.975 * portal.open * D.closed;
     P.power = Math.min(1, power);
+    P.ring = sparkOn0(portal, D) ? ringR : 0;
 
     const sparkOn = arc > 0.001 && portal.glow > 0.001;
     if (n === 0 && !sparkOn) {
