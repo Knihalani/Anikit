@@ -6,6 +6,7 @@ Times are in **seconds**. Every function accepts targets as a CSS selector, an e
 import { animate, timeline, stagger, spring, inertia, scroll, inView, splitText, flip,
          compositor, batch, set, from, fromTo, engine, ready } from 'anikit';
 // or: import ... from 'anikit/lean'  (streams anikit.wasm instead of embedding it)
+// or: import ... from 'anikit/tween' (animate, timeline, stagger, spring, inertia only: ~121 KB min+gzip with its core)
 ```
 
 The WebAssembly core starts compiling on import. Calls made before it's ready are queued and run in order, so you rarely need it, but `await ready` is available. Functions that return a computed value right away (`ease()`, `morph()`, `pathLength()`, `staggerValues()`, `world()`, …) need the core loaded: with `anikit/lean`, `await init()` (or `await ready`) first.

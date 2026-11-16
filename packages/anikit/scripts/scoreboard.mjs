@@ -84,12 +84,16 @@ async function bundle(code) {
   const lean = gzipSync(readFileSync(join(pkg, 'dist', 'anikit.lean.js')), { level: 9 }).length;
   const wasm = gzipSync(readFileSync(join(pkg, 'dist', 'anikit.wasm')), { level: 9 }).length;
   const ak = (lean + wasm) / 1024;
+  const tw = (gzipSync(readFileSync(join(pkg, 'dist', 'anikit.tween.js')), { level: 9 }).length + gzipSync(readFileSync(join(pkg, 'dist', 'anikit.tween.wasm')), { level: 9 }).length) / 1024;
   const comp = [];
   if (installed.includes('gsap')) comp.push(['gsap (core)', await bundle("import gsap from 'gsap'; console.log(gsap);") / 1024]);
   if (installed.includes('motion')) comp.push(['motion (animate)', await bundle("import { animate } from 'motion'; console.log(animate);") / 1024]);
   if (installed.includes('animejs')) comp.push(['animejs', await bundle("import * as a from 'animejs'; console.log(a);") / 1024]);
   comp.sort((a, b) => a[1] - b[1]);
-  if (comp.length) add('size', 'bundle, min+gzip (anikit: lean JS + wasm)', ak, comp[0][0], comp[0][1], 'KB');
+  if (comp.length) {
+    add('size', 'tween bundle, min+gzip (anikit/tween: JS + stripped wasm)', tw, comp[0][0], comp[0][1], 'KB');
+    add('size', 'full bundle, min+gzip (anikit/lean: JS + full wasm)', ak, comp[0][0], comp[0][1], 'KB');
+  }
   for (const [name, kb] of comp) process.stderr.write(`scoreboard: ${name} ${kb.toFixed(1)} KB\n`);
   process.stderr.write(`scoreboard: anikit lean ${(lean / 1024).toFixed(1)} KB + wasm ${(wasm / 1024).toFixed(1)} KB\n`);
 }
@@ -109,9 +113,11 @@ function startup(code) {
   if (installed.includes('gsap')) comp.push(['gsap', startup(`const t=performance.now();await import('gsap');console.log(performance.now()-t)`)]);
   if (installed.includes('motion')) comp.push(['motion', startup(`const t=performance.now();await import('motion');console.log(performance.now()-t)`)]);
   comp.sort((a, b) => a[1] - b[1]);
+  const tween = startup(`const t=performance.now();const a=await import('./dist/anikit.tween.js');await a.ready;console.log(performance.now()-t)`);
   const lean = startup(`const t=performance.now();const a=await import('./dist/anikit.lean.js');await a.ready;console.log(performance.now()-t)`);
   if (comp.length) {
-    add('start-up', 'import → ready, lean build (wasm read + compile + instantiate)', lean, comp[0][0], comp[0][1], 'ms');
+    add('start-up', 'import → ready, tween build (stripped wasm read + compile + instantiate)', tween, comp[0][0], comp[0][1], 'ms');
+    add('start-up', 'import → ready, lean build (full wasm read + compile + instantiate)', lean, comp[0][0], comp[0][1], 'ms');
     add('start-up', 'import → ready, full build (wasm embedded as base64)', ak, comp[0][0], comp[0][1], 'ms');
   }
 }

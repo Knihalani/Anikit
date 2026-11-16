@@ -18,6 +18,11 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/anikit.lean.js"
     },
+    "./tween": {
+      "types": "./dist/types/tween.d.ts",
+      "import": "./dist/anikit.tween.js"
+    },
+    "./anikit.tween.wasm": "./dist/anikit.tween.wasm",
     "./node": "./node/index.mjs"
   },
   "files": [
