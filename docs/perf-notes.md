@@ -1994,3 +1994,41 @@ plane overflow f32 in the edge functions and are dropped (not fixed).
   instance) into wasm; small next to the passes.
 - The film bright pass written branch-free in 4-pixel groups (adding exact
   `+0.0` keeps it bit-identical): no measurable change, reverted.
+
+
+## Ninth round (DOM): against Motion
+
+Goal: every DOM feature against Motion 12.43 (vanilla `motion`) as well as
+GSAP, in real Chromium frames. New script `scripts/bench-motion.mjs`
+(staggered entrance, spring followers, scroll-linked sections; set-up ms and
+main-thread ms per frame from Chrome's Performance metrics). Results and the
+GSAP-only rows (flip, split, drag, triggers) are in `docs/scoreboard-dom.md`.
+Anikit has the lowest per-frame cost in every row; it loses some set-up
+rows (staggered entrance and scroll links vs Motion, 200 springs vs GSAP's
+plain tween).
+
+### 1. `scroll()`: batched first apply
+
+Each `scroll()` link measured its target and applied its first progress
+straight away, so the next link's measurement forced a layout: 200 links
+created in one go laid the page out 200 times. The first apply now waits for
+a microtask or the next engine frame (whichever comes first), batched with
+every link created in the same task. 200 links: set-up 23.5 → 13.1 ms
+(Motion 10.1, GSAP 56.7); 50: 10.1 → 7.3. A link removed before its first
+apply writes nothing. Browser test: `round9 › scroll(): the batched first
+apply…` (applied by the first frame, in order).
+
+### Profiled, not changed
+
+`spring()` set-up (10 000 calls on 2000 elements, 56 ms): mostly native style
+access; in JS the largest item is the revert snapshot taken per call
+(`snapshot()`, ~6%). Skipping it on retargets would change what a retarget
+controller's `revert()` restores, so it stays.
+
+### Bug hunt
+
+The only source changes since the eighth round were the core's `animate()`
+creation fast paths. All 67 earlier browser cases pass on them; new cases
+cover a 1000-element staggered entrance (end values and `revert()`), the
+batched first apply, and `flip()` with a target listed twice. No new bugs
+found.
