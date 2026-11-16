@@ -290,8 +290,14 @@ impl<'de> Deserialize<'de> for TextSpec {
 }
 
 impl TextSpec {
+    /// Literal text in one style (markup off: safe for code and labels).
     pub fn plain(text: impl Into<String>, style: TextStyle) -> Self {
-        TextSpec { text: text.into(), style, ..Default::default() }
+        TextSpec { text: text.into(), style, markup: Some(false), ..Default::default() }
+    }
+
+    /// Text with inline markup (`**bold**`, `*italic*`, `` `code` ``, `==accent==`).
+    pub fn rich(text: impl Into<String>, style: TextStyle) -> Self {
+        TextSpec { text: text.into(), style, markup: Some(true), ..Default::default() }
     }
 
     /// Expand CSS `font` shorthands (`"italic 800 72px/1.1 Inter Display"`) into fields.
