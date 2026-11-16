@@ -73,24 +73,31 @@ scroll((p) => set('.hero', { opacity: 1 - ease(clamp(p * 1.6)), y: -p * 80 }), {
 // Each stop: the panel rises in over ~45vh, holds, and drifts out over ~45vh
 // ---------------------------------------------------------------------------
 const shade = $('.shade');
-const shadeFor = new Map();
-for (const sec of $$('.stop')) {
-  const panel = $('.panel', sec);
-  scroll((p) => {
-    // p runs 0 → 1 while the section crosses the viewport (start end → end start).
-    const H = sec.offsetHeight, vh = innerHeight, span = H + vh;
-    const y = p * span; // px scrolled since the section's top hit the bottom of the viewport
-    // Sticky from y = vh to y = H: rise in over the last 50vh before it, leave over 45vh before it unsticks.
+// Measured on load and resize; read every frame from the engine clock, so a busy
+// demo can never leave a panel half-faded.
+const stops = $$('.stop').map((sec) => ({ sec, panel: $('.panel', sec), top: 0, H: 0, last: -1 }));
+const measure = () => { for (const st of stops) { st.top = st.sec.getBoundingClientRect().top + scrollY; st.H = st.sec.offsetHeight; } };
+measure();
+addEventListener('resize', measure);
+addEventListener('load', measure);
+let lastShade = -1;
+engine.onFrame(() => {
+  const vh = innerHeight, sy = scrollY;
+  let m = 0;
+  for (const st of stops) {
+    // y: px scrolled since the section's top met the bottom of the viewport. Sticky from y = vh to y = H:
+    // rise in over the 50vh before that, leave over 45vh before it unsticks.
+    const y = sy - st.top + vh;
     const a = ease(clamp((y - vh * 0.55) / (vh * 0.5)));
-    const b = ease(clamp((y - (H - vh * 0.5)) / (vh * 0.45)));
-    const o = a * (1 - b);
-    set(panel, { opacity: o, y: (1 - a) * 60 - b * 60, scale: 0.97 + 0.03 * o });
-    shadeFor.set(sec, o);
-    let m = 0;
-    for (const v of shadeFor.values()) m = Math.max(m, v);
-    set(shade, { opacity: m });
-  }, { target: sec, offset: ['start end', 'end start'] });
-}
+    const b = ease(clamp((y - (st.H - vh * 0.5)) / (vh * 0.45)));
+    const o = Math.round(a * (1 - b) * 1000) / 1000;
+    m = Math.max(m, o);
+    if (o === st.last) continue;
+    st.last = o;
+    set(st.panel, { opacity: o, y: (1 - a) * 60 - b * 60, scale: 0.97 + 0.03 * o });
+  }
+  if (m !== lastShade) { lastShade = m; set(shade, { opacity: m }); }
+});
 // The ending: the install line arrives as the sun clears the limb.
 scroll((p) => {
   const o = ease(clamp((p - 0.45) / 0.3));
