@@ -41,6 +41,47 @@ export interface PresenceOptions extends AnimateOptions {
 /** Exits in progress for elements animated out in the flow (no layout mode). */
 const exiting = new WeakMap<Element, Animation>();
 
+/** An entrance played by {@link enter} or a no-layout {@link Presence.add}. */
+interface Entrance {
+  anim: Playable;
+  keyframes: Props;
+  options: AnimateOptions;
+}
+const entering = new WeakMap<Element, Entrance>();
+/**
+ * Entrances an exit interrupted: turning that exit around only goes back to
+ * the half-way point it started from, so the entrance is finished after it.
+ */
+const interrupted = new WeakMap<Element, { e: Entrance; at: number }>();
+
+/** The end values of keyframes (`{ opacity: [0, 1] }` → `{ opacity: 1 }`). */
+function ends(k: Props): Props {
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(k)) {
+    const v = (k as Record<string, unknown>)[key];
+    out[key] = Array.isArray(v) ? v[v.length - 1] : v;
+  }
+  return out as Props;
+}
+
+function remember(els: Element[], anim: Playable, keyframes: Props, options: AnimateOptions): void {
+  const e = { anim, keyframes, options };
+  for (const el of els) entering.set(el, e);
+}
+
+/** Finish an interrupted entrance once its exit has been turned all the way back. */
+function resume(el: Element): void {
+  const r = interrupted.get(el);
+  interrupted.delete(el);
+  if (!r || exiting.has(el) || !el.isConnected) return;
+  const { e, at } = r;
+  const d = (typeof e.options.duration === 'number' ? e.options.duration : 0.4) * Math.max(0, 1 - at);
+  const { delay: _d, immediateRender: _i, ...rest } = e.options;
+  void _d; void _i;
+  const a = animate(el, ends(e.keyframes), { ease: 'outQuad', ...rest, duration: Math.max(0.05, d) });
+  remember([el], a, e.keyframes, e.options);
+}
+
 function finishExit(el: Element, how: 'remove' | 'hide'): void {
   if (how === 'hide') (el as HTMLElement).hidden = true;
   else el.remove();
@@ -69,15 +110,29 @@ export function exit(targets: Targets, keyframes: Props = { opacity: 0 }, option
   const { after = 'remove', ...opts } = options;
   const els = toTargets(targets).filter(isElement);
   const user = opts.onComplete;
+  const userBack = opts.onReverseComplete;
+  for (const el of els) {
+    // Leaving half-way through an entrance: remember where it got to.
+    const e = entering.get(el);
+    entering.delete(el);
+    if (e && !e.anim._killed && e.anim.progress < 1) interrupted.set(el, { e, at: e.anim.progress });
+    else if (e) interrupted.delete(el);
+    // No entrance: an earlier exit (turned around or replaced) keeps its record.
+  }
   const a: Animation = animate(els, keyframes, {
     duration: 0.3, ease: 'inQuad', ...opts,
     onComplete: (self) => {
       for (const el of els) {
         if (exiting.get(el) !== a) continue;
         exiting.delete(el);
+        interrupted.delete(el);
         finishExit(el, after);
       }
       user?.(self);
+    },
+    onReverseComplete: (self) => {
+      for (const el of els) if (!exiting.has(el)) resume(el);
+      userBack?.(self);
     },
   });
   for (const el of els) exiting.set(el, a);
@@ -110,7 +165,9 @@ export function enter(targets: Targets, keyframes: Props = { opacity: [0, 1] }, 
     }
   }
   if (!fresh.length && back) return back;
-  return animate(fresh, keyframes, { duration: 0.4, ease: 'outQuad', immediateRender: true, ...options });
+  const a = animate(fresh, keyframes, { duration: 0.4, ease: 'outQuad', immediateRender: true, ...options });
+  remember(fresh, a, keyframes, options);
+  return a;
 }
 
 /** Enter/exit manager for a container's children; see {@link presence}. */
@@ -159,9 +216,22 @@ export class Presence {
     if (this.o.layout === false) {
       cancelLeave(el);
       insert();
-      return this.keep(animate(el, this.o.enter ?? { opacity: [0, 1] }, { duration: 0.4, ease: 'outQuad', immediateRender: true, ...this.anim() }));
+      const kf = this.o.enter ?? { opacity: [0, 1] };
+      const opts = this.anim();
+      const a = animate(el, kf, { duration: 0.4, ease: 'outQuad', immediateRender: true, ...opts });
+      remember([el], a, kf, opts);
+      return this.keep(a);
     }
-    return this.keep(flip(Array.from(c.children), insert, this.flipOpts()));
+    const wasLeaving = isLeaving(el);
+    const tl = this.keep(flip(Array.from(c.children), insert, this.flipOpts()));
+    if (wasLeaving) {
+      // Coming back while animating out: flip() moves it home from the
+      // opacity it had, towards the inline one it had before leaving, which
+      // is wherever an interrupted entrance had got to. Finish the entrance.
+      const opts = this.anim();
+      this.keep(animate(el, ends(this.o.enter ?? { opacity: [0, 1] }), { duration: 0.4, ease: 'outQuad', ...opts, delay: 0 }));
+    }
+    return tl;
   }
 
   /** Animate `el` out, then remove it (or hide it with `after: 'hide'`). */
