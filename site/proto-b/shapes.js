@@ -38,8 +38,10 @@ function positionsOf(set, n, flipY = false) {
 }
 
 /** Text as splats (splats.fromText), in world units. */
-export function lettering(n, text, font, weight, width) {
-  return positionsOf(splats.fromText(text, { count: n, width, depth: 70, font, weight }), n);
+export function lettering(n, text, font, weight, width, dy = 0) {
+  const o = positionsOf(splats.fromText(text, { count: n, width, depth: 70, font, weight }), n);
+  if (dy) for (let i = 1; i < o.length; i += 3) o[i] += dy;
+  return o;
 }
 
 /**
@@ -47,12 +49,12 @@ export function lettering(n, text, font, weight, width) {
  * centre from splats.fromSDF, a stem from splats.fromPoints; merged.
  */
 export function flowerSteps(n, done) {
-  const tilt = -0.42, ct = Math.cos(tilt), st = Math.sin(tilt), lift = 60;
+  const tilt = -0.42, ct = Math.cos(tilt), st = Math.sin(tilt), lift = -10;
   const pos = [], idx = [];
   const put = (x, y, z) => { pos.push(x, y * ct - z * st + lift, y * st + z * ct); return pos.length / 3 - 1; };
   const U = 12, V = 6;
   for (let L = 0; L < 4; L++) {
-    const np = 6 + L * 2, R = 330 - L * 62;
+    const np = 6 + L * 2, R = 290 - L * 54;
     for (let j = 0; j < np; j++) {
       const th = (j / np) * TAU + L * 0.45, c = Math.cos(th), sn = Math.sin(th);
       const base = pos.length / 3;
@@ -87,7 +89,7 @@ export function flowerSteps(n, done) {
   for (let i = 0; i < stemN; i++) {
     const t = r();
     stem[i * 3] = Math.sin(t * 2.2) * 40 + gauss(r) * 5;
-    stem[i * 3 + 1] = -t * 420 + lift - 30;
+    stem[i * 3 + 1] = -t * 380 + lift - 30;
     stem[i * 3 + 2] = gauss(r) * 5 - 40;
   }
   parts.push(centre, splats.fromPoints(stem));
@@ -136,10 +138,12 @@ export function flock(n) {
 export function wave(n) {
   const o = new Float32Array(n * 3), r = rng(31);
   for (let i = 0; i < n; i++) {
-    const x = (r() - 0.5) * 1300, z = (r() - 0.5) * 800;
-    const fall = 1 - Math.min(1, Math.hypot(x / 650, z / 400));
+    // an ellipse whose density thins toward the rim, so the edge is soft
+    const a = r() * TAU, rr = Math.pow(r(), 0.62) * (r() < 0.85 ? 1 : 1.18);
+    const x = Math.cos(a) * rr * 560, z = Math.sin(a) * rr * 360;
+    const fall = Math.max(0, 1 - rr);
     o[i * 3] = x;
-    o[i * 3 + 1] = Math.sin(x * 0.009 + z * 0.004) * 40 * fall + gauss(r) * 2 - 40;
+    o[i * 3 + 1] = Math.sin(x * 0.009 + z * 0.004) * 40 * fall + gauss(r) * 2 - 60;
     o[i * 3 + 2] = z;
   }
   return o;
@@ -148,7 +152,7 @@ export function wave(n) {
 /** A barred spiral galaxy in the model's xz plane. */
 export function galaxy(n, o = new Float32Array(n * 3), from = 0, to = n) {
   const r = rng(41 + from);
-  const arms = 3, R = 560;
+  const arms = 3, R = 480;
   for (let i = from; i < to; i++) {
     let x, y, z;
     if (r() < 0.16) {

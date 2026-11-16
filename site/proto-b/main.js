@@ -100,7 +100,7 @@ const builders = [
   () => cloud.shape(3, S.wave(N)),
   () => S.galaxy(N, gal, 0, N >> 1),
   () => cloud.shape(4, S.galaxy(N, gal, N >> 1, N)),
-  () => cloud.shape(5, S.lettering(N, 'npm i anikit', 'Mono', 400, 1050)),
+  () => cloud.shape(5, S.lettering(N, 'npm i anikit', 'Mono', 400, 1000, 110)),
 ];
 const FORM_AT = [0, 4, 5, 6, 8, 9]; // builders done when form k is ready
 let built = 0;
@@ -365,7 +365,7 @@ function frameBody(time, dtMs) {
   st.spin += dt * 0.12 * w4;
   if (w4 < 0.6) { const nearest = Math.round(st.spin / (Math.PI * 2)) * Math.PI * 2; st.spin += (nearest - st.spin) * (1 - Math.exp(-dt * 1.5 * (1 - w4))); }
   const yaw = st.sway + st.spin + (st.pxs - 0.5) * 0.35;
-  const pitch = 0.06 + 0.5 * w3 + 0.95 * w4 + (st.pys - 0.5) * 0.18;
+  const pitch = 0.06 + 0.5 * w3 + 0.85 * w4 + (st.pys - 0.5) * 0.18;
   const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
   // M = Rx(pitch) · Ry(yaw), column-major mat3
   const m = f.model;
@@ -377,7 +377,7 @@ function frameBody(time, dtMs) {
   const aspect = cssW / cssH, tanH = Math.tan(FOV / 2);
   const fitW = 1150 / 2 / (tanH * aspect * 0.94), fitH = 800 / 2 / (tanH * 0.86);
   const wide = aspect > 1.25;
-  camDist = Math.max(fitW, fitH) * (wide ? 1 : 1.04) * (1 + 0.12 * w4 - 0.08 * Math.max(0, 1 - Math.abs(s - 1)));
+  camDist = Math.max(fitW, fitH) * (wide ? 1 : 1.04) * (1 + 0.24 * w4);
   const oxT = wide ? 0.24 * wSide : 0;
   st.ox += (oxT - st.ox) * (1 - Math.exp(-dt * 2.5));
   eye[0] = 0; eye[1] = 140; eye[2] = camDist;
@@ -409,7 +409,7 @@ function frameBody(time, dtMs) {
   if (positions.buffer.byteLength === 0) positions = cloud.positions; // memory grew
   gl.upload(positions);
   f.glow = st.glow * 0.9;
-  f.shadow = st.shadow;
+  f.shadow = st.shadow * (1 - 0.8 * Math.max(0, s - 4)); // the last form sits over the install button
   f.cut = st.cut;
   f.size = 2.1 * (1 + 0.2 * w4);
   f.radial = smooth(0.3, 0.9, w4);
