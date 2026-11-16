@@ -434,7 +434,7 @@ export default async function film({ anikit: A }) {
       for (let i = 0; i < N_PIX; i++) {
         const d = da[i], o = i * 4, sky = d > 8000;
         const k = sky ? kSky : type === 'front' ? smooth(D - soft, D + soft, d) : 1 - smooth(D - soft, D + soft, d);
-        const g = sky ? 0 : Math.exp(-(((d - D) / band) ** 2)) * (1 - smooth(0.7, 1, e)) * smooth(0, 0.15, e) * 255 * 0.45;
+        const g = sky ? 0 : Math.exp(-(((d - D) / band) ** 2)) * (1 - smooth(0.7, 1, e)) * smooth(0, 0.15, e) * 255 * 0.16;
         frame[o] = pa[o] + (pb[o] - pa[o]) * k + g * sc[0];
         frame[o + 1] = pa[o + 1] + (pb[o + 1] - pa[o + 1]) * k + g * sc[1];
         frame[o + 2] = pa[o + 2] + (pb[o + 2] - pa[o + 2]) * k + g * sc[2];
