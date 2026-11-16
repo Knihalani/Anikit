@@ -52,7 +52,7 @@ vec3 skyCol(vec3 d) {
   vec3 hz = mix(hzAway, hzSun, pow(az, 2.0));
   float eu = max(e, 0.0);
   vec3 c = mix(hz, mid, smoothstep(0.0, 0.16, eu));
-  c = mix(c, zen, smoothstep(0.12, 0.7, eu));
+  c = mix(c, zen, smoothstep(0.1, 0.55, eu));
   // below the horizon: warm haze over the cloud sea
   c = mix(c, hz * 0.95, smoothstep(0.0, -0.08, e));
   // sun glow (Mie-like): broad warm halo + tighter core
