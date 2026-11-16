@@ -1,6 +1,7 @@
 // spring() and inertia() in Node on plain objects (engine + JS write path).
 // Cases: creating N springs (3 props each), the frame of N running springs,
-// a pointer follower (every frame retargets all N springs, then ticks), and
+// a pointer follower (every frame retargets all N springs, then ticks), the
+// same with a new `{ onUpdate }` per call, and
 // N inertia() flings with bounds and snapping. Median of RUNS, ms (lower is better).
 // With --expose-gc it also prints the heap kept per retarget call while the
 // springs are still moving.
@@ -68,6 +69,27 @@ const cases = {
     if (globalThis.gc) kept.set(n, (process.memoryUsage().heapUsed - heap0) / (n * FRAMES));
     check(objs);
     for (const o of objs) spring(o, { x: o.x, y: o.y }).stop();
+    return ms;
+  },
+  // A follower written the obvious way: a new { onUpdate } literal per event.
+  // Listeners used to pile up per simulation until it rested.
+  'retarget, new onUpdate': (n) => {
+    const objs = make(n);
+    let calls = 0;
+    let px = 0;
+    const frame = () => {
+      px += 7;
+      for (let i = 0; i < n; i++) spring(objs[i], { x: px, y: px * 0.5 }, { stiffness: 300, damping: 25, onUpdate: () => calls++ });
+      step();
+    };
+    for (let i = 0; i < 30; i++) frame();
+    const s = performance.now();
+    for (let i = 0; i < FRAMES; i++) frame();
+    const ms = (performance.now() - s) / FRAMES;
+    check(objs);
+    if (!calls) throw new Error('onUpdate never ran');
+    for (const o of objs) spring(o, { x: o.x, y: o.y }).stop();
+    step();
     return ms;
   },
   'inertia create + 10 frames': (n) => {

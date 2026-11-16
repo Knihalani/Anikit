@@ -125,10 +125,16 @@ export function scroll(subject: Playable | CompositorAnimation | ((progress: num
     restSpeed: 1e-3,
     onUpdate: () => apply(proxy.p),
   };
+  // Smoothed: the last target given to the spring. Outside the range every
+  // scroll event reads the same clamped 0 or 1, and the spring already heads there.
+  let aim = NaN;
   const update = () => {
     const p = read();
-    if (options.smooth) smoother = spring(proxy, { p }, springOpts);
-    else apply(p);
+    if (!options.smooth) apply(p);
+    else if (p !== aim) {
+      aim = p;
+      smoother = spring(proxy, { p }, springOpts);
+    }
   };
   const onResize = () => {
     measure();

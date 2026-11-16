@@ -169,7 +169,7 @@ await s;                             // resolves at rest
 inertia(card, { x: { velocity: vx, min: 0, max: 600, snap: 100 } }, { power: 0.8, timeConstant: 0.35 });
 ```
 
-`spring(targets, props, options?)`: props are end values (numbers or strings with units, colours too). Options: `stiffness` (default 100), `damping` (10), `mass` (1), or the perceptual pair `bounce` (0–1) + `duration` (seconds); `velocity` (units/s, a number or per-property map), `restDelta`, `restSpeed`, `onUpdate`, `onComplete`. There is no `delay` or `ease`: call it later, or use `animate()` with `ease: 'spring(…)'` for a timed spring. `inertia()` adds `power` (0.8), `timeConstant` (0.35 s), `bounceStiffness` and `bounceDamping`; each prop is `{ velocity, min?, max?, snap? }` or a bare velocity. All three return a `PhysicsAnimation`.
+`spring(targets, props, options?)`: props are end values (numbers or strings with units, colours too). Options: `stiffness` (default 100), `damping` (10), `mass` (1), or the perceptual pair `bounce` (0–1) + `duration` (seconds); `velocity` (units/s, a number or per-property map), `restDelta`, `restSpeed`, `onUpdate`, `onComplete`. Calling `spring()` again on a moving property retargets it (position and velocity kept); the latest call's `onUpdate` replaces the earlier one for that property, and every distinct `onComplete` fires once at rest, so a follower can pass a fresh options literal on every event. There is no `delay` or `ease`: call it later, or use `animate()` with `ease: 'spring(…)'` for a timed spring. `inertia()` adds `power` (0.8), `timeConstant` (0.35 s), `bounceStiffness` and `bounceDamping`; each prop is `{ velocity, min?, max?, snap? }` or a bare velocity. All three return a `PhysicsAnimation`.
 
 ---
 

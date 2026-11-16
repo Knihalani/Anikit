@@ -69,6 +69,13 @@ class Sim implements NodeRecord, Owner {
   /** Times this simulation came to rest or was disposed (controllers compare it to their snapshot of it). */
   rests = 0;
   done: Array<() => void> = [];
+  /**
+   * Options whose `onUpdate` runs every frame: the latest call's. A follower
+   * that passes a new `{ onUpdate }` on every event replaces it instead of
+   * adding one more listener per event until rest.
+   */
+  upd: PhysicsOptions | null = null;
+  /** Options whose `onComplete` runs at rest (each distinct callback once). */
   listeners: PhysicsOptions[] = [];
   constructor(
     public target: Target,
@@ -78,8 +85,15 @@ class Sim implements NodeRecord, Owner {
   ) {}
   render(): void {
     apply(this.b, this.at);
+    this.upd?.onUpdate!();
+  }
+  /** Take a call's callbacks. */
+  listen(o: PhysicsOptions): void {
+    if (o.onUpdate) this.upd = o;
+    if (!o.onComplete) return;
     const ls = this.listeners;
-    for (let i = 0; i < ls.length; i++) ls[i].onUpdate?.();
+    for (let i = 0; i < ls.length; i++) if (ls[i] === o || ls[i].onComplete === o.onComplete) return;
+    ls.push(o);
   }
   event(kind: number): void {
     if (kind === EV_FINISH) {
@@ -88,7 +102,8 @@ class Sim implements NodeRecord, Owner {
       this.done = [];
       const ls = this.listeners;
       this.listeners = [];
-      for (const l of ls) l.onComplete?.();
+      this.upd = null;
+      for (const l of ls) l.onComplete!();
       for (const f of d) f();
     }
   }
@@ -305,7 +320,7 @@ export function spring(targets: Targets, props: Record<string, number | string>,
         }
         const unitScale = ch === 4 ? 1 : 1;
         w.ak_sim_rest(sim.h, options.restDelta ?? 0.01 * unitScale, options.restSpeed ?? 0.1 * unitScale);
-        if ((options.onUpdate || options.onComplete) && !sim.listeners.includes(options)) sim.listeners.push(options);
+        sim.listen(options);
         list.push(sim);
       }
     }
@@ -388,7 +403,7 @@ export function inertia(targets: Targets, props: Record<string, InertiaProp | nu
         claim(target, prop, sim);
         map.set(prop, sim);
         w.ak_sim_rest(sim.h, options.restDelta ?? 0.01, options.restSpeed ?? 0.1);
-        if (options.onUpdate || options.onComplete) sim.listeners.push(options);
+        sim.listen(options);
         list.push(sim);
       }
     }
@@ -462,7 +477,7 @@ export function physics(targets: Targets, props: Record<string, PhysicsProp | nu
         register(sim);
         claim(target, prop, sim);
         map.set(prop, sim);
-        if (options.onUpdate || options.onComplete) sim.listeners.push(options);
+        sim.listen(options);
         list.push(sim);
       }
     }

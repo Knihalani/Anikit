@@ -381,7 +381,12 @@ export class ScrollTrigger {
     const anim = o.animation;
     if (anim && o.scrub) {
       if (typeof o.scrub === 'number' && o.scrub > 0 && !firstUpdate) {
-        this.smoother = spring(this.proxy, { p }, this.smoothOpts);
+        // Outside the range every scroll event clamps to the same 0 or 1: the
+        // spring is already heading there, retargeting it again is wasted.
+        if (p !== this.scrubbed) {
+          this.scrubbed = p;
+          this.smoother = spring(this.proxy, { p }, this.smoothOpts);
+        }
       } else if (p !== this.scrubbed || firstUpdate) {
         // Off-screen triggers keep reading 0 or 1 while the page scrolls:
         // seeking the animation to the same progress again is a no-op.
@@ -674,8 +679,10 @@ export function smoothScroll(options: SmoothScrollOptions = {}) {
     el.scrollTop = proxy.y;
     options.onUpdate?.(proxy.y);
   };
+  // One options object for every retarget (a wheel event each).
+  const sopts = { duration: lag, bounce: 0, restDelta: 0.5, restSpeed: 5, onUpdate: write };
   const go = () => {
-    sim = spring(proxy, { y: target }, { duration: lag, bounce: 0, restDelta: 0.5, restSpeed: 5, onUpdate: write });
+    sim = spring(proxy, { y: target }, sopts);
   };
   const onWheel = (e: WheelEvent) => {
     if (!running || e.ctrlKey) return;
