@@ -30,11 +30,26 @@ use vello_cpu::peniko::{
 };
 use vello_cpu::{Image, ImageSource, Pixmap, RasterizerSettings, RenderContext, Resources, TargetInit};
 
-pub use assets::{Assets, FontStore, ImageError, ImageStore};
+pub use assets::{Assets, Face, FontStore, ImageError, ImageStore};
 pub use diff::{diff_mb, MbMap};
 pub use yuv::{rgba_to_yuv420, YuvFrame};
 
 use crate::dl::{self, Blend, DisplayList, FillRule, Op, Paint, Rgba};
+
+/// Shared assets plus this renderer's per-frame image overrides.
+pub(crate) struct View<'a> {
+    assets: &'a Assets,
+    frame: &'a HashMap<dl::ImageId, Arc<Pixmap>>,
+}
+
+impl View<'_> {
+    fn image(&self, id: dl::ImageId) -> Option<&Arc<Pixmap>> {
+        self.frame.get(&id).or_else(|| self.assets.images.get(id))
+    }
+    fn face(&self, id: dl::FontId) -> Option<&Face> {
+        self.assets.fonts.face(id)
+    }
+}
 
 /// A rendered frame: premultiplied RGBA8, `width × height`, tightly packed.
 pub type FrameRgba = Pixmap;
@@ -102,6 +117,8 @@ pub struct Renderer {
     /// Context and pixmap for partial (dirty-region) renders.
     rctx: Option<RenderContext>,
     rpix: Pixmap,
+    /// Per-frame image overrides (video frames, live textures).
+    frame_images: Arc<HashMap<dl::ImageId, Arc<Pixmap>>>,
     inc: incremental::Tracker,
     st: State,
 }
@@ -119,6 +136,7 @@ impl Renderer {
             frame: Pixmap::new(1, 1),
             rctx: None,
             rpix: Pixmap::new(1, 1),
+            frame_images: Default::default(),
             inc: Default::default(),
             st: State {
                 res: Resources::new(),
@@ -146,6 +164,20 @@ impl Renderer {
 
     pub fn assets(&self) -> &Arc<Assets> {
         &self.assets
+    }
+
+    /// Dynamic-image hook: draw `pixmap` (premultiplied RGBA8) for `id` in the
+    /// following renders, overriding [`Assets::images`] — for decoded video
+    /// frames or other per-frame textures. Set it before each frame whose
+    /// image changes; incremental renders notice the new pixels (identity of
+    /// the `Arc`), so give each new frame its own `Arc`.
+    pub fn set_frame_image(&mut self, id: dl::ImageId, pixmap: Arc<Pixmap>) {
+        Arc::make_mut(&mut self.frame_images).insert(id, pixmap);
+    }
+
+    /// Drop one per-frame override (falls back to the shared store).
+    pub fn clear_frame_image(&mut self, id: dl::ImageId) {
+        Arc::make_mut(&mut self.frame_images).remove(&id);
     }
 
     /// Number of cached layers composited without re-rendering in the last frame.
@@ -184,7 +216,9 @@ impl Renderer {
             st.cache_hits = 0;
         }
         st.frame_size = (w as u32, h as u32);
-        let assets = self.assets.clone();
+        let shared = self.assets.clone();
+        let frame_images = self.frame_images.clone();
+        let assets = View { assets: &shared, frame: &frame_images };
         let settings = RasterizerSettings { target_init: TargetInit::Clear(color(list.background)), ..Default::default() };
         if full {
             st.org = (0, 0);
@@ -267,7 +301,7 @@ fn matching_pop(ops: &[Op]) -> usize {
     ops.len()
 }
 
-fn draw_ops(st: &mut State, assets: &Assets, ctx: &mut RenderContext, ops: &[Op], base: Affine) {
+fn draw_ops(st: &mut State, assets: &View, ctx: &mut RenderContext, ops: &[Op], base: Affine) {
     draw_ops_culled(st, assets, ctx, ops, base, None)
 }
 
@@ -281,7 +315,7 @@ pub(crate) struct Cull<'a> {
 }
 
 /// As [`draw_ops`], skipping top-level ops and layers whose bounds miss the cull region.
-fn draw_ops_culled(st: &mut State, assets: &Assets, ctx: &mut RenderContext, ops: &[Op], base: Affine, cull: Option<Cull>) {
+fn draw_ops_culled(st: &mut State, assets: &View, ctx: &mut RenderContext, ops: &[Op], base: Affine, cull: Option<Cull>) {
     let misses = |a: usize, b: usize| -> bool {
         let Some(c) = cull else { return false };
         let reg = c.region + kurbo::Vec2::new(c.org.0, c.org.1);
@@ -417,7 +451,7 @@ fn draw_cached_run(
     st: &mut State,
     ctx: &mut RenderContext,
     font_id: dl::FontId,
-    font: &vello_cpu::peniko::FontData,
+    font: &Face,
     size: f32,
     glyphs: &[dl::Glyph],
     c: Rgba,
@@ -666,7 +700,7 @@ pub(crate) fn ops_bounds(ops: &[Op], base: Affine) -> Option<Rect> {
 #[allow(clippy::too_many_arguments)]
 fn draw_offscreen(
     st: &mut State,
-    assets: &Assets,
+    assets: &View,
     ctx: &mut RenderContext,
     inner: &[Op],
     base: Affine,
@@ -756,7 +790,7 @@ fn stops(stops: &[(f32, Rgba)]) -> ColorStops {
 }
 
 /// Set `paint` on `ctx`. Returns false when there is nothing to draw.
-fn set_paint(ctx: &mut RenderContext, assets: &Assets, paint: &Paint) -> bool {
+fn set_paint(ctx: &mut RenderContext, assets: &View, paint: &Paint) -> bool {
     ctx.reset_paint_transform();
     match paint {
         Paint::Solid(c) => {
@@ -796,7 +830,7 @@ fn set_paint(ctx: &mut RenderContext, assets: &Assets, paint: &Paint) -> bool {
             });
         }
         Paint::Image { image, transform, opacity } => {
-            let Some(pix) = assets.images.get(*image) else { return false };
+            let Some(pix) = assets.image(*image) else { return false };
             let Some(inv) = invert(affine(transform)) else { return false };
             if *opacity <= 0.0 {
                 return false;
@@ -819,7 +853,7 @@ fn invert(a: Affine) -> Option<Affine> {
     }
 }
 
-fn draw_op(st: &mut State, assets: &Assets, ctx: &mut RenderContext, op: &Op, base: Affine) {
+fn draw_op(st: &mut State, assets: &View, ctx: &mut RenderContext, op: &Op, base: Affine) {
     match op {
         Op::Fill { path, paint, rule, transform } => {
             if !set_paint(ctx, assets, paint) {
@@ -883,7 +917,7 @@ fn draw_op(st: &mut State, assets: &Assets, ctx: &mut RenderContext, op: &Op, ba
             }
         }
         Op::Image { image, dst, opacity, transform } => {
-            let Some(pix) = assets.images.get(*image) else { return };
+            let Some(pix) = assets.image(*image) else { return };
             if *opacity <= 0.0 || dst[2] <= 0.0 || dst[3] <= 0.0 {
                 return;
             }
@@ -903,7 +937,7 @@ fn draw_op(st: &mut State, assets: &Assets, ctx: &mut RenderContext, op: &Op, ba
             ctx.fill_rect(&Rect::new(dst[0] as f64, dst[1] as f64, (dst[0] + dst[2]) as f64, (dst[1] + dst[3]) as f64));
         }
         Op::Glyphs { font: font_id, size, glyphs, paint, transform } => {
-            let Some(font) = assets.fonts.get(*font_id) else { return };
+            let Some(font) = assets.face(*font_id) else { return };
             if glyphs.is_empty() || *size <= 0.0 || !set_paint(ctx, assets, paint) {
                 return;
             }
@@ -924,12 +958,16 @@ fn draw_op(st: &mut State, assets: &Assets, ctx: &mut RenderContext, op: &Op, ba
                     ctx.fill_path(&st.run);
                 }
             } else {
-                let _ = ctx
-                    .glyph_run(&mut st.res, font)
-                    .font_size(*size)
-                    .hint(false)
-                    .atlas_cache(true)
-                    .fill_glyphs(glyphs.iter().map(|g| vello_cpu::Glyph { id: g.id as u32, x: g.x, y: g.y }));
+                let mut b = ctx.glyph_run(&mut st.res, &font.data).font_size(*size).hint(false).atlas_cache(true);
+                b = b.normalized_coords(&font.coords);
+                if let Some(a) = font.skew {
+                    b = b.glyph_transform(Affine::skew(-(a as f64).to_radians().tan(), 0.0));
+                }
+                if font.embolden {
+                    let e = 0.02 * *size as f64;
+                    b = b.font_embolden(glifo::FontEmbolden::new(kurbo::Diagonal2::new(e, e)));
+                }
+                let _ = b.fill_glyphs(glyphs.iter().map(|g| vello_cpu::Glyph { id: g.id as u32, x: g.x, y: g.y }));
             }
         }
         Op::PushLayer { .. } | Op::PopLayer => {}

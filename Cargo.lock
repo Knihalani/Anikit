@@ -38,11 +38,13 @@ name = "anikit-video"
 version = "0.1.0"
 dependencies = [
  "anikit-core",
+ "glifo",
  "image",
  "kurbo",
  "rayon",
  "serde",
  "serde_json",
+ "skrifa",
  "vello_cpu",
 ]
 

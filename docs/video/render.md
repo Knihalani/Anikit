@@ -26,7 +26,7 @@ let update = r.render_yuv_incremental(&list, &mut yuv, &mut changed); // dirty r
 | `RoundRect` | `radius` is clamped to half the shorter side; radius 0 uses vello's `fill_rect`. |
 | `Image` | `dst` is `[x, y, w, h]` in local coordinates. 1:1 images at integer positions are blitted directly. Axis-aligned scaled images that repeat across consecutive frames are resampled **once** with a tent filter (true area filtering when shrinking), then blitted. Anything else uses vello's bilinear filter. |
 | `Paint::Image` | `transform` maps local coordinates → image pixels. |
-| `Glyphs` | Outlines are cached per (font, glyph). Each run is drawn as **one** path. Solid, translation-only runs are cached as bitmaps, keyed by content and quarter-pixel phase, and blitted. Colour fonts (COLR/CBDT/sbix) go through vello's glyph runs. |
+| `Glyphs` | Drawn with the face instance in `FontStore` (`insert_face(id, Face { data, coords, embolden, skew })`): variable-font `coords` (F2Dot14 bits), synthetic bold (2% of the em per side) and oblique skew (degrees). Outlines are cached per (font, glyph). Each run is drawn as **one** path. Solid, translation-only runs are cached as bitmaps, keyed by content and quarter-pixel phase, and blitted. Colour fonts (COLR/CBDT/sbix) go through vello's glyph runs. |
 | `PushLayer` | A layer with no filter and no `cache_key` becomes a native vello layer, or nothing at all when opacity is 1, the blend is normal and there is no clip. A layer with filters or a `cache_key` is rendered offscreen, sized to its filter-expanded bounds ∩ view ∩ clip, filtered and composited. A `cache_key` keeps that bitmap while the key repeats. |
 | `Filter::Blur(σ)` | Gaussian σ, as in CSS. Three variance-matched box passes; every pass is a vectorised row operation (horizontal passes run on a transposed copy). Decimated 2/4/8× for σ ≥ 4/8/24. |
 | `Filter::Shadow` | σ blur, offset, colour. **Fast path:** when the layer's alpha is a single axis-aligned `RoundRect` (a card, optionally with content inside an opaque card), the shadow is a blurred sprite cached per size, radius, σ and colour, and drawn at an integer offset. No offscreen pass is needed. |
@@ -46,6 +46,10 @@ let update = r.render_yuv_incremental(&list, &mut yuv, &mut changed); // dirty r
 - **Macroblock diffs:**
   - `diff_mb(prev, cur)` is the exact changed-macroblock map (luma plus both chroma planes).
   - `diff::diff_mb_ops(prev_dl, cur_dl)` is a conservative map computed from the display lists alone.
+
+### Dynamic images
+
+`Renderer::set_frame_image(id, Arc<Pixmap>)` overrides `Assets::images` for the following renders. Use it for decoded video frames and other per-frame textures; `clear_frame_image(id)` removes the override. Incremental renders track the identity of each `Arc`, so only the macroblocks under the image are re-rendered when a new frame is set.
 
 ### Incremental frames
 

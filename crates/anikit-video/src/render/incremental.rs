@@ -218,9 +218,14 @@ fn hash_filter(h: &mut impl Hasher, fl: &Filter) {
     }
 }
 
-/// Content hash of one op (images are identified by id: a changed image under
-/// the same id must come with [`Renderer::invalidate`]).
+/// Content hash of one op. Images are identified by id; a changed image in the
+/// shared store must come with [`Renderer::invalidate`] (per-frame images set
+/// with [`Renderer::set_frame_image`] are tracked automatically).
 pub fn hash_op(op: &Op) -> u64 {
+    hash_op_with(op, &|_| 0)
+}
+
+fn hash_op_with(op: &Op, image_gen: &dyn Fn(crate::dl::ImageId) -> u64) -> u64 {
     let mut h = Fx::default();
     match op {
         Op::Fill { path, paint, rule, transform } => {
@@ -248,6 +253,7 @@ pub fn hash_op(op: &Op) -> u64 {
         Op::Image { image, dst, opacity, transform } => {
             h.write_u8(3);
             h.write_u32(image.0);
+            h.write_u64(image_gen(*image));
             for v in dst {
                 f(&mut h, *v);
             }
@@ -282,15 +288,22 @@ pub fn hash_op(op: &Op) -> u64 {
         }
         Op::PopLayer => h.write_u8(6),
     }
+    let paint = match op {
+        Op::Fill { paint, .. } | Op::Stroke { paint, .. } | Op::RoundRect { paint, .. } | Op::Glyphs { paint, .. } => Some(paint),
+        _ => None,
+    };
+    if let Some(Paint::Image { image, .. }) = paint {
+        h.write_u64(image_gen(*image));
+    }
     h.finish()
 }
 
-fn fingerprint(list: &DisplayList, out: &mut Vec<Print>) {
+fn fingerprint(list: &DisplayList, out: &mut Vec<Print>, image_gen: &dyn Fn(crate::dl::ImageId) -> u64) {
     out.clear();
     let mut stack: Vec<[f32; 4]> = Vec::new();
     let mut m = [0f32; 4];
     for op in &list.ops {
-        let hash = hash_op(op);
+        let hash = hash_op_with(op, image_gen);
         match op {
             Op::PushLayer { filters, .. } => {
                 stack.push(m);
@@ -331,7 +344,8 @@ impl Renderer {
         let bg = list.background.0.map(f32::to_bits);
         let mut inc = std::mem::take(&mut self.inc);
         std::mem::swap(&mut inc.prev, &mut inc.cur);
-        fingerprint(list, &mut inc.cur);
+        let frame_images = self.frame_images.clone();
+        fingerprint(list, &mut inc.cur, &|id| frame_images.get(&id).map_or(0, |p| std::sync::Arc::as_ptr(p) as u64));
         let usable = inc.valid && inc.size == (w, h) && inc.bg == bg && yuv.width == w && yuv.height == h;
         inc.valid = true;
         inc.size = (w, h);

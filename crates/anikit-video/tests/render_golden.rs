@@ -372,3 +372,81 @@ fn incremental_matches_full_render() {
     assert_eq!(kinds[5], Update::Full);
     assert_eq!(kinds[7], Update::Unchanged);
 }
+
+/// Variable-font coordinates, synthetic bold and oblique change the ink.
+#[test]
+fn font_variations_and_synthesis() {
+    use anikit_video::render::Face;
+    let path = std::env::var("AK_VARFONT").unwrap_or_else(|_| format!("{}/fonts/InterVariable.ttf", env!("CARGO_MANIFEST_DIR")));
+    let Ok(bytes) = std::fs::read(&path) else {
+        eprintln!("skipping: no variable font at {path}");
+        return;
+    };
+    let data = vello_cpu::peniko::FontData::new(vello_cpu::peniko::Blob::from(bytes), 0);
+    // Inter's axes are [opsz, wght]; wght 400 → 0.0, 900 → 1.0 (F2Dot14 16384).
+    let fref = skrifa::FontRef::new(data.data.data()).unwrap();
+    use skrifa::MetadataProvider;
+    let axes: Vec<String> = fref.axes().iter().map(|a| a.tag().to_string()).collect();
+    let wi = axes.iter().position(|t| t == "wght").expect("wght axis");
+    let mut heavy = vec![0i16; axes.len()];
+    heavy[wi] = 16384;
+    let mut assets = Assets::default();
+    let face = |coords: Vec<i16>, embolden: bool, skew: Option<f32>| Face { data: data.clone(), coords: coords.into(), embolden, skew };
+    assets.fonts.insert_face(FontId(0), face(vec![], false, None));
+    assets.fonts.insert_face(FontId(1), face(heavy, false, None));
+    assets.fonts.insert_face(FontId(2), face(vec![], true, None));
+    assets.fonts.insert_face(FontId(3), face(vec![], false, Some(12.0)));
+    let mut r = Renderer::new(Arc::new(assets));
+    // Inter glyph ids for a few letters, drawn both via the run cache (solid) and outlines (gradient).
+    let glyphs: Vec<Glyph> = (0..6).map(|k| Glyph { id: 40 + k as u16 * 3, x: k as f32 * 14.0, y: 0.0 }).collect();
+    let ink = |r: &mut Renderer, font: u32, paint: Paint| -> (u64, Vec<u8>) {
+        let l = list(vec![Op::Glyphs { font: FontId(font), size: 22.0, glyphs: glyphs.clone(), paint, transform: [1.0, 0.0, 0.0, 1.0, 4.0, 50.0] }]);
+        let px = r.render(&l).data_as_u8_slice().to_vec();
+        let bg = (0.1f32 * 255.0 + 0.5) as u64;
+        (px.chunks(4).map(|p| (p[1] as u64).saturating_sub(bg)).sum(), px)
+    };
+    let grad = Paint::Linear { p0: [0.0, 0.0], p1: [90.0, 0.0], stops: vec![(0.0, rgba(0.0, 1.0, 0.0, 1.0)), (1.0, rgba(0.0, 1.0, 0.0, 1.0))] };
+    for paint in [solid(0.0, 1.0, 0.0), grad] {
+        let (base, bp) = ink(&mut r, 0, paint.clone());
+        let (bold, _) = ink(&mut r, 1, paint.clone());
+        let (emb, _) = ink(&mut r, 2, paint.clone());
+        let (obl, op) = ink(&mut r, 3, paint.clone());
+        assert!(bold as f64 > base as f64 * 1.3, "wght 900 should add ink: {base} → {bold}");
+        assert!(emb as f64 > base as f64 * 1.1, "embolden should add ink: {base} → {emb}");
+        assert!((obl as f64 - base as f64).abs() < base as f64 * 0.1 && op != bp, "oblique moves ink, keeps area");
+    }
+}
+
+#[test]
+fn dynamic_frame_images() {
+    use anikit_video::render::incremental::Update;
+    use anikit_video::render::{MbMap, YuvFrame};
+    let mut r = Renderer::new(Arc::new(Assets::default()));
+    let frame = |v: u8| {
+        let mut p = vello_cpu::Pixmap::new(32, 32);
+        p.data_as_u8_slice_mut().chunks_mut(4).for_each(|c| c.copy_from_slice(&[v, v / 2, 255 - v, 255]));
+        Arc::new(p)
+    };
+    let l = DisplayList {
+        width: 128,
+        height: 64,
+        background: rgba(0.0, 0.0, 0.0, 1.0),
+        ops: vec![
+            card(70.0, 10.0, 40.0, 40.0, solid(1.0, 1.0, 1.0)),
+            Op::Image { image: ImageId(77), dst: [4.0, 4.0, 48.0, 48.0], opacity: 1.0, transform: IDENTITY },
+        ],
+    };
+    let (mut yuv, mut changed) = (YuvFrame::default(), MbMap::default());
+    r.set_frame_image(ImageId(77), frame(10));
+    assert_eq!(r.render_yuv_incremental(&l, &mut yuv, &mut changed), Update::Full);
+    let a = r.frame().data_as_u8_slice()[(20 * 128 + 20) * 4];
+    assert_eq!(r.render_yuv_incremental(&l, &mut yuv, &mut changed), Update::Unchanged);
+    r.set_frame_image(ImageId(77), frame(200));
+    assert!(matches!(r.render_yuv_incremental(&l, &mut yuv, &mut changed), Update::Partial { .. }));
+    let b = r.frame().data_as_u8_slice()[(20 * 128 + 20) * 4];
+    assert!(a < 30 && b > 180, "{a} {b}");
+    assert!(changed.get(0, 0) && !changed.get(5, 1), "only the image's macroblocks change");
+    let mut fresh = Renderer::new(Arc::new(Assets::default()));
+    fresh.set_frame_image(ImageId(77), frame(200));
+    assert_eq!(fresh.render(&l).data_as_u8_slice(), r.frame().data_as_u8_slice());
+}
