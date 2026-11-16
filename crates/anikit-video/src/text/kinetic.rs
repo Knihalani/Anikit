@@ -24,16 +24,16 @@ use crate::dl::{self, Affine, Filter, FontId, Op, Paint, Rgba};
 
 /// Which animation each unit performs.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
+#[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase", remote = "Self")]
 pub enum KineticStyle {
-    /// Slide up from `distance` px below while fading in.
+    /// Slide up from `distance` em below while fading in.
     Rise {
         #[serde(default = "d_rise")]
         distance: f32,
     },
     /// Fade in.
     Fade,
-    /// Unblur from `radius` px while fading in.
+    /// Unblur from `radius` em while fading in.
     BlurIn {
         #[serde(default = "d_blur")]
         radius: f32,
@@ -63,7 +63,7 @@ pub enum KineticStyle {
         #[serde(default)]
         seed: u32,
     },
-    /// Continuous sine wave through the units (amplitude ramps in over `duration`).
+    /// Continuous sine wave through the units (amplitude in em; ramps in over `duration`).
     Wave {
         #[serde(default = "d_amp")]
         amplitude: f32,
@@ -78,7 +78,7 @@ pub enum KineticStyle {
     HighlightSweep {
         #[serde(default = "d_highlight")]
         color: Color,
-        /// Padding around the unit's box, px.
+        /// Padding around the unit's box, em.
         #[serde(default = "d_pad")]
         padding: f32,
         #[serde(default = "d_radius")]
@@ -92,10 +92,10 @@ pub enum KineticStyle {
 }
 
 fn d_rise() -> f32 {
-    40.0
+    0.6
 }
 fn d_blur() -> f32 {
-    12.0
+    0.25
 }
 fn d_true() -> bool {
     true
@@ -110,7 +110,7 @@ fn d_rate() -> f32 {
     20.0
 }
 fn d_amp() -> f32 {
-    12.0
+    0.15
 }
 fn d_wavelength() -> f32 {
     8.0
@@ -122,10 +122,10 @@ fn d_highlight() -> Color {
     Color::rgba(1.0, 0.85, 0.2, 0.45)
 }
 fn d_pad() -> f32 {
-    4.0
+    0.08
 }
 fn d_radius() -> f32 {
-    6.0
+    0.12
 }
 
 /// Direction a masked unit enters from.
@@ -152,16 +152,18 @@ pub enum From {
     Random,
 }
 
-/// A kinetic text animation.
+/// A kinetic text animation. Deserialises from an object or a shorthand
+/// string (see [`Kinetic::parse`]): `"rise"`, `"pop by char from center"`,
+/// `"fade words 0.8s 0.1s exit"`. Unset fields take per-style defaults.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase", remote = "Self")]
 pub struct Kinetic {
     pub style: KineticStyle,
-    pub unit: UnitKind,
+    pub unit: Option<UnitKind>,
     /// Seconds between consecutive units starting.
-    pub stagger: f32,
+    pub stagger: Option<f32>,
     /// Seconds each unit takes.
-    pub duration: f32,
+    pub duration: Option<f32>,
     /// Seconds before the first unit starts.
     pub delay: f32,
     /// Easing (any `anikit-core` syntax: `outCubic`, `back.out(1.7)`, `spring(bounce: 0.3)`…).
@@ -176,9 +178,9 @@ impl Default for Kinetic {
     fn default() -> Self {
         Kinetic {
             style: KineticStyle::Rise { distance: d_rise() },
-            unit: UnitKind::Word,
-            stagger: 0.06,
-            duration: 0.6,
+            unit: None,
+            stagger: None,
+            duration: None,
             delay: 0.0,
             ease: None,
             from: From::First,
@@ -187,11 +189,185 @@ impl Default for Kinetic {
     }
 }
 
+/// Style names accepted in shorthand (and as `"style": "<name>"`).
+pub const STYLE_NAMES: &[&str] =
+    &["rise", "fade", "blur", "pop", "typewriter", "scramble", "wave", "highlight", "mask"];
+
+impl KineticStyle {
+    /// A style with default parameters by name (`rise`, `blur-in`, `scalePop`, `decode`…).
+    pub fn by_name(name: &str) -> Option<Self> {
+        let n: String = name.chars().filter(|c| c.is_alphanumeric()).collect::<String>().to_lowercase();
+        Some(match n.as_str() {
+            "rise" | "slideup" | "up" => KineticStyle::Rise { distance: d_rise() },
+            "fade" | "fadein" => KineticStyle::Fade,
+            "blur" | "blurin" => KineticStyle::BlurIn { radius: d_blur() },
+            "pop" | "scale" | "scalepop" => KineticStyle::ScalePop { from: 0.0 },
+            "type" | "typewriter" | "typing" => KineticStyle::Typewriter { caret: true, caret_color: None, blink: d_blink() },
+            "scramble" | "decode" => KineticStyle::Scramble { charset: d_charset(), rate: d_rate(), seed: 0 },
+            "wave" => KineticStyle::Wave { amplitude: d_amp(), wavelength: d_wavelength(), speed: d_speed() },
+            "highlight" | "highlightsweep" | "marker" => {
+                KineticStyle::HighlightSweep { color: d_highlight(), padding: d_pad(), radius: d_radius() }
+            }
+            "mask" | "maskreveal" | "reveal" => KineticStyle::MaskReveal { direction: Direction::Up },
+            _ => return None,
+        })
+    }
+}
+
+fn unknown_style(name: &str) -> String {
+    format!("unknown text animation {name:?}; use one of: {}", STYLE_NAMES.join(", "))
+}
+
+impl Serialize for KineticStyle {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        KineticStyle::serialize(self, s)
+    }
+}
+
+impl<'de> Deserialize<'de> for KineticStyle {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let v = serde_json::Value::deserialize(d)?;
+        if let Some(name) = v.as_str() {
+            return KineticStyle::by_name(name).ok_or_else(|| serde::de::Error::custom(unknown_style(name)));
+        }
+        let mut v = v;
+        if let Some(t) = v.get("type").and_then(|t| t.as_str()).map(str::to_string) {
+            // Accept any spelling of the name in objects too.
+            if let Some(def) = KineticStyle::by_name(&t) {
+                let canon = KineticStyle::serialize(&def, serde_json::value::Serializer).map_err(serde::de::Error::custom)?;
+                v["type"] = canon["type"].clone();
+            }
+        }
+        KineticStyle::deserialize(v).map_err(serde::de::Error::custom)
+    }
+}
+
+impl Serialize for Kinetic {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        Kinetic::serialize(self, s)
+    }
+}
+
+impl<'de> Deserialize<'de> for Kinetic {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let v = serde_json::Value::deserialize(d)?;
+        if let Some(s) = v.as_str() {
+            return Kinetic::parse(s).map_err(serde::de::Error::custom);
+        }
+        Kinetic::deserialize(v).map_err(serde::de::Error::custom)
+    }
+}
+
+impl std::str::FromStr for Kinetic {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, String> {
+        Kinetic::parse(s)
+    }
+}
+
+impl Kinetic {
+    /// Parse shorthand: a style name, then any of: a unit (`char(s)`, `word(s)`,
+    /// `line(s)`), durations (`0.6s`, `400ms`: the first is the per-unit
+    /// duration, the second the stagger), `stagger 0.05`, `delay 1s`,
+    /// `from center|last|edges|random`, `exit`, a direction (`up`, `down`,
+    /// `left`, `right` for mask), or an easing (`outBack`, `spring(bounce: 0.3)`).
+    pub fn parse(src: &str) -> Result<Kinetic, String> {
+        let toks: Vec<String> = split_tokens(src);
+        let mut it = toks.iter().map(|t| t.as_str()).peekable();
+        let first = it.next().ok_or("empty text animation")?;
+        let mut k = Kinetic { style: KineticStyle::by_name(first).ok_or_else(|| unknown_style(first))?, ..Default::default() };
+        let mut times = 0;
+        let secs = |t: &str| -> Option<f32> {
+            if let Some(v) = t.strip_suffix("ms") {
+                v.parse::<f32>().ok().map(|x| x / 1000.0)
+            } else {
+                t.strip_suffix('s').unwrap_or(t).parse::<f32>().ok()
+            }
+        };
+        while let Some(t) = it.next() {
+            let tl = t.to_lowercase();
+            match tl.as_str() {
+                "by" | "per" | "each" | "in" | "with" => {}
+                "char" | "chars" | "letter" | "letters" | "character" | "characters" => k.unit = Some(UnitKind::Char),
+                "word" | "words" => k.unit = Some(UnitKind::Word),
+                "line" | "lines" => k.unit = Some(UnitKind::Line),
+                "exit" | "out" => k.exit = true,
+                "stagger" => k.stagger = Some(it.next().and_then(secs).ok_or("`stagger` needs a time")?),
+                "delay" => k.delay = it.next().and_then(secs).ok_or("`delay` needs a time")?,
+                "duration" => k.duration = Some(it.next().and_then(secs).ok_or("`duration` needs a time")?),
+                "from" => {
+                    k.from = match it.next().map(|x| x.to_lowercase()).as_deref() {
+                        Some("first") | Some("start") => From::First,
+                        Some("last") | Some("end") => From::Last,
+                        Some("center") | Some("centre") | Some("middle") => From::Center,
+                        Some("edges") => From::Edges,
+                        Some("random") => From::Random,
+                        o => return Err(format!("`from` takes first|last|center|edges|random, got {o:?}")),
+                    }
+                }
+                "up" | "down" | "left" | "right" => {
+                    let d = match tl.as_str() {
+                        "up" => Direction::Up,
+                        "down" => Direction::Down,
+                        "left" => Direction::Left,
+                        _ => Direction::Right,
+                    };
+                    if let KineticStyle::MaskReveal { direction } = &mut k.style {
+                        *direction = d;
+                    }
+                }
+                _ => {
+                    if let Some(v) = secs(&tl).filter(|_| tl.chars().next().is_some_and(|c| c.is_ascii_digit() || c == '.')) {
+                        if times == 0 {
+                            k.duration = Some(v)
+                        } else {
+                            k.stagger = Some(v)
+                        }
+                        times += 1;
+                    } else if Easing::parse(t).is_some() {
+                        k.ease = Some(t.to_string());
+                    } else {
+                        return Err(format!("text animation {src:?}: don't understand {t:?}"));
+                    }
+                }
+            }
+        }
+        Ok(k)
+    }
+}
+
+/// Split on whitespace and commas, keeping parenthesised groups together.
+fn split_tokens(s: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut cur = String::new();
+    let mut depth = 0i32;
+    for c in s.chars() {
+        match c {
+            '(' => depth += 1,
+            ')' => depth -= 1,
+            _ => {}
+        }
+        if (c.is_whitespace() || c == ',') && depth == 0 {
+            if !cur.is_empty() {
+                out.push(std::mem::take(&mut cur));
+            }
+        } else {
+            cur.push(c);
+        }
+    }
+    if !cur.is_empty() {
+        out.push(cur);
+    }
+    out
+}
+
 /// Precomputed kinetic animation for one layout.
 pub struct KineticPlan {
     pub layout: Arc<TextLayout>,
     k: Kinetic,
     unit: UnitKind,
+    duration: f32,
+    em: f32,
     ease: Easing,
     /// Start time of each unit.
     starts: Vec<f32>,
@@ -202,10 +378,24 @@ pub struct KineticPlan {
 
 impl KineticPlan {
     pub fn new(fonts: &FontStore, layout: Arc<TextLayout>, k: &Kinetic) -> Self {
+        // Per-style defaults: (unit, stagger, duration).
+        let (du, ds, dd) = match k.style {
+            KineticStyle::Rise { .. } => (UnitKind::Word, 0.06, 0.6),
+            KineticStyle::Fade => (UnitKind::Char, 0.03, 0.4),
+            KineticStyle::BlurIn { .. } => (UnitKind::Word, 0.08, 0.7),
+            KineticStyle::ScalePop { .. } => (UnitKind::Char, 0.03, 0.5),
+            KineticStyle::Typewriter { .. } => (UnitKind::Char, 0.045, 0.0),
+            KineticStyle::Scramble { .. } => (UnitKind::Char, 0.03, 0.5),
+            KineticStyle::Wave { .. } => (UnitKind::Char, 0.03, 0.4),
+            KineticStyle::HighlightSweep { .. } => (UnitKind::Line, 0.3, 0.6),
+            KineticStyle::MaskReveal { .. } => (UnitKind::Line, 0.12, 0.8),
+        };
         let unit = match k.style {
             KineticStyle::Typewriter { .. } | KineticStyle::Scramble { .. } => UnitKind::Char,
-            _ => k.unit,
+            _ => k.unit.unwrap_or(du),
         };
+        let stagger_s = k.stagger.unwrap_or(ds);
+        let duration = k.duration.unwrap_or(dd);
         let default_ease = match k.style {
             KineticStyle::ScalePop { .. } => "back.out(1.7)",
             KineticStyle::Typewriter { .. } | KineticStyle::Wave { .. } => "linear",
@@ -226,7 +416,7 @@ impl KineticPlan {
             From::Edges => StaggerFrom::Edges,
             From::Random => StaggerFrom::Random(7),
         };
-        let starts = stagger(n, &Stagger { each: k.stagger as f64, from, ..Default::default() })
+        let starts = stagger(n, &Stagger { each: stagger_s as f64, from, ..Default::default() })
             .into_iter()
             .map(|d| k.delay + d as f32)
             .collect();
@@ -251,18 +441,19 @@ impl KineticPlan {
             KineticStyle::Typewriter { caret_color: Some(c), .. } => c.0,
             _ => layout.runs.first().map_or(Rgba([1.0; 4]), |r| r.color),
         };
-        KineticPlan { layout, k: k.clone(), unit, ease, starts, scramble, caret }
+        let em = layout.font_size;
+        KineticPlan { layout, k: k.clone(), unit, duration, em, ease, starts, scramble, caret }
     }
 
     /// Time at which every unit has finished its entrance.
     pub fn duration(&self) -> f32 {
-        self.starts.iter().cloned().fold(self.k.delay, f32::max) + self.k.duration
+        self.starts.iter().cloned().fold(self.k.delay, f32::max) + self.duration
     }
 
     /// Linear progress of unit `i` at time `t` (0..1, before easing).
     #[inline]
     pub fn progress(&self, i: usize, t: f32) -> f32 {
-        let d = self.k.duration.max(1e-6);
+        let d = self.duration.max(1e-6);
         let p = ((t - self.starts[i]) / d).clamp(0.0, 1.0);
         if self.k.exit {
             1.0 - p
@@ -281,6 +472,7 @@ impl KineticPlan {
         let mut decos_rest = true;
         match &self.k.style {
             KineticStyle::HighlightSweep { color, padding, radius } => {
+                let (padding, radius) = (&(padding * self.em), radius * self.em);
                 for (i, u) in units.iter().enumerate() {
                     let e = self.ease.ease(self.progress(i, t) as f64) as f32;
                     if e <= 0.0 {
@@ -292,7 +484,7 @@ impl KineticPlan {
                         y: r[1] - padding * 0.5,
                         w: (r[2] + 2.0 * padding) * e,
                         h: r[3] + *padding,
-                        radius: *radius,
+                        radius,
                         paint: Paint::Solid(color.0),
                         transform,
                     });
@@ -302,9 +494,9 @@ impl KineticPlan {
             }
             KineticStyle::Wave { amplitude, wavelength, speed } => {
                 for (i, u) in units.iter().enumerate() {
-                    let ramp = if self.k.duration > 0.0 { self.ease.ease(self.progress(i, t) as f64) as f32 } else { 1.0 };
+                    let ramp = if self.duration > 0.0 { self.ease.ease(self.progress(i, t) as f64) as f32 } else { 1.0 };
                     let ph = std::f32::consts::TAU * (speed * t - i as f32 / wavelength.max(0.1));
-                    let dy = -amplitude * ph.sin() * ramp;
+                    let dy = -amplitude * self.em * ph.sin() * ramp;
                     self.unit_ops(u, 1.0, dl::mul(&transform, &translate(0.0, dy)), out);
                 }
                 self.decorations(transform, 1.0, out);
@@ -335,11 +527,11 @@ impl KineticPlan {
             match &self.k.style {
                 KineticStyle::Rise { distance } => {
                     let a = p.min(1.0) * (2.0 - p.min(1.0)); // fast fade (outQuad)
-                    self.unit_ops(u, a, dl::mul(&transform, &translate(0.0, (1.0 - e) * distance)), out);
+                    self.unit_ops(u, a, dl::mul(&transform, &translate(0.0, (1.0 - e) * distance * self.em)), out);
                 }
                 KineticStyle::Fade => self.unit_ops(u, e.clamp(0.0, 1.0), transform, out),
                 KineticStyle::BlurIn { radius } => {
-                    let b = (1.0 - e).max(0.0) * radius;
+                    let b = (1.0 - e).max(0.0) * radius * self.em;
                     out.push(Op::PushLayer {
                         opacity: e.clamp(0.0, 1.0),
                         blend: Default::default(),

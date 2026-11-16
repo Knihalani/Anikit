@@ -9,16 +9,16 @@ fn store() -> &'static FontStore {
 }
 
 fn styles() -> Vec<(&'static str, Kinetic)> {
-    let k = |style, unit| Kinetic { style, unit, ..Default::default() };
+    let k = |style, unit| Kinetic { style, unit: Some(unit), ..Default::default() };
     vec![
-        ("rise", k(KineticStyle::Rise { distance: 40.0 }, UnitKind::Word)),
+        ("rise", k(KineticStyle::Rise { distance: 0.6 }, UnitKind::Word)),
         ("fade", k(KineticStyle::Fade, UnitKind::Char)),
-        ("blur", k(KineticStyle::BlurIn { radius: 12.0 }, UnitKind::Word)),
+        ("blur", k(KineticStyle::BlurIn { radius: 0.25 }, UnitKind::Word)),
         ("pop", k(KineticStyle::ScalePop { from: 0.0 }, UnitKind::Char)),
-        ("type", Kinetic { stagger: 0.04, duration: 0.0, ..k(KineticStyle::Typewriter { caret: true, caret_color: None, blink: 1.0 }, UnitKind::Char) }),
-        ("scramble", Kinetic { stagger: 0.04, ..k(KineticStyle::Scramble { charset: "ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&".into(), rate: 20.0, seed: 1 }, UnitKind::Char) }),
-        ("wave", k(KineticStyle::Wave { amplitude: 10.0, wavelength: 8.0, speed: 0.8 }, UnitKind::Char)),
-        ("highlight", Kinetic { stagger: 0.25, ..k(KineticStyle::HighlightSweep { color: Color::rgba(0.49, 0.36, 1.0, 0.55), padding: 4.0, radius: 6.0 }, UnitKind::Word) }),
+        ("type", Kinetic { stagger: Some(0.04), duration: Some(0.0), ..k(KineticStyle::Typewriter { caret: true, caret_color: None, blink: 1.0 }, UnitKind::Char) }),
+        ("scramble", Kinetic { stagger: Some(0.04), ..k(KineticStyle::Scramble { charset: "ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&".into(), rate: 20.0, seed: 1 }, UnitKind::Char) }),
+        ("wave", k(KineticStyle::Wave { amplitude: 0.2, wavelength: 8.0, speed: 0.8 }, UnitKind::Char)),
+        ("highlight", Kinetic { stagger: Some(0.25), ..k(KineticStyle::HighlightSweep { color: Color::rgba(0.49, 0.36, 1.0, 0.55), padding: 0.08, radius: 0.12 }, UnitKind::Word) }),
         ("mask", k(KineticStyle::MaskReveal { direction: Direction::Up }, UnitKind::Word)),
     ]
 }
@@ -109,7 +109,7 @@ fn contact_sheet() {
     let cols = [0.25f32, 0.5, 1.0];
     let (cw, rh) = (520.0, 80.0);
     let st = styles();
-    let mut dl = DisplayList { width: (cw * 3.0) as u32, height: (rh * st.len() as f32 + 100.0) as u32, background: Rgba([0.04, 0.04, 0.07, 1.0]), ops: vec![] };
+    let mut dl = DisplayList { width: (cw * 3.0) as u32, height: (rh * st.len() as f32 + 110.0) as u32, background: Rgba([0.04, 0.04, 0.07, 1.0]), ops: vec![] };
     for (row, (_, k)) in st.iter().enumerate() {
         let plan = KineticPlan::new(fonts, l.clone(), k);
         let d = plan.duration();
@@ -118,12 +118,38 @@ fn contact_sheet() {
             plan.ops(d * f + if *f >= 1.0 { 0.01 } else { 0.0 }, t, &mut dl.ops);
         }
     }
-    let c = CounterPlan::new(fonts, &Counter { to: 1284503.0, prefix: "$".into(), duration: 2.0, ..Default::default() });
+    let c = CounterPlan::new(fonts, &Counter { to: 1284503.0, prefix: "$".into(), duration: 2.0, style: TextStyle { size: 64.0, weight: 800.0, font: "Inter Display".into(), ..Default::default() }, ..Default::default() });
     for (i, f) in cols.iter().enumerate() {
-        c.ops(2.0 * f, [1.0, 0.0, 0.0, 1.0, 20.0 + i as f32 * cw, 15.0 + rh * st.len() as f32 - 20.0], &mut dl.ops);
+        c.ops(2.0 * f, [1.0, 0.0, 0.0, 1.0, 20.0 + i as f32 * cw, 20.0 + rh * st.len() as f32], &mut dl.ops);
     }
     let pm = common::render(fonts, &dl);
     let d = common::golden(&pm, "kinetic_sheet");
     assert!(d < 0.5, "golden diff {d}");
     common::save(pm, "kinetic_sheet");
+}
+
+#[test]
+fn shorthand_and_json() {
+    let k: Kinetic = "pop by char from center 0.4s 30ms outBack".parse().unwrap();
+    assert!(matches!(k.style, KineticStyle::ScalePop { .. }));
+    assert_eq!(k.unit, Some(UnitKind::Char));
+    assert_eq!(k.from, From::Center);
+    assert_eq!(k.duration, Some(0.4));
+    assert_eq!(k.stagger, Some(0.03));
+    assert_eq!(k.ease.as_deref(), Some("outBack"));
+    let k: Kinetic = serde_json::from_str(r#""mask lines down exit""#).unwrap();
+    assert_eq!(k.style, KineticStyle::MaskReveal { direction: Direction::Down });
+    assert!(k.exit);
+    let k: Kinetic = serde_json::from_str(r#"{"style": "blur-in", "unit": "word", "ease": "spring(bounce: 0.3)"}"#).unwrap();
+    assert!(matches!(k.style, KineticStyle::BlurIn { .. }));
+    let k: Kinetic = serde_json::from_str(r##"{"style": {"type": "Highlight", "color": "#ff0"}}"##).unwrap();
+    assert!(matches!(k.style, KineticStyle::HighlightSweep { .. }));
+    let e = "zoom".parse::<Kinetic>().unwrap_err();
+    assert!(e.contains("rise, fade"), "{e}");
+    let e = "rise sideways".parse::<Kinetic>().unwrap_err();
+    assert!(e.contains("sideways"), "{e}");
+    // Round trip.
+    let k: Kinetic = "wave 2s".parse().unwrap();
+    let j = serde_json::to_string(&k).unwrap();
+    assert_eq!(serde_json::from_str::<Kinetic>(&j).unwrap(), k);
 }
