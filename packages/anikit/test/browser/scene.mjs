@@ -49,6 +49,8 @@ export const tests = [
       const box = await page.evaluate(() => { const r = document.querySelector('#c').getBoundingClientRect(); return [r.left, r.top]; });
       await page.mouse.click(box[0] + 160, box[1] + 120);
       ok((await page.evaluate(() => clicks)) === 1, 'click fired on the object');
+      const err = await page.evaluate(() => { s.gl.getError(); s.add('sphere', { material: { map: (() => { const c = document.createElement('canvas'); c.width = c.height = 4; c.getContext('2d').fillRect(0, 0, 4, 4); return c; })() } }); const gl = s.gl, t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, null); /* a layer or app left a colour texture on unit 0 */ s.render(); s.render(); return s.gl.getError(); });
+      ok(err === 0, `no GL error with shadows off and a textured material (0x${err.toString(16)})`);
       await page.mouse.click(box[0] + 10, box[1] + 10);
       ok((await page.evaluate(() => clicks)) === 1, 'click on empty space ignored');
       // animate() drives plain Vector3 fields
