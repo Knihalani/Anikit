@@ -255,7 +255,7 @@ export default async function film({ anikit: A, node }) {
         skybox: tunnel ? false : { sun: 1.5 },
         mirror: floorOn ? { y: -300, strength: 0.48 } : undefined,
         lights,
-        dof: near ? { focus: near, aperture: 10 } : c > LAND - 0.2 ? { focus: Math.abs(cam.camera.z - WORD_Z), aperture: 12 * smooth(LAND - 0.2, LAND + 1, c) } : undefined,
+        dof: near ? { focus: near, aperture: 10 * smooth(9.4, 10.1, c) * (1 - smooth(12.9, 13.4, c)) } : c > LAND - 0.2 ? { focus: Math.abs(cam.camera.z - WORD_Z), aperture: 12 * smooth(LAND - 0.2, LAND + 1, c) } : undefined,
         motionBlur: { shutter: 0.55, max: 110 }, prevCamera,
       });
       ctx.putImageData(new globalThis.ImageData(px, W, H), 0, 0);
