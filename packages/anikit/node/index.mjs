@@ -14,6 +14,7 @@
 import { spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as require_fs from 'node:fs';
 import { createRequire } from 'node:module';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -53,9 +54,30 @@ export async function loadAnikit(o = {}) {
   const dist = join(here, '../dist/anikit.js');
   const { existsSync } = await import('node:fs');
   if (!existsSync(dist)) throw new Error(`anikit/node: ${dist} is missing; build the package first (npm run build in packages/anikit)`);
+  warnIfStale(dist);
   const anikit = await import(dist);
   await anikit.ready;
   return { anikit, node: nodeHelpers(lib) };
+}
+
+/**
+ * In a source checkout, warn when the built bundle is older than the sources
+ * it comes from (a forgotten `build-wasm` / `build` makes renders silently use
+ * old code). Installed packages have no sources next to them: no check.
+ */
+function warnIfStale(dist) {
+  try {
+    const { statSync, readdirSync, existsSync } = require_fs;
+    const src = join(here, '../src'), core = join(here, '../../../crates/anikit-core/src');
+    if (!existsSync(src)) return;
+    const newest = (dir, ext) => readdirSync(dir).filter((f) => f.endsWith(ext)).reduce((m, f) => Math.max(m, statSync(join(dir, f)).mtimeMs), 0);
+    const built = statSync(dist).mtimeMs;
+    const stale = [[src, '.ts', 'node scripts/build.mjs'], [core, '.rs', 'node scripts/build-wasm.mjs && node scripts/build.mjs']]
+      .filter(([dir, ext]) => existsSync(dir) && newest(dir, ext) > built + 1000);
+    if (stale.length) console.warn(`anikit/node: dist/anikit.js is older than ${stale.map(([d]) => d.replace(/.*\/(packages|crates)\//, '$1/')).join(' and ')}; rebuild (in packages/anikit: ${stale[stale.length - 1][2]}) or this render uses old code.`);
+  } catch {
+    // Best effort only.
+  }
 }
 
 function nodeHelpers(lib) {

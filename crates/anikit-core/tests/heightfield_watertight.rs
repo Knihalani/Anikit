@@ -22,7 +22,7 @@ fn merged_heightfield_has_no_holes() {
     let mut hs = vec![0.0f32; w * h];
     for z in 0..h {
         for x in 0..w {
-            let inside = (8..40).contains(&z) && ((10..40).contains(&x) || (60..70).contains(&x) || ((90..150).contains(&x) && (z < 16 || z > 32 || (110..130).contains(&x))));
+            let inside = (8..40).contains(&z) && ((10..40).contains(&x) || (60..70).contains(&x) || ((90..150).contains(&x) && (!(16..=32).contains(&z) || (110..130).contains(&x))));
             hs[z * w + x] = if inside { 0.06 } else { 0.0 };
         }
     }
