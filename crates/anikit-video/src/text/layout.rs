@@ -56,9 +56,63 @@ pub struct TextStyle {
     pub outline: Option<Outline>,
     /// Colour for `==accent==` markup.
     pub accent: Color,
+    /// A rounded box behind each line (captions, labels).
+    pub background: Option<LineBackground>,
+    /// Drop shadow: `{ "x": 0, "y": 8, "blur": 24, "color": "#0008" }`.
+    pub shadow: Option<Shadow>,
+    /// Soft glow: `{ "radius": 16, "intensity": 0.8, "color": "#8b7bff" }`.
+    pub glow: Option<Glow>,
     /// Gradient fill across the whole block (overrides span colours):
     /// `["#7c5cff", "#ff6ad5"]` or `{ "colors": [...], "angle": 135 }`.
     pub gradient: Option<Gradient>,
+}
+
+/// Box behind each line.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct LineBackground {
+    pub color: Color,
+    /// Horizontal and vertical padding in em.
+    pub padding: [f32; 2],
+    /// Corner radius in em.
+    pub radius: f32,
+}
+
+impl Default for LineBackground {
+    fn default() -> Self {
+        LineBackground { color: Color::rgba(0.0, 0.0, 0.0, 0.7), padding: [0.3, 0.08], radius: 0.18 }
+    }
+}
+
+/// Drop shadow (px).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Shadow {
+    pub x: f32,
+    pub y: f32,
+    pub blur: f32,
+    pub color: Color,
+}
+
+impl Default for Shadow {
+    fn default() -> Self {
+        Shadow { x: 0.0, y: 6.0, blur: 18.0, color: Color::rgba(0.0, 0.0, 0.0, 0.5) }
+    }
+}
+
+/// Glow (px).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Glow {
+    pub radius: f32,
+    pub intensity: f32,
+    pub color: Option<Color>,
+}
+
+impl Default for Glow {
+    fn default() -> Self {
+        Glow { radius: 16.0, intensity: 0.8, color: None }
+    }
 }
 
 /// Glyph outline stroke.
@@ -148,6 +202,9 @@ impl Default for TextStyle {
             features: None,
             accent: Color(Rgba([0.55, 0.48, 1.0, 1.0])),
             outline: None,
+            background: None,
+            shadow: None,
+            glow: None,
             gradient: None,
         }
     }
@@ -355,6 +412,10 @@ pub struct TextLayout {
     pub outline: Option<(Vec<dl::Path>, dl::Stroke, Option<Rgba>, bool)>,
     /// Content hash of the spec (stable cache key for layer caching).
     pub key: u64,
+    /// Line background boxes `([x, y, w, h], radius, colour)`.
+    pub backgrounds: Vec<([f32; 4], f32, Rgba)>,
+    /// Layer filters (shadow, glow) wrapping the glyphs.
+    pub filters: Vec<dl::Filter>,
 }
 
 /// Unit granularity for per-unit addressing and animation.
@@ -397,8 +458,31 @@ impl TextLayout {
         }
     }
 
-    /// Static ops for the whole block: decorations, then glyph runs.
+    /// Emit line backgrounds and open the effects layer (if any).
+    pub fn begin_effects(&self, transform: Affine, out: &mut Vec<Op>) {
+        for (r, rad, c) in &self.backgrounds {
+            out.push(Op::RoundRect { x: r[0], y: r[1], w: r[2], h: r[3], radius: *rad, paint: Paint::Solid(*c), transform });
+        }
+        if !self.filters.is_empty() {
+            out.push(Op::PushLayer { opacity: 1.0, blend: dl::Blend::Normal, filters: self.filters.clone(), clip: None, cache_key: None });
+        }
+    }
+
+    /// Close the effects layer opened by [`Self::begin_effects`].
+    pub fn end_effects(&self, out: &mut Vec<Op>) {
+        if !self.filters.is_empty() {
+            out.push(Op::PopLayer);
+        }
+    }
+
+    /// Static ops for the whole block: backgrounds, decorations, glyph runs, effects.
     pub fn ops(&self, transform: Affine, out: &mut Vec<Op>) {
+        self.begin_effects(transform, out);
+        self.body_ops(transform, out);
+        self.end_effects(out);
+    }
+
+    pub(crate) fn body_ops(&self, transform: Affine, out: &mut Vec<Op>) {
         for d in &self.decorations {
             out.push(rect_op(d.rect, d.color, transform));
         }
@@ -591,6 +675,23 @@ impl FontStore {
         }
         let mut out = self.extract(&layout, &text);
         out.fill = spec.style.gradient.clone().filter(|g| !g.colors.is_empty());
+        let em = base * scale;
+        if let Some(bg) = &spec.style.background {
+            let (px, py, rad) = (bg.padding[0] * em, bg.padding[1] * em, bg.radius * em);
+            out.backgrounds = out
+                .lines
+                .iter()
+                .filter(|l| l.rect[2] > 0.0)
+                .map(|l| ([l.rect[0] - px, l.rect[1] - py, l.rect[2] + 2.0 * px, l.rect[3] + 2.0 * py], rad, bg.color.0))
+                .collect();
+        }
+        if let Some(sh) = &spec.style.shadow {
+            out.filters.push(dl::Filter::Shadow { dx: sh.x, dy: sh.y, blur: sh.blur, color: sh.color.0 });
+        }
+        if let Some(g) = &spec.style.glow {
+            let c = g.color.unwrap_or(spec.style.color).0;
+            out.filters.push(dl::Filter::Glow { radius: g.radius, intensity: g.intensity, color: c });
+        }
         if let Some(o) = &spec.style.outline {
             let paths = out.runs.iter().map(|r| self.run_path(r, &r.glyphs)).collect();
             out.outline = Some((paths, text_stroke(o.width * base * scale), o.color.map(|c| c.0), o.hollow));

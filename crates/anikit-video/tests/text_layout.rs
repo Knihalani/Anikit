@@ -255,3 +255,32 @@ fn golden_outline_text() {
     assert!(d < 0.5, "golden diff {d}");
     common::save(pm, "outline_text");
 }
+
+#[test]
+fn caption_background_and_effects() {
+    use anikit_video::dl::Op;
+    let s = store();
+    let spec: TextSpec = serde_json::from_str(r##"{"text": "Captions get a box per line, like social video.", "width": 560, "align": "center",
+        "style": {"font": "700 40px Inter", "background": {"color": "#000c"}, "shadow": {}, "glow": {"radius": 10}}}"##).unwrap();
+    let l = s.layout(&spec);
+    assert_eq!(l.backgrounds.len(), l.lines.len());
+    assert_eq!(l.filters.len(), 2);
+    let ops = l.to_ops(anikit_video::dl::IDENTITY);
+    assert!(matches!(ops[0], Op::RoundRect { .. }));
+    assert!(ops.iter().any(|o| matches!(o, Op::PushLayer { .. })));
+    assert!(matches!(ops.last(), Some(Op::PopLayer)));
+    // Kinetic output keeps the backgrounds and the layer balanced.
+    let plan = anikit_video::text::kinetic::KineticPlan::new(s, l.clone(), &"karaoke".parse().unwrap());
+    let mut o = vec![];
+    plan.ops(0.5, anikit_video::dl::IDENTITY, &mut o);
+    let push = o.iter().filter(|x| matches!(x, Op::PushLayer { .. })).count();
+    let pop = o.iter().filter(|x| matches!(x, Op::PopLayer)).count();
+    assert_eq!(push, pop);
+    assert!(matches!(o[0], Op::RoundRect { .. }));
+    let mut dl = DisplayList { width: 600, height: 200, background: Rgba([0.3, 0.4, 0.5, 1.0]), ops: vec![] };
+    plan.ops(0.9, [1.0, 0.0, 0.0, 1.0, 20.0, 30.0], &mut dl.ops);
+    let pm = common::render(s, &dl);
+    let d = common::golden(&pm, "caption");
+    assert!(d < 0.5, "golden diff {d}");
+    common::save(pm, "caption");
+}

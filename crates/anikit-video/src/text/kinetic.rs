@@ -632,6 +632,12 @@ impl KineticPlan {
 
     /// Emit the ops for time `t` (seconds since the animation started).
     pub fn ops(&self, t: f32, transform: Affine, out: &mut Vec<Op>) {
+        self.layout.begin_effects(transform, out);
+        self.body(t, transform, out);
+        self.layout.end_effects(out);
+    }
+
+    fn body(&self, t: f32, transform: Affine, out: &mut Vec<Op>) {
         let l = &*self.layout;
         let units = l.units(self.unit);
         // Units at rest are batched into one op per glyph run.
@@ -657,11 +663,11 @@ impl KineticPlan {
                         transform,
                     });
                 }
-                l.ops(transform, out);
+                l.body_ops(transform, out);
                 return;
             }
             KineticStyle::Underline { color, thickness } => {
-                l.ops(transform, out);
+                l.body_ops(transform, out);
                 let th = thickness * self.em;
                 for (i, u) in units.iter().enumerate() {
                     let e = self.ease.ease(self.progress(i, t) as f64) as f32;
