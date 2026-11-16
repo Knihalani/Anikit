@@ -1,8 +1,8 @@
-// Bioluminescence: jellyfish and plankton on one full-screen 2D canvas, drawn
+// Bioluminescence: jellyfish, comb jellies and plankton on one full-screen 2D canvas, drawn
 // additively over the water. Bells pulse on Anikit timelines; their tentacles
 // are ropes in an Anikit physics world(), pinned to the rim and dragged
 // through the water as the bells swim and the camera descends.
-import { world, timeline, noise2 } from '../../../packages/anikit/dist/anikit.lean.js';
+import { world, timeline, noise2, spring } from '../../../packages/anikit/dist/anikit.lean.js';
 
 const TAU = Math.PI * 2;
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
@@ -26,6 +26,8 @@ export function life(canvas, { reduced, small }) {
   resize();
   addEventListener('resize', resize);
 
+  // Creature scale follows the viewport, so they hold their presence on big screens.
+  const S = Math.min(1.6, Math.max(0.8, Math.min(W, H * 1.6) / 1000));
   const dot = sprite(16, [[0, 'rgba(220,255,250,1)'], [0.25, 'rgba(110,255,220,0.55)'], [1, 'rgba(40,180,200,0)']]);
   const halo = sprite(64, [[0, 'rgba(150,230,255,0.55)'], [0.4, 'rgba(90,170,255,0.16)'], [1, 'rgba(60,100,255,0)']]);
 
@@ -35,7 +37,7 @@ export function life(canvas, { reduced, small }) {
   const nJ = small ? 3 : 4;
   const jellies = [];
   for (let k = 0; k < nJ; k++) {
-    const R = (small ? 30 : 44) + ((k * 11) % 17) + (k === 1 ? 18 : 0);
+    const R = ((small ? 30 : 40) + ((k * 11) % 17) + (k === 1 ? 18 : 0)) * S;
     const j = {
       x: W * [0.12, 0.86, 0.24, 0.74][k % 4], y: H * (0.25 + 0.6 * ((k * 0.43 + 0.2) % 1)) + H * 0.6,
       R, ang: (k % 2 ? 1 : -1) * 0.25, v: 0, c: 0, cPrev: 0, seed: k * 13.7, col: palette[k % palette.length], tent: [],
@@ -66,7 +68,7 @@ export function life(canvas, { reduced, small }) {
     const [r, g, b] = j.col;
     const cs = j.c;
     const bw = j.R * (1 - 0.2 * cs), bh = j.R * (0.78 + 0.16 * cs);
-    const lum = a * (0.55 + 0.45 * cs);
+    const lum = a * (0.65 + 0.5 * cs);
     // Tentacles first.
     ctx.lineCap = 'round';
     for (const t of j.tent) {
@@ -96,7 +98,7 @@ export function life(canvas, { reduced, small }) {
     ctx.translate(j.x, j.y);
     ctx.rotate(j.ang);
     ctx.globalAlpha = lum * 0.9;
-    ctx.drawImage(halo, -j.R * 2.6, -j.R * 2.9, j.R * 5.2, j.R * 5.2);
+    ctx.drawImage(halo, -j.R * 3, -j.R * 3.3, j.R * 6, j.R * 6);
     ctx.globalAlpha = 1;
     ctx.beginPath();
     ctx.moveTo(-bw, 0);
@@ -121,6 +123,46 @@ export function life(canvas, { reduced, small }) {
     }
     ctx.globalAlpha = lum * (0.6 + 0.4 * cs);
     ctx.drawImage(dot, -bw * 0.35, -bh * 0.85, bw * 0.7, bw * 0.7);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  // --- Comb jellies ----------------------------------------------------------
+  // Eight rows of cilia scatter light into travelling rainbows. They drift on
+  // slow Anikit springs, retargeted every few seconds.
+  const hues = Array.from({ length: 12 }, (_, k) => {
+    const h = k * 30;
+    return sprite(12, [[0, `hsla(${h},100%,92%,1)`], [0.3, `hsla(${h},100%,65%,0.6)`], [1, `hsla(${h},100%,50%,0)`]]);
+  });
+  const combs = Array.from({ length: small ? 1 : 2 }, (_, k) => ({
+    bx: W * (k ? 0.82 : 0.18), by: H * (k ? 1.3 : 0.7), R: (small ? 34 : 52 + k * 10) * S, x: 0, y: 0, tilt: 0, spin: k * 1.3, seed: k * 5.1, next: 0,
+  }));
+  function drawComb(c, a) {
+    const cx = c.bx + c.x, cy = c.by + c.y, R = c.R, rx = R * 0.6;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(c.tilt);
+    ctx.globalAlpha = a * 0.5;
+    ctx.drawImage(halo, -R * 1.6, -R * 1.9, R * 3.2, R * 3.8);
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, rx, R, 0, 0, TAU);
+    ctx.strokeStyle = `rgba(200,230,255,${0.28 * a})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    for (let k = 0; k < 8; k++) {
+      const az = (k / 8) * TAU + c.spin;
+      const sx = Math.sin(az), front = 0.35 + 0.65 * (Math.cos(az) * 0.5 + 0.5);
+      for (let i = 0; i < 16; i++) {
+        const ph = 0.22 * Math.PI + (i / 15) * 0.6 * Math.PI;
+        const x = sx * rx * Math.sin(ph), y = -Math.cos(ph) * R;
+        const wave = 0.5 + 0.5 * Math.sin(ph * 9 - time * 5 + k * 0.7);
+        const hue = Math.floor(((ph * 3 - time * 1.4 + k * 0.4) / TAU) * 12 % 12 + 12) % 12;
+        const sz = 2.2 + 2.6 * wave;
+        ctx.globalAlpha = a * front * (0.25 + 0.75 * wave);
+        ctx.drawImage(hues[hue], x - sz, y - sz, sz * 2, sz * 2);
+      }
+    }
     ctx.globalAlpha = 1;
     ctx.restore();
   }
@@ -182,6 +224,19 @@ export function life(canvas, { reduced, small }) {
       for (const t of j.tent) { const lx = t.u * bw * 0.85, ly = 2; w.setPosition(t.ids[0], j.x + lx * ca - ly * sa, j.y + lx * sa + ly * ca); }
     }
     if (bio > 0.001) for (const j of jellies) drawJelly(j, bio);
+    for (const c of combs) {
+      c.by -= ds * 0.45;
+      const span = H + c.R * 6;
+      if (c.by < -c.R * 3) c.by += span; else if (c.by > H + c.R * 3) c.by -= span;
+      if (!reduced) {
+        c.spin += dt * 0.35;
+        if (time > c.next) {
+          c.next = time + 4 + Math.random() * 3;
+          spring(c, { x: noise2(c.seed, time * 0.1) * W * 0.1, y: noise2(time * 0.1, c.seed) * H * 0.12 - 20, tilt: noise2(c.seed + 3, time * 0.2) * 0.5 }, { stiffness: 3, damping: 3.2 });
+        }
+      }
+      if (bio > 0.001) drawComb(c, bio);
+    }
 
     // Plankton: excited by the pointer, or by an unseen swimmer when it's idle.
     if (wake > 0.001) {

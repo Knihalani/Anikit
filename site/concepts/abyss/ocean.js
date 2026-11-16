@@ -154,13 +154,14 @@ void main(){
       float r2 = h21(id * 3.1 + fl);
       vec2 o = vec2(h21(id * 1.7 + 3.) - 0.5, h21(id * 2.3 + 9.) - 0.5) * 0.45;
       vec2 d = f - o;
-      // Some flakes are fibres, at an angle.
-      float ang = r2 * 6.283, ca = cos(ang), sa = sin(ang);
-      d = vec2(ca * d.x - sa * d.y, sa * d.x + ca * d.y);
-      d.x /= 1. + step(0.88, r2) * step(fl, 2.5) * 1.2;
-      float stretch = 1. + min(abs(uSpeed) * (0.3 + fl * 0.25), 2.5);
-      d.y /= stretch;
+      // Motion streaks are vertical on screen; some flakes are fibres, at an angle.
       float sz = min((0.04 + 0.022 * fl * fl) * (0.6 + 0.8 * r2), 0.2);
+      float stretch = min(1. + min(abs(uSpeed) * (0.3 + fl * 0.25), 2.5), max(1., (0.48 - abs(o.y)) / (sz * 1.6)));
+      d.y /= stretch;
+      float ang = r2 * 6.283, ca = cos(ang), sa = sin(ang);
+      vec2 dr = vec2(ca * d.x - sa * d.y, sa * d.x + ca * d.y);
+      dr.x /= 1. + step(0.88, r2) * step(fl, 1.5) * 0.8;
+      d = dr;
       float q = length(d) / sz;
       float m = (fl > 3.5 ? smoothstep(1.0, 0.55, q) * 0.16 : exp(-q * q * 3.) * step(q, 1.6)) / sqrt(stretch);
       float tw = 0.6 + 0.4 * sin(t * (1. + r * 3.) + r * 40.);
