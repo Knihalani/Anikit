@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CACHE = path.join(HERE, '.cache');
-const VERSION = 'w20';
+const VERSION = 'w22';
 
 export const clamp = (v, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
 export const mix = (a, b, t) => a + (b - a) * t;
@@ -68,8 +68,8 @@ export const WAYPOINTS = [
   [0, 50, 615], [-12, 66, 545],                                   // over the saddle
   [-36, 36, 470], [-12, 30, 370], [30, 31, 270], [18, 27, 175],  // the city
   [-8, 17, 85], [-44, 15, -35], [4, 15, -155], [48, 17, -275], [20, 18, -395], // the canyon
-  [-14, 50, -495], [-6, 92, -585], [8, 136, -690],                // climb
-  [18, 152, -800], [8, 142, -930], [0, 136, -1070], [-6, 133, -1200], // the vista (last point aims)
+  [-14, 52, -495], [-6, 108, -585], [8, 162, -690],                // climb
+  [18, 168, -800], [8, 142, -930], [0, 136, -1070], [-6, 133, -1200], // the vista (last point aims)
 ];
 
 // Valley profiles along z (the route runs along −z): floor height, half-width, slope width, minimum walls.
@@ -529,13 +529,15 @@ function bakeFar(T, farH, FE) {
   for (let j = 0; j < T; j++) for (let i = 0; i < T; i++) {
     const x = -FE + (i + 0.5) * ts, z = -FE + (j + 0.5) * ts, k = j * T + i;
     const h = farH(x, z), e = ts;
-    const gx = (farH(x + e, z) - farH(x - e, z)) / (2 * e), gz = (farH(x, z + e) - farH(x, z - e)) / (2 * e);
+    let gx = (farH(x + e, z) - farH(x - e, z)) / (2 * e), gz = (farH(x, z + e) - farH(x, z - e)) / (2 * e);
+    // Fine relief the coarse mesh can't hold: gullies and ridges for the shading.
+    gx += 0.35 * N1(x / 160, z / 160) + 0.18 * N3(x / 60, z / 60); gz += 0.35 * N2(x / 160, z / 160) + 0.18 * N4(x / 60, z / 60);
     const il = 1 / Math.hypot(gx, 1, gz), nx = -gx * il, ny = il, nz = -gz * il;
     const ndl = Math.max(0, nx * SUN[0] + ny * SUN[1] + nz * SUN[2]);
     const slope = 1 - ny, n1 = fbm(x / 300, z / 300, 3, N3);
     const snow = smooth(850, 1050, h + 140 * n1) * (1 - smooth(0.45, 0.6, slope));
     const rock = smooth(0.25, 0.45, slope + 0.1 * n1) * (1 - snow);
-    const forest = (1 - snow - rock) * (1 - smooth(500, 800, h));
+    const forest = (1 - snow - rock) * (1 - smooth(500, 800, h)) * smooth(-0.15, 0.25, fbm(x / 700, z / 700, 3, N4) + 0.1);
     const grass = Math.max(0, 1 - snow - rock - forest);
     const alb = [0, 0, 0], cpal = [0, 0, 0];
     const add = (w, c, cc) => { for (let q = 0; q < 3; q++) { alb[q] += w * c[q]; cpal[q] += w * cc[q]; } };
