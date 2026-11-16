@@ -2432,6 +2432,9 @@ pub extern "C" fn ak_surface_nets(nx: u32, ny: u32, nz: u32, ox: f64, oy: f64, o
     let d: Vec<f32> = state.f64_buf[..n].iter().map(|&v| v as f32).collect();
     let m = anikit_core::sdf::surface_nets(&d, nx as usize, ny as usize, nz as usize, [ox as f32, oy as f32, oz as f32], s as f32);
     push_slot(&mut state.meshes, m)
+}
+
+// ---------------------------------------------------------------------------
 // Gaussian splats (WebGL renderer): parsing, packing, depth sorting
 // ---------------------------------------------------------------------------
 
