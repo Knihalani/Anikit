@@ -327,7 +327,10 @@ describe('animate: creation bookkeeping', () => {
     advance(0.1);
     expect(b.state).toBe('idle');
     expect((b as any)._killed).toBe(true);
-    void a;
+    // The finished one is taken over too: it is freed although its controller detached.
+    expect((a as any)._killed).toBe(false);
+    animate(o, { x: 20 }, { duration: 1 });
+    expect((a as any)._killed).toBe(true);
   });
 });
 

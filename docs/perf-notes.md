@@ -1496,7 +1496,10 @@ growing array (~18% of `_build`) and spreading the property `Map`
   timeline's child build context, one track-offset array per call.
 - **Overwrite claims** look each target's state up once per Part
   (`claimAll`/`unclaimAll`) instead of once per property; release order is
-  unchanged.
+  unchanged. Not measured on its own, and the claim/unclaim share of the
+  profile looks about the same before and after (the fourth round found a
+  similar change 0–5% slower); kept because the difference is below what
+  this machine can resolve.
 - **No build closure** when the core is ready (`readyNow()`; `whenReady` is
   still used before it is), in `animate()` and `timeline.add()`.
 - **Property map** read into two arrays with `forEach` instead of `[...props]`.
@@ -1525,14 +1528,18 @@ the same runs; retained = heap kept per target):
 | `animate()` taking over a running one | 46.9 · 47.9 · 48.5 | **38.4 · 39.6 · 44.1** | 347–376 | |
 | `kill()`: timeline of 5000 steps | 1.03 · 1.07 · 1.10 | 0.79 · 0.82 · 0.92 | 0.02 | |
 
-An earlier set of three rounds, before the binding-array change, read the
-same way (one `animate()` 40.2–62.6 → 46.2–55.8 ms, retained 1.53 → 0.97 KB).
+An earlier set of three rounds, before the binding-array change (retained
+1.53 → 0.97 KB), was noisier (load up to 6.6): there only the 8 keyframes row
+separated (34.1–35.3 → 19.4–33.9 ms); stagger (29.5–36.2 → 18.7–34.4),
+timeline (8.7–14.3 → 7.3–9.5), takeover (47.1–65.5 → 45.3–48.9) and one
+`animate()` of 3 numbers (40.2–62.6 → 46.2–55.8) overlapped.
 
-So: the heap kept per target dropped by 35–50% in every case, and the 8
-keyframes, timeline, takeover and staggered rows are faster by more than the
-spread. The two rows that matter most against GSAP, one `animate()` of 3
-numbers and 10k separate calls, overlap with the base in these runs: the
-gap to GSAP (about 10x and 3–4x) is **not closed**.
+So: the heap kept per target dropped by 35–50% in every case. Timing gains
+beyond the spread hold in both sets only for 8 keyframes; stagger, timeline,
+takeover and timeline `kill()` separate in the final set only. All three
+rows that trail GSAP still do: one `animate()` of 3 numbers (about 10x),
+10k separate calls (3–4x) and the 1000-step timeline (3–4x). The creation
+gap is **not closed**.
 
 Per frame, `scripts/bench.mjs`, three interleaved rounds: Anikit still ahead
 of GSAP in all 12 cases in every round, now 1.08–4.91x against 1.06–4.93x
@@ -1555,3 +1562,6 @@ for the base; Anikit ms per frame within noise of the base
   its first value, so it needs an encoding with a per-target start slot.
 - `numberTrack`'s per-target `TrackDef` and value arrays are short-lived and
   still allocated per property per target.
+- Cost tracks the number of properties (1-property rows 15–20 ms, the
+  3-property row ~30–55 ms), so per-property work (Binding, track, owner-map
+  entry, revert slot) is the next target; not profiled further this round.
