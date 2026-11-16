@@ -14,7 +14,7 @@ const VS = `attribute vec2 p; varying vec2 v; void main(){ v = p * 0.5 + 0.5; gl
 
 const CLOUDS = `precision highp float;
 varying vec2 v;
-uniform vec2 uRes; uniform vec3 uEye; uniform mat3 uBasis; uniform float uTan, uTime, uClear, uFrame;
+uniform vec2 uRes; uniform vec3 uEye; uniform mat3 uBasis; uniform float uTan, uTime, uClear, uFrame, uBank;
 uniform vec3 uSun;
 const float BOT = 1300.0, TOP = 3300.0;
 float hash(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
@@ -32,7 +32,7 @@ vec3 skyCol(vec3 d){
   vec3 c = mix(zen, hor, k);
   float mu = max(dot(d, uSun), 0.0);
   c += vec3(1.0, 0.62, 0.3) * pow(mu, 8.0) * 0.55 + vec3(1.0, 0.8, 0.55) * pow(mu, 64.0) * 0.8;
-  if (h < 0.0) c = mix(hor * 0.75, vec3(0.035, 0.045, 0.08), clamp(-h * 9.0, 0.0, 1.0)) + vec3(1.0, 0.55, 0.25) * pow(mu, 30.0) * 0.4; // haze over the sea, and the sun's glint
+  if (h < 0.0) c = mix(hor * 0.8, vec3(0.16, 0.17, 0.26), sqrt(clamp(-h * 2.5, 0.0, 1.0))) + vec3(1.0, 0.55, 0.25) * pow(mu, 30.0) * 0.4; // haze over the sea, and the sun's glint
   return c;
 }
 float density(vec3 p, bool fine){
@@ -46,9 +46,10 @@ float density(vec3 p, bool fine){
     float e = noise(q * 9.0) * 0.6 + noise(q * 19.0) * 0.4;
     d = clamp(d - e * 0.32 * (1.0 - d * 0.7), 0.0, 1.0);
   }
-  // The pocket of clear sky the camera flies into.
+  // The pocket of clear sky the camera flies into, and the bank that closes around it between pockets.
   float r = length(p - uEye);
   d *= mix(1.0, smoothstep(1100.0, 2800.0, r), uClear);
+  if (uBank > 0.0) d = max(d, uBank * prof * smoothstep(2600.0, 500.0, r) * clamp(0.35 + base * 0.9, 0.0, 1.0));
   return d;
 }
 float hg(float c, float g){ float g2 = g * g; return (1.0 - g2) / (12.566 * pow(1.0 + g2 - 2.0 * g * c, 1.5)); }
@@ -181,7 +182,7 @@ export function createSky(canvas) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, fb); gl.viewport(0, 0, w, h);
       gl.useProgram(P1.p);
       gl.uniform2f(P1.u.uRes, w, h); gl.uniform3f(P1.u.uEye, ex, ey, ez); gl.uniformMatrix3fv(P1.u.uBasis, false, basis);
-      gl.uniform1f(P1.u.uTan, tan); gl.uniform1f(P1.u.uTime, s.time); gl.uniform1f(P1.u.uClear, s.clear); gl.uniform1f(P1.u.uFrame, frame++ % 64);
+      gl.uniform1f(P1.u.uTan, tan); gl.uniform1f(P1.u.uTime, s.time); gl.uniform1f(P1.u.uClear, s.clear); gl.uniform1f(P1.u.uBank, s.bank || 0); gl.uniform1f(P1.u.uFrame, frame++ % 64);
       gl.uniform3f(P1.u.uSun, sun[0], sun[1], sun[2]);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       // Sun on screen.

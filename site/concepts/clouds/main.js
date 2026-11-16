@@ -65,7 +65,7 @@ const progressAt = (y) => { const f = clamp(y, 0, L.max) / STEP, i = Math.floor(
 // ---------------------------------------------------------------------------
 // Frame loop
 // ---------------------------------------------------------------------------
-const state = { eye: [0, 0, 0], target: [0, 0, 0], roll: 0, time: 0, clear: 0, sun: [0, 0, -1], fov: small ? 70 : 58, exposure: 1.1, rays: 0.6 };
+const state = { eye: [0, 0, 0], target: [0, 0, 0], roll: 0, time: 0, clear: 0, bank: 0, sun: [0, 0, -1], fov: small ? 70 : 58, exposure: 1.1, rays: 0.6 };
 const tilt = { x: 0, y: 0 };
 let path = null, sy = scrollY, sv = 0, last = performance.now(), t = 0, lastKey = '', lastHud = 0, slowFor = 0, fastFor = 0;
 const heroEls = $$('.hero h1, .hero .lede'), install = $('#install-core'), hudLive = $('#hud-live');
@@ -104,11 +104,14 @@ function frame(now) {
   const hero = 1 - sstep(0, vh * 1.2, sy);
   state.target[1] += hero * 420;
   state.clear = clamp(pocket(sy) * 1.35);
+  // Between pockets, inside the deck, a cloud bank closes around you.
+  const inDeck = sstep(1450, 1750, state.eye[1]) * (1 - sstep(3050, 3350, state.eye[1]));
+  state.bank = inDeck * (1 - state.clear) * (1 - hero);
   state.time = t;
   // The sun sinks from golden hour to sunset as you climb.
   const el = lerp(13, 2.2, p) * Math.PI / 180, az = lerp(48, 26, p) * Math.PI / 180;
   state.sun[0] = Math.sin(az) * Math.cos(el); state.sun[1] = Math.sin(el); state.sun[2] = -Math.cos(az) * Math.cos(el);
-  state.rays = 0.45 + 0.5 * p; state.exposure = 0.95 + 0.1 * p;
+  state.rays = 0.45 + 0.55 * p; state.exposure = 1.0 - 0.22 * p * p;
   const key = reduced ? `${Math.round(sy)}|${canvas.width}` : '';
   if (sky && (!reduced || key !== lastKey)) { lastKey = key; sky.render(state); }
   if (setFn) choreograph();
@@ -126,7 +129,7 @@ function adapt(dt) {
   const ms = dt * 1000;
   if (ms > 19) { slowFor += dt; fastFor = 0; } else if (ms < 17.6) { fastFor += dt; slowFor = 0; }
   if (slowFor > 0.4 && sky.scale > SMIN) { sky.scale = Math.max(SMIN, sky.scale * 0.85); slowFor = 0; }
-  else if (slowFor > 1 && comp > 0.5) { comp = Math.max(0.5, comp * 0.8); fit(); slowFor = 0; }
+  else if (slowFor > 1 && comp > 0.65) { comp = Math.max(0.65, comp * 0.85); fit(); slowFor = 0; }
   if (fastFor > 2.5 && sky.scale < SMAX) { sky.scale = Math.min(SMAX, sky.scale * 1.06); fastFor = 0; }
   stats.scale = sky.scale;
 }
