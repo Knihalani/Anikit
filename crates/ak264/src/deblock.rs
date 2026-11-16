@@ -1,7 +1,7 @@
 //! In-loop deblocking filter (8.7), disable_deblocking_filter_idc = 0, offsets 0.
 
 use crate::encoder::MbInfo;
-use crate::frame::{Pic, Plane};
+use crate::frame::Pic;
 use crate::transform::{chroma_qp, Quant};
 
 const ALPHA: [u8; 52] = [
@@ -44,87 +44,171 @@ fn bs(p: &MbInfo, bp: usize, q: &MbInfo, bq: usize, mb_edge: bool) -> u8 {
     (p.mv != q.mv) as u8
 }
 
-/// Filter `n` lines across one edge. `o` is the offset of q0 on the first line,
-/// `xs` the step across the edge, `ls` the step along it.
+/// Filter up to 16 lines across one edge, branch-free and lane-wise.
+/// `o` is the offset of q0 on the first line, `xs` the step across the edge,
+/// `ls` the step along it; `bs[l]` is the strength of line `l`.
 #[inline(always)]
 #[allow(clippy::too_many_arguments)]
-fn filter_line(d: &mut [u8], o: usize, xs: usize, ls: usize, n: usize, bs: u8, p: &Params, chroma: bool) {
-    if bs == 0 {
-        return;
+fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: usize, ls: usize, bs: &[u8; N], p: &Params) {
+    let mut v = [[0i16; N]; 8]; // p3 p2 p1 p0 q0 q1 q2 q3
+    let vertical = xs == 1;
+    if !CHROMA && vertical {
+        let t = crate::simd::load_t16x8(d, o - 4, ls);
+        for j in 0..8 {
+            for l in 0..N {
+                v[j][l] = t[j][l] as i16;
+            }
+        }
+    } else if !vertical {
+        let lo = if CHROMA { 2 } else { 0 };
+        for j in lo..8 - lo {
+            let r = &d[o + j * xs - 4 * xs..][..N];
+            for l in 0..N {
+                v[j][l] = r[l] as i16;
+            }
+        }
+    } else {
+        for l in 0..N {
+            let r = &d[o + l * ls - 2..][..4];
+            for j in 0..4 {
+                v[2 + j][l] = r[j] as i16;
+            }
+        }
     }
-    let (alpha, beta) = (p.alpha, p.beta);
-    for k in 0..n {
-        let q0i = o + k * ls;
-        let at = |i: isize| -> usize { (q0i as isize + i * xs as isize) as usize };
-        let p0 = d[at(-1)] as i32;
-        let q0 = d[at(0)] as i32;
-        let p1 = d[at(-2)] as i32;
-        let q1 = d[at(1)] as i32;
-        if (p0 - q0).abs() >= alpha || (p1 - p0).abs() >= beta || (q1 - q0).abs() >= beta {
-            continue;
-        }
-        if chroma {
-            if bs < 4 {
-                let tc = p.tc0[bs as usize - 1] + 1;
-                let delta = ((((q0 - p0) << 2) + (p1 - q1) + 4) >> 3).clamp(-tc, tc);
-                d[at(-1)] = (p0 + delta).clamp(0, 255) as u8;
-                d[at(0)] = (q0 - delta).clamp(0, 255) as u8;
-            } else {
-                d[at(-1)] = ((2 * p1 + p0 + q1 + 2) >> 2) as u8;
-                d[at(0)] = ((2 * q1 + q0 + p1 + 2) >> 2) as u8;
-            }
-            continue;
-        }
-        let p2 = d[at(-3)] as i32;
-        let q2 = d[at(2)] as i32;
-        let ap = (p2 - p0).abs() < beta;
-        let aq = (q2 - q0).abs() < beta;
-        if bs < 4 {
-            let tc0 = p.tc0[bs as usize - 1];
-            let tc = tc0 + ap as i32 + aq as i32;
-            let delta = ((((q0 - p0) << 2) + (p1 - q1) + 4) >> 3).clamp(-tc, tc);
-            d[at(-1)] = (p0 + delta).clamp(0, 255) as u8;
-            d[at(0)] = (q0 - delta).clamp(0, 255) as u8;
-            if ap {
-                d[at(-2)] = (p1 + ((p2 + ((p0 + q0 + 1) >> 1) - (p1 << 1)) >> 1).clamp(-tc0, tc0)) as u8;
-            }
-            if aq {
-                d[at(1)] = (q1 + ((q2 + ((p0 + q0 + 1) >> 1) - (q1 << 1)) >> 1).clamp(-tc0, tc0)) as u8;
-            }
+    let (alpha, beta) = (p.alpha as i16, p.beta as i16);
+    // per-lane constants
+    let mut bsm = [0i16; N]; // -1 where bS > 0
+    let mut s4 = [0i16; N]; // -1 where bS == 4
+    let mut tc0 = [0i16; N];
+    for l in 0..N {
+        let b = bs[l];
+        bsm[l] = -((b > 0) as i16);
+        s4[l] = -((b == 4) as i16);
+        tc0[l] = if b > 0 && b < 4 { p.tc0[(b - 1) as usize] as i16 } else { 0 };
+    }
+    #[inline(always)]
+    fn sel(m: i16, a: i16, b: i16) -> i16 {
+        (a & m) | (b & !m)
+    }
+    #[inline(always)]
+    fn lt(a: i16, b: i16) -> i16 {
+        -((a < b) as i16)
+    }
+    let mut out = v;
+    for l in 0..N {
+        let (p1, p0, q0, q1) = (v[2][l], v[3][l], v[4][l], v[5][l]);
+        let filt = bsm[l] & lt((p0 - q0).abs(), alpha) & lt((p1 - p0).abs(), beta) & lt((q1 - q0).abs(), beta);
+        let strong = s4[l];
+        let tc0 = tc0[l];
+        let base_delta = (((q0 - p0) << 2) + (p1 - q1) + 4) >> 3;
+        if CHROMA {
+            let tc = tc0 + 1;
+            let delta = base_delta.max(-tc).min(tc);
+            let np0 = sel(strong, (2 * p1 + p0 + q1 + 2) >> 2, (p0 + delta).max(0).min(255));
+            let nq0 = sel(strong, (2 * q1 + q0 + p1 + 2) >> 2, (q0 - delta).max(0).min(255));
+            out[3][l] = sel(filt, np0, p0);
+            out[4][l] = sel(filt, nq0, q0);
         } else {
-            let strong = (p0 - q0).abs() < ((alpha >> 2) + 2);
-            if ap && strong {
-                let p3 = d[at(-4)] as i32;
-                d[at(-1)] = ((p2 + 2 * p1 + 2 * p0 + 2 * q0 + q1 + 4) >> 3) as u8;
-                d[at(-2)] = ((p2 + p1 + p0 + q0 + 2) >> 2) as u8;
-                d[at(-3)] = ((2 * p3 + 3 * p2 + p1 + p0 + q0 + 4) >> 3) as u8;
-            } else {
-                d[at(-1)] = ((2 * p1 + p0 + q1 + 2) >> 2) as u8;
+            let (p3, p2, q2, q3) = (v[0][l], v[1][l], v[6][l], v[7][l]);
+            let ap = lt((p2 - p0).abs(), beta);
+            let aq = lt((q2 - q0).abs(), beta);
+            let tc = tc0 - ap - aq;
+            let delta = base_delta.max(-tc).min(tc);
+            let avg = (p0 + q0 + 1) >> 1;
+            let n_p1 = sel(ap, p1 + ((p2 + avg - (p1 << 1)) >> 1).max(-tc0).min(tc0), p1);
+            let n_q1 = sel(aq, q1 + ((q2 + avg - (q1 << 1)) >> 1).max(-tc0).min(tc0), q1);
+            let n_p0 = (p0 + delta).max(0).min(255);
+            let n_q0 = (q0 - delta).max(0).min(255);
+            let small = lt((p0 - q0).abs(), (alpha >> 2) + 2);
+            let sp = ap & small;
+            let sq = aq & small;
+            let s_p0 = sel(sp, (p2 + 2 * p1 + 2 * p0 + 2 * q0 + q1 + 4) >> 3, (2 * p1 + p0 + q1 + 2) >> 2);
+            let s_p1 = sel(sp, (p2 + p1 + p0 + q0 + 2) >> 2, p1);
+            let s_p2 = sel(sp, (2 * p3 + 3 * p2 + p1 + p0 + q0 + 4) >> 3, p2);
+            let s_q0 = sel(sq, (p1 + 2 * p0 + 2 * q0 + 2 * q1 + q2 + 4) >> 3, (2 * q1 + q0 + p1 + 2) >> 2);
+            let s_q1 = sel(sq, (p0 + q0 + q1 + q2 + 2) >> 2, q1);
+            let s_q2 = sel(sq, (2 * q3 + 3 * q2 + q1 + q0 + p0 + 4) >> 3, q2);
+            let fs = filt & strong;
+            let fn_ = filt & !strong;
+            out[1][l] = sel(fs, s_p2, p2);
+            out[2][l] = sel(fs, s_p1, sel(fn_, n_p1, p1));
+            out[3][l] = sel(fs, s_p0, sel(fn_, n_p0, p0));
+            out[4][l] = sel(fs, s_q0, sel(fn_, n_q0, q0));
+            out[5][l] = sel(fs, s_q1, sel(fn_, n_q1, q1));
+            out[6][l] = sel(fs, s_q2, q2);
+        }
+    }
+    if !CHROMA && vertical {
+        let mut t = [[0u8; 16]; 8];
+        for j in 0..8 {
+            for l in 0..N {
+                t[j][l] = out[j][l] as u8;
             }
-            if aq && strong {
-                let q3 = d[at(3)] as i32;
-                d[at(0)] = ((p1 + 2 * p0 + 2 * q0 + 2 * q1 + q2 + 4) >> 3) as u8;
-                d[at(1)] = ((p0 + q0 + q1 + q2 + 2) >> 2) as u8;
-                d[at(2)] = ((2 * q3 + 3 * q2 + q1 + q0 + p0 + 4) >> 3) as u8;
-            } else {
-                d[at(0)] = ((2 * q1 + q0 + p1 + 2) >> 2) as u8;
+        }
+        crate::simd::store_t16x8(d, o - 4, ls, &t);
+    } else if !vertical {
+        let (lo, hi) = if CHROMA { (3, 5) } else { (1, 7) };
+        for j in lo..hi {
+            let r = &mut d[o + j * xs - 4 * xs..][..N];
+            for l in 0..N {
+                r[l] = out[j][l] as u8;
             }
+        }
+    } else {
+        for l in 0..N {
+            let r = &mut d[o + l * ls - 1..][..2];
+            r[0] = out[3][l] as u8;
+            r[1] = out[4][l] as u8;
         }
     }
 }
 
-/// Deblock a whole reconstructed picture in decoding order.
-pub(crate) fn deblock(p: &mut Pic, info: &[MbInfo], mbw: usize, mbh: usize, q: &Quant, _slices: Vec<(usize, usize)>) {
+/// Marks every macroblock whose samples may change in `touched`.
+pub(crate) fn deblock(p: &mut Pic, info: &[MbInfo], mbw: usize, mbh: usize, q: &Quant, touched: &mut [bool]) {
+    #[cfg(target_arch = "x86_64")]
+    {
+        if crate::simd::level() >= 2 {
+            #[target_feature(enable = "avx2")]
+            unsafe fn f(p: &mut Pic, info: &[MbInfo], mbw: usize, mbh: usize, q: &Quant, touched: &mut [bool]) {
+                deblock_impl(p, info, mbw, mbh, q, touched)
+            }
+            // SAFETY: AVX2 detected at run time.
+            return unsafe { f(p, info, mbw, mbh, q, touched) };
+        }
+    }
+    deblock_impl(p, info, mbw, mbh, q, touched)
+}
+
+#[inline(always)]
+fn deblock_impl(p: &mut Pic, info: &[MbInfo], mbw: usize, mbh: usize, q: &Quant, touched: &mut [bool]) {
     let lp = params(q.qp);
     let cpar = params(chroma_qp(q.qp));
     for mby in 0..mbh {
         for mbx in 0..mbw {
-            deblock_mb(p, info, mbw, mbx, mby, &lp, &cpar);
+            let i = mby * mbw + mbx;
+            let cur = &info[i];
+            // Fast path: copies next to copies with the same motion have bS 0 everywhere.
+            if !cur.coded
+                && (mbx == 0 || (!info[i - 1].coded && info[i - 1].mv == cur.mv))
+                && (mby == 0 || (!info[i - mbw].coded && info[i - mbw].mv == cur.mv))
+            {
+                continue;
+            }
+            let (l, t) = deblock_mb(p, info, mbw, mbx, mby, &lp, &cpar);
+            touched[i] = true;
+            if l {
+                touched[i - 1] = true;
+            }
+            if t {
+                touched[i - mbw] = true;
+            }
         }
     }
 }
 
-fn deblock_mb(p: &mut Pic, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize, lp: &Params, cp: &Params) {
+/// Returns whether the left / top macroblock edges were filtered.
+#[inline(always)]
+fn deblock_mb(p: &mut Pic, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize, lp: &Params, cp: &Params) -> (bool, bool) {
     let cur = &info[mby * mbw + mbx];
     // bS[dir][edge][segment]
     let mut b = [[[0u8; 4]; 4]; 2];
@@ -156,36 +240,40 @@ fn deblock_mb(p: &mut Pic, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize, 
         }
     }
     if !any {
-        return;
+        return (false, false);
     }
     let lum = &mut p.y;
     let (s, base) = (lum.stride, lum.off(mbx as isize * 16, mby as isize * 16));
     for e in 0..4 {
-        for k in 0..4 {
-            filter_line(&mut lum.data, base + e * 4 + k * 4 * s, 1, s, 4, b[0][e][k], lp, false);
+        if b[0][e] == [0; 4] {
+            continue;
         }
+        let bs: [u8; 16] = core::array::from_fn(|l| b[0][e][l >> 2]);
+        filter_edge::<16, false>(&mut lum.data, base + e * 4, 1, s, &bs, lp);
     }
     for e in 0..4 {
-        for k in 0..4 {
-            filter_line(&mut lum.data, base + e * 4 * s + k * 4, s, 1, 4, b[1][e][k], lp, false);
+        if b[1][e] == [0; 4] {
+            continue;
         }
+        let bs: [u8; 16] = core::array::from_fn(|l| b[1][e][l >> 2]);
+        filter_edge::<16, false>(&mut lum.data, base + e * 4 * s, s, 1, &bs, lp);
     }
     for pl in [&mut p.u, &mut p.v] {
-        chroma_mb(pl, mbx, mby, &b, cp);
+        let (s, base) = (pl.stride, pl.off(mbx as isize * 8, mby as isize * 8));
+        // chroma edges 0 and 4 use luma edges 0 and 2; chroma line l uses luma segment l/2.
+        for (ce, le) in [(0usize, 0usize), (1, 2)] {
+            if b[0][le] != [0; 4] {
+                let bs: [u8; 8] = core::array::from_fn(|l| b[0][le][l >> 1]);
+                filter_edge::<8, true>(&mut pl.data, base + ce * 4, 1, s, &bs, cp);
+            }
+        }
+        for (ce, le) in [(0usize, 0usize), (1, 2)] {
+            if b[1][le] != [0; 4] {
+                let bs: [u8; 8] = core::array::from_fn(|l| b[1][le][l >> 1]);
+                filter_edge::<8, true>(&mut pl.data, base + ce * 4 * s, s, 1, &bs, cp);
+            }
+        }
     }
+    (b[0][0].iter().any(|&v| v != 0), b[1][0].iter().any(|&v| v != 0))
 }
 
-fn chroma_mb(pl: &mut Plane, mbx: usize, mby: usize, b: &[[[u8; 4]; 4]; 2], cp: &Params) {
-    let (s, base) = (pl.stride, pl.off(mbx as isize * 8, mby as isize * 8));
-    // chroma edges 0 and 4 map to luma edges 0 and 2; chroma sample pairs map to luma segments.
-    for (ce, le) in [(0usize, 0usize), (1, 2)] {
-        for k in 0..4 {
-            filter_line(&mut pl.data, base + ce * 4 + k * 2 * s, 1, s, 2, b[0][le][k], cp, true);
-        }
-    }
-    for (ce, le) in [(0usize, 0usize), (1, 2)] {
-        for k in 0..4 {
-            filter_line(&mut pl.data, base + ce * 4 * s + k * 2, s, 1, 2, b[1][le][k], cp, true);
-        }
-    }
-}

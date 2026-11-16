@@ -20,6 +20,7 @@ mod headers;
 mod intra;
 pub mod mp4;
 mod simd;
+mod soa;
 #[doc(hidden)]
 pub mod synth;
 mod transform;

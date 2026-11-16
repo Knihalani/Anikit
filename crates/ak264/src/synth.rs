@@ -28,16 +28,28 @@ impl Scene {
         Scene { width, height, cards: 3, speed: 4, moving_bg: false }
     }
 
-    /// Card rectangles at frame t: (x, y, w, h, luma, u, v).
+    /// Card rectangles at frame t: (x, y, w, h, luma, u, v), rounded outward to pixels.
     pub fn cards_at(&self, t: u32) -> Vec<(i32, i32, i32, i32, u8, u8, u8)> {
-        let (w, h) = (self.width as i32, self.height as i32);
+        self.cards_f(t)
+            .into_iter()
+            .map(|(x, y, w, h, l, u, v)| {
+                let x0 = x.floor() as i32;
+                (x0, y as i32, (x + w).ceil() as i32 - x0, h as i32, l, u, v)
+            })
+            .collect()
+    }
+
+    fn cards_f(&self, t: u32) -> Vec<(f32, f32, f32, f32, u8, u8, u8)> {
+        let (w, h) = (self.width as f32, self.height as f32);
         (0..self.cards)
             .map(|i| {
-                let cw = (w / 5).max(8) & !1;
-                let ch = (h / 6).max(8) & !1;
-                let span = (w + cw).max(1);
-                let x = ((i as i32 * w / 3 + self.speed * t as i32 * (1 + i as i32 % 2)) % span) - cw;
-                let y = (h / 8 + i as i32 * h / 4) % (h - ch).max(1);
+                let cw = ((w / 5.0).max(8.0) as i32 & !1) as f32;
+                let ch = ((h / 6.0).max(8.0) as i32 & !1) as f32;
+                let span = w + cw;
+                // sub-pixel speeds: real renders move by fractional amounts
+                let v = self.speed as f32 * (1.0 + (i % 2) as f32) * 0.913;
+                let x = ((i as f32 * w / 3.0 + v * t as f32) % span) - cw;
+                let y = ((h / 8.0 + i as f32 * h / 4.0) as i32 % ((h - ch) as i32).max(1)) as f32;
                 let r = hash(i as u32 + 7);
                 (x, y, cw, ch, 60 + (r % 150) as u8, 64 + (r >> 8) as u8 % 128, 64 + (r >> 16) as u8 % 128)
             })
@@ -82,6 +94,9 @@ impl Scene {
                         let bar = (yy < 2 && pat & 2 != 0) || (yy + 2 >= gh && pat & 4 != 0) || (yy == gh / 2 && pat & 8 != 0);
                         if stem || bar {
                             f.y[(y0 + yy) * w + x + xx] = 235;
+                        } else if xx < 3 || yy < 3 || xx + 3 >= gw || yy + 3 >= gh {
+                            let o = (y0 + yy) * w + x + xx;
+                            f.y[o] = ((f.y[o] as u32 * 2 + 235) / 3) as u8;
                         }
                     }
                 }
@@ -89,17 +104,22 @@ impl Scene {
             x += gw + 2;
             k += 1;
         }
-        for (cx, cy, cw_, ch_, l, u, v) in self.cards_at(t) {
-            for y in cy.max(0)..(cy + ch_).min(h as i32) {
-                for x in cx.max(0)..(cx + cw_).min(w as i32) {
-                    // rounded-ish corners
-                    let dx = (x - cx).min(cx + cw_ - 1 - x);
-                    let dy = (y - cy).min(cy + ch_ - 1 - y);
-                    if dx + dy < 3 {
+        for (cx, cy, cw_, ch_, l, u, v) in self.cards_f(t) {
+            let (x0, x1) = (cx.floor() as i32, (cx + cw_).ceil() as i32);
+            let (y0, y1) = (cy as i32, (cy + ch_) as i32);
+            for y in y0.max(0)..y1.min(h as i32) {
+                for x in x0.max(0)..x1.min(w as i32) {
+                    let xf = x as f32;
+                    let cov = ((xf + 1.0 - cx).min(1.0) * (cx + cw_ - xf).min(1.0)).clamp(0.0, 1.0);
+                    let dy = (y - y0).min(y1 - 1 - y);
+                    let dx = (xf - cx).min(cx + cw_ - 1.0 - xf);
+                    if dx + (dy as f32) < 2.0 {
                         continue;
                     }
-                    f.y[y as usize * w + x as usize] = l.saturating_add(((y - cy) / 2) as u8 % 40);
-                    if x % 2 == 0 && y % 2 == 0 {
+                    let i = y as usize * w + x as usize;
+                    let fill = l.saturating_add(((y - y0) / 3) as u8 % 50) as f32;
+                    f.y[i] = (f.y[i] as f32 * (1.0 - cov) + fill * cov + 0.5) as u8;
+                    if x % 2 == 0 && y % 2 == 0 && cov > 0.5 {
                         let ci = (y as usize / 2) * cw + x as usize / 2;
                         if ci < f.u.len() {
                             f.u[ci] = u;

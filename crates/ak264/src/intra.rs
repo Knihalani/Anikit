@@ -170,6 +170,115 @@ pub fn mode4_ok(e: &Edges4, m: u8) -> bool {
 
 /// I4x4 prediction (9 modes). Output raster 4×4.
 pub fn pred4(e: &Edges4, mode: u8, out: &mut [u8; 16]) {
+    // edge layout: [l3 l2 l1 l0 tl t0 .. t7]
+    let mut g = [0i32; 13];
+    for y in 0..4 {
+        g[3 - y] = e.left[y] as i32;
+    }
+    g[4] = e.tl as i32;
+    for x in 0..8 {
+        g[5 + x] = e.top[x] as i32;
+    }
+    let f2 = |i: usize| ((g[i - 1] + 2 * g[i] + g[i + 1] + 2) >> 2) as u8;
+    let f1 = |i: usize| ((g[i] + g[i + 1] + 1) >> 1) as u8;
+    match mode {
+        0 => {
+            for y in 0..4 {
+                out[y * 4..y * 4 + 4].copy_from_slice(&e.top[..4]);
+            }
+        }
+        1 => {
+            for y in 0..4 {
+                out[y * 4..y * 4 + 4].fill(e.left[y]);
+            }
+        }
+        2 => {
+            let st: u32 = e.top[..4].iter().map(|&v| v as u32).sum();
+            let sl: u32 = e.left.iter().map(|&v| v as u32).sum();
+            let dc = match (e.has_top, e.has_left) {
+                (true, true) => (st + sl + 4) >> 3,
+                (false, true) => (sl + 2) >> 2,
+                (true, false) => (st + 2) >> 2,
+                _ => 128,
+            };
+            out.fill(dc as u8);
+        }
+        3 => {
+            // diagonal down-left: t index x+y+1 filtered; last uses (t6 + 3 t7 + 2) >> 2
+            for y in 0..4 {
+                for x in 0..4 {
+                    out[y * 4 + x] = if x + y == 6 {
+                        ((g[11] + 3 * g[12] + 2) >> 2) as u8
+                    } else {
+                        f2(5 + x + y + 1)
+                    };
+                }
+            }
+        }
+        4 => {
+            // diagonal down-right: centre at tl (index 4) shifted by x - y
+            for y in 0..4 {
+                for x in 0..4 {
+                    out[y * 4 + x] = f2((4 + x as isize - y as isize) as usize);
+                }
+            }
+        }
+        5 => {
+            for y in 0..4 {
+                for x in 0..4 {
+                    let z = 2 * x as i32 - y as i32;
+                    let t = 4 + x as i32 - (y as i32 >> 1); // index of p[x-(y>>1)-1, -1]
+                    out[y * 4 + x] = match z {
+                        0 | 2 | 4 | 6 => f1(t as usize),
+                        1 | 3 | 5 => f2(t as usize),
+                        -1 => f2(4),
+                        _ => f2((4 - y as i32 + 1) as usize),
+                    };
+                }
+            }
+        }
+        6 => {
+            for y in 0..4 {
+                for x in 0..4 {
+                    let z = 2 * y as i32 - x as i32;
+                    let li = 4 - y as i32 + (x as i32 >> 1); // index of p[-1, y-(x>>1)-1]
+                    out[y * 4 + x] = match z {
+                        0 | 2 | 4 | 6 => f1((li - 1) as usize),
+                        1 | 3 | 5 => f2(li as usize),
+                        -1 => f2(4),
+                        _ => f2((4 + x as i32 - 1) as usize),
+                    };
+                }
+            }
+        }
+        7 => {
+            for y in 0..4 {
+                for x in 0..4 {
+                    let i = 5 + x + (y >> 1);
+                    out[y * 4 + x] = if y % 2 == 0 { f1(i) } else { f2(i + 1) };
+                }
+            }
+        }
+        _ => {
+            for y in 0..4 {
+                for x in 0..4 {
+                    let z = x + 2 * y;
+                    let li = 3 - (y + (x >> 1)) as isize; // index of p[-1, y+(x>>1)]
+                    out[y * 4 + x] = match z {
+                        0 | 2 | 4 => f1((li - 1) as usize),
+                        1 | 3 => f2((li - 1) as usize),
+                        5 => ((g[1] + 3 * g[0] + 2) >> 2) as u8,
+                        _ => g[0] as u8,
+                    };
+                }
+            }
+        }
+    }
+}
+
+/// Reference I4x4 prediction straight from the spec equations (tests only).
+#[cfg(test)]
+pub fn pred4_ref(e: &Edges4, mode: u8, out: &mut [u8; 16]) {
     // p(x,-1) for x in -1..8, p(-1,y) for y in -1..4
     let t = |x: i32| -> i32 {
         if x < 0 {
@@ -261,6 +370,35 @@ pub fn pred4(e: &Edges4, mode: u8, out: &mut [u8; 16]) {
                 }
             };
             out[(y * 4 + x) as usize] = v as u8;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn pred4_matches_spec() {
+        let mut seed = 1u32;
+        for _ in 0..200 {
+            let mut r = || {
+                seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
+                (seed >> 24) as u8
+            };
+            let e = Edges4 {
+                top: core::array::from_fn(|_| r()),
+                left: core::array::from_fn(|_| r()),
+                tl: r(),
+                has_top: true,
+                has_left: true,
+                has_tl: true,
+            };
+            for m in 0..9 {
+                let (mut a, mut b) = ([0u8; 16], [0u8; 16]);
+                pred4(&e, m, &mut a);
+                pred4_ref(&e, m, &mut b);
+                assert_eq!(a, b, "mode {m}");
+            }
         }
     }
 }
