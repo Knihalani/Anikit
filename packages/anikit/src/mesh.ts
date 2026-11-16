@@ -319,6 +319,14 @@ export interface MaterialOptions {
   textureRepeat?: [number, number];
   textureGain?: number;
   /**
+   * Texture filtering. `'linear'` (default): one bilinear tap from the mip level that
+   * matches the larger side of each pixel's footprint. `'aniso'`: anisotropic — the mip
+   * follows the smaller side (up to 8× finer) and up to 4 taps are averaged along the
+   * longer one, so ground and roads seen at grazing angles stay sharp instead of
+   * blurring. Costs more per pixel where the footprint is stretched.
+   */
+  textureFilter?: 'linear' | 'aniso';
+  /**
    * How much the render's `fog` / `groundFog` applies to this material (default 1;
    * 0 = none): sky domes and backdrops painted with their own haze.
    */
@@ -490,7 +498,7 @@ export class Renderer3D {
         m.emissive ?? 0, m.metal ?? 0, m.iridescence ?? 0, m.hue ?? 0, ...rgb(o.sky, [0.25, 0.3, 0.55]), ...rgb(o.horizon, [1, 0.85, 0.7]), ...rgb(o.ground, [0.05, 0.05, 0.07]),
         m.lines ?? 0, ...rgb(m.lineColor, [1, 1, 1]), ...(m.grid ?? [8, 8]), m.lineWidth ?? 0.04,
         m.pulse ?? 0, m.pulseCount ?? 1, m.pulsePhase ?? 0, ...(m.pulseDir ?? [0, 0, 0]), ...rgb(o.strips, [0, 0, 0]),
-        m.texture ? m.texture.id + 1 : 0, m.texture ? (m.textureMode === 'emissive' ? 2 : 1) : 0, ...(m.textureRepeat ?? [1, 1]), m.textureGain ?? 1, gloss,
+        m.texture ? m.texture.id + 1 : 0, m.texture ? (m.textureMode === 'emissive' ? 2 : 1) + (m.textureFilter === 'aniso' ? 4 : 0) : 0, ...(m.textureRepeat ?? [1, 1]), m.textureGain ?? 1, gloss,
         o.groundFog?.bottom ?? 0, o.groundFog?.top ?? 0, o.groundFog?.range ?? 0,
         ({ grid: 0, hex: 1, dots: 2, circuit: 3 } as const)[m.pattern ?? 'grid'] ?? 0,
         m.fog ?? 1,

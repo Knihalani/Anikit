@@ -114,6 +114,25 @@ describe('mesh builders', () => {
     expect(() => texture({ width: 4, height: 4, data: [1, 2, 3] })).toThrow(/expected 64/);
   });
 
+  it("keeps grazing textured ground sharp with textureFilter: 'aniso'", () => {
+    // Stripes across the view on a ground plane seen at a grazing angle.
+    const n = 256, data = new Uint8ClampedArray(n * n * 4);
+    for (let i = 0; i < n * n; i++) { const v = ((i % n) >> 2) % 2 ? 0 : 255; data.set([v, v, v, 255], i * 4); }
+    const tex = texture({ width: n, height: n, data });
+    const r = renderer3d({ width: 96, height: 96 });
+    const cam = scene3d({ width: 96, height: 96, fov: 50, near: 0.5, far: 200, camera: { x: 0, y: 1, z: 0 }, target: { x: 0, y: 0, z: -20 } });
+    const ground = instances(1, () => ({ z: -60, sx: 40, sz: 120 }));
+    const spread = (textureFilter?: 'linear' | 'aniso') => {
+      const px = r.render(cam, [{ mesh: mesh.plane(), instances: ground, cull: false, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: tex, textureMode: 'emissive', textureRepeat: [1, 24], textureFilter } }], {}).slice();
+      let lo = 255, hi = 0;
+      for (let x = 0; x < 96; x++) { const v = px[(60 * 96 + x) * 4]; lo = Math.min(lo, v); hi = Math.max(hi, v); }
+      return { contrast: hi - lo, px };
+    };
+    const iso = spread(), lin = spread('linear'), aniso = spread('aniso');
+    expect(Array.from(lin.px)).toEqual(Array.from(iso.px)); // 'linear' is the default
+    expect(aniso.contrast).toBeGreaterThan(iso.contrast + 60);
+  });
+
   it('reflects the scene in a glossy mirror surface', () => {
     const r = renderer3d({ width: 48, height: 48 });
     const cam = scene3d({ width: 48, height: 48, camera: { x: 0, y: 60, z: 400 }, target: { x: 0, y: 0, z: 0 } });
