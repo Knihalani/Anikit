@@ -224,12 +224,41 @@ export type Converter = (value: number, from: string, to: string) => number;
 /** Units that need no conversion between each other. */
 const sameUnit = (a: string, b: string) => a === b || a === '' || b === '';
 
+/**
+ * `s3(F64[at]) + unit`, with two savings for the frame loop:
+ * - the fraction table already ends in the unit (`'.5px'`), so the result is
+ *   one concatenation instead of two;
+ * - the last result is kept with its rounded integer, so targets moving in
+ *   step (every target of one call without a stagger) share one string and
+ *   build nothing after the first. Same output: `s3` depends only on that
+ *   integer (`-0` and `0` both give `'0'`; NaN never matches).
+ */
+export function unitFormat(unit: string): (at: number) => string {
+  const t = FRAC3.map((f) => f + unit);
+  let lk = NaN;
+  let ls = '';
+  return (at: number) => {
+    const v = F64[at];
+    const k = Math.round(v * 1000);
+    if (k === lk) return ls;
+    lk = k;
+    if (k >= 0 && k < 2147483648) {
+      const ip = (k / 1000) | 0;
+      ls = ip + t[k - ip * 1000];
+    } else if (k < 0 && k > -2147483648) {
+      const ip = (-k / 1000) | 0;
+      ls = '-' + ip + t[-k - ip * 1000];
+    } else ls = s3(v) + unit;
+    return ls;
+  };
+}
+
 /** Output formatters of plain-number tracks, one per unit (shared by every track with that unit). */
 const numberFormats = new Map<string, (at: number) => string | number>();
 function numberFormat(unit: string): (at: number) => string | number {
   let f = numberFormats.get(unit);
   if (f === undefined) {
-    f = unit ? (at: number) => s3(F64[at]) + unit : (at: number) => r3(F64[at]);
+    f = unit ? unitFormat(unit) : (at: number) => r3(F64[at]);
     numberFormats.set(unit, f);
   }
   return f;
