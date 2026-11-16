@@ -39,6 +39,14 @@ h1, h2 { font-family: Display, system-ui, sans-serif; font-weight: 900; letter-s
 
 main { position: relative; z-index: 1; }
 
+/* Side rail: which piece of the knot is in view */
+.rail { position: fixed; left: 50%; top: 18px; transform: translateX(-50%); z-index: 6; display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(15, 17, 23, 0.86); border: 1px solid var(--line); opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+.rail.on { opacity: 1; pointer-events: auto; }
+.rail a { text-decoration: none; color: #8d93a3; font-size: 12px; padding: 6px 11px; border-radius: 999px; transition: color 0.3s, background-color 0.3s; }
+.rail a.on { color: #0b0c10; background: var(--c, var(--text)); }
+.rail a:hover:not(.on) { color: var(--text); }
+@media (max-width: 1100px) { .rail { display: none; } }
+
 /* Hero */
 .hero { min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 var(--gut) 9vh; position: relative; }
 .hero-text { max-width: 560px; }
@@ -82,7 +90,7 @@ code.pill { font-family: Mono, monospace; font-size: 14px; cursor: text; user-se
 .svg-demo { width: 100%; height: auto; display: block; background: #07080c; border: 1px solid var(--line); border-radius: 14px; }
 #blob { fill: var(--accent); }
 #trail { fill: none; stroke: #e9fff6; stroke-width: 3; stroke-linecap: round; }
-#rider { fill: #fff; }
+#rider { fill: #fff; transform-box: fill-box; transform-origin: center; }
 
 .world-box { position: relative; height: 300px; border-radius: 14px; background: #07080c; border: 1px solid var(--line); overflow: hidden; touch-action: none; user-select: none; }
 .w-letter { position: absolute; left: 0; top: 0; font-family: Display, sans-serif; font-weight: 900; font-size: 92px; line-height: 1; color: var(--accent); cursor: grab; will-change: transform; }
@@ -109,7 +117,7 @@ code.pill { font-family: Mono, monospace; font-size: 14px; cursor: text; user-se
 
 /* Install */
 .install { min-height: 130vh; position: relative; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 0 6vh; }
-.install-core { text-align: center; padding: 0 var(--gut); margin-bottom: 8vh; }
+.install-core { text-align: center; padding: 0 var(--gut); margin-bottom: 5vh; }
 .install-core h2 { font-size: clamp(44px, 7vw, 96px); margin-bottom: 22px; }
 .install-row { display: inline-flex; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 6px 6px 22px; margin-bottom: 14px; }
 .install-row code { font-size: 17px; }
@@ -121,7 +129,7 @@ code.pill { font-family: Mono, monospace; font-size: 14px; cursor: text; user-se
 @media (max-width: 760px) {
   .nav-links a:not(:last-child) { display: none; }
   .hero { padding-bottom: 7vh; }
-  .hero-meta, .scroll-cue { display: none; }
+  .hero-meta, .scroll-cue, .rail { display: none; }
   .demo { min-height: 0; padding: 46vh var(--gut) 8vh; }
   .demo[data-side='right'] { justify-content: flex-start; }
   .n-stats { grid-template-columns: 1fr; gap: 6px; }

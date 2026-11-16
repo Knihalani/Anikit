@@ -125,8 +125,8 @@ const pose = (k, out) => {
   // F: re-formed above the install command.
   const f = ease(clamp((sy - (installTop - vh * 1.05)) / (vh * 0.95)));
   if (f > 0) {
-    const [fx, fy] = toWorld(vw / 2, Math.max(vh * (small ? 0.25 : 0.3), installBottom - sy - vh * (small ? 0.75 : 0.7)));
-    const fs = small ? 0.46 : 0.75, frx = 58 + tilt.x, fry = t * 14 + tilt.y, frz = t * 6;
+    const [fx, fy] = toWorld(vw / 2, Math.max(vh * (small ? 0.25 : 0.27), installBottom - sy - vh * (small ? 0.75 : 0.73)));
+    const fs = small ? 0.46 : 0.52, frx = 58 + tilt.x, fry = t * 14 + tilt.y, frz = t * 6;
     const fc = rotate(frx, fry, frz, P.c);
     x = mix(x, fx + fc[0] * fs, f); y = mix(y, fy + fc[1] * fs, f); z = mix(z, fc[2] * fs, f);
     rx = mix(rx, frx, f); ry = mix(ry, fry, f); rz = mix(rz, frz, f); s = mix(s, fs, f);
@@ -147,7 +147,20 @@ let lastHero = -1, lastTitle = -1;
 set(titleChars, { opacity: 0 });
 set(note, { opacity: 0 });
 if (!reduced) animate('.scroll-cue i', { scaleX: [0, 1, 1], x: [0, 0, 46], opacity: [1, 1, 0] }, { duration: 1.8, ease: 'inOutCubic', repeat: Infinity });
+const rail = $('#rail');
+const railLinks = [...rail.querySelectorAll('a')];
+railLinks.forEach((a, k) => a.style.setProperty('--c', sections[k].dataset.accent));
+let railActive = -2;
 const choreograph = () => {
+  // The rail shows while the demos are on screen and marks the one in view.
+  let act = -1;
+  for (let k = 0; k < tops.length; k++) if (sy + vh * 0.5 >= tops[k].top) act = k;
+  if (sy + vh * 0.5 >= installTop) act = -1;
+  if (act !== railActive) {
+    rail.classList.toggle('on', act >= 0);
+    railLinks.forEach((a, k) => a.classList.toggle('on', k === act));
+    railActive = act;
+  }
   // Hero copy lifts away as the knot starts to break.
   const h = Math.round(clamp(sy / (vh * 0.6)) * 1000) / 1000;
   if (h !== lastHero) { lastHero = h; set(heroEls, { opacity: 1 - h, y: -h * 70 }); }

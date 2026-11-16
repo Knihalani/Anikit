@@ -80,9 +80,12 @@ export function start({ reduced, fine, small }) {
     const tl = timeline({ repeat: Infinity, defaults: { ease: 'spring(bounce: 0.25, duration: 0.9)', duration: 1 } });
     for (let k = 1; k < shapes.length; k++) tl.add('#blob', { d: shapes[k] }, k === 1 ? 0.4 : '+=0.45');
     const draw = timeline({ repeat: Infinity, defaults: { ease: 'inOutCubic' } });
-    draw.add('#trail', { draw: [0, 1] }, { duration: 2.2 }, 0)
+    draw.add('#rider', { opacity: [0, 1] }, { duration: 0.3 }, 0)
+      .add('#trail', { draw: [0, 1] }, { duration: 2.2 }, 0)
       .add('#rider', { path: { path: '#trail' } }, { duration: 2.2 }, 0)
-      .add('#trail', { draw: [1, 0] }, { duration: 1.2, ease: 'inCubic' }, 2.8);
+      .add('#rider', { opacity: 0, scale: 0.4 }, { duration: 0.35, ease: 'inCubic' }, 2.6)
+      .add('#trail', { draw: [1, 0] }, { duration: 1.2, ease: 'inCubic' }, 2.8)
+      .set('#rider', { scale: 1 }, 4.1);
     inView('#svg', () => { tl.play(); draw.play(); return () => { tl.pause(); draw.pause(); }; }, { amount: 0 });
   });
 
