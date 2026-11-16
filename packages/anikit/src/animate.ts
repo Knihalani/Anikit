@@ -1087,6 +1087,8 @@ export class Animation extends Playable {
       }
 
       if (tracks.length === 0) continue;
+      // Exact-size copy: the pushes above leave spare capacity the Part would keep.
+      if (part.b.length < 8) part.b = part.b.slice();
 
       // Output offsets per track.
       // (One array per call, overwritten per target.)
