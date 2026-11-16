@@ -764,6 +764,19 @@ brushed.set({ color: '#c0c4cc' });
 
 `MaterialPreset`: `chrome`, `gold`, `copper`, `glass`, `plastic`, `ceramic`, `rubber`, `emissive` and `toon`. `SceneMaterialOptions`: `preset`, `color`, `metalness`, `roughness`, `emissive`, `emissiveIntensity`, `opacity` (below 1 draws in the back-to-front transparent pass), `toon` and `glass`. Lighting is metal/roughness GGX with a split-sum environment term. The `EnvironmentName` environments are analytic, so they are prefiltered per roughness in closed form: no textures, no load-time cost.
 
+### Live HTML on a mesh: `htmlTexture`
+
+`map` (a `MapSource`) puts a texture on any material: a canvas or image (uploaded once), or a live source with `canvas` and `version` such as `htmlTexture(el)`, which is re-uploaded only when the element changed. UV (0, 0) is the image's top-left, so `plane()` rotated `[Math.PI / 2, 0, 0]` shows it upright, facing the camera. A black material with a white `emissive` shows the HTML unlit, like a screen; a coloured or metallic one lights it like printed material. Pointer events on the mesh (`click`, `pointerdown`, `pointerup`, `pointermove`) are re-dispatched to the element under the hit's UV, and focusable targets are focused on click, so buttons and inputs on a 3D card still work. `RayHit.uv` and `ScenePointerEvent.uv` expose the UV. Keep the source element rendered, for example off-screen with `position: fixed; left: -10000px`, not `display: none`. See [HTML in canvas](#html-in-canvas-htmlcanvas-htmleffect) for what the fallback raster captures.
+
+```ts
+const s3 = scene('#stage', { camera: { position: [0, 0, 3] } });
+const ui = htmlTexture('#panel');                                   // live, re-rasterised on change
+const screen = s3.add(plane(1.6, 1), { rotation: [Math.PI / 2, 0, 0], material: { color: '#000', emissive: '#fff', map: ui } });
+const cube = s3.add(roundedBox(1, 1, 1, 0.1), { position: [2, 0, 0], material: { map: ui, roughness: 0.6 } });
+screen.on('click', (e) => console.log('hit the screen at', e.uv));  // the element under e.uv got the click too
+animate(screen.rotation, { y: Math.PI * 2 }, { duration: 8, repeat: -1, ease: 'linear' });
+```
+
 ### Geometry and instancing
 
 ```ts
@@ -1272,7 +1285,7 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Marquees](#marquees-marquee) | `marquee`, `Marquee` | `MarqueeOptions` |
 | [Magnetic and parallax](#magnetic-and-parallax-magnetic-parallax) | `magnetic`, `parallax` | `MagneticOptions`, `ParallaxOptions`, `PointerFx` |
 | [Effects](#effects) | `effects`, `effect`, `registerEffect`, `effectNames` | `EffectOptions`, `EffectFn`, `EffectName` |
-| [HTML in canvas](#html-in-canvas-htmlcanvas-htmleffect) | `htmlCanvas`, `htmlEffect`, `htmlCanvasSupported`, `htmlToSvg` | `HtmlCanvas`, `HtmlCanvasOptions`, `HtmlEffect`, `HtmlEffectOptions`, `HtmlEffectName` |
+| [HTML in canvas](#html-in-canvas-htmlcanvas-htmleffect) | `htmlCanvas`, `htmlEffect`, `htmlTexture`, `htmlCanvasSupported`, `htmlToSvg` | `HtmlCanvas`, `HtmlCanvasOptions`, `HtmlEffect`, `HtmlEffectOptions`, `HtmlEffectName` |
 | [Layout transitions](#layout-transitions-flip), [presence](#presence-enter-and-exit) and [View Transitions](#view-transitions) | `flip`, `presence`, `Presence`, `enter`, `exit`, `viewTransition` | `FlipOptions`, `FlipState`, `PresenceOptions`, `ViewTransitionOptions`, `ViewTransitionHandle` |
 | [Interaction](#interaction) | `draggable`, `Draggable`, `observer`, `hover`, `press`, `gesture`, `Gesture` | `DraggableOptions`, `Bounds`, `ObserverOptions`, `ObserverEvent`, `GestureOptions` |
 | [Engine](#engine) | `engine`, `flush`, `ready`, `init` | |
