@@ -92,9 +92,11 @@ pub enum Role {
     Sfx,
 }
 
-/// Lower this track while tracks of role `under` are sounding.
+/// Lower this track while tracks of role `under` are sounding. In JSON it is
+/// an object, `true` (defaults), or a number: the level to duck *to*
+/// (0..1, e.g. `0.4` ≈ −8 dB), as in the spec's shorthand.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
+#[serde(default, deny_unknown_fields, rename_all = "camelCase", remote = "Self")]
 pub struct Duck {
     /// The sidechain role (default `"voice"`).
     pub under: Role,
@@ -117,16 +119,52 @@ impl Default for Duck {
     }
 }
 
+impl<'de> Deserialize<'de> for Duck {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let v = serde_json::Value::deserialize(d)?;
+        match &v {
+            serde_json::Value::Bool(true) => Ok(Duck::default()),
+            serde_json::Value::Number(n) => {
+                let level = n.as_f64().unwrap_or(0.4).clamp(1e-4, 1.0);
+                Ok(Duck { amount_db: -20.0 * level.log10(), ..Duck::default() })
+            }
+            _ => Duck::deserialize(v).map_err(serde::de::Error::custom),
+        }
+    }
+}
+
+impl Serialize for Duck {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        Duck::serialize(self, s)
+    }
+}
+
+/// Volume: a linear number or a dB string like `"-6dB"`.
+fn volume_de<'de, D: serde::Deserializer<'de>>(d: D) -> Result<f64, D::Error> {
+    match serde_json::Value::deserialize(d)? {
+        serde_json::Value::Number(n) => n.as_f64().ok_or_else(|| serde::de::Error::custom("volume must be a number")),
+        serde_json::Value::String(s) => {
+            let t = s.trim().trim_end_matches("dB").trim_end_matches("db").trim();
+            t.parse::<f64>().map(|db| 10f64.powf(db / 20.0)).map_err(|_| serde::de::Error::custom(format!("volume {s:?}: use a number (0..1) or \"-6dB\"")))
+        }
+        v => Err(serde::de::Error::custom(format!("volume must be a number or \"-6dB\", got {v}"))),
+    }
+}
+
 /// One audio track on the timeline.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 pub struct Track {
     pub src: Source,
-    /// Timeline seconds where the (trimmed) source starts.
+    /// Timeline seconds where the (trimmed) source starts (`at` also works).
+    #[serde(alias = "at")]
     pub start: f64,
     /// `[in, out]` in source seconds; `out <= in` (or absent) means "to the end".
     pub trim: Option<[f64; 2]>,
-    /// Linear gain (default 1).
+    /// Shorthand for `trim: [trimStart, end]`.
+    pub trim_start: Option<f64>,
+    /// Linear gain (default 1), or a dB string like `"-6dB"`.
+    #[serde(deserialize_with = "volume_de")]
     pub volume: f64,
     /// Extra gain in dB, multiplied with `volume` (default 0).
     pub db: f64,
@@ -144,6 +182,8 @@ pub struct Track {
     pub duck: Option<Duck>,
     /// Defaults to `"sfx"` for built-in SFX sources and `"music"` otherwise.
     pub role: Option<Role>,
+    /// Shorthand for `role: "voice"`.
+    pub voice: bool,
 }
 
 impl Default for Track {
@@ -152,6 +192,7 @@ impl Default for Track {
             src: Source::default(),
             start: 0.0,
             trim: None,
+            trim_start: None,
             volume: 1.0,
             db: 0.0,
             fade_in: 0.0,
@@ -160,6 +201,7 @@ impl Default for Track {
             duration: None,
             duck: None,
             role: None,
+            voice: false,
         }
     }
 }
@@ -167,6 +209,9 @@ impl Default for Track {
 impl Track {
     /// The effective role.
     pub fn role(&self) -> Role {
+        if self.voice && self.role.is_none() {
+            return Role::Voice;
+        }
         self.role.unwrap_or(match self.src {
             Source::Sfx { .. } => Role::Sfx,
             Source::File(_) => Role::Music,
@@ -226,7 +271,7 @@ struct Placement {
 fn place(t: &Track, src: &Pcm, rate: u32, n_out: usize) -> Option<Placement> {
     let r = rate as f64;
     let frames = src.frames();
-    let [a, b] = t.trim.unwrap_or([0.0, 0.0]);
+    let [a, b] = t.trim.unwrap_or([t.trim_start.unwrap_or(0.0), 0.0]);
     let seg0 = ((a.max(0.0) * r).round() as usize).min(frames);
     let seg1 = if b > a {
         ((b * r).round() as usize).min(frames)
@@ -759,4 +804,17 @@ mod tests {
             "{dt:?}"
         );
     }
+
+    #[test]
+    fn spec_spellings() {
+        let t: Track = serde_json::from_str(r#"{"src":"sfx:whoosh","at":2.5,"volume":"-6dB","trimStart":1,"duck":0.5,"voice":true}"#).unwrap();
+        assert_eq!(t.start, 2.5);
+        assert!((t.volume - 0.501).abs() < 1e-3);
+        assert_eq!(t.trim_start, Some(1.0));
+        assert!((t.duck.as_ref().unwrap().amount_db - 6.02).abs() < 0.01);
+        assert_eq!(t.role(), Role::Voice);
+        let t: Track = serde_json::from_str(r#"{"src":"m.mp3","duck":true}"#).unwrap();
+        assert_eq!(t.duck.unwrap().amount_db, 12.0);
+    }
+
 }

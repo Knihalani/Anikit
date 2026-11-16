@@ -318,7 +318,7 @@ impl Default for CodeBlock {
             code: String::new(),
             language: "typescript".into(),
             title: String::new(),
-            font_size: 22.0,
+            font_size: 26.0,
             line_numbers: true,
             chrome: Chrome::Mac,
             typing: 0.0,
@@ -589,7 +589,7 @@ pub struct Terminal {
 }
 impl Default for Terminal {
     fn default() -> Self {
-        Terminal { lines: Vec::new(), title: String::new(), font_size: 20.0, typing: 28.0, pause: 0.35, line_delay: 0.06, delay: 0.0, prompt_color: None, sched: Vec::new() }
+        Terminal { lines: Vec::new(), title: String::new(), font_size: 26.0, typing: 28.0, pause: 0.35, line_delay: 0.06, delay: 0.0, prompt_color: None, sched: Vec::new() }
     }
 }
 impl Terminal {

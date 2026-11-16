@@ -10,6 +10,7 @@ use super::{Component, Ctx, Prepare};
 use crate::dl::{Blend, Op, Paint, Path, Rgba, IDENTITY};
 use anikit_core::noise::Noise;
 use serde::Deserialize;
+use std::sync::{Arc, Mutex};
 
 fn colors_or(v: &[Color], fallback: &[Rgba]) -> Vec<Rgba> {
     if v.is_empty() {
@@ -23,36 +24,76 @@ fn lin(c: f32) -> f32 {
     c * c
 }
 
-/// Field image `w×h` from a closure giving linear-ish RGB per normalised (u, v).
-fn field(w: u32, h: u32, mut f: impl FnMut(f32, f32) -> [f32; 3]) -> Vec<u8> {
-    let mut px = vec![0u8; (w * h * 4) as usize];
-    let mut i = 0;
-    for y in 0..h {
-        let v = (y as f32 + 0.5) / h as f32;
-        for x in 0..w {
-            let u = (x as f32 + 0.5) / w as f32;
-            let c = f(u, v);
-            // Ordered dither (2×2) before quantising, against banding after upscale.
-            let d = [0.0, 0.5, 0.75, 0.25][((x & 1) + 2 * (y & 1)) as usize] - 0.375;
-            for k in 0..3 {
-                px[i + k] = (c[k].max(0.0).sqrt() * 255.0 + d).clamp(0.0, 255.0) as u8;
+/// A low-resolution field in (approximately) linear light, 3 floats per pixel.
+pub struct Field {
+    key: u64,
+    w: u32,
+    h: u32,
+    lin: Vec<f32>,
+}
+
+impl Field {
+    /// Evaluate `f(u, v)` (normalised coordinates) on a `w×h` grid.
+    fn compute(key: u64, w: u32, h: u32, mut f: impl FnMut(f32, f32) -> [f32; 3]) -> Field {
+        let mut lin = Vec::with_capacity((w * h * 3) as usize);
+        for y in 0..h {
+            let v = (y as f32 + 0.5) / h as f32;
+            for x in 0..w {
+                lin.extend_from_slice(&f((x as f32 + 0.5) / w as f32, v));
             }
-            px[i + 3] = 255;
-            i += 4;
         }
+        Field { key, w, h, lin }
     }
-    px
 }
 
-fn field_image(ctx: &Ctx, key: u64, w: u32, h: u32, make: impl FnMut(f32, f32) -> [f32; 3]) -> Vec<Op> {
-    let mut make = Some(make);
-    let id = ctx.assets.image(key, w, h, &mut || field(w, h, make.take().unwrap()));
+/// The last few keyframe fields of one component, shared by render threads.
+#[derive(Default)]
+pub struct FieldCache(Mutex<Vec<Arc<Field>>>);
+
+impl FieldCache {
+    fn get(&self, key: u64, make: impl FnOnce() -> Field) -> Arc<Field> {
+        if let Some(f) = self.0.lock().unwrap().iter().find(|f| f.key == key) {
+            return f.clone();
+        }
+        // Compute outside the lock; a rare duplicate computation is harmless.
+        let f = Arc::new(make());
+        let mut v = self.0.lock().unwrap();
+        if v.len() >= 8 {
+            v.remove(0);
+        }
+        v.push(f.clone());
+        f
+    }
+}
+
+/// Slow fields are computed at `rate` keyframes per second and blended per
+/// frame into one image: a fraction of the field evaluations, one image draw.
+fn keyframed(ctx: &Ctx, t: f32, rate: f32, field: impl Fn(f32) -> Arc<Field>) -> Vec<Op> {
+    let rate = rate.clamp(1.0, 120.0);
+    let x = t.max(0.0) * rate;
+    let k0 = x.floor();
+    // Blend weight quantised to 1/64: identical frames share an image.
+    let f = ((x - k0) * 64.0).round() / 64.0;
+    let a = field(k0 / rate);
+    let b = if f > 0.0 { Some(field((k0 + 1.0) / rate)) } else { None };
+    let key = fnv(&[b"blend", &a.key.to_le_bytes(), &b.as_ref().map_or(0, |b| b.key).to_le_bytes(), &f.to_bits().to_le_bytes()]);
+    let (w, h) = (a.w, a.h);
+    let id = ctx.assets.image(key, w, h, &mut || {
+        let mut px = vec![255u8; (w * h * 4) as usize];
+        for (i, p) in px.chunks_exact_mut(4).enumerate() {
+            for k in 0..3 {
+                let va = a.lin[i * 3 + k];
+                let v = match &b {
+                    Some(b) => va + (b.lin[i * 3 + k] - va) * f,
+                    None => va,
+                };
+                // No dithering at field resolution: it would upscale into stripes.
+                p[k] = (v.max(0.0).sqrt() * 255.0 + 0.5).min(255.0) as u8;
+            }
+        }
+        px
+    });
     vec![Op::Image { image: id, dst: [0.0, 0.0, ctx.width, ctx.height], opacity: 1.0, transform: IDENTITY }]
-}
-
-/// Frame-quantised time, so identical frames share images.
-fn qt(t: f32, fps: f32) -> f32 {
-    (t * fps.max(1.0)).round() / fps.max(1.0)
 }
 
 // ------------------------------------------------------------------ gradient
@@ -104,20 +145,31 @@ pub struct MeshGradient {
     pub seed: u32,
     /// Field resolution divisor (higher = cheaper, softer).
     pub detail: f32,
+    /// Colour strength (1 = the colours as given; lower sits better behind text).
+    pub intensity: f32,
+    /// Field keyframes per second (blended in between).
+    pub rate: f32,
+    #[serde(skip)]
+    cache: FieldCache,
 }
 impl Default for MeshGradient {
     fn default() -> Self {
-        MeshGradient { colors: Vec::new(), base: None, speed: 1.0, warp: 0.6, seed: 7, detail: 1.0 }
+        MeshGradient { colors: Vec::new(), base: None, speed: 1.0, warp: 0.6, seed: 7, detail: 1.0, intensity: 0.75, rate: 12.0, cache: FieldCache::default() }
     }
 }
 impl Prepare for MeshGradient {}
 impl Component for MeshGradient {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
-        let t = qt(t, ctx.fps);
+        keyframed(ctx, t, self.rate, |tt| self.field_at(tt, ctx))
+    }
+}
+
+impl MeshGradient {
+    fn field_at(&self, t: f32, ctx: &Ctx) -> Arc<Field> {
         let cols = colors_or(&self.colors, &[hx3("#5b2bff"), hx3("#1f6bff"), hx3("#ff3d9a"), hx3("#00c2d1"), hx3("#2a0f6e")]);
         let base = self.base.map(|c| c.0).unwrap_or(ctx.theme.background);
         let (fw, fh) = field_size(ctx, 12.0 * self.detail);
-        let key = fnv(&[b"mesh", &t.to_bits().to_le_bytes(), &self.seed.to_le_bytes(), &self.speed.to_bits().to_le_bytes(), &self.warp.to_bits().to_le_bytes(), &fw.to_le_bytes(), &fh.to_le_bytes(), &colors_key(&cols), &colors_key(&[base])]);
+        let key = fnv(&[b"mesh", &t.to_bits().to_le_bytes(), &self.seed.to_le_bytes(), &self.speed.to_bits().to_le_bytes(), &self.warp.to_bits().to_le_bytes(), &self.intensity.to_bits().to_le_bytes(), &fw.to_le_bytes(), &fh.to_le_bytes(), &colors_key(&cols), &colors_key(&[base])]);
         let noise = Noise::new(self.seed);
         let aspect = ctx.width / ctx.height.max(1.0);
         let s = t * 0.07 * self.speed;
@@ -125,15 +177,24 @@ impl Component for MeshGradient {
         let centres: Vec<(f32, f32)> = (0..cols.len())
             .map(|i| {
                 let k = i as f64 * 17.3;
-                let x = 0.5 + 0.42 * noise.noise2(k, s as f64) as f32;
-                let y = 0.5 + 0.42 * noise.noise2(k + 5.1, s as f64 + 3.7) as f32;
+                // Anchors spread over the frame (a ring plus the centre), drifting.
+                let n = cols.len().max(2) as f32;
+                let (ax, ay) = if i + 1 == cols.len() && cols.len() > 3 {
+                    (0.5, 0.5)
+                } else {
+                    let a = i as f32 / (n - if cols.len() > 3 { 1.0 } else { 0.0 }) * std::f32::consts::TAU + self.seed as f32;
+                    (0.5 + 0.36 * a.cos(), 0.5 + 0.34 * a.sin())
+                };
+                let x = ax + 0.22 * noise.noise2(k, s as f64) as f32;
+                let y = ay + 0.22 * noise.noise2(k + 5.1, s as f64 + 3.7) as f32;
                 (x * aspect, y)
             })
             .collect();
-        let lc: Vec<[f32; 3]> = cols.iter().map(|c| [lin(c.0[0]), lin(c.0[1]), lin(c.0[2])]).collect();
+        let k = self.intensity.clamp(0.0, 2.0);
+        let lc: Vec<[f32; 3]> = cols.iter().map(|c| [lin(c.0[0]) * k, lin(c.0[1]) * k, lin(c.0[2]) * k]).collect();
         let lb = [lin(base.0[0]), lin(base.0[1]), lin(base.0[2])];
         let warp = self.warp;
-        field_image(ctx, key, fw, fh, |u, v| {
+        self.cache.get(key, || Field::compute(key, fw, fh, |u, v| {
             let (mut x, mut y) = (u * aspect, v);
             let wx = noise.noise2((x * 1.6) as f64, (y * 1.6 + s * 2.0) as f64) as f32;
             let wy = noise.noise2((x * 1.6 + 9.2) as f64, (y * 1.6 - s * 2.0) as f64) as f32;
@@ -143,15 +204,16 @@ impl Component for MeshGradient {
             let mut wsum = 0.0;
             for (c, (cx, cy)) in lc.iter().zip(&centres) {
                 let d2 = (x - cx) * (x - cx) + (y - cy) * (y - cy);
-                let w = 1.0 / (d2 * 9.0 + 0.08).powi(2);
+                let w = 1.0 / (d2 * 7.0 + 0.06).powi(3);
                 wsum += w;
                 for k in 0..3 {
                     acc[k] += c[k] * w;
                 }
             }
-            let cov = (wsum / (wsum + 6.0)).min(1.0);
-            [0, 1, 2].map(|k| lb[k] + (acc[k] / wsum - lb[k]) * cov)
-        })
+            // The base colour joins as a weak constant-weight blob.
+            let wb = 2.5;
+            [0, 1, 2].map(|k| (acc[k] + lb[k] * wb) / (wsum + wb))
+        }))
     }
 }
 
@@ -180,18 +242,27 @@ pub struct Aurora {
     /// Brightness of the ribbons.
     pub intensity: f32,
     pub seed: u32,
+    /// Field keyframes per second (blended in between).
+    pub rate: f32,
+    #[serde(skip)]
+    cache: FieldCache,
 }
 impl Default for Aurora {
     fn default() -> Self {
-        Aurora { colors: Vec::new(), sky: None, speed: 1.0, intensity: 1.0, seed: 3 }
+        Aurora { colors: Vec::new(), sky: None, speed: 1.0, intensity: 1.0, seed: 3, rate: 15.0, cache: FieldCache::default() }
     }
 }
 impl Prepare for Aurora {}
 impl Component for Aurora {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
-        let t = qt(t, ctx.fps);
+        keyframed(ctx, t, self.rate, |tt| self.field_at(tt, ctx))
+    }
+}
+
+impl Aurora {
+    fn field_at(&self, t: f32, ctx: &Ctx) -> Arc<Field> {
         let cols = colors_or(&self.colors, &[hx3("#2cffb0"), hx3("#21c7ff"), hx3("#8a5cff")]);
-        let sky = self.sky.map(|s| [s[0].0, s[1].0]).unwrap_or([hx3("#03040a"), hx3("#0b1430")]);
+        let sky = self.sky.map(|s| [s[0].0, s[1].0]).unwrap_or([hx3("#02030a"), hx3("#081026")]);
         let (fw, fh) = field_size(ctx, 10.0);
         let key = fnv(&[b"aurora", &t.to_bits().to_le_bytes(), &self.seed.to_le_bytes(), &self.speed.to_bits().to_le_bytes(), &self.intensity.to_bits().to_le_bytes(), &fw.to_le_bytes(), &fh.to_le_bytes(), &colors_key(&cols), &colors_key(&sky)]);
         let noise = Noise::new(self.seed);
@@ -200,17 +271,17 @@ impl Component for Aurora {
         let ls = sky.map(|c| [lin(c.0[0]), lin(c.0[1]), lin(c.0[2])]);
         let k = self.intensity;
         let aspect = (ctx.width / ctx.height.max(1.0)) as f64;
-        field_image(ctx, key, fw, fh, |u, v| {
+        self.cache.get(key, || Field::compute(key, fw, fh, |u, v| {
             let mut c = [0, 1, 2].map(|i| ls[0][i] + (ls[1][i] - ls[0][i]) * v);
             for (i, col) in lc.iter().enumerate() {
                 let fi = i as f64 * 3.3;
                 let x = u as f64 * aspect;
                 // Ribbon centre line and thickness wander with noise.
-                let centre = 0.38 + 0.1 * i as f32 + 0.16 * noise.noise2(x * 0.9 + fi, s + fi) as f32;
+                let centre = 0.48 + 0.09 * i as f32 + 0.14 * noise.noise2(x * 0.9 + fi, s + fi) as f32;
                 let thick = 0.06 + 0.04 * noise.noise2(x * 1.7 - fi, s * 1.3) as f32;
                 let d = v - centre;
                 // Sharp lower edge, long upward rays.
-                let band = if d > 0.0 { (-(d / (thick * 0.35)).powi(2)).exp() } else { (-(d / (thick * 2.6)).powi(2)).exp() };
+                let band = if d > 0.0 { (-(d / (thick * 1.3)).powi(2)).exp() } else { (-(d / (thick * 2.6)).powi(2)).exp() };
                 let rays = 0.55 + 0.45 * noise.noise2(x * 14.0 + fi, s * 3.0) as f32;
                 let a = band * rays * k * (0.5 + 0.5 * noise.noise2(x * 0.6 - fi, s * 0.7 + 2.0) as f32).max(0.0) * 1.4;
                 for j in 0..3 {
@@ -218,7 +289,7 @@ impl Component for Aurora {
                 }
             }
             c
-        })
+        }))
     }
 }
 

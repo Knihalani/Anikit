@@ -183,7 +183,7 @@ pub struct Button {
 }
 impl Default for Button {
     fn default() -> Self {
-        Button { label: "Button".into(), variant: "primary".into(), size: 20.0, color: None, press: Vec::new(), arrow: false, delay: 0.0, out: None }
+        Button { label: "Button".into(), variant: "primary".into(), size: 26.0, color: None, press: Vec::new(), arrow: false, delay: 0.0, out: None }
     }
 }
 impl Prepare for Button {
@@ -265,7 +265,7 @@ pub struct Toggle {
 }
 impl Default for Toggle {
     fn default() -> Self {
-        Toggle { at: 0.5, on: false, size: 36.0, color: None, label: None }
+        Toggle { at: 0.5, on: false, size: 44.0, color: None, label: None }
     }
 }
 impl Prepare for Toggle {}
@@ -311,7 +311,7 @@ pub struct Badge {
 }
 impl Default for Badge {
     fn default() -> Self {
-        Badge { label: "New".into(), color: None, size: 15.0, dot: false, solid: false, delay: 0.0, out: None }
+        Badge { label: "New".into(), color: None, size: 20.0, dot: false, solid: false, delay: 0.0, out: None }
     }
 }
 impl Prepare for Badge {}
@@ -381,7 +381,7 @@ pub struct Avatar {
 }
 impl Default for Avatar {
     fn default() -> Self {
-        Avatar { name: "Ada Lovelace".into(), src: None, size: 72.0, status: None, delay: 0.0 }
+        Avatar { name: "Ada Lovelace".into(), src: None, size: 96.0, status: None, delay: 0.0 }
     }
 }
 impl Prepare for Avatar {}
@@ -424,7 +424,7 @@ pub struct AvatarStack {
 }
 impl Default for AvatarStack {
     fn default() -> Self {
-        AvatarStack { names: Vec::new(), srcs: Vec::new(), size: 56.0, overlap: 0.3, max: 5, delay: 0.0, stagger: 0.08 }
+        AvatarStack { names: Vec::new(), srcs: Vec::new(), size: 72.0, overlap: 0.3, max: 5, delay: 0.0, stagger: 0.08 }
     }
 }
 impl Prepare for AvatarStack {}
@@ -474,7 +474,7 @@ pub struct ProgressBar {
 }
 impl Default for ProgressBar {
     fn default() -> Self {
-        ProgressBar { from: 0.0, to: 1.0, duration: 1.6, delay: 0.0, thickness: 10.0, color: None, label: None, percent: true }
+        ProgressBar { from: 0.0, to: 1.0, duration: 1.6, delay: 0.0, thickness: 12.0, color: None, label: None, percent: true }
     }
 }
 impl Prepare for ProgressBar {}
@@ -525,7 +525,7 @@ pub struct ProgressRing {
 }
 impl Default for ProgressRing {
     fn default() -> Self {
-        ProgressRing { from: 0.0, to: 1.0, duration: 1.6, delay: 0.0, size: 180.0, thickness: 14.0, color: None, label: None }
+        ProgressRing { from: 0.0, to: 1.0, duration: 1.6, delay: 0.0, size: 240.0, thickness: 18.0, color: None, label: None }
     }
 }
 impl Prepare for ProgressRing {}
@@ -585,7 +585,7 @@ pub struct Toast {
 }
 impl Default for Toast {
     fn default() -> Self {
-        Toast { title: String::new(), body: String::new(), kind: "success".into(), delay: 0.0, hold: 0.0, from: "top".into(), width: 400.0 }
+        Toast { title: String::new(), body: String::new(), kind: "success".into(), delay: 0.0, hold: 0.0, from: "top".into(), width: 520.0 }
     }
 }
 impl Prepare for Toast {}
@@ -599,24 +599,26 @@ impl Component for Toast {
             return Vec::new();
         }
         let w = self.width;
-        let pad = 18.0;
-        let ts = sans(18.0, 600, th.text);
-        let bs = sans(15.0, 400, th.muted);
-        let lines = wrap(ctx.assets, &self.body, &bs, w - pad * 2.0 - 46.0);
-        let h = pad * 2.0 + 22.0 + if self.body.is_empty() { 0.0 } else { lines.len() as f32 * 21.0 + 2.0 };
+        // Metrics scale with the width (designed at 400 px).
+        let u = (w / 400.0).max(0.5);
+        let pad = 18.0 * u;
+        let ts = sans(18.0 * u, 600, th.text);
+        let bs = sans(15.0 * u, 400, th.muted);
+        let lines = wrap(ctx.assets, &self.body, &bs, w - pad * 2.0 - 46.0 * u);
+        let h = pad * 2.0 + 22.0 * u + if self.body.is_empty() { 0.0 } else { lines.len() as f32 * 21.0 * u + 2.0 * u };
         let mut o = Vec::new();
-        surface(&mut o, th, 0.0, 0.0, w, h, 16.0, 1.0);
+        surface(&mut o, th, 0.0, 0.0, w, h, 16.0 * u, 1.0);
         let c = match self.kind.as_str() {
             "error" => th.negative,
             "warning" => parse_color("#ffb547").unwrap(),
             "info" => th.pal(5),
             _ => th.positive,
         };
-        o.push(circle(pad + 16.0, pad + 15.0, 16.0, solid(alpha(c, 0.18))));
-        icon(&mut o, &self.kind, pad + 16.0, pad + 15.0, 17.0, c);
-        draw(&mut o, ctx.assets, &self.title, &ts, pad + 46.0, pad + 20.0, 0.0);
+        o.push(circle(pad + 16.0 * u, pad + 15.0 * u, 16.0 * u, solid(alpha(c, 0.18))));
+        icon(&mut o, &self.kind, pad + 16.0 * u, pad + 15.0 * u, 17.0 * u, c);
+        draw(&mut o, ctx.assets, &self.title, &ts, pad + 46.0 * u, pad + 20.0 * u, 0.0);
         for (i, l) in lines.iter().enumerate() {
-            draw(&mut o, ctx.assets, l, &bs, pad + 46.0, pad + 44.0 + i as f32 * 21.0, 0.0);
+            draw(&mut o, ctx.assets, l, &bs, pad + 46.0 * u, pad + (44.0 + i as f32 * 21.0) * u, 0.0);
         }
         let k = 1.0 - p + exit;
         let (dx, dy) = match self.from.as_str() {
@@ -650,7 +652,7 @@ pub struct Cursor {
 }
 impl Default for Cursor {
     fn default() -> Self {
-        Cursor { path: vec![[0.0, 0.0]], times: Vec::new(), clicks: Vec::new(), size: 28.0, style: "arrow".into(), ripple: None }
+        Cursor { path: vec![[0.0, 0.0]], times: Vec::new(), clicks: Vec::new(), size: 36.0, style: "arrow".into(), ripple: None }
     }
 }
 impl Prepare for Cursor {
@@ -770,7 +772,7 @@ pub struct Tooltip {
 }
 impl Default for Tooltip {
     fn default() -> Self {
-        Tooltip { text: "Tooltip".into(), at: [160.0, 80.0], side: "top".into(), size: 16.0, delay: 0.0, out: None }
+        Tooltip { text: "Tooltip".into(), at: [160.0, 80.0], side: "top".into(), size: 22.0, delay: 0.0, out: None }
     }
 }
 impl Prepare for Tooltip {}
@@ -825,7 +827,7 @@ pub struct Callout {
 }
 impl Default for Callout {
     fn default() -> Self {
-        Callout { from: [100.0, 100.0], to: [300.0, 60.0], text: String::new(), color: None, size: 20.0, delay: 0.0, out: None }
+        Callout { from: [100.0, 100.0], to: [300.0, 60.0], text: String::new(), color: None, size: 26.0, delay: 0.0, out: None }
     }
 }
 impl Prepare for Callout {}
@@ -958,7 +960,7 @@ pub struct LowerThird {
 }
 impl Default for LowerThird {
     fn default() -> Self {
-        LowerThird { title: String::new(), subtitle: String::new(), accent: None, size: 34.0, delay: 0.0, out: None, align: "left".into(), margin: 72.0 }
+        LowerThird { title: String::new(), subtitle: String::new(), accent: None, size: 44.0, delay: 0.0, out: None, align: "left".into(), margin: 72.0 }
     }
 }
 impl Prepare for LowerThird {}
