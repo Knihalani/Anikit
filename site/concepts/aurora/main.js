@@ -68,11 +68,11 @@ engine.onFrame((_t, dt) => {
 // ---------------------------------------------------------------------------
 const title = splitText('#title', { type: 'chars', charClass: 'ch' });
 timeline({ defaults: { ease: 'outExpo' } })
-  .add(title.chars, { yPercent: [70, 0], opacity: [0, 1], rotateX: [-60, 0] }, { duration: 1.6, delay: stagger(0.07, { from: 'center' }) }, 0.15)
+  .add(title.chars, { yPercent: [70, 0], opacity: [0, 1] }, { duration: 1.4, delay: stagger(0.06) }, 0.15)
   .add('#lede', { opacity: [0, 1], y: [14, 0] }, { duration: 1.4 }, 0.7)
   .add('#cue', { opacity: [0, 0.8] }, { duration: 1.2 }, 1.4)
   .add('.nav', { opacity: [0, 1] }, { duration: 1.2 }, 1.2);
-scroll(animate('.hero-in', { opacity: [1, 0], y: [0, -70], scale: [1, 0.96] }, { ease: 'inSine', autoplay: false }), { target: $('.hero'), offset: ['start start', 'end start'] });
+scroll(timeline({ autoplay: false, defaults: { ease: 'inSine' } }).add('.hero', { opacity: [1, 0] }, 0).add('.hero-in', { y: [0, -70] }, 0), { target: $('.hero'), offset: ['start start', 'end start'] });
 if (!reduced) animate('#cue', { y: [0, 6, 0] }, { duration: 2.8, repeat: Infinity, ease: 'inOutSine', delay: 2.6 });
 
 // ---------------------------------------------------------------------------

@@ -64,7 +64,7 @@ vec3 curtainLight(float sx, float y, float fk, float T, float dist){
   float hgt = (y - base) / (120. + 190. * uStorm);
   if (hgt < -.1) return vec3(0.);
   float ray = vnoise(vec2(sx * .05 + T * .22, fk * 5.));
-  ray = mix(.5, .25 + .75 * ray * ray, clamp(1.6 - dist / 3000., 0., 1.));
+  ray = mix(.5, .12 + 1.1 * ray * ray * ray, clamp(1.6 - dist / 3000., 0., 1.));
   ray *= .55 + .45 * mix(.5, vnoise(vec2(sx * .19 - T * .7, 3. + fk)), clamp(1.5 - dist / 900., 0., 1.));
   float pulse = .7 + .3 * sin(sx * .004 - T * .9 + fk * 2.);
   float edge = smoothstep(-.1, .0, hgt);
@@ -102,7 +102,7 @@ vec3 aurora(vec3 ro, vec3 rd, float steps, float dither){
         float f = pd / (pd - d);
         float tc = t - dt * (1. - f);
         vec3 pc = ro + rd * tc;
-        float th = 10. + 10. * uStorm;
+        float th = 7. + 6. * uStorm;
         float cosA = abs(rd.z - sl * rd.x) / sqrt(1. + sl * sl) / max(length(rd.xz), .05);
         float L = min(th / max(cosA, .06), th * 7.) + 22.;
         acc += curtainLight(mix(px, sx, f), pc.y, fk, T, tc) * amp * L * fade;
@@ -230,9 +230,9 @@ void main(){
     float c2 = (1. - smoothstep(0., aa * 3., v2.x)) * step(.45, v2.y) * (1. - lod);
     float crack = max(c1 * smoothstep(.35, .65, vnoise(g * .12 + 4.)), c2 * .6) * (1. - lod);
     float frost = smoothstep(.45, .8, fbm(g * .05 + 3.));
-    float rough = .006 + .05 * frost + .03 * crack;
+    float rough = .003 + .025 * frost + .02 * crack;
     // normal: gentle undulation + tilt into cracks; fades with distance
-    vec2 grad = vec2(vnoise(g * .7) - .5, vnoise(g * .7 + 5.) - .5) * .028 * (1. - lod);
+    vec2 grad = vec2(vnoise(g * .7) - .5, vnoise(g * .7 + 5.) - .5) * .012 * (1. - lod);
     grad += (vec2(vnoise(g * 3.1), vnoise(g * 3.1 + 9.)) - .5) * rough * 1.6 * (1. - lod);
     vec3 n = normalize(vec3(grad.x, 1., grad.y));
     vec3 rr = reflect(rd, n);
@@ -244,7 +244,7 @@ void main(){
     float F = .02 + .98 * pow(1. - cosT, 5.);
     F = mix(F, .5, .0) ;
     vec3 base = vec3(.002, .004, .007) + uAmb * .012;
-    col = base + refl * mix(.22, 1., F) * (1. - frost * .5);
+    col = base * .5 + refl * mix(.42, 1., F) * (1. - frost * .35);
     // frosted patches and crack walls scatter the aurora light
     vec3 lit = vec3(.05, .06, .075) * (.3 + .7 * uNight) + uAmb * .5;
     col += lit * (frost * .03 + crack * .2);
