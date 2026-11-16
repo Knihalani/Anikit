@@ -12,7 +12,7 @@ import { createControls } from './hall-controls.js';
 
 const SUN = [0.72, -0.62, -0.3];
 { const l = Math.hypot(SUN[0], SUN[1], SUN[2]); SUN[0] /= l; SUN[1] /= l; SUN[2] /= l; }
-const FOG = [0.86, 0.80, 0.72];
+const FOG = [0.55, 0.49, 0.42];
 const SPAWN = [0, 1.7, 12];
 const PI2 = Math.PI * 2;
 
@@ -30,7 +30,7 @@ const ST = [
 ];
 
 export function createHall(canvas, overlayEl) {
-  const gl = canvas.getContext('webgl2', { antialias: true, alpha: false, depth: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
+  const gl = canvas.getContext('webgl2', { antialias: (globalThis.devicePixelRatio || 1) < 1.3, alpha: false, depth: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
   if (!gl) throw new Error('hall: WebGL2 unavailable');
 
   const progMesh = program(gl, S.MESH_VS, S.MESH_FS);
@@ -53,7 +53,7 @@ export function createHall(canvas, overlayEl) {
     g.push(x, y, z, 0, sx, sy, sz, gloss, r, gg, b, e);
     if (collide) colliders.push(x - sx / 2, z - sz / 2, x + sx / 2, z + sz / 2);
   };
-  const WALL = [0.74, 0.68, 0.6], STONE = [0.86, 0.82, 0.76], GOLD = [0.86, 0.62, 0.3], CEIL = [0.8, 0.74, 0.66];
+  const WALL = [0.74, 0.54, 0.44], STONE = [0.84, 0.8, 0.74], GOLD = [0.8, 0.52, 0.2], CEIL = [0.5, 0.6, 0.74];
   // walls (thick boxes), ceiling
   box(archBox, -HX - 0.5, HY / 2, (HZ0 + HZ1) / 2, 1, HY, HZ1 - HZ0, 0.05, ...WALL);
   box(archBox, HX + 0.5, HY / 2, (HZ0 + HZ1) / 2, 1, HY, HZ1 - HZ0, 0.05, ...WALL);
@@ -87,10 +87,10 @@ export function createHall(canvas, overlayEl) {
     }
   }
   // end wall: a great arch frame behind the letters
-  box(archBox, 0, 9.3, HZ0 + 0.1, 10, 0.4, 0.3, 0.5, ...GOLD, 0.05);
-  box(archBox, -5, 4.65, HZ0 + 0.1, 0.4, 9.3, 0.3, 0.5, ...GOLD, 0.05);
-  box(archBox, 5, 4.65, HZ0 + 0.1, 0.4, 9.3, 0.3, 0.5, ...GOLD, 0.05);
-  box(archBox, 0, 4.6, HZ0 + 0.04, 9.6, 9.2, 0.1, 0.05, 0.9, 0.78, 0.62);
+  box(archBox, 0, 9.3, HZ0 + 0.1, 14.4, 0.4, 0.3, 0.5, ...GOLD, 0.05);
+  box(archBox, -7.2, 4.65, HZ0 + 0.1, 0.4, 9.3, 0.3, 0.5, ...GOLD, 0.05);
+  box(archBox, 7.2, 4.65, HZ0 + 0.1, 0.4, 9.3, 0.3, 0.5, ...GOLD, 0.05);
+  box(archBox, 0, 4.6, HZ0 + 0.04, 14, 9.2, 0.1, 0.05, 0.92, 0.84, 0.72);
   // door frame behind spawn (bright: where you came from)
   windows.push(0, 3.4, HZ1 - 0.02, 0, 3.6, 6.4, 0.06, 0, 1, 1, 1, 3);
   box(archBox, 0, 6.8, HZ1 - 0.1, 4.4, 0.5, 0.3, 0.5, ...GOLD, 0.05);
@@ -120,8 +120,9 @@ export function createHall(canvas, overlayEl) {
   archCyl.push(0, 0.62, -16, 0, 3.26, 0.05, 3.26, 0.6, ...GOLD, 0.05);
   colliders.push(-1.5, -17.5, 1.5, -14.5);
   // text: stage
-  box(archBox, 0, 0.2, -25.6, 12.5, 0.4, 3.4, 0.3, ...STONE, 0, true);
-  box(archBox, 0, 0.41, -24.0, 12.5, 0.03, 0.08, 0.6, ...GOLD, 0.04);
+  box(archBox, 0, 0.2, -25.6, 15, 0.4, 3.4, 0.3, ...STONE, 0, true);
+  box(archBox, 0, 0.41, -24.0, 15, 0.03, 0.08, 0.6, ...GOLD, 0.04);
+  for (let i = 0; i < 6; i++) archCyl.push((i - 2.5) * 2.3, 0.62, -25.6, 0, 1.3, 0.4, 1.3, 0.6, ...GOLD, 0.05);
 
   archBox.upload(); archCyl.upload(); windows.upload();
 
@@ -265,10 +266,12 @@ export function createHall(canvas, overlayEl) {
   const WAVE_FROM = ['center', 'edges', 0, 'random', 'last'];
   function wave() {
     const from = WAVE_FROM[waveN % WAVE_FROM.length];
-    const b = batch(NBk, { y: [0, 1.25, -0.08, 0], s: [0, 0.35, 0] }, {
+    const b = batch(NBk, { y: [0, 1, -0.08, 0], s: [0, 0.3, 0] }, {
       duration: 1.6, ease: 'inOutSine', delay: stagger(0.045, { grid: [GB, GB], from }),
     });
+    const old = waves[waveN & 1];
     waves[waveN & 1] = b;
+    if (old) old.kill();
     waveN++;
   }
 
@@ -280,12 +283,12 @@ export function createHall(canvas, overlayEl) {
     k: ['#....', '#....', '#..#.', '#.#..', '##...', '#.#..', '#..#.'],
     t: ['.#...', '.#...', '####.', '.#...', '.#...', '.#..#', '..##.'],
   };
-  const WORD = 'anikit', VOX = 0.3;
+  const WORD = 'anikit', VOX = 0.38;
   const letterS = [];
   const vox = []; // [letter, lx, ly]
   for (let li = 0; li < WORD.length; li++) {
     const rows = FONT[WORD[li]];
-    letterS.push({ y: 0, ry: 0, s: 1, bob: 0, cx: (li - (WORD.length - 1) / 2) * 1.85 });
+    letterS.push({ y: 0, ry: 0, s: 1, bob: 0, cx: (li - (WORD.length - 1) / 2) * 2.3 });
     for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) if (rows[r][c] === '#') vox.push(li, (c - 2) * VOX, (6 - r) * VOX);
   }
   const NV = vox.length / 3;
@@ -408,7 +411,7 @@ export function createHall(canvas, overlayEl) {
       const o = orbS[i];
       const fl = orbFollow ? 0 : 0.08 * Math.sin(t * 1.2 + i * 1.7);
       const sc = o.s * (1 + 0.15 * wk);
-      orbs.put(i, o.x, o.y + fl, o.z, 0, sc, sc, sc, 1.0, 0.98, 0.7 - i * 0.03, 0.3 + i * 0.04, 0.25 + 0.5 * wk);
+      orbs.put(i, o.x, o.y + fl, o.z, 0, sc, sc, sc, 1.0, 0.95, 0.55 - i * 0.03, 0.2 + i * 0.05, 0.06 + 0.3 * wk);
     }
     orbs.upload();
 
@@ -427,11 +430,11 @@ export function createHall(canvas, overlayEl) {
         let y = 0, s = 0;
         if (da) { y += da[i * sa + ya]; s += da[i * sa + ssa]; }
         if (dbb) { y += dbb[i * sb + yb]; s += dbb[i * sb + ssb]; }
-        const h = 0.16 + Math.max(0, y) * 0.5 + s * 0.4;
+        const h = 0.14 + Math.max(0, y) * 0.3 + s * 0.3;
         const hue = Math.min(1, Math.max(0, y));
-        blocks.put(i, 4.6 + (gx - 7.5) * 0.23, 0.27 + h / 2 + y * 0.45, -6.5 + (gz - 7.5) * 0.23, 0,
+        blocks.put(i, 4.6 + (gx - 7.5) * 0.23, 0.27 + h / 2 + y * 0.32, -6.5 + (gz - 7.5) * 0.23, 0,
           0.19, h, 0.19, 0.5,
-          0.92 - 0.6 * hue, 0.88 - 0.3 * hue, 0.82 + 0.15 * hue, 0.05 + 0.6 * hue * (0.4 + wk2));
+          0.22 + 0.78 * hue, 0.45 + 0.35 * hue, 0.72 - 0.45 * hue, 0.08 + 0.7 * hue * (0.4 + wk2));
       }
       blocks.upload();
     } else blocks.visible = false;
@@ -446,9 +449,9 @@ export function createHall(canvas, overlayEl) {
         const lx = vox[v * 3 + 1] * L.s, ly = vox[v * 3 + 2] * L.s;
         const c = Math.cos(L.ry), s = Math.sin(L.ry);
         const k = li / (WORD.length - 1);
-        letters.put(v, L.cx + c * lx, 0.42 + VOX / 2 + ly + L.y + L.bob, -25.6 - s * lx, L.ry,
+        letters.put(v, L.cx + c * lx, 1.1 + VOX / 2 + ly + L.y + L.bob, -25.6 - s * lx, L.ry,
           VOX * 0.94 * L.s, VOX * 0.94 * L.s, VOX * 0.94 * L.s, 0.8,
-          0.98, 0.55 + 0.25 * k, 0.32 + 0.1 * k, 0.12 + 0.35 * wk3 + 0.3 * Math.min(1, L.y));
+          1.0 - 0.15 * k, 0.42 + 0.3 * k, 0.28 - 0.1 * k, 0.18 + 0.35 * wk3 + 0.4 * Math.min(1, L.y));
       }
       letters.upload();
     } else letters.visible = false;
@@ -512,7 +515,7 @@ export function createHall(canvas, overlayEl) {
     updateCamera(cam);
     gl.viewport(0, 0, W, H);
     gl.disable(gl.SCISSOR_TEST);
-    gl.clearColor(0.93, 0.9, 0.85, 1);
+    gl.clearColor(0.8, 0.76, 0.7, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     gl.depthMask(true);
@@ -546,7 +549,7 @@ export function createHall(canvas, overlayEl) {
     gl.depthMask(false);
     gl.disable(gl.CULL_FACE);
     setCommon(progBeam, 1);
-    gl.uniform1f(progBeam.u.uBeam, 0.11);
+    gl.uniform1f(progBeam.u.uBeam, 0.07);
     gl.bindVertexArray(beamVao);
     gl.drawArrays(gl.TRIANGLES, 0, beamCount);
     setCommon(progDust, 1);
@@ -559,6 +562,7 @@ export function createHall(canvas, overlayEl) {
 
   // ---------- the contract ----------
   const api = {
+    _ctl: ctl,
     resize(cssW, cssH, dpr) {
       const d = Math.min(dpr || 1, 1.5);
       W = Math.max(1, Math.round(cssW * d));
@@ -620,7 +624,7 @@ function makeShapes(n) {
   const ga = Math.PI * (3 - Math.sqrt(5));
   for (let i = 0; i < n; i++) {
     const y = 1 - (i / (n - 1)) * 2, r = Math.sqrt(1 - y * y), th = ga * i;
-    const R = 1.55 * (0.96 + 0.04 * rnd());
+    const R = 1.75 * (0.96 + 0.04 * rnd());
     a[i * 3] = Math.cos(th) * r * R; a[i * 3 + 1] = y * R; a[i * 3 + 2] = Math.sin(th) * r * R;
   }
   out.push(a);

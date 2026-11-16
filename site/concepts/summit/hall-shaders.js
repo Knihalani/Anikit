@@ -31,24 +31,25 @@ vec3 tone(vec3 c) {
 vec3 shade(vec3 w, vec3 n, vec3 alb, float gloss, float emis, float fogDist) {
   vec3 V = normalize(uEye - w);
   float hemi = 0.5 + 0.5 * n.y;
-  vec3 amb = mix(vec3(0.42, 0.37, 0.33), vec3(0.78, 0.80, 0.86), hemi);
+  vec3 amb = mix(vec3(0.42, 0.36, 0.32), vec3(0.95, 0.97, 1.05), hemi);
   // soft ambient occlusion near floor and walls
-  float ao = mix(0.62, 1.0, smoothstep(0.0, 1.4, w.y));
-  ao *= mix(0.8, 1.0, smoothstep(8.0, 6.6, abs(w.x)));
+  float ao = mix(0.5, 1.0, smoothstep(0.0, 1.6, w.y));
+  ao *= mix(0.7, 1.0, smoothstep(8.0, 6.4, abs(w.x)));
+  ao *= mix(0.75, 1.0, smoothstep(-28.0, -24.0, w.z) * smoothstep(16.0, 13.0, w.z));
   ao *= mix(0.85, 1.0, smoothstep(12.0, 9.5, w.y));
   float wm = winMask(w);
   float nd = max(dot(n, -uSun), 0.0);
-  vec3 sunC = vec3(1.0, 0.82, 0.58) * 2.6;
+  vec3 sunC = vec3(1.0, 0.78, 0.52) * 4.2;
   vec3 col = alb * (amb * ao + sunC * wm * nd);
   // bounce from lit floor patches
-  col += alb * vec3(0.10, 0.08, 0.05) * (1.0 - hemi);
+  col += alb * vec3(0.12, 0.08, 0.05) * (1.0 - hemi);
   vec3 H = normalize(V - uSun);
   col += gloss * (pow(max(dot(n, H), 0.0), 60.0) * wm * 2.0 + pow(max(dot(n, V), 0.0), 3.0) * 0.0) * sunC;
   // rim from the sky-lit hall
   float fr = pow(1.0 - max(dot(n, V), 0.0), 4.0);
   col += gloss * fr * vec3(0.55, 0.55, 0.6);
   col += alb * emis;
-  float f = 1.0 - exp(-fogDist * 0.022);
+  float f = (1.0 - exp(-fogDist * 0.016)) * 0.85;
   col = mix(col, uFog, f);
   return col;
 }
@@ -82,7 +83,7 @@ in vec3 vW; in vec3 vN; in vec4 vCol; in float vGloss; in vec3 vL;
 out vec4 o;
 void main() {
   vec3 n = normalize(vN);
-  vec3 alb = vCol.rgb;
+  vec3 alb = vCol.rgb * vCol.rgb;
   float emis = vCol.a;
   // emissive > 2 marks windows: sky gradient
   if (emis > 2.0) {
@@ -94,7 +95,7 @@ void main() {
   }
   vec3 wm = vec3(vW.x, vW.y * uMirror, vW.z);
   vec3 col = shade(vW, n, alb, vGloss, emis, length(uEye - wm));
-  if (uMirror < 0.0) col *= vec3(0.92, 0.9, 0.88);
+  if (uMirror < 0.0) col *= vec3(0.8, 0.76, 0.72);
   o = vec4(tone(col), 1.0);
 }`;
 
@@ -117,7 +118,7 @@ void main() {
   vec2 p = vW.xz;
   vec2 tile = floor(p / 2.0);
   float chk = mod(tile.x + tile.y, 2.0);
-  vec3 a = mix(vec3(0.80, 0.74, 0.66), vec3(0.62, 0.56, 0.50), chk);
+  vec3 a = mix(vec3(0.84, 0.78, 0.70), vec3(0.42, 0.47, 0.44), chk);
   // central runner in warm stone
   float run = 1.0 - smoothstep(2.9, 3.0, abs(p.x));
   a = mix(a, vec3(0.78, 0.62, 0.46), run * 0.55);
@@ -129,10 +130,10 @@ void main() {
   // grout
   vec2 g = abs(fract(p / 2.0) - 0.5);
   a *= mix(0.82, 1.0, smoothstep(0.485, 0.47, max(g.x, g.y)));
-  vec3 col = shade(vW, vec3(0, 1, 0), a, 0.0, 0.0, length(uEye - vW));
+  vec3 col = shade(vW, vec3(0, 1, 0), a * a, 0.0, 0.0, length(uEye - vW));
   vec3 V = normalize(uEye - vW);
   float fres = pow(1.0 - V.y, 5.0);
-  float refl = clamp(0.30 + 0.55 * fres, 0.0, 0.85) * (1.0 - 0.25 * chk);
+  float refl = clamp(0.14 + 0.32 * fres, 0.0, 0.42) * (1.0 - 0.35 * chk);
   // floor gets the scene reflection through (1 - alpha)
   o = vec4(tone(col), 1.0 - refl);
 }`;
@@ -157,6 +158,8 @@ void main() {
   float a = edge * mix(0.25, 1.0, along) * smoothstep(0.0, 0.12, vUV.y);
   float d = length(uEye - vW);
   a *= smoothstep(0.6, 4.0, d);
+  vec3 N = normalize(cross(dFdx(vW), dFdy(vW)));
+  a *= pow(abs(dot(N, normalize(uEye - vW))), 1.5);
   float flick = 0.85 + 0.15 * sin(uTime * 0.7 + vW.z * 0.9 + vW.y * 0.4);
   a *= flick * uBeam;
   o = vec4(vec3(1.0, 0.86, 0.62) * a, 0.0);
@@ -170,7 +173,11 @@ layout(location=2) in vec4 aS; // delay, size, hue, rand
 uniform mat4 uVP; uniform float uMirror; uniform float uMix; uniform float uTime;
 uniform vec3 uCenter; uniform float uPx; uniform vec3 uEye; uniform float uSpin;
 out vec3 vC; out float vFog;
-vec3 pal(float t) { return 0.55 + 0.45 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) * 0.8 + t + vec3(0.02, 0.1, 0.25))); }
+vec3 pal(float t) {
+  t = clamp(t, 0.0, 1.0);
+  vec3 a = vec3(0.10, 0.22, 0.95), b = vec3(0.55, 0.22, 0.95), c = vec3(1.0, 0.38, 0.32), d = vec3(1.0, 0.78, 0.30);
+  return t < 0.33 ? mix(a, b, t / 0.33) : t < 0.66 ? mix(b, c, (t - 0.33) / 0.33) : mix(c, d, (t - 0.66) / 0.34);
+}
 void main() {
   float m = clamp(uMix * 1.7 - aS.x * 0.7, 0.0, 1.0);
   m = m * m * (3.0 - 2.0 * m);
@@ -185,8 +192,8 @@ void main() {
   vec4 cp = uVP * vec4(w.x, w.y * uMirror, w.z, 1.0);
   gl_Position = cp;
   gl_PointSize = clamp(uPx * aS.y / cp.w, 1.0, 9.0);
-  vC = pal(aS.z + p.y * 0.08 + mid * 0.2) * (0.75 + 0.5 * mid);
-  vFog = 1.0 - exp(-length(uEye - w) * 0.022);
+  vC = pal(0.5 + p.y * 0.26 + aS.z * 0.5 - 0.1 + mid * 0.25) * (0.85 + 0.6 * mid);
+  vFog = (1.0 - exp(-length(uEye - w) * 0.016)) * 0.85;
 }`;
 
 export const PTS_FS = /* glsl */ `#version 300 es
@@ -199,7 +206,7 @@ void main() {
   vec2 q = gl_PointCoord * 2.0 - 1.0;
   float r = dot(q, q);
   if (r > 1.0) discard;
-  vec3 c = vC * (1.15 - 0.5 * r);
+  vec3 c = vC * (0.75 - 0.35 * r);
   o = vec4(tone(mix(c, uFog, vFog)), 1.0);
 }`;
 
@@ -237,6 +244,6 @@ in vec2 vUV; in vec3 vW; out vec4 o;
 void main() {
   vec4 t = texture(uTex, vUV);
   vec3 c = t.rgb * (0.95 + 0.25 * uGlow);
-  float f = 1.0 - exp(-length(uEye - vW) * 0.022);
+  float f = (1.0 - exp(-length(uEye - vW) * 0.016)) * 0.85;
   o = vec4(mix(c, pow(uFog, vec3(1.0/2.2)) * 0.97, f), 1.0);
 }`;

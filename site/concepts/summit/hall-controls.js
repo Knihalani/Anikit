@@ -36,7 +36,7 @@ export function createControls(canvas, overlayEl, opts) {
   hint.style.cssText = 'opacity:.75;margin-top:4px;font-size:14px';
   card.append(name, hint);
   const tip = document.createElement('div');
-  tip.style.cssText = 'position:absolute;left:50%;top:58%;transform:translateX(-50%);font-size:14px;opacity:.8;white-space:nowrap;text-shadow:0 1px 8px rgba(255,248,236,.9)';
+  tip.style.cssText = 'position:absolute;left:50%;bottom:7%;transform:translateX(-50%);font-size:14px;opacity:.8;white-space:nowrap;text-shadow:0 1px 8px rgba(255,248,236,.9)';
   tip.textContent = touch ? 'Left thumb to walk · drag to look' : 'Click to look around · WASD to walk · Shift to run';
   const jBase = document.createElement('div');
   jBase.style.cssText = 'position:absolute;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;border:2px solid rgba(255,255,255,.75);background:rgba(255,250,240,.18);opacity:0;left:0;top:0';
@@ -49,6 +49,7 @@ export function createControls(canvas, overlayEl, opts) {
   const cardS = { o: 0 }, hudS = { o: 0 }, tipS = { o: 1 };
 
   function setStation(n, h) {
+    if (n) hideTip();
     if (n) { name.textContent = n; hint.textContent = touch ? h.replace(/Click or E|E to/g, (m) => (m === 'E to' ? 'Use to' : 'Tap')) : h; }
     animate(card, { opacity: n ? 1 : 0, y: n ? [8, 0] : 0 }, { duration: n ? 0.45 : 0.3, ease: 'outCubic' });
     animate(useBtn, { opacity: n ? 1 : 0.35, scale: n ? 1 : 0.9 }, { duration: 0.35, ease: 'outBack' });

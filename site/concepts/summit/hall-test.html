@@ -34,6 +34,7 @@
   function enter() { mode = 'enter'; canvas.style.clipPath = ''; go.remove(); hall.enter(); }
   go.onclick = enter;
   if (mode === 'enter') enter();
+  if (q.has('at')) { const [x, z, yaw, pitch] = q.get('at').split(',').map(Number); const c = hall._ctl; setTimeout(() => { c.pos[0] = x; c.pos[2] = z; c.yaw = yaw || 0; c.pitch = pitch || 0; }, 50); }
   addEventListener('keydown', (e) => { if (e.code === 'Escape' && mode === 'enter' && !document.pointerLockElement) { /* stay */ } });
   const stats = document.getElementById('stats');
   let frames = 0, acc = 0;
