@@ -986,6 +986,8 @@ pub struct CounterPlan {
     font: FontId,
     size: f32,
     color: Rgba,
+    gradient: Option<super::layout::Gradient>,
+    height: f32,
     baseline: f32,
     /// Glyph and advance per char (digits, sign, point, separator, affixes).
     table: Vec<(char, u16, f32)>,
@@ -1022,6 +1024,8 @@ impl CounterPlan {
             font: r.map_or(FontId(0), |r| r.font),
             size: r.map_or(c.style.size, |r| r.size),
             color: r.map_or(c.style.color.0, |r| r.color),
+            gradient: c.style.gradient.clone().filter(|g| !g.colors.is_empty()),
+            height: l.height,
             baseline: l.lines.first().map_or(c.style.size, |x| x.baseline),
             table,
         }
@@ -1059,7 +1063,14 @@ impl CounterPlan {
         for g in &mut glyphs {
             g.x += shift;
         }
-        out.push(Op::Glyphs { font: self.font, size: self.size, glyphs, paint: Paint::Solid(self.color), transform });
+        let paint = match &self.gradient {
+            Some(g) => match g.paint(x, self.height, 1.0) {
+                Paint::Linear { p0, p1, stops } => Paint::Linear { p0: [p0[0] + shift, p0[1]], p1: [p1[0] + shift, p1[1]], stops },
+                p => p,
+            },
+            None => Paint::Solid(self.color),
+        };
+        out.push(Op::Glyphs { font: self.font, size: self.size, glyphs, paint, transform });
     }
 }
 
