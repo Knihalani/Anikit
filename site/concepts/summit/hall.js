@@ -227,7 +227,7 @@ export function createHall(canvas, overlayEl) {
   // ---- benchmark panel (canvas texture) ----
   const BENCH = [
     // label, ratio (lower bound shown on the bar), text — all from README.md
-    ['1k objects, 3 numbers/frame vs GSAP 3', 3.5, '3.5–3.8×'],
+    ['1k objects vs GSAP 3 (1.3–1.5× at 10k–50k)', 3.5, '3.5–3.8×'],
     ['batch(), 100k objects vs GSAP 3', 16, '~16×'],
     ['2D physics, 250 bodies vs matter.js', 43, '43–60×'],
     ['3D project + sort, 100k pts vs JS', 20, '20–22×'],
@@ -351,7 +351,13 @@ export function createHall(canvas, overlayEl) {
   function wakeStation(i, on) {
     animate(wake[i], { v: on ? 1 : 0 }, { duration: on ? 0.6 : 0.9, ease: 'outCubic' });
     if (on && ST[i].id === 'bench') benchIn(false);
-    if (on && ST[i].id === 'blocks' && st.ready) wave();
+    if (on && st.ready) {
+      const id = ST[i].id;
+      if (id === 'blocks') wave();
+      else if (id === 'text') playText();
+      else if (id === 'physics') wld.impulse(PW / 2, PH, 140, 700);
+      else if (id === 'cloud' && cloud.mix >= 1 && cloud.idle > 2) morph();
+    }
   }
 
   function updateNear(px, pz) {
