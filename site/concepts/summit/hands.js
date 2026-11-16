@@ -126,7 +126,7 @@ void main() {
   bool ember = h4 < uP.w;
   // Spin is clockwise on screen (decreasing angle); the band crackles: radius re-rolls ~25 times a second.
   float tick = floor(t * 25.0 + h5 * 25.0);
-  float band = 3.0 * uScale + R * 0.05;
+  float band = 3.0 * uScale + R * 0.055;
   vec2 pos, dir; float len, wid, bright;
   vec3 col;
   if (!ember) {
@@ -138,7 +138,7 @@ void main() {
     dir = vec2(sin(a), cos(a));                               // direction of travel (clockwise)
     float hot = 1.0 - min(1.0, abs(jr) * 1.4);
     len = (4.0 + 22.0 * h2 * h2) * uScale * (0.4 + 0.6 * closed) * (0.5 + 0.5 * min(1.0, R / (200.0 * uScale)));
-    wid = (0.7 + 0.8 * h3) * uScale;
+    wid = (1.0 + 1.0 * h3) * uScale;
     float flick = 0.35 + 0.65 * h(f * 0.7 + tick);
     bright = (0.8 + 1.4 * h1 * h1) * flick * (0.5 + 0.5 * hot) * (1.0 + 0.8 * min(1.0, R / (500.0 * uScale)));
     col = mix(vec3(1.0, 0.3, 0.06), mix(vec3(1.0, 0.6, 0.18), vec3(1.0, 0.92, 0.7), hot * hot), 0.35 + 0.65 * hot);
@@ -296,7 +296,7 @@ const FINGERS = [
 const makePose = (side) => ({ x: side * 0.2, y: -0.5, z: -0.38, yaw: 0, pitch: 20, roll: 0, curl: 0.55, spread: 0.1, thumb: 0.2, tcurl: 0.4, ex: side * 0.26, ey: -0.55, ez: -0.12 });
 
 export function createHands(canvas) {
-  const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: true, depth: true, powerPreference: 'high-performance' });
+  const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: (globalThis.devicePixelRatio || 1) < 2, depth: true, powerPreference: 'high-performance' });
   if (!gl) return { resize() {}, frame() { return NOOP; } };
   const NOOP = { portal: { x: 0, y: 0, r: 0 } };
 
@@ -351,36 +351,28 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
   const emptyVao = gl.createVertexArray();
 
   // -------------------------------------------------------------------------
-  // The gesture: one Anikit timeline over the two poses and the portal, scrubbed by g (0..1 → 0..10 s).
-  // The circling itself runs on time (about one loop a second) once the hands are up; scroll decides
-  // how far the portal has come: its growth, the opening and the step through.
+  // The formation plays on its own clock, like a film: once the scroll triggers it, about 3.5 s of
+  // hands rising, a fingertip tracing loops, a small ring that ignites, expands and opens onto the hall.
+  // Scrolling back reverses it. Afterwards the scroll carries you through (a second, scrubbed timeline).
   // -------------------------------------------------------------------------
   const Lh = makePose(-1), Rh = makePose(1);
   Lh.x = -0.36; Lh.y = -0.62; Rh.x = 0.36; Rh.y = -0.62;
-  const portal = { size: 0, open: 0, grow: 0, glow: 0, flash: 0 };
+  const portal = { size: 0, glow: 0, grow: 0, drop: 0 };
   const io = 'inOutCubic', oo = 'outCubic';
-  const tl = timeline({ autoplay: false })
-    // The ring hand rises and holds forward, low left; the drawing hand comes up low right (0 → 2).
-    .add(Lh, { x: [-0.36, -0.31], y: [-0.62, -0.31], z: [-0.48, -0.52], pitch: [30, 80], yaw: [25, 24], roll: [-20, -6], curl: [0.5, 0.12], spread: [0.1, 0.75], thumb: [0.2, 0.75], tcurl: [0.4, 0.12], ex: -0.42, ey: -0.68, ez: -0.3 }, { duration: 2.0, ease: oo }, 0)
-    .add(Rh, { x: [0.36, 0.22], y: [-0.62, -0.3], z: [-0.48, -0.5], pitch: [30, 62], yaw: [-25, -14], roll: [20, 8], curl: [0.5, 0.2], spread: 0.35, thumb: 0.45, tcurl: 0.3, ex: 0.4, ey: -0.68, ez: -0.3 }, { duration: 2.1, ease: oo }, 0.1)
-    .add(portal, { glow: [0, 1] }, { duration: 0.6, ease: 'outSine' }, 1.7)
-    // The closed ring expands from hand size to full size (3.0 → 6.0), then tears open.
-    .add(portal, { size: [0, 1] }, { duration: 3.0, ease: io }, 3.0)
-    .add(portal, { open: [0, 1] }, { duration: 0.5, ease: 'outCubic' }, 6.0)
-    .add(portal, { flash: [0, 1, 0] }, { duration: 0.6, ease: 'outSine' }, 6.0)
-    // The drawing hand eases back as the ring takes over.
-    .add(Rh, { x: 0.27, y: -0.34, curl: 0.3 }, { duration: 1.0, ease: io }, 5.6)
-    // Step through (7.2 → 10): the portal grows past the screen, the arms drop away.
-    .add(portal, { grow: [0, 1] }, { duration: 2.8, ease: 'inCubic' }, 7.2)
-    .add(Lh, { y: -0.66, pitch: 40, curl: 0.4, ey: -0.8 }, { duration: 1.4, ease: 'inCubic' }, 7.4)
-    .add(Rh, { y: -0.66, pitch: 40, curl: 0.4, ey: -0.8 }, { duration: 1.3, ease: 'inCubic' }, 7.3);
-  const TL = 10;
-  const DRAW_AT = 0.17;        // g from which the hand circles
-  // The hand pose follows g through a soft, heavy, critically damped spring.
-  const gS = { v: 0 };
-  let gTarget = -1, lastSeek = -1;
-  // Time-driven drawing state.
-  const draw$ = { phase: 0, vel: 0, amp: 0, arc: 0, closed: 0, flash: 0, wasClosed: false };
+  const FORM = 3.5;            // seconds
+  const tlForm = timeline({ autoplay: false })
+    .add(Lh, { x: [-0.36, -0.31], y: [-0.62, -0.31], z: [-0.48, -0.52], pitch: [30, 80], yaw: [25, 24], roll: [-20, -6], curl: [0.5, 0.12], spread: [0.1, 0.75], thumb: [0.2, 0.75], tcurl: [0.4, 0.12], ex: -0.42, ey: -0.68, ez: -0.3 }, { duration: 0.9, ease: oo }, 0)
+    .add(Rh, { x: [0.36, 0.22], y: [-0.62, -0.3], z: [-0.48, -0.5], pitch: [30, 62], yaw: [-25, -14], roll: [20, 8], curl: [0.5, 0.2], spread: 0.35, thumb: 0.45, tcurl: 0.3, ex: 0.4, ey: -0.68, ez: -0.3 }, { duration: 0.85, ease: oo }, 0.05)
+    .add(portal, { glow: [0, 1] }, { duration: 0.35, ease: 'outSine' }, 0.7)
+    .add(portal, { size: [0, 1] }, { duration: 1.25, ease: io }, 2.0)
+    .add(Rh, { x: 0.27, y: -0.34, curl: 0.3 }, { duration: 0.8, ease: io }, 2.6);
+  const tlStep = timeline({ autoplay: false })
+    .add(portal, { grow: [0, 1] }, { duration: 1, ease: 'inCubic' }, 0)
+    .add(portal, { drop: [0, 1] }, { duration: 0.6, ease: 'inCubic' }, 0.05);
+  const TRIGGER = 0.06;        // g at which the formation starts
+  const ARC_FROM = 0.8, ARC_LEN = 1.1;   // seconds into the formation the fingertip draws the ring
+  // Time-driven state (allocation-free).
+  const draw$ = { f: 0, lastF: -1, phase: 0, vel: 0, amp: 0, flash: 0, step: 0, stepV: 0, lastStep: -1 };
 
   // -------------------------------------------------------------------------
   // Skeleton → instances (no allocation per frame).
@@ -507,11 +499,12 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
   // -------------------------------------------------------------------------
   // Frame
   // -------------------------------------------------------------------------
-  const out = { portal: { x: 0, y: 0, r: 0, power: 0, ring: 0 } };
+  const out = { portal: { x: 0, y: 0, r: 0, power: 0, ring: 0, formed: 0, step: 0 } };
   const proj = new Float32Array(16);
   let cssW = 1, cssH = 1, dprK = 1, fov = 0, tanH = 0.6, aspect = 1;
-  const NSPARK = 32000;
+  const NSPARK = 9000;
   const sun = [0.18, 0.2, -1];
+  const off = (globalThis.__summitOff) || {};
   function resize(w, h, dpr) {
     cssW = w; cssH = h; dprK = Math.min(dpr || 1, 2);
     canvas.width = Math.max(2, Math.round(w * dprK)); canvas.height = Math.max(2, Math.round(h * dprK));
@@ -535,13 +528,14 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
   }
   const LOOP_R = 0.045;        // metres, the drawing fingertip's loop
   let spinAcc = 0, drewLast = true, timeNow = 0;
+  const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
   function draw(sparkOn, cx, cy, ringR, arc, a0, closed, gr, power) {
     const Wd = canvas.width, Hd = canvas.height, k = dprK;
     gl.viewport(0, 0, Wd, Hd);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    if (n > 0) {
+    if (n > 0 && !off.hands) {
       gl.enable(gl.DEPTH_TEST); gl.depthMask(true); gl.disable(gl.BLEND);
       gl.enable(gl.CULL_FACE); gl.cullFace(gl.FRONT);
       gl.useProgram(MESH.p);
@@ -562,37 +556,45 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
       }
       gl.disable(gl.CULL_FACE);
     }
-    if (sparkOn) {
+    if (sparkOn && !off.sparks) {
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
       gl.bindVertexArray(emptyVao);
-      // Light cast on the snow (and a flash), behind everything.
+      // Light cast on the snow, limited to a box round the portal and below it.
       gl.disable(gl.DEPTH_TEST); gl.depthMask(false);
-      gl.useProgram(LIGHT.p);
-      gl.uniform2f(LIGHT.u.uRes, Wd, Hd);
-      gl.uniform4f(LIGHT.u.uRing, cx * k, cy * k, Math.max(ringR, cssH * 0.1) * k, power * (1 - gr));
-      gl.uniform2f(LIGHT.u.uL, (portal.flash * 0.25 + draw$.flash * 0.3) * (1 - gr), cssH * 0.86 * k);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      const LR = Math.max(ringR, cssH * 0.1);
+      const bx = Math.max(0, Math.floor((cx - LR * 4.5) * k)), bw = Math.min(Wd, Math.ceil((cx + LR * 4.5) * k)) - bx;
+      const by = Math.max(0, Math.floor((cy - LR * 3.2) * k));
+      if (bw > 0 && by < Hd) {
+        gl.enable(gl.SCISSOR_TEST);
+        gl.scissor(bx, 0, bw, Hd - by);
+        gl.useProgram(LIGHT.p);
+        gl.uniform2f(LIGHT.u.uRes, Wd, Hd);
+        gl.uniform4f(LIGHT.u.uRing, cx * k, cy * k, LR * k, power * (1 - gr));
+        gl.uniform2f(LIGHT.u.uL, draw$.flash * 0.35 * (1 - gr), cssH * 0.86 * k);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        gl.disable(gl.SCISSOR_TEST);
+      }
       gl.enable(gl.DEPTH_TEST);
       const fade = 1 - gr * gr;
       gl.useProgram(GLOW.p);
       gl.uniform2f(GLOW.u.uRes, Wd, Hd);
       gl.uniform4f(GLOW.u.uRing, cx * k, cy * k, ringR * k, arc);
-      gl.uniform4f(GLOW.u.uP, timeNow, spinAcc, power * fade, portal.open);
+      gl.uniform4f(GLOW.u.uP, timeNow, spinAcc, power * fade, 1);
       gl.uniform2f(GLOW.u.uA, a0, closed);
       gl.uniform1f(GLOW.u.uDepth, portalDepth());
       gl.uniform1f(GLOW.u.uScale, k);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 322);
-      // The tear sends one shockwave ring outwards.
-      const sh = portal.open;
-      if (sh > 0.01 && sh < 0.99) {
-        gl.uniform4f(GLOW.u.uRing, cx * k, cy * k, ringR * (1 + 0.7 * sh) * k, 1);
-        gl.uniform4f(GLOW.u.uP, timeNow, spinAcc, 1.6 * (1 - sh) * (1 - sh) * fade, 0);
+      // Ignition sends one shockwave ring outwards.
+      const sh = 1 - draw$.flash;
+      if (draw$.flash > 0.02) {
+        gl.uniform4f(GLOW.u.uRing, cx * k, cy * k, ringR * (1 + 1.4 * sh) * k, 1);
+        gl.uniform4f(GLOW.u.uP, timeNow, spinAcc, 1.4 * draw$.flash * draw$.flash * fade, 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 322);
       }
       gl.useProgram(SPARK.p);
       gl.uniform2f(SPARK.u.uRes, Wd, Hd);
       gl.uniform4f(SPARK.u.uRing, cx * k, cy * k, ringR * k, arc);
-      gl.uniform4f(SPARK.u.uP, timeNow, spinAcc, power * fade, 0.12 + 0.2 * closed);
+      gl.uniform4f(SPARK.u.uP, timeNow, spinAcc, power * fade, 0.14 + 0.16 * closed);
       gl.uniform2f(SPARK.u.uA, a0, closed);
       gl.uniform1f(SPARK.u.uFloor, cssH * 0.88 * k);
       gl.uniform1f(SPARK.u.uDepth, portalDepth());
@@ -603,44 +605,51 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
     }
   }
 
-  const sparkOn0 = (pt, D) => D.arc > 0.001 && pt.glow > 0.001;
+  const sparkOn0 = (D) => D.f * FORM > ARC_FROM && portal.glow > 0.001;
   function frame(t, dt, g, look) {
     timeNow = t;
     dt = Math.min(0.05, Math.max(0, dt || 0));
     g = Math.min(1, Math.max(0, g || 0));
-    if (Math.abs(g - gTarget) > 0.0005) { gTarget = g; spring(gS, { v: g }, { stiffness: 45, damping: 2 * Math.sqrt(45) }); }
-    const gv = Math.min(1, Math.max(0, gS.v));
-    if (Math.abs(gv - lastSeek) > 1e-5) { tl.seek(gv * TL); lastSeek = gv; }
-
-    // Time-driven circling: about a loop a second, easing in and out; it draws the ring.
     const D = draw$;
-    const drawing = gv > DRAW_AT && gv * TL < 7.2;
-    const k1 = 1 - Math.exp(-dt * 1.6);
-    D.vel += ((drawing ? Math.PI * 2 * 0.95 : 0) - D.vel) * k1;
-    D.amp += ((drawing ? 1 : 0) - D.amp) * (1 - Math.exp(-dt * 2.2));
+    // Formation clock: forwards at real speed once triggered, back a little faster when you scroll up.
+    const trig = g > TRIGGER;
+    D.f = trig ? Math.min(1, D.f + dt / FORM) : Math.max(0, D.f - dt / (FORM * 0.6));
+    const F = D.f * FORM;
+    if (D.f !== D.lastF) { tlForm.seek(F); D.lastF = D.f; }
+    // Step through: only once formed; a critically damped spring follows the scroll.
+    const stepT = D.f >= 1 ? Math.min(1, Math.max(0, (g - 0.75) / 0.25)) : 0;
+    const K = 60, C = 2 * Math.sqrt(K);
+    D.stepV += (K * (stepT - D.step) - C * D.stepV) * dt;
+    D.step = Math.min(1, Math.max(0, D.step + D.stepV * dt));
+    if (Math.abs(D.step - D.lastStep) > 1e-5) { tlStep.seek(D.step); D.lastStep = D.step; }
+
+    // Ring: drawn by the fingertip, closes, ignites, expands.
+    const arc = Math.min(1, Math.max(0, (F - ARC_FROM) / ARC_LEN));
+    const closedNow = F >= ARC_FROM + ARC_LEN;
+    if (closedNow && !D.wasClosed && trig) D.flash = 1;
+    D.wasClosed = closedNow;
+    D.flash *= Math.exp(-dt * 3.2);
+    const closed = sm(ARC_FROM + ARC_LEN - 0.05, ARC_FROM + ARC_LEN + 0.25, F);
+    // The hand circles at about a loop a second while it draws and holds the ring.
+    const circling = F > 0.55 && F < 3.3 && D.step < 0.3;
+    D.vel += ((circling ? Math.PI * 2 : 0) - D.vel) * (1 - Math.exp(-dt * 2.2));
+    D.amp += ((circling ? 1 : 0) - D.amp) * (1 - Math.exp(-dt * 2.5));
     D.phase += D.vel * dt;
     if (D.phase > 1e4) D.phase -= Math.PI * 2 * 1000;
-    // Each loop extends the arc; once you're scrolling into the expansion it closes regardless.
-    if (gv > DRAW_AT) D.arc = Math.min(1, D.arc + (D.vel * dt) / (Math.PI * 2 * 1.6) + (gv * TL > 3.0 ? dt * 1.2 : 0));
-    else D.arc = Math.max(0, D.arc - dt * 0.9);
-    const isClosed = D.arc >= 1;
-    if (isClosed && !D.wasClosed) D.flash = 1;
-    D.wasClosed = isClosed;
-    D.flash *= Math.exp(-dt * 3.5);
-    D.closed += ((isClosed ? 1 : 0) - D.closed) * (1 - Math.exp(-dt * 3.0));
-    spinAcc += dt * 8.0 * D.closed;
+    spinAcc += dt * 8.0 * closed;
     if (spinAcc > 1e4) spinAcc -= Math.PI * 2 * 1000;
 
     const lx = look ? look.x || 0 : 0, ly = look ? look.y || 0 : 0;
     const sway = Math.sin(t * 0.9) * 0.003, bob = Math.sin(t * 1.4) * 0.002;
-    const ph = -D.phase + Math.PI / 2;            // clockwise on screen, starting at the top
-    const sizeEff = portal.size * D.closed;
-    const loopR = LOOP_R * (1 + 0.7 * sizeEff) * D.amp;
+    const ph = -D.phase + Math.PI / 2;
+    const sizeEff = portal.size * closed;
+    const loopR = LOOP_R * (1 + 0.6 * sizeEff) * D.amp;
     const ca = Math.cos(ph), sa = Math.sin(ph);
     const xs = Math.min(1, Math.max(0.42, aspect / 1.6));
+    const drop = portal.drop * 0.36;
     const rx = Rh.x, ry = Rh.y, lxp = Lh.x, lyp = Lh.y, rex = Rh.ex, lex = Lh.ex;
-    Rh.x = Rh.x * xs + ca * loopR - lx * 0.01 + sway; Rh.y += sa * loopR - ly * 0.008 + bob; Rh.ex *= xs;
-    Lh.x = Lh.x * xs - lx * 0.01 - sway * 0.7; Lh.y += -ly * 0.008 + bob * 0.8; Lh.ex *= xs;
+    Rh.x = Rh.x * xs + ca * loopR - lx * 0.01 + sway; Rh.y += sa * loopR - ly * 0.008 + bob - drop; Rh.ex *= xs;
+    Lh.x = Lh.x * xs - lx * 0.01 - sway * 0.7; Lh.y += -ly * 0.008 + bob * 0.8 - drop; Lh.ex *= xs;
     n = 0; ringN = 0;
     if (Lh.y > -0.58 || Rh.y > -0.58) {
       buildHand(Lh, -1, true, t);
@@ -648,35 +657,33 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
     }
     Rh.x = rx; Rh.y = ry; Lh.x = lxp; Lh.y = lyp; Rh.ex = rex; Lh.ex = lex;
 
-    // The small ring forms on the fingertip's loop, then grows out to the full portal in the middle.
+    // Small ring on the fingertip's loop, growing out to the full portal in the middle.
     project(TIP[0] - ca * loopR, TIP[1] - sa * loopR, TIP[2]);
     const sX = scr[0], sY = scr[1], sR = Math.max(LOOP_R * 1.15 * scr[2], 6);
     const minS = Math.min(cssW, cssH);
     const R0 = Math.min(cssW * 0.34, cssH * 0.4);
     const cover = Math.hypot(cssW, cssH) * 0.62;
     const gr = portal.grow;
-    const e = sizeEff * sizeEff * (3 - 2 * sizeEff);
+    const e = sizeEff;
     const fx = cssW * 0.5 + lx * minS * 0.02, fy = lerpR(cssH * 0.42, cssH * 0.5, gr) + ly * minS * 0.015;
     const cx = lerpR(sX, fx, e), cy = lerpR(sY, fy, e);
     const ringR = lerpR(lerpR(sR, R0, e), cover * 1.08, gr);
-    const arc = D.arc;
-    const a0 = ph - arc * Math.PI * 2 * -1;      // the head sits at the fingertip
-    const power = portal.glow * Math.min(1, 0.25 + arc) * (1 + D.flash * 0.6);
+    const power = portal.glow * Math.min(1, 0.3 + arc) * (1 + D.flash * 0.7);
     const P = out.portal;
     P.x = cx; P.y = cy;
-    // The destination shows inside the ring from the moment it closes, bordered by the sparks.
-    P.r = D.closed < 0.01 ? 0 : Math.max(0, ringR * 0.955 - 2) * D.closed;
+    P.r = closed < 0.01 ? 0 : Math.max(0, ringR * 0.955 - 2) * closed;
     P.power = Math.min(1, power);
-    P.ring = sparkOn0(portal, D) ? ringR : 0;
+    P.ring = sparkOn0(D) ? ringR : 0;
+    P.formed = D.f;
+    P.step = D.step;
 
-    const sparkOn = arc > 0.001 && portal.glow > 0.001;
+    const sparkOn = sparkOn0(D) && arc > 0.001;
     if (n === 0 && !sparkOn) {
       if (drewLast) { gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); drewLast = false; }
       return out;
     }
     drewLast = true;
-    draw(sparkOn, cx, cy, ringR, arc, ph, D.closed, gr, power);
-    void a0;
+    draw(sparkOn, cx, cy, ringR, arc, ph, closed, gr, power);
     return out;
   }
 
@@ -685,7 +692,6 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
     const saveN = n; n = 0;
     buildHand(Lh, -1, true, 0); buildHand(Rh, 1, false, 0);
     draw(true, 0, 0, 1, 0.5, 0, 0, 0, 0);
-    draw$.arc = 0;
     gl.flush();
     n = saveN; ringN = 0;
     gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

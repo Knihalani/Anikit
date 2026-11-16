@@ -52,6 +52,12 @@ await ready;
 let createMountain = stubMountain;
 try { ({ createMountain } = await import('./mountain.js')); } catch { /* the stand-in until mountain.js lands */ }
 
+// ?perf shows real frame times per phase; ?perf=no-sparks,no-hall,no-mountain,no-hands switches passes off to rank their cost.
+const perfArg = new URLSearchParams(location.search).get('perf');
+const OFF = {};
+if (perfArg) for (const k of perfArg.split(',')) if (k.startsWith('no-')) OFF[k.slice(3)] = true;
+globalThis.__summitOff = OFF;
+
 const mountainCanvas = $('#mountain'), hallCanvas = $('#hall'), handsCanvas = $('#hands');
 const mountain = createMountain(mountainCanvas);
 const hall = createHall(hallCanvas, $('#overlay'));
@@ -107,7 +113,7 @@ function exitHall() {
   armed = false;
   root.classList.remove('in-hall');
   // Back to just outside the portal; the spring carries the camera back from there.
-  const p = 0.8;
+  const p = 0.7;
   scrollTo({ top: p * maxScroll, behavior: 'instant' });
   spring(sp, { p }, SPRING);
 }
@@ -118,37 +124,76 @@ addEventListener('keydown', (e) => { if (e.key === 'Escape' && inHall && !docume
 const io = { p: 0, g: 0, push: 0, k: 0 };
 function mapProgress(p) {
   io.p = p;
-  io.g = p < 0.06 ? 0 : p < 0.7 ? ((p - 0.06) / 0.64) * 0.75 : 0.75 + clamp01((p - 0.7) / 0.22) * 0.25;
-  io.push = clamp01((p - 0.7) / 0.22);
-  io.k = io.push;
+  // A little scroll triggers the formation (it then plays on its own clock); later scroll carries you through.
+  io.g = p < 0.08 ? 0 : p < 0.35 ? 0.1 + ((p - 0.08) / 0.27) * 0.64 : 0.75 + clamp01((p - 0.35) / 0.55) * 0.25;
+}
+
+
+// Frame-time readout (?perf): p50 / p95 / max over the last 120 frames, per phase. Allocation-free.
+const perf = perfArg !== null ? (() => {
+  const el = document.createElement('pre');
+  el.style.cssText = 'position:fixed;right:8px;top:48px;z-index:9;margin:0;padding:8px 10px;font:12px/1.35 ui-monospace,monospace;background:rgba(0,0,0,.6);color:#fff;border-radius:8px;pointer-events:none;white-space:pre';
+  document.body.append(el);
+  const names = ['summit', 'portal', 'hall'];
+  const buf = [new Float32Array(120), new Float32Array(120), new Float32Array(120)];
+  const len = [0, 0, 0], at = [0, 0, 0], scratch = new Float32Array(120);
+  let n = 0;
+  return { el, names, buf, len, at, scratch, get n() { return n; }, set n(v) { n = v; } };
+})() : null;
+function perfTick(dtMs, phase) {
+  const P = perf;
+  P.buf[phase][P.at[phase]] = dtMs; P.at[phase] = (P.at[phase] + 1) % 120; P.len[phase] = Math.min(120, P.len[phase] + 1);
+  if (++P.n % 30) return;
+  let txt = 'frame ms   p50   p95   max';
+  for (let i = 0; i < 3; i++) {
+    const L = P.len[i];
+    if (!L) continue;
+    const s = P.scratch.subarray(0, L);
+    s.set(P.buf[i].subarray(0, L)); s.sort();
+    txt += `\n${P.names[i].padEnd(8)} ${s[Math.floor(L * 0.5)].toFixed(1).padStart(5)} ${s[Math.min(L - 1, Math.floor(L * 0.95))].toFixed(1).padStart(5)} ${s[L - 1].toFixed(1).padStart(5)}`;
+  }
+  P.el.textContent = txt;
+  window.__summitPerf = txt;
 }
 
 let clipKey = '', hallShown = false, mountainOn = true;
+const hallRect = { x: 0, y: 0, w: 1, h: 1 };
 const status = { frames: 0, p: 0, r: 0, inHall: false };
 window.__summit = status;
 function frame(timeMs, dtMs) {
   const t = timeMs / 1000, dt = Math.min(dtMs, 50) / 1000;
   status.frames++;
-  if (inHall) { hall.frame(t, dt); status.inHall = true; return; }
+  if (inHall) { hall.frame(t, dt); status.inHall = true; if (perf) perfTick(dtMs, 2); return; }
   status.inHall = false;
   mapProgress(clamp01(sp.p));
   status.p = io.p;
   const { portal } = hands.frame(t, dt, io.g, look);
   status.r = portal.r;
-  // The mountain stops once the portal covers the whole screen.
-  const cover = portal.r > 0 && portal.r >= Math.hypot(Math.max(portal.x, innerWidth - portal.x), Math.max(portal.y, innerHeight - portal.y));
+  io.push = io.k = portal.step;
+  // Never two full-cost scenes: once the portal covers ~70% of the screen the mountain keeps its last frame;
+  // once it covers everything the canvas is hidden.
+  const W = innerWidth, H = innerHeight;
+  const cover = portal.r > 0 && portal.r >= Math.hypot(Math.max(portal.x, W - portal.x), Math.max(portal.y, H - portal.y));
   if (cover === mountainOn) { mountainOn = !cover; mountainCanvas.style.visibility = cover ? 'hidden' : ''; }
-  if (mountainOn) mountain.frame(t, dt, io.p, look, io.push, portal);
+  const rr = Math.max(portal.r, portal.ring || 0);
+  const coverage = (Math.PI * rr * rr) / (W * H);
+  if (mountainOn && coverage < 0.7 && !OFF.mountain) mountain.frame(t, dt, io.p, look, io.push, portal);
   // The hall shows only inside the portal.
   if (portal.r > 0.5) {
     const key = cover ? 'none' : `circle(${portal.r.toFixed(1)}px at ${portal.x.toFixed(1)}px ${portal.y.toFixed(1)}px)`;
     if (key !== clipKey) { clipKey = key; hallCanvas.style.clipPath = cover ? '' : key; }
     if (!hallShown) { hallShown = true; hallCanvas.style.visibility = 'visible'; }
-    hall.preview(t, dt, io.k);
+    // The hall renders only its portal's box (device px of the hall canvas).
+    const ks = hallCanvas.width / W;
+    const x0 = Math.max(0, portal.x - portal.r), y0 = Math.max(0, portal.y - portal.r);
+    hallRect.x = Math.floor(x0 * ks); hallRect.y = Math.floor(y0 * ks);
+    hallRect.w = Math.ceil((Math.min(W, portal.x + portal.r) - x0) * ks); hallRect.h = Math.ceil((Math.min(H, portal.y + portal.r) - y0) * ks);
+    if (!OFF.hall) hall.preview(t, dt, io.k, cover ? undefined : hallRect);
   } else if (hallShown) { hallShown = false; hallCanvas.style.visibility = ''; clipKey = ''; }
   // After leaving, the hall re-arms only once the camera has backed out of the doorway.
-  if (io.p < 0.9) armed = true;
-  if (armed && io.p >= 0.95) enterHall();
+  if (portal.step < 0.9) armed = true;
+  if (armed && portal.step >= 0.97 && io.p >= 0.85) enterHall();
+  if (perf) perfTick(dtMs, inHall ? 2 : portal.r > 0 || portal.ring > 0 ? 1 : 0);
 }
 
 if (reduced) {
