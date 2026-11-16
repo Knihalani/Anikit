@@ -217,8 +217,17 @@ addEventListener('pointerdown', (e) => {
   if (e.target.closest('a,button')) return;
   pointerRay((e.clientX / cssW) * 2 - 1, 1 - (e.clientY / cssH) * 2);
   const t = -(ray[0] * ray[3] + ray[1] * ray[4] + ray[2] * ray[5]);
-  cloud.explode(ray[0] + ray[3] * t, ray[1] + ray[4] * t, ray[2] + ray[5] * t, reduced ? 300 : 1100);
+  cloud.explode(ray[0] + ray[3] * t, ray[1] + ray[4] * t, ray[2] + ray[5] * t, reduced ? 300 : 1500);
+  // let the burst bloom: springs loosen, then tighten back in two steps
+  const base = FEEL[feelStage];
+  cloud.set({ stiffness: base.stiffness * 0.35, damping: base.damping * 0.35 });
+  clearTimeout(burstT);
+  burstT = setTimeout(() => {
+    cloud.set({ stiffness: base.stiffness * 0.7, damping: base.damping * 0.7 });
+    burstT = setTimeout(() => cloud.set(FEEL[feelStage]), 700);
+  }, 650);
 });
+let burstT = 0;
 
 // ---------------------------------------------------------------------------
 // Captions: one visible at a time; lines enter with a stagger.
@@ -377,7 +386,7 @@ function frameBody(time, dtMs) {
     // basis: right (0..2), up (3..5)
     worldToModel(sweep, basis[0] * vx + basis[3] * vy, basis[1] * vx + basis[4] * vy, basis[2] * vx + basis[5] * vy);
     const speed = Math.min(4000, Math.hypot(vx, vy));
-    cloud.push(ray[0] + ray[3] * t, ray[1] + ray[4] * t, ray[2] + ray[5] * t, 85, 80 + speed * 0.12, sweep[0] * 0.05, sweep[1] * 0.05, sweep[2] * 0.05, ray[3], ray[4], ray[5]);
+    cloud.push(ray[0] + ray[3] * t, ray[1] + ray[4] * t, ray[2] + ray[5] * t, 120, 160 + speed * 0.3, sweep[0] * 0.14, sweep[1] * 0.14, sweep[2] * 0.14, ray[3], ray[4], ray[5]);
   }
   st.moved = false; st.pdx = 0; st.pdy = 0;
 
@@ -418,4 +427,4 @@ requestAnimationFrame(() => requestAnimationFrame(() => {
   if (!reduced) animate(st, { intro: 1 }, { duration: 2.8, ease: 'inOutCubic', delay: 0.1 });
   setTimeout(buildNext, 120);
 }));
-if (PERF) Object.assign(window, { __st: st, __gov: governor, __cloud: cloud });
+if (PERF) Object.assign(window, { __st: st, __gov: governor, __cloud: cloud, __capFx: capFx });

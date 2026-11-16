@@ -118,13 +118,13 @@ void main() {
   float e = local * local * (3.0 - 2.0 * local);
   vec2 px = uRect.xy + uv * uRect.zw;
   float a = 6.2831 * h2;
-  vec2 drift = vec2(cos(a), sin(a)) * (40.0 + 160.0 * h3) + vec2(260.0, -140.0) * (0.4 + h1);
+  vec2 drift = vec2(cos(a), sin(a)) * (70.0 + 260.0 * h3) + vec2(320.0, -220.0) * (0.3 + h1);
   drift += vec2(sin(uTime * 1.3 + h1 * 9.0), cos(uTime * 1.1 + h2 * 9.0)) * 18.0 * e;
   px += drift * e * uView.y / 900.0;
-  float alpha = t.a * (1.0 - smoothstep(0.35, 1.0, e));
+  float alpha = t.a * (1.0 - smoothstep(0.15, 0.85, e));
   vec3 col = t.a > 0.0 ? t.rgb / t.a : vec3(0.0);
-  col = mix(col, uTint, smoothstep(0.0, 0.5, e));
-  float r = uCell * (0.75 + e * 1.6);
+  col = mix(col, mix(uTint, vec3(1.0), 0.35), smoothstep(0.0, 0.45, e));
+  float r = uCell * (1.25 + e * 1.4);
   vec2 ndc = vec2(px.x / uView.x * 2.0 - 1.0, 1.0 - px.y / uView.y * 2.0);
   ndc += c * r * 2.0 / uView;
   gl_Position = alpha < 0.01 ? vec4(2.0, 2.0, 2.0, 1.0) : vec4(ndc, 0.0, 1.0);
@@ -137,7 +137,7 @@ in vec2 vUv;
 in vec4 vCol;
 out vec4 o;
 void main() {
-  float g = exp(-dot(vUv, vUv) * 2.2) * vCol.a;
+  float g = exp(-dot(vUv, vUv) * 3.0) * vCol.a;
   o = vec4(vCol.rgb * g, g);
 }`;
 
