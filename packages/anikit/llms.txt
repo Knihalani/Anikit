@@ -53,6 +53,7 @@ Import from 'anikit'. Times are in seconds (only `engine.onFrame`/`engine.tick` 
 - Ballistic physics
 - Bake to CSS
 - Effects
+- HTML in canvas: `htmlCanvas`, `htmlEffect`
 - Scroll
 - Interaction
 - Dev tools

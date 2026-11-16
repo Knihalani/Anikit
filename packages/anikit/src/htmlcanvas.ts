@@ -589,10 +589,10 @@ void main(){
   if(u_fx==1){ // shatter
     vec2 c=a_c*u_size; vec2 o=u_o*u_size; vec2 d=c-o; float l=length(d)+1.0;
     float t=max(0.0,e*1.4-l/length(u_size)*0.4);
-    vec2 dir=d/l; float sp=(600.0+a_r*900.0)*u_k;
+    vec2 dir=d/l; float sp=(220.0+a_r*380.0)*u_k;
     vec2 q=p-c; float ang=(a_r-0.5)*12.0*t*u_k; float cs=cos(ang), sn=sin(ang);
     q=vec2(q.x*cs-q.y*sn,q.x*sn+q.y*cs)*(1.0-0.3*t);
-    p=c+q+dir*sp*t+vec2(0.0,700.0*t*t);
+    p=c+q+dir*sp*t+vec2(0.0,300.0*t*t);
     z=(a_r-0.3)*600.0*t*u_k; v_a=clamp(1.0-t*1.1,0.0,1.0);
   } else if(u_fx==5){ // wave
     float env=sin(3.14159*e)*u_k;

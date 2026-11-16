@@ -135,4 +135,26 @@ export const tests = [
       ok(px[2] > 240, `blue: ${px}`);
     },
   },
+  {
+    name: 'htmlCanvas fallback limits (documented in docs/api.md): fonts embedded, form state kept, iframe/::before dropped; raster cost',
+    html: `<style>@font-face{font-family:T;src:url("data:font/woff2;base64,AAAA")} #x::before{content:"BEFORE"} </style>
+      <div id="x" style="width:300px;padding:10px;font-family:T,sans-serif"><input type="checkbox" checked><input value="v1"><select><option>a</option><option selected>b</option></select><textarea>txt</textarea><iframe srcdoc="hi"></iframe><p>${'para '.repeat(40)}</p></div>`,
+    async run(page) {
+      const r = await page.evaluate(async () => {
+        document.querySelector('#x input[value]').value = 'edited';
+        const { url } = await ak.htmlToSvg(document.getElementById('x'));
+        const svg = decodeURIComponent(url.slice(url.indexOf(',') + 1));
+        const hc = ak.htmlCanvas('#x', { live: false });
+        await hc.ready;
+        const t0 = performance.now();
+        for (let i = 0; i < 10; i++) await hc.refresh();
+        return { svg, ms: (performance.now() - t0) / 10 };
+      });
+      ok(r.svg.includes('@font-face') && r.svg.includes('data:font/woff2'), 'font-face embedded');
+      ok(r.svg.includes('value="edited"') && /checked/.test(r.svg) && /selected/.test(r.svg) && r.svg.includes('txt'), 'form state');
+      ok(!r.svg.includes('<iframe') && !r.svg.includes('BEFORE'), 'iframe and ::before dropped');
+      console.log(`      fallback re-raster of a ~40-node card: ${r.ms.toFixed(1)} ms`);
+      ok(r.ms < 100, `raster cost ${r.ms} ms`);
+    },
+  },
 ];
