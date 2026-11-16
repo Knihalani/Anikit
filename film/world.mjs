@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CACHE = path.join(HERE, '.cache');
-const VERSION = 'w22';
+const VERSION = 'w23';
 
 export const clamp = (v, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
 export const mix = (a, b, t) => a + (b - a) * t;
@@ -55,7 +55,7 @@ function ridged(x, y, oct = 5) {
 export function hash(i) { i = Math.imul(i ^ 0x9e3779b9, 0x85ebca6b); i ^= i >>> 13; i = Math.imul(i, 0xc2b2ae35); i ^= i >>> 16; return (i >>> 0) / 4294967296; }
 
 // ---- Light ---------------------------------------------------------------------------------
-export const SUN = norm([-0.84, 0.17, -0.42]);      // low golden-hour sun, off the left of the flight (side light)
+export const SUN = norm([-0.86, 0.095, -0.44]);      // low golden-hour sun, off the left of the flight (side light)
 export const WATER = 0;
 export const EXT = 1300;                             // main terrain: x, z in [−EXT, EXT]
 
@@ -103,7 +103,7 @@ export async function buildWorld(A) {
   const { mesh, instances, texture, flightPath } = A;
   const t0 = performance.now();
   const log = (m) => process.env.ANIKIT_WORLD_LOG && console.error(`world: ${m} (${((performance.now() - t0) / 1000).toFixed(1)}s)`);
-  const path3 = flightPath(WAYPOINTS, { lookAhead: 90, bank: 0.12, maxBank: 16, bankWindow: 280 });
+  const path3 = flightPath(WAYPOINTS, { lookAhead: 90, bank: 0.07, maxBank: 8, bankWindow: 300 });
   // Centre line x(z) from the flown path (the valley follows the camera exactly).
   const pts = path3.points(3000);
   const CZ0 = 1500, CZ1 = -1500, CN = 3001;
@@ -457,7 +457,7 @@ function bakeTerrain(T, heightAt, groundAt, gh, GN, GS, trees, centerX, log) {
   log && log('tree shadows');
 
   const real = new Uint8ClampedArray(T * T * 4), comic = new Uint8ClampedArray(T * T * 4), neon = new Uint8ClampedArray(T * T * 4);
-  const SUNC = [1.55, 1.08, 0.66], SKYC = [0.26, 0.33, 0.46];
+  const SUNC = [1.75, 1.05, 0.55], SKYC = [0.24, 0.28, 0.46];
   for (let j = 0; j < T; j++) {
     const z = -EXT + (j + 0.5) * ts;
     for (let i = 0; i < T; i++) {
@@ -498,7 +498,8 @@ function bakeTerrain(T, heightAt, groundAt, gh, GN, GS, trees, centerX, log) {
       // Comic: flat palette, two light bands (sun / shade tinted blue-violet).
       const lit = smooth(0.1, 0.16, ndl * sv);
       const shadeT = [0.56, 0.54, 0.74];
-      for (let q = 0; q < 3; q++) comic[k * 4 + q] = Math.round(255 * clamp(cpal[q] * mix(shadeT[q], 1.02, lit) * (0.8 + 0.2 * cav)));
+      const crack = rock > 0.45 && (Math.abs(N1(x / 16, z / 16)) < 0.035 || Math.abs(Math.sin(h * 0.7 + n1 * 3)) < 0.06) ? 0.12 : 1;
+      for (let q = 0; q < 3; q++) comic[k * 4 + q] = Math.round(255 * clamp(cpal[q] * mix(shadeT[q], 1.02, lit) * (0.8 + 0.2 * cav) * crack));
       comic[k * 4 + 3] = 255;
       // Neon: contour lines every 8 m (a brighter one every 40 m), a shoreline, a faint 50 m grid.
       const grad = Math.hypot(gx, gz) * ts;
@@ -567,9 +568,9 @@ function bakeFar(T, farH, FE) {
 // ---- Skies (equirectangular, for a sphere's UVs: u around from +x towards +z, v from the zenith) ----
 function bakeSky(TW, TH, comicStyle) {
   const data = new Uint8ClampedArray(TW * TH * 4);
-  const ZEN = comicStyle ? [0.06, 0.32, 0.86] : [0.10, 0.20, 0.44];
-  const HOR_SUN = comicStyle ? [1.0, 0.86, 0.55] : [1.25, 0.86, 0.52];
-  const HOR_AWAY = comicStyle ? [0.62, 0.86, 1.0] : [0.62, 0.66, 0.72];
+  const ZEN = comicStyle ? [0.06, 0.32, 0.86] : [0.13, 0.19, 0.36];
+  const HOR_SUN = comicStyle ? [1.0, 0.86, 0.55] : [1.45, 0.82, 0.42];
+  const HOR_AWAY = comicStyle ? [0.62, 0.86, 1.0] : [0.85, 0.66, 0.62];
   const HAZE = HAZE_RGB;
   for (let j = 0; j < TH; j++) {
     const th = ((j + 0.5) / TH) * Math.PI;
@@ -579,9 +580,9 @@ function bakeSky(TW, TH, comicStyle) {
       const d = [sth * Math.cos(ph), dy, sth * Math.sin(ph)];
       const sd = d[0] * SUN[0] + d[1] * SUN[1] + d[2] * SUN[2];
       const sh = clamp((d[0] * SUN[0] + d[2] * SUN[2]) / (Math.hypot(SUN[0], SUN[2]) * Math.max(1e-4, Math.hypot(d[0], d[2]))) * 0.5 + 0.5);
-      const hor = [0, 1, 2].map((q) => mix(HOR_AWAY[q], HOR_SUN[q], sh ** 3));
+      const hor = [0, 1, 2].map((q) => mix(HOR_AWAY[q], HOR_SUN[q], sh ** 2));
       const el = Math.max(0, dy);
-      const g = comicStyle ? clamp(el * 2.2) ** 0.8 : 1 - Math.exp(-el * 4.2);
+      const g = comicStyle ? clamp(el * 2.2) ** 0.8 : 1 - Math.exp(-el * 2.6);
       let c = [0, 1, 2].map((q) => mix(hor[q], ZEN[q], g));
       // Haze band at (and below) the horizon, matching the distance fog.
       const band = 1 - smooth(0, comicStyle ? 0.0 : 0.05, dy);
@@ -652,7 +653,7 @@ function bakeNeonSky(TW, TH) {
 }
 
 // The haze colour at the horizon (linear); the distance fog uses its display value.
-export const HAZE_RGB = [0.80, 0.62, 0.46];
+export const HAZE_RGB = [0.86, 0.6, 0.42];
 export const HAZE_DISPLAY = HAZE_RGB.map((v) => Math.pow(clamp(v), 1 / 2.2));
 
 // ---- Facade textures -------------------------------------------------------------------------------

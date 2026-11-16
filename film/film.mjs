@@ -56,11 +56,11 @@ export default async function film({ anikit: A }) {
     tr(15.4, 0.6, 'N', 'R', 'slash'),    // out of the canyon: daylight wipes across
     tr(18.2, 0.8, 'R', 'C', 'reveal'),   // over the last ridge a comic world grows out from the lens
   ];
-  const TEASE = [0.34, 1.12]; // the hook: during the dive the frame splits into all three looks
+  const TEASE = [0.25, 1.9]; // the hook: during the dive the frame splits into all three looks
   const OUTRO = DUR - 1.35;
   const ease = (p) => p * p * (3 - 2 * p);
   const state = (t) => {
-    if (t > TEASE[0] && t < TEASE[1]) { const p = (t - TEASE[0]) / (TEASE[1] - TEASE[0]); return { tease: p, inn: ease(clamp(p / 0.28)), out: ease(clamp((p - 0.7) / 0.3)) }; }
+    if (t > TEASE[0] && t < TEASE[1]) { const p = (t - TEASE[0]) / (TEASE[1] - TEASE[0]); return { tease: p, inn: ease(clamp(p / 0.2)), out: ease(clamp((p - 0.8) / 0.2)) }; }
     if (t > OUTRO) return { tease: 0.5, inn: ease(clamp((t - OUTRO) / 0.5)), out: 0, mid: 'C', right: 'R' }; // the bookend: all three again
     let look = 'R';
     for (const s of SCHEDULE) {
@@ -174,7 +174,7 @@ export default async function film({ anikit: A }) {
       { mesh: world.terrainMesh, instances: terrainAt, material: { ...baked, texture: TX.real, textureFilter: 'aniso' } },
       { mesh: rockMesh, instances: rocksR, material: { ambient: 0.32, diffuse: 1.05, specular: 0.12, shininess: 10, rim: 0.15 } },
       { mesh: tm, instances: treesR, material: { ambient: 0.3, diffuse: 1.0, specular: 0.08, shininess: 6, rim: 0.45 } },
-      ...towersR.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 0.42, diffuse: 0.9, specular: 0.7, shininess: 60, rim: 0.12, texture: TX.windows, textureRepeat: CLS[c] } })),
+      ...towersR.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 0.85, diffuse: 0.9, specular: 0.5, shininess: 60, rim: 0.2, texture: TX.windows, textureRepeat: CLS[c] } })),
       { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farReal } },
       { mesh: dome, instances: domeAt, cull: false, reflect: true, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.sky, textureMode: 'emissive', fog: 0 } },
       { mesh: water, instances: waterAt, mirror: true, material: { ...baked, ambient: 0.25 } },
@@ -280,13 +280,11 @@ export default async function film({ anikit: A }) {
   }
   function comic(src, dist, out, t) {
     for (let i = 0; i < N_PIX; i++) { const o = i * 4; lum[i] = (src[o] * 0.299 + src[o + 1] * 0.587 + src[o + 2] * 0.114) / 255; }
-    const B = 16, G = 9; // panel border: paper gutter, then a black rule
+    const B = 16;
     for (let y = 0; y < H; y++) {
       const yy = Math.min(H - 4, Math.max(3, y));
       for (let x = 0; x < W; x++) {
         const i = y * W + x, o = i * 4;
-        if (x < G || y < G || x >= W - G || y >= H - G) { out[o] = PAPER[0]; out[o + 1] = PAPER[1]; out[o + 2] = PAPER[2]; out[o + 3] = 255; continue; }
-        if (x < B || y < B || x >= W - B || y >= H - B) { out[o] = 14; out[o + 1] = 12; out[o + 2] = 18; out[o + 3] = 255; continue; }
         const xx = Math.min(W - 4, Math.max(3, x)), c = yy * W + xx;
         const d = dist[c], finite = d < 1e30, sky = !finite || d > 15000;
         // Ink: silhouettes and creases from depth (thicker up close), strong colour edges.
@@ -337,6 +335,21 @@ export default async function film({ anikit: A }) {
         out[o] = cr; out[o + 1] = cg; out[o + 2] = cb; out[o + 3] = 255;
       }
     }
+  }
+
+  // The comic panel border (paper gutter, then a black rule), faded in with the comic look.
+  function panelBorder(buf, a) {
+    if (a <= 0.002) return;
+    const G = 9, Bw = 16;
+    const paint = (x0, y0, x1, y1, c) => {
+      for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+        const o = (y * W + x) * 4;
+        buf[o] += (c[0] - buf[o]) * a; buf[o + 1] += (c[1] - buf[o + 1]) * a; buf[o + 2] += (c[2] - buf[o + 2]) * a;
+      }
+    };
+    const INK = [14, 12, 18];
+    paint(0, 0, W, G, PAPER); paint(0, H - G, W, H, PAPER); paint(0, G, G, H - G, PAPER); paint(W - G, G, W, H - G, PAPER);
+    paint(G, G, W - G, Bw, INK); paint(G, H - Bw, W - G, H - G, INK); paint(G, Bw, Bw, H - Bw, INK); paint(W - Bw, Bw, W - G, H - Bw, INK);
   }
 
   // ---- Transitions ------------------------------------------------------------------------------
@@ -397,7 +410,7 @@ export default async function film({ anikit: A }) {
         const blot = noise(x / 22 + 11, y / 22) > 0.42 - 0.5 * (R - r) ? 1 : 0; // droplets ahead of the front
         const i = y * W + x, o = i * 4;
         const k = r < R ? 1 : blot && r < R + 0.12 ? 1 : 0;
-        const rim = clamp(1 - Math.abs(r - R) / 0.022) * (R > 0 && R < 1.25 ? 1 : 0);
+        const rim = clamp(1.6 - Math.abs(r - R) / 0.03) * (R > 0 && R < 1.25 ? 1 : 0);
         for (let q = 0; q < 3; q++) frame[o + q] = mix(k ? pb[o + q] : pa[o + q], 14, rim);
         frame[o + 3] = 255;
       }
@@ -406,11 +419,11 @@ export default async function film({ anikit: A }) {
       while (y < H) {
         const hgt = 6 + Math.floor(hash(band * 17 + 1) * 54), u = hash(band * 29 + 5) * 0.86 + 0.07;
         const on = e > u, near = Math.abs(e - u) < 0.09;
-        const shift = near ? Math.round((hash(band * 3 + Math.floor(t * 30)) - 0.5) * 24) : 0;
+        const shift = 0;
         for (let yy = y; yy < Math.min(H, y + hgt); yy++) for (let x = 0; x < W; x++) {
           const o = (yy * W + x) * 4, src = on ? pb : pa;
           const xs = Math.min(W - 1, Math.max(0, x + shift)), os = (yy * W + xs) * 4;
-          const sp = near ? 10 : 0;
+          const sp = 0;
           frame[o] = src[(yy * W + Math.min(W - 1, xs + sp)) * 4];
           frame[o + 1] = src[os + 1];
           frame[o + 2] = src[(yy * W + Math.max(0, xs - sp)) * 4 + 2];
@@ -458,7 +471,7 @@ export default async function film({ anikit: A }) {
     post: {
       aa: 1,
       bloom: (t) => W_(t, 0.28, 0.78, 0.0),
-      bloomThreshold: (t) => W_(t, 0.82, 0.42, 1),
+      bloomThreshold: (t) => W_(t, 0.82, 0.6, 1),
       bloomRadius: 42,
       streaks: (t) => W_(t, 0, 0.3, 0),
       streakLength: 260,
@@ -499,6 +512,8 @@ export default async function film({ anikit: A }) {
         composite(a, b, s.type, s.p, t);
         out = frame;
       }
+      const aC = s.look ? (s.look === 'C' ? 1 : 0) : s.tease !== undefined ? 0 : s.to === 'C' ? ease(clamp((s.p - 0.6) / 0.4)) : s.from === 'C' ? 1 - ease(clamp(s.p / 0.4)) : 0;
+      panelBorder(out, aC);
       ctx.putImageData(new globalThis.ImageData(out, W, H), 0, 0);
     },
   });
