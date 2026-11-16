@@ -28,7 +28,7 @@ float winMask(vec3 w) {
   float y = smoothstep(6.3, 6.9, h.y) * (1.0 - smoothstep(10.3, 10.9, h.y));
   float cell = fract((h.z - 8.5) / 5.0 + 0.5) - 0.5;
   float x = (1.0 - smoothstep(0.17, 0.25, abs(cell))) * smoothstep(0.004, 0.02, abs(cell));
-  return y * x * step(-27.0, h.z) * step(h.z, 15.0);
+  return y * x * step(-12.6, h.z) * step(h.z, 15.0);
 }
 
 vec3 aces(vec3 c) {
@@ -41,7 +41,7 @@ float aoAt(vec3 w) {
   float ao = mix(0.45, 1.0, smoothstep(0.0, 1.2, w.y));
   ao *= mix(0.6, 1.0, clamp(smoothstep(8.0, 6.9, abs(w.x)) + smoothstep(1.0, 3.0, w.y) * 0.4, 0.0, 1.0));
   ao *= mix(0.7, 1.0, smoothstep(12.0, 10.6, w.y));
-  ao *= mix(0.7, 1.0, smoothstep(-28.0, -25.5, w.z) * smoothstep(16.0, 13.5, w.z));
+  ao *= mix(0.7, 1.0, smoothstep(-13.5, -11.0, w.z) * smoothstep(16.0, 13.5, w.z));
   float zc = floor((w.z - 11.0) / 5.0 + 0.5) * 5.0 + 11.0;
   float dc = length(vec2(abs(w.x) - 7.0, w.z - zc));
   ao *= mix(mix(0.5, 1.0, smoothstep(0.42, 1.4, dc)), 1.0, smoothstep(0.3, 1.6, w.y));
@@ -403,4 +403,45 @@ void main() {
   vec2 q = vUV - 0.5;
   c *= 1.0 - 0.5 * dot(q, q);
   o = vec4(c, 1.0);
+}`;
+
+// ---- portals ----
+// a disc in the portal plane: writes the stencil mask (colour off) or, with uMode 1,
+// the spark ring (additive), the same orange-gold ring as the intro's portal
+export const PORTAL_VS = /* glsl */ `#version 300 es
+uniform mat4 uVP; uniform vec3 uC; uniform vec3 uR; uniform vec3 uU; uniform float uRad;
+out vec2 vQ;
+void main() {
+  vec2 q = vec2(gl_VertexID == 1 ? 3.0 : -1.0, gl_VertexID == 2 ? 3.0 : -1.0);
+  vQ = q;
+  gl_Position = uVP * vec4(uC + (uR * q.x + uU * q.y) * uRad, 1.0);
+}`;
+export const PORTAL_FS = /* glsl */ `#version 300 es
+precision highp float;
+uniform float uMode; uniform float uTime; uniform float uInner; uniform float uGlow;
+in vec2 vQ; out vec4 o;
+float h(float n) { return fract(sin(n * 127.1) * 43758.5453); }
+void main() {
+  float r = length(vQ);
+  if (uMode < 0.5) { if (r > uInner) discard; o = vec4(0.0); return; }
+  if (r > 1.0) discard;
+  float a = atan(vQ.y, vQ.x);
+  // spark streaks running around the ring
+  float s = 0.0;
+  for (int k = 0; k < 3; k++) {
+    float fk = float(k);
+    float sp = (1.3 + fk * 0.7) * (mod(fk, 2.0) * 2.0 - 1.0);
+    float u = a * (9.0 + fk * 5.0) + uTime * sp * 4.0;
+    float cell = floor(u);
+    float f = fract(u);
+    float on = step(0.45, h(cell + fk * 17.0));
+    s += on * smoothstep(0.0, 0.15, f) * (1.0 - smoothstep(0.15, 0.9, f)) * (0.6 + 0.4 * h(cell + 3.0));
+  }
+  float band = exp(-pow((r - uInner) * 38.0, 2.0));
+  float halo = exp(-pow((r - uInner) * 9.0, 2.0)) * 0.35;
+  float jit = (h(floor(a * 40.0 + uTime * 30.0)) - 0.5) * 0.02;
+  float sparks = exp(-pow((r - uInner - jit) * 60.0, 2.0)) * s * 2.2;
+  vec3 hot = vec3(1.0, 0.82, 0.45), orange = vec3(1.0, 0.45, 0.1);
+  vec3 c = hot * band * 1.4 + orange * (halo + sparks) ;
+  o = vec4(c * uGlow, 0.0);
 }`;

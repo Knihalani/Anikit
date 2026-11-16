@@ -90,7 +90,9 @@ export function createControls(canvas, overlayEl, opts) {
       if (down) hideTip();
     } else if (down && (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space')) {
       e.preventDefault();
-      opts.onUse();
+      opts.onUse('push');
+    } else if (down && e.code === 'KeyQ') {
+      opts.onUse('pull');
     }
   }
   function onBlur() { keys.f = keys.b = keys.l = keys.r = keys.run = 0; retarget(); }
@@ -98,7 +100,7 @@ export function createControls(canvas, overlayEl, opts) {
   function isUI(t) { return t && t.closest && t.closest('button,a,input,select,textarea,[data-ui]'); }
   function onDown(e) {
     if (!active || e.pointerType === 'touch' || isUI(e.target)) return;
-    if (locked) { opts.onUse(); return; }
+    if (locked) { opts.onUse(e.button === 2 ? 'pull' : 'push'); return; }
     dragging = true; lastX = e.clientX; lastY = e.clientY;
     look.moved = 0;
     if (canvas.requestPointerLock) {
@@ -110,7 +112,7 @@ export function createControls(canvas, overlayEl, opts) {
   }
   function onUp(e) {
     if (e.pointerType === 'touch') return;
-    if (dragging && !locked && look.moved < 4 && !isUI(e.target)) opts.onUse();
+    if (dragging && !locked && look.moved < 4 && !isUI(e.target)) opts.onUse(e.button === 2 ? 'pull' : 'push');
     dragging = false;
   }
   function onMove(e) {
@@ -182,12 +184,13 @@ export function createControls(canvas, overlayEl, opts) {
         tf = ts = 0;
         spring(mv, { f: 0, s: 0 }, MOVE);
       } else if (t.identifier === look.id) {
-        if (look.moved < 10 && performance.now() - look.t0 < 300) opts.onUse();
+        if (look.moved < 10 && performance.now() - look.t0 < 300) opts.onUse('push');
         look.id = -1;
       }
     }
   }
-  function onUseBtn(e) { e.preventDefault(); e.stopPropagation(); opts.onUse(); }
+  function onUseBtn(e) { e.preventDefault(); e.stopPropagation(); opts.onUse('push'); }
+  function onMenu(e) { if (active) e.preventDefault(); }
 
   let tipShown = true;
   function hideTip() {
@@ -209,6 +212,7 @@ export function createControls(canvas, overlayEl, opts) {
     addEventListener('keyup', onKey);
     addEventListener('blur', onBlur);
     addEventListener('pointerdown', onDown);
+    addEventListener('contextmenu', onMenu);
     addEventListener('pointerup', onUp);
     addEventListener('pointermove', onMove);
     document.addEventListener('pointerlockchange', onLock);
@@ -225,6 +229,7 @@ export function createControls(canvas, overlayEl, opts) {
     removeEventListener('keyup', onKey);
     removeEventListener('blur', onBlur);
     removeEventListener('pointerdown', onDown);
+    removeEventListener('contextmenu', onMenu);
     removeEventListener('pointerup', onUp);
     removeEventListener('pointermove', onMove);
     document.removeEventListener('pointerlockchange', onLock);
@@ -239,9 +244,23 @@ export function createControls(canvas, overlayEl, opts) {
     animate(hud, { opacity: 0 }, { duration: 0.4, ease: 'outCubic', onComplete: () => { if (!active && hud.parentNode) hud.remove(); } });
   }
 
-  const C = opts.colliders, B = opts.bounds;
+  // ground mode walks the hall (colliders + box bounds); fly mode (worlds) moves along the
+  // full view direction inside a sphere of ctl.flyRadius around the origin
+  ctl.colliders = opts.colliders; ctl.bounds = opts.bounds; ctl.fly = false; ctl.flyRadius = 30;
   function update(t, dt) {
     const sy = Math.sin(ctl.yaw), cy = Math.cos(ctl.yaw);
+    if (ctl.fly) {
+      const cp = Math.cos(ctl.pitch), sp = Math.sin(ctl.pitch);
+      let x = pos[0] + (-sy * cp * mv.f + cy * mv.s) * dt;
+      let y = pos[1] + sp * mv.f * dt;
+      let z = pos[2] + (-cy * cp * mv.f - sy * mv.s) * dt;
+      const dy = y - EYE, l = Math.hypot(x, dy, z), R = ctl.flyRadius;
+      if (l > R) { const k = R / l; x *= k; z *= k; y = EYE + dy * k; }
+      pos[0] = x; pos[1] = y; pos[2] = z;
+      ctl.speed = Math.hypot(mv.f, mv.s);
+      return;
+    }
+    const C = ctl.colliders, B = ctl.bounds;
     // forward = (-sin, -cos), right = (cos, -sin)
     let x = pos[0] + (-sy * mv.f + cy * mv.s) * dt;
     let z = pos[2] + (-cy * mv.f - sy * mv.s) * dt;
