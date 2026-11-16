@@ -650,7 +650,7 @@ impl BlackHole {
                 let neb2 = smooth(0.6, 0.9, n1) * 0.3;
                 // Fade structure out toward the poles (no equirect pinch).
                 let pole = smooth(0.82, 0.97, sla.abs());
-                let (glow, neb, neb2) = (glow + (0.2 - glow) * pole, neb * (1.0 - pole), neb2 * (1.0 - pole));
+                let (glow, neb, neb2) = (glow * (1.0 - pole), neb * (1.0 - pole), neb2 * (1.0 - pole));
                 let k = 0.06;
                 pano[y * PANO_W + x] = [
                     k * (glow * 1.0 + neb * 0.9 + neb2 * 0.2),
@@ -982,7 +982,13 @@ impl BlackHole {
         let bb_k = (BB_N - 1) as f32 / (libm::log2f(BB_T1) - lt0);
         let row_scale = ROWS as f32 / self.psi_max;
         let alpha_q = if cinematic { 0.92 * 65535.0 } else { 0.97 * 65535.0 };
-        for pix in 0..w * h {
+        // Walk the screen in 32×32 tiles: neighbouring pixels read
+        // neighbouring table rows, which keeps the 3 MB table in cache.
+        const TILE: usize = 32;
+        let tiles = (0..h.div_ceil(TILE)).flat_map(|ty| (0..w.div_ceil(TILE)).map(move |tx| (tx, ty)));
+        for pix in tiles.flat_map(|(tx, ty)| {
+            (ty * TILE..((ty + 1) * TILE).min(h)).flat_map(move |y| (tx * TILE..((tx + 1) * TILE).min(w)).map(move |x| y * w + x))
+        }) {
             let row = self.scr_psi[pix] * row_scale - 0.5;
             if row >= (ROWS - 1) as f32 {
                 continue;
@@ -1320,7 +1326,7 @@ impl BlackHole {
                     continue;
                 }
                 let d2 = dob * dob;
-                let k = p.stars * 3.0 * st.flux * mu * (d2 * d2).min(400.0);
+                let k = p.stars * 16.0 * st.flux * mu * (d2 * d2).min(400.0);
                 if k < 2e-3 {
                     // Below one grey level after tone mapping.
                     continue;
@@ -1423,7 +1429,7 @@ impl BlackHole {
             Self::blur(buf, &mut self.tmp, &mut self.acc, bw, bh, 1, 1);
             Self::blur(wide, &mut self.tmp, &mut self.acc, bw, bh, 8, 2);
             for (b, wv) in buf.iter_mut().zip(wide.iter()) {
-                *b = strength * (0.05 * *b + 0.12 * wv);
+                *b = strength * (0.05 * *b + 0.07 * wv);
             }
         }
         // Lensed sky (nebula and Milky-Way glow), occluded by the disk.
@@ -1431,7 +1437,7 @@ impl BlackHole {
         if neb > 0.0 {
             let du = az_off * (PANO_W as f32 / TAU);
             for i in 0..bw * bh {
-                let kk = self.sky_k[i] * neb * self.lt[i] * k;
+                let kk = self.sky_k[i] * neb * self.lt[i] * k / sqrtf(self.adapt);
                 if kk <= 0.0 {
                     continue;
                 }

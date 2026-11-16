@@ -18,9 +18,7 @@ fn main() {
     let (w, h) = (1280, 800);
     let mut bh = BlackHole::new(w, h, 1);
     let shots: Vec<(&str, Params)> = vec![
-        ("edge-30m", Params { distance: 30.0, inclination: 84.0, fov: 34.0, time: 3.0, ..Default::default() }),
-        ("edge-nospots", Params { distance: 30.0, inclination: 84.0, fov: 34.0, time: 3.0, hot_spots: 0.0, ..Default::default() }),
-        ("edge-t40", Params { distance: 30.0, inclination: 84.0, fov: 34.0, time: 40.0, hot_spots: 0.0, ..Default::default() }),
+        ("edge-30m", Params { distance: 30.0, inclination: 84.0, fov: 34.0, time: 3.0, jet: 0.35, ..Default::default() }),
         ("edge-30m-cinematic", Params { distance: 30.0, inclination: 84.0, fov: 34.0, time: 3.0, mode: 1, temperature: 6500.0, ..Default::default() }),
         ("eht-17", Params { distance: 40.0, inclination: 17.0, fov: 30.0, time: 3.0, ..Default::default() }),
         ("near-10m", Params { distance: 10.0, inclination: 80.0, fov: 70.0, time: 3.0, ..Default::default() }),
