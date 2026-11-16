@@ -134,3 +134,4 @@ fn all_doc_examples_parse() {
     }
     assert!(n >= 3);
 }
+

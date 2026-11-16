@@ -1,0 +1,2018 @@
+{
+  "$id": "https://anikit.dev/video/spec.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Anikit Video spec",
+  "description": "The whole video.",
+  "type": "object",
+  "properties": {
+    "audio": {
+      "description": "Music and sound effects.",
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/$defs/AudioCue"
+      }
+    },
+    "background": {
+      "description": "Default background of every scene (colour or gradient). Default `\"$bg\"`.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Paint"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "captions": {
+      "description": "Burned-in captions.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Captions"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "duration": {
+      "description": "Override the total duration (truncate, or hold the last frame).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Num"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "fonts": {
+      "description": "Extra fonts: family name → file path.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "fps": {
+      "description": "Frames per second. Default 30.",
+      "type": [
+        "number",
+        "null"
+      ],
+      "format": "double"
+    },
+    "markers": {
+      "description": "Named times on the global timeline, referenced as `\"@name\"`.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": {
+        "$ref": "#/$defs/Num"
+      }
+    },
+    "scenes": {
+      "description": "The scenes, in order.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Scene"
+      }
+    },
+    "size": {
+      "description": "Frame size preset or `[w, h]`. Default `\"16:9\"` (1920×1080).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Size"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "theme": {
+      "description": "Colour tokens, fonts and text styles.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Theme"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "transition": {
+      "description": "Default transition between scenes. Default crossfade 0.5 s.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Transition"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "scenes"
+  ],
+  "$defs": {
+    "Anchor": {
+      "description": "Anchor: `[ax, ay]` in 0..1 or a name (`center`, `topLeft`, …).",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "maxItems": 2,
+          "minItems": 2
+        }
+      ]
+    },
+    "AudioCue": {
+      "description": "An audio cue.",
+      "type": "object",
+      "properties": {
+        "at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "duck": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "duration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fadeIn": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "fadeOut": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "loop": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "src": {
+          "type": "string"
+        },
+        "trimStart": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "voice": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "volume": {
+          "description": "0..1 or `\"-6dB\"`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "src"
+      ]
+    },
+    "BoxStyle": {
+      "description": "Flexbox style of a `box` (and of a box's children: `grow`).",
+      "type": "object",
+      "properties": {
+        "align": {
+          "description": "Cross axis: `start`, `center` (default), `end`, `stretch`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "background": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Paint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "border": {
+          "description": "`\"2px #fff\"`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "columns": {
+          "description": "Grid with this many equal columns.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "direction": {
+          "description": "`row` (default) or `column`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "gap": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "grow": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "justify": {
+          "description": "Main axis: `start`, `center`, `end`, `spaceBetween`, `spaceAround`, `spaceEvenly`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "padding": {
+          "description": "Number, `[v, h]` or `[t, r, b, l]`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Padding"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "radius": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "wrap": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "Camera": {
+      "description": "Scene camera.",
+      "type": "object",
+      "properties": {
+        "animate": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/Tween"
+          }
+        },
+        "rotation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shake": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Shake"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "x": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "y": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "zoom": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "CaptionCue": {
+      "type": "object",
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/Num"
+        },
+        "end": {
+          "$ref": "#/$defs/Num"
+        },
+        "text": {
+          "type": "string"
+        },
+        "words": {
+          "description": "Word timings `[text, at, end]`.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "array",
+            "maxItems": 3,
+            "minItems": 3,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number",
+                "format": "double"
+              },
+              {
+                "type": "number",
+                "format": "double"
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "text",
+        "at",
+        "end"
+      ]
+    },
+    "CaptionFile": {
+      "type": "object",
+      "properties": {
+        "background": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cues": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/CaptionCue"
+          }
+        },
+        "highlight": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "src": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "style": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "y": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "Captions": {
+      "description": "Captions: a list of cues, or a subtitle file with styling.",
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CaptionCue"
+          }
+        },
+        {
+          "$ref": "#/$defs/CaptionFile"
+        }
+      ]
+    },
+    "Clip": {
+      "description": "`clip`: `true` (the layer box) or a shape layer.",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "$ref": "#/$defs/Layer"
+        }
+      ]
+    },
+    "Glow": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/GlowObj"
+        }
+      ]
+    },
+    "GlowObj": {
+      "type": "object",
+      "properties": {
+        "color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "intensity": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "radius": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        }
+      }
+    },
+    "Gradient": {
+      "description": "Gradient object.",
+      "type": "object",
+      "properties": {
+        "angle": {
+          "description": "Linear angle in degrees (CSS convention: 180 = top to bottom). Default 180.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "center": {
+          "description": "Radial centre `[x, y]` as fractions of the box. Default `[0.5, 0.5]`.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "maxItems": 2,
+          "minItems": 2
+        },
+        "radius": {
+          "description": "Radial radius as a fraction of the box diagonal / 2. Default 1.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "stops": {
+          "description": "Colours, evenly spaced, or `[offset, colour]` pairs.",
+          "type": "array",
+          "items": true
+        },
+        "type": {
+          "description": "`linear` (default) or `radial`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "stops"
+      ]
+    },
+    "Layer": {
+      "description": "A layer. One flat type for every kind; `type` picks the kind (and is\ninferred when obvious). Keys that don't apply to the kind are warned about.",
+      "type": "object",
+      "properties": {
+        "align": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "anchor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Anchor"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "animate": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/Tween"
+          }
+        },
+        "blend": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "blur": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "children": {
+          "description": "Children of a `box`.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/Layer"
+          }
+        },
+        "clip": {
+          "description": "`true` clips children to the layer box, or a clip shape.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Clip"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "color": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Paint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "component": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "d": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "duration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "end": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "enter": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Preset"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "exit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Preset"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fill": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Paint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fit": {
+          "description": "`contain`, `cover`, `fill`, `none`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "font": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "glow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Glow"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "headSize": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "innerRadius": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "italic": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "kinetic": {
+          "description": "Kinetic text animation (TEXT module): shorthand like `\"pop by char from center 0.4s 30ms outBack\"`, or an object."
+        },
+        "layers": {
+          "description": "Children of a `group`.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/Layer"
+          }
+        },
+        "letterSpacing": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lineHeight": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "loop": {
+          "description": "Repeating motion: `float`, `pulse`, `spin`, `wiggle`, `breathe`, `blink`\n(for `video` layers, a bool: loop the clip).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LoopValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mask": {
+          "description": "A layer whose alpha masks this one.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Layer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maxLines": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "opacity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "points": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Num"
+            },
+            "maxItems": 2,
+            "minItems": 2
+          }
+        },
+        "progress": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "props": true,
+        "radius": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reveal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rotation": {
+          "description": "Degrees, clockwise.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scale": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Scale"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scaleX": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scaleY": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shadow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Shadow"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "shape": {
+          "description": "`rect`, `circle`, `ellipse`, `line`, `arrow`, `polygon`, `star`, `path`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sides": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "size": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "skewX": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "skewY": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "speed": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "split": {
+          "description": "`chars`, `words`, `lines`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "src": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stagger": {
+          "description": "Delay children's animations by index × seconds (group, box, split text).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Stagger"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "start": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stroke": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StrokeSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "strokeWidth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "style": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StyleRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "trimEnd": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "trimStart": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": {
+          "description": "`text`, `shape`, `image`, `video`, `group`, `box`, `component`. Inferred when omitted.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "uppercase": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "visible": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "volume": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "weight": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Weight"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "width": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "x": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "y": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "LoopValue": {
+      "description": "`loop`: a preset (name or object), or a bool for video clips.",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "$ref": "#/$defs/Preset"
+        }
+      ]
+    },
+    "Num": {
+      "description": "A number, a unit string (`\"50%\"`, `\"10vh\"`, `\"1.5s\"`, `\"12f\"`, `\"@marker+0.2\"`),\na relative value (`\"+40\"`, `\"*1.5\"`) or an expression (`\"=sin(t)*10\"`).",
+      "anyOf": [
+        {
+          "type": "number",
+          "format": "double"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "Padding": {
+      "description": "Padding: one value, `[v, h]` or `[t, r, b, l]`.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Num"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Num"
+          }
+        }
+      ]
+    },
+    "Paint": {
+      "description": "A colour or gradient: a CSS string (`\"#fff\"`, `\"$primary\"`,\n`\"linear-gradient(90deg, #f00, #00f)\"`) or a gradient object.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/Gradient"
+        }
+      ]
+    },
+    "Preset": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/PresetObj"
+        }
+      ]
+    },
+    "PresetObj": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "description": "Loop amplitude.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "cps": {
+          "description": "Typewriter characters per second.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "delay": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "direction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "distance": {
+          "description": "Move distance (px or unit string) for move presets.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "duration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ease": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "period": {
+          "description": "Loop period in seconds.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "preset": {
+          "description": "Preset name (`fadeUp`, `popIn`, `drawOn`, `typewriter`, …).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "spring": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SpringSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stagger": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Stagger"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "Scale": {
+      "description": "`scale`: one number (or expression) or `[sx, sy]`.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Num"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Num"
+          },
+          "maxItems": 2,
+          "minItems": 2
+        }
+      ]
+    },
+    "Scene": {
+      "description": "One scene.",
+      "type": "object",
+      "properties": {
+        "audio": {
+          "description": "Audio cues relative to the scene start.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/AudioCue"
+          }
+        },
+        "background": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Paint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "camera": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Camera"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "duration": {
+          "description": "Seconds (or a time string), or `\"auto\"`. Default 3.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "layers": {
+          "description": "Drawn bottom to top.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Layer"
+          }
+        },
+        "markers": {
+          "description": "Times relative to the scene start.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "$ref": "#/$defs/Num"
+          }
+        },
+        "transition": {
+          "description": "How this scene comes in from the previous one.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Transition"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "layers"
+      ]
+    },
+    "Shadow": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/ShadowObj"
+        }
+      ]
+    },
+    "ShadowObj": {
+      "type": "object",
+      "properties": {
+        "blur": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "x": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "y": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        }
+      }
+    },
+    "Shake": {
+      "description": "Camera shake.",
+      "type": "object",
+      "properties": {
+        "amount": {
+          "description": "Pixels. Default 8.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "duration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "frequency": {
+          "description": "Hz. Default 6.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "rotation": {
+          "description": "Shake rotation in degrees. Default 0.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        }
+      }
+    },
+    "Size": {
+      "description": "Video size: a preset (`\"16:9\"`, `\"9:16\"`, `\"1:1\"`, `\"4:5\"`, `\"720p\"`,\n`\"1080p\"`, `\"4k\"`, …) or `[width, height]`.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          },
+          "maxItems": 2,
+          "minItems": 2
+        }
+      ]
+    },
+    "SpringParams": {
+      "type": "object",
+      "properties": {
+        "damping": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "mass": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "stiffness": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "velocity": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SpringSpec": {
+      "description": "Spring: a preset name or parameters.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/SpringParams"
+        }
+      ]
+    },
+    "Stagger": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "$ref": "#/$defs/StaggerObj"
+        }
+      ]
+    },
+    "StaggerObj": {
+      "type": "object",
+      "properties": {
+        "each": {
+          "description": "Seconds between consecutive items.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "ease": {
+          "description": "Ease applied to the delay distribution.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "from": {
+          "description": "`start` (default), `center`, `end`, `random`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "total": {
+          "description": "Spread the delays over this many seconds instead.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        }
+      }
+    },
+    "StrokeObj": {
+      "type": "object",
+      "properties": {
+        "cap": {
+          "description": "`butt`, `round`, `square`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dash": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "dashOffset": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "join": {
+          "description": "`miter`, `round`, `bevel`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "width": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "StrokeSpec": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/StrokeObj"
+        }
+      ]
+    },
+    "StyleRef": {
+      "description": "`style`: a theme text-style name (text layers) or a box style (box layers).",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/BoxStyle"
+        }
+      ]
+    },
+    "TextStyle": {
+      "description": "A named text style.",
+      "type": "object",
+      "properties": {
+        "align": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "color": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Paint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "font": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "italic": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "letterSpacing": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lineHeight": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "uppercase": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "weight": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Weight"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "Theme": {
+      "description": "Theme: colour tokens (`\"$name\"`), font roles and text styles.",
+      "type": "object",
+      "properties": {
+        "colors": {
+          "description": "Colour tokens: `primary`, `secondary`, `accent`, `bg`, `surface`, `text`, `muted`, or your own.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "fonts": {
+          "description": "Font roles: `heading`, `body`, `mono`.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "radius": {
+          "description": "Default corner radius for boxes.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "styles": {
+          "description": "Text styles: `title`, `heading`, `subtitle`, `body`, `caption`, `label`, `code`, or your own.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "$ref": "#/$defs/TextStyle"
+          }
+        }
+      }
+    },
+    "Transition": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/TransitionObj"
+        }
+      ]
+    },
+    "TransitionObj": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "direction": {
+          "description": "`left`, `right`, `up`, `down`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "duration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ease": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "intensity": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "origin": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/Num"
+          },
+          "maxItems": 2,
+          "minItems": 2
+        },
+        "softness": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "type": {
+          "description": "`cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Tween": {
+      "description": "One tween in `animate`.",
+      "type": "object",
+      "properties": {
+        "at": {
+          "description": "Start, relative to the layer's start. `\"+0.2\"` = after the previous tween.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "duration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ease": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "from": {
+          "description": "Animate from these values to the layer's own.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": true
+        },
+        "keyframes": {
+          "description": "`{ prop: [v0, v1, …] }` or `{ prop: [[time 0..1, value], …] }`.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "array",
+            "items": true
+          }
+        },
+        "preset": {
+          "description": "A preset run as a tween at `at`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "repeat": {
+          "description": "Repeat count (`-1` = forever).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "spring": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SpringSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "to": {
+          "description": "Animate to these values (and hold).",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": true
+        },
+        "yoyo": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "Weight": {
+      "description": "Font weight: 100..900 or a name (`\"bold\"`, `\"semibold\"`, …).",
+      "anyOf": [
+        {
+          "type": "number",
+          "format": "double"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    }
+  }
+}

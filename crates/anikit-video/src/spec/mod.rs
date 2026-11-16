@@ -332,6 +332,8 @@ pub struct Layer {
     pub split: Option<String>,
     pub reveal: Option<Num>,
     pub value: Option<Num>,
+    /// Kinetic text animation (TEXT module): shorthand like `"pop by char from center 0.4s 30ms outBack"`, or an object.
+    pub kinetic: Option<serde_json::Value>,
 
     // ---- shape
     /// `rect`, `circle`, `ellipse`, `line`, `arrow`, `polygon`, `star`, `path`.
