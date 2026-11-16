@@ -32,9 +32,24 @@ export interface NodeRecord {
   at: number;
   /** Apply freshly computed values. */
   render?(): void;
+  /**
+   * Optional batch form of `render` (see `flush`): applies this record and
+   * the records after it in the updated list that share its writer, and
+   * returns the index of the first one it did not apply.
+   */
+  run?: Runner | null;
   /** Discrete engine events. */
   event?(kind: number): void;
 }
+
+/**
+ * `run(records, U32, up, i, n, F64)`: apply updated records from index `i`
+ * (of `n`, list at `U32[up]`) while they take this same runner; returns the
+ * index of the first one not applied (`i` if none).
+ */
+export type Runner = (
+  records: Array<NodeRecord | undefined>, u: Uint32Array, up: number, i: number, n: number, f: Float64Array,
+) => number;
 
 const records: Array<NodeRecord | undefined> = [];
 
@@ -90,10 +105,25 @@ export function flush(): void {
       if (i >= n) break;
       views();
       const up = w.ak_updated_ptr() >>> 2;
-      for (; i < n; i++) {
+      while (i < n) {
         const h = U32[up + i];
         const r = records[h & INDEX_MASK];
-        if (r !== undefined && r.h === h && r.render !== undefined) r.render();
+        if (r !== undefined && r.h === h && r.render !== undefined) {
+          // Runs of records with one generated writer (plain objects, one
+          // property set: every target of an `animate()` call) are applied
+          // by that writer's own loop, so each store site sees one shape and
+          // there is no call per record.
+          const run = r.run;
+          if (run !== undefined && run !== null) {
+            const j = run(records, U32, up, i, n, F64);
+            if (j > i) {
+              i = j;
+              continue;
+            }
+          }
+          r.render();
+        }
+        i++;
       }
     }
   } finally {
