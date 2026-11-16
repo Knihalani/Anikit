@@ -729,3 +729,46 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
   }
   return { resize, frame, update, render, setQuality };
 }
+
+// The spark ring on its own, for other portals (the hall's): the same shaders and look.
+// draw(cx, cy, r, t, power) in device px of the bound framebuffer (top-left origin); additive over what is there.
+// Leaves the default GL state (no blend, no depth test, no VAO).
+export function createSparkRing(gl, count = 6000) {
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+  const prog = (vs, fs) => {
+    const p = gl.createProgram();
+    gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    const u = {};
+    for (const n of ['uRes', 'uRing', 'uP', 'uA', 'uFloor', 'uDepth', 'uScale']) u[n] = gl.getUniformLocation(p, n);
+    return { p, u };
+  };
+  const S = prog(sparkVert, sparkFrag), G = prog(glowVert, glowFrag);
+  const vao = gl.createVertexArray();
+  let last = -1, spin = 0;
+  function draw(cx, cy, r, t, power = 1, scale = 1) {
+    const dt = last < 0 ? 0 : Math.min(0.05, Math.max(0, t - last));
+    last = t; spin += dt * 8;
+    if (spin > 1e4) spin -= Math.PI * 2 * 1000;
+    const W = gl.drawingBufferWidth, H = gl.drawingBufferHeight;
+    gl.disable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.bindVertexArray(vao);
+    for (const P of [G, S]) {
+      gl.useProgram(P.p);
+      gl.uniform2f(P.u.uRes, W, H);
+      gl.uniform4f(P.u.uRing, cx, cy, r, 1);
+      gl.uniform4f(P.u.uP, t, spin, power, P === S ? 0.3 : 1);
+      gl.uniform2f(P.u.uA, Math.PI / 2, 1);
+      gl.uniform1f(P.u.uFloor, H * 4);
+      gl.uniform1f(P.u.uDepth, 0);
+      gl.uniform1f(P.u.uScale, scale);
+      if (P === G) gl.drawArrays(gl.TRIANGLE_STRIP, 0, 322);
+      else gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, count);
+    }
+    gl.disable(gl.BLEND);
+    gl.bindVertexArray(null);
+  }
+  return { draw };
+}
