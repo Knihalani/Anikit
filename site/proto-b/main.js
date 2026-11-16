@@ -21,7 +21,7 @@ const caps = [...document.querySelectorAll('.cap')];
 // Palettes per form, linear-ish RGB triples (a → b by height, c accents).
 const hex = (h) => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255];
 const PAL = [
-  ['#f2553f', '#6a4cf0', '#ffb93a'], // lettering
+  ['#e8402a', '#5b34e0', '#ff9f1c'], // lettering
   ['#e8306f', '#ff9a55', '#ffe08a'], // flower
   ['#2c48c8', '#1ba7b9', '#ff7a59'], // flock
   ['#155fd6', '#38c9d1', '#ffffff'], // wave
@@ -86,11 +86,11 @@ await Promise.race([document.fonts.load('900 100px Display'), new Promise((r) =>
 const narrow = () => innerWidth < 700;
 const yieldTask = () => new Promise((r) => setTimeout(r, 0));
 await yieldTask();
-const cloud = pointCloud(N, { ...FEEL[0] });
+const cloud = pointCloud(N, { ...FEEL[0], stiffness: 60 });
 // shape 0..5 are the forms; DUST holds the waiting fog
 cloud.shape(DUST, S.dust(N));
 await yieldTask();
-{ const t0 = performance.now(); cloud.shape(0, S.lettering(N, 'anikit', 'Display', 900, 1000)); mark('letter', t0); }
+{ const t0 = performance.now(); cloud.shape(0, S.lettering(N, 'anikit', 'Display', 900, 1120)); mark('letter', t0); }
 cloud.snap(DUST);
 
 // The other forms are built one per frame after first paint, so no long task.
@@ -423,7 +423,7 @@ function frameBody(time, dtMs) {
   f.cut = st.cut;
   f.size = 2.1 * (1 + 0.2 * w4);
   f.radial = smooth(0.3, 0.9, w4);
-  f.alpha = 0.55 * (0.5 + 0.5 * Math.min(1, st.intro * 1.5));
+  f.alpha = 0.72 * (0.5 + 0.5 * Math.min(1, st.intro * 1.5));
   gl.render(f);
   for (let i = 0; i < capFx.length; i++) {
     const fx = capFx[i];
@@ -448,7 +448,7 @@ st.s = target.s;
 requestAnimationFrame(() => requestAnimationFrame(() => {
   applyLevel();
   animate(canvas, { opacity: [0, 1] }, { duration: 1.2, ease: 'outSine' });
-  if (!reduced) animate(st, { intro: 1 }, { duration: 2.6, ease: 'inOutCubic' });
+  if (!reduced) animate(st, { intro: 1 }, { duration: 1.5, ease: 'outCubic', onComplete: () => setTimeout(() => cloud.set(FEEL[feelStage]), 600) });
   setTimeout(buildNext, 120);
 }));
 if (PERF) Object.assign(window, { __st: st, __gov: governor, __cloud: cloud, __capFx: capFx, __engine: engine });
