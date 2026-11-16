@@ -177,9 +177,11 @@ export class Marquee {
   private frame(dt: number): void {
     if (!this.length || dt <= 0) return;
     const hover = this.hovered ? (this.o.pauseOnHover ? 0 : this.o.hoverSpeed ?? 1) : 1;
-    const target = this.paused || prefersReduced() ? 0 : this.speed * hover * this.boost;
+    const reduced = prefersReduced();
+    const target = this.paused || reduced ? 0 : this.speed * hover * this.boost;
     const k = 1 - Math.exp(-dt / Math.max(1e-3, (this.o.smoothing ?? 0.4) / 3));
-    this.velocity += (target - this.velocity) * k;
+    // Reduced motion stops at once: easing down would still move it.
+    this.velocity = reduced ? 0 : this.velocity + (target - this.velocity) * k;
     this.boost += (1 - this.boost) * (1 - Math.exp(-dt * 4)); // scroll boost dies away
     this.offset = (((this.offset + this.velocity * dt) % this.length) + this.length) % this.length;
     this.render();

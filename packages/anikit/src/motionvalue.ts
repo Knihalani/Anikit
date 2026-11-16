@@ -18,6 +18,7 @@ import { spring, PhysicsAnimation, PhysicsOptions } from './spring';
 import { interpolate } from './utils';
 import type { EasingInput } from './core';
 import { quickSetter } from './quick';
+import { snapshot, classify } from './props';
 import { toTargets, Targets } from './props';
 import { track } from './context';
 import { checkTargets, warn } from './debug';
@@ -180,6 +181,10 @@ export function bindValues(targets: Targets, props: Record<string, MotionValue>)
   const els = toTargets(targets);
   checkTargets('bindValues()', targets, els.length);
   const saved = els.map((el) => (el as HTMLElement).getAttribute?.('style') ?? null);
+  // Also the engine's cached transform, or a later animation would write the
+  // bound values back.
+  const restores: Array<() => void> = [];
+  for (const el of els) for (const prop of Object.keys(props)) restores.push(snapshot(el, prop, classify(el, prop)));
   const offs: Array<() => void> = [];
   for (const [prop, val] of Object.entries(props)) {
     if (!(val instanceof MotionValue)) {
@@ -195,6 +200,7 @@ export function bindValues(targets: Targets, props: Record<string, MotionValue>)
     kill,
     revert() {
       kill();
+      for (const r of restores.splice(0).reverse()) r();
       els.forEach((el, i) => {
         const e = el as HTMLElement;
         if (!e.setAttribute) return;

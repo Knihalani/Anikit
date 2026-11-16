@@ -6,14 +6,14 @@
  * parallax('.layer-back', { speed: -0.3 });            // moves slower than the page while it scrolls past
  * ```
  */
-import { spring, PhysicsOptions } from './spring';
+import { spring, PhysicsOptions, PhysicsAnimation } from './spring';
 import { animate } from './animate';
 import { scroll } from './scroll';
 import { prefersReduced } from './core';
 import { track } from './context';
 import { checkKeys, checkTargets } from './debug';
 import type { OptionKeys } from './debug';
-import { toTargets, Targets, isElement, stateOf } from './props';
+import { toTargets, Targets, isElement, stateOf, snapshot, Kind } from './props';
 
 export interface MagneticOptions {
   /** How far the element follows the pointer, as a fraction of the pointer's offset (default 0.3). */
@@ -45,6 +45,11 @@ export function magnetic(targets: Targets, options: MagneticOptions = {}): Point
   const strength = options.strength ?? 0.3, radius = options.radius ?? 80;
   const sp: PhysicsOptions = { stiffness: 220, damping: 16, ...options.spring };
   const pulled = new Set<HTMLElement>();
+  // The transform before any pull (revert() puts it back, inline style and
+  // the engine's cached transform both), and each element's running spring.
+  const restores = els.map((el) => snapshot(el, 'x', Kind.Transform));
+  const springs = new Map<HTMLElement, PhysicsAnimation>();
+  const pull = (el: HTMLElement, x: number, y: number) => springs.set(el, spring(el, { x, y }, sp));
   const move = (e: PointerEvent) => {
     if (prefersReduced()) return;
     for (const el of els) {
@@ -57,12 +62,12 @@ export function magnetic(targets: Targets, options: MagneticOptions = {}): Point
       const near = Math.abs(dx) < r.width / 2 + radius && Math.abs(dy) < r.height / 2 + radius;
       if (near) {
         pulled.add(el);
-        spring(el, { x: dx * strength, y: dy * strength }, sp);
-      } else if (pulled.delete(el)) spring(el, { x: 0, y: 0 }, sp);
+        pull(el, dx * strength, dy * strength);
+      } else if (pulled.delete(el)) pull(el, 0, 0);
     }
   };
   const leave = () => {
-    for (const el of pulled) spring(el, { x: 0, y: 0 }, sp);
+    for (const el of pulled) pull(el, 0, 0);
     pulled.clear();
   };
   const win = typeof window !== 'undefined' ? window : null;
@@ -76,7 +81,10 @@ export function magnetic(targets: Targets, options: MagneticOptions = {}): Point
     kill,
     revert() {
       kill();
-      for (const el of els) animate(el, { x: 0, y: 0 }, { duration: 0 });
+      for (const a of springs.values()) a.stop();
+      springs.clear();
+      pulled.clear();
+      for (const r of restores) r();
     },
   });
 }
@@ -106,10 +114,12 @@ export function parallax(targets: Targets, options: ParallaxOptions = {}): Point
   const speed = options.speed ?? -0.3, axis = options.axis ?? 'y';
   const offs: Array<() => void> = [];
   if (!prefersReduced()) {
-    for (const el of els) {
+    // Read every size before creating any animation (no layout per element).
+    const spans = els.map((el) => (axis === 'y' ? innerHeight + el.offsetHeight : innerWidth + el.offsetWidth) || 1000);
+    for (let i = 0; i < els.length; i++) {
+      const el = els[i];
       // Over the scroll range (viewport + element), shift by −speed × that distance.
-      const span = (axis === 'y' ? innerHeight + el.offsetHeight : innerWidth + el.offsetWidth) || 1000;
-      const d = (-speed * span) / 2;
+      const d = (-speed * spans[i]) / 2;
       const a = animate(el, { [axis]: [-d, d] }, { ease: 'linear', autoplay: false });
       offs.push(scroll(a, { target: el, axis, smooth: options.smooth }), () => a.revert());
     }
