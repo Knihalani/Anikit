@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Anikit interactions</title>
+<style>
+  :root { --bg: #0d0f14; --panel: #161a22; --ink: #e8ebf2; --muted: #8a93a6; --accent: #6ea8ff; --accent2: #ff7ab6; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, Segoe UI, sans-serif; overflow-x: hidden; }
+  header { padding: 72px 24px 24px; max-width: 1040px; margin: auto; }
+  h1 { font-size: clamp(32px, 6vw, 64px); margin: 0 0 8px; letter-spacing: -0.02em; }
+  header p, small { color: var(--muted); }
+  section { max-width: 1040px; margin: 0 auto 28px; background: var(--panel); border-radius: 14px; padding: 22px; position: relative; overflow: hidden; }
+  h2 { font-size: 15px; margin: 0 0 2px; }
+  small { display: block; margin-bottom: 16px; font-size: 13px; }
+  code { font: 12px ui-monospace, monospace; color: #b7c3ff; }
+  /* motionValue */
+  .slider { width: 100%; accent-color: var(--accent); }
+  .meter { display: flex; gap: 14px; align-items: center; height: 110px; }
+  .dot { width: 64px; height: 64px; border-radius: 50%; background: var(--accent2); }
+  .bar { height: 10px; border-radius: 5px; background: var(--accent); width: 300px; transform-origin: 0 50%; }
+  .readout { font: 12px ui-monospace, monospace; color: var(--muted); margin-left: auto; }
+  /* marquee */
+  .logos { display: flex; gap: 40px; font: 700 28px/1 system-ui; letter-spacing: -0.02em; color: #c9d2e6; padding: 10px 0; }
+  .logos span:nth-child(3n) { color: var(--accent2); }
+  .logos.small { font-size: 16px; color: var(--muted); gap: 24px; }
+  /* magnetic */
+  .row { display: flex; gap: 22px; flex-wrap: wrap; padding: 26px 0; }
+  .mag { background: #232938; color: var(--ink); border: 0; border-radius: 999px; padding: 14px 26px; font: 600 15px system-ui; cursor: pointer; }
+  .mag.primary { background: var(--accent); color: #07101f; }
+  /* parallax */
+  .stage { height: 420px; position: relative; border-radius: 12px; overflow: hidden; background: linear-gradient(#141a2a, #0b0d12); }
+  .layer { position: absolute; left: 0; right: 0; display: grid; place-items: center; font: 800 clamp(40px, 8vw, 96px)/1 system-ui; letter-spacing: -0.04em; }
+  .l1 { top: 30%; color: #1e2740; } .l2 { top: 42%; color: #3c4d7a; } .l3 { top: 54%; color: var(--accent); }
+  .spacer { height: 40vh; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Interactions</h1>
+  <p>Reactive values, marquees, magnetic buttons and parallax — all anikit. Move the slider, hover the rows, point at the buttons, scroll the layers.</p>
+</header>
+
+<section>
+  <h2>motionValue → many properties</h2>
+  <small><code>const p = motionValue(0); bindValues(dot, { x: p.map([0, 1], [0, 600]), scale: p.map([0, 0.5, 1], [1, 1.6, 1]) }); p.spring(slider.value)</code></small>
+  <input class="slider" id="slider" type="range" min="0" max="1" step="0.001" value="0" />
+  <div class="meter"><div class="dot" id="dot"></div><div class="readout" id="readout"></div></div>
+  <div class="bar" id="bar"></div>
+</section>
+
+<section>
+  <h2>marquee</h2>
+  <small><code>marquee('.logos', { speed: 60, pauseOnHover: true, scrollBoost: 0.6 })</code> — hover to stop, scroll the page to speed it up.</small>
+  <div class="logos" id="logos"><span>Northwind</span><span>Acme</span><span>Globex</span><span>Initech</span><span>Umbrella</span><span>Hooli</span><span>Vandelay</span></div>
+  <div class="logos small" id="ticker"><span>tweens</span><span>springs</span><span>scroll</span><span>physics</span><span>3D</span><span>films</span><span>Python</span><span>WebAssembly</span></div>
+</section>
+
+<section>
+  <h2>magnetic</h2>
+  <small><code>magnetic('.mag', { strength: 0.35, radius: 90 })</code></small>
+  <div class="row"><button class="mag primary">Get started</button><button class="mag">Docs</button><button class="mag">GitHub</button><button class="mag">Examples</button></div>
+</section>
+
+<div class="spacer"></div>
+<section>
+  <h2>parallax</h2>
+  <small><code>parallax('.l1', { speed: -0.6 }); parallax('.l2', { speed: -0.3 }); parallax('.l3', { speed: 0.15 })</code></small>
+  <div class="stage"><div class="layer l1">DEPTH</div><div class="layer l2">DEPTH</div><div class="layer l3">DEPTH</div></div>
+</section>
+<div class="spacer"></div>
+
+<script type="module">
+  import { ready, motionValue, bindValues, marquee, magnetic, parallax, engine } from '../packages/anikit/dist/anikit.js';
+  await ready;
+  engine.reducedMotion = 'user';
+
+  const p = motionValue(0);
+  bindValues('#dot', { x: p.map([0, 1], [0, 600]), scale: p.map([0, 0.5, 1], [1, 1.6, 1]) });
+  bindValues('#bar', { scaleX: p, opacity: p.map([0, 1], [0.35, 1]) });
+  const readout = document.getElementById('readout');
+  p.on((v) => { readout.textContent = `value ${v.toFixed(3)} · velocity ${p.velocity.toFixed(2)}/s`; });
+  document.getElementById('slider').addEventListener('input', (e) => p.spring(+e.target.value, { stiffness: 170, damping: 14 }));
+
+  marquee('#logos', { speed: 60, pauseOnHover: true, scrollBoost: 0.6 });
+  marquee('#ticker', { speed: -40, scrollBoost: 0.6 });
+  magnetic('.mag', { strength: 0.35, radius: 90 });
+  parallax('.l1', { speed: -0.6 });
+  parallax('.l2', { speed: -0.3 });
+  parallax('.l3', { speed: 0.15 });
+</script>
+</body>
+</html>

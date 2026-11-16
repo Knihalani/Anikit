@@ -199,7 +199,7 @@ crates/anikit-wasm   WebAssembly C-ABI shim (no_std, dlmalloc)
 crates/anikit-py     Python package (PyO3 + maturin), tests, README
 packages/anikit      TypeScript package: src/, test/ (vitest + happy-dom), scripts/ (build, benchmarks), bin/anikit-record
 site/                The landing page (built with Anikit)
-examples/            Browser demos (examples/index.html, examples/scroll.html)
+examples/            Browser demos (examples/index.html, scroll.html, interactions.html, journey.html)
 docs/                API reference
 AGENTS.md, llms.txt  Guides for coding agents
 ```
@@ -220,7 +220,7 @@ cd packages/anikit && npm install && npm test && npm run build
 cd crates/anikit-py && python -m venv .venv && . .venv/bin/activate && pip install maturin pytest && maturin develop --release && pytest
 ```
 
-To see the demos, build the TS package and serve the repo root (for example `python -m http.server`). `/site/` is the landing page, `/examples/` shows the core features and `/examples/scroll.html` the scroll and interaction suite.
+To see the demos, build the TS package and serve the repo root (for example `python -m http.server`). `/site/` is the landing page, `/examples/` shows the core features, `/examples/scroll.html` the scroll and interaction suite and `/examples/interactions.html` motion values, marquees, magnetic buttons and parallax.
 
 Benchmarks: `npm run bench`, `npm run bench:physics`, `npm run bench:3d`, `npm run bench:dom`, `npm run bench:cloud` and `node scripts/bench-wasm.mjs` (the core's kernels through the WebAssembly exports; in `packages/anikit`) and `cargo run --release -p anikit-core --example bench` / `physics_bench` / `cloud_bench`. Before/after notes for the core's optimisations: [`docs/perf-notes.md`](docs/perf-notes.md).
 
