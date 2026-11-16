@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { ready, composition, FrameBuffer, emitter, analyzeAudio, muxWebM, animate, delayedCall, mesh, instances, renderer3d, scene3d } from '../src/index';
+import { ready, composition, FrameBuffer, emitter, analyzeAudio, muxWebM, animate, delayedCall, mesh, instances, renderer3d, scene3d, testing } from '../src/index';
 
 beforeAll(async () => { await ready; });
 
@@ -168,6 +168,22 @@ describe('composition extras', () => {
       expect(Object.keys(t.passes)).toEqual(expect.arrayContaining(['opaque', 'sky']));
     }
     expect(Object.keys(r.stats)).toEqual(expect.arrayContaining(['setup', 'opaque', 'sky', 'output']));
+  });
+
+  it('warns when draw() keeps creating meshes or instance buffers', async () => {
+    const warnings = testing.captureWarnings();
+    const c = composition({ width: 4, height: 2, fps: 10, duration: 0.6 });
+    c.scene('leaky', 0, 0.6, { draw: () => { instances(2); } });
+    const cv: any = { width: 4, height: 2, getContext: () => ({ fillRect() {}, getImageData: () => ({ data: new Uint8ClampedArray(32) }) }) };
+    await c.render({ canvas: cv, onFrame: () => {} });
+    expect(warnings.filter((w) => /creates 1 mesh or instance buffers in every draw/.test(w))).toHaveLength(1);
+    expect(warnings[0]).toMatch(/scene "leaky"/);
+    warnings.length = 0;
+    const ok = composition({ width: 4, height: 2, fps: 10, duration: 0.6 });
+    const inst = instances(2);
+    ok.scene('fine', 0, 0.6, { draw: () => { inst.set(0, { x: 1 }); } });
+    await ok.render({ canvas: cv, onFrame: () => {} });
+    expect(warnings).toHaveLength(0);
   });
 
   it('impacts can send out a shockwave that expands and fades', () => {

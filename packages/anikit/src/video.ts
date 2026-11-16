@@ -23,7 +23,8 @@
 import { core, W, ready, F64, f64Buf } from './wasm';
 import { engine, isManual } from './core';
 import { ease } from './utils';
-import { passTimes } from './profile';
+import { passTimes, created } from './profile';
+import { warn } from './debug';
 import type { EasingInput } from './core';
 
 type Ctx2D = CanvasRenderingContext2D;
@@ -488,7 +489,19 @@ export class Composition {
       c.fillStyle = this.options.background;
       c.fillRect(0, 0, w, h);
     };
+    // Guard: meshes / instance buffers created inside draw() pile up in WebAssembly memory.
+    let churn = 0, churnWarned = false;
     const paint = (t: number, f: number, act: SceneDef[]) => {
+      const before = created.meshes + created.instances;
+      paintFrame(t, f, act);
+      const made = created.meshes + created.instances - before;
+      churn = made > 0 ? churn + 1 : 0;
+      if (churn >= 3 && !churnWarned) {
+        churnWarned = true;
+        warn(`composition: scene "${act.map((s) => s.name).join('" / "')}" creates ${made} mesh${made === 1 ? '' : 'es'} or instance buffers in every draw(). Create them once, outside draw(), and update them in place (instances.set(i, …)): each one stays in memory for the whole render.`);
+      }
+    };
+    const paintFrame = (t: number, f: number, act: SceneDef[]) => {
       const [a, b] = act;
       if (!b || !b.transition) {
         bg(ctx);

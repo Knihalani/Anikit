@@ -9,3 +9,6 @@ export const passTimes: Record<string, number> = {};
 export function addPass(name: string, ms: number): void {
   passTimes[name] = (passTimes[name] ?? 0) + ms;
 }
+
+/** Meshes and instance buffers created so far (compositions warn when `draw()` keeps creating them). */
+export const created = { meshes: 0, instances: 0 };

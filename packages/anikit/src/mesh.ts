@@ -17,7 +17,7 @@ import { core, F64, f64Buf, W } from './wasm';
 import { parseColor } from './values';
 import { track } from './context';
 import type { Scene3D } from './scene';
-import { addPass } from './profile';
+import { addPass, created } from './profile';
 
 type V3 = [number, number, number];
 const STRIDE = 15;
@@ -68,7 +68,9 @@ export function texture(src: ImageLike | CanvasLike): Texture3D {
 export class Mesh3D {
   /** Depth/width ratio for meshes built from images (`mesh.text`): use it as the instance's `sz`/`sy` factor. */
   aspect = 1;
-  constructor(readonly id: number) {}
+  constructor(readonly id: number) {
+    created.meshes++;
+  }
   get vertices(): number {
     return core().ak_mesh_ptr(this.id, 3);
   }
@@ -241,6 +243,7 @@ export interface InstanceInit {
 export class Instances {
   readonly data: Float32Array;
   constructor(public count: number) {
+    created.instances++;
     this.data = new Float32Array(count * STRIDE);
     for (let i = 0; i < count; i++) this.set(i, {});
   }
