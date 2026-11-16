@@ -387,17 +387,17 @@ export default async function film({ anikit: A }) {
         const dx = o0[0] + ax[0] * nx + ay[0] * ny, dz = o0[2] + ax[2] * nx + ay[2] * ny;
         const tt = -ey / dy, vz = tt * (dx * fx + dy * fy + dz * fz);
         const i = y * W + x, d = dist[i];
-        if (vz > (mode === 'comic' ? 700 : 30000) || Math.abs(d - vz) > 0.03 * vz + 0.4) continue;
+        if (vz > (mode === 'comic' ? 700 * Math.max(1, ey / 22) : 30000) || Math.abs(d - vz) > 0.03 * vz + 0.4) continue;
         const wx = ex + dx * tt, wz = ez + dz * tt, dn = -dy / Math.sqrt(dx * dx + dy * dy + dz * dz);
         let wv = 0;
         if (mode !== 'comic') wv = Math.sin(wz * 0.55 + wx * 0.12 + t * 1.6) * 0.6 + Math.sin(wz * 1.7 - wx * 0.4 + t * 2.3) * 0.3 + Math.sin(wz * 0.31 - wx * 0.27 - t * 1.1) * 0.4;
         if (mode === 'comic') {
-          const u = wx / 7, v = wz / 2.4, cu = Math.floor(u), cv = Math.floor(v), hh = hash(cu * 7919 + cv * 104729 + 13);
+          const ws = Math.max(1, ey / 22), u = wx / (7 * ws), v = wz / (2.4 * ws), cu = Math.floor(u), cv = Math.floor(v), hh = hash(cu * 7919 + cv * 104729 + 13);
           if (hh <= 0.42) {
             const fu = u - cu, fv = v - cv - 0.5 - 0.12 * Math.sin(fu * Math.PI);
             const len = 0.55 + 0.4 * hash(cu * 31 + cv * 17), du = (fu - 0.5) / (len * 0.5);
             if (Math.abs(du) <= 1) {
-              const th = (hh < 0.3 ? 0.09 : 0.06) * (1 - du * du) * Math.min(1, 40 / vz + 0.35);
+              const th = (hh < 0.3 ? 0.09 : 0.06) * (1 - du * du) * Math.min(1, 40 * Math.max(1, ey / 22) / vz + 0.35);
               if (Math.abs(fv) < th) wv = hh < 0.3 ? 1 : 2;
             }
           }
