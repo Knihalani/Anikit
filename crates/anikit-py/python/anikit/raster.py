@@ -526,6 +526,10 @@ class Material:
       ``texture_repeat`` (UV tiling).
     * ``pattern``: what ``lines`` draws in ``grid`` cells — ``"grid"``
       (default), ``"hex"`` cells, ``"dots"`` or ``"circuit"`` traces with pads.
+    * ``fog`` (0–1, default 1): how much the lighting's fog applies (0 for sky
+      domes and backdrops painted with their own haze).
+    * ``texture_filter``: ``"linear"`` (default) or ``"aniso"`` (anisotropic:
+      sharp ground at grazing angles, at some cost).
     """
 
     ambient: float = 0.22
@@ -550,8 +554,12 @@ class Material:
     texture_repeat: Tuple[float, float] = (1.0, 1.0)
     texture_gain: float = 1.0
     pattern: str = "grid"
+    fog: float = 1.0
+    texture_filter: str = "linear"
 
     def _pack(self) -> List[float]:
+        if self.texture_filter not in ("linear", "aniso"):
+            raise ValueError(f"texture_filter must be 'linear' or 'aniso', got {self.texture_filter!r}")
         if self.texture_mode not in ("albedo", "emissive"):
             raise ValueError(f"texture_mode must be 'albedo' or 'emissive', got {self.texture_mode!r}")
         if self.pattern not in PATTERNS:
@@ -581,6 +589,8 @@ class Material:
             *_v2(self.texture_repeat, "texture_repeat"),
             float(self.texture_gain),
             float(PATTERNS.index(self.pattern)),
+            float(self.fog),
+            1.0 if self.texture_filter == "aniso" else 0.0,
         ]
 
 

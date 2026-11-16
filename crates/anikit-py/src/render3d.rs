@@ -21,7 +21,7 @@ use crate::{f32_bytes, finite, u32_bytes, F32Data};
 /// metal, iridescence, hue, lines, line_color(3), grid(2), line_width, pulse,
 /// pulse_count, pulse_phase, pulse_dir(3), tex_mode, tex_repeat(2), tex_gain,
 /// pattern (0 grid, 1 hex, 2 dots, 3 circuit).
-const MATERIAL_LEN: usize = 27;
+const MATERIAL_LEN: usize = 29;
 /// Floats per lighting: key(3), key_color(3), fill(3), fill_color(3),
 /// rim_color(3), fog(2), fog_color(3), sky(3), horizon(3), ground(3), strips(3),
 /// ground_fog(3: bottom, top, range), point light count, then 8 lights ×
@@ -363,6 +363,8 @@ fn material(v: &[f32]) -> PyResult<Material> {
         tex_repeat: [v[23], v[24]],
         tex_gain: v[25],
         pattern: pattern as u8,
+        fog: v[27],
+        tex_filter: if v[28] != 0.0 { 1 } else { 0 },
         ..Material::default()
     })
 }
