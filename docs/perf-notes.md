@@ -950,6 +950,7 @@ New scripts (in `packages/anikit/scripts/`):
 | `node scripts/bench-trigger.mjs` (`PIN=1`) | Chromium: creating N scrubbed `scrollTrigger`s and `refreshScrollTriggers()`, against GSAP's ScrollTrigger |
 | `node scripts/bench-marquee.mjs` | Chromium: M `marquee()` rows down a long page (about 3 on screen), set-up and ms per frame including the style and layout work it causes |
 | `node scripts/bench-gif.mjs` | `encodeGif()` (what `record()` runs on its frames): flat UI frames and a full-frame moving gradient, ms per frame and file size |
+| `node scripts/bench-magnetic.mjs` | Chromium: M `magnetic()` buttons with the pointer sweeping across them, ms per move + frame and JS heap kept per move (after a GC, through the DevTools protocol) |
 | `node scripts/bench-drag.mjs` (`FORCE=0`) | Chromium: `draggable()` against GSAP's Draggable, µs per synthetic pointer move and ms for the release (throw set-up) |
 | `node scripts/bench-world-draw.mjs` | Chromium: `world().draw()` on a 2D canvas, N bodies, ms per frame including the raster |
 | `cargo run --release -p anikit-core --example gif_prof` | native GIF encoder on gradient frames (a callgrind target) |
@@ -972,7 +973,20 @@ three interleaved rounds):
 | `inertia()` create + 10 frames | 1k | 4.1–11.5 | 3.6–12.0 |
 | 〃 | 10k | 61.2–98.0 | 48.8–98.3 |
 
-Only the retarget rows changed beyond the noise. GSAP has no spring, and its
+Only the retarget rows changed beyond the noise.
+
+The same fix on a DOM feature, `bench-magnetic.mjs` (Chromium, 600 pointer
+moves each followed by a frame, median of 3 pages, three interleaved
+rounds):
+
+| M buttons | ms/move+frame `86b471c` | now | heap kept per move `86b471c` | now |
+|---:|---:|---:|---:|---:|
+| 20 | 0.094–0.098 | 0.066–0.085 | 7–8 B | 23–26 B |
+| 200 | 0.694–1.003 | **0.547–0.674** | **811–818 B** | **26–29 B** |
+
+(At 20 buttons few are near the pointer at once, so little is retargeted;
+the 7–26 B per move there is within what this heap reading resolves, about
+15 KB over the run.) GSAP has no spring, and its
 InertiaPlugin does not register under Node (it reported "Missing plugin"),
 so there is no competitor column here.
 
@@ -1139,20 +1153,20 @@ smaller gain: 13.6 → 13.1 ms per gradient frame on its own).
 
 `gesture()` (read: one `getBoundingClientRect` per press, one transform
 write per move, no reads in the move path; ctrl-wheel pinch reads the box per
-event), `observer()`, `smoothScroll()` and `scroll({ smooth })`
-(both retarget a spring per event, so they get §1), `magnetic()` (one
-`getBoundingClientRect` per element per pointer move, then a spring retarget:
-also §1), `parallax()` (a `scroll()` link per element), `presence`/`exit`,
-`motionValue`/`bindValues`, the `effects` presets (thin wrappers over
-`animate()`, the other round's path), `pointCloud` + `glow` and `scene3d`
-(benchmarked in earlier rounds, code unchanged).
+event), `observer()`, `smoothScroll()` and `scroll({ smooth })` (both
+retarget a spring per event, so they get §1), `parallax()` (a `scroll()` link
+per element), `presence`/`exit`, `bindValues`, the `effects` presets (thin
+wrappers over `animate()`, the other round's path).
 
-For the record, one run each of the existing scripts on the final build
-(code unchanged): `bench-physics.mjs` (`world()` vs matter.js, ms per step)
+`world()`, `pointCloud` + `glow`, `scene3d` and motion values were not
+changed; for the record, one run each of their existing scripts on the final
+build: `bench-physics.mjs` (`world()` vs matter.js, ms per step)
 250 bodies 0.060 vs 4.82 (81x), 1000 0.361 vs 9.49 (26x), 2000 0.445 vs
 12.6 (28x), 5000 1.08 vs 14.1 (13x); `bench-3d.mjs` (projection vs plain JS)
 10k points 0.103 vs 2.06 ms (20x), 100k 1.23 vs 29.5 ms (24x), 500k 6.99 vs
 200 ms (29x); `bench-cloud.mjs` (Chromium, step + render at 1080×675, ms
 per frame) 10k particles 2.53, 50k 4.30, 150k 12.36, 300k 17.49 (100k sits
-between 50k and 150k, roughly half a 60 fps frame).
+between 50k and 150k, roughly half a 60 fps frame); `bench-create.mjs`
+`frame: motionValue -> 1000 derived + listeners` 0.098 ms (fourth round:
+0.068–0.103).
 
