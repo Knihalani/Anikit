@@ -30,7 +30,7 @@ fn scene(t: f32, font: Option<FontId>, shadows: bool) -> DisplayList {
     });
     for i in 0..30 {
         let (cx, cy) = ((i % 6) as f32 * 310.0 + 40.0, (i / 6) as f32 * 205.0 + 40.0);
-        let moving = i < 4;
+        let moving = i < std::env::var("MOVING").map(|v| v.parse().unwrap()).unwrap_or(4);
         let dx = if moving { (t * 3.0 + i as f32).sin() * 40.0 } else { 0.0 };
         let card = Op::RoundRect {
             x: cx + dx,

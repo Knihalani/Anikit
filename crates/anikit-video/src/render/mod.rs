@@ -72,6 +72,7 @@ struct State {
     pix_pool: Vec<Pixmap>,
     in_flight: Vec<Arc<Pixmap>>,
     cache: HashMap<u64, CacheEntry>,
+    sprites: HashMap<u64, CacheEntry>,
     frame_no: u64,
     path: BezPath,
     lens: Vec<f64>,
@@ -105,6 +106,7 @@ impl Renderer {
                 pix_pool: Vec::new(),
                 in_flight: Vec::new(),
                 cache: HashMap::new(),
+                sprites: HashMap::new(),
                 frame_no: 0,
                 path: BezPath::new(),
                 lens: Vec::new(),
@@ -154,6 +156,9 @@ impl Renderer {
         }
         let now = st.frame_no;
         st.cache.retain(|_, e| e.last_used + 1 >= now);
+        if st.sprites.len() > 256 {
+            st.sprites.retain(|_, e| e.last_used + 30 >= now);
+        }
         &self.frame
     }
 
@@ -194,6 +199,24 @@ fn draw_ops(st: &mut State, assets: &Assets, ctx: &mut RenderContext, ops: &[Op]
                 if opacity <= 0.0 || inner.is_empty() {
                     continue;
                 }
+                if let [dl::Filter::Shadow { dx, dy, blur, color: sc }] = filters.as_slice() {
+                    if let Some(card) = card_shadow(inner, base) {
+                        let trivial = opacity >= 1.0 && *blend == Blend::Normal && clip.is_none();
+                        if !trivial {
+                            push_layer(ctx, base, clip.as_ref(), *blend, opacity);
+                        }
+                        let mut c = *sc;
+                        c.0[3] *= card.alpha;
+                        if c.0[3] > 0.0 {
+                            draw_shadow_sprite(st, ctx, &card, *dx, *dy, blur.max(0.0), c);
+                        }
+                        draw_ops(st, assets, ctx, inner, base);
+                        if !trivial {
+                            ctx.pop_layer();
+                        }
+                        continue;
+                    }
+                }
                 if !filters.is_empty() || cache_key.is_some() {
                     draw_offscreen(st, assets, ctx, inner, base, opacity, *blend, filters, clip.as_ref(), *cache_key);
                     continue;
@@ -214,6 +237,106 @@ fn draw_ops(st: &mut State, assets: &Assets, ctx: &mut RenderContext, ops: &[Op]
             }
         }
     }
+}
+
+/// Draw a card's drop shadow from a cached sprite (rendered and blurred once
+/// per size/radius/blur/colour), at an integer device offset.
+#[allow(clippy::too_many_arguments)]
+fn draw_shadow_sprite(st: &mut State, ctx: &mut RenderContext, card: &Card, dx: f32, dy: f32, sigma: f32, c: Rgba) {
+    let dev = card.transform.transform_rect_bbox(card.rect);
+    let (w, h) = (dev.width(), dev.height());
+    let r = card.radius as f64 * card.scale as f64;
+    let m = (sigma * 3.0).ceil() as f64 + 1.0;
+    let q = |v: f64| (v * 16.0).round() as u64;
+    let key = {
+        use std::hash::{Hash, Hasher};
+        let mut hs = std::collections::hash_map::DefaultHasher::new();
+        (q(w), q(h), q(r), q(sigma as f64), c.0.map(|v| (v * 1023.0) as u32)).hash(&mut hs);
+        hs.finish()
+    };
+    let now = st.frame_no;
+    let pix = match st.sprites.get_mut(&key) {
+        Some(e) => {
+            e.last_used = now;
+            e.pix.clone()
+        }
+        None => {
+            let (sw, sh) = ((w + 2.0 * m).ceil(), (h + 2.0 * m).ceil());
+            if sw > 8192.0 || sh > 8192.0 {
+                return;
+            }
+            let (sw, sh) = (sw as u16, sh as u16);
+            let mut sub = st.pool.pop().unwrap_or_else(|| RenderContext::new(sw, sh));
+            sub.reset_and_resize(sw, sh);
+            sub.set_paint(color(c));
+            sub.set_fill_rule(Fill::NonZero);
+            st.path.truncate(0);
+            st.path.extend(RoundedRect::new(m, m, m + w, m + h, r).path_elements(0.1));
+            sub.fill_path(&st.path);
+            sub.flush();
+            let mut pm = Pixmap::new(sw, sh);
+            sub.render_with(&mut pm, &mut st.res, RasterizerSettings::default());
+            sub.reset();
+            st.pool.push(sub);
+            filter::apply(&dl::Filter::Blur(sigma), pm.data_as_u8_slice_mut(), sw as usize, sh as usize, &mut st.filters);
+            pm.set_may_have_transparency(true);
+            let pix = Arc::new(pm);
+            st.sprites.insert(key, CacheEntry { pix: pix.clone(), x: 0, y: 0, last_used: now });
+            pix
+        }
+    };
+    let (x, y) = ((dev.x0 - m + dx as f64).round(), (dev.y0 - m + dy as f64).round());
+    blit(ctx, pix, x, y, 1.0);
+}
+
+/// Composite a premultiplied bitmap at an integer device position.
+fn blit(ctx: &mut RenderContext, pix: Arc<Pixmap>, x: f64, y: f64, alpha: f32) {
+    let (w, h) = (pix.width() as f64, pix.height() as f64);
+    ctx.set_transform(Affine::translate((x, y)));
+    ctx.reset_paint_transform();
+    ctx.set_paint(Image {
+        image: ImageSource::Pixmap(pix),
+        sampler: ImageSampler { x_extend: Extend::Pad, y_extend: Extend::Pad, quality: ImageQuality::Low, alpha },
+    });
+    ctx.fill_rect(&Rect::new(0.0, 0.0, w, h));
+}
+
+struct Card {
+    rect: Rect,
+    radius: f32,
+    transform: Affine,
+    scale: f32,
+    alpha: f32,
+}
+
+/// If the layer's alpha is exactly one axis-aligned rounded rect (a card,
+/// optionally with content drawn inside an opaque card), return it: its drop
+/// shadow is then an analytic blurred rounded rect, with no offscreen pass.
+fn card_shadow(inner: &[Op], base: Affine) -> Option<Card> {
+    let Op::RoundRect { x, y, w, h, radius, paint, transform } = inner.first()? else { return None };
+    let t = base * affine(transform);
+    let [a, b, c, d, _, _] = t.as_coeffs();
+    if b != 0.0 || c != 0.0 || a <= 0.0 || (a - d).abs() > 1e-6 * a.abs() {
+        return None;
+    }
+    let alpha = match paint {
+        Paint::Solid(c) => c.0[3].clamp(0.0, 1.0),
+        Paint::Linear { stops, .. } | Paint::Radial { stops, .. } if stops.iter().all(|s| s.1 .0[3] >= 1.0) => 1.0,
+        _ => return None,
+    };
+    let rect = Rect::new(*x as f64, *y as f64, (*x + *w) as f64, (*y + *h) as f64);
+    if inner.len() > 1 {
+        // Everything else must sit inside an opaque card, so the alpha is the card's.
+        if alpha < 1.0 {
+            return None;
+        }
+        let dev = t.transform_rect_bbox(rect).inflate(1.5, 1.5);
+        let rest = ops_bounds(&inner[1..], base)?;
+        if rest.x0 < dev.x0 || rest.y0 < dev.y0 || rest.x1 > dev.x1 || rest.y1 > dev.y1 {
+            return None;
+        }
+    }
+    Some(Card { rect, radius: radius.clamp(0.0, w.min(*h) * 0.5), transform: t, scale: a as f32, alpha })
 }
 
 fn push_layer(ctx: &mut RenderContext, base: Affine, clip: Option<&(dl::Path, dl::Affine)>, blend: Blend, opacity: f32) {
@@ -365,19 +488,7 @@ fn draw_offscreen(
     if layered {
         push_layer(ctx, base, clip, blend, opacity);
     }
-    let (w, h) = (pix.width() as f64, pix.height() as f64);
-    ctx.set_transform(Affine::translate((x as f64, y as f64)));
-    ctx.reset_paint_transform();
-    ctx.set_paint(Image {
-        image: ImageSource::Pixmap(pix),
-        sampler: ImageSampler {
-            x_extend: Extend::Pad,
-            y_extend: Extend::Pad,
-            quality: ImageQuality::Low,
-            alpha: if layered { 1.0 } else { opacity },
-        },
-    });
-    ctx.fill_rect(&Rect::new(0.0, 0.0, w, h));
+    blit(ctx, pix, x as f64, y as f64, if layered { 1.0 } else { opacity });
     if layered {
         ctx.pop_layer();
     }

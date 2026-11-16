@@ -184,6 +184,13 @@ fn scenes(font: Option<FontId>) -> Vec<(&'static str, DisplayList)> {
             Op::PopLayer,
             Op::PopLayer,
         ])),
+        ("shadow_card_with_content", list(vec![
+            Op::RoundRect { x: 0.0, y: 0.0, w: 96.0, h: 96.0, radius: 0.0, paint: solid(0.85, 0.87, 0.9), transform: IDENTITY },
+            layer(0.9, Blend::Normal, vec![Filter::Shadow { dx: 3.0, dy: 5.0, blur: 4.0, color: rgba(0.1, 0.0, 0.3, 0.7) }], None, None),
+            Op::RoundRect { x: 12.0, y: 14.0, w: 60.0, h: 56.0, radius: 12.0, paint: solid(1.0, 1.0, 1.0), transform: [1.2, 0.0, 0.0, 1.2, -4.0, -6.0] },
+            card(24.0, 26.0, 40.0, 12.0, solid(0.3, 0.5, 1.0)),
+            Op::PopLayer,
+        ])),
     ];
     if let Some(f) = font {
         // DejaVu Sans glyph ids for "Anikit" (A=36, n=81, i=76, k=78, t=87).
@@ -244,7 +251,7 @@ fn layer_cache_hits_and_matches() {
     let scene = |x: f32| {
         list(vec![
             layer(1.0, Blend::Normal, vec![Filter::Shadow { dx: 2.0, dy: 3.0, blur: 4.0, color: rgba(0.0, 0.0, 0.0, 0.7) }], None, Some(42)),
-            card(10.0, 10.0, 50.0, 40.0, solid(1.0, 1.0, 1.0)),
+            Op::Fill { path: star(), paint: solid(1.0, 1.0, 1.0), rule: FillRule::NonZero, transform: IDENTITY },
             Op::PopLayer,
             Op::Fill { path: circle(x as f64, 70.0, 10.0), paint: solid(1.0, 0.2, 0.2), rule: FillRule::NonZero, transform: IDENTITY },
         ])
