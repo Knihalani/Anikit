@@ -8,6 +8,8 @@ const q = new URLSearchParams(location.search);
 // Startup: when the core is usable, in ms since navigation (bundle parse,
 // base64 decode and WebAssembly compile included). Printed by MANUAL=1.
 window.readyAt = NaN;
+// Time of the animate() call on the N elements (creation, reads of current values).
+window.createMs = NaN;
 ak.ready.then(() => (window.readyAt = performance.now()));
 import { setTypedOM } from '../src/props';
 setTypedOM(q.get('typed') === '1');
@@ -27,7 +29,9 @@ const delay = (i) => (i % 50) * 0.01;
 window.start = async () => {
   if (lib === 'anikit' || lib === 'anikit-typed') {
     await ak.ready;
+    const t0 = performance.now();
     ak.animate(els, { x: [0, 300], y: [0, 200], rotate: [0, 360], opacity: [1, 0.3] }, { duration: 2, ease: 'inOutQuad', repeat: Infinity, yoyo: true, delay: (_e, i) => delay(i) });
+    window.createMs = performance.now() - t0;
   } else if (lib === 'anikit-compositor') {
     await ak.ready;
     ak.compositor(els, { x: [0, 300], y: [0, 200], rotate: [0, 360], opacity: [1, 0.3] }, { duration: 2, ease: 'inOutQuad', repeat: Infinity, yoyo: true, delay: (_e, i) => delay(i) });

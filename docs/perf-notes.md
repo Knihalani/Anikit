@@ -598,6 +598,12 @@ frame function, three interleaved rounds):
 | 2000 | 2.04–2.29 | 1.78–1.86 | 2.48–3.41 |
 | 5000 | 5.72–8.65 | 4.31–5.34 | 5.50–6.95 |
 
+Creation on elements (same runs, `MANUAL=1` also prints the time of the
+page's one `animate()` call on the N boxes: four properties, a delay function,
+current transforms read; cold, so it includes JIT warm-up), three interleaved
+rounds: 500 boxes 25.6–37.0 → 22.5–24.1 ms, 2000 51.6–72.3 → 35.6–55.5 ms,
+5000 96.5–98.6 → 69.5–99.4 ms.
+
 The rAF metrics of `bench-dom.mjs` (one run each, script ms per frame):
 anikit 0.68 / 2.52 / 8.18 → 0.84 / 2.36 / 6.07 at 500 / 2000 / 5000, GSAP in
 the same runs 0.97–1.07 / 4.65–5.65 / 7.15–8.17; within their noise except
