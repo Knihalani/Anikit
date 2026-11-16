@@ -912,3 +912,20 @@ export function _resetHtmlCanvasCache(): void {
   fontCss = null;
   warnedCross = new Set();
 }
+
+/**
+ * A live HTML texture for `scene()` materials: `material({ map: htmlTexture('#card') })`.
+ * The element is rasterised (natively when possible), re-uploaded to the GPU only
+ * when it changes, and pointer events on the mesh are forwarded to the element
+ * under the hit's UV. Keep the element rendered (e.g. off-screen with
+ * `position: fixed; left: -10000px`), not `display: none`.
+ *
+ * ```ts
+ * const s = scene('#c');
+ * const ui = htmlTexture('#panel');
+ * s.add(plane(1.6, 1), { rotation: [Math.PI / 2, 0, 0], material: { color: '#000', emissive: '#fff', map: ui } });
+ * ```
+ */
+export function htmlTexture(element: Element | string, options: Omit<HtmlCanvasOptions, 'target'> = {}): HtmlCanvas {
+  return htmlCanvas(element, { live: true, ...options });
+}

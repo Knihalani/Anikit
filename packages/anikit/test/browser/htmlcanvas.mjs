@@ -162,3 +162,49 @@ export const tests = [
     },
   },
 ];
+
+// scene() + htmlTexture: live HTML on a GPU mesh, with pointer forwarding through UV picking.
+const SCENE_HTML = `<canvas id="c" style="width:320px;height:240px;display:block"></canvas>
+  <div id="ui" style="position:fixed;left:-10000px;top:0;width:200px;height:200px;display:flex">
+    <button id="l" style="all:unset;width:100px;height:200px;background:rgb(255,0,0)"></button>
+    <button id="r" style="all:unset;width:100px;height:200px;background:rgb(0,0,255)"></button>
+  </div>`;
+const scenePx = (page, x, y) => page.evaluate(([x, y]) => {
+  s.render();
+  return Array.from(s.readPixels(x, s.gl.drawingBufferHeight - 1 - y, 1, 1));
+}, [x, y]);
+
+tests.push({
+  name: 'htmlTexture on a scene() mesh: upright, live, and clicks reach the element under the UV',
+  html: SCENE_HTML,
+  async run(page) {
+    await page.evaluate(async () => {
+      window.s = ak.scene('#c', { dpr: 1, adaptive: false, autoRender: false, shadows: false, camera: { position: [0, 0, 3] } });
+      window.ui = ak.htmlTexture('#ui');
+      await ui.ready;
+      window.card = s.add(ak.plane(2, 2), { rotation: [Math.PI / 2, 0, 0], material: { color: '#000000', emissive: '#ffffff', map: ui } });
+      window.hits = [];
+      document.getElementById('l').addEventListener('click', () => hits.push('l'));
+      document.getElementById('r').addEventListener('click', () => hits.push('r'));
+    });
+    const left = await scenePx(page, 130, 120), right = await scenePx(page, 190, 120);
+    ok(left[0] > 150 && left[2] < 80, `left half red (${left})`);
+    ok(right[2] > 150 && right[0] < 80, `right half blue (${right})`);
+    // Live: recolour the left button; the texture is re-uploaded once the new raster lands.
+    const v = await page.evaluate(() => ui.version);
+    await page.evaluate(() => { document.getElementById('l').style.background = 'rgb(0,255,0)'; });
+    await page.waitForFunction((v) => ui.version > v, v);
+    const green = await scenePx(page, 130, 120);
+    ok(green[1] > 150 && green[0] < 80, `left half now green (${green})`);
+    // Pointer forwarding through the mesh's UV.
+    {
+      const box = await page.$eval('#c', (c) => { const r = c.getBoundingClientRect(); return [r.left, r.top]; });
+      await page.mouse.click(box[0] + 200, box[1] + 120);
+      await page.mouse.click(box[0] + 120, box[1] + 120);
+    }
+    const hits = await page.evaluate(() => hits);
+    ok(hits.join() === 'r,l', `clicks forwarded to the buttons under the UV: ${hits}`);
+    const uv = await page.evaluate(() => s.raycast(160, 120)?.uv);
+    ok(uv && Math.abs(uv[0] - 0.5) < 0.05 && Math.abs(uv[1] - 0.5) < 0.05, `centre UV ≈ (0.5, 0.5): ${uv}`);
+  },
+});

@@ -30,3 +30,15 @@ for (const f of ['dist/anikit.min.js', 'dist/anikit.lean.js', 'dist/anikit.wasm'
   const raw = readFileSync(f);
   console.log(`${f}: ${kb(statSync(f).size)} (gzip ${kb(gzipSync(raw, { level: 9 }).length)})`);
 }
+
+// `anikit/scene`: the real-time GPU 3D layer as its own entry. It re-exports
+// from the main bundle so both share one engine (no duplicate rAF loop).
+{
+  const { writeFileSync } = await import('node:fs');
+  const names = [];
+  for (const f of ['src/gl.ts', 'src/geometry.ts']) {
+    for (const m of readFileSync(f, 'utf8').matchAll(/^export (?:function|class|const) ([A-Za-z_$][\w$]*)/gm)) names.push(m[1]);
+  }
+  writeFileSync('dist/scene.js', `// Real-time WebGL2 3D (see docs/api.md, "Real-time GPU 3D").\nexport { ${names.join(', ')} } from './anikit.js';\n`);
+  writeFileSync('dist/scene.d.ts', "export * from './types/gl';\nexport * from './types/geometry';\n");
+}
