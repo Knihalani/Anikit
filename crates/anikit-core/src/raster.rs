@@ -1347,6 +1347,7 @@ impl Raster {
         let (src, vel) = (&self.blur_src, &self.vel);
         let (wi, hi) = (bw as isize - 1, bh as isize - 1);
         const N: usize = 8;
+        let lanes = V4::new(0.0, 1.0, 2.0, 3.0);
         for by in 0..bh {
             for bx in 0..bw {
                 let j = by * bw + bx;
@@ -1367,8 +1368,6 @@ impl Raster {
                 let ln = crate::math::sqrtf(ln2);
                 let (zc, ilc) = unpack(vel[j]);
                 let kz = 1.0 / (0.02 * zc.abs().max(1.0));
-                let mut acc = [(c0 & 255) as f32 * ilc, ((c0 >> 8) & 255) as f32 * ilc, ((c0 >> 16) & 255) as f32 * ilc];
-                let mut tot = ilc;
                 let jit = (hs >> 8) as f32 * (1.0 / 16_777_216.0) - 0.5;
                 // Taps spaced ≤ ~2.5 half-res px apart (jittered), 3 to N of them.
                 let n = ((ln * 0.4) as usize + 3).min(N);
@@ -1380,26 +1379,38 @@ impl Raster {
                 let fy0 = ((by as f32 + 0.5 + vn[1] * h0) * 65536.0) as i32;
                 let (dfx, dfy) = ((vn[0] * inv_n * 65536.0) as i32, (vn[1] * inv_n * 65536.0) as i32);
                 let (dd, d0) = (inv_n * ln, h0 * ln);
-                let (mut fx, mut fy, mut dh) = (fx0, fy0, d0);
-                for _ in 0..n {
-                    let m = (fy >> 16).clamp(0, hi as i32) as usize * bw + (fx >> 16).clamp(0, wi as i32) as usize;
-                    let dist = dh.abs();
-                    fx = fx.wrapping_add(dfx);
-                    fy = fy.wrapping_add(dfy);
-                    dh += dd;
-                    let (zs, ils) = unpack(vel[m]);
-                    let (ds, dc) = (dist * ils, dist * ilc);
-                    let fg = ((zc - zs) * kz + 0.5).clamp(0.0, 1.0);
-                    let wgt = fg * (1.0 - ds).max(0.0) + (1.0 - fg) * (1.0 - dc).max(0.0) + (10.5 - ds * 10.0).clamp(0.0, 1.0) * (10.5 - dc * 10.0).clamp(0.0, 1.0) * 2.0;
-                    if wgt <= 0.0 {
-                        continue;
+                let (mut fx, mut fy) = (fx0, fy0);
+                // Four taps per step: scalar gathers, weights and accumulation
+                // in SIMD lanes (one lane per tap; lanes past n weigh zero).
+                let (zcv, kzv, ilcv) = (V4::splat(zc), V4::splat(kz), V4::splat(ilc));
+                let mut acc4 = [V4::splat(0.0); 3];
+                let mut tot4 = V4::splat(0.0);
+                let mut k0 = 0;
+                while k0 < n {
+                    let mut vq = [0u32; 4];
+                    let mut cq = [0u32; 4];
+                    for l in 0..4 {
+                        let m = (fy >> 16).clamp(0, hi as i32) as usize * bw + (fx >> 16).clamp(0, wi as i32) as usize;
+                        fx = fx.wrapping_add(dfx);
+                        fy = fy.wrapping_add(dfy);
+                        vq[l] = vel[m];
+                        cq[l] = src[m];
                     }
-                    let c = src[m];
-                    acc[0] += (c & 255) as f32 * wgt;
-                    acc[1] += ((c >> 8) & 255) as f32 * wgt;
-                    acc[2] += ((c >> 16) & 255) as f32 * wgt;
-                    tot += wgt;
+                    let kv = lanes + k0 as f32;
+                    let dist = (kv * dd + d0).abs();
+                    let zs = V4::from_bits_masked(vq, 0xffff_0000);
+                    let ils = V4::from_u32_masked(vq, 0xffff) * (1.0 / 32767.0);
+                    let (ds, dc) = (dist * ils, dist * ilcv);
+                    let fg = ((zcv - zs) * kzv + 0.5).clamp(0.0, 1.0);
+                    let wgt = fg * (1.0 - ds).maxf(0.0) + (1.0 - fg) * (1.0 - dc).maxf(0.0) + (10.5 - ds * 10.0).clamp(0.0, 1.0) * (10.5 - dc * 10.0).clamp(0.0, 1.0) * 2.0;
+                    let wgt = V4::select(kv.ltf(n as f32), wgt, V4::splat(0.0));
+                    let [r, g, b] = V4::unpack_rgb(cq);
+                    acc4 = [acc4[0] + r * wgt, acc4[1] + g * wgt, acc4[2] + b * wgt];
+                    tot4 = tot4 + wgt;
+                    k0 += 4;
                 }
+                let acc = [(c0 & 255) as f32 * ilc + acc4[0].sum(), ((c0 >> 8) & 255) as f32 * ilc + acc4[1].sum(), ((c0 >> 16) & 255) as f32 * ilc + acc4[2].sum()];
+                let tot = ilc + tot4.sum();
                 let it = 1.0 / tot;
                 let q = |v: f32| ((v * it + 0.5) as u32).min(255);
                 self.half_px[j] = q(acc[0]) | q(acc[1]) << 8 | q(acc[2]) << 16;

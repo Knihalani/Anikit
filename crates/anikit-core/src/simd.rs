@@ -375,6 +375,42 @@ pub fn dot3(a: &[V4; 3], b: &[V4; 3]) -> V4 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
 
+/// Lanes from packed integer data (gathered words decoded four at a time).
+impl V4 {
+    /// The bit patterns `p & mask`, reinterpreted as f32.
+    #[inline(always)]
+    pub fn from_bits_masked(p: [u32; 4], mask: u32) -> Self {
+        #[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
+        {
+            use core::arch::wasm32 as w;
+            Self(w::v128_and(w::u32x4(p[0], p[1], p[2], p[3]), w::u32x4_splat(mask)))
+        }
+        #[cfg(not(all(target_arch = "wasm32", target_feature = "simd128")))]
+        {
+            Self(core::array::from_fn(|i| f32::from_bits(p[i] & mask)))
+        }
+    }
+    /// The integers `p & mask`, converted to f32.
+    #[inline(always)]
+    pub fn from_u32_masked(p: [u32; 4], mask: u32) -> Self {
+        #[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
+        {
+            use core::arch::wasm32 as w;
+            Self(w::f32x4_convert_u32x4(w::v128_and(w::u32x4(p[0], p[1], p[2], p[3]), w::u32x4_splat(mask))))
+        }
+        #[cfg(not(all(target_arch = "wasm32", target_feature = "simd128")))]
+        {
+            Self(core::array::from_fn(|i| (p[i] & mask) as f32))
+        }
+    }
+    /// Sum of the four lanes, as (a + b) + (c + d).
+    #[inline(always)]
+    pub fn sum(self) -> f32 {
+        let a = self.to_array();
+        (a[0] + a[1]) + (a[2] + a[3])
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
