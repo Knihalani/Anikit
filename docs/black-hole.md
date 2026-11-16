@@ -143,30 +143,44 @@ engine.onFrame((t) => {
 
 ## Status
 
-*As of 2026-11-16, 14:35 UTC, branch `claude/epic-ramanujan-qe7x4w-blackhole`.*
+*As of 2026-11-16, 15:00 UTC, branch `claude/epic-ramanujan-qe7x4w-blackhole`.*
 
 **Done**
 
-- **Core** (`crates/anikit-core/src/blackhole.rs`) implements everything above: the geodesic table, the per-pixel lensing geometry with three image orders, the Page–Thorne disk with exact g, blackbody colour and g⁴ beaming, both modes, the flowing sheared turbulence, hot spots, lensed stars (inverted through the lens, with magnification), the lensed Milky Way and nebulae, a jet glow, the infalling (raindrop) observer inside and outside the horizon, bloom, ACES tone mapping and grain.
-- **Unit tests** cover: the shadow edge at b = 3√3 M from far away; the Synge shadow angle at 10M and 30M; periapsis ≈ 3M for the critical ray; the ISCO and Page–Thorne peak; g against the analytic formula; raindrop against static-plus-aberration; blackbody colours; continuity of the turbulence in time (across resets too); fast log2/sincos accuracy; and an end-to-end render.
+- **Core** (`crates/anikit-core/src/blackhole.rs`) implements everything above:
+  - the geodesic table and the per-pixel lensing geometry, with three image orders and an anti-aliased photon ring;
+  - the Page–Thorne disk with exact g, blackbody colour and g⁴ beaming, in both modes;
+  - flowing, sheared turbulence, orbiting hot spots and infalling spiral streams;
+  - lensed stars (inverted through the lens, with magnification) and a lensed Milky Way and nebulae;
+  - a jet glow;
+  - the infalling (raindrop) observer, inside and outside the horizon;
+  - bloom, ACES tone mapping and grain.
+- **Unit tests** cover:
+  - the shadow edge at b = 3√3 M from far away, and the Synge shadow angle at 10M and 30M;
+  - periapsis ≈ 3M for the critical ray;
+  - the ISCO and the Page–Thorne peak;
+  - g against the analytic formula, and raindrop against static-plus-aberration;
+  - blackbody colours and fast log2/sincos accuracy;
+  - continuity of the turbulence in time, across resets too;
+  - an end-to-end render, and extreme cameras (r = 1–500M, every inclination, field of view 1–170°, looking back, NaN distance) not panicking.
 - **WebAssembly**: `ak_bh_create/free/resize/render/stats` (parameters through the f64 scratch buffer, output pointer into a stable RGBA buffer), plus `ak_bh_stage` for per-stage profiling.
-- **TypeScript**: `blackHole({ width, height, canvas, mode, scale, seed, budget, minScale })` returns `render(frame)`, `resize`, `stats`, `currentScale` and `destroy/kill/revert`. It is registered with `track()`, has `OptionKeys` tables with unknown-key warnings, JSDoc, a type-checked example in `docs/api.md` and vitest tests.
-- **Python**: `anikit.BlackHole(width, height, mode)` with `render(**params)` returning RGBA bytes, `resize`, `stats` and `size`; pytest passes.
-- **Demo and benchmark**: the demo page is `examples/blackhole.html`; the benchmark is `packages/anikit/scripts/bench-blackhole.mjs`.
+- **TypeScript**: `blackHole({ width, height, canvas, mode, scale, seed, budget, minScale })` returns `render(frame)`, `resize`, `stats`, `currentScale` and `destroy/kill/revert`. It is registered with `track()` (a `context()` test covers cleanup), has `OptionKeys` tables with unknown-key warnings, JSDoc, a type-checked example in `docs/api.md` and vitest tests.
+- **Python**: `anikit.BlackHole(width, height, mode)` with `render(**params)` returning RGBA bytes, `resize`, `stats` and `size`; the full pytest suite passes (395).
+- **Demo and benchmark**: the demo page is `examples/blackhole.html`, the benchmark `packages/anikit/scripts/bench-blackhole.mjs`, and the reference renders are in `docs/images/blackhole/`.
+- **Gates**: all of them pass (cargo test and clippy, npm test, typecheck, build, pytest).
 
 **Performance** (measured on this sandbox VM, which is slow: a plain 1M-element `Float32Array` multiply–add loop in Node takes about 2.5 ms here, roughly 3–4× a current laptop):
 
-| 1280×800 (1.02 Mpx) | Node wasm, steady (time + azimuth animating) | Node wasm, camera moving | Chromium headless, incl. `putImageData` |
+| 1280×800, edge-on, 30M | Node wasm, steady (time + azimuth animating) | Node wasm, camera moving | Chromium headless, incl. `putImageData` |
 |---|---|---|---|
-| scale 1, edge-on 30M | 24.6 ms | 100 ms | 29 ms |
-| scale 0.75 | – | – | 16.4 ms |
-| scale 0.6 | 10.4 ms | 41 ms | – |
-| `budget: 14` (adaptive), mid-journey (7M) | – | – | 9.2 ms at 576×360 |
+| scale 1 (1.02 Mpx) | 25 ms | 100–115 ms | 31.6 ms |
+| scale 0.75 (0.58 Mpx) | 15–17 ms | 59–67 ms | 17.0 ms |
+| `budget: 14` (adaptive), mid-journey | – | – | 9.3 ms at 576×360 |
 
-- **The ≤ 8 ms at 1 Mpx target is not met on this VM.** Steady frames are 24.6 ms in wasm here. If the 3–4× ratio above carries over, that would be roughly 6–8 ms on a current desktop, but this was not measured on one; it needs confirming on real hardware.
-- **Camera moves are about 4× a steady frame.** Moving the camera re-integrates the table (about 4 ms) and rebuilds the per-pixel geometry. Orbiting with `azimuth` and animating `time` reuse the geometry.
-- **The scroll journey should use `budget`** (for example 14 ms with `minScale: 0.5`). The scale then drops automatically while the camera moves and recovers once it settles.
-- **Where the steady frame goes (wasm, per stage, ms):** disk texture 0.8, shading 8–9, stars 2, bloom and sky 4, tone map 12. Every stage is memory-bound on this VM.
+- **The ≤ 8 ms at 1 Mpx target is not met on this VM.** If the 3–4× ratio above carries over, that would be roughly 6–8 ms on a current desktop, but this was not measured on one; it needs confirming on real hardware.
+- **Where the steady frame goes (wasm, per stage, ms):** disk texture 1.2, shading 7–9, stars 2, bloom and sky 4, tone map 11. Every stage is memory-bound here.
+- **Camera moves cost about 4× a steady frame.** They re-integrate the table (about 4 ms) and rebuild the per-pixel geometry (about 65 ms at 1 Mpx). Orbiting with `azimuth` and animating `time` reuse the geometry.
+- **The scroll journey should use `budget`** (for example 14 ms with `minScale: 0.5`), so the scale drops while the camera moves and recovers once it settles.
 
 **Not done, or approximated**
 
@@ -176,5 +190,4 @@ engine.onFrame((t) => {
 - **Sky resolution.** The Milky Way and nebulae are looked up at quarter resolution. Stars are inverted per image (primary, secondary and one more winding) and splatted at full resolution.
 - **Eye adaptation.** Looking back out from inside the horizon, the sky is physically dimmed (redshifted by about 1/(1 + β)). The renderer raises exposure there by up to 10× (eye adaptation) so the finale is visible.
 - **Temperature scale.** Disk temperatures are scaled to the visible: 7000 K peak by default in physical mode, against about 10⁵ K for a real disk around a supermassive hole. Colours are therefore representative, not literal.
-- **Performance.** It falls short of the stated target on this VM; see above. The remaining cost is per-pixel memory traffic: three HDR planes plus transmittance, roughly 16 bytes per disk sample, and the tone-map pass. Possible next steps: f16 or packed HDR, merging shading into the tone-map pass for the direct image, and computing camera-move geometry at half resolution.
-
+- **Performance.** It falls short of the stated target on this VM; see above. Things tried without a measurable gain: tile-ordered geometry, an autovectorised scalar tone map (slower), and a per-row bloom lerp. The remaining cost is per-pixel memory traffic: three HDR planes plus transmittance, 16 bytes per disk sample, and the tone-map pass. Possible next steps: packed or f16 HDR, merging shading of the direct image into the tone-map pass, and half-resolution geometry while the camera moves.
