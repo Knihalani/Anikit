@@ -83,15 +83,16 @@ export function startDemos({ reduced, fine, small, setChainPreset, inView, liqui
 
   // Split text: a timeline that rises in, holds, and falls away, looping while visible.
   near('#text', () => {
-    const { chars } = splitText('#reveal', { type: 'words,chars', charClass: 'ch', wordClass: 'gw' });
-    set(chars, { yPercent: 110, opacity: 0 });
-    const eases = ['spring(bounce: 0.35, duration: 0.9)', 'outExpo', 'outBack'];
+    // The word is split into letters; each letter's rise out of the pool is one value the canvas reads.
+    const { chars } = splitText('#reveal', { type: 'chars', charClass: 'ch' });
+    const rise = liquid.rise.slice(0, chars.length);
+    const eases = ['spring(bounce: 0.35, duration: 1)', 'outBack', 'outExpo'];
     const tl = timeline({ repeat: Infinity, autoplay: false });
     eases.forEach((e) => {
-      tl.add(chars, { yPercent: [110, 0], rotate: [8, 0], opacity: [0, 1] }, { duration: 1.0, ease: e, delay: stagger(0.022) })
-        .add(chars, { yPercent: [0, -110], opacity: [1, 0] }, { duration: 0.7, ease: 'inCubic', delay: stagger(0.014) }, '+=2.2');
+      tl.add(rise, { v: [0, 1] }, { duration: 1.2, ease: e, delay: stagger(0.11) })
+        .add(rise, { v: [1, 0] }, { duration: 1.1, ease: 'inCubic', delay: stagger(0.08, { from: 'last' }) }, '+=2.2');
     });
-    inView('#reveal', () => { tl.play(); return () => tl.pause(); }, { amount: 0.6 });
+    inView('#reveal', () => { tl.play(); return () => tl.pause(); }, { amount: 0.5 });
   });
 
   // Springs: the drops in the canvas form the chain (see mercury.js); these switch its character.

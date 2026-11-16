@@ -23,7 +23,7 @@ const N = small ? 14 : MAX_DROPS;
 const canvas = $('#metal');
 const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'high-performance' });
 const root = document.documentElement;
-let prog = null, U = {}, tex = null;
+let prog = null, U = {}, tex = null, tex2 = null;
 function setupGL() {
   const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
   prog = gl.createProgram();
@@ -38,7 +38,7 @@ function setupGL() {
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
   gl.enableVertexAttribArray(0);
   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-  for (const n of ['uRes', 'uTime', 'uD', 'uTex', 'uTR', 'uTA', 'uMelt', 'uRimA', 'uRimAP', 'uRimB', 'uRimBP', 'uNeck', 'uNeckR', 'uPool', 'uLight', 'uK', 'uBar']) U[n] = gl.getUniformLocation(prog, n);
+  for (const n of ['uRes', 'uTime', 'uD', 'uTex', 'uTR', 'uTA', 'uMelt', 'uRimA', 'uRimAP', 'uRimB', 'uRimBP', 'uNeck', 'uNeckR', 'uPool', 'uLight', 'uK', 'uBar', 'uTex2', 'uWR', 'uWA', 'uRise', 'uEdge', 'uWP']) U[n] = gl.getUniformLocation(prog, n);
   tex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, tex);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -47,6 +47,13 @@ function setupGL() {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16F, 1, 1, 0, gl.RED, gl.FLOAT, new Float32Array([1000]));
   gl.uniform1i(U.uTex, 0);
+  gl.uniform1i(U.uTex2, 1);
+  tex2 = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, tex2);
+  for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16F, 1, 1, 0, gl.RED, gl.FLOAT, new Float32Array([1000]));
+  gl.activeTexture(gl.TEXTURE0);
 }
 let glOk = !!gl;
 if (glOk) { try { setupGL(); } catch (e) { console.warn(e); glOk = false; } }
@@ -54,10 +61,13 @@ root.classList.add(glOk ? 'gl' : 'no-gl');
 
 // Resolution adapts to the frame rate: start modest, step down when frames run long,
 // step back up when there is headroom.
-const qMax = Math.min(devicePixelRatio || 1, small ? 1 : 1.25);
-// Start near a million shaded pixels; the frame-time loop below takes it from there.
-let q = Math.min(qMax, +(new URLSearchParams(location.search).get('q') || Math.min(small ? 0.6 : 0.8, Math.sqrt(1.1e6 / (vw * vh)))));
-const qMin = 0.35;
+// Full device resolution (up to 2×). Frame time is averaged over windows of 30 frames;
+// only a sustained slow window steps the scale down, and it never goes below 0.75×,
+// so nothing visibly blurs or flickers between sizes.
+const qParam = +new URLSearchParams(location.search).get('q') || 0;
+const qMax = qParam || Math.min(devicePixelRatio || 1, small ? 1.5 : 2);
+let q = qMax;
+const qMin = qParam || qMax * 0.75;
 function sizeCanvas() {
   const w = Math.max(2, Math.round(vw * q)), h = Math.max(2, Math.round(vh * q));
   if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
@@ -135,6 +145,57 @@ function buildText() {
   text.ready = true;
   layoutText();
 }
+// The split-text word: same distance-field recipe, plus where each letter starts and ends.
+const word = { ready: false, text: 'letters', edges: new Float32Array(9).fill(2) };
+function signedField(ctx, W, H) {
+  const px = ctx.getImageData(0, 0, W, H).data;
+  const inside = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) inside[i] = px[i * 4 + 3] > 127 ? 1 : 0;
+  const a = new Float64Array(W * H), b = new Float64Array(W * H);
+  for (let i = 0; i < W * H; i++) { a[i] = inside[i] ? 0 : 1e20; b[i] = inside[i] ? 1e20 : 0; }
+  edt(a, W, H); edt(b, W, H);
+  const sd = new Float32Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x, o = (H - 1 - y) * W + x;
+    sd[o] = inside[i] ? -(Math.sqrt(b[i]) - 0.5) : Math.sqrt(a[i]) - 0.5;
+  }
+  return sd;
+}
+function buildWord() {
+  const W = 768, pad = 40, str = word.text;
+  const c = document.createElement('canvas');
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  const font = (fs) => `900 ${fs}px "Inter Display", Inter, system-ui, sans-serif`;
+  ctx.font = font(200);
+  let m = ctx.measureText(str);
+  const fs = (200 * (W - 2 * pad)) / (m.actualBoundingBoxRight + m.actualBoundingBoxLeft + 200 * -0.02 * (str.length - 1));
+  ctx.font = font(fs);
+  m = ctx.measureText(str);
+  const H = Math.ceil(m.actualBoundingBoxAscent + m.actualBoundingBoxDescent + 2 * pad);
+  c.width = W; c.height = H;
+  ctx.font = font(fs);
+  ctx.fillStyle = '#fff';
+  ctx.textBaseline = 'alphabetic';
+  // Letters drawn one by one so their boundaries are known exactly.
+  const sp = -0.02 * fs;
+  const widths = [...str].map((ch) => ctx.measureText(ch).width);
+  const total = widths.reduce((x, y) => x + y, 0) + sp * (str.length - 1);
+  let x = (W - total) / 2;
+  const edges = [0];
+  [...str].forEach((ch, i) => { ctx.fillText(ch, x, pad + m.actualBoundingBoxAscent); x += widths[i] + sp; if (i < str.length - 1) edges.push((x - sp / 2) / W); });
+  edges.push(1);
+  word.edges.fill(2);
+  edges.forEach((e, i) => (word.edges[i] = e));
+  word.edges[0] = -1;
+  const sd = signedField(ctx, W, H);
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, tex2);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16F, W, H, 0, gl.RED, gl.FLOAT, sd);
+  gl.activeTexture(gl.TEXTURE0);
+  word.W = W; word.H = H; word.gh = H - 2 * pad; word.pad = pad;
+  word.ready = true;
+}
+
 function layoutText() {
   if (!text.W) return;
   const aspect = vw / vh;
@@ -219,7 +280,8 @@ for (const d of drops) { d.out.x = d.prev.x = d.pos.x; d.out.y = d.prev.y = d.po
 
 const state = { form: 0, melt: 0, t: 0, wm: 0, chain: 0 };
 // Values the demos animate with anikit and the shader reads.
-const liquid = { bars: [{ v: 0 }, { v: 0 }, { v: 0 }] };
+const liquid = { bars: [{ v: 0 }, { v: 0 }, { v: 0 }], rise: Array.from({ length: 8 }, () => ({ v: 0 })) };
+const RISE = new Float32Array(8);
 const BAR = new Float32Array(12);
 const pointer = { x: vw / 2, y: vh / 2, at: -1e9, inHero: false };
 const light = { x: 0, y: 0 };
@@ -370,7 +432,7 @@ const D = new Float32Array(MAX_DROPS * 4);
 const tmpA = { x: 0, y: 0, r: 0 }, tmpB = { x: 0, y: 0, r: 0 };
 const fade = sections.map((el) => ({ el, items: [$('h2', el), ...$$('.stage > *', el), $('.snippet', el)].filter(Boolean), last: -1 }));
 const heroFade = { items: [$('.lede'), $('.cue')], last: -1 };
-let frameAvg = 16.7, frames = 0, lastNow = performance.now();
+let frameAvg = 16.7, frames = 0, lastNow = performance.now(), winSum = 0, winN = 0, calib = 0, qLocked = !!qParam;
 const stats = { q: 0, w: 0, h: 0, ms: 0 };
 window.__mercury = stats;
 
@@ -469,9 +531,16 @@ function render(a, b, t) {
   const now = performance.now();
   const ft = now - lastNow; lastNow = now;
   if (ft < 1000) frameAvg = frameAvg * 0.94 + ft * 0.06;
-  if (++frames % 30 === 0) {
-    if (frameAvg > 19 && q > qMin) { q = Math.max(qMin, q * 0.86); sizeCanvas(); }
-    else if (frameAvg < 15.5 && q < qMax && frames > 120) { q = Math.min(qMax, q * 1.06); sizeCanvas(); }
+  // One-time calibration: up to two 30-frame windows shortly after start may lower the
+  // scale; after that the resolution is locked, so it never changes while idle or scrolling.
+  if (!qLocked && ++frames > 20 && ft < 1000) {
+    winSum += ft; winN++;
+    if (winN >= 30) {
+      const avg = winSum / winN; winSum = 0; winN = 0; calib++;
+      if (avg > 20 && q > qMin) { q = Math.max(qMin, q * Math.max(0.75, Math.sqrt(16 / avg))); sizeCanvas(); }
+      else qLocked = true;
+      if (calib >= 2) qLocked = true;
+    }
   }
   gl.viewport(0, 0, canvas.width, canvas.height);
   gl.uniform2f(U.uRes, canvas.width, canvas.height);
@@ -513,6 +582,20 @@ function render(a, b, t) {
     });
     gl.uniform4fv(U.uBar, BAR);
   }
+  {
+    const s = stops[stopIndex.text];
+    const f = 1 - sstep(0.04, 0.46, s.d);
+    if (word.ready && f > 0.01) {
+      const gw = Math.min(s.sw * 0.78, s.sh * 2.4) / vh;
+      const scale = gw / word.W, hh = (word.H * scale) / 2;
+      gl.uniform4f(U.uWR, (s.sl + s.sw / 2) / vh, (vh - (s.st + s.sh * 0.5)) / vh, gw / 2, hh);
+      gl.uniform3f(U.uWA, word.gh * scale * 0.095 * sstep(0.2, 0.8, f), scale, 1);
+      gl.uniform3f(U.uWP, (s.sl + s.sw / 2) / vh, (vh - (s.st + s.sh * 0.5)) / vh - hh + word.pad * scale, gw * 0.48);
+      for (let i = 0; i < 8; i++) RISE[i] = reduced ? 1 : liquid.rise[i].v * sstep(0.5, 0.95, f);
+      gl.uniform1fv(U.uRise, RISE);
+      gl.uniform1fv(U.uEdge, word.edges);
+    } else gl.uniform3f(U.uWA, 0, 0, 0);
+  }
   gl.uniform1f(U.uK, lerp(lerp(lerp(0.045, 0.045 * textSize(), heroWeight), 0.03, state.wm), 0.024, state.chain));
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   stats.q = q; stats.w = canvas.width; stats.h = canvas.height; stats.ms = frameAvg;
@@ -530,7 +613,7 @@ if (reduced) engine.reducedMotion = 'always';
 await ready;
 const fontReady = Promise.race([document.fonts.load('900 100px "Inter Display"'), new Promise((r) => setTimeout(r, 900))]);
 await fontReady;
-if (glOk) buildText();
+if (glOk) { buildText(); buildWord(); }
 measure();
 makeWorld();
 if (fine && !reduced) smoothScroll({ smooth: 0.55 });
@@ -538,7 +621,13 @@ animate(state, { form: [0, 1] }, { duration: reduced ? 0 : 2.6, ease: 'inOutCubi
 if (glOk) animate('.wordmark', { opacity: 0 }, { duration: 1.4, ease: 'inOutSine', delay: 0.5 });
 engine.onFrame((_t, dt) => frame(dt));
 let rz = 0;
-addEventListener('resize', () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(measure); });
+// Mobile toolbars change the height while scrolling: ignore those, so the canvas never reallocates mid-scroll.
+let lastW = innerWidth, lastH = innerHeight;
+addEventListener('resize', () => {
+  if (innerWidth === lastW && Math.abs(innerHeight - lastH) < lastH * 0.2) return;
+  lastW = innerWidth; lastH = innerHeight;
+  cancelAnimationFrame(rz); rz = requestAnimationFrame(measure);
+});
 addEventListener('load', measure);
 document.fonts.ready.then(measure);
 startDemos({ reduced, fine, small, setChainPreset, inView, liquid });

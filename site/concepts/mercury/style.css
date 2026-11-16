@@ -105,3 +105,5 @@ html.no-gl .install-row { border: 1px solid var(--line); }
 }
 
 html.gl .n-row u { visibility: hidden; }
+html.gl .reveal { color: transparent; }
+html.gl .reveal .ch { background: none; }
