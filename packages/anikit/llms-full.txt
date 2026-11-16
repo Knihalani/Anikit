@@ -1967,7 +1967,7 @@ cloud.explode(0, 0, 0, 1200);                        // shockwave; particles fin
 
 ```ts
 import { splats, packSplats, SPLAT_STRIDE, SplatLayer } from 'anikit/splats';
-import { animate, scroll } from 'anikit';
+import { animate, scroll, engine } from 'anikit';
 
 const word = splats.fromText('anikit', { count: 120_000, width: 2.4, color: '#9ab' });
 const ball = splats.fromSDF((x, y, z) => Math.hypot(x, y, z) - 0.9, {
@@ -1988,6 +1988,10 @@ animate(layer.transform, { rotateY: 360 }, { duration: 12, repeat: -1, ease: 'li
 animate(layer.camera, { z: 2 }, { duration: 3 });
 scroll(animate(layer.fx, { reveal: [0, 1] }, { duration: 1 })); // scroll-driven reveal
 
+// Per-splat motion: write new centres every frame (springs, physics, pointCloud().positions).
+const xyz = new Float32Array(word.count * 3);
+engine.onFrame((t) => { for (let i = 0; i < xyz.length; i++) xyz[i] = word.data[(i / 3 | 0) * SPLAT_STRIDE + i % 3] + Math.sin(t / 300 + i) * 0.01; layer.positions(xyz); });
+
 const texels: Uint32Array = packSplats(word);   // the GPU layout (8 u32 per splat)
 console.log(word.data.length / SPLAT_STRIDE, layer instanceof SplatLayer, layer.stats.sortMs);
 ```
@@ -1997,6 +2001,7 @@ Every splat is projected to a 2D covariance in the vertex shader and drawn as an
 | Member | Purpose |
 |---|---|
 | `morph(set, { duration, ease, delay, spread })` | GPU morph to another set (resampled to this layer's count); the target becomes `set` when done. |
+| `positions(xyz, start?, count?)` | Move splats per frame: only the changed texture rows are uploaded, and the worker re-sorts from the new centres (re-sent at most every 100 ms). |
 | `explode()`, `swirl()`, `dissolve()`, `reveal()` (`{ to, duration, ease, delay }`) | Tween one effect uniform. |
 | `setSplats(set)`, `set`, `stats` (`count`, `sorts`, `sortMs`, `frames`, `worker`), `sorted` | Data and diagnostics. |
 | `render()` (automatic unless `autoRender: false`), `resize()`, `orbit()` | Own-canvas rendering. |

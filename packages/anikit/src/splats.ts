@@ -776,6 +776,11 @@ export class SplatLayer {
   private indexBuf: WebGLBuffer;
   private texA: WebGLTexture;
   private texB: WebGLTexture;
+  private packedA: Uint32Array = new Uint32Array(0);
+  private packedB: Uint32Array = new Uint32Array(0);
+  private centersA: Float32Array = new Float32Array(0);
+  private posSent = 0;
+  private posTimer: ReturnType<typeof setTimeout> | null = null;
   private hasB = false;
   private target: SplatSet | null = null;
   private sorter: SortBackend;
@@ -868,12 +873,14 @@ export class SplatLayer {
   private upload(set: SplatSet): void {
     const gl = this.gl;
     const n = set.count;
-    this.texture(this.texA, packSplats(set));
+    this.packedA = packSplats(set);
+    this.texture(this.texA, this.packedA);
+    this.centersA = centersOf(set, n);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.indexBuf);
     const id = new Uint32Array(n);
     for (let i = 0; i < n; i++) id[i] = i;
     gl.bufferData(gl.ARRAY_BUFFER, id, gl.DYNAMIC_DRAW);
-    this.sorter.centers(centersOf(set, n), n, 0);
+    this.sorter.centers(this.centersA, n, 0);
     this.sorter.centers(new Float32Array(0), 0, 1);
     this.hasB = false;
     this.target = null;
@@ -888,6 +895,48 @@ export class SplatLayer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32UI, TEX_W, packed.length / 4 / TEX_W, 0, gl.RGBA_INTEGER, gl.UNSIGNED_INT, packed);
+  }
+
+  /**
+   * Move splats every frame: `xyz` holds `x y z` centres for splats
+   * `start … start + count` (default: the whole layer). Only the changed
+   * texture rows are uploaded; the depth sort picks up the new centres,
+   * throttled to one re-send per 100 ms. Drive it from springs, physics or
+   * `pointCloud().positions`. Allocation-free per call.
+   */
+  positions(xyz: ArrayLike<number>, start = 0, count = Math.floor(xyz.length / 3)): this {
+    const n = this.set.count;
+    start = Math.max(0, Math.min(n, start | 0));
+    const end = Math.min(n, start + Math.max(0, count | 0));
+    if (end <= start || this.dead) return this;
+    const P = this.packedA;
+    const f = new Float32Array(P.buffer, P.byteOffset, P.length);
+    const c = this.centersA;
+    for (let i = start, k = 0; i < end; i++, k += 3) {
+      const x = xyz[k], y = xyz[k + 1], z = xyz[k + 2];
+      f[i * 8] = x; f[i * 8 + 1] = y; f[i * 8 + 2] = z;
+      c[i * 3] = x; c[i * 3 + 1] = y; c[i * 3 + 2] = z;
+    }
+    const gl = this.gl;
+    const r0 = (start * 2 / TEX_W) | 0;
+    const r1 = (((end - 1) * 2 + 1) / TEX_W) | 0;
+    gl.bindTexture(gl.TEXTURE_2D, this.texA);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, r0, TEX_W, r1 - r0 + 1, gl.RGBA_INTEGER, gl.UNSIGNED_INT, P, r0 * TEX_W * 4);
+    this.dirty = true;
+    const now = performance.now();
+    if (now - this.posSent >= 100) this.sendCenters();
+    else if (!this.posTimer) this.posTimer = setTimeout(() => this.sendCenters(), 100 - (now - this.posSent));
+    return this;
+  }
+
+  private sendCenters(): void {
+    if (this.posTimer) clearTimeout(this.posTimer);
+    this.posTimer = null;
+    if (this.dead) return;
+    this.posSent = performance.now();
+    this.sorter.centers(this.centersA, this.set.count, 0);
+    this.lastV[0] = NaN; // force a re-sort on the next frame
+    this.requestRender();
   }
 
   /** Replace the splat set (count may change). Ends any morph. */
@@ -909,7 +958,8 @@ export class SplatLayer {
     this.morphAnim?.kill();
     if (this.hasB && this.target && this.fx.morph >= 1) this.adopt();
     const n = this.set.count;
-    this.texture(this.texB, packSplats(other, n));
+    this.packedB = packSplats(other, n);
+    this.texture(this.texB, this.packedB);
     this.sorter.centers(centersOf(other, n), n, 1);
     this.hasB = true;
     this.target = other;
@@ -930,12 +980,16 @@ export class SplatLayer {
     if (!t) return;
     const n = this.set.count;
     const set = t.count === n ? t : { count: n, data: remap(t, n) };
+    const tp = this.packedA;
+    this.packedA = this.packedB;
+    this.packedB = tp;
+    this.centersA = centersOf(set, n);
     const tmp = this.texA;
     this.texA = this.texB;
     this.texB = tmp;
     this.set = set;
     this.b = bounds(set);
-    this.sorter.centers(centersOf(set, n), n, 0);
+    this.sorter.centers(this.centersA, n, 0);
     this.sorter.centers(new Float32Array(0), 0, 1);
     this.hasB = false;
     this.target = null;
@@ -1017,7 +1071,7 @@ export class SplatLayer {
   }
 
   private requestRender(): void {
-    if (!this.off && !this.dead) this.render();
+    if (!this.off && !this.dead && this.own) this.render();
   }
 
   /** Resize the drawing buffer to the canvas's CSS size × pixel ratio (automatic in `render()`). */
@@ -1149,6 +1203,7 @@ export class SplatLayer {
     this.off = null;
     this.orbitOff?.();
     this.morphAnim?.kill();
+    if (this.posTimer) clearTimeout(this.posTimer);
     this.sorter.destroy();
     const gl = this.gl;
     gl.deleteTexture(this.texA);

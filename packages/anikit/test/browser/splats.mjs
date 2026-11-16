@@ -147,4 +147,35 @@ export const tests = [
       ok(Math.abs(r.q - 0.3) < 1e-9, `governor reached its floor (${r.q})`);
     },
   },
+  {
+    name: 'splats(): positions() moves splats per frame and the depth order follows',
+    html,
+    async run(page) {
+      const r = await page.evaluate(async () => {
+        const set = ak.splats.fromPoints([0, 0, 0, 0, 0, 0.5], { size: 0.4, opacity: 0.99, color: (i) => (i === 0 ? [1, 0, 0] : [0, 0, 1]) });
+        window.layer = ak.splats('#c', set, { autoRender: false, governor: false, camera: { x: 0, y: 0, z: 3, tx: 0, ty: 0, tz: 0, fov: 40 } });
+        layer.render();
+        await layer.sorted;
+        layer.render();
+        const px = () => { const gl = layer.gl, o = new Uint8Array(4); gl.readPixels(gl.drawingBufferWidth >> 1, gl.drawingBufferHeight >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, o); return [...o]; };
+        const before = px();
+        // Move the blue splat behind the red one (only splat 1).
+        layer.positions(new Float32Array([0, 0, -0.5]), 1);
+        const s0 = layer.stats.sorts;
+        layer.render();
+        for (let i = 0; i < 200 && layer.stats.sorts === s0; i++) await new Promise((r) => setTimeout(r, 5));
+        layer.render();
+        const after = px();
+        // Move both far to the side: the centre empties.
+        layer.positions(new Float32Array([5, 0, 0, 5, 0, 0]));
+        layer.render();
+        const gone = px();
+        layer.kill();
+        return { before, after, gone };
+      });
+      ok(r.before[2] > 150, `blue in front first: ${r.before}`);
+      ok(r.after[0] > 150 && r.after[2] < 60, `red in front after moving blue behind: ${r.after}`);
+      ok(r.gone[3] < 10, `centre empty after moving both away: ${r.gone}`);
+    },
+  },
 ];
