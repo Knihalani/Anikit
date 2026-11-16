@@ -17,6 +17,7 @@ const HELP = `anikit-render — render an anikit composition to video, frame-exa
 Usage
   anikit-render --init [film.mjs] [--template film|journey]   write a working starter film
   anikit-render <film.mjs> --still <t> [--out f.png]  one frame at t seconds, as PNG (or .jpg): a quick check
+  anikit-render <film.mjs> --still <t> --watch        re-render that frame every time the file is saved
   anikit-render <film.mjs> --review [dir/]            contact sheet + pacing report (default dir: review/)
   anikit-render <film.mjs> --preview <N> --out dir/   every Nth frame as JPEG
   anikit-render <film.mjs> --profile [--every N]      where render time goes, per frame and per 3D pass
@@ -45,7 +46,7 @@ Workflow: --still 2 to look at one frame, --review to check pacing and the whole
 film at a glance (or --preview 15 for full frames), then render. Output never depends on machine speed.`;
 
 const VALUE = ['out', 'workers', 'from', 'to', 'audio', 'fade-in', 'fade-out', 'fade-color', 'crf', 'preset', 'codec', 'preview', 'still', 'template', 'every', 'sheet-every'];
-const BOOL = ['help', 'init', 'profile'];
+const BOOL = ['help', 'init', 'profile', 'watch'];
 /** Flags whose value is optional (`--review` or `--review dir/`). */
 const OPTIONAL = ['review'];
 const fail = (msg) => {
@@ -124,7 +125,7 @@ const out = resolve(opt('out', 'anikit.mp4'));
 const modUrl = pathToFileURL(resolve(file)).href;
 const SEG = process.env.ANIKIT_SEG;
 
-async function build() {
+async function build(version = 0) {
   const { loadAnikit } = await import(join(here, '../node/index.mjs'));
   const fonts = JSON.parse(process.env.ANIKIT_FONTS || '{}');
   let env;
@@ -133,7 +134,7 @@ async function build() {
   } catch (e) {
     fail(String(e?.message ?? e).replace(/^anikit\/node: /, ''));
   }
-  const mod = await import(modUrl);
+  const mod = await import(version ? `${modUrl}?v=${version}` : modUrl);
   if (typeof mod.default !== 'function') fail(`${file} must default-export a function:\n  export default async ({ anikit, node }) => { const film = anikit.composition({ … }); …; return film; }`);
   const comp = await mod.default(env);
   if (!comp || typeof comp.render !== 'function') fail(`the default export of ${file} must return the composition (anikit.composition({ … })); it returned ${comp === undefined ? 'nothing (missing "return film"?)' : typeof comp}.`);
@@ -173,7 +174,27 @@ if (opts.still !== undefined) {
   if (!/\.(png|jpe?g)$/i.test(dest)) fail(`--still writes an image: use --out frame.png (or .jpg), not ${basename(dest)}.`);
   await node.renderStill(comp, { t, out: dest });
   console.log('still →', dest);
-  process.exit(0);
+  if (!opts.watch) process.exit(0);
+  // Watch: re-import the module (cache-busted) and re-render on every save.
+  const { watch } = await import('node:fs');
+  let version = 1, timer = null, busy = false, again = false;
+  const rerender = async () => {
+    if (busy) { again = true; return; }
+    busy = true;
+    const t0 = Date.now();
+    try {
+      const { comp: next } = await build(version++);
+      await node.renderStill(next, { t: Math.min(t, next.duration), out: dest });
+      console.log(`still → ${dest} (${Date.now() - t0} ms)`);
+    } catch (e) {
+      console.error(`anikit-render: ${e?.stack ?? e}`);
+    }
+    busy = false;
+    if (again) { again = false; rerender(); }
+  };
+  watch(resolve(file), () => { clearTimeout(timer); timer = setTimeout(rerender, 120); });
+  console.log(`watching ${file} — save it to re-render (Ctrl+C to stop)`);
+  await new Promise(() => {});
 }
 
 if (opts.preview !== undefined) {
