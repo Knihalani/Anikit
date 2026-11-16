@@ -12,3 +12,4 @@
 //! See `docs/video/ARCHITECTURE.md` for ownership and contracts.
 
 pub mod dl;
+pub mod templates;
