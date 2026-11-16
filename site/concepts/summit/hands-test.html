@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hands test</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #f3c79a; font: 13px/1.4 ui-monospace, monospace; }
+  .sky { position: fixed; inset: 0; background:
+    radial-gradient(60% 40% at 70% 68%, rgba(255, 214, 150, 0.9), transparent 70%),
+    linear-gradient(180deg, #6d8fc4 0%, #b7b9cf 38%, #f2c9a0 62%, #f6dcc0 66%, #9fa9bd 67%, #e9edf4 80%, #ffffff 100%); }
+  .peaks { position: fixed; left: 0; right: 0; bottom: 0; height: 40%; background: linear-gradient(180deg, #e7ecf3, #ffffff);
+    clip-path: polygon(0 40%, 12% 22%, 23% 35%, 38% 8%, 52% 30%, 66% 14%, 81% 33%, 100% 18%, 100% 100%, 0 100%); }
+  .hall { position: fixed; inset: 0; background: radial-gradient(circle at 50% 55%, #2b3f66, #0d1220 70%); clip-path: circle(0px at 50% 50%); }
+  .hall::after { content: 'hall'; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: #8fb3ff; font-size: 40px; letter-spacing: 0.3em; }
+  #hands { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .ui { position: fixed; left: 16px; right: 16px; bottom: 16px; display: flex; gap: 12px; align-items: center; color: #222; background: rgba(255,255,255,0.7); padding: 8px 12px; border-radius: 10px; }
+  .ui input { flex: 1; }
+</style>
+</head>
+<body>
+<div class="sky"></div><div class="peaks"></div>
+<div class="hall" id="hall"></div>
+<canvas id="hands"></canvas>
+<div class="ui"><label>g</label><input id="g" type="range" min="0" max="1" step="0.001" value="0" /><span id="gv">0.000</span><label><input id="play" type="checkbox" /> play</label><span id="ms"></span></div>
+<script type="module">
+import { createHands } from './hands.js';
+const canvas = document.getElementById('hands');
+const hands = createHands(canvas);
+const resize = () => hands.resize(innerWidth, innerHeight, devicePixelRatio);
+resize(); addEventListener('resize', resize);
+const slider = document.getElementById('g'), gv = document.getElementById('gv'), play = document.getElementById('play'), hall = document.getElementById('hall'), ms = document.getElementById('ms');
+const q = new URLSearchParams(location.search);
+if (q.has('g')) slider.value = q.get('g');
+const look = { x: 0, y: 0 };
+addEventListener('pointermove', (e) => { look.x = (e.clientX / innerWidth) * 2 - 1; look.y = 1 - (e.clientY / innerHeight) * 2; });
+let last = performance.now(), avg = 0;
+window.__hands = { frames: 0, setG: (v) => { slider.value = v; } };
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (play.checked) slider.value = (+slider.value + dt * 0.08) % 1;
+  const g = +slider.value;
+  gv.textContent = g.toFixed(3);
+  const t0 = performance.now();
+  const { portal } = hands.frame(now / 1000, dt, g, look);
+  avg = avg * 0.95 + (performance.now() - t0) * 0.05;
+  ms.textContent = avg.toFixed(2) + ' ms cpu';
+  hall.style.clipPath = portal.r > 0 ? `circle(${portal.r.toFixed(1)}px at ${portal.x.toFixed(1)}px ${portal.y.toFixed(1)}px)` : 'circle(0px at 50% 50%)';
+  window.__hands.frames++;
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hall test</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #e9e2d6; }
+  #hall { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #overlay { position: fixed; inset: 0; pointer-events: none; }
+  #go { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); pointer-events: auto;
+        font: 600 15px system-ui, sans-serif; padding: 10px 18px; border-radius: 999px; border: 0;
+        background: #fffaf2; color: #2a2018; box-shadow: 0 4px 18px rgba(80,50,20,.2); cursor: pointer; }
+  #stats { position: fixed; left: 8px; top: 8px; font: 12px ui-monospace, monospace; color: #5a4a3a; pointer-events: none; }
+</style>
+</head>
+<body>
+<canvas id="hall"></canvas>
+<div id="overlay"></div>
+<button id="go" data-ui>Enter the hall</button>
+<div id="stats"></div>
+<script type="module">
+  import { createHall } from './hall.js';
+  const canvas = document.getElementById('hall');
+  const overlay = document.getElementById('overlay');
+  const hall = createHall(canvas, overlay);
+  if (new URLSearchParams(location.search).has('hq')) hall._quality.lock = true;  // headless GPUs are slow
+  // circle clip like main.js does, so the preview reads as "through the portal"
+  const q = new URLSearchParams(location.search);
+  let mode = q.has('enter') ? 'enter' : 'preview';
+  let k = q.has('k') ? +q.get('k') : 0, t0 = performance.now(), last = t0;
+  const resize = () => hall.resize(innerWidth, innerHeight, devicePixelRatio);
+  addEventListener('resize', resize); resize();
+  const go = document.getElementById('go');
+  function enter() { mode = 'enter'; canvas.style.clipPath = ''; go.remove(); hall.enter(); }
+  go.onclick = enter;
+  if (mode === 'enter') enter();
+  if (q.has('at')) { const [x, z, yaw, pitch] = q.get('at').split(',').map(Number); const c = hall._ctl; setTimeout(() => { c.pos[0] = x; c.pos[2] = z; c.yaw = yaw || 0; c.pitch = pitch || 0; }, 50); }
+  addEventListener('keydown', (e) => { if (e.code === 'Escape' && mode === 'enter' && !document.pointerLockElement) { /* stay */ } });
+  const stats = document.getElementById('stats');
+  let frames = 0, acc = 0;
+  function loop(now) {
+    const t = (now - t0) / 1000, dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (mode === 'preview') {
+      if (!q.has('k')) k = Math.min(1, k + dt / 6);
+      const r = Math.min(innerWidth, innerHeight) * (0.28 + 0.5 * k);
+      canvas.style.clipPath = `circle(${r}px at 50% 50%)`;
+      hall.preview(t, dt, k);
+    } else hall.frame(t, dt);
+    frames++; acc += dt;
+    if (acc > 0.5) { stats.textContent = (frames / acc).toFixed(0) + ' fps'; frames = 0; acc = 0; }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+  window.__hall = hall;
+</script>
+</body>
+</html>
