@@ -118,3 +118,4 @@ code.pill { font-family: Mono, monospace; font-size: 14px; cursor: text; user-se
   .w-letter { font-size: 64px; }
   .tiles.alt { grid-template-columns: repeat(4, 1fr); }
 }
+.install-core { order: 1; } .ticker { order: 2; margin: 0 0 4vh; } .foot { order: 3; }

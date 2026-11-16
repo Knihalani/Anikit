@@ -37,7 +37,7 @@ sections.forEach((s) => s.style.setProperty('--accent', s.dataset.accent));
 // ---------------------------------------------------------------------------
 const canvas = $('#stage');
 const small = innerWidth < 760;
-let scale = Math.min(devicePixelRatio || 1, 2) * (small ? 0.5 : 0.6);
+let scale = small ? Math.max(0.8, Math.min(devicePixelRatio || 1, 3) * 0.5) : Math.min(devicePixelRatio || 1, 2) * 0.6;
 let vw = innerWidth, vh = innerHeight, W = 0, H = 0;
 const cam = scene3d({ fov: 30, camera: { z: 1600 }, near: 20, far: 6000, width: 16, height: 9 });
 let r3 = null;
@@ -52,12 +52,12 @@ const wpp = () => (2 * Math.tan((cam.fov * Math.PI) / 360) * cam.camera.z) / vh;
 const toWorld = (px, py) => [(px - vw / 2) * wpp(), -(py - vh / 2) * wpp()];
 
 // Section offsets, cached (no layout reads in the frame loop).
-let tops = [], installTop = 0, breakTop = 0, breakH = 1;
+let tops = [], installTop = 0, installBottom = 0, breakTop = 0, breakH = 1;
 const measure = () => {
   vw = innerWidth; vh = innerHeight;
   const y = scrollY;
   tops = sections.map((s) => { const b = s.getBoundingClientRect(); return { top: b.top + y, h: b.height, side: s.dataset.side === 'right' ? -1 : 1 }; });
-  const ib = $('#install').getBoundingClientRect(); installTop = ib.top + y;
+  const ib = $("#install").getBoundingClientRect(); installTop = ib.top + y; installBottom = ib.bottom + y;
   const bb = $('#break').getBoundingClientRect(); breakTop = bb.top + y; breakH = bb.height;
   fit();
 };
@@ -117,7 +117,7 @@ const pose = (k, out) => {
   // F: re-formed above the install command.
   const f = ease(clamp((sy - (installTop - vh * 1.05)) / (vh * 0.95)));
   if (f > 0) {
-    const [fx, fy] = toWorld(vw / 2, installTop - sy + vh * 0.32);
+    const [fx, fy] = toWorld(vw / 2, Math.max(vh * 0.3, installBottom - sy - vh * 0.7));
     const fs = small ? 0.55 : 0.75, frx = 58 + tilt.x, fry = t * 14 + tilt.y, frz = t * 6;
     const fc = rotate(frx, fry, frz, P.c);
     x = mix(x, fx + fc[0] * fs, f); y = mix(y, fy + fc[1] * fs, f); z = mix(z, fc[2] * fs, f);
@@ -158,7 +158,7 @@ const frame = (dt) => {
   const ms = performance.now() - t0;
   avg = avg * 0.9 + ms * 0.1;
   stats.ms = avg; stats.w = W; stats.h = H;
-  const cap = Math.min(devicePixelRatio || 1, 2) * (small ? 0.55 : 0.75);
+  const cap = small ? Math.max(0.9, Math.min(devicePixelRatio || 1, 3) * 0.55) : Math.min(devicePixelRatio || 1, 2) * 0.75;
   const want = Math.min(cap, Math.max(0.32, scale * Math.sqrt(7 / Math.max(2, avg))));
   if (Math.abs(want - scale) / scale > 0.12) { scale = want; fit(); }
   if (!canvas.classList.contains('on')) canvas.classList.add('on');
