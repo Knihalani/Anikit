@@ -2072,6 +2072,38 @@ pub extern "C" fn ak_raster_reflection_after(id: u32, rgb: u32, alpha: u32) {
         r.reflection_after(rgb, alpha.min(255) as u8);
     }
 }
+/// Mirror mask for the next `ak_raster_reflection_after` (see `Raster::reflection_mask_begin`):
+/// begin, draw each mirror item's instances with `ak_raster_mask_draw`, end.
+#[no_mangle]
+pub extern "C" fn ak_raster_mask_begin(id: u32) {
+    if let Some(Some((r, _))) = st().rasters.get_mut(id as usize) {
+        r.reflection_mask_begin();
+    }
+}
+/// Draw `n` instances (from the instance buffer) of `mesh` depth-only into the mirror mask.
+/// f64 buffer: viewProj(16).
+#[no_mangle]
+pub extern "C" fn ak_raster_mask_draw(id: u32, mesh: u32, n: u32, cull_back: u32) {
+    use anikit_core::raster::*;
+    let s = st();
+    if s.f64_buf.len() < 16 {
+        return;
+    }
+    let vp: M4 = core::array::from_fn(|i| s.f64_buf[i] as f32);
+    let Some(Some(m)) = s.meshes.get(mesh as usize) else { return };
+    let Some(Some((r, inst))) = s.rasters.get_mut(id as usize) else { return };
+    let k = (n as usize * INSTANCE_STRIDE).min(inst.len());
+    // As the gloss draw: not flipped, no list index.
+    r.flip_winding = false;
+    r.item = None;
+    r.draw_with(m, &inst[..k], &vp, [0.0; 3], &Material::default(), &Lighting::default(), cull_back != 0, Blend::DepthOnly, None);
+}
+#[no_mangle]
+pub extern "C" fn ak_raster_mask_end(id: u32) {
+    if let Some(Some((r, _))) = st().rasters.get_mut(id as usize) {
+        r.reflection_mask_end();
+    }
+}
 /// End the reflection pass: upsample it into the frame and clear depth.
 #[no_mangle]
 pub extern "C" fn ak_raster_reflection_end(id: u32) {

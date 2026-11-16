@@ -666,6 +666,21 @@ export class Renderer3D {
       const mr = matrix.slice();
       for (let r = 0; r < 4; r++) { mr[4 + r] = -matrix[4 + r]; mr[12 + r] = matrix[12 + r] + 2 * Y * matrix[4 + r]; }
       const er = [eye[0], 2 * Y - eye[1], eye[2]];
+      if (after && o.skybox) {
+        // The sky overwrites every pixel nothing covers: reflect only under the
+        // mirror surfaces (their depth-only coverage). Same frame, less shading.
+        w.ak_raster_mask_begin(this.id);
+        for (const it of meshes) {
+          if (!it.mirror || it.mesh.freed) continue;
+          const inst = it.instances ?? this.single;
+          const ptr = w.ak_raster_instances(this.id, inst.count);
+          new Float32Array(W!.memory.buffer, ptr, inst.count * STRIDE).set(inst.data.subarray(0, inst.count * STRIDE));
+          const at = f64Buf(16);
+          F64.set(matrix, at);
+          w.ak_raster_mask_draw(this.id, it.mesh.id, inst.count, it.cull === false ? 0 : 1);
+        }
+        w.ak_raster_mask_end(this.id);
+      }
       if (after) w.ak_raster_reflection_after(this.id, hex, o.transparent ? 0 : 255);
       for (const [it, flags] of ordered(meshes.filter((it) => !it.mirror && it.reflect !== false && it.blend !== 'additive'), er)) drawMesh(it, mr, er, 8 | flags);
       if (after) w.ak_raster_reflection_end(this.id);

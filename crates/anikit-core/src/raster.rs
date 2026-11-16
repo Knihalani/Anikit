@@ -339,6 +339,9 @@ pub struct Raster {
     shadow_depth: Vec<f32>,
     /// Reflection after the scene: rows with an uncovered pixel.
     row_open: Vec<bool>,
+    /// Mirror-surface coverage (depth, INFINITY = none) for the next `reflection_after`.
+    mask_depth: Vec<f32>,
+    mask_on: bool,
     shadow_size: usize,
     shadow_vp: M4,
     shadow_bias: f32,
@@ -832,6 +835,7 @@ impl Raster {
         self.color.iter_mut().for_each(|p| *p = c);
         self.depth.iter_mut().for_each(|d| *d = f32::INFINITY);
         self.shadows_on = false;
+        self.mask_on = false;
     }
 
     /// Start a shadow map for the key light: `light_vp` is the light's
@@ -903,14 +907,31 @@ impl Raster {
         // Half pixel (bx, by) feeds full-res x in 2bx − 1 ..= 2bx + 2 (and y alike).
         let mut need = vec![false; bw * bh];
         let mut row = vec![false; bw];
+        // With a mirror mask (see `reflection_mask_begin`), a pixel needs the
+        // reflection only where the mirror surface will be drawn over it.
+        let mask = if self.mask_on && self.mask_depth.len() == w * h { Some(&self.mask_depth) } else { None };
+        let mut open = core::mem::take(&mut self.row_open);
         for y in 0..h {
             let d = &self.depth[y * w..(y + 1) * w];
             if !d.contains(&f32::INFINITY) {
                 continue; // a covered row needs nothing
             }
+            let d: &[f32] = match mask {
+                Some(m) => {
+                    // Open = uncovered by the scene and covered by the mirror: INFINITY
+                    // marks it, anything else is closed.
+                    open.clear();
+                    open.extend(d.iter().zip(&m[y * w..(y + 1) * w]).map(|(z, mz)| *z == f32::INFINITY && *mz != f32::INFINITY));
+                    if !open.contains(&true) {
+                        continue;
+                    }
+                    &[]
+                }
+                None => d,
+            };
             for (bx, r) in row.iter_mut().enumerate() {
                 let (x0, x1) = ((2 * bx).saturating_sub(1), (2 * bx + 3).min(w));
-                *r = d[x0.min(x1)..x1].contains(&f32::INFINITY);
+                *r = if mask.is_some() { open[x0.min(x1)..x1].contains(&true) } else { d[x0.min(x1)..x1].contains(&f32::INFINITY) };
             }
             // Half rows by with 2by − 1 <= y <= 2by + 2.
             for by in y.saturating_sub(2) / 2..(y.div_ceil(2) + 1).min(bh) {
@@ -927,6 +948,26 @@ impl Raster {
                 *z = f32::NEG_INFINITY;
             }
         }
+        self.row_open = open;
+        self.mask_on = false;
+    }
+
+    /// Before [`Raster::reflection_after`] when the sky is drawn afterwards: draw
+    /// the mirror surfaces (depth only, `Blend::DepthOnly`, the same culling as
+    /// their gloss draw) between this and [`Raster::reflection_mask_end`]. The
+    /// reflection is then shaded only where a mirror surface will cover it; every
+    /// other uncovered pixel is overwritten by the sky, so the frame is the same.
+    pub fn reflection_mask_begin(&mut self) {
+        let n = self.width * self.height;
+        let mut m = core::mem::take(&mut self.mask_depth);
+        m.clear();
+        m.resize(n, f32::INFINITY);
+        self.mask_depth = core::mem::replace(&mut self.depth, m);
+    }
+    /// End the mirror mask (see [`Raster::reflection_mask_begin`]).
+    pub fn reflection_mask_end(&mut self) {
+        core::mem::swap(&mut self.depth, &mut self.mask_depth);
+        self.mask_on = true;
     }
     /// The raster draws should go to: the half-res reflection target during a
     /// reflection pass, otherwise this one.
@@ -3218,6 +3259,57 @@ mod tests {
                 }
             }
             assert!(lit > 50 && lit < n * n * 3 / 4, "pattern {kind}: {lit}");
+        }
+    }
+
+    #[test]
+    fn mirror_mask_with_a_sky_gives_the_same_frame() {
+        // Reflection after the scene, then the glossy floor, then the sky: shading the
+        // reflection only under the floor's coverage must not change the frame.
+        let eye = [0.5f32, 1.5, 6.0];
+        let m = mul(&perspective(60.0, 1.3, 0.5, 100.0), &look_at([0.5, 1.5, 6.0], [0.0, 0.5, 0.0], [0.0, 1.0, 0.0]));
+        let vp: M4 = core::array::from_fn(|i| m[i] as f32);
+        let mut mvp = vp; // reflected about y = 0
+        for r in 0..4 {
+            mvp[4 + r] = -vp[4 + r];
+        }
+        let tf = |s: [f32; 3], p: [f32; 3], c: [f32; 3]| [s[0], 0.0, 0.0, 0.0, s[1], 0.0, 0.0, 0.0, s[2], p[0], p[1], p[2], c[0], c[1], c[2]];
+        let mut cubes = tf([1.0; 3], [-1.2, 0.6, 0.0], [1.0, 0.2, 0.1]).to_vec();
+        cubes.extend(tf([0.7; 3], [1.1, 0.4, -1.0], [0.2, 0.9, 0.3]));
+        cubes.extend(tf([2.5; 3], [0.0, 1.5, -6.0], [0.3, 0.3, 0.9]));
+        // A floor that doesn't reach the frame edges (pixels left for the sky).
+        let floor = tf([6.0, 1.0, 5.0], [0.0, 0.0, -1.0], [0.4, 0.4, 0.45]);
+        let light = Lighting::default();
+        let mat = Material::default();
+        for (w, h) in [(80usize, 60usize), (81, 63), (33, 18)] {
+            let frame = |masked: bool| {
+                let mut r = Raster::new(w, h);
+                r.clear(0x203040, 255);
+                r.draw(&cube(), &cubes, &vp, eye, &mat, &light, true);
+                if masked {
+                    r.reflection_mask_begin();
+                    r.draw_with(&plane(4, 4), &floor, &vp, eye, &mat, &light, true, Blend::DepthOnly, None);
+                    r.reflection_mask_end();
+                }
+                r.reflection_after(0x203040, 255);
+                {
+                    let t = r.target();
+                    t.flip_winding = true;
+                    t.draw(&cube(), &cubes, &mvp, eye, &mat, &light, true);
+                    t.flip_winding = false;
+                }
+                let skipped = r.reflection.as_ref().map(|s| s.depth.iter().filter(|z| **z == f32::NEG_INFINITY).count()).unwrap_or(0);
+                r.reflection_end();
+                r.gloss = 0.5;
+                r.draw_with(&plane(4, 4), &floor, &vp, eye, &mat, &light, true, Blend::Gloss, None);
+                r.sky(&vp, &light, 0.0);
+                (r.color, r.depth, skipped)
+            };
+            let (ca, da, sa) = frame(false);
+            let (cb, db, sb) = frame(true);
+            assert!(ca == cb, "colour {w}x{h}");
+            assert!(da.iter().zip(&db).all(|(x, y)| x.to_bits() == y.to_bits()), "depth {w}x{h}");
+            assert!(sb > sa, "the mask skips more of the reflection ({sb} vs {sa}, {w}x{h})");
         }
     }
 

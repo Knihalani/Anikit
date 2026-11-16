@@ -1583,7 +1583,7 @@ number is an interleaved base/new pair; single runs move ±10–15%.
 | `bench-terrain.mjs --frames 12 --hash --sort near` | `ce3c2950` |
 | `bench-post.mjs --hash` (new flag: FNV-1a of the graded frame per case) | aa `364fb719`, bloom `2cd58525`, streaks `2bdd8db7`, rays `8365fd00`, flares `217fc14e`, zoom `05f79552`, aberration `57c253fa`, grade `8c6d49cc`, full `64864ebb` |
 | `film2.mjs --still 4` (shadows, motion blur 4) | identical PNG (`28692e63…`) |
-| `film.mjs --still 2` / `--still 8` (lake, mirror, full grade) | identical PNGs (`3289707d…`, `eb80c2bd…`) |
+| `film.mjs --still 2` / `8` / `12` / `16` (lake, mirror, full grade) | identical PNGs (`3289707d…`, `eb80c2bd…`, `7a3939f4…`, `a25cfa00…`) |
 | Tiny 64×36 film, one worker, CLI mp4 | byte-identical |
 
 ### Results
@@ -1612,10 +1612,9 @@ End to end, `--profile --every 240`, one run each (base, then new): film.mjs
 61.2); film2.mjs 816 → 835 (post 65 → 55, the rest within noise). The films
 gain less than the benches: film.mjs's mirror cost is shading the reflected
 scene, and nearly every row of its frames has an uncovered (sky) pixel, so the
-row skip below rarely applies there. The next mirror step would be to reflect
-only the pixels the mirror surface will cover when a skybox is drawn (the sky
-overwrites the rest): it needs the mirror item's coverage before the
-reflection pass.
+row skip below rarely applies there. With `skybox`, section 4 below shades the reflection only under the mirror
+surface; the films draw their own sky dome instead of `skybox`, so it doesn't
+apply to them.
 
 ### 1. Mirror: skip rows the scene covers
 
@@ -1650,6 +1649,22 @@ film the shadow column didn't move: the casters are many small triangles
 it is rows, not pixels or vertices). The span solve needs exact divisions to
 stay bit-identical; an incremental edge walk would not be. Test
 `depth_only_matches_the_opaque_depth` (odd sizes, near-plane clipping).
+
+### 4. Mirror under a skybox: reflect only under the mirror surface
+
+After the scene, the half-res reflection was shaded wherever the scene left a
+pixel uncovered. With `skybox`, the sky then overwrites every pixel still at
+depth `Infinity`, i.e. every uncovered pixel the glossy mirror surface didn't
+draw over, so the reflection there was wasted. Now `render()` first draws the
+mirror items depth-only into a mask (`ak_raster_mask_begin/draw/end`, same
+culling and matrix as their gloss draw, so the same pixels), and
+`reflection_after` needs only pixels that are uncovered and under a mirror.
+Test `mirror_mask_with_a_sky_gives_the_same_frame` runs the whole sequence
+(scene, reflection, gloss floor, sky) with and without the mask at 80×60,
+81×63 and 33×18: same colour and depth, and more of the reflection skipped;
+inverting the mask makes it fail. `bench-raster.mjs` film-like frame (mirror
+floor + skybox): 325 · 312 → 304 · 302 ms (two pairs), hash `77424f03/fdb7e70e`
+unchanged.
 
 ### Bugs found and fixed (with regression tests)
 
