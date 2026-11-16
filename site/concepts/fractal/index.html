@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Anikit — animation engine</title>
+<meta name="description" content="A web animation engine with a Rust/WebAssembly core: tweens, springs, timelines, physics, particles, solid 3D, scroll, SVG and text." />
+<meta name="theme-color" content="#030406" />
+<link rel="modulepreload" href="fractal.js" />
+<link rel="modulepreload" href="../../../packages/anikit/dist/anikit.lean.js" />
+<link rel="preload" href="../../fonts/InterDisplay-Black.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<canvas id="fractal" aria-hidden="true"></canvas>
+<div class="shade" aria-hidden="true"></div>
+
+<nav class="nav">
+  <a class="brand" href="#top">anikit</a>
+  <a class="mono nav-link" href="#install">Install</a>
+</nav>
+
+<div class="rail mono" aria-hidden="true"><span id="rail-n">00</span><i><u id="rail-bar"></u></i><span>07</span></div>
+
+<main>
+  <header class="hero" id="top">
+    <div class="hero-in">
+      <h1 id="title">anikit</h1>
+      <p class="lede" id="lede">An animation engine for the web, with a Rust core compiled to WebAssembly.</p>
+      <p class="cue mono" id="cue">Scroll</p>
+    </div>
+  </header>
+
+  <section class="chamber" id="physics">
+    <div class="stick"><div class="panel">
+      <p class="idx mono">01</p>
+      <h2>Physics</h2>
+      <div class="stage" id="world-stage"><canvas id="world-canvas"></canvas></div>
+      <code class="snippet mono">world({ container }).addMany(bodies).dragging()</code>
+    </div></div>
+  </section>
+
+  <section class="chamber" id="cloud">
+    <div class="stick"><div class="panel">
+      <p class="idx mono">02</p>
+      <h2>100,000 particles</h2>
+      <div class="stage dark"><canvas id="cloud-canvas" aria-label="A particle cloud morphing between a sphere, a torus knot and a spiral"></canvas></div>
+      <code class="snippet mono">pointCloud(100_000).morph(1, { duration: 2.4 })</code>
+    </div></div>
+  </section>
+
+  <section class="chamber" id="text">
+    <div class="stick"><div class="panel">
+      <p class="idx mono">03</p>
+      <h2>Split text</h2>
+      <div class="stage textstage"><p class="reveal" id="reveal"></p></div>
+      <code class="snippet mono">timeline().add(splitText(el).chars, { yPercent: [110, 0] }, { delay: stagger(0.018) })</code>
+    </div></div>
+  </section>
+
+  <section class="chamber" id="springs">
+    <div class="stick"><div class="panel">
+      <p class="idx mono">04</p>
+      <h2>Springs</h2>
+      <div class="stage" id="spring-stage">
+        <span class="target" id="spring-target"></span>
+        <span class="dot d0"></span><span class="dot d1"></span><span class="dot d2"></span>
+      </div>
+      <div class="row"><span class="pill mag" data-k="0">Stiff</span><span class="pill mag" data-k="1">Bouncy</span><span class="pill mag" data-k="2">Slow</span></div>
+      <code class="snippet mono">spring(dot, { x, y }, { stiffness: 260, damping: 16 }) · magnetic('.pill')</code>
+    </div></div>
+  </section>
+
+  <section class="chamber" id="svg">
+    <div class="stick"><div class="panel">
+      <p class="idx mono">05</p>
+      <h2>SVG morph</h2>
+      <div class="stage">
+        <svg class="svg-demo" viewBox="0 0 400 300" aria-hidden="true">
+          <defs>
+            <linearGradient id="mg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ffd27a" /><stop offset="0.5" stop-color="#ff7a59" /><stop offset="1" stop-color="#8f6bff" />
+            </linearGradient>
+          </defs>
+          <g id="morph-g"><path id="morph-echo" /><path id="morph" /></g>
+        </svg>
+      </div>
+      <code class="snippet mono">scroll(animate(path, { d: [circle(…), star(…), rect(…)] }), { target })</code>
+    </div></div>
+  </section>
+
+  <section class="chamber" id="layout">
+    <div class="stick"><div class="panel">
+      <p class="idx mono">06</p>
+      <h2>FLIP layout</h2>
+      <div class="stage tilestage"><div class="tiles" id="tiles"></div></div>
+      <code class="snippet mono">flip('.tile', () => shuffle(grid), { ease: 'spring(bounce: .2)' })</code>
+    </div></div>
+  </section>
+
+  <section class="chamber numbers" id="numbers">
+    <div class="stick"><div class="panel wide">
+      <p class="idx mono">07</p>
+      <h2>Benchmarks</h2>
+      <p class="dim">From the scripts in <code>packages/anikit/scripts</code>.</p>
+      <div class="n-stats">
+        <div class="n-stat"><b><span class="n-count" data-to="43" data-dec="0">43</span>×</b><p class="mono">faster than matter.js<br />250 colliding bodies · bench-physics.mjs</p></div>
+        <div class="n-stat"><b><span class="n-count" data-to="0.37" data-dec="2">0.37</span><small>ms</small></b><p class="mono">100,000 objects per frame<br />batch(), 3 channels · bench.mjs</p></div>
+        <div class="n-stat"><b><span class="n-count" data-to="150" data-dec="0">150</span>k</b><p class="mono">particles rendered in 6.2–6.8 ms<br />Chromium · bench-cloud.mjs</p></div>
+      </div>
+      <div class="n-chart" role="img" aria-label="100,000 objects, one frame: GSAP 3 5.85 ms, anikit animate() 3.68 ms, anikit batch() 0.37 ms">
+        <p class="mono n-cap">100,000 objects · one frame · ms (lower is faster)</p>
+        <div class="n-row"><span class="mono">GSAP 3</span><i><u style="--w:1"></u></i><em class="n-count" data-to="5.85" data-dec="2">5.85</em></div>
+        <div class="n-row me"><span class="mono">anikit animate()</span><i><u style="--w:0.629"></u></i><em class="n-count" data-to="3.68" data-dec="2">3.68</em></div>
+        <div class="n-row me"><span class="mono">anikit batch()</span><i><u style="--w:0.063"></u></i><em class="n-count" data-to="0.37" data-dec="2">0.37</em></div>
+        <p class="mono n-cap dim">bench.mjs, one run · docs/perf-notes.md</p>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="void" id="install">
+    <div class="stick"><div class="install-core" id="install-core">
+      <h2>Install</h2>
+      <div class="install-row">
+        <code class="mono" id="install-cmd">npm install anikit</code>
+        <button class="pill solid" id="copy" type="button">Copy</button>
+      </div>
+      <p class="mono dim">pip install anikit · MIT</p>
+    </div></div>
+  </section>
+</main>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
