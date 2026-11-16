@@ -1531,6 +1531,13 @@ pub extern "C" fn ak_cloud_explode(id: u32, x: f64, y: f64, z: f64, strength: f6
         c.explode(x as f32, y as f32, z as f32, strength as f32);
     }
 }
+/// Local brush: radial kick within `radius` of `(x, y)` plus the sweep `(vx, vy)`.
+#[no_mangle]
+pub extern "C" fn ak_cloud_push(id: u32, x: f64, y: f64, radius: f64, strength: f64, vx: f64, vy: f64) {
+    if let Some(c) = cloud(id) {
+        c.push(x as f32, y as f32, radius as f32, strength as f32, vx as f32, vy as f32);
+    }
+}
 #[no_mangle]
 pub extern "C" fn ak_cloud_speed(id: u32) -> f64 {
     cloud(id).map(|c| c.mean_speed() as f64).unwrap_or(0.0)

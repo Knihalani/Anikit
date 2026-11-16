@@ -141,6 +141,7 @@ export interface Exports {
   ak_cloud_ptr(id: number): number;
   ak_cloud_explode(id: number, x: number, y: number, z: number, strength: number): void;
   ak_cloud_speed(id: number): number;
+  ak_cloud_push(id: number, x: number, y: number, radius: number, strength: number, vx: number, vy: number): void;
   ak_bh_create(w: number, h: number, seed: number): number;
   ak_bh_free(id: number): void;
   ak_bh_resize(id: number, w: number, h: number): void;

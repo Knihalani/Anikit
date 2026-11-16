@@ -143,6 +143,15 @@ export class PointCloud {
     return this;
   }
 
+  /**
+   * Brush: kick particles within `radius` of `(x, y)` (a cylinder along z)
+   * outward by `strength`, plus the sweep velocity `(vx, vy)`; springs pull them back.
+   */
+  push(x: number, y: number, radius: number, strength = 300, vx = 0, vy = 0): this {
+    core().ak_cloud_push(this.id, x, y, radius, strength, vx, vy);
+    return this;
+  }
+
   /** Live positions `[x, y, z] * count` (zero-copy; valid until memory grows). */
   get positions(): Float32Array {
     return new Float32Array(W!.memory.buffer, core().ak_cloud_ptr(this.id), this.count * 3);

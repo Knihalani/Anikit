@@ -697,7 +697,7 @@ cloud.explode(0, 0, 0, 1200);                        // shockwave; particles fin
 | `shape(k, xyzOrFn)`, `snap(k)` | Define / jump to shapes. |
 | `from`, `to`, `mix`, `morph(k, { duration, ease, from })` | Blend state. |
 | `set({ stiffness, damping, spread, noise, swirl, frequency })` | Tune the motion. |
-| `step(dt)` (automatic unless `autoStep: false`), `explode(x, y, z, strength)`, `positions`, `speed` | Simulation. |
+| `step(dt)` (automatic unless `autoStep: false`), `explode(x, y, z, strength)`, `push(x, y, radius, strength, vx, vy)` (local brush), `positions`, `speed` | Simulation. |
 | `textPoints(text, count, { font, weight, width, depth })` | Sample points from rendered text. |
 | `glow.render(scene, source, { size, intensity, fog, lens, exposure, maxRadius })` | Draw a frame. |
 | `glow.colors(count, rgbOrFn)`, `glow.resize(w, h)`, `glow.options.trail`, `glow.lastMs`, `glow.avgMs` | Colours, size, trails, timing. |
