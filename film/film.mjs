@@ -10,7 +10,7 @@
 // → the wordmark, in chrome, on the mirror floor under the sun.
 export default async function film({ anikit: A, node }) {
   const { composition, scene3d, renderer3d, mesh, instances, flightPath, shatter } = A;
-  const W = 1920, H = 1080, FPS = 60, D = 21.8;
+  const W = 1920, H = 1080, FPS = 60, D = 21.8; // D: story seconds (the film itself is a little shorter, see `story`)
   node.registerFont('/usr/share/fonts/opentype/inter/InterDisplay-Black.otf', 'Display');
 
   let seed = 20261116;
@@ -28,8 +28,20 @@ export default async function film({ anikit: A, node }) {
   // ---- Time: the choreography runs on a clock slowed by bullet time ------------------
   const HIT = 12.55;  // clock time the knot shatters
   const LAND = 18.9;  // clock time we arrive at the wordmark
-  const timeScale = (t) => 1 - 0.82 * bell(t, HIT + 0.42, 0.42);
-  const clockOf = (t) => film.clockAt('velocity', t); // the slowed scene clock at composition time t
+  // Pacing: the choreography below is written in "story" seconds; the film runs
+  // through the long stretches faster (the tunnel, the beat after the hit, the
+  // vortex), with speed changes eased so the camera never jerks.
+  const win = (a, b, x, e = 0.35) => smooth(a - e, a + e, x) * (1 - smooth(b - e, b + e, x));
+  const pace = (st) => 1 + 0.22 * win(0.7, 2.6, st) + 0.5 * win(13.3, 14.2, st) + 0.38 * win(14.3, 16.8, st);
+  const storyTable = [0];
+  for (let i = 1; storyTable[i - 1] < D + 1; i++) storyTable.push(storyTable[i - 1] + pace(storyTable[i - 1]) / 1000);
+  const story = (c) => { const i = Math.max(0, c * 1000), k = Math.min(Math.floor(i), storyTable.length - 2); return storyTable[k] + (storyTable[k + 1] - storyTable[k]) * (i - k); };
+  const unstory = (st) => { let lo = 0, hi = storyTable.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (storyTable[m] < st) lo = m; else hi = m; } return hi / 1000; };
+  const timeScale = (t) => 1 - 0.82 * bell(t, unstory(HIT) + 0.42, 0.42);
+  // Film length: until the story clock reaches the end of the old cut (~21.2 s), plus the time bullet time costs.
+  const DUR = Math.round((unstory(21.2) + 0.61) * FPS) / FPS;
+  const clockOf = (t) => story(film.clockAt('velocity', t)); // story seconds at composition time t
+  const beat = (st) => film.timeAt('velocity', unstory(st)); // composition time of a story beat
 
   // ---- The route ------------------------------------------------------------------------
   const KNOT_C = [0, 320, -38000], ORBIT_R = 2000;
@@ -137,7 +149,7 @@ export default async function film({ anikit: A, node }) {
 
   // ---- The grade: functions of composition time (mapped onto the clock) -------------
   const film = composition({
-    width: W, height: H, fps: FPS, duration: D, motionBlur: 1,
+    width: W, height: H, fps: FPS, duration: DUR, motionBlur: 1,
     post: {
       aa: 1,
       bloom: (t) => 0.85 + 0.6 * bell(t, 0.05, 0.3),
@@ -177,13 +189,13 @@ export default async function film({ anikit: A, node }) {
     }
   };
 
-  let clock = 0, prevClock = 0;
-  film.scene('velocity', 0, D, {
+  let prevClock = 0, lastClock = 0;
+  film.scene('velocity', 0, DUR, {
     timeScale, // bullet time as the knot breaks: camera, shards, pulses all slow together
-    step({ dt }) { prevClock = clock; clock += dt; },
-    draw({ ctx }) {
-      const c = clock;
-      pose(prevClock);
+    step({ clock }) { prevClock = lastClock; lastClock = clock; },
+    draw({ ctx, clock }) {
+      const c = story(clock);
+      pose(story(prevClock));
       const prevCamera = cam.viewProjection().matrix;
       pose(c);
       const z = cam.camera.z;
@@ -235,9 +247,9 @@ export default async function film({ anikit: A, node }) {
   });
   // Impacts land on story beats of the slowed clock.
   film.impact(0, { flash: '#ffffff', flashOpacity: 1, decay: 4, aberration: 6 }); // ignition: the film opens on a white flash
-  film.impact(film.timeAt('velocity', 3.0), { shake: 14, flash: '#8fe3ff', flashOpacity: 0.35, aberration: 5, shockwave: 22 });
-  film.impact(film.timeAt('velocity', HIT), { shake: 34, flash: '#ffd1ef', flashOpacity: 0.75, aberration: 10, shockwave: 40, origin: [0.5, 0.45], shockSpeed: 0.8 });
-  film.impact(film.timeAt('velocity', 14.25), { shake: 16, flash: '#ffffff', flashOpacity: 0.3, aberration: 6 });
-  film.impact(film.timeAt('velocity', LAND), { shake: 10, aberration: 3, shockwave: 16, origin: [0.5, 0.56], shockSpeed: 0.7 });
+  film.impact(beat(3.0), { shake: 14, flash: '#8fe3ff', flashOpacity: 0.35, aberration: 5, shockwave: 22 });
+  film.impact(beat(HIT), { shake: 34, flash: '#ffd1ef', flashOpacity: 0.75, aberration: 10, shockwave: 40, origin: [0.5, 0.45], shockSpeed: 0.8 });
+  film.impact(beat(14.25), { shake: 16, flash: '#ffffff', flashOpacity: 0.3, aberration: 6 });
+  film.impact(beat(LAND), { shake: 10, aberration: 3, shockwave: 16, origin: [0.5, 0.56], shockSpeed: 0.7 });
   return film;
 }
