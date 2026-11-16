@@ -304,7 +304,9 @@ void main() {
   vec3 sky = vec3(0.45, 0.58, 0.88);
   // snow: wrapped diffuse (light scatters through) + cool sky fill + sparkle
   float wrap = clamp((dot(N, L) + 0.12) / 1.12, 0.0, 1.0);
-  vec3 sn = vec3(0.92, 0.94, 1.0) * (sunC * wrap * 1.15 + sky * (0.3 + 0.22 * N.y));
+  vec3 sn = vec3(0.92, 0.94, 1.0) * (sunC * wrap * 1.15 + sky * (0.42 + 0.2 * N.y));
+  // light scattered inside the snowpack keeps the shadows luminous
+  sn += vec3(0.05, 0.1, 0.16) * (1.0 - wrap);
   vec3 H = normalize(L - dir);
   sn += sunC * 0.25 * pow(max(dot(N, H), 0.0), 24.0);
   vec2 cell = floor(vW.xz * 70.0);

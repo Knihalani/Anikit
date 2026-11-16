@@ -25,11 +25,12 @@ const m = createMountain(canvas);
 const resize = () => m.resize(innerWidth, innerHeight, Math.min(2, devicePixelRatio));
 resize(); addEventListener('resize', resize);
 const $ = (id) => document.getElementById(id);
+const look = { x: 0, y: 0 }, target = { x: 0, y: 0 };
 const q = new URLSearchParams(location.search);
 if (q.has('p')) $('p').value = q.get('p');
 if (q.has('push')) $('push').value = q.get('push');
+if (q.has('lx')) { target.x = +q.get('lx'); target.y = +(q.get('ly') || 0); }
 if (q.has('noui')) document.querySelector('.ui').style.display = 'none';
-const look = { x: 0, y: 0 }, target = { x: 0, y: 0 };
 addEventListener('pointermove', (e) => { target.x = (e.clientX / innerWidth) * 2 - 1; target.y = 1 - (e.clientY / innerHeight) * 2; });
 let last = performance.now(), avg = 0;
 window.__mountain = { frames: 0, look: target };
