@@ -448,8 +448,8 @@ mark('setup');
 layout();
 mark('layout');
 if (G) {
-  shards = G.shards(14, 9);
-  shardsLow = G.shards(9, 6);
+  shards = G.shards(8, 5);
+  shardsLow = G.shards(6, 4);
   await buildLetters();
   mark('letters');
   await idle(); await paintCode();
