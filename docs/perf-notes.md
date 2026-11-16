@@ -2067,3 +2067,16 @@ A non-matrix inline value now falls back to the computed matrix. The
 computed read for elements with no inline transform stays (a stylesheet may
 set one), so this does not speed up `spring()` set-up on fresh elements.
 Browser test `transform-read › …` fails on the old code.
+
+### 5. Where the landing page's set-up time goes
+
+Timed inside the Anikit lean page (CPU 4×, two loads): `splitText` 1–7 ms,
+**the first `animate()` (13 words) 45–48 ms**, the next six `animate()`s
+(48 cards) 7–8 ms, six `scrollTrigger`s 7 ms, the pinned trigger 6 ms,
+`magnetic` + `marquee` 5 ms. Trigger measurement is a small part, so making it
+lazy would not remove the long task. The cost is the first call into the
+core: likely its WebAssembly functions being compiled on first use, which
+belongs to the core session's split-wasm work. Re-run after the
+`readTransform` fix (median of 5): Anikit ready 150 ms / TBT 43 ms / busy
+0.76 ms per frame; lean 214 / 49 / 0.74; GSAP 146 / 65 / 0.92; Motion 81 / 0 /
+1.19.
