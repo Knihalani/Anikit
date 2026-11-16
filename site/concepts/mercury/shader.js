@@ -47,7 +47,12 @@ float textD(vec2 p) {
 float rim(vec3 q, vec4 R, vec4 P) {
   if (P.y < 0.0006) return 1e5;
   float b = sdRR(q.xy - R.xy, R.zw, P.x);
-  float th = P.y * (1.0 + 0.07 * sin(q.x * 29.0 + uTime * 1.1) * sin(q.y * 23.0 - uTime * 0.9));
+  // Two slugs of metal run round the ring, so the frame looks poured rather than drawn.
+  vec2 rp = (q.xy - R.xy) / R.zw;
+  float ang = atan(rp.y, rp.x) / 6.2831853;
+  float w1 = fract(ang - uTime * 0.07) - 0.5, w2 = fract(ang + 0.5 - uTime * 0.07) - 0.5;
+  float slug = exp(-w1 * w1 * 160.0) + exp(-w2 * w2 * 160.0);
+  float th = P.y * (1.0 + 0.07 * sin(q.x * 29.0 + uTime * 1.1) * sin(q.y * 23.0 - uTime * 0.9) + 0.7 * slug);
   return length(vec2(b, q.z - th * 0.15)) - th;
 }
 
