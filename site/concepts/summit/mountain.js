@@ -307,12 +307,12 @@ void main() {
   N = normalize(N + vec3(-d5.y, 0.0, -d5.z) * 0.05 * fade * (0.3 + crag2));
   vec3 L = uSun;
   vec3 sunC = mix(vec3(1.6, 1.42, 1.18), vec3(1.85, 1.3, 0.85), uWarm);
-  vec3 sky = vec3(0.45, 0.58, 0.88);
+  vec3 sky = vec3(0.36, 0.52, 0.95);
   // snow: wrapped diffuse (light scatters through) + cool sky fill + sparkle
   float wrap = clamp((dot(N, L) + 0.12) / 1.12, 0.0, 1.0);
   vec3 sn = vec3(0.92, 0.94, 1.0) * (sunC * wrap * 1.15 + sky * (0.42 + 0.2 * N.y));
   // light scattered inside the snowpack keeps the shadows luminous
-  sn += vec3(0.05, 0.1, 0.16) * (1.0 - wrap);
+  sn += vec3(0.02, 0.07, 0.16) * (1.0 - wrap);
   vec3 H = normalize(L - dir);
   sn += sunC * 0.25 * pow(max(dot(N, H), 0.0), 24.0);
   vec2 cell = floor(vW.xz * 70.0);
@@ -487,6 +487,8 @@ function buildGround() {
   return { pos, nor, idx };
 }
 
+const GIANTS = [];
+for (const [az, r, hgt, rad] of [[-0.66, 21000, 3100, 2500], [0.66, 25000, 3000, 2900]]) GIANTS.push(Math.sin(az) * r, -Math.cos(az) * r, hgt, rad);
 const farH = (x, z) => {
   const r = Math.hypot(x, z);
   // a mask decides where the big massifs stand; elsewhere the land stays under the clouds
@@ -501,6 +503,12 @@ const farH = (x, z) => {
   const k = 1 / 260;
   const hi = Math.max(h, cap), lo = Math.min(h, cap);
   h = lo - Math.log(1 + Math.exp(-k * (hi - lo))) / k;
+  // two great distant peaks, taller than everything, for scale
+  for (let i = 0; i < GIANTS.length; i += 4) {
+    const dx = x - GIANTS[i], dz = z - GIANTS[i + 1];
+    const q = Math.hypot(dx, dz) / GIANTS[i + 3];
+    if (q < 3) h = Math.max(h, DECK_Y + GIANTS[i + 2] * Math.exp(-Math.pow(q, 0.85) * 1.2) * (0.8 + 0.35 * ridged(dx / 1400, dz / 1400, 4, 55 + i)));
+  }
   return h;
 };
 function buildRanges() {
@@ -605,7 +613,7 @@ function buildWord() {
   const f = new Float32Array(N * 8);
   // back-to-front by depth jitter
   // light transmittance: march through the ink toward the sun (right and slightly up)
-  const lx = 0.93, ly = -0.36;
+  const lx = 0.8, ly = -0.6;
   const trans = (x, y) => {
     let n = 0;
     for (let i = 1; i <= 36; i++) if (inside(x + lx * i * 3, y + ly * i * 3)) n++;
@@ -843,7 +851,7 @@ export function createMountain(canvas) {
     gl.bindVertexArray(vSea); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, seaCount);
     // the word: lit from the sun's side in screen space (it sits low and to the right)
     const wl = Math.hypot(sR, sU) || 1;
-    gl.uniform3f(pu2.uSunV, 0.9 * sR / wl, -0.15, 0.4);
+    gl.uniform3f(pu2.uSunV, 0.75 * sR / wl, 0.4, 0.4);
     gl.uniform1f(pu2.uWordMode, 1);
     gl.uniform3f(pu2.uWordC, wordC[0], wordC[1], wordC[2]);
     gl.uniform1f(pu2.uWordS, wordS);
