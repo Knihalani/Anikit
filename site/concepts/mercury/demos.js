@@ -18,7 +18,7 @@ export function startDemos({ reduced, fine, small, setChainPreset, inView }) {
   // Hero line: words rise once.
   {
     const words = splitText('.lede', { type: 'words' }).words;
-    animate(words, { y: [14, 0], opacity: [0, 1] }, { duration: 1.1, ease: 'outCubic', delay: stagger(0.045, { start: 1.2 }) });
+    animate(words, { y: [12, 0], opacity: [0, 1] }, { duration: 0.8, ease: 'outCubic', delay: stagger(0.03, { start: 0.6 }) });
   }
 
   // 100,000 particles (40,000 on phones), built in idle time well before the section arrives.

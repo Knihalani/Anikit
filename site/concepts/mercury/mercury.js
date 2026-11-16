@@ -229,6 +229,12 @@ const textSize = () => Math.min(1, Math.max(0.4, text.glyphH / 0.28));
 let heroWeight = 1;
 // Hero: drops live inside the letters and bud off now and then; the pointer pulls one out.
 let pulled = -1, neckR = 0, neckBroken = false;
+const splash = { x: 0, y: 0, t: -10 };
+addEventListener('pointerdown', (e) => {
+  if (scrollY > vh * 0.25 || !text.ready || e.target.closest('a, button')) return;
+  splash.x = e.clientX; splash.y = e.clientY; splash.t = state.t;
+  pulled = -1; neckBroken = false;
+});
 function heroTarget(d, i, t, out) {
   const h = text.homes[i];
   if (!h) { out.x = d.pos.x; out.y = d.pos.y; out.r = d.r; return; }
@@ -240,6 +246,13 @@ function heroTarget(d, i, t, out) {
   const px = text.cx * vh + ((i + 0.5) / N - 0.5) * text.hw * 1.5 * vh;
   const py = vh - (text.cy - text.hh * 0.62) * vh + Math.sin(i * 2.3) * 0.02 * vh;
   x = lerp(x, px, m); y = lerp(y, py, m);
+  // Splash: a click throws the drops out of the letters; they spring back and merge.
+  const age = t - splash.t;
+  if (age < 2.5 && !reduced) {
+    const dx = h.x - splash.x, dy = h.y - splash.y, dl = Math.hypot(dx, dy) || 1;
+    const kick = Math.exp(-age * 2.2) * Math.min(1, age * 12) * vh * (0.16 + 0.22 * Math.abs(Math.sin(i * 1.7))) * (1 - m);
+    x += (dx / dl) * kick; y += (dy / dl) * kick - kick * 0.35;
+  }
   if (i === pulled && !neckBroken) { x = pointer.x; y = pointer.y; }
   else if (i === pulled) { x = pointer.x; y = pointer.y; }
   out.x = x; out.y = y;

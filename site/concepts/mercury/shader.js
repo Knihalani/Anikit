@@ -96,6 +96,10 @@ vec3 env(vec3 d, float rough) {
     c += vec3(1.0) * 0.55 * softBox(pp - vec2(-0.12, -0.05), vec2(0.30, 0.20), s + 0.12);
     c += vec3(0.86, 0.92, 1.0) * 3.0 * softBox(pp - vec2(-0.82, 0.0), vec2(0.06, 0.75), s);
     c += vec3(1.0, 0.95, 0.88) * 2.2 * softBox(pp - vec2(0.95, -0.2), vec2(0.045, 0.6), s);
+    c += vec3(0.95, 0.97, 1.0) * 2.6 * softBox(pp - vec2(0.1, -0.62), vec2(0.5, 0.035), s);
+    c += vec3(1.0, 0.96, 0.9) * 7.0 * (1.0 - smoothstep(0.06 - s, 0.06 + s, length(pp - vec2(0.55, 0.25))));
+    // A cool-to-warm gradient across the studio walls.
+    c += mix(vec3(0.05, 0.07, 0.11), vec3(0.11, 0.08, 0.05), smoothstep(-1.5, 1.5, pp.x)) * smoothstep(0.03, 0.5, up);
   }
   float az = atan(d.y, d.x);
   float hor = exp(-pow((up - 0.1) / (0.14 + rough * 0.3), 2.0));
@@ -180,8 +184,13 @@ void main() {
     vec3 rf = reflect(rd, vec3(0.0, 0.0, 1.0));
     float pl = max(plate(p, uRimA, uRimAP), plate(p, uRimB, uRimBP));
     // Dark lacquer: a blurred reflection of the soft boxes, almost black elsewhere.
-    vec3 base = vec3(0.0035, 0.0036, 0.0042);
-    vec3 gloss = env(rf, 0.35) * 0.011;
+    // The table: black lacquer under a soft key light, so shadows and contact read clearly.
+    vec2 kd = (p - cam - vec2(0.0, 0.06) - uLight * 0.05) / vec2(0.9 * cam.x + 0.3, 0.55);
+    float pool = exp(-dot(kd, kd) * 1.6);
+    vec3 base = vec3(0.0022, 0.0023, 0.0028) + vec3(0.011, 0.0105, 0.0098) * pool;
+    // Glossy: the soft boxes overhead appear in the lacquer as broad, blurred panels.
+    vec3 fr = normalize(vec3(rf.xy * 2.4, rf.z));
+    vec3 gloss = env(fr, 0.1) * 0.011;
     float sh = 1.0, ao = 1.0;
     vec3 mirror = vec3(0.0);
     if (dF < 0.14) {
@@ -195,12 +204,12 @@ void main() {
         if (h < hmin) { hmin = h; tmin = tt; }
         if (h < 0.001) break;
         tt += max(h * 0.9, 0.002);
-        if (tt > 0.12) break;
+        if (tt > 0.18) break;
       }
       float cover = 1.0 - smoothstep(0.0, 0.006, hmin);
       if (cover > 0.0) {
         vec3 Q = P + rf * tmin;
-        mirror = env(reflect(rf, calcNormal(Q)), 0.3) * 0.07 * cover * exp(-tmin * 22.0);
+        mirror = env(reflect(rf, calcNormal(Q)), 0.2) * 0.16 * cover * exp(-tmin * 14.0);
       }
       // Light bounced off the metal onto the table.
       base += vec3(0.9, 0.86, 0.82) * 0.012 * exp(-dF * 45.0);

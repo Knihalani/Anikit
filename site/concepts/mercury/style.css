@@ -34,7 +34,7 @@ main, .nav { position: relative; z-index: 1; }
 .wordmark { position: absolute; left: 0; right: 0; top: 0; margin: 0; transform: translateY(-50%); white-space: nowrap; font: 900 min(29.6vw, 44.8vh)/1 'Inter Display', sans-serif; letter-spacing: -0.045em;
   background: linear-gradient(180deg, #f5f6f8 0%, #9da1a9 42%, #24262b 52%, #c9ccd2 64%, #50535a 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .wordmark { top: 45.5%; }
-.lede { position: absolute; left: 0; right: 0; top: calc(50% + min(15vw, 150px)); margin: 0 auto; max-width: 30ch; padding: 0 20px; color: #c3c6cd; font-size: clamp(16px, 2vw, 19px); }
+.lede { position: absolute; left: 0; right: 0; top: calc(50% + min(15vw, 150px)); margin: 0 auto; max-width: 30ch; padding: 0 20px; color: #eef0f3; font-size: clamp(16px, 2vw, 19px); text-shadow: 0 1px 2px #000, 0 0 18px rgba(0, 0, 0, 0.85); }
 .cue { position: absolute; bottom: 28px; left: 0; right: 0; margin: 0; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); }
 
 /* Every demo: a tall section, a pinned viewport, one centred stage. */
