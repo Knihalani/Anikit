@@ -336,7 +336,53 @@ export default async function film({ anikit: A }) {
     HA[i] = Math.abs(a - Math.round(a)) * 6; HB[i] = Math.abs(b - Math.round(b)) * 6.5;
     GRAIN[i] = 1 - 0.035 * (0.5 + 0.5 * noise(x / 1.7 + 50, y / 9)) - 0.03 * (0.5 + 0.5 * noise(x / 60, y / 45));
   }
+  // Water strokes: each pixel's ray is a linear function of its screen position (from the inverse
+  // view-projection); where the ray meets the lake at the depth the buffer holds, the pixel is water,
+  // and short inked wave dashes and white glints are drawn there, fixed in the world.
+  const inv4 = (m) => {
+    const a = m, o = new Array(16);
+    const b00 = a[0] * a[5] - a[1] * a[4], b01 = a[0] * a[6] - a[2] * a[4], b02 = a[0] * a[7] - a[3] * a[4], b03 = a[1] * a[6] - a[2] * a[5], b04 = a[1] * a[7] - a[3] * a[5], b05 = a[2] * a[7] - a[3] * a[6];
+    const b06 = a[8] * a[13] - a[9] * a[12], b07 = a[8] * a[14] - a[10] * a[12], b08 = a[8] * a[15] - a[11] * a[12], b09 = a[9] * a[14] - a[10] * a[13], b10 = a[9] * a[15] - a[11] * a[13], b11 = a[10] * a[15] - a[11] * a[14];
+    const det = 1 / (b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06);
+    o[0] = (a[5] * b11 - a[6] * b10 + a[7] * b09) * det; o[1] = (a[2] * b10 - a[1] * b11 - a[3] * b09) * det; o[2] = (a[13] * b05 - a[14] * b04 + a[15] * b03) * det; o[3] = (a[10] * b04 - a[9] * b05 - a[11] * b03) * det;
+    o[4] = (a[6] * b08 - a[4] * b11 - a[7] * b07) * det; o[5] = (a[0] * b11 - a[2] * b08 + a[3] * b07) * det; o[6] = (a[14] * b02 - a[12] * b05 - a[15] * b01) * det; o[7] = (a[8] * b05 - a[10] * b02 + a[11] * b01) * det;
+    o[8] = (a[4] * b10 - a[5] * b08 + a[7] * b06) * det; o[9] = (a[1] * b08 - a[0] * b10 - a[3] * b06) * det; o[10] = (a[12] * b04 - a[13] * b02 + a[15] * b00) * det; o[11] = (a[9] * b02 - a[8] * b04 - a[11] * b00) * det;
+    o[12] = (a[5] * b07 - a[4] * b09 - a[6] * b06) * det; o[13] = (a[0] * b09 - a[1] * b07 + a[2] * b06) * det; o[14] = (a[13] * b01 - a[12] * b03 - a[14] * b00) * det; o[15] = (a[8] * b03 - a[9] * b01 + a[10] * b00) * det;
+    return o;
+  };
+  const WAVE = new Uint8Array(N_PIX); // 0 none, 1 ink dash, 2 glint
+  function waterStrokes(dist) {
+    WAVE.fill(0);
+    const c = cam.camera, ex = c.x, ey = c.y - WATER, ez = c.z;
+    if (ey < 0.2) return;
+    const iv = inv4(cam.viewProjection().matrix);
+    const tg = cam.target, fl = Math.hypot(tg.x - ex, tg.y - c.y, tg.z - ez), fx = (tg.x - ex) / fl, fy = (tg.y - c.y) / fl, fz = (tg.z - ez) / fl;
+    // Homogeneous far-plane point p(nx, ny) = iv · [nx, ny, 1, 1]; the ray is p.xyz − eye · p.w (linear in nx, ny).
+    const P = (nx, ny) => { const r = [0, 1, 2, 3].map((q) => iv[q] * nx + iv[4 + q] * ny + iv[8 + q] + iv[12 + q]); return [r[0] - ex * r[3], r[1] - c.y * r[3], r[2] - ez * r[3]]; };
+    const o0 = P(0, 0), ax = P(1, 0).map((v, q) => v - o0[q]), ay = P(0, 1).map((v, q) => v - o0[q]);
+    for (let y = 0; y < H; y++) {
+      const ny = 1 - ((y + 0.5) / H) * 2;
+      for (let x = 0; x < W; x++) {
+        const nx = ((x + 0.5) / W) * 2 - 1;
+        let dy = o0[1] + ax[1] * nx + ay[1] * ny;
+        if (dy >= 0) continue;
+        const dx = o0[0] + ax[0] * nx + ay[0] * ny, dz = o0[2] + ax[2] * nx + ay[2] * ny;
+        const tt = -ey / dy, vz = tt * (dx * fx + dy * fy + dz * fz);
+        const i = y * W + x, d = dist[i];
+        if (vz > 700 || Math.abs(d - vz) > 0.03 * vz + 0.4) continue;
+        const wx = ex + dx * tt, wz = ez + dz * tt;
+        const u = wx / 7, v = wz / 2.4, cu = Math.floor(u), cv = Math.floor(v), hh = hash(cu * 7919 + cv * 104729 + 13);
+        if (hh > 0.42) continue;
+        const fu = u - cu, fv = v - cv - 0.5 - 0.12 * Math.sin(fu * Math.PI);
+        const len = 0.55 + 0.4 * hash(cu * 31 + cv * 17), du = (fu - 0.5) / (len * 0.5);
+        if (Math.abs(du) > 1) continue;
+        const th = (hh < 0.3 ? 0.09 : 0.06) * (1 - du * du) * Math.min(1, 40 / vz + 0.35);
+        if (Math.abs(fv) < th) WAVE[i] = hh < 0.3 ? 1 : 2;
+      }
+    }
+  }
   function comic(src, dist, out, t) {
+    waterStrokes(dist);
     for (let i = 0; i < N_PIX; i++) { const o = i * 4; lum[i] = (src[o] * 0.299 + src[o + 1] * 0.587 + src[o + 2] * 0.114) / 255; }
     const B = 16;
     for (let y = 0; y < H; y++) {
@@ -395,6 +441,8 @@ export default async function film({ anikit: A }) {
           const a = ANG[i], hsh = hash(a * 97 + Math.floor(t * 9 + hash(a * 13 + 1) * 9) * 7919);
           if (hsh > 0.955 && hash(a * 31 + 3) * 0.4 + 0.8 < rad) { const w = smooth(0.8, 1.15, rad) * 0.85; cr = mix(cr, 16, w); cg = mix(cg, 14, w); cb = mix(cb, 22, w); }
         }
+        const wv = WAVE[i];
+        if (wv === 1) { cr = 14; cg = 26; cb = 70; } else if (wv === 2) { cr = PAPER[0]; cg = PAPER[1]; cb = PAPER[2]; }
         if (ink) { cr = 16; cg = 13; cb = 20; }
         const gr = GRAIN[i]; cr *= gr; cg *= gr; cb *= gr;
         out[o] = cr; out[o + 1] = cg; out[o + 2] = cb; out[o + 3] = 255;
