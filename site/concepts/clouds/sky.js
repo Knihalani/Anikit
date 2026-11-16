@@ -49,7 +49,8 @@ float density(vec3 p, bool fine){
   // The pocket of clear sky the camera flies into, and the bank that closes around it between pockets.
   float r = length(p - uEye);
   d *= mix(1.0, smoothstep(1100.0, 2800.0, r), uClear);
-  if (uBank > 0.0) d = max(d, uBank * prof * smoothstep(2600.0, 700.0, r) * clamp((base - 0.4) * 3.2 + 0.15, 0.0, 1.0));
+  d *= mix(0.2, 1.0, smoothstep(150.0, 900.0, r)); // never a blank whiteout: the nearest air stays thin
+  if (uBank > 0.0) d = max(d, uBank * 0.6 * prof * smoothstep(350.0, 1000.0, r) * smoothstep(2900.0, 1500.0, r) * clamp((base - 0.4) * 3.2 + 0.15, 0.0, 1.0));
   return d;
 }
 float hg(float c, float g){ float g2 = g * g; return (1.0 - g2) / (12.566 * pow(1.0 + g2 - 2.0 * g * c, 1.5)); }
