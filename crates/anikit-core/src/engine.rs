@@ -156,6 +156,13 @@ struct Anim {
     tracks: Box<[Track]>,
     buf: Box<[f64]>,
     out_at: usize,
+    /// When every track is an enabled single-segment number of one channel
+    /// with the same easing (`{ x: 500, y: 300, opacity: 0 }`), the number of
+    /// tracks, else 0. Their data then sits at fixed places (track `k`: values
+    /// at `4k + 2`, output `k`), so [`eval`](Self::eval) skips the track table.
+    simple: u32,
+    /// The shared easing of a `simple` animation.
+    simple_ease: u32,
 }
 
 impl Anim {
@@ -166,7 +173,37 @@ impl Anim {
     #[inline(always)]
     fn eval(&mut self, easings: &[Easing], memo: &mut EaseMemo, p: f64) {
         let (data, out) = self.buf.split_at_mut(self.out_at);
+        let n = self.simple as usize;
+        if n > 0 {
+            // The single-segment path of `eval_into` for every track, without
+            // reading the tracks (same easing call, same lerp).
+            let e = ease_memo(easings, memo, self.simple_ease, p);
+            if let (Some(d), Some(o)) = (data.get(..4 * n), out.get_mut(..n)) {
+                for (o, d) in o.iter_mut().zip(d.chunks_exact(4)) {
+                    *o = d[2] + (d[3] - d[2]) * e;
+                }
+            }
+            return;
+        }
         Anim::eval_into(&mut self.tracks, data, easings, memo, p, out);
+    }
+
+    /// Recompute [`simple`](Self::simple) (after creation or a track toggle).
+    fn classify(&mut self) {
+        let t = &self.tracks;
+        let ok = !t.is_empty()
+            && t.iter().enumerate().all(|(k, tr)| {
+                tr.enabled
+                    && tr.single
+                    && tr.ch == 1
+                    && tr.off_at as usize == 4 * k
+                    && tr.val_at as usize == 4 * k + 2
+                    && tr.out_at as usize == k
+                    && tr.ease0 == t[0].ease0
+            })
+            && self.out_at >= 4 * t.len();
+        self.simple = if ok { t.len() as u32 } else { 0 };
+        self.simple_ease = if ok { t[0].ease0 } else { LINEAR };
     }
 }
 
@@ -923,7 +960,8 @@ impl Engine {
         data.extend(eases.iter().map(|&e| e as f64));
         let out_at = data.len();
         data.resize(out_at + out_len as usize, 0.0);
-        let mut anim = Anim { tracks: tracks.into_boxed_slice(), buf: data.into_boxed_slice(), out_at };
+        let mut anim = Anim { tracks: tracks.into_boxed_slice(), buf: data.into_boxed_slice(), out_at, simple: 0, simple_ease: LINEAR };
+        anim.classify();
         // Pre-fill outputs with the start values so readers never see zeros.
         anim.eval(&self.easings, &mut EaseMemo::EMPTY.clone(), 0.0);
         let idx = self.alloc(Kind::Anim(anim), sanitize(timing), fl)?;
@@ -1555,6 +1593,7 @@ impl Engine {
             Kind::Anim(a) => match a.tracks.get_mut(track) {
                 Some(t) => {
                     t.enabled = enabled;
+                    a.classify();
                     Ok(())
                 }
                 None => Err(Error::InvalidInput),
@@ -2791,6 +2830,52 @@ mod tests {
             }
         }
         assert!(checked > 1000, "{checked}");
+    }
+
+    #[test]
+    fn simple_anims_match_track_evaluation() {
+        // `simple` animations skip the track table; they must equal
+        // `eval_into` exactly, before and after tracks are toggled.
+        let mut e = Engine::new();
+        let ease = e.easing("outCubic").unwrap();
+        let other = e.easing("inOutSine").unwrap();
+        let mk = |e: &mut Engine, specs: &[TrackSpec]| e.create_anim(Timing::default(), specs, flags::DEFAULT).unwrap();
+        let n3 = |es: [u32; 3]| -> Vec<TrackSpec> {
+            [(0.0, 500.0), (-3.0, 300.0), (1.0, 0.0)].iter().zip(es).map(|(&(a, b), x)| TrackSpec::number(vec![a, b], 1).with_easings(vec![x])).collect()
+        };
+        let hs = [
+            mk(&mut e, &n3([ease; 3])),
+            mk(&mut e, &n3([LINEAR; 3])),
+            mk(&mut e, &n3([ease, other, ease])),
+            mk(&mut e, &[TrackSpec::number(vec![0.0, 1.0, 2.0, 3.0], 2)]),
+            mk(&mut e, &[TrackSpec::number(vec![5.0, 6.0], 1).with_easings(vec![ease])]),
+        ];
+        let simple = |e: &Engine, h: Handle| match &e.nodes[Engine::handle_index(h) as usize].kind {
+            Kind::Anim(a) => a.simple,
+            _ => unreachable!(),
+        };
+        assert_eq!(hs.iter().map(|&h| simple(&e, h)).collect::<Vec<_>>(), [3, 3, 0, 0, 1]);
+        let check = |e: &mut Engine| {
+            for &h in &hs {
+                for k in 0..=40 {
+                    let p = k as f64 / 32.0 - 0.1;
+                    let Kind::Anim(a) = &mut e.nodes[Engine::handle_index(h) as usize].kind else { unreachable!() };
+                    let mut want = a.out().to_vec();
+                    let (data, _) = a.buf.split_at(a.out_at);
+                    let mut tracks = a.tracks.to_vec();
+                    Anim::eval_into(&mut tracks, data, &e.easings, &mut EaseMemo::EMPTY.clone(), p, &mut want);
+                    a.eval(&e.easings, &mut EaseMemo::EMPTY.clone(), p);
+                    assert_eq!(a.out().iter().map(|v| v.to_bits()).collect::<Vec<_>>(), want.iter().map(|v| v.to_bits()).collect::<Vec<_>>());
+                }
+            }
+        };
+        check(&mut e);
+        e.set_track_enabled(hs[0], 1, false).unwrap();
+        assert_eq!(simple(&e, hs[0]), 0);
+        check(&mut e);
+        e.set_track_enabled(hs[0], 1, true).unwrap();
+        assert_eq!(simple(&e, hs[0]), 3);
+        check(&mut e);
     }
 
     #[test]
