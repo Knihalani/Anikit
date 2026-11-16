@@ -255,6 +255,9 @@ pub struct Raster {
     blur_src: Vec<u32>,
     vel: Vec<u32>,
     tiles: Vec<[f32; 2]>,
+    /// Per-tile 16.16 sample step and start offset for the motion-blur cleanup pass.
+    tile_step: Vec<[i32; 4]>,
+    tile_taps: Vec<TileTaps>,
     alpha: Vec<f32>,
     row_px: Vec<u32>,
     /// Half-resolution packed RGB written by the blur passes for [`Raster::blend_half`].
@@ -285,6 +288,18 @@ pub struct Raster {
     /// shaded once. Front-to-back instance order already keeps overdraw low,
     /// so this only pays off for heavily self-overlapping single meshes.
     pub prepass: bool,
+}
+
+/// Motion-blur taps for one velocity tile: length, 1/count, spacing, count
+/// (0 = still) and the 16.16 step between taps.
+#[derive(Clone, Copy, Debug, Default)]
+struct TileTaps {
+    ln: f32,
+    inv_n: f32,
+    dd: f32,
+    n: u32,
+    dfx: i32,
+    dfy: i32,
 }
 
 /// Everything the pixel shader needs for one instance.
@@ -1267,6 +1282,8 @@ impl Raster {
         let cm: M4 = core::array::from_fn(|i| c64[i] as f32);
         let mut any = false;
         let (sx, sy) = (fw * 0.5 * shutter, fh * 0.5 * shutter);
+        const RB: u32 = 0x00ff_00ff;
+        let lanes2 = V4::new(0.0, 2.0, 4.0, 6.0);
         for by in 0..bh {
             let y = by * 2;
             let ny = 1.0 - (y as f32 + 1.0) / fh;
@@ -1275,45 +1292,63 @@ impl Raster {
             let (kx, ky, kq) = (cm[4] * ny + cm[12], cm[5] * ny + cm[13], cm[7] * ny + cm[15]);
             let row = y * w;
             let trow = (by / T) * tw;
-            for bx in 0..bw {
-                let x = bx * 2;
-                let i = row + x;
-                let q = [self.color[i], self.color[i + 1], self.color[i + w], self.color[i + w + 1]];
-                let ch = |s: u32| ((q[0] >> s & 255) + (q[1] >> s & 255) + (q[2] >> s & 255) + (q[3] >> s & 255) + 2) >> 2;
-                self.blur_src[by * bw + bx] = ch(0) | ch(8) << 8 | ch(16) << 16;
-                // Nearest of the four depths: edges belong to the foreground.
-                let d = self.depth[i].min(self.depth[i + 1]).min(self.depth[i + w]).min(self.depth[i + w + 1]);
-                let nz = if d.is_finite() { d } else { 0.9999 };
-                let nx = (x as f32 + 1.0) / fw - 1.0;
-                let cw = inv[3] * nx + inv[11] * nz + kw;
-                if cw.abs() < 1e-12 {
-                    continue;
+            // Four half-res pixels per step: colour and depth gathered as
+            // scalars, the reprojection (two divides and a square root) in SIMD.
+            let (crow, crow2) = (&self.color[row..row + w], &self.color[row + w..row + 2 * w]);
+            let (drow, drow2) = (&self.depth[row..row + w], &self.depth[row + w..row + 2 * w]);
+            let mut bx0 = 0;
+            while bx0 < bw {
+                let nl = (bw - bx0).min(4);
+                let mut dq = [0.9999f32; 4];
+                for l in 0..nl {
+                    let x = (bx0 + l) * 2;
+                    // 2×2 mean in packed lanes: red+blue share a word, green another.
+                    let q = [crow[x], crow[x + 1], crow2[x], crow2[x + 1]];
+                    let rb = ((q[0] & RB) + (q[1] & RB) + (q[2] & RB) + (q[3] & RB) + 0x0002_0002) >> 2 & RB;
+                    let g = (((q[0] >> 8) & 255) + ((q[1] >> 8) & 255) + ((q[2] >> 8) & 255) + ((q[3] >> 8) & 255) + 2) >> 2;
+                    self.blur_src[by * bw + bx0 + l] = rb | g << 8;
+                    // Nearest of the four depths: edges belong to the foreground.
+                    let d = drow[x].min(drow[x + 1]).min(drow2[x]).min(drow2[x + 1]);
+                    if d.is_finite() {
+                        dq[l] = d;
+                    }
                 }
+                let nx = (lanes2 + (bx0 * 2) as f32 + 1.0) / fw - 1.0;
+                let nz = V4::from_array(dq);
+                let cw = nx * inv[3] + nz * inv[11] + kw;
                 let lin = 1.0 / cw;
-                let qw = cm[3] * nx + cm[11] * nz + kq;
-                // Behind the previous camera (w ≤ 0 after the cw divide): treat as still.
-                if qw * lin <= 1e-6 {
-                    self.vel[by * bw + bx] = pack(lin, 0.5);
-                    continue;
-                }
+                let qw = nx * cm[3] + nz * cm[11] + kq;
                 let iq = 1.0 / qw;
-                let px = (cm[0] * nx + cm[8] * nz + kx) * iq;
-                let py = (cm[1] * nx + cm[9] * nz + ky) * iq;
+                let px = (nx * cm[0] + nz * cm[8] + kx) * iq;
+                let py = (nx * cm[1] + nz * cm[9] + ky) * iq;
                 // Velocity in half-res pixels.
-                let (mut vx, mut vy) = ((nx - px) * sx, (py - ny) * sy);
-                let l2 = vx * vx + vy * vy;
-                let mut len = crate::math::sqrtf(l2);
-                if len > max_b {
-                    vx *= max_b / len;
-                    vy *= max_b / len;
-                    len = max_b;
+                let (vx, vy) = ((nx - px) * sx, (py - ny) * sy);
+                let len = (vx * vx + vy * vy).sqrt();
+                let (cw, lin, qw, vx, vy, len) = (cw.to_array(), lin.to_array(), qw.to_array(), vx.to_array(), vy.to_array(), len.to_array());
+                for l in 0..nl {
+                    let bx = bx0 + l;
+                    if cw[l].abs() < 1e-12 {
+                        continue;
+                    }
+                    // Behind the previous camera (w ≤ 0 after the cw divide): treat as still.
+                    if qw[l] * lin[l] <= 1e-6 {
+                        self.vel[by * bw + bx] = pack(lin[l], 0.5);
+                        continue;
+                    }
+                    let (mut vx, mut vy, mut len) = (vx[l], vy[l], len[l]);
+                    if len > max_b {
+                        vx *= max_b / len;
+                        vy *= max_b / len;
+                        len = max_b;
+                    }
+                    any |= len > 0.5;
+                    self.vel[by * bw + bx] = pack(lin[l], len);
+                    let t = &mut self.tiles[trow + bx / T];
+                    if len * len > t[0] * t[0] + t[1] * t[1] {
+                        *t = [vx, vy];
+                    }
                 }
-                any |= len > 0.5;
-                self.vel[by * bw + bx] = pack(lin, len);
-                let t = &mut self.tiles[trow + bx / T];
-                if len * len > t[0] * t[0] + t[1] * t[1] {
-                    *t = [vx, vy];
-                }
+                bx0 += 4;
             }
         }
         if !any {
@@ -1347,6 +1382,21 @@ impl Raster {
         let (src, vel) = (&self.blur_src, &self.vel);
         let (wi, hi) = (bw as isize - 1, bh as isize - 1);
         const N: usize = 8;
+        let lanes = V4::new(0.0, 1.0, 2.0, 3.0);
+        // Per tile: tap count and spacing (shared by every pixel that picks the tile).
+        let mut taps = core::mem::take(&mut self.tile_taps);
+        taps.clear();
+        taps.extend(self.tiles.iter().map(|vn| {
+            let ln2 = vn[0] * vn[0] + vn[1] * vn[1];
+            if ln2 < 0.25 {
+                return TileTaps::default();
+            }
+            let ln = crate::math::sqrtf(ln2);
+            // Taps spaced ≤ ~2.5 half-res px apart (jittered), 3 to N of them.
+            let n = ((ln * 0.4) as usize + 3).min(N);
+            let inv_n = 1.0 / n as f32;
+            TileTaps { ln, inv_n, dd: inv_n * ln, n: n as u32, dfx: (vn[0] * inv_n * 65536.0) as i32, dfy: (vn[1] * inv_n * 65536.0) as i32 }
+        }));
         for by in 0..bh {
             for bx in 0..bw {
                 let j = by * bw + bx;
@@ -1358,61 +1408,145 @@ impl Raster {
                 let jy = ((hs >> 12) & 7) as isize - 4;
                 let tx = ((bx as isize + jx).clamp(0, wi) as usize) / T;
                 let ty = ((by as isize + jy).clamp(0, hi) as usize) / T;
-                let vn = self.tiles[ty * tw + tx];
-                let ln2 = vn[0] * vn[0] + vn[1] * vn[1];
-                if ln2 < 0.25 {
+                let tt = taps[ty * tw + tx];
+                if tt.n == 0 {
                     self.half_px[j] = c0 & 0x00ff_ffff;
                     continue;
                 }
-                let ln = crate::math::sqrtf(ln2);
+                let (vn, ln, n, inv_n, dd) = (self.tiles[ty * tw + tx], tt.ln, tt.n as usize, tt.inv_n, tt.dd);
                 let (zc, ilc) = unpack(vel[j]);
                 let kz = 1.0 / (0.02 * zc.abs().max(1.0));
-                let mut acc = [(c0 & 255) as f32 * ilc, ((c0 >> 8) & 255) as f32 * ilc, ((c0 >> 16) & 255) as f32 * ilc];
-                let mut tot = ilc;
                 let jit = (hs >> 8) as f32 * (1.0 / 16_777_216.0) - 0.5;
-                // Taps spaced ≤ ~2.5 half-res px apart (jittered), 3 to N of them.
-                let n = ((ln * 0.4) as usize + 3).min(N);
-                let inv_n = 1.0 / n as f32;
                 // Taps march along the tile velocity in 16.16 fixed point: one
                 // float→int conversion per pixel instead of two per tap.
                 let h0 = (0.5 + jit * 0.95) * inv_n - 0.5;
                 let fx0 = ((bx as f32 + 0.5 + vn[0] * h0) * 65536.0) as i32;
                 let fy0 = ((by as f32 + 0.5 + vn[1] * h0) * 65536.0) as i32;
-                let (dfx, dfy) = ((vn[0] * inv_n * 65536.0) as i32, (vn[1] * inv_n * 65536.0) as i32);
-                let (dd, d0) = (inv_n * ln, h0 * ln);
-                let (mut fx, mut fy, mut dh) = (fx0, fy0, d0);
-                for _ in 0..n {
-                    let m = (fy >> 16).clamp(0, hi as i32) as usize * bw + (fx >> 16).clamp(0, wi as i32) as usize;
-                    let dist = dh.abs();
-                    fx = fx.wrapping_add(dfx);
-                    fy = fy.wrapping_add(dfy);
-                    dh += dd;
-                    let (zs, ils) = unpack(vel[m]);
-                    let (ds, dc) = (dist * ils, dist * ilc);
-                    let fg = ((zc - zs) * kz + 0.5).clamp(0.0, 1.0);
-                    let wgt = fg * (1.0 - ds).max(0.0) + (1.0 - fg) * (1.0 - dc).max(0.0) + (10.5 - ds * 10.0).clamp(0.0, 1.0) * (10.5 - dc * 10.0).clamp(0.0, 1.0) * 2.0;
-                    if wgt <= 0.0 {
-                        continue;
+                let (dfx, dfy) = (tt.dfx, tt.dfy);
+                let d0 = h0 * ln;
+                let (mut fx, mut fy) = (fx0, fy0);
+                // Four taps per step: scalar gathers, weights and accumulation
+                // in SIMD lanes (one lane per tap; lanes past n weigh zero).
+                let (zcv, kzv, ilcv) = (V4::splat(zc), V4::splat(kz), V4::splat(ilc));
+                let mut acc4 = [V4::splat(0.0); 3];
+                let mut tot4 = V4::splat(0.0);
+                let mut k0 = 0;
+                while k0 < n {
+                    let mut vq = [0u32; 4];
+                    let mut cq = [0u32; 4];
+                    for l in 0..4 {
+                        let m = (fy >> 16).clamp(0, hi as i32) as usize * bw + (fx >> 16).clamp(0, wi as i32) as usize;
+                        fx = fx.wrapping_add(dfx);
+                        fy = fy.wrapping_add(dfy);
+                        vq[l] = vel[m];
+                        cq[l] = src[m];
                     }
-                    let c = src[m];
-                    acc[0] += (c & 255) as f32 * wgt;
-                    acc[1] += ((c >> 8) & 255) as f32 * wgt;
-                    acc[2] += ((c >> 16) & 255) as f32 * wgt;
-                    tot += wgt;
+                    let kv = lanes + k0 as f32;
+                    let dist = (kv * dd + d0).abs();
+                    let zs = V4::from_bits_masked(vq, 0xffff_0000);
+                    let ils = V4::from_u32_masked(vq, 0xffff) * (1.0 / 32767.0);
+                    let (ds, dc) = (dist * ils, dist * ilcv);
+                    let fg = ((zcv - zs) * kzv + 0.5).clamp(0.0, 1.0);
+                    let wgt = fg * (1.0 - ds).maxf(0.0) + (1.0 - fg) * (1.0 - dc).maxf(0.0) + (10.5 - ds * 10.0).clamp(0.0, 1.0) * (10.5 - dc * 10.0).clamp(0.0, 1.0) * 2.0;
+                    let wgt = V4::select(kv.ltf(n as f32), wgt, V4::splat(0.0));
+                    let [r, g, b] = V4::unpack_rgb(cq);
+                    acc4 = [acc4[0] + r * wgt, acc4[1] + g * wgt, acc4[2] + b * wgt];
+                    tot4 = tot4 + wgt;
+                    k0 += 4;
                 }
+                let acc = [(c0 & 255) as f32 * ilc + acc4[0].sum(), ((c0 >> 8) & 255) as f32 * ilc + acc4[1].sum(), ((c0 >> 16) & 255) as f32 * ilc + acc4[2].sum()];
+                let tot = ilc + tot4.sum();
                 let it = 1.0 / tot;
                 let q = |v: f32| ((v * it + 0.5) as u32).min(255);
                 self.half_px[j] = q(acc[0]) | q(acc[1]) << 8 | q(acc[2]) << 16;
             }
         }
+        self.tile_taps = taps;
+        // 3b. The jittered taps leave grain inside long smears (taps there are
+        //     several pixels apart). Average eight samples of the result spread
+        //     over ~2.6 tap spacings along the tile velocity: the smear is
+        //     already that long, so this only removes the noise. Pixels much
+        //     slower than their tile (a tracked subject the gather kept sharp)
+        //     fade out of it by their own speed. Packed SWAR.
+        {
+            const RB: u32 = 0x00ff_00ff;
+            // Per tile: the 16.16 step between samples and the first sample's offset (0 step = still).
+            self.tile_step.clear();
+            self.tile_step.extend(self.tiles.iter().map(|vn| {
+                let ln2 = vn[0] * vn[0] + vn[1] * vn[1];
+                if ln2 < 0.25 {
+                    return [0; 4];
+                }
+                let s = 0.375 / ((crate::math::sqrtf(ln2) * 0.4) as usize + 3).min(N) as f32;
+                let (sx, sy) = (vn[0] * s, vn[1] * s);
+                [(sx * 65536.0) as i32, (sy * 65536.0) as i32, ((0.5 - sx * 3.5) * 65536.0) as i32, ((0.5 - sy * 3.5) * 65536.0) as i32]
+            }));
+            let (hp, out, steps, taps, vel) = (&self.half_px, &mut self.blur_src, &self.tile_step, &self.tile_taps, &self.vel);
+            for by in 0..bh {
+                let trow = (by / T) * tw;
+                let (orow, hrow) = (&mut out[by * bw..(by + 1) * bw], &hp[by * bw..(by + 1) * bw]);
+                for (bx, (o, &c)) in orow.iter_mut().zip(hrow).enumerate() {
+                    let [sx, sy, ox, oy] = steps[trow + bx / T];
+                    if sx == 0 && sy == 0 {
+                        *o = c;
+                        continue;
+                    }
+                    // Own speed / tile speed: none below 1/4, all from 3/4 (vel holds 32767 / speed).
+                    let iv = (vel[by * bw + bx] & 0xffff).max(1) as f32;
+                    let k = (65534.0 / (iv * taps[trow + bx / T].ln) - 0.5).clamp(0.0, 1.0);
+                    if k <= 0.0 {
+                        *o = c;
+                        continue;
+                    }
+                    let (mut fx, mut fy) = (((bx as i32) << 16) + ox, ((by as i32) << 16) + oy);
+                    let (mut arb, mut ag) = (0u32, 0u32);
+                    // Clamp per sample only when the footprint leaves the image.
+                    let (ex, ey) = (fx.wrapping_add(sx * 7), fy.wrapping_add(sy * 7));
+                    let inside = fx.min(ex) >= 0 && fy.min(ey) >= 0 && (fx.max(ex) >> 16) <= wi as i32 && (fy.max(ey) >> 16) <= hi as i32;
+                    if inside {
+                        for _ in 0..8 {
+                            let v = hp[(fy >> 16) as usize * bw + (fx >> 16) as usize];
+                            arb += v & RB;
+                            ag += (v >> 8) & 255;
+                            fx += sx;
+                            fy += sy;
+                        }
+                    } else {
+                        for _ in 0..8 {
+                            let v = hp[(fy >> 16).clamp(0, hi as i32) as usize * bw + (fx >> 16).clamp(0, wi as i32) as usize];
+                            arb += v & RB;
+                            ag += (v >> 8) & 255;
+                            fx = fx.wrapping_add(sx);
+                            fy = fy.wrapping_add(sy);
+                        }
+                    }
+                    let avg = ((arb + 0x0004_0004) >> 3 & RB) | ((ag + 4) >> 3) << 8;
+                    *o = if k >= 1.0 {
+                        avg
+                    } else {
+                        let ai = (k * 256.0) as u32;
+                        let rb = (((c & RB) * (256 - ai) + (avg & RB) * ai) >> 8) & RB;
+                        let g = ((((c >> 8) & 255) * (256 - ai) + ((avg >> 8) & 255) * ai) >> 8) << 8;
+                        rb | g
+                    };
+                }
+            }
+            core::mem::swap(&mut self.half_px, &mut self.blur_src);
+        }
         // 4. Blend the upsampled blur over the sharp frame by local speed
         //    (sharp where still, fully blurred from ~3 px of motion).
         let mut alpha = core::mem::take(&mut self.alpha);
         alpha.clear();
-        alpha.extend((0..bw * bh).map(|j| {
-            let t = self.tiles[((j / bw) / T).min(th - 1) * tw + ((j % bw) / T).min(tw - 1)];
-            ((crate::math::sqrtf(t[0] * t[0] + t[1] * t[1]) * 2.0 - 0.75) / 2.25).clamp(0.0, 1.0)
-        }));
+        // One value per tile, computed once and repeated across its pixels.
+        let ta = |t: &[f32; 2]| ((crate::math::sqrtf(t[0] * t[0] + t[1] * t[1]) * 2.0 - 0.75) / 2.25).clamp(0.0, 1.0);
+        for by in 0..bh {
+            let trow = &self.tiles[(by / T).min(th - 1) * tw..][..tw];
+            for t in trow {
+                let a = ta(t);
+                alpha.extend(core::iter::repeat_n(a, T));
+            }
+            alpha.truncate((by + 1) * bw);
+        }
         self.blend_half(bw, bh, &alpha);
         self.alpha = alpha;
     }
@@ -1598,6 +1732,8 @@ impl Raster {
         self.half_px.resize(bw * bh, 0);
         const N: usize = 14;
         const NS: usize = 7;
+        // Table stride: N rounded up to whole groups of four.
+        const NP: usize = 16;
         const Q: f32 = 4.0;
         let golden = 2.399_963;
         let disc = |k: usize, n: usize| {
@@ -1611,8 +1747,13 @@ impl Raster {
         for l in 0..levels {
             let rq = l as f32 / Q;
             let n = if rq < 3.0 { NS } else { N };
-            for k in 0..N {
-                let (tx, ty, tr) = if k < n { disc(k, n) } else { (0.0, 0.0, 0.0) };
+            for k in 0..NP {
+                if k >= n {
+                    // Padding (taps go four at a time): too far for any blur to reach.
+                    tab.push((0, 0, 1e9));
+                    continue;
+                }
+                let (tx, ty, tr) = disc(k, n);
                 tab.push((crate::math::floorf(0.5 + tx * rq) as i32, crate::math::floorf(0.5 + ty * rq) as i32, rq * tr));
             }
         }
@@ -1629,21 +1770,27 @@ impl Raster {
                 }
                 let lv = ((rc * Q + 0.5) as usize).min(levels - 1);
                 let n = if (lv as f32) < 3.0 * Q { NS } else { N };
-                let mut acc = [(c0 & 255) as f32, ((c0 >> 8) & 255) as f32, ((c0 >> 16) & 255) as f32];
-                let mut tot = 1.0;
-                for &(ox, oy, dist) in &tab[lv * N..lv * N + n] {
-                    let m = (by as i32 + oy).clamp(0, hi) as usize * bw + (bx as i32 + ox).clamp(0, wi) as usize;
-                    // A tap only contributes if it is itself blurry enough to reach us.
-                    let wgt = ((coc[m] - dist) + 1.0).clamp(0.0, 1.0);
-                    if wgt <= 0.0 {
-                        continue;
+                // Four taps per step: scalar gathers, weights and sums in SIMD lanes.
+                let mut acc4 = [V4::splat(0.0); 3];
+                let mut tot4 = V4::splat(0.0);
+                for g in tab[lv * NP..lv * NP + n.next_multiple_of(4)].chunks_exact(4) {
+                    let mut cq = [0u32; 4];
+                    let mut rq = [0f32; 4];
+                    let mut dq = [0f32; 4];
+                    for (l, &(ox, oy, dist)) in g.iter().enumerate() {
+                        let m = (by as i32 + oy).clamp(0, hi) as usize * bw + (bx as i32 + ox).clamp(0, wi) as usize;
+                        cq[l] = src[m];
+                        rq[l] = coc[m];
+                        dq[l] = dist;
                     }
-                    let c = src[m];
-                    acc[0] += (c & 255) as f32 * wgt;
-                    acc[1] += ((c >> 8) & 255) as f32 * wgt;
-                    acc[2] += ((c >> 16) & 255) as f32 * wgt;
-                    tot += wgt;
+                    // A tap only contributes if it is itself blurry enough to reach us.
+                    let wgt = (V4::from_array(rq) - V4::from_array(dq) + 1.0).clamp(0.0, 1.0);
+                    let [r, gg, b] = V4::unpack_rgb(cq);
+                    acc4 = [acc4[0] + r * wgt, acc4[1] + gg * wgt, acc4[2] + b * wgt];
+                    tot4 = tot4 + wgt;
                 }
+                let acc = [(c0 & 255) as f32 + acc4[0].sum(), ((c0 >> 8) & 255) as f32 + acc4[1].sum(), ((c0 >> 16) & 255) as f32 + acc4[2].sum()];
+                let tot = 1.0 + tot4.sum();
                 let it = 1.0 / tot;
                 let q = |v: f32| ((v * it + 0.5) as u32).min(255);
                 self.half_px[j] = q(acc[0]) | q(acc[1]) << 8 | q(acc[2]) << 16;
@@ -1698,6 +1845,17 @@ impl Raster {
                 let o_g = ((((c >> 8) & 255) * (256 - ai) + b_g * ai + 128) >> 8) & 255;
                 (c & 0xff00_0000) | o_rb | o_g << 8
             };
+            if arow.iter().all(|a| *a >= 1.0) {
+                // Fully covered row (a reflection): the mix is a plain store.
+                let lerp = |p0: u32, p1: u32| ((((p0 & RB) * 3 + (p1 & RB) + 0x0002_0002) >> 2) & RB) | (((((p0 >> 8) & 255) * 3 + ((p1 >> 8) & 255) + 2) >> 2) << 8);
+                for (bx, pair) in out.chunks_exact_mut(2).enumerate() {
+                    let p0 = rb[bx];
+                    let (pl, pr) = (rb[bx.saturating_sub(1)], rb[(bx + 1).min(bw - 1)]);
+                    pair[0] = (pair[0] & 0xff00_0000) | lerp(p0, pl);
+                    pair[1] = (pair[1] & 0xff00_0000) | lerp(p0, pr);
+                }
+                continue;
+            }
             for (bx, (pair, &a)) in out.chunks_exact_mut(2).zip(arow).enumerate() {
                 if a <= 0.0 {
                     continue;
@@ -1895,9 +2053,13 @@ fn put<const MODE: u8>(dst: &mut u32, px: u32, gloss: u32) {
     *dst = match MODE {
         ADD => add_packed(*dst, px),
         GLOSS => {
-            // px·(1 − g) + dst·g per channel, g in 1/256ths.
-            let ch = |s: u32| ((((px >> s) & 255) * (256 - gloss) + ((*dst >> s) & 255) * gloss) >> 8) << s;
-            ch(0) | ch(8) | ch(16) | 0xff00_0000
+            // px·(1 − g) + dst·g per channel, g in 1/256ths; red and blue
+            // share one word in 16-bit lanes (each sum ≤ 255·256 fits).
+            const RB: u32 = 0x00ff_00ff;
+            let d = *dst;
+            let rb = (((px & RB) * (256 - gloss) + (d & RB) * gloss) >> 8) & RB;
+            let g = ((((px >> 8) & 255) * (256 - gloss) + ((d >> 8) & 255) * gloss) >> 8) << 8;
+            rb | g | 0xff00_0000
         }
         _ => px,
     }
