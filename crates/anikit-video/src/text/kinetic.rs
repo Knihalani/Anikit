@@ -89,6 +89,38 @@ pub enum KineticStyle {
         #[serde(default)]
         direction: Direction,
     },
+    /// Flip up around the baseline (a 3D-ish card flip faked with a y-scale).
+    Flip,
+    /// Letters converge from wide tracking (`spread` em per unit from centre).
+    Tracking {
+        #[serde(default = "d_spread")]
+        spread: f32,
+    },
+    /// Fall from `distance` em above with a springy landing.
+    Drop {
+        #[serde(default = "d_drop")]
+        distance: f32,
+    },
+    /// Slide in horizontally from `distance` em (negative = from the right).
+    Slide {
+        #[serde(default = "d_slide")]
+        distance: f32,
+    },
+    /// Digital glitch: jittering RGB-split copies that settle.
+    Glitch {
+        #[serde(default = "d_glitch")]
+        amount: f32,
+        #[serde(default)]
+        seed: u32,
+    },
+    /// An underline draws on under each unit.
+    Underline {
+        #[serde(default)]
+        color: Option<Color>,
+        /// Thickness in em.
+        #[serde(default = "d_thick")]
+        thickness: f32,
+    },
     /// Captions: every unit is visible at `dim` alpha; the current unit takes
     /// `active` colour, spoken units return to full colour. Pair with `times`.
     Karaoke {
@@ -101,6 +133,21 @@ pub enum KineticStyle {
 
 fn d_dim() -> f32 {
     0.35
+}
+fn d_spread() -> f32 {
+    0.6
+}
+fn d_drop() -> f32 {
+    1.2
+}
+fn d_slide() -> f32 {
+    0.8
+}
+fn d_glitch() -> f32 {
+    0.12
+}
+fn d_thick() -> f32 {
+    0.07
 }
 
 fn d_rise() -> f32 {
@@ -207,7 +254,10 @@ impl Default for Kinetic {
 
 /// Style names accepted in shorthand (and as `"style": "<name>"`).
 pub const STYLE_NAMES: &[&str] =
-    &["rise", "fade", "blur", "pop", "typewriter", "scramble", "wave", "highlight", "mask", "karaoke"];
+    &[
+    "rise", "fade", "blur", "pop", "typewriter", "scramble", "wave", "highlight", "mask", "flip", "tracking", "drop",
+    "slide", "glitch", "underline", "karaoke",
+];
 
 impl KineticStyle {
     /// A style with default parameters by name (`rise`, `blur-in`, `scalePop`, `decode`…).
@@ -225,6 +275,13 @@ impl KineticStyle {
                 KineticStyle::HighlightSweep { color: d_highlight(), padding: d_pad(), radius: d_radius() }
             }
             "mask" | "maskreveal" | "reveal" => KineticStyle::MaskReveal { direction: Direction::Up },
+            "flip" | "flipup" => KineticStyle::Flip,
+            "tracking" | "trackingin" | "spread" | "converge" => KineticStyle::Tracking { spread: d_spread() },
+            "drop" | "fall" | "bounce" => KineticStyle::Drop { distance: d_drop() },
+            "slide" | "slidein" | "slideright" => KineticStyle::Slide { distance: d_slide() },
+            "slideleft" => KineticStyle::Slide { distance: -d_slide() },
+            "glitch" => KineticStyle::Glitch { amount: d_glitch(), seed: 0 },
+            "underline" | "draw" => KineticStyle::Underline { color: None, thickness: d_thick() },
             "karaoke" | "caption" | "captions" | "sing" => KineticStyle::Karaoke { active: None, dim: d_dim() },
             _ => return None,
         })
@@ -443,6 +500,12 @@ impl KineticPlan {
             KineticStyle::HighlightSweep { .. } => (UnitKind::Line, 0.3, 0.6),
             KineticStyle::MaskReveal { .. } => (UnitKind::Line, 0.12, 0.8),
             KineticStyle::Karaoke { .. } => (UnitKind::Word, 0.35, 0.12),
+            KineticStyle::Flip => (UnitKind::Char, 0.035, 0.6),
+            KineticStyle::Tracking { .. } => (UnitKind::Char, 0.0, 1.2),
+            KineticStyle::Drop { .. } => (UnitKind::Char, 0.04, 0.8),
+            KineticStyle::Slide { .. } => (UnitKind::Word, 0.07, 0.7),
+            KineticStyle::Glitch { .. } => (UnitKind::Word, 0.08, 0.6),
+            KineticStyle::Underline { .. } => (UnitKind::Line, 0.25, 0.6),
         };
         let unit = match k.style {
             KineticStyle::Typewriter { .. } | KineticStyle::Scramble { .. } => UnitKind::Char,
@@ -455,6 +518,11 @@ impl KineticPlan {
             KineticStyle::Typewriter { .. } | KineticStyle::Wave { .. } => "linear",
             KineticStyle::HighlightSweep { .. } => "inOutCubic",
             KineticStyle::MaskReveal { .. } => "outExpo",
+            KineticStyle::Flip => "back.out(1.4)",
+            KineticStyle::Tracking { .. } => "outExpo",
+            KineticStyle::Drop { .. } => "spring(bounce: 0.35)",
+            KineticStyle::Slide { .. } => "outQuart",
+            KineticStyle::Underline { .. } => "inOutCubic",
             _ => "outCubic",
         };
         let ease = k
@@ -554,6 +622,20 @@ impl KineticPlan {
                 l.ops(transform, out);
                 return;
             }
+            KineticStyle::Underline { color, thickness } => {
+                l.ops(transform, out);
+                let th = thickness * self.em;
+                for (i, u) in units.iter().enumerate() {
+                    let e = self.ease.ease(self.progress(i, t) as f64) as f32;
+                    if e <= 0.0 {
+                        continue;
+                    }
+                    let c = color.map(|c| c.0).unwrap_or(self.accent);
+                    let y = u.baseline + self.em * 0.14;
+                    out.push(Op::RoundRect { x: u.rect[0], y, w: u.rect[2] * e.min(1.0), h: th, radius: th * 0.5, paint: Paint::Solid(c), transform });
+                }
+                return;
+            }
             KineticStyle::Karaoke { active, dim } => {
                 let act = active.map_or_else(|| l.runs.first().map_or(Rgba([1.0; 4]), |_| self.accent), |c| c.0);
                 for (i, u) in units.iter().enumerate() {
@@ -638,6 +720,39 @@ impl KineticPlan {
                     let tick = (t * rate).floor() as u32;
                     self.scrambled(u, i as u32, tick ^ seed.wrapping_mul(0x9e37_79b9), transform, out);
                 }
+                KineticStyle::Flip => {
+                    let sy = e.max(0.0);
+                    let by = u.baseline;
+                    let m = [1.0, 0.0, 0.0, sy, 0.0, by - sy * by];
+                    self.unit_ops(u, (p * 2.5).min(1.0), dl::mul(&transform, &m), out);
+                }
+                KineticStyle::Tracking { spread } => {
+                    // Each unit sits `spread` em further from the centre per index.
+                    let rel = i as f32 - (units.len() as f32 - 1.0) * 0.5;
+                    let dx = (1.0 - e) * spread * self.em * rel;
+                    self.unit_ops(u, p.min(1.0).powf(0.6), dl::mul(&transform, &translate(dx, 0.0)), out);
+                }
+                KineticStyle::Drop { distance } => {
+                    let dy = -(1.0 - e) * distance * self.em;
+                    self.unit_ops(u, (p * 4.0).min(1.0), dl::mul(&transform, &translate(0.0, dy)), out);
+                }
+                KineticStyle::Slide { distance } => {
+                    let dx = -(1.0 - e) * distance * self.em;
+                    self.unit_ops(u, (p * 2.0).min(1.0), dl::mul(&transform, &translate(dx, 0.0)), out);
+                }
+                KineticStyle::Glitch { amount, seed } => {
+                    // Jitter changes ~30 times a second and fades out with progress.
+                    let tick = (t * 30.0) as u32;
+                    let h = hash(tick ^ (i as u32).wrapping_mul(0x9e37_79b9) ^ seed);
+                    let j = (1.0 - e).max(0.0) * amount * self.em;
+                    let r1 = ((h & 0xff) as f32 / 127.5 - 1.0) * j;
+                    let r2 = (((h >> 8) & 0xff) as f32 / 127.5 - 1.0) * j * 0.4;
+                    let vis = if p < 0.5 && (h >> 16) & 3 == 0 { 0.0 } else { 1.0 };
+                    let a = (p * 3.0).min(1.0) * vis;
+                    l.unit_ops(u, a * 0.8, Some(Rgba([1.0, 0.1, 0.35, 1.0])), dl::mul(&transform, &translate(r1 - j, r2)), out);
+                    l.unit_ops(u, a * 0.8, Some(Rgba([0.1, 0.9, 1.0, 1.0])), dl::mul(&transform, &translate(-r1 + j, -r2)), out);
+                    self.unit_ops(u, a, dl::mul(&transform, &translate(r1 * 0.3, 0.0)), out);
+                }
                 KineticStyle::MaskReveal { direction } => {
                     let r = u.rect;
                     let pad = r[3] * 0.25;
@@ -664,9 +779,10 @@ impl KineticPlan {
                     self.unit_ops(u, 1.0, dl::mul(&transform, &translate(dx, dy)), out);
                     out.push(Op::PopLayer);
                 }
-                KineticStyle::HighlightSweep { .. } | KineticStyle::Wave { .. } | KineticStyle::Karaoke { .. } => {
-                    unreachable!()
-                }
+                KineticStyle::HighlightSweep { .. }
+                | KineticStyle::Wave { .. }
+                | KineticStyle::Karaoke { .. }
+                | KineticStyle::Underline { .. } => unreachable!(),
             }
         }
         if any_rest {

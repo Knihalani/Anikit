@@ -20,6 +20,12 @@ fn styles() -> Vec<(&'static str, Kinetic)> {
         ("wave", k(KineticStyle::Wave { amplitude: 0.2, wavelength: 8.0, speed: 0.8 }, UnitKind::Char)),
         ("highlight", Kinetic { stagger: Some(0.25), ..k(KineticStyle::HighlightSweep { color: Color::rgba(0.49, 0.36, 1.0, 0.55), padding: 0.08, radius: 0.12 }, UnitKind::Word) }),
         ("mask", k(KineticStyle::MaskReveal { direction: Direction::Up }, UnitKind::Word)),
+        ("flip", Kinetic { unit: None, ..k(KineticStyle::Flip, UnitKind::Char) }),
+        ("tracking", Kinetic { unit: None, ..k(KineticStyle::Tracking { spread: 0.6 }, UnitKind::Char) }),
+        ("drop", Kinetic { unit: None, ..k(KineticStyle::Drop { distance: 1.2 }, UnitKind::Char) }),
+        ("slide", k(KineticStyle::Slide { distance: 0.8 }, UnitKind::Word)),
+        ("glitch", k(KineticStyle::Glitch { amount: 0.12, seed: 0 }, UnitKind::Word)),
+        ("underline", Kinetic { unit: Some(UnitKind::Word), ..k(KineticStyle::Underline { color: None, thickness: 0.07 }, UnitKind::Word) }),
     ]
 }
 
@@ -64,13 +70,14 @@ fn kinetic_start_mid_end() {
         assert!((ae - total as f32).abs() < 1e-3, "{name} end alpha");
         // Start: nothing visible, except continuous styles.
         match name {
-            "wave" | "highlight" => assert_eq!(n0, total),
+            "wave" | "highlight" | "underline" => assert_eq!(n0, total),
+            "tracking" => {}
             _ => assert!(n0 <= 1, "{name} start shows {n0}"),
         }
         // Mid: partially there.
         if name == "blur" || name == "mask" {
             assert!(om.iter().any(|o| matches!(o, Op::PushLayer { .. })), "{name} mid has no layer");
-        } else if !matches!(name, "wave" | "highlight" | "type" | "scramble") {
+        } else if !matches!(name, "wave" | "highlight" | "type" | "scramble" | "underline" | "tracking" | "glitch") {
             assert!(am > 0.0 && am < total as f32, "{name} mid alpha {am}");
         }
     }
