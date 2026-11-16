@@ -53,13 +53,13 @@ export function createHall(canvas, overlayEl) {
     g.push(x, y, z, 0, sx, sy, sz, gloss, r, gg, b, e);
     if (collide) colliders.push(x - sx / 2, z - sz / 2, x + sx / 2, z + sz / 2);
   };
-  const WALL = [0.74, 0.54, 0.44], STONE = [0.84, 0.8, 0.74], GOLD = [0.8, 0.52, 0.2], CEIL = [0.5, 0.6, 0.74];
+  const WALL = [0.74, 0.54, 0.44], STONE = [0.84, 0.8, 0.74], GOLD = [0.8, 0.52, 0.2], CEIL = [0.6, 0.7, 0.86];
   // walls (thick boxes), ceiling
   box(archBox, -HX - 0.5, HY / 2, (HZ0 + HZ1) / 2, 1, HY, HZ1 - HZ0, 0.05, ...WALL);
   box(archBox, HX + 0.5, HY / 2, (HZ0 + HZ1) / 2, 1, HY, HZ1 - HZ0, 0.05, ...WALL);
   box(archBox, 0, HY / 2, HZ0 - 0.5, 2 * HX + 2, HY, 1, 0.05, ...WALL);
   box(archBox, 0, HY / 2, HZ1 + 0.5, 2 * HX + 2, HY, 1, 0.05, ...WALL);
-  box(archBox, 0, HY + 0.5, (HZ0 + HZ1) / 2, 2 * HX + 2, 1, HZ1 - HZ0 + 2, 0, ...CEIL);
+  box(archBox, 0, HY + 0.5, (HZ0 + HZ1) / 2, 2 * HX + 2, 1, HZ1 - HZ0 + 2, 0, ...CEIL, 0.55);
   // skirting + cornice
   for (const s of [-1, 1]) {
     box(archBox, s * (HX - 0.06), 0.18, (HZ0 + HZ1) / 2, 0.14, 0.36, HZ1 - HZ0, 0.2, 0.62, 0.55, 0.47);
@@ -486,8 +486,9 @@ export function createHall(canvas, overlayEl) {
   let time = 0;
   function drawScene(mirror) {
     setCommon(progMesh, mirror);
-    archBox.draw(); archCyl.draw(); windows.draw();
-    balls.draw(); orbs.draw(); blocks.draw(); letters.draw(); bars.draw();
+    // near, small things first so the big architecture fails the depth test early
+    orbs.draw(); bars.draw(); balls.draw(); blocks.draw(); letters.draw();
+    archCyl.draw(); archBox.draw(); windows.draw();
     // particles
     if (sees(cam, CLOUD_C[0], CLOUD_C[1], CLOUD_C[2], 2.4)) {
       setCommon(progPts, mirror);
@@ -537,7 +538,9 @@ export function createHall(canvas, overlayEl) {
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.bindVertexArray(floorVao);
+      gl.disable(gl.CULL_FACE);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
+      gl.enable(gl.CULL_FACE);
       gl.disable(gl.BLEND);
       gl.disable(gl.SCISSOR_TEST);
     }

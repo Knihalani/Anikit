@@ -192,7 +192,7 @@ void main() {
   vec4 cp = uVP * vec4(w.x, w.y * uMirror, w.z, 1.0);
   gl_Position = cp;
   gl_PointSize = clamp(uPx * aS.y / cp.w, 1.0, 9.0);
-  vC = pal(0.5 + p.y * 0.26 + aS.z * 0.5 - 0.1 + mid * 0.25) * (0.85 + 0.6 * mid);
+  vC = pal(0.48 + p.y * 0.3 + aS.z * 0.25 - 0.05 + mid * 0.25) * (0.8 + 0.5 * aS.w + 0.6 * mid);
   vFog = (1.0 - exp(-length(uEye - w) * 0.016)) * 0.85;
 }`;
 
