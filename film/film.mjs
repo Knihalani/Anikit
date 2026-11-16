@@ -240,6 +240,11 @@ export default async function film({ anikit: A, node }) {
         lights.push({ position: [p[0] - 240, p[1] - 150, p[2]], color: CYAN, radius: 700, intensity: 1.6 });
         lights.push({ position: [p[0] + 240, p[1] - 150, p[2]], color: ORANGE, radius: 700, intensity: 1.6 });
       }
+      if (c > LAND - 1.5) {
+        // A light sweeps across the wordmark during the hold: a travelling sheen on its faces.
+        const k = smooth(LAND - 0.6, D - 0.3, c);
+        lights.push({ position: [mix(-2600, 2600, k), 900, WORD_Z + 1100], color: [1.5, 1.25, 1.5], radius: 1400, intensity: 2.6 * smooth(LAND - 1.5, LAND - 0.5, c) });
+      }
       if (c > HIT && c < HIT + 2.2) lights.push({ position: KNOT_C, color: [1.6, 1.2, 1.5], radius: 2400, intensity: 3 * Math.exp(-(c - HIT) * 1.6) });
       const near = c > 9.4 && c < 13.4 ? Math.hypot(cam.camera.x - KNOT_C[0], cam.camera.y - KNOT_C[1], cam.camera.z - KNOT_C[2]) : 0;
       const px = r3.render(cam, items, {
