@@ -123,5 +123,7 @@ fn contact_sheet() {
         c.ops(2.0 * f, [1.0, 0.0, 0.0, 1.0, 20.0 + i as f32 * cw, 15.0 + rh * st.len() as f32 - 20.0], &mut dl.ops);
     }
     let pm = common::render(fonts, &dl);
+    let d = common::golden(&pm, "kinetic_sheet");
+    assert!(d < 0.5, "golden diff {d}");
     common::save(pm, "kinetic_sheet");
 }

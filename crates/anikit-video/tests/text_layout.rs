@@ -58,3 +58,125 @@ fn render_rich_paragraph() {
     let _ = IDENTITY;
     common::save(common::render(s, &dl), "rich_paragraph");
 }
+
+const PARA: &str = "Agents are best at writing structured data, so the video is a spec: scenes, text, shapes and timing. A native renderer draws every frame in parallel across all cores, and the encoder knows exactly which blocks changed.";
+
+#[test]
+fn wrapping_and_alignment() {
+    let s = store();
+    let mk = |align| TextSpec { text: PARA.into(), width: Some(600.0), align, style: TextStyle { size: 32.0, ..Default::default() }, ..Default::default() };
+    let left = s.layout(&mk(Align::Left));
+    assert!(left.lines.len() >= 4);
+    for l in &left.lines {
+        assert!(l.rect[2] <= 600.5);
+        assert!(l.rect[0].abs() < 0.01, "left aligned starts at 0");
+    }
+    // Lines stack at the line height (32 * 1.2).
+    for w in left.lines.windows(2) {
+        assert!((w[1].baseline - w[0].baseline - 38.4).abs() <= 1.0, "{} {}", w[0].baseline, w[1].baseline);
+    }
+    let right = s.layout(&mk(Align::Right));
+    for l in &right.lines {
+        assert!((l.rect[0] + l.rect[2] - 600.0).abs() < 0.6, "{:?}", l.rect);
+    }
+    let center = s.layout(&mk(Align::Center));
+    for l in &center.lines {
+        assert!((l.rect[0] + l.rect[2] * 0.5 - 300.0).abs() < 0.6);
+    }
+    let just = s.layout(&mk(Align::Justify));
+    for l in &just.lines[..just.lines.len() - 1] {
+        let last = just.chars.iter().rfind(|c| c.text.end <= l.text.end).unwrap();
+        assert!((last.rect[0] + last.rect[2] - 600.0).abs() < 1.0, "justified line ends at the edge");
+    }
+    // Every word sits inside its line.
+    for w in &left.words {
+        let g = left.glyphs[w.glyphs.start as usize];
+        let line = &left.lines[g.line as usize];
+        assert!(w.rect[0] >= line.rect[0] - 0.01 && w.rect[0] + w.rect[2] <= line.rect[0] + line.rect[2] + 0.01);
+    }
+    // Word text ranges round-trip.
+    let words: Vec<&str> = left.words.iter().map(|w| &left.text[w.text.clone()]).collect();
+    assert_eq!(words[0], "Agents");
+    assert_eq!(words.len(), PARA.split_whitespace().count());
+}
+
+#[test]
+fn max_lines_ellipsis() {
+    let s = store();
+    let spec = TextSpec { text: PARA.into(), width: Some(500.0), max_lines: Some(2), style: TextStyle { size: 32.0, ..Default::default() }, ..Default::default() };
+    let l = s.layout(&spec);
+    assert_eq!(l.lines.len(), 2);
+    assert!(l.truncated);
+    assert!(l.text.ends_with('…'), "{}", l.text);
+    // Fills the second line reasonably (not cut absurdly early).
+    assert!(l.lines[1].rect[2] > 300.0);
+    let no = s.layout(&TextSpec { ellipsis: Some(false), ..spec.clone() });
+    assert!(!no.text.ends_with('…'));
+    let short = s.layout(&TextSpec { text: "Short".into(), ..spec });
+    assert!(!short.truncated);
+}
+
+#[test]
+fn auto_fit_binary_search() {
+    let s = store();
+    let fit = |w: f32, h: f32| TextSpec {
+        text: PARA.into(),
+        style: TextStyle { size: 120.0, ..Default::default() },
+        fit: Some(Fit { width: w, height: h, min_size: 8.0, max_size: None }),
+        ..Default::default()
+    };
+    let a = s.layout(&fit(800.0, 300.0));
+    assert!(a.height <= 300.0 + 0.01 && a.width <= 800.0 + 0.01, "{} {}", a.width, a.height);
+    assert!(a.font_size < 120.0 && a.font_size > 12.0);
+    // The next size up would not fit: the search is tight.
+    let bigger = s.layout(&TextSpec { fit: None, width: Some(800.0), style: TextStyle { size: a.font_size + 1.0, ..Default::default() }, ..fit(800.0, 300.0) });
+    assert!(bigger.height > 300.0, "size {} not tight", a.font_size);
+    // Short text grows only up to the max size.
+    let short = s.layout(&TextSpec { text: "Hi".into(), ..fit(800.0, 300.0) });
+    assert_eq!(short.font_size, 120.0);
+    // Huge text clamps at the minimum.
+    let tiny = s.layout(&TextSpec { text: PARA.repeat(20), ..fit(200.0, 50.0) });
+    assert_eq!(tiny.font_size, 8.0);
+}
+
+#[test]
+fn cache_hits_and_fonts() {
+    let s = store();
+    let spec = TextSpec::plain("cached", TextStyle::default());
+    let a = s.layout(&spec);
+    let b = s.layout(&spec);
+    assert!(std::sync::Arc::ptr_eq(&a, &b));
+    // Different families intern different faces; weights on a variable font are distinct instances.
+    let f = |font: &str, weight| s.layout(&TextSpec::plain("Aa", TextStyle { font: font.into(), weight, ..Default::default() })).runs[0].font;
+    assert_ne!(f("Inter", 400.0), f("Inter", 800.0));
+    assert_ne!(f("Inter", 400.0), f("Inter Display", 400.0));
+    assert_ne!(f("Inter", 400.0), f("JetBrains Mono", 400.0));
+    assert_ne!(f("serif", 400.0), f("mono", 400.0));
+    assert_eq!(f("Inter", 400.0), f("inter", 400.0));
+    let face = s.face(f("Inter", 800.0));
+    assert!(!face.coords.is_empty(), "variable instance carries coords");
+    // Unknown family falls back to the default sans.
+    assert_eq!(f("Nope Sans", 400.0), f("Inter", 400.0));
+}
+
+#[test]
+fn golden_rich_paragraph() {
+    let s = store();
+    let spec = TextSpec {
+        spans: vec![
+            Span { text: "Golden ".into(), weight: Some(800.0), ..Default::default() },
+            Span { text: "type".into(), font: Some("Instrument Serif".into()), italic: Some(true), color: Some(hex("#ffcb6b")), ..Default::default() },
+            Span::new(" stays put. "),
+            Span { text: "mono 0123".into(), font: Some("mono".into()), strikethrough: Some(true), ..Default::default() },
+        ],
+        width: Some(560.0),
+        align: Align::Center,
+        ..Default::default()
+    };
+    let l = s.layout(&spec);
+    let mut dl = DisplayList { width: 600, height: 160, background: Rgba([0.06, 0.06, 0.1, 1.0]), ops: vec![] };
+    l.ops([1.0, 0.0, 0.0, 1.0, 20.0, 20.0], &mut dl.ops);
+    let pm = common::render(s, &dl);
+    let d = common::golden(&pm, "rich_paragraph");
+    assert!(d < 0.5, "golden diff {d}");
+}

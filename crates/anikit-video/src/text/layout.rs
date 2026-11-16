@@ -374,15 +374,10 @@ impl FontStore {
         let mut guard = self.shaper.lock().unwrap();
         let sh = &mut *guard;
         let st = &spec.style;
-        let fam_base = family_css(&sh.families, sh.emoji.as_deref(), &st.font);
+        let fam_base = family_css(sh, &st.font);
         let fams: Vec<(String, bool)> = spans
             .iter()
-            .map(|(_, s)| {
-                s.font
-                    .as_deref()
-                    .map(|f| family_css(&sh.families, sh.emoji.as_deref(), f))
-                    .unwrap_or_else(|| fam_base.clone())
-            })
+            .map(|(_, s)| s.font.as_deref().map(|f| family_css(sh, f)).unwrap_or_else(|| fam_base.clone()))
             .collect();
         let mut b = sh.lcx.ranged_builder(&mut sh.fcx, text, 1.0, true);
         let size = st.size * scale;
@@ -597,11 +592,7 @@ fn opsz(display: bool) -> FontVariations<'static> {
 
 /// Resolve a user family list to CSS (with emoji fallback) and whether it asks
 /// for Inter Display (Inter at optical size 32).
-fn family_css(
-    families: &std::collections::HashMap<String, String>,
-    emoji: Option<&str>,
-    names: &str,
-) -> (String, bool) {
+fn family_css(sh: &mut super::fonts::Shaper, names: &str) -> (String, bool) {
     let mut out = Vec::new();
     let mut display = false;
     for n in names.split(',') {
@@ -615,16 +606,18 @@ fn family_css(
         }
         match lower.as_str() {
             "serif" | "sans-serif" | "monospace" | "system-ui" | "cursive" | "fantasy" => out.push(lower.clone()),
-            _ => match families.get(&lower) {
+            _ => match sh.families.get(&lower) {
                 Some(f) => out.push(format!("\"{f}\"")),
-                None => out.push(format!("\"{n}\"")),
+                // Unknown families are dropped so the default sans takes over.
+                None if sh.fcx.collection.family_id(n).is_some() => out.push(format!("\"{n}\"")),
+                None => {}
             },
         }
     }
     if out.is_empty() {
         out.push("sans-serif".into());
     }
-    if let Some(e) = emoji {
+    if let Some(e) = &sh.emoji {
         out.push(format!("\"{e}\""));
     }
     (out.join(", "), display)

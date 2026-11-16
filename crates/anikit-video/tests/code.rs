@@ -51,6 +51,9 @@ fn render_code_block() {
         }
         gutter.ops([1.0, 0.0, 0.0, 1.0, 60.0, 40.0], &mut dl.ops);
         code.ops([1.0, 0.0, 0.0, 1.0, ox, 40.0], &mut dl.ops);
-        common::save(common::render(&fonts, &dl), &format!("code_{th}"));
+        let pm = common::render(&fonts, &dl);
+        let d = common::golden(&pm, &format!("code_{th}"));
+        assert!(d < 0.5, "golden diff {d}");
+        common::save(pm, &format!("code_{th}"));
     }
 }
