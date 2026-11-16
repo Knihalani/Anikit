@@ -200,7 +200,7 @@ const items = pieces.map((p, k) => ({
   material: { metal: 0.92, iridescence: 0.45, hue: k / PIECES, specular: 1.6, shininess: 140, rim: 0.5, lines: 0, lineColor: accents[k] || [1.6, 1.6, 1.6], grid: [0, 4], lineWidth: 0.018 },
 }));
 const env = { transparent: true, background: '#06070b', sky: [0.05, 0.06, 0.12], horizon: [0.5, 0.42, 0.7], ground: [0.02, 0.02, 0.03], strips: [2.6, 2.6, 2.9], key: [-0.4, 0.6, 0.7], keyColor: [1, 0.95, 0.9], fill: [0.6, -0.2, 0.5], fillColor: [0.3, 0.4, 0.9], rimColor: [0.9, 0.5, 1] };
-let avg = 6, frames = 0, minMs = Infinity, calibrated = false, stats = { ms: 0, w: 0, h: 0 };
+let avg = 6, frames = 0, minMs = Infinity, stats = { ms: 0, w: 0, h: 0 };
 window.__stage = stats;
 const frame = (dt) => {
   if (!reduced) t += Math.min(dt, 50) / 1000;
@@ -225,10 +225,15 @@ const frame = (dt) => {
   const ms = performance.now() - t0;
   avg = avg * 0.9 + ms * 0.1;
   stats.ms = avg; stats.w = W; stats.h = H; stats.last = ms;
-  // One calibration step: if even the fastest of the first 60 frames took over 7 ms
-  // (the minimum ignores frames slowed by other work), drop the resolution once.
-  if (frames < 60) minMs = Math.min(minMs, ms);
-  if (++frames === 60 && minMs > 7 && !calibrated) { calibrated = true; calFactor = Math.max(0.6, Math.sqrt(6 / minMs)); scale *= calFactor; fit(); }
+  // Calibration, twice at most (after 60 and 150 frames, while the hero is on screen):
+  // if even the fastest frame of the window took over 7 ms (the minimum ignores frames
+  // slowed by other work), lower the resolution. Never during the demos.
+  minMs = Math.min(minMs, ms);
+  if ((++frames === 60 || frames === 150) && minMs > 7 && sy < vh * 0.5 && scale > 0.25) {
+    const f = Math.max(0.5, Math.sqrt(6 / minMs));
+    calFactor *= f; scale *= f; fit();
+  }
+  if (frames === 60) minMs = Infinity;
   if (!canvas.classList.contains('on')) canvas.classList.add('on');
 };
 engine.onFrame((_t, dt) => frame(dt));
