@@ -88,13 +88,13 @@ vec3 rot(vec3 v, vec3 k, float a) { float c = cos(a), s = sin(a); return v * c +
 void main() {
   vec2 c = aC * uRect.zw, p = aP * uRect.zw;
   float dist = length(c - uO) / length(uRect.zw);
-  float e = clamp(uE * 1.6 - dist * 0.6, 0.0, 1.0);
+  float e = clamp(uE * 1.3 - dist * 0.4, 0.0, 1.0);
   e = e * e * (3.0 - 2.0 * e);
   vec3 axis = normalize(vec3(aR.x - 0.5, aR.y - 0.5, 0.25));
-  float ang = e * (aR.z * 2.0 - 1.0) * 1.6;
+  float ang = e * (aR.z * 2.0 - 1.0) * 1.2;
   vec3 rel = rot(vec3(p - c, 0.0), axis, ang);
   vec2 dir = normalize(c - uO + vec2(0.001));
-  vec3 off = vec3(dir * (30.0 + 170.0 * aR.z) * e, (aR.x * 420.0 - 60.0) * e);
+  vec3 off = vec3(dir * (24.0 + 130.0 * aR.z) * e, (aR.x * 300.0 - 50.0) * e);
   off.y += 90.0 * e * e * (aR.y - 0.3);
   vec3 nrm = rot(vec3(0.0, 0.0, 1.0), axis, ang);
   vShade = 0.72 + 0.28 * max(dot(nrm, normalize(vec3(-0.4, -0.5, 0.75))), 0.0);

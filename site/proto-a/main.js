@@ -345,8 +345,8 @@ async function paintPanel() {
 $('#breakit').addEventListener('click', (e) => {
   const r = panel.getBoundingClientRect();
   origin = [e.clientX - r.left, e.clientY - r.top];
-  timeline().add(burst, { e: [0, 0.85] }, { duration: 1.1, ease: 'outCubic' })
-    .add(burst, { e: 0 }, { ease: 'spring(bounce: 0.15, duration: 1.4)' }, '+=0.5');
+  timeline().add(burst, { e: [0, 0.62] }, { duration: 0.9, ease: 'outCubic' })
+    .add(burst, { e: 0 }, { ease: 'spring(bounce: 0.15, duration: 1.4)' }, '+=0.15');
 });
 
 // ─── Scroll: anikit scroll triggers drive the fold and the finale ─────────
