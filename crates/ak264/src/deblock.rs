@@ -49,7 +49,7 @@ fn bs(p: &MbInfo, bp: usize, q: &MbInfo, bq: usize, mb_edge: bool) -> u8 {
 /// `ls` the step along it; `bs[l]` is the strength of line `l`.
 #[inline(always)]
 #[allow(clippy::too_many_arguments)]
-fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: usize, ls: usize, bs: &[u8; N], p: &Params) {
+fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: usize, ls: usize, seg: &[u8; 4], p: &Params) {
     let mut v = [[0i16; N]; 8]; // p3 p2 p1 p0 q0 q1 q2 q3
     let vertical = xs == 1;
     if !CHROMA && vertical {
@@ -80,11 +80,16 @@ fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: u
     let mut bsm = [0i16; N]; // -1 where bS > 0
     let mut s4 = [0i16; N]; // -1 where bS == 4
     let mut tc0 = [0i16; N];
+    let shift = if N == 16 { 2 } else { 1 };
+    let segc: [(i16, i16, i16); 4] = core::array::from_fn(|k| {
+        let b = seg[k];
+        (-((b > 0) as i16), -((b == 4) as i16), if b > 0 && b < 4 { p.tc0[(b - 1) as usize] as i16 } else { 0 })
+    });
     for l in 0..N {
-        let b = bs[l];
-        bsm[l] = -((b > 0) as i16);
-        s4[l] = -((b == 4) as i16);
-        tc0[l] = if b > 0 && b < 4 { p.tc0[(b - 1) as usize] as i16 } else { 0 };
+        let c = segc[l >> shift];
+        bsm[l] = c.0;
+        s4[l] = c.1;
+        tc0[l] = c.2;
     }
     #[inline(always)]
     fn sel(m: i16, a: i16, b: i16) -> i16 {
@@ -141,17 +146,21 @@ fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: u
     if !CHROMA && vertical {
         let mut t = [[0u8; 16]; 8];
         for j in 0..8 {
-            for l in 0..N {
-                t[j][l] = out[j][l] as u8;
-            }
+            let row: &[i16; 16] = out[j][..16].try_into().unwrap();
+            t[j] = crate::simd::pack16(row);
         }
         crate::simd::store_t16x8(d, o - 4, ls, &t);
     } else if !vertical {
         let (lo, hi) = if CHROMA { (3, 5) } else { (1, 7) };
         for j in lo..hi {
             let r = &mut d[o + j * xs - 4 * xs..][..N];
-            for l in 0..N {
-                r[l] = out[j][l] as u8;
+            if N == 16 {
+                let row: &[i16; 16] = out[j][..16].try_into().unwrap();
+                r.copy_from_slice(&crate::simd::pack16(row));
+            } else {
+                for l in 0..N {
+                    r[l] = out[j][l] as u8;
+                }
             }
         }
     } else {
@@ -248,29 +257,25 @@ fn deblock_mb(p: &mut Pic, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize, 
         if b[0][e] == [0; 4] {
             continue;
         }
-        let bs: [u8; 16] = core::array::from_fn(|l| b[0][e][l >> 2]);
-        filter_edge::<16, false>(&mut lum.data, base + e * 4, 1, s, &bs, lp);
+        filter_edge::<16, false>(&mut lum.data, base + e * 4, 1, s, &b[0][e], lp);
     }
     for e in 0..4 {
         if b[1][e] == [0; 4] {
             continue;
         }
-        let bs: [u8; 16] = core::array::from_fn(|l| b[1][e][l >> 2]);
-        filter_edge::<16, false>(&mut lum.data, base + e * 4 * s, s, 1, &bs, lp);
+        filter_edge::<16, false>(&mut lum.data, base + e * 4 * s, s, 1, &b[1][e], lp);
     }
     for pl in [&mut p.u, &mut p.v] {
         let (s, base) = (pl.stride, pl.off(mbx as isize * 8, mby as isize * 8));
         // chroma edges 0 and 4 use luma edges 0 and 2; chroma line l uses luma segment l/2.
         for (ce, le) in [(0usize, 0usize), (1, 2)] {
             if b[0][le] != [0; 4] {
-                let bs: [u8; 8] = core::array::from_fn(|l| b[0][le][l >> 1]);
-                filter_edge::<8, true>(&mut pl.data, base + ce * 4, 1, s, &bs, cp);
+                filter_edge::<8, true>(&mut pl.data, base + ce * 4, 1, s, &b[0][le], cp);
             }
         }
         for (ce, le) in [(0usize, 0usize), (1, 2)] {
             if b[1][le] != [0; 4] {
-                let bs: [u8; 8] = core::array::from_fn(|l| b[1][le][l >> 1]);
-                filter_edge::<8, true>(&mut pl.data, base + ce * 4 * s, s, 1, &bs, cp);
+                filter_edge::<8, true>(&mut pl.data, base + ce * 4 * s, s, 1, &b[1][le], cp);
             }
         }
     }

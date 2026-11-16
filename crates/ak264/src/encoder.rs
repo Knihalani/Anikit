@@ -196,6 +196,8 @@ struct Inter {
     mvp: (i32, i32),
     skip_mv: (i32, i32),
     pred: [u8; 256],
+    /// Luma SAD at the integer-pel result.
+    sad: u32,
 }
 
 #[derive(Clone, Copy)]
@@ -372,14 +374,14 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let lambda = c.lambda;
 
         let mut inter: Option<Inter> = None;
+        let (mut mvp, mut skip_mv) = ((0, 0), (0, 0));
         if !c.idr {
-            let (mvp, skip_mv) = self.mv_pred(mbx, mby);
+            (mvp, skip_mv) = self.mv_pred(mbx, mby);
             if !c.changed[mbi] {
                 // Unchanged: copy of the reference.
                 self.code_copy(mbx, mby, mvp, skip_mv);
                 return;
             }
-            inter = Some(self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, false));
         }
         self.stats.changed += 1;
 
@@ -398,14 +400,20 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
         }
         let cost16 = best16.0 + lambda as u32 * if c.idr { 4 } else { 8 };
+        // Motion search unless intra prediction is already near-perfect.
+        if !c.idr {
+            // Full search unless intra prediction is already near-perfect (then only
+            // the predicted / zero / hint candidates).
+            let quick = best16.0 <= lambda as u32 * 4;
+            inter = Some(self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, quick));
+        }
 
         let mut kind = Kind::I16(best16.1);
         let mut best_cost = cost16;
         // Sub-pel refinement only when inter is competitive and imperfect.
-        if let Some(it) = &inter {
+        if let Some(it) = inter.as_mut() {
             if c.subpel && it.cost < cost16 + cost16 / 2 && it.cost > lambda as u32 * 8 {
-                let (mvp, skip_mv) = (it.mvp, it.skip_mv);
-                inter = Some(self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, true));
+                self.refine_subpel(mbx, mby, src_y, it);
             }
         }
         if let Some(it) = &inter {
@@ -447,7 +455,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         mvp: (i32, i32),
         skip_mv: (i32, i32),
         mbi: usize,
-        refine: bool,
+        quick: bool,
     ) -> Inter {
         let c = self.c;
         let lambda = c.lambda as u32;
@@ -482,9 +490,11 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             push(round((h.0 as i32, h.1 as i32)));
         }
         let (x, y) = (mbx as isize, mby as isize);
-        for nb in [self.nb(x - 1, y), self.nb(x, y - 1), self.nb(x + 1, y - 1)] {
-            if nb.inter {
-                push(round(nb.mv));
+        if !quick {
+            for nb in [self.nb(x - 1, y), self.nb(x, y - 1), self.nb(x + 1, y - 1)] {
+                if nb.inter {
+                    push(round(nb.mv));
+                }
             }
         }
         for &mv in &cands[..n] {
@@ -494,7 +504,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
         }
         // small diamond refinement
-        if best.0 > mvcost((best.1 .0 * 4, best.1 .1 * 4)) {
+        if !quick && best.0 > mvcost((best.1 .0 * 4, best.1 .1 * 4)) {
             let mut steps = 0;
             loop {
                 let cur = best;
@@ -525,28 +535,41 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
         let mut cost = dsp::satd(src_y, &pred, 16, 16) + mvcost(base_q);
         let mut mv = base_q;
-        let sad_only = best.0 - mvcost(base_q);
-        if c.subpel && sad_only > 0 && refine {
-            let hp = crate::mc::Hpel::new(&c.refp.y, (bx + base.0) as isize, (by + base.1) as isize);
-            let mut p = [0u8; 256];
-            let mut d = (0, 0);
-            for step in [2, 1] {
-                let centre = d;
-                for (sx, sy) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
-                    let cand = (centre.0 + sx * step, centre.1 + sy * step);
-                    hp.pred(cand.0, cand.1, &mut p);
-                    let q = (base_q.0 + cand.0, base_q.1 + cand.1);
-                    let cst = dsp::satd(src_y, &p, 16, 16) + mvcost(q);
-                    if cst < cost {
-                        cost = cst;
-                        mv = q;
-                        d = cand;
-                        pred = p;
-                    }
+        let sad = best.0 - mvcost(base_q);
+        Inter { mv, cost, mvp, skip_mv, pred, sad }
+    }
+
+    /// Half- then quarter-pel refinement around the integer result.
+    fn refine_subpel(&self, mbx: usize, mby: usize, src_y: &[u8; 256], it: &mut Inter) {
+        if it.sad == 0 || it.mv.0 & 3 != 0 || it.mv.1 & 3 != 0 {
+            return;
+        }
+        let lambda = self.c.lambda as u32;
+        let mvp = it.mvp;
+        let mvcost = |q: (i32, i32)| -> u32 { lambda * (se_len(q.0 - mvp.0) + se_len(q.1 - mvp.1)) };
+        let base_q = it.mv;
+        let hp = crate::mc::Hpel::new(
+            &self.c.refp.y,
+            (mbx as i32 * 16 + (base_q.0 >> 2)) as isize,
+            (mby as i32 * 16 + (base_q.1 >> 2)) as isize,
+        );
+        let mut p = [0u8; 256];
+        let mut d = (0, 0);
+        for step in [2, 1] {
+            let centre = d;
+            for (sx, sy) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
+                let cand = (centre.0 + sx * step, centre.1 + sy * step);
+                hp.pred(cand.0, cand.1, &mut p);
+                let q = (base_q.0 + cand.0, base_q.1 + cand.1);
+                let cst = dsp::satd(src_y, &p, 16, 16) + mvcost(q);
+                if cst < it.cost {
+                    it.cost = cst;
+                    it.mv = q;
+                    d = cand;
+                    it.pred = p;
                 }
             }
         }
-        Inter { mv, cost, mvp, skip_mv, pred }
     }
 
     /// Unchanged macroblock: copy the co-located reference (MV 0, no residual).
@@ -834,7 +857,15 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let ec = [self.edges8(0, mbx, mby), self.edges8(1, mbx, mby)];
         let mut best = (u32::MAX, 0u8);
         let mut predc = [[0u8; 64]; 2];
-        for m in 0..4u8 {
+        // Chroma modes tried: DC plus the one matching the luma I16 direction (all for I4x4).
+        let cands: &[u8] = match kind {
+            Kind::I16(0) => &[0, 2],
+            Kind::I16(1) => &[0, 1],
+            Kind::I16(3) => &[0, 3],
+            Kind::I16(_) => &[0],
+            _ => &[0, 1, 2, 3],
+        };
+        for &m in cands {
             let ok = match m {
                 0 => true,
                 1 => ec[0].has_left,

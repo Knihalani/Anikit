@@ -602,3 +602,20 @@ pub fn avg16(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
     #[cfg(not(target_arch = "x86_64"))]
     core::array::from_fn(|i| ((a[i] as u16 + b[i] as u16 + 1) >> 1) as u8)
 }
+
+/// Saturating pack of 16 i16 lanes to u8.
+#[inline(always)]
+pub fn pack16(v: &[i16; 16]) -> [u8; 16] {
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: SSE2 is baseline; arrays are 32 / 16 bytes.
+    unsafe {
+        use std::arch::x86_64::*;
+        let a = _mm_loadu_si128(v.as_ptr() as *const __m128i);
+        let b = _mm_loadu_si128(v.as_ptr().add(8) as *const __m128i);
+        let mut o = [0u8; 16];
+        _mm_storeu_si128(o.as_mut_ptr() as *mut __m128i, _mm_packus_epi16(a, b));
+        o
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    core::array::from_fn(|i| v[i].clamp(0, 255) as u8)
+}
