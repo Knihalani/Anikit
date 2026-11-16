@@ -136,13 +136,36 @@ export default async function film({ anikit: A }) {
   // Buildings in three height classes (so the facade texture keeps its window size).
   const CLS = [[0.82, 1.45], [0.82, 0.8], [0.82, 0.32]];
   const PAL = [[0.95, 0.36, 0.3], [0.98, 0.8, 0.3], [0.32, 0.7, 0.86], [0.92, 0.92, 0.88], [0.55, 0.45, 0.85]];
+  // Setbacks: taller towers step in once or twice towards the top; every roof gets plant rooms.
+  const blocks = [], roofs = [];
+  towers.forEach((b, i) => {
+    let { x, z, w, d, h } = b; const fl = b.y - h / 2;
+    const tiers = h > 55 && hash(i * 5 + 1) < 0.7 ? 2 + (h > 85 && hash(i * 5 + 2) < 0.5 ? 1 : 0) : 1;
+    let y0 = fl;
+    for (let k = 0; k < tiers; k++) {
+      const th = tiers === 1 ? h : k === 0 ? h * 0.6 : h * (0.4 / (tiers - 1)) * (k === tiers - 1 ? 1.15 : 0.85);
+      blocks.push({ x, z, w, d, h: th, y: y0 + th / 2, cls: th > 60 ? 0 : th > 30 ? 1 : 2, id: i });
+      y0 += th;
+      if (k < tiers - 1) { const sh = 0.72 + 0.12 * hash(i * 9 + k); w *= sh; d *= sh; x += (hash(i * 3 + k) - 0.5) * w * 0.2; }
+    }
+    const nr = 1 + Math.floor(hash(i * 7 + 4) * 3);
+    for (let k = 0; k < nr; k++) {
+      const rw = w * (0.18 + 0.25 * hash(i * 11 + k)), rd = d * (0.18 + 0.25 * hash(i * 13 + k)), rh = 1.5 + 3.5 * hash(i * 17 + k);
+      roofs.push({ x: x + (hash(i * 19 + k) - 0.5) * (w - rw) * 0.8, z: z + (hash(i * 23 + k) - 0.5) * (d - rd) * 0.8, w: rw, d: rd, h: rh, y: y0 + rh / 2 - 0.2, id: i });
+    }
+  });
+  const FACADE = [[0.86, 0.83, 0.77], [0.92, 0.77, 0.6], [0.58, 0.7, 0.82], [0.68, 0.52, 0.45], [0.7, 0.72, 0.72]];
+  const roofSet = (col) => instances(roofs.length, (i) => { const r = roofs[i]; return { x: r.x, y: r.y, z: r.z, sx: r.w, sy: r.h, sz: r.d, color: col(r) }; });
+  const roofsR = roofSet((r) => { const v = 0.55 + 0.25 * hash(r.id * 29); return [v, v * 0.98, v * 0.95]; });
+  const roofsN = roofSet(() => [0.02, 0.02, 0.035]);
+  const roofsC = roofSet(() => [0.85, 0.85, 0.82]);
   const towerSet = (cls, col) => {
-    const list = towers.filter((b) => b.cls === cls);
+    const list = blocks.filter((b) => b.cls === cls);
     return instances(list.length, (i) => { const b = list[i]; return { x: b.x, y: b.y, z: b.z, sx: b.w, sy: b.h, sz: b.d, color: col(b, i) }; });
   };
-  const towersR = [0, 1, 2].map((c) => towerSet(c, (b, i) => { const v = 0.82 + 0.3 * hash(i * 7 + c); return [v, v * 0.97, v * 0.92]; }));
+  const towersR = [0, 1, 2].map((c) => towerSet(c, (b) => { const f = FACADE[Math.floor(hash(b.id * 31 + 7) * FACADE.length)], v = 0.85 + 0.25 * hash(b.id * 7); return f.map((q) => q * v); }));
   const towersN = [0, 1, 2].map((c) => towerSet(c, () => [0.025, 0.025, 0.04]));
-  const towersC = [0, 1, 2].map((c) => towerSet(c, (b, i) => PAL[Math.floor(hash(i * 13 + c * 5) * PAL.length)]));
+  const towersC = [0, 1, 2].map((c) => towerSet(c, (b) => PAL[Math.floor(hash(b.id * 13 + 5) * PAL.length)]));
 
   // Neon light trails along the flight line (a glowing river under the drone, lanes either side).
   const lanes = [0, -1, 1].map((side, k) => {
@@ -184,6 +207,7 @@ export default async function film({ anikit: A }) {
       { mesh: rockMesh, instances: rocksR, material: { ambient: 0.32, diffuse: 1.05, specular: 0.12, shininess: 10, rim: 0.15 } },
       ...TM.map((m, k) => ({ mesh: m, instances: treesR[k], material: { ambient: 0.5, diffuse: 1.0, specular: 0.06, shininess: 6, rim: 0.22 } })),
       ...towersR.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 0.85, diffuse: 0.9, specular: 0.5, shininess: 60, rim: 0.2, texture: TX.windows, textureRepeat: CLS[c] } })),
+      { mesh: cube, instances: roofsR, material: { ambient: 0.7, diffuse: 0.9, specular: 0.1, shininess: 10, rim: 0.15 } },
       { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farReal } },
       { mesh: dome, instances: domeAt, cull: false, reflect: true, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.sky, textureMode: 'emissive', fog: 0 } },
       { mesh: water, instances: waterAt, mirror: true, material: { ...baked, ambient: 0.25 } },
@@ -195,6 +219,7 @@ export default async function film({ anikit: A }) {
       { mesh: world.wallMesh, instances: terrainAt, material: { ambient: 1, diffuse: 0.9, specular: 0, rim: 0, texture: TX.wallNeon, textureMode: 'emissive', textureGain: 1.25, textureFilter: 'aniso' } },
       { mesh: rockMesh, instances: rocksN, material: { ambient: 1, diffuse: 0.4, specular: 0.6, shininess: 30, rim: 0.9 } },
       ...towersN.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 1, diffuse: 0.6, specular: 0.9, shininess: 80, rim: 0.3, texture: TX.windowsNeon, textureMode: 'emissive', textureGain: 1.5, textureRepeat: CLS[c], lines: 1.1, lineColor: [1.5, 0.35, 1.1], grid: [1, 1], lineWidth: 0.012 } })),
+      { mesh: cube, instances: roofsN, material: { ambient: 1, diffuse: 0.6, specular: 0.9, shininess: 80, rim: 0.3, lines: 1.1, lineColor: [0.35, 1.0, 1.6], grid: [1, 1], lineWidth: 0.04 } },
       { mesh: world.farMesh, instances: farAt, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0, texture: TX.farNeon, textureMode: 'emissive', textureGain: 1.3 } },
       { mesh: dome, instances: domeAt, cull: false, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.skyNeon, textureMode: 'emissive', fog: 0 } },
       { mesh: water, instances: waterAt, mirror: true, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0 } },
@@ -208,6 +233,7 @@ export default async function film({ anikit: A }) {
       { mesh: rockMesh, instances: rocksC, material: { ambient: 0.6, diffuse: 0.7, specular: 0, rim: 0 } },
       ...TM.map((m, k) => ({ mesh: m, instances: treesC[k], material: { ambient: 0.6, diffuse: 0.7, specular: 0, rim: 0 } })),
       ...towersC.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 0.62, diffuse: 0.6, specular: 0, rim: 0, texture: TX.windowsComic, textureRepeat: CLS[c] } })),
+      { mesh: cube, instances: roofsC, material: { ambient: 0.62, diffuse: 0.6, specular: 0, rim: 0 } },
       { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farComic } },
       { mesh: dome, instances: domeAt, cull: false, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.skyComic, textureMode: 'emissive', fog: 0 } },
       { mesh: water, instances: waterAt, mirror: true, material: { ...baked, ambient: 1 } },
