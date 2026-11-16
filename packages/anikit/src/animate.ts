@@ -19,7 +19,7 @@ import {
 } from './values';
 import {
   Target, Targets, toTargets, classify, Kind, readValue, writer, convertUnit, defaultUnit, isElement,
-  claim, unclaim, Owner, stateOf, markDirty, transformUnit, TargetState, snapshot, composeTransform, kebab, computed, camel,
+  claimAll, unclaimAll, Owner, stateOf, markDirty, transformUnit, TargetState, snapshot, composeTransform, kebab, computed, camel,
 } from './props';
 import { Playable, Callbacks, Linked } from './playable';
 import { warn, didYouMean, describe, cssPropertyNames, suggest, warningsOn, checkSeconds, checkTargets } from './debug';
@@ -622,7 +622,7 @@ class Part implements NodeRecord, Owner, Linked {
   /** Every binding was released (counted once by the animation). */
   gone = false;
   dispose(): void {
-    for (const x of this.b) if (this.claims) unclaim(x.target, x.prop, this);
+    if (this.claims) unclaimAll(this.b, this);
     this.unslot();
     unregister(this);
   }
@@ -913,11 +913,24 @@ export class Animation extends Playable {
     const easeList = Array.isArray(o.ease) && !(o.ease.length === 4 && typeof o.ease[0] === 'number') ? o.ease : null;
     const baseEase = easeList ? undefined : (o.ease as EasingInput);
     // Per-property work that does not depend on the target, done once.
-    const entries = [...props];
-    const posts = entries.map(([prop, spec]) => (spec.raw === undefined ? postFor(prop, o) : null));
-    // Values with no per-target functions or `random()` strings resolve to themselves.
-    const dynamic = entries.map(([, spec]) => spec.values.some((v) => typeof v === 'function' || (typeof v === 'string' && RANDOM_RE.test(v))));
+    // (Two arrays filled by `forEach`: spreading the Map was a sixth of `_build` for one target.)
+    const keys: string[] = [], specs: PropSpec[] = [];
+    props.forEach((spec, key) => {
+      keys.push(key);
+      specs.push(spec);
+    });
+    const np = keys.length;
+    const posts: Array<((v: any, target: any) => any) | null> = [], dynamic: boolean[] = [];
+    for (let pi = 0; pi < np; pi++) {
+      const spec = specs[pi];
+      posts.push(spec.raw === undefined ? postFor(keys[pi], o) : null);
+      // Values with no per-target functions or `random()` strings resolve to themselves.
+      dynamic.push(spec.values.some((v) => typeof v === 'function' || (typeof v === 'string' && RANDOM_RE.test(v))));
+    }
     let tm: readonly [number, number, number, number] = NO_TIMING;
+    // `_rp` while this call fills it, and its used length.
+    let rp: unknown[] | null = null;
+    let rpn = 0;
     // The current target's track list (one `addTrack` per call, not per target).
     let curTracks: TrackDef[] = [];
     const addTrack = (t: TrackDef, ease: EasingInput | EasingInput[] | undefined, offsets?: number[], motion = false) => {
@@ -961,8 +974,8 @@ export class Animation extends Playable {
       let snappedTransform = false;
 
 
-      for (let pi = 0; pi < entries.length; pi++) {
-        const prop = entries[pi][0], spec = entries[pi][1];
+      for (let pi = 0; pi < np; pi++) {
+        const prop = keys[pi], spec = specs[pi];
         if (spec.raw !== undefined) {
           this._special(prop, spec.raw, target, i, n, part, tracks, addTrack, cs, ctx);
           continue;
@@ -1027,8 +1040,12 @@ export class Animation extends Playable {
         const numeric = track.kind === TRACK_NUMBER && track.ch === 1 && !track.complex;
         if (kind === Kind.Prop) {
           // Plain properties: target, key and value, flat (no closure per property).
-          const rp = this._rp ?? (this._rp = []);
-          rp.push(target, prop, (target as any)[prop]);
+          // (Sized once for the call: growing by push was a fifth of `_build`.)
+          if (rp === null) rp = this._rp = new Array(3 * n * np);
+          rp[rpn] = target;
+          rp[rpn + 1] = prop;
+          rp[rpn + 2] = (target as any)[prop];
+          rpn += 3;
         } else if (kind !== Kind.Transform || !snappedTransform) this._restore.push(snapshot(target, prop, kind));
         if (kind === Kind.Transform) snappedTransform = true;
         const post = posts[pi];
@@ -1115,7 +1132,7 @@ export class Animation extends Playable {
       );
       if (!part.h) throw new Error('anikit: failed to create animation (invalid keyframes)');
       register(part);
-      if (claims) for (const b of part.b) claim(target, b.prop, part);
+      if (claims) claimAll(target, part.b, part);
       this._parts.push(part);
       const pb = part.b;
       for (let k = 0; k < pb.length; k++) {
@@ -1126,6 +1143,8 @@ export class Animation extends Playable {
       }
       this._links.push(part);
     }
+
+    if (rp !== null && rpn !== rp.length) rp.length = rpn;
 
     // Root node: the single part, or a group of all parts.
     if (this._parts.length === 1) {

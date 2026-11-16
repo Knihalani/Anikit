@@ -90,6 +90,28 @@ export function claim(target: Target, prop: string, owner: Owner): void {
   if (prev && prev !== owner) prev.release(prop);
   s.owners.set(prop, owner);
 }
+/** `claim` of each binding's `prop` in order, looking the target's state up once. */
+export function claimAll(target: Target, bs: ReadonlyArray<{ prop: string }>, owner: Owner): void {
+  if (bs.length === 0) return;
+  const s = stateOf(target);
+  const owners = s.owners;
+  for (let i = 0; i < bs.length; i++) {
+    const prop = bs[i].prop;
+    const prev = owners.get(prop);
+    if (prev && prev !== owner) prev.release(prop);
+    owners.set(prop, owner);
+  }
+}
+/** `unclaim` of each binding's `prop` (of its own target), looking the state up once per target. */
+export function unclaimAll(bs: ReadonlyArray<{ target: any; prop: string }>, owner: Owner): void {
+  let t: unknown = undefined;
+  let s: TargetState | undefined;
+  for (let i = 0; i < bs.length; i++) {
+    const b = bs[i];
+    if (i === 0 || b.target !== t) s = states.get((t = b.target));
+    if (s !== undefined && s.owners.get(b.prop) === owner) s.owners.delete(b.prop);
+  }
+}
 export function unclaim(target: Target, prop: string, owner: Owner): void {
   const s = states.get(target);
   if (s && s.owners.get(prop) === owner) s.owners.delete(prop);
