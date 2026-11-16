@@ -21,7 +21,7 @@ const bloom = document.createElement('canvas'), bctx = bloom.getContext('2d', { 
 let budget = small ? 160_000 : 280_000;
 let vw = innerWidth, vh = innerHeight;
 const layers = ['#sky-a', '#sky-b'].map((s) => ({ el: $(s), ctx: null, img: null, out: null, lens: null, band: -1, scale: 1 }));
-let front = 0, gen = null, genLayer = -1, genBand = -1, fadeUntil = 0;
+let F0 = 1, front = 0, gen = null, genLayer = -1, genBand = -1, fadeUntil = 0;
 
 const size = () => {
   const k = Math.sqrt(budget / (vw * vh * OVER * OVER));
@@ -35,9 +35,10 @@ const alloc = () => {
     L.ctx = L.el.getContext('2d', { alpha: false });
     L.img = L.ctx.createImageData(w, h);
     L.out = new Uint32Array(L.img.data.buffer);
-    L.lens = new Lens(w, h, vfovFor(w, h));
+    L.lens = new Lens(w, h);
     L.band = -1;
   }
+  F0 = h / 2 / Math.tan((vfovFor(w, h) * Math.PI) / 360);
   bloom.width = Math.max(32, w >> 2); bloom.height = Math.max(32, h >> 2);
 };
 const bandD = (k) => D0 * BAND ** k;
@@ -52,8 +53,15 @@ const measure = () => {
   docH = document.documentElement.scrollHeight;
 };
 const clamp = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
-const fallP = () => clamp(sy / Math.max(1, horizonTop - vh * 0.15));
-const depth = (p) => D0 * (DMIN / D0) ** (p ** 1.7);
+// The fall: slow through the demos (down to DM), then quickly through the horizon.
+const DM = 9;
+// The field of view widens as you fall, so the shadow never quite swallows the page.
+const focal = (D) => { const u = clamp(Math.log(D0 / D) / Math.log(D0 / DMIN)); return F0 / (1 + 2.5 * u ** 1.2); };
+const fallP = () => clamp(sy / (horizonTop + vh * 0.6));
+const depth = (p) => {
+  const a = horizonTop / (horizonTop + vh * 0.6);
+  return p <= a ? D0 * (DM / D0) ** ((p / a) ** 1.25) : DM * (DMIN / DM) ** ((p - a) / (1 - a));
+};
 
 let t = 0, exposure = 1.7;
 const draw = (L, D, p) => {
@@ -69,14 +77,14 @@ const draw = (L, D, p) => {
   L.ctx.drawImage(bloom, 0, 0, L.el.width, L.el.height);
   L.ctx.globalAlpha = 1;
   L.ctx.globalCompositeOperation = 'source-over';
-  L.scale = shadowScale(D) / shadowScale(L.lens.D);
+  L.scale = (shadowScale(D) * focal(D)) / (shadowScale(L.lens.D) * L.lens.F);
   L.el.style.transform = `scale(${L.scale.toFixed(4)})`;
 };
 
 // Start building (or finish synchronously) the band for depth D on the back layer.
 const startBuild = (k) => {
   genLayer = 1 - front; genBand = k;
-  gen = layers[genLayer].lens.build(bandD(k), ELEV);
+  gen = layers[genLayer].lens.build(bandD(k), ELEV, focal(bandD(k)));
 };
 const finishBuild = () => {
   const L = layers[genLayer];
@@ -148,7 +156,7 @@ function choreograph() {
     set(panels[k], { opacity: r, y: (1 - ease(a)) * 80 - ease(b) * 60, scale: 0.96 + r * 0.04 });
   }
   // The horizon: the sky goes dark; then a white bloom opens onto a quiet starfield.
-  const x = clamp((sy - (horizonTop - vh * 0.3)) / (vh * 0.7));
+  const x = clamp((sy - (horizonTop + vh * 0.05)) / (vh * 0.55));
   const w = clamp((sy - (installTop - vh * 1.0)) / (vh * 0.55));
   const v = Math.round(x * 1000) / 1000 + Math.round(w * 1000) * 10;
   if (v !== lastV) {
@@ -156,7 +164,7 @@ function choreograph() {
     veil.style.opacity = String(ease(x) * (1 - w));
     sky.style.visibility = w >= 1 ? 'hidden' : 'visible';
     const fl = Math.sin(Math.PI * Math.min(1, w * 1.25));
-    flash.style.opacity = String(fl);
+    flash.style.opacity = String(Math.min(1, fl * 1.5));
     flash.style.transform = `scale(${(0.2 + w * 1.6).toFixed(3)})`;
     calm.style.opacity = String(clamp(w * 1.5 - 0.3));
   }

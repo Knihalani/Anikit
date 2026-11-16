@@ -85,7 +85,7 @@ const CELL = 0.006; // star cells: a 3D lattice around the unit sky sphere
 function starAt(dx, dy, dz, sig, out) {
   out[0] = 0; out[1] = 0; out[2] = 0;
   const cx = Math.floor(dx / CELL), cy = Math.floor(dy / CELL), cz = Math.floor(dz / CELL);
-  if (hash3(cx, cy, cz) > 0.03) return;
+  if (hash3(cx, cy, cz) > 0.02) return;
   // The star sits near the middle of its cell, projected onto the sphere.
   let sx = cx + 0.4 + 0.2 * hash3(cx, cy, cz + 7), sy = cy + 0.4 + 0.2 * hash3(cx + 3, cy, cz), sz = cz + 0.4 + 0.2 * hash3(cx, cy + 5, cz);
   const l = Math.hypot(sx, sy, sz);
@@ -94,7 +94,7 @@ function starAt(dx, dy, dz, sig, out) {
   if (d2 > 9 * s2) return;
   // Magnitudes: a steep power law, so most stars are faint and a few are bright.
   const h = hash3(cy, cz, cx);
-  const m = Math.pow(h, 8) * 26 + 0.12;
+  const m = Math.pow(h, 8) * 30 + 0.16;
   const k = m * Math.exp(-d2 / (2 * s2)) * 0.7;
   let ti = ((2800 + Math.pow(hash3(cz, cx, cy), 1.4) * 12000 - BB_MIN) / (BB_MAX - BB_MIN)) * (BB_N - 1);
   ti = Math.min(BB_N - 1, Math.max(0, ti)) | 0;
@@ -109,12 +109,10 @@ function starAt(dx, dy, dz, sig, out) {
  * `build()` returns a generator; each `next()` does a few milliseconds of work.
  */
 export class Lens {
-  constructor(w, h, vfov) {
+  constructor(w, h) {
     this.w = w; this.h = h;
-    this.F = h / 2 / Math.tan((vfov * Math.PI) / 360);
-    const rhoMax = Math.hypot(w / 2, h / 2) / this.F;
     this.NA = Math.ceil(Math.hypot(w / 2, h / 2) * 1.6) + 2;
-    this.drho = (rhoMax * 1.01) / (this.NA - 1);
+    this.F = 1; this.drho = 1;
     this.rows = new Float32Array(this.NA * NP);
     this.end = new Float32Array(this.NA);
     this.fate = new Uint8Array(this.NA); // 0 escaped, 1 captured
@@ -122,8 +120,10 @@ export class Lens {
     this.D = 0;
   }
 
-  *build(D, elev, spin = 1) {
-    this.D = D;
+  /** Build for a camera at distance D (in M), `elev` radians above the disk, focal length F (px). */
+  *build(D, elev, F, spin = 1) {
+    this.D = D; this.F = F;
+    this.drho = ((Math.hypot(this.w / 2, this.h / 2) / F) * 1.01) / (this.NA - 1);
     const { NA, drho, rows, end, fate } = this;
     const lapse = Math.sqrt(Math.max(1e-4, 1 - 2 / D));
     // 1. Orbits r(φ) for each screen radius.
@@ -155,7 +155,7 @@ export class Lens {
       if (performance.now() - t0 > 3) { yield; t0 = performance.now(); }
     }
     // 2. Per pixel: disk crossings and escape directions.
-    const { w, h, F, px } = this;
+    const { w, h, px } = this;
     const se = Math.sin(elev), ce = Math.cos(elev);
     const star = [0, 0, 0];
     const lnIn = Math.log(RIN), lnSpan = Math.log(ROUT) - lnIn;
@@ -212,7 +212,7 @@ export class Lens {
           const cp = Math.cos(phEnd), sp = Math.sin(phEnd);
           const dx = sp * nx, dy = cp * se + sp * (ny), dz = cp * ce + sp * nz;
           // Star size follows the local magnification: sigma in cells per screen pixel.
-          starAt(dx, dy, dz, Math.min(0.16, Math.max(0.05, 0.42 / F / CELL)), star);
+          starAt(dx, dy, dz, Math.min(0.12, Math.max(0.04, 0.36 / F / CELL)), star);
           px[o] = star[0] * trans; px[o + 1] = star[1] * trans; px[o + 2] = star[2] * trans;
         } else { px[o] = 0; px[o + 1] = 0; px[o + 2] = 0; }
       }
