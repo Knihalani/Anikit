@@ -16,10 +16,6 @@ fn rgba(r: f32, g: f32, b: f32, a: f32) -> Rgba {
 
 /// Background gradient, 30 cards (optionally with cached drop shadows), 400
 /// glyph-sized shapes, 10 strokes, text if a font is present. Animated by `t`.
-fn scene(t: f32, font: Option<FontId>, shadows: bool) -> DisplayList {
-    scene_with(t, font, shadows, true)
-}
-
 /// `busy = false`: only 4 cards and one stroke animate (a typical UI/explainer shot).
 fn scene_with(t: f32, font: Option<FontId>, shadows: bool, busy: bool) -> DisplayList {
     let tb = if busy { t } else { 0.0 };
