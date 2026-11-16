@@ -45,11 +45,12 @@ uniform vec4 uPortal;     // centre in NDC, radius in NDC-y units, power
 uniform float uFlicker;
 uniform float uFade;       // landscape cross-fade 0..1 once geometry arrives
 uniform float uShadowOn;
+uniform float uFragScale;  // gl_FragCoord to full-res px (2 in the half-res word pass)
 uniform float uAspect;
 vec3 portalGlow(vec2 fc) {
   if (uPortalPx.w <= 0.001) return vec3(0.0);
   float rr = max(uPortalPx.z, 1.0);
-  float x = max(length(fc - uPortalPx.xy) - rr, 0.0) / rr;
+  float x = max(length(fc * uFragScale - uPortalPx.xy) - rr, 0.0) / rr;
   return vec3(1.0, 0.42, 0.1) * (uPortalPx.w * uFlicker * 1.4 / (1.0 + x * x * 5.0 + x * 1.5));
 }
 // spiral a projected point toward the portal; returns the weight used
@@ -464,6 +465,13 @@ void main() {
   } else discard;
   o = vec4(texture(uScene, uv).rgb, 1.0);
 }`;
+
+// --- the half-resolution word, composited (premultiplied) over the scene ---
+const wordCompFS = HEAD + `
+uniform sampler2D uTex;
+uniform vec2 uRes;
+out vec4 o;
+void main() { o = texture(uTex, gl_FragCoord.xy / uRes); }`;
 
 // --- sky-view LUT: Rayleigh + Mie + ozone single scattering, seen from the summit (km units) ---
 const ATMOS_GLSL = `
@@ -914,6 +922,7 @@ export function createMountain(glOrCanvas) {
     glare: compile(gl, glareVS, glareFS),
     lut: compile(gl, lutVS, lutFS),
     comp: compile(gl, compVS, compFS),
+    wordComp: compile(gl, compVS, wordCompFS),
   };
   for (const k in P) finish(gl, P[k], k);
 
@@ -1076,9 +1085,21 @@ onmessage = () => {
 
   // Heat haze: the band around the ring is copied out of the drawn frame into this texture and redrawn
   // refracted, scissored to the ring's bounding box (no offscreen scene, no full-screen pass).
-  let hazeTex = null;
+  let hazeTex = null, wordTex = null, wordFbo = null, hw = 1, hh = 1;
   function buildTargets() {
-    if (hazeTex) gl.deleteTexture(hazeTex);
+    if (hazeTex) { gl.deleteTexture(hazeTex); gl.deleteTexture(wordTex); gl.deleteFramebuffer(wordFbo); }
+    // the cloud word renders at half resolution: it is soft, so it looks the same at a quarter of the fill
+    hw = Math.max(1, Math.ceil(canvas.width / 2)); hh = Math.max(1, Math.ceil(canvas.height / 2));
+    wordTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, wordTex);
+    gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, hw, hh);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    wordFbo = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, wordFbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, wordTex, 0);
+    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     hazeTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, hazeTex);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGB8, canvas.width, canvas.height);  // matches the RGB (alpha: false) drawing buffer
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -1094,6 +1115,55 @@ onmessage = () => {
     gl.bindVertexArray(vSky); gl.drawArrays(gl.TRIANGLES, 0, 3);
     gl.disable(gl.SCISSOR_TEST);
     gl.bindVertexArray(null);
+    gl.activeTexture(gl.TEXTURE0);
+  }
+
+  // screen-space bounding box (framebuffer px) of the word, grown by the ring while it pulls puffs in
+  const bb = new Float32Array(4);
+  function bbAdd(x, y, z) {
+    const cw = VP[3] * x + VP[7] * y + VP[11] * z + VP[15];
+    if (cw <= 1e-3) return;
+    const W = canvas.width, H = canvas.height;
+    const px = ((VP[0] * x + VP[4] * y + VP[8] * z + VP[12]) / cw * 0.5 + 0.5) * W;
+    const py = ((VP[1] * x + VP[5] * y + VP[9] * z + VP[13]) / cw * 0.5 + 0.5) * H;
+    if (px < bb[0]) bb[0] = px; if (py < bb[1]) bb[1] = py; if (px > bb[2]) bb[2] = px; if (py > bb[3]) bb[3] = py;
+  }
+  function drawWord(wordS) {
+    const W = canvas.width, H = canvas.height;
+    bb[0] = bb[1] = 1e9; bb[2] = bb[3] = -1e9;
+    const ya = word.aspect * 0.5 + 0.07;
+    for (let k = 0; k < 4; k++) {
+      const qx = k & 1 ? 0.58 : -0.68, qy = k & 2 ? ya : -ya;
+      bbAdd(wordC[0] + (qx * right[0] + qy * up[0]) * wordS, wordC[1] + (qx * right[1] + qy * up[1]) * wordS, wordC[2] + (qx * right[2] + qy * up[2]) * wordS);
+    }
+    if (portalOn) {
+      const R = portalPx[2] * 1.2 + 20;
+      bb[0] = Math.min(bb[0], portalPx[0] - R); bb[1] = Math.min(bb[1], portalPx[1] - R);
+      bb[2] = Math.max(bb[2], portalPx[0] + R); bb[3] = Math.max(bb[3], portalPx[1] + R);
+    }
+    const x0 = Math.max(0, Math.floor(bb[0]) - 8), y0 = Math.max(0, Math.floor(bb[1]) - 8);
+    const x1 = Math.min(W, Math.ceil(bb[2]) + 8), y1 = Math.min(H, Math.ceil(bb[3]) + 8);
+    if (x1 <= x0 || y1 <= y0) return;
+    // 1) puffs into the half-res buffer (premultiplied), scissored to the box
+    gl.bindFramebuffer(gl.FRAMEBUFFER, wordFbo);
+    gl.viewport(0, 0, hw, hh);
+    gl.enable(gl.SCISSOR_TEST);
+    gl.scissor(x0 >> 1, y0 >> 1, ((x1 + 1) >> 1) - (x0 >> 1), ((y1 + 1) >> 1) - (y0 >> 1));
+    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.disable(gl.DEPTH_TEST);
+    gl.uniform1f(P.puff.u.uFragScale, W / hw);
+    gl.bindVertexArray(vWord); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, word.count);
+    // 2) composite over the scene, same box
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, W, H);
+    gl.scissor(x0, y0, x1 - x0, y1 - y0);
+    gl.useProgram(P.wordComp.p);
+    gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, wordTex);
+    gl.uniform1i(P.wordComp.u.uTex, 3);
+    gl.uniform2f(P.wordComp.u.uRes, W, H);
+    gl.bindVertexArray(vSky); gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.disable(gl.SCISSOR_TEST);
+    gl.enable(gl.DEPTH_TEST);
     gl.activeTexture(gl.TEXTURE0);
   }
 
@@ -1135,6 +1205,7 @@ onmessage = () => {
     if (u.uPortal) gl.uniform4f(u.uPortal, portalNdc[0], portalNdc[1], portalNdc[2], portalNdc[3]);
     if (u.uFlicker) gl.uniform1f(u.uFlicker, flicker);
     if (u.uFade) gl.uniform1f(u.uFade, fadeK);
+    if (u.uFragScale) gl.uniform1f(u.uFragScale, 1);
     if (u.uShadowOn) gl.uniform1f(u.uShadowOn, PERF.has('no-shadows') ? 0 : 1);
     if (u.uSkyAlpha) gl.uniform1f(u.uSkyAlpha, 1);
     if (u.uAspect) gl.uniform1f(u.uAspect, aspect);
@@ -1267,7 +1338,7 @@ onmessage = () => {
     gl.uniform1f(pu2.uWordMode, 1);
     gl.uniform3f(pu2.uWordC, wordC[0], wordC[1], wordC[2]);
     gl.uniform1f(pu2.uWordS, wordS);
-    if (!PERF.has('no-word')) { gl.bindVertexArray(vWord); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, word.count); }
+    if (!PERF.has('no-word')) drawWord(wordS);
 
     // 6. spindrift
     gl.useProgram(P.drift.p); setCommon(P.drift);
