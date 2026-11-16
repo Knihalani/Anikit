@@ -428,7 +428,11 @@ function update(dtMs) {
   // Camera: orbit, blended into the crane path for the finale.
   // Frame the object inside the free area: pull back until it fits, then shift it to its centre.
   const freeW = Math.max(120, FREE.x1 - FREE.x0), freeH = Math.max(120, FREE.y1 - FREE.y0);
-  const fitK = Math.max(1, (1.3 * cssH) / freeW, (0.95 * cssH) / freeH);
+  // Hero scale: as close as 1/1.6 of the rig distance, but never so close that
+  // the object (about 0.85 × the view height wide, 0.76 × tall at rig distance) leaves the free area.
+  // On narrow screens the exploded view is relatively wider than the hero: allow for it.
+  const kw = 0.85 * (1 + (freeW < 700 ? 0.35 : 0) * Math.min(1, rig.lift / 3.2));
+  const fitK = Math.max(1 / 1.6, (kw * cssH) / freeW, (0.76 * cssH) / freeH);
   // A slow cinematic drift, so the shot breathes even without dragging.
   const drift = calm ? 0 : 1;
   rigDrift.yaw = Math.sin(F_TIME * 0.11) * 0.09 * drift;
