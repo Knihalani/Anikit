@@ -49,7 +49,7 @@ export type SplatColor = string | [number, number, number] | ((i: number, x: num
 
 /** Options shared by the procedural sources. */
 export interface SplatSourceOptions {
-  /** Splat radius (one standard deviation) in world units (default 0.015, or a function of the index). */
+  /** Splat radius (one standard deviation) in world units, or a function of the index (default: from the point density). */
   size?: number | ((i: number) => number);
   /** Colour (default `'#8aa2ff'`). */
   color?: SplatColor;
@@ -138,10 +138,19 @@ export interface SplatsOptions {
   sortThreshold?: number;
   /** Drag to orbit, wheel to zoom (default false). */
   orbit?: boolean;
+  /** Largest on-screen splat radius in CSS pixels (one standard deviation; default 48): keeps near splats from smearing. */
+  maxRadius?: number;
+  /**
+   * Quality governor: when frames run slower than `fps` (default 50), draw a
+   * random subset of the splats (down to `min`, default 0.25), growing the
+   * kept ones to cover the gaps, and recover when there is headroom.
+   * Default on for layers that render themselves; `false` turns it off.
+   */
+  governor?: boolean | { fps?: number; min?: number };
 }
 
 const OPTION_KEYS: OptionKeys<SplatsOptions> = {
-  camera: 0, transform: 0, fx: 0, background: 0, autoRender: 0, pixelRatio: 0, worker: 0, sortThreshold: 0, orbit: 0,
+  camera: 0, transform: 0, fx: 0, background: 0, autoRender: 0, pixelRatio: 0, worker: 0, sortThreshold: 0, orbit: 0, maxRadius: 0, governor: 0,
 };
 
 /** Morph / effect tween options. */
@@ -180,6 +189,8 @@ export interface SplatStats {
   frames: number;
   /** Whether sorting runs in a Web Worker. */
   worker: boolean;
+  /** Fraction of splats drawn (1 unless the governor is shedding load). */
+  quality: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -311,6 +322,14 @@ function build(
 /** Isotropic splats at `x y z` triples. */
 function fromPoints(points: ArrayLike<number>, o: SplatSourceOptions = {}): SplatSet {
   const n = Math.floor(points.length / 3);
+  if (o.size === undefined && n > 1) {
+    // Default scale from the point density: about half the mean spacing of a
+    // surface sampled by n points over the bounding box, so clouds look crisp.
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i < n * 3; i++) { const v = points[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
+    const ext = hi - lo || 1;
+    o = { ...o, size: Math.min(ext * 0.05, Math.max(ext * 1e-4, (ext * 0.5) / Math.sqrt(n))) };
+  }
   return build(n, o, (i, d, k) => {
     d[k] = points[i * 3]; d[k + 1] = points[i * 3 + 1]; d[k + 2] = points[i * 3 + 2];
   });
@@ -404,7 +423,7 @@ function fromSDF(sdf: (x: number, y: number, z: number) => number, o: SplatSourc
   if (found < count) warn(`splats.fromSDF(): found ${found} of ${count} surface points; check that the surface lies within ±${B}.`);
   return build(
     found,
-    { size: B * 1.2 / Math.sqrt(Math.max(found, 1)), ...o },
+    { size: B * 0.9 / Math.sqrt(Math.max(found, 1)), ...o },
     (i, d, k) => { d[k] = pos[i * 3]; d[k + 1] = pos[i * 3 + 1]; d[k + 2] = pos[i * 3 + 2]; },
     (i) => [nrm[i * 3], nrm[i * 3 + 1], nrm[i * 3 + 2]],
   );
@@ -540,7 +559,7 @@ uniform mat4 u_view, u_proj;
 uniform vec2 u_viewport;
 uniform vec4 u_bounds; // centre xyz, radius
 uniform vec2 u_yrange;
-uniform float u_morph, u_spread, u_explode, u_swirl, u_dissolve, u_reveal, u_size, u_opacity;
+uniform float u_morph, u_spread, u_explode, u_swirl, u_dissolve, u_reveal, u_size, u_opacity, u_keep, u_maxr;
 in uint a_index;
 out vec4 v_color;
 out vec2 v_pos;
@@ -557,6 +576,8 @@ mat3 cov(uvec4 t) {
 }
 void main() {
   uint i = a_index;
+  // Governor: skip a random subset early (cheap), grow the rest to cover.
+  if (hash(i ^ 0x9e3779b9u) > u_keep) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return; }
   uvec4 a0 = texelFetch(u_a, at(i * 2u), 0), a1 = texelFetch(u_a, at(i * 2u + 1u), 0);
   vec3 p = uintBitsToFloat(a0.xyz);
   vec4 col = rgba(a0.w);
@@ -598,7 +619,7 @@ void main() {
     return;
   }
   mat3 W = mat3(u_view);
-  mat3 Sv = W * (S * (u_size * u_size)) * transpose(W);
+  mat3 Sv = W * (S * (u_size * u_size / u_keep)) * transpose(W);
   vec2 f = vec2(u_proj[0][0], u_proj[1][1]) * u_viewport * 0.5;
   float z = cam.z, z2 = z * z;
   mat3 J = mat3(-f.x / z, 0.0, 0.0, 0.0, -f.y / z, 0.0, f.x * cam.x / z2, f.y * cam.y / z2, 0.0);
@@ -607,9 +628,9 @@ void main() {
   float mid = 0.5 * (a + c), rad = length(vec2(0.5 * (a - c), b));
   float l1 = mid + rad, l2 = max(mid - rad, 0.1);
   vec2 dir = normalize(vec2(b, l1 - a) + vec2(1e-9, 0.0));
-  vec2 major = min(sqrt(2.0 * l1), 1024.0) * dir;
-  vec2 minor = min(sqrt(2.0 * l2), 1024.0) * vec2(dir.y, -dir.x);
-  vec2 corner = vec2(float(gl_VertexID & 1), float((gl_VertexID >> 1) & 1)) * 4.0 - 2.0;
+  vec2 major = min(sqrt(2.0 * l1), u_maxr) * dir;
+  vec2 minor = min(sqrt(2.0 * l2), u_maxr) * vec2(dir.y, -dir.x);
+  vec2 corner = vec2(float(gl_VertexID & 1), float((gl_VertexID >> 1) & 1)) * 3.5355339 - 1.7677670;
   v_pos = corner;
   v_color = col;
   vec2 ndc = clip.xy / clip.w + (corner.x * major + corner.y * minor) * 2.0 / u_viewport;
@@ -623,7 +644,7 @@ in vec2 v_pos;
 out vec4 o;
 void main() {
   float A = -dot(v_pos, v_pos);
-  if (A < -4.0) discard;
+  if (A < -3.125) discard; // 2.5 sigma
   float B = exp(A) * v_color.a;
   o = vec4(v_color.rgb * B, B);
 }`;
@@ -644,7 +665,7 @@ function compile(gl: WebGL2RenderingContext): WebGLProgram {
   return p;
 }
 
-const UNIFORMS = ['u_a', 'u_b', 'u_view', 'u_proj', 'u_viewport', 'u_bounds', 'u_yrange', 'u_morph', 'u_spread', 'u_explode', 'u_swirl', 'u_dissolve', 'u_reveal', 'u_size', 'u_opacity'] as const;
+const UNIFORMS = ['u_a', 'u_b', 'u_view', 'u_proj', 'u_viewport', 'u_bounds', 'u_yrange', 'u_morph', 'u_spread', 'u_explode', 'u_swirl', 'u_dissolve', 'u_reveal', 'u_size', 'u_opacity', 'u_keep', 'u_maxr'] as const;
 
 // Column-major 4×4 helpers writing into preallocated arrays.
 function perspective(out: Float32Array, fovDeg: number, aspect: number, near: number, far: number): void {
@@ -776,6 +797,11 @@ export class SplatLayer {
   private resolveSorted!: () => void;
   private morphAnim: Animation | null = null;
   private dead = false;
+  private maxR: number;
+  private gov: { fps: number; min: number } | null;
+  private govLast = 0;
+  private govAvg = 0;
+  private govHold = 0;
   private onDone: (order: Uint32Array, ms: number) => void;
 
   constructor(target: HTMLCanvasElement | OffscreenCanvas | WebGL2RenderingContext, set: SplatSet, o: SplatsOptions = {}) {
@@ -796,6 +822,9 @@ export class SplatLayer {
     this.fx = { morph: 0, spread: 0.6, explode: 0, swirl: 0, dissolve: 0, reveal: 1, size: 1, opacity: 1, ...o.fx };
     this.ratio = o.pixelRatio ?? Math.min(typeof devicePixelRatio === 'number' ? devicePixelRatio : 1, 2);
     this.threshold = o.sortThreshold ?? 0.002;
+    this.maxR = o.maxRadius ?? 48;
+    const gv = o.governor ?? (o.autoRender ?? !isGl);
+    this.gov = gv ? { fps: 50, min: 0.25, ...(typeof gv === 'object' ? gv : {}) } : null;
     if (o.background) {
       const c = parseColor(o.background);
       if (c) this.bg = [c[0] / 255, c[1] / 255, c[2] / 255, c[3] ?? 1];
@@ -816,7 +845,7 @@ export class SplatLayer {
     gl.bindVertexArray(null);
     this.sorted = new Promise((r) => (this.resolveSorted = r));
     this.sorter = o.worker === false ? mainSorter() : workerSorter(mainSorter);
-    this.stats = { count: set.count, sorts: 0, frames: 0, sortMs: 0, worker: this.sorter.worker };
+    this.stats = { count: set.count, sorts: 0, frames: 0, sortMs: 0, worker: this.sorter.worker, quality: 1 };
     this.onDone = (order, ms) => {
       if (this.dead) return;
       if (order.length === this.set.count) {
@@ -832,7 +861,7 @@ export class SplatLayer {
     };
     this.upload(set);
     if (o.orbit) this.orbit();
-    if (o.autoRender ?? this.own) this.off = engine.onFrame(() => this.render());
+    if (o.autoRender ?? this.own) this.off = engine.onFrame(() => { this.govern(); this.render(); });
     track(this);
   }
 
@@ -1052,6 +1081,8 @@ export class SplatLayer {
     gl.uniform1f(L.u_reveal, f.reveal);
     gl.uniform1f(L.u_size, f.size);
     gl.uniform1f(L.u_opacity, f.opacity);
+    gl.uniform1f(L.u_keep, this.stats.quality);
+    gl.uniform1f(L.u_maxr, this.maxR * Math.sqrt(2) * (this.own ? this.ratio : 1));
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.texA);
     gl.uniform1i(L.u_a, 0);
@@ -1087,6 +1118,27 @@ export class SplatLayer {
     this.lastMix = mix;
     this.sortN = n;
     this.sorter.sort(v, mix, n, this.onDone);
+  }
+
+  /** Adjust `stats.quality` from the measured frame interval (governor). */
+  private govern(): void {
+    const g = this.gov;
+    if (!g) return;
+    const now = performance.now();
+    const dt = this.govLast ? now - this.govLast : 0;
+    this.govLast = now;
+    if (!dt || dt > 250) return; // first frame, or the tab was hidden
+    this.govAvg = this.govAvg ? this.govAvg * 0.9 + dt * 0.1 : dt;
+    if (this.govHold > 0) { this.govHold--; return; }
+    const budget = 1000 / g.fps;
+    const q = this.stats.quality;
+    if (this.govAvg > budget * 1.15 && q > g.min) {
+      this.stats.quality = Math.max(g.min, q * 0.8);
+      this.govHold = 20;
+    } else if (this.govAvg < budget * 0.75 && q < 1) {
+      this.stats.quality = Math.min(1, q * 1.1);
+      this.govHold = 30;
+    }
   }
 
   /** Remove the layer: stop rendering, free GPU resources and the worker. */

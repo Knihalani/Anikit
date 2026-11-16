@@ -2003,7 +2003,9 @@ Every splat is projected to a 2D covariance in the vertex shader and drawn as an
 | `draw(view, proj)` | Draw into the bound framebuffer of the layer's context with your own column-major matrices: the hook for other WebGL2 scenes (create the layer with `splats(gl, set)`). |
 | `kill()` / `revert()` | Free the GPU resources and the worker. |
 
-Options (`SplatsOptions`): `camera`, `transform`, `fx`, `background`, `autoRender`, `pixelRatio`, `worker`, `sortThreshold`, `orbit`. Types: `SplatSet`, `SplatColor`, `SplatSourceOptions`, `SplatFx`, `SplatCamera`, `SplatTransform`, `SplatMorphOptions`, `SplatEffectOptions`, `SplatStats`.
+Options (`SplatsOptions`): `camera`, `transform`, `fx`, `background`, `autoRender`, `pixelRatio`, `worker`, `sortThreshold`, `orbit`, `maxRadius`, `governor`.
+
+Crisp by default: each splat is cut off at 2.5σ, its on-screen radius is clamped to `maxRadius` (48 CSS px σ by default) so splats near the camera don't smear, and procedural sources pick their scale from the point density (about half the sample spacing). The quality governor (on for self-rendering layers) watches the frame interval: below `governor.fps` (default 50) it draws a random subset of the splats, down to `governor.min` (default 0.25), and enlarges the ones it keeps to cover the gaps. It recovers when there is headroom. `stats.quality` is the fraction currently drawn; pass `governor: false` for exact output, e.g. in tests or recordings. Types: `SplatSet`, `SplatColor`, `SplatSourceOptions`, `SplatFx`, `SplatCamera`, `SplatTransform`, `SplatMorphOptions`, `SplatEffectOptions`, `SplatStats`.
 
 Limits: colour is view-independent (spherical-harmonic bands above degree 0 are skipped when parsing); `.ksplat` is not supported yet; effects that move splats far (`explode`, `swirl`) are sorted by their resting positions, so heavy overlap mid-effect can blend slightly out of order.
 
