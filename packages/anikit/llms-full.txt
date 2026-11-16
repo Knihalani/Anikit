@@ -17,7 +17,9 @@ import { animate, timeline, stagger, spring, scrollTrigger, effects, testing } f
 
 Calls work immediately: the WebAssembly core loads in the background and queues `animate()`/`timeline()` work until it's ready. Helpers that return a value at once (`ease()`, `morph()`, `pathLength()`, `staggerValues()`, `world()`) need it loaded, so `await ready` first in code that runs at startup.
 
-## Quick start: a polished page in five lines
+## Quick start: five lines each
+
+### A polished page: `recipe()`
 
 ```ts
 import { recipe } from 'anikit';
@@ -30,6 +32,36 @@ recipe('parallax-gallery', '.gallery');                      // images drift at 
 Or start from a working project: `npx anikit new vanilla my-site` (no build step), `npx anikit new vite my-site`, or `npx anikit new react my-site`. `recipeNames()` lists every recipe (`hero-reveal`, `scroll-story`, `magnetic-buttons`, `text-scramble`, `parallax-gallery`, `stagger-in`, `draw-svg`, `count-up`, `tilt-cards`); each returns a handle with `revert()`. Every option of every API is in `docs/api.schema.json` (JSON Schema). Unknown options and recipe names produce an `anikit:` warning or error with a "did you mean" and a `docs/api.md#…` link.
 
 In React, `import { useRecipe, useAnimate, useAnikit, useSpring, useScroll, Presence } from 'anikit/react'`: everything a hook creates is reverted on unmount. Vue: `v-recipe` / `v-anikit` directives from `anikit/vue`; Svelte: `use:recipe` / `use:anikit` actions from `anikit/svelte`.
+
+### Real-time 3D in five lines: `scene()`
+
+```ts
+import { scene, sphere, plane, animate } from 'anikit';
+const s = scene('#c', { camera: { position: [0, 2, 6], target: [0, 0.5, 0] }, environment: 'studio', shadows: true, bloom: true });
+s.add(plane(20, 20), { material: { color: '#333', roughness: 0.9 } });
+const ball = s.add(sphere(0.6, 64), { material: 'chrome', position: [0, 0.6, 0] });
+animate(ball.position, { y: 1.5 }, { duration: 0.8, yoyo: true, repeat: -1, ease: 'inOutSine' });
+```
+
+### Gaussian splats in five lines: `anikit/splats`
+
+```ts
+import { splats } from 'anikit/splats';
+const word = splats.fromText('anikit', { count: 120_000, width: 2.4, color: '#9ab' });
+const ball = splats.fromSDF((x, y, z) => Math.hypot(x, y, z) - 0.9, { count: 120_000 });
+const layer = splats('#stage', word, { background: '#07080b', orbit: true });
+layer.morph(ball, { duration: 2.4, ease: 'inOutCubic', spread: 0.8 });   // GPU morph; .ply/.splat via splats.load(url)
+```
+
+### Live HTML in WebGL in five lines: `htmlTexture`, `htmlEffect`
+
+```ts
+import { scene, plane, htmlTexture, htmlEffect } from 'anikit';
+const s3 = scene('#stage', { camera: { position: [0, 0, 3] } });
+const ui = htmlTexture('#panel');                    // live: re-rasterised when #panel changes; clicks are forwarded
+s3.add(plane(1.6, 1), { rotation: [Math.PI / 2, 0, 0], material: { color: '#000', emissive: '#fff', map: ui } });
+htmlEffect('.hero', 'ripple', { origin: [0.3, 0.6] }); // also 'shatter' | 'dissolve' | 'curl' | 'pixelate' | 'wave' | 'glass'
+```
 
 ## Want X → use Y
 

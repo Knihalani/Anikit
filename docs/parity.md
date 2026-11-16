@@ -166,6 +166,9 @@ Legend: ✅ supported · ⚠️ partial, or only with extra work · ❌ not avai
 | 3D projection and depth sort in Wasm | ✅ `scene3d` | ❌ | ❌ | ❌ |
 | Point clouds with shape morphing + glow renderer | ✅ `pointCloud`, `glow` | ❌ | ❌ | ❌ |
 | Particle emitters | ✅ `emitter` | ❌ | ❌ | ❌ |
+| Real-time GPU 3D (WebGL2 PBR, shadows, bloom, instancing, picking, glTF) | ✅ `scene()` (also `anikit/scene`), `loadGLTF` | ❌ | ❌ | ❌ |
+| Gaussian splats (text/SDF/mesh/points → splats, .ply/.splat load, GPU morph) | ✅ `anikit/splats` | ❌ | ❌ | ❌ |
+| Live HTML as a WebGL texture, HTML transition effects | ✅ `htmlTexture`, `htmlCanvas`, `htmlEffect` (ripple, shatter, dissolve, curl, pixelate, wave, glass) | ❌ | ❌ | ❌ |
 | Software 3D renderer (meshes, shadows, DoF) | ✅ `renderer3d`, `mesh`, `shatter`, `flightPath` | ❌ | ❌ | ❌ |
 | Canvas library plugins (Pixi, Easel) | ❌ (tween plain objects instead) | ✅ PixiPlugin, EaselPlugin | ❌ | ❌ |
 | Audio analysis (tempo, beats, onsets) | ✅ `analyzeAudio` | ❌ | ❌ | ❌ |
@@ -195,7 +198,7 @@ Lottie (`lottie-web`) is in a different category from the others. It's a **playe
 | Lottie capability | anikit equivalent |
 |---|---|
 | Plays designer-authored After Effects JSON (shapes, masks, mattes, precomps, text, partial expressions) | ❌ No Lottie / AE import. Motion has to be written in code. |
-| SVG, canvas and HTML renderers | ⚠️ anikit animates the real DOM / SVG, and draws to canvas with its own renderers (`glow`, `renderer3d`). |
+| SVG, canvas and HTML renderers | ⚠️ anikit animates the real DOM / SVG, and draws to canvas/WebGL with its own renderers (`glow`, `renderer3d`, `scene()`, `splats`). |
 | `play`, `pause`, `setSpeed`, `setDirection`, `goToAndStop`, `playSegments` | ✅ The same controls on any `Timeline` / `Animation` (`seek`, `speed`, `reverse`, labels). |
 | Scroll or hover sync (lottie-interactivity) | ✅ Any timeline can go to `scroll()`, `scrollTrigger({ scrub })` or `hover()`. |
 | `.lottie` / dotLottie packaging, theming and state machines (separate players) | ❌ |
