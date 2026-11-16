@@ -30,11 +30,16 @@ pub struct EncoderConfig {
     pub threads: usize,
     /// Full-range (JPEG) levels instead of limited (16–235).
     pub full_range: bool,
+    /// Quarter-pel motion refinement (smaller files on sub-pixel motion, slower).
+    pub subpel: bool,
+    /// CABAC entropy coding (Main profile; smaller files) instead of CAVLC
+    /// (Constrained Baseline; faster).
+    pub cabac: bool,
 }
 
 impl Default for EncoderConfig {
     fn default() -> Self {
-        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: true, threads: 1, full_range: false }
+        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: false, cabac: true }
     }
 }
 
@@ -73,6 +78,9 @@ pub struct FrameStats {
     pub intra4: u32,
     /// Macroblocks that went through mode decision.
     pub changed: u32,
+    /// Bits spent on intra / inter macroblocks (diagnostics).
+    pub bits_intra: u64,
+    pub bits_inter: u64,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -88,6 +96,13 @@ pub(crate) struct MbInfo {
     pub nzc: [[u8; 4]; 2],
     /// I4x4 modes (raster), 2 when not I4x4.
     pub m4: [u8; 16],
+    pub cbp: u8,
+    /// intra_chroma_pred_mode (0 for inter).
+    pub cmode: u8,
+    /// Motion vector difference (quarter pels; 0 for skip / intra).
+    pub mvd: (i16, i16),
+    /// coded_block_flag of luma DC (bit 0), Cb DC (bit 1), Cr DC (bit 2).
+    pub dcf: u8,
 }
 
 const BLK_X: [usize; 16] = [0, 1, 0, 1, 2, 3, 2, 3, 0, 1, 0, 1, 2, 3, 2, 3];
@@ -154,6 +169,8 @@ pub(crate) struct FrameCtx<'a> {
     pub hint: &'a [(i16, i16)],
     pub idr: bool,
     pub max_mvy: i32,
+    pub subpel: bool,
+    pub cabac: bool,
     pub hdr_frame_num: u32,
     pub idr_id: u32,
     pub deblock: bool,
@@ -169,6 +186,18 @@ pub(crate) struct Band<'a> {
     pub info: &'a mut [MbInfo],
     pub mby0: usize,
     pub mby1: usize,
+}
+
+/// Result of motion search (quarter-pel units).
+struct Inter {
+    mv: (i32, i32),
+    /// SATD + lambda * MV bits.
+    cost: u32,
+    mvp: (i32, i32),
+    skip_mv: (i32, i32),
+    pred: [u8; 256],
+    /// Luma SAD at the integer-pel result.
+    sad: u32,
 }
 
 #[derive(Clone, Copy)]
@@ -188,6 +217,7 @@ struct SliceEnc<'a, 'b> {
     cp: usize,
     skip_run: u32,
     stats: FrameStats,
+    cabac: Option<crate::cabac::Cabac>,
 }
 
 #[inline(always)]
@@ -221,7 +251,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
     }
 
-    /// (mvp for P16x16, P_Skip mv) in full pels.
+    /// (mvp for P16x16, P_Skip mv) in quarter pels.
     fn mv_pred(&self, mbx: usize, mby: usize) -> ((i32, i32), (i32, i32)) {
         let (x, y) = (mbx as isize, mby as isize);
         let a = self.nb(x - 1, y);
@@ -252,7 +282,8 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
 
     // ---------- prediction helpers ----------
 
-    fn luma_ref<'r>(&self, mbx: usize, mby: usize, mv: (i32, i32)) -> (&'r [u8], usize)
+    /// Reference block at an integer-pel displacement.
+    fn luma_ref_int<'r>(&self, mbx: usize, mby: usize, mv: (i32, i32)) -> (&'r [u8], usize)
     where
         'a: 'r,
     {
@@ -263,7 +294,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
 
     fn mc_chroma(&self, comp: usize, mbx: usize, mby: usize, mv: (i32, i32), out: &mut [u8; 64]) {
         let p = if comp == 0 { &self.c.refp.u } else { &self.c.refp.v };
-        let (mx, my) = (mv.0 * 4, mv.1 * 4); // 1/8 chroma units
+        let (mx, my) = mv; // quarter luma = 1/8 chroma units
         let (ix, fx) = (mx >> 3, mx & 7);
         let (iy, fy) = (my >> 3, my & 7);
         let o = p.off(mbx as isize * 8 + ix as isize, mby as isize * 8 + iy as isize);
@@ -342,15 +373,15 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mbi = mby * c.mbw + mbx;
         let lambda = c.lambda;
 
-        let mut best_inter: Option<((i32, i32), u32, (i32, i32), (i32, i32))> = None; // (mv, cost, mvp, skipmv)
+        let mut inter: Option<Inter> = None;
+        let (mut mvp, mut skip_mv) = ((0, 0), (0, 0));
         if !c.idr {
-            let (mvp, skip_mv) = self.mv_pred(mbx, mby);
+            (mvp, skip_mv) = self.mv_pred(mbx, mby);
             if !c.changed[mbi] {
                 // Unchanged: copy of the reference.
                 self.code_copy(mbx, mby, mvp, skip_mv);
                 return;
             }
-            best_inter = Some(self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi));
         }
         self.stats.changed += 1;
 
@@ -369,59 +400,53 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
         }
         let cost16 = best16.0 + lambda as u32 * if c.idr { 4 } else { 8 };
+        // Motion search unless intra prediction is already near-perfect.
+        if !c.idr {
+            // Full search unless intra prediction is already near-perfect (then only
+            // the predicted / zero / hint candidates).
+            let quick = best16.0 <= lambda as u32 * 4;
+            inter = Some(self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, quick));
+        }
 
         let mut kind = Kind::I16(best16.1);
         let mut best_cost = cost16;
-        let mut inter_mv = (0, 0);
-        if let Some((mv, sad_cost, _, _)) = best_inter {
-            // re-measure inter with SATD for a fair comparison
-            let (r, rs) = self.luma_ref(mbx, mby, mv);
-            let mut p = [0u8; 256];
-            for y in 0..16 {
-                p[y * 16..y * 16 + 16].copy_from_slice(&r[y * rs..y * rs + 16]);
+        // Sub-pel refinement only when inter is competitive and imperfect.
+        if let Some(it) = inter.as_mut() {
+            if c.subpel && it.cost < cost16 + cost16 / 2 && it.cost > lambda as u32 * 8 {
+                self.refine_subpel(mbx, mby, src_y, it);
             }
-            let s = dsp::satd(src_y, &p, 16, 16);
-            let cost = s + sad_cost; // sad_cost carries the mv bit cost only
-            if cost <= best_cost {
-                best_cost = cost;
+        }
+        if let Some(it) = &inter {
+            if it.cost <= best_cost {
+                best_cost = it.cost;
                 kind = Kind::P16;
-                inter_mv = mv;
             }
         }
 
-        // Chroma intra mode (needed for both intra kinds).
-        let mut cmode = 0u8;
         let mut cd = Coded::new();
         let try_i4 = best_cost > lambda as u32 * 24 + 256;
-        if kind != Kind::P16 || try_i4 {
-            if try_i4 {
-                // Encode I4x4 tentatively (writes recon).
-                let (cost4, modes) = self.code_i4(mbx, mby, src_y, &mut cd, true);
-                if cost4 < best_cost {
-                    kind = Kind::I4;
-                    best_cost = cost4;
-                    let _ = best_cost;
-                    self.finish_intra(mbx, mby, src_c, &mut cd, kind, Some(modes));
-                    return;
-                }
-                cd = Coded::new();
+        if try_i4 {
+            // Encode I4x4 tentatively (writes recon).
+            let (cost4, modes) = self.code_i4(mbx, mby, src_y, &mut cd, true);
+            if cost4 < best_cost {
+                self.finish_intra(mbx, mby, src_c, &mut cd, Kind::I4, Some(modes));
+                return;
             }
+            cd = Coded::new();
         }
         match kind {
             Kind::P16 => {
-                let (mvp, skip_mv) = (best_inter.unwrap().2, best_inter.unwrap().3);
-                self.code_inter(mbx, mby, src_y, src_c, inter_mv, mvp, skip_mv);
+                let it = inter.unwrap();
+                self.code_inter(mbx, mby, src_y, src_c, &it);
             }
             Kind::I16(_) | Kind::I4 => {
-                cmode = cmode.max(0);
-                let _ = cmode;
                 self.finish_intra(mbx, mby, src_c, &mut cd, kind, None);
             }
         }
     }
 
-    /// Integer-pel motion search seeded by zero, hints and neighbours.
-    /// Returns (mv, lambda * mv bits, mvp, skip mv).
+    /// Motion search: integer candidates (zero, skip MV, predictor, hint,
+    /// neighbours), a small integer diamond, then half- and quarter-pel refinement.
     fn motion_search(
         &self,
         mbx: usize,
@@ -430,22 +455,23 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         mvp: (i32, i32),
         skip_mv: (i32, i32),
         mbi: usize,
-    ) -> ((i32, i32), u32, (i32, i32), (i32, i32)) {
+        quick: bool,
+    ) -> Inter {
         let c = self.c;
-        let lambda = c.lambda;
+        let lambda = c.lambda as u32;
         let w16 = (c.mbw * 16) as i32;
         let h16 = (c.refp.y.h) as i32;
         let (bx, by) = (mbx as i32 * 16, mby as i32 * 16);
+        // integer-pel search window
         let xr = (-16 - bx, w16 - bx);
-        let yr = ((-16 - by).max(-c.max_mvy), (h16 - by).min(c.max_mvy));
+        let yr = ((-16 - by).max(-c.max_mvy), (h16 - by).min(c.max_mvy - 1));
         let clamp = |mv: (i32, i32)| (mv.0.clamp(xr.0, xr.1), mv.1.clamp(yr.0, yr.1));
-        let mvcost = |mv: (i32, i32)| -> u32 {
-            lambda as u32 * (se_len(4 * (mv.0 - mvp.0)) + se_len(4 * (mv.1 - mvp.1)))
-        };
+        let mvcost = |q: (i32, i32)| -> u32 { lambda * (se_len(q.0 - mvp.0) + se_len(q.1 - mvp.1)) };
         let eval = |mv: (i32, i32)| -> u32 {
-            let (r, rs) = self.luma_ref(mbx, mby, mv);
-            dsp::sad16(src_y, 16, r, rs) + mvcost(mv)
+            let (r, rs) = self.luma_ref_int(mbx, mby, mv);
+            dsp::sad16(src_y, 16, r, rs) + mvcost((mv.0 * 4, mv.1 * 4))
         };
+        let round = |q: (i32, i32)| ((q.0 + 2) >> 2, (q.1 + 2) >> 2);
         let mut best = (u32::MAX, (0, 0));
         let mut cands = [(0i32, 0i32); 7];
         let mut n = 0;
@@ -457,16 +483,18 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
         };
         push((0, 0));
-        push(skip_mv);
-        push(mvp);
+        push(round(skip_mv));
+        push(round(mvp));
         let h = c.hint[mbi];
         if h != NO_HINT {
-            push((h.0 as i32, h.1 as i32));
+            push(round((h.0 as i32, h.1 as i32)));
         }
         let (x, y) = (mbx as isize, mby as isize);
-        for nb in [self.nb(x - 1, y), self.nb(x, y - 1), self.nb(x + 1, y - 1)] {
-            if nb.inter {
-                push(nb.mv);
+        if !quick {
+            for nb in [self.nb(x - 1, y), self.nb(x, y - 1), self.nb(x + 1, y - 1)] {
+                if nb.inter {
+                    push(round(nb.mv));
+                }
             }
         }
         for &mv in &cands[..n] {
@@ -476,7 +504,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
         }
         // small diamond refinement
-        if best.0 > mvcost(best.1) {
+        if !quick && best.0 > mvcost((best.1 .0 * 4, best.1 .1 * 4)) {
             let mut steps = 0;
             loop {
                 let cur = best;
@@ -496,7 +524,52 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 }
             }
         }
-        (best.1, mvcost(best.1), mvp, skip_mv)
+        let base = best.1;
+        let base_q = (base.0 * 4, base.1 * 4);
+        let mut pred = [0u8; 256];
+        {
+            let (r, rs) = self.luma_ref_int(mbx, mby, base);
+            for y in 0..16 {
+                pred[y * 16..y * 16 + 16].copy_from_slice(&r[y * rs..y * rs + 16]);
+            }
+        }
+        let cost = dsp::satd(src_y, &pred, 16, 16) + mvcost(base_q);
+        let mv = base_q;
+        let sad = best.0 - mvcost(base_q);
+        Inter { mv, cost, mvp, skip_mv, pred, sad }
+    }
+
+    /// Half- then quarter-pel refinement around the integer result.
+    fn refine_subpel(&self, mbx: usize, mby: usize, src_y: &[u8; 256], it: &mut Inter) {
+        if it.sad == 0 || it.mv.0 & 3 != 0 || it.mv.1 & 3 != 0 {
+            return;
+        }
+        let lambda = self.c.lambda as u32;
+        let mvp = it.mvp;
+        let mvcost = |q: (i32, i32)| -> u32 { lambda * (se_len(q.0 - mvp.0) + se_len(q.1 - mvp.1)) };
+        let base_q = it.mv;
+        let hp = crate::mc::Hpel::new(
+            &self.c.refp.y,
+            (mbx as i32 * 16 + (base_q.0 >> 2)) as isize,
+            (mby as i32 * 16 + (base_q.1 >> 2)) as isize,
+        );
+        let mut p = [0u8; 256];
+        let mut d = (0, 0);
+        for step in [2, 1] {
+            let centre = d;
+            for (sx, sy) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
+                let cand = (centre.0 + sx * step, centre.1 + sy * step);
+                hp.pred(cand.0, cand.1, &mut p);
+                let q = (base_q.0 + cand.0, base_q.1 + cand.1);
+                let cst = dsp::satd(src_y, &p, 16, 16) + mvcost(q);
+                if cst < it.cost {
+                    it.cost = cst;
+                    it.mv = q;
+                    d = cand;
+                    it.pred = p;
+                }
+            }
+        }
     }
 
     /// Unchanged macroblock: copy the co-located reference (MV 0, no residual).
@@ -510,42 +583,40 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             skip = true;
         }
         let mv = if skip { skip_mv } else { (0, 0) };
+        let mvd = if skip { (0, 0) } else { (-mvp.0, -mvp.1) };
         let i = (mby - self.b.mby0) * self.c.mbw + mbx;
         self.b.info[i] = MbInfo {
             kind: 0,
             skip,
             coded: false,
             mv: (mv.0 as i16, mv.1 as i16),
-            nz: [0; 16],
-            nzc: [[0; 4]; 2],
+            mvd: (mvd.0 as i16, mvd.1 as i16),
             m4: [2; 16],
+            ..Default::default()
         };
         if skip {
-            self.skip_run += 1;
+            self.emit_skip(mbx, mby);
             self.stats.skip += 1;
         } else {
-            self.w.ue(self.skip_run);
-            self.skip_run = 0;
-            self.w.ue(0); // P_L0_16x16
-            self.w.se(-4 * mvp.0);
-            self.w.se(-4 * mvp.1);
-            self.w.ue(CBP_INTER[0] as u32);
+            self.emit_p16(mbx, mby, mvd, &Coded::new());
             self.stats.inter += 1;
         }
+        self.emit_end(mbx, mby);
     }
 
     /// Does motion compensation at `mv` reproduce the co-located reference exactly?
     fn pred_equals_zero(&self, mbx: usize, mby: usize, mv: (i32, i32)) -> bool {
         let c = self.c;
-        let w16 = (c.mbw * 16) as i32;
-        let h16 = c.refp.y.h as i32;
-        let (bx, by) = (mbx as i32 * 16 + mv.0, mby as i32 * 16 + mv.1);
-        if bx < -16 || bx > w16 || by < -16 || by > h16 || mv.1.abs() > c.max_mvy {
+        let w16 = (c.mbw * 16) as i32 * 4;
+        let h16 = c.refp.y.h as i32 * 4;
+        let (bx, by) = (mbx as i32 * 64 + mv.0, mby as i32 * 64 + mv.1);
+        if bx < -64 || bx > w16 || by < -64 || by > h16 || mv.1.abs() >= c.max_mvy * 4 {
             return false;
         }
-        let (a, sa) = self.luma_ref(mbx, mby, mv);
-        let (z, sz) = self.luma_ref(mbx, mby, (0, 0));
-        if !dsp::block_eq(a, sa, z, sz, 16, 16) {
+        let mut a = [0u8; 256];
+        crate::mc::luma_pred(&c.refp.y, mbx as isize * 16, mby as isize * 16, mv, &mut a);
+        let (z, sz) = self.luma_ref_int(mbx, mby, (0, 0));
+        if !dsp::block_eq(&a, 16, z, sz, 16, 16) {
             return false;
         }
         let mut p0 = [0u8; 64];
@@ -561,7 +632,8 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
     }
 
     fn copy_pred(&mut self, mbx: usize, mby: usize, mv: (i32, i32)) {
-        let (r, rs) = self.luma_ref(mbx, mby, mv);
+        let (r, rs) = self.luma_ref_int(mbx, mby, (mv.0 >> 2, mv.1 >> 2));
+        debug_assert!(mv.0 & 3 == 0 && mv.1 & 3 == 0);
         let base = self.yi(mbx * 16, mby * 16);
         for y in 0..16 {
             self.b.y[base + y * self.ys..base + y * self.ys + 16].copy_from_slice(&r[y * rs..y * rs + 16]);
@@ -578,54 +650,43 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
-    fn code_inter(
-        &mut self,
-        mbx: usize,
-        mby: usize,
-        src_y: &[u8; 256],
-        src_c: &[[u8; 64]; 2],
-        mv: (i32, i32),
-        mvp: (i32, i32),
-        skip_mv: (i32, i32),
-    ) {
-        let mut pred = [0u8; 256];
-        {
-            let (r, rs) = self.luma_ref(mbx, mby, mv);
-            for y in 0..16 {
-                pred[y * 16..y * 16 + 16].copy_from_slice(&r[y * rs..y * rs + 16]);
-            }
-        }
+    fn code_inter(&mut self, mbx: usize, mby: usize, src_y: &[u8; 256], src_c: &[[u8; 64]; 2], it: &Inter) {
+        let (mv, mvp, skip_mv) = (it.mv, it.mvp, it.skip_mv);
+        let pred = it.pred;
         let mut predc = [[0u8; 64]; 2];
         self.mc_chroma(0, mbx, mby, mv, &mut predc[0]);
         self.mc_chroma(1, mbx, mby, mv, &mut predc[1]);
         let mut cd = Coded::new();
-        let q = self.c.q;
+
         let mut recon = [0u8; 256];
         luma_inter(src_y, &pred, &self.c.qs, &mut cd, &mut recon);
         let mut reconc = [[0u8; 64]; 2];
         chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, false, &mut cd, &mut reconc);
         self.store_recon(mbx, mby, &recon, &reconc);
         let skip = cd.cbp == 0 && mv == skip_mv;
+        let mvd = if skip { (0, 0) } else { (mv.0 - mvp.0, mv.1 - mvp.1) };
         let i = (mby - self.b.mby0) * self.c.mbw + mbx;
-        self.b.info[i] =
-            MbInfo { kind: 0, skip, coded: true, mv: (mv.0 as i16, mv.1 as i16), nz: cd.nz, nzc: cd.nzc, m4: [2; 16] };
+        self.b.info[i] = MbInfo {
+            kind: 0,
+            skip,
+            coded: true,
+            mv: (mv.0 as i16, mv.1 as i16),
+            nz: cd.nz,
+            nzc: cd.nzc,
+            m4: [2; 16],
+            cbp: cd.cbp,
+            cmode: 0,
+            mvd: (mvd.0 as i16, mvd.1 as i16),
+            dcf: dc_flags(&cd, false),
+        };
         if skip {
-            self.skip_run += 1;
+            self.emit_skip(mbx, mby);
             self.stats.skip += 1;
-            return;
+        } else {
+            self.stats.inter += 1;
+            self.emit_p16(mbx, mby, mvd, &cd);
         }
-        self.stats.inter += 1;
-        self.w.ue(self.skip_run);
-        self.skip_run = 0;
-        self.w.ue(0);
-        self.w.se(4 * (mv.0 - mvp.0));
-        self.w.se(4 * (mv.1 - mvp.1));
-        self.w.ue(CBP_INTER[cd.cbp as usize] as u32);
-        if cd.cbp != 0 {
-            self.w.se(0);
-            self.write_residual(mbx, mby, &cd, false);
-        }
+        self.emit_end(mbx, mby);
     }
 
     fn store_recon(&mut self, mbx: usize, mby: usize, y16: &[u8; 256], c8: &[[u8; 64]; 2]) {
@@ -796,7 +857,15 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let ec = [self.edges8(0, mbx, mby), self.edges8(1, mbx, mby)];
         let mut best = (u32::MAX, 0u8);
         let mut predc = [[0u8; 64]; 2];
-        for m in 0..4u8 {
+        // Chroma modes tried: DC plus the one matching the luma I16 direction (all for I4x4).
+        let cands: &[u8] = match kind {
+            Kind::I16(0) => &[0, 2],
+            Kind::I16(1) => &[0, 1],
+            Kind::I16(3) => &[0, 3],
+            Kind::I16(_) => &[0],
+            _ => &[0, 1, 2, 3],
+        };
+        for &m in cands {
             let ok = match m {
                 0 => true,
                 1 => ec[0].has_left,
@@ -828,45 +897,21 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
 
         // ---- syntax ----
-        if !self.c.idr {
-            self.w.ue(self.skip_run);
-            self.skip_run = 0;
-        }
-        let off = if self.c.idr { 0 } else { 5 };
         let modes4 = modes.unwrap_or([2; 16]);
-        match kind {
-            Kind::I16(m) => {
-                let cbpl = if cd.cbp & 15 != 0 { 1 } else { 0 };
-                self.w.ue(off + 1 + m as u32 + 4 * (cd.cbp >> 4) as u32 + 12 * cbpl);
-                self.w.ue(cmode as u32);
-                self.w.se(0);
-                self.stats.intra16 += 1;
-            }
-            _ => {
-                self.w.ue(off);
-                let mut cur = [2u8; 16];
-                for k in 0..16 {
-                    let (bx, by) = (BLK_X[k], BLK_Y[k]);
-                    let pm = self.pred_mode4(mbx, mby, bx, by, &cur);
-                    let m = modes4[by * 4 + bx];
-                    cur[by * 4 + bx] = m;
-                    if m == pm {
-                        self.w.bit(true);
-                    } else {
-                        self.w.bit(false);
-                        self.w.put(3, if m < pm { m } else { m - 1 } as u32);
-                    }
-                }
-                self.w.ue(cmode as u32);
-                self.w.ue(CBP_INTRA[cd.cbp as usize] as u32);
-                if cd.cbp != 0 {
-                    self.w.se(0);
-                }
-                self.stats.intra4 += 1;
+        let is16 = matches!(kind, Kind::I16(_));
+        // I4x4 mode signalling (prev flag, rem) in block order
+        let mut m4sig = [(true, 0u8); 16];
+        if !is16 {
+            let mut cur = [2u8; 16];
+            for k in 0..16 {
+                let (bx, by) = (BLK_X[k], BLK_Y[k]);
+                let pm = self.pred_mode4(mbx, mby, bx, by, &cur);
+                let m = modes4[by * 4 + bx];
+                cur[by * 4 + bx] = m;
+                m4sig[k] = if m == pm { (true, 0) } else { (false, if m < pm { m } else { m - 1 }) };
             }
         }
         let i = (mby - self.b.mby0) * self.c.mbw + mbx;
-        let is16 = matches!(kind, Kind::I16(_));
         self.b.info[i] = MbInfo {
             kind: if is16 { 1 } else { 2 },
             skip: false,
@@ -875,11 +920,171 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             nz: cd.nz,
             nzc: cd.nzc,
             m4: modes4,
+            cbp: cd.cbp,
+            cmode,
+            mvd: (0, 0),
+            dcf: dc_flags(cd, is16),
         };
         if is16 {
-            self.write_residual(mbx, mby, cd, true);
-        } else if cd.cbp != 0 {
-            self.write_residual(mbx, mby, cd, false);
+            self.stats.intra16 += 1;
+        } else {
+            self.stats.intra4 += 1;
+        }
+        self.emit_intra(mbx, mby, kind, &m4sig, cmode, cd);
+        self.emit_end(mbx, mby);
+    }
+
+    fn nbrs(&self, mbx: usize, mby: usize) -> (Option<MbInfo>, Option<MbInfo>) {
+        let a = if mbx > 0 { Some(*self.info(mbx - 1, mby)) } else { None };
+        let b = if mby > self.b.mby0 { Some(*self.info(mbx, mby - 1)) } else { None };
+        (a, b)
+    }
+
+    fn emit_skip(&mut self, mbx: usize, mby: usize) {
+        let (a, b) = self.nbrs(mbx, mby);
+        if let Some(cb) = self.cabac.as_mut() {
+            let inc = a.map_or(0, |m| !m.skip as usize) + b.map_or(0, |m| !m.skip as usize);
+            cb.decision(self.w, 11 + inc, 1);
+        } else {
+            self.skip_run += 1;
+        }
+    }
+
+    /// end_of_slice_flag (CABAC).
+    fn emit_end(&mut self, mbx: usize, mby: usize) {
+        if let Some(cb) = self.cabac.as_mut() {
+            let last = mbx + 1 == self.c.mbw && mby + 1 == self.b.mby1;
+            cb.terminate(self.w, last as u32);
+        }
+    }
+
+    fn emit_p16(&mut self, mbx: usize, mby: usize, mvd: (i32, i32), cd: &Coded) {
+        if self.cabac.is_none() {
+            self.w.ue(self.skip_run);
+            self.skip_run = 0;
+            self.w.ue(0); // P_L0_16x16
+            self.w.se(mvd.0);
+            self.w.se(mvd.1);
+            self.w.ue(CBP_INTER[cd.cbp as usize] as u32);
+            if cd.cbp != 0 {
+                self.w.se(0);
+                self.write_residual(mbx, mby, cd, false);
+            }
+            return;
+        }
+        let (a, b) = self.nbrs(mbx, mby);
+        let cb = self.cabac.as_mut().unwrap();
+        let w = &mut *self.w;
+        let inc = a.map_or(0, |m| !m.skip as usize) + b.map_or(0, |m| !m.skip as usize);
+        cb.decision(w, 11 + inc, 0);
+        cb.decision(w, 14, 0);
+        cb.decision(w, 15, 0);
+        cb.decision(w, 16, 0);
+        let sx = a.map_or(0, |m| m.mvd.0.unsigned_abs() as u32) + b.map_or(0, |m| m.mvd.0.unsigned_abs() as u32);
+        let sy = a.map_or(0, |m| m.mvd.1.unsigned_abs() as u32) + b.map_or(0, |m| m.mvd.1.unsigned_abs() as u32);
+        cb.mvd(w, 40, mvd.0, sx);
+        cb.mvd(w, 47, mvd.1, sy);
+        cabac_cbp(cb, w, &a, &b, cd.cbp);
+        if cd.cbp != 0 {
+            cb.decision(w, 60, 0); // mb_qp_delta = 0
+            cabac_residual(cb, w, &a, &b, cd, false, false);
+        }
+    }
+
+    fn emit_intra(&mut self, mbx: usize, mby: usize, kind: Kind, m4sig: &[(bool, u8); 16], cmode: u8, cd: &Coded) {
+        let p_slice = !self.c.idr;
+        if self.cabac.is_none() {
+            if p_slice {
+                self.w.ue(self.skip_run);
+                self.skip_run = 0;
+            }
+            let off = if p_slice { 5 } else { 0 };
+            match kind {
+                Kind::I16(m) => {
+                    let cbpl = if cd.cbp & 15 != 0 { 1 } else { 0 };
+                    self.w.ue(off + 1 + m as u32 + 4 * (cd.cbp >> 4) as u32 + 12 * cbpl);
+                    self.w.ue(cmode as u32);
+                    self.w.se(0);
+                    self.write_residual(mbx, mby, cd, true);
+                }
+                _ => {
+                    self.w.ue(off);
+                    for &(f, r) in m4sig {
+                        self.w.bit(f);
+                        if !f {
+                            self.w.put(3, r as u32);
+                        }
+                    }
+                    self.w.ue(cmode as u32);
+                    self.w.ue(CBP_INTRA[cd.cbp as usize] as u32);
+                    if cd.cbp != 0 {
+                        self.w.se(0);
+                        self.write_residual(mbx, mby, cd, false);
+                    }
+                }
+            }
+            return;
+        }
+        let (a, b) = self.nbrs(mbx, mby);
+        let cb = self.cabac.as_mut().unwrap();
+        let w = &mut *self.w;
+        // mb_type
+        let bin0_ctx = if p_slice {
+            let inc = a.map_or(0, |m| !m.skip as usize) + b.map_or(0, |m| !m.skip as usize);
+            cb.decision(w, 11 + inc, 0);
+            cb.decision(w, 14, 1); // intra prefix
+            17
+        } else {
+            3 + a.map_or(0, |m| (m.kind != 2) as usize) + b.map_or(0, |m| (m.kind != 2) as usize)
+        };
+        match kind {
+            Kind::I16(m) => {
+                cb.decision(w, bin0_ctx, 1);
+                cb.terminate(w, 0);
+                let cbpc = (cd.cbp >> 4) as u32;
+                // suffix contexts: I slice 6,7,8|9,9|10 ; P slice 18,19,19|20,20|20
+                let (c_l, c_c, c_c2, c_p1, c_p2, n_p1, n_p2) =
+                    if p_slice { (18, 19, 19, 20, 20, 20, 20) } else { (6, 7, 8, 9, 10, 9, 10) };
+                cb.decision(w, c_l, (cd.cbp & 15 != 0) as u32);
+                cb.decision(w, c_c, (cbpc != 0) as u32);
+                if cbpc != 0 {
+                    cb.decision(w, c_c2, (cbpc == 2) as u32);
+                    cb.decision(w, c_p1, (m >> 1) as u32);
+                    cb.decision(w, c_p2, (m & 1) as u32);
+                } else {
+                    cb.decision(w, n_p1, (m >> 1) as u32);
+                    cb.decision(w, n_p2, (m & 1) as u32);
+                }
+            }
+            _ => {
+                cb.decision(w, bin0_ctx, 0);
+                for &(f, r) in m4sig {
+                    cb.decision(w, 68, f as u32);
+                    if !f {
+                        cb.decision(w, 69, (r & 1) as u32);
+                        cb.decision(w, 69, ((r >> 1) & 1) as u32);
+                        cb.decision(w, 69, ((r >> 2) & 1) as u32);
+                    }
+                }
+            }
+        }
+        // intra_chroma_pred_mode
+        let inc = a.map_or(0, |m| (m.kind != 0 && m.cmode != 0) as usize)
+            + b.map_or(0, |m| (m.kind != 0 && m.cmode != 0) as usize);
+        cb.decision(w, 64 + inc, (cmode > 0) as u32);
+        if cmode > 0 {
+            cb.decision(w, 67, (cmode > 1) as u32);
+            if cmode > 1 {
+                cb.decision(w, 67, (cmode > 2) as u32);
+            }
+        }
+        let is16 = matches!(kind, Kind::I16(_));
+        if !is16 {
+            cabac_cbp(cb, w, &a, &b, cd.cbp);
+        }
+        if is16 || cd.cbp != 0 {
+            cb.decision(w, 60, 0);
+            cabac_residual(cb, w, &a, &b, cd, is16, true);
         }
     }
 
@@ -980,6 +1185,115 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                     let nc = self.nc_chroma(mbx, mby, comp, b & 1, b >> 1, &cd.nzc[comp]);
                     write_block(self.w, &scan[..15], nc);
                 }
+            }
+        }
+    }
+}
+
+fn dc_flags(cd: &Coded, i16: bool) -> u8 {
+    let mut f = 0;
+    if i16 && cd.dc.iter().any(|&v| v != 0) {
+        f |= 1;
+    }
+    if cd.cbp >> 4 != 0 {
+        if cd.cdc[0].iter().any(|&v| v != 0) {
+            f |= 2;
+        }
+        if cd.cdc[1].iter().any(|&v| v != 0) {
+            f |= 4;
+        }
+    }
+    f
+}
+
+fn cabac_cbp(cb: &mut crate::cabac::Cabac, w: &mut BitWriter, a: &Option<MbInfo>, b: &Option<MbInfo>, cbp: u8) {
+    let bit = |v: u8, k: usize| (v >> k) & 1 != 0;
+    // condTerm = 0 if unavailable or the neighbouring 8x8 has coefficients; else 1
+    let ext = |m: &Option<MbInfo>, k: usize| m.map_or(0, |m| (!bit(m.cbp, k)) as usize);
+    for b8 in 0..4 {
+        let ca = if b8 & 1 == 1 { (!bit(cbp, b8 - 1)) as usize } else { ext(a, b8 + 1) };
+        let cbb = if b8 >= 2 { (!bit(cbp, b8 - 2)) as usize } else { ext(b, b8 + 2) };
+        cb.decision(w, 73 + ca + 2 * cbb, bit(cbp, b8) as u32);
+    }
+    let c = cbp >> 4;
+    let ca = a.map_or(0, |m| (m.cbp >> 4 != 0) as usize);
+    let cbb = b.map_or(0, |m| (m.cbp >> 4 != 0) as usize);
+    cb.decision(w, 77 + ca + 2 * cbb, (c != 0) as u32);
+    if c != 0 {
+        let ca = a.map_or(0, |m| (m.cbp >> 4 == 2) as usize);
+        let cbb = b.map_or(0, |m| (m.cbp >> 4 == 2) as usize);
+        cb.decision(w, 81 + ca + 2 * cbb, (c == 2) as u32);
+    }
+}
+
+fn cabac_residual(
+    cb: &mut crate::cabac::Cabac,
+    w: &mut BitWriter,
+    a: &Option<MbInfo>,
+    b: &Option<MbInfo>,
+    cd: &Coded,
+    i16: bool,
+    intra: bool,
+) {
+    use crate::cabac::Cat;
+    let ext = |m: &Option<MbInfo>, f: &dyn Fn(&MbInfo) -> bool| match m {
+        None => intra as usize,
+        Some(m) => f(m) as usize,
+    };
+    let mut scan = [0i32; 16];
+    if i16 {
+        for k in 0..16 {
+            scan[k] = cd.dc[ZIGZAG[k]];
+        }
+        let inc = ext(a, &|m| m.dcf & 1 != 0) + 2 * ext(b, &|m| m.dcf & 1 != 0);
+        cb.residual(w, &scan, Cat::LumaDc, inc);
+    }
+    let luma_inc = |bx: usize, by: usize| -> usize {
+        let ia = if bx > 0 { (cd.nz[by * 4 + bx - 1] > 0) as usize } else { ext(a, &|m| m.nz[by * 4 + 3] > 0) };
+        let ib = if by > 0 { (cd.nz[(by - 1) * 4 + bx] > 0) as usize } else { ext(b, &|m| m.nz[12 + bx] > 0) };
+        ia + 2 * ib
+    };
+    for k in 0..16 {
+        let (bx, by) = (BLK_X[k], BLK_Y[k]);
+        let blk = &cd.luma[by * 4 + bx];
+        if i16 {
+            if cd.cbp & 15 == 0 {
+                break;
+            }
+            for j in 0..15 {
+                scan[j] = blk[ZIGZAG[j + 1]];
+            }
+            cb.residual(w, &scan[..15], Cat::LumaAc, luma_inc(bx, by));
+        } else {
+            if cd.cbp & (1 << (k / 4)) == 0 {
+                continue;
+            }
+            for j in 0..16 {
+                scan[j] = blk[ZIGZAG[j]];
+            }
+            cb.residual(w, &scan, Cat::Luma4x4, luma_inc(bx, by));
+        }
+    }
+    let cbpc = cd.cbp >> 4;
+    if cbpc != 0 {
+        for comp in 0..2 {
+            let bitn = 1 << (1 + comp);
+            let inc = ext(a, &|m| m.dcf & bitn != 0) + 2 * ext(b, &|m| m.dcf & bitn != 0);
+            cb.residual(w, &cd.cdc[comp], Cat::ChromaDc, inc);
+        }
+    }
+    if cbpc == 2 {
+        for comp in 0..2 {
+            for blk in 0..4 {
+                let (bx, by) = (blk & 1, blk >> 1);
+                let ia =
+                    if bx > 0 { (cd.nzc[comp][by * 2] > 0) as usize } else { ext(a, &|m| m.nzc[comp][by * 2 + 1] > 0) };
+                let ib = if by > 0 { (cd.nzc[comp][bx] > 0) as usize } else { ext(b, &|m| m.nzc[comp][2 + bx] > 0) };
+                let src = &cd.cac[comp][blk];
+                for j in 0..15 {
+                    scan[j] = src[ZIGZAG[j + 1]];
+                }
+                cb.residual(w, &scan[..15], Cat::ChromaAc, ia + 2 * ib);
             }
         }
     }
@@ -1191,6 +1505,7 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
             frame_num: c.hdr_frame_num,
             idr_id: c.idr_id,
             deblock: c.deblock,
+            cabac: c.cabac,
         },
     );
     let mut s = SliceEnc {
@@ -1203,7 +1518,14 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
         cp: c.refp.u.pad,
         skip_run: 0,
         stats: FrameStats::default(),
+        cabac: None,
     };
+    if c.cabac {
+        while !s.w.byte_aligned() {
+            s.w.put(1, 1); // cabac_alignment_one_bit
+        }
+        s.cabac = Some(crate::cabac::Cabac::new(c.q.qp, !c.idr));
+    }
     let sy = &c.src.y;
     let su = &c.src.u;
     let sv = &c.src.v;
@@ -1212,8 +1534,15 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
     for mby in mby0..mby1 {
         for mbx in 0..c.mbw {
             if !c.idr && !c.changed[mby * c.mbw + mbx] {
-                let (mvp, skip_mv) = s.mv_pred(mbx, mby);
-                s.code_copy(mbx, mby, mvp, skip_mv);
+                // Cheap P_Skip test: the skip MV is zero when A or B is missing or
+                // an inter neighbour with MV 0.
+                let zero = |i: &MbInfo| i.kind == 0 && i.mv == (0, 0);
+                if mbx == 0 || mby == mby0 || zero(s.info(mbx - 1, mby)) || zero(s.info(mbx, mby - 1)) {
+                    s.code_copy(mbx, mby, (0, 0), (0, 0));
+                } else {
+                    let (mvp, skip_mv) = s.mv_pred(mbx, mby);
+                    s.code_copy(mbx, mby, mvp, skip_mv);
+                }
                 continue;
             }
             let o = sy.off(mbx as isize * 16, mby as isize * 16);
@@ -1225,8 +1554,20 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
                 src_c[0][y * 8..y * 8 + 8].copy_from_slice(&su.data[o + y * su.stride..o + y * su.stride + 8]);
                 src_c[1][y * 8..y * 8 + 8].copy_from_slice(&sv.data[o + y * sv.stride..o + y * sv.stride + 8]);
             }
+            let b0 = s.w.bits_written();
+            let (i0, n0) = (s.stats.intra16 + s.stats.intra4, s.stats.inter);
             s.encode_mb(mbx, mby, &src_y, &src_c);
+            let db = (s.w.bits_written() - b0) as u64;
+            if s.stats.intra16 + s.stats.intra4 > i0 {
+                s.stats.bits_intra += db;
+            } else if s.stats.inter > n0 {
+                s.stats.bits_inter += db;
+            }
         }
+    }
+    if s.cabac.is_some() {
+        s.w.align_zero();
+        return s.stats;
     }
     if s.skip_run > 0 {
         let r = s.skip_run;
@@ -1259,6 +1600,8 @@ pub struct Encoder {
     writers: Vec<BitWriter>,
     hdr: BitWriter,
     last: FrameStats,
+    /// CABAC payload of an all-skip P slice (it never changes).
+    skip_cache: Vec<u8>,
 }
 
 impl Encoder {
@@ -1270,7 +1613,7 @@ impl Encoder {
     /// independently encoded chunks can be concatenated).
     pub fn with_idr_base(cfg: EncoderConfig, idr_base: u32) -> Self {
         assert!(cfg.width >= 2 && cfg.height >= 2, "ak264: frame size too small");
-        assert!(cfg.width % 2 == 0 && cfg.height % 2 == 0, "ak264: width and height must be even (4:2:0)");
+        assert!(cfg.width.is_multiple_of(2) && cfg.height.is_multiple_of(2), "ak264: width and height must be even (4:2:0)");
         assert!(cfg.qp <= 51, "ak264: qp must be 0..=51");
         let mbw = (cfg.width as usize).div_ceil(16);
         let mbh = (cfg.height as usize).div_ceil(16);
@@ -1299,6 +1642,7 @@ impl Encoder {
             writers: (0..threads).map(|_| BitWriter::new()).collect(),
             hdr: BitWriter::new(),
             last: FrameStats::default(),
+            skip_cache: Vec::new(),
             cfg,
         }
     }
@@ -1382,7 +1726,7 @@ impl Encoder {
                 let y1 = ((m.y + m.h) as usize).div_ceil(16).min(self.mbh);
                 for my in y0..y1 {
                     for mx in x0..x1 {
-                        self.hint[my * self.mbw + mx] = (-m.dx as i16, -m.dy as i16);
+                        self.hint[my * self.mbw + mx] = ((-m.dx * 4) as i16, (-m.dy * 4) as i16);
                     }
                 }
             }
@@ -1397,27 +1741,45 @@ impl Encoder {
                     width: self.cfg.width,
                     height: self.cfg.height,
                     fps: self.cfg.fps,
-                    qp: self.cfg.qp,
                     full_range: self.cfg.full_range,
+                    cabac: self.cfg.cabac,
                 },
                 self.level,
             );
             write_nal(&mut self.out, 3, 7, &self.hdr.buf);
             self.hdr.clear();
-            write_pps(&mut self.hdr, self.cfg.qp);
+            write_pps(&mut self.hdr, self.cfg.qp, self.cfg.cabac);
             write_nal(&mut self.out, 3, 8, &self.hdr.buf);
         }
         let frame_num = (self.frame_in_gop % (1 << LOG2_MAX_FRAME_NUM)) as u32;
         if !any_changed {
             // All-skip P slice; the reference is unchanged.
+            let cabac = self.cfg.cabac;
             let w = &mut self.writers[0];
             w.clear();
             write_slice_header(
                 w,
-                &SliceHdr { first_mb: 0, idr: false, frame_num, idr_id: 0, deblock: self.cfg.deblock },
+                &SliceHdr { first_mb: 0, idr: false, frame_num, idr_id: 0, deblock: self.cfg.deblock, cabac },
             );
-            w.ue(nmb as u32);
-            w.trailing();
+            if cabac {
+                while !w.byte_aligned() {
+                    w.put(1, 1);
+                }
+                if self.skip_cache.is_empty() {
+                    let mut cw = BitWriter::new();
+                    let mut cb = crate::cabac::Cabac::new(self.cfg.qp, true);
+                    for i in 0..nmb {
+                        cb.decision(&mut cw, 11, 1);
+                        cb.terminate(&mut cw, (i + 1 == nmb) as u32);
+                    }
+                    cw.align_zero();
+                    self.skip_cache = cw.buf;
+                }
+                w.append_bytes(&self.skip_cache);
+            } else {
+                w.ue(nmb as u32);
+                w.trailing();
+            }
             write_nal(&mut self.out, 2, 1, &w.buf);
             stats.skip = nmb as u32;
         } else {
@@ -1460,6 +1822,8 @@ impl Encoder {
             hint: &self.hint,
             idr,
             max_mvy: max_mv_y(self.level),
+            subpel: self.cfg.subpel,
+            cabac: self.cfg.cabac,
             hdr_frame_num: frame_num,
             idr_id: self.idr_count & 0xffff,
             deblock: self.cfg.deblock,
@@ -1504,6 +1868,8 @@ impl Encoder {
             stats.intra16 += r.intra16;
             stats.intra4 += r.intra4;
             stats.changed += r.changed;
+            stats.bits_intra += r.bits_intra;
+            stats.bits_inter += r.bits_inter;
         }
     }
 }

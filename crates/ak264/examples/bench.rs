@@ -40,22 +40,7 @@ fn main() {
     let qps: Vec<u8> = if args.len() > 3 { args[3..].iter().map(|s| s.parse().unwrap()).collect() } else { vec![22] };
     let x264: bool = std::env::var("X264").map(|v| v != "0").unwrap_or(true);
     let (w, h) = (1920u32, 1080u32);
-    let mut s = Scene::new(w, h);
-    match scene.as_str() {
-        "hold" => {
-            s.cards = 1;
-            s.speed = 2;
-        }
-        "full" => {
-            s.moving_bg = true;
-            s.cards = 6;
-            s.speed = 6;
-        }
-        _ => {
-            s.cards = 4;
-            s.speed = 5;
-        }
-    }
+    let s = Scene::preset(&scene, w, h);
     let t0 = Instant::now();
     let bufs: Vec<YuvBuffer> = (0..n).map(|t| s.frame(t)).collect();
     eprintln!("generated {n} frames in {:.2}s", t0.elapsed().as_secs_f64());

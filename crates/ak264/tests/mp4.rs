@@ -39,3 +39,14 @@ fn mp4_decodes_like_annexb() {
     let _ = std::fs::remove_file(&p);
     let _ = std::fs::remove_file(&raw);
 }
+
+#[test]
+fn parallel_render_encode_matches_chunks() {
+    let s = Scene::new(128, 80);
+    let bufs: Vec<_> = (0..17).map(|t| s.frame(t)).collect();
+    let frames: Vec<_> = bufs.iter().map(|b| b.frame()).collect();
+    let cfg = EncoderConfig { width: 128, height: 80, gop: 5, ..Default::default() };
+    let a = encode_chunks(&cfg, &frames, &[]);
+    let b = encode_parallel(&cfg, 17, |t, buf, _| *buf = s.frame(t as u32));
+    assert_eq!(a, b);
+}

@@ -1,3 +1,4 @@
+#![allow(clippy::needless_range_loop)]
 mod common;
 use ak264::synth::Scene;
 use ak264::*;
@@ -32,7 +33,9 @@ fn roundtrip(cfg: EncoderConfig, frames: &[YuvBuffer], name: &str) -> (Vec<u8>, 
 
 fn cfg(w: u32, h: u32) -> EncoderConfig {
     let deblock = std::env::var("AK264_DEBLOCK").map(|v| v != "0").unwrap_or(true);
-    EncoderConfig { width: w, height: h, deblock, ..Default::default() }
+    let subpel = std::env::var("AK264_SUBPEL").map(|v| v != "0").unwrap_or(true);
+    let cabac = std::env::var("AK264_CABAC").map(|v| v != "0").unwrap_or(true);
+    EncoderConfig { width: w, height: h, deblock, cabac, subpel, ..Default::default() }
 }
 
 #[test]
@@ -182,4 +185,22 @@ fn hints_change_map_and_motion() {
     let p = psnr(&dec, &src);
     eprintln!("hints: {} bytes psnr {p:.2}", stream.len());
     assert!(p > 40.0);
+}
+
+#[test]
+fn cavlc_and_options_matrix() {
+    let mut s = Scene::new(192, 112);
+    s.moving_bg = true;
+    s.cards = 4;
+    s.fade = 0.3;
+    let frames: Vec<_> = (0..6).map(|t| s.frame(t)).collect();
+    for cabac in [false, true] {
+        for deblock in [false, true] {
+            for subpel in [false, true] {
+                let c = EncoderConfig { cabac, deblock, subpel, threads: 2, ..cfg(192, 112) };
+                let (_, p) = roundtrip(c, &frames, &format!("m{}{}{}", cabac as u8, deblock as u8, subpel as u8));
+                assert!(p > 40.0);
+            }
+        }
+    }
 }

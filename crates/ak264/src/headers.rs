@@ -10,8 +10,8 @@ pub(crate) struct SeqInfo {
     pub width: u32,
     pub height: u32,
     pub fps: f64,
-    pub qp: u8,
     pub full_range: bool,
+    pub cabac: bool,
 }
 
 /// (level_idc, MaxMBPS, MaxFS)
@@ -66,8 +66,13 @@ fn timing(fps: f64) -> (u32, u32) {
 }
 
 pub(crate) fn write_sps(w: &mut BitWriter, s: &SeqInfo, level: u8) {
-    w.put(8, 66); // Baseline
-    w.put(8, 0b1100_0000); // constraint_set0 + set1: Constrained Baseline
+    if s.cabac {
+        w.put(8, 77); // Main
+        w.put(8, 0b0100_0000); // constraint_set1
+    } else {
+        w.put(8, 66); // Baseline
+        w.put(8, 0b1100_0000); // constraint_set0 + set1: Constrained Baseline
+    }
     w.put(8, level as u32);
     w.ue(0); // sps id
     w.ue(LOG2_MAX_FRAME_NUM - 4);
@@ -120,10 +125,10 @@ pub(crate) fn write_sps(w: &mut BitWriter, s: &SeqInfo, level: u8) {
     w.trailing();
 }
 
-pub(crate) fn write_pps(w: &mut BitWriter, qp: u8) {
+pub(crate) fn write_pps(w: &mut BitWriter, qp: u8, cabac: bool) {
     w.ue(0);
     w.ue(0);
-    w.bit(false); // CAVLC
+    w.bit(cabac); // entropy_coding_mode_flag
     w.bit(false); // bottom_field_pic_order
     w.ue(0); // slice groups
     w.ue(0); // num_ref_idx_l0_default_active_minus1
@@ -145,6 +150,7 @@ pub(crate) struct SliceHdr {
     pub frame_num: u32,
     pub idr_id: u32,
     pub deblock: bool,
+    pub cabac: bool,
 }
 
 pub(crate) fn write_slice_header(w: &mut BitWriter, h: &SliceHdr) {
@@ -164,6 +170,9 @@ pub(crate) fn write_slice_header(w: &mut BitWriter, h: &SliceHdr) {
         w.bit(false);
     } else {
         w.bit(false);
+    }
+    if h.cabac && !h.idr {
+        w.ue(0); // cabac_init_idc
     }
     w.se(0); // slice_qp_delta
     if h.deblock {
