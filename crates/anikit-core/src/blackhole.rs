@@ -988,13 +988,8 @@ impl BlackHole {
         // The thin images hug the shadow edge.
         let edge_row = self.first_escape as f32;
         let alpha_q = if cinematic { 0.92 * 65535.0 } else { 0.97 * 65535.0 };
-        // Walk the screen in 32×32 tiles: neighbouring pixels read
-        // neighbouring table rows, which keeps the 3 MB table in cache.
-        const TILE: usize = 32;
-        let tiles = (0..h.div_ceil(TILE)).flat_map(|ty| (0..w.div_ceil(TILE)).map(move |tx| (tx, ty)));
-        for pix in tiles.flat_map(|(tx, ty)| {
-            (ty * TILE..((ty + 1) * TILE).min(h)).flat_map(move |y| (tx * TILE..((tx + 1) * TILE).min(w)).map(move |x| y * w + x))
-        }) {
+        // Pixel order keeps every layer's sample stream (and its HDR writes) sequential.
+        for pix in 0..w * h {
             let row = self.scr_psi[pix] * row_scale - 0.5;
             if row >= (ROWS - 1) as f32 {
                 continue;
@@ -1328,13 +1323,24 @@ impl BlackHole {
                 let cd = c + (d - c) * fa;
                 let v = ab + (cd - ab) * fx;
                 let p = p as usize;
-                let tt = tr[p];
-                let e = tt * v * gain;
                 let col = bb[(ca & 0xffff) as usize];
-                hr[p] += e * col[0];
-                hg[p] += e * col[1];
-                hb[p] += e * col[2];
-                tr[p] = tt * (1.0 - (ca >> 16) as f32 * (1.0 / 65535.0) * v.min(1.0));
+                let a = 1.0 - (ca >> 16) as f32 * (1.0 / 65535.0) * v.min(1.0);
+                if k == 0 {
+                    // The direct image is each pixel's first writer this
+                    // frame (the planes were cleared by the tone map): store.
+                    let e = v * gain;
+                    hr[p] = e * col[0];
+                    hg[p] = e * col[1];
+                    hb[p] = e * col[2];
+                    tr[p] = a;
+                } else {
+                    let tt = tr[p];
+                    let e = tt * v * gain;
+                    hr[p] += e * col[0];
+                    hg[p] += e * col[1];
+                    hb[p] += e * col[2];
+                    tr[p] = tt * a;
+                }
             }
         }
     }
