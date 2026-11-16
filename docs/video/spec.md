@@ -387,7 +387,8 @@ anikit-video check  spec.json [--json]                      validate, print erro
 anikit-video still  spec.json --at 2.5 -o f.png [--watch]   one frame (--at @sceneId works too)
 anikit-video sheet  spec.json -o sheet.png [--cols 4 --rows 3 --width 480]
 anikit-video render spec.json -o out.mp4 [--quality draft|good|best] [--from 2 --to 5] [--scale 0.5]
-                    [--codec h264|h265|vp9|av1|prores|gif|png]   (default from the extension: .webm vp9, .gif, .mov prores)
+                    [--codec ak264|h264|h265|vp9|av1|prores|gif|png]
+                    default by extension: .mp4 → ak264 (our encoder; x264 with --quality best), .webm vp9, .gif, .mov prores, .mkv av1
 anikit-video info [--components]                              encoders and the component catalogue
 anikit-video schema [-o spec.schema.json]
 ```
