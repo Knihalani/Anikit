@@ -567,9 +567,10 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 pred[y * 16..y * 16 + 16].copy_from_slice(&r[y * rs..y * rs + 16]);
             }
         }
-        let cost = dsp::satd(src_y, &pred, 16, 16) + mvcost(base_q);
         let mv = base_q;
         let sad = best.0 - mvcost(base_q);
+        // SATD only matters when the result competes with intra.
+        let cost = if quick && sad <= lambda * 24 { best.0 } else { dsp::satd(src_y, &pred, 16, 16) + mvcost(base_q) };
         Inter { mv, cost, mvp, skip_mv, pred, sad }
     }
 
