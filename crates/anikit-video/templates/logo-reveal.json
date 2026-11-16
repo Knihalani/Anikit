@@ -1,0 +1,1 @@
+{ "name": "logo-reveal", "title": "logo-reveal", "description": "placeholder", "params": {}, "spec": { "theme": { "$use": "theme" }, "scenes": [ { "layers": [ { "text": "logo-reveal" } ] } ] } }

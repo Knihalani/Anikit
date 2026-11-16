@@ -1,0 +1,1 @@
+{ "name": "demo", "title": "demo", "description": "placeholder", "params": {}, "spec": { "theme": { "$use": "theme" }, "scenes": [ { "layers": [ { "text": "demo" } ] } ] } }

@@ -169,8 +169,24 @@ pub struct Template {
     pub doc: Value,
 }
 
+const DIRECTIVES: [&str; 6] = ["$each", "$if", "$let", "$fmt", "$use", "$merge"];
+
+/// Shared defs available to every template (`templates/_common.json`).
+pub const COMMON: &str = include_str!("../../templates/_common.json");
+
 /// Templates shipped with the crate.
-pub const BUILTIN: &[(&str, &str)] = &[];
+pub const BUILTIN: &[(&str, &str)] = &[
+    ("launch", include_str!("../../templates/launch.json")),
+    ("feature", include_str!("../../templates/feature.json")),
+    ("changelog", include_str!("../../templates/changelog.json")),
+    ("demo", include_str!("../../templates/demo.json")),
+    ("teaser", include_str!("../../templates/teaser.json")),
+    ("data-story", include_str!("../../templates/data-story.json")),
+    ("testimonial", include_str!("../../templates/testimonial.json")),
+    ("tutorial", include_str!("../../templates/tutorial.json")),
+    ("countdown", include_str!("../../templates/countdown.json")),
+    ("logo-reveal", include_str!("../../templates/logo-reveal.json")),
+];
 
 impl Template {
     pub fn from_json(src: &str) -> Result<Template, String> {
@@ -214,6 +230,18 @@ impl Template {
             "required": required,
             "params": params.keys().collect::<Vec<_>>(),
         })
+    }
+
+    /// Parameters built from each declaration's `example` (falling back to
+    /// defaults): what `new` scaffolds and what tests expand.
+    pub fn example_params(&self) -> Value {
+        let mut out = Map::new();
+        for (k, p) in self.params() {
+            if let Some(e) = p.get("example") {
+                out.insert(k, e.clone());
+            }
+        }
+        Value::Object(out)
     }
 
     /// JSON Schema for the parameters (draft 2020-12 subset).
@@ -300,7 +328,11 @@ impl Template {
         let fmt = format.scope();
         let p = self.resolve_params(params, &b, &fmt)?;
         let globals = json!({"brand": b, "fmt": fmt, "template": self.name}).as_object().cloned().unwrap();
-        let defs = self.doc.get("defs").and_then(|d| d.as_object()).cloned().unwrap_or_default();
+        let common: Value = serde_json::from_str(COMMON).expect("templates/_common.json is valid JSON");
+        let mut defs = common.get("defs").and_then(|d| d.as_object()).cloned().unwrap_or_default();
+        if let Some(own) = self.doc.get("defs").and_then(|d| d.as_object()) {
+            defs.extend(own.clone());
+        }
         let mut sc = Scope::new();
         sc.push(&globals);
         sc.push(&p);
@@ -496,7 +528,8 @@ pub fn expand_value(v: &Value, sc: &mut Scope, defs: &Map<String, Value>, path: 
             let mut out = Vec::with_capacity(a.len());
             for (i, x) in a.iter().enumerate() {
                 let p = format!("{path}[{i}]");
-                let splice = x.get("$each").is_some();
+                // Directives that yield a list splice into the parent list.
+                let splice = x.as_object().is_some_and(|o| o.keys().any(|k| DIRECTIVES.contains(&k.as_str())));
                 match expand_value(x, sc, defs, &p)? {
                     Some(Value::Array(items)) if splice => out.extend(items),
                     Some(y) => out.push(y),
@@ -511,7 +544,12 @@ pub fn expand_value(v: &Value, sc: &mut Scope, defs: &Map<String, Value>, path: 
             }
             if let Some(c) = m.get("$if") {
                 let cond = match c {
-                    Value::String(s) => expr::truthy(&eval_cond(s, sc).map_err(|e| format!("{path}.$if: {e}"))?),
+                    // An undefined name is false, so defs can test optional arguments.
+                    Value::String(s) => match eval_cond(s, sc) {
+                        Ok(v) => expr::truthy(&v),
+                        Err(e) if e.starts_with("unknown name") => false,
+                        Err(e) => return Err(format!("{path}.$if: {e}")),
+                    },
                     other => expr::truthy(other),
                 };
                 let branch = if cond { m.get("then") } else { m.get("else") };
@@ -601,8 +639,7 @@ pub fn expand_value(v: &Value, sc: &mut Scope, defs: &Map<String, Value>, path: 
                 return Ok(Some(Value::Object(o)));
             }
             if let Some(k) = m.keys().find(|k| k.starts_with('$')) {
-                let d = ["$each", "$if", "$let", "$fmt", "$use", "$merge"];
-                let hint = suggest(k, d.iter().copied()).map(|s| format!(" (did you mean '{s}'?)")).unwrap_or_default();
+                let hint = suggest(k, DIRECTIVES.iter().copied()).map(|s| format!(" (did you mean '{s}'?)")).unwrap_or_default();
                 return Err(format!("{path}: unknown directive '{k}'{hint}"));
             }
             let mut o = Map::new();
@@ -738,6 +775,29 @@ mod tests {
         let e = t.expand(&json!({"product": "far too many words", "mode": "drak"}), &brand::Brand::default(), f).unwrap_err();
         assert!(e.iter().any(|m| m.contains("4 words is too long")), "{e:?}");
         assert!(e.iter().any(|m| m.contains("did you mean 'dark'")), "{e:?}");
+    }
+
+    #[test]
+    fn builtin_templates_expand_in_every_format() {
+        let brands = [
+            brand::Brand::default(),
+            brand::Brand::from_json(r##"{"name":"Lumen","theme":"light","colors":{"primary":"#0F766E"},"logo":"logo.svg","voice":{"url":"lumen.app"}}"##).unwrap(),
+        ];
+        for (name, _) in BUILTIN {
+            let t = Template::builtin(name).unwrap();
+            let params = t.example_params();
+            for b in &brands {
+                for f in ["16:9", "9:16", "1:1"] {
+                    let spec = t.expand(&params, b, Format::parse(f).unwrap()).unwrap_or_else(|e| panic!("{name} {f}: {e:?}"));
+                    let text = spec.to_string();
+                    assert!(!text.contains("{{"), "{name} {f}: unexpanded expression in {text}");
+                    for d in DIRECTIVES {
+                        assert!(!text.contains(&format!("\"{d}\"")), "{name} {f}: unexpanded {d} in {text}");
+                    }
+                    assert!(spec["scenes"].as_array().is_some_and(|s| !s.is_empty()), "{name} {f}: no scenes");
+                }
+            }
+        }
     }
 
     #[test]

@@ -1,0 +1,1 @@
+{ "name": "feature", "title": "feature", "description": "placeholder", "params": {}, "spec": { "theme": { "$use": "theme" }, "scenes": [ { "layers": [ { "text": "feature" } ] } ] } }

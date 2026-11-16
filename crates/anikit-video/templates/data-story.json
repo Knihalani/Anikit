@@ -1,0 +1,1 @@
+{ "name": "data-story", "title": "data-story", "description": "placeholder", "params": {}, "spec": { "theme": { "$use": "theme" }, "scenes": [ { "layers": [ { "text": "data-story" } ] } ] } }

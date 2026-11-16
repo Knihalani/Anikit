@@ -1,0 +1,1 @@
+{ "name": "changelog", "title": "changelog", "description": "placeholder", "params": {}, "spec": { "theme": { "$use": "theme" }, "scenes": [ { "layers": [ { "text": "changelog" } ] } ] } }

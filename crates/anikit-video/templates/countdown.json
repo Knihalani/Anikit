@@ -1,0 +1,1 @@
+{ "name": "countdown", "title": "countdown", "description": "placeholder", "params": {}, "spec": { "theme": { "$use": "theme" }, "scenes": [ { "layers": [ { "text": "countdown" } ] } ] } }

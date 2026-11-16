@@ -403,7 +403,11 @@ fn run(e: &Ex, sc: &Scope) -> Result<Value, String> {
                     return if truthy(&l) { Ok(l) } else { run(b, sc) };
                 }
                 "??" => {
-                    let l = run(a, sc)?;
+                    // An undefined name on the left counts as null, so `x ?? 1` works for optional args.
+                    let l = match run(a, sc) {
+                        Err(e) if e.starts_with("unknown name") => Value::Null,
+                        r => r?,
+                    };
                     return if l.is_null() || l == Value::String(String::new()) { run(b, sc) } else { Ok(l) };
                 }
                 _ => {}

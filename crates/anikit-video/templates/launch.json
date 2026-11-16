@@ -1,0 +1,150 @@
+{
+  "name": "launch",
+  "title": "Product launch",
+  "description": "A 20–35 s launch film: a 2-second hook, the product reveal (logo, name, tagline, optional hero screenshot), 2–4 feature beats, an optional proof number and a call to action. Paced by word count so every line is readable.",
+  "duration": "20–35 s",
+  "tags": ["launch", "product", "announcement", "hero"],
+  "params": {
+    "product": { "type": "string", "default": "{{brand.name}}", "maxWords": 3, "description": "Product name as it should appear on screen.", "example": "Anikit Video" },
+    "hook": { "type": "string", "required": true, "maxWords": 7, "description": "The first line: a tension, a promise or a surprising fact, readable in 2 s. Not the product name.", "example": "Video, without the browser." },
+    "tagline": { "type": "string", "required": true, "maxWords": 10, "description": "What it is and why it matters, in one breath.", "example": "Programmatic video for AI agents, rendered natively." },
+    "screenshot": { "type": "image", "description": "Optional hero screenshot shown in a browser frame during the reveal (16:10 works best)." },
+    "url": { "type": "string", "default": "{{brand.voice.url}}", "maxChars": 32, "description": "Address shown in the browser bar and on the end card.", "example": "anikit.dev" },
+    "features": {
+      "type": "array", "required": true, "minItems": 2, "maxItems": 4,
+      "description": "The 2–4 strongest benefits, most important first. One idea each.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "required": true, "maxWords": 5, "description": "Benefit, not feature: 'Renders 10× faster'." },
+          "body": { "type": "string", "maxWords": 16, "description": "One supporting sentence." },
+          "image": { "type": "image", "description": "Optional screenshot for this beat." }
+        }
+      },
+      "example": [ { "title": "10× faster renders", "body": "Native Rust, every core, no headless browser." }, { "title": "Built for agents", "body": "One JSON spec, clear errors, an MCP server." } ]
+    },
+    "stat": {
+      "type": "object", "description": "Optional proof point shown as a big animated number.",
+      "properties": {
+        "value": { "type": "number", "required": true },
+        "prefix": { "type": "string", "maxChars": 3 },
+        "suffix": { "type": "string", "maxChars": 4 },
+        "label": { "type": "string", "required": true, "maxWords": 8 }
+      },
+      "example": { "value": 935, "suffix": " fps", "label": "rendered per second on a laptop" }
+    },
+    "cta": { "type": "string", "default": "{{brand.voice.cta}}", "maxWords": 4, "description": "Call to action on the end card.", "example": "Start building" },
+    "music": { "type": "string", "description": "Optional music file (MP3/WAV). Pick something with a clear beat around 100–124 BPM." }
+  },
+  "spec": {
+    "size": ["{{fmt.w}}", "{{fmt.h}}"],
+    "fps": "{{fmt.fps}}",
+    "theme": { "$use": "theme" },
+    "background": "radial-gradient(circle at 50% 35%, $bg, $bgDeep)",
+    "transition": { "type": "crossfade", "duration": 0.5 },
+    "scenes": [
+      {
+        "id": "hook",
+        "duration": "{{max(2.4, readtime(hook) + 0.5)}}",
+        "camera": { "animate": [ { "from": { "zoom": 1.06 }, "to": { "zoom": 1 }, "duration": "{{max(2.4, readtime(hook) + 0.5)}}", "ease": "outCubic" } ] },
+        "layers": [
+          { "$use": "glows", "with": { "strength": 0.8 } },
+          { "id": "hook", "text": "{{hook}}", "style": "hero", "width": "{{fmt.safe.w}}", "split": "words", "enter": { "preset": "fadeUp", "stagger": 0.09, "duration": 0.7, "ease": "outExpo", "distance": "{{fmt.u * 5}}" } }
+        ]
+      },
+      {
+        "id": "reveal",
+        "transition": { "type": "zoom", "duration": 0.6 },
+        "duration": "{{readtime(product + ' ' + tagline) + (screenshot ? 2.2 : 1.0)}}",
+        "layers": [
+          { "$use": "glows", "with": { "gy": "30%", "hx": "80%", "hy": "75%" } },
+          {
+            "$if": "screenshot",
+            "then": [
+              { "id": "name", "text": "{{product}}", "style": "title", "y": "{{fmt.portrait ? '22%' : '17%'}}", "width": "{{fmt.safe.w}}", "split": "chars", "enter": { "preset": "fadeUp", "stagger": 0.025, "duration": 0.6, "ease": "outExpo" } },
+              { "id": "tagline", "text": "{{tagline}}", "style": "subtitle", "y": "{{fmt.portrait ? '31%' : '28%'}}", "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.6}}", "enter": { "preset": "fadeUp", "delay": 0.45 } },
+              {
+                "$use": "browser",
+                "with": { "src": "{{screenshot}}", "url": "{{url}}", "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.58}}", "height": "{{(fmt.portrait ? fmt.safe.w : fmt.w * 0.58) * 0.6}}" },
+                "y": "{{fmt.portrait ? '60%' : '67%'}}",
+                "enter": { "preset": "slideUp", "delay": 0.7, "duration": 0.9 },
+                "animate": [ { "to": { "scale": 1.03 }, "at": 1.4, "duration": 4, "ease": "inOutSine" } ]
+              }
+            ],
+            "else": [
+              { "$if": "brand.logo", "then": { "$use": "wordmark", "with": { "y": "34%", "height": "{{fmt.u * 13}}", "enter": "popIn" } } },
+              { "id": "name", "text": "{{product}}", "style": "title", "y": "{{brand.logo ? '52%' : '44%'}}", "width": "{{fmt.safe.w}}", "split": "chars", "enter": { "preset": "fadeUp", "stagger": 0.03, "duration": 0.6, "ease": "outExpo", "delay": "{{brand.logo ? 0.25 : 0}}" } },
+              { "id": "tagline", "text": "{{tagline}}", "style": "subtitle", "y": "{{brand.logo ? '64%' : '58%'}}", "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.62}}", "enter": { "preset": "fadeUp", "delay": 0.6 } }
+            ]
+          }
+        ]
+      },
+      {
+        "$each": "features", "as": "f", "index": "i",
+        "do": {
+          "id": "feature-{{i + 1}}",
+          "transition": { "type": "push", "direction": "{{fmt.portrait ? 'up' : 'left'}}", "duration": 0.6, "ease": "inOutQuart" },
+          "duration": "{{readtime(f.title + ' ' + (f.body ?? '')) + (f.image ? 1.4 : 0.8)}}",
+          "layers": [
+            { "$use": "glows", "with": { "strength": 0.6, "gx": "{{i % 2 ? '90%' : '10%'}}", "hx": "{{i % 2 ? '10%' : '90%'}}" } },
+            {
+              "$if": "f.image",
+              "then": {
+                "type": "box", "id": "row", "width": "{{fmt.safe.w}}",
+                "style": { "direction": "{{fmt.landscape ? 'row' : 'column'}}", "gap": "{{fmt.u * 6}}", "align": "center" },
+                "stagger": 0.15,
+                "children": [
+                  {
+                    "type": "box", "width": "{{fmt.landscape ? '38%' : '100%'}}",
+                    "style": { "direction": "column", "gap": "{{fmt.u * 2}}", "align": "{{fmt.landscape ? 'start' : 'center'}}" },
+                    "children": [
+                      { "text": "{{(i + 1) < 10 ? '0' + str(i + 1) : str(i + 1)}}", "style": "label", "align": "{{fmt.landscape ? 'left' : 'center'}}", "enter": "fadeUp" },
+                      { "text": "{{f.title}}", "style": "heading", "width": "100%", "align": "{{fmt.landscape ? 'left' : 'center'}}", "enter": { "preset": "fadeUp", "delay": 0.1 } },
+                      { "$if": "f.body", "then": { "text": "{{f.body}}", "style": "subtitle", "width": "100%", "align": "{{fmt.landscape ? 'left' : 'center'}}", "enter": { "preset": "fadeUp", "delay": 0.25 } } }
+                    ]
+                  },
+                  {
+                    "$use": "browser",
+                    "with": { "src": "{{f.image}}", "width": "{{fmt.landscape ? fmt.safe.w * 0.56 : fmt.safe.w}}", "height": "{{(fmt.landscape ? fmt.safe.w * 0.56 : fmt.safe.w) * 0.62}}" },
+                    "enter": { "preset": "slideLeft", "delay": 0.2, "duration": 0.8 }
+                  }
+                ]
+              },
+              "else": [
+                { "text": "{{(i + 1) < 10 ? '0' + str(i + 1) : str(i + 1)}}", "style": "label", "y": "{{f.body ? '36%' : '40%'}}", "enter": "fadeUp" },
+                { "text": "{{f.title}}", "style": "title", "y": "{{f.body ? '47%' : '51%'}}", "width": "{{fmt.safe.w}}", "split": "words", "enter": { "preset": "fadeUp", "stagger": 0.07, "delay": 0.1, "ease": "outExpo" } },
+                { "$if": "f.body", "then": { "text": "{{f.body}}", "style": "subtitle", "y": "{{fmt.portrait ? '62%' : '63%'}}", "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.6}}", "enter": { "preset": "fadeUp", "delay": 0.45 } } }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "$if": "stat",
+        "then": {
+          "id": "proof",
+          "transition": { "type": "blur", "duration": 0.5 },
+          "duration": "{{readtime(stat.label) + 2.2}}",
+          "layers": [
+            { "$use": "glows", "with": { "gx": "50%", "gy": "40%", "strength": 0.9 } },
+            { "id": "number", "text": "{{(stat.prefix ?? '') + '{value:,}' + (stat.suffix ?? '')}}", "value": "{{stat.value}}", "style": "stat", "y": "44%", "enter": { "preset": "countUp", "duration": 1.6 }, "animate": [ { "from": { "scale": 0.92 }, "duration": 1.6, "ease": "outExpo" } ] },
+            { "id": "label", "text": "{{stat.label}}", "style": "subtitle", "y": "{{fmt.portrait ? '58%' : '62%'}}", "width": "{{fmt.safe.w}}", "enter": { "preset": "fadeUp", "delay": 0.8 } }
+          ]
+        }
+      },
+      {
+        "id": "cta",
+        "transition": { "type": "blur", "duration": 0.6 },
+        "duration": "{{max(3.5, readtime(product + ' ' + cta + ' ' + (url ?? '')) + 1.2)}}",
+        "layers": [
+          { "$use": "glows", "with": { "gx": "30%", "gy": "20%", "hx": "70%", "hy": "85%" } },
+          { "$use": "wordmark", "with": { "y": "{{fmt.portrait ? '36%' : '33%'}}", "height": "{{fmt.u * 10}}", "enter": "scaleIn" } },
+          { "$if": "brand.logo", "then": { "text": "{{product}}", "style": "heading", "y": "{{fmt.portrait ? '45%' : '47%'}}", "enter": { "preset": "fadeUp", "delay": 0.2 } } },
+          { "$use": "button", "with": { "label": "{{cta}}", "delay": 0.45 }, "y": "{{fmt.portrait ? '56%' : '62%'}}" },
+          { "$if": "url", "then": { "text": "{{url}}", "style": "caption", "y": "{{fmt.portrait ? '64%' : '75%'}}", "enter": { "preset": "fadeIn", "delay": 0.8 } } }
+        ]
+      }
+    ],
+    "audio": { "$use": "music" }
+  }
+}

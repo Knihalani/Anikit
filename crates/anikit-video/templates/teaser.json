@@ -1,0 +1,1 @@
+{ "name": "teaser", "title": "teaser", "description": "placeholder", "params": {}, "spec": { "theme": { "$use": "theme" }, "scenes": [ { "layers": [ { "text": "teaser" } ] } ] } }

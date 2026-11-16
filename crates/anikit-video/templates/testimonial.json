@@ -1,0 +1,1 @@
+{ "name": "testimonial", "title": "testimonial", "description": "placeholder", "params": {}, "spec": { "theme": { "$use": "theme" }, "scenes": [ { "layers": [ { "text": "testimonial" } ] } ] } }
