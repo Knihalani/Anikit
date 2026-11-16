@@ -210,7 +210,7 @@ export default async function film2({ anikit: A }) {
         { position: [e.x, e.y + 60, e.z - 700], color: [0.4, 0.9, 1.6], radius: 1600, intensity: 1.3 },
         { position: [0, FLOOR + 200, -21000], color: [1.6, 0.4, 1.1], radius: 4500, intensity: 1.2 + 4 * Math.exp(-(((c - HIT) / 0.35) ** 2)) },
       ];
-      const px = r3.render(cam, items, {
+      const px = r3.render(cam, items, { sort: 'near',
         background: '#020207', fog: [14000, 60000], fogColor: [0.01, 0.008, 0.025],
         sky: [0.02, 0.02, 0.06], horizon: [0.3, 0.12, 0.35], ground: [0.01, 0.01, 0.02], strips: [1.6 * stripK, 1.6 * stripK, 2.0 * stripK],
         key: [0.2, 0.5, 1], keyColor: [0.5, 0.45, 0.7], fill: [0, -1, 0], fillColor: [0.05, 0.05, 0.12], rimColor: [0.6, 0.9, 1.6], lights,
