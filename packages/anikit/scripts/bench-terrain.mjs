@@ -3,7 +3,7 @@
 // instanced trees, an emissive textured sky dome, camera motion blur with
 // `prevCamera`, `depth()` read-back and the film grade, along a low flight.
 // Prints ms per renderer3d pass (from r3.stats) and per full frame.
-//   node scripts/bench-terrain.mjs [--frames 24] [--trees 12000] [--hash] [--aniso] [--only sky,far,terrain,trees,water]
+//   node scripts/bench-terrain.mjs [--frames 24] [--trees 12000] [--hash] [--aniso] [--order near] [--only sky,far,terrain,trees,water]
 // --aniso turns on anisotropic filtering for the terrain textures.
 // --hash prints an FNV hash of every rendered frame (colour and depth), to
 // check that an optimisation leaves the output bit-identical.
@@ -102,6 +102,8 @@ const items = [
   { mesh: cone(24), instances: trees, material: { specular: 0.15, rim: 0.2 } },
   { mesh: A.mesh.plane(1), instances: A.instances(1, () => ({ y: 0, sx: FAR, sz: FAR, color: [0.03, 0.06, 0.08] })), mirror: true, material: { specular: 1.2, shininess: 90, rim: 0.4 } },
 ].filter((_, i) => only.includes(NAMES[i]));
+// --order near: opaque items nearest first (trees, terrain, far, sky) instead of sky first.
+if (process.argv.includes('--order') && process.argv[process.argv.indexOf('--order') + 1] === 'near') items.reverse();
 const env = { background: '#8fb4d8', fog: [3000, 70000], fogColor: [0.62, 0.72, 0.85], sky: [0.35, 0.5, 0.8], horizon: [0.9, 0.85, 0.8], ground: [0.1, 0.12, 0.1], key: [0.5, 0.45, -0.6], keyColor: [1.2, 1.05, 0.9], mirror: { y: 0, strength: 0.6 }, motionBlur: { shutter: 0.5 } };
 console.log(`setup: geometry ${tGeo.toFixed(0)} ms, textures ${tTex.toFixed(0)} ms; terrain ${terrain.triangles} triangles, far ${farTerrain.triangles}, ${TREES} trees`);
 

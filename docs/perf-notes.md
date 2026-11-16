@@ -578,10 +578,15 @@ two interleaved rounds (ms per frame):
 Per item (`--only <item> --frames 6`, opaque pass, single runs): sky dome
 128 → 67 ms; near terrain 127 → 97 ms; far terrain 103 → 104 ms and trees
 51 → 55 ms (both within noise). `bench-raster.mjs`: the textured / shadowed /
-additive scene 138 → 114 ms; the untextured scenes and the film-like frame
-are within the VM's noise (film-like 227–273 base vs 256–312 new over four
-interleaved pairs; natively, `raster_bench`'s knot and towers numbers moved
-both ways by up to 15%), so treat them as unchanged, possibly up to ~3% slower.
+additive scene 138 → 114 ms. **Untextured shading got slightly slower in
+wasm:** the film-like frame was slower in all six interleaved pairs (by
+0.5–14%; 227–273 base vs 256–312 new) and the towers in five of six, about
+3–5% overall. In the one pair with a per-pass split, the gap sits in the mesh
+passes (opaque 83 → 101, mirror 31 → 36 ms); sky, light, DOF and motion blur
+are flat. Natively, `raster_bench` moved both ways (knot 29.5 → 25.5, plain
+knot 18.4 → 20.9, towers 65.9 → 66.1 ms). Not bisected yet; the suspects are
+the larger queue (per-lane aniso gradients) and the two extra branches
+(`unlit`, `aniso`) in the inlined shader.
 
 ### 1. Unlit fast path (core)
 
@@ -639,7 +644,7 @@ pixel is grazing, it adds ~100 ms (from 270). Use it on the near ground only.
 
 | Idea | Why not |
 |---|---|
-| Draw opaque backdrops (the sky dome) last, or sort opaque items front to back | The sky is drawn first in the film, so every pixel is shaded twice or more. Reordering is order-independent except at exact depth ties, but then a tie goes to the other item, and `docs/api.md` says items draw in order. A deferred item compared with `<=` gets ties against other items right but flips ties *within* the item (shared edges). Not bit-identical, so left for a decision. |
+| Draw opaque backdrops (the sky dome) last, or sort opaque items front to back | Measured from the film side: `bench-terrain.mjs --order near` (trees, terrain, far, sky) takes the opaque pass 297 → 200 ms with **identical depth** but different colour hashes (`74919321` vs `ce3c2950`), so some pixels change (not yet located: exact depth ties or queue order). `docs/api.md` says items draw in order, so a film can list opaque items nearest first itself; doing it inside `render()` would change output. A deferred item compared with `<=` gets ties against other items right but flips ties *within* the item (shared edges). |
 | `depth(cam)` in wasm | 7 ms per call, and the loop is division-bound in either place; a gain of ~5 ms per frame wasn't worth a new export. |
 | Caching instance uploads / the `vals` array in `drawMesh` | Setup is ~2 ms per render, and `Instances.data` is writable in place, so "unchanged" can't be detected safely. |
 | Clipping the mirror pass at the water plane | It would skip reflected geometry below the water but change output wherever that geometry shows in the reflection today (mostly culled as back faces already). |
