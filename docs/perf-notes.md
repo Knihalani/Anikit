@@ -1536,7 +1536,7 @@ gap to GSAP (about 10x and 3–4x) is **not closed**.
 
 Per frame, `scripts/bench.mjs`, three interleaved rounds: Anikit still ahead
 of GSAP in all 12 cases in every round, now 1.08–4.91x against 1.06–4.93x
-for the base; Anikit ms per frame within the base's range in every case
+for the base; Anikit ms per frame within noise of the base
 (e.g. 3 numbers 50k 0.73–0.75 → 0.75–0.80, 8 keyframes 50k 0.70–0.75 →
 0.68–0.71, colour 50k 3.05–3.24 → 3.00–3.18). The frame rows of
 `bench-create.mjs` moved likewise within noise.
