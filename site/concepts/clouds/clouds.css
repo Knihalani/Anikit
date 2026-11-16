@@ -30,8 +30,10 @@ h1, h2 { font-family: Head, system-ui, sans-serif; font-weight: 500; letter-spac
 
 main { position: relative; z-index: 2; }
 .hero { height: 100vh; height: 100svh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 0 var(--gut) 12vh; }
+.hero { position: relative; }
+.hero::before { content: ''; position: absolute; left: 50%; top: 44%; width: min(900px, 120vw); height: 420px; transform: translate(-50%, -50%); background: radial-gradient(closest-side, rgba(30, 36, 70, 0.32), rgba(30, 36, 70, 0)); pointer-events: none; z-index: -1; }
 .hero h1 { font-size: clamp(64px, 11vw, 168px); text-shadow: 0 6px 40px rgba(40, 30, 60, 0.35); }
-.lede { font-size: clamp(16px, 1.4vw, 20px); margin: 18px 0 0; max-width: 30em; color: rgba(255, 252, 246, 0.9); text-shadow: 0 1px 14px rgba(40, 30, 60, 0.45); }
+.lede { font-size: clamp(16px, 1.4vw, 20px); margin: 18px 0 0; max-width: 30em; color: #fffaf3; text-shadow: 0 1px 3px rgba(30, 30, 60, 0.45), 0 1px 18px rgba(30, 30, 60, 0.55); }
 
 .bank { height: 120vh; }
 .bank.tall { height: 150vh; }
@@ -85,7 +87,7 @@ main { position: relative; z-index: 2; }
 .install { text-align: center; opacity: 0; }
 .install-row { display: inline-flex; gap: 10px; align-items: center; background: rgba(14, 16, 28, 0.5); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 999px; padding: 6px 6px 6px 22px; margin-bottom: 12px; }
 .install-row code { font-size: 17px; }
-.install p { margin: 0; text-shadow: 0 1px 10px rgba(0, 0, 0, 0.4); }
+.install p { margin: 0; color: rgba(255, 255, 255, 0.86); text-shadow: 0 1px 3px rgba(40, 30, 60, 0.5), 0 1px 14px rgba(40, 30, 60, 0.5); }
 
 @media (max-width: 760px) {
   .nav-links a:not(:last-child) { display: none; }

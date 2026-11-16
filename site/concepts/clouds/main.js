@@ -39,7 +39,7 @@ const PTS = [[0, 650, 0], [380, 900, -4200], [-260, 1550, -8400], [420, 1850, -1
 // Layout
 // ---------------------------------------------------------------------------
 const stops = $$('.stop'), panels = stops.map((s) => s.querySelector('.panel'));
-const L = { stops: [], above: 0, max: 1 };
+const L = window.__L = { stops: [], above: 0, max: 1 };
 const panelR = (k, y) => {
   const T = L.stops[k]; if (!T) return 0;
   const u = (y - T.top) / (T.h - vh);
@@ -85,7 +85,7 @@ function pose(p) {
 }
 
 function frame(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const dt = Math.min(0.25, (now - last) / 1000); last = now; // the scroll spring is sub-stepped, so long frames stay stable
   stats.dt = stats.dt * 0.92 + dt * 1000 * 0.08; stats.frames++;
   if (stats.log.length < 6000) stats.log.push(dt * 1000);
   // Scroll: a critically damped spring towards the real position.
@@ -95,7 +95,7 @@ function frame(now) {
     for (let i = 0, n = Math.ceil(dt / 0.008), h = dt / n; i < n; i++) { sv += (k * (scrollY - sy) - c * sv) * h; sy += sv * h; }
     if (Math.abs(scrollY - sy) < 0.2 && Math.abs(sv) < 2) { sy = scrollY; sv = 0; }
   }
-  const p = progressAt(sy);
+  const p = progressAt(sy); stats.sy = sy; stats.p = p;
   if (!reduced) t += dt;
   pose(p);
   // Pointer tilt, in metres at the look-ahead point.
