@@ -536,3 +536,111 @@ that, which points at `flush()`'s optimisation budget.
 | Lane leader's time, iteration and timing copied into locals instead of re-read from its node per child | 10 fewer instructions per child natively, no measurable change in wasm (`ak_tick` 0.73–0.82 ms vs 0.74–0.96 ms before, seven interleaved rounds). |
 | `r.pt.x = F64[r.at]` (or `r.pw(...)`) inline in `flush()` instead of `r.render()` | no change (0.88–1.11 vs 0.96–1.01 ms): the call isn't the cost. |
 | Matching GSAP's structure (one tween per segment) | not attempted: with the segment memo the per-target core work is a compare, two loads and a lerp; what remains is per-node bookkeeping (lane checks, the updated list) and the JS store. |
+
+## Fourth round: a landscape film (renderer3d)
+
+The next film is a landscape, not the neon city: a 401×401 textured terrain
+(320k triangles, 4096² albedo), a coarse far terrain, a mirror lake, thousands
+of instanced trees, an emissive textured sky dome, camera motion blur with
+`prevCamera`, `depth()` read-back and the grade, with two renders per frame in
+transitions. `scripts/bench-terrain.mjs` reproduces it synthetically (12,000
+cone trees of 48 triangles, a 4096×2048 sky, a low flight over the lake) and
+prints ms per `renderer3d` pass from `r3.stats`, the depth read-back, and
+whole composition frames with the draw / read / grade split.
+
+**Method:** the baseline is `adcffe5`'s `dist/` saved before any change. All
+three Node benches take `DIST=path/to/dist`, and the runs below are
+interleaved (base, new, base, new). `--hash` (in `bench-terrain.mjs` and
+`bench-raster.mjs`) prints FNV hashes of every frame's colour and depth; every
+change in this round keeps them identical:
+
+| Bench | Hash (base = new) |
+|---|---|
+| `bench-terrain.mjs --hash --frames 12` | `ce3c2950` |
+| `bench-raster.mjs --hash` knot / towers / cubes / textures+shadows+additive / film-like | `bcfa8f8e/06cb0df2` · `a3adee0a/8eb73fb5` · `cccf64fd/7f3d856d` · `9fc65e43/8661ce9e` · `77424f03/fdb7e70e` |
+
+### Results
+
+`node scripts/bench-terrain.mjs --frames 12 --hash`, 1920×1080, wasm in Node,
+two interleaved rounds (ms per frame):
+
+| | base | new |
+|---|---|---|
+| one render | 638 · 608 | 443 · 493 |
+| … mirror pass | 127 · 121 | 93 · 100 |
+| … opaque pass | 453 · 429 | 295 · 332 |
+| … motion blur | 55 · 56 | 52 · 59 |
+| `depth(cam)` read-back | 6.9 · 6.8 | 6.9 · 7.3 |
+| full frame (render + depth + grade) | 648 · 633 | 487 · 476 |
+| transition frame (2 renders + grade) | 971 · 921 | 710 · 702 |
+| grade alone (within the full frame) | 35 · 33 | 33 · 32 |
+
+Per item (`--only <item> --frames 6`, opaque pass, single runs): sky dome
+128 → 67 ms; near terrain 127 → 97 ms; far terrain 103 → 104 ms and trees
+51 → 55 ms (both within noise). `bench-raster.mjs`: the textured / shadowed /
+additive scene 138 → 114 ms; the untextured scenes and the film-like frame
+are within the VM's noise (film-like 227–273 base vs 256–312 new over four
+interleaved pairs; natively, `raster_bench`'s knot and towers numbers moved
+both ways by up to 15%), so treat them as unchanged, possibly up to ~3% slower.
+
+### 1. Unlit fast path (core)
+
+A material with zero diffuse, specular and rim and no reflections, lines or
+pulses (the emissive textured sky dome) makes every lighting term exactly
+zero, so `px4` now returns base × (ambient + emissive), tinted by or plus the
+texture, then fogged, without the lighting maths. Test
+`unlit_fast_path_matches_the_full_shader` renders such materials with every
+texture mode, fog, ground fog, a point light, shadows and opaque / additive /
+gloss blending through both paths and requires identical colour and depth.
+A finite, positive shininess is part of the condition: it keeps the Schlick
+quotient finite, so `0 × it` stays 0. Sky dome alone: 128 → 67 ms.
+
+### 2. Bilinear sampler: SIMD across channels, no division to wrap (core)
+
+`Texture::sample` blended each channel in scalar and wrapped every index with
+`rem_euclid` and `%` (four integer divisions per sample). It now loads each
+texel's four bytes into lanes (`V4::bytes`) and blends all channels at once,
+with the same operations per channel; indices wrap with compares, as
+`u − floor(u)` already puts them in −1…n−1 (`rem_euclid` remains for the
+rest). `texture_sampling_matches_the_reference_bit_for_bit` checks 20,000
+samples, including wrap edges, against the old sampler. Four lane samples
+are transposed with shuffles. Textured scenes: −15–20% on the opaque pass.
+
+### 3. Tiny and thin triangles (core)
+
+A triangle whose bounds hold no pixel centre (with a conservative 1/16 px
+margin, so rounding in the span solve can't disagree) now returns before
+setup, rows outside the centre range are not walked, and the shading
+gradients (with six divisions for the UV footprint) are set up only when a
+row has a covered span. Triangle counts are unchanged. Tree pass in the
+mirror (half-res) 44 → 39 ms; little change at full resolution.
+
+`examples/trees_prof.rs` (12,000 cones) under callgrind shows where the
+trees' time goes: about 1,000 instructions per front-facing triangle in
+`tri`, mostly the per-row span solve (an edge-function evaluation, a division
+and a floor/ceil per edge per row) on tall, thin cone sides, and about 20% in
+the vertex stage. Stepping the edge functions incrementally would make it
+cheap, but it rounds differently from the direct evaluation, so it can't be
+bit-identical; it is the next step if a small output change is acceptable.
+
+### 4. Anisotropic filtering (opt-in, `textureFilter: 'aniso'`)
+
+New: per-pixel UV derivatives from the triangle's screen gradients of 1/w and
+uv/w (exact under perspective, unlike the per-triangle footprint used for
+line antialiasing). The mip follows the shorter footprint axis (ratio capped
+at 8), and up to 4 bilinear taps sit along the longer one, at most 1.5
+footprints apart (one tap up to a 1.5 ratio). Default output is unchanged.
+Its cost on `bench-terrain.mjs --aniso` (both terrains): opaque 295–332 →
+515 ms. On the near terrain alone it adds ~90 ms (the first version, one tap
+per footprint and up to 8, added 164); on the far ring, where almost every
+pixel is grazing, it adds ~100 ms (from 270). Use it on the near ground only.
+
+### Not done or not kept (fourth round)
+
+| Idea | Why not |
+|---|---|
+| Draw opaque backdrops (the sky dome) last, or sort opaque items front to back | The sky is drawn first in the film, so every pixel is shaded twice or more. Reordering is order-independent except at exact depth ties, but then a tie goes to the other item, and `docs/api.md` says items draw in order. A deferred item compared with `<=` gets ties against other items right but flips ties *within* the item (shared edges). Not bit-identical, so left for a decision. |
+| `depth(cam)` in wasm | 7 ms per call, and the loop is division-bound in either place; a gain of ~5 ms per frame wasn't worth a new export. |
+| Caching instance uploads / the `vals` array in `drawMesh` | Setup is ~2 ms per render, and `Instances.data` is writable in place, so "unchanged" can't be detected safely. |
+| Clipping the mirror pass at the water plane | It would skip reflected geometry below the water but change output wherever that geometry shows in the reflection today (mostly culled as back faces already). |
+| ffmpeg piping / readback | 1.2 ms of a ~480 ms frame. |
