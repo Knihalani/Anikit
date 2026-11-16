@@ -60,6 +60,7 @@ Import from 'anikit'. Times are in seconds (only `engine.onFrame`/`engine.tick` 
 - Physics worlds
 - 3D
 - Point clouds and glow
+- Gaussian splats: `splats`
 - Capture: screenshots and recordings
 - Testing and diagnostics
 - Particle emitters

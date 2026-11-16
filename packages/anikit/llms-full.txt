@@ -44,6 +44,7 @@ Calls work immediately: the WebAssembly core loads in the background and queues 
 | Thousands of things on a canvas | `batch(n, props)` (one Float32Array) or `world().addMany()` |
 | 3D points / tilt / transform strings | `scene3d()`, `tilt(el)`, `{ transform: 'rotateY(180deg)' }` |
 | 100k particles | `pointCloud()` + `glow()` |
+| Photoreal 3D captures, splat morphs, 100k–1M soft 3D points on the GPU | `splats(canvas, set)` with `splats.load('x.ply')` or procedural `splats.fromText/fromSDF/fromMesh/fromPoints`; animate `layer.fx`, `layer.camera`, `layer.transform`, or `layer.morph(other)` |
 | Off-main-thread transform/opacity | `compositor(el, props, options)` |
 | Cleanup in React/Vue/Svelte | `const ctx = context(() => { … }, rootEl); return () => ctx.revert()` |
 | Respect "reduce motion" | `engine.reducedMotion = 'user'` once at startup |
@@ -1608,6 +1609,49 @@ cloud.explode(0, 0, 0, 1200);                        // shockwave; particles fin
 
 `budget` (ms, default 7) enables adaptive quality: if rendering stays over budget, the pixel resolution steps down (to `minResolution`) so slower machines keep their frame rate.
 
+## Gaussian splats: `splats`
+
+`splats(canvasOrSelector, set, options)` renders real-time 3D Gaussian splats with WebGL2 and returns a `SplatLayer`. A `SplatSet` is plain data: `count` splats of `SPLAT_STRIDE` (14) floats each: position, linear scale, rotation quaternion (w x y z), colour and opacity. Load captured scenes (`.ply` from 3DGS training or a coloured point cloud, binary little-endian; antimatter15 `.splat`), or make them procedurally, so a scene needs no downloads:
+
+```ts
+const word = splats.fromText('anikit', { count: 120_000, width: 2.4, color: '#9ab' });
+const ball = splats.fromSDF((x, y, z) => Math.hypot(x, y, z) - 0.9, {
+  count: 120_000, color: (i, x, y, z) => [0.5 + x / 2, 0.5 + y / 2, 1],
+});
+const pts = splats.fromPoints([0, 0, 0, 1, 0, 0], { size: 0.05, color: [1, 0.4, 0.2] });
+const quad = splats.fromMesh([0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0], [0, 1, 2, 0, 2, 3], { count: 5000 });
+const both = splats.merge(pts, quad);
+const scan = await splats.load('/scenes/garden.ply'); // or splats.parse(arrayBuffer, 'splat')
+
+const layer = splats('#stage', word, { background: '#07080b', orbit: true });
+layer.morph(ball, { duration: 2.4, ease: 'inOutCubic', spread: 0.8 }); // GPU morph, staggered
+layer.explode({ to: 1.5, duration: 1 });                             // and back: explode({ to: 0 })
+layer.swirl({ to: 0.5 });
+layer.dissolve({ to: 1, duration: 2 });
+layer.reveal({ duration: 1.5 });
+animate(layer.transform, { rotateY: 360 }, { duration: 12, repeat: -1, ease: 'linear' });
+animate(layer.camera, { z: 2 }, { duration: 3 });
+scroll(animate(layer.fx, { reveal: [0, 1] }, { duration: 1 })); // scroll-driven reveal
+
+const texels: Uint32Array = packSplats(word);   // the GPU layout (8 u32 per splat)
+console.log(word.data.length / SPLAT_STRIDE, layer instanceof SplatLayer, layer.stats.sortMs);
+```
+
+Every splat is projected to a 2D covariance in the vertex shader and drawn as an instanced quad with Gaussian falloff, premultiplied and sorted back to front. Splats live in one `RGBA32UI` texture (32 bytes each: centre, `rgba8`, 3D covariance as six halves; `packSplats(set)` produces it). The depth sort is a 16-bit counting sort in the WebAssembly core, running in a Web Worker (main-thread fallback when workers are unavailable), and runs again only when the view or the morph moves past `sortThreshold`. Effects are uniforms: `layer.fx` (`morph`, `spread`, `explode`, `swirl`, `dissolve`, `reveal`, `size`, `opacity`), `layer.camera` (`x y z`, target `tx ty tz`, `fov`, `near`, `far`) and `layer.transform` (`x y z`, `rotateX/Y/Z` in degrees, `scale`) are plain objects, so tweens, springs, timelines and scroll drive them with no per-frame allocation.
+
+| Member | Purpose |
+|---|---|
+| `morph(set, { duration, ease, delay, spread })` | GPU morph to another set (resampled to this layer's count); the target becomes `set` when done. |
+| `explode()`, `swirl()`, `dissolve()`, `reveal()` (`{ to, duration, ease, delay }`) | Tween one effect uniform. |
+| `setSplats(set)`, `set`, `stats` (`count`, `sorts`, `sortMs`, `frames`, `worker`), `sorted` | Data and diagnostics. |
+| `render()` (automatic unless `autoRender: false`), `resize()`, `orbit()` | Own-canvas rendering. |
+| `draw(view, proj)` | Draw into the bound framebuffer of the layer's context with your own column-major matrices: the hook for other WebGL2 scenes (create the layer with `splats(gl, set)`). |
+| `kill()` / `revert()` | Free the GPU resources and the worker. |
+
+Options (`SplatsOptions`): `camera`, `transform`, `fx`, `background`, `autoRender`, `pixelRatio`, `worker`, `sortThreshold`, `orbit`. Types: `SplatSet`, `SplatColor`, `SplatSourceOptions`, `SplatFx`, `SplatCamera`, `SplatTransform`, `SplatMorphOptions`, `SplatEffectOptions`, `SplatStats`.
+
+Limits: colour is view-independent (spherical-harmonic bands above degree 0 are skipped when parsing); `.ksplat` is not supported yet; effects that move splats far (`explode`, `swirl`) are sorted by their resting positions, so heavy overlap mid-effect can blend slightly out of order.
+
 ## Capture: screenshots and recordings
 
 ```ts
@@ -2057,6 +2101,7 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Physics worlds](#physics-worlds) | `world`, `World` | `WorldOptions`, `BodyInit` |
 | [3D](#3d) | `scene3d`, `Scene3D`, `tilt`, `parseTransform`, `toMatrix3d`, `mixTransforms` | `SceneOptions`, `Projection`, `DrawOptions`, `TiltOptions`, `Vec3`, `Matrix` |
 | [Point clouds and glow](#point-clouds-and-glow) | `pointCloud`, `PointCloud`, `textPoints`, `glow`, `Glow` | `CloudOptions`, `ShapeInput`, `GlowOptions`, `GlowRenderOptions` |
+| [Gaussian splats](#gaussian-splats-splats) | `splats`, `SplatLayer`, `packSplats`, `SPLAT_STRIDE` | `SplatSet`, `SplatColor`, `SplatSourceOptions`, `SplatFx`, `SplatCamera`, `SplatTransform`, `SplatsOptions`, `SplatMorphOptions`, `SplatEffectOptions`, `SplatStats` |
 | [Particle emitters](#particle-emitters) | `emitter`, `Emitter` | `EmitterOptions`, `SpawnShape` |
 | [Solid 3D](#solid-3d-renderer3d-mesh-instances) | `renderer3d`, `Renderer3D`, `mesh`, `Mesh3D`, `instances`, `Instances`, `texture`, `Texture3D`, `shatter`, `Shards`, `flightPath`, `FlightPath` | `InstanceInit`, `MaterialOptions`, `LightOptions`, `DrawItem`, `PointsItem`, `ShatterOptions`, `FlightPathOptions`, `FlightPose`, `Point3` |
 | [Audio](#audio-analysis) | `analyzeAudio`, `decodeAudio` | `AudioAnalysis` |
