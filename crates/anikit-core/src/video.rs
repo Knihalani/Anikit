@@ -724,10 +724,16 @@ impl PostFx {
             while x0 < w {
                 let nl = (w - x0).min(4);
                 // Four pixels as packed words (the last group repeats its edge pixel).
-                let words: [u32; 4] = core::array::from_fn(|l| {
-                    let o = (x0 + l.min(nl - 1)) * 4;
-                    u32::from_le_bytes([row[o], row[o + 1], row[o + 2], row[o + 3]])
-                });
+                let words: [u32; 4] = if nl == 4 {
+                    // Full group: one 16-byte slice, no per-lane bounds checks.
+                    let q: &[u8; 16] = row[x0 * 4..x0 * 4 + 16].try_into().expect("16 bytes");
+                    core::array::from_fn(|l| u32::from_le_bytes([q[l * 4], q[l * 4 + 1], q[l * 4 + 2], q[l * 4 + 3]]))
+                } else {
+                    core::array::from_fn(|l| {
+                        let o = (x0 + l.min(nl - 1)) * 4;
+                        u32::from_le_bytes([row[o], row[o + 1], row[o + 2], row[o + 3]])
+                    })
+                };
                 let [mut r, g, mut b] = V4::unpack_rgb(words);
                 if ab {
                     // Red pushed outward, blue pulled inward, proportional to radius.
@@ -786,11 +792,19 @@ impl PostFx {
                     V4::splat(0.0)
                 };
                 let out = V4::pack_rgb(((c[0] + n) * k).maxf(0.0), ((c[1] + n) * k).maxf(0.0), ((c[2] + n) * k).maxf(0.0));
-                for l in 0..nl {
-                    let o = (x0 + l) * 4;
-                    // RGB from the grade, alpha kept.
-                    let v = (out[l] & 0x00ff_ffff) | (words[l] & 0xff00_0000);
-                    row[o..o + 4].copy_from_slice(&v.to_le_bytes());
+                if nl == 4 {
+                    let q: &mut [u8; 16] = (&mut row[x0 * 4..x0 * 4 + 16]).try_into().expect("16 bytes");
+                    for l in 0..4 {
+                        // RGB from the grade, alpha kept.
+                        let v = (out[l] & 0x00ff_ffff) | (words[l] & 0xff00_0000);
+                        q[l * 4..l * 4 + 4].copy_from_slice(&v.to_le_bytes());
+                    }
+                } else {
+                    for l in 0..nl {
+                        let o = (x0 + l) * 4;
+                        let v = (out[l] & 0x00ff_ffff) | (words[l] & 0xff00_0000);
+                        row[o..o + 4].copy_from_slice(&v.to_le_bytes());
+                    }
                 }
                 x0 += 4;
             }
