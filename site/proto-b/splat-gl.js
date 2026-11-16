@@ -93,6 +93,54 @@ void main() {
   o = s * uGain;
 }`;
 
+// Captions as splats: one splat per cell of the caption's texture (rasterised
+// by htmlCanvas into this context), drifting apart as uP goes 0 → 1.
+const CAP_VS = `#version 300 es
+uniform sampler2D uTex;
+uniform vec4 uRect;       // x, y, w, h in device pixels (top-left origin)
+uniform vec2 uView;       // viewport in device pixels
+uniform vec2 uGrid;       // columns, rows
+uniform float uP, uTime, uCell;
+uniform vec3 uTint;
+out vec2 vUv;
+out vec4 vCol;
+float hash(float n) { return fract(sin(n) * 43758.5453); }
+void main() {
+  int id = gl_VertexID;
+  vec2 c = vec2(float(id & 1), float(id >> 1)) * 2.0 - 1.0;
+  float i = float(gl_InstanceID);
+  vec2 cell = vec2(mod(i, uGrid.x), floor(i / uGrid.x));
+  vec2 uv = (cell + 0.5) / uGrid;
+  vec4 t = textureLod(uTex, uv, 0.0);
+  float h1 = hash(i * 1.37 + 0.1), h2 = hash(i * 2.11 + 3.7), h3 = hash(i * 0.73 + 9.1);
+  // each splat leaves at its own moment, left to right with jitter
+  float local = clamp(uP * 1.6 - (uv.x * 0.45 + h1 * 0.15), 0.0, 1.0);
+  float e = local * local * (3.0 - 2.0 * local);
+  vec2 px = uRect.xy + uv * uRect.zw;
+  float a = 6.2831 * h2;
+  vec2 drift = vec2(cos(a), sin(a)) * (40.0 + 160.0 * h3) + vec2(260.0, -140.0) * (0.4 + h1);
+  drift += vec2(sin(uTime * 1.3 + h1 * 9.0), cos(uTime * 1.1 + h2 * 9.0)) * 18.0 * e;
+  px += drift * e * uView.y / 900.0;
+  float alpha = t.a * (1.0 - smoothstep(0.35, 1.0, e));
+  vec3 col = t.a > 0.0 ? t.rgb / t.a : vec3(0.0);
+  col = mix(col, uTint, smoothstep(0.0, 0.5, e));
+  float r = uCell * (0.75 + e * 1.6);
+  vec2 ndc = vec2(px.x / uView.x * 2.0 - 1.0, 1.0 - px.y / uView.y * 2.0);
+  ndc += c * r * 2.0 / uView;
+  gl_Position = alpha < 0.01 ? vec4(2.0, 2.0, 2.0, 1.0) : vec4(ndc, 0.0, 1.0);
+  vUv = c;
+  vCol = vec4(col, alpha);
+}`;
+const CAP_FS = `#version 300 es
+precision mediump float;
+in vec2 vUv;
+in vec4 vCol;
+out vec4 o;
+void main() {
+  float g = exp(-dot(vUv, vUv) * 2.2) * vCol.a;
+  o = vec4(vCol.rgb * g, g);
+}`;
+
 function compile(gl, vs, fs) {
   const p = gl.createProgram();
   for (const [type, src] of [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]]) {
@@ -122,6 +170,7 @@ export class SplatRenderer {
     this.count = count;
     this.splat = compile(gl, SPLAT_VS, SPLAT_FS);
     this.comp = compile(gl, QUAD_VS, COMP_FS);
+    this.cap = compile(gl, CAP_VS, CAP_FS);
 
     this.vao = gl.createVertexArray();
     gl.bindVertexArray(this.vao);
@@ -148,6 +197,25 @@ export class SplatRenderer {
     this.w = this.h = this.gw = this.gh = 0;
     this.viewProj = new Float32Array(16);
     this.model = new Float32Array(9);
+  }
+
+  /** Draw a caption texture as dissolving splats. `c` is a reused object. */
+  drawCaption(c) {
+    const gl = this.gl, u = this.cap.u;
+    gl.useProgram(this.cap.p);
+    gl.bindVertexArray(this.emptyVao);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, c.tex);
+    gl.uniform1i(u.uTex, 0);
+    gl.uniform4f(u.uRect, c.x, c.y, c.w, c.h);
+    gl.uniform2f(u.uView, this.w, this.h);
+    gl.uniform2f(u.uGrid, c.cols, c.rows);
+    gl.uniform1f(u.uP, c.p);
+    gl.uniform1f(u.uTime, c.time);
+    gl.uniform1f(u.uCell, c.cell);
+    gl.uniform3fv(u.uTint, c.tint);
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, c.cols * c.rows);
+    gl.bindVertexArray(null);
   }
 
   resize(w, h) {
@@ -209,14 +277,14 @@ export class SplatRenderer {
       if (f.shadow > 0.01) {
         gl.uniform1f(u.uMode, 1);
         gl.uniform1f(u.uSize, f.size * 7);
-        gl.uniform1f(u.uMaxPx, 18);
+        gl.uniform1f(u.uMaxPx, 9);
         gl.uniform1f(u.uAlpha, 0.045 * f.shadow);
         gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n >> 3);
       }
       if (f.glow > 0.01) {
         gl.uniform1f(u.uMode, 0);
         gl.uniform1f(u.uSize, f.size * 6);
-        gl.uniform1f(u.uMaxPx, 22);
+        gl.uniform1f(u.uMaxPx, 10);
         gl.uniform1f(u.uAlpha, 0.05 * f.glow);
         gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n >> 2);
       }
@@ -246,7 +314,7 @@ export class SplatRenderer {
     // 3. the splats
     gl.uniform1f(u.uMode, 0);
     gl.uniform1f(u.uSize, f.size);
-    gl.uniform1f(u.uMaxPx, 14 * f.dpr);
+    gl.uniform1f(u.uMaxPx, 4.5 * f.dpr);
     gl.uniform1f(u.uAlpha, f.alpha);
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n);
     gl.bindVertexArray(null);

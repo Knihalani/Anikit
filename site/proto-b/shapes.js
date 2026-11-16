@@ -1,6 +1,6 @@
 // Target shapes for the sculpture. Each returns a Float32Array [x, y, z] * n in
 // model space (y up, about ±550 wide). Deterministic, allocation once.
-import { textPoints, staggerValues } from '../../packages/anikit/dist/anikit.lean.js';
+import { splats, staggerValues } from '../../packages/anikit/dist/anikit.lean.js';
 
 const TAU = Math.PI * 2;
 function rng(seed) {
@@ -19,57 +19,72 @@ export function dust(n) {
     const s = Math.sqrt(1 - u * u);
     o[i * 3] = Math.cos(a) * s * rad * 1.4;
     o[i * 3 + 1] = u * rad * 0.7;
-    o[i * 3 + 2] = Math.sin(a) * s * rad - 300;
+    o[i * 3 + 2] = Math.sin(a) * s * rad * 0.6 - 500;
   }
   return o;
 }
 
-export function lettering(n, text, font, weight, width) {
-  return textPoints(text, n, { font, weight, width, depth: 70 });
-}
-
-/** A flower with four rings of curled petals, a domed centre and a stem. */
-export function flower(n) {
-  const o = new Float32Array(n * 3), r = rng(11);
-  const tilt = -0.42, ct = Math.cos(tilt), st = Math.sin(tilt);
-  const lift = 60;
+// Positions of a splat set (stride 14), resampled to n with a scattering
+// permutation so any prefix of the result covers the whole form.
+const STRIDE = 14;
+function positionsOf(set, n, flipY = false) {
+  const o = new Float32Array(n * 3), c = Math.max(1, set.count), d = set.data;
   for (let i = 0; i < n; i++) {
-    let x, y, z;
-    const k = r();
-    if (k < 0.1) {
-      // centre dome
-      const a = r() * TAU, rr = Math.sqrt(r()) * 62;
-      x = Math.cos(a) * rr; y = Math.sin(a) * rr; z = 30 + Math.sqrt(Math.max(0, 62 * 62 - rr * rr)) * 0.55 + gauss(r) * 3;
-    } else if (k < 0.15) {
-      // stem: a gentle curve down to the floor (applied after tilt below)
-      const t = r();
-      const sx = Math.sin(t * 2.2) * 40 + gauss(r) * 5, sz = gauss(r) * 5;
-      const sy = -t * 420;
-      o[i * 3] = sx; o[i * 3 + 1] = sy + lift - 30; o[i * 3 + 2] = sz - 40;
-      continue;
-    } else {
-      const L = Math.min(3, Math.floor(r() * 4.6));
-      const np = 6 + L * 2;
-      const j = Math.floor(r() * np);
-      const th = (j / np) * TAU + L * 0.45;
-      const R = 330 - L * 62;
-      const u = Math.pow(r(), 0.8), v = r() - 0.5;
-      const elev = 0.18 + L * 0.32 + u * u * (0.5 + L * 0.15);
-      const w = Math.pow(Math.sin(Math.PI * Math.min(1, u * 1.05)), 0.7) * v * R * 0.62;
-      const rr = u * R + 20;
-      const radial = rr * Math.cos(elev);
-      const axial = rr * Math.sin(elev) - (v * v) * 30 * u; // petals cup slightly
-      const c = Math.cos(th), s = Math.sin(th);
-      x = c * radial - s * w;
-      y = s * radial + c * w;
-      z = axial + gauss(r) * 2.5;
-    }
-    // face the camera, tipped up
-    o[i * 3] = x;
-    o[i * 3 + 1] = y * ct - z * st + lift;
-    o[i * 3 + 2] = y * st + z * ct;
+    const j = ((i * 7919) % c) * STRIDE;
+    o[i * 3] = d[j]; o[i * 3 + 1] = flipY ? -d[j + 1] : d[j + 1]; o[i * 3 + 2] = d[j + 2];
   }
   return o;
+}
+
+/** Text as splats (splats.fromText), in world units. */
+export function lettering(n, text, font, weight, width) {
+  return positionsOf(splats.fromText(text, { count: n, width, depth: 70, font, weight }), n, true);
+}
+
+/**
+ * A flower: petals as a triangle mesh sampled by splats.fromMesh, a domed
+ * centre from splats.fromSDF, a stem from splats.fromPoints; merged.
+ */
+export function flower(n) {
+  const tilt = -0.42, ct = Math.cos(tilt), st = Math.sin(tilt), lift = 60;
+  const pos = [], idx = [];
+  const put = (x, y, z) => { pos.push(x, y * ct - z * st + lift, y * st + z * ct); return pos.length / 3 - 1; };
+  const U = 12, V = 6;
+  for (let L = 0; L < 4; L++) {
+    const np = 6 + L * 2, R = 330 - L * 62;
+    for (let j = 0; j < np; j++) {
+      const th = (j / np) * TAU + L * 0.45, c = Math.cos(th), sn = Math.sin(th);
+      const base = pos.length / 3;
+      for (let a = 0; a <= U; a++) for (let b = 0; b <= V; b++) {
+        const u = a / U, v = b / V - 0.5;
+        const elev = 0.18 + L * 0.32 + u * u * (0.5 + L * 0.15);
+        const w = Math.pow(Math.sin(Math.PI * Math.min(1, u * 1.02 + 0.001)), 0.7) * v * R * 0.62;
+        const rr = u * R + 20;
+        const radial = rr * Math.cos(elev), axial = rr * Math.sin(elev) - v * v * 30 * u;
+        put(c * radial - sn * w, sn * radial + c * w, axial);
+      }
+      for (let a = 0; a < U; a++) for (let b = 0; b < V; b++) {
+        const i0 = base + a * (V + 1) + b;
+        idx.push(i0, i0 + V + 1, i0 + 1, i0 + 1, i0 + V + 1, i0 + V + 2);
+      }
+    }
+  }
+  const petals = splats.fromMesh(pos, idx, { count: Math.round(n * 0.84), seed: 3 });
+  // centre: a squashed sphere, then tipped like the petals
+  const centre = splats.fromSDF((x, y, z) => (Math.hypot(x / 62, y / 62, (z - 26) / 36) - 1) * 36, { count: Math.round(n * 0.11), bounds: 100, seed: 5 });
+  const cd = centre.data;
+  for (let k = 0; k < cd.length; k += STRIDE) {
+    const y = cd[k + 1], z = cd[k + 2];
+    cd[k + 1] = y * ct - z * st + lift; cd[k + 2] = y * st + z * ct;
+  }
+  const r = rng(13), stemN = n - petals.count - centre.count, stem = new Float32Array(Math.max(0, stemN) * 3);
+  for (let i = 0; i < stemN; i++) {
+    const t = r();
+    stem[i * 3] = Math.sin(t * 2.2) * 40 + gauss(r) * 5;
+    stem[i * 3 + 1] = -t * 420 + lift - 30;
+    stem[i * 3 + 2] = gauss(r) * 5 - 40;
+  }
+  return positionsOf(splats.merge(petals, centre, splats.fromPoints(stem)), n);
 }
 
 /** A flock: birds along a ribbon, wing phases spread with staggerValues(). */

@@ -1,7 +1,7 @@
 // Prototype B: a living splat sculpture.
 // The particles live in anikit's pointCloud() (WebAssembly springs + morphs);
 // this file wires scroll, pointer and captions to it and draws one WebGL canvas.
-import { ready, engine, pointCloud, animate, spring, timeline, stagger, set } from '../../packages/anikit/dist/anikit.lean.js';
+import { ready, engine, pointCloud, animate, spring, timeline, stagger, set, htmlCanvas } from '../../packages/anikit/dist/anikit.lean.js';
 import { SplatRenderer } from './splat-gl.js';
 import * as S from './shapes.js';
 
@@ -12,6 +12,8 @@ const N = q.has('n') ? +q.get('n') : 131072;
 const STAGES = 6;
 const DUST = 6; // shape index of the waiting fog
 
+const T = (window.__t = []);
+const mark = (l, t0) => T.push(l + ' ' + Math.round(performance.now() - t0));
 const canvas = document.getElementById('stage');
 const caps = [...document.querySelectorAll('.cap')];
 
@@ -83,7 +85,7 @@ const narrow = () => innerWidth < 700;
 const cloud = pointCloud(N, { ...FEEL[0] });
 // shape 0..5 are the forms; DUST holds the waiting fog
 cloud.shape(DUST, S.dust(N));
-cloud.shape(0, S.lettering(N, 'anikit', 'Display', 900, 1000));
+{ const t0 = performance.now(); cloud.shape(0, S.lettering(N, 'anikit', 'Display', 900, 1000)); mark('letter', t0); }
 cloud.snap(DUST);
 
 // The other forms are built one per frame after first paint, so no long task.
@@ -97,7 +99,9 @@ const builders = [
 let built = 1;
 function buildNext() {
   if (!builders.length) return;
+  const t0 = performance.now();
   builders.shift()();
+  mark('build' + built, t0);
   built++;
   setTimeout(buildNext, 30);
 }
@@ -218,19 +222,52 @@ addEventListener('pointerdown', (e) => {
 
 // ---------------------------------------------------------------------------
 // Captions: one visible at a time; lines enter with a stagger.
-let shown = -1, capAnim = null;
+let shown = -1;
+// Each caption is rasterised into the splat context once it has fully entered
+// (htmlCanvas → a texture in our WebGL2 context); on exit it dissolves as splats.
+const capFx = caps.map(() => ({ hc: null, ready: false, x: 0, y: 0, w: 0, h: 0, cols: 0, rows: 0, cell: 1, p: 1, live: false }));
+const capDraw = { tex: null, x: 0, y: 0, w: 0, h: 0, cols: 0, rows: 0, p: 0, time: 0, cell: 1, tint: null };
+function rasterCaption(k) {
+  const fx = capFx[k];
+  if (!gl || fx.hc || shown !== k) return;
+  const el = caps[k], r = el.getBoundingClientRect(), dpr = f.dpr;
+  if (r.width < 4 || r.height < 4) return;
+  fx.hc = htmlCanvas(el, { target: gl.gl, live: false, scale: Math.min(dpr, 2) });
+  fx.hc.ready.then(() => { fx.ready = true; }, () => {});
+  fx.x = r.left * dpr; fx.y = r.top * dpr; fx.w = r.width * dpr; fx.h = r.height * dpr;
+  const cellCss = 1.5;
+  fx.cols = Math.min(420, Math.ceil(r.width / cellCss));
+  fx.rows = Math.min(200, Math.ceil(r.height / cellCss));
+  fx.cell = (r.width / fx.cols) * dpr * 0.75;
+}
+function dropRasters() {
+  for (const fx of capFx) { fx.hc?.dispose?.(); fx.hc = null; fx.ready = false; fx.live = false; }
+}
+addEventListener('resize', dropRasters);
+
 function showCaption(k) {
   if (k === shown) return;
-  const prev = caps[shown];
+  const prev = caps[shown], pfx = capFx[shown];
   shown = k;
   if (prev) {
     const p = prev;
-    animate(p, { opacity: 0, y: -10, filter: 'blur(6px)' }, { duration: 0.35, ease: 'inQuad', onComplete: () => { if (caps[shown] !== p) p.classList.remove('on'); } });
+    if (pfx.ready && pfx.hc?.texture && !reduced) {
+      // swap the DOM caption for its splat twin, then let it drift apart
+      set(p, { opacity: 0 });
+      p.classList.remove('on');
+      pfx.live = true;
+      animate(pfx, { p: [0, 1] }, { duration: 1.5, ease: 'linear', onComplete: () => { pfx.live = false; } });
+    } else {
+      animate(p, { opacity: 0, y: -10, filter: 'blur(6px)' }, { duration: 0.35, ease: 'inQuad', onComplete: () => { if (caps[shown] !== p) p.classList.remove('on'); } });
+    }
   }
   const c = caps[k];
   c.classList.add('on');
   set(c, { opacity: 1, y: 0, filter: 'blur(0px)' });
-  capAnim = animate(c.children, { opacity: [0, 1], y: [14, 0], filter: ['blur(8px)', 'blur(0px)'] }, { duration: 0.7, ease: 'outCubic', delay: stagger(0.08, { start: prev ? 0.25 : 0 }) });
+  animate(c.children, { opacity: [0, 1], y: [14, 0], filter: ['blur(8px)', 'blur(0px)'] }, {
+    duration: 0.7, ease: 'outCubic', delay: stagger(0.08, { start: prev ? 0.35 : 0 }),
+    onComplete: () => setTimeout(() => rasterCaption(k), 120),
+  });
 }
 
 // The swell: a looping timeline, faded in and out with the wave stage.
@@ -355,6 +392,14 @@ function frameBody(time, dtMs) {
   f.radial = smooth(0.3, 0.9, w4);
   f.alpha = 0.55 * Math.min(1, st.intro * 1.6 + 0.15);
   gl.render(f);
+  for (let i = 0; i < capFx.length; i++) {
+    const fx = capFx[i];
+    if (!fx.live || !fx.hc?.texture) continue;
+    capDraw.tex = fx.hc.texture; capDraw.x = fx.x; capDraw.y = fx.y; capDraw.w = fx.w; capDraw.h = fx.h;
+    capDraw.cols = fx.cols; capDraw.rows = fx.rows; capDraw.cell = fx.cell; capDraw.p = fx.p;
+    capDraw.time = f.time; capDraw.tint = f.b;
+    gl.drawCaption(capDraw);
+  }
 
   if (PERF && ++perfTick % 15 === 0) {
     const g = governor;
@@ -363,6 +408,7 @@ function frameBody(time, dtMs) {
 }
 
 // Pre-warm: compile, upload, draw once offscreen-visible-at-0 before revealing.
+if (q.has('test')) engine.lagSmoothing(0); // headless checks: let slow frames advance real time
 engine.onFrame(frame);
 onScroll();
 st.s = target.s;
