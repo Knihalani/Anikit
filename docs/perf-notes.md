@@ -924,3 +924,151 @@ unit strings at 50k). This is the colour gain in the
 | `claim`/`unclaim` with one state lookup per target, and `set(prop, undefined)` instead of `Map.delete` | 0–5% slower creation in three interleaved rounds of a development creation loop. |
 | Pinning benchmark processes to one CPU (`taskset`) | did not remove the 2x process-to-process modes under the shared load. |
 | Typed OM transforms (`setTypedOM(true)`) | slower than the string path now: `MANUAL=1 LIBS=anikit,anikit-typed,gsap bench-dom.mjs`, one run, 0.41 / 1.85 / 4.31 (strings) vs 0.77 / 2.87 / 9.66 ms (Typed OM) at 500 / 2000 / 5000. Still off by default. |
+
+## Fifth round (video)
+
+Goal: the whole path from a `renderer3d` frame to an encoded video file, on
+the real films (`film/film.mjs`) and the synthetic benches. The machine is
+4 cores shared with other agents (load 7–9 throughout), so every number below
+comes from interleaved base/new runs. Single runs moved by up to ±15% on
+their own (`bench-post` swung 93 → 80 ms with no post change), so only the
+large differences count.
+
+**Baseline:** `86b471c`'s `dist/`, `node/` and `bin/`, saved before any
+change. `film/film.mjs` at HEAD was copied as `film-base.mjs` for the base
+CLI.
+
+**Output identity** (base = new, every change in this round):
+
+| Check | Hash |
+|---|---|
+| `bench-terrain.mjs --frames 12 --hash`, also with `--sort near` | `ce3c2950` |
+| `bench-raster.mjs --hash` (5 scenes) | `bcfa8f8e/06cb0df2` · `a3adee0a/8eb73fb5` · `cccf64fd/7f3d856d` · `9fc65e43/8661ce9e` · `77424f03/fdb7e70e` |
+| `film/film.mjs`, frames 0, 240, …, 1200, RGBA after the grade (base film vs the film with `sort: 'near'` and `pixels()`) | `791476f7 41b78629 04626768 d9b92636 7dfdebe2 db144d17` |
+| `film.mjs` frames 960–965: `--preroll 0` vs the default 0.5 | `7dfdebe2 c0d32803 86c7991b ae7e6d89 ea02b3c1 9d2b3772` (same) |
+| CLI 16–16.5 s, one worker: base vs `--preroll 0` | byte-identical mp4 |
+
+### Results
+
+`bench-terrain.mjs --frames 12 --hash` (ms per frame, interleaved pairs;
+"new" is the first commit without `sort`, then with it; "final" adds the
+mirror change):
+
+| | base | new | new, `sort: 'near'` | final, `sort: 'near'` |
+|---|---|---|---|---|
+| one render | 479 · 512 | 449 · 451 | 355 · 335 | 325 |
+| … opaque pass | 316 · 341 | 297 · 303 | 199 · 188 | 194 |
+| … mirror pass | 100 · 108 | 95 · 93 | 97 · 87 | 74 |
+| … motion blur | 60 · 59 | 54 · 53 | 57 · 57 | 54 |
+| `depth(cam)` | 8.0 · 8.1 | 7.4 · 7.2 | 7.7 · 7.7 | 5.1 |
+
+`bench-raster.mjs`: flat (film-like frame 266 · 282 base vs 270 · 278 new).
+The 3–5% untextured regression from the fourth round doesn't show above this
+noise; it is still unbisected.
+
+`film/film.mjs` through `anikit-render --profile --every 240` (frames at
+0, 4, …, 20 s; the base film against the film with `sort: 'near'` and
+`pixels()`). Means per frame in ms, in two interleaved rounds. "c2" is the
+second commit (sort + pixels + pipeline); "final" adds the mirror change:
+
+| | base | c2 | final |
+|---|---|---|---|
+| frame total (step + draw + read + post) | 1013 · 1059 | 872 · 921 | 929 · 874 |
+| … draw (all 3D passes + the film's JS) | 950 · 994 | 825 · 870 | 871 · 824 |
+| … 3d: mirror + opaque | 687 · 691 | 581 · 602 | 630 · 603 |
+| … read (canvas → frame buffer) | 7.2 · 6.8 | 1.4 · 1.5 | 1.5 · 1.5 |
+| … post (grade) | 56 · 59 | 46 · 50 | 57 · 48 |
+
+So about −13% per film frame, from `sort: 'near'` and the canvas round
+trip. The mirror change is flat on the film within noise (−20 ms on
+`bench-terrain`). Its cost moves between columns: run first, the opaque pass
+reads 224–244 ms instead of 347–365, and the reflection after it reads 379–386
+instead of 234–237. That shift is not explained yet.
+
+End to end (`anikit-render`, one worker, `film.mjs` with the base CLI and
+dist against the new CLI with `--preroll 0`; wall time including world setup
+and x264 medium):
+
+| Slice | base | new | Output |
+|---|---|---|---|
+| 16–16.5 s (30 frames, plain flight; before the mirror commit) | 68.3 s | 26.9 s | byte-identical mp4 |
+| 2–2.5 s (30 frames, over the lake) | 52.7 s | 34.0 s | byte-identical mp4 |
+
+On a full three-worker render, the preroll is 30 of ~430 frames per worker.
+A 2-second `--chunk` with `--preroll 0` costs one world setup (~2.5 s) per
+120 frames and evens out the 0.45–3 s frame costs across workers. The tease
+at the start no longer holds up the first worker while the others finish.
+(Not measured on a full render: the main checkout was rendering, and the
+machine is shared.)
+
+### 1. Opaque items in any order, list-order pixels (`sort: 'near'`)
+
+Before this change, drawing the sky dome last changed the picture. The fourth
+round measured it (`--order near`, opaque 297 → 200 ms, colour hash
+`74919321`). The cause is exact depth ties between items. With `<`, the item
+drawn first wins a tie, so reordering the list changes which item wins.
+
+Now an opaque draw can carry its list index (flag bit 4, index in bits 8…).
+In that mode (`SHADE_OWN`, its own const `MODE`, so the other modes compile
+as before), the core keeps a per-pixel owner. A fragment wins with `z < d`,
+or with `z == d` when the pixel's owner is later in the list. Ties inside an
+item keep first-drawn-wins. The final pixel is therefore the minimum depth,
+then the lowest list index, then the item's own first triangle, whatever the
+draw order.
+
+`render(…, { sort: 'near' })` uses this in the main and mirror passes. It
+orders opaque items by the far side of their bounds (the instance spheres
+from `ak_mesh_bounds`, cached per mesh), so a dome around the camera goes
+last. Test `any_draw_order_with_list_indices_matches_list_order` draws five
+items with coincident surfaces in all 120 orders and requires the list-order
+colour and depth. A plain reversed order does differ from list order, so the
+test scene really has ties.
+
+The film already lists its items nearest first (terrain, rocks, trees,
+towers, far, dome), so it gains less than the bench.
+
+### 2. Half-res reflections after the scene, shading only what shows
+
+With `mirror`, the half-res reflection used to render first, and the opaque
+scene was then drawn over almost all of it. Now the opaque pass runs first.
+`reflection_after` marks half-res pixels whose 4×4 upsampling footprint is
+fully covered with depth −∞, so every test fails and they are never shaded.
+`reflection_end` then writes the upsample only into pixels the scene left
+uncovered, and keeps the depth. The upsample of a needed pixel reads the same
+half-res values, and per-lane shading doesn't depend on queue grouping, so
+the picture is the same. Test
+`reflection_after_the_scene_matches_reflection_first` checks colour and depth
+at 80×60, 81×63 and 33×18 against the old order. `resolution: 'full'` keeps
+the old order.
+
+### 3. The pipeline: preroll, jobs, the canvas round trip
+
+- **Preroll.** Every worker drew 0.5 s (30 frames) unseen before its slice,
+  so trails match. That cost the same as 30 output frames per job, ~7% of a
+  three-worker render and far more for short slices. `--preroll <s>` sets it.
+  For films whose `draw()` keeps no state (film.mjs: camera on a path, motion
+  blur from `prevCamera`), `--preroll 0` gives the same pixels.
+- **Balance.** Frame cost varies 5× along film.mjs (0.45 s plain frames,
+  2.3–3.2 s in the three-look tease). One equal slice per worker leaves the
+  others idle while one finishes the expensive stretch. `--chunk <s>` splits
+  the range into jobs that free workers take in turn. Each job pays world
+  setup (~2.5 s with the bake cache), and its preroll unless `--preroll 0`.
+  The default is unchanged.
+- **Canvas round trip.** A full-frame render went `putImageData` (13.8 ms at
+  1080p in Skia) → `canvas.data()` (5.4 ms) → the frame buffer. The new
+  `FrameInfo.pixels(px)` hands the frame to the grade directly. Transitions,
+  impacts, BGRA read-back and `keepCanvas` (used by `--still` with `raw`)
+  still go through the canvas. In the film profile, `read` dropped from
+  7.2 to 1.7 ms, and `draw` lost the `putImageData`.
+
+### Measured and left alone (fifth round)
+
+| Item | Finding |
+|---|---|
+| `depth(cam)` linearisation in WebAssembly | Built and measured, not kept. Same f64 formula, bit-identical, but 5.18 → 4.52 and 10.86 → 10.09 ms (two interleaved pairs): division-bound in either place, plus an 8 MB copy to keep the JS-owned result. Not worth an export. |
+| x264 preset (encoding) | 30 film frames at 1080p, `-crf 18`: medium 3.4 s user + 0.8 s sys (~140 ms CPU per frame), faster 2.6 + 0.2, veryfast 1.4 + 0.1. `-threads 1` cuts the sys time (0.8 → 0.1 s) but changes the bitstream (827,077 vs 827,361 bytes). ffmpeg runs beside each worker with 3 frames queued, so it overlaps rendering. The default worker count (cores − 1) leaves one core for the encoders. Kept medium; `--preset` already exists. |
+| Raw RGBA vs I420 into ffmpeg | Already I420 from WebAssembly (1.5 bytes per pixel) with a 3-frame queue. `Buffer.from` is one 3 MB copy per frame. |
+| Instance-buffer caching | Not done: setup is 2.6–5 ms per render, and `Instances.data` is writable in place. |
+| Thin cone triangles | Not done: incremental edge stepping rounds differently, so it isn't bit-identical. |
+| The film grade | `bench-post.mjs`: full grade 93 (base) vs 80 ms (new, unchanged code) in one pair, so ±15% noise. aa 17–20, bloom 14–15, rays 21–23, flares 19–21 ms. Not changed this round. |
+| The film's own JS | `draw` minus the 3D passes is ~190 ms per frame on average in film.mjs, 270–290 ms in the comic look and ~500 ms in the tease. That is film code (the per-pixel `comic()` ink pass and the look `composite()` in JS), not the engine; it is the next largest cost after the 3D passes. |
