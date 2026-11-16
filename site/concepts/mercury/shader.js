@@ -93,7 +93,7 @@ vec3 env(vec3 d, float rough) {
     vec2 pp = d.xy / up - uLight * 0.22;
     float s = 0.03 + rough;
     c += vec3(1.0, 0.98, 0.95) * 5.0 * softBox(pp - vec2(0.05, 0.42), vec2(0.62, 0.075), s);
-    c += vec3(1.0) * 1.4 * softBox(pp - vec2(-0.12, -0.05), vec2(0.30, 0.20), s + 0.08);
+    c += vec3(1.0) * 0.55 * softBox(pp - vec2(-0.12, -0.05), vec2(0.30, 0.20), s + 0.12);
     c += vec3(0.86, 0.92, 1.0) * 3.0 * softBox(pp - vec2(-0.82, 0.0), vec2(0.06, 0.75), s);
     c += vec3(1.0, 0.95, 0.88) * 2.2 * softBox(pp - vec2(0.95, -0.2), vec2(0.045, 0.6), s);
   }

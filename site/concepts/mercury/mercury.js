@@ -471,7 +471,7 @@ function render(a, b, t) {
   gl.uniform1f(U.uMelt, m);
   // Puddle under the melting letters, carried up with the page once it has formed.
   const lift = Math.max(0, scrollY - vh * 0.85) / vh;
-  const pr = text.ready ? sstep(0.1, 0.8, m) * text.hw * 0.58 * (1 - sstep(0.15, 0.75, lift)) : 0;
+  const pr = text.ready ? sstep(0.1, 0.8, m) * text.hw * 0.58 * (1 - sstep(0.02, 0.4, lift)) : 0;
   gl.uniform4f(U.uPool, text.cx, text.cy - text.hh * 0.62 + lift, pr, 0.006 + 0.006 * sstep(0.1, 0.8, m));
   rimUniform(U.uRimA, U.uRimAP, a);
   rimUniform(U.uRimB, U.uRimBP, b);
