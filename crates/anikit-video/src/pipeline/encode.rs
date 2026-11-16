@@ -17,6 +17,8 @@ pub enum Codec {
     ProRes,
     Gif,
     Png,
+    /// Our renderer-aware H.264 encoder (MP4 via ffmpeg `-c copy`).
+    Ak264,
 }
 
 impl Codec {
@@ -46,6 +48,7 @@ impl Codec {
             "prores" => Codec::ProRes,
             "gif" => Codec::Gif,
             "png" => Codec::Png,
+            "ak264" => Codec::Ak264,
             _ => return None,
         })
     }
@@ -58,6 +61,7 @@ impl Codec {
             Codec::ProRes => "prores",
             Codec::Gif => "gif",
             Codec::Png => "png",
+            Codec::Ak264 => "ak264",
         }
     }
 }
@@ -100,6 +104,7 @@ pub struct FfmpegEncoder {
     h: u32,
     buf: Vec<u8>,
     name: String,
+    ak: Option<ak264::Encoder>,
 }
 
 fn secs(x: f32) -> String {
@@ -114,7 +119,11 @@ impl FfmpegEncoder {
         let (w, h) = (w & !1, h & !1);
         let mut cmd = Command::new("ffmpeg");
         cmd.args(["-hide_banner", "-loglevel", "error", "-y"]);
-        cmd.args(["-f", "rawvideo", "-pix_fmt", "yuv420p", "-s", &format!("{w}x{h}"), "-r", &format!("{fps}"), "-i", "-"]);
+        if codec == Codec::Ak264 {
+            cmd.args(["-f", "h264", "-r", &format!("{fps}"), "-i", "-"]);
+        } else {
+            cmd.args(["-f", "rawvideo", "-pix_fmt", "yuv420p", "-s", &format!("{w}x{h}"), "-r", &format!("{fps}"), "-i", "-"]);
+        }
         let use_audio = !audio.is_empty() && !matches!(codec, Codec::Gif | Codec::Png);
         let mut filters = Vec::new();
         if use_audio {
@@ -151,6 +160,12 @@ impl FfmpegEncoder {
             filters.push(format!("{ins}amix=inputs={}:normalize=0:dropout_transition=0,atrim=0:{}[aout]", audio.len(), secs(dur)));
             cmd.args(["-filter_complex", &filters.join(";")]);
             cmd.args(["-map", "0:v", "-map", "[aout]", "-c:a", "aac", "-b:a", "192k"]);
+        }
+        if codec == Codec::Ak264 {
+            cmd.args(["-c:v", "copy", "-movflags", "+faststart"]);
+            if !use_audio {
+                cmd.args(["-map", "0:v"]);
+            }
         }
         let (preset, crf) = match q {
             Quality::Draft => ("ultrafast", 26),
@@ -190,7 +205,10 @@ impl FfmpegEncoder {
                 let gf = fps.min(25.0);
                 cmd.args(["-vf", &format!("fps={gf},split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4")]);
             }
-            Codec::Png => {}
+            Codec::Png | Codec::Ak264 => {}
+        }
+        if matches!(codec, Codec::H264 | Codec::H265 | Codec::Vp9 | Codec::Av1) {
+            cmd.args(["-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709"]);
         }
         let out_s = if codec == Codec::Png && !out.to_string_lossy().contains('%') {
             // `frames.png` → `frames_00001.png`.
@@ -208,7 +226,16 @@ impl FfmpegEncoder {
         cmd.stdin(Stdio::piped()).stdout(Stdio::null()).stderr(Stdio::piped());
         let mut child = cmd.spawn().map_err(|e| format!("can't start ffmpeg (is it installed?): {e}"))?;
         let stdin = child.stdin.take();
-        Ok(FfmpegEncoder { child: Some(child), stdin, out: out.to_path_buf(), w, h, buf: Vec::new(), name: codec.name().into() })
+        let ak = (codec == Codec::Ak264).then(|| {
+            let qp = match q {
+                Quality::Draft => 28,
+                Quality::Good => 23,
+                Quality::Best => 19,
+            };
+            let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(8);
+            ak264::Encoder::new(ak264::EncoderConfig { width: w, height: h, fps: fps as f64, qp, gop: (fps * 4.0) as u32, deblock: true, threads, full_range: false })
+        });
+        Ok(FfmpegEncoder { child: Some(child), stdin, out: out.to_path_buf(), w, h, buf: Vec::new(), name: codec.name().into(), ak })
     }
 
     fn pack(&mut self, f: &YuvFrame) {
@@ -227,6 +254,21 @@ impl FfmpegEncoder {
 
 impl Encoder for FfmpegEncoder {
     fn write(&mut self, f: &YuvFrame, repeat: bool) -> Result<(), String> {
+        if let Some(ak) = &mut self.ak {
+            let fr = ak264::YuvFrame { width: self.w, height: self.h, y: &f.y, u: &f.u, v: &f.v, y_stride: f.y_stride, c_stride: f.c_stride };
+            let hints = if repeat {
+                let (mw, mh) = ak.mb_size();
+                ak264::FrameHints { changed: Some(vec![false; mw * mh]), motions: Vec::new() }
+            } else {
+                ak264::FrameHints::default()
+            };
+            let bytes = ak.encode(&fr, &hints);
+            let r = self.stdin.as_mut().ok_or("encoder finished")?.write_all(bytes);
+            if r.is_err() {
+                return Err(self.finish().err().unwrap_or_else(|| "ffmpeg closed its input".into()));
+            }
+            return Ok(());
+        }
         if !repeat || self.buf.is_empty() {
             self.pack(f);
         }
