@@ -1,8 +1,6 @@
 import { createFractal, de } from './fractal.js';
-import {
-  init, engine, animate, timeline, stagger, spring, magnetic, splitText, scroll, smoothScroll, inView, flip,
-  flightPath, world, pointCloud, glow, scene3d, circle, star, rect,
-} from '../../../packages/anikit/dist/anikit.lean.js';
+// anikit is imported dynamically so the fractal's first frame never waits for it.
+const ak = import('../../../packages/anikit/dist/anikit.lean.js');
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -11,11 +9,9 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const small = matchMedia('(pointer: coarse)').matches || innerWidth < 640;
 const TAU = Math.PI * 2;
 
-// 1 · The fractal draws its first frame now, before anikit has loaded.
-const q = params.get('q');
-const fr = createFractal($('#fractal'), { quality: q ? +q : undefined });
+const q = params.get('q');   // ?q=0.4 pins the fractal's resolution (captures)
 
-// 2 · The dive: a spiral of camera stations closing in on one point of the surface,
+// 1 · The dive: a spiral of camera stations closing in on one point of the surface,
 // each about 2.4× closer than the last. Found by marching the same estimate in JS.
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
@@ -48,6 +44,9 @@ for (let k = 1; k < STATIONS; k++) {
   pts.push(c);
 }
 pts.push(add(P, mul(sub(pts[STATIONS - 1], P), 0.35)));   // a point beyond the last station for look-ahead
+// 2 · The fractal draws its first frame now, before anikit has loaded.
+const fr = createFractal($('#fractal'), { quality: q ? +q : undefined, initial: { eye: START, forward: norm(add(mul(norm(sub(pts[1], START)), 0.35), mul(norm(sub(P, START)), 0.65))) } });
+const { init, engine, animate, timeline, stagger, spring, magnetic, splitText, scroll, smoothScroll, inView, flip, flightPath, world, pointCloud, glow, scene3d, circle, star, rect } = await ak;
 const path = flightPath(pts, { lookAhead: 0.4, bank: 0.55, maxBank: 16, bankWindow: 0.9 });
 
 // Arc length of every station (nearest sample on the path).
@@ -85,6 +84,8 @@ function layout() {
 const par = { x: 0, y: 0 };
 const cam = { s: 0 };
 let fade = 0;
+let zoomText = '';
+const zoomEl = $('#zoom');
 
 function steer(timeMs) {
   if (!fr) return;
@@ -108,6 +109,9 @@ function steer(timeMs) {
     fwd = norm(add(fwd, add(mul(r, par.x * 0.012), mul(up, -par.y * 0.010))));
   }
   const breathe = reduced ? 0 : Math.sin((t * TAU) / 26) * 0.42 * Math.min(1, dist / D0);
+  const z = D0 / Math.max(dist, 1e-6);
+  const zt = z < 10 ? z.toFixed(1) : Math.round(z).toLocaleString('en-US');
+  if (zt !== zoomText) { zoomText = zt; zoomEl.textContent = '×' + zt; }
   fr.set({ eye, forward: fwd, up, power: 8 + breathe, fade, focus: len(sub(P, eye)) * 0.9, time: t, depth: Math.log2(D0 / Math.max(dist, 1e-6)) / 10 });
 }
 
@@ -140,6 +144,7 @@ if (!reduced && !small) {
 // Hero: letters rise, then the copy leaves as you scroll in.
 {
   const { chars } = splitText('#title', { type: 'chars' });
+  $('#title').classList.add('split');
   timeline({ defaults: { ease: 'outCubic' } })
     .add(chars, { yPercent: [60, 0], opacity: [0, 1], rotateX: [-50, 0] }, { duration: 1.4, ease: 'outExpo', delay: stagger(0.06) })
     .add('#lede', { opacity: [0, 1], y: [14, 0] }, { duration: 1.2 }, '-=0.9')
@@ -161,7 +166,7 @@ chambers.forEach((sec) => {
     .add({}, { duration: 0.2 }, 0.8);
   scroll(tl, { target: voidSec, offset: ['start end', 'end end'] });
   // The fractal dissolves into the void.
-  scroll((p) => { fade = Math.min(1, Math.max(0, (p - 0.05) / 0.55)); }, { target: voidSec, offset: ['start end', 'end end'] });
+  scroll((p) => { fade = Math.min(1, Math.max(0, (p - 0.05) / 0.55)); zoomEl.style.opacity = String(1 - fade); }, { target: voidSec, offset: ['start end', 'end end'] });
 }
 // Progress rail.
 scroll((p) => {
@@ -331,10 +336,10 @@ function whileNear(sec, fn) {
 {
   const counts = $$('#numbers .n-count'), bars = $$('#numbers .n-row u');
   counts.forEach((c) => (c.textContent = (0).toFixed(+c.dataset.dec)));
-  bars.forEach((b) => (b.style.transform = 'scaleX(0)'));
+  if (!reduced) bars.forEach((b) => (b.style.transform = 'scaleX(0)'));
   inView($('#numbers .n-chart'), () => {
     counts.forEach((c, i) => { const o = { v: 0 }, dec = +c.dataset.dec; animate(o, { v: +c.dataset.to }, { duration: 1.6, ease: 'outExpo', delay: i * 0.08, onUpdate: () => (c.textContent = o.v.toFixed(dec)) }); });
-    animate(bars, { scaleX: [0, 1] }, { duration: 1.4, ease: 'outExpo', delay: stagger(0.12, { start: 0.2 }) });
+    if (!reduced) animate(bars, { scaleX: [0, 1] }, { duration: 1.4, ease: 'outExpo', delay: stagger(0.12, { start: 0.2 }) });
   }, { once: true, amount: 0.6 });
 }
 

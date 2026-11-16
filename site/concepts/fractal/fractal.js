@@ -146,7 +146,7 @@ export function de(x, y, z, power = 8) {
   return (0.5 * Math.log(r) * r) / dr;
 }
 
-export function createFractal(canvas, { quality } = {}) {
+export function createFractal(canvas, { quality, initial } = {}) {
   const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, depth: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
   if (!gl) { canvas.classList.add('nogl'); return null; }
   const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(s)); return s; };
@@ -169,6 +169,7 @@ export function createFractal(canvas, { quality } = {}) {
   let scale = fixed ? quality : mobile ? 0.4 : 0.55;     // start low: first frame fast
   const steps = mobile ? 90 : 130;
   const state = { eye: [0.4, 0.5, 3.1], forward: [0, 0, -1], up: [0, 1, 0], power: 8, fade: 0, focus: 2, time: 0, depth: 0 };
+  Object.assign(state, initial);
   let prev = null, n = 0, frame = 0, running = false, raf = 0, w = 0, h = 0, last = 0, slow = 0, fast = 0, cool = 0, idle = false;
 
   const resize = () => {
