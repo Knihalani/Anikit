@@ -380,9 +380,11 @@ export default async function film2({ anikit: A, node }) {
     [7.4, [-10, YH + 150, 150], W0([-62, 6], 26)],
   ];
   const orbit = (t) => {
-    const az = (-16 + 4.4 * (t - 8.2)) * DEG;
-    const el = lerp(lerp(44, 56, smooth(8.2, 9.6, t)), 24, smooth(9.8, 16, t)) * DEG;
-    const dist = lerp(lerp(190, 540, smooth(8.0, 9.9, t)), 900, smooth(10.0, 14.2, t)) - 70 * smooth(14.5, 20, t);
+    // Once the watch is closed, the orbit turns into a slow push-in that rises over the dial (the end
+    // lands closer on 10:10 rather than holding a wide shot).
+    const az = (-16 + 4.4 * (t - 8.2) + 26 * smooth(13.4, 20, t)) * DEG;
+    const el = (lerp(lerp(44, 56, smooth(8.2, 9.6, t)), 24, smooth(9.8, 16, t)) + 12 * smooth(14.6, 20, t)) * DEG;
+    const dist = lerp(lerp(190, 540, smooth(8.0, 9.9, t)), 900, smooth(10.0, 14.2, t)) - 250 * smooth(13.8, 20.2, t);
     const ty = lerp(movY(t) - 10, 40, smooth(10.0, 12.5, t));
     const tg = [0, ty, 8 * smooth(12, 16, t)];
     return [[tg[0] + Math.sin(az) * Math.cos(el) * dist, tg[1] + Math.sin(el) * dist, tg[2] + Math.cos(az) * Math.cos(el) * dist], tg];
