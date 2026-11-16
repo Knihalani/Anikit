@@ -44,7 +44,8 @@
     "bench:dom": "node scripts/bench-dom.mjs",
     "bench:3d": "node scripts/bench-3d.mjs",
     "record": "node bin/anikit-record.mjs",
-    "bench:cloud": "node scripts/bench-cloud.mjs"
+    "bench:cloud": "node scripts/bench-cloud.mjs",
+    "bench:splats": "node scripts/bench-splats.mjs"
   },
   "keywords": [
     "animation",
