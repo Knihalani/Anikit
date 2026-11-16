@@ -292,3 +292,24 @@ fn diff_mb_marks_only_changed_blocks() {
     assert!(c.count() < 36);
     assert_eq!(diff_mb(&ya, &ya).count(), 0);
 }
+
+#[test]
+fn cached_image_resample_matches_direct() {
+    let mut assets = Assets::default();
+    let img: Vec<u8> = (0..40 * 30).flat_map(|i| [(i * 7 % 256) as u8, (i * 3 % 256) as u8, (i % 40 * 6) as u8, 255]).collect();
+    assets.images.insert_rgba8(ImageId(3), 40, 30, img).unwrap();
+    let mut r = Renderer::new(Arc::new(assets));
+    for dst in [[10.25f32, 7.5, 60.0, 45.0], [3.0, 4.0, 20.0, 15.0], [0.0, 0.0, 40.0, 30.0]] {
+        let l = list(vec![Op::Image { image: ImageId(3), dst, opacity: 0.8, transform: IDENTITY }]);
+        let first = r.render(&l).data_as_u8_slice().to_vec();
+        r.render(&l);
+        let cached = r.render(&l).data_as_u8_slice().to_vec();
+        let (mut sum, mut max) = (0u64, 0u8);
+        for (a, b) in first.iter().zip(&cached) {
+            sum += a.abs_diff(*b) as u64;
+            max = max.max(a.abs_diff(*b));
+        }
+        let mean = sum as f64 / first.len() as f64;
+        assert!(mean < 1.5 && max < 90, "{dst:?}: mean {mean} max {max}");
+    }
+}

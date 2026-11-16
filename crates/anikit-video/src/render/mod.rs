@@ -14,6 +14,7 @@ pub mod blur;
 pub mod diff;
 pub mod filter;
 pub mod glyphs;
+pub mod resample;
 pub mod trim;
 pub mod yuv;
 
@@ -76,6 +77,9 @@ struct State {
     cache: HashMap<u64, CacheEntry>,
     sprites: HashMap<u64, CacheEntry>,
     text: HashMap<u64, CacheEntry>,
+    scaled: HashMap<u64, CacheEntry>,
+    seen: HashMap<u64, u64>,
+    resample_buf: Vec<u8>,
     frame_no: u64,
     path: BezPath,
     lens: Vec<f64>,
@@ -113,6 +117,9 @@ impl Renderer {
                 cache: HashMap::new(),
                 sprites: HashMap::new(),
                 text: HashMap::new(),
+                scaled: HashMap::new(),
+                seen: HashMap::new(),
+                resample_buf: Vec::new(),
                 frame_no: 0,
                 path: BezPath::new(),
                 lens: Vec::new(),
@@ -165,6 +172,8 @@ impl Renderer {
         let now = st.frame_no;
         st.cache.retain(|_, e| e.last_used + 1 >= now);
         st.text.retain(|_, e| e.last_used + 2 >= now);
+        st.scaled.retain(|_, e| e.last_used + 2 >= now);
+        st.seen.retain(|_, &mut f| f + 2 >= now);
         if st.sprites.len() > 256 {
             st.sprites.retain(|_, e| e.last_used + 30 >= now);
         }
@@ -382,6 +391,58 @@ fn draw_cached_run(
         }
     };
     blit(ctx, pix, fx + x0 as f64, fy + y0 as f64, 1.0);
+    true
+}
+
+/// Axis-aligned images: 1:1 at integer positions blit directly; scaled ones
+/// that repeat across frames are resampled once (tent filter) and blitted.
+/// Returns false to fall back to vello's bilinear sampling.
+#[allow(clippy::too_many_arguments)]
+fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix: &Arc<Pixmap>, dst: &[f32; 4], opacity: f32, t: Affine) -> bool {
+    let k = t.as_coeffs();
+    if k[1] != 0.0 || k[2] != 0.0 || k[0] <= 0.0 || k[3] <= 0.0 {
+        return false;
+    }
+    let (x0, y0) = (k[0] * dst[0] as f64 + k[4], k[3] * dst[1] as f64 + k[5]);
+    let (ew, eh) = (k[0] * dst[2] as f64, k[3] * dst[3] as f64);
+    let (iw, ih) = (pix.width() as f64, pix.height() as f64);
+    let alpha = opacity.min(1.0);
+    if ew == iw && eh == ih && x0.fract() == 0.0 && y0.fract() == 0.0 {
+        blit(ctx, pix.clone(), x0, y0, alpha);
+        return true;
+    }
+    let q = |v: f64| (v * 4.0).round() / 4.0;
+    let (fx, fy) = (x0.floor(), y0.floor());
+    let (px, py, qw, qh) = (q(x0 - fx), q(y0 - fy), q(ew), q(eh));
+    if qw < 1.0 || qh < 1.0 || qw > 8192.0 || qh > 8192.0 {
+        return false;
+    }
+    let key = {
+        use std::hash::{Hash, Hasher};
+        let mut hs = std::collections::hash_map::DefaultHasher::new();
+        (id.0, px.to_bits(), py.to_bits(), qw.to_bits(), qh.to_bits(), Arc::as_ptr(pix) as usize).hash(&mut hs);
+        hs.finish()
+    };
+    let now = st.frame_no;
+    if let Some(e) = st.scaled.get_mut(&key) {
+        e.last_used = now;
+        let p = e.pix.clone();
+        blit(ctx, p, fx, fy, alpha);
+        return true;
+    }
+    // Only pay for resampling once the same placement shows up in consecutive frames.
+    let seen_last = st.seen.insert(key, now).is_some_and(|f| f + 1 >= now);
+    if !seen_last {
+        return false;
+    }
+    let (ow, oh) = ((px + qw).ceil() as usize, (py + qh).ceil() as usize);
+    resample::resample(pix.data_as_u8_slice(), iw as usize, ih as usize, px, py, qw, qh, ow, oh, &mut st.resample_buf);
+    let mut pm = Pixmap::new(ow as u16, oh as u16);
+    pm.data_as_u8_slice_mut().copy_from_slice(&st.resample_buf);
+    pm.recompute_may_have_transparency();
+    let p = Arc::new(pm);
+    st.scaled.insert(key, CacheEntry { pix: p.clone(), x: 0, y: 0, last_used: now });
+    blit(ctx, p, fx, fy, alpha);
     true
 }
 
@@ -712,6 +773,10 @@ fn draw_op(st: &mut State, assets: &Assets, ctx: &mut RenderContext, op: &Op, ba
         Op::Image { image, dst, opacity, transform } => {
             let Some(pix) = assets.images.get(*image) else { return };
             if *opacity <= 0.0 || dst[2] <= 0.0 || dst[3] <= 0.0 {
+                return;
+            }
+            let t = base * affine(transform);
+            if draw_image_fast(st, ctx, *image, pix, dst, *opacity, t) {
                 return;
             }
             let (iw, ih) = (pix.width() as f64, pix.height() as f64);
