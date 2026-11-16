@@ -638,7 +638,7 @@ impl BlackHole {
                 let (slo, clo) = sincosf(lon);
                 let d = [cla * clo, cla * slo, sla];
                 let bl = dot(d, band_n);
-                let band = exp_neg(bl * bl * 40.0);
+                let band = exp_neg(bl * bl * 90.0);
                 let u = x as f32 / PANO_W as f32;
                 let v = y as f32 / PANO_H as f32;
                 let n1 = fbm(u * 16.0, v * 8.0, 16, 8, 5, seed ^ 0xbeef);
@@ -651,7 +651,7 @@ impl BlackHole {
                 // Fade structure out toward the poles (no equirect pinch).
                 let pole = smooth(0.82, 0.97, sla.abs());
                 let (glow, neb, neb2) = (glow * (1.0 - pole), neb * (1.0 - pole), neb2 * (1.0 - pole));
-                let k = 0.06;
+                let k = 0.03;
                 pano[y * PANO_W + x] = [
                     k * (glow * 1.0 + neb * 0.9 + neb2 * 0.2),
                     k * (glow * 0.85 + neb * 0.35 + neb2 * 0.35),
