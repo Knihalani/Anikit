@@ -44,4 +44,4 @@ Everything below is on `claude/epic-ramanujan-qe7x4w`. Benchmark numbers come fr
 
 ### The film
 
-`film/film.mjs` — **VELOCITY**, a ~20 s single continuous 3D flight: ignition in a dark ring tunnel, a neon city on a mirror floor with a barrel roll, chrome gates, a black-chrome knot that shatters in bullet time with sparks and a shockwave, a vortex of light cubes, and the wordmark in chrome under the sun. No captions, no music.
+`film/film.mjs` — **VELOCITY**, 20.4 s at 1080p60 (1,227 frames), one continuous 3D flight: ignition in a dark ring tunnel whose circuits switch on with a flash, a neon city on a mirror floor with streams of light and a barrel roll through a gap, chrome gates, a black-chrome knot that shatters in bullet time with sparks and a shockwave, a vortex of light cubes, and the wordmark in chrome under the sun with a travelling sheen. No captions, no music. Pacing is a story-time warp over the choreography; every frame-to-frame spike in `anikit-render --check` is a placed flash, impact or fly-through. Renders in about 4 minutes on 3 workers.
