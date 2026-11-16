@@ -11,6 +11,16 @@ import { WASM_BASE64 } from './generated/wasm-bytes';
 export interface Exports {
   memory: WebAssembly.Memory;
   ak_f64_buf(n: number): number;
+  /** Parse `len` u8-scratch bytes (0 = .ply, 1 = .splat) into the splat buffer; count or negative error. */
+  ak_gs_parse(kind: number, len: number): number;
+  /** Canonical splat buffer resized for `n` splats (14 floats each). */
+  ak_gs_data(n: number): number;
+  /** Pack the splat buffer (8 u32 per splat); returns its address. */
+  ak_gs_pack(): number;
+  ak_gs_sorter_create(): number;
+  ak_gs_sorter_free(id: number): void;
+  ak_gs_sorter_centers(id: number, n: number, set: number): number;
+  ak_gs_sort(id: number, vx: number, vy: number, vz: number, vw: number, mix: number): number;
   ak_u8_buf(n: number): number;
   ak_str_ptr(): number;
   ak_easing_parse(len: number): number;
@@ -278,7 +288,14 @@ let readyResolve!: () => void;
 /** Resolves once the WebAssembly core is instantiated. */
 export const ready: Promise<void> = new Promise<void>((r) => (readyResolve = r));
 
-function install(instance: WebAssembly.Instance): void {
+let MODULE: WebAssembly.Module | null = null;
+/** The compiled core module once ready (shared with workers), or null. */
+export function wasmModule(): WebAssembly.Module | null {
+  return MODULE;
+}
+
+function install(instance: WebAssembly.Instance, mod?: WebAssembly.Module): void {
+  if (mod) MODULE = mod;
   W = instance.exports as unknown as Exports;
   views();
   readyResolve();
@@ -311,9 +328,9 @@ function boot(): void {
     // Synchronous compile works in Node, workers, Firefox, Safari and in
     // Chromium when allowed; it lets the very first animate() run immediately.
     const mod = new WebAssembly.Module(bytes as BufferSource);
-    install(new WebAssembly.Instance(mod, {}));
+    install(new WebAssembly.Instance(mod, {}), mod);
   } catch {
-    WebAssembly.instantiate(bytes as BufferSource, {}).then((r) => install(r.instance));
+    WebAssembly.instantiate(bytes as BufferSource, {}).then((r) => install(r.instance, r.module));
   }
 }
 
@@ -340,7 +357,7 @@ export async function init(source?: string | URL | Response | BufferSource): Pro
   } else {
     result = await WebAssembly.instantiate(source as BufferSource, {});
   }
-  install(result.instance);
+  install(result.instance, result.module);
 }
 
 /** Whether the core is ready now (booting it synchronously if it can): `whenReady` would run its function at once. */
