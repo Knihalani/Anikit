@@ -450,7 +450,7 @@ impl PostFx {
             self.streak.extend_from_slice(&self.small);
             let sr = (crate::math::floorf(p.streak_length / 4.0 + 0.5) as usize).max(1);
             for _ in 0..3 {
-                box_blur(&self.streak, &mut self.tmp, sw, sh, sr, true);
+                box_blur_h(&self.streak, &mut self.tmp, sw, sh, sr);
                 core::mem::swap(&mut self.streak, &mut self.tmp);
             }
         }
@@ -459,7 +459,7 @@ impl PostFx {
             self.lens_flares(sw, sh);
         }
         for _ in 0..2 {
-            box_blur(&self.small, &mut self.tmp, sw, sh, r, true);
+            box_blur_h(&self.small, &mut self.tmp, sw, sh, r);
             box_blur_v(&self.tmp, &mut self.small, sw, sh, r, &mut self.vsum);
         }
         if p.rays > 0.0 {
@@ -608,7 +608,7 @@ impl PostFx {
         // Soften: ghosts are out-of-focus images.
         let r = (sw / 120).max(2);
         self.tmp.resize(sw * sh * 3, 0.0);
-        box_blur(&self.flare, &mut self.tmp, sw, sh, r, true);
+        box_blur_h(&self.flare, &mut self.tmp, sw, sh, r);
         box_blur_v(&self.tmp, &mut self.flare, sw, sh, r, &mut self.vsum);
     }
 
@@ -816,8 +816,6 @@ impl PostFx {
     }
 }
 
-/// Running-sum box blur of an RGB f32 image along x (`horizontal`) or y.
-#[allow(clippy::needless_range_loop)]
 /// Vertical running-sum box blur of an RGB f32 image, row by row: one running
 /// sum per column, so every step is a contiguous (vectorisable) row operation
 /// instead of a strided walk down each column. Same result as
@@ -847,6 +845,39 @@ fn box_blur_v(src: &[f32], dst: &mut [f32], w: usize, h: usize, r: usize, sums: 
     }
 }
 
+/// Horizontal running-sum box blur of an RGB f32 image on row slices (no
+/// per-element direction branch); same result as `box_blur(.., true)`.
+#[allow(clippy::needless_range_loop)]
+fn box_blur_h(src: &[f32], dst: &mut [f32], w: usize, h: usize, r: usize) {
+    let rw = w * 3;
+    if w == 0 {
+        return;
+    }
+    let norm = 1.0 / (2 * r + 1) as f32;
+    for (s, d) in src.chunks_exact(rw).zip(dst.chunks_exact_mut(rw)).take(h) {
+        let mut sum = [0.0f32; 3];
+        for k in 0..=r.min(w - 1) {
+            for c in 0..3 {
+                sum[c] += s[k * 3 + c];
+            }
+        }
+        for c in 0..3 {
+            sum[c] += s[c] * r as f32;
+        }
+        for k in 0..w {
+            let (o, a, b) = (k * 3, (k + r + 1).min(w - 1) * 3, k.saturating_sub(r) * 3);
+            for c in 0..3 {
+                d[o + c] = sum[c] * norm;
+                sum[c] += s[a + c] - s[b + c];
+            }
+        }
+    }
+}
+
+/// Running-sum box blur of an RGB f32 image along x (`horizontal`) or y: the
+/// reference the row-wise versions above are tested against.
+#[cfg(test)]
+#[allow(clippy::needless_range_loop)]
 fn box_blur(src: &[f32], dst: &mut [f32], w: usize, h: usize, r: usize, horizontal: bool) {
     let (len, lines) = if horizontal { (w, h) } else { (h, w) };
     let idx = |line: usize, k: usize| if horizontal { (line * w + k) * 3 } else { (k * w + line) * 3 };
@@ -1017,6 +1048,9 @@ mod tests {
             box_blur_v(&src, &mut b, w, h, r, &mut sums);
             let worst = a.iter().zip(&b).map(|(x, y)| (x - y).abs()).fold(0.0f32, f32::max);
             assert!(worst < 1e-3, "r = {r}: max difference {worst}");
+            box_blur(&src, &mut a, w, h, r, true);
+            box_blur_h(&src, &mut b, w, h, r);
+            assert!(a.iter().zip(&b).all(|(x, y)| (x - y).abs() < 1e-3), "horizontal, r = {r}");
         }
     }
 
