@@ -356,6 +356,20 @@ enum Kind {
 
 const PHASE_UNKNOWN: u8 = 3;
 
+/// See [`Engine::render_children`].
+const LANE_MAX_MISSES: u32 = 8;
+
+/// Bit-for-bit timing equality (`==` would equate `0.0` and `-0.0`).
+#[inline(always)]
+fn same_timing(a: &Timing, b: &Timing) -> bool {
+    a.delay.to_bits() == b.delay.to_bits()
+        && a.duration.to_bits() == b.duration.to_bits()
+        && a.iterations.to_bits() == b.iterations.to_bits()
+        && a.end_delay.to_bits() == b.end_delay.to_bits()
+        && a.direction == b.direction
+        && a.easing == b.easing
+}
+
 #[derive(Debug)]
 struct Node {
     gen: u32,
@@ -425,6 +439,9 @@ pub struct Engine {
     released_scratch: Vec<u32>,
     /// Easing memo for the frame loop (see [`EaseMemo`]).
     memo: EaseMemo,
+    /// Tests: render every group child in full (reference for the lane).
+    #[cfg(test)]
+    lane_off: bool,
 }
 
 impl Default for Engine {
@@ -623,6 +640,8 @@ impl Engine {
             lag_adjusted: 33.0,
             released_scratch: Vec::new(),
             memo: EaseMemo::EMPTY,
+            #[cfg(test)]
+            lane_off: false,
         }
     }
 
@@ -1727,9 +1746,12 @@ impl Engine {
         }
     }
 
-    /// Render node `i` at local time `t`.
+    /// Render node `i` at local time `t`. Returns the eased progress when an
+    /// animation was evaluated in its active phase, else NaN (see
+    /// [`render_children`](Self::render_children); a scalar, not an
+    /// `Option`, so wasm returns it in a register).
     #[inline]
-    fn render(&mut self, i: usize, t: f64, backward: bool) {
+    fn render(&mut self, i: usize, t: f64, backward: bool) -> f64 {
         let n = &mut self.nodes[i];
         n.time = t;
         let mut st = n.timing.eval(t);
@@ -1743,7 +1765,7 @@ impl Engine {
         // Steady before/after the active phase: nothing to render or report.
         // (This is what makes long timelines cheap: idle children cost one eval.)
         if !changed && st.phase != Phase::Active {
-            return;
+            return f64::NAN;
         }
         let h = (n.gen << INDEX_BITS) | i as u32;
         let repeat = !changed && st.iteration != n.last_iter;
@@ -1766,6 +1788,9 @@ impl Engine {
                     let p = ease_memo(&self.easings, &mut self.memo, te, st.progress);
                     a.eval(&self.easings, &mut self.memo, p);
                     self.updated.push(h);
+                    if st.phase == Phase::Active {
+                        return p;
+                    }
                 }
             }
             Kind::Group(_) => {
@@ -1784,20 +1809,12 @@ impl Engine {
                         g.last_inner = inner;
                         (core::mem::take(&mut g.children), back)
                     }
-                    _ => return,
+                    _ => return f64::NAN,
                 };
                 if child_backward {
-                    for &c in children.iter().rev() {
-                        let cn = &self.nodes[c as usize];
-                        let ct = (inner - cn.start) * cn.rate;
-                        self.render(c as usize, ct, true);
-                    }
+                    self.render_children(children.iter().rev(), inner, true);
                 } else {
-                    for &c in children.iter() {
-                        let cn = &self.nodes[c as usize];
-                        let ct = (inner - cn.start) * cn.rate;
-                        self.render(c as usize, ct, false);
-                    }
+                    self.render_children(children.iter(), inner, false);
                 }
                 if let Kind::Group(g) = &mut self.nodes[i].kind {
                     g.children = children;
@@ -1816,6 +1833,75 @@ impl Engine {
             }
             Kind::Sim(_) | Kind::Free => {}
         }
+        f64::NAN
+    }
+
+    /// Render a group's children at group time `inner`, in iteration order.
+    ///
+    /// Children of one `animate()` call usually share start, rate and timing,
+    /// so they all reach the same timing state. After a child is rendered in
+    /// full, the next ones with bit-identical local time and timing that are
+    /// already steady in that active iteration take [`render_lane`]: no timing
+    /// evaluation, no phase bookkeeping, no events (there would be none).
+    ///
+    /// [`render_lane`]: Self::render_lane
+    #[inline(never)]
+    fn render_children<'a>(&mut self, children: impl Iterator<Item = &'a u32>, inner: f64, backward: bool) {
+        // (index of the last child rendered in full in its active phase, its eased progress)
+        let mut lane: Option<(usize, f64)> = None;
+        // Consecutive lane misses: staggered children never match, so after a
+        // few misses stop checking (the checks alone cost ~8% of their tick).
+        let mut misses = 0u32;
+        for &c in children {
+            let ci = c as usize;
+            let cn = &self.nodes[ci];
+            let ct = (inner - cn.start) * cn.rate;
+            #[cfg(test)]
+            if self.lane_off {
+                lane = None;
+            }
+            if let Some((li, p)) = lane {
+                if self.render_lane(ci, ct, li, p) {
+                    misses = 0;
+                    continue;
+                }
+                misses += 1;
+            }
+            let p = self.render(ci, ct, backward);
+            // NaN: not an active animation (or a NaN progress): keep the old lane.
+            if !p.is_nan() && misses < LANE_MAX_MISSES {
+                lane = Some((ci, p));
+            } else if misses >= LANE_MAX_MISSES {
+                lane = None;
+            }
+        }
+    }
+
+    /// The fast path of [`render`](Self::render) for animation `i` at time
+    /// `t` when node `li` was just rendered in full, in its active phase, at
+    /// eased progress `p` (its `time`, `timing` and `last_iter` are what that
+    /// render used and produced). `false` if it doesn't apply.
+    #[inline(always)]
+    fn render_lane(&mut self, i: usize, t: f64, li: usize, p: f64) -> bool {
+        let (l, n) = (&self.nodes[li], &self.nodes[i]);
+        if t.to_bits() != l.time.to_bits()
+            || n.last_phase != Phase::Active as u8
+            || n.last_iter != l.last_iter
+            || !matches!(n.kind, Kind::Anim(_))
+            || !same_timing(&n.timing, &l.timing)
+        {
+            return false;
+        }
+        let iteration = l.last_iter;
+        let n = &mut self.nodes[i];
+        n.time = t;
+        n.last_iter = iteration;
+        let h = (n.gen << INDEX_BITS) | i as u32;
+        if let Kind::Anim(a) = &mut n.kind {
+            a.eval(&self.easings, &mut self.memo, p);
+        }
+        self.updated.push(h);
+        true
     }
 
     fn step_sims(&mut self, dt: f64) {
@@ -2486,6 +2572,80 @@ mod tests {
             }
         }
         assert!(checked > 3000, "{checked}");
+    }
+
+    #[test]
+    fn group_lane_matches_full_render() {
+        // Same scenario on two engines, one rendering every group child in
+        // full: values, updated lists, events and node state must agree.
+        fn build(lane_off: bool) -> (Engine, Handle, Vec<Handle>) {
+            let mut e = Engine::new();
+            e.lane_off = lane_off;
+            let ease = e.easing("outCubic").unwrap();
+            let sine = e.easing("inOutSine").unwrap();
+            let g = e.create_group(Timing { iterations: 2.0, direction: crate::timing::Direction::Alternate, ..Default::default() }, true, flags::DEFAULT)
+                .unwrap();
+            let mut kids = Vec::new();
+            for i in 0..64usize {
+                let timing = Timing {
+                    delay: if i % 16 == 15 { 50.0 } else { 0.0 },
+                    duration: if i % 11 == 10 { 300.0 } else { 500.0 },
+                    iterations: if i % 13 == 12 { 3.0 } else { 1.0 },
+                    easing: if i % 9 == 8 { sine } else { LINEAR },
+                    ..Default::default()
+                };
+                let specs = [
+                    TrackSpec::number(vec![0.0, 500.0 + i as f64], 1).with_easings(vec![ease]),
+                    TrackSpec::number(vec![0.0, 50.0, 10.0, 80.0, i as f64], 1).with_easings(vec![sine]),
+                ];
+                let fl = if i % 7 == 6 { flags::DEFAULT & !flags::FILL_FORWARDS } else { flags::DEFAULT };
+                let h = e.create_anim(timing, &specs, fl).unwrap();
+                e.group_add(g, h, if i % 10 == 9 { 40.0 } else { 0.0 }).unwrap();
+                kids.push(h);
+            }
+            // A callback and a nested group among the children.
+            let cb = e.create_callback().unwrap();
+            e.group_add(g, cb, 120.0).unwrap();
+            e.play(g).unwrap();
+            (e, g, kids)
+        }
+        let (mut a, g, kids) = build(false);
+        let (mut b, _, _) = build(true);
+        let snap = |e: &Engine| {
+            let mut v: Vec<u64> = Vec::new();
+            for &h in &kids {
+                v.extend(e.values(h).unwrap().iter().map(|x| x.to_bits()));
+                let n = &e.nodes[Engine::handle_index(h) as usize];
+                v.extend([n.time.to_bits(), n.last_phase as u64, n.last_iter.to_bits(), n.state as u64]);
+            }
+            (v, e.updated().to_vec(), e.events().to_vec())
+        };
+        for f in 0..140 {
+            match f {
+                30 => {
+                    a.seek(g, 200.0).unwrap();
+                    b.seek(g, 200.0).unwrap();
+                }
+                50 => {
+                    a.reverse(g).unwrap();
+                    b.reverse(g).unwrap();
+                }
+                70 => {
+                    a.set_rate(g, 2.5).unwrap();
+                    b.set_rate(g, 2.5).unwrap();
+                }
+                90 => {
+                    a.seek(g, 0.0).unwrap();
+                    b.seek(g, 0.0).unwrap();
+                    a.set_rate(g, 1.0).unwrap();
+                    b.set_rate(g, 1.0).unwrap();
+                }
+                _ => {}
+            }
+            a.tick(17.0);
+            b.tick(17.0);
+            assert_eq!(snap(&a), snap(&b), "frame {f}");
+        }
     }
 
     #[test]
