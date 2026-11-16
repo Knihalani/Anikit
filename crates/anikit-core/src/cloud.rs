@@ -187,6 +187,31 @@ impl Cloud {
         }
     }
 
+    /// Brush: kick particles within `radius` of the line through `c` along the
+    /// unit axis `a` (e.g. the pointer ray) outward by `strength`, plus the sweep
+    /// velocity `v`, with a smooth falloff. The springs bring them back.
+    #[allow(clippy::too_many_arguments)]
+    pub fn push(&mut self, c: [f32; 3], a: [f32; 3], radius: f32, strength: f32, v: [f32; 3]) {
+        let r = radius.max(1.0);
+        let r2 = r * r;
+        let inv = 1.0 / r;
+        for (pp, vv) in self.pos.chunks_exact(3).zip(self.vel.chunks_exact_mut(3)) {
+            let (dx, dy, dz) = (pp[0] - c[0], pp[1] - c[1], pp[2] - c[2]);
+            let t = dx * a[0] + dy * a[1] + dz * a[2];
+            let (px, py, pz) = (dx - t * a[0], dy - t * a[1], dz - t * a[2]);
+            let d2 = px * px + py * py + pz * pz;
+            if d2 < r2 {
+                let d = sqrtf(d2).max(0.5);
+                let w = 1.0 - d * inv;
+                let w = w * w;
+                let s = strength * w / d;
+                vv[0] += px * s + v[0] * w;
+                vv[1] += py * s + v[1] * w;
+                vv[2] += pz * s + v[2] * w;
+            }
+        }
+    }
+
     /// Mean speed (for "settled" checks).
     pub fn mean_speed(&self) -> f32 {
         if self.n == 0 {
@@ -202,6 +227,16 @@ impl Cloud {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn push_is_local() {
+        let mut c = Cloud::new(2, 1, 1);
+        c.shape_mut(0).copy_from_slice(&[0.0, 0.0, 0.0, 500.0, 0.0, 0.0]);
+        c.snap(0);
+        c.push([10.0, 0.0, 0.0], [0.0, 0.0, 1.0], 50.0, 100.0, [0.0; 3]);
+        assert!(c.vel[0] < 0.0);
+        assert_eq!(c.vel[3], 0.0);
+    }
+
     use super::*;
 
     #[test]

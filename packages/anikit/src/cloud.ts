@@ -143,6 +143,22 @@ export class PointCloud {
     return this;
   }
 
+  /**
+   * Brush: kick particles within `radius` of the line through `(x, y, z)` along
+   * the unit axis `(ax, ay, az)` (default: the z axis; pass the pointer ray for
+   * a 3D view) outward by `strength`, plus the sweep velocity `(vx, vy, vz)`.
+   * Springs pull them back. Allocation-free, so it can run every frame.
+   */
+  push(x: number, y: number, z: number, radius: number, strength = 300, vx = 0, vy = 0, vz = 0, ax = 0, ay = 0, az = 1): this {
+    const at = f64Buf(11);
+    F64[at] = x; F64[at + 1] = y; F64[at + 2] = z;
+    F64[at + 3] = ax; F64[at + 4] = ay; F64[at + 5] = az;
+    F64[at + 6] = radius; F64[at + 7] = strength;
+    F64[at + 8] = vx; F64[at + 9] = vy; F64[at + 10] = vz;
+    core().ak_cloud_push(this.id);
+    return this;
+  }
+
   /** Live positions `[x, y, z] * count` (zero-copy; valid until memory grows). */
   get positions(): Float32Array {
     return new Float32Array(W!.memory.buffer, core().ak_cloud_ptr(this.id), this.count * 3);

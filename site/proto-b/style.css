@@ -1,0 +1,97 @@
+@font-face { font-family: 'Display'; src: url(../fonts/InterDisplay-Black.woff2) format('woff2'); font-weight: 900; font-display: swap; }
+@font-face { font-family: 'Text'; src: url(../fonts/Inter-Regular.woff2) format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Text'; src: url(../fonts/Inter-Medium.woff2) format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Mono'; src: url(../fonts/JetBrainsMono-Regular.woff2) format('woff2'); font-weight: 400; font-display: swap; }
+
+:root {
+  --ink: #1c1d2b;
+  --dim: #5c6075;
+  --line: rgba(28, 29, 43, 0.12);
+  --gut: clamp(16px, 4vw, 56px);
+}
+* { box-sizing: border-box; }
+html {
+  color: var(--ink);
+  -webkit-text-size-adjust: 100%;
+  background: #eef0f3;
+}
+/* The room: pale sky above, a warm floor below, sunlight from the upper left. */
+body {
+  margin: 0;
+  font: 400 16px/1.5 Text, system-ui, sans-serif;
+  overflow-x: hidden;
+}
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(70vmax 50vmax at 18% -8%, rgba(255, 246, 222, 0.95), rgba(255, 246, 222, 0) 60%),
+    radial-gradient(90vw 22vh at 50% 74%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 70%),
+    linear-gradient(180deg, #cfe2f6 0%, #e3edf6 34%, #f4f2ee 62%, #ece5da 74%, #e6ddd0 100%);
+}
+code, .mono { font-family: Mono, ui-monospace, monospace; font-size: 0.86em; }
+a { color: inherit; }
+
+#stage {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  z-index: 0; pointer-events: none; opacity: 0;
+}
+
+.top {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 3;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px var(--gut);
+}
+.mark { font: 900 20px/1 Display, system-ui, sans-serif; letter-spacing: -0.03em; text-decoration: none; }
+.top nav { display: flex; gap: 22px; font-weight: 500; font-size: 14px; }
+.top nav a { text-decoration: none; color: var(--dim); transition: color 0.2s; }
+.top nav a:hover { color: var(--ink); }
+
+.captions { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+.cap {
+  position: absolute; left: var(--gut); bottom: clamp(28px, 9vh, 96px);
+  max-width: min(440px, calc(100vw - 2 * var(--gut)));
+  opacity: 0; visibility: hidden;
+}
+.cap.on { visibility: visible; }
+.cap .k { margin: 0 0 10px; font-size: 13px; letter-spacing: 0.02em; color: var(--dim); }
+.cap .k code { color: var(--ink); font-size: 13px; }
+.cap h1, .cap h2 {
+  margin: 0; font: 900 clamp(26px, 3.1vw, 40px)/1.04 Display, system-ui, sans-serif; letter-spacing: -0.03em;
+}
+.cap .hint { margin: 14px 0 0; color: var(--dim); font-size: 14px; }
+.cap .snip {
+  display: inline-block; margin-top: 16px; padding: 8px 12px; border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6); box-shadow: 0 0 0 1px var(--line), 0 6px 24px rgba(40, 50, 90, 0.07);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  font-size: 13px; white-space: nowrap;
+}
+.cap .count { font-variant-numeric: tabular-nums; }
+.cap.end { left: 50%; transform: translateX(-50%); text-align: center; bottom: clamp(36px, 12vh, 120px); }
+.install {
+  pointer-events: auto; cursor: pointer; display: inline-flex; align-items: center; gap: 14px;
+  border: 0; padding: 14px 18px 14px 22px; border-radius: 14px; color: var(--ink);
+  background: rgba(255, 255, 255, 0.78); box-shadow: 0 0 0 1px var(--line), 0 10px 40px rgba(40, 50, 90, 0.12);
+  font: inherit; font-size: 18px; transition: transform 0.25s cubic-bezier(.2, .8, .2, 1), box-shadow 0.25s;
+}
+.install:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px var(--line), 0 16px 44px rgba(40, 50, 90, 0.16); }
+.install code { white-space: nowrap; }
+.install .copy { font-size: 12px; color: var(--dim); padding: 4px 8px; border-radius: 6px; background: rgba(28, 29, 43, 0.06); }
+.links { margin: 18px 0 0; display: flex; gap: 20px; justify-content: center; font-size: 14px; pointer-events: auto; }
+.links a { white-space: nowrap; color: var(--dim); text-decoration: none; border-bottom: 1px solid var(--line); }
+.links a:hover { color: var(--ink); }
+
+.track { position: relative; z-index: 1; pointer-events: none; }
+.track > div { height: 100vh; height: 100svh; }
+.track > div:not(:last-child) { height: 120vh; }
+
+.perf {
+  position: fixed; right: 12px; bottom: 12px; z-index: 9; padding: 8px 10px; border-radius: 8px;
+  background: rgba(255, 255, 255, 0.85); box-shadow: 0 0 0 1px var(--line);
+  font: 11px/1.45 Mono, ui-monospace, monospace; white-space: pre; color: var(--ink);
+}
+
+@media (max-width: 640px) {
+  .top nav { gap: 16px; }
+  .cap { bottom: 28px; }
+  .cap .snip { white-space: normal; }
+}

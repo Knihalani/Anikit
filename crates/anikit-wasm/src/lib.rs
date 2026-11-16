@@ -1554,6 +1554,21 @@ pub extern "C" fn ak_cloud_explode(id: u32, x: f64, y: f64, z: f64, strength: f6
         c.explode(x as f32, y as f32, z as f32, strength as f32);
     }
 }
+/// Local brush. f64 buffer: `[cx, cy, cz, ax, ay, az, radius, strength, vx, vy, vz]`
+/// (a cylinder of `radius` around the line through `c` along unit axis `a`).
+#[no_mangle]
+pub extern "C" fn ak_cloud_push(id: u32) {
+    let b = &st().f64_buf;
+    if b.len() < 11 {
+        return;
+    }
+    let f = |i: usize| b[i] as f32;
+    let (c, a, v) = ([f(0), f(1), f(2)], [f(3), f(4), f(5)], [f(8), f(9), f(10)]);
+    let (r, s) = (f(6), f(7));
+    if let Some(cl) = cloud(id) {
+        cl.push(c, a, r, s, v);
+    }
+}
 #[no_mangle]
 pub extern "C" fn ak_cloud_speed(id: u32) -> f64 {
     cloud(id).map(|c| c.mean_speed() as f64).unwrap_or(0.0)
