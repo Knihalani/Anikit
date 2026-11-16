@@ -151,6 +151,7 @@ Devices keep their aspect ratio and are centred in the box. Screen props are sha
 - `scrollTo` (0 to 1), `scrollAt` and `scrollDuration`: scroll a tall screenshot;
 - `delay`: spring entrance;
 - `float`: bobbing amplitude in px.
+- `screen`: a generated app screen, used when there is no `src`. It is one of `dashboard` (KPI tiles, an area chart and a list), `chat`, `feed`, `editor` or `settings`. Add `title` for the product name and `accent` for the colour. Screens lay out for portrait or landscape and build in with a stagger. Example: `{ "component": "device.phone", "props": { "screen": "dashboard", "title": "Northwind" } }`.
 
 | Kind | Extra props |
 |---|---|

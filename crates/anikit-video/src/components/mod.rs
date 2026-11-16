@@ -39,6 +39,7 @@ pub mod metaballs;
 pub mod morph;
 pub mod particle_text;
 pub mod particles;
+pub mod screens;
 pub mod rays;
 pub mod three;
 pub mod transitions;
