@@ -535,7 +535,7 @@ export class Renderer3D {
     pass('setup');
     if (o.mirror) {
       // 1. The scene reflected about y = mirror.y (winding flips), 2. clear depth,
-      // 3. the glossy surface blended over the reflection, 4. the scene itself.
+      // 3. the scene itself, 4. the glossy surface blended over the reflection where it shows.
       const Y = o.mirror.y;
       const mr = matrix.slice();
       for (let r = 0; r < 4; r++) { mr[4 + r] = -matrix[4 + r]; mr[12 + r] = matrix[12 + r] + 2 * Y * matrix[4 + r]; }
@@ -546,7 +546,6 @@ export class Renderer3D {
       for (const it of meshes) if (!it.mirror && it.reflect !== false && it.blend !== 'additive') drawMesh(it, mr, er, 8);
       if (half) w.ak_raster_reflection_end(this.id);
       else w.ak_raster_clear_depth(this.id);
-      for (const it of meshes) if (it.mirror) drawMesh(it, matrix, eye, 4, o.mirror.strength ?? 0.5);
       pass('mirror');
     }
     const light = (it: DrawItem | PointsItem) => 'points' in it || it.blend === 'additive';
@@ -555,6 +554,12 @@ export class Renderer3D {
       drawMesh(item as DrawItem, matrix, eye, 0);
     }
     pass('opaque');
+    if (o.mirror) {
+      // The glossy surface after the opaque scene: the depth test skips floor
+      // pixels the scene covers, so only visible floor is shaded and blended.
+      for (const it of meshes) if (it.mirror) drawMesh(it, matrix, eye, 4, o.mirror.strength ?? 0.5);
+      pass('mirror');
+    }
     if (o.skybox) {
       const sb = o.skybox === true ? {} : o.skybox;
       const vals = [...matrix, ...(o.key ?? [0.4, 0.8, 0.6]), ...rgb(o.keyColor), ...rgb(o.sky, [0.25, 0.3, 0.55]), ...rgb(o.horizon, [1, 0.85, 0.7]), ...rgb(o.ground, [0.05, 0.05, 0.07]), ...rgb(o.fogColor, bg), ...(o.fog ?? [0, 0])];

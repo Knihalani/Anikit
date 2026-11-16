@@ -1068,9 +1068,6 @@ class Renderer3D:
                 nat.reflection_end()
             else:
                 nat.clear_depth()
-            for it in meshes:
-                if it.mirror:
-                    tris += draw(it, vp, eye, blend="gloss", gloss=mir.strength)
 
         def is_light(it: Union[Item, Points]) -> bool:
             return isinstance(it, Points) or it.blend == "additive"
@@ -1079,6 +1076,12 @@ class Renderer3D:
             if isinstance(it, Points) or is_light(it) or (mir is not None and it.mirror):
                 continue
             tris += draw(it, vp, eye, gloss=it.gloss)
+        if mir is not None:
+            # The glossy surface after the opaque scene (as in TypeScript): the
+            # depth test skips the floor pixels the scene covers.
+            for it in meshes:
+                if it.mirror:
+                    tris += draw(it, vp, eye, blend="gloss", gloss=mir.strength)
         if sky is not None:
             nat.sky(vp, lpack, sky.get("sun", 0.0))
         # Light last: additive geometry and points add onto everything (the sky too).
