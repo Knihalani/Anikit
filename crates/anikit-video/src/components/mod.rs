@@ -39,6 +39,11 @@ pub mod particles;
 pub mod three;
 pub mod transitions;
 pub mod ui;
+pub mod visualizer;
+pub mod ken_burns;
+pub mod tiles;
+pub mod reactions;
+pub mod card_stack;
 
 #[cfg(test)]
 pub(crate) mod preview;
@@ -218,6 +223,13 @@ kinds! {
     "marquee" => blocks::Marquee, "Endless scrolling ticker of words or logos with faded edges.", r##"{"items":["Stripe","Linear","Vercel"]}"##;
     "spotlight" => blocks::Spotlight, "Dims everything except a focus rectangle that glides between targets (product demos).", r##"{"targets":[[100,100,300,120],[500,300,200,80]]}"##;
     "keys" => blocks::Keys, "Keyboard shortcut keycaps that pop in and press.", r##"{"keys":["⌘","K"],"press":[0.6]}"##;
+    // Media
+    "visualizer" => visualizer::Visualizer, "Audio visualiser synced to a music src: spectrum bars, a mirrored wave or radial bars around an image (synthetic groove when no src).", r##"{"style":"bars"}"##;
+    "ken-burns" => ken_burns::KenBurns, "Photo with a slow zoom/pan (presets or from/to rects), parallax layers, vignette and a film grade.", r##"{"motion":"in"}"##;
+    "tile-reveal" => tiles::TileReveal, "Grid of tiles that flip, scale or fade in with a diagonal/radial wave to reveal an image or gradient; can reverse.", r##"{"cols":10}"##;
+    "kinetic-grid" => tiles::KineticGrid, "Mesmerising grid of rounded squares or dots whose size, rotation and colour ripple with a wave.", r##"{}"##;
+    "reactions" => reactions::Reactions, "Live-stream reactions (hearts, likes, fire, stars, sparkles, 100, laugh) floating up with wobble, pop and fade.", r##"{"kinds":["heart","like","fire"]}"##;
+    "card-stack" => card_stack::CardStack, "2.5D stack of image or titled cards; the front card swipes away every interval and the stack advances.", r##"{"cards":["Design","Build","Ship"]}"##;
     // Lottie
     "lottie" => lottie::Lottie, "Minimal Lottie player (shape layers, transforms, trim paths).", r##"{"src":"anim.json"}"##;
 }
