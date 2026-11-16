@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
-import { animate, from, fromTo, set, stagger, engine, flush } from '../src/index';
+import { animate, from, fromTo, set, stagger, engine, flush, FrameBuffer } from '../src/index';
 import { setup, advance, box } from './setup';
 import { _setCodegen } from '../src/animate';
 
@@ -299,5 +299,41 @@ describe('animate: name collisions', () => {
     animate(p, { fill: ['#ff0000', '#0000ff'] }, { duration: 1, ease: 'linear', colorSpace: 'srgb' });
     advance(1.1);
     expect((p as any).style.fill.replace(/\s/g, '')).toBe('rgb(0,0,255)');
+  });
+});
+
+describe('generated flush loops survive engine changes mid-flush', () => {
+  it('keeps writing correct values when a setter creates animations (array moves, memory may grow)', () => {
+    const N = 64;
+    const targets: Array<{ x: number }> = [];
+    let spawned = 0;
+    const extra: Array<{ v: number }> = [];
+    const buffers: FrameBuffer[] = [];
+    for (let i = 0; i < N; i++) {
+      if (i === 20) {
+        // A class whose prototype setter starts thousands of animations the first
+        // time it is written: the generated loop sees a plain-looking target.
+        class Spawner {
+          _x = 0;
+          get x() { return this._x; }
+          set x(v: number) {
+            this._x = v;
+            if (!spawned++) {
+              for (let k = 0; k < 2000; k++) { const o = { v: 0 }; extra.push(o); animate(o, { v: 1 }, { duration: 1, ease: 'linear' }); }
+              // …and grows WebAssembly memory (detaching every typed-array view) mid-flush.
+              buffers.push(new FrameBuffer(4096, 4096));
+            }
+          }
+        }
+        targets.push(new Spawner());
+      } else targets.push({ x: 0 });
+    }
+    animate(targets, { x: [0, 100] }, { duration: 1, ease: 'linear' });
+    for (const [s, want] of [[0.25, 25], [0.25, 50], [0.25, 75]] as const) {
+      advance(s);
+      for (let i = 0; i < N; i++) expect(targets[i].x).toBeCloseTo(want, 6);
+    }
+    expect(spawned).toBeGreaterThan(0);
+    expect(extra[1999].v).toBeGreaterThan(0);
   });
 });
