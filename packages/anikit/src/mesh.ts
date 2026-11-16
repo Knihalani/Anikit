@@ -104,6 +104,7 @@ export class Mesh3D {
       if (positions === this) return this;
       if (positions.dead) throw new Error('anikit: mesh.update(other) got a freed mesh');
       w.ak_mesh_replace(this.id, positions.id);
+      this.aspect = positions.aspect;
       positions.dead = true;
       created.meshes--;
       boundsCache.delete(this);

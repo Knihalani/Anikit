@@ -36,8 +36,10 @@ describe('mesh.update / free / tube({ into })', () => {
   it('update(other) takes another mesh of any size and frees it; sort: near sees the new bounds', () => {
     const small = mesh.sphere(4, 6), big = mesh.sphere(12, 16);
     const nBig = big.triangles;
+    big.aspect = 0.3; // e.g. from mesh.text()
     small.update(big);
     expect(small.triangles).toBe(nBig);
+    expect(small.aspect).toBe(0.3);
     expect(big.freed).toBe(true);
     expect(() => small.update(big)).toThrow(/freed/);
     const r = renderer3d({ width: 48, height: 32 }), c = cam();

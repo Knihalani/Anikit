@@ -165,6 +165,7 @@ class Mesh:
         its geometry (any size). Returns ``self``."""
         if isinstance(positions, Mesh):
             self._native = positions._native
+            self.aspect = positions.aspect
             return self
         nv = self.vertex_count
         p = np.asarray(positions, dtype=np.float32).reshape(-1)
