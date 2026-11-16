@@ -178,6 +178,20 @@ pub(crate) struct FrameCtx<'a> {
 
 pub(crate) const NO_HINT: (i16, i16) = (i16::MIN, i16::MIN);
 
+const SKIP_INFO: MbInfo = MbInfo {
+    kind: 0,
+    skip: true,
+    coded: false,
+    mv: (0, 0),
+    nz: [0; 16],
+    nzc: [[0; 4]; 2],
+    m4: [2; 16],
+    cbp: 0,
+    cmode: 0,
+    mvd: (0, 0),
+    dcf: 0,
+};
+
 /// Mutable band of the reconstructed picture owned by one slice.
 pub(crate) struct Band<'a> {
     pub y: &'a mut [u8],
@@ -928,6 +942,13 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         self.emit_end(mbx, mby);
     }
 
+    #[inline(always)]
+    fn skip_ctx_inc(&self, mbx: usize, mby: usize) -> usize {
+        let a = mbx > 0 && !self.info(mbx - 1, mby).skip;
+        let b = mby > self.b.mby0 && !self.info(mbx, mby - 1).skip;
+        a as usize + b as usize
+    }
+
     fn nbrs(&self, mbx: usize, mby: usize) -> (Option<MbInfo>, Option<MbInfo>) {
         let a = if mbx > 0 { Some(*self.info(mbx - 1, mby)) } else { None };
         let b = if mby > self.b.mby0 { Some(*self.info(mbx, mby - 1)) } else { None };
@@ -935,10 +956,11 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
     }
 
     fn emit_skip(&mut self, mbx: usize, mby: usize) {
-        let (a, b) = self.nbrs(mbx, mby);
-        if let Some(cb) = self.cabac.as_mut() {
-            let inc = a.map_or(0, |m| !m.skip as usize) + b.map_or(0, |m| !m.skip as usize);
-            cb.decision(self.w, 11 + inc, 1);
+        if self.cabac.is_some() {
+            let inc = self.skip_ctx_inc(mbx, mby);
+            if let Some(cb) = self.cabac.as_mut() {
+                cb.decision(self.w, 11 + inc, 1);
+            }
         } else {
             self.skip_run += 1;
         }
@@ -1532,7 +1554,23 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
                 // an inter neighbour with MV 0.
                 let zero = |i: &MbInfo| i.kind == 0 && i.mv == (0, 0);
                 if mbx == 0 || mby == mby0 || zero(s.info(mbx - 1, mby)) || zero(s.info(mbx, mby - 1)) {
-                    s.code_copy(mbx, mby, (0, 0), (0, 0));
+                    let i = (mby - mby0) * c.mbw + mbx;
+                    if !c.stale[mby * c.mbw + mbx] {
+                        // Fast path: P_Skip, recon already equal to the reference.
+                        s.b.info[i] = SKIP_INFO;
+                        s.stats.skip += 1;
+                        if let Some(cb) = s.cabac.as_mut() {
+                            let a = mbx > 0 && !s.b.info[i - 1].skip;
+                            let b = mby > mby0 && !s.b.info[i - c.mbw].skip;
+                            cb.decision(s.w, 11 + a as usize + b as usize, 1);
+                            let last = mbx + 1 == c.mbw && mby + 1 == mby1;
+                            cb.terminate(s.w, last as u32);
+                        } else {
+                            s.skip_run += 1;
+                        }
+                    } else {
+                        s.code_copy(mbx, mby, (0, 0), (0, 0));
+                    }
                 } else {
                     let (mvp, skip_mv) = s.mv_pred(mbx, mby);
                     s.code_copy(mbx, mby, mvp, skip_mv);
