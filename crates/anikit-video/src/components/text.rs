@@ -177,3 +177,21 @@ pub fn draw(out: &mut Vec<Op>, a: &dyn Assets, s: &str, st: &TextStyle, x: f32, 
     out.extend(ops);
     adv
 }
+
+/// Greedy word wrap of `s` into lines no wider than `max_w`.
+pub fn wrap(a: &dyn Assets, s: &str, st: &TextStyle, max_w: f32) -> Vec<String> {
+    let mut lines = Vec::new();
+    for para in s.split('\n') {
+        let mut cur = String::new();
+        for word in para.split_whitespace() {
+            let cand = if cur.is_empty() { word.to_string() } else { format!("{cur} {word}") };
+            if !cur.is_empty() && a.measure(&cand, st) > max_w {
+                lines.push(std::mem::replace(&mut cur, word.to_string()));
+            } else {
+                cur = cand;
+            }
+        }
+        lines.push(cur);
+    }
+    lines
+}
