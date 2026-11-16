@@ -122,3 +122,4 @@ button:focus-visible, a:focus-visible { outline: 2px solid rgba(var(--aur), 0.9)
 @media (prefers-reduced-motion: reduce) { .panel, .install-core { will-change: auto; } }
 .pill.on { background: rgba(var(--aur), 0.16); border-color: rgba(var(--aur), 0.6); }
 .numbers .stick { padding-bottom: 6vh; }
+.cloud-canvas { background: transparent; -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000 55%, transparent 100%); mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000 55%, transparent 100%); }

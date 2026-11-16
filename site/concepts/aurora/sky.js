@@ -82,23 +82,21 @@ vec3 aurora(vec3 ro, vec3 rd, float steps, float dither){
   vec3 acc = vec3(0.);
   float dt = (t1 - t0) / steps;
   float T = uT;
-  float pd0 = 0., pd1 = 0., pd2 = 0.;
+  float pd0 = 0., pd1 = 0., pd2 = 0., px0 = 0., px1 = 0., px2 = 0.;
   for (int i = 0; i <= 64; i++){
     if (float(i) > steps) break;
     float t = t0 + (float(i) + dither - .5) * dt;
     vec3 p = ro + rd * t;
     float fade = exp(-t / 3800.);
     vec2 sq = p.xz + curl(p.xz * .0026 + vec2(T * .03, -T * .018)) * (40. + 35. * uStorm);
-    float base = 105. + 20. * sin(sq.x * .004);
-    float hg = (p.y - base) / (120. + 190. * uStorm);
-    vec3 halo = (GREEN * exp(-max(hg, 0.) * 3.) + RED * smoothstep(.2, .65, hg) * uRed * .5) * smoothstep(-.1, 0., hg);
     for (int k = 0; k < 3; k++){
       float fk = float(k);
-      float amp = (k == 0 ? 1. : (k == 1 ? .3 + .8 * uStorm : uStorm * .85)) * (1. - .7 * uCorona);
+      float amp = (k == 0 ? 1. : (k == 1 ? .3 + .8 * uStorm : uStorm * .85)) * (1. - uCorona);
       if (amp < .01) continue;
       float sx, sl;
       float d = sheetD(sq, fk, T, sx, sl);
       float pd = k == 0 ? pd0 : (k == 1 ? pd1 : pd2);
+      float px = k == 0 ? px0 : (k == 1 ? px1 : px2);
       if (i > 0 && d * pd <= 0.){
         // crossed the sheet between the last sample and this one
         float f = pd / (pd - d);
@@ -106,13 +104,11 @@ vec3 aurora(vec3 ro, vec3 rd, float steps, float dither){
         vec3 pc = ro + rd * tc;
         float th = 10. + 10. * uStorm;
         float cosA = abs(rd.z - sl * rd.x) / sqrt(1. + sl * sl) / max(length(rd.xz), .05);
-        float L = min(th / max(cosA, .06), th * 7.);
-        acc += curtainLight(sx, pc.y, fk, T, tc) * amp * L * fade;
+        float L = min(th / max(cosA, .06), th * 7.) + 22.;
+        acc += curtainLight(mix(px, sx, f), pc.y, fk, T, tc) * amp * L * fade;
       }
       // a soft glow around each sheet
-      float w2 = max(12000., dt * dt * 1.5);
-      acc += halo * amp * exp(-d * d / w2) * sqrt(12000. / w2) * dt * .008 * fade;
-      if (k == 0) pd0 = d; else if (k == 1) pd1 = d; else pd2 = d;
+      if (k == 0) { pd0 = d; px0 = sx; } else if (k == 1) { pd1 = d; px1 = sx; } else { pd2 = d; px2 = sx; }
     }
     if (uCorona > .001){
       vec2 dd = p.xz - uCam.xz; float rr = length(dd), an = atan(dd.y, dd.x);
@@ -122,7 +118,7 @@ vec3 aurora(vec3 ro, vec3 rd, float steps, float dither){
       float hgt = (p.y - 105.) / 320.;
       float g = smoothstep(-.06, .03, hgt) * exp(-max(hgt, 0.) * 2.6);
       float r = smoothstep(.3, .8, hgt) * uRed;
-      acc += uCorona * ring * rays * (GREEN * g * 1.2 + RED * r * .6 + VIOLET * exp(-pow(hgt / .05, 2.)) * .6) * dt * .012;
+      acc += uCorona * ring * rays * (GREEN * g * 1.6 + RED * r * .38 + VIOLET * exp(-pow(hgt / .12, 2.)) * .3) * dt * .012;
     }
   }
   return acc * .028 * (.6 + .8 * uStorm);
@@ -165,23 +161,23 @@ float ridge(float az, float scale, float seed){
 vec3 skyBase(vec3 rd, out float mountain){
   float e = rd.y;
   vec3 top = mix(vec3(.010, .016, .036), vec3(.002, .004, .011), uNight);
-  vec3 hor = mix(vec3(.03, .045, .065), vec3(.01, .016, .024), uNight);
+  vec3 hor = mix(vec3(.018, .026, .04), vec3(.006, .01, .016), uNight);
   vec3 col = mix(hor, top, smoothstep(0., .5, e));
   col += uAmb * .04 * exp(-max(e, 0.) * 5.);           // aurora light scattered in the air
   col += vec3(.02, .05, .03) * exp(-max(e, 0.) * 30.) * .4; // airglow
   col += stars(rd) * smoothstep(-.01, .08, e) * (.55 + .45 * uNight);
   mountain = 0.;
   float az = atan(rd.x, rd.z);
-  float far = .02 + .085 * ridge(az * .6 + 1., 1.3, 4.);
-  float near = .006 + .12 * ridge(az * .5 + 3., 1.0, 9.) * smoothstep(.25, .65, vnoise(vec2(az * .9, 2.)));
+  float far = .012 + .12 * pow(ridge(az * .7 + 1., 1.3, 4.), 1.8);
+  float near = .004 + .2 * pow(ridge(az * .55 + 3., 1.0, 9.), 2.2) * smoothstep(.2, .6, vnoise(vec2(az * .9, 2.)));
   if (e < far){
-    float lit = smoothstep(far - .035, far, e) * (.5 + .5 * vnoise(vec2(az * 30., 1.)));
-    vec3 m = vec3(.009, .012, .018) + uAmb * .02 + (vec3(.035, .042, .052) + uAmb * .08) * lit;
+    float lit = smoothstep(far - .012, far, e) * (.6 + .4 * vnoise(vec2(az * 12., 1.)));
+    vec3 m = vec3(.005, .007, .011) + uAmb * .012 + (vec3(.02, .025, .03) + uAmb * .06) * lit;
     col = mix(col, m, .94); mountain = 1.;
   }
   if (e < near){
-    float lit = smoothstep(near - .05, near, e) * (.4 + .6 * vnoise(vec2(az * 40., 3.)));
-    vec3 m = vec3(.004, .006, .009) + uAmb * .012 + (vec3(.04, .048, .06) + uAmb * .14) * lit;
+    float lit = smoothstep(near - .015, near, e) * (.5 + .5 * vnoise(vec2(az * 14., 3.)));
+    vec3 m = vec3(.002, .003, .005) + uAmb * .008 + (vec3(.03, .036, .045) + uAmb * .1) * lit;
     col = m; mountain = 1.;
   }
   return col;
@@ -211,14 +207,14 @@ void main(){
   vec3 up = cross(fw, rt);
   vec3 rd = normalize(fw * uFov + rt * uv.x + up * uv.y);
   vec3 ro = uCam;
-  float dither = h12(gl_FragCoord.xy + fract(uT * 7.3) * 91.);
+  float dither = .5;
   vec3 col;
   if (rd.y > 0.){
     float mtn;
     col = skyBase(rd, mtn);
     if (mtn < .5) col += aurora(ro, rd, uSteps, dither);
     // ground fog near the horizon
-    col = mix(col, vec3(.008, .012, .018) + uAmb * .06, exp(-rd.y * 40.) * .25);
+    col = mix(col, vec3(.004, .006, .009) + uAmb * .035, exp(-rd.y * 40.) * .25);
   } else {
     float t = -ro.y / rd.y;
     vec3 p = ro + rd * t;
@@ -255,7 +251,7 @@ void main(){
     float fogN = fbm(g * .03 + vec2(uT * .04, -uT * .03));
     float breath = .75 + .25 * sin(uT * .35 + fogN * 4.);
     float fog = (1. - exp(-t * .006)) * (.25 + .55 * fogN) * breath;
-    col = mix(col, vec3(.008, .012, .018) + uAmb * .06, clamp(fog, 0., 1.) * .35);
+    col = mix(col, vec3(.004, .006, .009) + uAmb * .035, clamp(fog, 0., 1.) * .35);
   }
   col *= uExposure;
   col = aces(col);

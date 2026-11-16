@@ -21,15 +21,15 @@ if (!reduced) smoothScroll({ smooth: 0.9 });
 // The night, scrubbed by the page scroll.
 // ---------------------------------------------------------------------------
 const P = sky.params;
-const story = { storm: 0.42, red: 0.2, bandZ: 900, corona: 0, night: 0.15, exposure: 1.7, camY: 4.2, camZ: 0, pitch: small ? 0.2 : 0.17, fov: small ? 0.95 : 1.15 };
+const story = { storm: 0.42, red: 0.2, bandZ: 900, corona: 0, night: 0.15, exposure: 1.7, camY: 4.2, camZ: 0, pitch: small ? 0.3 : 0.17, fov: small ? 0.95 : 1.15 };
 const night = timeline({ autoplay: false, defaults: { ease: 'inOutSine' } })
   // hero → first demo: drop towards the ice, the first band brightens
-  .add(story, { camY: 2.4, pitch: small ? 0.17 : 0.13, storm: 0.5, bandZ: 760, night: 0.4, camZ: 160 }, { duration: 1 }, 0)
+  .add(story, { camY: 2.4, pitch: small ? 0.26 : 0.13, storm: 0.5, bandZ: 760, night: 0.4, camZ: 160 }, { duration: 1 }, 0)
   // the demos: the storm builds, the red upper layer appears, the bands come closer
   .add(story, { storm: 1, bandZ: 420, night: 1, exposure: 1.95, camY: 1.3, camZ: 1100 }, { duration: 7 }, 1)
   .add(story, { red: 0.85 }, { duration: 5, ease: 'inQuad' }, 3)
   // the end: the bands pass overhead and the camera looks up into the corona
-  .add(story, { bandZ: -60, corona: 1, camY: 1.1, camZ: 1260, exposure: 1.55, fov: small ? 0.75 : 0.9 }, { duration: 2, ease: 'inOutSine' }, 8)
+  .add(story, { bandZ: 260, corona: 1, camY: 1.1, camZ: 1260, exposure: 1.55, fov: small ? 0.75 : 0.9 }, { duration: 2, ease: 'inOutSine' }, 8)
   .add(story, { pitch: 1.42 }, { duration: 1.7, ease: 'inOutSine' }, 8.15);
 scroll(night, { smooth: reduced ? 0 : 0.08 });
 

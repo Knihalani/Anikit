@@ -78,7 +78,7 @@ export function start({ reduced, fine, small }) {
       const h = Math.pow(rnd(), 1.8);
       heights[i] = h;
       const fold = Math.sin(x * 0.012) * 60 + Math.sin(x * 0.031 + 1) * 22;
-      a[o] = x + (rnd() - 0.5) * 6; a[o + 1] = 150 - h * 330 - Math.sin(x * 0.02) * 16; a[o + 2] = fold + (rnd() - 0.5) * 8;
+      const xr = x + Math.sin(x * 0.11) * 5; a[o] = xr + (rnd() - 0.5) * 4; a[o + 1] = -170 + h * 360 + Math.sin(x * 0.02) * 16; a[o + 2] = fold * 1.6 + (rnd() - 0.5) * 8;
     },
     (i, a, o) => { const u = rnd() * 2 - 1, th = rnd() * TAU, r = 210 * Math.cbrt(0.85 + rnd() * 0.15), q = Math.sqrt(1 - u * u); a[o] = Math.cos(th) * q * r; a[o + 1] = u * r; a[o + 2] = Math.sin(th) * q * r; },
     (i, a, o) => { const th = rnd() * TAU, ph = rnd() * TAU, r = 60 * Math.sqrt(rnd()); const R = 240 + Math.cos(ph) * r; a[o] = Math.cos(th) * R; a[o + 1] = Math.sin(ph) * r; a[o + 2] = Math.sin(th) * R; },
