@@ -127,12 +127,12 @@ All numbers are from a shared 4‑core cloud VM, so treat them as indicative. Re
 
 | Scene | Triangles drawn | ms/frame |
 |---|---:|---:|
-| Torus knot: chrome, iridescence, grid lines, pulses | 17,557 | 28 |
-| 900 towers with glowing edges and a pulse wave | 4,770 | 71 |
-| 6,000 overlapping cubes | 30,087 | 207 |
-| Film-like frame: mirror floor, towers, knot, sky + sun, 2 point lights, 20k stars, depth of field, camera motion blur | — | 294 |
+| Torus knot: chrome, iridescence, grid lines, pulses | 17,557 | 24 |
+| 900 towers with glowing edges and a pulse wave | 4,770 | 64 |
+| 6,000 overlapping cubes | 30,087 | 159 |
+| Film-like frame: mirror floor, towers, knot, sky + sun, 2 point lights, 20k stars, depth of field, camera motion blur | — | 259 |
 
-Per pass in the film-like frame: mirror 41 (half-resolution reflection + glossy floor, drawn after the scene), opaque 118, sky 10, light 18, depth of field 42, camera motion blur 63 ms.
+Per pass in the film-like frame: mirror 34 (half-resolution reflection + glossy floor, drawn after the scene), opaque 91, sky 10, light 18, depth of field 43, camera motion blur 61 ms.
 
 **Film grade** (WebAssembly in Node, 1920×1080, `node packages/anikit/scripts/bench-post.mjs`), each effect on a rendered frame: FXAA 17–19 ms, bloom 16, streaks 19, god rays 23–24, lens flares 23, zoom blur 21, aberration 16–17, grade + vignette + grain 11; the full grade of `film/film.mjs` 84–85 ms. (The bloom-family rows include the ~11 ms composite pass they share.)
 
