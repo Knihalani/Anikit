@@ -61,7 +61,7 @@ export default async function film({ anikit: A }) {
     tr(10.0, 0.7, 'N', 'C', 'ink'),      // into the canyon: an ink bloom
     tr(12.8, 0.7, 'C', 'N', 'dots'),     // halftone dots dissolve into a neon river
     tr(15.4, 0.6, 'N', 'R', 'slash'),    // out of the canyon: daylight wipes across
-    tr(18.2, 0.8, 'R', 'C', 'reveal'),   // over the last ridge a comic world grows out from the lens
+    tr(18.25, 1.0, 'R', 'C', 'reveal'),   // over the last ridge a comic world grows out from the lens
   ];
   const TEASE = [0.25, 1.9]; // the hook: during the dive the frame splits into all three looks
   const OUTRO = DUR - 1.35;
@@ -424,10 +424,12 @@ export default async function film({ anikit: A }) {
     const e = ease(clamp(p));
     if (type === 'front' || type === 'reveal') {
       // A front at distance D sweeps through the world (far → near, or near → far).
-      const D = Math.exp(type === 'front' ? mix(lnF, lnN, e) : mix(lnN, lnF, e));
+      // High above water nothing is nearer than the camera's height: start the front there.
+      const lnNear = Math.max(lnN, Math.log(Math.max(1.5, (cam.camera.y - WATER) * 0.8)));
+      const D = Math.exp(type === 'front' ? mix(lnF, lnNear, e) : mix(lnNear, lnF, e));
       // The sky (and anything beyond 8 km) cross-fades instead: first for a front, last for a reveal.
       const kSky = type === 'front' ? smooth(0.0, 0.35, e) : smooth(0.6, 0.95, e);
-      const soft = D * 0.08 + 1.5, band = D * 0.12 + 2;
+      const soft = D * (type === 'reveal' ? 0.45 : 0.12) + 1.5, band = D * 0.12 + 2;
       const sc = type === 'front' ? [0.5, 1.0, 1.0] : [1.0, 0.75, 0.4];
       for (let i = 0; i < N_PIX; i++) {
         const d = da[i], o = i * 4, sky = d > 8000;
