@@ -1,0 +1,17 @@
+[package]
+name = "anikit-node"
+description = "Native Node.js addon for anikit: the same ak_* C-ABI as the WebAssembly module, compiled for the host CPU."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+anikit-wasm = { path = "../anikit-wasm" }
+# Native maths (hardware sqrt/floor) instead of the no_std libm routines.
+anikit-core = { path = "../anikit-core", features = ["std"] }
+dlmalloc = { version = "0.2", default-features = false }
+libc = "0.2"

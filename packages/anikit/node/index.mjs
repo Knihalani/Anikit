@@ -55,9 +55,11 @@ export async function loadAnikit(o = {}) {
   const { existsSync } = await import('node:fs');
   if (!existsSync(dist)) throw new Error(`anikit/node: ${dist} is missing; build the package first (npm run build in packages/anikit)`);
   warnIfStale(dist);
+  const native = o.native === false ? null : loadNative();
+  if (native) globalThis.__ANIKIT_NATIVE__ = native;
   const anikit = await import(dist);
   await anikit.ready;
-  return { anikit, node: nodeHelpers(lib) };
+  return { anikit, node: nodeHelpers(lib), native: !!native };
 }
 
 /**
@@ -78,6 +80,22 @@ function warnIfStale(dist) {
   } catch {
     // Best effort only.
   }
+}
+
+/**
+ * The native core (`native/anikit.node`, built by `node scripts/build-native.mjs`):
+ * the same exports as the WebAssembly module, compiled for this CPU. Rendering
+ * uses it when present; ANIKIT_NATIVE=0 forces WebAssembly, ANIKIT_NATIVE=<path>
+ * loads another build.
+ */
+export function loadNative() {
+  const env = process.env.ANIKIT_NATIVE;
+  if (env === '0') return null;
+  const file = env && env !== '1' ? env : join(here, '../native/anikit.node');
+  if (!require_fs.existsSync(file)) return null;
+  const m = { exports: {} };
+  process.dlopen(m, file);
+  return m.exports;
 }
 
 function nodeHelpers(lib) {
