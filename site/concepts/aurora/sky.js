@@ -118,7 +118,7 @@ vec3 aurora(vec3 ro, vec3 rd, float steps, float dither){
       float hgt = (p.y - 105.) / 320.;
       float g = smoothstep(-.06, .03, hgt) * exp(-max(hgt, 0.) * 2.6);
       float r = smoothstep(.3, .8, hgt) * uRed;
-      acc += uCorona * ring * rays * (GREEN * g * 1.6 + RED * r * .38 + VIOLET * exp(-pow(hgt / .12, 2.)) * .3) * dt * .012;
+      acc += uCorona * ring * rays * (GREEN * g * 1.6 + RED * r * .38 + VIOLET * exp(-pow(hgt / .12, 2.)) * .3) * dt * .019;
     }
   }
   // extinction: aurora low on the horizon is dimmed by a long path through the air
