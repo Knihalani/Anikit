@@ -2103,14 +2103,34 @@ pub fn heightfield(w: usize, h: usize, heights: &[f32], skip: f32) -> Mesh {
             m.uv.extend_from_slice(&[x as f32 * sx, z as f32 * sz]);
         }
     }
+    // A vertex is flat when its four neighbours share its height (its normal
+    // is exactly vertical); a cell is flat when its four corners are flat at
+    // one height. Runs of flat cells along a row merge into one quad: same
+    // surface, same shading, far fewer triangles (text tops, plateaus).
+    let flat_v = |x: usize, z: usize| {
+        let y = at(x, z);
+        at(x + 1, z) == y && at(x.saturating_sub(1), z) == y && at(x, z + 1) == y && at(x, z.saturating_sub(1)) == y
+    };
+    let full = heights.len() >= w * h;
     for z in 0..h - 1 {
-        for x in 0..w - 1 {
-            if heights.len() >= w * h && at(x, z) <= skip && at(x + 1, z) <= skip && at(x, z + 1) <= skip && at(x + 1, z + 1) <= skip {
+        let mut x = 0;
+        while x < w - 1 {
+            if full && at(x, z) <= skip && at(x + 1, z) <= skip && at(x, z + 1) <= skip && at(x + 1, z + 1) <= skip {
+                x += 1;
                 continue;
             }
-            let (a, b, c, d) = ((z * w + x) as u32, (z * w + x + 1) as u32, ((z + 1) * w + x + 1) as u32, ((z + 1) * w + x) as u32);
+            let y = at(x, z);
+            let flat_cell = |x: usize| flat_v(x, z) && flat_v(x + 1, z) && flat_v(x, z + 1) && flat_v(x + 1, z + 1) && at(x + 1, z) == y && at(x, z + 1) == y && at(x + 1, z + 1) == y;
+            let mut x1 = x;
+            if full && flat_cell(x) {
+                while x1 + 1 < w - 1 && flat_cell(x1 + 1) {
+                    x1 += 1;
+                }
+            }
+            let (a, b, c, d) = ((z * w + x) as u32, (z * w + x1 + 1) as u32, ((z + 1) * w + x1 + 1) as u32, ((z + 1) * w + x) as u32);
             // Counter-clockwise seen from +Y.
             m.idx.extend_from_slice(&[a, c, b, a, d, c]);
+            x = x1 + 1;
         }
     }
     m
@@ -2439,6 +2459,23 @@ mod tests {
         let green = r.color.iter().filter(|c| (**c >> 8) & 255 > 20).count();
         assert!(red > 20 && red < 64 * 64 / 2, "a pool, not a flood: {red}");
         assert_eq!(green, 0, "the light is red");
+    }
+
+    #[test]
+    fn heightfield_merges_flat_runs() {
+        // A 40×20 field: a raised plateau (rows 4..16, cols 5..35) on a flat base.
+        let (w, h) = (40, 20);
+        let hs: Vec<f32> = (0..w * h).map(|i| if (4..16).contains(&(i / w)) && (5..35).contains(&(i % w)) { 1.0 } else { 0.0 }).collect();
+        let m = heightfield(w, h, &hs, -1.0);
+        let tris = m.idx.len() / 3;
+        assert!(tris * 2 < (w - 1) * (h - 1) * 2, "flat runs merge: {tris} triangles");
+        // Same surface: the triangles still tile the whole 1×1 footprint.
+        let area: f32 = m.idx.chunks(3).map(|t| {
+            let p = |k: usize| [m.pos[t[k] as usize * 3], m.pos[t[k] as usize * 3 + 2]];
+            let (a, b, c) = (p(0), p(1), p(2));
+            ((b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])).abs() * 0.5
+        }).sum();
+        assert!((area - 1.0).abs() < 1e-4, "covers the footprint exactly once: {area}");
     }
 
     #[test]
