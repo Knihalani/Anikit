@@ -15,11 +15,13 @@ export const tests = [
     async run(page, h) {
       await page.evaluate(() => { window.hc = ak.htmlCanvas('#card'); return window.hc.ready.then(() => 0); });
       const info = await page.evaluate(() => ({ native: hc.native, w: hc.width, h: hc.height, v: hc.version }));
-      ok(!info.native && info.w === 200 && info.h === 120 && info.v === 1, `first raster: ${JSON.stringify(info)}`);
+      ok(!info.native && info.w === 200 && info.h === 120 && info.v >= 1, `first raster: ${JSON.stringify(info)}`);
       const red = await pixel(page, 190, 110);
       ok(red[0] > 240 && red[1] < 20 && red[3] === 255, `red background: ${red}`);
+      // Under SwiftShader a font/resize observer can add a raster before the change: wait for one after it.
+      const v0 = await page.evaluate(() => hc.version);
       await page.evaluate(() => { document.getElementById('card').style.background = 'rgb(0,0,255)'; });
-      await page.waitForFunction(() => hc.version >= 2);
+      await page.waitForFunction((v0) => hc.version > v0, v0);
       const blue = await pixel(page, 190, 110);
       ok(blue[2] > 240 && blue[0] < 20, `live update to blue: ${blue}`);
       // No re-raster without a change.
