@@ -704,6 +704,8 @@ const orbit: Orbit = s.orbit({ autoRotate: 8, damping: 0.92 });
 - **Picking.** `s.raycast(x, y)` returns a `RayHit` (`object`, `instance`, `point`, `distance`) or null. Meshes are tested exactly (triangles); instances use per-instance bounding spheres. Event handlers receive a `ScenePointerEvent` (`ScenePointerType`: `click`, `pointerdown`, `pointerup`, `pointerenter`, `pointerleave`, `pointermove`), bubble to parents, and set `cursor: pointer` over clickable objects.
 - **Stats and cleanup.** `s.stats` (`SceneStats`) has `drawCalls`, `triangles`, `culled`, `frameMs` and `dpr`. `s.revert()` stops rendering and frees all GPU resources; scenes and orbit controls register with `context()`.
 
+- **Performance.** Every frame reuses its matrices, render lists and uniform buffer (no per-frame allocation, no layout reads; size comes from a `ResizeObserver`). Opaque draws are sorted by program, geometry and material. Transparent draws are sorted back to front. Shaders are compiled when the scene is created. `scripts/bench-scene.mjs` compares against three.js. Headless Chromium here renders WebGL with SwiftShader (CPU), and for 10k instanced boxes with shadows at 960×540 it measured: start-up 870 ms vs 876 ms, frame time 670 ms vs 552 ms (three.js 0.187 is about 20% faster per frame on the CPU rasteriser), 3 draw calls each. Run it with `--gpu` on a machine with a GPU for representative numbers.
+
 ### Materials
 
 ```ts
@@ -717,6 +719,18 @@ brushed.set({ color: '#c0c4cc' });
 
 `MaterialPreset`: `chrome`, `gold`, `copper`, `glass`, `plastic`, `ceramic`, `rubber`, `emissive` and `toon`. `SceneMaterialOptions`: `preset`, `color`, `metalness`, `roughness`, `emissive`, `emissiveIntensity`, `opacity` (below 1 draws in the back-to-front transparent pass), `toon` and `glass`. Lighting is metal/roughness GGX with a split-sum environment term. The `EnvironmentName` environments are analytic, so they are prefiltered per roughness in closed form: no textures, no load-time cost.
 
+### glTF models
+
+```ts
+const s4 = scene(canvas);
+const model: import('anikit').GltfModel = await loadGLTF(s4, '/models/robot.glb');
+model.root.position.y = 1;
+const stop = model.play(model.animations[0] ?? 0, { loop: true, speed: 1 });
+const parsed = parseGLTF(s4, { asset: { version: '2.0' } }, []);   // JSON + buffers you fetched yourself
+```
+
+`loadGLTF(scene, url)` loads `.gltf` files (with embedded or external buffers) and `.glb` files. It reads triangle meshes (with smooth normals when the file has none), metal/roughness factors, emissive colour and strength, and the node hierarchy. It also reads translation/rotation/scale animations with linear, step or cubic-spline keys (cubic-spline keys are interpolated linearly). Textures, skinning and morph targets are not loaded yet.
+
 ### Geometry and instancing
 
 ```ts
@@ -729,6 +743,7 @@ const blob: import('anikit').Geometry = sdfMesh((x, y, z) => smoothUnion(sdSpher
 const carved = sdfMesh((x, y, z) => smoothSubtract(sdBox(x, y, z, 0.6, 0.6, 0.6, 0.1), sdSphere(x, y, z, 0.75), 0.05));
 const shapes = [roundedBox(1, 1, 1, 0.15), sphere(1, 48), cylinder(0.3, 0.5, 1), torus(1, 0.3), plane(4, 4), smoothNormals(vase)];
 const tri = triangulate([[0, 0], [1, 0], [0, 1]]);       // ear clipping → index triples
+const title = text3d('anikit', { font: 'bold 120px Inter, sans-serif', size: 0.6, depth: 0.2, bevel: 0.03 });
 
 const s2 = scene(canvas);
 const grid: InstancedMesh = s2.instances(box(0.1, 0.1, 0.1), 10000, (i, o) => {
@@ -745,7 +760,8 @@ let hit: import('anikit').RayHit | null = sc.raycast(10, 10);
 ```
 
 - All generators return a `Geometry` (`positions`, `normals`, `uvs`, `indices` as typed arrays) with counter-clockwise front faces and unit normals.
-- `sdfMesh(f, SdfOptions)` meshes a signed distance function with surface nets: one vertex per surface cell, with gradient normals. `resolution` sets the cells per axis (default 48) and `bounds` the half-size of the sampled cube (default 1.5). Build fields from `sdSphere`, `sdBox`, `sdTorus`, `smoothUnion` and `smoothSubtract`.
+- `sdfMesh(f, SdfOptions)` meshes a signed distance function with surface nets: one vertex per surface cell, with gradient normals. JavaScript samples `f` on the grid, and the WebAssembly core (`anikit-core::sdf`) extracts the mesh. A JS fallback runs if the core isn't loaded. `resolution` sets the cells along the longest axis (default 48). `bounds` is the half-size of the sampled box: a number or `[x, y, z]` (default 1.5). Build fields from `sdSphere`, `sdBox`, `sdTorus`, `smoothUnion` and `smoothSubtract`.
+- `text3d(text, Text3dOptions)` turns glyph outlines into rounded-bevel 3D text. It rasterises the text with Canvas 2D, takes an exact Euclidean distance transform, and extrudes that 2D field with a bevel, meshed by `sdfMesh` (browser only). Options: `font` (CSS font), `size` (cap height), `depth`, `bevel` and `resolution` (cells along the width, default 160).
 - `instances(geometry, count, fn, options)` draws every copy in one call. `fn(i, o)` sets the `InstanceState` (`position`, `rotation`, `scale` and `color`). `grid.update(fn)` reruns the callback without allocating. You can also write `grid.matrices` and `grid.colors` directly and then call `grid.needsUpdate()`.
 - `Vec3Like` is `[x, y, z]` or `{ x, y, z }`. `PrimitiveName` lists the string shorthands.
 
@@ -1231,7 +1247,7 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Dev tools](#dev-tools) and [testing](#testing-and-diagnostics) | `inspector`, `testing`, `setWarnings`, `onWarning` | `InspectorOptions` |
 | [Physics worlds](#physics-worlds) | `world`, `World` | `WorldOptions`, `BodyInit` |
 | [3D](#3d) | `scene3d`, `Scene3D`, `tilt`, `parseTransform`, `toMatrix3d`, `mixTransforms` | `SceneOptions`, `Projection`, `DrawOptions`, `TiltOptions`, `Vec3`, `Matrix` |
-| [Real-time GPU 3D](#real-time-gpu-3d-scene) | `scene`, `Scene`, `Object3D`, `InstancedMesh`, `Material`, `material`, `Orbit`, `Vector3`, `linearColor`, `box`, `roundedBox`, `sphere`, `cylinder`, `capsule`, `torus`, `plane`, `lathe`, `extrude`, `tube`, `triangulate`, `smoothNormals`, `subdivide`, `sdfMesh`, `sdSphere`, `sdBox`, `sdTorus`, `smoothUnion`, `smoothSubtract` | `SceneInit`, `CameraOptions`, `BloomOptions`, `DofOptions`, `OrbitOptions`, `Camera`, `SceneMaterialOptions`, `MaterialPreset`, `ObjectOptions`, `InstanceState`, `EnvironmentName`, `LayerContext`, `SceneLayer`, `RayHit`, `SceneStats`, `ScenePointerEvent`, `ScenePointerType`, `PrimitiveName`, `Vec3Like`, `Geometry`, `SdfOptions` |
+| [Real-time GPU 3D](#real-time-gpu-3d-scene) | `scene`, `Scene`, `Object3D`, `InstancedMesh`, `Material`, `material`, `Orbit`, `Vector3`, `linearColor`, `box`, `roundedBox`, `sphere`, `cylinder`, `capsule`, `torus`, `plane`, `lathe`, `extrude`, `tube`, `triangulate`, `smoothNormals`, `subdivide`, `sdfMesh`, `sdSphere`, `sdBox`, `sdTorus`, `smoothUnion`, `smoothSubtract`, `text3d`, `loadGLTF`, `parseGLTF` | `GltfModel`, `SceneInit`, `CameraOptions`, `BloomOptions`, `DofOptions`, `OrbitOptions`, `Camera`, `SceneMaterialOptions`, `MaterialPreset`, `ObjectOptions`, `InstanceState`, `EnvironmentName`, `LayerContext`, `SceneLayer`, `RayHit`, `SceneStats`, `ScenePointerEvent`, `ScenePointerType`, `PrimitiveName`, `Vec3Like`, `Geometry`, `SdfOptions`, `Text3dOptions` |
 | [Point clouds and glow](#point-clouds-and-glow) | `pointCloud`, `PointCloud`, `textPoints`, `glow`, `Glow` | `CloudOptions`, `ShapeInput`, `GlowOptions`, `GlowRenderOptions` |
 | [Particle emitters](#particle-emitters) | `emitter`, `Emitter` | `EmitterOptions`, `SpawnShape` |
 | [Solid 3D](#solid-3d-renderer3d-mesh-instances) | `renderer3d`, `Renderer3D`, `mesh`, `Mesh3D`, `instances`, `Instances`, `texture`, `Texture3D`, `shatter`, `Shards`, `flightPath`, `FlightPath` | `InstanceInit`, `MaterialOptions`, `LightOptions`, `DrawItem`, `PointsItem`, `ShatterOptions`, `FlightPathOptions`, `FlightPose`, `Point3` |

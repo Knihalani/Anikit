@@ -10,6 +10,7 @@
  * const blob = sdfMesh((x, y, z) => smoothUnion(sdSphere(x - 0.4, y, z, 0.6), sdSphere(x + 0.4, y, z, 0.5), 0.3));
  * ```
  */
+import { core, f64Buf, F64 } from './wasm';
 
 /** Indexed triangle mesh: positions/normals (xyz), uvs (uv), indices. */
 export interface Geometry {
@@ -369,9 +370,9 @@ export function smoothSubtract(a: number, b: number, k: number): number { return
 
 /** Options for {@link sdfMesh}. */
 export interface SdfOptions {
-  /** Half-size of the sampled cube around the origin (default 1.5). */
-  bounds?: number;
-  /** Cells per axis (default 48). Cost grows with the cube of this. */
+  /** Half-size of the sampled box around the origin: a number (cube) or `[x, y, z]` (default 1.5). */
+  bounds?: number | readonly [number, number, number];
+  /** Cells along the longest axis (default 48). Cost grows with the cube of this. */
   resolution?: number;
 }
 
@@ -381,16 +382,23 @@ export interface SdfOptions {
  * cracks. Combine shapes with {@link smoothUnion} / {@link smoothSubtract}.
  */
 export function sdfMesh(f: (x: number, y: number, z: number) => number, opts: SdfOptions = {}): Geometry {
-  const R = Math.max(4, Math.min(256, opts.resolution ?? 48) | 0), H = opts.bounds ?? 1.5;
-  const s = (2 * H) / R, N = R + 1;
-  const d = new Float32Array(N * N * N);
-  for (let k = 0; k < N; k++) for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) d[i + N * (j + N * k)] = f(-H + i * s, -H + j * s, -H + k * s);
-  const cell = new Int32Array(R * R * R).fill(-1);
+  const B = opts.bounds ?? 1.5;
+  const hx = typeof B === 'number' ? B : B[0], hy = typeof B === 'number' ? B : B[1], hz = typeof B === 'number' ? B : B[2];
+  const R = Math.max(4, Math.min(512, opts.resolution ?? 48) | 0);
+  const s = (2 * Math.max(hx, hy, hz)) / R;
+  const Rx = Math.max(2, Math.ceil((2 * hx) / s)), Ry = Math.max(2, Math.ceil((2 * hy) / s)), Rz = Math.max(2, Math.ceil((2 * hz) / s));
+  const Nx = Rx + 1, Ny = Ry + 1, Nz = Rz + 1;
+  const ox = -Rx * s / 2, oy = -Ry * s / 2, oz = -Rz * s / 2;
+  const d = new Float32Array(Nx * Ny * Nz);
+  for (let k = 0; k < Nz; k++) for (let j = 0; j < Ny; j++) for (let i = 0; i < Nx; i++) d[i + Nx * (j + Ny * k)] = f(ox + i * s, oy + j * s, oz + k * s);
+  const fast = wasmNets(d, Nx, Ny, Nz, ox, oy, oz, s);
+  if (fast) return fast;
+  const cell = new Int32Array(Rx * Ry * Rz).fill(-1);
   const pos: number[] = [], nor: number[] = [];
-  const at = (i: number, j: number, k: number) => d[i + N * (j + N * k)];
+  const at = (i: number, j: number, k: number) => d[i + Nx * (j + Ny * k)];
   const E = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];
   const c = new Float32Array(8);
-  for (let k = 0; k < R; k++) for (let j = 0; j < R; j++) for (let i = 0; i < R; i++) {
+  for (let k = 0; k < Rz; k++) for (let j = 0; j < Ry; j++) for (let i = 0; i < Rx; i++) {
     let mask = 0;
     for (let q = 0; q < 8; q++) { c[q] = at(i + (q & 1), j + ((q >> 1) & 1), k + ((q >> 2) & 1)); if (c[q] < 0) mask |= 1 << q; }
     if (mask === 0 || mask === 255) continue;
@@ -400,31 +408,130 @@ export function sdfMesh(f: (x: number, y: number, z: number) => number, opts: Sd
       const t = c[a] / (c[a] - c[b]);
       x += (a & 1) + t * ((b & 1) - (a & 1)); y += ((a >> 1) & 1) + t * (((b >> 1) & 1) - ((a >> 1) & 1)); z += ((a >> 2) & 1) + t * (((b >> 2) & 1) - ((a >> 2) & 1)); m++;
     }
-    const px = -H + (i + x / m) * s, py = -H + (j + y / m) * s, pz = -H + (k + z / m) * s;
+    const px = ox + (i + x / m) * s, py = oy + (j + y / m) * s, pz = oz + (k + z / m) * s;
     const e = s * 0.5;
     const gx = f(px + e, py, pz) - f(px - e, py, pz), gy = f(px, py + e, pz) - f(px, py - e, pz), gz = f(px, py, pz + e) - f(px, py, pz - e);
     const l = Math.hypot(gx, gy, gz) || 1;
-    cell[i + R * (j + R * k)] = pos.length / 3;
+    cell[i + Rx * (j + Ry * k)] = pos.length / 3;
     pos.push(px, py, pz); nor.push(gx / l, gy / l, gz / l);
   }
   const idx: number[] = [];
-  const C = (i: number, j: number, k: number) => cell[i + R * (j + R * k)];
+  const C = (i: number, j: number, k: number) => cell[i + Rx * (j + Ry * k)];
   const quad = (a: number, b: number, cc: number, dd: number, flip: boolean) => {
     if (a < 0 || b < 0 || cc < 0 || dd < 0) return;
     if (flip) idx.push(a, cc, b, b, cc, dd); else idx.push(a, b, cc, b, dd, cc);
   };
-  for (let k = 1; k < R; k++) for (let j = 1; j < R; j++) for (let i = 0; i < R; i++) {
+  for (let k = 1; k < Rz; k++) for (let j = 1; j < Ry; j++) for (let i = 0; i < Rx; i++) {
     const a = at(i, j, k), b = at(i + 1, j, k);
     if ((a < 0) !== (b < 0)) quad(C(i, j - 1, k - 1), C(i, j, k - 1), C(i, j - 1, k), C(i, j, k), a < 0);
   }
-  for (let k = 1; k < R; k++) for (let j = 0; j < R; j++) for (let i = 1; i < R; i++) {
+  for (let k = 1; k < Rz; k++) for (let j = 0; j < Ry; j++) for (let i = 1; i < Rx; i++) {
     const a = at(i, j, k), b = at(i, j + 1, k);
     if ((a < 0) !== (b < 0)) quad(C(i - 1, j, k - 1), C(i - 1, j, k), C(i, j, k - 1), C(i, j, k), a < 0);
   }
-  for (let k = 0; k < R; k++) for (let j = 1; j < R; j++) for (let i = 1; i < R; i++) {
+  for (let k = 0; k < Rz; k++) for (let j = 1; j < Ry; j++) for (let i = 1; i < Rx; i++) {
     const a = at(i, j, k), b = at(i, j, k + 1);
     if ((a < 0) !== (b < 0)) quad(C(i - 1, j - 1, k), C(i, j - 1, k), C(i - 1, j, k), C(i, j, k), a < 0);
   }
   const g: Geometry = { positions: new Float32Array(pos), normals: new Float32Array(nor), uvs: new Float32Array((pos.length / 3) * 2), indices: new Uint32Array(idx) };
   return fixWinding(g);
+}
+
+/**
+ * Surface-nets extraction in the WebAssembly core (the field is already
+ * sampled, so no user code runs between reserving the scratch buffer and the
+ * call). Returns null when the core isn't loaded; the JS path is the fallback.
+ */
+function wasmNets(d: Float32Array, nx: number, ny: number, nz: number, ox: number, oy: number, oz: number, s: number): Geometry | null {
+  let w;
+  try { w = core(); } catch { return null; }
+  const at = f64Buf(d.length);
+  F64.set(d, at);
+  const id = w.ak_surface_nets(nx, ny, nz, ox, oy, oz, s);
+  if (id === 0xffffffff) return null;
+  const nv = w.ak_mesh_ptr(id, 3), nt = w.ak_mesh_ptr(id, 4), buf = w.memory.buffer;
+  const g: Geometry = {
+    positions: new Float32Array(buf, w.ak_mesh_ptr(id, 0), nv * 3).slice(),
+    normals: new Float32Array(buf, w.ak_mesh_ptr(id, 1), nv * 3).slice(),
+    uvs: new Float32Array(nv * 2),
+    indices: new Uint32Array(buf, w.ak_mesh_ptr(id, 2), nt * 3).slice(),
+  };
+  w.ak_mesh_free(id);
+  return g;
+}
+
+/** Options for {@link text3d}. */
+export interface Text3dOptions {
+  /** CSS font (default `'bold 100px sans-serif'`). The size only sets raster detail. */
+  font?: string;
+  /** Height of a capital letter in scene units (default 1). */
+  size?: number;
+  /** Extrusion depth (default 0.3). */
+  depth?: number;
+  /** Rounded bevel radius (default 0.04). */
+  bevel?: number;
+  /** Mesh cells along the text width (default 160). */
+  resolution?: number;
+}
+
+/**
+ * Extruded, bevelled 3D text, centred on the origin and facing +Z. The glyphs
+ * are rasterised with Canvas 2D (needs a DOM or OffscreenCanvas), turned into
+ * a 2D distance field, extruded with a rounded bevel and meshed with
+ * surface nets.
+ */
+export function text3d(text: string, o: Text3dOptions = {}): Geometry {
+  const font = o.font ?? 'bold 100px sans-serif', size = o.size ?? 1, depth = o.depth ?? 0.3, bevel = o.bevel ?? 0.04;
+  const px = Number(/(\d+(?:\.\d+)?)px/.exec(font)?.[1] ?? 100);
+  const pad = Math.ceil(px * 0.25);
+  const mk = (w: number, h: number): OffscreenCanvas | HTMLCanvasElement => {
+    if (typeof OffscreenCanvas === 'function') return new OffscreenCanvas(w, h);
+    const c = document.createElement('canvas'); c.width = w; c.height = h; return c;
+  };
+  let cv = mk(8, 8);
+  let ctx = cv.getContext('2d') as CanvasRenderingContext2D | null;
+  if (!ctx) throw new Error('anikit: text3d() needs Canvas 2D');
+  ctx.font = font;
+  const W = Math.ceil(ctx.measureText(text).width) + pad * 2, H = Math.ceil(px * 1.3) + pad * 2;
+  cv = mk(W, H); ctx = cv.getContext('2d') as CanvasRenderingContext2D;
+  ctx.font = font; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff';
+  ctx.fillText(text, pad, H / 2);
+  const img = ctx.getImageData(0, 0, W, H).data;
+  // Two-pass (Felzenszwalb) exact Euclidean distance transform, inside and outside.
+  const edt = (inside: boolean): Float32Array => {
+    const INF = 1e20, g = new Float32Array(W * H);
+    for (let i = 0; i < W * H; i++) g[i] = (img[i * 4 + 3] > 127) === inside ? 0 : INF;
+    const f = new Float32Array(Math.max(W, H)), dd = new Float32Array(Math.max(W, H)), v = new Int32Array(Math.max(W, H)), z = new Float32Array(Math.max(W, H) + 1);
+    const pass = (n: number, get: (i: number) => number, set: (i: number, x: number) => void) => {
+      for (let i = 0; i < n; i++) f[i] = get(i);
+      let k = 0; v[0] = 0; z[0] = -INF; z[1] = INF;
+      for (let q = 1; q < n; q++) {
+        let s2 = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+        while (s2 <= z[k]) { k--; s2 = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); }
+        k++; v[k] = q; z[k] = s2; z[k + 1] = INF;
+      }
+      k = 0;
+      for (let q = 0; q < n; q++) { while (z[k + 1] < q) k++; dd[q] = (q - v[k]) ** 2 + f[v[k]]; }
+      for (let i = 0; i < n; i++) set(i, dd[i]);
+    };
+    for (let x = 0; x < W; x++) pass(H, (y) => g[y * W + x], (y, val) => { g[y * W + x] = val; });
+    for (let y = 0; y < H; y++) pass(W, (x) => g[y * W + x], (x, val) => { g[y * W + x] = val; });
+    return g;
+  };
+  const dOut = edt(true), dIn = edt(false);
+  const scale = size / (px * 0.72); // cap height ≈ 0.72 em
+  const sd = new Float32Array(W * H);
+  for (let i = 0; i < W * H; i++) sd[i] = (Math.sqrt(dOut[i]) - Math.sqrt(dIn[i])) * scale;
+  const hw = (W * scale) / 2, hh = (H * scale) / 2;
+  const field2 = (x: number, y: number) => {
+    const fx = Math.max(0, Math.min(W - 1.001, x / scale + W / 2 - 0.5)), fy = Math.max(0, Math.min(H - 1.001, H / 2 - y / scale - 0.5));
+    const ix = fx | 0, iy = fy | 0, tx = fx - ix, ty = fy - iy, i = iy * W + ix;
+    return (sd[i] * (1 - tx) + sd[i + 1] * tx) * (1 - ty) + (sd[i + W] * (1 - tx) + sd[i + W + 1] * tx) * ty;
+  };
+  // Extrusion with a rounded bevel: shrink the outline and depth by the bevel, then round.
+  const f = (x: number, y: number, z: number) => {
+    const a = field2(x, y) + bevel, b = Math.abs(z) - depth / 2 + bevel;
+    return Math.min(Math.max(a, b), 0) + Math.hypot(Math.max(a, 0), Math.max(b, 0)) - bevel;
+  };
+  return sdfMesh(f, { bounds: [hw, hh, depth / 2 + bevel + (hw * 2) / (o.resolution ?? 160) * 2], resolution: o.resolution ?? 160 });
 }
