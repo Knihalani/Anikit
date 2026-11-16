@@ -33,12 +33,44 @@ Agents are best at writing structured data and TypeScript, and per-frame user co
 
 The environment has `ffmpeg` with libx264, libx265, libsvtav1, libvpx-vp9, aac and opus. Machines have 4 cores.
 
+
+## Foundation decisions (measured on this 4-core machine, 1080p)
+
+| Choice | Measured | Decision |
+|---|---|---|
+| **Rasteriser** | Typical motion-graphics frame (gradient, 30 cards, 400 glyph-sized shapes, 10 strokes): tiny-skia 53 fps on one thread / 200 fps frame-parallel; **vello_cpu 250 fps on one thread / 935 fps frame-parallel** (sparse strips, SIMD) | **vello_cpu** 0.4 (Linebender) behind our display list. We may vendor and patch it. |
+| **Encoder** | x264 on our content: ultrafast 330 fps (46 MB), veryfast 141 fps (6 MB), medium 71 fps; OpenH264 105–122 fps (11 MB, 43 dB). The full pipeline through ffmpeg (RGBA pipe + swscale + x264) is only 45–77 fps | **The encoder is the wall** (rendering is 10× faster), so we build our own: **`ak264`**, a renderer-aware H.264 encoder (see below). x264 via ffmpeg stays as the "max compression" option and the reference. |
+| **Colour conversion** | ffmpeg swscale RGBA → YUV is single-threaded and costs about 35% of the pipeline | Fused SIMD RGBA → YUV420 inside the render workers |
+| **Text** | n/a | **parley** (layout, Linebender) + **skrifa** outlines + **harfrust** shaping, drawn as vello_cpu glyph runs; bundled Inter, Inter Display and JetBrains Mono |
+| **Layout** | n/a | **taffy** (flexbox and grid), so agents can lay out with CSS-like boxes they already know |
+| **Images, audio, mux** | n/a | `image` / zune for images; symphonia for audio decode plus our own mixer; ffmpeg only for final muxing and AAC/Opus (cheap), with an optional pure-Rust MP4 muxer |
+
+### `ak264`: why it can be orders of magnitude faster
+
+General encoders spend their time discovering what changed (motion search, mode decisions) across the whole frame. Our renderer already knows:
+- which 16×16 macroblocks changed since the previous frame (an exact diff of the rendered frames, which is cheap, or the display-list bounding boxes);
+- often *how* they moved (layer transforms give exact motion vectors).
+
+**Bitstream:** H.264 High or Main profile, Annex-B, decodable everywhere.
+
+**Per macroblock:**
+- **Unchanged:** P_Skip, at zero cost. Mind the predicted-MV rule: force MV 0 by choosing neighbours, or code P_L0_16x16 with MV 0 and no residual.
+- **Moved by a known integer translation:** P_L0_16x16 with that MV plus a small residual.
+- **Otherwise:** a fast intra mode decision (I16x16 / I4x4, DC/V/H/plane) with CAVLC residual.
+
+**Constant QP:** quality is set by QP (CRF-like), with deblocking on or off (measured).
+
+**Parallelism:** fully static frames become a single all-skip P slice, in nanoseconds. The video is split into GOP chunks, each starting with an IDR, encoded on all cores, and the Annex-B streams are concatenated.
+
+**Target:** at least 10× x264 veryfast on typical motion graphics, at matched PSNR (≥ 40 dB). Verify every output decodes with ffmpeg, and report PSNR.
+
 ## Crate and package layout
 
 | Path | Module | Owner (session) |
 |---|---|---|
 | `crates/anikit-video/src/dl.rs` | **Display list**: the contract between eval and render (already written) | parent; changes by agreement |
-| `src/render/` | 2D rasteriser: paths (analytic AA), strokes (joins, caps, dashes, trim), gradients, images, blend modes, layers, clips, filters (blur, shadow, glow, colour matrix), layer cache, tile-parallel, direct-to-YUV output | RENDER |
+| `crates/ak264/` | **Renderer-aware H.264 encoder**, chunk-parallel, plus the Annex-B to MP4 path | ENCODER |
+| `src/render/` | 2D rasteriser (**vello_cpu**): paths (analytic AA), strokes (joins, caps, dashes, trim), gradients, images, blend modes, layers, clips, filters (blur, shadow, glow, colour matrix), layer cache, tile-parallel, direct-to-YUV output | RENDER |
 | `src/text/` | Fonts (TTF/OTF, bundled Inter / Inter Display / JetBrains Mono, system), shaping (rustybuzz), layout (wrap, align, rich spans), glyph outline cache and atlas → `Op::Glyphs`; kinetic text helpers (split by char/word/line) | TEXT |
 | `src/spec/`, `src/eval/` | JSON spec types (serde), schema generation, validation with "did you mean" errors, timeline (scenes, transitions, keyframes, easings, springs, stagger, expressions), evaluation `(spec, t)` → `DisplayList` | SPEC |
 | `src/pipeline/`, `src/bin/anikit-video.rs`, `src/audio/` | Frame scheduling (rayon), dedupe of identical frames, RGBA → YUV, encoders (x264, x265, AV1, VP9, ProRes, GIF, PNG sequence) via ffmpeg pipes, with chunked parallel encode and concat; audio mixing (music, SFX, ducking, fades), beat detection for sync, captions (SRT, word timing → burn-in); CLI commands: `render` / `still` / `sheet` / `check` | PIPELINE |

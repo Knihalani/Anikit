@@ -7,7 +7,9 @@
 //! skip identical frames.
 //!
 //! Coordinates are in output pixels (origin top-left, y down) after the
-//! op's `transform`. Colours are linear-light premultiplied RGBA in `f32`.
+//! op's `transform`. Colours are **sRGB, straight (non-premultiplied) alpha**,
+//! `f32` 0..1, which maps 1:1 onto vello_cpu's paint colours.
+//! Paths are `kurbo::BezPath` (re-exported), the rasteriser's native type.
 
 /// 2D affine transform `[a, b, c, d, e, f]`: `x' = a·x + c·y + e`, `y' = b·x + d·y + f`.
 pub type Affine = [f32; 6];
@@ -27,19 +29,12 @@ pub fn mul(a: &Affine, b: &Affine) -> Affine {
     ]
 }
 
-/// Linear-light, premultiplied RGBA.
+/// sRGB colour with straight alpha, components 0..1.
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct Rgba(pub [f32; 4]);
 
-/// A path in local coordinates. Commands are flat for cache friendliness.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct Path {
-    /// Verbs: `M`, `L`, `Q`, `C`, `Z` (one byte each).
-    pub verbs: Vec<u8>,
-    /// Points, two `f32` per point, consumed by the verbs in order
-    /// (`M`/`L` one point, `Q` two, `C` three, `Z` none).
-    pub points: Vec<f32>,
-}
+/// A path in local coordinates (the rasteriser's native path type).
+pub use kurbo::BezPath as Path;
 
 /// How a shape is coloured.
 #[derive(Clone, Debug, PartialEq)]
