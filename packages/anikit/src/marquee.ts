@@ -53,6 +53,12 @@ export class Marquee {
   private clones: HTMLElement[] = [];
   private originalStyle: string | null;
   private length = 0;
+  /** On screen (or unknown): off-screen frames move the offset but skip the style write. */
+  private visible = true;
+  /** The offset the track's transform shows (NaN: not written yet). */
+  private shown = NaN;
+  /** Container size and repeat length of the last measure (resizes that change neither skip re-cloning). */
+  private measured = '';
 
   constructor(readonly el: HTMLElement, private o: MarqueeOptions) {
     this.speed = o.speed ?? 80;
@@ -87,9 +93,23 @@ export class Marquee {
       this.off.push(() => window.removeEventListener('scroll', onScroll));
     }
     if (typeof ResizeObserver !== 'undefined') {
-      const ro = new ResizeObserver(() => this.measure());
+      // The first callback (on observe) and resizes that leave the sizes as
+      // they were need no new clones.
+      const ro = new ResizeObserver(() => {
+        if (this.sizes() !== this.measured) this.measure();
+      });
       ro.observe(el);
       this.off.push(() => ro.disconnect());
+    }
+    if (typeof IntersectionObserver !== 'undefined') {
+      // The margin flips `visible` before the marquee scrolls into view (the
+      // callback comes a frame late), so it never shows a stale offset.
+      const io = new IntersectionObserver((entries) => {
+        this.visible = entries[entries.length - 1].isIntersecting;
+        if (this.visible) this.render();
+      }, { rootMargin: '50%' });
+      io.observe(el);
+      this.off.push(() => io.disconnect());
     }
     this.off.push(engine.onFrame((_t, dt) => this.frame(dt / 1000)));
   }
@@ -101,6 +121,7 @@ export class Marquee {
     const ax = this.o.axis ?? 'x';
     const size = (e: Element) => (ax === 'x' ? (e as HTMLElement).offsetWidth : (e as HTMLElement).offsetHeight);
     const items = Array.from(this.track.children) as HTMLElement[];
+    this.shown = NaN;
     const gap = this.o.gap ?? (parseFloat(getComputedStyle(this.el)[ax === 'x' ? 'columnGap' : 'rowGap']) || 0);
     if (gap && !this.o.gap) this.track.style.gap = `${gap}px`;
     // One repeat = the items plus one gap, so the wrap is seamless.
@@ -118,7 +139,14 @@ export class Marquee {
         this.clones.push(c);
       }
     }
+    this.measured = this.sizes();
     this.render();
+  }
+  /** Container size and the size of the original items with the clones (layout reads only). */
+  private sizes(): string {
+    const ax = this.o.axis ?? 'x';
+    const size = (e: Element) => (ax === 'x' ? (e as HTMLElement).offsetWidth : (e as HTMLElement).offsetHeight);
+    return `${size(this.el)} ${size(this.track)} ${this.track.children.length}`;
   }
   /** Stop moving (eases to a stop over `smoothing`). */
   pause(): this {
@@ -156,6 +184,8 @@ export class Marquee {
     this.render();
   }
   private render(): void {
+    if (!this.visible || this.offset === this.shown) return;
+    this.shown = this.offset;
     const ax = this.o.axis ?? 'x';
     this.track.style.transform = ax === 'x' ? `translate3d(${-this.offset}px,0,0)` : `translate3d(0,${-this.offset}px,0)`;
   }

@@ -12,7 +12,8 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const pkg = join(here, '..');
+// PKG=path/to/a/copy/of/packages/anikit measures another version of the source.
+const pkg = process.env.PKG || join(here, '..');
 const dir = mkdtempSync(join(tmpdir(), 'anikit-scroll-'));
 await build({ entryPoints: [join(pkg, 'bench/scroll-entry.js')], bundle: true, format: 'iife', minify: true, outfile: join(dir, 'bundle.js'), logLevel: 'error' });
 writeFileSync(join(dir, 'index.html'), '<!doctype html><meta charset="utf-8"><style>body{margin:0} section{height:60vh;position:relative;border-top:1px solid #ddd} .b{position:absolute;left:20px;top:20px;width:40px;height:40px;background:#6ea8ff}</style><div id="stage"></div><script src="bundle.js"></script>');

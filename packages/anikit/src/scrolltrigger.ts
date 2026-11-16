@@ -215,6 +215,8 @@ export class ScrollTrigger {
   direction = 1;
   isActive = false;
   private last = -1;
+  /** Progress last given to a scrubbed animation (NaN: none yet / after a refresh). */
+  private scrubbed = NaN;
   private o: ScrollTriggerOptions;
   private smoother: PhysicsAnimation | null = null;
   private proxy = { p: 0 };
@@ -355,6 +357,7 @@ export class ScrollTrigger {
     }
     this.drawMarkers();
     this.last = -1;
+    this.scrubbed = NaN;
     this.o.onRefresh?.(this);
     this.update();
   }
@@ -379,7 +382,10 @@ export class ScrollTrigger {
     if (anim && o.scrub) {
       if (typeof o.scrub === 'number' && o.scrub > 0 && !firstUpdate) {
         this.smoother = spring(this.proxy, { p }, this.smoothOpts);
-      } else {
+      } else if (p !== this.scrubbed || firstUpdate) {
+        // Off-screen triggers keep reading 0 or 1 while the page scrolls:
+        // seeking the animation to the same progress again is a no-op.
+        this.scrubbed = p;
         this.proxy.p = p;
         anim.progress = p;
       }
