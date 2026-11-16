@@ -152,6 +152,31 @@ console.log('case'.padEnd(44), 'Anikit'.padStart(9), 'GSAP'.padStart(9), '  rati
   }, (tl) => { tl.kill(); gsapKill(); }, gsFrame));
 }
 
+{
+  // Teardown: kill() of a long timeline (each child is killed too).
+  const M = Math.max(1, N / 2 | 0);
+  const t = objs(M, () => ({ x: 0 }));
+  const ak = [], gs = [];
+  for (let r = 0; r < WARM + RUNS; r++) {
+    const tl = timeline({ autoplay: false });
+    for (let i = 0; i < M; i++) tl.add(t[i], { x: 100 }, { duration: 0.1 }, i * 1e-6);
+    tl.play();
+    akFrame();
+    let s = performance.now();
+    tl.kill();
+    if (r >= WARM) ak.push(performance.now() - s);
+    akFrame();
+    const g = gsap.timeline();
+    for (let i = 0; i < M; i++) g.to(t[i], { x: 100, duration: 0.1 }, i * 1e-6);
+    gsFrame();
+    s = performance.now();
+    g.kill();
+    if (r >= WARM) gs.push(performance.now() - s);
+    gsapKill();
+  }
+  row(`kill: timeline of ${M} steps`, median(ak), median(gs));
+}
+
 console.log('');
 {
   const t = objs(N, () => ({ x: 0 }));

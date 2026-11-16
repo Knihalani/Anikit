@@ -389,11 +389,15 @@ export class Timeline extends Playable {
 
   protected _kill(): void {
     watch(this, false);
+    // Release the whole subtree first, in one pass. The children's own kills
+    // below then find their nodes gone (stale handles are harmless) instead
+    // of each detaching from this group and recomputing its duration over the
+    // remaining children: O(n²) for n children.
+    if (this._h) core().ak_release(this._h);
+    this._h = 0;
     for (const c of this._cleanups) c();
     this._cleanups = [];
     for (const l of this._links) unregister(l as unknown as NodeRecord);
-    if (this._h) core().ak_release(this._h);
-    this._h = 0;
   }
 
   protected _cleanup(): () => void {
@@ -401,9 +405,9 @@ export class Timeline extends Playable {
     const links = this._links.slice();
     const h = this._h;
     return () => {
+      if (h) core().ak_release(h);
       for (const c of cleanups) c();
       for (const l of links) unregister(l as unknown as NodeRecord);
-      if (h) core().ak_release(h);
     };
   }
 }
