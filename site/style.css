@@ -79,13 +79,13 @@ code.pill { font-family: Mono, monospace; font-size: 14px; cursor: text; user-se
 .panel p { color: #cfd3dd; margin: 0 0 18px; }
 .panel .tag { color: var(--accent); margin: 0; letter-spacing: 0.02em; }
 .panel { will-change: transform, opacity; }
-.snippet { display: block; margin-top: 18px; padding: 12px 14px; background: #07080c; border: 1px solid var(--line); border-radius: 10px; color: #c9cfdc; overflow-x: auto; white-space: nowrap; }
+.snippet { display: block; margin-top: 18px; padding: 12px 14px; background: #07080c; border: 1px solid var(--line); border-radius: 10px; color: #c9cfdc; line-height: 1.6; overflow-wrap: anywhere; }
 .hint { position: absolute; left: 14px; bottom: 12px; color: var(--dim); pointer-events: none; }
 
 .stage-box { position: relative; height: 240px; border-radius: 14px; background: #07080c; border: 1px solid var(--line); overflow: hidden; margin-bottom: 14px; touch-action: none; }
 .dot { position: absolute; left: 0; top: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--accent); will-change: transform; }
 
-.reveal { font-family: Display, sans-serif; font-weight: 900; font-size: clamp(26px, 2.8vw, 38px) !important; line-height: 1.08 !important; color: var(--text) !important; letter-spacing: -0.02em; }
+.reveal { font-family: Display, sans-serif; font-weight: 900; font-size: clamp(24px, 2.3vw, 32px) !important; line-height: 1.1 !important; color: var(--text) !important; letter-spacing: -0.02em; }
 .reveal .ch { display: inline-block; }
 .reveal .gw { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.08em; }
 
