@@ -1815,11 +1815,27 @@ impl Encoder {
                     // Inner macroblocks were compared exactly; edge ones were only flagged.
                     let full_cols = (w / 16).min(cw / 8);
                     let full_rows = (h / 16).min(ch / 8);
-                    for (i, chg) in self.changed.iter_mut().enumerate() {
-                        if *chg {
-                            let (mx, my) = (i % mbw, i / mbw);
-                            let exact = mx < full_cols && my < full_rows && crate::simd::level() >= 2;
-                            *chg = crate::diff::load_mb(y, u, v, f, mx, my, !exact);
+                    let exact_flags = crate::simd::level() >= 2;
+                    for my in 0..self.mbh {
+                        let row = &mut self.changed[my * mbw..(my + 1) * mbw];
+                        let mut mx = 0;
+                        while mx < mbw {
+                            if !row[mx] {
+                                mx += 1;
+                                continue;
+                            }
+                            if exact_flags && my < full_rows && mx < full_cols {
+                                // a run of changed inner macroblocks: copy row spans
+                                let mut end = mx;
+                                while end < full_cols && row[end] {
+                                    end += 1;
+                                }
+                                crate::diff::copy_run(y, u, v, f, my, mx, end);
+                                mx = end;
+                            } else {
+                                row[mx] = crate::diff::load_mb(y, u, v, f, mx, my, true);
+                                mx += 1;
+                            }
                         }
                     }
                 }
