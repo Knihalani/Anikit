@@ -3,6 +3,13 @@
 version = 4
 
 [[package]]
+name = "ak264"
+version = "0.1.0"
+dependencies = [
+ "rayon",
+]
+
+[[package]]
 name = "anikit-core"
 version = "0.1.0"
 dependencies = [
