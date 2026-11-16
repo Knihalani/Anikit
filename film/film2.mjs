@@ -456,7 +456,7 @@ export default async function film2({ anikit: A, node }) {
       const showMov = t < 11.45;
       const gearAt = (inst, p, phase, theta, col) => put(inst, 0, chain(G, P(p[0], p[1]), spin(phase + theta)), col);
       const thE = -12 * DEG * s, th4 = 0.75 * DEG * s, th3 = -0.1 * DEG * s, thC = 0.0125 * DEG * s;
-      put(I.plate, 0, G, [0.52, 0.52, 0.54]); put(I.plateB, 0, G, [0.6, 0.6, 0.62]);
+      put(I.plate, 0, G, [0.52, 0.52, 0.54]); put(I.plateB, 0, G, [0.82, 0.82, 0.85]);
       put(I.bbridge, 0, G, [0.86, 0.87, 0.9]); put(I.bars, 0, G, [0.84, 0.85, 0.88]); put(I.cock, 0, G, [0.84, 0.85, 0.88]);
       put(I.ratchet, 0, chain(G, P(BARREL[0], BARREL[1]), spin(0.02 * c)), STEEL);
       put(I.crownW, 0, chain(G, P(CROWNW[0], CROWNW[1]), spin(-0.05 * c)), STEEL);
@@ -513,7 +513,7 @@ export default async function film2({ anikit: A, node }) {
       const items = [];
       if (showMov) items.push(
         { mesh: mainplate, instances: I.plate, material: mats.perlage },
-        { mesh: mainBottom, instances: I.plateB, material: { ...mats.perlage, metal: 0.12, diffuse: 0.95, specular: 0.4 } },
+        { mesh: mainBottom, instances: I.plateB, material: { ...mats.perlage, metal: 0.4, diffuse: 0.9, specular: 1.0, shininess: 60 } },
         { mesh: barrelBridge, instances: I.bbridge, material: mats.cotes },
         { mesh: bars, instances: I.bars, material: mats.steel },
         { mesh: cock, instances: I.cock, material: mats.steel },
