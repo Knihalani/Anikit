@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>anikit · studio</title>
+<meta name="description" content="Procedural headphones, modelled, lit and choreographed with anikit.">
+<link rel="modulepreload" href="../../packages/anikit/dist/anikit.lean.js">
+<link rel="preload" href="../../packages/anikit/dist/anikit.wasm" as="fetch" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="stage" aria-label="Headphones in a photo studio. Drag to turn, scroll to take apart, click a part to change its finish."></canvas>
+<div id="labels" aria-hidden="true"></div>
+
+<header class="bar">
+  <a class="mark" href="../">anikit</a>
+  <nav><a href="../../docs/api.md">Docs</a><a href="https://github.com/knihalani/anikit">GitHub</a></nav>
+</header>
+
+<main class="captions">
+  <section data-at="-1" data-to="0.9">
+    <h1>Studio</h1>
+    <p>Headphones modelled from lathes and swept curves, lit and moved by anikit, live in your browser.</p>
+    <p class="hint">Drag to turn · Scroll to take apart</p>
+  </section>
+  <section data-at="1.3" data-to="4.0">
+    <p class="big">Twelve parts, one timeline.</p>
+    <p>Each part springs out on a staggered, scroll-scrubbed timeline.</p>
+  </section>
+  <section data-at="4.2" data-to="6.0">
+    <p class="big">Click a part.</p>
+    <p>Finishes change live: chrome, brushed aluminium, frosted glass, soft rubber.</p>
+  </section>
+  <section data-at="8.0" data-to="99">
+    <p class="big">Three hundred copies.</p>
+    <p>Instanced, one draw call per part, riding a wave.</p>
+    <p class="cta"><code>npm i anikit</code><a href="../../docs/api.md">Read the docs</a></p>
+  </section>
+</main>
+<div class="scroll" aria-hidden="true"></div>
+<script type="module" src="main.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+:root { --paper: #eceae6; --ink: #1d1e21; --muted: #6c6e73; --accent: #ff6a4d; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.45 ui-sans-serif, -apple-system, "Inter", "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+#stage { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: pan-y; cursor: grab; }
+body.grabbing #stage { cursor: grabbing; }
+.scroll { height: 720vh; }
+.bar { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 22px 28px; pointer-events: none; z-index: 3; }
+.bar a { pointer-events: auto; color: var(--ink); text-decoration: none; }
+.mark { font-weight: 650; letter-spacing: -0.02em; font-size: 18px; }
+.bar nav a { margin-left: 22px; color: var(--muted); transition: color .2s; }
+.bar nav a:hover { color: var(--ink); }
+.captions section { position: fixed; left: 28px; bottom: 30px; max-width: 360px; opacity: 0; pointer-events: none; z-index: 2; will-change: opacity, transform; }
+.captions section:first-child { opacity: 1; }
+.captions h1 { font-size: 44px; line-height: 1; letter-spacing: -0.035em; font-weight: 640; margin: 0 0 12px; }
+.captions .big { font-size: 22px; letter-spacing: -0.02em; font-weight: 600; margin: 0 0 6px; }
+.captions p { margin: 0 0 8px; color: var(--muted); }
+.captions .big { color: var(--ink); }
+.hint { font-size: 13px; color: var(--ink) !important; opacity: .7; }
+.cta { display: flex; gap: 14px; align-items: center; margin-top: 14px !important; pointer-events: auto; }
+.cta code { background: #fff; border-radius: 8px; padding: 6px 10px; color: var(--ink); font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.cta a { color: var(--ink); }
+#labels { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
+.label { position: absolute; left: 0; top: 0; opacity: 0; background: rgba(255,255,255,.82); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-radius: 10px; padding: 6px 10px 7px; box-shadow: 0 6px 20px rgba(40,30,20,.08), 0 1px 2px rgba(0,0,0,.05); white-space: nowrap; will-change: transform, opacity; }
+.label b { display: block; font-size: 12.5px; font-weight: 600; }
+.label span { display: block; font-size: 11.5px; color: var(--muted); }
+#perf { position: fixed; right: 12px; bottom: 12px; margin: 0; padding: 8px 10px; background: rgba(255,255,255,.85); border-radius: 8px; font: 11px/1.4 ui-monospace, Menlo, monospace; z-index: 9; }
+@media (max-width: 640px) { .captions section { left: 16px; right: 16px; bottom: 20px; } .captions h1 { font-size: 34px; } .bar { padding: 16px; } }
