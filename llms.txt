@@ -38,6 +38,7 @@ Import from 'anikit'. Times are in seconds (only `engine.onFrame`/`engine.tick` 
 - Scroll & viewport
 - SVG
 - Text, layout, compositor, batches
+- Marquees: `marquee`
 - Layout transitions: `flip`
 - Presence: enter and exit
 - View Transitions

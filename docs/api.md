@@ -251,6 +251,21 @@ const b = batch(50_000, { x: (i) => [0, i % 500], y: [0, 300], a: [0, 1] },
 
 ---
 
+## Marquees: `marquee`
+
+An endless row (or column) of items — logos, tickers, testimonials — with no seam: the children move into a track, are cloned (`aria-hidden`, ids removed) until they cover the container twice, and the track moves and wraps every frame.
+
+```ts
+import { marquee, Marquee } from 'anikit';
+
+const m: Marquee = marquee('.logos', { speed: 60, pauseOnHover: true, scrollBoost: 0.5 });
+m.speed = -120;     // reverse and speed up (eases over `smoothing`, default 0.4 s)
+m.pause();          // eases to a stop; m.play() resumes
+m.revert();         // removes the clones and the track, restores the container
+```
+
+Options: `speed` (px/s, default 80; negative reverses), `axis` (`'x'` or `'y'`), `gap` (px; or set CSS `gap` on the container), `pauseOnHover`, `hoverSpeed` (multiplier while hovered), `scrollBoost` (speeds up and follows the page's scroll direction), `smoothing`. It re-measures on resize (`m.measure()` after changing the content), stands still under reduced motion, and is cleaned up by `context().revert()`. The `Marquee` controller exposes `offset` and the eased `velocity`.
+
 ## Layout transitions: `flip`
 
 `flip(targets, mutate, options?)` records where elements are, runs `mutate`, and animates every element from its old box to its new one using only transforms. It returns a `Timeline` holding every animation it started, so `await flip(...)` waits for all of them.
@@ -1023,6 +1038,7 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Noise](#more-utilities) | `noise2`, `noise3`, `fbm`, `noiseMany`, `wander` | |
 | [Cleanup](#control-cleanup-and-accessibility) | `context`, `Context`, `matchMedia`, `quickTo`, `quickSetter` | `Revertible` |
 | [Reactive values](#reactive-values-motionvalue) | `motionValue`, `MotionValue`, `derived`, `bindValues` | `ValueBinding` |
+| [Marquees](#marquees-marquee) | `marquee`, `Marquee` | `MarqueeOptions` |
 | [Effects](#effects) | `effects`, `effect`, `registerEffect`, `effectNames` | `EffectOptions`, `EffectFn`, `EffectName` |
 | [Layout transitions](#layout-transitions-flip), [presence](#presence-enter-and-exit) and [View Transitions](#view-transitions) | `flip`, `presence`, `Presence`, `enter`, `exit`, `viewTransition` | `FlipOptions`, `FlipState`, `PresenceOptions`, `ViewTransitionOptions`, `ViewTransitionHandle` |
 | [Interaction](#interaction) | `draggable`, `Draggable`, `observer`, `hover`, `press`, `gesture`, `Gesture` | `DraggableOptions`, `Bounds`, `ObserverOptions`, `ObserverEvent`, `GestureOptions` |
