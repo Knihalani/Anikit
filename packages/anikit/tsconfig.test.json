@@ -5,7 +5,7 @@
     "declaration": false,
     "declarationDir": null,
     "rootDir": ".",
-    "paths": { "anikit": ["./src/index.ts"] }
+    "paths": { "anikit": ["./src/index.ts"], "anikit/splats": ["./src/splats.ts"] }
   },
   "include": ["src", "test", "test/.snippets/*.ts"]
 }

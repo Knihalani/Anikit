@@ -20,7 +20,7 @@ const filter = process.argv[2] || '';
 
 const dir = mkdtempSync(join(tmpdir(), 'anikit-browser-'));
 await build({
-  stdin: { contents: "import * as ak from './src/index'; window.ak = ak;", resolveDir: pkg, loader: 'ts' },
+  stdin: { contents: "import * as ak from './src/index'; import * as sp from './src/splats'; window.ak = { ...ak, ...sp };", resolveDir: pkg, loader: 'ts' },
   bundle: true, format: 'iife', outfile: join(dir, 'ak.js'), logLevel: 'error',
 });
 const bundle = readFileSync(join(dir, 'ak.js'), 'utf8');

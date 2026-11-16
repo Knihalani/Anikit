@@ -13,6 +13,10 @@
       "import": "./dist/anikit.js",
       "require": "./dist/anikit.cjs"
     },
+    "./splats": {
+      "types": "./dist/types/splats.d.ts",
+      "import": "./dist/splats.js"
+    },
     "./anikit.wasm": "./dist/anikit.wasm",
     "./lean": {
       "types": "./dist/types/index.d.ts",
@@ -49,7 +53,8 @@
     "bench:3d": "node scripts/bench-3d.mjs",
     "record": "node bin/anikit-record.mjs",
     "bench:cloud": "node scripts/bench-cloud.mjs",
-    "bench:scene": "node scripts/bench-scene.mjs"
+    "bench:scene": "node scripts/bench-scene.mjs",
+    "bench:splats": "node scripts/bench-splats.mjs"
   },
   "keywords": [
     "animation",

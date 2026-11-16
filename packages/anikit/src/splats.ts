@@ -366,7 +366,7 @@ function fromText(text: string, o: SplatSourceOptions & { count?: number; width?
   const width = o.width ?? 2;
   const pts = textPoints(text, count, { width: 1000, depth: ((o.depth ?? 0.1) * 1000) / width, font: o.font, weight: o.weight });
   const k = width / 1000;
-  for (let i = 0; i < pts.length; i++) pts[i] *= i % 3 === 1 ? -k : k; // canvas y is down
+  for (let i = 0; i < pts.length; i++) pts[i] *= k;
   return fromPoints(pts, { size: Math.max(0.004, (width / Math.sqrt(count)) * 0.18), ...o });
 }
 
@@ -670,7 +670,9 @@ function lookAt(out: Float32Array, c: SplatCamera): void {
   out[3] = 0; out[7] = 0; out[11] = 0; out[15] = 1;
 }
 
-/** out = view · model(t) */
+const MODEL = new Float64Array(16);
+
+/** out = view · model(t) (no allocation). */
 function modelView(out: Float32Array, view: ArrayLike<number>, t: SplatTransform): void {
   const r = Math.PI / 180;
   const cx = Math.cos(t.rotateX * r), sx = Math.sin(t.rotateX * r);
@@ -681,7 +683,11 @@ function modelView(out: Float32Array, view: ArrayLike<number>, t: SplatTransform
   const m00 = cz * cy, m10 = sz * cy, m20 = -sy;
   const m01 = cz * sy * sx - sz * cx, m11 = sz * sy * sx + cz * cx, m21 = cy * sx;
   const m02 = cz * sy * cx + sz * sx, m12 = sz * sy * cx - cz * sx, m22 = cy * cx;
-  const M = [m00 * s, m10 * s, m20 * s, 0, m01 * s, m11 * s, m21 * s, 0, m02 * s, m12 * s, m22 * s, 0, t.x, t.y, t.z, 1];
+  const M = MODEL;
+  M[0] = m00 * s; M[1] = m10 * s; M[2] = m20 * s; M[3] = 0;
+  M[4] = m01 * s; M[5] = m11 * s; M[6] = m21 * s; M[7] = 0;
+  M[8] = m02 * s; M[9] = m12 * s; M[10] = m22 * s; M[11] = 0;
+  M[12] = t.x; M[13] = t.y; M[14] = t.z; M[15] = 1;
   for (let c = 0; c < 4; c++) {
     for (let rr = 0; rr < 4; rr++) {
       out[c * 4 + rr] = view[rr] * M[c * 4] + view[4 + rr] * M[c * 4 + 1] + view[8 + rr] * M[c * 4 + 2] + view[12 + rr] * M[c * 4 + 3];
@@ -1010,16 +1016,17 @@ export class SplatLayer {
     if (this.bg) gl.clearColor(this.bg[0] * this.bg[3], this.bg[1] * this.bg[3], this.bg[2] * this.bg[3], this.bg[3]);
     else gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    this.draw(this.view, this.proj);
+    this.draw(this.view, this.proj, w, h);
   }
 
   /**
    * Draw into whatever framebuffer and viewport are bound on this layer's
    * context, with the given column-major view and projection matrices: the
    * hook for rendering splats inside another WebGL2 scene. The layer's
-   * `transform` is applied on top of `view`.
+   * `transform` is applied on top of `view`. `width`/`height` are the
+   * viewport size in pixels (default: the drawing buffer).
    */
-  draw(view: ArrayLike<number>, proj: ArrayLike<number>): void {
+  draw(view: ArrayLike<number>, proj: ArrayLike<number>, width = this.gl.drawingBufferWidth, height = this.gl.drawingBufferHeight): void {
     if (this.dead) return;
     const gl = this.gl;
     const n = this.set.count;
@@ -1028,13 +1035,12 @@ export class SplatLayer {
     modelView(this.mv, view, this.transform);
     this.maybeSort();
     if (!n) return;
-    const vp = gl.getParameter(gl.VIEWPORT) as Int32Array;
     const L = this.loc;
     const f = this.fx;
     gl.useProgram(this.prog);
     gl.uniformMatrix4fv(L.u_view, false, this.mv);
     gl.uniformMatrix4fv(L.u_proj, false, proj as Float32Array);
-    gl.uniform2f(L.u_viewport, vp[2], vp[3]);
+    gl.uniform2f(L.u_viewport, width, height);
     const b = this.b;
     gl.uniform4f(L.u_bounds, b[0], b[1], b[2], b[3]);
     gl.uniform2f(L.u_yrange, b[4], b[5]);
@@ -1142,4 +1148,4 @@ function createSplats(target: string | HTMLCanvasElement | OffscreenCanvas | Web
  * `splats.fromPoints`, `splats.fromMesh`, `splats.fromText`, `splats.fromSDF`,
  * `splats.merge`.
  */
-export const splats = Object.assign(createSplats, { parse, load, fromPoints, fromMesh, fromText, fromSDF, merge, pack: packSplats });
+export const splats = /* @__PURE__ */ Object.assign(createSplats, { parse, load, fromPoints, fromMesh, fromText, fromSDF, merge, pack: packSplats });

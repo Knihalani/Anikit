@@ -1994,3 +1994,32 @@ plane overflow f32 in the edge functions and are dropped (not fixed).
   instance) into wasm; small next to the passes.
 - The film bright pass written branch-free in 4-pixel groups (adding exact
   `+0.0` keeps it bit-identical): no measurable change, reverted.
+
+## Gaussian splats (`splats()`)
+
+`node scripts/bench-splats.mjs` (after `node scripts/build.mjs`), on a 4-core 2.1 GHz Xeon container with no GPU.
+
+Depth sort (16-bit counting sort in the core, `--sort-only`, Node, median of 30):
+
+| Splats | Sort |
+|---|---|
+| 100k | 1.5 ms |
+| 300k | 3.3 ms |
+| 1M | 15.1 ms |
+
+The sort runs in a Web Worker, so it never blocks the main thread. At 1M splats it takes about one 60 Hz frame, and the order trails the camera by one sort while it moves (the usual trade-off for worker sorting).
+
+Rendering in headless Chromium with **SwiftShader** (a software rasteriser), 1280×720, and the worker sorts measured in the page:
+
+| Splats | Frame (draw + finish) | Worker sort |
+|---|---|---|
+| 1k | 18 ms | 0.1 ms |
+| 20k | 354 ms | 0.3 ms |
+| 100k | 1667 ms | 1.4 ms |
+| 300k | 4974 ms | 4.5 ms |
+
+Use these numbers as a ranking only. SwiftShader runs the vertex shader on the CPU, at about 16 µs per splat whatever the splat size (tiny splats measure the same), so it measures shader cost and not GPU throughput. The targets (1M splats at 60 fps on a discrete GPU, 300k+ on an integrated one) are **not verified here**: there is no GPU in this environment. Run `node scripts/bench-splats.mjs --gpu` on real hardware to check them.
+
+Known costs and next steps:
+- Each splat's projection runs once per quad corner (4×). A per-splat pre-pass (transform feedback, or a compute-style pass into a texture) would cut vertex work by 4×.
+- Per-frame JavaScript work is constant: a dozen uniform calls and one draw call. Index-buffer uploads happen only when a sort completes.

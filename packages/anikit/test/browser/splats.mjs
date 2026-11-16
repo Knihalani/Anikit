@@ -88,4 +88,31 @@ export const tests = [
       await page.evaluate(() => layer.kill());
     },
   },
+  {
+    name: 'splats(): draw(view, proj) renders inside a caller-owned WebGL2 context; unknown options warn',
+    html,
+    async run(page, h) {
+      const px = await page.evaluate(async () => {
+        const gl = document.getElementById('c').getContext('webgl2', { preserveDrawingBuffer: true });
+        const set = ak.splats.fromPoints([0, 0, 0], { size: 0.5, color: [0, 1, 0], opacity: 1 });
+        window.layer = ak.splats(gl, set, { orbitt: true });
+        // Identity view looking down −z from the origin: move the cloud to z = −3.
+        layer.transform.z = -3;
+        const view = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+        const f = 1 / Math.tan(Math.PI / 8), n = 0.1, fa = 100;
+        const proj = new Float32Array([f, 0, 0, 0, 0, f, 0, 0, 0, 0, (fa + n) / (n - fa), -1, 0, 0, (2 * fa * n) / (n - fa), 0]);
+        gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        layer.draw(view, proj);
+        const out = new Uint8Array(4);
+        gl.readPixels(gl.drawingBufferWidth >> 1, gl.drawingBufferHeight >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, out);
+        return [...out];
+      });
+      ok(px[1] > 150 && px[0] < 30, `green splat drawn through the hook: ${px}`);
+      const w = h.warnings();
+      ok(w.length === 1 && w[0].includes('orbitt') && w[0].includes('orbit'), `unknown option warns with a suggestion: ${w}`);
+      await page.evaluate(() => layer.kill());
+    },
+  },
 ];
