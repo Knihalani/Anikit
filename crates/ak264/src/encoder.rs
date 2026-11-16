@@ -126,10 +126,10 @@ const CBP_INTER: [u8; 48] = [
 /// Residual data of one macroblock (levels in raster order per 4×4 block).
 #[derive(Clone)]
 struct Coded {
-    luma: [[i32; 16]; 16],
+    luma: [[i16; 16]; 16],
     dc: [i32; 16],
     cdc: [[i32; 4]; 2],
-    cac: [[[i32; 16]; 4]; 2],
+    cac: [[[i16; 16]; 4]; 2],
     nz: [u8; 16],
     nzc: [[u8; 4]; 2],
     cbp: u8,
@@ -163,6 +163,9 @@ pub(crate) struct FrameCtx<'a> {
     pub qc: Quant,
     pub qs: QuantS,
     pub qcs: QuantS,
+    /// SAD bounds (luma 16×16, chroma 8×8) under which inter residuals are all zero.
+    pub zero_sad: (u32, u32),
+    pub zero_sad_intra: (u32, u32),
     pub lambda: i32,
     pub src: &'a Pic,
     pub refp: &'a Pic,
@@ -323,11 +326,14 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             return;
         }
         let (w00, w01, w10, w11) = ((8 - fx) * (8 - fy), fx * (8 - fy), (8 - fx) * fy, fx * fy);
+        let (w00, w01, w10, w11) = (w00 as u16, w01 as u16, w10 as u16, w11 as u16);
         for y in 0..8 {
+            let r0: &[u8; 9] = d[o + y * s..o + y * s + 9].try_into().unwrap();
+            let r1: &[u8; 9] = d[o + (y + 1) * s..o + (y + 1) * s + 9].try_into().unwrap();
+            let row = &mut out[y * 8..y * 8 + 8];
             for x in 0..8 {
-                let i = o + y * s + x;
-                let v = w00 * d[i] as i32 + w01 * d[i + 1] as i32 + w10 * d[i + s] as i32 + w11 * d[i + s + 1] as i32;
-                out[y * 8 + x] = ((v + 32) >> 6) as u8;
+                let v = w00 * r0[x] as u16 + w01 * r0[x + 1] as u16 + w10 * r1[x] as u16 + w11 * r1[x + 1] as u16;
+                row[x] = ((v + 32) >> 6) as u8;
             }
         }
     }
@@ -401,6 +407,17 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
         self.stats.changed += 1;
 
+        // Early inter: the predicted candidates already match (typical for layers
+        // moving coherently) → no intra analysis, no search.
+        if !c.idr {
+            let q = self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, true);
+            if q.sad <= lambda as u32 * 24 {
+                self.code_inter(mbx, mby, src_y, src_c, &q);
+                return;
+            }
+            inter = Some(q);
+        }
+
         // Intra 16x16 decision.
         let e16 = self.edges16(mbx, mby);
         let mut pred = [0u8; 256];
@@ -418,12 +435,14 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
         }
         let cost16 = best16.0 + lambda as u32 * if c.idr { 4 } else { 8 };
-        // Motion search unless intra prediction is already near-perfect.
-        if !c.idr {
-            // Full search unless intra prediction is already near-perfect (then only
-            // the predicted / zero / hint candidates).
-            let quick = best16.0 <= lambda as u32 * 4;
-            inter = Some(self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, quick));
+        // Full motion search unless intra prediction is already near-perfect.
+        // (Skipped too when the predicted candidates are far worse than intra.)
+        let hopeless = inter.as_ref().is_some_and(|q| q.sad > 4 * best16.0);
+        if !c.idr && best16.0 > lambda as u32 * 4 && !hopeless {
+            let full = self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, false);
+            if full.cost < inter.as_ref().map_or(u32::MAX, |q| q.cost) {
+                inter = Some(full);
+            }
         }
 
         let mut kind = Kind::I16(best16.1);
@@ -442,7 +461,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
 
         let mut cd = Coded::new();
-        let try_i4 = best_cost > lambda as u32 * 24 + 256;
+        let try_i4 = best_cost > lambda as u32 * 24 + 256 && (c.idr || kind != Kind::P16 || best_cost > lambda as u32 * 64 + 1024);
         if try_i4 {
             // Encode I4x4 tentatively (writes recon).
             let (cost4, modes) = self.code_i4(mbx, mby, src_y, &mut cd, true);
@@ -551,9 +570,10 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 pred[y * 16..y * 16 + 16].copy_from_slice(&r[y * rs..y * rs + 16]);
             }
         }
-        let cost = dsp::satd(src_y, &pred, 16, 16) + mvcost(base_q);
         let mv = base_q;
         let sad = best.0 - mvcost(base_q);
+        // SATD only matters when the result competes with intra.
+        let cost = if quick && sad <= lambda * 24 { best.0 } else { dsp::satd(src_y, &pred, 16, 16) + mvcost(base_q) };
         Inter { mv, cost, mvp, skip_mv, pred, sad }
     }
 
@@ -676,10 +696,16 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         self.mc_chroma(1, mbx, mby, mv, &mut predc[1]);
         let mut cd = Coded::new();
 
-        let mut recon = [0u8; 256];
-        luma_inter(src_y, &pred, &self.c.qs, &mut cd, &mut recon);
-        let mut reconc = [[0u8; 64]; 2];
-        chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, false, &mut cd, &mut reconc);
+        // Residuals that provably quantise to zero are not transformed.
+        let mut recon = pred;
+        if crate::simd::sad16(src_y, 16, &pred, 16) > self.c.zero_sad.0 {
+            luma_inter(src_y, &pred, &self.c.qs, &mut cd, &mut recon);
+        }
+        let mut reconc = predc;
+        let zc = self.c.zero_sad.1;
+        if crate::simd::sad64(&src_c[0], &predc[0]) > zc || crate::simd::sad64(&src_c[1], &predc[1]) > zc {
+            chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, false, &mut cd, &mut reconc);
+        }
         self.store_recon(mbx, mby, &recon, &reconc);
         let skip = cd.cbp == 0 && mv == skip_mv;
         let mvd = if skip { (0, 0) } else { (mv.0 - mvp.0, mv.1 - mvp.1) };
@@ -819,7 +845,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             let n = quant4(&mut co, &q, true, false);
             clamp_levels(&mut co);
             let bi = by * 4 + bx;
-            cd.luma[bi] = co;
+            cd.luma[bi] = co.map(|v| v as i16);
             cd.nz[bi] = n as u8;
             let mut out = best_pred;
             if n > 0 {
@@ -856,8 +882,10 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
     ) {
         let q = self.c.q;
         if let (Kind::I16(_), Some((src, pred))) = (kind, i16) {
-            let mut recon = [0u8; 256];
-            luma_i16(src, pred, &q, &self.c.qs, cd, &mut recon);
+            let mut recon = *pred;
+            if crate::simd::sad16(src, 16, pred, 16) > self.c.zero_sad_intra.0 {
+                luma_i16(src, pred, &q, &self.c.qs, cd, &mut recon);
+            }
             let base = self.yi(mbx * 16, mby * 16);
             for y in 0..16 {
                 self.b.y[base + y * self.ys..base + y * self.ys + 16].copy_from_slice(&recon[y * 16..y * 16 + 16]);
@@ -898,7 +926,12 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
         let cmode = best.1;
         let mut reconc = [[0u8; 64]; 2];
-        chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, true, cd, &mut reconc);
+        let zc = self.c.zero_sad_intra.1;
+        if crate::simd::sad64(&src_c[0], &predc[0]) > zc || crate::simd::sad64(&src_c[1], &predc[1]) > zc {
+            chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, true, cd, &mut reconc);
+        } else {
+            reconc = predc;
+        }
         let base = self.ci(mbx * 8, mby * 8);
         let cs = self.cs;
         for y in 0..8 {
@@ -1167,7 +1200,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                     let (bx, by) = (BLK_X[k], BLK_Y[k]);
                     let blk = &cd.luma[by * 4 + bx];
                     for j in 0..15 {
-                        scan[j] = blk[ZIGZAG[j + 1]];
+                        scan[j] = blk[ZIGZAG[j + 1]] as i32;
                     }
                     let nc = self.nc_luma(mbx, mby, bx, by, &cd.nz);
                     write_block(self.w, &scan[..15], nc);
@@ -1181,7 +1214,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 let (bx, by) = (BLK_X[k], BLK_Y[k]);
                 let blk = &cd.luma[by * 4 + bx];
                 for j in 0..16 {
-                    scan[j] = blk[ZIGZAG[j]];
+                    scan[j] = blk[ZIGZAG[j]] as i32;
                 }
                 let nc = self.nc_luma(mbx, mby, bx, by, &cd.nz);
                 write_block(self.w, &scan, nc);
@@ -1198,7 +1231,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 for b in 0..4 {
                     let blk = &cd.cac[comp][b];
                     for j in 0..15 {
-                        scan[j] = blk[ZIGZAG[j + 1]];
+                        scan[j] = blk[ZIGZAG[j + 1]] as i32;
                     }
                     let nc = self.nc_chroma(mbx, mby, comp, b & 1, b >> 1, &cd.nzc[comp]);
                     write_block(self.w, &scan[..15], nc);
@@ -1254,21 +1287,25 @@ fn cabac_residual(
     intra: bool,
 ) {
     use crate::cabac::Cat;
-    let ext = |m: &Option<MbInfo>, f: &dyn Fn(&MbInfo) -> bool| match m {
-        None => intra as usize,
-        Some(m) => f(m) as usize,
-    };
+    // condTermFlag of a neighbouring macroblock's block: unavailable → intra
+    #[inline(always)]
+    fn ext(m: &Option<MbInfo>, intra: bool, f: impl Fn(&MbInfo) -> bool) -> usize {
+        match m {
+            None => intra as usize,
+            Some(m) => f(m) as usize,
+        }
+    }
     let mut scan = [0i32; 16];
     if i16 {
         for k in 0..16 {
             scan[k] = cd.dc[ZIGZAG[k]];
         }
-        let inc = ext(a, &|m| m.dcf & 1 != 0) + 2 * ext(b, &|m| m.dcf & 1 != 0);
+        let inc = ext(a, intra, |m| m.dcf & 1 != 0) + 2 * ext(b, intra, |m| m.dcf & 1 != 0);
         cb.residual(w, &scan, Cat::LumaDc, inc);
     }
     let luma_inc = |bx: usize, by: usize| -> usize {
-        let ia = if bx > 0 { (cd.nz[by * 4 + bx - 1] > 0) as usize } else { ext(a, &|m| m.nz[by * 4 + 3] > 0) };
-        let ib = if by > 0 { (cd.nz[(by - 1) * 4 + bx] > 0) as usize } else { ext(b, &|m| m.nz[12 + bx] > 0) };
+        let ia = if bx > 0 { (cd.nz[by * 4 + bx - 1] > 0) as usize } else { ext(a, intra, |m| m.nz[by * 4 + 3] > 0) };
+        let ib = if by > 0 { (cd.nz[(by - 1) * 4 + bx] > 0) as usize } else { ext(b, intra, |m| m.nz[12 + bx] > 0) };
         ia + 2 * ib
     };
     for k in 0..16 {
@@ -1279,7 +1316,7 @@ fn cabac_residual(
                 break;
             }
             for j in 0..15 {
-                scan[j] = blk[ZIGZAG[j + 1]];
+                scan[j] = blk[ZIGZAG[j + 1]] as i32;
             }
             cb.residual(w, &scan[..15], Cat::LumaAc, luma_inc(bx, by));
         } else {
@@ -1287,7 +1324,7 @@ fn cabac_residual(
                 continue;
             }
             for j in 0..16 {
-                scan[j] = blk[ZIGZAG[j]];
+                scan[j] = blk[ZIGZAG[j]] as i32;
             }
             cb.residual(w, &scan, Cat::Luma4x4, luma_inc(bx, by));
         }
@@ -1296,7 +1333,7 @@ fn cabac_residual(
     if cbpc != 0 {
         for comp in 0..2 {
             let bitn = 1 << (1 + comp);
-            let inc = ext(a, &|m| m.dcf & bitn != 0) + 2 * ext(b, &|m| m.dcf & bitn != 0);
+            let inc = ext(a, intra, |m| m.dcf & bitn != 0) + 2 * ext(b, intra, |m| m.dcf & bitn != 0);
             cb.residual(w, &cd.cdc[comp], Cat::ChromaDc, inc);
         }
     }
@@ -1305,11 +1342,11 @@ fn cabac_residual(
             for blk in 0..4 {
                 let (bx, by) = (blk & 1, blk >> 1);
                 let ia =
-                    if bx > 0 { (cd.nzc[comp][by * 2] > 0) as usize } else { ext(a, &|m| m.nzc[comp][by * 2 + 1] > 0) };
-                let ib = if by > 0 { (cd.nzc[comp][bx] > 0) as usize } else { ext(b, &|m| m.nzc[comp][2 + bx] > 0) };
+                    if bx > 0 { (cd.nzc[comp][by * 2] > 0) as usize } else { ext(a, intra, |m| m.nzc[comp][by * 2 + 1] > 0) };
+                let ib = if by > 0 { (cd.nzc[comp][bx] > 0) as usize } else { ext(b, intra, |m| m.nzc[comp][2 + bx] > 0) };
                 let src = &cd.cac[comp][blk];
                 for j in 0..15 {
-                    scan[j] = src[ZIGZAG[j + 1]];
+                    scan[j] = src[ZIGZAG[j + 1]] as i32;
                 }
                 cb.residual(w, &scan[..15], Cat::ChromaAc, ia + 2 * ib);
             }
@@ -1325,7 +1362,7 @@ fn clamp_levels(c: &mut [i32; 16]) {
 }
 
 /// x264-style decimation score of a 4×4 block (raster levels, scan order walk).
-fn decimate_score(c: &[i32; 16]) -> u32 {
+fn decimate_score(c: &[i16; 16]) -> u32 {
     const DS: [u32; 16] = [3, 2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     let mut i = 15isize;
     while i >= 0 && c[ZIGZAG[i as usize]] == 0 {
@@ -1380,7 +1417,7 @@ fn luma_inter_impl(src: &[u8; 256], pred: &[u8; 256], qs: &QuantS, cd: &mut Code
         cd.nz[b] = nz[b];
         if nz[b] > 0 {
             for k in 0..16 {
-                cd.luma[b][k] = c[k][b] as i32;
+                cd.luma[b][k] = c[k][b];
             }
             score8[(b >> 3) * 2 + ((b & 3) >> 1)] += decimate_score(&cd.luma[b]);
         }
@@ -1426,7 +1463,7 @@ fn luma_i16_impl(src: &[u8; 256], pred: &[u8; 256], q: &Quant, qs: &QuantS, cd: 
         if nz[b] > 0 {
             any_ac = true;
             for k in 0..16 {
-                cd.luma[b][k] = c[k][b] as i32;
+                cd.luma[b][k] = c[k][b];
             }
         }
     }
@@ -1468,7 +1505,7 @@ fn chroma_resid_impl(
         cd.nzc[comp][b] = nz[l];
         if nz[l] > 0 {
             for k in 0..16 {
-                cd.cac[comp][b][k] = c[k][l] as i32;
+                cd.cac[comp][b][k] = c[k][l];
             }
             if !intra {
                 score += decimate_score(&cd.cac[comp][b]);
@@ -1747,8 +1784,31 @@ impl Encoder {
                     }
                 }
                 None => {
-                    for (mby, row) in self.changed.chunks_mut(mbw).enumerate() {
-                        crate::diff::load_row(y, u, v, f, mby, mbw, row);
+                    // Read-only flags (in parallel across rows when slices are used),
+                    // then an exact compare + copy of the flagged macroblocks.
+                    {
+                        let (yr, ur, vr) = (&*y, &*u, &*v);
+                        if self.writers.len() > 1 {
+                            use rayon::prelude::*;
+                            self.changed
+                                .par_chunks_mut(mbw)
+                                .enumerate()
+                                .for_each(|(mby, row)| crate::diff::flag_row(yr, ur, vr, f, mby, row));
+                        } else {
+                            for (mby, row) in self.changed.chunks_mut(mbw).enumerate() {
+                                crate::diff::flag_row(yr, ur, vr, f, mby, row);
+                            }
+                        }
+                    }
+                    // Inner macroblocks were compared exactly; edge ones were only flagged.
+                    let full_cols = (w / 16).min(cw / 8);
+                    let full_rows = (h / 16).min(ch / 8);
+                    for (i, chg) in self.changed.iter_mut().enumerate() {
+                        if *chg {
+                            let (mx, my) = (i % mbw, i / mbw);
+                            let exact = mx < full_cols && my < full_rows && crate::simd::level() >= 2;
+                            *chg = crate::diff::load_mb(y, u, v, f, mx, my, !exact);
+                        }
                     }
                 }
             }
@@ -1835,9 +1895,28 @@ impl Encoder {
         &self.out
     }
 
-    fn slice_rows(&self) -> Vec<(usize, usize)> {
+    /// Slice row ranges. P frames balance the expected work: a changed macroblock
+    /// costs about 40 unchanged ones.
+    fn slice_rows(&self, idr: bool) -> Vec<(usize, usize)> {
         let n = self.writers.len();
-        (0..n).map(|i| (i * self.mbh / n, (i + 1) * self.mbh / n)).filter(|r| r.1 > r.0).collect()
+        if n == 1 || idr {
+            return (0..n).map(|i| (i * self.mbh / n, (i + 1) * self.mbh / n)).filter(|r| r.1 > r.0).collect();
+        }
+        let w: Vec<u64> = self.changed.chunks(self.mbw).map(|r| self.mbw as u64 + 40 * r.iter().filter(|&&c| c).count() as u64).collect();
+        let total: u64 = w.iter().sum();
+        let mut rows = Vec::with_capacity(n);
+        let (mut start, mut acc) = (0usize, 0u64);
+        for (y, &wy) in w.iter().enumerate() {
+            acc += wy;
+            let k = rows.len() as u64 + 1;
+            // close the band once its share is reached, leaving rows for the rest
+            if acc * n as u64 >= total * k && rows.len() + 1 < n && self.mbh - (y + 1) >= n - rows.len() - 1 {
+                rows.push((start, y + 1));
+                start = y + 1;
+            }
+        }
+        rows.push((start, self.mbh));
+        rows
     }
 
     fn encode_slices(&mut self, idr: bool, frame_num: u32, stats: &mut FrameStats) {
@@ -1847,6 +1926,8 @@ impl Encoder {
             qc: self.qc,
             qs: QuantS::new(&self.q),
             qcs: QuantS::new(&self.qc),
+            zero_sad: crate::soa::zero_sad_bounds(&self.q, &QuantS::new(&self.q), &self.qc, &QuantS::new(&self.qc), false),
+            zero_sad_intra: crate::soa::zero_sad_bounds(&self.q, &QuantS::new(&self.q), &self.qc, &QuantS::new(&self.qc), true),
             lambda: self.lambda,
             src: &self.cur,
             refp: &self.refp,
@@ -1861,7 +1942,7 @@ impl Encoder {
             idr_id: self.idr_count & 0xffff,
             deblock: self.cfg.deblock,
         };
-        let rows = self.slice_rows();
+        let rows = self.slice_rows(idr);
         // Split recon planes and MB info into bands.
         let mut bands = Vec::with_capacity(rows.len());
         {

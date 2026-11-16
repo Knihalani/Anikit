@@ -224,3 +224,32 @@ fn synthetic_scene_hints_are_exact() {
         assert!(psnr(&da, &db) > 45.0, "{name}");
     }
 }
+
+#[test]
+fn long_gop_frame_num_wraps() {
+    let s = Scene::new(48, 32);
+    let frames: Vec<_> = (0..300).map(|t| s.frame(t / 3)).collect();
+    let c = EncoderConfig { gop: 1000, ..cfg(48, 32) };
+    let (_, p) = roundtrip(c, &frames, "wrap");
+    assert!(p > 40.0);
+}
+
+#[test]
+#[ignore] // slow-ish: cargo test -p ak264 --release -- --ignored
+fn uhd_4k_and_ntsc_rate() {
+    let s = Scene::preset("typical", 3840, 2160);
+    let frames: Vec<_> = (0..4).map(|t| s.frame(t)).collect();
+    let c = EncoderConfig { fps: 30000.0 / 1001.0, ..cfg(3840, 2160) };
+    let (st, p) = roundtrip(c, &frames, "uhd");
+    assert!(p > 40.0);
+    let m = ak264::mp4::mux(&st, 3840, 2160, 30000.0 / 1001.0);
+    let path = tmp("uhd.mp4");
+    std::fs::write(&path, m).unwrap();
+    let o = std::process::Command::new("ffprobe")
+        .args(["-v", "error", "-show_entries", "stream=r_frame_rate,level,profile", "-of", "csv=p=0"])
+        .arg(&path)
+        .output()
+        .unwrap();
+    let out = String::from_utf8_lossy(&o.stdout);
+    assert!(out.contains("30000/1001"), "{out}");
+}
