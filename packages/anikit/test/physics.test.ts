@@ -20,6 +20,33 @@ describe('physics', () => {
     await s;
   });
 
+  it('retargeted controllers resolve at rest, awaited before or after', async () => {
+    const o = { x: 0, y: 0 };
+    const first = spring(o, { x: 50, y: 10 });
+    const early = first.finished; // asked for before any frame
+    const done: string[] = [];
+    void early.then(() => done.push('early'));
+    advance(0.05);
+    const mid = spring(o, { x: 80 }, { stiffness: 300, damping: 30 }); // retargets x only
+    advance(0.05);
+    void mid.then(() => done.push('mid')); // asked for while still moving
+    advance(4);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(o.x).toBe(80);
+    expect(done.sort()).toEqual(['early', 'mid']);
+    // Already at rest: a controller of a finished spring resolves when asked.
+    const rested = spring(o, { x: 80 });
+    advance(1);
+    await rested;
+    // Many retargets that nobody awaits leave nothing behind on the simulation.
+    for (let i = 0; i < 100; i++) spring(o, { x: i });
+    const last = spring(o, { x: 5 });
+    advance(4);
+    await last;
+    expect(o.x).toBe(5);
+  });
+
   it('perceptual springs (bounce/duration) overshoot', () => {
     const o = { x: 0 };
     spring(o, { x: 100 }, { duration: 0.4, bounce: 0.5 });
