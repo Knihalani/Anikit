@@ -33,12 +33,14 @@ h1, h2 { font-family: Display, system-ui, sans-serif; font-weight: 900; letter-s
 
 main { position: relative; z-index: 2; }
 
-.hero { height: 100vh; height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 26vh var(--gut) 0; text-align: center; }
+.hero { height: 100vh; height: 100svh; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; padding: 0 var(--gut) 9vh; text-align: left; position: relative; }
+/* A soft dark pool under the type, so it reads over city lights; the planet stays the subject. */
+.hero::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(70vmax 46vmax at 0% 100%, rgba(2, 3, 10, 0.92) 0%, rgba(2, 3, 10, 0.72) 38%, rgba(2, 3, 10, 0) 72%); }
 .hero h1, .lede, .nav { opacity: 0; }
-.hero h1 { font-size: clamp(68px, 11vw, 168px); text-shadow: 0 4px 40px rgba(0, 0, 0, 0.5); }
+.hero h1 { font-size: clamp(60px, 8.5vw, 132px); margin-left: -0.04em; text-shadow: 0 4px 40px rgba(0, 0, 0, 0.5); }
 .hero h1 .ch { display: inline-block; }
 .hero h1 .gw { display: inline-block; overflow: hidden; padding: 0 0.04em 0.08em; vertical-align: top; }
-.lede { font-size: clamp(15px, 1.25vw, 18px); color: rgba(232, 234, 240, 0.82); text-shadow: 0 1px 14px #000, 0 0 4px #000; margin: 18px 0 0; max-width: 30em; }
+.lede { font-size: clamp(15px, 1.25vw, 18px); color: rgba(232, 234, 240, 0.82); text-shadow: 0 1px 14px #000, 0 0 4px #000; margin: 16px 0 0; max-width: 26em; }
 
 /* Demo stops: one centred layout for every demo, held while the orbit carries on. */
 .stop { height: 240vh; position: relative; }
@@ -95,7 +97,8 @@ main { position: relative; z-index: 2; }
 @media (max-width: 760px) {
   :root { --stage-h: 44vh; }
   .stage { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(3, 5, 12, 0.86); }
-  .hero { padding-top: 22vh; }
+  .hero { padding-bottom: 8vh; }
+  .hero::before { background: linear-gradient(to top, rgba(2, 3, 10, 0.94) 0%, rgba(2, 3, 10, 0.75) 32%, rgba(2, 3, 10, 0) 58%); }
   .stick { padding: 60px 14px 14px; }
   .n-stats { grid-template-columns: 1fr; gap: 4px; margin-bottom: 14px; }
   .n-row { grid-template-columns: 108px 1fr 44px; }
