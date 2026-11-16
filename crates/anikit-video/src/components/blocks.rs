@@ -731,6 +731,136 @@ impl Component for Marquee {
     }
 }
 
+// ------------------------------------------------------------------ spotlight
+
+#[derive(Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Spotlight {
+    /// Focus rectangles `[x, y, w, h]` in box px; the spotlight glides between them.
+    pub targets: Vec<[f32; 4]>,
+    /// Time each target becomes active (default 1.2 s apart from `delay`).
+    pub times: Vec<f32>,
+    /// Darkness outside the focus (0..1).
+    pub dim: f32,
+    pub radius: f32,
+    /// Padding around each target.
+    pub padding: f32,
+    pub color: Option<Color>,
+    pub delay: f32,
+    pub out: Option<f32>,
+}
+impl Default for Spotlight {
+    fn default() -> Self {
+        Spotlight { targets: vec![[100.0, 100.0, 300.0, 120.0]], times: Vec::new(), dim: 0.6, radius: 16.0, padding: 10.0, color: None, delay: 0.0, out: None }
+    }
+}
+impl Prepare for Spotlight {
+    fn prepare(&mut self) -> Result<(), Error> {
+        if self.targets.is_empty() {
+            return Err(Error("spotlight needs `targets`".into()));
+        }
+        if self.times.is_empty() {
+            self.times = (0..self.targets.len()).map(|i| self.delay + i as f32 * 1.2).collect();
+        }
+        if self.times.len() != self.targets.len() {
+            return Err(Error(format!("spotlight: {} times for {} targets", self.times.len(), self.targets.len())));
+        }
+        Ok(())
+    }
+}
+impl Component for Spotlight {
+    fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        let th = ctx.theme;
+        let on = ease_out(seg(t, self.times[0], 0.5)) * self.out.map(|o| 1.0 - ease_in_out(seg(t, o, 0.4))).unwrap_or(1.0);
+        if on <= 0.0 {
+            return Vec::new();
+        }
+        // Current rect: glide between targets.
+        let mut r = self.targets[0];
+        for i in 1..self.targets.len() {
+            let k = ease_in_out(seg(t, self.times[i] - 0.5, 0.5));
+            for j in 0..4 {
+                r[j] = lerp(r[j], self.targets[i][j], k);
+            }
+        }
+        let p = self.padding;
+        // Opening: the hole starts larger and settles on the target.
+        let grow = (1.0 - ease_out(seg(t, self.times[0], 0.6))) * 60.0;
+        let (x, y, w, h) = (r[0] - p - grow, r[1] - p - grow, r[2] + 2.0 * (p + grow), r[3] + 2.0 * (p + grow));
+        let mut path = rrect_path(-10.0, -10.0, ctx.width + 20.0, ctx.height + 20.0, 0.0);
+        path.extend(rrect_path(x, y, w, h, self.radius).elements().iter().copied());
+        let mut o = vec![Op::Fill { path, paint: solid(Rgba([0.0, 0.0, 0.0, self.dim * on])), rule: crate::dl::FillRule::EvenOdd, transform: IDENTITY }];
+        let c = self.color.map(|c| c.0).unwrap_or(th.accent);
+        o.push(Op::Stroke { path: rrect_path(x, y, w, h, self.radius), paint: solid(alpha(c, 0.9 * on)), stroke: line(2.0, [0.0, 1.0]), transform: IDENTITY });
+        o
+    }
+    fn duration(&self) -> Option<f32> {
+        Some(self.times.last().copied().unwrap_or(0.0) + 0.6)
+    }
+}
+
+// ------------------------------------------------------------------ keys
+
+#[derive(Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Keys {
+    /// Keycap labels, e.g. `["⌘", "K"]` or `["Ctrl", "Shift", "P"]`.
+    pub keys: Vec<String>,
+    /// Times the combo is pressed.
+    pub press: Vec<f32>,
+    pub size: f32,
+    pub delay: f32,
+    pub out: Option<f32>,
+}
+impl Default for Keys {
+    fn default() -> Self {
+        Keys { keys: vec!["⌘".into(), "K".into()], press: vec![0.6], size: 64.0, delay: 0.0, out: None }
+    }
+}
+impl Prepare for Keys {}
+impl Component for Keys {
+    fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        let th = ctx.theme;
+        let s = self.size;
+        let st = sans(s * 0.42, 600, th.text);
+        let mut x = 0.0;
+        let mut out = Vec::new();
+        let exit = self.out.map(|o| ease_in(seg(t, o, 0.3))).unwrap_or(0.0);
+        for (i, k) in self.keys.iter().enumerate() {
+            let p = spring(t - self.delay - i as f32 * 0.08, 1.2);
+            if p <= 0.0 {
+                break;
+            }
+            let kw = (ctx.assets.measure(k, &st) + s * 0.6).max(s);
+            // All keys go down together, staggered slightly like real fingers.
+            let mut down = 0.0f32;
+            for &pt in &self.press {
+                let d = t - pt - i as f32 * 0.04;
+                if (0.0..0.35).contains(&d) {
+                    down = down.max((d / 0.35 * std::f32::consts::PI).sin());
+                }
+            }
+            let depth = s * 0.09;
+            let dy = depth * down;
+            let mut e = Vec::new();
+            // Key body (side), cap, label.
+            e.push(rect(x, depth, kw, s, s * 0.2, solid(shade(th.surface2, -0.35))));
+            e.push(rect(x, dy, kw, s, s * 0.2, vgrad(dy, dy + s, shade(th.surface2, 0.12), th.surface2)));
+            border(&mut e, x, dy, kw, s, s * 0.2, if down > 0.3 { alpha(th.accent, 0.8) } else { th.border });
+            draw(&mut e, ctx.assets, k, &st, x + kw * 0.5, dy + s * 0.5 + st.size * 0.36, 0.5);
+            if i + 1 < self.keys.len() {
+                draw(&mut e, ctx.assets, "+", &sans(s * 0.4, 500, th.muted), x + kw + s * 0.3, s * 0.5 + s * 0.15, 0.5);
+            }
+            out.extend(rise(e, p, s * 0.3));
+            x += kw + s * 0.6;
+        }
+        with_opacity(out, 1.0 - exit)
+    }
+    fn duration(&self) -> Option<f32> {
+        Some(self.press.iter().fold(self.delay + 0.5, |m, p| m.max(p + 0.4)))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::{build, preview, Theme};
@@ -761,6 +891,8 @@ mod tests {
             ("table", json!({"x": 40, "y": 20, "width": 560, "height": 300, "columns": ["", "Anikit", "Browser"], "rows": [["Native render", true, false], ["1080p60 encode", "4 s", "3 min"], ["Agent-first JSON", "✓", "✗"]], "highlight": 1})),
             ("timeline", json!({"x": 40, "y": 300, "width": 880, "height": 220, "items": [{"label": "Q1", "title": "Prototype"}, {"label": "Q2", "title": "Beta", "body": "500 teams"}, {"label": "Q3", "title": "Launch"}, {"label": "Q4", "title": "Scale"}], "current": 2})),
             ("marquee", json!({"x": 620, "y": 120, "width": 320, "height": 80, "items": ["Stripe", "Linear", "Vercel", "Figma"], "font_size": 26})),
+            ("keys", json!({"x": 640, "y": 220, "keys": ["⌘", "Shift", "K"], "press": [2.9], "size": 52})),
+            ("spotlight", json!({"targets": [[230, 60, 180, 220]], "times": [2.0]})),
         ];
         let mut ops = Vec::new();
         for (k, p) in &items {

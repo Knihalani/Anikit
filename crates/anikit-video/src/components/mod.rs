@@ -216,6 +216,8 @@ kinds! {
     "table" => blocks::Table, "Comparison table with check/cross cells and a highlighted column.", r##"{"columns":["","Us","Them"],"rows":[["Fast",true,false]],"highlight":1}"##;
     "timeline" => blocks::Timeline, "Milestones along a line that draws on, with a pulsing current step.", r##"{"items":[{"label":"Q1","title":"Beta"},{"label":"Q2","title":"Launch"}],"current":1}"##;
     "marquee" => blocks::Marquee, "Endless scrolling ticker of words or logos with faded edges.", r##"{"items":["Stripe","Linear","Vercel"]}"##;
+    "spotlight" => blocks::Spotlight, "Dims everything except a focus rectangle that glides between targets (product demos).", r##"{"targets":[[100,100,300,120],[500,300,200,80]]}"##;
+    "keys" => blocks::Keys, "Keyboard shortcut keycaps that pop in and press.", r##"{"keys":["⌘","K"],"press":[0.6]}"##;
     // Lottie
     "lottie" => lottie::Lottie, "Minimal Lottie player (shape layers, transforms, trim paths).", r##"{"src":"anim.json"}"##;
 }
