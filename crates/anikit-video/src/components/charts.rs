@@ -300,9 +300,9 @@ impl Component for LineChart {
             }
             // Glow pass + crisp line, drawn on by x (clip), so curves draw at even speed in time.
             o.push(Op::PushLayer { opacity: 1.0, blend: crate::dl::Blend::Normal, filters: vec![], clip: Some((rrect_path(px - 10.0, py - 20.0, pw * k + 10.0, ph + 40.0, 0.0), IDENTITY)), cache_key: None });
-            push_layer(&mut o, 0.5, crate::dl::Blend::Screen, vec![crate::dl::Filter::Blur(8.0)]);
-            o.push(stroke_op(path.clone(), solid(c), self.width * 2.0, [0.0, 1.0]));
-            o.push(Op::PopLayer);
+            // Soft glow from layered translucent strokes (no blur pass).
+            o.push(stroke_op(path.clone(), solid(alpha(c, 0.07)), self.width * 6.0, [0.0, 1.0]));
+            o.push(stroke_op(path.clone(), solid(alpha(c, 0.12)), self.width * 3.2, [0.0, 1.0]));
             o.push(stroke_op(path, solid(c), self.width, [0.0, 1.0]));
             o.push(Op::PopLayer);
             if self.dots {

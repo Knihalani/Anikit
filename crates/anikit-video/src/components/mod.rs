@@ -22,6 +22,8 @@
 use crate::dl::{self, Affine, ImageId, Op, Rgba};
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
+#[cfg(test)]
+use std::sync::Arc;
 
 pub mod style;
 pub mod host;
@@ -410,5 +412,47 @@ mod tests {
         assert_eq!(kebab("avatarStack"), "avatar-stack");
         let e = build("bar-chart", &serde_json::json!({"valuess": [1]})).err().unwrap();
         assert!(e.0.contains("did you mean `values`"), "{e}");
+    }
+}
+
+#[cfg(test)]
+mod bench {
+    use super::*;
+
+    /// `cargo test --release -p anikit-video components::bench -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn per_frame_cost_1080p() {
+        let theme = Theme::default();
+        let host = preview::host();
+        let mut rows = Vec::new();
+        let only = std::env::var("BENCH_KINDS").unwrap_or_default();
+        for k in KINDS.iter().filter(|k| only.is_empty() || only.split(',').any(|o| o == k.name)) {
+            let v: Value = serde_json::from_str(k.example).unwrap();
+            let p = build(k.name, &v).unwrap();
+            // Warm caches (text layouts, images) over the first frames.
+            for f in 0..10 {
+                let _ = p.eval(f as f32 / 60.0, 1920.0, 1080.0, 60.0, &theme, host);
+            }
+            let n = 60;
+            let t0 = std::time::Instant::now();
+            let mut lists = Vec::new();
+            for f in 10..10 + n {
+                lists.push(p.eval(f as f32 / 60.0, 1920.0, 1080.0, 60.0, &theme, host));
+            }
+            let eval_ms = t0.elapsed().as_secs_f64() * 1000.0 / n as f64;
+            let mut r = crate::render::Renderer::new(Arc::new(host.render_assets(None)));
+            let t1 = std::time::Instant::now();
+            for ops in &lists {
+                let dl = dl::DisplayList { width: 1920, height: 1080, background: theme.background, ops: ops.clone() };
+                r.render(&dl);
+            }
+            let render_ms = t1.elapsed().as_secs_f64() * 1000.0 / n as f64;
+            rows.push((k.name, eval_ms, render_ms, lists[0].len()));
+        }
+        rows.sort_by(|a, b| (b.1 + b.2).total_cmp(&(a.1 + a.2)));
+        for (name, e, r, n) in rows {
+            println!("{name:16} eval {e:7.3} ms  render {r:7.2} ms  ops {n}");
+        }
     }
 }

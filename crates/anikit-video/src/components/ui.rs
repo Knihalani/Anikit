@@ -131,9 +131,7 @@ impl Component for Card {
         let acc = self.accent.map(|c| c.0).unwrap_or(th.accent);
         let mut o = Vec::new();
         if self.glow {
-            push_layer(&mut o, 0.7, Blend::Screen, vec![crate::dl::Filter::Blur(28.0)]);
-            o.push(rect(0.0, 0.0, w, h, th.radius, solid(alpha(acc, 0.45))));
-            o.push(Op::PopLayer);
+            glow(&mut o, 0.0, 0.0, w, h, th.radius, 28.0, alpha(acc, 0.35));
         }
         surface(&mut o, th, 0.0, 0.0, w, h, th.radius, 1.0);
         if self.glow {

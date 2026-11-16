@@ -436,9 +436,7 @@ impl Component for CodeBlock {
         let bg = self.background.map(|c| c.0).unwrap_or(if th.dark { parse_color("#0e0f14").unwrap() } else { Rgba([1.0, 1.0, 1.0, 1.0]) });
         let mut o = Vec::new();
         if let Some(g) = self.glow {
-            push_layer(&mut o, 0.55, crate::dl::Blend::Screen, vec![crate::dl::Filter::Blur(60.0)]);
-            o.push(rect(w * 0.1, h * 0.1, w * 0.8, h * 0.8, r, radial(w * 0.5, h * 0.5, w * 0.5, vec![(0.0, g.0), (1.0, alpha(g.0, 0.0))])));
-            o.push(Op::PopLayer);
+            glow(&mut o, 0.0, 0.0, w, h, r, 60.0, alpha(g.0, 0.5));
         }
         shadow(&mut o, 0.0, 0.0, w, h, r, 24.0, 48.0, if th.dark { 0.6 } else { 0.18 });
         o.push(rect(0.0, 0.0, w, h, r, solid(bg)));

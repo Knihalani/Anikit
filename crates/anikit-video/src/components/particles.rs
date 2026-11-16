@@ -6,7 +6,7 @@
 
 use super::style::*;
 use super::{Component, Ctx, Prepare};
-use crate::dl::{Blend, Filter, Op, Path, Rgba, IDENTITY};
+use crate::dl::{Blend, Op, Path, Rgba, IDENTITY};
 use anikit_core::noise::Noise;
 use kurbo::Shape;
 use serde::Deserialize;
@@ -229,8 +229,9 @@ impl Component for Sparks {
         }
         push_layer(&mut o, 1.0, Blend::Add, Vec::new());
         if self.glow {
-            push_layer(&mut o, 0.8, Blend::Normal, vec![Filter::Blur(6.0 * scale.max(0.5))]);
-            draw_all(&mut o, 3.0);
+            // Halo from wide translucent strokes (additive), no blur pass.
+            push_layer(&mut o, 0.25, Blend::Normal, Vec::new());
+            draw_all(&mut o, 4.0);
             o.push(Op::PopLayer);
         }
         draw_all(&mut o, 1.0);
@@ -285,13 +286,7 @@ impl Component for Snow {
             if p.is_empty() {
                 continue;
             }
-            if i == 2 {
-                push_layer(&mut o, 1.0, Blend::Normal, vec![Filter::Blur(2.0 * scale.max(0.5))]);
-                o.push(fill(p, solid(alpha(c, 0.9))));
-                o.push(Op::PopLayer);
-            } else {
-                o.push(fill(p, solid(alpha(c, [0.35, 0.6][i]))));
-            }
+            o.push(fill(p, solid(alpha(c, [0.35, 0.6, 0.85][i]))));
         }
         o
     }
@@ -324,6 +319,7 @@ impl Component for Dust {
         let mut rng = Rng::new(self.seed as u64 ^ 0xd057);
         let mut dim = Path::new();
         let mut bright = Path::new();
+        let mut halos = Vec::new();
         for i in 0..self.count {
             let (a, b, z, ph) = (rng.f(), rng.f(), rng.f(), rng.f() * std::f32::consts::TAU);
             let s = (t * 0.05 * self.speed) as f64;
@@ -334,6 +330,7 @@ impl Component for Dust {
             let r = self.size * scale * (0.5 + z) * (0.7 + 0.3 * tw);
             let circle = kurbo::Circle::new((x as f64, y as f64), r.max(0.3) as f64);
             if tw > 0.6 {
+                halos.push((x, y, r));
                 bright.extend(circle.path_elements(0.2));
             } else {
                 dim.extend(circle.path_elements(0.2));
@@ -341,10 +338,11 @@ impl Component for Dust {
         }
         let mut o = Vec::new();
         push_layer(&mut o, 1.0, Blend::Screen, Vec::new());
-        if self.glow && !bright.is_empty() {
-            push_layer(&mut o, 0.9, Blend::Normal, vec![Filter::Blur(6.0 * scale.max(0.5))]);
-            o.push(fill(bright.clone(), solid(alpha(c, 0.9))));
-            o.push(Op::PopLayer);
+        if self.glow {
+            for (x, y, r) in halos {
+                let hr = r * 5.0;
+                o.push(circle(x, y, hr, radial(x, y, hr, vec![(0.0, alpha(c, 0.45)), (0.3, alpha(c, 0.12)), (1.0, alpha(c, 0.0))])));
+            }
         }
         o.push(fill(dim, solid(alpha(c, 0.35))));
         o.push(fill(bright, solid(alpha(c, 0.85))));

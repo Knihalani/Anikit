@@ -80,18 +80,13 @@ fn present(o: Vec<Op>, t: f32, delay: f32, float: f32, cx: f32, cy: f32) -> Vec<
     with_opacity(o, clamp01(p * 1.5))
 }
 
-/// Contact shadow under a device.
-fn ground_shadow(o: &mut Vec<Op>, cx: f32, y: f32, w: f32, a: f32) {
-    let mut s = Vec::new();
-    push_layer(&mut s, 1.0, crate::dl::Blend::Normal, vec![crate::dl::Filter::Blur(w * 0.06)]);
-    s.push(fill(kurbo_ellipse(cx, y, w * 0.45, w * 0.045), solid(Rgba([0.0, 0.0, 0.0, a]))));
-    s.push(Op::PopLayer);
-    o.extend(s);
-}
-
-fn kurbo_ellipse(cx: f32, cy: f32, rx: f32, ry: f32) -> crate::dl::Path {
-    use kurbo::Shape;
-    kurbo::Ellipse::new((cx as f64, cy as f64), (rx as f64, ry as f64), 0.0).to_path(0.1)
+/// Contact shadow under a device: the shadow of a pill hidden behind the
+/// device's own silhouette (sprite-cached by the renderer, so it is cheap).
+/// Call it before drawing the device so the device covers the pill.
+fn ground_shadow(o: &mut Vec<Op>, cx: f32, y: f32, w: f32, h: f32, dy: f32, blur: f32, a: f32) {
+    o.push(Op::PushLayer { opacity: 1.0, blend: crate::dl::Blend::Normal, filters: vec![crate::dl::Filter::Shadow { dx: 0.0, dy, blur, color: Rgba([0.0, 0.0, 0.0, a]) }], clip: None, cache_key: None });
+    o.push(rect(cx - w * 0.5, y, w, h, h * 0.5, solid(Rgba([0.0, 0.0, 0.0, 1.0]))));
+    o.push(Op::PopLayer);
 }
 
 /// Fit an aspect ratio into the box, centred.
@@ -132,7 +127,7 @@ impl Component for Phone {
         let bz = w * 0.035;
         let mut o = Vec::new();
         if self.shadow {
-            ground_shadow(&mut o, x + w * 0.5, y + h + w * 0.04, w, 0.55);
+            ground_shadow(&mut o, x + w * 0.5, y + h - w * 0.09, w * 0.6, w * 0.06, w * 0.1, w * 0.06, 0.6);
             shadow(&mut o, x, y, w, h, r, w * 0.06, w * 0.12, 0.5);
         }
         // Metal band, then black bezel, then screen.
@@ -192,7 +187,8 @@ impl Component for Laptop {
         let mut o = Vec::new();
         let base_y = y + lid_h;
         if self.shadow {
-            ground_shadow(&mut o, x + w * 0.5, base_y + h * 0.06, w, 0.6);
+            let bh0 = h * 0.045;
+            ground_shadow(&mut o, x + w * 0.5, base_y + bh0 * 0.1, w * 0.8, bh0 * 0.8, bh0 * 1.6, w * 0.03, 0.6);
         }
         // Lid (scaled vertically while opening, hinged at the bottom).
         let mut lid = Vec::new();
