@@ -244,6 +244,7 @@ precision highp float;
 uniform vec4 uRing;
 uniform vec4 uP;        // time, spin, intensity, open
 uniform float uScale;
+uniform float uHole;    // radius of the opening (device px)
 in vec2 vPx;
 out vec4 outColor;
 void main() {
@@ -259,6 +260,12 @@ void main() {
   // Inside, a faint warm wash so the edge of the opening reads as hot.
   float inside = (1.0 - smoothstep(-0.4, 0.0, x / (R / uScale))) * exp(-abs(x) / 50.0);
   c += vec3(1.0, 0.45, 0.1) * inside * 0.06;
+  // The opening tears outwards with a hot, flickering lip.
+  if (uHole > 0.5) {
+    float hx = (r - uHole) / (uScale * (2.5 + 2.0 * shimmer));
+    float lip = exp(-hx * hx) * (1.0 - smoothstep(0.85, 1.0, uHole / R));
+    c += vec3(1.0, 0.6, 0.22) * lip * 0.9;
+  }
   float ext = uRing.z * 1.45 + 60.0;
   vec2 e = abs(d) / ext;
   c *= uP.z * (1.0 - smoothstep(0.6, 1.0, max(e.x, e.y)));
@@ -606,6 +613,7 @@ export function createHands(canvas) {
       gl.uniform4f(GLOW.u.uP, t, 1, portal.glow * portal.arc * fade, portal.open);
       gl.uniform1f(GLOW.u.uDepth, portalDepth());
       gl.uniform1f(GLOW.u.uScale, k);
+      gl.uniform1f(GLOW.u.uHole, P.r * k);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       gl.useProgram(SPARK.p);
       gl.uniform2f(SPARK.u.uRes, Wd, Hd);
