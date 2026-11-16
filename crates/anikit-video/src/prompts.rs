@@ -121,7 +121,7 @@ pub fn template_guide(t: &Template) -> String {
     }
     out += &format!(
         "\n## Example\n\n```json\n{}\n```\n\nCreate: MCP `create_from_template {{template: \"{name}\", params, brand, format}}`, or `anikit-video templates expand {name} params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.\n",
-        t.example_params().to_string(),
+        t.example_params(),
         name = t.name
     );
     if let Some(tips) = d.get("tips").and_then(|x| x.as_array()) {
