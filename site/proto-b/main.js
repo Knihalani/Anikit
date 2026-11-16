@@ -123,7 +123,7 @@ const st = {
   px: 0.5, py: 0.5, // pointer, 0..1
   pxs: 0.5, pys: 0.5,
   pdx: 0, pdy: 0, moved: false, inside: false,
-  ox: 0, oy: 0, js: 0,
+  ox: 0, oy: 0, js: 0, noDraw: false,
 };
 const f = {
   viewProj: new Float32Array(16), model: new Float32Array(9),
@@ -340,7 +340,7 @@ function frameBody(time, dtMs) {
   const near = Math.round(s);
   const ns = Math.min(STAGES - 1, Math.max(0, near));
   if (ns !== feelStage && built >= FORM_AT[ns]) { feelStage = ns; cloud.set(FEEL[ns]); }
-  if (st.intro >= 0.6) showCaption(ns);
+  if (st.intro >= 0.45) showCaption(ns);
 
   // weights of each form (for camera pose)
   const w3 = Math.max(0, 1 - Math.abs(s - 3)), w4 = Math.max(0, 1 - Math.abs(s - 4));
@@ -405,7 +405,7 @@ function frameBody(time, dtMs) {
   st.moved = false; st.pdx = 0; st.pdy = 0;
 
   // --- draw
-  if (!gl) return;
+  if (!gl || st.noDraw) return;
   if (positions.buffer.byteLength === 0) positions = cloud.positions; // memory grew
   gl.upload(positions);
   f.glow = st.glow * 0.9;
@@ -413,7 +413,7 @@ function frameBody(time, dtMs) {
   f.cut = st.cut;
   f.size = 2.1 * (1 + 0.2 * w4);
   f.radial = smooth(0.3, 0.9, w4);
-  f.alpha = 0.55 * Math.min(1, st.intro * 1.6 + 0.15);
+  f.alpha = 0.55 * (0.5 + 0.5 * Math.min(1, st.intro * 1.5));
   gl.render(f);
   for (let i = 0; i < capFx.length; i++) {
     const fx = capFx[i];
@@ -438,7 +438,7 @@ st.s = target.s;
 requestAnimationFrame(() => requestAnimationFrame(() => {
   applyLevel();
   animate(canvas, { opacity: [0, 1] }, { duration: 1.2, ease: 'outSine' });
-  if (!reduced) animate(st, { intro: 1 }, { duration: 2.8, ease: 'inOutCubic', delay: 0.1 });
+  if (!reduced) animate(st, { intro: 1 }, { duration: 2.6, ease: 'inOutCubic' });
   setTimeout(buildNext, 120);
 }));
-if (PERF) Object.assign(window, { __st: st, __gov: governor, __cloud: cloud, __capFx: capFx });
+if (PERF) Object.assign(window, { __st: st, __gov: governor, __cloud: cloud, __capFx: capFx, __engine: engine });

@@ -16,7 +16,7 @@ function gauss(r) {
 export function dust(n) {
   const o = new Float32Array(n * 3), r = rng(7);
   for (let i = 0; i < n; i++) {
-    const u = r() * 2 - 1, a = r() * TAU, rad = 700 + r() * 500;
+    const u = r() * 2 - 1, a = r() * TAU, rad = 520 + r() * 420;
     const s = Math.sqrt(1 - u * u);
     o[i * 3] = Math.cos(a) * s * rad * 1.4;
     o[i * 3 + 1] = u * rad * 0.7;
