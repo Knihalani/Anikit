@@ -170,6 +170,8 @@ function perfTick(dtMs, phase) {
     s.set(P.buf[i].subarray(0, L)); s.sort();
     txt += `\n${P.names[i].padEnd(8)} ${s[Math.floor(L * 0.5)].toFixed(1).padStart(5)} ${s[Math.min(L - 1, Math.floor(L * 0.95))].toFixed(1).padStart(5)} ${s[L - 1].toFixed(1).padStart(5)}`;
   }
+  if (gpuT) txt += `\ngpu ms   mountain ${gpuT.ms[0].toFixed(2)}  hall ${gpuT.ms[1].toFixed(2)}  hands ${gpuT.ms[2].toFixed(2)}`;
+  txt += `\n${SHARED ? 'shared context' : 'stacked canvases'} · tier ${gov.tier}`;
   P.el.textContent = txt;
   window.__summitPerf = txt;
 }
@@ -179,6 +181,35 @@ const hallRect = { x: 0, y: 0, w: 1, h: 1 };
 const status = { frames: 0, p: 0, r: 0, inHall: false };
 window.__summit = status;
 const portalDev = { x: 0, y: 0, r: 0 };
+// GPU time per module (?perf, shared context, EXT_disjoint_timer_query_webgl2): a small pool of queries per
+// module, read back a few frames later; smoothed ms shown in the overlay.
+const gpuT = (() => {
+  if (!SHARED || perfArg === null) return null;
+  const ext = gl.getExtension('EXT_disjoint_timer_query_webgl2');
+  if (!ext) return null;
+  const names = ['mountain', 'hall', 'hands'], N = 4;
+  const pools = names.map(() => Array.from({ length: N }, () => ({ q: gl.createQuery(), busy: false })));
+  const ms = new Float32Array(3), at = new Int32Array(3);
+  let open = -1;
+  return {
+    names, ms,
+    begin(i) {
+      const slot = pools[i][at[i]];
+      if (slot.busy) return;            // still waiting for this one: skip timing this frame
+      gl.beginQuery(ext.TIME_ELAPSED_EXT, slot.q); slot.busy = true; open = i;
+    },
+    end(i) { if (open !== i) return; gl.endQuery(ext.TIME_ELAPSED_EXT); open = -1; at[i] = (at[i] + 1) % N; },
+    poll() {
+      const disjoint = gl.getParameter(ext.GPU_DISJOINT_EXT);
+      for (let i = 0; i < 3; i++) for (const slot of pools[i]) {
+        if (!slot.busy || !gl.getQueryParameter(slot.q, gl.QUERY_RESULT_AVAILABLE)) continue;
+        const ns = gl.getQueryParameter(slot.q, gl.QUERY_RESULT);
+        slot.busy = false;
+        if (!disjoint) ms[i] = ms[i] * 0.9 + (ns / 1e6) * 0.1;
+      }
+    },
+  };
+})();
 function frameShared(t, dt, dtMs) {
   const W = innerWidth, H = innerHeight, k = glCanvas.width / W;
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -192,8 +223,10 @@ function frameShared(t, dt, dtMs) {
   io.push = io.k = portal.step;
   const cover = portal.r > 0 && portal.r >= Math.hypot(Math.max(portal.x, W - portal.x), Math.max(portal.y, H - portal.y));
   // 1. The mountain (only while some of it shows).
+  if (gpuT) { gpuT.poll(); gpuT.begin(0); }
   if (!cover && !OFF.mountain) mountain.frame(t, dt, io.p, look, io.push, portal);
   else if (!cover) { gl.clearColor(0.7, 0.75, 0.8, 1); gl.clear(gl.COLOR_BUFFER_BIT); }
+  if (gpuT) { gpuT.end(0); gpuT.begin(1); }
   // 2. The hall, inside the portal only.
   if (portal.r > 0.5 && !OFF.hall) {
     const x0 = Math.max(0, portal.x - portal.r), y0 = Math.max(0, portal.y - portal.r);
@@ -203,8 +236,10 @@ function frameShared(t, dt, dtMs) {
     hall.preview(t, dt, io.k, hallRect, portalDev);
   }
   gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+  if (gpuT) { gpuT.end(1); gpuT.begin(2); }
   // 3. Hands and sparks on top.
   hands.render();
+  if (gpuT) gpuT.end(2);
   if (portal.step < 0.9) armed = true;
   if (armed && portal.step >= 0.97 && io.p >= 0.85) enterHall();
   governor(dtMs);
