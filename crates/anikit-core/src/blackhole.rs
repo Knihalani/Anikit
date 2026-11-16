@@ -249,6 +249,9 @@ pub struct BlackHole {
     /// Eye adaptation: exposure gain that compensates the redshifted sky
     /// seen looking back out while falling in.
     adapt: f32,
+    /// The bloom accumulators hold no previous frame yet (first frame or
+    /// after a resize): build them from this frame before bloom.
+    prime: bool,
 }
 
 // ---------------------------------------------------------------------------
@@ -550,6 +553,7 @@ impl BlackHole {
             frame: 0,
             cam: None,
             adapt: 1.0,
+            prime: true,
         };
         bh.build_static(seed);
         bh.resize(w, h);
@@ -690,6 +694,7 @@ impl BlackHole {
         self.ab = vec![0.0; m];
         self.at = vec![0.0; m];
         self.scr_key = None;
+        self.prime = true;
         self.tmp = vec![0.0; m.max(self.bw.max(self.bh))];
         self.acc = vec![0.0; self.bw];
         self.wide = [vec![0.0; m], vec![0.0; m], vec![0.0; m]];
@@ -1261,8 +1266,33 @@ impl BlackHole {
         self.build_disk(p, t, az_off);
         self.shade_disk();
         self.draw_stars(p, &cam, az_off);
+        if self.prime {
+            self.prime_bloom();
+            self.prime = false;
+        }
         self.bloom_and_sky(p, &cam, az_off);
         self.tonemap(p);
+    }
+
+    /// Downsample this frame's HDR into the bloom accumulators (normally the
+    /// tone-map pass does this for the next frame).
+    fn prime_bloom(&mut self) {
+        let (w, h, bw) = (self.w, self.h, self.bw);
+        self.ar.fill(0.0);
+        self.ag.fill(0.0);
+        self.ab.fill(0.0);
+        self.at.fill(0.0);
+        for y in 0..h {
+            let o = (y >> 2) * bw;
+            let s = y * w;
+            for x in 0..w {
+                let b = o + (x >> 2);
+                self.ar[b] += self.hr[s + x];
+                self.ag[b] += self.hg[s + x];
+                self.ab[b] += self.hb[s + x];
+                self.at[b] += self.trans[s + x];
+            }
+        }
     }
 
     /// Run one pipeline stage alone (0 disk texture, 1 shading, 2 stars,
