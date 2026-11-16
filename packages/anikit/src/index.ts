@@ -88,3 +88,5 @@ export type { ViewTransitionOptions, ViewTransitionHandle } from './viewtransiti
 export { gesture, Gesture } from './gesture';
 export type { GestureOptions } from './gesture';
 export { transformPath } from './svg';
+export { htmlCanvas, htmlEffect, htmlCanvasSupported, htmlToSvg } from './htmlcanvas';
+export type { HtmlCanvas, HtmlCanvasOptions, HtmlEffect, HtmlEffectOptions, HtmlEffectName } from './htmlcanvas';
