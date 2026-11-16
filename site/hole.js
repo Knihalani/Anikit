@@ -205,7 +205,7 @@ export class Lens {
           px[so + 2] = rate0 * Math.pow(RIN / r, 1.5) * spin;
           px[so + 3] = BB[ti * 3] * I; px[so + 4] = BB[ti * 3 + 1] * I; px[so + 5] = BB[ti * 3 + 2] * I;
           hits++;
-          trans *= 0.12; // the disk is optically thick: later images show through faintly
+          trans *= 1 - 0.88 * sIn * sOut; // optically thick where it glows; thin at the fading edges
         }
         // Escape direction, or the shadow.
         if (fate[i] === 0) {

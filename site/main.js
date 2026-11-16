@@ -64,11 +64,15 @@ const depth = (p) => {
 };
 
 let t = 0, exposure = 2.4;
+const canBlur = 'filter' in bctx; // no canvas filters (older WebKit): skip the bloom pass
+const scaleOf = (L, D) => (shadowScale(D) * focal(D)) / (shadowScale(L.lens.D) * L.lens.F);
+const zoom = (L, D) => { L.el.style.transform = `scale(${scaleOf(L, D).toFixed(4)})`; };
 const draw = (L, D, p) => {
   // Blue shift and aberration as the fall speeds up; time near the hole runs slow.
   const sb = 1 + 0.9 * p * p, sr = 1 - 0.45 * p * p;
   shade(L.lens, tex, L.out, t, exposure * (1 + p * 0.1), sr * (1 + 1.5 * p * p), (1 + 1.2 * p * p), sb * (1 + 1.5 * p * p), 1, frames);
   L.ctx.putImageData(L.img, 0, 0);
+  if (!canBlur) return;
   // Bloom: blur a quarter-size copy, then screen it back over the frame.
   bctx.filter = BLUR;
   bctx.drawImage(L.el, 0, 0, bloom.width, bloom.height);
@@ -77,28 +81,27 @@ const draw = (L, D, p) => {
   L.ctx.drawImage(bloom, 0, 0, L.el.width, L.el.height);
   L.ctx.globalAlpha = 1;
   L.ctx.globalCompositeOperation = 'source-over';
-  L.scale = (shadowScale(D) * focal(D)) / (shadowScale(L.lens.D) * L.lens.F);
-  L.el.style.transform = `scale(${L.scale.toFixed(4)})`;
 };
 
-// Start building (or finish synchronously) the band for depth D on the back layer.
+// Build the band for a camera distance on the back layer, in slices; then cross-fade.
+const FADE = 280;
+let fadeStart = 0;
 const startBuild = (k) => {
   genLayer = 1 - front; genBand = k;
   gen = layers[genLayer].lens.build(bandD(k), ELEV, focal(bandD(k)));
 };
-const finishBuild = () => {
+const finishBuild = (instant = reduced) => {
   const L = layers[genLayer];
   L.band = genBand; gen = null;
   front = genLayer;
   L.el.style.zIndex = '2'; layers[1 - front].el.style.zIndex = '1';
-  if (reduced) { L.el.style.opacity = '1'; layers[1 - front].el.style.opacity = '0'; return; }
-  L.el.style.transition = 'none'; L.el.style.opacity = '0';
-  void L.el.offsetWidth;
-  L.el.style.transition = 'opacity 0.28s linear'; L.el.style.opacity = '1';
-  fadeUntil = performance.now() + 320;
+  lastSy = -1; // draw the new band on this frame, even if the scroll is still
+  if (instant) { L.el.style.opacity = '1'; layers[1 - front].el.style.opacity = '0'; fadeUntil = 0; return; }
+  L.el.style.opacity = '0';
+  fadeStart = performance.now(); fadeUntil = fadeStart + FADE;
 };
 
-const stats = { ms: 0, w: 0, h: 0, last: 0, band: 0 };
+const stats = { ms: 0, shade: 0, w: 0, h: 0, last: 0, band: 0 };
 window.__stage = stats;
 let lastSy = -1, frames = 0, worst = 0;
 const frame = (dt) => {
@@ -108,26 +111,39 @@ const frame = (dt) => {
   const tScale = 1 - 0.7 * p ** 3;
   if (!reduced) t += (Math.min(dt, 50) / 1000) * tScale;
   const t0 = performance.now();
-  // Lensing for a new distance band is built in slices of a few ms, then faded in.
+  frames++;
+  // When shading is expensive (close to the hole the disk fills the view), shade on
+  // even frames and build on odd ones; the zoom is a CSS transform and runs every frame.
+  const heavy = stats.shade > 6, even = (frames & 1) === 0;
   const k = bandFor(D);
-  const now = performance.now();
-  if (!gen && layers[front].band !== k && p < 0.995 && now > fadeUntil) startBuild(k);
-  if (gen && gen.next().done) finishBuild();
-  if (reduced && sy === lastSy && !gen) return;
-  lastSy = sy;
+  if (!gen && layers[front].band !== k && p < 0.995 && t0 > fadeUntil) startBuild(k);
+  if (gen && (!heavy || !even) && gen.next().done) finishBuild();
   const F = layers[front];
   if (p < 0.999) {
-    draw(F, D, p);
-    // The outgoing band keeps its last frame (rescaled) while the new one fades in.
-    if (now < fadeUntil) { const O = layers[1 - front]; O.el.style.transform = `scale(${((shadowScale(D) * focal(D)) / (shadowScale(O.lens.D) * O.lens.F)).toFixed(4)})`; }
-    else if (fadeUntil) { fadeUntil = 0; layers[1 - front].el.style.opacity = '0'; F.el.style.transition = 'none'; F.el.style.opacity = '1'; }
+    const still = reduced && sy === lastSy;
+    if (!still && (!heavy || even || lastSy < 0)) {
+      const s0 = performance.now();
+      draw(F, D, p);
+      stats.shade = stats.shade * 0.85 + (performance.now() - s0) * 0.15;
+      lastSy = sy;
+    }
+    zoom(F, D);
+    if (fadeUntil) {
+      // The outgoing band keeps its last frame (rescaled) while the new one fades in.
+      const O = layers[1 - front];
+      const f = (t0 - fadeStart) / FADE;
+      if (f < 1) { zoom(O, D); F.el.style.opacity = f.toFixed(3); }
+      else { fadeUntil = 0; O.el.style.opacity = '0'; F.el.style.opacity = '1'; }
+    }
   }
   choreograph(p);
   const ms = performance.now() - t0;
   stats.ms = stats.ms * 0.9 + ms * 0.1; stats.last = ms; stats.w = F.lens.w; stats.h = F.lens.h; stats.band = F.band;
-  // Adaptive resolution: once, early, while the hero is idle.
-  // (EMA of the shading cost after warm-up; V8 and the GPU process settle first.)
-  if (++frames === 150 && !gen && sy < 2 && stats.ms > 8) { worst = stats.ms; budget = Math.round(budget * Math.min(0.8, 6 / worst)); alloc(); startBuild(bandFor(D)); while (gen && !gen.next().done); finishBuild(); }
+  // Adaptive resolution: once, early, while the hero is idle (after V8 has warmed up).
+  if (frames === 150 && !gen && sy < 2 && stats.shade > 7) {
+    worst = stats.shade; budget = Math.round(budget * Math.min(0.8, 5.5 / worst));
+    alloc(); startBuild(bandFor(D)); while (gen && !gen.next().done); finishBuild(true);
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -197,8 +213,7 @@ alloc();
 measure(); measurePanels();
 startBuild(bandFor(depth(fallP())));
 while (gen && !gen.next().done);
-finishBuild();
-layers[front].el.style.transition = 'none'; layers[front].el.style.opacity = '1';
+finishBuild(true);
 frame(16);
 sky.classList.add('on');
 drawCalm();
@@ -211,7 +226,7 @@ const onResize = () => {
   const big = Math.abs(nw - vw) > 40 || Math.abs(nh - vh) > 140; // ignore mobile toolbar resizes
   vw = nw; vh = nh;
   measure(); measurePanels();
-  if (big) { alloc(); startBuild(bandFor(depth(fallP()))); while (gen && !gen.next().done); finishBuild(); drawCalm(); }
+  if (big) { alloc(); startBuild(bandFor(depth(fallP()))); while (gen && !gen.next().done); finishBuild(true); drawCalm(); }
   lastP.fill(-1); lastV = -1; lastHero = -1;
 };
 addEventListener('resize', onResize);
