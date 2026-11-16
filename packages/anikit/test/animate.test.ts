@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { animate, from, fromTo, set, stagger, engine, flush, FrameBuffer } from '../src/index';
 import { setup, advance, box } from './setup';
-import { _setCodegen } from '../src/animate';
+import { _setCodegen, _setNumberTracks } from '../src/animate';
+import { timeline } from '../src/timeline';
 import { _recordCount } from '../src/core';
 
 beforeAll(setup);
@@ -143,6 +144,50 @@ describe('animate: values', () => {
     set(s, { x: 5, y: 6, opacity: 0.3 });
     expect(tf(s)).toBe('translate(5px,6px)');
     expect(s.style.opacity).toBe('0.3');
+  });
+});
+
+describe('animate: plain-number track path', () => {
+  // Number keyframes (and `null` = current value) skip the general value
+  // parser; every scenario must build the same tracks either way.
+  const run = (): unknown[] => {
+    const out: unknown[] = [];
+    const objs = Array.from({ length: 4 }, (_, i) => ({ x: i * 10, y: -i, s: '5px', z: i === 2 ? '7em' : 3, q: 1 }));
+    const els = [
+      box({ transform: 'translate(12px, 4px) rotate(30deg) scale(1.5)', opacity: '0.4', width: '40px' }),
+      box({ transform: 'translateX(50%)', marginLeft: '2em' }),
+    ];
+    const anims = [
+      animate(objs, { x: 100, y: [null, 50, -20], s: 40, z: 10, q: [2, null] }, { duration: 1, ease: 'outCubic' }),
+      animate(els, { x: 100, y: [0, 30], rotate: 270, scale: 2, skewX: [null, 15], opacity: 1, width: 200, marginLeft: 10 }, { duration: 1, ease: 'linear', repeatDelay: 0.2, repeat: 1 }),
+      animate(objs[3], { x: '+=5', y: (_: unknown, i: number) => i + 1, q: 'random(3, 3)' }, { duration: 0.5, delay: 0.1 }),
+      animate([{ v: NaN }, { v: -0 }, { v: undefined as unknown as number }], { v: [null, 1] }, { duration: 0.5 }),
+    ];
+    // Timeline children read the value the previous step left (`chain`).
+    const solo = { x: 1 };
+    const el3 = box({ transform: 'rotate(10deg)' });
+    const tl = timeline({ autoplay: false }).add(solo, { x: 5 }, { duration: 0.2 }).add(solo, { x: [null, 9] }, { duration: 0.2 }).add(el3, { x: [null, 40], rotate: 2 }, { duration: 0.2 });
+    tl.play();
+    for (let f = 0; f < 6; f++) {
+      advance(0.27);
+      out.push(JSON.stringify(objs), els.map((e) => e.getAttribute('style')), solo.x, el3.getAttribute('style'));
+    }
+    for (const a of anims) {
+      a.revert();
+    }
+    tl.revert();
+    flush();
+    out.push(JSON.stringify(objs), els.map((e) => e.getAttribute('style')));
+    return out;
+  };
+  it('builds the same tracks as the general path', () => {
+    const prev = _setNumberTracks(false);
+    const general = run();
+    _setNumberTracks(true);
+    const fast = run();
+    _setNumberTracks(prev);
+    expect(fast).toEqual(general);
+    expect(general[0]).not.toBe(general[2]);
   });
 });
 

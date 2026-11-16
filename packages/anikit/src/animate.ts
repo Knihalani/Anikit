@@ -15,7 +15,7 @@ import {
   FL_FILL_BACKWARDS, FL_FILL_FORWARDS, FL_IMMEDIATE,
 } from './core';
 import {
-  buildTrack, TrackDef, TRACK_NUMBER, TRACK_PATH, TRACK_MATRIX, COLOR_SPACES, ColorSpaceName, r3,
+  buildTrack, numberTrack, TrackDef, TRACK_NUMBER, TRACK_PATH, TRACK_MATRIX, COLOR_SPACES, ColorSpaceName, r3,
 } from './values';
 import {
   Target, Targets, toTargets, classify, Kind, readValue, writer, convertUnit, defaultUnit, isElement,
@@ -332,6 +332,7 @@ export function _setCodegen(on: boolean | undefined): boolean | undefined {
   const prev = codegen;
   codegen = on;
   compactCache.clear();
+  lastCompact = null;
   return prev;
 }
 function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner] | null {
@@ -373,7 +374,16 @@ function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner] | null {
 }
 
 /** Key/offset arrays (and their writer and runner) shared by Parts with the same property set (see `Part.prep`). */
-const compactCache = new Map<string, [string[], Int32Array, Writer | null, Runner | null]>();
+type Compact = [string[], Int32Array, Writer | null, Runner | null];
+const compactCache = new Map<string, Compact>();
+/** The entry used last: consecutive Parts (the targets of one call) usually share it, so no signature string is built for them. */
+let lastCompact: Compact | null = null;
+function sameCompact(b: Binding[], c: Compact): boolean {
+  const keys = c[0], offs = c[1];
+  if (keys.length !== b.length) return false;
+  for (let i = 0; i < b.length; i++) if (b[i].key !== keys[i] || b[i].off !== offs[i]) return false;
+  return true;
+}
 
 /** Per-target engine node. */
 class Part implements NodeRecord, Owner, Linked {
@@ -412,13 +422,17 @@ class Part implements NodeRecord, Owner, Linked {
       const x = b[i];
       if (!x.on || x.mode !== M_PROP || x.target !== t) return;
     }
-    const sig = b.map((x) => x.key + ':' + x.off).join(',');
-    let shared = compactCache.get(sig);
-    if (shared === undefined) {
-      const keys = b.map((x) => x.key), offs = Int32Array.from(b, (x) => x.off);
-      const w = makeWriter(keys, offs);
-      shared = [keys, offs, w && w[0], w && w[1]];
-      compactCache.set(sig, shared);
+    let shared = lastCompact;
+    if (shared === null || !sameCompact(b, shared)) {
+      const sig = b.map((x) => x.key + ':' + x.off).join(',');
+      let c = compactCache.get(sig);
+      if (c === undefined) {
+        const keys = b.map((x) => x.key), offs = Int32Array.from(b, (x) => x.off);
+        const w = makeWriter(keys, offs);
+        c = [keys, offs, w && w[0], w && w[1]];
+        compactCache.set(sig, c);
+      }
+      lastCompact = shared = c;
     }
     this.pt = t;
     this.pk = shared[0];
@@ -494,6 +508,37 @@ class Part implements NodeRecord, Owner, Linked {
     for (const x of this.b) if (this.claims) unclaim(x.target, x.prop, this);
     unregister(this);
   }
+}
+
+/**
+ * One shared `easings` array per easing id (and one empty one for linear):
+ * tracks only read them, and the one place that appends (`repeatDelay`)
+ * only touches lists of more than one easing.
+ */
+const NO_EASINGS: number[] = [];
+const singleEasings = new Map<number, number[]>();
+function singleEasing(id: number): number[] {
+  if (id === LINEAR) return NO_EASINGS;
+  let a = singleEasings.get(id);
+  if (a === undefined) singleEasings.set(id, (a = [id]));
+  return a;
+}
+
+/** "Not read yet" marker for the current value in `_build`. */
+const UNREAD: unknown = {};
+/** Whether `buildTrack` reads the current value for these keyframes (a lone value or a `null` one). */
+function usesCurrent(raw: readonly unknown[]): boolean {
+  if (raw.length === 1) return true;
+  for (let i = 0; i < raw.length; i++) if (raw[i] === null || raw[i] === undefined) return true;
+  return false;
+}
+/** `false`: always use the general `buildTrack` (tests compare both paths). */
+let numberTracks = true;
+/** Testing hook: turn the plain-number track path off/on; returns the previous state. */
+export function _setNumberTracks(on: boolean): boolean {
+  const prev = numberTracks;
+  numberTracks = on;
+  return prev;
 }
 
 /** `Part.onEmpty` for `part` of `anim` (a closure over just these two). */
@@ -737,6 +782,11 @@ export class Animation extends Playable {
     else if (o.fillMode === 'none') fill = 0;
     const easeList = Array.isArray(o.ease) && !(o.ease.length === 4 && typeof o.ease[0] === 'number') ? o.ease : null;
     const baseEase = easeList ? undefined : (o.ease as EasingInput);
+    // Per-property work that does not depend on the target, done once.
+    const entries = [...props];
+    const posts = entries.map(([prop, spec]) => (spec.raw === undefined ? postFor(prop, o) : null));
+    // Values with no per-target functions or `random()` strings resolve to themselves.
+    const dynamic = entries.map(([, spec]) => spec.values.some((v) => typeof v === 'function' || (typeof v === 'string' && RANDOM_RE.test(v))));
 
     for (let i = 0; i < n; i++) {
       const target = targets[i];
@@ -762,7 +812,7 @@ export class Animation extends Playable {
           t.easings = ids;
         } else {
           const id = easingId(e as EasingInput);
-          t.easings = id === LINEAR ? [] : [id];
+          t.easings = singleEasing(id);
         }
         tracks.push(t);
         const idx = tracks.length - 1;
@@ -777,7 +827,8 @@ export class Animation extends Playable {
         return idx;
       };
 
-      for (const [prop, spec] of props) {
+      for (let pi = 0; pi < entries.length; pi++) {
+        const prop = entries[pi][0], spec = entries[pi][1];
         if (spec.raw !== undefined) {
           this._special(prop, spec.raw, target, i, n, part, tracks, addTrack, cs, ctx);
           continue;
@@ -788,7 +839,7 @@ export class Animation extends Playable {
           const hint = !s ? '' : OPTION_KEYS.has(s) ? ` Did you mean the option "${s}"? (Options can go in the third argument or among the properties.)` : ` Did you mean "${s}"?`;
           warn(`"${prop}" is not a CSS property of ${describe(target)}; it will be written as an inline style anyway.${hint}`);
         }
-        let raw = spec.values.map((v) => resolve(v, target, i, n));
+        let raw = dynamic[pi] ? spec.values.map((v) => resolve(v, target, i, n)) : (spec.values as Array<Scalar | null>);
         // A function may return keyframes for its target: `y: (el, i) => [0, i * 10]`.
         if (raw.length === 2 && raw[0] === null && Array.isArray(raw[1])) raw = raw[1] as Array<Scalar | null>;
         if (i === 0 && warningsOn()) checkValues(prop, kind, raw, target);
@@ -802,17 +853,28 @@ export class Animation extends Playable {
           if (raw.some((v, k) => v === 'auto' || (inlineAuto && k === 0 && (v === null || v === undefined)))) {
             const px = measureAuto(el, prop);
             autoPx = [px];
+            raw = raw.slice(); // (may be the shared spec values)
             for (let k = 0; k < raw.length; k++) {
               if (raw[k] === 'auto' || (k === 0 && inlineAuto && (raw[k] === null || raw[k] === undefined))) raw[k] = px + 'px';
             }
           }
         }
         const chained = ctx.chain?.get(target)?.get(prop);
-        const read = () => (chained !== undefined ? chained : readValue(target, prop, kind));
         const el = isElement(target) ? target : null;
         let du = defaultUnit(prop, kind);
-        const conv = (v: number, f: string, t: string) => convertUnit(el, prop, v, f, t);
-        let track = buildTrack(raw, read, conv, cs, du);
+        // Plain numbers (the common case) skip the general parser and its
+        // closures; the current value is read at most once either way.
+        let cur: unknown = UNREAD;
+        let track: TrackDef | null = null;
+        if (numberTracks) {
+          if (usesCurrent(raw)) cur = chained !== undefined ? chained : readValue(target, prop, kind);
+          track = numberTrack(raw, cur, du);
+        }
+        if (track === null) {
+          const read = cur !== UNREAD ? () => cur : () => (chained !== undefined ? chained : readValue(target, prop, kind));
+          const conv = (v: number, f: string, t: string) => convertUnit(el, prop, v, f, t);
+          track = buildTrack(raw, read, conv, cs, du);
+        }
         if (kind === Kind.Transform) {
           if (track.kind !== TRACK_NUMBER || track.ch !== 1 || track.complex) {
             if (i === 0) warn(`"${prop}" needs a single number (optionally with a unit, e.g. 100 or '50%'); got ${raw.map((v) => JSON.stringify(v)).join(' → ')}, so it was skipped. For a full transform string use the "transform" property.`);
@@ -831,7 +893,7 @@ export class Animation extends Playable {
         const numeric = track.kind === TRACK_NUMBER && track.ch === 1 && !track.complex;
         if (kind !== Kind.Transform || !snappedTransform) this._restore.push(snapshot(target, prop, kind));
         if (kind === Kind.Transform) snappedTransform = true;
-        const post = postFor(prop, o);
+        const post = posts[pi];
         if (autoPx && numeric && track.unit === 'px') {
           // Write `auto` whenever the value sits on the measured size (start
           // or end): identical on screen, and the element stays responsive.
@@ -1305,7 +1367,7 @@ export function createAnim(
     f[at++] = t.offsets ? 1 : 0;
     if (t.offsets) for (let k = 0; k < nk; k++) f[at++] = t.offsets[k];
     for (let k = 0; k < t.values.length; k++) f[at++] = t.values[k];
-    const e = t.easings ?? [];
+    const e = t.easings ?? NO_EASINGS;
     f[at++] = e.length;
     for (let k = 0; k < e.length; k++) f[at++] = e[k] === LINEAR ? -1 : e[k];
   }

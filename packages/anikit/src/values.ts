@@ -195,6 +195,60 @@ export type Converter = (value: number, from: string, to: string) => number;
 /** Units that need no conversion between each other. */
 const sameUnit = (a: string, b: string) => a === b || a === '' || b === '';
 
+/** Output formatters of plain-number tracks, one per unit (shared by every track with that unit). */
+const numberFormats = new Map<string, (at: number) => string | number>();
+function numberFormat(unit: string): (at: number) => string | number {
+  let f = numberFormats.get(unit);
+  if (f === undefined) {
+    f = unit ? (at: number) => r3(F64[at]) + unit : (at: number) => r3(F64[at]);
+    numberFormats.set(unit, f);
+  }
+  return f;
+}
+
+/**
+ * `buildTrack` for the common case: every keyframe is a number or
+ * `null`/`undefined` (the current value `cur`, which must then be a number or
+ * a plain number string such as `'0px'`). Builds the same track as the
+ * general path without the parsed-value objects; returns `null` when the
+ * general path is needed. `cur` is only looked at when a keyframe uses it.
+ */
+export function numberTrack(raw: readonly unknown[], cur: unknown, defaultUnit = ''): TrackDef | null {
+  const one = raw.length === 1;
+  let usesCur = one;
+  for (let i = 0; i < raw.length; i++) {
+    const v = raw[i];
+    if (v === null || v === undefined) usesCur = true;
+    else if (typeof v !== 'number') return null;
+  }
+  let cn = 0;
+  let unit = '';
+  if (usesCur) {
+    if (typeof cur === 'number') cn = cur;
+    else {
+      const p = parseValue(cur);
+      if (p.k !== 'num' || p.rel) return null;
+      cn = p.n;
+      unit = p.unit;
+    }
+  }
+  // Numbers carry no unit, so the current value's unit (if any) is the last explicit one.
+  if (!unit) unit = defaultUnit;
+  const values: number[] = [];
+  if (one) values.push(cn, raw[0] === null || raw[0] === undefined ? cn : (raw[0] as number));
+  else {
+    for (let i = 0; i < raw.length; i++) {
+      const v = raw[i];
+      values.push(v === null || v === undefined ? cn : (v as number));
+    }
+  }
+  const n = values.length;
+  return {
+    kind: TRACK_NUMBER, arg: 0, ch: 1, out: 1, values, format: numberFormat(unit), unit,
+    first: unit ? values[0] + unit : values[0], last: unit ? values[n - 1] + unit : values[n - 1],
+  };
+}
+
 /**
  * Build a track from raw keyframe values. `current` is the live value used
  * for a missing/`null` first keyframe and as the base of relative values.
@@ -245,9 +299,8 @@ export function buildTrack(
     }
     if (!unit) unit = defaultUnit;
     const values = nums.map((p) => (sameUnit(p.unit, unit) ? p.n : convert(p.n, p.unit, unit)));
-    const fmt = unit ? (at: number) => r3(F64[at]) + unit : (at: number) => r3(F64[at]);
     return {
-      kind: TRACK_NUMBER, arg: 0, ch: 1, out: 1, values, format: fmt, unit,
+      kind: TRACK_NUMBER, arg: 0, ch: 1, out: 1, values, format: numberFormat(unit), unit,
       first: unit ? values[0] + unit : values[0], last: unit ? values[n - 1] + unit : values[n - 1],
     };
   }
