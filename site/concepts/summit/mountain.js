@@ -9,28 +9,6 @@ import { timeline, spring } from '../../../packages/anikit/dist/anikit.lean.js';
 // ---------------------------------------------------------------------------
 // Small deterministic noise for building geometry (JS, load time only)
 // ---------------------------------------------------------------------------
-function hash2(x, y, s) {
-  let h = (x * 374761393 + y * 668265263 + s * 2147483647) | 0;
-  h = Math.imul(h ^ (h >>> 13), 1274126177);
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-}
-function vnoise(x, y, s = 0) {
-  const xi = Math.floor(x), yi = Math.floor(y);
-  const xf = x - xi, yf = y - yi;
-  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
-  const a = hash2(xi, yi, s), b = hash2(xi + 1, yi, s), c = hash2(xi, yi + 1, s), d = hash2(xi + 1, yi + 1, s);
-  return (a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v) * 2 - 1;
-}
-function fbm(x, y, oct, s = 0) {
-  let sum = 0, amp = 0.5, f = 1;
-  for (let i = 0; i < oct; i++) { sum += amp * vnoise(x * f, y * f, s + i * 17); f *= 2.03; amp *= 0.5; }
-  return sum;
-}
-function ridged(x, y, oct, s = 0) {
-  let sum = 0, amp = 0.55, f = 1;
-  for (let i = 0; i < oct; i++) { const n = 1 - Math.abs(vnoise(x * f, y * f, s + i * 31)); sum += amp * n * n; f *= 2.1; amp *= 0.5; }
-  return sum;
-}
 let seed = 1234567;
 const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) | 0; return (seed >>> 0) / 4294967296; };
 
@@ -65,6 +43,7 @@ vec3 haze(vec3 col, vec3 dir, float dist, float k) {
 uniform vec4 uPortalPx;   // centre x, y and radius in framebuffer px, power 0..1
 uniform vec4 uPortal;     // centre in NDC, radius in NDC-y units, power
 uniform float uFlicker;
+uniform float uFade;       // landscape cross-fade 0..1 once geometry arrives
 uniform float uAspect;
 vec3 portalGlow(vec2 fc) {
   if (uPortalPx.w <= 0.001) return vec3(0.0);
@@ -124,6 +103,7 @@ void main() {
 const skyFS = HEAD + COMMON + `
 in vec3 vDir;
 uniform float uT;
+uniform float uSkyAlpha;
 out vec4 o;
 void main() {
   vec3 d = normalize(vDir);
@@ -141,7 +121,7 @@ void main() {
     vec3 cc = uSunCol * (0.55 + 0.9 * pow(max(s, 0.0), 6.0)) + uAmb * 0.5;
     c = mix(c, cc, cir * 0.22);
   }
-  o = vec4(tonemap(c), 1.0);
+  o = vec4(tonemap(c), uSkyAlpha);
 }`;
 
 // --- distant mountains: a big polar heightfield with peaks poking through the cloud sea ---
@@ -289,7 +269,7 @@ void main() {
   vec2 q = vUV * 1.7 + vS.x * 37.0;
   float n = vnoise(q) * 0.6 + vnoise(q * 2.3 + 4.0) * 0.4;
   float rr = sqrt(r2) + (n - 0.5) * 0.35;
-  float a = (uWordMode > 0.5 ? smoothstep(1.0, 0.35, rr) : smoothstep(0.95, 0.6, rr) * smoothstep(-0.55, -0.1, vUV.y + (n - 0.5) * 0.3)) * vS.y;
+  float a = (uWordMode > 0.5 ? 1.0 : uFade) * (uWordMode > 0.5 ? smoothstep(1.0, 0.35, rr) : smoothstep(0.95, 0.6, rr) * smoothstep(-0.55, -0.1, vUV.y + (n - 0.5) * 0.3)) * vS.y;
   if (a < 0.004) discard;
   vec3 N = vec3(vUV, sqrt(max(1.0 - r2, 0.0)));
   float ndl = dot(N, uSunV);
@@ -415,7 +395,7 @@ in float vGlow;
 in float vHot;
 out vec4 o;
 void main() {
-  float a = exp(-dot(vUV, vUV) * 3.0) * min(1.0, vA * (1.0 + 0.8 * vHot));
+  float a = exp(-dot(vUV, vUV) * 3.0) * min(1.0, vA * (1.0 + 0.8 * vHot)) * uFade;
   vec3 c = mix(mix(vec3(0.95, 0.95, 1.0), vec3(1.6, 1.15, 0.7), vGlow), vec3(1.5, 0.9, 0.45), vHot * 0.8);
   o = vec4(c * a, a * 0.8);
 }`;
@@ -602,6 +582,35 @@ function attrib(gl, loc, buf, size, stride = 0, offset = 0, divisor = 0) {
 // ---------------------------------------------------------------------------
 const EYE_Y = 1.7;
 const DECK_Y = -720;
+
+// All terrain, shadow and cloud-sea construction lives in one self-contained function, so it can run
+// in a Worker (its source is shipped as a Blob) and never block the main thread.
+function geometryKernel() {
+function hash2(x, y, s) {
+  let h = (x * 374761393 + y * 668265263 + s * 2147483647) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+function vnoise(x, y, s = 0) {
+  const xi = Math.floor(x), yi = Math.floor(y);
+  const xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = hash2(xi, yi, s), b = hash2(xi + 1, yi, s), c = hash2(xi, yi + 1, s), d = hash2(xi + 1, yi + 1, s);
+  return (a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v) * 2 - 1;
+}
+function fbm(x, y, oct, s = 0) {
+  let sum = 0, amp = 0.5, f = 1;
+  for (let i = 0; i < oct; i++) { sum += amp * vnoise(x * f, y * f, s + i * 17); f *= 2.03; amp *= 0.5; }
+  return sum;
+}
+function ridged(x, y, oct, s = 0) {
+  let sum = 0, amp = 0.55, f = 1;
+  for (let i = 0; i < oct; i++) { const n = 1 - Math.abs(vnoise(x * f, y * f, s + i * 31)); sum += amp * n * n; f *= 2.1; amp *= 0.5; }
+  return sum;
+}
+let seed = 1234567;
+const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) | 0; return (seed >>> 0) / 4294967296; };
+const DECK_Y = -720;
 let lastRock = 0;
 const groundH = (x, z) => {
   const d = Math.hypot(x, z);
@@ -764,6 +773,9 @@ function buildSea() {
   return f;
 }
 
+  return { buildGround, buildRanges, buildSea };
+}
+
 function buildWord() {
   // Draw the word once, then sample puff centres inside the glyphs.
   const W = 1400, H = 420;
@@ -909,27 +921,48 @@ export function createMountain(canvas) {
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   const sunT = new Float64Array(3);
 
-  const G = buildGround();
-  const vGround = gl.createVertexArray(); gl.bindVertexArray(vGround);
-  attrib(gl, 0, vbo(gl, G.pos), 3); attrib(gl, 1, vbo(gl, G.nor), 4); attrib(gl, 2, vbo(gl, G.sh), 1);
-  vbo(gl, G.idx, gl.ELEMENT_ARRAY_BUFFER);
-  const groundCount = G.idx.length;
-
-  const R = buildRanges();
-  const vRange = gl.createVertexArray(); gl.bindVertexArray(vRange);
-  attrib(gl, 0, vbo(gl, R.pos), 3); attrib(gl, 1, vbo(gl, R.nor), 3); attrib(gl, 2, vbo(gl, R.sh), 1);
-  vbo(gl, R.idx, gl.ELEMENT_ARRAY_BUFFER);
-  const rangeCount = R.idx.length;
-
   const vDeck = gl.createVertexArray(); gl.bindVertexArray(vDeck);
   attrib(gl, 0, vbo(gl, new Float32Array([-40000, -40000, 40000, -40000, -40000, 400, 40000, 400])), 2);
 
-  const sea = buildSea();
-  const vSea = gl.createVertexArray(); gl.bindVertexArray(vSea);
-  attrib(gl, 0, quad, 2);
-  const sb = vbo(gl, sea);
-  attrib(gl, 1, sb, 4, 32, 0, 1); attrib(gl, 2, sb, 4, 32, 16, 1);
-  const seaCount = sea.length / 8;
+  // Terrain, shadows and the cloud sea are built off the main thread; until they arrive the sky
+  // and the word are drawn alone, then the landscape cross-fades in.
+  let vGround = null, vRange = null, vSea = null, groundCount = 0, rangeCount = 0, seaCount = 0;
+  let geoReady = false, readyT = -1, fadeK = 0, disposed = false;
+  function upload(G, R, sea) {
+    if (disposed) return;
+    vGround = gl.createVertexArray(); gl.bindVertexArray(vGround);
+    attrib(gl, 0, vbo(gl, G.pos), 3); attrib(gl, 1, vbo(gl, G.nor), 4); attrib(gl, 2, vbo(gl, G.sh), 1);
+    vbo(gl, G.idx, gl.ELEMENT_ARRAY_BUFFER);
+    groundCount = G.idx.length;
+    vRange = gl.createVertexArray(); gl.bindVertexArray(vRange);
+    attrib(gl, 0, vbo(gl, R.pos), 3); attrib(gl, 1, vbo(gl, R.nor), 3); attrib(gl, 2, vbo(gl, R.sh), 1);
+    vbo(gl, R.idx, gl.ELEMENT_ARRAY_BUFFER);
+    rangeCount = R.idx.length;
+    vSea = gl.createVertexArray(); gl.bindVertexArray(vSea);
+    attrib(gl, 0, quad, 2);
+    const sb = vbo(gl, sea);
+    attrib(gl, 1, sb, 4, 32, 0, 1); attrib(gl, 2, sb, 4, 32, 16, 1);
+    seaCount = sea.length / 8;
+    gl.bindVertexArray(null);
+    geoReady = true;
+  }
+  const buildHere = () => { const K = geometryKernel(); upload(K.buildGround(), K.buildRanges(), K.buildSea()); };
+  try {
+    const src = `const K = (${geometryKernel.toString()})();
+onmessage = () => {
+  const G = K.buildGround(), R = K.buildRanges(), S = K.buildSea();
+  postMessage({ G, R, S }, [G.pos.buffer, G.nor.buffer, G.sh.buffer, G.idx.buffer, R.pos.buffer, R.nor.buffer, R.sh.buffer, R.idx.buffer, S.buffer]);
+};`;
+    const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+    const worker = new Worker(url);
+    let done = false;
+    worker.onmessage = (e) => { done = true; worker.terminate(); URL.revokeObjectURL(url); upload(e.data.G, e.data.R, e.data.S); };
+    worker.onerror = (e) => { e.preventDefault(); if (!done) { done = true; worker.terminate(); URL.revokeObjectURL(url); setTimeout(buildHere, 0); } };
+    worker.postMessage(0);
+  } catch {
+    // no Workers (e.g. a strict CSP): build after first paint instead
+    setTimeout(buildHere, 0);
+  }
 
   const word = buildWord();
   const vWord = gl.createVertexArray(); gl.bindVertexArray(vWord);
@@ -1058,6 +1091,8 @@ export function createMountain(canvas) {
     if (u.uPortalPx) gl.uniform4f(u.uPortalPx, portalPx[0], portalPx[1], portalPx[2], portalPx[3]);
     if (u.uPortal) gl.uniform4f(u.uPortal, portalNdc[0], portalNdc[1], portalNdc[2], portalNdc[3]);
     if (u.uFlicker) gl.uniform1f(u.uFlicker, flicker);
+    if (u.uFade) gl.uniform1f(u.uFade, fadeK);
+    if (u.uSkyAlpha) gl.uniform1f(u.uSkyAlpha, 1);
     if (u.uAspect) gl.uniform1f(u.uAspect, aspect);
     if (u.uSkyLUT2) gl.uniform1i(u.uSkyLUT2, 1);
     if (u.uLutMix) gl.uniform1f(u.uLutMix, curMix);
@@ -1082,6 +1117,8 @@ export function createMountain(canvas) {
 
   function frame(t, dt, p, look, push, portal) {
     curT = t;
+    if (geoReady && readyT < 0) readyT = t;
+    if (geoReady) { const k = Math.min(1, Math.max(0, (t - readyT) / 0.9)); fadeK = k * k * (3 - 2 * k); }
     // the portal (optional): framebuffer px for light, NDC for suction
     const fbs = canvas.width / cssW;
     // effects follow the visible spark ring when the integrator provides it, else the opening radius
@@ -1142,19 +1179,29 @@ export function createMountain(canvas) {
     gl.enable(gl.CULL_FACE); gl.cullFace(gl.BACK); gl.frontFace(gl.CCW);
     gl.disable(gl.CULL_FACE);
 
-    // 1. foreground (largest occluder first)
-    gl.useProgram(P.ground.p); setCommon(P.ground);
-    gl.bindVertexArray(vGround); gl.drawElements(gl.TRIANGLES, groundCount, gl.UNSIGNED_INT, 0);
-    // 2. ranges
-    gl.useProgram(P.range.p); setCommon(P.range); gl.uniform1f(P.range.u.uDeckY, DECK_Y);
-    gl.bindVertexArray(vRange); gl.drawElements(gl.TRIANGLES, rangeCount, gl.UNSIGNED_INT, 0);
-    // 3. cloud deck
-    gl.useProgram(P.deck.p); setCommon(P.deck); gl.uniform1f(P.deck.u.uDeckY, DECK_Y);
-    gl.bindVertexArray(vDeck); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    if (geoReady) {
+      // 1. foreground (largest occluder first)
+      gl.useProgram(P.ground.p); setCommon(P.ground);
+      gl.bindVertexArray(vGround); gl.drawElements(gl.TRIANGLES, groundCount, gl.UNSIGNED_INT, 0);
+      // 2. ranges
+      gl.useProgram(P.range.p); setCommon(P.range); gl.uniform1f(P.range.u.uDeckY, DECK_Y);
+      gl.bindVertexArray(vRange); gl.drawElements(gl.TRIANGLES, rangeCount, gl.UNSIGNED_INT, 0);
+      // 3. cloud deck
+      gl.useProgram(P.deck.p); setCommon(P.deck); gl.uniform1f(P.deck.u.uDeckY, DECK_Y);
+      gl.bindVertexArray(vDeck); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
     // 4. sky fills what's left
     gl.depthMask(false);
     gl.useProgram(P.sky.p); setCommon(P.sky); gl.uniform2f(P.sky.u.uTan, camOut.tx, camOut.ty);
     gl.bindVertexArray(vSky); gl.drawArrays(gl.TRIANGLES, 0, 3);
+    if (geoReady && fadeK < 1) {
+      // cross-fade the freshly arrived landscape in from the sky-only first paint
+      gl.disable(gl.DEPTH_TEST);
+      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.uniform1f(P.sky.u.uSkyAlpha, 1 - fadeK);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.enable(gl.DEPTH_TEST);
+    }
 
     // sun direction in billboard space for puff lighting
     const sR = sun[0] * right[0] + sun[1] * right[1] + sun[2] * right[2];
@@ -1167,7 +1214,7 @@ export function createMountain(canvas) {
     const pu2 = P.puff.u;
     gl.uniform3f(pu2.uSunV, sR, sU, sF);
     gl.uniform1f(pu2.uWordMode, 0);
-    gl.bindVertexArray(vSea); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, seaCount);
+    if (geoReady) { gl.bindVertexArray(vSea); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, seaCount); }
     // the word: lit from the sun's side in screen space (it sits low and to the right)
     const wl = Math.hypot(sR, sU) || 1;
     gl.uniform3f(pu2.uSunV, 0.75 * sR / wl, 0.4, 0.4);
