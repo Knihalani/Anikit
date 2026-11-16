@@ -343,6 +343,14 @@ function install(instance: WebAssembly.Instance, mod?: WebAssembly.Module): void
 let started = false;
 function boot(): void {
   if (started) return;
+  // A native build of the same core (Node: the anikit-node addon, installed by
+  // anikit/node before this module loads): same exports, same memory contract.
+  const native = (globalThis as { __ANIKIT_NATIVE__?: Exports }).__ANIKIT_NATIVE__;
+  if (native) {
+    started = true;
+    install({ exports: native } as unknown as WebAssembly.Instance);
+    return;
+  }
   if (!WASM_BASE64) {
     // Lean build: stream the module that ships next to this file. Re-bundled
     // into a script without import.meta (an IIFE), there is no "next to this

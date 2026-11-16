@@ -423,8 +423,17 @@ export default async function film({ anikit: A }) {
       dst[o] = mix(src[so], DEEP[0], fr); dst[o + 1] = mix(src[so + 1], DEEP[1], fr); dst[o + 2] = mix(src[so + 2], DEEP[2], fr);
     }
   }
+  // Speed lines: whether angle bucket a carries a line this frame depends only on a and t, so the
+  // two hashes are evaluated once per bucket per frame (SPD[a] = the radius beyond which it is
+  // drawn, Infinity for none) instead of per pixel. Same values, same test.
+  const SPD = new Float64Array(720);
+  const jump = (d, finite, n) => (finite !== (n < 1e30) ? 1 : finite ? Math.abs(d - n) / Math.min(d, n) : 0);
   function comic(src, dist, out, t) {
     waterStrokes(dist);
+    for (let a = 0; a < 720; a++) {
+      const hsh = hash(a * 97 + Math.floor(t * 9 + hash(a * 13 + 1) * 9) * 7919);
+      SPD[a] = hsh > 0.955 ? hash(a * 31 + 3) * 0.4 + 0.8 : Infinity;
+    }
     for (let i = 0; i < N_PIX; i++) { const o = i * 4; lum[i] = (src[o] * 0.299 + src[o + 1] * 0.587 + src[o + 2] * 0.114) / 255; }
     const B = 16;
     for (let y = 0; y < H; y++) {
@@ -437,11 +446,10 @@ export default async function film({ anikit: A }) {
         let ink = 0;
         const step = d < 150 ? 3 : d < 700 ? 2 : 1;
         const l = dist[c - step], r = dist[c + step], u = dist[c - step * W], dn = dist[c + step * W];
-        const jump = (n) => (finite !== (n < 1e30) ? 1 : finite ? Math.abs(d - n) / Math.min(d, n) : 0);
-        const jm = Math.max(jump(l), jump(r), jump(u), jump(dn));
+        const jm = Math.max(jump(d, finite, l), jump(d, finite, r), jump(d, finite, u), jump(d, finite, dn));
         if (jm > 0.05 && d < 15000) ink = 1;
         // Heavier contour on silhouettes (big depth jumps): look one step further out.
-        else if (d < 2500 && Math.max(jump(dist[c - 2 * step]), jump(dist[c + 2 * step]), jump(dist[c - 2 * step * W]), jump(dist[c + 2 * step * W])) > 0.35) ink = 1;
+        else if (d < 2500 && Math.max(jump(d, finite, dist[c - 2 * step]), jump(d, finite, dist[c + 2 * step]), jump(d, finite, dist[c - 2 * step * W]), jump(d, finite, dist[c + 2 * step * W])) > 0.35) ink = 1;
         if (finite && d < 3000 && (Math.abs(l + r - 2 * d) + Math.abs(u + dn - 2 * d)) / d > 0.07 / step) ink = 1;
         const g = Math.abs(lum[c + 2] - lum[c - 2]) + Math.abs(lum[c + 2 * W] - lum[c - 2 * W]);
         if (g > 0.34) ink = 1;
@@ -479,10 +487,7 @@ export default async function film({ anikit: A }) {
         if (!sky && L > 0.26) cr = mix(cr, src[or] * k * 0.62, 0.25);
         // Speed lines towards the edges (black, manga).
         const rad = RAD[i];
-        if (rad > 0.66) {
-          const a = ANG[i], hsh = hash(a * 97 + Math.floor(t * 9 + hash(a * 13 + 1) * 9) * 7919);
-          if (hsh > 0.955 && hash(a * 31 + 3) * 0.4 + 0.8 < rad) { const w = smooth(0.8, 1.15, rad) * 0.85; cr = mix(cr, 16, w); cg = mix(cg, 14, w); cb = mix(cb, 22, w); }
-        }
+        if (rad > 0.66 && SPD[ANG[i]] < rad) { const w = smooth(0.8, 1.15, rad) * 0.85; cr = mix(cr, 16, w); cg = mix(cg, 14, w); cb = mix(cb, 22, w); }
         const wv = WAVE[i];
         if (wv === 1) { cr = 14; cg = 26; cb = 70; } else if (wv === 2) { cr = PAPER[0]; cg = PAPER[1]; cb = PAPER[2]; }
         if (ink) { cr = 16; cg = 13; cb = 20; }

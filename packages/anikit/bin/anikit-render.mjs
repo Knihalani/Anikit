@@ -30,7 +30,9 @@ Options
   --workers <n>         parallel render processes (default: CPU cores - 1, at most 8)
   --chunk <s>           split the film into jobs of this many seconds, handed to the
                         workers as they finish (balances slow and fast stretches);
-                        default: one equal slice per worker
+                        default: one equal slice per worker. Either way, a worker that
+                        runs out of work takes over the second half of the slowest
+                        slice still rendering (same frames, ANIKIT_STEAL_LOG=1 shows it)
   --preroll <s>         seconds each job (and --still) draws, unseen, before its first
                         frame so trails match (default 0.5); 0 when draw() keeps no state
                         between frames: renders sooner, same pixels
@@ -239,11 +241,23 @@ if (SEG) {
   // the slices never needs a second encode.
   // Report progress to the parent (it prints one aggregated line).
   let last = 0;
+  // The parent may hand the end of this slice to an idle worker: { end } (a frame index)
+  // moves our end there, or just past the frame being rendered; we acknowledge the end we keep.
+  const first = Math.round(+a * comp.fps);
+  let end = Math.round(+b * comp.fps), written = 0;
+  process.on('message', (m) => {
+    if (m && typeof m.end === 'number') {
+      end = Math.min(end, Math.max(m.end, first + written + 1));
+      process.send?.({ ack: end });
+    }
+  });
   await node.renderToFile(comp, {
     ...enc, out: target, from: +a, to: +b, preroll: num('preroll'), fadeIn: +fi || 0, fadeOut: +fo || 0, fadeColor: fc || undefined, quiet: +a > 0,
-    onProgress: (_fr, n) => { const now = Date.now(); if (process.send && now - last > 250) { last = now; process.send({ n }); } },
+    onProgress: (_fr, n) => { written = n; const now = Date.now(); if (process.send && now - last > 250) { last = now; process.send({ n }); } },
+    stopAfter: (index) => index + 1 >= end,
   });
-  process.send?.({ n: Math.round((+b - +a) * comp.fps) });
+  process.send?.({ n: end - first, done: true });
+  process.disconnect?.();
   process.exit(0);
 }
 
@@ -263,9 +277,11 @@ const t0 = Date.now();
 const fadeIn = +opt('fade-in', 0), fadeOut = +opt('fade-out', 0), audio = opt('audio');
 const tmp = out + '.parts';
 mkdirSync(tmp, { recursive: true });
+// Parts in film order (stealing splits a slice in two): [first frame, file].
 const parts = [];
+const endFrame = Math.round(to * fps);
 // Progress: workers report frames done over IPC; one line on a terminal, every 10% otherwise.
-const done = new Array(jobs.length).fill(0);
+const done = [];
 const tty = process.stderr.isTTY;
 let lastDecile = -1;
 const report = () => {
@@ -276,23 +292,80 @@ const report = () => {
   else if (Math.floor((n / frames) * 10) > lastDecile) { lastDecile = Math.floor((n / frames) * 10); console.error(line); }
 };
 const ticker = setInterval(report, 500);
-const run = (k) => {
-  const [fa, fb] = jobs[k];
+// A running slice: frames [fa, end), `pos` = frames written so far.
+const running = new Set();
+let setupMs = Infinity; // shortest observed time from spawn to the first frame: what a new worker costs
+const run = (fa, fb) => {
+  const k = done.length;
+  done.push(0);
   const part = join(tmp, `p${k}.mp4`);
-  parts[k] = part;
-  return new Promise((res, rej) => spawn(process.execPath, [fileURLToPath(import.meta.url), ...args], {
-    env: { ...process.env, ANIKIT_SEG: [fa / fps, fb / fps, part, k === 0 ? fadeIn : 0, fb === Math.round(to * fps) ? fadeOut : 0, opt('fade-color', '')].join('|') }, stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
-  }).on('message', (m) => { if (m && typeof m.n === 'number') done[k] = m.n; })
-    .on('close', (c) => (c ? rej(new Error(`worker ${k} exited ${c}`)) : res())));
+  parts.push([fa, part]);
+  const job = { fa, end: fb, pos: 0, t0: Date.now(), tFirst: 0, child: null, pending: null };
+  running.add(job);
+  return new Promise((res, rej) => {
+    const child = spawn(process.execPath, [fileURLToPath(import.meta.url), ...args], {
+      env: { ...process.env, ANIKIT_SEG: [fa / fps, fb / fps, part, fa === Math.round(from * fps) ? fadeIn : 0, fb === endFrame ? fadeOut : 0, opt('fade-color', '')].join('|') }, stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+    });
+    job.child = child;
+    child.on('message', (m) => {
+      if (!m) return;
+      if (typeof m.n === 'number') {
+        if (!job.tFirst && m.n > 0) { job.tFirst = Date.now(); setupMs = Math.min(setupMs, job.tFirst - job.t0); }
+        job.pos = m.n; done[k] = m.n;
+      }
+      if (typeof m.ack === 'number' && job.pending) { const p = job.pending; job.pending = null; p(m.ack); }
+    });
+    child.on('close', (c) => {
+      running.delete(job);
+      if (job.pending) { const p = job.pending; job.pending = null; p(job.end); }
+      if (c) rej(new Error(`worker ${k} exited ${c}`)); else res();
+    });
+  });
 };
-let nextJob = 0;
+// When a worker is idle and no slice is waiting, split the slice with the most work left
+// (by its own frame rate) and hand its second half to a new worker, if that half takes
+// clearly longer than starting a worker. Fades stay inside the first and last parts.
+const steal = async () => {
+  let best = null, bestLeft = 0, busy = false;
+  for (const j of running) {
+    if (j.pending || !j.tFirst) { busy = true; continue; }
+    const rate = j.pos / Math.max(1e-3, (Date.now() - j.tFirst) / 1000);
+    const left = (j.end - j.fa - j.pos) / Math.max(1e-3, rate);
+    if (left > bestLeft) { bestLeft = left; best = j; best.rate = rate; }
+  }
+  // A new worker costs its start-up plus the pre-roll it draws before its first frame.
+  const cost = setupMs / 1000 + (best ? (num('preroll', 0.5) * fps) / Math.max(1e-3, best.rate) : 0);
+  if (!best || bestLeft / 2 < cost * 1.5 + 1) return busy ? 'wait' : null;
+  const now = best.fa + best.pos;
+  let split = now + Math.ceil((best.end - now) / 2);
+  if (best.end === endFrame) split = Math.min(split, endFrame - Math.ceil(fadeOut * fps) - 1);
+  if (split <= now + 1) return null;
+  const oldEnd = best.end;
+  const ack = await new Promise((res) => { best.pending = res; best.child.send({ end: split }); });
+  if (ack >= oldEnd) return null;
+  if (process.env.ANIKIT_STEAL_LOG) console.error(`steal: [${best.fa}, ${oldEnd}) → [${best.fa}, ${ack}) + [${ack}, ${oldEnd})`);
+  best.end = ack;
+  return [ack, oldEnd];
+};
+const queue = [...jobs];
 await Promise.all(Array.from({ length: Math.min(workers, jobs.length) }, async () => {
-  while (nextJob < jobs.length) await run(nextJob++);
+  for (;;) {
+    let job = queue.shift();
+    // Idle: take the second half of the slowest slice; while another lane is splitting
+    // one (or a slice hasn't shown its speed yet), look again shortly.
+    while (!job && running.size) {
+      job = await steal();
+      if (job === 'wait') { job = null; await new Promise((r) => setTimeout(r, 250)); } else break;
+    }
+    if (!job) return;
+    await run(job[0], job[1]);
+  }
 }));
 clearInterval(ticker);
 report();
 if (tty) process.stderr.write('\n');
-writeFileSync(join(tmp, 'list.txt'), parts.map((p) => `file '${p}'`).join('\n'));
+parts.sort((x, y) => x[0] - y[0]);
+writeFileSync(join(tmp, 'list.txt'), parts.map(([, p]) => `file '${p}'`).join('\n'));
 const ffArgs = ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', join(tmp, 'list.txt')];
 if (audio) ffArgs.push('-ss', String(from), '-i', resolve(audio));
 ffArgs.push('-c:v', 'copy');
