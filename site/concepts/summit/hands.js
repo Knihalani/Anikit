@@ -126,21 +126,21 @@ void main() {
   bool ember = h4 < uP.w;
   // Spin is clockwise on screen (decreasing angle); the band crackles: radius re-rolls ~25 times a second.
   float tick = floor(t * 25.0 + h5 * 25.0);
-  float band = 2.0 * uScale + R * 0.022;
+  float band = 3.0 * uScale + R * 0.05;
   vec2 pos, dir; float len, wid, bright;
   vec3 col;
   if (!ember) {
     float speed = (0.85 + 0.3 * h2);
     float a = uA.x + h1 * arc * TAU - uP.y * speed;
     float jr = (h(f + tick) - 0.5) * 2.0;                     // -1..1, re-rolled: a ragged edge
-    float r = R + jr * abs(jr) * band * (1.0 + 1.5 * step(0.93, h3));
+    float r = R + jr * sqrt(abs(jr)) * band * (1.0 + 1.2 * step(0.94, h3));
     pos = C + vec2(cos(a), -sin(a)) * r;
     dir = vec2(sin(a), cos(a));                               // direction of travel (clockwise)
     float hot = 1.0 - min(1.0, abs(jr) * 1.4);
     len = (4.0 + 22.0 * h2 * h2) * uScale * (0.4 + 0.6 * closed) * (0.5 + 0.5 * min(1.0, R / (200.0 * uScale)));
     wid = (0.7 + 0.8 * h3) * uScale;
     float flick = 0.35 + 0.65 * h(f * 0.7 + tick);
-    bright = (0.6 + 1.2 * h1 * h1) * flick * (0.45 + 0.55 * hot) * (1.0 + 0.8 * min(1.0, R / (500.0 * uScale)));
+    bright = (0.8 + 1.4 * h1 * h1) * flick * (0.5 + 0.5 * hot) * (1.0 + 0.8 * min(1.0, R / (500.0 * uScale)));
     col = mix(vec3(1.0, 0.3, 0.06), mix(vec3(1.0, 0.6, 0.18), vec3(1.0, 0.92, 0.7), hot * hot), 0.35 + 0.65 * hot);
     // While the arc is being drawn its leading end flares.
     if (arc < 0.999) bright *= 0.6 + 1.8 * (1.0 - smoothstep(0.0, 0.08, h1 * arc));
@@ -202,7 +202,7 @@ const float SEG = 160.0;
 void main() {
   float seg = float(gl_VertexID >> 1), outer = float(gl_VertexID & 1);
   float a = seg / SEG * 6.2831853;
-  float w = 14.0 * uScale + uRing.z * 0.05;
+  float w = 16.0 * uScale + uRing.z * 0.09;
   float r = max(0.0, uRing.z + (outer * 2.0 - 1.0) * w);
   vec2 q = uRing.xy + vec2(cos(a), -sin(a)) * r;
   vPx = q;
@@ -227,7 +227,7 @@ void main() {
   float drawn = arc >= 0.999 ? 1.0 : 1.0 - smoothstep(arc - 0.01, arc + 0.003, rel);
   float t = uP.x;
   float flick = 0.75 + 0.25 * sin(ang * 23.0 - t * 31.0) * sin(ang * 9.0 + t * 17.0);
-  float w = 2.5 + R / uScale * 0.012;
+  float w = 3.0 + R / uScale * 0.03;
   float core = exp(-x * x / (w * w));
   float halo = exp(-abs(x) / (5.0 + R / uScale * 0.02));
   vec3 c = (vec3(1.0, 0.55, 0.16) * core * 0.35 + vec3(1.0, 0.38, 0.06) * halo * 0.16) * flick * drawn * uP.z;
@@ -510,7 +510,7 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
   const out = { portal: { x: 0, y: 0, r: 0, power: 0, ring: 0 } };
   const proj = new Float32Array(16);
   let cssW = 1, cssH = 1, dprK = 1, fov = 0, tanH = 0.6, aspect = 1;
-  const NSPARK = 9000;
+  const NSPARK = 32000;
   const sun = [0.18, 0.2, -1];
   function resize(w, h, dpr) {
     cssW = w; cssH = h; dprK = Math.min(dpr || 1, 2);
@@ -592,7 +592,7 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
       gl.useProgram(SPARK.p);
       gl.uniform2f(SPARK.u.uRes, Wd, Hd);
       gl.uniform4f(SPARK.u.uRing, cx * k, cy * k, ringR * k, arc);
-      gl.uniform4f(SPARK.u.uP, timeNow, spinAcc, power * fade, 0.1 + 0.18 * closed);
+      gl.uniform4f(SPARK.u.uP, timeNow, spinAcc, power * fade, 0.12 + 0.2 * closed);
       gl.uniform2f(SPARK.u.uA, a0, closed);
       gl.uniform1f(SPARK.u.uFloor, cssH * 0.88 * k);
       gl.uniform1f(SPARK.u.uDepth, portalDepth());
@@ -664,7 +664,8 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
     const power = portal.glow * Math.min(1, 0.25 + arc) * (1 + D.flash * 0.6);
     const P = out.portal;
     P.x = cx; P.y = cy;
-    P.r = portal.open <= 0.001 ? 0 : ringR * 0.975 * portal.open * D.closed;
+    // The destination shows inside the ring from the moment it closes, bordered by the sparks.
+    P.r = D.closed < 0.01 ? 0 : Math.max(0, ringR * 0.955 - 2) * D.closed;
     P.power = Math.min(1, power);
     P.ring = sparkOn0(portal, D) ? ringR : 0;
 
