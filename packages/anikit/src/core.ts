@@ -240,10 +240,19 @@ export function reducedMotionMode(): 'instant' | 'fade' {
   return reducedMode;
 }
 /** True when animations should be reduced (see `engine.reducedMotion`). */
+/** The reduced-motion media query (its `matches` is live), and the `matchMedia` that made it. */
+let reducedQuery: MediaQueryList | null = null;
+let reducedQueryFn: unknown = null;
 export function prefersReduced(): boolean {
   if (reduced === 'always') return true;
   if (reduced === 'never') return false;
-  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (typeof matchMedia !== 'function') return false;
+  // One query object, not one per call (marquees ask every frame, animate() per call).
+  if (reducedQueryFn !== matchMedia) {
+    reducedQueryFn = matchMedia;
+    reducedQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  }
+  return reducedQuery!.matches;
 }
 
 export const engine = {
