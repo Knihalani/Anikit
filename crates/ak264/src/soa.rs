@@ -94,7 +94,7 @@ pub fn quant<const N: usize>(c: &mut Soa<N>, q: &QuantS, intra: bool, from: usiz
     let mut cnt = [0i16; N];
     #[cfg(target_arch = "x86_64")]
     {
-        if N % 8 == 0 && crate::simd::level() >= 1 {
+        if N.is_multiple_of(8) && crate::simd::level() >= 1 {
             for k in from..16 {
                 for h in (0..N).step_by(8) {
                     // SAFETY: SSE4.1 detected; slices are 8 lanes.
