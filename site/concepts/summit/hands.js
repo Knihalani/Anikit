@@ -131,7 +131,10 @@ void main() {
   vec3 col;
   if (!ember) {
     float speed = (0.85 + 0.3 * h2);
-    float a = uA.x + h1 * arc * TAU - uP.y * speed;
+    // Sparks race round the whole circle; only those inside the part drawn so far are shown.
+    float a = h1 * TAU - uP.y * speed;
+    float relA = mod(a - uA.x, TAU) / TAU;
+    float inArc = arc >= 0.999 ? 1.0 : step(relA, arc);
     float jr = (h(f + tick) - 0.5) * 2.0;                     // -1..1, re-rolled: a ragged edge
     float r = R + jr * sqrt(abs(jr)) * band * (1.0 + 1.2 * step(0.94, h3));
     pos = C + vec2(cos(a), -sin(a)) * r;
@@ -143,7 +146,9 @@ void main() {
     bright = (0.8 + 1.4 * h1 * h1) * flick * (0.5 + 0.5 * hot) * (1.0 + 0.8 * min(1.0, R / (500.0 * uScale)));
     col = mix(vec3(1.0, 0.3, 0.06), mix(vec3(1.0, 0.6, 0.18), vec3(1.0, 0.92, 0.7), hot * hot), 0.35 + 0.65 * hot);
     // While the arc is being drawn its leading end flares.
-    if (arc < 0.999) bright *= 0.6 + 1.8 * (1.0 - smoothstep(0.0, 0.08, h1 * arc));
+    // The growing tip, at the hand's phase, flares and crackles.
+    if (arc < 0.999) bright *= 0.75 + 1.8 * (1.0 - smoothstep(0.0, 0.05, relA)) * (0.5 + h(f + tick * 1.3));
+    bright *= inArc; wid *= inArc;
   } else {
     // Shed sparks: thrown off along the spin, mostly from the lower half, falling and bouncing on the snow.
     float rate = 0.6 + 0.6 * h2;
@@ -251,6 +256,8 @@ void main() {
   float snow = exp(-dot(g, g)) * smoothstep(uL.y - R * 0.45, uL.y + R * 0.05, px.y) * 0.4;
   float flash = uL.x * (0.6 * exp(-r / R) + 0.1);
   vec3 c = vec3(1.0, 0.45, 0.12) * (air + snow) * uRing.w + vec3(1.0, 0.8, 0.55) * flash;
+  // Fade to nothing well inside the scissor box main draws this in, so its edges never show.
+  c *= (1.0 - smoothstep(3.0 * R, 4.3 * R, abs(d.x))) * smoothstep(uRing.y - 3.1 * R, uRing.y - 2.3 * R, px.y);
   outColor = vec4(c, 0.0);
 }`;
 
@@ -365,18 +372,17 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
   Lh.x = -0.36; Lh.y = -0.62; Rh.x = 0.36; Rh.y = -0.62;
   const portal = { size: 0, glow: 0, grow: 0, drop: 0 };
   const io = 'inOutCubic', oo = 'outCubic';
-  const FORM = 3.5;            // seconds
+  const FORM = 4.3;            // seconds
   const tlForm = timeline({ autoplay: false })
     .add(Lh, { x: [-0.36, -0.31], y: [-0.62, -0.31], z: [-0.48, -0.52], pitch: [30, 80], yaw: [25, 24], roll: [-20, -6], curl: [0.5, 0.12], spread: [0.1, 0.75], thumb: [0.2, 0.75], tcurl: [0.4, 0.12], ex: -0.42, ey: -0.68, ez: -0.3 }, { duration: 0.9, ease: oo }, 0)
     .add(Rh, { x: [0.36, 0.22], y: [-0.62, -0.3], z: [-0.48, -0.5], pitch: [30, 62], yaw: [-25, -14], roll: [20, 8], curl: [0.5, 0.2], spread: 0.35, thumb: 0.45, tcurl: 0.3, ex: 0.4, ey: -0.68, ez: -0.3 }, { duration: 0.85, ease: oo }, 0.05)
     .add(portal, { glow: [0, 1] }, { duration: 0.35, ease: 'outSine' }, 0.7)
-    .add(portal, { size: [0, 1] }, { duration: 1.25, ease: io }, 2.0)
-    .add(Rh, { x: 0.27, y: -0.34, curl: 0.3 }, { duration: 0.8, ease: io }, 2.6);
+    .add(Rh, { x: 0.27, y: -0.34, curl: 0.3 }, { duration: 0.7, ease: io }, 3.6);
   const tlStep = timeline({ autoplay: false })
     .add(portal, { grow: [0, 1] }, { duration: 1, ease: 'inCubic' }, 0)
     .add(portal, { drop: [0, 1] }, { duration: 0.6, ease: 'inCubic' }, 0.05);
   const TRIGGER = 0.06;        // g at which the formation starts
-  const ARC_FROM = 0.8, ARC_LEN = 1.1;   // seconds into the formation the fingertip draws the ring
+  const ARC_FROM = 0.6, ARC_LEN = 3.0;   // three calm circles of the hand draw the ring, a third each
   // Time-driven state (allocation-free).
   const draw$ = { f: 0, lastF: -1, phase: 0, vel: 0, amp: 0, flash: 0, step: 0, stepV: 0, lastStep: -1 };
 
@@ -532,7 +538,7 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
     scr[1] = (0.5 - y * k * 0.5) * cssH;
     scr[2] = k * 0.5 * cssH;
   }
-  const LOOP_R = 0.045;        // metres, the drawing fingertip's loop
+  const LOOP_R = 0.06;         // metres, the drawing hand's loop
   let spinAcc = 0, drewLast = true, timeNow = 0;
   const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
@@ -637,25 +643,26 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
     if (Math.abs(D.step - D.lastStep) > 1e-5) { tlStep.seek(D.step); D.lastStep = D.step; }
 
     // Ring: drawn by the fingertip, closes, ignites, expands.
-    const arc = Math.min(1, Math.max(0, (F - ARC_FROM) / ARC_LEN));
+    // The hand's phase and the arc are one thing: three eased loops, the ring growing a third per loop.
+    const u = Math.min(1, Math.max(0, (F - ARC_FROM) / ARC_LEN));
+    const ue = u * u * (3 - 2 * u) * 0.35 + u * 0.65;
+    const arc = ue;
+    D.phase = ue * Math.PI * 2 * 3;
     const closedNow = F >= ARC_FROM + ARC_LEN;
     if (closedNow && !D.wasClosed && trig) D.flash = 1;
     D.wasClosed = closedNow;
     D.flash *= Math.exp(-dt * 3.2);
     const closed = sm(ARC_FROM + ARC_LEN - 0.05, ARC_FROM + ARC_LEN + 0.25, F);
     // The hand circles at about a loop a second while it draws and holds the ring.
-    const circling = F > 0.55 && F < 3.3 && D.step < 0.3;
-    D.vel += ((circling ? Math.PI * 2 : 0) - D.vel) * (1 - Math.exp(-dt * 2.2));
-    D.amp += ((circling ? 1 : 0) - D.amp) * (1 - Math.exp(-dt * 2.5));
-    D.phase += D.vel * dt;
-    if (D.phase > 1e4) D.phase -= Math.PI * 2 * 1000;
-    spinAcc += dt * 8.0 * closed;
+    D.amp = sm(ARC_FROM - 0.3, ARC_FROM + 0.25, F) * (1 - 0.7 * sm(ARC_FROM + ARC_LEN, ARC_FROM + ARC_LEN + 0.6, F));
+    spinAcc += dt * (3.0 + 5.0 * closed);
+    if (spinAcc > 1e4) spinAcc -= Math.PI * 2 * 1000;
     if (spinAcc > 1e4) spinAcc -= Math.PI * 2 * 1000;
 
     const lx = look ? look.x || 0 : 0, ly = look ? look.y || 0 : 0;
     const sway = Math.sin(t * 0.9) * 0.003, bob = Math.sin(t * 1.4) * 0.002;
     const ph = -D.phase + Math.PI / 2;
-    const sizeEff = portal.size * closed;
+    const sizeEff = 0;
     const loopR = LOOP_R * (1 + 0.6 * sizeEff) * D.amp;
     const ca = Math.cos(ph), sa = Math.sin(ph);
     const xs = Math.min(1, Math.max(0.42, aspect / 1.6));
@@ -671,20 +678,19 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
     Rh.x = rx; Rh.y = ry; Lh.x = lxp; Lh.y = lyp; Rh.ex = rex; Lh.ex = lex;
 
     // Small ring on the fingertip's loop, growing out to the full portal in the middle.
-    project(TIP[0] - ca * loopR, TIP[1] - sa * loopR, TIP[2]);
-    const sX = scr[0], sY = scr[1], sR = Math.max(LOOP_R * 1.15 * scr[2], 6);
     const minS = Math.min(cssW, cssH);
     const R0 = Math.min(cssW * 0.34, cssH * 0.4);
     const cover = Math.hypot(cssW, cssH) * 0.62;
     const gr = portal.grow;
-    const e = sizeEff;
     const fx = cssW * 0.5 + lx * minS * 0.02, fy = lerpR(cssH * 0.42, cssH * 0.5, gr) + ly * minS * 0.015;
-    const cx = lerpR(sX, fx, e), cy = lerpR(sY, fy, e);
-    const ringR = lerpR(lerpR(sR, R0, e), cover * 1.08, gr);
+    const cx = fx, cy = fy;
+    const ringR = lerpR(R0, cover * 1.08, gr);
     const power = portal.glow * Math.min(1, 0.3 + arc) * (1 + D.flash * 0.7);
     const P = out.portal;
     P.x = cx; P.y = cy;
-    P.r = closed < 0.01 ? 0 : Math.max(0, ringR * 0.955 - 2) * closed;
+    // Only once the ring is complete does the inside tear open onto the hall, centre to rim in ~0.4 s.
+    const tear = sm(ARC_FROM + ARC_LEN + 0.05, ARC_FROM + ARC_LEN + 0.45, F);
+    P.r = tear < 0.005 ? 0 : Math.max(0, ringR * 0.955 - 2) * tear;
     P.power = Math.min(1, power);
     P.ring = sparkOn0(D) ? ringR : 0;
     P.formed = D.f;
@@ -697,7 +703,7 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
       return out;
     }
     drewLast = true;
-    pend.on = true; pend.sparkOn = sparkOn; pend.cx = cx; pend.cy = cy; pend.ringR = ringR; pend.arc = arc; pend.ph = ph; pend.closed = closed; pend.gr = gr; pend.power = power;
+    pend.on = true; pend.sparkOn = sparkOn; pend.cx = cx; pend.cy = cy; pend.ringR = ringR; pend.arc = arc; pend.ph = Math.PI / 2 - arc * Math.PI * 2; pend.closed = closed; pend.gr = gr; pend.power = power;
     if (!deferred) render();
     return out;
   }
