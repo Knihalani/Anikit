@@ -120,7 +120,20 @@ export default async function film({ anikit: A }) {
     const t = list[i], c = col(t);
     return { x: t.x, y: t.y, z: t.z, sx: t.h * t.w, sy: t.h, sz: t.h * t.w, ry: t.ry, color: c };
   }));
-  const TREE_R = [[0.035, 0.1, 0.045], [0.03, 0.085, 0.07], [0.08, 0.15, 0.045]];
+  // Needles: streaky branches, lighter at the drooping tips (v = 0 is the tier's outer rim), dark inside.
+  const needleTex = (() => {
+    const TW = 128, data = new Uint8ClampedArray(TW * TW * 4);
+    for (let y = 0; y < TW; y++) for (let x = 0; x < TW; x++) {
+      const v = y / (TW - 1), u = x / TW;
+      const streak = 0.55 + 0.45 * hash(Math.floor(u * 48) * 13 + Math.floor(v * 6)) * (0.6 + 0.4 * Math.sin(u * 301 + v * 9));
+      const tip = 1.25 - 0.75 * v, gap = (hash(Math.floor(u * 11) * 7 + 3) < 0.25 && v > 0.15) ? 0.45 : 1;
+      const k = Math.max(0, Math.min(1, streak * tip * gap * 1.05));
+      const o = (y * TW + x) * 4;
+      data[o] = data[o + 1] = data[o + 2] = Math.round(255 * k); data[o + 3] = 255;
+    }
+    return A.texture({ width: TW, height: TW, data });
+  })();
+  const TREE_R = [[0.035, 0.13, 0.05], [0.03, 0.11, 0.08], [0.08, 0.16, 0.045]];
   const treesR = treeSet((t) => {
     const v = 0.45 + 0.55 * world.visAt(t.x, t.z), k = 0.75 + 0.5 * t.tint, base = TREE_R[t.kind];
     const autumn = t.kind === 2 && t.tint > 0.88 ? [2.2, 1.0, 0.5] : [1, 1, 1];
@@ -218,7 +231,7 @@ export default async function film({ anikit: A }) {
       { mesh: world.terrainMesh, instances: terrainAt, material: { ...baked, texture: TX.real, textureFilter: 'aniso' } },
       { mesh: world.wallMesh, instances: terrainAt, material: { ...baked, texture: TX.wallReal, textureFilter: 'aniso' } },
       { mesh: rockMesh, instances: rocksR, material: { ambient: 0.32, diffuse: 1.05, specular: 0.12, shininess: 10, rim: 0.15 } },
-      ...chunks.map((ch, k) => ({ mesh: TM[ch.kind], instances: treesR[k], zmin: ch.zmin, zmax: ch.zmax, material: { ambient: 0.5, diffuse: 1.0, specular: 0.06, shininess: 6, rim: 0.34 } })),
+      ...chunks.map((ch, k) => ({ mesh: TM[ch.kind], instances: treesR[k], zmin: ch.zmin, zmax: ch.zmax, material: { ambient: 0.55, diffuse: 1.0, specular: 0.06, shininess: 6, rim: 0.2, ...(ch.kind < 2 ? { texture: needleTex, textureRepeat: [2, 1] } : {}) } })),
       ...towersR.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 0.85, diffuse: 0.9, specular: 0.5, shininess: 60, rim: 0.2, texture: TX.windows, textureRepeat: CLS[c] } })),
       { mesh: cube, instances: roofsR, material: { ambient: 0.7, diffuse: 0.9, specular: 0.1, shininess: 10, rim: 0.15 } },
       { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farReal } },
