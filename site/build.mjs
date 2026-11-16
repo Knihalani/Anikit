@@ -26,6 +26,12 @@ if (existsSync(join(here, 'concepts'))) {
   const walk = (d) => { for (const f of readdirSync(d)) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p); else if (/\.(html|js|mjs)$/.test(f)) writeFileSync(p, readFileSync(p, 'utf8').replaceAll('../../../packages/anikit/dist/', '/vendor/')); } };
   walk(join(out, 'concepts'));
 }
+// The landing page is the summit concept, served at the root (its own index.html, main.js, style.css and modules).
+const landing = join(out, 'concepts', 'summit');
+if (existsSync(landing)) {
+  for (const f of ['index.html', 'style.css', 'main.js', 'demos.js', 'hole.js', 'hole-worker.js']) rmSync(join(out, f), { force: true });
+  cpSync(landing, out, { recursive: true });
+} else
 // Inline the stylesheet: one request fewer before first paint.
 {
   const p = join(out, 'index.html');
