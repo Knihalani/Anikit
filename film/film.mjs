@@ -411,7 +411,7 @@ export default async function film({ anikit: A }) {
   // the lake shows its own dark body instead of the mirror (Fresnel).
   function realWater(src, dst, dist, t) {
     waterStrokes(dist, 'real', t);
-    const DEEP = [16, 30, 34];
+    const DEEP = [22, 44, 50];
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const i = y * W + x, vz = WVZ[i];
       if (vz === 0) continue;
@@ -419,7 +419,7 @@ export default async function film({ anikit: A }) {
       const amp = Math.min(9, 260 / (vz + 20));
       const sy = Math.min(H - 1, Math.max(0, Math.round(y + sw * amp))), sx = Math.min(W - 1, Math.max(0, Math.round(x + sw * amp * 0.25)));
       const so = (sy * W + sx) * 4, o = i * 4;
-      const dn = WDN[i], fr = (0.12 + 0.85 * dn * Math.sqrt(dn)) * 0.75;
+      const dn = WDN[i], fr = (0.08 + 0.5 * dn * Math.sqrt(dn)) * 0.75;
       dst[o] = mix(src[so], DEEP[0], fr); dst[o + 1] = mix(src[so + 1], DEEP[1], fr); dst[o + 2] = mix(src[so + 2], DEEP[2], fr);
     }
   }
