@@ -51,8 +51,12 @@ jobs:
       - run: npm ci && npm i --no-save @napi-rs/canvas
       - run: node scripts/build-wasm.mjs && node scripts/build.mjs
       - run: node bin/anikit-render.mjs templates/journey.mjs --still 5 --out /tmp/journey.png
+      - run: node bin/anikit-render.mjs --doctor
       - run: node bin/anikit-render.mjs templates/film.mjs --still 2 --out /tmp/film.png
+      - run: node bin/anikit-render.mjs templates/film.mjs --profile --every 120
+      - run: node bin/anikit-render.mjs templates/film.mjs --from 1 --to 2 --out /tmp/film.mp4 --workers 2 && node bin/anikit-render.mjs --check /tmp/film.mp4
       - run: node scripts/bench-raster.mjs
+      - run: node scripts/bench-post.mjs
 
   python:
     runs-on: ubuntu-latest
