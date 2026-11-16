@@ -382,7 +382,7 @@ function frameBody(time, dtMs) {
 
   // --- camera: fit ~1150×760 units, slight lens shift to clear the captions
   const aspect = cssW / cssH, tanH = Math.tan(FOV / 2);
-  const fitW = 1150 / 2 / (tanH * aspect * 0.94), fitH = 800 / 2 / (tanH * 0.86);
+  const fitW = (aspect < 0.8 ? 1060 : 1150) / 2 / (tanH * aspect * (aspect < 0.8 ? 0.98 : 0.94)), fitH = 800 / 2 / (tanH * 0.86);
   const wide = aspect > 1.25;
   camDist = Math.max(fitW, fitH) * (wide ? 1 : 1.04) * (1 + 0.24 * w4);
   const oxT = wide ? 0.24 * wSide : 0;
@@ -415,8 +415,11 @@ function frameBody(time, dtMs) {
   if (!gl || st.noDraw) return;
   if (positions.buffer.byteLength === 0) positions = cloud.positions; // memory grew
   gl.upload(positions);
-  f.glow = st.glow * 0.9;
-  f.shadow = st.shadow * (1 - 0.8 * Math.max(0, s - 4)); // the last form sits over the install button
+
+  // overlap grows as the form shrinks on screen; keep shadow and glow density constant
+  const ppu = proj[5] * cssH / 2 / camDist, dens = Math.min(1, Math.max(0.15, (ppu / 0.75) * (ppu / 0.75)));
+  f.glow = st.glow * 0.9 * dens;
+  f.shadow = st.shadow * dens * (1 - 0.8 * Math.max(0, s - 4)); // the last form sits over the install button
   f.cut = st.cut;
   f.size = 2.1 * (1 + 0.2 * w4);
   f.radial = smooth(0.3, 0.9, w4);
