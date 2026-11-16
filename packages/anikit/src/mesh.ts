@@ -550,6 +550,14 @@ export class Renderer3D {
      * Items with `castShadow: false` don't cast.
      */
     shadows?: { extent: number; center?: V3; size?: number; strength?: number; bias?: number };
+    /**
+     * Rasterise only the pixel rectangle `[x0, y0, x1, y1]` (x1, y1 exclusive), e.g. the
+     * part of a split screen this render shows. Pixels inside are exactly those of a full
+     * render (spans keep their start and step); the passes after the scene (sky, points,
+     * mirror upsampling, motion blur, depth of field) still run on the whole frame, so keep
+     * a margin of their reach (motion blur: its `max` + 32 px) around what you display.
+     */
+    scissor?: [number, number, number, number];
   } = {}): Uint8ClampedArray {
     const t0 = performance.now();
     const stats: Record<string, number> = (this.stats = {});
@@ -559,6 +567,9 @@ export class Renderer3D {
     const bg = rgb(o.background, [0, 0, 0]);
     const hex = (Math.round(bg[0] * 255) << 16) | (Math.round(bg[1] * 255) << 8) | Math.round(bg[2] * 255);
     w.ak_raster_clear(this.id, hex, o.transparent ? 0 : 255);
+    const sc = o.scissor;
+    if (sc) w.ak_raster_scissor(this.id, Math.max(0, Math.floor(sc[0])), Math.max(0, Math.floor(sc[1])), Math.max(0, Math.ceil(sc[2])), Math.max(0, Math.ceil(sc[3])));
+    else w.ak_raster_scissor(this.id, 0, 0, 0, 0);
     const sw = scene.width, sh = scene.height;
     scene.width = this.width; scene.height = this.height;
     const { matrix, eye } = scene.viewProjection();

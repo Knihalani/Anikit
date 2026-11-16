@@ -468,6 +468,10 @@ pub struct Raster {
     hiz_track: bool,
     /// Instances skipped as hidden by the last call (diagnostics).
     pub occluded: usize,
+    /// Only pixels in `[x0, x1) × [y0, y1)` are rasterised (`None`: all). Pixels
+    /// inside get exactly the values of an unclipped draw: spans keep their start
+    /// and step, only the pixels outside are skipped.
+    pub scissor: Option<[usize; 4]>,
     /// Tests: disable occlusion culling (to compare against it).
     #[cfg(test)]
     no_hiz: bool,
@@ -756,21 +760,28 @@ impl Shade<'_> {
             let ly = (p[0] * svp[1] + p[1] * svp[5] + p[2] * svp[9] + svp[13]) * ilw;
             let lz = (p[0] * svp[2] + p[1] * svp[6] + p[2] * svp[10] + svp[14]) * ilw - bias;
             let hs = size as f32 * 0.5;
-            let (tx, ty, tz) = ((lx * hs + hs - 0.5).to_array(), (hs - ly * hs - 0.5).to_array(), lz.to_array());
-            let lit: [f32; 4] = core::array::from_fn(|l| {
+            let (tx, ty) = ((lx * hs + hs - 0.5).to_array(), (hs - ly * hs - 0.5).to_array());
+            // Texel addresses and weights per lane; the depth tests and the blend for
+            // all four lanes at once (the same operations per lane as one at a time).
+            let (mut q, mut wx, mut wy, mut inside) = ([[f32::INFINITY; 4]; 4], [0.0f32; 4], [0.0f32; 4], [0.0f32; 4]);
+            for l in 0..4 {
                 let (fx, fy) = (tx[l], ty[l]);
                 if !(fx > -1.0 && fy > -1.0 && fx < size as f32 && fy < size as f32) {
-                    return 1.0;
+                    continue; // outside the map: lit
                 }
                 let (x0, y0) = (fx.max(0.0) as usize, fy.max(0.0) as usize);
                 let (x1, y1) = ((x0 + 1).min(size - 1), (y0 + 1).min(size - 1));
-                let (ax, ay) = (fx - x0 as f32, fy - y0 as f32);
-                let t = |x: usize, y: usize| if tz[l] <= sd[y * size + x] { 1.0 } else { 0.0 };
-                let top = t(x0, y0) + (t(x1, y0) - t(x0, y0)) * ax.clamp(0.0, 1.0);
-                let bot = t(x0, y1) + (t(x1, y1) - t(x0, y1)) * ax.clamp(0.0, 1.0);
-                top + (bot - top) * ay.clamp(0.0, 1.0)
-            });
-            let k = 1.0 - (1.0 - V4::from_array(lit)) * strength;
+                (wx[l], wy[l]) = ((fx - x0 as f32).clamp(0.0, 1.0), (fy - y0 as f32).clamp(0.0, 1.0));
+                (q[0][l], q[1][l], q[2][l], q[3][l]) = (sd[y0 * size + x0], sd[y0 * size + x1], sd[y1 * size + x0], sd[y1 * size + x1]);
+                inside[l] = 1.0;
+            }
+            let t = |d: [f32; 4]| V4::select(lz.le(V4::from_array(d)), V4::splat(1.0), V4::splat(0.0));
+            let (t00, t10, t01, t11) = (t(q[0]), t(q[1]), t(q[2]), t(q[3]));
+            let (ax, ay) = (V4::from_array(wx), V4::from_array(wy));
+            let top = t00 + (t10 - t00) * ax;
+            let bot = t01 + (t11 - t01) * ax;
+            let lit = V4::select(V4::from_array(inside).gtf(0.5), top + (bot - top) * ay, V4::splat(1.0));
+            let k = 1.0 - (1.0 - lit) * strength;
             dk = dk * k;
         }
         let dk = dk;
@@ -982,7 +993,10 @@ impl Raster {
         self.width = s;
         self.height = s;
         let vp = self.shadow_vp;
+        // The shadow map covers the light's view whatever part of the frame is drawn.
+        let sc = self.scissor.take();
         self.draw_with(mesh, instances, &vp, [0.0; 3], &Material::default(), &Lighting::default(), cull_back, Blend::DepthOnly, None);
+        self.scissor = sc;
         self.width = w;
         self.height = h;
         core::mem::swap(&mut self.depth, &mut self.shadow_depth);
@@ -999,11 +1013,15 @@ impl Raster {
     /// softer half-res image looks right and costs a quarter of the shading.
     pub fn reflection_begin(&mut self, rgb: u32, alpha: u8) {
         let (hw, hh) = ((self.width / 2).max(1), (self.height / 2).max(1));
+        let sc = self.scissor;
         let sub = self.reflection.get_or_insert_with(Default::default);
         if sub.width != hw || sub.height != hh {
             sub.resize(hw, hh);
         }
         sub.clear(rgb, alpha);
+        // The half-res target covers the scissor plus the 2 half-res pixels the
+        // upsampling reads around it.
+        sub.scissor = sc.map(|s| [(s[0] / 2).saturating_sub(2), (s[1] / 2).saturating_sub(2), (s[2].div_ceil(2) + 2).min(hw), (s[3].div_ceil(2) + 2).min(hh)]);
         self.reflecting = true;
         self.reflect_after = false;
     }
@@ -1220,6 +1238,16 @@ impl Raster {
         let (bc, br) = bounds(mesh);
         let row = |r: usize| [vp[r], vp[4 + r], vp[8 + r], vp[12 + r]];
         let (r0, r1, r2, r3) = (row(0), row(1), row(2), row(3));
+        // Side planes at NDC ±1, or at the scissor's edges (2 px outside them).
+        let side = match self.scissor {
+            Some(sc) => {
+                let (hw, hh) = (self.width as f32 * 0.5, self.height as f32 * 0.5);
+                let (l, r) = ((sc[0] as f32 - 2.0) / hw - 1.0, (sc[2] as f32 + 2.0) / hw - 1.0);
+                let (b, t) = (1.0 - (sc[3] as f32 + 2.0) / hh, 1.0 - (sc[1] as f32 - 2.0) / hh);
+                [(-l).min(1.0), r.min(1.0), (-b).min(1.0), t.min(1.0)]
+            }
+            None => [1.0; 4],
+        };
         let planes: [[f32; 4]; 6] = core::array::from_fn(|k| {
             let (a, sgn) = match k {
                 0 => (r0, 1.0),
@@ -1229,7 +1257,8 @@ impl Raster {
                 4 => (r2, 1.0),
                 _ => (r2, -1.0),
             };
-            let p = [r3[0] + sgn * a[0], r3[1] + sgn * a[1], r3[2] + sgn * a[2], r3[3] + sgn * a[3]];
+            let c = if k < 4 { side[k] } else { 1.0 };
+            let p = [r3[0] * c + sgn * a[0], r3[1] * c + sgn * a[1], r3[2] * c + sgn * a[2], r3[3] * c + sgn * a[3]];
             let l = 1.0 / crate::math::sqrtf(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]).max(1e-12);
             [p[0] * l, p[1] * l, p[2] * l, p[3] * l]
         });
@@ -1614,6 +1643,14 @@ impl Raster {
         if cx0 > cx1 || cy0 > cy1 {
             return;
         }
+        // Rows are independent: the scissor clips the row range directly.
+        let (cy0, cy1) = match self.scissor {
+            Some(sc) => (cy0.max(sc[1] as isize), cy1.min(sc[3] as isize - 1)),
+            None => (cy0, cy1),
+        };
+        if cy0 > cy1 || self.scissor.is_some_and(|sc| cx1 < sc[0] as isize || cx0 >= sc[2] as isize) {
+            return;
+        }
         if self.hiz_track && MODE != SHADE_EQ && MODE != ADD {
             // This triangle may lower depth anywhere in its pixel-centre bounds.
             for ty in (cy0 as usize >> 4)..=(cy1 as usize >> 4) {
@@ -1625,7 +1662,7 @@ impl Raster {
         // Edge functions; per row, solve for the covered span directly, then
         // walk it with incrementally interpolated depth (and, when shading,
         // 1/w and varyings/w).
-        let e = |ax: f32, ay: f32, bx: f32, by: f32, px: f32, py: f32| (bx - ax) * (py - ay) - (by - ay) * (px - ax);
+        // Edge functions e(a, b, p) = (bx − ax)(py − ay) − (by − ay)(px − ax), four rows at a time below.
         let sgn = if area > 0.0 { 1.0 } else { -1.0 };
         let d = [-(y2 - y1) * sgn, -(y0 - y2) * sgn, -(y1 - y0) * sgn];
         let gx = [d[0] * sgn * inv, d[1] * sgn * inv, d[2] * sgn * inv];
@@ -1636,10 +1673,26 @@ impl Raster {
         let mut grads = MODE == DEPTH;
         let span = (maxx - minx) as f32;
         // Rows outside cy0..=cy1 hold no pixel centre of the triangle.
+        // The edge values and span bounds of four rows are computed at once: per
+        // lane, the same operations as `e(…) * sgn`, `ceil(-w / d)` (as −floor(w / d)…
+        // negated: exact) and `floor(-w / d)`; the bounds are then combined per row
+        // in scalar, as before.
+        let fx = minx as f32 + 0.5;
+        let ed = [(x1, y1, x2, y2), (x2, y2, x0, y0), (x0, y0, x1, y1)];
+        let (mut wq, mut bq) = ([[0.0f32; 4]; 3], [[0.0f32; 4]; 3]);
         for py in cy0..=cy1 {
-            let fy = py as f32 + 0.5;
-            let fx = minx as f32 + 0.5;
-            let wv = [e(x1, y1, x2, y2, fx, fy) * sgn, e(x2, y2, x0, y0, fx, fy) * sgn, e(x0, y0, x1, y1, fx, fy) * sgn];
+            let j = ((py - cy0) & 3) as usize;
+            if j == 0 {
+                let fy = V4::new(py as f32, (py + 1) as f32, (py + 2) as f32, (py + 3) as f32) + 0.5;
+                for k in 0..3 {
+                    let (ax, ay, bx, by) = ed[k];
+                    let w = (V4::splat(bx - ax) * (fy - ay) - (by - ay) * (fx - ax)) * sgn;
+                    let q = -w / V4::splat(d[k]); // a true division (V4 / f32 multiplies by the reciprocal)
+                    let b = if d[k] > 0.0 { -(-q).floor() } else { q.floor() };
+                    (wq[k], bq[k]) = (w.to_array(), b.to_array());
+                }
+            }
+            let wv = [wq[0][j], wq[1][j], wq[2][j]];
             let (mut lo, mut hi) = (0.0f32, span);
             let mut empty = false;
             for k in 0..3 {
@@ -1648,9 +1701,9 @@ impl Raster {
                         empty = true;
                     }
                 } else if d[k] > 0.0 {
-                    lo = lo.max(crate::math::ceilf(-wv[k] / d[k]));
+                    lo = lo.max(bq[k][j]);
                 } else {
-                    hi = hi.min(crate::math::floorf(-wv[k] / d[k]));
+                    hi = hi.min(bq[k][j]);
                 }
             }
             if empty || lo > hi {
@@ -1674,14 +1727,26 @@ impl Raster {
             let z0 = b0 * p0.z + b1 * p1.z + b2 * p2.z;
             let row = py as usize * self.width + minx as usize;
             let (a0, a1) = (row + lo as usize, row + hi as usize);
+            // Pixels ks..kend of the span lie inside the scissor (all of it without one).
+            let (ks, kend) = match self.scissor {
+                Some(sc) => {
+                    let (x_lo, n) = (minx as usize + lo as usize, a1 - a0 + 1);
+                    let kend = sc[2].saturating_sub(x_lo).min(n);
+                    (sc[0].saturating_sub(x_lo).min(kend), kend)
+                }
+                None => (0, a1 - a0 + 1),
+            };
+            if ks >= kend {
+                continue;
+            }
             // Depth along the span is evaluated as z0 + dz·k in every mode, so a
             // pre-pass and the shading pass agree bit for bit.
             if MODE == DEPTH {
                 // Four at a time (the lane values equal the scalar z0 + dz·k: k + l is
                 // exact in f32), then the tail.
-                let span = &mut self.depth[a0..=a1];
+                let span = &mut self.depth[a0..a0 + kend];
                 let (zv0, dzv, lanes) = (V4::splat(z0), V4::splat(dz), V4::new(0.0, 1.0, 2.0, 3.0));
-                let mut k = 0;
+                let mut k = ks;
                 while k + 4 <= span.len() {
                     let zv = zv0 + dzv * (V4::splat(k as f32) + lanes);
                     let d4 = &mut span[k..k + 4];
@@ -1704,12 +1769,12 @@ impl Raster {
             let (mut q0, mut s0, mut ready) = (0.0f32, [0.0f32; NV], false);
             // Split borrows so the span loop keeps everything in locals.
             let gl = (self.gloss.clamp(0.0, 1.0) * 256.0) as u32;
-            let (depth, color, qu) = (&mut self.depth[a0..=a1], &mut self.color, &mut self.queue);
+            let (depth, color, qu) = (&mut self.depth[a0..a0 + kend], &mut self.color, &mut self.queue);
             // Owners of the span's depth (SHADE_OWN only): a tie wins against a later item.
             let me = self.item.unwrap_or(0);
-            let owner: &mut [u16] = if MODE == SHADE_OWN { &mut self.owner[a0..=a1] } else { &mut [] };
+            let owner: &mut [u16] = if MODE == SHADE_OWN { &mut self.owner[a0..a0 + kend] } else { &mut [] };
             let len = depth.len();
-            let mut k = 0;
+            let mut k = ks;
             // Groups of four: runs of groups where all four pass the depth
             // test (large faces, no overdraw) are shaded straight from
             // registers, out of line; the rest go through the queue.
@@ -3144,6 +3209,74 @@ mod tests {
             } else {
                 c[i] = 0;
                 i += 1;
+            }
+        }
+    }
+
+    #[test]
+    fn a_scissor_changes_no_pixel_inside_it() {
+        // Overlapping lit instances, coincident list-indexed items, shadows and a
+        // half-res mirror after the scene: inside the scissor, colour and depth
+        // equal the unclipped render bit for bit; outside, nothing is drawn.
+        let tf = |s: f32, x: f32, y: f32, z: f32, c: [f32; 3]| {
+            let mut v = vec![s, 0.0, 0.0, 0.0, s, 0.0, 0.0, 0.0, s, x, y, z];
+            v.extend_from_slice(&c);
+            v
+        };
+        let mut many = Vec::new();
+        for i in 0..60 {
+            let f = i as f32;
+            many.extend(tf(0.12 + (f * 0.37).fract() * 0.2, (f * 0.71).fract() * 3.0 - 1.5, (f * 0.53).fract() * 2.0 - 0.6, (f * 0.29).fract() * 3.0 - 1.5, [(f * 0.3).fract(), 0.5, 0.7]));
+        }
+        let floor = {
+            let mut v = vec![4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 4.0, 0.0, -1.0, 0.0];
+            v.extend_from_slice(&[0.2, 0.2, 0.25]);
+            v
+        };
+        let items: [(Mesh, Vec<f32>); 3] = [(cube(), many.clone()), (sphere(8, 12), many), (cube(), tf(0.9, 0.2, 0.1, 0.0, [0.9, 0.3, 0.2]))];
+        let (mat, light) = (Material { specular: 0.8, ..Material::default() }, Lighting::default());
+        let mvp = |eye: [f64; 3]| -> M4 {
+            let m = mul(&perspective(50.0, 1.3, 0.5, 60.0), &look_at(eye, [0.0, -0.3, 0.0], [0.0, 1.0, 0.0]));
+            core::array::from_fn(|i| m[i] as f32)
+        };
+        let (vp, eye) = (mvp([0.5, 1.2, 5.0]), [0.5, 1.2, 5.0]);
+        // The mirrored camera (about y = −1).
+        let rvp: M4 = core::array::from_fn(|i| if i % 4 == 1 { -vp[i] } else if i >= 12 { vp[i] + 2.0 * -1.0 * vp[i - 8] } else { vp[i] });
+        let render = |r: &mut Raster| {
+            r.clear(0x203040, 255);
+            let lvp = mvp([3.0, 5.0, 2.0]);
+            r.shadow_begin(&lvp, 128, 0.002, 0.8);
+            for (m, inst) in &items {
+                r.shadow_draw(m, inst, true);
+            }
+            for (i, (m, inst)) in items.iter().enumerate() {
+                r.item = Some(i as u16);
+                r.draw(m, inst, &vp, eye, &mat, &light, true);
+            }
+            r.item = None;
+            r.reflection_after(0x101010, 255);
+            r.flip_winding = true;
+            for (m, inst) in &items {
+                r.target().draw(m, inst, &rvp, [eye[0], -2.0 - eye[1], eye[2]], &mat, &light, true);
+            }
+            r.flip_winding = false;
+            r.reflection_end();
+            r.gloss = 0.6;
+            r.draw_with(&plane(1, 1), &floor, &vp, eye, &mat, &light, false, Blend::Gloss, None);
+        };
+        for (w, h) in [(160usize, 123usize), (97, 64)] {
+            let mut full = Raster::new(w, h);
+            render(&mut full);
+            for sc in [[0usize, 0, w, h], [w / 3, 0, w * 2 / 3 + 1, h], [7, 11, w / 2 + 3, h - 5], [w - 9, 3, w, 40]] {
+                let mut r = Raster::new(w, h);
+                r.scissor = Some(sc);
+                render(&mut r);
+                for y in sc[1]..sc[3] {
+                    for x in sc[0]..sc[2] {
+                        let i = y * w + x;
+                        assert_eq!((r.color[i], r.depth[i].to_bits()), (full.color[i], full.depth[i].to_bits()), "{w}x{h} scissor {sc:?} at {x},{y}");
+                    }
+                }
             }
         }
     }

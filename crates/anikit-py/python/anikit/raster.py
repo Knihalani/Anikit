@@ -990,6 +990,7 @@ class Renderer3D:
         shadows: Any = None,
         dof: Any = None,
         motion_blur: Any = None,
+        scissor: Optional[Sequence[int]] = None,
         lighting: Optional[Lighting] = None,
         **light: Any,
     ) -> np.ndarray:
@@ -1023,6 +1024,10 @@ class Renderer3D:
           ``shutter`` 0–1 of a frame (default 0.5), ``max`` px (default 6% of
           the width). Call :meth:`reset_motion` after a cut.
 
+        ``scissor=(x0, y0, x1, y1)`` rasterises only that pixel rectangle
+        (``x1``, ``y1`` exclusive): pixels inside are exactly those of a full
+        render; the passes after the scene still run on the whole frame.
+
         Passes, as in TypeScript: shadow map, mirror, opaque items, sky,
         then additive items and points (in item order, so light adds onto the
         sky), then depth of field, then motion blur.
@@ -1034,6 +1039,9 @@ class Renderer3D:
         bg = _bg(background)
         r8, g8, b8 = (max(0, min(255, round(c * 255))) for c in bg)
         nat.clear((r8 << 16) | (g8 << 8) | b8, 0 if transparent else 255)
+        if scissor is not None and len(scissor) != 4:
+            raise ValueError("scissor is (x0, y0, x1, y1) in pixels")
+        nat.scissor = None if scissor is None else tuple(max(0, int(v)) for v in scissor)
         vp, eye = self.view(camera)
         lights = lighting if lighting is not None else Lighting()
         if light:
