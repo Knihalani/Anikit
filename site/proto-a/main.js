@@ -143,7 +143,7 @@ function stepLetters(dt) {
     L.w += (-(L.ry - home) * k - L.w * (k ? 9 : 0.9)) * dt;
     L.ry += L.w * dt;
     if (Math.abs(L.w) < 1e-3 && Math.abs(L.ry - home) < 1e-4) { L.ry = home % (Math.PI * 2); L.w = 0; }
-    const tilt = scrollE * -0.5;
+    const tilt = scrollE * -(0.6 + 0.08 * i); // tip back as the page leaves, a little more per letter
     L.rx += (tilt - L.rx) * (1 - Math.exp(-dt * 10));
     const live = L.e > 1e-3 || Math.abs(L.ry % (Math.PI * 2)) > 1e-3 || Math.abs(L.rx) > 1e-3;
     if (live !== L.live) { L.live = live; L.el.style.color = live && L.mesh ? 'transparent' : ''; }
