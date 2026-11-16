@@ -169,12 +169,20 @@ void main() {
   float alt = vW.y - uDeckY;
   // snow holds on slopes gentler than ~50 degrees; streaks follow the noise
   float snow = smoothstep(0.66, 0.8, N.y + (d1.x - 0.5) * 0.4 + (d2.x - 0.5) * 0.3);
+  // couloirs: snow-filled gullies streaking straight down the steep faces
+  vec2 down = normalize(vN.xz + 1e-4), across = vec2(-down.y, down.x);
+  float gul = vnoise(vec2(dot(vW.xz, across) * 0.016, dot(vW.xz, down) * 0.0022 + vW.y * 0.002));
+  float steep = 1.0 - smoothstep(0.55, 0.8, N.y);
+  snow = max(snow, smoothstep(0.62, 0.78, gul) * steep * 0.9);
+  // strata: tilted sedimentary bands in the exposed rock
+  float band = sin(vW.y * 0.045 + dot(vW.xz, vec2(0.006, 0.004)) + d1.x * 3.0);
+  vec3 rockA = mix(vec3(0.17, 0.15, 0.15), vec3(0.3, 0.26, 0.23), smoothstep(-0.3, 0.6, band));
   vec3 sunC = uSunCol;
   vec3 sky = mix(uAmb, vec3(dot(uAmb, vec3(0.3, 0.5, 0.2))), 0.3) * 1.2;
   float ndl = dot(N, uSun);
   sunC *= vSh;
   vec3 sn = vec3(0.93, 0.95, 1.0) * (sunC * 1.1 * clamp((ndl + 0.05) / 1.05, 0.0, 1.0) + sky * (0.28 + 0.2 * N.y));
-  vec3 rk = vec3(0.2, 0.18, 0.19) * (0.7 + 0.6 * d2.x) * (sunC * max(ndl, 0.0) * 1.4 + sky * 0.4);
+  vec3 rk = rockA * (0.75 + 0.5 * d2.x) * (sunC * max(ndl, 0.0) * 1.4 + sky * 0.4);
   vec3 col = mix(rk, sn, snow);
   // cloud fringe where the peaks meet the sea
   float fringe = 1.0 - smoothstep(0.0, 90.0 + 80.0 * d1.x, alt);
@@ -1077,10 +1085,10 @@ export function createMountain(canvas) {
     // the portal (optional): framebuffer px for light, NDC for suction
     const fbs = canvas.width / cssW;
     const pr = portal ? portal.r || 0 : 0;
-    const pow = pr > 0 ? (portal.power !== undefined ? Math.min(1, Math.max(0, portal.power)) : Math.min(1, pr / 60)) : 0;
+    const pow = portal ? (portal.power !== undefined ? Math.min(1, Math.max(0, portal.power)) : Math.min(1, pr / 60)) : 0;
     portalOn = pow > 0.002;
     if (portalOn) {
-      portalPx[0] = portal.x * fbs; portalPx[1] = (cssH - portal.y) * fbs; portalPx[2] = pr * fbs; portalPx[3] = pow;
+      portalPx[0] = portal.x * fbs; portalPx[1] = (cssH - portal.y) * fbs; portalPx[2] = Math.max(pr, 36) * fbs; portalPx[3] = pow;
       portalNdc[0] = portal.x / cssW * 2 - 1; portalNdc[1] = 1 - portal.y / cssH * 2; portalNdc[2] = pr / cssH * 2; portalNdc[3] = pow;
       flicker = 0.82 + 0.1 * Math.sin(t * 23.0) + 0.06 * Math.sin(t * 37.3 + 1.3) + 0.05 * Math.sin(t * 61.7 + 0.4);
     } else { portalPx[3] = 0; portalNdc[3] = 0; }
