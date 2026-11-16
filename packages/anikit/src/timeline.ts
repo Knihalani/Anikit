@@ -15,7 +15,7 @@
  * ```
  */
 import { core, whenReady, readyNow, W } from './wasm';
-import { register, unregister, easingId, NodeRecord, EasingInput, EV_CALLBACK, FL_FILL_BACKWARDS, FL_FILL_FORWARDS, LINEAR, wake, onFlush } from './core';
+import { register, unregister, easingId, NodeRecord, EasingInput, EV_CALLBACK, FL_FILL_BACKWARDS, FL_FILL_FORWARDS, LINEAR, wake, onFlush, defer } from './core';
 import { Animation, AnimateOptions, Props, Keyframe, Chain, PropValue, BuildContext } from './animate';
 import type { Targets as _T } from './props';
 import { Playable, Callbacks, Linked } from './playable';
@@ -90,6 +90,29 @@ onFlush(() => {
 function runCleanup(c: Playable | (() => void)): void {
   if (typeof c === 'function') c();
   else c.kill();
+}
+
+/** Cleanup lists of killed timelines, run together at the next flush or microtask (see `_kill`). */
+let later: Array<Array<Playable | (() => void)>> = [];
+function laterCleanup(cs: Array<Playable | (() => void)>): void {
+  if (later.length === 0) {
+    // Whichever comes first: the next flush (every frame) or a microtask.
+    queueMicrotask(runLater);
+    defer(runLater);
+  }
+  later.push(cs);
+}
+function runLater(): void {
+  // (A cleanup may kill a nested timeline, which queues more: drain them too.)
+  while (later.length > 0) {
+    const ls = later;
+    later = [];
+    for (const cs of ls) for (const c of cs) runCleanup(c);
+  }
+}
+/** Testing hook: run deferred timeline cleanups now. */
+export function _flushLaterCleanup(): void {
+  while (later.length > 0) runLater();
 }
 
 export class Timeline extends Playable {
@@ -407,7 +430,11 @@ export class Timeline extends Playable {
     // remaining children: O(n²) for n children.
     if (this._h) core().ak_release(this._h);
     this._h = 0;
-    for (const c of this._cleanups) runCleanup(c);
+    // With the subtree freed nothing of it renders or fires again, so the
+    // children's own bookkeeping (records, writer tables, promises) runs in
+    // one pass at the next flush or microtask: kill() itself is O(1) in the
+    // number of children.
+    if (this._cleanups.length > 0) laterCleanup(this._cleanups);
     this._cleanups = [];
     for (const l of this._links) unregister(l as unknown as NodeRecord);
   }
