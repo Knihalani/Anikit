@@ -175,7 +175,7 @@ Place backgrounds first in a scene's layers.
 
 | Kind | Props |
 |---|---|
-| `meshGradient` | `colors` (3–6 blobs), `base`, `speed`, `warp` (0 gives round blobs, 1 gives swirls), `seed`, `detail` |
+| `meshGradient` | `colors` (3–6 blobs), `base`, `speed`, `warp` (0 gives round blobs, 1 gives swirls), `intensity` (default 0.75), `seed`, `detail` |
 | `aurora` | `colors` (ribbons), `sky` (`[top, horizon]`), `speed`, `intensity`, `seed` |
 | `gradient` | `colors`, `kind` (`linear` or `radial`), `angle`, `spin` (degrees per second) |
 | `grain` | `amount` (0.03–0.1 is subtle), `size`, `rate` (new patterns per second), `seed`. Put it last, as an overlay. |
