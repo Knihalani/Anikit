@@ -48,7 +48,7 @@ vec3 skyCol(vec3 d) {
   vec3 zen = vec3(0.06, 0.20, 0.52);
   vec3 mid = vec3(0.22, 0.45, 0.82);
   vec3 hzSun = mix(vec3(1.0, 0.78, 0.52), vec3(1.1, 0.68, 0.38), uWarm);
-  vec3 hzAway = vec3(0.56, 0.64, 0.82);
+  vec3 hzAway = vec3(0.66, 0.66, 0.84);
   vec3 hz = mix(hzAway, hzSun, pow(az, 2.0));
   float eu = max(e, 0.0);
   vec3 c = mix(hz, mid, smoothstep(0.0, 0.16, eu));
@@ -326,8 +326,11 @@ uniform mat4 uVP;
 uniform vec3 uRight, uUp;
 uniform float uT;
 uniform vec2 uWind;
+uniform vec3 uSun;
+uniform vec3 uEye;
 out vec2 vUV;
 out float vA;
+out float vGlow;
 void main() {
   float span = 34.0;
   float life = fract(uT * iA.z * 0.09 + iA.w);
@@ -340,15 +343,17 @@ void main() {
   float r = 0.025 + 0.05 * fract(iA.w * 13.1);
   gl_Position = uVP * vec4(c + (aC.x * uRight + aC.y * uUp) * r, 1.0);
   vUV = aC;
-  vA = sin(life * 3.14159) * (0.2 + 0.25 * fract(iA.w * 3.7)) * (0.7 + 0.3 * uWind.x);
+  vGlow = pow(max(dot(normalize(c - uEye), uSun), 0.0), 6.0);
+  vA = sin(life * 3.14159) * (0.3 + 0.35 * fract(iA.w * 3.7)) * (0.7 + 0.3 * uWind.x);
 }`;
 const driftFS = HEAD + `
 in vec2 vUV;
 in float vA;
+in float vGlow;
 out vec4 o;
 void main() {
   float a = exp(-dot(vUV, vUV) * 3.0) * vA;
-  o = vec4(vec3(1.0, 0.95, 0.88) * a, a);
+  o = vec4(mix(vec3(0.95, 0.95, 1.0), vec3(1.6, 1.15, 0.7), vGlow) * a, a * 0.8);
 }`;
 
 // --- lens bloom around the sun, and faint ghosts (screen space, additive) ---
@@ -472,12 +477,13 @@ const farH = (x, z) => {
   // a mask decides where the big massifs stand; elsewhere the land stays under the clouds
   const m = Math.max(0, fbm(x / 7000, z / 7000, 3, 21) + 0.18);
   const peaks = ridged(x / 2600, z / 2600, 6, 33);
-  let h = DECK_Y - 800 + peaks * (480 + 3000 * m * m);
+  const far = 1 + Math.max(0, r - 9000) / 6000;
+  let h = DECK_Y - 800 + peaks * (480 + 3000 * m * m) * far;
   h += fbm(x / 900, z / 900, 3, 44) * 120;
   // nothing stands higher than the summit: peaks rise towards the horizon only far away
   const t = Math.min(1, Math.max(0, (r - 600) / 6000));
-  const cap = DECK_Y - 20 + 820 * t * t * (3 - 2 * t) + r * 0.004;
-  const k = 1 / 140;
+  const cap = DECK_Y - 20 + 820 * t * t * (3 - 2 * t) + r * 0.004 + Math.max(0, r - 9000) * 0.045 + (fbm(x / 3000, z / 3000, 3, 77) + 0.3) * 650 * t;
+  const k = 1 / 260;
   const hi = Math.max(h, cap), lo = Math.min(h, cap);
   h = lo - Math.log(1 + Math.exp(-k * (hi - lo))) / k;
   return h;
