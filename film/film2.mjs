@@ -136,7 +136,7 @@ export default async function film2({ anikit: A }) {
       streaks: (t) => 0.45 + 0.35 * smooth(10, 13, t), streakLength: 340,
       rays: (t) => 0.9 * smooth(7.5, 10, t), raysCenter: [0.5, 0.52], raysLength: 0.5,
       flares: (t) => 0.35 + 0.3 * smooth(9, 12, t),
-      aberration: (t) => 0.6 + 0.9 * (1 - smooth(0, 4.4, t)), zoomBlur: (t) => 0.25 * (1 - smooth(3.8, 4.8, t)),
+      aberration: (t) => 0.6 + 0.9 * (1 - smooth(0, 4.4, t)), zoomBlur: (t) => 0.1 * (1 - smooth(3.8, 4.8, t)),
       vignette: 0.5, grain: 3.5, contrast: 1.08, saturation: 1.12, exposure: 1.02,
       shadows: [0.0, 0.004, 0.02], highlights: [0.03, 0.012, -0.01],
     },
@@ -169,7 +169,7 @@ export default async function film2({ anikit: A }) {
         { mesh: cube, instances: blocks, material: { metal: 0.95, iridescence: 0.55, specular: 1.6, shininess: 140, rim: 0.3, lines: 1.2, lineColor: [0.3, 0.8, 1.8], grid: [1, 1], lineWidth: 0.04, pulse: 2.6, pulseCount: 4, pulsePhase: c * 2.2, pulseDir: [0, 0, 0.0005] } },
         { mesh: cube, instances: avenue, material: { metal: 0.95, iridescence: 0.4, specular: 1.6, shininess: 160, rim: 0.25, lines: 1.4, lineColor: [1.7, 0.35, 1.1], grid: [2, 7], lineWidth: 0.025, pulse: 2.4, pulsePhase: c * 1.5, pulseDir: [0, 0.0012, 0] } },
         c < HIT
-          ? { mesh: monoMesh, instances: monoAt, material: { metal: 0.95, iridescence: 0.6, specular: 1.8, shininess: 180, rim: 0.4, lines: 1.5, lineColor: [0.4, 0.9, 1.9], grid: [3, 9], lineWidth: 0.03, pulse: 3, pulsePhase: c * 3 } }
+          ? { mesh: monoMesh, instances: monoAt, material: { metal: 0.95, iridescence: 0.7, specular: 1.8, shininess: 180, rim: 0.4 } }
           : { mesh: shards.mesh, instances: (shards.update(c - HIT), shards.instances), cull: false, material: { metal: 0.95, iridescence: 0.6, specular: 1.8, shininess: 180, emissive: 0.35 * Math.exp(-(c - HIT) * 1.2) + 0.05, rim: 0.5 } },
         { mesh: sphere, instances: holeAt, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, fog: 0 } },
         { mesh: ring, instances: neonRings, blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 0.5, pulse: 4, pulseCount: 3, pulsePhase: c * 3, lineColor: [1.8, 0.4, 1.3] } },
@@ -190,14 +190,14 @@ export default async function film2({ anikit: A }) {
       // Point lights travel with the camera through the tunnel, then sit by the monoliths.
       const lights = [
         { position: [e.x, e.y + 60, e.z - 700], color: [0.4, 0.9, 1.6], radius: 1600, intensity: 2.2 },
-        { position: [0, FLOOR + 200, -21000], color: [1.6, 0.4, 1.1], radius: 4500, intensity: 2.5 + 6 * Math.exp(-(((c - HIT) / 0.35) ** 2)) },
+        { position: [0, FLOOR + 200, -21000], color: [1.6, 0.4, 1.1], radius: 4500, intensity: 1.2 + 4 * Math.exp(-(((c - HIT) / 0.35) ** 2)) },
         { position: [BH[0], BH[1] + 2400, BH[2] + 9000], color: [1.6, 1.0, 0.6], radius: 14000, intensity: 1.5 + 4 * smooth(SN, SN + 0.15, c) * Math.exp(-sn) },
       ];
       const px = r3.render(cam, items, {
         background: '#020207', fog: [16000, 90000], fogColor: [0.01, 0.008, 0.025],
         sky: [0.02, 0.02, 0.06], horizon: [0.3, 0.12, 0.35], ground: [0.01, 0.01, 0.02], strips: [2.0, 2.0, 2.4],
         key: [0.2, 0.5, 1], keyColor: [0.5, 0.45, 0.7], fill: [0, -1, 0], fillColor: [0.05, 0.05, 0.12], rimColor: [0.6, 0.9, 1.6], lights,
-        mirror: { y: FLOOR, strength: 0.5 }, motionBlur: { shutter: 0.5, max: 90 }, prevCamera,
+        mirror: { y: FLOOR, strength: 0.5 }, motionBlur: { shutter: c < 4.6 ? 0.28 : 0.45, max: c < 4.6 ? 36 : 80 }, prevCamera,
       });
       ctx.putImageData(new globalThis.ImageData(px, W, H), 0, 0);
     },
