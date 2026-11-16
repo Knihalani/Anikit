@@ -1876,9 +1876,28 @@ impl Encoder {
         &self.out
     }
 
-    fn slice_rows(&self) -> Vec<(usize, usize)> {
+    /// Slice row ranges. P frames balance the expected work: a changed macroblock
+    /// costs about 40 unchanged ones.
+    fn slice_rows(&self, idr: bool) -> Vec<(usize, usize)> {
         let n = self.writers.len();
-        (0..n).map(|i| (i * self.mbh / n, (i + 1) * self.mbh / n)).filter(|r| r.1 > r.0).collect()
+        if n == 1 || idr {
+            return (0..n).map(|i| (i * self.mbh / n, (i + 1) * self.mbh / n)).filter(|r| r.1 > r.0).collect();
+        }
+        let w: Vec<u64> = self.changed.chunks(self.mbw).map(|r| self.mbw as u64 + 40 * r.iter().filter(|&&c| c).count() as u64).collect();
+        let total: u64 = w.iter().sum();
+        let mut rows = Vec::with_capacity(n);
+        let (mut start, mut acc) = (0usize, 0u64);
+        for (y, &wy) in w.iter().enumerate() {
+            acc += wy;
+            let k = rows.len() as u64 + 1;
+            // close the band once its share is reached, leaving rows for the rest
+            if acc * n as u64 >= total * k && rows.len() + 1 < n && self.mbh - (y + 1) >= n - rows.len() - 1 {
+                rows.push((start, y + 1));
+                start = y + 1;
+            }
+        }
+        rows.push((start, self.mbh));
+        rows
     }
 
     fn encode_slices(&mut self, idr: bool, frame_num: u32, stats: &mut FrameStats) {
@@ -1903,7 +1922,7 @@ impl Encoder {
             idr_id: self.idr_count & 0xffff,
             deblock: self.cfg.deblock,
         };
-        let rows = self.slice_rows();
+        let rows = self.slice_rows(idr);
         // Split recon planes and MB info into bands.
         let mut bands = Vec::with_capacity(rows.len());
         {
