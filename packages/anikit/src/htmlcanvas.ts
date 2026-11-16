@@ -756,6 +756,8 @@ class HtmlEffectImpl implements HtmlEffect {
       if (this.done) return;
       this.place();
       document.body.appendChild(this.canvas);
+      addEventListener('scroll', this.onScroll, { passive: true, capture: true });
+      addEventListener('resize', this.onScroll);
       // The real element stays in place (opacity 0) so it keeps receiving pointer events.
       this.el.style.opacity = '0';
       this.t0 = performance.now();
@@ -772,6 +774,13 @@ class HtmlEffectImpl implements HtmlEffect {
       });
     });
   }
+
+  // Keep the overlay on the element while the page scrolls or resizes.
+  private onScroll = () => {
+    if (this.done) return;
+    this.place();
+    this.render();
+  };
 
   private tick = () => {
     this.progress = this.state.p;
@@ -828,6 +837,8 @@ class HtmlEffectImpl implements HtmlEffect {
     this.done = true;
     this.anim?.kill();
     this.hc?.dispose();
+    removeEventListener('scroll', this.onScroll, { capture: true });
+    removeEventListener('resize', this.onScroll);
     this.canvas.remove();
     const ext = this.gl?.getExtension('WEBGL_lose_context');
     ext?.loseContext();

@@ -179,6 +179,30 @@ document.addEventListener('click', (e) => {
 
 For full-page "one section per swipe" navigation, `observer({ onDown, onUp, tolerance: 20 })` turns wheel, touch and pointer input into intents.
 
+## Shader transition on real DOM (shatter, dissolve, curl)
+
+Break a card apart on click, then bring it back. `htmlEffect` draws the element into a WebGL overlay (natively where the browser supports HTML-in-Canvas, through SVG `foreignObject` elsewhere), animates the effect and restores the element. Clicks still reach the real element while the effect plays.
+
+```html
+<div class="notice" style="width:280px;padding:20px;border-radius:14px;background:#24324d;color:#fff">
+  <strong>Saved!</strong> Your changes are live.
+  <button class="dismiss">Dismiss</button>
+</div>
+<button class="restore">Restore</button>
+```
+
+```ts
+import { htmlEffect } from 'anikit';
+
+const notice = document.querySelector<HTMLElement>('.notice')!;
+document.querySelector('.dismiss')!.addEventListener('click', async () => {
+  await htmlEffect(notice, 'shatter', { duration: 1.2 }).finished; // notice is now visibility: hidden
+});
+document.querySelector('.restore')!.addEventListener('click', () => {
+  htmlEffect(notice, 'dissolve', { mode: 'in', duration: 0.8, color: '#7cf' }); // reveal it again
+});
+```
+
 ## Draggable carousel
 
 Drag (or throw) the track; it settles on a slide. Buttons animate to the neighbouring slide.
