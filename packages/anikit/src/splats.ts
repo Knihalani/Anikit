@@ -366,7 +366,7 @@ function fromText(text: string, o: SplatSourceOptions & { count?: number; width?
   const width = o.width ?? 2;
   const pts = textPoints(text, count, { width: 1000, depth: ((o.depth ?? 0.1) * 1000) / width, font: o.font, weight: o.weight });
   const k = width / 1000;
-  for (let i = 0; i < pts.length; i++) pts[i] *= i % 3 === 1 ? -k : k; // canvas y is down
+  for (let i = 0; i < pts.length; i++) pts[i] *= k;
   return fromPoints(pts, { size: Math.max(0.004, (width / Math.sqrt(count)) * 0.18), ...o });
 }
 
@@ -1010,16 +1010,17 @@ export class SplatLayer {
     if (this.bg) gl.clearColor(this.bg[0] * this.bg[3], this.bg[1] * this.bg[3], this.bg[2] * this.bg[3], this.bg[3]);
     else gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    this.draw(this.view, this.proj);
+    this.draw(this.view, this.proj, w, h);
   }
 
   /**
    * Draw into whatever framebuffer and viewport are bound on this layer's
    * context, with the given column-major view and projection matrices: the
    * hook for rendering splats inside another WebGL2 scene. The layer's
-   * `transform` is applied on top of `view`.
+   * `transform` is applied on top of `view`. `width`/`height` are the
+   * viewport size in pixels (default: the drawing buffer).
    */
-  draw(view: ArrayLike<number>, proj: ArrayLike<number>): void {
+  draw(view: ArrayLike<number>, proj: ArrayLike<number>, width = this.gl.drawingBufferWidth, height = this.gl.drawingBufferHeight): void {
     if (this.dead) return;
     const gl = this.gl;
     const n = this.set.count;
@@ -1028,13 +1029,12 @@ export class SplatLayer {
     modelView(this.mv, view, this.transform);
     this.maybeSort();
     if (!n) return;
-    const vp = gl.getParameter(gl.VIEWPORT) as Int32Array;
     const L = this.loc;
     const f = this.fx;
     gl.useProgram(this.prog);
     gl.uniformMatrix4fv(L.u_view, false, this.mv);
     gl.uniformMatrix4fv(L.u_proj, false, proj as Float32Array);
-    gl.uniform2f(L.u_viewport, vp[2], vp[3]);
+    gl.uniform2f(L.u_viewport, width, height);
     const b = this.b;
     gl.uniform4f(L.u_bounds, b[0], b[1], b[2], b[3]);
     gl.uniform2f(L.u_yrange, b[4], b[5]);
