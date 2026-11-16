@@ -475,7 +475,7 @@ export function createHall(canvas, overlayEl) {
     bars.count = BENCH.length;
     for (let i = 0; i < BENCH.length; i++) {
       const h = Math.max(0.02, benchState[i].h * 1.6);
-      bars.put(i, 5.15, 0.95 + h / 2, 2.75 + i * 0.72, 0, 0.3, h, 0.3, LACQUER + 0.8, 1.0, 0.52 - i * 0.06, 0.16 + i * 0.05, 0.1 + 0.4 * wake[1].v);
+      bars.put(i, 5.15, 0.95 + h / 2, 2.75 + i * 0.72, 0, 0.3, h, 0.3, LACQUER + 0.8, 1.0, 0.52 - i * 0.06, 0.16 + i * 0.05, 0.03 + 0.12 * wake[1].v);
     }
     bars.upload();
 
