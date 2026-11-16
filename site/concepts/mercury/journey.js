@@ -2,7 +2,7 @@
 // One render loop (anikit's engine.onFrame). Scroll progress is smoothed by a critically
 // damped anikit spring; that one value seeks an anikit timeline which drives every beat
 // (morph, staggered burst, rain, mist, install), and a spline camera.
-import { engine, ready, spring, world, timeline, stagger, smoothScroll, pointCloud, glow, scene3d, textPoints, set, animate } from '../../../packages/anikit/dist/anikit.lean.js';
+import { engine, ready, spring, world, timeline, stagger, smoothScroll, pointCloud, glow, scene3d, animate } from '../../../packages/anikit/dist/anikit.lean.js';
 import { vert, frag, MAX_DROPS } from './shader3d.js';
 
 const $ = (s) => document.querySelector(s);
@@ -140,8 +140,8 @@ const KEYS = [
   [0.66, [0.1, 0.25, 1.4], [0, 0, -0.2]],
   [0.7, [0, 0.12, 0.6], [0, 0, -0.4]],
   [0.84, [0, 2.0, 3.0], [0, 0, 0]],
-  [0.92, [0, 7.0, 1.2], [0, 0, 0]],
-  [1.0, [0, 7.6, 0.9], [0, 0, 0]],
+  [0.92, [0, 5.6, 3.2], [0, 0, 0.2]],
+  [1.0, [0, 6.0, 3.0], [0, 0, 0.25]],
 ];
 const cr = (p0, p1, p2, p3, u) => { const u2 = u * u, u3 = u2 * u; return 0.5 * ((2 * p1) + (-p0 + p2) * u + (2 * p0 - 5 * p1 + 4 * p2 - p3) * u2 + (-p0 + 3 * p1 - 3 * p2 + p3) * u3); };
 function camAt(s, out, which) {
@@ -245,7 +245,6 @@ function idleJobs() {
       return true;
     });
   });
-  jobs.push(() => { cloud.shape(2, textPoints('0.37 ms', NP, { width: 760, depth: 30 })); return true; });
   jobs.push(() => {
     g = glow(mistCanvas, { resolution: small ? 0.7 : 0.85, background: '#020203', trail: 0.3, budget: 5 });
     g.colors(NP, (j) => { const k = rnd(); const s = k < 0.025 ? 2.4 : 0.55 + k * 0.5; return (j % 11 === 0) ? [s, 0.8 * s, 0.6 * s] : [0.8 * s, 0.85 * s, 0.95 * s]; });
@@ -361,7 +360,8 @@ function frame(dtMs) {
   if (Math.abs(mv - mistVis) > 0.004) { mistVis = mv; mistCanvas.style.opacity = mv.toFixed(3); mistCanvas.style.visibility = mv > 0.001 ? 'visible' : 'hidden'; }
   if (mv > 0.001 && cloud && g) {
     const c = S.cond;
-    if (c < 1) { cloud.from = 0; cloud.to = 1; cloud.mix = c; } else { cloud.from = 1; cloud.to = 2; cloud.mix = c - 1; }
+    // Atomise into a swirling disc, then condense back into a drop.
+    if (c < 1) { cloud.from = 0; cloud.to = 1; cloud.mix = c; } else { cloud.from = 1; cloud.to = 0; cloud.mix = c - 1; }
     cloud.step(dt);
     const ang = t * 0.15 + s * 6;
     cloudScene.camera.x = Math.sin(ang) * 900 * (1 - sstep(1.3, 2, c)); cloudScene.camera.z = Math.cos(ang) * 900 * (1 - sstep(1.3, 2, c)) + 900 * sstep(1.3, 2, c); cloudScene.camera.y = 160 * (1 - sstep(1.3, 2, c));
@@ -391,14 +391,14 @@ function render(t, morph, avg) {
   gl.uniformMatrix3fv(U.uCamM, false, M);
   gl.uniform1f(U.uFov, FOV);
   gl.uniform4fv(U.uD, D);
-  gl.uniform1f(U.uK, 0.16 + 0.1 * S.rain * 0);
+  gl.uniform1f(U.uK, lerp(0.1, 0.075, S.rain));
   // Wordmark: hovers and breathes; its width fits the screen.
   const gw = Math.min(3.4, 3.4 * (vw / vh) / 1.5);
   const scale = text.ready ? gw / (text.W - 2 * text.pad) : 0;
   const breathe = 1 + Math.sin(t * 0.8) * 0.012;
   gl.uniform4f(U.uTC, 0, 1.15 + Math.sin(t * 0.6) * 0.04, 0, scale * breathe);
   gl.uniform4f(U.uTB, (text.W * scale) / 2 * breathe, (text.H * scale) / 2 * breathe, text.ready ? text.gh * scale * 0.1 : 0, text.ready ? 1 : 0);
-  const sr = SPH.r0 * Math.cbrt(Math.max(0, 1 - avg * 0.97)) * sstep(0, 0.35, morph);
+  const sr = SPH.r0 * Math.cbrt(Math.max(0, 1 - avg * 0.97)) * sstep(0, 0.35, morph) * (1 - sstep(0.85, 1, avg));
   gl.uniform4f(U.uSph, SPH.x, SPH.y, SPH.z, sr);
   gl.uniform1f(U.uMorph, morph);
   // Ripple under the pointer, on the wordmark's plane.

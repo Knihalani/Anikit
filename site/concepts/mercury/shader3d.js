@@ -180,7 +180,8 @@ vec3 floorColor(vec3 P, vec3 rd, float px) {
     vec3 Q = P + rr * h.t;
     r = metal(Q, normalAt(Q), rr) * exp(-h.t * 0.25);
   } else {
-    r = env(rr, 0.02);
+    // The studio in the lacquer: blurred, and without the small hot lights.
+    r = env(rr, 0.08) * 0.35;
     float cover = 1.0 - smoothstep(0.0, px * 1.5, h.dmin);
     if (cover > 0.0) { vec3 Q = P + rr * h.tmin; r = mix(r, metal(Q, normalAt(Q), rr) * exp(-h.tmin * 0.25), cover); }
   }
