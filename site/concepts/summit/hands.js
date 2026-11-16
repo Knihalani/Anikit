@@ -132,14 +132,19 @@ void main() {
     float rOff = layer < 0.5 ? 0.0 : layer < 1.5 ? 0.35 : -0.3;
     float a = uA.x + h1 * arc * TAU + uP.y * speed * uA.y;
     float jr = h3 - 0.5;
-    float r = R + (rOff + jr * abs(jr) * 3.0) * band + (h(f + floor(t * 20.0)) - 0.5) * 2.0 * uScale;
+    // Thickness varies along the ring and in time; a few sparks spray well outside the band.
+    float thick = 0.6 + 0.8 * (0.5 + 0.5 * sin(a * 5.0 + t * 2.3) * sin(a * 3.0 - t * 1.7));
+    float spray = step(0.86, h4 + h5 * 0.2) * h2 * 3.5;
+    float r = R + (rOff + jr * abs(jr) * 3.0 * thick + spray) * band + (h(f + floor(t * 20.0)) - 0.5) * 2.0 * uScale;
     pos = C + vec2(cos(a), -sin(a)) * r;
     dir = vec2(-sin(a), -cos(a)) * sign(speed * uA.y + 0.001 * (1.0 - uA.y));
     len = (14.0 + 90.0 * h2 * h2) * uScale * (0.5 + 0.5 * uA.y) * (0.45 + 0.55 * min(1.0, R / (260.0 * uScale)));
     wid = (0.9 + 1.6 * h1 * h1) * uScale;
     float core = 1.0 - min(1.0, abs(jr) * 2.2);
     float flick = 0.55 + 0.45 * sin(t * (18.0 + 30.0 * h3) + f);
-    bright = (0.35 + 1.0 * h1 * h1 * h1) * (0.4 + 0.6 * core) * flick;
+    // Comet heads: bright sections racing round the ring.
+    float comet = pow(max(0.0, cos(a * 3.0 - uP.y * 2.6 - 1.3)), 10.0) + pow(max(0.0, cos(a * 2.0 + uP.y * 1.9)), 14.0);
+    bright = (0.35 + 1.0 * h1 * h1 * h1) * (0.4 + 0.6 * core) * flick * (0.65 + 2.2 * comet * uA.y);
     col = mix(vec3(1.0, 0.36, 0.06), vec3(1.0, 0.66, 0.26), h2 * core);
     if (arc < 0.999) bright *= 0.5 + 1.8 * smoothstep(0.85, 1.0, h1);
   } else {
@@ -159,7 +164,7 @@ void main() {
     vec2 vnow = vel * exp(-T * 0.9) + g * T;
     if (pos.y > uFloor) { pos.y = uFloor - (pos.y - uFloor) * 0.28; vnow.y = -vnow.y * 0.28; }
     dir = normalize(vnow + 1e-4);
-    len = clamp(length(vnow) * 0.05, 3.0 * uScale, 60.0 * uScale);
+    len = clamp(length(vnow) * 0.09, 4.0 * uScale, 110.0 * uScale);
     wid = (1.0 + 1.4 * h3) * uScale * (1.0 - life * 0.5);
     bright = (1.0 - life) * (1.0 - life) * (0.8 + 1.4 * h2) * (0.7 + 0.3 * sin(t * 25.0 + f));
     col = mix(vec3(1.0, 0.26, 0.03), vec3(1.0, 0.6, 0.2), (1.0 - life) * h2);
@@ -224,13 +229,14 @@ void main() {
   // Heat: wavy bands that crawl outwards.
   float sh = sin(ang * 31.0 + r * 0.11 / uScale - t * 9.0) * sin(ang * 13.0 - t * 4.3 + r * 0.05 / uScale);
   float band = 4.0 + R / uScale * 0.05;
-  float core = exp(-x * x / (2.0 + band * 0.6));
+  float var = 0.55 + 0.45 * sin(ang * 7.0 + t * 3.1) * sin(ang * 4.0 - t * 2.2);
+  float core = exp(-x * x / (2.0 + band * 0.6 * var)) * (0.6 + 0.4 * var);
   float halo = exp(-abs(x) / (8.0 + band * 1.4));
   float heat = exp(-pow(max(x, 0.0) / (14.0 + band * 2.5), 2.0)) * step(0.0, x);
-  vec3 c = vec3(1.0, 0.62, 0.26) * core * 0.6 + vec3(1.0, 0.95, 0.8) * exp(-x * x / 1.2) * 0.35
-         + vec3(1.0, 0.4, 0.07) * halo * 0.32 + vec3(1.0, 0.45, 0.12) * heat * (0.05 + 0.07 * sh);
+  vec3 c = vec3(1.0, 0.62, 0.26) * core * 0.35 + vec3(1.0, 0.95, 0.8) * exp(-x * x / 1.2) * 0.2 * var
+         + vec3(1.0, 0.4, 0.07) * halo * 0.22 + vec3(1.0, 0.45, 0.12) * heat * (0.05 + 0.07 * sh);
   c *= drawn;
-  float al = clamp((core * 0.6 + halo * 0.2) * drawn, 0.0, 0.9);
+  float al = clamp((core * 0.4 + halo * 0.12) * drawn, 0.0, 0.8);
   // Heat haze just outside the rim: alternating light and shade so the scenery behind seems to waver.
   al += heat * 0.08 * max(sh, 0.0) * drawn;
   // Inside: the bright inner lip of the opening and a warm falloff into the hall.
@@ -258,8 +264,8 @@ void main() {
   float R = max(uRing.z, 1.0);
   float r = length(d);
   float air = exp(-max(r - R, 0.0) / (R * 0.6)) * step(R, r) * 0.07;
-  vec2 g = vec2(d.x / (R * 1.8), (px.y - uL.y) / (R * 0.45));
-  float snow = exp(-dot(g, g)) * smoothstep(uL.y - R * 0.3, uL.y + R * 0.1, px.y) * 0.35;
+  vec2 g = vec2(d.x / (R * 2.2), (px.y - uL.y) / (R * 0.6));
+  float snow = exp(-dot(g, g)) * smoothstep(uL.y - R * 0.45, uL.y + R * 0.05, px.y) * 0.7;
   float flash = uL.x * (0.6 * exp(-r / R) + 0.1);
   vec3 c = vec3(1.0, 0.45, 0.12) * (air + snow) * uRing.w + vec3(1.0, 0.8, 0.55) * flash;
   outColor = vec4(c, 0.0);
@@ -382,7 +388,7 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
     .add(portal, { size: [0, 1] }, { duration: 3.0, ease: io }, 3.4)
     .add(circle, { amp: 0 }, { duration: 0.4, ease: 'inOutSine' }, 6.2)
     // It tears open with a flash (6.0 → 7.0).
-    .add(portal, { open: [0, 1] }, { duration: 1.0, ease: 'inOutSine' }, 6.0)
+    .add(portal, { open: [0, 1] }, { duration: 0.55, ease: 'outCubic' }, 6.0)
     .add(portal, { flash: [0, 1, 0] }, { duration: 0.6, ease: 'outSine' }, 6.1)
     // Step through (7.2 → 10): the portal grows past the screen, the arms drop away.
     .add(portal, { grow: [0, 1] }, { duration: 2.8, ease: 'inCubic' }, 7.2)
@@ -592,7 +598,7 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
       gl.useProgram(SPARK.p);
       gl.uniform2f(SPARK.u.uRes, Wd, Hd);
       gl.uniform4f(SPARK.u.uRing, cx * k, cy * k, ringR * k, arc);
-      gl.uniform4f(SPARK.u.uP, timeNow, spinAcc, portal.glow * fade, 0.1 + 0.16 * spinOn);
+      gl.uniform4f(SPARK.u.uP, timeNow, spinAcc, portal.glow * fade, 0.12 + 0.2 * spinOn);
       gl.uniform2f(SPARK.u.uA, a0, spinOn);
       gl.uniform1f(SPARK.u.uFloor, cssH * 0.86 * k);
       gl.uniform1f(SPARK.u.uDepth, portalDepth());
