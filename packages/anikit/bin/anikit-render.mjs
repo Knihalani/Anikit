@@ -28,6 +28,12 @@ Usage
 Options
   --out <path>          video file, image (--still) or directory (--preview). Default anikit.mp4
   --workers <n>         parallel render processes (default: CPU cores - 1, at most 8)
+  --chunk <s>           split the film into jobs of this many seconds, handed to the
+                        workers as they finish (balances slow and fast stretches);
+                        default: one equal slice per worker
+  --preroll <s>         seconds each job (and --still) draws, unseen, before its first
+                        frame so trails match (default 0.5); 0 when draw() keeps no state
+                        between frames: renders sooner, same pixels
   --from <s>, --to <s>  render only this time range, in seconds
   --audio <file>        mux a soundtrack (cut to the video's length)
   --fade-in <s>         fade in from --fade-color (default black) at the start
@@ -47,7 +53,7 @@ for a complete example. Needs ffmpeg on PATH and the peer dependency
 Workflow: --still 2 to look at one frame, --review to check pacing and the whole
 film at a glance (or --preview 15 for full frames), then render. Output never depends on machine speed.`;
 
-const VALUE = ['check', 'out', 'workers', 'from', 'to', 'audio', 'fade-in', 'fade-out', 'fade-color', 'crf', 'preset', 'codec', 'preview', 'still', 'template', 'every', 'sheet-every'];
+const VALUE = ['check', 'out', 'workers', 'chunk', 'preroll', 'from', 'to', 'audio', 'fade-in', 'fade-out', 'fade-color', 'crf', 'preset', 'codec', 'preview', 'still', 'template', 'every', 'sheet-every'];
 const BOOL = ['help', 'init', 'profile', 'watch', 'doctor'];
 /** Flags whose value is optional (`--review` or `--review dir/`). */
 const OPTIONAL = ['review'];
@@ -134,7 +140,9 @@ if (!file) {
 }
 if (positional.length > 1) fail(`unexpected argument "${positional[1]}". Options start with -- (e.g. --out ${positional[1]}).`);
 if (!existsSync(resolve(file))) fail(`${file} not found.${/\.m?js$/.test(file) ? '' : ' Pass the composition module, e.g. film.mjs (anikit-render --init writes one).'}`);
-for (const n of ['workers', 'preview', 'still', 'from', 'to', 'fade-in', 'fade-out', 'crf', 'every', 'sheet-every']) num(n);
+for (const n of ['workers', 'chunk', 'preroll', 'preview', 'still', 'from', 'to', 'fade-in', 'fade-out', 'crf', 'every', 'sheet-every']) num(n);
+if (opts.chunk !== undefined && !(num('chunk') > 0)) fail('--chunk takes a length in seconds > 0.');
+if (opts.preroll !== undefined && !(num('preroll') >= 0)) fail('--preroll takes seconds >= 0.');
 if (opts.preview !== undefined && !(num('preview') >= 1)) fail('--preview takes N >= 1: write every Nth frame.');
 if (opts.workers !== undefined && !(num('workers') >= 1)) fail('--workers must be at least 1.');
 const out = resolve(opt('out', 'anikit.mp4'));
@@ -188,7 +196,7 @@ if (opts.still !== undefined) {
   if (t < 0 || t > comp.duration) fail(`--still ${t} is outside the composition (0 to ${comp.duration} s).`);
   const dest = resolve(opt('out', `${basename(file).replace(/\.[cm]?[jt]s$/, '')}-${t}s.png`));
   if (!/\.(png|jpe?g)$/i.test(dest)) fail(`--still writes an image: use --out frame.png (or .jpg), not ${basename(dest)}.`);
-  await node.renderStill(comp, { t, out: dest });
+  await node.renderStill(comp, { t, out: dest, preroll: num('preroll') });
   console.log('still →', dest);
   if (!opts.watch) process.exit(0);
   // Watch: re-import the module (cache-busted) and re-render on every save.
@@ -200,7 +208,7 @@ if (opts.still !== undefined) {
     const t0 = Date.now();
     try {
       const { comp: next } = await build(version++);
-      await node.renderStill(next, { t: Math.min(t, next.duration), out: dest });
+      await node.renderStill(next, { t: Math.min(t, next.duration), out: dest, preroll: num('preroll') });
       console.log(`still → ${dest} (${Date.now() - t0} ms)`);
     } catch (e) {
       console.error(`anikit-render: ${e?.stack ?? e}`);
@@ -232,7 +240,7 @@ if (SEG) {
   // Report progress to the parent (it prints one aggregated line).
   let last = 0;
   await node.renderToFile(comp, {
-    ...enc, out: target, from: +a, to: +b, fadeIn: +fi || 0, fadeOut: +fo || 0, fadeColor: fc || undefined,
+    ...enc, out: target, from: +a, to: +b, preroll: num('preroll'), fadeIn: +fi || 0, fadeOut: +fo || 0, fadeColor: fc || undefined,
     onProgress: (_fr, n) => { const now = Date.now(); if (process.send && now - last > 250) { last = now; process.send({ n }); } },
   });
   process.send?.({ n: Math.round((+b - +a) * comp.fps) });
@@ -244,14 +252,20 @@ const from = +(opt('from', 0)), to = +(opt('to', comp.duration));
 const workers = Math.max(1, +(opt('workers', Math.max(1, Math.min(8, cpus().length - 1)))));
 const fps = comp.fps;
 const frames = Math.round((to - from) * fps);
-const per = Math.ceil(frames / workers);
+// Jobs: one equal slice per worker, or --chunk seconds each, taken by whichever worker is free.
+const per = opts.chunk !== undefined ? Math.max(1, Math.round(num('chunk') * fps)) : Math.ceil(frames / workers);
+const jobs = [];
+for (let fa = Math.round(from * fps); fa < Math.round(to * fps); fa += per) jobs.push([fa, Math.min(Math.round(to * fps), fa + per)]);
+// A fade must lie inside one job: fold a last (or first) job shorter than its fade into its neighbour.
+if (jobs.length > 1 && (jobs[jobs.length - 1][1] - jobs[jobs.length - 1][0]) / fps < +opt('fade-out', 0)) jobs[jobs.length - 2][1] = jobs.pop()[1];
+if (jobs.length > 1 && (jobs[0][1] - jobs[0][0]) / fps < +opt('fade-in', 0)) jobs[1][0] = jobs.shift()[0];
 const t0 = Date.now();
 const fadeIn = +opt('fade-in', 0), fadeOut = +opt('fade-out', 0), audio = opt('audio');
 const tmp = out + '.parts';
 mkdirSync(tmp, { recursive: true });
 const parts = [];
 // Progress: workers report frames done over IPC; one line on a terminal, every 10% otherwise.
-const done = new Array(workers).fill(0);
+const done = new Array(jobs.length).fill(0);
 const tty = process.stderr.isTTY;
 let lastDecile = -1;
 const report = () => {
@@ -262,15 +276,18 @@ const report = () => {
   else if (Math.floor((n / frames) * 10) > lastDecile) { lastDecile = Math.floor((n / frames) * 10); console.error(line); }
 };
 const ticker = setInterval(report, 500);
-await Promise.all(Array.from({ length: workers }, (_, k) => {
-  const fa = Math.round(from * fps) + k * per, fb = Math.min(Math.round(to * fps), fa + per);
-  if (fa >= fb) return null;
+const run = (k) => {
+  const [fa, fb] = jobs[k];
   const part = join(tmp, `p${k}.mp4`);
-  parts.push(part);
+  parts[k] = part;
   return new Promise((res, rej) => spawn(process.execPath, [fileURLToPath(import.meta.url), ...args], {
     env: { ...process.env, ANIKIT_SEG: [fa / fps, fb / fps, part, k === 0 ? fadeIn : 0, fb === Math.round(to * fps) ? fadeOut : 0, opt('fade-color', '')].join('|') }, stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
   }).on('message', (m) => { if (m && typeof m.n === 'number') done[k] = m.n; })
     .on('close', (c) => (c ? rej(new Error(`worker ${k} exited ${c}`)) : res())));
+};
+let nextJob = 0;
+await Promise.all(Array.from({ length: Math.min(workers, jobs.length) }, async () => {
+  while (nextJob < jobs.length) await run(nextJob++);
 }));
 clearInterval(ticker);
 report();

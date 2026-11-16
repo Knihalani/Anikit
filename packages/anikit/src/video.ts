@@ -57,6 +57,16 @@ export interface FrameInfo {
    * maps a clock value back to composition time (for impacts and cues).
    */
   clock: number;
+  /**
+   * In `draw()`: this frame is `px` (opaque RGBA, `width × height × 4`), as if put
+   * with `ctx.putImageData` as the draw's last step (a canvas premultiplies
+   * translucent pixels and the direct path doesn't, so keep alpha at 255). On a plain frame the pixels go
+   * straight to the grade and the encoder, skipping the canvas round trip
+   * (`putImageData` + read-back, ~20 ms at 1080p in Node); in transitions and with
+   * impacts they are put on the canvas. Use it for full-frame renders such as
+   * `renderer3d` output, and draw nothing on `ctx` after it.
+   */
+  pixels(px: Uint8ClampedArray | Uint8Array): void;
 }
 export interface SceneHooks {
   /** Once, when the scene starts (start tweens, timelines, simulations here). */
@@ -230,6 +240,8 @@ export interface RenderOptions {
   order?: 'rgba' | 'bgra';
   /** Create offscreen canvases for transitions (Node: pass your canvas library's). */
   createCanvas?: (width: number, height: number) => CanvasLike;
+  /** Put frames handed over with `pixels()` on the canvas too (for callers that read the canvas in `onFrame`). */
+  keepCanvas?: boolean;
   onFrame(frame: RenderedFrame): void | Promise<void>;
 }
 
@@ -435,9 +447,21 @@ export class Composition {
     const bufs: CanvasLike[] = [];
     const buf = (k: number) => (bufs[k] ??= make(w, h));
     const clocks = new Map<SceneDef, number>();
+    /** Pixels handed over by `pixels()` on a plain frame: read instead of the canvas. */
+    let direct: Uint8ClampedArray | Uint8Array | null = null;
+    const viaCanvas = order !== 'rgba' || o.keepCanvas || this.impacts.length > 0;
+    const putPixels = (c: Ctx2D, px: Uint8ClampedArray | Uint8Array) => {
+      const data = px instanceof Uint8ClampedArray ? px : new Uint8ClampedArray(px.buffer, px.byteOffset, px.length);
+      c.putImageData(new ImageData(data as Uint8ClampedArray<ArrayBuffer>, w, h), 0, 0);
+    };
     const info = (t: number, frame: number, s: SceneDef, c: Ctx2D = ctx, step = 0): FrameInfo => ({
       ctx: c, t, frame, width: w, height: h, scene: s, local: t - s.start, progress: Math.min(1, Math.max(0, (t - s.start) / (s.end - s.start))), dt: step,
       clock: clocks.get(s) ?? 0,
+      pixels: (px) => {
+        if (px.length < w * h * 4) throw new Error(`anikit composition: pixels() needs ${w}×${h}×4 = ${w * h * 4} bytes, got ${px.length}`);
+        if (c === ctx && !viaCanvas) direct = px;
+        else putPixels(c, px);
+      },
     });
     const post = this.options.post;
     const postOn = !!post && Object.values(post).some((v) => v);
@@ -492,6 +516,7 @@ export class Composition {
     // Guard: meshes / instance buffers created inside draw() pile up in WebAssembly memory.
     let churn = 0, churnWarned = false;
     const paint = (t: number, f: number, act: SceneDef[]) => {
+      direct = null;
       const before = created.meshes + created.instances;
       paintFrame(t, f, act);
       const made = created.meshes + created.instances - before;
@@ -559,7 +584,7 @@ export class Composition {
           if (blur) {
             paint(ts, f, act);
             c1 = performance.now(); tm.draw += c1 - c0; c0 = c1;
-            fb.write(read(ctx, w, h));
+            fb.write(direct ?? read(ctx, w, h));
             fb.accumulate();
             c1 = performance.now(); tm.read += c1 - c0; c0 = c1;
           } else if (warm || (visible && k === n - 1)) {
@@ -576,7 +601,7 @@ export class Composition {
         }
         if (!visible || !act.length) continue;
         if (blur) fb.resolve();
-        else fb.write(read(ctx, w, h));
+        else fb.write(direct ?? read(ctx, w, h));
         c1 = performance.now(); tm.read += c1 - c0; c0 = c1;
         grade(f, t);
         tm.post = performance.now() - c0;

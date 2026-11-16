@@ -249,7 +249,7 @@ export default async function film({ anikit: A }) {
     const o = opts[look];
     const its = items[look];
     for (const it of laneItems) it.material.pulsePhase = curT * 4.2;
-    const px = r.render(cam, its, { ...o, prevCamera: prevVP, motionBlur: look === 'C' ? undefined : o.motionBlur });
+    const px = r.render(cam, its, { ...o, sort: 'near', prevCamera: prevVP, motionBlur: look === 'C' ? undefined : o.motionBlur });
     const dist = r.depth(cam);
     const dst = slot === 0 ? bufA : slot === 1 ? bufB : frame;
     if (look === 'C') { comic(px, dist, comicOut[slot], curT); distCopy[slot].set(dist); return { px: comicOut[slot], dist: distCopy[slot] }; }
@@ -490,7 +490,7 @@ export default async function film({ anikit: A }) {
   });
 
   filmC.scene('flight', 0, DUR, {
-    draw({ ctx, t }) {
+    draw({ t, pixels }) {
       curT = t;
       pose(Math.max(0, t - 1 / FPS));
       prevVP = cam.viewProjection().matrix;
@@ -514,7 +514,7 @@ export default async function film({ anikit: A }) {
       }
       const aC = s.look ? (s.look === 'C' ? 1 : 0) : s.tease !== undefined ? 0 : s.to === 'C' ? ease(clamp((s.p - 0.6) / 0.4)) : s.from === 'C' ? 1 - ease(clamp(s.p / 0.4)) : 0;
       panelBorder(out, aC);
-      ctx.putImageData(new globalThis.ImageData(out, W, H), 0, 0);
+      pixels(out); // straight to the grade and the encoder (no canvas round trip)
     },
   });
   return filmC;

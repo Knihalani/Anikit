@@ -327,6 +327,8 @@ pub struct Raster {
     /// Half-resolution target for a planar reflection pass (see [`Raster::reflection_begin`]).
     reflection: Option<alloc::boxed::Box<Raster>>,
     reflecting: bool,
+    /// The reflection pass runs after the opaque scene (see [`Raster::reflection_after`]).
+    reflect_after: bool,
     /// Depth-of-field scratch: circle of confusion per half-res pixel, and
     /// integer tap offsets per quantised radius.
     coc: Vec<f32>,
@@ -350,6 +352,14 @@ pub struct Raster {
     /// shaded once. Front-to-back instance order already keeps overdraw low,
     /// so this only pays off for heavily self-overlapping single meshes.
     pub prepass: bool,
+    /// List order of the opaque item being drawn, for draws in any order with
+    /// list-order results (see [`Raster::ordered`]): `Some(i)` resolves depth
+    /// ties against other items by this index (the lower index wins, as if the
+    /// items were drawn in list order); `None` (the default) keeps
+    /// first-drawn-wins.
+    pub item: Option<u16>,
+    /// Owner (list index) of each pixel's depth while drawing with [`Raster::item`].
+    owner: Vec<u16>,
     /// Tests: always take the full shader (to check the fast paths against it).
     #[cfg(test)]
     full_shader: bool,
@@ -872,6 +882,46 @@ impl Raster {
         }
         sub.clear(rgb, alpha);
         self.reflecting = true;
+        self.reflect_after = false;
+    }
+
+    /// [`Raster::reflection_begin`] after the opaque scene is drawn: the
+    /// reflection only shows where nothing opaque was drawn, so half-res
+    /// pixels whose upsampling footprint (4×4 full-res pixels) is all covered
+    /// are skipped (depth −∞ fails every test), and [`Raster::reflection_end`]
+    /// writes only uncovered pixels and keeps the depth. Same picture as
+    /// reflecting first and drawing the scene over it, without shading the
+    /// hidden part of the reflection.
+    pub fn reflection_after(&mut self, rgb: u32, alpha: u8) {
+        self.reflection_begin(rgb, alpha);
+        self.reflect_after = true;
+        let (w, h) = (self.width, self.height);
+        let Some(sub) = self.reflection.as_deref_mut() else { return };
+        let (bw, bh) = (sub.width, sub.height);
+        // Half pixel (bx, by) feeds full-res x in 2bx − 1 ..= 2bx + 2 (and y alike).
+        let mut need = vec![false; bw * bh];
+        let mut row = vec![false; bw];
+        for y in 0..h {
+            let d = &self.depth[y * w..(y + 1) * w];
+            for (bx, r) in row.iter_mut().enumerate() {
+                let (x0, x1) = ((2 * bx).saturating_sub(1), (2 * bx + 3).min(w));
+                *r = d[x0.min(x1)..x1].contains(&f32::INFINITY);
+            }
+            // Half rows by with 2by − 1 <= y <= 2by + 2.
+            for by in y.saturating_sub(2) / 2..(y.div_ceil(2) + 1).min(bh) {
+                if by * 2 + 2 < y || by * 2 > y + 1 {
+                    continue;
+                }
+                for (n, r) in need[by * bw..(by + 1) * bw].iter_mut().zip(&row) {
+                    *n |= *r;
+                }
+            }
+        }
+        for (z, n) in sub.depth.iter_mut().zip(&need) {
+            if !*n {
+                *z = f32::NEG_INFINITY;
+            }
+        }
     }
     /// The raster draws should go to: the half-res reflection target during a
     /// reflection pass, otherwise this one.
@@ -890,17 +940,32 @@ impl Raster {
         self.reflecting = false;
         let Some(sub) = self.reflection.take() else { return };
         let (bw, bh) = (sub.width, sub.height);
+        let after = core::mem::take(&mut self.reflect_after);
         if self.width >= 2 && self.height >= 2 {
             self.half_px.clear();
             self.half_px.extend(sub.color.iter().map(|c| c & 0x00ff_ffff));
             let mut alpha = core::mem::take(&mut self.alpha);
             alpha.clear();
             alpha.resize(bw * bh, 1.0);
-            self.blend_half(bw, bh, &alpha);
+            if after {
+                // Keep the opaque scene: blend everywhere, then restore covered pixels.
+                let mut saved = core::mem::take(&mut self.blur_src);
+                saved.clear();
+                saved.extend_from_slice(&self.color);
+                self.blend_half(bw, bh, &alpha);
+                for ((c, s), z) in self.color.iter_mut().zip(&saved).zip(&self.depth) {
+                    *c = if *z == f32::INFINITY { *c } else { *s };
+                }
+                self.blur_src = saved;
+            } else {
+                self.blend_half(bw, bh, &alpha);
+            }
             self.alpha = alpha;
         }
         self.reflection = Some(sub);
-        self.clear_depth();
+        if !after {
+            self.clear_depth();
+        }
     }
 
     #[inline(always)]
@@ -1078,6 +1143,14 @@ impl Raster {
             }
             Blend::Opaque => {
                 let pre = self.prepass;
+                let own = !pre && self.item.is_some();
+                if own {
+                    let n = self.width * self.height;
+                    if self.owner.len() != n {
+                        self.owner.clear();
+                        self.owner.resize(n, u16::MAX);
+                    }
+                }
                 if pre {
                     for oi in 0..count {
                         self.tris::<DEPTH>(mesh, oi * nv, cull_back, &sh);
@@ -1094,6 +1167,8 @@ impl Raster {
                     }
                     if pre {
                         self.tris::<SHADE_EQ>(mesh, oi * nv, cull_back, &sh);
+                    } else if own {
+                        self.tris::<SHADE_OWN>(mesh, oi * nv, cull_back, &sh);
                     } else {
                         self.tris::<SHADE_LT>(mesh, oi * nv, cull_back, &sh);
                     }
@@ -1281,6 +1356,9 @@ impl Raster {
             // Split borrows so the span loop keeps everything in locals.
             let gl = (self.gloss.clamp(0.0, 1.0) * 256.0) as u32;
             let (depth, color, qu) = (&mut self.depth[a0..=a1], &mut self.color, &mut self.queue);
+            // Owners of the span's depth (SHADE_OWN only): a tie wins against a later item.
+            let me = self.item.unwrap_or(0);
+            let owner: &mut [u16] = if MODE == SHADE_OWN { &mut self.owner[a0..=a1] } else { &mut [] };
             let len = depth.len();
             let mut k = 0;
             // Groups of four: runs of groups where all four pass the depth
@@ -1295,19 +1373,33 @@ impl Raster {
                 let zv = zv0 + dzv * (V4::splat(kf) + lanes);
                 let d4 = &mut depth[k..k + 4];
                 let dv = V4::new(d4[0], d4[1], d4[2], d4[3]);
-                let bits = match MODE {
+                let mut bits = match MODE {
                     SHADE_EQ => zv.le(dv),
                     _ => zv.lt(dv),
                 }
                 .bits();
+                if MODE == SHADE_OWN {
+                    // Exact ties are rare: check owners only for those lanes.
+                    let eq = zv.le(dv).bits() & !bits;
+                    if eq != 0 {
+                        for l in 0..4 {
+                            if eq & (1 << l) != 0 && owner[k + l] > me {
+                                bits |= 1 << l;
+                            }
+                        }
+                    }
+                }
                 if bits != 0 && !ready {
                     (q0, s0) = start();
                     ready = true;
                 }
                 let zs = zv.to_array();
                 if bits == 15 {
-                    if MODE == SHADE_LT || MODE == GLOSS {
+                    if MODE == SHADE_LT || MODE == GLOSS || MODE == SHADE_OWN {
                         d4.copy_from_slice(&zs);
+                    }
+                    if MODE == SHADE_OWN {
+                        owner[k..k + 4].fill(me);
                     }
                     if run == usize::MAX {
                         run = k;
@@ -1328,8 +1420,11 @@ impl Raster {
                     if !pass[l] {
                         continue;
                     }
-                    if MODE == SHADE_LT || MODE == GLOSS {
+                    if MODE == SHADE_LT || MODE == GLOSS || MODE == SHADE_OWN {
                         d4[l] = zs[l];
+                    }
+                    if MODE == SHADE_OWN {
+                        owner[k + l] = me;
                     }
                     let kf = (k + l) as f32;
                     let qi = qu.n & 3;
@@ -1362,6 +1457,7 @@ impl Raster {
                 let z = z0 + dz * kf;
                 let ok = match MODE {
                     SHADE_EQ => z <= *dp,
+                    SHADE_OWN => z < *dp || (z == *dp && owner[k + kk] > me),
                     _ => z < *dp,
                 };
                 if !ok {
@@ -1371,8 +1467,11 @@ impl Raster {
                     (q0, s0) = start();
                     ready = true;
                 }
-                if MODE == SHADE_LT || MODE == GLOSS {
+                if MODE == SHADE_LT || MODE == GLOSS || MODE == SHADE_OWN {
                     *dp = z;
+                }
+                if MODE == SHADE_OWN {
+                    owner[k + kk] = me;
                 }
                 let l = qu.n & 3;
                 qu.idx[l] = a0 + k + kk;
@@ -2235,7 +2334,8 @@ impl Raster {
 }
 
 /// Bounding sphere of a mesh (box centre, max distance), in model space.
-fn bounds(mesh: &Mesh) -> ([f32; 3], f32) {
+/// Bounding sphere of a mesh: centre and radius.
+pub fn bounds(mesh: &Mesh) -> ([f32; 3], f32) {
     let mut lo = [f32::INFINITY; 3];
     let mut hi = [f32::NEG_INFINITY; 3];
     for p in mesh.pos.chunks_exact(3) {
@@ -2260,6 +2360,8 @@ const SHADE_EQ: u8 = 1;
 const ADD: u8 = 2;
 const SHADE_LT: u8 = 3;
 const GLOSS: u8 = 4;
+/// Opaque, depth ties against other items resolved by list index ([`Raster::item`]).
+const SHADE_OWN: u8 = 5;
 
 /// Write a shaded pixel according to the mode.
 #[inline(always)]
@@ -2633,6 +2735,111 @@ mod tests {
         back.extend_from_slice(&[0.0, 1.0, 0.0]);
         r.draw(&cube(), &back, &vp(), [0.0, 0.0, 5.0], &Material::default(), &Lighting::default(), true);
         assert_eq!(r.color[32 * 64 + 32], before);
+    }
+
+    #[test]
+    fn any_draw_order_with_list_indices_matches_list_order() {
+        // Coincident surfaces (two identical cubes in different colours, a
+        // sphere through them, a plane cutting both) make exact depth ties
+        // between items and inside each item; drawn in every order with their
+        // list indices, colour and depth must equal the plain list-order draw.
+        let tf = |s: f32, x: f32, y: f32, z: f32, c: [f32; 3]| {
+            let mut v = vec![s, 0.0, 0.0, 0.0, s, 0.0, 0.0, 0.0, s, x, y, z];
+            v.extend_from_slice(&c);
+            v
+        };
+        let mut two = tf(1.0, -0.4, 0.0, 0.0, [0.2, 0.3, 0.9]);
+        two.extend(tf(1.0, 0.4, 0.2, -0.3, [0.9, 0.9, 0.1]));
+        let items: [(Mesh, Vec<f32>, bool); 5] = [
+            (cube(), tf(1.2, 0.0, 0.0, 0.0, [1.0, 0.0, 0.0]), true),
+            (sphere(10, 14), tf(0.8, 0.3, 0.1, 0.2, [0.1, 0.8, 0.2]), true),
+            (cube(), tf(1.2, 0.0, 0.0, 0.0, [0.0, 1.0, 0.0]), true),
+            (plane(3, 3), tf(3.0, 0.0, 0.0, 0.0, [0.5, 0.5, 0.5]), false),
+            (cube(), two, true),
+        ];
+        let (mat, light) = (Material::default(), Lighting::default());
+        let draw = |r: &mut Raster, order: &[usize], indexed: bool| {
+            r.clear(0x101010, 255);
+            for &i in order {
+                r.item = indexed.then_some(i as u16);
+                let (m, inst, cull) = &items[i];
+                r.draw(m, inst, &vp(), [0.0, 0.0, 5.0], &mat, &light, *cull);
+            }
+            r.item = None;
+        };
+        let mut want = Raster::new(80, 72);
+        draw(&mut want, &[0, 1, 2, 3, 4], false);
+        let mut plain = Raster::new(80, 72);
+        draw(&mut plain, &[4, 3, 2, 1, 0], false);
+        assert_ne!(plain.color, want.color, "the scene has ties that depend on order");
+        let mut r = Raster::new(80, 72);
+        let mut perm = [0usize, 1, 2, 3, 4];
+        // Heap's algorithm: all 120 orders.
+        let mut c = [0usize; 5];
+        let mut check = |p: &[usize]| {
+            draw(&mut r, p, true);
+            assert!(r.color == want.color && r.depth.iter().zip(&want.depth).all(|(a, b)| a.to_bits() == b.to_bits()), "order {p:?}");
+        };
+        check(&perm);
+        let mut i = 0;
+        while i < 5 {
+            if c[i] < i {
+                perm.swap(if i % 2 == 0 { 0 } else { c[i] }, i);
+                check(&perm);
+                c[i] += 1;
+                i = 0;
+            } else {
+                c[i] = 0;
+                i += 1;
+            }
+        }
+    }
+
+    #[test]
+    fn reflection_after_the_scene_matches_reflection_first() {
+        // A mirrored pass drawn first and covered by the scene, against the same
+        // pass drawn after the scene into the pixels it leaves uncovered only.
+        let m = mul(&perspective(60.0, 1.3, 0.5, 100.0), &look_at([0.5, 1.5, 6.0], [0.0; 3], [0.0, 1.0, 0.0]));
+        let vp: M4 = core::array::from_fn(|i| m[i] as f32);
+        let mut mvp = vp;
+        for r in 0..4 {
+            mvp[4 + r] = -vp[4 + r];
+        }
+        let tf = |s: f32, x: f32, y: f32, z: f32, c: [f32; 3]| {
+            let mut v = vec![s, 0.0, 0.0, 0.0, s, 0.0, 0.0, 0.0, s, x, y, z];
+            v.extend_from_slice(&c);
+            v
+        };
+        let mut cubes = tf(1.0, -1.2, 0.6, 0.0, [1.0, 0.2, 0.1]);
+        cubes.extend(tf(0.7, 1.1, 0.4, -1.0, [0.2, 0.9, 0.3]));
+        cubes.extend(tf(2.5, 0.0, 1.5, -6.0, [0.3, 0.3, 0.9]));
+        let ball = tf(0.6, 0.3, 1.2, 1.0, [0.9, 0.9, 0.2]);
+        let (mat, light) = (Material::default(), Lighting::default());
+        for (w, h) in [(80, 60), (81, 63), (33, 18)] {
+            let scene = |r: &mut Raster, v: &M4, flip: bool| {
+                let r = r.target();
+                r.flip_winding = flip;
+                r.draw(&cube(), &cubes, v, [0.5, 1.5, 6.0], &mat, &light, true);
+                r.draw(&sphere(8, 12), &ball, v, [0.5, 1.5, 6.0], &mat, &light, true);
+                r.flip_winding = false;
+            };
+            let mut a = Raster::new(w, h);
+            a.clear(0x203040, 255);
+            a.reflection_begin(0x203040, 255);
+            scene(&mut a, &mvp, true);
+            a.reflection_end();
+            scene(&mut a, &vp, false);
+            let mut b = Raster::new(w, h);
+            b.clear(0x203040, 255);
+            scene(&mut b, &vp, false);
+            b.reflection_after(0x203040, 255);
+            scene(&mut b, &mvp, true);
+            b.reflection_end();
+            assert!(a.color == b.color, "colour {w}x{h}");
+            assert!(a.depth.iter().zip(&b.depth).all(|(x, y)| x.to_bits() == y.to_bits()), "depth {w}x{h}");
+            let sub = b.reflection.as_ref().expect("reflection target");
+            assert!(sub.depth.iter().any(|z| *z == f32::NEG_INFINITY), "covered half-res pixels were skipped ({w}x{h})");
+        }
     }
 
     #[test]

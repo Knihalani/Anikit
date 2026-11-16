@@ -155,6 +155,7 @@ export interface Exports {
   ak_mesh_builtin(kind: number): number;
   ak_mesh_custom(nverts: number, ntris: number): number;
   ak_mesh_ptr(id: number, which: number): number;
+  ak_mesh_bounds(id: number): number;
   ak_mesh_free(id: number): void;
   ak_raster_create(w: number, h: number): number;
   ak_raster_free(id: number): void;
@@ -168,6 +169,7 @@ export interface Exports {
   ak_raster_clear_depth(id: number): void;
   ak_raster_reflection_begin(id: number, rgb: number, alpha: number): void;
   ak_raster_reflection_end(id: number): void;
+  ak_raster_reflection_after(id: number, rgb: number, alpha: number): void;
   ak_raster_sky(id: number, sun: number): void;
   ak_raster_shadow_begin(id: number, size: number, bias: number, strength: number): void;
   ak_raster_shadow_draw(id: number, mesh: number, n: number): void;

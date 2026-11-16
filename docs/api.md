@@ -857,6 +857,21 @@ export default async ({ anikit, node }) => {
 npx anikit-render film.mjs --out film.mp4 --workers 4 --fade-in 0.3 --fade-out 0.8   # --audio track.wav to mux a soundtrack
 ```
 
+Faster renders, same pixels:
+
+- **`--preroll 0`** when `draw()` keeps no state between frames (a camera on a path, no trails). Each job otherwise draws 0.5 s unseen before its first frame so trails match. On `film/film.mjs`, a 30-frame slice took 68 s by default and 27 s with `--preroll 0`, to a byte-identical mp4.
+- **`--chunk 2`** splits the film into 2-second jobs that free workers take in turn, so a slow stretch doesn't hold up the whole render. With the default preroll, every job pays it, so pair it with `--preroll 0`.
+- **`pixels(px)`** hands a full-frame render of opaque pixels to the composition instead of `ctx.putImageData`. On a plain frame it skips the canvas round trip (about 20 ms at 1080p in Node); in transitions and with impacts it puts the pixels on the canvas. Draw nothing on `ctx` after it. Use it only for opaque frames: a canvas premultiplies translucent pixels and the direct path doesn't, so they would differ between plain and transition frames.
+
+```js
+film.scene('flight', 0, 20, {
+  draw({ t, pixels }) {
+    pose(t);
+    pixels(r3.render(cam, items, { sort: 'near' }));   // instead of ctx.putImageData(new ImageData(px, W, H), 0, 0)
+  },
+});
+```
+
 ```bash
 npx anikit-render film.mjs --preview 30 --out frames/
 npx anikit-render film.mjs --review review/   # contact sheet + pacing report (holds, flat frames, cuts)
@@ -927,6 +942,17 @@ Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [nea
 
 **Camera motion blur**: `render(scene, items, { motionBlur: { shutter: 0.5, max } })` reprojects every pixel with the previous `render()`'s camera using the depth buffer and blurs along that motion (depth-aware, so near geometry smears over the background). Smooth, ghost-free speed from one render per frame — use it with composition `motionBlur: 1`, give points `streak: 0`–`0.5`, and call `r3.resetMotion()` after a cut. Pass `prevCamera` (the camera one frame earlier, `scene.viewProjection().matrix`) so previews and `--review`, which skip frames, blur exactly like the final render — see `templates/journey.mjs`.
 
+**Draw order**: `render(scene, items, { sort: 'near' })` draws the opaque items nearest first (by the far side of each item's bounds, so a sky dome around the camera goes last), in the mirror pass too: pixels hidden behind nearer items are rejected by the depth test instead of shaded and overwritten. The picture is bit-identical to list order, exact depth ties included (the item listed first still wins them). On a landscape (sky dome, two terrains, 12,000 trees, a lake), it took the opaque pass from 316–341 ms to 188–199 ms (interleaved runs).
+
+```ts
+import { renderer3d, scene3d, mesh, instances } from 'anikit';
+const r3 = renderer3d({ width: 640, height: 360 });
+const cam = scene3d({ width: 640, height: 360, camera: { y: 40, z: 600 } });
+const dome = { mesh: mesh.sphere(16, 24), instances: instances(1, () => ({ scale: 5000 })), cull: false, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0 } };
+const ground = { mesh: mesh.plane(1), instances: instances(1, () => ({ sx: 4000, sz: 4000 })) };
+r3.render(cam, [dome, ground], { sort: 'near' }); // ground first, dome last: same pixels
+```
+
 **Depth read-back**: after a render, `r3.depth(cam)` returns each pixel's distance from the camera (a reused `Float32Array`, `Infinity` where nothing was drawn); `r3.depth()` without a scene gives the raw NDC depth as a view into WebAssembly memory. Drive post effects by depth: ink outlines, a transition front sweeping from the horizon towards the lens (`film/film.mjs` does both).
 
 ```ts
@@ -941,7 +967,7 @@ const far = dist.filter((d) => d > front).length;
 
 A sky dome that the fog leaves alone: `{ mesh: dome, cull: false, material: { ambient: 0, diffuse: 0, texture: sky, textureMode: 'emissive', fog: 0 } }`. If the scene has a mirror floor, make the dome an upper hemisphere resting on the floor: a whole sphere would cover the reflection below the horizon.
 
-**Mirror floors**: `render(scene, items, { mirror: { y, strength } })` renders the scene reflected about the plane `y`, then the scene itself, then items marked `mirror: true` (the floor) glossily over the reflection where they show (`strength` 0–1; drawing the floor last means hidden floor pixels are never shaded). Neon on wet asphalt. The mirror item should cover the view below the horizon; `reflect: false` keeps an item out of the reflection. The reflection renders at half resolution (about a quarter of the cost of the main pass, and softer, like a real glossy floor); `mirror: { y, resolution: 'full' }` keeps it sharp.
+**Mirror floors**: `render(scene, items, { mirror: { y, strength } })` renders the scene reflected about the plane `y`, then the scene itself, then items marked `mirror: true` (the floor) glossily over the reflection where they show (`strength` 0–1; drawing the floor last means hidden floor pixels are never shaded). Neon on wet asphalt. The mirror item should cover the view below the horizon; `reflect: false` keeps an item out of the reflection. The reflection renders at half resolution (softer, like a real glossy floor), after the scene and only into the pixels the scene leaves uncovered, so the hidden part of the reflection is never shaded (same picture as reflecting first); `mirror: { y, resolution: 'full' }` keeps it sharp, at full cost.
 
 **Meshes**: `mesh.cube()`, `sphere(rings, segments)`, `torus(radius, tube, segments, sides)`, `torusKnot({ p, q, radius, spread, tube, segments, sides })`, `plane(cells)` (XZ, faces +Y — floors that run to the horizon with `grid`), `cylinder(segments, caps)`, `heightfield(w, d, heights | (x, z) => h, { skip })`, `text(str, { font, depth, bevel, resolution })` (solid bevelled 3D text in any font; stand it up with `rx: 90` and use `sz: size * mesh.aspect`), `custom(positions, normals, indices, uvs?)`.
 
