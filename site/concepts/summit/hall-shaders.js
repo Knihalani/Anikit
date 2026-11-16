@@ -240,7 +240,7 @@ layout(location=0) in vec3 aA;
 layout(location=1) in vec3 aB;
 layout(location=2) in vec4 aS;
 uniform mat4 uVP; uniform float uMirror; uniform float uMix; uniform float uTime;
-uniform vec3 uCenter; uniform float uPx; uniform vec3 uEye; uniform float uSpin; uniform float uScale; uniform float uGlow;
+uniform vec3 uCenter; uniform float uPx; uniform vec3 uEye; uniform float uSpin; uniform float uScale; uniform float uGlow; uniform float uBlast;
 out vec3 vC; out float vFog;
 vec3 pal(float t) {
   t = clamp(t, 0.0, 1.0);
@@ -254,6 +254,9 @@ void main() {
   float mid = sin(3.14159 * m);
   vec3 sw = vec3(sin(p.y * 3.1 + uTime * 1.3 + aS.w * 6.0), cos(p.x * 2.7 + uTime), sin(p.z * 3.3 - uTime * 1.1));
   p += sw * mid * 0.35;
+  // explosion: fling outward along the point's direction plus a turbulent kick
+  vec3 dir = normalize(p + vec3(0.001, 0.002, 0.003));
+  p += (dir * (0.9 + 1.6 * aS.w) + sw * 0.6) * uBlast * (0.6 + aS.x);
   p += 0.012 * vec3(sin(uTime * 1.7 + aS.w * 40.0), cos(uTime * 1.3 + aS.w * 31.0), sin(uTime * 1.1 + aS.w * 23.0));
   float c = cos(uSpin), s = sin(uSpin);
   vec3 col = pal(0.48 + p.y * 0.3 + aS.z * 0.25 - 0.05 + mid * 0.25);
@@ -262,7 +265,7 @@ void main() {
   vec4 cp = uVP * vec4(w.x, w.y * uMirror, w.z, 1.0);
   gl_Position = cp;
   gl_PointSize = clamp(uPx * aS.y * uScale * 0.6 / cp.w, 1.0, 10.0);
-  vC = col * (0.95 + 0.7 * aS.w * aS.w + 0.8 * mid) * uGlow;
+  vC = col * (0.95 + 0.7 * aS.w * aS.w + 0.8 * mid + 1.2 * uBlast) * uGlow;
   vFog = (1.0 - exp(-length(uEye - w) * 0.014)) * 0.6;
 }`;
 

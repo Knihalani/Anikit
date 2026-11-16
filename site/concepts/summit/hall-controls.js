@@ -10,7 +10,7 @@ const WALK = 3.0, RUN = 5.6, EYE = 1.7, RAD = 0.35;
 export function createControls(canvas, overlayEl, opts) {
   const pos = new Float32Array([opts.spawn[0], opts.spawn[1], opts.spawn[2]]);
   const ctl = {
-    pos, yaw: 0, pitch: 0,
+    pos, yaw: 0, pitch: 0, speed: 0, running: false,
     enable, disable, update, setStation,
   };
   const keys = { f: 0, b: 0, l: 0, r: 0, run: 0 };
@@ -197,7 +197,10 @@ export function createControls(canvas, overlayEl, opts) {
     active = true;
     // start at the spawn point, looking down the hall
     pos[0] = opts.spawn[0]; pos[1] = opts.spawn[1]; pos[2] = opts.spawn[2];
-    ctl.yaw = 0; ctl.pitch = 0; mv.f = mv.s = 0; tf = ts = 0;
+    ctl.yaw = 0; ctl.pitch = 0; mv.s = 0; tf = ts = 0;
+    // arrive with a short forward glide that eases into your control
+    mv.f = 1.3;
+    spring(mv, { f: 0, s: 0 }, { stiffness: 9, damping: 6 });
     if (!hud.parentNode && overlayEl) overlayEl.appendChild(hud);
     animate(hud, { opacity: 1 }, { duration: 0.8, ease: 'outCubic' });
     tipShown = true; tip.style.opacity = '0.8';
@@ -256,9 +259,12 @@ export function createControls(canvas, overlayEl, opts) {
     pos[0] = x < B[0] ? B[0] : x > B[2] ? B[2] : x;
     pos[2] = z < B[1] ? B[1] : z > B[3] ? B[3] : z;
     const speed = Math.hypot(mv.f, mv.s);
-    bob += speed * dt * 2.2;
+    ctl.speed = speed;
+    ctl.running = speed > WALK * 1.25;
+    // footstep-paced bob: one dip per ~0.72 m step
+    bob += speed * dt * Math.PI / 0.72;
     const amp = Math.min(1, speed / WALK);
-    pos[1] = EYE + Math.sin(bob * 2) * 0.035 * amp;
+    pos[1] = EYE - 0.045 * amp * (1 - Math.abs(Math.cos(bob))) + 0.012 * amp;
     void t;
   }
 

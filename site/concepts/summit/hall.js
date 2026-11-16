@@ -209,10 +209,10 @@ export function createHall(canvas, overlayEl) {
   gl.bindBuffer(gl.ARRAY_BUFFER, pS); gl.bufferData(gl.ARRAY_BUFFER, seeds, gl.STATIC_DRAW);
   gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 0, 0);
   gl.bindVertexArray(null);
-  const cloud = { mix: 0, cur: 0, next: 1, spin: 0, spinV: { v: 0.12 }, idle: 0 };
+  const cloud = { mix: 0, cur: 0, next: 1, spin: 0, spinV: { v: 0.12 }, idle: 0, blast: 0 };
   const CLOUD_C = [0, 4.1, -16], CLOUD_S = 1.6;
 
-  function morph() {
+  function morph(burst = false) {
     // fold the current blend into A, then morph to the next shape
     cloud.cur = cloud.mix > 0.5 ? cloud.next : cloud.cur;
     cloud.next = (cloud.cur + 1) % shapes.length;
@@ -222,6 +222,7 @@ export function createHall(canvas, overlayEl) {
     cloud.mix = 0;
     cloud.idle = 0;
     animate(cloud, { mix: [0, 1] }, { duration: 2.6, ease: 'inOutCubic' });
+    if (burst) animate(cloud, { blast: [0, 1, 0] }, { duration: 2.4, times: [0, 0.18, 1], ease: ['outExpo', 'inOutCubic'] });
     if (cloud.next === shapes.TEXT) {
       // the word must face you: settle the spin on the next whole turn
       spring(cloud.spinV, { v: 0 }, { stiffness: 20, damping: 9 });
@@ -247,14 +248,14 @@ export function createHall(canvas, overlayEl) {
   // ---- physics (world in px, mapped 1 px = 1 cm into the glass case) ----
   let wld = null;
   const PW = Math.round((PC.z1 - PC.z0) * 100), PH = Math.round((PC.y1 - PC.y0) * 100);
-  const NB = 260;
+  const NB = 150;
   const ballCol = new Float32Array(NB * 3);
   const ballR = new Float32Array(NB);
   const BALL_PAL = [[0.95, 0.42, 0.28], [0.98, 0.72, 0.25], [0.32, 0.62, 0.95], [0.95, 0.94, 0.9], [0.5, 0.82, 0.7]];
   for (let i = 0; i < NB; i++) {
     const c = BALL_PAL[i % BALL_PAL.length];
     ballCol[i * 3] = c[0]; ballCol[i * 3 + 1] = c[1]; ballCol[i * 3 + 2] = c[2];
-    ballR[i] = 6 + ((i * 7919) % 6);
+    ballR[i] = 7 + ((i * 7919) % 6);
   }
 
   // ---- springs: orbs that follow you ----
@@ -271,10 +272,11 @@ export function createHall(canvas, overlayEl) {
   // ---- timeline + stagger: 16×16 blocks, two superposed batch() waves ----
   const GB = 16, NBk = GB * GB;
   const waves = [null, null];
-  let waveN = 0, waveIdle = 0;
+  let waveN = 0, waveIdle = 0, burstSeed = 7, waveFrom = -1;
   const WAVE_FROM = ['center', 'edges', 0, 'random', 'last'];
   function wave() {
-    const from = WAVE_FROM[waveN % WAVE_FROM.length];
+    const from = waveFrom >= 0 ? waveFrom : WAVE_FROM[waveN % WAVE_FROM.length];
+    waveFrom = -1;
     const b = batch(NBk, { y: [0, 1, -0.08, 0], s: [0, 0.3, 0] }, {
       duration: 1.6, ease: 'inOutSine', delay: stagger(0.045, { grid: [GB, GB], from }),
     });
@@ -333,11 +335,24 @@ export function createHall(canvas, overlayEl) {
     const id = ST[st.near].id;
     if (id === 'physics') {
       // throw: an upward blast under where you stand, plus a sideways scatter
+      // throw: a burst of 30 balls flung up from where you stand, then a scatter
       const pz = Math.min(Math.max((ctl.pos[2] - PC.z0) * 100, 0), PW);
-      wld.impulse(pz, PH, 160, 1400);
-      wld.impulse(PW - pz, PH * 0.6, 120, 700);
-    } else if (id === 'cloud') morph();
-    else if (id === 'blocks') wave();
+      for (let k = 0; k < 30; k++) {
+        const i = (burstSeed = (burstSeed * 1103515245 + 12345) >>> 0) % NB;
+        const a = -Math.PI / 2 + ((burstSeed >>> 8) % 1000 / 1000 - 0.5) * 1.6;
+        const v = 900 + ((burstSeed >>> 4) % 700);
+        wld.setPosition(i, clampN(pz + ((k % 6) - 2.5) * 14, 12, PW - 12), PH - 12 - (k / 6 | 0) * 14);
+        wld.setVelocity(i, Math.cos(a) * v, Math.sin(a) * v);
+      }
+      wld.impulse(pz, PH, 120, 900);
+    } else if (id === 'cloud') morph(true);
+    else if (id === 'blocks') {
+      // ripple out from the block nearest to you
+      const gx = Math.round(clampN((ctl.pos[0] - 4.6) / 0.23 + 7.5, 0, GB - 1));
+      const gz = Math.round(clampN((ctl.pos[2] + 6.5) / 0.23 + 7.5, 0, GB - 1));
+      waveFrom = gz * GB + gx;
+      wave();
+    }
     else if (id === 'text') playText();
     else if (id === 'bench') benchIn(true);
     else if (id === 'springs') {
@@ -449,7 +464,7 @@ export function createHall(canvas, overlayEl) {
         const hue = Math.min(1, Math.max(0, y));
         blocks.put(i, 4.6 + (gx - 7.5) * 0.23, 0.27 + h / 2 + y * 0.32, -6.5 + (gz - 7.5) * 0.23, 0,
           0.2, h, 0.2, LACQUER + 0.7,
-          0.1 + 0.9 * hue, 0.42 + 0.2 * hue, 0.58 - 0.38 * hue, 0.04 + 1.1 * hue * (0.5 + wk2));
+          0.1 + 0.85 * hue, 0.42 - 0.08 * hue, 0.58 - 0.3 * hue, 0.02 + 0.22 * hue * (0.5 + wk2));
       }
       blocks.upload();
     } else blocks.visible = false;
@@ -501,7 +516,8 @@ export function createHall(canvas, overlayEl) {
     if (u.uPool) gl.uniform4fv(u.uPool, POOLS);
   }
 
-  let time = 0;
+  let time = 0, baseFov = 1.12, fovRun = false;
+  const fovK = { v: 0 };
   // a pool of light over each station: x, z, radius, intensity (intensity follows wake)
   const POOLS = new Float32Array(24);
   function updatePools() {
@@ -529,6 +545,7 @@ export function createHall(canvas, overlayEl) {
       gl.uniform1f(progPts.u.uMix, cloud.mix);
       gl.uniform3f(progPts.u.uCenter, CLOUD_C[0], CLOUD_C[1], CLOUD_C[2]);
       gl.uniform1f(progPts.u.uSpin, cloud.spin);
+      gl.uniform1f(progPts.u.uBlast, cloud.blast);
       gl.uniform1f(progPts.u.uScale, CLOUD_S);
       gl.uniform1f(progPts.u.uGlow, 0.62 + 0.25 * wake[4].v);
       gl.bindVertexArray(ptsVao);
@@ -700,18 +717,20 @@ export function createHall(canvas, overlayEl) {
       W = nw; H = nh;
       if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
       cam.aspect = W / H;
-      cam.fov = cssW < cssH ? 1.35 : 1.12;
+      baseFov = cssW < cssH ? 1.35 : 1.12;
+      cam.fov = baseFov;
       pxScale = (H * 0.5) / Math.tan(cam.fov / 2);
       if (changed) { buildTargets(); prewarm(); }
     },
     preview(t, dt, k) {
       time = t;
-      const e = k * k * (3 - 2 * k);
+      const e = k * k * (2.5 - 1.5 * k);
       cam.eye[0] = Math.sin(t * 0.21) * 0.25 * (1 - e);
       cam.eye[1] = 2.3 - 0.6 * e + Math.sin(t * 0.5) * 0.04 * (1 - e);
       cam.eye[2] = 15.4 - 3.4 * e;
       cam.yaw = Math.sin(t * 0.17) * 0.05 * (1 - e);
       cam.pitch = 0.02 * (1 - e);
+      cam.fov = baseFov;
         updateCamera(cam);
       if (st.ready) updateStations(t, Math.min(dt, 0.05), cam.eye[0], cam.eye[2]);
       render();
@@ -735,6 +754,8 @@ export function createHall(canvas, overlayEl) {
       ctl.update(t, dt);
       cam.eye[0] = ctl.pos[0]; cam.eye[1] = ctl.pos[1]; cam.eye[2] = ctl.pos[2];
       cam.yaw = ctl.yaw; cam.pitch = ctl.pitch;
+      if (ctl.running !== fovRun) { fovRun = ctl.running; spring(fovK, { v: fovRun ? 1 : 0 }, { stiffness: 60, damping: 14 }); }
+      cam.fov = baseFov + 0.09 * fovK.v;
       updateCamera(cam);
       if (st.ready) {
         updateNear(ctl.pos[0], ctl.pos[2]);
