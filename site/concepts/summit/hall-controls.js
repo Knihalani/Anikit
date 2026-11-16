@@ -134,8 +134,10 @@ export function createControls(canvas, overlayEl, opts) {
   // touch
   function onTouchStart(e) {
     if (!active) return;
+    let used = false;
     for (const t of e.changedTouches) {
       if (isUI(t.target)) continue;
+      used = true;
       if (t.clientX < innerWidth * 0.45 && joy.id < 0) {
         joy.id = t.identifier; joy.x0 = joy.x = t.clientX; joy.y0 = joy.y = t.clientY;
         jBase.style.left = jKnob.style.left = t.clientX + 'px';
@@ -146,11 +148,13 @@ export function createControls(canvas, overlayEl, opts) {
         look.id = t.identifier; look.x = t.clientX; look.y = t.clientY; look.moved = 0; look.t0 = performance.now();
       }
     }
-    if (e.cancelable) e.preventDefault();
+    if (used && e.cancelable) e.preventDefault();
   }
   function onTouchMove(e) {
     if (!active) return;
+    let used = false;
     for (const t of e.changedTouches) {
+      if (t.identifier === joy.id || t.identifier === look.id) used = true;
       if (t.identifier === joy.id) {
         let dx = t.clientX - joy.x0, dy = t.clientY - joy.y0;
         const m = Math.hypot(dx, dy);
@@ -166,7 +170,7 @@ export function createControls(canvas, overlayEl, opts) {
         hideTip();
       }
     }
-    if (e.cancelable) e.preventDefault();
+    if (used && e.cancelable) e.preventDefault();
   }
   function onTouchEnd(e) {
     for (const t of e.changedTouches) {

@@ -615,6 +615,7 @@ export function createHall(canvas, overlayEl) {
       st.active = false;
       ctl.disable();
       if (st.near >= 0) { wakeStation(st.near, false); st.near = -1; }
+      ctl.setStation('', '');
     },
     frame(t, dt) {
       time = t;
