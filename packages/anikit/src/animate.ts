@@ -641,6 +641,14 @@ export function _setNumberTracks(on: boolean): boolean {
   numberTracks = on;
   return prev;
 }
+/** `false`: never pack a multi-target animation's group in the core (tests compare both). */
+let packGroups = true;
+/** Testing hook: turn group packing off/on for animations created afterwards; returns the previous state. */
+export function _setPackGroups(on: boolean): boolean {
+  const prev = packGroups;
+  packGroups = on;
+  return prev;
+}
 
 /** `Part.onEmpty` for `part` of `anim` (a closure over just these two). */
 function emptyHandler(anim: Animation, part: Part): () => void {
@@ -1094,6 +1102,9 @@ export class Animation extends Playable {
     } else if (this._parts.length > 1) {
       this._group = w.ak_group_create(0, 0, 1, 0, 0, -1, FL_FILL_BACKWARDS | FL_FILL_FORWARDS, 1);
       for (const p of this._parts) w.ak_group_add(this._group, p.h, 0);
+      // Children of one layout and timing are evaluated together; their
+      // outputs then live in the pack.
+      if (packGroups && w.ak_group_pack(this._group)) for (const p of this._parts) p.at = w.ak_values_ptr(p.h) >>> 3;
       this._h = this._group;
       const rec: NodeRecord & Linked = {
         h: this._group, at: 0, ctl: this,

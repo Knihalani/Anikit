@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { animate, from, fromTo, set, stagger, engine, flush, FrameBuffer } from '../src/index';
 import { setup, advance, box } from './setup';
-import { _setCodegen, _setNumberTracks, _setCompactFmt } from '../src/animate';
+import { _setCodegen, _setNumberTracks, _setCompactFmt, _setPackGroups } from '../src/animate';
 import { timeline } from '../src/timeline';
 import { _recordCount } from '../src/core';
 import { r3, s3, unitFormat } from '../src/values';
@@ -374,6 +374,53 @@ describe('animate: plain-object write path', () => {
     expect(loop[0][0]).toBeGreaterThan(0);
     expect(loop[1][loop[1].length - 1]).toBeGreaterThan(0); // onUpdate ran
     expect(loop[2][2]).toBeLessThan(0); // the takeover wrote objs[2]
+  });
+  it('packed groups (one evaluation per animate() call in the core) write what unpacked ones do', () => {
+    const scenario = (): unknown[][] => {
+      const objs = Array.from({ length: 10 }, (_, i) => ({ x: 0, y: i, o: 1, w: '0px' }));
+      const els = Array.from({ length: 4 }, () => box());
+      let updates = 0;
+      const frames: unknown[][] = [];
+      const snap = () => frames.push([...objs.flatMap((o) => [o.x, o.y, o.o, o.w]), ...els.map(tf), updates]);
+      const a = animate(objs, { x: [0, 50, 10, 80, 20, 90, 30, 100] }, { duration: 1, ease: 'inOutSine', repeat: 1, yoyo: true });
+      const b = animate(objs, { y: 300, o: 0 }, { duration: 0.8, ease: 'outCubic' });
+      const c = animate(objs, { w: (_: unknown, i: number) => `${100 + i}px` }, { duration: 0.6, ease: 'linear' });
+      const d = animate(els, { x: [0, 40, 10, 90], rotate: 30 }, { duration: 0.7, ease: 'outQuad' });
+      advance(0.2);
+      snap();
+      // Takeovers (one target of each), an onUpdate animation, and seeks/reversal.
+      animate(objs[2], { x: -50, y: 7 }, { duration: 0.5, ease: 'linear' });
+      animate([objs[4], objs[5]], { w: '9px' }, { duration: 0.3, onUpdate: () => updates++ });
+      advance(0.15);
+      snap();
+      a.reverse();
+      advance(0.1);
+      snap();
+      b.seek(0.1);
+      flush();
+      snap();
+      a.seek(1.5);
+      d.pause();
+      advance(0.2);
+      snap();
+      c.kill();
+      d.revert();
+      advance(0.3);
+      snap();
+      advance(2);
+      snap();
+      a.kill();
+      b.kill();
+      return frames;
+    };
+    const prev = _setPackGroups(false);
+    const plain = scenario();
+    _setPackGroups(true);
+    const packed = scenario();
+    _setPackGroups(prev);
+    expect(packed).toEqual(plain);
+    expect(plain[0][0]).not.toBe(0);
+    expect(plain[1][plain[1].length - 1]).toBeGreaterThan(0);
   });
   it('both paths are strict: a frozen target throws the same way', () => {
     const attempt = (): string => {

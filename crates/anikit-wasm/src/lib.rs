@@ -346,6 +346,17 @@ pub extern "C" fn ak_group_add(group: u32, child: u32, start: f64) -> i32 {
     code(st().engine.group_add(group, child, start))
 }
 
+/// Pack a group's children for one evaluation per frame (see
+/// `Engine::group_pack`): 1 if packed (re-read `ak_values_ptr` of each
+/// child), 0 if not.
+#[no_mangle]
+pub extern "C" fn ak_group_pack(group: u32) -> i32 {
+    match st().engine.group_pack(group) {
+        Ok(true) => 1,
+        _ => 0,
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn ak_group_remove(child: u32) -> i32 {
     code(st().engine.group_remove(child))
