@@ -1,175 +1,160 @@
 import {
   ready, engine, timeline, stagger, staggerValues, spring, inertia, animate,
-  motionValue, scrollProgress, flightPath, htmlCanvas,
+  motionValue, scrollProgress, flightPath, htmlCanvas, scene, material, linearColor,
 } from '../../packages/anikit/dist/anikit.lean.js';
-import { buildHeadphones } from './geometry.js';
-import { Studio } from './studio.js';
+import { buildHeadphones, CUP_Y } from './model.js';
 
 const qs = new URLSearchParams(location.search);
 const canvas = document.getElementById('stage');
+await ready;
 
-// ---------------------------------------------------------------- materials
-const lin = (hex) => [1, 3, 5].map((i) => (parseInt(hex.slice(i, i + 2), 16) / 255) ** 2.2);
+// ---------------------------------------------------------------- finishes
 const FINISHES = {
-  chrome: { label: 'polished chrome', base: lin('#f4f4f6'), metal: 1, rough: 0.07, brushed: 0, glass: 0 },
-  brushed: { label: 'brushed aluminium', base: lin('#e6e7ea'), metal: 1, rough: 0.3, brushed: 1, glass: 0 },
-  brushedMist: { label: 'anodised, mist', base: lin('#a9bcd6'), metal: 1, rough: 0.32, brushed: 1, glass: 0 },
-  coral: { label: 'anodised, coral', base: lin('#ff8a6e'), metal: 1, rough: 0.3, brushed: 1, glass: 0 },
-  sage: { label: 'matte sage', base: lin('#a8b8a0'), metal: 0, rough: 0.55, brushed: 0, glass: 0 },
-  glass: { label: 'frosted glass', base: lin('#e2e9f0'), metal: 0, rough: 0.3, brushed: 0, glass: 1 },
-  rubberSand: { label: 'soft rubber, sand', base: lin('#e4dbcf'), metal: 0, rough: 0.78, brushed: 0, glass: 0 },
-  graphite: { label: 'soft rubber, graphite', base: lin('#4a4d53'), metal: 0, rough: 0.7, brushed: 0, glass: 0 },
-  butter: { label: 'soft rubber, butter', base: lin('#f6d98a'), metal: 0, rough: 0.72, brushed: 0, glass: 0 },
+  chrome: { label: 'polished chrome', color: '#f2f2f4', metalness: 1, roughness: 0.06 },
+  brushed: { label: 'brushed aluminium', color: '#dfe1e5', metalness: 1, roughness: 0.3 },
+  brushedMist: { label: 'anodised, mist', color: '#9fb4d2', metalness: 1, roughness: 0.3 },
+  coral: { label: 'anodised, coral', color: '#ff7a5c', metalness: 1, roughness: 0.3 },
+  sage: { label: 'matte sage', color: '#a3b59b', metalness: 0, roughness: 0.55 },
+  graphite: { label: 'soft rubber, graphite', color: '#45484e', metalness: 0, roughness: 0.7 },
+  butter: { label: 'soft rubber, butter', color: '#f4d47e', metalness: 0, roughness: 0.7 },
+  rubberSand: { label: 'soft rubber, sand', color: '#e6ddd1', metalness: 0, roughness: 0.8 },
+  glass: { label: 'frosted glass', color: '#f4f7fa', metalness: 0, roughness: 0.32, glass: true },
+  glassSmoke: { label: 'smoked glass', color: '#8d939c', metalness: 0, roughness: 0.25, glass: true },
+  glassAmber: { label: 'amber glass', color: '#f2b46a', metalness: 0, roughness: 0.3, glass: true },
 };
-// What a click cycles through, per group.
 const CYCLE = {
   band: ['chrome', 'brushed', 'coral', 'graphite'],
   bandpad: ['rubberSand', 'graphite', 'butter', 'sage'],
   slider: ['brushed', 'chrome', 'coral', 'graphite'],
   yoke: ['chrome', 'brushed', 'graphite', 'coral'],
   cup: ['brushedMist', 'coral', 'brushed', 'sage', 'graphite'],
-  glass: ['glass', 'chrome', 'butter', 'brushedMist'],
+  glass: ['glass', 'glassSmoke', 'glassAmber'],
   pad: ['rubberSand', 'graphite', 'butter', 'sage'],
 };
+const lin = (hex) => linearColor(hex);
 
-// ---------------------------------------------------------------- frame state (reused every frame)
-const F = {
-  cssW: 1, cssH: 1, fogNear: 300, fogFar: 700,
-  vp: new Float32Array(16), invVP: new Float32Array(16), shadowVP: new Float32Array(16),
-  eye: new Float32Array(3), time: 0, appear: 0, wave: 0, floorY: -8.75, instances: 1,
-  sky: new Float32Array(lin('#efedea')), floor: new Float32Array(lin('#e9e6e1')), envBoost: 1.0,
-  shadowRect: new Float32Array(4), fade: 0, paper: new Float32Array([0xec / 255, 0xea / 255, 0xe6 / 255]),
-};
-const view = new Float32Array(16), proj = new Float32Array(16), tmp = new Float32Array(16);
+// ---------------------------------------------------------------- the scene
+const pinned = qs.get('q');
+let quality = pinned !== null ? +pinned : 3;
+const FLOOR_Y = -8.75;
+const s = scene(canvas, {
+  camera: { fov: 30, position: [0, 6, 60], target: [0, -0.6, 0], near: 1, far: 2400 },
+  environment: 'studio', background: '#eceae6', shadows: true,
+  bloom: { strength: 0.16, threshold: 3.2 }, fxaa: true, dpr: 2, adaptive: false, autoRender: false,
+});
+// A bright, warm studio. Library gap: scene() only ships a dark 'studio'
+// environment and has no public way to recolour it, so we tint its private
+// gradient here (top, horizon, ground: the softboxes stay).
+Object.assign(s.envC, { top: lin('#d9d6d1'), hor: lin('#c9c5bf'), ground: lin('#57544f') });
+s.lightDir.set(0.25, 1, 0.35); // overhead key: shadows sit under the parts, like contact shadows
+s.lightIntensity = 1.6;
+s.envIntensity = 1.0;
+s.exposure = 0.95;
 
-function perspective(o, fovy, aspect, near, far) {
-  const f = 1 / Math.tan(fovy / 2), nf = 1 / (near - far);
-  o.fill(0);
-  o[0] = f / aspect; o[5] = f; o[10] = (far + near) * nf; o[11] = -1; o[14] = 2 * far * near * nf;
-}
-function lookAt(o, ex, ey, ez, tx, ty, tz) {
-  let zx = ex - tx, zy = ey - ty, zz = ez - tz;
-  let l = Math.hypot(zx, zy, zz); zx /= l; zy /= l; zz /= l;
-  let xx = zz, xy = 0, xz = -zx; // up × z with up = +Y
-  l = Math.hypot(xx, xz) || 1; xx /= l; xz /= l;
-  const yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx;
-  o[0] = xx; o[1] = yx; o[2] = zx; o[3] = 0;
-  o[4] = xy; o[5] = yy; o[6] = zy; o[7] = 0;
-  o[8] = xz; o[9] = yz; o[10] = zz; o[11] = 0;
-  o[12] = -(xx * ex + xy * ey + xz * ez); o[13] = -(yx * ex + yy * ey + yz * ez); o[14] = -(zx * ex + zy * ey + zz * ez); o[15] = 1;
-}
-function mul(o, a, b) {
-  for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
-    o[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] + a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
+// A seamless photo-studio sweep: floor curving up into the wall.
+function sweepGeometry() {
+  const prof = [];
+  for (let z = 420; z > -60; z -= 30) prof.push([z, 0]);
+  for (let k = 0; k <= 16; k++) { const a = (k / 16) * (Math.PI / 2); prof.push([-60 - Math.sin(a) * 90, 90 - Math.cos(a) * 90]); }
+  prof.push([-150, 700]);
+  const X = [-700, -300, -100, 0, 100, 300, 700];
+  const n = prof.length, pos = [], nor = [], uvs = [], idx = [];
+  for (let i = 0; i < n; i++) {
+    const [z, y] = prof[i];
+    const a = prof[Math.max(0, i - 1)], b = prof[Math.min(n - 1, i + 1)];
+    let tz = b[0] - a[0], ty = b[1] - a[1]; const l = Math.hypot(tz, ty); tz /= l; ty /= l;
+    for (const x of X) { pos.push(x, y + FLOOR_Y, z); nor.push(0, -tz, ty); uvs.push(x / 100, i / n); }
   }
+  // Normal: perpendicular to the profile, pointing up/forward.
+  for (let k = 0; k < nor.length; k += 3) { if (nor[k + 1] < 0 || (nor[k + 1] === 0 && nor[k + 2] < 0)) { nor[k + 1] *= -1; nor[k + 2] *= -1; } }
+  const W = X.length;
+  for (let i = 0; i < n - 1; i++) for (let j = 0; j < W - 1; j++) {
+    const a = i * W + j, b = a + W;
+    idx.push(a, a + 1, b, a + 1, b + 1, b);
+  }
+  return { positions: new Float32Array(pos), normals: new Float32Array(nor), uvs: new Float32Array(uvs), indices: new Uint32Array(idx) };
 }
-function invert(o, m) {
-  const a00 = m[0], a01 = m[1], a02 = m[2], a03 = m[3], a10 = m[4], a11 = m[5], a12 = m[6], a13 = m[7];
-  const a20 = m[8], a21 = m[9], a22 = m[10], a23 = m[11], a30 = m[12], a31 = m[13], a32 = m[14], a33 = m[15];
-  const b00 = a00 * a11 - a01 * a10, b01 = a00 * a12 - a02 * a10, b02 = a00 * a13 - a03 * a10, b03 = a01 * a12 - a02 * a11;
-  const b04 = a01 * a13 - a03 * a11, b05 = a02 * a13 - a03 * a12, b06 = a20 * a31 - a21 * a30, b07 = a20 * a32 - a22 * a30;
-  const b08 = a20 * a33 - a23 * a30, b09 = a21 * a32 - a22 * a31, b10 = a21 * a33 - a23 * a31, b11 = a22 * a33 - a23 * a32;
-  const d = 1 / (b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06);
-  o[0] = (a11 * b11 - a12 * b10 + a13 * b09) * d; o[1] = (a02 * b10 - a01 * b11 - a03 * b09) * d;
-  o[2] = (a31 * b05 - a32 * b04 + a33 * b03) * d; o[3] = (a22 * b04 - a21 * b05 - a23 * b03) * d;
-  o[4] = (a12 * b08 - a10 * b11 - a13 * b07) * d; o[5] = (a00 * b11 - a02 * b08 + a03 * b07) * d;
-  o[6] = (a32 * b02 - a30 * b05 - a33 * b01) * d; o[7] = (a20 * b05 - a22 * b02 + a23 * b01) * d;
-  o[8] = (a10 * b10 - a11 * b08 + a13 * b06) * d; o[9] = (a01 * b08 - a00 * b10 - a03 * b06) * d;
-  o[10] = (a30 * b04 - a31 * b02 + a33 * b00) * d; o[11] = (a21 * b02 - a20 * b04 - a23 * b00) * d;
-  o[12] = (a11 * b07 - a10 * b09 - a12 * b06) * d; o[13] = (a00 * b09 - a01 * b07 + a02 * b06) * d;
-  o[14] = (a31 * b01 - a30 * b03 - a32 * b00) * d; o[15] = (a20 * b03 - a21 * b01 + a22 * b00) * d;
-}
-/** Axis-angle rotation into a 3×3 (column-major). */
-function rot3(o, x, y, z, a) {
-  const c = Math.cos(a), s = Math.sin(a), t = 1 - c;
-  o[0] = t * x * x + c; o[1] = t * x * y + s * z; o[2] = t * x * z - s * y;
-  o[3] = t * x * y - s * z; o[4] = t * y * y + c; o[5] = t * y * z + s * x;
-  o[6] = t * x * z + s * y; o[7] = t * y * z - s * x; o[8] = t * z * z + c;
-}
+const sweep = s.add(sweepGeometry(), { material: { color: '#f3f1ee', roughness: 0.95, metalness: 0 }, castShadow: false });
+void sweep;
 
-// ---------------------------------------------------------------- scene
-let studio;
-try {
-  studio = new Studio(canvas);
-} catch (e) {
-  document.body.classList.add('no-gl');
-  throw e;
-}
-await ready;
-
-// 300 instances: a 20×15 grid around the hero, which is instance 0.
+// 300 copies: a 20×15 grid around the hero (the hero itself is the real objects).
 const COLS = 20, ROWS = 15, N = COLS * ROWS, HERO = 7 * COLS + 10;
 const delays = staggerValues(N, 1, { grid: [COLS, ROWS], from: HERO, ease: 'inQuad' });
 const maxDelay = Math.max(...delays);
-const inst = new Float32Array(N * 4);
+const copies = new Float32Array((N - 1) * 4); // x, z, delay, phase
 {
-  let k = 1;
+  let k = 0;
   for (let j = 0; j < ROWS; j++) for (let i = 0; i < COLS; i++) {
-    const idx = j * COLS + i, slot = idx === HERO ? 0 : k++;
-    const o = slot * 4;
-    inst[o] = (i - 10) * 23 + (Math.abs(j - 7) % 2) * 7;
-    inst[o + 1] = (j - 7) * 21;
-    inst[o + 2] = idx === HERO ? 0 : 0.04 + (delays[idx] / maxDelay) * 0.95;
-    inst[o + 3] = ((idx * 2654435761) % 1000) / 1000 * 0.8;
+    const idx = j * COLS + i;
+    if (idx === HERO) continue;
+    const o = k++ * 4;
+    copies[o] = (i - 10) * 23 + (Math.abs(j - 7) % 2) * 7;
+    copies[o + 1] = (j - 7) * 21;
+    copies[o + 2] = 0.04 + (delays[idx] / maxDelay) * 0.95;
+    copies[o + 3] = ((idx * 2654435761) % 1000) / 1000;
   }
 }
+const PALETTE = ['#ff6f52', '#7f9cc6', '#93ab88', '#f2c75c', '#3e4148'].map(lin);
 
 const hero = buildHeadphones(1);
-const lod = buildHeadphones(0.32);
+const lod = buildHeadphones(0.3);
 const parts = hero.map((p, i) => {
   const fin = FINISHES[p.mat];
-  const m = { r: fin.base[0], g: fin.base[1], b: fin.base[2], metal: fin.metal, rough: fin.rough, brushed: fin.brushed, glass: fin.glass };
-  return {
-    ...p, e: 0, hi: 0, vary: p.group === 'cup' ? 0.85 : p.group === 'pad' || p.group === 'bandpad' ? 0.0 : 0, finish: p.mat, m,
-    gpu: studio.addMesh(p.mesh, inst), lod: studio.addMesh(lod[i].mesh, inst),
-    rot: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]), offset: new Float32Array(3),
-    mat: { base: new Float32Array(fin.base), params: new Float32Array([fin.metal, fin.rough, fin.brushed, fin.glass]) },
-    spinAxis: (() => { const [x, y, z] = p.spin; const l = Math.hypot(x, y, z); return [x / l, y / l, z / l]; })(),
-  };
+  const mat = material({ color: fin.color, metalness: fin.metalness, roughness: fin.roughness, glass: !!fin.glass });
+  const obj = s.add(p.geometry, { material: mat, position: p.centre });
+  const c = lin(fin.color);
+  const m = { r: c[0], g: c[1], b: c[2], metalness: fin.metalness, roughness: fin.roughness };
+  const vary = p.group === 'cup' || p.group === 'glass';
+  const cm = material({ color: vary ? '#ffffff' : fin.color, metalness: fin.metalness, roughness: fin.roughness, glass: !!fin.glass });
+  const inst = s.instances(lod[i].geometry, N - 1, (k, o) => {
+    o.scale.set(0);
+    if (vary) { const col = PALETTE[Math.floor(copies[k * 4 + 3] * 5) % 5]; o.color[0] = col[0]; o.color[1] = col[1]; o.color[2] = col[2]; }
+  }, { material: cm });
+  inst.visible = false;
+  return { ...p, obj, mat, m, finish: p.mat, e: 0, inst, axis: p.spin[0], deg: p.spin[1] };
 });
 const groups = {};
 for (const p of parts) (groups[p.group] ||= []).push(p);
 
-// ---------------------------------------------------------------- choreography (one anikit timeline, scrubbed by scroll)
-const rig = { dist: 60, ty: -0.6, lift: 0, yawOff: 0, pitchOff: 0, labels: 0, fin: 0, appear: 0, wave: 0, fov: 30 };
+// ---------------------------------------------------------------- choreography: one anikit timeline, scrubbed by scroll
+const rig = { dist: 60, ty: -0.6, lift: 0, yawOff: 0, pitchOff: 0, labels: 0, fin: 0, appear: 0, wave: 0 };
 const order = ['band', 'bandpad', 'slider', 'yoke', 'cup', 'glass', 'pad'];
 const explodeOrder = [...parts].sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group));
 const tl = timeline({ autoplay: false })
   .add(rig, { dist: 84, lift: 3.2, yawOff: -0.3, pitchOff: 0.1, ty: 2.6 }, { duration: 3, ease: 'inOutCubic' }, 1)
   .add(explodeOrder, { e: 1 }, { duration: 1.8, ease: 'inOutCubic', delay: stagger(0.11) }, 1.2)
   .add(rig, { labels: 1 }, { duration: 0.6, ease: 'outCubic' }, 3.9)
-  .label('hold', 4.5)
   .add(rig, { labels: 0 }, { duration: 0.4, ease: 'inCubic' }, 6)
   .add([...explodeOrder].reverse(), { e: 0 }, { duration: 1.3, ease: 'inOutCubic', delay: stagger(0.06) }, 6.1)
   .add(rig, { lift: 0, yawOff: 0, pitchOff: 0, dist: 60, ty: -0.6 }, { duration: 1.4, ease: 'inOutCubic' }, 6.2)
   .add(rig, { fin: 1 }, { duration: 2.6, ease: 'inOutSine' }, 7.6)
   .add(rig, { appear: 1.05 }, { duration: 1.9, ease: 'linear' }, 7.9)
   .add(rig, { wave: 1 }, { duration: 1.4, ease: 'inOutSine' }, 8.6)
-  .add(rig, { fov: 30 }, { duration: 0.4 }, 10);
+  .add(rig, { dist: 60 }, { duration: 0.4 }, 10);
 const TL_LEN = tl.duration;
 
-// Finale camera: a crane move along a smooth anikit flight path, sampled once.
+// Finale camera: a crane move along an anikit flight path, sampled once.
 const crane = flightPath([[0, 6, 60], [30, 50, 140], [70, 160, 280], [90, 250, 380]], { lookAhead: 40, bank: 0 });
 const CRANE_N = 240, craneXYZ = new Float32Array(CRANE_N * 3);
 crane.points(CRANE_N).forEach((p, i) => craneXYZ.set(p, i * 3));
 
-// Scroll → spring-smoothed progress (anikit motion values).
 const scrolled = scrollProgress();
 const progress = motionValue(0);
 scrolled.on((v) => progress.spring(v, { stiffness: 70, damping: 20 }));
 
 // ---------------------------------------------------------------- orbit: drag with inertia, settle with a spring
-const orbit = { yaw: -0.5, pitch: 0.16, drift: 0 };
-let drag = null, orbitAnims = [];
+const orbit = { yaw: -0.5, pitch: 0.12, drift: 0 };
+let drag = null;
+const orbitAnims = [];
 const stopOrbit = () => { for (const a of orbitAnims) a.kill(); orbitAnims.length = 0; };
 canvas.addEventListener('pointerdown', (e) => {
   stopOrbit();
-  drag = { x: e.clientX, y: e.clientY, t: performance.now(), vx: 0, vy: 0, moved: 0, id: e.pointerId };
+  drag = { x: e.clientX, y: e.clientY, t: performance.now(), vx: 0, vy: 0, moved: 0 };
   canvas.setPointerCapture(e.pointerId);
   document.body.classList.add('grabbing');
 });
 canvas.addEventListener('pointermove', (e) => {
-  if (!drag) return;
+  if (!drag) { hover(e); return; }
   const now = performance.now(), dt = Math.max(1, now - drag.t) / 1000;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
   orbit.yaw -= dx * 0.0065;
@@ -186,33 +171,44 @@ const endDrag = (e) => {
   if (d.moved < 6 && e.type === 'pointerup') { click(e); return; }
   const v = performance.now() - d.t > 80 ? 0 : d.vx;
   orbitAnims.push(inertia(orbit, { yaw: { velocity: v } }, { timeConstant: 0.5 }));
-  orbitAnims.push(spring(orbit, { pitch: 0.16 }, { stiffness: 60, damping: 11, velocity: d.vy }));
+  orbitAnims.push(spring(orbit, { pitch: 0.12 }, { stiffness: 60, damping: 11, velocity: d.vy }));
 };
 canvas.addEventListener('pointerup', endDrag);
 canvas.addEventListener('pointercancel', endDrag);
 
-// ---------------------------------------------------------------- click a part: change its finish, spring-smoothed
-function click(e) {
-  if (rig.appear > 0.05) return;
+// ---------------------------------------------------------------- picking (scene.raycast): hover and click to change a finish
+const partOf = (hit) => hit && parts.find((p) => p.obj === hit.object);
+let hovered = null, hoverQueued = null;
+function hover(e) { hoverQueued = e; }
+function pickHover() {
+  const e = hoverQueued; hoverQueued = null;
+  if (!e || rig.appear > 0.02) return;
   const r = canvas.getBoundingClientRect();
-  const id = studio.pick(F, parts, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
-  if (!id) return;
-  const g = parts[id - 1].group;
-  const list = CYCLE[g];
+  const p = partOf(s.raycast(e.clientX - r.left, e.clientY - r.top));
+  const g = p ? p.group : null;
+  if (g === hovered) return;
+  hovered = g;
+  canvas.style.cursor = g ? 'pointer' : '';
+}
+function click(e) {
+  if (rig.appear > 0.02) return;
+  const r = canvas.getBoundingClientRect();
+  const p = partOf(s.raycast(e.clientX - r.left, e.clientY - r.top));
+  if (!p) return;
+  const g = p.group, list = CYCLE[g];
   const next = list[(list.indexOf(groups[g][0].finish) + 1) % list.length];
-  const fin = FINISHES[next];
-  for (const p of groups[g]) {
-    p.finish = next;
-    spring(p.m, { r: fin.base[0], g: fin.base[1], b: fin.base[2], metal: fin.metal, rough: fin.rough, brushed: fin.brushed, glass: fin.glass }, { stiffness: 120, damping: 16 });
-    animate(p, { hi: [1, 0] }, { duration: 0.9, ease: 'outCubic' });
+  const fin = FINISHES[next], c = lin(fin.color);
+  for (const q of groups[g]) {
+    q.finish = next;
+    spring(q.m, { r: c[0], g: c[1], b: c[2], metalness: fin.metalness, roughness: fin.roughness }, { stiffness: 120, damping: 16 });
+    // A little nudge so the change reads as physical.
+    animate(q.obj.scale, { x: [1.06, 1], y: [1.06, 1], z: [1.06, 1] }, { ease: 'spring(bounce: 0.45, duration: 0.6)' });
   }
   const label = labels.find((l) => l.group === g);
   if (label) animate(label.sub, { text: { value: fin.label, type: 'scramble' } }, { duration: 0.5 });
 }
 
-// ---------------------------------------------------------------- labels: real HTML, drawn into the WebGL canvas
-// by anikit's htmlCanvas() (native HTML-in-Canvas where available, foreignObject
-// raster elsewhere) and pinned to each part's 3D position.
+// ---------------------------------------------------------------- labels: real HTML via htmlCanvas(), drawn by a scene layer
 const LABELS = [['band', 'Headband'], ['bandpad', 'Band cushion'], ['slider', 'Slider'], ['yoke', 'Yoke'], ['cup', 'Housing'], ['glass', 'Glass cap'], ['pad', 'Ear cushion']];
 const labelLayer = document.getElementById('labels');
 const labels = LABELS.map(([group, name]) => {
@@ -224,153 +220,259 @@ const labels = LABELS.map(([group, name]) => {
   const sub = el.querySelector('span');
   sub.textContent = FINISHES[part.finish].label;
   labelLayer.appendChild(el);
-  const hc = htmlCanvas(el, { target: studio.gl, live: true, scale: Math.min(2, devicePixelRatio || 1) });
+  const hc = htmlCanvas(el, { target: s.gl, live: true, scale: Math.min(2, devicePixelRatio || 1) });
   return { group, part, el, sub, hc, tex: null, x: 0, y: 0, w: 0, h: 0, ax: 0, ay: 0, o: 0, side: 1 };
 });
 await Promise.all(labels.map((l) => l.hc.ready.catch(() => null)));
 
+const LABEL_VS = `#version 300 es
+uniform vec4 uRect; uniform vec4 uLine; uniform vec2 uPx; uniform float uMode;
+out vec2 vUv;
+void main() {
+  vec2 c = vec2(gl_VertexID & 1, gl_VertexID >> 1);
+  vUv = vec2(c.x, 1.0 - c.y);
+  vec2 p;
+  if (uMode == 1.0) { vec2 d = uLine.zw - uLine.xy; vec2 n = normalize(vec2(-d.y, d.x) / uPx) * uPx * 0.75; p = mix(uLine.xy, uLine.zw, c.x) + n * (c.y * 2.0 - 1.0); }
+  else p = mix(uRect.xy, uRect.zw, c);
+  gl_Position = vec4(p, 0.0, 1.0);
+}`;
+// The layer draws into the scene's linear HDR buffer before ACES, so the card
+// colours are passed through the inverse curve to land on their sRGB values.
+const LABEL_FS = `#version 300 es
+precision highp float;
+in vec2 vUv;
+uniform sampler2D uTex; uniform float uMode, uAlpha, uExposure, uHdr;
+out vec4 o;
+vec3 invAces(vec3 y) {
+  y = clamp(y, 0.0, 0.9);
+  vec3 a = 2.43 * y - 2.51, b = 0.59 * y - 0.03, c = 0.14 * y;
+  return (-b - sqrt(max(b * b - 4.0 * a * c, 0.0))) / (2.0 * a);
+}
+vec3 toScene(vec3 srgb) { vec3 l = pow(srgb, vec3(2.2)); return uHdr > 0.5 ? invAces(l) / uExposure : srgb; }
+void main() {
+  vec4 c;
+  if (uMode == 0.0) { c = texture(uTex, vUv); if (c.a > 0.0) c.rgb = toScene(c.rgb / c.a) * c.a; }
+  else if (uMode == 1.0) c = vec4(toScene(vec3(0.25)), 1.0) * 0.6;
+  else { float r = length(vUv - 0.5) * 2.0; float halo = 1.0 - smoothstep(0.8, 1.0, r), core = 1.0 - smoothstep(0.38, 0.5, r);
+    c = vec4(toScene(mix(vec3(1.0), vec3(0.11, 0.11, 0.13), core)), 1.0) * halo; }
+  o = c * uAlpha;
+}`;
+let lp = null;
+// A scene layer hands us this frame's camera matrices; the cards themselves are
+// drawn after the scene's post chain (tone mapping, bloom, FXAA) so the HTML
+// keeps its exact colours and crisp text.
+s.add({ render(ctx) { VP.set(ctx.viewProj); }, dispose() {} });
+const labelPass = {
+  render(ctx) {
+    const gl = ctx.gl;
+    if (rig.labels < 0.004) return;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    if (!lp) {
+      const p = gl.createProgram();
+      for (const [t, src] of [[gl.VERTEX_SHADER, LABEL_VS], [gl.FRAGMENT_SHADER, LABEL_FS]]) {
+        const sh = gl.createShader(t); gl.shaderSource(sh, src); gl.compileShader(sh);
+        if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));
+        gl.attachShader(p, sh);
+      }
+      gl.linkProgram(p);
+      const u = {};
+      for (const n of ['uRect', 'uLine', 'uPx', 'uMode', 'uTex', 'uAlpha', 'uExposure', 'uHdr']) u[n] = gl.getUniformLocation(p, n);
+      lp = { p, u, vao: gl.createVertexArray() };
+    }
+    layoutLabels();
+    const prevProg = gl.getParameter(gl.CURRENT_PROGRAM);
+    const u = lp.u, sx = 2 / cssW, sy = 2 / cssH;
+    gl.useProgram(lp.p);
+    gl.bindVertexArray(lp.vao);
+    gl.disable(gl.DEPTH_TEST);
+    gl.depthMask(false);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.uniform1i(u.uTex, 0);
+    gl.uniform2f(u.uPx, sx, sy);
+    gl.uniform1f(u.uExposure, s.exposure);
+    gl.uniform1f(u.uHdr, ctx.hdr ? 1 : 0);
+    gl.activeTexture(gl.TEXTURE0);
+    for (const l of labels) {
+      if (l.o < 0.004 || !l.tex) continue;
+      gl.bindTexture(gl.TEXTURE_2D, l.tex); // unit 0 must hold a colour texture for every mode
+      gl.uniform1f(u.uAlpha, l.o);
+      const ex = l.x + (l.side < 0 ? l.w - 12 : 12), ey = l.y + l.h * 0.5;
+      gl.uniform1f(u.uMode, 1);
+      gl.uniform4f(u.uLine, l.ax * sx - 1, 1 - l.ay * sy, ex * sx - 1, 1 - ey * sy);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      gl.uniform1f(u.uMode, 2);
+      gl.uniform4f(u.uRect, (l.ax - 5) * sx - 1, 1 - (l.ay + 5) * sy, (l.ax + 5) * sx - 1, 1 - (l.ay - 5) * sy);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      gl.uniform1f(u.uMode, 0);
+      gl.bindTexture(gl.TEXTURE_2D, l.tex);
+      gl.uniform4f(u.uRect, l.x * sx - 1, 1 - (l.y + l.h) * sy, (l.x + l.w) * sx - 1, 1 - l.y * sy);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+    gl.depthMask(true);
+    gl.enable(gl.DEPTH_TEST);
+    gl.disable(gl.BLEND);
+    gl.bindVertexArray(null);
+    gl.useProgram(prevProg);
+  },
+  dispose() {},
+};
+
 // ---------------------------------------------------------------- captions
 const captions = [...document.querySelectorAll('[data-at]')].map((el) => ({ el, a: +el.dataset.at, b: +el.dataset.to, o: -1 }));
 
-// ---------------------------------------------------------------- frame
-let cssW = 0, cssH = 0, lastP = -1;
-function resize() {
-  cssW = F.cssW = canvas.clientWidth; cssH = F.cssH = canvas.clientHeight;
-  studio.resize(cssW, cssH);
-}
-addEventListener('resize', resize);
-resize();
-
-const P = new Float32Array(4);
+// ---------------------------------------------------------------- per frame
+let cssW = canvas.clientWidth, cssH = canvas.clientHeight, lastP = -1, F_TIME = 0;
+addEventListener('resize', () => { cssW = canvas.clientWidth; cssH = canvas.clientHeight; });
+const P = new Float32Array(3), VP = new Float32Array(16), LCTX = { gl: s.gl, hdr: false };
 const sideBuf = new Array(8).fill(null);
 function project(x, y, z) {
-  const m = F.vp;
+  const m = VP;
   const cx = m[0] * x + m[4] * y + m[8] * z + m[12], cy = m[1] * x + m[5] * y + m[9] * z + m[13], cw = m[3] * x + m[7] * y + m[11] * z + m[15];
   P[0] = (cx / cw * 0.5 + 0.5) * cssW; P[1] = (0.5 - cy / cw * 0.5) * cssH; P[2] = cw;
 }
 
-function update(dtMs) {
-  const dt = Math.min(0.05, dtMs / 1000);
-  F.time += dt;
-  const p = Math.min(1, Math.max(0, progress.get()));
-  if (p !== lastP) { tl.seek(p * TL_LEN); lastP = p; }
-
-  // Idle drift on the hero only while nobody is dragging; eased in and out.
-  orbit.drift += ((!drag && p < 0.02 ? 1 : 0) - orbit.drift) * Math.min(1, dt * 1.5);
-  if (!drag) orbit.yaw += orbit.drift * dt * 0.12;
-
-  // Parts.
-  const lift = rig.lift;
-  for (let i = 0; i < parts.length; i++) {
-    const q = parts[i], e = q.e;
-    q.offset[0] = q.explode[0] * e; q.offset[1] = q.explode[1] * e + lift; q.offset[2] = q.explode[2] * e;
-    rot3(q.rot, q.spinAxis[0], q.spinAxis[1], q.spinAxis[2], (q.spin[3] * Math.PI / 180) * e);
-    const m = q.m, b = q.mat.base, pr = q.mat.params;
-    b[0] = Math.max(0, m.r); b[1] = Math.max(0, m.g); b[2] = Math.max(0, m.b);
-    pr[0] = Math.min(1, Math.max(0, m.metal)); pr[1] = Math.min(1, Math.max(0.03, m.rough)); pr[2] = Math.max(0, m.brushed); pr[3] = Math.min(1, Math.max(0, m.glass));
-  }
-
-  // Camera: orbit around the hero, blended into the crane path for the finale.
-  const yaw = orbit.yaw + rig.yawOff, pitch = orbit.pitch + rig.pitchOff, d = rig.dist;
-  let ex = Math.sin(yaw) * Math.cos(pitch) * d, ey = rig.ty + Math.sin(pitch) * d, ez = Math.cos(yaw) * Math.cos(pitch) * d;
-  let tx = 0, ty = rig.ty, tz = 0;
-  const fin = rig.fin;
-  if (fin > 0) {
-    const s = fin * (CRANE_N - 1), k = Math.min(CRANE_N - 2, Math.floor(s)), f = s - k, o = k * 3;
-    const cx = craneXYZ[o] + (craneXYZ[o + 3] - craneXYZ[o]) * f, cy = craneXYZ[o + 1] + (craneXYZ[o + 4] - craneXYZ[o + 1]) * f, cz = craneXYZ[o + 2] + (craneXYZ[o + 5] - craneXYZ[o + 2]) * f;
-    // Rotate the crane by the user's orbit so dragging still works at the end.
-    const cs = Math.cos(orbit.yaw + 0.5), sn = Math.sin(orbit.yaw + 0.5);
-    const w = fin * fin * (3 - 2 * fin);
-    ex += (cx * cs + cz * sn - ex) * w; ey += (cy - 2 - ey) * w; ez += (-cx * sn + cz * cs - ez) * w;
-    ty += (-24 - ty) * w; tz += (-30 * cs - tz) * w * 0; tx += 0;
-  }
-  F.eye[0] = ex; F.eye[1] = ey; F.eye[2] = ez;
-  perspective(proj, (rig.fov * Math.PI) / 180, cssW / cssH, 1, 2000);
-  lookAt(view, ex, ey, ez, tx, ty, tz);
-  mul(F.vp, proj, view);
-  invert(F.invVP, F.vp);
-
-  F.appear = rig.appear; F.wave = rig.wave;
-  F.fogNear = 360; F.fogFar = 760;
-  F.instances = rig.appear > 0.001 ? N : 1;
-
-  // Contact-shadow window: tight around the hero, the whole field for the finale.
-  const half = 22 + 240 * Math.min(1, rig.appear * 1.6);
-  F.shadowRect[0] = -half; F.shadowRect[1] = -half; F.shadowRect[2] = 1 / (2 * half); F.shadowRect[3] = 1 / (2 * half);
-  F.shadowVP.fill(0);
-  F.shadowVP[0] = 1 / half; F.shadowVP[9] = 1 / half; F.shadowVP[15] = 1;
-
-  // Labels: anchored to each exploded part, card offset away from the object.
-  const lo = rig.labels;
-  project(0, rig.ty + rig.lift, 0);
-  const midX = P[0];
-  for (const l of labels) {
-    const q = l.part;
-    project(q.centre[0] + q.offset[0], q.centre[1] + q.offset[1], q.centre[2] + q.offset[2]);
-    l.ax = P[0]; l.ay = P[1];
-    l.side = l.ax < midX ? -1 : 1;
-    l.tex = l.hc.texture; l.w = l.hc.width; l.h = l.hc.height;
-    const reach = 34 + 14 * lo;
-    l.x = l.side < 0 ? l.ax - reach - l.w : l.ax + reach;
-    l.y = l.ay - l.h * 0.5 - 18;
-    l.o = lo;
-  }
-  // Keep cards apart vertically on each side (tiny insertion sort, no allocation).
-  for (let side = -1; side <= 1; side += 2) {
-    let n = 0;
-    for (const l of labels) if (l.side === side) sideBuf[n++] = l;
-    for (let i = 1; i < n; i++) { const x = sideBuf[i]; let j = i - 1; while (j >= 0 && sideBuf[j].y > x.y) { sideBuf[j + 1] = sideBuf[j]; j--; } sideBuf[j + 1] = x; }
-    for (let i = 1; i < n; i++) { const a = sideBuf[i - 1], b = sideBuf[i]; const min = a.y + a.h - 22; if (b.y < min) b.y = min; }
-  }
-  // Captions: cross-fade by timeline time.
-  const t = p * TL_LEN;
-  for (const c of captions) {
-    const o = Math.max(0, Math.min(1, (t - c.a) / 0.35, (c.b - t) / 0.35));
-    if (Math.abs(o - c.o) > 0.002) { c.el.style.opacity = o.toFixed(3); c.el.style.transform = `translateY(${((1 - o) * 10).toFixed(1)}px)`; c.o = o; }
+  // Labels: anchored to each exploded part, cards pushed away from the object.
+function layoutLabels() {
+  const lo = rig.labels, lift = rig.lift;
+  {
+    project(0, rig.ty + lift, 0);
+    const midX = P[0];
+    for (const l of labels) {
+      const q = l.part.obj.position;
+      project(q.x, q.y, q.z);
+      l.ax = P[0]; l.ay = P[1];
+      l.side = l.ax < midX ? -1 : 1;
+      l.tex = l.hc.texture; l.w = l.hc.width; l.h = l.hc.height;
+      const reach = 34 + 14 * lo;
+      l.x = l.side < 0 ? l.ax - reach - l.w : l.ax + reach;
+      l.y = l.ay - l.h * 0.5 - 18;
+      l.o = lo;
+    }
+    for (let side = -1; side <= 1; side += 2) {
+      let n = 0;
+      for (const l of labels) if (l.side === side) sideBuf[n++] = l;
+      for (let i = 1; i < n; i++) { const x = sideBuf[i]; let j = i - 1; while (j >= 0 && sideBuf[j].y > x.y) { sideBuf[j + 1] = sideBuf[j]; j--; } sideBuf[j + 1] = x; }
+      for (let i = 1; i < n; i++) { const a = sideBuf[i - 1], b = sideBuf[i]; const min = a.y + a.h - 22; if (b.y < min) b.y = min; }
+    }
   }
 }
 
-// ---------------------------------------------------------------- perf overlay + quality governor
+const AX = [s.camera.position, s.camera.target];
+let copiesOn = false;
+let waveT = 0;
+const copyFn = (k, o) => {
+  const ox = copies[k * 4], oz = copies[k * 4 + 1], delay = copies[k * 4 + 2], ph0 = copies[k * 4 + 3];
+  let a = Math.min(1, Math.max(0, (rig.appear - delay) / 0.35));
+  a = a * a * (3 - 2 * a) * (1 + 0.25 * Math.sin(Math.PI * a));
+  const d = Math.hypot(ox, oz), ph = d * 0.055 - waveT * 2.1 + ph0 * 0.8;
+  const w = rig.wave;
+  const h = w * (Math.sin(ph) * 3.4 + 2);
+  const yaw = w * (0.6 * Math.sin(ph * 0.5 + ph0) + d * 0.004), pitch = w * 0.32 * Math.cos(ph);
+  // Rotate this part's centre with the copy (R = Ry(yaw)·Rx(pitch), as compose() does).
+  const c = curPart.centre;
+  const cp = Math.cos(pitch), sp = Math.sin(pitch), cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const y1 = c[1] * cp - c[2] * sp, z1 = c[1] * sp + c[2] * cp;
+  const x2 = c[0] * cy + z1 * sy, z2 = -c[0] * sy + z1 * cy;
+  o.position.set(ox + x2 * a, h + y1 * a, oz + z2 * a);
+  o.rotation.set(pitch, yaw, 0);
+  o.scale.set(a);
+};
+let curPart = parts[0];
+
+function update(dtMs) {
+  const dt = Math.min(0.05, dtMs / 1000);
+  F_TIME += dt;
+  const p = Math.min(1, Math.max(0, progress.get()));
+  if (p !== lastP) { tl.seek(p * TL_LEN); lastP = p; }
+  orbit.drift += ((!drag && p < 0.02 ? 1 : 0) - orbit.drift) * Math.min(1, dt * 1.5);
+  if (!drag) orbit.yaw += orbit.drift * dt * 0.12;
+  if (hoverQueued) pickHover();
+
+  const lift = rig.lift;
+  for (const q of parts) {
+    const e = q.e;
+    q.obj.position.set(q.centre[0] + q.explode[0] * e, q.centre[1] + q.explode[1] * e + lift, q.centre[2] + q.explode[2] * e);
+    const r = (q.deg * Math.PI / 180) * e;
+    q.obj.rotation.set(q.axis === 0 ? r : 0, q.axis === 1 ? r : 0, q.axis === 2 ? r : 0);
+    const m = q.m, c = q.mat.color;
+    c[0] = Math.max(0, m.r); c[1] = Math.max(0, m.g); c[2] = Math.max(0, m.b);
+    q.mat.metalness = Math.min(1, Math.max(0, m.metalness));
+    q.mat.roughness = Math.min(1, Math.max(0.03, m.roughness));
+  }
+
+  // Camera: orbit, blended into the crane path for the finale.
+  const yaw = orbit.yaw + rig.yawOff, pitch = orbit.pitch + rig.pitchOff, d = rig.dist;
+  let ex = Math.sin(yaw) * Math.cos(pitch) * d, ey = rig.ty + Math.sin(pitch) * d, ez = Math.cos(yaw) * Math.cos(pitch) * d;
+  let ty = rig.ty;
+  const fin = rig.fin;
+  if (fin > 0) {
+    const sc = fin * (CRANE_N - 1), k = Math.min(CRANE_N - 2, Math.floor(sc)), f = sc - k, o = k * 3;
+    const cx = craneXYZ[o] + (craneXYZ[o + 3] - craneXYZ[o]) * f, cy = craneXYZ[o + 1] + (craneXYZ[o + 4] - craneXYZ[o + 1]) * f, cz = craneXYZ[o + 2] + (craneXYZ[o + 5] - craneXYZ[o + 2]) * f;
+    const cs = Math.cos(orbit.yaw + 0.5), sn = Math.sin(orbit.yaw + 0.5), w = fin * fin * (3 - 2 * fin);
+    ex += (cx * cs + cz * sn - ex) * w; ey += (cy - 2 - ey) * w; ez += (-cx * sn + cz * cs - ez) * w;
+    ty += (-24 - ty) * w;
+  }
+  AX[0].set(ex, ey, ez);
+  AX[1].set(0, ty, 0);
+
+  // Copies.
+  const on = rig.appear > 0.001;
+  if (on || copiesOn) {
+    waveT += dt;
+    for (const q of parts) { q.inst.visible = on; if (on) { curPart = q; q.inst.update(copyFn); } }
+    copiesOn = on;
+  }
+
+  const t = p * TL_LEN;
+  for (const c of captions) {
+    const o = Math.max(0, Math.min(1, (t - c.a) / 0.35, (c.b - t) / 0.35));
+    if (Math.abs(o - c.o) > 0.002) { c.el.style.opacity = o.toFixed(3); c.el.style.transform = `translateY(${((1 - o) * 10).toFixed(1)}px)`; c.el.style.visibility = o > 0 ? 'visible' : 'hidden'; c.o = o; }
+  }
+}
+
+// ---------------------------------------------------------------- perf overlay + quality governor (effects before resolution)
 const times = new Float32Array(240), sorted = new Float32Array(240);
-let tn = 0, lastT = 0, lastReport = 0, govT = 0, warm = 0;
+let tn = 0, lastT = 0, lastReport = 0, govT = 0;
 const perfEl = qs.has('perf') ? Object.assign(document.body.appendChild(document.createElement('pre')), { id: 'perf' }) : null;
-const pinned = qs.get('q');
-if (pinned !== null) { studio.quality = +pinned; if (studio.quality <= 0) studio.resScale = 0.75; resize(); }
+function applyQuality() {
+  // Library gap: scene() has no public runtime toggles for bloom or the pixel ratio yet.
+  s.bloomOn = quality >= 3;
+  s.shadows = quality >= 2;
+  const dpr = Math.min(2, devicePixelRatio || 1) * (quality >= 1 ? 1 : 0.75);
+  if (s.dpr !== dpr) { s.dpr = dpr; s.resize?.(); }
+}
+applyQuality();
 function stats() {
   const n = Math.min(tn, 240);
-  sorted.set(times); const s = sorted.subarray(0, n).sort();
-  return [s[Math.floor(n * 0.5)] || 0, s[Math.floor(n * 0.95)] || 0, s[n - 1] || 0];
+  sorted.set(times); const a = sorted.subarray(0, n).sort();
+  return [a[Math.floor(n * 0.5)] || 0, a[Math.floor(n * 0.95)] || 0, a[n - 1] || 0];
 }
 function govern(now) {
   if (pinned !== null || tn < 90 || now - govT < 1500) return;
   const [, p95] = stats();
-  if (p95 > 22 && studio.quality > 0) {
-    studio.quality--;
-    if (studio.quality === 0) studio.resScale = 0.75;
-    resize();
-    govT = now; tn = 0;
-  }
+  if (p95 > 22 && quality > 0) { quality--; applyQuality(); govT = now; tn = 0; }
 }
-
 function frame(now, dtMs) {
-  if (lastT) { times[tn++ % 240] = now - lastT; }
+  if (lastT) times[tn++ % 240] = now - lastT;
   lastT = now;
   update(dtMs);
-  studio.render(F, parts, labels);
-  if (++warm > 3) govern(now);
+  s.render();
+  labelPass.render(LCTX);
+  govern(now);
   if (perfEl && now - lastReport > 500) {
     const [a, b, c] = stats();
-    perfEl.textContent = `frame p50 ${a.toFixed(1)}  p95 ${b.toFixed(1)}  max ${c.toFixed(1)} ms\nquality ${studio.quality}  ${studio.w}×${studio.h}  ${F.instances} copies`;
+    perfEl.textContent = `frame p50 ${a.toFixed(1)}  p95 ${b.toFixed(1)}  max ${c.toFixed(1)} ms\nquality ${quality}  dpr ${s.dpr}  ${s.stats.drawCalls} draws  ${(s.stats.triangles / 1000).toFixed(0)}k tris`;
     lastReport = now;
   }
 }
 
-// Pre-warm every path (finale instancing, pick) before the first visible frame.
-F.instances = N; F.appear = 1.4; update(16);
-F.appear = 1.4; F.instances = N; studio.render(F, parts);
-studio.pick(F, parts, 0.5, 0.5);
-update(16); studio.render(F, parts);
-
+// Pre-warm: render the finale (all copies) and the labels once before the first visible frame.
+rig.appear = 1.2; rig.labels = 1; update(16); s.render(); labelPass.render(LCTX);
+rig.appear = 0; rig.labels = 0; update(16); s.render();
 engine.onFrame((t, dt) => frame(performance.now(), dt));
-animate(F, { fade: 1 }, { duration: 1.1, ease: 'outCubic', delay: 0.05 });
+canvas.style.opacity = '0';
+animate(canvas, { opacity: 1 }, { duration: 1.1, ease: 'outCubic', delay: 0.05 });
 document.body.classList.add('ready');
+void CUP_Y;

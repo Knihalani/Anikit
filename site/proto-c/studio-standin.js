@@ -2,7 +2,7 @@
 // analytic softbox environment, top-down contact shadows, half-res bloom.
 // Stand-in for anikit's scene(): the parts, materials and passes map 1:1.
 
-import { VERTEX_STRIDE } from './geometry.js';
+import { VERTEX_STRIDE } from './geometry-standin.js';
 
 const COMMON = `#version 300 es
 precision highp float;
