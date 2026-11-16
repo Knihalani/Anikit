@@ -61,6 +61,16 @@ await build({ ...common, entryPoints: ['src/tween.ts'], format: 'esm', minify: t
     if (o.c !== 'rgb(0,0,255)' || Math.abs(p.v - 10) > 1e-3) throw new Error('tween bundle smoke run: ' + JSON.stringify([o, p]));
   `], { stdio: 'inherit' });
 }
+// anikit/react: imports the main bundle (one engine) and React, both external.
+const shareCore = {
+  name: 'share-core',
+  setup(b) {
+    b.onResolve({ filter: /^\.\// }, (a) => (/(react|vue|svelte)\.ts$/.test(a.importer) ? { path: './anikit.js', external: true } : undefined));
+  },
+};
+for (const fw of ['react', 'vue', 'svelte']) {
+  await build({ ...common, entryPoints: [`src/${fw}.ts`], format: 'esm', outfile: `dist/${fw}.js`, external: ['react'], plugins: [shareCore] });
+}
 execFileSync('npx', ['tsc', '--emitDeclarationOnly', '--declaration', '--outDir', 'dist/types'], { stdio: 'inherit' });
 
 const kb = (n) => (n / 1024).toFixed(1) + ' KB';

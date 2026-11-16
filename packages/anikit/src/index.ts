@@ -119,3 +119,9 @@ export {
 export type { Geometry, SdfOptions, Text3dOptions } from './geometry';
 export { loadGLTF, parseGLTF } from './gltf';
 export type { GltfModel } from './gltf';
+export { recipe, recipeNames } from './recipe';
+export type { RecipeName, RecipeOptions, RecipeHandle } from './recipe';
+export { variants, Variants } from './variants';
+export type { Variant, VariantDef, VariantTransition, VariantsOptions } from './variants';
+export { customBounce, customWiggle } from './customease';
+export type { CustomBounceOptions, CustomWiggleOptions } from './customease';

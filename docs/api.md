@@ -13,7 +13,7 @@ The WebAssembly core starts compiling on import. Calls made before it's ready ar
 
 **Units:** times are **seconds** everywhere (`duration`, `delay`, `stagger(0.05)`, `seek(1.2)`), except the low-level clock: `engine.tick(ms)`, `engine.time` and `engine.onFrame((timeMs, dtMs) => …)` are milliseconds. Numbers default to `px` for lengths, `deg` for angles; `scale` and `opacity` are unitless (opacity 0–1).
 
-Task-oriented examples: [recipes.md](recipes.md). Mistakes are reported as `anikit:` warnings with fixes (see [Testing and diagnostics](#testing-and-diagnostics)).
+Task-oriented examples: [recipes.md](recipes.md). One-call patterns: [`recipe()`](#recipes-recipe). Feature comparison with GSAP, Motion and anime.js: [parity.md](parity.md). Every options object as JSON Schema (descriptions included): [api.schema.json](api.schema.json), also shipped as `anikit/api.schema.json` (regenerate with `npm run schema`). Mistakes are reported as `anikit:` warnings with fixes (see [Testing and diagnostics](#testing-and-diagnostics)).
 
 ---
 
@@ -485,6 +485,116 @@ physics(ball, { x: { velocity: 300 }, y: { velocity: -600, acceleration: 1500, m
 ## Bake to CSS
 
 `anim.toCSS({ name, selector, samples })` produces `@keyframes` plus an `animation:` rule, sampled from the engine. Any easing, spring, colour space or keyframe set works. Use it for SSR, HTML emails or zero‑JS pages.
+
+## Recipes: `recipe`
+
+`recipe(name, targets, options?)` builds a polished, common pattern in one call from the primitives above, with good-looking defaults. It returns a handle with `animations`, `finished`, `revert()` (restores styles and split markup) and `kill()`; an enclosing `context()` reverts it too. `recipeNames()` lists them.
+
+| Name | What it does | Useful options |
+|---|---|---|
+| `'hero-reveal'` | Splits the headline (`h1, h2` inside the element) into masked words or chars that rise in, then fades the rest of the children up. | `headline`, `by: 'words' \| 'chars'`, `stagger`, `duration` |
+| `'scroll-story'` | Each `section` (or `children`) fades and slides up as it scrolls into view (`scrollTriggerBatch`). | `children`, `distance`, `once: false` (reverse on the way back) |
+| `'magnetic-buttons'` | Buttons and links inside lean towards the pointer and spring back (`magnetic`). | `strength`, `distance` (radius) |
+| `'text-scramble'` | Decodes the text through random glyphs. | `text`, `chars`, `duration`, `onScroll` |
+| `'parallax-gallery'` | Images drift at alternating depths while scrolling (`parallax`). | `children`, `strength` |
+| `'stagger-in'` | Children fade, rise and scale in, staggered, when the list enters the viewport. | `children`, `stagger`, `onScroll: false` |
+| `'draw-svg'` | Strokes of every shape inside draw in on enter. | `stagger`, `duration` |
+| `'count-up'` | Counts from 0 to the number already written in the element on enter. | `duration`, `text` |
+| `'tilt-cards'` | Cards tilt in 3D under the pointer and spring flat on leave. | `children`, `strength` |
+
+Shared options (`RecipeOptions`): `duration`, `delay`, `stagger`, `ease`, `children`, `headline`, `by`, `text`, `chars`, `distance`, `strength`, `onScroll`, `once`. An unknown name throws with a "did you mean"; an unknown option warns with a link back here.
+
+```ts
+recipe('hero-reveal', '.hero');
+recipe('scroll-story', 'main', { children: 'section' });
+recipe('magnetic-buttons', '.cta');
+recipe('text-scramble', '#title', { text: 'HELLO WORLD' });
+const gallery = recipe('parallax-gallery', '.gallery', { strength: 0.3 });
+recipeNames();       // ['hero-reveal', 'scroll-story', …]
+gallery.revert();
+```
+
+## React: `anikit/react`
+
+Hooks and an exit-animation component. Every hook collects what it creates in a `context()` and reverts it on unmount; selectors inside `useAnikit`/`useAnimate` match only inside the returned ref.
+
+| Hook / component | Does |
+|---|---|
+| `useAnikit(setup, deps?)` → ref | Runs `setup` in a scoped `context()` after mount; reverted on unmount or when `deps` change. |
+| `useAnimate()` → `[ref, animate]` | Motion-style: call `animate()` from events; every animation is reverted on unmount. |
+| `useRecipe(name, ref, options?)` | `recipe()` on `ref.current` after mount. |
+| `useMotionValue(initial)` | A `MotionValue` that lives as long as the component. |
+| `useSpring(target \| motionValue, physics?)` | A `MotionValue` springing to a number prop or following another value. |
+| `useTransform(value, input, output)` | `value.map(input, output)`. |
+| `useScroll({ target?, container?, offset? })` | `{ scrollYProgress, scrollXProgress }` motion values (refs accepted). |
+| `<Presence enter exit options initial>` | Keyed children animate in when added and out before React removes them. |
+
+```tsx no-check
+import { useRef, useState } from 'react';
+import { useAnikit, useAnimate, useRecipe, useSpring, useScroll, Presence } from 'anikit/react';
+import { animate, bindValues } from 'anikit';
+
+function Hero() {
+  const hero = useRef<HTMLElement>(null);
+  useRecipe('hero-reveal', hero);
+  const scope = useAnikit(() => { animate('.badge', { scale: [0.8, 1] }, { ease: 'spring(bounce: 0.5)' }); });
+  const [box, run] = useAnimate();
+  const [open, setOpen] = useState(true);
+  const { scrollYProgress } = useScroll();
+  const smooth = useSpring(scrollYProgress, { stiffness: 120, damping: 20 });
+  useAnikit(() => { bindValues('.bar', { scaleX: smooth }); });
+  return <header ref={hero}>
+    <h1>Hello</h1>
+    <div ref={scope}><span className="badge">new</span></div>
+    <button onClick={() => run(box.current, { rotate: [0, 360] })}>Spin</button>
+    <Presence exit={{ opacity: 0, y: -8 }}>{open && <p key="note" onClick={() => setOpen(false)}>Dismiss me</p>}</Presence>
+  </header>;
+}
+```
+
+## Variants: `variants`
+
+Motion-style named states. `variants(targets, states, options?)` returns a `Variants` controller: `.animate(name, overrides?)` animates to a state and returns an awaitable timeline (replacing a running transition), `.set(name)` jumps there, `.current` is the state name, `.names` lists the states, `revert()`/`kill()` as usual (tracked by `context()`).
+
+A state is the properties to animate to (end values or keyframes, as for `animate()`) plus an optional `transition` (animation options plus `delayChildren`, `staggerChildren`, `when: 'beforeChildren' | 'afterChildren'`). A state can also be a function `(el, index) => state`. Options: `initial` (applied at once), `transition` (default for every state), `children` (controllers that follow every state change, orchestrated by the parent's transition). Unknown state names and transition keys warn with a suggestion.
+
+```ts
+const items = variants('.menu li', {
+  closed: { opacity: 0, x: -12 },
+  open: (el, i) => ({ opacity: 1, x: 0, transition: { ease: 'spring(bounce: 0.3)', delay: i * 0.01 } }),
+}, { initial: 'closed' });
+const menu: Variants = variants('.menu', {
+  closed: { opacity: 0, y: -8, transition: { duration: 0.2, when: 'afterChildren' } },
+  open: { opacity: 1, y: 0, transition: { duration: 0.25, staggerChildren: 0.04, delayChildren: 0.05 } },
+}, { initial: 'closed', children: items });
+await menu.animate('open');
+menu.animate(menu.current === 'open' ? 'closed' : 'open');
+```
+
+## Custom bounce and wiggle: `customBounce`, `customWiggle`
+
+`customBounce({ strength?, squash?, endAtStart? })` returns `{ ease, squash }`: a bounce whose rebounds each last `strength` (0–1, default 0.7) of the previous one, and a companion ease that pulses 0 → 1 → 0 at each impact (scaled by impact speed) for squash and stretch. `customWiggle(wiggles, { type?, seed? })` swings around the start value and settles there; `type` is `'easeOut'` (default), `'easeInOut'`, `'anticipate'`, `'uniform'` or `'random'`. Both are plain `(t) => number` functions, usable anywhere an `ease` is.
+
+```ts
+const ball = document.createElement('div');
+const { ease, squash } = customBounce({ strength: 0.6, squash: 2 });
+animate(ball, { y: [-200, 0] }, { duration: 1.6, ease });
+animate(ball, { scaleY: [1, 0.7], scaleX: [1, 1.25] }, { duration: 1.6, ease: squash });
+animate(ball, { rotate: 15 }, { duration: 0.8, ease: customWiggle(5, { type: 'easeInOut' }) });
+```
+
+## Vue and Svelte: `anikit/vue`, `anikit/svelte`
+
+No framework import needed. Both take a recipe name (or `{ name, options }`) and a setup function run in a `context()` scoped to the element, reverted when the element goes away.
+
+- **Vue:** directives `vRecipe` and `vAnikit`. Register with `app.directive('recipe', vRecipe)` (or use them directly in `<script setup>`), then `<header v-recipe="'hero-reveal'">` and `<div v-anikit="(el) => animate(el, { x: 100 })">`.
+- **Svelte:** actions `recipe` and `anikit`: `<header use:recipe={'hero-reveal'}>`, `<section use:recipe={{ name: 'scroll-story', options: { children: '.card' } }}>`, `<div use:anikit={(el) => { animate(el, { x: 100 }); }}>`.
+
+```ts no-check
+import { createApp } from 'vue';
+import { vRecipe, vAnikit } from 'anikit/vue';
+createApp(App).directive('recipe', vRecipe).directive('anikit', vAnikit).mount('#app');
+```
 
 ## Effects
 
@@ -1347,6 +1457,11 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Magnetic and parallax](#magnetic-and-parallax-magnetic-parallax) | `magnetic`, `parallax` | `MagneticOptions`, `ParallaxOptions`, `PointerFx` |
 | [Effects](#effects) | `effects`, `effect`, `registerEffect`, `effectNames` | `EffectOptions`, `EffectFn`, `EffectName` |
 | [HTML in canvas](#html-in-canvas-htmlcanvas-htmleffect) | `htmlCanvas`, `htmlEffect`, `htmlTexture`, `htmlCanvasSupported`, `htmlToSvg` | `HtmlCanvas`, `HtmlCanvasOptions`, `HtmlEffect`, `HtmlEffectOptions`, `HtmlEffectName` |
+| [Variants](#variants-variants) | `variants`, `Variants` | `Variant`, `VariantDef`, `VariantTransition`, `VariantsOptions` |
+| [Custom easings](#custom-bounce-and-wiggle-custombounce-customwiggle) | `customBounce`, `customWiggle` | `CustomBounceOptions`, `CustomWiggleOptions` |
+| [Recipes](#recipes-recipe) | `recipe`, `recipeNames` | `RecipeName`, `RecipeOptions`, `RecipeHandle` |
+| [Vue and Svelte](#vue-and-svelte-anikitvue-anikitsvelte) (`anikit/vue`, `anikit/svelte`) | `vRecipe`, `vAnikit`; actions `recipe`, `anikit` | `RecipeParam`, `Directive`, `Binding`, `ActionReturn` |
+| [React](#react-anikitreact) (`anikit/react`) | `useAnikit`, `useAnimate`, `useRecipe`, `useMotionValue`, `useSpring`, `useTransform`, `useScroll`, `Presence` | `PresenceProps`, `ScopedAnimate` |
 | [Layout transitions](#layout-transitions-flip), [presence](#presence-enter-and-exit) and [View Transitions](#view-transitions) | `flip`, `presence`, `Presence`, `enter`, `exit`, `viewTransition` | `FlipOptions`, `FlipState`, `PresenceOptions`, `ViewTransitionOptions`, `ViewTransitionHandle` |
 | [Interaction](#interaction) | `draggable`, `Draggable`, `observer`, `hover`, `press`, `gesture`, `Gesture` | `DraggableOptions`, `Bounds`, `ObserverOptions`, `ObserverEvent`, `GestureOptions` |
 | [Engine](#engine) | `engine`, `flush`, `ready`, `init` | |
