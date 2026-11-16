@@ -31,6 +31,7 @@ Anikit is an animation engine: a `no_std` Rust core compiled to WebAssembly (Typ
 - **Hot paths:**
   - `Engine::tick`, `Anim::eval_into`, `Part.render`, `apply()` and `flush()` must not allocate;
   - keep the JS binding loop **monomorphic**: every binding is a `Binding` instance with a `mode` switch, never per‑binding closures;
+  - plain-object targets write through one generated function per property-set shape (`new Function`, strict mode, built once and shared), with a plain loop as the fallback under a CSP without `'unsafe-eval'`; keep both paths tested;
   - measure before and after with `scripts/bench*.mjs` and `cargo run --release -p anikit-core --example bench`.
 - **Re‑entrancy:**
   - `flush()` may be called from inside callbacks; it's re‑entrancy safe, so keep it that way;
