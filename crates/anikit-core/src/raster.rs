@@ -1117,8 +1117,11 @@ impl Raster {
                 }
                 continue;
             }
-            let q0 = b0 * p0.q + b1 * p1.q + b2 * p2.q;
-            let s0: [f32; NV] = core::array::from_fn(|k| b0 * p0.a[k] + b1 * p1.a[k] + b2 * p2.a[k]);
+            // 1/w and varyings/w at the span start, computed only once a
+            // pixel of the row passes the depth test (rows hidden behind
+            // nearer geometry are common under overdraw).
+            let start = || (b0 * p0.q + b1 * p1.q + b2 * p2.q, core::array::from_fn::<f32, NV, _>(|k| b0 * p0.a[k] + b1 * p1.a[k] + b2 * p2.a[k]));
+            let (mut q0, mut s0, mut ready) = (0.0f32, [0.0f32; NV], false);
             // Split borrows so the span loop keeps everything in locals.
             let gl = (self.gloss.clamp(0.0, 1.0) * 256.0) as u32;
             let (depth, color, qu) = (&mut self.depth[a0..=a1], &mut self.color, &mut self.queue);
@@ -1141,6 +1144,10 @@ impl Raster {
                     _ => zv.lt(dv),
                 }
                 .bits();
+                if bits != 0 && !ready {
+                    (q0, s0) = start();
+                    ready = true;
+                }
                 let zs = zv.to_array();
                 if bits == 15 {
                     if MODE == SHADE_LT || MODE == GLOSS {
@@ -1199,6 +1206,10 @@ impl Raster {
                 if !ok {
                     continue;
                 }
+                if !ready {
+                    (q0, s0) = start();
+                    ready = true;
+                }
                 if MODE == SHADE_LT || MODE == GLOSS {
                     *dp = z;
                 }
@@ -1234,10 +1245,11 @@ fn shade_run<const MODE: u8>(qu: &mut Queue, color: &mut [u32], sh: &Shade, gl: 
         flush::<MODE>(qu, color, sh, gl);
     }
     let (fu, fv) = (V4::splat(fwu), V4::splat(fwv));
+    let lanes = V4::new(0.0, 1.0, 2.0, 3.0);
     let mut k = k0;
     for dst in color[g0..g1].chunks_exact_mut(4) {
         let kf = k as f32;
-        let kk = V4::new(kf, kf + 1.0, kf + 2.0, kf + 3.0);
+        let kk = V4::splat(kf) + lanes;
         let iw = 1.0 / (kk * dq + q0);
         let a: [V4; NV] = core::array::from_fn(|c| (kk * da[c] + s0[c]) * iw);
         let px = pack4(sh.px4([a[0], a[1], a[2]], [a[3], a[4], a[5]], a[6], a[7], fu, fv));
