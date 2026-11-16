@@ -34,4 +34,15 @@ Open `site/proto-b/` from a static server at the repo root, after building the p
 
 ## Checks (headless Chromium, SwiftShader)
 
-No console errors. No long tasks after load. Filmstrips of the intro, brush, burst, caption dissolve and every form are in the session notes. SwiftShader can't show real frame times: it is vertex-bound at ~40k instances, about 200 ms/frame. Real-GPU timing still needs a laptop run with `?perf`.
+- **Console:** no errors or warnings with the default URL, with `?perf`, and with `prefers-reduced-motion: reduce`.
+- **Tests:** `cargo test -p anikit-core` (158 + 1), `cargo clippy -p anikit-core -p anikit-wasm -D warnings` and `vitest` (292/292) pass after the merges.
+- **Long tasks:** at 131k with `?nogl` (CPU work only) there are none. Every form-building step is 8–31 ms.
+  - With SwiftShader drawing, one ~60–90 ms task remains at load (the full entry's embedded wasm).
+  - Occasional build steps also stretch while the software rasteriser saturates the 4 cores.
+- **Filmstrips:** made deterministic by ticking the engine at 60 fps in manual mode (`?perf` exposes `__engine`; `__st.noDraw` skips intermediate draws). They cover:
+  - the intro: dust converges into "anikit" by ~2 s;
+  - the brush and burst;
+  - the lettering → flower transition with the caption dissolving into splats;
+  - every form at 30k splats.
+- **Governor:** under SwiftShader it steps 4 → 0 (glow, shadow, 60% splats, DPR 0.7) without errors.
+- **Not measured:** SwiftShader is vertex-bound (~200 ms/frame at 8k instances), so real frame times on an integrated GPU still need a laptop run with `?perf`. The per-frame budget is one 1.5 MB `bufferSubData`, a ~1 ms wasm step and three instanced draws, with splat radius ≤ 4.5 device px.

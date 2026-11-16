@@ -73,7 +73,9 @@ const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a
 // ---------------------------------------------------------------------------
 let gl;
 try {
+  const t0 = performance.now();
   if (!q.has('nogl')) gl = new SplatRenderer(canvas, N);
+  mark('gl@' + Math.round(t0), t0);
 } catch (e) {
   document.documentElement.classList.add('no-gl');
 }
