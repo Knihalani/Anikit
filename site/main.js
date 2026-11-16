@@ -1,449 +1,174 @@
-// Anikit — a kinetic poster film. Every frame on this page runs on anikit.
-import {
-  ready, engine, animate, set, timeline, stagger, spring, scroll, inView, splitText, effects, world,
-  record, noise2, circle, star, rect, pathThrough, flush, marquee, magnetic,
-} from '../packages/anikit/dist/anikit.js';
-import { cosmos, bulletTime } from './cosmos.js';
-import { gravity } from './gravity.js';
-import { flight } from './flight.js';
+// Anikit landing page. One chrome knot, rendered by anikit's WebAssembly rasteriser,
+// breaks into seven pieces on scroll; each piece docks beside one demo and the
+// pieces re-form the knot above the install command. Every pose below is a pure
+// function of one smoothed scroll position, so scrubbing is continuous both ways.
+import { ready, engine, renderer3d, scene3d, mesh, instances, spring, inView } from '../packages/anikit/dist/anikit.lean.js';
 
 await ready;
 engine.reducedMotion = 'user';
-const $ = (s, r = document) => r.querySelector(s);
-const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const dpr = Math.min(2, devicePixelRatio || 1);
 const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+const $ = (s) => document.querySelector(s);
 
-/** Run `fn(dt)` every frame only while `el` is on screen. */
-function whileVisible(el, fn) {
-  let off = null;
-  inView(el, () => {
-    off = engine.onFrame((_t, dt) => fn(dt));
-    return () => { off?.(); off = null; };
-  }, { amount: 0 });
+// ---------------------------------------------------------------------------
+// Geometry: a (2, 3) torus knot cut into seven tube pieces
+// ---------------------------------------------------------------------------
+const PIECES = 7, PER = 64, TUBE = 46;
+const knotAt = (t) => {
+  const r = 210 + 95 * Math.cos(3 * t);
+  return [r * Math.cos(2 * t), r * Math.sin(2 * t), -95 * Math.sin(3 * t)];
+};
+const pieces = [];
+for (let k = 0; k < PIECES; k++) {
+  const pts = [];
+  for (let j = 0; j <= PER; j++) pts.push(knotAt(((k + j / PER) / PIECES) * Math.PI * 2));
+  const c = pts.reduce((a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length, a[2] + p[2] / pts.length], [0, 0, 0]);
+  // Rounded-off ends so each piece reads as a solid part once it leaves the knot.
+  const radii = pts.map((_, j) => { const e = Math.min(j, PER - j); return e === 0 ? 0.3 : e === 1 ? 0.78 : e === 2 ? 0.95 : 1; });
+  const m = mesh.tube(pts.map((p) => [p[0] - c[0], p[1] - c[1], p[2] - c[2]]), { radius: TUBE, sides: 20, radii });
+  pieces.push({ mesh: m, c, inst: instances(1), dir: (() => { const l = Math.hypot(...c) || 1; return [c[0] / l, c[1] / l, c[2] / l]; })() });
 }
-/** Scroll progress through a pinned section (0 at pin start, 1 at pin end). */
-const pinned = (section, fn) => scroll(fn, { target: section, offset: ['start start', 'end end'] });
-/** Wrap every character of an element in an inline-block span. */
-const chars = (el) => splitText(el, { type: 'words,chars', charClass: 'ch', wordClass: 'gw' }).chars;
+const sections = [...document.querySelectorAll('.demo')];
+const accents = sections.map((s) => s.dataset.accent.match(/[0-9a-f]{2}/gi).map((h) => (parseInt(h, 16) / 255) * 1.6));
+sections.forEach((s) => s.style.setProperty('--accent', s.dataset.accent));
 
 // ---------------------------------------------------------------------------
-// The cosmos, time, gravity, frame UI
+// Renderer: reduced internal resolution, adapted to hold ~7 ms per frame
 // ---------------------------------------------------------------------------
-const cos = await cosmos({ reduced });
-const bt = bulletTime({
-  glow: cos.glow,
-  buttons: [$('#hud-slow'), $('#hold-btn')],
-  vignette: $('#vignette'),
-  onChange: (slow) => animate('#t-key', { y: slow ? '0.08em' : 0, boxShadow: slow ? '0 0em 0 #0c0c0c' : '0 0.09em 0 #0c0c0c' }, { duration: 0.12 }),
-});
-const grav = gravity({ onChange: (on, n) => { $('#hud-gravity').classList.toggle('on', on); hudNote = on ? `${n} bodies · drag · double-click · Esc` : ''; } });
-let hudNote = '';
-for (const b of [$('#hud-gravity'), $('#hero-gravity')]) b.addEventListener('click', () => grav.toggle());
-addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && grav.active) grav.off();
-  if ((e.key === 'g' || e.key === 'G') && !e.metaKey && !e.ctrlKey) grav.toggle();
-});
-setInterval(() => {
-  const s = cos.stats;
-  $('#hud-stats').textContent = hudNote || `${cos.count.toLocaleString('en-US')} particles · ${s.ms.toFixed(1)} ms · ${s.fps} fps${bt.speed < 0.99 ? ` · ${bt.speed.toFixed(2)}×` : ''}`;
-}, 250);
+const canvas = $('#stage');
+const small = innerWidth < 760;
+let scale = Math.min(devicePixelRatio || 1, 2) * (small ? 0.5 : 0.6);
+let vw = innerWidth, vh = innerHeight, W = 0, H = 0;
+const cam = scene3d({ fov: 30, camera: { z: 1600 }, near: 20, far: 6000, width: 16, height: 9 });
+let r3 = null;
+const fit = () => {
+  W = Math.max(120, Math.round(vw * scale)); H = Math.max(120, Math.round(vh * scale));
+  canvas.width = W; canvas.height = H;
+  if (r3) r3.resize(W, H); else r3 = renderer3d(canvas);
+  cam.width = W; cam.height = H;
+};
+fit();
+const wpp = () => (2 * Math.tan((cam.fov * Math.PI) / 360) * cam.camera.z) / vh; // world units per CSS px at z = 0
+const toWorld = (px, py) => [(px - vw / 2) * wpp(), -(py - vh / 2) * wpp()];
 
-// Scene counter + progress.
-{
-  const names = [...new Set(cos.stations.map((s) => s.name))];
-  $('#scene-total').textContent = String(names.length).padStart(2, '0');
-  let last = '';
-  engine.onFrame(() => {
-    const name = cos.state.station.name;
-    if (name !== last) {
-      last = name;
-      $('#scene-no').textContent = String(names.indexOf(name) + 1).padStart(2, '0');
-      animate('#scene-name', { text: { value: name, type: 'scramble', chars: 'upper' } }, { duration: 0.45, ease: 'linear' });
-    }
-    const max = document.documentElement.scrollHeight - innerHeight;
-    set('#progress', { scaleX: max > 0 ? scrollY / max : 0 });
-  });
-}
-
-// Cursor: a difference-blended dot that swells over anything interactive.
-if (fine) {
-  const cur = $('#cursor');
-  const label = $('#cursor-label');
-  const pos = { x: innerWidth / 2, y: innerHeight / 2 };
-  addEventListener('pointermove', (e) => {
-    spring(pos, { x: e.clientX, y: e.clientY }, { stiffness: 900, damping: 50 });
-    set(cur, { opacity: 1 });
-  }, { passive: true });
-  engine.onFrame(() => set(cur, { x: pos.x, y: pos.y }));
-  let over = null;
-  addEventListener('pointerover', (e) => {
-    const t = e.target.closest?.('[data-cursor], a, button');
-    if (t === over) return;
-    over = t;
-    const text = t?.dataset?.cursor || '';
-    label.textContent = text;
-    animate($('i', cur), { scale: t ? (text ? 5 : 2.4) : 1 }, { duration: 0.5, ease: 'spring(bounce: 0.35, duration: 0.45)' });
-    animate(label, { opacity: t && text ? 1 : 0 }, { duration: 0.2 });
-  });
-  addEventListener('pointerdown', () => animate($('i', cur), { scale: [null, 0.6, null] }, { duration: 0.35, ease: 'outCubic' }));
-}
-
-// Shockwaves on the open "stage" scenes.
-for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
-  el.addEventListener('click', (e) => { if (!e.target.closest('a, button')) cos.shock(e.clientX, e.clientY); });
-}
+// Section offsets, cached (no layout reads in the frame loop).
+let tops = [], installTop = 0, breakTop = 0, breakH = 1;
+const measure = () => {
+  vw = innerWidth; vh = innerHeight;
+  const y = scrollY;
+  tops = sections.map((s) => { const b = s.getBoundingClientRect(); return { top: b.top + y, h: b.height, side: s.dataset.side === 'right' ? -1 : 1 }; });
+  const ib = $('#install').getBoundingClientRect(); installTop = ib.top + y;
+  const bb = $('#break').getBoundingClientRect(); breakTop = bb.top + y; breakH = bb.height;
+  fit();
+};
+measure();
+addEventListener('resize', measure);
+new ResizeObserver(() => measure()).observe(document.body);
 
 // ---------------------------------------------------------------------------
-// 01 · Hero
+// Poses
 // ---------------------------------------------------------------------------
-{
-  const cs = chars($('#hero-title'));
-  $('#hero-title').dataset.gsplit = '1';
-  set(cs, { yPercent: 110, rotate: 8, opacity: 0 });
-  set('#hero-copy, .hero-actions, .hero .corner, .scroll-cue', { opacity: 0, y: 14 });
-  setTimeout(() => {
-    animate(cs, { yPercent: 0, rotate: 0, opacity: 1 }, { duration: 1.1, ease: 'spring(bounce: 0.2, duration: 0.9)', delay: stagger(0.03) });
-    animate('#hero-copy, .hero-actions, .hero .corner, .scroll-cue', { opacity: 1, y: 0 }, { duration: 0.9, ease: 'outCubic', delay: stagger(0.08, { start: 0.4 }) });
-  }, reduced ? 0 : 2300);
-  animate('.scroll-cue i', { scaleX: [0, 1, 1], x: [0, 0, 46], opacity: [1, 1, 0] }, { duration: 1.8, ease: 'inOutCubic', repeat: Infinity });
-  cos.playIntro();
-  // Scrubbed exit: the title row recedes and blurs into the particles as you scroll on.
-  let left = false;
-  scroll((p) => {
-    if (p <= 0 && !left) return; // leave the intro's own reveal alone until the page moves
-    left = true;
-    set('.hero-row', { y: -p * 160, scale: 1 - p * 0.08, opacity: 1 - p * 1.1, filter: `blur(${(p * 10).toFixed(2)}px)` });
-    set('.hero .corner, .scroll-cue', { opacity: Math.max(0, 1 - p * 3) });
-  }, { target: $('#top'), offset: ['start start', 'end start'] });
-}
+const clamp = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+const mix = (a, b, t) => a + (b - a) * t;
+const tilt = { x: 0, y: 0 };
+if (fine && !reduced) addEventListener('pointermove', (e) => spring(tilt, { x: (e.clientY / vh - 0.5) * 22, y: (e.clientX / vw - 0.5) * 30 }, { stiffness: 90, damping: 14 }), { passive: true });
 
-// ---------------------------------------------------------------------------
-// 02 · Manifesto: a kinetic list scrubbed by scroll
-// ---------------------------------------------------------------------------
-{
-  const items = [
-    ['Any CSS property, SVG attribute or JS object.', "animate(el, { x: 400, rotate: 90 })", 'outExpo'],
-    ['Retarget mid-flight — velocity is kept.', "spring(el, { x }, { bounce: 0.4 })", 'spring(bounce: 0.55)'],
-    ['Labels, overlaps, nesting, exact seeking.', "timeline().add(a).add(b, '<0.2')", 'outBack'],
-    ['Rigid bodies, ropes and cloth in WebAssembly.', 'world({ gravity: [0, 980] })', 'outBounce'],
-    ['150,000 particles, simulated and lit in the core.', 'pointCloud(150_000, { shapes })', 'outElastic'],
-    ['Transform lists, slerped like browsers do.', "animate(el, { transform: 'rotateY(180deg)' })", 'inOutCubic'],
-    ['Scrub, pin, snap to labels.', 'scrollTrigger({ scrub: true, pin: true })', 'outQuart'],
-    ['Split by line, word, char. Scramble. Type.', "splitText(el, { type: 'chars' })", 'steps(6)'],
-    ['Morph anything into anything.', 'animate(path, { d: star(…) })', 'outCirc'],
-    ['Frame-exact GIF, WebM and PNG.', "record('#hero', { duration: 2 })", 'rough(16, 1.4, 7, outQuad)'],
-    ['Compose films in code; render MP4 or WebM, frame-exact.', "composition({ fps: 60, motionBlur: 3 })", 'outBack'],
-    ['Beats, onsets and tempo, found in WebAssembly.', 'analyzeAudio(track).beats', 'spring(bounce: 0.7)'],
-  ];
-  const section = $('#manifesto');
-  const stack = $('#m-stack');
-  const words = $$('.m-word', stack);
-  const wordChars = words.map((w) => chars(w));
-  let active = -1;
-  let descTween = null;
-  let wordH = words[0].getBoundingClientRect().height;
-  addEventListener('resize', () => (wordH = words[0].getBoundingClientRect().height));
-  const activate = (i) => {
-    if (i === active) return;
-    const prev = active;
-    active = i;
-    words.forEach((w, k) => w.classList.toggle('on', k === i));
-    const [desc, code, ease] = items[i];
-    $('#m-index').textContent = String(i + 1).padStart(2, '0');
-    descTween?.kill();
-    descTween = animate('#m-desc', { text: { value: desc, type: 'scramble', chars: 'lower' } }, { duration: 0.3, ease: 'linear' });
-    $('#m-code').textContent = `${code}  // ease: '${ease}'`;
-    const dir = prev < i ? 1 : -1;
-    const three = i === 5;
-    animate(wordChars[i], three ? { rotateX: [-90 * dir, 0], opacity: [0, 1] } : { yPercent: [60 * dir, 0], opacity: [0, 1] }, { duration: 0.9, ease, delay: stagger(0.035) });
+const rotM = instances(1);
+/** Rotate a point by the renderer's own Euler convention (read back from an instance matrix). */
+const rotate = (rx, ry, rz, p) => {
+  rotM.set(0, { rx, ry, rz });
+  const m = rotM.data;
+  return [m[0] * p[0] + m[3] * p[1] + m[6] * p[2], m[1] * p[0] + m[4] * p[1] + m[7] * p[2], m[2] * p[0] + m[5] * p[1] + m[8] * p[2]];
+};
+
+let sy = scrollY, t = 0;
+const pose = (k, out) => {
+  const knotScale = small ? 0.62 : 0.95;
+  // A: assembled in the hero (screen-fixed), slowly turning, tilted by the pointer.
+  const hx = small ? vw / 2 : vw * 0.66, hy = small ? vh * 0.3 : vh * 0.46;
+  const [ax, ay] = toWorld(hx, hy);
+  const grx = 58 + tilt.x, gry = t * 14 + tilt.y, grz = t * 6;
+  const b = clamp((sy - breakTop * 0.15) / (breakTop + breakH * 0.35 - breakTop * 0.15)); // the burst
+  const d = clamp((sy - (breakTop + breakH * 0.25)) / (breakH * 0.75)); // flight to the docks
+  const rc = rotate(grx, gry, grz, pieces[k].c);
+  const burst = ease(b) * (small ? 260 : 420);
+  const P = pieces[k];
+  let x = ax + rc[0] * knotScale + rotate(grx, gry, grz, P.dir)[0] * burst;
+  let y = ay + rc[1] * knotScale + rotate(grx, gry, grz, P.dir)[1] * burst;
+  let z = rc[2] * knotScale + burst * 0.4;
+  let rx = grx + ease(b) * (k % 2 ? 40 : -40), ry = gry + ease(b) * 30 * (k - 3), rz = grz;
+  let s = knotScale;
+  // D: docked beside section k, moving with it.
+  const T = tops[k];
+  const dock = (out2) => {
+    const px = small ? vw / 2 : vw / 2 + T.side * vw * 0.25;
+    const py = small ? T.top + vh * 0.22 - sy : T.top + T.h / 2 - sy;
+    const [wx, wy] = toWorld(px, py);
+    out2.x = wx; out2.y = wy; out2.z = 0;
+    out2.rx = 25 + tilt.x * 0.6 + Math.sin(t * 0.7 + k) * 12; out2.ry = t * 24 + k * 50 + tilt.y * 0.6; out2.rz = k * 30;
+    out2.s = small ? 1.0 : 1.55;
   };
-  pinned(section, (p) => {
-    const f = Math.min(words.length - 1, Math.max(0, p * (words.length - 0.2) - 0.1));
-    set(stack, { y: -(f + 0.5) * wordH });
-    words.forEach((w, k) => {
-      const d = Math.abs(k - f);
-      set(w, { x: Math.max(0, 1 - d) * 40, opacity: Math.max(0.12, 1 - d * 0.35) });
-    });
-    activate(Math.round(f));
-  });
-}
+  const D = {};
+  dock(D);
+  const de = ease(d);
+  x = mix(x, D.x, de); y = mix(y, D.y, de); z = mix(z, D.z, de);
+  rx = mix(rx, D.rx, de); ry = mix(ry, D.ry, de); rz = mix(rz, D.rz, de); s = mix(s, D.s, de);
+  // F: re-formed above the install command.
+  const f = ease(clamp((sy - (installTop - vh * 1.05)) / (vh * 0.95)));
+  if (f > 0) {
+    const [fx, fy] = toWorld(vw / 2, installTop - sy + vh * 0.32);
+    const fs = small ? 0.55 : 0.75, frx = 58 + tilt.x, fry = t * 14 + tilt.y, frz = t * 6;
+    const fc = rotate(frx, fry, frz, P.c);
+    x = mix(x, fx + fc[0] * fs, f); y = mix(y, fy + fc[1] * fs, f); z = mix(z, fc[2] * fs, f);
+    rx = mix(rx, frx, f); ry = mix(ry, fry, f); rz = mix(rz, frz, f); s = mix(s, fs, f);
+  }
+  out.set(0, { x, y, z, rx, ry, rz, scale: s });
+  return { b, d, f };
+};
 
 // ---------------------------------------------------------------------------
-// 03 · Physics: giant letters and 3,000 grains share one WebAssembly world
+// Frame loop
 // ---------------------------------------------------------------------------
-{
-  const section = $('#physics');
-  const pin = $('.pin', section);
-  const host = $('#p-letters');
-  const canvas = $('#sand');
-  const ctx = canvas.getContext('2d');
-  const letters = 'GRAVITY'.split('').map((ch) => {
-    const s = document.createElement('div');
-    s.className = 'p-letter';
-    s.textContent = ch;
-    host.appendChild(s);
-    return s;
-  });
-  let w = null, firstGrain = 0, grains = 0, started = false;
-  const letterIds = new Set();
-  const bodies = [];
-  const fit = () => {
-    canvas.width = pin.clientWidth * dpr;
-    canvas.height = pin.clientHeight * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    w?.set({ bounds: [0, -3000, pin.clientWidth, pin.clientHeight - 26] });
-  };
-  const start = () => {
-    if (started) return;
-    started = true;
-    fit();
-    addEventListener('resize', fit);
-    // Open top (letters fall in from above), floor slightly above the fold so glyphs rest fully in view.
-    w = world({ container: pin, bounds: [0, -3000, pin.clientWidth, pin.clientHeight - 26], gravity: [0, 2200], substeps: 4, iterations: 3, restitution: 0.25, friction: 0.12, damping: 0.02 });
-    // Letters enter one by one from above, spread across the width.
-    const W = pin.clientWidth;
-    letters.forEach((el, i) => {
-      const r = el.getBoundingClientRect();
-      set(el, { x: (W / (letters.length + 1)) * (i + 1) - r.width / 2, y: 20 - r.height });
-    });
-    flush();
-    letterIds.clear();
-    // Each letter is a rigid pair of circles stacked over the glyph's cap
-    // height, so tall letters stand, tip and tumble like real objects.
-    const host = pin.getBoundingClientRect();
-    letters.forEach((el, i) => setTimeout(() => {
-      const b = el.getBoundingClientRect();
-      const capH = b.height * 0.72;
-      const r = Math.min(b.width * 0.46, capH * 0.32);
-      const cx = b.left - host.left + b.width / 2, cy = b.top - host.top + b.height * 0.53;
-      const off = capH / 2 - r;
-      const top = w.add(cx, cy - off, r, 40), bot = w.add(cx, cy + off, r, 40);
-      w.link(top, bot, { stiffness: 1 });
-      letterIds.add(top).add(bot);
-      bodies.push({ el, top, bot, w: b.width, h: b.height });
-      w.setVelocity(top, (Math.random() - 0.5) * 300, 200);
-      w.setVelocity(bot, (Math.random() - 0.5) * 300, 200);
-    }, reduced ? 0 : 140 * i));
-    w.onStep(() => {
-      for (const o of bodies) {
-        const x = (w.x(o.top) + w.x(o.bot)) / 2, y = (w.y(o.top) + w.y(o.bot)) / 2;
-        const ang = Math.atan2(w.x(o.top) - w.x(o.bot), w.y(o.bot) - w.y(o.top));
-        set(o.el, { x: x - o.w / 2, y: y - o.h * 0.53, rotate: (ang * 180) / Math.PI });
-      }
-    });
-    w.pointer({ mode: 'repel', radius: 130, strength: 9000 });
-    w.dragging({ hitSlop: 20 });
-    pin.addEventListener('click', (e) => {
-      const r = pin.getBoundingClientRect();
-      w.impulse(e.clientX - r.left, e.clientY - r.top, 320, 2600);
-    });
-    firstGrain = -1;
-  };
-  inView(section, start, { amount: 0.25 });
-  const MAX = innerWidth < 760 ? 700 : 1600;
-  whileVisible(pin, () => {
-    if (!w) return;
-    // Pour grains from a moving spout until the floor is covered.
-    if (grains < MAX) {
-      const W = pin.clientWidth, n = Math.min(40, MAX - grains);
-      const sx = W * (0.5 + 0.38 * Math.sin(performance.now() / 900));
-      const first = w.addMany(Array.from({ length: n }, () => ({ x: sx + (Math.random() - 0.5) * 60, y: 6 + Math.random() * 30, r: 2.4 + Math.random() * 2 })));
-      if (firstGrain < 0) firstGrain = first;
-      grains += n;
-    }
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (firstGrain < 0) return;
-    ctx.fillStyle = '#ece6da';
-    for (let i = firstGrain; i < w.count; i++) {
-      if (letterIds.has(i)) continue;
-      const r = w.radius(i);
-      ctx.beginPath();
-      ctx.arc(w.x(i), w.y(i), r * 0.92, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  });
-}
+const items = pieces.map((p, k) => ({
+  mesh: p.mesh, instances: p.inst, cull: false,
+  material: { metal: 0.92, iridescence: 0.45, hue: k / PIECES, specular: 1.6, shininess: 140, rim: 0.5, lines: 0, lineColor: accents[k] || [1.6, 1.6, 1.6], grid: [0, 5], lineWidth: 0.04, pulse: 0, pulseCount: 2, pulsePhase: 0 },
+}));
+const env = { background: '#06070b', sky: [0.05, 0.06, 0.12], horizon: [0.5, 0.42, 0.7], ground: [0.02, 0.02, 0.03], strips: [2.6, 2.6, 2.9], key: [-0.4, 0.6, 0.7], keyColor: [1, 0.95, 0.9], fill: [0.6, -0.2, 0.5], fillColor: [0.3, 0.4, 0.9], rimColor: [0.9, 0.5, 1] };
+let avg = 6, last = -1, stats = { ms: 0, w: 0, h: 0 };
+window.__stage = stats;
+const frame = (dt) => {
+  if (!reduced) t += Math.min(dt, 50) / 1000;
+  sy += (scrollY - sy) * (reduced ? 1 : 1 - Math.exp(-dt / 70));
+  if (Math.abs(scrollY - sy) < 0.5) sy = scrollY;
+  if (reduced) {
+    if (sy === last) return; // reduced motion: draw only when the scroll changes
+    last = sy;
+  }
+  let glowing = 0;
+  for (let k = 0; k < PIECES; k++) {
+    const { d, f } = pose(k, pieces[k].inst);
+    const m = items[k].material;
+    // Docked pieces light up in their section's accent, with pulses running along them.
+    glowing = Math.max(0, d - f);
+    m.lines = 1.4 * glowing; m.pulse = 2.2 * glowing; m.pulsePhase = t * 0.8 + k * 0.3;
+  }
+  const t0 = performance.now();
+  r3.render(cam, items, env);
+  const ms = performance.now() - t0;
+  avg = avg * 0.9 + ms * 0.1;
+  stats.ms = avg; stats.w = W; stats.h = H;
+  const cap = Math.min(devicePixelRatio || 1, 2) * (small ? 0.55 : 0.75);
+  const want = Math.min(cap, Math.max(0.32, scale * Math.sqrt(7 / Math.max(2, avg))));
+  if (Math.abs(want - scale) / scale > 0.12) { scale = want; fit(); }
+  if (!canvas.classList.contains('on')) canvas.classList.add('on');
+};
+engine.onFrame((_t, dt) => frame(dt));
 
 // ---------------------------------------------------------------------------
-// 04 · Particles: the number fills as you scroll through the shapes
+// Demos load on approach (dynamic import keeps them off the critical path)
 // ---------------------------------------------------------------------------
-{
-  const section = $('#particles');
-  $$('#big-num span').forEach((s) => (s.textContent = cos.count.toLocaleString('en-US')));
-  pinned(section, (p) => set('#big-num-fill', { clipPath: `inset(0 ${(100 - p * 100).toFixed(2)}% 0 0)` }));
-}
-
-// ---------------------------------------------------------------------------
-// 05 · Time
-// ---------------------------------------------------------------------------
-{
-  const lines = $$('.t-line');
-  set(lines, { yPercent: 40, opacity: 0 });
-  inView('#time', () => animate(lines, { yPercent: 0, opacity: 1 }, { duration: 1, ease: 'spring(bounce: 0.3, duration: 0.8)', delay: stagger(0.08) }), { amount: 0.3 });
-  animate('#hold-btn', { scale: [1, 1.06, 1] }, { duration: 1.6, ease: 'inOutSine', repeat: Infinity });
-}
-
-// ---------------------------------------------------------------------------
-// 06 · Paths: a giant blob morphs with scroll; a stroke draws across the page
-// ---------------------------------------------------------------------------
-{
-  const section = $('#paths');
-  const blobShape = (seed, n = 9) => pathThrough(Array.from({ length: n }, (_, k) => {
-    const a = (k / n) * Math.PI * 2, r = 150 + noise2(k * 0.6, seed) * 60;
-    return [200 + Math.cos(a) * r, 200 + Math.sin(a) * r];
-  }), { closed: true });
-  const blob = $('#blob');
-  blob.setAttribute('d', circle(200, 200, 170));
-  const shapes = [circle(200, 200, 170), star(200, 200, 12, 190, 120), blobShape(2), rect(40, 40, 320, 320, 40), star(200, 200, 5, 195, 80), blobShape(7, 11)];
-  const tl = timeline({ autoplay: false, defaults: { ease: 'inOutCubic', duration: 1 } });
-  for (let k = 1; k < shapes.length; k++) tl.add(blob, { d: shapes[k] });
-  const draw = animate('#trail', { draw: [0, 1] }, { autoplay: false, ease: 'linear', duration: 1 });
-  const ride = animate('#rider', { path: { path: '#trail' } }, { autoplay: false, ease: 'linear', duration: 1 });
-  pinned(section, (p) => {
-    tl.progress = p;
-    draw.progress = p;
-    ride.progress = p;
-  });
-  animate('.blob', { rotate: 360 }, { duration: 40, ease: 'linear', repeat: Infinity });
-}
-
-// ---------------------------------------------------------------------------
-// 08 · Flight: scroll flies a camera through a city rendered live in WebAssembly
-// ---------------------------------------------------------------------------
-{
-  const section = $('#fly');
-  flight({
-    canvas: $('#fly-canvas'), stats: $('#fly-stats'), reduced,
-    onProgress: (fn) => pinned(section, fn),
-    whileVisible: (fn) => whileVisible(section, fn),
-  });
-}
-
-// ---------------------------------------------------------------------------
-// 07 · Depth: a ring of cards turned by scroll
-// ---------------------------------------------------------------------------
-{
-  const section = $('#depth');
-  const ring = $('#ring');
-  const feats = [
-    ['Spring', "ease: 'spring(bounce: .4)'", 'M0 90 C 20 -40 40 120 60 40 S 90 70 120 60'],
-    ['Inertia', 'inertia(el, { x: { velocity } })', 'M0 90 C 30 10 60 4 120 2'],
-    ['Flip', "flip('.tile', change)", 'M10 80 L40 20 L70 80 L100 20'],
-    ['Morph', 'animate(p, { d: star(…) })', 'M0 60 Q 30 0 60 60 T 120 60'],
-    ['Scroll', 'scrollTrigger({ pin: true })', 'M0 90 L120 0'],
-    ['Text', "splitText(el, { type: 'chars' })", 'M0 70 h20 v-30 h20 v30 h20 v-50 h20 v50 h20'],
-    ['OKLab', "animate(el, { color: 'oklch(…)' })", 'M0 50 C 40 50 40 10 60 10 S 80 90 120 90'],
-    ['WAAPI', 'compositor(el, { x: 200 })', 'M0 80 C 40 80 60 20 120 20'],
-    ['Capture', "record('#hero')", 'M0 50 h120 M60 0 v100'],
-    ['Python', 'anikit.animate(box, {…})', 'M0 90 Q 60 -60 120 90'],
-  ];
-  const R = () => innerHeight * 0.4;
-  const cards = feats.map(([name, code, d], i) => {
-    const c = document.createElement('button');
-    c.className = 'card';
-    c.dataset.cursor = 'Flip';
-    c.innerHTML = `<span class="n">${String(i + 1).padStart(2, '0')}</span><svg viewBox="0 0 120 100"><path d="${d}"/></svg><b>${name}</b><code>${code}</code>`;
-    ring.appendChild(c);
-    return c;
-  });
-  const place = () => cards.forEach((c, i) => set(c, { transform: `rotateY(${i * 36}deg) translateZ(${R()}px)` }));
-  place();
-  addEventListener('resize', place);
-  cards.forEach((c, i) => {
-    let flipped = false;
-    c.addEventListener('click', () => {
-      flipped = !flipped;
-      animate(c, { transform: `rotateY(${i * 36}deg) translateZ(${R() + (flipped ? 120 : 0)}px) rotateY(${flipped ? 180 : 0}deg) rotateX(${flipped ? -10 : 0}deg)` }, { duration: 1.1, ease: 'spring(bounce: 0.35, duration: 0.9)' });
-    });
-  });
-  const tilt = { x: 0, y: 0 };
-  addEventListener('pointermove', (e) => spring(tilt, { x: (e.clientY / innerHeight - 0.5) * -14, y: (e.clientX / innerWidth - 0.5) * 18 }, { stiffness: 120, damping: 18 }), { passive: true });
-  let p = 0;
-  pinned(section, (v) => (p = v));
-  whileVisible(section, () => set(ring, { rotateX: -12 + tilt.x, rotateY: -p * 324 + tilt.y }));
-  // Paths inside the cards draw on as the ring enters.
-  inView(section, () => animate($$('.card path'), { draw: [0, 1] }, { duration: 1.4, ease: 'inOutCubic', delay: stagger(0.06) }), { amount: 0.2 });
-}
-
-// ---------------------------------------------------------------------------
-// 09 · Numbers: benchmark counters count up, bars race in on a spring
-// ---------------------------------------------------------------------------
-{
-  const section = $('#numbers');
-  const title = chars($('#n-title'));
-  $('#n-title').dataset.gsplit = '1';
-  const counts = $$('.n-count', section);
-  const bars = $$('.n-row u', section);
-  const fmt = (d) => ({ format: { minimumFractionDigits: d, maximumFractionDigits: d }, locale: 'en-US' });
-  set(title, { yPercent: 105, rotate: -6, opacity: 0 });
-  set($$('.n-stat, .n-row, .n-cap', section), { opacity: 0, y: 24 });
-  set(bars, { scaleX: 0 });
-  for (const c of counts) c.textContent = (0).toFixed(+c.dataset.dec);
-  inView(section, () => {
-    animate(title, { yPercent: 0, rotate: 0, opacity: 1 }, { duration: 1, ease: 'spring(bounce: 0.25, duration: 0.85)', delay: stagger(0.03) });
-    animate($$('.n-stat, .n-cap, .n-row', section), { opacity: 1, y: 0 }, { duration: 0.8, ease: 'outCubic', delay: stagger(0.07, { start: 0.25 }) });
-    animate(bars, { scaleX: 1 }, { duration: 1.6, ease: 'spring(bounce: 0.3, duration: 1.2)', delay: stagger(0.18, { start: 0.6 }) });
-    counts.forEach((c, i) => animate(c, { textContent: +c.dataset.to }, { duration: 1.8, ease: 'outExpo', delay: 0.4 + i * 0.1, ...fmt(+c.dataset.dec) }));
-  }, { amount: 0.3 });
-  // Scrubbed exit: the whole board tilts back and lifts away as the next scene arrives.
-  const board = $$('.n-title, .n-stats, .n-chart', section);
-  scroll((p) => {
-    const q = Math.max(0, p - 0.5) * 2;
-    set(board, { y: -q * 120, opacity: 1 - q * 0.9 });
-  }, { target: section, offset: ['start start', 'end start'] });
-}
-
-// ---------------------------------------------------------------------------
-// 10 · Agents: live engine.inspect() and in-page recording
-// ---------------------------------------------------------------------------
-{
-  const term = $('#term');
-  let tick = 0;
-  whileVisible(term, () => {
-    if (++tick % 15) return;
-    const all = engine.inspect().filter((s) => s.state === 'running');
-    const live = all.filter((s) => s.progress > 0 && s.progress < 1);
-    const rows = (live.length ? live : all).slice(0, 14);
-    const q = (v) => (typeof v === 'string' ? `'${v}'` : Array.isArray(v) ? `[${v.map(q).join(', ')}]` : typeof v === 'number' ? +v.toFixed(3) : v);
-    term.innerHTML = `<span class="k">&gt; engine.inspect()</span>  // ${all.length} running\n` + rows.map((s) =>
-      `{ <span class="k">id</span>: ${s.id}, <span class="k">type</span>: ${q(s.type)}, <span class="k">target</span>: ${q(s.target ?? '–')}, <span class="k">props</span>: ${q(s.props ?? [])}, <span class="k">progress</span>: ${q(s.progress)} }`).join('\n');
-  });
-  const btn = $('#rec-btn');
-  btn.addEventListener('click', async () => {
-    btn.disabled = true;
-    btn.textContent = '● Recording…';
-    const t0 = performance.now();
-    const rec = await record('#term', { duration: 2, fps: 20, scale: 1, background: '#0c0c0c' });
-    const img = new Image();
-    img.src = rec.url;
-    $('#rec-out').replaceChildren(img);
-    $('#rec-out').append(` ${rec.frames} frames · ${(rec.blob.size / 1024).toFixed(0)} KB · ${((performance.now() - t0) / 1000).toFixed(1)} s`);
-    btn.textContent = '● Record 2 s';
-    btn.disabled = false;
-  });
-}
-
-// ---------------------------------------------------------------------------
-// 10 · Install
-// ---------------------------------------------------------------------------
-{
-  const cs = chars($('#outro'));
-  $('#outro').dataset.gsplit = '1';
-  set(cs, { yPercent: 100, opacity: 0 });
-  inView('#install', () => animate(cs, { yPercent: 0, opacity: 1 }, { duration: 1, ease: 'spring(bounce: 0.3, duration: 0.8)', delay: stagger(0.035) }), { amount: 0.4 });
-  $('#outro').addEventListener('click', () => effects.rubberBand(cs, { stagger: 0.03 }));
-  $('#copy').addEventListener('click', async (e) => {
-    try { await navigator.clipboard.writeText('npm install anikit'); } catch { /* clipboard blocked */ }
-    e.currentTarget.textContent = 'Copied';
-    effects.pop(e.currentTarget, { duration: 0.35 });
-  });
-}
-
-window.anikit = await import('../packages/anikit/dist/anikit.js');
-
-// Feature ticker: an endless marquee that speeds up with scrolling; magnetic buttons.
-const tick = $('#ticker');
-if (tick) marquee(tick, { speed: 70, pauseOnHover: true, scrollBoost: 0.6 });
-if (fine) magnetic('.pill, .f-btn', { strength: 0.25, radius: 60 });
+let demos = null;
+const loadDemos = () => (demos ??= import('./demos.js').then((m) => m.start({ reduced, fine, small })));
+inView('#break', () => { loadDemos(); }, { amount: 0 });
+if (scrollY > innerHeight) loadDemos();

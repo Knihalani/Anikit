@@ -1,0 +1,198 @@
+// The seven demos beside the knot's pieces. Each one starts when its section is
+// first near the viewport and runs per-frame work only while it is visible.
+import {
+  engine, animate, set, spring, stagger, splitText, inView, magnetic, timeline, world, flush,
+  circle, star, rect, pathThrough, noise2, pointCloud, glow, scene3d, textPoints, flip, marquee, effects,
+} from '../packages/anikit/dist/anikit.lean.js';
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+function whileVisible(el, fn) {
+  let off = null;
+  inView(el, () => {
+    off = engine.onFrame((_t, dt) => fn(dt));
+    return () => { off?.(); off = null; };
+  }, { amount: 0 });
+}
+const once = (el, fn) => inView(el, () => { fn(); }, { amount: 0, once: true, margin: '0px 0px 40% 0px' });
+
+export function start({ reduced, fine, small }) {
+  // 01 · Springs: a chain of dots, each springing towards the one ahead.
+  once('#springs', () => {
+    const box = $('#spring-box');
+    const presets = [{ stiffness: 260, damping: 16 }, { stiffness: 180, damping: 7 }, { stiffness: 40, damping: 10 }];
+    let cfg = presets[0];
+    const n = 10;
+    const dots = Array.from({ length: n }, (_, i) => {
+      const d = document.createElement('i');
+      d.className = 'dot';
+      d.style.opacity = String(1 - i * 0.075);
+      d.style.scale = String(1 - i * 0.05);
+      box.appendChild(d);
+      return d;
+    });
+    const pos = dots.map(() => ({ x: 0, y: 0 }));
+    const aim = { x: 0, y: 0 };
+    const home = () => { aim.x = box.clientWidth / 2; aim.y = box.clientHeight / 2; };
+    home();
+    pos.forEach((p) => { p.x = aim.x; p.y = aim.y; });
+    box.addEventListener('pointermove', (e) => { const r = box.getBoundingClientRect(); aim.x = e.clientX - r.left; aim.y = e.clientY - r.top; });
+    box.addEventListener('pointerleave', home);
+    let idle = 0;
+    whileVisible(box, (dt) => {
+      // Without a pointer, the head draws a slow figure eight.
+      if (!fine) { idle += dt / 1000; aim.x = box.clientWidth / 2 + Math.sin(idle * 1.3) * box.clientWidth * 0.32; aim.y = box.clientHeight / 2 + Math.sin(idle * 2.6) * 60; }
+      spring(pos[0], aim, cfg);
+      for (let i = 1; i < n; i++) spring(pos[i], pos[i - 1], cfg);
+      for (let i = 0; i < n; i++) set(dots[i], { x: pos[i].x, y: pos[i].y });
+    });
+    $$('#springs .mag').forEach((b, i) => b.addEventListener('click', () => { cfg = presets[i]; effects.pop(b, { duration: 0.3 }); }));
+    if (fine) magnetic('#springs .mag, .actions .pill, #copy', { strength: 0.3, radius: 70 });
+  });
+
+  // 02 · Text: split, then stagger.
+  once('#text', () => {
+    const el = $('#reveal');
+    const chars = splitText(el, { type: 'words,chars', charClass: 'ch', wordClass: 'gw' }).chars;
+    const eases = ['spring(bounce: 0.35, duration: 0.8)', 'outExpo', 'outBack', 'outBounce', 'steps(5)'];
+    let k = 0;
+    const play = () => {
+      $('#reveal-ease').textContent = `ease: ${eases[k].split('(')[0]}`;
+      animate(chars, { yPercent: [110, 0], rotate: [10, 0], opacity: [0, 1] }, { duration: 0.9, ease: eases[k], delay: stagger(0.016) });
+    };
+    set(chars, { yPercent: 110, opacity: 0 });
+    inView(el, play, { amount: 0.6 });
+    $('#reveal-btn').addEventListener('click', () => { k = (k + 1) % eases.length; play(); });
+  });
+
+  // 03 · SVG: a looping morph, a stroke drawing on and a rider on the path.
+  once('#svg', () => {
+    const blobShape = (seed, n = 9) => pathThrough(Array.from({ length: n }, (_, k) => {
+      const a = (k / n) * Math.PI * 2, r = 80 + noise2(k * 0.6, seed) * 34;
+      return [150 + Math.cos(a) * r, 150 + Math.sin(a) * r];
+    }), { closed: true });
+    const shapes = [circle(150, 150, 95), star(150, 150, 10, 110, 66), blobShape(2), rect(60, 60, 180, 180, 28), star(150, 150, 5, 112, 46), blobShape(7, 11), circle(150, 150, 95)];
+    $('#blob').setAttribute('d', shapes[0]);
+    const tl = timeline({ repeat: Infinity, defaults: { ease: 'spring(bounce: 0.25, duration: 0.9)', duration: 1 } });
+    for (let k = 1; k < shapes.length; k++) tl.add('#blob', { d: shapes[k] }, k === 1 ? 0.4 : '+=0.45');
+    const draw = timeline({ repeat: Infinity, defaults: { ease: 'inOutCubic' } });
+    draw.add('#trail', { draw: [0, 1] }, { duration: 2.2 }, 0)
+      .add('#rider', { path: { path: '#trail' } }, { duration: 2.2 }, 0)
+      .add('#trail', { draw: [1, 0] }, { duration: 1.2, ease: 'inCubic' }, 2.8);
+    inView('#svg', () => { tl.play(); draw.play(); return () => { tl.pause(); draw.pause(); }; }, { amount: 0 });
+  });
+
+  // 04 · Physics: letters with real bodies in a box.
+  once('#physics', () => {
+    const box = $('#world-box');
+    const letters = 'WORLD'.split('').map((ch) => { const s = document.createElement('div'); s.className = 'w-letter'; s.textContent = ch; box.appendChild(s); return s; });
+    let w = null;
+    const bodies = [];
+    const build = () => {
+      const Wd = box.clientWidth, Hd = box.clientHeight;
+      w = world({ container: box, bounds: [0, -2000, Wd, Hd - 4], gravity: [0, 2200], substeps: 4, iterations: 3, restitution: 0.3, friction: 0.15, damping: 0.02 });
+      letters.forEach((el, i) => set(el, { x: (Wd / (letters.length + 1)) * (i + 1) - el.offsetWidth / 2, y: -el.offsetHeight - i * 70 }));
+      flush();
+      const host = box.getBoundingClientRect();
+      for (const el of letters) {
+        const b = el.getBoundingClientRect();
+        const capH = b.height * 0.72, r = Math.min(b.width * 0.46, capH * 0.32);
+        const cx = b.left - host.left + b.width / 2, cy = b.top - host.top + b.height * 0.53, off = capH / 2 - r;
+        const top = w.add(cx, cy - off, r, 40), bot = w.add(cx, cy + off, r, 40);
+        w.link(top, bot, { stiffness: 1 });
+        w.setVelocity(top, (Math.random() - 0.5) * 300, 0);
+        bodies.push({ el, top, bot, w: b.width, h: b.height });
+      }
+      w.onStep(() => {
+        for (const o of bodies) {
+          const x = (w.x(o.top) + w.x(o.bot)) / 2, y = (w.y(o.top) + w.y(o.bot)) / 2;
+          const ang = Math.atan2(w.x(o.top) - w.x(o.bot), w.y(o.bot) - w.y(o.top));
+          set(o.el, { x: x - o.w / 2, y: y - o.h * 0.53, rotate: (ang * 180) / Math.PI });
+        }
+      });
+      w.dragging({ hitSlop: 16 });
+      box.addEventListener('click', (e) => { const r = box.getBoundingClientRect(); w.impulse(e.clientX - r.left, e.clientY - r.bottom + r.height, 220, 2400); });
+    };
+    inView(box, () => { if (!w) build(); }, { amount: 0.5 });
+  });
+
+  // 05 · Particles: 100,000 points (40,000 on phones) morphing between shapes.
+  once('#cloud', () => {
+    const N = reduced ? 30_000 : small ? 40_000 : 100_000;
+    $('#cloud-n').textContent = N.toLocaleString('en-US');
+    $('.snippet', $('#cloud')).textContent = `pointCloud(${N.toLocaleString('en-US').replaceAll(',', '_')}).morph(1, { duration: 2 })`;
+    const canvas = $('#cloud-canvas');
+    const g = glow(canvas, { resolution: small ? 0.7 : 0.9, background: '#05060a', trail: 0.4, budget: 5 });
+    const scene = scene3d({ fov: 40, camera: { z: 1000 }, near: 10, far: 5000 });
+    const fit = () => { const r = canvas.getBoundingClientRect(); g.resize(r.width, r.height); scene.resize(r.width, r.height, 1); };
+    fit();
+    addEventListener('resize', fit);
+    let seed = 3;
+    const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+    const make = (fn) => { const a = new Float32Array(N * 3); for (let i = 0; i < N; i++) fn(i, a, i * 3); return a; };
+    const sphere = make((i, a, o) => { const u = rnd() * 2 - 1, th = rnd() * Math.PI * 2, r = 230 * Math.cbrt(0.85 + rnd() * 0.15), s = Math.sqrt(1 - u * u); a[o] = Math.cos(th) * s * r; a[o + 1] = u * r; a[o + 2] = Math.sin(th) * s * r; });
+    const ring = make((i, a, o) => { const th = rnd() * Math.PI * 2, ph = rnd() * Math.PI * 2, r = 70 * Math.sqrt(rnd()); const R = 250 + Math.cos(ph) * r; a[o] = Math.cos(th) * R; a[o + 1] = Math.sin(ph) * r; a[o + 2] = Math.sin(th) * R; });
+    const cloud = pointCloud(N, { stiffness: 30, damping: 7, spread: 0.8, noise: 1.6, swirl: 60, frequency: 0.012 });
+    cloud.shape(0, sphere);
+    cloud.shape(1, ring);
+    cloud.shape(2, textPoints('anikit', N, { width: 760, depth: 40, font: 'Display', weight: 900 }));
+    cloud.snap(0);
+    g.colors(N, (i) => { const k = rnd(); return k < 0.05 ? [1.6, 1.3, 1.8] : [0.55 + k * 0.4, 0.35 + k * 0.2, 1]; });
+    let next = 1, timer = 0, rot = 0;
+    const ptr = { x: 0, y: 0, on: false };
+    canvas.addEventListener('pointermove', (e) => { const r = canvas.getBoundingClientRect(); ptr.x = e.clientX - r.left; ptr.y = e.clientY - r.top; ptr.on = true; });
+    canvas.addEventListener('pointerleave', () => (ptr.on = false));
+    canvas.addEventListener('click', () => cloud.explode(0, 0, 0, 900));
+    whileVisible(canvas, (dt) => {
+      timer += dt / 1000;
+      if (!reduced) rot += dt / 1000;
+      if (timer > 3.2) { timer = 0; cloud.morph(next, { duration: 2, ease: 'inOutCubic' }); next = (next + 1) % 3; }
+      scene.camera.x = Math.sin(rot * 0.25) * 1000; scene.camera.z = Math.cos(rot * 0.25) * 1000;
+      g.render(scene, cloud, { size: 1.1, intensity: small ? 0.5 : 0.32, fog: [600, 2200], ...(ptr.on ? { lens: { x: ptr.x, y: ptr.y } } : {}) });
+    });
+  });
+
+  // 06 · Layout: FLIP.
+  once('#layout', () => {
+    const grid = $('#tiles');
+    const cols = ['#ff3d8b', '#ff6a3d', '#ffd23d', '#3dffb0', '#3d8bff', '#c86bff'];
+    for (let i = 0; i < 12; i++) {
+      const t = document.createElement('div');
+      t.className = 'tile';
+      t.style.setProperty('--c', cols[i % cols.length]);
+      t.textContent = String(i + 1).padStart(2, '0');
+      grid.appendChild(t);
+    }
+    const opts = { duration: 0.7, ease: 'spring(bounce: 0.22, duration: 0.6)', delay: stagger(0.02) };
+    const shuffle = () => flip('.tile', () => { const ts = $$('.tile', grid); for (let i = ts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); grid.appendChild(ts[j]); ts.splice(j, 1); } }, opts);
+    const regrid = () => flip('.tile', () => { grid.classList.toggle('alt'); $$('.tile', grid)[0].classList.toggle('big'); }, opts);
+    $('#shuffle').addEventListener('click', shuffle);
+    $('#regrid').addEventListener('click', regrid);
+    let n = 0, id = 0;
+    inView(grid, () => { id = setInterval(() => (++n % 3 ? shuffle() : regrid()), 2600); return () => clearInterval(id); }, { amount: 0.5 });
+  });
+
+  // 07 · Benchmarks: counters and bars run in once.
+  once('#numbers', () => {
+    const section = $('#numbers');
+    const counts = $$('.n-count', section);
+    const bars = $$('.n-row u', section);
+    set(bars, { scaleX: 0 });
+    for (const c of counts) c.textContent = (0).toFixed(+c.dataset.dec);
+    inView(section, () => {
+      animate(bars, { scaleX: 1 }, { duration: 1.4, ease: 'spring(bounce: 0.2, duration: 1.1)', delay: stagger(0.15, { start: 0.2 }) });
+      counts.forEach((c, i) => { const d = +c.dataset.dec; animate(c, { textContent: +c.dataset.to }, { duration: 1.6, ease: 'outExpo', delay: 0.2 + i * 0.08, format: { minimumFractionDigits: d, maximumFractionDigits: d }, locale: 'en-US' }); });
+    }, { amount: 0.35 });
+  });
+
+  // Install: the feature ticker follows the scroll; copy button.
+  once('#install', () => {
+    marquee('#ticker', { speed: 60, pauseOnHover: true, scrollBoost: 0.6 });
+    $('#copy').addEventListener('click', async (e) => {
+      try { await navigator.clipboard.writeText('npm install anikit'); } catch { /* clipboard blocked */ }
+      e.currentTarget.textContent = 'Copied';
+      effects.pop(e.currentTarget, { duration: 0.35 });
+    });
+  });
+}

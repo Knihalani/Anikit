@@ -1,22 +1,24 @@
 // Build the landing page for static hosting (Cloudflare Pages):
 //   node site/build.mjs   →  site-dist/
-// Copies the site, vendors the anikit bundle and rewrites import paths.
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync, existsSync, statSync } from 'node:fs';
+// Copies the site, vendors the lean anikit bundle (which streams anikit.wasm)
+// and rewrites import paths.
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
 const out = join(root, 'site-dist');
+const pages = ['index.html', 'style.css', 'main.js', 'demos.js'];
 rmSync(out, { recursive: true, force: true });
 mkdirSync(join(out, 'vendor'), { recursive: true });
-for (const f of ['index.html', 'style.css', 'main.js', 'cosmos.js', 'gravity.js', 'flight.js']) cpSync(join(here, f), join(out, f));
-cpSync(join(here, 'fonts'), join(out, 'fonts'), { recursive: true });
-cpSync(join(root, 'packages/anikit/dist/anikit.js'), join(out, 'vendor/anikit.js'));
-for (const f of ['main.js', 'cosmos.js', 'gravity.js', 'flight.js']) {
+mkdirSync(join(out, 'fonts'), { recursive: true });
+for (const f of pages) cpSync(join(here, f), join(out, f));
+for (const f of ['InterDisplay-Black.woff2', 'Inter-Regular.woff2', 'JetBrainsMono-Regular.woff2', 'LICENSE-Inter.txt', 'LICENSE-JetBrainsMono.txt']) cpSync(join(here, 'fonts', f), join(out, 'fonts', f));
+for (const f of ['anikit.lean.js', 'anikit.wasm']) cpSync(join(root, 'packages/anikit/dist', f), join(out, 'vendor', f));
+for (const f of pages) {
   const p = join(out, f);
-  writeFileSync(p, readFileSync(p, 'utf8').replaceAll('../packages/anikit/dist/anikit.js', './vendor/anikit.js'));
+  writeFileSync(p, readFileSync(p, 'utf8').replaceAll('../packages/anikit/dist/', './vendor/'));
 }
-writeFileSync(join(out, '_headers'), `/fonts/*\n  Cache-Control: public, max-age=31536000, immutable\n/vendor/*\n  Cache-Control: public, max-age=3600\n`);
+writeFileSync(join(out, '_headers'), `/fonts/*\n  Cache-Control: public, max-age=31536000, immutable\n/vendor/*\n  Cache-Control: public, max-age=3600\n/vendor/anikit.wasm\n  Content-Type: application/wasm\n`);
 console.log('site →', out);
