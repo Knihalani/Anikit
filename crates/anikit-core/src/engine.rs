@@ -123,6 +123,50 @@ impl TrackSpec {
     }
 }
 
+/// Easing ids of a [`TrackRef`]: native ids, or the wasm encoding (f64,
+/// negative = linear).
+#[derive(Clone, Copy, Debug)]
+pub enum EaseIds<'a> {
+    U32(&'a [u32]),
+    F64(&'a [f64]),
+}
+
+impl EaseIds<'_> {
+    pub fn len(&self) -> usize {
+        match self {
+            EaseIds::U32(e) => e.len(),
+            EaseIds::F64(e) => e.len(),
+        }
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    /// The id at `i` (`i < len()`).
+    pub fn get(&self, i: usize) -> u32 {
+        match self {
+            EaseIds::U32(e) => e[i],
+            EaseIds::F64(e) => {
+                if e[i] < 0.0 {
+                    LINEAR
+                } else {
+                    e[i] as u32
+                }
+            }
+        }
+    }
+}
+
+/// A [`TrackSpec`] over borrowed data (see [`Engine::create_anim_ref`]).
+#[derive(Clone, Copy, Debug)]
+pub struct TrackRef<'a> {
+    pub kind: TrackKind,
+    pub channels: usize,
+    pub offsets: &'a [f64],
+    pub values: &'a [f64],
+    pub easings: EaseIds<'a>,
+    pub path: Option<&'a PathLut>,
+}
+
 #[derive(Clone, Debug)]
 struct Track {
     kind: TrackKind,
@@ -1002,17 +1046,47 @@ impl Engine {
     /// Create a keyframe animation. It starts paused (idle); call [`play`](Self::play)
     /// or add it to a timeline.
     pub fn create_anim(&mut self, timing: Timing, specs: &[TrackSpec], fl: u8) -> Result<Handle, Error> {
-        // Build into temporary vectors, then pack into the compact layout.
-        let mut data: Vec<f64> = Vec::new();
-        let mut eases: Vec<u32> = Vec::new();
-        let mut tracks: Vec<Track> = Vec::with_capacity(specs.len());
-        let mut out_len = 0u32;
+        let refs: Vec<TrackRef<'_>> = specs
+            .iter()
+            .map(|s| TrackRef {
+                kind: s.kind,
+                channels: s.channels,
+                offsets: &s.offsets,
+                values: &s.values,
+                easings: EaseIds::U32(&s.easings),
+                path: s.path.as_ref(),
+            })
+            .collect();
+        self.create_anim_ref(timing, &refs, fl)
+    }
+
+    /// [`Engine::create_anim`] from borrowed track data (no copy of the
+    /// inputs; the node's storage is allocated once, at its exact size).
+    pub fn create_anim_ref(&mut self, timing: Timing, specs: &[TrackRef<'_>], fl: u8) -> Result<Handle, Error> {
+        // Exact sizes first, so the node's buffer is one allocation.
+        let mut cap = 0usize;
+        let mut ncap = 0usize;
         for spec in specs {
             let ch = spec.channels.max(1);
             let nkf = spec.values.len() / ch;
             if nkf == 0 || spec.values.len() != nkf * ch {
                 return Err(Error::InvalidInput);
             }
+            let (store, out) = match spec.kind {
+                TrackKind::Path => (1, 3),
+                TrackKind::Matrix => (17, 16),
+                _ => (ch, ch),
+            };
+            cap += nkf * (1 + store) + spec.path.map_or(0, |p| p.data.len()) + spec.easings.len() + out;
+            ncap += 1;
+        }
+        let mut data: Vec<f64> = Vec::with_capacity(cap);
+        let mut tracks: Vec<Track> = Vec::with_capacity(ncap);
+        let mut n_eases = 0u32;
+        let mut out_len = 0u32;
+        for spec in specs {
+            let ch = spec.channels.max(1);
+            let nkf = spec.values.len() / ch;
             if !spec.offsets.is_empty() && spec.offsets.len() != nkf {
                 return Err(Error::InvalidInput);
             }
@@ -1046,7 +1120,7 @@ impl Engine {
             } else {
                 // Clamp to non-decreasing order.
                 let mut m = f64::NEG_INFINITY;
-                for &o in &spec.offsets {
+                for &o in spec.offsets {
                     let o = if o.is_finite() { o.max(m) } else { m.max(0.0) };
                     data.push(o);
                     m = o;
@@ -1073,23 +1147,24 @@ impl Engine {
                         data.extend_from_slice(&d);
                     }
                 }
-                _ => data.extend_from_slice(&spec.values),
+                _ => data.extend_from_slice(spec.values),
             }
-            let (lut_at, lut_len) = if let (TrackKind::Path, Some(p)) = (spec.kind, &spec.path) {
+            let (lut_at, lut_len) = if let (TrackKind::Path, Some(p)) = (spec.kind, spec.path) {
                 let at = data.len() as u32;
                 data.extend_from_slice(&p.data);
                 (at, p.data.len() as u32)
             } else {
                 (0, 0)
             };
-            let ease_at = eases.len() as u32;
+            // Easing ids go after all the data; `ease_at` is relative until then.
+            let ease_at = n_eases;
             let ease_n = match spec.easings.len() {
                 0 => 0,
                 1 => 1,
                 n if n == nkf.saturating_sub(1) => n as u32,
                 _ => return Err(Error::InvalidInput),
             };
-            eases.extend_from_slice(&spec.easings[..ease_n as usize]);
+            n_eases += ease_n;
             tracks.push(Track {
                 kind: spec.kind,
                 ch: store_ch as u32,
@@ -1114,16 +1189,18 @@ impl Engine {
                     && nkf >= 2
                     && !(nkf == 2 && data[off_at as usize] == 0.0 && data[off_at as usize + 1] == 1.0),
                 even: spec.offsets.is_empty() && nkf >= 2,
-                ease0: if ease_n > 0 { eases[ease_at as usize] } else { LINEAR },
+                ease0: if ease_n > 0 { spec.easings.get(0) } else { LINEAR },
             });
             out_len += out_ch as u32;
         }
         // Pack: data, then easing ids (as f64), then outputs.
         let ease_base = data.len() as u32;
-        for t in tracks.iter_mut() {
+        for (t, spec) in tracks.iter_mut().zip(specs) {
             t.ease_at += ease_base;
+            for k in 0..t.ease_n as usize {
+                data.push(spec.easings.get(k) as f64);
+            }
         }
-        data.extend(eases.iter().map(|&e| e as f64));
         let out_at = data.len();
         data.resize(out_at + out_len as usize, 0.0);
         let mut anim = Anim { tracks: tracks.into_boxed_slice(), buf: data.into_boxed_slice(), out_at, simple: 0, simple_ease: LINEAR, kf: 0, kf_cursor: 0, kf_even: false, pack_j: NONE };

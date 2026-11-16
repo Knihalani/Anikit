@@ -19,7 +19,7 @@ import {
 } from './values';
 import {
   Target, Targets, toTargets, classify, Kind, readValue, writer, convertUnit, defaultUnit, isElement,
-  claimAll, unclaimAll, Owner, stateOf, markDirty, transformUnit, TargetState, snapshot, composeTransform, kebab, computed, camel,
+  claimAll, unclaimAll, Owner, stateOf, TEXT_PROPS, markDirty, transformUnit, TargetState, snapshot, composeTransform, kebab, computed, camel,
 } from './props';
 import { Playable, Callbacks, Linked } from './playable';
 import { warn, didYouMean, describe, cssPropertyNames, suggest, warningsOn, checkSeconds, checkTargets } from './debug';
@@ -658,6 +658,14 @@ export function _setNumberTracks(on: boolean): boolean {
   numberTracks = on;
   return prev;
 }
+/** `false`: never create a multi-target animation's nodes in one batch (tests compare both). */
+let batchCreate = true;
+/** Testing hook: turn batched creation off/on; returns the previous state. */
+export function _setBatchCreate(on: boolean): boolean {
+  const prev = batchCreate;
+  batchCreate = on;
+  return prev;
+}
 /** `false`: never pack a multi-target animation's group in the core (tests compare both). */
 let packGroups = true;
 /** Testing hook: turn group packing off/on for animations created afterwards; returns the previous state. */
@@ -970,7 +978,9 @@ export class Animation extends Playable {
       return idx;
     };
 
-    for (let i = 0; i < n; i++) {
+    const fast = batchCreate && n > 1 && !ctx.chain && !ctx.set && (o.repeatDelay ?? 0) <= 0 &&
+      this._fast(targets, keys, specs, posts, dynamic, o, claims, reduce, repeat, direction, fill, easeList, baseEase);
+    if (!fast) for (let i = 0; i < n; i++) {
       const target = targets[i];
       const part = new Part(this, claims, this);
       part.upd = !!o.onUpdate;
@@ -1161,11 +1171,14 @@ export class Animation extends Playable {
       this._h = p.h;
       p.event = rootEvent;
     } else if (this._parts.length > 1) {
-      this._group = w.ak_group_create(0, 0, 1, 0, 0, -1, FL_FILL_BACKWARDS | FL_FILL_FORWARDS, 1);
-      for (const p of this._parts) w.ak_group_add(this._group, p.h, 0);
-      // Children of one layout and timing are evaluated together; their
-      // outputs then live in the pack.
-      if (packGroups && w.ak_group_pack(this._group)) for (const p of this._parts) p.at = w.ak_values_ptr(p.h) >>> 3;
+      // (`_fast` creates its group, adds and packs its children itself.)
+      if (!fast) {
+        this._group = w.ak_group_create(0, 0, 1, 0, 0, -1, FL_FILL_BACKWARDS | FL_FILL_FORWARDS, 1);
+        for (const p of this._parts) w.ak_group_add(this._group, p.h, 0);
+        // Children of one layout and timing are evaluated together; their
+        // outputs then live in the pack.
+        if (packGroups && w.ak_group_pack(this._group)) for (const p of this._parts) p.at = w.ak_values_ptr(p.h) >>> 3;
+      }
       this._h = this._group;
       const rec: NodeRecord & Linked = {
         h: this._group, at: 0, ctl: this,
@@ -1195,6 +1208,166 @@ export class Animation extends Playable {
       }
       wake();
     }
+  }
+
+  /**
+   * Batched creation for the common multi-target case: plain objects, plain
+   * numbers (no per-target values, units or post-processing), one timing.
+   * Reads every current value first (getters are user code; see the
+   * scratch-buffer rule), then creates every target's node in one
+   * `ak_anim_create_many` call, without per-target track objects. Returns
+   * false, having changed nothing, when the call does not qualify.
+   */
+  private _fast(
+    targets: Target[], keys: string[], specs: PropSpec[], posts: Array<unknown>, dynamic: boolean[],
+    o: AnimateOptions, claims: boolean, reduce: boolean, repeat: number, direction: number, fill: number,
+    easeList: readonly unknown[] | null, baseEase: EasingInput | undefined,
+  ): boolean {
+    const n = targets.length, np = keys.length;
+    if (np === 0 || np > 16) return false;
+    if ((o.duration !== undefined && typeof o.duration !== 'number') || (o.delay !== undefined && typeof o.delay !== 'number')) return false;
+    // Per property: its keyframes (numbers or null), count, offsets, easings.
+    const nks: number[] = [], cur: boolean[] = [];
+    let stride = 0, hasExplicitFrom = false;
+    for (let pi = 0; pi < np; pi++) {
+      const spec = specs[pi];
+      if (spec.raw !== undefined || posts[pi] !== null || dynamic[pi] || TEXT_PROPS.has(keys[pi])) return false;
+      const raw = spec.values;
+      if (raw.length === 0) return false;
+      for (let k = 0; k < raw.length; k++) {
+        const v = raw[k];
+        if (v !== null && v !== undefined && typeof v !== 'number') return false;
+      }
+      const nk = raw.length === 1 ? 2 : raw.length;
+      nks.push(nk);
+      cur.push(usesCurrent(raw));
+      if (raw[0] !== null && raw[0] !== undefined && raw.length > 1) hasExplicitFrom = true;
+      stride += nk;
+    }
+    // Current values (and the values `revert()` restores), read once.
+    const rp: unknown[] = new Array(3 * n * np);
+    const vals = new Float64Array(n * stride);
+    for (let i = 0, r = 0, at = 0; i < n; i++) {
+      const t = targets[i] as any;
+      if (isElement(t)) return false;
+      for (let pi = 0; pi < np; pi++) {
+        const key = keys[pi];
+        const v = t[key];
+        rp[r] = t;
+        rp[r + 1] = key;
+        rp[r + 2] = v;
+        r += 3;
+        let cn = 0;
+        if (cur[pi]) {
+          if (typeof v !== 'number') return false;
+          cn = v;
+        }
+        const raw = specs[pi].values as Array<number | null>;
+        if (raw.length === 1) {
+          vals[at++] = cn;
+          vals[at++] = raw[0] === null || raw[0] === undefined ? cn : raw[0];
+        } else {
+          for (let k = 0; k < raw.length; k++) {
+            const x = raw[k];
+            vals[at++] = x === null || x === undefined ? cn : x;
+          }
+        }
+      }
+    }
+    if (warningsOn()) for (let pi = 0; pi < np; pi++) checkValues(keys[pi], Kind.Prop, specs[pi].values, targets[0]);
+    // Offsets and easing ids per property (as `addTrack` sets them).
+    const offs: Array<number[] | undefined> = [], eases: number[][] = [];
+    let len = 8;
+    for (let pi = 0; pi < np; pi++) {
+      const spec = specs[pi], nk = nks[pi];
+      const of = spec.offsets && spec.offsets.length === nk ? spec.offsets : undefined;
+      offs.push(of);
+      const e = spec.ease ?? (easeList ? easeList : baseEase);
+      let ids: number[];
+      if (Array.isArray(e) && !(e.length === 4 && typeof e[0] === 'number')) {
+        ids = [];
+        for (let k = 0; k < nk - 1; k++) ids.push(easingId((e as EasingInput[])[k] ?? baseEase));
+      } else ids = singleEasing(easingId(e as EasingInput));
+      eases.push(ids);
+      len += 5 + (of ? nk : 0) + nk + 1 + ids.length;
+    }
+    // Timing (the same for every target).
+    const easeForDur = easeList ? easeList[0] : baseEase;
+    let dur: number;
+    if (reduce) dur = 0;
+    else if (o.duration !== undefined) dur = o.duration as number;
+    else if (isSpringEase(easeForDur)) {
+      const d = easingDuration(easingId(easeForDur as EasingInput));
+      dur = d > 0 ? d : 0.5;
+    } else dur = 0.5;
+    const delay = reduce ? 0 : ((o.delay as number | undefined) ?? 0);
+    const durMs = Math.max(0, dur * 1000);
+    let flags = fill;
+    if (o.immediateRender ?? (hasExplicitFrom && delay > 0)) {
+      flags |= FL_IMMEDIATE;
+      this._immediate = true;
+    }
+    // Encode: the first target in full, then the others' values only.
+    // (Nothing below calls user code until the call has consumed the buffer.)
+    const base = f64Buf(len + (n - 1) * stride);
+    let at = base;
+    const f = F64;
+    f[at++] = delay * 1000;
+    f[at++] = durMs;
+    f[at++] = repeat + 1;
+    f[at++] = direction;
+    f[at++] = (o.endDelay ?? 0) * 1000;
+    f[at++] = -1;
+    f[at++] = flags;
+    f[at++] = np;
+    for (let pi = 0, v = 0; pi < np; pi++) {
+      const nk = nks[pi], of = offs[pi], ids = eases[pi];
+      f[at++] = TRACK_NUMBER;
+      f[at++] = 0;
+      f[at++] = 1;
+      f[at++] = nk;
+      f[at++] = of ? 1 : 0;
+      if (of) for (let k = 0; k < nk; k++) f[at++] = of[k];
+      for (let k = 0; k < nk; k++) f[at++] = vals[v++];
+      f[at++] = ids.length;
+      for (let k = 0; k < ids.length; k++) f[at++] = ids[k] === LINEAR ? -1 : ids[k];
+    }
+    f.set(vals.subarray(stride), at);
+    const w = core();
+    // Created straight into the call's group (see the root node in `_build`).
+    const g = w.ak_group_create(0, 0, 1, 0, 0, -1, FL_FILL_BACKWARDS | FL_FILL_FORWARDS, 1);
+    if (w.ak_anim_create_many(len, n, stride, g) !== n) {
+      w.ak_release(g);
+      throw new Error('anikit: failed to create animation (invalid keyframes)');
+    }
+    this._group = g;
+    views();
+    const hs = F64.slice(base, base + n);
+    // Output locations, after packing (the pack moves them).
+    if (packGroups) w.ak_group_pack(g);
+    w.ak_values_ptrs(n);
+    views();
+    const ats = F64.slice(base, base + n);
+    const tm: readonly [number, number, number, number] = [delay * 1000, durMs, repeat + 1, direction];
+    const upd = !!o.onUpdate;
+    for (let i = 0; i < n; i++) {
+      const target = targets[i];
+      const part = new Part(this, claims, this);
+      part.upd = upd;
+      const b: Binding[] = new Array(np);
+      for (let pi = 0; pi < np; pi++) b[pi] = new Binding(target, keys[pi], pi, pi, M_PROP, null, keys[pi], '', 0, -1, null, null);
+      part.b = b;
+      part.tm = tm;
+      part.h = hs[i];
+      part.at = ats[i] / 8;
+      register(part);
+      if (claims) claimAll(target, b, part);
+      this._parts.push(part);
+      this._live++;
+      this._links.push(part);
+    }
+    this._rp = rp;
+    return true;
   }
 
   /** Special properties: motion `path`, morph `d`, stroke `draw`, `attr`. */
