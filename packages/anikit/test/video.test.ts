@@ -135,7 +135,7 @@ describe('composition extras', () => {
 
   it('impacts are pure functions of time', () => {
     const c = composition({ width: 4, height: 2, duration: 2 }).impact(1, { shake: 20, flash: '#fff', aberration: 5 });
-    expect(c.impactAt(0.5)).toEqual({ x: 0, y: 0, flash: '', flashAlpha: 0, aberration: 0 });
+    expect(c.impactAt(0.5)).toEqual({ x: 0, y: 0, flash: '', flashAlpha: 0, aberration: 0, shock: [0.5, 0.5, 0, 0, 0] });
     const a = c.impactAt(1.01), b = c.impactAt(1.01);
     expect(a).toEqual(b);
     expect(a.flashAlpha).toBeGreaterThan(0.5);
@@ -168,6 +168,17 @@ describe('composition extras', () => {
       expect(Object.keys(t.passes)).toEqual(expect.arrayContaining(['opaque', 'sky']));
     }
     expect(Object.keys(r.stats)).toEqual(expect.arrayContaining(['setup', 'opaque', 'sky', 'output']));
+  });
+
+  it('impacts can send out a shockwave that expands and fades', () => {
+    const c = composition({ width: 400, height: 300, fps: 30, duration: 3 });
+    c.impact(1, { shake: 0, shockwave: 30, origin: [0.25, 0.5] });
+    expect(c.impactAt(0.9).shock[4]).toBe(0);
+    const a = c.impactAt(1.1).shock, b = c.impactAt(1.3).shock;
+    expect(a.slice(0, 2)).toEqual([0.25, 0.5]);
+    expect(b[2]).toBeGreaterThan(a[2]); // expands
+    expect(Math.abs(b[4])).toBeLessThan(Math.abs(a[4])); // and fades
+    expect(c.impactAt(2.9).shock[4]).toBe(0); // gone once it has left the frame
   });
 
   it('adds lens flares opposite bright lights', async () => {

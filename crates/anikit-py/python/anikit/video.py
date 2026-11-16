@@ -53,6 +53,7 @@ POST_OPTIONS = (
     "rays_length",  # 0-1 of the way (default 0.6)
     "aa",  # FXAA-style edge antialiasing (0-1; 1 recommended for raster frames)
     "flares",  # lens flares: ghosts of bright lights mirrored through the centre (0-2)
+    "shock",  # shockwave ring (x, y 0-1, radius px, half-width px, strength px); animate the radius
     "exposure",  # 1 = none
     "contrast",  # 1 = none
     "saturation",  # 1 = none
@@ -60,7 +61,7 @@ POST_OPTIONS = (
     "highlights",  # (r, g, b) multiplied into highlights
 )
 
-_VECTORS = {"streak_tint": 3, "zoom_center": 2, "rays_center": 2, "shadows": 3, "highlights": 3}
+_VECTORS = {"streak_tint": 3, "zoom_center": 2, "rays_center": 2, "shadows": 3, "highlights": 3, "shock": 5}
 
 PostValue = Union[float, Tuple[float, ...], Callable[[float], Any]]
 

@@ -179,6 +179,14 @@ export interface ImpactOptions {
   aberration?: number;
   /** Decay rate per second (default 10; higher = shorter). */
   decay?: number;
+  /**
+   * A shockwave: a refracting ring that expands from `origin` (0–1 of the frame,
+   * default centre) at `shockSpeed` frame diagonals per second (default 1.1),
+   * displacing the picture by up to `shockwave` px (try 20–40) as it passes.
+   */
+  shockwave?: number;
+  origin?: [number, number];
+  shockSpeed?: number;
 }
 
 /** Where one delivered frame's time went (milliseconds). */
@@ -316,7 +324,8 @@ export class Composition {
    * aberration kick, applied to the finished frame (after transitions).
    */
   impact(t: number, o: ImpactOptions = {}): this {
-    this.impacts.push({ t, shake: o.shake ?? 24, flash: o.flash ?? '', flashOpacity: o.flashOpacity ?? 0.85, aberration: o.aberration ?? 0, decay: o.decay ?? 10 });
+    this.impacts.push({ t, shake: o.shake ?? 24, flash: o.flash ?? '', flashOpacity: o.flashOpacity ?? 0.85, aberration: o.aberration ?? 0, decay: o.decay ?? 10,
+      shockwave: o.shockwave ?? 0, origin: o.origin ?? [0.5, 0.5], shockSpeed: o.shockSpeed ?? 1.1 });
     return this;
   }
 
@@ -354,10 +363,20 @@ export class Composition {
   }
 
   /** Shake offset, flash and aberration at `t` (a pure function of time). */
-  impactAt(t: number): { x: number; y: number; flash: string; flashAlpha: number; aberration: number } {
+  impactAt(t: number): { x: number; y: number; flash: string; flashAlpha: number; aberration: number; shock: [number, number, number, number, number] } {
     let x = 0, y = 0, fa = 0, fl = '', ab = 0;
+    // The strongest live shockwave: [origin x, y, radius px, half-width px, strength px].
+    const shock: [number, number, number, number, number] = [0.5, 0.5, 0, 0, 0];
+    const diag = Math.hypot(this.width, this.height);
     this.impacts.forEach((s, i) => {
       if (t < s.t) return;
+      if (s.shockwave) {
+        const age = t - s.t, r = age * s.shockSpeed * diag;
+        const amt = s.shockwave * Math.exp(-age * 1.6) * Math.min(1, age * 30);
+        if (r < diag * 1.2 && Math.abs(amt) > 0.3 && Math.abs(amt) > Math.abs(shock[4])) {
+          shock[0] = s.origin[0]; shock[1] = s.origin[1]; shock[2] = r; shock[3] = diag * 0.02 + r * 0.12; shock[4] = amt;
+        }
+      }
       const k = Math.exp(-(t - s.t) * s.decay);
       x += s.shake * k * Math.sin(t * 97 + i * 7.1);
       y += s.shake * k * Math.cos(t * 83 + i * 3.3);
@@ -367,7 +386,7 @@ export class Composition {
         if (a > fa) { fa = a; fl = s.flash; }
       }
     });
-    return { x, y, flash: fl, flashAlpha: fa, aberration: ab };
+    return { x, y, flash: fl, flashAlpha: fa, aberration: ab, shock };
   }
 
   get frames(): number {
@@ -450,14 +469,16 @@ export class Composition {
     const num = (v: PostValue | undefined, t: number, d: number) => (v === undefined ? d : typeof v === 'function' ? v(t) : v);
     const col = (v: PostColor | undefined, t: number, d: [number, number, number]) => (v === undefined ? d : typeof v === 'function' ? v(t) : v);
     const grade = (f: number, t: number) => {
-      const ab = num(post?.aberration, t, 0) + (this.impacts.length ? this.impactAt(t).aberration : 0);
-      if (!postOn && ab <= 0) return;
+      const im = this.impacts.length ? this.impactAt(t) : null;
+      const ab = num(post?.aberration, t, 0) + (im ? im.aberration : 0);
+      const shock = im?.shock ?? [0.5, 0.5, 0, 0, 0];
+      if (!postOn && ab <= 0 && !shock[4]) return;
       const p = post ?? {};
       const zc = p.zoomCenter ?? [0.5, 0.5];
       const vals = [num(p.bloomThreshold, t, 0.7), num(p.bloom, t, 0), num(p.bloomRadius, t, 24), ab, num(p.vignette, t, 0), num(p.grain, t, 0),
         num(p.streaks, t, 0), num(p.streakLength, t, 160), ...col(p.streakTint, t, [0.6, 0.75, 1]), num(p.zoomBlur, t, 0), zc[0], zc[1],
         num(p.exposure, t, 1), num(p.contrast, t, 1), num(p.saturation, t, 1), ...col(p.shadows, t, [0, 0, 0]), ...col(p.highlights, t, [0, 0, 0]),
-        num(p.rays, t, 0), ...(typeof p.raysCenter === 'function' ? p.raysCenter(t) : p.raysCenter ?? [0.5, 0.4]), num(p.raysLength, t, 0.6), num(p.aa, t, 0), num(p.flares, t, 0)];
+        num(p.rays, t, 0), ...(typeof p.raysCenter === 'function' ? p.raysCenter(t) : p.raysCenter ?? [0.5, 0.4]), num(p.raysLength, t, 0.6), num(p.aa, t, 0), num(p.flares, t, 0), ...shock];
       const at = f64Buf(vals.length);
       F64.set(vals, at);
       fb.post(f, vals.length);

@@ -897,11 +897,12 @@ const film = composition({ …, motionBlur: { samples: 2 }, post: {
   contrast: 1.08, saturation: 1.1, shadows: [0, 0.015, 0.04], highlights: [0.06, 0.02, -0.02], // grade + split tone
 } });
 film.impact(12.75, { shake: 40, flash: '#fff', flashOpacity: 0.7, aberration: 9 });  // shake + flash + aberration kick
+film.impact(14.2, { shake: 20, shockwave: 32, origin: [0.5, 0.45] });                 // + a refracting ring expanding from the hit
 film.scene('flight', 16, 24, { timeScale: (t) => 1 - 0.88 * Math.exp(-((t - 18.7) / 0.55) ** 2), step: ({ dt }) => sim.step(dt), draw });
 ```
 
 - `post` runs in WebAssembly once per output frame (after motion blur); grain is seeded by frame index, so parallel slices match. Every value may be a function of composition time, so the grade can follow the edit.
-- `impact()` shakes and flashes the finished frame (after transitions); `impactAt(t)` is its pure function of time.
+- `impact()` shakes and flashes the finished frame (after transitions); `impactAt(t)` is its pure function of time. `shockwave` (px of displacement, 20–40) adds a refracting ring that expands from `origin` at `shockSpeed` frame diagonals per second and fades as it goes; the grade's `post` pass draws it (Python: `post(shock=(x, y, radius, half_width, strength))`).
 - `timeScale(local)` scales engine time for that scene — tweens, particles and physics all slow together; `step()` receives the scaled `dt`.
 - Choreograph bullet time on the scene's own clock: `FrameInfo.clock` is the sum of those `dt`s (seconds since the scene started, slowed by `timeScale`). `film.clockAt(name, t)` gives it as a pure function of composition time, and `film.timeAt(name, clock)` maps it back, so impacts and cues land on story beats:
 

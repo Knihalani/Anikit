@@ -135,6 +135,11 @@ pub struct Post {
     /// Lens flares (0…2): ghosts of bright lights mirrored through the frame
     /// centre at several scales with a chromatic tint, plus a halo ring.
     pub flares: f32,
+    /// Shockwave: a refracting ring `[centre x, centre y (0…1 of the frame),
+    /// radius px, half-width px, strength px]`; strength 0 = off. Pixels in
+    /// the ring are displaced radially (red and blue a little apart) and the
+    /// wavefront brightens. Animate the radius for an expanding blast.
+    pub shock: [f32; 5],
     /// Colour grade: exposure multiplier (1 = none), contrast (1 = none),
     /// saturation (1 = none), additive shadow tint and multiplicative
     /// highlight tint (0…1 per channel; zeros = none).
@@ -165,6 +170,7 @@ impl Default for Post {
             rays_length: 0.6,
             aa: 0.0,
             flares: 0.0,
+            shock: [0.5, 0.5, 0.0, 0.0, 0.0],
             exposure: 1.0,
             contrast: 1.0,
             saturation: 1.0,
@@ -207,6 +213,9 @@ impl PostFx {
         }
         if p.zoom_blur > 0.0 {
             self.zoom(rgba, w, h, p);
+        }
+        if p.shock[4] != 0.0 && p.shock[3] > 0.0 {
+            self.shockwave(rgba, w, h, p.shock);
         }
         let glow = p.bloom > 0.0 || p.streaks > 0.0 || p.rays > 0.0 || p.flares > 0.0;
         if glow {
@@ -452,6 +461,61 @@ impl PostFx {
             let k = p.flares;
             for (v, f) in self.small.iter_mut().zip(&self.flare) {
                 *v += f * k;
+            }
+        }
+    }
+
+    /// A refracting ring (see [`Post::shock`]): only the rows and columns the
+    /// annulus touches are visited, so it costs little while it is small.
+    fn shockwave(&mut self, rgba: &mut [u8], w: usize, h: usize, s: [f32; 5]) {
+        let [ux, uy, rad, half, amt] = s;
+        let (cx, cy) = (ux * w as f32, uy * h as f32);
+        let outer = rad + half;
+        let y0 = crate::math::floorf(cy - outer).max(0.0) as usize;
+        let y1 = (crate::math::ceilf(cy + outer).max(0.0) as usize).min(h);
+        if y0 >= y1 {
+            return;
+        }
+        // Only the band of rows the ring covers is read back.
+        self.copy.clear();
+        let (r0, r1) = (y0.saturating_sub(amt.abs() as usize + 2), (y1 + amt.abs() as usize + 2).min(h));
+        self.copy.extend_from_slice(&rgba[r0 * w * 4..r1 * w * 4]);
+        let wi = w as i32 - 1;
+        let src = &self.copy;
+        let at = |x: f32, y: f32| {
+            let (xi, yi) = ((x + 0.5) as i32, ((y + 0.5) as i32).clamp(r0 as i32, r1 as i32 - 1));
+            ((yi as usize - r0) * w + xi.clamp(0, wi) as usize) * 4
+        };
+        let inv_half = 1.0 / half;
+        for y in y0..y1 {
+            let dy = y as f32 + 0.5 - cy;
+            let span = outer * outer - dy * dy;
+            if span <= 0.0 {
+                continue;
+            }
+            let sx = crate::math::sqrtf(span);
+            let x0 = crate::math::floorf(cx - sx).max(0.0) as usize;
+            let x1 = (crate::math::ceilf(cx + sx).max(0.0) as usize).min(w);
+            for x in x0..x1 {
+                let dx = x as f32 + 0.5 - cx;
+                let d = crate::math::sqrtf(dx * dx + dy * dy).max(1e-3);
+                let u = (d - rad) * inv_half;
+                if !(-1.0..1.0).contains(&u) {
+                    continue;
+                }
+                // Push out ahead of the front, pull in behind it; zero at the edges.
+                let env = 1.0 - u * u;
+                let disp = amt * libm::sinf(core::f32::consts::PI * u) * env;
+                let (nx, ny) = (dx / d, dy / d);
+                let (px, py) = (x as f32, y as f32);
+                let ir = at(px - nx * disp * 1.2, py - ny * disp * 1.2);
+                let ig = at(px - nx * disp, py - ny * disp);
+                let ib = at(px - nx * disp * 0.8, py - ny * disp * 0.8);
+                let lift = 1.0 + 0.18 * env * env * (amt.abs() / 24.0).min(1.0);
+                let o = (y * w + x) * 4;
+                rgba[o] = (src[ir] as f32 * lift).min(255.0) as u8;
+                rgba[o + 1] = (src[ig + 1] as f32 * lift).min(255.0) as u8;
+                rgba[o + 2] = (src[ib + 2] as f32 * lift).min(255.0) as u8;
             }
         }
     }
@@ -856,6 +920,21 @@ mod tests {
         let mut g = alloc::vec![100u8, 50, 20, 255];
         fx.apply(&mut g, 1, 1, &Post { exposure: 1.5, saturation: 0.0, ..Default::default() });
         assert!(g[0] == g[1] && g[1] == g[2] && g[0] > 50, "{g:?}");
+    }
+
+    #[test]
+    fn shockwave_refracts_only_inside_its_ring() {
+        // Vertical stripes, so any horizontal displacement shows.
+        let (w, h) = (200usize, 120usize);
+        let px: Vec<u8> = (0..w * h).flat_map(|i| { let v = if (i % w / 4) % 2 == 0 { 220 } else { 30 }; [v, v, v, 255] }).collect();
+        let mut a = px.clone();
+        let mut fx = PostFx::default();
+        fx.apply(&mut a, w, h, &Post { shock: [0.5, 0.5, 40.0, 10.0, 6.0], ..Default::default() });
+        let changed = |x: usize, y: usize| a[(y * w + x) * 4..(y * w + x) * 4 + 3] != px[(y * w + x) * 4..(y * w + x) * 4 + 3];
+        let ring = (0..w).filter(|&x| changed(x, 60) && { let d = (x as f32 + 0.5 - 100.0).abs(); (30.0..50.0).contains(&d) }).count();
+        assert!(ring > 6, "pixels in the ring move: {ring}");
+        assert!((0..w).filter(|&x| { let d = (x as f32 + 0.5 - 100.0).abs(); !(29.0..51.0).contains(&d) }).all(|x| !changed(x, 60)), "nothing outside it");
+        assert!((0..w).all(|x| !changed(x, 5)), "rows the ring misses are untouched");
     }
 
     #[test]
