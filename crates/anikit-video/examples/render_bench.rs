@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use anikit_video::dl::*;
-use anikit_video::render::{rgba_to_yuv420, Assets, Renderer, YuvFrame};
+use anikit_video::render::{rgba_to_yuv420, Assets, MbMap, Renderer, YuvFrame};
 use kurbo::{BezPath, Shape};
 use rayon::prelude::*;
 
@@ -17,6 +17,12 @@ fn rgba(r: f32, g: f32, b: f32, a: f32) -> Rgba {
 /// Background gradient, 30 cards (optionally with cached drop shadows), 400
 /// glyph-sized shapes, 10 strokes, text if a font is present. Animated by `t`.
 fn scene(t: f32, font: Option<FontId>, shadows: bool) -> DisplayList {
+    scene_with(t, font, shadows, true)
+}
+
+/// `busy = false`: only 4 cards and one stroke animate (a typical UI/explainer shot).
+fn scene_with(t: f32, font: Option<FontId>, shadows: bool, busy: bool) -> DisplayList {
+    let tb = if busy { t } else { 0.0 };
     let mut ops = Vec::new();
     ops.push(Op::Fill {
         path: kurbo::Rect::new(0.0, 0.0, 1920.0, 1080.0).to_path(0.1),
@@ -56,7 +62,7 @@ fn scene(t: f32, font: Option<FontId>, shadows: bool) -> DisplayList {
         }
     }
     for i in 0..400 {
-        let (x, y) = ((i % 40) as f64 * 47.0 + 20.0, (i / 40) as f64 * 100.0 + 60.0 + (t as f64 * 2.0 + i as f64).sin() * 10.0);
+        let (x, y) = ((i % 40) as f64 * 47.0 + 20.0, (i / 40) as f64 * 100.0 + 60.0 + (tb as f64 * 2.0 + i as f64).sin() * 10.0);
         ops.push(Op::Fill {
             path: kurbo::Circle::new((x, y), 6.0).to_path(0.1),
             paint: Paint::Solid(rgba((i % 7) as f32 / 7.0, 0.6, 1.0, 0.8)),
@@ -71,7 +77,7 @@ fn scene(t: f32, font: Option<FontId>, shadows: bool) -> DisplayList {
         ops.push(Op::Stroke {
             path: p,
             paint: Paint::Solid(rgba(1.0, 0.5, 0.2, 1.0)),
-            stroke: Stroke { width: 4.0, cap: 1, join: 1, miter_limit: 4.0, dash: vec![], dash_offset: 0.0, trim: [0.0, (t * 0.5).fract().max(0.05)] },
+            stroke: Stroke { width: 4.0, cap: 1, join: 1, miter_limit: 4.0, dash: vec![], dash_offset: 0.0, trim: [0.0, if busy || i == 0 { (t * 0.5).fract().max(0.05) } else { 1.0 }] },
             transform: IDENTITY,
         });
     }
@@ -83,7 +89,7 @@ fn scene(t: f32, font: Option<FontId>, shadows: bool) -> DisplayList {
                 size: 36.0,
                 glyphs,
                 paint: Paint::Solid(rgba(1.0, 1.0, 1.0, 1.0)),
-                transform: [1.0, 0.0, 0.0, 1.0, 60.0 + t * 10.0, 120.0 + line as f32 * 160.0],
+                transform: [1.0, 0.0, 0.0, 1.0, 60.0 + tb * 10.0, 120.0 + line as f32 * 160.0],
             });
         }
     }
@@ -97,8 +103,12 @@ fn main() {
     let frames = 240;
     let threads = rayon::current_num_threads();
     println!("1080p, {frames} frames, {threads} threads, yuv kernel: {}", anikit_video::render::yuv::simd_level());
-    for (name, shadows) in [("typical", false), ("typical + 30 shadowed cards (26 cached)", true)] {
-        let lists: Vec<_> = (0..frames).map(|i| scene(i as f32 / 60.0, font, shadows)).collect();
+    for (name, shadows, busy) in [
+        ("busy (everything moves)", false, true),
+        ("busy + 30 shadowed cards", true, true),
+        ("mostly static (4 cards + 1 stroke move)", true, false),
+    ] {
+        let lists: Vec<_> = (0..frames).map(|i| scene_with(i as f32 / 60.0, font, shadows, busy)).collect();
         // Single thread: render, then render + YUV.
         let mut r = Renderer::new(assets.clone());
         let mut yuv = YuvFrame::default();
@@ -135,6 +145,27 @@ fn main() {
         let t0 = Instant::now();
         run();
         let mt = frames as f64 / t0.elapsed().as_secs_f64();
+        // Incremental (dirty regions + exact macroblock map), single thread and frame-parallel.
+        let mut changed = MbMap::default();
+        let mut r = Renderer::new(assets.clone());
+        let t0 = Instant::now();
+        let mut mbs = 0;
+        for l in &lists {
+            r.render_yuv_incremental(l, &mut yuv, &mut changed);
+            mbs += changed.count();
+        }
+        let inc = frames as f64 / t0.elapsed().as_secs_f64();
+        let t0 = Instant::now();
+        lists.par_chunks(chunk).for_each(|c| {
+            let mut r = Renderer::new(assets.clone());
+            let (mut yuv, mut changed) = (YuvFrame::default(), MbMap::default());
+            for l in c {
+                r.render_yuv_incremental(l, &mut yuv, &mut changed);
+            }
+        });
+        let inc_mt = frames as f64 / t0.elapsed().as_secs_f64();
+        let total_mb = yuv.mb_dims().0 * yuv.mb_dims().1;
+        println!("{name}: incremental: 1 thread {inc:.0} fps, {threads} threads {inc_mt:.0} fps; {:.1}% of macroblocks changed per frame", 100.0 * mbs as f64 / (frames * total_mb) as f64);
         println!("{name}: {} ops | 1 thread: {st:.0} fps render, {st_yuv:.0} fps render+yuv | yuv alone {yuv_ms:.2} ms | {threads} threads: {mt:.0} fps render+yuv", lists[0].ops.len());
     }
 }

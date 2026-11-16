@@ -14,6 +14,7 @@ pub mod blur;
 pub mod diff;
 pub mod filter;
 pub mod glyphs;
+pub mod incremental;
 pub mod resample;
 pub mod trim;
 pub mod yuv;
@@ -80,6 +81,9 @@ struct State {
     scaled: HashMap<u64, CacheEntry>,
     seen: HashMap<u64, u64>,
     resample_buf: Vec<u8>,
+    /// Frame-space position of the current context's pixel (0, 0).
+    org: (i32, i32),
+    frame_size: (u32, u32),
     frame_no: u64,
     path: BezPath,
     lens: Vec<f64>,
@@ -95,6 +99,10 @@ pub struct Renderer {
     assets: Arc<Assets>,
     ctx: RenderContext,
     frame: Pixmap,
+    /// Context and pixmap for partial (dirty-region) renders.
+    rctx: Option<RenderContext>,
+    rpix: Pixmap,
+    inc: incremental::Tracker,
     st: State,
 }
 
@@ -109,6 +117,9 @@ impl Renderer {
             assets,
             ctx: RenderContext::new(1, 1),
             frame: Pixmap::new(1, 1),
+            rctx: None,
+            rpix: Pixmap::new(1, 1),
+            inc: Default::default(),
             st: State {
                 res: Resources::new(),
                 pool: Vec::new(),
@@ -120,6 +131,8 @@ impl Renderer {
                 scaled: HashMap::new(),
                 seen: HashMap::new(),
                 resample_buf: Vec::new(),
+                org: (0, 0),
+                frame_size: (1, 1),
                 frame_no: 0,
                 path: BezPath::new(),
                 lens: Vec::new(),
@@ -147,37 +160,83 @@ impl Renderer {
 
     /// Render `list` and return the frame (premultiplied RGBA8).
     pub fn render(&mut self, list: &DisplayList) -> &FrameRgba {
+        self.render_region(list, None);
+        &self.frame
+    }
+
+    /// Render all of `list`, or only the pixels of `region` (`[x0, y0, x1, y1)`,
+    /// clipped to the frame) — the rest of the frame keeps its previous pixels.
+    pub(crate) fn render_region(&mut self, list: &DisplayList, region: Option<[u32; 4]>) {
         let (w, h) = (list.width.clamp(1, u16::MAX as u32) as u16, list.height.clamp(1, u16::MAX as u32) as u16);
         if self.ctx.width() != w || self.ctx.height() != h {
             self.ctx = RenderContext::new(w, h);
             self.frame = Pixmap::new(w, h);
             self.st.cache.clear();
         }
+        let region = region.map(|[x0, y0, x1, y1]| [x0.min(w as u32), y0.min(h as u32), x1.min(w as u32), y1.min(h as u32)]);
+        let full = match region {
+            None => true,
+            Some([x0, y0, x1, y1]) => x0 == 0 && y0 == 0 && x1 == w as u32 && y1 == h as u32,
+        };
         let st = &mut self.st;
         st.frame_no += 1;
         st.cache_hits = 0;
-        self.ctx.reset();
+        st.frame_size = (w as u32, h as u32);
         let assets = self.assets.clone();
-        draw_ops(st, &assets, &mut self.ctx, &list.ops, Affine::IDENTITY);
-        self.ctx.flush();
         let settings = RasterizerSettings { target_init: TargetInit::Clear(color(list.background)), ..Default::default() };
-        self.ctx.render_with(&mut self.frame, &mut st.res, settings);
-        // Release the paints that referenced offscreen bitmaps, then recycle them.
-        self.ctx.reset();
+        if full {
+            st.org = (0, 0);
+            self.ctx.reset();
+            draw_ops(st, &assets, &mut self.ctx, &list.ops, Affine::IDENTITY);
+            self.ctx.flush();
+            self.ctx.render_with(&mut self.frame, &mut st.res, settings);
+            // Release the paints that referenced offscreen bitmaps.
+            self.ctx.reset();
+        } else {
+            let [x0, y0, x1, y1] = region.unwrap_or_default();
+            if x1 <= x0 || y1 <= y0 {
+                return;
+            }
+            let (rw, rh) = ((x1 - x0) as u16, (y1 - y0) as u16);
+            let rctx = self.rctx.get_or_insert_with(|| RenderContext::new(rw, rh));
+            rctx.reset_and_resize(rw, rh);
+            st.org = (x0 as i32, y0 as i32);
+            draw_ops(st, &assets, rctx, &list.ops, Affine::translate((-(x0 as f64), -(y0 as f64))));
+            rctx.flush();
+            self.rpix.resize(rw, rh);
+            rctx.render_with(&mut self.rpix, &mut st.res, settings);
+            rctx.reset();
+            st.org = (0, 0);
+            let (fw, rwb) = (w as usize * 4, rw as usize * 4);
+            let src = self.rpix.data_as_u8_slice();
+            let dst = self.frame.data_as_u8_slice_mut();
+            for (i, row) in src.chunks_exact(rwb).enumerate() {
+                let o = (y0 as usize + i) * fw + x0 as usize * 4;
+                dst[o..o + rwb].copy_from_slice(row);
+            }
+        }
+        // Recycle offscreen bitmaps.
         for a in st.in_flight.drain(..) {
             if let Ok(p) = Arc::try_unwrap(a) {
                 st.pix_pool.push(p);
             }
         }
+        // Evict caches: on full frames by recency; on partial frames only when large
+        // (entries outside the region weren't touched but are still valid).
         let now = st.frame_no;
-        st.cache.retain(|_, e| e.last_used + 1 >= now);
-        st.text.retain(|_, e| e.last_used + 2 >= now);
-        st.scaled.retain(|_, e| e.last_used + 2 >= now);
+        if full || st.cache.len() > 512 {
+            st.cache.retain(|_, e| e.last_used + 1 >= now);
+        }
+        if full || st.text.len() > 2048 {
+            st.text.retain(|_, e| e.last_used + 2 >= now);
+        }
+        if full || st.scaled.len() > 64 {
+            st.scaled.retain(|_, e| e.last_used + 2 >= now);
+        }
         st.seen.retain(|_, &mut f| f + 2 >= now);
         if st.sprites.len() > 256 {
             st.sprites.retain(|_, e| e.last_used + 30 >= now);
         }
-        &self.frame
     }
 
     /// Render and convert to YUV 4:2:0 (BT.709 limited range) in one call.
@@ -575,9 +634,10 @@ fn draw_offscreen(
     cache_key: Option<u64>,
 ) {
     let now = st.frame_no;
+    let org = st.org;
     let cached = cache_key.and_then(|k| st.cache.get_mut(&k)).map(|e| {
         e.last_used = now;
-        (e.pix.clone(), e.x, e.y)
+        (e.pix.clone(), e.x - org.0, e.y - org.1)
     });
     let (pix, x, y) = match cached {
         Some(c) => {
@@ -594,7 +654,14 @@ fn draw_offscreen(
                 }
             }
             let grow = |r: Rect| Rect::new(r.x0 - m[0] as f64, r.y0 - m[1] as f64, r.x1 + m[2] as f64, r.y1 + m[3] as f64);
-            let view = Rect::new(0.0, 0.0, ctx.width() as f64, ctx.height() as f64);
+            // Cached bitmaps must hold everything visible in the *frame* (they
+            // outlive this render's region); others only what this context shows.
+            let view = if cache_key.is_some() {
+                let (fw, fh) = st.frame_size;
+                Rect::new(-org.0 as f64, -org.1 as f64, fw as f64 - org.0 as f64, fh as f64 - org.1 as f64)
+            } else {
+                Rect::new(0.0, 0.0, ctx.width() as f64, ctx.height() as f64)
+            };
             // Pixels outside the view can still blur or cast shadows into it.
             let mut r = grow(content).intersect(grow(view));
             if let Some((p, t)) = clip {
@@ -607,7 +674,9 @@ fn draw_offscreen(
             let (w, h) = (r.width() as u16, r.height() as u16);
             let mut sub = st.pool.pop().unwrap_or_else(|| RenderContext::new(w, h));
             sub.reset_and_resize(w, h);
+            st.org = (org.0 + r.x0 as i32, org.1 + r.y0 as i32);
             draw_ops(st, assets, &mut sub, inner, Affine::translate((-r.x0, -r.y0)) * base);
+            st.org = org;
             sub.flush();
             let mut pm = st.pix_pool.pop().unwrap_or_else(|| Pixmap::new(w, h));
             pm.resize(w, h);
@@ -622,7 +691,7 @@ fn draw_offscreen(
             let (x, y) = (r.x0 as i32, r.y0 as i32);
             match cache_key {
                 Some(k) => {
-                    st.cache.insert(k, CacheEntry { pix: pix.clone(), x, y, last_used: now });
+                    st.cache.insert(k, CacheEntry { pix: pix.clone(), x: x + org.0, y: y + org.1, last_used: now });
                 }
                 None => st.in_flight.push(pix.clone()),
             }

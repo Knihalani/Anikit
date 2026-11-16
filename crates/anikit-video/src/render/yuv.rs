@@ -106,41 +106,52 @@ fn rows_scalar(r0: &[u8], r1: &[u8], ya: &mut [u8], yb: Option<&mut [u8]>, u: &m
     }
 }
 
+type Region = [usize; 4];
+
 #[inline(always)]
-fn kernel_with(src: &[u8], w: usize, h: usize, out: &mut YuvFrame, simd: impl Fn(&[u8], &[u8], &mut [u8], &mut [u8], &mut [u8], &mut [u8]) -> usize) {
+fn kernel_with(
+    src: &[u8],
+    w: usize,
+    h: usize,
+    out: &mut YuvFrame,
+    [x0, y0, x1, y1]: Region,
+    simd: impl Fn(&[u8], &[u8], &mut [u8], &mut [u8], &mut [u8], &mut [u8]) -> usize,
+) {
     let ys = out.y_stride;
     let cs = out.c_stride;
-    for cy in 0..h.div_ceil(2) {
-        let y0 = cy * 2;
-        let r0 = &src[y0 * w * 4..(y0 + 1) * w * 4];
-        let u = &mut out.u[cy * cs..cy * cs + cs];
-        let v = &mut out.v[cy * cs..cy * cs + cs];
-        let (ya, rest) = out.y[y0 * ys..].split_at_mut(ys);
-        if y0 + 1 < h {
-            let r1 = &src[(y0 + 1) * w * 4..(y0 + 2) * w * 4];
-            let yb = &mut rest[..ys];
+    let n = x1 - x0;
+    for cy in y0 / 2..y1.div_ceil(2) {
+        let y = cy * 2;
+        let r0 = &src[(y * w + x0) * 4..(y * w + x1) * 4];
+        let u = &mut out.u[cy * cs + x0 / 2..cy * cs + x1.div_ceil(2)];
+        let v = &mut out.v[cy * cs + x0 / 2..cy * cs + x1.div_ceil(2)];
+        let (ya, rest) = out.y[y * ys..].split_at_mut(ys);
+        let ya = &mut ya[x0..x1];
+        if y + 1 < h {
+            let r1 = &src[((y + 1) * w + x0) * 4..((y + 1) * w + x1) * 4];
+            let yb = &mut rest[x0..x1];
             let done = simd(r0, r1, ya, yb, u, v);
-            rows_scalar(r0, r1, ya, Some(yb), u, v, done, w);
+            rows_scalar(r0, r1, ya, Some(yb), u, v, done, n);
         } else {
-            rows_scalar(r0, r0, ya, None, u, v, 0, w);
+            rows_scalar(r0, r0, ya, None, u, v, 0, n);
         }
     }
 }
 
-fn kernel(src: &[u8], w: usize, h: usize, out: &mut YuvFrame) {
-    kernel_with(src, w, h, out, |_, _, _, _, _, _| 0)
+fn kernel(src: &[u8], w: usize, h: usize, out: &mut YuvFrame, r: Region) {
+    kernel_with(src, w, h, out, r, |_, _, _, _, _, _| 0)
 }
 
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2")]
-unsafe fn kernel_avx2(src: &[u8], w: usize, h: usize, out: &mut YuvFrame) {
-    kernel_with(src, w, h, out, |r0, r1, ya, yb, u, v| unsafe { avx2::rows(r0, r1, ya, yb, u, v) })
+unsafe fn kernel_avx2(src: &[u8], w: usize, h: usize, out: &mut YuvFrame, r: Region) {
+    kernel_with(src, w, h, out, r, |r0, r1, ya, yb, u, v| unsafe { avx2::rows(r0, r1, ya, yb, u, v) })
 }
 
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "sse4.1")]
-unsafe fn kernel_sse41(src: &[u8], w: usize, h: usize, out: &mut YuvFrame) {
-    kernel(src, w, h, out)
+unsafe fn kernel_sse41(src: &[u8], w: usize, h: usize, out: &mut YuvFrame, r: Region) {
+    kernel(src, w, h, out, r)
 }
 
 #[cfg(target_arch = "x86_64")]
@@ -272,21 +283,34 @@ pub fn rgba_to_yuv420(src: &Pixmap, out: &mut YuvFrame) {
 pub fn convert_rgba(src: &[u8], w: usize, h: usize, out: &mut YuvFrame) {
     assert!(src.len() >= w * h * 4 && w > 0 && h > 0);
     out.resize(w as u32, h as u32);
+    convert_region(src, w, h, [0, 0, w, h], out);
+}
+
+/// Convert only `[x0, y0, x1, y1)` of a `w × h` frame into `out` (already
+/// sized for `w × h`); `x0`, `y0` must be even. Re-pads edges it touches.
+pub fn convert_region(src: &[u8], w: usize, h: usize, r: Region, out: &mut YuvFrame) {
+    assert!(src.len() >= w * h * 4 && out.width as usize == w && out.height as usize == h);
+    let r = [r[0] & !1, r[1] & !1, r[2].min(w), r[3].min(h)];
+    if r[0] >= r[2] || r[1] >= r[3] {
+        return;
+    }
     #[cfg(target_arch = "x86_64")]
     {
         if std::arch::is_x86_feature_detected!("avx2") {
             // SAFETY: feature checked above.
-            unsafe { kernel_avx2(src, w, h, out) };
-            return pad(out);
-        }
-        if std::arch::is_x86_feature_detected!("sse4.1") {
+            unsafe { kernel_avx2(src, w, h, out, r) };
+        } else if std::arch::is_x86_feature_detected!("sse4.1") {
             // SAFETY: feature checked above.
-            unsafe { kernel_sse41(src, w, h, out) };
-            return pad(out);
+            unsafe { kernel_sse41(src, w, h, out, r) };
+        } else {
+            kernel(src, w, h, out, r);
         }
     }
-    kernel(src, w, h, out);
-    pad(out)
+    #[cfg(not(target_arch = "x86_64"))]
+    kernel(src, w, h, out, r);
+    if r[2] >= w || r[3] >= h {
+        pad(out);
+    }
 }
 
 /// Scalar reference (floating point), for tests.
@@ -365,8 +389,14 @@ mod tests {
         let mut a = YuvFrame::default();
         convert_rgba(&src, w, h, &mut a);
         let mut b = YuvFrame::new(w as u32, h as u32);
-        kernel(&src, w, h, &mut b);
+        kernel(&src, w, h, &mut b, [0, 0, w, h]);
         pad(&mut b);
         assert_eq!(a, b);
+        // Region conversion composes to the same frame.
+        let mut c = YuvFrame::new(w as u32, h as u32);
+        convert_region(&src, w, h, [0, 0, w, 8], &mut c);
+        convert_region(&src, w, h, [0, 8, 32, h], &mut c);
+        convert_region(&src, w, h, [32, 8, w, h], &mut c);
+        assert_eq!(a, c);
     }
 }
