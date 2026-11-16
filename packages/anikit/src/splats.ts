@@ -1148,4 +1148,4 @@ function createSplats(target: string | HTMLCanvasElement | OffscreenCanvas | Web
  * `splats.fromPoints`, `splats.fromMesh`, `splats.fromText`, `splats.fromSDF`,
  * `splats.merge`.
  */
-export const splats = Object.assign(createSplats, { parse, load, fromPoints, fromMesh, fromText, fromSDF, merge, pack: packSplats });
+export const splats = /* @__PURE__ */ Object.assign(createSplats, { parse, load, fromPoints, fromMesh, fromText, fromSDF, merge, pack: packSplats });

@@ -32,7 +32,7 @@ const gpu = process.argv.includes('--gpu');
 if (process.argv.includes('--sort-only')) process.exit(0);
 // 2. Rendering in Chromium.
 const res = await build({
-  stdin: { contents: "import * as ak from './src/index'; window.ak = ak;", resolveDir: pkg, loader: 'ts' },
+  stdin: { contents: "import * as ak from './src/index'; import * as sp from './src/splats'; window.ak = { ...ak, ...sp };", resolveDir: pkg, loader: 'ts' },
   bundle: true, format: 'iife', write: false, logLevel: 'error',
 });
 const browser = await chromium.launch({ args: gpu ? ['--enable-gpu', '--ignore-gpu-blocklist'] : ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });

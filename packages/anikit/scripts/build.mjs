@@ -10,7 +10,12 @@ const common = {
   // The import.meta path is only reachable in the lean ESM build.
   logOverride: { 'empty-import-meta': 'silent' },
 };
-await build({ ...common, format: 'esm', outfile: 'dist/anikit.js' });
+// ESM: `anikit` and the separately importable `anikit/splats` share chunks
+// (one core, one engine); importing `animate` never pulls in the splat renderer.
+await build({
+  ...common, entryPoints: { anikit: 'src/index.ts', splats: 'src/splats.ts' }, format: 'esm', splitting: true,
+  outdir: 'dist', chunkNames: 'chunks/[name]-[hash]',
+});
 await build({ ...common, format: 'cjs', outfile: 'dist/anikit.cjs' });
 await build({ ...common, format: 'esm', minify: true, outfile: 'dist/anikit.min.js' });
 await build({ ...common, format: 'iife', globalName: 'anikit', minify: true, outfile: 'dist/anikit.iife.js' });

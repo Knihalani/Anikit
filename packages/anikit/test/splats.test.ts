@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { ready, splats, packSplats, SPLAT_STRIDE } from '../src/index';
+import { ready } from '../src/index';
+import { splats, packSplats, SPLAT_STRIDE } from '../src/splats';
 import { core } from '../src/wasm';
 
 beforeAll(async () => {

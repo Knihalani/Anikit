@@ -38,7 +38,7 @@ Calls work immediately: the WebAssembly core loads in the background and queues 
 | Thousands of things on a canvas | `batch(n, props)` (one Float32Array) or `world().addMany()` |
 | 3D points / tilt / transform strings | `scene3d()`, `tilt(el)`, `{ transform: 'rotateY(180deg)' }` |
 | 100k particles | `pointCloud()` + `glow()` |
-| Photoreal 3D captures, splat morphs, 100k–1M soft 3D points on the GPU | `splats(canvas, set)` with `splats.load('x.ply')` or procedural `splats.fromText/fromSDF/fromMesh/fromPoints`; animate `layer.fx`, `layer.camera`, `layer.transform`, or `layer.morph(other)` |
+| Photoreal 3D captures, splat morphs, 100k–1M soft 3D points on the GPU | `import { splats } from 'anikit/splats'`; `splats(canvas, set)` with `splats.load('x.ply')` or procedural `splats.fromText/fromSDF/fromMesh/fromPoints`; animate `layer.fx`, `layer.camera`, `layer.transform`, or `layer.morph(other)` |
 | Off-main-thread transform/opacity | `compositor(el, props, options)` |
 | Cleanup in React/Vue/Svelte | `const ctx = context(() => { … }, rootEl); return () => ctx.revert()` |
 | Respect "reduce motion" | `engine.reducedMotion = 'user'` once at startup |

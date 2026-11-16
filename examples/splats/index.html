@@ -30,7 +30,8 @@
 <script type="module">
   // Every splat set here is procedural: no downloads. Drag to orbit, wheel to
   // zoom. ?n=500000 sets the splat count; ?url=… loads a .ply/.splat instead.
-  import { ready, splats, animate, engine } from '../../packages/anikit/dist/anikit.js';
+  import { ready, animate, engine } from '../../packages/anikit/dist/anikit.js';
+  import { splats } from '../../packages/anikit/dist/splats.js';
   await ready;
   const q = new URLSearchParams(location.search);
   const N = +(q.get('n') ?? 200_000);

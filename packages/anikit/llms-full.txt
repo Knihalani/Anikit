@@ -44,7 +44,7 @@ Calls work immediately: the WebAssembly core loads in the background and queues 
 | Thousands of things on a canvas | `batch(n, props)` (one Float32Array) or `world().addMany()` |
 | 3D points / tilt / transform strings | `scene3d()`, `tilt(el)`, `{ transform: 'rotateY(180deg)' }` |
 | 100k particles | `pointCloud()` + `glow()` |
-| Photoreal 3D captures, splat morphs, 100k–1M soft 3D points on the GPU | `splats(canvas, set)` with `splats.load('x.ply')` or procedural `splats.fromText/fromSDF/fromMesh/fromPoints`; animate `layer.fx`, `layer.camera`, `layer.transform`, or `layer.morph(other)` |
+| Photoreal 3D captures, splat morphs, 100k–1M soft 3D points on the GPU | `import { splats } from 'anikit/splats'`; `splats(canvas, set)` with `splats.load('x.ply')` or procedural `splats.fromText/fromSDF/fromMesh/fromPoints`; animate `layer.fx`, `layer.camera`, `layer.transform`, or `layer.morph(other)` |
 | Off-main-thread transform/opacity | `compositor(el, props, options)` |
 | Cleanup in React/Vue/Svelte | `const ctx = context(() => { … }, rootEl); return () => ctx.revert()` |
 | Respect "reduce motion" | `engine.reducedMotion = 'user'` once at startup |
@@ -1611,9 +1611,12 @@ cloud.explode(0, 0, 0, 1200);                        // shockwave; particles fin
 
 ## Gaussian splats: `splats`
 
-`splats(canvasOrSelector, set, options)` renders real-time 3D Gaussian splats with WebGL2 and returns a `SplatLayer`. A `SplatSet` is plain data: `count` splats of `SPLAT_STRIDE` (14) floats each: position, linear scale, rotation quaternion (w x y z), colour and opacity. Load captured scenes (`.ply` from 3DGS training or a coloured point cloud, binary little-endian; antimatter15 `.splat`), or make them procedurally, so a scene needs no downloads:
+`splats` is a separate entry, so importing `animate` never pulls in the renderer: `import { splats } from 'anikit/splats'` (it shares the core and engine with `anikit`). `splats(canvasOrSelector, set, options)` renders real-time 3D Gaussian splats with WebGL2 and returns a `SplatLayer`. A `SplatSet` is plain data: `count` splats of `SPLAT_STRIDE` (14) floats each: position, linear scale, rotation quaternion (w x y z), colour and opacity. Load captured scenes (`.ply` from 3DGS training or a coloured point cloud, binary little-endian; antimatter15 `.splat`), or make them procedurally, so a scene needs no downloads:
 
 ```ts
+import { splats, packSplats, SPLAT_STRIDE, SplatLayer } from 'anikit/splats';
+import { animate, scroll } from 'anikit';
+
 const word = splats.fromText('anikit', { count: 120_000, width: 2.4, color: '#9ab' });
 const ball = splats.fromSDF((x, y, z) => Math.hypot(x, y, z) - 0.9, {
   count: 120_000, color: (i, x, y, z) => [0.5 + x / 2, 0.5 + y / 2, 1],
@@ -2101,7 +2104,7 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Physics worlds](#physics-worlds) | `world`, `World` | `WorldOptions`, `BodyInit` |
 | [3D](#3d) | `scene3d`, `Scene3D`, `tilt`, `parseTransform`, `toMatrix3d`, `mixTransforms` | `SceneOptions`, `Projection`, `DrawOptions`, `TiltOptions`, `Vec3`, `Matrix` |
 | [Point clouds and glow](#point-clouds-and-glow) | `pointCloud`, `PointCloud`, `textPoints`, `glow`, `Glow` | `CloudOptions`, `ShapeInput`, `GlowOptions`, `GlowRenderOptions` |
-| [Gaussian splats](#gaussian-splats-splats) | `splats`, `SplatLayer`, `packSplats`, `SPLAT_STRIDE` | `SplatSet`, `SplatColor`, `SplatSourceOptions`, `SplatFx`, `SplatCamera`, `SplatTransform`, `SplatsOptions`, `SplatMorphOptions`, `SplatEffectOptions`, `SplatStats` |
+| [Gaussian splats](#gaussian-splats-splats) (`anikit/splats`) | `splats`, `SplatLayer`, `packSplats`, `SPLAT_STRIDE` | `SplatSet`, `SplatColor`, `SplatSourceOptions`, `SplatFx`, `SplatCamera`, `SplatTransform`, `SplatsOptions`, `SplatMorphOptions`, `SplatEffectOptions`, `SplatStats` |
 | [Particle emitters](#particle-emitters) | `emitter`, `Emitter` | `EmitterOptions`, `SpawnShape` |
 | [Solid 3D](#solid-3d-renderer3d-mesh-instances) | `renderer3d`, `Renderer3D`, `mesh`, `Mesh3D`, `instances`, `Instances`, `texture`, `Texture3D`, `shatter`, `Shards`, `flightPath`, `FlightPath` | `InstanceInit`, `MaterialOptions`, `LightOptions`, `DrawItem`, `PointsItem`, `ShatterOptions`, `FlightPathOptions`, `FlightPose`, `Point3` |
 | [Audio](#audio-analysis) | `analyzeAudio`, `decodeAudio` | `AudioAnalysis` |

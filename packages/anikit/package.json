@@ -13,6 +13,10 @@
       "import": "./dist/anikit.js",
       "require": "./dist/anikit.cjs"
     },
+    "./splats": {
+      "types": "./dist/types/splats.d.ts",
+      "import": "./dist/splats.js"
+    },
     "./anikit.wasm": "./dist/anikit.wasm",
     "./lean": {
       "types": "./dist/types/index.d.ts",
