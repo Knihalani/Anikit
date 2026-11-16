@@ -39,7 +39,7 @@ function positionsOf(set, n, flipY = false) {
 
 /** Text as splats (splats.fromText), in world units. */
 export function lettering(n, text, font, weight, width) {
-  return positionsOf(splats.fromText(text, { count: n, width, depth: 70, font, weight }), n, true);
+  return positionsOf(splats.fromText(text, { count: n, width, depth: 70, font, weight }), n);
 }
 
 /**

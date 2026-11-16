@@ -123,7 +123,7 @@ const st = {
   px: 0.5, py: 0.5, // pointer, 0..1
   pxs: 0.5, pys: 0.5,
   pdx: 0, pdy: 0, moved: false, inside: false,
-  ox: 0, js: 0,
+  ox: 0, oy: 0, js: 0,
 };
 const f = {
   viewProj: new Float32Array(16), model: new Float32Array(9),
@@ -198,7 +198,7 @@ const ray = new Float32Array(6); // model-space origin, direction
 function pointerRay(nx, ny) {
   // nx, ny in NDC, with the lens shift removed
   const tanH = Math.tan(FOV / 2), aspect = cssW / cssH;
-  const sx = (nx - st.ox) * tanH * aspect, sy = ny * tanH;
+  const sx = (nx - st.ox) * tanH * aspect, sy = (ny - st.oy) * tanH;
   let dx = basis[6] + basis[0] * sx + basis[3] * sy;
   let dy = basis[7] + basis[1] * sx + basis[4] * sy;
   let dz = basis[8] + basis[2] * sx + basis[5] * sy;
@@ -327,12 +327,12 @@ function frameBody(time, dtMs) {
   const k = Math.min(STAGES - 1, Math.floor(s));
   const frac = s - k;
   const mix = smooth(0.18, 0.82, frac);
+  // never aim at a form that is not built yet (only in the first ~0.3 s)
+  let avail = 0;
+  while (avail < STAGES - 1 && built >= FORM_AT[avail + 1]) avail++;
   if (st.intro < 1) {
-    cloud.from = DUST; cloud.to = k; cloud.mix = st.intro;
+    cloud.from = DUST; cloud.to = Math.min(k, avail); cloud.mix = st.intro;
   } else {
-    // never aim at a form that is not built yet (only in the first ~0.3 s)
-    let avail = 0;
-    while (avail < STAGES - 1 && built >= FORM_AT[avail + 1]) avail++;
     cloud.from = Math.min(k, avail); cloud.to = Math.min(STAGES - 1, k + 1, avail); cloud.mix = mix;
   }
   const near = Math.round(s);
@@ -384,6 +384,8 @@ function frameBody(time, dtMs) {
   mul4(f.viewProj, proj, view);
   const vp = f.viewProj, ox = st.ox;
   vp[0] += ox * vp[3]; vp[4] += ox * vp[7]; vp[8] += ox * vp[11]; vp[12] += ox * vp[15];
+  const oy = st.oy = aspect < 0.8 ? 0.16 : 0;
+  vp[1] += oy * vp[3]; vp[5] += oy * vp[7]; vp[9] += oy * vp[11]; vp[13] += oy * vp[15];
   f.focal = proj[5] * (gl ? gl.h : cssH) / 2;
   f.floor = -420;
 
