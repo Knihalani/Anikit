@@ -45,6 +45,8 @@ function scenario(seed: number): unknown[] {
   const snap = (tag: string) => log.push(tag, objs.map((o) => KEYS.map((k) => o[k])));
   const subset = () => {
     const s = objs.filter(() => r() < 0.6);
+    // Sometimes a target listed twice (the later one takes the earlier over).
+    if (s.length && r() < 0.1) s.push(s[0]);
     return s.length ? s : [pick(objs)];
   };
   const value = (): unknown => {
@@ -208,6 +210,35 @@ describe('core fuzz: single tweens match a reference timing model', () => {
         }
       }
       an.kill();
+    }
+  });
+});
+
+describe('core edge cases', () => {
+  it('a target listed twice animates, and kill() stops it', async () => {
+    for (const on of [true, false]) {
+      const prev = _setBatchCreate(on);
+      try {
+        const o = { x: 0 }, p = { x: 0 };
+        const a = animate([o, o, p], { x: [0, 100] }, { duration: 1, ease: 'linear' });
+        let done = false;
+        a.then(() => { done = true; });
+        advance(0.25, 250);
+        expect(o.x).toBeCloseTo(25, 6);
+        expect(p.x).toBeCloseTo(25, 6);
+        await Promise.resolve();
+        expect(done).toBe(false);
+        a.kill();
+        advance(0.25, 250);
+        expect(o.x).toBeCloseTo(25, 6);
+        expect(p.x).toBeCloseTo(25, 6);
+        const b = animate([o, o], { x: 0 }, { duration: 1, ease: 'linear' });
+        advance(0.5, 500);
+        expect(o.x).toBeCloseTo(12.5, 6);
+        b.kill();
+      } finally {
+        _setBatchCreate(prev);
+      }
     }
   });
 });

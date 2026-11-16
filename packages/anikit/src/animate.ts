@@ -865,6 +865,8 @@ export class Animation extends Playable {
   /** The group's node record (registered while the group exists). */
   private _grec: NodeRecord | null = null;
   private _immediate = false;
+  /** Set while `_build` runs (see `_partEmpty`). */
+  private _building = false;
   /** Restorers for `revert()` (captured before the first write). */
   _restore: Array<() => void> = [];
   /**
@@ -906,6 +908,17 @@ export class Animation extends Playable {
   }
 
   private _build(targetsIn: Targets, props: Map<string, PropSpec>, o: AnimateOptions, ctx: BuildContext): void {
+    this._building = true;
+    try {
+      this._build1(targetsIn, props, o, ctx);
+    } finally {
+      this._building = false;
+    }
+    // Every part lost its properties to a later part of the same call.
+    if (this._parts.length > 0 && this._live <= 0) this.kill();
+  }
+
+  private _build1(targetsIn: Targets, props: Map<string, PropSpec>, o: AnimateOptions, ctx: BuildContext): void {
     const w = core();
     const targets = (this.targets = toTargets(targetsIn));
     const n = targets.length;
@@ -1586,7 +1599,9 @@ export class Animation extends Playable {
   _partEmpty(part: Part): void {
     if (part.gone) return;
     part.gone = true;
-    if (--this._live <= 0) this.kill();
+    // While building, a later target of the same call can take a property
+    // from an earlier one (a target listed twice): `_build` checks at the end.
+    if (--this._live <= 0 && !this._building) this.kill();
   }
 
   /**
