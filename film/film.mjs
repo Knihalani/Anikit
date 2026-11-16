@@ -95,10 +95,15 @@ export default async function film({ anikit: A, node }) {
   const accentInit = towersInit.filter((_, i) => isAccent(i)), mainInit = towersInit.filter((_, i) => !isAccent(i));
   const towers = instances(mainInit.length, (i) => mainInit[i]);
   const accents = instances(accentInit.length, (i) => accentInit[i]);
-  const trailPts = (k, from, to) => samples.filter((q, i) => { const f = i / (samples.length - 1); return f > from && f < to; })
-    .map(([x, y, z], i) => [x + k * 240 + Math.sin(i * 0.11 + k) * 70, y - 150 + Math.cos(i * 0.09 + k * 2) * 50, z]);
-  const trails = [-1, 1].map((k) => mesh.tube(trailPts(k, at(3) - 0.01, at(11)), { radius: 11, sides: 8, taper: [0.15, 1] }));
-  const trailAt = [instances(1, () => ({ color: [0.3, 0.6, 1] })), instances(1, () => ({ color: [1, 0.45, 0.2] }))];
+  const trailPts = (k, from, to, wob = 1) => samples.filter((q, i) => { const f = i / (samples.length - 1); return f > from && f < to; })
+    .map(([x, y, z], i) => [x + k * 240 + Math.sin(i * 0.11 + k) * 70 * wob, y - 150 + Math.cos(i * 0.09 + k * 2) * 50 * wob, z]);
+  // Streams of light like traffic: two along the street, two higher up between the towers.
+  const lanes = [
+    { k: -1, dy: 0, r: 11, col: CYAN, wob: 1 }, { k: 1, dy: 0, r: 11, col: ORANGE, wob: 1 },
+    { k: -1.5, dy: 420, r: 9, col: MAG, wob: 0.35 }, { k: 1.4, dy: 300, r: 9, col: CYAN, wob: 0.35 },
+  ];
+  const trails = lanes.map((l) => mesh.tube(trailPts(l.k, at(3) - 0.01, at(11), l.wob).map(([x, y, z]) => [x, y + l.dy, z]), { radius: l.r, sides: 8, taper: [0.15, 1] }));
+  const trailAt = lanes.map(() => instances(1, () => ({ color: [1, 1, 1] })));
 
   // ---- Zone C: chrome gates ----------------------------------------------------------
   const gateZ = [-28300, -29300, -30300, -31300, -32300, -33300];
@@ -216,7 +221,7 @@ export default async function film({ anikit: A, node }) {
       if (z < -9000 && z > -30500) {
         items.push({ mesh: cube, instances: towers, material: { metal: 0.28, rim: 0.15, specular: 1.2, shininess: 90, lines: 1.25, pattern: 'hex', lineColor: MAG, grid: [3, 14], lineWidth: 0.032, pulse: 0.35, pulsePhase: c * 1.8, pulseDir: [0, 0, 0.00035] } });
         items.push({ mesh: cube, instances: accents, material: { metal: 0.25, iridescence: 0.2, rim: 0.15, specular: 1.3, shininess: 120, lines: 2, pattern: 'circuit', lineColor: CYAN, grid: [4, 16], lineWidth: 0.04, pulse: 0.5, pulseCount: 2, pulsePhase: c * 2.2, pulseDir: [0, 0, 0.0005] } });
-        trails.forEach((m, k) => items.push({ mesh: m, instances: trailAt[k], blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 0.12, pulse: 3.5, pulseCount: 10, pulsePhase: c * 1.6 + k * 0.5, lineColor: k ? ORANGE : CYAN } }));
+        trails.forEach((m, k) => items.push({ mesh: m, instances: trailAt[k], blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 0.1, pulse: k < 2 ? 3.5 : 2.6, pulseCount: k < 2 ? 10 : 14, pulsePhase: c * (1.6 + k * 0.23) + k * 0.5, lineColor: lanes[k].col } }));
       }
       if (z < -14000 && z > -46000) items.push({ mesh: gateMesh, instances: gates, material: { metal: 1, iridescence: 0.75, hue: 0.1, specular: 1.6, shininess: 160, pulse: 3, pulseCount: 2, pulsePhase: c * 3.2, lineColor: CYAN } });
       if (z < -18000 && z > -46000) {
