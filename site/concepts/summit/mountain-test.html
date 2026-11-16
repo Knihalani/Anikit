@@ -36,8 +36,9 @@ if (q.has('lx')) { target.x = +q.get('lx'); target.y = +(q.get('ly') || 0); }
 if (q.has('noui')) document.querySelector('.ui').style.display = 'none';
 addEventListener('pointermove', (e) => { target.x = (e.clientX / innerWidth) * 2 - 1; target.y = 1 - (e.clientY / innerHeight) * 2; });
 let last = performance.now(), avg = 0;
-window.__mountain = { frames: 0, look: target };
+window.__mountain = { frames: 0, look: target, m, canvas, pause: false };
 function loop(now) {
+  if (window.__mountain.pause) { requestAnimationFrame(loop); return; }
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   look.x += (target.x - look.x) * Math.min(1, dt * 4); look.y += (target.y - look.y) * Math.min(1, dt * 4);
   const p = +$('p').value, push = +$('push').value;

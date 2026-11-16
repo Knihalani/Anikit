@@ -44,6 +44,7 @@ uniform vec4 uPortalPx;   // centre x, y and radius in framebuffer px, power 0..
 uniform vec4 uPortal;     // centre in NDC, radius in NDC-y units, power
 uniform float uFlicker;
 uniform float uFade;       // landscape cross-fade 0..1 once geometry arrives
+uniform float uShadowOn;
 uniform float uAspect;
 vec3 portalGlow(vec2 fc) {
   if (uPortalPx.w <= 0.001) return vec3(0.0);
@@ -65,6 +66,12 @@ float portalPull(inout vec4 clipP, vec4 clipC, float strength, float phase) {
   dr.x /= uAspect;
   clipP.xy += (uPortal.xy + dr - n) * clipP.w;
   return w;
+}
+// aerial perspective evaluated per vertex: transmittance and in-scattered light
+void hazeVS(vec3 w, vec3 eye, float k, out vec3 T, out vec3 C) {
+  vec3 v = w - eye; float dist = length(v); vec3 dir = v / dist;
+  T = exp(-dist * k * vec3(0.62, 0.86, 1.3));
+  C = skyCol(vec3(dir.x, max(dir.y, 0.0) + 0.012, dir.z)) * (1.0 - T);
 }
 vec3 tonemap(vec3 c) {
   c *= uExposure * vec3(0.93, 1.0, 1.16);
@@ -107,7 +114,8 @@ uniform float uSkyAlpha;
 out vec4 o;
 void main() {
   vec3 d = normalize(vDir);
-  vec3 c = skyCol(d);
+  // below the horizon (seen only before the landscape arrives, or through gaps) use the bright horizon haze
+  vec3 c = skyCol(vec3(d.x, max(d.y, 0.004), d.z));
   // sun disc
   float s = dot(d, uSun);
   c += uSunCol * (smoothstep(0.99955, 0.99975, s) * 6.0 + 0.6 * pow(max(s, 0.0), 900.0) + 0.12 * pow(max(s, 0.0), 120.0) + 0.05 * pow(max(s, 0.0), 12.0));
@@ -125,19 +133,22 @@ void main() {
 }`;
 
 // --- distant mountains: a big polar heightfield with peaks poking through the cloud sea ---
-const rangeVS = HEAD + `
+const rangeVS = HEAD + COMMON + `
 layout(location = 0) in vec3 aP;
 layout(location = 1) in vec3 aN;
 layout(location = 2) in float aSh;
 uniform mat4 uVP;
+uniform vec3 uEye;
 out vec3 vW;
 out vec3 vN;
 out float vSh;
-void main() { vW = aP; vN = aN; vSh = aSh; gl_Position = uVP * vec4(aP, 1.0); }`;
+out vec3 vHT, vHC;
+void main() { vW = aP; vN = aN; vSh = aSh; hazeVS(aP, uEye, 0.000075, vHT, vHC); gl_Position = uVP * vec4(aP, 1.0); }`;
 const rangeFS = HEAD + COMMON + `
 in vec3 vW;
 in vec3 vN;
 in float vSh;
+in vec3 vHT, vHC;
 uniform vec3 uEye;
 uniform float uDeckY;
 out vec4 o;
@@ -160,14 +171,14 @@ void main() {
   vec3 sunC = uSunCol;
   vec3 sky = mix(uAmb, vec3(dot(uAmb, vec3(0.3, 0.5, 0.2))), 0.3) * 1.2;
   float ndl = dot(N, uSun);
-  sunC *= vSh;
+  sunC *= mix(1.0, vSh, uShadowOn);
   vec3 sn = vec3(0.93, 0.95, 1.0) * (sunC * 1.1 * clamp((ndl + 0.05) / 1.05, 0.0, 1.0) + sky * (0.28 + 0.2 * N.y));
   vec3 rk = rockA * (0.75 + 0.5 * d2.x) * (sunC * max(ndl, 0.0) * 1.4 + sky * 0.4);
   vec3 col = mix(rk, sn, snow);
   // cloud fringe where the peaks meet the sea
   float fringe = 1.0 - smoothstep(0.0, 90.0 + 80.0 * d1.x, alt);
   col = mix(col, vec3(1.0, 0.92, 0.88), fringe * 0.6);
-  col = haze(col, dir, dist, 0.000075);
+  col = col * vHT + vHC;
   o = vec4(tonemap(col), 1.0);
 }`;
 
@@ -267,7 +278,7 @@ void main() {
   if (r2 > 1.0) discard;
   // fluffy edge: a few octaves of noise warp the falloff
   vec2 q = vUV * 1.7 + vS.x * 37.0;
-  float n = vnoise(q) * 0.6 + vnoise(q * 2.3 + 4.0) * 0.4;
+  float n = uWordMode > 0.5 ? vnoise(q * 1.4) : vnoise(q) * 0.6 + vnoise(q * 2.3 + 4.0) * 0.4;
   float rr = sqrt(r2) + (n - 0.5) * 0.35;
   float a = (uWordMode > 0.5 ? 1.0 : uFade) * (uWordMode > 0.5 ? smoothstep(1.0, 0.35, rr) : smoothstep(0.95, 0.6, rr) * smoothstep(-0.55, -0.1, vUV.y + (n - 0.5) * 0.3)) * vS.y;
   if (a < 0.004) discard;
@@ -289,21 +300,24 @@ void main() {
 }`;
 
 // --- foreground snow and rock ---
-const groundVS = HEAD + `
+const groundVS = HEAD + COMMON + `
 layout(location = 0) in vec3 aP;
 layout(location = 1) in vec4 aN;
 layout(location = 2) in float aSh;
 uniform mat4 uVP;
+uniform vec3 uEye;
 out vec3 vW;
 out vec3 vN;
 out float vRock;
 out float vSh;
-void main() { vW = aP; vN = aN.xyz; vRock = aN.w; vSh = aSh; gl_Position = uVP * vec4(aP, 1.0); }`;
+out vec3 vHT, vHC;
+void main() { vW = aP; vN = aN.xyz; vRock = aN.w; vSh = aSh; hazeVS(aP, uEye, 0.0009, vHT, vHC); gl_Position = uVP * vec4(aP, 1.0); }`;
 const groundFS = HEAD + COMMON + `
 in vec3 vW;
 in vec3 vN;
 in float vRock;
 in float vSh;
+in vec3 vHT, vHC;
 uniform vec3 uEye;
 uniform float uT;
 out vec4 o;
@@ -329,7 +343,7 @@ void main() {
   snow *= 1.0 - crag2 * smoothstep(0.93, 0.78, normalize(vN).y + d5.x * 0.12);
   N = normalize(N + vec3(-d5.y, 0.0, -d5.z) * 0.05 * fade * (0.3 + crag2));
   vec3 L = uSun;
-  vec3 sunC = uSunCol * vSh;
+  vec3 sunC = uSunCol * mix(1.0, vSh, uShadowOn);
   vec3 sky = mix(uAmb, vec3(dot(uAmb, vec3(0.3, 0.5, 0.2))), 0.4) * 1.9;
   // snow: wrapped diffuse (light scatters through) + cool sky fill + sparkle
   float wrap = clamp((dot(N, L) + 0.12) / 1.12, 0.0, 1.0);
@@ -353,7 +367,7 @@ void main() {
   vec3 rk = ra * (sunC * max(dot(Nr, L), 0.0) * 1.6 + sky * (0.4 + 0.25 * Nr.y));
   vec3 col = mix(rk, sn, snow);
   col += portalGlow(gl_FragCoord.xy) * mix(ra * 1.5, vec3(0.9), snow) * (1.0 - smoothstep(20.0, 60.0, dist));
-  col = haze(col, dir, dist, 0.0009);
+  col = col * vHT + vHC;
   o = vec4(tonemap(col), 1.0);
 }`;
 
@@ -447,7 +461,7 @@ void main() {
     float n1 = vnoise(q) - 0.5, n2 = vnoise(q * 2.1 + 17.0) - 0.5;
     vec2 off = (dir * n1 + tang * n2 * 0.7) * band * min(R * 0.07, 40.0);
     uv += off / uRes;
-  }
+  } else discard;
   o = vec4(texture(uScene, uv).rgb, 1.0);
 }`;
 
@@ -784,7 +798,7 @@ function buildRanges() {
 
 function buildSea() {
   const out = [];
-  const N = 1100;
+  const N = 800;
   for (let i = 0; i < N; i++) {
     const r = 500 * Math.pow(9000 / 500, Math.pow(rnd(), 0.8));
     const az = (rnd() * 2 - 1) * 2.0;
@@ -830,12 +844,12 @@ function buildWord() {
     return 24;
   };
   const pts = [];
-  const step = 5;
+  const step = 6;
   for (let y = y0 - 4; y <= y1 + 4; y += step) for (let x = x0 - 4; x <= x1 + 4; x += step) {
     const px = x + (rnd() - 0.5) * step, py = y + (rnd() - 0.5) * step;
     if (!inside(px, py)) continue;
     const ed = edgeDist(px, py);
-    const rad = 5 + Math.min(ed, 14) * 0.4 + rnd() * 3;
+    const rad = 5.5 + Math.min(ed, 14) * 0.42 + rnd() * 3;
     pts.push([px, py, rad, ed, 0]);
   }
   // wisps: thin streams trailing off downwind (to the left, away from the sun) from some glyph edges
@@ -877,7 +891,11 @@ function buildWord() {
 // createMountain
 // ---------------------------------------------------------------------------
 export function createMountain(canvas) {
-  const gl = canvas.getContext('webgl2', { antialias: true, alpha: false, depth: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
+  // ?perf=no-msaa,no-haze,no-clouds,no-shadows,... switches passes off for measurement
+  const PERF = new Set(typeof location !== 'undefined' ? (new URLSearchParams(location.search).get('perf') || '').split(',') : []);
+  // MSAA only below DPR 2: at 2x the pixels are small enough, and 4x samples of a retina canvas are expensive
+  const wantMSAA = !PERF.has('no-msaa') && (typeof devicePixelRatio === 'undefined' || devicePixelRatio < 2);
+  const gl = canvas.getContext('webgl2', { antialias: wantMSAA, alpha: false, depth: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
   if (!gl) throw new Error('mountain: WebGL2 unavailable');
 
   // compile everything up front (parallel compile where supported)
@@ -1049,34 +1067,25 @@ onmessage = () => {
     buildTargets();
   }
 
-  // Offscreen targets for the heat-haze composite, built at resize (never per frame).
-  let msFbo = null, msColor = null, msDepth = null, rsFbo = null, rsTex = null;
+  // Heat haze: the band around the ring is copied out of the drawn frame into this texture and redrawn
+  // refracted, scissored to the ring's bounding box (no offscreen scene, no full-screen pass).
+  let hazeTex = null;
   function buildTargets() {
-    if (msFbo) { gl.deleteFramebuffer(msFbo); gl.deleteRenderbuffer(msColor); gl.deleteRenderbuffer(msDepth); gl.deleteFramebuffer(rsFbo); gl.deleteTexture(rsTex); }
-    const W = canvas.width, H = canvas.height;
-    const samples = Math.min(4, gl.getParameter(gl.MAX_SAMPLES) || 0);
-    msColor = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, msColor);
-    gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.RGBA8, W, H);
-    msDepth = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, msDepth);
-    gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.DEPTH_COMPONENT24, W, H);
-    msFbo = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, msFbo);
-    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, msColor);
-    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, msDepth);
-    rsTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, rsTex);
-    gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, W, H);
+    if (hazeTex) gl.deleteTexture(hazeTex);
+    hazeTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, hazeTex);
+    gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGB8, canvas.width, canvas.height);  // matches the RGB (alpha: false) drawing buffer
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    rsFbo = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, rsFbo);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rsTex, 0);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    // pre-warm the composite so its first real use doesn't hitch
-    gl.viewport(0, 0, W, H);
+    // pre-warm the haze program so its first real use doesn't hitch
+    gl.viewport(0, 0, canvas.width, canvas.height);
     gl.useProgram(P.comp.p);
-    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, rsTex);
+    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, hazeTex);
     gl.uniform1i(P.comp.u.uScene, 2);
+    gl.enable(gl.SCISSOR_TEST); gl.scissor(0, 0, 1, 1);
     gl.bindVertexArray(vSky); gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.disable(gl.SCISSOR_TEST);
     gl.bindVertexArray(null);
   }
 
@@ -1118,6 +1127,7 @@ onmessage = () => {
     if (u.uPortal) gl.uniform4f(u.uPortal, portalNdc[0], portalNdc[1], portalNdc[2], portalNdc[3]);
     if (u.uFlicker) gl.uniform1f(u.uFlicker, flicker);
     if (u.uFade) gl.uniform1f(u.uFade, fadeK);
+    if (u.uShadowOn) gl.uniform1f(u.uShadowOn, PERF.has('no-shadows') ? 0 : 1);
     if (u.uSkyAlpha) gl.uniform1f(u.uSkyAlpha, 1);
     if (u.uAspect) gl.uniform1f(u.uAspect, aspect);
     if (u.uSkyLUT2) gl.uniform1i(u.uSkyLUT2, 1);
@@ -1151,6 +1161,8 @@ onmessage = () => {
     const pr = portal ? Math.max(portal.r || 0, portal.ring || 0) : 0;
     const pow = portal ? (portal.power !== undefined ? Math.min(1, Math.max(0, portal.power)) : Math.min(1, pr / 60)) : 0;
     portalOn = pow > 0.002;
+    // the hall covers the screen: nothing of the mountain would be seen
+    if (portal && (portal.r || 0) > 0.7 * Math.hypot(cssW, cssH)) return;
     if (portalOn) {
       portalPx[0] = portal.x * fbs; portalPx[1] = (cssH - portal.y) * fbs; portalPx[2] = Math.max(pr, 36) * fbs; portalPx[3] = pow;
       portalNdc[0] = portal.x / cssW * 2 - 1; portalNdc[1] = 1 - portal.y / cssH * 2; portalNdc[2] = pr / cssH * 2; portalNdc[3] = pow;
@@ -1194,7 +1206,6 @@ onmessage = () => {
     const elev = Math.atan(0.5 * tanY) + pitchBase;
     wordC[0] = 0; wordC[1] = EYE_Y + Math.sin(elev) * dist; wordC[2] = -Math.cos(elev) * dist;
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, portalOn ? msFbo : null);
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0.8, 0.85, 0.95, 1);
     gl.clearDepth(1);
@@ -1207,11 +1218,11 @@ onmessage = () => {
 
     if (geoReady) {
       // 1. foreground (largest occluder first)
-      gl.useProgram(P.ground.p); setCommon(P.ground);
-      gl.bindVertexArray(vGround); gl.drawElements(gl.TRIANGLES, groundCount, gl.UNSIGNED_INT, 0);
+      if (!PERF.has('no-ground')) { gl.useProgram(P.ground.p); setCommon(P.ground);
+      gl.bindVertexArray(vGround); gl.drawElements(gl.TRIANGLES, groundCount, gl.UNSIGNED_INT, 0); }
       // 2. ranges
-      gl.useProgram(P.range.p); setCommon(P.range); gl.uniform1f(P.range.u.uDeckY, DECK_Y);
-      gl.bindVertexArray(vRange); gl.drawElements(gl.TRIANGLES, rangeCount, gl.UNSIGNED_INT, 0);
+      if (!PERF.has('no-ranges')) { gl.useProgram(P.range.p); setCommon(P.range); gl.uniform1f(P.range.u.uDeckY, DECK_Y);
+      gl.bindVertexArray(vRange); gl.drawElements(gl.TRIANGLES, rangeCount, gl.UNSIGNED_INT, 0); }
       // 3. cloud deck
       gl.useProgram(P.deck.p); setCommon(P.deck); gl.uniform1f(P.deck.u.uDeckY, DECK_Y);
       gl.bindVertexArray(vDeck); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -1219,7 +1230,7 @@ onmessage = () => {
     // 4. sky fills what's left
     gl.depthMask(false);
     gl.useProgram(P.sky.p); setCommon(P.sky); gl.uniform2f(P.sky.u.uTan, camOut.tx, camOut.ty);
-    gl.bindVertexArray(vSky); gl.drawArrays(gl.TRIANGLES, 0, 3);
+    if (!PERF.has('no-sky')) { gl.bindVertexArray(vSky); gl.drawArrays(gl.TRIANGLES, 0, 3); }
     if (geoReady && fadeK < 1) {
       // cross-fade the freshly arrived landscape in from the sky-only first paint
       gl.disable(gl.DEPTH_TEST);
@@ -1240,18 +1251,18 @@ onmessage = () => {
     const pu2 = P.puff.u;
     gl.uniform3f(pu2.uSunV, sR, sU, sF);
     gl.uniform1f(pu2.uWordMode, 0);
-    if (geoReady) { gl.bindVertexArray(vSea); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, seaCount); }
+    if (geoReady && !PERF.has('no-clouds')) { gl.bindVertexArray(vSea); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, seaCount); }
     // the word: lit from the sun's side in screen space (it sits low and to the right)
     const wl = Math.hypot(sR, sU) || 1;
     gl.uniform3f(pu2.uSunV, 0.75 * sR / wl, 0.4, 0.4);
     gl.uniform1f(pu2.uWordMode, 1);
     gl.uniform3f(pu2.uWordC, wordC[0], wordC[1], wordC[2]);
     gl.uniform1f(pu2.uWordS, wordS);
-    gl.bindVertexArray(vWord); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, word.count);
+    if (!PERF.has('no-word')) { gl.bindVertexArray(vWord); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, word.count); }
 
     // 6. spindrift
     gl.useProgram(P.drift.p); setCommon(P.drift);
-    gl.bindVertexArray(vDrift); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, ND);
+    if (!PERF.has('no-drift')) { gl.bindVertexArray(vDrift); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, ND); }
 
     // 7. lens bloom and ghosts (screen space, additive)
     const sx = sR / (sF < 0 ? -sF : 1e-3), sy = sU / (sF < 0 ? -sF : 1e-3);
@@ -1264,21 +1275,24 @@ onmessage = () => {
     gl.uniform2f(P.glare.u.uSunS, nx, ny);
     gl.uniform1f(P.glare.u.uAspect, aspect);
     gl.uniform1f(P.glare.u.uVis, vis);
-    gl.bindVertexArray(vGlare); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6);
+    if (!PERF.has('no-glare')) { gl.bindVertexArray(vGlare); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6); }
 
-    if (portalOn) {
-      // resolve MSAA, then composite to the screen with heat haze around the ring
-      const W = canvas.width, H = canvas.height;
-      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, msFbo);
-      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, rsFbo);
-      gl.blitFramebuffer(0, 0, W, H, 0, 0, W, H, gl.COLOR_BUFFER_BIT, gl.NEAREST);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      gl.disable(gl.BLEND);
-      gl.useProgram(P.comp.p); setCommon(P.comp);
-      gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, rsTex);
-      gl.uniform1i(P.comp.u.uScene, 2);
-      gl.uniform2f(P.comp.u.uRes, W, H);
-      gl.bindVertexArray(vSky); gl.drawArrays(gl.TRIANGLES, 0, 3);
+    if (portalOn && !PERF.has('no-haze') && portalPx[2] > 4) {
+      // copy only the ring band's bounding box (plus the refraction margin), redraw it refracted
+      const W = canvas.width, H = canvas.height, R = portalPx[2] * 1.32 + 48;
+      const x0 = Math.max(0, Math.floor(portalPx[0] - R)), y0 = Math.max(0, Math.floor(portalPx[1] - R));
+      const x1 = Math.min(W, Math.ceil(portalPx[0] + R)), y1 = Math.min(H, Math.ceil(portalPx[1] + R));
+      if (x1 > x0 && y1 > y0) {
+        gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, hazeTex);
+        gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, x0, y0, x0, y0, x1 - x0, y1 - y0);
+        gl.disable(gl.BLEND);
+        gl.enable(gl.SCISSOR_TEST); gl.scissor(x0, y0, x1 - x0, y1 - y0);
+        gl.useProgram(P.comp.p); setCommon(P.comp);
+        gl.uniform1i(P.comp.u.uScene, 2);
+        gl.uniform2f(P.comp.u.uRes, W, H);
+        gl.bindVertexArray(vSky); gl.drawArrays(gl.TRIANGLES, 0, 3);
+        gl.disable(gl.SCISSOR_TEST);
+      }
     }
 
     gl.bindVertexArray(null);
@@ -1287,5 +1301,5 @@ onmessage = () => {
   }
 
   if (typeof window !== 'undefined') window.__mountainAtm = { ambA, ambB, floatOK };
-  return { resize, frame };
+  return { resize, frame, get ready() { return geoReady && fadeK >= 1; } };
 }
