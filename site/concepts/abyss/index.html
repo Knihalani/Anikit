@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Anikit — animation engine</title>
+<meta name="description" content="A web animation engine with a Rust/WebAssembly core: tweens, springs, timelines, physics, particles, scroll, SVG and text." />
+<meta name="theme-color" content="#0b4a6a" />
+<link rel="modulepreload" href="../../../packages/anikit/dist/anikit.lean.js" />
+<link rel="preload" href="../../fonts/InterDisplay-Black.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="stylesheet" href="abyss.css" />
+</head>
+<body>
+<canvas id="ocean" aria-hidden="true"></canvas>
+<canvas id="life" aria-hidden="true"></canvas>
+<div class="gauge mono" aria-hidden="true"><span id="gauge">0 m</span><i><b id="gauge-bar"></b></i></div>
+
+<main>
+  <header class="hero" id="top">
+    <h1 id="title">anikit</h1>
+    <p class="lede">An animation engine for the web, with a Rust core compiled to WebAssembly.</p>
+    <p class="cue mono" id="cue">Scroll to descend</p>
+  </header>
+
+  <section class="stop" id="springs" data-hue="#7ff6ff">
+    <div class="stick"><div class="lantern"></div><div class="panel">
+      <h2>Springs</h2>
+      <div class="stage" id="spring-box"></div>
+      <div class="row"><button class="pill mag">Stiff</button><button class="pill mag">Bouncy</button><button class="pill mag">Slow</button></div>
+      <code class="snippet mono">spring(bead, { x, y }, { stiffness: 260, damping: 16 })</code>
+    </div></div>
+  </section>
+
+  <section class="stop" id="text" data-hue="#9cffd9">
+    <div class="stick"><div class="lantern"></div><div class="panel">
+      <h2>Split text</h2>
+      <div class="stage text-stage"><p class="reveal" id="reveal">Every letter starts a little later than the last.</p></div>
+      <code class="snippet mono">timeline().add(splitText(el).chars, { yPercent: [110, 0] }, { delay: stagger(0.02) })</code>
+    </div></div>
+  </section>
+
+  <section class="stop" id="svg" data-hue="#8fd8ff">
+    <div class="stick"><div class="lantern"></div><div class="panel">
+      <h2>SVG morph</h2>
+      <div class="stage">
+        <svg class="svg-demo" viewBox="0 0 300 300" aria-hidden="true">
+          <defs><filter id="bl" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="6" /></filter></defs>
+          <path id="blob-glow" filter="url(#bl)" />
+          <path id="blob" />
+        </svg>
+      </div>
+      <code class="snippet mono">scroll(timeline().add(path, { d: star(…) }).add(path, { d: circle(…) }))</code>
+    </div></div>
+  </section>
+
+  <section class="stop" id="physics" data-hue="#a9b8ff">
+    <div class="stick"><div class="lantern"></div><div class="panel">
+      <h2>Physics</h2>
+      <canvas class="stage" id="world-canvas" aria-label="Glowing bodies rising and colliding; drag to throw them"></canvas>
+      <code class="snippet mono">world({ gravity: [0, -600] }).addMany(bodies).dragging()</code>
+    </div></div>
+  </section>
+
+  <section class="stop" id="layout" data-hue="#c7a4ff">
+    <div class="stick"><div class="lantern"></div><div class="panel">
+      <h2>FLIP layout</h2>
+      <div class="stage tiles-stage"><div class="tiles" id="tiles"></div></div>
+      <code class="snippet mono">flip('.tile', () => shuffle(grid), { ease: 'spring(bounce: .2)' })</code>
+    </div></div>
+  </section>
+
+  <section class="stop tall" id="cloud" data-hue="#6ff0d0">
+    <div class="stick"><div class="lantern"></div><div class="panel">
+      <h2><span id="cloud-n">100,000</span> particles</h2>
+      <canvas class="stage cloud-stage" id="cloud-canvas" aria-label="A bloom of glowing plankton morphing between shapes"></canvas>
+      <code class="snippet mono" id="cloud-code">pointCloud(100_000).morph(1, { duration: 2 })</code>
+    </div></div>
+  </section>
+
+  <section class="stop" id="numbers" data-hue="#d7ff9a">
+    <div class="stick"><div class="lantern"></div><div class="panel wide">
+      <h2>Benchmarks</h2>
+      <p class="dim">From the scripts in <code>packages/anikit/scripts</code>.</p>
+      <div class="n-stats">
+        <div class="n-stat"><b><span class="n-count" data-to="43" data-dec="0">43</span>×</b><p class="mono">faster than matter.js<br />250 colliding bodies · bench-physics.mjs</p></div>
+        <div class="n-stat"><b><span class="n-count" data-to="0.37" data-dec="2">0.37</span><small>ms</small></b><p class="mono">100,000 objects per frame<br />batch(), 3 channels · bench.mjs</p></div>
+        <div class="n-stat"><b><span class="n-count" data-to="150" data-dec="0">150</span>k</b><p class="mono">particles rendered in 6.2–6.8 ms<br />Chromium · bench-cloud.mjs</p></div>
+      </div>
+      <div class="n-chart" role="img" aria-label="100,000 objects, one frame: GSAP 3 5.85 ms, anikit animate() 3.68 ms, anikit batch() 0.37 ms">
+        <p class="mono n-cap">100,000 objects · one frame · ms (lower is faster)</p>
+        <div class="n-row"><span class="mono">GSAP 3</span><i><u style="--w:1"></u></i><em class="n-count" data-to="5.85" data-dec="2">5.85</em></div>
+        <div class="n-row me"><span class="mono">anikit animate()</span><i><u style="--w:0.629"></u></i><em class="n-count" data-to="3.68" data-dec="2">3.68</em></div>
+        <div class="n-row me"><span class="mono">anikit batch()</span><i><u style="--w:0.063"></u></i><em class="n-count" data-to="0.37" data-dec="2">0.37</em></div>
+        <p class="mono n-cap dim">bench.mjs, one run · docs/perf-notes.md</p>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="stop end" id="install" data-hue="#8ffcff">
+    <div class="stick"><div class="lantern"></div><div class="panel">
+      <div class="install mono"><span class="prompt">$</span> <span id="cmd">npm install anikit</span><button class="pill" id="copy">Copy</button></div>
+      <p class="dim foot mono">pip install anikit · MIT</p>
+    </div></div>
+  </section>
+</main>
+<script type="module">
+  // First frame of the water right away, before the engine has loaded.
+  import { ocean } from './ocean.js';
+  try { window.__sea = ocean(document.getElementById('ocean')); } catch (e) { console.warn('WebGL unavailable', e); }
+</script>
+<script type="module" src="main.js"></script>
+</body>
+</html>
