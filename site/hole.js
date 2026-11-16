@@ -152,7 +152,7 @@ export class Lens {
       if (f === 2) { f = 1; end[i] = PHIMAX; } // still orbiting: counts as captured
       fate[i] = f;
       for (let j = k; j < NP; j++) rows[base + j] = 0;
-      if (performance.now() - t0 > 3) { yield; t0 = performance.now(); }
+      if (performance.now() - t0 > 2.5) { yield; t0 = performance.now(); }
     }
     // 2. Per pixel: disk crossings and escape directions.
     const { w, h, px } = this;
@@ -216,7 +216,7 @@ export class Lens {
           px[o] = star[0] * trans; px[o + 1] = star[1] * trans; px[o + 2] = star[2] * trans;
         } else { px[o] = 0; px[o + 1] = 0; px[o + 2] = 0; }
       }
-      if (performance.now() - t0 > 3) { yield; t0 = performance.now(); }
+      if (performance.now() - t0 > 2.5) { yield; t0 = performance.now(); }
     }
   }
 }
@@ -225,11 +225,15 @@ export class Lens {
  * Shade one frame into `out` (Uint32 RGBA). `t` is disk time in seconds;
  * `exposure`, star tint and disk gain come from the scroll choreography.
  */
+// Tone curve: linear radiance (after exposure) in [0, 4) → 0..255, 2048 steps per unit.
+const TSTEP = 2048, TMAX = TSTEP * 4 - 1;
+const TONE = new Float32Array(TMAX + 1);
+for (let i = 0; i <= TMAX; i++) { const x = i / TSTEP; const y = (x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14); TONE[i] = Math.sqrt(Math.min(1, y)) * 255; }
 const GRAIN = new Float32Array(8192);
 for (let i = 0; i < GRAIN.length; i++) GRAIN[i] = (Math.random() + Math.random() - 1) * 4.5;
 export function shade(lens, tex, out, t, exposure, sr, sg, sb, disk, seed = 0) {
   const px = lens.px, n = lens.w * lens.h;
-  const go = (seed * 2971) & 4095;
+  const go = (seed * 2971) & 4095, ks = exposure * TSTEP;
   for (let i = 0, o = 0; i < n; i++, o += STRIDE) {
     let r = px[o] * sr, g = px[o + 1] * sg, b = px[o + 2] * sb;
     const h0 = px[o + 3];
@@ -243,15 +247,10 @@ export function shade(lens, tex, out, t, exposure, sr, sg, sb, disk, seed = 0) {
         r += px[o + 12] * v; g += px[o + 13] * v; b += px[o + 14] * v;
       }
     }
-    // Filmic tone map (ACES fit), applied per channel.
-    r *= exposure; g *= exposure; b *= exposure;
-    r = (r * (2.51 * r + 0.03)) / (r * (2.43 * r + 0.59) + 0.14);
-    g = (g * (2.51 * g + 0.03)) / (g * (2.43 * g + 0.59) + 0.14);
-    b = (b * (2.51 * b + 0.03)) / (b * (2.43 * b + 0.59) + 0.14);
-    // Approximate sRGB encode: sqrt is close and cheap.
-    // Film grain, on lit pixels only.
+    // Filmic tone map (ACES fit) and sRGB-ish encode, from a lookup table; plus grain.
     const gn = GRAIN[(i + go) & 8191];
-    let R = Math.sqrt(r > 1 ? 1 : r) * 255 + gn, G = Math.sqrt(g > 1 ? 1 : g) * 255 + gn, B = Math.sqrt(b > 1 ? 1 : b) * 255 + gn;
+    r *= ks; g *= ks; b *= ks;
+    let R = TONE[r < TMAX ? r | 0 : TMAX] + gn, G = TONE[g < TMAX ? g | 0 : TMAX] + gn, B = TONE[b < TMAX ? b | 0 : TMAX] + gn;
     R = R < 0 ? 0 : R > 255 ? 255 : R; G = G < 0 ? 0 : G > 255 ? 255 : G; B = B < 0 ? 0 : B > 255 ? 255 : B;
     out[i] = 0xff000000 | (B << 16) | (G << 8) | R;
   }

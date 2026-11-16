@@ -14,11 +14,11 @@ const small = innerWidth < 760;
 // Sky: two layers (so a new distance band can fade in over the old one) + bloom
 // ---------------------------------------------------------------------------
 const OVER = 1.12;
-const BLUR = 'blur(5px)'; // overscan, so the zoom between bands never shows an edge
+const BLUR = 'blur(5px)';
 const D0 = small ? 30 : 60, DMIN = 2.12, BAND = 0.9, ELEV = (4.5 * Math.PI) / 180;
 const tex = diskTexture();
 const bloom = document.createElement('canvas'), bctx = bloom.getContext('2d', { alpha: false });
-let budget = small ? 160_000 : 280_000;
+let budget = small ? 150_000 : 230_000;
 let vw = innerWidth, vh = innerHeight;
 const layers = ['#sky-a', '#sky-b'].map((s) => ({ el: $(s), ctx: null, img: null, out: null, lens: null, band: -1, scale: 1 }));
 let F0 = 1, front = 0, gen = null, genLayer = -1, genBand = -1, fadeUntil = 0;
@@ -118,7 +118,8 @@ const frame = (dt) => {
   const F = layers[front];
   if (p < 0.999) {
     draw(F, D, p);
-    if (now < fadeUntil) draw(layers[1 - front], D, p);
+    // The outgoing band keeps its last frame (rescaled) while the new one fades in.
+    if (now < fadeUntil) { const O = layers[1 - front]; O.el.style.transform = `scale(${((shadowScale(D) * focal(D)) / (shadowScale(O.lens.D) * O.lens.F)).toFixed(4)})`; }
     else if (fadeUntil) { fadeUntil = 0; layers[1 - front].el.style.opacity = '0'; F.el.style.transition = 'none'; F.el.style.opacity = '1'; }
   }
   choreograph(p);
