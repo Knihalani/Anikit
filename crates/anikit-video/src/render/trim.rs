@@ -2,13 +2,14 @@
 
 use kurbo::{BezPath, ParamCurve, ParamCurveArclen, PathSeg, Point};
 
-const ACCURACY: f64 = 1e-3;
+const ACCURACY: f64 = 0.02;
 
 /// Write the part of `src` between fractions `t0..t1` of its total length into `out`.
 /// `lens` is reusable scratch.
 pub fn trim_path(src: &BezPath, t0: f32, t1: f32, out: &mut BezPath, lens: &mut Vec<f64>) {
     out.truncate(0);
-    let (t0, t1) = (t0.clamp(0.0, 1.0) as f64, t1.clamp(0.0, 1.0) as f64);
+    let fix = |v: f32, d: f32| if v.is_nan() { d as f64 } else { v.clamp(0.0, 1.0) as f64 };
+    let (t0, t1) = (fix(t0, 0.0), fix(t1, 1.0));
     if t1 <= t0 {
         return;
     }

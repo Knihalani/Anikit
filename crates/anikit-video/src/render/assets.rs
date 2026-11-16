@@ -76,10 +76,23 @@ impl ImageStore {
     }
 }
 
+/// One drawable face instance: font data plus variation coordinates and synthesis.
+#[derive(Clone, Debug)]
+pub struct Face {
+    /// Font file bytes plus the face index in a collection.
+    pub data: FontData,
+    /// Normalised variation coordinates (F2Dot14 bits), empty for static fonts / default instance.
+    pub coords: Arc<[i16]>,
+    /// Synthetic bold (outline expanded by 2% of the em per side).
+    pub embolden: bool,
+    /// Synthetic oblique angle in degrees (positive slants right).
+    pub skew: Option<f32>,
+}
+
 /// Font faces keyed by [`FontId`]. Filled by the text system, read by the renderer.
 #[derive(Default, Debug, Clone)]
 pub struct FontStore {
-    fonts: Vec<Option<FontData>>,
+    fonts: Vec<Option<Face>>,
 }
 
 impl FontStore {
@@ -87,24 +100,33 @@ impl FontStore {
         Self::default()
     }
 
-    /// Add a face (TTF/OTF bytes, face `index` in a collection); returns its id.
+    /// Add a face (TTF/OTF bytes, face `index` in a collection) at its default instance; returns its id.
     pub fn add(&mut self, bytes: Arc<Vec<u8>>, index: u32) -> FontId {
         let id = FontId(self.fonts.len() as u32);
-        self.fonts.push(Some(FontData::new(Blob::new(bytes), index)));
+        self.insert(id, FontData::new(Blob::new(bytes), index));
         id
     }
 
-    /// Store a face under a caller-chosen id.
+    /// Store a face's default instance under a caller-chosen id.
     pub fn insert(&mut self, id: FontId, font: FontData) {
+        self.insert_face(id, Face { data: font, coords: Arc::from([]), embolden: false, skew: None });
+    }
+
+    /// Store a face instance (variation coordinates, synthetic bold / oblique) under `id`.
+    pub fn insert_face(&mut self, id: FontId, face: Face) {
         let i = id.0 as usize;
         if self.fonts.len() <= i {
             self.fonts.resize(i + 1, None);
         }
-        self.fonts[i] = Some(font);
+        self.fonts[i] = Some(face);
+    }
+
+    pub fn face(&self, id: FontId) -> Option<&Face> {
+        self.fonts.get(id.0 as usize).and_then(|f| f.as_ref())
     }
 
     pub fn get(&self, id: FontId) -> Option<&FontData> {
-        self.fonts.get(id.0 as usize).and_then(|f| f.as_ref())
+        self.face(id).map(|f| &f.data)
     }
 }
 

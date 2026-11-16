@@ -55,6 +55,7 @@ version = "0.1.0"
 dependencies = [
  "ak264",
  "anikit-core",
+ "glifo",
  "image",
  "kurbo",
  "parley",

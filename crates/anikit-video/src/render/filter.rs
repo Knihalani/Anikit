@@ -12,9 +12,30 @@ pub struct FilterScratch {
     blur: BlurScratch,
 }
 
+/// Finite and within ±`max` (NaN → 0).
+pub fn sane(v: f32, max: f32) -> f32 {
+    if v.is_nan() {
+        0.0
+    } else {
+        v.clamp(-max, max)
+    }
+}
+
+/// The filter with every parameter finite and in range.
+pub fn sanitize(f: &Filter) -> Filter {
+    let s = |v: f32| sane(v, 1000.0).max(0.0);
+    let c = |c: Rgba| Rgba(c.0.map(|v| sane(v, 1.0).max(0.0)));
+    match *f {
+        Filter::Blur(v) => Filter::Blur(s(v)),
+        Filter::Shadow { dx, dy, blur, color } => Filter::Shadow { dx: sane(dx, 4096.0), dy: sane(dy, 4096.0), blur: s(blur), color: c(color) },
+        Filter::Glow { radius, intensity, color } => Filter::Glow { radius: s(radius), intensity: sane(intensity, 64.0).max(0.0), color: c(color) },
+        Filter::ColorMatrix(m) => Filter::ColorMatrix(m.map(|v| sane(v, 1e6))),
+    }
+}
+
 /// Extent a filter adds around its input, in pixels: (left, top, right, bottom).
 pub fn margin(f: &Filter) -> [f32; 4] {
-    match *f {
+    match sanitize(f) {
         Filter::Blur(s) => [blur_extent(s); 4],
         Filter::Shadow { dx, dy, blur, .. } => {
             let e = blur_extent(blur);
@@ -90,7 +111,7 @@ unsafe fn apply_avx2(f: &Filter, buf: &mut [u8], w: usize, h: usize, s: &mut Fil
 
 #[inline(always)]
 fn apply_inner(f: &Filter, buf: &mut [u8], w: usize, h: usize, s: &mut FilterScratch) {
-    match *f {
+    match sanitize(f) {
         Filter::Blur(sigma) => blur::<4>(buf, w, h, sigma, &mut s.blur),
         Filter::Shadow { dx, dy, blur, color } => {
             behind(buf, s, w, h, dx.round() as i32, dy.round() as i32, blur, color, 1.0)
