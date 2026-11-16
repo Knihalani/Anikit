@@ -76,6 +76,8 @@ export class Gesture {
   private anims: PhysicsAnimation[] = [];
   private types: Set<string>;
   private last: Pt = { x: 0, y: 0 };
+  /** What revert() puts back. */
+  private orig: { transform: string; t: number[]; touch: string; select: string };
 
   constructor(target: HTMLElement, options: GestureOptions = {}) {
     this.target = target;
@@ -87,6 +89,7 @@ export class Gesture {
     this.scale = this.s.t[8];
     this.rotation = this.s.t[3];
     const st = target.style;
+    this.orig = { transform: st.transform, t: this.s.t.slice(), touch: st.touchAction, select: st.userSelect };
     st.touchAction = 'none';
     st.userSelect = 'none';
     target.addEventListener('pointerdown', this.down);
@@ -201,15 +204,18 @@ export class Gesture {
     p.x = e.clientX;
     p.y = e.clientY;
     const g = this.g0;
-    const list = Array.from(this.pts.values());
+    // The first two pointers (no arrays per move).
+    const it = this.pts.values();
+    const p0 = it.next().value as Pt;
+    const p1 = this.pts.size >= 2 ? (it.next().value as Pt) : null;
     let scale = g.scale;
     let rotation = g.rotation;
-    let cx = list[0].x, cy = list[0].y;
-    if (list.length >= 2) {
-      cx = (list[0].x + list[1].x) / 2;
-      cy = (list[0].y + list[1].y) / 2;
-      const dist = Math.hypot(list[1].x - list[0].x, list[1].y - list[0].y) || 1;
-      const angle = Math.atan2(list[1].y - list[0].y, list[1].x - list[0].x);
+    let cx = p0.x, cy = p0.y;
+    if (p1) {
+      cx = (p0.x + p1.x) / 2;
+      cy = (p0.y + p1.y) / 2;
+      const dist = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 1;
+      const angle = Math.atan2(p1.y - p0.y, p1.x - p0.x);
       if (this.types.has('pinch')) scale = this.resistScale((g.scale * dist) / g.dist);
       if (this.types.has('rotate')) {
         let d = ((angle - g.angle) * 180) / Math.PI;
@@ -383,9 +389,21 @@ export class Gesture {
     window.removeEventListener('pointercancel', this.up);
   }
   /** Stop listening and reset the transform. */
+  /** {@link kill} and put back the element's transform and styles as they were before `gesture()`. */
   revert(): void {
     this.kill();
-    this.set({ x: 0, y: 0, scale: 1, rotation: 0 });
+    this.pts.clear();
+    this.pointers = 0;
+    this.isActive = false;
+    const o = this.orig;
+    const t = this.s.t;
+    for (let i = 0; i < t.length; i++) t[i] = o.t[i];
+    this.s.dirty = false;
+    this.syncFromState();
+    const st = this.target.style;
+    st.transform = o.transform;
+    st.touchAction = o.touch;
+    st.userSelect = o.select;
   }
 }
 
