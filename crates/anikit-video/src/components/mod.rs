@@ -36,7 +36,9 @@ pub mod code;
 pub mod devices;
 pub mod lottie;
 pub mod particles;
+pub mod text3d;
 pub mod three;
+pub mod globe;
 pub mod transitions;
 pub mod ui;
 
@@ -204,6 +206,8 @@ kinds! {
     "dust" => particles::Dust, "Floating glowing dust motes.", r##"{}"##;
     // 3D
     "model" => three::Model, "Product spin/orbit of a 3D primitive (rounded box, sphere, torus, knot, extruded logo).", r##"{"shape":"torus"}"##;
+    "text-3d" => text3d::Text3d, "Extruded, bevelled chrome 3D text or logo whose letters rise in, with studio lighting, sway and a glint sweep.", r##"{"text":"ANIKIT"}"##;
+    "globe" => globe::Globe, "Rotating dot-matrix globe with glowing great-circle arcs, travelling pulses, pulsing markers and an atmosphere.", r##"{"arcs":[[37.8,-122.4,51.5,-0.1]]}"##;
     // Transitions
     "wipe" => transitions::Wipe, "Soft-edged wipe mask as a transition overlay.", r##"{}"##;
     "iris" => transitions::Iris, "Circular iris open/close.", r##"{}"##;
@@ -290,8 +294,12 @@ fn snake_keys(m: Map<String, Value>) -> Map<String, Value> {
 pub fn kebab(name: &str) -> String {
     let mut out = String::with_capacity(name.len() + 4);
     for (i, c) in name.chars().enumerate() {
-        if c.is_ascii_uppercase() {
-            if i > 0 && !out.ends_with('-') {
+        if c.is_ascii_digit() && out.ends_with(|p: char| p.is_ascii_lowercase()) {
+            // `text3d` → `text-3d`.
+            out.push('-');
+            out.push(c);
+        } else if c.is_ascii_uppercase() {
+            if i > 0 && !out.ends_with('-') && !out.ends_with(|p: char| p.is_ascii_digit()) {
                 out.push('-');
             }
             out.push(c.to_ascii_lowercase());

@@ -236,6 +236,58 @@ Rendered with `anikit-core`'s CPU rasteriser at native resolution, supersampled 
 
 **Cost** per frame at 1280×720 on 4 cores: 5–23 ms.
 
+### `text3d`: extruded chrome text or logo
+`{ "text": "ANIKIT" }` is enough. Each glyph (from the bundled fonts, with kerning) is extruded with a quarter-round bevel. The bevel shrinks on its own where strokes are thin, such as serif hairlines. Letters rise in one after another, then the word sways gently and a sheen sweeps across it every 6 s. The default material is polished chrome with a hint of the theme accent, lit by a warm key, a cool fill, a fresnel rim and a studio horizon reflection, on a transparent background. Kind names: `text3d`, `text-3d`.
+
+| Prop | Default | Meaning |
+|---|---|---|
+| `text` | `ANIKIT` | `\n` breaks lines. |
+| `points` | | A logo polygon `[[x, y], ...]` (y down), used instead of `text`. |
+| `path` | | An SVG path (`M L H V C S Q T Z`, absolute or relative; nested sub-paths make holes), used instead of `text`. |
+| `font`, `weight` | `Inter`, `800` | Any loaded family or alias (`serif`, `mono`). |
+| `tracking` | `0.03` | Letter spacing, in em. |
+| `depth`, `bevel` | `0.2`, `0.028` | Extrusion depth and bevel size, in em. |
+| `color` | chrome | Base colour. |
+| `gradient` | | Colours spread across the letters from left to right, e.g. `["#7c6cff", "#ff6fb1"]`. |
+| `metallic`, `roughness` | `0.85`, `0.22` | `0`/`0.6` gives matte plastic. |
+| `intro` | `rise` | `rise`, `flyIn`, `drop` or `none`. |
+| `stagger` | `0.07` | Seconds between letters. |
+| `delay` | | Seconds before the entrance. |
+| `spin` | `0` | Turntable speed, in degrees per second. |
+| `angle`, `tilt` | `-10`, `8` | Start yaw. Tilt towards the camera, which shows the tops of the letters. |
+| `sway` | `7` | Amplitude of the idle sway, in degrees. |
+| `shine` | `1` | Strength of the sheen sweep (`0` turns it off). |
+| `shadow` | `0.35` | Soft shadow under the text. |
+| `scale`, `resolution` | `1`, `1` | Size, and render scale (capped at 2400 px). |
+
+The component's duration is the end of its entrance. **Cost** per frame at 1920×1080 on 4 cores, for a full-width title: 18–25 ms (a logo: 5 ms). The cost scales with the text's area on screen.
+
+### `globe`: dot-matrix globe with arcs
+A rotating globe in the style of the Stripe and GitHub globes: land is drawn as a lattice of dots (from built-in coarse continent outlines), with an atmosphere halo and a fresnel rim. Great-circle arcs draw on one after another, glowing from cyan to pink. A comet pulse then runs along each arc every 2.6 s. Markers pulse with expanding rings. The view starts centred on the arcs and markers. Everything is vector, and the static geometry is built once.
+
+```json
+{ "type": "component", "component": "globe", "props": { "arcs": [[37.8, -122.4, 51.5, -0.1], [51.5, -0.1, 1.35, 103.8]], "markers": [[37.8, -122.4]] } }
+```
+
+| Prop | Default | Meaning |
+|---|---|---|
+| `arcs` | | `[[lat1, lon1, lat2, lon2], ...]`, in degrees. |
+| `markers` | | `[[lat, lon], ...]`. |
+| `spin` | `8` | Degrees of longitude per second. |
+| `tilt` | `18` | The latitude the camera looks from. |
+| `lon` | the middle of the arcs | Longitude facing the camera at the start. |
+| `color` | cool accent | Dots, rim and atmosphere. |
+| `arcColor` | cyan → pink | One colour, or `[start, end]`. |
+| `markerColor` | arc end colour | |
+| `dots` | `land` | `land`, `all` or `none`. |
+| `density` | `1` | Dot rows (`1` = 100 rows from pole to pole, max `4`). |
+| `grid` | `false` | Latitude and longitude lines. |
+| `glow` | `1` | Atmosphere strength. |
+| `stagger`, `draw` | `0.45`, `1.4` | Seconds between arcs, and the draw-on time of each. |
+| `delay`, `scale` | | Fade-in delay. A scale of `1` fills 80 % of the short side. |
+
+The component's duration is the time the last arc lands. **Cost** per frame at 1920×1080: eval under 1 ms, render 6–15 ms.
+
 ## Lottie
 
 ### `lottie`
