@@ -1994,3 +1994,45 @@ plane overflow f32 in the edge functions and are dropped (not fixed).
   instance) into wasm; small next to the passes.
 - The film bright pass written branch-free in 4-pixel groups (adding exact
   `+0.0` keeps it bit-identical): no measurable change, reverted.
+
+## Ninth round (core): scoreboard and three fixes
+
+**Scoreboard.** `packages/anikit/scripts/scoreboard.mjs` runs `bench.mjs`,
+`bench-create.mjs`, `bench-physics.mjs` (and `bench-dom.mjs` in Chromium
+with `SCOREBOARD_DOM=1`) against every competitor installed in
+`node_modules` (here GSAP, Motion, matter.js; anime.js, popmotion, tween.js
+and Velocity are not installed and are listed as not measured), plus
+bundle size (min+gzip; competitors bundled with esbuild from their package
+entry) and import-to-ready time in fresh Node processes. It writes
+`docs/scoreboard.md`: metric, Anikit, best competitor, ratio (competitor ÷
+Anikit, > 1 = Anikit leads), target. Single runs on this shared machine
+move by up to ~1.5x.
+
+**Fixes (each with a regression test, `test/core-bugs.test.ts`):**
+
+- Reduced motion `'instant'` built top-level animations with zero
+  duration, so `scroll()` (which sets `progress`) and seeks always landed on
+  the end. They now keep their real timing and play at a rate that ends
+  within one frame; repeats stay off; timeline children and `set()` are
+  unchanged.
+- An inline transform written as a function list (`translateX(50px)
+  rotate(10deg)`) was ignored (only `matrix()` was read), so `animate()`
+  started from identity and dropped the other functions. Function lists are
+  read into the transform state as written; unknown functions fall back to
+  the computed matrix.
+- The lean build crashed Node on import (its auto-load `fetch()`es a
+  `file:` URL, unsupported by Node's fetch; the rejection was unhandled),
+  and the failed auto-load blocked an explicit `init(bytes)`. `file:` URLs
+  are read from disk in Node; a failed auto-load lets `init()` take over.
+  Lean import → ready in Node: ~14 ms (GSAP import ~10–14 ms).
+
+**Tried and not kept:** allocating `_build1`'s general-path closure and
+arrays only when the batched path is not taken (three interleaved pairs,
+within noise); skipping the stale `ak_release` of each child after a
+timeline frees its subtree (one wasm call per child of ~100 ns of work,
+far from the 40x gap to GSAP's `kill()`).
+
+**Still red:** creation of one `animate()` over 10k objects (~3.5x behind
+GSAP), 10k separate calls (~2x), the 1000-step timeline (~1.7x), timeline
+`kill()` (GSAP does almost no work there), stagger-delay creation (not on
+the batched path), and bundle size (the wasm core is most of it).
