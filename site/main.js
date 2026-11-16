@@ -109,6 +109,14 @@ for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
   }, reduced ? 0 : 2300);
   animate('.scroll-cue i', { scaleX: [0, 1, 1], x: [0, 0, 46], opacity: [1, 1, 0] }, { duration: 1.8, ease: 'inOutCubic', repeat: Infinity });
   cos.playIntro();
+  // Scrubbed exit: the title row recedes and blurs into the particles as you scroll on.
+  let left = false;
+  scroll((p) => {
+    if (p <= 0 && !left) return; // leave the intro's own reveal alone until the page moves
+    left = true;
+    set('.hero-row', { y: -p * 160, scale: 1 - p * 0.08, opacity: 1 - p * 1.1, filter: `blur(${(p * 10).toFixed(2)}px)` });
+    set('.hero .corner, .scroll-cue', { opacity: Math.max(0, 1 - p * 3) });
+  }, { target: $('#top'), offset: ['start start', 'end start'] });
 }
 
 // ---------------------------------------------------------------------------
@@ -360,7 +368,35 @@ for (const el of $$('.hero, .particles .pin, .time .pin, .install .pin')) {
 }
 
 // ---------------------------------------------------------------------------
-// 08 · Agents: live engine.inspect() and in-page recording
+// 09 · Numbers: benchmark counters count up, bars race in on a spring
+// ---------------------------------------------------------------------------
+{
+  const section = $('#numbers');
+  const title = chars($('#n-title'));
+  $('#n-title').dataset.gsplit = '1';
+  const counts = $$('.n-count', section);
+  const bars = $$('.n-row u', section);
+  const fmt = (d) => ({ format: { minimumFractionDigits: d, maximumFractionDigits: d }, locale: 'en-US' });
+  set(title, { yPercent: 105, rotate: -6, opacity: 0 });
+  set($$('.n-stat, .n-row, .n-cap', section), { opacity: 0, y: 24 });
+  set(bars, { scaleX: 0 });
+  for (const c of counts) c.textContent = (0).toFixed(+c.dataset.dec);
+  inView(section, () => {
+    animate(title, { yPercent: 0, rotate: 0, opacity: 1 }, { duration: 1, ease: 'spring(bounce: 0.25, duration: 0.85)', delay: stagger(0.03) });
+    animate($$('.n-stat, .n-cap, .n-row', section), { opacity: 1, y: 0 }, { duration: 0.8, ease: 'outCubic', delay: stagger(0.07, { start: 0.25 }) });
+    animate(bars, { scaleX: 1 }, { duration: 1.6, ease: 'spring(bounce: 0.3, duration: 1.2)', delay: stagger(0.18, { start: 0.6 }) });
+    counts.forEach((c, i) => animate(c, { textContent: +c.dataset.to }, { duration: 1.8, ease: 'outExpo', delay: 0.4 + i * 0.1, ...fmt(+c.dataset.dec) }));
+  }, { amount: 0.3 });
+  // Scrubbed exit: the whole board tilts back and lifts away as the next scene arrives.
+  const board = $$('.n-title, .n-stats, .n-chart', section);
+  scroll((p) => {
+    const q = Math.max(0, p - 0.5) * 2;
+    set(board, { y: -q * 120, opacity: 1 - q * 0.9 });
+  }, { target: section, offset: ['start start', 'end start'] });
+}
+
+// ---------------------------------------------------------------------------
+// 10 · Agents: live engine.inspect() and in-page recording
 // ---------------------------------------------------------------------------
 {
   const term = $('#term');

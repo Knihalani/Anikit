@@ -131,7 +131,27 @@
     </div>
   </section>
 
-  <!-- 09 · AGENTS (black) -->
+  <!-- 09 · NUMBERS (acid) -->
+  <section class="scene numbers station" id="numbers" data-shape="vortex" data-bg="#d2ff3c" data-mode="ink" data-exposure="0.14" data-name="Numbers">
+    <div class="pin">
+      <div class="corner tl mono">09 — Measured<br />Every number from the repo's bench scripts</div>
+      <h2 class="giant n-title" id="n-title">Fast,<br /><em>measured.</em></h2>
+      <div class="n-stats">
+        <div class="n-stat"><b><span class="n-count" data-to="43" data-dec="0">43</span>×</b><p class="mono">faster than matter.js<br />250 colliding bodies · bench-physics.mjs</p></div>
+        <div class="n-stat"><b><span class="n-count" data-to="0.37" data-dec="2">0.37</span><small>ms</small></b><p class="mono">100,000 objects per frame<br />batch(), 3 channels · bench.mjs</p></div>
+        <div class="n-stat"><b><span class="n-count" data-to="150" data-dec="0">150</span>k</b><p class="mono">particles rendered in 6.2–6.8 ms<br />Chromium · bench-cloud.mjs</p></div>
+      </div>
+      <div class="n-chart" id="n-chart" role="img" aria-label="100,000 objects, one frame: GSAP 3 5.85 ms, anikit animate() 3.68 ms, anikit batch() 0.37 ms">
+        <p class="mono n-cap">100,000 objects · one frame · ms (lower is faster)</p>
+        <div class="n-row"><span class="mono">GSAP 3</span><i><u style="--w:1"></u></i><em class="n-count" data-to="5.85" data-dec="2">5.85</em></div>
+        <div class="n-row me"><span class="mono">anikit animate()</span><i><u style="--w:0.629"></u></i><em class="n-count" data-to="3.68" data-dec="2">3.68</em></div>
+        <div class="n-row me"><span class="mono">anikit batch()</span><i><u style="--w:0.063"></u></i><em class="n-count" data-to="0.37" data-dec="2">0.37</em></div>
+        <p class="mono n-cap dim">bench.mjs, one run · docs/perf-notes.md</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · AGENTS (black) -->
   <section class="scene agents station" id="agents" data-shape="grid" data-bg="#0c0c0c" data-mode="light" data-tint="0.82,1,0.24" data-exposure="0.45" data-name="Agents">
     <div class="pin">
       <h2 class="giant">Machines<br />read it<br />too.</h2>
