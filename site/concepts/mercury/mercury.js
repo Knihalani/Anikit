@@ -215,7 +215,7 @@ for (const d of drops) { d.out.x = d.prev.x = d.pos.x; d.out.y = d.prev.y = d.po
 const state = { form: 0, melt: 0, t: 0, wm: 0, chain: 0 };
 const pointer = { x: vw / 2, y: vh / 2, at: -1e9, inHero: false };
 const light = { x: 0, y: 0 };
-const chainCfgs = [{ stiffness: 260, damping: 16 }, { stiffness: 180, damping: 7 }, { stiffness: 40, damping: 10 }];
+const chainCfgs = [{ stiffness: 170, damping: 15 }, { stiffness: 120, damping: 6 }, { stiffness: 30, damping: 9 }];
 let chainCfg = chainCfgs[0];
 export function setChainPreset(k) { chainCfg = chainCfgs[k]; }
 
@@ -283,7 +283,9 @@ function stageTarget(s, d, i, t, out) {
     return;
   }
   const dir = stopIndex[s.kind] % 2 ? 1 : -1;
-  rimPoint(s.sl - g, s.st - g, s.sw + 2 * g, s.sh + 2 * g, s.radius + g, i / N + dir * t * 0.012 + stopIndex[s.kind] * 0.07, out);
+  // On the springs stage the chain takes the first drops; the rest spread round the whole ring.
+  const u = s.kind === 'springs' && state.chain > 0 ? lerp(i / N, (i - CHAIN) / (N - CHAIN), state.chain) : i / N;
+  rimPoint(s.sl - g, s.st - g, s.sw + 2 * g, s.sh + 2 * g, s.radius + g, u + dir * t * 0.012 + stopIndex[s.kind] * 0.07, out);
   out.r = d.r * (s.kind === 'install' ? 0.62 : 0.8);
 }
 
@@ -335,7 +337,7 @@ function stepChain(t) {
   const px = pointer.x - s.sl, py = pointer.y - s.st;
   const inside = recent && px > 0 && py > 0 && px < s.sw && py < s.sh;
   const aim = inside ? { x: px, y: py } : reduced ? { x: s.sw / 2, y: s.sh * 0.45 } :
-    { x: s.sw / 2 + Math.sin(t * 1.05) * s.sw * 0.32, y: s.sh * 0.44 + Math.sin(t * 2.1) * s.sh * 0.24 };
+    { x: s.sw / 2 + Math.sin(t * 1.3) * s.sw * 0.34, y: s.sh * 0.42 + Math.sin(t * 2.6) * s.sh * 0.22 };
   spring(chain[0], aim, chainCfg);
   for (let i = 1; i < CHAIN; i++) spring(chain[i], { x: chain[i - 1].x, y: chain[i - 1].y }, chainCfg);
 }

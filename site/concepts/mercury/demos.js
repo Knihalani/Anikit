@@ -97,7 +97,7 @@ export function startDemos({ reduced, fine, small, setChainPreset, inView }) {
   // Springs: the drops in the canvas form the chain (see mercury.js); these switch its character.
   near('#springs', () => {
     const code = $('#spring-code');
-    const presets = [[260, 16], [180, 7], [40, 10]];
+    const presets = [[170, 15], [120, 6], [30, 9]];
     const btns = $$('#springs .mag');
     const pick = (k) => {
       setChainPreset(k);
