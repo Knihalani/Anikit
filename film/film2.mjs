@@ -9,7 +9,7 @@
 //   anikit-render film2.mjs --out film2.mp4 --workers 4 --preroll 0 --fade-out 0.5
 export default async function film2({ anikit: A, node }) {
   const { composition, scene3d, renderer3d, mesh, instances, texture } = A;
-  const W = 1920, H = 1080, FPS = 60, D = 20;
+  const W = 1920, H = 1080, FPS = 60, D = 17.5;
   const PI = Math.PI, TAU = PI * 2, DEG = PI / 180;
   let seed = 11;
   const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -330,6 +330,20 @@ export default async function film2({ anikit: A, node }) {
   const lugPts = []; for (let i = 0; i <= 24; i++) { const u = i / 24; lugPts.push([0, 60 - 16 * u * u - 4 * u, 170 + 56 * u]); } // short, tapering horns
   const lugMesh = mesh.tube(lugPts, { radius: 12.5, sides: 24, radii: lugPts.map((_, i) => 1 - 0.3 * (i / 24)) });
   const lugEnd = lugPts[24];
+  // Leather straps: a band from between the lugs, curving down onto the floor and away.
+  const strapMesh = (() => {
+    const b = new MB(), pts = [], hw = 92, th = 7;
+    for (let i = 0; i <= 40; i++) { const u = i / 40, z = 205 + 520 * u, y = 4 + th / 2 + (lugEnd[1] - 8) * Math.exp(-(((z - 205) / 70) ** 2)); pts.push([y, z]); }
+    const nrm = (i) => { const a = pts[Math.max(0, i - 1)], c = pts[Math.min(pts.length - 1, i + 1)], ty = c[0] - a[0], tz = c[1] - a[1], l = Math.hypot(ty, tz); return [tz / l, -ty / l]; };
+    const ring = pts.map(([y, z], i) => { const [ny, nz] = nrm(i), o = th / 2; return { top: [y + ny * o, z + nz * o], bot: [y - ny * o, z - nz * o], n: [ny, nz] }; });
+    for (let i = 0; i < ring.length - 1; i++) {
+      const A = ring[i], B = ring[i + 1], u0 = i / 40, u1 = (i + 1) / 40;
+      const q = (pa, pb, n, x0, x1) => { const a = b.v(x0, pa[0], pa[1], 0, n[0], n[1], 0, u0), c = b.v(x1, pa[0], pa[1], 0, n[0], n[1], 1, u0), d = b.v(x1, pb[0], pb[1], 0, n[0], n[1], 1, u1), e = b.v(x0, pb[0], pb[1], 0, n[0], n[1], 0, u1); b.quad(a, c, d, e, [0, n[0], n[1]]); };
+      q(A.top, B.top, A.n, -hw, hw); q(A.bot, B.bot, [-A.n[0], -A.n[1]], -hw, hw);
+      for (const sx of [-1, 1]) { const x = sx * hw, a = b.v(x, A.top[0], A.top[1], sx, 0, 0), c = b.v(x, A.bot[0], A.bot[1], sx, 0, 0), d = b.v(x, B.bot[0], B.bot[1], sx, 0, 0), e = b.v(x, B.top[0], B.top[1], sx, 0, 0); b.quad(a, c, d, e, [sx, 0, 0]); }
+    }
+    return b.build();
+  })();
   const floor = mesh.plane(1);
 
   // ---- Instances --------------------------------------------------------------------------------
@@ -341,7 +355,7 @@ export default async function film2({ anikit: A, node }) {
     rotor: one(), rotorRim: one(), rotorHub: one(),
     arbors: instances(5), jewels: instances(12), chatons: instances(12), screws: instances(14), slots: instances(14), balScrews: instances(12), stones: instances(3),
     case: one(), caseFloor: one(), caseInner: one(), bezel: one(), crystal: one(), dialTop: one(), dialBody: one(), indices: instances(13),
-    hh: one(), mh: one(), sh: one(), crown: one(), stem: one(), lugs: instances(4), lugCaps: instances(4), floor: one(),
+    hh: one(), mh: one(), sh: one(), crown: one(), stem: one(), lugs: instances(4), lugCaps: instances(4), floor: one(), straps: instances(2),
   };
   const JEWELS = [[C0, Y.bridge[1]], [T3, Y.bridge[1]], [F4, Y.bridge[1]], [E5, Y.bridge[1]], [PAL, Y.bridge[1]], [BAL, 27], [BARREL, 26], [CROWNW, 30]];
   const SCREWS = [[[112, 26], Y.bridge[1], 6.5, BLUE], [[104, -100], Y.bridge[1], 6.5, BLUE], [COCKF, 27, 7, BLUE], [[-100, 95], 26, 6, BLUE], [[-128, 40], 26, 6, BLUE], [[-128, -40], 26, 6, BLUE], [[-100, -95], 26, 6, BLUE], [[-62, -26], 26, 5.5, BLUE], [BARREL, 31.5, 9, STEEL], [CROWNW, 30, 5.5, STEEL], [[-57, 12], Y.bridge[1], 5, BLUE]];
@@ -382,9 +396,9 @@ export default async function film2({ anikit: A, node }) {
   const orbit = (t) => {
     // Once the watch is closed, the orbit turns into a slow push-in that rises over the dial (the end
     // lands closer on 10:10 rather than holding a wide shot).
-    const az = (-16 + 4.4 * (t - 8.2) + 26 * smooth(13.4, 20, t)) * DEG;
-    const el = (lerp(lerp(44, 56, smooth(8.2, 9.6, t)), 24, smooth(9.8, 16, t)) + 12 * smooth(14.6, 20, t)) * DEG;
-    const dist = lerp(lerp(190, 540, smooth(8.0, 9.9, t)), 900, smooth(10.0, 14.2, t)) - 250 * smooth(13.8, 20.2, t);
+    const az = (-16 + 4.4 * (t - 8.2) + 24 * smooth(13.0, 17.6, t)) * DEG;
+    const el = lerp(lerp(lerp(44, 56, smooth(8.2, 9.6, t)), 24, smooth(9.8, 13.6, t)), 21, smooth(13.4, 17.6, t)) * DEG;
+    const dist = lerp(lerp(190, 540, smooth(8.0, 9.9, t)), 900, smooth(10.0, 13.2, t)) - 330 * smooth(13.2, 17.7, t);
     const ty = lerp(movY(t) - 10, 40, smooth(10.0, 12.5, t));
     const tg = [0, ty, 8 * smooth(12, 16, t)];
     return [[tg[0] + Math.sin(az) * Math.cos(el) * dist, tg[1] + Math.sin(el) * dist, tg[2] + Math.cos(az) * Math.cos(el) * dist], tg];
@@ -428,7 +442,7 @@ export default async function film2({ anikit: A, node }) {
     ruby: { ambient: 0.25, diffuse: 0.55, specular: 2.4, shininess: 420, emissive: 0.55, metal: 0.25, rim: 0.7 },
     slot: { ambient: 0.02, diffuse: 0.05, specular: 0, rim: 0 },
     dial: { ambient: 0.3, diffuse: 0.85, metal: 0.18, specular: 1.6, shininess: 26, rim: 0.05, texture: dialTex, textureFilter: 'aniso' },
-    crystal: { ambient: 0, diffuse: 0, specular: 1.4, shininess: 300, rim: 0.08, metal: 0.16 },
+    crystal: { ambient: 0, diffuse: 0, specular: 1.8, shininess: 300, rim: 0.1, metal: 0.32 },
     floor: { ambient: 0.4, diffuse: 0.2, specular: 0.25, shininess: 300, rim: 0 },
   };
 
@@ -494,6 +508,7 @@ export default async function film2({ anikit: A, node }) {
       put(I.crown, 0, chain(T(226, 46, 0), Rz(PI / 2)), STEEL); put(I.stem, 0, chain(T(208, 46, 0), Rz(PI / 2), S(5, 18, 5)), STEEL);
       [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz], i) => { put(I.lugs, i, chain(T(sx * 104, 0, 0), S(1, 1, sz)), STEEL); put(I.lugCaps, i, chain(T(sx * 104, lugEnd[1], sz * lugEnd[2]), S(17.5)), STEEL); });
       put(I.floor, 0, chain(T(0, 0, 0), S(40000, 1, 40000)), [0.02, 0.02, 0.022]);
+      put(I.straps, 0, T(0, 0, 0), [0.16, 0.075, 0.04]); put(I.straps, 1, S(1, 1, -1), [0.16, 0.075, 0.04]);
 
       const items = [];
       if (showMov) items.push(
@@ -526,6 +541,7 @@ export default async function film2({ anikit: A, node }) {
         { mesh: caseInner, instances: I.caseInner, cull: false, material: mats.steel },
         { mesh: lugMesh, instances: I.lugs, cull: false, material: mats.steel }, { mesh: sph, instances: I.lugCaps, material: mats.steel },
         { mesh: crownMesh, instances: I.crown, material: mats.steel },
+        { mesh: strapMesh, instances: I.straps, cull: false, material: { ambient: 0.25, diffuse: 0.85, specular: 0.35, shininess: 18, rim: 0.12 } },
         { mesh: cyl, instances: I.stem, material: mats.steel },
         { mesh: floor, instances: I.floor, mirror: true, reflect: false, material: mats.floor },
       );
@@ -546,7 +562,9 @@ export default async function film2({ anikit: A, node }) {
         sort: 'near', background: '#040405',
         key: [-0.5, 0.85, 0.45], keyColor: [1.0, 0.96, 0.9], fill: [0.7, 0.35, -0.5], fillColor: [0.07, 0.08, 0.1], rimColor: [0.5, 0.55, 0.62],
         sky: [0.6, 0.6, 0.62], horizon: [0.2, 0.2, 0.21], ground: [0.012, 0.012, 0.014], strips: [1.7, 1.66, 1.6],
-        lights: [{ position: [cp[0] + 40 * Math.sin(t * 0.7), cp[1] + 30, cp[2] + 20], color: [1, 0.95, 0.88], radius: 60 + 400 * (1 - macro), intensity: 0.5 }],
+        lights: [{ position: [cp[0] + 40 * Math.sin(t * 0.7), cp[1] + 30, cp[2] + 20], color: [1, 0.95, 0.88], radius: 60 + 400 * (1 - macro), intensity: 0.5 },
+          // A soft light sweeps across the dial once the crystal is on.
+          { position: [lerp(-420, 420, smooth(14.0, 16.6, t)), 190, lerp(-120, 120, smooth(14.0, 16.6, t))], color: [1, 0.97, 0.92], radius: 170, intensity: 1.3 * smooth(13.6, 14.3, t) * (1 - smooth(16.4, 17.2, t)) }],
         shadows: { extent: lerp(140, 300, 1 - macro), center: tg, size: 1536, strength: 0.75, bias: 0.004 },
         mirror: { y: 0, strength: 0.32 * smooth(9.0, 12.0, t) },
         dof: { focus: dist, aperture: lerp(30, 95, macro), max: lerp(14, 28, macro) },
