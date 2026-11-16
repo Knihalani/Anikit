@@ -1,11 +1,12 @@
 // hall.js — the hall of demos. A bright, walkable gallery in hand-written WebGL2.
 // createHall(canvas, overlayEl) → { resize, preview, enter, exit, frame }  (see CONTRACT.md)
 //
-// Every moving thing is driven by anikit: world() physics, spring() followers and
-// movement, batch() + stagger waves, timeline()/keyframes for the letters, animate()
-// for the point-sculpture morphs, HUD fades and station wake-ups.
+// Every moving thing is driven by anikit. The five set pieces live in hall-demos.js:
+// world() ropes, a spring() swarm, a scrubbed timeline(), 200k spring-parted points and
+// batch() + stagger pin waves. Movement, HUD fades and station wake-ups are anikit too.
 
-import { ready, world, spring, animate, batch, stagger, timeline, textPoints } from '../../../packages/anikit/dist/anikit.lean.js';
+import { ready, animate } from '../../../packages/anikit/dist/anikit.lean.js';
+import { createDemos, STATIONS as ST } from './hall-demos.js';
 import { program, cubeMesh, cylinderMesh, sphereMesh, group, camera, updateCamera, sees } from './hall-gl.js';
 import * as S from './hall-shaders.js';
 import { createControls } from './hall-controls.js';
@@ -15,24 +16,8 @@ const SUN = [0.72, -0.62, -0.3];
 const FOG = [0.55, 0.49, 0.42];
 const SPAWN = [0, 1.7, 12];
 const PI2 = Math.PI * 2;
-// floor contact shadows under station bases: x, z, radius, strength
-const BLOBS = new Float32Array([
-  -4.6, 4.2, 1.4, 0.3,   5.4, 4.2, 1.9, 0.35,   -6.35, -6.5, 2.0, 0.35,
-  4.6, -6.5, 2.3, 0.3,   0, -16, 1.9, 0.4,      0, -26.4, 3.0, 0.2,
-]);
-
 // hall extents
 const HX = 8, HZ0 = -28, HZ1 = 16, HY = 12;
-
-// stations (positions in metres)
-const ST = [
-  { id: 'springs', name: 'Springs', hint: 'Walk past — they follow · E to scatter', x: -4.6, z: 4.2, r: 4.2, ring: 1.75 },
-  { id: 'bench', name: 'Benchmarks', hint: 'Numbers from README.md · E to replay', x: 4.8, z: 4.2, r: 3.6, ring: 0 },
-  { id: 'physics', name: 'Physics · world()', hint: 'Click or E to throw the balls', x: -5.2, z: -6.5, r: 3.8, ring: 0 },
-  { id: 'blocks', name: 'Timeline + stagger', hint: 'Click or E for the next wave', x: 4.6, z: -6.5, r: 3.8, ring: 2.95 },
-  { id: 'cloud', name: 'Particles · 100k points', hint: 'Click or E to morph', x: 0, z: -16, r: 4.8, ring: 2.2 },
-  { id: 'text', name: 'Keyframes', hint: 'Look up · click or E to play the letters', x: 0, z: -23.8, r: 3.6, ring: 0 },
-];
 
 export function createHall(canvas, overlayEl) {
   const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, depth: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
@@ -41,9 +26,7 @@ export function createHall(canvas, overlayEl) {
   const progMesh = program(gl, S.MESH_VS, S.MESH_FS);
   const progFloor = program(gl, S.FLOOR_VS, S.FLOOR_FS);
   const progBeam = program(gl, S.BEAM_VS, S.BEAM_FS);
-  const progPts = program(gl, S.PTS_VS, S.PTS_FS);
   const progDust = program(gl, S.DUST_VS, S.DUST_FS);
-  const progTex = program(gl, S.TEX_VS, S.TEX_FS);
 
   const cube = cubeMesh(), cyl = cylinderMesh(22), sph = sphereMesh(14, 9), sphLo = sphereMesh(10, 6);
   const cam = camera();
@@ -93,37 +76,16 @@ export function createHall(canvas, overlayEl) {
       box(archBox, s * (HX - 0.05), 6.35, z, 0.25, 0.25, 2.6, METAL + 0.4, ...STEEL);
     }
   }
-  // end wall: a bronze frame for the letters
-  box(archBox, 0, 11.3, HZ0 + 0.1, 15.6, 0.3, 0.3, METAL + 0.6, ...BRONZE);
-  box(archBox, 0, 7.5, HZ0 + 0.1, 15.6, 0.2, 0.3, METAL + 0.6, ...BRONZE);
-  box(archBox, 0, 9.4, HZ0 + 0.04, 15.4, 3.8, 0.1, PLAIN + 0.1, 0.24, 0.22, 0.24);
   // door behind spawn (bright: where you came from)
   windows.push(0, 3.4, HZ1 - 0.02, 0, 3.6, 6.4, 0.06, 0, 1, 1, 1, 3);
   box(archBox, 0, 6.8, HZ1 - 0.1, 4.4, 0.5, 0.3, METAL + 0.5, ...BRONZE);
   box(archBox, -2.0, 3.4, HZ1 - 0.1, 0.4, 6.8, 0.3, METAL + 0.5, ...BRONZE);
   box(archBox, 2.0, 3.4, HZ1 - 0.1, 0.4, 6.8, 0.3, METAL + 0.5, ...BRONZE);
 
-  // station furniture: dark walnut and bronze
-  archCyl.push(-4.6, 0.12, 4.2, 0, 2.8, 0.24, 2.8, WALNUT + 0.5, ...WOOD, 0);
-  archCyl.push(-4.6, 0.25, 4.2, 0, 2.84, 0.03, 2.84, METAL + 0.6, ...BRONZE, 0);
-  archCyl.push(-4.6, 0.55, 4.2, 0, 0.5, 1.1, 0.5, METAL + 0.5, ...BRONZE, 0);
-  colliders.push(-4.95, 3.85, -4.25, 4.55);
-  box(archBox, 5.4, 0.45, 4.2, 1.3, 0.9, 3.8, WALNUT + 0.5, ...WOOD, 0, true);
-  box(archBox, 5.4, 0.92, 4.2, 1.36, 0.05, 3.86, METAL + 0.6, ...BRONZE);
-  box(archBox, 6.3, 3.05, 4.2, 0.12, 4.2, 4.2, METAL + 0.4, ...STEEL);
-  const PC = { x: -6.35, z0: -8.3, z1: -4.7, y0: 0.7, y1: 3.3 };
-  box(archBox, PC.x, PC.y0 / 2, (PC.z0 + PC.z1) / 2, 0.8, PC.y0, PC.z1 - PC.z0 + 0.3, WALNUT + 0.5, ...WOOD, 0, true);
-  box(archBox, PC.x - 0.25, (PC.y0 + PC.y1) / 2, (PC.z0 + PC.z1) / 2, 0.06, PC.y1 - PC.y0, PC.z1 - PC.z0, PLAIN + 0.1, 0.93, 0.91, 0.88, 0.1);
-  box(archBox, PC.x, PC.y1 + 0.05, (PC.z0 + PC.z1) / 2, 0.6, 0.1, PC.z1 - PC.z0 + 0.3, METAL + 0.4, ...STEEL);
-  box(archBox, PC.x + 0.22, (PC.y0 + PC.y1) / 2, PC.z0 - 0.05, 0.08, PC.y1 - PC.y0, 0.1, METAL + 0.4, ...STEEL);
-  box(archBox, PC.x + 0.22, (PC.y0 + PC.y1) / 2, PC.z1 + 0.05, 0.08, PC.y1 - PC.y0, 0.1, METAL + 0.4, ...STEEL);
-  box(archBox, 4.6, 0.12, -6.5, 4.0, 0.24, 4.0, WALNUT + 0.5, ...WOOD, 0, true);
-  box(archBox, 4.6, 0.25, -6.5, 4.06, 0.03, 4.06, METAL + 0.6, ...BRONZE);
-  archCyl.push(0, 0.3, -16, 0, 3.4, 0.6, 3.4, WALNUT + 0.5, ...WOOD, 0);
-  archCyl.push(0, 0.62, -16, 0, 3.46, 0.05, 3.46, METAL + 0.7, ...BRONZE, 0);
-  colliders.push(-1.6, -17.6, 1.6, -14.4);
-  box(archBox, 0, 0.2, -26.4, 15, 0.4, 2.6, WALNUT + 0.5, ...WOOD, 0, true);
-  box(archBox, 0, 0.41, -25.1, 15, 0.03, 0.08, METAL + 0.6, ...BRONZE);
+  // the set pieces (they add their own furniture before the static upload)
+  const demos = createDemos({ gl, cam, sees, group, cube, sph, sphLo, cyl, box, archBox, archCyl, colliders, setCommon });
+  const BLOBS = demos.blobs;
+  const wake = demos.wake;
 
   archBox.upload(); archCyl.upload(); windows.upload();
 
@@ -178,151 +140,8 @@ export function createHall(canvas, overlayEl) {
   gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 0, 0);
   gl.bindVertexArray(null);
 
-  // ---------- stations ----------
-  const balls = group(gl, sphLo, 320);
-  const orbs = group(gl, sph, 16);
-  const blocks = group(gl, cube, 256);
-  const letters = group(gl, cube, 220);
-  const bars = group(gl, cube, 8);
-
-  const st = { ready: false, active: false, near: -1, nearK: new Float32Array(ST.length) };
-  const wake = ST.map(() => ({ v: 0 }));  // proximity glow per station, animated
-
-  // ---- particles: GPU points, morph mix driven by anikit animate() ----
-  const NP = 100_000;
-  const shapes = makeShapes(NP);
-  const ptsVao = gl.createVertexArray();
-  gl.bindVertexArray(ptsVao);
-  // every shape lives on the GPU from load; a morph only re-points two attributes (no upload)
-  const shapeBuf = shapes.map((sh) => { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, sh, gl.STATIC_DRAW); return b; });
-  const pS = gl.createBuffer();
-  const pointAttr = (loc, k) => { gl.bindBuffer(gl.ARRAY_BUFFER, shapeBuf[k]); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 3, gl.FLOAT, false, 0, 0); };
-  pointAttr(0, 0); pointAttr(1, 1);
-  const seeds = new Float32Array(NP * 4);
-  for (let i = 0; i < NP; i++) {
-    const y = shapes[0][i * 3 + 1];
-    seeds[i * 4] = Math.min(1, Math.max(0, (y + 1.6) / 3.2 * 0.75 + Math.random() * 0.25));
-    seeds[i * 4 + 1] = 0.014 + Math.random() * 0.014;
-    seeds[i * 4 + 2] = Math.random() * 0.35 + 0.05;
-    seeds[i * 4 + 3] = Math.random();
-  }
-  gl.bindBuffer(gl.ARRAY_BUFFER, pS); gl.bufferData(gl.ARRAY_BUFFER, seeds, gl.STATIC_DRAW);
-  gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 0, 0);
-  gl.bindVertexArray(null);
-  const cloud = { mix: 0, cur: 0, next: 1, spin: 0, spinV: { v: 0.12 }, idle: 0, blast: 0 };
-  const CLOUD_C = [0, 4.1, -16], CLOUD_S = 1.6;
-
-  function morph(burst = false) {
-    // fold the current blend into A, then morph to the next shape
-    cloud.cur = cloud.mix > 0.5 ? cloud.next : cloud.cur;
-    cloud.next = (cloud.cur + 1) % shapes.length;
-    gl.bindVertexArray(ptsVao);
-    pointAttr(0, cloud.cur); pointAttr(1, cloud.next);
-    gl.bindVertexArray(null);
-    cloud.mix = 0;
-    cloud.idle = 0;
-    animate(cloud, { mix: [0, 1] }, { duration: 2.6, ease: 'inOutCubic' });
-    if (burst) animate(cloud, { blast: [0, 1, 0] }, { duration: 2.4, times: [0, 0.18, 1], ease: ['outExpo', 'inOutCubic'] });
-    if (cloud.next === shapes.TEXT) {
-      // the word must face you: settle the spin on the next whole turn
-      spring(cloud.spinV, { v: 0 }, { stiffness: 20, damping: 9 });
-      animate(cloud, { spin: Math.ceil(cloud.spin / PI2 + 0.15) * PI2 }, { duration: 2.6, ease: 'inOutCubic' });
-    } else {
-      // a spin kick that settles on a spring
-      spring(cloud.spinV, { v: 0.12 }, { stiffness: 30, damping: 6, velocity: 2.4 });
-    }
-  }
-
-  // ---- benchmark panel (canvas texture) ----
-  const BENCH = [
-    // label, ratio (lower bound shown on the bar), text — all from README.md
-    ['3 numbers per object, 1,000 objects vs GSAP 3 (1.3–1.5× faster at 10,000)', 3.5, '3.5–3.8× faster'],
-    ['batch(), 3 channels, 100,000 vs GSAP 3', 16, '~16×'],
-    ['2D physics, 250 colliding bodies, per step vs matter.js', 43, '43–60×'],
-    ['3D project + depth sort, 100k points vs optimised plain JS', 20, '20–22×'],
-    ['2,000 animated DOM elements, real Chromium: 56–59 vs 26–27 fps', 2.2, '~2.2× fps'],
-  ];
-  const panel = makePanel(gl, BENCH);
-  const benchState = BENCH.map(() => ({ h: 0 }));
-
-  // ---- physics (world in px, mapped 1 px = 1 cm into the glass case) ----
-  let wld = null;
-  const PW = Math.round((PC.z1 - PC.z0) * 100), PH = Math.round((PC.y1 - PC.y0) * 100);
-  const NB = 150;
-  const ballCol = new Float32Array(NB * 3);
-  const ballR = new Float32Array(NB);
-  const BALL_PAL = [[0.95, 0.42, 0.28], [0.98, 0.72, 0.25], [0.32, 0.62, 0.95], [0.95, 0.94, 0.9], [0.5, 0.82, 0.7]];
-  for (let i = 0; i < NB; i++) {
-    const c = BALL_PAL[i % BALL_PAL.length];
-    ballCol[i * 3] = c[0]; ballCol[i * 3 + 1] = c[1]; ballCol[i * 3 + 2] = c[2];
-    ballR[i] = 7 + ((i * 7919) % 6);
-  }
-
-  // ---- springs: orbs that follow you ----
-  const NO = 9;
-  const ORB_PAL = [[1.0, 0.62, 0.12], [0.98, 0.3, 0.22], [0.9, 0.22, 0.5]];
-  const orbS = [];
-  for (let i = 0; i < NO; i++) {
-    const a = (i / NO) * PI2;
-    const hx = -4.6 + Math.cos(a) * 1.15, hy = 1.75 + 0.4 * Math.sin(a * 2), hz = 4.2 + Math.sin(a) * 1.15;
-    orbS.push({ x: hx, y: hy, z: hz, hx, hy, hz, k: 26 + i * 9, d: 7 + i * 0.6, s: 0.26 + (i % 3) * 0.06 });
-  }
-  let orbFollow = false, orbRetarget = 0;
-
-  // ---- timeline + stagger: 16×16 blocks, two superposed batch() waves ----
-  const GB = 16, NBk = GB * GB;
-  const waves = [null, null];
-  let waveN = 0, waveIdle = 0, burstSeed = 7, waveFrom = -1;
-  const WAVE_FROM = ['center', 'edges', 0, 'random', 'last'];
-  function wave() {
-    const from = waveFrom >= 0 ? waveFrom : WAVE_FROM[waveN % WAVE_FROM.length];
-    waveFrom = -1;
-    const b = batch(NBk, { y: [0, 1, -0.08, 0], s: [0, 0.3, 0] }, {
-      duration: 1.6, ease: 'inOutSine', delay: stagger(0.045, { grid: [GB, GB], from }),
-    });
-    const old = waves[waveN & 1];
-    waves[waveN & 1] = b;
-    waveIdle = 0;
-    if (old) old.kill();
-    waveN++;
-  }
-
-  // ---- text: voxel letters "anikit" animated with keyframes and stagger ----
-  const FONT = {
-    a: ['.....', '.....', '.###.', '....#', '.####', '#...#', '.####'],
-    n: ['.....', '.....', '#.##.', '##..#', '#...#', '#...#', '#...#'],
-    i: ['..#..', '.....', '.##..', '..#..', '..#..', '..#..', '.###.'],
-    k: ['#....', '#....', '#..#.', '#.#..', '##...', '#.#..', '#..#.'],
-    t: ['.#...', '.#...', '####.', '.#...', '.#...', '.#..#', '..##.'],
-  };
-  const WORD = 'anikit', VOX = 0.42;
-  const letterS = [];
-  const vox = []; // [letter, lx, ly]
-  for (let li = 0; li < WORD.length; li++) {
-    const rows = FONT[WORD[li]];
-    letterS.push({ y: 0, ry: 0, s: 1, bob: 0, cx: (li - (WORD.length - 1) / 2) * 2.45 });
-    for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) if (rows[r][c] === '#') vox.push(li, (c - 2) * VOX, (6 - r) * VOX);
-  }
-  const NV = vox.length / 3;
-  let textTl = null;
-  function playText() {
-    if (textTl) textTl.kill();
-    textTl = timeline({ defaults: { ease: 'inOutCubic' } })
-      .add(letterS, { y: [0, -0.5, 0.06, 0], s: [1, 1.12, 0.96, 1] }, { duration: 1.5, delay: stagger(0.09), times: [0, 0.45, 0.8, 1] })
-      .add(letterS, { ry: [0, PI2] }, { duration: 1.2, delay: stagger(0.09, { from: 'center' }), ease: 'outBack' }, '<0.25');
-  }
-
-  // ---------- async: anikit core, then start the stations ----------
-  ready.then(() => {
-    wld = world({ gravity: [0, 900], bounds: [0, 0, PW, PH], restitution: 0.45, wallRestitution: 0.5, friction: 0.04, substeps: 3 });
-    const bodies = [];
-    for (let i = 0; i < NB; i++) bodies.push({ x: 20 + (i * 37) % (PW - 40), y: 10 + ((i * 13) % 120), r: ballR[i] });
-    wld.addMany(bodies);
-    // idle loops (all anikit)
-    animate(letterS, { bob: [0, -0.1, 0] }, { duration: 3.2, repeat: -1, ease: 'inOutSine', delay: stagger(0.3) });
-    wave();
-    st.ready = true;
-  });
+  const st = { ready: false, active: false, near: -1 };
+  ready.then(() => { demos.start(); st.ready = true; });
 
   // ---------- controls & HUD ----------
   const ctl = createControls(canvas, overlayEl, {
@@ -332,174 +151,27 @@ export function createHall(canvas, overlayEl) {
 
   function use() {
     if (!st.ready || st.near < 0) return;
-    const id = ST[st.near].id;
-    if (id === 'physics') {
-      // throw: an upward blast under where you stand, plus a sideways scatter
-      // throw: a burst of 30 balls flung up from where you stand, then a scatter
-      const pz = Math.min(Math.max((ctl.pos[2] - PC.z0) * 100, 0), PW);
-      for (let k = 0; k < 30; k++) {
-        const i = (burstSeed = (burstSeed * 1103515245 + 12345) >>> 0) % NB;
-        const a = -Math.PI / 2 + ((burstSeed >>> 8) % 1000 / 1000 - 0.5) * 1.6;
-        const v = 900 + ((burstSeed >>> 4) % 700);
-        wld.setPosition(i, clampN(pz + ((k % 6) - 2.5) * 14, 12, PW - 12), PH - 12 - (k / 6 | 0) * 14);
-        wld.setVelocity(i, Math.cos(a) * v, Math.sin(a) * v);
-      }
-      wld.impulse(pz, PH, 120, 900);
-    } else if (id === 'cloud') morph(true);
-    else if (id === 'blocks') {
-      // ripple out from the block nearest to you
-      const gx = Math.round(clampN((ctl.pos[0] - 4.6) / 0.23 + 7.5, 0, GB - 1));
-      const gz = Math.round(clampN((ctl.pos[2] + 6.5) / 0.23 + 7.5, 0, GB - 1));
-      waveFrom = gz * GB + gx;
-      wave();
-    }
-    else if (id === 'text') playText();
-    else if (id === 'bench') benchIn(true);
-    else if (id === 'springs') {
-      for (let i = 0; i < NO; i++) {
-        const o = orbS[i], a = (i / NO) * PI2;
-        spring(o, { x: o.hx, y: o.hy, z: o.hz }, { stiffness: 40, damping: 5, velocity: { x: Math.cos(a) * 9, y: 6 + i, z: Math.sin(a) * 9 } });
-      }
-      orbFollow = false; orbRetarget = 0.9;
-    }
+    demos.use(st.near, time, ctl.pos[0], ctl.pos[2]);
   }
 
-  function benchIn(replay) {
-    for (let i = 0; i < BENCH.length; i++) {
-      const target = Math.log2(1 + BENCH[i][1]) / Math.log2(61);
-      animate(benchState[i], { h: replay ? [0, target] : target }, { duration: 1.1, delay: i * 0.12, ease: 'outBack' });
-    }
-  }
-
-  // ---------- per-frame updates (no allocation) ----------
   function wakeStation(i, on) {
     animate(wake[i], { v: on ? 1 : 0 }, { duration: on ? 0.6 : 0.9, ease: 'outCubic' });
-    if (on && ST[i].id === 'bench') benchIn(false);
-    if (on && st.ready) {
-      const id = ST[i].id;
-      if (id === 'blocks') wave();
-      else if (id === 'text') playText();
-      else if (id === 'physics') wld.impulse(PW / 2, PH, 140, 700);
-      else if (id === 'cloud' && cloud.mix >= 1 && cloud.idle > 2) morph();
-    }
+    demos.onWake(i, on);
   }
 
   function updateNear(px, pz) {
     let best = -1, bd = 1e9;
     for (let i = 0; i < ST.length; i++) {
-      const dx = px - ST[i].x, dz = pz - ST[i].z, d = Math.hypot(dx, dz);
+      const d = Math.hypot(px - ST[i].x, pz - ST[i].z);
       if (d < ST[i].r && d < bd) { bd = d; best = i; }
     }
     if (best !== st.near) {
       if (st.near >= 0) wakeStation(st.near, false);
       if (best >= 0) wakeStation(best, true);
       st.near = best;
-      ctl.setStation(best >= 0 ? ST[best].name : '', best >= 0 ? ST[best].hint : '');
+      if (best >= 0) ctl.setStation(ST[best].name, ST[best].hint, ST[best].feature);
+      else ctl.setStation('', '', '');
     }
-  }
-
-  function updateStations(t, dt, px, pz) {
-    // physics balls
-    if (wld && sees(cam, PC.x, (PC.y0 + PC.y1) / 2, (PC.z0 + PC.z1) / 2, 2.5)) {
-      const d = wld.data;
-      balls.count = NB;
-      for (let i = 0; i < NB; i++) {
-        const bx = d[i * 3], by = d[i * 3 + 1], r = ballR[i] * 0.02;
-        const depth = ((i * 0.618) % 1 - 0.5) * 0.24;
-        balls.put(i, PC.x + depth, PC.y1 - by * 0.01, PC.z0 + bx * 0.01, 0, r, r, r, LACQUER + 0.85,
-          ballCol[i * 3], ballCol[i * 3 + 1], ballCol[i * 3 + 2], 0.1);
-      }
-      balls.upload();
-      balls.visible = true;
-    } else balls.visible = false;
-
-    // springs: retarget at ~8 Hz while you are near
-    const sd = Math.hypot(px + 4.6, pz - 4.2);
-    orbRetarget -= dt;
-    if (sd < 5.5 && st.active && orbRetarget <= 0) {
-      orbRetarget = 0.12;
-      orbFollow = true;
-      const yaw = ctl.yaw;
-      for (let i = 0; i < NO; i++) {
-        const o = orbS[i];
-        const a = yaw + (i - (NO - 1) / 2) * 0.32;
-        const tx = px - Math.sin(a) * 1.5, tz = pz - Math.cos(a) * 1.5;
-        const ty = 1.35 + 0.28 * Math.sin(t * 1.6 + i);
-        spring(o, { x: clampN(tx, -7.3, 7.3), y: ty, z: tz }, { stiffness: o.k, damping: o.d });
-      }
-    } else if (orbFollow && (sd >= 5.5 || !st.active)) {
-      orbFollow = false;
-      for (let i = 0; i < NO; i++) {
-        const o = orbS[i];
-        spring(o, { x: o.hx, y: o.hy, z: o.hz }, { stiffness: 18 + i * 3, damping: 5 + i * 0.4 });
-      }
-    }
-    const wk = wake[0].v;
-    orbs.count = NO;
-    for (let i = 0; i < NO; i++) {
-      const o = orbS[i];
-      const fl = orbFollow ? 0 : 0.08 * Math.sin(t * 1.2 + i * 1.7);
-      const sc = o.s * (1 + 0.15 * wk);
-      const oc = ORB_PAL[i % 3];
-      orbs.put(i, o.x, o.y + fl, o.z, 0, sc, sc, sc, LACQUER + 0.95, oc[0], oc[1], oc[2], 0.05 + 0.35 * wk);
-    }
-    orbs.upload();
-
-    // blocks: sum of two waves
-    if (sees(cam, 4.6, 1, -6.5, 3.2)) {
-      blocks.visible = true;
-      blocks.count = NBk;
-      const a = waves[0], b = waves[1];
-      const sa = a ? a.stride : 0, sb = b ? b.stride : 0;
-      const da = a ? a.data : null, dbb = b ? b.data : null;
-      const ya = a ? a.channels.y : 0, ssa = a ? a.channels.s : 0;
-      const yb = b ? b.channels.y : 0, ssb = b ? b.channels.s : 0;
-      const wk2 = wake[3].v;
-      for (let i = 0; i < NBk; i++) {
-        const gx = i % GB, gz = (i / GB) | 0;
-        let y = 0, s = 0;
-        if (da) { y += da[i * sa + ya]; s += da[i * sa + ssa]; }
-        if (dbb) { y += dbb[i * sb + yb]; s += dbb[i * sb + ssb]; }
-        const h = 0.14 + Math.max(0, y) * 0.3 + s * 0.3;
-        const hue = Math.min(1, Math.max(0, y));
-        blocks.put(i, 4.6 + (gx - 7.5) * 0.23, 0.27 + h / 2 + y * 0.32, -6.5 + (gz - 7.5) * 0.23, 0,
-          0.2, h, 0.2, LACQUER + 0.7,
-          0.1 + 0.85 * hue, 0.42 - 0.08 * hue, 0.58 - 0.3 * hue, 0.02 + 0.22 * hue * (0.5 + wk2));
-      }
-      blocks.upload();
-    } else blocks.visible = false;
-
-    // letters
-    if (sees(cam, 0, 9.4, -27.5, 8)) {
-      letters.visible = true;
-      letters.count = NV;
-      const wk3 = wake[5].v;
-      for (let v = 0; v < NV; v++) {
-        const li = vox[v * 3], L = letterS[li];
-        const lx = vox[v * 3 + 1] * L.s, ly = vox[v * 3 + 2] * L.s;
-        const c = Math.cos(L.ry), s = Math.sin(L.ry);
-        const k = li / (WORD.length - 1);
-        letters.put(v, L.cx + c * lx, 7.95 + VOX / 2 + ly + L.y + L.bob, -27.5 - s * lx, L.ry,
-          VOX * 0.94 * L.s, VOX * 0.94 * L.s, VOX * 0.94 * L.s, METAL + 0.85,
-          1.0, 0.72 - 0.22 * k, 0.36 - 0.12 * k, 0.04 + 0.25 * wk3 + 0.5 * Math.min(1, Math.abs(L.y)));
-      }
-      letters.upload();
-    } else letters.visible = false;
-
-    // bench bars
-    bars.count = BENCH.length;
-    for (let i = 0; i < BENCH.length; i++) {
-      const h = Math.max(0.02, benchState[i].h * 1.6);
-      bars.put(i, 5.15, 0.95 + h / 2, 2.75 + i * 0.72, 0, 0.3, h, 0.3, LACQUER + 0.8, 1.0, 0.52 - i * 0.06, 0.16 + i * 0.05, 0.03 + 0.12 * wake[1].v);
-    }
-    bars.upload();
-
-    // cloud: auto-morph while idle
-    cloud.idle += dt;
-    if (st.ready && cloud.idle > 7 && cloud.mix >= 1) morph();
-    waveIdle += dt;
-    if (st.ready && blocks.visible && waveIdle > 3.6) { waveIdle = 0; wave(); }
-    cloud.spin += cloud.spinV.v * dt;
   }
 
   // ---------- rendering ----------
@@ -522,8 +194,8 @@ export function createHall(canvas, overlayEl) {
   function updatePools() {
     for (let i = 0; i < ST.length; i++) {
       POOLS[i * 4] = ST[i].x; POOLS[i * 4 + 1] = ST[i].z;
-      POOLS[i * 4 + 2] = ST[i].id === 'text' ? 4.5 : 2.4;
-      POOLS[i * 4 + 3] = 0.35 + 0.75 * wake[i].v;
+      POOLS[i * 4 + 2] = 2.6;
+      POOLS[i * 4 + 3] = ST[i].pool * (0.45 + 0.65 * wake[i].v);
     }
   }
   // safety net for weak GPUs: if frames stay slow, drop the mirror pass (not the resolution)
@@ -536,32 +208,23 @@ export function createHall(canvas, overlayEl) {
   }
   function drawScene(mirror) {
     setCommon(progMesh, mirror);
-    orbs.draw(); bars.draw(); balls.draw(); blocks.draw(); letters.draw();
+    demos.drawMeshes();
     archCyl.draw(); archBox.draw(); windows.draw();
-    // particles
-    if (sees(cam, CLOUD_C[0], CLOUD_C[1], CLOUD_C[2], 2.2 * CLOUD_S)) {
-      setCommon(progPts, mirror);
-      gl.uniform1f(progPts.u.uMix, cloud.mix);
-      gl.uniform3f(progPts.u.uCenter, CLOUD_C[0], CLOUD_C[1], CLOUD_C[2]);
-      gl.uniform1f(progPts.u.uSpin, cloud.spin);
-      gl.uniform1f(progPts.u.uBlast, cloud.blast);
-      gl.uniform1f(progPts.u.uScale, CLOUD_S);
-      gl.uniform1f(progPts.u.uGlow, 0.62 + 0.25 * wake[4].v);
-      gl.bindVertexArray(ptsVao);
-      gl.drawArrays(gl.POINTS, 0, mirror < 0 ? NP >> 2 : NP);
-    }
-    // benchmark panel
-    if (sees(cam, 6.2, 2.2, 4.2, 2.2)) {
-      setCommon(progTex, mirror);
-      gl.uniform1f(progTex.u.uGlow, wake[1].v);
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, panel.tex);
-      gl.uniform1i(progTex.u.uTex, 0);
-      gl.bindVertexArray(panel.vao);
-      gl.disable(gl.CULL_FACE);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      gl.enable(gl.CULL_FACE);
-    }
+    demos.drawPoints(mirror);
+    // glass: blended over everything opaque, no depth writes
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false);
+    gl.disable(gl.CULL_FACE);
+    setCommon(progMesh, mirror);
+    demos.drawGlass();
+    gl.enable(gl.CULL_FACE);
+    // glowing things: additive, no depth writes
+    gl.blendFunc(gl.ONE, gl.ONE);
+    gl.depthMask(false);
+    demos.drawGlow(mirror);
+    gl.depthMask(true);
+    gl.disable(gl.BLEND);
   }
 
   // ---------- render targets (rebuilt on resize only) ----------
@@ -697,10 +360,8 @@ export function createHall(canvas, overlayEl) {
   function prewarm() {
     const ex = cam.eye[0], ey = cam.eye[1], ez = cam.eye[2], yw = cam.yaw, pt = cam.pitch;
     cam.eye[0] = 0; cam.eye[1] = 1.7; cam.eye[2] = 12; cam.yaw = 0; cam.pitch = 0;
-    const vis = [balls.visible, blocks.visible, letters.visible];
-    balls.visible = blocks.visible = letters.visible = true;
+    demos.setVisible(true);
     render();
-    balls.visible = vis[0]; blocks.visible = vis[1]; letters.visible = vis[2];
     cam.eye[0] = ex; cam.eye[1] = ey; cam.eye[2] = ez; cam.yaw = yw; cam.pitch = pt;
   }
 
@@ -731,7 +392,7 @@ export function createHall(canvas, overlayEl) {
       cam.pitch = 0.02 * (1 - e);
       cam.fov = baseFov;
         updateCamera(cam);
-      if (st.ready) updateStations(t, Math.min(dt, 0.05), cam.eye[0], cam.eye[2]);
+      demos.update(t, Math.min(dt, 0.05), cam.eye[0], cam.eye[2], false);
       render();
     },
     enter() {
@@ -744,7 +405,7 @@ export function createHall(canvas, overlayEl) {
       st.active = false;
       ctl.disable();
       if (st.near >= 0) { wakeStation(st.near, false); st.near = -1; }
-      ctl.setStation('', '');
+      ctl.setStation('', '', '');
     },
     frame(t, dt) {
       time = t;
@@ -758,7 +419,7 @@ export function createHall(canvas, overlayEl) {
       updateCamera(cam);
       if (st.ready) {
         updateNear(ctl.pos[0], ctl.pos[2]);
-        updateStations(t, dt, ctl.pos[0], ctl.pos[2]);
+        demos.update(t, dt, ctl.pos[0], ctl.pos[2], true);
       }
       render();
     },
@@ -768,113 +429,3 @@ export function createHall(canvas, overlayEl) {
 
 function clampN(v, a, b) { return v < a ? a : v > b ? b : v; }
 
-// ---------- particle shapes ----------
-function makeShapes(n) {
-  const out = [];
-  const rnd = mulberry(7);
-  // 1. sphere shell with a soft inner glow
-  const a = new Float32Array(n * 3);
-  const ga = Math.PI * (3 - Math.sqrt(5));
-  for (let i = 0; i < n; i++) {
-    const y = 1 - (i / (n - 1)) * 2, r = Math.sqrt(1 - y * y), th = ga * i;
-    const R = 1.75 * (0.96 + 0.04 * rnd());
-    a[i * 3] = Math.cos(th) * r * R; a[i * 3 + 1] = y * R; a[i * 3 + 2] = Math.sin(th) * r * R;
-  }
-  out.push(a);
-  // 2. the word, sampled from rendered text by anikit's textPoints()
-  const tp = textPoints('anikit', n, { width: 4.2, depth: 0.35, weight: 800 });
-  out.push(tp);
-  out.TEXT = 1;
-  // 3. torus knot (2,3)
-  const b = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) {
-    const t = (i / n) * Math.PI * 2;
-    const r = 0.95 + 0.42 * Math.cos(3 * t);
-    const cx = r * Math.cos(2 * t), cy = 0.42 * Math.sin(3 * t) * 1.6, cz = r * Math.sin(2 * t);
-    const u = rnd() * Math.PI * 2, rr = 0.16 * Math.sqrt(rnd());
-    b[i * 3] = cx + Math.cos(u) * rr; b[i * 3 + 1] = cy + Math.sin(u) * rr; b[i * 3 + 2] = cz + Math.sin(u + 1.3) * rr;
-  }
-  out.push(b);
-  // 3. spiral galaxy, tilted
-  const c = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) {
-    const arm = i % 3, f = rnd();
-    const rad = 0.08 + 1.75 * Math.pow(f, 0.7);
-    const ang = arm * (Math.PI * 2 / 3) + rad * 2.6 + (rnd() - 0.5) * 0.45 / (0.4 + rad);
-    const x = Math.cos(ang) * rad, z = Math.sin(ang) * rad, y = (rnd() - 0.5) * 0.18 * (1.8 - rad);
-    c[i * 3] = x; c[i * 3 + 1] = y * 0.9 + z * 0.35; c[i * 3 + 2] = z * 0.93 - y * 0.35;
-  }
-  out.push(c);
-  // 4. cube lattice shell
-  const d = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) {
-    const face = i % 6, u = rnd() * 2 - 1, v = rnd() * 2 - 1, s = 1.15;
-    const g = (q) => Math.round(q * 6) / 6;
-    const onLine = rnd() < 0.7;
-    const uu = onLine ? (rnd() < 0.5 ? g(u) : u) : u, vv = onLine ? (Math.abs(uu - g(u)) < 1e-6 ? v : g(v)) : v;
-    let x, y, z;
-    const w = face < 3 ? 1 : -1;
-    if (face % 3 === 0) { x = w; y = uu; z = vv; } else if (face % 3 === 1) { x = uu; y = w; z = vv; } else { x = uu; y = vv; z = w; }
-    d[i * 3] = x * s; d[i * 3 + 1] = y * s; d[i * 3 + 2] = z * s;
-  }
-  out.push(d);
-  return out;
-}
-
-function mulberry(s) {
-  return () => {
-    s |= 0; s = (s + 0x6d2b79f5) | 0;
-    let t = Math.imul(s ^ (s >>> 15), 1 | s);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-// ---------- benchmark panel ----------
-function makePanel(gl, rows) {
-  const cv = document.createElement('canvas');
-  cv.width = 1024; cv.height = 1024;
-  const c = cv.getContext('2d');
-  const g = c.createLinearGradient(0, 0, 0, 1024);
-  g.addColorStop(0, '#2a2420'); g.addColorStop(1, '#1a1512');
-  c.fillStyle = g; c.fillRect(0, 0, 1024, 1024);
-  c.strokeStyle = '#b8874c'; c.lineWidth = 8; c.strokeRect(18, 18, 988, 988);
-  c.fillStyle = '#f3e9da';
-  c.font = '700 64px system-ui, -apple-system, Segoe UI, sans-serif';
-  c.fillText('Benchmarks', 64, 128);
-  c.font = '400 30px system-ui, -apple-system, Segoe UI, sans-serif';
-  c.fillStyle = '#a8977f';
-  c.fillText('From README.md · packages/anikit/scripts/*.mjs', 64, 178);
-  for (let i = 0; i < rows.length; i++) {
-    const y = 290 + i * 150;
-    c.fillStyle = '#f2a65a';
-    c.font = '800 76px system-ui, -apple-system, Segoe UI, sans-serif';
-    c.fillText(rows[i][2], 64, y);
-    c.fillStyle = '#e6dac8';
-    c.font = '400 27px system-ui, -apple-system, Segoe UI, sans-serif';
-    c.fillText(rows[i][0], 64, y + 48, 900);
-  }
-  const tex = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, tex);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv);
-  gl.generateMipmap(gl.TEXTURE_2D);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  const an = gl.getExtension('EXT_texture_filter_anisotropic');
-  if (an) gl.texParameterf(gl.TEXTURE_2D, an.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(8, gl.getParameter(an.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
-  // a standing panel behind the plinth, facing -x (toward the hall's centre)
-  const x = 6.2, z0 = 2.3, z1 = 6.1, y0 = 1.15, y1 = 4.95;
-  const v = new Float32Array([
-    x, y0, z0, 0, 1, x, y0, z1, 1, 1, x, y1, z1, 1, 0,
-    x, y0, z0, 0, 1, x, y1, z1, 1, 0, x, y1, z0, 0, 0,
-  ]);
-  const vao = gl.createVertexArray();
-  gl.bindVertexArray(vao);
-  const b = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, b);
-  gl.bufferData(gl.ARRAY_BUFFER, v, gl.STATIC_DRAW);
-  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 20, 0);
-  gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 20, 12);
-  gl.bindVertexArray(null);
-  return { tex, vao };
-}

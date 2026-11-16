@@ -72,7 +72,12 @@ vec3 shade(vec3 w, vec3 n, vec3 alb, float gloss, float metal, float emis, float
   float fr = pow(1.0 - max(dot(n, V), 0.0), 5.0);
   vec3 R = reflect(-V, n);
   vec3 col;
-  if (metal > 0.5) {
+  if (metal > 1.5) {
+    // glass: mostly reflection, tinted, with a hot specular glint
+    float spec2 = pow(max(dot(n, H), 0.0), 220.0) * (0.4 + 3.0 * wm);
+    vec3 sky = mix(vec3(0.45, 0.5, 0.58), vec3(1.05, 1.04, 1.0), smoothstep(-0.5, 0.7, R.y));
+    col = alb * lit * 0.12 + sky * (0.15 + 0.85 * fr) * alb + vec3(1.0, 0.92, 0.8) * spec2 * 2.5;
+  } else if (metal > 0.5) {
     col = alb * (lit * 0.22 + env(R) * (0.55 + 0.45 * gloss)) + alb * keyC * spec * 0.6;
   } else {
     col = alb * lit + keyC * spec * 0.25;
@@ -90,15 +95,21 @@ layout(location=1) in vec3 aNor;
 layout(location=2) in vec4 iPosRot;
 layout(location=3) in vec4 iScale;
 layout(location=4) in vec4 iCol;
+layout(location=5) in vec4 iRot2; // rotX, rotZ (applied Z, then X, then Y)
 uniform mat4 uVP;
 uniform float uMirror;
 out vec3 vW; out vec3 vN; out vec4 vCol; out float vGloss; out vec3 vL; flat out int vMat;
-void main() {
+vec3 rot(vec3 p) {
+  float cz = cos(iRot2.y), sz = sin(iRot2.y);
+  p = vec3(cz * p.x - sz * p.y, sz * p.x + cz * p.y, p.z);
+  float cx = cos(iRot2.x), sx = sin(iRot2.x);
+  p = vec3(p.x, cx * p.y - sx * p.z, sx * p.y + cx * p.z);
   float c = cos(iPosRot.w), s = sin(iPosRot.w);
-  vec3 p = aPos * iScale.xyz;
-  p = vec3(c * p.x + s * p.z, p.y, -s * p.x + c * p.z);
-  vec3 n = aNor / iScale.xyz;
-  n = vec3(c * n.x + s * n.z, n.y, -s * n.x + c * n.z);
+  return vec3(c * p.x + s * p.z, p.y, -s * p.x + c * p.z);
+}
+void main() {
+  vec3 p = rot(aPos * iScale.xyz);
+  vec3 n = rot(aNor / iScale.xyz);
   vec3 w = p + iPosRot.xyz;
   float m = floor(iScale.w * 0.5);
   vW = w; vN = n; vCol = iCol; vGloss = iScale.w - m * 2.0; vL = aPos; vMat = int(m);
@@ -146,10 +157,21 @@ void main() {
   } else if (vMat == 5) {
     float g = vn(vec2((vW.x + vW.z) * 0.5, vW.y * 14.0 + vn(vW.xz * 2.0) * 3.0));
     alb *= 0.75 + 0.45 * g;
+  } else if (vMat == 7) {
+    metal = 2.0;
   }
   vec3 wm = vec3(vW.x, vW.y * uMirror, vW.z);
   vec3 col = shade(vW, n, alb, gloss, metal, emis, length(uEye - wm));
-  o = vec4(aces(col), 1.0);
+  float alpha = 1.0;
+  if (vMat == 7) {
+    // translucent glass with bright cut edges
+    vec2 e = abs(vL.xy);
+    float edge = smoothstep(0.42, 0.5, max(e.x, e.y));
+    float fr = pow(1.0 - abs(dot(n, normalize(uEye - vW))), 3.0);
+    col += vec3(0.8, 0.92, 1.0) * edge * 0.55;
+    alpha = clamp(0.12 + 0.55 * fr + 0.55 * edge, 0.0, 0.9);
+  }
+  o = vec4(aces(col), alpha);
 }`;
 
 export const FLOOR_VS = /* glsl */ `#version 300 es

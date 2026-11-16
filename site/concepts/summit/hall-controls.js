@@ -33,9 +33,11 @@ export function createControls(canvas, overlayEl, opts) {
   card.style.cssText = 'position:absolute;left:0;right:0;bottom:13%;text-align:center;opacity:0;padding:0 16px;text-shadow:0 1px 8px rgba(255,248,236,.9)';
   const name = document.createElement('div');
   name.style.cssText = 'font-weight:700;font-size:22px;letter-spacing:.01em';
+  const feat = document.createElement('div');
+  feat.style.cssText = 'font:500 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;opacity:.6;margin-top:2px';
   const hint = document.createElement('div');
   hint.style.cssText = 'opacity:.75;margin-top:4px;font-size:14px';
-  card.append(name, hint);
+  card.append(name, feat, hint);
   const tip = document.createElement('div');
   tip.style.cssText = 'position:absolute;left:50%;bottom:7%;transform:translateX(-50%);font-size:14px;opacity:.8;white-space:nowrap;text-shadow:0 1px 8px rgba(255,248,236,.9)';
   tip.textContent = touch ? 'Left thumb to walk · drag to look' : 'Click to look around · WASD to walk · Shift to run';
@@ -48,9 +50,9 @@ export function createControls(canvas, overlayEl, opts) {
   useBtn.style.cssText = 'position:absolute;right:22px;bottom:22px;width:76px;height:76px;border-radius:50%;border:0;background:rgba(255,252,246,.9);color:#2a2018;font:700 16px system-ui,sans-serif;box-shadow:0 4px 18px rgba(80,50,20,.18);pointer-events:auto;opacity:0;display:' + (touch ? 'block' : 'none');
   hud.append(cross, card, tip, jBase, jKnob, useBtn);
 
-  function setStation(n, h) {
+  function setStation(n, h, f) {
     if (n) hideTip();
-    if (n) { name.textContent = n; hint.textContent = touch ? h.replace(/Click or E|E to/g, (m) => (m === 'E to' ? 'Use to' : 'Tap')) : h; }
+    if (n) { name.textContent = n; feat.textContent = f || ''; hint.textContent = touch ? h.replace(/Click or E|E to/g, (m) => (m === 'E to' ? 'Use to' : 'Tap')) : h; }
     animate(card, { opacity: n ? 1 : 0, y: n ? [8, 0] : 0 }, { duration: n ? 0.45 : 0.3, ease: 'outCubic' });
     animate(useBtn, { opacity: n ? 1 : 0.35, scale: n ? 1 : 0.9 }, { duration: 0.35, ease: 'outBack' });
     animate(cross, { scale: n ? 1.8 : 1 }, { duration: 0.35, ease: 'outBack' });

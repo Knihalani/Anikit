@@ -91,9 +91,9 @@ export function sphereMesh(lon = 14, lat = 9) {
   return { v: new Float32Array(v), i: new Uint16Array(idx) };
 }
 
-// ---- instanced group: 12 floats per instance: posRot(4) scaleGloss(4) colorEmis(4) ----
+// ---- instanced group: 16 floats per instance: posRotY(4) scaleGloss(4) colorEmis(4) rotXZ(4) ----
 
-export const STRIDE = 12;
+export const STRIDE = 16;
 
 export function group(gl, mesh, max) {
   const vao = gl.createVertexArray();
@@ -112,7 +112,7 @@ export function group(gl, mesh, max) {
   gl.bindBuffer(gl.ARRAY_BUFFER, inst);
   const data = new Float32Array(max * STRIDE);
   gl.bufferData(gl.ARRAY_BUFFER, data.byteLength, gl.DYNAMIC_DRAW);
-  for (let a = 0; a < 3; a++) {
+  for (let a = 0; a < 4; a++) {
     gl.enableVertexAttribArray(2 + a);
     gl.vertexAttribPointer(2 + a, 4, gl.FLOAT, false, STRIDE * 4, a * 16);
     gl.vertexAttribDivisor(2 + a, 1);
@@ -121,14 +121,15 @@ export function group(gl, mesh, max) {
   const g = {
     data, count: 0, max, n: mesh.i.length, visible: true,
     // write instance i
-    put(i, x, y, z, ry, sx, sy, sz, gloss, r, gg, b, emis) {
+    put(i, x, y, z, ry, sx, sy, sz, gloss, r, gg, b, emis, rx = 0, rz = 0) {
       const o = i * STRIDE;
+      data[o + 12] = rx; data[o + 13] = rz;
       data[o] = x; data[o + 1] = y; data[o + 2] = z; data[o + 3] = ry;
       data[o + 4] = sx; data[o + 5] = sy; data[o + 6] = sz; data[o + 7] = gloss;
       data[o + 8] = r; data[o + 9] = gg; data[o + 10] = b; data[o + 11] = emis;
     },
-    push(x, y, z, ry, sx, sy, sz, gloss, r, gg, b, emis) {
-      g.put(g.count++, x, y, z, ry, sx, sy, sz, gloss, r, gg, b, emis);
+    push(x, y, z, ry, sx, sy, sz, gloss, r, gg, b, emis, rx = 0, rz = 0) {
+      g.put(g.count++, x, y, z, ry, sx, sy, sz, gloss, r, gg, b, emis, rx, rz);
     },
     upload(n = g.count) {
       gl.bindBuffer(gl.ARRAY_BUFFER, inst);
