@@ -587,7 +587,7 @@ impl KineticPlan {
             for (ri, g) in rest.into_iter().enumerate() {
                 if !g.is_empty() {
                     let r = &l.runs[ri];
-                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: g, paint: Paint::Solid(r.color), transform });
+                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: g, paint: l.paint(r, 1.0), transform });
                 }
             }
         }
@@ -639,7 +639,7 @@ impl KineticPlan {
                 gi += 1;
             }
             let r = &l.runs[run as usize];
-            out.push(Op::Glyphs { font: r.font, size: r.size, glyphs, paint: Paint::Solid(with_alpha(r.color, alpha)), transform });
+            out.push(Op::Glyphs { font: r.font, size: r.size, glyphs, paint: l.paint(r, alpha), transform });
         }
         // Decorations under this unit.
         for d in &l.decorations {
@@ -680,7 +680,7 @@ impl KineticPlan {
             font: r.font,
             size: r.size,
             glyphs: vec![dl::Glyph { id: gid, x, y: base.y }],
-            paint: Paint::Solid(with_alpha(r.color, 0.75)),
+            paint: l.paint(r, 0.75),
             transform,
         });
     }

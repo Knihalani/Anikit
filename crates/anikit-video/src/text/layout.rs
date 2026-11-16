@@ -52,6 +52,63 @@ pub struct TextStyle {
     pub strikethrough: bool,
     /// OpenType features in CSS syntax, e.g. `"tnum" on, "ss01" on`.
     pub features: Option<String>,
+    /// Gradient fill across the whole block (overrides span colours):
+    /// `["#7c5cff", "#ff6ad5"]` or `{ "colors": [...], "angle": 135 }`.
+    pub gradient: Option<Gradient>,
+}
+
+/// A linear gradient: CSS angle convention (0 = upwards, 90 = to the right).
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct Gradient {
+    pub colors: Vec<Color>,
+    pub angle: f32,
+}
+
+impl<'de> Deserialize<'de> for Gradient {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Raw {
+            Colors(Vec<Color>),
+            Full {
+                colors: Vec<Color>,
+                #[serde(default = "deg90")]
+                angle: f32,
+            },
+        }
+        fn deg90() -> f32 {
+            90.0
+        }
+        Ok(match Raw::deserialize(d)? {
+            Raw::Colors(colors) => Gradient { colors, angle: 90.0 },
+            Raw::Full { colors, angle } => Gradient { colors, angle },
+        })
+    }
+}
+
+impl Gradient {
+    /// The paint over a `w × h` box at the origin.
+    pub fn paint(&self, w: f32, h: f32, alpha: f32) -> Paint {
+        let a = self.angle.to_radians();
+        let (dx, dy) = (a.sin(), -a.cos());
+        let half = (w * 0.5 * dx).abs() + (h * 0.5 * dy).abs();
+        let (cx, cy) = (w * 0.5, h * 0.5);
+        let n = self.colors.len().max(2) - 1;
+        Paint::Linear {
+            p0: [cx - dx * half, cy - dy * half],
+            p1: [cx + dx * half, cy + dy * half],
+            stops: self
+                .colors
+                .iter()
+                .enumerate()
+                .map(|(i, c)| {
+                    let mut v = c.0 .0;
+                    v[3] *= alpha;
+                    (i as f32 / n as f32, Rgba(v))
+                })
+                .collect(),
+        }
+    }
 }
 
 impl Default for TextStyle {
@@ -67,6 +124,7 @@ impl Default for TextStyle {
             underline: false,
             strikethrough: false,
             features: None,
+            gradient: None,
         }
     }
 }
@@ -111,9 +169,9 @@ impl Default for Fit {
     }
 }
 
-/// A block of rich text.
+/// A block of rich text. Deserialises from an object or just a string.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase", remote = "Self")]
 pub struct TextSpec {
     /// Plain text (used when `spans` is empty).
     pub text: String,
@@ -130,9 +188,48 @@ pub struct TextSpec {
     pub fit: Option<Fit>,
 }
 
+impl Serialize for TextSpec {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        TextSpec::serialize(self, s)
+    }
+}
+
+impl<'de> Deserialize<'de> for TextSpec {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let v = serde_json::Value::deserialize(d)?;
+        if let Some(s) = v.as_str() {
+            return Ok(TextSpec { text: s.to_string(), ..Default::default() });
+        }
+        TextSpec::deserialize(v).map_err(serde::de::Error::custom)
+    }
+}
+
 impl TextSpec {
     pub fn plain(text: impl Into<String>, style: TextStyle) -> Self {
         TextSpec { text: text.into(), style, ..Default::default() }
+    }
+
+    /// Expand CSS `font` shorthands (`"italic 800 72px/1.1 Inter Display"`) into fields.
+    pub fn normalized(&self) -> TextSpec {
+        let mut s = self.clone();
+        if let Some(f) = parse_font(&s.style.font) {
+            s.style.font = f.family;
+            s.style.weight = f.weight.unwrap_or(s.style.weight);
+            s.style.size = f.size.unwrap_or(s.style.size);
+            s.style.line_height = f.line_height.unwrap_or(s.style.line_height);
+            s.style.italic |= f.italic;
+        }
+        for sp in &mut s.spans {
+            if let Some(f) = sp.font.as_deref().and_then(parse_font) {
+                sp.font = Some(f.family);
+                sp.weight = sp.weight.or(f.weight);
+                sp.size = sp.size.or(f.size);
+                if f.italic {
+                    sp.italic = Some(true);
+                }
+            }
+        }
+        s
     }
 
     fn cache_key(&self) -> u64 {
@@ -217,6 +314,8 @@ pub struct TextLayout {
     pub font_size: f32,
     /// True when `max_lines` cut the text.
     pub truncated: bool,
+    /// Block-wide fill overriding run colours (gradient text).
+    pub fill: Option<Gradient>,
 }
 
 /// Unit granularity for per-unit addressing and animation.
@@ -246,6 +345,19 @@ impl TextLayout {
         (r, r.glyphs[g.index as usize])
     }
 
+    /// The paint for a run's glyphs with an extra alpha factor.
+    #[inline]
+    pub fn paint(&self, run: &GlyphRun, alpha: f32) -> Paint {
+        match &self.fill {
+            Some(g) => g.paint(self.width, self.height, alpha),
+            None => {
+                let mut c = run.color.0;
+                c[3] *= alpha;
+                Paint::Solid(Rgba(c))
+            }
+        }
+    }
+
     /// Static ops for the whole block: decorations, then glyph runs.
     pub fn ops(&self, transform: Affine, out: &mut Vec<Op>) {
         for d in &self.decorations {
@@ -256,7 +368,7 @@ impl TextLayout {
                 font: r.font,
                 size: r.size,
                 glyphs: r.glyphs.clone(),
-                paint: Paint::Solid(r.color),
+                paint: self.paint(r, 1.0),
                 transform,
             });
         }
@@ -288,6 +400,7 @@ impl FontStore {
 
     /// Lay out without touching the cache.
     pub fn layout_uncached(&self, spec: &TextSpec) -> TextLayout {
+        let spec = &spec.normalized();
         let (text, spans) = spec.joined();
         let width = spec.width.or(spec.fit.as_ref().map(|f| f.width));
         let max_lines = spec.max_lines.map(|m| m.max(1) as usize);
@@ -296,18 +409,22 @@ impl FontStore {
         if let Some(fit) = &spec.fit {
             let hi = fit.max_size.unwrap_or(base) / base;
             let lo = (fit.min_size / base).min(hi);
-            let fits = |s: f32| {
-                let l = self.parley_layout(spec, &text, &spans, s, width);
-                let lines = l.len();
-                l.height() <= fit.height + 0.01
-                    && l.lines().all(|ln| ln.metrics().advance - ln.metrics().hanging_advance <= fit.width + 0.01)
+            // Shape once at scale 1. Scaling all sizes by `s` and wrapping at `W`
+            // breaks lines exactly like scale 1 wrapped at `W / s`, so each probe
+            // is a cheap re-break instead of a re-shape.
+            let mut l1 = self.parley_layout(spec, &text, &spans, 1.0, None);
+            let mut fits = |s: f32| {
+                l1.break_all_lines(Some(fit.width / s));
+                let lines = l1.len();
+                l1.height() * s <= fit.height + 0.01
+                    && l1.lines().all(|ln| (ln.metrics().advance - ln.metrics().hanging_advance) * s <= fit.width + 0.01)
                     && max_lines.is_none_or(|m| lines <= m)
             };
             scale = if fits(hi) {
                 hi
             } else {
                 let (mut a, mut b) = (lo, hi);
-                for _ in 0..14 {
+                for _ in 0..20 {
                     let m = 0.5 * (a + b);
                     if fits(m) {
                         a = m
@@ -320,6 +437,17 @@ impl FontStore {
                 }
                 a
             };
+            // Verify at the real size (rounding and hinting are not perfectly linear).
+            for _ in 0..4 {
+                let l = self.parley_layout(spec, &text, &spans, scale, width);
+                let ok = l.height() <= fit.height + 0.5
+                    && l.lines().all(|ln| ln.metrics().advance - ln.metrics().hanging_advance <= fit.width + 0.5)
+                    && max_lines.is_none_or(|m| l.len() <= m);
+                if ok || scale <= lo {
+                    break;
+                }
+                scale = (scale * 0.985).max(lo);
+            }
         }
         let mut layout = self.parley_layout(spec, &text, &spans, scale, width);
         let mut text = text;
@@ -328,9 +456,12 @@ impl FontStore {
             if layout.len() > m {
                 truncated = true;
                 let ellipsis = spec.ellipsis.unwrap_or(true);
-                let cut_end = layout.get(m - 1).map_or(text.len(), |l| l.text_range().end);
-                // Candidate cut points: char boundaries up to the end of line m.
-                let cands: Vec<usize> = text[..cut_end].char_indices().map(|(i, _)| i).chain([cut_end]).collect();
+                let last = layout.get(m - 1);
+                let cut_end = last.as_ref().map_or(text.len(), |l| l.text_range().end);
+                let cut_start = last.as_ref().map_or(0, |l| l.text_range().start);
+                // Candidate cut points: char boundaries on the last kept line.
+                let cands: Vec<usize> =
+                    text[cut_start..cut_end].char_indices().map(|(i, _)| cut_start + i).chain([cut_end]).collect();
                 let make = |k: usize| -> String {
                     let mut t = text[..k].trim_end().to_string();
                     if ellipsis {
@@ -339,6 +470,51 @@ impl FontStore {
                     t
                 };
                 let (mut lo, mut hi) = (0usize, cands.len() - 1);
+                // Fast path: measure the last line's clusters and the ellipsis once,
+                // and cut where both fit; verified by one layout below.
+                let avail = width.unwrap_or(f32::MAX);
+                if let Some(line) = last.as_ref() {
+                    let ell_w = if ellipsis {
+                        let sp: Vec<(Range<usize>, &Span)> = spans
+                            .iter()
+                            .rfind(|(r, _)| r.start < cut_end)
+                            .map(|(_, s)| vec![(0..'…'.len_utf8(), *s)])
+                            .unwrap_or_default();
+                        self.parley_layout(spec, "…", &sp, scale, None).width()
+                    } else {
+                        0.0
+                    };
+                    let mut x = 0.0;
+                    let mut best = cut_start;
+                    for run in line.runs() {
+                        for cl in run.visual_clusters() {
+                            x += cl.advance();
+                            let end = cl.text_range().end;
+                            if x + ell_w <= avail && !cl.is_space_or_nbsp() {
+                                best = best.max(end);
+                            }
+                        }
+                    }
+                    if let Ok(i) = cands.binary_search(&best) {
+                        // Bracket the search tightly around the estimate.
+                        let t = make(cands[i]);
+                        let sp = clip_spans(&spans, t.len(), cands[i]);
+                        if self.parley_layout(spec, &t, &sp, scale, width).len() <= m {
+                            lo = i;
+                            hi = (i + 1).min(cands.len() - 1);
+                            let t2 = make(cands[hi]);
+                            let sp2 = clip_spans(&spans, t2.len(), cands[hi]);
+                            if hi == i || self.parley_layout(spec, &t2, &sp2, scale, width).len() > m {
+                                hi = i;
+                            } else {
+                                lo = hi;
+                                hi = cands.len() - 1;
+                            }
+                        } else {
+                            hi = i.saturating_sub(1);
+                        }
+                    }
+                }
                 // Largest k whose truncated text fits in m lines.
                 while lo < hi {
                     let mid = (lo + hi).div_ceil(2);
@@ -358,6 +534,7 @@ impl FontStore {
             }
         }
         let mut out = self.extract(&layout, &text);
+        out.fill = spec.style.gradient.clone().filter(|g| !g.colors.is_empty());
         out.font_size = base * scale;
         out.truncated = truncated;
         out
@@ -440,7 +617,6 @@ impl FontStore {
             }
         }
         let mut layout: Layout<Rgba> = b.build(text);
-        layout.break_all_lines(width);
         let align = match spec.align {
             Align::Left => Alignment::Left,
             Align::Center => Alignment::Center,
@@ -448,7 +624,6 @@ impl FontStore {
             Align::Justify => Alignment::Justify,
         };
         layout.set_alignment(align, AlignmentOptions { align_when_overflowing: true, ..Default::default() });
-        // Alignment applies on the next line break pass.
         layout.break_all_lines(width);
         layout
     }
@@ -637,4 +812,64 @@ fn clip_spans<'a>(spans: &[(Range<usize>, &'a Span)], new_len: usize, cut: usize
         last.0.end = new_len;
     }
     v
+}
+
+/// A parsed CSS `font` shorthand.
+#[derive(Debug, PartialEq)]
+pub struct FontShorthand {
+    pub family: String,
+    pub weight: Option<f32>,
+    pub size: Option<f32>,
+    pub line_height: Option<f32>,
+    pub italic: bool,
+}
+
+/// Parse `[italic] [weight] [size[/line-height]] family` (each part optional;
+/// weights may be numbers or names like `bold`, `semibold`, `black`).
+/// Returns `None` when the string is just a family name.
+pub fn parse_font(s: &str) -> Option<FontShorthand> {
+    let mut out = FontShorthand { family: String::new(), weight: None, size: None, line_height: None, italic: false };
+    let mut fam: Vec<&str> = Vec::new();
+    let mut any = false;
+    for t in s.split_whitespace() {
+        if !fam.is_empty() {
+            fam.push(t);
+            continue;
+        }
+        let l = t.to_lowercase();
+        let w = match l.as_str() {
+            "thin" | "hairline" => Some(100.0),
+            "extralight" | "ultralight" => Some(200.0),
+            "light" => Some(300.0),
+            "regular" | "normal" | "book" => Some(400.0),
+            "medium" => Some(500.0),
+            "semibold" | "demibold" => Some(600.0),
+            "bold" => Some(700.0),
+            "extrabold" | "ultrabold" | "heavy" => Some(800.0),
+            "black" => Some(900.0),
+            _ => None,
+        };
+        if l == "italic" || l == "oblique" {
+            out.italic = true;
+        } else if let Some(w) = w {
+            out.weight = Some(w);
+        } else if let Ok(n) = l.parse::<f32>() {
+            out.weight = Some(n);
+        } else if l.chars().next().is_some_and(|c| c.is_ascii_digit() || c == '.') {
+            let (sz, lh) = l.split_once('/').map_or((l.as_str(), None), |(a, b)| (a, Some(b)));
+            out.size = Some(sz.trim_end_matches("px").parse().ok()?);
+            if let Some(lh) = lh {
+                out.line_height = Some(lh.parse().ok()?);
+            }
+        } else {
+            fam.push(t);
+            continue;
+        }
+        any = true;
+    }
+    if !any {
+        return None;
+    }
+    out.family = if fam.is_empty() { "Inter".into() } else { fam.join(" ") };
+    Some(out)
 }

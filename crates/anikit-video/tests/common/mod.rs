@@ -15,6 +15,18 @@ fn col(c: Rgba) -> AlphaColor<Srgb> {
     AlphaColor::new(c.0)
 }
 
+fn set_paint(ctx: &mut RenderContext, p: &Paint) {
+    match p {
+        Paint::Solid(c) => ctx.set_paint(col(*c)),
+        Paint::Linear { p0, p1, stops } => {
+            let g = vello_cpu::peniko::Gradient::new_linear((p0[0] as f64, p0[1] as f64), (p1[0] as f64, p1[1] as f64))
+                .with_stops(stops.iter().map(|(o, c)| (*o, col(*c))).collect::<Vec<_>>().as_slice());
+            ctx.set_paint(g);
+        }
+        _ => {}
+    }
+}
+
 pub fn render(fonts: &FontStore, dl: &DisplayList) -> Pixmap {
     let (w, h) = (dl.width as u16, dl.height as u16);
     let mut ctx = RenderContext::new(w, h);
@@ -34,10 +46,10 @@ pub fn render(fonts: &FontStore, dl: &DisplayList) -> Pixmap {
                 ctx.set_paint(col(*c));
                 ctx.fill_path(path);
             }
-            Op::Glyphs { font, size, glyphs, paint: Paint::Solid(c), transform } => {
+            Op::Glyphs { font, size, glyphs, paint, transform } => {
                 let f = fonts.face(*font);
                 ctx.set_transform(aff(transform));
-                ctx.set_paint(col(*c));
+                set_paint(&mut ctx, paint);
                 let mut b = ctx.glyph_run(&mut res, &f.data).font_size(*size).hint(false);
                 b = b.normalized_coords(&f.coords);
                 if let Some(s) = f.skew {

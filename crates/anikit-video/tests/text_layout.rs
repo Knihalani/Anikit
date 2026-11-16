@@ -180,3 +180,31 @@ fn golden_rich_paragraph() {
     let d = common::golden(&pm, "rich_paragraph");
     assert!(d < 0.5, "golden diff {d}");
 }
+
+#[test]
+fn font_shorthand_and_string_specs() {
+    let f = parse_font("italic 800 72px/1.1 Inter Display").unwrap();
+    assert_eq!((f.family.as_str(), f.weight, f.size, f.line_height, f.italic), ("Inter Display", Some(800.0), Some(72.0), Some(1.1), true));
+    assert_eq!(parse_font("JetBrains Mono"), None);
+    assert_eq!(parse_font("bold 32px mono").unwrap().weight, Some(700.0));
+    let spec: TextSpec = serde_json::from_str(r#""Hello""#).unwrap();
+    assert_eq!(spec.text, "Hello");
+    let spec: TextSpec = serde_json::from_str(r##"{"text": "Hi", "style": {"font": "black 100px serif", "color": "#ff0", "gradient": ["#7c5cff", "#ff6ad5"]}}"##).unwrap();
+    let l = store().layout(&spec);
+    assert_eq!(l.font_size, 100.0);
+    assert!(l.fill.is_some());
+    assert!(matches!(l.paint(&l.runs[0], 1.0), anikit_video::dl::Paint::Linear { .. }));
+}
+
+#[test]
+fn golden_gradient_title() {
+    let s = store();
+    let spec: TextSpec = serde_json::from_str(r##"{"text": "Gradient titles ✨", "style": {"font": "900 64px Inter Display", "letterSpacing": -0.02, "gradient": {"colors": ["#7c5cff", "#ff6ad5", "#ffcb6b"], "angle": 100}}}"##).unwrap();
+    let l = s.layout(&spec);
+    let mut dl = DisplayList { width: 640, height: 110, background: Rgba([0.04, 0.04, 0.07, 1.0]), ops: vec![] };
+    l.ops([1.0, 0.0, 0.0, 1.0, 20.0, 15.0], &mut dl.ops);
+    let pm = common::render(s, &dl);
+    let d = common::golden(&pm, "gradient_title");
+    assert!(d < 0.5, "golden diff {d}");
+    common::save(pm, "gradient_title");
+}
