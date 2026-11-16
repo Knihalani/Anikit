@@ -87,11 +87,13 @@
     if (preview) {
       gl.clearColor(0.9, 0.86, 0.8, 1); gl.clear(gl.COLOR_BUFFER_BIT);
       const r = Math.min(canvas.width, canvas.height) * 0.36;
-      portal.x = canvas.width / 2; portal.y = canvas.height / 2; portal.r = r;
+      // top-left origin, device px (CONTRACT.md); off-centre and above the middle so a flipped y shows
+      portal.x = canvas.width * 0.42; portal.y = canvas.height * 0.42; portal.r = r;
       sc.x = Math.floor(portal.x - r); sc.y = Math.floor(portal.y - r); sc.w = sc.h = Math.ceil(2 * r);
       world.preview(t, dt, sc, portal);
     } else {
       world.frame(t, dt, input);
+      if (q.has('q')) world.setQuality?.(+q.get('q'));
     }
     if (tq) { gl.endQuery(tq.TIME_ELAPSED_EXT); queries.push(q0); }
     while (queries.length && gl.getQueryParameter(queries[0], gl.QUERY_RESULT_AVAILABLE)) {

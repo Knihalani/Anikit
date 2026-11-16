@@ -117,6 +117,7 @@ uniform vec4 uLv[${LEVELS}];   // per level: snapped centre xz, spacing, half-wi
 uniform vec4 uRip[${RIPPLES}];  // x, z, start time, amplitude (signed, spring-driven)
 uniform int uNRip;
 uniform float uFar;
+uniform float uKeep;     // quality: fraction of points kept beyond the finest levels
 out vec3 vCol;
 out float vA;
 ${SKY_GLSL}
@@ -158,6 +159,7 @@ void main() {
   ivec2 wc = ivec2(floor(p / sp + 0.5));
   uvec2 hv = pcg2(uvec2(wc + 32768) + uvec2(uint(L) * 7919u, uint(L) * 104729u));
   vec4 h = vec4(hv & 0xffffu, hv >> 16u) / 65535.0;
+  if (L > 1 && h.w > uKeep) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); gl_PointSize = 0.0; return; }
   p += (h.xy - 0.5) * sp * 0.85;
 
   P = vec3(p.x, 0.0, p.y);
@@ -211,7 +213,7 @@ ${wavesGLSL()}
   float fog = exp(-dist * 0.0024);
   float edge = smoothstep(uFar, uFar * 0.7, dist);
   float near = smoothstep(0.6, 2.4, dist);
-  vA = (0.75 + 0.6 * h.z) * tw * cover * clampFade * fog * edge * near;
+  vA = (0.75 + 0.6 * h.z) * tw * (L > 1 ? 1.0 / min(uKeep, 1.0) : 1.0) * cover * clampFade * fog * edge * near;
   vCol = col;
 }`;
 
@@ -262,6 +264,8 @@ function swellHeight(x, z, t) {
   return y;
 }
 
+export const SHARED_GL = true;
+
 export function createWorld(gl) {
   const sky = compile(gl, SKY_VS, SKY_FS);
   const pts = compile(gl, PT_VS, PT_FS);
@@ -275,7 +279,7 @@ export function createWorld(gl) {
   const rip = new Float32Array(RIPPLES * 4);
   const clip = new Float32Array(3);
   const vpRect = new Float32Array(4);
-  let W = 1, H = 1, dpr = 1;
+  let W = 1, H = 1, dpr = 1, quality = 0;
 
   // ripples: a ring of slots; each amplitude is a plain object an anikit spring() drives
   const slots = [];
@@ -370,7 +374,8 @@ export function createWorld(gl) {
     gl.uniform3fv(pts.u.uEye, eye);
     gl.uniform1f(pts.u.uT, t);
     gl.uniform1f(pts.u.uSizeK, (0.5 * h) / tanY);
-    gl.uniform1f(pts.u.uMaxPx, Math.min(22 * dpr, h * 0.04));
+    gl.uniform1f(pts.u.uMaxPx, Math.min((quality ? 12 : 22) * dpr, h * 0.04));
+    gl.uniform1f(pts.u.uKeep, quality > 1 ? 0.5 : 1.01);
     gl.uniform4fv(pts.u.uLv, lv);
     gl.uniform4fv(pts.u.uRip, rip);
     gl.uniform1i(pts.u.uNRip, nr);
@@ -404,7 +409,8 @@ export function createWorld(gl) {
     exit() { entered = false; },
 
     // the world seen through a portal: a slow look around, with rain-like drops showing the ripples
-    preview(t, dt, sc, portal) {
+    // rect and portal: device px, top-left origin (CONTRACT.md); GL wants bottom-left
+    preview(t, dt, rect, portal) {
       nowT = t;
       const yaw = Math.sin(t * 0.07) * 0.35, pitch = -0.1 + Math.sin(t * 0.11) * 0.03;
       camera(0, 1.7, 0, yaw, pitch, t, dt);
@@ -414,12 +420,14 @@ export function createWorld(gl) {
         const d = 5 + Math.random() * 16, a = yaw + (Math.random() - 0.5) * 0.9;
         ripple(eye[0] - Math.sin(a) * d, eye[2] - Math.cos(a) * d, 0.25 + Math.random() * 0.25);
       }
+      const bh = gl.drawingBufferHeight;
+      const x = Math.floor(rect.x), w = Math.ceil(rect.w), h = Math.ceil(rect.h), y = bh - Math.floor(rect.y) - h;
       gl.enable(gl.SCISSOR_TEST);
-      gl.scissor(sc.x, sc.y, sc.w, sc.h);
-      clip[0] = portal.x; clip[1] = portal.y; clip[2] = portal.r;
-      draw(t, sc.x, sc.y, sc.w, sc.h, true);
+      gl.scissor(x, y, w, h);
+      clip[0] = portal.x; clip[1] = bh - portal.y; clip[2] = portal.r;
+      draw(t, x, y, w, h, true);
       gl.disable(gl.SCISSOR_TEST);
-      gl.viewport(0, 0, W, H);
+      gl.viewport(0, 0, gl.drawingBufferWidth, bh);
     },
 
     frame(t, dt, input) {
@@ -443,8 +451,11 @@ export function createWorld(gl) {
         ripple(eye[0] + f[0] * d, eye[2] + f[2] * d, 0.75);
       }
       if (input.wheel) { /* no zoom: the sea is about standing still */ }
-      draw(t, 0, 0, W, H, false);
+      draw(t, 0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, false);
     },
+
+    // 0 full · 1 smaller sprites (less fill) · 2 also thins the far lattice
+    setQuality(level) { quality = level | 0; },
   };
 
   // pre-warm: compile and run both programs once into a 1×1 scissor so the first real frame is clean
