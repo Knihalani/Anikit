@@ -5,6 +5,7 @@ import {
 import { buildHeadphones, yieldTask, CUP_Y } from './model.js';
 
 const qs = new URLSearchParams(location.search);
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches; // no idle spin, a gentler wave
 const canvas = document.getElementById('stage');
 await ready;
 
@@ -223,7 +224,7 @@ const labels = LABELS.map(([group, name]) => {
   sub.textContent = FINISHES[part.finish].label;
   labelLayer.appendChild(el);
   const hc = htmlCanvas(el, { target: s.gl, live: true, scale: Math.min(2, devicePixelRatio || 1) });
-  return { group, part, el, sub, hc, tex: null, x: 0, y: 0, w: 0, h: 0, ax: 0, ay: 0, o: 0, side: 1 };
+  return { group, part, el, sub, hc, minor: group === 'slider' || group === 'yoke' || group === 'bandpad', tex: null, x: 0, y: 0, w: 0, h: 0, ax: 0, ay: 0, o: 0, side: 1 };
 });
 await Promise.all(labels.map((l) => l.hc.ready.catch(() => null)));
 
@@ -350,11 +351,12 @@ function layoutLabels() {
       const reach = 34 + 14 * lo;
       l.x = l.side < 0 ? l.ax - reach - l.w : l.ax + reach;
       l.y = l.ay - l.h * 0.5 - 18;
-      l.o = lo;
+      if (l.x < 4) l.x = 4; else if (l.x + l.w > cssW - 4) l.x = cssW - 4 - l.w;
+      l.o = cssW < 560 && l.minor ? 0 : lo;
     }
     for (let side = -1; side <= 1; side += 2) {
       let n = 0;
-      for (const l of labels) if (l.side === side) sideBuf[n++] = l;
+      for (const l of labels) if (l.side === side && l.o > 0) sideBuf[n++] = l;
       for (let i = 1; i < n; i++) { const x = sideBuf[i]; let j = i - 1; while (j >= 0 && sideBuf[j].y > x.y) { sideBuf[j + 1] = sideBuf[j]; j--; } sideBuf[j + 1] = x; }
       for (let i = 1; i < n; i++) { const a = sideBuf[i - 1], b = sideBuf[i]; const min = a.y + a.h - 22; if (b.y < min) b.y = min; }
     }
@@ -369,7 +371,7 @@ const copyFn = (k, o) => {
   let a = Math.min(1, Math.max(0, (rig.appear - delay) / 0.35));
   a = a * a * (3 - 2 * a) * (1 + 0.25 * Math.sin(Math.PI * a));
   const d = Math.hypot(ox, oz), ph = d * 0.055 - waveT * 2.1 + ph0 * 0.8;
-  const w = rig.wave;
+  const w = calm ? rig.wave * 0.25 : rig.wave;
   const h = w * (Math.sin(ph) * 3.4 + 2);
   const yaw = w * (0.6 * Math.sin(ph * 0.5 + ph0) + d * 0.004), pitch = w * 0.32 * Math.cos(ph);
   // Rotate this part's centre with the copy (R = Ry(yaw)·Rx(pitch), as compose() does).
@@ -390,7 +392,7 @@ function update(dtMs) {
   const p = Math.min(1, Math.max(0, progress.get()));
   if (p !== lastP) { tl.seek(p * TL_LEN); lastP = p; }
   orbit.drift += ((!drag && p < 0.02 ? 1 : 0) - orbit.drift) * Math.min(1, dt * 1.5);
-  if (!drag) orbit.yaw += orbit.drift * dt * 0.12;
+  if (!drag && !calm) orbit.yaw += orbit.drift * dt * 0.12;
   if (hoverQueued) pickHover();
 
   const lift = rig.lift;
@@ -406,9 +408,12 @@ function update(dtMs) {
   }
 
   // Camera: orbit, blended into the crane path for the finale.
-  const yaw = orbit.yaw + rig.yawOff, pitch = orbit.pitch + rig.pitchOff, d = rig.dist;
-  let ex = Math.sin(yaw) * Math.cos(pitch) * d, ey = rig.ty + Math.sin(pitch) * d, ez = Math.cos(yaw) * Math.cos(pitch) * d;
-  let ty = rig.ty;
+  // Narrow screens: pull back so the width fits, and lift the object above the caption.
+  const aspect = cssW / cssH, narrow = Math.max(0, Math.min(1, (1.2 - aspect) / 0.6));
+  const fitK = aspect < 1.25 ? Math.pow(1.25 / aspect, 0.85) : 1;
+  const yaw = orbit.yaw + rig.yawOff, pitch = orbit.pitch + rig.pitchOff, d = rig.dist * fitK;
+  let ex = Math.sin(yaw) * Math.cos(pitch) * d, ey = rig.ty - narrow * 9 * (1 - rig.fin) + Math.sin(pitch) * d, ez = Math.cos(yaw) * Math.cos(pitch) * d;
+  let ty = rig.ty - narrow * 9 * (1 - rig.fin);
   const fin = rig.fin;
   if (fin > 0) {
     const sc = fin * (CRANE_N - 1), k = Math.min(CRANE_N - 2, Math.floor(sc)), f = sc - k, o = k * 3;
