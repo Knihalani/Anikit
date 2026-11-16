@@ -23,6 +23,8 @@ export interface Exports {
   ak_easing_css(id: number, tolerance: number): number;
   ak_easing_sample(id: number, n: number): number;
   ak_anim_create(len: number): number;
+  ak_anim_create_many(len: number, n: number, stride: number, group: number): number;
+  ak_values_ptrs(n: number): void;
   ak_group_create(
     delay: number, duration: number, iterations: number, direction: number,
     endDelay: number, easing: number, flags: number, auto: number,

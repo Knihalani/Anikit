@@ -32,7 +32,7 @@ fn panic(_: &core::panic::PanicInfo) -> ! {
 use anikit_core::color::{self, ColorSpace};
 use anikit_core::css;
 use anikit_core::easing::Easing;
-use anikit_core::engine::{Engine, Error, Handle, TrackKind, TrackSpec, LINEAR};
+use anikit_core::engine::{EaseIds, Engine, Error, Handle, TrackKind, TrackRef, LINEAR};
 use anikit_core::morph;
 use anikit_core::path::{Path, PathLut};
 use anikit_core::spring::SpringParams;
@@ -274,50 +274,101 @@ pub extern "C" fn ak_anim_create(len: u32) -> u32 {
     if b.len() < 8 {
         return 0;
     }
-    let timing = read_timing(b);
-    let fl = b[6] as u8;
+    let Some(specs) = parse_tracks(b, &s.luts) else { return 0 };
+    handle(s.engine.create_anim_ref(read_timing(b), &specs, b[6] as u8))
+}
+
+/// Parse the track list of an encoded animation (after its 8-value header),
+/// borrowing the buffer. `None` if the encoding is malformed.
+fn parse_tracks<'a>(b: &'a [f64], luts: &'a [Option<PathLut>]) -> Option<Vec<TrackRef<'a>>> {
     let ntracks = b[7] as usize;
     let mut at = 8;
-    let mut specs: Vec<TrackSpec> = Vec::with_capacity(ntracks);
-    let take = |n: usize, at: &mut usize| -> Option<Vec<f64>> {
-        if *at + n > b.len() {
+    let mut specs: Vec<TrackRef<'a>> = Vec::with_capacity(ntracks.min(b.len()));
+    let take = |n: usize, at: &mut usize| -> Option<&'a [f64]> {
+        let end = at.checked_add(n)?;
+        if end > b.len() {
             return None;
         }
-        let v = b[*at..*at + n].to_vec();
-        *at += n;
+        let v = &b[*at..end];
+        *at = end;
         Some(v)
     };
     for _ in 0..ntracks {
-        let Some(h) = take(5, &mut at) else { return 0 };
+        let h = take(5, &mut at)?;
         let (kind_code, arg, ch, nkf, has_off) = (h[0] as u32, h[1], h[2] as usize, h[3] as usize, h[4] != 0.0);
-        let offsets = if has_off {
-            match take(nkf, &mut at) {
-                Some(v) => v,
-                None => return 0,
-            }
-        } else {
-            Vec::new()
-        };
-        let Some(values) = take(nkf * ch.max(1), &mut at) else { return 0 };
-        let Some(ne) = take(1, &mut at) else { return 0 };
-        let Some(eases) = take(ne[0] as usize, &mut at) else { return 0 };
-        let easings: Vec<u32> = eases.iter().map(|&e| if e < 0.0 { LINEAR } else { e as u32 }).collect();
+        let offsets = if has_off { take(nkf, &mut at)? } else { &[][..] };
+        let values = take(nkf.checked_mul(ch.max(1))?, &mut at)?;
+        let ne = take(1, &mut at)?;
+        let eases = take(ne[0] as usize, &mut at)?;
         let (kind, path) = match kind_code {
             1 => (TrackKind::Color(ColorSpace::from_u8(arg as u8)), None),
             2 => (TrackKind::Discrete, None),
             4 => (TrackKind::Matrix, None),
-            3 => {
-                let lut = s.luts.get(arg as usize).and_then(|l| l.clone());
-                if lut.is_none() {
-                    return 0;
-                }
-                (TrackKind::Path, lut)
-            }
+            3 => (TrackKind::Path, Some(luts.get(arg as usize)?.as_ref()?)),
             _ => (TrackKind::Number, None),
         };
-        specs.push(TrackSpec { kind, channels: ch.max(1), offsets, values, easings, path });
+        specs.push(TrackRef { kind, channels: ch.max(1), offsets, values, easings: EaseIds::F64(eases), path });
     }
-    handle(s.engine.create_anim(timing, &specs, fl))
+    Some(specs)
+}
+
+/// Create `n` animations with one layout: the f64 buffer holds an
+/// `ak_anim_create` encoding (`len` values; the first animation), then, for
+/// each further animation, its track values (`stride` values: every track's
+/// values in order, nothing else). Timing, flags, offsets and easings are
+/// shared. With `group` non-zero, each one is added to that group (start 0).
+/// Writes the `n` handles to the start of the f64 buffer and returns `n`,
+/// or 0 (nothing created) if the input is malformed.
+#[no_mangle]
+pub extern "C" fn ak_anim_create_many(len: u32, n: u32, stride: u32, group: u32) -> u32 {
+    let s = st();
+    let (len, n, stride) = (len as usize, n as usize, stride as usize);
+    let total = n.saturating_sub(1).checked_mul(stride).and_then(|x| x.checked_add(len));
+    let Some(total) = total.filter(|&t| t <= s.f64_buf.len() && len >= 8 && n > 0) else { return 0 };
+    let mut out: Vec<u32> = Vec::with_capacity(n);
+    {
+        let buf = &s.f64_buf[..total];
+        let b = &buf[..len];
+        let Some(mut specs) = parse_tracks(b, &s.luts) else { return 0 };
+        if specs.iter().map(|t| t.values.len()).sum::<usize>() != stride {
+            return 0;
+        }
+        let (timing, fl) = (read_timing(b), b[6] as u8);
+        for i in 0..n {
+            if i > 0 {
+                let mut at = len + (i - 1) * stride;
+                for t in specs.iter_mut() {
+                    let k = t.values.len();
+                    t.values = &buf[at..at + k];
+                    at += k;
+                }
+            }
+            let r = s.engine.create_anim_ref(timing, &specs, fl);
+            let r = match r {
+                Ok(h) if group != 0 => match s.engine.group_add(group, h, 0.0) {
+                    Ok(()) => Ok(h),
+                    Err(e) => {
+                        let _ = s.engine.release(h);
+                        Err(e)
+                    }
+                },
+                r => r,
+            };
+            match r {
+                Ok(h) => out.push(h),
+                Err(_) => {
+                    for &h in &out {
+                        let _ = s.engine.release(h);
+                    }
+                    return 0;
+                }
+            }
+        }
+    }
+    for (i, &h) in out.iter().enumerate() {
+        s.f64_buf[i] = h as f64;
+    }
+    n as u32
 }
 
 #[no_mangle]
@@ -527,6 +578,16 @@ pub extern "C" fn ak_clear() {
 #[no_mangle]
 pub extern "C" fn ak_values_ptr(h: u32) -> *const f64 {
     st().engine.values_ptr(h)
+}
+/// `ak_values_ptr` of `n` handles at once: the f64 buffer holds the handles;
+/// each is replaced by its pointer (0 if invalid).
+#[no_mangle]
+pub extern "C" fn ak_values_ptrs(n: u32) {
+    let s = st();
+    let n = (n as usize).min(s.f64_buf.len());
+    for i in 0..n {
+        s.f64_buf[i] = s.engine.values_ptr(s.f64_buf[i] as u32) as usize as f64;
+    }
 }
 #[no_mangle]
 pub extern "C" fn ak_values_len(h: u32) -> u32 {

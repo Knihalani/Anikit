@@ -19,7 +19,7 @@ import {
 } from './values';
 import {
   Target, Targets, toTargets, classify, Kind, readValue, writer, convertUnit, defaultUnit, isElement,
-  claimAll, unclaimAll, Owner, stateOf, markDirty, transformUnit, TargetState, snapshot, composeTransform, kebab, computed, camel,
+  claimAll, unclaimAll, Owner, stateOf, TEXT_PROPS, markDirty, transformUnit, TargetState, snapshot, composeTransform, kebab, computed, camel,
 } from './props';
 import { Playable, Callbacks, Linked } from './playable';
 import { warn, didYouMean, describe, cssPropertyNames, suggest, warningsOn, checkSeconds, checkTargets } from './debug';
@@ -377,14 +377,14 @@ function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner, Slots | 
           'H', 'T',
           'return function run(R,U,up,i,n,f,w){"use strict";' +
             'const v0=w.ak_out0_ptr()>>>3,ep=w.ak_out0_epoch_ptr()>>>2,e0=U[ep];' +
-            `for(;i<n;i++){if(U[ep]!==e0)break;const h=U[up+i],x=h&${INDEX_MASK};if(H[x]!==h)break;` +
+            `for(;i<n;i++){if(U[ep]!==e0)break;const h=U[up+i]|0,x=h&${INDEX_MASK};if(H[x]!==h)break;` +
             `T[x][${JSON.stringify(keys[0])}]=f[v0+x];}return i;}`,
         )(slots.h, slots.t)
         : new Function(
           'H', 'T', 'A',
           'return function run(R,U,up,i,n,f,w){"use strict";' +
             'for(;i<n;i++){if(f.length===0)break;' +
-            `const h=U[up+i],x=h&${INDEX_MASK};if(H[x]!==h)break;` +
+            `const h=U[up+i]|0,x=h&${INDEX_MASK};if(H[x]!==h)break;` +
             `const t=T[x],a=A[x];${stores}}return i;}`,
         )(slots.h, slots.t, slots.a)
     ) as Runner;
@@ -395,6 +395,22 @@ function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner, Slots | 
     codegen = false;
     return null;
   }
+}
+
+/**
+ * Testing hook: entries of the compact writers' dense tables (`Slots`) whose
+ * node is no longer alive. Always 0 unless a Part outlived its node without
+ * leaving its table (a stale entry is written through if the slot's handle
+ * comes round again).
+ */
+export function _staleSlots(): number {
+  const w = core();
+  let n = 0;
+  compactCache.forEach((c) => {
+    const s = c[4];
+    if (s !== null) for (let x = 0; x < s.h.length; x++) if (s.h[x] !== 0 && !w.ak_alive(s.h[x])) n++;
+  });
+  return n;
 }
 
 /** `false`: formatted single-property Parts take the general binding loop (tests compare both). */
@@ -658,6 +674,17 @@ export function _setNumberTracks(on: boolean): boolean {
   numberTracks = on;
   return prev;
 }
+/** `false`: never create a multi-target animation's nodes in one batch (tests compare both). */
+let batchCreate = true;
+/** `_fast`'s value scratch (JS memory, not the core's), and whether a call is using it. */
+let fastVals = new Float64Array(64);
+let fastBusy = false;
+/** Testing hook: turn batched creation off/on; returns the previous state. */
+export function _setBatchCreate(on: boolean): boolean {
+  const prev = batchCreate;
+  batchCreate = on;
+  return prev;
+}
 /** `false`: never pack a multi-target animation's group in the core (tests compare both). */
 let packGroups = true;
 /** Testing hook: turn group packing off/on for animations created afterwards; returns the previous state. */
@@ -667,6 +694,119 @@ export function _setPackGroups(on: boolean): boolean {
   return prev;
 }
 
+
+/**
+ * `Animation._fast`'s reads: each target's current values (and `revert()`
+ * values into `rp`), and every target's keyframe values into `vals`.
+ * False if a target is an element or a needed current value is not a number.
+ */
+function readFast(
+  targets: Target[], keys: string[], specs: PropSpec[], cur: boolean[], rp: unknown[], vals: Float64Array,
+  chain: Chain | undefined,
+): boolean {
+  const n = targets.length, np = keys.length;
+  for (let i = 0, r = 0, at = 0; i < n; i++) {
+    const t = targets[i] as any;
+    if (isElement(t)) return false;
+    // A timeline's earlier steps set where this one starts.
+    const ch = chain !== undefined ? chain.get(t) : undefined;
+    for (let pi = 0; pi < np; pi++) {
+      const key = keys[pi];
+      const v = t[key];
+      rp[r] = t;
+      rp[r + 1] = key;
+      rp[r + 2] = v;
+      r += 3;
+      let cn = 0;
+      if (cur[pi]) {
+        const c = ch !== undefined ? ch.get(key) : undefined;
+        const x = c !== undefined ? c : v;
+        if (typeof x !== 'number') return false;
+        cn = x;
+      }
+      const raw = specs[pi].values as Array<number | null>;
+      if (raw.length === 1) {
+        vals[at++] = cn;
+        vals[at++] = raw[0] === null || raw[0] === undefined ? cn : raw[0];
+      } else {
+        for (let k = 0; k < raw.length; k++) {
+          const x = raw[k];
+          vals[at++] = x === null || x === undefined ? cn : x;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+const seen = new Set<unknown>();
+/** Whether a target list holds one target more than once. */
+function hasDuplicates(targets: Target[]): boolean {
+  let dup = false;
+  for (let i = 0; i < targets.length && !dup; i++) {
+    if (seen.has(targets[i])) dup = true;
+    else seen.add(targets[i]);
+  }
+  seen.clear();
+  return dup;
+}
+
+/** `Animation._fast`: each value's last keyframe is where the timeline's next step starts. */
+function fastChain(chain: Chain, targets: Target[], keys: string[], nks: number[], vals: Float64Array): void {
+  for (let i = 0, v = 0; i < targets.length; i++) {
+    for (let pi = 0; pi < keys.length; pi++) {
+      v += nks[pi];
+      chainSet(chain, targets[i], keys[pi], vals[v - 1]);
+    }
+  }
+}
+
+/** `Animation._fast`: one Part per target, handles read from the f64 buffer at `base`. */
+function fastParts(
+  an: Animation, targets: Target[], keys: string[], base: number, tm: readonly [number, number, number, number],
+  claims: boolean, upd: boolean,
+): void {
+  const n = targets.length, np = keys.length;
+  const parts = an._parts;
+  for (let i = 0; i < n; i++) {
+    const target = targets[i];
+    const part = new Part(an, claims, an);
+    part.upd = upd;
+    // (Packed, like the general path's arrays: a holey one makes every
+    // loop over bindings polymorphic.)
+    const b: Binding[] = [];
+    for (let pi = 0; pi < np; pi++) b.push(new Binding(target, keys[pi], pi, pi, M_PROP, null, keys[pi], '', 0, -1, null, null));
+    // (Exact-size copy: the pushes leave spare capacity the Part would keep.)
+    part.b = b.slice();
+    part.tm = tm;
+    // (int32, as wasm returns handles: keeps the field a small integer.)
+    part.h = F64[base + i] | 0;
+    parts.push(part);
+  }
+}
+
+/** `Animation._fast`: pack the group, then read every part's output location. */
+function fastPack(w: ReturnType<typeof core>, g: number, parts: Part[], base: number): void {
+  const n = parts.length;
+  // Output locations, after packing (the pack moves them).
+  if (packGroups) w.ak_group_pack(g);
+  for (let i = 0; i < n; i++) F64[base + i] = parts[i].h >>> 0;
+  w.ak_values_ptrs(n);
+  views();
+  for (let i = 0; i < n; i++) parts[i].at = F64[base + i] >>> 3;
+}
+
+/** `Animation._fast`: register the parts and claim their properties (may release older owners). */
+function fastLink(an: Animation, targets: Target[], claims: boolean): void {
+  const parts = an._parts;
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    register(part);
+    if (claims) claimAll(targets[i], part.b, part);
+    an._live++;
+    an._links.push(part);
+  }
+}
 
 /** Per-timeline/animation chain of last written values (timeline sequencing). */
 export type Chain = WeakMap<object, Map<string, Scalar>>;
@@ -853,10 +993,12 @@ export class Animation extends Playable {
   _parts: Part[] = [];
   private _group = 0;
   /** Parts that still write at least one property (see `_partEmpty`). */
-  private _live = 0;
+  _live = 0;
   /** The group's node record (registered while the group exists). */
   private _grec: NodeRecord | null = null;
   private _immediate = false;
+  /** Set while `_build` runs (see `_partEmpty`). */
+  private _building = false;
   /** Restorers for `revert()` (captured before the first write). */
   _restore: Array<() => void> = [];
   /**
@@ -898,6 +1040,17 @@ export class Animation extends Playable {
   }
 
   private _build(targetsIn: Targets, props: Map<string, PropSpec>, o: AnimateOptions, ctx: BuildContext): void {
+    this._building = true;
+    try {
+      this._build1(targetsIn, props, o, ctx);
+    } finally {
+      this._building = false;
+    }
+    // Every part lost its properties to a later part of the same call.
+    if (this._parts.length > 0 && this._live <= 0) this.kill();
+  }
+
+  private _build1(targetsIn: Targets, props: Map<string, PropSpec>, o: AnimateOptions, ctx: BuildContext): void {
     const w = core();
     const targets = (this.targets = toTargets(targetsIn));
     const n = targets.length;
@@ -970,7 +1123,9 @@ export class Animation extends Playable {
       return idx;
     };
 
-    for (let i = 0; i < n; i++) {
+    const fast = batchCreate && n > 0 && !ctx.set && (o.repeatDelay ?? 0) <= 0 &&
+      this._fast(targets, keys, specs, posts, dynamic, o, ctx, claims, reduce, repeat, direction, fill, easeList, baseEase);
+    if (!fast) for (let i = 0; i < n; i++) {
       const target = targets[i];
       const part = new Part(this, claims, this);
       part.upd = !!o.onUpdate;
@@ -1161,11 +1316,14 @@ export class Animation extends Playable {
       this._h = p.h;
       p.event = rootEvent;
     } else if (this._parts.length > 1) {
-      this._group = w.ak_group_create(0, 0, 1, 0, 0, -1, FL_FILL_BACKWARDS | FL_FILL_FORWARDS, 1);
-      for (const p of this._parts) w.ak_group_add(this._group, p.h, 0);
-      // Children of one layout and timing are evaluated together; their
-      // outputs then live in the pack.
-      if (packGroups && w.ak_group_pack(this._group)) for (const p of this._parts) p.at = w.ak_values_ptr(p.h) >>> 3;
+      // (`_fast` creates its group, adds and packs its children itself.)
+      if (!fast) {
+        this._group = w.ak_group_create(0, 0, 1, 0, 0, -1, FL_FILL_BACKWARDS | FL_FILL_FORWARDS, 1);
+        for (const p of this._parts) w.ak_group_add(this._group, p.h, 0);
+        // Children of one layout and timing are evaluated together; their
+        // outputs then live in the pack.
+        if (packGroups && w.ak_group_pack(this._group)) for (const p of this._parts) p.at = w.ak_values_ptr(p.h) >>> 3;
+      }
       this._h = this._group;
       const rec: NodeRecord & Linked = {
         h: this._group, at: 0, ctl: this,
@@ -1195,6 +1353,138 @@ export class Animation extends Playable {
       }
       wake();
     }
+  }
+
+  /**
+   * Batched creation for the common multi-target case: plain objects, plain
+   * numbers (no per-target values, units or post-processing), one timing.
+   * Reads every current value first (getters are user code; see the
+   * scratch-buffer rule), then creates every target's node in one
+   * `ak_anim_create_many` call, without per-target track objects. Returns
+   * false, having changed nothing, when the call does not qualify.
+   */
+  private _fast(
+    targets: Target[], keys: string[], specs: PropSpec[], posts: Array<unknown>, dynamic: boolean[],
+    o: AnimateOptions, ctx: BuildContext, claims: boolean, reduce: boolean, repeat: number, direction: number, fill: number,
+    easeList: readonly unknown[] | null, baseEase: EasingInput | undefined,
+  ): boolean {
+    const n = targets.length, np = keys.length;
+    if (np === 0 || np > 16) return false;
+    if ((o.duration !== undefined && typeof o.duration !== 'number') || (o.delay !== undefined && typeof o.delay !== 'number')) return false;
+    // Per property: its keyframes (numbers or null), count, offsets, easings.
+    const nks: number[] = [], cur: boolean[] = [];
+    let stride = 0, hasExplicitFrom = false;
+    for (let pi = 0; pi < np; pi++) {
+      const spec = specs[pi];
+      if (spec.raw !== undefined || posts[pi] !== null || dynamic[pi] || TEXT_PROPS.has(keys[pi])) return false;
+      const raw = spec.values;
+      if (raw.length === 0) return false;
+      for (let k = 0; k < raw.length; k++) {
+        const v = raw[k];
+        if (v !== null && v !== undefined && typeof v !== 'number') return false;
+      }
+      const nk = raw.length === 1 ? 2 : raw.length;
+      nks.push(nk);
+      cur.push(usesCurrent(raw));
+      if (raw[0] !== null && raw[0] !== undefined && raw.length > 1) hasExplicitFrom = true;
+      stride += nk;
+    }
+    // A target listed twice in a timeline step starts its second part where
+    // the first ends (the general path chains them one by one).
+    if (ctx.chain && n > 1 && hasDuplicates(targets)) return false;
+    // Current values (and the values `revert()` restores), read once.
+    // (`vals` is shared between calls unless a getter re-enters.)
+    const rp: unknown[] = new Array(3 * n * np);
+    const busy = fastBusy;
+    let vals = fastVals;
+    if (busy) vals = new Float64Array(n * stride);
+    else if (vals.length < n * stride) vals = fastVals = new Float64Array(Math.max(n * stride, 2 * vals.length));
+    fastBusy = true;
+    let ok: boolean;
+    try {
+      ok = readFast(targets, keys, specs, cur, rp, vals, ctx.chain);
+    } finally {
+      fastBusy = busy;
+    }
+    if (!ok) return false;
+    if (warningsOn()) for (let pi = 0; pi < np; pi++) checkValues(keys[pi], Kind.Prop, specs[pi].values, targets[0]);
+    // Offsets and easing ids per property (as `addTrack` sets them).
+    const offs: Array<number[] | undefined> = [], eases: number[][] = [];
+    let len = 8;
+    for (let pi = 0; pi < np; pi++) {
+      const spec = specs[pi], nk = nks[pi];
+      const of = spec.offsets && spec.offsets.length === nk ? spec.offsets : undefined;
+      offs.push(of);
+      const e = spec.ease ?? (easeList ? easeList : baseEase);
+      let ids: number[];
+      if (Array.isArray(e) && !(e.length === 4 && typeof e[0] === 'number')) {
+        ids = [];
+        for (let k = 0; k < nk - 1; k++) ids.push(easingId((e as EasingInput[])[k] ?? baseEase));
+      } else ids = singleEasing(easingId(e as EasingInput));
+      eases.push(ids);
+      len += 5 + (of ? nk : 0) + nk + 1 + ids.length;
+    }
+    // Timing (the same for every target).
+    const easeForDur = easeList ? easeList[0] : baseEase;
+    let dur: number;
+    if (reduce) dur = 0;
+    else if (o.duration !== undefined) dur = o.duration as number;
+    else if (isSpringEase(easeForDur)) {
+      const d = easingDuration(easingId(easeForDur as EasingInput));
+      dur = d > 0 ? d : 0.5;
+    } else dur = 0.5;
+    const delay = reduce ? 0 : ((o.delay as number | undefined) ?? 0);
+    const durMs = Math.max(0, dur * 1000);
+    let flags = fill;
+    if (o.immediateRender ?? (!ctx.child && hasExplicitFrom && delay > 0)) {
+      flags |= FL_IMMEDIATE;
+      this._immediate = true;
+    }
+    // Encode: the first target in full, then the others' values only.
+    // (Nothing below calls user code until the call has consumed the buffer.)
+    const base = f64Buf(len + (n - 1) * stride);
+    let at = base;
+    const f = F64;
+    f[at++] = delay * 1000;
+    f[at++] = durMs;
+    f[at++] = repeat + 1;
+    f[at++] = direction;
+    f[at++] = (o.endDelay ?? 0) * 1000;
+    f[at++] = -1;
+    f[at++] = flags;
+    f[at++] = np;
+    for (let pi = 0, v = 0; pi < np; pi++) {
+      const nk = nks[pi], of = offs[pi], ids = eases[pi];
+      f[at++] = TRACK_NUMBER;
+      f[at++] = 0;
+      f[at++] = 1;
+      f[at++] = nk;
+      f[at++] = of ? 1 : 0;
+      if (of) for (let k = 0; k < nk; k++) f[at++] = of[k];
+      for (let k = 0; k < nk; k++) f[at++] = vals[v++];
+      f[at++] = ids.length;
+      for (let k = 0; k < ids.length; k++) f[at++] = ids[k] === LINEAR ? -1 : ids[k];
+    }
+    if (n > 1) f.set(vals.subarray(stride, n * stride), at);
+    const w = core();
+    // Several targets are created straight into the call's group (see the
+    // root node in `_build`).
+    const g = n > 1 ? w.ak_group_create(0, 0, 1, 0, 0, -1, FL_FILL_BACKWARDS | FL_FILL_FORWARDS, 1) : 0;
+    if (w.ak_anim_create_many(len, n, stride, g) !== n) {
+      if (g) w.ak_release(g);
+      throw new Error('anikit: failed to create animation (invalid keyframes)');
+    }
+    this._group = g;
+    views();
+    const tm: readonly [number, number, number, number] = [delay * 1000, durMs, repeat + 1, direction];
+    // (The per-target loops live in functions of their own: optimised during
+    // one large call, the method would keep that code for every small one.)
+    if (ctx.chain) fastChain(ctx.chain, targets, keys, nks, vals);
+    fastParts(this, targets, keys, base, tm, claims, !!o.onUpdate);
+    if (n > 1) fastPack(w, g, this._parts, base);
+    fastLink(this, targets, claims);
+    this._rp = rp;
+    return true;
   }
 
   /** Special properties: motion `path`, morph `d`, stroke `draw`, `attr`. */
@@ -1413,7 +1703,9 @@ export class Animation extends Playable {
   _partEmpty(part: Part): void {
     if (part.gone) return;
     part.gone = true;
-    if (--this._live <= 0) this.kill();
+    // While building, a later target of the same call can take a property
+    // from an earlier one (a target listed twice): `_build` checks at the end.
+    if (--this._live <= 0 && !this._building) this.kill();
   }
 
   /**
