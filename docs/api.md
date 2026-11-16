@@ -169,7 +169,7 @@ await s;                             // resolves at rest
 inertia(card, { x: { velocity: vx, min: 0, max: 600, snap: 100 } }, { power: 0.8, timeConstant: 0.35 });
 ```
 
-`spring(targets, props, options?)`: props are end values (numbers or strings with units, colours too). Options: `stiffness` (default 100), `damping` (10), `mass` (1), or the perceptual pair `bounce` (0–1) + `duration` (seconds); `velocity` (units/s, a number or per-property map), `restDelta`, `restSpeed`, `onUpdate`, `onComplete`. There is no `delay` or `ease`: call it later, or use `animate()` with `ease: 'spring(…)'` for a timed spring. `inertia()` adds `power` (0.8), `timeConstant` (0.35 s), `bounceStiffness` and `bounceDamping`; each prop is `{ velocity, min?, max?, snap? }` or a bare velocity. All three return a `PhysicsAnimation`.
+`spring(targets, props, options?)`: props are end values (numbers or strings with units, colours too). Options: `stiffness` (default 100), `damping` (10), `mass` (1), or the perceptual pair `bounce` (0–1) + `duration` (seconds); `velocity` (units/s, a number or per-property map), `restDelta`, `restSpeed`, `onUpdate`, `onComplete`. Calling `spring()` again on a moving property retargets it (position and velocity kept); the latest call's `onUpdate` replaces the earlier one for that property, and every distinct `onComplete` fires once at rest, so a follower can pass a fresh options literal on every event. There is no `delay` or `ease`: call it later, or use `animate()` with `ease: 'spring(…)'` for a timed spring. `inertia()` adds `power` (0.8), `timeConstant` (0.35 s), `bounceStiffness` and `bounceDamping`; each prop is `{ velocity, min?, max?, snap? }` or a bare velocity. All three return a `PhysicsAnimation`.
 
 ---
 
@@ -183,7 +183,7 @@ inView('.reveal', (el) => { animate(el, { opacity: [0, 1] }); return () => anima
 scroll(compositor('.hero', { scale: [1, 1.15], opacity: [1, 0] }, { ease: 'linear' }), { target: hero, offset: ['start start', 'end start'] });
 ```
 
-Give `scroll()` a `compositor()` animation and it's attached to a native `ScrollTimeline` where the browser has one: the browser scrubs it in step with the scroll, and no JavaScript runs while scrolling. The `offset` range is measured from layout (and again on resize), so it means the same as on the JavaScript path. Without `ScrollTimeline`, or with `smooth`, it's scrubbed from the scroll event instead (`native: false` forces that).
+Give `scroll()` a `compositor()` animation and it's attached to a native `ScrollTimeline` where the browser has one: the browser scrubs it in step with the scroll, and no JavaScript runs while scrolling. The `offset` range is measured from layout (and again on resize), so it means the same as on the JavaScript path. Without `ScrollTimeline`, or with `smooth`, it's scrubbed from the scroll event instead (`native: false` forces that). All `scroll()` links on one scroller share one passive listener that reads the scroll position once per event; a link driving an animation only seeks when its progress changes, while a function subject is called on every event.
 
 `compositor()` animations honour `engine.reducedMotion` (they jump to the end), and `revert()` cancels them and puts back the inline styles from before.
 
@@ -242,7 +242,7 @@ const b = batch(50_000, { x: (i) => [0, i % 500], y: [0, 300], a: [0, 1] },
 // b.data: Float32Array (count * stride), e.g. gl.bufferSubData(gl.ARRAY_BUFFER, 0, b.data)
 ```
 
-- `splitText(targets, { type: 'chars' | 'words' | 'lines' (comma separated, default 'words,chars'), charClass, wordClass, lineClass, mask, maskClass, autoSplit, onSplit }) → { chars, words, lines, masks, split(), revert() }`. Characters are grapheme-safe (emoji stay whole).
+- `splitText(targets, { type: 'chars' | 'words' | 'lines' (comma separated, default 'words,chars'), charClass, wordClass, lineClass, mask, maskClass, autoSplit, onSplit }) → { chars, words, lines, masks, split(), revert() }`. Characters are grapheme-safe (emoji stay whole). Line wrappers are direct children of the element; inline markup that spans lines (`<b>`, `<a>`) is continued on the next line by a copy without its `id`. Runs against the paragraph's direction (a Hebrew phrase in English text) are wrapped in `<span dir unicode-bidi:isolate>` so they keep their order, and Arabic, Syriac and N'Ko character pieces carry zero-width joiners so letters keep their joined forms.
 - `splitText` options: `mask: 'lines' | 'words' | 'chars'` wraps each unit in an `overflow: clip` element (returned in `masks`; class via `maskClass`). `autoSplit: true` splits again when an element's width changes and once web fonts have loaded, so lines match the layout. `onSplit(result)` runs after every split; return the animation that uses the pieces, and on a re-split it's reverted and the new one is moved to the same time. `result.split()` re-splits on demand, and `revert()` restores the markup (a `context()` does this too).
 - `flip(targets, mutate, options?)` measures, runs `mutate()` (your DOM/class change), then animates from the old layout; see [Layout transitions](#layout-transitions-flip) for enter/leave, shared elements and presence.
 - `compositor(targets, props, options?)` runs on the browser's compositor thread (Web Animations) with anikit easings, springs included; keeps going when the main thread is busy.
@@ -298,6 +298,7 @@ const state = flip.capture('.item'); reorder(); flip.from(state, { duration: 0.4
 - **Leaving elements** (removed from the DOM or hidden by the change) are put back at their last box with `position: absolute`, so their siblings reflow straight away. They play `leave` (or a fade, or `onLeave(els)`) and are then removed or hidden for real, with their inline styles restored. If a later change brings one back mid-exit, the exit is cancelled and it animates from where it is.
 - **Shared elements:** two different elements with the same `data-flip-id` (or the same `id(el)`) are treated as one: the incoming one starts on the outgoing one's box. If both stay visible they cross-fade (`crossfade: false` to turn it off).
 - **Interrupted flips** start from where the elements are on screen and end on their own transforms.
+- **Nested and scrolled:** an element inside another moving element starts at its old box on screen, at any depth and with scaling. A `flip.capture()` followed by a page scroll and then `flip.from()` starts the elements where they were on the page (fixed-position elements where they were on screen).
 - `scale: false` animates position only. `correctRadius: true` counter-scales `border-radius` every frame so rounded corners don't stretch while an element scales. It's off by default because it adds a style recalc and a repaint per element per frame, while transforms alone stay on the compositor.
 - Layout is read once for all elements (transforms off, measure, transforms back) rather than once per element.
 
@@ -528,7 +529,7 @@ const swipe = observer({ type: 'wheel,touch', tolerance: 20, onDown: () => next(
 swipe.kill();
 ```
 
-One passive listener per scroller drives every trigger, and layout is measured only on refresh (load and resize). Call `refreshScrollTriggers()` after you change the layout yourself. Pinning uses `position: fixed` for the page and a counter‑translate inside scrolling elements.
+One passive listener per scroller drives every trigger (it reads the scroll position once per event for all of them), and layout is measured only on refresh (load and resize). Call `refreshScrollTriggers()` after you change the layout yourself. Pinning uses `position: fixed` for the page and a counter‑translate inside scrolling elements. The pinned element keeps its own inline size, margin, position and (on the page) transform; `kill()` puts its `style` attribute back exactly.
 
 - `animation` takes one animation or timeline; it is paused for you (create it with `autoplay: false` to avoid a first-frame flash). For one trigger per element, use `scrollTriggerBatch(targets, { animation: (el, i) => … })`, which takes a factory.
 - `toggleActions` is four words for onEnter / onLeave / onEnterBack / onLeaveBack, each `play pause resume reverse restart reset complete none`; it is ignored with `scrub`.
@@ -547,7 +548,7 @@ const [knob]: Draggable[] = draggable('.knob', { type: 'rotate' });
 knob.setPosition(0, 0, 45);
 ```
 
-`draggable()` returns one `Draggable` per element. It exposes `x`, `y`, `rotation`, `deltaX`/`deltaY`, `isDragging`, `isPressed`, `enabled`, `enable()`, `disable()`, `setPosition(x, y, rotation?)`, `kill()` and `revert()`. Options: `type` (`'x,y'`, `'x'`, `'y'`, `'rotate'`), `bounds` (element, selector or `{ minX, maxX, minY, maxY, minRotation, maxRotation }`), `inertia`, `snap` (step, list or function; per axis with `{ x, y, rotation }`), `edgeResistance` (0.35), `lockAxis`, `handle`, `minimumMovement` (3 px), `cursor`, and callbacks `onPress`, `onDragStart`, `onDrag`, `onDragEnd`, `onRelease`, `onThrowUpdate`, `onThrowComplete` (each receives the `Draggable`).
+`draggable()` returns one `Draggable` per element. It exposes `x`, `y`, `rotation`, `deltaX`/`deltaY`, `isDragging`, `isPressed`, `enabled`, `enable()`, `disable()`, `setPosition(x, y, rotation?)`, `kill()` (ends a drag in progress where it is) and `revert()` (also puts back the element's inline transform and the handle's `touch-action`, `cursor` and `user-select` from before). Only the pointer that started a drag moves it: a second finger is ignored until the first lifts. Options: `type` (`'x,y'`, `'x'`, `'y'`, `'rotate'`), `bounds` (element, selector or `{ minX, maxX, minY, maxY, minRotation, maxRotation }`), `inertia`, `snap` (step, list or function; per axis with `{ x, y, rotation }`), `edgeResistance` (0.35), `lockAxis`, `handle`, `minimumMovement` (3 px), `cursor`, and callbacks `onPress`, `onDragStart`, `onDrag`, `onDragEnd`, `onRelease`, `onThrowUpdate`, `onThrowComplete` (each receives the `Draggable`).
 
 `hover(targets, fn)` and `press(targets, fn)` call `fn(el, event)` on enter/press; a function returned from `fn` runs on leave/release. Both return `{ kill, revert }`. Hover ignores touch, so nothing gets stuck.
 

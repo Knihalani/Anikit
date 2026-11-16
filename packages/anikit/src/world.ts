@@ -290,12 +290,21 @@ export class World {
     this.pushAttractors();
   }
   private pushAttractors(): void {
-    const list = this.attractors.slice();
+    // Runs on every pointer move: write straight into the buffer, no copy.
+    const list = this.attractors;
     const p = this.pointerAttr;
-    if (p && p.on) list.push(p.x, p.y, p.strength * p.mode, p.radius);
-    const at = f64Buf(list.length || 1);
-    F64.set(list, at);
-    core().ak_world_attractors(this.id, list.length / 4);
+    const on = !!(p && p.on);
+    const n = list.length + (on ? 4 : 0);
+    const at = f64Buf(n || 1);
+    for (let i = 0; i < list.length; i++) F64[at + i] = list[i];
+    if (on) {
+      const k = at + list.length;
+      F64[k] = p!.x;
+      F64[k + 1] = p!.y;
+      F64[k + 2] = p!.strength * p!.mode;
+      F64[k + 3] = p!.radius;
+    }
+    core().ak_world_attractors(this.id, n / 4);
   }
 
   private local(e: { clientX: number; clientY: number }): [number, number] {
@@ -315,8 +324,11 @@ export class World {
     this.pointerAttr = { mode: o.mode === 'attract' ? 1 : -1, strength: o.strength ?? 4000, radius: o.radius ?? 150, x: 0, y: 0, on: false };
     const target = (this.container ?? window) as HTMLElement;
     const move = (e: PointerEvent) => {
-      const [x, y] = this.local(e);
-      Object.assign(this.pointerAttr!, { x, y, on: true });
+      const r = this.container?.getBoundingClientRect();
+      const a = this.pointerAttr!;
+      a.x = e.clientX - (r ? r.left : 0);
+      a.y = e.clientY - (r ? r.top : 0);
+      a.on = true;
       this.pushAttractors();
     };
     const leave = () => {
@@ -339,8 +351,9 @@ export class World {
   } = {}): this {
     const target = (this.container ?? window) as HTMLElement;
     let held = -1;
-    let last: [number, number, number] = [0, 0, 0];
-    let vel: [number, number] = [0, 0];
+    // Updated in place on every move.
+    const last: [number, number, number] = [0, 0, 0];
+    const vel: [number, number] = [0, 0];
     const down = (e: PointerEvent) => {
       const [x, y] = this.local(e);
       let i = core().ak_world_pick(this.id, x, y) >>> 0;
@@ -352,17 +365,25 @@ export class World {
       }
       if (i === 0xffffffff) return;
       held = i;
-      last = [x, y, e.timeStamp];
+      last[0] = x;
+      last[1] = y;
+      last[2] = e.timeStamp;
+      vel[0] = vel[1] = 0;
       core().ak_world_set_pinned(this.id, i, 1);
       (e.target as Element).setPointerCapture?.(e.pointerId);
       e.preventDefault();
     };
     const move = (e: PointerEvent) => {
       if (held < 0) return;
-      const [x, y] = this.local(e);
+      const r = this.container?.getBoundingClientRect();
+      const x = e.clientX - (r ? r.left : 0);
+      const y = e.clientY - (r ? r.top : 0);
       const dt = Math.max(1, e.timeStamp - last[2]) / 1000;
-      vel = [(x - last[0]) / dt, (y - last[1]) / dt];
-      last = [x, y, e.timeStamp];
+      vel[0] = (x - last[0]) / dt;
+      vel[1] = (y - last[1]) / dt;
+      last[0] = x;
+      last[1] = y;
+      last[2] = e.timeStamp;
       core().ak_world_set_position(this.id, held, x, y, 0);
     };
     const up = () => {

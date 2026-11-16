@@ -101,6 +101,10 @@ export class Draggable {
   private throwAnim: PhysicsAnimation | null = null;
   private handleEl: Element;
   private limits: Bounds = {};
+  /** The pointer driving the drag (-1: none); other pointers are ignored until it lifts. */
+  private pid = -1;
+  /** What revert() puts back: the inline transform, the transform state and the handle's styles. */
+  private orig: { transform: string; t: number[]; touch: string; cursor: string; select: string };
 
   constructor(target: HTMLElement, options: DraggableOptions = {}) {
     this.target = target;
@@ -112,6 +116,7 @@ export class Draggable {
     const h = options.handle;
     this.handleEl = (typeof h === 'string' ? target.querySelector(h) : h) ?? target;
     const hs = (this.handleEl as HTMLElement).style;
+    this.orig = { transform: target.style.transform, t: this.s.t.slice(), touch: hs.touchAction, cursor: hs.cursor, select: hs.userSelect };
     hs.touchAction = options.type === 'x' ? 'pan-y' : options.type === 'y' ? 'pan-x' : 'none';
     hs.cursor = options.cursor ?? 'grab';
     hs.userSelect = 'none';
@@ -153,7 +158,8 @@ export class Draggable {
   }
 
   private down = (e: PointerEvent): void => {
-    if (!this.enabled || (e.button !== undefined && e.button > 0)) return;
+    if (!this.enabled || this.isPressed || (e.button !== undefined && e.button > 0)) return;
+    this.pid = e.pointerId;
     this.throwAnim?.stop();
     this.x = this.s.t[0];
     this.y = this.s.t[1];
@@ -180,7 +186,7 @@ export class Draggable {
   };
 
   private move = (e: PointerEvent): void => {
-    if (!this.isPressed) return;
+    if (!this.isPressed || e.pointerId !== this.pid) return;
     const dx = e.clientX - this.start.px;
     const dy = e.clientY - this.start.py;
     if (!this.isDragging) {
@@ -214,9 +220,8 @@ export class Draggable {
   };
 
   private up = (e: PointerEvent): void => {
-    window.removeEventListener('pointermove', this.move);
-    window.removeEventListener('pointerup', this.up);
-    window.removeEventListener('pointercancel', this.up);
+    if (e.pointerId !== this.pid) return;
+    this.unlisten();
     const wasDragging = this.isDragging;
     this.isPressed = false;
     this.isDragging = false;
@@ -271,15 +276,35 @@ export class Draggable {
   disable(): void {
     this.enabled = false;
   }
+  private unlisten(): void {
+    window.removeEventListener('pointermove', this.move);
+    window.removeEventListener('pointerup', this.up);
+    window.removeEventListener('pointercancel', this.up);
+    this.pid = -1;
+  }
+  /** Stop a throw, end any drag in progress where it is, and stop listening. */
   kill(): void {
     this.throwAnim?.stop();
     this.handleEl.removeEventListener('pointerdown', this.down as EventListener);
-    window.removeEventListener('pointermove', this.move);
-    window.removeEventListener('pointerup', this.up);
+    this.unlisten();
+    this.isPressed = false;
+    this.isDragging = false;
   }
+  /** {@link kill} and put back the element's transform and the handle's styles as they were before `draggable()`. */
   revert(): void {
     this.kill();
-    this.setPosition(0, 0, 0);
+    const o = this.orig;
+    const t = this.s.t;
+    for (let i = 0; i < t.length; i++) t[i] = o.t[i];
+    this.s.dirty = false;
+    this.x = t[0];
+    this.y = t[1];
+    this.rotation = t[3];
+    this.target.style.transform = o.transform;
+    const hs = (this.handleEl as HTMLElement).style;
+    hs.touchAction = o.touch;
+    hs.cursor = o.cursor;
+    hs.userSelect = o.select;
   }
 }
 
@@ -373,6 +398,10 @@ export function observer(options: ObserverOptions) {
   let stopTimer: ReturnType<typeof setTimeout> | null = null;
   let posX = 0;
   let posY = 0;
+  let lastEv: ObserverEvent | null = null;
+  let lastT = 0;
+  // Date.now(): fake timers in tests move it with setTimeout.
+  const now = () => Date.now();
 
   const emit = (dx: number, dy: number, event: Event) => {
     posX += dx;
@@ -391,11 +420,21 @@ export function observer(options: ObserverOptions) {
       (ax > 0 ? options.onRight : options.onLeft)?.(ev);
       ax = 0;
     }
-    if (stopTimer) clearTimeout(stopTimer);
-    stopTimer = setTimeout(() => {
-      ax = ay = 0;
-      options.onStop?.(ev);
-    }, 150);
+    // One timer per quiet period, not one per event: it re-arms itself
+    // until 150 ms have passed since the last event.
+    lastEv = ev;
+    lastT = now();
+    if (!stopTimer) stopTimer = setTimeout(checkStop, 150);
+  };
+  const checkStop = () => {
+    const left = lastT + 150 - now();
+    if (left > 1) {
+      stopTimer = setTimeout(checkStop, left);
+      return;
+    }
+    stopTimer = null;
+    ax = ay = 0;
+    options.onStop?.(lastEv!);
   };
 
   const onWheel = (e: Event) => {

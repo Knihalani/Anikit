@@ -24,7 +24,8 @@ import { checkTargets, checkKeys } from './debug';
 import type { OptionKeys } from './debug';
 import { Timeline } from './timeline';
 import { Playable } from './playable';
-import { Targets, toTargets, stateOf, flushTransforms, computed, isElement, markDirty } from './props';
+import { Targets, toTargets, stateOf, flushTransforms, computed, isElement, markDirty, claim, unclaim, composeTransform } from './props';
+import type { Owner } from './props';
 import { r3, s3 } from './values';
 
 export interface FlipState {
@@ -46,6 +47,10 @@ export interface FlipState {
   display: string[];
   /** The targets as given (a selector is queried again after the change). */
   targets?: Targets;
+  /** Page scroll at capture (the rects are in viewport coordinates). */
+  scrollX?: number;
+  /** Page scroll at capture. */
+  scrollY?: number;
 }
 
 export interface FlipOptions extends AnimateOptions {
@@ -116,13 +121,23 @@ function capture(targets: Targets, options: Pick<FlipOptions, 'id' | 'fade' | 'l
     // Only needed to show hidden elements while they animate out.
     display: options.fade || options.leave || options.onLeave ? els.map((e) => computed(e, 'display') || 'block') : [],
     targets: typeof targets === 'string' ? targets : undefined,
+    scrollX: typeof window !== 'undefined' ? window.scrollX : 0,
+    scrollY: typeof window !== 'undefined' ? window.scrollY : 0,
   };
   watchInsertions(state);
   return state;
 }
 
 /** Transform each moving element should end on (survives interrupted flips). */
-const homes = new WeakMap<Element, { x: number; y: number; sx: number; sy: number }>();
+// `by` is the latest flip animation moving the element: an earlier flip that
+// completes after a later one took the element over must not forget the home
+// (the next interruption would then take the in-flight transform as home).
+const homes = new WeakMap<Element, { x: number; y: number; sx: number; sy: number; by?: unknown }>();
+
+/** The properties a flip move animates. */
+const MOVE_PROPS = ['x', 'y', 'scaleX', 'scaleY'];
+/** Owner used to evict a flip move from a popped-out element. */
+const POPPED: Owner = { release() {} };
 
 /** Elements currently animating out (popped out of the flow). */
 interface Leaving {
@@ -144,6 +159,21 @@ export function popOut(el: HTMLElement, rect: DOMRect, display?: string): { rest
   const s = stateOf(el);
   const prevT = s.t.slice();
   const prevU = s.u.slice();
+  // Popped out in the middle of a flip move: that move stops here (the pop
+  // pins the element where it was on screen), and coming back restores the
+  // transform the move was heading to, not the one it had got to (with the
+  // move gone, nothing would ever finish it).
+  const home = homes.get(el);
+  if (home) {
+    prevT[0] = home.x;
+    prevT[1] = home.y;
+    prevT[8] = home.sx;
+    prevT[9] = home.sy;
+    for (const p of MOVE_PROPS) {
+      claim(el, p, POPPED);
+      unclaim(el, p, POPPED);
+    }
+  }
   st.position = 'absolute';
   st.margin = '0px';
   st.boxSizing = 'border-box';
@@ -168,6 +198,7 @@ export function popOut(el: HTMLElement, rect: DOMRect, display?: string): { rest
       else el.setAttribute('style', prevStyle);
       s.t = prevT;
       s.u = prevU;
+      if (home) st.transform = composeTransform(s);
     },
   };
 }
@@ -227,6 +258,21 @@ function insertedSince(state: FlipState): Set<Node> {
   mo.disconnect();
   observers.delete(state);
   return out;
+}
+
+/** Where an element's content is drawn at the start of a flip: x -> ax + bx·x, y -> ay + by·y. */
+interface StartMap {
+  ax: number;
+  bx: number;
+  ay: number;
+  by: number;
+}
+
+function isFixed(el: Element): boolean {
+  for (let e: Element | null = el; e; e = (e as HTMLElement).offsetParent) {
+    if (computed(e, 'position') === 'fixed') return true;
+  }
+  return false;
 }
 
 interface Radius {
@@ -308,6 +354,17 @@ function fromState(state: FlipState, options: FlipOptions = {}): Timeline {
     if (r) radiusAt.set(e, r);
   });
 
+  // The page scrolled since the capture (flip.capture, then flip.from later):
+  // the old boxes are where they were on the page, not in the viewport.
+  // Fixed-position elements stay where they were on screen.
+  let rects = state.rects;
+  const sdx = typeof window !== 'undefined' && state.scrollX !== undefined ? state.scrollX - window.scrollX : 0;
+  const sdy = typeof window !== 'undefined' && state.scrollY !== undefined ? state.scrollY - window.scrollY : 0;
+  if (sdx || sdy) {
+    rects = state.rects.map((r, i) =>
+      isFixed(state.els[i]) ? r : new DOMRect(r.left + sdx, r.top + sdy, r.width, r.height));
+  }
+
   // Shared ids: the visible "before" element of each id.
   const byId = new Map<string, number>();
   state.ids.forEach((v, i) => {
@@ -325,7 +382,7 @@ function fromState(state: FlipState, options: FlipOptions = {}): Timeline {
     const bi = before.get(el);
     if (bi !== undefined && state.visible[bi]) {
       consumed.add(bi);
-      moves.push({ el, from: state.rects[bi], to: box, box });
+      moves.push({ el, from: rects[bi], to: box, box });
       continue;
     }
     const key = id(el);
@@ -335,10 +392,10 @@ function fromState(state: FlipState, options: FlipOptions = {}): Timeline {
       consumed.add(si);
       const other = state.els[si];
       const both = crossfade && visibleSet.has(other);
-      moves.push({ el, from: state.rects[si], to: box, box, fade: both ? [0, 1] : undefined });
+      moves.push({ el, from: rects[si], to: box, box, fade: both ? [0, 1] : undefined });
       if (both) {
         // The outgoing twin travels to the new box while fading out.
-        moves.push({ el: other, from: state.rects[si], to: box, box: lastOf.get(other)!, fade: [1, 0], outgoing: true });
+        moves.push({ el: other, from: rects[si], to: box, box: lastOf.get(other)!, fade: [1, 0], outgoing: true });
       }
       continue;
     }
@@ -359,15 +416,40 @@ function fromState(state: FlipState, options: FlipOptions = {}): Timeline {
   const outgoing: Array<[Element, { x: number; y: number; sx: number; sy: number }]> = [];
   const cx = (r: DOMRect) => r.left + r.width / 2;
   const cy = (r: DOMRect) => r.top + r.height / 2;
+  // Nested moves: an element inside another moving element is carried by its
+  // ancestor's inverted transform at the start. Its own start transform
+  // undoes that, so it starts at its old box on screen. Each start is an
+  // axis-aligned map q -> a + b·q (viewport coordinates of the new layout).
+  const starts = new Map<Element, StartMap>();
+  const startOf = (el: Element): StartMap | null => {
+    for (let p = el.parentElement; p; p = p.parentElement) {
+      const m = starts.get(p);
+      if (m) return m;
+    }
+    return null;
+  };
   for (const m of moves) {
     const { el, from, to, box } = m;
     const s = stateOf(el);
     const home = homes.get(el) ?? { x: s.t[0], y: s.t[1], sx: s.t[8], sy: s.t[9] };
     const settled = to === box;
-    const sx0 = scale && box.width ? from.width / box.width : 1;
-    const sy0 = scale && box.height ? from.height / box.height : 1;
-    const x0 = cx(from) - cx(box);
-    const y0 = cy(from) - cy(box);
+    const P = starts.size && !m.outgoing ? startOf(el) : null;
+    const bx = P ? P.bx : 1;
+    const by = P ? P.by : 1;
+    const sx0 = scale && box.width ? from.width / (box.width * bx) : 1;
+    const sy0 = scale && box.height ? from.height / (box.height * by) : 1;
+    const x0 = P ? (cx(from) - P.ax) / bx - cx(box) : cx(from) - cx(box);
+    const y0 = P ? (cy(from) - P.ay) / by - cy(box) : cy(from) - cy(box);
+    if (!m.outgoing && settled && el.firstElementChild !== null) {
+      // This element's start map, for its descendants (a leaf has none: the
+      // common flat list then never walks ancestors).
+      const ox = cx(box), oy = cy(box);
+      const ax0 = P ? P.ax : 0, ay0 = P ? P.ay : 0;
+      starts.set(el, {
+        ax: ax0 + bx * (ox + x0 - sx0 * ox), bx: bx * sx0,
+        ay: ay0 + by * (oy + y0 - sy0 * oy), by: by * sy0,
+      });
+    }
     const x1 = settled ? home.x : cx(to) - cx(box);
     const y1 = settled ? home.y : cy(to) - cy(box);
     const sx1 = settled ? home.sx : scale && box.width ? to.width / box.width : 1;
@@ -456,10 +538,14 @@ function fromState(state: FlipState, options: FlipOptions = {}): Timeline {
             markDirty(t);
           }
         }
-        for (const el of g.els) homes.delete(el);
+        for (const el of g.els) if (homes.get(el)?.by === moveAnim) homes.delete(el);
         user.onComplete?.(a);
       },
     });
+    for (const el of g.els) {
+      const hm = homes.get(el);
+      if (hm) hm.by = moveAnim;
+    }
     tl.add(moveAnim, 0);
   }
   fix?.();
@@ -487,7 +573,7 @@ function fromState(state: FlipState, options: FlipOptions = {}): Timeline {
         removed = true;
       }
       const hidden = !removed && !isRendered(el);
-      const pop = popOut(el, state.rects[i], hidden ? state.display[i] || 'block' : undefined);
+      const pop = popOut(el, rects[i], hidden ? state.display[i] || 'block' : undefined);
       const op = carried.get(el);
       if (op !== undefined) el.style.opacity = op;
       const finish = trackLeave(el, pop.restore, removed, () => {

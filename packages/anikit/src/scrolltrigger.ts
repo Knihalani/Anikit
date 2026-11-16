@@ -119,7 +119,17 @@ function listen(st: ScrollTrigger): void {
     set = new Set();
     groups.set(st.scroller, set);
     const s = set;
-    st.scroller.addEventListener('scroll', () => s.forEach((t) => t.update()), { passive: true });
+    const sc = st.scroller;
+    // Read the position once per event: a read after the previous trigger's
+    // style writes would make the browser lay the page out again, per trigger.
+    sc.addEventListener('scroll', () => {
+      let y = NaN;
+      let x = NaN;
+      for (const t of s) {
+        if (t.horizontal) t.update(x === x ? x : (x = scrollPos(sc, true)));
+        else t.update(y === y ? y : (y = scrollPos(sc, false)));
+      }
+    }, { passive: true });
   }
   set.add(st);
   if (!resizeBound && typeof window !== 'undefined') {
@@ -232,6 +242,8 @@ export class ScrollTrigger {
   private pinMargin = '';
   private pinItem: Record<string, string> = {};
   private pinSize = { w: 0, h: 0 };
+  /** The pinned element's inline values of the properties pinning writes. */
+  private pinOrig = { position: '', top: '', left: '', width: '', height: '', transform: '', margin: '', boxSizing: '' };
 
   /** Size the spacer like the pinned element's natural box. */
   private sizeSpacer(): void {
@@ -239,9 +251,19 @@ export class ScrollTrigger {
     const el = this.pinEl;
     if (!sp || !el) return;
     const st = sp.style;
-    el.style.margin = '';
+    // Measure the element's own box: its inline size and margin as the page set them.
+    const o = this.pinOrig;
+    el.style.margin = o.margin;
+    el.style.boxSizing = o.boxSizing;
+    el.style.width = o.width;
+    el.style.height = o.height;
     st.display = 'contents';
+    // The layout box: without the element's own transform (a rotation would
+    // grow the rect, and the pinned box with it).
+    const tf = el.style.transform;
+    el.style.transform = 'none';
     const r = el.getBoundingClientRect();
+    el.style.transform = tf;
     this.pinSize = { w: r.width, h: r.height };
     st.display = 'block';
     st.boxSizing = 'content-box';
@@ -300,6 +322,8 @@ export class ScrollTrigger {
     this.pinMargin = cs.margin;
     this.pinItem = { flex: cs.flex, alignSelf: cs.alignSelf, justifySelf: cs.justifySelf, gridArea: cs.gridArea, order: cs.order };
     const prev = el.getAttribute('style');
+    const o = this.pinOrig;
+    for (const k of Object.keys(o) as (keyof typeof o)[]) o[k] = el.style[k];
     this.pinRestore = () => {
       if (prev === null) el.removeAttribute('style');
       else el.setAttribute('style', prev);
@@ -313,15 +337,23 @@ export class ScrollTrigger {
     if (this.dead) return;
     const h = this.horizontal;
     const size = viewportSize(this.scroller, h);
-    const scroll = scrollPos(this.scroller, h);
     // Measure with the pin un-pinned.
     if (this.pinEl) {
       const st = this.pinEl.style;
-      st.position = '';
-      st.top = st.left = st.width = st.height = st.transform = '';
+      const o = this.pinOrig;
+      st.position = o.position;
+      st.top = o.top;
+      st.left = o.left;
+      // The counter-translation inside a scrolling element is ours; in the
+      // window the transform stays the page's (it may be animating it).
+      if (this.scroller !== window) st.transform = o.transform;
       if (this.spacer) this.spacer.style.paddingBottom = this.spacer.style.paddingRight = '';
       this.sizeSpacer();
     }
+    // Read after un-pinning: removing the spacing can make the browser's
+    // scroll anchoring move the scroll position, and every rect below is
+    // read in that same layout.
+    const scroll = scrollPos(this.scroller, h);
     let tStart = 0;
     let tSize = 0;
     if (this.trigger) {
@@ -362,10 +394,10 @@ export class ScrollTrigger {
     this.update();
   }
 
-  /** Apply the current scroll position (called by the shared listener). */
-  update(): void {
+  /** Apply the current scroll position (the shared listener passes the position it read once for all triggers). */
+  update(pos?: number): void {
     if (!this.enabled || this.dead) return;
-    const s = scrollPos(this.scroller, this.horizontal);
+    const s = pos ?? scrollPos(this.scroller, this.horizontal);
     if (s === this.last) return;
     this.direction = s >= this.last ? 1 : -1;
     const span = this.end - this.start;
@@ -381,7 +413,12 @@ export class ScrollTrigger {
     const anim = o.animation;
     if (anim && o.scrub) {
       if (typeof o.scrub === 'number' && o.scrub > 0 && !firstUpdate) {
-        this.smoother = spring(this.proxy, { p }, this.smoothOpts);
+        // Outside the range every scroll event clamps to the same 0 or 1: the
+        // spring is already heading there, retargeting it again is wasted.
+        if (p !== this.scrubbed) {
+          this.scrubbed = p;
+          this.smoother = spring(this.proxy, { p }, this.smoothOpts);
+        }
       } else if (p !== this.scrubbed || firstUpdate) {
         // Off-screen triggers keep reading 0 or 1 while the page scrolls:
         // seeking the animation to the same progress again is a no-op.
@@ -451,8 +488,11 @@ export class ScrollTrigger {
     const h = this.horizontal;
     if (this.scroller === window) {
       if (s < this.start) {
-        st.position = '';
-        st.top = st.left = st.width = '';
+        const o = this.pinOrig;
+        st.position = o.position;
+        st.top = o.top;
+        st.left = o.left;
+        st.width = this.pinSize.w + 'px';
       } else if (s <= this.end) {
         if (st.position !== 'fixed') {
           const r = this.spacer!.getBoundingClientRect();
@@ -674,8 +714,10 @@ export function smoothScroll(options: SmoothScrollOptions = {}) {
     el.scrollTop = proxy.y;
     options.onUpdate?.(proxy.y);
   };
+  // One options object for every retarget (a wheel event each).
+  const sopts = { duration: lag, bounce: 0, restDelta: 0.5, restSpeed: 5, onUpdate: write };
   const go = () => {
-    sim = spring(proxy, { y: target }, { duration: lag, bounce: 0, restDelta: 0.5, restSpeed: 5, onUpdate: write });
+    sim = spring(proxy, { y: target }, sopts);
   };
   const onWheel = (e: WheelEvent) => {
     if (!running || e.ctrlKey) return;
