@@ -19,7 +19,16 @@ const PI2 = Math.PI * 2;
 // hall extents
 const HX = 8, HZ0 = -28, HZ1 = 16, HY = 12;
 
+// ?perf=no-mirror,no-bloom,no-fxaa,no-shafts,no-sand,no-flies,no-beads,no-pins,no-glass
+// switches single passes or demos off, to measure what each one costs.
+function perfFlags() {
+  const off = new Set(((globalThis.location && new URLSearchParams(location.search).get('perf')) || '').split(',').map((s) => s.trim()));
+  const on = (k) => !off.has('no-' + k);
+  return { mirror: on('mirror'), bloom: on('bloom'), fxaa: on('fxaa'), shafts: on('shafts'), sand: on('sand'), flies: on('flies'), beads: on('beads'), pins: on('pins'), glass: on('glass') };
+}
+
 export function createHall(canvas, overlayEl) {
+  const PERF = perfFlags();
   const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, depth: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
   if (!gl) throw new Error('hall: WebGL2 unavailable');
 
@@ -83,7 +92,7 @@ export function createHall(canvas, overlayEl) {
   box(archBox, 2.0, 3.4, HZ1 - 0.1, 0.4, 6.8, 0.3, METAL + 0.5, ...BRONZE);
 
   // the set pieces (they add their own furniture before the static upload)
-  const demos = createDemos({ gl, cam, sees, group, cube, sph, sphLo, cyl, box, archBox, archCyl, colliders, setCommon });
+  const demos = createDemos({ gl, cam, sees, group, cube, sph, sphLo, cyl, box, archBox, archCyl, colliders, setCommon, perf: PERF });
   const BLOBS = demos.blobs;
   const wake = demos.wake;
 
@@ -229,9 +238,10 @@ export function createHall(canvas, overlayEl) {
   }
   function drawScene(mirror) {
     setCommon(progMesh, mirror);
-    demos.drawMeshes();
+    // the mirror pass reflects the architecture and the light, not the heavy exhibit geometry
+    if (mirror > 0) demos.drawMeshes();
     archCyl.draw(); archBox.draw(); windows.draw();
-    demos.drawPoints(mirror);
+    if (mirror > 0) demos.drawPoints(mirror);
     // glass: blended over everything opaque, no depth writes
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -291,7 +301,15 @@ export function createHall(canvas, overlayEl) {
     gl.bindVertexArray(postVao);
   }
 
-  function render() {
+  // the region being drawn: the whole canvas, or (in preview) the portal's bounding box
+  const clip = { on: false, x: 0, y: 0, w: 0, h: 0 };
+  function scissorOn() {
+    if (!clip.on) { gl.disable(gl.SCISSOR_TEST); return; }
+    gl.enable(gl.SCISSOR_TEST);
+    gl.scissor(clip.x, clip.y, clip.w, clip.h);
+  }
+  // cheap = preview through the portal: no mirror pass, no bloom
+  function render(cheap = false) {
     updateCamera(cam);
     updatePools();
     gl.disable(gl.SCISSOR_TEST);
@@ -304,7 +322,7 @@ export function createHall(canvas, overlayEl) {
     // 1) mirrored scene into the half-res target, only below the horizon line
     const hy = -Math.tan(cam.pitch) / cam.tanH; // horizon in NDC
     const frac = Math.min(1, Math.max(0, hy * 0.5 + 0.5 + 0.04));
-    const reflOn = quality.refl && frac > 0;
+    const reflOn = !cheap && PERF.mirror && quality.refl && frac > 0;
     if (reflOn) {
       bindTarget(rtRefl);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -318,6 +336,7 @@ export function createHall(canvas, overlayEl) {
 
     // 2) the scene at full resolution
     bindTarget(rtScene);
+    scissorOn();
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     // near, small things first so the big architecture fails the depth test early
     drawScene(1);
@@ -342,10 +361,12 @@ export function createHall(canvas, overlayEl) {
     gl.blendFunc(gl.ONE, gl.ONE);
     gl.depthMask(false);
     gl.disable(gl.CULL_FACE);
-    setCommon(progBeam, 1);
-    gl.uniform1f(progBeam.u.uBeam, 0.028);
-    gl.bindVertexArray(beamVao);
-    gl.drawArrays(gl.TRIANGLES, 0, beamCount);
+    if (PERF.shafts) {
+      setCommon(progBeam, 1);
+      gl.uniform1f(progBeam.u.uBeam, 0.028);
+      gl.bindVertexArray(beamVao);
+      gl.drawArrays(gl.TRIANGLES, 0, beamCount);
+    }
     setCommon(progDust, 1);
     gl.bindVertexArray(dustVao);
     gl.drawArrays(gl.POINTS, 0, DUST);
@@ -353,7 +374,10 @@ export function createHall(canvas, overlayEl) {
     gl.disable(gl.BLEND);
     gl.disable(gl.DEPTH_TEST);
 
+    gl.disable(gl.SCISSOR_TEST);
+    const bloomOn = !cheap && PERF.bloom;
     // 3) bloom: bright pass to quarter res, separable blur
+    if (bloomOn) {
     post(progBright, rtScene, rtB0);
     gl.uniform2f(progBright.u.uTexel, 1 / W, 1 / H);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -363,15 +387,19 @@ export function createHall(canvas, overlayEl) {
     post(progBlur, rtB1, rtB0);
     gl.uniform2f(progBlur.u.uDir, 0, 1 / rtB0.h);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
 
     // 4) composite at native resolution: FXAA, bloom, grade, vignette
     post(progFinal, rtScene, null);
+    scissorOn();
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, rtB0.tex);
     gl.uniform1i(progFinal.u.uBloom, 1);
     gl.uniform2f(progFinal.u.uTexel, 1 / W, 1 / H);
-    gl.uniform1f(progFinal.u.uBloomK, 0.6);
+    gl.uniform1f(progFinal.u.uBloomK, bloomOn ? 0.6 : 0);
+    gl.uniform1f(progFinal.u.uFxaa, PERF.fxaa ? 1 : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.disable(gl.SCISSOR_TEST);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindVertexArray(null);
     gl.enable(gl.DEPTH_TEST);
@@ -404,8 +432,20 @@ export function createHall(canvas, overlayEl) {
       pxScale = (H * 0.5) / Math.tan(cam.fov / 2);
       if (changed) { buildTargets(); prewarm(); }
     },
-    preview(t, dt, k) {
+    // scissor (optional): the portal's bounding box in device px, top-left origin, as
+    // { x, y, w, h }, [x, y, w, h] or a circle { x, y, r }. Only that region is drawn.
+    preview(t, dt, k, scissor) {
       time = t;
+      if (scissor) {
+        let x, y, w, h;
+        if (Array.isArray(scissor)) { x = scissor[0]; y = scissor[1]; w = scissor[2]; h = scissor[3]; }
+        else if (scissor.r !== undefined) { x = scissor.x - scissor.r; y = scissor.y - scissor.r; w = h = scissor.r * 2; }
+        else { x = scissor.x; y = scissor.y; w = scissor.w; h = scissor.h; }
+        const x0 = Math.max(0, Math.floor(x)), y0 = Math.max(0, Math.floor(y));
+        const x1 = Math.min(W, Math.ceil(x + w)), y1 = Math.min(H, Math.ceil(y + h));
+        if (x1 <= x0 || y1 <= y0) return;
+        clip.on = true; clip.x = x0; clip.y = H - y1; clip.w = x1 - x0; clip.h = y1 - y0;
+      } else clip.on = false;
       const e = k * k * (3 - 2 * k);
       cam.eye[0] = Math.sin(t * 0.21) * 0.25 * (1 - e);
       cam.eye[1] = 2.3 - 0.6 * e + Math.sin(t * 0.5) * 0.04 * (1 - e);
@@ -415,7 +455,8 @@ export function createHall(canvas, overlayEl) {
       cam.fov = baseFov;
         updateCamera(cam);
       demos.update(t, Math.min(dt, 0.05), cam.eye[0], cam.eye[2], false);
-      render();
+      render(true);
+      clip.on = false;
     },
     enter() {
       if (st.active) return;

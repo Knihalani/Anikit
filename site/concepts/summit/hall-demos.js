@@ -143,6 +143,7 @@ function mulberry(s) {
 export function createDemos(ctx) {
   const { gl, cam, sees, group, cube, sphLo, box, archCyl, colliders } = ctx;
   const rnd = mulberry(1234);
+  const P = ctx.perf || { beads: true, glass: true, pins: true, sand: true, flies: true };
   const wake = STATIONS.map(() => ({ v: 0 }));
   let ready = false;
 
@@ -475,16 +476,16 @@ export function createDemos(ctx) {
     update(t, dt, px, pz, active) {
       wheelActive = active && Math.hypot(px - GX, pz - GZ) < 6.5;
       if (!ready) return;
-      updateCurtain(t, dt, px, pz, active);
+      if (P.beads) updateCurtain(t, dt, px, pz, active); else beads.visible = strings.visible = false;
       updateFireflies(t, dt, px, pz, active);
-      updateGlass(t, dt, px, pz, active);
+      if (P.glass) updateGlass(t, dt, px, pz, active); else shards.visible = false;
       updateSand(t, dt, px, pz, active);
-      updatePins(t, dt, px, pz, active);
+      if (P.pins) updatePins(t, dt, px, pz, active); else pins.visible = rods.visible = false;
     },
     drawMeshes() { beads.draw(); strings.draw(); pins.draw(); rods.draw(); },
     drawGlass() { shards.draw(); },
-    drawPoints(mirror) { drawSand(mirror); },
-    drawGlow(mirror) { drawFireflies(mirror); },
+    drawPoints(mirror) { if (P.sand) drawSand(mirror); },
+    drawGlow(mirror) { if (P.flies) drawFireflies(mirror); },
     use(i, t, px, pz) {
       if (!ready) return;
       const id = STATIONS[i].id;
@@ -501,6 +502,6 @@ export function createDemos(ctx) {
     onWake(i, on) {
       if (on && ready && STATIONS[i].id === 'pins') usePins(0, PY0 + PGY * PSP / 2);
     },
-    setVisible(all) { beads.visible = strings.visible = shards.visible = pins.visible = rods.visible = all; },
+    setVisible(all) { beads.visible = strings.visible = P.beads && all; shards.visible = P.glass && all; pins.visible = rods.visible = P.pins && all; },
   };
 }

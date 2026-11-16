@@ -375,7 +375,7 @@ void main() {
 
 export const FINAL_FS = /* glsl */ `#version 300 es
 precision highp float;
-uniform sampler2D uTex; uniform sampler2D uBloom; uniform vec2 uTexel; uniform float uBloomK;
+uniform sampler2D uTex; uniform sampler2D uBloom; uniform vec2 uTexel; uniform float uBloomK; uniform float uFxaa;
 in vec2 vUV; out vec4 o;
 float lum(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
 void main() {
@@ -388,7 +388,7 @@ void main() {
   float lMin = min(lM, min(min(lNW, lNE), min(lSW, lSE)));
   float lMax = max(lM, max(max(lNW, lNE), max(lSW, lSE)));
   vec3 c = cM;
-  if (lMax - lMin > max(0.04, lMax * 0.12)) {
+  if (uFxaa > 0.5 && lMax - lMin > max(0.04, lMax * 0.12)) {
     vec2 dir = vec2(-((lNW + lNE) - (lSW + lSE)), (lNW + lSW) - (lNE + lSE));
     float rcp = 1.0 / (min(abs(dir.x), abs(dir.y)) + max((lNW + lNE + lSW + lSE) * 0.03125, 0.0078));
     dir = clamp(dir * rcp, -8.0, 8.0) * uTexel;
@@ -397,7 +397,7 @@ void main() {
     float lb = lum(b);
     c = (lb < lMin || lb > lMax) ? a : b;
   }
-  c += texture(uBloom, vUV).rgb * uBloomK;
+  if (uBloomK > 0.0) c += texture(uBloom, vUV).rgb * uBloomK;
   float l = lum(c);
   c *= mix(vec3(0.95, 0.98, 1.05), vec3(1.04, 1.0, 0.94), smoothstep(0.2, 0.8, l));
   vec2 q = vUV - 0.5;
