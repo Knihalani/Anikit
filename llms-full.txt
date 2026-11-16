@@ -1883,6 +1883,16 @@ const ground = { mesh: mesh.plane(1), instances: instances(1, () => ({ sx: 4000,
 r3.render(cam, [dome, ground], { sort: 'near' }); // ground first, dome last: same pixels
 ```
 
+**Scissor**: `render(scene, items, { scissor: [x0, y0, x1, y1] })` rasterises only that pixel rectangle (`x1`, `y1` exclusive), e.g. one panel of a split screen. Pixels inside come out exactly as in a full render (spans keep their start and step; only pixels outside are skipped), and instances wholly outside are culled. The passes after the scene (sky, points, mirror upsampling, motion blur, depth of field) still run on the whole frame and read neighbours, so keep a margin of their reach around what you show (motion blur: its `max` + 32 px). `film/film.mjs` renders its three-panel opening this way.
+
+```ts
+import { renderer3d, scene3d, mesh, instances } from 'anikit';
+const r3 = renderer3d({ width: 640, height: 360 });
+const cam = scene3d({ width: 640, height: 360, camera: { y: 40, z: 600 } });
+const cubes = { mesh: mesh.cube(), instances: instances(50, (i) => ({ x: (i % 10) * 60 - 270, z: -Math.floor(i / 10) * 80, scale: 20 })) };
+const left = r3.render(cam, [cubes], { scissor: [0, 0, 320, 360] }); // columns 0–319 as in a full render
+```
+
 **Depth read-back**: after a render, `r3.depth(cam)` returns each pixel's distance from the camera (a reused `Float32Array`, `Infinity` where nothing was drawn); `r3.depth()` without a scene gives the raw NDC depth as a view into WebAssembly memory. Drive post effects by depth: ink outlines, a transition front sweeping from the horizon towards the lens (`film/film.mjs` does both).
 
 ```ts

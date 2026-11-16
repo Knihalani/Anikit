@@ -1,5 +1,17 @@
 # Changelog
 
+## Ninth round: render 10x (2026-11-16)
+
+Details, profiles and full-film timings are in `docs/perf-notes.md` under "Ninth round (render 10x)". Every change is exact by construction (each tested against the code it replaces); the films' reference stills are bit-identical to the previous renderer on the native and wasm cores.
+
+- **Films render ~2× faster** on the 4-core VM: film.mjs 498 → 273 s, film2.mjs 415 → 211 s (`--workers 4 --preroll 0 --fade-out 0.5`).
+- **Native core for Node** (`crates/anikit-node`, `node scripts/build-native.mjs`): the same `ak_*` exports as an N-API addon built for the host CPU, picked up by `anikit/node` when present (`ANIKIT_NATIVE=0` forces wasm). `npm run test:native` runs the vitest suite on it.
+- **`simd.rs`:** SSE4.1 and AVX2 (`V8`) backends with the wasm semantics; the pixel shader shades eight pixels at a time on AVX2.
+- **Raster:** exact occlusion culling of instances (Hi-Z tiles), SIMD texture sampling, four-row span solve and SIMD shadow PCF.
+- **New option:** `renderer3d.render({ scissor })` (Python `scissor=`) renders part of the frame, exactly.
+- **CLI:** idle workers take over the second half of the slowest slice; `renderToFile({ stopAfter })`.
+- **Tools:** `scripts/check-films.mjs --base <saved build>` compares the films' reference stills (bit-identity or PSNR).
+
 ## Eighth round (2026-11-16, to 18:05 UTC)
 
 Details and interleaved before/after runs are in `docs/perf-notes.md` under "Eighth round (core)", "(DOM)" and "(video)".
