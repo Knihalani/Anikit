@@ -283,12 +283,18 @@ export default async function film({ anikit: A }) {
   // manga speed lines and a panel border.
   const PAPER = [246, 238, 214];
   // The 45° halftone screen and the hatching, precomputed once per pixel.
-  const DOT = new Float32Array(N_PIX), HATCH = new Uint8Array(N_PIX);
+  // Hatching is engraved: line width grows with the shade (distance to the nearest line, in px,
+  // of a slightly wavering 6 px screen in two directions); the paper has a faint fibre grain.
+  const DOT = new Float32Array(N_PIX), HA = new Float32Array(N_PIX), HB = new Float32Array(N_PIX), GRAIN = new Float32Array(N_PIX);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const u45 = (x + y) * 0.7071, v45 = (x - y) * 0.7071;
     const fu = u45 / 7 - Math.floor(u45 / 7) - 0.5, fv = v45 / 7 - Math.floor(v45 / 7) - 0.5;
-    DOT[y * W + x] = Math.hypot(fu, fv);
-    HATCH[y * W + x] = (((x + y) % 7) < 2 ? 1 : 0) | ((((x - y + 7000) % 7) < 2) ? 2 : 0);
+    const i = y * W + x;
+    DOT[i] = Math.hypot(fu, fv);
+    const wa = 0.9 * Math.sin(y * 0.031 + x * 0.007) + 0.5 * noise(x / 40, y / 40);
+    const a = (x * 0.94 + y * 0.34 + wa) / 6, b = (x * 0.34 - y * 0.94 + wa * 0.7 + 3000) / 6.5;
+    HA[i] = Math.abs(a - Math.round(a)) * 6; HB[i] = Math.abs(b - Math.round(b)) * 6.5;
+    GRAIN[i] = 1 - 0.035 * (0.5 + 0.5 * noise(x / 1.7 + 50, y / 9)) - 0.03 * (0.5 + 0.5 * noise(x / 60, y / 45));
   }
   function comic(src, dist, out, t) {
     for (let i = 0; i < N_PIX; i++) { const o = i * 4; lum[i] = (src[o] * 0.299 + src[o + 1] * 0.587 + src[o + 2] * 0.114) / 255; }
@@ -298,13 +304,16 @@ export default async function film({ anikit: A }) {
       for (let x = 0; x < W; x++) {
         const i = y * W + x, o = i * 4;
         const xx = Math.min(W - 4, Math.max(3, x)), c = yy * W + xx;
-        const d = dist[c], finite = d < 1e30, sky = !finite || d > 15000;
+        const d = dist[c], finite = d < 1e30, sky = !finite || d > 9500; // the dome is 20 km away but its z-depth falls off-axis
         // Ink: silhouettes and creases from depth (thicker up close), strong colour edges.
         let ink = 0;
         const step = d < 150 ? 3 : d < 700 ? 2 : 1;
         const l = dist[c - step], r = dist[c + step], u = dist[c - step * W], dn = dist[c + step * W];
         const jump = (n) => (finite !== (n < 1e30) ? 1 : finite ? Math.abs(d - n) / Math.min(d, n) : 0);
-        if (Math.max(jump(l), jump(r), jump(u), jump(dn)) > 0.05 && d < 15000) ink = 1;
+        const jm = Math.max(jump(l), jump(r), jump(u), jump(dn));
+        if (jm > 0.05 && d < 15000) ink = 1;
+        // Heavier contour on silhouettes (big depth jumps): look one step further out.
+        else if (d < 2500 && Math.max(jump(dist[c - 2 * step]), jump(dist[c + 2 * step]), jump(dist[c - 2 * step * W]), jump(dist[c + 2 * step * W])) > 0.35) ink = 1;
         if (finite && d < 3000 && (Math.abs(l + r - 2 * d) + Math.abs(u + dn - 2 * d)) / d > 0.07 / step) ink = 1;
         const g = Math.abs(lum[c + 2] - lum[c - 2]) + Math.abs(lum[c + 2 * W] - lum[c - 2 * W]);
         if (g > 0.34) ink = 1;
@@ -319,20 +328,23 @@ export default async function film({ anikit: A }) {
         let cr, cg, cb;
         if (sky) {
           // Sky: Ben-Day dots, bigger towards the zenith; clouds stay paper.
-          const rad = 0.18 + 0.3 * (1 - y / H) * clamp((0.85 - L) * 3);
-          const on = dot < rad;
-          cr = on ? R * 0.8 : PAPER[0]; cg = on ? Gc * 0.85 : PAPER[1]; cb = on ? Math.min(255, Bc * 1.05) : PAPER[2];
-          if (L > 0.78) { cr = PAPER[0]; cg = PAPER[1]; cb = PAPER[2]; }
+          const rad = 0.1 + 0.36 * clamp((0.97 - L) * 1.5) * (0.55 + 0.45 * (1 - y / H));
+          const on = clamp((rad - dot) * 14 + 0.5);
+          cr = mix(PAPER[0], R * 0.8, on); cg = mix(PAPER[1], Gc * 0.85, on); cb = mix(PAPER[2], Math.min(255, Bc * 1.05), on);
+          if (L > 0.93) { cr = PAPER[0]; cg = PAPER[1]; cb = PAPER[2]; }
         } else if (L > 0.58) {
           cr = mix(PAPER[0], R, 0.75); cg = mix(PAPER[1], Gc, 0.75); cb = mix(PAPER[2], Bc, 0.75);
         } else if (L > 0.26) {
           const on = dot < 0.36;
           cr = on ? R : mix(PAPER[0], R, 0.55); cg = on ? Gc : mix(PAPER[1], Gc, 0.55); cb = on ? Bc : mix(PAPER[2], Bc, 0.55);
+        } else if (L > 0.07) {
+          cr = R * 0.66; cg = Gc * 0.66; cb = Bc * 0.74;
+          // Engraved hatching: lines thicken into the shadow; a second direction crosses the darkest.
+          const wA = 0.35 + 2.4 * clamp((0.27 - L) / 0.17), wB = 2.2 * clamp((0.17 - L) / 0.1);
+          const hk = Math.max(clamp(wA - HA[i] + 0.5), clamp(wB - HB[i] + 0.5));
+          cr = mix(cr, 22, hk); cg = mix(cg, 18, hk); cb = mix(cb, 30, hk);
         } else {
-          cr = R * 0.62; cg = Gc * 0.62; cb = Bc * 0.7;
-          // Cross-hatching (one direction, two in the deepest shade).
-          const hb = HATCH[i], h1 = (hb & 1) !== 0, h2 = L < 0.13 && (hb & 2) !== 0;
-          if (h1 || h2) { cr = 22; cg = 18; cb = 30; }
+          cr = 20; cg = 17; cb = 27; // spotted blacks
         }
         // Misregistration: the red plate sits 2 px to the right.
         const or = (y * W + Math.max(B, x - 2)) * 4;
@@ -341,9 +353,10 @@ export default async function film({ anikit: A }) {
         const rad = RAD[i];
         if (rad > 0.66) {
           const a = ANG[i], hsh = hash(a * 97 + Math.floor(t * 9 + hash(a * 13 + 1) * 9) * 7919);
-          if (hsh > 0.9 && hash(a * 31 + 3) * 0.45 + 0.72 < rad) { const w = smooth(0.72, 1.1, rad) * 0.9; cr = mix(cr, 16, w); cg = mix(cg, 14, w); cb = mix(cb, 22, w); }
+          if (hsh > 0.955 && hash(a * 31 + 3) * 0.4 + 0.8 < rad) { const w = smooth(0.8, 1.15, rad) * 0.85; cr = mix(cr, 16, w); cg = mix(cg, 14, w); cb = mix(cb, 22, w); }
         }
         if (ink) { cr = 16; cg = 13; cb = 20; }
+        const gr = GRAIN[i]; cr *= gr; cg *= gr; cb *= gr;
         out[o] = cr; out[o + 1] = cg; out[o + 2] = cb; out[o + 3] = 255;
       }
     }

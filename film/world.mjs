@@ -246,7 +246,7 @@ export async function buildWorld(A) {
   // ---- Bakes ---------------------------------------------------------------------------------
   const T = 4096;
   const tex = await cached('terrain2', () => bakeTerrain(T, heightAt, groundAt, gh, GN, GS, trees, centerX, log));
-  const wallTex = await cached('walls3', () => bakeWalls(heightAt, groundAt, walls.tris, log));
+  const wallTex = await cached('walls4', () => bakeWalls(heightAt, groundAt, walls.tris, log));
   const farTex = await cached('far2', () => bakeFar(4096, farH, FE));
   const sky = await cached('sky', () => bakeSky(4096, 2048, false));
   const skyComic = await cached('skycomic', () => bakeSky(2048, 1024, true));
@@ -824,9 +824,9 @@ function bakeWalls(heightAt, groundAt, tris, log) {
     const cr = [0.84 - 0.1 * band, 0.6 - 0.08 * band, 0.44 - 0.06 * band];
     const cg = ledge > 0.5 ? [0.3, 0.62, 0.3] : cr;
     const shadeT = [0.5, 0.48, 0.72];
-    const strata = Math.abs(Math.sin((y + w1) * 0.62 * 0.5)) < 0.05 + 0.04 * clamp(N3(u / 20, y / 20) + 0.4) ? 1 : 0;
+    const strata = Math.abs(Math.sin((y + w1) * 0.62 * 0.5)) < 0.015 + 0.06 * clamp(N3(u / 45, y / 20) + 0.25) ** 1.5 ? 1 : 0;
     const crack = N1(u / 40, y / 40) > 0.05 && Math.abs(N4(u / 7 + g * 3, y / 70)) < 0.006 + 0.01 * clamp(N1(u / 9, y / 5) + 0.3) ? 1 : 0;
-    const ink = (strata && N2(u / 60, y / 4) > -0.25) || crack ? 0.1 : 1;
+    const ink = strata || crack ? 0.1 : 1;
     for (let q = 0; q < 3; q++) comic[k * 4 + q] = Math.round(255 * clamp(cg[q] * mix(shadeT[q], 1.03, lit) * ink));
     // Neon: contour lines every 8 m (brighter every 40 m) run as crisp horizontal lines.
     const line = (period, width) => { const f = y / period, d = Math.abs(f - Math.round(f)) * period; return clamp(1 - d / width); };
