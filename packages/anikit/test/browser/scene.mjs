@@ -1,4 +1,6 @@
 import { ok, near } from './assert.mjs';
+// WebGL2 in headless Chromium needs SwiftShader.
+const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
 
 // WebGL2 scene(): render real frames (SwiftShader in headless Chromium) and read pixels back.
 const html = '<canvas id="c" style="width:320px;height:240px;display:block"></canvas>';
@@ -10,6 +12,7 @@ const px = (page, x, y) => page.evaluate(([x, y]) => {
 
 export const tests = [
   {
+    args: GL,
     name: 'scene(): renders a lit sphere over the studio environment',
     html,
     async run(page) {
@@ -27,6 +30,7 @@ export const tests = [
     },
   },
   {
+    args: GL,
     name: 'scene(): animate(obj.position) moves the object; raycast and click events hit it',
     html,
     async run(page, h) {
@@ -53,6 +57,7 @@ export const tests = [
     },
   },
   {
+    args: GL,
     name: 'scene(): instanced draws, frustum culling, bloom + FXAA chain, revert',
     html,
     async run(page) {

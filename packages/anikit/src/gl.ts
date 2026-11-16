@@ -896,7 +896,9 @@ export class Scene {
       if (i !== gl.INVALID_INDEX) gl.uniformBlockBinding(p, i, 0);
     }
     this.emptyVao = gl.createVertexArray()!;
-    if (this.shadows) this.makeShadowMap();
+    // Without shadows, a 1×1 depth texture still backs the sampler2DShadow (a colour texture on its unit is a GL error).
+    if (!this.shadows) this.shadowSize = 1;
+    this.makeShadowMap();
 
     // Size: read layout once, then follow ResizeObserver (no per-frame layout reads).
     this.dpr = Math.min(this.maxDpr, typeof devicePixelRatio === 'number' ? devicePixelRatio : 1);
@@ -1159,6 +1161,19 @@ export class Scene {
     this.orbitCtl?.step(dt);
     if (this.adaptive) this.govern();
     this.render();
+  }
+
+  /**
+   * The pixel ratio the scene renders at (at most `devicePixelRatio`, capped at 2).
+   * Set it to run your own quality governor (with `adaptive: false`).
+   */
+  get pixelRatio(): number {
+    return this.dpr;
+  }
+  set pixelRatio(r: number) {
+    const base = Math.min(2, typeof devicePixelRatio === 'number' ? devicePixelRatio : 1);
+    this.dpr = Math.max(0.25, Math.min(base, r));
+    this.resize();
   }
 
   private govern(): void {
@@ -1430,10 +1445,8 @@ export class Scene {
       // Always on unit 1: a 2D and a shadow sampler may not share unit 0, even unused.
       gl.uniform1i(prog.u.uMap, 1);
       if (tex) { gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, tex); gl.activeTexture(gl.TEXTURE0); }
-      if (this.shadows) {
-        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.shadowTex);
-        gl.uniform1i(prog.u.uShadow, 0);
-      }
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.shadowTex);
+      gl.uniform1i(prog.u.uShadow, 0);
       this.stats.triangles += (g.count / 3) * (isI ? (o as InstancedMesh).count : 1);
     }
     if (isI) gl.drawElementsInstanced(gl.TRIANGLES, g.count, g.type, 0, (o as InstancedMesh).count);
