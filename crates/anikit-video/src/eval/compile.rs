@@ -1368,13 +1368,14 @@ impl C<'_> {
             }
         };
         let chars = layout.chars.len();
-        let nat = [layout.width, layout.height];
+        let wrap = if counter.is_some() { None } else { tspec.width };
+        let nat = [wrap.unwrap_or(layout.width), layout.height];
         if split.is_some() && (counter.is_some() || kinetic.is_some()) {
             self.d.push(Diagnostic::warning(format!("{path}.split"), "split is ignored on counters and kinetic text"));
         }
         let split = if counter.is_some() || kinetic.is_some() { None } else { split.map(|by| SplitC { by, tracks: Vec::new(), delays: Vec::new() }) };
         let has_split = split.is_some();
-        (Kind::Text { layout, paint, run_colors, split, counter, kinetic }, nat, chars, has_split, from_enter)
+        (Kind::Text { layout, wrap, paint, run_colors, split, counter, kinetic }, nat, chars, has_split, from_enter)
     }
 
     /// Inline markup: `**bold**`, `*italic*`, `[text]{colour}`. Returns the plain text and spans (empty if none).

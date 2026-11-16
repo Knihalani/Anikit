@@ -160,3 +160,14 @@ fn clip_shapes() {
     let clip = dl.ops.iter().find_map(|o| match o { Op::PushLayer { clip: Some((p, _)), .. } => Some(kurbo::Shape::bounding_box(p)), _ => None }).expect("clip");
     assert!((clip.x0 - 100.0).abs() < 0.5 && (clip.x1 - 300.0).abs() < 0.5, "{clip:?}");
 }
+
+
+#[test]
+fn contextual_key_suggestions() {
+    // `durration` on a scene → duration; `colr` on a layer → color; `ease` on a scene is not valid there.
+    let e = errors(r##"{ "scenes": [ { "durration": 2, "ease": "x", "layers": [ { "text": "x", "colr": "#fff", "enter": { "preset": "fadeUp", "dellay": 1 } } ] } ] }"##);
+    assert!(e.iter().any(|m| m == "warning: scenes[0].durration: unknown key (ignored), did you mean 'duration'?"), "{e:?}");
+    assert!(e.iter().any(|m| m == "warning: scenes[0].layers[0].colr: unknown key (ignored), did you mean 'color'?"), "{e:?}");
+    assert!(e.iter().any(|m| m == "warning: scenes[0].layers[0].enter.dellay: unknown key (ignored), did you mean 'delay'?"), "{e:?}");
+    assert!(e.iter().any(|m| m == "warning: scenes[0].ease: 'ease' is not valid here (ignored)"), "{e:?}");
+}

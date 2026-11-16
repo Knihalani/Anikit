@@ -216,6 +216,8 @@ pub(crate) struct SplitC {
 pub(crate) enum Kind {
     Text {
         layout: Arc<TextLayout>,
+        /// Wrap width the layout was made with (glyphs are positioned within it).
+        wrap: Option<f32>,
         paint: PaintC,
         /// Use the runs' own colours (rich spans).
         run_colors: bool,
@@ -725,7 +727,7 @@ impl Evaluator {
                     }
                 }
             }
-            Kind::Text { layout, paint, run_colors, split, counter, kinetic } => {
+            Kind::Text { layout, wrap, paint, run_colors, split, counter, kinetic } => {
                 let owned;
                 let layout = if let Some(c) = counter {
                     owned = self.layout_counter(c, v[prop::VALUE]);
@@ -733,7 +735,7 @@ impl Evaluator {
                 } else {
                     layout
                 };
-                let lsize = [layout.width, layout.height];
+                let lsize = [wrap.unwrap_or(layout.width), layout.height];
                 // Centre the block in the layer box (it may differ when the box is wider).
                 let ox = (w - lsize[0]) * 0.5;
                 let oy = (h - lsize[1]) * 0.5;

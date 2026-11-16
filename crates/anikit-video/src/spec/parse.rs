@@ -100,13 +100,26 @@ pub fn from_value(v: serde_json::Value) -> Result<Parsed, Vec<Diagnostic>> {
         let de = serde_path_to_error::Deserializer::new(&v, &mut track);
         serde_ignored::deserialize(de, |p| {
             let path = fmt_ignored(&p);
-            let (parent, key) = match path.rfind(['.', '[']) {
-                Some(i) => (&path[..i], path[i..].trim_start_matches('.')),
-                None => ("", path.as_str()),
+            let mut segs = Vec::new();
+            segments(&p, &mut segs);
+            let key = match segs.pop() {
+                Some(Seg2::Key(k)) => k,
+                _ => String::new(),
             };
-            let _ = parent;
-            let sug = super::validate::suggest(key, super::validate::all_keys());
-            if sug.as_deref() == Some(key) {
+            let parent: Vec<super::validate::Seg> = segs
+                .iter()
+                .map(|s| match s {
+                    Seg2::Key(k) => super::validate::Seg::Key(k),
+                    Seg2::Index => super::validate::Seg::Index,
+                })
+                .collect();
+            let local = super::validate::keys_at(&parent);
+            let sug = match &local {
+                Some(keys) => super::validate::suggest(&key, keys),
+                None => super::validate::suggest(&key, super::validate::all_keys()),
+            };
+            let elsewhere = local.as_ref().is_some_and(|k| !k.contains(&key)) && super::validate::all_keys().contains(&key);
+            if sug.as_deref() == Some(key.as_str()) || (sug.is_none() && elsewhere) {
                 warnings.push(Diagnostic::warning(path.clone(), format!("'{key}' is not valid here (ignored)")));
             } else {
                 warnings.push(Diagnostic::warning(path.clone(), "unknown key (ignored)").suggest(sug));
@@ -175,5 +188,26 @@ fn fmt_ignored(p: &serde_ignored::Path) -> String {
             }
         }
         Path::Some { parent } | Path::NewtypeStruct { parent } | Path::NewtypeVariant { parent } => fmt_ignored(parent),
+    }
+}
+
+enum Seg2 {
+    Key(String),
+    Index,
+}
+
+fn segments(p: &serde_ignored::Path, out: &mut Vec<Seg2>) {
+    use serde_ignored::Path;
+    match p {
+        Path::Root => {}
+        Path::Seq { parent, .. } => {
+            segments(parent, out);
+            out.push(Seg2::Index);
+        }
+        Path::Map { parent, key } => {
+            segments(parent, out);
+            out.push(Seg2::Key(key.clone()));
+        }
+        Path::Some { parent } | Path::NewtypeStruct { parent } | Path::NewtypeVariant { parent } => segments(parent, out),
     }
 }

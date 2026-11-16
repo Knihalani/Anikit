@@ -98,6 +98,48 @@ pub fn all_keys() -> &'static [String] {
     })
 }
 
+/// One step of a path into the spec.
+pub enum Seg<'a> {
+    Key(&'a str),
+    Index,
+}
+
+/// The keys valid in the object at `path` (resolved through the schema), if known.
+pub fn keys_at(path: &[Seg]) -> Option<Vec<String>> {
+    static S: OnceLock<serde_json::Value> = OnceLock::new();
+    let root = S.get_or_init(|| serde_json::from_str(&super::schema_json()).unwrap());
+    let defs = root.get("$defs");
+    // Resolve $ref / anyOf / oneOf to the object (or array) variant.
+    fn resolve<'a>(v: &'a serde_json::Value, defs: Option<&'a serde_json::Value>, want_array: bool) -> Option<&'a serde_json::Value> {
+        let mut v = v;
+        for _ in 0..8 {
+            if let Some(r) = v.get("$ref").and_then(|r| r.as_str()) {
+                v = defs?.get(r.rsplit('/').next()?)?;
+                continue;
+            }
+            if let Some(list) = v.get("anyOf").or_else(|| v.get("oneOf")).and_then(|x| x.as_array()) {
+                let pick = list.iter().find_map(|x| {
+                    let r = resolve(x, defs, want_array)?;
+                    let ok = if want_array { r.get("items").is_some() } else { r.get("properties").is_some() };
+                    ok.then_some(r)
+                });
+                return pick;
+            }
+            return Some(v);
+        }
+        None
+    }
+    let mut cur = resolve(root, defs, false)?;
+    for seg in path {
+        cur = match seg {
+            Seg::Key(k) => resolve(cur.get("properties")?.get(*k)?, defs, false).or_else(|| resolve(cur.get("properties")?.get(*k)?, defs, true))?,
+            Seg::Index => resolve(resolve(cur, defs, true)?.get("items")?, defs, false)?,
+        };
+    }
+    let props = cur.get("properties")?.as_object()?;
+    Some(props.keys().cloned().collect())
+}
+
 fn collect_props(v: &serde_json::Value, out: &mut Vec<String>) {
     match v {
         serde_json::Value::Object(m) => {
