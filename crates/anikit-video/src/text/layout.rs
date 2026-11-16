@@ -331,8 +331,19 @@ impl TextSpec {
     }
 
     fn cache_key(&self) -> u64 {
+        // Stream the serialisation into the hasher: no allocation.
+        struct W<'a>(&'a mut std::collections::hash_map::DefaultHasher);
+        impl std::io::Write for W<'_> {
+            fn write(&mut self, b: &[u8]) -> std::io::Result<usize> {
+                self.0.write(b);
+                Ok(b.len())
+            }
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
         let mut h = std::collections::hash_map::DefaultHasher::new();
-        serde_json::to_vec(self).unwrap_or_default().hash(&mut h);
+        let _ = serde_json::to_writer(W(&mut h), self);
         h.finish()
     }
 
@@ -534,13 +545,13 @@ impl FontStore {
     /// Lay out a text block (cached by content; cheap to call again).
     pub fn layout(&self, spec: &TextSpec) -> Arc<TextLayout> {
         let key = spec.cache_key();
-        if let Some(l) = self.cache.lock().unwrap().get(&key) {
+        if let Some(l) = self.cache.read().unwrap().get(&key) {
             return l.clone();
         }
         let mut l = self.layout_uncached(spec);
         l.key = key;
         let l = Arc::new(l);
-        self.cache.lock().unwrap().insert(key, l.clone());
+        self.cache.write().unwrap().insert(key, l.clone());
         l
     }
 

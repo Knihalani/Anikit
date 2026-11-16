@@ -70,7 +70,7 @@ pub struct FontStore {
     pub(crate) shaper: Mutex<Shaper>,
     faces: RwLock<Vec<Arc<Face>>>,
     index: Mutex<HashMap<FaceKey, FontId>>,
-    pub(crate) cache: Mutex<HashMap<u64, Arc<super::layout::TextLayout>>>,
+    pub(crate) cache: RwLock<HashMap<u64, Arc<super::layout::TextLayout>>>,
 }
 
 impl Default for FontStore {
@@ -98,7 +98,7 @@ impl FontStore {
             shaper: Mutex::new(Shaper { fcx, lcx: LayoutContext::new(), families: HashMap::new(), emoji: None }),
             faces: RwLock::new(Vec::new()),
             index: Mutex::new(HashMap::new()),
-            cache: Mutex::new(HashMap::new()),
+            cache: RwLock::new(HashMap::new()),
         };
         let sans = store.add_blob(Blob::new(Arc::new(bundled::INTER)));
         store.add_blob(Blob::new(Arc::new(bundled::INTER_ITALIC)));
@@ -165,7 +165,7 @@ impl FontStore {
             }
         }
         // New fonts can change any layout.
-        self.cache.lock().unwrap().clear();
+        self.cache.write().unwrap().clear();
         names
     }
 
