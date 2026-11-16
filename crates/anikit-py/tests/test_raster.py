@@ -355,3 +355,26 @@ def test_example_script_writes_pngs(tmp_path, monkeypatch):
     runpy.run_path(str(script), run_name="__main__")
     png = (tmp_path / "knot_000.png").read_bytes()
     assert png.startswith(b"\x89PNG\r\n\x1a\n") and png.endswith(b"IEND\xaeB`\x82")
+
+
+def test_mesh_update_in_place_and_tube_into():
+    pos = np.array([[-1, -1, 0], [1, -1, 0], [0, 1, 0]], np.float32)
+    nrm = np.array([[0, 0, 1]] * 3, np.float32)
+    m = raster.custom(pos, nrm, [0, 1, 2])
+    moved = pos.copy()
+    moved[2, 1] = 0.5
+    assert m.update(moved) is m
+    np.testing.assert_array_equal(m.positions, moved)
+    np.testing.assert_array_equal(m.normals, nrm)
+    np.testing.assert_array_equal(m.indices, [[0, 1, 2]])
+    with pytest.raises(ValueError, match="expected 9"):
+        m.update(np.zeros(6))
+    with pytest.raises(ValueError, match="finite"):
+        m.update(np.full(9, np.nan))
+    other = raster.sphere(4, 6)
+    m.update(other)
+    assert m.triangle_count == other.triangle_count
+    pts = [[0, 0, 0], [10, 0, 0], [20, 5, 0], [30, 0, 0]]
+    hair = raster.tube(pts[:2], radius=1)
+    assert raster.tube(pts, radius=1, into=hair) is hair
+    np.testing.assert_array_equal(hair.positions, raster.tube(pts, radius=1).positions)

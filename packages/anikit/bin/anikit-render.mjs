@@ -185,7 +185,7 @@ if (opts.review !== undefined) {
 if (opts.profile) {
   // Where the time goes: steps, draws (and each renderer3d pass), read-back, grade.
   const { comp } = await build();
-  const p = await node.profileFilm(comp, { every: num('every') });
+  const p = await node.profileFilm(comp, { every: num('every'), from: num('from'), to: num('to') });
   console.log(node.formatProfile(p));
   process.exit(0);
 }
@@ -240,7 +240,7 @@ if (SEG) {
   // Report progress to the parent (it prints one aggregated line).
   let last = 0;
   await node.renderToFile(comp, {
-    ...enc, out: target, from: +a, to: +b, preroll: num('preroll'), fadeIn: +fi || 0, fadeOut: +fo || 0, fadeColor: fc || undefined,
+    ...enc, out: target, from: +a, to: +b, preroll: num('preroll'), fadeIn: +fi || 0, fadeOut: +fo || 0, fadeColor: fc || undefined, quiet: +a > 0,
     onProgress: (_fr, n) => { const now = Date.now(); if (process.send && now - last > 250) { last = now; process.send({ n }); } },
   });
   process.send?.({ n: Math.round((+b - +a) * comp.fps) });

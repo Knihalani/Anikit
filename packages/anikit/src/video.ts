@@ -278,7 +278,9 @@ export class FrameBuffer {
   /** I420 of the current frame (view, valid until the next call). */
   i420(order: 'rgba' | 'bgra' = 'rgba'): Uint8Array {
     const p = core().ak_video_i420(this.id, order === 'bgra' ? 1 : 0);
-    return new Uint8Array(W!.memory.buffer, p, this.width * this.height * 1.5);
+    // Chroma planes round up for odd sizes (ffmpeg's and WebCodecs' I420 layout).
+    const c = Math.ceil(this.width / 2) * Math.ceil(this.height / 2);
+    return new Uint8Array(W!.memory.buffer, p, this.width * this.height + 2 * c);
   }
   free(): void {
     if (this.id >= 0) core().ak_video_free(this.id);
@@ -523,7 +525,7 @@ export class Composition {
       churn = made > 0 ? churn + 1 : 0;
       if (churn >= 3 && !churnWarned) {
         churnWarned = true;
-        warn(`composition: scene "${act.map((s) => s.name).join('" / "')}" creates ${made} mesh${made === 1 ? '' : 'es'} or instance buffers in every draw(). Create them once, outside draw(), and update them in place (instances.set(i, …)): each one stays in memory for the whole render.`);
+        warn(`composition: scene "${act.map((s) => s.name).join('" / "')}" creates ${made} mesh${made === 1 ? '' : 'es'} or instance buffers in every draw(). Create them once, outside draw(), and update them in place (instances.set(i, …), mesh.update(positions), mesh.tube(points, { into })), or free() the previous mesh: each mesh stays in WebAssembly memory until freed.`);
       }
     };
     const paintFrame = (t: number, f: number, act: SceneDef[]) => {

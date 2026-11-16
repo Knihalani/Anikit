@@ -1901,6 +1901,18 @@ A sky dome that the fog leaves alone: `{ mesh: dome, cull: false, material: { am
 
 **Meshes**: `mesh.cube()`, `sphere(rings, segments)`, `torus(radius, tube, segments, sides)`, `torusKnot({ p, q, radius, spread, tube, segments, sides })`, `plane(cells)` (XZ, faces +Y — floors that run to the horizon with `grid`), `cylinder(segments, caps)`, `heightfield(w, d, heights | (x, z) => h, { skip })`, `text(str, { font, depth, bevel, resolution })` (solid bevelled 3D text in any font; stand it up with `rx: 90` and use `sz: size * mesh.aspect`), `custom(positions, normals, indices, uvs?)`.
 
+**Animated geometry**: don't create meshes inside `draw()`. Change one in place with `m.update(positions, normals?, uvs?)` (same vertex count), or rebuild a tube into an existing mesh with `mesh.tube(points, { into: m })` (any size). `m.free()` is safe to call twice, and a freed mesh is skipped when drawn.
+
+```ts
+const pos = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]), nrm = new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1]);
+const sail = mesh.custom(pos, nrm, [0, 1, 2]);
+const hair = mesh.tube([[0, 0, 0], [10, 0, 0], [20, 5, 0]], { radius: 0.4 });
+// per frame:
+pos[7] = 1 + 0.1 * Math.sin(Date.now() / 300);
+sail.update(pos);
+mesh.tube([[0, 0, 0], [10, 2, 0], [20, 5, 3]], { radius: 0.4, into: hair });
+```
+
 **Light points** (`{ points, colors?, size, intensity, streak, fog }`): `points` is a flat xyz array or a live `emitter()` / `pointCloud()`. `streak` stretches each point along its screen motion since the previous `render()` (1 = shutter-accurate, 3+ = warp).
 
 **Shatter**: `shatter(mesh, { transform, force, spread, spin, gravity, drag, ripple, color })` turns every triangle into a flying shard; `shards.update(secondsSinceHit)` poses them; draw `{ mesh: shards.mesh, instances: shards.instances, cull: false }`. Deterministic, so parallel render workers agree.
@@ -1958,7 +1970,8 @@ The Python package (`crates/anikit-py`) exposes the same renderer and grade on n
 | `renderer3d({ width, height })` | `raster.Renderer3D(width, height)` |
 | `r3.render(scene, items, { background, mirror, …light })` | `r3.render(camera, items, background=, transparent=, mirror=, lighting=, **light)` → `(h, w, 4)` uint8 array |
 | `mesh.cube()`, `sphere`, `torus`, `torusKnot({…})`, `plane`, `cylinder`, `heightfield`, `custom` | `raster.cube()`, `sphere`, `torus`, `torus_knot(p=, q=, radius=, spread=, tube=, segments=, sides=)`, `plane`, `cylinder`, `heightfield(w, d, heights \| f(x, z), skip=)`, `custom(positions, normals, indices, uvs=None)` |
-| `mesh.tube(points, { radius, sides, radii, taper })` | `raster.tube(points, radius=10, sides=8, radii=None, taper=None)` (`(n, 3)`, flat or a list of points; `(n - 1) * sides * 2` triangles) |
+| `mesh.tube(points, { radius, sides, radii, taper, into })` | `raster.tube(points, radius=10, sides=8, radii=None, taper=None, into=None)` (`(n, 3)`, flat or a list of points; `(n - 1) * sides * 2` triangles) |
+| `m.update(positions, normals?, uvs?)`, `m.update(otherMesh)` | `m.update(positions, normals=None, uvs=None)`, `m.update(other_mesh)` |
 | `instances(n, (i) => ({ x, ry, scale, color }))`, `inst.set(i, {…})` | `raster.instances(n, x=xs, ry=angles, scale=12, color=…)` (vectorised) or `instances(n, lambda i: {...})`; `inst.set(index, **fields)`; `inst.data` is `(n, 15)` float32, `inst.positions` / `inst.colors` are writable views |
 | `{ mesh, instances, material, cull, blend, mirror, reflect }` | `raster.Item(mesh, instances, material, cull=, blend="opaque" \| "additive" \| "gloss", mirror=, reflect=)` or a dict |
 | `{ …, castShadow: false }` | `raster.Item(…, cast_shadow=False)` |

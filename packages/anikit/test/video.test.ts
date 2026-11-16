@@ -110,6 +110,20 @@ describe('FrameBuffer', () => {
     expect(Array.from(y.slice(0, 4))).toEqual([235, 235, 235, 235]);
     fb.free();
   });
+
+  it('lays out odd sizes like ffmpeg (chroma planes round up), so frames stay aligned', () => {
+    for (const [w, h] of [[5, 3], [1, 1], [63, 35], [2, 3]]) {
+      const fb = new FrameBuffer(w, h);
+      fb.write(new Uint8Array(w * h * 4).fill(255));
+      const y = fb.i420();
+      const c = Math.ceil(w / 2) * Math.ceil(h / 2);
+      expect(y.length).toBe(w * h + 2 * c);
+      expect(Array.from(y.slice(0, w * h)).every((v) => v === 235)).toBe(true);
+      // Every chroma sample is written (neutral grey for white), including the odd edge.
+      expect(Array.from(y.slice(w * h)).every((v) => v >= 127 && v <= 129)).toBe(true);
+      fb.free();
+    }
+  });
 });
 
 describe('emitter', () => {

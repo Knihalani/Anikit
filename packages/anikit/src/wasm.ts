@@ -170,6 +170,10 @@ export interface Exports {
   ak_mesh_ptr(id: number, which: number): number;
   ak_mesh_bounds(id: number): number;
   ak_mesh_free(id: number): void;
+  ak_mesh_replace(dst: number, src: number): number;
+  ak_raster_mask_begin(id: number): void;
+  ak_raster_mask_draw(id: number, mesh: number, n: number, cull: number): void;
+  ak_raster_mask_end(id: number): void;
   ak_raster_create(w: number, h: number): number;
   ak_raster_free(id: number): void;
   ak_raster_resize(id: number, w: number, h: number): void;

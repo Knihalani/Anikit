@@ -106,7 +106,8 @@ export const readPixels = (ctx, w, h) => (typeof ctx.canvas?.data === 'function'
 
 /**
  * Render a composition to a video file with ffmpeg. Frames are converted to
- * I420 in WebAssembly and piped raw, so ffmpeg only encodes.
+ * I420 in WebAssembly and piped raw, so ffmpeg only encodes. Odd sizes are
+ * padded to even for libx264 (with a warning unless `o.quiet`).
  */
 export async function renderToFile(comp, o) {
   const { width: w, height: h, fps } = comp;
@@ -115,6 +116,13 @@ export async function renderToFile(comp, o) {
   const vf = [];
   if (o.fadeIn) vf.push(`fade=t=in:st=0:d=${o.fadeIn}`);
   if (o.fadeOut) vf.push(`fade=t=out:st=${((o.to ?? comp.duration) - (o.from ?? 0) - o.fadeOut).toFixed(3)}:d=${o.fadeOut}${o.fadeColor ? `:color=${o.fadeColor}` : ''}`);
+  // x264 (and yuv420p output) needs even sizes: pad an odd width/height by one
+  // pixel, repeating nothing (black), rather than fail after rendering.
+  const odd = (w % 2 || h % 2) && codec === 'libx264';
+  if (odd) {
+    vf.push('pad=ceil(iw/2)*2:ceil(ih/2)*2');
+    if (!o.quiet) console.warn(`anikit-render: ${w}x${h} is odd; libx264 needs even sizes, so the video is padded to ${w + (w % 2)}x${h + (h % 2)}. Use an even width and height to avoid the black edge.`);
+  }
   const args = ['-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'yuv420p', '-s', `${w}x${h}`, '-r', String(fps), '-i', '-',
     ...(vf.length ? ['-vf', vf.join(',')] : []),
     '-c:v', codec, ...(codec === 'libx264' ? ['-preset', o.preset ?? 'medium', '-crf', crf, '-pix_fmt', 'yuv420p'] : ['-crf', crf, '-b:v', '0']),
@@ -264,12 +272,14 @@ export async function checkVideo(file, o = {}) {
     for (let k = Math.max(0, i - win); k <= Math.min(diffs.length - 1, i + win); k++) if (Math.abs(k - i) > 1) around.push(diffs[k]);
     around.sort((x, y) => x - y);
     const med = around.length ? around[around.length >> 1] : 0;
-    if (diffs[i] > floor && diffs[i] > ratio * Math.max(med, 0.5)) spikes.push({ t: +((i + 1) / fps).toFixed(3), frame: i + 1, diff: +diffs[i].toFixed(2), ratio: +(diffs[i] / Math.max(med, 0.5)).toFixed(1) });
+    // A spike needs neighbours to compare with: in very short videos there are none.
+    if (around.length >= 2 && diffs[i] > floor && diffs[i] > ratio * Math.max(med, 0.5)) spikes.push({ t: +((i + 1) / fps).toFixed(3), frame: i + 1, diff: +diffs[i].toFixed(2), ratio: +(diffs[i] / Math.max(med, 0.5)).toFixed(1) });
     if (diffs[i] === 0 && i > 0 && i < diffs.length - 1) freezes.push({ t: +((i + 1) / fps).toFixed(3), frame: i + 1 });
   }
   const mean = diffs.reduce((x, y) => x + y, 0) / Math.max(1, diffs.length);
   const lines = [`${file}: ${frames} frames @ ${fps} fps, mean change ${mean.toFixed(2)} (0-255 per pixel per frame)`];
-  lines.push(spikes.length ? `SPIKES (a frame changes ${ratio}x+ more than its neighbours; confirm each is a cut/flash/impact you meant):` : 'no spikes: every frame flows from the last');
+  if (diffs.length < 4) lines.push('too short to look for spikes (fewer than 5 frames)');
+  else lines.push(spikes.length ? `SPIKES (a frame changes ${ratio}x+ more than its neighbours; confirm each is a cut/flash/impact you meant):` : 'no spikes: every frame flows from the last');
   for (const s of spikes) lines.push(`  ${s.t.toFixed(3)} s (frame ${s.frame}): change ${s.diff} = ${s.ratio}x its neighbours`);
   if (freezes.length) lines.push(`FROZEN frames (identical to the previous one): ${freezes.slice(0, 12).map((f) => f.t.toFixed(3)).join(', ')}${freezes.length > 12 ? ', …' : ''}`);
   return { fps, frames, diffs: Array.from(diffs), spikes, freezes, report: lines.join('\n') };
@@ -292,7 +302,7 @@ export async function profileFilm(comp, o = {}) {
   const frames = [];
   const canvas = lib.createCanvas(comp.width, comp.height);
   await comp.render({
-    canvas, every, readPixels, createCanvas: (w, h) => lib.createCanvas(w, h),
+    canvas, every, from: o.from, to: o.to, readPixels, createCanvas: (w, h) => lib.createCanvas(w, h),
     onFrame: (fr) => { frames.push({ t: fr.t, ...fr.timing, passes: { ...fr.timing.passes } }); },
   });
   const keys = ['step', 'draw', 'read', 'post'];
@@ -301,6 +311,7 @@ export async function profileFilm(comp, o = {}) {
   const mean = Object.fromEntries(keys.map((k) => [k, avg((f) => f[k])]));
   mean.passes = Object.fromEntries(passKeys.map((k) => [k, avg((f) => f.passes[k] ?? 0)]));
   const per = keys.reduce((a, k) => a + mean[k], 0);
+  // The estimate is for the whole film, even when only a range was profiled.
   return { frames, mean, perFrame: per, estimate: (per * comp.frames) / 1000, passKeys };
 }
 

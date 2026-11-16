@@ -337,6 +337,11 @@ pub struct Raster {
     dof_taps: Vec<(i32, i32, f32)>,
     /// Shadow map from the key light (see [`Raster::shadow_begin`]).
     shadow_depth: Vec<f32>,
+    /// Reflection after the scene: rows with an uncovered pixel.
+    row_open: Vec<bool>,
+    /// Mirror-surface coverage (depth, INFINITY = none) for the next `reflection_after`.
+    mask_depth: Vec<f32>,
+    mask_on: bool,
     shadow_size: usize,
     shadow_vp: M4,
     shadow_bias: f32,
@@ -830,6 +835,7 @@ impl Raster {
         self.color.iter_mut().for_each(|p| *p = c);
         self.depth.iter_mut().for_each(|d| *d = f32::INFINITY);
         self.shadows_on = false;
+        self.mask_on = false;
     }
 
     /// Start a shadow map for the key light: `light_vp` is the light's
@@ -901,11 +907,31 @@ impl Raster {
         // Half pixel (bx, by) feeds full-res x in 2bx − 1 ..= 2bx + 2 (and y alike).
         let mut need = vec![false; bw * bh];
         let mut row = vec![false; bw];
+        // With a mirror mask (see `reflection_mask_begin`), a pixel needs the
+        // reflection only where the mirror surface will be drawn over it.
+        let mask = if self.mask_on && self.mask_depth.len() == w * h { Some(&self.mask_depth) } else { None };
+        let mut open = core::mem::take(&mut self.row_open);
         for y in 0..h {
             let d = &self.depth[y * w..(y + 1) * w];
+            if !d.contains(&f32::INFINITY) {
+                continue; // a covered row needs nothing
+            }
+            let d: &[f32] = match mask {
+                Some(m) => {
+                    // Open = uncovered by the scene and covered by the mirror: INFINITY
+                    // marks it, anything else is closed.
+                    open.clear();
+                    open.extend(d.iter().zip(&m[y * w..(y + 1) * w]).map(|(z, mz)| *z == f32::INFINITY && *mz != f32::INFINITY));
+                    if !open.contains(&true) {
+                        continue;
+                    }
+                    &[]
+                }
+                None => d,
+            };
             for (bx, r) in row.iter_mut().enumerate() {
                 let (x0, x1) = ((2 * bx).saturating_sub(1), (2 * bx + 3).min(w));
-                *r = d[x0.min(x1)..x1].contains(&f32::INFINITY);
+                *r = if mask.is_some() { open[x0.min(x1)..x1].contains(&true) } else { d[x0.min(x1)..x1].contains(&f32::INFINITY) };
             }
             // Half rows by with 2by − 1 <= y <= 2by + 2.
             for by in y.saturating_sub(2) / 2..(y.div_ceil(2) + 1).min(bh) {
@@ -922,6 +948,26 @@ impl Raster {
                 *z = f32::NEG_INFINITY;
             }
         }
+        self.row_open = open;
+        self.mask_on = false;
+    }
+
+    /// Before [`Raster::reflection_after`] when the sky is drawn afterwards: draw
+    /// the mirror surfaces (depth only, `Blend::DepthOnly`, the same culling as
+    /// their gloss draw) between this and [`Raster::reflection_mask_end`]. The
+    /// reflection is then shaded only where a mirror surface will cover it; every
+    /// other uncovered pixel is overwritten by the sky, so the frame is the same.
+    pub fn reflection_mask_begin(&mut self) {
+        let n = self.width * self.height;
+        let mut m = core::mem::take(&mut self.mask_depth);
+        m.clear();
+        m.resize(n, f32::INFINITY);
+        self.mask_depth = core::mem::replace(&mut self.depth, m);
+    }
+    /// End the mirror mask (see [`Raster::reflection_mask_begin`]).
+    pub fn reflection_mask_end(&mut self) {
+        core::mem::swap(&mut self.depth, &mut self.mask_depth);
+        self.mask_on = true;
     }
     /// The raster draws should go to: the half-res reflection target during a
     /// reflection pass, otherwise this one.
@@ -948,17 +994,31 @@ impl Raster {
             alpha.clear();
             alpha.resize(bw * bh, 1.0);
             if after {
-                // Keep the opaque scene: blend everywhere, then restore covered pixels.
+                // Keep the opaque scene: blend, then restore covered pixels. Rows the
+                // scene covers entirely would be restored whole, so they're skipped.
+                let w = self.width;
+                let mut open = core::mem::take(&mut self.row_open);
+                open.clear();
+                open.extend(self.depth.chunks_exact(w).map(|d| d.contains(&f32::INFINITY)));
                 let mut saved = core::mem::take(&mut self.blur_src);
-                saved.clear();
-                saved.extend_from_slice(&self.color);
-                self.blend_half(bw, bh, &alpha);
-                for ((c, s), z) in self.color.iter_mut().zip(&saved).zip(&self.depth) {
-                    *c = if *z == f32::INFINITY { *c } else { *s };
+                if saved.len() != self.color.len() {
+                    saved.clear();
+                    saved.resize(self.color.len(), 0);
+                }
+                for (y, _) in open.iter().enumerate().filter(|(_, o)| **o) {
+                    saved[y * w..(y + 1) * w].copy_from_slice(&self.color[y * w..(y + 1) * w]);
+                }
+                self.blend_half(bw, bh, &alpha, &open);
+                for (y, _) in open.iter().enumerate().filter(|(_, o)| **o) {
+                    let r = y * w..(y + 1) * w;
+                    for ((c, s), z) in self.color[r.clone()].iter_mut().zip(&saved[r.clone()]).zip(&self.depth[r]) {
+                        *c = if *z == f32::INFINITY { *c } else { *s };
+                    }
                 }
                 self.blur_src = saved;
+                self.row_open = open;
             } else {
-                self.blend_half(bw, bh, &alpha);
+                self.blend_half(bw, bh, &alpha, &[]);
             }
             self.alpha = alpha;
         }
@@ -1101,6 +1161,38 @@ impl Raster {
         self.clip.resize(total, [0.0; 4]);
         self.var.resize(total, [0.0; NV]);
         self.sv.resize(total, Sv::default());
+        if blend == Blend::DepthOnly {
+            // Depth only (shadow maps): rasterising reads screen x, y and z, never the
+            // varyings, so skip normals, UVs and the perspective-divided attributes.
+            // The clip coordinates and screen positions are computed exactly as below.
+            let (hw, hh) = (self.width as f32 * 0.5, self.height as f32 * 0.5);
+            for oi in 0..count {
+                let ii = self.order[oi] as usize;
+                let m = &instances[ii * INSTANCE_STRIDE..ii * INSTANCE_STRIDE + 12];
+                let off = oi * nv;
+                for (v, p) in mesh.pos.chunks_exact(3).enumerate() {
+                    let (px, py, pz) = (p[0], p[1], p[2]);
+                    let wx = m[0] * px + m[3] * py + m[6] * pz + m[9];
+                    let wy = m[1] * px + m[4] * py + m[7] * pz + m[10];
+                    let wz = m[2] * px + m[5] * py + m[8] * pz + m[11];
+                    let c = [
+                        vp[0] * wx + vp[4] * wy + vp[8] * wz + vp[12],
+                        vp[1] * wx + vp[5] * wy + vp[9] * wz + vp[13],
+                        vp[2] * wx + vp[6] * wy + vp[10] * wz + vp[14],
+                        vp[3] * wx + vp[7] * wy + vp[11] * wz + vp[15],
+                    ];
+                    self.clip[off + v] = c;
+                    if c[2] >= -c[3] && c[3] > 0.0 {
+                        let q = 1.0 / c[3];
+                        self.sv[off + v] = Sv { x: hw + c[0] * q * hw, y: hh - c[1] * q * hh, z: c[2] * q, q, a: [0.0; NV] };
+                    }
+                }
+            }
+            for oi in 0..count {
+                self.tris::<DEPTH>(mesh, oi * nv, cull_back, &sh);
+            }
+            return;
+        }
         for oi in 0..count {
             let ii = self.order[oi] as usize;
             let m = &instances[ii * INSTANCE_STRIDE..ii * INSTANCE_STRIDE + 12];
@@ -1340,8 +1432,20 @@ impl Raster {
             // Depth along the span is evaluated as z0 + dz·k in every mode, so a
             // pre-pass and the shading pass agree bit for bit.
             if MODE == DEPTH {
-                for (k, dp) in self.depth[a0..=a1].iter_mut().enumerate() {
-                    let z = z0 + dz * k as f32;
+                // Four at a time (the lane values equal the scalar z0 + dz·k: k + l is
+                // exact in f32), then the tail.
+                let span = &mut self.depth[a0..=a1];
+                let (zv0, dzv, lanes) = (V4::splat(z0), V4::splat(dz), V4::new(0.0, 1.0, 2.0, 3.0));
+                let mut k = 0;
+                while k + 4 <= span.len() {
+                    let zv = zv0 + dzv * (V4::splat(k as f32) + lanes);
+                    let d4 = &mut span[k..k + 4];
+                    let dv = V4::new(d4[0], d4[1], d4[2], d4[3]);
+                    d4.copy_from_slice(&V4::select(zv.lt(dv), zv, dv).to_array());
+                    k += 4;
+                }
+                for (kk, dp) in span[k..].iter_mut().enumerate() {
+                    let z = z0 + dz * (k + kk) as f32;
                     if z < *dp {
                         *dp = z;
                     }
@@ -1860,7 +1964,7 @@ impl Raster {
             }
             alpha.truncate((by + 1) * bw);
         }
-        self.blend_half(bw, bh, &alpha);
+        self.blend_half(bw, bh, &alpha, &[]);
         self.alpha = alpha;
     }
 }
@@ -2114,7 +2218,7 @@ impl Raster {
         let mut alpha = core::mem::take(&mut self.alpha);
         alpha.clear();
         alpha.extend(coc.iter().map(|c| ((c - 0.25) * 1.5).clamp(0.0, 1.0)));
-        self.blend_half(bw, bh, &alpha);
+        self.blend_half(bw, bh, &alpha, &[]);
         self.alpha = alpha;
         self.coc = coc;
     }
@@ -2125,7 +2229,8 @@ impl Raster {
     /// upsampled 2× bilinearly with fixed phase weights (output pixel 2i + k
     /// sits at i − 0.25 + k/2), by the half-res `alpha`.
     #[allow(clippy::needless_range_loop)]
-    fn blend_half(&mut self, bw: usize, bh: usize, alpha: &[f32]) {
+    /// `rows`: only these full-res rows (empty = all).
+    fn blend_half(&mut self, bw: usize, bh: usize, alpha: &[f32], rows: &[bool]) {
         let (w, h) = (self.width, self.height);
         // Packed-integer (SWAR) from here on: red+blue share one u32 in 16-bit
         // lanes, green another, so each tap is two multiply-adds, not three.
@@ -2134,6 +2239,9 @@ impl Raster {
         self.row_px.resize(bw, 0);
         let hp = &self.half_px;
         for y in 0..h.min(bh * 2) {
+            if !rows.is_empty() && !rows[y] {
+                continue;
+            }
             let by = y / 2;
             let ny = if y & 1 == 0 { by.saturating_sub(1) } else { (by + 1).min(bh - 1) };
             let arow = &alpha[by * bw..(by + 1) * bw];
@@ -2813,6 +2921,9 @@ mod tests {
         let mut cubes = tf(1.0, -1.2, 0.6, 0.0, [1.0, 0.2, 0.1]);
         cubes.extend(tf(0.7, 1.1, 0.4, -1.0, [0.2, 0.9, 0.3]));
         cubes.extend(tf(2.5, 0.0, 1.5, -6.0, [0.3, 0.3, 0.9]));
+        // A wall across the top of the frame: rows the scene covers entirely
+        // (the reflection skips them).
+        cubes.extend(tf(30.0, 0.0, 19.0, -25.0, [0.5, 0.4, 0.3]));
         let ball = tf(0.6, 0.3, 1.2, 1.0, [0.9, 0.9, 0.2]);
         let (mat, light) = (Material::default(), Lighting::default());
         for (w, h) in [(80, 60), (81, 63), (33, 18)] {
@@ -2839,6 +2950,8 @@ mod tests {
             assert!(a.depth.iter().zip(&b.depth).all(|(x, y)| x.to_bits() == y.to_bits()), "depth {w}x{h}");
             let sub = b.reflection.as_ref().expect("reflection target");
             assert!(sub.depth.iter().any(|z| *z == f32::NEG_INFINITY), "covered half-res pixels were skipped ({w}x{h})");
+            let full = b.depth.chunks_exact(w).filter(|r| !r.contains(&f32::INFINITY)).count();
+            assert!(full > 0 && full < h, "{full} of {h} rows fully covered ({w}x{h})");
         }
     }
 
@@ -3146,6 +3259,94 @@ mod tests {
                 }
             }
             assert!(lit > 50 && lit < n * n * 3 / 4, "pattern {kind}: {lit}");
+        }
+    }
+
+    #[test]
+    fn mirror_mask_with_a_sky_gives_the_same_frame() {
+        // Reflection after the scene, then the glossy floor, then the sky: shading the
+        // reflection only under the floor's coverage must not change the frame.
+        let eye = [0.5f32, 1.5, 6.0];
+        let m = mul(&perspective(60.0, 1.3, 0.5, 100.0), &look_at([0.5, 1.5, 6.0], [0.0, 0.5, 0.0], [0.0, 1.0, 0.0]));
+        let vp: M4 = core::array::from_fn(|i| m[i] as f32);
+        let mut mvp = vp; // reflected about y = 0
+        for r in 0..4 {
+            mvp[4 + r] = -vp[4 + r];
+        }
+        let tf = |s: [f32; 3], p: [f32; 3], c: [f32; 3]| [s[0], 0.0, 0.0, 0.0, s[1], 0.0, 0.0, 0.0, s[2], p[0], p[1], p[2], c[0], c[1], c[2]];
+        let mut cubes = tf([1.0; 3], [-1.2, 0.6, 0.0], [1.0, 0.2, 0.1]).to_vec();
+        cubes.extend(tf([0.7; 3], [1.1, 0.4, -1.0], [0.2, 0.9, 0.3]));
+        cubes.extend(tf([2.5; 3], [0.0, 1.5, -6.0], [0.3, 0.3, 0.9]));
+        // A floor that doesn't reach the frame edges (pixels left for the sky).
+        let floor = tf([6.0, 1.0, 5.0], [0.0, 0.0, -1.0], [0.4, 0.4, 0.45]);
+        let light = Lighting::default();
+        let mat = Material::default();
+        for (w, h) in [(80usize, 60usize), (81, 63), (33, 18)] {
+            let frame = |masked: bool| {
+                let mut r = Raster::new(w, h);
+                r.clear(0x203040, 255);
+                r.draw(&cube(), &cubes, &vp, eye, &mat, &light, true);
+                if masked {
+                    r.reflection_mask_begin();
+                    r.draw_with(&plane(4, 4), &floor, &vp, eye, &mat, &light, true, Blend::DepthOnly, None);
+                    r.reflection_mask_end();
+                }
+                r.reflection_after(0x203040, 255);
+                {
+                    let t = r.target();
+                    t.flip_winding = true;
+                    t.draw(&cube(), &cubes, &mvp, eye, &mat, &light, true);
+                    t.flip_winding = false;
+                }
+                let skipped = r.reflection.as_ref().map(|s| s.depth.iter().filter(|z| **z == f32::NEG_INFINITY).count()).unwrap_or(0);
+                r.reflection_end();
+                r.gloss = 0.5;
+                r.draw_with(&plane(4, 4), &floor, &vp, eye, &mat, &light, true, Blend::Gloss, None);
+                r.sky(&vp, &light, 0.0);
+                (r.color, r.depth, skipped)
+            };
+            let (ca, da, sa) = frame(false);
+            let (cb, db, sb) = frame(true);
+            assert!(ca == cb, "colour {w}x{h}");
+            assert!(da.iter().zip(&db).all(|(x, y)| x.to_bits() == y.to_bits()), "depth {w}x{h}");
+            assert!(sb > sa, "the mask skips more of the reflection ({sb} vs {sa}, {w}x{h})");
+        }
+    }
+
+    #[test]
+    fn depth_only_matches_the_opaque_depth() {
+        // The depth-only path (shadow maps) skips the varyings and fills spans four at a
+        // time: its depth must equal an opaque draw's, also through near-plane clipping
+        // (the camera sits inside the torus) and at odd sizes (span tails).
+        for (w, h, eye) in [(81usize, 63usize, [0.0, 0.3, 0.0]), (64, 64, [0.0, 3.0, 5.0]), (33, 18, [0.4, 0.0, 0.2])] {
+            let m = mul(&perspective(70.0, w as f64 / h as f64, 0.1, 50.0), &look_at(eye, [1.0, 0.0, -1.0], [0.0, 1.0, 0.0]));
+            let vp: M4 = core::array::from_fn(|i| m[i] as f32);
+            let ti = [1.0f32, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0];
+            let tor = torus(1.0, 0.45, 40, 16);
+            let mut a = Raster::new(w, h);
+            a.clear(0, 255);
+            a.draw_with(&tor, &ti, &vp, eye.map(|x| x as f32), &Material::default(), &Lighting::default(), false, Blend::DepthOnly, None);
+            let mut b = Raster::new(w, h);
+            b.clear(0, 255);
+            b.draw_with(&tor, &ti, &vp, eye.map(|x| x as f32), &Material::default(), &Lighting::default(), false, Blend::Opaque, None);
+            assert!(a.depth.iter().any(|z| z.is_finite()), "{w}x{h}: nothing drawn");
+            assert!(a.depth.iter().zip(&b.depth).all(|(x, y)| x.to_bits() == y.to_bits()), "{w}x{h}: depth differs");
+        }
+    }
+
+    #[test]
+    fn nan_vertices_draw_nothing_and_do_not_poison_depth() {
+        let m = mul(&perspective(60.0, 1.0, 0.5, 100.0), &look_at([0.0, 0.0, 5.0], [0.0; 3], [0.0, 1.0, 0.0]));
+        let vp: M4 = core::array::from_fn(|i| m[i] as f32);
+        let mut bad = cube();
+        bad.pos[0] = f32::NAN;
+        bad.pos[4] = f32::INFINITY;
+        let inst = [1.0f32, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0];
+        for blend in [Blend::Opaque, Blend::DepthOnly, Blend::Additive] {
+            let mut r = Raster::new(32, 32);
+            r.clear(0, 255);
+            r.draw_with(&bad, &inst, &vp, [0.0, 0.0, 5.0], &Material::default(), &Lighting::default(), true, blend, None);
+            assert!(r.depth.iter().all(|z| !z.is_nan()), "{blend:?}: NaN in depth");
         }
     }
 

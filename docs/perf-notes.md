@@ -1867,3 +1867,130 @@ shape and their arrays are packed).
   core layer holds a stale handle that long now (the fuzz test counts
   writer-table entries and records left behind), but FIFO reuse or retiring
   a slot at the last generation would make the invariant unconditional.
+## Eighth round (video)
+
+Goal: faster film rendering on the real films, plus a debugging sweep of the
+3D and video path. Same shared 4-core VM (other agents running), so every
+number is an interleaved base/new pair; single runs move ±10–15%.
+
+**Baseline:** `e8e4e30`'s `dist/`, `node/` and `bin/`, saved before any change
+(run with `DIST=…` for the bench scripts, and as a separate CLI for stills).
+
+**Output identity** (base = new, every change in this round):
+
+| Check | Result |
+|---|---|
+| `bench-raster.mjs --hash` (5 scenes, includes shadows) | `bcfa8f8e/06cb0df2` · `a3adee0a/8eb73fb5` · `cccf64fd/7f3d856d` · `9fc65e43/8661ce9e` · `77424f03/fdb7e70e` |
+| `bench-terrain.mjs --frames 12 --hash --sort near` | `ce3c2950` |
+| `bench-post.mjs --hash` (new flag: FNV-1a of the graded frame per case) | aa `364fb719`, bloom `2cd58525`, streaks `2bdd8db7`, rays `8365fd00`, flares `217fc14e`, zoom `05f79552`, aberration `57c253fa`, grade `8c6d49cc`, full `64864ebb` |
+| `film2.mjs --still 4` (shadows, motion blur 4) | identical PNG (`28692e63…`) |
+| `film.mjs --still 2` / `8` / `12` / `16` (lake, mirror, full grade) | identical PNGs (`3289707d…`, `eb80c2bd…`, `7a3939f4…`, `a25cfa00…`) |
+| Tiny 64×36 film, one worker, CLI mp4 | byte-identical |
+
+### Results
+
+`bench-terrain.mjs --frames 12 --hash --sort near` (ms per frame, two
+interleaved pairs, base · base vs new · new):
+
+| | base | new |
+|---|---|---|
+| one render | 393 · 410 | 391 · 375 |
+| … mirror pass | 82 · 87 | 68 · 65 |
+| … opaque pass | 241 · 253 | 248 · 239 |
+| full frame grade | 43 · 42 | 35 · 36 |
+
+`bench-post.mjs` (1080p, ms, pairs): FXAA 20.6 · 23.5 · 19.9 · 23.8 →
+17.2 · 17.6 · 18.5 · 17.5; full film grade 90 · 95 · 100 · 97 → 89 · 82 · 94 · 88.
+The other stages didn't change.
+
+film2.mjs `--profile --every 240`: the shadow map is now its own column
+(`3d:shadow`, previously hidden inside `3d:setup`): 120–130 ms of the 745–815 ms
+mean frame, 350 ms at 4 s (macro shot, 4 motion-blur samples × 36 casters).
+Unchanged by this round within noise (see "Shadow maps" below).
+
+End to end, `--profile --every 240`, one run each (base, then new): film.mjs
+1125 → 1087 ms per frame (opaque 504 → 476, mirror 269 → 265, post 62.7 →
+61.2); film2.mjs 816 → 835 (post 65 → 55, the rest within noise). The films
+gain less than the benches: film.mjs's mirror cost is shading the reflected
+scene, and nearly every row of its frames has an uncovered (sky) pixel, so the
+row skip below rarely applies there. With `skybox`, section 4 below shades the reflection only under the mirror
+surface; the films draw their own sky dome instead of `skybox`, so it doesn't
+apply to them.
+
+### 1. Mirror: skip rows the scene covers
+
+With `mirror` (half-res, after the scene), `reflection_after` scanned every
+full-res row to find pixels the reflection must fill, and `reflection_end`
+upsampled the whole frame, then restored every covered pixel from a full-frame
+copy. Rows with no uncovered pixel (depth `Infinity` nowhere) can't receive
+any reflection, so both now skip them: no flag scan, no 8 MB copy, no blend,
+no restore for those rows. Natively at 1080p (no geometry, so only the fixed
+cost): 3.3 + 6.4 ms with nothing covered (unchanged), 4.1 + 6.1 → 2.1 + 3.3 ms
+at 50% covered, 4.7 + 6.1 → 1.0 + 1.1 ms at 90%. In the terrain bench the
+mirror pass went 82–87 → 65–68 ms. Covered by
+`reflection_after_the_scene_matches_reflection_first` and the hashes.
+
+### 2. FXAA: the edge test as a branch-free byte pass
+
+The antialiasing loop tested each pixel's 5-tap luma range with branches and
+skipped most pixels. The test now runs first for the whole row on `u8`s
+(max/min of five bytes, `range >= max(16, hi >> 3)`; neither can wrap), which
+LLVM vectorises to `i8x16`; the blend loop only visits flagged pixels. Same
+decisions, same blends: hashes identical. ~20% off the FXAA stage.
+
+### 3. Shadow maps (depth-only draws)
+
+Depth-only draws now skip normals, UVs and the perspective-divided varyings
+in the vertex loop (the rasteriser reads only screen x, y, z), and fill spans
+four at a time with the same per-lane `z0 + dz·k` as the shading path.
+Natively, a 1536² map with a large capped cylinder: 4.33 → 3.20 ms. On the
+film the shadow column didn't move: the casters are many small triangles
+(36 draws per render, 24k-triangle gears), and per-row span setup dominates
+(a 24k-triangle torus costs 16 ms at full map size but 1.9 ms when tiny, so
+it is rows, not pixels or vertices). The span solve needs exact divisions to
+stay bit-identical; an incremental edge walk would not be. Test
+`depth_only_matches_the_opaque_depth` (odd sizes, near-plane clipping).
+
+### 4. Mirror under a skybox: reflect only under the mirror surface
+
+After the scene, the half-res reflection was shaded wherever the scene left a
+pixel uncovered. With `skybox`, the sky then overwrites every pixel still at
+depth `Infinity`, i.e. every uncovered pixel the glossy mirror surface didn't
+draw over, so the reflection there was wasted. Now `render()` first draws the
+mirror items depth-only into a mask (`ak_raster_mask_begin/draw/end`, same
+culling and matrix as their gloss draw, so the same pixels), and
+`reflection_after` needs only pixels that are uncovered and under a mirror.
+Test `mirror_mask_with_a_sky_gives_the_same_frame` runs the whole sequence
+(scene, reflection, gloss floor, sky) with and without the mask at 80×60,
+81×63 and 33×18: same colour and depth, and more of the reflection skipped;
+inverting the mask makes it fail. `bench-raster.mjs` film-like frame (mirror
+floor + skybox): 325 · 312 → 304 · 302 ms (two pairs), hash `77424f03/fdb7e70e`
+unchanged.
+
+### Bugs found and fixed (with regression tests)
+
+| Bug | Fix · test |
+|---|---|
+| `Mesh3D.free()` twice freed whichever mesh had since reused the slot (mesh ids are plain slot indices). | `free()` is idempotent (`freed` flag); freed meshes are skipped by `render()` and the shadow pass · `mesh-update.test.ts` |
+| The "creates 1 mesh in every draw()" guard fired on film2, which frees the previous hairspring tube each frame (no leak), and there was no way to animate geometry without creating meshes. | `free()` counts against the guard; new `mesh.update(positions, normals?, uvs?)` (in place), `mesh.update(otherMesh)` and `mesh.tube(points, { into })`; Python `Mesh.update`, `tube(into=)` · `mesh-update.test.ts`, `test_raster.py` |
+| Odd frame sizes: I420 chroma planes were `floor(w/2)·floor(h/2)` while ffmpeg and WebCodecs read `ceil`, so the raw pipe drifted (14 of 15 frames at 63×35) and libx264 refused the size after rendering. | Core writes ceil-sized chroma (edge column/row averaged; even sizes unchanged), `FrameBuffer.i420()` returns the full frame, the CLI pads odd sizes for libx264 with one warning; Python `rgba_to_i420` accepts odd sizes · `i420_odd_sizes_round_chroma_up_and_match_even_blocks`, `video.test.ts`, `test_video.py` |
+| Python `VideoWriter` refused odd sizes while the CLI now pads them. | Pads for libx264 with the same warning (parity) · `test_odd_sizes_are_padded_like_the_cli` |
+| `--check` on a 3-frame video reported every frame as a "35x" spike (no neighbours, median 0). | Spikes need two neighbours; short videos say "too short" |
+| `--profile --from/--to` ignored the range and profiled the whole film. | Passed through |
+
+Checked and fine: zero, 1×1, 1×N and odd canvases (render, mirror, DOF,
+motion blur, shadows), `depth()` before any render, `resize()` between
+frames, motion blur after `resetMotion()`, 1×1 / 1×300 / 7×13 textures with
+aniso at grazing angles (no NaN depth), NaN and degenerate vertices (new Rust
+test), the camera inside a mesh (near-plane clipping), empty instance
+buffers, `--workers 7` on a 3-frame film, `--chunk 0.2 --fade-in --fade-out`
+(frame-identical to one worker). Triangles at 1e18 units right at the near
+plane overflow f32 in the edge functions and are dropped (not fixed).
+
+### Not done (eighth round)
+
+- `blackHole()` (24 ms vs 8 ms target) and worker/ffmpeg balance: not reached.
+- Instance-buffer re-uploads: each draw copies `Instances.data` (60 bytes per
+  instance) into wasm; small next to the passes.
+- The film bright pass written branch-free in 4-pixel groups (adding exact
+  `+0.0` keeps it bit-identical): no measurable change, reverted.

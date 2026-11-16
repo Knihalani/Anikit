@@ -179,8 +179,8 @@ def post(frame: np.ndarray, *, t: Optional[float] = None, seed: int = 0, **optio
 
 def rgba_to_i420(frame: np.ndarray, order: str = "rgba") -> np.ndarray:
     """Convert an RGBA (or ``order="bgra"``) frame to planar I420 — Y
-    (``w*h``), then U and V (``w/2 * h/2`` each), BT.709 limited range — as a
-    flat uint8 array. Width and height must be even."""
+    (``w*h``), then U and V (``ceil(w/2) * ceil(h/2)`` each, ffmpeg's layout
+    for odd sizes), BT.709 limited range — as a flat uint8 array."""
     _check_frame(frame)
     h, w = frame.shape[:2]
     buf = _frame_bytearray(frame)
@@ -239,7 +239,8 @@ class VideoWriter:
     ``crf`` (quality, lower is better; default 18), ``preset`` (x264 speed /
     size trade-off, default ``"medium"``), ``codec`` (default ``"libx264"``)
     and ``audio`` (a file muxed in and cut to the video's length) match the
-    ``anikit-render`` CLI. Width and height must be even.
+    ``anikit-render`` CLI. Odd sizes are padded to even for libx264 (with a
+    warning), as the CLI does.
     """
 
     def __init__(
@@ -258,8 +259,18 @@ class VideoWriter:
         import shutil
         import subprocess
 
-        if width % 2 or height % 2:
-            raise ValueError(f"VideoWriter needs an even width and height for I420, got {width}x{height}")
+        import warnings
+
+        if width < 1 or height < 1:
+            raise ValueError(f"VideoWriter needs a positive width and height, got {width}x{height}")
+        odd = bool(width % 2 or height % 2) and codec == "libx264"
+        if odd:
+            # Same as the anikit-render CLI: x264 needs even sizes, so pad by a pixel.
+            warnings.warn(
+                f"{width}x{height} is odd; libx264 needs even sizes, so the video is padded to "
+                f"{width + width % 2}x{height + height % 2}. Use an even width and height to avoid the black edge.",
+                stacklevel=2,
+            )
         exe = shutil.which(ffmpeg)
         if exe is None:
             raise FileNotFoundError(f"VideoWriter needs ffmpeg on PATH (looked for {ffmpeg!r})")
@@ -269,6 +280,8 @@ class VideoWriter:
                "-f", "rawvideo", "-pix_fmt", "yuv420p", "-s", f"{self.width}x{self.height}", "-r", str(self.fps), "-i", "-"]
         if audio:
             cmd += ["-i", audio, "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-shortest"]
+        if odd:
+            cmd += ["-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2"]
         cmd += ["-c:v", codec, "-preset", preset, "-crf", str(crf), "-pix_fmt", "yuv420p", "-movflags", "+faststart", path]
         self._proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 

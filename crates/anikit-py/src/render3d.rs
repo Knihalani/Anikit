@@ -806,9 +806,6 @@ fn rgba_to_i420<'py>(py: Python<'py>, frame: U8Data<'_>, width: usize, height: u
         other => return Err(PyValueError::new_err(format!("order must be 'rgba' or 'bgra', got {other:?}"))),
     };
     let n = check_frame(width, height)?;
-    if !width.is_multiple_of(2) || !height.is_multiple_of(2) {
-        return Err(PyValueError::new_err(format!("I420 needs even dimensions, got {width}x{height}")));
-    }
     frame.with(|src| {
         if src.len() != n {
             return Err(PyValueError::new_err(format!("frame needs {n} bytes ({width} x {height} x 4), got {}", src.len())));
