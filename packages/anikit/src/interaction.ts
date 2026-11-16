@@ -398,6 +398,10 @@ export function observer(options: ObserverOptions) {
   let stopTimer: ReturnType<typeof setTimeout> | null = null;
   let posX = 0;
   let posY = 0;
+  let lastEv: ObserverEvent | null = null;
+  let lastT = 0;
+  // Date.now(): fake timers in tests move it with setTimeout.
+  const now = () => Date.now();
 
   const emit = (dx: number, dy: number, event: Event) => {
     posX += dx;
@@ -416,11 +420,21 @@ export function observer(options: ObserverOptions) {
       (ax > 0 ? options.onRight : options.onLeft)?.(ev);
       ax = 0;
     }
-    if (stopTimer) clearTimeout(stopTimer);
-    stopTimer = setTimeout(() => {
-      ax = ay = 0;
-      options.onStop?.(ev);
-    }, 150);
+    // One timer per quiet period, not one per event: it re-arms itself
+    // until 150 ms have passed since the last event.
+    lastEv = ev;
+    lastT = now();
+    if (!stopTimer) stopTimer = setTimeout(checkStop, 150);
+  };
+  const checkStop = () => {
+    const left = lastT + 150 - now();
+    if (left > 1) {
+      stopTimer = setTimeout(checkStop, left);
+      return;
+    }
+    stopTimer = null;
+    ax = ay = 0;
+    options.onStop?.(lastEv!);
   };
 
   const onWheel = (e: Event) => {

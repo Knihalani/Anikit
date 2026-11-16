@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { spring, smoothScroll, scroll, animate, scrollTrigger, VelocityTracker } from '../src/index';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { spring, smoothScroll, scroll, animate, scrollTrigger, VelocityTracker, observer } from '../src/index';
 import { setup, advance } from './setup';
 
 beforeAll(setup);
@@ -145,6 +145,40 @@ describe('VelocityTracker', () => {
         a.reset();
         b.s.length = 0;
       }
+    }
+  });
+});
+
+describe('observer() onStop', () => {
+  it('fires once, 150 ms after the last event of a burst, with that event', () => {
+    vi.useFakeTimers();
+    try {
+      const el = document.createElement('div');
+      document.body.appendChild(el);
+      const stops: number[] = [];
+      const ob = observer({ target: el, type: 'wheel', onStop: (e) => stops.push(e.deltaY) });
+      for (let i = 1; i <= 20; i++) {
+        el.dispatchEvent(new WheelEvent('wheel', { deltaY: i }));
+        vi.advanceTimersByTime(40); // a burst: never 150 ms apart
+      }
+      expect(stops).toEqual([]);
+      vi.advanceTimersByTime(109);
+      expect(stops).toEqual([]);
+      vi.advanceTimersByTime(2);
+      expect(stops).toEqual([20]);
+      vi.advanceTimersByTime(1000);
+      expect(stops).toEqual([20]);
+      // A second burst stops again.
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: 5 }));
+      vi.advanceTimersByTime(151);
+      expect(stops).toEqual([20, 5]);
+      // kill() cancels a pending stop.
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: 7 }));
+      ob.kill();
+      vi.advanceTimersByTime(500);
+      expect(stops).toEqual([20, 5]);
+    } finally {
+      vi.useRealTimers();
     }
   });
 });
