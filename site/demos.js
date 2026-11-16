@@ -1,7 +1,7 @@
 // The seven demos beside the knot's pieces. Each one starts when its section is
 // first near the viewport and runs per-frame work only while it is visible.
 import {
-  engine, animate, set, spring, stagger, splitText, inView, magnetic, timeline, world, flush,
+  engine, animate, set, spring, scroll, stagger, splitText, inView, magnetic, timeline, world, flush,
   circle, star, rect, pathThrough, noise2, pointCloud, glow, scene3d, flip, effects,
 } from '../packages/anikit/dist/anikit.lean.js';
 
@@ -79,14 +79,12 @@ export function start({ reduced, fine, small }) {
     $('#blob').setAttribute('d', shapes[0]);
     const tl = timeline({ repeat: Infinity, defaults: { ease: 'spring(bounce: 0.25, duration: 0.9)', duration: 1 } });
     for (let k = 1; k < shapes.length; k++) tl.add('#blob', { d: shapes[k] }, k === 1 ? 0.4 : '+=0.45');
-    const draw = timeline({ repeat: Infinity, defaults: { ease: 'inOutCubic' } });
-    draw.add('#rider', { opacity: [0, 1] }, { duration: 0.3 }, 0)
-      .add('#trail', { draw: [0, 1] }, { duration: 2.2 }, 0)
-      .add('#rider', { path: { path: '#trail' } }, { duration: 2.2 }, 0)
-      .add('#rider', { opacity: 0, scale: 0.4 }, { duration: 0.35, ease: 'inCubic' }, 2.6)
-      .add('#trail', { draw: [1, 0] }, { duration: 1.2, ease: 'inCubic' }, 2.8)
-      .set('#rider', { scale: 1 }, 4.1);
-    inView('#svg', () => { tl.play(); draw.play(); return () => { tl.pause(); draw.pause(); }; }, { amount: 0 });
+    // The stroke and its rider are scrubbed by the scroll through this stop.
+    const draw = timeline({ autoplay: false, defaults: { ease: 'linear' } });
+    draw.add('#trail', { draw: [0, 1] }, { duration: 1 }, 0)
+      .add('#rider', { path: { path: '#trail' } }, { duration: 1 }, 0);
+    scroll(draw, { target: $('#svg'), offset: ['start start', 'end end'], smooth: 0.15 });
+    inView('#svg', () => { tl.play(); return () => tl.pause(); }, { amount: 0 });
   });
 
   // 04 · Physics: letters with real bodies in a box.
@@ -194,12 +192,13 @@ export function start({ reduced, fine, small }) {
     const ptr = { x: 0, y: 0, on: false };
     canvas.addEventListener('pointermove', (e) => { const r = canvas.getBoundingClientRect(); ptr.x = e.clientX - r.left; ptr.y = e.clientY - r.top; ptr.on = true; });
     canvas.addEventListener('pointerleave', () => (ptr.on = false));
-    canvas.addEventListener('click', () => cloud.explode(0, 0, 0, 900));
+    // Click: a shockwave, then the cloud morphs to the next shape.
+    canvas.addEventListener('click', () => { cloud.explode(0, 0, 0, 700); cloud.morph(next, { duration: 1.6, ease: 'inOutCubic' }); next = (next + 1) % 3; timer = 0; });
     whileVisible(canvas, (dt) => {
       timer += dt / 1000;
       cloud.step(Math.min(dt, 50) / 1000);
       if (!reduced) rot += dt / 1000;
-      if (timer > 3.2 && !reduced) { timer = 0; cloud.morph(next, { duration: 2, ease: 'inOutCubic' }); next = (next + 1) % 3; }
+      if (timer > 5 && !reduced) { timer = 0; cloud.morph(next, { duration: 2, ease: 'inOutCubic' }); next = (next + 1) % 3; }
       scene.camera.x = Math.sin(rot * 0.25) * 1000; scene.camera.z = Math.cos(rot * 0.25) * 1000;
       g.render(scene, cloud, { size: 1.1, intensity: small ? 0.5 : 0.32, fog: [600, 2200], ...(ptr.on ? { lens: { x: ptr.x, y: ptr.y } } : {}) });
     });
@@ -221,8 +220,9 @@ export function start({ reduced, fine, small }) {
     const regrid = () => flip('.tile', () => { grid.classList.toggle('alt'); $$('.tile', grid)[0].classList.toggle('big'); }, opts);
     $('#shuffle').addEventListener('click', shuffle);
     $('#regrid').addEventListener('click', regrid);
+    grid.addEventListener('click', shuffle);
     let n = 0, id = 0;
-    if (!reduced) inView(grid, () => { id = setInterval(() => (++n % 3 ? shuffle() : regrid()), 2600); return () => clearInterval(id); }, { amount: 0.5 });
+    if (!reduced) inView(grid, () => { id = setInterval(() => (++n % 3 ? shuffle() : regrid()), 3200); return () => clearInterval(id); }, { amount: 0.5 });
   });
 
   // 07 · Benchmarks: counters and bars run in once.

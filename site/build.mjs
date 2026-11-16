@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
 const out = join(root, 'site-dist');
-const pages = ['index.html', 'style.css', 'main.js', 'demos.js', 'hole.js'];
+const pages = ['index.html', 'style.css', 'main.js', 'demos.js', 'hole.js', 'hole-worker.js'];
 rmSync(out, { recursive: true, force: true });
 mkdirSync(join(out, 'vendor'), { recursive: true });
 mkdirSync(join(out, 'fonts'), { recursive: true });
