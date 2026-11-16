@@ -160,6 +160,8 @@ impl Default for MeshGradient {
 impl Prepare for MeshGradient {}
 impl Component for MeshGradient {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        // A still field (speed 0) always reuses one image, so renders stay cached.
+        let t = if self.speed == 0.0 { 0.0 } else { t };
         keyframed(ctx, t, self.rate, |tt| self.field_at(tt, ctx))
     }
 }
@@ -249,12 +251,14 @@ pub struct Aurora {
 }
 impl Default for Aurora {
     fn default() -> Self {
-        Aurora { colors: Vec::new(), sky: None, speed: 1.0, intensity: 1.0, seed: 3, rate: 15.0, cache: FieldCache::default() }
+        Aurora { colors: Vec::new(), sky: None, speed: 1.0, intensity: 1.0, seed: 3, rate: 12.0, cache: FieldCache::default() }
     }
 }
 impl Prepare for Aurora {}
 impl Component for Aurora {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        // A still field (speed 0) always reuses one image, so renders stay cached.
+        let t = if self.speed == 0.0 { 0.0 } else { t };
         keyframed(ctx, t, self.rate, |tt| self.field_at(tt, ctx))
     }
 }
@@ -263,7 +267,7 @@ impl Aurora {
     fn field_at(&self, t: f32, ctx: &Ctx) -> Arc<Field> {
         let cols = colors_or(&self.colors, &[hx3("#2cffb0"), hx3("#21c7ff"), hx3("#8a5cff")]);
         let sky = self.sky.map(|s| [s[0].0, s[1].0]).unwrap_or([hx3("#02030a"), hx3("#081026")]);
-        let (fw, fh) = field_size(ctx, 10.0);
+        let (fw, fh) = field_size(ctx, 12.0);
         let key = fnv(&[b"aurora", &t.to_bits().to_le_bytes(), &self.seed.to_le_bytes(), &self.speed.to_bits().to_le_bytes(), &self.intensity.to_bits().to_le_bytes(), &fw.to_le_bytes(), &fh.to_le_bytes(), &colors_key(&cols), &colors_key(&sky)]);
         let noise = Noise::new(self.seed);
         let s = (t * 0.12 * self.speed) as f64;

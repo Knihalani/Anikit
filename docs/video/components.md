@@ -6,6 +6,13 @@ High-level blocks for Anikit Video specs: code, charts, devices, UI, backgrounds
 { "type": "component", "component": "barChart", "props": { "values": [3, 7, 5, 9], "labels": ["Q1", "Q2", "Q3", "Q4"] }, "width": 900, "height": 500 }
 ```
 
+**Shorthands (fewest tokens):**
+- Dotted kind names: `chart.bar`, `chart.line`, `chart.area`, `chart.donut`, `chart.pie`, `bg.mesh`, `bg.aurora`, `bg.grid`, `bg.stars`, `device.phone`, `device.laptop`, `device.browser`, `ui.toast`, `ui.cursor`, `fx.confetti`, `fx.sparks`.
+- Plain words also work, for example `bar`, `line`, `donut`, `mesh`, `title`, `editor`, `testimonial`, `ticker`.
+- `data` is the main data of any component: chart values, line series (a flat array is one series), a counter's target, chat messages, checklist items and table rows.
+- `text` is the main text: a title, a label, or the code.
+- So `{ "component": "chart.bar", "props": { "data": [3, 7, 5] } }` is a complete chart.
+
 **Names and props:** kind names are written in camelCase (`barChart`) or kebab-case (`bar-chart`). Props are written in camelCase (`fontSize`) or snake_case (`font_size`). An unknown name or prop is an error with a "did you mean" suggestion.
 
 **The box:** a component draws inside its layer's `width × height`, which defaults to the whole frame. The layer's position, transforms, `enter`/`exit` and `opacity` apply on top.
@@ -192,7 +199,7 @@ Place backgrounds first in a scene's layers.
 | Kind | Props |
 |---|---|
 | `meshGradient` | `colors` (3–6 blobs), `base`, `speed`, `warp` (0 gives round blobs, 1 gives swirls), `intensity` (default 0.75), `seed`, `detail`, `rate` (field keyframes per second, blended in between; default 12) |
-| `aurora` | `colors` (ribbons), `sky` (`[top, horizon]`), `speed`, `intensity`, `seed`, `rate` (default 15) |
+| `aurora` | `colors` (ribbons), `sky` (`[top, horizon]`), `speed`, `intensity`, `seed`, `rate` (default 12) |
 | `gradient` | `colors`, `kind` (`linear` or `radial`), `angle`, `spin` (degrees per second) |
 | `grain` | `amount` (0.03–0.1 is subtle), `size`, `rate` (new patterns per second), `seed`. Put it last, as an overlay. |
 | `grid` | `cell`, `color`, `lineWidth`, `fade`, `perspective` (receding floor), `horizon`, `speed` (scroll), `reveal` (seconds to draw on) |
