@@ -55,7 +55,8 @@ root.classList.add(glOk ? 'gl' : 'no-gl');
 // Resolution adapts to the frame rate: start modest, step down when frames run long,
 // step back up when there is headroom.
 const qMax = Math.min(devicePixelRatio || 1, small ? 1 : 1.25);
-let q = Math.min(qMax, +(new URLSearchParams(location.search).get('q') || (small ? 0.6 : 0.8)));
+// Start near a million shaded pixels; the frame-time loop below takes it from there.
+let q = Math.min(qMax, +(new URLSearchParams(location.search).get('q') || Math.min(small ? 0.6 : 0.8, Math.sqrt(1.1e6 / (vw * vh)))));
 const qMin = 0.35;
 function sizeCanvas() {
   const w = Math.max(2, Math.round(vw * q)), h = Math.max(2, Math.round(vh * q));

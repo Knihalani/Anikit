@@ -181,7 +181,7 @@ void main() {
     float pl = max(plate(p, uRimA, uRimAP), plate(p, uRimB, uRimBP));
     // Dark lacquer: a blurred reflection of the soft boxes, almost black elsewhere.
     vec3 base = vec3(0.0035, 0.0036, 0.0042);
-    vec3 gloss = env(rf, 0.3) * 0.006;
+    vec3 gloss = env(rf, 0.35) * 0.011;
     float sh = 1.0, ao = 1.0;
     vec3 mirror = vec3(0.0);
     if (dF < 0.14) {
