@@ -7,7 +7,7 @@
 //   anikit-render film.mjs --still 6 --out still.jpg          (the first run bakes the world: ~1 min)
 //   anikit-render film.mjs --review review/
 //   anikit-render film.mjs --out anikit-film.mp4 --workers 3 --fade-out 0.5
-import { buildWorld, SUN, WATER, HAZE_DISPLAY, clamp, mix, smooth, hash, noise } from './world.mjs';
+import { buildWorld, boulder, SUN, WATER, HAZE_DISPLAY, clamp, mix, smooth, hash, noise } from './world.mjs';
 
 /** Filled in by film(): the camera pose function and duration, for scripts that check the flight. */
 export const debug = {};
@@ -42,7 +42,7 @@ export default async function film({ anikit: A }) {
   const DUR = Math.round(END * FPS) / FPS;
 
   const cam = scene3d({ fov: 72, width: W, height: H, near: 1.5, far: 60000 });
-  const pose = (t) => path.apply(cam, sOf(t), 0, { shake: 2.2 + 3 * smooth(0, 0.3, t) * (1 - smooth(1.0, 1.6, t)), time: t, rate: 2.4 });
+  const pose = (t) => path.apply(cam, sOf(t), 0, { shake: 0.6 + 1.2 * smooth(0, 0.3, t) * (1 - smooth(1.0, 1.6, t)), time: t, rate: 0.9 });
   Object.assign(debug, { pose, cam, DUR, FPS });
 
   // ---- Looks and transitions: a schedule anchored to places on the route --------------------
@@ -50,11 +50,11 @@ export default async function film({ anikit: A }) {
   const tr = (c, dur, from, to, type) => ({ t0: c - dur / 2, t1: c + dur / 2, from, to, type });
   const SCHEDULE = [
     tr(3.8, 0.8, 'R', 'C', 'front'),     // over the lake: the comic world sweeps in from the horizon
-    tr(6.6, 0.5, 'C', 'N', 'glitch'),    // over the saddle, a scan glitch into the neon city
-    tr(10.0, 0.6, 'N', 'C', 'ink'),      // into the canyon: an ink burst
-    tr(12.8, 0.6, 'C', 'N', 'dots'),     // halftone dots dissolve into a neon river
-    tr(15.4, 0.45, 'N', 'R', 'slash'),   // out of the canyon: a slash of daylight
-    tr(18.2, 0.9, 'R', 'C', 'reveal'),   // over the last ridge a comic world grows out from the lens
+    tr(6.6, 0.6, 'C', 'N', 'glitch'),    // over the saddle, scan lines into the neon city
+    tr(10.0, 0.7, 'N', 'C', 'ink'),      // into the canyon: an ink bloom
+    tr(12.8, 0.7, 'C', 'N', 'dots'),     // halftone dots dissolve into a neon river
+    tr(15.4, 0.6, 'N', 'R', 'slash'),    // out of the canyon: daylight wipes across
+    tr(18.2, 0.8, 'R', 'C', 'reveal'),   // over the last ridge a comic world grows out from the lens
   ];
   const TEASE = [0.34, 1.12]; // the hook: during the dive the frame splits into all three looks
   const OUTRO = DUR - 1.35;
@@ -108,6 +108,23 @@ export default async function film({ anikit: A }) {
   const treesR = treeSet((t) => { const v = 0.5 + 0.5 * world.visAt(t.x, t.z), k = 0.8 + 0.45 * t.tint; return [0.11 * v * k, 0.16 * v * (0.9 + 0.2 * t.tint), 0.075 * v]; });
   const treesN = treeSet((t) => (t.tint > 0.5 ? [0.0, 0.035, 0.05] : [0.04, 0.0, 0.045]));
   const treesC = treeSet((t) => (t.tint > 0.75 ? [0.2, 0.62, 0.28] : t.tint > 0.35 ? [0.12, 0.5, 0.3] : [0.1, 0.42, 0.26]));
+  // Boulders along the shores and the lower slopes near the flight line.
+  const rockMesh = boulder(mesh, 3.1);
+  const rocks = [];
+  for (let k = 0; k < 20000 && rocks.length < 1400; k++) {
+    const z = mix(1250, -1150, hash(k * 3 + 11)), side = hash(k * 3 + 12) < 0.5 ? -1 : 1;
+    const x = centerX(z) + side * (12 + 230 * hash(k * 3 + 13) ** 1.6);
+    const h = groundAt(x, z);
+    if (h < -0.8 || h > 220) continue;
+    const sl = Math.hypot(groundAt(x + 3, z) - groundAt(x - 3, z), groundAt(x, z + 3) - groundAt(x, z - 3)) / 6;
+    if (sl > 0.9) continue;
+    const sz = (1.2 + 5.5 * hash(k * 7 + 1) ** 2.2) * (h < 1.5 ? 1.4 : 1);
+    rocks.push({ x, z, y: h - sz * 0.25, s: sz, r: hash(k * 7 + 2) * 360, v: hash(k * 7 + 3) });
+  }
+  const rockSet = (col) => instances(rocks.length, (i) => { const r = rocks[i]; return { x: r.x, y: r.y, z: r.z, sx: r.s * (0.8 + 0.4 * r.v), sy: r.s, sz: r.s, ry: r.r, color: col(r) }; });
+  const rocksR = rockSet((r) => { const v = 0.5 + 0.5 * world.visAt(r.x, r.z); return [0.3 * v * (0.85 + 0.3 * r.v), 0.28 * v, 0.25 * v]; });
+  const rocksN = rockSet(() => [0.015, 0.012, 0.025]);
+  const rocksC = rockSet((r) => (r.v > 0.5 ? [0.66, 0.6, 0.55] : [0.56, 0.5, 0.48]));
   // Buildings in three height classes (so the facade texture keeps its window size).
   const CLS = [[0.82, 1.45], [0.82, 0.8], [0.82, 0.32]];
   const PAL = [[0.95, 0.36, 0.3], [0.98, 0.8, 0.3], [0.32, 0.7, 0.86], [0.92, 0.92, 0.88], [0.55, 0.45, 0.85]];
@@ -155,6 +172,7 @@ export default async function film({ anikit: A }) {
   const items = {
     R: [
       { mesh: world.terrainMesh, instances: terrainAt, material: { ...baked, texture: TX.real, textureFilter: 'aniso' } },
+      { mesh: rockMesh, instances: rocksR, material: { ambient: 0.32, diffuse: 1.05, specular: 0.12, shininess: 10, rim: 0.15 } },
       { mesh: tm, instances: treesR, material: { ambient: 0.3, diffuse: 1.0, specular: 0.08, shininess: 6, rim: 0.45 } },
       ...towersR.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 0.42, diffuse: 0.9, specular: 0.7, shininess: 60, rim: 0.12, texture: TX.windows, textureRepeat: CLS[c] } })),
       { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farReal } },
@@ -165,6 +183,7 @@ export default async function film({ anikit: A }) {
     ],
     N: [
       { mesh: world.terrainMesh, instances: terrainAt, material: { ambient: 1, diffuse: 0.9, specular: 0, rim: 0, texture: TX.neon, textureMode: 'emissive', textureGain: 1.25, textureFilter: 'aniso' } },
+      { mesh: rockMesh, instances: rocksN, material: { ambient: 1, diffuse: 0.4, specular: 0.6, shininess: 30, rim: 0.9 } },
       ...towersN.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 1, diffuse: 0.6, specular: 0.9, shininess: 80, rim: 0.3, texture: TX.windowsNeon, textureMode: 'emissive', textureGain: 1.5, textureRepeat: CLS[c], lines: 1.1, lineColor: [1.5, 0.35, 1.1], grid: [1, 1], lineWidth: 0.012 } })),
       { mesh: world.farMesh, instances: farAt, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0, texture: TX.farNeon, textureMode: 'emissive', textureGain: 1.3 } },
       { mesh: dome, instances: domeAt, cull: false, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.skyNeon, textureMode: 'emissive', fog: 0 } },
@@ -175,6 +194,7 @@ export default async function film({ anikit: A }) {
     ],
     C: [
       { mesh: world.terrainMesh, instances: terrainAt, material: { ...baked, texture: TX.comic, textureFilter: 'aniso' } },
+      { mesh: rockMesh, instances: rocksC, material: { ambient: 0.6, diffuse: 0.7, specular: 0, rim: 0 } },
       { mesh: tm, instances: treesC, material: { ambient: 0.6, diffuse: 0.7, specular: 0, rim: 0 } },
       ...towersC.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 0.62, diffuse: 0.6, specular: 0, rim: 0, texture: TX.windowsComic, textureRepeat: CLS[c] } })),
       { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farComic } },
@@ -197,7 +217,7 @@ export default async function film({ anikit: A }) {
 
   const opts = {
     R: {
-      background: '#c9a888', fog: [120, 21000], fogColor: HAZE_DISPLAY,
+      background: '#c9a888', fog: [60, 15000], fogColor: HAZE_DISPLAY,
       key: SUN, keyColor: [1.35, 1.0, 0.7], fill: [0, 1, 0], fillColor: [0.22, 0.28, 0.4], rimColor: [1.1, 0.72, 0.45], ...ENV_R,
       mirror: { y: WATER, strength: 0.78 },
       motionBlur: { shutter: 0.36, max: 70 },
@@ -246,51 +266,69 @@ export default async function film({ anikit: A }) {
     RAD[y * W + x] = Math.hypot(dx, dy) / (H * 0.5);
   }
   const lum = new Float32Array(N_PIX);
+  // Printed-comic look: flat inks on off-white paper, Ben-Day dots in the mid tones, black
+  // cross-hatching in the shadows, heavy ink outlines from depth, slight colour misregistration,
+  // manga speed lines and a panel border.
+  const PAPER = [246, 238, 214];
   function comic(src, dist, out, t) {
     for (let i = 0; i < N_PIX; i++) { const o = i * 4; lum[i] = (src[o] * 0.299 + src[o + 1] * 0.587 + src[o + 2] * 0.114) / 255; }
-    const speed = 0.55 + 0.45 * smooth(60, 120, 100);
+    const B = 16, G = 9; // panel border: paper gutter, then a black rule
     for (let y = 0; y < H; y++) {
-      const yy = Math.min(H - 3, Math.max(2, y));
+      const yy = Math.min(H - 4, Math.max(3, y));
       for (let x = 0; x < W; x++) {
         const i = y * W + x, o = i * 4;
-        const xx = Math.min(W - 3, Math.max(2, x)), c = yy * W + xx;
-        const d = dist[c];
-        // Ink: silhouettes (depth jumps) and strong colour edges.
+        if (x < G || y < G || x >= W - G || y >= H - G) { out[o] = PAPER[0]; out[o + 1] = PAPER[1]; out[o + 2] = PAPER[2]; out[o + 3] = 255; continue; }
+        if (x < B || y < B || x >= W - B || y >= H - B) { out[o] = 14; out[o + 1] = 12; out[o + 2] = 18; out[o + 3] = 255; continue; }
+        const xx = Math.min(W - 4, Math.max(3, x)), c = yy * W + xx;
+        const d = dist[c], finite = d < 1e30, sky = !finite || d > 15000;
+        // Ink: silhouettes and creases from depth (thicker up close), strong colour edges.
         let ink = 0;
-        const step = d < 400 ? 2 : 1;
+        const step = d < 150 ? 3 : d < 700 ? 2 : 1;
         const l = dist[c - step], r = dist[c + step], u = dist[c - step * W], dn = dist[c + step * W];
-        const finite = d < 1e30;
         const jump = (n) => (finite !== (n < 1e30) ? 1 : finite ? Math.abs(d - n) / Math.min(d, n) : 0);
-        const j = Math.max(jump(l), jump(r), jump(u), jump(dn));
-        if (j > 0.07 && d < 15000) ink = 1;
-        if (finite && d < 2500) {
-          const crease = Math.abs(l + r - 2 * d) / d + Math.abs(u + dn - 2 * d) / d;
-          if (crease > 0.09 / step) ink = Math.max(ink, 0.8);
+        if (Math.max(jump(l), jump(r), jump(u), jump(dn)) > 0.05 && d < 15000) ink = 1;
+        if (finite && d < 3000 && (Math.abs(l + r - 2 * d) + Math.abs(u + dn - 2 * d)) / d > 0.07 / step) ink = 1;
+        const g = Math.abs(lum[c + 2] - lum[c - 2]) + Math.abs(lum[c + 2 * W] - lum[c - 2 * W]);
+        if (g > 0.34) ink = 1;
+        // Flat inks: saturate, then three bands.
+        const L = lum[i];
+        let R = src[o], Gc = src[o + 1], Bc = src[o + 2];
+        const m = (R + Gc + Bc) / 3;
+        R = m + (R - m) * 1.7; Gc = m + (Gc - m) * 1.7; Bc = m + (Bc - m) * 1.7;
+        const k = 1 / (L + 0.05);
+        R *= k * 0.62; Gc *= k * 0.62; Bc *= k * 0.62; // normalise to a flat ink of the hue
+        const u45 = (x + y) * 0.7071, v45 = (x - y) * 0.7071;
+        const fu = u45 / 7 - Math.floor(u45 / 7) - 0.5, fv = v45 / 7 - Math.floor(v45 / 7) - 0.5;
+        const dot = Math.hypot(fu, fv);
+        let cr, cg, cb;
+        if (sky) {
+          // Sky: Ben-Day dots, bigger towards the zenith; clouds stay paper.
+          const rad = 0.18 + 0.3 * (1 - y / H) * clamp((0.85 - L) * 3);
+          const on = dot < rad;
+          cr = on ? R * 0.8 : PAPER[0]; cg = on ? Gc * 0.85 : PAPER[1]; cb = on ? Math.min(255, Bc * 1.05) : PAPER[2];
+          if (L > 0.78) { cr = PAPER[0]; cg = PAPER[1]; cb = PAPER[2]; }
+        } else if (L > 0.58) {
+          cr = mix(PAPER[0], R, 0.75); cg = mix(PAPER[1], Gc, 0.75); cb = mix(PAPER[2], Bc, 0.75);
+        } else if (L > 0.26) {
+          const on = dot < 0.36;
+          cr = on ? R : mix(PAPER[0], R, 0.55); cg = on ? Gc : mix(PAPER[1], Gc, 0.55); cb = on ? Bc : mix(PAPER[2], Bc, 0.55);
+        } else {
+          cr = R * 0.62; cg = Gc * 0.62; cb = Bc * 0.7;
+          // Cross-hatching (one direction, two in the deepest shade).
+          const h1 = ((x + y) % 7) < 2, h2 = L < 0.13 && ((x - y + 7000) % 7) < 2;
+          if (h1 || h2) { cr = 22; cg = 18; cb = 30; }
         }
-        const g = Math.abs(lum[c + 1] - lum[c - 1]) + Math.abs(lum[c + W] - lum[c - W]);
-        if (g > 0.42) ink = 1;
-        // Flat bands: quantise luminance, keep (and push) the hue.
-        const L = lum[i] + 1e-4;
-        let q = L < 0.16 ? 0.1 : L < 0.4 ? 0.3 : L < 0.68 ? 0.6 : 0.9;
-        let k = q / L;
-        k = k > 3 ? 3 : k;
-        let R = src[o] * k, G = src[o + 1] * k, B = src[o + 2] * k;
-        const m = (R + G + B) / 3;
-        R = m + (R - m) * 1.35; G = m + (G - m) * 1.35; B = m + (B - m) * 1.35;
-        // Halftone: dots in the shade band (45° screen), lighter dots in the sky.
-        const u45 = (x + y) * 0.7071, v45 = (x - y) * 0.7071, cell = 7;
-        const fu = (u45 / cell) % 1, fv = (v45 / cell) % 1;
-        const dd = Math.hypot((fu < 0 ? fu + 1 : fu) - 0.5, (fv < 0 ? fv + 1 : fv) - 0.5);
-        if (q <= 0.3 && dd < 0.3 + (0.3 - q) * 0.5) { R *= 0.45; G *= 0.42; B *= 0.55; }
-        else if (!finite || d > 15000) { const sky = 0.16 + 0.22 * (1 - y / H); if (dd < sky) { R = R * 0.86 + 6; G = G * 0.9 + 10; B = B * 0.96 + 14; } }
-        // Speed lines towards the edges.
+        // Misregistration: the red plate sits 2 px to the right.
+        const or = (y * W + Math.max(B, x - 2)) * 4;
+        if (!sky && L > 0.26) cr = mix(cr, src[or] * k * 0.62, 0.25);
+        // Speed lines towards the edges (black, manga).
         const rad = RAD[i];
-        if (rad > 0.62) {
-          const a = ANG[i], hsh = hash(a * 97 + Math.floor(t * 9 + hash(a * 13 + 1) * 9) * 7919); // each line changes on its own beat
-          if (hsh > 0.93 && hash(a * 31 + 3) * 0.5 + 0.7 < rad) { const w = smooth(0.7, 1.15, rad) * speed * 0.8; R = mix(R, 255, w); G = mix(G, 255, w); B = mix(B, 255, w); }
+        if (rad > 0.66) {
+          const a = ANG[i], hsh = hash(a * 97 + Math.floor(t * 9 + hash(a * 13 + 1) * 9) * 7919);
+          if (hsh > 0.9 && hash(a * 31 + 3) * 0.45 + 0.72 < rad) { const w = smooth(0.72, 1.1, rad) * 0.9; cr = mix(cr, 16, w); cg = mix(cg, 14, w); cb = mix(cb, 22, w); }
         }
-        if (ink > 0) { R = mix(R, 18, ink); G = mix(G, 14, ink); B = mix(B, 26, ink); }
-        out[o] = R; out[o + 1] = G; out[o + 2] = B; out[o + 3] = 255;
+        if (ink) { cr = 16; cg = 13; cb = 20; }
+        out[o] = cr; out[o + 1] = cg; out[o + 2] = cb; out[o + 3] = 255;
       }
     }
   }
@@ -303,14 +341,14 @@ export default async function film({ anikit: A }) {
     if (type === 'front' || type === 'reveal') {
       // A front at distance D sweeps through the world (far → near, or near → far).
       const D = Math.exp(type === 'front' ? mix(lnF, lnN, e) : mix(lnN, lnF, e));
-      // The sky (and anything beyond 12 km) cross-fades instead: first for a front, last for a reveal.
+      // The sky (and anything beyond 8 km) cross-fades instead: first for a front, last for a reveal.
       const kSky = type === 'front' ? smooth(0.0, 0.35, e) : smooth(0.6, 0.95, e);
-      const soft = D * 0.035 + 0.6, band = D * 0.09 + 1.5;
+      const soft = D * 0.08 + 1.5, band = D * 0.12 + 2;
       const sc = type === 'front' ? [0.5, 1.0, 1.0] : [1.0, 0.75, 0.4];
       for (let i = 0; i < N_PIX; i++) {
-        const d = da[i], o = i * 4, sky = d > 12000;
+        const d = da[i], o = i * 4, sky = d > 8000;
         const k = sky ? kSky : type === 'front' ? smooth(D - soft, D + soft, d) : 1 - smooth(D - soft, D + soft, d);
-        const g = sky ? 0 : Math.exp(-(((d - D) / band) ** 2)) * (1 - smooth(0.85, 1, e)) * 255 * 0.9;
+        const g = sky ? 0 : Math.exp(-(((d - D) / band) ** 2)) * (1 - smooth(0.7, 1, e)) * smooth(0, 0.15, e) * 255 * 0.45;
         frame[o] = pa[o] + (pb[o] - pa[o]) * k + g * sc[0];
         frame[o + 1] = pa[o + 1] + (pb[o + 1] - pa[o + 1]) * k + g * sc[1];
         frame[o + 2] = pa[o + 2] + (pb[o + 2] - pa[o + 2]) * k + g * sc[2];
@@ -324,7 +362,7 @@ export default async function film({ anikit: A }) {
         const r = cell * 0.74 * clamp(e * 1.9 - rc * 0.9);
         const dd = Math.hypot(x - cx, y - cy);
         const i = y * W + x, o = i * 4;
-        const k = clamp(r - dd + 0.5), ring = r > 1 ? clamp(1 - Math.abs(dd - r) / 1.6) * (1 - e) : 0;
+        const k = clamp(r - dd + 0.5), ring = r > 1 ? clamp(1 - Math.abs(dd - r) / 1.6) * (1 - e) * 0.5 : 0;
         for (let q = 0; q < 3; q++) frame[o + q] = mix(mix(pa[o + q], pb[o + q], k), 16, ring);
         frame[o + 3] = 255;
       }
@@ -334,10 +372,10 @@ export default async function film({ anikit: A }) {
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
         const u = x * nx + y * ny, s = (edge - u);
         const i = y * W + x, o = i * 4;
-        const k = clamp(s / 3 + 0.5);
-        const hot = Math.exp(-((s / 14) ** 2)) * 255 * 1.1 + Math.exp(-((s / 90) ** 2)) * 80;
+        const k = clamp(s / 60 + 0.5);
+        const hot = Math.exp(-((s / 40) ** 2)) * 255 * 0.35 + Math.exp(-((s / 160) ** 2)) * 30;
         // The image just behind the edge is dragged along it (a smear).
-        const sm = s > 0 && s < 160 ? Math.round((1 - s / 160) * 60) : 0;
+        const sm = s > 0 && s < 200 ? Math.round((1 - s / 200) * 24) : 0;
         const ob = (y * W + Math.max(0, x - sm)) * 4;
         frame[o] = mix(pa[o], pb[ob], k) + hot;
         frame[o + 1] = mix(pa[o + 1], pb[ob + 1], k) + hot * 0.92;
@@ -362,7 +400,7 @@ export default async function film({ anikit: A }) {
       while (y < H) {
         const hgt = 6 + Math.floor(hash(band * 17 + 1) * 54), u = hash(band * 29 + 5) * 0.86 + 0.07;
         const on = e > u, near = Math.abs(e - u) < 0.09;
-        const shift = near ? Math.round((hash(band * 3 + Math.floor(t * 30)) - 0.5) * 70) : 0;
+        const shift = near ? Math.round((hash(band * 3 + Math.floor(t * 30)) - 0.5) * 24) : 0;
         for (let yy = y; yy < Math.min(H, y + hgt); yy++) for (let x = 0; x < W; x++) {
           const o = (yy * W + x) * 4, src = on ? pb : pa;
           const xs = Math.min(W - 1, Math.max(0, x + shift)), os = (yy * W + xs) * 4;
@@ -370,7 +408,7 @@ export default async function film({ anikit: A }) {
           frame[o] = src[(yy * W + Math.min(W - 1, xs + sp)) * 4];
           frame[o + 1] = src[os + 1];
           frame[o + 2] = src[(yy * W + Math.max(0, xs - sp)) * 4 + 2];
-          if (near && (yy & 1)) { frame[o] += 30; frame[o + 1] += 30; frame[o + 2] += 40; }
+          
           frame[o + 3] = 255;
         }
         y += hgt; band++;
@@ -458,8 +496,5 @@ export default async function film({ anikit: A }) {
       ctx.putImageData(new globalThis.ImageData(out, W, H), 0, 0);
     },
   });
-  // A soft punch on the hard cuts of look (the slash and the glitch).
-  filmC.impact(SCHEDULE[2].t0 + 0.2, { shake: 6, flash: '#fff4e0', flashOpacity: 0.18, decay: 9 });
-  filmC.impact(SCHEDULE[4].t0 + 0.25, { shake: 4, aberration: 5, decay: 10 });
   return filmC;
 }

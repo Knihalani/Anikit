@@ -4,7 +4,8 @@ import { setup, advance, box } from './setup';
 import { _setCodegen, _setNumberTracks, _setCompactFmt } from '../src/animate';
 import { timeline } from '../src/timeline';
 import { _recordCount } from '../src/core';
-import { r3, s3 } from '../src/values';
+import { r3, s3, unitFormat } from '../src/values';
+import { f64Buf, F64 } from '../src/wasm';
 
 beforeAll(setup);
 
@@ -203,6 +204,26 @@ describe('s3 (output number formatting)', () => {
     for (let i = 0; i < 200000; i++) {
       const v = (rnd() - 0.5) * Math.pow(10, (i % 12) - 3);
       if (s3(v) !== String(r3(v))) expect(s3(v)).toBe(String(r3(v)));
+    }
+  });
+});
+
+describe('unitFormat (number + unit output)', () => {
+  it('equals s3(v) + unit, in step or not', () => {
+    const f = unitFormat('px');
+    const at = f64Buf(1);
+    const vals = [0, -0, 0.5, 0.5, 0.5004, -0.5, -0.0004, 1 / 3, -2 / 3, 12.34, 12.34, -300.05, 2147483.648,
+      -2147483.648, 1e21, NaN, NaN, Infinity, -Infinity, 999.9995, 0];
+    for (const v of vals) {
+      F64[at] = v;
+      expect(f(at)).toBe(s3(v) + 'px');
+    }
+    let seed = 3;
+    const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+    for (let i = 0; i < 20000; i++) {
+      const v = (rnd() - 0.5) * Math.pow(10, (i % 8) - 2);
+      F64[at] = v;
+      if (f(at) !== s3(v) + 'px') expect(f(at)).toBe(s3(v) + 'px');
     }
   });
 });

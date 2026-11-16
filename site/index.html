@@ -105,7 +105,7 @@
   <!-- 06 · PATHS (paper) -->
   <section class="scene paths station" id="paths" data-shape="grid" data-bg="#ece6da" data-mode="ink" data-exposure="0.35" data-name="Paths">
     <div class="pin">
-      <h2 class="giant">Paths<br />that<br />think.</h2>
+      <h2 class="giant">SVG<br />morphs and<br />paths</h2>
       <svg class="blob" viewBox="0 0 400 400" aria-hidden="true"><path id="blob" /></svg>
       <svg class="trail" viewBox="0 0 1600 400" preserveAspectRatio="none" aria-hidden="true"><path id="trail" d="M-20 300 C 200 40 360 380 560 200 S 900 20 1080 220 S 1400 380 1620 120" /><circle id="rider" r="11" /></svg>
       <p class="mono corner br">Morph · draw · motion paths · arc-length exact</p>
@@ -131,34 +131,34 @@
     </div>
   </section>
 
-  <!-- 09 · AGENTS (black) -->
-  <section class="scene agents station" id="agents" data-shape="grid" data-bg="#0c0c0c" data-mode="light" data-tint="0.82,1,0.24" data-exposure="0.45" data-name="Agents">
+  <!-- 09 · NUMBERS (acid) -->
+  <section class="scene numbers station" id="numbers" data-shape="vortex" data-bg="#d2ff3c" data-mode="ink" data-exposure="0.07" data-name="Benchmarks">
     <div class="pin">
-      <h2 class="giant">Machines<br />read it<br />too.</h2>
-      <pre class="term" id="term"></pre>
-      <div class="rec">
-        <button class="pill solid" id="rec-btn" data-cursor="Record">● Record 2 s</button>
-        <p class="mono" id="rec-out">Frame-exact GIF, encoded in WebAssembly.</p>
+      <div class="corner tl mono">09 — Benchmarks<br />From the scripts in packages/anikit/scripts</div>
+      <h2 class="giant n-title" id="n-title">Benchmarks</h2>
+      <div class="n-stats">
+        <div class="n-stat"><b><span class="n-count" data-to="43" data-dec="0">43</span>×</b><p class="mono">faster than matter.js<br />250 colliding bodies · bench-physics.mjs</p></div>
+        <div class="n-stat"><b><span class="n-count" data-to="0.37" data-dec="2">0.37</span><small>ms</small></b><p class="mono">100,000 objects per frame<br />batch(), 3 channels · bench.mjs</p></div>
+        <div class="n-stat"><b><span class="n-count" data-to="150" data-dec="0">150</span>k</b><p class="mono">particles rendered in 6.2–6.8 ms<br />Chromium · bench-cloud.mjs</p></div>
+      </div>
+      <div class="n-chart" id="n-chart" role="img" aria-label="100,000 objects, one frame: GSAP 3 5.85 ms, anikit animate() 3.68 ms, anikit batch() 0.37 ms">
+        <p class="mono n-cap">100,000 objects · one frame · ms (lower is faster)</p>
+        <div class="n-row"><span class="mono">GSAP 3</span><i><u style="--w:1"></u></i><em class="n-count" data-to="5.85" data-dec="2">5.85</em></div>
+        <div class="n-row me"><span class="mono">anikit animate()</span><i><u style="--w:0.629"></u></i><em class="n-count" data-to="3.68" data-dec="2">3.68</em></div>
+        <div class="n-row me"><span class="mono">anikit batch()</span><i><u style="--w:0.063"></u></i><em class="n-count" data-to="0.37" data-dec="2">0.37</em></div>
+        <p class="mono n-cap dim">bench.mjs, one run · docs/perf-notes.md</p>
       </div>
     </div>
   </section>
 
-  <!-- 10 · FILM (black) -->
-  <section class="scene film station" id="film" data-shape="grid" data-bg="#050505" data-mode="light" data-tint="1,0.6,0.4" data-exposure="0.12" data-name="Film">
+  <!-- 10 · AGENTS (black) -->
+  <section class="scene agents station" id="agents" data-shape="grid" data-bg="#0c0c0c" data-mode="light" data-tint="0.82,1,0.24" data-exposure="0.45" data-name="Agents">
     <div class="pin">
-      <h2 class="giant film-title">Films,<br /><em>compiled.</em></h2>
-      <div class="film-frame">
-        <video id="film-video" src="film/anikit-film.mp4" poster="film/poster.jpg" muted loop playsinline preload="metadata" aria-label="ANIKIT — Velocity: a 20 second 3D flight rendered by anikit"></video>
-      </div>
-      <div class="film-copy">
-        <p class="mono">One flight, no cuts: a tunnel of circuit rings, a neon city on a mirror floor, chrome gates, a knot that shatters in bullet time, a vortex of light — rasterised by anikit's own 3D renderer with camera motion blur, depth of field, lens flares and a shockwave, composed in code and rendered in Node. No browser, no WebGL, no editor.</p>
-<pre class="film-code"><span class="k">const</span> film = composition({ fps: 60, duration: 20.4, motionBlur: 1, post: { bloom: 0.85, flares: 0.6, aa: 1 } });
-film.scene(<span class="s">'velocity'</span>, 0, 20.4, {
-  timeScale: (t) =&gt; bulletTime(t),               <span class="c">// slows everything together</span>
-  draw: ({ clock }) =&gt; { path.apply(cam, s(clock)); r3.render(cam, items, { mirror, motionBlur }); },
-});
-film.impact(film.timeAt(<span class="s">'velocity'</span>, HIT), { shake: 34, shockwave: 40 });
-<span class="c">// $ anikit-render film.mjs --workers 4</span></pre>
+      <h2 class="giant">Docs for<br />coding<br />agents</h2>
+      <pre class="term" id="term"></pre>
+      <div class="rec">
+        <button class="pill solid" id="rec-btn" data-cursor="Record">● Record 2 s</button>
+        <p class="mono" id="rec-out">Frame-exact GIF, encoded in WebAssembly.</p>
       </div>
     </div>
   </section>
