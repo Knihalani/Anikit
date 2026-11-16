@@ -11,7 +11,7 @@
       "items": { "type": "string", "maxWords": 3, "maxChars": 18 },
       "example": ["No browser.", "No waiting.", "Just", "JSON", "in.", "Video", "out."]
     },
-    "beat": { "type": "seconds", "default": 0.6, "minimum": 0.35, "maximum": 1.2, "description": "Seconds per word. 0.5–0.65 feels energetic; match it to the music (60 / BPM × 1 or × 2).", "example": 0.6 },
+    "beat": { "type": "seconds", "default": 0.6, "minimum": 0.35, "maximum": 1.2, "description": "Seconds per one-word beat (two- and three-word beats get 1.5×). 0.5–0.65 feels energetic; match it to the music (60 / BPM × 1 or × 2).", "example": 0.6 },
     "payoff": { "type": "string", "maxWords": 6, "description": "Line under the logo at the end: a date, a URL or a call to action.", "example": "Out now · anikit.dev" },
     "flash": { "type": "boolean", "default": true, "description": "Flash every third beat to the brand colour for energy.", "example": true },
     "music": { "type": "string", "description": "Optional music file; a strong beat is what makes a teaser work." }
@@ -26,12 +26,12 @@
       {
         "$each": "words", "as": "w", "index": "i",
         "do": {
-          "$let": { "hot": "flash && i % 3 == 2" },
+          "$let": { "hot": "flash && i % 3 == 2", "d": "len(split(w, '')) > 1 ? beat * 1.5 : beat" },
           "in": {
             "id": "beat-{{i + 1}}",
-            "duration": "{{beat}}",
+            "duration": "{{d}}",
             "background": "{{hot ? 'linear-gradient(135deg, ' + brand.colors.primary + ', ' + brand.colors.secondary + ')' : 'radial-gradient(circle at 50% 45%, ' + brand.colors.surface + ', ' + brand.colors.background + ')'}}",
-            "camera": { "animate": [ { "from": { "zoom": "{{i % 2 ? 1.14 : 1.08}}", "rotation": "{{i % 2 ? -1.2 : 1.2}}" }, "to": { "zoom": 1, "rotation": 0 }, "duration": "{{beat}}", "ease": "outExpo" } ] },
+            "camera": { "animate": [ { "from": { "zoom": "{{i % 2 ? 1.14 : 1.08}}", "rotation": "{{i % 2 ? -1.2 : 1.2}}" }, "to": { "zoom": 1, "rotation": 0 }, "duration": "{{d}}", "ease": "outExpo" } ] },
             "layers": [
               { "$if": "!hot", "then": { "$use": "glows", "with": { "strength": 0.7, "gx": "{{i % 2 ? '85%' : '15%'}}", "gy": "{{i % 2 ? '80%' : '20%'}}" } } },
               {

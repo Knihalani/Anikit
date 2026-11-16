@@ -62,7 +62,7 @@
         "$if": "headline",
         "then": {
           "id": "headline",
-          "duration": "{{max(2.2, readtime(headline) + 0.4)}}",
+          "duration": "{{max(2.2, readtime(headline) + 0.5 + 0.08 * words(headline))}}",
           "layers": [
             { "$use": "glows", "with": { "strength": 0.7 } },
             { "id": "headline", "text": "{{headline}}", "style": "hero", "width": "{{fmt.safe.w}}", "split": "words", "enter": { "preset": "fadeUp", "stagger": 0.08, "duration": 0.7, "ease": "outExpo" } }

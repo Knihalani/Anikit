@@ -70,7 +70,7 @@
     "scenes": [
       {
         "id": "intro",
-        "duration": "{{max(2.4, readtime(title) + 0.6)}}",
+        "duration": "{{max(2.4, readtime(title) + 0.6 + 0.08 * words(title))}}",
         "layers": [
           { "$use": "glows", "with": { "strength": 0.85 } },
           { "$use": "kicker", "with": { "text": "{{product}}" }, "y": "38%" },

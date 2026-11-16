@@ -265,9 +265,6 @@ pub fn critique(spec: &Value) -> Report {
         let scene_start = total - tr;
         total += dur - tr;
         let id = scene.get("id").and_then(|v| v.as_str()).map(|s| format!(" ('{s}')")).unwrap_or_default();
-        if dur < 1.2 {
-            cx.note("warning", "pacing", &path, format!("scene{id} lasts {dur:.2} s, too short to register"), "make it at least 1.5 s, or merge it with a neighbour (fast cuts work only for single words on a beat)");
-        }
         if tr > dur * 0.5 && si > 0 {
             cx.note("warning", "pacing", &path, format!("transition of {tr:.2} s is more than half of the {dur:.2} s scene"), "keep transitions at 0.3–0.7 s, at most a third of the scene");
         }
@@ -276,6 +273,7 @@ pub fn critique(spec: &Value) -> Report {
         let layers = scene.get("layers").and_then(|l| l.as_array()).cloned().unwrap_or_default();
         let mut words_on_screen = 0usize;
         let mut has_motion = scene.get("camera").is_some();
+        let mut kinetic_only = true;
         for (li, layer) in layers.iter().enumerate() {
             walk_layer(&mut cx, layer, &format!("{path}.layers[{li}]"), dur, bg, 0.0, &mut |cx, l, p, vis_from, vis_to, bg| {
                 if l.get("enter").is_some() || l.get("animate").is_some() || l.get("loop").is_some() {
@@ -284,11 +282,15 @@ pub fn critique(spec: &Value) -> Report {
                 if let Some(f) = l.get("font").and_then(|f| f.as_str()) {
                     fonts.insert(f.to_string());
                 }
-                let Some(text) = l.get("text").and_then(|t| t.as_str()) else { return };
+                let Some(raw) = l.get("text").and_then(|t| t.as_str()) else { return };
+                let text_owned = with_value(raw, l.get("value"));
+                let text = text_owned.as_str();
                 let words = expr::word_count(text);
+                kinetic_only &= words <= 2;
                 words_on_screen += words;
                 let visible = vis_to - vis_from;
-                let need = expr::read_time(text);
+                // Single kinetic words and numbers (a teaser beat, a countdown) read in a glance.
+                let need = if words <= 2 && text.chars().count() <= 14 && visible < 1.5 { 0.35 + 0.15 * words as f64 } else { expr::read_time(text) };
                 if words > 0 && visible + 0.05 < need {
                     cx.note("warning", "reading-time", p, format!("\"{}\" ({words} words) is readable for {visible:.1} s but needs about {need:.1} s", trunc(text, 40)),
                         format!("extend the scene/layer by {:.1} s or cut it to {} words", need - visible, ((visible - 1.0).max(0.3) * 3.0).floor().max(1.0)));
@@ -332,6 +334,9 @@ pub fn critique(spec: &Value) -> Report {
             // Safe area for the layer's anchor point (top level only: children are laid out by their parent).
             check_safe(&mut cx, layer, &format!("{path}.layers[{li}]"));
         }
+        if dur < 1.2 && !kinetic_only {
+            cx.note("warning", "pacing", &path, format!("scene{id} lasts {dur:.2} s, too short to register"), "make it at least 1.5 s, or merge it with a neighbour (fast cuts work only for single words on a beat)");
+        }
         if words_on_screen > 32 {
             cx.note("warning", "density", &path, format!("{words_on_screen} words in one scene; viewers skim, they don't read paragraphs"), "keep scenes under ~20 words; split the copy across scenes or move detail to a voice-over");
         }
@@ -370,6 +375,21 @@ fn transition_secs(cx: &Ctx, t: &Value) -> Option<f64> {
         }
         _ => None,
     }
+}
+
+/// Substitute a counter's `{value…}` placeholder with its final value.
+fn with_value(text: &str, value: Option<&Value>) -> String {
+    let (Some(a), Some(v)) = (text.find("{value"), value.and_then(|v| v.as_f64())) else { return text.to_string() };
+    let Some(b) = text[a..].find('}') else { return text.to_string() };
+    let digits = format!("{}", v.round() as i64);
+    let mut grouped = String::new();
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i) % 3 == 0 && c.is_ascii_digit() {
+            grouped.push(',');
+        }
+        grouped.push(c);
+    }
+    format!("{}{}{}", &text[..a], grouped, &text[a + b + 1..])
 }
 
 fn trunc(s: &str, n: usize) -> String {
@@ -412,7 +432,10 @@ fn walk_layer(cx: &mut Ctx, layer: &Value, path: &str, scene_dur: f64, bg: color
                 let cps = o.get("cps").and_then(|v| v.as_f64()).unwrap_or(20.0);
                 d + l.get("text").and_then(|t| t.as_str()).map(|t| t.chars().count() as f64 / cps).unwrap_or(0.0)
             } else {
-                d + dur * 0.5 + stagger
+                // Strong ease-outs are legible after about a third of their duration.
+                let ease = o.get("ease").and_then(|e| e.as_str()).unwrap_or("");
+                let k = if ["outExpo", "outQuart", "outQuint", "outCirc"].iter().any(|e| ease.eq_ignore_ascii_case(e)) { 0.35 } else { 0.5 };
+                d + dur * k + stagger
             }
         }
         Some(Value::String(_)) => 0.3,
@@ -495,5 +518,34 @@ mod tests {
         let r = critique(&spec);
         assert!(r.notes.is_empty(), "{}", r.to_text());
         assert_eq!(r.score, 100);
+    }
+}
+
+#[cfg(test)]
+mod template_quality {
+    use crate::templates::{brand::Brand, Format, Template, BUILTIN};
+
+    /// Every template, with its example copy, must pass the critique without
+    /// errors or warnings in every format: templates are the quality bar.
+    #[test]
+    fn templates_pass_critique() {
+        let mut failures = String::new();
+        for (name, _) in BUILTIN {
+            let t = Template::builtin(name).unwrap();
+            for f in ["16:9", "9:16", "1:1"] {
+                for b in [Brand::default(), Brand::from_json(r##"{"theme":"light","colors":{"primary":"#0F766E"},"logo":"logo.svg"}"##).unwrap()] {
+                    let spec = t.expand(&t.example_params(), &b, Format::parse(f).unwrap()).unwrap();
+                    let r = super::critique(&spec);
+                    let bad: Vec<_> = r.notes.iter().filter(|n| n.severity != "tip").collect();
+                    if !bad.is_empty() {
+                        failures += &format!("--- {name} {f} {}\n", b.theme.as_deref().unwrap_or("dark"));
+                        for n in bad {
+                            failures += &format!("{} {} {}: {}\n", n.severity, n.check, n.path, n.message);
+                        }
+                    }
+                }
+            }
+        }
+        assert!(failures.is_empty(), "{failures}");
     }
 }

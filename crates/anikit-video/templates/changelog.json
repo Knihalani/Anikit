@@ -84,7 +84,7 @@
                           {
                             "type": "box", "width": "{{fmt.u * (fmt.portrait ? 18 : 15)}}",
                             "style": { "padding": ["{{fmt.u * 0.7}}", 0], "radius": 999, "justify": "center", "background": "{{alpha(c, 0.16)}}", "border": "1px {{alpha(c, 0.55)}}" },
-                            "children": [ { "text": "{{kind}}", "style": "label", "color": "{{c}}" } ]
+                            "children": [ { "text": "{{kind}}", "style": "label", "color": "{{mix(c, brand.colors.text, 0.5)}}" } ]
                           },
                           { "text": "{{it.text}}", "style": "body", "weight": 600, "align": "left", "width": "{{fmt.portrait ? fmt.safe.w - fmt.u * 6 : fmt.w * 0.66 - fmt.u * 23.4}}" }
                         ]

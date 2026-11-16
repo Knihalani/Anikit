@@ -9,6 +9,10 @@
 //!   anikit-video mcp    (Model Context Protocol server on stdio)
 
 fn main() {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    if let Some(code) = anikit_video::agent_cli::run(&args) {
+        std::process::exit(code);
+    }
     eprintln!("anikit-video: under construction (see docs/video/ARCHITECTURE.md)");
     std::process::exit(2);
 }

@@ -56,7 +56,7 @@
                 { "shape": "circle", "width": "{{fmt.u * 1.25}}", "height": "{{fmt.u * 1.25}}", "fill": "#28C840" },
                 {
                   "$if": "s.language || language",
-                  "then": { "type": "box", "style": { "grow": 1, "justify": "end" }, "children": [ { "text": "{{s.language ?? language}}", "style": "label", "color": "$muted", "size": "{{fmt.u * 1.6}}" } ] }
+                  "then": { "type": "box", "style": { "grow": 1, "justify": "end" }, "children": [ { "text": "{{s.language ?? language}}", "style": "label", "color": "$muted", "size": "{{fmt.u * 2.3}}" } ] }
                 }
               ]
             },
@@ -117,7 +117,7 @@
             "in": {
               "id": "step-{{i + 1}}",
               "transition": { "type": "push", "direction": "{{fmt.portrait ? 'up' : 'left'}}", "duration": 0.55, "ease": "inOutQuart" },
-              "duration": "{{max(readtime(s.title + ' ' + (s.body ?? '')) + 1, 0.9 + typing + 1.5 + nlines * 0.25)}}",
+              "duration": "{{max(readtime(s.title + ' ' + (s.body ?? '')) + 1, 0.9 + typing + max(1.5 + nlines * 0.25, readtime(s.code) + 0.1))}}",
               "layers": [
                 { "$use": "glows", "with": { "strength": 0.45, "gx": "{{i % 2 ? '90%' : '10%'}}", "hx": "{{i % 2 ? '10%' : '90%'}}" } },
                 {

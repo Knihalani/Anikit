@@ -24,7 +24,7 @@
         "subtitle": { "font": "$body", "size": "{{fmt.portrait ? '4.6vmin' : '3.7vmin'}}", "weight": 500, "lineHeight": 1.35, "color": "$muted" },
         "body": { "font": "$body", "size": "{{fmt.portrait ? '4.2vmin' : '3.2vmin'}}", "weight": 400, "lineHeight": 1.4, "color": "$text" },
         "caption": { "font": "$body", "size": "{{fmt.portrait ? '3.3vmin' : '2.5vmin'}}", "weight": 500, "lineHeight": 1.35, "color": "$muted" },
-        "label": { "font": "$body", "size": "{{fmt.portrait ? '2.9vmin' : '2.1vmin'}}", "weight": 650, "uppercase": true, "letterSpacing": "0.14em", "color": "$accent" },
+        "label": { "font": "$body", "size": "{{fmt.portrait ? '3vmin' : '2.4vmin'}}", "weight": 650, "uppercase": true, "letterSpacing": "0.14em", "color": "$accent" },
         "button": { "font": "$body", "size": "{{fmt.portrait ? '4.2vmin' : '3.1vmin'}}", "weight": 650, "color": "$onPrimary" },
         "stat": { "font": "$heading", "size": "{{fmt.portrait ? '22vmin' : '20vmin'}}", "weight": 800, "letterSpacing": "-0.045em", "lineHeight": 1, "color": "$text" },
         "code": { "font": "$mono", "size": "{{fmt.portrait ? '3.2vmin' : '2.4vmin'}}", "weight": 400, "lineHeight": 1.55, "color": "$text" }
@@ -69,7 +69,7 @@
             {
               "$if": "url", "then": {
                 "type": "box", "style": { "grow": 1, "justify": "center", "padding": [0, "{{fmt.u * 10}}"] },
-                "children": [ { "text": "{{url}}", "style": "caption", "size": "{{fmt.u * 1.7}}" } ]
+                "children": [ { "text": "{{url}}", "style": "caption", "size": "{{fmt.u * 2.2}}" } ]
               }
             }
           ]

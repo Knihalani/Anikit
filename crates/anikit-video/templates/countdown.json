@@ -77,7 +77,7 @@
                 "enter": { "preset": "popIn" },
                 "children": [
                   { "shape": "circle", "width": "{{fmt.u * 1.8}}", "height": "{{fmt.u * 1.8}}", "fill": "#FF3B30", "loop": { "preset": "pulse", "period": 1.2 } },
-                  { "text": "LIVE", "style": "label", "color": "#FF6B61" }
+                  { "text": "LIVE", "style": "label", "color": "{{mix('#FF3B30', brand.colors.text, 0.35)}}" }
                 ]
               },
               { "id": "live-text", "text": "{{liveText}}", "style": "hero", "y": "{{fmt.portrait ? '47%' : '48%'}}", "width": "{{fmt.safe.w}}", "split": "chars", "enter": { "preset": "popIn", "stagger": 0.04, "delay": 0.15 } }

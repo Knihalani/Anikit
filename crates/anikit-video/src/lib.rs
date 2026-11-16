@@ -12,5 +12,8 @@
 //! See `docs/video/ARCHITECTURE.md` for ownership and contracts.
 
 pub mod dl;
+pub mod agent_cli;
 pub mod critique;
+pub mod mcp;
+pub mod prompts;
 pub mod templates;
