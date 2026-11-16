@@ -41,7 +41,7 @@ main { position: relative; z-index: 2; }
 .lede { font-size: clamp(15px, 1.25vw, 18px); color: rgba(232, 234, 240, 0.78); margin: 18px 0 0; max-width: 30em; }
 
 /* Demo stops: one centred layout for every demo, held while the orbit carries on. */
-.stop { height: 220vh; position: relative; }
+.stop { height: 240vh; position: relative; }
 .stick { position: sticky; top: 0; height: 100vh; height: 100svh; display: flex; align-items: center; justify-content: center; padding: 64px var(--gut) 24px; }
 .panel { width: min(760px, 100%); text-align: center; will-change: transform, opacity; opacity: 0; }
 .panel h2 { font-size: clamp(26px, 3vw, 40px); margin: 0 0 18px; text-shadow: 0 2px 24px rgba(0, 0, 0, 0.6); }
@@ -68,7 +68,7 @@ main { position: relative; z-index: 2; }
 #rider { fill: #fff; }
 
 .tiles { position: absolute; inset: 0; margin: auto; display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; width: min(540px, 86%); height: max-content; cursor: pointer; }
-.tiles.alt { grid-template-columns: repeat(4, 1fr); width: min(360px, 70%); }
+.tiles.alt { grid-template-columns: repeat(4, 1fr); width: min(290px, 60%); }
 .tile { aspect-ratio: 1; border-radius: 12px; background: var(--c); display: grid; place-items: center; font: 500 13px Mono, monospace; color: rgba(5, 8, 20, 0.8); }
 .tile.big { grid-column: span 2; grid-row: span 2; aspect-ratio: auto; }
 

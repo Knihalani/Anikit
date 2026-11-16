@@ -80,8 +80,9 @@ for (const sec of $$('.stop')) {
     // p runs 0 → 1 while the section crosses the viewport (start end → end start).
     const H = sec.offsetHeight, vh = innerHeight, span = H + vh;
     const y = p * span; // px scrolled since the section's top hit the bottom of the viewport
-    const a = ease(clamp((y - vh * 0.6) / (vh * 0.5)));
-    const b = ease(clamp((y - (H - vh * 0.55)) / (vh * 0.5)));
+    // Sticky from y = vh to y = H: rise in over the last 50vh before it, leave over 45vh before it unsticks.
+    const a = ease(clamp((y - vh * 0.55) / (vh * 0.5)));
+    const b = ease(clamp((y - (H - vh * 0.5)) / (vh * 0.45)));
     const o = a * (1 - b);
     set(panel, { opacity: o, y: (1 - a) * 60 - b * 60, scale: 0.97 + 0.03 * o });
     shadeFor.set(sec, o);
