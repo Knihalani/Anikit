@@ -97,20 +97,23 @@ export default async function film({ anikit: A, node }) {
   const knot = mesh.torusKnot({ p: 2, q: 3, radius: 880, spread: 340, tube: 170, segments: 640, sides: 28 });
   const KNOT_AT = { x: KNOT_C[0], y: KNOT_C[1], z: KNOT_C[2], rx: 25, color: [0.05, 0.05, 0.065] };
   const knotAt = instances(1, () => KNOT_AT);
-  const shards = shatter(knot, { transform: KNOT_AT, force: 1900, spread: 0.7, spin: 520, drag: 0.55, ripple: 0.25 });
+  const KNOT_SPIN = 24; // degrees per second
+  // Shards start in the pose the knot breaks in.
+  const shards = shatter(knot, { transform: { ...KNOT_AT, ry: HIT * KNOT_SPIN }, force: 3200, spread: 0.75, spin: 640, drag: 0.6, ripple: 0.08 });
 
   // ---- Zone E: the vortex -------------------------------------------------------------
   const NV = 2600;
   const vortexInit = Array.from({ length: NV }, (_, i) => {
     const f = i / NV, a = f * TAU * 26 + rnd() * 0.5, r = 650 + rnd() * 700, z = -41900 - f * 10900 + (rnd() - 0.5) * 200;
-    return { a, r, z, s: 50 + rnd() * 90, spin: rnd() * 360, c: f };
+    const k = rnd(); // mostly dark glass, with cyan and magenta lights among them
+    return { a, r, z, s: 50 + rnd() * 90, spin: rnd() * 360, color: k < 0.55 ? [0.02, 0.022, 0.035] : k < 0.8 ? CYAN.map((x) => x * 0.45) : MAG.map((x) => x * 0.45) };
   });
   const vortex = instances(NV);
   const placeVortex = (t) => {
     for (let i = 0; i < NV; i++) {
-      const v = vortexInit[i], a = v.a + t * 0.9, c = v.c;
+      const v = vortexInit[i], a = v.a + t * 0.9;
       vortex.set(i, { x: Math.cos(a) * v.r, y: 250 + Math.sin(a) * v.r, z: v.z, rx: v.spin + t * 90, ry: v.spin * 1.7 + t * 60, scale: v.s,
-        color: [mix(CYAN[0], MAG[0], c) * 0.55, mix(CYAN[1], MAG[1], c) * 0.55, mix(CYAN[2], MAG[2], c) * 0.55] });
+        color: v.color });
     }
   };
 
@@ -137,7 +140,7 @@ export default async function film({ anikit: A, node }) {
     width: W, height: H, fps: FPS, duration: D, motionBlur: 1,
     post: {
       aa: 1,
-      bloom: (t) => 0.85 + 0.5 * bell(t, 0.4, 0.25),
+      bloom: (t) => 0.85 + 0.6 * bell(t, 0.05, 0.3),
       bloomThreshold: 0.5, bloomRadius: 46,
       streaks: 0.45, streakLength: 300, streakTint: [0.7, 0.75, 1],
       rays: (t) => { const c = clockOf(t); return 0.35 + 0.55 * smooth(2.9, 3.4, c) * (1 - smooth(9.2, 9.8, c)) + 0.75 * smooth(17.4, 18.4, c); },
@@ -193,7 +196,7 @@ export default async function film({ anikit: A, node }) {
       }
       if (z < -26000 && z > -36500) items.push({ mesh: gateMesh, instances: gates, material: { metal: 1, iridescence: 0.75, hue: 0.1, specular: 1.6, shininess: 160, pulse: 3, pulseCount: 2, pulsePhase: c * 3.2, lineColor: CYAN } });
       if (z < -31000 && z > -46000) {
-        if (c < HIT) items.push({ mesh: knot, instances: knotAt.set(0, { ...KNOT_AT, ry: c * 24 }), material: { metal: 0.92, iridescence: 0.3, specular: 1.5, shininess: 140, rim: 0.3, lines: 1.6, pattern: 'circuit', lineColor: CYAN, grid: [70, 5], lineWidth: 0.06, pulse: 2.8, pulseCount: 3, pulsePhase: c * 1.4 } });
+        if (c < HIT) items.push({ mesh: knot, instances: knotAt.set(0, { ...KNOT_AT, ry: c * KNOT_SPIN }), material: { metal: 0.92, iridescence: 0.3, specular: 1.5, shininess: 140, rim: 0.3, lines: 1.6, pattern: 'circuit', lineColor: CYAN, grid: [70, 5], lineWidth: 0.06, pulse: 2.8, pulseCount: 3, pulsePhase: c * 1.4 } });
         else {
           shards.update(c - HIT);
           items.push({ mesh: shards.mesh, instances: shards.instances, cull: false, material: { metal: 0.9, iridescence: 0.45, specular: 1.6, shininess: 140, emissive: 0.15 + 0.8 * Math.exp(-(c - HIT) * 1.5) } });
@@ -201,7 +204,7 @@ export default async function film({ anikit: A, node }) {
       }
       if (z < -39500 && z > -54500) {
         placeVortex(c);
-        items.push({ mesh: cube, instances: vortex, material: { ambient: 0.15, emissive: 0.4, metal: 0.5, specular: 1.2, shininess: 80, lines: 1.2, pattern: 'dots', grid: [3, 3], lineWidth: 0.09, lineColor: WHITE, pulse: 1.6, pulsePhase: c * 3, pulseDir: [0, 0, 0.0006] } });
+        items.push({ mesh: cube, instances: vortex, material: { ambient: 0.05, diffuse: 0.3, emissive: 0.9, metal: 0.55, specular: 1.3, shininess: 110, lines: 1.1, grid: [1, 1], lineWidth: 0.04, lineColor: WHITE, pulse: 1.6, pulsePhase: c * 3, pulseDir: [0, 0, 0.0006] } });
       }
       if (z < -50000) items.push({ mesh: word, instances: wordAt, material: { metal: 1, iridescence: 0.4, specular: 1.9, shininess: 190, rim: 0.3, lines: 1.2, lineColor: [1.5, 1.2, 1.6], grid: [0, 0], lineWidth: 0.015, pulse: 1.8, pulseCount: 1, pulsePhase: c * 0.55 - 0.2, lineColor: [1.4, 0.9, 1.2] } });
       items.push({ points: stars, colors: starCol, size: 3.2, intensity: 2.3, streak: 0.5, fog: [9000, 24000] });
@@ -229,7 +232,7 @@ export default async function film({ anikit: A, node }) {
     },
   });
   // Impacts land on story beats of the slowed clock.
-  film.impact(0.38, { flash: '#ffffff', flashOpacity: 0.9, decay: 5, aberration: 6 });
+  film.impact(0, { flash: '#ffffff', flashOpacity: 1, decay: 4, aberration: 6 }); // ignition: the film opens on a white flash
   film.impact(film.timeAt('velocity', 3.0), { shake: 14, flash: '#8fe3ff', flashOpacity: 0.35, aberration: 5 });
   film.impact(film.timeAt('velocity', HIT), { shake: 34, flash: '#ffd1ef', flashOpacity: 0.75, aberration: 10 });
   film.impact(film.timeAt('velocity', 14.25), { shake: 16, flash: '#ffffff', flashOpacity: 0.3, aberration: 6 });
