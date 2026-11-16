@@ -33,7 +33,7 @@ main { position: relative; z-index: 2; }
 .hero h1 { font: 900 clamp(64px, 15vw, 200px)/0.9 'Inter Display', 'Inter', sans-serif; letter-spacing: -0.045em; margin: 0; color: #f4fdff; text-shadow: 0 2px 40px rgba(0, 40, 70, 0.35); }
 .hero h1 .ch { display: inline-block; }
 .lede { max-width: 30em; margin: 22px auto 0; font-size: clamp(16px, 2vw, 19px); color: rgba(240, 252, 255, 0.86); text-shadow: 0 1px 14px rgba(0, 30, 50, 0.5); }
-.cue { margin-top: 15vh; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(235, 250, 255, 0.7); }
+.cue { margin-top: 15vh; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #f2fdff; text-shadow: 0 1px 10px rgba(0, 40, 60, 0.7), 0 0 2px rgba(0, 40, 60, 0.6); }
 
 .stop { position: relative; height: 230vh; }
 .stop + .stop { margin-top: -100vh; }

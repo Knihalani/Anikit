@@ -123,7 +123,7 @@ void main(){
     vec2 g = uv * sc + vec2(t * 0.05 * (fl - 1.), drift);
     vec2 id = floor(g), f = fract(g) - 0.5;
     float r = h21(id + fl * 31.);
-    if (r > 0.84) {
+    if (r > 0.87) {
       vec2 o = vec2(h21(id * 1.7 + 3.) - 0.5, h21(id * 2.3 + 9.) - 0.5) * 0.6;
       vec2 d = f - o;
       float stretch = 1. + min(abs(uSpeed) * (0.4 + fl * 0.3), 6.);
