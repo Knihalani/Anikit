@@ -2191,3 +2191,97 @@ pub extern "C" fn ak_raster_ptr(id: u32) -> *const u32 {
         _ => core::ptr::null(),
     }
 }
+
+// ---------------------------------------------------------------------------
+// Black hole (Schwarzschild lensing renderer)
+// ---------------------------------------------------------------------------
+
+struct BlackHoles(UnsafeCell<Vec<Option<anikit_core::blackhole::BlackHole>>>);
+// SAFETY: wasm32-unknown-unknown without threads is single-threaded.
+unsafe impl Sync for BlackHoles {}
+static BLACK_HOLES: BlackHoles = BlackHoles(UnsafeCell::new(Vec::new()));
+
+#[allow(clippy::mut_from_ref)]
+fn black_holes() -> &'static mut Vec<Option<anikit_core::blackhole::BlackHole>> {
+    // SAFETY: single-threaded; see `st()`.
+    unsafe { &mut *BLACK_HOLES.0.get() }
+}
+
+fn black_hole(id: u32) -> Option<&'static mut anikit_core::blackhole::BlackHole> {
+    black_holes().get_mut(id as usize).and_then(|b| b.as_mut())
+}
+
+#[no_mangle]
+pub extern "C" fn ak_bh_create(w: u32, h: u32, seed: u32) -> u32 {
+    let b = anikit_core::blackhole::BlackHole::new(w as usize, h as usize, seed);
+    let v = black_holes();
+    if let Some(i) = v.iter().position(|s| s.is_none()) {
+        v[i] = Some(b);
+        return i as u32;
+    }
+    v.push(Some(b));
+    (v.len() - 1) as u32
+}
+#[no_mangle]
+pub extern "C" fn ak_bh_free(id: u32) {
+    if let Some(s) = black_holes().get_mut(id as usize) {
+        *s = None;
+    }
+}
+#[no_mangle]
+pub extern "C" fn ak_bh_resize(id: u32, w: u32, h: u32) {
+    if let Some(b) = black_hole(id) {
+        b.resize(w as usize, h as usize);
+    }
+}
+/// f64 buffer: `[distance, inclination, fov, time, exposure, bloom, grain,
+/// hotSpots, jet, azimuth, look, roll, fall, mode, temperature, diskOuter,
+/// stars, speed, nebula]`. Returns a pointer to the RGBA8 frame.
+#[no_mangle]
+pub extern "C" fn ak_bh_render(id: u32) -> *const u8 {
+    let f = &st().f64_buf;
+    if f.len() < 19 {
+        return core::ptr::null();
+    }
+    let p = anikit_core::blackhole::Params {
+        distance: f[0] as f32,
+        inclination: f[1] as f32,
+        fov: f[2] as f32,
+        time: f[3] as f32,
+        exposure: f[4] as f32,
+        bloom: f[5] as f32,
+        grain: f[6] as f32,
+        hot_spots: f[7] as f32,
+        jet: f[8] as f32,
+        azimuth: f[9] as f32,
+        look: f[10] as f32,
+        roll: f[11] as f32,
+        fall: f[12] as f32,
+        mode: f[13] as u32,
+        temperature: f[14] as f32,
+        disk_outer: f[15] as f32,
+        stars: f[16] as f32,
+        speed: f[17] as f32,
+        nebula: f[18] as f32,
+    };
+    match black_hole(id) {
+        Some(b) => {
+            b.render(&p);
+            b.out.as_ptr()
+        }
+        None => core::ptr::null(),
+    }
+}
+/// Writes `[samples0, samples1, samples2, stars, tableBuilt, geometryBuilt,
+/// shadowRadius]` to the f64 buffer.
+#[no_mangle]
+pub extern "C" fn ak_bh_stats(id: u32) {
+    let Some(b) = black_hole(id) else { return };
+    let s = b.stats;
+    let buf = &mut st().f64_buf;
+    if buf.len() < 7 {
+        buf.resize(7, 0.0);
+    }
+    let v = [s.samples[0] as f64, s.samples[1] as f64, s.samples[2] as f64, s.stars as f64, s.table_built as f64, s.geometry_built as f64, s.shadow as f64];
+    buf[..7].copy_from_slice(&v);
+}
