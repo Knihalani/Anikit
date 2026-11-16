@@ -204,3 +204,21 @@ fn text_block_enter_exit_anchor() {
     assert_eq!(n(3.0).0, 16);
     assert_eq!(n(30.0).0, 0);
 }
+
+#[test]
+fn shareable_across_render_threads() {
+    fn assert_sync<T: Send + Sync>() {}
+    assert_sync::<FontStore>();
+    assert_sync::<TextLayout>();
+    assert_sync::<KineticPlan>();
+    assert_sync::<TextBlock>();
+    assert_sync::<CounterPlan>();
+    assert_sync::<anikit_video::text::Face>();
+    // Frames evaluate in parallel: same result as sequential.
+    use rayon::prelude::*;
+    let fonts = store();
+    let plan = KineticPlan::new(fonts, fonts.layout(&spec()), &"pop by char".parse().unwrap());
+    let seq: Vec<usize> = (0..60).map(|f| { let mut o = vec![]; plan.ops(f as f32 / 60.0, anikit_video::dl::IDENTITY, &mut o); o.len() }).collect();
+    let par: Vec<usize> = (0..60).into_par_iter().map(|f| { let mut o = vec![]; plan.ops(f as f32 / 60.0, anikit_video::dl::IDENTITY, &mut o); o.len() }).collect();
+    assert_eq!(seq, par);
+}
