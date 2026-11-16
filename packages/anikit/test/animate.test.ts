@@ -177,6 +177,28 @@ describe('animate: plain-object write path', () => {
     expect(loop[0][0]).toBeGreaterThan(0);
     expect(loop[1][2 * 4 + 1]).toBeLessThan(loop[1][1 * 4 + 1]);
   });
+  it('both paths are strict: a frozen target throws the same way', () => {
+    const attempt = (): string => {
+      const objs = [{ p: 0, q: 0 }, Object.freeze({ p: 0, q: 0 })];
+      let a: ReturnType<typeof animate> | undefined;
+      try {
+        a = animate(objs, { p: 10, q: 5 }, { duration: 1, ease: 'linear' });
+        advance(0.1);
+        return 'no error ' + objs[0].p;
+      } catch (e) {
+        return (e as Error).constructor.name;
+      } finally {
+        a?.kill();
+      }
+    };
+    const prev = _setCodegen(false);
+    const loop = attempt();
+    _setCodegen(undefined);
+    const gen = attempt();
+    _setCodegen(prev);
+    expect(loop).toBe('TypeError');
+    expect(gen).toBe(loop);
+  });
 });
 
 describe('animate: playback', () => {

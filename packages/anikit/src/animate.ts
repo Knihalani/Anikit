@@ -336,7 +336,9 @@ export function _setCodegen(on: boolean | undefined): boolean | undefined {
 }
 function makeWriter(keys: string[], offs: Int32Array): Writer | null {
   if (codegen === false) return null;
-  let body = '';
+  // Strict, like this module: writing to a frozen target or a getter-only
+  // property throws here exactly as it does in the generic loop.
+  let body = '"use strict";';
   for (let i = 0; i < keys.length; i++) {
     if (typeof keys[i] !== 'string') return null;
     body += `t[${JSON.stringify(keys[i])}]=f[a+${offs[i]}];`;
