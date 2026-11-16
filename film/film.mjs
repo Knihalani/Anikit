@@ -303,12 +303,12 @@ export default async function film({ anikit: A }) {
     if (type === 'front' || type === 'reveal') {
       // A front at distance D sweeps through the world (far → near, or near → far).
       const D = Math.exp(type === 'front' ? mix(lnF, lnN, e) : mix(lnN, lnF, e));
-      // The sky (and anything beyond 12 km) cross-fades instead: first for a front, last for a reveal.
+      // The sky (and anything beyond 8 km) cross-fades instead: first for a front, last for a reveal.
       const kSky = type === 'front' ? smooth(0.0, 0.35, e) : smooth(0.6, 0.95, e);
       const soft = D * 0.035 + 0.6, band = D * 0.09 + 1.5;
       const sc = type === 'front' ? [0.5, 1.0, 1.0] : [1.0, 0.75, 0.4];
       for (let i = 0; i < N_PIX; i++) {
-        const d = da[i], o = i * 4, sky = d > 12000;
+        const d = da[i], o = i * 4, sky = d > 8000;
         const k = sky ? kSky : type === 'front' ? smooth(D - soft, D + soft, d) : 1 - smooth(D - soft, D + soft, d);
         const g = sky ? 0 : Math.exp(-(((d - D) / band) ** 2)) * (1 - smooth(0.85, 1, e)) * 255 * 0.9;
         frame[o] = pa[o] + (pb[o] - pa[o]) * k + g * sc[0];
