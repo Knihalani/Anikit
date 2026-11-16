@@ -79,13 +79,13 @@ export default async function film2({ anikit: A }) {
   const shards = shatter(monoMesh, { transform: MONO, force: 1500, spin: 700, drag: 0.6, gravity: 250, center: [0, 0, 0] });
 
   // ---- The black hole: a void, a photon ring, a lensed halo and a 100k-point disk ---------
-  const BH = [0, 0, -43000], RS = 1300, TILT = (-9 * Math.PI) / 180;
+  const BH = [0, 3200, -45500], RS = 1300, TILT = (-9 * Math.PI) / 180;
   const sphere = mesh.sphere(1, 64), holeAt = instances(1, () => ({ x: BH[0], y: BH[1], z: BH[2], scale: RS, color: [0, 0, 0] }));
   const photonAt = instances(1, () => ({ x: BH[0], y: BH[1], z: BH[2] + 200, scale: RS * 1.06, color: [1, 1, 1] }));
   const NDISK = 100000, dR = new Float32Array(NDISK), dA = new Float32Array(NDISK), dY = new Float32Array(NDISK), dV = new Float32Array(NDISK);
   const disk = new Float32Array(NDISK * 3), diskCol = new Float32Array(NDISK * 3);
   for (let i = 0; i < NDISK; i++) {
-    const u = rnd(), r = RS * (1.55 + 5.5 * u * u);
+    const u = rnd(), r = RS * (1.55 + 4.2 * u * u);
     dR[i] = r; dA[i] = rnd() * Math.PI * 2; dY[i] = (rnd() - 0.5) * (40 + r * 0.035); dV[i] = 0.4 + rnd();
     const h = clamp((r / RS - 1.55) / 4); // hot white-gold inside, ember red outside
     const b = (1.6 - 1.1 * h) * (0.6 + 0.6 * rnd());
@@ -109,7 +109,7 @@ export default async function film2({ anikit: A }) {
   // ---- Camera ----------------------------------------------------------------------------
   const pts = [];
   for (let z = 2400; z >= TUN_END; z -= 2000) pts.push([cx(z), cy(z), z]);
-  pts.push([0, 0, -18500], [0, -20, -20800], [0, 150, -23500], [0, 800, -26500], [0, 1350, -29500], [0, 1450, -31500]);
+  pts.push([0, 0, -18500], [0, -20, -20800], [0, 150, -23500], [0, 900, -27000], [0, 2100, -31000], [0, 2850, -33800], [0, 3000, -35800]);
   const path = flightPath(pts, { lookAhead: 900, bank: 0.15, maxBank: 16, bankWindow: 250 });
   const NP = 2000, PP = path.points(NP + 1);
   const fracAtZ = (z) => { for (let i = 0; i <= NP; i++) if (PP[i][2] <= z) return i / NP; return 1; };
@@ -134,8 +134,8 @@ export default async function film2({ anikit: A }) {
       bloom: (t) => 0.95 + 0.4 * smooth(SN - 0.3, SN + 0.3, t) * Math.exp(-Math.max(0, t - SN - 0.6)),
       bloomThreshold: 0.42, bloomRadius: 50,
       streaks: (t) => 0.45 + 0.35 * smooth(10, 13, t), streakLength: 340,
-      rays: (t) => 0.9 * smooth(7.5, 10, t), raysCenter: [0.5, 0.52], raysLength: 0.5,
-      flares: (t) => 0.35 + 0.3 * smooth(9, 12, t),
+      rays: (t) => 0.7 * smooth(7.5, 10, t), raysCenter: [0.5, 0.48], raysLength: 0.5,
+      flares: 0.12,
       aberration: (t) => 0.6 + 0.9 * (1 - smooth(0, 4.4, t)), zoomBlur: (t) => 0.1 * (1 - smooth(3.8, 4.8, t)),
       vignette: 0.5, grain: 3.5, contrast: 1.08, saturation: 1.12, exposure: 1.02,
       shadows: [0.0, 0.004, 0.02], highlights: [0.03, 0.012, -0.01],
@@ -173,11 +173,11 @@ export default async function film2({ anikit: A }) {
           : { mesh: shards.mesh, instances: (shards.update(c - HIT), shards.instances), cull: false, material: { metal: 0.95, iridescence: 0.6, specular: 1.8, shininess: 180, emissive: 0.35 * Math.exp(-(c - HIT) * 1.2) + 0.05, rim: 0.5 } },
         { mesh: sphere, instances: holeAt, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, fog: 0 } },
         { mesh: ring, instances: neonRings, blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 0.5, pulse: 4, pulseCount: 3, pulsePhase: c * 3, lineColor: [1.8, 0.4, 1.3] } },
-        { mesh: ring, instances: photonAt, blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 1.6 * (1 - smooth(SN, SN + 1.5, c)), fog: 0 } },
+        { mesh: ring, instances: photonAt, blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 1.0 * (1 - smooth(SN, SN + 1.5, c)), fog: 0 } },
         { points: stars, colors: starCol, size: 70, intensity: 1.6, streak: 0.6 },
         { points: dust, colors: dustCol, size: 1.6, intensity: 1.6, streak: 3, fog: [1800, 4500] },
-        { points: disk, colors: diskCol, size: 13 + sn * 6, intensity: 1.1 * (1 + 1.5 * Math.exp(-sn * 2) * (sn > 0 ? 1 : 0)), streak: 1 },
-        { points: halo, colors: haloCol, size: 12, intensity: 1.2 * (1 - smooth(SN, SN + 1.2, c)) },
+        { points: disk, colors: diskCol, size: 11 + sn * 5, intensity: 0.4 * (1 + 1.5 * Math.exp(-sn * 2) * (sn > 0 ? 1 : 0)), streak: 1 },
+        { points: halo, colors: haloCol, size: 10, intensity: 0.5 * (1 - smooth(SN, SN + 1.2, c)) },
       ];
       if (sn > 0) {
         const R = 600 + 9000 * (1 - Math.exp(-sn * 0.9)) + 1200 * sn;
@@ -185,7 +185,7 @@ export default async function film2({ anikit: A }) {
           const k = R * shV[i];
           shell[i * 3] = BH[0] + shDir[i * 3] * k; shell[i * 3 + 1] = BH[1] + shDir[i * 3 + 1] * k; shell[i * 3 + 2] = BH[2] + shDir[i * 3 + 2] * k;
         }
-        items.push({ points: shell, colors: shellCol, size: 22, intensity: 2.2 * Math.exp(-sn * 0.5), streak: 1 });
+        items.push({ points: shell, colors: shellCol, size: 12, intensity: 1.6 * Math.exp(-sn * 0.5), streak: 1 });
       }
       // Point lights travel with the camera through the tunnel, then sit by the monoliths.
       const lights = [
