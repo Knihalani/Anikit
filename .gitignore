@@ -13,3 +13,4 @@ site-dist/
 packages/anikit/test/.snippets/
 film/.cache/
 packages/anikit/native/
+isolate-*-v8.log
