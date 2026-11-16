@@ -745,7 +745,6 @@ fn parse_obj(src: &str) -> Result<Mesh, String> {
 #[cfg(test)]
 mod tests {
     use super::super::preview::{snapshot, validate};
-    use super::super::text::StubAssets;
     use super::super::{build, Theme};
     use super::*;
     use crate::dl::FillRule;
@@ -779,20 +778,20 @@ mod tests {
     #[test]
     fn shapes_render() {
         let theme = Theme::default();
-        let assets = StubAssets::default();
+        let assets = super::super::preview::host();
         let (w, h) = (640.0, 400.0);
         for (name, params) in cases() {
             let p = build("model", &params).unwrap_or_else(|e| panic!("{name}: {e}"));
             assert!(p.component.duration().is_none());
             let mut seen = 0;
             for t in [0.0, 1.0, 2.5] {
-                let ops = p.eval(t, w, h, 30.0, &theme, &assets);
+                let ops = p.eval(t, w, h, 30.0, &theme, assets);
                 validate(&ops).unwrap_or_else(|e| panic!("{name} at {t}: {e}"));
                 assert!(ops.iter().any(|o| matches!(o, Op::Image { .. })), "{name}: no image at {t}");
                 if t == 2.5 {
                     let mut all = vec![backdrop(w, h)];
                     all.extend(ops);
-                    let px = snapshot(&format!("three-{name}"), w as u32, h as u32, theme.background, all, &assets);
+                    let px = snapshot(&format!("three-{name}"), w as u32, h as u32, theme.background, all, assets);
                     // Model pixels are lit and not the backdrop.
                     seen = px.chunks_exact(4).filter(|c| c[0].max(c[1]).max(c[2]) > 90).count();
                 }
@@ -804,14 +803,14 @@ mod tests {
     #[test]
     fn entrance_and_caching() {
         let theme = Theme::default();
-        let assets = StubAssets::default();
+        let assets = super::super::preview::host();
         let p = build("model", &serde_json::json!({"shape": "sphere", "delay": 0.5, "spin": 0})).unwrap();
-        assert!(p.eval(0.2, 320.0, 240.0, 30.0, &theme, &assets).is_empty());
-        let a = p.eval(0.6, 320.0, 240.0, 30.0, &theme, &assets);
+        assert!(p.eval(0.2, 320.0, 240.0, 30.0, &theme, assets).is_empty());
+        let a = p.eval(0.6, 320.0, 240.0, 30.0, &theme, assets);
         let op = a.iter().find_map(|o| if let Op::Image { opacity, .. } = o { Some(*opacity) } else { None }).unwrap();
         assert!(op > 0.0 && op < 1.0);
         let n = assets.image_count();
-        p.eval(0.6, 320.0, 240.0, 30.0, &theme, &assets);
+        p.eval(0.6, 320.0, 240.0, 30.0, &theme, assets);
         assert_eq!(assets.image_count(), n, "same frame reuses the image");
     }
 
@@ -830,12 +829,12 @@ mod tests {
     fn timing() {
         let theme = Theme::default();
         for (name, params) in cases() {
-            let assets = StubAssets::default();
+            let assets = super::super::preview::host();
             let p = build("model", &params).unwrap();
             let n = 30;
             let t0 = std::time::Instant::now();
             for i in 0..n {
-                p.eval(i as f32 / 30.0, 1280.0, 720.0, 30.0, &theme, &assets);
+                p.eval(i as f32 / 30.0, 1280.0, 720.0, 30.0, &theme, assets);
             }
             println!("{name:12} {:.2} ms/frame", t0.elapsed().as_secs_f64() * 1e3 / n as f64);
         }

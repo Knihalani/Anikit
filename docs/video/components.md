@@ -197,15 +197,28 @@ Place backgrounds first in a scene's layers.
 ## 3D
 
 ### `model`: product spin and orbit
-Rendered with `anikit-core`'s CPU rasteriser at native resolution.
+Rendered with `anikit-core`'s CPU rasteriser at native resolution, supersampled 2× for anti-aliasing, with studio lighting and a transparent background.
 
-| Prop | Meaning |
-|---|---|
-| `shape` | `roundedBox`, `sphere`, `torus`, `knot`, `cylinder`, `cube` or `logo`. For `logo`, `points` gives the polygon and `depth` the extrusion. |
-| `obj` | Inline Wavefront OBJ text, used instead of `shape`. |
-| `color`, `spin`, `tilt`, `orbit`, `float`, `scale`, `shadow`, `delay` | |
+| Prop | Default | Meaning |
+|---|---|---|
+| `shape` | `roundedBox` | `roundedBox`, `sphere`, `torus`, `knot`, `cylinder`, `cube` or `logo`. |
+| `points`, `depth` | lightning bolt | For `logo`: the polygon outline and its extrusion depth. |
+| `obj` | | Inline Wavefront OBJ text, used instead of `shape`. |
+| `size`, `radius` | | Rounded-box proportions and corner radius. |
+| `color` | accent | |
+| `metallic` | `0.3` | |
+| `roughness` | `0.3` | |
+| `spin` | `28` | Degrees per second about Y. |
+| `angle` | `-30` | Start angle. |
+| `tilt` | `16` | Degrees. |
+| `orbit` | `0` | Camera orbit, in degrees per second. |
+| `float` | `0.035` | Bobbing amount. |
+| `scale` | `1` | |
+| `delay` | | Spring entrance. |
+| `shadow` | `0.6` | Contact shadow (a number or a bool). |
+| `resolution` | `1` | Capped at 2048 px. |
 
-The material options are listed by `anikit-video info --components`.
+**Cost** per frame at 1280×720 on 4 cores: 5–23 ms.
 
 ## Lottie
 
