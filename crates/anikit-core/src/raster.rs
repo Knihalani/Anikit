@@ -1124,8 +1124,10 @@ impl Raster {
             let (depth, color, qu) = (&mut self.depth[a0..=a1], &mut self.color, &mut self.queue);
             let len = depth.len();
             let mut k = 0;
-            // Groups of four: when all four pass the depth test (large faces,
-            // no overdraw) shade them straight from registers.
+            // Groups of four: runs of groups where all four pass the depth
+            // test (large faces, no overdraw) are shaded straight from
+            // registers, out of line; the rest go through the queue.
+            let mut run = usize::MAX;
             while k + 4 <= len {
                 let kf = k as f32;
                 let zs = [z0 + dz * kf, z0 + dz * (kf + 1.0), z0 + dz * (kf + 2.0), z0 + dz * (kf + 3.0)];
@@ -1134,54 +1136,50 @@ impl Raster {
                     SHADE_EQ => zs[l] <= d4[l],
                     _ => zs[l] < d4[l],
                 });
-                if !(pass[0] || pass[1] || pass[2] || pass[3]) {
-                    k += 4;
-                    continue; // hidden: the common case under overdraw
-                }
                 if pass[0] && pass[1] && pass[2] && pass[3] {
                     if MODE == SHADE_LT || MODE == GLOSS {
                         d4.copy_from_slice(&zs);
                     }
-                    // A queued pixel from an earlier (farther) triangle must not land on top later.
-                    let (g0, g1) = (a0 + k, a0 + k + 4);
-                    if (0..qu.n).any(|l| (g0..g1).contains(&qu.idx[l])) {
-                        self.shaded += qu.n;
+                    if run == usize::MAX {
+                        run = k;
+                    }
+                    k += 4;
+                    continue;
+                }
+                if run != usize::MAX {
+                    self.shaded += shade_run::<MODE>(qu, color, sh, gl, a0, run, k, q0, dq, &s0, &da, fwu, fwv);
+                    run = usize::MAX;
+                }
+                if !(pass[0] || pass[1] || pass[2] || pass[3]) {
+                    k += 4;
+                    continue; // hidden: the common case under overdraw
+                }
+                for l in 0..4 {
+                    if !pass[l] {
+                        continue;
+                    }
+                    if MODE == SHADE_LT || MODE == GLOSS {
+                        d4[l] = zs[l];
+                    }
+                    let kf = (k + l) as f32;
+                    let qi = qu.n & 3;
+                    qu.idx[qi] = a0 + k + l;
+                    qu.q[qi] = q0 + dq * kf;
+                    for c in 0..NV {
+                        qu.a[c][qi] = s0[c] + da[c] * kf;
+                    }
+                    qu.fw[0][qi] = fwu;
+                    qu.fw[1][qi] = fwv;
+                    qu.n = qi + 1;
+                    if qi == 3 {
+                        self.shaded += 4;
                         flush::<MODE>(qu, color, sh, gl);
-                    }
-                    let kk = V4::new(kf, kf + 1.0, kf + 2.0, kf + 3.0);
-                    let iw = 1.0 / (kk * dq + q0);
-                    let a: [V4; NV] = core::array::from_fn(|c| (kk * da[c] + s0[c]) * iw);
-                    let px = pack4(sh.px4([a[0], a[1], a[2]], [a[3], a[4], a[5]], a[6], a[7], V4::splat(fwu), V4::splat(fwv)));
-                    let dst = &mut color[a0 + k..a0 + k + 4];
-                    for l in 0..4 {
-                        put::<MODE>(&mut dst[l], px[l], gl);
-                    }
-                    self.shaded += 4;
-                } else {
-                    for l in 0..4 {
-                        if !pass[l] {
-                            continue;
-                        }
-                        if MODE == SHADE_LT || MODE == GLOSS {
-                            d4[l] = zs[l];
-                        }
-                        let kf = (k + l) as f32;
-                        let qi = qu.n & 3;
-                        qu.idx[qi] = a0 + k + l;
-                        qu.q[qi] = q0 + dq * kf;
-                        for c in 0..NV {
-                            qu.a[c][qi] = s0[c] + da[c] * kf;
-                        }
-                        qu.fw[0][qi] = fwu;
-                        qu.fw[1][qi] = fwv;
-                        qu.n = qi + 1;
-                        if qi == 3 {
-                            self.shaded += 4;
-                            flush::<MODE>(qu, color, sh, gl);
-                        }
                     }
                 }
                 k += 4;
+            }
+            if run != usize::MAX {
+                self.shaded += shade_run::<MODE>(qu, color, sh, gl, a0, run, k, q0, dq, &s0, &da, fwu, fwv);
             }
             // Tail (and short spans): queue the passing pixels.
             for (kk, dp) in depth[k..].iter_mut().enumerate() {
@@ -1215,8 +1213,37 @@ impl Raster {
     }
 }
 
+/// Shade span pixels `k0..k1` (whole groups of four that all passed the
+/// depth test) of the row starting at colour index `a0`, interpolating
+/// straight from registers.
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn shade_run<const MODE: u8>(qu: &mut Queue, color: &mut [u32], sh: &Shade, gl: u32, a0: usize, k0: usize, k1: usize, q0: f32, dq: f32, s0: &[f32; NV], da: &[f32; NV], fwu: f32, fwv: f32) -> usize {
+    // A queued pixel from an earlier (farther) triangle must not land on top later.
+    let (g0, g1) = (a0 + k0, a0 + k1);
+    let mut shaded = k1 - k0;
+    if (0..qu.n).any(|l| (g0..g1).contains(&qu.idx[l])) {
+        shaded += qu.n;
+        flush::<MODE>(qu, color, sh, gl);
+    }
+    let (fu, fv) = (V4::splat(fwu), V4::splat(fwv));
+    let mut k = k0;
+    for dst in color[g0..g1].chunks_exact_mut(4) {
+        let kf = k as f32;
+        let kk = V4::new(kf, kf + 1.0, kf + 2.0, kf + 3.0);
+        let iw = 1.0 / (kk * dq + q0);
+        let a: [V4; NV] = core::array::from_fn(|c| (kk * da[c] + s0[c]) * iw);
+        let px = pack4(sh.px4([a[0], a[1], a[2]], [a[3], a[4], a[5]], a[6], a[7], fu, fv));
+        for l in 0..4 {
+            put::<MODE>(&mut dst[l], px[l], gl);
+        }
+        k += 4;
+    }
+    shaded
+}
+
 /// Shade the queued pixels (up to four) in one SIMD group and store them.
-#[inline(always)]
+#[inline(never)]
 #[allow(clippy::needless_range_loop)]
 fn flush<const MODE: u8>(q: &mut Queue, color: &mut [u32], sh: &Shade, gl: u32) {
     let n = q.n;
