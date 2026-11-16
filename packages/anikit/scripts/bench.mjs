@@ -17,10 +17,14 @@ const sizes = process.argv.slice(2).map(Number).filter(Boolean);
 const NS = sizes.length ? sizes : [1000, 10000, 50000];
 const FRAMES = 60;
 const RUNS = 5;
+// Untimed frames before each measurement, for both libraries: V8 tiers up
+// JavaScript and WebAssembly lazily, and a 5-frame warm-up left the first
+// (1k) rows measuring baseline-tier code. `WARMUP=5` gives the old method.
+const WARMUP = +(process.env.WARMUP || 100);
 const median = (a) => a.sort((x, y) => x - y)[a.length >> 1];
 
 function time(frame) {
-  for (let i = 0; i < 5; i++) frame();
+  for (let i = 0; i < WARMUP; i++) frame();
   const t = performance.now();
   for (let i = 0; i < FRAMES; i++) frame();
   return (performance.now() - t) / FRAMES;
@@ -44,7 +48,7 @@ const CASES = {
   },
 };
 
-console.log(`median of ${RUNS} runs x ${FRAMES} frames, ms per frame (lower is better)\n`);
+console.log(`median of ${RUNS} runs x ${FRAMES} frames (after ${WARMUP} warm-up frames), ms per frame (lower is better)\n`);
 console.log('case'.padEnd(22), 'N'.padStart(7), 'Anikit'.padStart(9), 'GSAP'.padStart(9), '  ratio');
 for (const [name, c] of Object.entries(CASES)) {
   for (const n of NS) {
