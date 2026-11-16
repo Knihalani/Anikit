@@ -18,7 +18,7 @@ const PI2 = Math.PI * 2;
 // floor contact shadows under station bases: x, z, radius, strength
 const BLOBS = new Float32Array([
   -4.6, 4.2, 1.4, 0.3,   5.4, 4.2, 1.9, 0.35,   -6.35, -6.5, 2.0, 0.35,
-  4.6, -6.5, 2.3, 0.3,   0, -16, 1.8, 0.35,     0, -25.6, 3.2, 0.25,
+  4.6, -6.5, 2.3, 0.3,   0, -16, 1.9, 0.4,      0, -26.4, 3.0, 0.2,
 ]);
 
 // hall extents
@@ -31,11 +31,11 @@ const ST = [
   { id: 'physics', name: 'Physics · world()', hint: 'Click or E to throw the balls', x: -5.2, z: -6.5, r: 3.8, ring: 0 },
   { id: 'blocks', name: 'Timeline + stagger', hint: 'Click or E for the next wave', x: 4.6, z: -6.5, r: 3.8, ring: 2.95 },
   { id: 'cloud', name: 'Particles · 100k points', hint: 'Click or E to morph', x: 0, z: -16, r: 4.8, ring: 2.2 },
-  { id: 'text', name: 'Keyframes', hint: 'Click or E to play the letters', x: 0, z: -23.2, r: 4.6, ring: 0 },
+  { id: 'text', name: 'Keyframes', hint: 'Look up · click or E to play the letters', x: 0, z: -23.8, r: 3.6, ring: 0 },
 ];
 
 export function createHall(canvas, overlayEl) {
-  const gl = canvas.getContext('webgl2', { antialias: (globalThis.devicePixelRatio || 1) < 1.3, alpha: false, depth: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
+  const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, depth: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
   if (!gl) throw new Error('hall: WebGL2 unavailable');
 
   const progMesh = program(gl, S.MESH_VS, S.MESH_FS);
@@ -58,76 +58,72 @@ export function createHall(canvas, overlayEl) {
     g.push(x, y, z, 0, sx, sy, sz, gloss, r, gg, b, e);
     if (collide) colliders.push(x - sx / 2, z - sz / 2, x + sx / 2, z + sz / 2);
   };
-  const WALL = [0.74, 0.54, 0.44], STONE = [0.84, 0.8, 0.74], GOLD = [0.8, 0.52, 0.2], CEIL = [0.6, 0.7, 0.86];
+  // material id rides in the gloss slot: mat * 2 + gloss (see hall-shaders.js)
+  const PLAIN = 0, PLASTER = 2, FLUTE = 4, METAL = 6, COFFER = 8, WALNUT = 10, LACQUER = 12;
+  const WALL = [0.8, 0.74, 0.66], MARBLE = [0.92, 0.9, 0.86], BRONZE = [0.78, 0.55, 0.32], STEEL = [0.2, 0.2, 0.22];
+  const WOOD = [0.42, 0.29, 0.2], BEAM = [0.66, 0.61, 0.55], DEEP = [0.36, 0.38, 0.44];
   // walls (thick boxes), ceiling
-  box(archBox, -HX - 0.5, HY / 2, (HZ0 + HZ1) / 2, 1, HY, HZ1 - HZ0, 0.05, ...WALL);
-  box(archBox, HX + 0.5, HY / 2, (HZ0 + HZ1) / 2, 1, HY, HZ1 - HZ0, 0.05, ...WALL);
-  box(archBox, 0, HY / 2, HZ0 - 0.5, 2 * HX + 2, HY, 1, 0.05, ...WALL);
-  box(archBox, 0, HY / 2, HZ1 + 0.5, 2 * HX + 2, HY, 1, 0.05, ...WALL);
-  box(archBox, 0, HY + 0.5, (HZ0 + HZ1) / 2, 2 * HX + 2, 1, HZ1 - HZ0 + 2, 0, ...CEIL, 0.55);
-  // skirting + cornice
+  box(archBox, -HX - 0.5, HY / 2, (HZ0 + HZ1) / 2, 1, HY, HZ1 - HZ0, PLASTER + 0.05, ...WALL);
+  box(archBox, HX + 0.5, HY / 2, (HZ0 + HZ1) / 2, 1, HY, HZ1 - HZ0, PLASTER + 0.05, ...WALL);
+  box(archBox, 0, HY / 2, HZ0 - 0.5, 2 * HX + 2, HY, 1, PLASTER + 0.05, ...WALL);
+  box(archBox, 0, HY / 2, HZ1 + 0.5, 2 * HX + 2, HY, 1, PLASTER + 0.05, ...WALL);
+  box(archBox, 0, HY + 0.5, (HZ0 + HZ1) / 2, 2 * HX + 2, 1, HZ1 - HZ0 + 2, COFFER, ...DEEP, 0.12);
+  // cornice + string course
   for (const s of [-1, 1]) {
-    box(archBox, s * (HX - 0.06), 0.18, (HZ0 + HZ1) / 2, 0.14, 0.36, HZ1 - HZ0, 0.2, 0.62, 0.55, 0.47);
-    box(archBox, s * (HX - 0.15), 11.6, (HZ0 + HZ1) / 2, 0.3, 0.3, HZ1 - HZ0, 0.3, ...GOLD, 0.05);
-    box(archBox, s * (HX - 0.08), 5.9, (HZ0 + HZ1) / 2, 0.16, 0.2, HZ1 - HZ0, 0.2, ...STONE);
+    box(archBox, s * (HX - 0.15), 11.6, (HZ0 + HZ1) / 2, 0.3, 0.3, HZ1 - HZ0, METAL + 0.5, ...BRONZE);
+    box(archBox, s * (HX - 0.08), 5.9, (HZ0 + HZ1) / 2, 0.16, 0.2, HZ1 - HZ0, PLAIN + 0.2, ...MARBLE);
   }
-  // coffered ceiling beams
-  for (let z = HZ0 + 2.5; z < HZ1; z += 5) box(archBox, 0, HY - 0.35, z, 2 * HX, 0.7, 0.45, 0.1, ...STONE);
-  for (const x of [-4, 0, 4]) box(archBox, x, HY - 0.25, (HZ0 + HZ1) / 2, 0.35, 0.5, HZ1 - HZ0, 0.1, ...STONE);
-  // columns between the window bays
+  // deep coffered ceiling
+  for (let z = HZ0 + 2.5; z < HZ1; z += 5) box(archBox, 0, HY - 0.45, z, 2 * HX, 0.9, 0.5, COFFER + 0.1, ...BEAM);
+  for (const x of [-4, 0, 4]) box(archBox, x, HY - 0.35, (HZ0 + HZ1) / 2, 0.4, 0.7, HZ1 - HZ0, COFFER + 0.1, ...BEAM);
+  // fluted marble columns on bronze bases between the window bays
   for (let z = 11; z > HZ0; z -= 5) {
     for (const s of [-1, 1]) {
       const x = s * 7.0;
-      archCyl.push(x, 5.6, z, 0, 0.82, 10.4, 0.82, 0.35, 0.93, 0.9, 0.85, 0);
-      box(archBox, x, 0.3, z, 1.2, 0.6, 1.2, 0.2, ...STONE, 0, true);
-      box(archBox, x, 10.95, z, 1.15, 0.5, 1.15, 0.6, ...GOLD, 0.06);
-      archCyl.push(x, 0.7, z, 0, 1.0, 0.22, 1.0, 0.6, ...GOLD, 0.04);
+      archCyl.push(x, 5.6, z, 0, 0.82, 10.4, 0.82, FLUTE + 0.35, ...MARBLE, 0);
+      box(archBox, x, 0.3, z, 1.2, 0.6, 1.2, WALNUT + 0.4, ...WOOD, 0, true);
+      box(archBox, x, 10.95, z, 1.15, 0.5, 1.15, METAL + 0.6, ...BRONZE, 0);
+      archCyl.push(x, 0.7, z, 0, 1.0, 0.22, 1.0, METAL + 0.6, ...BRONZE, 0);
     }
   }
-  // windows: both walls, emissive sky (emis > 2 flags the window shader)
+  // windows: both walls (emis > 2 flags the window shader), steel sills
   for (let z = 8.5; z > HZ0; z -= 5) {
     for (const s of [-1, 1]) {
       windows.push(s * (HX - 0.02), 8.6, z, 0, 0.06, 4.2, 2.2, 0, 1, 1, 1, 3);
-      box(archBox, s * (HX - 0.05), 6.35, z, 0.25, 0.25, 2.6, 0.4, ...GOLD, 0.05);
+      box(archBox, s * (HX - 0.05), 6.35, z, 0.25, 0.25, 2.6, METAL + 0.4, ...STEEL);
     }
   }
-  // end wall: a great arch frame behind the letters
-  box(archBox, 0, 9.3, HZ0 + 0.1, 14.4, 0.4, 0.3, 0.5, ...GOLD, 0.05);
-  box(archBox, -7.2, 4.65, HZ0 + 0.1, 0.4, 9.3, 0.3, 0.5, ...GOLD, 0.05);
-  box(archBox, 7.2, 4.65, HZ0 + 0.1, 0.4, 9.3, 0.3, 0.5, ...GOLD, 0.05);
-  box(archBox, 0, 4.6, HZ0 + 0.04, 14, 9.2, 0.1, 0.05, 0.92, 0.84, 0.72);
-  // door frame behind spawn (bright: where you came from)
+  // end wall: a bronze frame for the letters
+  box(archBox, 0, 11.3, HZ0 + 0.1, 15.6, 0.3, 0.3, METAL + 0.6, ...BRONZE);
+  box(archBox, 0, 7.5, HZ0 + 0.1, 15.6, 0.2, 0.3, METAL + 0.6, ...BRONZE);
+  box(archBox, 0, 9.4, HZ0 + 0.04, 15.4, 3.8, 0.1, PLAIN + 0.1, 0.24, 0.22, 0.24);
+  // door behind spawn (bright: where you came from)
   windows.push(0, 3.4, HZ1 - 0.02, 0, 3.6, 6.4, 0.06, 0, 1, 1, 1, 3);
-  box(archBox, 0, 6.8, HZ1 - 0.1, 4.4, 0.5, 0.3, 0.5, ...GOLD, 0.05);
-  box(archBox, -2.0, 3.4, HZ1 - 0.1, 0.4, 6.8, 0.3, 0.5, ...GOLD, 0.05);
-  box(archBox, 2.0, 3.4, HZ1 - 0.1, 0.4, 6.8, 0.3, 0.5, ...GOLD, 0.05);
+  box(archBox, 0, 6.8, HZ1 - 0.1, 4.4, 0.5, 0.3, METAL + 0.5, ...BRONZE);
+  box(archBox, -2.0, 3.4, HZ1 - 0.1, 0.4, 6.8, 0.3, METAL + 0.5, ...BRONZE);
+  box(archBox, 2.0, 3.4, HZ1 - 0.1, 0.4, 6.8, 0.3, METAL + 0.5, ...BRONZE);
 
-  // station furniture
-  // springs: a low round dais
-  archCyl.push(-4.6, 0.12, 4.2, 0, 2.6, 0.24, 2.6, 0.3, ...STONE, 0);
-  archCyl.push(-4.6, 0.55, 4.2, 0, 0.5, 1.1, 0.5, 0.4, ...STONE, 0);
+  // station furniture: dark walnut and bronze
+  archCyl.push(-4.6, 0.12, 4.2, 0, 2.8, 0.24, 2.8, WALNUT + 0.5, ...WOOD, 0);
+  archCyl.push(-4.6, 0.25, 4.2, 0, 2.84, 0.03, 2.84, METAL + 0.6, ...BRONZE, 0);
+  archCyl.push(-4.6, 0.55, 4.2, 0, 0.5, 1.1, 0.5, METAL + 0.5, ...BRONZE, 0);
   colliders.push(-4.95, 3.85, -4.25, 4.55);
-  // benchmarks: plinth
-  box(archBox, 5.4, 0.45, 4.2, 1.3, 0.9, 3.8, 0.25, ...STONE, 0, true);
-  box(archBox, 5.4, 0.92, 4.2, 1.36, 0.05, 3.86, 0.6, ...GOLD, 0.05);
-  // physics: case base + frame + back
+  box(archBox, 5.4, 0.45, 4.2, 1.3, 0.9, 3.8, WALNUT + 0.5, ...WOOD, 0, true);
+  box(archBox, 5.4, 0.92, 4.2, 1.36, 0.05, 3.86, METAL + 0.6, ...BRONZE);
+  box(archBox, 6.3, 3.05, 4.2, 0.12, 4.2, 4.2, METAL + 0.4, ...STEEL);
   const PC = { x: -6.35, z0: -8.3, z1: -4.7, y0: 0.7, y1: 3.3 };
-  box(archBox, PC.x, PC.y0 / 2, (PC.z0 + PC.z1) / 2, 0.8, PC.y0, PC.z1 - PC.z0 + 0.3, 0.3, ...STONE, 0, true);
-  box(archBox, PC.x - 0.25, (PC.y0 + PC.y1) / 2, (PC.z0 + PC.z1) / 2, 0.06, PC.y1 - PC.y0, PC.z1 - PC.z0, 0.1, 0.94, 0.92, 0.9, 0.12);
-  box(archBox, PC.x, PC.y1 + 0.05, (PC.z0 + PC.z1) / 2, 0.6, 0.1, PC.z1 - PC.z0 + 0.3, 0.6, ...GOLD, 0.05);
-  box(archBox, PC.x + 0.22, (PC.y0 + PC.y1) / 2, PC.z0 - 0.05, 0.08, PC.y1 - PC.y0, 0.1, 0.6, ...GOLD, 0.05);
-  box(archBox, PC.x + 0.22, (PC.y0 + PC.y1) / 2, PC.z1 + 0.05, 0.08, PC.y1 - PC.y0, 0.1, 0.6, ...GOLD, 0.05);
-  // blocks: platform
-  box(archBox, 4.6, 0.12, -6.5, 4.0, 0.24, 4.0, 0.3, ...STONE, 0, true);
-  box(archBox, 4.6, 0.25, -6.5, 4.06, 0.03, 4.06, 0.6, ...GOLD, 0.04);
-  // cloud: pedestal
-  archCyl.push(0, 0.3, -16, 0, 3.2, 0.6, 3.2, 0.3, ...STONE, 0);
-  archCyl.push(0, 0.62, -16, 0, 3.26, 0.05, 3.26, 0.6, ...GOLD, 0.05);
-  colliders.push(-1.5, -17.5, 1.5, -14.5);
-  // text: stage
-  box(archBox, 0, 0.2, -25.6, 15, 0.4, 3.4, 0.3, ...STONE, 0, true);
-  box(archBox, 0, 0.41, -24.0, 15, 0.03, 0.08, 0.6, ...GOLD, 0.04);
-  for (let i = 0; i < 6; i++) archCyl.push((i - 2.5) * 2.3, 0.62, -25.6, 0, 1.3, 0.4, 1.3, 0.6, ...GOLD, 0.05);
+  box(archBox, PC.x, PC.y0 / 2, (PC.z0 + PC.z1) / 2, 0.8, PC.y0, PC.z1 - PC.z0 + 0.3, WALNUT + 0.5, ...WOOD, 0, true);
+  box(archBox, PC.x - 0.25, (PC.y0 + PC.y1) / 2, (PC.z0 + PC.z1) / 2, 0.06, PC.y1 - PC.y0, PC.z1 - PC.z0, PLAIN + 0.1, 0.93, 0.91, 0.88, 0.1);
+  box(archBox, PC.x, PC.y1 + 0.05, (PC.z0 + PC.z1) / 2, 0.6, 0.1, PC.z1 - PC.z0 + 0.3, METAL + 0.4, ...STEEL);
+  box(archBox, PC.x + 0.22, (PC.y0 + PC.y1) / 2, PC.z0 - 0.05, 0.08, PC.y1 - PC.y0, 0.1, METAL + 0.4, ...STEEL);
+  box(archBox, PC.x + 0.22, (PC.y0 + PC.y1) / 2, PC.z1 + 0.05, 0.08, PC.y1 - PC.y0, 0.1, METAL + 0.4, ...STEEL);
+  box(archBox, 4.6, 0.12, -6.5, 4.0, 0.24, 4.0, WALNUT + 0.5, ...WOOD, 0, true);
+  box(archBox, 4.6, 0.25, -6.5, 4.06, 0.03, 4.06, METAL + 0.6, ...BRONZE);
+  archCyl.push(0, 0.3, -16, 0, 3.4, 0.6, 3.4, WALNUT + 0.5, ...WOOD, 0);
+  archCyl.push(0, 0.62, -16, 0, 3.46, 0.05, 3.46, METAL + 0.7, ...BRONZE, 0);
+  colliders.push(-1.6, -17.6, 1.6, -14.4);
+  box(archBox, 0, 0.2, -26.4, 15, 0.4, 2.6, WALNUT + 0.5, ...WOOD, 0, true);
+  box(archBox, 0, 0.41, -25.1, 15, 0.03, 0.08, METAL + 0.6, ...BRONZE);
 
   archBox.upload(); archCyl.upload(); windows.upload();
 
@@ -197,16 +193,16 @@ export function createHall(canvas, overlayEl) {
   const shapes = makeShapes(NP);
   const ptsVao = gl.createVertexArray();
   gl.bindVertexArray(ptsVao);
-  const pA = gl.createBuffer(), pB = gl.createBuffer(), pS = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, pA); gl.bufferData(gl.ARRAY_BUFFER, shapes[0], gl.DYNAMIC_DRAW);
-  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
-  gl.bindBuffer(gl.ARRAY_BUFFER, pB); gl.bufferData(gl.ARRAY_BUFFER, shapes[1], gl.DYNAMIC_DRAW);
-  gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
+  // every shape lives on the GPU from load; a morph only re-points two attributes (no upload)
+  const shapeBuf = shapes.map((sh) => { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, sh, gl.STATIC_DRAW); return b; });
+  const pS = gl.createBuffer();
+  const pointAttr = (loc, k) => { gl.bindBuffer(gl.ARRAY_BUFFER, shapeBuf[k]); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 3, gl.FLOAT, false, 0, 0); };
+  pointAttr(0, 0); pointAttr(1, 1);
   const seeds = new Float32Array(NP * 4);
   for (let i = 0; i < NP; i++) {
     const y = shapes[0][i * 3 + 1];
     seeds[i * 4] = Math.min(1, Math.max(0, (y + 1.6) / 3.2 * 0.75 + Math.random() * 0.25));
-    seeds[i * 4 + 1] = 0.016 + Math.random() * 0.016;
+    seeds[i * 4 + 1] = 0.014 + Math.random() * 0.014;
     seeds[i * 4 + 2] = Math.random() * 0.35 + 0.05;
     seeds[i * 4 + 3] = Math.random();
   }
@@ -214,14 +210,15 @@ export function createHall(canvas, overlayEl) {
   gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 0, 0);
   gl.bindVertexArray(null);
   const cloud = { mix: 0, cur: 0, next: 1, spin: 0, spinV: { v: 0.12 }, idle: 0 };
-  const CLOUD_C = [0, 2.75, -16];
+  const CLOUD_C = [0, 4.1, -16], CLOUD_S = 1.6;
 
   function morph() {
     // fold the current blend into A, then morph to the next shape
     cloud.cur = cloud.mix > 0.5 ? cloud.next : cloud.cur;
     cloud.next = (cloud.cur + 1) % shapes.length;
-    gl.bindBuffer(gl.ARRAY_BUFFER, pA); gl.bufferSubData(gl.ARRAY_BUFFER, 0, shapes[cloud.cur]);
-    gl.bindBuffer(gl.ARRAY_BUFFER, pB); gl.bufferSubData(gl.ARRAY_BUFFER, 0, shapes[cloud.next]);
+    gl.bindVertexArray(ptsVao);
+    pointAttr(0, cloud.cur); pointAttr(1, cloud.next);
+    gl.bindVertexArray(null);
     cloud.mix = 0;
     cloud.idle = 0;
     animate(cloud, { mix: [0, 1] }, { duration: 2.6, ease: 'inOutCubic' });
@@ -238,11 +235,11 @@ export function createHall(canvas, overlayEl) {
   // ---- benchmark panel (canvas texture) ----
   const BENCH = [
     // label, ratio (lower bound shown on the bar), text — all from README.md
-    ['1k objects vs GSAP 3 (1.3–1.5× at 10k–50k)', 3.5, '3.5–3.8×'],
-    ['batch(), 100k objects vs GSAP 3', 16, '~16×'],
-    ['2D physics, 250 bodies vs matter.js', 43, '43–60×'],
-    ['3D project + sort, 100k pts vs JS', 20, '20–22×'],
-    ['2,000 DOM elements, fps vs GSAP', 2.2, '~2.2×'],
+    ['3 numbers per object, 1,000 objects vs GSAP 3 (1.3–1.5× faster at 10,000)', 3.5, '3.5–3.8× faster'],
+    ['batch(), 3 channels, 100,000 vs GSAP 3', 16, '~16×'],
+    ['2D physics, 250 colliding bodies, per step vs matter.js', 43, '43–60×'],
+    ['3D project + depth sort, 100k points vs optimised plain JS', 20, '20–22×'],
+    ['2,000 animated DOM elements, real Chromium: 56–59 vs 26–27 fps', 2.2, '~2.2× fps'],
   ];
   const panel = makePanel(gl, BENCH);
   const benchState = BENCH.map(() => ({ h: 0 }));
@@ -262,19 +259,19 @@ export function createHall(canvas, overlayEl) {
 
   // ---- springs: orbs that follow you ----
   const NO = 9;
-  const ORB_PAL = [[0.98, 0.72, 0.3], [0.97, 0.45, 0.38], [0.93, 0.4, 0.62]];
+  const ORB_PAL = [[1.0, 0.62, 0.12], [0.98, 0.3, 0.22], [0.9, 0.22, 0.5]];
   const orbS = [];
   for (let i = 0; i < NO; i++) {
     const a = (i / NO) * PI2;
-    const hx = -4.6 + Math.cos(a) * 1.0, hy = 1.6 + 0.35 * Math.sin(a * 2), hz = 4.2 + Math.sin(a) * 1.0;
-    orbS.push({ x: hx, y: hy, z: hz, hx, hy, hz, k: 26 + i * 9, d: 7 + i * 0.6, s: 0.15 + (i % 3) * 0.04 });
+    const hx = -4.6 + Math.cos(a) * 1.15, hy = 1.75 + 0.4 * Math.sin(a * 2), hz = 4.2 + Math.sin(a) * 1.15;
+    orbS.push({ x: hx, y: hy, z: hz, hx, hy, hz, k: 26 + i * 9, d: 7 + i * 0.6, s: 0.26 + (i % 3) * 0.06 });
   }
   let orbFollow = false, orbRetarget = 0;
 
   // ---- timeline + stagger: 16×16 blocks, two superposed batch() waves ----
   const GB = 16, NBk = GB * GB;
   const waves = [null, null];
-  let waveN = 0;
+  let waveN = 0, waveIdle = 0;
   const WAVE_FROM = ['center', 'edges', 0, 'random', 'last'];
   function wave() {
     const from = WAVE_FROM[waveN % WAVE_FROM.length];
@@ -283,6 +280,7 @@ export function createHall(canvas, overlayEl) {
     });
     const old = waves[waveN & 1];
     waves[waveN & 1] = b;
+    waveIdle = 0;
     if (old) old.kill();
     waveN++;
   }
@@ -295,12 +293,12 @@ export function createHall(canvas, overlayEl) {
     k: ['#....', '#....', '#..#.', '#.#..', '##...', '#.#..', '#..#.'],
     t: ['.#...', '.#...', '####.', '.#...', '.#...', '.#..#', '..##.'],
   };
-  const WORD = 'anikit', VOX = 0.38;
+  const WORD = 'anikit', VOX = 0.42;
   const letterS = [];
   const vox = []; // [letter, lx, ly]
   for (let li = 0; li < WORD.length; li++) {
     const rows = FONT[WORD[li]];
-    letterS.push({ y: 0, ry: 0, s: 1, bob: 0, cx: (li - (WORD.length - 1) / 2) * 2.3 });
+    letterS.push({ y: 0, ry: 0, s: 1, bob: 0, cx: (li - (WORD.length - 1) / 2) * 2.45 });
     for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) if (rows[r][c] === '#') vox.push(li, (c - 2) * VOX, (6 - r) * VOX);
   }
   const NV = vox.length / 3;
@@ -308,7 +306,7 @@ export function createHall(canvas, overlayEl) {
   function playText() {
     if (textTl) textTl.kill();
     textTl = timeline({ defaults: { ease: 'inOutCubic' } })
-      .add(letterS, { y: [0, 1.3, -0.1, 0], s: [1, 1.18, 0.95, 1] }, { duration: 1.5, delay: stagger(0.09), times: [0, 0.45, 0.8, 1] })
+      .add(letterS, { y: [0, -0.5, 0.06, 0], s: [1, 1.12, 0.96, 1] }, { duration: 1.5, delay: stagger(0.09), times: [0, 0.45, 0.8, 1] })
       .add(letterS, { ry: [0, PI2] }, { duration: 1.2, delay: stagger(0.09, { from: 'center' }), ease: 'outBack' }, '<0.25');
   }
 
@@ -319,7 +317,7 @@ export function createHall(canvas, overlayEl) {
     for (let i = 0; i < NB; i++) bodies.push({ x: 20 + (i * 37) % (PW - 40), y: 10 + ((i * 13) % 120), r: ballR[i] });
     wld.addMany(bodies);
     // idle loops (all anikit)
-    animate(letterS, { bob: [0, 0.14, 0] }, { duration: 3.2, repeat: -1, ease: 'inOutSine', delay: stagger(0.3) });
+    animate(letterS, { bob: [0, -0.1, 0] }, { duration: 3.2, repeat: -1, ease: 'inOutSine', delay: stagger(0.3) });
     wave();
     st.ready = true;
   });
@@ -393,7 +391,7 @@ export function createHall(canvas, overlayEl) {
       for (let i = 0; i < NB; i++) {
         const bx = d[i * 3], by = d[i * 3 + 1], r = ballR[i] * 0.02;
         const depth = ((i * 0.618) % 1 - 0.5) * 0.24;
-        balls.put(i, PC.x + depth, PC.y1 - by * 0.01, PC.z0 + bx * 0.01, 0, r, r, r, 0.9,
+        balls.put(i, PC.x + depth, PC.y1 - by * 0.01, PC.z0 + bx * 0.01, 0, r, r, r, LACQUER + 0.85,
           ballCol[i * 3], ballCol[i * 3 + 1], ballCol[i * 3 + 2], 0.1);
       }
       balls.upload();
@@ -428,7 +426,7 @@ export function createHall(canvas, overlayEl) {
       const fl = orbFollow ? 0 : 0.08 * Math.sin(t * 1.2 + i * 1.7);
       const sc = o.s * (1 + 0.15 * wk);
       const oc = ORB_PAL[i % 3];
-      orbs.put(i, o.x, o.y + fl, o.z, 0, sc, sc, sc, 1.0, oc[0], oc[1], oc[2], 0.06 + 0.3 * wk);
+      orbs.put(i, o.x, o.y + fl, o.z, 0, sc, sc, sc, LACQUER + 0.95, oc[0], oc[1], oc[2], 0.05 + 0.35 * wk);
     }
     orbs.upload();
 
@@ -450,14 +448,14 @@ export function createHall(canvas, overlayEl) {
         const h = 0.14 + Math.max(0, y) * 0.3 + s * 0.3;
         const hue = Math.min(1, Math.max(0, y));
         blocks.put(i, 4.6 + (gx - 7.5) * 0.23, 0.27 + h / 2 + y * 0.32, -6.5 + (gz - 7.5) * 0.23, 0,
-          0.19, h, 0.19, 0.5,
-          0.22 + 0.78 * hue, 0.45 + 0.35 * hue, 0.72 - 0.45 * hue, 0.08 + 0.7 * hue * (0.4 + wk2));
+          0.2, h, 0.2, LACQUER + 0.7,
+          0.1 + 0.9 * hue, 0.42 + 0.2 * hue, 0.58 - 0.38 * hue, 0.04 + 1.1 * hue * (0.5 + wk2));
       }
       blocks.upload();
     } else blocks.visible = false;
 
     // letters
-    if (sees(cam, 0, 2, -25, 7)) {
+    if (sees(cam, 0, 9.4, -27.5, 8)) {
       letters.visible = true;
       letters.count = NV;
       const wk3 = wake[5].v;
@@ -466,9 +464,9 @@ export function createHall(canvas, overlayEl) {
         const lx = vox[v * 3 + 1] * L.s, ly = vox[v * 3 + 2] * L.s;
         const c = Math.cos(L.ry), s = Math.sin(L.ry);
         const k = li / (WORD.length - 1);
-        letters.put(v, L.cx + c * lx, 1.1 + VOX / 2 + ly + L.y + L.bob, -25.6 - s * lx, L.ry,
-          VOX * 0.94 * L.s, VOX * 0.94 * L.s, VOX * 0.94 * L.s, 0.8,
-          1.0 - 0.15 * k, 0.42 + 0.3 * k, 0.28 - 0.1 * k, 0.18 + 0.35 * wk3 + 0.4 * Math.min(1, L.y));
+        letters.put(v, L.cx + c * lx, 7.95 + VOX / 2 + ly + L.y + L.bob, -27.5 - s * lx, L.ry,
+          VOX * 0.94 * L.s, VOX * 0.94 * L.s, VOX * 0.94 * L.s, METAL + 0.85,
+          1.0, 0.72 - 0.22 * k, 0.36 - 0.12 * k, 0.04 + 0.25 * wk3 + 0.5 * Math.min(1, Math.abs(L.y)));
       }
       letters.upload();
     } else letters.visible = false;
@@ -477,13 +475,15 @@ export function createHall(canvas, overlayEl) {
     bars.count = BENCH.length;
     for (let i = 0; i < BENCH.length; i++) {
       const h = Math.max(0.02, benchState[i].h * 1.6);
-      bars.put(i, 5.15, 0.95 + h / 2, 2.75 + i * 0.72, 0, 0.3, h, 0.3, 0.7, 0.98, 0.6 - i * 0.05, 0.28 + i * 0.06, 0.15 + 0.3 * wake[1].v);
+      bars.put(i, 5.15, 0.95 + h / 2, 2.75 + i * 0.72, 0, 0.3, h, 0.3, LACQUER + 0.8, 1.0, 0.52 - i * 0.06, 0.16 + i * 0.05, 0.1 + 0.4 * wake[1].v);
     }
     bars.upload();
 
     // cloud: auto-morph while idle
     cloud.idle += dt;
     if (st.ready && cloud.idle > 7 && cloud.mix >= 1) morph();
+    waveIdle += dt;
+    if (st.ready && blocks.visible && waveIdle > 3.6) { waveIdle = 0; wave(); }
     cloud.spin += cloud.spinV.v * dt;
   }
 
@@ -498,9 +498,19 @@ export function createHall(canvas, overlayEl) {
     if (u.uFog) gl.uniform3f(u.uFog, FOG[0], FOG[1], FOG[2]);
     if (u.uTime) gl.uniform1f(u.uTime, time);
     if (u.uPx) gl.uniform1f(u.uPx, pxScale);
+    if (u.uPool) gl.uniform4fv(u.uPool, POOLS);
   }
 
   let time = 0;
+  // a pool of light over each station: x, z, radius, intensity (intensity follows wake)
+  const POOLS = new Float32Array(24);
+  function updatePools() {
+    for (let i = 0; i < ST.length; i++) {
+      POOLS[i * 4] = ST[i].x; POOLS[i * 4 + 1] = ST[i].z;
+      POOLS[i * 4 + 2] = ST[i].id === 'text' ? 4.5 : 2.4;
+      POOLS[i * 4 + 3] = 0.35 + 0.75 * wake[i].v;
+    }
+  }
   // safety net for weak GPUs: if frames stay slow, drop the mirror pass (not the resolution)
   const quality = { refl: true, slow: 0, lock: false };
   function watch(dt) {
@@ -511,15 +521,16 @@ export function createHall(canvas, overlayEl) {
   }
   function drawScene(mirror) {
     setCommon(progMesh, mirror);
-    // near, small things first so the big architecture fails the depth test early
     orbs.draw(); bars.draw(); balls.draw(); blocks.draw(); letters.draw();
     archCyl.draw(); archBox.draw(); windows.draw();
     // particles
-    if (sees(cam, CLOUD_C[0], CLOUD_C[1], CLOUD_C[2], 2.4)) {
+    if (sees(cam, CLOUD_C[0], CLOUD_C[1], CLOUD_C[2], 2.2 * CLOUD_S)) {
       setCommon(progPts, mirror);
       gl.uniform1f(progPts.u.uMix, cloud.mix);
       gl.uniform3f(progPts.u.uCenter, CLOUD_C[0], CLOUD_C[1], CLOUD_C[2]);
       gl.uniform1f(progPts.u.uSpin, cloud.spin);
+      gl.uniform1f(progPts.u.uScale, CLOUD_S);
+      gl.uniform1f(progPts.u.uGlow, 0.62 + 0.25 * wake[4].v);
       gl.bindVertexArray(ptsVao);
       gl.drawArrays(gl.POINTS, 0, mirror < 0 ? NP >> 2 : NP);
     }
@@ -537,35 +548,87 @@ export function createHall(canvas, overlayEl) {
     }
   }
 
+  // ---------- render targets (rebuilt on resize only) ----------
+  const progBright = program(gl, S.POST_VS, S.BRIGHT_FS);
+  const progBlur = program(gl, S.POST_VS, S.BLUR_FS);
+  const progFinal = program(gl, S.POST_VS, S.FINAL_FS);
+  const postVao = gl.createVertexArray();
+  function target(w, h, depth) {
+    const t = { w, h, tex: gl.createTexture(), fb: gl.createFramebuffer(), rb: null };
+    gl.bindTexture(gl.TEXTURE_2D, t.tex);
+    gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, w, h);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, t.fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t.tex, 0);
+    if (depth) {
+      t.rb = gl.createRenderbuffer();
+      gl.bindRenderbuffer(gl.RENDERBUFFER, t.rb);
+      gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, w, h);
+      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, t.rb);
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return t;
+  }
+  function freeTarget(t) { if (!t) return; gl.deleteTexture(t.tex); gl.deleteFramebuffer(t.fb); if (t.rb) gl.deleteRenderbuffer(t.rb); }
+  let rtScene = null, rtRefl = null, rtB0 = null, rtB1 = null;
+  function buildTargets() {
+    freeTarget(rtScene); freeTarget(rtRefl); freeTarget(rtB0); freeTarget(rtB1);
+    rtScene = target(W, H, true);
+    rtRefl = target(Math.max(1, W >> 1), Math.max(1, H >> 1), true);   // mirror pass at half resolution
+    rtB0 = target(Math.max(1, W >> 2), Math.max(1, H >> 2), false);      // bloom at quarter resolution
+    rtB1 = target(Math.max(1, W >> 2), Math.max(1, H >> 2), false);
+  }
+  function bindTarget(t) { gl.bindFramebuffer(gl.FRAMEBUFFER, t ? t.fb : null); gl.viewport(0, 0, t ? t.w : W, t ? t.h : H); }
+  function post(p, src, dst) {
+    bindTarget(dst);
+    gl.useProgram(p.p);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, src.tex);
+    gl.uniform1i(p.u.uTex, 0);
+    gl.bindVertexArray(postVao);
+  }
+
   function render() {
     updateCamera(cam);
-    gl.viewport(0, 0, W, H);
+    updatePools();
     gl.disable(gl.SCISSOR_TEST);
-    gl.clearColor(0.8, 0.76, 0.7, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     gl.depthMask(true);
     gl.disable(gl.BLEND);
     gl.enable(gl.CULL_FACE);
+    gl.clearColor(0.55, 0.5, 0.45, 1);
 
-    // 1) mirrored scene, only below the horizon line
+    // 1) mirrored scene into the half-res target, only below the horizon line
     const hy = -Math.tan(cam.pitch) / cam.tanH; // horizon in NDC
-    const rows = Math.ceil(Math.min(1, Math.max(0, hy * 0.5 + 0.5 + 0.02)) * H);
-    if (rows > 0) {
+    const frac = Math.min(1, Math.max(0, hy * 0.5 + 0.5 + 0.04));
+    const reflOn = quality.refl && frac > 0;
+    if (reflOn) {
+      bindTarget(rtRefl);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       gl.enable(gl.SCISSOR_TEST);
-      gl.scissor(0, 0, W, rows);
-      if (quality.refl) {
-        gl.frontFace(gl.CW);
-        drawScene(-1);
-        gl.frontFace(gl.CCW);
-        gl.clear(gl.DEPTH_BUFFER_BIT);
-      }
-      // 2) the floor, blended over its reflection
+      gl.scissor(0, 0, rtRefl.w, Math.ceil(frac * rtRefl.h));
+      gl.frontFace(gl.CW);
+      drawScene(-1);
+      gl.frontFace(gl.CCW);
+      gl.disable(gl.SCISSOR_TEST);
+    }
+
+    // 2) the scene at full resolution
+    bindTarget(rtScene);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    // near, small things first so the big architecture fails the depth test early
+    drawScene(1);
+    if (frac > 0) {
       setCommon(progFloor, 1);
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.uniform4fv(progFloor.u.uBlob, BLOBS);
-      gl.uniform1f(progFloor.u.uRefl, quality.refl ? 1 : 0);
+      gl.uniform1f(progFloor.u.uRefl, reflOn ? 1 : 0);
+      gl.uniform2f(progFloor.u.uRes, W, H);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, rtRefl.tex);
+      gl.uniform1i(progFloor.u.uReflTex, 0);
       let ri = 0;
       for (let i = 1; i < ST.length; i++) if (wake[i].v > wake[ri].v) ri = i;
       gl.uniform4f(progFloor.u.uRing, ST[ri].x, ST[ri].z, ST[ri].ring, ST[ri].ring > 0 ? wake[ri].v : 0);
@@ -573,18 +636,14 @@ export function createHall(canvas, overlayEl) {
       gl.disable(gl.CULL_FACE);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       gl.enable(gl.CULL_FACE);
-      gl.disable(gl.BLEND);
-      gl.disable(gl.SCISSOR_TEST);
     }
-    // 3) the scene
-    drawScene(1);
-    // 4) light: shafts and dust, additive
+    // light: subtle shafts and dust, additive
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE);
     gl.depthMask(false);
     gl.disable(gl.CULL_FACE);
     setCommon(progBeam, 1);
-    gl.uniform1f(progBeam.u.uBeam, 0.07);
+    gl.uniform1f(progBeam.u.uBeam, 0.028);
     gl.bindVertexArray(beamVao);
     gl.drawArrays(gl.TRIANGLES, 0, beamCount);
     setCommon(progDust, 1);
@@ -592,7 +651,41 @@ export function createHall(canvas, overlayEl) {
     gl.drawArrays(gl.POINTS, 0, DUST);
     gl.depthMask(true);
     gl.disable(gl.BLEND);
+    gl.disable(gl.DEPTH_TEST);
+
+    // 3) bloom: bright pass to quarter res, separable blur
+    post(progBright, rtScene, rtB0);
+    gl.uniform2f(progBright.u.uTexel, 1 / W, 1 / H);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    post(progBlur, rtB0, rtB1);
+    gl.uniform2f(progBlur.u.uDir, 1 / rtB0.w, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    post(progBlur, rtB1, rtB0);
+    gl.uniform2f(progBlur.u.uDir, 0, 1 / rtB0.h);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    // 4) composite at native resolution: FXAA, bloom, grade, vignette
+    post(progFinal, rtScene, null);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, rtB0.tex);
+    gl.uniform1i(progFinal.u.uBloom, 1);
+    gl.uniform2f(progFinal.u.uTexel, 1 / W, 1 / H);
+    gl.uniform1f(progFinal.u.uBloomK, 0.6);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.activeTexture(gl.TEXTURE0);
     gl.bindVertexArray(null);
+    gl.enable(gl.DEPTH_TEST);
+  }
+
+  // Compile/link every program and touch every buffer once, so nothing stalls later.
+  function prewarm() {
+    const ex = cam.eye[0], ey = cam.eye[1], ez = cam.eye[2], yw = cam.yaw, pt = cam.pitch;
+    cam.eye[0] = 0; cam.eye[1] = 1.7; cam.eye[2] = 12; cam.yaw = 0; cam.pitch = 0;
+    const vis = [balls.visible, blocks.visible, letters.visible];
+    balls.visible = blocks.visible = letters.visible = true;
+    render();
+    balls.visible = vis[0]; blocks.visible = vis[1]; letters.visible = vis[2];
+    cam.eye[0] = ex; cam.eye[1] = ey; cam.eye[2] = ez; cam.yaw = yw; cam.pitch = pt;
   }
 
   // ---------- the contract ----------
@@ -600,13 +693,16 @@ export function createHall(canvas, overlayEl) {
     _ctl: ctl,
     _quality: quality,
     resize(cssW, cssH, dpr) {
-      const d = Math.min(dpr || 1, 1.5);
-      W = Math.max(1, Math.round(cssW * d));
-      H = Math.max(1, Math.round(cssH * d));
+      // native resolution (DPR capped at 2): the budget is earned by technique, not pixels
+      const d = Math.min(dpr || 1, 2);
+      const nw = Math.max(1, Math.round(cssW * d)), nh = Math.max(1, Math.round(cssH * d));
+      const changed = nw !== W || nh !== H || !rtScene;
+      W = nw; H = nh;
       if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
       cam.aspect = W / H;
       cam.fov = cssW < cssH ? 1.35 : 1.12;
       pxScale = (H * 0.5) / Math.tan(cam.fov / 2);
+      if (changed) { buildTargets(); prewarm(); }
     },
     preview(t, dt, k) {
       time = t;
@@ -720,23 +816,23 @@ function makePanel(gl, rows) {
   cv.width = 1024; cv.height = 1024;
   const c = cv.getContext('2d');
   const g = c.createLinearGradient(0, 0, 0, 1024);
-  g.addColorStop(0, '#fbf6ee'); g.addColorStop(1, '#efe4d2');
+  g.addColorStop(0, '#2a2420'); g.addColorStop(1, '#1a1512');
   c.fillStyle = g; c.fillRect(0, 0, 1024, 1024);
-  c.strokeStyle = '#c9a063'; c.lineWidth = 10; c.strokeRect(14, 14, 996, 996);
-  c.fillStyle = '#2a2420';
+  c.strokeStyle = '#b8874c'; c.lineWidth = 8; c.strokeRect(18, 18, 988, 988);
+  c.fillStyle = '#f3e9da';
   c.font = '700 64px system-ui, -apple-system, Segoe UI, sans-serif';
   c.fillText('Benchmarks', 64, 128);
   c.font = '400 30px system-ui, -apple-system, Segoe UI, sans-serif';
-  c.fillStyle = '#7a6a58';
-  c.fillText('Measured with packages/anikit/scripts/*.mjs · README.md', 64, 178);
+  c.fillStyle = '#a8977f';
+  c.fillText('From README.md · packages/anikit/scripts/*.mjs', 64, 178);
   for (let i = 0; i < rows.length; i++) {
     const y = 290 + i * 150;
-    c.fillStyle = '#c0622f';
+    c.fillStyle = '#f2a65a';
     c.font = '800 76px system-ui, -apple-system, Segoe UI, sans-serif';
     c.fillText(rows[i][2], 64, y);
-    c.fillStyle = '#3a322b';
-    c.font = '400 34px system-ui, -apple-system, Segoe UI, sans-serif';
-    c.fillText(rows[i][0], 64, y + 52);
+    c.fillStyle = '#e6dac8';
+    c.font = '400 27px system-ui, -apple-system, Segoe UI, sans-serif';
+    c.fillText(rows[i][0], 64, y + 48, 900);
   }
   const tex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -744,8 +840,10 @@ function makePanel(gl, rows) {
   gl.generateMipmap(gl.TEXTURE_2D);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  const an = gl.getExtension('EXT_texture_filter_anisotropic');
+  if (an) gl.texParameterf(gl.TEXTURE_2D, an.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(8, gl.getParameter(an.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
   // a standing panel behind the plinth, facing -x (toward the hall's centre)
-  const x = 6.25, z0 = 2.2, z1 = 6.2, y0 = 1.05, y1 = 5.05;
+  const x = 6.2, z0 = 2.3, z1 = 6.1, y0 = 1.15, y1 = 4.95;
   const v = new Float32Array([
     x, y0, z0, 0, 1, x, y0, z1, 1, 1, x, y1, z1, 1, 0,
     x, y0, z0, 0, 1, x, y1, z1, 1, 0, x, y1, z0, 0, 0,
