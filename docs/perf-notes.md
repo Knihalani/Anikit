@@ -279,7 +279,9 @@ each, `fc71751` vs now): 500 elements 0.74 / 0.83 vs 0.76 / 0.87; 2,000
 within noise (elements write through transform bindings, not the plain-object
 writers below).
 
-Kernel benchmarks, `fc71751` vs now (one run each; the rows marked * have
+Kernel benchmarks, `fc71751` vs now (one run each, except the springs,
+batch, cloud and emitter rows: two interleaved runs each, which differ by
+VM noise only, as those code paths did not change; the rows marked * have
 every animation at the same progress or colour, so the memos hit on every
 animation after the first; staggered work doesn't get that):
 
@@ -289,7 +291,10 @@ animation after the first; staggered work doesn't get that):
 | 〃 tween 1 number, cubic-bezier * | 100k | 5.09 ms | 1.99 ms |
 | 〃 x, y, opacity + OKLab colour * | 50k | 3.66 ms | 2.39 ms |
 | 〃 8 keyframes, spring easing * | 50k | 3.18 ms | 1.41 ms |
-| 〃 springs, batches, world, cloud, splat, emitter | | unchanged | unchanged |
+| 〃 springs: retarget 2 ch + tick | 10k | 0.65–0.72 ms | 0.68–0.72 ms |
+| 〃 batch: 3 channels, `outCubic` | 100k | 0.35–0.38 ms | 0.38–0.50 ms |
+| 〃 cloud: step | 150k | 1.66–1.67 ms | 1.59–1.98 ms |
+| 〃 emitter: step | 100k | 1.42–1.43 ms | 1.45–1.47 ms |
 | native `bench`: tween 1 number, `outCubic` * | 100k | 1.48 ms | 1.38 ms |
 | 〃 x, y, opacity + OKLab colour * | 50k | 3.33 ms | 1.40 ms |
 | 〃 keyframes: 8 kf, spring * | 50k | 2.32 ms | 0.93 ms |
