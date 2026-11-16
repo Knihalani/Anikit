@@ -240,6 +240,7 @@ pub struct BlackHole {
     up_fx: Vec<f32>,
     row_a: Vec<f32>,
     row_b: Vec<f32>,
+    row_c: Vec<f32>,
     /// RGBA8 output.
     pub out: Vec<u8>,
     pub stats: Stats,
@@ -543,6 +544,7 @@ impl BlackHole {
             up_fx: Vec::new(),
             row_a: Vec::new(),
             row_b: Vec::new(),
+            row_c: Vec::new(),
             out: Vec::new(),
             stats: Stats::default(),
             frame: 0,
@@ -705,6 +707,7 @@ impl BlackHole {
         }
         self.row_a = vec![0.0; w * 3];
         self.row_b = vec![0.0; w * 3];
+        self.row_c = vec![0.0; w * 3];
         self.geom_key = None;
     }
 
@@ -1625,6 +1628,7 @@ impl BlackHole {
         let (w, h, bh) = (self.w, self.h, self.bh);
         let mut row_a = core::mem::take(&mut self.row_a);
         let mut row_b = core::mem::take(&mut self.row_b);
+        let mut row_c = core::mem::take(&mut self.row_c);
         let mut cached = (usize::MAX, usize::MAX);
         let ex = V4::splat(p.exposure.max(0.0) * 1.6 * self.adapt);
         let grain = p.grain.max(0.0) * 0.035;
@@ -1648,10 +1652,14 @@ impl BlackHole {
                 cached = (l0, l1);
             }
             let s = y * w;
-            let (ar, rest) = row_a.split_at(w);
-            let (ag, ab) = rest.split_at(w);
-            let (br, rest) = row_b.split_at(w);
-            let (bg, bb) = rest.split_at(w);
+            // Bloom for this row: one vectorisable lerp pass between the two
+            // upsampled low-resolution rows.
+            let fyf = fy.to_array()[0];
+            for ((o, a), b) in row_c.iter_mut().zip(row_a.iter()).zip(row_b.iter()) {
+                *o = a + (b - a) * fyf;
+            }
+            let (cr, rest) = row_c.split_at(w);
+            let (cg, cb) = rest.split_at(w);
             let hr = &mut self.hr[s..s + w];
             let hg = &mut self.hg[s..s + w];
             let hb = &mut self.hb[s..s + w];
@@ -1678,9 +1686,9 @@ impl BlackHole {
                     acb[lx] += sum(vb) * 4.0;
                     act[lx] += sum(v(trow)) * 4.0;
                 }
-                let r = aces((vr + v(ar) + (v(br) - v(ar)) * fy) * ex);
-                let gg = aces((vg + v(ag) + (v(bg) - v(ag)) * fy) * ex);
-                let b = aces((vb + v(ab) + (v(bb) - v(ab)) * fy) * ex);
+                let r = aces((vr + v(cr)) * ex);
+                let gg = aces((vg + v(cg)) * ex);
+                let b = aces((vb + v(cb)) * ex);
                 let gi = (go + x) & 4095;
                 let n = V4::from_array([gtab[gi], gtab[gi + 1], gtab[gi + 2], gtab[gi + 3]]) * g;
                 // Film grain, strongest in the mid-tones, then the sRGB curve
@@ -1696,9 +1704,8 @@ impl BlackHole {
                 }
                 x += 4;
             }
-            let fy = fy.to_array()[0];
             while x < w {
-                let vals = [hr[x] + ar[x] + (br[x] - ar[x]) * fy, hg[x] + ag[x] + (bg[x] - ag[x]) * fy, hb[x] + ab[x] + (bb[x] - ab[x]) * fy];
+                let vals = [hr[x] + cr[x], hg[x] + cg[x], hb[x] + cb[x]];
                 let t = aces(V4::from_array([vals[0], vals[1], vals[2], 0.0]) * ex).to_array();
                 for c in 0..3 {
                     out[x * 4 + c] = srgb[(t[c] * sn) as usize];
@@ -1713,6 +1720,7 @@ impl BlackHole {
         }
         self.row_a = row_a;
         self.row_b = row_b;
+        self.row_c = row_c;
     }
 }
 
