@@ -793,6 +793,13 @@ What makes it look expensive rather than plain:
 - **Hits land.** `film.impact(t, { shake, flash, aberration })` plus a `timeScale` dip right after (bullet time) and a `shatter()` of the object you hit.
 - **One hero at the end.** `mesh.text(name, { font })` in chrome on the mirror floor, the sun behind it, `rays` aimed at the sun, the camera settling (ease the last metres, then hold ~1.5 s).
 
+Pitfalls that cost a render:
+
+- **Bullet time shifts every later beat.** Choreograph on the scene clock (`FrameInfo.clock`, or your own sum of `dt`), and place impacts with `film.timeAt('scene', clockSeconds)`: a 0.6 s dip moves everything after it by 0.6 s of composition time. `post` functions receive composition time; convert with `film.clockAt('scene', t)`.
+- **Unwind roll the short way.** Barrel rolls add up (three rolls = 1080°). Before easing `cam.roll` back to level for a landing, wrap it: `cam.roll = ((((cam.roll + 180) % 360) + 360) % 360 - 180) * (1 - k)`, otherwise the camera spins three times on arrival.
+- **End the route past the last stop.** `path.apply()` at the very end of a path has nothing to look ahead at. Add one waypoint beyond where the camera stops, and stop the timing short of it.
+- **Metal reflects the horizon.** Large `metal` faces mirror the sky, so a bright `horizon` turns them into flat slabs of colour. Keep big bodies at `metal` ≤ 0.3 and save chrome for heroes (gates, knots, type).
+
 ## Python
 
 The Python package animates plain objects (dicts, objects, lists of them) with the same engine. Times are seconds; options are keyword arguments in `snake_case`.
