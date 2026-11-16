@@ -906,7 +906,7 @@ fn markup_spans(base: &Span, style: &TextStyle) -> Vec<Span> {
         }
         let mut sp = Span { text: std::mem::take(cur), ..base.clone() };
         if on[0] {
-            sp.weight = Some((sp.weight.unwrap_or(style.weight) + 300.0).min(900.0).max(700.0));
+            sp.weight = Some((sp.weight.unwrap_or(style.weight) + 300.0).clamp(700.0, 900.0));
         }
         if on[1] {
             sp.color = Some(style.accent);
