@@ -15,4 +15,5 @@ pub mod audio;
 pub mod components;
 pub mod dl;
 pub mod layout;
+pub mod render;
 pub mod text;
