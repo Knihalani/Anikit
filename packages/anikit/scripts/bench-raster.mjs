@@ -23,3 +23,23 @@ for (const [name, items] of Object.entries(scenes)) {
   for (let i = 0; i < n; i++) r3.render(cam, items, env);
   console.log(`${name.padEnd(32)} ${((performance.now() - t) / n).toFixed(1).padStart(6)} ms/frame  (${r3.triangles} triangles)`);
 }
+
+// A film-like frame with every pass on (mirror floor, sky + sun, point lights,
+// stars, depth of field, camera motion blur), with the per-pass split from r3.stats.
+{
+  const floor = A.instances(1, () => ({ y: -500, z: -2000, sx: 14000, sz: 30000, color: [0.02, 0.02, 0.03] }));
+  const stars = new Float32Array(20000 * 3).map((_, i) => (i % 3 === 0 ? ((i * 7919) % 6000) - 3000 : i % 3 === 1 ? ((i * 104729) % 3000) - 400 : -((i * 1299709) % 20000)));
+  const items = [
+    { mesh: A.mesh.plane(1), instances: floor, mirror: true, material: { lines: 1.2, lineColor: [0.3, 0.5, 1.5], grid: [60, 150], lineWidth: 0.03 } },
+    ...scenes['900 towers (edge lines)'], ...scenes['knot (chrome, lines, pulses)'],
+    { points: stars, size: 3, intensity: 2, streak: 0.4 },
+  ];
+  const prev = A.scene3d({ fov: 50, width: W, height: H, near: 8, far: 40000, camera: { x: 310, y: 250, z: 1450 }, target: { x: 0, y: -50, z: -200 } }).viewProjection().matrix;
+  const opts = { ...env, skybox: { sun: 2 }, mirror: { y: -500, strength: 0.45 }, lights: [{ position: [200, -300, 600], color: [0.3, 0.8, 1.6], radius: 600 }, { position: [-300, -300, 200], color: [1.6, 0.6, 0.2], radius: 600 }], dof: { focus: 1400, aperture: 10 }, motionBlur: { shutter: 0.55 }, prevCamera: prev };
+  for (let i = 0; i < 10; i++) r3.render(cam, items, opts);
+  const n = 20, sum = {};
+  const t = performance.now();
+  for (let i = 0; i < n; i++) { r3.render(cam, items, opts); for (const [k, v] of Object.entries(r3.stats)) sum[k] = (sum[k] ?? 0) + v; }
+  console.log(`${'film-like frame (all passes)'.padEnd(32)} ${((performance.now() - t) / n).toFixed(1).padStart(6)} ms/frame`);
+  console.log('  per pass: ' + Object.entries(sum).filter(([, v]) => v / n >= 0.05).map(([k, v]) => `${k} ${(v / n).toFixed(1)}`).join(' · ') + ' ms');
+}
