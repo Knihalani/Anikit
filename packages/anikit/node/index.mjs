@@ -157,7 +157,7 @@ export async function renderStill(comp, o) {
   const jpeg = /\.jpe?g$/i.test(o.out);
   let wrote = false;
   await comp.render({
-    canvas, from: t, to: t + 1 / comp.fps, readPixels, createCanvas: (w, h) => canvasLib().createCanvas(w, h),
+    canvas, from: t, to: t + 1 / comp.fps, preroll: o.preroll, keepCanvas: !!o.raw, readPixels, createCanvas: (w, h) => canvasLib().createCanvas(w, h),
     onFrame: (fr) => {
       if (wrote) return;
       // The graded frame (motion blur, impacts, bloom, flares, grade…), exactly as in the video;

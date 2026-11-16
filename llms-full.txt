@@ -1759,6 +1759,21 @@ export default async ({ anikit, node }) => {
 npx anikit-render film.mjs --out film.mp4 --workers 4 --fade-in 0.3 --fade-out 0.8   # --audio track.wav to mux a soundtrack
 ```
 
+Faster renders, same pixels:
+
+- **`--preroll 0`** when `draw()` keeps no state between frames (a camera on a path, no trails). Each job otherwise draws 0.5 s unseen before its first frame so trails match. On `film/film.mjs`, a 30-frame slice took 68 s by default and 27 s with `--preroll 0`, to a byte-identical mp4.
+- **`--chunk 2`** splits the film into 2-second jobs that free workers take in turn, so a slow stretch doesn't hold up the whole render. With the default preroll, every job pays it, so pair it with `--preroll 0`.
+- **`pixels(px)`** hands a full-frame render to the composition instead of `ctx.putImageData`. On a plain frame it skips the canvas round trip (about 20 ms at 1080p in Node); in transitions and with impacts it puts the pixels on the canvas. Draw nothing on `ctx` after it.
+
+```js
+film.scene('flight', 0, 20, {
+  draw({ t, pixels }) {
+    pose(t);
+    pixels(r3.render(cam, items, { sort: 'near' }));   // instead of ctx.putImageData(new ImageData(px, W, H), 0, 0)
+  },
+});
+```
+
 ```bash
 npx anikit-render film.mjs --preview 30 --out frames/
 npx anikit-render film.mjs --review review/   # contact sheet + pacing report (holds, flat frames, cuts)

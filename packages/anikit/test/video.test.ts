@@ -52,6 +52,30 @@ describe('composition', () => {
   });
 });
 
+describe('composition pixels()', () => {
+  it('delivers handed-over pixels without the canvas, and puts them on it when the canvas is needed', async () => {
+    const px = new Uint8ClampedArray(4 * 2 * 4).map((_, i) => (i * 37) & 255);
+    const run = async (o: { blur?: number; keepCanvas?: boolean; impact?: boolean }) => {
+      const c = composition({ width: 4, height: 2, fps: 10, duration: 0.2, motionBlur: o.blur });
+      if (o.impact) c.impact(5, { shake: 0 });
+      c.scene('s', 0, 1, { draw: (f) => f.pixels(px) });
+      let put = 0, read = 0;
+      const ctx: any = { fillRect() {}, drawImage() {}, putImageData: () => { put++; }, getImageData: () => { read++; return { data: px }; } };
+      const out: number[][] = [];
+      await c.render({ canvas: { width: 4, height: 2, getContext: () => ctx } as any, keepCanvas: o.keepCanvas, onFrame: (fr) => { out.push(Array.from(fr.rgba())); } });
+      return { out, put, read };
+    };
+    const plain = await run({});
+    expect(plain.out).toEqual([Array.from(px), Array.from(px)]);
+    expect(plain.put + plain.read).toBe(0); // no canvas round trip
+    expect((await run({ blur: 2 })).out[1]).toEqual(Array.from(px));
+    const kept = await run({ keepCanvas: true });
+    expect(kept.out).toEqual(plain.out);
+    expect(kept.put).toBeGreaterThan(0);
+    expect((await run({ impact: true })).put).toBeGreaterThan(0);
+  });
+});
+
 describe('transitions', () => {
   it('runs both scenes during an overlap and composites them', async () => {
     const log: string[] = [];
