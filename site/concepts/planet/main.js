@@ -119,7 +119,7 @@ soon('#text', () => {
     tl?.kill();
     tl = timeline({ onComplete: () => { k = (k + 1) % eases.length; play(); } })
       .add(chars, { yPercent: [110, 0], rotate: [8, 0], opacity: [0, 1] }, { duration: 1, ease: eases[k], delay: stagger(0.018) })
-      .add(chars, { yPercent: [0, -110], opacity: [1, 0] }, { duration: 0.6, ease: 'inCubic', delay: stagger(0.01, { from: 'end' }) }, '+=2.2');
+      .add(chars, { yPercent: [0, -110], opacity: [1, 0] }, { duration: 0.6, ease: 'inCubic', delay: stagger(0.01, { from: 'last' }) }, '+=2.2');
   };
   if (reduced) set(chars, { yPercent: 0, opacity: 1 });
   else inView(el, () => { play(); return () => { tl?.pause(); }; }, { amount: 0.4 });
@@ -133,7 +133,7 @@ soon('#physics', () => {
   const ctx = canvas.getContext('2d');
   const dpr = Math.min(devicePixelRatio || 1, 2);
   let W = 0, H = 0, w = null;
-  const N = small ? 140 : 240;
+  const N = small ? 90 : 150;
   const palette = ['#ffcf8a', '#ffb066', '#ff8f4d', '#ffe3b8', '#9fd2ff'];
   const build = () => {
     W = canvas.clientWidth; H = canvas.clientHeight;

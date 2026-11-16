@@ -38,7 +38,7 @@ main { position: relative; z-index: 2; }
 .hero h1 { font-size: clamp(68px, 11vw, 168px); text-shadow: 0 4px 40px rgba(0, 0, 0, 0.5); }
 .hero h1 .ch { display: inline-block; }
 .hero h1 .gw { display: inline-block; overflow: hidden; padding: 0 0.04em 0.08em; vertical-align: top; }
-.lede { font-size: clamp(15px, 1.25vw, 18px); color: rgba(232, 234, 240, 0.78); margin: 18px 0 0; max-width: 30em; }
+.lede { font-size: clamp(15px, 1.25vw, 18px); color: rgba(232, 234, 240, 0.82); text-shadow: 0 1px 14px #000, 0 0 4px #000; margin: 18px 0 0; max-width: 30em; }
 
 /* Demo stops: one centred layout for every demo, held while the orbit carries on. */
 .stop { height: 240vh; position: relative; }
@@ -88,7 +88,7 @@ main { position: relative; z-index: 2; }
 
 /* The end: the sun clears the limb */
 .install { height: 190vh; position: relative; }
-.install-core { position: sticky; top: 0; height: 100vh; height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 24vh; text-align: center; opacity: 0; }
+.install-core { position: sticky; top: 0; height: 100vh; height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 20vh; text-align: center; opacity: 0; }
 .install-row { display: inline-flex; gap: 10px; align-items: center; background: rgba(3, 5, 12, 0.6); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 999px; padding: 6px 6px 6px 22px; margin-bottom: 14px; }
 .install-row code { font-size: 16px; }
 
@@ -102,6 +102,7 @@ main { position: relative; z-index: 2; }
   .tiles { grid-template-columns: repeat(4, 1fr); }
   .tiles.alt { grid-template-columns: repeat(3, 1fr); }
   .snippet { font-size: 11px; }
+  .install-core { padding-top: 47vh; }
 }
 @media (prefers-reduced-motion: reduce) {
   .live::before { animation: none; }
