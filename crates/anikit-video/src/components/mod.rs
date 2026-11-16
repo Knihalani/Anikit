@@ -228,7 +228,7 @@ pub const COMMON_KEYS: &[&str] = &["type", "kind", "id", "x", "y", "width", "hei
 /// Build a component from its kind and the spec object (which may still
 /// contain `type`, `kind` and the other [`COMMON_KEYS`]).
 pub fn build(kind: &str, params: &Value) -> Result<Placed, Error> {
-    let kebab = kebab(kind);
+    let kebab = canonical(kind);
     let Some(k) = KINDS.iter().find(|k| k.name == kebab) else {
         let names: Vec<&str> = KINDS.iter().map(|k| k.name).collect();
         return Err(Error(match style::closest(kind, &names) {
@@ -259,9 +259,114 @@ pub fn build(kind: &str, params: &Value) -> Result<Placed, Error> {
     for key in ["type", "kind", "id"] {
         obj.remove(key);
     }
-    let obj = snake_keys(obj);
+    let mut obj = snake_keys(obj);
+    shorthand(&kebab, &mut obj);
     let component = (k.build)(Value::Object(obj)).map_err(|e| Error(format!("component `{kind}`: {}", suggest_field(&e.0))))?;
     Ok(Placed { component, x, y, w, h, theme })
+}
+
+/// Short dotted aliases (`chart.bar`, `bg.mesh`, `device.phone`, …) and other
+/// spellings → the canonical kebab-case kind.
+pub fn canonical(kind: &str) -> String {
+    let k = kebab(kind).replace('_', "-");
+    let alias = match k.as_str() {
+        "chart.bar" | "bar" | "bars" => "bar-chart",
+        "chart.line" | "line" => "line-chart",
+        "chart.area" | "area" => "area-chart",
+        "chart.donut" | "donut" => "donut-chart",
+        "chart.pie" | "pie" => "pie-chart",
+        "chart.counter" | "number" | "count" => "counter",
+        "chart.stat" => "stat",
+        "bg.mesh" | "mesh" => "mesh-gradient",
+        "bg.aurora" => "aurora",
+        "bg.grain" => "grain",
+        "bg.grid" => "grid",
+        "bg.dots" => "dots",
+        "bg.leak" | "bg.light-leak" => "light-leak",
+        "bg.bokeh" => "bokeh",
+        "bg.stars" | "stars" | "bg.starfield" => "starfield",
+        "bg.gradient" => "gradient",
+        "device.phone" | "iphone" => "phone",
+        "device.laptop" | "macbook" => "laptop",
+        "device.browser" | "window" => "browser",
+        "ui.card" => "card",
+        "ui.button" => "button",
+        "ui.toast" | "notification" => "toast",
+        "ui.cursor" | "mouse" => "cursor",
+        "ui.badge" | "pill" | "tag" => "badge",
+        "ui.progress" | "progress" => "progress-bar",
+        "ui.ring" | "ring" => "progress-ring",
+        "title" | "ui.title" => "title-card",
+        "lower3rd" | "ui.lower-third" => "lower-third",
+        "fx.confetti" => "confetti",
+        "fx.sparks" | "fireworks" => "sparks",
+        "fx.snow" => "snow",
+        "fx.dust" => "dust",
+        "3d" | "3d.model" => "model",
+        "code-block" | "editor" => "code",
+        "shell" | "console" => "terminal",
+        "testimonial" => "quote",
+        "todo" | "checks" => "checklist",
+        "ticker" | "logos" => "marquee",
+        "shortcut" | "kbd" => "keys",
+        "focus" => "spotlight",
+        "messages" => "chat",
+        "input" | "ai-prompt" => "prompt",
+        "roadmap" => "timeline",
+        "comparison" => "table",
+        _ => return k,
+    };
+    alias.to_string()
+}
+
+/// Shared shorthands: `data` means the main data of any data component, and a
+/// flat number array is a single line series.
+fn shorthand(kind: &str, obj: &mut Map<String, Value>) {
+    if let Some(d) = obj.remove("data") {
+        let key = match kind {
+            "line-chart" | "area-chart" => "series",
+            "counter" => "to",
+            "stat" => "value",
+            "chat" => "messages",
+            "checklist" | "timeline" | "marquee" => "items",
+            "table" => "rows",
+            "terminal" => "lines",
+            "lottie" => {
+                // Lottie's `data` is the animation itself.
+                obj.insert("data".into(), d);
+                return;
+            }
+            _ => "values",
+        };
+        obj.entry(key.to_string()).or_insert(d);
+    }
+    // `text` is the main text of any text-bearing component.
+    let text_key = match kind {
+        "title-card" | "card" | "lower-third" | "toast" => Some("title"),
+        "button" | "badge" | "progress-bar" | "progress-ring" => Some("label"),
+        "code" => Some("code"),
+        _ => None,
+    };
+    if let Some(k) = text_key {
+        if k != "text" {
+            if let Some(t) = obj.remove("text") {
+                obj.entry(k.to_string()).or_insert(t);
+            }
+        }
+    }
+    if kind == "counter" {
+        if let Some(v) = obj.remove("value") {
+            obj.entry("to".to_string()).or_insert(v);
+        }
+    }
+    if matches!(kind, "line-chart" | "area-chart") {
+        if let Some(Value::Array(a)) = obj.get("series") {
+            if a.iter().all(|v| v.is_number()) {
+                let flat = Value::Array(a.clone());
+                obj.insert("series".into(), Value::Array(vec![flat]));
+            }
+        }
+    }
 }
 
 /// camelCase keys → snake_case, recursively (except inside `data`, which is
@@ -417,6 +522,12 @@ mod tests {
         let e = build("bar-chrt", &Value::Null).err().unwrap();
         assert!(e.0.contains("did you mean `bar-chart`"), "{e}");
         assert!(build("barChart", &serde_json::json!({"values": [1], "fontSize": 20, "format": {"prefix": "$"}})).is_ok());
+        assert!(build("chart.bar", &serde_json::json!({"data": [3, 7, 5]})).is_ok());
+        assert!(build("chart.line", &serde_json::json!({"data": [3, 7, 5]})).is_ok());
+        assert!(build("chart.donut", &serde_json::json!({"data": [3, 7, 5]})).is_ok());
+        assert!(build("bg.mesh", &Value::Null).is_ok());
+        assert!(build("title", &serde_json::json!({"text": "Hi"})).is_ok());
+        assert!(build("counter", &serde_json::json!({"value": 10})).is_ok());
         let e = build("code", &serde_json::json!({"lineNumbrs": false})).err().unwrap();
         assert!(e.0.contains("did you mean `lineNumbers`"), "{e}");
         assert_eq!(camel("avatar-stack"), "avatarStack");

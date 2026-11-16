@@ -204,3 +204,23 @@ fn cavlc_and_options_matrix() {
         }
     }
 }
+
+#[test]
+fn synthetic_scene_hints_are_exact() {
+    // The scene's own change map must cover every changed macroblock.
+    for name in ["typical", "hold"] {
+        let s = Scene::preset(name, 320, 192);
+        let frames: Vec<_> = (0..6).map(|t| s.frame(t)).collect();
+        let hints: Vec<FrameHints> = (0..6).map(|t| if t == 0 { FrameHints::default() } else { s.hints(t) }).collect();
+        let c = cfg(320, 192);
+        let refs: Vec<YuvFrame> = frames.iter().map(|f| f.frame()).collect();
+        let a = encode_chunks(&c, &refs, &[]);
+        let b = encode_chunks(&c, &refs, &hints);
+        if !have_ffmpeg() {
+            return;
+        }
+        let (_, da) = decode(&a, "ha");
+        let (_, db) = decode(&b, "hb");
+        assert!(psnr(&da, &db) > 45.0, "{name}");
+    }
+}

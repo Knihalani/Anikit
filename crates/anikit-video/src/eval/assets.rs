@@ -75,7 +75,7 @@ impl SharedAssets {
         let mut fonts = render::FontStore::new();
         for i in 0..self.fonts.face_count() {
             let f = self.fonts.face(dl::FontId(i as u32));
-            fonts.insert(dl::FontId(i as u32), f.data.clone());
+            fonts.insert_face(dl::FontId(i as u32), render::Face { data: f.data.clone(), coords: Arc::from(&*f.coords), embolden: f.embolden, skew: f.skew });
         }
         Arc::new(render::Assets { images, fonts })
     }

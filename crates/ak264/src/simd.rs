@@ -627,3 +627,22 @@ pub fn pack16(v: &[i16; 16]) -> [u8; 16] {
     #[cfg(not(target_arch = "x86_64"))]
     core::array::from_fn(|i| v[i].clamp(0, 255) as u8)
 }
+
+/// Quantise 8 lanes: `sign(v) * min(((|v| +sat bias) * m) >> 16, 2047)`; returns
+/// the levels and a per-lane non-zero mask (-1 / 0).
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "sse4.1")]
+#[inline]
+pub unsafe fn quant8_sse41(v: &mut [i16], m: u16, bias: u16, cnt: &mut [i16]) {
+    use std::arch::x86_64::*;
+    let x = _mm_loadu_si128(v.as_ptr() as *const __m128i);
+    let a = _mm_adds_epu16(_mm_abs_epi16(x), _mm_set1_epi16(bias as i16));
+    let l = _mm_min_epu16(_mm_mulhi_epu16(a, _mm_set1_epi16(m as i16)), _mm_set1_epi16(2047));
+    let r = _mm_sign_epi16(l, x);
+    _mm_storeu_si128(v.as_mut_ptr() as *mut __m128i, r);
+    let nz = _mm_cmpeq_epi16(l, _mm_setzero_si128()); // -1 where zero
+    let c = _mm_loadu_si128(cnt.as_ptr() as *const __m128i);
+    // cnt += (l != 0) == cnt - (nz + 1)... use: cnt + 1 + nz
+    let c = _mm_add_epi16(_mm_add_epi16(c, _mm_set1_epi16(1)), nz);
+    _mm_storeu_si128(cnt.as_mut_ptr() as *mut __m128i, c);
+}

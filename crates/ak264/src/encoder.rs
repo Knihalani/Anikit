@@ -59,9 +59,11 @@ pub struct MotionHint {
 /// What the renderer knows about a frame.
 #[derive(Clone, Debug, Default)]
 pub struct FrameHints {
-    /// Per-macroblock "changed since the previous frame" flags, row-major,
-    /// `ceil(w/16) * ceil(h/16)` entries. `None`: computed by exact comparison.
-    /// A macroblock marked unchanged is coded as a copy of the previous frame.
+    /// Per-macroblock "may have changed since the previous frame" flags,
+    /// row-major, `ceil(w/16) * ceil(h/16)` entries (e.g. display-list bounding
+    /// boxes). Flagged macroblocks are compared exactly; unflagged ones are
+    /// trusted to be unchanged and coded as copies without being read.
+    /// `None`: every macroblock is compared.
     pub changed: Option<Vec<bool>>,
     /// Known translations (seeds for motion search).
     pub motions: Vec<MotionHint>,
@@ -177,6 +179,20 @@ pub(crate) struct FrameCtx<'a> {
 }
 
 pub(crate) const NO_HINT: (i16, i16) = (i16::MIN, i16::MIN);
+
+const SKIP_INFO: MbInfo = MbInfo {
+    kind: 0,
+    skip: true,
+    coded: false,
+    mv: (0, 0),
+    nz: [0; 16],
+    nzc: [[0; 4]; 2],
+    m4: [2; 16],
+    cbp: 0,
+    cmode: 0,
+    mvd: (0, 0),
+    dcf: 0,
+};
 
 /// Mutable band of the reconstructed picture owned by one slice.
 pub(crate) struct Band<'a> {
@@ -388,6 +404,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         // Intra 16x16 decision.
         let e16 = self.edges16(mbx, mby);
         let mut pred = [0u8; 256];
+        let mut pred16 = [0u8; 256];
         let mut best16 = (u32::MAX, 2u8);
         for m in 0..4u8 {
             if !Self::intra16_modes_ok(&e16, m) {
@@ -397,6 +414,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             let s = dsp::satd(src_y, &pred, 16, 16);
             if s < best16.0 {
                 best16 = (s, m);
+                pred16 = pred;
             }
         }
         let cost16 = best16.0 + lambda as u32 * if c.idr { 4 } else { 8 };
@@ -429,7 +447,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             // Encode I4x4 tentatively (writes recon).
             let (cost4, modes) = self.code_i4(mbx, mby, src_y, &mut cd, true);
             if cost4 < best_cost {
-                self.finish_intra(mbx, mby, src_c, &mut cd, Kind::I4, Some(modes));
+                self.finish_intra(mbx, mby, src_c, &mut cd, Kind::I4, Some(modes), None);
                 return;
             }
             cd = Coded::new();
@@ -440,7 +458,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 self.code_inter(mbx, mby, src_y, src_c, &it);
             }
             Kind::I16(_) | Kind::I4 => {
-                self.finish_intra(mbx, mby, src_c, &mut cd, kind, None);
+                self.finish_intra(mbx, mby, src_c, &mut cd, kind, None, Some((src_y, &pred16)));
             }
         }
     }
@@ -834,20 +852,12 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         cd: &mut Coded,
         kind: Kind,
         modes: Option<[u8; 16]>,
+        i16: Option<(&[u8; 256], &[u8; 256])>,
     ) {
         let q = self.c.q;
-        if let Kind::I16(m) = kind {
-            let e16 = self.edges16(mbx, mby);
-            let mut pred = [0u8; 256];
-            intra::pred16(&e16, m, &mut pred);
-            let mut src = [0u8; 256];
-            let base = self.c.src.y.off(mbx as isize * 16, mby as isize * 16);
-            let ss = self.c.src.y.stride;
-            for y in 0..16 {
-                src[y * 16..y * 16 + 16].copy_from_slice(&self.c.src.y.data[base + y * ss..base + y * ss + 16]);
-            }
+        if let (Kind::I16(_), Some((src, pred))) = (kind, i16) {
             let mut recon = [0u8; 256];
-            luma_i16(&src, &pred, &q, &self.c.qs, cd, &mut recon);
+            luma_i16(src, pred, &q, &self.c.qs, cd, &mut recon);
             let base = self.yi(mbx * 16, mby * 16);
             for y in 0..16 {
                 self.b.y[base + y * self.ys..base + y * self.ys + 16].copy_from_slice(&recon[y * 16..y * 16 + 16]);
@@ -934,6 +944,13 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         self.emit_end(mbx, mby);
     }
 
+    #[inline(always)]
+    fn skip_ctx_inc(&self, mbx: usize, mby: usize) -> usize {
+        let a = mbx > 0 && !self.info(mbx - 1, mby).skip;
+        let b = mby > self.b.mby0 && !self.info(mbx, mby - 1).skip;
+        a as usize + b as usize
+    }
+
     fn nbrs(&self, mbx: usize, mby: usize) -> (Option<MbInfo>, Option<MbInfo>) {
         let a = if mbx > 0 { Some(*self.info(mbx - 1, mby)) } else { None };
         let b = if mby > self.b.mby0 { Some(*self.info(mbx, mby - 1)) } else { None };
@@ -941,10 +958,11 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
     }
 
     fn emit_skip(&mut self, mbx: usize, mby: usize) {
-        let (a, b) = self.nbrs(mbx, mby);
-        if let Some(cb) = self.cabac.as_mut() {
-            let inc = a.map_or(0, |m| !m.skip as usize) + b.map_or(0, |m| !m.skip as usize);
-            cb.decision(self.w, 11 + inc, 1);
+        if self.cabac.is_some() {
+            let inc = self.skip_ctx_inc(mbx, mby);
+            if let Some(cb) = self.cabac.as_mut() {
+                cb.decision(self.w, 11 + inc, 1);
+            }
         } else {
             self.skip_run += 1;
         }
@@ -1538,7 +1556,23 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
                 // an inter neighbour with MV 0.
                 let zero = |i: &MbInfo| i.kind == 0 && i.mv == (0, 0);
                 if mbx == 0 || mby == mby0 || zero(s.info(mbx - 1, mby)) || zero(s.info(mbx, mby - 1)) {
-                    s.code_copy(mbx, mby, (0, 0), (0, 0));
+                    let i = (mby - mby0) * c.mbw + mbx;
+                    if !c.stale[mby * c.mbw + mbx] {
+                        // Fast path: P_Skip, recon already equal to the reference.
+                        s.b.info[i] = SKIP_INFO;
+                        s.stats.skip += 1;
+                        if let Some(cb) = s.cabac.as_mut() {
+                            let a = mbx > 0 && !s.b.info[i - 1].skip;
+                            let b = mby > mby0 && !s.b.info[i - c.mbw].skip;
+                            cb.decision(s.w, 11 + a as usize + b as usize, 1);
+                            let last = mbx + 1 == c.mbw && mby + 1 == mby1;
+                            cb.terminate(s.w, last as u32);
+                        } else {
+                            s.skip_run += 1;
+                        }
+                    } else {
+                        s.code_copy(mbx, mby, (0, 0), (0, 0));
+                    }
                 } else {
                     let (mvp, skip_mv) = s.mv_pred(mbx, mby);
                     s.code_copy(mbx, mby, mvp, skip_mv);
@@ -1565,8 +1599,8 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
             }
         }
     }
-    if s.cabac.is_some() {
-        s.w.align_zero();
+    if let Some(cb) = s.cabac.take() {
+        s.w.append_bytes(&cb.out);
         return s.stats;
     }
     if s.skip_run > 0 {
@@ -1707,14 +1741,14 @@ impl Encoder {
             match &hints.changed {
                 Some(c) => {
                     assert_eq!(c.len(), nmb, "ak264: changed map must have one entry per macroblock");
-                    self.changed.copy_from_slice(c);
-                    for (i, _) in c.iter().enumerate().filter(|x| *x.1) {
-                        crate::diff::load_mb(y, u, v, f, i % mbw, i / mbw, false);
+                    // Only macroblocks that may have changed are compared (exactly).
+                    for (i, (dst, &maybe)) in self.changed.iter_mut().zip(c.iter()).enumerate() {
+                        *dst = maybe && crate::diff::load_mb(y, u, v, f, i % mbw, i / mbw, true);
                     }
                 }
                 None => {
-                    for (i, ch) in self.changed.iter_mut().enumerate() {
-                        *ch = crate::diff::load_mb(y, u, v, f, i % mbw, i / mbw, true);
+                    for (mby, row) in self.changed.chunks_mut(mbw).enumerate() {
+                        crate::diff::load_row(y, u, v, f, mby, mbw, row);
                     }
                 }
             }
@@ -1772,8 +1806,7 @@ impl Encoder {
                         cb.decision(&mut cw, 11, 1);
                         cb.terminate(&mut cw, (i + 1 == nmb) as u32);
                     }
-                    cw.align_zero();
-                    self.skip_cache = cw.buf;
+                    self.skip_cache = cb.out;
                 }
                 w.append_bytes(&self.skip_cache);
             } else {
