@@ -301,8 +301,16 @@ let started = false;
 function boot(): void {
   if (started) return;
   if (!WASM_BASE64) {
-    // Lean build: stream the module that ships next to this file.
-    void init(new URL('./anikit.wasm', import.meta.url));
+    // Lean build: stream the module that ships next to this file. Re-bundled
+    // into a script without import.meta (an IIFE), there is no "next to this
+    // file": wait for the app's init(url) instead of throwing at load.
+    let url: URL;
+    try {
+      url = new URL('./anikit.wasm', import.meta.url);
+    } catch {
+      return;
+    }
+    void init(url);
     return;
   }
   started = true;

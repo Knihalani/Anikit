@@ -31,6 +31,35 @@ median of 3 fresh pages.
 - Motion defers its keyframe resolution to the first frame, so part of its
   work lands in the frames rather than the set-up.
 
+## A realistic landing page (`node scripts/bench-page.mjs`)
+
+The same page built with each library (`bench/page/`): a split-word hero
+reveal, six sections of eight cards with a staggered entrance on scroll, a
+pinned scrubbed section, three magnetic buttons and a marquee. One minified
+bundle per library, Chromium with the CPU throttled 4× (a mid-range phone),
+median of 5 fresh pages. `anikit` embeds the WebAssembly core in the bundle;
+`anikit-lean` is the lean build (`anikit/lean`), which streams `anikit.wasm`
+so the browser compiles it off the main thread. Motion has no pinning (a
+sticky wrapper scrubbed with `scroll()` stands in) and neither GSAP's free
+build nor Motion splits text (words split by hand, same markup).
+
+| | gzip KB | ready ms | TBT ms | long tasks | heap MB | p95 / max frame ms | main-thread ms per frame while scrolling |
+|---|---|---|---|---|---|---|---|
+| Anikit (embedded core) | 392.6 | 174 | 58 | 1 | 2.81 | 16.8 / 16.8 | 0.82 |
+| Anikit lean | 297.9 (JS 42 + wasm 256) | 216 | 53 | 2 | 1.93 | 16.8 / 16.8 | **0.80** |
+| GSAP | 45.8 | 153 | 58 | 1 | 1.96 | 16.7 / 16.8 | 1.05 |
+| Motion | **26.3** | **76** | **0** | **0** | **1.80** | 16.7 / 16.8 | 1.30 |
+
+- Scrolling, every library holds 60 fps at 4× throttling (p95 = one frame);
+  Anikit does the least main-thread work per frame (0.80 vs 1.05 / 1.30 ms).
+- **Loading, Motion wins** and Anikit loses: the WebAssembly core is 256 KB
+  gzipped, and its compile plus the trigger set-up (layout reads for six
+  triggers and a pin, synchronous so `start`/`end` are known at once) make
+  one or two long tasks; Motion defers its work and has no pinning.
+- Found while building it: the lean build re-bundled into a plain script
+  (no `import.meta`) threw "Invalid URL" at load before the page could call
+  `init(url)`. Fixed (it now waits for `init()`); browser test `lean › …`.
+
 ## Scripted (`bench-text.mjs`, `bench-drag.mjs`, `bench-scroll.mjs`)
 
 | Case | Size | Anikit | GSAP | |

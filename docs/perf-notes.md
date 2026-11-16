@@ -2032,3 +2032,27 @@ creation fast paths. All 67 earlier browser cases pass on them; new cases
 cover a 1000-element staggered entrance (end values and `revert()`), the
 batched first apply, and `flip()` with a target listed twice. No new bugs
 found.
+
+### 2. A realistic landing page (`scripts/bench-page.mjs`)
+
+Same page with Anikit (embedded core and lean), GSAP and Motion; numbers in
+`docs/scoreboard-dom.md`. Anikit does the least main-thread work per scroll
+frame (0.80 ms vs GSAP 1.05, Motion 1.30, CPU 4× throttled) but loses load
+time, blocking time, heap and size to Motion (the 256 KB WebAssembly core,
+and synchronous trigger measurement at creation).
+
+Bug found: the lean build bundled again into a plain script has no
+`import.meta.url`, and its automatic boot threw "Invalid URL" at load, so the
+page's `init(url)` never ran. The boot now waits for `init()` in that case.
+`test-browser.mjs` gained `lean: true` cases (dist/anikit.lean.js re-bundled
+as an IIFE, `anikit.wasm` served next to the page).
+
+### 3. `spring()` set-up (asked: under GSAP's 2.0 ms for 200)
+
+Not done. A first `spring()` on a fresh element costs ~13.6 µs (2000 in
+27 ms, CPU profile): most of it is native work in reading the element's
+transform into the shared transform state (`stateOf`/`readTransform` in
+`props.ts`, owned by the core session), then `resolveProp`. The revert
+snapshot is a copy of that state plus one inline `style.transform` read
+(~2% here), not computed-style reads, so taking it lazily would not close
+the gap.
