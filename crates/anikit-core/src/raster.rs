@@ -559,17 +559,22 @@ fn dot(a: [f32; 3], b: [f32; 3]) -> f32 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
 
-use crate::simd::{dot3, V4};
+use crate::simd::{dot3, dot3_8, M4 as Mask4, M8, V4, V8};
 
+/// The pixel shader and its helpers, for a lane type `$V` (four or eight pixels
+/// at once). One source text for both widths: every lane computes the same
+/// operations, so eight-wide shading gives the bits of four-wide shading.
+macro_rules! shader {
+    ($V:ident, $N:literal, $all:literal, $dot:ident, $wave:ident, $peak:ident, $grid:ident, $pattern:ident, $uvd:ident, $pack:ident, $env:ident, $px:ident, $fog:ident, $unlit:ident, $sample:ident, $shadow:ident, $far:ident) => {
 /// ≈ 0.5 + 0.5·cos(2πx) per lane, without a software cosine (smoothstep of a triangle wave).
 #[inline(always)]
-fn wave4(x: V4) -> V4 {
+fn $wave(x: $V) -> $V {
     let y = (2.0 * x.fract() - 1.0).abs();
     y * y * (3.0 - 2.0 * y)
 }
 /// A soft peak of width ~1/k around 0 (rational, no exp).
 #[inline(always)]
-fn peak4(x: V4, k: f32) -> V4 {
+fn $peak(x: $V, k: f32) -> $V {
     let t = x * k;
     let b = 1.0 / (1.0 + t * t);
     b * b
@@ -579,7 +584,7 @@ fn peak4(x: V4, k: f32) -> V4 {
 /// footprint `fw` (UV units per pixel). Lines thinner than a pixel dim rather
 /// than shimmer, and grids denser than ~2 px per cell fade to their mean.
 #[inline(always)]
-fn grid4(t: V4, cells: f32, hw: f32, fw: V4) -> V4 {
+fn $grid(t: $V, cells: f32, hw: f32, fw: $V) -> $V {
     let fw = fw * cells;
     let aa = fw.maxf(1e-4);
     let inv = 1.0 / aa;
@@ -594,10 +599,10 @@ fn grid4(t: V4, cells: f32, hw: f32, fw: V4) -> V4 {
 /// footprint `fw` (cells per pixel) for antialiasing and half-width `hw`:
 /// 1 hexagon edges, 2 dots, 3 circuit traces with pads.
 #[inline(always)]
-fn pattern4(kind: u8, x: V4, y: V4, fw: V4, hw: f32) -> V4 {
+fn $pattern(kind: u8, x: $V, y: $V, fw: $V, hw: f32) -> $V {
     let aa = fw.maxf(1e-4);
     // Coverage of a band of half-width hw at distance d.
-    let band = |d: V4| ((V4::splat(hw) - d) / aa + 0.5).clamp(0.0, 1.0);
+    let band = |d: $V| (($V::splat(hw) - d) / aa + 0.5).clamp(0.0, 1.0);
     // Patterns denser than ~2 px per cell fade to their mean instead of shimmering.
     let fade = (2.0 - fw * 4.0).clamp(0.0, 1.0);
     let cov = match kind {
@@ -607,7 +612,7 @@ fn pattern4(kind: u8, x: V4, y: V4, fw: V4, hw: f32) -> V4 {
             let (ax, ay) = ((x / sx).fract() * sx - sx * 0.5, (y / sy).fract() * sy - sy * 0.5);
             let (bxx, byy) = (((x - sx * 0.5) / sx).fract() * sx - sx * 0.5, ((y - sy * 0.5) / sy).fract() * sy - sy * 0.5);
             let use_a = (ax * ax + ay * ay).lt(bxx * bxx + byy * byy);
-            let (gx, gy) = (V4::select(use_a, ax, bxx).abs(), V4::select(use_a, ay, byy).abs());
+            let (gx, gy) = ($V::select(use_a, ax, bxx).abs(), $V::select(use_a, ay, byy).abs());
             let e = (gx * 0.5 + gy * 0.866_025_4).max(gx);
             band(0.5 - e)
         }
@@ -623,38 +628,18 @@ fn pattern4(kind: u8, x: V4, y: V4, fw: V4, hw: f32) -> V4 {
             let h = ((cx * 0.1031 + cy * 0.113_69) * (cx * 0.0973 + cy * 0.1099 + 33.33)).fract();
             let (fx, fy) = ((x - cx - 0.5).abs(), (y - cy - 0.5).abs());
             let horiz = h.ltf(0.5);
-            let trace = band(V4::select(horiz, fy, fx));
+            let trace = band($V::select(horiz, fy, fx));
             let pad = band((fx * fx + fy * fy).sqrt() - hw * 2.5);
-            trace.max(V4::select(h.gtf(0.8), pad, V4::splat(0.0)))
+            trace.max($V::select(h.gtf(0.8), pad, $V::splat(0.0)))
         }
     };
     cov * fade + (1.0 - fade) * (2.0 * hw).min(1.0) * 0.5
 }
 
-/// Pixels waiting to be shaded: passing pixels from successive rows and
-/// triangles are packed into full groups of four before shading, so small
-/// triangles don't waste SIMD lanes.
-#[derive(Debug, Default)]
-struct Queue {
-    n: usize,
-    idx: [usize; 4],
-    /// 1/w and varyings/w (divided at flush).
-    q: [f32; 4],
-    a: [[f32; 4]; NV],
-    fw: [[f32; 4]; 2],
-    /// Screen gradients of the owning triangle for anisotropic filtering (see [`TriGrad`]).
-    g: [[f32; 4]; 6],
-}
-
-/// Per-triangle screen-space gradients of 1/w and u/w, v/w along x and y:
-/// `[dq/dx, dq/dy, d(u/w)/dx, d(u/w)/dy, d(v/w)/dx, d(v/w)/dy]`. With the
-/// per-pixel 1/w and uv they give exact per-pixel UV derivatives.
-type TriGrad = [f32; 6];
-
 /// Per-pixel UV derivatives `[du/dx, dv/dx, du/dy, dv/dy]` from the triangle's
 /// gradients `g` (lanes), the pixel's `u, v` and `iw` = w.
 #[inline(always)]
-fn uv_derivs(g: &[V4; 6], u: V4, v: V4, iw: V4) -> [V4; 4] {
+fn $uvd(g: &[$V; 6], u: $V, v: $V, iw: $V) -> [$V; 4] {
     [(g[2] - u * g[0]) * iw, (g[4] - v * g[0]) * iw, (g[3] - u * g[1]) * iw, (g[5] - v * g[1]) * iw]
 }
 
@@ -662,42 +647,38 @@ fn uv_derivs(g: &[V4; 6], u: V4, v: V4, iw: V4) -> [V4; 4] {
 /// towards 1, and channels that still exceed 1 burn towards white instead
 /// of clipping per channel.
 #[inline(always)]
-fn pack4(c: [V4; 3]) -> [u32; 4] {
+fn $pack(c: [$V; 3]) -> [u32; $N] {
     let (r, g, b) = (c[0].maxf(0.0), c[1].maxf(0.0), c[2].maxf(0.0));
     let l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
     let x = (l - 0.6).maxf(0.0);
-    let s = V4::select(l.gtf(0.6), (0.6 + x / (1.0 + x * 2.5)) / l.maxf(1e-6), V4::splat(1.0));
+    let s = $V::select(l.gtf(0.6), (0.6 + x / (1.0 + x * 2.5)) / l.maxf(1e-6), $V::splat(1.0));
     let (r, g, b) = (r * s, g * s, b * s);
     let m = r.max(g).max(b).maxf(1.0);
     let w = ((m - 1.0) * 0.2).minf(0.75);
     let inv = 1.0 / m;
-    let t = |v: V4| {
+    let t = |v: $V| {
         let v = v * inv;
         v + (1.0 - v) * w
     };
-    V4::pack_rgb(t(r), t(g), t(b))
+    $V::pack_rgb(t(r), t(g), t(b))
 }
 
-#[cfg(test)]
-fn pack(c: [f32; 3]) -> u32 {
-    pack4([V4::splat(c[0]), V4::splat(c[1]), V4::splat(c[2])])[0]
-}
 
 impl Shade<'_> {
     #[inline(always)]
-    fn env4(&self, r: &[V4; 3]) -> [V4; 3] {
+    fn $env(&self, r: &[$V; 3]) -> [$V; 3] {
         let l = self.l;
         let up = r[1].clamp(-1.0, 1.0);
-        let band = peak4(up, 3.0);
+        let band = $peak(up, 3.0);
         let above = up.gtf(0.0);
-        let mut e: [V4; 3] = core::array::from_fn(|k| {
-            let sg = V4::select(above, V4::splat(l.sky[k]), V4::splat(l.ground[k]));
+        let mut e: [$V; 3] = core::array::from_fn(|k| {
+            let sg = $V::select(above, $V::splat(l.sky[k]), $V::splat(l.ground[k]));
             sg + (l.horizon[k] - sg) * band
         });
         if self.strips_on {
             // Studio softboxes: a high horizontal strip and two vertical panels.
-            let side = peak4(r[0] - 0.72, 10.0) + 0.6 * peak4(r[0] + 0.55, 16.0);
-            let st = peak4(up - 0.55, 14.0) + V4::select(up.gtf(-0.25), side, V4::splat(0.0));
+            let side = $peak(r[0] - 0.72, 10.0) + 0.6 * $peak(r[0] + 0.55, 16.0);
+            let st = $peak(up - 0.55, 14.0) + $V::select(up.gtf(-0.25), side, $V::splat(0.0));
             for (k, ek) in e.iter_mut().enumerate() {
                 *ek = *ek + st * l.strips[k];
             }
@@ -705,100 +686,45 @@ impl Shade<'_> {
         e
     }
 
-    /// Sample the texture for four lanes (RGBA as V4s).
-    #[inline(always)]
-    fn sample4(&self, t: &Texture, u: V4, v: V4, fwu: V4, fwv: V4, d: Option<&[V4; 4]>) -> [V4; 4] {
-        let m = self.m;
-        let (ru, rv) = (m.tex_repeat[0], m.tex_repeat[1]);
-        if let Some(d) = d {
-            let (u, v) = (u * ru, v * rv);
-            let (ux, vx, uy, vy) = (d[0] * ru, d[1] * rv, d[2] * ru, d[3] * rv);
-            if let Some(c) = t.sample_aniso_lanes(u, v, [ux, vx], [uy, vy]) {
-                return c;
-            }
-            let (u, v) = (u.to_array(), v.to_array());
-            let (ux, vx, uy, vy) = (ux.to_array(), vx.to_array(), uy.to_array(), vy.to_array());
-            return V4::transpose(core::array::from_fn(|l| t.sample_aniso(u[l], v[l], [ux[l], vx[l]], [uy[l], vy[l]])));
-        }
-        let (tw, th) = (t.width() as f32 * ru, t.height() as f32 * rv);
-        let (u, v, fu, fv) = (u * ru, v * rv, fwu * tw, fwv * th);
-        // f32::max ignores a NaN operand where the SIMD max may not: lanes path only when both are numbers.
-        let (fua, fva) = (fu.to_array(), fv.to_array());
-        if fua.iter().chain(&fva).all(|x| !x.is_nan()) {
-            return t.sample_lanes(u, v, fu.max(fv));
-        }
-        let (u, v) = (u.to_array(), v.to_array());
-        V4::transpose(core::array::from_fn(|l| t.sample_v(u[l], v[l], fua[l].max(fva[l]))))
-    }
-
     /// Shade four pixels at once.
     #[inline(always)]
     #[allow(clippy::needless_range_loop)]
     #[allow(clippy::too_many_arguments)]
-    fn px4(&self, n: [V4; 3], p: [V4; 3], u: V4, v: V4, fwu: V4, fwv: V4, d: Option<&[V4; 4]>) -> [V4; 3] {
+    fn $px(&self, n: [$V; 3], p: [$V; 3], u: $V, v: $V, fwu: $V, fwv: $V, d: Option<&[$V; 4]>) -> [$V; 3] {
         if self.unlit {
-            return self.px4_unlit(p, u, v, fwu, fwv, d);
+            return self.$unlit(p, u, v, fwu, fwv, d);
         }
         let (m, l) = (self.m, self.l);
         let view = [self.eye[0] - p[0], self.eye[1] - p[1], self.eye[2] - p[2]];
-        let d2 = dot3(&view, &view).maxf(1e-12);
+        let d2 = $dot(&view, &view).maxf(1e-12);
         let rd = 1.0 / d2.sqrt();
         let vd = [view[0] * rd, view[1] * rd, view[2] * rd];
-        let rn = 1.0 / dot3(&n, &n).sqrt().maxf(1e-9);
-        let ndv0 = dot3(&n, &vd) * rn;
+        let rn = 1.0 / $dot(&n, &n).sqrt().maxf(1e-9);
+        let ndv0 = $dot(&n, &vd) * rn;
         // Normalise and flip back faces (two-sided lighting) with one scale.
-        let sc = V4::select(ndv0.ltf(0.0), -rn, rn);
+        let sc = $V::select(ndv0.ltf(0.0), -rn, rn);
         let n = [n[0] * sc, n[1] * sc, n[2] * sc];
         let ndv = ndv0.abs();
-        let key = [V4::splat(self.key[0]), V4::splat(self.key[1]), V4::splat(self.key[2])];
-        let mut dk = dot3(&n, &key).maxf(0.0);
-        if let Some((sd, size, svp, bias, strength)) = self.shadow {
-            // Light-space position → shadow map texel; 2×2 PCF.
-            let lw = p[0] * svp[3] + p[1] * svp[7] + p[2] * svp[11] + svp[15];
-            let ilw = 1.0 / lw;
-            let lx = (p[0] * svp[0] + p[1] * svp[4] + p[2] * svp[8] + svp[12]) * ilw;
-            let ly = (p[0] * svp[1] + p[1] * svp[5] + p[2] * svp[9] + svp[13]) * ilw;
-            let lz = (p[0] * svp[2] + p[1] * svp[6] + p[2] * svp[10] + svp[14]) * ilw - bias;
-            let hs = size as f32 * 0.5;
-            let (tx, ty) = ((lx * hs + hs - 0.5).to_array(), (hs - ly * hs - 0.5).to_array());
-            // Texel addresses and weights per lane; the depth tests and the blend for
-            // all four lanes at once (the same operations per lane as one at a time).
-            let (mut q, mut wx, mut wy, mut inside) = ([[f32::INFINITY; 4]; 4], [0.0f32; 4], [0.0f32; 4], [0.0f32; 4]);
-            for l in 0..4 {
-                let (fx, fy) = (tx[l], ty[l]);
-                if !(fx > -1.0 && fy > -1.0 && fx < size as f32 && fy < size as f32) {
-                    continue; // outside the map: lit
-                }
-                let (x0, y0) = (fx.max(0.0) as usize, fy.max(0.0) as usize);
-                let (x1, y1) = ((x0 + 1).min(size - 1), (y0 + 1).min(size - 1));
-                (wx[l], wy[l]) = ((fx - x0 as f32).clamp(0.0, 1.0), (fy - y0 as f32).clamp(0.0, 1.0));
-                (q[0][l], q[1][l], q[2][l], q[3][l]) = (sd[y0 * size + x0], sd[y0 * size + x1], sd[y1 * size + x0], sd[y1 * size + x1]);
-                inside[l] = 1.0;
-            }
-            let t = |d: [f32; 4]| V4::select(lz.le(V4::from_array(d)), V4::splat(1.0), V4::splat(0.0));
-            let (t00, t10, t01, t11) = (t(q[0]), t(q[1]), t(q[2]), t(q[3]));
-            let (ax, ay) = (V4::from_array(wx), V4::from_array(wy));
-            let top = t00 + (t10 - t00) * ax;
-            let bot = t01 + (t11 - t01) * ax;
-            let lit = V4::select(V4::from_array(inside).gtf(0.5), top + (bot - top) * ay, V4::splat(1.0));
-            let k = 1.0 - (1.0 - lit) * strength;
-            dk = dk * k;
+        let key = [$V::splat(self.key[0]), $V::splat(self.key[1]), $V::splat(self.key[2])];
+        let mut dk = $dot(&n, &key).maxf(0.0);
+        if self.shadow.is_some() {
+            dk = dk * self.$shadow(&p);
         }
         let dk = dk;
         let df = (n[0] * self.fill[0] + n[1] * self.fill[1] + n[2] * self.fill[2]).maxf(0.0);
         let h = [vd[0] + self.key[0], vd[1] + self.key[1], vd[2] + self.key[2]];
-        let x = (dot3(&n, &h) / dot3(&h, &h).sqrt().maxf(1e-9)).maxf(0.0);
+        let x = ($dot(&n, &h) / $dot(&h, &h).sqrt().maxf(1e-9)).maxf(0.0);
         // Schlick's cheap power: x / (s − s·x + x) ≈ x^s.
         let ss = m.shininess;
-        let sp = V4::select(dk.gtf(0.0), x / (ss - ss * x + x) * m.specular, V4::splat(0.0));
+        let sp = $V::select(dk.gtf(0.0), x / (ss - ss * x + x) * m.specular, $V::splat(0.0));
         let fr = 1.0 - ndv;
         let rim = fr * fr * fr * m.rim;
         let (ka, kk, kf) = (&self.lit[0], &self.lit[1], &self.lit[2]);
         let texel = match self.tex {
-            Some(t) if m.tex_mode != 0 => Some(self.sample4(t, u, v, fwu, fwv, d)),
+            Some(t) if m.tex_mode != 0 => Some(self.$sample(t, u, v, fwu, fwv, d)),
             _ => None,
         };
-        let mut c: [V4; 3] = match (texel, m.tex_mode) {
+        let mut c: [$V; 3] = match (texel, m.tex_mode) {
             // Albedo: the texture tints the lit (diffuse + ambient) colour.
             (Some(tx), 1) => core::array::from_fn(|k| tx[k] * (dk * kk[k] + df * kf[k] + ka[k]) + sp * l.key_color[k] + rim * l.rim_color[k]),
             _ => core::array::from_fn(|k| ka[k] + dk * kk[k] + df * kf[k] + sp * l.key_color[k] + rim * l.rim_color[k]),
@@ -808,28 +734,30 @@ impl Shade<'_> {
             let b = self.base;
             for pl in &self.pl[..self.npl] {
                 let lv = [pl[0] - p[0], pl[1] - p[1], pl[2] - p[2]];
-                let d2 = dot3(&lv, &lv).maxf(1e-6);
+                let d2 = $dot(&lv, &lv).maxf(1e-6);
                 let r2 = pl[6] * pl[6];
-                // All four pixels beyond the falloff window: nothing to add.
-                if d2.to_array().iter().all(|d| *d >= 16.0 * r2) {
+                // Groups of four pixels all beyond the falloff window get nothing added
+                // (the lanes of such a group keep their colour).
+                let far = $far(d2, 16.0 * r2);
+                if far.bits() == $all {
                     continue;
                 }
                 let win = (1.0 - d2 * (1.0 / (16.0 * r2))).clamp(0.0, 1.0);
                 let att = r2 / (d2 + r2) * win * win * pl[7];
                 let il = 1.0 / d2.sqrt();
                 let ld = [lv[0] * il, lv[1] * il, lv[2] * il];
-                let ndl = dot3(&n, &ld).maxf(0.0);
+                let ndl = $dot(&n, &ld).maxf(0.0);
                 let hp = [ld[0] + vd[0], ld[1] + vd[1], ld[2] + vd[2]];
-                let xh = (dot3(&n, &hp) / dot3(&hp, &hp).sqrt().maxf(1e-9)).maxf(0.0);
-                let spec = V4::select(ndl.gtf(0.0), xh / (ss - ss * xh + xh) * m.specular, V4::splat(0.0));
+                let xh = ($dot(&n, &hp) / $dot(&hp, &hp).sqrt().maxf(1e-9)).maxf(0.0);
+                let spec = $V::select(ndl.gtf(0.0), xh / (ss - ss * xh + xh) * m.specular, $V::splat(0.0));
                 let dif = ndl * att * m.diffuse;
                 let sat = spec * att;
                 for k in 0..3 {
                     let alb = match (texel, m.tex_mode) {
                         (Some(tx), 1) => tx[k] * b[k],
-                        _ => V4::splat(b[k]),
+                        _ => $V::splat(b[k]),
                     };
-                    c[k] = c[k] + (alb * dif + sat) * pl[3 + k];
+                    c[k] = $V::select(far, c[k], c[k] + (alb * dif + sat) * pl[3 + k]);
                 }
             }
         }
@@ -841,12 +769,12 @@ impl Shade<'_> {
         }
         if self.env_on {
             let r = [2.0 * ndv * n[0] - vd[0], 2.0 * ndv * n[1] - vd[1], 2.0 * ndv * n[2] - vd[2]];
-            let mut e = self.env4(&r);
+            let mut e = self.$env(&r);
             if m.iridescence > 0.0 {
                 // Thin film: tint the reflection with a palette indexed by the viewing angle.
                 let t = m.iridescence;
                 let xx = fr * 1.6 + m.hue;
-                let pal = [wave4(xx), wave4(xx + 0.33), wave4(xx + 0.67)];
+                let pal = [$wave(xx), $wave(xx + 0.33), $wave(xx + 0.67)];
                 for k in 0..3 {
                     e[k] = e[k] * ((1.0 - t) + pal[k] * (t * 1.7));
                     c[k] = c[k] + pal[k] * fr * (t * 0.3);
@@ -874,34 +802,34 @@ impl Shade<'_> {
                 let t4 = t2 * t2;
                 t4 * t4 * t
             } else {
-                V4::splat(0.0)
+                $V::splat(0.0)
             };
-            let zero = V4::splat(0.0);
+            let zero = $V::splat(0.0);
             let lm = if m.lines <= 0.0 {
                 zero
             } else if m.pattern == 0 {
-                let lu = if m.grid[0] > 0.0 { grid4(u, m.grid[0], m.line_width, fwu) } else { zero };
-                let lv = if m.grid[1] > 0.0 { grid4(v, m.grid[1], m.line_width, fwv) } else { zero };
+                let lu = if m.grid[0] > 0.0 { $grid(u, m.grid[0], m.line_width, fwu) } else { zero };
+                let lv = if m.grid[1] > 0.0 { $grid(v, m.grid[1], m.line_width, fwv) } else { zero };
                 lu.max(lv)
             } else {
-                pattern4(m.pattern, u * m.grid[0].max(1e-3), v * m.grid[1].max(1e-3), (fwu * m.grid[0]).max(fwv * m.grid[1]), m.line_width)
+                $pattern(m.pattern, u * m.grid[0].max(1e-3), v * m.grid[1].max(1e-3), (fwu * m.grid[0]).max(fwv * m.grid[1]), m.line_width)
             };
             let e = lm * m.lines * (1.0 + 3.0 * band) + band * m.pulse;
             for k in 0..3 {
                 c[k] = c[k] + e * m.line_color[k];
             }
         }
-        self.fog4(&mut c, &p, d2, rd);
+        self.$fog(&mut c, &p, d2, rd);
         c
     }
 
     /// Distance fog and ground fog (`d2`, `rd`: squared distance to the eye and its inverse root).
     #[inline(always)]
-    fn fog4(&self, c: &mut [V4; 3], p: &[V4; 3], d2: V4, rd: V4) {
+    fn $fog(&self, c: &mut [$V; 3], p: &[$V; 3], d2: $V, rd: $V) {
         let (m, l) = (self.m, self.l);
         if (self.fog_on || l.ground_fog[2] > 0.0) && m.fog > 0.0 {
             let dist = d2 * rd;
-            let mut f = if self.fog_on { ((dist - l.fog[0]) * self.fog_inv).clamp(0.0, 1.0) } else { V4::splat(0.0) };
+            let mut f = if self.fog_on { ((dist - l.fog[0]) * self.fog_inv).clamp(0.0, 1.0) } else { $V::splat(0.0) };
             if l.ground_fog[2] > 0.0 {
                 let gf = l.ground_fog;
                 let low = ((gf[1] - p[1]) * (1.0 / (gf[1] - gf[0]).max(1e-3))).clamp(0.0, 1.0);
@@ -920,16 +848,16 @@ impl Shade<'_> {
     /// tinted or added to by the texture, then fogged — the same values the
     /// full shader computes, without the lighting maths.
     #[inline(always)]
-    fn px4_unlit(&self, p: [V4; 3], u: V4, v: V4, fwu: V4, fwv: V4, d: Option<&[V4; 4]>) -> [V4; 3] {
+    fn $unlit(&self, p: [$V; 3], u: $V, v: $V, fwu: $V, fwv: $V, d: Option<&[$V; 4]>) -> [$V; 3] {
         let m = self.m;
         let ka = &self.lit[0];
         let texel = match self.tex {
-            Some(t) if m.tex_mode != 0 => Some(self.sample4(t, u, v, fwu, fwv, d)),
+            Some(t) if m.tex_mode != 0 => Some(self.$sample(t, u, v, fwu, fwv, d)),
             _ => None,
         };
-        let mut c: [V4; 3] = match (texel, m.tex_mode) {
+        let mut c: [$V; 3] = match (texel, m.tex_mode) {
             (Some(tx), 1) => core::array::from_fn(|k| tx[k] * ka[k]),
-            _ => core::array::from_fn(|k| V4::splat(ka[k])),
+            _ => core::array::from_fn(|k| $V::splat(ka[k])),
         };
         if let (Some(tx), 2) = (texel, m.tex_mode) {
             for k in 0..3 {
@@ -938,10 +866,131 @@ impl Shade<'_> {
         }
         if (self.fog_on || self.l.ground_fog[2] > 0.0) && m.fog > 0.0 {
             let view = [self.eye[0] - p[0], self.eye[1] - p[1], self.eye[2] - p[2]];
-            let d2 = dot3(&view, &view).maxf(1e-12);
-            self.fog4(&mut c, &p, d2, 1.0 / d2.sqrt());
+            let d2 = $dot(&view, &view).maxf(1e-12);
+            self.$fog(&mut c, &p, d2, 1.0 / d2.sqrt());
         }
         c
+    }
+}
+
+    };
+}
+shader!(V4, 4, 15, dot3, wave4, peak4, grid4, pattern4, uv_derivs, pack4, env4, px4, fog4, px4_unlit, sample4, shadow4, far4);
+shader!(V8, 8, 255, dot3_8, wave8, peak8, grid8, pattern8, uv_derivs8, pack8, env8, px8, fog8, px8_unlit, sample8, shadow8, far8);
+
+/// Mask of the lanes in groups of four whose squared distances are all ≥ `t`.
+#[inline(always)]
+fn far4(d2: V4, t: f32) -> Mask4 {
+    Mask4::from_bits(if d2.to_array().iter().all(|d| *d >= t) { 15 } else { 0 })
+}
+#[inline(always)]
+fn far8(d2: V8, t: f32) -> M8 {
+    let a = d2.to_array();
+    M8::from_bits(if a[..4].iter().all(|d| *d >= t) { 15 } else { 0 } | if a[4..].iter().all(|d| *d >= t) { 240 } else { 0 })
+}
+
+/// Pixels waiting to be shaded: passing pixels from successive rows and
+/// triangles are packed into full groups of four before shading, so small
+/// triangles don't waste SIMD lanes.
+#[derive(Debug, Default)]
+struct Queue {
+    n: usize,
+    idx: [usize; 4],
+    /// 1/w and varyings/w (divided at flush).
+    q: [f32; 4],
+    a: [[f32; 4]; NV],
+    fw: [[f32; 4]; 2],
+    /// Screen gradients of the owning triangle for anisotropic filtering (see [`TriGrad`]).
+    g: [[f32; 4]; 6],
+}
+
+/// Per-triangle screen-space gradients of 1/w and u/w, v/w along x and y:
+/// `[dq/dx, dq/dy, d(u/w)/dx, d(u/w)/dy, d(v/w)/dx, d(v/w)/dy]`. With the
+/// per-pixel 1/w and uv they give exact per-pixel UV derivatives.
+type TriGrad = [f32; 6];
+
+#[cfg(test)]
+fn pack(c: [f32; 3]) -> u32 {
+    pack4([V4::splat(c[0]), V4::splat(c[1]), V4::splat(c[2])])[0]
+}
+
+impl Shade<'_> {
+    /// Sample the texture for four lanes (RGBA as V4s).
+    #[inline(always)]
+    fn sample4(&self, t: &Texture, u: V4, v: V4, fwu: V4, fwv: V4, d: Option<&[V4; 4]>) -> [V4; 4] {
+        let m = self.m;
+        let (ru, rv) = (m.tex_repeat[0], m.tex_repeat[1]);
+        if let Some(d) = d {
+            let (u, v) = (u * ru, v * rv);
+            let (ux, vx, uy, vy) = (d[0] * ru, d[1] * rv, d[2] * ru, d[3] * rv);
+            if let Some(c) = t.sample_aniso_lanes(u, v, [ux, vx], [uy, vy]) {
+                return c;
+            }
+            let (u, v) = (u.to_array(), v.to_array());
+            let (ux, vx, uy, vy) = (ux.to_array(), vx.to_array(), uy.to_array(), vy.to_array());
+            return V4::transpose(core::array::from_fn(|l| t.sample_aniso(u[l], v[l], [ux[l], vx[l]], [uy[l], vy[l]])));
+        }
+        let (tw, th) = (t.width() as f32 * ru, t.height() as f32 * rv);
+        let (u, v, fu, fv) = (u * ru, v * rv, fwu * tw, fwv * th);
+        // f32::max ignores a NaN operand where the SIMD max may not: lanes path only when both are numbers.
+        let (fua, fva) = (fu.to_array(), fv.to_array());
+        if fua.iter().chain(&fva).all(|x| !x.is_nan()) {
+            return t.sample_lanes(u, v, fu.max(fv));
+        }
+        let (u, v) = (u.to_array(), v.to_array());
+        V4::transpose(core::array::from_fn(|l| t.sample_v(u[l], v[l], fua[l].max(fva[l]))))
+    }
+
+    /// [`Shade::sample4`] for eight lanes: two groups of four.
+    #[inline(always)]
+    fn sample8(&self, t: &Texture, u: V8, v: V8, fwu: V8, fwv: V8, d: Option<&[V8; 4]>) -> [V8; 4] {
+        let (u, v, fwu, fwv) = (u.halves(), v.halves(), fwu.halves(), fwv.halves());
+        let d = d.map(|d| d.map(V8::halves));
+        let lo = self.sample4(t, u.0, v.0, fwu.0, fwv.0, d.map(|d| d.map(|h| h.0)).as_ref());
+        let hi = self.sample4(t, u.1, v.1, fwu.1, fwv.1, d.map(|d| d.map(|h| h.1)).as_ref());
+        core::array::from_fn(|k| V8::from_halves(lo[k], hi[k]))
+    }
+
+    /// Key-light visibility of four pixels from the shadow map (2×2 PCF): `1 − (1 − lit) × strength`.
+    #[inline(always)]
+    fn shadow4(&self, p: &[V4; 3]) -> V4 {
+        let Some((sd, size, svp, bias, strength)) = self.shadow else { return V4::splat(1.0) };
+            // Light-space position → shadow map texel; 2×2 PCF.
+        let lw = p[0] * svp[3] + p[1] * svp[7] + p[2] * svp[11] + svp[15];
+        let ilw = 1.0 / lw;
+        let lx = (p[0] * svp[0] + p[1] * svp[4] + p[2] * svp[8] + svp[12]) * ilw;
+        let ly = (p[0] * svp[1] + p[1] * svp[5] + p[2] * svp[9] + svp[13]) * ilw;
+        let lz = (p[0] * svp[2] + p[1] * svp[6] + p[2] * svp[10] + svp[14]) * ilw - bias;
+        let hs = size as f32 * 0.5;
+        let (tx, ty) = ((lx * hs + hs - 0.5).to_array(), (hs - ly * hs - 0.5).to_array());
+        // Texel addresses and weights per lane; the depth tests and the blend for
+        // all four lanes at once (the same operations per lane as one at a time).
+        let (mut q, mut wx, mut wy, mut inside) = ([[f32::INFINITY; 4]; 4], [0.0f32; 4], [0.0f32; 4], [0.0f32; 4]);
+        for l in 0..4 {
+            let (fx, fy) = (tx[l], ty[l]);
+            if !(fx > -1.0 && fy > -1.0 && fx < size as f32 && fy < size as f32) {
+                continue; // outside the map: lit
+            }
+            let (x0, y0) = (fx.max(0.0) as usize, fy.max(0.0) as usize);
+            let (x1, y1) = ((x0 + 1).min(size - 1), (y0 + 1).min(size - 1));
+            (wx[l], wy[l]) = ((fx - x0 as f32).clamp(0.0, 1.0), (fy - y0 as f32).clamp(0.0, 1.0));
+            (q[0][l], q[1][l], q[2][l], q[3][l]) = (sd[y0 * size + x0], sd[y0 * size + x1], sd[y1 * size + x0], sd[y1 * size + x1]);
+            inside[l] = 1.0;
+        }
+        let t = |d: [f32; 4]| V4::select(lz.le(V4::from_array(d)), V4::splat(1.0), V4::splat(0.0));
+        let (t00, t10, t01, t11) = (t(q[0]), t(q[1]), t(q[2]), t(q[3]));
+        let (ax, ay) = (V4::from_array(wx), V4::from_array(wy));
+        let top = t00 + (t10 - t00) * ax;
+        let bot = t01 + (t11 - t01) * ax;
+        let lit = V4::select(V4::from_array(inside).gtf(0.5), top + (bot - top) * ay, V4::splat(1.0));
+        1.0 - (1.0 - lit) * strength
+            }
+
+    /// [`Shade::shadow4`] for eight lanes.
+    #[inline(always)]
+    fn shadow8(&self, p: &[V8; 3]) -> V8 {
+        let h = p.map(V8::halves);
+        V8::from_halves(self.shadow4(&[h[0].0, h[1].0, h[2].0]), self.shadow4(&[h[0].1, h[1].1, h[2].1]))
     }
 }
 
@@ -1923,10 +1972,26 @@ fn shade_run<const MODE: u8>(qu: &mut Queue, color: &mut [u32], sh: &Shade, gl: 
         shaded += qu.n;
         flush::<MODE>(qu, color, sh, gl);
     }
+    // Eight pixels at a time, then four: each lane computes what it would in a
+    // group of four (k + l is exact in f32), so the width changes no bit.
+    let (fu8, fv8) = (V8::splat(fwu), V8::splat(fwv));
+    let lanes8 = V8::from_array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]);
+    let mut k = k0;
+    let mut chunks = color[g0..g1].chunks_exact_mut(8);
+    for dst in &mut chunks {
+        let kk = V8::splat(k as f32) + lanes8;
+        let iw = 1.0 / (kk * dq + q0);
+        let a: [V8; NV] = core::array::from_fn(|c| (kk * da[c] + s0[c]) * iw);
+        let d = sh.aniso.then(|| uv_derivs8(&tg.map(V8::splat), a[6], a[7], iw));
+        let px = pack8(sh.px8([a[0], a[1], a[2]], [a[3], a[4], a[5]], a[6], a[7], fu8, fv8, d.as_ref()));
+        for l in 0..8 {
+            put::<MODE>(&mut dst[l], px[l], gl);
+        }
+        k += 8;
+    }
     let (fu, fv) = (V4::splat(fwu), V4::splat(fwv));
     let lanes = V4::new(0.0, 1.0, 2.0, 3.0);
-    let mut k = k0;
-    for dst in color[g0..g1].chunks_exact_mut(4) {
+    for dst in chunks.into_remainder().chunks_exact_mut(4) {
         let kf = k as f32;
         let kk = V4::splat(kf) + lanes;
         let iw = 1.0 / (kk * dq + q0);
