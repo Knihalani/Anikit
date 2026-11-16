@@ -774,7 +774,7 @@ const farH = (x, z) => {
   return h;
 };
 function buildRanges() {
-  const NR = 200, NA = 340;
+  const NR = 200, NA = 337;   // NA - 1 divisible by 4 for the LOD strides
   const r0 = 650, r1 = 30000;
   const a0 = -2.0, a1 = 2.0;
   const pos = new Float32Array(NR * NA * 3), nor = new Float32Array(NR * NA * 3);
@@ -794,12 +794,34 @@ function buildRanges() {
       k += 3;
     }
   }
-  const idx = new Uint32Array((NR - 1) * (NA - 1) * 6);
-  k = 0;
-  for (let i = 0; i < NR - 1; i++) for (let j = 0; j < NA - 1; j++) {
-    const a = i * NA + j, b = a + 1, c = a + NA, d = c + 1;
-    idx[k++] = a; idx[k++] = c; idx[k++] = b; idx[k++] = b; idx[k++] = c; idx[k++] = d;
+  // Distance LOD: full density near, every 2nd ring/column from 8 km, every 4th from 22 km.
+  // Rows of different stride are stitched with fans, so there are no cracks.
+  const lr = Math.log(r1 / r0);
+  const ringAt = (r) => Math.round(Math.log(r / r0) / lr * (NR - 1));
+  const rows = [];
+  for (let i = 0; i < NR;) {
+    const st = i < ringAt(8000) ? 1 : i < ringAt(22000) ? 2 : 4;
+    rows.push(i, st);
+    if (i === NR - 1) break;
+    i = Math.min(NR - 1, i + st);
   }
+  const tmp = [];
+  for (let q = 0; q + 2 < rows.length; q += 2) {
+    const ia = rows[q], sa = rows[q + 1], ib = rows[q + 2], sb = rows[q + 3];
+    const s2 = Math.max(sa, sb), sf = Math.min(sa, sb);
+    // the fine side of this strip (if the strides differ) is ring ia, which keeps stride sa
+    for (let j = 0; j + s2 < NA; j += s2) {
+      const A = ia * NA, B = ib * NA;
+      if (sa === sb) {
+        tmp.push(A + j, B + j, A + j + sa, A + j + sa, B + j, B + j + sa);
+      } else {
+        // fan: coarse edge B j..j+s2, fine edge A j, j+sf, ..., j+s2
+        for (let f = j; f < j + s2; f += sf) tmp.push(A + f, B + j, A + f + sf);
+        tmp.push(A + j + s2, B + j, B + j + s2);
+      }
+    }
+  }
+  const idx = new Uint32Array(tmp);
   const sh = bakeShadows(pos, NR, NA, r0, r1, a0, a1, BAKE_SUN, 26000, 48, 30);
   return { pos, nor, idx, sh };
 }
