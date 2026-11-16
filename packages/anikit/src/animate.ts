@@ -336,9 +336,9 @@ export function _setCodegen(on: boolean | undefined): boolean | undefined {
   return prev;
 }
 /**
- * Dense tables of a single-property key set, by node index: the handle of
- * the Part writing through that key set's runner there (0 if none) and its
- * target. Only Parts on the compact path without `onUpdate` are entered
+ * Dense tables of a key set, by node index: the handle of the Part writing
+ * through that key set's runner there (0 if none), its target and its output
+ * offset. Only Parts on the compact path without `onUpdate` are entered
  * (`Part.slot`), and they leave on `release` and `dispose`, so the runner
  * checks one handle and writes one target per record without loading the
  * record or the Part (the handle's generation guards reused indices).
@@ -346,6 +346,7 @@ export function _setCodegen(on: boolean | undefined): boolean | undefined {
 interface Slots {
   h: number[];
   t: unknown[];
+  a: number[];
 }
 function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner, Slots | null] | null {
   if (codegen === false) return null;
@@ -369,7 +370,7 @@ function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner, Slots | 
     // created animations (it may have moved: `ak_out0_epoch_ptr`). That loop
     // also reads the Parts from this key set's dense tables (`Slots`).
     const one = keys.length === 1 && offs[0] === 0;
-    const slots: Slots | null = one ? { h: [], t: [] } : null;
+    const slots: Slots = { h: [], t: [], a: [] };
     const run = (
       one
         ? new Function(
@@ -378,14 +379,14 @@ function makeWriter(keys: string[], offs: Int32Array): [Writer, Runner, Slots | 
             'const v0=w.ak_out0_ptr()>>>3,ep=w.ak_out0_epoch_ptr()>>>2,e0=U[ep];' +
             `for(;i<n;i++){if(U[ep]!==e0)break;const h=U[up+i],x=h&${INDEX_MASK};if(H[x]!==h)break;` +
             `T[x][${JSON.stringify(keys[0])}]=f[v0+x];}return i;}`,
-        )(slots!.h, slots!.t)
+        )(slots.h, slots.t)
         : new Function(
+          'H', 'T', 'A',
           'return function run(R,U,up,i,n,f,w){"use strict";' +
             'for(;i<n;i++){if(f.length===0)break;' +
-            `const h=U[up+i];const r=R[h&${INDEX_MASK}];` +
-            'if(r===undefined||r.h!==h||r.run!==run||r.pm!==1||r.upd)break;' +
-            `const t=r.pt,a=r.at;${stores}}return i;}`,
-        )()
+            `const h=U[up+i],x=h&${INDEX_MASK};if(H[x]!==h)break;` +
+            `const t=T[x],a=A[x];${stores}}return i;}`,
+        )(slots.h, slots.t, slots.a)
     ) as Runner;
     codegen = true;
     return [fn, run, slots];
@@ -499,13 +500,15 @@ class Part implements NodeRecord, Owner, Linked {
     const s = shared[4];
     if (s !== null && !this.upd) {
       const x = this.h & INDEX_MASK;
-      // Grow both tables densely (holes would make them sparse arrays).
+      // Grow the tables densely (holes would make them sparse arrays).
       while (s.h.length <= x) {
         s.h.push(0);
         s.t.push(undefined);
+        s.a.push(0);
       }
       s.h[x] = this.h;
       s.t[x] = t;
+      s.a[x] = this.at;
       this.slot = s;
     }
   }
