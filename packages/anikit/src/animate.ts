@@ -660,6 +660,9 @@ export function _setNumberTracks(on: boolean): boolean {
 }
 /** `false`: never create a multi-target animation's nodes in one batch (tests compare both). */
 let batchCreate = true;
+/** `_fast`'s value scratch (JS memory, not the core's), and whether a call is using it. */
+let fastVals = new Float64Array(64);
+let fastBusy = false;
 /** Testing hook: turn batched creation off/on; returns the previous state. */
 export function _setBatchCreate(on: boolean): boolean {
   const prev = batchCreate;
@@ -675,6 +678,91 @@ export function _setPackGroups(on: boolean): boolean {
   return prev;
 }
 
+
+/**
+ * `Animation._fast`'s reads: each target's current values (and `revert()`
+ * values into `rp`), and every target's keyframe values into `vals`.
+ * False if a target is an element or a needed current value is not a number.
+ */
+function readFast(
+  targets: Target[], keys: string[], specs: PropSpec[], cur: boolean[], rp: unknown[], vals: Float64Array,
+): boolean {
+  const n = targets.length, np = keys.length;
+  for (let i = 0, r = 0, at = 0; i < n; i++) {
+    const t = targets[i] as any;
+    if (isElement(t)) return false;
+    for (let pi = 0; pi < np; pi++) {
+      const key = keys[pi];
+      const v = t[key];
+      rp[r] = t;
+      rp[r + 1] = key;
+      rp[r + 2] = v;
+      r += 3;
+      let cn = 0;
+      if (cur[pi]) {
+        if (typeof v !== 'number') return false;
+        cn = v;
+      }
+      const raw = specs[pi].values as Array<number | null>;
+      if (raw.length === 1) {
+        vals[at++] = cn;
+        vals[at++] = raw[0] === null || raw[0] === undefined ? cn : raw[0];
+      } else {
+        for (let k = 0; k < raw.length; k++) {
+          const x = raw[k];
+          vals[at++] = x === null || x === undefined ? cn : x;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+/** `Animation._fast`: one Part per target, handles read from the f64 buffer at `base`. */
+function fastParts(
+  an: Animation, targets: Target[], keys: string[], base: number, tm: readonly [number, number, number, number],
+  claims: boolean, upd: boolean,
+): void {
+  const n = targets.length, np = keys.length;
+  const parts = an._parts;
+  for (let i = 0; i < n; i++) {
+    const target = targets[i];
+    const part = new Part(an, claims, an);
+    part.upd = upd;
+    // (Packed, like the general path's arrays: a holey one makes every
+    // loop over bindings polymorphic.)
+    const b: Binding[] = [];
+    for (let pi = 0; pi < np; pi++) b.push(new Binding(target, keys[pi], pi, pi, M_PROP, null, keys[pi], '', 0, -1, null, null));
+    part.b = b;
+    part.tm = tm;
+    // (int32, as wasm returns handles: keeps the field a small integer.)
+    part.h = F64[base + i] | 0;
+    parts.push(part);
+  }
+}
+
+/** `Animation._fast`: pack the group, then read every part's output location. */
+function fastPack(w: ReturnType<typeof core>, g: number, parts: Part[], base: number): void {
+  const n = parts.length;
+  // Output locations, after packing (the pack moves them).
+  if (packGroups) w.ak_group_pack(g);
+  for (let i = 0; i < n; i++) F64[base + i] = parts[i].h >>> 0;
+  w.ak_values_ptrs(n);
+  views();
+  for (let i = 0; i < n; i++) parts[i].at = F64[base + i] >>> 3;
+}
+
+/** `Animation._fast`: register the parts and claim their properties (may release older owners). */
+function fastLink(an: Animation, targets: Target[], claims: boolean): void {
+  const parts = an._parts;
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    register(part);
+    if (claims) claimAll(targets[i], part.b, part);
+    an._live++;
+    an._links.push(part);
+  }
+}
 
 /** Per-timeline/animation chain of last written values (timeline sequencing). */
 export type Chain = WeakMap<object, Map<string, Scalar>>;
@@ -861,7 +949,7 @@ export class Animation extends Playable {
   _parts: Part[] = [];
   private _group = 0;
   /** Parts that still write at least one property (see `_partEmpty`). */
-  private _live = 0;
+  _live = 0;
   /** The group's node record (registered while the group exists). */
   private _grec: NodeRecord | null = null;
   private _immediate = false;
@@ -991,7 +1079,7 @@ export class Animation extends Playable {
       return idx;
     };
 
-    const fast = batchCreate && n > 1 && !ctx.chain && !ctx.set && (o.repeatDelay ?? 0) <= 0 &&
+    const fast = batchCreate && n > 0 && !ctx.chain && !ctx.set && (o.repeatDelay ?? 0) <= 0 &&
       this._fast(targets, keys, specs, posts, dynamic, o, claims, reduce, repeat, direction, fill, easeList, baseEase);
     if (!fast) for (let i = 0; i < n; i++) {
       const target = targets[i];
@@ -1258,35 +1346,20 @@ export class Animation extends Playable {
       stride += nk;
     }
     // Current values (and the values `revert()` restores), read once.
+    // (`vals` is shared between calls unless a getter re-enters.)
     const rp: unknown[] = new Array(3 * n * np);
-    const vals = new Float64Array(n * stride);
-    for (let i = 0, r = 0, at = 0; i < n; i++) {
-      const t = targets[i] as any;
-      if (isElement(t)) return false;
-      for (let pi = 0; pi < np; pi++) {
-        const key = keys[pi];
-        const v = t[key];
-        rp[r] = t;
-        rp[r + 1] = key;
-        rp[r + 2] = v;
-        r += 3;
-        let cn = 0;
-        if (cur[pi]) {
-          if (typeof v !== 'number') return false;
-          cn = v;
-        }
-        const raw = specs[pi].values as Array<number | null>;
-        if (raw.length === 1) {
-          vals[at++] = cn;
-          vals[at++] = raw[0] === null || raw[0] === undefined ? cn : raw[0];
-        } else {
-          for (let k = 0; k < raw.length; k++) {
-            const x = raw[k];
-            vals[at++] = x === null || x === undefined ? cn : x;
-          }
-        }
-      }
+    const busy = fastBusy;
+    let vals = fastVals;
+    if (busy) vals = new Float64Array(n * stride);
+    else if (vals.length < n * stride) vals = fastVals = new Float64Array(Math.max(n * stride, 2 * vals.length));
+    fastBusy = true;
+    let ok: boolean;
+    try {
+      ok = readFast(targets, keys, specs, cur, rp, vals);
+    } finally {
+      fastBusy = busy;
     }
+    if (!ok) return false;
     if (warningsOn()) for (let pi = 0; pi < np; pi++) checkValues(keys[pi], Kind.Prop, specs[pi].values, targets[0]);
     // Offsets and easing ids per property (as `addTrack` sets them).
     const offs: Array<number[] | undefined> = [], eases: number[][] = [];
@@ -1345,40 +1418,23 @@ export class Animation extends Playable {
       f[at++] = ids.length;
       for (let k = 0; k < ids.length; k++) f[at++] = ids[k] === LINEAR ? -1 : ids[k];
     }
-    f.set(vals.subarray(stride), at);
+    if (n > 1) f.set(vals.subarray(stride, n * stride), at);
     const w = core();
-    // Created straight into the call's group (see the root node in `_build`).
-    const g = w.ak_group_create(0, 0, 1, 0, 0, -1, FL_FILL_BACKWARDS | FL_FILL_FORWARDS, 1);
+    // Several targets are created straight into the call's group (see the
+    // root node in `_build`).
+    const g = n > 1 ? w.ak_group_create(0, 0, 1, 0, 0, -1, FL_FILL_BACKWARDS | FL_FILL_FORWARDS, 1) : 0;
     if (w.ak_anim_create_many(len, n, stride, g) !== n) {
-      w.ak_release(g);
+      if (g) w.ak_release(g);
       throw new Error('anikit: failed to create animation (invalid keyframes)');
     }
     this._group = g;
     views();
-    const hs = F64.slice(base, base + n);
-    // Output locations, after packing (the pack moves them).
-    if (packGroups) w.ak_group_pack(g);
-    w.ak_values_ptrs(n);
-    views();
-    const ats = F64.slice(base, base + n);
     const tm: readonly [number, number, number, number] = [delay * 1000, durMs, repeat + 1, direction];
-    const upd = !!o.onUpdate;
-    for (let i = 0; i < n; i++) {
-      const target = targets[i];
-      const part = new Part(this, claims, this);
-      part.upd = upd;
-      const b: Binding[] = new Array(np);
-      for (let pi = 0; pi < np; pi++) b[pi] = new Binding(target, keys[pi], pi, pi, M_PROP, null, keys[pi], '', 0, -1, null, null);
-      part.b = b;
-      part.tm = tm;
-      part.h = hs[i];
-      part.at = ats[i] / 8;
-      register(part);
-      if (claims) claimAll(target, b, part);
-      this._parts.push(part);
-      this._live++;
-      this._links.push(part);
-    }
+    // (The per-target loops live in functions of their own: optimised during
+    // one large call, the method would keep that code for every small one.)
+    fastParts(this, targets, keys, base, tm, claims, !!o.onUpdate);
+    if (n > 1) fastPack(w, g, this._parts, base);
+    fastLink(this, targets, claims);
     this._rp = rp;
     return true;
   }
