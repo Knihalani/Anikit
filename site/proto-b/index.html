@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anikit</title>
+<meta name="description" content="Anikit is an animation engine with a Rust core compiled to WebAssembly.">
+<link rel="preload" href="../fonts/InterDisplay-Black.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="modulepreload" href="../../packages/anikit/dist/anikit.lean.js">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="stage" aria-hidden="true"></canvas>
+
+<header class="top">
+  <a class="mark" href="#top">anikit</a>
+  <nav>
+    <a href="../../docs/api.md">Docs</a>
+    <a href="https://github.com/knihalani/anikit">GitHub</a>
+  </nav>
+</header>
+
+<div class="captions" aria-live="polite">
+  <section class="cap" data-stage="0">
+    <p class="k">Animation engine · Rust → WebAssembly</p>
+    <h1>Every dot here is a<br>Gaussian splat.</h1>
+    <p class="hint">Move through it. Click to scatter it.</p>
+  </section>
+  <section class="cap" data-stage="1">
+    <p class="k">01 · <code>spring()</code></p>
+    <h2>Each splat rides its own spring.</h2>
+    <code class="snip">spring(el, { x: 200 }, { bounce: 0.3 })</code>
+  </section>
+  <section class="cap" data-stage="2">
+    <p class="k">02 · <code>stagger()</code></p>
+    <h2>Seventy-two birds, one wave of offsets.</h2>
+    <code class="snip">stagger(0.04, { grid: [12, 6], from: 'center' })</code>
+  </section>
+  <section class="cap" data-stage="3">
+    <p class="k">03 · <code>timeline()</code></p>
+    <h2>The swell is a timeline. Scrub it.</h2>
+    <code class="snip">timeline().add(sea, { swell: 46 }).add(sea, { swell: 18 })</code>
+  </section>
+  <section class="cap" data-stage="4">
+    <p class="k">04 · <code>pointCloud()</code></p>
+    <h2><span class="count">131,072</span> particles, stepped in WebAssembly.</h2>
+    <code class="snip">pointCloud(131_072, { shapes }).morph(4)</code>
+  </section>
+  <section class="cap end" data-stage="5">
+    <p class="k">Install</p>
+    <button class="install" type="button"><code>npm i anikit</code><span class="copy">copy</span></button>
+    <p class="links"><a href="../../docs/api.md">API reference</a> <a href="../../docs/recipes.md">Recipes</a> <a href="https://github.com/knihalani/anikit">Source</a></p>
+  </section>
+</div>
+
+<main id="top" class="track" aria-hidden="true">
+  <div></div><div></div><div></div><div></div><div></div><div></div>
+</main>
+
+<div class="perf" hidden></div>
+<script type="module" src="main.js"></script>
+</body>
+</html>
