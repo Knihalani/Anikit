@@ -102,6 +102,7 @@ fn spec_for(s: &str, st: &TextStyle) -> TextSpec {
         Face::Sans => "Inter",
         Face::Display => "Inter Display",
         Face::Mono => "JetBrains Mono",
+        Face::Serif => "Instrument Serif",
     };
     let style = crate::text::TextStyle {
         font: font.into(),

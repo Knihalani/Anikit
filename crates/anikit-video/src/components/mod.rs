@@ -30,6 +30,7 @@ pub mod host;
 pub mod text;
 
 pub mod backgrounds;
+pub mod blocks;
 pub mod charts;
 pub mod code;
 pub mod devices;
@@ -207,6 +208,14 @@ kinds! {
     "wipe" => transitions::Wipe, "Soft-edged wipe mask as a transition overlay.", r##"{}"##;
     "iris" => transitions::Iris, "Circular iris open/close.", r##"{}"##;
     "glitch" => transitions::Glitch, "Glitch slices with RGB split.", r##"{}"##;
+    // Content blocks
+    "chat" => blocks::Chat, "Chat thread: user and assistant bubbles, typing dots, streamed replies, auto-scroll.", r##"{"messages":[{"from":"user","text":"Make me a launch video"},{"from":"assistant","text":"Rendering now."}]}"##;
+    "prompt" => blocks::Prompt, "AI prompt box that types a request and presses send, with a glowing gradient rim.", r##"{"text":"Summarise this quarter in a chart"}"##;
+    "checklist" => blocks::Checklist, "Items that appear and tick off one by one.", r##"{"items":["Fast","Native","Agent-first"]}"##;
+    "quote" => blocks::Quote, "Testimonial: big quote mark, word-by-word reveal, stars, avatar, name and title.", r##"{"text":"It just works.","name":"Ada Lovelace","title":"CTO"}"##;
+    "table" => blocks::Table, "Comparison table with check/cross cells and a highlighted column.", r##"{"columns":["","Us","Them"],"rows":[["Fast",true,false]],"highlight":1}"##;
+    "timeline" => blocks::Timeline, "Milestones along a line that draws on, with a pulsing current step.", r##"{"items":[{"label":"Q1","title":"Beta"},{"label":"Q2","title":"Launch"}],"current":1}"##;
+    "marquee" => blocks::Marquee, "Endless scrolling ticker of words or logos with faded edges.", r##"{"items":["Stripe","Linear","Vercel"]}"##;
     // Lottie
     "lottie" => lottie::Lottie, "Minimal Lottie player (shape layers, transforms, trim paths).", r##"{"src":"anim.json"}"##;
 }

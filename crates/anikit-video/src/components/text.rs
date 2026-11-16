@@ -21,6 +21,8 @@ pub enum Face {
     Display,
     /// JetBrains Mono: code.
     Mono,
+    /// Instrument Serif: editorial accents, quotes.
+    Serif,
 }
 
 #[derive(Clone, Debug, PartialEq)]
