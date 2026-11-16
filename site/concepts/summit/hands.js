@@ -125,7 +125,7 @@ void main() {
   bool ember = h4 < uP.w;
   vec2 pos, dir; float len, wid, bright;
   vec3 col;
-  float band = 4.0 * uScale + R * 0.05;
+  float band = 5.0 * uScale + R * 0.07;
   if (!ember) {
     float layer = floor(h5 * 3.0);
     float speed = layer < 0.5 ? 1.6 + 0.8 * h2 : layer < 1.5 ? -(0.9 + 0.5 * h2) : 2.8 + 1.4 * h2;
@@ -135,7 +135,7 @@ void main() {
     float r = R + (rOff + jr * abs(jr) * 3.0) * band + (h(f + floor(t * 20.0)) - 0.5) * 2.0 * uScale;
     pos = C + vec2(cos(a), -sin(a)) * r;
     dir = vec2(-sin(a), -cos(a)) * sign(speed * uA.y + 0.001 * (1.0 - uA.y));
-    len = (10.0 + 70.0 * h2 * h2) * uScale * (0.5 + 0.5 * uA.y) * (0.45 + 0.55 * min(1.0, R / (260.0 * uScale)));
+    len = (14.0 + 90.0 * h2 * h2) * uScale * (0.5 + 0.5 * uA.y) * (0.45 + 0.55 * min(1.0, R / (260.0 * uScale)));
     wid = (0.9 + 1.6 * h1 * h1) * uScale;
     float core = 1.0 - min(1.0, abs(jr) * 2.2);
     float flick = 0.55 + 0.45 * sin(t * (18.0 + 30.0 * h3) + f);
@@ -150,13 +150,13 @@ void main() {
     vec2 p0 = C + vec2(cos(a0), -sin(a0)) * (R + (h1 - 0.5) * band);
     vec2 tang = vec2(-sin(a0), -cos(a0));
     vec2 out0 = vec2(cos(a0), -sin(a0));
-    float v = (0.35 + 0.6 * h2 + 0.8 * step(0.85, h2)) * R + 40.0 * uScale;
+    float v = (0.7 + 0.9 * h2 + 0.9 * step(0.85, h2)) * R + 60.0 * uScale;
     vec2 vel = (tang * (0.8 + 0.4 * h1) * (0.3 + 0.7 * uA.y) + out0 * (h1 - 0.25) * 0.5) * v;
-    float T = life * 2.2;
-    float drag = (1.0 - exp(-T * 1.4)) / 1.4;
-    vec2 g = vec2(0.0, 1.1 * R + 260.0 * uScale);
+    float T = life * 1.7;
+    float drag = (1.0 - exp(-T * 0.9)) / 0.9;
+    vec2 g = vec2(0.0, 0.6 * R + 160.0 * uScale);
     pos = p0 + vel * drag + g * T * T * 0.5;
-    vec2 vnow = vel * exp(-T * 1.4) + g * T;
+    vec2 vnow = vel * exp(-T * 0.9) + g * T;
     if (pos.y > uFloor) { pos.y = uFloor - (pos.y - uFloor) * 0.28; vnow.y = -vnow.y * 0.28; }
     dir = normalize(vnow + 1e-4);
     len = clamp(length(vnow) * 0.05, 3.0 * uScale, 60.0 * uScale);
