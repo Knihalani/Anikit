@@ -9,7 +9,7 @@
  * animate(obj, { value: 100 }, { onUpdate: () => draw(obj.value) })
  * ```
  */
-import { core, F64, LINEAR, f64Buf, whenReady, views } from './wasm';
+import { core, F64, LINEAR, f64Buf, whenReady, readyNow, views } from './wasm';
 import {
   register, unregister, wake, flush, easingId, easingDuration, NodeRecord, Runner, INDEX_MASK, EasingInput, prefersReduced, reducedMotionMode,
   FL_FILL_BACKWARDS, FL_FILL_FORWARDS, FL_IMMEDIATE,
@@ -681,6 +681,9 @@ export interface BuildContext {
   quiet?: boolean;
 }
 
+/** The default (empty) build context, shared. */
+const NO_CTX: BuildContext = Object.freeze({});
+
 const RANDOM_RE = /^\s*random\((.*)\)\s*$/;
 
 /** Resolve `"random(min, max[, snap])"` / `"random([a, b, c])"` value strings. */
@@ -866,7 +869,7 @@ export class Animation extends Playable {
   /** Seconds; available once built. */
   _end = 0;
 
-  constructor(targets: Targets, keyframes: Props | Keyframe[], options: AnimateOptions = {}, ctx: BuildContext = {}) {
+  constructor(targets: Targets, keyframes: Props | Keyframe[], options: AnimateOptions = {}, ctx: BuildContext = NO_CTX) {
     if (typeof options === 'number') {
       // `animate(el, props, 0.5)`: anime.js / jQuery habit. Accept it as the duration.
       warn(`animate(): the third argument is an options object; got the number ${options}. Treating it as { duration: ${options} } (seconds).`);
@@ -889,7 +892,9 @@ export class Animation extends Playable {
     super(opts);
     if (warningsOn()) checkAnimateOptions(options ?? {}, opts);
     this._times = opts.times;
-    whenReady(() => this._build(targets, props, opts, ctx));
+    // (No closure when the core is already there, the usual case.)
+    if (readyNow()) this._build(targets, props, opts, ctx);
+    else whenReady(() => this._build(targets, props, opts, ctx));
   }
 
   private _build(targetsIn: Targets, props: Map<string, PropSpec>, o: AnimateOptions, ctx: BuildContext): void {
@@ -933,6 +938,7 @@ export class Animation extends Playable {
     let rpn = 0;
     // The current target's track list (one `addTrack` per call, not per target).
     let curTracks: TrackDef[] = [];
+    const trackOffs: number[] = [];
     const addTrack = (t: TrackDef, ease: EasingInput | EasingInput[] | undefined, offsets?: number[], motion = false) => {
       if (still && motion) {
         // Hold the end value for the whole animation: no movement, same timing.
@@ -1083,11 +1089,12 @@ export class Animation extends Playable {
       if (tracks.length === 0) continue;
 
       // Output offsets per track.
+      // (One array per call, overwritten per target.)
       let off = 0;
-      const offsets: number[] = [];
-      for (const t of tracks) {
-        offsets.push(off);
-        off += t.out;
+      const offsets = trackOffs;
+      for (let k = 0; k < tracks.length; k++) {
+        offsets[k] = off;
+        off += tracks[k].out;
       }
       for (const b of part.b) b.off += offsets[b.track];
 

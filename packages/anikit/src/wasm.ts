@@ -328,6 +328,12 @@ export async function init(source?: string | URL | Response | BufferSource): Pro
   install(result.instance);
 }
 
+/** Whether the core is ready now (booting it synchronously if it can): `whenReady` would run its function at once. */
+export function readyNow(): boolean {
+  if (!W) boot();
+  return !!W;
+}
+
 /** Run `fn` now if the core is ready, otherwise as soon as it is. */
 export function whenReady(fn: () => void): void {
   if (!W) boot();
