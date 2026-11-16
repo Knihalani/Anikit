@@ -89,6 +89,37 @@ Approximation: the interior uses the Schwarzschild metric, i.e. an eternal, non-
 
 Benchmarks are in `packages/anikit/scripts/bench-blackhole.mjs` (wasm in Node) and `cargo run --release -p anikit-core --features std --example blackhole` (native, with per-stage timings, and reference PPMs when given an output directory). `examples/blackhole.html` is the scroll journey; add `?p=0.5` to pin the progress, `&mode=cinematic`, `&scale=0.75` or `&budget=0`.
 
+## Using it on a page
+
+```ts
+import { blackHole, engine } from 'anikit';
+
+// Hero: a fixed camera; only time and the slow orbit animate, which reuses the
+// lensing geometry every frame.
+const bh = blackHole({ canvas: '#hero', width: innerWidth, height: innerHeight, mode: 'cinematic', budget: 14, minScale: 0.5 });
+addEventListener('resize', () => bh.resize(innerWidth, innerHeight));
+
+// Journey: map scroll progress p ∈ [0, 1] to the fall.
+const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+engine.onFrame((t) => {
+  const p = scrollY / (document.body.scrollHeight - innerHeight);
+  bh.render({
+    time: t / 1000,
+    azimuth: t / 300,                                   // slow orbit: cheap
+    distance: p < 0.85 ? 30 * Math.pow(2.6 / 30, p / 0.85) : 2.6 - 1.4 * smooth(0.85, 1, p),
+    inclination: 84 - 10 * p,
+    fov: 34 + 70 * smooth(0.3, 0.95, p),               // widen as the sky is squeezed by aberration
+    fall: smooth(0.2, 0.6, p),                           // hover → free fall
+    look: 180 * smooth(0.93, 1, p),                      // inside: turn round to see the sky
+    jet: 0.35,
+  });
+});
+```
+
+- **Canvas size.** Size the canvas with CSS (`width: 100vw; height: 100vh`). With `budget`, the backing resolution drops while the camera moves and recovers when it settles.
+- **Cost.** `distance`, `fall`, `fov`, `inclination`, `look`, `roll`, `temperature`, `diskOuter` and the size rebuild the geometry. Hold them steady in the hero and animate `time`/`azimuth`.
+- **Live demo.** `examples/blackhole.html` is this journey with a heads-up display.
+
 ## Reference renders
 
 | | |

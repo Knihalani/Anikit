@@ -1870,4 +1870,18 @@ mod tests {
         bh.render(&Params { distance: 1.5, fall: 1.0, look: 180.0, fov: 90.0, ..p });
         assert!(bh.out.chunks(4).any(|p| p[0] > 30));
     }
+
+    #[test]
+    fn extreme_cameras_do_not_panic() {
+        let mut bh = BlackHole::new(48, 32, 2);
+        for &distance in &[1.0f32, 1.9, 2.0, 2.01, 2.5, 3.0, 6.0, 500.0, f32::NAN] {
+            for &inc in &[0.0f32, 45.0, 90.0, 180.0] {
+                for &(fov, look, fall) in &[(1.0f32, 0.0f32, 0.0f32), (170.0, 0.0, 1.0), (90.0, 180.0, 0.5), (60.0, 90.0, 1.0)] {
+                    let p = Params { distance, inclination: inc, fov, look, fall, roll: 30.0, jet: 1.0, time: 5.0, ..Default::default() };
+                    bh.render(&p);
+                    assert!(bh.out.chunks(4).all(|q| q[3] == 255));
+                }
+            }
+        }
+    }
 }
