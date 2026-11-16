@@ -94,24 +94,29 @@ export function start({ reduced, fine, small }) {
     const bodies = [];
     const build = () => {
       const Wd = box.clientWidth, Hd = box.clientHeight;
-      w = world({ container: box, bounds: [0, -2000, Wd, Hd - 4], gravity: [0, 2200], substeps: 4, iterations: 3, restitution: 0.3, friction: 0.15, damping: 0.02 });
+      w = world({ container: box, bounds: [0, -2000, Wd, Hd - 14], gravity: [0, 2200], substeps: 4, iterations: 3, restitution: 0.3, friction: 0.15, damping: 0.02 });
       letters.forEach((el, i) => set(el, { x: (Wd / (letters.length + 1)) * (i + 1) - el.offsetWidth / 2, y: -el.offsetHeight - i * 70 }));
       flush();
       const host = box.getBoundingClientRect();
+      // Each letter is a rigid box: four circles at the corners of its cap-height
+      // rectangle, linked to each other, so letters stand, stack and tumble like blocks.
       for (const el of letters) {
         const b = el.getBoundingClientRect();
-        const capH = b.height * 0.72, r = Math.min(b.width * 0.46, capH * 0.32);
-        const cx = b.left - host.left + b.width / 2, cy = b.top - host.top + b.height * 0.53, off = capH / 2 - r;
-        const top = w.add(cx, cy - off, r, 40), bot = w.add(cx, cy + off, r, 40);
-        w.link(top, bot, { stiffness: 1 });
-        w.setVelocity(top, (Math.random() - 0.5) * 300, 0);
-        bodies.push({ el, top, bot, w: b.width, h: b.height });
+        const capH = b.height * 0.72, cw = b.width * 0.84, r = Math.min(cw, capH) * 0.2;
+        const cx = b.left - host.left + b.width / 2, cy = b.top - host.top + b.height * 0.535;
+        const dx = cw / 2 - r, dy = capH / 2 - r;
+        const ids = [[-dx, -dy], [dx, -dy], [dx, dy], [-dx, dy]].map(([ox, oy]) => w.add(cx + ox, cy + oy, r, 30));
+        for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) w.link(ids[i], ids[j], { stiffness: 1 });
+        const vx = (Math.random() - 0.5) * 260;
+        for (const id of ids) w.setVelocity(id, vx, 0);
+        bodies.push({ el, ids, w: b.width, h: b.height });
       }
       w.onStep(() => {
         for (const o of bodies) {
-          const x = (w.x(o.top) + w.x(o.bot)) / 2, y = (w.y(o.top) + w.y(o.bot)) / 2;
-          const ang = Math.atan2(w.x(o.top) - w.x(o.bot), w.y(o.bot) - w.y(o.top));
-          set(o.el, { x: x - o.w / 2, y: y - o.h * 0.53, rotate: (ang * 180) / Math.PI });
+          const [tl, tr, br, bl] = o.ids;
+          const x = (w.x(tl) + w.x(tr) + w.x(br) + w.x(bl)) / 4, y = (w.y(tl) + w.y(tr) + w.y(br) + w.y(bl)) / 4;
+          const ang = Math.atan2(w.y(br) - w.y(bl) + w.y(tr) - w.y(tl), w.x(br) - w.x(bl) + w.x(tr) - w.x(tl));
+          set(o.el, { x: x - o.w / 2, y: y - o.h * 0.535, rotate: (ang * 180) / Math.PI });
         }
       });
       w.dragging({ hitSlop: 16 });
@@ -149,7 +154,7 @@ export function start({ reduced, fine, small }) {
       while (i < N && performance.now() < end) { const stop = Math.min(N, i + 2000); for (; i < stop; i++) fn(i, buf, i * 3); }
       if (i < N) return false;
       cloud.shape(k, buf);
-      if (k === 0) cloud.snap(0);
+      if (k === 2) cloud.snap(2);
       return true;
     });
   });
@@ -159,7 +164,7 @@ export function start({ reduced, fine, small }) {
     jobs.push((deadline) => {
       cols ??= new Float32Array(N * 3);
       const end = performance.now() + Math.min(6, Math.max(2, deadline.timeRemaining() - 1));
-      while (i < N && performance.now() < end) { const stop = Math.min(N, i + 4000); for (; i < stop; i++) { const k = rnd(); const c = k < 0.05 ? [1.6, 1.3, 1.8] : [0.55 + k * 0.4, 0.35 + k * 0.2, 1]; cols[i * 3] = c[0]; cols[i * 3 + 1] = c[1]; cols[i * 3 + 2] = c[2]; } }
+      while (i < N && performance.now() < end) { const stop = Math.min(N, i + 4000); for (; i < stop; i++) { const u = i / N, k = rnd(); const sp = k < 0.04 ? 1.8 : 0.75 + k * 0.35; cols[i * 3] = (0.55 + 0.45 * Math.cos(TAU * u)) * sp; cols[i * 3 + 1] = (0.45 + 0.4 * Math.cos(TAU * (u - 0.33))) * sp; cols[i * 3 + 2] = (0.75 + 0.25 * Math.cos(TAU * (u - 0.66))) * sp; } }
       if (i < N) return false;
       g.colors(N, (j) => [cols[j * 3], cols[j * 3 + 1], cols[j * 3 + 2]]);
       return true;
@@ -179,10 +184,10 @@ export function start({ reduced, fine, small }) {
     $('.snippet', $('#cloud')).textContent = `pointCloud(${N.toLocaleString('en-US').replaceAll(',', '_')}).morph(1, { duration: 2 })`;
     const canvas = $('#cloud-canvas');
     const scene = scene3d({ fov: 40, camera: { z: 1000 }, near: 10, far: 5000 });
-    const fit = () => { const r = canvas.getBoundingClientRect(); g.resize(r.width, r.height); scene.resize(r.width, r.height, 1); };
+    const fit = () => { const w = canvas.clientWidth, h = canvas.clientHeight; g.resize(w, h); scene.resize(w, h, 1); };
     fit();
     addEventListener('resize', fit);
-    let next = 1, timer = 0, rot = 0;
+    let next = 1, timer = 1.4, rot = 0;
     const ptr = { x: 0, y: 0, on: false };
     canvas.addEventListener('pointermove', (e) => { const r = canvas.getBoundingClientRect(); ptr.x = e.clientX - r.left; ptr.y = e.clientY - r.top; ptr.on = true; });
     canvas.addEventListener('pointerleave', () => (ptr.on = false));

@@ -41,7 +41,7 @@ const canvas = $('#stage');
 const small = innerWidth < 760;
 const dpr = Math.min(devicePixelRatio || 1, 3);
 const budgetPx = small ? 300_000 : 420_000;
-const pickScale = () => Math.min(dpr * (small ? 0.5 : 0.6), Math.sqrt(budgetPx / (innerWidth * innerHeight)), 1);
+const pickScale = () => Math.min(Math.max(small ? 0.75 : 0.55, dpr * (small ? 0.5 : 0.6)), Math.sqrt(budgetPx / (innerWidth * innerHeight)), 1);
 let calFactor = 1;
 let scale = pickScale();
 let vw = innerWidth, vh = innerHeight, W = 0, H = 0;
@@ -111,11 +111,11 @@ const pose = (k, out) => {
   const T = tops[k];
   const dock = (out2) => {
     const px = small ? vw / 2 : vw / 2 + T.side * vw * 0.235;
-    const py = small ? T.top + vh * 0.22 - sy : T.top + T.h / 2 - sy;
+    const py = small ? T.top + vh * 0.21 - sy : T.top + T.h / 2 - sy;
     const [wx, wy] = toWorld(px, py);
     out2.x = wx; out2.y = wy; out2.z = 0;
     out2.rx = 25 + tilt.x * 0.6 + Math.sin(t * 0.7 + k) * 12; out2.ry = t * 24 + k * 50 + tilt.y * 0.6; out2.rz = k * 30;
-    out2.s = small ? 1.0 : 1.35;
+    out2.s = small ? 0.7 : 1.35;
   };
   const D = {};
   dock(D);
@@ -125,8 +125,8 @@ const pose = (k, out) => {
   // F: re-formed above the install command.
   const f = ease(clamp((sy - (installTop - vh * 1.05)) / (vh * 0.95)));
   if (f > 0) {
-    const [fx, fy] = toWorld(vw / 2, Math.max(vh * 0.3, installBottom - sy - vh * 0.7));
-    const fs = small ? 0.55 : 0.75, frx = 58 + tilt.x, fry = t * 14 + tilt.y, frz = t * 6;
+    const [fx, fy] = toWorld(vw / 2, Math.max(vh * (small ? 0.25 : 0.3), installBottom - sy - vh * (small ? 0.75 : 0.7)));
+    const fs = small ? 0.46 : 0.75, frx = 58 + tilt.x, fry = t * 14 + tilt.y, frz = t * 6;
     const fc = rotate(frx, fry, frz, P.c);
     x = mix(x, fx + fc[0] * fs, f); y = mix(y, fy + fc[1] * fs, f); z = mix(z, fc[2] * fs, f);
     rx = mix(rx, frx, f); ry = mix(ry, fry, f); rz = mix(rz, frz, f); s = mix(s, fs, f);
@@ -169,7 +169,7 @@ const choreograph = () => {
     const r = Math.round(ease(clamp((sy + vh - T.top - (small ? vh * 0.3 : 0)) / (vh * 0.6))) * 1000) / 1000;
     if (r === lastP[k]) continue;
     lastP[k] = r;
-    set(panels[k], { opacity: 0.001 + r * 0.999, y: (1 - r) * 90, scale: 0.94 + r * 0.06 });
+    set(panels[k], { opacity: 0.001 + r * 0.999, y: (1 - r) * 110 });
   }
 };
 
