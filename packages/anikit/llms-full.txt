@@ -1814,6 +1814,7 @@ const px = r3.render(scene, [
 | `pattern: 'hex' \| 'dots' \| 'circuit'` | what `lines` draws instead of grid lines: glowing hexagon cells, a dot matrix, or circuit traces with pads (in `grid` cells, `lineWidth` thick) |
 | `pulse`, `pulseCount`, `pulsePhase`, `pulseDir` | bright pulses travelling along `u` (animate `pulsePhase`); `pulseDir` offsets each instance's phase by its position, so a wave sweeps through a field |
 | `texture`, `textureMode`, `textureRepeat`, `textureGain` | an image from `texture(imageData | canvas)` mapped by UV: `'albedo'` tints the lit colour, `'emissive'` glows unlit (screens, signs); mipmapped, so it doesn't shimmer when small |
+| `fog` (0–1, default 1) | how much the render's `fog`/`groundFog` applies: `0` for sky domes and backdrops painted with their own haze |
 | `textureFilter` | `'linear'` (default) or `'aniso'`: anisotropic filtering (mip from the short side of the pixel footprint, up to 4 taps along the long side) keeps terrain, roads and floors sharp at grazing angles, at some cost per stretched pixel |
 
 Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [near, far]`, `fogColor`, environment `sky`, `horizon`, `ground`, `strips`. Items draw in order; per item `cull: false` shows back faces (tumbling shards), `blend: 'additive'` adds light.
@@ -1828,6 +1829,20 @@ Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [nea
 
 **Camera motion blur**: `render(scene, items, { motionBlur: { shutter: 0.5, max } })` reprojects every pixel with the previous `render()`'s camera using the depth buffer and blurs along that motion (depth-aware, so near geometry smears over the background). Smooth, ghost-free speed from one render per frame — use it with composition `motionBlur: 1`, give points `streak: 0`–`0.5`, and call `r3.resetMotion()` after a cut. Pass `prevCamera` (the camera one frame earlier, `scene.viewProjection().matrix`) so previews and `--review`, which skip frames, blur exactly like the final render — see `templates/journey.mjs`.
 
+**Depth read-back**: after a render, `r3.depth(cam)` returns each pixel's distance from the camera (a reused `Float32Array`, `Infinity` where nothing was drawn); `r3.depth()` without a scene gives the raw NDC depth as a view into WebAssembly memory. Drive post effects by depth: ink outlines, a transition front sweeping from the horizon towards the lens (`film/film.mjs` does both).
+
+```ts
+import { renderer3d, scene3d, mesh, instances } from 'anikit';
+const r3 = renderer3d({ width: 640, height: 360 });
+const cam = scene3d({ width: 640, height: 360, camera: { z: 900 } });
+r3.render(cam, [{ mesh: mesh.cube(), instances: instances(1, () => ({ scale: 200 })) }]);
+const dist = r3.depth(cam);
+const front = 600; // pixels farther than this show another look
+const far = dist.filter((d) => d > front).length;
+```
+
+A sky dome that the fog leaves alone: `{ mesh: dome, cull: false, material: { ambient: 0, diffuse: 0, texture: sky, textureMode: 'emissive', fog: 0 } }`. If the scene has a mirror floor, make the dome an upper hemisphere resting on the floor: a whole sphere would cover the reflection below the horizon.
+
 **Mirror floors**: `render(scene, items, { mirror: { y, strength } })` renders the scene reflected about the plane `y`, then the scene itself, then items marked `mirror: true` (the floor) glossily over the reflection where they show (`strength` 0–1; drawing the floor last means hidden floor pixels are never shaded). Neon on wet asphalt. The mirror item should cover the view below the horizon; `reflect: false` keeps an item out of the reflection. The reflection renders at half resolution (about a quarter of the cost of the main pass, and softer, like a real glossy floor); `mirror: { y, resolution: 'full' }` keeps it sharp.
 
 **Meshes**: `mesh.cube()`, `sphere(rings, segments)`, `torus(radius, tube, segments, sides)`, `torusKnot({ p, q, radius, spread, tube, segments, sides })`, `plane(cells)` (XZ, faces +Y — floors that run to the horizon with `grid`), `cylinder(segments, caps)`, `heightfield(w, d, heights | (x, z) => h, { skip })`, `text(str, { font, depth, bevel, resolution })` (solid bevelled 3D text in any font; stand it up with `rx: 90` and use `sz: size * mesh.aspect`), `custom(positions, normals, indices, uvs?)`.
@@ -1836,7 +1851,7 @@ Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [nea
 
 **Shatter**: `shatter(mesh, { transform, force, spread, spin, gravity, drag, ripple, color })` turns every triangle into a flying shard; `shards.update(secondsSinceHit)` poses them; draw `{ mesh: shards.mesh, instances: shards.instances, cull: false }`. Deterministic, so parallel render workers agree.
 
-**Camera flights**: `flightPath(points, { lookAhead, bank, maxBank, closed })` is a smooth (centripetal Catmull–Rom) path with an arc-length table. `path.apply(scene, s, extraRoll, { shake })` places the camera at distance `s`, looking `lookAhead` ahead and banking into turns (`shake`, a `FlightShake`, adds a deterministic handheld wobble of that many world units that quickens with speed); `path.timing([[sec, fraction], …])` returns a monotone, smoothly accelerating seconds→distance function (hold a fraction to stop). `scene.roll` rolls any camera about its view axis.
+**Camera flights**: `flightPath(points, { lookAhead, bank, maxBank, bankWindow, closed })` is a smooth (centripetal Catmull–Rom) path with an arc-length table. Banking follows the turn rate averaged over `bankWindow` world units (default `max(50, lookAhead)`; longer is calmer through S-bends) and eases towards `maxBank` instead of clipping, so it never flips in a frame. `path.apply(scene, s, extraRoll, { shake })` places the camera at distance `s`, looking `lookAhead` ahead and banking into turns (`shake`, a `FlightShake`, adds a deterministic handheld wobble of that many world units that quickens with speed); `path.timing([[sec, fraction], …])` returns a monotone, smoothly accelerating seconds→distance function (hold a fraction to stop). `scene.roll` rolls any camera about its view axis.
 
 ```ts
 const path = flightPath([[0, 300, 2000], [0, 120, -2000], [180, 60, -8000], [0, 400, -26000]], { lookAhead: 900, bank: 1.4 });
@@ -1901,7 +1916,7 @@ The Python package (`crates/anikit-py`) exposes the same renderer and grade on n
 | `texture(imageData)` | `raster.texture(array)` (`(h, w, 4)` or `(h, w, 3)`, uint8 or 0–1 floats) |
 | `shatter(mesh, { transform, force, … })`, `shards.update(t)` | `raster.shatter(mesh, transform=dict(…), force=, …)`, `shards.update(t)`, `shards.item()` |
 | `scene.camera` / `scene.target` / `scene.roll` | `anikit.transform.Camera(position, target, fov=, near=, far=, roll=)` |
-| `flightPath(points, { lookAhead, bank, maxBank, closed })` | `anikit.flight_path(points, look_ahead=, bank=, max_bank=, closed=)`: `.point(s)`, `.tangent(s)`, `.at(s)`, `.apply(camera, s, extra_roll)`, `.timing(keys)`, `.points(n, from_=0, to=None)` |
+| `flightPath(points, { lookAhead, bank, maxBank, bankWindow, closed })` | `anikit.flight_path(points, look_ahead=, bank=, max_bank=, bank_window=, closed=)`: `.point(s)`, `.tangent(s)`, `.at(s)`, `.apply(camera, s, extra_roll)`, `.timing(keys)`, `.points(n, from_=0, to=None)` |
 | `composition({ post: { bloom, bloomThreshold, … } })` | `video.post(frame, bloom=, bloom_threshold=, …, seed=)` or `video.PostFx(**options)(frame, t=, seed=)` |
 
 ```python

@@ -1,5 +1,33 @@
 # Changelog
 
+## Afternoon session (2026-11-16): three looks, faster everything
+
+Benchmark numbers come from `packages/anikit/scripts/` and `docs/perf-notes.md` ("Fourth round (a)" and "(b)"); the machine was shared between two optimisation passes and renders, so figures are ranges over interleaved runs.
+
+### The film
+
+`film/film.mjs` + `film/world.mjs`: **ONE WORLD, THREE LOOKS**, 21.4 s at 1080p60. One continuous FPV flight through a procedural valley (a mirror lake, a saddle, a small city, a river canyon, the last ridge and a long lake under snowy peaks) that keeps switching how it is drawn: photographic golden hour (baked sun, shadows and occlusion, long tree shadows, mirror water, a painted cloud sky), neon (contour lines, lit windows, light trails, a synthwave sky) and comic (cel palette, ink from the depth buffer, halftone, speed lines). Six different transitions (a front from the horizon, a scan glitch, an ink burst, halftone dots, a slash of light, a reveal from the lens); the hook and the ending split the frame into all three looks. No captions, no music. The world bakes once (about a minute, cached in `film/.cache`); the film renders in about 7 minutes on 3 workers.
+
+### Video creation
+
+- `Renderer3D.depth(scene?)`: the depth buffer as distances (or NDC z) for depth-driven post effects.
+- Material `fog` (0–1): sky domes and painted backdrops can skip the distance fog.
+- Material `textureFilter: 'aniso'`: anisotropic filtering keeps ground sharp at grazing angles.
+- `flightPath({ bankWindow })` and a soft bank limit: banking eases towards `maxBank` instead of clipping, so S-bends no longer flip the camera in a frame (peak roll rate in the film 511 → 56 °/s).
+- Python: `Material(fog=, texture_filter=)`, `flight_path(bank_window=)`.
+- Faster renderer (`scripts/bench-terrain.mjs`, new): a 1080p terrain frame 648 → ~480 ms, a two-look transition frame ~945 → ~705 ms, a sky dome 128 → 67 ms, a textured scene 138 → 114 ms, all bit-identical (a faster bilinear sampler, an unlit fast path, skipping triangles that cover no pixel centre). Untextured scenes measured 3–5% slower; not yet bisected (see the perf notes).
+
+### Web animation
+
+`scripts/bench-create.mjs`, `bench-dom.mjs`, `bench.mjs` (new cases), `bench-scroll.mjs` (new):
+
+- Taking over a running multi-target animation (10k targets) 1.25–1.8 s → 41 ms (was O(n²)); killing a 5,000-step timeline 46 → ~1 ms.
+- Creation: 10k separate `animate()` calls 66–72 → 43–50 ms; retained heap per target 5.5 → 2.4 KB; startup (import → ready) ~18 → ~15 ms.
+- DOM frames: 500 boxes 0.58–0.60 → 0.37–0.50 ms, 5,000 boxes 5.7–8.7 → 4.3–5.3 ms (cheaper transform strings, cached style declarations).
+- Colour strings on objects 2× faster (10k: 1.22 → 0.55 ms); unit strings ~1.7× faster.
+- Fixed: killed multi-target animations leaked through the record table. `motionValue` no longer allocates per update.
+- Still behind GSAP: 8-keyframe tracks at 50k (0.56–0.65×), unit strings on objects (~0.5×), creation cost.
+
 ## Overnight session (2026-11-15 → 16)
 
 Everything below is on `claude/epic-ramanujan-qe7x4w`. Benchmark numbers come from the scripts named next to them (`packages/anikit/scripts/`, `crates/anikit-core/examples/`); `docs/perf-notes.md` has the before/after detail.
