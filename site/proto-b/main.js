@@ -146,7 +146,7 @@ function applyLevel() {
   const L = governor.level;
   animate(st, { glow: L >= 4 ? 1 : 0, shadow: L >= 3 ? 1 : 0, cut: L >= 2 ? N : N * 0.6 }, { duration: 0.9, ease: 'inOutSine' });
   const want = L >= 1 ? 1 : 0.7;
-  if (want !== governor.dprScale) { governor.dprScale = want; resize(); }
+  if (want !== governor.dprScale) { const t0 = performance.now(); governor.dprScale = want; resize(); mark('resize@' + Math.round(t0), t0); }
 }
 function sample(dt, now) {
   const g = governor;
@@ -248,7 +248,9 @@ function rasterCaption(k) {
   if (!gl || fx.hc || shown !== k) return;
   const el = caps[k], r = el.getBoundingClientRect(), dpr = f.dpr;
   if (r.width < 4 || r.height < 4) return;
+  const t0 = performance.now();
   fx.hc = htmlCanvas(el, { target: gl.gl, live: false, scale: Math.min(dpr, 2) });
+  mark('raster@' + Math.round(t0), t0);
   fx.hc.ready.then(() => { fx.ready = true; }, () => {});
   fx.x = r.left * dpr; fx.y = r.top * dpr; fx.w = r.width * dpr; fx.h = r.height * dpr;
   const cellCss = 1.5;
