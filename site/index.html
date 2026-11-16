@@ -7,16 +7,14 @@
 <meta name="description" content="A web animation engine with a Rust/WebAssembly core: tweens, springs, timelines, physics, particles, solid 3D, scroll, SVG and text." />
 <meta name="theme-color" content="#000000" />
 <link rel="modulepreload" href="hole.js" />
+<link rel="modulepreload" href="hole-worker.js" />
 <link rel="modulepreload" href="../packages/anikit/dist/anikit.lean.js" />
 <link rel="preload" href="../packages/anikit/dist/anikit.wasm" as="fetch" type="application/wasm" crossorigin />
 <link rel="preload" href="fonts/InterDisplay-Black.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div class="sky" id="sky" aria-hidden="true">
-  <canvas class="layer" id="sky-a"></canvas>
-  <canvas class="layer" id="sky-b"></canvas>
-</div>
+<div class="sky" id="sky" aria-hidden="true"><canvas id="sky-canvas"></canvas></div>
 <div class="veil" id="veil" aria-hidden="true"></div>
 <div class="flash" id="flash" aria-hidden="true"></div>
 <canvas class="calm" id="calm" aria-hidden="true"></canvas>
@@ -36,27 +34,28 @@
     <p class="lede">An animation engine for the web, with a Rust core compiled to WebAssembly.</p>
     <p class="cue mono" id="cue">Scroll to fall in</p>
   </header>
+  <section class="fall" id="fall" aria-hidden="true"></section>
 
-  <section class="demo" id="springs" data-side="left" data-accent="#ff9a5a">
-    <div class="panel">
+  <section class="demo stop" id="springs" data-accent="#ff9a5a">
+    <div class="stick"><div class="panel">
       <h2>Springs</h2>
       <div class="stage-box" id="spring-box"></div>
       <div class="row"><button class="pill mag">Stiff</button><button class="pill mag">Bouncy</button><button class="pill mag">Slow</button></div>
       <code class="snippet mono">spring(dot, { x, y }, { stiffness: 260, damping: 16 })</code>
-    </div>
+    </div></div>
   </section>
 
-  <section class="demo" id="text" data-side="right" data-accent="#ffd27a">
-    <div class="panel">
+  <section class="demo stop" id="text" data-accent="#ffd27a">
+    <div class="stick"><div class="panel">
       <h2>Split text</h2>
       <p class="reveal" id="reveal">Every letter starts a little later than the last.</p>
       <div class="row"><button class="pill" id="reveal-btn">Replay</button><span class="mono dim" id="reveal-ease">ease: spring</span></div>
       <code class="snippet mono">animate(splitText(el).chars, { yPercent: [110, 0] }, { delay: stagger(0.02) })</code>
-    </div>
+    </div></div>
   </section>
 
-  <section class="demo" id="svg" data-side="left" data-accent="#9fe8ff">
-    <div class="panel">
+  <section class="demo stop" id="svg" data-accent="#9fe8ff">
+    <div class="stick"><div class="panel">
       <h2>SVG morph</h2>
       <svg class="svg-demo" viewBox="0 0 520 300" aria-hidden="true">
         <path id="blob" />
@@ -64,36 +63,36 @@
         <circle id="rider" r="9" />
       </svg>
       <code class="snippet mono">timeline().add(path, { d: star(…) }).add(path, { d: circle(…) })</code>
-    </div>
+    </div></div>
   </section>
 
-  <section class="demo" id="physics" data-side="right" data-accent="#8fb4ff">
-    <div class="panel">
+  <section class="demo stop" id="physics" data-accent="#8fb4ff">
+    <div class="stick"><div class="panel">
       <h2>Physics</h2>
       <div class="world-box" id="world-box"></div>
       <code class="snippet mono">world({ gravity: [0, 2200] }).dragging()</code>
-    </div>
+    </div></div>
   </section>
 
-  <section class="demo" id="cloud" data-side="left" data-accent="#c9a6ff">
-    <div class="panel">
+  <section class="demo stop" id="cloud" data-accent="#c9a6ff">
+    <div class="stick"><div class="panel">
       <h2><span id="cloud-n">100,000</span> particles</h2>
       <canvas class="cloud-canvas" id="cloud-canvas" aria-label="A particle cloud morphing between a sphere, a ring and a torus knot"></canvas>
       <code class="snippet mono">pointCloud(100_000).morph(1, { duration: 2 })</code>
-    </div>
+    </div></div>
   </section>
 
-  <section class="demo" id="layout" data-side="right" data-accent="#ff9ec4">
-    <div class="panel">
+  <section class="demo stop" id="layout" data-accent="#ff9ec4">
+    <div class="stick"><div class="panel">
       <h2>FLIP layout</h2>
       <div class="tiles" id="tiles"></div>
       <div class="row"><button class="pill" id="shuffle">Shuffle</button><button class="pill" id="regrid">Change layout</button></div>
       <code class="snippet mono">flip('.tile', () => shuffle(grid), { ease: 'spring(bounce: .2)' })</code>
-    </div>
+    </div></div>
   </section>
 
-  <section class="demo numbers" id="numbers" data-side="left" data-accent="#e6ff7a">
-    <div class="panel wide">
+  <section class="demo stop numbers" id="numbers" data-accent="#e6ff7a">
+    <div class="stick"><div class="panel wide">
       <h2>Benchmarks</h2>
       <p class="dim">From the scripts in <code>packages/anikit/scripts</code>.</p>
       <div class="n-stats">
@@ -108,10 +107,10 @@
         <div class="n-row me"><span class="mono">anikit batch()</span><i><u style="--w:0.063"></u></i><em class="n-count" data-to="0.37" data-dec="2">0.37</em></div>
         <p class="mono n-cap dim">bench.mjs, one run · docs/perf-notes.md</p>
       </div>
-    </div>
+    </div></div>
   </section>
 
-  <section class="horizon" id="horizon" aria-hidden="true"></section>
+  <section class="exit" id="horizon" aria-hidden="true"></section>
 
   <section class="install" id="install">
     <div class="install-core">
@@ -122,7 +121,7 @@
       </div>
       <p class="mono dim">pip install anikit · MIT</p>
     </div>
-    <p class="mono foot dim">The black hole on this page is ray traced on the CPU and driven by anikit.</p>
+    <p class="mono foot dim">Every frame on this page is drawn with anikit.</p>
   </section>
 </main>
 

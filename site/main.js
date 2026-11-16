@@ -1,8 +1,8 @@
-// Anikit landing page: a ray-traced Schwarzschild black hole that you fall into as
-// you scroll. The lensing is precomputed per camera-distance band (hole.js); each
-// frame shades the rotating disk from lookup tables. Anikit runs the frame loop,
-// the scroll choreography and every demo.
-import { Lens, shade, diskTexture, shadowScale } from './hole.js';
+// Anikit landing page: you fall into a black hole as you scroll. One smoothed scroll
+// value drives the camera distance continuously: the hole grows, you cross the
+// horizon, the demos come at paced stops in the tunnel inside, and you leave through
+// a white hole. The renderer sits behind a tiny adapter with the same shape as
+// anikit's core `blackHole()` (render({ distance, inclination, fov, time, ... })).
 import { ready, engine, inView, set, animate } from '../packages/anikit/dist/anikit.lean.js';
 
 const $ = (s) => document.querySelector(s);
@@ -11,183 +11,130 @@ const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
 const small = innerWidth < 760;
 
 // ---------------------------------------------------------------------------
-// Sky: two layers (so a new distance band can fade in over the old one) + bloom
+// Renderer adapter: a worker with an OffscreenCanvas when available, so scrolling
+// never waits for a frame; otherwise the same renderer on the main thread.
 // ---------------------------------------------------------------------------
-const OVER = 1.12;
-const BLUR = 'blur(5px)';
-const D0 = small ? 30 : 60, DMIN = 2.12, BAND = 0.9, ELEV = (4.5 * Math.PI) / 180;
-const tex = diskTexture();
-const bloom = document.createElement('canvas'), bctx = bloom.getContext('2d', { alpha: false });
-let budget = small ? 180_000 : 480_000;
+const canvas = $('#sky-canvas');
+let budget = small ? 150_000 : 320_000;
 let vw = innerWidth, vh = innerHeight;
-const layers = ['#sky-a', '#sky-b'].map((s) => ({ el: $(s), ctx: null, img: null, out: null, lens: null, band: -1, scale: 1 }));
-let F0 = 1, front = 0, gen = null, genLayer = -1, genBand = -1, fadeUntil = 0;
+const renderSize = () => { const k = Math.min(1, Math.sqrt(budget / (vw * vh))); return [Math.round(vw * k), Math.round(vh * k)]; };
+const stats = { ms: 0, w: 0, h: 0, main: 0, frames: 0 };
+window.__stage = stats;
 
-const size = () => {
-  const k = Math.sqrt(budget / (vw * vh * OVER * OVER));
-  return [Math.max(64, Math.round(vw * OVER * k)), Math.max(64, Math.round(vh * OVER * k))];
-};
-const vfovFor = (w, h) => (w >= h ? 40 : (2 * Math.atan(Math.tan((40 * Math.PI) / 180) * (h / w)) * 180) / Math.PI);
-const alloc = () => {
-  const [w, h] = size();
-  for (const L of layers) {
-    L.el.width = w; L.el.height = h;
-    L.ctx = L.el.getContext('2d', { alpha: false });
-    L.img = L.ctx.createImageData(w, h);
-    L.out = new Uint32Array(L.img.data.buffer);
-    L.lens = new Lens(w, h);
-    L.band = -1;
+async function createSky() {
+  const [w, h] = renderSize();
+  if (canvas.transferControlToOffscreen && typeof Worker !== 'undefined' && !location.search.includes('noworker')) {
+    const off = canvas.transferControlToOffscreen();
+    const worker = new Worker(new URL('./hole-worker.js', import.meta.url), { type: 'module' });
+    worker.onmessage = (e) => { stats.ms = stats.ms * 0.9 + e.data.ms * 0.1; stats.w = e.data.w; stats.h = e.data.h; stats.frames++; };
+    worker.postMessage({ canvas: off, width: w, height: h }, [off]);
+    return { render: (opts) => worker.postMessage({ opts }), resize: (W, H) => worker.postMessage({ resize: [W, H] }) };
   }
-  F0 = h / 2 / Math.tan((vfovFor(w, h) * Math.PI) / 360);
-  bloom.width = Math.max(32, w >> 2); bloom.height = Math.max(32, h >> 2);
-};
-const bandD = (k) => D0 * BAND ** k;
-const bandFor = (D) => Math.max(0, Math.floor(Math.log(D / D0) / Math.log(BAND) + 1e-6));
+  const { blackHole } = await import('./hole.js');
+  const bh = blackHole({ width: w, height: h, canvas });
+  return {
+    render: (opts) => { const t0 = performance.now(); bh.render(opts); stats.ms = stats.ms * 0.9 + (performance.now() - t0) * 0.1; stats.w = bh.width; stats.h = bh.height; stats.frames++; },
+    resize: (W, H) => bh.resize(W, H),
+  };
+}
+const sky = await createSky();
 
-// Smoothed scroll → fall depth. Every visual below is a pure function of `sy`.
-let sy = scrollY, horizonTop = 1, installTop = 1, docH = 1;
+// ---------------------------------------------------------------------------
+// The journey: scroll position → camera distance (M), with paced stops inside
+// ---------------------------------------------------------------------------
+const D0 = small ? 34 : 46, DH = 2.02, DEND = 0.12;
+const stops = [...document.querySelectorAll('.stop')];
+const panels = stops.map((s) => s.querySelector('.panel'));
+stops.forEach((s) => s.style.setProperty('--accent', s.dataset.accent));
+let fallTop = 0, fallEnd = 1, tops = [], exitTop = 1, installTop = 1;
 const measure = () => {
-  const y = scrollY;
-  horizonTop = $('#horizon').getBoundingClientRect().top + y;
-  installTop = $('#install').getBoundingClientRect().top + y;
-  docH = document.documentElement.scrollHeight;
+  vw = innerWidth; vh = innerHeight;
+  const y = scrollY, top = (el) => el.getBoundingClientRect().top + y;
+  fallTop = 0;
+  fallEnd = top(stops[0]); // the horizon is crossed as the first stop arrives
+  tops = stops.map((s) => ({ top: top(s), h: s.offsetHeight }));
+  exitTop = top($('#horizon')); installTop = top($('#install'));
 };
 const clamp = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
-// The fall: slow through the demos (down to DM), then quickly through the horizon.
-const DM = 9;
-// The field of view widens as you fall, so the shadow never quite swallows the page.
-const focal = (D) => { const u = clamp(Math.log(D0 / D) / Math.log(D0 / DMIN)); return F0 / (1 + 2.5 * u ** 1.2); };
-const fallP = () => clamp(sy / (horizonTop + vh * 0.6));
-const depth = (p) => {
-  const a = horizonTop / (horizonTop + vh * 0.6);
-  if (p > a) return DM * (DMIN / DM) ** ((p - a) / (1 - a));
-  // Paced: the fall eases to a near stop while each demo is centred, then moves on.
-  const u = (p / a) * 8, i = Math.floor(u), f = u - i;
-  const e = f < 0.45 ? f * 0.12 : 0.054 + 0.946 * ease((f - 0.45) / 0.55);
-  return D0 * (DM / D0) ** (((i + e) / 8) ** 1.25);
-};
-
-let t = 0, exposure = 2.4;
-const canBlur = 'filter' in bctx; // no canvas filters (older WebKit): skip the bloom pass
-const scaleOf = (L, D) => (shadowScale(D) * focal(D)) / (shadowScale(L.lens.D) * L.lens.F);
-const zoom = (L, D) => { L.el.style.transform = `scale(${scaleOf(L, D).toFixed(4)})`; };
-const draw = (L, D, p) => {
-  // Blue shift and aberration as the fall speeds up; time near the hole runs slow.
-  const sb = 1 + 0.9 * p * p, sr = 1 - 0.45 * p * p;
-  shade(L.lens, tex, L.out, t, exposure * (1 + p * 0.1), sr * (1 + 1.5 * p * p), (1 + 1.2 * p * p), sb * (1 + 1.5 * p * p), 1, frames);
-  L.ctx.putImageData(L.img, 0, 0);
-  if (!canBlur) return;
-  // Bloom: blur a quarter-size copy, then screen it back over the frame.
-  bctx.filter = BLUR;
-  bctx.drawImage(L.el, 0, 0, bloom.width, bloom.height);
-  L.ctx.globalCompositeOperation = 'screen';
-  L.ctx.globalAlpha = 0.6;
-  L.ctx.drawImage(bloom, 0, 0, L.el.width, L.el.height);
-  L.ctx.globalAlpha = 1;
-  L.ctx.globalCompositeOperation = 'source-over';
-};
-
-// Build the band for a camera distance on the back layer, in slices; then cross-fade.
-const FADE = 280;
-let fadeStart = 0;
-const startBuild = (k) => {
-  genLayer = 1 - front; genBand = k;
-  gen = layers[genLayer].lens.build(bandD(k), ELEV, focal(bandD(k)));
-};
-const finishBuild = (instant = reduced) => {
-  const L = layers[genLayer];
-  L.band = genBand; gen = null;
-  front = genLayer;
-  L.el.style.zIndex = '2'; layers[1 - front].el.style.zIndex = '1';
-  lastSy = -1; // draw the new band on this frame, even if the scroll is still
-  if (instant) { L.el.style.opacity = '1'; layers[1 - front].el.style.opacity = '0'; fadeUntil = 0; return; }
-  L.el.style.opacity = '0';
-  fadeStart = performance.now(); fadeUntil = fadeStart + FADE;
-};
-
-const stats = { ms: 0, shade: 0, w: 0, h: 0, last: 0, band: 0 };
-window.__stage = stats;
-let lastSy = -1, frames = 0, worst = 0;
-const frame = (dt) => {
-  sy += (scrollY - sy) * (reduced ? 1 : 1 - Math.exp(-dt / 90));
-  if (Math.abs(scrollY - sy) < 0.5) sy = scrollY;
-  const p = fallP(), D = depth(p);
-  const tScale = 1 - 0.7 * p ** 3;
-  if (!reduced) t += (Math.min(dt, 50) / 1000) * tScale;
-  const t0 = performance.now();
-  frames++;
-  // When shading is expensive (close to the hole the disk fills the view), shade on
-  // even frames and build on odd ones; the zoom is a CSS transform and runs every frame.
-  const heavy = stats.shade > 6, even = (frames & 1) === 0;
-  const k = bandFor(D);
-  if (!gen && layers[front].band !== k && p < 0.995 && t0 > fadeUntil) startBuild(k);
-  if (gen && (!heavy || !even) && gen.next().done) finishBuild();
-  const F = layers[front];
-  if (p < 0.999) {
-    const still = reduced && sy === lastSy;
-    if (!still && (!heavy || even || lastSy < 0)) {
-      const s0 = performance.now();
-      draw(F, D, p);
-      stats.shade = stats.shade * 0.85 + (performance.now() - s0) * 0.15;
-      lastSy = sy;
-    }
-    zoom(F, D);
-    if (fadeUntil) {
-      // The outgoing band keeps its last frame (rescaled) while the new one fades in.
-      const O = layers[1 - front];
-      const f = (t0 - fadeStart) / FADE;
-      if (f < 1) { zoom(O, D); F.el.style.opacity = f.toFixed(3); }
-      else { fadeUntil = 0; O.el.style.opacity = '0'; F.el.style.opacity = '1'; }
-    }
-  }
-  choreograph(p);
-  const ms = performance.now() - t0;
-  stats.ms = stats.ms * 0.9 + ms * 0.1; stats.last = ms; stats.w = F.lens.w; stats.h = F.lens.h; stats.band = F.band;
-  // Adaptive resolution: once, early, while the hero is idle (after V8 has warmed up).
-  if (frames === 150 && !gen && sy < 2 && stats.shade > 7) {
-    worst = stats.shade; budget = Math.round(budget * Math.min(0.8, 5.5 / worst));
-    alloc(); startBuild(bandFor(D)); while (gen && !gen.next().done); finishBuild(true);
-  }
-};
-
-// ---------------------------------------------------------------------------
-// Choreography: hero copy, panels, horizon, white hole, calm
-// ---------------------------------------------------------------------------
-const heroEls = [...document.querySelectorAll('.hero h1, .hero .lede, .hero .cue')];
-const sections = [...document.querySelectorAll('.demo')];
-const panels = sections.map((s) => s.querySelector('.panel'));
-sections.forEach((s) => s.style.setProperty('--accent', s.dataset.accent));
-let tops = [];
-const measurePanels = () => { tops = sections.map((s) => { const b = s.getBoundingClientRect(); return { top: b.top + scrollY, h: b.height }; }); };
-const lastP = panels.map(() => -1);
-let lastHero = -1, lastV = -1;
-const veil = $('#veil'), flash = $('#flash'), calm = $('#calm'), sky = $('#sky');
 const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2);
+/** Camera distance for a scroll position. Outside: a smooth fall from D0 to the horizon. */
+const distanceAt = (y) => {
+  if (y < fallEnd) {
+    const p = clamp(y / fallEnd);
+    return D0 * (DH / D0) ** (p ** 1.6);
+  }
+  // Inside: each stop slows the fall while its demo is centred, then moves on.
+  const N = stops.length;
+  for (let k = 0; k < N; k++) {
+    const T = tops[k], u = (y - T.top) / (T.h - vh);
+    if (u <= 1 || k === N - 1) {
+      const uu = clamp(u);
+      const e = uu + (0.8 * Math.sin(TAU * uu)) / TAU; // fast at the edges, slow in the middle
+      const P = (k + e) / N;
+      return DH * (DEND / DH) ** P;
+    }
+  }
+  return DEND;
+};
+const TAU = Math.PI * 2;
+
+// ---------------------------------------------------------------------------
+// Frame loop
+// ---------------------------------------------------------------------------
+let sy = scrollY, t = 0, lastKey = '';
+const veil = $('#veil'), flash = $('#flash'), calm = $('#calm'), skyEl = $('#sky');
+const heroEls = [...document.querySelectorAll('.hero h1, .hero .lede, .hero .cue')];
+const lastP = panels.map(() => -1);
+let lastHero = -1, lastEnd = -1;
+const frame = (dt) => {
+  const t0 = performance.now();
+  sy += (scrollY - sy) * (reduced ? 1 : 1 - Math.exp(-dt / 110));
+  if (Math.abs(scrollY - sy) < 0.3) sy = scrollY;
+  const D = distanceAt(sy);
+  // Clocks run slow near the horizon (subtly).
+  if (!reduced) t += (Math.min(dt, 50) / 1000) * (D > DH ? 0.45 + 0.55 * clamp((D - 2.4) / 10) : 0.7);
+  // The view widens as you fall in, so the shadow grows without swallowing the page.
+  const near = clamp(Math.log(D0 / Math.max(D, DH)) / Math.log(D0 / DH));
+  const fov = (small ? 62 : 42) + near ** 1.5 * (small ? 40 : 52);
+  const p = clamp(sy / fallEnd);
+  const blue = p * p;
+  const tint = D > DH ? [1 - 0.3 * blue, 1, 1 + 0.6 * blue] : [1, 1, 1];
+  const key = reduced ? `${D.toFixed(4)}` : '';
+  if (!reduced || key !== lastKey) {
+    lastKey = key;
+    sky.render({ distance: D, inclination: 84.5, fov, time: t, exposure: 2.3 * (1 - 0.45 * near * near), bloom: 0.55, grain: 4, tint });
+  }
+  choreograph();
+  stats.main = stats.main * 0.9 + (performance.now() - t0) * 0.1;
+};
+
 function choreograph() {
   const h = Math.round(clamp(sy / (vh * 0.5)) * 1000) / 1000;
   if (h !== lastHero) { lastHero = h; set(heroEls, { opacity: 1 - h, y: -h * 40 }); }
+  // Each stop: the panel rises in, holds while the fall slows, and rises out.
   for (let k = 0; k < panels.length; k++) {
     const T = tops[k];
     if (!T) continue;
-    // In as the section arrives, out as it leaves: a continuous scrub.
-    const a = clamp((sy + vh - T.top) / (vh * 0.55)), b = clamp((sy - (T.top + T.h - vh * 0.9)) / (vh * 0.5));
+    const u = (sy - T.top) / (T.h - vh);
+    const a = clamp((u + 0.08) / 0.3), b = clamp((u - 0.78) / 0.3);
     const r = Math.round(ease(a) * (1 - ease(b)) * 1000) / 1000;
-    if (r === lastP[k]) continue;
-    lastP[k] = r;
-    set(panels[k], { opacity: r, y: (1 - ease(a)) * 80 - ease(b) * 60, scale: 0.96 + r * 0.04 });
+    const key = r + b * 7;
+    if (key === lastP[k]) continue;
+    lastP[k] = key;
+    set(panels[k], { opacity: r, y: (1 - ease(a)) * 90 - ease(b) * 90, scale: 0.94 + 0.06 * ease(a) - 0.04 * ease(b) });
+    panels[k].style.pointerEvents = r > 0.5 ? 'auto' : 'none';
   }
-  // The horizon: the sky goes dark; then a white bloom opens onto a quiet starfield.
-  const x = clamp((sy - (horizonTop + vh * 0.05)) / (vh * 0.55));
-  const w = clamp((sy - (installTop - vh * 1.0)) / (vh * 0.55));
-  const v = Math.round(x * 1000) / 1000 + Math.round(w * 1000) * 10;
-  if (v !== lastV) {
-    lastV = v;
-    veil.style.opacity = String(ease(x) * (1 - w));
-    sky.style.visibility = w >= 1 ? 'hidden' : 'visible';
-    const fl = Math.sin(Math.PI * Math.min(1, w * 1.25));
-    flash.style.opacity = String(Math.min(1, fl * 1.5));
-    flash.style.transform = `scale(${(0.2 + w * 1.6).toFixed(3)})`;
-    calm.style.opacity = String(clamp(w * 1.5 - 0.3));
+  // The exit: the tunnel narrows to a white point that blooms open onto quiet stars.
+  const x = clamp((sy - exitTop) / (installTop - exitTop));
+  const v = Math.round(x * 1000);
+  if (v !== lastEnd) {
+    lastEnd = v;
+    const fl = Math.sin(Math.PI * Math.min(1, x * 1.15));
+    flash.style.opacity = String(Math.min(1, fl * 1.6));
+    flash.style.transform = `scale(${(0.05 + x * 1.7).toFixed(3)})`;
+    calm.style.opacity = String(clamp(x * 1.6 - 0.45));
+    skyEl.style.visibility = x > 0.75 ? 'hidden' : 'visible';
+    veil.style.opacity = '0';
   }
 }
 
@@ -199,50 +146,37 @@ const drawCalm = () => {
   c.fillStyle = '#000'; c.fillRect(0, 0, calm.width, calm.height);
   let s = 7;
   const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
-  const n = Math.round((vw * vh) / 2200);
+  const n = Math.round((vw * vh) / 2600);
   for (let i = 0; i < n; i++) {
     const m = rnd() ** 6, tt = rnd();
     const col = tt < 0.3 ? '255,214,170' : tt < 0.8 ? '255,250,240' : '196,214,255';
     c.fillStyle = `rgba(${col},${0.25 + m * 0.75})`;
-    const r = (0.45 + m * 1.2) * dpr;
-    c.beginPath(); c.arc(rnd() * calm.width, rnd() * calm.height, r, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(rnd() * calm.width, rnd() * calm.height, (0.4 + m * 1.1) * dpr, 0, TAU); c.fill();
   }
 };
 
-
 // ---------------------------------------------------------------------------
-// Start: the first frame is drawn before the WebAssembly core has loaded.
+// Start: the first frame is requested before the WebAssembly core has loaded.
 // ---------------------------------------------------------------------------
-alloc();
-measure(); measurePanels();
-startBuild(bandFor(depth(fallP())));
-while (gen && !gen.next().done);
-finishBuild(true);
+measure();
 frame(16);
-sky.classList.add('on');
+skyEl.classList.add('on');
 drawCalm();
 
 await ready;
 engine.reducedMotion = 'user';
 engine.onFrame((_t, dt) => frame(dt));
-const onResize = () => {
-  const nw = innerWidth, nh = innerHeight;
-  const big = Math.abs(nw - vw) > 40 || Math.abs(nh - vh) > 140; // ignore mobile toolbar resizes
-  vw = nw; vh = nh;
-  measure(); measurePanels();
-  if (big) { alloc(); startBuild(bandFor(depth(fallP()))); while (gen && !gen.next().done); finishBuild(true); drawCalm(); }
-  lastP.fill(-1); lastV = -1; lastHero = -1;
-};
-addEventListener('resize', onResize);
-new ResizeObserver(() => { measure(); measurePanels(); }).observe(document.body);
+addEventListener('resize', () => {
+  const big = Math.abs(innerWidth - vw) > 40 || Math.abs(innerHeight - vh) > 140; // ignore mobile toolbar resizes
+  measure();
+  if (big) { sky.resize(...renderSize()); drawCalm(); }
+  lastP.fill(-1); lastEnd = -1; lastHero = -1;
+});
+new ResizeObserver(() => measure()).observe(document.body);
 if (!reduced) animate('#cue', { opacity: [0.35, 1, 0.35] }, { duration: 2.6, repeat: Infinity, ease: 'inOutSine' });
-
-if (location.search.includes('debug')) {
-  window.__shade = (n = 20) => { const L = layers[front], out = []; for (let i = 0; i < n; i++) { const a = performance.now(); shade(L.lens, tex, L.out, i * 0.1, 1, 1, 1, 1, 1); L.ctx.putImageData(L.img, 0, 0); out.push(+(performance.now() - a).toFixed(2)); } return out; };
-}
 
 // Demos load on approach (dynamic import keeps them off the critical path).
 let demos = null;
 const loadDemos = () => (demos ??= import('./demos.js').then((m) => m.start({ reduced, fine, small })));
-inView('#springs', () => { loadDemos(); }, { amount: 0, margin: '0px 0px 100% 0px' });
+inView('#fall', () => { loadDemos(); }, { amount: 0 });
 if (scrollY > innerHeight * 0.5) loadDemos();
