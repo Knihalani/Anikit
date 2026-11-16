@@ -949,7 +949,7 @@ A sky dome that the fog leaves alone: `{ mesh: dome, cull: false, material: { am
 
 **Shatter**: `shatter(mesh, { transform, force, spread, spin, gravity, drag, ripple, color })` turns every triangle into a flying shard; `shards.update(secondsSinceHit)` poses them; draw `{ mesh: shards.mesh, instances: shards.instances, cull: false }`. Deterministic, so parallel render workers agree.
 
-**Camera flights**: `flightPath(points, { lookAhead, bank, maxBank, closed })` is a smooth (centripetal Catmull–Rom) path with an arc-length table. `path.apply(scene, s, extraRoll, { shake })` places the camera at distance `s`, looking `lookAhead` ahead and banking into turns (`shake`, a `FlightShake`, adds a deterministic handheld wobble of that many world units that quickens with speed); `path.timing([[sec, fraction], …])` returns a monotone, smoothly accelerating seconds→distance function (hold a fraction to stop). `scene.roll` rolls any camera about its view axis.
+**Camera flights**: `flightPath(points, { lookAhead, bank, maxBank, bankWindow, closed })` is a smooth (centripetal Catmull–Rom) path with an arc-length table. Banking follows the turn rate averaged over `bankWindow` world units (default `max(50, lookAhead)`; longer is calmer through S-bends) and eases towards `maxBank` instead of clipping, so it never flips in a frame. `path.apply(scene, s, extraRoll, { shake })` places the camera at distance `s`, looking `lookAhead` ahead and banking into turns (`shake`, a `FlightShake`, adds a deterministic handheld wobble of that many world units that quickens with speed); `path.timing([[sec, fraction], …])` returns a monotone, smoothly accelerating seconds→distance function (hold a fraction to stop). `scene.roll` rolls any camera about its view axis.
 
 ```ts
 const path = flightPath([[0, 300, 2000], [0, 120, -2000], [180, 60, -8000], [0, 400, -26000]], { lookAhead: 900, bank: 1.4 });
@@ -1014,7 +1014,7 @@ The Python package (`crates/anikit-py`) exposes the same renderer and grade on n
 | `texture(imageData)` | `raster.texture(array)` (`(h, w, 4)` or `(h, w, 3)`, uint8 or 0–1 floats) |
 | `shatter(mesh, { transform, force, … })`, `shards.update(t)` | `raster.shatter(mesh, transform=dict(…), force=, …)`, `shards.update(t)`, `shards.item()` |
 | `scene.camera` / `scene.target` / `scene.roll` | `anikit.transform.Camera(position, target, fov=, near=, far=, roll=)` |
-| `flightPath(points, { lookAhead, bank, maxBank, closed })` | `anikit.flight_path(points, look_ahead=, bank=, max_bank=, closed=)`: `.point(s)`, `.tangent(s)`, `.at(s)`, `.apply(camera, s, extra_roll)`, `.timing(keys)`, `.points(n, from_=0, to=None)` |
+| `flightPath(points, { lookAhead, bank, maxBank, bankWindow, closed })` | `anikit.flight_path(points, look_ahead=, bank=, max_bank=, bank_window=, closed=)`: `.point(s)`, `.tangent(s)`, `.at(s)`, `.apply(camera, s, extra_roll)`, `.timing(keys)`, `.points(n, from_=0, to=None)` |
 | `composition({ post: { bloom, bloomThreshold, … } })` | `video.post(frame, bloom=, bloom_threshold=, …, seed=)` or `video.PostFx(**options)(frame, t=, seed=)` |
 
 ```python

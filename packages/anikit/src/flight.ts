@@ -18,8 +18,13 @@ export interface FlightPathOptions {
   lookAhead?: number;
   /** Banking strength: 0 = level, 1 = natural (default), 2 = aggressive. */
   bank?: number;
-  /** Maximum bank angle in degrees (default 55). */
+  /** Maximum bank angle in degrees (default 55), approached smoothly rather than clipped. */
   maxBank?: number;
+  /**
+   * Distance over which the turn rate is averaged for banking (world units, default
+   * `max(50, lookAhead)`). Longer = calmer, earlier banking through S-bends.
+   */
+  bankWindow?: number;
   /** Close the loop (last point joins the first). */
   closed?: boolean;
 }
@@ -53,11 +58,11 @@ export class FlightPath {
   private pts: [number, number, number][];
   private cum: Float64Array; // arc length at each table sample
   private tab: Float64Array; // xyz per sample
-  private o: Required<FlightPathOptions>;
+  private o: Required<Omit<FlightPathOptions, 'bankWindow'>> & { bankWindow?: number };
 
   constructor(points: Point3[], o: FlightPathOptions = {}) {
     if (points.length < 2) throw new Error('anikit: flightPath needs at least 2 points');
-    this.o = { lookAhead: o.lookAhead ?? 400, bank: o.bank ?? 1, maxBank: o.maxBank ?? 55, closed: o.closed ?? false };
+    this.o = { lookAhead: o.lookAhead ?? 400, bank: o.bank ?? 1, maxBank: o.maxBank ?? 55, closed: o.closed ?? false, bankWindow: o.bankWindow };
     this.pts = points.map(v3);
     const segs = this.o.closed ? this.pts.length : this.pts.length - 1;
     const per = 48;
@@ -146,7 +151,7 @@ export class FlightPath {
     }
     // Bank from the signed horizontal turn rate, averaged over the look-ahead window.
     let turn = 0;
-    const k = 4, span = Math.max(50, ahead);
+    const span = this.o.bankWindow ?? Math.max(50, ahead), k = Math.max(4, Math.min(16, Math.round(span / 25)));
     for (let i = 0; i < k; i++) {
       const s0 = s - span * 0.25 + (span * i) / k;
       const a = this.tangent(s0), b = this.tangent(s0 + span / k);
@@ -155,7 +160,9 @@ export class FlightPath {
     turn /= k;
     const bankK = (o.bank ?? this.o.bank) * 900;
     const max = this.o.maxBank;
-    const roll = Math.max(-max, Math.min(max, (Math.atan(turn * bankK) * 180) / Math.PI));
+    // Soft limit: approaches ±max smoothly (a hard clip turns S-bends into sudden flips).
+    const raw = (Math.atan(turn * bankK) * 180) / Math.PI;
+    const roll = max > 0 ? max * Math.tanh(raw / max) : 0;
     return { eye, target, roll, forward: fwd };
   }
 

@@ -55,12 +55,14 @@ class FlightPath:
 
     ``look_ahead`` is how far ahead along the path the camera looks (world
     units), ``bank`` the banking strength (0 level, 1 natural, 2 aggressive),
-    ``max_bank`` the largest bank angle in degrees, and ``closed`` joins the
+    ``max_bank`` the largest bank angle in degrees (approached smoothly),
+    ``bank_window`` the distance the turn rate is averaged over for banking
+    (default ``max(50, look_ahead)``; longer = calmer), and ``closed`` joins the
     last point to the first. Distances ``s`` are arc lengths in world units
     (``0 … length``).
     """
 
-    __slots__ = ("length", "look_ahead", "bank", "max_bank", "closed", "_pts", "_cum", "_tab")
+    __slots__ = ("length", "look_ahead", "bank", "max_bank", "bank_window", "closed", "_pts", "_cum", "_tab")
 
     _PER = 48
 
@@ -71,6 +73,7 @@ class FlightPath:
         look_ahead: float = 400.0,
         bank: float = 1.0,
         max_bank: float = 55.0,
+        bank_window: Optional[float] = None,
         closed: bool = False,
     ) -> None:
         pts = [_v3(p) for p in points]
@@ -79,6 +82,7 @@ class FlightPath:
         self.look_ahead = float(look_ahead)
         self.bank = float(bank)
         self.max_bank = float(max_bank)
+        self.bank_window = None if bank_window is None else float(bank_window)
         self.closed = bool(closed)
         self._pts = pts
         segs = len(pts) if self.closed else len(pts) - 1
@@ -185,7 +189,8 @@ class FlightPath:
             target = (target[0] + fwd[0] * over, target[1] + fwd[1] * over, target[2] + fwd[2] * over)
         # Bank from the signed horizontal turn rate, averaged over the look-ahead window.
         turn = 0.0
-        k, span = 4, max(50.0, ahead)
+        span = self.bank_window if self.bank_window is not None else max(50.0, ahead)
+        k = max(4, min(16, round(span / 25)))
         for i in range(k):
             s0 = s - span * 0.25 + (span * i) / k
             a, b = self.tangent(s0), self.tangent(s0 + span / k)
@@ -193,7 +198,9 @@ class FlightPath:
         turn /= k
         bank_k = (self.bank if bank is None else float(bank)) * 900
         mx = self.max_bank
-        roll = max(-mx, min(mx, math.atan(turn * bank_k) * 180 / math.pi))
+        # Soft limit: approaches +-max smoothly (a hard clip turns S-bends into sudden flips).
+        raw = math.atan(turn * bank_k) * 180 / math.pi
+        roll = mx * math.tanh(raw / mx) if mx > 0 else 0.0
         return FlightPose(eye, target, roll, fwd)
 
     def apply(
@@ -295,7 +302,8 @@ def flight_path(
     look_ahead: float = 400.0,
     bank: float = 1.0,
     max_bank: float = 55.0,
+    bank_window: Optional[float] = None,
     closed: bool = False,
 ) -> FlightPath:
     """A smooth camera flight path through ``points`` (see :class:`FlightPath`)."""
-    return FlightPath(points, look_ahead=look_ahead, bank=bank, max_bank=max_bank, closed=closed)
+    return FlightPath(points, look_ahead=look_ahead, bank=bank, max_bank=max_bank, bank_window=bank_window, closed=closed)
