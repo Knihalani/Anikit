@@ -24,6 +24,10 @@ fn highlights_typescript_and_ranges() {
     let colours: std::collections::HashSet<String> = h.lines.iter().flat_map(|l| l.spans.iter().map(|s| format!("{:?}", s.color))).collect();
     assert!(colours.len() >= 5, "{colours:?}");
     assert!(h.lines[2].spans[0].italic, "comment italic");
+    // Code is never parsed as markup.
+    let fonts = FontStore::new();
+    let star = highlight(&CodeSpec { code: "a ** b * c `d` == e".into(), language: "py".into(), ..Default::default() });
+    assert_eq!(fonts.layout(&star.text_spec(20.0, 1.5)).text, "a ** b * c `d` == e");
     // Unknown language falls back to plain text.
     let p = highlight(&CodeSpec { code: "x".into(), language: "nope".into(), ..Default::default() });
     assert_eq!(p.syntax, "Plain Text");

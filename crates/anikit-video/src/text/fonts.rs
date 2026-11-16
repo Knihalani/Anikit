@@ -66,10 +66,11 @@ pub(crate) struct Shaper {
 
 /// Fonts for one render: loaded once, shared read-only (`Arc<FontStore>`).
 pub struct FontStore {
+    paths: Mutex<HashMap<(u32, u16, u32), Arc<kurbo::BezPath>>>,
     pub(crate) shaper: Mutex<Shaper>,
     faces: RwLock<Vec<Arc<Face>>>,
     index: Mutex<HashMap<FaceKey, FontId>>,
-    pub(crate) cache: Mutex<HashMap<u64, Arc<super::layout::TextLayout>>>,
+    pub(crate) cache: RwLock<HashMap<u64, Arc<super::layout::TextLayout>>>,
 }
 
 impl Default for FontStore {
@@ -93,18 +94,19 @@ impl FontStore {
         let collection = Collection::new(CollectionOptions { shared: false, system_fonts: system });
         let fcx = FontContext { collection, source_cache: SourceCache::default() };
         let store = FontStore {
+            paths: Mutex::new(HashMap::new()),
             shaper: Mutex::new(Shaper { fcx, lcx: LayoutContext::new(), families: HashMap::new(), emoji: None }),
             faces: RwLock::new(Vec::new()),
             index: Mutex::new(HashMap::new()),
-            cache: Mutex::new(HashMap::new()),
+            cache: RwLock::new(HashMap::new()),
         };
-        let sans = store.add_font_bytes(bundled::INTER.to_vec());
-        store.add_font_bytes(bundled::INTER_ITALIC.to_vec());
-        let mono = store.add_font_bytes(bundled::JETBRAINS_MONO.to_vec());
-        store.add_font_bytes(bundled::JETBRAINS_MONO_ITALIC.to_vec());
-        let serif = store.add_font_bytes(bundled::INSTRUMENT_SERIF.to_vec());
-        store.add_font_bytes(bundled::INSTRUMENT_SERIF_ITALIC.to_vec());
-        let emoji = store.add_font_bytes(bundled::TWEMOJI.to_vec());
+        let sans = store.add_blob(Blob::new(Arc::new(bundled::INTER)));
+        store.add_blob(Blob::new(Arc::new(bundled::INTER_ITALIC)));
+        let mono = store.add_blob(Blob::new(Arc::new(bundled::JETBRAINS_MONO)));
+        store.add_blob(Blob::new(Arc::new(bundled::JETBRAINS_MONO_ITALIC)));
+        let serif = store.add_blob(Blob::new(Arc::new(bundled::INSTRUMENT_SERIF)));
+        store.add_blob(Blob::new(Arc::new(bundled::INSTRUMENT_SERIF_ITALIC)));
+        let emoji = store.add_blob(Blob::new(Arc::new(bundled::TWEMOJI)));
         {
             let mut s = store.shaper.lock().unwrap();
             let s = &mut *s;
@@ -145,9 +147,13 @@ impl FontStore {
 
     /// Register font bytes (TTF/OTF/TTC); returns the family names it added.
     pub fn add_font_bytes(&self, bytes: Vec<u8>) -> Vec<String> {
+        self.add_blob(Blob::new(Arc::new(bytes)))
+    }
+
+    fn add_blob(&self, blob: Blob<u8>) -> Vec<String> {
         let mut s = self.shaper.lock().unwrap();
         let s = &mut *s;
-        let added = s.fcx.collection.register_fonts(Blob::new(Arc::new(bytes)), None);
+        let added = s.fcx.collection.register_fonts(blob, None);
         let mut names = Vec::new();
         for (fam, _) in added {
             if let Some(n) = s.fcx.collection.family_name(fam) {
@@ -159,7 +165,7 @@ impl FontStore {
             }
         }
         // New fonts can change any layout.
-        self.cache.lock().unwrap().clear();
+        self.cache.write().unwrap().clear();
         names
     }
 
@@ -234,5 +240,57 @@ impl FontStore {
         f.glyph_metrics(skrifa::instance::Size::new(size), loc)
             .advance_width(skrifa::GlyphId::new(gid as u32))
             .unwrap_or(0.0)
+    }
+}
+
+struct PathPen<'a>(&'a mut kurbo::BezPath);
+
+impl skrifa::outline::OutlinePen for PathPen<'_> {
+    fn move_to(&mut self, x: f32, y: f32) {
+        self.0.move_to((x as f64, -y as f64));
+    }
+    fn line_to(&mut self, x: f32, y: f32) {
+        self.0.line_to((x as f64, -y as f64));
+    }
+    fn quad_to(&mut self, cx: f32, cy: f32, x: f32, y: f32) {
+        self.0.quad_to((cx as f64, -cy as f64), (x as f64, -y as f64));
+    }
+    fn curve_to(&mut self, a: f32, b: f32, c: f32, d: f32, x: f32, y: f32) {
+        self.0.curve_to((a as f64, -b as f64), (c as f64, -d as f64), (x as f64, -y as f64));
+    }
+    fn close(&mut self) {
+        self.0.close_path();
+    }
+}
+
+impl FontStore {
+    /// A glyph's outline at `size` px, y-down, origin on the pen position at
+    /// the baseline (cached). Empty for bitmap/COLR-only glyphs.
+    pub fn glyph_path(&self, id: FontId, gid: u16, size: f32) -> Arc<kurbo::BezPath> {
+        use skrifa::MetadataProvider;
+        let key = (id.0, gid, size.to_bits());
+        if let Some(p) = self.paths.lock().unwrap().get(&key) {
+            return p.clone();
+        }
+        let face = self.face(id);
+        let mut path = kurbo::BezPath::new();
+        if let Ok(f) = skrifa::FontRef::from_index(face.data.data.as_ref(), face.data.index) {
+            let coords: Vec<skrifa::instance::NormalizedCoord> =
+                face.coords.iter().map(|c| skrifa::instance::NormalizedCoord::from_bits(*c)).collect();
+            if let Some(g) = f.outline_glyphs().get(skrifa::GlyphId::new(gid as u32)) {
+                let settings = skrifa::outline::DrawSettings::unhinted(
+                    skrifa::instance::Size::new(size),
+                    skrifa::instance::LocationRef::new(&coords),
+                );
+                let _ = g.draw(settings, &mut PathPen(&mut path));
+            }
+        }
+        if let Some(s) = face.skew {
+            let t = (s as f64).to_radians().tan();
+            path.apply_affine(kurbo::Affine::new([1.0, 0.0, -t, 1.0, 0.0, 0.0]));
+        }
+        let p = Arc::new(path);
+        self.paths.lock().unwrap().insert(key, p.clone());
+        p
     }
 }

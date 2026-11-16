@@ -284,6 +284,7 @@ impl Highlighted {
         TextSpec {
             spans,
             style: TextStyle { font: "JetBrains Mono".into(), size, line_height, color: self.theme.foreground, ..Default::default() },
+            markup: Some(false),
             ..Default::default()
         }
     }
@@ -305,6 +306,7 @@ impl Highlighted {
             spans,
             style: TextStyle { font: "JetBrains Mono".into(), size, line_height, color: self.theme.gutter, ..Default::default() },
             align: super::layout::Align::Right,
+            markup: Some(false),
             ..Default::default()
         }
     }
