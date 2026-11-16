@@ -232,7 +232,7 @@ fn cmd_critique(args: &[String]) -> Result<(), String> {
 fn cmd_preview(args: &[String]) -> Result<(), String> {
     let a = parse(args, &["at", "width", "o", "out", "format", "brand", "params"], &[])?;
     let src = a.pos.first().ok_or("usage: preview <spec.json|template> [--at T] [--width W] [-o out.png]")?;
-    let (spec, base, stem) = if src.ends_with(".json") || src.ends_with(".yaml") || Path::new(src).exists() {
+    let (spec, base, stem) = if src.ends_with(".json") || src.ends_with(".yaml") || Path::new(src).is_file() {
         let text = read(src)?;
         let spec = crate::spec::parse::parse_str(&text).map(|_| ()).map_err(|d| d.iter().map(|x| x.to_string()).collect::<Vec<_>>().join("\n"));
         spec?;
