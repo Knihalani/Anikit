@@ -1,182 +1,227 @@
-// Anikit landing page: you fall into a black hole as you scroll. One smoothed scroll
-// value drives the camera distance continuously: the hole grows, you cross the
-// horizon, the demos come at paced stops in the tunnel inside, and you leave through
-// a white hole. The renderer sits behind a tiny adapter with the same shape as
-// anikit's core `blackHole()` (render({ distance, inclination, fov, time, ... })).
-import { ready, engine, inView, set, animate } from '../packages/anikit/dist/anikit.lean.js';
+// Anikit landing page. A mechanical watch is rendered live by anikit's CPU rasteriser
+// (no WebGL) in a worker. One spring-smoothed scroll value drives everything: the watch
+// opens into an exploded view, the camera dives into the movement, the demos come and
+// go at paced stops, and the watch reassembles above the install command.
+import { ready, engine, inView, set, spring } from '../packages/anikit/dist/anikit.lean.js';
 
 const $ = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
 const small = innerWidth < 760;
+const clamp = (v, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2);
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
 
 // ---------------------------------------------------------------------------
-// Renderer adapter: a worker with an OffscreenCanvas when available, so scrolling
-// never waits for a frame; otherwise the same renderer on the main thread.
+// Renderer: a worker drawing into a transferred OffscreenCanvas when available,
+// otherwise the same renderer on the main thread. Resolution adapts to hold ~8 ms.
 // ---------------------------------------------------------------------------
-const canvas = $('#sky-canvas');
-let budget = small ? 150_000 : 320_000;
+const stageEl = $('#stage'), canvas = $('#watch');
 let vw = innerWidth, vh = innerHeight;
-const renderSize = () => { const k = Math.min(1, Math.sqrt(budget / (vw * vh))); return [Math.round(vw * k), Math.round(vh * k)]; };
-const stats = { ms: 0, w: 0, h: 0, main: 0, frames: 0 };
+const MAXPX = small ? 380_000 : 900_000, MINPX = small ? 90_000 : 160_000;
+let budget = small ? 200_000 : 420_000;
+const renderSize = () => { const k = Math.sqrt(Math.min(budget, vw * vh * Math.min(2, devicePixelRatio || 1)) / (vw * vh)); return [Math.max(2, Math.round(vw * k)), Math.max(2, Math.round(vh * k))]; };
+const stats = { ms: 0, w: 0, h: 0, tris: 0, frames: 0, main: 0, worker: true };
 window.__stage = stats;
+window.__state = null;
+let labelPos = null;
+const onFrameStats = (d) => {
+  if (!stats.frames) stageEl.classList.add('live');
+  stats.ms = stats.frames ? stats.ms * 0.85 + d.ms * 0.15 : d.ms;
+  stats.w = d.w; stats.h = d.h; stats.tris = d.tris; stats.frames++;
+  if (d.labels) labelPos = d.labels;
+  (stats.log ??= []).push(d.ms);
+  if (stats.log.length > 4000) stats.log.splice(0, 2000);
+};
 
-async function createSky() {
+async function createRenderer() {
   const [w, h] = renderSize();
   if (canvas.transferControlToOffscreen && typeof Worker !== 'undefined' && !location.search.includes('noworker')) {
     const off = canvas.transferControlToOffscreen();
-    const worker = new Worker(new URL('./hole-worker.js', import.meta.url), { type: 'module' });
-    worker.onmessage = (e) => { stats.ms = stats.ms * 0.9 + e.data.ms * 0.1; stats.w = e.data.w; stats.h = e.data.h; stats.frames++; };
+    const worker = new Worker(new URL('./watch-worker.js', import.meta.url), { type: 'module' });
+    worker.onmessage = (e) => { if (!e.data.ready) onFrameStats(e.data); };
+    worker.onerror = (e) => console.warn('anikit: watch worker failed', e.message);
     worker.postMessage({ canvas: off, width: w, height: h }, [off]);
-    return { render: (opts) => worker.postMessage({ opts }), resize: (W, H) => worker.postMessage({ resize: [W, H] }) };
+    return { render: (state) => worker.postMessage({ state }), resize: (W, H) => worker.postMessage({ resize: [W, H] }) };
   }
-  const { blackHole } = await import('./hole.js');
-  const bh = blackHole({ width: w, height: h, canvas });
+  stats.worker = false;
+  canvas.width = w; canvas.height = h;
+  const { createWatch } = await import('./watch.js');
+  const watch = await createWatch({ width: w, height: h, canvas });
+  const labels = new Float32Array(14);
   return {
-    render: (opts) => { const t0 = performance.now(); bh.render(opts); stats.ms = stats.ms * 0.9 + (performance.now() - t0) * 0.1; stats.w = bh.width; stats.h = bh.height; stats.frames++; },
-    resize: (W, H) => bh.resize(W, H),
+    render: (state) => {
+      if (state.wantLabels) state.labels = labels;
+      const t0 = performance.now(); watch.render(state);
+      onFrameStats({ ms: performance.now() - t0, w: watch.width, h: watch.height, tris: watch.triangles, labels: state.wantLabels ? labels : null });
+    },
+    resize: (W, H) => watch.resize(W, H),
   };
 }
-const sky = await createSky();
+const renderer = createRenderer();
+
+let lastAdapt = 0, curSize = renderSize();
+function adapt(now) {
+  if (now - lastAdapt < 700 || stats.frames < 8) return;
+  lastAdapt = now;
+  const ms = stats.ms;
+  if (ms > 9.5 && budget > MINPX) budget = Math.max(MINPX, budget * (ms > 14 ? 0.7 : 0.85));
+  else if (ms < 5.5 && budget < MAXPX) budget = Math.min(MAXPX, budget * 1.12);
+  else return;
+  const s = renderSize();
+  if (Math.abs(s[0] - curSize[0]) > 8) { curSize = s; renderer.then((r) => r.resize(s[0], s[1])); }
+}
 
 // ---------------------------------------------------------------------------
-// The journey: scroll position → camera distance (M), with paced stops inside
+// Layout: section positions, measured on load and resize.
 // ---------------------------------------------------------------------------
-const D0 = small ? 34 : 46, DH = 2.02, DEND = 0.12;
-const stops = [...document.querySelectorAll('.stop')];
-const panels = stops.map((s) => s.querySelector('.panel'));
-stops.forEach((s) => s.style.setProperty('--accent', s.dataset.accent));
-let fallTop = 0, fallEnd = 1, tops = [], exitTop = 1, installTop = 1;
+const stops = $$('.stop'), panels = stops.map((s) => s.querySelector('.panel'));
+const beats = { open: $('#open'), calibre: $('#calibre'), close: $('#close') };
+const captions = { open: $('#open .caption'), calibre: $('#calibre .caption') };
+const L = {};
 const measure = () => {
   vw = innerWidth; vh = innerHeight;
   const y = scrollY, top = (el) => el.getBoundingClientRect().top + y;
-  fallTop = 0;
-  fallEnd = top(stops[0]); // the horizon is crossed as the first stop arrives
-  tops = stops.map((s) => ({ top: top(s), h: s.offsetHeight }));
-  exitTop = top($('#horizon')); installTop = top($('#install'));
+  for (const k in beats) L[k] = { top: top(beats[k]), h: beats[k].offsetHeight };
+  L.stops = stops.map((s) => ({ top: top(s), h: s.offsetHeight }));
+  L.max = document.documentElement.scrollHeight - vh;
 };
-const clamp = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
-const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2);
-/** Camera distance for a scroll position. Outside: a smooth fall from D0 to the horizon. */
-const distanceAt = (y) => {
-  if (y < fallEnd) {
-    const p = clamp(y / fallEnd);
-    return D0 * (DH / D0) ** (p ** 1.6);
-  }
-  // Inside: each stop slows the fall while its demo is centred, then moves on.
-  const N = stops.length;
-  for (let k = 0; k < N; k++) {
-    const T = tops[k], u = (y - T.top) / (T.h - vh);
-    if (u <= 1 || k === N - 1) {
-      const uu = clamp(u);
-      const e = uu + (0.8 * Math.sin(TAU * uu)) / TAU; // fast at the edges, slow in the middle
-      const P = (k + e) / N;
-      return DH * (DEND / DH) ** P;
-    }
-  }
-  return DEND;
+
+// ---------------------------------------------------------------------------
+// The story: scroll → watch state
+// ---------------------------------------------------------------------------
+const state = window.__state = { t: 0, clock: 0, explode: 0, dive: 0, yaw: 0, pitch: 0, turn: 0, lift: 0, rest: 1, wantLabels: false };
+const tilt = { x: 0, y: 0 };
+const prog = (b, y) => (y - L[b].top) / (L[b].h - vh); // 0 when the beat is pinned, 1 when it leaves
+/** How visible the watch is (0–1): fades out across the demos, eased over 60vh. */
+const visibility = (y) => {
+  const F = 0.3 * vh;
+  const o = L.open, c = L.calibre, z = L.close;
+  const out1 = 1 - sstep(o.top + o.h - vh - F * 0.4, o.top + o.h - vh + F * 1.6, y);
+  const in2 = sstep(c.top - F * 1.8, c.top + F * 0.2, y), out2 = 1 - sstep(c.top + c.h - vh - F * 0.4, c.top + c.h - vh + F * 1.6, y);
+  const in3 = sstep(z.top - F * 1.8, z.top + F * 0.2, y);
+  if (y < c.top - F * 2) return out1;
+  if (y < z.top - F * 2) return in2 * out2;
+  return in3;
 };
-const TAU = Math.PI * 2;
+function story(y) {
+  const near = (b) => y > L[b].top - 1.5 * vh;
+  if (!near('calibre')) {
+    // Hero → exploded view.
+    const e = sstep(0.15 * vh, L.open.top + (L.open.h - vh) * 0.62, y);
+    state.explode = e; state.dive = 0; state.lift = 130 * (1 - e) + 20 * e;
+    state.turn = 0.25 * Math.sin(Math.PI * clamp(prog('open', y))) * e;
+  } else if (!near('close')) {
+    // Into the movement.
+    const u = prog('calibre', y);
+    state.explode = 1; state.dive = sstep(0.0, 0.78, u); state.lift = 0; state.turn = 0;
+  } else {
+    // Reassembly above the install command.
+    const u = prog('close', y);
+    state.explode = 1 - sstep(-0.25, 0.55, u); state.dive = 0; state.lift = 20 - 100 * sstep(-0.25, 0.55, u); state.turn = -0.4 * (1 - sstep(-0.25, 0.7, u));
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Frame loop
 // ---------------------------------------------------------------------------
-let sy = scrollY, t = 0, lastKey = '';
-const veil = $('#veil'), flash = $('#flash'), calm = $('#calm'), skyEl = $('#sky');
-const heroEls = [...document.querySelectorAll('.hero h1, .hero .lede, .hero .cue')];
+let sy = scrollY, sv = 0, last = performance.now();
+const t0 = performance.now();
+const heroEls = $$('.hero h1, .hero .lede');
+const labelsEl = $('#labels'), labelEls = $$('#labels span'), hud = $('#hud'), hudLive = $('#hud-live'), install = $('#install');
 const lastP = panels.map(() => -1);
-let lastHero = -1, lastEnd = -1;
-const frame = (dt) => {
-  const t0 = performance.now();
-  sy += (scrollY - sy) * (reduced ? 1 : 1 - Math.exp(-dt / 110));
-  if (Math.abs(scrollY - sy) < 0.3) sy = scrollY;
-  const D = distanceAt(sy);
-  // Clocks run slow near the horizon (subtly).
-  if (!reduced) t += (Math.min(dt, 50) / 1000) * (D > DH ? 0.45 + 0.55 * clamp((D - 2.4) / 10) : 0.7);
-  // The view widens as you fall in, so the shadow grows without swallowing the page.
-  const near = clamp(Math.log(D0 / Math.max(D, DH)) / Math.log(D0 / DH));
-  const fov = (small ? 62 : 42) + near ** 1.5 * (small ? 40 : 52);
-  const p = clamp(sy / fallEnd);
-  const blue = p * p;
-  const tint = D > DH ? [1 - 0.3 * blue, 1, 1 + 0.6 * blue] : [1, 1, 1];
-  const key = reduced ? `${D.toFixed(4)}` : '';
-  if (!reduced || key !== lastKey) {
-    lastKey = key;
-    sky.render({ distance: D, inclination: 84.5, fov, time: t, exposure: 2.3 * (1 - 0.45 * near * near), bloom: 0.55, grain: 4, tint });
+const cache = new Map();
+const setOnce = (el, key, props) => { if (cache.get(el) === key) return; cache.set(el, key); set(el, props); };
+let R = null, stageShown = -1, lastHud = 0, lastKey = '';
+
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const f0 = performance.now();
+  // Scroll: a critically damped spring (ω ≈ 9.5 rad/s) towards the real position.
+  const target = scrollY;
+  if (reduced) { sy = target; sv = 0; }
+  else {
+    const k = 90, c = 2 * Math.sqrt(k);
+    for (let i = 0, n = Math.ceil(dt / 0.008), h = dt / n; i < n; i++) { sv += (k * (target - sy) - c * sv) * h; sy += sv * h; }
+    if (Math.abs(target - sy) < 0.2 && Math.abs(sv) < 2) { sy = target; sv = 0; }
   }
+  story(sy);
+  const vis = Math.round(visibility(sy) * 1000) / 1000;
+  if (vis !== stageShown) { stageShown = vis; stageEl.style.opacity = String(vis); hud.style.opacity = String(vis); }
+
+  // Pointer tilt on a spring; real time on the dial.
+  const d = new Date();
+  state.clock = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000;
+  if (reduced) state.clock = Math.floor(state.clock / 60) * 60;
+  state.t = reduced ? 0.4 : (now - t0) / 1000;
+  state.yaw = tilt.x * (1 - state.dive); state.pitch = tilt.y * (1 - state.dive);
+  const oEnd = L.open.top + L.open.h - vh;
+  const labelsOn = sy < L.calibre.top - vh ? clamp((state.explode - 0.82) / 0.15) * (1 - sstep(oEnd - 0.3 * vh, oEnd, sy)) : 0;
+  state.wantLabels = labelsOn > 0;
+  if (vis > 0) {
+    const key = reduced ? `${state.explode.toFixed(4)}${state.dive.toFixed(4)}${state.clock}${vw}` : '';
+    if (!reduced || key !== lastKey) { lastKey = key; R.render(state); }
+  }
+  labelsEl.style.opacity = String(Math.round(labelsOn * 100) / 100);
+  if (labelsOn > 0 && labelPos) for (let i = 0; i < labelEls.length; i++) labelEls[i].style.transform = `translate(${(labelPos[i * 2] * vw + 10).toFixed(1)}px, ${(labelPos[i * 2 + 1] * vh - 9).toFixed(1)}px)`;
   choreograph();
-  stats.main = stats.main * 0.9 + (performance.now() - t0) * 0.1;
-};
+  adapt(now);
+  if (now - lastHud > 250 && stats.frames) {
+    lastHud = now;
+    hudLive.textContent = `${stats.ms.toFixed(1)} ms · ${stats.tris.toLocaleString('en-US')} triangles · ${stats.w}×${stats.h}`;
+  }
+  stats.main = stats.main * 0.9 + (performance.now() - f0) * 0.1;
+}
 
 function choreograph() {
-  const h = Math.round(clamp(sy / (vh * 0.5)) * 1000) / 1000;
-  if (h !== lastHero) { lastHero = h; set(heroEls, { opacity: 1 - h, y: -h * 40 }); }
-  // Each stop: the panel rises in, holds while the fall slows, and rises out.
+  const h = Math.round(clamp(sy / (vh * 0.45)) * 1000) / 1000;
+  setOnce(heroEls[0], h, { opacity: 1 - ease(h), y: -h * 30 });
+  setOnce(heroEls[1], h, { opacity: 1 - ease(clamp(h * 1.15)), y: -h * 40 });
+  // Captions under the watch in each beat.
+  for (const k of ['open', 'calibre']) {
+    const u = prog(k, sy), a = sstep(0.12, 0.4, u) * (1 - sstep(0.72, 0.95, u));
+    const r = Math.round(a * 1000) / 1000;
+    setOnce(captions[k], r, { opacity: r, y: (1 - r) * 24 });
+  }
+  // Install fades in under the reassembled watch.
+  { const u = prog('close', sy), r = Math.round(sstep(0.35, 0.7, u) * 1000) / 1000; setOnce(install, r, { opacity: r, y: (1 - r) * 24 }); install.style.pointerEvents = r > 0.5 ? 'auto' : 'none'; }
+  // Demo panels: rise in over ~45vh, hold, and rise out.
   for (let k = 0; k < panels.length; k++) {
-    const T = tops[k];
-    if (!T) continue;
+    const T = L.stops[k];
     const u = (sy - T.top) / (T.h - vh);
-    const a = clamp((u + 0.08) / 0.3), b = clamp((u - 0.78) / 0.3);
+    const a = clamp((u + 0.12) / 0.34), b = clamp((u - 0.74) / 0.34);
     const r = Math.round(ease(a) * (1 - ease(b)) * 1000) / 1000;
     const key = r + b * 7;
     if (key === lastP[k]) continue;
     lastP[k] = key;
-    set(panels[k], { opacity: r, y: (1 - ease(a)) * 90 - ease(b) * 90, scale: 0.94 + 0.06 * ease(a) - 0.04 * ease(b) });
+    set(panels[k], { opacity: r, y: (1 - ease(a)) * 70 - ease(b) * 70, scale: 0.96 + 0.04 * ease(a) - 0.02 * ease(b) });
     panels[k].style.pointerEvents = r > 0.5 ? 'auto' : 'none';
-  }
-  // The exit: the tunnel narrows to a white point that blooms open onto quiet stars.
-  const x = clamp((sy - exitTop) / (installTop - exitTop));
-  const v = Math.round(x * 1000);
-  if (v !== lastEnd) {
-    lastEnd = v;
-    const fl = Math.sin(Math.PI * Math.min(1, x * 1.15));
-    flash.style.opacity = String(Math.min(1, fl * 1.6));
-    flash.style.transform = `scale(${(0.05 + x * 1.7).toFixed(3)})`;
-    calm.style.opacity = String(clamp(x * 1.6 - 0.45));
-    skyEl.style.visibility = x > 0.75 ? 'hidden' : 'visible';
-    veil.style.opacity = '0';
   }
 }
 
-// A quiet starfield for the end, drawn once.
-const drawCalm = () => {
-  const dpr = Math.min(2, devicePixelRatio || 1);
-  calm.width = Math.round(vw * dpr); calm.height = Math.round(vh * dpr);
-  const c = calm.getContext('2d');
-  c.fillStyle = '#000'; c.fillRect(0, 0, calm.width, calm.height);
-  let s = 7;
-  const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
-  const n = Math.round((vw * vh) / 2600);
-  for (let i = 0; i < n; i++) {
-    const m = rnd() ** 6, tt = rnd();
-    const col = tt < 0.3 ? '255,214,170' : tt < 0.8 ? '255,250,240' : '196,214,255';
-    c.fillStyle = `rgba(${col},${0.25 + m * 0.75})`;
-    c.beginPath(); c.arc(rnd() * calm.width, rnd() * calm.height, (0.4 + m * 1.1) * dpr, 0, TAU); c.fill();
-  }
-};
-
 // ---------------------------------------------------------------------------
-// Start: the first frame is requested before the WebAssembly core has loaded.
+// Start: the poster is the static first frame; the first live frame fades in over it.
 // ---------------------------------------------------------------------------
 measure();
-frame(16);
-skyEl.classList.add('on');
-drawCalm();
-
+story(sy);
 await ready;
 engine.reducedMotion = 'user';
-engine.onFrame((_t, dt) => frame(dt));
+const r0 = await renderer;
+R = r0;
+measure();
+engine.onFrame(() => frame(performance.now()));
 addEventListener('resize', () => {
   const big = Math.abs(innerWidth - vw) > 40 || Math.abs(innerHeight - vh) > 140; // ignore mobile toolbar resizes
   measure();
-  if (big) { sky.resize(...renderSize()); drawCalm(); }
-  lastP.fill(-1); lastEnd = -1; lastHero = -1;
+  if (big) { curSize = renderSize(); r0.resize(curSize[0], curSize[1]); }
+  lastP.fill(-1); cache.clear(); stageShown = -1;
 });
 new ResizeObserver(() => measure()).observe(document.body);
-if (!reduced) animate('#cue', { opacity: [0.35, 1, 0.35] }, { duration: 2.6, repeat: Infinity, ease: 'inOutSine' });
+if (fine && !reduced) addEventListener('pointermove', (e) => { spring(tilt, { x: (e.clientX / vw - 0.5) * 0.42, y: (e.clientY / vh - 0.5) * 0.24 }, { stiffness: 50, damping: 12 }); }, { passive: true });
 
 // Demos load on approach (dynamic import keeps them off the critical path).
 let demos = null;
 const loadDemos = () => (demos ??= import('./demos.js').then((m) => m.start({ reduced, fine, small })));
-inView('#fall', () => { loadDemos(); }, { amount: 0 });
+inView('#open', () => { loadDemos(); }, { amount: 0 });
 if (scrollY > innerHeight * 0.5) loadDemos();

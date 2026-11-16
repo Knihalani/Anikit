@@ -9,12 +9,13 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
 const out = join(root, 'site-dist');
-const pages = ['index.html', 'style.css', 'main.js', 'demos.js', 'hole.js', 'hole-worker.js'];
+const pages = ['index.html', 'style.css', 'main.js', 'demos.js', 'watch.js', 'watch-worker.js'];
 rmSync(out, { recursive: true, force: true });
 mkdirSync(join(out, 'vendor'), { recursive: true });
 mkdirSync(join(out, 'fonts'), { recursive: true });
 for (const f of pages) cpSync(join(here, f), join(out, f));
-for (const f of ['InterDisplay-Black.woff2', 'Inter-Regular.woff2', 'JetBrainsMono-Regular.woff2', 'LICENSE-Inter.txt', 'LICENSE-JetBrainsMono.txt']) cpSync(join(here, 'fonts', f), join(out, 'fonts', f));
+cpSync(join(here, 'poster.jpg'), join(out, 'poster.jpg'));
+for (const f of ['Inter-Medium.woff2', 'Inter-Regular.woff2', 'JetBrainsMono-Regular.woff2', 'LICENSE-Inter.txt', 'LICENSE-JetBrainsMono.txt']) cpSync(join(here, 'fonts', f), join(out, 'fonts', f));
 for (const f of ['anikit.lean.js', 'anikit.wasm']) cpSync(join(root, 'packages/anikit/dist', f), join(out, 'vendor', f));
 for (const f of pages) {
   const p = join(out, f);

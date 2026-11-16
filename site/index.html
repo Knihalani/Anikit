@@ -6,23 +6,28 @@
 <title>Anikit — animation engine</title>
 <meta name="description" content="A web animation engine with a Rust/WebAssembly core: tweens, springs, timelines, physics, particles, solid 3D, scroll, SVG and text." />
 <meta name="theme-color" content="#000000" />
-<link rel="modulepreload" href="hole.js" />
-<link rel="modulepreload" href="hole-worker.js" />
+<link rel="modulepreload" href="watch-worker.js" />
+<link rel="modulepreload" href="watch.js" />
 <link rel="modulepreload" href="../packages/anikit/dist/anikit.lean.js" />
 <link rel="preload" href="../packages/anikit/dist/anikit.wasm" as="fetch" type="application/wasm" crossorigin />
-<link rel="preload" href="fonts/InterDisplay-Black.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="fonts/Inter-Medium.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="poster.jpg" as="image" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div class="sky" id="sky" aria-hidden="true"><canvas id="sky-canvas"></canvas></div>
-<div class="veil" id="veil" aria-hidden="true"></div>
-<div class="flash" id="flash" aria-hidden="true"></div>
-<canvas class="calm" id="calm" aria-hidden="true"></canvas>
+<div class="stage" id="stage" aria-hidden="true">
+  <img class="poster" id="poster" src="poster.jpg" alt="" decoding="sync" fetchpriority="high" />
+  <canvas id="watch"></canvas>
+</div>
+<div class="labels mono" id="labels" aria-hidden="true">
+  <span>Crystal</span><span>Bezel</span><span>Hands</span><span>Dial</span><span>Movement</span><span>Case</span><span>Strap</span>
+</div>
+<p class="hud mono" id="hud"><span>Rendered live on your CPU by anikit. No WebGL.</span> <span id="hud-live"></span></p>
 
 <nav class="nav">
   <a class="brand" href="#top">anikit</a>
   <div class="nav-links mono">
-    <a href="#springs">Demos</a>
+    <a href="#crown">Demos</a>
     <a href="#numbers">Benchmarks</a>
     <a href="#install">Install</a>
   </div>
@@ -32,67 +37,100 @@
   <header class="hero" id="top">
     <h1>anikit</h1>
     <p class="lede">An animation engine for the web, with a Rust core compiled to WebAssembly.</p>
-    <p class="cue mono" id="cue">Scroll to fall in</p>
   </header>
-  <section class="fall" id="fall" aria-hidden="true"></section>
 
-  <section class="demo stop" id="springs" data-accent="#ff9a5a">
+  <section class="beat" id="open">
+    <div class="stick"><p class="caption" data-beat>Opened along its axis.<br /><span class="dim">Every surface is shaded per pixel, four pixels at a time.</span></p></div>
+  </section>
+
+  <section class="demo stop" id="crown">
     <div class="stick"><div class="panel">
-      <h2>Springs</h2>
-      <div class="stage-box" id="spring-box"></div>
-      <div class="row"><button class="pill mag">Stiff</button><button class="pill mag">Bouncy</button><button class="pill mag">Slow</button></div>
-      <code class="snippet mono">spring(dot, { x, y }, { stiffness: 260, damping: 16 })</code>
+      <p class="kicker mono">01 · Springs</p>
+      <h2>Set the time</h2>
+      <div class="stage-box crown-box" id="crown-box">
+        <svg class="dial" id="dial" viewBox="-160 -160 320 320" aria-label="A watch dial whose hands spring to the time set by its crown">
+          <defs>
+            <radialGradient id="dg" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#2a4a92" /><stop offset="0.7" stop-color="#14275a" /><stop offset="1" stop-color="#091430" /></radialGradient>
+            <linearGradient id="cg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f4f6fa" /><stop offset="0.5" stop-color="#8d929c" /><stop offset="1" stop-color="#e8ebf0" /></linearGradient>
+          </defs>
+          <circle r="150" fill="url(#cg)" />
+          <circle r="138" fill="url(#dg)" />
+          <g id="ticks"></g>
+          <g id="hand-h"><path d="M0 -78 L6 -18 L0 8 L-6 -18 Z" fill="#e9edf3" /></g>
+          <g id="hand-m"><path d="M0 -118 L4.5 -22 L0 8 L-4.5 -22 Z" fill="#f4f6fa" /></g>
+          <g id="hand-s"><rect x="-0.9" y="-124" width="1.8" height="150" fill="#ff7a3d" /><circle r="4" fill="#ff7a3d" /></g>
+          <circle r="2" fill="#091430" />
+        </svg>
+        <div class="crown" id="crown-knob" role="slider" tabindex="0" aria-label="Crown: drag up or down to set the time" aria-valuetext="10:10"></div>
+      </div>
+      <div class="row"><span class="mono dim" id="crown-time">10:10</span><span class="mono dim">Drag the crown</span></div>
+      <code class="snippet mono">spring(hands, { hours, minutes }, { stiffness: 170, damping: 14 })</code>
     </div></div>
   </section>
 
-  <section class="demo stop" id="text" data-accent="#ffd27a">
+  <section class="demo stop" id="text">
     <div class="stick"><div class="panel">
+      <p class="kicker mono">02 · Text</p>
       <h2>Split text</h2>
-      <p class="reveal" id="reveal">Every letter starts a little later than the last.</p>
+      <div class="stage-box text-box"><p class="reveal" id="reveal">A balance wheel swings back and forth eight times a second.</p></div>
       <div class="row"><button class="pill" id="reveal-btn">Replay</button><span class="mono dim" id="reveal-ease">ease: spring</span></div>
       <code class="snippet mono">animate(splitText(el).chars, { yPercent: [110, 0] }, { delay: stagger(0.02) })</code>
     </div></div>
   </section>
 
-  <section class="demo stop" id="svg" data-accent="#9fe8ff">
+  <section class="beat tall" id="calibre">
+    <div class="stick"><p class="caption" data-beat>The balance wheel swings at 4 Hz.<br /><span class="dim">Each wheel of the going train turns at its true ratio.</span></p></div>
+  </section>
+
+  <section class="demo stop" id="svg">
     <div class="stick"><div class="panel">
-      <h2>SVG morph</h2>
-      <svg class="svg-demo" viewBox="0 0 520 300" aria-hidden="true">
-        <path id="blob" />
-        <path id="trail" d="M10 250 C 120 40 220 300 300 150 S 440 30 510 120" />
-        <circle id="rider" r="9" />
-      </svg>
-      <code class="snippet mono">timeline().add(path, { d: star(…) }).add(path, { d: circle(…) })</code>
+      <p class="kicker mono">03 · SVG</p>
+      <h2>Scrubbed by scroll</h2>
+      <div class="stage-box">
+        <svg class="svg-demo" id="train" viewBox="0 0 520 320" aria-label="A gear train drawn on as you scroll">
+          <g id="train-gears"></g>
+          <path id="trail" d="M30 290 C 140 250 150 120 260 120 S 400 40 490 60" />
+          <circle id="rider" r="7" />
+        </svg>
+      </div>
+      <div class="row"><span class="mono dim">Scroll to wind it</span></div>
+      <code class="snippet mono">scroll(timeline().add(gears, { draw: [0, 1], rotate: 360 }), { target })</code>
     </div></div>
   </section>
 
-  <section class="demo stop" id="physics" data-accent="#8fb4ff">
+  <section class="demo stop" id="physics">
     <div class="stick"><div class="panel">
-      <h2>Physics</h2>
-      <div class="world-box" id="world-box"></div>
+      <p class="kicker mono">04 · Physics</p>
+      <h2>Screws and wheels</h2>
+      <div class="stage-box world-box" id="world-box"></div>
+      <div class="row"><span class="mono dim">Throw them</span></div>
       <code class="snippet mono">world({ gravity: [0, 2200] }).dragging()</code>
     </div></div>
   </section>
 
-  <section class="demo stop" id="cloud" data-accent="#c9a6ff">
+  <section class="demo stop" id="cloud">
     <div class="stick"><div class="panel">
+      <p class="kicker mono">05 · Particles</p>
       <h2><span id="cloud-n">100,000</span> particles</h2>
-      <canvas class="cloud-canvas" id="cloud-canvas" aria-label="A particle cloud morphing between a sphere, a ring and a torus knot"></canvas>
+      <div class="stage-box"><canvas class="cloud-canvas" id="cloud-canvas" aria-label="A particle cloud morphing into a watch, a gear and a sphere"></canvas></div>
+      <div class="row"><span class="mono dim">Click to scatter</span></div>
       <code class="snippet mono">pointCloud(100_000).morph(1, { duration: 2 })</code>
     </div></div>
   </section>
 
-  <section class="demo stop" id="layout" data-accent="#ff9ec4">
+  <section class="demo stop" id="layout">
     <div class="stick"><div class="panel">
-      <h2>FLIP layout</h2>
-      <div class="tiles" id="tiles"></div>
-      <div class="row"><button class="pill" id="shuffle">Shuffle</button><button class="pill" id="regrid">Change layout</button></div>
-      <code class="snippet mono">flip('.tile', () => shuffle(grid), { ease: 'spring(bounce: .2)' })</code>
+      <p class="kicker mono">06 · Layout</p>
+      <h2>FLIP</h2>
+      <div class="stage-box tiles-box"><div class="tiles" id="tiles"></div></div>
+      <div class="row"><button class="pill on" id="show-dials">Dials</button><button class="pill" id="show-straps">Straps</button><button class="pill" id="shuffle">Shuffle</button></div>
+      <code class="snippet mono">flip('.tile', () => grid.classList.toggle('straps'), { ease: 'spring(bounce: .2)' })</code>
     </div></div>
   </section>
 
-  <section class="demo stop numbers" id="numbers" data-accent="#e6ff7a">
+  <section class="demo stop numbers" id="numbers">
     <div class="stick"><div class="panel wide">
+      <p class="kicker mono">07 · Speed</p>
       <h2>Benchmarks</h2>
       <p class="dim">From the scripts in <code>packages/anikit/scripts</code>.</p>
       <div class="n-stats">
@@ -110,18 +148,16 @@
     </div></div>
   </section>
 
-  <section class="exit" id="horizon" aria-hidden="true"></section>
-
-  <section class="install" id="install">
-    <div class="install-core">
-      <h2>Install</h2>
-      <div class="install-row">
-        <code class="mono" id="install-cmd">npm install anikit</code>
-        <button class="pill solid" id="copy">Copy</button>
+  <section class="beat close" id="close">
+    <div class="stick">
+      <div class="install" id="install">
+        <div class="install-row">
+          <code class="mono" id="install-cmd">npm install anikit</code>
+          <button class="pill solid" id="copy">Copy</button>
+        </div>
+        <p class="mono dim">pip install anikit · MIT</p>
       </div>
-      <p class="mono dim">pip install anikit · MIT</p>
     </div>
-    <p class="mono foot dim">Every frame on this page is drawn with anikit.</p>
   </section>
 </main>
 
