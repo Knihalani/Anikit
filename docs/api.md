@@ -373,6 +373,30 @@ animate(hero, { backgroundImage: 'linear-gradient(90deg, #f0c, #0cf)' });       
 
 `'auto'` works for `height`, `width`, `maxHeight`, `maxWidth`, `blockSize` and `inlineSize`, as a target, as a start value, or as a keyframe. The size is measured when the animation is built, and the property is written back as `auto` (`none` for max sizes) whenever the value sits on that size, so the element stays responsive after the animation ends or is reversed. Add `overflow: hidden` (or `clip`) yourself if the content shouldn't spill while it grows.
 
+## Reactive values: `motionValue`
+
+A number you can subscribe to, tween, spring, derive from and bind to styles: one source of truth (a scroll position, a drag, a slider) driving many properties.
+
+```ts
+import { motionValue, derived, bindValues, MotionValue } from 'anikit';
+
+const progress: MotionValue = motionValue(0);
+const opacity = progress.map([0, 0.5, 1], [0, 1, 0.4]);   // interpolate() stops, clamped
+const x = progress.map([0, 1], [0, 300], { ease: 'outCubic' });
+const width = motionValue(200), height = motionValue(100);
+const area = derived([width, height], (a, b) => a * b);
+bindValues('.card', { opacity, x });                      // writes styles on every change
+progress.to(1, { duration: 1.2, ease: 'inOutCubic' });   // tween (any animate() options)
+addEventListener('pointermove', (e) => progress.spring(e.clientX / innerWidth, { stiffness: 200 }));
+const off = area.on((v) => console.log(v, progress.velocity));
+off();
+```
+
+- `get()`, `set(v)` (stops a running tween/spring), `on(fn)` → unsubscribe, `velocity` (units/s), `stop()`, `destroy()`.
+- `to(target, options)` returns the `Animation`; `spring(target, options)` returns the `PhysicsAnimation` and keeps momentum when called again mid-flight (pointer following).
+- `map(input, output, { clamp, ease })` and `derived(sources, fn)` return values that recompute when their sources change.
+- `bindValues(targets, { prop: value })` writes any property `animate()` understands (transforms compose), immediately and on every change; it returns a `ValueBinding` (`kill()`, `revert()` restores the inline style from before) and is cleaned up by `context().revert()`.
+
 ## Control, cleanup and accessibility
 
 - `anim.revert()` kills the animation and restores every property it touched to its original inline value. `timeline.revert()` does the same for every child.
@@ -998,6 +1022,7 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Utilities](#more-utilities) | `mixColor`, `parseColor`, `splitColor`, `clamp`, `lerp`, `mapRange`, `wrap`, `snap`, `random`, `interpolate`, `normalize`, `roundTo`, `pipe`, `shuffle`, `getUnit`, `toArray`, `VelocityTracker` | |
 | [Noise](#more-utilities) | `noise2`, `noise3`, `fbm`, `noiseMany`, `wander` | |
 | [Cleanup](#control-cleanup-and-accessibility) | `context`, `Context`, `matchMedia`, `quickTo`, `quickSetter` | `Revertible` |
+| [Reactive values](#reactive-values-motionvalue) | `motionValue`, `MotionValue`, `derived`, `bindValues` | `ValueBinding` |
 | [Effects](#effects) | `effects`, `effect`, `registerEffect`, `effectNames` | `EffectOptions`, `EffectFn`, `EffectName` |
 | [Layout transitions](#layout-transitions-flip), [presence](#presence-enter-and-exit) and [View Transitions](#view-transitions) | `flip`, `presence`, `Presence`, `enter`, `exit`, `viewTransition` | `FlipOptions`, `FlipState`, `PresenceOptions`, `ViewTransitionOptions`, `ViewTransitionHandle` |
 | [Interaction](#interaction) | `draggable`, `Draggable`, `observer`, `hover`, `press`, `gesture`, `Gesture` | `DraggableOptions`, `Bounds`, `ObserverOptions`, `ObserverEvent`, `GestureOptions` |

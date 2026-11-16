@@ -44,6 +44,7 @@ Import from 'anikit'. Times are in seconds (only `engine.onFrame`/`engine.tick` 
 - Engine
 - More easings
 - More values
+- Reactive values: `motionValue`
 - Control, cleanup and accessibility
 - Timeline extras
 - Ballistic physics

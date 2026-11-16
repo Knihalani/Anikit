@@ -39,6 +39,8 @@ export { noise2, noise3, fbm, noiseMany, wander } from './noise';
 export { context, matchMedia, Context } from './context';
 export type { Revertible } from './context';
 export { quickTo, quickSetter } from './quick';
+export { motionValue, MotionValue, derived, bindValues } from './motionvalue';
+export type { ValueBinding } from './motionvalue';
 export { effects, effect, registerEffect, effectNames } from './effects';
 export type { EffectOptions, EffectFn, EffectName } from './effects';
 export type { Playable, PlayState } from './playable';

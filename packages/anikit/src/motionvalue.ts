@@ -1,0 +1,190 @@
+/**
+ * Reactive values: a number you can subscribe to, animate, spring, derive
+ * other values from and bind to element styles. Drive many properties from one
+ * source of truth (a scroll position, a drag, a slider) without wiring every
+ * update by hand.
+ *
+ * ```ts
+ * const progress = motionValue(0);
+ * const opacity = progress.map([0, 0.5, 1], [0, 1, 0.4]);
+ * const x = progress.map([0, 1], [0, 300]);
+ * bindValues('.card', { opacity, x });              // writes styles when they change
+ * progress.to(1, { duration: 1.2, ease: 'inOutCubic' });
+ * addEventListener('pointermove', (e) => progress.spring(e.clientX / innerWidth));
+ * ```
+ */
+import { animate, AnimateOptions, Animation } from './animate';
+import { spring, PhysicsAnimation, PhysicsOptions } from './spring';
+import { interpolate } from './utils';
+import type { EasingInput } from './core';
+import { quickSetter } from './quick';
+import { toTargets, Targets } from './props';
+import { track } from './context';
+import { checkTargets, warn } from './debug';
+
+type Listener = (v: number) => void;
+
+/** A reactive number: `get`/`set`, subscribe with `on`, animate with `to`/`spring`, derive with `map`/`derived()`. */
+export class MotionValue {
+  private v: number;
+  private subs = new Set<Listener>();
+  /** The animated box `animate()`/`spring()` write into. */
+  private box: { v: number };
+  private anim: Animation | PhysicsAnimation | null = null;
+  private sopts: PhysicsOptions = {};
+  private last = { t: 0, v: 0, vel: 0 };
+  private notifying = false;
+
+  constructor(initial: number) {
+    this.v = initial;
+    this.box = { v: initial };
+    this.last = { t: now(), v: initial, vel: 0 };
+  }
+  /** The current value. */
+  get(): number {
+    return this.v;
+  }
+  /** Set the value now (stops a running `to()`/`spring()`) and notify subscribers. */
+  set(v: number): void {
+    this.stop();
+    this.write(v);
+  }
+  /** Units per second: from the running spring, else from the last changes. */
+  get velocity(): number {
+    if (this.anim instanceof PhysicsAnimation) {
+      const v = this.anim.velocity.v;
+      if (v !== undefined) return v;
+    }
+    return now() - this.last.t > 100 ? 0 : this.last.vel;
+  }
+  /** Call `fn(value)` on every change; returns an unsubscribe function. */
+  on(fn: Listener): () => void {
+    this.subs.add(fn);
+    return () => this.subs.delete(fn);
+  }
+  /** Tween to `target` (any `animate()` options); returns the animation. */
+  to(target: number, options: AnimateOptions = {}): Animation {
+    this.stop();
+    this.box.v = this.v;
+    const user = options.onUpdate;
+    const a = animate(this.box, { v: target }, { ...options, onUpdate: (...args: unknown[]) => { this.write(this.box.v); (user as ((...a: unknown[]) => void) | undefined)?.(...args); } });
+    this.anim = a;
+    return a;
+  }
+  /**
+   * Spring to `target`, keeping the current velocity when re-targeted (call it
+   * on every pointer move). Options as `spring()`.
+   */
+  spring(target: number, options: PhysicsOptions = {}): PhysicsAnimation {
+    if (!(this.anim instanceof PhysicsAnimation)) {
+      this.stop();
+      this.box.v = this.v;
+    }
+    // One options object per value, so re-targeting doesn't pile up listeners.
+    for (const k of Object.keys(this.sopts) as (keyof PhysicsOptions)[]) if (k !== 'onUpdate') delete this.sopts[k];
+    Object.assign(this.sopts, options, { onUpdate: () => { this.write(this.box.v); options.onUpdate?.(); } });
+    const s = spring(this.box, { v: target }, this.sopts);
+    this.anim = s;
+    return s;
+  }
+  /** Stop a running `to()`/`spring()` where it is. */
+  stop(): void {
+    if (!this.anim) return;
+    const a = this.anim;
+    this.anim = null;
+    a.kill();
+  }
+  /** A value that follows this one through `interpolate()` stops: `x.map([0, 1], [0, 300])`. */
+  map(input: number[], output: number[], options: {
+    /** Hold the end values outside the input range (default true). */
+    clamp?: boolean;
+    /** Easing for every segment, or one per segment. */
+    ease?: EasingInput | EasingInput[];
+  } = {}): MotionValue {
+    const f = interpolate(input, output, options) as (v: number) => number;
+    return derived([this], (v) => f(v));
+  }
+  /** Stop animating and drop every subscriber. */
+  destroy(): void {
+    this.stop();
+    this.subs.clear();
+  }
+
+  private write(v: number): void {
+    if (v === this.v) return;
+    const t = now(), dt = (t - this.last.t) / 1000;
+    if (dt > 0) this.last = { t, v, vel: (v - this.last.v) / dt };
+    this.v = v;
+    if (this.notifying) return; // a subscriber set us again: the outer loop already has the latest value
+    this.notifying = true;
+    try {
+      for (const fn of this.subs) fn(this.v);
+    } finally {
+      this.notifying = false;
+    }
+  }
+  /** @internal Set without stopping animations (derived values). */
+  _derive(v: number): void {
+    this.write(v);
+  }
+}
+
+const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
+/** A reactive number starting at `initial`. */
+export function motionValue(initial = 0): MotionValue {
+  return new MotionValue(initial);
+}
+
+/**
+ * A value computed from others, recomputed whenever any of them changes:
+ * `derived([w, h], (w, h) => w * h)`.
+ */
+export function derived(sources: MotionValue[], fn: (...values: number[]) => number): MotionValue {
+  const read = () => fn(...sources.map((s) => s.get()));
+  const out = new MotionValue(read());
+  for (const s of sources) s.on(() => out._derive(read()));
+  return out;
+}
+
+/** What `bindValues()` returns: stop the binding, or stop and restore the styles from before. */
+export interface ValueBinding {
+  /** Stop updating and restore each element's inline style from before the binding. */
+  revert(): void;
+  /** Stop updating, keep the current styles. */
+  kill(): void;
+}
+
+/**
+ * Write values to element properties whenever they change (any property
+ * `animate()` understands: `x`, `opacity`, `backgroundColor`, CSS variables…).
+ * The current values are written straight away. Registered with `context()`.
+ */
+export function bindValues(targets: Targets, props: Record<string, MotionValue>): ValueBinding {
+  const els = toTargets(targets);
+  checkTargets('bindValues()', targets, els.length);
+  const saved = els.map((el) => (el as HTMLElement).getAttribute?.('style') ?? null);
+  const offs: Array<() => void> = [];
+  for (const [prop, val] of Object.entries(props)) {
+    if (!(val instanceof MotionValue)) {
+      warn(`bindValues(): "${prop}" is not a motionValue (got ${typeof val}); wrap it: motionValue(${JSON.stringify(val)})`);
+      continue;
+    }
+    const set = quickSetter(els, prop);
+    set(val.get());
+    offs.push(val.on(set));
+  }
+  const kill = () => { for (const off of offs.splice(0)) off(); };
+  return track({
+    kill,
+    revert() {
+      kill();
+      els.forEach((el, i) => {
+        const e = el as HTMLElement;
+        if (!e.setAttribute) return;
+        if (saved[i] === null) e.removeAttribute('style');
+        else e.setAttribute('style', saved[i]!);
+      });
+    },
+  });
+}
