@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Anikit — animation engine</title>
+<meta name="description" content="A web animation engine with a Rust/WebAssembly core: tweens, springs, timelines, physics, particles, scroll, SVG and text." />
+<meta name="theme-color" content="#030304" />
+<link rel="modulepreload" href="../../../packages/anikit/dist/anikit.lean.js" />
+<link rel="preload" href="../../fonts/InterDisplay-Black.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<canvas id="metal" aria-hidden="true"></canvas>
+
+<nav class="nav">
+  <a class="brand" href="#top">anikit</a>
+  <div class="nav-links mono">
+    <a href="#physics">Demos</a>
+    <a href="#numbers">Benchmarks</a>
+    <a href="#install">Install</a>
+  </div>
+</nav>
+
+<main>
+  <header class="hero" id="top">
+    <div class="hero-in">
+      <h1 class="wordmark"><span>anikit</span></h1>
+      <p class="lede">An animation engine for the web, with a Rust core compiled to WebAssembly.</p>
+      <p class="cue mono">Scroll</p>
+    </div>
+  </header>
+
+  <section class="stop" id="physics">
+    <div class="pin">
+      <h2>Physics</h2>
+      <div class="stage" id="world-stage"><p class="hint mono">Throw them</p></div>
+      <code class="snippet mono">world({ gravity: [0, 2400] }).dragging()</code>
+    </div>
+  </section>
+
+  <section class="stop" id="cloud">
+    <div class="pin">
+      <h2><span id="cloud-n">100,000</span> particles</h2>
+      <div class="stage"><canvas class="fill" id="cloud-canvas" aria-label="A cloud of particles morphing between a sphere, a ring and a knot"></canvas></div>
+      <code class="snippet mono" id="cloud-code">pointCloud(100_000).morph(1, { duration: 2.4 })</code>
+    </div>
+  </section>
+
+  <section class="stop" id="text">
+    <div class="pin">
+      <h2>Split text</h2>
+      <div class="stage"><p class="reveal" id="reveal">Every letter starts a little later than the last.</p></div>
+      <code class="snippet mono">timeline().add(splitText(el).chars, { yPercent: [110, 0] }, { delay: stagger(0.02) })</code>
+    </div>
+  </section>
+
+  <section class="stop" id="springs">
+    <div class="pin">
+      <h2>Springs</h2>
+      <div class="stage" id="spring-stage">
+        <div class="row presets"><button class="pill mag" data-k="0">Stiff</button><button class="pill mag" data-k="1">Bouncy</button><button class="pill mag" data-k="2">Slow</button></div>
+      </div>
+      <code class="snippet mono" id="spring-code">spring(drop, { x, y }, { stiffness: 260, damping: 16 })</code>
+    </div>
+  </section>
+
+  <section class="stop" id="svg">
+    <div class="pin">
+      <h2>SVG morph</h2>
+      <div class="stage">
+        <svg class="morph" viewBox="0 0 300 300" aria-hidden="true">
+          <defs>
+            <linearGradient id="chrome" x1="0" y1="0" x2="0.35" y2="1">
+              <stop offset="0" stop-color="#f4f5f7" />
+              <stop offset="0.28" stop-color="#8b8f97" />
+              <stop offset="0.46" stop-color="#1b1c20" />
+              <stop offset="0.52" stop-color="#d9dce2" />
+              <stop offset="0.7" stop-color="#5d6068" />
+              <stop offset="1" stop-color="#0e0f12" />
+            </linearGradient>
+          </defs>
+          <path id="blob" fill="url(#chrome)" />
+        </svg>
+      </div>
+      <code class="snippet mono">scroll(timeline({ autoplay: false }).add(path, { d: star(…) }).add(path, { d: circle(…) }))</code>
+    </div>
+  </section>
+
+  <section class="stop" id="layout">
+    <div class="pin">
+      <h2>FLIP layout</h2>
+      <div class="stage"><div class="tiles" id="tiles"></div></div>
+      <code class="snippet mono">flip('.tile', () => shuffle(grid), { ease: 'spring(bounce: .2)' })</code>
+    </div>
+  </section>
+
+  <section class="stop" id="numbers">
+    <div class="pin">
+      <h2>Benchmarks</h2>
+      <div class="stage numbers">
+        <p class="dim">From the scripts in <code>packages/anikit/scripts</code>.</p>
+        <div class="n-stats">
+          <div class="n-stat"><b><span class="n-count" data-to="43" data-dec="0">43</span>×</b><p class="mono">faster than matter.js<br />250 colliding bodies · bench-physics.mjs</p></div>
+          <div class="n-stat"><b><span class="n-count" data-to="0.37" data-dec="2">0.37</span><small>ms</small></b><p class="mono">100,000 objects per frame<br />batch(), 3 channels · bench.mjs</p></div>
+          <div class="n-stat"><b><span class="n-count" data-to="150" data-dec="0">150</span>k</b><p class="mono">particles rendered in 6.2–6.8 ms<br />Chromium · bench-cloud.mjs</p></div>
+        </div>
+        <div class="n-chart" role="img" aria-label="100,000 objects, one frame: GSAP 3 5.85 ms, anikit animate() 3.68 ms, anikit batch() 0.37 ms">
+          <p class="mono n-cap">100,000 objects · one frame · ms (lower is faster)</p>
+          <div class="n-row"><span class="mono">GSAP 3</span><i><u style="--w:1"></u></i><em class="n-count" data-to="5.85" data-dec="2">5.85</em></div>
+          <div class="n-row me"><span class="mono">anikit animate()</span><i><u style="--w:0.629"></u></i><em class="n-count" data-to="3.68" data-dec="2">3.68</em></div>
+          <div class="n-row me"><span class="mono">anikit batch()</span><i><u style="--w:0.063"></u></i><em class="n-count" data-to="0.37" data-dec="2">0.37</em></div>
+          <p class="mono n-cap dim">bench.mjs, one run · docs/perf-notes.md</p>
+        </div>
+      </div>
+      <code class="snippet mono">node scripts/bench.mjs</code>
+    </div>
+  </section>
+
+  <section class="install" id="install">
+    <div class="install-in">
+      <h2>Install</h2>
+      <div class="install-row" id="install-row">
+        <code class="mono" id="install-cmd">npm install anikit</code>
+        <button class="pill solid" id="copy">Copy</button>
+      </div>
+      <p class="mono dim">pip install anikit · MIT</p>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="mercury.js"></script>
+</body>
+</html>
