@@ -2,7 +2,7 @@ import {
   ready, engine, timeline, stagger, staggerValues, spring, inertia, animate,
   motionValue, scrollProgress, flightPath, htmlCanvas, scene, material, linearColor,
 } from '../../packages/anikit/dist/anikit.lean.js';
-import { buildHeadphones, CUP_Y } from './model.js';
+import { buildHeadphones, yieldTask, CUP_Y } from './model.js';
 
 const qs = new URLSearchParams(location.search);
 const canvas = document.getElementById('stage');
@@ -18,9 +18,9 @@ const FINISHES = {
   graphite: { label: 'soft rubber, graphite', color: '#45484e', metalness: 0, roughness: 0.7 },
   butter: { label: 'soft rubber, butter', color: '#f4d47e', metalness: 0, roughness: 0.7 },
   rubberSand: { label: 'soft rubber, sand', color: '#e6ddd1', metalness: 0, roughness: 0.8 },
-  glass: { label: 'frosted glass', color: '#f4f7fa', metalness: 0, roughness: 0.32, glass: true },
-  glassSmoke: { label: 'smoked glass', color: '#8d939c', metalness: 0, roughness: 0.25, glass: true },
-  glassAmber: { label: 'amber glass', color: '#f2b46a', metalness: 0, roughness: 0.3, glass: true },
+  glass: { label: 'frosted glass', color: '#f7f9fb', metalness: 0, roughness: 0.38, opacity: 0.86 },
+  glassSmoke: { label: 'smoked glass', color: '#7d838c', metalness: 0, roughness: 0.18, opacity: 0.86 },
+  glassAmber: { label: 'amber glass', color: '#f5b25f', metalness: 0, roughness: 0.22, opacity: 0.86 },
 };
 const CYCLE = {
   band: ['chrome', 'brushed', 'coral', 'graphite'],
@@ -96,16 +96,17 @@ const copies = new Float32Array((N - 1) * 4); // x, z, delay, phase
 }
 const PALETTE = ['#ff6f52', '#7f9cc6', '#93ab88', '#f2c75c', '#3e4148'].map(lin);
 
-const hero = buildHeadphones(1);
-const lod = buildHeadphones(0.2);
-const parts = hero.map((p, i) => {
+const hero = await buildHeadphones(1);
+const lod = await buildHeadphones(0.2);
+const parts = [];
+for (let i = 0; i < hero.length; i++) { const p = hero[i]; if (i % 4 === 3) await yieldTask(); parts.push((() => {
   const fin = FINISHES[p.mat];
-  const mat = material({ color: fin.color, metalness: fin.metalness, roughness: fin.roughness, glass: !!fin.glass });
+  const mat = material({ color: fin.color, metalness: fin.metalness, roughness: fin.roughness, opacity: fin.opacity ?? 1 });
   const obj = s.add(p.geometry, { material: mat, position: p.centre });
   const c = lin(fin.color);
   const m = { r: c[0], g: c[1], b: c[2], metalness: fin.metalness, roughness: fin.roughness };
   const vary = p.group === 'cup';
-  const cm = material({ color: vary ? '#ffffff' : fin.color, metalness: fin.metalness, roughness: fin.roughness, glass: !!fin.glass });
+  const cm = material({ color: vary ? '#ffffff' : fin.color, metalness: fin.metalness, roughness: fin.roughness });
   const inst = s.instances(lod[i].geometry, N - 1, (k, o) => {
     o.scale.set(0);
     if (vary) { const col = PALETTE[Math.floor(copies[k * 4 + 3] * 5) % 5]; o.color[0] = col[0]; o.color[1] = col[1]; o.color[2] = col[2]; }
@@ -113,7 +114,7 @@ const parts = hero.map((p, i) => {
   inst.visible = false;
   inst.castShadow = false; // the shadow map only covers the hero's neighbourhood
   return { ...p, obj, mat, m, finish: p.mat, e: 0, inst, vary, axis: p.spin[0], deg: p.spin[1] };
-});
+})()); }
 const groups = {};
 for (const p of parts) (groups[p.group] ||= []).push(p);
 
@@ -474,8 +475,12 @@ function frame(now, dtMs) {
 }
 
 // Pre-warm: render the finale (all copies) and the labels once before the first visible frame.
-rig.appear = 1.2; rig.labels = 1; update(16); s.render(); labelPass.render(LCTX);
-rig.appear = 0; rig.labels = 0; update(16); s.render();
+await yieldTask();
+rig.appear = 1.2; update(16); s.render();
+await yieldTask();
+rig.appear = 0; rig.labels = 1; update(16); s.render(); labelPass.render(LCTX);
+await yieldTask();
+rig.labels = 0; update(16); s.render();
 engine.onFrame((t, dt) => frame(performance.now(), dt));
 canvas.style.opacity = '0';
 animate(canvas, { opacity: 1 }, { duration: 1.1, ease: 'outCubic', delay: 0.05 });
