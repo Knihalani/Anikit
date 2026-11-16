@@ -61,7 +61,7 @@ export default async function film({ anikit: A }) {
   const ease = (p) => p * p * (3 - 2 * p);
   const state = (t) => {
     if (t > TEASE[0] && t < TEASE[1]) { const p = (t - TEASE[0]) / (TEASE[1] - TEASE[0]); return { tease: p, inn: ease(clamp(p / 0.28)), out: ease(clamp((p - 0.7) / 0.3)) }; }
-    if (t > OUTRO) return { tease: 0.5, inn: ease(clamp((t - OUTRO) / 0.5)), out: 0 }; // the bookend: all three again
+    if (t > OUTRO) return { tease: 0.5, inn: ease(clamp((t - OUTRO) / 0.5)), out: 0, mid: 'C', right: 'R' }; // the bookend: all three again
     let look = 'R';
     for (const s of SCHEDULE) {
       if (t < s.t0) return { look };
@@ -247,7 +247,6 @@ export default async function film({ anikit: A }) {
   }
   const lum = new Float32Array(N_PIX);
   function comic(src, dist, out, t) {
-    const seed = Math.floor(t * 14);
     for (let i = 0; i < N_PIX; i++) { const o = i * 4; lum[i] = (src[o] * 0.299 + src[o + 1] * 0.587 + src[o + 2] * 0.114) / 255; }
     const speed = 0.55 + 0.45 * smooth(60, 120, 100);
     for (let y = 0; y < H; y++) {
@@ -287,7 +286,7 @@ export default async function film({ anikit: A }) {
         // Speed lines towards the edges.
         const rad = RAD[i];
         if (rad > 0.62) {
-          const a = ANG[i], hsh = hash(a * 97 + seed * 7919);
+          const a = ANG[i], hsh = hash(a * 97 + Math.floor(t * 9 + hash(a * 13 + 1) * 9) * 7919); // each line changes on its own beat
           if (hsh > 0.93 && hash(a * 31 + 3) * 0.5 + 0.7 < rad) { const w = smooth(0.7, 1.15, rad) * speed * 0.8; R = mix(R, 255, w); G = mix(G, 255, w); B = mix(B, 255, w); }
         }
         if (ink > 0) { R = mix(R, 18, ink); G = mix(G, 14, ink); B = mix(B, 26, ink); }
@@ -297,19 +296,21 @@ export default async function film({ anikit: A }) {
   }
 
   // ---- Transitions ------------------------------------------------------------------------------
-  const lnF = Math.log(40000), lnN = Math.log(1.5);
+  const lnF = Math.log(9000), lnN = Math.log(1.5);
   function composite(a, b, type, p, t) {
     const pa = a.px, pb = b.px, da = a.dist;
     const e = ease(clamp(p));
     if (type === 'front' || type === 'reveal') {
       // A front at distance D sweeps through the world (far → near, or near → far).
       const D = Math.exp(type === 'front' ? mix(lnF, lnN, e) : mix(lnN, lnF, e));
+      // The sky (and anything beyond 12 km) cross-fades instead: first for a front, last for a reveal.
+      const kSky = type === 'front' ? smooth(0.0, 0.35, e) : smooth(0.6, 0.95, e);
       const soft = D * 0.035 + 0.6, band = D * 0.09 + 1.5;
       const sc = type === 'front' ? [0.5, 1.0, 1.0] : [1.0, 0.75, 0.4];
       for (let i = 0; i < N_PIX; i++) {
-        const d = da[i] > 1e30 ? 1e9 : da[i], o = i * 4;
-        const k = type === 'front' ? smooth(D - soft, D + soft, d) : 1 - smooth(D - soft, D + soft, d);
-        const g = Math.exp(-(((d - D) / band) ** 2)) * (1 - smooth(0.85, 1, e)) * 255 * 0.9;
+        const d = da[i], o = i * 4, sky = d > 12000;
+        const k = sky ? kSky : type === 'front' ? smooth(D - soft, D + soft, d) : 1 - smooth(D - soft, D + soft, d);
+        const g = sky ? 0 : Math.exp(-(((d - D) / band) ** 2)) * (1 - smooth(0.85, 1, e)) * 255 * 0.9;
         frame[o] = pa[o] + (pb[o] - pa[o]) * k + g * sc[0];
         frame[o + 1] = pa[o + 1] + (pb[o + 1] - pa[o + 1]) * k + g * sc[1];
         frame[o + 2] = pa[o + 2] + (pb[o + 2] - pa[o + 2]) * k + g * sc[2];
@@ -443,8 +444,9 @@ export default async function film({ anikit: A }) {
       const s = state(t);
       let out;
       if (s.tease !== undefined) {
-        const n = renderLook('N', 0), cc = renderLook('C', 1), r = renderLook('R', 2);
-        triptych(n.px, r.px, cc.px, s.inn, s.out);
+        const mid = s.mid ?? 'R', right = s.right ?? 'C';
+        const n = renderLook('N', 0), rp = renderLook(right, 1), m = renderLook(mid, 2);
+        triptych(n.px, m.px, rp.px, s.inn, s.out);
         out = frame;
       } else if (s.look) {
         out = renderLook(s.look, 2).px;
