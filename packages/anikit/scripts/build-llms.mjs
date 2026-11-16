@@ -22,6 +22,17 @@ Import from 'anikit'. Times are in seconds (only \`engine.onFrame\`/\`engine.tic
 - [Agent playbook](${links.agents}): "want X → use Y" table, rules, snippets, verification, common mistakes and fixes
 - [Recipes](${links.recipes}): task-sized, tested examples (${headings(recipes).filter((h) => h !== 'Python').length} tasks + Python)
 - [Full reference](${links.full}): playbook + recipes + every API in one file
+- [Options schema](${links.schema}): JSON Schema of every options object, with descriptions
+${links.parity ? `- [Feature parity](${links.parity}): anikit vs GSAP, Motion, anime.js and Lottie\n` : ''}
+## Quick start
+\`\`\`ts
+import { recipe } from 'anikit';
+recipe('hero-reveal', '.hero');
+recipe('magnetic-buttons', '.hero');
+recipe('scroll-story', 'main', { children: 'section' });
+recipe('parallax-gallery', '.gallery');
+\`\`\`
+Scaffold: \`npx anikit new vanilla|vite|react <dir>\`. React hooks: \`anikit/react\` (useAnikit, useAnimate, useRecipe, useSpring, useScroll, Presence).
 
 ## Recipes
 ${headings(recipes).map((s) => `- ${s}`).join('\n')}
@@ -47,8 +58,8 @@ ${recipes}
 ${api}`;
 
 const targets = [
-  { dir: pkg, links: { agents: 'AGENTS.md', recipes: 'llms-full.txt', full: 'llms-full.txt' } },
-  { dir: root, links: { agents: 'packages/anikit/AGENTS.md', recipes: 'docs/recipes.md', full: 'llms-full.txt' } },
+  { dir: pkg, links: { agents: 'AGENTS.md', recipes: 'llms-full.txt', full: 'llms-full.txt', schema: 'api.schema.json' } },
+  { dir: root, links: { agents: 'packages/anikit/AGENTS.md', recipes: 'docs/recipes.md', full: 'llms-full.txt', schema: 'docs/api.schema.json', parity: 'docs/parity.md' } },
 ];
 for (const { dir, links } of targets) {
   writeFileSync(join(dir, 'llms.txt'), index(links));
