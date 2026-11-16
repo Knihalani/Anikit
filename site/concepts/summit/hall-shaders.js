@@ -111,6 +111,7 @@ precision highp float;
 ${LIGHT}
 uniform vec4 uBlob[6];
 uniform vec4 uRing;
+uniform float uRefl;
 in vec3 vW;
 out vec4 o;
 float h(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -148,7 +149,7 @@ void main() {
   float fres = pow(1.0 - V.y, 5.0);
   float refl = clamp(0.14 + 0.32 * fres, 0.0, 0.42) * (1.0 - 0.35 * chk);
   // floor gets the scene reflection through (1 - alpha)
-  o = vec4(tone(col), 1.0 - refl);
+  o = vec4(tone(col), 1.0 - refl * uRefl);
 }`;
 
 // light shafts: additive slabs from the windows

@@ -24,6 +24,7 @@
   const canvas = document.getElementById('hall');
   const overlay = document.getElementById('overlay');
   const hall = createHall(canvas, overlay);
+  if (new URLSearchParams(location.search).has('hq')) hall._quality.lock = true;  // headless GPUs are slow
   // circle clip like main.js does, so the preview reads as "through the portal"
   const q = new URLSearchParams(location.search);
   let mode = q.has('enter') ? 'enter' : 'preview';

@@ -503,6 +503,14 @@ export function createHall(canvas, overlayEl) {
   }
 
   let time = 0;
+  // safety net for weak GPUs: if frames stay slow, drop the mirror pass (not the resolution)
+  const quality = { refl: true, slow: 0, lock: false };
+  function watch(dt) {
+    if (!quality.refl || quality.lock) return;
+    const d = Math.min(dt, 0.1); // one long hitch (tab switch) is not a slow GPU
+    quality.slow = d > 0.024 ? quality.slow + d : Math.max(0, quality.slow - d * 0.5);
+    if (quality.slow > 2) quality.refl = false;
+  }
   function drawScene(mirror) {
     setCommon(progMesh, mirror);
     // near, small things first so the big architecture fails the depth test early
@@ -548,15 +556,18 @@ export function createHall(canvas, overlayEl) {
     if (rows > 0) {
       gl.enable(gl.SCISSOR_TEST);
       gl.scissor(0, 0, W, rows);
-      gl.frontFace(gl.CW);
-      drawScene(-1);
-      gl.frontFace(gl.CCW);
-      gl.clear(gl.DEPTH_BUFFER_BIT);
+      if (quality.refl) {
+        gl.frontFace(gl.CW);
+        drawScene(-1);
+        gl.frontFace(gl.CCW);
+        gl.clear(gl.DEPTH_BUFFER_BIT);
+      }
       // 2) the floor, blended over its reflection
       setCommon(progFloor, 1);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.uniform4fv(progFloor.u.uBlob, BLOBS);
+      gl.uniform1f(progFloor.u.uRefl, quality.refl ? 1 : 0);
       let ri = 0;
       for (let i = 1; i < ST.length; i++) if (wake[i].v > wake[ri].v) ri = i;
       gl.uniform4f(progFloor.u.uRing, ST[ri].x, ST[ri].z, ST[ri].ring, ST[ri].ring > 0 ? wake[ri].v : 0);
@@ -589,6 +600,7 @@ export function createHall(canvas, overlayEl) {
   // ---------- the contract ----------
   const api = {
     _ctl: ctl,
+    _quality: quality,
     resize(cssW, cssH, dpr) {
       const d = Math.min(dpr || 1, 1.5);
       W = Math.max(1, Math.round(cssW * d));
@@ -625,6 +637,7 @@ export function createHall(canvas, overlayEl) {
     },
     frame(t, dt) {
       time = t;
+      watch(dt);
       dt = Math.min(dt, 0.05);
       ctl.update(t, dt);
       cam.eye[0] = ctl.pos[0]; cam.eye[1] = ctl.pos[1]; cam.eye[2] = ctl.pos[2];
