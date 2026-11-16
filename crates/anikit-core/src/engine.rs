@@ -143,6 +143,9 @@ struct Track {
     seg1: bool,
     /// Easing of the first segment (used by the fast path).
     ease0: u32,
+    /// Fast path: a numeric track of one channel with 3+ keyframes, or 2
+    /// keyframes not at offsets 0 and 1.
+    num1: bool,
 }
 
 /// A keyframe animation. Everything it needs per frame lives in two
@@ -525,6 +528,41 @@ impl Anim {
                 }
                 continue;
             }
+            if tr.num1 {
+                // Keyframed single number: the segment search of `eval_track`
+                // without the slicing and kind dispatch (same arithmetic).
+                let n = tr.nkf as usize;
+                let oa = tr.out_at as usize;
+                if let (Some(off), Some(vals), Some(o)) =
+                    (data.get(tr.off_at as usize..tr.off_at as usize + n), data.get(tr.val_at as usize..tr.val_at as usize + n), out.get_mut(oa))
+                {
+                    let mut i = (tr.cursor as usize).min(n - 2);
+                    while i > 0 && p < off[i] {
+                        i -= 1;
+                    }
+                    while i < n - 2 && p >= off[i + 1] {
+                        i += 1;
+                    }
+                    tr.cursor = i as u32;
+                    let span = off[i + 1] - off[i];
+                    let local = if span > 0.0 {
+                        (p - off[i]) / span
+                    } else if p >= off[i + 1] {
+                        1.0
+                    } else {
+                        0.0
+                    };
+                    let id = match tr.ease_n {
+                        0 => LINEAR,
+                        1 => tr.ease0,
+                        _ => data[tr.ease_at as usize + i] as u32,
+                    };
+                    let e = ease_memo(easings, memo, id, local);
+                    let (a, b) = (vals[i], vals[i + 1]);
+                    *o = a + (b - a) * e;
+                }
+                continue;
+            }
             Anim::eval_track(tr, data, easings, memo, p, out);
         }
     }
@@ -845,6 +883,10 @@ impl Engine {
                     && data[off_at as usize] == 0.0
                     && data[off_at as usize + 1] == 1.0,
                 seg1: nkf == 2 && data[off_at as usize] == 0.0 && data[off_at as usize + 1] == 1.0,
+                num1: spec.kind == TrackKind::Number
+                    && ch == 1
+                    && nkf >= 2
+                    && !(nkf == 2 && data[off_at as usize] == 0.0 && data[off_at as usize + 1] == 1.0),
                 ease0: if ease_n > 0 { eases[ease_at as usize] } else { LINEAR },
             });
             out_len += out_ch as u32;
@@ -2645,6 +2687,38 @@ mod tests {
             a.tick(17.0);
             b.tick(17.0);
             assert_eq!(snap(&a), snap(&b), "frame {f}");
+        }
+    }
+
+    #[test]
+    fn keyframed_number_fast_path_matches_eval_track() {
+        let mut e = Engine::new();
+        let ids = [e.easing("outBack").unwrap(), e.easing("inOutSine").unwrap(), e.easing("steps(3)").unwrap()];
+        let specs = [
+            TrackSpec::number(vec![0.0, 50.0, 10.0, 80.0, 20.0, 90.0, 30.0, 100.0], 1).with_easings(vec![ids[0]]),
+            TrackSpec::number(vec![5.0, -5.0, 7.0, 1.0], 1).with_easings(vec![ids[0], ids[1], ids[2]]),
+            TrackSpec::number(vec![1.0, 2.0, 3.0, 4.0], 1).with_offsets(vec![0.0, 0.5, 0.5, 1.0]),
+            TrackSpec::number(vec![1.0, 9.0], 1).with_offsets(vec![0.2, 0.7]).with_easings(vec![ids[1]]),
+            TrackSpec::number(vec![3.0, 4.0, 6.0], 1).with_offsets(vec![0.3, 0.1, 0.9]),
+        ];
+        let h = e.create_anim(Timing::default(), &specs, flags::DEFAULT).unwrap();
+        let Kind::Anim(anim) = &mut e.nodes[Engine::handle_index(h) as usize].kind else { unreachable!() };
+        assert!(anim.tracks.iter().all(|t| t.num1));
+        let mut reference = anim.tracks.to_vec();
+        let mut rng = crate::math::Rng(7);
+        let mut ps: Vec<f64> = (0..200).map(|k| k as f64 / 150.0 - 0.2).collect();
+        ps.extend((0..200).map(|k| 1.1 - k as f64 / 160.0));
+        ps.extend((0..400).map(|_| rng.next_f64() * 1.6 - 0.3));
+        ps.extend([0.0, -0.0, 0.5, 1.0, 0.2, 0.7, f64::NAN, 0.4]);
+        let (data, out) = anim.buf.split_at_mut(anim.out_at);
+        let mut want = vec![0.0; out.len()];
+        for &p in &ps {
+            Anim::eval_into(&mut anim.tracks, data, &e.easings, &mut EaseMemo::EMPTY.clone(), p, out);
+            for tr in reference.iter_mut() {
+                Anim::eval_track(tr, data, &e.easings, &mut EaseMemo::EMPTY.clone(), p, &mut want);
+            }
+            assert_eq!(out.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), want.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), "p = {p}");
+            assert_eq!(anim.tracks.iter().map(|t| t.cursor).collect::<Vec<_>>(), reference.iter().map(|t| t.cursor).collect::<Vec<_>>());
         }
     }
 
