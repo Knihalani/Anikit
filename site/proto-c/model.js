@@ -96,7 +96,7 @@ export function buildHeadphones(detail = 1) {
 
   for (const s of [-1, 1]) {
     add({ name: 'Slider', group: 'slider', geometry: translate(capsule(0.42, 4.6, Math.max(12, Math.round(28 * detail))), s * ARM_X, 3.5, 0), explode: [s * 3.2, 2.6, -1.5], spin: [2, s * 14], mat: 'brushed' });
-    const res = Math.max(28, Math.round(104 * detail));
+    const res = Math.max(20, Math.round(104 * detail));
     const yoke = sdfMesh((x, y, z) => yokeSdf(s)(x + s * ARM_X, y + CUP_Y + 2.3, z), { resolution: res, bounds: 5.7 });
     add({ name: 'Yoke', group: 'yoke', geometry: translate(yoke, s * ARM_X, CUP_Y + 2.3, 0), explode: [s * 5.2, 0.6, 0], spin: [1, s * 20], mat: 'chrome' });
     add({ name: 'Housing', group: 'cup', geometry: toSide(lathe(shellProfile(q), seg), s), explode: [s * 9.5, -0.6, 0.6], spin: [2, s * -8], mat: 'brushedMist' });

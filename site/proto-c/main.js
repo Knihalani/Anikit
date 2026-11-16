@@ -97,21 +97,22 @@ const copies = new Float32Array((N - 1) * 4); // x, z, delay, phase
 const PALETTE = ['#ff6f52', '#7f9cc6', '#93ab88', '#f2c75c', '#3e4148'].map(lin);
 
 const hero = buildHeadphones(1);
-const lod = buildHeadphones(0.3);
+const lod = buildHeadphones(0.2);
 const parts = hero.map((p, i) => {
   const fin = FINISHES[p.mat];
   const mat = material({ color: fin.color, metalness: fin.metalness, roughness: fin.roughness, glass: !!fin.glass });
   const obj = s.add(p.geometry, { material: mat, position: p.centre });
   const c = lin(fin.color);
   const m = { r: c[0], g: c[1], b: c[2], metalness: fin.metalness, roughness: fin.roughness };
-  const vary = p.group === 'cup' || p.group === 'glass';
+  const vary = p.group === 'cup';
   const cm = material({ color: vary ? '#ffffff' : fin.color, metalness: fin.metalness, roughness: fin.roughness, glass: !!fin.glass });
   const inst = s.instances(lod[i].geometry, N - 1, (k, o) => {
     o.scale.set(0);
     if (vary) { const col = PALETTE[Math.floor(copies[k * 4 + 3] * 5) % 5]; o.color[0] = col[0]; o.color[1] = col[1]; o.color[2] = col[2]; }
   }, { material: cm });
   inst.visible = false;
-  return { ...p, obj, mat, m, finish: p.mat, e: 0, inst, axis: p.spin[0], deg: p.spin[1] };
+  inst.castShadow = false; // the shadow map only covers the hero's neighbourhood
+  return { ...p, obj, mat, m, finish: p.mat, e: 0, inst, vary, axis: p.spin[0], deg: p.spin[1] };
 });
 const groups = {};
 for (const p of parts) (groups[p.group] ||= []).push(p);
@@ -121,7 +122,7 @@ const rig = { dist: 60, ty: -0.6, lift: 0, yawOff: 0, pitchOff: 0, labels: 0, fi
 const order = ['band', 'bandpad', 'slider', 'yoke', 'cup', 'glass', 'pad'];
 const explodeOrder = [...parts].sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group));
 const tl = timeline({ autoplay: false })
-  .add(rig, { dist: 84, lift: 3.2, yawOff: -0.3, pitchOff: 0.1, ty: 2.6 }, { duration: 3, ease: 'inOutCubic' }, 1)
+  .add(rig, { dist: 86, lift: 3.2, yawOff: -0.3, pitchOff: 0.1, ty: 2.8 }, { duration: 2.6, ease: 'inOutCubic' }, 0.8)
   .add(explodeOrder, { e: 1 }, { duration: 1.8, ease: 'inOutCubic', delay: stagger(0.11) }, 1.2)
   .add(rig, { labels: 1 }, { duration: 0.6, ease: 'outCubic' }, 3.9)
   .add(rig, { labels: 0 }, { duration: 0.4, ease: 'inCubic' }, 6)
@@ -378,6 +379,7 @@ const copyFn = (k, o) => {
   o.position.set(ox + x2 * a, h + y1 * a, oz + z2 * a);
   o.rotation.set(pitch, yaw, 0);
   o.scale.set(a);
+  if (curPart.vary) { const col = PALETTE[Math.floor(ph0 * 5) % 5]; o.color[0] = col[0]; o.color[1] = col[1]; o.color[2] = col[2]; }
 };
 let curPart = parts[0];
 
@@ -414,8 +416,11 @@ function update(dtMs) {
     ex += (cx * cs + cz * sn - ex) * w; ey += (cy - 2 - ey) * w; ez += (-cx * sn + cz * cs - ez) * w;
     ty += (-24 - ty) * w;
   }
-  AX[0].set(ex, ey, ez);
-  AX[1].set(0, ty, 0);
+  // Wide screens: slide the camera sideways so the object sits right of the captions.
+  const shift = Math.max(0, Math.min(1, (cssW / cssH - 1.1) / 0.6)) * -7 * (1 - fin);
+  const rl = Math.hypot(ex, ez) || 1, rx = ez / rl, rz = -ex / rl;
+  AX[0].set(ex + rx * shift, ey, ez + rz * shift);
+  AX[1].set(rx * shift, ty, rz * shift);
 
   // Copies.
   const on = rig.appear > 0.001;

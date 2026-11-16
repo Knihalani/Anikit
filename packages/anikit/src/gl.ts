@@ -1373,7 +1373,9 @@ export class Scene {
       gl.uniform4f(prog.u.uColor, m.color[0], m.color[1], m.color[2], Math.max(0, Math.min(1, m.opacity)));
       gl.uniform4f(prog.u.uPbr, m.metalness, m.roughness, m.emissiveIntensity, m.glass ? 2 : m.toon ? 1 : 0);
       gl.uniform3f(prog.u.uEmissive, m.emissive[0], m.emissive[1], m.emissive[2]);
-      if (this.shadows) {
+      // Bind the shadow map whenever it exists, even with shadows switched off at
+      // runtime: the sampler must always see a depth texture (the shader skips it).
+      if (this.shadowTex) {
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.shadowTex);
         gl.uniform1i(prog.u.uShadow, 0);
       }
