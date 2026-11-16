@@ -291,8 +291,8 @@ function showCaption(k) {
 // The swell: a looping timeline, faded in and out with the wave stage.
 const sea = { swell: 0 };
 const swellTl = timeline({ repeat: Infinity, yoyo: true, autoplay: false })
-  .add(sea, { swell: 46 }, { duration: 1.8, ease: 'inOutSine' })
-  .add(sea, { swell: 18 }, { duration: 1.4, ease: 'inOutSine' });
+  .add(sea, { swell: 64 }, { duration: 1.8, ease: 'inOutSine' })
+  .add(sea, { swell: 24 }, { duration: 1.4, ease: 'inOutSine' });
 let feelStage = 0;
 
 // Copy button.
@@ -400,7 +400,7 @@ function frameBody(time, dtMs) {
     // basis: right (0..2), up (3..5)
     worldToModel(sweep, basis[0] * vx + basis[3] * vy, basis[1] * vx + basis[4] * vy, basis[2] * vx + basis[5] * vy);
     const speed = Math.min(4000, Math.hypot(vx, vy));
-    cloud.push(ray[0] + ray[3] * t, ray[1] + ray[4] * t, ray[2] + ray[5] * t, 120, 160 + speed * 0.3, sweep[0] * 0.14, sweep[1] * 0.14, sweep[2] * 0.14, ray[3], ray[4], ray[5]);
+    cloud.push(ray[0] + ray[3] * t, ray[1] + ray[4] * t, ray[2] + ray[5] * t, 100, 110 + speed * 0.18, sweep[0] * 0.1, sweep[1] * 0.1, sweep[2] * 0.1, ray[3], ray[4], ray[5]);
   }
   st.moved = false; st.pdx = 0; st.pdy = 0;
 

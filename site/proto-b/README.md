@@ -9,7 +9,7 @@ Open `site/proto-b/` from a static server at the repo root, after building the p
 | "anikit" | `splats.fromText` | intro morph out of a dust cloud |
 | flower | `splats.fromMesh` (petal mesh) + `splats.fromSDF` (centre) + `splats.fromPoints` (stem), `splats.merge` | looser per-splat springs (`cloud.set`) |
 | flock | wing phases from `staggerValues(72, …, { grid, from: 'center' })` | caption lines enter with `stagger()` |
-| wave | sheet of points | swell from a looping `timeline()` (46 → 18, yoyo) |
+| wave | sheet of points | swell from a looping `timeline()` (64 → 24, yoyo) |
 | galaxy | 3-arm spiral | spin and tilt follow the scroll |
 | `npm i anikit` | `splats.fromText` (mono) | |
 
