@@ -220,6 +220,17 @@ addEventListener('resize', () => {
 new ResizeObserver(() => measure()).observe(document.body);
 if (fine && !reduced) addEventListener('pointermove', (e) => { spring(tilt, { x: (e.clientX / vw - 0.5) * 0.42, y: (e.clientY / vh - 0.5) * 0.24 }, { stiffness: 50, damping: 12 }); }, { passive: true });
 
+// Nav links land where each section is fully shown (mid-dwell), not at its first pixel.
+for (const a of $$('.nav a[href^="#"]')) a.addEventListener('click', (e) => {
+  const id = a.getAttribute('href').slice(1);
+  const el = id === 'install' ? $('#close') : document.getElementById(id);
+  if (!el) return;
+  e.preventDefault();
+  const top = el.getBoundingClientRect().top + scrollY;
+  const y = id === 'top' ? 0 : id === 'install' ? L.max : top + (el.offsetHeight - vh) * 0.45;
+  scrollTo({ top: y, behavior: reduced ? 'auto' : 'smooth' });
+});
+
 // Demos load on approach (dynamic import keeps them off the critical path).
 let demos = null;
 const loadDemos = () => (demos ??= import('./demos.js').then((m) => m.start({ reduced, fine, small })));
