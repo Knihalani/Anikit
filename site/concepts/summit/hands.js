@@ -110,7 +110,10 @@ void main() {
     col *= 0.92 + 0.08 * hash(floor(vPos * 900.0));
   } else {
     // Skin: wrapped diffuse with a warm red terminator, soft sheen, rim light.
-    vec3 alb = vec3(0.70, 0.43, 0.31);
+    vec3 alb = vec3(0.66, 0.39, 0.27);
+    // Blood shows through at the joints and fingertips.
+    float joint = 1.0 - smoothstep(0.0, 0.22, min(vLocal.x, 1.0 - vLocal.x));
+    alb = mix(alb, vec3(0.70, 0.33, 0.25), joint * 0.35 + (m > 2.5 ? smoothstep(0.5, 1.0, vLocal.x) * 0.45 : 0.0));
     // Nails on the dorsal side of the fingertips.
     float nail = 0.0;
     if (m > 2.5) {
@@ -121,15 +124,15 @@ void main() {
     float ndl = dot(n, L);
     float wrap = max((ndl + 0.45) / 1.45, 0.0);
     float sss = smoothstep(-0.45, 0.15, ndl) * (1.0 - smoothstep(0.15, 0.7, ndl));
-    vec3 diff = sunC * wrap + skyC * (0.32 + 0.22 * n.y);
+    vec3 diff = sunC * wrap * wrap * 1.15 + skyC * (0.2 + 0.2 * n.y);
     col = alb * diff * 0.62;
-    col += alb * vec3(0.95, 0.28, 0.16) * sss * 0.55;
+    col += alb * vec3(1.0, 0.25, 0.12) * sss * 0.75;
     vec3 H = normalize(L + V);
     float spec = pow(max(dot(n, H), 0.0), mix(18.0, 80.0, nail)) * mix(0.08, 0.6, nail);
     col += sunC * spec;
     // Rim from the bright sky ahead.
     float rim = pow(1.0 - max(dot(n, V), 0.0), 3.0);
-    col += vec3(1.0, 0.82, 0.62) * rim * 0.32 * (0.5 + 0.5 * n.y);
+    col += vec3(1.0, 0.6, 0.42) * rim * 0.3 * (0.5 + 0.5 * n.y);
     // The portal lights the hands from in front.
     float pl = max(dot(n, Lp), 0.0);
     col += alb * portC * (pl * 0.35 + 0.35 * rim) + portC * rim * 0.12;
@@ -469,7 +472,7 @@ export function createHands(canvas) {
           const k = ringN * 12, tt = 0.42;
           ringInst[k] = tmpA[0] + (tmpB[0] - tmpA[0]) * tt; ringInst[k + 1] = tmpA[1] + (tmpB[1] - tmpA[1]) * tt; ringInst[k + 2] = tmpA[2] + (tmpB[2] - tmpA[2]) * tt;
           ringInst[k + 3] = lerpR(fi.r[0], fi.r[1], tt) + 0.0012;
-          ringInst[k + 4] = dirL[0]; ringInst[k + 5] = dirL[1]; ringInst[k + 6] = dirL[2]; ringInst[k + 7] = 0.0021;
+          ringInst[k + 4] = dirL[0]; ringInst[k + 5] = dirL[1]; ringInst[k + 6] = dirL[2]; ringInst[k + 7] = 0.0026;
           ringInst[k + 8] = dorL[0]; ringInst[k + 9] = dorL[1]; ringInst[k + 10] = dorL[2]; ringInst[k + 11] = 4;
           ringN++;
           if (f === 2) {
@@ -479,7 +482,7 @@ export function createHands(canvas) {
             for (let q = 0; q < 3; q++) RING[3 + q] = ringInst[(a0 + 1) * 12 + q] + ringInst[(a0 + 1) * 12 + 8 + q] * (ringInst[(a0 + 1) * 12 + 3] + 0.0012);
             tmpRingA[0] = RING[0]; tmpRingA[1] = RING[1]; tmpRingA[2] = RING[2];
             tmpRingB[0] = RING[3]; tmpRingB[1] = RING[4]; tmpRingB[2] = RING[5];
-            push(tmpRingA, 0.0032, tmpRingB, 0.0032, dirL, 4);
+            push(tmpRingA, 0.0042, tmpRingB, 0.0042, dirL, 4);
           }
         }
         R(tmpA, tmpB[0], tmpB[1], tmpB[2]);
