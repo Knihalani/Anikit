@@ -1586,7 +1586,7 @@ is the noise gauge.
 (`npm run test:browser`) bundles `src/` once and runs every
 `test/browser/*.mjs` case in its own Chromium page with real layout and real
 pointer input; a page error or an unexpected `anikit:` warning fails the case.
-70 cases this round: scroll triggers (pin + resize + refresh, spacing, nested
+65+ cases this round: scroll triggers (pin + resize + refresh, spacing, nested
 scroller in a scrolled page, horizontal scroller and window, smoothed scrub
 past the end, inline styles of the pinned element), `scroll()` link sharing,
 `draggable` (bounds, inertia, snap, axis lock, mouse and touch, a second
@@ -1682,6 +1682,8 @@ the old code). `gesture()` no longer builds an array of pointers per move.
 `world().pointer()`/`dragging()` update coordinates and velocity in place and
 write attractors straight into the scratch buffer. `observer()` keeps one
 `onStop` timer per quiet period instead of clearing and setting one per event.
+`glow().render()` writes its draw parameters straight into the buffer instead
+of building an array every frame.
 
 ### 4. Bugs found in the browser (each with a test)
 
@@ -1703,6 +1705,7 @@ write attractors straight into the scratch buffer. `observer()` keeps one
 | `magnetic().revert()`, `tilt().revert()` | wiped the element's own transform / left the tilt on it | springs stopped, inline and cached transform restored |
 | `bindValues().revert()` | a later `animate()` wrote the bound values back | cached transform reset too |
 | `world().dragging()` | pressing a body without moving threw it again at the previous drag's speed | velocity reset on press |
+| `scroll()`, `inView()` and `context()` | after `ctx.revert()` a `scroll()` link kept its listener (a function subject kept being called, a smoothing spring kept running) and `inView()` kept observing | neither was registered with `track()`; their cleanups now are |
 
 ### Tried and not kept (eighth round)
 
