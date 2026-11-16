@@ -103,7 +103,7 @@ async function buildLetters() {
   for (const L of letters) {
     await idle();
     const t0 = performance.now();
-    const m3 = mesh.text(L.el.textContent, { font, resolution: 110, depth: 0.1, bevel: 0.35 });
+    const m3 = mesh.text(L.el.textContent, { font, resolution: 150, depth: 0.1, bevel: 0.35 });
     L.aspect = m3.aspect;
     L.sy = L.sx * L.aspect;
     const t1 = performance.now();
@@ -116,7 +116,9 @@ async function buildLetters() {
 
 // Letter motion: spin velocity from the pointer, a spring home to a whole turn.
 let clock = 0, lastHeroInput = -1e9, scrollE = 0;
-const intro = { on: 0 };
+const intro = { on: 0, rest: 0 };
+const look = { x: 0, y: 0 };
+addEventListener('pointermove', (e) => { look.x = e.clientX / vw - 0.5; look.y = e.clientY / vh - 0.5; }, { passive: true });
 const ptr = { x: -1, y: -1, down: false, px: 0, vx: 0 };
 word.addEventListener('pointerdown', (e) => { ptr.down = true; ptr.px = e.clientX; word.setPointerCapture(e.pointerId); lastHeroInput = clock; });
 word.addEventListener('pointermove', (e) => {
@@ -130,7 +132,7 @@ word.addEventListener('pointermove', (e) => {
 addEventListener('pointerup', () => (ptr.down = false));
 
 function stepLetters(dt) {
-  const target = Math.max(intro.on, clock - lastHeroInput < 2.6 ? 1 : 0, scrollE);
+  const target = Math.max(intro.on, intro.rest, clock - lastHeroInput < 2.6 ? 1 : 0, scrollE);
   let any = false;
   for (let i = 0; i < letters.length; i++) {
     const L = letters[i];
@@ -138,12 +140,13 @@ function stepLetters(dt) {
     L.e += (target - L.e) * (1 - Math.exp(-dt * 6));
     if (Math.abs(target - L.e) < 1e-4) L.e = target;
     // Spin: free while fast, then a spring to the nearest whole turn.
-    const home = Math.round(L.ry / (Math.PI * 2)) * Math.PI * 2;
+    const lookY = reduce ? 0 : look.x * 0.5 * intro.rest;
+    const home = Math.round((L.ry - lookY) / (Math.PI * 2)) * Math.PI * 2 + lookY;
     const k = Math.abs(L.w) > 2.2 ? 0 : 38;
     L.w += (-(L.ry - home) * k - L.w * (k ? 9 : 0.9)) * dt;
     L.ry += L.w * dt;
-    if (Math.abs(L.w) < 1e-3 && Math.abs(L.ry - home) < 1e-4) { L.ry = home % (Math.PI * 2); L.w = 0; }
-    const tilt = scrollE * -(0.6 + 0.08 * i); // tip back as the page leaves, a little more per letter
+    if (!intro.rest && Math.abs(L.w) < 1e-3 && Math.abs(L.ry - home) < 1e-4) { L.ry = home % (Math.PI * 2); L.w = 0; }
+    const tilt = scrollE * -(0.6 + 0.08 * i) + (reduce ? 0 : look.y * 0.35 * intro.rest); // tip back as the page leaves, a little more per letter
     L.rx += (tilt - L.rx) * (1 - Math.exp(-dt * 10));
     const live = L.e > 1e-3 || Math.abs(L.ry % (Math.PI * 2)) > 1e-3 || Math.abs(L.rx) > 1e-3;
     if (live !== L.live) { L.live = live; L.el.style.color = live && L.mesh ? 'transparent' : ''; }
@@ -174,7 +177,8 @@ function buildStrips() {
     c.style.cssText = `top:${-k * stripH}px;width:${r.width}px;height:${r.height}px;border-radius:${k === 0 ? '6px 6px 0 0' : k === STRIPS - 1 ? '0 0 6px 6px' : '0'}`;
     const shade = document.createElement('div');
     shade.className = 'shade';
-    shade.style.background = k % 2 ? 'linear-gradient(#fff0, #fff8)' : 'linear-gradient(rgba(60,40,10,.0), rgba(60,40,10,.28))';
+    // Light on the upward faces, a crease shadow in each valley.
+    shade.style.background = k % 2 ? 'linear-gradient(rgba(70,45,10,.32), rgba(255,255,255,.35) 30%, rgba(255,255,255,.55))' : 'linear-gradient(rgba(255,255,255,.2), rgba(70,45,10,.12) 55%, rgba(70,45,10,.42))';
     s.append(c, shade);
     stripsWrap.append(s);
     strips.push({ s, shade });
@@ -188,7 +192,7 @@ function drawFold() {
   const p = reduce ? 0 : foldState.p;
   if (Math.abs(p - foldDrawn) < 1e-5) return;
   foldDrawn = p;
-  const a = smooth(0.08, 0.62, p) * 1.36; // radians, ~78°
+  const a = smooth(0.03, 0.55, p) * 1.42; // radians, ~81°
   const on = a > 1e-4;
   fold.classList.toggle('folding', on);
   stripsWrap.style.visibility = on ? 'visible' : 'hidden';
@@ -203,7 +207,7 @@ function drawFold() {
     shade.style.opacity = s.toFixed(3);
   }
   const packed = total * c;
-  stripsWrap.style.transform = `translate3d(0,${((total - packed) / 2 - lift * vh * 0.5).toFixed(2)}px,${(-lift * 300).toFixed(1)}px) rotateX(${(lift * 28).toFixed(2)}deg) rotateZ(${(-lift * 7).toFixed(2)}deg)`;
+  stripsWrap.style.transform = `translate3d(0,${((total - packed) / 2 - lift * vh * 0.5).toFixed(2)}px,${(-lift * 300).toFixed(1)}px) rotateX(${(s * 30 + lift * 20).toFixed(2)}deg) rotateY(${(-s * 16).toFixed(2)}deg) rotateZ(${(-lift * 7).toFixed(2)}deg)`;
 }
 
 // ─── 3. Cards are rigid bodies (anikit world) ─────────────────────────────
@@ -234,17 +238,22 @@ function drop() {
     }
     c.base = W.addMany(pts);
     for (let a = 0; a < 6; a++) for (let b = a + 1; b < 6; b++) W.link(c.base + a, c.base + b, { stiffness: 1 });
-    const kick = (Math.random() - 0.35) * 1100;
-    for (let a = 0; a < 6; a++) W.setVelocity(c.base + a, kick + (a % 3 - 1) * 0, -300 - Math.random() * 300 + ((a % 3) - 1) * kick * 0.4);
+    // Throw each card towards its own spot across the full width.
+    const tx = S.width * (0.08 + 0.84 * (cards.indexOf(c) + Math.random() * 0.6) / cards.length);
+    const kick = (tx - cx) * 1.5 + (Math.random() - 0.5) * 200;
+    const spin = (Math.random() - 0.5) * 500;
+    for (let a = 0; a < 6; a++) W.setVelocity(c.base + a, kick, -700 - Math.random() * 300 + ((a % 3) - 1) * spin);
   }
   W.dragging({ hitSlop: 24 });
   physics = true;
+  stage.classList.add('flying');
   dropBtn.disabled = true; tidyBtn.disabled = false;
 }
 function tidy() {
   if (!physics) return;
   physics = false;
   W.pause();
+  stage.classList.remove('flying');
   for (const c of cards) {
     // unwrap so the card turns the short way home
     c.r = Math.atan2(Math.sin(c.r), Math.cos(c.r));
@@ -346,12 +355,13 @@ $('#breakit').addEventListener('click', (e) => {
   const r = panel.getBoundingClientRect();
   origin = [e.clientX - r.left, e.clientY - r.top];
   timeline().add(burst, { e: [0, 0.62] }, { duration: 0.9, ease: 'outCubic' })
-    .add(burst, { e: 0 }, { ease: 'spring(bounce: 0.15, duration: 1.4)' }, '+=0.15');
+    .add(burst, { e: 0 }, { duration: 1.5, ease: 'inOutCubic' }, '+=0.15');
 });
 
 // ─── Scroll: anikit scroll triggers drive the fold and the finale ─────────
 scrollTrigger({ trigger: '#fold-wrap', start: 'top top', end: 'bottom bottom', scrub: 0.5,
   animation: animate(foldState, { p: [0, 1] }, { ease: 'linear', duration: 1, autoplay: false }) });
+if (!reduce) scrollTrigger({ trigger: '#cards', start: 'top 35%', once: true, onEnter: () => drop() });
 scrollTrigger({ trigger: '#finale', start: 'top top', end: 'bottom bottom', scrub: 0.6,
   animation: animate(fin, { p: [0, 1] }, { ease: 'linear', duration: 1, autoplay: false }) });
 
@@ -468,6 +478,8 @@ if (G) {
     // The introduction: letters rise out of the paper, turn once, and settle back.
     letters.forEach((L, i) => animate(L, { w: 9.5 }, { duration: 0.01, delay: 0.4 + i * 0.09 }));
     animate(intro, { on: [0, 1, 1, 0] }, { duration: 3.4, ease: 'inOutSine', delay: 0.2 });
+    // After the introduction the letters stay raised off the page and follow the pointer.
+    animate(intro, { rest: [0, 0.85] }, { duration: 1.2, ease: 'inOutSine', delay: 2.6 });
   }
 }
 window.__proto = { S, addRipple, drop, tidy, letters, cards, foldState, fin, burst, get quality() { return quality; } };

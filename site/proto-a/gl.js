@@ -97,7 +97,7 @@ void main() {
   vec3 off = vec3(dir * (24.0 + 130.0 * aR.z) * e, (aR.x * 300.0 - 50.0) * e);
   off.y += 90.0 * e * e * (aR.y - 0.3);
   vec3 nrm = rot(vec3(0.0, 0.0, 1.0), axis, ang);
-  vShade = 0.72 + 0.28 * max(dot(nrm, normalize(vec3(-0.4, -0.5, 0.75))), 0.0);
+  vShade = 0.84 + 0.3 * max(dot(nrm, normalize(vec3(-0.4, -0.5, 0.75))), 0.0);
   vShade = mix(1.0, vShade, min(e * 3.0, 1.0));
   vUV = aP; vB = aB; vE = e;
   gl_Position = project(vec3(uRect.xy + c, 0.0) + rel + off);
@@ -113,8 +113,9 @@ void main() {
   float edge = min(vB.x, min(vB.y, vB.z));
   float crack = (1.0 - smoothstep(0.0, 0.035, edge)) * min(uE * 10.0, 1.0);
   vec3 col = t.rgb * vShade;
-  col = mix(col, col * 0.55 + vec3(0.12, 0.09, 0.05), crack * 0.55);
-  col += vec3(1.0, 0.96, 0.85) * crack * vE * 0.25;
+  float rim = 1.0 - smoothstep(0.0, 0.05, edge);
+  col = mix(col, col * 0.6 + vec3(0.1, 0.07, 0.03), crack * 0.5 * (1.0 - min(vE * 4.0, 1.0)));
+  col += vec3(1.0, 0.97, 0.9) * rim * min(vE * 4.0, 1.0) * 0.45;
   o = vec4(col, 1.0);
 }`;
 
