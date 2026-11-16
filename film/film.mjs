@@ -73,7 +73,7 @@ export default async function film({ anikit: A }) {
   // Weights of each look on screen (for the grade).
   const weights = (t) => {
     const s = state(t), w = { R: 0, N: 0, C: 0 };
-    if (s.tease !== undefined) { const k = s.inn * (1 - s.out); w.R = 1 - 0.66 * k; w.N = w.C = 0.33 * k; }
+    if (s.tease !== undefined) { const k = s.inn * (1 - s.out), mid = s.mid ?? 'R'; w.R = w.N = w.C = 0.33 * k; w[mid] = 1 - 0.66 * k; }
     else if (s.look) w[s.look] = 1;
     else { const e = ease(s.p); w[s.from] += 1 - e; w[s.to] += e; }
     return w;
@@ -188,7 +188,7 @@ export default async function film({ anikit: A }) {
       { mesh: world.farMesh, instances: farAt, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0, texture: TX.farNeon, textureMode: 'emissive', textureGain: 1.3 } },
       { mesh: dome, instances: domeAt, cull: false, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.skyNeon, textureMode: 'emissive', fog: 0 } },
       { mesh: water, instances: waterAt, mirror: true, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0 } },
-      ...lanes.map((m, k) => ({ mesh: m, blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 0.12, pulse: 3.2, pulseCount: k === 0 ? 34 : 48, pulsePhase: 0, lineColor: laneCol[k] } })),
+      ...lanes.map((m, k) => ({ mesh: m, blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 0.12, pulse: 2.1, pulseCount: k === 0 ? 34 : 48, pulsePhase: 0, lineColor: laneCol[k] } })),
       { mesh: tm, instances: treesN, blend: 'additive', material: { ambient: 1, diffuse: 0, specular: 0, rim: 1.1 } },
       { points: motes, colors: moteColN, size: 0.09, intensity: 1.8, streak: 1, fog: [6, 120] },
     ],
@@ -451,7 +451,7 @@ export default async function film({ anikit: A }) {
     width: W, height: H, fps: FPS, duration: DUR, motionBlur: 1,
     post: {
       aa: 1,
-      bloom: (t) => W_(t, 0.28, 0.95, 0.0),
+      bloom: (t) => W_(t, 0.28, 0.78, 0.0),
       bloomThreshold: (t) => W_(t, 0.82, 0.42, 1),
       bloomRadius: 42,
       streaks: (t) => W_(t, 0, 0.3, 0),
