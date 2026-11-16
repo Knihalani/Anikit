@@ -33,7 +33,7 @@ except ImportError as e:  # pragma: no cover - depends on the environment
 from ._anikit import NativeFrameMixer, NativePostFx
 from ._anikit import rgba_to_i420 as _rgba_to_i420
 
-__all__ = ["PostFx", "post", "rgba_to_i420", "MotionBlur", "POST_OPTIONS"]
+__all__ = ["PostFx", "post", "rgba_to_i420", "MotionBlur", "VideoWriter", "POST_OPTIONS"]
 
 #: Every option :class:`PostFx` and :func:`post` understand (core defaults: all effects off).
 POST_OPTIONS = (
@@ -224,3 +224,83 @@ class MotionBlur:
 
     def __repr__(self) -> str:
         return f"MotionBlur({self.size[0]}x{self.size[1]}, count={self.count})"
+
+
+class VideoWriter:
+    """Encode RGBA frames to a video file with ffmpeg (which must be on PATH).
+
+    Frames are converted to I420 in the native core and piped to ffmpeg, so
+    Python never touches per-pixel work::
+
+        with VideoWriter("film.mp4", 1920, 1080, fps=60) as out:
+            for f in range(frames):
+                out.write(post(render(f), t=f / 60, bloom=0.8, grain=3))
+
+    ``crf`` (quality, lower is better; default 18), ``preset`` (x264 speed /
+    size trade-off, default ``"medium"``), ``codec`` (default ``"libx264"``)
+    and ``audio`` (a file muxed in and cut to the video's length) match the
+    ``anikit-render`` CLI. Width and height must be even.
+    """
+
+    def __init__(
+        self,
+        path: str,
+        width: int,
+        height: int,
+        fps: float = 60,
+        *,
+        crf: int = 18,
+        preset: str = "medium",
+        codec: str = "libx264",
+        audio: Optional[str] = None,
+        ffmpeg: str = "ffmpeg",
+    ) -> None:
+        import shutil
+        import subprocess
+
+        if width % 2 or height % 2:
+            raise ValueError(f"VideoWriter needs an even width and height for I420, got {width}x{height}")
+        exe = shutil.which(ffmpeg)
+        if exe is None:
+            raise FileNotFoundError(f"VideoWriter needs ffmpeg on PATH (looked for {ffmpeg!r})")
+        self.path, self.width, self.height, self.fps = path, int(width), int(height), float(fps)
+        self.frames = 0
+        cmd = [exe, "-hide_banner", "-loglevel", "error", "-y",
+               "-f", "rawvideo", "-pix_fmt", "yuv420p", "-s", f"{self.width}x{self.height}", "-r", str(self.fps), "-i", "-"]
+        if audio:
+            cmd += ["-i", audio, "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-shortest"]
+        cmd += ["-c:v", codec, "-preset", preset, "-crf", str(crf), "-pix_fmt", "yuv420p", "-movflags", "+faststart", path]
+        self._proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    def write(self, frame: np.ndarray) -> None:
+        """Append one ``(height, width, 4)`` uint8 RGBA frame."""
+        _check_frame(frame)
+        h, w = frame.shape[:2]
+        if (w, h) != (self.width, self.height):
+            raise ValueError(f"frame is {w}x{h}, the video is {self.width}x{self.height}")
+        assert self._proc.stdin is not None
+        try:
+            self._proc.stdin.write(rgba_to_i420(frame).tobytes())
+        except BrokenPipeError:
+            raise RuntimeError(f"ffmpeg stopped: {self._error()}") from None
+        self.frames += 1
+
+    def close(self) -> None:
+        """Finish the file (waits for ffmpeg)."""
+        if self._proc.stdin and not self._proc.stdin.closed:
+            self._proc.stdin.close()
+        if self._proc.wait() != 0:
+            raise RuntimeError(f"ffmpeg failed: {self._error()}")
+
+    def _error(self) -> str:
+        err = self._proc.stderr.read().decode(errors="replace").strip() if self._proc.stderr else ""
+        return err or f"exit code {self._proc.poll()}"
+
+    def __enter__(self) -> "VideoWriter":
+        return self
+
+    def __exit__(self, *exc: Any) -> None:
+        self.close()
+
+    def __repr__(self) -> str:
+        return f"VideoWriter({self.path!r}, {self.width}x{self.height} @ {self.fps:g} fps, {self.frames} frames)"
