@@ -5,7 +5,7 @@ description: How to fill the 'demo' template well.
 
 # Template guide: Product demo walkthrough (`demo`)
 
-A 15–35 s walkthrough: a title hook, then 2–5 steps, each a screenshot in a browser window (or a phone) with an animated cursor that glides to the click point, a click pulse and a callout, then a call to action.
+A 15–35 s walkthrough: a kinetic title beside the product, then 2–5 steps, each a screenshot in a browser (or phone) with an animated cursor that glides to the click point, clicks with a ripple and shows a tooltip callout, then a CTA with confetti.
 
 **Typical length:** 15–35 s. **Formats:** 16:9, 9:16 and 1:1 (pass `--format`); the layout adapts automatically.
 

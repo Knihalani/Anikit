@@ -15,86 +15,429 @@
         "onPrimary": "{{brand.colors.onPrimary}}",
         "onAccent": "{{brand.colors.onAccent}}"
       },
-      "fonts": { "heading": "{{brand.fonts.heading}}", "body": "{{brand.fonts.body}}", "mono": "{{brand.fonts.mono}}" },
+      "fonts": {
+        "heading": "{{brand.fonts.heading}}",
+        "body": "{{brand.fonts.body}}",
+        "mono": "{{brand.fonts.mono}}"
+      },
       "radius": "{{brand.radius * fmt.s}}",
       "styles": {
-        "hero": { "font": "$heading", "size": "{{fmt.portrait ? '13vmin' : '12vmin'}}", "weight": 800, "letterSpacing": "-0.035em", "lineHeight": 1.02, "color": "$text" },
-        "title": { "font": "$heading", "size": "{{fmt.portrait ? '10.5vmin' : '9.5vmin'}}", "weight": 800, "letterSpacing": "-0.03em", "lineHeight": 1.05, "color": "$text" },
-        "heading": { "font": "$heading", "size": "{{fmt.portrait ? '7.4vmin' : '6.4vmin'}}", "weight": 700, "letterSpacing": "-0.02em", "lineHeight": 1.1, "color": "$text" },
-        "subtitle": { "font": "$body", "size": "{{fmt.portrait ? '4.6vmin' : '3.7vmin'}}", "weight": 500, "lineHeight": 1.35, "color": "$muted" },
-        "body": { "font": "$body", "size": "{{fmt.portrait ? '4.2vmin' : '3.2vmin'}}", "weight": 400, "lineHeight": 1.4, "color": "$text" },
-        "caption": { "font": "$body", "size": "{{fmt.portrait ? '3.3vmin' : '2.5vmin'}}", "weight": 500, "lineHeight": 1.35, "color": "$muted" },
-        "label": { "font": "$body", "size": "{{fmt.portrait ? '3.4vmin' : '2.7vmin'}}", "weight": 700, "uppercase": true, "letterSpacing": "0.14em", "color": "$accent" },
-        "button": { "font": "$body", "size": "{{fmt.portrait ? '4.2vmin' : '3.1vmin'}}", "weight": 650, "color": "$onPrimary" },
-        "stat": { "font": "$heading", "size": "{{fmt.portrait ? '22vmin' : '20vmin'}}", "weight": 800, "letterSpacing": "-0.045em", "lineHeight": 1, "color": "$text" },
-        "code": { "font": "$mono", "size": "{{fmt.portrait ? '3.2vmin' : '2.4vmin'}}", "weight": 400, "lineHeight": 1.55, "color": "$text" }
+        "hero": {
+          "font": "$heading",
+          "size": "{{fmt.portrait ? '13vmin' : '12vmin'}}",
+          "weight": 800,
+          "letterSpacing": "-0.035em",
+          "lineHeight": 1.02,
+          "color": "$text"
+        },
+        "title": {
+          "font": "$heading",
+          "size": "{{fmt.portrait ? '10.5vmin' : '9.5vmin'}}",
+          "weight": 800,
+          "letterSpacing": "-0.03em",
+          "lineHeight": 1.05,
+          "color": "$text"
+        },
+        "heading": {
+          "font": "$heading",
+          "size": "{{fmt.portrait ? '7.4vmin' : '6.4vmin'}}",
+          "weight": 700,
+          "letterSpacing": "-0.02em",
+          "lineHeight": 1.1,
+          "color": "$text"
+        },
+        "subtitle": {
+          "font": "$body",
+          "size": "{{fmt.portrait ? '4.6vmin' : '3.7vmin'}}",
+          "weight": 500,
+          "lineHeight": 1.35,
+          "color": "$muted"
+        },
+        "body": {
+          "font": "$body",
+          "size": "{{fmt.portrait ? '4.2vmin' : '3.2vmin'}}",
+          "weight": 400,
+          "lineHeight": 1.4,
+          "color": "$text"
+        },
+        "caption": {
+          "font": "$body",
+          "size": "{{fmt.portrait ? '3.3vmin' : '2.5vmin'}}",
+          "weight": 500,
+          "lineHeight": 1.35,
+          "color": "$muted"
+        },
+        "label": {
+          "font": "$body",
+          "size": "{{fmt.portrait ? '3.4vmin' : '2.7vmin'}}",
+          "weight": 700,
+          "uppercase": true,
+          "letterSpacing": "0.14em",
+          "color": "$accent"
+        },
+        "button": {
+          "font": "$body",
+          "size": "{{fmt.portrait ? '4.2vmin' : '3.1vmin'}}",
+          "weight": 650,
+          "color": "$onPrimary"
+        },
+        "stat": {
+          "font": "$heading",
+          "size": "{{fmt.portrait ? '22vmin' : '20vmin'}}",
+          "weight": 800,
+          "letterSpacing": "-0.045em",
+          "lineHeight": 1,
+          "color": "$text"
+        },
+        "code": {
+          "font": "$mono",
+          "size": "{{fmt.portrait ? '3.2vmin' : '2.4vmin'}}",
+          "weight": 400,
+          "lineHeight": 1.55,
+          "color": "$text"
+        }
       }
     },
-
     "glows": [
       {
-        "id": "glow-a", "type": "shape", "shape": "circle", "width": "95vmax", "height": "95vmax", "x": "{{gx ?? '12%'}}", "y": "{{gy ?? '8%'}}",
+        "id": "glow-a",
+        "type": "shape",
+        "shape": "circle",
+        "width": "95vmax",
+        "height": "95vmax",
+        "x": "{{gx ?? '12%'}}",
+        "y": "{{gy ?? '8%'}}",
         "fill": "radial-gradient({{alpha(brand.colors.primary, (strength ?? 1) * 0.42)}} 0%, {{alpha(brand.colors.primary, (strength ?? 1) * 0.12)}} 35%, {{alpha(brand.colors.primary, 0)}} 70%)",
-        "loop": { "preset": "float", "amount": "{{fmt.u * 4}}", "period": 9 }
+        "loop": {
+          "preset": "float",
+          "amount": "{{fmt.u * 4}}",
+          "period": 9
+        }
       },
       {
-        "id": "glow-b", "type": "shape", "shape": "circle", "width": "85vmax", "height": "85vmax", "x": "{{hx ?? '92%'}}", "y": "{{hy ?? '96%'}}",
+        "id": "glow-b",
+        "type": "shape",
+        "shape": "circle",
+        "width": "85vmax",
+        "height": "85vmax",
+        "x": "{{hx ?? '92%'}}",
+        "y": "{{hy ?? '96%'}}",
         "fill": "radial-gradient({{alpha(brand.colors.secondary, (strength ?? 1) * 0.3)}} 0%, {{alpha(brand.colors.secondary, (strength ?? 1) * 0.08)}} 35%, {{alpha(brand.colors.secondary, 0)}} 70%)",
-        "loop": { "preset": "float", "amount": "{{fmt.u * 5}}", "period": 11 }
+        "loop": {
+          "preset": "float",
+          "amount": "{{fmt.u * 5}}",
+          "period": 11
+        }
       }
     ],
-
-    "kicker": { "text": "{{text}}", "style": "label", "enter": { "preset": "fadeUp", "delay": "{{delay ?? 0}}", "duration": 0.5 } },
-
-    "button": {
-      "type": "box", "id": "cta-button",
-      "style": { "padding": ["{{fmt.u * 2.4}}", "{{fmt.u * 5}}"], "radius": 999, "background": "$primary" },
-      "shadow": { "x": 0, "y": "{{fmt.u * 1.2}}", "blur": "{{fmt.u * 4}}", "color": "{{alpha(brand.colors.primary, 0.45)}}" },
-      "enter": { "preset": "popIn", "delay": "{{delay ?? 0}}" },
-      "children": [ { "text": "{{label}}", "style": "button" } ]
+    "kicker": {
+      "text": "{{text}}",
+      "style": "label",
+      "enter": {
+        "preset": "fadeUp",
+        "delay": "{{delay ?? 0}}",
+        "duration": 0.5
+      }
     },
-
-    "browser": {
-      "type": "box", "id": "{{id ?? 'browser'}}", "width": "{{width}}",
-      "style": { "direction": "column", "align": "stretch", "background": "$surface", "radius": "{{fmt.u * 1.8}}", "border": "1px $border" },
-      "clip": true,
-      "shadow": { "x": 0, "y": "{{fmt.u * 3}}", "blur": "{{fmt.u * 9}}", "color": "#00000066" },
+    "button": {
+      "type": "box",
+      "id": "cta-button",
+      "style": {
+        "padding": [
+          "{{fmt.u * 2.4}}",
+          "{{fmt.u * 5}}"
+        ],
+        "radius": 999,
+        "background": "$primary"
+      },
+      "shadow": {
+        "x": 0,
+        "y": "{{fmt.u * 1.2}}",
+        "blur": "{{fmt.u * 4}}",
+        "color": "{{alpha(brand.colors.primary, 0.45)}}"
+      },
+      "enter": {
+        "preset": "popIn",
+        "delay": "{{delay ?? 0}}"
+      },
       "children": [
         {
-          "type": "box", "height": "{{fmt.u * 4.4}}", "style": { "direction": "row", "gap": "{{fmt.u * 0.9}}", "padding": [0, "{{fmt.u * 1.8}}"], "align": "center", "justify": "start" },
+          "text": "{{label}}",
+          "style": "button"
+        }
+      ]
+    },
+    "browser": {
+      "type": "box",
+      "id": "{{id ?? 'browser'}}",
+      "width": "{{width}}",
+      "style": {
+        "direction": "column",
+        "align": "stretch",
+        "background": "$surface",
+        "radius": "{{fmt.u * 1.8}}",
+        "border": "1px $border"
+      },
+      "clip": true,
+      "shadow": {
+        "x": 0,
+        "y": "{{fmt.u * 3}}",
+        "blur": "{{fmt.u * 9}}",
+        "color": "#00000066"
+      },
+      "children": [
+        {
+          "type": "box",
+          "height": "{{fmt.u * 4.4}}",
+          "style": {
+            "direction": "row",
+            "gap": "{{fmt.u * 0.9}}",
+            "padding": [
+              0,
+              "{{fmt.u * 1.8}}"
+            ],
+            "align": "center",
+            "justify": "start"
+          },
           "children": [
-            { "shape": "circle", "width": "{{fmt.u * 1.25}}", "height": "{{fmt.u * 1.25}}", "fill": "#FF5F57" },
-            { "shape": "circle", "width": "{{fmt.u * 1.25}}", "height": "{{fmt.u * 1.25}}", "fill": "#FEBC2E" },
-            { "shape": "circle", "width": "{{fmt.u * 1.25}}", "height": "{{fmt.u * 1.25}}", "fill": "#28C840" },
             {
-              "$if": "url", "then": {
-                "type": "box", "style": { "grow": 1, "justify": "center", "padding": [0, "{{fmt.u * 10}}"] },
-                "children": [ { "text": "{{url}}", "style": "caption", "size": "{{fmt.u * 2.2}}" } ]
+              "shape": "circle",
+              "width": "{{fmt.u * 1.25}}",
+              "height": "{{fmt.u * 1.25}}",
+              "fill": "#FF5F57"
+            },
+            {
+              "shape": "circle",
+              "width": "{{fmt.u * 1.25}}",
+              "height": "{{fmt.u * 1.25}}",
+              "fill": "#FEBC2E"
+            },
+            {
+              "shape": "circle",
+              "width": "{{fmt.u * 1.25}}",
+              "height": "{{fmt.u * 1.25}}",
+              "fill": "#28C840"
+            },
+            {
+              "$if": "url",
+              "then": {
+                "type": "box",
+                "style": {
+                  "grow": 1,
+                  "justify": "center",
+                  "padding": [
+                    0,
+                    "{{fmt.u * 10}}"
+                  ]
+                },
+                "children": [
+                  {
+                    "text": "{{url}}",
+                    "style": "caption",
+                    "size": "{{fmt.u * 2.2}}"
+                  }
+                ]
               }
             }
           ]
         },
-        { "src": "{{src}}", "width": "{{width}}", "height": "{{height}}", "fit": "cover" }
+        {
+          "src": "{{src}}",
+          "width": "{{width}}",
+          "height": "{{height}}",
+          "fit": "cover"
+        }
       ]
     },
-
     "phone": {
-      "type": "box", "id": "{{id ?? 'phone'}}", "width": "{{width}}", "height": "{{width * 2.05}}",
-      "style": { "padding": "{{width * 0.035}}", "radius": "{{width * 0.16}}", "background": "#0A0A0C", "border": "2px #FFFFFF22" },
-      "shadow": { "x": 0, "y": "{{fmt.u * 3}}", "blur": "{{fmt.u * 9}}", "color": "#00000080" },
-      "children": [ { "src": "{{src}}", "width": "{{width * 0.93}}", "height": "{{width * 1.98}}", "fit": "cover", "radius": "{{width * 0.13}}" } ]
+      "type": "box",
+      "id": "{{id ?? 'phone'}}",
+      "width": "{{width}}",
+      "height": "{{width * 2.05}}",
+      "style": {
+        "padding": "{{width * 0.035}}",
+        "radius": "{{width * 0.16}}",
+        "background": "#0A0A0C",
+        "border": "2px #FFFFFF22"
+      },
+      "shadow": {
+        "x": 0,
+        "y": "{{fmt.u * 3}}",
+        "blur": "{{fmt.u * 9}}",
+        "color": "#00000080"
+      },
+      "children": [
+        {
+          "src": "{{src}}",
+          "width": "{{width * 0.93}}",
+          "height": "{{width * 1.98}}",
+          "fit": "cover",
+          "radius": "{{width * 0.13}}"
+        }
+      ]
     },
-
     "wordmark": {
       "$if": "brand.logo",
-      "then": { "src": "{{brand.logo}}", "height": "{{height ?? fmt.u * 12}}", "fit": "contain", "x": "{{x ?? '50%'}}", "y": "{{y ?? '50%'}}", "enter": { "preset": "{{enter ?? 'scaleIn'}}", "delay": "{{delay ?? 0}}" } },
-      "else": { "text": "{{brand.name}}", "style": "title", "x": "{{x ?? '50%'}}", "y": "{{y ?? '50%'}}", "enter": { "preset": "{{enter ?? 'scaleIn'}}", "delay": "{{delay ?? 0}}" } }
+      "then": {
+        "src": "{{brand.logo}}",
+        "height": "{{height ?? fmt.u * 12}}",
+        "fit": "contain",
+        "x": "{{x ?? '50%'}}",
+        "y": "{{y ?? '50%'}}",
+        "enter": {
+          "preset": "{{enter ?? 'scaleIn'}}",
+          "delay": "{{delay ?? 0}}"
+        }
+      },
+      "else": {
+        "text": "{{brand.name}}",
+        "style": "title",
+        "x": "{{x ?? '50%'}}",
+        "y": "{{y ?? '50%'}}",
+        "enter": {
+          "preset": "{{enter ?? 'scaleIn'}}",
+          "delay": "{{delay ?? 0}}"
+        }
+      }
     },
-
     "music": {
       "$if": "music",
-      "then": [ { "src": "{{music}}", "volume": 0.8, "fadeIn": 0.3, "fadeOut": 1.5 } ],
+      "then": [
+        {
+          "src": "{{music}}",
+          "volume": 0.8,
+          "fadeIn": 0.3,
+          "fadeOut": 1.5
+        }
+      ],
       "else": []
+    },
+    "backdrop": [
+      {
+        "id": "mesh",
+        "type": "component",
+        "component": "mesh-gradient",
+        "props": {
+          "colors": [
+            "{{brand.colors.primary}}",
+            "{{brand.colors.secondary}}",
+            "{{mix(brand.colors.background, brand.colors.primary, 0.35)}}"
+          ],
+          "base": "{{brand.colors.backgroundDeep}}",
+          "intensity": "{{(intensity ?? 0.38) * (brand.theme == 'light' ? 0.6 : 1)}}",
+          "seed": "{{seed ?? 1}}",
+          "speed": 0.6
+        }
+      },
+      {
+        "$if": "floor",
+        "then": {
+          "id": "floor",
+          "type": "component",
+          "component": "grid",
+          "props": {
+            "perspective": true,
+            "color": "{{alpha(brand.colors.text, 0.07)}}",
+            "speed": 24,
+            "fade": 0.85
+          }
+        }
+      }
+    ],
+    "grain": {
+      "id": "grain",
+      "type": "component",
+      "component": "grain",
+      "props": {
+        "amount": 0.04
+      }
+    },
+    "device": [
+      {
+        "$if": "src",
+        "then": {
+          "id": "{{(id ?? 'device') + '-asset'}}",
+          "src": "{{src}}",
+          "width": 2,
+          "height": 2,
+          "opacity": 0
+        }
+      },
+      {
+        "id": "{{id ?? 'device'}}",
+        "type": "component",
+        "component": "{{kind ?? 'browser'}}",
+        "props": {
+          "$merge": [
+            {
+              "delay": "{{delay ?? 0.3}}",
+              "float": "{{fmt.u * 0.6}}"
+            },
+            {
+              "$if": "src",
+              "then": {
+                "src": "{{src}}"
+              },
+              "else": {
+                "colors": [
+                  "{{brand.colors.primary}}",
+                  "{{brand.colors.secondary}}"
+                ]
+              }
+            },
+            {
+              "$if": "(kind ?? 'browser') == 'browser' && url",
+              "then": {
+                "url": "{{url}}"
+              }
+            }
+          ]
+        },
+        "x": "{{x ?? '50%'}}",
+        "y": "{{y ?? '50%'}}",
+        "width": "{{width}}",
+        "height": "{{height}}"
+      }
+    ],
+    "ctaButton": {
+      "id": "cta-button",
+      "type": "component",
+      "component": "button",
+      "props": {
+        "label": "{{label}}",
+        "variant": "gradient",
+        "size": "{{fmt.portrait ? fmt.u * 4.6 : fmt.u * 3.6}}",
+        "press": [
+          "{{press ?? 1.4}}"
+        ],
+        "delay": "{{delay ?? 0.5}}"
+      },
+      "x": "{{fmt.cx - (len(label) * (fmt.portrait ? fmt.u * 4.6 : fmt.u * 3.6) * 0.29 + (fmt.portrait ? fmt.u * 4.6 : fmt.u * 3.6) * 1.2)}}",
+      "anchor": "left",
+      "y": "{{y ?? '60%'}}",
+      "width": "{{fmt.w * 0.6}}",
+      "height": "{{fmt.u * 14}}"
+    },
+    "confetti": {
+      "id": "confetti",
+      "type": "component",
+      "component": "confetti",
+      "props": {
+        "mode": "burst",
+        "at": "{{at ?? 1.4}}",
+        "origin": [
+          "{{ox ?? 0.5}}",
+          "{{oy ?? 0.6}}"
+        ],
+        "count": "{{count ?? 120}}",
+        "colors": [
+          "{{brand.colors.primary}}",
+          "{{brand.colors.secondary}}",
+          "{{brand.colors.accent}}",
+          "{{brand.colors.text}}"
+        ],
+        "seed": 7
+      }
     }
   }
 }
