@@ -292,3 +292,83 @@ fn diff_mb_marks_only_changed_blocks() {
     assert!(c.count() < 36);
     assert_eq!(diff_mb(&ya, &ya).count(), 0);
 }
+
+#[test]
+fn cached_image_resample_matches_direct() {
+    let mut assets = Assets::default();
+    let img: Vec<u8> = (0..40 * 30).flat_map(|i| [(i * 7 % 256) as u8, (i * 3 % 256) as u8, (i % 40 * 6) as u8, 255]).collect();
+    assets.images.insert_rgba8(ImageId(3), 40, 30, img).unwrap();
+    let mut r = Renderer::new(Arc::new(assets));
+    for dst in [[10.25f32, 7.5, 60.0, 45.0], [3.0, 4.0, 20.0, 15.0], [0.0, 0.0, 40.0, 30.0]] {
+        let l = list(vec![Op::Image { image: ImageId(3), dst, opacity: 0.8, transform: IDENTITY }]);
+        let first = r.render(&l).data_as_u8_slice().to_vec();
+        r.render(&l);
+        let cached = r.render(&l).data_as_u8_slice().to_vec();
+        let (mut sum, mut max) = (0u64, 0u8);
+        for (a, b) in first.iter().zip(&cached) {
+            sum += a.abs_diff(*b) as u64;
+            max = max.max(a.abs_diff(*b));
+        }
+        let mean = sum as f64 / first.len() as f64;
+        assert!(mean < 1.5 && max < 90, "{dst:?}: mean {mean} max {max}");
+    }
+}
+
+#[test]
+fn incremental_matches_full_render() {
+    use anikit_video::render::incremental::Update;
+    use anikit_video::render::{diff_mb, MbMap, YuvFrame};
+    let mut assets = Assets::default();
+    let f = font(&mut assets);
+    let assets = Arc::new(assets);
+    let (w, h) = (200u32, 120u32);
+    let scene = |i: usize| {
+        let mut ops = vec![
+            Op::Fill { path: kurbo::Rect::new(0.0, 0.0, 200.0, 120.0).to_path(0.1), paint: Paint::Linear { p0: [0.0, 0.0], p1: [200.0, 0.0], stops: vec![(0.0, rgba(0.1, 0.1, 0.3, 1.0)), (1.0, rgba(0.3, 0.1, 0.2, 1.0))] }, rule: FillRule::NonZero, transform: IDENTITY },
+            layer(1.0, Blend::Normal, vec![Filter::Shadow { dx: 2.0, dy: 3.0, blur: 3.0, color: rgba(0.0, 0.0, 0.0, 0.6) }], None, Some(9)),
+            Op::Fill { path: star(), paint: solid(0.9, 0.9, 0.2), rule: FillRule::NonZero, transform: IDENTITY },
+            Op::PopLayer,
+            card(120.0 + (i as f32 * 3.7) % 50.0, 70.0, 30.0, 20.0, solid(0.2, 0.8, 0.9)),
+        ];
+        if i % 4 >= 2 {
+            ops.push(Op::Fill { path: circle(170.0, 20.0, 8.0), paint: solid(1.0, 0.3, 0.3), rule: FillRule::NonZero, transform: IDENTITY });
+        }
+        if let Some(f) = f {
+            let glyphs = vec![Glyph { id: 36, x: 0.0, y: 0.0 }, Glyph { id: 81, x: 14.0, y: 0.0 }];
+            ops.push(Op::Glyphs { font: f, size: 18.0, glyphs, paint: solid(1.0, 1.0, 1.0), transform: [1.0, 0.0, 0.0, 1.0, 110.0, 30.0] });
+        }
+        if i == 5 {
+            // Layer structure change → full frame.
+            ops.push(layer(0.5, Blend::Normal, vec![], None, None));
+            ops.push(card(10.0, 90.0, 20.0, 20.0, solid(1.0, 1.0, 1.0)));
+            ops.push(Op::PopLayer);
+        }
+        DisplayList { width: w, height: h, background: rgba(0.0, 0.0, 0.0, 1.0), ops }
+    };
+    let mut inc = Renderer::new(assets.clone());
+    let mut full = Renderer::new(assets.clone());
+    let (mut yi, mut changed) = (YuvFrame::default(), MbMap::default());
+    let mut prev_full: Option<YuvFrame> = None;
+    let mut kinds = Vec::new();
+    for i in 0..10 {
+        let l = scene(if i == 7 { 6 } else { i }); // frame 7 repeats frame 6's list
+        let l = if i == 7 { scene(6) } else { l };
+        kinds.push(inc.render_yuv_incremental(&l, &mut yi, &mut changed));
+        let mut yf = YuvFrame::default();
+        full.render_yuv(&l, &mut yf);
+        // Same pixels up to float rounding (sub-region tiles see shifted coordinates).
+        for (pa, pb) in [(&yi.y, &yf.y), (&yi.u, &yf.u), (&yi.v, &yf.v)] {
+            let bad = pa.iter().zip(pb.iter()).filter(|(a, b)| a.abs_diff(**b) > 0).count();
+            let max = pa.iter().zip(pb.iter()).map(|(a, b)| a.abs_diff(*b)).max().unwrap_or(0);
+            assert!(max <= 1 && bad * 200 < pa.len(), "frame {i} ({:?}): {bad} diffs, max {max}", kinds[i]);
+        }
+        if let Some(p) = &prev_full {
+            assert_eq!(changed, diff_mb(p, &yi), "frame {i}: changed map not exact");
+        }
+        prev_full = Some(yi.clone());
+    }
+    assert_eq!(kinds[0], Update::Full);
+    assert!(matches!(kinds[1], Update::Partial(_)), "{kinds:?}");
+    assert_eq!(kinds[5], Update::Full);
+    assert_eq!(kinds[7], Update::Unchanged);
+}

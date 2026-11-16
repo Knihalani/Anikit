@@ -10,8 +10,12 @@
 //! composited as an image; a `cache_key` keeps that bitmap for the next frame.
 
 pub mod assets;
+pub mod blur;
 pub mod diff;
 pub mod filter;
+pub mod glyphs;
+pub mod incremental;
+pub mod resample;
 pub mod trim;
 pub mod yuv;
 
@@ -73,10 +77,19 @@ struct State {
     in_flight: Vec<Arc<Pixmap>>,
     cache: HashMap<u64, CacheEntry>,
     sprites: HashMap<u64, CacheEntry>,
+    text: HashMap<u64, CacheEntry>,
+    scaled: HashMap<u64, CacheEntry>,
+    seen: HashMap<u64, u64>,
+    resample_buf: Vec<u8>,
+    /// Frame-space position of the current context's pixel (0, 0).
+    org: (i32, i32),
+    frame_size: (u32, u32),
     frame_no: u64,
     path: BezPath,
     lens: Vec<f64>,
     filters: filter::FilterScratch,
+    glyphs: glyphs::GlyphCache,
+    run: BezPath,
     /// Layers rendered from cache in the last frame (for stats/tests).
     cache_hits: usize,
 }
@@ -86,6 +99,10 @@ pub struct Renderer {
     assets: Arc<Assets>,
     ctx: RenderContext,
     frame: Pixmap,
+    /// Context and pixmap for partial (dirty-region) renders.
+    rctx: Option<RenderContext>,
+    rpix: Pixmap,
+    inc: incremental::Tracker,
     st: State,
 }
 
@@ -100,6 +117,9 @@ impl Renderer {
             assets,
             ctx: RenderContext::new(1, 1),
             frame: Pixmap::new(1, 1),
+            rctx: None,
+            rpix: Pixmap::new(1, 1),
+            inc: Default::default(),
             st: State {
                 res: Resources::new(),
                 pool: Vec::new(),
@@ -107,10 +127,18 @@ impl Renderer {
                 in_flight: Vec::new(),
                 cache: HashMap::new(),
                 sprites: HashMap::new(),
+                text: HashMap::new(),
+                scaled: HashMap::new(),
+                seen: HashMap::new(),
+                resample_buf: Vec::new(),
+                org: (0, 0),
+                frame_size: (1, 1),
                 frame_no: 0,
                 path: BezPath::new(),
                 lens: Vec::new(),
                 filters: Default::default(),
+                glyphs: Default::default(),
+                run: BezPath::new(),
                 cache_hits: 0,
             },
         }
@@ -132,34 +160,83 @@ impl Renderer {
 
     /// Render `list` and return the frame (premultiplied RGBA8).
     pub fn render(&mut self, list: &DisplayList) -> &FrameRgba {
+        self.render_region(list, None);
+        &self.frame
+    }
+
+    /// Render all of `list`, or only the pixels of `region` (`[x0, y0, x1, y1)`,
+    /// clipped to the frame) — the rest of the frame keeps its previous pixels.
+    pub(crate) fn render_region(&mut self, list: &DisplayList, region: Option<[u32; 4]>) {
         let (w, h) = (list.width.clamp(1, u16::MAX as u32) as u16, list.height.clamp(1, u16::MAX as u32) as u16);
         if self.ctx.width() != w || self.ctx.height() != h {
             self.ctx = RenderContext::new(w, h);
             self.frame = Pixmap::new(w, h);
             self.st.cache.clear();
         }
+        let region = region.map(|[x0, y0, x1, y1]| [x0.min(w as u32), y0.min(h as u32), x1.min(w as u32), y1.min(h as u32)]);
+        let full = match region {
+            None => true,
+            Some([x0, y0, x1, y1]) => x0 == 0 && y0 == 0 && x1 == w as u32 && y1 == h as u32,
+        };
         let st = &mut self.st;
         st.frame_no += 1;
         st.cache_hits = 0;
-        self.ctx.reset();
+        st.frame_size = (w as u32, h as u32);
         let assets = self.assets.clone();
-        draw_ops(st, &assets, &mut self.ctx, &list.ops, Affine::IDENTITY);
-        self.ctx.flush();
         let settings = RasterizerSettings { target_init: TargetInit::Clear(color(list.background)), ..Default::default() };
-        self.ctx.render_with(&mut self.frame, &mut st.res, settings);
-        // Release the paints that referenced offscreen bitmaps, then recycle them.
-        self.ctx.reset();
+        if full {
+            st.org = (0, 0);
+            self.ctx.reset();
+            draw_ops(st, &assets, &mut self.ctx, &list.ops, Affine::IDENTITY);
+            self.ctx.flush();
+            self.ctx.render_with(&mut self.frame, &mut st.res, settings);
+            // Release the paints that referenced offscreen bitmaps.
+            self.ctx.reset();
+        } else {
+            let [x0, y0, x1, y1] = region.unwrap_or_default();
+            if x1 <= x0 || y1 <= y0 {
+                return;
+            }
+            let (rw, rh) = ((x1 - x0) as u16, (y1 - y0) as u16);
+            let rctx = self.rctx.get_or_insert_with(|| RenderContext::new(rw, rh));
+            rctx.reset_and_resize(rw, rh);
+            st.org = (x0 as i32, y0 as i32);
+            draw_ops(st, &assets, rctx, &list.ops, Affine::translate((-(x0 as f64), -(y0 as f64))));
+            rctx.flush();
+            self.rpix.resize(rw, rh);
+            rctx.render_with(&mut self.rpix, &mut st.res, settings);
+            rctx.reset();
+            st.org = (0, 0);
+            let (fw, rwb) = (w as usize * 4, rw as usize * 4);
+            let src = self.rpix.data_as_u8_slice();
+            let dst = self.frame.data_as_u8_slice_mut();
+            for (i, row) in src.chunks_exact(rwb).enumerate() {
+                let o = (y0 as usize + i) * fw + x0 as usize * 4;
+                dst[o..o + rwb].copy_from_slice(row);
+            }
+        }
+        // Recycle offscreen bitmaps.
         for a in st.in_flight.drain(..) {
             if let Ok(p) = Arc::try_unwrap(a) {
                 st.pix_pool.push(p);
             }
         }
+        // Evict caches: on full frames by recency; on partial frames only when large
+        // (entries outside the region weren't touched but are still valid).
         let now = st.frame_no;
-        st.cache.retain(|_, e| e.last_used + 1 >= now);
+        if full || st.cache.len() > 512 {
+            st.cache.retain(|_, e| e.last_used + 1 >= now);
+        }
+        if full || st.text.len() > 2048 {
+            st.text.retain(|_, e| e.last_used + 2 >= now);
+        }
+        if full || st.scaled.len() > 64 {
+            st.scaled.retain(|_, e| e.last_used + 2 >= now);
+        }
+        st.seen.retain(|_, &mut f| f + 2 >= now);
         if st.sprites.len() > 256 {
             st.sprites.retain(|_, e| e.last_used + 30 >= now);
         }
-        &self.frame
     }
 
     /// Render and convert to YUV 4:2:0 (BT.709 limited range) in one call.
@@ -301,6 +378,133 @@ fn blit(ctx: &mut RenderContext, pix: Arc<Pixmap>, x: f64, y: f64, alpha: f32) {
     ctx.fill_rect(&Rect::new(0.0, 0.0, w, h));
 }
 
+/// Draw a solid-colour, translation-only glyph run from a cached bitmap
+/// (rendered once per content and quarter-pixel phase). Returns false if the
+/// run can't be cached (colour font) and must be drawn as outlines.
+#[allow(clippy::too_many_arguments)]
+fn draw_cached_run(
+    st: &mut State,
+    ctx: &mut RenderContext,
+    font_id: dl::FontId,
+    font: &vello_cpu::peniko::FontData,
+    size: f32,
+    glyphs: &[dl::Glyph],
+    c: Rgba,
+    tx: f64,
+    ty: f64,
+) -> bool {
+    let (fx, fy) = (tx.floor(), ty.floor());
+    let (qx, qy) = (((tx - fx) * 4.0).round() as u8, ((ty - fy) * 4.0).round() as u8);
+    let key = {
+        use std::hash::{Hash, Hasher};
+        let mut hs = std::collections::hash_map::DefaultHasher::new();
+        (font_id.0, size.to_bits(), qx, qy, c.0.map(f32::to_bits)).hash(&mut hs);
+        for g in glyphs {
+            (g.id, g.x.to_bits(), g.y.to_bits()).hash(&mut hs);
+        }
+        hs.finish()
+    };
+    let now = st.frame_no;
+    let (pix, x0, y0) = match st.text.get_mut(&key) {
+        Some(e) => {
+            e.last_used = now;
+            (e.pix.clone(), e.x, e.y)
+        }
+        None => {
+            let mut run = std::mem::take(&mut st.run);
+            if !st.glyphs.run_path(font_id, font, size, glyphs, &mut run) {
+                st.run = run;
+                return false;
+            }
+            let (ox, oy) = (qx as f64 / 4.0, qy as f64 / 4.0);
+            if run.is_empty() {
+                st.run = run;
+                return true;
+            }
+            let bb = run.bounding_box();
+            let (x0, y0) = ((bb.x0 + ox).floor() - 1.0, (bb.y0 + oy).floor() - 1.0);
+            let (w, h) = ((bb.x1 + ox).ceil() + 1.0 - x0, (bb.y1 + oy).ceil() + 1.0 - y0);
+            if w > 4096.0 || h > 4096.0 {
+                st.run = run;
+                return false;
+            }
+            let (w, h) = (w as u16, h as u16);
+            let mut sub = st.pool.pop().unwrap_or_else(|| RenderContext::new(w, h));
+            sub.reset_and_resize(w, h);
+            sub.set_paint(color(c));
+            sub.set_fill_rule(Fill::NonZero);
+            sub.set_transform(Affine::translate((ox - x0, oy - y0)));
+            sub.fill_path(&run);
+            sub.flush();
+            let mut pm = st.pix_pool.pop().unwrap_or_else(|| Pixmap::new(w, h));
+            pm.resize(w, h);
+            sub.render_with(&mut pm, &mut st.res, RasterizerSettings::default());
+            sub.reset();
+            st.pool.push(sub);
+            st.run = run;
+            pm.set_may_have_transparency(true);
+            let pix = Arc::new(pm);
+            let (x0, y0) = (x0 as i32, y0 as i32);
+            st.text.insert(key, CacheEntry { pix: pix.clone(), x: x0, y: y0, last_used: now });
+            (pix, x0, y0)
+        }
+    };
+    blit(ctx, pix, fx + x0 as f64, fy + y0 as f64, 1.0);
+    true
+}
+
+/// Axis-aligned images: 1:1 at integer positions blit directly; scaled ones
+/// that repeat across frames are resampled once (tent filter) and blitted.
+/// Returns false to fall back to vello's bilinear sampling.
+#[allow(clippy::too_many_arguments)]
+fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix: &Arc<Pixmap>, dst: &[f32; 4], opacity: f32, t: Affine) -> bool {
+    let k = t.as_coeffs();
+    if k[1] != 0.0 || k[2] != 0.0 || k[0] <= 0.0 || k[3] <= 0.0 {
+        return false;
+    }
+    let (x0, y0) = (k[0] * dst[0] as f64 + k[4], k[3] * dst[1] as f64 + k[5]);
+    let (ew, eh) = (k[0] * dst[2] as f64, k[3] * dst[3] as f64);
+    let (iw, ih) = (pix.width() as f64, pix.height() as f64);
+    let alpha = opacity.min(1.0);
+    if ew == iw && eh == ih && x0.fract() == 0.0 && y0.fract() == 0.0 {
+        blit(ctx, pix.clone(), x0, y0, alpha);
+        return true;
+    }
+    let q = |v: f64| (v * 4.0).round() / 4.0;
+    let (fx, fy) = (x0.floor(), y0.floor());
+    let (px, py, qw, qh) = (q(x0 - fx), q(y0 - fy), q(ew), q(eh));
+    if qw < 1.0 || qh < 1.0 || qw > 8192.0 || qh > 8192.0 {
+        return false;
+    }
+    let key = {
+        use std::hash::{Hash, Hasher};
+        let mut hs = std::collections::hash_map::DefaultHasher::new();
+        (id.0, px.to_bits(), py.to_bits(), qw.to_bits(), qh.to_bits(), Arc::as_ptr(pix) as usize).hash(&mut hs);
+        hs.finish()
+    };
+    let now = st.frame_no;
+    if let Some(e) = st.scaled.get_mut(&key) {
+        e.last_used = now;
+        let p = e.pix.clone();
+        blit(ctx, p, fx, fy, alpha);
+        return true;
+    }
+    // Only pay for resampling once the same placement shows up in consecutive frames.
+    let seen_last = st.seen.insert(key, now).is_some_and(|f| f + 1 >= now);
+    if !seen_last {
+        return false;
+    }
+    let (ow, oh) = ((px + qw).ceil() as usize, (py + qh).ceil() as usize);
+    resample::resample(pix.data_as_u8_slice(), iw as usize, ih as usize, px, py, qw, qh, ow, oh, &mut st.resample_buf);
+    let mut pm = Pixmap::new(ow as u16, oh as u16);
+    pm.data_as_u8_slice_mut().copy_from_slice(&st.resample_buf);
+    pm.recompute_may_have_transparency();
+    let p = Arc::new(pm);
+    st.scaled.insert(key, CacheEntry { pix: p.clone(), x: 0, y: 0, last_used: now });
+    blit(ctx, p, fx, fy, alpha);
+    true
+}
+
 struct Card {
     rect: Rect,
     radius: f32,
@@ -430,9 +634,10 @@ fn draw_offscreen(
     cache_key: Option<u64>,
 ) {
     let now = st.frame_no;
+    let org = st.org;
     let cached = cache_key.and_then(|k| st.cache.get_mut(&k)).map(|e| {
         e.last_used = now;
-        (e.pix.clone(), e.x, e.y)
+        (e.pix.clone(), e.x - org.0, e.y - org.1)
     });
     let (pix, x, y) = match cached {
         Some(c) => {
@@ -449,7 +654,14 @@ fn draw_offscreen(
                 }
             }
             let grow = |r: Rect| Rect::new(r.x0 - m[0] as f64, r.y0 - m[1] as f64, r.x1 + m[2] as f64, r.y1 + m[3] as f64);
-            let view = Rect::new(0.0, 0.0, ctx.width() as f64, ctx.height() as f64);
+            // Cached bitmaps must hold everything visible in the *frame* (they
+            // outlive this render's region); others only what this context shows.
+            let view = if cache_key.is_some() {
+                let (fw, fh) = st.frame_size;
+                Rect::new(-org.0 as f64, -org.1 as f64, fw as f64 - org.0 as f64, fh as f64 - org.1 as f64)
+            } else {
+                Rect::new(0.0, 0.0, ctx.width() as f64, ctx.height() as f64)
+            };
             // Pixels outside the view can still blur or cast shadows into it.
             let mut r = grow(content).intersect(grow(view));
             if let Some((p, t)) = clip {
@@ -462,7 +674,9 @@ fn draw_offscreen(
             let (w, h) = (r.width() as u16, r.height() as u16);
             let mut sub = st.pool.pop().unwrap_or_else(|| RenderContext::new(w, h));
             sub.reset_and_resize(w, h);
+            st.org = (org.0 + r.x0 as i32, org.1 + r.y0 as i32);
             draw_ops(st, assets, &mut sub, inner, Affine::translate((-r.x0, -r.y0)) * base);
+            st.org = org;
             sub.flush();
             let mut pm = st.pix_pool.pop().unwrap_or_else(|| Pixmap::new(w, h));
             pm.resize(w, h);
@@ -477,7 +691,7 @@ fn draw_offscreen(
             let (x, y) = (r.x0 as i32, r.y0 as i32);
             match cache_key {
                 Some(k) => {
-                    st.cache.insert(k, CacheEntry { pix: pix.clone(), x, y, last_used: now });
+                    st.cache.insert(k, CacheEntry { pix: pix.clone(), x: x + org.0, y: y + org.1, last_used: now });
                 }
                 None => st.in_flight.push(pix.clone()),
             }
@@ -630,6 +844,10 @@ fn draw_op(st: &mut State, assets: &Assets, ctx: &mut RenderContext, op: &Op, ba
             if *opacity <= 0.0 || dst[2] <= 0.0 || dst[3] <= 0.0 {
                 return;
             }
+            let t = base * affine(transform);
+            if draw_image_fast(st, ctx, *image, pix, dst, *opacity, t) {
+                return;
+            }
             let (iw, ih) = (pix.width() as f64, pix.height() as f64);
             ctx.set_transform(base * affine(transform));
             ctx.set_paint(Image {
@@ -641,18 +859,35 @@ fn draw_op(st: &mut State, assets: &Assets, ctx: &mut RenderContext, op: &Op, ba
             );
             ctx.fill_rect(&Rect::new(dst[0] as f64, dst[1] as f64, (dst[0] + dst[2]) as f64, (dst[1] + dst[3]) as f64));
         }
-        Op::Glyphs { font, size, glyphs, paint, transform } => {
-            let Some(font) = assets.fonts.get(*font) else { return };
+        Op::Glyphs { font: font_id, size, glyphs, paint, transform } => {
+            let Some(font) = assets.fonts.get(*font_id) else { return };
             if glyphs.is_empty() || *size <= 0.0 || !set_paint(ctx, assets, paint) {
                 return;
             }
             ctx.set_transform(base * affine(transform));
             ctx.set_fill_rule(Fill::NonZero);
-            let _ = ctx
-                .glyph_run(&mut st.res, font)
-                .font_size(*size)
-                .hint(false)
-                .fill_glyphs(glyphs.iter().map(|g| vello_cpu::Glyph { id: g.id as u32, x: g.x, y: g.y }));
+            if let Paint::Solid(c) = paint {
+                let t = base * affine(transform);
+                let k = t.as_coeffs();
+                if k[0] == 1.0 && k[1] == 0.0 && k[2] == 0.0 && k[3] == 1.0 {
+                    if draw_cached_run(st, ctx, *font_id, font, *size, glyphs, *c, k[4], k[5]) {
+                        return;
+                    }
+                    ctx.set_transform(t);
+                }
+            }
+            if st.glyphs.run_path(*font_id, font, *size, glyphs, &mut st.run) {
+                if !st.run.is_empty() {
+                    ctx.fill_path(&st.run);
+                }
+            } else {
+                let _ = ctx
+                    .glyph_run(&mut st.res, font)
+                    .font_size(*size)
+                    .hint(false)
+                    .atlas_cache(true)
+                    .fill_glyphs(glyphs.iter().map(|g| vello_cpu::Glyph { id: g.id as u32, x: g.x, y: g.y }));
+            }
         }
         Op::PushLayer { .. } | Op::PopLayer => {}
     }
