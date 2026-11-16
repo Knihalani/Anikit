@@ -201,7 +201,7 @@ export function createHall(canvas, overlayEl) {
   for (let i = 0; i < NP; i++) {
     const y = shapes[0][i * 3 + 1];
     seeds[i * 4] = Math.min(1, Math.max(0, (y + 1.6) / 3.2 * 0.75 + Math.random() * 0.25));
-    seeds[i * 4 + 1] = 0.018 + Math.random() * 0.02;
+    seeds[i * 4 + 1] = 0.016 + Math.random() * 0.016;
     seeds[i * 4 + 2] = Math.random() * 0.35 + 0.05;
     seeds[i * 4 + 3] = Math.random();
   }
@@ -251,11 +251,12 @@ export function createHall(canvas, overlayEl) {
 
   // ---- springs: orbs that follow you ----
   const NO = 9;
+  const ORB_PAL = [[0.98, 0.72, 0.3], [0.97, 0.45, 0.38], [0.93, 0.4, 0.62]];
   const orbS = [];
   for (let i = 0; i < NO; i++) {
     const a = (i / NO) * PI2;
     const hx = -4.6 + Math.cos(a) * 1.0, hy = 1.6 + 0.35 * Math.sin(a * 2), hz = 4.2 + Math.sin(a) * 1.0;
-    orbS.push({ x: hx, y: hy, z: hz, hx, hy, hz, k: 26 + i * 9, d: 7 + i * 0.6, s: 0.22 + (i % 3) * 0.05 });
+    orbS.push({ x: hx, y: hy, z: hz, hx, hy, hz, k: 26 + i * 9, d: 7 + i * 0.6, s: 0.15 + (i % 3) * 0.04 });
   }
   let orbFollow = false, orbRetarget = 0;
 
@@ -411,7 +412,8 @@ export function createHall(canvas, overlayEl) {
       const o = orbS[i];
       const fl = orbFollow ? 0 : 0.08 * Math.sin(t * 1.2 + i * 1.7);
       const sc = o.s * (1 + 0.15 * wk);
-      orbs.put(i, o.x, o.y + fl, o.z, 0, sc, sc, sc, 1.0, 0.95, 0.55 - i * 0.03, 0.2 + i * 0.05, 0.06 + 0.3 * wk);
+      const oc = ORB_PAL[i % 3];
+      orbs.put(i, o.x, o.y + fl, o.z, 0, sc, sc, sc, 1.0, oc[0], oc[1], oc[2], 0.06 + 0.3 * wk);
     }
     orbs.upload();
 

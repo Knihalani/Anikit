@@ -29,7 +29,7 @@ export function createControls(canvas, overlayEl, opts) {
   const cross = document.createElement('div');
   cross.style.cssText = 'position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:#fff;box-shadow:0 0 0 1.5px rgba(40,30,20,.55);transition:transform .25s';
   const card = document.createElement('div');
-  card.style.cssText = 'position:absolute;left:50%;bottom:12%;transform:translateX(-50%);text-align:center;opacity:0;white-space:nowrap;text-shadow:0 1px 8px rgba(255,248,236,.9)';
+  card.style.cssText = 'position:absolute;left:0;right:0;bottom:13%;text-align:center;opacity:0;padding:0 16px;text-shadow:0 1px 8px rgba(255,248,236,.9)';
   const name = document.createElement('div');
   name.style.cssText = 'font-weight:700;font-size:22px;letter-spacing:.01em';
   const hint = document.createElement('div');
