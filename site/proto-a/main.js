@@ -17,19 +17,28 @@ for (const b of document.querySelectorAll('[data-copy]')) b.addEventListener('cl
 
 const idle = () => new Promise((r) => (window.requestIdleCallback ? requestIdleCallback(() => r(), { timeout: 120 }) : setTimeout(r, 16)));
 
+const T = (window.__t = []), mark = (n) => T.push([n, Math.round(performance.now())]);
+mark('module');
 await init();
+mark('wasm');
 await document.fonts.ready;
+mark('fonts');
+// Let the HTML paint before any WebGL work starts.
+await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
 
 // ─── WebGL overlay ─────────────────────────────────────────────────────────
 const canvas = $('#gl');
 // anikit scene() owns the one WebGL2 context and the frame; the letters, the
 // ripple and the shatter draw into it as scene layers.
+mark('pre-scene');
 let S = null;
 try {
   S = scene(canvas, { background: 'transparent', shadows: false, bloom: false, fxaa: false, adaptive: false, autoRender: false,
     environment: 'studio', camera: { fov: 44, near: 20, far: 10000, position: [0, 0, 1000], target: [0, 0, 0] } });
 } catch { S = null; }
+mark('scene');
 const G = createGL(canvas, S ? canvas.getContext('webgl2') : null);
+mark('gl');
 let vw = innerWidth, vh = innerHeight;
 let quality = 0; // 0 best … 4: governor steps down effects before resolution
 const dprFor = () => Math.min(devicePixelRatio || 1, 2) * (quality >= 4 ? 0.6 : quality >= 3 ? 0.8 : 1);
@@ -93,12 +102,15 @@ async function buildLetters() {
   const font = measureLetters();
   for (const L of letters) {
     await idle();
+    const t0 = performance.now();
     const m3 = mesh.text(L.el.textContent, { font, resolution: 110, depth: 0.1, bevel: 0.35 });
     L.aspect = m3.aspect;
     L.sy = L.sx * L.aspect;
+    const t1 = performance.now();
     const arr = m3.arrays();
     m3.free();
     L.mesh = G.mesh(arr);
+    mark('letter ' + Math.round(t1 - t0) + '/' + Math.round(performance.now() - t1));
   }
 }
 
@@ -417,12 +429,17 @@ engine.onFrame((now, dtMs) => {
 });
 
 // ─── Start: paint first, pre-warm everything, then come alive ──────────────
+mark('setup');
 layout();
+mark('layout');
 if (G) {
   shards = G.shards(14, 9);
   await buildLetters();
+  mark('letters');
   await idle(); await paintCode();
+  mark('code');
   await idle(); await paintPanel();
+  mark('panel');
   // Pre-warm every program once, off-screen, so the first real frame doesn't compile.
   if (S) {
     // Pre-warm every program once, off-screen, then clear.
