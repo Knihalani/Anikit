@@ -912,6 +912,7 @@ const px = r3.render(scene, [
 | `pattern: 'hex' \| 'dots' \| 'circuit'` | what `lines` draws instead of grid lines: glowing hexagon cells, a dot matrix, or circuit traces with pads (in `grid` cells, `lineWidth` thick) |
 | `pulse`, `pulseCount`, `pulsePhase`, `pulseDir` | bright pulses travelling along `u` (animate `pulsePhase`); `pulseDir` offsets each instance's phase by its position, so a wave sweeps through a field |
 | `texture`, `textureMode`, `textureRepeat`, `textureGain` | an image from `texture(imageData | canvas)` mapped by UV: `'albedo'` tints the lit colour, `'emissive'` glows unlit (screens, signs); mipmapped, so it doesn't shimmer when small |
+| `fog` (0–1, default 1) | how much the render's `fog`/`groundFog` applies: `0` for sky domes and backdrops painted with their own haze |
 | `textureFilter` | `'linear'` (default) or `'aniso'`: anisotropic filtering (mip from the short side of the pixel footprint, up to 4 taps along the long side) keeps terrain, roads and floors sharp at grazing angles, at some cost per stretched pixel |
 
 Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [near, far]`, `fogColor`, environment `sky`, `horizon`, `ground`, `strips`. Items draw in order; per item `cull: false` shows back faces (tumbling shards), `blend: 'additive'` adds light.
@@ -925,6 +926,20 @@ Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [nea
 **Depth of field**: `render(…, { dof: { focus, aperture, max } })` blurs by distance from the focal plane (thin lens; `aperture` = blur in px at infinity). Animate `focus` for rack-focus shots.
 
 **Camera motion blur**: `render(scene, items, { motionBlur: { shutter: 0.5, max } })` reprojects every pixel with the previous `render()`'s camera using the depth buffer and blurs along that motion (depth-aware, so near geometry smears over the background). Smooth, ghost-free speed from one render per frame — use it with composition `motionBlur: 1`, give points `streak: 0`–`0.5`, and call `r3.resetMotion()` after a cut. Pass `prevCamera` (the camera one frame earlier, `scene.viewProjection().matrix`) so previews and `--review`, which skip frames, blur exactly like the final render — see `templates/journey.mjs`.
+
+**Depth read-back**: after a render, `r3.depth(cam)` returns each pixel's distance from the camera (a reused `Float32Array`, `Infinity` where nothing was drawn); `r3.depth()` without a scene gives the raw NDC depth as a view into WebAssembly memory. Drive post effects by depth: ink outlines, a transition front sweeping from the horizon towards the lens (`film/film.mjs` does both).
+
+```ts
+import { renderer3d, scene3d, mesh, instances } from 'anikit';
+const r3 = renderer3d({ width: 640, height: 360 });
+const cam = scene3d({ width: 640, height: 360, camera: { z: 900 } });
+r3.render(cam, [{ mesh: mesh.cube(), instances: instances(1, () => ({ scale: 200 })) }]);
+const dist = r3.depth(cam);
+const front = 600; // pixels farther than this show another look
+const far = dist.filter((d) => d > front).length;
+```
+
+A sky dome that the fog leaves alone: `{ mesh: dome, cull: false, material: { ambient: 0, diffuse: 0, texture: sky, textureMode: 'emissive', fog: 0 } }`. If the scene has a mirror floor, make the dome an upper hemisphere resting on the floor: a whole sphere would cover the reflection below the horizon.
 
 **Mirror floors**: `render(scene, items, { mirror: { y, strength } })` renders the scene reflected about the plane `y`, then the scene itself, then items marked `mirror: true` (the floor) glossily over the reflection where they show (`strength` 0–1; drawing the floor last means hidden floor pixels are never shaded). Neon on wet asphalt. The mirror item should cover the view below the horizon; `reflect: false` keeps an item out of the reflection. The reflection renders at half resolution (about a quarter of the cost of the main pass, and softer, like a real glossy floor); `mirror: { y, resolution: 'full' }` keeps it sharp.
 

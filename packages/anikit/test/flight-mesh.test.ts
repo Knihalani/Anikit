@@ -198,3 +198,24 @@ describe('mesh builders', () => {
     expect(Array.from(blurred)).not.toEqual(Array.from(moved));
   });
 });
+
+describe('renderer3d depth and material fog', () => {
+  it('reads back distances and lets a material skip the fog', () => {
+    const r3 = renderer3d({ width: 64, height: 48 });
+    const cam = scene3d({ fov: 60, width: 64, height: 48, near: 5, far: 60000 });
+    cam.camera.x = 0; cam.camera.y = 0; cam.camera.z = 1000;
+    cam.target.x = 0; cam.target.y = 0; cam.target.z = 0;
+    const wall = instances(1, () => ({ sx: 400, sy: 400, sz: 2, color: [1, 0, 0] }));
+    const flat = { ambient: 1, diffuse: 0, specular: 0, rim: 0 };
+    const centre = (px: Uint8ClampedArray) => Array.from(px.slice((24 * 64 + 32) * 4, (24 * 64 + 32) * 4 + 3));
+    const fogged = centre(r3.render(cam, [{ mesh: mesh.cube(), instances: wall, material: flat }], { background: '#0000ff', fog: [0, 1000], fogColor: [0, 1, 0] }).slice());
+    const d = r3.depth(cam);
+    expect(d[24 * 64 + 32]).toBeCloseTo(999, 0);
+    expect(d[0]).toBe(Infinity);
+    expect(r3.depth()[0]).toBe(Infinity);
+    const clear = centre(r3.render(cam, [{ mesh: mesh.cube(), instances: wall, material: { ...flat, fog: 0 } }], { background: '#0000ff', fog: [0, 1000], fogColor: [0, 1, 0] }));
+    expect(fogged[1]).toBeGreaterThan(200); // fully fogged: green
+    expect(clear[0]).toBeGreaterThan(200);  // fog 0: still red
+    expect(clear[1]).toBeLessThan(30);
+  });
+});

@@ -11,3 +11,4 @@ packages/anikit/src/generated/
 target/
 site-dist/
 packages/anikit/test/.snippets/
+film/.cache/
