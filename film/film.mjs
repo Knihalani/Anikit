@@ -283,7 +283,7 @@ export default async function film({ anikit: A }) {
     C: {
       background: '#9fd4ff', fog: [500, 26000], fogColor: [0.68, 0.86, 1.0],
       key: SUN, keyColor: [1.05, 1.0, 0.92], fill: [0, 1, 0], fillColor: [0.35, 0.38, 0.5], rimColor: [1, 1, 1], sky: [0.3, 0.6, 1], horizon: [0.7, 0.88, 1], ground: [0.3, 0.3, 0.3], strips: [0, 0, 0],
-      mirror: { y: WATER, strength: 0.42 },
+      // No mirror pass: printed water is flat ink with wave strokes (and it saves the reflection render).
     },
   };
 
