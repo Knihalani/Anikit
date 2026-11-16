@@ -90,3 +90,16 @@ export type { GestureOptions } from './gesture';
 export { transformPath } from './svg';
 export { htmlCanvas, htmlEffect, htmlCanvasSupported, htmlToSvg } from './htmlcanvas';
 export type { HtmlCanvas, HtmlCanvasOptions, HtmlEffect, HtmlEffectOptions, HtmlEffectName } from './htmlcanvas';
+export {
+  scene, Scene, Object3D, InstancedMesh, Material, material, Orbit, Vector3, linearColor,
+} from './gl';
+export type {
+  SceneInit, CameraOptions, BloomOptions, DofOptions, OrbitOptions, Camera, SceneMaterialOptions, MaterialPreset,
+  ObjectOptions, InstanceState, EnvironmentName, LayerContext, SceneLayer, RayHit, SceneStats, ScenePointerEvent,
+  ScenePointerType, PrimitiveName, Vec3Like,
+} from './gl';
+export {
+  box, roundedBox, sphere, cylinder, capsule, torus, plane, lathe, extrude, tube, triangulate, smoothNormals, subdivide,
+  sdfMesh, sdSphere, sdBox, sdTorus, smoothUnion, smoothSubtract,
+} from './geometry';
+export type { Geometry, SdfOptions } from './geometry';

@@ -717,6 +717,83 @@ const { data, order, count } = scene.project(points); // [sx, sy, depth, scale] 
 - `parseTransform(css)`, `toMatrix3d(m)` and `mixTransforms(a, b, t)` expose the same maths.
 - `scene.project()` transforms and depth-sorts (LSD radix sort) entirely in WebAssembly. Sources: a `batch()` with `x`/`y`/`z` channels, a `pointCloud()`, or a flat `[x, y, z, …]` array.
 
+## Real-time GPU 3D: `scene`
+
+`scene()` is a WebGL2 renderer for real-time sites: physically based materials, procedural image-based lighting, a PCF shadow map, optional bloom / depth of field / FXAA, instancing, frustum culling and raycast picking. It renders through anikit's single rAF loop, so `animate()`, `spring()` and timelines drive objects directly. It is also exported as `anikit/scene`.
+
+```ts
+const s = scene('#c', {
+  camera: { fov: 45, position: [0, 2, 6], target: [0, 0.5, 0] },
+  environment: 'studio',          // 'studio' | 'sunset' | 'night'
+  shadows: true,                  // PCF shadow map from the key light
+  bloom: true,                    // HDR post chain: bloom + ACES + FXAA
+});
+s.add(plane(20, 20), { material: { color: '#333', roughness: 0.9 } });
+const ball = s.add(sphere(0.6, 64), { material: 'chrome', position: [0, 0.6, 0] });
+const ring = s.add('torus', { material: 'gold', position: [1.6, 0.5, 0], scale: 1.4 });
+
+animate(ball.position, { y: 1.5 }, { duration: 0.8, yoyo: true, repeat: -1, ease: 'inOutSine' });
+animate(ring.rotation, { y: Math.PI * 2 }, { duration: 6, repeat: -1, ease: 'linear' });
+spring(ring.scale, { x: 1.6, y: 1.6, z: 1.6 });
+timeline().to(ball.material, { roughness: 0.6 }, { duration: 1 }).to(s, { exposure: 1.4 }, { duration: 1 });
+
+ball.on('click', (e) => console.log('hit', e.point));     // also pointerenter/leave/down/up/move
+const orbit: Orbit = s.orbit({ autoRotate: 8, damping: 0.92 });
+```
+
+- **Setup.** `scene(canvas | selector, options)`. Options: `camera` (`fov`, `position`, `target`, `near`, `far`), `environment`, `background` (`'environment'`, a `#rrggbb` colour or `'transparent'`), `shadows` (default true), `bloom` (`true` or `{ strength, threshold }`), `dof` (`true` or `{ focus, aperture }`), `fxaa`, `exposure`, `dpr` (max pixel ratio, capped at 2), `adaptive` (lower the pixel ratio when frames run slow; default true) and `autoRender` (default true; otherwise call `s.render()`). Without post effects it renders straight to the canvas with MSAA and tonemaps in the material shader.
+- **Objects.** `s.add(geometry | 'box' | 'sphere' | 'cylinder' | 'torus' | 'plane' | 'capsule' | 'roundedBox' | null, options)` returns an `Object3D` with animatable `position`, `rotation` (radians, XYZ) and `scale` (`Vector3`s), a `material`, `visible`, `castShadow`, `children` and `data`. Options are `ObjectOptions`: `position`, `rotation`, `scale`, `material`, `castShadow`, `visible` and `parent` (transforms compose). `null` makes an empty group. `obj.remove()` takes it out of the scene.
+- **Camera.** `s.camera` (`Camera`) has `position` and `target` (`Vector3`), `fov`, `roll`, `near` and `far`, all animatable. `s.fly(path, s)` puts it on a `flightPath()` (eye, look-ahead target and bank).
+- **Lights.** `s.lightDir`, `s.lightIntensity`, `s.envIntensity`, `s.exposure`, `s.bloomStrength` and `s.focus` are plain numbers or vectors, so animate them too.
+- **Layers.** `s.add(layer)` accepts any `SceneLayer` (`{ render(ctx: LayerContext), dispose?() }`): it draws after opaque objects in the scene's framebuffer with the camera matrices. Use it to host a Gaussian-splat renderer or custom WebGL.
+- **Picking.** `s.raycast(x, y)` returns a `RayHit` (`object`, `instance`, `point`, `distance`) or null. Meshes are tested exactly (triangles); instances use per-instance bounding spheres. Event handlers receive a `ScenePointerEvent` (`ScenePointerType`: `click`, `pointerdown`, `pointerup`, `pointerenter`, `pointerleave`, `pointermove`), bubble to parents, and set `cursor: pointer` over clickable objects.
+- **Stats and cleanup.** `s.stats` (`SceneStats`) has `drawCalls`, `triangles`, `culled`, `frameMs` and `dpr`. `s.revert()` stops rendering and frees all GPU resources; scenes and orbit controls register with `context()`.
+
+### Materials
+
+```ts
+const glass = material('glass');
+const brushed = material({ preset: 'chrome', roughness: 0.35 });
+const neon: Material = material({ preset: 'emissive', emissive: '#61dafb', emissiveIntensity: 6 });
+const lin = linearColor('#ff8800');         // sRGB hex → linear [r, g, b]
+animate(neon, { emissiveIntensity: 1 }, { duration: 1, yoyo: true, repeat: -1 });
+brushed.set({ color: '#c0c4cc' });
+```
+
+`MaterialPreset`: `chrome`, `gold`, `copper`, `glass`, `plastic`, `ceramic`, `rubber`, `emissive` and `toon`. `SceneMaterialOptions`: `preset`, `color`, `metalness`, `roughness`, `emissive`, `emissiveIntensity`, `opacity` (below 1 draws in the back-to-front transparent pass), `toon` and `glass`. Lighting is metal/roughness GGX with a split-sum environment term. The `EnvironmentName` environments are analytic, so they are prefiltered per roughness in closed form: no textures, no load-time cost.
+
+### Geometry and instancing
+
+```ts
+const vase = lathe([[0, 0], [0.4, 0.05], [0.25, 0.8], [0.3, 1.2]], 64);
+const letterL = extrude([[0, 0], [2, 0], [2, 1], [1, 1], [1, 2], [0, 2]], 0.4);
+const knot = tube((t) => [Math.cos(t * 12), Math.sin(t * 18) * 0.3, Math.sin(t * 12)], 0.08, 256, 12);
+const pill = capsule(0.3, 1.2);
+const soft = subdivide(box(1, 1, 1), 2, 0.5);           // midpoint subdivision + Laplacian smoothing
+const blob: import('anikit').Geometry = sdfMesh((x, y, z) => smoothUnion(sdSphere(x - 0.3, y, z, 0.5), sdTorus(x + 0.3, y, z, 0.4, 0.12), 0.25), { resolution: 64 });
+const carved = sdfMesh((x, y, z) => smoothSubtract(sdBox(x, y, z, 0.6, 0.6, 0.6, 0.1), sdSphere(x, y, z, 0.75), 0.05));
+const shapes = [roundedBox(1, 1, 1, 0.15), sphere(1, 48), cylinder(0.3, 0.5, 1), torus(1, 0.3), plane(4, 4), smoothNormals(vase)];
+const tri = triangulate([[0, 0], [1, 0], [0, 1]]);       // ear clipping → index triples
+
+const s2 = scene(canvas);
+const grid: InstancedMesh = s2.instances(box(0.1, 0.1, 0.1), 10000, (i, o) => {
+  o.position.set((i % 100) - 50, 0, Math.floor(i / 100) - 50);
+  o.color[0] = i / 10000;                            // per-instance tint
+}, { material: 'plastic' });
+engine.onFrame((t) => grid.update((i, o: import('anikit').InstanceState) => {
+  o.position.set((i % 100) - 50, Math.sin(t / 500 + i * 0.1), Math.floor(i / 100) - 50);
+}));
+const v = new Vector3(1, 2, 3);
+const node: Object3D = s2.add(null, { position: v });
+let sc: Scene = s2;
+let hit: import('anikit').RayHit | null = sc.raycast(10, 10);
+```
+
+- All generators return a `Geometry` (`positions`, `normals`, `uvs`, `indices` as typed arrays) with counter-clockwise front faces and unit normals.
+- `sdfMesh(f, SdfOptions)` meshes a signed distance function with surface nets: one vertex per surface cell, with gradient normals. `resolution` sets the cells per axis (default 48) and `bounds` the half-size of the sampled cube (default 1.5). Build fields from `sdSphere`, `sdBox`, `sdTorus`, `smoothUnion` and `smoothSubtract`.
+- `instances(geometry, count, fn, options)` draws every copy in one call. `fn(i, o)` sets the `InstanceState` (`position`, `rotation`, `scale` and `color`). `grid.update(fn)` reruns the callback without allocating. You can also write `grid.matrices` and `grid.colors` directly and then call `grid.needsUpdate()`.
+- `Vec3Like` is `[x, y, z]` or `{ x, y, z }`. `PrimitiveName` lists the string shorthands.
+
 ## Point clouds and glow
 
 `pointCloud(count, options)` keeps particles in WebAssembly. Each one spring-follows a blend between target shapes with its own timing, plus a turbulence field, so morphs ripple through the cloud and can be scrubbed, interrupted or blasted apart. `glow(canvas, options)` renders projected points as additive light straight into pixels: sub-pixel bilinear splats, soft bokeh for near points, depth fog, a pointer lens, motion trails and tone mapping. JavaScript does one `putImageData` per frame.
@@ -1243,6 +1320,7 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Dev tools](#dev-tools) and [testing](#testing-and-diagnostics) | `inspector`, `testing`, `setWarnings`, `onWarning` | `InspectorOptions` |
 | [Physics worlds](#physics-worlds) | `world`, `World` | `WorldOptions`, `BodyInit` |
 | [3D](#3d) | `scene3d`, `Scene3D`, `tilt`, `parseTransform`, `toMatrix3d`, `mixTransforms` | `SceneOptions`, `Projection`, `DrawOptions`, `TiltOptions`, `Vec3`, `Matrix` |
+| [Real-time GPU 3D](#real-time-gpu-3d-scene) | `scene`, `Scene`, `Object3D`, `InstancedMesh`, `Material`, `material`, `Orbit`, `Vector3`, `linearColor`, `box`, `roundedBox`, `sphere`, `cylinder`, `capsule`, `torus`, `plane`, `lathe`, `extrude`, `tube`, `triangulate`, `smoothNormals`, `subdivide`, `sdfMesh`, `sdSphere`, `sdBox`, `sdTorus`, `smoothUnion`, `smoothSubtract` | `SceneInit`, `CameraOptions`, `BloomOptions`, `DofOptions`, `OrbitOptions`, `Camera`, `SceneMaterialOptions`, `MaterialPreset`, `ObjectOptions`, `InstanceState`, `EnvironmentName`, `LayerContext`, `SceneLayer`, `RayHit`, `SceneStats`, `ScenePointerEvent`, `ScenePointerType`, `PrimitiveName`, `Vec3Like`, `Geometry`, `SdfOptions` |
 | [Point clouds and glow](#point-clouds-and-glow) | `pointCloud`, `PointCloud`, `textPoints`, `glow`, `Glow` | `CloudOptions`, `ShapeInput`, `GlowOptions`, `GlowRenderOptions` |
 | [Gaussian splats](#gaussian-splats-splats) | `splats`, `SplatLayer`, `packSplats`, `SPLAT_STRIDE` | `SplatSet`, `SplatColor`, `SplatSourceOptions`, `SplatFx`, `SplatCamera`, `SplatTransform`, `SplatsOptions`, `SplatMorphOptions`, `SplatEffectOptions`, `SplatStats` |
 | [Particle emitters](#particle-emitters) | `emitter`, `Emitter` | `EmitterOptions`, `SpawnShape` |
