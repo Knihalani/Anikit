@@ -117,6 +117,7 @@ export class Lens {
     this.end = new Float32Array(this.NA);
     this.fate = new Uint8Array(this.NA); // 0 escaped, 1 captured
     this.px = new Float32Array(w * h * STRIDE);
+    this.lit = new Uint8Array(w * h); // 0: black (shadow or empty sky), 1: something to shade
     this.D = 0;
   }
 
@@ -215,6 +216,7 @@ export class Lens {
           starAt(dx, dy, dz, 0.5 / F / CELL, star);
           px[o] = star[0] * trans; px[o + 1] = star[1] * trans; px[o + 2] = star[2] * trans;
         } else { px[o] = 0; px[o + 1] = 0; px[o + 2] = 0; }
+        this.lit[y * w + x] = px[o + 3] >= 0 || px[o] + px[o + 1] + px[o + 2] > 0.0015 ? 1 : 0;
       }
       if (performance.now() - t0 > 2.5) { yield; t0 = performance.now(); }
     }
@@ -232,12 +234,12 @@ for (let i = 0; i <= TMAX; i++) { const x = i / TSTEP; const y = (x * (2.51 * x 
 const GRAIN = new Float32Array(8192);
 for (let i = 0; i < GRAIN.length; i++) GRAIN[i] = (Math.random() + Math.random() - 1) * 4.5;
 export function shade(lens, tex, out, t, exposure, sr, sg, sb, disk, seed = 0) {
-  const px = lens.px, n = lens.w * lens.h;
+  const px = lens.px, lit = lens.lit, n = lens.w * lens.h;
   const go = (seed * 2971) & 4095, ks = exposure * TSTEP;
   for (let i = 0, o = 0; i < n; i++, o += STRIDE) {
+    if (lit[i] === 0) { out[i] = 0xff000000; continue; } // most of the sky: no table reads at all
     let r = px[o] * sr, g = px[o + 1] * sg, b = px[o + 2] * sb;
     const h0 = px[o + 3];
-    if (h0 < 0 && r + g + b < 0.002) { out[i] = 0xff000000; continue; }
     if (h0 >= 0) {
       let v = tex[h0 + ((px[o + 4] + px[o + 5] * t) & AZM)] * disk;
       r += px[o + 6] * v; g += px[o + 7] * v; b += px[o + 8] * v;
