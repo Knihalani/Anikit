@@ -122,9 +122,9 @@ const tl = timeline({ autoplay: false })
   .add(rig, { labels: 0 }, { duration: 0.4, ease: 'inCubic' }, 6)
   .add([...explodeOrder].reverse(), { e: 0 }, { duration: 1.3, ease: 'inOutCubic', delay: stagger(0.06) }, 6.1)
   .add(rig, { lift: 0, yawOff: 0, pitchOff: 0, dist: 60, ty: -0.6 }, { duration: 1.4, ease: 'inOutCubic' }, 6.2)
-  .add(rig, { fin: 1 }, { duration: 2.6, ease: 'inOutSine' }, 7.6)
-  .add(rig, { appear: 1.05 }, { duration: 1.9, ease: 'linear' }, 7.9)
-  .add(rig, { wave: 1 }, { duration: 1.4, ease: 'inOutSine' }, 8.6)
+  .add(rig, { fin: 1 }, { duration: 2.6, ease: 'inOutSine' }, 7.4)
+  .add(rig, { appear: 1.05 }, { duration: 1.7, ease: 'linear' }, 8.4)
+  .add(rig, { wave: 1 }, { duration: 1.3, ease: 'inOutSine' }, 8.9)
   .add(rig, { dist: 60 }, { duration: 0.4 }, 10);
 const TL_LEN = tl.duration;
 
