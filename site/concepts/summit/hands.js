@@ -248,7 +248,7 @@ void main() {
   float r = length(d);
   float air = exp(-max(r - R, 0.0) / (R * 0.6)) * step(R, r) * 0.07;
   vec2 g = vec2(d.x / (R * 2.2), (px.y - uL.y) / (R * 0.6));
-  float snow = exp(-dot(g, g)) * smoothstep(uL.y - R * 0.45, uL.y + R * 0.05, px.y) * 0.7;
+  float snow = exp(-dot(g, g)) * smoothstep(uL.y - R * 0.45, uL.y + R * 0.05, px.y) * 0.4;
   float flash = uL.x * (0.6 * exp(-r / R) + 0.1);
   vec3 c = vec3(1.0, 0.45, 0.12) * (air + snow) * uRing.w + vec3(1.0, 0.8, 0.55) * flash;
   outColor = vec4(c, 0.0);
