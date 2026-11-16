@@ -179,6 +179,8 @@ pub(crate) struct FrameCtx<'a> {
     pub hdr_frame_num: u32,
     pub idr_id: u32,
     pub deblock: bool,
+    /// Deblock inside each slice (multi-slice frames, idc 2).
+    pub slice_deblock: bool,
 }
 
 pub(crate) const NO_HINT: (i16, i16) = (i16::MIN, i16::MIN);
@@ -203,6 +205,8 @@ pub(crate) struct Band<'a> {
     pub u: &'a mut [u8],
     pub v: &'a mut [u8],
     pub info: &'a mut [MbInfo],
+    /// Macroblocks changed by in-slice deblocking.
+    pub touched: &'a mut [bool],
     pub mby0: usize,
     pub mby1: usize,
 }
@@ -1560,6 +1564,7 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
             frame_num: c.hdr_frame_num,
             idr_id: c.idr_id,
             deblock: c.deblock,
+            slice_edges: c.slice_deblock,
             cabac: c.cabac,
         },
     );
@@ -1636,6 +1641,11 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
             }
         }
     }
+    if c.slice_deblock {
+        let b = &mut s.b;
+        let mut view = crate::deblock::View { y: &mut *b.y, u: &mut *b.u, v: &mut *b.v, ys: s.ys, cs: s.cs, yp: s.yp, cp: s.cp };
+        crate::deblock::deblock_rows(&mut view, b.info, c.mbw, mby1 - mby0, &c.q, b.touched);
+    }
     if let Some(cb) = s.cabac.take() {
         s.w.append_bytes(&cb.out);
         return s.stats;
@@ -1660,6 +1670,7 @@ pub struct Encoder {
     cur: Pic,
     /// Macroblocks where `recon` (the picture before the reference) differs from `refp`.
     stale: Vec<bool>,
+    touched: Vec<bool>,
     recon: Pic,
     refp: Pic,
     info: Vec<MbInfo>,
@@ -1702,6 +1713,7 @@ impl Encoder {
             level,
             cur: Pic::new(mbw, mbh, 0),
             stale: vec![true; mbw * mbh],
+            touched: vec![false; mbw * mbh],
             recon: Pic::new(mbw, mbh, PAD),
             refp: Pic::new(mbw, mbh, PAD),
             info: vec![MbInfo::default(); mbw * mbh],
@@ -1853,7 +1865,7 @@ impl Encoder {
             w.clear();
             write_slice_header(
                 w,
-                &SliceHdr { first_mb: 0, idr: false, frame_num, idr_id: 0, deblock: self.cfg.deblock, cabac },
+                &SliceHdr { first_mb: 0, idr: false, frame_num, idr_id: 0, deblock: self.cfg.deblock, slice_edges: false, cabac },
             );
             if cabac {
                 while !w.byte_aligned() {
@@ -1877,10 +1889,10 @@ impl Encoder {
             stats.skip = nmb as u32;
         } else {
             self.encode_slices(idr, frame_num, &mut stats);
-            for (st, inf) in self.stale.iter_mut().zip(&self.info) {
-                *st = inf.coded;
+            for ((st, inf), &t) in self.stale.iter_mut().zip(&self.info).zip(&self.touched) {
+                *st = inf.coded || t;
             }
-            if self.cfg.deblock {
+            if self.cfg.deblock && self.writers.len() == 1 {
                 crate::deblock::deblock(&mut self.recon, &self.info, self.mbw, self.mbh, &self.q, &mut self.stale);
             }
             self.recon.extend();
@@ -1941,6 +1953,7 @@ impl Encoder {
             hdr_frame_num: frame_num,
             idr_id: self.idr_count & 0xffff,
             deblock: self.cfg.deblock,
+            slice_deblock: self.cfg.deblock && self.writers.len() > 1,
         };
         let rows = self.slice_rows(idr);
         // Split recon planes and MB info into bands.
@@ -1953,17 +1966,21 @@ impl Encoder {
             let mut urest: &mut [u8] = &mut r.u.data[cp * cs..];
             let mut vrest: &mut [u8] = &mut r.v.data[cp * cs..];
             let mut irest: &mut [MbInfo] = &mut self.info;
+            self.touched.fill(false);
+            let mut trest: &mut [bool] = &mut self.touched;
             for &(a, b) in &rows {
                 let n = b - a;
                 let (y, yr) = std::mem::take(&mut yrest).split_at_mut(n * 16 * ys);
                 let (u, ur) = std::mem::take(&mut urest).split_at_mut(n * 8 * cs);
                 let (v, vr) = std::mem::take(&mut vrest).split_at_mut(n * 8 * cs);
                 let (inf, ir) = std::mem::take(&mut irest).split_at_mut(n * self.mbw);
+                let (tch, tr) = std::mem::take(&mut trest).split_at_mut(n * self.mbw);
+                trest = tr;
                 yrest = yr;
                 urest = ur;
                 vrest = vr;
                 irest = ir;
-                bands.push(Band { y, u, v, info: inf, mby0: a, mby1: b });
+                bands.push(Band { y, u, v, info: inf, touched: tch, mby0: a, mby1: b });
             }
         }
         let writers = &mut self.writers[..rows.len()];

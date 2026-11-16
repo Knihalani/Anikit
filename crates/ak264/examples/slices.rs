@@ -9,7 +9,7 @@ fn main() {
         let mut best = f64::MAX;
         let mut bytes = 0;
         for _ in 0..3 {
-            let mut e = Encoder::new(EncoderConfig { width: 1920, height: 1080, qp: 26, gop: 60, threads, ..Default::default() });
+            let mut e = Encoder::new(EncoderConfig { width: 1920, height: 1080, qp: 26, gop: 60, threads, deblock: std::env::var("DEBLOCK").is_ok(), ..Default::default() });
             let t = Instant::now();
             bytes = 0;
             for b in &bufs {
