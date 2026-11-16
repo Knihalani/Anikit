@@ -170,6 +170,26 @@ describe('composition extras', () => {
     expect(Object.keys(r.stats)).toEqual(expect.arrayContaining(['setup', 'opaque', 'sky', 'output']));
   });
 
+  it('adds lens flares opposite bright lights', async () => {
+    const [w, h] = [128, 64];
+    const src = new Uint8ClampedArray(w * h * 4);
+    for (let i = 3; i < src.length; i += 4) src[i] = 255;
+    for (let y = 10; y < 16; y++) for (let x = 20; x < 28; x++) src.fill(255, (y * w + x) * 4, (y * w + x) * 4 + 4);
+    const ghost = async (flares: number) => {
+      const c = composition({ width: w, height: h, fps: 10, duration: 0.1, post: { flares, bloomThreshold: 0.5, vignette: 0.0001 } });
+      c.scene('s', 0, 0.1, { draw() {} });
+      let sum = 0;
+      const cv: any = { width: w, height: h, getContext: () => ({ fillRect() {}, drawImage() {} }) };
+      await c.render({ canvas: cv, readPixels: () => src, onFrame: (f) => {
+        const px = f.rgba();
+        for (let y = h - 16; y < h - 10; y++) for (let x = w - 28; x < w - 20; x++) sum += px[(y * w + x) * 4] + px[(y * w + x) * 4 + 2];
+      } });
+      return sum;
+    };
+    expect(await ghost(0)).toBe(0);
+    expect(await ghost(2)).toBeGreaterThan(100);
+  });
+
   it('keeps a scene clock and maps it back to composition time', async () => {
     const c = composition({ width: 4, height: 2, fps: 10, duration: 2, motionBlur: 3 });
     const ramp = (l: number) => (l < 1 ? 1 : 0.25);

@@ -1603,7 +1603,7 @@ pub extern "C" fn ak_video_resolve(id: u32) {
 pub extern "C" fn ak_video_post(id: u32, seed: u32, nf: u32) -> u32 {
     // f64 buffer: bloomThreshold, bloom, bloomRadius, aberration, vignette, grain,
     // [6..23) streaks, streakLength, streakTint(3), zoomBlur, zoomCenter(2), exposure,
-    // contrast, saturation, shadows(3), highlights(3), [23..27) rays, raysCenter(2), raysLength, [27] aa.
+    // contrast, saturation, shadows(3), highlights(3), [23..27) rays, raysCenter(2), raysLength, [27] aa, [28] flares.
     let b = &st().f64_buf;
     let nf = (nf as usize).min(b.len());
     if nf < 6 {
@@ -1633,6 +1633,7 @@ pub extern "C" fn ak_video_post(id: u32, seed: u32, nf: u32) -> u32 {
         rays_center: [g(24, d.rays_center[0]), g(25, d.rays_center[1])],
         rays_length: g(26, d.rays_length),
         aa: g(27, 0.0),
+        flares: g(28, 0.0),
     };
     if let Some(v) = video(id) {
         let (w, h) = (v.mixer.width, v.mixer.height);

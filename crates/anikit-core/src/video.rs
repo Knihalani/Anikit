@@ -132,6 +132,9 @@ pub struct Post {
     pub rays_length: f32,
     /// Edge antialiasing (FXAA-style, 0…1): smooths stair-stepped geometry edges.
     pub aa: f32,
+    /// Lens flares (0…2): ghosts of bright lights mirrored through the frame
+    /// centre at several scales with a chromatic tint, plus a halo ring.
+    pub flares: f32,
     /// Colour grade: exposure multiplier (1 = none), contrast (1 = none),
     /// saturation (1 = none), additive shadow tint and multiplicative
     /// highlight tint (0…1 per channel; zeros = none).
@@ -161,6 +164,7 @@ impl Default for Post {
             rays_center: [0.5, 0.4],
             rays_length: 0.6,
             aa: 0.0,
+            flares: 0.0,
             exposure: 1.0,
             contrast: 1.0,
             saturation: 1.0,
@@ -184,6 +188,7 @@ pub struct PostFx {
     streak: Vec<f32>,
     rays: Vec<f32>,
     luma: Vec<u8>,
+    flare: Vec<f32>,
     copy: Vec<u8>,
     /// Zoom blur: half-res packed RGB and its copy for the second pass.
     half: Vec<u32>,
@@ -203,7 +208,7 @@ impl PostFx {
         if p.zoom_blur > 0.0 {
             self.zoom(rgba, w, h, p);
         }
-        let glow = p.bloom > 0.0 || p.streaks > 0.0 || p.rays > 0.0;
+        let glow = p.bloom > 0.0 || p.streaks > 0.0 || p.rays > 0.0 || p.flares > 0.0;
         if glow {
             self.glow(rgba, w, h, p);
         }
@@ -411,6 +416,10 @@ impl PostFx {
                 core::mem::swap(&mut self.streak, &mut self.tmp);
             }
         }
+        if p.flares > 0.0 {
+            // From the sharp bright pass: each ghost is a (softened) image of the lights.
+            self.lens_flares(sw, sh);
+        }
         for _ in 0..2 {
             box_blur(&self.small, &mut self.tmp, sw, sh, r, true);
             box_blur(&self.tmp, &mut self.small, sw, sh, r, false);
@@ -439,6 +448,70 @@ impl PostFx {
                 *v *= bk;
             }
         }
+        if p.flares > 0.0 {
+            let k = p.flares;
+            for (v, f) in self.small.iter_mut().zip(&self.flare) {
+                *v += f * k;
+            }
+        }
+    }
+
+    /// Pseudo lens flares from the bright pass (`self.small`, quarter
+    /// resolution) into `self.flare`: each pixel gathers the bright pass seen
+    /// through a few "ghosts" (the frame mirrored through its centre at
+    /// different scales, tinted like lens coatings, fading towards the edges)
+    /// and a halo ring around the centre.
+    #[allow(clippy::needless_range_loop)]
+    fn lens_flares(&mut self, sw: usize, sh: usize) {
+        // (scale, r, g, b): negative scales mirror through the centre.
+        const GHOSTS: [(f32, f32, f32, f32); 5] = [(-0.5, 0.9, 0.5, 1.2), (-1.0, 0.4, 0.8, 1.1), (-1.6, 1.1, 0.6, 0.4), (0.45, 0.5, 1.0, 0.7), (-2.4, 0.7, 0.4, 1.0)];
+        self.flare.clear();
+        self.flare.resize(sw * sh * 3, 0.0);
+        let (fw, fh) = (sw as f32, sh as f32);
+        let aspect = fw / fh;
+        let src = &self.small;
+        let sample = |u: f32, v: f32| -> Option<usize> {
+            if !(0.0..1.0).contains(&u) || !(0.0..1.0).contains(&v) {
+                return None;
+            }
+            Some(((v * fh) as usize).min(sh - 1) * sw + ((u * fw) as usize).min(sw - 1))
+        };
+        for y in 0..sh {
+            let v = (y as f32 + 0.5) / fh;
+            for x in 0..sw {
+                let u = (x as f32 + 0.5) / fw;
+                let (cu, cv) = (u - 0.5, v - 0.5);
+                let mut acc = [0.0f32; 3];
+                for &(s, r, g, b) in &GHOSTS {
+                    let (gu, gv) = (0.5 + cu * s, 0.5 + cv * s);
+                    if let Some(i) = sample(gu, gv) {
+                        // Ghosts fade towards the edge of the frame they come from.
+                        let d = ((gu - 0.5) * (gu - 0.5) + (gv - 0.5) * (gv - 0.5)) * 2.0;
+                        let f = (1.0 - d).max(0.0);
+                        let f = f * f;
+                        acc[0] += src[i * 3] * f * r;
+                        acc[1] += src[i * 3 + 1] * f * g;
+                        acc[2] += src[i * 3 + 2] * f * b;
+                    }
+                }
+                // Halo: a ring at a fixed radius, sampled outward along the ray from the centre.
+                let len = crate::math::sqrtf(cu * cu * aspect * aspect + cv * cv).max(1e-4);
+                let (hu, hv) = (u + cu / len * 0.32 / aspect, v + cv / len * 0.32);
+                if let Some(i) = sample(hu, hv) {
+                    let ring = 1.0 - ((len - 0.32).abs() * 6.0).min(1.0);
+                    let f = ring * ring * 0.8;
+                    acc[0] += src[i * 3] * f;
+                    acc[1] += src[i * 3 + 1] * f * 0.8;
+                    acc[2] += src[i * 3 + 2] * f * 1.1;
+                }
+                let o = (y * sw + x) * 3;
+                self.flare[o..o + 3].copy_from_slice(&acc);
+            }
+        }
+        // Soften: ghosts are out-of-focus images.
+        let r = (sw / 120).max(2);
+        box_blur(&self.flare, &mut self.tmp, sw, sh, r, true);
+        box_blur(&self.tmp, &mut self.flare, sw, sh, r, false);
     }
 
     /// Radial blur of the quarter-resolution bright pass towards the light
@@ -783,6 +856,30 @@ mod tests {
         let mut g = alloc::vec![100u8, 50, 20, 255];
         fx.apply(&mut g, 1, 1, &Post { exposure: 1.5, saturation: 0.0, ..Default::default() });
         assert!(g[0] == g[1] && g[1] == g[2] && g[0] > 50, "{g:?}");
+    }
+
+    #[test]
+    fn lens_flares_mirror_bright_lights_through_the_centre() {
+        // One hot spot in the upper-left quadrant of a dark frame.
+        let (w, h) = (256usize, 128usize);
+        let mut px = vec![0u8; w * h * 4];
+        for y in 20..32 {
+            for x in 40..56 {
+                px[(y * w + x) * 4..(y * w + x) * 4 + 4].copy_from_slice(&[255, 255, 255, 255]);
+            }
+        }
+        let mut a = px.clone();
+        let mut fx = PostFx::default();
+        fx.apply(&mut a, w, h, &Post { flares: 2.0, bloom_threshold: 0.5, ..Default::default() });
+        // Mirrored through the centre: around (w − 48, h − 26), lower right.
+        let lum = |b: &[u8], x0: usize, y0: usize| (y0 - 6..y0 + 6).flat_map(|y| (x0 - 6..x0 + 6).map(move |x| (y, x))).map(|(y, x)| b[(y * w + x) * 4] as u32 + b[(y * w + x) * 4 + 2] as u32).sum::<u32>();
+        let ghost = lum(&a, w - 48, h - 26);
+        let before = lum(&px, w - 48, h - 26);
+        assert!(ghost > before + 200, "a ghost appears opposite the light: {before} -> {ghost}");
+        // Off: nothing changes.
+        let mut b = px.clone();
+        fx.apply(&mut b, w, h, &Post { flares: 0.0, ..Default::default() });
+        assert_eq!(b, px);
     }
 
     #[test]

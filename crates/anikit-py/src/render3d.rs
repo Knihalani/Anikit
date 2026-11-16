@@ -713,7 +713,7 @@ impl NativePostFx {
     #[pyo3(signature = (
         frame, width, height, *, seed=0, bloom=None, bloom_threshold=None, bloom_radius=None, aberration=None,
         vignette=None, grain=None, streaks=None, streak_length=None, streak_tint=None, zoom_blur=None,
-        zoom_center=None, rays=None, rays_center=None, rays_length=None, aa=None, exposure=None, contrast=None,
+        zoom_center=None, rays=None, rays_center=None, rays_length=None, aa=None, flares=None, exposure=None, contrast=None,
         saturation=None, shadows=None, highlights=None
     ))]
     #[allow(clippy::too_many_arguments)]
@@ -738,6 +738,7 @@ impl NativePostFx {
         rays_center: Option<(f32, f32)>,
         rays_length: Option<f32>,
         aa: Option<f32>,
+        flares: Option<f32>,
         exposure: Option<f32>,
         contrast: Option<f32>,
         saturation: Option<f32>,
@@ -767,6 +768,7 @@ impl NativePostFx {
             rays_center: xy("rays_center", rays_center, d.rays_center)?,
             rays_length: opt("rays_length", rays_length, d.rays_length)?,
             aa: opt("aa", aa, d.aa)?,
+            flares: opt("flares", flares, d.flares)?,
             exposure: opt("exposure", exposure, d.exposure)?,
             contrast: opt("contrast", contrast, d.contrast)?,
             saturation: opt("saturation", saturation, d.saturation)?,

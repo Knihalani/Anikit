@@ -542,6 +542,7 @@ class NativePostFx:
         rays_center: Optional[Tuple[float, float]] = None,
         rays_length: Optional[float] = None,
         aa: Optional[float] = None,
+        flares: Optional[float] = None,
         exposure: Optional[float] = None,
         contrast: Optional[float] = None,
         saturation: Optional[float] = None,
