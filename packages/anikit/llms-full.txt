@@ -769,11 +769,11 @@ export default async ({ anikit: A }) => {
   const cube = mesh.cube(), floor = mesh.plane(1);
   const floorAt = instances(1, () => ({ y: -300, z: -10000, sx: 12000, sz: 30000, color: [0.02, 0.02, 0.03] }));
   const film = composition({ width: W, height: H, fps: 60, duration: 6, motionBlur: 1,
-    post: { aa: 1, bloom: 0.9, bloomThreshold: 0.5, streaks: 0.5, rays: 0.8, vignette: 0.45, grain: 4, contrast: 1.06 } });
-  let clock = 0, prev = 0;
+    post: { aa: 1, bloom: 0.9, bloomThreshold: 0.5, streaks: 0.5, rays: 0.8, flares: 0.5, vignette: 0.45, grain: 4, contrast: 1.06 } });
+  let prev = 0, last = 0;
   film.scene('fly', 0, 6, {
-    step: ({ dt }) => { prev = clock; clock += dt; },          // a clock that respects timeScale
-    draw: ({ ctx }) => {
+    step: ({ clock }) => { prev = last; last = clock; },       // clock: scene seconds, slowed by timeScale
+    draw: ({ ctx, clock }) => {
       path.apply(cam, s(prev)); const prevCamera = cam.viewProjection().matrix;
       path.apply(cam, s(clock));
       const px = r3.render(cam, [
@@ -794,7 +794,8 @@ What makes it look expensive rather than plain:
 - **Two or three hues per shot.** One warm, one cool, one neutral. The sky (`skybox`), the fog colour and the horizon should be the same family so geometry dissolves into the distance.
 - **Speed you can feel.** `motionBlur` on the render (with `prevCamera`, so previews match the final render), stars as `points` with a small `streak`, light trails (`mesh.tube` along `path.points()`, `blend: 'additive'`, `pulse`), objects passing close to the camera. Bank into turns (`bank`), add a barrel roll (`path.apply(cam, s, rollDegrees)`).
 - **Something always changes.** `--review` flags any stretch of ≥ 1 s with little motion. Fix every hold you didn't intend: speed up, cut closer to geometry, add a pulse wave or a hit.
-- **Hits land.** `film.impact(t, { shake, flash, aberration })` plus a `timeScale` dip right after (bullet time) and a `shatter()` of the object you hit.
+- **Hits land.** `film.impact(t, { shake, flash, aberration, shockwave })` plus a `timeScale` dip right after (bullet time) and a `shatter()` of the object you hit.
+- **Know where the time goes.** `npx anikit-render fly.mjs --profile` prints each frame's cost per 3D pass and for the grade; fix the biggest line first.
 - **One hero at the end.** `mesh.text(name, { font })` in chrome on the mirror floor, the sun behind it, `rays` aimed at the sun, the camera settling (ease the last metres, then hold ~1.5 s).
 
 Pitfalls that cost a render:
