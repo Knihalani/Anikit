@@ -536,3 +536,259 @@ that, which points at `flush()`'s optimisation budget.
 | Lane leader's time, iteration and timing copied into locals instead of re-read from its node per child | 10 fewer instructions per child natively, no measurable change in wasm (`ak_tick` 0.73–0.82 ms vs 0.74–0.96 ms before, seven interleaved rounds). |
 | `r.pt.x = F64[r.at]` (or `r.pw(...)`) inline in `flush()` instead of `r.render()` | no change (0.88–1.11 vs 0.96–1.01 ms): the call isn't the cost. |
 | Matching GSAP's structure (one tween per segment) | not attempted: with the segment memo the per-target core work is a compare, two loads and a lerp; what remains is per-node bookkeeping (lane checks, the updated list) and the JS store. |
+
+## Fourth round: the web layer end to end
+
+Goal: everything a page uses, not only plain-object frames: creation cost,
+memory kept and churned, DOM writes, timelines, motion values, scroll links,
+startup and bundle size. Starting point: `adcffe5`. No Rust changed in this
+round (the wasm binary is byte-identical, 567.7 KB); everything is in
+`packages/anikit/src`.
+
+**Noise.** Same VM as above, but shared throughout with another agent's 3D
+renders (one or two of the four cores busy). The same build measured
+anywhere from 0.6 to 1.6 ms per frame for one case in consecutive processes,
+and GSAP's own numbers moved up to 2x between rounds. Every before/after
+below is interleaved with a build of `adcffe5` (base, new, base, new, …) and
+given as the range over the rounds. The code of `batch()` did not change and
+its 50k row moved 0.17–0.23 → 0.22–0.44 ms: that is the noise floor for
+single rows. Changes that did not clear the noise were dropped ("Tried and
+not kept").
+
+New and extended scripts:
+
+| Script | What it measures |
+|---|---|
+| `node --expose-gc scripts/bench-create.mjs [N]` | creation + first frame (GSAP defers its set-up to the first render, so the first frame is included for both), heap retained per target, re-triggering (a new `animate()` taking over a running one), `kill()` of a long timeline, staggered/timeline/motion-value frames, import-to-ready startup; every case checks that something moved |
+| `MANUAL=1 node scripts/bench-dom.mjs` | scripted DOM frames in Chromium: the time of `engine.tick` (anikit) or `gsap.updateRoot` alone, style recalc forced outside the timed region; much steadier than the rAF metrics, which move with the frame rate |
+| `node scripts/bench-scroll.mjs` | scroll-linked updates in Chromium: scrubbed `scrollTrigger`s and `scroll()` links, ms per scroll event |
+| `node scripts/bench.mjs` | new "unit string" case (`'0px'` → `'100px'` on objects) |
+
+### Results
+
+`bench-create.mjs` (N = 10k, two interleaved rounds, ms; retained = heap
+per target kept by a live animation):
+
+| Case | `adcffe5` | now | GSAP 3 (now runs) |
+|---|---:|---:|---:|
+| one `animate()`, 3 numbers | 59.0–65.1 | 49.8–54.1 | 3.6 |
+| 10k `animate()` calls, 3 numbers | 65.6–71.6 | 43.4–50.4 | 12.7–12.8 |
+| one `animate()`, stagger delay | 23.1–23.5 | 14.5–20.6 | 7.5–14.1 |
+| one `animate()`, 8 keyframes | 29.4–35.2 | 23.2–26.8 | 37.2–50.1 |
+| one `animate()`, colour string | 33.0–35.5 | 25.6–39.9 | 32.8–51.9 |
+| timeline of 1000 steps | 6.2–7.8 | 5.2–8.4 | 1.1–2.0 |
+| **`animate()` taking over a running one** | **1253–1802** | **40.6–41.2** | 353–390 |
+| **`kill()`, timeline of 5000 steps** | **45.4–47.0** | **0.85–1.05** | 0.01–0.02 |
+| retained, 10k `animate()` calls | 5.50 KB | 2.44 KB | 1.14 KB |
+| retained, one `animate()` of 10k / 1000-step timeline | ~0 KB* / 4.79 KB | 1.49 KB / 2.61–2.63 KB | 0.47 / 1.09 KB |
+| frame: 10k targets, stagger delay | 0.187–0.365 | 0.189–0.288 | 0.79–0.82 |
+| frame: timeline of 1000 steps x 10 targets | 0.423–0.509 | 0.530–0.704 | 0.80–1.03 |
+| frame: `motionValue` → 1000 derived + listeners | 0.083–0.110 | 0.068–0.103 | — |
+| startup: import → `ready` (Node) | 17.4–19.9 | 14.9–16.0 | — |
+
+\* the base build never frees a killed multi-target animation (§1), so the
+"alive minus released" difference reads ~0.
+
+`MANUAL=1 bench-dom.mjs` (Chromium, x/y/rotate/opacity on N boxes, ms in the
+frame function, three interleaved rounds):
+
+| N | `adcffe5` | now | GSAP 3 (all runs) |
+|---:|---:|---:|---:|
+| 500 | 0.58–0.60 | 0.37–0.50 | 0.63–0.95 |
+| 2000 | 2.04–2.29 | 1.78–1.86 | 2.48–3.41 |
+| 5000 | 5.72–8.65 | 4.31–5.34 | 5.50–6.95 |
+
+The rAF metrics of `bench-dom.mjs` (one run each, script ms per frame):
+anikit 0.68 / 2.52 / 8.18 → 0.84 / 2.36 / 6.07 at 500 / 2000 / 5000, GSAP in
+the same runs 0.97–1.07 / 4.65–5.65 / 7.15–8.17; within their noise except
+perhaps at 5000.
+
+`bench.mjs` (plain objects, ms per frame, the last two interleaved rounds,
+after every change):
+
+| Case | N | `adcffe5` | now | GSAP 3 (now runs) | now vs GSAP |
+|---|---:|---:|---:|---:|---:|
+| 3 numbers, `outCubic` | 1k | 0.016–0.032 | 0.016–0.018 | 0.038–0.046 | 2.4–2.6x faster |
+| 〃 | 10k | 0.641–0.708 | 0.661–0.712 | 0.637–0.652 | 0.89–0.99x |
+| 〃 | 50k | 2.390–3.066 | 2.617–2.843 | 2.322–2.678 | 0.89–0.94x |
+| colour string | 1k | 0.051 | 0.037–0.049 | 0.098–0.127 | 2.6x faster |
+| 〃 | 10k | 1.218–1.261 | **0.521–0.593** | 0.698–0.801 | 1.2–1.5x faster |
+| 〃 | 50k | 4.699–5.427 | **2.263–2.271** | 3.975–4.653 | 1.8–2.1x faster |
+| unit string (new) | 1k | 0.083–0.090 | 0.047–0.050 | 0.033–0.036 | 0.70–0.72x |
+| 〃 | 10k | 1.647–1.666 | 0.899–1.006 | 0.444–0.473 | 0.47–0.49x |
+| 〃 | 50k | 6.598–8.742 | 3.817–4.754 | 1.895–2.123 | 0.45–0.50x |
+| 8 keyframes, `inOutSine` | 1k | 0.018 | 0.017–0.018 | 0.020 | 1.1–1.2x faster |
+| 〃 | 10k | 0.294–0.422 | 0.434–0.479 | 0.251–0.271 | 0.57–0.58x |
+| 〃 | 50k | 2.181–2.185 | 1.767–2.165 | 1.146–1.216 | 0.56–0.65x |
+
+The number and keyframe paths did not change in this round; their rows move
+with the VM (in the same rounds base itself read 0.72–1.36x GSAP on 3
+numbers, and the three earlier interleaved rounds gave 8 keyframes 10k
+0.39–0.50 base vs 0.27–0.44 new, the other way round). A CPU-time A/B of 8
+keyframes at 50k against the build before §6 (which added fields to `Part`)
+gave minima of 1.19–1.32 vs 1.20–1.26 ms over five pairs: no change.
+
+`bench-scroll.mjs` (ms per scroll event; base / now, one run each, the code
+did not change): 200 scrubbed triggers 0.176 / 0.146, 200 `scroll()` links
+0.292 / 0.290. Below a microsecond per link per event: nothing to fix.
+
+Bundle (`node scripts/build.mjs`): `anikit.min.js` 953.5 → 956.3 KB (gzip
+367.6 → 368.7 KB), `anikit.lean.js` 196.6 → 199.4 KB (gzip 73.5 → 74.5 KB),
+`anikit.wasm` unchanged. Native `cargo run --release -p anikit-core
+--example bench`: no Rust changes, not re-measured.
+
+### 1. Killed multi-target animations were never collected (memory leak)
+
+`Animation._kill()` unregistered its group's node record with
+`unregister({ h: this._group, at: 0 })`, a fresh object, but `unregister`
+matches the record itself, so the group record (whose `ctl` is the
+animation) stayed in the record table until its slot was reused, keeping
+the killed animation, its Parts, bindings and restore closures alive. It
+now unregisters the record it registered. Separately, `Part.onEmpty` was a
+closure created inside the per-target build loop; V8 gives that loop body
+one context per iteration holding every variable any closure in it
+captures, and `addTrack` captured the target's track list, so each Part kept
+its track definitions (value arrays, formatters, first/last values) alive.
+It is now built by a module-level helper. Test: `kill() unregisters every
+record` (fails on the old code).
+
+### 2. Creation: plain-number tracks, per-call hoisting, shared arrays
+
+Creating an animation spent ~45% of its time in GC (CPU profile of 10k
+targets x 3 numbers) and allocated ~7.6 KB per target (sampled allocation
+profile with collected objects included; ~4.3 KB after these changes). All
+changes produce the same tracks:
+
+- `numberTrack()`: keyframes that are numbers or `null` (the current value:
+  a number, or a plain number string such as `'0px'` from a transform read)
+  build the `TrackDef` without the parser's per-value objects and the
+  per-property `read`/`convert` closures. Anything else (relative values,
+  colours, strings, functions, `random()`) takes `buildTrack`, which also
+  runs whenever the fast path declines. `_setNumberTracks(false)` forces the
+  general path; the test runs objects (numbers, `null` keyframes, unit
+  strings, NaN/-0/undefined current values), elements (existing matrices,
+  scale/skew, opacity, px/em styles, `repeatDelay`), relative/function/
+  random values and a chained timeline through both and compares every
+  frame and the reverted state; dropping or changing the current value's
+  unit fails it.
+- One formatter per unit for number tracks instead of one closure per track;
+  one `easings` array per easing id (tracks only read them; the one append,
+  for `repeatDelay`, only touches lists of more than one).
+- Per call instead of per target: the property list (no `Map` iterator
+  entries per target), `postFor()` (which built an `Intl.NumberFormat` per
+  target when `format` was set) and whether values need resolving at all.
+- `Part.prep()` reuses the last key/offset entry when the bindings match
+  instead of building a signature string per Part.
+- The completion promise (`finished`/`then`) is created on first use: most
+  animations are never awaited. Same object for the rest of a run, already
+  resolved when asked after the end, re-armed by a replay (the test passes
+  on the old code too).
+
+### 3. Two O(n²) paths
+
+- **Taking over a running animation.** When another animation takes a
+  property over, each emptied Part asked its animation whether all parts
+  were empty by scanning `_parts` from the start, past every part already
+  emptied, so a new `animate()` over the same n targets and properties (any
+  re-triggered staggered list) cost O(n²): 10k targets 1.25–1.80 s. The
+  animation now counts the parts that still write something (bindings only
+  ever turn off): ~41 ms, 9x faster than GSAP's `overwrite: 'auto'`. Test:
+  partial takeovers keep it running, the last one frees it, the same target
+  twice in one call (passes on the old code too).
+- **Killing a timeline.** `kill()` killed each child before releasing the
+  root; each child's `ak_release` detached it from the group (`Vec::retain`)
+  and recomputed the group's auto duration over the remaining children. The
+  root is now released first (one recursive pass frees the subtree); the
+  children's own kills then hit stale handles, which are harmless, and
+  still dispose their records and claims. Test: nodes and records all freed
+  (children, a nested timeline, an adopted animation, a `call()`), later
+  `kill()`/`seek()` on the children harmless (passes on the old order too).
+
+### 4. DOM writes
+
+A CPU profile of the DOM bench at 5000 boxes put Blink's `style.transform`
+setter (CSS parsing) first, which is not ours to remove; next came building
+the transform strings (double-to-string conversions), the `opacity` writes
+and the `el.style` getter, called twice per element per frame. Small
+Chromium experiments (not kept as scripts) chose between the alternatives;
+the effect of the whole change is the `MANUAL=1 bench-dom.mjs` table above.
+
+- `s3(v)`: `String(r3(v))` built from the integer `Math.round(v * 1000)`
+  and a table of the 1000 fraction strings, instead of V8's general
+  double-to-string conversion. Identical output: below 2^31 thousandths the
+  shortest representation of `k / 1000` is exactly those digits; anything
+  else (large, NaN, infinite) takes the general conversion. Test: edge
+  cases and 200k values over 12 magnitudes against `String(r3(v))`. Used for
+  transforms and every per-frame number-with-unit string (number, complex
+  and colour-alpha formats, styles with units, springs, `quickTo`, morph
+  paths, FLIP radii, stroke drawing); it is most of the "unit string" gain
+  above.
+- Unitless numeric styles (`opacity`, `z-index`, …) are written as numbers:
+  the setter makes the same string, at about half the cost in Chromium.
+- `TargetState` keeps the element's style declaration (`el.style` returns
+  the same object for the element's lifetime): no getter call per element
+  per frame.
+- `composeTransform` joins parts as it appends them instead of slicing off
+  a trailing space (which flattened and copied the string once more).
+
+### 5. Motion values, reduced motion, startup
+
+- `MotionValue.write()` replaced its velocity record with a new object on
+  every change, and `derived()` mapped its sources into an array and spread
+  it on every update. The record is updated in place; one- and two-source
+  values (every `map()`) call `fn` directly; three or more keep the general
+  path (test added). The `bench-create.mjs` row moved 0.083–0.110 →
+  0.068–0.103 ms (overlapping).
+- With `engine.reducedMotion = 'user'`, `prefersReduced()` called
+  `matchMedia(...)` on every check (each `animate()` and every frame of every
+  marquee), making a `MediaQueryList` and parsing the query each time. The
+  list (its `matches` is live) is kept and re-made only if `matchMedia` is
+  replaced. Test: follows a live stub, one query object.
+- The embedded module was decoded with `atob()` plus a copy loop, cold code
+  at startup (in Node `atob` is JavaScript). `Uint8Array.fromBase64`
+  (current Chromium, Firefox, Safari) or Node's own `Buffer` decode it
+  natively; the loop stays as the fallback (a bundler's `Buffer` polyfill is
+  not used). Node import → `ready` 17.4–19.9 → 14.9–16.0 ms. In Chromium the
+  `MANUAL=1 bench-dom.mjs` page's navigation → `ready` time (50–90 ms, bundle
+  parse included) did not move measurably. Test: every decoder gives the
+  same bytes; the native one was also checked against `Buffer` on the
+  module under `node --js-base-64`, and the recipes run on it in Chromium.
+
+### 6. One formatted plain property per Part skips the binding loop
+
+Profiling the colour and unit-string rows showed about half of the frame at
+50k in the dependent loads Part → bindings array → Binding → target (the
+number path avoids them through the compact writers of the second round).
+A Part with exactly one formatted plain-property binding (colours, `'12px'`,
+complex strings on objects) now keeps the key, output offset, formatter and
+last written value itself; the last value goes back to the binding on
+`release`. Same writes, same order, same skipping of unchanged values
+(`_setCompactFmt(false)` forces the binding loop; the test runs colour, px,
+complex and setter targets, `onUpdate`, a mid-run takeover, a seek, a
+`steps()` easing that repeats values, and revert, through both; always
+writing, or writing twice, fails it). This is the colour gain in the
+`bench.mjs` table: 10k 1.22–1.26 → 0.52–0.59 ms, 50k 4.70–5.43 →
+2.26–2.27 ms, from 0.86–1.00x GSAP to 1.2–2.1x faster.
+
+### Weak spots from the third round, re-checked
+
+- **8 keyframes above 1k:** still behind GSAP (0.56–0.65x at 50k, ~0.58x at
+  10k in the final rounds; 0.6–0.9x over all five). Not worked on: that path
+  (core tick + generated runner + V8's boxed stores, see the third round) is
+  unchanged, and a frame profile at 10k split it about evenly between
+  `ak_tick` and the runner's stores.
+- **Colour strings at 10k:** resolved, 2.1–2.3x faster than before (§6).
+- **Staggered tweens:** `frame: 10k targets, stagger delay` 0.187–0.365 →
+  0.189–0.288 ms, 2.7–4.4x faster than GSAP; the core lane is unchanged.
+- **New: unit strings on objects** (not benchmarked before): 1.7–2.2x
+  faster than before, still 0.45–0.72x GSAP. What remains per target is the
+  formatter call and the string allocation (`s3` + unit).
+
+### Tried and not kept (fourth round)
+
+| Idea | Result |
+|---|---|
+| A generated store per key for formatted plain properties (`t["c"] = v` instead of `t[b.key] = v`) | no change in an in-process A/B (median 0.95 vs 0.93 ms, 10k colours): with one key per process the keyed store site is already monomorphic. |
+| `claim`/`unclaim` with one state lookup per target, and `set(prop, undefined)` instead of `Map.delete` | 0–5% slower creation in three interleaved rounds. |
+| Pinning benchmark processes to one CPU (`taskset`) | did not remove the 2x process-to-process modes under the shared load. |
+| Typed OM transforms (`setTypedOM(true)`) | not re-measured; still off by default (it changes the inline style serialisation). |
