@@ -323,9 +323,14 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             let h = ((ev.height as f32 * scale).round() as u32).max(2);
             let t0 = from.unwrap_or(0.0);
             let dur = to.unwrap_or(ev.duration) - t0;
-            let audio = if opts.audio { ev.audio.clone() } else { Vec::new() };
-            let mut enc = FfmpegEncoder::new(&out, w, h, ev.fps, codec, quality, &audio, t0, dur)?;
-            let s = pipeline::render_video(&ev, &opts, &mut enc)?;
+            let wav = std::env::temp_dir().join(format!("anikit-video-{}.wav", std::process::id()));
+            let audio = if opts.audio { pipeline::mix_audio(&ev, t0, dur, &wav)? } else { None };
+            let mut enc = FfmpegEncoder::new(&out, w, h, ev.fps, codec, quality, audio.as_deref())?;
+            let s = pipeline::render_video(&ev, &opts, &mut enc);
+            if audio.is_some() {
+                let _ = std::fs::remove_file(&wav);
+            }
+            let s = s?;
             if json {
                 println!("{}", serde_json::json!({ "ok": true, "summary": s, "warnings": d }));
             } else {

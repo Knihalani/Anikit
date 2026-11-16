@@ -301,6 +301,36 @@ pub fn contact_sheet(ev: &Evaluator, cols: u32, rows: u32, cell_w: u32) -> (u32,
     (sw, sh, out)
 }
 
+/// Mix the video's audio for `[t0, t0 + dur)` into a WAV at `wav`; `None` if the video is silent.
+pub fn mix_audio(ev: &Evaluator, t0: f32, dur: f32, wav: &std::path::Path) -> Result<Option<std::path::PathBuf>, String> {
+    use crate::audio::{self, Source};
+    if ev.audio.is_empty() {
+        return Ok(None);
+    }
+    let mut tracks = Vec::new();
+    for t in &ev.audio {
+        let mut t = t.clone();
+        t.start -= t0 as f64;
+        if t.start < 0.0 {
+            match &t.src {
+                Source::File(_) => {
+                    let tr = t.trim.unwrap_or([0.0, 0.0]);
+                    t.trim = Some([tr[0] - t.start, tr[1]]);
+                    if let Some(d) = &mut t.duration {
+                        *d += t.start;
+                    }
+                    t.start = 0.0;
+                }
+                Source::Sfx { .. } => continue,
+            }
+        }
+        tracks.push(t);
+    }
+    let pcm = audio::mix(&tracks, dur as f64, audio::DEFAULT_RATE, None)?;
+    audio::write_wav(wav, &pcm, audio::WavFormat::Pcm16)?;
+    Ok(Some(wav.to_path_buf()))
+}
+
 /// Render the video (or a range of it) into `enc`.
 pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder) -> Result<Summary, String> {
     let t0 = Instant::now();
@@ -311,6 +341,7 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
     let threads = rayon::current_num_threads().max(1) as u32;
     let batch = (threads * 4).max(8);
     let mut prev_hash = None;
+    let mut last_dl: Option<DisplayList> = None;
     let mut prev_frame: Option<Arc<YuvFrame>> = None;
     let mut deduped = 0;
     let mut done = 0u32;
@@ -328,6 +359,20 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
                 (dl, h)
             })
             .collect();
+        // Changed-macroblock maps from display-list diffs (for renderer-aware encoders).
+        let hints: Vec<Option<Vec<bool>>> = if enc.wants_hints() {
+            (0..lists.len())
+                .into_par_iter()
+                .map(|k| {
+                    let prev = if k == 0 { last_dl.as_ref()? } else { &lists[k - 1].0 };
+                    let mut m = crate::render::MbMap::new(0, 0);
+                    crate::render::diff::diff_mb_ops(prev, &lists[k].0, &mut m);
+                    Some((0..m.mb_width * m.mb_height).map(|i| m.get(i % m.mb_width, i / m.mb_width)).collect())
+                })
+                .collect()
+        } else {
+            vec![None; lists.len()]
+        };
         let mut same = vec![false; lists.len()];
         let mut ph = prev_hash;
         for (k, (_, h)) in lists.iter().enumerate() {
@@ -349,24 +394,27 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
                 }))
             })
             .collect();
+        let mut hints = hints.into_iter();
         for f in frames {
+            let hint = hints.next().flatten();
             let f = match f {
                 Some(f) => {
                     let a = Arc::new(f);
                     prev_frame = Some(a.clone());
-                    enc.write(&a, false)?;
+                    enc.write(&a, false, hint)?;
                     a
                 }
                 None => {
                     deduped += 1;
                     let a = prev_frame.clone().ok_or("dedupe without a previous frame")?;
-                    enc.write(&a, true)?;
+                    enc.write(&a, true, None)?;
                     a
                 }
             };
             drop(f);
             done += 1;
         }
+        last_dl = lists.into_iter().last().map(|x| x.0);
         if opts.progress && (last_report.elapsed().as_secs_f32() > 0.5 || end == f1) {
             last_report = Instant::now();
             let el = t0.elapsed().as_secs_f32();

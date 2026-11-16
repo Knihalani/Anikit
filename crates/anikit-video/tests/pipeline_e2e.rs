@@ -22,7 +22,7 @@ fn tiny_render_decodes() {
     let dir = std::env::temp_dir().join(format!("akv-e2e-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let out = dir.join("t.mp4");
-    let mut enc = FfmpegEncoder::new(&out, 160, 90, 10.0, Codec::H264, Quality::Draft, &[], 0.0, ev.duration).unwrap();
+    let mut enc = FfmpegEncoder::new(&out, 160, 90, 10.0, Codec::H264, Quality::Draft, None).unwrap();
     let s = pipeline::render_video(&ev, &RenderOptions::default(), &mut enc).unwrap();
     assert_eq!(s.frames, 15);
     assert!(s.bytes > 0);
@@ -54,4 +54,26 @@ fn identical_frames_are_deduped() {
     let a = pipeline::hash_list(&ev.eval(0.1));
     let b = pipeline::hash_list(&ev.eval(0.5));
     assert_eq!(a, b);
+}
+
+#[test]
+fn ak264_with_sfx_audio() {
+    if !ffmpeg() {
+        return;
+    }
+    let src = r#"{ "size": [128, 72], "fps": 15, "scenes": [ { "duration": 1, "layers": [ { "text": "x", "enter": "pop" } ],
+        "audio": [ { "sfx": "whoosh", "at": 0.1 }, { "sfx": "impact", "at": 0.6, "volume": "-3dB" } ] } ] }"#;
+    let ev = Evaluator::new(&parse_json(src).unwrap().spec, Options::default()).unwrap();
+    assert_eq!(ev.audio.len(), 2);
+    let dir = std::env::temp_dir().join(format!("akv-e2e-a-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let wav = pipeline::mix_audio(&ev, 0.0, ev.duration, &dir.join("a.wav")).unwrap();
+    let out = dir.join("a.mp4");
+    let mut enc = FfmpegEncoder::new(&out, 128, 72, 15.0, Codec::Ak264, Quality::Good, wav.as_deref()).unwrap();
+    let s = pipeline::render_video(&ev, &RenderOptions::default(), &mut enc).unwrap();
+    assert_eq!(s.frames, 15);
+    let o = Command::new("ffprobe").args(["-v", "error", "-show_entries", "stream=codec_name", "-of", "csv=p=0"]).arg(&out).output().unwrap();
+    let streams = String::from_utf8_lossy(&o.stdout);
+    assert!(streams.contains("h264") && streams.contains("aac"), "{streams}");
+    let _ = std::fs::remove_dir_all(&dir);
 }

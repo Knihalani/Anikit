@@ -2158,37 +2158,71 @@ impl C<'_> {
 
     // ---------- audio & captions ----------
 
-    fn audio(&mut self, a: &spec::AudioCue, path: &str, scene_start: f32) -> Option<AudioClip> {
-        let full = self.o.base_dir.join(&a.src);
-        if !full.exists() {
-            self.d.push(Diagnostic::error(format!("{path}.src"), format!("file not found: {}", full.display())));
-        }
+    fn audio(&mut self, a: &spec::AudioCue, path: &str, scene_start: f32) -> Option<crate::audio::Track> {
+        use crate::audio::{Duck, Role, SfxParams, Source, SFX_NAMES};
+        let src = match (&a.src, &a.sfx) {
+            (Some(f), None) => {
+                let full = self.o.base_dir.join(f);
+                if !full.exists() {
+                    self.d.push(Diagnostic::error(format!("{path}.src"), format!("file not found: {}", full.display())));
+                }
+                Source::File(full.to_string_lossy().into_owned())
+            }
+            (None, Some(n)) => {
+                if !SFX_NAMES.contains(&n.as_str()) {
+                    self.d.push(Diagnostic::error(format!("{path}.sfx"), format!("unknown sound effect '{n}'")).suggest(suggest(n, SFX_NAMES)));
+                    return None;
+                }
+                let duration = a.duration.as_ref().map(|x| self.time_raw(x, &format!("{path}.duration")) as f64);
+                Source::Sfx { name: n.clone(), params: SfxParams { duration, pitch: a.pitch.unwrap_or(1.0), seed: 0 } }
+            }
+            (Some(_), Some(_)) => {
+                self.d.push(Diagnostic::error(path, "set either 'src' or 'sfx', not both"));
+                return None;
+            }
+            (None, None) => {
+                self.d.push(Diagnostic::error(path, "an audio cue needs 'src' (a file) or 'sfx' (a built-in effect)"));
+                return None;
+            }
+        };
         let at = scene_start + a.at.as_ref().map(|x| self.time_rel(x, &format!("{path}.at"), 0.0)).unwrap_or(0.0);
         let volume = match &a.volume {
             None => 1.0,
-            Some(Num::Num(v)) => *v as f32,
-            Some(Num::Str(s)) => match s.trim().strip_suffix("dB").or_else(|| s.trim().strip_suffix("db")).and_then(|x| x.trim().parse::<f32>().ok()) {
-                Some(db) => 10f32.powf(db / 20.0),
+            Some(Num::Num(v)) => *v,
+            Some(Num::Str(s)) => match s.trim().strip_suffix("dB").or_else(|| s.trim().strip_suffix("db")).and_then(|x| x.trim().parse::<f64>().ok()) {
+                Some(db) => crate::audio::db_to_gain(db),
                 None => {
                     self.d.push(Diagnostic::error(format!("{path}.volume"), format!("invalid volume '{s}' (0..1 or \"-6dB\")")));
                     1.0
                 }
             },
         };
-        let trim_start = a.trim_start.as_ref().map(|x| self.time_raw(x, &format!("{path}.trimStart"))).unwrap_or(0.0);
-        let duration = a.duration.as_ref().map(|x| self.time_raw(x, &format!("{path}.duration")));
-        if a.duck.is_some() || a.voice.is_some() {
-            self.d.push(Diagnostic::warning(path, "ducking is not supported yet; 'duck' and 'voice' are ignored"));
-        }
-        Some(AudioClip {
-            src: full,
-            at,
+        let trim_start = a.trim_start.as_ref().map(|x| self.time_raw(x, &format!("{path}.trimStart")) as f64);
+        let duration = match &a.sfx {
+            None => a.duration.as_ref().map(|x| self.time_raw(x, &format!("{path}.duration")) as f64),
+            Some(_) => None,
+        };
+        let duck = match &a.duck {
+            None | Some(serde_json::Value::Bool(false)) => None,
+            Some(serde_json::Value::Bool(true)) => Some(Duck::default()),
+            Some(serde_json::Value::Number(n)) => Some(Duck { amount_db: n.as_f64().unwrap_or(12.0).abs(), ..Default::default() }),
+            Some(v) => {
+                self.d.push(Diagnostic::error(format!("{path}.duck"), format!("expected true or a reduction in dB, got {v}")));
+                None
+            }
+        };
+        Some(crate::audio::Track {
+            src,
+            start: at as f64,
+            trim: trim_start.map(|t| [t, 0.0]),
             volume,
-            trim_start,
-            duration,
-            fade_in: a.fade_in.unwrap_or(0.0) as f32,
-            fade_out: a.fade_out.unwrap_or(0.0) as f32,
+            db: 0.0,
+            fade_in: a.fade_in.unwrap_or(0.0),
+            fade_out: a.fade_out.unwrap_or(0.0),
             looped: a.loop_.unwrap_or(false),
+            duration,
+            duck,
+            role: if a.voice == Some(true) { Some(Role::Voice) } else { None },
         })
     }
 

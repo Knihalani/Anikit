@@ -1,7 +1,6 @@
 //! Encoders. [`FfmpegEncoder`] pipes planar YUV 4:2:0 into ffmpeg (x264, x265,
 //! VP9, AV1, ProRes, GIF, PNG sequence) and muxes audio in the same process.
 
-use crate::eval::AudioClip;
 use crate::render::YuvFrame;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -87,8 +86,13 @@ impl Quality {
 
 /// Consumes frames in order.
 pub trait Encoder {
-    /// Append a frame. `repeat` is true when it's identical to the previous one.
-    fn write(&mut self, f: &YuvFrame, repeat: bool) -> Result<(), String>;
+    /// Append a frame. `repeat` is true when it's identical to the previous one;
+    /// `changed` (if given) flags the 16×16 macroblocks that may differ from it.
+    fn write(&mut self, f: &YuvFrame, repeat: bool, changed: Option<Vec<bool>>) -> Result<(), String>;
+    /// Whether `changed` maps are useful (computing them costs a little).
+    fn wants_hints(&self) -> bool {
+        false
+    }
     /// Finish; returns the output size in bytes.
     fn finish(&mut self) -> Result<u64, String>;
     fn output(&self) -> &str;
@@ -107,15 +111,11 @@ pub struct FfmpegEncoder {
     ak: Option<ak264::Encoder>,
 }
 
-fn secs(x: f32) -> String {
-    format!("{:.4}", x.max(0.0))
-}
-
 impl FfmpegEncoder {
     /// Start ffmpeg. Video size is cropped to even dimensions for 4:2:0.
-    /// `audio` clips are placed relative to `t0` (the first frame's time) and cut at `dur`.
+    /// `audio` is a mixed WAV aligned with the first frame.
     #[allow(clippy::too_many_arguments)]
-    pub fn new(out: &Path, w: u32, h: u32, fps: f32, codec: Codec, q: Quality, audio: &[AudioClip], t0: f32, dur: f32) -> Result<Self, String> {
+    pub fn new(out: &Path, w: u32, h: u32, fps: f32, codec: Codec, q: Quality, audio: Option<&Path>) -> Result<Self, String> {
         let (w, h) = (w & !1, h & !1);
         let mut cmd = Command::new("ffmpeg");
         cmd.args(["-hide_banner", "-loglevel", "error", "-y"]);
@@ -124,42 +124,12 @@ impl FfmpegEncoder {
         } else {
             cmd.args(["-f", "rawvideo", "-pix_fmt", "yuv420p", "-s", &format!("{w}x{h}"), "-r", &format!("{fps}"), "-i", "-"]);
         }
-        let use_audio = !audio.is_empty() && !matches!(codec, Codec::Gif | Codec::Png);
-        let mut filters = Vec::new();
-        if use_audio {
-            for (k, a) in audio.iter().enumerate() {
-                if a.looped {
-                    cmd.args(["-stream_loop", "-1"]);
-                }
-                cmd.arg("-i").arg(&a.src);
-                // Position in output time.
-                let rel = a.at - t0;
-                let mut start = a.trim_start;
-                let mut delay = rel;
-                if rel < 0.0 {
-                    start -= rel;
-                    delay = 0.0;
-                }
-                let mut f = format!("[{}:a]atrim=start={}", k + 1, secs(start));
-                if let Some(d) = a.duration {
-                    f += &format!(":duration={}", secs(d - (start - a.trim_start)));
-                }
-                f += &format!(",asetpts=PTS-STARTPTS,volume={:.4}", a.volume);
-                if a.fade_in > 0.0 {
-                    f += &format!(",afade=t=in:d={}", secs(a.fade_in));
-                }
-                if a.fade_out > 0.0 {
-                    let end = a.duration.map(|d| d - (start - a.trim_start)).unwrap_or(dur - delay).min(dur - delay);
-                    f += &format!(",afade=t=out:st={}:d={}", secs(end - a.fade_out), secs(a.fade_out));
-                }
-                let ms = (delay * 1000.0).round() as i64;
-                f += &format!(",adelay={ms}|{ms}[a{k}]");
-                filters.push(f);
-            }
-            let ins: String = (0..audio.len()).map(|k| format!("[a{k}]")).collect();
-            filters.push(format!("{ins}amix=inputs={}:normalize=0:dropout_transition=0,atrim=0:{}[aout]", audio.len(), secs(dur)));
-            cmd.args(["-filter_complex", &filters.join(";")]);
-            cmd.args(["-map", "0:v", "-map", "[aout]", "-c:a", "aac", "-b:a", "192k"]);
+        let use_audio = audio.is_some() && !matches!(codec, Codec::Gif | Codec::Png);
+        if let (true, Some(a)) = (use_audio, audio) {
+            cmd.arg("-i").arg(a);
+            cmd.args(["-map", "0:v", "-map", "1:a"]);
+            let ac = if codec == Codec::Vp9 { "libopus" } else if codec == Codec::ProRes { "pcm_s16le" } else { "aac" };
+            cmd.args(["-c:a", ac, "-b:a", "192k"]);
         }
         if codec == Codec::Ak264 {
             cmd.args(["-c:v", "copy", "-movflags", "+faststart"]);
@@ -186,9 +156,6 @@ impl FfmpegEncoder {
                     Quality::Best => "2",
                 };
                 cmd.args(["-c:v", "libvpx-vp9", "-b:v", "0", "-crf", &(crf + 12).to_string(), "-row-mt", "1", "-deadline", "realtime", "-cpu-used", speed]);
-                if use_audio {
-                    cmd.args(["-c:a", "libopus"]);
-                }
             }
             Codec::Av1 => {
                 let p = match q {
@@ -223,6 +190,9 @@ impl FfmpegEncoder {
             }
         }
         cmd.arg(&out_s);
+        if std::env::var_os("ANIKIT_DEBUG").is_some() {
+            eprintln!("{cmd:?}");
+        }
         cmd.stdin(Stdio::piped()).stdout(Stdio::null()).stderr(Stdio::piped());
         let mut child = cmd.spawn().map_err(|e| format!("can't start ffmpeg (is it installed?): {e}"))?;
         let stdin = child.stdin.take();
@@ -253,14 +223,19 @@ impl FfmpegEncoder {
 }
 
 impl Encoder for FfmpegEncoder {
-    fn write(&mut self, f: &YuvFrame, repeat: bool) -> Result<(), String> {
+    fn wants_hints(&self) -> bool {
+        self.ak.is_some()
+    }
+
+    fn write(&mut self, f: &YuvFrame, repeat: bool, changed: Option<Vec<bool>>) -> Result<(), String> {
         if let Some(ak) = &mut self.ak {
             let fr = ak264::YuvFrame { width: self.w, height: self.h, y: &f.y, u: &f.u, v: &f.v, y_stride: f.y_stride, c_stride: f.c_stride };
             let hints = if repeat {
                 let (mw, mh) = ak.mb_size();
                 ak264::FrameHints { changed: Some(vec![false; mw * mh]), motions: Vec::new() }
             } else {
-                ak264::FrameHints::default()
+                let (mw, mh) = ak.mb_size();
+                ak264::FrameHints { changed: changed.filter(|c| c.len() == mw * mh), motions: Vec::new() }
             };
             let bytes = ak.encode(&fr, &hints);
             let r = self.stdin.as_mut().ok_or("encoder finished")?.write_all(bytes);

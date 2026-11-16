@@ -645,11 +645,14 @@ pub struct Tween {
     pub yoyo: Option<bool>,
 }
 
-/// An audio cue.
+/// An audio cue: a file (`src`) or a built-in sound effect (`sfx`).
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AudioCue {
-    pub src: String,
+    /// Audio file (mp3, wav, ogg, flac, aac/m4a).
+    pub src: Option<String>,
+    /// Built-in effect: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `riser`, `drop`, `impact`, `ding`, `chime`, `typing`, `success`.
+    pub sfx: Option<String>,
     pub at: Option<Num>,
     /// 0..1 or `"-6dB"`.
     pub volume: Option<Num>,
@@ -659,8 +662,12 @@ pub struct AudioCue {
     pub fade_out: Option<f64>,
     #[serde(rename = "loop")]
     pub loop_: Option<bool>,
-    pub duck: Option<f64>,
+    /// Duck this track while voice plays: `true`, or the reduction in dB (default 12).
+    pub duck: Option<serde_json::Value>,
+    /// This track is a voice-over (others duck under it).
     pub voice: Option<bool>,
+    /// SFX pitch multiplier.
+    pub pitch: Option<f64>,
 }
 
 /// Captions: a list of cues, or a subtitle file with styling.

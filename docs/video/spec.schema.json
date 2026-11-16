@@ -156,7 +156,7 @@
       ]
     },
     "AudioCue": {
-      "description": "An audio cue.",
+      "description": "An audio cue: a file (`src`) or a built-in sound effect (`sfx`).",
       "type": "object",
       "properties": {
         "at": {
@@ -170,11 +170,7 @@
           ]
         },
         "duck": {
-          "type": [
-            "number",
-            "null"
-          ],
-          "format": "double"
+          "description": "Duck this track while voice plays: `true`, or the reduction in dB (default 12)."
         },
         "duration": {
           "anyOf": [
@@ -206,8 +202,27 @@
             "null"
           ]
         },
+        "pitch": {
+          "description": "SFX pitch multiplier.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "sfx": {
+          "description": "Built-in effect: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `riser`, `drop`, `impact`, `ding`, `chime`, `typing`, `success`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "src": {
-          "type": "string"
+          "description": "Audio file (mp3, wav, ogg, flac, aac/m4a).",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "trimStart": {
           "anyOf": [
@@ -220,6 +235,7 @@
           ]
         },
         "voice": {
+          "description": "This track is a voice-over (others duck under it).",
           "type": [
             "boolean",
             "null"
@@ -236,10 +252,7 @@
             }
           ]
         }
-      },
-      "required": [
-        "src"
-      ]
+      }
     },
     "BoxStyle": {
       "description": "Flexbox style of a `box` (and of a box's children: `grow`).",

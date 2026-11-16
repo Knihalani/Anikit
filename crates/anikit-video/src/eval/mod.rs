@@ -318,19 +318,6 @@ pub(crate) struct SceneC {
     pub layers: Vec<Node>,
 }
 
-/// A resolved audio cue (global times).
-#[derive(Clone, Debug, PartialEq, serde::Serialize)]
-pub struct AudioClip {
-    pub src: std::path::PathBuf,
-    pub at: f32,
-    pub volume: f32,
-    pub trim_start: f32,
-    pub duration: Option<f32>,
-    pub fade_in: f32,
-    pub fade_out: f32,
-    pub looped: bool,
-}
-
 /// Timing summary of one scene.
 #[derive(Clone, Debug, serde::Serialize)]
 pub struct SceneInfo {
@@ -347,7 +334,8 @@ pub struct Evaluator {
     /// Total duration in seconds.
     pub duration: f32,
     pub diagnostics: Vec<Diagnostic>,
-    pub audio: Vec<AudioClip>,
+    /// Audio tracks on the global timeline (paths resolved).
+    pub audio: Vec<crate::audio::Track>,
     /// Fonts and images, shared with the renderers.
     pub assets: Arc<SharedAssets>,
     pub(crate) easings: Vec<Easing>,

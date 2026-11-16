@@ -347,12 +347,14 @@ On a `group`/`box` (or a `split` text), `"stagger": 0.08` delays each child's `e
 
 ```json
 "audio": [
-  { "src": "music.mp3", "volume": 0.7, "fadeIn": 0.5, "fadeOut": 1.5, "duck": 0.4 },
-  { "src": "whoosh.wav", "at": "@drop", "volume": 1 }
+  { "src": "music.mp3", "volume": 0.7, "fadeIn": 0.5, "fadeOut": 1.5, "duck": true },
+  { "src": "voiceover.wav", "at": 0.5, "voice": true },
+  { "sfx": "whoosh", "at": "@drop" },
+  { "sfx": "impact", "at": "@drop+0.2", "volume": "-3dB" }
 ]
 ```
 
-`src`, `at` (time, default `0`), `volume` (0..1, or `"-6dB"`), `trimStart`, `duration`, `fadeIn`, `fadeOut`, `loop`. (`duck` and `voice` are reserved for ducking and are not implemented yet.)
+A cue plays a file (`src`) or a built-in sound effect (`sfx`: `click`, `tick`, `pop`, `whoosh`, `swoosh`, `rise`, `riser`, `drop`, `impact`, `ding`, `chime`, `typing`, `success`; `pitch` and `duration` vary it). Keys: `at` (time, default `0`; inside a scene it's relative to the scene), `volume` (0..1 or `"-6dB"`), `trimStart`, `duration`, `fadeIn`, `fadeOut`, `loop`, `voice` (marks a voice-over), and `duck` (`true`, or a reduction in dB, default 12: this track dips while voice plays).
 
 ## Captions
 
