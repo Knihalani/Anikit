@@ -24,6 +24,9 @@ fn main() {
     let w: Vec<&str> = words.split(' ').collect();
     let para: String = (0..200).map(|i| w[i % w.len()]).collect::<Vec<_>>().join(" ");
     let t = Instant::now();
+    std::hint::black_box(highlight(&CodeSpec { code: "let x = 1;".into(), language: "ts".into(), ..Default::default() }));
+    println!("{:<48} {:>10.1} µs", "first highlight (cold: grammar load)", t.elapsed().as_secs_f64() * 1e6);
+    let t = Instant::now();
     let fonts = FontStore::new();
     println!("{:<48} {:>10.1} µs", "FontStore::new (bundled)", t.elapsed().as_secs_f64() * 1e6);
 
@@ -75,7 +78,6 @@ fn main() {
         ops.len()
     });
     let code = include_str!("../src/text/kinetic.rs").lines().take(40).collect::<Vec<_>>().join("\n");
-    time("highlight 40 lines of Rust (first call loads grammars)", 1, || highlight(&CodeSpec { code: code.clone(), language: "rust".into(), ..Default::default() }));
     time("highlight 40 lines of Rust", 20, || highlight(&CodeSpec { code: code.clone(), language: "rust".into(), ..Default::default() }));
     let ts = "const x: number = 1;\n".repeat(40);
     time("highlight 40 lines of TypeScript", 20, || highlight(&CodeSpec { code: ts.clone(), language: "ts".into(), ..Default::default() }));

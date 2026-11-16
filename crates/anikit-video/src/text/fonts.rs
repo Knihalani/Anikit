@@ -98,13 +98,13 @@ impl FontStore {
             index: Mutex::new(HashMap::new()),
             cache: Mutex::new(HashMap::new()),
         };
-        let sans = store.add_font_bytes(bundled::INTER.to_vec());
-        store.add_font_bytes(bundled::INTER_ITALIC.to_vec());
-        let mono = store.add_font_bytes(bundled::JETBRAINS_MONO.to_vec());
-        store.add_font_bytes(bundled::JETBRAINS_MONO_ITALIC.to_vec());
-        let serif = store.add_font_bytes(bundled::INSTRUMENT_SERIF.to_vec());
-        store.add_font_bytes(bundled::INSTRUMENT_SERIF_ITALIC.to_vec());
-        let emoji = store.add_font_bytes(bundled::TWEMOJI.to_vec());
+        let sans = store.add_blob(Blob::new(Arc::new(bundled::INTER)));
+        store.add_blob(Blob::new(Arc::new(bundled::INTER_ITALIC)));
+        let mono = store.add_blob(Blob::new(Arc::new(bundled::JETBRAINS_MONO)));
+        store.add_blob(Blob::new(Arc::new(bundled::JETBRAINS_MONO_ITALIC)));
+        let serif = store.add_blob(Blob::new(Arc::new(bundled::INSTRUMENT_SERIF)));
+        store.add_blob(Blob::new(Arc::new(bundled::INSTRUMENT_SERIF_ITALIC)));
+        let emoji = store.add_blob(Blob::new(Arc::new(bundled::TWEMOJI)));
         {
             let mut s = store.shaper.lock().unwrap();
             let s = &mut *s;
@@ -145,9 +145,13 @@ impl FontStore {
 
     /// Register font bytes (TTF/OTF/TTC); returns the family names it added.
     pub fn add_font_bytes(&self, bytes: Vec<u8>) -> Vec<String> {
+        self.add_blob(Blob::new(Arc::new(bytes)))
+    }
+
+    fn add_blob(&self, blob: Blob<u8>) -> Vec<String> {
         let mut s = self.shaper.lock().unwrap();
         let s = &mut *s;
-        let added = s.fcx.collection.register_fonts(Blob::new(Arc::new(bytes)), None);
+        let added = s.fcx.collection.register_fonts(blob, None);
         let mut names = Vec::new();
         for (fam, _) in added {
             if let Some(n) = s.fcx.collection.family_name(fam) {
