@@ -367,19 +367,30 @@ impl PostFx {
             let dy = y as f32 - fcy;
             let hrow = &self.half[by * bw..(by + 1) * bw];
             let row = &mut rgba[y * w * 4..(y + 1) * w * 4];
-            // Beyond radius 4 / kk the blur is total: copy the blurred pixel.
-            let full2 = (4.0 / kk.max(1e-6)) * (4.0 / kk.max(1e-6));
-            for (x, px) in row.chunks_exact_mut(4).enumerate() {
-                let dx = x as f32 - fcx;
-                let d2 = dx * dx + dy * dy;
-                if d2 >= full2 {
-                    let b = hrow[(x / 2).min(bw - 1)];
+            // Beyond radius 4 / kk the blur is total: copy the blurred pixel. Per row
+            // that is everything outside [xa, xb); only that span blends by distance.
+            let full = 4.0 / kk.max(1e-6);
+            let span = full * full - dy * dy;
+            let (xa, xb) = if span > 0.0 {
+                let r = crate::math::sqrtf(span);
+                ((crate::math::floorf(fcx - r).max(0.0) as usize).min(w), (crate::math::ceilf(fcx + r).max(0.0) as usize).min(w))
+            } else {
+                (w, w)
+            };
+            let copy_run = |row: &mut [u8], x0: usize, x1: usize| {
+                for (k, px) in row[x0 * 4..x1 * 4].chunks_exact_mut(4).enumerate() {
+                    let b = hrow[((x0 + k) / 2).min(bw - 1)];
                     px[0] = b as u8;
                     px[1] = (b >> 8) as u8;
                     px[2] = (b >> 16) as u8;
-                    continue;
                 }
-                let len = crate::math::sqrtf(d2) * kk;
+            };
+            copy_run(row, 0, xa);
+            copy_run(row, xb.max(xa), w);
+            for x in xa..xb {
+                let px = &mut row[x * 4..x * 4 + 4];
+                let dx = x as f32 - fcx;
+                let len = crate::math::sqrtf(dx * dx + dy * dy) * kk;
                 let a = ((len - 1.5) * 0.4).clamp(0.0, 1.0);
                 if a <= 0.0 {
                     continue;
