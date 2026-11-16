@@ -1,10 +1,10 @@
 import shutil
 import subprocess
 
-import numpy as np
 import pytest
 
-from anikit.video import VideoWriter, post
+np = pytest.importorskip("numpy")
+from anikit.video import VideoWriter, post  # noqa: E402  (needs numpy)
 
 pytestmark = pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="needs ffmpeg")
 
