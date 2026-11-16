@@ -55,14 +55,25 @@ fn main() {
     println!("| encoder | settings | fps | size KB | PSNR-Y | PSNR-all |");
     println!("|---|---|---|---|---|---|");
     for &qp in &qps {
-        for (label, threads, chunked) in [("ak264 1 thread", 1usize, false), ("ak264 4 slices", 4, false), ("ak264 chunks", 1, true)]
-        {
+        let hints: Vec<FrameHints> = (0..n).map(|t| if t == 0 { FrameHints::default() } else { s.hints(t) }).collect();
+        for (label, threads, chunked) in [
+            ("ak264 1 thread", 1usize, 0),
+            ("ak264 4 slices", 4, 0),
+            ("ak264 chunks", 1, 1),
+            ("ak264 chunks + renderer hints", 1, 2),
+        ] {
             let cfg = EncoderConfig { width: w, height: h, qp, gop: 60, fps: 30.0, threads, ..Default::default() };
             // warm-up
             let _ = encode_chunks(&cfg, &frames[..2.min(frames.len())], &[]);
+            let reps: usize = std::env::var("REPS").ok().and_then(|v| v.parse().ok()).unwrap_or(3);
+            let mut best = f64::MAX;
+            let mut stream = Vec::new();
+            for _ in 0..reps {
             let t = Instant::now();
-            let stream = if chunked {
+            stream = if chunked == 1 {
                 encode_chunks(&cfg, &frames, &[])
+            } else if chunked == 2 {
+                encode_chunks(&cfg, &frames, &hints)
             } else {
                 let mut e = Encoder::new(cfg.clone());
                 let mut out = Vec::new();
@@ -71,7 +82,9 @@ fn main() {
                 }
                 out
             };
-            let dt = t.elapsed().as_secs_f64();
+            best = best.min(t.elapsed().as_secs_f64());
+            }
+            let dt = best;
             let p = format!("{dir}/ak264-{scene}-{qp}.h264");
             std::fs::write(&p, &stream).unwrap();
             let dec = decode(&p);
@@ -86,14 +99,17 @@ fn main() {
     for preset in ["ultrafast", "veryfast", "medium"] {
         for crf in &crfs {
             let out = format!("{dir}/x264-{scene}-{preset}-{crf}.h264");
-            let t = Instant::now();
-            let o = Command::new("ffmpeg")
-                .args(["-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "yuv420p", "-s", &format!("{w}x{h}"), "-r", "30"])
-                .args(["-i", &srcp, "-c:v", "libx264", "-preset", preset, "-crf", crf, "-g", "60", &out])
-                .output()
-                .unwrap();
-            let dt = t.elapsed().as_secs_f64();
-            assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+            let mut dt = f64::MAX;
+            for _ in 0..std::env::var("REPS").ok().and_then(|v| v.parse().ok()).unwrap_or(3usize) {
+                let t = Instant::now();
+                let o = Command::new("ffmpeg")
+                    .args(["-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "yuv420p", "-s", &format!("{w}x{h}"), "-r", "30"])
+                    .args(["-i", &srcp, "-c:v", "libx264", "-preset", preset, "-crf", crf, "-g", "60", &out])
+                    .output()
+                    .unwrap();
+                dt = dt.min(t.elapsed().as_secs_f64());
+                assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+            }
             let size = std::fs::metadata(&out).unwrap().len();
             let dec = decode(&out);
             let (py, pa) = psnr_y(&dec, &src, fsz, ysz);

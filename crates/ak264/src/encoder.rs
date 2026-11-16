@@ -59,9 +59,11 @@ pub struct MotionHint {
 /// What the renderer knows about a frame.
 #[derive(Clone, Debug, Default)]
 pub struct FrameHints {
-    /// Per-macroblock "changed since the previous frame" flags, row-major,
-    /// `ceil(w/16) * ceil(h/16)` entries. `None`: computed by exact comparison.
-    /// A macroblock marked unchanged is coded as a copy of the previous frame.
+    /// Per-macroblock "may have changed since the previous frame" flags,
+    /// row-major, `ceil(w/16) * ceil(h/16)` entries (e.g. display-list bounding
+    /// boxes). Flagged macroblocks are compared exactly; unflagged ones are
+    /// trusted to be unchanged and coded as copies without being read.
+    /// `None`: every macroblock is compared.
     pub changed: Option<Vec<bool>>,
     /// Known translations (seeds for motion search).
     pub motions: Vec<MotionHint>,
@@ -1739,9 +1741,9 @@ impl Encoder {
             match &hints.changed {
                 Some(c) => {
                     assert_eq!(c.len(), nmb, "ak264: changed map must have one entry per macroblock");
-                    self.changed.copy_from_slice(c);
-                    for (i, _) in c.iter().enumerate().filter(|x| *x.1) {
-                        crate::diff::load_mb(y, u, v, f, i % mbw, i / mbw, false);
+                    // Only macroblocks that may have changed are compared (exactly).
+                    for (i, (dst, &maybe)) in self.changed.iter_mut().zip(c.iter()).enumerate() {
+                        *dst = maybe && crate::diff::load_mb(y, u, v, f, i % mbw, i / mbw, true);
                     }
                 }
                 None => {
