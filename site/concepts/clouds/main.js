@@ -19,8 +19,11 @@ const lerp = (a, b, k) => a + (b - a) * k;
 // The sky. Its first frame is drawn before anikit's WebAssembly has loaded.
 // ---------------------------------------------------------------------------
 const canvas = $('#sky');
-let sky = null;
+let sky = null, lostSky = null;
 try { sky = createSky(canvas); } catch (e) { console.warn('anikit: sky shader unavailable', e.message); }
+// If the GPU drops the context, the CSS sky behind the canvas takes over until it is restored.
+canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); canvas.style.opacity = '0'; lostSky = sky; sky = null; });
+canvas.addEventListener('webglcontextrestored', () => { try { sky = createSky(canvas); if (sky && lostSky) sky.scale = lostSky.scale; canvas.style.opacity = ''; lastKey = ''; } catch { /* stay on the CSS sky */ } });
 const dprCap = small ? 1.25 : 1.5;
 let vw = innerWidth, vh = innerHeight;
 let comp = 1; // composite resolution, lowered only when the clouds alone can't hold the frame rate
