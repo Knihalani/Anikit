@@ -47,7 +47,7 @@ main { position: relative; z-index: 2; }
 .beat.close { height: 230vh; }
 .stick { position: sticky; top: 0; height: 100vh; height: 100svh; display: flex; align-items: center; justify-content: center; padding: 72px var(--gut) 24px; }
 .beat .stick { align-items: flex-end; padding-bottom: 12vh; }
-.caption { margin: 0; text-align: center; font-size: clamp(16px, 1.35vw, 19px); line-height: 1.5; opacity: 0; will-change: transform, opacity; }
+.caption { margin: 0; text-align: center; text-shadow: 0 1px 2px #000, 0 0 18px rgba(0, 0, 0, 0.9), 0 0 40px rgba(0, 0, 0, 0.8); font-size: clamp(16px, 1.35vw, 19px); line-height: 1.5; opacity: 0; will-change: transform, opacity; }
 
 .pill { display: inline-flex; align-items: center; height: 38px; padding: 0 18px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.03); color: var(--text); font: 400 14px/1 Text, sans-serif; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
 .pill:hover { border-color: rgba(255, 255, 255, 0.36); }

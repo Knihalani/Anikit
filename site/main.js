@@ -109,7 +109,9 @@ function story(y) {
     // Hero → exploded view.
     const e = sstep(0.15 * vh, L.open.top + (L.open.h - vh) * 0.62, y);
     state.explode = e; state.dive = 0; state.lift = 130 * (1 - e) + 20 * e;
-    state.turn = 0.25 * Math.sin(Math.PI * clamp(prog('open', y))) * e;
+    // At rest the watch sways slowly, so the studio highlights travel across the case.
+    const sway = reduced ? 0 : 0.09 * Math.sin(performance.now() / 2600) * (1 - e);
+    state.turn = 0.25 * Math.sin(Math.PI * clamp(prog('open', y))) * e + sway;
   } else if (!near('close')) {
     // Into the movement.
     const u = prog('calibre', y);
@@ -117,7 +119,7 @@ function story(y) {
   } else {
     // Reassembly above the install command.
     const u = prog('close', y);
-    state.explode = 1 - sstep(0.02, 0.6, u); state.dive = 0; state.lift = 20 - 100 * sstep(0.02, 0.6, u); state.turn = -0.4 * (1 - sstep(0.02, 0.7, u));
+    state.explode = 1 - sstep(0.02, 0.6, u); state.dive = 0; state.lift = 20 - 100 * sstep(0.02, 0.6, u); state.turn = -0.4 * (1 - sstep(0.02, 0.7, u)) + (reduced ? 0 : 0.09 * Math.sin(performance.now() / 2600) * sstep(0.5, 0.9, u));
   }
 }
 

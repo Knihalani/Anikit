@@ -286,7 +286,7 @@ function build() {
   G.caseMesh = lathe([[150, 80, 1], [153, 86, 1], [197, 87, 1], [205, 82, 1], [209, 70], [210, 52], [208, 30, 1], [200, 14, 1], [182, 6], [120, 3], [0, 2.5, 1]], 112);
   G.caseFloor = polar({ r0: 0, r1: 152, nr: 1, na: 64, y: 4, walls: false, normal: () => [0, 1, 0] });
   G.caseInner = lathe([[150, 4, 1], [150, 80, 1]], 96);
-  G.bezelMesh = lathe([[151, 85, 1], [152, 92, 1], [162, 96], [184, 95.5], [196, 91, 1], [199, 86, 1]], 112);
+  G.bezelMesh = lathe([[151, 85, 1], [152, 93, 1], [157, 97], [167, 96.5], [175, 92, 1], [178, 87, 1]], 112);
   G.crystal = polar({ r0: 0, r1: 152, nr: 6, na: 72, y: 0, walls: false, yAt: (x, z) => 98.5 - 3 * ((x * x + z * z) / (152 * 152)), normal: (x, z) => [x * 0.0026, 1, z * 0.0026] });
   G.dialTop = polar({ r0: 3, r1: 150, nr: 1, na: 180, y: 0, flatSeg: true, uvR: 150, normal: (x, z, a, r, j) => { const s = Math.sin(j * 12.9898 + 78.233) * 43758.5453, h = (s - Math.floor(s)) - 0.5; const tl = 0.1 * h; return [-Math.sin(a) * tl, 1, Math.cos(a) * tl]; } });
   G.dialBody = (() => { const b = new MB(); disc(b, 0, 0, 149.5, -3, -1.2, 96); return b.build(); })();
@@ -515,7 +515,7 @@ export async function createWatch({ width, height, canvas = null }) {
     // Screen positions (0–1) of the parts' right-hand edges, for the exploded-view labels.
     if (s.labels) {
       const m = cam.viewProjection().matrix, out = s.labels;
-      const pts = [[Gw, 160, exY(560) + 98], [Gw, 199, exY(480) + 92], [Gw, 60, exY(370) + 82], [Gd, 150, 0], [Gmov, 150, 0], [Gc, 210, 50], [Gw, 84, exY(-200) - 160]];
+      const pts = [[Gw, 160, exY(560) + 98], [Gw, 178, exY(480) + 92], [Gw, 60, exY(370) + 82], [Gd, 150, 0], [Gmov, 150, 0], [Gc, 210, 50], [Gw, 84, exY(-200) - 160]];
       for (let i = 0; i < pts.length; i++) {
         const [g, x, y] = pts[i];
         const v = i === 6 ? xf(Gw, x, y, 250, tmp) : xf(g, x, y, 0, tmp);
