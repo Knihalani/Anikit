@@ -91,13 +91,15 @@ const rotate = (rx, ry, rz, p) => {
 };
 
 let sy = scrollY, t = 0;
+const intro = { v: reduced || scrollY > 10 ? 0 : 1 };
 const pose = (k, out) => {
   const knotScale = small ? 0.62 : 0.86;
   // A: assembled in the hero (screen-fixed), slowly turning, tilted by the pointer.
   const hx = small ? vw / 2 : vw * 0.66, hy = small ? vh * 0.3 : vh * 0.46;
   const [ax, ay] = toWorld(hx, hy);
   const grx = 58 + tilt.x, gry = t * 14 + tilt.y, grz = t * 6;
-  const b = clamp((sy - breakTop * 0.15) / (breakTop + breakH * 0.35 - breakTop * 0.15)); // the burst
+  // The burst: scrubbed by scroll, plus the intro, where the pieces fly in and lock together.
+  const b = Math.max(clamp((sy - breakTop * 0.15) / (breakTop + breakH * 0.35 - breakTop * 0.15)), intro.v * (0.6 + (k % 3) * 0.2));
   const d = clamp((sy - (breakTop + breakH * 0.25)) / (breakH * 0.75)); // flight to the docks
   const rc = rotate(grx, gry, grz, pieces[k].c);
   const burst = ease(b) * (small ? 260 : 420);
@@ -229,6 +231,7 @@ const frame = (dt) => {
   if (total > 12 && slow.length < 50) slow.push({ y: scrollY, total: +total.toFixed(1), r3: +ms.toFixed(1), passes: r3.stats });
 };
 engine.onFrame((_t, dt) => frame(dt));
+if (intro.v) animate(intro, { v: 0 }, { duration: 1.6, ease: 'spring(bounce: 0.18, duration: 1.4)', delay: 0.1 });
 if (location.search.includes('debug')) {
   // Profiling hook: render the pose at scroll position y, n times, and return the times.
   window.__at = (y, n = 5) => { const out = []; for (let i = 0; i < n; i++) { sy = y; for (let k = 0; k < PIECES; k++) pose(k, pieces[k].inst); const a = performance.now(); r3.render(cam, items, env); out.push(+(performance.now() - a).toFixed(1)); } return out; };

@@ -72,6 +72,8 @@ code.pill { font-family: Mono, monospace; font-size: 14px; cursor: text; user-se
 .demo { min-height: 120vh; display: flex; align-items: center; padding: 10vh var(--gut); }
 .demo[data-side='right'] { justify-content: flex-end; }
 .panel { width: min(560px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: clamp(20px, 3vw, 36px); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35); }
+.panel { transition: border-color 0.4s; }
+.panel:hover { border-color: color-mix(in oklab, var(--accent) 45%, var(--line)); }
 .panel.wide { width: min(720px, 100%); }
 .panel h2 { font-size: clamp(34px, 4.2vw, 56px); margin: 6px 0 14px; }
 .panel p { color: #cfd3dd; margin: 0 0 18px; }
