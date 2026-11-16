@@ -9,6 +9,8 @@
 import { Playable } from './playable';
 import { engine } from './core';
 import { Timeline } from './timeline';
+import { checkKeys } from './debug';
+import type { OptionKeys } from './debug';
 
 export interface InspectorOptions {
   /** Panel title. */
@@ -19,7 +21,10 @@ export interface InspectorOptions {
   container?: Element;
 }
 
+const INSPECTOR_KEYS: OptionKeys<InspectorOptions> = { title: 0, paused: 0, container: 0 };
+
 export function inspector(anim: Playable, options: InspectorOptions = {}) {
+  checkKeys('inspector()', options, INSPECTOR_KEYS);
   if (typeof document === 'undefined') return { destroy() {}, revert() {} };
   const root = document.createElement('div');
   root.style.cssText =

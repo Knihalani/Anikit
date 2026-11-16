@@ -22,7 +22,7 @@ import {
   claimAll, unclaimAll, Owner, stateOf, TEXT_PROPS, markDirty, transformUnit, TargetState, snapshot, composeTransform, kebab, computed, camel,
 } from './props';
 import { Playable, Callbacks, Linked } from './playable';
-import { warn, didYouMean, describe, cssPropertyNames, suggest, warningsOn, checkSeconds, checkTargets } from './debug';
+import { warn, didYouMean, describe, cssPropertyNames, suggest, warningsOn, checkSeconds, checkTargets, docLink } from './debug';
 import { stagger as staggerFn } from './stagger';
 import type { StaggerOptions } from './stagger';
 import type { OptionKeys } from './debug';
@@ -227,7 +227,7 @@ function checkAnimateOptions(given: AnimateOptions, o: AnimateOptions): void {
   for (const k of Object.keys(given)) {
     if (OPTION_KEYS.has(k) || EXTRA_OPTION_KEYS.has(k)) continue;
     const alias = OPTION_ALIASES[k];
-    warn(`unknown animation option "${k}"; it is ignored.${alias ? ` Use ${alias} instead.` : didYouMean(k, OPTION_KEYS)}`);
+    warn(`unknown animation option "${k}"; it is ignored.${alias ? ` Use ${alias} instead.` : didYouMean(k, OPTION_KEYS)} See ${docLink('animate()')}`);
   }
   checkSeconds('animate()', 'duration', o.duration);
   checkSeconds('animate()', 'delay', o.delay);
@@ -674,6 +674,8 @@ export function _setNumberTracks(on: boolean): boolean {
   numberTracks = on;
   return prev;
 }
+/** Playback rate of an animation under reduced motion 'instant': any duration ends within one frame. */
+const JUMP_RATE = 1e12;
 /** `false`: never create a multi-target animation's nodes in one batch (tests compare both). */
 let batchCreate = true;
 /** `_fast`'s value scratch (JS memory, not the core's), and whether a call is using it. */
@@ -997,6 +999,8 @@ export class Animation extends Playable {
   /** The group's node record (registered while the group exists). */
   private _grec: NodeRecord | null = null;
   private _immediate = false;
+  /** Reduced motion 'instant': real timing, played at `JUMP_RATE` (see `_build1`). */
+  _jump = false;
   /** Set while `_build` runs (see `_partEmpty`). */
   private _building = false;
   /** Restorers for `revert()` (captured before the first write). */
@@ -1059,9 +1063,15 @@ export class Animation extends Playable {
     const cs = COLOR_SPACES[o.colorSpace ?? 'oklab'] ?? 2;
     // Reduced motion: everything jumps ('instant'), or only movement does ('fade').
     const reducedAny = prefersReduced();
-    const reduce = reducedAny && reducedMotionMode() === 'instant';
-    const still = reducedAny && !reduce;
-    const repeat = reduce || o.repeat === undefined ? 0 : o.repeat < 0 ? Infinity : o.repeat;
+    const instant = reducedAny && reducedMotionMode() === 'instant';
+    const still = reducedAny && !instant;
+    // 'instant' on a top-level animation keeps its real timing, so progress
+    // and seeks (scroll(), scrub) still map onto it, and plays it at a rate
+    // that finishes on the next frame (`_jump`). Timeline children and set()
+    // collapse to zero duration as before.
+    const reduce = instant && (!!ctx.child || !!ctx.set);
+    this._jump = instant && !reduce;
+    const repeat = instant || o.repeat === undefined ? 0 : o.repeat < 0 ? Infinity : o.repeat;
     const direction =
       o.direction !== undefined ? DIRECTIONS[o.direction] ?? 0 : o.yoyo ? DIRECTIONS.alternate : 0;
     let fill = FL_FILL_BACKWARDS | FL_FILL_FORWARDS;
@@ -1145,7 +1155,7 @@ export class Animation extends Playable {
         if (kind === Kind.Style && i === 0 && !isKnownStyle(target as HTMLElement, prop)) {
           const s = suggest(prop, [...cssPropertyNames(), ...TRANSFORM_PROPS, ...SPECIAL_PROPS, ...OPTION_KEYS]);
           const hint = !s ? '' : OPTION_KEYS.has(s) ? ` Did you mean the option "${s}"? (Options can go in the third argument or among the properties.)` : ` Did you mean "${s}"?`;
-          warn(`"${prop}" is not a CSS property of ${describe(target)}; it will be written as an inline style anyway.${hint}`);
+          warn(`"${prop}" is not a CSS property of ${describe(target)}; it will be written as an inline style anyway.${hint} See ${docLink('animate()')}`);
         }
         let raw = dynamic[pi] ? spec.values.map((v) => resolve(v, target, i, n)) : (spec.values as Array<Scalar | null>);
         // A function may return keyframes for its target: `y: (el, i) => [0, i * 10]`.
@@ -1337,7 +1347,8 @@ export class Animation extends Playable {
       return;
     }
     this._end = w.ak_duration(this._h) / 1000;
-    if (o.speed !== undefined && o.speed !== 1) w.ak_set_rate(this._h, o.speed);
+    if (this._jump) w.ak_set_rate(this._h, JUMP_RATE);
+    else if (o.speed !== undefined && o.speed !== 1) w.ak_set_rate(this._h, o.speed);
     if (ctx.set) {
       w.ak_seek(this._h, 0);
       flush();

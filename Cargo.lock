@@ -10,6 +10,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "anikit-node"
+version = "0.1.0"
+dependencies = [
+ "anikit-core",
+ "anikit-wasm",
+ "dlmalloc",
+ "libc",
+]
+
+[[package]]
 name = "anikit-py"
 version = "0.1.0"
 dependencies = [

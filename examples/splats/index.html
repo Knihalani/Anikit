@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anikit — Gaussian splats</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #07080b; color: #c9cfff; font: 12px/1.4 ui-monospace, monospace; overflow: hidden; }
+  #stage { position: fixed; inset: 0; }
+  #hud { position: fixed; left: 16px; bottom: 14px; opacity: 0.85; white-space: pre; pointer-events: none; }
+  #ui { position: fixed; right: 16px; top: 14px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; max-width: 70vw; }
+  button { background: #111a; color: inherit; border: 1px solid #4458; padding: 4px 10px; font: inherit; cursor: pointer; }
+  button:hover { border-color: #88f; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="ui">
+  <button data-to="text">text</button>
+  <button data-to="torus">torus knot</button>
+  <button data-to="gyroid">gyroid</button>
+  <button data-to="sphere">sphere</button>
+  <button id="explode">explode</button>
+  <button id="swirl">swirl</button>
+  <button id="dissolve">dissolve</button>
+  <button id="reveal">reveal</button>
+  <label><input type="file" id="file" accept=".ply,.splat" hidden><button onclick="file.click()">open .ply / .splat</button></label>
+</div>
+<div id="hud"></div>
+<script type="module">
+  // Every splat set here is procedural: no downloads. Drag to orbit, wheel to
+  // zoom. ?n=500000 sets the splat count; ?url=… loads a .ply/.splat instead.
+  import { ready, animate, engine } from '../../packages/anikit/dist/anikit.js';
+  import { splats } from '../../packages/anikit/dist/splats.js';
+  await ready;
+  const q = new URLSearchParams(location.search);
+  const N = +(q.get('n') ?? 200_000);
+
+  const hue = (h) => [0.5 + 0.5 * Math.cos(6.283 * h), 0.5 + 0.5 * Math.cos(6.283 * (h + 0.33)), 0.5 + 0.5 * Math.cos(6.283 * (h + 0.67))];
+  // Torus knot SDF (approximate: distance to a sampled (2,3) curve).
+  const knot = [];
+  for (let i = 0; i < 400; i++) {
+    const t = (i / 400) * Math.PI * 2;
+    const r = 0.6 + 0.25 * Math.cos(3 * t);
+    knot.push([r * Math.cos(2 * t), r * Math.sin(2 * t), 0.25 * Math.sin(3 * t)]);
+  }
+  const knotSdf = (x, y, z) => {
+    let d = 1e9;
+    for (const p of knot) d = Math.min(d, (x - p[0]) ** 2 + (y - p[1]) ** 2 + (z - p[2]) ** 2);
+    return Math.sqrt(d) - 0.12;
+  };
+  const sets = {
+    text: () => splats.fromText('anikit', { count: N, width: 2.4, depth: 0.15, color: (i, x, y) => hue(0.55 + x * 0.12) }),
+    sphere: () => splats.fromSDF((x, y, z) => Math.hypot(x, y, z) - 0.9, { count: N, color: (i, x, y, z) => hue(0.6 + y * 0.2) }),
+    torus: () => splats.fromSDF(knotSdf, { count: Math.min(N, 60_000), bounds: 1.1, color: (i, x, y, z) => hue(Math.atan2(y, x) / 6.283) }),
+    gyroid: () => splats.fromSDF((x, y, z) => {
+      const s = 5;
+      const g = Math.sin(x * s) * Math.cos(y * s) + Math.sin(y * s) * Math.cos(z * s) + Math.sin(z * s) * Math.cos(x * s);
+      return Math.max(g / s, Math.hypot(x, y, z) - 0.95);
+    }, { count: N, bounds: 1, color: (i, x, y, z) => hue(0.1 + z * 0.3) }),
+  };
+  const cache = {};
+  const get = (k) => (cache[k] ??= sets[k]());
+
+  const url = q.get('url');
+  const first = url ? await splats.load(url) : get('text');
+  const layer = splats('#stage', first, { background: '#07080b', orbit: true, camera: { z: 3.2, fov: 45 } });
+  window.layer = layer;
+  layer.reveal({ duration: 1.6, ease: 'outCubic' });
+  const spin = animate(layer.transform, { rotateY: [-14, 14] }, { duration: 6, direction: 'alternate', repeat: -1, ease: 'inOutSine' });
+
+  for (const b of document.querySelectorAll('[data-to]')) {
+    b.onclick = () => layer.morph(get(b.dataset.to), { duration: 2.2, spread: 0.8 });
+  }
+  explode.onclick = async () => { await layer.explode({ to: 1.6, duration: 0.9 }); layer.explode({ to: 0, duration: 1.6, ease: 'inOutCubic' }); };
+  swirl.onclick = () => { layer.fx.swirl = 0; layer.swirl({ to: 1, duration: 2.5, ease: 'inOutCubic' }).then(() => (layer.fx.swirl = 0)); };
+  dissolve.onclick = async () => { await layer.dissolve({ to: 1, duration: 1.4 }); layer.dissolve({ to: 0, duration: 1.4 }); };
+  reveal.onclick = () => layer.reveal({ duration: 1.6 });
+  file.onchange = async () => {
+    const f = file.files?.[0];
+    if (!f) return;
+    const set = splats.parse(await f.arrayBuffer(), f.name.endsWith('.splat') ? 'splat' : 'ply');
+    spin.pause();
+    layer.setSplats(set);
+    Object.assign(layer.camera, { x: 0, y: 0, z: 4, tx: 0, ty: 0, tz: 0 });
+  };
+
+  let last = performance.now(), frames = 0, fps = 0;
+  engine.onFrame(() => {
+    frames++;
+    const now = performance.now();
+    if (now - last > 500) { fps = (frames * 1000) / (now - last); frames = 0; last = now; }
+    const s = layer.stats;
+    hud.textContent = `${s.count.toLocaleString()} splats · ${fps.toFixed(0)} fps · sort ${s.sortMs.toFixed(1)} ms ${s.worker ? '(worker)' : '(main thread)'} · ${s.sorts} sorts`;
+  });
+</script>
+</body>
+</html>

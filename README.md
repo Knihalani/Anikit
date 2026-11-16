@@ -20,6 +20,17 @@ engine.onFrame(() => g.render(scene, cloud));             // particles → light
 await record('#hero', { duration: 2 });                   // frame-exact GIF
 ```
 
+**Fastest start:** `npx anikit new vanilla my-site` (or `vite`, `react`) writes a working animated page, and one call per pattern builds the polish:
+
+```ts
+import { recipe } from 'anikit';
+recipe('hero-reveal', '.hero');                           // masked headline rise
+recipe('scroll-story', 'main', { children: 'section' });  // sections rise in on scroll
+recipe('magnetic-buttons', '.hero');                      // buttons lean towards the cursor
+```
+
+Framework adapters: `anikit/react` (`useAnimate`, `useSpring`, `useScroll`, `useRecipe`, `<Presence>`), `anikit/vue` (`v-recipe`, `v-anikit`), `anikit/svelte` (`use:recipe`, `use:anikit`). Agents: [`llms.txt`](llms.txt), [`AGENTS.md`](packages/anikit/AGENTS.md) and a JSON Schema of every option ([`docs/api.schema.json`](docs/api.schema.json)). How it compares with GSAP, Motion and anime.js, feature by feature: [`docs/parity.md`](docs/parity.md).
+
 ```python
 import anikit
 

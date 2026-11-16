@@ -55,9 +55,11 @@ export async function loadAnikit(o = {}) {
   const { existsSync } = await import('node:fs');
   if (!existsSync(dist)) throw new Error(`anikit/node: ${dist} is missing; build the package first (npm run build in packages/anikit)`);
   warnIfStale(dist);
+  const native = o.native === false ? null : loadNative();
+  if (native) globalThis.__ANIKIT_NATIVE__ = native;
   const anikit = await import(dist);
   await anikit.ready;
-  return { anikit, node: nodeHelpers(lib) };
+  return { anikit, node: nodeHelpers(lib), native: !!native };
 }
 
 /**
@@ -78,6 +80,22 @@ function warnIfStale(dist) {
   } catch {
     // Best effort only.
   }
+}
+
+/**
+ * The native core (`native/anikit.node`, built by `node scripts/build-native.mjs`):
+ * the same exports as the WebAssembly module, compiled for this CPU. Rendering
+ * uses it when present; ANIKIT_NATIVE=0 forces WebAssembly, ANIKIT_NATIVE=<path>
+ * loads another build.
+ */
+export function loadNative() {
+  const env = process.env.ANIKIT_NATIVE;
+  if (env === '0') return null;
+  const file = env && env !== '1' ? env : join(here, '../native/anikit.node');
+  if (!require_fs.existsSync(file)) return null;
+  const m = { exports: {} };
+  process.dlopen(m, file);
+  return m.exports;
 }
 
 function nodeHelpers(lib) {
@@ -139,16 +157,24 @@ export async function renderToFile(comp, o) {
   const canvas = o.canvas ?? canvasLib().createCanvas(w, h);
   const t0 = Date.now();
   let n = 0;
-  await comp.render({
-    canvas, from: o.from, to: o.to, preroll: o.preroll, readPixels, createCanvas: (w, h) => canvasLib().createCanvas(w, h),
-    onFrame: async (fr) => {
-      // Copy out of wasm memory: the pipe may not drain before the next frame.
-      const wait = write(Buffer.from(fr.i420()));
-      if (wait) await wait;
-      n++;
-      o.onProgress?.(fr, n, (Date.now() - t0) / 1000);
-    },
-  });
+  // `o.stopAfter(index)`: end the video after this frame (the CLI hands the rest of
+  // a slow slice to an idle worker); unwinds out of render() with a sentinel.
+  const STOP = Symbol('stop');
+  try {
+    await comp.render({
+      canvas, from: o.from, to: o.to, preroll: o.preroll, readPixels, createCanvas: (w, h) => canvasLib().createCanvas(w, h),
+      onFrame: async (fr) => {
+        // Copy out of wasm memory: the pipe may not drain before the next frame.
+        const wait = write(Buffer.from(fr.i420()));
+        if (wait) await wait;
+        n++;
+        o.onProgress?.(fr, n, (Date.now() - t0) / 1000);
+        if (o.stopAfter?.(fr.index)) throw STOP;
+      },
+    });
+  } catch (e) {
+    if (e !== STOP) throw e;
+  }
   ff.stdin.end();
   await done;
   return { frames: n, seconds: (Date.now() - t0) / 1000 };

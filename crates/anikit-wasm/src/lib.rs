@@ -60,6 +60,9 @@ struct State {
     meshes: Vec<Option<anikit_core::raster::Mesh>>,
     rasters: Vec<Option<(anikit_core::raster::Raster, Vec<f32>)>>,
     textures: Vec<Option<anikit_core::raster::Texture>>,
+    gs_data: Vec<f32>,
+    gs_packed: Vec<u32>,
+    gs_sorters: Vec<Option<anikit_core::gsplat::Sorter>>,
 }
 
 struct VideoSlot {
@@ -93,6 +96,9 @@ static STATE: Global = Global(UnsafeCell::new(State {
     meshes: Vec::new(),
     rasters: Vec::new(),
     textures: Vec::new(),
+    gs_data: Vec::new(),
+    gs_packed: Vec::new(),
+    gs_sorters: Vec::new(),
 }));
 
 #[inline(always)]
@@ -101,6 +107,23 @@ fn st() -> &'static mut State {
     // SAFETY: single-threaded; each export obtains the reference once and
     // never re-enters (no callbacks into the host while it is held).
     unsafe { &mut *STATE.0.get() }
+}
+
+/// Subtracted from addresses the host reads out of buffers (`ak_values_ptrs`,
+/// `ak_mesh_ptr`): 0 in WebAssembly, where addresses are already offsets into
+/// linear memory; the native Node addon sets it to the base of its arena.
+pub static HOST_BASE: core::sync::atomic::AtomicUsize = core::sync::atomic::AtomicUsize::new(0);
+
+/// An address as the host sees it (0 stays 0).
+#[inline]
+fn host_addr<T>(p: *const T) -> usize {
+    let base = HOST_BASE.load(core::sync::atomic::Ordering::Relaxed);
+    // Null, and the dangling address of an empty buffer below the arena, read as 0.
+    if p.is_null() || (p as usize) < base {
+        0
+    } else {
+        p as usize - base
+    }
 }
 
 const ERR_EASING: u32 = 0xFFFF_FFFE;
@@ -586,7 +609,7 @@ pub extern "C" fn ak_values_ptrs(n: u32) {
     let s = st();
     let n = (n as usize).min(s.f64_buf.len());
     for i in 0..n {
-        s.f64_buf[i] = s.engine.values_ptr(s.f64_buf[i] as u32) as usize as f64;
+        s.f64_buf[i] = host_addr(s.engine.values_ptr(s.f64_buf[i] as u32)) as f64;
     }
 }
 #[no_mangle]
@@ -1954,12 +1977,12 @@ pub extern "C" fn ak_mesh_custom(nverts: u32, ntris: u32) -> u32 {
 pub extern "C" fn ak_mesh_ptr(id: u32, which: u32) -> usize {
     match st().meshes.get_mut(id as usize).and_then(|m| m.as_mut()) {
         Some(m) => match which {
-            0 => m.pos.as_mut_ptr() as usize,
-            1 => m.nrm.as_mut_ptr() as usize,
-            2 => m.idx.as_mut_ptr() as usize,
+            0 => host_addr(m.pos.as_mut_ptr()),
+            1 => host_addr(m.nrm.as_mut_ptr()),
+            2 => host_addr(m.idx.as_mut_ptr()),
             3 => m.pos.len() / 3,
             4 => m.idx.len() / 3,
-            5 => m.uv.as_mut_ptr() as usize,
+            5 => host_addr(m.uv.as_mut_ptr()),
             _ => 0,
         },
         None => 0,
@@ -2426,4 +2449,99 @@ pub extern "C" fn ak_surface_nets(nx: u32, ny: u32, nz: u32, ox: f64, oy: f64, o
     let d: Vec<f32> = state.f64_buf[..n].iter().map(|&v| v as f32).collect();
     let m = anikit_core::sdf::surface_nets(&d, nx as usize, ny as usize, nz as usize, [ox as f32, oy as f32, oz as f32], s as f32);
     push_slot(&mut state.meshes, m)
+}
+
+// ---------------------------------------------------------------------------
+// Gaussian splats (WebGL renderer): parsing, packing, depth sorting
+// ---------------------------------------------------------------------------
+
+/// Parse `len` bytes of the u8 scratch buffer (`kind` 0 = `.ply`, 1 = `.splat`)
+/// into the canonical splat buffer (`ak_gs_data_ptr`). Returns the splat
+/// count, or a negative error: −1 not a PLY, −2 unsupported format,
+/// −3 no positions, −4 truncated.
+#[no_mangle]
+pub extern "C" fn ak_gs_parse(kind: u32, len: u32) -> i32 {
+    use anikit_core::gsplat::{parse_ply, parse_splat, PlyError, STRIDE};
+    let s = st();
+    let bytes = &s.u8_buf[..(len as usize).min(s.u8_buf.len())];
+    let r = if kind == 0 { parse_ply(bytes) } else { Ok(parse_splat(bytes)) };
+    match r {
+        Ok(v) => {
+            s.gs_data = v;
+            (s.gs_data.len() / STRIDE) as i32
+        }
+        Err(PlyError::NotPly) => -1,
+        Err(PlyError::Format) => -2,
+        Err(PlyError::MissingPosition) => -3,
+        Err(PlyError::Truncated) => -4,
+    }
+}
+
+/// The canonical splat buffer, resized for `n` splats (14 floats each).
+#[no_mangle]
+pub extern "C" fn ak_gs_data(n: u32) -> *mut f32 {
+    let s = st();
+    s.gs_data.resize(n as usize * anikit_core::gsplat::STRIDE, 0.0);
+    s.gs_data.as_mut_ptr()
+}
+
+/// Pack the canonical buffer into 8 `u32` words per splat; returns their address.
+#[no_mangle]
+pub extern "C" fn ak_gs_pack() -> *const u32 {
+    use anikit_core::gsplat::{pack, PACKED, STRIDE};
+    let s = st();
+    let n = s.gs_data.len() / STRIDE;
+    s.gs_packed.resize(n * PACKED, 0);
+    pack(&s.gs_data, &mut s.gs_packed);
+    s.gs_packed.as_ptr()
+}
+
+/// New depth sorter; returns its id.
+#[no_mangle]
+pub extern "C" fn ak_gs_sorter_create() -> u32 {
+    let s = st();
+    let v = Some(anikit_core::gsplat::Sorter::default());
+    if let Some(i) = s.gs_sorters.iter().position(|c| c.is_none()) {
+        s.gs_sorters[i] = v;
+        return i as u32;
+    }
+    s.gs_sorters.push(v);
+    (s.gs_sorters.len() - 1) as u32
+}
+
+#[no_mangle]
+pub extern "C" fn ak_gs_sorter_free(id: u32) {
+    if let Some(c) = st().gs_sorters.get_mut(id as usize) {
+        *c = None;
+    }
+}
+
+/// Centre buffer (`x y z` per splat) of set `set` (0 = A, 1 = morph target B)
+/// resized for `n` splats; `n = 0` on set 1 drops the morph target.
+#[no_mangle]
+pub extern "C" fn ak_gs_sorter_centers(id: u32, n: u32, set: u32) -> *mut f32 {
+    match st().gs_sorters.get_mut(id as usize).and_then(|c| c.as_mut()) {
+        Some(so) if set == 0 => {
+            so.resize(n as usize);
+            so.a.as_mut_ptr()
+        }
+        Some(so) => {
+            so.b.resize(n as usize * 3, 0.0);
+            so.b.as_mut_ptr()
+        }
+        None => core::ptr::null_mut(),
+    }
+}
+
+/// Sort back to front by `d = vx·x + vy·y + vz·z + vw` (larger = nearer);
+/// returns the address of the order (`u32` per splat, furthest first).
+#[no_mangle]
+pub extern "C" fn ak_gs_sort(id: u32, vx: f64, vy: f64, vz: f64, vw: f64, mix: f64) -> *const u32 {
+    match st().gs_sorters.get_mut(id as usize).and_then(|c| c.as_mut()) {
+        Some(so) => {
+            so.sort([vx as f32, vy as f32, vz as f32, vw as f32], mix as f32);
+            so.order.as_ptr()
+        }
+        None => core::ptr::null(),
+    }
 }
