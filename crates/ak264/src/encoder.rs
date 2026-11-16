@@ -388,6 +388,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         // Intra 16x16 decision.
         let e16 = self.edges16(mbx, mby);
         let mut pred = [0u8; 256];
+        let mut pred16 = [0u8; 256];
         let mut best16 = (u32::MAX, 2u8);
         for m in 0..4u8 {
             if !Self::intra16_modes_ok(&e16, m) {
@@ -397,6 +398,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             let s = dsp::satd(src_y, &pred, 16, 16);
             if s < best16.0 {
                 best16 = (s, m);
+                pred16 = pred;
             }
         }
         let cost16 = best16.0 + lambda as u32 * if c.idr { 4 } else { 8 };
@@ -429,7 +431,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             // Encode I4x4 tentatively (writes recon).
             let (cost4, modes) = self.code_i4(mbx, mby, src_y, &mut cd, true);
             if cost4 < best_cost {
-                self.finish_intra(mbx, mby, src_c, &mut cd, Kind::I4, Some(modes));
+                self.finish_intra(mbx, mby, src_c, &mut cd, Kind::I4, Some(modes), None);
                 return;
             }
             cd = Coded::new();
@@ -440,7 +442,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 self.code_inter(mbx, mby, src_y, src_c, &it);
             }
             Kind::I16(_) | Kind::I4 => {
-                self.finish_intra(mbx, mby, src_c, &mut cd, kind, None);
+                self.finish_intra(mbx, mby, src_c, &mut cd, kind, None, Some((src_y, &pred16)));
             }
         }
     }
@@ -834,20 +836,12 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         cd: &mut Coded,
         kind: Kind,
         modes: Option<[u8; 16]>,
+        i16: Option<(&[u8; 256], &[u8; 256])>,
     ) {
         let q = self.c.q;
-        if let Kind::I16(m) = kind {
-            let e16 = self.edges16(mbx, mby);
-            let mut pred = [0u8; 256];
-            intra::pred16(&e16, m, &mut pred);
-            let mut src = [0u8; 256];
-            let base = self.c.src.y.off(mbx as isize * 16, mby as isize * 16);
-            let ss = self.c.src.y.stride;
-            for y in 0..16 {
-                src[y * 16..y * 16 + 16].copy_from_slice(&self.c.src.y.data[base + y * ss..base + y * ss + 16]);
-            }
+        if let (Kind::I16(_), Some((src, pred))) = (kind, i16) {
             let mut recon = [0u8; 256];
-            luma_i16(&src, &pred, &q, &self.c.qs, cd, &mut recon);
+            luma_i16(src, pred, &q, &self.c.qs, cd, &mut recon);
             let base = self.yi(mbx * 16, mby * 16);
             for y in 0..16 {
                 self.b.y[base + y * self.ys..base + y * self.ys + 16].copy_from_slice(&recon[y * 16..y * 16 + 16]);
@@ -1713,8 +1707,8 @@ impl Encoder {
                     }
                 }
                 None => {
-                    for (i, ch) in self.changed.iter_mut().enumerate() {
-                        *ch = crate::diff::load_mb(y, u, v, f, i % mbw, i / mbw, true);
+                    for (mby, row) in self.changed.chunks_mut(mbw).enumerate() {
+                        crate::diff::load_row(y, u, v, f, mby, mbw, row);
                     }
                 }
             }

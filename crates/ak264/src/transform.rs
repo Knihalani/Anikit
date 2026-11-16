@@ -130,11 +130,11 @@ pub fn idct4(d: &[i32; 16]) -> [i32; 16] {
 pub fn hadamard4(c: &[i32; 16]) -> [i32; 16] {
     let mut t = [0i32; 16];
     for y in 0..4 {
-        let a = &c[y * 4..y * 4 + 4];
-        let s01 = a[0] + a[1];
-        let d01 = a[0] - a[1];
-        let s23 = a[2] + a[3];
-        let d23 = a[2] - a[3];
+        let (a0, a1, a2, a3) = (c[y * 4], c[y * 4 + 1], c[y * 4 + 2], c[y * 4 + 3]);
+        let s01 = a0 + a1;
+        let d01 = a0 - a1;
+        let s23 = a2 + a3;
+        let d23 = a2 - a3;
         t[y * 4] = s01 + s23;
         t[y * 4 + 1] = s01 - s23;
         t[y * 4 + 2] = d01 - d23;
@@ -142,10 +142,11 @@ pub fn hadamard4(c: &[i32; 16]) -> [i32; 16] {
     }
     let mut o = [0i32; 16];
     for x in 0..4 {
-        let s01 = t[x] + t[4 + x];
-        let d01 = t[x] - t[4 + x];
-        let s23 = t[8 + x] + t[12 + x];
-        let d23 = t[8 + x] - t[12 + x];
+        let (a0, a1, a2, a3) = (t[x], t[4 + x], t[8 + x], t[12 + x]);
+        let s01 = a0 + a1;
+        let d01 = a0 - a1;
+        let s23 = a2 + a3;
+        let d23 = a2 - a3;
         o[x] = s01 + s23;
         o[4 + x] = s01 - s23;
         o[8 + x] = d01 - d23;
@@ -186,6 +187,7 @@ pub fn dequant4(c: &mut [i32; 16], q: &Quant, keep_dc: bool) {
 }
 
 /// Luma DC (Intra16x16): forward Hadamard of 16 DCs (raster by block position) and quantise.
+#[inline]
 pub fn luma_dc_forward(dc: &[i32; 16], q: &Quant) -> [i32; 16] {
     let mut h = hadamard4(dc);
     let f = q.f_intra * 2;
@@ -196,6 +198,7 @@ pub fn luma_dc_forward(dc: &[i32; 16], q: &Quant) -> [i32; 16] {
 }
 
 /// Luma DC inverse: levels → dcY (8.5.10).
+#[inline]
 pub fn luma_dc_inverse(levels: &[i32; 16], qp: u8, v0: i32) -> [i32; 16] {
     let mut f = hadamard4(levels);
     let q6 = (qp / 6) as i32;
