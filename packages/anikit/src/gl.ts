@@ -136,9 +136,18 @@ export interface SceneMaterialOptions {
   toon?: boolean;
   /** Glass: Fresnel-weighted transparency with refraction-tinted environment. */
   glass?: boolean;
+  /**
+   * Colour texture, multiplied into `color` (and `emissive`, so a black, emissive material shows it unlit like a screen).
+   * A canvas or image (uploaded once), or a live source with `canvas` + `version` such as `htmlTexture(el)` /
+   * `htmlCanvas(el)` (re-uploaded only when `version` changes; pointer events on the mesh are forwarded to the element).
+   * UV (0, 0) is the image's top-left.
+   */
+  map?: MapSource | null;
 }
+/** A texture source for {@link SceneMaterialOptions.map}. */
+export type MapSource = HTMLCanvasElement | HTMLImageElement | ImageBitmap | { readonly canvas: HTMLCanvasElement; readonly version: number; readonly element?: Element; readonly width?: number; readonly height?: number };
 const MATERIAL_KEYS: OptionKeys<SceneMaterialOptions> = {
-  preset: 0, color: 0, metalness: 0, roughness: 0, emissive: 0, emissiveIntensity: 0, opacity: 0, toon: 0, glass: 0,
+  preset: 0, color: 0, metalness: 0, roughness: 0, emissive: 0, emissiveIntensity: 0, opacity: 0, toon: 0, glass: 0, map: 0,
 };
 const PRESETS: Record<MaterialPreset, SceneMaterialOptions> = {
   chrome: { color: '#f4f5f7', metalness: 1, roughness: 0.06 },
@@ -175,6 +184,8 @@ export class Material {
   toon = false;
   /** Glass shading. */
   glass = false;
+  /** Colour texture (see {@link SceneMaterialOptions.map}). */
+  map: MapSource | null = null;
   /** Stable id (used for state sorting). */
   readonly id = ++materialIds;
   constructor(o: SceneMaterialOptions | MaterialPreset = {}) { this.set(typeof o === 'string' ? { preset: o } : o); }
@@ -194,6 +205,7 @@ export class Material {
     if (o.opacity !== undefined) this.opacity = o.opacity;
     if (o.toon !== undefined) this.toon = o.toon;
     if (o.glass !== undefined) this.glass = o.glass;
+    if (o.map !== undefined) this.map = o.map;
     return this;
   }
 }
@@ -212,6 +224,8 @@ export interface ScenePointerEvent {
   point: [number, number, number];
   /** Distance from the camera. */
   distance: number;
+  /** Texture coordinate at the hit (meshes only; (0, 0) = image top-left). */
+  uv: [number, number] | null;
   /** The DOM event that caused it. */
   event: PointerEvent | MouseEvent;
 }
@@ -239,7 +253,7 @@ const OBJECT_KEYS: OptionKeys<ObjectOptions> = { position: 0, rotation: 0, scale
 
 interface GpuGeometry {
   id: number; vao: WebGLVertexArrayObject; count: number; type: number;
-  buffers: WebGLBuffer[]; geometry: Geometry; center: [number, number, number]; radius: number;
+  buffers: WebGLBuffer[]; uvBuffer: WebGLBuffer | null; geometry: Geometry; center: [number, number, number]; radius: number;
 }
 
 /**
@@ -504,6 +518,8 @@ export interface RayHit {
   point: [number, number, number];
   /** Distance from the camera. */
   distance: number;
+  /** Texture coordinate at the hit (meshes only). */
+  uv?: [number, number];
 }
 
 /** Live counters for the last frame. */
@@ -554,13 +570,13 @@ vec3 envMap(vec3 d, float r) {
 }`;
 const COMMON_VS = `#version 300 es
 ${UBO}
-layout(location=0) in vec3 aPos; layout(location=1) in vec3 aNor;
+layout(location=0) in vec3 aPos; layout(location=1) in vec3 aNor; layout(location=2) in vec2 aUv;
 #ifdef INSTANCED
 layout(location=3) in vec4 aI0; layout(location=4) in vec4 aI1; layout(location=5) in vec4 aI2; layout(location=6) in vec4 aI3;
 layout(location=7) in vec3 aTint;
 #endif
 uniform mat4 uModel;
-out vec3 vPos; out vec3 vNor; out vec4 vShadow; out vec3 vTint;
+out vec3 vPos; out vec3 vNor; out vec4 vShadow; out vec3 vTint; out vec2 vUv;
 void main() {
   mat4 m = uModel; vec3 tint = vec3(1.0);
 #ifdef INSTANCED
@@ -570,7 +586,7 @@ void main() {
 #ifdef DEPTH
   gl_Position = uLightVP * wp;
 #else
-  vPos = wp.xyz; vNor = transpose(inverse(mat3(m))) * aNor; vShadow = uLightVP * wp; vTint = tint;
+  vPos = wp.xyz; mat3 r = mat3(m); vNor = r * (aNor / vec3(dot(r[0], r[0]), dot(r[1], r[1]), dot(r[2], r[2]))); vShadow = uLightVP * wp; vTint = tint; vUv = aUv;
   gl_Position = uProj * uView * wp;
 #endif
 }`;
@@ -581,8 +597,8 @@ precision highp float; precision highp sampler2DShadow;
 ${UBO}
 ${ENV}
 uniform vec4 uColor; uniform vec4 uPbr; uniform vec3 uEmissive;
-uniform sampler2DShadow uShadow;
-in vec3 vPos; in vec3 vNor; in vec4 vShadow; in vec3 vTint;
+uniform sampler2DShadow uShadow; uniform sampler2D uMap; uniform float uHasMap;
+in vec3 vPos; in vec3 vNor; in vec4 vShadow; in vec3 vTint; in vec2 vUv;
 out vec4 outColor;
 float pcf(float ndl) {
   vec3 p = vShadow.xyz / vShadow.w * 0.5 + 0.5;
@@ -590,15 +606,21 @@ float pcf(float ndl) {
   float bias = 0.0008 + 0.002 * (1.0 - ndl);
   vec2 t = 1.0 / vec2(textureSize(uShadow, 0));
   float s = 0.0;
-  for (int x = -1; x <= 1; x++) for (int y = -1; y <= 1; y++) s += texture(uShadow, vec3(p.xy + vec2(x, y) * t * 1.25, p.z - bias));
-  return s / 9.0;
+  // 4 hardware-filtered taps (each a bilinear 2×2 compare): a smooth 4×4 PCF footprint.
+  s += texture(uShadow, vec3(p.xy + vec2(-0.75, -0.75) * t, p.z - bias));
+  s += texture(uShadow, vec3(p.xy + vec2(0.75, -0.75) * t, p.z - bias));
+  s += texture(uShadow, vec3(p.xy + vec2(-0.75, 0.75) * t, p.z - bias));
+  s += texture(uShadow, vec3(p.xy + vec2(0.75, 0.75) * t, p.z - bias));
+  return s * 0.25;
 }
 vec3 aces(vec3 x) { return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
 void main() {
   vec3 N = normalize(vNor); if (!gl_FrontFacing) N = -N;
   vec3 V = normalize(uCam.xyz - vPos);
-  vec3 albedo = uColor.rgb * vTint;
-  float metal = uPbr.x, rough = clamp(uPbr.y, 0.03, 1.0), flags = uPbr.w, opacity = uColor.a;
+  vec4 tx = vec4(1.0);
+  if (uHasMap > 0.5) { tx = texture(uMap, vUv); tx.rgb = pow(tx.rgb, vec3(2.2)); }
+  vec3 albedo = uColor.rgb * vTint * tx.rgb;
+  float metal = uPbr.x, rough = clamp(uPbr.y, 0.03, 1.0), flags = uPbr.w, opacity = uColor.a * tx.a;
   vec3 L = uSunDir.xyz, H = normalize(L + V);
   float NdL = max(dot(N, L), 0.0), NdV = max(dot(N, V), 1e-4), NdH = max(dot(N, H), 0.0), VdH = max(dot(V, H), 0.0);
   float sh = uSunCol.w > 0.5 ? pcf(NdL) : 1.0;
@@ -637,7 +659,7 @@ void main() {
       opacity = clamp(opacity + fr * 1.5, 0.0, 1.0);
     }
   }
-  col += uEmissive * uPbr.z;
+  col += uEmissive * uPbr.z * tx.rgb;
   if (uSkyHor.w > 0.5) col = pow(aces(col * uCam.w), vec3(1.0 / 2.2));
   outColor = vec4(col * (flags > 1.5 ? 1.0 : opacity), opacity);
 }`;
@@ -807,6 +829,7 @@ export class Scene {
   private orbitCtl: Orbit | null = null;
   private domOff: Array<() => void> = [];
   private gpuGeoms = new Map<Geometry, GpuGeometry>();
+  private maps = new WeakMap<object, { tex: WebGLTexture; version: number }>();
   private alive = true;
 
   constructor(canvas: HTMLCanvasElement, o: SceneInit = {}) {
@@ -1075,10 +1098,13 @@ export class Scene {
     let down: [number, number] | null = null;
     const pos = (e: MouseEvent): [number, number] => [e.offsetX, e.offsetY];
     const fire = (type: string, h: RayHit | null, e: PointerEvent | MouseEvent, obj = h?.object ?? null) => {
+      // Live HTML maps: forward the event to the element under the hit's UV.
+      const map = h?.object.material?.map as { element?: Element } | null | undefined;
+      if (h?.uv && map && map.element && type !== 'pointerenter' && type !== 'pointerleave') forwardToElement(map.element, h.uv, type, e);
       for (let o: Object3D | null = obj; o; o = o.parent) {
         const set = o.handlers?.get(type);
         if (set && set.size) {
-          const ev: ScenePointerEvent = { object: h ? h.object : o, instance: h ? h.instance : -1, point: h ? h.point : [0, 0, 0], distance: h ? h.distance : 0, event: e };
+          const ev: ScenePointerEvent = { object: h ? h.object : o, instance: h ? h.instance : -1, point: h ? h.point : [0, 0, 0], distance: h ? h.distance : 0, uv: h?.uv ?? null, event: e };
           for (const fn of set) fn(ev);
         }
       }
@@ -1112,7 +1138,7 @@ export class Scene {
   private attach(obj: Object3D, parent?: Object3D): Object3D {
     obj.scene = this;
     if (parent) parent.add(obj); else this.objects.push(obj);
-    if (obj.handlers) this.listen();
+    if (obj.handlers || (obj.material?.map as { element?: Element } | null)?.element) this.listen();
     return obj;
   }
 
@@ -1193,6 +1219,12 @@ export class Scene {
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, nb); gl.bufferData(gl.ARRAY_BUFFER, g.normals, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
+    let ub: WebGLBuffer | null = null;
+    if (g.uvs && g.uvs.length * 3 === g.positions.length * 2) {
+      ub = gl.createBuffer()!;
+      gl.bindBuffer(gl.ARRAY_BUFFER, ub); gl.bufferData(gl.ARRAY_BUFFER, g.uvs, gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 0, 0);
+    }
     const small = g.positions.length / 3 <= 65536;
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, small ? new Uint16Array(g.indices) : g.indices, gl.STATIC_DRAW);
@@ -1206,7 +1238,7 @@ export class Scene {
     const cx = (lx + hx) / 2 || 0, cy = (ly + hy) / 2 || 0, cz = (lz + hz) / 2 || 0;
     let r = 0;
     for (let i = 0; i < p.length; i += 3) r = Math.max(r, Math.hypot(p[i] - cx, p[i + 1] - cy, p[i + 2] - cz));
-    gg = { id: ++geomIds, vao, count: g.indices.length, type: small ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT, buffers: [pb, nb, ib], geometry: g, center: [cx, cy, cz], radius: r };
+    gg = { id: ++geomIds, vao, count: g.indices.length, type: small ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT, buffers: [pb, nb, ib], uvBuffer: ub, geometry: g, center: [cx, cy, cz], radius: r };
     this.gpuGeoms.set(g, gg);
     return gg;
   }
@@ -1218,6 +1250,7 @@ export class Scene {
     gl.bindVertexArray(vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, gg.buffers[0]); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, gg.buffers[1]); gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
+    if (gg.uvBuffer) { gl.bindBuffer(gl.ARRAY_BUFFER, gg.uvBuffer); gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 0, 0); }
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gg.buffers[2]);
     gl.bindBuffer(gl.ARRAY_BUFFER, ibuf);
     gl.bufferData(gl.ARRAY_BUFFER, count * 19 * 4, gl.DYNAMIC_DRAW);
@@ -1315,15 +1348,29 @@ export class Scene {
     if (!invert(inv, o.world)) return null;
     const lo = xform(inv, ro, 1), ld = xform(inv, rd, 0);
     const g = o.gpu!.geometry, p = g.positions, ix = g.indices;
-    let best = Infinity;
+    let best = Infinity, bt = -1;
     for (let t = 0; t < ix.length; t += 3) {
       const d = rayTri(lo, ld, p, ix[t] * 3, ix[t + 1] * 3, ix[t + 2] * 3);
-      if (d < best) best = d;
+      if (d < best) { best = d; bt = t; }
     }
     if (best === Infinity) return null;
     const lp = [lo[0] + ld[0] * best, lo[1] + ld[1] * best, lo[2] + ld[2] * best];
     const wp = xform(o.world, lp, 1);
-    return { object: o, instance: -1, point: [wp[0], wp[1], wp[2]], distance: Math.hypot(wp[0] - ro[0], wp[1] - ro[1], wp[2] - ro[2]) };
+    const hit: RayHit = { object: o, instance: -1, point: [wp[0], wp[1], wp[2]], distance: Math.hypot(wp[0] - ro[0], wp[1] - ro[1], wp[2] - ro[2]) };
+    const uv = g.uvs;
+    if (uv && uv.length * 3 === p.length * 2) {
+      // Barycentric weights of the hit point in the hit triangle → interpolated UV.
+      const a = ix[bt], b = ix[bt + 1], c = ix[bt + 2];
+      const v0 = [p[b * 3] - p[a * 3], p[b * 3 + 1] - p[a * 3 + 1], p[b * 3 + 2] - p[a * 3 + 2]];
+      const v1 = [p[c * 3] - p[a * 3], p[c * 3 + 1] - p[a * 3 + 1], p[c * 3 + 2] - p[a * 3 + 2]];
+      const v2 = [lp[0] - p[a * 3], lp[1] - p[a * 3 + 1], lp[2] - p[a * 3 + 2]];
+      const d00 = v0[0] * v0[0] + v0[1] * v0[1] + v0[2] * v0[2], d01 = v0[0] * v1[0] + v0[1] * v1[1] + v0[2] * v1[2];
+      const d11 = v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2], d20 = v2[0] * v0[0] + v2[1] * v0[1] + v2[2] * v0[2];
+      const d21 = v2[0] * v1[0] + v2[1] * v1[1] + v2[2] * v1[2], den = d00 * d11 - d01 * d01 || 1;
+      const wb = (d11 * d20 - d01 * d21) / den, wc = (d00 * d21 - d01 * d20) / den, wa = 1 - wb - wc;
+      hit.uv = [uv[a * 2] * wa + uv[b * 2] * wb + uv[c * 2] * wc, uv[a * 2 + 1] * wa + uv[b * 2 + 1] * wb + uv[c * 2 + 1] * wc];
+    }
+    return hit;
   }
 
   private writeUbo(): void {
@@ -1388,6 +1435,11 @@ export class Scene {
       gl.uniform4f(prog.u.uColor, m.color[0], m.color[1], m.color[2], Math.max(0, Math.min(1, m.opacity)));
       gl.uniform4f(prog.u.uPbr, m.metalness, m.roughness, m.emissiveIntensity, m.glass ? 2 : m.toon ? 1 : 0);
       gl.uniform3f(prog.u.uEmissive, m.emissive[0], m.emissive[1], m.emissive[2]);
+      const tex = m.map ? this.mapTexture(m.map) : null;
+      gl.uniform1f(prog.u.uHasMap, tex ? 1 : 0);
+      // Always on unit 1: a 2D and a shadow sampler may not share unit 0, even unused.
+      gl.uniform1i(prog.u.uMap, 1);
+      if (tex) { gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, tex); gl.activeTexture(gl.TEXTURE0); }
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.shadowTex);
       gl.uniform1i(prog.u.uShadow, 0);
       this.stats.triangles += (g.count / 3) * (isI ? (o as InstancedMesh).count : 1);
@@ -1395,6 +1447,37 @@ export class Scene {
     if (isI) gl.drawElementsInstanced(gl.TRIANGLES, g.count, g.type, 0, (o as InstancedMesh).count);
     else gl.drawElements(gl.TRIANGLES, g.count, g.type, 0);
     this.stats.drawCalls++;
+  }
+
+  /** GPU texture for a map source; re-uploaded only when a live source's `version` changes. */
+  private mapTexture(src: MapSource): WebGLTexture | null {
+    const gl = this.gl;
+    let e = this.maps.get(src);
+    const live = 'version' in src && 'canvas' in src;
+    const version = live ? src.version : 0;
+    if (live && version === 0) return null; // not rasterised yet
+    if (!e) {
+      const tex = gl.createTexture()!;
+      // Unit 1: unit 0 belongs to the shadow sampler, which must never see a colour texture.
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      e = { tex, version: -1 };
+      this.maps.set(src, e);
+    }
+    if (e.version !== version) {
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, e.tex);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, live ? src.canvas : (src as TexImageSource));
+      gl.activeTexture(gl.TEXTURE0);
+      e.version = version;
+    }
+    return e.tex;
   }
 
   private byDepth = (a: Object3D, b: Object3D) => this.depthKey.get(b)! - this.depthKey.get(a)!;
@@ -1671,4 +1754,25 @@ export function scene(canvas: HTMLCanvasElement | string, options?: SceneInit): 
   const el = typeof canvas === 'string' ? document.querySelector<HTMLCanvasElement>(canvas) : canvas;
   if (!el) throw new Error(`anikit: scene(): no canvas matches "${canvas}"`);
   return new Scene(el, options);
+}
+
+/** Dispatch `type` on the deepest descendant of `root` under element-relative UV `uv` ((0, 0) = top-left). */
+function forwardToElement(root: Element, uv: [number, number], type: string, src: PointerEvent | MouseEvent): void {
+  const r = root.getBoundingClientRect();
+  const x = r.left + uv[0] * r.width, y = r.top + uv[1] * r.height;
+  let target: Element = root;
+  for (let descended = true; descended;) {
+    descended = false;
+    for (const c of Array.from(target.children)) {
+      const cr = c.getBoundingClientRect();
+      if (x >= cr.left && x <= cr.right && y >= cr.top && y <= cr.bottom) { target = c; descended = true; break; }
+    }
+  }
+  const init = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, button: src.button, buttons: src.buttons, shiftKey: src.shiftKey, ctrlKey: src.ctrlKey, altKey: src.altKey, metaKey: src.metaKey };
+  if (type === 'click') {
+    target.dispatchEvent(new MouseEvent('click', init));
+    if (typeof (target as HTMLElement).focus === 'function' && target.matches('input, textarea, select, button, a[href], [tabindex], [contenteditable]')) (target as HTMLElement).focus({ preventScroll: true });
+  } else if (typeof PointerEvent !== 'undefined') {
+    target.dispatchEvent(new PointerEvent(type, { ...init, pointerId: (src as PointerEvent).pointerId ?? 1, pointerType: (src as PointerEvent).pointerType ?? 'mouse' }));
+  }
 }

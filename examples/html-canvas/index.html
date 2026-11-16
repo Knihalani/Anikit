@@ -64,14 +64,16 @@
   document.getElementById('like').onclick = () => (document.getElementById('likes').textContent = ++likes);
 
   const buttons = document.getElementById('buttons');
-  let running = null;
+  let running = null, gen = 0;
   for (const name of ['ripple', 'wave', 'glass', 'pixelate', 'dissolve', 'shatter', 'curl']) {
     const b = document.createElement('button');
     b.textContent = name;
     b.onclick = async () => {
+      const my = ++gen;
       running?.revert();
       running = htmlEffect('#card', name, { duration: name === 'shatter' ? 1.6 : 1.2 });
       await running.finished;
+      if (my !== gen) return; // another button took over
       if (['dissolve', 'shatter', 'curl'].includes(name)) {
         // Bring it back with the same effect in reverse.
         running = htmlEffect('#card', name, { mode: 'in', duration: 0.9 });

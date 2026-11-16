@@ -21,6 +21,18 @@ function expect(ok, msg) {
 
 /** Interactions + assertions per recipe heading (recipes without an entry are only loaded and scrolled). */
 const CHECKS = {
+  'Shader transition on real DOM (shatter, dissolve, curl)': async (page) => {
+    await page.click('.dismiss');
+    await wait(page, 300);
+    expect((await page.$$('canvas')).length === 1, 'overlay canvas while shattering');
+    await wait(page, 1300);
+    expect((await page.$eval('.notice', (el) => getComputedStyle(el).visibility)) === 'hidden', 'notice hidden after shatter');
+    await page.click('.restore');
+    await wait(page, 1300);
+    const s = await page.$eval('.notice', (el) => { const c = getComputedStyle(el); return c.visibility + ' ' + c.opacity; });
+    expect(s === 'visible 1', `notice back: ${s}`);
+    expect((await page.$$('canvas')).length === 0, 'overlay removed');
+  },
   'Hero entrance': async (page) => {
     await wait(page, 1600);
     expect(+(await page.$eval('.hero-cta', (el) => getComputedStyle(el).opacity)) > 0.99, 'CTA visible at the end');

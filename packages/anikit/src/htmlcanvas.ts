@@ -104,7 +104,12 @@ function sameOrigin(url: string): boolean {
 /** Fetch a same-origin URL as a data URL (cached). Cross-origin: null + one warning. */
 function toDataURL(url: string): Promise<string | null> {
   if (url.startsWith('data:')) return Promise.resolve(url);
-  const abs = new URL(url, location.href).href;
+  let abs: string;
+  try {
+    abs = new URL(url, location.href).href;
+  } catch {
+    return Promise.resolve(null);
+  }
   let p = dataCache.get(abs);
   if (p) return p;
   if (!sameOrigin(abs)) {
@@ -134,7 +139,15 @@ async function inlineUrls(css: string, base?: string): Promise<string> {
   for (const m of css.matchAll(URL_RE)) if (!m[2].startsWith('data:') && !m[2].startsWith('#')) urls.add(m[2]);
   if (!urls.size) return css;
   const map = new Map<string, string | null>();
-  await Promise.all([...urls].map(async (u) => map.set(u, await toDataURL(base ? new URL(u, base).href : u))));
+  await Promise.all([...urls].map(async (u) => {
+    let abs = u;
+    try {
+      if (base) abs = new URL(u, base).href;
+    } catch {
+      /* keep as is */
+    }
+    map.set(u, await toDataURL(abs));
+  }));
   return css.replace(URL_RE, (all, _q, u: string) => {
     if (!map.has(u)) return all;
     const d = map.get(u);
@@ -442,7 +455,14 @@ class HtmlCanvasImpl implements HtmlCanvas {
   private async raster(): Promise<void> {
     if (this.dead) return;
     this.last = performance.now();
-    const { url, width, height } = await htmlToSvg(this.element);
+    let svg: { url: string; width: number; height: number };
+    try {
+      svg = await htmlToSvg(this.element);
+    } catch (e) {
+      warn(`htmlCanvas: the element could not be serialised (${(e as Error).message}).`);
+      return;
+    }
+    const { url, width, height } = svg;
     if (this.dead) return;
     const img = this.img ?? (this.img = new Image());
     img.src = url;
@@ -589,11 +609,11 @@ void main(){
   if(u_fx==1){ // shatter
     vec2 c=a_c*u_size; vec2 o=u_o*u_size; vec2 d=c-o; float l=length(d)+1.0;
     float t=max(0.0,e*1.4-l/length(u_size)*0.4);
-    vec2 dir=d/l; float sp=(220.0+a_r*380.0)*u_k;
+    vec2 dir=d/l; float sp=(140.0+a_r*260.0)*u_k;
     vec2 q=p-c; float ang=(a_r-0.5)*12.0*t*u_k; float cs=cos(ang), sn=sin(ang);
     q=vec2(q.x*cs-q.y*sn,q.x*sn+q.y*cs)*(1.0-0.3*t);
-    p=c+q+dir*sp*t+vec2(0.0,300.0*t*t);
-    z=(a_r-0.3)*600.0*t*u_k; v_a=clamp(1.0-t*1.1,0.0,1.0);
+    p=c+q+dir*sp*t+vec2(0.0,520.0*t*t);
+    z=(a_r-0.3)*300.0*t*u_k; v_a=clamp(1.0-t*1.1,0.0,1.0);
   } else if(u_fx==5){ // wave
     float env=sin(3.14159*e)*u_k;
     p.y+=sin(uv.x*12.0-u_t*8.0)*18.0*env; p.x+=sin(uv.y*9.0-u_t*6.0)*6.0*env; z=sin(uv.x*12.0-u_t*8.0)*20.0*env;
@@ -707,7 +727,7 @@ class HtmlEffectImpl implements HtmlEffect {
     gl.useProgram(prog);
     for (const u of ['u_size', 'u_pad', 'u_view', 'u_p', 'u_k', 'u_fx', 'u_o', 'u_t', 'u_col', 'u_tex']) this.loc[u] = gl.getUniformLocation(prog, u);
     // A grid of independent triangles: uv, triangle centroid, random.
-    const N = name === 'shatter' ? 24 : name === 'curl' || name === 'wave' ? 48 : 1;
+    const N = name === 'shatter' ? 12 : name === 'curl' || name === 'wave' ? 48 : 1;
     const data = new Float32Array(N * N * 6 * 5);
     let k = 0, seed = 1234567;
     const rnd = () => ((seed = (Math.imul(seed ^ (seed >>> 15), 0x2c1b3c6d) + 0x6d2b79f5) >>> 0) / 4294967296);
@@ -746,14 +766,20 @@ class HtmlEffectImpl implements HtmlEffect {
 
   start(): void {
     if (this.done) return;
+    if (this.mode === 'in') {
+      // Rasterise the element visible (it is usually hidden before an entrance), but keep it transparent.
+      this.el.style.opacity = '0';
+      this.el.style.visibility = 'visible';
+    }
     this.hc = htmlCanvas(this.el, { target: this.gl!, live: true, scale: this.o.scale, onUpdate: () => this.render() });
     this.hc.ready.then(() => {
       if (this.done) return;
       this.place();
       document.body.appendChild(this.canvas);
+      addEventListener('scroll', this.onScroll, { passive: true, capture: true });
+      addEventListener('resize', this.onScroll);
       // The real element stays in place (opacity 0) so it keeps receiving pointer events.
       this.el.style.opacity = '0';
-      if (this.mode === 'in') this.el.style.visibility = '';
       this.t0 = performance.now();
       const from = this.mode === 'in' ? 1 : 0, to = this.mode === 'in' ? 0 : 1;
       this.state.p = from;
@@ -768,6 +794,13 @@ class HtmlEffectImpl implements HtmlEffect {
       });
     });
   }
+
+  // Keep the overlay on the element while the page scrolls or resizes.
+  private onScroll = () => {
+    if (this.done) return;
+    this.place();
+    this.render();
+  };
 
   private tick = () => {
     this.progress = this.state.p;
@@ -813,7 +846,8 @@ class HtmlEffectImpl implements HtmlEffect {
 
   private complete() {
     if (this.mode === 'out') this.el.style.visibility = 'hidden';
-    this.el.style.opacity = this.prevOpacity;
+    else if (this.mode === 'in') this.el.style.visibility = this.prevVisibility === 'hidden' ? '' : this.prevVisibility;
+    this.el.style.opacity = this.prevOpacity === '0' ? '' : this.prevOpacity;
     this.finish();
     this.o.onComplete?.();
   }
@@ -823,6 +857,8 @@ class HtmlEffectImpl implements HtmlEffect {
     this.done = true;
     this.anim?.kill();
     this.hc?.dispose();
+    removeEventListener('scroll', this.onScroll, { capture: true });
+    removeEventListener('resize', this.onScroll);
     this.canvas.remove();
     const ext = this.gl?.getExtension('WEBGL_lose_context');
     ext?.loseContext();
@@ -875,4 +911,21 @@ export function _resetHtmlCanvasCache(): void {
   dataCache.clear();
   fontCss = null;
   warnedCross = new Set();
+}
+
+/**
+ * A live HTML texture for `scene()` materials: `material({ map: htmlTexture('#card') })`.
+ * The element is rasterised (natively when possible), re-uploaded to the GPU only
+ * when it changes, and pointer events on the mesh are forwarded to the element
+ * under the hit's UV. Keep the element rendered (e.g. off-screen with
+ * `position: fixed; left: -10000px`), not `display: none`.
+ *
+ * ```ts
+ * const s = scene('#c');
+ * const ui = htmlTexture('#panel');
+ * s.add(plane(1.6, 1), { rotation: [Math.PI / 2, 0, 0], material: { color: '#000', emissive: '#fff', map: ui } });
+ * ```
+ */
+export function htmlTexture(element: Element | string, options: Omit<HtmlCanvasOptions, 'target'> = {}): HtmlCanvas {
+  return htmlCanvas(element, { live: true, ...options });
 }

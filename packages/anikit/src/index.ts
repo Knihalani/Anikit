@@ -86,13 +86,13 @@ export type { ViewTransitionOptions, ViewTransitionHandle } from './viewtransiti
 export { gesture, Gesture } from './gesture';
 export type { GestureOptions } from './gesture';
 export { transformPath } from './svg';
-export { htmlCanvas, htmlEffect, htmlCanvasSupported, htmlToSvg } from './htmlcanvas';
+export { htmlCanvas, htmlEffect, htmlTexture, htmlCanvasSupported, htmlToSvg } from './htmlcanvas';
 export type { HtmlCanvas, HtmlCanvasOptions, HtmlEffect, HtmlEffectOptions, HtmlEffectName } from './htmlcanvas';
 export {
   scene, Scene, Object3D, InstancedMesh, Material, material, Orbit, Vector3, linearColor,
 } from './gl';
 export type {
-  SceneInit, CameraOptions, BloomOptions, DofOptions, OrbitOptions, Camera, SceneMaterialOptions, MaterialPreset,
+  SceneInit, CameraOptions, BloomOptions, DofOptions, OrbitOptions, Camera, SceneMaterialOptions, MaterialPreset, MapSource,
   ObjectOptions, InstanceState, EnvironmentName, LayerContext, SceneLayer, RayHit, SceneStats, ScenePointerEvent,
   ScenePointerType, PrimitiveName, Vec3Like,
 } from './gl';
