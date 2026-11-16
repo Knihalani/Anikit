@@ -1,7 +1,7 @@
 // Prototype B: a living splat sculpture.
 // The particles live in anikit's pointCloud() (WebAssembly springs + morphs);
 // this file wires scroll, pointer and captions to it and draws one WebGL canvas.
-import { ready, engine, pointCloud, animate, spring, timeline, stagger, set, htmlCanvas } from '../../packages/anikit/dist/anikit.js';
+import { ready, engine, pointCloud, animate, timeline, stagger, set, htmlCanvas } from '../../packages/anikit/dist/anikit.js';
 import { SplatRenderer } from './splat-gl.js';
 import * as S from './shapes.js';
 
@@ -125,7 +125,7 @@ const st = {
   px: 0.5, py: 0.5, // pointer, 0..1
   pxs: 0.5, pys: 0.5,
   pdx: 0, pdy: 0, moved: false, inside: false,
-  ox: 0, oy: 0, js: 0, noDraw: false,
+  ox: 0, oy: 0, js: 0, noDraw: false, vs: 0,
 };
 const f = {
   viewProj: new Float32Array(16), model: new Float32Array(9),
@@ -185,7 +185,6 @@ function onScroll() {
   const t = max > 0 ? (scrollY / max) * (STAGES - 1) : 0;
   if (Math.abs(t - target.s) < 1e-4) return;
   target.s = t;
-  spring(st, { s: t }, { stiffness: 70, damping: 18 });
 }
 addEventListener('scroll', onScroll, { passive: true });
 
@@ -326,8 +325,14 @@ function frameBody(time, dtMs) {
   last = now;
   f.time = time / 1000;
 
-  // --- stage blend
-  const s = st.s;
+  // --- stage blend: scroll position followed by a damped spring (k 70, c 17),
+  // integrated here so scrolling allocates nothing
+  for (let h = dt, step; h > 0; h -= step) {
+    step = Math.min(h, 1 / 120);
+    st.vs += ((target.s - st.s) * 70 - st.vs * 17) * step;
+    st.s += st.vs * step;
+  }
+  const s = Math.min(STAGES - 1, Math.max(0, st.s));
   const k = Math.min(STAGES - 1, Math.floor(s));
   const frac = s - k;
   const mix = smooth(0.18, 0.82, frac);

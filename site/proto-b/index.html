@@ -28,14 +28,14 @@
     <p class="hint">Move through it. Click to scatter it.</p>
   </section>
   <section class="cap" data-stage="1">
-    <p class="k">01 · <code>spring()</code></p>
+    <p class="k">01 · springs</p>
     <h2>Each splat rides its own spring.</h2>
-    <code class="snip">spring(el, { x: 200 }, { bounce: 0.3 })</code>
+    <code class="snip">cloud.set({ stiffness: 22, damping: 3.6 })</code>
   </section>
   <section class="cap" data-stage="2">
-    <p class="k">02 · <code>stagger()</code></p>
+    <p class="k">02 · <code>staggerValues()</code></p>
     <h2>Seventy-two birds, one wave of offsets.</h2>
-    <code class="snip">stagger(0.04, { grid: [12, 6], from: 'center' })</code>
+    <code class="snip">staggerValues(72, 1 / 72, { grid: [12, 6], from: 'center' })</code>
   </section>
   <section class="cap" data-stage="3">
     <p class="k">03 · <code>timeline()</code></p>
@@ -45,7 +45,7 @@
   <section class="cap" data-stage="4">
     <p class="k">04 · <code>pointCloud()</code></p>
     <h2><span class="count">131,072</span> particles, stepped in WebAssembly.</h2>
-    <code class="snip">pointCloud(131_072, { shapes }).morph(4)</code>
+    <code class="snip">pointCloud(131_072).shape(4, galaxy)</code>
   </section>
   <section class="cap end" data-stage="5">
     <p class="k">Install</p>

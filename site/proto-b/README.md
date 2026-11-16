@@ -13,7 +13,7 @@ Open `site/proto-b/` from a static server at the repo root, after building the p
 | galaxy | 3-arm spiral | spin and tilt follow the scroll |
 | `npm i anikit` | `splats.fromText` (mono) | |
 
-- **Simulation:** `pointCloud()` (WebAssembly). Each splat spring-follows a blend between two forms, with its own delay and turbulence. The scroll position springs (`spring()`) toward the target stage, so wheel steps never jump.
+- **Simulation:** `pointCloud()` (WebAssembly). Each splat spring-follows a blend between two forms, with its own delay and turbulence. The scroll position follows the target stage through a damped spring integrated in the frame loop, so wheel steps never jump and scrolling allocates nothing.
 - **Brush:** `cloud.push()` along the pointer ray, with sweep velocity. Click: `cloud.explode()`, with the springs briefly loosened so the burst blooms.
 - **Captions:** each caption is rasterised by `htmlCanvas(el, { target: gl })` into a texture *in the same WebGL2 context*. On exit the DOM caption is swapped for one splat per texel, which drift apart toward the sculpture.
 - **Rendering:** one canvas, one WebGL2 context (`splat-gl.js`):
