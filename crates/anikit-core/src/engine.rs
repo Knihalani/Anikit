@@ -472,16 +472,38 @@ fn ease_by(easings: &[Easing], id: u32, t: f64) -> f64 {
 /// a frame. `Easing::ease` is a pure function of `(id, t)` and the registry is
 /// append-only, so reusing the result is exact. Keyed on the bits of `t`, so
 /// `-0.0` and `0.0` (or two NaNs) never alias.
+///
+/// The same goes for colour tracks: targets animated between the same
+/// colours convert the same interpolated colour back to RGBA, so the last
+/// conversion (space and bits of the four channels in, RGBA out) is kept too.
 #[derive(Clone, Copy, Debug)]
 struct EaseMemo {
     id: u32,
     bits: u64,
     v: f64,
+    col_space: Option<ColorSpace>,
+    col_in: [u64; 4],
+    col_out: [f64; 4],
 }
 
 impl EaseMemo {
-    /// Never matches: `LINEAR` is answered before the memo is consulted.
-    const EMPTY: EaseMemo = EaseMemo { id: LINEAR, bits: 0, v: 0.0 };
+    /// Never matches: `LINEAR` is answered before the memo is consulted, and
+    /// no colour has been converted.
+    const EMPTY: EaseMemo = EaseMemo { id: LINEAR, bits: 0, v: 0.0, col_space: None, col_in: [0; 4], col_out: [0.0; 4] };
+
+    /// `color::from_space(c, space)` as an array, reusing the last result.
+    #[inline]
+    fn color(&mut self, c: &[f64; 4], space: ColorSpace) -> [f64; 4] {
+        let key = [c[0].to_bits(), c[1].to_bits(), c[2].to_bits(), c[3].to_bits()];
+        if self.col_space == Some(space) && self.col_in == key {
+            return self.col_out;
+        }
+        let out = color::from_space(c, space).to_array();
+        self.col_space = Some(space);
+        self.col_in = key;
+        self.col_out = out;
+        out
+    }
 }
 
 #[inline(always)]
@@ -497,7 +519,9 @@ fn ease_memo(easings: &[Easing], memo: &mut EaseMemo, id: u32, t: f64) -> f64 {
         Some(e) => e.ease(t),
         None => t,
     };
-    *memo = EaseMemo { id, bits, v };
+    memo.id = id;
+    memo.bits = bits;
+    memo.v = v;
     v
 }
 
@@ -640,7 +664,7 @@ impl Anim {
                 for k in 0..4 {
                     c[k] = a[k] + (b[k] - a[k]) * e;
                 }
-                o.copy_from_slice(&color::from_space(&c, space).to_array());
+                o.copy_from_slice(&memo.color(&c, space));
             }
             TrackKind::Discrete => {
                 o[0] = if e < 0.5 { a[0] } else { b[0] };
@@ -2720,6 +2744,53 @@ mod tests {
             assert_eq!(out.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), want.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), "p = {p}");
             assert_eq!(anim.tracks.iter().map(|t| t.cursor).collect::<Vec<_>>(), reference.iter().map(|t| t.cursor).collect::<Vec<_>>());
         }
+    }
+
+    #[test]
+    fn memoised_colour_conversion_matches_from_space() {
+        // Interleaved spaces and colours (shared and per-target), alpha 0,
+        // hue spaces: every output equals a fresh conversion.
+        let mut e = Engine::new();
+        let ease = e.easing("inOutQuad").unwrap();
+        let spaces = [ColorSpace::Oklab, ColorSpace::Srgb, ColorSpace::Oklch, ColorSpace::Hsl, ColorSpace::LinearSrgb];
+        let g = e.create_group(Timing::default(), true, flags::DEFAULT).unwrap();
+        let mut kids = Vec::new();
+        for i in 0..60usize {
+            let to_b = if i % 3 == 0 { i as f64 * 4.0 } else { 255.0 };
+            let alpha = if i % 11 == 0 { 0.0 } else { 1.0 };
+            let mut c = TrackSpec::number(vec![255.0, 0.0, 0.0, 1.0, 0.0, 30.0, to_b, alpha], 4).with_easings(vec![ease]);
+            let space = spaces[(i / 2) % spaces.len()];
+            c.kind = TrackKind::Color(space);
+            let mut c2 = TrackSpec::number(vec![10.0, 200.0, 30.0, 0.5, 250.0, 250.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], 4);
+            c2.kind = TrackKind::Color(spaces[i % spaces.len()]);
+            let h = e.create_anim(Timing { duration: 400.0 + (i % 2) as f64 * 100.0, ..Default::default() }, &[c, c2], flags::DEFAULT).unwrap();
+            e.group_add(g, h, 0.0).unwrap();
+            kids.push(h);
+        }
+        e.play(g).unwrap();
+        let mut checked = 0;
+        for _ in 0..40 {
+            e.tick(16.0);
+            for &h in &kids {
+                if !e.updated().contains(&h) {
+                    continue;
+                }
+                let Kind::Anim(a) = &e.nodes[Engine::handle_index(h) as usize].kind else { unreachable!() };
+                let n = &e.nodes[Engine::handle_index(h) as usize];
+                let p = n.timing.eval(n.time).progress;
+                let mut want = vec![0.0; 8];
+                let mut tracks = a.tracks.to_vec();
+                let data = &a.buf[..a.out_at];
+                for tr in tracks.iter_mut() {
+                    // eval_track with a fresh memo per track: no reuse across targets.
+                    Anim::eval_track(tr, data, &e.easings, &mut EaseMemo::EMPTY.clone(), p, &mut want);
+                }
+                let got = e.values(h).unwrap();
+                assert_eq!(got.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), want.iter().map(|v| v.to_bits()).collect::<Vec<_>>());
+                checked += 1;
+            }
+        }
+        assert!(checked > 1000, "{checked}");
     }
 
     #[test]
