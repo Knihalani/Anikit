@@ -397,7 +397,7 @@ impl Component for Glitch {
 
 #[cfg(test)]
 mod tests {
-    use super::super::{preview, text::StubAssets, Theme};
+    use super::super::{preview, Theme};
     use super::*;
 
     fn scene(c: &str, label: f32) -> Vec<Op> {
@@ -407,7 +407,7 @@ mod tests {
 
     #[test]
     fn every_transition_at_every_phase() {
-        let a = StubAssets::default();
+        let a = preview::host();
         let th = Theme::default();
         let mut sheet = Vec::new();
         for (i, k) in KINDS.iter().enumerate() {
@@ -427,7 +427,7 @@ mod tests {
             sheet.push(Op::PopLayer);
         }
         preview::validate(&sheet).unwrap();
-        preview::snapshot("transitions", 960, 216, th.background, sheet, &a);
+        preview::snapshot("transitions", 960, 216, th.background, sheet, a);
         let bad = Transition { kind: "wip".into(), ..Default::default() };
         assert!(bad.validate().unwrap_err().contains("did you mean `wipe`"));
     }

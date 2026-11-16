@@ -24,6 +24,7 @@ use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
 
 pub mod style;
+pub mod host;
 pub mod text;
 
 pub mod backgrounds;
@@ -305,13 +306,13 @@ mod tests {
     #[test]
     fn every_kind_builds_and_evaluates() {
         let theme = Theme::default();
-        let assets = text::StubAssets::default();
+        let assets = preview::host();
         for k in KINDS {
             let v: Value = serde_json::from_str(k.example).unwrap();
             let p = build(k.name, &v).unwrap_or_else(|e| panic!("{}: {e}", k.name));
             let end = p.component.duration().unwrap_or(3.0);
             for t in [0.0, end * 0.5, end, end + 1.0] {
-                let ops = p.eval(t, 1280.0, 720.0, 30.0, &theme, &assets);
+                let ops = p.eval(t, 1280.0, 720.0, 30.0, &theme, assets);
                 preview::validate(&ops).unwrap_or_else(|e| panic!("{} at t={t}: {e}", k.name));
             }
         }

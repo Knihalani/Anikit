@@ -356,7 +356,7 @@ impl Component for Dust {
 
 #[cfg(test)]
 mod tests {
-    use super::super::{build, preview, text::StubAssets, Theme};
+    use super::super::{build, preview, Theme};
     use super::*;
     use serde_json::json;
 
@@ -375,7 +375,7 @@ mod tests {
     #[test]
     fn deterministic_and_gallery() {
         let th = Theme::default();
-        let a = StubAssets::default();
+        let a = preview::host();
         for (k, p, t) in [
             ("confetti", json!({}), 0.6f32),
             ("confetti", json!({"mode": "cannons"}), 0.9),
@@ -384,13 +384,13 @@ mod tests {
             ("dust", json!({}), 2.0),
         ] {
             let c = build(k, &p).unwrap();
-            let o1 = c.eval(t, 960.0, 540.0, 30.0, &th, &a);
-            let o2 = c.eval(t, 960.0, 540.0, 30.0, &th, &a);
+            let o1 = c.eval(t, 960.0, 540.0, 30.0, &th, a);
+            let o2 = c.eval(t, 960.0, 540.0, 30.0, &th, a);
             assert_eq!(o1, o2, "{k} is not deterministic");
             assert!(!o1.is_empty(), "{k} drew nothing at {t}");
             preview::validate(&o1).unwrap();
             let name = format!("particles-{k}-{}", p.get("mode").and_then(|m| m.as_str()).unwrap_or("default"));
-            preview::snapshot(&name, 960, 540, th.background, o1, &a);
+            preview::snapshot(&name, 960, 540, th.background, o1, a);
         }
     }
 }

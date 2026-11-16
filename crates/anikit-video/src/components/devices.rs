@@ -299,13 +299,13 @@ impl Component for Browser {
 
 #[cfg(test)]
 mod tests {
-    use super::super::{build, preview, text::StubAssets, Theme};
+    use super::super::{build, preview, Theme};
     use serde_json::json;
 
     #[test]
     fn gallery() {
         let th = Theme::default();
-        let a = StubAssets::default();
+        let a = preview::host();
         // A tall "screenshot" to scroll through.
         let (iw, ih) = (360u32, 1400u32);
         let mut px = Vec::with_capacity((iw * ih * 4) as usize);
@@ -322,9 +322,9 @@ mod tests {
             ("laptop", json!({"x": 260, "y": 30, "width": 680, "height": 240})),
             ("browser", json!({"x": 300, "y": 290, "width": 620, "height": 240, "url": "anikit.dev/video", "tabs": ["Anikit Video", "Docs"]})),
         ] {
-            ops.extend(build(k, &p).unwrap().eval(1.5, 960.0, 540.0, 30.0, &th, &a));
+            ops.extend(build(k, &p).unwrap().eval(1.5, 960.0, 540.0, 30.0, &th, a));
         }
         preview::validate(&ops).unwrap();
-        preview::snapshot("devices", 960, 540, th.background, ops, &a);
+        preview::snapshot("devices", 960, 540, th.background, ops, a);
     }
 }

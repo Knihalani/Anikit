@@ -576,14 +576,11 @@ impl Component for Counter {
         let base = (ctx.height * 0.5 + self.size * 0.36).min(self.size * 0.95 + (ctx.height - self.size) * 0.5);
         let mut o = Vec::new();
         let tw = ctx.assets.measure(&txt, &st);
+        let st = match self.gradient {
+            Some([a, b]) => st.gradient(a.0, b.0, [0.0, base - self.size * 0.75], [0.0, base]),
+            None => st,
+        };
         draw(&mut o, ctx.assets, &txt, &st, x + fw - tw, base, 0.0);
-        if let Some([a, b]) = self.gradient {
-            for op in &mut o {
-                if let Op::Glyphs { paint, .. } | Op::RoundRect { paint, .. } | Op::Fill { paint, .. } = op {
-                    *paint = vgrad(base - self.size * 0.75, base, a.0, b.0);
-                }
-            }
-        }
         if !self.label.is_empty() {
             draw(&mut o, ctx.assets, &self.label, &TextStyle::new(Face::Sans, self.size * 0.2, 500, th.muted), ctx.width * self.align, base + self.size * 0.42, self.align);
         }
@@ -677,7 +674,7 @@ impl Component for Stat {
 
 #[cfg(test)]
 mod tests {
-    use super::super::{build, preview, text::StubAssets, Theme};
+    use super::super::{build, preview, Theme};
     use super::*;
     use serde_json::json;
 
@@ -698,7 +695,7 @@ mod tests {
     #[test]
     fn gallery() {
         let th = Theme::default();
-        let a = StubAssets::default();
+        let a = preview::host();
         let items = [
             ("bar-chart", json!({"x": 30, "y": 20, "width": 440, "height": 240, "values": [32, 54, 41, 78, 66, 92], "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"], "highlight": 5})),
             ("line-chart", json!({"x": 500, "y": 20, "width": 430, "height": 240, "series": [[12, 18, 15, 26, 31, 29, 42], [8, 10, 14, 13, 17, 22, 24]], "names": ["Anikit", "Browser"], "labels": ["M", "T", "W", "T", "F", "S", "S"]})),
@@ -710,12 +707,12 @@ mod tests {
         for (name, t) in [("charts-mid", 0.7f32), ("charts-end", 4.0)] {
             let mut ops = Vec::new();
             for (k, p) in &items {
-                ops.extend(build(k, p).unwrap().eval(t, 960.0, 540.0, 30.0, &th, &a));
+                ops.extend(build(k, p).unwrap().eval(t, 960.0, 540.0, 30.0, &th, a));
             }
             preview::validate(&ops).unwrap();
-            preview::snapshot(name, 960, 540, th.background, ops, &a);
+            preview::snapshot(name, 960, 540, th.background, ops, a);
         }
         let pie = build("pie-chart", &json!({"values": [1, 2, 3]})).unwrap();
-        preview::validate(&pie.eval(5.0, 400.0, 300.0, 30.0, &th, &a)).unwrap();
+        preview::validate(&pie.eval(5.0, 400.0, 300.0, 30.0, &th, a)).unwrap();
     }
 }

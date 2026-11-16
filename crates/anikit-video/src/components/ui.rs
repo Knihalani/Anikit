@@ -1039,11 +1039,7 @@ impl Component for TitleCard {
         let (w, h) = (ctx.width, ctx.height);
         let size = self.size.unwrap_or((w * 0.062).clamp(28.0, 132.0));
         let exit = self.out.map(|o| ease_in(seg(t, o, 0.4))).unwrap_or(0.0);
-        let mut ts = TextStyle::new(Face::Display, size, 700, th.text).tracking(-0.035);
-        if let Some([a, b]) = self.gradient {
-            ts.color = a.0;
-            let _ = b;
-        }
+        let ts = TextStyle::new(Face::Display, size, 700, th.text).tracking(-0.035);
         let lines = wrap(ctx.assets, &self.title, &ts, w * 0.86);
         let es = sans(size * 0.2, 600, th.accent).tracking(0.14);
         let ss = sans(size * 0.3, 400, th.muted);
@@ -1079,14 +1075,11 @@ impl Component for TitleCard {
             let words: Vec<&str> = if self.reveal == "word" { l.split(' ').collect() } else { vec![l.as_str()] };
             for wd in words {
                 let mut e = Vec::new();
-                let adv = draw(&mut e, ctx.assets, wd, &ts, x, y, 0.0);
-                if let Some((a, b)) = gradient {
-                    for op in &mut e {
-                        if let Op::Glyphs { paint, .. } | Op::RoundRect { paint, .. } | Op::Fill { paint, .. } = op {
-                            *paint = crate::dl::Paint::Linear { p0: [ax - lw * self.align, 0.0], p1: [ax - lw * self.align + lw, 0.0], stops: vec![(0.0, a), (1.0, b)] };
-                        }
-                    }
-                }
+                let wst = match gradient {
+                    Some((a, b)) => ts.clone().gradient(a, b, [ax - lw * self.align, 0.0], [ax - lw * self.align + lw, 0.0]),
+                    None => ts.clone(),
+                };
+                let adv = draw(&mut e, ctx.assets, wd, &wst, x, y, 0.0);
                 let start = if self.reveal == "fade" { 0.0 } else { k as f32 * self.stagger };
                 piece(&mut o, e, start, size * 0.35);
                 x += adv + ctx.assets.measure(" ", &ts);
@@ -1111,13 +1104,13 @@ impl Component for TitleCard {
 
 #[cfg(test)]
 mod tests {
-    use super::super::{build, preview, text::StubAssets, Theme};
+    use super::super::{build, preview, Theme};
     use serde_json::json;
 
     #[test]
     fn gallery() {
         let th = Theme::default();
-        let a = StubAssets::default();
+        let a = preview::host();
         let items = [
             ("card", json!({"x": 40, "y": 40, "width": 360, "height": 220, "title": "Instant previews", "body": "Render any frame in under 100 ms, without a browser.", "icon": "bolt", "glow": true})),
             ("button", json!({"x": 440, "y": 50, "label": "Get started", "arrow": true})),
@@ -1139,15 +1132,15 @@ mod tests {
         let mut ops = Vec::new();
         for (k, p) in &items {
             let c = build(k, p).unwrap();
-            ops.extend(c.eval(1.2, 960.0, 540.0, 30.0, &th, &a));
+            ops.extend(c.eval(1.2, 960.0, 540.0, 30.0, &th, a));
         }
         preview::validate(&ops).unwrap();
-        preview::snapshot("ui-kit", 960, 540, th.background, ops, &a);
+        preview::snapshot("ui-kit", 960, 540, th.background, ops, a);
         let c = build("title-card", &json!({"eyebrow": "Introducing", "title": "Video for agents, rendered natively", "subtitle": "One JSON spec in. A finished film out.", "gradient": ["#ffffff", "#9c8cff"]})).unwrap();
         for (i, t) in [0.2f32, 0.5, 2.0].iter().enumerate() {
-            let ops = c.eval(*t, 960.0, 540.0, 30.0, &th, &a);
+            let ops = c.eval(*t, 960.0, 540.0, 30.0, &th, a);
             preview::validate(&ops).unwrap();
-            preview::snapshot(&format!("ui-title-{i}"), 960, 540, th.background, ops, &a);
+            preview::snapshot(&format!("ui-title-{i}"), 960, 540, th.background, ops, a);
         }
     }
 }

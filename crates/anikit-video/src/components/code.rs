@@ -661,7 +661,7 @@ impl Component for Terminal {
 
 #[cfg(test)]
 mod tests {
-    use super::super::{build, preview, text::StubAssets, Theme};
+    use super::super::{build, preview, Theme};
     use super::*;
     use serde_json::json;
 
@@ -681,25 +681,25 @@ mod tests {
     #[test]
     fn gallery() {
         let th = Theme::default();
-        let a = StubAssets::default();
+        let a = preview::host();
         let code = "import { video } from \"anikit\";\n\n// One spec in, a film out.\nconst film = video({ width: 1920, height: 1080 });\nfilm.scene(\"intro\", { duration: 3 });\n-film.render(\"old.mp4\");\n+await film.render(\"launch.mp4\");";
         let c = build("code", &json!({"code": code, "title": "launch.ts", "typing": 40, "diff": true, "highlights": [{"lines": [4], "at": 3.5}], "glow": "#7c6cff"})).unwrap();
         let end = c.component.duration().unwrap();
         for (i, t) in [0.0, end * 0.4, end + 0.5].iter().enumerate() {
-            let ops = c.eval(*t, 960.0, 540.0, 30.0, &th, &a);
+            let ops = c.eval(*t, 960.0, 540.0, 30.0, &th, a);
             preview::validate(&ops).unwrap();
             if i > 0 {
                 let mut all = vec![super::super::style::rect(0.0, 0.0, 960.0, 540.0, 0.0, super::super::style::solid(th.background))];
                 let mut ops = ops;
                 super::super::transform_ops(&mut ops, &[0.85, 0.0, 0.0, 0.85, 72.0, 40.0]);
                 all.extend(ops);
-                preview::snapshot(&format!("code-{i}"), 960, 540, th.background, all, &a);
+                preview::snapshot(&format!("code-{i}"), 960, 540, th.background, all, a);
             }
         }
         let c = build("terminal", &json!({"lines": ["$ npm install anikit", "added 1 package in 0.4s", "$ npx anikit-video render launch.json", "✓ 1800 frames in 6.1s (295 fps)"], "title": "zsh"})).unwrap();
         let end = c.component.duration().unwrap();
-        let ops = c.eval(end, 720.0, 300.0, 30.0, &th, &a);
+        let ops = c.eval(end, 720.0, 300.0, 30.0, &th, a);
         preview::validate(&ops).unwrap();
-        preview::snapshot("code-terminal", 720, 300, th.background, ops, &a);
+        preview::snapshot("code-terminal", 720, 300, th.background, ops, a);
     }
 }
