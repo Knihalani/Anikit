@@ -247,6 +247,8 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `trimStart` | time | `0` | (video) Start offset into the clip. |
 | `speed` | number | `1` | (video) Playback rate. |
 | `volume` | 0..1 | `0` | (video) Clip audio, muted by default. |
+
+Video clips are decoded once (via ffmpeg) at the output frame rate and at the layer's size, so playback costs the same as an image. `radius` rounds the corners of images and videos.
 | `loop` | bool | `false` | (video) Loop the clip. |
 
 ### `group`

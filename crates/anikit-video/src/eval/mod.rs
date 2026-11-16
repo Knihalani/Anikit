@@ -235,6 +235,15 @@ pub(crate) enum Kind {
         /// 0 contain, 1 cover, 2 fill, 3 none.
         fit: u8,
     },
+    /// Decoded clip frames at `rate` frames per clip-second.
+    Video {
+        frames: Vec<ImageId>,
+        natural: [f32; 2],
+        fit: u8,
+        rate: f32,
+        speed: f32,
+        looped: bool,
+    },
     Group {
         children: Vec<Node>,
     },
@@ -629,7 +638,7 @@ impl Evaluator {
         let xf = dl::mul(parent, &local_xf(&v, n.anchor, w, h));
         let blur = v[prop::BLUR].max(0.0);
         let wipe = v[prop::WIPE].clamp(0.0, 1.0);
-        let is_leaf = matches!(n.kind, Kind::Text { kinetic: None, .. } | Kind::Image { .. })
+        let is_leaf = matches!(n.kind, Kind::Text { kinetic: None, .. } | Kind::Image { .. } | Kind::Video { .. })
             || matches!(&n.kind, Kind::Shape { fill, stroke, .. } if fill.is_none() || stroke.is_none());
         let needs_layer = blur > 0.05
             || n.blend != Blend::Normal
@@ -781,6 +790,14 @@ impl Evaluator {
             Kind::Image { image, natural, fit } => {
                 let dst = fit_rect(*natural, [w, h], *fit);
                 out.push(Op::Image { image: *image, dst, opacity: alpha, transform: xf });
+            }
+            Kind::Video { frames, natural, fit, rate, speed, looped } => {
+                if !frames.is_empty() {
+                    let k = (lt * speed * rate).floor().max(0.0) as usize;
+                    let k = if *looped { k % frames.len() } else { k.min(frames.len() - 1) };
+                    let dst = fit_rect(*natural, [w, h], *fit);
+                    out.push(Op::Image { image: frames[k], dst, opacity: alpha, transform: xf });
+                }
             }
             Kind::Group { children } => {
                 let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt };

@@ -80,6 +80,8 @@ struct C<'a> {
     scene_dur: f32,
     image_ids: HashMap<PathBuf, (u32, [f32; 2])>,
     assets: Arc<SharedAssets>,
+    /// Audio from video clips.
+    audio_extra: Vec<crate::audio::Track>,
 }
 
 fn size_preset(s: &str) -> Option<[u32; 2]> {
@@ -128,6 +130,7 @@ impl Evaluator {
             scene_start: 0.0,
             scene_dur: 3.0,
             image_ids: HashMap::new(),
+            audio_extra: Vec::new(),
             assets: Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new())))),
         };
         c.ease_ids.insert("linear".into(), 0);
@@ -216,8 +219,10 @@ impl Evaluator {
                 }
             }
             let nd = c.d.len();
+            let na = c.audio_extra.len();
             let mut built = c.scene(s, &path, dur, &default_bg);
             if auto {
+                c.audio_extra.truncate(na);
                 let end = built.layers.iter().map(node_last).fold(0.0f32, f32::max);
                 dur = (end + 0.5).max(0.5);
                 c.d.truncate(nd);
@@ -246,6 +251,7 @@ impl Evaluator {
                 }
             }
         }
+        audio.append(&mut c.audio_extra);
         c.smarkers.clear();
         c.scene_start = 0.0;
         c.scene_dur = duration;
@@ -954,11 +960,8 @@ impl C<'_> {
             "shape" => self.shape_layer(l, path, given_w, given_h, &mut n),
             "image" => self.image_layer(l, path, given_w, given_h),
             "video" => {
-                self.d.push(Diagnostic::warning(path, "video layers are not supported yet; drawn as a placeholder"));
-                let s = [given_w.unwrap_or(640.0), given_h.unwrap_or(360.0)];
-                n.base[prop::RADIUS] = 12.0;
-                n.base[prop::FILL..prop::FILL + 4].copy_from_slice(&rgba_to_oklab(self.theme.colors["surface"]));
-                (Kind::Shape { shape: ShapeKind::Rect, fill: Some(PaintC::Solid), stroke: None, path: Path::new() }, s)
+                let life = if end.is_finite() && end < 1e5 { end - start } else { (self.scene_dur - start).clamp(0.0, 600.0) };
+                self.video_layer(l, path, given_w, given_h, life, start)
             }
             "group" => {
                 let size = [given_w.unwrap_or(pw), given_h.unwrap_or(ph)];
@@ -972,11 +975,17 @@ impl C<'_> {
         n.kind = kind_v;
         n.base[prop::W] = given_w.unwrap_or(nat[0]);
         n.base[prop::H] = given_h.unwrap_or(nat[1]);
-        if let (Some(_), None, Kind::Image { natural, .. }) = (given_w, given_h, &n.kind) {
-            n.base[prop::H] = given_w.unwrap() * natural[1] / natural[0].max(1.0);
-        }
-        if let (None, Some(_), Kind::Image { natural, .. }) = (given_w, given_h, &n.kind) {
-            n.base[prop::W] = given_h.unwrap() * natural[0] / natural[1].max(1.0);
+        let natural = match &n.kind {
+            Kind::Image { natural, .. } | Kind::Video { natural, .. } => Some(*natural),
+            _ => None,
+        };
+        if let Some(nat) = natural {
+            // One side given: keep the aspect ratio.
+            match (given_w, given_h) {
+                (Some(w), None) => n.base[prop::H] = w * nat[1] / nat[0].max(1.0),
+                (None, Some(h)) => n.base[prop::W] = h * nat[0] / nat[1].max(1.0),
+                _ => {}
+            }
         }
         if let Some(w) = &l.width {
             if let V::E(e) = self.len(w, &format!("{path}.width"), pw, 16.0) {
@@ -1070,6 +1079,13 @@ impl C<'_> {
                 None => self.theme.colors["primary"],
             };
             n.glow = Some(Filter::Glow { radius: g.radius.unwrap_or(24.0) as f32, intensity: g.intensity.unwrap_or(1.0) as f32, color });
+        }
+        if matches!(n.kind, Kind::Image { .. } | Kind::Video { .. }) {
+            if let Some(r) = &l.radius {
+                let refl = n.base[prop::W].min(n.base[prop::H]);
+                self.set(&mut n, prop::RADIUS, Some(r), &format!("{path}.radius"), refl);
+                n.clip = true;
+            }
         }
         match &l.clip {
             Some(spec::Clip::On(b)) => n.clip = *b,
@@ -1744,6 +1760,122 @@ impl C<'_> {
             self.d.push(Diagnostic::warning(format!("{path}.fill"), "a box's colour is style.background").suggest(Some("style.background")));
         }
         (Kind::Box { children: kids, bg, border }, size)
+    }
+
+    /// Decode a clip's frames for the layer's lifetime (once, via ffmpeg) into the shared image store.
+    fn video_layer(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>, life: f32, start: f32) -> (Kind, [f32; 2]) {
+        let src = l.src.clone().unwrap_or_default();
+        let fit = match l.fit.as_deref() {
+            None | Some("contain") => 0,
+            Some("cover") => 1,
+            Some("fill") => 2,
+            Some("none") => 3,
+            Some(x) => {
+                self.d.push(Diagnostic::error(format!("{path}.fit"), format!("unknown fit '{x}'")).suggest(suggest(x, val::FITS)));
+                0
+            }
+        };
+        let full = self.o.base_dir.join(&src);
+        let empty = |nat: [f32; 2]| (Kind::Video { frames: Vec::new(), natural: nat, fit, rate: 1.0, speed: 1.0, looped: false }, nat);
+        if !full.exists() {
+            self.d.push(Diagnostic::error(format!("{path}.src"), format!("file not found: {}", full.display())));
+            return empty([gw.unwrap_or(640.0), gh.unwrap_or(360.0)]);
+        }
+        // Probe size, duration and whether it has audio.
+        let probe = std::process::Command::new("ffprobe")
+            .args(["-v", "error", "-show_entries", "stream=codec_type,width,height:format=duration", "-of", "json"])
+            .arg(&full)
+            .output();
+        let info: serde_json::Value = match probe {
+            Ok(o) if o.status.success() => serde_json::from_slice(&o.stdout).unwrap_or_default(),
+            Ok(o) => {
+                self.d.push(Diagnostic::error(format!("{path}.src"), format!("can't read video: {}", String::from_utf8_lossy(&o.stderr).trim())));
+                return empty([gw.unwrap_or(640.0), gh.unwrap_or(360.0)]);
+            }
+            Err(e) => {
+                self.d.push(Diagnostic::error(format!("{path}.src"), format!("video layers need ffprobe/ffmpeg: {e}")));
+                return empty([gw.unwrap_or(640.0), gh.unwrap_or(360.0)]);
+            }
+        };
+        let streams = info["streams"].as_array().cloned().unwrap_or_default();
+        let v = streams.iter().find(|s| s["codec_type"] == "video");
+        let has_audio = streams.iter().any(|s| s["codec_type"] == "audio");
+        let (nw, nh) = match v {
+            Some(v) => (v["width"].as_f64().unwrap_or(640.0) as f32, v["height"].as_f64().unwrap_or(360.0) as f32),
+            None => {
+                self.d.push(Diagnostic::error(format!("{path}.src"), "no video stream in this file"));
+                return empty([gw.unwrap_or(640.0), gh.unwrap_or(360.0)]);
+            }
+        };
+        let clip_dur = info["format"]["duration"].as_str().and_then(|d| d.parse::<f32>().ok()).unwrap_or(life);
+        let nat = [nw, nh];
+        let speed = l.speed.unwrap_or(1.0).max(0.01) as f32;
+        let looped = matches!(l.loop_, Some(spec::LoopValue::Clip(true)));
+        let trim = l.trim_start.as_ref().map(|t| self.time_raw(t, &format!("{path}.trimStart"))).unwrap_or(0.0).max(0.0);
+        // Audio from the clip.
+        if let Some(vol) = l.volume.filter(|v| *v > 0.0) {
+            if has_audio {
+                self.audio_extra.push(crate::audio::Track {
+                    src: crate::audio::Source::File(full.to_string_lossy().into_owned()),
+                    start: (self.scene_start + start) as f64,
+                    trim: Some([trim as f64, 0.0]),
+                    volume: vol,
+                    looped,
+                    duration: Some(life as f64),
+                    ..Default::default()
+                });
+            } else {
+                self.d.push(Diagnostic::warning(format!("{path}.volume"), "this clip has no audio track"));
+            }
+        }
+        if !self.o.load_assets {
+            return empty(nat);
+        }
+        // Decode size: the layer's box (or natural size), at most the frame, at most ~1 GB for the clip.
+        let rate = self.fps.min(60.0);
+        let span = if looped { (clip_dur - trim).max(0.04) } else { (life * speed).min((clip_dur - trim).max(0.04)) };
+        let count = (span * rate).ceil().max(1.0);
+        let bw = gw.unwrap_or(nw).min(self.w).max(2.0);
+        let bh = gh.unwrap_or(nh).min(self.h).max(2.0);
+        let mut k = (bw / nw).max(bh / nh).min(1.0);
+        let budget = 1.0e9f32;
+        let bytes = |k: f32| nw * k * nh * k * 4.0 * count;
+        if bytes(k) > budget {
+            k *= (budget / bytes(k)).sqrt();
+            self.d.push(Diagnostic::warning(path, format!("long clip: decoded at {:.0}% resolution to fit in memory", k * 100.0)));
+        }
+        let (dw, dh) = (((nw * k).round() as u32).max(2) & !1, ((nh * k).round() as u32).max(2) & !1);
+        let out = std::process::Command::new("ffmpeg")
+            .args(["-v", "error", "-ss", &format!("{trim:.4}"), "-t", &format!("{span:.4}"), "-i"])
+            .arg(&full)
+            .args(["-vf", &format!("fps={rate},scale={dw}:{dh}:flags=bicubic"), "-f", "rawvideo", "-pix_fmt", "rgba", "-"])
+            .output();
+        let px = match out {
+            Ok(o) if o.status.success() => o.stdout,
+            Ok(o) => {
+                self.d.push(Diagnostic::error(format!("{path}.src"), format!("can't decode video: {}", String::from_utf8_lossy(&o.stderr).trim())));
+                return empty(nat);
+            }
+            Err(e) => {
+                self.d.push(Diagnostic::error(format!("{path}.src"), format!("video layers need ffmpeg: {e}")));
+                return empty(nat);
+            }
+        };
+        let fsz = (dw * dh * 4) as usize;
+        let mut frames = Vec::new();
+        for chunk in px.chunks_exact(fsz) {
+            match self.assets.add_rgba(dw, dh, chunk.to_vec()) {
+                Ok(id) => frames.push(id),
+                Err(e) => {
+                    self.d.push(Diagnostic::error(format!("{path}.src"), e));
+                    break;
+                }
+            }
+        }
+        if frames.is_empty() {
+            self.d.push(Diagnostic::error(format!("{path}.src"), "no frames decoded (is trimStart past the end?)"));
+        }
+        (Kind::Video { frames, natural: nat, fit, rate, speed, looped }, nat)
     }
 
     fn component_layer(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>) -> Option<(Kind, [f32; 2])> {

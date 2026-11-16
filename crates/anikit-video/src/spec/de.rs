@@ -49,6 +49,7 @@ impl<'de> Visitor<'de> for LayerV {
         Layer::deserialize(de::value::MapAccessDeserializer::new(m))
     }
 }
+#[derive(Clone, Copy)]
 struct LayerSeed;
 impl<'de> DeserializeSeed<'de> for LayerSeed {
     type Value = Layer;
@@ -88,6 +89,7 @@ impl<'de> Visitor<'de> for SceneV {
         Scene::deserialize(de::value::MapAccessDeserializer::new(m))
     }
 }
+#[derive(Clone, Copy)]
 struct SceneSeed;
 impl<'de> DeserializeSeed<'de> for SceneSeed {
     type Value = Scene;
@@ -110,18 +112,6 @@ impl<'de, S: DeserializeSeed<'de> + Copy> Visitor<'de> for SeqV<S> {
         Ok(v)
     }
 }
-impl Clone for LayerSeed {
-    fn clone(&self) -> Self {
-        LayerSeed
-    }
-}
-impl Copy for LayerSeed {}
-impl Clone for SceneSeed {
-    fn clone(&self) -> Self {
-        SceneSeed
-    }
-}
-impl Copy for SceneSeed {}
 
 pub fn layers<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<Layer>, D::Error> {
     d.deserialize_seq(SeqV(LayerSeed))
