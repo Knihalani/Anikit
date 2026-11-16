@@ -64,6 +64,14 @@ describe('motionValue', () => {
     expect(area.get()).toBe(6);
     w.set(4);
     expect(area.get()).toBe(12);
+    // Three or more sources (and none) take the general path.
+    const d = motionValue(5);
+    const vol = derived([w, h, d], (a, b, c) => a * b * c);
+    expect(vol.get()).toBe(60);
+    h.set(1);
+    expect(vol.get()).toBe(20);
+    expect(area.get()).toBe(4);
+    expect(derived([], () => 7).get()).toBe(7);
   });
 
   it('binds values to element styles, and reverts', () => {

@@ -117,8 +117,13 @@ export class MotionValue {
 
   private write(v: number): void {
     if (v === this.v) return;
-    const t = now(), dt = (t - this.last.t) / 1000;
-    if (dt > 0) this.last = { t, v, vel: (v - this.last.v) / dt };
+    const t = now(), last = this.last, dt = (t - last.t) / 1000;
+    if (dt > 0) {
+      // In place: one record per value, not one object per change.
+      last.vel = (v - last.v) / dt;
+      last.t = t;
+      last.v = v;
+    }
     this.v = v;
     if (this.notifying) return; // a subscriber set us again: the outer loop already has the latest value
     this.notifying = true;
@@ -146,7 +151,13 @@ export function motionValue(initial = 0): MotionValue {
  * `derived([w, h], (w, h) => w * h)`.
  */
 export function derived(sources: MotionValue[], fn: (...values: number[]) => number): MotionValue {
-  const read = () => fn(...sources.map((s) => s.get()));
+  // One or two sources (the common cases, and every `map()`): no array and
+  // spread per update.
+  const a = sources[0], b = sources[1];
+  const read =
+    sources.length === 1 ? () => fn(a.get())
+    : sources.length === 2 ? () => fn(a.get(), b.get())
+    : () => fn(...sources.map((s) => s.get()));
   const out = new MotionValue(read());
   for (const s of sources) s.on(() => out._derive(read()));
   return out;
