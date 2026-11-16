@@ -86,6 +86,13 @@ mod imp {
         let v = w::v128_or(w::v128_or(q(r), w::i32x4_shl(q(g), 8)), w::v128_or(w::i32x4_shl(q(b), 16), w::i32x4_splat(0xff00_0000u32 as i32)));
         [w::u32x4_extract_lane::<0>(v), w::u32x4_extract_lane::<1>(v), w::u32x4_extract_lane::<2>(v), w::u32x4_extract_lane::<3>(v)]
     }
+    #[inline(always)]
+    pub fn unpack(p: [u32; 4]) -> [Raw; 3] {
+        let v = w::u32x4(p[0], p[1], p[2], p[3]);
+        let m = w::u32x4_splat(255);
+        let c = |s: u32| w::f32x4_convert_u32x4(w::v128_and(w::u32x4_shr(v, s), m));
+        [c(0), c(8), c(16)]
+    }
 }
 
 #[cfg(not(all(target_arch = "wasm32", target_feature = "simd128")))]
@@ -168,6 +175,11 @@ mod imp {
     pub fn pack(r: Raw, g: Raw, b: Raw) -> [u32; 4] {
         let q = |v: f32| ((v * 255.0 + 0.5) as u32).min(255);
         core::array::from_fn(|i| q(r[i]) | (q(g[i]) << 8) | (q(b[i]) << 16) | 0xff00_0000)
+    }
+    #[inline(always)]
+    pub fn unpack(p: [u32; 4]) -> [Raw; 3] {
+        let c = |s: u32| core::array::from_fn(|i| ((p[i] >> s) & 255) as f32);
+        [c(0), c(8), c(16)]
     }
 }
 
@@ -256,6 +268,12 @@ impl V4 {
     #[inline(always)]
     pub fn pack_rgb(r: Self, g: Self, b: Self) -> [u32; 4] {
         imp::pack(r.0, g.0, b.0)
+    }
+    /// Red, green and blue (0…255) of four packed little-endian RGBA pixels.
+    #[inline(always)]
+    pub fn unpack_rgb(p: [u32; 4]) -> [Self; 3] {
+        let [r, g, b] = imp::unpack(p);
+        [Self(r), Self(g), Self(b)]
     }
 }
 
@@ -368,5 +386,9 @@ mod tests {
         assert_eq!(V4::select(a.gtf(0.0), a, V4::splat(0.0)).to_array(), [1.0, 0.0, 4.0, 9.0]);
         assert_eq!(V4::new(1.25, -0.5, 0.0, 3.0).fract().to_array(), [0.25, 0.5, 0.0, 0.0]);
         assert_eq!(V4::pack_rgb(V4::splat(1.0), V4::splat(0.0), V4::splat(2.0))[0], 0xffff_00ff);
+        let [r, g, b] = V4::unpack_rgb([0x0001_0203, 0xff40_8020, 0, 0x00ff_ffff]);
+        assert_eq!((r.to_array()[0], g.to_array()[0], b.to_array()[0]), (3.0, 2.0, 1.0));
+        assert_eq!((r.to_array()[1], g.to_array()[1], b.to_array()[1]), (32.0, 128.0, 64.0));
+        assert_eq!(b.to_array()[3], 255.0);
     }
 }

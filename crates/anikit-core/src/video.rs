@@ -185,7 +185,9 @@ pub struct PostFx {
     rays: Vec<f32>,
     luma: Vec<u8>,
     copy: Vec<u8>,
-    half: Vec<u8>,
+    /// Zoom blur: half-res packed RGB and its copy for the second pass.
+    half: Vec<u32>,
+    half2: Vec<u32>,
 }
 
 impl PostFx {
@@ -276,23 +278,31 @@ impl PostFx {
             return;
         }
         let (bw, bh) = (w / 2, h / 2);
+        const RB: u32 = 0x00ff_00ff;
+        // 2×2 mean into packed RGB words (red+blue and green summed in 16-bit lanes).
         self.half.clear();
-        self.half.resize(bw * bh * 3, 0);
+        self.half.resize(bw * bh, 0);
+        let word = |i: usize| u32::from_le_bytes([rgba[i], rgba[i + 1], rgba[i + 2], rgba[i + 3]]);
         for by in 0..bh {
             for bx in 0..bw {
                 let i = (by * 2 * w + bx * 2) * 4;
-                for c in 0..3 {
-                    let s = rgba[i + c] as u16 + rgba[i + 4 + c] as u16 + rgba[i + w * 4 + c] as u16 + rgba[i + w * 4 + 4 + c] as u16;
-                    self.half[(by * bw + bx) * 3 + c] = ((s + 2) >> 2) as u8;
-                }
+                let q = [word(i), word(i + 4), word(i + w * 4), word(i + w * 4 + 4)];
+                let rb = (q.iter().map(|v| v & RB).sum::<u32>() + 0x0002_0002) >> 2 & RB;
+                let g = (q.iter().map(|v| (v >> 8) & 255).sum::<u32>() + 2) >> 2;
+                self.half[by * bw + bx] = rb | g << 8;
             }
         }
         let (cx, cy) = (p.zoom_center[0] * bw as f32, p.zoom_center[1] * bh as f32);
         let k = p.zoom_blur.min(0.9) / 16.0;
-        let (wi, hi) = (bw as isize - 1, bh as isize - 1);
+        // Taps lie between the pixel and the centre (step·t < 1), so with the
+        // centre on screen they never leave it: no clamping per tap.
+        let inside = cx >= 0.0 && cy >= 0.0 && cx <= (bw - 1) as f32 && cy <= (bh - 1) as f32;
+        let (wi, hi) = (bw as i32 - 1, bh as i32 - 1);
         for pass in 0..2u32 {
-            self.copy.clear();
-            self.copy.extend_from_slice(&self.half);
+            core::mem::swap(&mut self.half, &mut self.half2);
+            self.half.clear();
+            self.half.extend_from_slice(&self.half2);
+            let src = &self.half2;
             let step = if pass == 0 { k } else { k * 4.0 };
             for by in 0..bh {
                 let dy = (cy - by as f32) * step;
@@ -305,20 +315,21 @@ impl PostFx {
                     hs ^= hs >> 15;
                     hs = hs.wrapping_mul(0x2C1B_3C6D);
                     let jit = (hs >> 8) as f32 * (1.0 / 16_777_216.0);
-                    let mut acc = [0u32; 3];
-                    for j in 0..4 {
-                        let t = j as f32 + jit;
-                        let sx = (bx as f32 + dx * t + 0.5).clamp(0.0, wi as f32) as usize;
-                        let sy = (by as f32 + dy * t + 0.5).clamp(0.0, hi as f32) as usize;
-                        let o = (sy * bw + sx) * 3;
-                        acc[0] += self.copy[o] as u32;
-                        acc[1] += self.copy[o + 1] as u32;
-                        acc[2] += self.copy[o + 2] as u32;
+                    // 16.16 fixed point along the ray, starting at t = jit.
+                    let mut fx = ((bx as f32 + dx * jit + 0.5) * 65536.0) as i32;
+                    let mut fy = ((by as f32 + dy * jit + 0.5) * 65536.0) as i32;
+                    let (ddx, ddy) = ((dx * 65536.0) as i32, (dy * 65536.0) as i32);
+                    let (mut arb, mut ag) = (0u32, 0u32);
+                    for _ in 0..4 {
+                        let (sx, sy) = (fx >> 16, fy >> 16);
+                        let (sx, sy) = if inside { (sx, sy) } else { (sx.clamp(0, wi), sy.clamp(0, hi)) };
+                        let v = src[sy as usize * bw + sx as usize];
+                        arb += v & RB;
+                        ag += (v >> 8) & 255;
+                        fx += ddx;
+                        fy += ddy;
                     }
-                    let o = (by * bw + bx) * 3;
-                    self.half[o] = ((acc[0] + 2) >> 2) as u8;
-                    self.half[o + 1] = ((acc[1] + 2) >> 2) as u8;
-                    self.half[o + 2] = ((acc[2] + 2) >> 2) as u8;
+                    self.half[by * bw + bx] = ((arb + 0x0002_0002) >> 2 & RB) | ((ag + 2) >> 2) << 8;
                 }
             }
         }
@@ -328,20 +339,31 @@ impl PostFx {
         for y in 0..h {
             let by = (y / 2).min(bh - 1);
             let dy = y as f32 - fcy;
-            for x in 0..w {
+            let hrow = &self.half[by * bw..(by + 1) * bw];
+            let row = &mut rgba[y * w * 4..(y + 1) * w * 4];
+            // Beyond radius 4 / kk the blur is total: copy the blurred pixel.
+            let full2 = (4.0 / kk.max(1e-6)) * (4.0 / kk.max(1e-6));
+            for (x, px) in row.chunks_exact_mut(4).enumerate() {
                 let dx = x as f32 - fcx;
-                let len = crate::math::sqrtf(dx * dx + dy * dy) * kk;
+                let d2 = dx * dx + dy * dy;
+                if d2 >= full2 {
+                    let b = hrow[(x / 2).min(bw - 1)];
+                    px[0] = b as u8;
+                    px[1] = (b >> 8) as u8;
+                    px[2] = (b >> 16) as u8;
+                    continue;
+                }
+                let len = crate::math::sqrtf(d2) * kk;
                 let a = ((len - 1.5) * 0.4).clamp(0.0, 1.0);
                 if a <= 0.0 {
                     continue;
                 }
                 let ai = (a * 256.0) as u32;
-                let o = (by * bw + (x / 2).min(bw - 1)) * 3;
-                let i = (y * w + x) * 4;
-                for c in 0..3 {
-                    let v = (rgba[i + c] as u32 * (256 - ai) + self.half[o + c] as u32 * ai + 128) >> 8;
-                    rgba[i + c] = v.min(255) as u8;
-                }
+                let b = hrow[(x / 2).min(bw - 1)];
+                let c = u32::from_le_bytes([px[0], px[1], px[2], px[3]]);
+                let o_rb = (((c & RB) * (256 - ai) + (b & RB) * ai + 0x0080_0080) >> 8) & RB;
+                let o_g = ((((c >> 8) & 255) * (256 - ai) + ((b >> 8) & 255) * ai + 128) >> 8) & 255;
+                px.copy_from_slice(&((c & 0xff00_0000) | o_rb | o_g << 8).to_le_bytes());
             }
         }
     }
@@ -427,33 +449,45 @@ impl PostFx {
         let (cx, cy) = (p.rays_center[0] * sw as f32, p.rays_center[1] * sh as f32);
         let k = p.rays_length.clamp(0.0, 1.0) / 24.0; // taps are spread over 24 steps of the ray
         self.tmp.resize(sw * sh * 3, 0.0);
-        let (wi, hi) = (sw as isize - 1, sh as isize - 1);
+        // Decaying tap weights, normalised once (×2: rays are a glow, not an average).
+        let mut wts = [0.0f32; N];
+        let mut wgt = 1.0f32;
+        for v in wts.iter_mut() {
+            *v = wgt;
+            wgt *= 0.93;
+        }
+        let scale = 2.0 / wts.iter().sum::<f32>();
+        wts.iter_mut().for_each(|v| *v *= scale);
+        // Taps run from the pixel towards the centre and stop short of it, so
+        // with the centre on screen they never leave it: no clamps per tap.
+        let inside = cx >= 0.0 && cy >= 0.0 && cx <= (sw - 1) as f32 && cy <= (sh - 1) as f32;
+        let (wi, hi) = (sw as i32 - 1, sh as i32 - 1);
+        let st = 24.0 / N as f32;
         for y in 0..sh {
             for x in 0..sw {
                 let (dx, dy) = ((cx - x as f32) * k, (cy - y as f32) * k);
                 let mut acc = [0.0f32; 3];
-                let mut wgt = 1.0f32;
-                let mut norm = 0.0f32;
                 // Jittered start (per pixel hash) hides the coarser tap spacing.
                 let mut hs = (x as u32).wrapping_mul(0x9E37_79B1) ^ (y as u32).wrapping_mul(0x85EB_CA77);
                 hs ^= hs >> 15;
                 hs = hs.wrapping_mul(0x2C1B_3C6D);
                 let jit = (hs >> 8) as f32 * (1.0 / 16_777_216.0);
-                for j in 0..N {
-                    let t = (j as f32 + jit) * (24.0 / N as f32);
-                    let sx = (x as f32 + dx * t + 0.5).clamp(0.0, wi as f32) as usize;
-                    let sy = (y as f32 + dy * t + 0.5).clamp(0.0, hi as f32) as usize;
-                    let o = (sy * sw + sx) * 3;
-                    for c in 0..3 {
-                        acc[c] += self.rays[o + c] * wgt;
-                    }
-                    norm += wgt;
-                    wgt *= 0.93;
+                // 16.16 fixed point along the ray.
+                let mut fx = ((x as f32 + dx * jit * st + 0.5) * 65536.0) as i32;
+                let mut fy = ((y as f32 + dy * jit * st + 0.5) * 65536.0) as i32;
+                let (ddx, ddy) = ((dx * st * 65536.0) as i32, (dy * st * 65536.0) as i32);
+                for &wv in &wts {
+                    let (sx, sy) = (fx >> 16, fy >> 16);
+                    let (sx, sy) = if inside { (sx, sy) } else { (sx.clamp(0, wi), sy.clamp(0, hi)) };
+                    let o = (sy as usize * sw + sx as usize) * 3;
+                    acc[0] += self.rays[o] * wv;
+                    acc[1] += self.rays[o + 1] * wv;
+                    acc[2] += self.rays[o + 2] * wv;
+                    fx += ddx;
+                    fy += ddy;
                 }
                 let o = (y * sw + x) * 3;
-                for c in 0..3 {
-                    self.tmp[o + c] = acc[c] / norm * 2.0;
-                }
+                self.tmp[o..o + 3].copy_from_slice(&acc);
             }
         }
         core::mem::swap(&mut self.rays, &mut self.tmp);
@@ -501,26 +535,31 @@ impl PostFx {
             }
             let dy = y as f32 - cy;
             let dy2 = V4::splat(dy * dy);
+            // Aberration sources: red at x − (x − cx)·norm on row y − dy·norm, blue
+            // mirrored. Rows are constant and x is affine, so step x in 16.16.
+            let (ry, by_) = (((y as f32 - dy * norm + 0.5) as isize).clamp(0, hi) as usize * w, ((y as f32 + dy * norm + 0.5) as isize).clamp(0, hi) as usize * w);
+            let (rx0, bx0) = ((((cx * norm + 0.5) * 65536.0) as i64), (((-cx * norm + 0.5) * 65536.0) as i64));
+            let (rdx, bdx) = (((1.0 - norm) * 65536.0) as i64, ((1.0 + norm) * 65536.0) as i64);
             let row = &mut rgba[y * w * 4..(y + 1) * w * 4];
             let mut x0 = 0;
             while x0 < w {
                 let nl = (w - x0).min(4);
-                let px = |l: usize, c: usize| row[(x0 + l.min(nl - 1)) * 4 + c] as f32;
-                let (mut r, g, mut b) = (
-                    V4::new(px(0, 0), px(1, 0), px(2, 0), px(3, 0)),
-                    V4::new(px(0, 1), px(1, 1), px(2, 1), px(3, 1)),
-                    V4::new(px(0, 2), px(1, 2), px(2, 2), px(3, 2)),
-                );
+                // Four pixels as packed words (the last group repeats its edge pixel).
+                let words: [u32; 4] = core::array::from_fn(|l| {
+                    let o = (x0 + l.min(nl - 1)) * 4;
+                    u32::from_le_bytes([row[o], row[o + 1], row[o + 2], row[o + 3]])
+                });
+                let [mut r, g, mut b] = V4::unpack_rgb(words);
                 if ab {
                     // Red pushed outward, blue pulled inward, proportional to radius.
                     let mut rr = [0f32; 4];
                     let mut bb = [0f32; 4];
                     for l in 0..4 {
-                        let x = (x0 + l.min(nl - 1)) as f32;
-                        let (ox, oy) = ((x - cx) * norm, dy * norm);
-                        let at = |sx: f32, sy: f32| ((sy + 0.5) as isize).clamp(0, hi) as usize * w + ((sx + 0.5) as isize).clamp(0, wi) as usize;
-                        rr[l] = self.copy[at(x - ox, y as f32 - oy) * 4] as f32;
-                        bb[l] = self.copy[at(x + ox, y as f32 + oy) * 4 + 2] as f32;
+                        let x = (x0 + l.min(nl - 1)) as i64;
+                        let sxr = ((rx0 + x * rdx) >> 16).clamp(0, wi as i64) as usize;
+                        let sxb = ((bx0 + x * bdx) >> 16).clamp(0, wi as i64) as usize;
+                        rr[l] = self.copy[(ry + sxr) * 4] as f32;
+                        bb[l] = self.copy[(by_ + sxb) * 4 + 2] as f32;
                     }
                     r = V4::from_array(rr);
                     b = V4::from_array(bb);
@@ -574,10 +613,9 @@ impl PostFx {
                 let out = V4::pack_rgb(((c[0] + n) * k).maxf(0.0), ((c[1] + n) * k).maxf(0.0), ((c[2] + n) * k).maxf(0.0));
                 for l in 0..nl {
                     let o = (x0 + l) * 4;
-                    let v = out[l];
-                    row[o] = v as u8;
-                    row[o + 1] = (v >> 8) as u8;
-                    row[o + 2] = (v >> 16) as u8;
+                    // RGB from the grade, alpha kept.
+                    let v = (out[l] & 0x00ff_ffff) | (words[l] & 0xff00_0000);
+                    row[o..o + 4].copy_from_slice(&v.to_le_bytes());
                 }
                 x0 += 4;
             }
