@@ -109,13 +109,13 @@ void main() {
     vec3 base;
     float tex = 1.0;
     if (m < 1.5) {
-      float fold = sin(t * 22.0 + 1.6 * sin(th * 2.0 + t * 3.0)) * 0.5 + 0.5;
-      fold = pow(fold, 2.0);
-      n = normalize(n + Z * (fold - 0.4) * 0.45 + cross(Z, n) * 0.12 * sin(th * 5.0 + t * 9.0));
+      float fold = sin(t * 16.0 + 1.8 * sin(th * 2.0 + t * 3.0)) * 0.5 + 0.5;
+      fold = pow(fold, 1.5);
+      n = normalize(n + Z * (fold - 0.4) * 0.7 + cross(Z, n) * 0.12 * sin(th * 5.0 + t * 9.0));
       vec2 q = vec2(t * 260.0, th * 42.0);
       vec2 gq = abs(fract(q) - 0.5);
       tex = 1.0 + 0.07 * step(0.44, max(gq.x, gq.y));
-      base = vec3(0.034, 0.038, 0.048);
+      base = vec3(0.05, 0.056, 0.07) * (0.85 + 0.3 * fold);
       float seam = smoothstep(0.992, 0.999, cos(th - 2.4));
       float stitch = step(0.45, fract(t * 140.0));
       base += vec3(0.08, 0.085, 0.09) * seam * stitch;
@@ -127,7 +127,8 @@ void main() {
     }
     float d = max(dot(n, L) * 0.5 + 0.5, 0.0);
     col = base * tex * (sunC * d * d * 0.8 + skyC * (0.55 + 0.35 * n.y) + snowC * 0.3 * max(-n.y, 0.0));
-    col += vec3(1.0, 0.7, 0.45) * pow(edge, 3.0) * back * 0.22;
+    col += vec3(1.0, 0.72, 0.48) * pow(edge, 2.5) * (0.12 + 0.3 * back);
+    col += sunC * 0.05 * pow(max(dot(reflect(-V, n), L), 0.0), 6.0);
     col += vec3(0.55, 0.6, 0.7) * pow(edge, 2.5) * 0.05;
     col += base * portC * max(dot(n, Lp), 0.0) * 2.0;
     col *= 0.93 + 0.07 * hash(floor(vPos * 1400.0));
@@ -426,9 +427,9 @@ export function createHands(canvas) {
     .add(Lh, { x: [-0.2, -0.13], y: [-0.5, -0.11], z: [-0.38, -0.43], pitch: [20, 38], yaw: [10, 16], roll: [-30, -12], curl: [0.55, 0.34], ex: [-0.26, -0.22], ey: [-0.55, -0.5] }, { duration: 2.5, ease: oo }, 0)
     .add(Rh, { x: [0.2, 0.13], y: [-0.5, -0.13], z: [-0.38, -0.42], pitch: [20, 30], yaw: [-10, -16], roll: [30, 14], curl: [0.55, 0.38], ex: [0.26, 0.22], ey: [-0.55, -0.5] }, { duration: 2.7, ease: oo }, 0.15)
     // The ring hand reaches forward and a little left, palm out, fingers relaxed and spread: the anchor (2.4 → 4).
-    .add(Lh, { x: -0.13, y: -0.035, z: -0.6, pitch: 80, yaw: 20, roll: -4, curl: [0.34, 0.12], spread: [0.1, 0.75], thumb: [0.2, 0.8], tcurl: [0.4, 0.12], ex: -0.21, ey: -0.42, ez: -0.27 }, { duration: 1.6, ease: io }, 2.4)
+    .add(Lh, { x: -0.13, y: -0.035, z: -0.6, pitch: 80, yaw: 20, roll: -4, curl: [0.34, 0.12], spread: [0.1, 0.75], thumb: [0.2, 0.8], tcurl: [0.4, 0.12], ex: -0.23, ey: -0.46, ez: -0.27 }, { duration: 1.6, ease: io }, 2.4)
     // The drawing hand comes up beside it, index leading (3.0 → 4.1).
-    .add(Rh, { x: 0.075, y: -0.075, z: -0.5, pitch: 58, yaw: -10, roll: 12, curl: 0.24, spread: 0.3, thumb: 0.45, tcurl: 0.35, ex: 0.2, ey: -0.44, ez: -0.18 }, { duration: 1.1, ease: io }, 3.0)
+    .add(Rh, { x: 0.075, y: -0.075, z: -0.5, pitch: 58, yaw: -10, roll: 12, curl: 0.24, spread: 0.3, thumb: 0.45, tcurl: 0.35, ex: 0.25, ey: -0.47, ez: -0.24 }, { duration: 1.1, ease: io }, 3.0)
     // Two and a half big circles (4.0 → 7.0); the first one draws the ring, the rest spin it up.
     .add(circle, { amp: [0, 1] }, { duration: 0.45, ease: 'inOutSine' }, 3.95)
     .add(circle, { phase: [0, Math.PI * 2 * TURNS] }, { duration: 3.0, ease: 'inOutSine' }, 4.0)
@@ -492,8 +493,9 @@ export function createHands(canvas) {
     const al = Math.hypot(ax, ay, az); ax /= al; ay /= al; az /= al;
     R(AR, ax, ay, az);
     const at = (k, out) => R(out, W[0] - ax * k, W[1] - ay * k, W[2] - az * k);
-    at(0.62, tmpA); at(0.1, tmpB); push(tmpA, 0.062, tmpB, 0.05, D, 1);            // sleeve
-    at(0.105, tmpA); at(0.05, tmpB); push(tmpA, 0.049, tmpB, 0.033, D, 2);          // knit cuff, gathered at the wrist
+    // Forearm sleeve, tapering from the elbow to the wrist.
+    at(0.5, tmpA); at(0.1, tmpB); push(tmpA, 0.058, tmpB, 0.037, D, 1);
+    at(0.105, tmpA); at(0.05, tmpB); push(tmpA, 0.037, tmpB, 0.03, D, 2);           // knit cuff, gathered at the wrist
     at(0.075, tmpA); toView(tmpB, 0, -0.002, 0.012); push(tmpA, 0.03, tmpB, 0.026, D, 0); // wrist
     // Palm: metacarpals side by side fuse into the back of the hand; a pad underneath.
     for (let f = 0; f < 4; f++) {
