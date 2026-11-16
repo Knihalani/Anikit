@@ -888,6 +888,53 @@
       },
       "additionalProperties": false
     },
+    "CustomBounceOptions": {
+      "type": "object",
+      "description": "Options of `customBounce()`.",
+      "x-module": "anikit",
+      "properties": {
+        "strength": {
+          "type": "number",
+          "description": "Bounciness 0–1: each bounce lasts `strength` times the previous one (default 0.7).",
+          "tsType": "number | undefined"
+        },
+        "squash": {
+          "type": "number",
+          "description": "Length of the squash pulse at each impact, as a fraction of a bounce (0 for none; default 1, typical 1–4).",
+          "tsType": "number | undefined"
+        },
+        "endAtStart": {
+          "type": "boolean",
+          "description": "Start at the ground (1) and bounce up off it first, instead of falling in from 0 (default false).",
+          "tsType": "boolean | undefined"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CustomWiggleOptions": {
+      "type": "object",
+      "description": "Options of `customWiggle()`.",
+      "x-module": "anikit",
+      "properties": {
+        "type": {
+          "enum": [
+            "anticipate",
+            "random",
+            "easeOut",
+            "easeInOut",
+            "uniform"
+          ],
+          "description": "Amplitude envelope: `'easeOut'` (strong, then dying away; default),\n`'easeInOut'` (swells and fades), `'anticipate'` (a pull back, then the\nswing), `'uniform'` (constant) or `'random'` (irregular, seeded).",
+          "tsType": "\"anticipate\" | \"random\" | \"easeOut\" | \"easeInOut\" | \"uniform\" | undefined"
+        },
+        "seed": {
+          "type": "number",
+          "description": "Seed for `'random'` (default 1).",
+          "tsType": "number | undefined"
+        }
+      },
+      "additionalProperties": false
+    },
     "DraggableOptions": {
       "type": "object",
       "x-module": "anikit",
@@ -5601,6 +5648,38 @@
         "letterSpacing": {
           "type": "number",
           "tsType": "number | undefined"
+        }
+      },
+      "additionalProperties": false
+    },
+    "VariantsOptions": {
+      "type": "object",
+      "description": "Options of `variants()`.",
+      "x-module": "anikit",
+      "properties": {
+        "initial": {
+          "type": "string",
+          "description": "State applied immediately, without animating.",
+          "tsType": "string | undefined"
+        },
+        "transition": {
+          "tsType": "VariantTransition | undefined",
+          "description": "Default transition for every state (a state's own `transition` wins)."
+        },
+        "children": {
+          "anyOf": [
+            {
+              "tsType": "Variants"
+            },
+            {
+              "type": "array",
+              "items": {
+                "tsType": "Variants"
+              }
+            }
+          ],
+          "description": "Controllers (or one) that follow this one's state changes, orchestrated by the state's transition.",
+          "tsType": "Variants | Variants[] | undefined"
         }
       },
       "additionalProperties": false

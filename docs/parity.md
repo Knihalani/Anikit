@@ -55,8 +55,8 @@ Legend: ✅ supported · ⚠️ partial, or only with extra work · ❌ not avai
 | CSS strings (`cubic-bezier`, `steps`, `linear()`) | ✅ | ⚠️ `steps(n)`; bezier needs CustomEase | ✅ arrays, `steps` | ✅ |
 | Spring as an easing | ✅ `'spring(bounce: .3)'`, presets | ❌ | ✅ | ✅ `createSpring` |
 | Draw an ease from an SVG path (CustomEase) | ✅ `'custom(M0,0 C…)'` | ✅ CustomEase | ❌ | ❌ |
-| CustomBounce (with squash) | ⚠️ bounce eases, no squash companion | ✅ CustomBounce | ❌ | ❌ |
-| CustomWiggle | ⚠️ `wiggle(n)`, `shake(n)`, no wiggle types | ✅ CustomWiggle | ❌ | ❌ |
+| CustomBounce (with squash) | ✅ `customBounce({ strength, squash })` → `{ ease, squash }` | ✅ CustomBounce | ❌ | ❌ |
+| CustomWiggle | ✅ `customWiggle(n, { type })` (easeOut, easeInOut, anticipate, uniform, random), `'wiggle(n)'` | ✅ CustomWiggle | ❌ | ❌ |
 | EasePack (SlowMo, RoughEase, ExpoScaleEase) | ✅ `slowmo`, `rough`, `expoScale` | ✅ EasePack | ❌ | ⚠️ `irregular` |
 | Ease modifiers (reverse, mirror, blend) | ✅ `reverse()`, `mirror()`, `blend()` | ⚠️ in / out / inOut variants | ✅ `reverseEasing`, `mirrorEasing` | ⚠️ in / out variants |
 | Typo suggestions for ease names | ✅ throws "did you mean" | ❌ | ❌ | ❌ |
@@ -117,7 +117,7 @@ Legend: ✅ supported · ⚠️ partial, or only with extra work · ❌ not avai
 | Exit animations before removal | ✅ `exit`, `enter`, `presence()`, React `<Presence>` | ⚠️ Flip `onLeave` | ✅ `AnimatePresence` (React) | ❌ |
 | Presence modes (wait / sync / pop layout) | ⚠️ `replace(..., { mode })` wait / sync | ❌ | ✅ | ❌ |
 | View Transitions API wrapper | ✅ `viewTransition()` with fallback | ❌ | ✅ `animateView` | ❌ |
-| Declarative variants / orchestration | ❌ (timelines and effects instead) | ❌ | ✅ `variants`, `staggerChildren` | ❌ |
+| Declarative variants / orchestration | ✅ `variants()` with `delayChildren`, `staggerChildren`, `when` | ❌ | ✅ `variants`, `staggerChildren` | ❌ |
 | Reactive values (map, derive, bind) | ✅ `motionValue`, `derived`, `bindValues` | ⚠️ `quickTo` | ✅ `useMotionValue`, `useTransform`, `useSpring` | ⚠️ `createAnimatable` |
 
 ## SVG
@@ -207,7 +207,7 @@ To ship a designer's After Effects animation, Lottie is still the right tool. an
 
 The honest remaining gaps in anikit, most important first:
 
-1. **Thin framework bindings, no declarative component API.** `anikit/react` has hooks and `<Presence>`, but there are no Vue/Svelte adapters, no `variants`/orchestration and no `whileHover` / `whileInView` props on components. This is Motion's core audience.
+1. **Thin framework bindings, no declarative component API.** `anikit/react` has hooks and `<Presence>`, but there are no Vue/Svelte adapters, no `whileHover` / `whileInView` props on components. This is Motion's core audience.
 2. **No Lottie / After Effects import.** Designer-authored motion can't be played: everything is code.
 3. **Layout animation is less complete than Motion's.** Box-shadow distortion isn't corrected, radius correction is opt-in, and there's no `Reorder`, no `popLayout` presence mode and no `Flip.fit()`.
 4. **Missing scroll features.** There's no `containerAnimation` for horizontal-scroll sections and no `scrollerProxy` / `normalizeScroll` (mobile address-bar jumps, third-party scrollers). `smoothScroll` has none of ScrollSmoother's `data-speed` / `data-lag` effects (`parallax()` partly covers them).
@@ -215,6 +215,5 @@ The honest remaining gaps in anikit, most important first:
 6. **Missing Draggable features.** There's no `autoScroll` near container edges, no `hitTest` and no `top,left` positioning mode.
 7. **Lighter dev tools.** `inspector()` is lighter than GSDevTools (no timeline picker, in/out points or persistence), and there's no visual motion-path editor like MotionPathHelper.
 8. **Less control over morphs.** Point matching is automatic only: there's no `shapeIndex` or manual mapping when the automatic match twists.
-9. **Smaller easing gaps.** There's no CustomBounce `squash` companion and no CustomWiggle wiggle types (`anticipate`, `uniform`, `random`).
-10. **Timeline extras.** There's no `addPause()` and no `getById()`.
-11. **Niche integrations.** There's no PixiPlugin / EaselPlugin (plain-object tweening covers most uses), no CSSRulePlugin, and no `wrapYoyo` / `unitize` utilities.
+9. **Timeline extras.** There's no `addPause()` and no `getById()`.
+10. **Niche integrations.** There's no PixiPlugin / EaselPlugin (plain-object tweening covers most uses), no CSSRulePlugin, and no `wrapYoyo` / `unitize` utilities.

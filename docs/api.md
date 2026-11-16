@@ -551,6 +551,37 @@ function Hero() {
 }
 ```
 
+## Variants: `variants`
+
+Motion-style named states. `variants(targets, states, options?)` returns a `Variants` controller: `.animate(name, overrides?)` animates to a state and returns an awaitable timeline (replacing a running transition), `.set(name)` jumps there, `.current` is the state name, `.names` lists the states, `revert()`/`kill()` as usual (tracked by `context()`).
+
+A state is the properties to animate to (end values or keyframes, as for `animate()`) plus an optional `transition` (animation options plus `delayChildren`, `staggerChildren`, `when: 'beforeChildren' | 'afterChildren'`). A state can also be a function `(el, index) => state`. Options: `initial` (applied at once), `transition` (default for every state), `children` (controllers that follow every state change, orchestrated by the parent's transition). Unknown state names and transition keys warn with a suggestion.
+
+```ts
+const items = variants('.menu li', {
+  closed: { opacity: 0, x: -12 },
+  open: (el, i) => ({ opacity: 1, x: 0, transition: { ease: 'spring(bounce: 0.3)', delay: i * 0.01 } }),
+}, { initial: 'closed' });
+const menu: Variants = variants('.menu', {
+  closed: { opacity: 0, y: -8, transition: { duration: 0.2, when: 'afterChildren' } },
+  open: { opacity: 1, y: 0, transition: { duration: 0.25, staggerChildren: 0.04, delayChildren: 0.05 } },
+}, { initial: 'closed', children: items });
+await menu.animate('open');
+menu.animate(menu.current === 'open' ? 'closed' : 'open');
+```
+
+## Custom bounce and wiggle: `customBounce`, `customWiggle`
+
+`customBounce({ strength?, squash?, endAtStart? })` returns `{ ease, squash }`: a bounce whose rebounds each last `strength` (0–1, default 0.7) of the previous one, and a companion ease that pulses 0 → 1 → 0 at each impact (scaled by impact speed) for squash and stretch. `customWiggle(wiggles, { type?, seed? })` swings around the start value and settles there; `type` is `'easeOut'` (default), `'easeInOut'`, `'anticipate'`, `'uniform'` or `'random'`. Both are plain `(t) => number` functions, usable anywhere an `ease` is.
+
+```ts
+const ball = document.createElement('div');
+const { ease, squash } = customBounce({ strength: 0.6, squash: 2 });
+animate(ball, { y: [-200, 0] }, { duration: 1.6, ease });
+animate(ball, { scaleY: [1, 0.7], scaleX: [1, 1.25] }, { duration: 1.6, ease: squash });
+animate(ball, { rotate: 15 }, { duration: 0.8, ease: customWiggle(5, { type: 'easeInOut' }) });
+```
+
 ## Effects
 
 Over 35 presets. Every one accepts the usual animation options plus `stagger`, `distance`, `from`, `intensity` and `loop`:
@@ -1214,6 +1245,8 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 | [Marquees](#marquees-marquee) | `marquee`, `Marquee` | `MarqueeOptions` |
 | [Magnetic and parallax](#magnetic-and-parallax-magnetic-parallax) | `magnetic`, `parallax` | `MagneticOptions`, `ParallaxOptions`, `PointerFx` |
 | [Effects](#effects) | `effects`, `effect`, `registerEffect`, `effectNames` | `EffectOptions`, `EffectFn`, `EffectName` |
+| [Variants](#variants-variants) | `variants`, `Variants` | `Variant`, `VariantDef`, `VariantTransition`, `VariantsOptions` |
+| [Custom easings](#custom-bounce-and-wiggle-custombounce-customwiggle) | `customBounce`, `customWiggle` | `CustomBounceOptions`, `CustomWiggleOptions` |
 | [Recipes](#recipes-recipe) | `recipe`, `recipeNames` | `RecipeName`, `RecipeOptions`, `RecipeHandle` |
 | [React](#react-anikitreact) (`anikit/react`) | `useAnikit`, `useAnimate`, `useRecipe`, `useMotionValue`, `useSpring`, `useTransform`, `useScroll`, `Presence` | `PresenceProps`, `ScopedAnimate` |
 | [Layout transitions](#layout-transitions-flip), [presence](#presence-enter-and-exit) and [View Transitions](#view-transitions) | `flip`, `presence`, `Presence`, `enter`, `exit`, `viewTransition` | `FlipOptions`, `FlipState`, `PresenceOptions`, `ViewTransitionOptions`, `ViewTransitionHandle` |

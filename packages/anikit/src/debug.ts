@@ -115,7 +115,7 @@ const DOC_ANCHORS: Record<string, string> = {
   smoothScroll: 'scroll', splitText: 'text-layout-compositor-batches', flip: 'layout-transitions-flip', presence: 'presence-enter-and-exit',
   marquee: 'marquees-marquee', magnetic: 'magnetic-and-parallax-magnetic-parallax', parallax: 'magnetic-and-parallax-magnetic-parallax',
   draggable: 'interaction', observer: 'interaction', gesture: 'pinch-rotate-and-pan-gesture', world: 'physics-worlds',
-  recipe: 'recipes-recipe', effects: 'effects', effect: 'effects', batch: 'text-layout-compositor-batches', viewTransition: 'view-transitions',
+  recipe: 'recipes-recipe', variants: 'variants-variants', customBounce: 'custom-bounce-and-wiggle-custombounce-customwiggle', customWiggle: 'custom-bounce-and-wiggle-custombounce-customwiggle', effects: 'effects', effect: 'effects', batch: 'text-layout-compositor-batches', viewTransition: 'view-transitions',
 };
 
 /** Where `api` (e.g. `'scrollTrigger()'` or `"recipe('hero-reveal')"`) is documented: `docs/api.md#…` (also in `llms-full.txt`). */
