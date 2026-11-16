@@ -42,7 +42,14 @@ export default async function film({ anikit: A }) {
   const DUR = Math.round(END * FPS) / FPS;
 
   const cam = scene3d({ fov: 72, width: W, height: H, near: 1.5, far: 60000 });
-  const pose = (t) => path.apply(cam, sOf(t), 0, { shake: 0.6 + 1.2 * smooth(0, 0.3, t) * (1 - smooth(1.0, 1.6, t)), time: t, rate: 0.9 });
+  // A steady drone: a faint drift only. On the steep climb out of the canyon the aim is held lower
+  // (the horizon and the forest stay in frame rather than an empty sky).
+  const pose = (t) => {
+    const p = path.apply(cam, sOf(t), 0, { shake: 0.22, time: t, rate: 0.6 });
+    const z = cam.camera.z, dip = 34 * smooth(-460, -545, z) * (1 - smooth(-640, -760, z));
+    cam.target.y -= dip;
+    return p;
+  };
   Object.assign(debug, { pose, cam, DUR, FPS });
 
   // ---- Looks and transitions: a schedule anchored to places on the route --------------------
@@ -211,7 +218,7 @@ export default async function film({ anikit: A }) {
       { mesh: world.terrainMesh, instances: terrainAt, material: { ...baked, texture: TX.real, textureFilter: 'aniso' } },
       { mesh: world.wallMesh, instances: terrainAt, material: { ...baked, texture: TX.wallReal, textureFilter: 'aniso' } },
       { mesh: rockMesh, instances: rocksR, material: { ambient: 0.32, diffuse: 1.05, specular: 0.12, shininess: 10, rim: 0.15 } },
-      ...chunks.map((ch, k) => ({ mesh: TM[ch.kind], instances: treesR[k], zmin: ch.zmin, zmax: ch.zmax, material: { ambient: 0.5, diffuse: 1.0, specular: 0.06, shininess: 6, rim: 0.22 } })),
+      ...chunks.map((ch, k) => ({ mesh: TM[ch.kind], instances: treesR[k], zmin: ch.zmin, zmax: ch.zmax, material: { ambient: 0.5, diffuse: 1.0, specular: 0.06, shininess: 6, rim: 0.34 } })),
       ...towersR.map((n, c) => ({ mesh: cube, instances: n, material: { ambient: 0.85, diffuse: 0.9, specular: 0.5, shininess: 60, rim: 0.2, texture: TX.windows, textureRepeat: CLS[c] } })),
       { mesh: cube, instances: roofsR, material: { ambient: 0.7, diffuse: 0.9, specular: 0.1, shininess: 10, rim: 0.15 } },
       { mesh: world.farMesh, instances: farAt, material: { ...baked, texture: TX.farReal } },
