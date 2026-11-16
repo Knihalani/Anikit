@@ -1893,6 +1893,20 @@ pub extern "C" fn ak_mesh_ptr(id: u32, which: u32) -> usize {
         None => 0,
     }
 }
+/// Bounding sphere of a mesh: centre x, y, z and radius into the f64 buffer (4 values; reserve them first).
+#[no_mangle]
+pub extern "C" fn ak_mesh_bounds(id: u32) -> u32 {
+    let s = st();
+    let Some(Some(m)) = s.meshes.get(id as usize) else { return 0 };
+    let (c, r) = anikit_core::raster::bounds(m);
+    if s.f64_buf.len() < 4 {
+        return 0; // reserve with ak_f64_buf(4) first
+    }
+    for (o, v) in s.f64_buf.iter_mut().zip([c[0], c[1], c[2], r]) {
+        *o = v as f64;
+    }
+    1
+}
 #[no_mangle]
 pub extern "C" fn ak_mesh_free(id: u32) {
     if let Some(m) = st().meshes.get_mut(id as usize) {
@@ -2004,7 +2018,8 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
     let light = Lighting { ground_fog, point_lights, point_count, ..light };
     let Some(Some((r, inst))) = s.rasters.get_mut(id as usize) else { return 0 };
     let k = (n as usize * INSTANCE_STRIDE).min(inst.len());
-    // Flags: bit 0 back-face culling, bit 1 additive, bit 2 gloss (strength f64[78]), bit 3 flip winding.
+    // Flags: bit 0 back-face culling, bit 1 additive, bit 2 gloss (strength f64[78]), bit 3 flip winding,
+    // bit 4 + bits 8… list index (opaque items drawn out of order, see `Raster::item`).
     let blend = if cull_back & 2 != 0 {
         Blend::Additive
     } else if cull_back & 4 != 0 {
@@ -2015,6 +2030,8 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
     let r = r.target();
     r.gloss = gloss;
     r.flip_winding = cull_back & 8 != 0;
+    // Bit 4: drawn out of list order; the list index (bits 8…23) breaks depth ties.
+    r.item = if cull_back & 16 != 0 { Some((cull_back >> 8).min(u16::MAX as u32 - 1) as u16) } else { None };
     r.draw_with(m, &inst[..k], &vp, eye, &mat, &light, cull_back & 1 != 0, blend, tex);
     r.drawn as u32
 }

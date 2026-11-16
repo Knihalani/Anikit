@@ -927,6 +927,17 @@ Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [nea
 
 **Camera motion blur**: `render(scene, items, { motionBlur: { shutter: 0.5, max } })` reprojects every pixel with the previous `render()`'s camera using the depth buffer and blurs along that motion (depth-aware, so near geometry smears over the background). Smooth, ghost-free speed from one render per frame — use it with composition `motionBlur: 1`, give points `streak: 0`–`0.5`, and call `r3.resetMotion()` after a cut. Pass `prevCamera` (the camera one frame earlier, `scene.viewProjection().matrix`) so previews and `--review`, which skip frames, blur exactly like the final render — see `templates/journey.mjs`.
 
+**Draw order**: `render(scene, items, { sort: 'near' })` draws the opaque items nearest first (by the far side of each item's bounds, so a sky dome around the camera goes last), in the mirror pass too: pixels hidden behind nearer items are rejected by the depth test instead of shaded and overwritten. The picture is bit-identical to list order, exact depth ties included (the item listed first still wins them). On a landscape (sky dome, two terrains, 12,000 trees, a lake), it took the opaque pass from 394 to 257 ms.
+
+```ts
+import { renderer3d, scene3d, mesh, instances } from 'anikit';
+const r3 = renderer3d({ width: 640, height: 360 });
+const cam = scene3d({ width: 640, height: 360, camera: { y: 40, z: 600 } });
+const dome = { mesh: mesh.sphere(16, 24), instances: instances(1, () => ({ scale: 5000 })), cull: false, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0 } };
+const ground = { mesh: mesh.plane(1), instances: instances(1, () => ({ sx: 4000, sz: 4000 })) };
+r3.render(cam, [dome, ground], { sort: 'near' }); // ground first, dome last: same pixels
+```
+
 **Depth read-back**: after a render, `r3.depth(cam)` returns each pixel's distance from the camera (a reused `Float32Array`, `Infinity` where nothing was drawn); `r3.depth()` without a scene gives the raw NDC depth as a view into WebAssembly memory. Drive post effects by depth: ink outlines, a transition front sweeping from the horizon towards the lens (`film/film.mjs` does both).
 
 ```ts

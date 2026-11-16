@@ -82,6 +82,18 @@ export class Mesh3D {
   }
 }
 
+/** Bounding sphere `[cx, cy, cz, r]` per mesh (it only steers `sort: 'near'`, never the pixels). */
+const boundsCache = new WeakMap<Mesh3D, number[]>();
+function meshBounds(m: Mesh3D): number[] {
+  let b = boundsCache.get(m);
+  if (!b) {
+    const at = f64Buf(4);
+    b = core().ak_mesh_bounds(m.id) ? Array.from(F64.subarray(at, at + 4)) : [0, 0, 0, 0];
+    boundsCache.set(m, b);
+  }
+  return b;
+}
+
 const builtin = (kind: number, params: number[] = []) => {
   const at = f64Buf(Math.max(1, params.length));
   F64.set(params, at);
@@ -455,6 +467,13 @@ export class Renderer3D {
      */
     prevCamera?: number[];
     /**
+     * `'near'`: draw opaque items nearest first (by the far side of each item's bounds,
+     * so a sky dome around the camera goes last), the mirror pass too. Hidden pixels are
+     * then rejected by the depth test instead of shaded and overwritten. The output is
+     * identical to list order, exact depth ties included (the item listed first still wins).
+     */
+    sort?: 'near';
+    /**
      * Paint the background with the environment (`sky` / `horizon` / `ground` gradient, meeting the
      * fog at the horizon) instead of a flat colour; `sun` adds a sun disc + halo towards `key`
      * (angular size, ~1–4). Drawn after opaque geometry, before additive items and points.
@@ -509,6 +528,33 @@ export class Renderer3D {
       this.triangles += w.ak_raster_draw(this.id, it.mesh.id, inst.count, flags, vals.length);
     };
     const meshes = items.filter((it): it is DrawItem => !('points' in it));
+    /**
+     * Opaque items in draw order: list order, or nearest first with `sort: 'near'`
+     * (flag bit 4 + list index: the core resolves depth ties by list index, so the
+     * pixels match list order).
+     */
+    const ordered = (list: DrawItem[], ey: number[]): Array<[DrawItem, number]> => {
+      const out = list.map((it): [DrawItem, number] => [it, 0]);
+      if (o.sort !== 'near' || list.length < 2 || items.length >= 0xfffe) return out;
+      const keys = new Map<DrawItem, number>();
+      for (const it of list) keys.set(it, farSide(it, ey));
+      for (const e of out) e[1] = 16 | (items.indexOf(e[0]) << 8);
+      return out.sort((a, b) => keys.get(a[0])! - keys.get(b[0])!);
+    };
+    const farSide = (it: DrawItem, ey: number[]): number => {
+      const b = meshBounds(it.mesh);
+      const inst = it.instances ?? this.single, d = inst.data;
+      let far = 0;
+      for (let i = 0, o = 0; i < inst.count; i++, o += STRIDE) {
+        const x = d[o] * b[0] + d[o + 3] * b[1] + d[o + 6] * b[2] + d[o + 9] - ey[0];
+        const y = d[o + 1] * b[0] + d[o + 4] * b[1] + d[o + 7] * b[2] + d[o + 10] - ey[1];
+        const z = d[o + 2] * b[0] + d[o + 5] * b[1] + d[o + 8] * b[2] + d[o + 11] - ey[2];
+        const s2 = Math.max(d[o] * d[o] + d[o + 1] * d[o + 1] + d[o + 2] * d[o + 2], d[o + 3] * d[o + 3] + d[o + 4] * d[o + 4] + d[o + 5] * d[o + 5], d[o + 6] * d[o + 6] + d[o + 7] * d[o + 7] + d[o + 8] * d[o + 8]);
+        const f = Math.sqrt(x * x + y * y + z * z) + b[3] * Math.sqrt(s2);
+        if (f > far) far = f;
+      }
+      return far;
+    };
     const pls = (o.lights ?? []).slice(0, 8);
     const pointLights: number[] = [pls.length];
     for (const pl of pls) pointLights.push(...pl.position, ...rgb(pl.color), pl.radius ?? 500, pl.intensity ?? 1);
@@ -557,16 +603,14 @@ export class Renderer3D {
       // Reflections render at half resolution (a quarter of the shading; the glossy surface softens them anyway).
       const half = o.mirror.resolution !== 'full';
       if (half) w.ak_raster_reflection_begin(this.id, hex, o.transparent ? 0 : 255);
-      for (const it of meshes) if (!it.mirror && it.reflect !== false && it.blend !== 'additive') drawMesh(it, mr, er, 8);
+      for (const [it, flags] of ordered(meshes.filter((it) => !it.mirror && it.reflect !== false && it.blend !== 'additive'), er)) drawMesh(it, mr, er, 8 | flags);
       if (half) w.ak_raster_reflection_end(this.id);
       else w.ak_raster_clear_depth(this.id);
       pass('mirror');
     }
     const light = (it: DrawItem | PointsItem) => 'points' in it || it.blend === 'additive';
-    for (const item of items) {
-      if (light(item) || (o.mirror && (item as DrawItem).mirror)) continue;
-      drawMesh(item as DrawItem, matrix, eye, 0);
-    }
+    const opaque = meshes.filter((it) => !light(it) && !(o.mirror && it.mirror));
+    for (const [it, flags] of ordered(opaque, eye)) drawMesh(it, matrix, eye, flags);
     pass('opaque');
     if (o.mirror) {
       // The glossy surface after the opaque scene: the depth test skips floor

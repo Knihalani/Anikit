@@ -350,6 +350,14 @@ pub struct Raster {
     /// shaded once. Front-to-back instance order already keeps overdraw low,
     /// so this only pays off for heavily self-overlapping single meshes.
     pub prepass: bool,
+    /// List order of the opaque item being drawn, for draws in any order with
+    /// list-order results (see [`Raster::ordered`]): `Some(i)` resolves depth
+    /// ties against other items by this index (the lower index wins, as if the
+    /// items were drawn in list order); `None` (the default) keeps
+    /// first-drawn-wins.
+    pub item: Option<u16>,
+    /// Owner (list index) of each pixel's depth while drawing with [`Raster::item`].
+    owner: Vec<u16>,
     /// Tests: always take the full shader (to check the fast paths against it).
     #[cfg(test)]
     full_shader: bool,
@@ -1078,6 +1086,14 @@ impl Raster {
             }
             Blend::Opaque => {
                 let pre = self.prepass;
+                let own = !pre && self.item.is_some();
+                if own {
+                    let n = self.width * self.height;
+                    if self.owner.len() != n {
+                        self.owner.clear();
+                        self.owner.resize(n, u16::MAX);
+                    }
+                }
                 if pre {
                     for oi in 0..count {
                         self.tris::<DEPTH>(mesh, oi * nv, cull_back, &sh);
@@ -1094,6 +1110,8 @@ impl Raster {
                     }
                     if pre {
                         self.tris::<SHADE_EQ>(mesh, oi * nv, cull_back, &sh);
+                    } else if own {
+                        self.tris::<SHADE_OWN>(mesh, oi * nv, cull_back, &sh);
                     } else {
                         self.tris::<SHADE_LT>(mesh, oi * nv, cull_back, &sh);
                     }
@@ -1281,6 +1299,9 @@ impl Raster {
             // Split borrows so the span loop keeps everything in locals.
             let gl = (self.gloss.clamp(0.0, 1.0) * 256.0) as u32;
             let (depth, color, qu) = (&mut self.depth[a0..=a1], &mut self.color, &mut self.queue);
+            // Owners of the span's depth (SHADE_OWN only): a tie wins against a later item.
+            let me = self.item.unwrap_or(0);
+            let owner: &mut [u16] = if MODE == SHADE_OWN { &mut self.owner[a0..=a1] } else { &mut [] };
             let len = depth.len();
             let mut k = 0;
             // Groups of four: runs of groups where all four pass the depth
@@ -1295,19 +1316,33 @@ impl Raster {
                 let zv = zv0 + dzv * (V4::splat(kf) + lanes);
                 let d4 = &mut depth[k..k + 4];
                 let dv = V4::new(d4[0], d4[1], d4[2], d4[3]);
-                let bits = match MODE {
+                let mut bits = match MODE {
                     SHADE_EQ => zv.le(dv),
                     _ => zv.lt(dv),
                 }
                 .bits();
+                if MODE == SHADE_OWN {
+                    // Exact ties are rare: check owners only for those lanes.
+                    let eq = zv.le(dv).bits() & !bits;
+                    if eq != 0 {
+                        for l in 0..4 {
+                            if eq & (1 << l) != 0 && owner[k + l] > me {
+                                bits |= 1 << l;
+                            }
+                        }
+                    }
+                }
                 if bits != 0 && !ready {
                     (q0, s0) = start();
                     ready = true;
                 }
                 let zs = zv.to_array();
                 if bits == 15 {
-                    if MODE == SHADE_LT || MODE == GLOSS {
+                    if MODE == SHADE_LT || MODE == GLOSS || MODE == SHADE_OWN {
                         d4.copy_from_slice(&zs);
+                    }
+                    if MODE == SHADE_OWN {
+                        owner[k..k + 4].fill(me);
                     }
                     if run == usize::MAX {
                         run = k;
@@ -1328,8 +1363,11 @@ impl Raster {
                     if !pass[l] {
                         continue;
                     }
-                    if MODE == SHADE_LT || MODE == GLOSS {
+                    if MODE == SHADE_LT || MODE == GLOSS || MODE == SHADE_OWN {
                         d4[l] = zs[l];
+                    }
+                    if MODE == SHADE_OWN {
+                        owner[k + l] = me;
                     }
                     let kf = (k + l) as f32;
                     let qi = qu.n & 3;
@@ -1362,6 +1400,7 @@ impl Raster {
                 let z = z0 + dz * kf;
                 let ok = match MODE {
                     SHADE_EQ => z <= *dp,
+                    SHADE_OWN => z < *dp || (z == *dp && owner[k + kk] > me),
                     _ => z < *dp,
                 };
                 if !ok {
@@ -1371,8 +1410,11 @@ impl Raster {
                     (q0, s0) = start();
                     ready = true;
                 }
-                if MODE == SHADE_LT || MODE == GLOSS {
+                if MODE == SHADE_LT || MODE == GLOSS || MODE == SHADE_OWN {
                     *dp = z;
+                }
+                if MODE == SHADE_OWN {
+                    owner[k + kk] = me;
                 }
                 let l = qu.n & 3;
                 qu.idx[l] = a0 + k + kk;
@@ -2235,7 +2277,8 @@ impl Raster {
 }
 
 /// Bounding sphere of a mesh (box centre, max distance), in model space.
-fn bounds(mesh: &Mesh) -> ([f32; 3], f32) {
+/// Bounding sphere of a mesh: centre and radius.
+pub fn bounds(mesh: &Mesh) -> ([f32; 3], f32) {
     let mut lo = [f32::INFINITY; 3];
     let mut hi = [f32::NEG_INFINITY; 3];
     for p in mesh.pos.chunks_exact(3) {
@@ -2260,6 +2303,8 @@ const SHADE_EQ: u8 = 1;
 const ADD: u8 = 2;
 const SHADE_LT: u8 = 3;
 const GLOSS: u8 = 4;
+/// Opaque, depth ties against other items resolved by list index ([`Raster::item`]).
+const SHADE_OWN: u8 = 5;
 
 /// Write a shaded pixel according to the mode.
 #[inline(always)]
@@ -2633,6 +2678,64 @@ mod tests {
         back.extend_from_slice(&[0.0, 1.0, 0.0]);
         r.draw(&cube(), &back, &vp(), [0.0, 0.0, 5.0], &Material::default(), &Lighting::default(), true);
         assert_eq!(r.color[32 * 64 + 32], before);
+    }
+
+    #[test]
+    fn any_draw_order_with_list_indices_matches_list_order() {
+        // Coincident surfaces (two identical cubes in different colours, a
+        // sphere through them, a plane cutting both) make exact depth ties
+        // between items and inside each item; drawn in every order with their
+        // list indices, colour and depth must equal the plain list-order draw.
+        let tf = |s: f32, x: f32, y: f32, z: f32, c: [f32; 3]| {
+            let mut v = vec![s, 0.0, 0.0, 0.0, s, 0.0, 0.0, 0.0, s, x, y, z];
+            v.extend_from_slice(&c);
+            v
+        };
+        let mut two = tf(1.0, -0.4, 0.0, 0.0, [0.2, 0.3, 0.9]);
+        two.extend(tf(1.0, 0.4, 0.2, -0.3, [0.9, 0.9, 0.1]));
+        let items: [(Mesh, Vec<f32>, bool); 5] = [
+            (cube(), tf(1.2, 0.0, 0.0, 0.0, [1.0, 0.0, 0.0]), true),
+            (sphere(10, 14), tf(0.8, 0.3, 0.1, 0.2, [0.1, 0.8, 0.2]), true),
+            (cube(), tf(1.2, 0.0, 0.0, 0.0, [0.0, 1.0, 0.0]), true),
+            (plane(3, 3), tf(3.0, 0.0, 0.0, 0.0, [0.5, 0.5, 0.5]), false),
+            (cube(), two, true),
+        ];
+        let (mat, light) = (Material::default(), Lighting::default());
+        let draw = |r: &mut Raster, order: &[usize], indexed: bool| {
+            r.clear(0x101010, 255);
+            for &i in order {
+                r.item = indexed.then_some(i as u16);
+                let (m, inst, cull) = &items[i];
+                r.draw(m, inst, &vp(), [0.0, 0.0, 5.0], &mat, &light, *cull);
+            }
+            r.item = None;
+        };
+        let mut want = Raster::new(80, 72);
+        draw(&mut want, &[0, 1, 2, 3, 4], false);
+        let mut plain = Raster::new(80, 72);
+        draw(&mut plain, &[4, 3, 2, 1, 0], false);
+        assert_ne!(plain.color, want.color, "the scene has ties that depend on order");
+        let mut r = Raster::new(80, 72);
+        let mut perm = [0usize, 1, 2, 3, 4];
+        // Heap's algorithm: all 120 orders.
+        let mut c = [0usize; 5];
+        let mut check = |p: &[usize]| {
+            draw(&mut r, p, true);
+            assert!(r.color == want.color && r.depth.iter().zip(&want.depth).all(|(a, b)| a.to_bits() == b.to_bits()), "order {p:?}");
+        };
+        check(&perm);
+        let mut i = 0;
+        while i < 5 {
+            if c[i] < i {
+                perm.swap(if i % 2 == 0 { 0 } else { c[i] }, i);
+                check(&perm);
+                c[i] += 1;
+                i = 0;
+            } else {
+                c[i] = 0;
+                i += 1;
+            }
+        }
     }
 
     #[test]

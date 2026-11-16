@@ -146,6 +146,26 @@ describe('mesh builders', () => {
     expect(mirrored).toBeGreaterThan(plain + 5); // the red cube shows up in the floor below it
   });
 
+  it("draws nearest first with sort: 'near' and keeps list-order pixels, ties included", () => {
+    const r = renderer3d({ width: 64, height: 48 });
+    const cam = scene3d({ width: 64, height: 48, camera: { x: 30, y: 80, z: 400 }, target: { x: 0, y: 0, z: 0 } });
+    // A dome around the camera listed first, two coincident cubes (exact depth ties), a mirror floor.
+    const items = [
+      { mesh: mesh.sphere(12, 16), instances: instances(1, () => ({ scale: 3000 })), cull: false, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0 } },
+      { mesh: mesh.cube(), instances: instances(1, () => ({ y: 20, scale: 90, color: [1, 0, 0] })) },
+      { mesh: mesh.cube(), instances: instances(1, () => ({ y: 20, scale: 90, color: [0, 0, 1] })) },
+      { mirror: true, mesh: mesh.plane(), instances: instances(1, () => ({ y: -40, scale: 2000, color: [0.1, 0.1, 0.1] })) },
+    ];
+    const env = { mirror: { y: -40, strength: 0.5 } };
+    const list = r.render(cam, items, env).slice(), depth = r.depth().slice();
+    const near = r.render(cam, items, { ...env, sort: 'near' }).slice();
+    expect(Array.from(near)).toEqual(Array.from(list));
+    expect(Array.from(r.depth())).toEqual(Array.from(depth));
+    // The tie goes to the cube listed first (red), as in list order.
+    const c = ((24 * 64) + 32) * 4;
+    expect(near[c]).toBeGreaterThan(near[c + 2]);
+  });
+
   it('builds open tubes along paths (trails)', () => {
     const path = flightPath([[0, 0, 0], [100, 0, -500], [0, 50, -1000]]);
     const pts = path.points(40);
