@@ -15,11 +15,10 @@ fn main() {
     let frames: Vec<YuvFrame> = bufs.iter().map(|b| b.frame()).collect();
     let dir = std::env::temp_dir();
     for (name, deblock, cabac, subpel) in [
-        ("default", true, true, true),
-        ("no deblock", false, true, true),
-        ("no subpel", true, true, false),
-        ("cavlc", true, false, true),
-        ("cavlc no subpel no deblock", false, false, false),
+        ("default (CABAC)", false, true, false),
+        ("+ deblock", true, true, false),
+        ("+ subpel", false, true, true),
+        ("CAVLC", false, false, false),
     ] {
         let cfg = EncoderConfig { width: w, height: h, qp, gop: 1000, deblock, cabac, subpel, ..Default::default() };
         let t = Instant::now();
