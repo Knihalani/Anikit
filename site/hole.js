@@ -81,6 +81,19 @@ for (let i = 0; i < BB_N; i++) { const c = blackbody(BB_MIN + ((BB_MAX - BB_MIN)
 // ---------------------------------------------------------------------------
 // Stars: procedural on the sky sphere, so lensed arcs come out of the same lookup
 // ---------------------------------------------------------------------------
+// A fixed catalogue of stars: direction, brightness (power law), colour index.
+const STARS = (() => {
+  const N = 4200, a = new Float32Array(N * 5);
+  let seed = 12345;
+  const rnd = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+  for (let i = 0; i < N; i++) {
+    const u = rnd() * 2 - 1, ph = rnd() * TAU, q = Math.sqrt(1 - u * u);
+    a[i * 5] = Math.cos(ph) * q; a[i * 5 + 1] = u; a[i * 5 + 2] = Math.sin(ph) * q;
+    a[i * 5 + 3] = 0.05 + Math.pow(rnd(), 9) * 2.4;
+    a[i * 5 + 4] = Math.min(BB_N - 1, Math.max(0, Math.round(((2900 + Math.pow(rnd(), 1.4) * 11000 - BB_MIN) / (BB_MAX - BB_MIN)) * (BB_N - 1))));
+  }
+  return a;
+})();
 const CELL = 0.006; // star cells: a 3D lattice around the unit sky sphere
 function starAt(dx, dy, dz, sig, out) {
   out[0] = 0; out[1] = 0; out[2] = 0;
@@ -218,13 +231,55 @@ export class Lens {
           const cp = Math.cos(phEnd), sp = Math.sin(phEnd);
           const dx = sp * nx, dy = cp * se + sp * (ny), dz = cp * ce + sp * nz;
           // Star size follows the local magnification: sigma in cells per screen pixel.
-          starAt(dx, dy, dz, 0.5 / F / CELL, star);
-          px[o] = star[0] * trans; px[o + 1] = star[1] * trans; px[o + 2] = star[2] * trans;
+          px[o] = 0; px[o + 1] = 0; px[o + 2] = 0; void dx; void dy; void dz;
         } else { px[o] = 0; px[o + 1] = 0; px[o + 2] = 0; }
         this.lit[y * w + x] = px[o + 3] >= 0 || px[o] + px[o + 1] + px[o + 2] > 0.0015 ? 1 : 0;
       }
       if (performance.now() - t0 > 2.5) { yield; t0 = performance.now(); }
     }
+    this.projectStars(se, ce);
+  }
+
+  /**
+   * Lens the star catalogue: for each star, find the screen radius whose escape angle
+   * matches (primary image) and its mirror (secondary image, just outside the shadow).
+   */
+  projectStars(se, ce) {
+    const { NA, drho, end, fate, w, h, F } = this;
+    let ic = 0;
+    while (ic < NA && fate[ic] !== 0) ic++;
+    const S = this.splats ??= new Float32Array(STARS.length / 5 * 2 * 5);
+    let n = 0;
+    const find = (th) => {
+      // end[] decreases with the row index above the critical row.
+      if (ic >= NA || th > end[ic] || th < end[NA - 1]) return -1;
+      let lo = ic, hi = NA - 1;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (end[m] > th) lo = m; else hi = m; }
+      const f = (end[lo] - th) / (end[lo] - end[hi] || 1);
+      return (lo + f) * drho;
+    };
+    for (let k = 0; k < STARS.length; k += 5) {
+      const sx = STARS[k], sy = STARS[k + 1], sz = STARS[k + 2];
+      const c = sy * se + sz * ce; // cosine of the angle from the camera direction (seen from the hole)
+      const th = Math.acos(c > 1 ? 1 : c < -1 ? -1 : c);
+      const qx = sx, qy = sy * ce - sz * se; // perpendicular part, in screen axes
+      const ql = Math.hypot(qx, qy) || 1e-9;
+      for (let img = 0; img < 2; img++) {
+        const rho = find(img === 0 ? th : 2 * Math.PI - th);
+        if (rho < 0) continue;
+        const sg = img === 0 ? 1 : -1;
+        const X = (sg * rho * qx) / ql, Y = (sg * rho * qy) / ql;
+        const x = X * F + w / 2 - 0.5, y = -Y * F + h / 2 - 0.5;
+        if (x < 0 || y < 0 || x >= w - 1 || y >= h - 1) continue;
+        S[n++] = x; S[n++] = y;
+        // Images crowding the shadow edge are strongly demagnified: dim them by distance from it.
+        const rc = ic * drho, dm = Math.min(1, Math.max(0, (rho - rc) / (rc * 0.6)));
+        const b = (img === 0 ? 1 : 0.25) * dm * dm;
+        if (b < 0.02) continue;
+        S[n++] = STARS[k + 3] * b; S[n++] = STARS[k + 4]; S[n++] = 0;
+      }
+    }
+    this.nSplats = n / 5;
   }
 }
 
@@ -246,11 +301,13 @@ export function shade(lens, tex, out, t, exposure, sr, sg, sb, disk, seed = 0) {
     let r = px[o] * sr, g = px[o + 1] * sg, b = px[o + 2] * sb;
     const h0 = px[o + 3];
     if (h0 >= 0) {
-      let v = tex[h0 + ((px[o + 4] + px[o + 5] * t) & AZM)] * disk;
+      let a = px[o + 4] + px[o + 5] * t, ai = a | 0, f = a - ai;
+      let v = (tex[h0 + (ai & AZM)] * (1 - f) + tex[h0 + ((ai + 1) & AZM)] * f) * disk;
       r += px[o + 6] * v; g += px[o + 7] * v; b += px[o + 8] * v;
       const h1 = px[o + 9];
       if (h1 >= 0) {
-        v = tex[h1 + ((px[o + 10] + px[o + 11] * t) & AZM)] * disk;
+        a = px[o + 10] + px[o + 11] * t; ai = a | 0; f = a - ai;
+        v = (tex[h1 + (ai & AZM)] * (1 - f) + tex[h1 + ((ai + 1) & AZM)] * f) * disk;
         r += px[o + 12] * v; g += px[o + 13] * v; b += px[o + 14] * v;
       }
     }
@@ -260,6 +317,23 @@ export function shade(lens, tex, out, t, exposure, sr, sg, sb, disk, seed = 0) {
     let R = TONE[r < TMAX ? r | 0 : TMAX] + gn, G = TONE[g < TMAX ? g | 0 : TMAX] + gn, B = TONE[b < TMAX ? b | 0 : TMAX] + gn;
     R = R < 0 ? 0 : R > 255 ? 255 : R; G = G < 0 ? 0 : G > 255 ? 255 : G; B = B < 0 ? 0 : B > 255 ? 255 : B;
     out[i] = 0xff000000 | (B << 16) | (G << 8) | R;
+  }
+  // Stars: tiny bilinear splats at their lensed positions, hidden behind the glowing disk.
+  const S = lens.splats, w = lens.w, k2 = exposure * 1.5;
+  for (let j = 0, m = lens.nSplats * 5; j < m; j += 5) {
+    const x = S[j], y = S[j + 1], xi = x | 0, yi = y | 0, fx = x - xi, fy = y - yi;
+    const ci = S[j + 3] * 3, br = S[j + 2] * k2;
+    const cr = BB[ci] * br * sr * 255, cg = BB[ci + 1] * br * sg * 255, cb = BB[ci + 2] * br * sb * 255;
+    for (let q = 0; q < 4; q++) {
+      const ix = xi + (q & 1), iy = yi + (q >> 1);
+      const wq = ((q & 1) ? fx : 1 - fx) * ((q >> 1) ? fy : 1 - fy);
+      const pi = iy * w + ix;
+      if (px[pi * STRIDE + 3] >= 0) continue;
+      const v = out[pi];
+      let R = (v & 255) + cr * wq, G = ((v >> 8) & 255) + cg * wq, B = ((v >> 16) & 255) + cb * wq;
+      R = R > 255 ? 255 : R; G = G > 255 ? 255 : G; B = B > 255 ? 255 : B;
+      out[pi] = 0xff000000 | (B << 16) | (G << 8) | R;
+    }
   }
 }
 

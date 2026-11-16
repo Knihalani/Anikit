@@ -51,15 +51,15 @@ main { position: relative; z-index: 2; }
 /* Demo sections: dark glass panels over the fall */
 .demo { min-height: 135vh; display: flex; align-items: center; padding: 10vh var(--gut); }
 .demo[data-side='right'] { justify-content: flex-end; }
-.panel { width: min(520px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: clamp(18px, 2.6vw, 30px); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05); will-change: transform, opacity; opacity: 0; }
-.panel.wide { width: min(700px, 100%); }
+.panel { width: min(720px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: clamp(18px, 2.6vw, 30px); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05); will-change: transform, opacity; opacity: 0; }
+.panel.wide { width: min(820px, 100%); }
 .panel h2 { font-size: clamp(30px, 3.4vw, 46px); margin: 0 0 18px; }
 .panel p { color: #d6d3cc; margin: 0 0 18px; }
 .horizon { height: 120vh; }
 .snippet { display: block; margin-top: 16px; font-size: 13px; padding: 12px 14px; background: rgba(0, 0, 0, 0.55); border: 1px solid var(--line); border-radius: 10px; color: #d8d5ce; line-height: 1.6; overflow-wrap: anywhere; }
 .hint { position: absolute; left: 14px; bottom: 12px; color: var(--dim); pointer-events: none; }
 
-.stage-box { position: relative; height: 240px; border-radius: 14px; background: rgba(0, 0, 0, 0.6); border: 1px solid var(--line); overflow: hidden; margin-bottom: 14px; touch-action: pan-y; }
+.stage-box { position: relative; height: 340px; border-radius: 14px; background: rgba(0, 0, 0, 0.6); border: 1px solid var(--line); overflow: hidden; margin-bottom: 14px; touch-action: pan-y; }
 .dot { position: absolute; left: 0; top: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--accent); will-change: transform; }
 
 .reveal { font-family: Display, sans-serif; font-weight: 900; font-size: clamp(24px, 2.3vw, 32px) !important; line-height: 1.1 !important; color: var(--text) !important; letter-spacing: -0.02em; }
@@ -71,7 +71,7 @@ main { position: relative; z-index: 2; }
 #trail { fill: none; stroke: #e9fff6; stroke-width: 3; stroke-linecap: round; }
 #rider { fill: #fff; transform-box: fill-box; transform-origin: center; }
 
-.world-box { position: relative; height: 300px; border-radius: 14px; background: rgba(0, 0, 0, 0.6); border: 1px solid var(--line); overflow: hidden; touch-action: pan-y; user-select: none; }
+.world-box { position: relative; height: 420px; border-radius: 14px; background: rgba(0, 0, 0, 0.6); border: 1px solid var(--line); overflow: hidden; touch-action: pan-y; user-select: none; }
 .w-letter { position: absolute; left: 0; top: 0; font-family: Display, sans-serif; font-weight: 900; font-size: 92px; line-height: 1; color: var(--accent); cursor: grab; will-change: transform; touch-action: none; }
 
 .cloud-canvas { display: block; width: 100%; aspect-ratio: 16 / 10; border-radius: 14px; border: 1px solid var(--line); background: #000; }

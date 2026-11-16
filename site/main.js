@@ -60,7 +60,11 @@ const focal = (D) => { const u = clamp(Math.log(D0 / D) / Math.log(D0 / DMIN)); 
 const fallP = () => clamp(sy / (horizonTop + vh * 0.6));
 const depth = (p) => {
   const a = horizonTop / (horizonTop + vh * 0.6);
-  return p <= a ? D0 * (DM / D0) ** ((p / a) ** 1.25) : DM * (DMIN / DM) ** ((p - a) / (1 - a));
+  if (p > a) return DM * (DMIN / DM) ** ((p - a) / (1 - a));
+  // Paced: the fall eases to a near stop while each demo is centred, then moves on.
+  const u = (p / a) * 8, i = Math.floor(u), f = u - i;
+  const e = f < 0.45 ? f * 0.12 : 0.054 + 0.946 * ease((f - 0.45) / 0.55);
+  return D0 * (DM / D0) ** (((i + e) / 8) ** 1.25);
 };
 
 let t = 0, exposure = 2.4;
