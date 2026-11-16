@@ -63,7 +63,9 @@ float map(vec3 q) {
   float d = 1e5;
   if (gText || gSph) {
     float dt = gText ? textD(q) : 1e5;
-    float ds = length(q - uSph.xyz) - uSph.w;
+    // Surface tension: the sphere wobbles slowly, as a big drop does.
+    vec3 sq = q - uSph.xyz;
+    float ds = length(sq) - uSph.w * (1.0 + 0.025 * sin(sq.x * 5.0 + uTime * 1.3) * sin(sq.y * 4.0 - uTime * 1.1) * sin(sq.z * 4.5 + uTime * 0.9));
     // Melting letters into a sphere: blend the two distance fields, with a little sag.
     d = gText && gSph ? mix(dt, ds, uMorph) - sin(uMorph * 3.14159) * 0.06 : (gText ? dt : ds);
   }
@@ -161,11 +163,11 @@ vec3 floorColor(vec3 P, vec3 rd, float px) {
   for (int i = 0; i < ND; i++) {
     vec4 D = uD[i];
     if (D.w <= 0.0) continue;
-    float dy = D.y - D.w;
-    if (dy > 2.0) continue;
-    sh *= sphShadow(P, L, D);
+    // Only drops whose shadow or occlusion can reach this point.
+    vec2 foot = D.xz - L.xz / L.y * D.y;
+    if (length(P.xz - foot) < D.w * 3.0 + D.y * 0.35) sh *= sphShadow(P, L, D);
     float dist = length(P - D.xyz);
-    ao *= 1.0 - D.w * D.w / (dist * dist) * 0.9;
+    if (dist < D.w * 6.0) ao *= 1.0 - D.w * D.w / (dist * dist) * 0.9;
   }
   if (uMorph > 0.001 && uSph.w > 0.0) { sh *= sphShadow(P, L, uSph); float dist = length(P - uSph.xyz); ao *= 1.0 - uSph.w * uSph.w / (dist * dist) * 0.8; }
   // The mirror: march the reflected ray; the studio shows dimly, the metal brightly.

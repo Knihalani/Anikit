@@ -183,6 +183,8 @@ function physicsToggle(on) {
 const ptr = { x: 0, y: 0, at: -1e9 };
 const tilt = { x: 0, y: 0 };
 const rip = { s: 0 };
+const pull = { s: 0 };
+const pointerW = [0, 0];
 const cam = { s: 0 };
 const camPos = [0, 0, 0], camTgt = [0, 0, 0];
 const M = new Float32Array(9);
@@ -202,6 +204,7 @@ addEventListener('pointermove', (e) => {
   if (!reduced) {
     spring(tilt, { x: (e.clientX / vw) * 2 - 1, y: (e.clientY / vh) * 2 - 1 }, { stiffness: 40, damping: 12.6 });
     spring(rip, { s: 1 }, { stiffness: 120, damping: 22 });
+    spring(pull, { s: 1 }, { stiffness: 60, damping: 9 });
   }
   if (grabbed >= 0 && rayToPlaneZ(e.clientX, e.clientY, 0, hitP)) {
     const [x, y] = toPx(hitP[0], Math.max(0.1, hitP[1]));
@@ -327,6 +330,12 @@ function frame(dtMs) {
     const oa = d.ph + t * (0.25 + i * 0.03);
     let x = Math.cos(oa) * (2.0 + i * 0.07), y = 1.15 + Math.sin(oa * 1.3) * 0.55, z = Math.sin(oa) * 0.9;
     x = lerp(SPH.x, x, sat); y = lerp(SPH.y, y, sat); z = lerp(SPH.z, z, sat);
+    // The pointer pulls the satellites towards it (in the wordmark's plane).
+    if (sat > 0 && pull.s > 0.01) {
+      const dx = pointerW[0] - x, dy = pointerW[1] - y, dl = Math.hypot(dx, dy) + 0.3;
+      const k = pull.s * sat * Math.min(1, 0.9 / dl);
+      x += dx * k * 0.6; y += dy * k * 0.6; z += (0 - z) * k * 0.5;
+    }
     let r = d.r * (sat * 0.55);
     // Burst: out of the sphere, into a turning ring.
     const a = (i / N) * TAU + t * 0.22;
@@ -350,6 +359,8 @@ function frame(dtMs) {
     // Hidden while we're inside the mercury.
     r *= 1 - sstep(0.25, 1, S.mist) * (1 - inst);
     d.x = x; d.y = y; d.z = z;
+    // A slight jiggle: drops are never perfectly still.
+    r *= 1 + (reduced ? 0 : 0.035 * Math.sin(t * 7.3 + d.ph * 5));
     d.rad += (r - d.rad) * Math.min(1, dt * 12 + (reduced ? 1 : 0));
     D[i * 4] = x; D[i * 4 + 1] = y; D[i * 4 + 2] = z; D[i * 4 + 3] = d.rad;
   }
@@ -403,8 +414,8 @@ function render(t, morph, avg) {
   gl.uniform1f(U.uMorph, morph);
   // Ripple under the pointer, on the wordmark's plane.
   const recent = performance.now() - ptr.at < 1500;
-  if (!recent && rip.s > 0 && !reduced) spring(rip, { s: 0 }, { stiffness: 30, damping: 11 });
-  if (rayToPlaneZ(ptr.x, ptr.y, 0, hitP)) gl.uniform4f(U.uRip, hitP[0], hitP[1], 0, rip.s * (1 - morph));
+  if (!recent && rip.s > 0 && !reduced) { spring(rip, { s: 0 }, { stiffness: 30, damping: 11 }); spring(pull, { s: 0 }, { stiffness: 40, damping: 7 }); }
+  if (rayToPlaneZ(ptr.x, ptr.y, 0, hitP)) { pointerW[0] = hitP[0]; pointerW[1] = hitP[1]; gl.uniform4f(U.uRip, hitP[0], hitP[1], 0, rip.s * (1 - morph)); }
   else gl.uniform4f(U.uRip, 0, 0, 0, 0);
   gl.uniform2f(U.uLight, tilt.x, tilt.y);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
