@@ -674,6 +674,8 @@ export function _setNumberTracks(on: boolean): boolean {
   numberTracks = on;
   return prev;
 }
+/** Playback rate of an animation under reduced motion 'instant': any duration ends within one frame. */
+const JUMP_RATE = 1e12;
 /** `false`: never create a multi-target animation's nodes in one batch (tests compare both). */
 let batchCreate = true;
 /** `_fast`'s value scratch (JS memory, not the core's), and whether a call is using it. */
@@ -997,6 +999,8 @@ export class Animation extends Playable {
   /** The group's node record (registered while the group exists). */
   private _grec: NodeRecord | null = null;
   private _immediate = false;
+  /** Reduced motion 'instant': real timing, played at `JUMP_RATE` (see `_build1`). */
+  _jump = false;
   /** Set while `_build` runs (see `_partEmpty`). */
   private _building = false;
   /** Restorers for `revert()` (captured before the first write). */
@@ -1059,9 +1063,15 @@ export class Animation extends Playable {
     const cs = COLOR_SPACES[o.colorSpace ?? 'oklab'] ?? 2;
     // Reduced motion: everything jumps ('instant'), or only movement does ('fade').
     const reducedAny = prefersReduced();
-    const reduce = reducedAny && reducedMotionMode() === 'instant';
-    const still = reducedAny && !reduce;
-    const repeat = reduce || o.repeat === undefined ? 0 : o.repeat < 0 ? Infinity : o.repeat;
+    const instant = reducedAny && reducedMotionMode() === 'instant';
+    const still = reducedAny && !instant;
+    // 'instant' on a top-level animation keeps its real timing, so progress
+    // and seeks (scroll(), scrub) still map onto it, and plays it at a rate
+    // that finishes on the next frame (`_jump`). Timeline children and set()
+    // collapse to zero duration as before.
+    const reduce = instant && (!!ctx.child || !!ctx.set);
+    this._jump = instant && !reduce;
+    const repeat = instant || o.repeat === undefined ? 0 : o.repeat < 0 ? Infinity : o.repeat;
     const direction =
       o.direction !== undefined ? DIRECTIONS[o.direction] ?? 0 : o.yoyo ? DIRECTIONS.alternate : 0;
     let fill = FL_FILL_BACKWARDS | FL_FILL_FORWARDS;
@@ -1337,7 +1347,8 @@ export class Animation extends Playable {
       return;
     }
     this._end = w.ak_duration(this._h) / 1000;
-    if (o.speed !== undefined && o.speed !== 1) w.ak_set_rate(this._h, o.speed);
+    if (this._jump) w.ak_set_rate(this._h, JUMP_RATE);
+    else if (o.speed !== undefined && o.speed !== 1) w.ak_set_rate(this._h, o.speed);
     if (ctx.set) {
       w.ak_seek(this._h, 0);
       flush();
