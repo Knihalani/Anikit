@@ -26,11 +26,6 @@ h1, h2 { font-family: Display, system-ui, sans-serif; font-weight: 900; letter-s
 .sky.on { opacity: 1; }
 .sky canvas { position: absolute; left: -6%; top: -6%; width: 112%; height: 112%; will-change: transform; }
 .sky .layer { opacity: 0; }
-.sky .bloom { z-index: 3; mix-blend-mode: screen; filter: blur(18px) saturate(1.15); opacity: 0.55; }
-@media (max-width: 760px) { .sky .bloom { filter: blur(10px); } }
-.grain { position: fixed; inset: -64px; z-index: 1; pointer-events: none; opacity: 0.055; mix-blend-mode: screen; animation: grain 0.5s steps(4) infinite; }
-@keyframes grain { 0% { transform: translate(0, 0); } 25% { transform: translate(-37px, 21px); } 50% { transform: translate(19px, -43px); } 75% { transform: translate(-11px, 53px); } }
-@media (prefers-reduced-motion: reduce) { .grain { animation: none; } }
 .veil { position: fixed; inset: 0; z-index: 1; background: #000; opacity: 0; pointer-events: none; }
 .flash { position: fixed; left: 50%; top: 50%; width: 150vmax; height: 150vmax; margin: -75vmax 0 0 -75vmax; z-index: 1; pointer-events: none; opacity: 0; background: radial-gradient(closest-side, #fff 0%, #fff7ec 18%, rgba(220, 230, 255, 0.55) 42%, rgba(160, 180, 255, 0) 100%); will-change: transform, opacity; }
 .calm { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; opacity: 0; pointer-events: none; }

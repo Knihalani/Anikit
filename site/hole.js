@@ -85,7 +85,7 @@ const CELL = 0.006; // star cells: a 3D lattice around the unit sky sphere
 function starAt(dx, dy, dz, sig, out) {
   out[0] = 0; out[1] = 0; out[2] = 0;
   const cx = Math.floor(dx / CELL), cy = Math.floor(dy / CELL), cz = Math.floor(dz / CELL);
-  if (hash3(cx, cy, cz) > 0.06) return;
+  if (hash3(cx, cy, cz) > 0.03) return;
   // The star sits near the middle of its cell, projected onto the sphere.
   let sx = cx + 0.4 + 0.2 * hash3(cx, cy, cz + 7), sy = cy + 0.4 + 0.2 * hash3(cx + 3, cy, cz), sz = cz + 0.4 + 0.2 * hash3(cx, cy + 5, cz);
   const l = Math.hypot(sx, sy, sz);
@@ -152,7 +152,7 @@ export class Lens {
       if (f === 2) { f = 1; end[i] = PHIMAX; } // still orbiting: counts as captured
       fate[i] = f;
       for (let j = k; j < NP; j++) rows[base + j] = 0;
-      if (performance.now() - t0 > 6) { yield; t0 = performance.now(); }
+      if (performance.now() - t0 > 3) { yield; t0 = performance.now(); }
     }
     // 2. Per pixel: disk crossings and escape directions.
     const { w, h, F, px } = this;
@@ -212,11 +212,11 @@ export class Lens {
           const cp = Math.cos(phEnd), sp = Math.sin(phEnd);
           const dx = sp * nx, dy = cp * se + sp * (ny), dz = cp * ce + sp * nz;
           // Star size follows the local magnification: sigma in cells per screen pixel.
-          starAt(dx, dy, dz, Math.min(0.22, Math.max(0.06, 0.5 / F / CELL)), star);
+          starAt(dx, dy, dz, Math.min(0.16, Math.max(0.05, 0.42 / F / CELL)), star);
           px[o] = star[0] * trans; px[o + 1] = star[1] * trans; px[o + 2] = star[2] * trans;
         } else { px[o] = 0; px[o + 1] = 0; px[o + 2] = 0; }
       }
-      if (performance.now() - t0 > 5) { yield; t0 = performance.now(); }
+      if (performance.now() - t0 > 3) { yield; t0 = performance.now(); }
     }
   }
 }
@@ -225,8 +225,11 @@ export class Lens {
  * Shade one frame into `out` (Uint32 RGBA). `t` is disk time in seconds;
  * `exposure`, star tint and disk gain come from the scroll choreography.
  */
-export function shade(lens, tex, out, t, exposure, sr, sg, sb, disk) {
+const GRAIN = new Float32Array(8192);
+for (let i = 0; i < GRAIN.length; i++) GRAIN[i] = (Math.random() + Math.random() - 1) * 9;
+export function shade(lens, tex, out, t, exposure, sr, sg, sb, disk, seed = 0) {
   const px = lens.px, n = lens.w * lens.h;
+  const go = (seed * 2971) & 4095;
   for (let i = 0, o = 0; i < n; i++, o += STRIDE) {
     let r = px[o] * sr, g = px[o + 1] * sg, b = px[o + 2] * sb;
     const h0 = px[o + 3];
@@ -246,7 +249,10 @@ export function shade(lens, tex, out, t, exposure, sr, sg, sb, disk) {
     g = (g * (2.51 * g + 0.03)) / (g * (2.43 * g + 0.59) + 0.14);
     b = (b * (2.51 * b + 0.03)) / (b * (2.43 * b + 0.59) + 0.14);
     // Approximate sRGB encode: sqrt is close and cheap.
-    const R = Math.sqrt(r > 1 ? 1 : r) * 255, G = Math.sqrt(g > 1 ? 1 : g) * 255, B = Math.sqrt(b > 1 ? 1 : b) * 255;
+    // Film grain, on lit pixels only.
+    const gn = GRAIN[(i + go) & 8191];
+    let R = Math.sqrt(r > 1 ? 1 : r) * 255 + gn, G = Math.sqrt(g > 1 ? 1 : g) * 255 + gn, B = Math.sqrt(b > 1 ? 1 : b) * 255 + gn;
+    R = R < 0 ? 0 : R > 255 ? 255 : R; G = G < 0 ? 0 : G > 255 ? 255 : G; B = B < 0 ? 0 : B > 255 ? 255 : B;
     out[i] = 0xff000000 | (B << 16) | (G << 8) | R;
   }
 }

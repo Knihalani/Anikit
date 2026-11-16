@@ -13,11 +13,12 @@ const small = innerWidth < 760;
 // ---------------------------------------------------------------------------
 // Sky: two layers (so a new distance band can fade in over the old one) + bloom
 // ---------------------------------------------------------------------------
-const OVER = 1.12; // overscan, so the zoom between bands never shows an edge
-const D0 = 60, DMIN = 2.12, BAND = 0.9, ELEV = (4.5 * Math.PI) / 180;
+const OVER = 1.12;
+const BLUR = 'blur(5px)'; // overscan, so the zoom between bands never shows an edge
+const D0 = small ? 30 : 60, DMIN = 2.12, BAND = 0.9, ELEV = (4.5 * Math.PI) / 180;
 const tex = diskTexture();
-const bloom = $('#bloom'), bctx = bloom.getContext('2d', { alpha: false });
-let budget = small ? 100_000 : 280_000;
+const bloom = document.createElement('canvas'), bctx = bloom.getContext('2d', { alpha: false });
+let budget = small ? 160_000 : 280_000;
 let vw = innerWidth, vh = innerHeight;
 const layers = ['#sky-a', '#sky-b'].map((s) => ({ el: $(s), ctx: null, img: null, out: null, lens: null, band: -1, scale: 1 }));
 let front = 0, gen = null, genLayer = -1, genBand = -1, fadeUntil = 0;
@@ -52,14 +53,22 @@ const measure = () => {
 };
 const clamp = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const fallP = () => clamp(sy / Math.max(1, horizonTop - vh * 0.15));
-const depth = (p) => D0 * (DMIN / D0) ** (p ** 1.25);
+const depth = (p) => D0 * (DMIN / D0) ** (p ** 1.7);
 
 let t = 0, exposure = 1.7;
 const draw = (L, D, p) => {
   // Blue shift and aberration as the fall speeds up; time near the hole runs slow.
   const sb = 1 + 0.9 * p * p, sr = 1 - 0.45 * p * p;
-  shade(L.lens, tex, L.out, t, exposure * (1 + p * 0.5), sr * (1 + 1.5 * p * p), (1 + 1.2 * p * p), sb * (1 + 1.5 * p * p), 1);
+  shade(L.lens, tex, L.out, t, exposure * (1 + p * 0.5), sr * (1 + 1.5 * p * p), (1 + 1.2 * p * p), sb * (1 + 1.5 * p * p), 1, frames);
   L.ctx.putImageData(L.img, 0, 0);
+  // Bloom: blur a quarter-size copy, then screen it back over the frame.
+  bctx.filter = BLUR;
+  bctx.drawImage(L.el, 0, 0, bloom.width, bloom.height);
+  L.ctx.globalCompositeOperation = 'screen';
+  L.ctx.globalAlpha = 0.6;
+  L.ctx.drawImage(bloom, 0, 0, L.el.width, L.el.height);
+  L.ctx.globalAlpha = 1;
+  L.ctx.globalCompositeOperation = 'source-over';
   L.scale = shadowScale(D) / shadowScale(L.lens.D);
   L.el.style.transform = `scale(${L.scale.toFixed(4)})`;
 };
@@ -93,17 +102,16 @@ const frame = (dt) => {
   const t0 = performance.now();
   // Lensing for a new distance band is built in slices of a few ms, then faded in.
   const k = bandFor(D);
-  if (!gen && layers[front].band !== k && p < 0.995) startBuild(k);
+  const now = performance.now();
+  if (!gen && layers[front].band !== k && p < 0.995 && now > fadeUntil) startBuild(k);
   if (gen && gen.next().done) finishBuild();
   if (reduced && sy === lastSy && !gen) return;
   lastSy = sy;
   const F = layers[front];
   if (p < 0.999) {
     draw(F, D, p);
-    if (performance.now() < fadeUntil) draw(layers[1 - front], D, p);
-    else layers[1 - front].el.style.opacity = '0';
-    bctx.drawImage(F.el, 0, 0, bloom.width, bloom.height);
-    bloom.style.transform = F.el.style.transform;
+    if (now < fadeUntil) draw(layers[1 - front], D, p);
+    else if (fadeUntil) { fadeUntil = 0; layers[1 - front].el.style.opacity = '0'; F.el.style.transition = 'none'; F.el.style.opacity = '1'; }
   }
   choreograph(p);
   const ms = performance.now() - t0;
@@ -172,14 +180,6 @@ const drawCalm = () => {
   }
 };
 
-// Film grain: one small noise tile, moved by the compositor.
-{
-  const g = document.createElement('canvas'); g.width = g.height = 128;
-  const gc = g.getContext('2d'), id = gc.createImageData(128, 128);
-  for (let i = 0; i < id.data.length; i += 4) { const v = Math.random() * 255; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; }
-  gc.putImageData(id, 0, 0);
-  $('#grain').style.backgroundImage = `url(${g.toDataURL()})`;
-}
 
 // ---------------------------------------------------------------------------
 // Start: the first frame is drawn before the WebAssembly core has loaded.
