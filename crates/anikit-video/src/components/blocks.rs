@@ -811,10 +811,12 @@ pub struct Keys {
     pub size: f32,
     pub delay: f32,
     pub out: Option<f32>,
+    /// Horizontal placement in the box: 0 left, 0.5 centre (default), 1 right. Vertically centred.
+    pub align: f32,
 }
 impl Default for Keys {
     fn default() -> Self {
-        Keys { keys: vec!["⌘".into(), "K".into()], press: vec![0.6], size: 64.0, delay: 0.0, out: None }
+        Keys { keys: vec!["⌘".into(), "K".into()], press: vec![0.6], size: 64.0, delay: 0.0, out: None, align: 0.5 }
     }
 }
 impl Prepare for Keys {}
@@ -854,6 +856,8 @@ impl Component for Keys {
             out.extend(rise(e, p, s * 0.3));
             x += kw + s * 0.6;
         }
+        let (w, h) = ((x - s * 0.6).max(0.0), s * 1.09);
+        transform_ops(&mut out, &translate((ctx.width - w) * self.align, (ctx.height - h).max(0.0) * 0.5));
         with_opacity(out, 1.0 - exit)
     }
     fn duration(&self) -> Option<f32> {
@@ -891,7 +895,7 @@ mod tests {
             ("table", json!({"x": 40, "y": 20, "width": 560, "height": 300, "columns": ["", "Anikit", "Browser"], "rows": [["Native render", true, false], ["1080p60 encode", "4 s", "3 min"], ["Agent-first JSON", "✓", "✗"]], "highlight": 1})),
             ("timeline", json!({"x": 40, "y": 300, "width": 880, "height": 220, "items": [{"label": "Q1", "title": "Prototype"}, {"label": "Q2", "title": "Beta", "body": "500 teams"}, {"label": "Q3", "title": "Launch"}, {"label": "Q4", "title": "Scale"}], "current": 2})),
             ("marquee", json!({"x": 620, "y": 120, "width": 320, "height": 80, "items": ["Stripe", "Linear", "Vercel", "Figma"], "font_size": 26})),
-            ("keys", json!({"x": 640, "y": 220, "keys": ["⌘", "Shift", "K"], "press": [2.9], "size": 52})),
+            ("keys", json!({"x": 640, "y": 220, "width": 300, "height": 60, "align": 0, "keys": ["⌘", "Shift", "K"], "press": [2.9], "size": 52})),
             ("spotlight", json!({"targets": [[230, 60, 180, 220]], "times": [2.0]})),
         ];
         let mut ops = Vec::new();
