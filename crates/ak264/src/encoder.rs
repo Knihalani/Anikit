@@ -458,7 +458,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
 
         let mut cd = Coded::new();
-        let try_i4 = best_cost > lambda as u32 * 24 + 256;
+        let try_i4 = best_cost > lambda as u32 * 24 + 256 && (c.idr || kind != Kind::P16 || best_cost > lambda as u32 * 64 + 1024);
         if try_i4 {
             // Encode I4x4 tentatively (writes recon).
             let (cost4, modes) = self.code_i4(mbx, mby, src_y, &mut cd, true);
