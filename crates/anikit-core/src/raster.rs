@@ -327,6 +327,8 @@ pub struct Raster {
     /// Half-resolution target for a planar reflection pass (see [`Raster::reflection_begin`]).
     reflection: Option<alloc::boxed::Box<Raster>>,
     reflecting: bool,
+    /// The reflection pass runs after the opaque scene (see [`Raster::reflection_after`]).
+    reflect_after: bool,
     /// Depth-of-field scratch: circle of confusion per half-res pixel, and
     /// integer tap offsets per quantised radius.
     coc: Vec<f32>,
@@ -880,6 +882,46 @@ impl Raster {
         }
         sub.clear(rgb, alpha);
         self.reflecting = true;
+        self.reflect_after = false;
+    }
+
+    /// [`Raster::reflection_begin`] after the opaque scene is drawn: the
+    /// reflection only shows where nothing opaque was drawn, so half-res
+    /// pixels whose upsampling footprint (4×4 full-res pixels) is all covered
+    /// are skipped (depth −∞ fails every test), and [`Raster::reflection_end`]
+    /// writes only uncovered pixels and keeps the depth. Same picture as
+    /// reflecting first and drawing the scene over it, without shading the
+    /// hidden part of the reflection.
+    pub fn reflection_after(&mut self, rgb: u32, alpha: u8) {
+        self.reflection_begin(rgb, alpha);
+        self.reflect_after = true;
+        let (w, h) = (self.width, self.height);
+        let Some(sub) = self.reflection.as_deref_mut() else { return };
+        let (bw, bh) = (sub.width, sub.height);
+        // Half pixel (bx, by) feeds full-res x in 2bx − 1 ..= 2bx + 2 (and y alike).
+        let mut need = vec![false; bw * bh];
+        let mut row = vec![false; bw];
+        for y in 0..h {
+            let d = &self.depth[y * w..(y + 1) * w];
+            for (bx, r) in row.iter_mut().enumerate() {
+                let (x0, x1) = ((2 * bx).saturating_sub(1), (2 * bx + 3).min(w));
+                *r = d[x0.min(x1)..x1].contains(&f32::INFINITY);
+            }
+            // Half rows by with 2by − 1 <= y <= 2by + 2.
+            for by in y.saturating_sub(2) / 2..(y.div_ceil(2) + 1).min(bh) {
+                if by * 2 + 2 < y || by * 2 > y + 1 {
+                    continue;
+                }
+                for (n, r) in need[by * bw..(by + 1) * bw].iter_mut().zip(&row) {
+                    *n |= *r;
+                }
+            }
+        }
+        for (z, n) in sub.depth.iter_mut().zip(&need) {
+            if !*n {
+                *z = f32::NEG_INFINITY;
+            }
+        }
     }
     /// The raster draws should go to: the half-res reflection target during a
     /// reflection pass, otherwise this one.
@@ -898,17 +940,32 @@ impl Raster {
         self.reflecting = false;
         let Some(sub) = self.reflection.take() else { return };
         let (bw, bh) = (sub.width, sub.height);
+        let after = core::mem::take(&mut self.reflect_after);
         if self.width >= 2 && self.height >= 2 {
             self.half_px.clear();
             self.half_px.extend(sub.color.iter().map(|c| c & 0x00ff_ffff));
             let mut alpha = core::mem::take(&mut self.alpha);
             alpha.clear();
             alpha.resize(bw * bh, 1.0);
-            self.blend_half(bw, bh, &alpha);
+            if after {
+                // Keep the opaque scene: blend everywhere, then restore covered pixels.
+                let mut saved = core::mem::take(&mut self.blur_src);
+                saved.clear();
+                saved.extend_from_slice(&self.color);
+                self.blend_half(bw, bh, &alpha);
+                for ((c, s), z) in self.color.iter_mut().zip(&saved).zip(&self.depth) {
+                    *c = if *z == f32::INFINITY { *c } else { *s };
+                }
+                self.blur_src = saved;
+            } else {
+                self.blend_half(bw, bh, &alpha);
+            }
             self.alpha = alpha;
         }
         self.reflection = Some(sub);
-        self.clear_depth();
+        if !after {
+            self.clear_depth();
+        }
     }
 
     #[inline(always)]
@@ -2735,6 +2792,53 @@ mod tests {
                 c[i] = 0;
                 i += 1;
             }
+        }
+    }
+
+    #[test]
+    fn reflection_after_the_scene_matches_reflection_first() {
+        // A mirrored pass drawn first and covered by the scene, against the same
+        // pass drawn after the scene into the pixels it leaves uncovered only.
+        let m = mul(&perspective(60.0, 1.3, 0.5, 100.0), &look_at([0.5, 1.5, 6.0], [0.0; 3], [0.0, 1.0, 0.0]));
+        let vp: M4 = core::array::from_fn(|i| m[i] as f32);
+        let mut mvp = vp;
+        for r in 0..4 {
+            mvp[4 + r] = -vp[4 + r];
+        }
+        let tf = |s: f32, x: f32, y: f32, z: f32, c: [f32; 3]| {
+            let mut v = vec![s, 0.0, 0.0, 0.0, s, 0.0, 0.0, 0.0, s, x, y, z];
+            v.extend_from_slice(&c);
+            v
+        };
+        let mut cubes = tf(1.0, -1.2, 0.6, 0.0, [1.0, 0.2, 0.1]);
+        cubes.extend(tf(0.7, 1.1, 0.4, -1.0, [0.2, 0.9, 0.3]));
+        cubes.extend(tf(2.5, 0.0, 1.5, -6.0, [0.3, 0.3, 0.9]));
+        let ball = tf(0.6, 0.3, 1.2, 1.0, [0.9, 0.9, 0.2]);
+        let (mat, light) = (Material::default(), Lighting::default());
+        for (w, h) in [(80, 60), (81, 63), (33, 18)] {
+            let scene = |r: &mut Raster, v: &M4, flip: bool| {
+                let r = r.target();
+                r.flip_winding = flip;
+                r.draw(&cube(), &cubes, v, [0.5, 1.5, 6.0], &mat, &light, true);
+                r.draw(&sphere(8, 12), &ball, v, [0.5, 1.5, 6.0], &mat, &light, true);
+                r.flip_winding = false;
+            };
+            let mut a = Raster::new(w, h);
+            a.clear(0x203040, 255);
+            a.reflection_begin(0x203040, 255);
+            scene(&mut a, &mvp, true);
+            a.reflection_end();
+            scene(&mut a, &vp, false);
+            let mut b = Raster::new(w, h);
+            b.clear(0x203040, 255);
+            scene(&mut b, &vp, false);
+            b.reflection_after(0x203040, 255);
+            scene(&mut b, &mvp, true);
+            b.reflection_end();
+            assert!(a.color == b.color, "colour {w}x{h}");
+            assert!(a.depth.iter().zip(&b.depth).all(|(x, y)| x.to_bits() == y.to_bits()), "depth {w}x{h}");
+            let sub = b.reflection.as_ref().expect("reflection target");
+            assert!(sub.depth.iter().any(|z| *z == f32::NEG_INFINITY), "covered half-res pixels were skipped ({w}x{h})");
         }
     }
 

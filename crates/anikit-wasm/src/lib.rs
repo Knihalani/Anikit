@@ -2042,6 +2042,13 @@ pub extern "C" fn ak_raster_reflection_begin(id: u32, rgb: u32, alpha: u32) {
         r.reflection_begin(rgb, alpha.min(255) as u8);
     }
 }
+/// Start a half-resolution reflection pass after the opaque scene (see `Raster::reflection_after`).
+#[no_mangle]
+pub extern "C" fn ak_raster_reflection_after(id: u32, rgb: u32, alpha: u32) {
+    if let Some(Some((r, _))) = st().rasters.get_mut(id as usize) {
+        r.reflection_after(rgb, alpha.min(255) as u8);
+    }
+}
 /// End the reflection pass: upsample it into the frame and clear depth.
 #[no_mangle]
 pub extern "C" fn ak_raster_reflection_end(id: u32) {

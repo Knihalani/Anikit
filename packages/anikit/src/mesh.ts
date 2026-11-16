@@ -593,25 +593,29 @@ export class Renderer3D {
       }
     }
     pass('setup');
-    if (o.mirror) {
-      // 1. The scene reflected about y = mirror.y (winding flips), 2. clear depth,
-      // 3. the scene itself, 4. the glossy surface blended over the reflection where it shows.
-      const Y = o.mirror.y;
+    const light = (it: DrawItem | PointsItem) => 'points' in it || it.blend === 'additive';
+    // Half-res reflections render after the opaque scene, into the pixels it leaves
+    // uncovered only (the same picture as reflecting first and drawing over it).
+    const after = !!o.mirror && o.mirror.resolution !== 'full';
+    const reflect = (mirror: { y: number }) => {
+      // The scene reflected about y = mirror.y (winding flips) into a half-res target,
+      // or (full resolution) into the frame before the scene, then a depth clear;
+      // the glossy surface is blended over the reflection where it shows.
+      const Y = mirror.y;
       const mr = matrix.slice();
       for (let r = 0; r < 4; r++) { mr[4 + r] = -matrix[4 + r]; mr[12 + r] = matrix[12 + r] + 2 * Y * matrix[4 + r]; }
       const er = [eye[0], 2 * Y - eye[1], eye[2]];
-      // Reflections render at half resolution (a quarter of the shading; the glossy surface softens them anyway).
-      const half = o.mirror.resolution !== 'full';
-      if (half) w.ak_raster_reflection_begin(this.id, hex, o.transparent ? 0 : 255);
+      if (after) w.ak_raster_reflection_after(this.id, hex, o.transparent ? 0 : 255);
       for (const [it, flags] of ordered(meshes.filter((it) => !it.mirror && it.reflect !== false && it.blend !== 'additive'), er)) drawMesh(it, mr, er, 8 | flags);
-      if (half) w.ak_raster_reflection_end(this.id);
+      if (after) w.ak_raster_reflection_end(this.id);
       else w.ak_raster_clear_depth(this.id);
       pass('mirror');
-    }
-    const light = (it: DrawItem | PointsItem) => 'points' in it || it.blend === 'additive';
+    };
+    if (o.mirror && !after) reflect(o.mirror);
     const opaque = meshes.filter((it) => !light(it) && !(o.mirror && it.mirror));
     for (const [it, flags] of ordered(opaque, eye)) drawMesh(it, matrix, eye, flags);
     pass('opaque');
+    if (o.mirror && after) reflect(o.mirror);
     if (o.mirror) {
       // The glossy surface after the opaque scene: the depth test skips floor
       // pixels the scene covers, so only visible floor is shaded and blended.

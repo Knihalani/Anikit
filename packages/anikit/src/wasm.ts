@@ -169,6 +169,7 @@ export interface Exports {
   ak_raster_clear_depth(id: number): void;
   ak_raster_reflection_begin(id: number, rgb: number, alpha: number): void;
   ak_raster_reflection_end(id: number): void;
+  ak_raster_reflection_after(id: number, rgb: number, alpha: number): void;
   ak_raster_sky(id: number, sun: number): void;
   ak_raster_shadow_begin(id: number, size: number, bias: number, strength: number): void;
   ak_raster_shadow_draw(id: number, mesh: number, n: number): void;
