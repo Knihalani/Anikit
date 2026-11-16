@@ -17,8 +17,8 @@ import { engine } from './core';
 import { Batch } from './batch';
 import { PointCloud } from './cloud';
 import { Emitter } from './emitter';
-import { spring, inertia } from './spring';
-import { Targets, toTargets, stateOf, markDirty } from './props';
+import { spring, inertia, PhysicsAnimation } from './spring';
+import { Targets, toTargets, stateOf, markDirty, snapshot, Kind } from './props';
 import { VelocityTracker } from './utils';
 import { track } from './context';
 
@@ -360,7 +360,11 @@ export function tilt(targets: Targets, o: TiltOptions = {}) {
   const max = o.max ?? 12;
   const sp = { stiffness: o.stiffness ?? 260, damping: o.damping ?? 20 };
   const offs: Array<() => void> = [];
+  // revert() puts back each element's transform from before (inline and cached).
+  const restores: Array<() => void> = [];
+  const springs = new Map<HTMLElement, PhysicsAnimation>();
   for (const el of toTargets(targets) as HTMLElement[]) {
+    restores.push(snapshot(el, 'x', Kind.Transform));
     const s = stateOf(el);
     s.t[11] = o.perspective ?? 800;
     markDirty(s);
@@ -368,11 +372,11 @@ export function tilt(targets: Targets, o: TiltOptions = {}) {
       const r = el.getBoundingClientRect();
       const nx = ((e.clientX - r.left) / r.width) * 2 - 1;
       const ny = ((e.clientY - r.top) / r.height) * 2 - 1;
-      spring(el, { rotateY: nx * max, rotateX: -ny * max, scale: o.scale ?? 1.03 }, sp);
+      springs.set(el, spring(el, { rotateY: nx * max, rotateX: -ny * max, scale: o.scale ?? 1.03 }, sp));
       o.onMove?.(el, nx, ny);
     };
     const leave = () => {
-      spring(el, { rotateY: 0, rotateX: 0, scale: 1 }, sp);
+      springs.set(el, spring(el, { rotateY: 0, rotateX: 0, scale: 1 }, sp));
       o.onMove?.(el, 0, 0);
     };
     el.addEventListener('pointermove', move);
@@ -382,7 +386,16 @@ export function tilt(targets: Targets, o: TiltOptions = {}) {
       el.removeEventListener('pointerleave', leave);
     });
   }
-  const api = { kill: () => offs.splice(0).forEach((f) => f()), revert: () => api.kill() };
+  const api = {
+    kill: () => offs.splice(0).forEach((f) => f()),
+    /** Stop listening, stop the springs and put the transforms back. */
+    revert: () => {
+      api.kill();
+      for (const a of springs.values()) a.stop();
+      springs.clear();
+      for (const r of restores.splice(0)) r();
+    },
+  };
   track(api);
   return api;
 }
