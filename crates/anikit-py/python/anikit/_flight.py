@@ -196,14 +196,34 @@ class FlightPath:
         roll = max(-mx, min(mx, math.atan(turn * bank_k) * 180 / math.pi))
         return FlightPose(eye, target, roll, fwd)
 
-    def apply(self, camera: Any, s: float, extra_roll: float = 0.0) -> FlightPose:
+    def apply(
+        self, camera: Any, s: float, extra_roll: float = 0.0, *, shake: float = 0.0, time: Optional[float] = None, rate: float = 1.0
+    ) -> FlightPose:
         """Put ``camera`` (an :class:`anikit.transform.Camera`) at arc length
         ``s``: sets its ``position``, ``target`` and ``roll`` (plus
-        ``extra_roll`` degrees, e.g. a barrel roll). Returns the pose."""
+        ``extra_roll`` degrees, e.g. a barrel roll). Returns the pose.
+
+        ``shake`` adds a deterministic handheld wobble of that many world
+        units to the camera, its aim and roll, varying with ``time`` seconds
+        (default: distance flown / 600, so it quickens with speed) times
+        ``rate`` — the same as TypeScript's ``apply(cam, s, roll, { shake })``."""
         p = self.at(s)
-        camera.position = p.eye
-        camera.target = p.target
-        camera.roll = p.roll + float(extra_roll)
+        eye, target, roll = list(p.eye), list(p.target), p.roll + float(extra_roll)
+        if shake:
+            t = (s / 600.0 if time is None else float(time)) * rate
+
+            def n(k: float) -> float:
+                return math.sin(t * 1.7 + k * 1.3) * 0.5 + math.sin(t * 3.1 + k * 2.9) * 0.3 + math.sin(t * 7.3 + k * 4.1) * 0.2
+
+            eye[0] += n(1) * shake
+            eye[1] += n(2) * shake
+            eye[2] += n(3) * shake * 0.3
+            target[0] += n(4) * shake * 2
+            target[1] += n(5) * shake * 2
+            roll += n(6) * shake * 0.04
+        camera.position = tuple(eye)
+        camera.target = tuple(target)
+        camera.roll = roll
         return p
 
     def timing(self, keys: Sequence[Sequence[float]]) -> Callable[[float], float]:
