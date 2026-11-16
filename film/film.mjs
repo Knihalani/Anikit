@@ -189,7 +189,7 @@ export default async function film({ anikit: A }) {
       { mesh: dome, instances: domeAt, cull: false, material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, texture: TX.skyNeon, textureMode: 'emissive', fog: 0 } },
       { mesh: water, instances: waterAt, mirror: true, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0 } },
       ...lanes.map((m, k) => ({ mesh: m, blend: 'additive', material: { ambient: 0, diffuse: 0, specular: 0, rim: 0, emissive: 0.12, pulse: 2.1, pulseCount: k === 0 ? 34 : 48, pulsePhase: 0, lineColor: laneCol[k] } })),
-      { mesh: tm, instances: treesN, blend: 'additive', material: { ambient: 1, diffuse: 0, specular: 0, rim: 1.1 } },
+      { mesh: tm, instances: treesN, material: { ambient: 1, diffuse: 0, specular: 0, rim: 0.85 } },
       { points: motes, colors: moteColN, size: 0.09, intensity: 1.8, streak: 1, fog: [6, 120] },
     ],
     C: [
