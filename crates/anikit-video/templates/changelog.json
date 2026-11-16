@@ -1,1 +1,115 @@
-{ "name": "changelog", "title": "changelog", "description": "placeholder", "params": {}, "spec": { "theme": { "$use": "theme" }, "scenes": [ { "layers": [ { "text": "changelog" } ] } ] } }
+{
+  "name": "changelog",
+  "title": "Changelog / what's new",
+  "description": "A 12–25 s release recap: a version badge as the hook, then 3–6 changes building in as a list (three per scene) with colour-coded New / Improved / Fixed pills, then an end card.",
+  "duration": "12–25 s",
+  "tags": ["changelog", "release", "update", "whats-new"],
+  "params": {
+    "product": { "type": "string", "default": "{{brand.name}}", "maxWords": 3, "description": "Product name.", "example": "Anikit" },
+    "version": { "type": "string", "required": true, "maxChars": 12, "description": "Version shown in the badge, e.g. 'v2.4' or '2026.11'.", "example": "v2.4" },
+    "title": { "type": "string", "default": "What's new", "maxWords": 4, "description": "Headline above the version badge.", "example": "What's new" },
+    "date": { "type": "string", "maxChars": 24, "description": "Optional release date.", "example": "November 2026" },
+    "items": {
+      "type": "array", "required": true, "minItems": 3, "maxItems": 6,
+      "description": "The changes, most exciting first. Each is one short line.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "enum", "values": ["new", "improved", "fixed"], "required": true, "description": "Kind of change; sets the pill colour." },
+          "text": { "type": "string", "required": true, "maxWords": 8, "description": "The change as a benefit." }
+        }
+      },
+      "example": [
+        { "type": "new", "text": "Vertical video templates" },
+        { "type": "new", "text": "MCP server for agents" },
+        { "type": "improved", "text": "Stills render in 40 ms" },
+        { "type": "fixed", "text": "Emoji in captions" }
+      ]
+    },
+    "cta": { "type": "string", "default": "Update now", "maxWords": 4, "description": "Call to action on the end card.", "example": "Update now" },
+    "url": { "type": "string", "default": "{{brand.voice.url}}", "maxChars": 32, "description": "Where to read the full notes.", "example": "anikit.dev/changelog" },
+    "music": { "type": "string", "description": "Optional music file (MP3/WAV)." }
+  },
+  "spec": {
+    "size": ["{{fmt.w}}", "{{fmt.h}}"],
+    "fps": "{{fmt.fps}}",
+    "theme": { "$use": "theme" },
+    "background": "radial-gradient(circle at 50% 30%, $bg, $bgDeep)",
+    "transition": { "type": "crossfade", "duration": 0.5 },
+    "scenes": [
+      {
+        "id": "version",
+        "duration": "{{max(2.6, readtime(title + ' ' + version + ' ' + (date ?? '')) + 0.8)}}",
+        "camera": { "animate": [ { "from": { "zoom": 1.06 }, "to": { "zoom": 1 }, "duration": 3, "ease": "outCubic" } ] },
+        "layers": [
+          { "$use": "glows", "with": { "gx": "50%", "gy": "35%", "strength": 0.9 } },
+          { "id": "title", "text": "{{title}}", "style": "title", "y": "38%", "width": "{{fmt.safe.w}}", "split": "words", "enter": { "preset": "fadeUp", "stagger": 0.08, "duration": 0.7, "ease": "outExpo" } },
+          {
+            "type": "box", "id": "badge", "y": "{{fmt.portrait ? '50%' : '55%'}}",
+            "style": { "padding": ["{{fmt.u * 1.4}}", "{{fmt.u * 4}}"], "radius": 999, "background": "linear-gradient(135deg, $primary, $secondary)" },
+            "glow": { "radius": "{{fmt.u * 4}}", "intensity": 0.8, "color": "$primary" },
+            "enter": { "preset": "popIn", "delay": 0.4 },
+            "children": [ { "text": "{{version}}", "style": "heading", "color": "$onPrimary", "font": "$mono" } ]
+          },
+          { "$if": "date", "then": { "id": "date", "text": "{{date}}", "style": "caption", "y": "{{fmt.portrait ? '58%' : '67%'}}", "enter": { "preset": "fadeIn", "delay": 0.8 } } }
+        ]
+      },
+      {
+        "$let": { "per": "ceil(len(items) / ceil(len(items) / 3))" },
+        "in": [ {
+        "$each": "range(ceil(len(items) / per))", "as": "g", "index": "gi",
+        "do": {
+          "$let": { "group": "slice(items, g * per, g * per + per)" },
+          "in": {
+            "id": "changes-{{g + 1}}",
+            "transition": { "type": "push", "direction": "{{fmt.portrait ? 'up' : 'left'}}", "duration": 0.6, "ease": "inOutQuart" },
+            "duration": "{{readtime(pick(group, 'text')) + 0.35 * len(group) + 0.9}}",
+            "layers": [
+              { "$use": "glows", "with": { "strength": 0.55, "gx": "{{g % 2 ? '90%' : '10%'}}", "hx": "{{g % 2 ? '10%' : '90%'}}" } },
+              { "text": "{{product}} {{version}}", "style": "label", "y": "{{fmt.portrait ? '28%' : '22%'}}", "enter": "fadeUp" },
+              {
+                "type": "box", "id": "list-{{g + 1}}", "y": "{{fmt.portrait ? '50%' : '56%'}}", "width": "{{fmt.landscape ? fmt.w * 0.66 : fmt.safe.w}}",
+                "style": { "direction": "column", "gap": "{{fmt.u * 2.2}}", "align": "stretch" },
+                "stagger": 0.35,
+                "children": [
+                  {
+                    "$each": "group", "as": "it", "index": "i",
+                    "do": {
+                      "$let": { "kind": "it.type", "c": "kind == 'new' ? brand.colors.primary : kind == 'improved' ? brand.colors.secondary : brand.colors.muted" },
+                      "in": {
+                        "type": "box", "id": "item-{{g * per + i + 1}}",
+                        "style": { "direction": "{{fmt.portrait ? 'column' : 'row'}}", "gap": "{{fmt.u * (fmt.portrait ? 1.2 : 2.4)}}", "align": "{{fmt.portrait ? 'start' : 'center'}}", "justify": "start", "padding": ["{{fmt.u * 2.2}}", "{{fmt.u * 3}}"], "background": "$surface", "radius": "{{brand.radius * fmt.s}}", "border": "1px $border" },
+                        "enter": { "preset": "fadeLeft", "duration": 0.6, "ease": "outExpo" },
+                        "children": [
+                          {
+                            "type": "box", "width": "{{fmt.u * (fmt.portrait ? 18 : 15)}}",
+                            "style": { "padding": ["{{fmt.u * 0.7}}", 0], "radius": 999, "justify": "center", "background": "{{alpha(c, 0.16)}}", "border": "1px {{alpha(c, 0.55)}}" },
+                            "children": [ { "text": "{{kind}}", "style": "label", "color": "{{c}}" } ]
+                          },
+                          { "text": "{{it.text}}", "style": "body", "weight": 600, "align": "left", "width": "{{fmt.portrait ? fmt.safe.w - fmt.u * 6 : fmt.w * 0.66 - fmt.u * 23.4}}" }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      } ]
+      },
+      {
+        "id": "end",
+        "transition": { "type": "blur", "duration": 0.6 },
+        "duration": "{{max(3.2, readtime(product + ' ' + cta + ' ' + (url ?? '')) + 1.2)}}",
+        "layers": [
+          { "$use": "glows", "with": { "gx": "30%", "gy": "20%", "hx": "70%", "hy": "85%" } },
+          { "$use": "wordmark", "with": { "y": "{{fmt.portrait ? '38%' : '34%'}}", "height": "{{fmt.u * 10}}", "enter": "scaleIn" } },
+          { "$use": "button", "with": { "label": "{{cta}}", "delay": 0.4 }, "y": "{{fmt.portrait ? '52%' : '58%'}}" },
+          { "$if": "url", "then": { "text": "{{url}}", "style": "caption", "y": "{{fmt.portrait ? '60%' : '72%'}}", "enter": { "preset": "fadeIn", "delay": 0.7 } } }
+        ]
+      }
+    ],
+    "audio": { "$use": "music" }
+  }
+}

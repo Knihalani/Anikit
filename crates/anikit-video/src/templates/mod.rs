@@ -691,7 +691,8 @@ fn expand_each(m: &Map<String, Value>, src: &Value, sc: &mut Scope, defs: &Map<S
         sc.push_owned(frame.clone());
         let r = expand_value(body, sc, defs, &format!("{path}[{as_name}={i}]"));
         sc.pop_owned();
-        match (r?, body.is_array()) {
+        let splice = body.is_array() || body.as_object().is_some_and(|o| o.keys().any(|k| DIRECTIVES.contains(&k.as_str())));
+        match (r?, splice) {
             (Some(Value::Array(v)), true) => out.extend(v),
             (Some(v), _) => out.push(v),
             (None, _) => {}

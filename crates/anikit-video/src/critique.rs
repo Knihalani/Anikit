@@ -1,0 +1,499 @@
+//! `critique`: fast heuristic review of a spec, the way a motion designer
+//! would review a cut. It needs no rendering, so agents can run it on every
+//! draft. Checks:
+//!
+//! - **reading time**: each text layer is on screen long enough to read
+//!   (about 3 words per second plus 1 s to notice it);
+//! - **hook**: something meaningful appears within the first 2 s;
+//! - **pacing**: scenes are neither rushed (< 1.2 s) nor static (> 8 s);
+//!   transitions are short compared with their scenes;
+//! - **legibility**: font sizes are large enough for the frame, and lines
+//!   are not too long;
+//! - **contrast**: text colour against the scene background (WCAG ratio);
+//! - **safe areas**: text and images stay inside the title-safe margins
+//!   (wider on 9:16, where platform UI covers the top and bottom);
+//! - **density**: not too many words on screen at once, and few font families.
+//!
+//! It works on the JSON value, so it also reviews specs that don't fully
+//! validate yet.
+
+use serde::Serialize;
+use serde_json::{Map, Value};
+
+use crate::templates::{color, expr, Format};
+
+/// One finding.
+#[derive(Clone, Debug, Serialize, PartialEq)]
+pub struct Note {
+    /// `"error"` (will look broken), `"warning"` (hurts the video) or `"tip"`.
+    pub severity: &'static str,
+    /// Check that produced it, e.g. `"reading-time"`.
+    pub check: &'static str,
+    /// JSON path, e.g. `scenes[2].layers[1]`.
+    pub path: String,
+    pub message: String,
+    /// What to change.
+    pub fix: String,
+}
+
+/// The result of [`critique`].
+#[derive(Clone, Debug, Serialize)]
+pub struct Report {
+    /// 0..100: starts at 100, minus 15 per error, 6 per warning, 1 per tip.
+    pub score: u32,
+    pub duration: f64,
+    pub notes: Vec<Note>,
+}
+
+impl Report {
+    /// Plain-text rendering for the terminal.
+    pub fn to_text(&self) -> String {
+        let mut s = format!("score {}/100 · {:.1} s · {} notes\n", self.score, self.duration, self.notes.len());
+        for n in &self.notes {
+            s += &format!("{:<7} {:<13} {}: {}\n        fix: {}\n", n.severity, n.check, n.path, n.message, n.fix);
+        }
+        s
+    }
+}
+
+struct Ctx<'a> {
+    w: f64,
+    h: f64,
+    fps: f64,
+    portrait: bool,
+    safe: [f64; 4],
+    colors: Map<String, Value>,
+    styles: &'a Map<String, Value>,
+    markers: Map<String, Value>,
+    notes: Vec<Note>,
+}
+
+impl Ctx<'_> {
+    fn note(&mut self, severity: &'static str, check: &'static str, path: &str, message: String, fix: impl Into<String>) {
+        self.notes.push(Note { severity, check, path: path.to_string(), message, fix: fix.into() });
+    }
+
+    /// Seconds from a spec time: 1.5, "1.5s", "500ms", "12f", "@marker+0.2".
+    fn time(&self, v: &Value) -> Option<f64> {
+        match v {
+            Value::Number(n) => n.as_f64(),
+            Value::String(s) => {
+                let s = s.trim();
+                if let Some(m) = s.strip_prefix('@') {
+                    let (name, off) = match m.find(['+', '-']) {
+                        Some(i) => (&m[..i], m[i..].parse::<f64>().unwrap_or(0.0)),
+                        None => (m, 0.0),
+                    };
+                    return self.markers.get(name).and_then(|x| self.time(x)).map(|t| t + off);
+                }
+                if let Some(x) = s.strip_suffix("ms") {
+                    return x.trim().parse::<f64>().ok().map(|x| x / 1000.0);
+                }
+                if let Some(x) = s.strip_suffix('s') {
+                    return x.trim().parse().ok();
+                }
+                if let Some(x) = s.strip_suffix('f') {
+                    return x.trim().parse::<f64>().ok().map(|x| x / self.fps);
+                }
+                s.parse().ok()
+            }
+            _ => None,
+        }
+    }
+
+    /// Pixels from a spec length; `rel` is the parent size for percentages.
+    fn len(&self, v: &Value, rel: f64) -> Option<f64> {
+        match v {
+            Value::Number(n) => n.as_f64(),
+            Value::String(s) => {
+                let s = s.trim();
+                if s.starts_with('=') {
+                    return None;
+                }
+                let units: [(&str, f64); 6] = [
+                    ("vmin", self.w.min(self.h) / 100.0),
+                    ("vmax", self.w.max(self.h) / 100.0),
+                    ("vw", self.w / 100.0),
+                    ("vh", self.h / 100.0),
+                    ("%", rel / 100.0),
+                    ("px", 1.0),
+                ];
+                for (u, k) in units {
+                    if let Some(x) = s.strip_suffix(u) {
+                        return x.trim().parse::<f64>().ok().map(|x| x * k);
+                    }
+                }
+                s.parse().ok()
+            }
+            _ => None,
+        }
+    }
+
+    /// A colour, resolving `$token`s; gradients give their first stop.
+    fn color(&self, v: &Value) -> Option<color::C> {
+        let s = v.as_str()?.trim();
+        if let Some(tok) = s.strip_prefix('$') {
+            return self.colors.get(tok).and_then(|c| self.color(c));
+        }
+        if s.contains("gradient(") {
+            let inner = &s[s.find('(')? + 1..s.rfind(')')?];
+            let parts = split_top(inner);
+            let stops: Vec<color::C> = parts
+                .iter()
+                .filter_map(|p| p.split_whitespace().next())
+                .filter_map(|p| self.color(&Value::String(p.to_string())))
+                .collect();
+            if stops.is_empty() {
+                return None;
+            }
+            // Average of the stops: a fair stand-in for "the background behind the text".
+            let n = stops.len() as f64;
+            let mut c = [0.0; 4];
+            for st in &stops {
+                for i in 0..4 {
+                    c[i] += st[i] / n;
+                }
+            }
+            return Some(c);
+        }
+        color::parse(&s.replace(' ', ",").replace(",,", ",")).ok().or_else(|| css_name(s))
+    }
+
+    fn style(&self, name: &str) -> Option<&Map<String, Value>> {
+        self.styles.get(name).and_then(|v| v.as_object())
+    }
+}
+
+fn split_top(s: &str) -> Vec<String> {
+    let mut out = vec![String::new()];
+    let mut depth = 0;
+    for c in s.chars() {
+        match c {
+            '(' => depth += 1,
+            ')' => depth -= 1,
+            ',' if depth == 0 => {
+                out.push(String::new());
+                continue;
+            }
+            _ => {}
+        }
+        out.last_mut().unwrap().push(c);
+    }
+    out.into_iter().map(|x| x.trim().to_string()).collect()
+}
+
+fn css_name(s: &str) -> Option<color::C> {
+    let hex = match s.to_ascii_lowercase().as_str() {
+        "white" => "#ffffff",
+        "black" => "#000000",
+        "red" => "#ff0000",
+        "tomato" => "#ff6347",
+        "gray" | "grey" => "#808080",
+        "yellow" => "#ffff00",
+        "orange" => "#ffa500",
+        "blue" => "#0000ff",
+        "green" => "#008000",
+        _ => return None,
+    };
+    color::parse(hex).ok()
+}
+
+/// Built-in style defaults from spec.md, as fractions of the frame height.
+fn builtin_style(name: &str) -> (f64, &'static str) {
+    match name {
+        "title" => (0.09, "$text"),
+        "heading" => (0.06, "$text"),
+        "subtitle" => (0.036, "$muted"),
+        "caption" => (0.022, "$muted"),
+        "label" => (0.018, "$muted"),
+        "code" => (0.026, "$text"),
+        _ => (0.03, "$text"),
+    }
+}
+
+const DEFAULT_COLORS: &[(&str, &str)] = &[
+    ("primary", "#7c5cff"),
+    ("secondary", "#22d3ee"),
+    ("accent", "#ff5ca8"),
+    ("bg", "#0b0b12"),
+    ("surface", "#171725"),
+    ("text", "#f5f5fa"),
+    ("muted", "#9a9ab0"),
+];
+
+/// Review a spec.
+pub fn critique(spec: &Value) -> Report {
+    let empty = Map::new();
+    let theme = spec.get("theme").and_then(|t| t.as_object()).unwrap_or(&empty);
+    let mut colors: Map<String, Value> = DEFAULT_COLORS.iter().map(|(k, v)| (k.to_string(), Value::String(v.to_string()))).collect();
+    if let Some(c) = theme.get("colors").and_then(|c| c.as_object()) {
+        colors.extend(c.clone());
+    }
+    let styles = theme.get("styles").and_then(|s| s.as_object()).unwrap_or(&empty);
+    let (w, h) = match spec.get("size") {
+        Some(Value::Array(a)) if a.len() == 2 => (a[0].as_f64().unwrap_or(1920.0), a[1].as_f64().unwrap_or(1080.0)),
+        Some(Value::String(s)) => Format::parse(s).map(|f| (f.width as f64, f.height as f64)).unwrap_or((1920.0, 1080.0)),
+        _ => (1920.0, 1080.0),
+    };
+    let fmt = Format { width: w as u32, height: h as u32, fps: 30 };
+    let mut cx = Ctx {
+        w,
+        h,
+        fps: spec.get("fps").and_then(|f| f.as_f64()).unwrap_or(30.0),
+        portrait: fmt.orientation() == "portrait",
+        safe: fmt.safe(),
+        colors,
+        styles,
+        markers: spec.get("markers").and_then(|m| m.as_object()).cloned().unwrap_or_default(),
+        notes: Vec::new(),
+    };
+
+    let scenes = spec.get("scenes").and_then(|s| s.as_array()).cloned().unwrap_or_default();
+    if scenes.is_empty() {
+        cx.note("error", "structure", "scenes", "the spec has no scenes".into(), "add at least one scene with layers");
+    }
+    let default_bg = spec.get("background").cloned().unwrap_or(Value::String("$bg".into()));
+    let default_tr = spec.get("transition").and_then(|t| transition_secs(&cx, t)).unwrap_or(0.5);
+    let mut fonts = std::collections::BTreeSet::new();
+    let mut total = 0.0;
+    let mut first_text_at: Option<f64> = None;
+
+    for (si, scene) in scenes.iter().enumerate() {
+        let path = format!("scenes[{si}]");
+        let dur = scene.get("duration").and_then(|d| cx.time(d)).unwrap_or(3.0);
+        let tr = if si == 0 { 0.0 } else { scene.get("transition").and_then(|t| transition_secs(&cx, t)).unwrap_or(default_tr) };
+        let scene_start = total - tr;
+        total += dur - tr;
+        let id = scene.get("id").and_then(|v| v.as_str()).map(|s| format!(" ('{s}')")).unwrap_or_default();
+        if dur < 1.2 {
+            cx.note("warning", "pacing", &path, format!("scene{id} lasts {dur:.2} s, too short to register"), "make it at least 1.5 s, or merge it with a neighbour (fast cuts work only for single words on a beat)");
+        }
+        if tr > dur * 0.5 && si > 0 {
+            cx.note("warning", "pacing", &path, format!("transition of {tr:.2} s is more than half of the {dur:.2} s scene"), "keep transitions at 0.3–0.7 s, at most a third of the scene");
+        }
+        let bg_v = scene.get("background").cloned().unwrap_or(default_bg.clone());
+        let bg = cx.color(&bg_v).unwrap_or([0.04, 0.04, 0.07, 1.0]);
+        let layers = scene.get("layers").and_then(|l| l.as_array()).cloned().unwrap_or_default();
+        let mut words_on_screen = 0usize;
+        let mut has_motion = scene.get("camera").is_some();
+        for (li, layer) in layers.iter().enumerate() {
+            walk_layer(&mut cx, layer, &format!("{path}.layers[{li}]"), dur, bg, 0.0, &mut |cx, l, p, vis_from, vis_to, bg| {
+                if l.get("enter").is_some() || l.get("animate").is_some() || l.get("loop").is_some() {
+                    has_motion = true;
+                }
+                if let Some(f) = l.get("font").and_then(|f| f.as_str()) {
+                    fonts.insert(f.to_string());
+                }
+                let Some(text) = l.get("text").and_then(|t| t.as_str()) else { return };
+                let words = expr::word_count(text);
+                words_on_screen += words;
+                let visible = vis_to - vis_from;
+                let need = expr::read_time(text);
+                if words > 0 && visible + 0.05 < need {
+                    cx.note("warning", "reading-time", p, format!("\"{}\" ({words} words) is readable for {visible:.1} s but needs about {need:.1} s", trunc(text, 40)),
+                        format!("extend the scene/layer by {:.1} s or cut it to {} words", need - visible, ((visible - 1.0).max(0.3) * 3.0).floor().max(1.0)));
+                }
+                if first_text_at.is_none() && words > 0 {
+                    first_text_at = Some(scene_start.max(0.0) + vis_from);
+                }
+                // Legibility: font size.
+                let style_name = l.get("style").and_then(|s| s.as_str()).unwrap_or("body");
+                let (def_frac, def_color) = builtin_style(style_name);
+                let st = cx.style(style_name).cloned();
+                let size = l.get("size").or_else(|| st.as_ref().and_then(|s| s.get("size"))).and_then(|v| cx.len(v, cx.h)).unwrap_or(def_frac * cx.h);
+                let short = cx.w.min(cx.h);
+                if size < short * 0.022 {
+                    cx.note("warning", "legibility", p, format!("text size {size:.0} px is small for a {}×{} frame (phones shrink it further)", cx.w, cx.h),
+                        format!("use at least {:.0} px (2.2vmin); 3vmin+ for body copy", short * 0.022));
+                }
+                // Line length.
+                let width = l.get("width").and_then(|v| cx.len(v, cx.w));
+                let chars = text.lines().map(|x| x.chars().count()).max().unwrap_or(0) as f64;
+                let line_px = chars * size * 0.52;
+                let max_w = cx.w - cx.safe[1] - cx.safe[3];
+                if width.is_none() && line_px > max_w {
+                    cx.note("warning", "safe-area", p, format!("\"{}\" is about {line_px:.0} px wide on one line; the safe width is {max_w:.0} px", trunc(text, 40)),
+                        format!("set \"width\": {max_w:.0} (or a %), so it wraps, or shorten it"));
+                }
+                // Contrast.
+                let col_v = l.get("color").cloned().or_else(|| st.as_ref().and_then(|s| s.get("color").cloned())).unwrap_or(Value::String(def_color.into()));
+                if let Some(fg) = cx.color(&col_v) {
+                    let fg = color::over(fg, bg);
+                    let ratio = color::contrast(fg, bg);
+                    let large = size >= short * 0.04;
+                    let min = if large { 3.0 } else { 4.5 };
+                    if ratio < min {
+                        cx.note(if ratio < 2.0 { "error" } else { "warning" }, "contrast", p,
+                            format!("text contrast {ratio:.1}:1 against the background (needs {min}:1 at this size)"),
+                            format!("use {} text, or darken/lighten the background", color::to_hex(color::contrast_text(bg))));
+                    }
+                }
+            });
+            // Safe area for the layer's anchor point (top level only: children are laid out by their parent).
+            check_safe(&mut cx, layer, &format!("{path}.layers[{li}]"));
+        }
+        if words_on_screen > 32 {
+            cx.note("warning", "density", &path, format!("{words_on_screen} words in one scene; viewers skim, they don't read paragraphs"), "keep scenes under ~20 words; split the copy across scenes or move detail to a voice-over");
+        }
+        if dur > 8.0 && !has_motion {
+            cx.note("warning", "pacing", &path, format!("scene{id} holds {dur:.1} s with no motion"), "add a slow camera push (zoom 1 → 1.05), a loop, or split it");
+        } else if dur > 12.0 {
+            cx.note("tip", "pacing", &path, format!("scene{id} is {dur:.1} s long"), "most motion-design beats are 2–6 s; consider splitting it");
+        }
+    }
+
+    match first_text_at {
+        Some(t) if t > 2.0 => cx.note("warning", "hook", "scenes[0]", format!("the first words appear at {t:.1} s; viewers decide in the first 2 s"), "open with the hook line on screen by 0.3–1 s"),
+        None if !scenes.is_empty() => cx.note("tip", "hook", "scenes[0]", "the video has no text; make sure the opening image is a strong hook".into(), "consider a 3–6 word hook line in the first scene"),
+        _ => {}
+    }
+    if fonts.len() > 3 {
+        cx.note("tip", "typography", "theme.fonts", format!("{} font families in use ({})", fonts.len(), fonts.iter().cloned().collect::<Vec<_>>().join(", ")), "stick to one display face and one text face, plus mono for code");
+    }
+    if cx.portrait && total > 60.0 {
+        cx.note("tip", "pacing", "scenes", format!("{total:.0} s vertical video; social platforms favour 6–30 s"), "cut to the hook, two beats and the payoff");
+    }
+    let score = cx.notes.iter().fold(100i32, |s, n| s - match n.severity { "error" => 15, "warning" => 6, _ => 1 }).max(0) as u32;
+    Report { score, duration: (total * 100.0).round() / 100.0, notes: cx.notes }
+}
+
+fn transition_secs(cx: &Ctx, t: &Value) -> Option<f64> {
+    match t {
+        Value::String(s) if s == "cut" => Some(0.0),
+        Value::String(s) if s == "glitch" => Some(0.3),
+        Value::String(_) => Some(0.5),
+        Value::Object(o) => {
+            if o.get("type").and_then(|x| x.as_str()) == Some("cut") {
+                return Some(0.0);
+            }
+            Some(o.get("duration").and_then(|d| cx.time(d)).unwrap_or(0.5))
+        }
+        _ => None,
+    }
+}
+
+fn trunc(s: &str, n: usize) -> String {
+    let one: String = s.split_whitespace().collect::<Vec<_>>().join(" ");
+    if one.chars().count() > n {
+        format!("{}…", one.chars().take(n - 1).collect::<String>())
+    } else {
+        one
+    }
+}
+
+type Visit<'f> = dyn FnMut(&mut Ctx, &Map<String, Value>, &str, f64, f64, color::C) + 'f;
+
+/// Visit a layer and its children with their visible window in scene time.
+fn walk_layer(cx: &mut Ctx, layer: &Value, path: &str, scene_dur: f64, bg: color::C, parent_start: f64, f: &mut Visit) {
+    let Some(l) = layer.as_object() else { return };
+    if l.get("visible") == Some(&Value::Bool(false)) {
+        return;
+    }
+    let start = parent_start + l.get("start").and_then(|v| cx.time(v)).unwrap_or(0.0);
+    let mut end = scene_dur;
+    if let Some(e) = l.get("end").and_then(|v| cx.time(v)) {
+        end = (parent_start + e).min(scene_dur);
+    } else if let Some(d) = l.get("duration").and_then(|v| cx.time(v)) {
+        end = (start + d).min(scene_dur);
+    }
+    // Entrances delay legibility until they have mostly played.
+    let enter_delay = match l.get("enter") {
+        Some(Value::Object(o)) => {
+            let d = o.get("delay").and_then(|v| cx.time(v)).unwrap_or(0.0);
+            let dur = o.get("duration").and_then(|v| cx.time(v)).unwrap_or(0.6);
+            let n = l.get("text").and_then(|t| t.as_str()).map(|t| match l.get("split").and_then(|s| s.as_str()) {
+                Some("words") => t.split_whitespace().count(),
+                Some("chars") => t.chars().count(),
+                Some("lines") => t.lines().count(),
+                _ => 1,
+            }).unwrap_or(1);
+            let stagger = o.get("stagger").and_then(|v| v.as_f64()).unwrap_or(0.0) * (n.saturating_sub(1)) as f64;
+            if o.get("preset").and_then(|p| p.as_str()) == Some("typewriter") {
+                let cps = o.get("cps").and_then(|v| v.as_f64()).unwrap_or(20.0);
+                d + l.get("text").and_then(|t| t.as_str()).map(|t| t.chars().count() as f64 / cps).unwrap_or(0.0)
+            } else {
+                d + dur * 0.5 + stagger
+            }
+        }
+        Some(Value::String(_)) => 0.3,
+        _ => 0.0,
+    };
+    let bg_here = l
+        .get("style")
+        .and_then(|s| s.as_object())
+        .and_then(|s| s.get("background"))
+        .and_then(|b| cx.color(b))
+        .map(|c| color::over(c, bg))
+        .unwrap_or(bg);
+    f(cx, l, path, start + enter_delay, end, bg_here);
+    for key in ["children", "layers"] {
+        if let Some(kids) = l.get(key).and_then(|k| k.as_array()) {
+            for (i, k) in kids.iter().enumerate() {
+                walk_layer(cx, k, &format!("{path}.{key}[{i}]"), scene_dur, bg_here, start, f);
+            }
+        }
+    }
+}
+
+/// Text and images whose anchor point sits outside the title-safe area.
+fn check_safe(cx: &mut Ctx, layer: &Value, path: &str) {
+    let Some(l) = layer.as_object() else { return };
+    if l.get("text").is_none() && l.get("src").is_none() {
+        return;
+    }
+    let [top, right, bottom, left] = cx.safe;
+    let x = l.get("x").and_then(|v| cx.len(v, cx.w)).unwrap_or(cx.w / 2.0);
+    let y = l.get("y").and_then(|v| cx.len(v, cx.h)).unwrap_or(cx.h / 2.0);
+    let width = l.get("width").and_then(|v| cx.len(v, cx.w)).unwrap_or(0.0);
+    let anchor_x = match l.get("anchor").and_then(|a| a.as_str()) {
+        Some(a) if a.to_ascii_lowercase().contains("left") => 0.0,
+        Some(a) if a.to_ascii_lowercase().contains("right") => 1.0,
+        _ => 0.5,
+    };
+    let x0 = x - width * anchor_x;
+    let x1 = x0 + width;
+    let what = if l.get("text").is_some() { "text" } else { "image" };
+    if x0 < left - 1.0 || x1 > cx.w - right + 1.0 || y < top - 1.0 || y > cx.h - bottom + 1.0 {
+        let extra = if cx.portrait { " (on 9:16, platform UI covers the top 12% and bottom 20%)" } else { "" };
+        cx.note("warning", "safe-area", path,
+            format!("{what} at ({x:.0}, {y:.0}){} is outside the title-safe area{extra}", if width > 0.0 { format!(", {width:.0} px wide") } else { String::new() }),
+            format!("keep it within x {left:.0}–{:.0}, y {top:.0}–{:.0}", cx.w - right, cx.h - bottom));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn flags_reading_time_contrast_hook_and_safe_area() {
+        let spec = json!({
+            "size": "9:16",
+            "scenes": [
+                { "duration": 4, "layers": [ { "shape": "rect" } ] },
+                { "duration": 1.5, "layers": [
+                    { "text": "This sentence has far too many words to read in a second and a half", "width": "80%" },
+                    { "text": "Low contrast", "color": "#151520" },
+                    { "text": "Edge", "y": "97%" }
+                ] }
+            ]
+        });
+        let r = critique(&spec);
+        let checks: Vec<&str> = r.notes.iter().map(|n| n.check).collect();
+        assert!(checks.contains(&"reading-time"), "{}", r.to_text());
+        assert!(checks.contains(&"contrast"), "{}", r.to_text());
+        assert!(checks.contains(&"hook"), "{}", r.to_text());
+        assert!(checks.contains(&"safe-area"), "{}", r.to_text());
+        assert!(r.score < 80);
+        assert!((r.duration - 5.0).abs() < 1e-9, "{}", r.duration);
+    }
+
+    #[test]
+    fn clean_spec_scores_high() {
+        let spec = json!({ "scenes": [ { "duration": 3, "layers": [ { "text": "Hello, world", "enter": "fadeUp" } ] } ] });
+        let r = critique(&spec);
+        assert!(r.notes.is_empty(), "{}", r.to_text());
+        assert_eq!(r.score, 100);
+    }
+}

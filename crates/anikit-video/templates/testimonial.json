@@ -1,1 +1,120 @@
-{ "name": "testimonial", "title": "testimonial", "description": "placeholder", "params": {}, "spec": { "theme": { "$use": "theme" }, "scenes": [ { "layers": [ { "text": "testimonial" } ] } ] } }
+{
+  "name": "testimonial",
+  "title": "Testimonial / quote",
+  "description": "1–3 customer quotes, each with a big accent quote mark, the words fading up in reading rhythm, the author (optional circular avatar, role and company) and an optional star rating, then a logo end card. Paced by word count.",
+  "duration": "8–30 s",
+  "tags": ["testimonial", "quote", "social proof", "review"],
+  "params": {
+    "headline": { "type": "string", "maxWords": 6, "description": "Optional opening line before the quotes (the hook). Leave it out to open on the first quote.", "example": "Loved by 4,000 teams" },
+    "quotes": {
+      "type": "array", "required": true, "minItems": 1, "maxItems": 3,
+      "description": "1–3 quotes, strongest first. Cut each to the sentence that carries the emotion.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "quote": { "type": "string", "required": true, "maxWords": 30, "description": "The quote, without quotation marks. Under 20 words reads best." },
+          "author": { "type": "string", "required": true, "maxWords": 4, "description": "Person's name." },
+          "role": { "type": "string", "maxWords": 7, "description": "Role and company, e.g. 'Head of Design, Linearly'." },
+          "avatar": { "type": "image", "description": "Optional square headshot; shown in a circle." },
+          "rating": { "type": "integer", "minimum": 1, "maximum": 5, "description": "Optional star rating (1–5)." }
+        }
+      },
+      "example": [
+        { "quote": "We replaced a week of motion work with one prompt. The renders are faster than our preview used to be.", "author": "Maya Okafor", "role": "Head of Growth, Fieldnote", "rating": 5 },
+        { "quote": "It just does what the spec says. Every time.", "author": "Jonas Berg", "role": "Staff Engineer, Tiller" }
+      ]
+    },
+    "cta": { "type": "string", "default": "{{brand.voice.cta}}", "maxWords": 4, "description": "Call to action on the end card.", "example": "Join them" },
+    "url": { "type": "string", "default": "{{brand.voice.url}}", "maxChars": 32, "description": "Address on the end card.", "example": "fieldnote.app" },
+    "music": { "type": "string", "description": "Optional music file. Warm, mid-tempo (80–110 BPM) suits testimonials.", "example": "music.mp3" }
+  },
+  "defs": {
+    "stars": {
+      "type": "box", "id": "stars", "style": { "direction": "row", "gap": "{{fmt.u * 1}}" }, "stagger": 0.07,
+      "children": {
+        "$each": "range(rating)", "as": "s",
+        "do": { "shape": "star", "sides": 5, "innerRadius": 0.46, "width": "{{fmt.u * (fmt.portrait ? 5 : 4)}}", "height": "{{fmt.u * (fmt.portrait ? 5 : 4)}}", "fill": "$accent", "enter": { "preset": "popIn", "delay": "{{delay}}", "duration": 0.45 } }
+      }
+    },
+    "author": {
+      "type": "box", "id": "author", "style": { "direction": "row", "gap": "{{fmt.u * 2.2}}", "align": "center" },
+      "enter": { "preset": "fadeUp", "delay": "{{delay}}", "duration": 0.6 },
+      "children": [
+        { "$if": "q.avatar", "then": { "src": "{{q.avatar}}", "width": "{{fmt.u * (fmt.portrait ? 12 : 9)}}", "height": "{{fmt.u * (fmt.portrait ? 12 : 9)}}", "fit": "cover", "radius": "{{fmt.u * (fmt.portrait ? 6 : 4.5)}}" } },
+        {
+          "type": "box", "style": { "direction": "column", "gap": "{{fmt.u * 0.5}}", "align": "{{q.avatar ? 'start' : 'center'}}" },
+          "children": [
+            { "text": "{{q.author}}", "style": "body", "weight": 650, "align": "{{q.avatar ? 'left' : 'center'}}" },
+            { "$if": "q.role", "then": { "text": "{{q.role}}", "style": "caption", "align": "{{q.avatar ? 'left' : 'center'}}" } }
+          ]
+        }
+      ]
+    }
+  },
+  "spec": {
+    "size": ["{{fmt.w}}", "{{fmt.h}}"],
+    "fps": "{{fmt.fps}}",
+    "theme": { "$use": "theme" },
+    "background": "radial-gradient(circle at 50% 30%, $bg, $bgDeep)",
+    "transition": { "type": "crossfade", "duration": 0.6 },
+    "scenes": [
+      {
+        "$if": "headline",
+        "then": {
+          "id": "headline",
+          "duration": "{{max(2.2, readtime(headline) + 0.4)}}",
+          "layers": [
+            { "$use": "glows", "with": { "strength": 0.7 } },
+            { "id": "headline", "text": "{{headline}}", "style": "hero", "width": "{{fmt.safe.w}}", "split": "words", "enter": { "preset": "fadeUp", "stagger": 0.08, "duration": 0.7, "ease": "outExpo" } }
+          ]
+        }
+      },
+      {
+        "$each": "quotes", "as": "q", "index": "i",
+        "do": {
+          "$let": {
+            "n": "words(q.quote)",
+            "stag": "clamp(1.4 / max(1, words(q.quote)), 0.05, 0.09)",
+            "long": "words(q.quote) > 18"
+          },
+          "in": {
+            "id": "quote-{{i + 1}}",
+            "transition": { "type": "{{i == 0 && !headline ? 'crossfade' : 'blur'}}", "duration": 0.6 },
+            "duration": "{{readtime(q.quote) + n * stag + 2.2}}",
+            "camera": { "animate": [ { "from": { "zoom": 1.04 }, "to": { "zoom": 1 }, "duration": "{{readtime(q.quote) + n * stag + 2.2}}", "ease": "outCubic" } ] },
+            "layers": [
+              { "$use": "glows", "with": { "strength": 0.6, "gx": "{{i % 2 ? '88%' : '12%'}}", "gy": "15%", "hx": "{{i % 2 ? '15%' : '85%'}}", "hy": "92%" } },
+              {
+                "type": "box", "id": "card", "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.72}}",
+                "style": { "direction": "column", "gap": "{{fmt.u * (fmt.portrait ? 4 : 3)}}", "align": "center" },
+                "children": [
+                  { "id": "mark", "text": "“", "font": "$heading", "weight": 800, "size": "{{fmt.portrait ? '30vmin' : '24vmin'}}", "lineHeight": 0.7, "color": "$accent", "height": "{{fmt.u * (fmt.portrait ? 15 : 12)}}", "enter": { "preset": "popIn", "duration": 0.5 } },
+                  {
+                    "id": "quote", "text": "{{q.quote}}", "style": "heading", "width": "100%",
+                    "size": "{{long ? (fmt.portrait ? '5.8vmin' : '4.6vmin') : (fmt.portrait ? '7.4vmin' : '6.2vmin')}}",
+                    "weight": "{{long ? 600 : 700}}", "lineHeight": "{{long ? 1.3 : 1.15}}",
+                    "split": "words", "enter": { "preset": "fadeUp", "stagger": "{{stag}}", "delay": 0.25, "duration": 0.6, "ease": "outCubic", "distance": "{{fmt.u * 2.5}}" }
+                  },
+                  { "$if": "q.rating", "then": { "$use": "stars", "with": { "rating": "{{q.rating}}", "delay": "{{0.4 + n * stag}}" } } },
+                  { "$use": "author", "with": { "q": "{{q}}", "delay": "{{0.5 + n * stag}}" } }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "end",
+        "transition": { "type": "zoom", "duration": 0.6 },
+        "duration": "{{max(3.2, readtime(brand.name + ' ' + cta + ' ' + (url ?? '')) + 1)}}",
+        "layers": [
+          { "$use": "glows", "with": { "gx": "30%", "gy": "20%", "hx": "70%", "hy": "85%" } },
+          { "$use": "wordmark", "with": { "y": "{{fmt.portrait ? '38%' : '36%'}}", "height": "{{fmt.u * 10}}", "enter": "scaleIn" } },
+          { "$use": "button", "with": { "label": "{{cta}}", "delay": 0.4 }, "y": "{{fmt.portrait ? '52%' : '58%'}}" },
+          { "$if": "url", "then": { "text": "{{url}}", "style": "caption", "y": "{{fmt.portrait ? '60%' : '71%'}}", "enter": { "preset": "fadeIn", "delay": 0.7 } } }
+        ]
+      }
+    ],
+    "audio": { "$use": "music" }
+  }
+}

@@ -1,1 +1,158 @@
-{ "name": "tutorial", "title": "tutorial", "description": "placeholder", "params": {}, "spec": { "theme": { "$use": "theme" }, "scenes": [ { "layers": [ { "text": "tutorial" } ] } ] } }
+{
+  "name": "tutorial",
+  "title": "Tutorial / code walkthrough",
+  "description": "A title card, then 2–6 steps, each with a step number, a one-line explanation and a code window that types itself out (timed so typing ends with time left to read), with optional highlighted lines, then a recap and call to action.",
+  "duration": "15–60 s",
+  "tags": ["tutorial", "code", "developer", "how-to", "walkthrough"],
+  "params": {
+    "title": { "type": "string", "required": true, "maxWords": 8, "description": "What the viewer will be able to do, as an outcome.", "example": "Render a video from JSON in 3 steps" },
+    "subtitle": { "type": "string", "maxWords": 12, "description": "Optional line under the title (who it's for, or the time it takes).", "example": "No browser, no timeline editor. Two minutes." },
+    "language": { "type": "string", "default": "", "maxChars": 16, "description": "Label shown in the code window bar, e.g. 'bash', 'json', 'ts'.", "example": "bash" },
+    "steps": {
+      "type": "array", "required": true, "minItems": 2, "maxItems": 6,
+      "description": "The steps in order. Keep each code block short (ideally ≤ 8 lines, ≤ 50 characters per line).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "required": true, "maxWords": 6, "description": "The action, imperative: 'Install the CLI'." },
+          "body": { "type": "string", "maxWords": 18, "description": "Why or what to notice, in one sentence." },
+          "code": { "type": "text", "required": true, "maxChars": 420, "description": "Code shown in the window; use \\n for new lines." },
+          "language": { "type": "string", "maxChars": 16, "description": "Overrides the top-level language for this step." },
+          "highlight": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "maxItems": 4, "description": "1-based line numbers to highlight after typing finishes." }
+        }
+      },
+      "example": [
+        { "title": "Install the CLI", "body": "One binary, no browser to download.", "code": "cargo install anikit-video", "language": "bash" },
+        { "title": "Describe your video", "body": "Scenes and layers in plain JSON.", "code": "{\n  \"scenes\": [\n    { \"layers\": [\n      { \"text\": \"Hello\", \"enter\": \"fadeUp\" }\n    ] }\n  ]\n}", "language": "json", "highlight": [4] },
+        { "title": "Render it", "body": "Every core, straight to MP4.", "code": "anikit-video render hello.json -o hello.mp4", "language": "bash" }
+      ]
+    },
+    "recap": { "type": "string", "default": "That's it.", "maxWords": 10, "description": "Closing line on the end card.", "example": "Your first video, in under a minute." },
+    "cta": { "type": "string", "default": "{{brand.voice.cta}}", "maxWords": 4, "description": "Call to action on the end card.", "example": "Read the docs" },
+    "url": { "type": "string", "default": "{{brand.voice.url}}", "maxChars": 32, "description": "Address on the end card.", "example": "anikit.dev/docs" },
+    "music": { "type": "string", "description": "Optional music file. Calm and low (lo-fi, 70–95 BPM) so it doesn't fight the reading.", "example": "music.mp3" }
+  },
+  "defs": {
+    "codeWindow": {
+      "$let": {
+        "lines": "len(split(s.code, '\n'))",
+        "codeSize": "fmt.u * (fmt.portrait ? 3.2 : 2.4)",
+        "pad": "fmt.u * (fmt.portrait ? 3.2 : 2.6)"
+      },
+      "in": {
+        "$let": { "lh": "codeSize * 1.55" },
+        "in": {
+          "type": "box", "id": "code-window", "width": "{{width}}",
+          "style": { "direction": "column", "align": "stretch", "background": "$surface", "radius": "{{fmt.u * 1.8}}", "border": "1px $border" },
+          "clip": true,
+          "shadow": { "x": 0, "y": "{{fmt.u * 3}}", "blur": "{{fmt.u * 9}}", "color": "#00000066" },
+          "enter": { "preset": "slideUp", "delay": 0.3, "duration": 0.7 },
+          "children": [
+            {
+              "type": "box", "height": "{{fmt.u * 4.4}}", "style": { "direction": "row", "gap": "{{fmt.u * 0.9}}", "padding": [0, "{{fmt.u * 1.8}}"], "align": "center", "justify": "start" },
+              "children": [
+                { "shape": "circle", "width": "{{fmt.u * 1.25}}", "height": "{{fmt.u * 1.25}}", "fill": "#FF5F57" },
+                { "shape": "circle", "width": "{{fmt.u * 1.25}}", "height": "{{fmt.u * 1.25}}", "fill": "#FEBC2E" },
+                { "shape": "circle", "width": "{{fmt.u * 1.25}}", "height": "{{fmt.u * 1.25}}", "fill": "#28C840" },
+                {
+                  "$if": "s.language || language",
+                  "then": { "type": "box", "style": { "grow": 1, "justify": "end" }, "children": [ { "text": "{{s.language ?? language}}", "style": "label", "color": "$muted", "size": "{{fmt.u * 1.6}}" } ] }
+                }
+              ]
+            },
+            {
+              "type": "group", "id": "code-area", "width": "{{width}}", "height": "{{lines * lh + pad * 2}}",
+              "layers": [
+                {
+                  "$each": "s.highlight ?? []", "as": "ln",
+                  "do": {
+                    "type": "group", "x": 0, "y": "{{pad + (ln - 1) * lh}}", "anchor": "topLeft", "width": "{{width}}", "height": "{{lh}}",
+                    "start": "{{0.9 + typing}}",
+                    "enter": { "preset": "wipeIn", "direction": "right", "duration": 0.4 },
+                    "layers": [
+                      { "shape": "rect", "x": 0, "y": 0, "anchor": "topLeft", "width": "{{width}}", "height": "{{lh}}", "fill": "{{alpha(brand.colors.accent, 0.16)}}" },
+                      { "shape": "rect", "x": 0, "y": 0, "anchor": "topLeft", "width": "{{fmt.u * 0.5}}", "height": "{{lh}}", "fill": "$accent" }
+                    ]
+                  }
+                },
+                {
+                  "id": "code", "text": "{{s.code}}", "style": "code", "align": "left", "lineHeight": 1.55,
+                  "x": "{{pad}}", "y": "{{pad}}", "anchor": "topLeft", "width": "{{width - pad * 2}}",
+                  "enter": { "preset": "typewriter", "cps": "{{cps}}", "delay": 0.9 }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "spec": {
+    "size": ["{{fmt.w}}", "{{fmt.h}}"],
+    "fps": "{{fmt.fps}}",
+    "theme": { "$use": "theme" },
+    "background": "radial-gradient(circle at 50% 30%, $bg, $bgDeep)",
+    "transition": { "type": "crossfade", "duration": 0.5 },
+    "scenes": [
+      {
+        "id": "title",
+        "duration": "{{max(2.6, readtime(title + ' ' + (subtitle ?? '')) + 0.6)}}",
+        "layers": [
+          { "$use": "glows", "with": { "strength": 0.7 } },
+          { "$use": "kicker", "with": { "text": "{{'Tutorial · ' + len(steps) + ' steps'}}" }, "y": "{{subtitle ? '33%' : '37%'}}" },
+          { "id": "title", "text": "{{title}}", "style": "title", "y": "{{subtitle ? '46%' : '50%'}}", "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.75}}", "split": "words", "enter": { "preset": "fadeUp", "stagger": 0.07, "delay": 0.15, "duration": 0.7, "ease": "outExpo" } },
+          { "$if": "subtitle", "then": { "id": "subtitle", "text": "{{subtitle}}", "style": "subtitle", "y": "{{fmt.portrait ? '60%' : '63%'}}", "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.6}}", "enter": { "preset": "fadeUp", "delay": 0.6 } } }
+        ]
+      },
+      {
+        "$each": "steps", "as": "s", "index": "i",
+        "do": {
+          "$let": {
+            "chars": "len(s.code)",
+            "typing": "clamp(len(s.code) / 32, 0.8, 4)",
+            "nlines": "len(split(s.code, '\n'))"
+          },
+          "in": {
+            "$let": { "cps": "round(chars / typing, 1)" },
+            "in": {
+              "id": "step-{{i + 1}}",
+              "transition": { "type": "push", "direction": "{{fmt.portrait ? 'up' : 'left'}}", "duration": 0.55, "ease": "inOutQuart" },
+              "duration": "{{max(readtime(s.title + ' ' + (s.body ?? '')) + 1, 0.9 + typing + 1.5 + nlines * 0.25)}}",
+              "layers": [
+                { "$use": "glows", "with": { "strength": 0.45, "gx": "{{i % 2 ? '90%' : '10%'}}", "hx": "{{i % 2 ? '10%' : '90%'}}" } },
+                {
+                  "type": "box", "id": "row", "width": "{{fmt.safe.w}}",
+                  "style": { "direction": "{{fmt.landscape ? 'row' : 'column'}}", "gap": "{{fmt.u * (fmt.landscape ? 6 : 5)}}", "align": "center" },
+                  "children": [
+                    {
+                      "type": "box", "width": "{{fmt.landscape ? '34%' : '100%'}}",
+                      "style": { "direction": "column", "gap": "{{fmt.u * 1.8}}", "align": "{{fmt.landscape ? 'start' : 'center'}}" },
+                      "children": [
+                        { "text": "{{'Step ' + (i + 1) + ' of ' + count}}", "style": "label", "align": "{{fmt.landscape ? 'left' : 'center'}}", "enter": "fadeUp" },
+                        { "text": "{{s.title}}", "style": "heading", "width": "100%", "align": "{{fmt.landscape ? 'left' : 'center'}}", "enter": { "preset": "fadeUp", "delay": 0.1, "ease": "outExpo" } },
+                        { "$if": "s.body", "then": { "text": "{{s.body}}", "style": "subtitle", "width": "100%", "align": "{{fmt.landscape ? 'left' : 'center'}}", "enter": { "preset": "fadeUp", "delay": 0.25 } } }
+                      ]
+                    },
+                    { "$use": "codeWindow", "with": { "s": "{{s}}", "typing": "{{typing}}", "cps": "{{cps}}", "width": "{{fmt.landscape ? fmt.safe.w * 0.6 : fmt.safe.w}}" } }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "recap",
+        "transition": { "type": "blur", "duration": 0.6 },
+        "duration": "{{max(3.5, readtime(recap + ' ' + cta + ' ' + (url ?? '')) + 1.2)}}",
+        "layers": [
+          { "$use": "glows", "with": { "gx": "30%", "gy": "20%", "hx": "70%", "hy": "85%" } },
+          { "id": "recap", "text": "{{recap}}", "style": "title", "y": "{{fmt.portrait ? '40%' : '38%'}}", "width": "{{fmt.safe.w}}", "split": "words", "enter": { "preset": "fadeUp", "stagger": 0.08, "ease": "outExpo" } },
+          { "$use": "button", "with": { "label": "{{cta}}", "delay": 0.5 }, "y": "{{fmt.portrait ? '54%' : '58%'}}" },
+          { "$if": "url", "then": { "text": "{{url}}", "style": "caption", "y": "{{fmt.portrait ? '62%' : '70%'}}", "enter": { "preset": "fadeIn", "delay": 0.8 } } }
+        ]
+      }
+    ],
+    "audio": { "$use": "music" }
+  }
+}

@@ -1,1 +1,98 @@
-{ "name": "countdown", "title": "countdown", "description": "placeholder", "params": {}, "spec": { "theme": { "$use": "theme" }, "scenes": [ { "layers": [ { "text": "countdown" } ] } ] } }
+{
+  "name": "countdown",
+  "title": "Event countdown",
+  "description": "An event intro (name, date, place), a big N…1 countdown where each number pops in inside a ring that draws itself over the second, then a 'Live now' or save-the-date end card.",
+  "duration": "8–18 s",
+  "tags": ["event", "countdown", "launch day", "livestream", "webinar"],
+  "params": {
+    "event": { "type": "string", "required": true, "maxWords": 6, "description": "Event name.", "example": "Launch Week Day 1" },
+    "kicker": { "type": "string", "default": "Coming up", "maxWords": 3, "description": "Small label above the event name.", "example": "Live stream" },
+    "date": { "type": "string", "maxChars": 32, "description": "Date and time as it should read, e.g. 'Thu 12 Dec · 17:00 UTC'.", "example": "Thu 12 Dec · 17:00 UTC" },
+    "location": { "type": "string", "maxChars": 40, "description": "Venue or where to watch.", "example": "youtube.com/@anikit" },
+    "from": { "type": "integer", "default": 5, "minimum": 3, "maximum": 10, "description": "Number to count down from (one second each).", "example": 5 },
+    "live": { "type": "boolean", "default": true, "description": "true: end on 'Live now' (for the start of a stream). false: end on a save-the-date card.", "example": true },
+    "liveText": { "type": "string", "default": "Live now", "maxWords": 3, "description": "End card headline when live is true.", "example": "We're live" },
+    "cta": { "type": "string", "maxWords": 4, "description": "Optional button on the end card.", "example": "Join the stream" },
+    "music": { "type": "string", "description": "Optional music; a track with a clear downbeat makes each number land.", "example": "music.mp3" }
+  },
+  "spec": {
+    "size": ["{{fmt.w}}", "{{fmt.h}}"],
+    "fps": "{{fmt.fps}}",
+    "theme": { "$use": "theme" },
+    "background": "radial-gradient(circle at 50% 45%, $bg, $bgDeep)",
+    "transition": { "type": "crossfade", "duration": 0.5 },
+    "scenes": [
+      {
+        "id": "intro",
+        "duration": "{{max(2.6, readtime(kicker + ' ' + event + ' ' + (date ?? '') + ' ' + (location ?? '')) + 0.4)}}",
+        "layers": [
+          { "$use": "glows", "with": { "strength": 0.8 } },
+          { "$use": "kicker", "with": { "text": "{{kicker}}" }, "y": "{{fmt.portrait ? '36%' : '32%'}}" },
+          { "id": "event", "text": "{{event}}", "style": "title", "y": "{{fmt.portrait ? '46%' : '46%'}}", "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.78}}", "split": "words", "enter": { "preset": "fadeUp", "stagger": 0.08, "delay": 0.1, "ease": "outExpo" } },
+          { "$if": "date", "then": { "id": "date", "text": "{{date}}", "style": "subtitle", "color": "$text", "y": "{{fmt.portrait ? '57%' : '61%'}}", "width": "{{fmt.safe.w}}", "enter": { "preset": "fadeUp", "delay": 0.5 } } },
+          { "$if": "location", "then": { "id": "location", "text": "{{location}}", "style": "caption", "y": "{{fmt.portrait ? '62%' : '68%'}}", "width": "{{fmt.safe.w}}", "enter": { "preset": "fadeUp", "delay": 0.65 } } }
+        ]
+      },
+      {
+        "id": "countdown",
+        "transition": { "type": "zoom", "duration": 0.5 },
+        "duration": "{{from + 0.15}}",
+        "layers": [
+          { "$use": "glows", "with": { "gx": "50%", "gy": "45%", "hx": "50%", "hy": "110%", "strength": 0.9 } },
+          { "id": "track", "shape": "circle", "width": "{{fmt.u * 56}}", "height": "{{fmt.u * 56}}", "fill": "none", "stroke": { "color": "$border", "width": "{{fmt.u * 0.9}}" }, "enter": "fadeIn" },
+          {
+            "$each": "range(from)", "as": "k", "index": "i",
+            "do": [
+              {
+                "id": "ring-{{from - i}}", "shape": "circle", "width": "{{fmt.u * 56}}", "height": "{{fmt.u * 56}}", "rotation": -90,
+                "fill": "none", "stroke": { "color": "$accent", "width": "{{fmt.u * 0.9}}", "cap": "round" },
+                "glow": { "radius": "{{fmt.u * 2}}", "intensity": 0.8, "color": "$accent" },
+                "start": "{{i}}", "duration": 1,
+                "animate": [ { "from": { "trimEnd": 0 }, "duration": 1, "ease": "linear" } ]
+              },
+              {
+                "id": "n-{{from - i}}", "text": "{{str(from - i)}}", "style": "stat", "size": "{{fmt.portrait ? '30vmin' : '28vmin'}}",
+                "start": "{{i}}", "duration": 1,
+                "enter": { "preset": "popIn", "duration": 0.4 },
+                "exit": { "preset": "fadeOut", "duration": 0.15 }
+              }
+            ]
+          },
+          { "id": "event-small", "text": "{{event}}", "style": "label", "y": "{{fmt.portrait ? '72%' : '88%'}}", "enter": { "preset": "fadeIn", "delay": 0.2 } }
+        ]
+      },
+      {
+        "id": "end",
+        "transition": { "type": "{{live ? 'zoom' : 'blur'}}", "duration": 0.45 },
+        "duration": "{{max(3.2, readtime((live ? liveText : event) + ' ' + (date ?? '') + ' ' + (cta ?? '')) + 1)}}",
+        "camera": { "animate": [ { "from": { "zoom": 1.08 }, "to": { "zoom": 1 }, "duration": 1.2, "ease": "outExpo" } ] },
+        "layers": [
+          { "$use": "glows", "with": { "gx": "30%", "gy": "25%", "hx": "70%", "hy": "80%", "strength": 1 } },
+          {
+            "$if": "live",
+            "then": [
+              {
+                "type": "box", "id": "live-pill", "y": "{{fmt.portrait ? '36%' : '32%'}}",
+                "style": { "direction": "row", "gap": "{{fmt.u * 1.4}}", "align": "center", "padding": ["{{fmt.u * 1.2}}", "{{fmt.u * 2.6}}"], "radius": 999, "background": "#FF3B3022", "border": "1px #FF3B3066" },
+                "enter": { "preset": "popIn" },
+                "children": [
+                  { "shape": "circle", "width": "{{fmt.u * 1.8}}", "height": "{{fmt.u * 1.8}}", "fill": "#FF3B30", "loop": { "preset": "pulse", "period": 1.2 } },
+                  { "text": "LIVE", "style": "label", "color": "#FF6B61" }
+                ]
+              },
+              { "id": "live-text", "text": "{{liveText}}", "style": "hero", "y": "{{fmt.portrait ? '47%' : '48%'}}", "width": "{{fmt.safe.w}}", "split": "chars", "enter": { "preset": "popIn", "stagger": 0.04, "delay": 0.15 } }
+            ],
+            "else": [
+              { "$use": "kicker", "with": { "text": "Save the date" }, "y": "{{fmt.portrait ? '34%' : '30%'}}" },
+              { "id": "event", "text": "{{event}}", "style": "title", "y": "{{fmt.portrait ? '44%' : '44%'}}", "width": "{{fmt.portrait ? fmt.safe.w : fmt.w * 0.78}}", "split": "words", "enter": { "preset": "fadeUp", "stagger": 0.08, "ease": "outExpo" } },
+              { "$if": "date", "then": { "id": "date", "text": "{{date}}", "style": "heading", "color": "$accent", "y": "{{fmt.portrait ? '55%' : '58%'}}", "width": "{{fmt.safe.w}}", "enter": { "preset": "fadeUp", "delay": 0.4 } } }
+            ]
+          },
+          { "$if": "cta", "then": { "$use": "button", "with": { "label": "{{cta}}", "delay": 0.6 }, "y": "{{fmt.portrait ? '62%' : '70%'}}" } },
+          { "$if": "location && !cta", "then": { "text": "{{location}}", "style": "caption", "y": "{{fmt.portrait ? '62%' : '70%'}}", "enter": { "preset": "fadeIn", "delay": 0.6 } } }
+        ]
+      }
+    ],
+    "audio": { "$use": "music" }
+  }
+}
