@@ -219,7 +219,7 @@ function frameShared(t, dt, dtMs) {
   mapProgress(clamp01(sp.p));
   status.p = io.p;
   const portal = hands.update(t, dt, io.g, look).portal;
-  status.r = portal.r;
+  status.r = portal.r; status.ring = portal.ring;
   io.push = io.k = portal.step;
   const cover = portal.r > 0 && portal.r >= Math.hypot(Math.max(portal.x, W - portal.x), Math.max(portal.y, H - portal.y));
   // 1. The mountain (only while some of it shows).
@@ -278,7 +278,7 @@ function frame(timeMs, dtMs) {
   mapProgress(clamp01(sp.p));
   status.p = io.p;
   const { portal } = hands.frame(t, dt, io.g, look);
-  status.r = portal.r;
+  status.r = portal.r; status.ring = portal.ring;
   io.push = io.k = portal.step;
   // Never two full-cost scenes: once the portal covers ~70% of the screen the mountain keeps its last frame;
   // once it covers everything the canvas is hidden.

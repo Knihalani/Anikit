@@ -384,7 +384,7 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
   const TRIGGER = 0.06;        // g at which the formation starts
   const ARC_FROM = 0.6, ARC_LEN = 3.0;   // three calm circles of the hand draw the ring, a third each
   // Time-driven state (allocation-free).
-  const draw$ = { f: 0, lastF: -1, phase: 0, vel: 0, amp: 0, flash: 0, step: 0, stepV: 0, lastStep: -1 };
+  const draw$ = { f: 0, lastF: -1, phase: 0, vel: 0, amp: 0, flash: 0, step: 0, stepV: 0, lastStep: -1, hold: 0, base: 0.75 };
 
   // -------------------------------------------------------------------------
   // Skeleton → instances (no allocation per frame).
@@ -636,7 +636,9 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
     const F = D.f * FORM;
     if (D.f !== D.lastF) { tlForm.seek(F); D.lastF = D.f; }
     // Step through: only once formed; a critically damped spring follows the scroll.
-    const stepT = D.f >= 1 ? Math.min(1, Math.max(0, (g - 0.75) / 0.25)) : 0;
+    // Stepping through needs the portal fully open, a short hold, then further scrolling from where you were.
+    if (D.f >= 1) { if (D.hold === 0) D.base = Math.min(0.85, Math.max(0.75, g)); D.hold += dt; } else { D.hold = 0; }
+    const stepT = D.f >= 1 && D.hold > 0.8 ? Math.min(1, Math.max(0, (g - D.base) / (1 - D.base))) : 0;
     const K = 60, C = 2 * Math.sqrt(K);
     D.stepV += (K * (stepT - D.step) - C * D.stepV) * dt;
     D.step = Math.min(1, Math.max(0, D.step + D.stepV * dt));
@@ -679,12 +681,14 @@ void main() { vec2 c = vec2(float(gl_VertexID & 1), float(gl_VertexID >> 1)) * 4
 
     // Small ring on the fingertip's loop, growing out to the full portal in the middle.
     const minS = Math.min(cssW, cssH);
-    const R0 = Math.min(cssW * 0.34, cssH * 0.4);
+    // One fixed radius from the first spark to fully open.
+    const R0 = Math.min(cssH * 0.42, cssW * 0.44);
     const cover = Math.hypot(cssW, cssH) * 0.62;
     const gr = portal.grow;
-    const fx = cssW * 0.5 + lx * minS * 0.02, fy = lerpR(cssH * 0.42, cssH * 0.5, gr) + ly * minS * 0.015;
+    const fx = cssW * 0.5 + lx * minS * 0.01, fy = cssH * 0.47 + ly * minS * 0.008;
     const cx = fx, cy = fy;
-    const ringR = lerpR(R0, cover * 1.08, gr);
+    // Stepping through reads as the camera moving towards a fixed ring: perspective, 1 / distance.
+    const ringR = Math.min(R0 / Math.max(0.04, 1 - 0.96 * gr), cover * 1.2);
     const power = portal.glow * Math.min(1, 0.3 + arc) * (1 + D.flash * 0.7);
     const P = out.portal;
     P.x = cx; P.y = cy;
