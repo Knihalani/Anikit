@@ -1463,9 +1463,11 @@ impl Raster {
         }
         self.tile_taps = taps;
         // 3b. The jittered taps leave grain inside long smears (taps there are
-        //     several pixels apart). Average four samples of the result spread
-        //     over 1.5 tap spacings along the tile velocity: the smear is
-        //     already that long, so this only removes the noise. Packed SWAR.
+        //     several pixels apart). Average eight samples of the result spread
+        //     over ~2.6 tap spacings along the tile velocity: the smear is
+        //     already that long, so this only removes the noise. Pixels much
+        //     slower than their tile (a tracked subject the gather kept sharp)
+        //     fade out of it by their own speed. Packed SWAR.
         {
             const RB: u32 = 0x00ff_00ff;
             // Per tile: the 16.16 step between samples and the first sample's offset (0 step = still).
@@ -1479,13 +1481,20 @@ impl Raster {
                 let (sx, sy) = (vn[0] * s, vn[1] * s);
                 [(sx * 65536.0) as i32, (sy * 65536.0) as i32, ((0.5 - sx * 3.5) * 65536.0) as i32, ((0.5 - sy * 3.5) * 65536.0) as i32]
             }));
-            let (hp, out, steps) = (&self.half_px, &mut self.blur_src, &self.tile_step);
+            let (hp, out, steps, taps, vel) = (&self.half_px, &mut self.blur_src, &self.tile_step, &self.tile_taps, &self.vel);
             for by in 0..bh {
                 let trow = (by / T) * tw;
                 let (orow, hrow) = (&mut out[by * bw..(by + 1) * bw], &hp[by * bw..(by + 1) * bw]);
                 for (bx, (o, &c)) in orow.iter_mut().zip(hrow).enumerate() {
                     let [sx, sy, ox, oy] = steps[trow + bx / T];
                     if sx == 0 && sy == 0 {
+                        *o = c;
+                        continue;
+                    }
+                    // Own speed / tile speed: none below 1/4, all from 3/4 (vel holds 32767 / speed).
+                    let iv = (vel[by * bw + bx] & 0xffff).max(1) as f32;
+                    let k = (65534.0 / (iv * taps[trow + bx / T].ln) - 0.5).clamp(0.0, 1.0);
+                    if k <= 0.0 {
                         *o = c;
                         continue;
                     }
@@ -1511,7 +1520,15 @@ impl Raster {
                             fy = fy.wrapping_add(sy);
                         }
                     }
-                    *o = ((arb + 0x0004_0004) >> 3 & RB) | ((ag + 4) >> 3) << 8;
+                    let avg = ((arb + 0x0004_0004) >> 3 & RB) | ((ag + 4) >> 3) << 8;
+                    *o = if k >= 1.0 {
+                        avg
+                    } else {
+                        let ai = (k * 256.0) as u32;
+                        let rb = (((c & RB) * (256 - ai) + (avg & RB) * ai) >> 8) & RB;
+                        let g = ((((c >> 8) & 255) * (256 - ai) + ((avg >> 8) & 255) * ai) >> 8) << 8;
+                        rb | g
+                    };
                 }
             }
             core::mem::swap(&mut self.half_px, &mut self.blur_src);
