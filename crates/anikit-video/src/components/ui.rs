@@ -180,10 +180,12 @@ pub struct Button {
     pub arrow: bool,
     pub delay: f32,
     pub out: Option<f32>,
+    /// Horizontal placement in the box: 0 left, 0.5 centre (default), 1 right. Vertically centred.
+    pub align: f32,
 }
 impl Default for Button {
     fn default() -> Self {
-        Button { label: "Button".into(), variant: "primary".into(), size: 26.0, color: None, press: Vec::new(), arrow: false, delay: 0.0, out: None }
+        Button { label: "Button".into(), variant: "primary".into(), size: 26.0, color: None, press: Vec::new(), arrow: false, delay: 0.0, out: None, align: 0.5 }
     }
 }
 impl Prepare for Button {
@@ -245,7 +247,9 @@ impl Component for Button {
             }
         }
         transform_ops(&mut o, &scale_about(s, w * 0.5, h * 0.5));
-        reveal(o, p, exit, w * 0.5, h * 0.5, 14.0)
+        transform_ops(&mut o, &translate((ctx.width - w) * self.align, (ctx.height - h).max(0.0) * 0.5));
+        let (cx, cy) = ((ctx.width - w) * self.align + w * 0.5, (ctx.height - h).max(0.0) * 0.5 + h * 0.5);
+        reveal(o, p, exit, cx, cy, 14.0)
     }
 }
 
@@ -308,10 +312,12 @@ pub struct Badge {
     pub solid: bool,
     pub delay: f32,
     pub out: Option<f32>,
+    /// Horizontal placement in the box: 0 left, 0.5 centre (default), 1 right. Vertically centred.
+    pub align: f32,
 }
 impl Default for Badge {
     fn default() -> Self {
-        Badge { label: "New".into(), color: None, size: 20.0, dot: false, solid: false, delay: 0.0, out: None }
+        Badge { label: "New".into(), color: None, size: 20.0, dot: false, solid: false, delay: 0.0, out: None, align: 0.5 }
     }
 }
 impl Prepare for Badge {}
@@ -340,7 +346,9 @@ impl Component for Badge {
             o.push(circle(cx, cy, fs * 0.25, solid(if self.solid { Rgba([1.0, 1.0, 1.0, 1.0]) } else { c })));
         }
         draw(&mut o, ctx.assets, &self.label, &st, px + dw, h * 0.5 + fs * 0.36, 0.0);
-        reveal(o, p, exit, w * 0.5, h * 0.5, 8.0)
+        transform_ops(&mut o, &translate((ctx.width - w) * self.align, (ctx.height - h).max(0.0) * 0.5));
+        let (cx, cy) = ((ctx.width - w) * self.align + w * 0.5, (ctx.height - h).max(0.0) * 0.5 + h * 0.5);
+        reveal(o, p, exit, cx, cy, 8.0)
     }
 }
 
@@ -1113,11 +1121,11 @@ mod tests {
         let a = preview::host();
         let items = [
             ("card", json!({"x": 40, "y": 40, "width": 360, "height": 220, "title": "Instant previews", "body": "Render any frame in under 100 ms, without a browser.", "icon": "bolt", "glow": true})),
-            ("button", json!({"x": 440, "y": 50, "label": "Get started", "arrow": true})),
-            ("button", json!({"x": 440, "y": 120, "label": "Docs", "variant": "secondary"})),
+            ("button", json!({"x": 440, "y": 40, "width": 200, "height": 60, "align": 0, "label": "Get started", "arrow": true})),
+            ("button", json!({"x": 440, "y": 110, "width": 200, "height": 60, "align": 0, "label": "Docs", "variant": "secondary"})),
             ("toggle", json!({"x": 640, "y": 60, "at": 0.2, "label": "Dark mode"})),
-            ("badge", json!({"x": 440, "y": 190, "label": "Live", "dot": true, "color": "#3ddc97"})),
-            ("badge", json!({"x": 540, "y": 190, "label": "v2.0", "solid": true})),
+            ("badge", json!({"x": 440, "y": 185, "width": 90, "height": 36, "align": 0, "label": "Live", "dot": true, "color": "#3ddc97"})),
+            ("badge", json!({"x": 540, "y": 185, "width": 90, "height": 36, "align": 0, "label": "v2.0", "solid": true})),
             ("avatar", json!({"x": 640, "y": 120, "name": "Grace Hopper", "status": "online"})),
             ("avatar-stack", json!({"x": 740, "y": 130, "names": ["Ada L", "Grace H", "Alan T", "Linus T", "Ken T", "Dennis R"], "max": 4})),
             ("progress-bar", json!({"x": 40, "y": 300, "width": 360, "to": 0.72, "label": "Rendering"})),

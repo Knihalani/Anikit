@@ -163,9 +163,9 @@ Devices keep their aspect ratio and are centred in the box. Screen props are sha
 | Kind | Props |
 |---|---|
 | `card` | `title`, `body`, `icon` (`spark`, `bolt`, `check`, `plus`, `arrow`, `info`, `warning`, `x`), `accent`, `glow`, `delay`, `out` |
-| `button` | `label`, `variant` (`primary`, `secondary`, `ghost`, `gradient`), `size`, `color`, `press` (times), `arrow`, `delay`, `out` |
+| `button` | `align` (0 left, 0.5 centre (default), 1 right; vertically centred in the box), `label`, `variant` (`primary`, `secondary`, `ghost`, `gradient`), `size`, `color`, `press` (times), `arrow`, `delay`, `out` |
 | `toggle` | `at` (flip time), `on` (initial state), `size`, `color`, `label` |
-| `badge` | `label`, `color`, `size`, `dot` (pulsing "live" dot), `solid`, `delay`, `out` |
+| `badge` | `align` (as `button`), `label`, `color`, `size`, `dot` (pulsing "live" dot), `solid`, `delay`, `out` |
 | `avatar` | `name` (gives the initials and colour), `src`, `size`, `status` (`online`, `away`, `busy`), `delay` |
 | `avatarStack` | `names`, `srcs`, `size`, `overlap`, `max` (then "+N"), `delay`, `stagger` |
 | `progressBar` | `from`, `to`, `duration`, `delay`, `thickness`, `color`, `label`, `percent` |
@@ -189,7 +189,7 @@ Devices keep their aspect ratio and are centred in the box. Screen props are sha
 | `table` | `columns`, `rows` (cells are text, or `true`/`false`/`"✓"`/`"✗"` for icons), `highlight` (index of the column to emphasise), `fontSize`, `delay`, `stagger` |
 | `timeline` | `items` (`[{ "label", "title", "body" }]`), `current` (pulses; later items dim), `vertical`, `fontSize`, `step` (seconds per milestone), `delay` |
 | `spotlight` | `targets` (`[[x, y, w, h], ...]` in box px), `times`, `dim` (0–1), `radius`, `padding`, `color`, `delay`, `out`. Everything outside the focus darkens; the focus glides between targets. |
-| `keys` | `keys` (e.g. `["⌘", "K"]`), `press` (times), `size`, `delay`, `out` |
+| `keys` | `align` (as `button`), `keys` (e.g. `["⌘", "K"]`), `press` (times), `size`, `delay`, `out` |
 | `marquee` | `items` (words, or image srcs with `images: true`), `speed` (px/s), `fontSize`, `gap`, `separator`, `fade`, `color` |
 
 ## Backgrounds
