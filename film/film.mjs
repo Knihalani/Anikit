@@ -270,6 +270,14 @@ export default async function film({ anikit: A }) {
   // cross-hatching in the shadows, heavy ink outlines from depth, slight colour misregistration,
   // manga speed lines and a panel border.
   const PAPER = [246, 238, 214];
+  // The 45° halftone screen and the hatching, precomputed once per pixel.
+  const DOT = new Float32Array(N_PIX), HATCH = new Uint8Array(N_PIX);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const u45 = (x + y) * 0.7071, v45 = (x - y) * 0.7071;
+    const fu = u45 / 7 - Math.floor(u45 / 7) - 0.5, fv = v45 / 7 - Math.floor(v45 / 7) - 0.5;
+    DOT[y * W + x] = Math.hypot(fu, fv);
+    HATCH[y * W + x] = (((x + y) % 7) < 2 ? 1 : 0) | ((((x - y + 7000) % 7) < 2) ? 2 : 0);
+  }
   function comic(src, dist, out, t) {
     for (let i = 0; i < N_PIX; i++) { const o = i * 4; lum[i] = (src[o] * 0.299 + src[o + 1] * 0.587 + src[o + 2] * 0.114) / 255; }
     const B = 16, G = 9; // panel border: paper gutter, then a black rule
@@ -297,9 +305,7 @@ export default async function film({ anikit: A }) {
         R = m + (R - m) * 1.7; Gc = m + (Gc - m) * 1.7; Bc = m + (Bc - m) * 1.7;
         const k = 1 / (L + 0.05);
         R *= k * 0.62; Gc *= k * 0.62; Bc *= k * 0.62; // normalise to a flat ink of the hue
-        const u45 = (x + y) * 0.7071, v45 = (x - y) * 0.7071;
-        const fu = u45 / 7 - Math.floor(u45 / 7) - 0.5, fv = v45 / 7 - Math.floor(v45 / 7) - 0.5;
-        const dot = Math.hypot(fu, fv);
+        const dot = DOT[i];
         let cr, cg, cb;
         if (sky) {
           // Sky: Ben-Day dots, bigger towards the zenith; clouds stay paper.
@@ -315,7 +321,7 @@ export default async function film({ anikit: A }) {
         } else {
           cr = R * 0.62; cg = Gc * 0.62; cb = Bc * 0.7;
           // Cross-hatching (one direction, two in the deepest shade).
-          const h1 = ((x + y) % 7) < 2, h2 = L < 0.13 && ((x - y + 7000) % 7) < 2;
+          const hb = HATCH[i], h1 = (hb & 1) !== 0, h2 = L < 0.13 && (hb & 2) !== 0;
           if (h1 || h2) { cr = 22; cg = 18; cb = 30; }
         }
         // Misregistration: the red plate sits 2 px to the right.
