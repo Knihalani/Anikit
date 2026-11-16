@@ -188,14 +188,15 @@ void main() {
 }`;
 
 // --- soft lit cloud puffs (instanced billboards): the sea, and the word ---
-const puffVS = HEAD + `
+const puffVS = HEAD + COMMON + `
 layout(location = 0) in vec2 aC;          // corner -1..1
 layout(location = 1) in vec4 iP;          // centre (world or word space), radius
 layout(location = 2) in vec4 iS;          // seed, alpha, brightness, kind
 uniform mat4 uVP;
 uniform vec3 uRight, uUp, uFwd, uEye;
 uniform float uT;
-uniform vec2 uWind;                       // anikit-driven gust
+uniform vec2 uWind;
+out vec4 vHaze;   // haze colour, amount (per puff: cheaper than per pixel)                       // anikit-driven gust
 uniform float uWordMode;                  // 1: iP is in word space
 uniform vec3 uWordC;                      // word centre (world)
 uniform float uWordS;                     // word width (world units)
@@ -226,6 +227,10 @@ void main() {
   vec3 p = c + (aC.x * uRight + aC.y * uUp) * r;
   vUV = aC; vS = iS;
   vec3 v = c - uEye; vDist = length(v); vDir = v / vDist;
+  float hk = uWordMode > 0.5 ? 0.00004 : 0.00005;
+  vec3 hc = haze(vec3(0.0), vDir, vDist, hk);
+  float hf = 1.0 - exp(-vDist * hk);
+  vHaze = vec4(hf > 0.0001 ? hc / hf : vec3(0.0), hf);
   gl_Position = uVP * vec4(p, 1.0);
 }`;
 const puffFS = HEAD + COMMON + `
@@ -234,6 +239,7 @@ in vec4 vS;
 in vec3 vDir;
 in float vDist;
 in float vWarmX;
+in vec4 vHaze;
 uniform vec3 uSunV;    // sun in billboard space (right, up, toward-camera)
 uniform float uWordMode;
 out vec4 o;
@@ -258,7 +264,7 @@ void main() {
   vec3 sunW = uWordMode > 0.5 ? mix(vec3(1.25, 1.02, 0.72), vec3(1.4, 0.92, 0.5), uWarm) : sunC;
   vec3 col = mix(shade, sunW, lit) * (uWordMode > 0.5 ? 0.92 + 0.12 * vS.z : vS.z) + vec3(1.0, 0.7, 0.38) * rim * (uWordMode > 0.5 ? 0.6 * vS.z + 0.2 : 0.9);
   if (uWordMode > 0.5) col *= mix(vec3(0.93, 0.97, 1.06), vec3(1.12, 0.96, 0.78), vWarmX);
-  col = haze(col, vDir, vDist, uWordMode > 0.5 ? 0.00004 : 0.00005);
+  col = mix(col, vHaze.rgb, vHaze.a);
   o = vec4(tonemap(col) * a, a);
 }`;
 
@@ -316,7 +322,12 @@ void main() {
   sn += vec3(2.2, 2.0, 1.8) * glint;
   // rock: warm granite with lichen-ish variation
   vec3 ra = mix(vec3(0.13, 0.12, 0.12), vec3(0.3, 0.26, 0.23), d2.x * 0.7 + d5.x * 0.3) * (0.75 + 0.5 * d4.x);
-  vec3 rk = ra * (sunC * max(dot(N, L), 0.0) * 1.6 + sky * 0.45);
+  // rock gets its own crisp, high-frequency relief and a dusting of snow in the cracks
+  vec3 d7 = vnoised(vW.xz * 23.0 + vW.y * 11.0);
+  vec3 Nr = normalize(N + vec3(-(d5.y * 0.3 + d7.y * 0.12), 0.0, -(d5.z * 0.3 + d7.z * 0.12)) * (0.4 + 0.6 * fade));
+  float dust = smoothstep(0.62, 0.75, d5.x * 0.6 + d7.x * 0.4 + Nr.y * 0.25);
+  ra = mix(ra, vec3(0.85, 0.88, 0.95), dust * 0.6);
+  vec3 rk = ra * (sunC * max(dot(Nr, L), 0.0) * 1.6 + sky * (0.4 + 0.25 * Nr.y));
   vec3 col = mix(rk, sn, snow);
   col = haze(col, dir, dist, 0.0009);
   o = vec4(tonemap(col), 1.0);
