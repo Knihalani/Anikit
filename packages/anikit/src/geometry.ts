@@ -493,7 +493,7 @@ export function text3d(text: string, o: Text3dOptions = {}): Geometry {
   if (!ctx) throw new Error('anikit: text3d() needs Canvas 2D');
   ctx.font = font;
   const W = Math.ceil(ctx.measureText(text).width) + pad * 2, H = Math.ceil(px * 1.3) + pad * 2;
-  cv = mk(W, H); ctx = cv.getContext('2d') as CanvasRenderingContext2D;
+  cv = mk(W, H); ctx = cv.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D; // read back once: keep it on the CPU
   ctx.font = font; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff';
   ctx.fillText(text, pad, H / 2);
   const img = ctx.getImageData(0, 0, W, H).data;

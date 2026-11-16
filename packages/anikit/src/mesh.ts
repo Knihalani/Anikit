@@ -254,7 +254,8 @@ export const mesh = {
     const W = cols, H = Math.max(4, Math.round(th * scale));
     const c = doc.createElement('canvas');
     c.width = W; c.height = H;
-    const ctx = c.getContext('2d')!;
+    // CPU-backed canvas: the whole raster is read back once (GPU readback took ~260 ms).
+    const ctx = c.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     ctx.font = font; ctx.fillStyle = '#fff'; ctx.textBaseline = 'alphabetic';

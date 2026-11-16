@@ -896,7 +896,10 @@ export class Scene {
       if (i !== gl.INVALID_INDEX) gl.uniformBlockBinding(p, i, 0);
     }
     this.emptyVao = gl.createVertexArray()!;
-    if (this.shadows) this.makeShadowMap();
+    // Without shadows a 1×1 depth map still backs the shadow sampler: a sampler2DShadow
+    // over an empty or colour texture is a GL error on every draw.
+    if (!this.shadows) this.shadowSize = 1;
+    this.makeShadowMap();
 
     // Size: read layout once, then follow ResizeObserver (no per-frame layout reads).
     this.dpr = Math.min(this.maxDpr, typeof devicePixelRatio === 'number' ? devicePixelRatio : 1);
@@ -1430,10 +1433,8 @@ export class Scene {
       // Always on unit 1: a 2D and a shadow sampler may not share unit 0, even unused.
       gl.uniform1i(prog.u.uMap, 1);
       if (tex) { gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, tex); gl.activeTexture(gl.TEXTURE0); }
-      if (this.shadows) {
-        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.shadowTex);
-        gl.uniform1i(prog.u.uShadow, 0);
-      }
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.shadowTex);
+      gl.uniform1i(prog.u.uShadow, 0);
       this.stats.triangles += (g.count / 3) * (isI ? (o as InstancedMesh).count : 1);
     }
     if (isI) gl.drawElementsInstanced(gl.TRIANGLES, g.count, g.type, 0, (o as InstancedMesh).count);
