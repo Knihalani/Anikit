@@ -339,6 +339,97 @@ Cards behind are smaller, higher and darker; every `interval` the front card swi
 | `loop` | `true` | `false` stops on the last card. |
 | `delay` | `0` | The stack springs in from the back. |
 
+### `particleText`: words made of particles
+Thousands of glowing particles fly in from all around, form the text, hold with a soft shimmer, re-form into the next word, then blow away. Points are sampled from the real glyph outlines, so any phrase works.
+
+```json
+{ "type": "component", "component": "particleText", "props": { "words": ["Hello", "World"] } }
+```
+
+| Prop | Default | Meaning |
+|---|---|---|
+| `text` | `"Hello"` | The word or phrase (or use `words`). |
+| `words` | | Several words; the particles re-form from one into the next. |
+| `count` | `4000` | Number of particles. |
+| `size` | `2.4` | Particle radius in px at 1080p. |
+| `colors` | theme | Gradient across the text, left to right. |
+| `fontSize` | fit | Default fits about 80% of the width and at most 30% of the height. |
+| `weight`, `face` | `800`, `display` | |
+| `form` | `1.6` | Seconds to fly in and to re-form. |
+| `hold` | `1.4` | Seconds each word holds. |
+| `exit` | `"blow"` | `blow` (wind), `explode`, `fade`, or `none` to stay. |
+| `exitTime` | `1.6` | |
+| `delay`, `glow`, `seed` | `0`, `true`, `1` | |
+
+## Shapes and light
+
+### `morph`: shape morphing
+A gradient-filled shape that morphs smoothly through a list of named shapes or SVG paths, with a little squash, turn and a glossy top light.
+
+```json
+{ "type": "component", "component": "morph", "props": { "shapes": ["circle", "star", "heart"] } }
+```
+
+| Prop | Default | Meaning |
+|---|---|---|
+| `shapes` | circle, star, heart, blob | Names (`circle`, `square`, `star`, `heart`, `blob`, `triangle`, `hexagon`, `diamond`) or SVG path data (`"M0,0 L10,0 L5,8 Z"`). Every shape is centred and scaled to a similar visual size. |
+| `size` | `0.62` | Fraction of the box's shorter side. |
+| `colors` | theme | Fill gradient (2–3 colours). |
+| `duration` | `0.9` | Seconds per morph. |
+| `hold` | `0.7` | Seconds each shape holds. |
+| `loop` | `true` | Morph back to the first shape and repeat. |
+| `turn` | `0` | Degrees each morph rotates the shape. |
+| `glow`, `stroke`, `delay`, `seed` | `true`, none, `0`, `1` | `seed` varies the `blob` shape. |
+
+### `metaballs`: liquid blobs
+Gooey blobs drift, merge and split. The edge is an iso-contour extracted as a vector path each frame, so it stays crisp at any resolution.
+
+| Prop | Default | Meaning |
+|---|---|---|
+| `count` | `9` | Number of blobs. |
+| `colors` | theme | Gradient (2–4 colours); it drifts slowly. |
+| `size` | `0.085` | Blob radius as a fraction of the box height. |
+| `spread` | `1` | How far the blobs wander. |
+| `speed` | `1` | |
+| `glow`, `gloss` | `true` | Coloured bloom; soft specular light. |
+| `detail` | `12` | Grid cell in px at 1080p (smaller is smoother). |
+| `seed` | `3` | |
+
+### `godRays`: volumetric light
+Soft beams fan out from a light source, slowly turning and breathing, with dust motes that light up inside the beams. Screen-blended: place it above the background.
+
+| Prop | Default | Meaning |
+|---|---|---|
+| `at` | `[0.32, -0.08]` | Source position as fractions of the box (may be outside it). |
+| `color` | warm white | |
+| `angle` | `62` | Direction of the fan in degrees (90 points straight down). |
+| `spread` | `70` | Fan width in degrees (360 for all around). |
+| `count` | `14` | Number of beams. |
+| `length` | `1.15` | Beam length as a fraction of the box diagonal. |
+| `intensity` | `0.8` | |
+| `spin` | `1.5` | Fan rotation in degrees per second. |
+| `dust` | `120` | Number of dust motes (0 for none). |
+| `seed` | `4` | |
+
+### `lensFlare`
+An anamorphic flare: hot core, halo, faint rainbow ring, a blue horizontal streak, and ghosts along the line from the light through the frame centre. The ghosts slide as the light moves.
+
+```json
+{ "type": "component", "component": "lensFlare", "props": { "path": [[0.15, 0.25], [0.85, 0.35]], "times": [0, 3] } }
+```
+
+| Prop | Default | Meaning |
+|---|---|---|
+| `at` | `[0.3, 0.3]` | Light position as fractions of the box. |
+| `path` | | Positions to travel through (fractions); overrides `at`. |
+| `times` | even | Arrival time of each `path` point, in seconds. |
+| `duration` | `4` | Travel time over the whole `path` when `times` is omitted. |
+| `color` | warm | Core and halo tint. |
+| `streakColor` | blue | |
+| `streak` | `1` | Streak length as a fraction of the box width (0 for none). |
+| `ghosts` | `7` | Number of ghosts (0 for none). |
+| `intensity`, `seed` | `1`, `2` | |
+
 ## 3D
 
 ### `model`: product spin and orbit
