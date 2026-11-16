@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { ready, blackHole, testing } from '../src/index';
+import { ready, blackHole, testing, context } from '../src/index';
 
 beforeAll(async () => {
   await ready;
@@ -43,6 +43,16 @@ describe('blackHole', () => {
     bh.resize(100, 60, 1);
     expect(bh.render().length).toBe(100 * 60 * 4);
     bh.destroy();
+  });
+
+  it('is cleaned up by context()', () => {
+    let bh: ReturnType<typeof blackHole> | null = null;
+    const ctx = context(() => {
+      bh = blackHole({ width: 16, height: 16 });
+    });
+    expect(bh!.render().length).toBe(16 * 16 * 4);
+    ctx.revert();
+    expect(bh!.render().length).toBe(0);
   });
 
   it('warns about unknown options', () => {

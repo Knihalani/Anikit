@@ -952,13 +952,15 @@ impl BlackHole {
         let norm_k = if cinematic { 0.5 } else { 0.1 } / (0.2126 * peak[0] + 0.7152 * peak[1] + 0.0722 * peak[2]).max(1e-6);
         // Radial profile over u: temperature, edge fade, texture x.
         const UN: usize = 2048;
-        let mut ulut = vec![[0.0f32; 3]; UN + 2];
+        // [T, fade, texture x, √(1 − 3u), Ω]
+        let mut ulut = vec![[0.0f32; 5]; UN + 2];
         for (i, e) in ulut.iter_mut().enumerate() {
             let u = u_lo + (u_hi - u_lo) * i as f32 / UN as f32;
             let r = 1.0 / u;
             let fade = smooth(rout, rout * 0.62, r) * smooth(ISCO * 0.86, ISCO * 1.02, r);
             let tx = ((libm::logf(r) - lx0) * xs).clamp(0.0, (TEX_X - 2) as f32 - 0.01);
-            *e = [Self::temperature(p, r), fade, tx];
+            let uc = u.min(1.0 / 3.01);
+            *e = [Self::temperature(p, r), fade, tx, sqrtf(1.0 - 3.0 * uc), uc * sqrtf(uc)];
         }
         let u_k = UN as f32 / (u_hi - u_lo);
         // Orbit-plane quantities per θ bin: φ0 column, azimuth (texels), L_z/b.
@@ -1048,7 +1050,8 @@ impl BlackHole {
                 if temp < 1.0 || fade <= 0.0 {
                     continue;
                 }
-                let g = redshift((1.0 / u).max(3.01), lz, dob);
+                // g = D·√(1 − 3u)/(1 − Ω L_z/E), see `redshift`.
+                let g = dob * ue[3] / (1.0 - ue[4] * lz).max(1e-3);
                 let (t_obs, gain) = if cinematic {
                     // Interstellar: no Doppler colour, beaming softened.
                     let gg = g.clamp(0.2, 3.0);
