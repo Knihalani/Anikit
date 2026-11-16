@@ -76,8 +76,9 @@ pub enum KineticStyle {
     },
     /// A marker highlight sweeps in behind each unit.
     HighlightSweep {
-        #[serde(default = "d_highlight")]
-        color: Color,
+        /// Defaults to the text style's `accent` at 30% opacity.
+        #[serde(default)]
+        color: Option<Color>,
         /// Padding around the unit's box, em.
         #[serde(default = "d_pad")]
         padding: f32,
@@ -185,9 +186,6 @@ fn d_wavelength() -> f32 {
 fn d_speed() -> f32 {
     0.8
 }
-fn d_highlight() -> Color {
-    Color::rgba(1.0, 0.85, 0.2, 0.45)
-}
 fn d_pad() -> f32 {
     0.08
 }
@@ -280,7 +278,7 @@ impl KineticStyle {
             "scramble" | "decode" => KineticStyle::Scramble { charset: d_charset(), rate: d_rate(), seed: 0 },
             "wave" => KineticStyle::Wave { amplitude: d_amp(), wavelength: d_wavelength(), speed: d_speed() },
             "highlight" | "highlightsweep" | "marker" => {
-                KineticStyle::HighlightSweep { color: d_highlight(), padding: d_pad(), radius: d_radius() }
+                KineticStyle::HighlightSweep { color: None, padding: d_pad(), radius: d_radius() }
             }
             "mask" | "maskreveal" | "reveal" => KineticStyle::MaskReveal { direction: Direction::Up },
             "flip" | "flipup" => KineticStyle::Flip,
@@ -492,7 +490,6 @@ pub struct KineticPlan {
     /// Scramble: per run, the charset's glyph ids and advances (same face and size).
     scramble: Vec<Vec<(u16, f32)>>,
     caret: Rgba,
-    accent: Rgba,
     /// Draw style: outline path and stroke colour per unit.
     paths: Vec<(dl::Path, Rgba)>,
 }
@@ -591,7 +588,6 @@ impl KineticPlan {
             _ => layout.runs.first().map_or(Rgba([1.0; 4]), |r| r.color),
         };
         let em = layout.font_size;
-        let accent = Color::hex("#ffd166").unwrap_or_default().0;
         let paths = match k.style {
             KineticStyle::Draw { .. } => layout
                 .units(unit)
@@ -617,7 +613,7 @@ impl KineticPlan {
                 .collect(),
             _ => Vec::new(),
         };
-        KineticPlan { layout, k: k.clone(), unit, duration, em, ease, starts, scramble, caret, accent, paths }
+        KineticPlan { layout, k: k.clone(), unit, duration, em, ease, starts, scramble, caret, paths }
     }
 
     /// Time at which every unit has finished its entrance.
@@ -666,7 +662,7 @@ impl KineticPlan {
                         w: (r[2] + 2.0 * padding) * e,
                         h: r[3] + *padding,
                         radius,
-                        paint: Paint::Solid(color.0),
+                        paint: Paint::Solid(color.map_or(with_alpha(l.accent, 0.3), |c| c.0)),
                         transform,
                     });
                 }
@@ -681,14 +677,14 @@ impl KineticPlan {
                     if e <= 0.0 {
                         continue;
                     }
-                    let c = color.map(|c| c.0).unwrap_or(self.accent);
+                    let c = color.map(|c| c.0).unwrap_or(l.accent);
                     let y = u.baseline + self.em * 0.14;
                     out.push(Op::RoundRect { x: u.rect[0], y, w: u.rect[2] * e.min(1.0), h: th, radius: th * 0.5, paint: Paint::Solid(c), transform });
                 }
                 return;
             }
             KineticStyle::Karaoke { active, dim } => {
-                let act = active.map_or_else(|| l.runs.first().map_or(Rgba([1.0; 4]), |_| self.accent), |c| c.0);
+                let act = active.map_or_else(|| l.runs.first().map_or(Rgba([1.0; 4]), |_| l.accent), |c| c.0);
                 for (i, u) in units.iter().enumerate() {
                     let st = self.starts[i];
                     let next = self.starts.get(i + 1).copied().unwrap_or(f32::INFINITY).max(st + self.duration);

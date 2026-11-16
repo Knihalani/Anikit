@@ -433,6 +433,8 @@ pub struct TextLayout {
     pub backgrounds: Vec<([f32; 4], f32, Rgba)>,
     /// Layer filters (shadow, glow) wrapping the glyphs.
     pub filters: Vec<dl::Filter>,
+    /// The style's accent colour (highlight/underline defaults).
+    pub accent: Rgba,
 }
 
 /// Unit granularity for per-unit addressing and animation.
@@ -711,6 +713,7 @@ impl FontStore {
             }
         }
         let mut out = self.extract(&layout, &text);
+        out.accent = spec.style.accent.0;
         out.fill = spec.style.gradient.clone().filter(|g| !g.colors.is_empty());
         let em = base * scale;
         if let Some(bg) = &spec.style.background {
