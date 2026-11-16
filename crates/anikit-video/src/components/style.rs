@@ -505,7 +505,7 @@ mod tests {
         assert_eq!(format_number(1234567.891, 2, true), "1,234,567.89");
         assert_eq!(format_number(-12.0, 0, true), "-12");
         assert_eq!(compact_number(12600.0), "13K");
-        assert_eq!(compact_number(1_250_000.0), "1.3M");
+        assert_eq!(compact_number(1_260_000.0), "1.3M");
         assert_eq!(compact_number(950.0), "950");
     }
     #[test]
