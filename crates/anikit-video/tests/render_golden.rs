@@ -450,3 +450,45 @@ fn dynamic_frame_images() {
     fresh.set_frame_image(ImageId(77), frame(200));
     assert_eq!(fresh.render(&l).data_as_u8_slice(), r.frame().data_as_u8_slice());
 }
+
+/// Degenerate input must never panic (a panicking worker kills the render).
+#[test]
+fn degenerate_inputs_do_not_panic() {
+    use anikit_video::render::{MbMap, YuvFrame};
+    let nan = f32::NAN;
+    let inf = f32::INFINITY;
+    let empty = BezPath::new();
+    let mut wild = BezPath::new();
+    wild.move_to((1e12, -1e12));
+    wild.line_to((f64::NAN, 3.0));
+    wild.curve_to((1e30, 1e30), (-1e30, 0.0), (5.0, 5.0));
+    let mut ops = vec![];
+    for t in [[nan, 0.0, 0.0, 1.0, 0.0, 0.0], [0.0; 6], [1e9, 0.0, 0.0, 1e9, -1e12, 1e12], [inf, 0.0, 0.0, inf, 0.0, 0.0], IDENTITY] {
+        for p in [circle(10.0, 10.0, 5.0), empty.clone(), wild.clone()] {
+            ops.push(Op::Fill { path: p.clone(), paint: Paint::Solid(rgba(nan, 2.0, -1.0, 0.5)), rule: FillRule::EvenOdd, transform: t });
+            ops.push(Op::Stroke { path: p.clone(), paint: solid(1.0, 1.0, 1.0), stroke: Stroke { width: nan, dash: vec![0.0, 0.0], trim: [nan, 2.0], ..stroke(2.0) }, transform: t });
+            ops.push(Op::Stroke { path: p, paint: solid(1.0, 1.0, 1.0), stroke: Stroke { dash: vec![1e-9, 1e-9], trim: [0.9, 0.1], ..stroke(1e6) }, transform: t });
+        }
+        ops.push(Op::RoundRect { x: nan, y: 0.0, w: 1e30, h: -5.0, radius: inf, paint: Paint::Linear { p0: [0.0, 0.0], p1: [0.0, 0.0], stops: vec![] }, transform: t });
+        ops.push(Op::RoundRect { x: 0.0, y: 0.0, w: 50.0, h: 50.0, radius: 5.0, paint: Paint::Radial { c: [nan, 0.0], r: -1.0, stops: vec![(nan, rgba(1.0, 0.0, 0.0, 1.0)), (2.0, rgba(0.0, 1.0, 0.0, 1.0))] }, transform: t });
+        ops.push(Op::Image { image: ImageId(999), dst: [0.0, 0.0, 10.0, 10.0], opacity: 1.0, transform: t });
+        ops.push(Op::Glyphs { font: FontId(999), size: 12.0, glyphs: vec![Glyph { id: 5, x: 0.0, y: 0.0 }], paint: solid(1.0, 1.0, 1.0), transform: t });
+        ops.push(layer(nan, Blend::Overlay, vec![Filter::Blur(nan), Filter::Blur(1e9), Filter::Shadow { dx: inf, dy: nan, blur: -3.0, color: rgba(0.0, 0.0, 0.0, 1.0) }, Filter::Glow { radius: 1e6, intensity: nan, color: rgba(1.0, 1.0, 1.0, 1.0) }], Some((wild.clone(), t)), Some(1)));
+        ops.push(card(0.0, 0.0, 40.0, 40.0, solid(1.0, 1.0, 1.0)));
+        ops.push(Op::PopLayer);
+        ops.push(layer(1.0, Blend::Normal, vec![Filter::Shadow { dx: 1e9, dy: 0.0, blur: 2.0, color: rgba(0.0, 0.0, 0.0, 1.0) }], None, None));
+        ops.push(Op::RoundRect { x: 0.0, y: 0.0, w: 1e7, h: 1e7, radius: 3.0, paint: solid(1.0, 1.0, 1.0), transform: t });
+        ops.push(Op::PopLayer);
+    }
+    ops.push(Op::PopLayer); // stray
+    ops.push(layer(1.0, Blend::Normal, vec![Filter::Blur(2.0)], None, None)); // unclosed
+    ops.push(card(5.0, 5.0, 10.0, 10.0, solid(1.0, 0.0, 0.0)));
+    let mut r = Renderer::new(Arc::new(Assets::default()));
+    let (mut y, mut m) = (YuvFrame::default(), MbMap::default());
+    for (w, h) in [(W, H), (1, 1), (17, 3), (0, 0)] {
+        let l = DisplayList { width: w, height: h, background: rgba(nan, 0.0, 0.0, 1.0), ops: ops.clone() };
+        r.render(&l);
+        r.render_yuv_incremental(&l, &mut y, &mut m);
+        r.render_yuv_incremental(&l, &mut y, &mut m);
+    }
+}

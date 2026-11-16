@@ -187,11 +187,12 @@ fn factor(sigma: f32) -> usize {
 /// Blur `buf` (`w × h` elements of `B` bytes) in place.
 #[inline(always)]
 pub fn blur<const B: usize>(buf: &mut [u8], w: usize, h: usize, sigma: f32, s: &mut BlurScratch) {
-    if sigma <= 0.0 || w == 0 || h == 0 {
+    if sigma.is_nan() || sigma <= 0.0 || w == 0 || h == 0 {
         return;
     }
+    let sigma = sigma.min(1000.0);
     let f = factor(sigma).min(w.max(1)).min(h.max(1));
-    let radii = box_radii(sigma / f as f32);
+    let radii = box_radii(sigma / f as f32).map(|r| r.min(127));
     // 1. decimate rows (y).
     let hs = down_rows(buf, &mut s.a, w * B, h, f, &mut s.sums32);
     transpose::<B>(&s.a, &mut s.b, w, hs);

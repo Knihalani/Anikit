@@ -332,7 +332,7 @@ fn draw_ops_culled(st: &mut State, assets: &View, ctx: &mut RenderContext, ops: 
                 let inner = &ops[i + 1..end.min(ops.len())];
                 let start = i;
                 i = end + 1;
-                let opacity = opacity.clamp(0.0, 1.0);
+                let opacity = if op_ok(&ops[start], base) { opacity.clamp(0.0, 1.0) } else { 0.0 };
                 if opacity <= 0.0 || inner.is_empty() {
                     continue;
                 }
@@ -623,10 +623,52 @@ fn push_layer(ctx: &mut RenderContext, base: Affine, clip: Option<&(dl::Path, dl
 }
 
 /// Conservative device-space bounds of `ops` (with nested filter margins added).
+/// Largest device coordinate we draw (anything beyond is degenerate input).
+const MAX_COORD: f64 = 1e6;
+
+fn rect_ok(r: Rect) -> bool {
+    [r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite() && v.abs() <= MAX_COORD)
+}
+
+/// Whether an op's numbers are sane enough to hand to the rasteriser:
+/// finite transform, finite geometry within ±1e6 px. Ops failing this are skipped.
+pub(crate) fn op_ok(op: &Op, base: Affine) -> bool {
+    let fin = |v: &[f32]| v.iter().all(|x| x.is_finite());
+    let dev = |t: &dl::Affine, r: Rect| fin(t) && rect_ok((base * affine(t)).transform_rect_bbox(r));
+    match op {
+        Op::Fill { path, transform, .. } => dev(transform, path.bounding_box()),
+        Op::Stroke { path, transform, stroke, .. } => {
+            let w = stroke.width as f64;
+            stroke.width.is_finite() && stroke.width >= 0.0 && dev(transform, path.bounding_box().inflate(w, w))
+        }
+        Op::RoundRect { x, y, w, h, radius, transform, .. } => {
+            fin(&[*x, *y, *w, *h, *radius]) && dev(transform, Rect::new(*x as f64, *y as f64, (*x + *w) as f64, (*y + *h) as f64))
+        }
+        Op::Image { dst, opacity, transform, .. } => {
+            fin(dst) && opacity.is_finite() && dev(transform, Rect::new(dst[0] as f64, dst[1] as f64, (dst[0] + dst[2]) as f64, (dst[1] + dst[3]) as f64))
+        }
+        Op::Glyphs { size, glyphs, transform, .. } => {
+            size.is_finite()
+                && glyphs.iter().all(|g| g.x.is_finite() && g.y.is_finite())
+                && glyphs.first().is_none_or(|g| {
+                    let s = *size as f64 * 2.0;
+                    dev(transform, Rect::new(g.x as f64 - s, g.y as f64 - s, g.x as f64 + s, g.y as f64 + s))
+                })
+        }
+        Op::PushLayer { opacity, clip, .. } => {
+            opacity.is_finite() && clip.as_ref().is_none_or(|(p, t)| fin(t) && { let b = p.bounding_box(); [b.x0, b.y0, b.x1, b.y1].iter().all(|v| v.is_finite()) })
+        }
+        Op::PopLayer => true,
+    }
+}
+
 pub(crate) fn ops_bounds(ops: &[Op], base: Affine) -> Option<Rect> {
     let mut acc: Option<Rect> = None;
     let mut extra = [0f32; 4];
     for op in ops {
+        if !matches!(op, Op::PushLayer { .. } | Op::PopLayer) && !op_ok(op, base) {
+            continue;
+        }
         let r = match op {
             Op::Fill { path, transform, .. } => Some((base * affine(transform)).transform_rect_bbox(path.bounding_box())),
             Op::Stroke { path, transform, stroke, .. } => {
@@ -845,6 +887,17 @@ fn set_paint(ctx: &mut RenderContext, assets: &View, paint: &Paint) -> bool {
     true
 }
 
+fn el_points(el: &kurbo::PathEl) -> impl Iterator<Item = kurbo::Point> {
+    use kurbo::PathEl::*;
+    let v: [Option<kurbo::Point>; 3] = match *el {
+        MoveTo(a) | LineTo(a) => [Some(a), None, None],
+        QuadTo(a, b) => [Some(a), Some(b), None],
+        CurveTo(a, b, c) => [Some(a), Some(b), Some(c)],
+        ClosePath => [None, None, None],
+    };
+    v.into_iter().flatten()
+}
+
 fn invert(a: Affine) -> Option<Affine> {
     if a.determinant().abs() < 1e-12 {
         None
@@ -854,6 +907,9 @@ fn invert(a: Affine) -> Option<Affine> {
 }
 
 fn draw_op(st: &mut State, assets: &View, ctx: &mut RenderContext, op: &Op, base: Affine) {
+    if !op_ok(op, base) {
+        return;
+    }
     match op {
         Op::Fill { path, paint, rule, transform } => {
             if !set_paint(ctx, assets, paint) {
@@ -883,7 +939,20 @@ fn draw_op(st: &mut State, assets: &View, ctx: &mut RenderContext, op: &Op, base
                 })
                 .with_miter_limit(stroke.miter_limit.max(1.0) as f64);
             let dash_sum: f32 = stroke.dash.iter().map(|d| d.max(0.0)).sum();
-            if !stroke.dash.is_empty() && dash_sum > 1e-3 {
+            // Guard against dash patterns that would produce millions of dashes.
+            let t = base * affine(transform);
+            let c = t.as_coeffs();
+            let scale = (c[0].abs() + c[1].abs()).max(c[2].abs() + c[3].abs()).max(1e-9);
+            let mut len = 0.0;
+            let mut last = kurbo::Point::ZERO;
+            for el in path.elements() {
+                for p in el_points(el) {
+                    len += p.distance(last);
+                    last = p;
+                }
+            }
+            let dashes = len * scale / (dash_sum as f64 * scale).max(1e-9);
+            if !stroke.dash.is_empty() && dash_sum > 1e-3 && stroke.dash.iter().all(|d| d.is_finite()) && dashes < 20_000.0 {
                 let reps = if stroke.dash.len() % 2 == 1 { 2 } else { 1 };
                 let pat = (0..reps).flat_map(|_| stroke.dash.iter().map(|d| d.max(0.0) as f64));
                 ks = ks.with_dashes(stroke.dash_offset as f64, pat);
