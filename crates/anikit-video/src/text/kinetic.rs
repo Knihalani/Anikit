@@ -1125,7 +1125,8 @@ impl TextBlock {
         anchor: [f32; 2],
     ) -> Self {
         let layout = fonts.layout(spec);
-        let offset = [-layout.width * anchor[0], -layout.height * anchor[1]];
+        let b = layout.bounds();
+        let offset = [-(b[0] + b[2] * anchor[0]), -layout.height * anchor[1]];
         let enter = enter.map(|k| KineticPlan::new(fonts, layout.clone(), k));
         let exit = exit.map(|(k, at)| {
             let mut k = k.clone();

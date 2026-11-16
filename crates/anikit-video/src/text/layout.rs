@@ -462,6 +462,17 @@ impl TextLayout {
         (r, r.glyphs[g.index as usize])
     }
 
+    /// Box `[x, y, w, h]` around all lines in layout coordinates (aligned
+    /// lines can start right of 0 when a wrap width is set).
+    pub fn bounds(&self) -> [f32; 4] {
+        if self.lines.is_empty() {
+            return [0.0, 0.0, self.width, self.height];
+        }
+        let x0 = self.lines.iter().map(|l| l.rect[0]).fold(f32::MAX, f32::min);
+        let x1 = self.lines.iter().map(|l| l.rect[0] + l.rect[2]).fold(f32::MIN, f32::max);
+        [x0, 0.0, (x1 - x0).max(0.0), self.height]
+    }
+
     /// The paint for a run's glyphs with an extra alpha factor.
     #[inline]
     pub fn paint(&self, run: &GlyphRun, alpha: f32) -> Paint {
