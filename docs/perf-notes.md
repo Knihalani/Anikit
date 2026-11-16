@@ -625,8 +625,17 @@ The number and keyframe paths did not change in this round; their rows move
 with the VM (in the same rounds base itself read 0.72–1.36x GSAP on 3
 numbers, and the three earlier interleaved rounds gave 8 keyframes 10k
 0.39–0.50 base vs 0.27–0.44 new, the other way round). A CPU-time A/B of 8
-keyframes at 50k against the build before §6 (which added fields to `Part`)
-gave minima of 1.19–1.32 vs 1.20–1.26 ms over five pairs: no change.
+keyframes against `dc17c46` (before the commits that added fields to
+`Part`; a development harness timing CPU time, minimum of 40 blocks per
+process) gave, over five interleaved triples at 50k, minima of 1.19–1.32
+(`dc17c46`) vs 1.20–1.26 ms (now), and at 10k 0.24–0.28 (`dc17c46`) vs
+0.24–0.37 (now) vs 0.24–0.39 ms (`adcffe5`): the processes split into a fast
+and a slow mode, now and `adcffe5` each landed in the slow one in some runs
+and `dc17c46` in none, so a small cost of the larger `Part` at 10k can't be
+excluded. The `frame: timeline` row of `bench-create.mjs`, which read slower
+in the two full rounds, was faster in three further interleaved pairs
+(`RUNS=1 WARM=1`): 0.656 / 0.429, 0.789 / 0.597, 0.736 / 0.566 ms (base /
+now).
 
 `bench-scroll.mjs` (ms per scroll event; base / now, one run each, the code
 did not change): 200 scrubbed triggers 0.176 / 0.146, 200 `scroll()` links
@@ -654,10 +663,10 @@ record` (fails on the old code).
 
 ### 2. Creation: plain-number tracks, per-call hoisting, shared arrays
 
-Creating an animation spent ~45% of its time in GC (CPU profile of 10k
-targets x 3 numbers) and allocated ~7.6 KB per target (sampled allocation
-profile with collected objects included; ~4.3 KB after these changes). All
-changes produce the same tracks:
+Creating an animation spent ~45% of its time in GC (development CPU profile
+of 10k targets x 3 numbers) and allocated ~7.6 KB per target (development
+allocation profile with collected objects included; ~4.3 KB after these
+changes). All changes produce the same tracks:
 
 - `numberTrack()`: keyframes that are numbers or `null` (the current value:
   a number, or a plain number string such as `'0px'` from a transform read)
@@ -766,7 +775,9 @@ last written value itself; the last value goes back to the binding on
 (`_setCompactFmt(false)` forces the binding loop; the test runs colour, px,
 complex and setter targets, `onUpdate`, a mid-run takeover, a seek, a
 `steps()` easing that repeats values, and revert, through both; always
-writing, or writing twice, fails it). This is the colour gain in the
+writing, or writing twice, fails it; a development in-process A/B toggling
+the path gave medians 4.08 → 2.77 ms for colours and 4.38 → 3.36 ms for
+unit strings at 50k). This is the colour gain in the
 `bench.mjs` table: 10k 1.22–1.26 → 0.52–0.59 ms, 50k 4.70–5.43 →
 2.26–2.27 ms, from 0.86–1.00x GSAP to 1.2–2.1x faster.
 
@@ -778,8 +789,10 @@ writing, or writing twice, fails it). This is the colour gain in the
   unchanged, and a frame profile at 10k split it about evenly between
   `ak_tick` and the runner's stores.
 - **Colour strings at 10k:** resolved, 2.1–2.3x faster than before (§6).
-- **Staggered tweens:** `frame: 10k targets, stagger delay` 0.187–0.365 →
-  0.189–0.288 ms, 2.7–4.4x faster than GSAP; the core lane is unchanged.
+- **Staggered tweens (~4% from the third round's lane):** not verified and
+  not addressed (the core lane is unchanged). For reference, `frame: 10k
+  targets, stagger delay` read 0.187–0.365 → 0.189–0.288 ms, 2.7–4.4x faster
+  than GSAP.
 - **New: unit strings on objects** (not benchmarked before): 1.7–2.2x
   faster than before, still 0.45–0.72x GSAP. What remains per target is the
   formatter call and the string allocation (`s3` + unit).
@@ -788,7 +801,7 @@ writing, or writing twice, fails it). This is the colour gain in the
 
 | Idea | Result |
 |---|---|
-| A generated store per key for formatted plain properties (`t["c"] = v` instead of `t[b.key] = v`) | no change in an in-process A/B (median 0.95 vs 0.93 ms, 10k colours): with one key per process the keyed store site is already monomorphic. |
-| `claim`/`unclaim` with one state lookup per target, and `set(prop, undefined)` instead of `Map.delete` | 0–5% slower creation in three interleaved rounds. |
+| A generated store per key for formatted plain properties (`t["c"] = v` instead of `t[b.key] = v`) | no change in a development in-process A/B (median 0.95 vs 0.93 ms, 10k colours): with one key per process the keyed store site is already monomorphic. |
+| `claim`/`unclaim` with one state lookup per target, and `set(prop, undefined)` instead of `Map.delete` | 0–5% slower creation in three interleaved rounds of a development creation loop. |
 | Pinning benchmark processes to one CPU (`taskset`) | did not remove the 2x process-to-process modes under the shared load. |
-| Typed OM transforms (`setTypedOM(true)`) | not re-measured; still off by default (it changes the inline style serialisation). |
+| Typed OM transforms (`setTypedOM(true)`) | slower than the string path now: `MANUAL=1 LIBS=anikit,anikit-typed,gsap bench-dom.mjs`, one run, 0.41 / 1.85 / 4.31 (strings) vs 0.77 / 2.87 / 9.66 ms (Typed OM) at 500 / 2000 / 5000. Still off by default. |
