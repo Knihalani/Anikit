@@ -114,8 +114,8 @@ void main() {
   float crack = (1.0 - smoothstep(0.0, 0.035, edge)) * min(uE * 10.0, 1.0);
   vec3 col = t.rgb * vShade;
   float rim = 1.0 - smoothstep(0.0, 0.05, edge);
-  col = mix(col, col * 0.6 + vec3(0.1, 0.07, 0.03), crack * 0.5 * (1.0 - min(vE * 4.0, 1.0)));
-  col += vec3(1.0, 0.97, 0.9) * rim * min(vE * 4.0, 1.0) * 0.45;
+  col = mix(col, col * 0.6 + vec3(0.1, 0.07, 0.03), crack * 0.22 * (1.0 - min(vE * 4.0, 1.0)));
+  col += vec3(1.0, 0.97, 0.9) * rim * min(vE * 4.0, 1.0) * 0.28;
   o = vec4(col, 1.0);
 }`;
 
@@ -246,7 +246,7 @@ export function createGL(canvas, shared) {
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     },
-    colors: { ink: hex('#1c1a17'), a: hex('#ff5b3a'), b: hex('#ffc23d') },
+    colors: { ink: hex('#1c1a17'), a: hex('#2b2723'), b: hex('#8c8170') },
     /** One letter: rotation (rx, ry in radians), centre (px), size (px), extrusion in px. */
     letter(m, cx, cy, sx, sy, depth, rx, ry, e, mirror, shadow = 0) {
       const { p, u } = letter;
