@@ -921,3 +921,54 @@ pub fn format_number(v: f64, decimals: u32, sep: &str, prefix: &str, suffix: &st
     out.push_str(suffix);
     out
 }
+
+/// A text block ready for evaluation: its layout plus optional enter and exit
+/// animations and an anchor. Build once at preprocessing; `ops(t)` per frame.
+pub struct TextBlock {
+    pub layout: Arc<TextLayout>,
+    enter: Option<KineticPlan>,
+    exit: Option<(f32, KineticPlan)>,
+    /// Offset applied so the anchor point lands on the transform's origin.
+    pub offset: [f32; 2],
+}
+
+impl TextBlock {
+    /// `anchor` is a fraction of the block's size (`[0, 0]` top-left,
+    /// `[0.5, 0.5]` centre); `exit_at` is when the exit animation starts.
+    pub fn new(
+        fonts: &FontStore,
+        spec: &TextSpec,
+        enter: Option<&Kinetic>,
+        exit: Option<(&Kinetic, f32)>,
+        anchor: [f32; 2],
+    ) -> Self {
+        let layout = fonts.layout(spec);
+        let offset = [-layout.width * anchor[0], -layout.height * anchor[1]];
+        let enter = enter.map(|k| KineticPlan::new(fonts, layout.clone(), k));
+        let exit = exit.map(|(k, at)| {
+            let mut k = k.clone();
+            k.exit = true;
+            (at, KineticPlan::new(fonts, layout.clone(), &k))
+        });
+        TextBlock { layout, enter, exit, offset }
+    }
+
+    /// Time the enter animation finishes.
+    pub fn enter_duration(&self) -> f32 {
+        self.enter.as_ref().map_or(0.0, |p| p.duration())
+    }
+
+    /// Ops at local time `t` (seconds since the block appeared).
+    pub fn ops(&self, t: f32, transform: Affine, out: &mut Vec<Op>) {
+        let tr = dl::mul(&transform, &translate(self.offset[0], self.offset[1]));
+        if let Some((at, p)) = &self.exit {
+            if t >= *at {
+                return p.ops(t - at, tr, out);
+            }
+        }
+        match &self.enter {
+            Some(p) => p.ops(t, tr, out),
+            None => self.layout.ops(tr, out),
+        }
+    }
+}

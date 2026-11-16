@@ -178,3 +178,19 @@ fn karaoke_with_word_times() {
     let c = colours(10.0);
     assert!(c.iter().all(|x| *x == [1.0, 1.0, 1.0, 1.0]) || c[3] == [1.0, 0.0, 0.0, 1.0]);
 }
+
+#[test]
+fn text_block_enter_exit_anchor() {
+    let fonts = store();
+    let b = TextBlock::new(fonts, &spec(), Some(&"rise".parse().unwrap()), Some((&"fade".parse().unwrap(), 3.0)), [0.5, 0.5]);
+    assert!((b.offset[0] + b.layout.width * 0.5).abs() < 1e-3);
+    let n = |t: f32| {
+        let mut o = vec![];
+        b.ops(t, anikit_video::dl::IDENTITY, &mut o);
+        glyph_alpha_sum(&o)
+    };
+    assert_eq!(n(0.0).0, 0);
+    assert_eq!(n(2.0), (16, 16.0));
+    assert_eq!(n(3.0).0, 16);
+    assert_eq!(n(30.0).0, 0);
+}

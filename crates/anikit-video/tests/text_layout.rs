@@ -224,3 +224,19 @@ fn inline_markup() {
     let l = store().layout(&spec);
     assert_eq!(l.text, "Ship faster with code and style, really. 2 * 3 = 6 *x");
 }
+
+#[test]
+fn system_font_fallback_cjk() {
+    let s = FontStore::with_system_fonts();
+    let l = s.layout(&TextSpec::plain("Hello 日本語", TextStyle::default()));
+    // Every glyph resolved (no .notdef) when the system has a CJK font.
+    let has_cjk = s.family_names().iter().any(|n| n.contains("IPA") || n.contains("Noto Sans CJK") || n.contains("Gothic"));
+    eprintln!("cjk font present: {has_cjk}, runs: {}", l.runs.len());
+    if has_cjk {
+        assert!(l.glyphs.iter().all(|g| l.runs[g.run as usize].glyphs[g.index as usize].id != 0));
+        assert!(l.runs.len() >= 2, "fallback face used");
+    }
+    // Bundled-only store keeps Inter for Latin.
+    let b = store().layout(&TextSpec::plain("Hello", TextStyle::default()));
+    assert!(s.face(l.runs[0].font).data.data.len() == store().face(b.runs[0].font).data.data.len());
+}
