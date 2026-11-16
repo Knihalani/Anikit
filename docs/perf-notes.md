@@ -1586,7 +1586,7 @@ is the noise gauge.
 (`npm run test:browser`) bundles `src/` once and runs every
 `test/browser/*.mjs` case in its own Chromium page with real layout and real
 pointer input; a page error or an unexpected `anikit:` warning fails the case.
-65+ cases this round: scroll triggers (pin + resize + refresh, spacing, nested
+67 cases this round: scroll triggers (pin + resize + refresh, spacing, nested
 scroller in a scrolled page, horizontal scroller and window, smoothed scrub
 past the end, inline styles of the pinned element), `scroll()` link sharing,
 `draggable` (bounds, inertia, snap, axis lock, mouse and touch, a second
@@ -1705,6 +1705,7 @@ of building an array every frame.
 | `magnetic().revert()`, `tilt().revert()` | wiped the element's own transform / left the tilt on it | springs stopped, inline and cached transform restored |
 | `bindValues().revert()` | a later `animate()` wrote the bound values back | cached transform reset too |
 | `world().dragging()` | pressing a body without moving threw it again at the previous drag's speed | velocity reset on press |
+| `flip` interrupted / overlapping (rapid presence add/remove) | elements left with a transform such as `translate(0px, 44px)` after everything settled | an older flip's completion deleted the end transform a newer flip owned (ownership is now checked), and a leaving element kept its mid-move transform while the old move ran on (`popOut()` stops that move and coming back restores the transform it was heading to). Flip 1000 boxes after this and the nested fix: 51–59 → 53–68 ms (one outlier; flat lists skip the ancestor walk) |
 | `scroll()`, `inView()` and `context()` | after `ctx.revert()` a `scroll()` link kept its listener (a function subject kept being called, a smoothing spring kept running) and `inView()` kept observing | neither was registered with `track()`; their cleanups now are |
 
 ### Tried and not kept (eighth round)

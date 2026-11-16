@@ -93,9 +93,7 @@ for (const layout of [true, false]) {
         const s = await settle(page, h, 1200);
         const got = s.filter((x) => !x.hidden).map((x) => x.id).sort();
         ok(JSON.stringify(got) === JSON.stringify(want), `present ${got} want ${want}`);
-        // Layout mode checks opacity only: overlapping flip() moves can still
-        // leave a transform behind (a flip.ts issue, reported separately).
-        const bad = s.filter((x) => !(x.op > 0.99 && (layout || clean(x)))).map((x) => `${x.id}: opacity ${x.op}, style "${x.style}"`);
+        const bad = s.filter((x) => !(x.op > 0.99 && clean(x))).map((x) => `${x.id}: opacity ${x.op}, style "${x.style}"`);
         ok(!bad.length, bad.join('; '));
       },
     },

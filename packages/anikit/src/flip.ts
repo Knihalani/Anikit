@@ -24,7 +24,8 @@ import { checkTargets, checkKeys } from './debug';
 import type { OptionKeys } from './debug';
 import { Timeline } from './timeline';
 import { Playable } from './playable';
-import { Targets, toTargets, stateOf, flushTransforms, computed, isElement, markDirty } from './props';
+import { Targets, toTargets, stateOf, flushTransforms, computed, isElement, markDirty, claim, unclaim, composeTransform } from './props';
+import type { Owner } from './props';
 import { r3, s3 } from './values';
 
 export interface FlipState {
@@ -128,7 +129,15 @@ function capture(targets: Targets, options: Pick<FlipOptions, 'id' | 'fade' | 'l
 }
 
 /** Transform each moving element should end on (survives interrupted flips). */
-const homes = new WeakMap<Element, { x: number; y: number; sx: number; sy: number }>();
+// `by` is the latest flip animation moving the element: an earlier flip that
+// completes after a later one took the element over must not forget the home
+// (the next interruption would then take the in-flight transform as home).
+const homes = new WeakMap<Element, { x: number; y: number; sx: number; sy: number; by?: unknown }>();
+
+/** The properties a flip move animates. */
+const MOVE_PROPS = ['x', 'y', 'scaleX', 'scaleY'];
+/** Owner used to evict a flip move from a popped-out element. */
+const POPPED: Owner = { release() {} };
 
 /** Elements currently animating out (popped out of the flow). */
 interface Leaving {
@@ -150,6 +159,21 @@ export function popOut(el: HTMLElement, rect: DOMRect, display?: string): { rest
   const s = stateOf(el);
   const prevT = s.t.slice();
   const prevU = s.u.slice();
+  // Popped out in the middle of a flip move: that move stops here (the pop
+  // pins the element where it was on screen), and coming back restores the
+  // transform the move was heading to, not the one it had got to (with the
+  // move gone, nothing would ever finish it).
+  const home = homes.get(el);
+  if (home) {
+    prevT[0] = home.x;
+    prevT[1] = home.y;
+    prevT[8] = home.sx;
+    prevT[9] = home.sy;
+    for (const p of MOVE_PROPS) {
+      claim(el, p, POPPED);
+      unclaim(el, p, POPPED);
+    }
+  }
   st.position = 'absolute';
   st.margin = '0px';
   st.boxSizing = 'border-box';
@@ -174,6 +198,7 @@ export function popOut(el: HTMLElement, rect: DOMRect, display?: string): { rest
       else el.setAttribute('style', prevStyle);
       s.t = prevT;
       s.u = prevU;
+      if (home) st.transform = composeTransform(s);
     },
   };
 }
@@ -415,8 +440,9 @@ function fromState(state: FlipState, options: FlipOptions = {}): Timeline {
     const sy0 = scale && box.height ? from.height / (box.height * by) : 1;
     const x0 = P ? (cx(from) - P.ax) / bx - cx(box) : cx(from) - cx(box);
     const y0 = P ? (cy(from) - P.ay) / by - cy(box) : cy(from) - cy(box);
-    if (!m.outgoing && settled) {
-      // This element's start map, for its descendants.
+    if (!m.outgoing && settled && el.firstElementChild !== null) {
+      // This element's start map, for its descendants (a leaf has none: the
+      // common flat list then never walks ancestors).
       const ox = cx(box), oy = cy(box);
       const ax0 = P ? P.ax : 0, ay0 = P ? P.ay : 0;
       starts.set(el, {
@@ -512,10 +538,14 @@ function fromState(state: FlipState, options: FlipOptions = {}): Timeline {
             markDirty(t);
           }
         }
-        for (const el of g.els) homes.delete(el);
+        for (const el of g.els) if (homes.get(el)?.by === moveAnim) homes.delete(el);
         user.onComplete?.(a);
       },
     });
+    for (const el of g.els) {
+      const hm = homes.get(el);
+      if (hm) hm.by = moveAnim;
+    }
     tl.add(moveAnim, 0);
   }
   fix?.();

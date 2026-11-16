@@ -1,7 +1,7 @@
 // flip() with real layout: nested moving elements, scaled parents, scrolled
 // containers and a scrolled window. At progress 0 every element must be
 // drawn where it was before the change, at progress 1 where it is now.
-import { near } from './assert.mjs';
+import { near, ok } from './assert.mjs';
 
 // Records rects, runs the flip paused, and checks progress 0, 0.5 and 1.
 async function check(page, sel, mutate, opts = {}, mid = true) {
@@ -137,6 +137,38 @@ export const tests = [
       });
       near(r[0], 0, 1, 'x on screen at progress 0');
       near(r[1], 20, 1, 'y on screen at progress 0');
+    },
+  },
+  {
+    name: 'interrupted flips: a later flip before an earlier one ends; leave and come back mid-move',
+    html: `<style>#l>div{height:30px;margin:4px;background:#ccd}</style><div id="l"><div id="a">a</div><div id="b">b</div><div id="c">c</div><div id="d">d</div></div>`,
+    async run(page, h) {
+      const styles = await page.evaluate(async () => {
+        const { flip } = window.ak;
+        const l = document.getElementById('l');
+        const [a, b, c, d] = ['a', 'b', 'c', 'd'].map((id) => document.getElementById(id));
+        const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+        const kids = () => [...l.children];
+        // 1: reverse the list (everything moves, 300 ms).
+        flip(kids(), () => l.append(d, c, b, a), { duration: 0.3 });
+        await wait(100);
+        // 2: a later flip takes b and c over mid-move, a short one that ends first.
+        flip(kids(), () => l.insertBefore(b, c), { duration: 0.1 });
+        await wait(60);
+        // 3: c leaves mid-move (its flip-1 move is still running) ...
+        flip(kids(), () => c.remove(), { duration: 0.4, leave: { opacity: 0 } });
+        await wait(300);
+        // ... and comes back after the flip-1 move would have ended.
+        flip([...kids(), c], () => l.insertBefore(c, a), { duration: 0.2 });
+        await wait(700);
+        return [a, b, c, d].map((e) => [e.id, e.isConnected, getComputedStyle(e).transform, e.style.position, getComputedStyle(e).opacity]);
+      });
+      for (const [id, conn, tf, pos, op] of styles) {
+        ok(conn, `${id} connected`);
+        ok(tf === 'none' || tf === 'matrix(1, 0, 0, 1, 0, 0)', `${id} settled transform ${tf}`);
+        ok(!pos, `${id} back in the flow (${pos})`);
+        ok(+op > 0.99, `${id} opacity ${op}`);
+      }
     },
   },
 ];
