@@ -704,6 +704,8 @@ const orbit: Orbit = s.orbit({ autoRotate: 8, damping: 0.92 });
 - **Picking.** `s.raycast(x, y)` returns a `RayHit` (`object`, `instance`, `point`, `distance`) or null. Meshes are tested exactly (triangles); instances use per-instance bounding spheres. Event handlers receive a `ScenePointerEvent` (`ScenePointerType`: `click`, `pointerdown`, `pointerup`, `pointerenter`, `pointerleave`, `pointermove`), bubble to parents, and set `cursor: pointer` over clickable objects.
 - **Stats and cleanup.** `s.stats` (`SceneStats`) has `drawCalls`, `triangles`, `culled`, `frameMs` and `dpr`. `s.revert()` stops rendering and frees all GPU resources; scenes and orbit controls register with `context()`.
 
+- **Performance.** Every frame reuses its matrices, render lists and uniform buffer (no per-frame allocation, no layout reads; size comes from a `ResizeObserver`). Opaque draws are sorted by program, geometry and material. Transparent draws are sorted back to front. Shaders are compiled when the scene is created. `scripts/bench-scene.mjs` compares against three.js. Headless Chromium here renders WebGL with SwiftShader (CPU), and for 10k instanced boxes with shadows at 960×540 it measured: start-up 870 ms vs 876 ms, frame time 670 ms vs 552 ms (three.js 0.187 is about 20% faster per frame on the CPU rasteriser), 3 draw calls each. Run it with `--gpu` on a machine with a GPU for representative numbers.
+
 ### Materials
 
 ```ts

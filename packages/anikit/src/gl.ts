@@ -570,7 +570,7 @@ void main() {
 #ifdef DEPTH
   gl_Position = uLightVP * wp;
 #else
-  vPos = wp.xyz; vNor = transpose(inverse(mat3(m))) * aNor; vShadow = uLightVP * wp; vTint = tint;
+  vPos = wp.xyz; mat3 r = mat3(m); vNor = r * (aNor / vec3(dot(r[0], r[0]), dot(r[1], r[1]), dot(r[2], r[2]))); vShadow = uLightVP * wp; vTint = tint;
   gl_Position = uProj * uView * wp;
 #endif
 }`;
@@ -590,8 +590,12 @@ float pcf(float ndl) {
   float bias = 0.0008 + 0.002 * (1.0 - ndl);
   vec2 t = 1.0 / vec2(textureSize(uShadow, 0));
   float s = 0.0;
-  for (int x = -1; x <= 1; x++) for (int y = -1; y <= 1; y++) s += texture(uShadow, vec3(p.xy + vec2(x, y) * t * 1.25, p.z - bias));
-  return s / 9.0;
+  // 4 hardware-filtered taps (each a bilinear 2×2 compare): a smooth 4×4 PCF footprint.
+  s += texture(uShadow, vec3(p.xy + vec2(-0.75, -0.75) * t, p.z - bias));
+  s += texture(uShadow, vec3(p.xy + vec2(0.75, -0.75) * t, p.z - bias));
+  s += texture(uShadow, vec3(p.xy + vec2(-0.75, 0.75) * t, p.z - bias));
+  s += texture(uShadow, vec3(p.xy + vec2(0.75, 0.75) * t, p.z - bias));
+  return s * 0.25;
 }
 vec3 aces(vec3 x) { return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
 void main() {
