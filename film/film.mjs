@@ -9,7 +9,7 @@
 // → a black-chrome knot that shatters in bullet time → a vortex of light cubes
 // → the wordmark, in chrome, on the mirror floor under the sun.
 export default async function film({ anikit: A, node }) {
-  const { composition, scene3d, renderer3d, mesh, instances, flightPath, shatter } = A;
+  const { composition, scene3d, renderer3d, mesh, instances, flightPath, shatter, emitter } = A;
   const W = 1920, H = 1080, FPS = 60, D = 21.8; // D: story seconds (the film itself is a little shorter, see `story`)
   node.registerFont('/usr/share/fonts/opentype/inter/InterDisplay-Black.otf', 'Display');
 
@@ -112,6 +112,8 @@ export default async function film({ anikit: A, node }) {
   const KNOT_SPIN = 24; // degrees per second
   // Shards start in the pose the knot breaks in.
   const shards = shatter(knot, { transform: { ...KNOT_AT, ry: HIT * KNOT_SPIN }, force: 3200, spread: 0.75, spin: 640, drag: 0.6, ripple: 0.08 });
+  // Sparks thrown out by the hit: light points, depth-tested against the shards.
+  const sparks = emitter({ capacity: 7000, rate: 0, life: 1.4, lifeVariation: 0.5, origin: KNOT_C, shape: 'sphere', size: 700, speed: 2400, speedVariation: 0.7, spread: Math.PI, drag: 1.4, gravity: [0, -500, 0], colors: ['#ffffff', '#ffd6f0', '#ff4fb0', '#401030'], autoStep: false, seed: 7 });
 
   // ---- Zone E: the vortex -------------------------------------------------------------
   const NV = 2600;
@@ -192,7 +194,11 @@ export default async function film({ anikit: A, node }) {
   let prevClock = 0, lastClock = 0;
   film.scene('velocity', 0, DUR, {
     timeScale, // bullet time as the knot breaks: camera, shards, pulses all slow together
-    step({ clock }) { prevClock = lastClock; lastClock = clock; },
+    step({ clock, dt }) {
+      if (story(lastClock) < HIT && story(clock) >= HIT) sparks.burst(6500);
+      prevClock = lastClock; lastClock = clock;
+      sparks.step(dt * pace(story(clock)));
+    },
     draw({ ctx, clock }) {
       const c = story(clock);
       pose(story(prevClock));
@@ -222,6 +228,7 @@ export default async function film({ anikit: A, node }) {
       }
       if (z < -50000) items.push({ mesh: word, instances: wordAt, material: { metal: 1, iridescence: 0.4, specular: 1.9, shininess: 190, rim: 0.3, lines: 1.2, lineColor: [1.5, 1.2, 1.6], grid: [0, 0], lineWidth: 0.015, pulse: 1.8, pulseCount: 1, pulsePhase: c * 0.55 - 0.2, lineColor: [1.4, 0.9, 1.2] } });
       items.push({ points: stars, colors: starCol, size: 3.2, intensity: 2.3, streak: 0.5, fog: [9000, 24000] });
+      if (c > HIT && c < HIT + 2.2) items.push({ points: sparks, size: 7, intensity: 4.5, streak: 0.9, fog: [6000, 14000] });
       const tunnel = z > -10400;
       const lights = [];
       if (z < -10000 && z > -28000) {
