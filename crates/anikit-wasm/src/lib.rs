@@ -1937,7 +1937,7 @@ pub extern "C" fn ak_raster_instances(id: u32, n: u32) -> *mut f32 {
 /// keyColor(3), fill(3), fillColor(3), rimColor(3), fog(2), fogColor(3);
 /// optional [44..57) emissive, metal, iridescence, hue, sky(3), horizon(3), ground(3);
 /// optional [57..73) lines, lineColor(3), grid(2), lineWidth, pulse, pulseCount, pulsePhase,
-/// pulseDir(3), strips(3); optional [73..78) texture id + 1 (0 = none), mode, repeat u, v, gain.
+/// pulseDir(3), strips(3); optional [73..78) texture id + 1 (0 = none), mode (+ 4: anisotropic), repeat u, v, gain.
 /// Returns triangles rasterised.
 #[no_mangle]
 pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf: u32) -> u32 {
@@ -1976,7 +1976,9 @@ pub extern "C" fn ak_raster_draw(id: u32, mesh: u32, n: u32, cull_back: u32, nf:
         pulse_count: b[65],
         pulse_phase: b[66],
         pulse_dir: v3(67),
-        tex_mode: b[74] as u8,
+        // Mode 1 albedo / 2 emissive, + 4 for anisotropic filtering.
+        tex_mode: (b[74] as u8) & 3,
+        tex_filter: ((b[74] as u8) >> 2) & 1,
         tex_repeat: [b[75], b[76]],
         tex_gain: b[77],
         pattern: if nf > 82 { s.f64_buf[82] as u8 } else { 0 },

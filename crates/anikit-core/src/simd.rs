@@ -94,6 +94,20 @@ mod imp {
         let v = w::v128_or(w::v128_or(q(r), w::i32x4_shl(q(g), 8)), w::v128_or(w::i32x4_shl(q(b), 16), w::i32x4_splat(0xff00_0000u32 as i32)));
         [w::u32x4_extract_lane::<0>(v), w::u32x4_extract_lane::<1>(v), w::u32x4_extract_lane::<2>(v), w::u32x4_extract_lane::<3>(v)]
     }
+    /// The four bytes of `p` (lowest first) as lanes.
+    #[inline(always)]
+    pub fn bytes(p: u32) -> Raw {
+        w::f32x4_convert_u32x4(w::u32x4_extend_low_u16x8(w::u16x8_extend_low_u8x16(w::u32x4_splat(p))))
+    }
+    /// Transpose four vectors (rows ↔ lanes).
+    #[inline(always)]
+    pub fn transpose(r: [Raw; 4]) -> [Raw; 4] {
+        let t0 = w::i32x4_shuffle::<0, 4, 1, 5>(r[0], r[1]);
+        let t1 = w::i32x4_shuffle::<2, 6, 3, 7>(r[0], r[1]);
+        let t2 = w::i32x4_shuffle::<0, 4, 1, 5>(r[2], r[3]);
+        let t3 = w::i32x4_shuffle::<2, 6, 3, 7>(r[2], r[3]);
+        [w::i32x4_shuffle::<0, 1, 4, 5>(t0, t2), w::i32x4_shuffle::<2, 3, 6, 7>(t0, t2), w::i32x4_shuffle::<0, 1, 4, 5>(t1, t3), w::i32x4_shuffle::<2, 3, 6, 7>(t1, t3)]
+    }
     #[inline(always)]
     pub fn unpack(p: [u32; 4]) -> [Raw; 3] {
         let v = w::u32x4(p[0], p[1], p[2], p[3]);
@@ -193,6 +207,14 @@ mod imp {
         core::array::from_fn(|i| q(r[i]) | (q(g[i]) << 8) | (q(b[i]) << 16) | 0xff00_0000)
     }
     #[inline(always)]
+    pub fn bytes(p: u32) -> Raw {
+        core::array::from_fn(|i| ((p >> (8 * i)) & 255) as f32)
+    }
+    #[inline(always)]
+    pub fn transpose(r: [Raw; 4]) -> [Raw; 4] {
+        core::array::from_fn(|k| [r[0][k], r[1][k], r[2][k], r[3][k]])
+    }
+    #[inline(always)]
     pub fn unpack(p: [u32; 4]) -> [Raw; 3] {
         let c = |s: u32| core::array::from_fn(|i| ((p[i] >> s) & 255) as f32);
         [c(0), c(8), c(16)]
@@ -230,6 +252,16 @@ impl V4 {
     #[inline(always)]
     pub fn to_array(self) -> [f32; 4] {
         imp::arr(self.0)
+    }
+    /// The four bytes of an RGBA word as lanes (r, g, b, a), exactly.
+    #[inline(always)]
+    pub fn bytes(p: u32) -> Self {
+        Self(imp::bytes(p))
+    }
+    /// Transpose a 4×4 block: lane `k` of row `i` becomes lane `i` of row `k`.
+    #[inline(always)]
+    pub fn transpose(r: [Self; 4]) -> [Self; 4] {
+        imp::transpose([r[0].0, r[1].0, r[2].0, r[3].0]).map(Self)
     }
     #[inline(always)]
     pub fn sqrt(self) -> Self {

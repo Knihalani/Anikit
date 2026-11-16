@@ -912,6 +912,7 @@ const px = r3.render(scene, [
 | `pattern: 'hex' \| 'dots' \| 'circuit'` | what `lines` draws instead of grid lines: glowing hexagon cells, a dot matrix, or circuit traces with pads (in `grid` cells, `lineWidth` thick) |
 | `pulse`, `pulseCount`, `pulsePhase`, `pulseDir` | bright pulses travelling along `u` (animate `pulsePhase`); `pulseDir` offsets each instance's phase by its position, so a wave sweeps through a field |
 | `texture`, `textureMode`, `textureRepeat`, `textureGain` | an image from `texture(imageData | canvas)` mapped by UV: `'albedo'` tints the lit colour, `'emissive'` glows unlit (screens, signs); mipmapped, so it doesn't shimmer when small |
+| `textureFilter` | `'linear'` (default) or `'aniso'`: anisotropic filtering (mip from the short side of the pixel footprint, up to 4 taps along the long side) keeps terrain, roads and floors sharp at grazing angles, at some cost per stretched pixel |
 
 Lighting options: `key`, `keyColor`, `fill`, `fillColor`, `rimColor`, `fog: [near, far]`, `fogColor`, environment `sky`, `horizon`, `ground`, `strips`. Items draw in order; per item `cull: false` shows back faces (tumbling shards), `blend: 'additive'` adds light.
 

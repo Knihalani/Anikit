@@ -53,6 +53,11 @@ pub struct Material {
     /// How much distance fog / ground fog applies (1 = fully, 0 = none: sky domes, backdrops
     /// painted with their own haze).
     pub fog: f32,
+    /// Texture filtering: 0 isotropic (default: one bilinear tap from the mip matching the
+    /// larger footprint axis), 1 anisotropic: the mip follows the *smaller* axis of each
+    /// pixel's footprint (ratio capped at 8) and up to 4 bilinear taps are averaged along
+    /// the longer one, so ground seen at grazing angles stays sharp instead of blurring.
+    pub tex_filter: u8,
 }
 
 impl Default for Material {
@@ -80,6 +85,7 @@ impl Default for Material {
             tex_gain: 1.0,
             pattern: 0,
             fog: 1.0,
+            tex_filter: 0,
         }
     }
 }
@@ -195,9 +201,16 @@ impl Texture {
 
     /// Bilinear sample (0…1 RGBA) at `u, v` (wrapping) with a footprint of
     /// `fw` base-level texels per pixel.
-    #[inline]
+    #[cfg(test)]
     fn sample(&self, u: f32, v: f32, fw: f32) -> [f32; 4] {
-        let Some(top) = self.levels.first() else { return [1.0; 4] };
+        self.sample_v(u, v, fw).to_array()
+    }
+
+    /// [`Texture::sample`] with the four channels in SIMD lanes (the same
+    /// arithmetic per channel, so the same bits).
+    #[inline]
+    fn sample_v(&self, u: f32, v: f32, fw: f32) -> V4 {
+        let Some(top) = self.levels.first() else { return V4::splat(1.0) };
         // floor(log2(fw)) from the float exponent.
         let lv = if fw > 1.0 { (((fw.to_bits() >> 23) & 255) as i32 - 127).clamp(0, self.levels.len() as i32 - 1) as usize } else { 0 };
         let (w, h, px) = (&self.levels[lv].0, &self.levels[lv].1, &self.levels[lv].2);
@@ -206,18 +219,61 @@ impl Texture {
         let fy = (v - crate::math::floorf(v)) * *h as f32 - 0.5;
         let (x0f, y0f) = (crate::math::floorf(fx), crate::math::floorf(fy));
         let (tx, ty) = (fx - x0f, fy - y0f);
-        let wrap = |i: isize, n: usize| i.rem_euclid(n as isize) as usize;
+        // Wrap without dividing: u − floor(u) ∈ [0, 1] puts the index in −1 … n − 1
+        // (`rem_euclid` for anything else, e.g. huge or NaN coordinates).
+        #[inline(always)]
+        fn wrap(i: isize, n: usize) -> usize {
+            if (i as usize) < n {
+                i as usize
+            } else if i == -1 {
+                n - 1
+            } else {
+                i.rem_euclid(n as isize) as usize
+            }
+        }
         let (x0, y0) = (wrap(x0f as isize, *w), wrap(y0f as isize, *h));
-        let (x1, y1) = ((x0 + 1) % *w, (y0 + 1) % *h);
+        let (x1, y1) = (if x0 + 1 == *w { 0 } else { x0 + 1 }, if y0 + 1 == *h { 0 } else { y0 + 1 });
         let (a, b, c, d) = (px[y0 * w + x0], px[y0 * w + x1], px[y1 * w + x0], px[y1 * w + x1]);
-        core::array::from_fn(|k| {
-            let ch = |q: u32| ((q >> (8 * k)) & 255) as f32;
-            let top = ch(a) + (ch(b) - ch(a)) * tx;
-            let bot = ch(c) + (ch(d) - ch(c)) * tx;
-            (top + (bot - top) * ty) * (1.0 / 255.0)
-        })
+        let (a, b, c, d) = (V4::bytes(a), V4::bytes(b), V4::bytes(c), V4::bytes(d));
+        let top = a + (b - a) * tx;
+        let bot = c + (d - c) * tx;
+        (top + (bot - top) * ty) * (1.0 / 255.0)
+    }
+
+    /// Anisotropic sample at `u, v` (wrapping): `ax`/`ay` are the UV steps of one
+    /// pixel along screen x and y. The mip follows the shorter footprint axis
+    /// (at most [`ANISO_MAX`] times finer than the longer one), and up to
+    /// [`ANISO_TAPS`] bilinear taps spread evenly along the longer axis are averaged.
+    #[inline]
+    fn sample_aniso(&self, u: f32, v: f32, ax: [f32; 2], ay: [f32; 2]) -> V4 {
+        let Some(top) = self.levels.first() else { return V4::splat(1.0) };
+        let (w, h) = (top.0 as f32, top.1 as f32);
+        let (xu, xv, yu, yv) = (ax[0] * w, ax[1] * h, ay[0] * w, ay[1] * h);
+        let (lx2, ly2) = (xu * xu + xv * xv, yu * yu + yv * yv);
+        let (mj2, mn2, du, dv) = if lx2 >= ly2 { (lx2, ly2, ax[0], ax[1]) } else { (ly2, lx2, ay[0], ay[1]) };
+        let (maj, min) = (crate::math::sqrtf(mj2), crate::math::sqrtf(mn2));
+        let fw = min.max(maj * (1.0 / ANISO_MAX));
+        // Taps about one footprint apart along the major axis, at most ANISO_TAPS (each
+        // bilinear tap spans ~2 texels); NaN or a round footprint: one tap.
+        let n = if maj > fw { crate::math::ceilf(maj / fw).min(ANISO_TAPS) as usize } else { 1 };
+        if n <= 1 {
+            return self.sample_v(u, v, fw);
+        }
+        let mut acc = V4::splat(0.0);
+        let step = 1.0 / n as f32;
+        for k in 0..n {
+            let o = (k as f32 + 0.5) * step - 0.5;
+            acc = acc + self.sample_v(u + du * o, v + dv * o, fw);
+        }
+        acc * step
     }
 }
+
+/// Largest footprint ratio of anisotropic texture filtering (the mip is at most
+/// this much finer than the long axis asks for).
+const ANISO_MAX: f32 = 8.0;
+/// Most bilinear taps along the long axis (spaced up to two texels of the chosen mip apart).
+const ANISO_TAPS: f32 = 4.0;
 
 /// Per-instance data: a 3×4 affine (column-major, `[r00 r10 r20 r01 r11 r21 r02 r12 r22 tx ty tz]`) and RGB.
 pub const INSTANCE_STRIDE: usize = 15;
@@ -324,6 +380,8 @@ struct Shade<'a> {
     /// Per-instance lighting terms: base×(ambient+emissive), base×diffuse×key, base×diffuse×fill.
     lit: [[f32; 3]; 3],
     tex: Option<&'a Texture>,
+    /// Anisotropic texture filtering is on (needs per-pixel UV derivatives).
+    aniso: bool,
     /// Shadow map: depth, size, light view-projection, bias, strength.
     shadow: Option<(&'a [f32], usize, M4, f32, f32)>,
     /// Point lights that can reach the current instance (see `cull_lights`).
@@ -452,6 +510,20 @@ struct Queue {
     q: [f32; 4],
     a: [[f32; 4]; NV],
     fw: [[f32; 4]; 2],
+    /// Screen gradients of the owning triangle for anisotropic filtering (see [`TriGrad`]).
+    g: [[f32; 4]; 6],
+}
+
+/// Per-triangle screen-space gradients of 1/w and u/w, v/w along x and y:
+/// `[dq/dx, dq/dy, d(u/w)/dx, d(u/w)/dy, d(v/w)/dx, d(v/w)/dy]`. With the
+/// per-pixel 1/w and uv they give exact per-pixel UV derivatives.
+type TriGrad = [f32; 6];
+
+/// Per-pixel UV derivatives `[du/dx, dv/dx, du/dy, dv/dy]` from the triangle's
+/// gradients `g` (lanes), the pixel's `u, v` and `iw` = w.
+#[inline(always)]
+fn uv_derivs(g: &[V4; 6], u: V4, v: V4, iw: V4) -> [V4; 4] {
+    [(g[2] - u * g[0]) * iw, (g[4] - v * g[0]) * iw, (g[3] - u * g[1]) * iw, (g[5] - v * g[1]) * iw]
 }
 
 /// Tone-map and pack four pixels: luminance above 0.6 rolls off smoothly
@@ -503,19 +575,24 @@ impl Shade<'_> {
 
     /// Sample the texture for four lanes (RGBA as V4s).
     #[inline(always)]
-    fn sample4(&self, t: &Texture, u: V4, v: V4, fwu: V4, fwv: V4) -> [V4; 4] {
+    fn sample4(&self, t: &Texture, u: V4, v: V4, fwu: V4, fwv: V4, d: Option<&[V4; 4]>) -> [V4; 4] {
         let m = self.m;
         let (ru, rv) = (m.tex_repeat[0], m.tex_repeat[1]);
+        if let Some(d) = d {
+            let (u, v) = ((u * ru).to_array(), (v * rv).to_array());
+            let (ux, vx, uy, vy) = ((d[0] * ru).to_array(), (d[1] * rv).to_array(), (d[2] * ru).to_array(), (d[3] * rv).to_array());
+            return V4::transpose(core::array::from_fn(|l| t.sample_aniso(u[l], v[l], [ux[l], vx[l]], [uy[l], vy[l]])));
+        }
         let (tw, th) = (t.width() as f32 * ru, t.height() as f32 * rv);
         let (u, v, fu, fv) = ((u * ru).to_array(), (v * rv).to_array(), (fwu * tw).to_array(), (fwv * th).to_array());
-        let s: [[f32; 4]; 4] = core::array::from_fn(|l| t.sample(u[l], v[l], fu[l].max(fv[l])));
-        core::array::from_fn(|k| V4::new(s[0][k], s[1][k], s[2][k], s[3][k]))
+        V4::transpose(core::array::from_fn(|l| t.sample_v(u[l], v[l], fu[l].max(fv[l]))))
     }
 
     /// Shade four pixels at once.
     #[inline(always)]
     #[allow(clippy::needless_range_loop)]
-    fn px4(&self, n: [V4; 3], p: [V4; 3], u: V4, v: V4, fwu: V4, fwv: V4) -> [V4; 3] {
+    #[allow(clippy::too_many_arguments)]
+    fn px4(&self, n: [V4; 3], p: [V4; 3], u: V4, v: V4, fwu: V4, fwv: V4, d: Option<&[V4; 4]>) -> [V4; 3] {
         let (m, l) = (self.m, self.l);
         let view = [self.eye[0] - p[0], self.eye[1] - p[1], self.eye[2] - p[2]];
         let d2 = dot3(&view, &view).maxf(1e-12);
@@ -565,7 +642,7 @@ impl Shade<'_> {
         let rim = fr * fr * fr * m.rim;
         let (ka, kk, kf) = (&self.lit[0], &self.lit[1], &self.lit[2]);
         let texel = match self.tex {
-            Some(t) if m.tex_mode != 0 => Some(self.sample4(t, u, v, fwu, fwv)),
+            Some(t) if m.tex_mode != 0 => Some(self.sample4(t, u, v, fwu, fwv, d)),
             _ => None,
         };
         let mut c: [V4; 3] = match (texel, m.tex_mode) {
@@ -832,6 +909,7 @@ impl Raster {
             pattern_on: mat.lines > 0.0 || mat.pulse > 0.0,
             lit: [[0.0; 3]; 3],
             tex,
+            aniso: tex.is_some() && mat.tex_mode != 0 && mat.tex_filter == 1 && blend != Blend::DepthOnly,
             shadow: if self.shadows_on && blend != Blend::DepthOnly { Some((shadow_depth, self.shadow_size, self.shadow_vp, self.shadow_bias, self.shadow_strength)) } else { None },
             pl: [[0.0; 8]; 8],
             npl: 0,
@@ -1076,7 +1154,7 @@ impl Raster {
         let gx = [d[0] * sgn * inv, d[1] * sgn * inv, d[2] * sgn * inv];
         let lerp = |g: &[f32; 3], a: f32, b: f32, c: f32| g[0] * a + g[1] * b + g[2] * c;
         let dz = lerp(&gx, p0.z, p1.z, p2.z);
-        let (mut dq, mut da, mut fwu, mut fwv) = (0.0, [0.0f32; NV], 0.0, 0.0);
+        let (mut dq, mut da, mut fwu, mut fwv, mut tg) = (0.0, [0.0f32; NV], 0.0, 0.0, [0.0f32; 6]);
         if MODE != DEPTH {
             let gy = [(x2 - x1) * inv, (x0 - x2) * inv, (x1 - x0) * inv];
             dq = lerp(&gx, p0.q, p1.q, p2.q);
@@ -1086,6 +1164,9 @@ impl Raster {
             let (v0, v1, v2) = (p0.a[7] / p0.q, p1.a[7] / p1.q, p2.a[7] / p2.q);
             fwu = lerp(&gx, u0, u1, u2).abs() + lerp(&gy, u0, u1, u2).abs();
             fwv = lerp(&gx, v0, v1, v2).abs() + lerp(&gy, v0, v1, v2).abs();
+            if sh.aniso {
+                tg = [dq, lerp(&gy, p0.q, p1.q, p2.q), da[6], lerp(&gy, p0.a[6], p1.a[6], p2.a[6]), da[7], lerp(&gy, p0.a[7], p1.a[7], p2.a[7])];
+            }
         }
         let span = (maxx - minx) as f32;
         for py in miny..=maxy {
@@ -1166,7 +1247,7 @@ impl Raster {
                     continue;
                 }
                 if run != usize::MAX {
-                    self.shaded += shade_run::<MODE>(qu, color, sh, gl, a0, run, k, q0, dq, &s0, &da, fwu, fwv);
+                    self.shaded += shade_run::<MODE>(qu, color, sh, gl, a0, run, k, q0, dq, &s0, &da, fwu, fwv, &tg);
                     run = usize::MAX;
                 }
                 if bits == 0 {
@@ -1190,6 +1271,11 @@ impl Raster {
                     }
                     qu.fw[0][qi] = fwu;
                     qu.fw[1][qi] = fwv;
+                    if sh.aniso {
+                        for (g, t) in qu.g.iter_mut().zip(tg) {
+                            g[qi] = t;
+                        }
+                    }
                     qu.n = qi + 1;
                     if qi == 3 {
                         self.shaded += 4;
@@ -1199,7 +1285,7 @@ impl Raster {
                 k += 4;
             }
             if run != usize::MAX {
-                self.shaded += shade_run::<MODE>(qu, color, sh, gl, a0, run, k, q0, dq, &s0, &da, fwu, fwv);
+                self.shaded += shade_run::<MODE>(qu, color, sh, gl, a0, run, k, q0, dq, &s0, &da, fwu, fwv, &tg);
             }
             // Tail (and short spans): queue the passing pixels.
             for (kk, dp) in depth[k..].iter_mut().enumerate() {
@@ -1227,6 +1313,11 @@ impl Raster {
                 }
                 qu.fw[0][l] = fwu;
                 qu.fw[1][l] = fwv;
+                if sh.aniso {
+                    for (g, t) in qu.g.iter_mut().zip(tg) {
+                        g[l] = t;
+                    }
+                }
                 qu.n = l + 1;
                 if l == 3 {
                     self.shaded += 4;
@@ -1242,7 +1333,7 @@ impl Raster {
 /// straight from registers.
 #[inline(never)]
 #[allow(clippy::too_many_arguments)]
-fn shade_run<const MODE: u8>(qu: &mut Queue, color: &mut [u32], sh: &Shade, gl: u32, a0: usize, k0: usize, k1: usize, q0: f32, dq: f32, s0: &[f32; NV], da: &[f32; NV], fwu: f32, fwv: f32) -> usize {
+fn shade_run<const MODE: u8>(qu: &mut Queue, color: &mut [u32], sh: &Shade, gl: u32, a0: usize, k0: usize, k1: usize, q0: f32, dq: f32, s0: &[f32; NV], da: &[f32; NV], fwu: f32, fwv: f32, tg: &TriGrad) -> usize {
     // A queued pixel from an earlier (farther) triangle must not land on top later.
     let (g0, g1) = (a0 + k0, a0 + k1);
     let mut shaded = k1 - k0;
@@ -1258,7 +1349,8 @@ fn shade_run<const MODE: u8>(qu: &mut Queue, color: &mut [u32], sh: &Shade, gl: 
         let kk = V4::splat(kf) + lanes;
         let iw = 1.0 / (kk * dq + q0);
         let a: [V4; NV] = core::array::from_fn(|c| (kk * da[c] + s0[c]) * iw);
-        let px = pack4(sh.px4([a[0], a[1], a[2]], [a[3], a[4], a[5]], a[6], a[7], fu, fv));
+        let d = sh.aniso.then(|| uv_derivs(&tg.map(V4::splat), a[6], a[7], iw));
+        let px = pack4(sh.px4([a[0], a[1], a[2]], [a[3], a[4], a[5]], a[6], a[7], fu, fv, d.as_ref()));
         for l in 0..4 {
             put::<MODE>(&mut dst[l], px[l], gl);
         }
@@ -1278,7 +1370,8 @@ fn flush<const MODE: u8>(q: &mut Queue, color: &mut [u32], sh: &Shade, gl: u32) 
     // Perspective divide for all four lanes at once.
     let iw = 1.0 / V4::from_array(q.q);
     let a: [V4; NV] = core::array::from_fn(|k| V4::from_array(q.a[k]) * iw);
-    let c = sh.px4([a[0], a[1], a[2]], [a[3], a[4], a[5]], a[6], a[7], V4::from_array(q.fw[0]), V4::from_array(q.fw[1]));
+    let d = sh.aniso.then(|| uv_derivs(&q.g.map(V4::from_array), a[6], a[7], iw));
+    let c = sh.px4([a[0], a[1], a[2]], [a[3], a[4], a[5]], a[6], a[7], V4::from_array(q.fw[0]), V4::from_array(q.fw[1]), d.as_ref());
     let px = pack4(c);
     for l in 0..n.min(4) {
         let i = q.idx[l];
@@ -2599,6 +2692,79 @@ mod tests {
             if blue > 150 && red < 80 && green < 80 { seen[2] = true; }
         }
         assert!(seen.iter().all(|s| *s), "{seen:?}");
+    }
+
+    /// The sampler before it went SIMD across channels and stopped dividing to wrap.
+    fn sample_reference(t: &Texture, u: f32, v: f32, fw: f32) -> [f32; 4] {
+        let lv = if fw > 1.0 { (((fw.to_bits() >> 23) & 255) as i32 - 127).clamp(0, t.levels.len() as i32 - 1) as usize } else { 0 };
+        let (w, h, px) = (&t.levels[lv].0, &t.levels[lv].1, &t.levels[lv].2);
+        let fx = (u - crate::math::floorf(u)) * *w as f32 - 0.5;
+        let fy = (v - crate::math::floorf(v)) * *h as f32 - 0.5;
+        let (x0f, y0f) = (crate::math::floorf(fx), crate::math::floorf(fy));
+        let (tx, ty) = (fx - x0f, fy - y0f);
+        let wrap = |i: isize, n: usize| i.rem_euclid(n as isize) as usize;
+        let (x0, y0) = (wrap(x0f as isize, *w), wrap(y0f as isize, *h));
+        let (x1, y1) = ((x0 + 1) % *w, (y0 + 1) % *h);
+        let (a, b, c, d) = (px[y0 * w + x0], px[y0 * w + x1], px[y1 * w + x0], px[y1 * w + x1]);
+        core::array::from_fn(|k| {
+            let ch = |q: u32| ((q >> (8 * k)) & 255) as f32;
+            let top = ch(a) + (ch(b) - ch(a)) * tx;
+            let bot = ch(c) + (ch(d) - ch(c)) * tx;
+            (top + (bot - top) * ty) * (1.0 / 255.0)
+        })
+    }
+
+    #[test]
+    fn texture_sampling_matches_the_reference_bit_for_bit() {
+        let (w, h) = (37, 20);
+        let px: Vec<u8> = (0..w * h * 4).map(|i| ((i * 7919 + i / 3) % 256) as u8).collect();
+        let t = Texture::from_rgba(w, h, &px);
+        let mut x = 0x1234_5678u32;
+        let mut rnd = || {
+            x ^= x << 13;
+            x ^= x >> 17;
+            x ^= x << 5;
+            x as f32 / u32::MAX as f32
+        };
+        for i in 0..20000 {
+            let (u, v, fw) = ((rnd() - 0.5) * 40.0, (rnd() - 0.5) * 40.0, rnd() * 64.0);
+            let (u, v) = match i % 5 {
+                0 => (u * 1e-9, -v * 1e-9),
+                1 => (-1e-12, 1.0),
+                _ => (u, v),
+            };
+            let (a, b) = (t.sample(u, v, fw), sample_reference(&t, u, v, fw));
+            assert_eq!(a.map(f32::to_bits), b.map(f32::to_bits), "u {u} v {v} fw {fw}");
+        }
+    }
+
+    #[test]
+    fn anisotropic_filtering_keeps_grazing_ground_sharp() {
+        // Stripes across a ground plane seen at a grazing angle: isotropic mips
+        // (footprint = the long axis) average them to grey; anisotropic
+        // filtering picks the mip from the short axis and keeps them.
+        let n = 256;
+        let px: Vec<u8> = (0..n * n).flat_map(|i| if (i % n / 4) % 2 == 0 { [255, 255, 255, 255] } else { [0, 0, 0, 255] }).collect();
+        let t = Texture::from_rgba(n, n, &px);
+        // Isotropic footprint: one tap, identical to the plain sample.
+        assert_eq!(t.sample_aniso(0.3, 0.7, [0.01, 0.0], [0.0, 0.01]).to_array(), t.sample(0.3, 0.7, 0.01 * n as f32));
+        let m = mul(&perspective(50.0, 1.0, 0.5, 200.0), &look_at([0.0, 1.0, 0.0], [0.0, 0.0, -20.0], [0.0, 1.0, 0.0]));
+        let vp: M4 = core::array::from_fn(|i| m[i] as f32);
+        let ground = [40.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 120.0, 0.0, 0.0, -60.0, 1.0, 1.0, 1.0];
+        let contrast = |filter: u8| {
+            let mut r = Raster::new(96, 96);
+            r.clear(0, 255);
+            let mat = Material { ambient: 0.0, diffuse: 0.0, specular: 0.0, rim: 0.0, tex_mode: 2, tex_repeat: [1.0, 24.0], tex_filter: filter, ..Material::default() };
+            r.draw_with(&plane(1, 1), &ground, &vp, [0.0, 1.0, 0.0], &mat, &Lighting::default(), false, Blend::Opaque, Some(&t));
+            // Spread of red along a row just below the horizon.
+            let row = &r.color[60 * 96..61 * 96];
+            let (lo, hi) = row.iter().fold((255u32, 0u32), |(lo, hi), c| (lo.min(c & 255), hi.max(c & 255)));
+            (hi - lo, r.color)
+        };
+        let (iso, iso_px) = contrast(0);
+        let (aniso, aniso_px) = contrast(1);
+        assert!(aniso > iso + 60, "aniso contrast {aniso} vs iso {iso}");
+        assert_ne!(iso_px, aniso_px);
     }
 
     #[test]
