@@ -188,17 +188,19 @@ void main() {
       sh = shadow(P + vec3(0.0, 0.0, 0.002), L);
       ao = 0.3 + 0.7 * smoothstep(0.0, 0.04, map(P + vec3(0.0, 0.0, 0.012)));
       // The metal mirrored in the lacquer, softened with distance.
-      float tt = 0.004;
-      for (int i = 0; i < 18; i++) {
+      // Soft coverage instead of a hard hit keeps thin rings from reflecting as dashes.
+      float tt = 0.004, hmin = 1.0, tmin = 0.0;
+      for (int i = 0; i < 16; i++) {
         float h = map(P + rf * tt);
-        if (h < 0.0015) {
-          vec3 Q = P + rf * tt;
-          vec3 n = calcNormal(Q);
-          mirror = env(reflect(rf, n), 0.3) * 0.08 * exp(-tt * 20.0);
-          break;
-        }
-        tt += max(h, 0.003);
-        if (tt > 0.25) break;
+        if (h < hmin) { hmin = h; tmin = tt; }
+        if (h < 0.001) break;
+        tt += max(h * 0.9, 0.002);
+        if (tt > 0.12) break;
+      }
+      float cover = 1.0 - smoothstep(0.0, 0.006, hmin);
+      if (cover > 0.0) {
+        vec3 Q = P + rf * tmin;
+        mirror = env(reflect(rf, calcNormal(Q)), 0.3) * 0.07 * cover * exp(-tmin * 22.0);
       }
       // Light bounced off the metal onto the table.
       base += vec3(0.9, 0.86, 0.82) * 0.012 * exp(-dF * 45.0);
