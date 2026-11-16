@@ -1765,6 +1765,17 @@ impl Raster {
                 let o_g = ((((c >> 8) & 255) * (256 - ai) + b_g * ai + 128) >> 8) & 255;
                 (c & 0xff00_0000) | o_rb | o_g << 8
             };
+            if arow.iter().all(|a| *a >= 1.0) {
+                // Fully covered row (a reflection): the mix is a plain store.
+                let lerp = |p0: u32, p1: u32| ((((p0 & RB) * 3 + (p1 & RB) + 0x0002_0002) >> 2) & RB) | (((((p0 >> 8) & 255) * 3 + ((p1 >> 8) & 255) + 2) >> 2) << 8);
+                for (bx, pair) in out.chunks_exact_mut(2).enumerate() {
+                    let p0 = rb[bx];
+                    let (pl, pr) = (rb[bx.saturating_sub(1)], rb[(bx + 1).min(bw - 1)]);
+                    pair[0] = (pair[0] & 0xff00_0000) | lerp(p0, pl);
+                    pair[1] = (pair[1] & 0xff00_0000) | lerp(p0, pr);
+                }
+                continue;
+            }
             for (bx, (pair, &a)) in out.chunks_exact_mut(2).zip(arow).enumerate() {
                 if a <= 0.0 {
                     continue;
