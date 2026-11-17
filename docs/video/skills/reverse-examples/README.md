@@ -1,6 +1,38 @@
 # Reverse-engineering examples
 
-## `fernway-to-tideline/` (the good one)
+## `nasa-to-soil/`: an outside reference (start here)
+
+- **Reference:** NASA Scientific Visualization Studio, *Global Temperature Anomalies from 1880 to 2023*, vertical version (`GISTEMP_1880-2023_vert.mp4`, svs.gsfc.nasa.gov/5207). It's 30 s, 1080×1920, and a NASA work in the public domain. It's not redistributed here: only analysis numbers, our sheets and short frame excerpts in `pairs.jpg` are included, credited to NASA SVS.
+- **Recreation:** the same design grammar for a different subject, soil moisture 1950–2024. The data and the geography are illustrative and invented: procedural noise with a drying trend, not a measurement, and not Earth.
+- **Style breakdown from looking at the frames:**
+  - one continuous take, two orthographic globes stacked on black, centred, almost filling the width;
+  - a diverging colour field (cool ↔ neutral ↔ warm) that steps year by year with a slow trend;
+  - hairline dark coastlines and borders over the field, faint relief shading, soft limb darkening;
+  - a slim vertical legend with tiny units at the left;
+  - a thick grey timeline with ticks, where the played portion is lighter and the year rides the playhead;
+  - no music, no cuts, no camera move.
+- **How it's built:** one GLSL shader layer (both globes, colour map, invented coastlines and relief, legend gradient) plus text and shapes for the legend and timeline, using `=…` expressions for the year and the playhead. `make.py` writes `soil.json`.
+- **One iteration from the analysis comparison:** the first render read "clean highlights, near monochrome" against the reference's "rolled-off highlights, desaturated" (and had a false cut on a hard year step). Pulling the neutral down to grey and widening the field fixed both: the second render reads 1 shot, medium contrast, desaturated, like the reference.
+
+**Open `pairs.jpg`:** six moments, reference left and recreation right.
+
+| | Reference | Recreation |
+|---|---|---|
+| shots / pace | 1 / calm | 1 / calm |
+| grade (`analyze`) | crushed blacks, rolled-off highlights, medium contrast, warm, desaturated | crushed blacks, clean highlights, medium contrast, warm, desaturated |
+| layout | centred, symmetry 0.81 | centred |
+| motion character | steady | steady |
+| analyze time | 6.3 s (30 s of 1080×1920) | 3.2 s |
+| render | | 3 min 5 s at `--scale 0.5` (shader ≈ 290 ms/frame at full size) |
+
+**Honest verdict:** a viewer would place the two as the same kind of piece and the same visual system: layout, colour logic, linework, legend, timeline and year stepping all match. Gaps:
+- The reference's real geography is far denser: detailed coasts, every border, hillshaded terrain. The invented land is sparse, and its relief reads as grainy white texture.
+- The legend lacks the reference's arrow caps and dual °F/°C scale.
+- The field is less saturated at its extremes.
+
+**Against BAR.md:** not the tasteful-AI look (no cream paper, serif or aphorisms). The type is crisp and legible, and the light is the data's own. But it's a faithful scientific-visualisation style, not a launch piece, and its density of detail is below the reference's.
+
+## `fernway-to-tideline/`: our own render as reference
 
 - **Reference:** `docs/video/skills/launch-examples/fernway/fernway.mp4`, our own 15 s 9:16 motion-design launch.
 - **Recreation:** the same style for a different product, *Tideline* (offline sea charts).

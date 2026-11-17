@@ -71,4 +71,4 @@ Put each pair next to each other and look. For every pair ask: would a viewer sa
 
 Tell the user what you took from the reference (structure, timing, type system, grade, motif) and what is theirs.
 
-Worked example: `docs/video/skills/reverse-examples/` (`fernway-to-tideline/` is the good one, with a pair sheet).
+Worked examples: `docs/video/skills/reverse-examples/` (`nasa-to-soil/` recreates an outside public-domain piece; `fernway-to-tideline/` one of ours; both with pair sheets).
