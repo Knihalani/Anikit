@@ -22,6 +22,26 @@ pub struct MusicCue {
 
 /// Parse the spec's `music` value.
 pub fn parse(v: &serde_json::Value, base: &Path) -> Result<MusicCue, String> {
+    parse_with_cuts(v, base, &[])
+}
+
+/// Parse `music`, scoring to the video's scene cuts (video seconds) unless `"followCuts": false`.
+pub fn parse_with_cuts(v: &serde_json::Value, base: &Path, cuts: &[f64]) -> Result<MusicCue, String> {
+    let mut v = match v {
+        serde_json::Value::String(s) => serde_json::json!({ "style": s }),
+        v => v.clone(),
+    };
+    if let Some(o) = v.as_object_mut() {
+        let follow = o.get("followCuts").and_then(|f| f.as_bool()).unwrap_or(true);
+        if follow && !o.contains_key("cuts") && !cuts.is_empty() {
+            let at = o.get("at").and_then(|a| a.as_f64()).unwrap_or(0.0);
+            o.insert("cuts".into(), serde_json::json!(cuts.iter().map(|c| c - at).filter(|c| *c > 0.0).collect::<Vec<_>>()));
+        }
+    }
+    parse_inner(&v, base)
+}
+
+fn parse_inner(v: &serde_json::Value, base: &Path) -> Result<MusicCue, String> {
     let v = match v {
         // Shorthand: "music": "lofi"
         serde_json::Value::String(s) => serde_json::json!({ "style": s }),
@@ -99,6 +119,7 @@ KEYS    instrumentation  bpm  key "Am" "F# dorian"  meter "6/8"  swing 0..1  moo
         chords "vi IV I V" | "Am F C G"   instruments {"lead":"violin","drums":"drums:909"}   mute ["lead"]
         sfx [{"sfx":"riser","at":"@bar5"}]  (aligned by hit point: a riser PEAKS at "at")   end ring|fade|cut
         master {"lufs":-14,"ceiling":-1,"reverb":"hall"}   video-only: at (s), gain (dB), duck (dB under voice, default 10)
+        scores to picture: scene cuts move section starts and get cymbal accents (followCuts:false to stop)
 TRACKS  (add to a style, or write everything yourself)
   {"inst":"piano","chords":"C Am F G","play":"broken"}        play: pad block stabs arp[-updown][/16] strum pulse/8 power broken x..x..x.
   {"inst":"bass","chords":"C Am F G","bass":"walk"}           bass: root half pulse octave walk house synco rock arp 808

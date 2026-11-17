@@ -26,3 +26,9 @@ A 3–6 s brand sting: a chrome 3D wordmark (or your logo) revealed with god ray
 ```
 
 Create: MCP `create_from_template {template: "logo-reveal", params, brand, format}`, or `anikit-video templates expand logo-reveal params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.
+
+## Tips
+
+- A template gives every product the same structure, which is what the user rejected: use it for a fast draft, then make it this product's (a palette from its own assets, a typeface chosen for it, its real UI or object as the hero, a score whose instruments fit it). For an original film, use the `director` prompt or skills/anikit-launch-video. Run the taste pass first: `anikit-video docs taste`.
+- Hold every line for max(0.83 s, chars/15, words × 0.3) after it settles, and keep words crisp (no blur or glow while they are read). Cut words, never type size.
+- Chrome with god rays and a lens flare is the default 3D look the user rejected. Prefer `minimal`, or a reveal built from the brand's own shape, unless the brand really is chrome.

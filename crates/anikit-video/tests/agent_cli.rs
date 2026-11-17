@@ -45,13 +45,14 @@ fn expand_examples_and_critique() {
         let out = d.join("spec.json");
         let (ok, _, err) = run(&["templates", "expand", "launch", &params, "--brand", &brand, "--format", f, "-o", out.to_str().unwrap()], &d);
         assert!(ok, "{err}");
-        // Templates are honest quick starts: flat 2D (BAR #5) and slower than their intent; nothing else.
+        // Templates are honest quick starts: slower than their intent; flat 2D (BAR #5) and taste heuristics are tips only.
         let issues: Vec<&str> = err.lines().filter(|l| l.starts_with("warning") || l.starts_with("error")).collect();
         assert!(issues.iter().all(|l| l.contains("BAR #") || l.contains("intent") || l.contains("nothing moves") || l.contains("centred")), "{f}: {err}");
-        assert!(err.contains("BAR #5") && err.contains("critique "), "{f}: {err}");
+        assert!(err.contains("critique "), "{f}: {err}");
         let (ok, json, _) = run(&["critique", out.to_str().unwrap(), "--json"], &d);
         let r: serde_json::Value = serde_json::from_str(&json).unwrap();
-        assert!(ok && r["score"] == 94, "{f}: {json}");
+        // Spec-only critique: tips, never warnings or errors.
+        assert!(ok && r["notes"].as_array().unwrap().iter().all(|n| n["severity"] == "tip"), "{f}: {json}");
     }
     let (_, text, _) = run(&["critique", &format!("{ROOT}/examples/video/hello.json")], &d);
     assert!(text.starts_with("score 100/100"), "{text}");
@@ -97,4 +98,14 @@ fn mcp_over_stdio() {
     assert_eq!(lines[0]["id"], 1);
     assert_eq!(lines[1]["result"]["isError"], false);
     assert!(lines[2]["result"]["prompts"].as_array().unwrap().iter().any(|p| p["name"] == "launch-video-generator"));
+}
+
+#[test]
+fn preview_is_the_one_call_inner_loop() {
+    let d = tmp("preview-loop");
+    std::fs::write(d.join("s.json"), r##"{"size":"16:9","scenes":[{"duration":2.5,"background":"#101014","layers":[{"text":"One call","x":"8%","anchor":"left","color":"#f4f1ea"}]}]}"##).unwrap();
+    let (ok, out, err) = run(&["preview", "s.json"], &d);
+    assert!(ok, "{out}{err}");
+    assert!(out.contains("sheet: s-sheet.png") && out.contains("score") && out.contains("intent"), "{out}");
+    assert!(d.join("s-sheet.png").is_file());
 }
