@@ -265,7 +265,20 @@ fn main() -> ExitCode {
         };
     }
     if matches!(raw.first().map(String::as_str), Some("--version" | "-V" | "version")) {
-        println!("anikit-video {}", env!("CARGO_PKG_VERSION"));
+        println!("anikit-video {} ({})", env!("CARGO_PKG_VERSION"), option_env!("ANIKIT_BUILD").unwrap_or("dev build"));
+        return ExitCode::SUCCESS;
+    }
+    // `<command> --help` (or -h) prints that command's usage and succeeds, so
+    // agents probing a command never mistake a usage error for a stale build.
+    if raw.len() >= 2 && raw[1..].iter().any(|a| a == "--help" || a == "-h") {
+        let cmd = raw[0].as_str();
+        let both = format!("{USAGE}\n{}", anikit_video::agent_cli::HELP);
+        let lines: Vec<&str> = both.lines().filter(|l| l.trim_start().starts_with(cmd) || l.contains(&format!("anikit-video {cmd}"))).collect();
+        if lines.is_empty() {
+            println!("{USAGE}");
+        } else {
+            println!("{}\n(more: anikit-video docs essentials)", lines.join("\n"));
+        }
         return ExitCode::SUCCESS;
     }
     if let Some(code) = anikit_video::music::run(&raw) {

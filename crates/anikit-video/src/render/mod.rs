@@ -669,7 +669,10 @@ impl Renderer {
                 Some(None) => {}
                 Some(Some(r)) if r.width() < 1.0 || r.height() < 1.0 => {}
                 Some(Some(r)) if r.area() < 0.7 * w as f64 * h as f64 => {
-                    let (x0, y0, rw, rh) = (r.x0 as usize, r.y0 as usize, r.width() as u16, r.height() as u16);
+                    // Clamped to the frame: a box that rounds one pixel past an edge
+                    // overran the copy below (a reported panic at full range).
+                    let (x0, y0) = ((r.x0.max(0.0) as usize).min(w as usize - 1), (r.y0.max(0.0) as usize).min(h as usize - 1));
+                    let (rw, rh) = ((r.width() as usize).clamp(1, w as usize - x0) as u16, (r.height() as usize).clamp(1, h as usize - y0) as u16);
                     let rctx = self.rctx.get_or_insert_with(|| RenderContext::new(rw, rh));
                     rctx.reset_and_resize(rw, rh);
                     st.org = (x0 as i32, y0 as i32);

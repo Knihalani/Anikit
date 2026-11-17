@@ -109,3 +109,12 @@ fn preview_is_the_one_call_inner_loop() {
     assert!(out.contains("sheet: s-sheet.png") && out.contains("review: ") && out.contains("intent"), "{out}");
     assert!(d.join("s-sheet.png").is_file());
 }
+
+#[test]
+fn subcommand_help_succeeds() {
+    let d = tmp("help");
+    let (ok, out, err) = run(&["preview", "--help"], &d);
+    assert!(ok && out.contains("preview"), "{out}{err}");
+    let (ok, out, _) = run(&["render", "-h"], &d);
+    assert!(ok && out.contains("render"), "{out}");
+}
