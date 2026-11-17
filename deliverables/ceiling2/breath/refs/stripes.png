@@ -1,0 +1,11 @@
+<html>
+	<head>
+		<script>
+			sessionStorage.redirect = location.href;
+		  </script>
+		  <meta http-equiv="refresh" content="0;URL='/'">
+	</head>
+	<body>
+		<!-- This is empty, but the code in the <head> section will redirect as 301 to the root URL.  Then there's some code in index.html which will reconstruct the full path.  This came from https://www.smashingmagazine.com/2016/08/sghpa-single-page-app-hack-github-pages/, which also says how this page must be >=512 bytes, which it is...now! -->
+	</body>
+</html>
