@@ -507,6 +507,39 @@ impl TextLayout {
         }
     }
 
+    /// Line background boxes (from `style.background`) with an alpha factor.
+    /// For callers that emit glyphs themselves; draw before the glyphs.
+    pub fn background_ops(&self, alpha: f32, transform: Affine, out: &mut Vec<Op>) {
+        for (r, rad, c) in &self.backgrounds {
+            let mut c = c.0;
+            c[3] *= alpha;
+            out.push(Op::RoundRect { x: r[0], y: r[1], w: r[2], h: r[3], radius: *rad, paint: Paint::Solid(Rgba(c)), transform });
+        }
+    }
+
+    /// Whether glyph fills should be skipped (`outline.hollow`).
+    pub fn hollow(&self) -> bool {
+        matches!(&self.outline, Some((_, _, _, true)))
+    }
+
+    /// Outline strokes (from `style.outline`) with an alpha factor. For callers
+    /// that emit glyphs themselves; draw after the glyph fills (or instead of
+    /// them when [`Self::hollow`]).
+    pub fn outline_ops(&self, alpha: f32, transform: Affine, out: &mut Vec<Op>) {
+        let Some((paths, stroke, color, _)) = &self.outline else { return };
+        for (r, p) in self.runs.iter().zip(paths) {
+            let paint = match color {
+                Some(c) => {
+                    let mut c = c.0;
+                    c[3] *= alpha;
+                    Paint::Solid(Rgba(c))
+                }
+                None => self.paint(r, alpha),
+            };
+            out.push(Op::Stroke { path: p.clone(), paint, stroke: stroke.clone(), transform });
+        }
+    }
+
     /// Close the effects layer opened by [`Self::begin_effects`].
     pub fn end_effects(&self, out: &mut Vec<Op>) {
         if !self.filters.is_empty() {

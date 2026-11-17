@@ -109,8 +109,9 @@ impl components::Assets for SharedAssets {
         if let Some(id) = self.by_key.read().unwrap().get(&key) {
             return *id;
         }
-        // Make the pixels outside the lock (another thread may race us to the
-        // same key; the first insert wins and the duplicate image is unused).
+        // Build without holding the key lock: `make` may use rayon, and a job
+        // stolen while it waits can call `image` again on this thread, which
+        // would deadlock on the lock. A rare duplicate build is harmless.
         let px = make();
         let mut keys = self.by_key.write().unwrap();
         if let Some(id) = keys.get(&key) {
@@ -133,5 +134,25 @@ impl components::Assets for SharedAssets {
 
     fn measure(&self, s: &str, st: &components::TextStyle) -> f32 {
         components::host::measure_text(&self.fonts, s, st)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::components::Assets;
+
+    /// `make` may re-enter `image` (rayon work-stealing does exactly this when
+    /// a component renders with par_iter); that used to deadlock.
+    #[test]
+    fn image_make_can_reenter() {
+        let a = SharedAssets::new(Arc::new(FontStore::new()));
+        let outer = a.image(1, 1, 1, &mut || {
+            let inner = a.image(2, 1, 1, &mut || vec![255; 4]);
+            assert_ne!(inner, ImageId(u32::MAX));
+            vec![0; 4]
+        });
+        assert_ne!(outer, a.image(2, 1, 1, &mut || unreachable!()));
+        assert_eq!(outer, a.image(1, 1, 1, &mut || unreachable!()));
     }
 }
