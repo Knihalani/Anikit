@@ -25,6 +25,8 @@ struct Block {
     rect: [f32; 4],
     size: f32,
     color: color::C,
+    /// The spec path of the layer that drew it.
+    layer: String,
 }
 
 fn bbox(t: &Affine, x0: f32, y0: f32, x1: f32, y1: f32) -> [f32; 4] {
@@ -34,11 +36,42 @@ fn bbox(t: &Affine, x0: f32, y0: f32, x1: f32, y1: f32) -> [f32; 4] {
     [xs.iter().cloned().fold(f32::MAX, f32::min), ys.iter().cloned().fold(f32::MAX, f32::min), xs.iter().cloned().fold(f32::MIN, f32::max), ys.iter().cloned().fold(f32::MIN, f32::max)]
 }
 
+/// For each op, the spec path of the user text layer that drew it, or `None`
+/// for anything inside a component (device UI, chips, cards: their own design).
+fn user_text(ev: &Evaluator, n: usize, tags: &[crate::eval::OpTag]) -> Vec<Option<String>> {
+    let mut best: Vec<Option<(usize, u32)>> = vec![None; n];
+    let mut in_component = vec![false; n];
+    for tag in tags {
+        let (_, kind) = ev.layer_info(tag.layer);
+        let comp = kind.starts_with("component:");
+        for k in tag.ops.clone().take_while(|&k| k < n) {
+            in_component[k] |= comp;
+            if best[k].is_none_or(|(len, _)| tag.ops.len() < len) {
+                best[k] = Some((tag.ops.len(), tag.layer));
+            }
+        }
+    }
+    best.into_iter()
+        .zip(in_component)
+        .map(|(b, comp)| {
+            let (_, layer) = b?;
+            let (path, kind) = ev.layer_info(layer);
+            (!comp && (kind == "text" || kind == "caption")).then(|| path.to_string())
+        })
+        .collect()
+}
+
 /// Text blocks with their effective opacity ≥ 0.6 (settled, not mid-fade).
-fn text_blocks(dl: &DisplayList) -> Vec<Block> {
+/// Only glyphs of user text layers count (`who`, from [`user_text`]).
+fn text_blocks(dl: &DisplayList, who: &[Option<String>]) -> Vec<Block> {
     let mut opacity = vec![1.0f32];
     let mut runs: Vec<Block> = Vec::new();
-    for op in &dl.ops {
+    for (k, op) in dl.ops.iter().enumerate() {
+        let layer = match who.get(k) {
+            Some(Some(p)) => p.clone(),
+            _ if matches!(op, Op::Glyphs { .. }) => continue,
+            _ => String::new(),
+        };
         match op {
             Op::PushLayer { opacity: o, .. } => opacity.push(opacity.last().unwrap() * o),
             Op::PopLayer => {
@@ -69,7 +102,7 @@ fn text_blocks(dl: &DisplayList) -> Vec<Block> {
                 let r = bbox(transform, x0, y0, x1, y1);
                 let scale = (transform[0] * transform[3] - transform[1] * transform[2]).abs().sqrt();
                 let c = c.0;
-                runs.push(Block { rect: r, size: size * scale, color: [c[0] as f64, c[1] as f64, c[2] as f64, 1.0] });
+                runs.push(Block { rect: r, size: size * scale, color: [c[0] as f64, c[1] as f64, c[2] as f64, 1.0], layer });
             }
             _ => {}
         }
@@ -79,7 +112,8 @@ fn text_blocks(dl: &DisplayList) -> Vec<Block> {
     for r in runs {
         let near = |b: &Block| {
             let gap = r.size.max(b.size) * 0.9;
-            (b.size - r.size).abs() < r.size * 0.15
+            b.layer == r.layer
+                && (b.size - r.size).abs() < r.size * 0.15
                 && color::contrast(b.color, r.color) < 1.1
                 && r.rect[0] <= b.rect[2] + gap
                 && b.rect[0] <= r.rect[2] + gap
@@ -166,21 +200,18 @@ pub fn check(ev: &Evaluator) -> Vec<Note> {
     let mut seen = std::collections::HashSet::new();
     for (t, where_) in sample_times(ev) {
         let transition = where_.contains('→');
-        let mut dl = ev.eval(t);
+        let (mut dl, tags) = ev.eval_tagged(t);
         pipeline::scale_list(&mut dl, SCALE);
-        let blocks = text_blocks(&dl);
+        let who = user_text(ev, dl.ops.len(), &tags);
+        let blocks = text_blocks(&dl, &who);
         let (w, h, bg) = pipeline::render_list_rgba(ev, &without_text(&dl));
-        let at = |r: [f32; 4]| format!("t={t:.1}s {where_} text at ({:.0}, {:.0})", (r[0] + r[2]) / SCALE / 2.0, (r[1] + r[3]) / SCALE / 2.0);
+        let at = |b: &Block| format!("{} (t={t:.1}s {where_}, at {:.0}, {:.0})", b.layer, (b.rect[0] + b.rect[2]) / SCALE / 2.0, (b.rect[1] + b.rect[3]) / SCALE / 2.0);
         let mut push = |key: String, n: Note| {
             if seen.insert(key) {
                 notes.push(n);
             }
         };
         for (i, b) in blocks.iter().enumerate() {
-            // Until eval tags glyph runs with their layer, skip small text (device UI, chip icons): < 16 px at output scale.
-            if b.size / SCALE < 16.0 {
-                continue;
-            }
             let large = b.size / SCALE >= fmt.width.min(fmt.height) as f32 * 0.03;
             let need = if large { 3.0 } else { 4.5 };
             if let Some(c) = worst_contrast(&bg, w, h, b.rect, b.color) {
@@ -188,7 +219,7 @@ pub fn check(ev: &Evaluator) -> Vec<Note> {
                     push(format!("c{where_}{i}"), Note {
                         severity: if c < 2.0 { "error" } else { "warning" },
                         check: "render-contrast",
-                        path: at(b.rect),
+                        path: at(b),
                         message: format!("text colour {} has {c:.1}:1 contrast against the pixels behind it (needs {need}:1)", color::to_hex(b.color)),
                         fix: "give the text a backing (box, darker scene), change its colour, or move it off the busy/bright area".into(),
                     });
@@ -199,9 +230,9 @@ pub fn check(ev: &Evaluator) -> Vec<Note> {
                 let (tx, ty) = (w as f32 * 0.015, h as f32 * 0.015);
                 let outside_safe = b.rect[0] < left - tx || b.rect[2] > w as f32 - right + tx || b.rect[1] < top - ty || b.rect[3] > h as f32 - bottom + ty;
                 if b.rect[0] < -1.0 || b.rect[1] < -1.0 || b.rect[2] > w as f32 + 1.0 || b.rect[3] > h as f32 + 1.0 {
-                    push(format!("f{where_}{i}"), Note { severity: "error", check: "render-frame", path: at(b.rect), message: "text is cut by the frame edge".into(), fix: "move it inside the frame or give it a narrower width".into() });
+                    push(format!("f{where_}{i}"), Note { severity: "error", check: "render-frame", path: at(b), message: "text is cut by the frame edge".into(), fix: "move it inside the frame or give it a narrower width".into() });
                 } else if outside_safe {
-                    push(format!("s{where_}{i}"), Note { severity: "warning", check: "render-safe", path: at(b.rect), message: "text extends outside the title-safe area".into(), fix: "keep it inside the safe margins (9:16: top 12%, bottom 20%)".into() });
+                    push(format!("s{where_}{i}"), Note { severity: "warning", check: "render-safe", path: at(b), message: "text extends outside the title-safe area".into(), fix: "keep it inside the safe margins (9:16: top 12%, bottom 20%)".into() });
                 }
             }
             for (j, o) in blocks.iter().enumerate().skip(i + 1) {
@@ -210,7 +241,7 @@ pub fn check(ev: &Evaluator) -> Vec<Note> {
                     push(format!("o{where_}{i}{j}"), Note {
                         severity: "warning",
                         check: "render-overlap",
-                        path: at(b.rect),
+                        path: at(b),
                         message: format!("two pieces of text overlap{}", if transition { " during the transition" } else { "" }),
                         fix: if transition { "let the outgoing text exit before the new text enters, or use a cut".into() } else { "space them apart, or stack them with the line-count spacing".into() },
                     });

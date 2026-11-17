@@ -541,7 +541,7 @@
             "text": "{{version}}",
             "style": "hero",
             "size": "{{fmt.portrait ? fmt.u * 30 : fmt.u * 26}}",
-            "color": "linear-gradient(90deg, $primary, $secondary)",
+            "color": "{{brand.colors.accent}}",
             "y": "{{fmt.portrait ? '41%' : '43%'}}",
             "enter": "pop by char from center"
           },
