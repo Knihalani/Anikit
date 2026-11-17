@@ -35,7 +35,7 @@ Write the spec directly. For repetitive layers use `"repeat": 40` with `$i`, `de
 
 Open the sheet and three full-size stills and answer in writing, a line each:
 
-1. **Is every frame visually striking on its own, a still someone would save?** It can be rich illustration, bold graphic design, beautiful light, spectacle, precise data design, texture or motion. What tends to get there: one strong image idea per shot, considered detail, real light and texture, contrast of scale. What tends not to: empty frames, a UI screenshot beside copy, default looks, generic type.
+1. **Is every frame visually striking on its own, a still someone would save?** It can be rich illustration, bold graphic design, beautiful light, spectacle, precise data design, texture or motion. What tends to get there: one strong image idea per shot, considered detail, real light and texture, contrast of scale. What tends not to: empty frames, a UI screenshot beside copy, default looks, generic type, and landing-page furniture (numbered eyebrows like "02 / PROCESS", pill labels, LIVE dots, corner metadata) unless the world itself has labels (a timetable, a map legend).
 2. **What would make a viewer stop scrolling?** Spectacle, wit, beauty, clarity, rhythm, surprise or craft: name the one this piece is going for.
 3. **Where is the weakest frame, and why?**
 4. **Does the sound do as much as the picture?** `anikit-video critique s.json --render` measures loudness and whether cuts land on beats.
