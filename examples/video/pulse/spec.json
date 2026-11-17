@@ -292,9 +292,16 @@
           ]
         },
         {
-          "component": "sparks",
+          "component": "confetti",
           "start": "@bar9",
-          "props": {"bursts": [0, 0.5, 1.0, 1.5], "origin": [0.5, 0.44], "count": 90, "colors": ["#07060f", "#ff2e88"], "power": 1.6, "glow": false}
+          "props": {
+            "mode": "burst",
+            "at": 0,
+            "origin": [0.5, 0.45],
+            "count": 220,
+            "colors": ["#07060f", "#ff2e88", "#7b5cff", "#ffffff"],
+            "power": 1.5
+          }
         }
       ]
     },
@@ -422,11 +429,19 @@
           "props": {"count": 6, "colors": ["#c8ff1a", "#22e4ff"], "size": 0.12, "speed": 0.8}
         },
         {
-          "text": "FEEL IT\nIN YOUR\nCHEST",
-          "style": "big",
-          "size": "9vh",
+          "type": "group",
           "y": "70%",
-          "kinetic": {"style": {"type": "karaoke", "active": "#c8ff1a", "dim": 0.25}, "unit": "word", "stagger": 0.5}
+          "height": 700,
+          "scale": "=1 + 0.04 * exp(-7 * (gt * 2 - floor(gt * 2)))",
+          "layers": [
+            {
+              "text": "FEEL IT\nIN YOUR\nCHEST",
+              "style": "big",
+              "size": "9vh",
+              "y": "50%",
+              "kinetic": {"style": {"type": "karaoke", "active": "#c8ff1a", "dim": 0.25}, "unit": "word", "stagger": 0.5}
+            }
+          ]
         }
       ]
     },

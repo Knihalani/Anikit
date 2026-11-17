@@ -244,7 +244,7 @@ add(lowpass(saw(midi(33), n, detune=0.01), 400) * np.exp(-t / 0.9), bar_t(17), 0
 mix = np.stack([L, R], 1)
 mix = np.tanh(mix * 1.25)
 mix /= np.max(np.abs(mix)) + 1e-9
-mix *= 0.93
+mix *= 0.66  # about -12 LUFS integrated
 fade = np.minimum((N - np.arange(N)) / (0.05 * SR), 1)[:, None]
 mix *= fade
 

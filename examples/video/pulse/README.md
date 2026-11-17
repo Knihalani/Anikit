@@ -8,7 +8,7 @@ A 36-second vertical (1080×1920, 30 fps) kinetic-typography music video, made f
 |---|---|
 | `spec.json` | The whole video: 12 scenes, about 60 layers, every cut and word placed on the beat with `"@beatN"` / `"@barN"` markers |
 | `soundtrack.py` | Synthesises the track: kick, clap, hats, sidechained saw bass, pad, a lead hook with dotted-eighth echo, a snare-roll build and a riser, at 120 BPM over 18 bars. Pure numpy; ffmpeg converts it to FLAC |
-| `pulse.flac` | The generated soundtrack (3.9 MB) |
+| `pulse.flac` | The generated soundtrack (3.7 MB) |
 | `sync_check.py` | Lists every cut and word reveal against the detected beat grid |
 | `poster.png`, `sheet.png` | A still at 18.6 s and a 24-frame contact sheet |
 
@@ -32,11 +32,11 @@ These numbers come from a 4-core cloud VM (Intel Xeon @ 2.10 GHz) using the defa
 
 | | |
 |---|---|
-| Render wall time | **11.3 s** for 36 s of video (12.0 s including process start and audio analysis) |
-| Render speed | **96 fps** (1080 frames, 3.2× real time) |
-| Output | 33.5 MB MP4 (H.264 1080×1920 + AAC) |
+| Render wall time | **10.9 s** for 36 s of video (12.3 s including process start and audio analysis) |
+| Render speed | **100 fps** (1080 frames, 3.3× real time) |
+| Output | 34.1 MB MP4 (H.264 1080×1920 + AAC), mastered to −11.8 LUFS |
 | Beat detection | 120.0 BPM; the grid is within 4 ms of the true beat |
-| Sync | All 49 cuts and word reveals are within **3.6 ms** of a detected beat (one frame is 33 ms) |
+| Sync | All 49 cuts and word reveals are within **3.4 ms** of a detected beat (one frame is 33 ms) |
 
 ## Structure (bar = 2 s)
 
@@ -45,7 +45,7 @@ These numbers come from a 4-core cloud VM (Intel Xeon @ 2.10 GHz) using the defa
 | 0–4 | 1–2 | Filtered kick, pad, lead teaser | `PULSE` glitches in over a beat-pulsing dot grid; "TURN IT UP" karaoke, one word per beat |
 | 4–12 | 3–6 | Verse: kick, bass, claps | One lyric per bar, cut on the downbeat: bars visualizer, radial visualizer, metaballs, diagonal grid; mask, pop, slide and drop styles |
 | 12–16 | 7–8 | Snare roll and riser; the kick drops out on the last beat | `PULSE` forms from 7,000 particles while the camera creeps in; 4·3·2·1 lands on the last four beats |
-| **16** | **9** | **Drop** | The palette flips from violet/cyan night to acid lime with ink and hot pink. The particle word bursts, a shockwave ring fires, the camera shakes and `DROP` pops in |
+| **16** | **9** | **Drop** | The palette flips from violet/cyan night to acid lime with ink and hot pink. The particle word bursts, a shockwave ring fires, confetti bursts, the camera shakes and `DROP` pops in, pulsing on every beat |
 | 18–28 | 10–14 | Hook, sidechained bass | Radial visualizer with karaoke, shape morphs on every beat, one word per beat ("LOUDER THAN THE CITY"), metaballs with a waveform |
 | 28–32 | 15–16 | Breakdown | God rays and slow metaballs; "FEEL IT IN YOUR CHEST" karaoke |
 | 32–36 | 17–18 | Final hit and tail | Sparks, a lens-flare sweep and the wordmark; the credits land on beats 69 and 70 |
