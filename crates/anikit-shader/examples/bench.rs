@@ -13,14 +13,16 @@ fn main() {
     let mut f = Frame::new(w, h, 0.0);
     f.supersample = ss;
     s.render(&f, &mut px);
-    let t0 = std::time::Instant::now();
+    // Best single frame of n (this machine is shared and noisy).
+    let mut ms = f64::MAX;
     for i in 0..n {
         f.time = i as f32 / 30.0;
         f.frame = i as i32;
+        let t0 = std::time::Instant::now();
         s.render(&f, &mut px);
+        ms = ms.min(t0.elapsed().as_secs_f64() * 1e3);
     }
-    let ms = t0.elapsed().as_secs_f64() * 1e3 / n as f64;
-    println!("{w}x{h}{}: {ms:.1} ms/frame ({} threads)", if ss { " 2x2 SS" } else { "" }, rayon::current_num_threads());
+    println!("{w}x{h}{}: {ms:.1} ms/frame (best of {n}) {} threads", if ss { " 2x2 SS" } else { "" }, rayon::current_num_threads());
     if let Some(out) = a.get(6) {
         let f = std::fs::File::create(out).unwrap();
         let mut e = png::Encoder::new(std::io::BufWriter::new(f), w, h);
