@@ -371,11 +371,14 @@ mod tests {
         }
         assert!(build("phone", &json!({"screen": "dashbord"})).err().unwrap().0.contains("dashboard"));
         // Product copy instead of invented data.
-        let items = json!(["Shared notebooks", "Offline mode", "Instant search", "Templates", "Version history"]);
+        let items = json!(["Capture in one keystroke", "Handwriting search in sketches", "Offline mode", "Shared notebooks with live cursors", "Templates", "Version history"]);
         let mut ops = Vec::new();
         ops.extend(build("phone", &json!({"x": 0, "y": 0, "width": 300, "height": 540, "screen": "app", "title": "Quill", "items": items})).unwrap().eval(2.5, 960.0, 540.0, 30.0, &th, a));
-        ops.extend(build("laptop", &json!({"x": 300, "y": 60, "width": 660, "height": 420, "screen": "dashboard", "title": "Quill", "items": items, "kpis": [{"label": "Notes", "value": "12,400"}, {"label": "Writers", "value": "3.2K"}, {"label": "Sync", "value": "99.9%"}]})).unwrap().eval(2.5, 960.0, 540.0, 30.0, &th, a));
+        ops.extend(build("browser", &json!({"x": 300, "y": 20, "width": 660, "height": 420, "screen": "app", "title": "Quill", "items": items})).unwrap().eval(2.5, 960.0, 540.0, 30.0, &th, a));
         preview::validate(&ops).unwrap();
         preview::snapshot("screen-quill", 960, 540, th.background, ops, a);
+        let ops = build("laptop", &json!({"screen": "dashboard", "title": "Quill", "items": items, "kpis": [{"label": "Notes captured this week", "value": "12,400"}]})).unwrap().eval(2.5, 960.0, 540.0, 30.0, &th, a);
+        preview::validate(&ops).unwrap();
+        preview::snapshot("screen-quill-kpi", 960, 540, th.background, ops, a);
     }
 }
