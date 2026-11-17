@@ -461,9 +461,8 @@ impl Component for GodRays {
             out.push(light(sx, sy, *br, st.clone()));
         }
 
-        // Slices: each at most ~5 px wide at its far end.
-        // Shortcut: slices up to ~9 px wide where the shafts fade out (2 px when exact).
-        let slice = ((if fxkit::exact() { 2.0 } else { 9.0 }) * k / len).atan().max(1e-4);
+        // Slices: each at most 2 px wide at its far end.
+        let slice = (2.0 * k / len).atan().max(1e-4);
         let ns = ((spread / slice).ceil() as usize).clamp(48, 1400);
         let da = spread / ns as f32;
         let a0 = fan - spread * 0.5;
