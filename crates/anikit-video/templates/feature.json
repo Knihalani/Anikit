@@ -1,6 +1,7 @@
 {
   "name": "feature",
   "look": "swiss",
+  "intent": { "pace": "steady", "genre": "launch" },
   "title": "Feature announcement",
   "description": "A 12–20 s spotlight on one new feature: a 'New' badge and kinetic headline beside the product in a browser (your screenshot or a generated UI), the points checking off next to it with a success toast, then a CTA that bursts into confetti.",
   "duration": "12–20 s",

@@ -16,9 +16,112 @@ use std::path::Path;
 pub struct Part {
     pub mesh: Mesh,
     pub mat: Material,
+    /// The node this primitive hangs from (meshes are node-local when the
+    /// file is animated, model space otherwise).
+    pub node: usize,
 }
 
-type M4 = [[f32; 4]; 4];
+/// One animated property of a node.
+struct Channel {
+    node: usize,
+    /// 0 translation, 1 rotation, 2 scale.
+    path: u8,
+    times: Vec<f32>,
+    /// 3 or 4 floats per key.
+    values: Vec<f32>,
+    step: bool,
+}
+
+/// Node hierarchy plus keyframe channels (the file's first animation).
+pub struct Anim {
+    /// Rest translation, rotation (quaternion), scale, or a fixed matrix.
+    rest: Vec<([f32; 3], [f32; 4], [f32; 3], Option<M4>)>,
+    children: Vec<Vec<usize>>,
+    roots: Vec<usize>,
+    channels: Vec<Channel>,
+    pub duration: f32,
+}
+
+fn trs(t: [f32; 3], q: [f32; 4], s: [f32; 3]) -> M4 {
+    let (x, y, z, w) = (q[0], q[1], q[2], q[3]);
+    let n = (x * x + y * y + z * z + w * w).sqrt().max(1e-12);
+    let (x, y, z, w) = (x / n, y / n, z / n, w / n);
+    let r = [
+        [1.0 - 2.0 * (y * y + z * z), 2.0 * (x * y + z * w), 2.0 * (x * z - y * w)],
+        [2.0 * (x * y - z * w), 1.0 - 2.0 * (x * x + z * z), 2.0 * (y * z + x * w)],
+        [2.0 * (x * z + y * w), 2.0 * (y * z - x * w), 1.0 - 2.0 * (x * x + y * y)],
+    ];
+    [
+        [r[0][0] * s[0], r[0][1] * s[0], r[0][2] * s[0], 0.0],
+        [r[1][0] * s[1], r[1][1] * s[1], r[1][2] * s[1], 0.0],
+        [r[2][0] * s[2], r[2][1] * s[2], r[2][2] * s[2], 0.0],
+        [t[0], t[1], t[2], 1.0],
+    ]
+}
+
+impl Anim {
+    /// Every node's model-space matrix at time `t` (seconds, clamped).
+    pub fn world(&self, t: f32) -> Vec<M4> {
+        let mut local: Vec<([f32; 3], [f32; 4], [f32; 3])> = self.rest.iter().map(|r| (r.0, r.1, r.2)).collect();
+        for c in &self.channels {
+            let n = c.times.len();
+            if n == 0 {
+                continue;
+            }
+            let w = if c.path == 1 { 4 } else { 3 };
+            let k = c.times.partition_point(|&x| x <= t);
+            let (i0, i1, u) = if k == 0 {
+                (0, 0, 0.0)
+            } else if k >= n {
+                (n - 1, n - 1, 0.0)
+            } else {
+                let (a, b) = (c.times[k - 1], c.times[k]);
+                (k - 1, k, if c.step { 0.0 } else { ((t - a) / (b - a).max(1e-6)).clamp(0.0, 1.0) })
+            };
+            let get = |i: usize, j: usize| c.values.get(i * w + j).copied().unwrap_or(0.0);
+            let l = &mut local[c.node];
+            match c.path {
+                0 => l.0 = std::array::from_fn(|j| get(i0, j) + (get(i1, j) - get(i0, j)) * u),
+                2 => l.2 = std::array::from_fn(|j| get(i0, j) + (get(i1, j) - get(i0, j)) * u),
+                _ => {
+                    // Normalised lerp along the short arc (smooth for key spacing used in practice).
+                    let a: [f32; 4] = std::array::from_fn(|j| get(i0, j));
+                    let mut b: [f32; 4] = std::array::from_fn(|j| get(i1, j));
+                    if a.iter().zip(&b).map(|(x, y)| x * y).sum::<f32>() < 0.0 {
+                        b = b.map(|v| -v);
+                    }
+                    l.1 = std::array::from_fn(|j| a[j] + (b[j] - a[j]) * u);
+                }
+            }
+        }
+        let mut out = vec![IDENT; self.rest.len()];
+        let mut stack: Vec<(usize, M4)> = self.roots.iter().map(|&r| (r, IDENT)).collect();
+        let mut guard = 0;
+        while let Some((ni, parent)) = stack.pop() {
+            guard += 1;
+            if guard > 100_000 {
+                break;
+            }
+            let m = match self.rest[ni].3 {
+                Some(fixed) => fixed,
+                None => trs(local[ni].0, local[ni].1, local[ni].2),
+            };
+            let w = mm(&parent, &m);
+            out[ni] = w;
+            for &c in &self.children[ni] {
+                stack.push((c, w));
+            }
+        }
+        out
+    }
+}
+
+/// A model-space matrix applied to a point.
+pub fn apply(m: &M4, p: V3) -> V3 {
+    v3(m[0][0] * p.x + m[1][0] * p.y + m[2][0] * p.z + m[3][0], m[0][1] * p.x + m[1][1] * p.y + m[2][1] * p.z + m[3][1], m[0][2] * p.x + m[1][2] * p.y + m[2][2] * p.z + m[3][2])
+}
+
+pub type M4 = [[f32; 4]; 4];
 
 const IDENT: M4 = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]];
 
@@ -138,6 +241,48 @@ impl Doc {
         Ok(out)
     }
 
+    fn animation(&self, roots: Vec<usize>) -> Result<Anim, String> {
+        let nodes = self.json["nodes"].as_array().cloned().unwrap_or_default();
+        let arr = |n: &Value, k: &str, d: &[f32]| -> Vec<f32> { n.get(k).and_then(|v| v.as_array()).map(|a| a.iter().map(|x| x.as_f64().unwrap_or(0.0) as f32).collect()).unwrap_or_else(|| d.to_vec()) };
+        let rest = nodes
+            .iter()
+            .map(|n| {
+                let t = arr(n, "translation", &[0.0, 0.0, 0.0]);
+                let r = arr(n, "rotation", &[0.0, 0.0, 0.0, 1.0]);
+                let s = arr(n, "scale", &[1.0, 1.0, 1.0]);
+                let fixed = n.get("matrix").map(|_| node_matrix(n));
+                ([t[0], t[1], t[2]], [r[0], r[1], r[2], r[3]], [s[0], s[1], s[2]], fixed)
+            })
+            .collect();
+        let children = nodes.iter().map(|n| n["children"].as_array().map(|a| a.iter().filter_map(|c| c.as_u64()).map(|c| c as usize).filter(|&c| c < nodes.len()).collect()).unwrap_or_default()).collect();
+        let a = &self.json["animations"][0];
+        let mut channels = Vec::new();
+        let mut duration = 0.0f32;
+        for ch in a["channels"].as_array().cloned().unwrap_or_default() {
+            let Some(node) = ch["target"]["node"].as_u64() else { continue };
+            let path = match ch["target"]["path"].as_str() {
+                Some("translation") => 0,
+                Some("rotation") => 1,
+                Some("scale") => 2,
+                _ => continue,
+            };
+            let smp = &a["samplers"][ch["sampler"].as_u64().unwrap_or(0) as usize];
+            let times = self.accessor(smp["input"].as_u64().ok_or("sampler without input")? as usize, 1)?;
+            let w = if path == 1 { 4 } else { 3 };
+            let mut values = self.accessor(smp["output"].as_u64().ok_or("sampler without output")? as usize, w)?;
+            let interp = smp["interpolation"].as_str().unwrap_or("LINEAR");
+            if interp == "CUBICSPLINE" {
+                // Keep the values, drop the tangents (linear between keys).
+                values = values.chunks_exact(w * 3).flat_map(|c| c[w..2 * w].to_vec()).collect();
+            }
+            duration = duration.max(times.last().copied().unwrap_or(0.0));
+            if (node as usize) < nodes.len() {
+                channels.push(Channel { node: node as usize, path, times, values, step: interp == "STEP" });
+            }
+        }
+        Ok(Anim { rest, children, roots, channels, duration })
+    }
+
     fn material(&self, i: Option<u64>) -> Material {
         let mut m = Material { base: v3(0.8, 0.8, 0.8), metallic: 1.0, roughness: 1.0, ..Material::chrome() };
         let Some(i) = i else {
@@ -170,7 +315,8 @@ impl Doc {
 }
 
 /// Load every triangle primitive of the default scene, in model space.
-pub fn load(path: &Path) -> Result<Vec<Part>, String> {
+/// With animations, meshes stay node-local and the [`Anim`] places them.
+pub fn load(path: &Path) -> Result<(Vec<Part>, Option<Anim>), String> {
     let bytes = std::fs::read(path).map_err(|e| format!("can't read {}: {e}", path.display()))?;
     let dir = path.parent().unwrap_or(Path::new("."));
     let (json, bin) = if bytes.starts_with(b"glTF") {
@@ -204,6 +350,8 @@ pub fn load(path: &Path) -> Result<Vec<Part>, String> {
         None => (0..doc.json["nodes"].as_array().map(|a| a.len()).unwrap_or(0) as u64).collect(),
     };
     let mut parts = Vec::new();
+    let animated = doc.json["animations"].as_array().is_some_and(|a| !a.is_empty());
+    let roots_all: Vec<usize> = roots.iter().map(|&r| r as usize).collect();
     let mut stack: Vec<(u64, M4)> = roots.into_iter().map(|r| (r, IDENT)).collect();
     let mut guard = 0;
     while let Some((ni, parent)) = stack.pop() {
@@ -213,6 +361,8 @@ pub fn load(path: &Path) -> Result<Vec<Part>, String> {
         }
         let node = &doc.json["nodes"][ni as usize];
         let m = mm(&parent, &node_matrix(node));
+        // Animated files keep meshes node-local; the animation places them.
+        let mv = if animated { IDENT } else { m };
         if let Some(mi) = node["mesh"].as_u64() {
             for prim in doc.json["meshes"][mi as usize]["primitives"].as_array().cloned().unwrap_or_default() {
                 if prim["mode"].as_u64().unwrap_or(4) != 4 {
@@ -241,12 +391,12 @@ pub fn load(path: &Path) -> Result<Vec<Part>, String> {
                 let mut mesh = Mesh { pos: Vec::with_capacity(nv * 3), nrm: Vec::new(), uv, idx };
                 for p in pos.chunks_exact(3) {
                     for r in 0..3 {
-                        mesh.pos.push(m[0][r] * p[0] + m[1][r] * p[1] + m[2][r] * p[2] + m[3][r]);
+                        mesh.pos.push(mv[0][r] * p[0] + mv[1][r] * p[1] + mv[2][r] * p[2] + mv[3][r]);
                     }
                 }
-                let a = v3(m[0][0], m[0][1], m[0][2]);
-                let b = v3(m[1][0], m[1][1], m[1][2]);
-                let c = v3(m[2][0], m[2][1], m[2][2]);
+                let a = v3(mv[0][0], mv[0][1], mv[0][2]);
+                let b = v3(mv[1][0], mv[1][1], mv[1][2]);
+                let c = v3(mv[2][0], mv[2][1], mv[2][2]);
                 let (cb, cc, ca) = (cross(b, c), cross(c, a), cross(a, b));
                 let flip = dot(a, cb) < 0.0;
                 if nrm.len() == pos.len() {
@@ -274,7 +424,7 @@ pub fn load(path: &Path) -> Result<Vec<Part>, String> {
                         t.swap(1, 2);
                     }
                 }
-                parts.push(Part { mesh, mat: doc.material(prim["material"].as_u64()) });
+                parts.push(Part { mesh, mat: doc.material(prim["material"].as_u64()), node: ni as usize });
             }
         }
         for c in node["children"].as_array().cloned().unwrap_or_default() {
@@ -286,7 +436,8 @@ pub fn load(path: &Path) -> Result<Vec<Part>, String> {
     if parts.is_empty() {
         return Err(format!("{}: no triangle meshes", path.display()));
     }
-    Ok(parts)
+    let anim = if animated { Some(doc.animation(roots_all)?) } else { None };
+    Ok((parts, anim))
 }
 
 #[cfg(test)]
@@ -295,12 +446,25 @@ pub(crate) mod tests {
 
     /// Write a one-triangle glTF (embedded buffer, a translated node) to `p`.
     pub(crate) fn write_triangle(p: &std::path::Path) {
+        write_tri(p, false)
+    }
+
+    /// The triangle with a 1 s translation animation from x = 0 to x = 2.
+    pub(crate) fn write_animated_triangle(p: &std::path::Path) {
+        write_tri(p, true)
+    }
+
+    fn write_tri(p: &std::path::Path, animated: bool) {
         let mut bin = Vec::new();
         for f in [0.0f32, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0] {
             bin.extend_from_slice(&f.to_le_bytes());
         }
         for i in [0u16, 1, 2, 0] {
             bin.extend_from_slice(&i.to_le_bytes());
+        }
+        // Animation data at byte 44: times [0, 1], translations [0,2,0]→[2,2,0].
+        for f in [0.0f32, 1.0, 0.0, 2.0, 0.0, 2.0, 2.0, 0.0] {
+            bin.extend_from_slice(&f.to_le_bytes());
         }
         const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         let mut s = String::new();
@@ -314,7 +478,7 @@ pub(crate) mod tests {
                 }
             }
         }
-        let gltf = serde_json::json!({
+        let mut gltf = serde_json::json!({
             "asset": { "version": "2.0" },
             "buffers": [ { "byteLength": bin.len(), "uri": format!("data:application/octet-stream;base64,{s}") } ],
             "bufferViews": [ { "buffer": 0, "byteOffset": 0, "byteLength": 36 }, { "buffer": 0, "byteOffset": 36, "byteLength": 6 } ],
@@ -324,6 +488,13 @@ pub(crate) mod tests {
             "nodes": [ { "mesh": 0, "translation": [0, 2, 0] } ],
             "scenes": [ { "nodes": [0] } ]
         });
+        if animated {
+            gltf["bufferViews"].as_array_mut().unwrap().push(serde_json::json!({ "buffer": 0, "byteOffset": 44, "byteLength": 8 }));
+            gltf["bufferViews"].as_array_mut().unwrap().push(serde_json::json!({ "buffer": 0, "byteOffset": 52, "byteLength": 24 }));
+            gltf["accessors"].as_array_mut().unwrap().push(serde_json::json!({ "bufferView": 2, "componentType": 5126, "count": 2, "type": "SCALAR" }));
+            gltf["accessors"].as_array_mut().unwrap().push(serde_json::json!({ "bufferView": 3, "componentType": 5126, "count": 2, "type": "VEC3" }));
+            gltf["animations"] = serde_json::json!([ { "samplers": [ { "input": 2, "output": 3 } ], "channels": [ { "sampler": 0, "target": { "node": 0, "path": "translation" } } ] } ]);
+        }
         std::fs::write(p, gltf.to_string()).unwrap();
     }
 
@@ -333,7 +504,8 @@ pub(crate) mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let p = dir.join("tri.gltf");
         write_triangle(&p);
-        let parts = load(&p).unwrap();
+        let (parts, anim) = load(&p).unwrap();
+        assert!(anim.is_none());
         assert_eq!(parts.len(), 1);
         let m = &parts[0].mesh;
         assert_eq!(m.idx, vec![0, 1, 2]);

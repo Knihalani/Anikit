@@ -1,7 +1,7 @@
 // Transition: the old scene burns away along a noisy front with a glowing
 // ember edge, revealing the new one. Uniforms: glow (edge width), color.
-uniform float glow;  // = 0.06
-uniform vec3 color;  // = vec3(1.0, 0.55, 0.12)
+uniform float glow;  // = 0.06  width of the ember edge
+uniform vec3 color;  // = vec3(1.0, 0.55, 0.12)  ember colour
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vnoise(vec2 p) {

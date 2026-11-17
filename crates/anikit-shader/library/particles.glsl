@@ -3,13 +3,13 @@
 // particle per cell; near layers are bigger and blurrier (depth of field).
 // Fast (~60–90 ms at 1080p). Uniforms: color, color2, density (0..1),
 // speed, size, focus (0 near … 1 far), direction (drift, uv/s).
-uniform vec3 color;      // = vec3(1.0, 0.72, 0.38)
-uniform vec3 color2;     // = vec3(0.35, 0.6, 1.0)
-uniform float density;   // = 0.6
-uniform float speed;     // = 1.0
-uniform float size;      // = 1.0
-uniform float focus;     // = 0.5
-uniform vec2 direction;  // = vec2(0.02, 0.05)
+uniform vec3 color;      // = vec3(1.0, 0.72, 0.38)  warm particle colour
+uniform vec3 color2;     // = vec3(0.35, 0.6, 1.0)  cool particle colour
+uniform float density;   // = 0.6  0 sparse … 1 dense
+uniform float speed;     // = 1.0  drift speed
+uniform float size;      // = 1.0  particle size
+uniform float focus;     // = 0.5  focal depth: 0 near … 1 far
+uniform vec2 direction;  // = vec2(0.02, 0.05)  drift, screen heights per second
 
 vec3 h33(vec3 p) {
     uvec3 q = uvec3(ivec3(p) + 32768) * uvec3(1597334673u, 3812015801u, 2798796415u);
@@ -43,9 +43,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             float d = length(p - pos) / r;
             if (d >= 1.0) continue;                       // most pixels miss: skip the shading
             // Bokeh: a soft disc with a brighter rim when defocused; a sharp glow in focus.
-            float disc = smoothstep(1.0, 1.0 - 0.25 - 0.5 * (1.0 - blur), d);
+            float sharp = 1.0 - min(blur, 1.0);               // 1 in focus … 0 fully defocused
+            float disc = smoothstep(1.0, 1.0 - 0.25 - 0.5 * sharp, d);
             float rim = smoothstep(0.75, 1.0, d) * disc * blur;
-            float core = exp(-d * d * 6.0) * (1.0 - blur);
+            float core = exp(-d * d * 6.0) * sharp;
             float energy = (disc * 0.35 + rim * 0.4 + core) / (1.0 + 6.0 * blur * blur);
             float tw = 0.7 + 0.3 * sin(t * (2.0 + 3.0 * h.y) + h.x * 50.0);
             col += mix(color, color2, smoothstep(0.35, 0.65, h.y)) * energy * tw * mix(1.1, 0.5, z);

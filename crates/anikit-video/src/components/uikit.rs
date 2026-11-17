@@ -243,13 +243,23 @@ fn icon_src(name: &str) -> &'static str {
         "box" => "M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z|m3.3 7 8.7 5 8.7-5|M12 22V12",
         "wand" => "m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72|m14 7 3 3|M5 6v4|M19 14v4|M10 2v2|M7 8H3|M21 16h-4|M11 3H9",
         "more" => "c 5 12 1|c 12 12 1|c 19 12 1",
+        "play" => "M6 3 20 12 6 21Z",
+        "pause" => "r 14 4 4 16 1|r 6 4 4 16 1",
+        "skip-back" => "M19 20 9 12 19 4Z|M5 19V5",
+        "skip-forward" => "M5 4 15 12 5 20Z|M19 5v14",
+        "shuffle" => "m18 14 4 4-4 4|m18 2 4 4-4 4|M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22|M2 6h1.9c1.5 0 2.9.9 3.6 2.2|M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8",
+        "volume" => "M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z",
+        "volume-2" => "M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z|M16 9a5 5 0 0 1 0 6|M19.364 18.364a9 9 0 0 0 0-12.728",
+        "airplay" => "M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1|m12 15 5 6H7Z",
+        "list" => "M3 12h.01|M3 18h.01|M3 6h.01|M8 12h13|M8 18h13|M8 6h13",
+        "quote" => "M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z|M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z",
         _ => "c 12 12 9",
     }
 }
 
 /// Icon names that have a drawing (for docs and fallbacks).
 pub const ICONS: &[&str] = &[
-    "home", "inbox", "search", "settings", "chart", "trending", "users", "user", "bell", "folder", "calendar", "file", "plus", "check", "x", "star", "message", "heart", "repeat", "share", "bookmark", "layers", "zap", "lock", "globe", "moon", "sun", "code", "grid", "image", "credit-card", "shield", "edit", "sparkles", "palette", "key", "help", "clock", "tag", "target", "box", "wand",
+    "home", "inbox", "search", "settings", "chart", "trending", "users", "user", "bell", "folder", "calendar", "file", "plus", "check", "x", "star", "message", "heart", "repeat", "share", "bookmark", "layers", "zap", "lock", "globe", "moon", "sun", "code", "grid", "image", "credit-card", "shield", "edit", "sparkles", "palette", "key", "help", "clock", "tag", "target", "box", "wand", "more", "play", "pause", "skip-back", "skip-forward", "shuffle", "volume", "volume-2", "airplay", "list", "quote", "chevron-down",
 ];
 
 /// Icon path in pixels: the 24-grid scaled to `size` with its top-left at `(x, y)`.

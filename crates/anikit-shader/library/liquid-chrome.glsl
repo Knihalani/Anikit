@@ -5,11 +5,11 @@
 // the sculpture is cut out for compositing.
 // Uniforms: speed, env (0 studio … 1 night sky), film (iridescence 0..1),
 // background (1 draw the environment behind, 0 transparent), size.
-uniform float speed;      // = 1.0
-uniform float env;        // = 0.0
-uniform float film;       // = 0.0
-uniform float background; // = 1.0
-uniform float size;       // = 1.0
+uniform float speed;      // = 1.0  motion speed
+uniform float env;        // = 0.0  0 studio … 1 night sky reflections
+uniform float film;       // = 0.0  thin-film iridescence 0..1
+uniform float background; // = 1.0  1 draws the environment, 0 cut out (set "alpha": true)
+uniform float size;       // = 1.0  sculpture scale
 
 // Smooth polynomial union: soft, wide necks between drops.
 float smin(float a, float b, float k) {

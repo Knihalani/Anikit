@@ -28,10 +28,13 @@ url="${ANIKIT_BASE_URL:-https://github.com/$repo/releases/download/$tag}/$asset"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
-if command -v curl >/dev/null 2>&1; then
-  curl -fsSL --retry 3 "$url" -o "$tmp/$asset"
-else
-  wget -q "$url" -O "$tmp/$asset"
+fetch() {
+  if command -v curl >/dev/null 2>&1; then curl -fsSL --retry 3 "$1" -o "$2"; else wget -q "$1" -O "$2"; fi
+}
+if ! fetch "$url" "$tmp/$asset"; then
+  echo "anikit-video: no prebuilt $os-$arch binary in release '$tag' yet." >&2
+  echo "Build it instead (about 4 min): cargo install --git https://github.com/$repo anikit-video" >&2
+  exit 1
 fi
 tar -xzf "$tmp/$asset" -C "$tmp"
 mkdir -p "$dir"

@@ -215,6 +215,15 @@ pub fn check_spec(raw: &serde_json::Value, ev: &Evaluator) -> Vec<Note> {
 /// Run the pixel checks.
 pub fn check(ev: &Evaluator) -> Vec<Note> {
     const SCALE: f32 = 0.5;
+    crate::eval::shader::set_preview_scale(SCALE);
+    let notes = check_at(ev, SCALE);
+    crate::eval::shader::set_preview_scale(1.0);
+    notes
+}
+
+fn check_at(ev: &Evaluator, scale: f32) -> Vec<Note> {
+    #[allow(non_snake_case)]
+    let SCALE = scale;
     let fmt = Format { width: ev.width, height: ev.height, fps: 30 };
     let [top, right, bottom, left] = fmt.safe().map(|x| x as f32 * SCALE);
     let mut notes = Vec::new();
@@ -300,6 +309,7 @@ pub fn check(ev: &Evaluator) -> Vec<Note> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     use crate::eval::Options;
     use serde_json::json;
 
