@@ -42,7 +42,7 @@ Other entry points:
 | `cabac` | `true` | Main profile with CABAC. `false` gives Constrained Baseline with CAVLC: 35–60% larger files, slightly faster. |
 | `deblock` | `false` | The in-loop filter. It helps only at QP ≥ 34 (+0.1–0.2 dB) and costs about 25% speed; at QP ≤ 28 it *lowers* PSNR on this content (sharp edges, and copied macroblocks next to changing areas get re-filtered every frame). | With `threads > 1`, each slice deblocks its own rows in parallel (`disable_deblocking_filter_idc` 2).
 | `subpel` | `true` | Quarter-pel motion refinement (exact 6-tap interpolation, half-pel planes kept up to date incrementally). It saves 16–46% on real renderer clips with sub-pixel motion, for 15–25% more time. |
-| `aq_strength` | `0` | Adaptive quantisation: flat, dark macroblocks get a lower QP (up to −(4 + 3)·strength), everything else keeps `qp`. At 0.5 it stops dark dithered gradients from turning into grid-aligned blocks, at +8–17% size on dark UI content. 0 = constant QP. |
+| `aq_strength` | `0` | Adaptive quantisation: smooth, dark macroblocks get a lower QP (up to −(2 + 4 + 3)·strength), everything else keeps `qp`. At 1.0 dark fades look like QP 19, at +29–83% size on dark UI content. 0 = constant QP. |
 | `skip_threshold` | `0` | Perceptual skip: code a changed macroblock as a copy when every sample is within this distance of the reconstructed reference. Off by default (see the measurements below). |
 | `threads` | 1 | Slices per frame for `encode()`. Chunk-parallel modes ignore it. |
 | `full_range` | `false` | Signals the colour range (BT.709 primaries/matrix are always signalled). |
@@ -415,6 +415,17 @@ On the dark clip, QP 23 with AQ 0.5 matches QP 19 without AQ: 37 vs 36 KB,
 and 4×4-smoothed PSNR 63.95 vs 64.07 dB. That is the `--quality best` level
 that showed no blocking, while busy content stays at QP 23. AQ 1.0 goes further
 (69 KB, 67.3 dB smoothed) for about +45% on launch.
+
+**On by default (free):** smooth ramps (small second differences) no longer try
+I4x4 at QP ≥ 12. Its 4×4 predictions turned fades into a staircase of 4×4
+squares; I16 plane prediction and inter prediction keep them smooth. On
+COMPONENTS' dark aurora fade it is neutral in size (580 vs 583 KB) and slightly
+better in every metric. Launch and tutorial grow 0.7–0.9% at the same PSNR.
+
+AQ 0.5 adds −2…−5 QP on smooth, dark macroblocks (second differences under 2
+per sample, mean luma under 80; it no longer uses variance, so fades of any
+slope qualify). AQ 1.0 makes that fade look like QP 19 (`--quality best`) at
++42% size on that clip, but costs +29% (0.5) to +83% (1.0) on launch.
 
 AQ is off by default. The cheaper fix is upstream: a temporally stable dither
 (the same pattern every frame) lets P_Skip and inter prediction preserve it at

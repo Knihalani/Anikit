@@ -173,7 +173,7 @@ fn main() {
     );
     if let Ok(dir) = std::env::var("OUT") {
         // lifted 320×180 crop of the last P frame, ×4 nearest, as PGM
-        let k = recon.len() - 2;
+        let k = std::env::var("FRAME").ok().and_then(|v| v.parse().ok()).unwrap_or(recon.len() - 2);
         let r = if std::env::var("SRC").is_ok() { &frames[k] } else { &recon[k] };
         let (cw, ch, sc) = (320usize, 180usize, 3usize);
         let lift: (i32, i32) = std::env::var("LIFT").ok().and_then(|c| c.split_once(',').map(|(a, b)| (a.parse().unwrap(), b.parse().unwrap()))).unwrap_or((16, 6));

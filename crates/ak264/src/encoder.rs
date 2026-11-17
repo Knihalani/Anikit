@@ -11,6 +11,9 @@ use crate::transform::*;
 
 /// Border (in luma samples) kept around reference pictures for motion compensation.
 pub(crate) const PAD: usize = 32;
+/// Sum of |second differences| of a 16×16 block below which it is a smooth ramp
+/// (about 2 per sample; a ±1 dither scores about 1).
+pub(crate) const SMOOTH_HF: u32 = 2 * 448;
 
 /// Encoder settings.
 #[derive(Clone, Debug)]
@@ -580,7 +583,11 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
 
         // In P frames I4x4 rarely beats the best of P16/I16 unless both are poor.
-        let try_i4 = best_cost > lambda as u32 * 24 + 256 && (c.idr || best_cost > lambda as u32 * 64 + 1024);
+        let try_i4 = best_cost > lambda as u32 * 24 + 256 && (c.idr || best_cost > lambda as u32 * 64 + 1024)
+            // Smooth ramps (fades, soft gradients): 4×4 predictions turn them into a
+            // staircase of 4×4 squares; I16 (plane) and inter keep them smooth.
+            // (At QP < 12 the steps are below one level, and I4 is more precise.)
+            && (self.mb_qp < 12 || crate::simd::second_diff16(src_y) >= SMOOTH_HF);
         if try_i4 {
             // Encode I4x4 tentatively (writes recon).
             let mut cd = Coded::new();
@@ -1468,32 +1475,25 @@ fn dc_flags(cd: &Coded, i16: bool) -> u8 {
 /// Adaptive-quantisation QP offset of a macroblock. One-sided: only flat, dark
 /// macroblocks (where blocking and banding show once shadows are lifted) get a
 /// lower QP; busy or bright ones keep the frame QP, so text and detail lose nothing.
-fn aq_offset(y: &[u8; 256], c: &[[u8; 64]; 2], strength: f32) -> i32 {
-    // flat: under about 4 levels² per luma sample; dark: mean luma under 80
-    const FLAT: u32 = 1024;
+fn aq_offset(y: &[u8; 256], _c: &[[u8; 64]; 2], strength: f32) -> i32 {
+    // dark: mean luma under 80 (limited range; black is 16)
     const DARK: u32 = 80;
-    let (sy, qy) = crate::simd::sum_sq(y);
+    let (sy, _) = crate::simd::sum_sq(y);
     // Only dark macroblocks (bright ones mask a 1-level step).
     if sy >= DARK << 8 {
         return 0;
     }
-    let ey = qy - ((sy * sy) >> 8);
-    if ey >= FLAT {
+    // Smooth: small second differences. A ramp of any slope (a fade) scores ~0,
+    // a ±1 dither about 1 per sample, edges and texture far more.
+    let hf = crate::simd::second_diff16(y);
+    if hf >= SMOOTH_HF {
         return 0;
     }
-    let ec = |p: &[u8; 64]| {
-        let (s, q) = crate::simd::sum_sq(p);
-        q - ((s * s) >> 6)
-    };
-    let e = ey + ec(&c[0]) + ec(&c[1]);
-    if e >= FLAT {
-        return 0;
-    }
-    let flat = ((FLAT as f32).log2() - (e.max(1) as f32).log2()).min(4.0);
-    // limited-range black is 16: up to 3 more for the darkest flat areas
+    let smooth = ((SMOOTH_HF as f32).log2() - (hf.max(1) as f32).log2()).min(4.0);
     let mean = (sy >> 8) as f32;
     let dark = ((DARK as f32 - mean).max(0.0) / 16.0).min(3.0);
-    -(strength * (flat + dark)).round() as i32
+    // a smooth dark macroblock starts at −2 (the staircase shows at any slope)
+    -(strength * (2.0 + smooth + dark)).round() as i32
 }
 
 /// mb_qp_delta: unary of the mapped value, contexts 60 + (previous MB coded a
@@ -2324,3 +2324,4 @@ impl Encoder {
         }
     }
 }
+

@@ -611,6 +611,25 @@ pub fn avg16(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
     core::array::from_fn(|i| ((a[i] as u16 + b[i] as u16 + 1) >> 1) as u8)
 }
 
+/// Sum of |second differences| of a 16×16 block, horizontally (x 1..15) and
+/// vertically (y 1..15).
+#[inline]
+pub fn second_diff16(p: &[u8; 256]) -> u32 {
+    let mut s = 0u32;
+    for y in 0..16 {
+        let r = &p[y * 16..y * 16 + 16];
+        for x in 1..15 {
+            s += (r[x - 1] as i32 + r[x + 1] as i32 - 2 * r[x] as i32).unsigned_abs();
+        }
+    }
+    for y in 1..15 {
+        for x in 0..16 {
+            s += (p[(y - 1) * 16 + x] as i32 + p[(y + 1) * 16 + x] as i32 - 2 * p[y * 16 + x] as i32).unsigned_abs();
+        }
+    }
+    s
+}
+
 /// Sum and sum of squares of a block whose length is a multiple of 16.
 #[inline]
 pub fn sum_sq(p: &[u8]) -> (u32, u32) {
