@@ -139,7 +139,15 @@ Tune it with an object: `{ "preset": "rembrandt", "ratio": 6, "rim": 1.5, "key":
 - `gobo`: `blinds`, `window` or `leaves` (a cookie in front of the key); `goboScale` is the pattern period in metres.
 - `beam`: haze plus volumetric shafts, so the key reads as a beam.
 
-Stills (one scene, six rigs): `docs/video/shots/3d-rigs/`. Rigs cost nothing extra: a rig is a few softboxes, the same as an env. Gobos add one pattern lookup per shaded point. Measured 1080p traces on 4 cores: 0.62–0.79 s.
+- `animate`: light that moves, which is how studios make chrome come alive. `start` and `duration` (default 2.5 s) set the timing.
+  - `sweep`: the strips travel 130° across the back, so a highlight runs along every edge.
+  - `reveal`: rim first, then the key, then the fill (from silhouette to fully lit).
+
+  `{ "preset": "product", "animate": "sweep", "duration": 3 }`
+
+  Animated rigs rebuild the lights each frame (about 2 ms) and skip the baked floor.
+
+Stills (one scene, six rigs) and `sweep.mp4` (3 s, 1080p30, rendered in 43 s on 4 cores): `docs/video/shots/3d-rigs/`. Rigs cost nothing extra: a rig is a few softboxes, the same as an env. Gobos add one pattern lookup per shaded point. Measured 1080p traces on 4 cores: 0.62–0.79 s.
 Why and how studios light: `docs/video/craft/3d-design.md`.
 
 ## Looks and worlds beyond the studio
