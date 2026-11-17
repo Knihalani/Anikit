@@ -168,6 +168,24 @@ pub struct Theme {
     pub radius: Option<f64>,
     /// Text styles: `title`, `heading`, `subtitle`, `body`, `caption`, `label`, `code`, or your own.
     pub styles: Option<BTreeMap<String, TextStyle>>,
+    /// Material defaults every component takes unless its props say otherwise.
+    pub material: Option<Material>,
+}
+
+/// Art-direction defaults for components (a look's finish). Explicit component props win.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Material {
+    /// `flat`, `glass`, `outline`, `paper` or `solid`.
+    pub surface: Option<String>,
+    /// Shadow depth 0..1.
+    pub shadow: Option<f64>,
+    /// Glow intensity 0..1 (0 = none).
+    pub glow: Option<f64>,
+    /// Texture (film grain) 0..1.
+    pub texture: Option<f64>,
+    /// `snappy`, `soft`, `bouncy`, `mechanical` or `smooth`.
+    pub motion: Option<String>,
 }
 
 /// A named text style.

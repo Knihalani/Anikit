@@ -2149,7 +2149,19 @@ impl C<'_> {
             self.d.push(Diagnostic::error(format!("{path}.component"), format!("unknown component '{raw}'")).suggest(suggest(&name, &names)));
             return None;
         }
-        let props = l.props.clone().unwrap_or(serde_json::Value::Object(Default::default()));
+        let mut props = l.props.clone().unwrap_or(serde_json::Value::Object(Default::default()));
+        // `"$accent"`-style colour tokens resolve against the scene theme.
+        let colors = &self.theme.colors;
+        crate::components::resolve_tokens(&mut props, &|k| {
+            colors.get(k).map(|c| {
+                let b = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
+                format!("#{:02x}{:02x}{:02x}{:02x}", b(c.0[0]), b(c.0[1]), b(c.0[2]), b(c.0[3]))
+            })
+        });
+        // The theme's material (surface, motion, glow…) fills props the layer leaves out.
+        if let Ok(m) = serde_json::to_value(&self.theme.material) {
+            props = crate::components::with_material(&name, &props, &m);
+        }
         // Load the images the component refers to, so `Assets::media` finds them.
         for src in crate::components::media_srcs(&props) {
             self.load_media(&src, &format!("{path}.props"));
