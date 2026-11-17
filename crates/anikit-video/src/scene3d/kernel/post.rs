@@ -772,6 +772,7 @@ fn motion_blur(hdr: &mut Img, vel: &[[f32; 2]], w: usize, h: usize, shutter: f32
         return;
     }
     let src = hdr.clone();
+    let avx = super::wide::avx2();
     par::rows(hdr, w, |y, row| {
         for x in 0..w {
             let v = vel[y * w + x];
@@ -780,7 +781,13 @@ fn motion_blur(hdr: &mut Img, vel: &[[f32; 2]], w: usize, h: usize, shutter: f32
             if l < 0.35 {
                 continue;
             }
-            let n = (l * 1.2).ceil().clamp(3.0, 16.0) as usize;
+            let n = super::super::math::fceil(l * 1.2).clamp(3.0, 16.0) as usize;
+            #[cfg(target_arch = "x86_64")]
+            if avx {
+                // SAFETY: the CPU has AVX2; `src` is w × h.
+                row[x] = unsafe { mblur_avx2(&src, w, h, x, y, vx, vy, n) };
+                continue;
+            }
             let mut acc = [0.0f32; 3];
             for i in 0..n {
                 let t = (i as f32 + 0.5) / n as f32 - 0.5;
@@ -792,6 +799,64 @@ fn motion_blur(hdr: &mut Img, vel: &[[f32; 2]], w: usize, h: usize, shutter: f32
             row[x] = acc.map(|a| a / n as f32);
         }
     });
+}
+
+/// [`motion_blur`]'s taps for one pixel, eight at a time with AVX2 gathers
+/// (the same clamped bilinear fetch per tap; summed in lanes).
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2,fma")]
+#[allow(clippy::too_many_arguments)]
+unsafe fn mblur_avx2(src: &[[f32; 3]], w: usize, h: usize, x: usize, y: usize, vx: f32, vy: f32, n: usize) -> [f32; 3] {
+    use std::arch::x86_64::*;
+    debug_assert!(src.len() >= w * h && n <= 16);
+    let base = src.as_ptr() as *const f32;
+    // SAFETY: (caller) AVX2; every gathered index is clamped into the image.
+    unsafe {
+        let lane = _mm256_setr_ps(0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0);
+        let (fx0, fy0) = (_mm256_set1_ps(x as f32), _mm256_set1_ps(y as f32));
+        let (vvx, vvy) = (_mm256_set1_ps(vx), _mm256_set1_ps(vy));
+        let (xm, ym) = (_mm256_set1_ps(w as f32 - 1.001), _mm256_set1_ps(h as f32 - 1.001));
+        let zero = _mm256_setzero_ps();
+        let one = _mm256_set1_ps(1.0);
+        let (half, nf) = (_mm256_set1_ps(0.5), _mm256_set1_ps(n as f32));
+        let w3 = _mm256_set1_epi32(w as i32 * 3);
+        let three = _mm256_set1_epi32(3);
+        let mut acc = [zero; 3];
+        let mut k = 0usize;
+        while k < n {
+            let i = _mm256_add_ps(lane, _mm256_set1_ps(k as f32));
+            let valid = _mm256_cmp_ps::<_CMP_LT_OQ>(i, nf);
+            let t = _mm256_sub_ps(_mm256_div_ps(_mm256_add_ps(i, half), nf), half);
+            let px = _mm256_min_ps(_mm256_max_ps(_mm256_sub_ps(fx0, _mm256_mul_ps(vvx, t)), zero), xm);
+            let py = _mm256_min_ps(_mm256_max_ps(_mm256_sub_ps(fy0, _mm256_mul_ps(vvy, t)), zero), ym);
+            let ix = _mm256_cvttps_epi32(px);
+            let iy = _mm256_cvttps_epi32(py);
+            let tx = _mm256_sub_ps(px, _mm256_cvtepi32_ps(ix));
+            let ty = _mm256_sub_ps(py, _mm256_cvtepi32_ps(iy));
+            let (ux, uy) = (_mm256_sub_ps(one, tx), _mm256_sub_ps(one, ty));
+            // Float offsets of the four corners (× 3 channels).
+            let i00 = _mm256_add_epi32(_mm256_mullo_epi32(iy, w3), _mm256_mullo_epi32(ix, three));
+            let i01 = _mm256_add_epi32(i00, three);
+            let i10 = _mm256_add_epi32(i00, w3);
+            let i11 = _mm256_add_epi32(i10, three);
+            for c in 0..3 {
+                let b = base.add(c);
+                let (a, bb, cc, d) = (_mm256_i32gather_ps::<4>(b, i00), _mm256_i32gather_ps::<4>(b, i01), _mm256_i32gather_ps::<4>(b, i10), _mm256_i32gather_ps::<4>(b, i11));
+                let top = _mm256_add_ps(_mm256_mul_ps(a, ux), _mm256_mul_ps(bb, tx));
+                let bot = _mm256_add_ps(_mm256_mul_ps(cc, ux), _mm256_mul_ps(d, tx));
+                let v = _mm256_add_ps(_mm256_mul_ps(top, uy), _mm256_mul_ps(bot, ty));
+                acc[c] = _mm256_add_ps(acc[c], _mm256_and_ps(v, valid));
+            }
+            k += 8;
+        }
+        let hsum = |v: __m256| {
+            let mut l = [0.0f32; 8];
+            _mm256_storeu_ps(l.as_mut_ptr(), v);
+            ((l[0] + l[1]) + (l[2] + l[3])) + ((l[4] + l[5]) + (l[6] + l[7]))
+        };
+        let inv = n as f32;
+        [hsum(acc[0]) / inv, hsum(acc[1]) / inv, hsum(acc[2]) / inv]
+    }
 }
 
 /// Bloom: a pyramid of blurred levels, mostly from highlights, summed back

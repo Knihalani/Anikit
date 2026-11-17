@@ -273,7 +273,7 @@ impl FloorVis {
         if fx < -1.0 || fz < -1.0 || fx > self.nx as f32 || fz > self.nz as f32 {
             return [1.0, 1.0];
         }
-        let (ix, iz) = (fx.floor(), fz.floor());
+        let (ix, iz) = (ffloor(fx), ffloor(fz));
         let (tx, tz) = (fx - ix, fz - iz);
         let at = |i: i32, k: i32| -> [f32; 2] {
             if i < 0 || k < 0 || i >= self.nx as i32 || k >= self.nz as i32 {
