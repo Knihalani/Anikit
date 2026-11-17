@@ -107,6 +107,7 @@ Shapes are built once when the spec loads, so their expressions use `u`/`v`/`s`/
 ## Cost and debugging
 
 - 1080p on 4 cores runs at about 1.3 s per frame at `standard`. Use `"quality": "draft"` for previews.
+- Static layouts bake a noise-free floor once per spec (1.5–2.5 s). The bake is cached in `$ANIKIT_CACHE/sim` (`ANIKIT_CACHE=off` disables it), so re-renders and parallel chunks of the same spec skip it.
 - `ANIKIT_SCENE3D_PROFILE=1` prints per-stage ms and ray counts.
 - `ANIKIT_SCENE3D_DEBUG=refl|col|diffuse` shows one buffer.
 - Errors name the exact field with a "did you mean" suggestion: ``objects[2].material: unknown material `crome`; did you mean `chrome`?``.
