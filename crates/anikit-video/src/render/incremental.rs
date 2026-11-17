@@ -329,6 +329,7 @@ pub(crate) fn auto_layer_key(inner: &[Op], filters: &[Filter], frame_base: &kurb
 fn fingerprint(list: &DisplayList, out: &mut Vec<Print>, image_gen: &dyn Fn(crate::dl::ImageId) -> u64) {
     out.clear();
     let mut stack: Vec<[f32; 4]> = Vec::new();
+    let mut opened: Vec<usize> = Vec::new();
     let mut m = [0f32; 4];
     for op in &list.ops {
         let hash = hash_op_with(op, image_gen);
@@ -341,11 +342,28 @@ fn fingerprint(list: &DisplayList, out: &mut Vec<Print>, image_gen: &dyn Fn(crat
                         m[k] += fm[k];
                     }
                 }
+                opened.push(out.len());
                 out.push(Print { hash, rect: None, layer: true });
             }
             Op::PopLayer => {
                 m = stack.pop().unwrap_or([0.0; 4]);
-                out.push(Print { hash, rect: None, layer: true });
+                // A layer only affects pixels its contents can reach: the union of the
+                // contents' rects (which already include this layer's filter margins).
+                // Unknown bounds inside leave the layer unbounded (a change means Full).
+                let rect = opened.pop().and_then(|start| {
+                    let mut u: Option<Rect> = None;
+                    for p in &out[start + 1..] {
+                        match p.rect {
+                            Some(r) => u = Some(u.map_or(r, |x| x.union(r))),
+                            None if p.layer => return None,
+                            None => {}
+                        }
+                    }
+                    let r = u?;
+                    out[start].rect = Some(r);
+                    Some(r)
+                });
+                out.push(Print { hash, rect, layer: true });
             }
             _ => {
                 let rect = ops_bounds(std::slice::from_ref(op), Affine::IDENTITY)
@@ -399,7 +417,9 @@ impl Renderer {
                         continue;
                     }
                 }
-                if a.is_some_and(|p| p.layer) || b.is_some_and(|p| p.layer) {
+                // A changed layer op with known bounds dirties those bounds (prev and cur);
+                // only an unbounded one forces a full frame.
+                if a.is_some_and(|p| p.layer && p.rect.is_none()) || b.is_some_and(|p| p.layer && p.rect.is_none()) {
                     dirty = None;
                     break;
                 }
