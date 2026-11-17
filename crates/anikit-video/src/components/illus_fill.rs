@@ -771,16 +771,15 @@ impl Component for Cutout {
         let (cx, cy) = (w * 0.5, h * 0.5);
         let m: Affine = dl::mul(&[sc, 0.0, 0.0, sc, cx - sc * cx + dx, cy - sc * cy + dy], &rotate_about(rot, cx, cy));
         let mut out = Vec::new();
-        out.push(Op::PushLayer { opacity: op, blend: dl::Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });
+        let faded = op < 0.999;
+        if faded {
+            out.push(Op::PushLayer { opacity: op, blend: dl::Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });
+        }
         // Lifted paper shadow: offset down-right, larger while it is still in the air.
         if self.shadow > 0.0 {
             let sh = self.shadow;
             let (sdx, sdy) = (3.0 + 10.0 * lift, 5.0 + 16.0 * lift);
-            out.push(Op::PushLayer { opacity: 1.0, blend: dl::Blend::Multiply, filters: vec![dl::Filter::Shadow { dx: sdx, dy: sdy, blur: 6.0 + 14.0 * lift, color: Rgba([0.12, 0.08, 0.05, (0.7 * sh) * (1.0 - 0.4 * lift)]) }], clip: None, cache_key: None });
-            out.push(fill_op(outer.clone(), Rgba([0.0, 0.0, 0.0, 1.0]), m));
-            out.push(Op::PopLayer);
-            // Contact shadow, tight.
-            out.push(Op::PushLayer { opacity: 1.0 - lift, blend: dl::Blend::Multiply, filters: vec![dl::Filter::Shadow { dx: 0.5, dy: 1.0, blur: 1.5, color: Rgba([0.1, 0.07, 0.05, 0.35 * sh]) }], clip: None, cache_key: None });
+            out.push(Op::PushLayer { opacity: 1.0, blend: dl::Blend::Normal, filters: vec![dl::Filter::Shadow { dx: sdx, dy: sdy, blur: 6.0 + 14.0 * lift, color: Rgba([0.12, 0.08, 0.05, (0.7 * sh) * (1.0 - 0.4 * lift)]) }], clip: None, cache_key: None });
             out.push(fill_op(outer.clone(), Rgba([0.0, 0.0, 0.0, 1.0]), m));
             out.push(Op::PopLayer);
         }
@@ -807,7 +806,9 @@ impl Component for Cutout {
         let id = paper_image(ctx, kind, col, tooth, fibers, 0.0, s, bw.min(4096), bh.min(4096));
         out.push(Op::Image { image: id, dst: [x0 - 1.0, y0 - 1.0, bw as f32, bh as f32], opacity: 1.0, transform: m });
         out.push(Op::PopLayer);
-        out.push(Op::PopLayer);
+        if faded {
+            out.push(Op::PopLayer);
+        }
         out
     }
     fn duration(&self) -> Option<f32> {
