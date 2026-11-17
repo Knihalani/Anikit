@@ -192,6 +192,8 @@ fn builtins_accuracy() {
     // pow is exp2(y·log2 x), as on GPUs.
     let r = one("c = vec4(pow(2.0, 10.0), pow(9.0, 0.5), pow(0.0, 2.0), pow(5.0, 0.0));");
     assert!(close(r[0], 1024.0, 1e-6) && close(r[1], 3.0, 1e-6) && r[2] == 0.0 && r[3] == 1.0, "{r:?}");
+    let r = one("float z = iTime - 4.0; c = vec4(pow(z, 2.0), pow(z, 3.0), pow(z, 0.5), 0);");
+    assert!(close(r[0], 9.0, 1e-6) && close(r[1], -27.0, 1e-6) && r[2] == 0.0 /* NaN is written as 0 */, "{r:?}");
     let r = one("c = vec4(atan(1.0, -1.0), atan(-1.0, -1.0), atan(0.0, -1.0), atan(1.0, 0.0));");
     let want = [3.0 * std::f32::consts::FRAC_PI_4, -3.0 * std::f32::consts::FRAC_PI_4, std::f32::consts::PI, std::f32::consts::FRAC_PI_2];
     for k in 0..4 {
@@ -325,4 +327,12 @@ fn odd_sizes_cover_every_pixel() {
     let v = s.render_f32(&Frame::new(5, 3, 0.0));
     assert_eq!(v[4], [4.5, 2.5, 0.0, 1.0]);
     assert_eq!(v[14], [4.5, 0.5, 0.0, 1.0]);
+}
+
+#[test]
+fn channel_usage() {
+    let s = Shader::compile("void mainImage(out vec4 c, in vec2 p) { c = texture(iChannel1, p); }").unwrap();
+    assert_eq!(s.channels_used, [false, true, false, false]);
+    let s = Shader::compile("void mainImage(out vec4 c, in vec2 p) { c = vec4(1); }").unwrap();
+    assert_eq!(s.channels_used, [false; 4]);
 }

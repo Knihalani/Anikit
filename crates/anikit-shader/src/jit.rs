@@ -108,6 +108,8 @@ struct Frame<'m> {
     ret_vars: Vec<Variable>,
     ret_kinds: Vec<K>,
     ctl: Vec<Ctl>,
+    /// Whether the caller's mask was its own entry mask at the call.
+    entry_full: bool,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -121,6 +123,8 @@ struct Lower<'m, 'b> {
     info: &'m ModuleInfo,
     b: FunctionBuilder<'b>,
     roots: Vec<Vec<Variable>>,
+    /// Frame depth that owns each root (0 = kernel: globals, output).
+    root_owner: Vec<usize>,
     root_kinds: Vec<Vec<K>>,
     gexpr: Vec<Option<Val>>,
     globals: HashMap<Handle<naga::GlobalVariable>, Val>,
@@ -242,6 +246,7 @@ impl<'m, 'b> Lower<'m, 'b> {
         let vars: Vec<Variable> = kinds.iter().map(|k| self.b.declare_var(k.ty())).collect();
         self.roots.push(vars);
         self.root_kinds.push(kinds);
+        self.root_owner.push(self.frames.len());
         self.roots.len() - 1
     }
 
@@ -265,8 +270,11 @@ impl<'m, 'b> Lower<'m, 'b> {
         }
     }
 
-    fn cur_mask(&mut self) -> Option<Value> {
-        if self.full {
+    /// Mask for a store into a variable owned by frame depth `owner`: none
+    /// when the current lanes are exactly the lanes that variable's frame
+    /// was entered with (then inactive lanes can't observe the write).
+    fn mask_for(&mut self, owner: usize) -> Option<Value> {
+        if self.full && self.frames[owner.min(self.frames.len())..].iter().all(|f| f.entry_full) {
             None
         } else {
             Some(self.exec())
@@ -333,7 +341,7 @@ impl<'m, 'b> Lower<'m, 'b> {
 
     fn store(&mut self, p: &Ptr, vals: &[Value]) -> R<()> {
         let vars = self.roots[p.root].clone();
-        let mask = self.cur_mask();
+        let mask = self.mask_for(self.root_owner[p.root]);
         if p.dynx.is_empty() {
             for i in 0..p.len.min(vals.len()) {
                 if let Some(&v) = vars.get(p.off + i) {
@@ -1416,7 +1424,7 @@ impl<'m, 'b> Lower<'m, 'b> {
             S::Return { value } => {
                 if let Some(v) = value {
                     let vals = self.vals(Sc::Top, *v)?;
-                    let mask = self.cur_mask();
+                    let mask = self.mask_for(self.frames.len());
                     let rv = self.frames.last().unwrap().ret_vars.clone();
                     for (var, val) in rv.into_iter().zip(vals) {
                         self.write(var, val, mask);
@@ -1501,7 +1509,10 @@ impl<'m, 'b> Lower<'m, 'b> {
             self.b.def_var(v, z);
             ret_vars.push(v);
         }
-        self.frames.push(Frame { f, fi, args, ex: vec![None; f.expressions.len()], locals: Vec::new(), ret, ret_vars, ret_kinds, ctl: Vec::new() });
+        let entry_full = self.full;
+        self.frames.push(Frame { f, fi, args, ex: vec![None; f.expressions.len()], locals: Vec::new(), ret, ret_vars, ret_kinds, ctl: Vec::new(), entry_full });
+        // Inside the callee, "full" means "the lanes it was called with".
+        self.full = true;
         // Expressions that need no Emit (literals, constants, arguments,
         // variables) are lowered here, where they dominate the whole body.
         let emitted = emitted_set(&f.body, f.expressions.len());
@@ -1741,6 +1752,7 @@ pub fn compile(m: &naga::Module, info: &ModuleInfo, entry: Handle<naga::Function
             info,
             b,
             roots: Vec::new(),
+            root_owner: Vec::new(),
             root_kinds: Vec::new(),
             gexpr: vec![None; m.global_expressions.len()],
             globals: HashMap::new(),
@@ -1790,6 +1802,33 @@ pub fn compile(m: &naga::Module, info: &ModuleInfo, entry: Handle<naga::Function
         let ldx = lw.b.ins().load(F32X4, fl, env, texture::ENV_LANE_DX);
         let ldy = lw.b.ins().load(F32X4, fl, env, texture::ENV_LANE_DY);
         let qstep = lw.b.ins().load(F32, fl, env, texture::ENV_QSTEP);
+        // Uniforms (and private-global initialisers) are loaded once per call,
+        // so maths that only depends on them is loop-invariant and hoisted.
+        let mut pre: Vec<(usize, Vec<Value>)> = Vec::new();
+        for (h, root, ks) in &priv_globals {
+            let g = &m.global_variables[*h];
+            let name = g.name.as_deref().unwrap_or("");
+            let mut vals = Vec::with_capacity(ks.len());
+            if let Some(&off) = layout.get(name) {
+                for (s, k) in ks.iter().enumerate() {
+                    let ty = if *k == K::F { F32 } else { I32 };
+                    let v = lw.b.ins().load(ty, fl, uni, ((off as usize + s) * 4) as i32);
+                    vals.push(lw.b.ins().splat(k.ty(), v));
+                }
+            } else {
+                let init = g.init.and_then(|i| match lw.gexpr[i.index()].clone() {
+                    Some(Val::V(v)) => Some(v),
+                    _ => None,
+                });
+                for (s, k) in ks.iter().enumerate() {
+                    vals.push(match &init {
+                        Some(iv) => iv[s.min(iv.len() - 1)],
+                        None => lw.zero(*k),
+                    });
+                }
+            }
+            pre.push((*root, vals));
+        }
         let xi = lw.b.declare_var(F32);
         let iv = lw.b.declare_var(I32);
         let op = lw.b.declare_var(ptr_ty);
@@ -1816,29 +1855,10 @@ pub fn compile(m: &naga::Module, info: &ModuleInfo, entry: Handle<naga::Function
         let zero = isplat(&mut lw.b, 0);
         lw.b.def_var(killed, zero);
         lw.full = true;
-        for (h, root, ks) in &priv_globals {
-            let g = &m.global_variables[*h];
-            let name = g.name.as_deref().unwrap_or("");
+        for (root, vals) in &pre {
             let vars = lw.roots[*root].clone();
-            if let Some(&off) = layout.get(name) {
-                for (s, k) in ks.iter().enumerate() {
-                    let ty = if *k == K::F { F32 } else { I32 };
-                    let v = lw.b.ins().load(ty, fl, uni, ((off as usize + s) * 4) as i32);
-                    let v = lw.b.ins().splat(k.ty(), v);
-                    lw.b.def_var(vars[s], v);
-                }
-            } else {
-                let init = g.init.and_then(|i| match lw.gexpr[i.index()].clone() {
-                    Some(Val::V(v)) => Some(v),
-                    _ => None,
-                });
-                for (s, k) in ks.iter().enumerate() {
-                    let v = match &init {
-                        Some(iv) => iv[s.min(iv.len() - 1)],
-                        None => lw.zero(*k),
-                    };
-                    lw.b.def_var(vars[s], v);
-                }
+            for (s, v) in vals.iter().enumerate() {
+                lw.b.def_var(vars[s], *v);
             }
         }
         let f = &m.functions[entry];

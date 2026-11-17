@@ -9,6 +9,8 @@
 pub mod assets;
 pub mod beat_markers;
 mod compile;
+/// Shader layers and transitions (anikit-shader).
+pub(crate) mod shader;
 pub mod expr;
 pub mod theme;
 
@@ -54,7 +56,9 @@ pub(crate) mod prop {
     pub const DEPTH: usize = 30;
     pub const FOCUS: usize = 31;
     pub const APERTURE: usize = 32;
-    pub const N: usize = 33;
+    /// Shader uniforms: `UNIFORM_SLOTS` floats, mapped per layer by name.
+    pub const U0: usize = 33;
+    pub const N: usize = U0 + super::shader::UNIFORM_SLOTS;
 
     /// Default values.
     pub const DEFAULTS: [f32; N] = {
@@ -264,6 +268,8 @@ pub(crate) enum Kind {
         border: Option<(f32, Rgba)>,
     },
     Component(Box<dyn crate::components::Component>, Option<crate::components::Theme>),
+    /// A JIT-compiled fragment shader (see `shader.rs`).
+    Shader(Box<shader::ShaderC>),
 }
 
 pub(crate) struct Counter {
@@ -316,6 +322,8 @@ pub(crate) struct TransC {
     pub color: Rgba,
     pub origin: [f32; 2],
     pub amount: f32,
+    /// `TransKind::Shader`: the compiled gl-transitions style shader.
+    pub shader: Option<shader::ShaderRef>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -331,6 +339,7 @@ pub(crate) enum TransKind {
     Blur,
     Glitch,
     MorphCut,
+    Shader,
 }
 
 pub(crate) struct SceneC {
@@ -511,9 +520,11 @@ impl Evaluator {
                 PaintC::Solid => out.background = s.bg_color,
                 _ => out.background = Rgba([0.0, 0.0, 0.0, 1.0]),
             }
+            shader::set_frame_bg(out.background);
             self.emit_scene(s, t, &dl::IDENTITY, true, &mut out.ops);
         } else {
             out.background = Rgba([0.0, 0.0, 0.0, 1.0]);
+            shader::set_frame_bg(out.background);
             let prev = &self.scenes[cur - 1];
             let p = (local / s.trans.dur).clamp(0.0, 1.0);
             let e = self.easings[s.trans.ease as usize].ease(p as f64) as f32;
@@ -616,6 +627,15 @@ impl Evaluator {
         };
         match tr.kind {
             TransKind::Cut => self.emit_scene(b, t, &id, false, out),
+            TransKind::Shader => {
+                let (mut fa, mut fb) = (Vec::new(), Vec::new());
+                self.emit_scene(a, t, &id, false, &mut fa);
+                self.emit_scene(b, t, &id, false, &mut fb);
+                match &tr.shader {
+                    Some(sc) => self.emit_shader_transition(&sc.0, (fa, a.bg_color), (fb, b.bg_color), t, e, out),
+                    None => out.extend(fb),
+                }
+            }
             TransKind::Crossfade => {
                 self.emit_scene(a, t, &id, false, out);
                 layer(out, e, vec![], None);
@@ -792,7 +812,7 @@ impl Evaluator {
         let xf = dl::mul(parent, &local_xf(&v, n.anchor, w, h));
         let blur = v[prop::BLUR].max(0.0) + cx.dof;
         let wipe = v[prop::WIPE].clamp(0.0, 1.0);
-        let is_leaf = matches!(n.kind, Kind::Text { kinetic: None, .. } | Kind::Image { .. } | Kind::Video { .. })
+        let is_leaf = matches!(n.kind, Kind::Text { kinetic: None, .. } | Kind::Image { .. } | Kind::Video { .. } | Kind::Shader(_))
             || matches!(&n.kind, Kind::Shape { fill, stroke, .. } if fill.is_none() || stroke.is_none());
         let needs_layer = blur > 0.05
             || n.blend != Blend::Normal
@@ -985,6 +1005,7 @@ impl Evaluator {
                     out.push(Op::Image { image: frames[k], dst, opacity: alpha, transform: xf });
                 }
             }
+            Kind::Shader(sc) => self.emit_shader(sc, cx, &v, &xf, w, h, alpha, lt, out),
             Kind::Group { children } => {
                 let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0 };
                 for c in children {
@@ -1086,6 +1107,10 @@ fn node_static(n: &Node, a: f32, b: f32) -> bool {
         }
         Kind::Video { frames, .. } => frames.len() <= 1,
         Kind::Component(c, _) => c.duration().is_some_and(|d| la >= d),
+        Kind::Shader(sc) => !sc.dynamic && sc.channels.iter().all(|(c, _)| match c {
+            shader::ChannelC::Layers(ns) => ns.iter().all(|c| node_static(c, a, b)),
+            _ => true,
+        }),
         _ => true,
     }
 }

@@ -130,13 +130,26 @@ impl Shader {
             off += 3;
         }
         let layout: jit::Layout = slots.iter().map(|(k, v)| (k.clone(), v.off)).collect();
+        // Channels the code actually samples (the prelude declares all four).
         let mut channels_used = [false; 4];
-        for (_, g) in p.module.global_variables.iter() {
-            if let (naga::AddressSpace::Handle, Some(b)) = (g.space, &g.binding) {
-                if matches!(p.module.types[g.ty].inner, naga::TypeInner::Image { .. }) && b.binding < 4 {
-                    channels_used[b.binding as usize] = true;
+        let mut mark = |f: &naga::Function| {
+            for (_, e) in f.expressions.iter() {
+                let img = match e {
+                    naga::Expression::ImageSample { image, .. } | naga::Expression::ImageLoad { image, .. } | naga::Expression::ImageQuery { image, .. } => *image,
+                    _ => continue,
+                };
+                if let naga::Expression::GlobalVariable(g) = &f.expressions[img] {
+                    let gv = &p.module.global_variables[*g];
+                    if let (Some(b), naga::TypeInner::Image { .. }) = (&gv.binding, &p.module.types[gv.ty].inner) {
+                        if b.binding < 4 {
+                            channels_used[b.binding as usize] = true;
+                        }
+                    }
                 }
             }
+        };
+        for (_, f) in p.module.functions.iter() {
+            mark(f);
         }
         let kernel = jit::compile(&p.module, &p.info, p.entry, p.kind, &layout).map_err(|mut e| {
             if e.line.is_none() {

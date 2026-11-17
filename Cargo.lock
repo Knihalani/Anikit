@@ -65,6 +65,7 @@ dependencies = [
  "cranelift-module",
  "cranelift-native",
  "naga",
+ "png",
  "rayon",
 ]
 
@@ -74,6 +75,7 @@ version = "0.1.0"
 dependencies = [
  "ak264",
  "anikit-core",
+ "anikit-shader",
  "glifo",
  "image",
  "kurbo",

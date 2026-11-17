@@ -335,12 +335,30 @@ pub fn log2(b: B, x: Value) -> Value {
     log_special(b, x, r)
 }
 
+/// `pow`: exp2(y·log2|x|) like a GPU, but exact in sign for negative bases
+/// with integral exponents (GPU compilers turn `pow(x, 2.0)` into `x * x`,
+/// and shader code relies on it); NaN for negative bases otherwise.
 pub fn pow(b: B, x: Value, y: Value) -> Value {
-    let l = log2(b, x);
+    let ax = b.ins().fabs(x);
+    let l = log2(b, ax);
     let t = b.ins().fmul(l, y);
     let v = exp2(b, t);
     let zero = fsplat(b, 0.0);
     let one = fsplat(b, 1.0);
+    let neg = flt(b, x, zero);
+    let ty = b.ins().trunc(y);
+    let integral = b.ins().fcmp(FloatCC::Equal, ty, y);
+    // Odd exponent: y/2 is not integral.
+    let half = fsplat(b, 0.5);
+    let hy = b.ins().fmul(y, half);
+    let thy = b.ins().trunc(hy);
+    let odd = b.ins().fcmp(FloatCC::NotEqual, thy, hy);
+    let flip = b.ins().band(neg, odd);
+    let nv = b.ins().fneg(v);
+    let v = sel(b, flip, nv, v);
+    let bad = b.ins().band_not(neg, integral);
+    let nan = fsplat(b, f32::NAN);
+    let v = sel(b, bad, nan, v);
     let y0 = b.ins().fcmp(FloatCC::Equal, y, zero);
     let x1 = b.ins().fcmp(FloatCC::Equal, x, one);
     let unit = b.ins().bor(y0, x1);

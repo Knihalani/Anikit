@@ -14,3 +14,6 @@ cranelift-jit = "0.137"
 cranelift-module = "0.137"
 cranelift-native = "0.137"
 rayon = "1"
+
+[dev-dependencies]
+png = "0.18"
