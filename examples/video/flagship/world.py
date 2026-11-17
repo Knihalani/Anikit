@@ -22,18 +22,14 @@ BAR = 4 * BEAT             # 2 s
 
 # --- The six films ------------------------------------------------------------
 FILMS = [
-    dict(id="sundial", name="Sundial", file="sundial.mp4",
-         request="A launch film for our calendar app, Sundial. Chrome and glass, golden hour."),
-    dict(id="maison", name="Maison Lune", file="maison-lune.mp4",
-         request="Maison Lune, autumn/winter. An editorial fashion film. Serif, ivory and oxblood."),
-    dict(id="rain", name="Where the Rain Goes", file="rain.mp4",
-         request="Explain where a city's rain goes. Clean charts, Swiss, one blue."),
-    dict(id="nosleep", name="No Sleep", file="no-sleep.mp4",
-         request="A lyric video for 'No Sleep', 128 BPM. Huge type, acid yellow on black."),
+    dict(id="product", name="Halo", file="halo.mp4",
+         request="A launch film for Halo, our speaker. Polished steel and glass, slow and expensive."),
     dict(id="fold", name="Fold", file="fold.mp4",
          request="Something abstract: a glass sculpture folding through itself, slow and iridescent."),
-    dict(id="harbour", name="Harbour Cup", file="harbour-cup.mp4",
-         request="A broadcast open for the Harbour Cup final. Team colours, big energy."),
+    dict(id="tide", name="Tide", file="tide.mp4",
+         request="Sunlight through moving water, for a swim brand. No words, just light."),
+    dict(id="type", name="No Sleep", file="no-sleep.mp4",
+         request="A lyric video for 'No Sleep', 128 BPM. Huge 3D type, acid yellow, in the dark."),
 ]
 LANES = len(FILMS)
 LANE_DZ = -4.0
@@ -73,7 +69,7 @@ T = dict(
     part0=66.0, part1=67.2,       # screens part for the logo
     logo0=66.2, logo1=68.0,
 )
-RUN_LANE_SECONDS = 4.0
+RUN_LANE_SECONDS = (T["run1"] - T["run0"]) / LANES
 
 
 def clamp(x, a=0.0, b=1.0):
@@ -177,9 +173,11 @@ def frame_at_x(x: float) -> float:
 
 # --- The run (shot 5) ------------------------------------------------------------
 
-CAM_Z = 2.4                    # camera distance from the strip during the run
-CAM_LOCK_Y = 0.55
-HOP_Y = 1.75
+CAM_Z = 3.6                    # camera offset (z) from the strip during the run
+CAM_LOCK_Y = 0.72
+HOP_Y = 1.9
+RUN_LOOK = (5.0, -0.42, -CAM_Z)   # oblique: looking ~36 degrees down the strip, slightly down
+RUN_FOCAL = 50.0
 RUN_X0 = pane_x(int(2.0 * FPS))     # lock starts at film time 2 s
 RUN_LEN = LOCK_SPEED * (T["run1"] - T["run0"])
 
@@ -206,11 +204,11 @@ def run_dir(t):
     """Look direction during the run: at the strip, tipping down over the top of each hop."""
     k = run_lane(t)
     t_land = T["run0"] + RUN_LANE_SECONDS * (k + 1)
-    dy = -0.05
+    dy = RUN_LOOK[1]
     if k < LANES - 1 and t > t_land - T["hop"]:
         u = seg(t, t_land - T["hop"], t_land)
-        dy = -0.05 - 0.45 * math.sin(math.pi * u)
-    return (0.0, dy, -CAM_Z)
+        dy = RUN_LOOK[1] - 1.6 * math.sin(math.pi * u)
+    return (RUN_LOOK[0], dy, RUN_LOOK[2])
 
 
 # --- Fold (shot 6) -------------------------------------------------------------
@@ -305,8 +303,8 @@ def _keys():
         dict(t=17.5, pos=(6.0, 5.0, 10.0), tgt=(0.0, 0.5, -9.0), f=34, fd=14.0),
         # shot 4: crane up and back over the highway of strips, then dive forward to lane 0
         dict(t=21.5, pos=(-30.0, 12.0, 14.0), tgt=(60.0, 0.0, mid_z), f=30, fd=60, v=(25.0, 0.0, 0.0)),
-        dict(t=T["run0"], pos=run_pos(T["run0"]), dir=run_dir(T["run0"]), f=35, fd=CAM_Z, v=(V, 0, 0)),
-        dict(t=T["run1"], pos=run_pos(T["run1"]), dir=run_dir(T["run1"]), f=35, fd=CAM_Z, v=(V, 0, 0)),
+        dict(t=T["run0"], pos=run_pos(T["run0"]), dir=run_dir(T["run0"]), f=RUN_FOCAL, fd=4.4, v=(V, 0, 0)),
+        dict(t=T["run1"], pos=run_pos(T["run1"]), dir=run_dir(T["run1"]), f=RUN_FOCAL, fd=4.4, v=(V, 0, 0)),
         dict(t=T["brake1"], pos=(x_brake, CAM_LOCK_Y + 0.15, zl + 0.6), dir=(0.0, -0.1, -CAM_Z), f=35, fd=3.0,
              v=(0, 0, 0)),
         # shot 6: rise as the stacks arrive and crush, then arc along the six tiles
@@ -395,13 +393,13 @@ def cam_tgt(t):
 
 def cam_focal(t):
     if T["run0"] <= t <= T["run1"]:
-        return 35.0
+        return RUN_FOCAL
     return _sample(t, "f")
 
 
 def cam_focus(t):
     if T["run0"] <= t <= T["run1"]:
-        return CAM_Z
+        return math.hypot(RUN_LOOK[0], RUN_LOOK[2]) * 0.72
     return _sample(t, "fd")
 
 

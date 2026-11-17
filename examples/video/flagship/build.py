@@ -230,7 +230,8 @@ def plan_comp(k):
 
 
 def build():
-    comps = {f["id"]: getattr(F, f["id"])() for f in Wd.FILMS}
+    # lanes whose film is not built yet show Fold (a 3D shader) so the outer world can be judged
+    comps = {f["id"]: getattr(F, f["id"], F.fold)() for f in Wd.FILMS}
     for k in range(Wd.LANES):
         comps[f"req{k}"] = request_comp(k)
         comps[f"plan{k}"] = plan_comp(k)
