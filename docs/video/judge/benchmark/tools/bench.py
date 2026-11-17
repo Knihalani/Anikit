@@ -277,10 +277,18 @@ def cmd_fetch(a):
                 except Exception as e:
                     err = e
                     continue
-                ext = os.path.splitext(urllib.parse.urlparse(s).path)[1].lower()
-                ext = ext if ext in (".jpg", ".jpeg", ".png", ".webp") else ".jpg"
+                ext = {b"\x89PNG": ".png", b"RIFF": ".webp", b"GIF8": ".gif"}.get(data[:4], ".jpg")
                 f = f"{len(manifest):02d}-{kind}{ext}"
                 (d / f).write_bytes(data)
+                if ext == ".gif":  # an animated clip: keep its middle frame as a JPEG still
+                    jpg = f[:-4] + ".jpg"
+                    r = subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(d / f), "-vf", "select=eq(n\\,0)+gte(t\\,1)",
+                                        "-frames:v", "1", str(d / jpg)], capture_output=True)
+                    (d / f).unlink()
+                    if r.returncode != 0 or not (d / jpg).exists():
+                        err = "gif decode"
+                        continue
+                    f = jpg
                 manifest[key] = {"file": f, "url": s, "kind": kind, "bytes": len(data)}
                 n_ok += 1
                 break

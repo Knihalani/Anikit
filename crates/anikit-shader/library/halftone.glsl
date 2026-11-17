@@ -14,8 +14,10 @@ float screen(vec2 p, float a, int ch) {
     mat2 r = mat2(cos(a), -sin(a), sin(a), cos(a));
     vec2 q = r * p / s;
     vec2 c = floor(q) + 0.5;
-    vec2 uv = (transpose(r) * (c * s)) / iResolution.xy;
-    vec3 col = texture(iChannel0, uv).rgb;
+    // The colour at the cell's centre: one exact texel read (cheaper than a
+    // filtered lookup; a dot's colour is constant over its cell anyway).
+    vec2 cp = transpose(r) * (c * s);
+    vec3 col = texelFetch(iChannel0, ivec2(clamp(cp, vec2(0.0), iResolution.xy - 1.0)), 0).rgb;
     float k = 1.0 - max(col.r, max(col.g, col.b));
     vec3 cmy = (1.0 - col - k) / max(1.0 - k, 1e-3);
     float v = ch == 0 ? cmy.x : (ch == 1 ? cmy.y : (ch == 2 ? cmy.z : k));

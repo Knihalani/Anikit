@@ -22,6 +22,11 @@ anikit_features: [video, mask, camera, group, post, "GAP: motion-control plate m
 awards: []
 stills:
   - https://i.vimeocdn.com/video/1431124838-f0244e25c00a3f973a11a1494a65e4fe0a84f73d09cfb270915f772da2567d64-d_1280
+  - https://mvsm.com/assets/images/project/_1600x900_crop_center-center_none/bbc_field_ramble_tweak.jpg
+  - https://mvsm.com/assets/images/project/_1600x900_crop_center-center_none/bbc_field_sheep.jpg
+  - https://mvsm.com/assets/images/project/_1600x900_crop_center-center_none/bbc_grease_builders_04.jpg
+  - https://mvsm.com/assets/images/project/_1600x900_crop_center-center_none/bbc_grease_date_04.jpg
+  - https://mvsm.com/assets/images/project/_2400x1350_crop_center-center_none/bbc_grease_footy_04.jpg
 measured: null
 ---
 

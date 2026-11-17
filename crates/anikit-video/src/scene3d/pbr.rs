@@ -137,6 +137,9 @@ pub struct PbrSet {
     pub keep_metal: bool,
     /// Rotate the texture (degrees) in each plane.
     pub rotate: f32,
+    /// Alpha-tested cutout (glTF `alphaMode: MASK`, e.g. leaves): coverage
+    /// map and cutoff. Rays pass through texels below the cutoff.
+    pub alpha: Option<(Mips, f32)>,
 }
 
 /// What a surface point looks like.
@@ -154,6 +157,15 @@ fn srgb_lin(v: f32) -> f32 {
 }
 
 impl PbrSet {
+    /// Whether a UV hit is solid (alpha at or above the cutoff).
+    #[inline]
+    pub fn solid(&self, uv: [f32; 2]) -> bool {
+        match &self.alpha {
+            Some((m, cut)) => m.sample(uv[0] * self.scale, uv[1] * self.scale, 0.0)[0] >= *cut,
+            None => true,
+        }
+    }
+
     /// Mip level for a footprint of `world` metres (per pixel) at `rep` repeats per metre.
     #[inline]
     fn lod(&self, m: &Mips, footprint: f32) -> f32 {
@@ -322,6 +334,7 @@ pub fn load(src: &str, o: &SetOpts) -> Result<u32, String> {
         keep_rough: o.keep_rough,
         keep_metal: o.keep_metal,
         rotate: o.rotate,
+        alpha: None,
     };
     let id = register(set);
     cache.lock().unwrap().push((src.to_string(), o.clone(), id));
@@ -356,7 +369,7 @@ mod tests {
     #[test]
     fn triplanar_blends_and_flat_normals_stay_put() {
         let flat = Mips::from_raw(2, 2, 3, [128, 128, 255].repeat(4));
-        let s = PbrSet { albedo: Some(checker(8)), normal: Some(flat), rough: None, ao: None, metal: None, mapping: Mapping::Triplanar, scale: 1.0, tint: v3(1.0, 1.0, 1.0), rough_mul: 1.0, normal_strength: 1.0, keep_rough: false, keep_metal: false, rotate: 0.0 };
+        let s = PbrSet { albedo: Some(checker(8)), normal: Some(flat), rough: None, ao: None, metal: None, mapping: Mapping::Triplanar, scale: 1.0, tint: v3(1.0, 1.0, 1.0), rough_mul: 1.0, normal_strength: 1.0, keep_rough: false, keep_metal: false, rotate: 0.0, alpha: None };
         for n in [v3(0.0, 1.0, 0.0), v3(1.0, 0.0, 0.0), norm(v3(0.3, -0.5, 0.8))] {
             let x = s.sample(v3(0.1, 0.2, 0.3), n, [0.0, 0.0], v3(1.0, 0.0, 0.0), 0.0, |v| v);
             let got = x.n.unwrap();

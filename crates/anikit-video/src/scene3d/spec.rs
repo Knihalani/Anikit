@@ -1242,6 +1242,9 @@ fn hdri_env(v: &Value, path: &str) -> Res<Option<EnvSpec>> {
         Some(x) => x,
         None => {
             let (m, k) = EnvMap::load(&file, o).map_err(|e| format!("{path}.hdri: {e}"))?;
+            if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() {
+                eprintln!("hdri {}: key {:?} ({:.0}% of the light), mean {:?}", file.display(), k.as_ref().map(|k| (k.c, k.radiance, k.hu.atan().to_degrees() * 2.0)), m.key_fraction * 100.0, m.mean());
+            }
             let x = (std::sync::Arc::new(m), k);
             CACHE.get_or_init(Default::default).lock().unwrap().insert(ck, x.clone());
             x

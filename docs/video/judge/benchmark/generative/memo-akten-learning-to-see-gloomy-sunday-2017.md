@@ -6,7 +6,7 @@ studio: "Memo Akten"
 client: "Self-initiated"
 year: 2017
 url: https://vimeo.com/260612034
-alt_urls: [https://www.memo.tv/works/learning-to-see/]
+alt_urls: ["https://www.memo.tv/works/learning-to-see/"]
 length_s: 182
 verified: oembed
 aspect: "16:9"                      # est.
@@ -24,6 +24,10 @@ stills:
   - https://i.vimeocdn.com/video/1604699068-89cc1952bce06668bac2f0dde8dab2c39eda16184d06fb4ca2d3328742b7fcb4-d_1280?region=us
   - https://media.superradiance.net/cdn-cgi/image/width=1200,fit=scale-down,format=auto,onerror=redirect/memotv/projects/2017/learning-to-see/images/learning-to-see.jpg
   - https://media.superradiance.net/cdn-cgi/image/width=640,fit=scale-down,format=auto,onerror=redirect/memotv/projects/2017/gloomy-sunday/gallery/01_Gloomy Sunday still 003.jpg
+  - "https://media.superradiance.net/cdn-cgi/image/width=1200,fit=scale-down,format=auto,onerror=redirect/memotv/projects/2017/gloomy-sunday/gallery/02_Gloomy%20Sunday%20still%20002.jpg"
+  - "https://media.superradiance.net/cdn-cgi/image/width=1200,fit=scale-down,format=auto,onerror=redirect/memotv/projects/2017/gloomy-sunday/gallery/03_Gloomy%20Sunday%20still%20004.jpg"
+  - "https://media.superradiance.net/cdn-cgi/image/width=1200,fit=scale-down,format=auto,onerror=redirect/memotv/projects/2017/gloomy-sunday/gallery/04_Gloomy%20Sunday%20still%20005.jpg"
+  - "https://media.superradiance.net/cdn-cgi/image/width=1200,fit=scale-down,format=auto,onerror=redirect/memotv/projects/2017/gloomy-sunday/gallery/05_Gloomy%20Sunday%20still%20006.jpg"
 measured: null
 ---
 

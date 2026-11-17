@@ -25,6 +25,7 @@ stills:
   - https://pentagram-production.imgix.net/daaef282-3878-41c9-9f4f-e8750c9b0299/AH_MotoGP_01.png
   - https://pentagram-production.imgix.net/daaef282-3878-41c9-9f4f-e8750c9b0299/AH_MotoGP_02_Thumbnail.png
   - https://pentagram-production.imgix.net/63e0d6b4-103e-4e33-854f-00babdffdac4/AH_MotoGP_27_v2.png
+  - https://pentagram-production.imgix.net/daaef282-3878-41c9-9f4f-e8750c9b0299/AH_MotoGP_03_Thumbnail.png?auto=compress%2Cformat&fit=min&fm=jpg&q=80&rect=0%2C0%2C1920%2C1080&w=1920&s=dfe3844b143566bc4ce404af54032548
 measured: null
 ---
 
