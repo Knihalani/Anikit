@@ -379,6 +379,11 @@
         "group": "back"
        },
        {
+        "texture": {
+         "style": "contour",
+         "amount": 0.7,
+         "scale": 9
+        },
         "shape": "polygon",
         "name": "leaf0",
         "points": [
@@ -478,6 +483,11 @@
         "lag": 0.0
        },
        {
+        "texture": {
+         "style": "contour",
+         "amount": 0.7,
+         "scale": 9
+        },
         "shape": "polygon",
         "name": "leaf1",
         "points": [
@@ -577,6 +587,11 @@
         "lag": 0.05
        },
        {
+        "texture": {
+         "style": "contour",
+         "amount": 0.7,
+         "scale": 9
+        },
         "shape": "polygon",
         "name": "leaf2",
         "points": [
@@ -1355,6 +1370,42 @@
          "clipTo": "table"
         },
         "grain": 0.05
+       },
+       {
+        "shape": "path",
+        "points": [
+         [
+          1110,
+          660
+         ],
+         [
+          1118,
+          740
+         ],
+         [
+          1154,
+          810
+         ]
+        ],
+        "smooth": true,
+        "stroke": "#fffaf0",
+        "weight": [
+         3,
+         9
+        ],
+        "taper": 0.45,
+        "clipTo": "cup",
+        "opacity": 0.9
+       },
+       {
+        "shape": "circle",
+        "cx": 1122,
+        "cy": 645,
+        "r": 5,
+        "fill": "#fffaf0",
+        "clipTo": "cup",
+        "wobble": 0,
+        "rough": 0
        },
        {
         "shape": "rect",
