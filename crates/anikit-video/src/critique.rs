@@ -499,6 +499,7 @@ pub fn critique(raw: &Value) -> Report {
         cx.note("tip", "pacing", "scenes", format!("{total:.0} s vertical video; social platforms favour 6–30 s"), "cut to the hook, two beats and the payoff");
     }
     sameness(raw, spec, &mut cx);
+    recipe_copy(raw, &mut cx);
     bar(spec, &mut cx);
     if applied.is_some() {
         let off = crate::looks::layer_offsets(raw);
@@ -706,6 +707,53 @@ fn bar(spec: &Value, cx: &mut Ctx) {
 }
 
 /// Generic defaults make every video look the same: flag them and suggest a direction.
+/// Leaf `key=value` pairs that make a spec's design (words and timing aside).
+fn design_leaves(v: &Value, out: &mut std::collections::BTreeSet<String>) {
+    match v {
+        Value::Object(m) => {
+            for (k, x) in m {
+                if matches!(k.as_str(), "text" | "about" | "cost" | "duration" | "start" | "end" | "at") {
+                    continue;
+                }
+                match x {
+                    Value::String(s) => {
+                        out.insert(format!("{k}={s}"));
+                    }
+                    Value::Number(n) => {
+                        out.insert(format!("{k}={n}"));
+                    }
+                    _ => design_leaves(x, out),
+                }
+            }
+        }
+        Value::Array(a) => a.iter().for_each(|x| design_leaves(x, out)),
+        _ => {}
+    }
+}
+
+/// A spec that is mostly a recipe with new words: say so, since the recipe
+/// is a technique to borrow, not the piece.
+fn recipe_copy(raw: &Value, cx: &mut Ctx) {
+    let mut mine = std::collections::BTreeSet::new();
+    design_leaves(raw, &mut mine);
+    for (name, src) in crate::agent_docs::RECIPES {
+        let Ok(r) = serde_json::from_str::<Value>(src) else { continue };
+        let mut theirs = std::collections::BTreeSet::new();
+        design_leaves(&r["spec"], &mut theirs);
+        if theirs.len() < 12 {
+            continue;
+        }
+        let common = theirs.intersection(&mine).count() as f64;
+        let (shared, of_mine) = (common / theirs.len() as f64, common / mine.len().max(1) as f64);
+        // Most of the recipe, making up most of this spec: one borrowed shot in
+        // a bigger piece is fine.
+        if shared >= 0.6 && of_mine >= 0.5 {
+            cx.note("warning", "recipe", "scenes", format!("{:.0}% of this spec's design is the `{name}` recipe with new words", shared * 100.0), "build the shots from this brief's own nouns: its object as the 3D hero, its data as particles or physics, its world as the shader; borrow the recipe's technique, not its shots");
+            return;
+        }
+    }
+}
+
 fn sameness(raw: &Value, spec: &Value, cx: &mut Ctx) {
     let scenes = spec.get("scenes").and_then(|s| s.as_array()).cloned().unwrap_or_default();
     if scenes.len() < 2 {
@@ -849,6 +897,21 @@ pub fn all_text(v: &Value) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn recipe_with_new_words_is_flagged() {
+        let (_, spec) = crate::agent_docs::recipe_spec("launch-sting").unwrap();
+        let r = critique(&spec);
+        assert!(r.notes.iter().any(|n| n.check == "recipe"), "{:?}", r.notes);
+        let own = serde_json::json!({"scenes": [{"duration": 2, "layers": [{"text": "Hi", "font": "Fraunces", "color": "#ff5a1f"}]}, {"duration": 2, "layers": [{"shape": "rect", "fill": "#111111"}]}]});
+        assert!(!critique(&own).notes.iter().any(|n| n.check == "recipe"));
+        // One borrowed shot inside a bigger piece is a technique, not a copy.
+        let (_, whip) = crate::agent_docs::recipe_spec("whip-transition").unwrap();
+        let mut big = spec.clone();
+        big["scenes"].as_array_mut().unwrap().extend(whip["scenes"].as_array().unwrap().iter().cloned());
+        let r = critique(&big);
+        assert!(!r.notes.iter().any(|n| n.check == "recipe" && n.message.contains("whip")), "{:?}", r.notes);
+    }
+
     #[test]
     fn sameness_flags_generic_defaults_not_a_look() {
         let generic = serde_json::json!({ "theme": { "colors": { "primary": "#7C5CFF" } }, "scenes": [

@@ -97,7 +97,6 @@ pub fn recipe_spec(name: &str) -> Option<(String, Value)> {
 }
 
 /// The recipe list, or one recipe: its notes and a ready spec.
-
 pub fn recipes(name: Option<&str>) -> Result<String, String> {
     let lib = anikit_shader::library::ALL;
     let Some(n) = name else {
@@ -138,6 +137,20 @@ pub fn recipes(name: Option<&str>) -> Result<String, String> {
     let all: Vec<&str> = RECIPES.iter().map(|(n, _)| *n).chain(lib.iter().map(|e| e.name)).collect();
     let hint = suggest(n, all.iter().copied()).map(|s| format!("did you mean '{s}'? ")).unwrap_or_default();
     Err(format!("unknown recipe '{n}'. {hint}`anikit-video recipes` lists them"))
+}
+
+/// A shader-library entry as a minimal ready spec (layer, filter or transition).
+fn library_spec(n: &str) -> Option<(String, Value)> {
+    let e = anikit_shader::library::ALL.iter().find(|e| e.name == n)?;
+    let use_ = format!("{:?}", e.use_).to_lowercase();
+    let spec = if use_.contains("transition") {
+        serde_json::json!({ "scenes": [ "Before", { "transition": { "type": e.name, "duration": 0.6 }, "layers": [ "After" ] } ] })
+    } else if use_.contains("filter") {
+        serde_json::json!({ "scenes": [ { "layers": [ { "text": "Filtered", "style": "title" }, { "shader": e.name, "filter": true } ] } ] })
+    } else {
+        serde_json::json!({ "scenes": [ { "duration": 4, "layers": [ { "shader": e.name } ] } ] })
+    };
+    Some((e.about.to_string(), spec))
 }
 
 #[cfg(test)]
@@ -183,18 +196,4 @@ mod tests {
         assert!(recipes(Some("aurora")).unwrap().contains("\"shader\": \"aurora\""));
         assert!(recipes(Some("kinetic-slm")).unwrap_err().contains("did you mean 'kinetic-slam'"));
     }
-}
-
-/// A shader-library entry as a minimal ready spec (layer, filter or transition).
-fn library_spec(n: &str) -> Option<(String, Value)> {
-    let e = anikit_shader::library::ALL.iter().find(|e| e.name == n)?;
-    let use_ = format!("{:?}", e.use_).to_lowercase();
-    let spec = if use_.contains("transition") {
-        serde_json::json!({ "scenes": [ "Before", { "transition": { "type": e.name, "duration": 0.6 }, "layers": [ "After" ] } ] })
-    } else if use_.contains("filter") {
-        serde_json::json!({ "scenes": [ { "layers": [ { "text": "Filtered", "style": "title" }, { "shader": e.name, "filter": true } ] } ] })
-    } else {
-        serde_json::json!({ "scenes": [ { "duration": 4, "layers": [ { "shader": e.name } ] } ] })
-    };
-    Some((e.about.to_string(), spec))
 }
