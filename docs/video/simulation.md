@@ -145,12 +145,32 @@ exact), so a cold still at 4.5 s of 3M particles steps 15 frames from the
 pixels. The cache keeps itself under `ANIKIT_CACHE_MAX_GB` (default 8),
 oldest files first.
 
-Each particle is projected and splatted (2×2 bilinear, energy-preserving)
-into a pyramid of buffers at the level where its footprint, its own size or
-its depth-of-field blur, is about one texel, so a defocused particle costs the
-same as a sharp one; levels are summed with smooth upsampling. Fast particles
-are splatted several times along their screen motion over the shutter
-(motion streaks, camera motion included). Particles are depth tested against
+Each particle is projected and drawn with the footprint a real lens gives
+it: a disc of its own projected size combined with its defocus (circle of
+confusion), seen through a tent pixel filter.
+
+- **Up to 4 px** (in focus and slightly defocused): an exact stamp from a
+  precomputed table (radius in 1/16 px, 16×16 sub-pixel phases, bilinear
+  between phases).
+- **Larger** (bokeh): a point splat into a defocus bin at quarter-octave
+  radii (4 … 64 px), held at the pyramid level where its disc is 2–3 texels
+  across. Each used bin is convolved with its disc once, so out-of-focus
+  particles get real disc bokeh at the cost of a point splat. Each particle
+  is split between the two bins bracketing its blur, matched in variance.
+- **Motion:** fast particles are drawn several times along their screen
+  motion over the shutter (camera motion included), at most one texel apart.
+
+Particle slots are kept in Morton (Z-curve) order of position, re-sorted
+every second with stable ids, so neighbours in space are neighbours in memory
+and both the splats and the flow lookups stay in cache.
+
+**Fidelity.** `cargo run --release -p anikit-video --example particles_reference`
+renders 1080p frames with the fast path and with a reference: exact discs
+sampled densely, 32 instants over the shutter. It compares them with PERF's
+qbench thresholds (SSIM ≥ 0.995, PSNR-Y ≥ 42 dB, ΔE p99.9 ≤ 2.3); see the
+table in the PR notes for current numbers.
+
+Particles are depth tested against
 the traced scene and composited before bloom, so bright ones glow.
 
 Shadows use an opacity shadow map from the key light: 384² texels × 64
