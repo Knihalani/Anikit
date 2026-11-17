@@ -131,3 +131,4 @@ Per-component speed (single thread, × real time):
   - Reverb and delay buses; SFX are placed by their hit point.
   - Master: low cut and tilt, glue compressor, gain, then the true-peak limiter, iterated until it reaches target.
   - Stems: drums, bass, music and fx. They carry the master gain and sum to the mix.
+  - Alternate mixes for editors (`--alts DIR`): `<name>-underscore` (no melody, for voice-over), `<name>-no-drums`, and 30 s and 15 s cutdowns that are recomposed with their own endings rather than truncated.
