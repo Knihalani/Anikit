@@ -80,7 +80,8 @@
          "blend": "add"
         }
        ],
-       "quality": "draft"
+       "quality": "draft",
+       "resolution": 0.5
       }
      }
     ]

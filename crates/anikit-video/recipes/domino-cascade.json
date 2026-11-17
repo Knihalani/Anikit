@@ -72,7 +72,8 @@
          ],
          "material": "chrome"
         }
-       ]
+       ],
+       "resolution": 0.5
       }
      }
     ]
