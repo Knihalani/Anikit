@@ -184,7 +184,9 @@ pub fn render_arrangement(a: Arrangement, opts: &RenderOpts) -> Result<Rendered,
             if !per_note.is_empty() {
                 return Err(err(format!("`synth.*` automation needs a custom synth: define \"{}\" under \"define\"", tr.inst)));
             }
-            insts.push(instruments::resolve(&tr.inst, opts.base_dir.as_deref()).map_err(err)?);
+            let inst = instruments::resolve(&tr.inst, opts.base_dir.as_deref()).map_err(err)?;
+            // Kits get a drummer's stereo image (one track holds the whole kit).
+            insts.push(if tr.role == "drums" { std::sync::Arc::new(instruments::KitStage(inst)) } else { inst });
             customs.push(None);
         }
     }

@@ -40,6 +40,7 @@ pub mod charts;
 pub mod code;
 pub mod devices;
 pub mod lottie;
+pub mod fluid;
 pub mod metaballs;
 pub mod morph;
 pub mod particle_text;
@@ -271,6 +272,7 @@ kinds! {
     "particle-text" => particle_text::ParticleText, "Thousands of glowing particles fly in, form a word, hold, re-form into the next word and blow away.", r##"{"text":"Hello"}"##;
     // Shapes and light
     "morph" => morph::Morph, "Smooth gradient shape morphing between named shapes (circle, square, star, heart, blob, triangle) or SVG paths.", r##"{"shapes":["circle","star","heart"]}"##;
+    "fluid" => fluid::Fluid, "Fluid simulation: ink blooming in water, smoke or fire, with real vortices; sources push and inject dye, and `text` writes a word the flow takes apart.", r##"{"look":"ink","text":{"text":"FLUID"}}"##;
     "metaballs" => metaballs::Metaballs, "Liquid gooey blobs that drift, merge and split, with a gradient fill and glow.", r##"{}"##;
     "god-rays" => rays::GodRays, "Volumetric light rays from a point, slowly turning, with dust motes in the beams.", r##"{}"##;
     "lens-flare" => rays::LensFlare, "Anamorphic lens flare: streak, halo and ghosts along the axis through the centre; `at` can travel a path.", r##"{"at":[0.3,0.3]}"##;
