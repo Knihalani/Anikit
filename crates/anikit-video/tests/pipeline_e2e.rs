@@ -109,5 +109,57 @@ fn fused_ak264_decodes_and_matches() {
     assert!(px(59, 80, 54)[0] > 200 && px(59, 20, 54)[0] < 80, "{:?} {:?}", px(59, 80, 54), px(59, 20, 54));
     // Frame 90 (second scene): white circle in the middle, green background.
     assert!(px(90, 96, 54)[1] > 220 && (px(90, 5, 5)[1] - 0x30).abs() < 14, "{:?} {:?}", px(90, 96, 54), px(90, 5, 5));
+    // Every frame must match the plain (non-fused) path: catches chunk-boundary and change-map bugs.
+    let refp = dir.join("ref.mp4");
+    let mut enc = FfmpegEncoder::new(&refp, 192, 108, 30.0, Codec::H264, Quality::Best, None).unwrap();
+    pipeline::render_video(&ev, &RenderOptions::default(), &mut enc).unwrap();
+    let r = Command::new("ffmpeg").args(["-v", "error", "-i"]).arg(&refp).args(["-f", "rawvideo", "-pix_fmt", "rgb24", "-"]).output().unwrap();
+    assert_eq!(r.stdout.len(), o.stdout.len());
+    for f in 0..105 {
+        let a = &o.stdout[f * fsz..(f + 1) * fsz];
+        let b = &r.stdout[f * fsz..(f + 1) * fsz];
+        let mad = a.iter().zip(b).map(|(x, y)| (*x as i32 - *y as i32).unsigned_abs() as u64).sum::<u64>() as f64 / fsz as f64;
+        assert!(mad < 3.0, "frame {f}: mean abs diff {mad:.2} vs the plain path");
+    }
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn fused_many_chunks_match_plain_path() {
+    if !ffmpeg() {
+        return;
+    }
+    // Something moves every frame, so a wrong partial copy at any chunk start shows.
+    let src = r##"{ "size": [160, 96], "fps": 30, "scenes": [ { "duration": 4, "background": "#202020", "layers": [
+        { "shape": "rect", "width": 24, "height": 24, "fill": "#ff4040", "x": "=12 + 136 * fract(t / 2)", "y": 30 },
+        { "shape": "circle", "width": 20, "fill": "#40ff40", "x": 80, "y": "=20 + 56 * fract(t / 1.3)" } ] } ] }"##;
+    let ev = Evaluator::new(&parse_json(src).unwrap().spec, Options::default()).unwrap();
+    let n = ev.frames() as usize;
+    let cfg = ak264::EncoderConfig { width: 160, height: 96, fps: 30.0, qp: 18, gop: 7, deblock: false, threads: 1, full_range: false, ..Default::default() };
+    let annexb = pipeline::render_fused(&ev, &RenderOptions::default(), &cfg, &pipeline::Profile::default());
+    let dec = |args: &[&str], input: Option<&[u8]>| {
+        use std::io::Write;
+        let mut c = Command::new("ffmpeg").args(["-v", "error"]).args(args).args(["-f", "rawvideo", "-pix_fmt", "gray", "-"]).stdin(std::process::Stdio::piped()).stdout(std::process::Stdio::piped()).spawn().unwrap();
+        let mut sin = c.stdin.take().unwrap();
+        if let Some(b) = input {
+            sin.write_all(b).unwrap();
+        }
+        drop(sin);
+        c.wait_with_output().unwrap().stdout
+    };
+    let got = dec(&["-f", "h264", "-i", "-"], Some(&annexb));
+    let dir = std::env::temp_dir().join(format!("akv-chunks-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let refp = dir.join("ref.mp4");
+    let mut enc = FfmpegEncoder::new(&refp, 160, 96, 30.0, Codec::H264, Quality::Best, None).unwrap();
+    pipeline::render_video(&ev, &RenderOptions::default(), &mut enc).unwrap();
+    let want = dec(&["-i", refp.to_str().unwrap()], None);
+    let fsz = 160 * 96;
+    assert_eq!(got.len(), n * fsz);
+    assert_eq!(want.len(), n * fsz);
+    for f in 0..n {
+        let mad = got[f * fsz..(f + 1) * fsz].iter().zip(&want[f * fsz..(f + 1) * fsz]).map(|(a, b)| (*a as i32 - *b as i32).unsigned_abs() as u64).sum::<u64>() as f64 / fsz as f64;
+        assert!(mad < 2.5, "frame {f}: mean abs diff {mad:.2} vs the plain path");
+    }
     let _ = std::fs::remove_dir_all(&dir);
 }
