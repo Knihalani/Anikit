@@ -14,6 +14,8 @@
      "props": {
       "code": "export async function render(spec) {\n  const frames = await compile(spec)\n  for (const f of frames) encode(f)\n  return frames.length // 60 fps\n}",
       "language": "ts",
+      "minimap": true,
+      "statusBar": true,
       "theme": {
        "mode": "dark",
        "background": "#0c0d10",
@@ -52,8 +54,11 @@
      "type": "component",
      "component": "code",
      "props": {
-      "code": "export async function render(spec) {\n  const frames = await compile(spec)\n  for (const f of frames) encode(f)\n  return frames.length // 60 fps\n}",
-      "language": "ts",
+      "code": "def render(spec):\n    frames = compile(spec)\n    for f in frames:\n        encode(f)\n    return len(frames)",
+      "language": "python",
+      "surface": "paper",
+      "chrome": "minimal",
+      "radius": 6,
       "theme": {
        "mode": "light",
        "background": "#f3efe6",
@@ -248,6 +253,10 @@
        "Thu",
        "Fri"
       ],
+      "shape": "square",
+      "fill": "solid",
+      "dashed": true,
+      "motion": "snappy",
       "theme": {
        "mode": "light",
        "background": "#f3efe6",
@@ -889,6 +898,9 @@
      "props": {
       "screen": "chat",
       "title": "Support",
+      "finish": "blue",
+      "ui": "dark",
+      "tint": "accent",
       "theme": {
        "mode": "dark",
        "background": "#0c0d10",
@@ -929,6 +941,13 @@
      "props": {
       "screen": "feed",
       "title": "Journal",
+      "finish": "desert",
+      "ui": "light",
+      "tint": "warm",
+      "font": "display",
+      "radius": 20,
+      "density": "large",
+      "motion": "lively",
       "theme": {
        "mode": "light",
        "background": "#f3efe6",
@@ -970,6 +989,7 @@
      "props": {
       "screen": "dashboard",
       "title": "Northwind",
+      "motion": "lively",
       "theme": {
        "mode": "dark",
        "background": "#0c0d10",
@@ -1010,6 +1030,12 @@
      "props": {
       "screen": "editor",
       "title": "Drafts",
+      "finish": "starlight",
+      "ui": "light",
+      "tint": "warm",
+      "font": "serif",
+      "radius": 4,
+      "density": "compact",
       "theme": {
        "mode": "light",
        "background": "#f3efe6",
@@ -1052,6 +1078,11 @@
       "url": "northwind.app",
       "screen": "app",
       "title": "Ship faster",
+      "style": "chrome",
+      "ui": "dark",
+      "tint": "cool",
+      "font": "mono",
+      "radius": 2,
       "theme": {
        "mode": "dark",
        "background": "#0c0d10",
@@ -1093,6 +1124,8 @@
       "url": "journal.press",
       "screen": "settings",
       "title": "Settings",
+      "style": "safari",
+      "ui": "light",
       "theme": {
        "mode": "light",
        "background": "#f3efe6",
@@ -2227,6 +2260,7 @@
      "props": {
       "title": "Ada Lovelace",
       "subtitle": "Head of Research, Analytical Engines",
+      "style": "plate",
       "theme": {
        "mode": "dark",
        "background": "#0c0d10",
@@ -2267,6 +2301,7 @@
      "props": {
       "title": "Ada Lovelace",
       "subtitle": "Head of Research, Analytical Engines",
+      "style": "minimal",
       "theme": {
        "mode": "light",
        "background": "#f3efe6",
@@ -2309,6 +2344,8 @@
       "title": "Video, rendered by agents",
       "eyebrow": "Introducing",
       "subtitle": "Native speed. Studio quality.",
+      "chip": true,
+      "sheen": true,
       "theme": {
        "mode": "dark",
        "background": "#0c0d10",
@@ -2350,6 +2387,9 @@
       "title": "The quiet machine",
       "eyebrow": "Chapter one",
       "subtitle": "An essay in motion",
+      "face": "serif",
+      "reveal": "fade",
+      "align": 0,
       "theme": {
        "mode": "light",
        "background": "#f3efe6",
@@ -4875,6 +4915,9 @@
        "Mix the soundtrack",
        "Publish"
       ],
+      "shape": "circle",
+      "surface": "paper",
+      "strike": true,
       "theme": {
        "mode": "light",
        "background": "#f3efe6",
@@ -4958,6 +5001,8 @@
       "text": "We replaced a week of motion design with one prompt.",
       "name": "Grace Hopper",
       "title": "VP Product",
+      "face": "serif",
+      "align": 0.5,
       "theme": {
        "mode": "light",
        "background": "#f3efe6",
