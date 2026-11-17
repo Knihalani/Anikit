@@ -819,13 +819,16 @@ struct PGroup {
     spring: Option<SpringSpec>,
 }
 
+/// A shape's `(cast shadow, everything else)` ops.
+type ShapeOps = (Vec<Op>, Vec<Op>);
+
 #[derive(Default)]
 struct Prepared {
     shapes: Vec<PShape>,
     groups: Vec<PGroup>,
     light_color: Rgba,
     shadow_tint: Rgba,
-    cache: Mutex<HashMap<u64, (Vec<Op>, Vec<Op>)>>,
+    cache: Mutex<HashMap<u64, ShapeOps>>,
     /// Shapes whose ops never change over time.
     still: Vec<bool>,
     hash: u64,
@@ -1111,7 +1114,7 @@ fn signed_area(r: &[[f32; 2]]) -> f32 {
 }
 
 /// Rotate (and if needed reverse) closed ring `b` so it lines up with `a` point for point.
-fn align_ring(a: &[[f32; 2]], b: &mut Vec<[f32; 2]>) {
+fn align_ring(a: &[[f32; 2]], b: &mut [[f32; 2]]) {
     if (signed_area(a) > 0.0) != (signed_area(b) > 0.0) {
         b.reverse();
     }
@@ -1519,7 +1522,7 @@ impl Prepare for Illo {
                     let pts: Vec<[f32; 2]> = (0..n)
                         .map(|k| {
                             let a = k as f32 / n as f32 * TAU;
-                            let rr = 1.0 + lumpy * (hash01(seed.wrapping_mul(977) ^ k as u32 * 0x9e37) * 2.0 - 1.0);
+                            let rr = 1.0 + lumpy * (hash01(seed.wrapping_mul(977) ^ (k as u32 * 0x9e37)) * 2.0 - 1.0);
                             [cx + rx * rr * a.cos(), cy + ry * rr * a.sin()]
                         })
                         .collect();
