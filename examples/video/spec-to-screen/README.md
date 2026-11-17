@@ -1,6 +1,6 @@
 # Spec to Screen
 
-A 58.5-second launch film for Anikit Video, at 1920×1080 and 60 fps, made only from an anikit-video spec. It's self-referential: a JSON spec types itself into a code block, each finished line "compiles" into the stage beside it, and the camera then pushes into the stage, which becomes the next shot frame for frame.
+A 57.5-second launch film for Anikit Video, at 1920×1080 and 60 fps, made only from an anikit-video spec. It's self-referential: a JSON spec types itself into a code block, each finished line "compiles" into the stage beside it, and the camera then pushes into the stage, which becomes the next shot frame for frame.
 
 | Time | Shot | Components |
 |---|---|---|
@@ -9,10 +9,10 @@ A 58.5-second launch film for Anikit Video, at 1920×1080 and 60 fps, made only 
 | 0:15.5 | Spec to Screen, full frame | the same layers at full size |
 | 0:19.5 | Write it. / Check it. / Render it. / No browser. | kinetic `mask`/`blur` type with real CLI commands |
 | 0:28.5 | Product shots, generated | `laptop` (dashboard screen), `phone` (chat screen), `bokeh`, `badge` |
-| 0:36 | "This 58-second film rendered in 56 s", plus 935 fps renderer alone and 1,268 fps encoder alone | `counter`, `progress-bar` |
+| 0:36 | "This 58-second film rendered in 32 s", plus 935 fps renderer alone and 1,268 fps encoder alone | `counter`, `progress-bar` |
 | 0:40.5 | Encode-speed bar chart, 9.4× | `bar-chart`, `counter` |
 | 0:46 | JSON in. / Film out. | `particleText` |
-| 0:50.5 | Chrome ANIKIT logo with a lens-flare sweep | `text-3d`, `lensFlare`, `godRays` |
+| 0:49.5 | Chrome ANIKIT logo with a lens-flare sweep | `text-3d`, `lensFlare`, `godRays` |
 
 Every cut lands on a beat of the 120 BPM score.
 
@@ -37,9 +37,11 @@ Measured on a 4-core cloud VM (Xeon, AVX2) with `--json` and the default ak264 e
 
 | Output | Frames | Wall time | Render fps | File size |
 |---|---|---|---|---|
-| 1920×1080, 60 fps, H.264 + AAC, 58.5 s | 3510 | 56.1 s | 63 fps | 65.1 MB |
+| 1920×1080, 60 fps, H.264 + AAC, 57.5 s | 3450 | 31.8–33.8 s (2 runs) | 103–110 fps | 33.1 MB |
 
-That is faster than real time, end to end, including the chrome text-3d, the globe and 9,000 particles. The "rendered in" stat in the film is `RENDER_SECONDS` in `build.py`: re-measure and update it after an engine change.
+That is about 1.8× faster than real time, end to end, including the chrome text-3d, the globe and the particle text.
+
+The spec is designed to keep renders fast and files small. The film grain is static, the aurora steps at 4 Hz, the camera settles and holds instead of drifting, and the logo holds its final pose for the last 3 s. Held frames are nearly free for both the renderer and ak264. The "rendered in" stat in the film is `RENDER_SECONDS` in `build.py`: re-measure and update it after an engine change.
 
 ## The numbers in the film
 

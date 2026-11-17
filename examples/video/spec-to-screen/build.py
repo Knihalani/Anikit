@@ -11,9 +11,9 @@ import json, os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BEAT = 0.5  # 120 BPM grid: every cut lands on a beat
-TOTAL, FRAMES = 58.5, 3510
+TOTAL, FRAMES = 57.5, 3450
 # End-to-end wall time of `anikit-video render spec.json` (see README); update after re-measuring.
-RENDER_SECONDS, RENDER_DECIMALS = 56, 0
+RENDER_SECONDS, RENDER_DECIMALS = 32, 0
 
 # ---------------------------------------------------------------- palette
 INK, SURF, TEXT, MUTED = "#07080c", "#12141c", "#f4f2ee", "#8b90a0"
@@ -62,7 +62,7 @@ def rect(w, h, **kw):
     return d
 
 
-grain = comp("grain", {"amount": 0.035, "rate": 24, "seed": 7})
+grain = comp("grain", {"amount": 0.035, "rate": 0, "seed": 7})  # static: animated grain changes every pixel
 
 scenes = []
 
@@ -117,9 +117,9 @@ def screen_layers(t_bg=None, t_aurora=None, t_title=None, t_globe=None, globe_ag
     return [
         rect(1920, 1080, fill="#0b0d14", **({} if t_bg is None else
              {"opacity": 0, "animate": [{"to": {"opacity": 1}, "at": t_bg, "duration": 0.4}]})),
-        comp("aurora", {"colors": [ICE, LILAC, MINT], "intensity": 0.75, "seed": 3},
+        comp("aurora", {"colors": [ICE, LILAC, MINT], "intensity": 0.75, "seed": 3, "rate": 4, "speed": 0.6},
              **at(t_aurora, {"preset": "fadeIn", "duration": 0.8})),
-        comp("globe", {"arcs": ARCS, "markers": [[37.8, -122.4], [51.5, -0.1], [35.7, 139.7]], "scale": 1.0,
+        comp("globe", {"arcs": ARCS, "markers": [[37.8, -122.4], [51.5, -0.1], [35.7, 139.7]], "scale": 1.0, "spin": 2.5,
                        "stagger": 0.25, "draw": 1.0}, height=1700, y="96%",
              **(at(t_globe, {"preset": "fadeUp", "duration": 0.7}) if t_globe is not None else {"start": -globe_age})),
         text("Spec to Screen", style="title", size="12vh", letterSpacing="-0.035em", y="36%",
@@ -160,11 +160,8 @@ scenes.append({
 scenes.append({
     "id": "screen", "duration": 4.0, "background": "#0b0d14",
     "transition": {"type": "cut"},
-    "camera": {"animate": [{"from": {"zoom": 1.0}, "to": {"zoom": 1.04}, "duration": 4, "ease": "inOutSine"}]},
     "layers": [
         *screen_layers(globe_age=round(SPEC_DUR - done(8), 3)),
-        text("one file  →  one film", font="$mono", size="2.6vh", color=MUTED, y="50%",
-             enter={"preset": "fadeUp", "delay": 0.6}),
         grain,
     ],
 })
@@ -192,22 +189,25 @@ kin_layers += [
     grain,
 ]
 scenes.append({"id": "kinetic", "duration": 9.5, "background": INK, "transition": {"type": "cut"},
-               "camera": {"animate": [{"from": {"zoom": 1.0}, "to": {"zoom": 1.06}, "duration": 9.5, "ease": "linear"}]},
                "layers": kin_layers})
 
 # ================================================================ 5. devices
 scenes.append({
     "id": "devices", "duration": 7.5, "background": "radial-gradient(#141826, %s)" % INK,
     "transition": {"type": "push", "direction": "up", "duration": 0.5, "ease": "inOutQuart"},
-    "camera": {"animate": [{"from": {"zoom": 1.0}, "to": {"zoom": 1.12, "x": 70, "y": 30}, "duration": 7.5, "ease": "inOutSine"}]},
+    "camera": {"animate": [{"from": {"zoom": 1.0}, "to": {"zoom": 1.06, "x": 40, "y": 15}, "duration": 4.5, "ease": "outCubic"}]},
     "layers": [
         comp("bokeh", {"count": 14, "colors": [ICE, LILAC], "minSize": 60, "maxSize": 220, "speed": 0.3, "seed": 5},
              opacity=0.35),
         text("Product shots, [generated.]{%s}" % LILAC, style="heading", size="6.4vh", letterSpacing="-0.025em",
              y="12%", kinetic="rise by word 0.6s 70ms outExpo"),
-        comp("laptop", {"screen": "dashboard", "title": "Northwind", "accent": ICE, "open": 1.0, "delay": 0.3,
+        comp("laptop", {"screen": "dashboard", "title": "spec.json", "accent": ICE,
+                         "items": ["hook", "spec", "screen", "kinetic", "devices", "speed", "chart", "particles", "logo"],
+                         "kpis": [{"label": "Frames", "value": format(FRAMES, ",")}, {"label": "Scenes", "value": "9"},
+                                  {"label": "Seconds", "value": "%g" % TOTAL}], "open": 1.0, "delay": 0.3,
                         "shadow": True}, width=1180, height=720, x="44%", y="58%"),
-        comp("phone", {"screen": "chat", "title": "Relay", "accent": LILAC, "delay": 1.1, "float": 6,
+        comp("phone", {"screen": "chat", "title": "anikit-video", "accent": LILAC,
+                       "items": ["JSON in", "MP4 out", "No browser in the loop"], "delay": 1.1, "float": 6,
                        "time": "9:41"}, width=360, height=700, x="77%", y="60%"),
         comp("cursor", {"path": [[1150, 980], [640, 540], [905, 540], [1150, 620], [1500, 640]],
                         "times": [1.6, 2.6, 3.6, 4.6, 5.8], "clicks": [2.7, 3.7, 4.7, 5.9], "size": 34},
@@ -223,7 +223,6 @@ scenes.append({
 # ================================================================ 6. numbers (measured; see README)
 scenes.append({
     "id": "speed", "duration": 5.0, "background": INK, "transition": {"type": "cut"},
-    "camera": {"animate": [{"from": {"zoom": 1.0}, "to": {"zoom": 1.05}, "duration": 5.0, "ease": "inOutSine"}]},
     "layers": [
         comp("grid", {"cell": 80, "color": "#ffffff08", "fade": 0.85}),
         {"shape": "circle", "width": 1200, "height": 600, "fill": ICE, "opacity": 0.10, "blur": 140, "y": "46%"},
@@ -263,10 +262,10 @@ scenes.append({
 
 # ================================================================ 7. particles
 scenes.append({
-    "id": "particles", "duration": 5.0, "background": INK, "transition": {"type": "crossfade", "duration": 0.5},
+    "id": "particles", "duration": 4.0, "background": INK, "transition": {"type": "crossfade", "duration": 0.5},
     "layers": [
-        comp("particleText", {"words": ["JSON in.", "Film out."], "count": 9000, "size": 2.8, "colors": [ICE, LILAC],
-                              "form": 1.1, "hold": 0.9, "exit": "explode", "exitTime": 1.0, "seed": 4}),
+        comp("particleText", {"words": ["JSON in.", "Film out."], "count": 2600, "size": 4.2, "glow": False, "colors": [ICE, LILAC],
+                              "form": 0.8, "hold": 0.8, "exit": "explode", "exitTime": 0.8, "seed": 4}),
     ],
 })
 
@@ -275,14 +274,14 @@ LOGO = 8.0
 scenes.append({
     "id": "logo", "duration": LOGO, "background": "radial-gradient(#10131d, #040508)",
     "transition": {"type": "fadeWhite", "duration": 0.5},
-    "camera": {"animate": [{"from": {"zoom": 1.08}, "to": {"zoom": 1.0}, "duration": LOGO, "ease": "outCubic"}]},
+    "camera": {"animate": [{"from": {"zoom": 1.08}, "to": {"zoom": 1.0}, "duration": 4.5, "ease": "outCubic"}]},
     "layers": [
-        comp("godRays", {"at": [0.5, -0.15], "angle": 90, "spread": 60, "color": "#cfe3ff", "intensity": 0.35,
-                         "dust": 80}),
+        comp("godRays", {"at": [0.5, -0.3], "angle": 90, "spread": 60, "color": "#cfe3ff", "intensity": 0.35,
+                         "dust": 30, "spin": 0}, width=1920, height=640, y=320),
         comp("text-3d", {"text": "ANIKIT", "gradient": ["#dfe9ff", "#e9e0ff"], "intro": "rise", "stagger": 0.08,
-                        "delay": 0.2, "tilt": 10, "sway": 4, "scale": 0.78}, y="45%"),
+                        "delay": 0.2, "tilt": 10, "sway": 0, "shine": 0, "scale": 0.78}, y="45%"),
         comp("lensFlare", {"path": [[0.12, 0.36], [0.88, 0.40]], "times": [1.6, 3.6], "intensity": 0.8, "ghosts": 3},
-             start=0, blend="screen"),
+             start=0, end=5.4, exit={"preset": "fadeOut", "duration": 0.8}, blend="screen"),
         text("VIDEO", style="label", size="3.2vh", letterSpacing="0.6em", color=TEXT, y="67%",
              enter={"preset": "fadeIn", "delay": 1.6, "duration": 0.8}),
         text("anikit-video render spec.json", font="$mono", size="2.4vh", color=MUTED, y="80%",

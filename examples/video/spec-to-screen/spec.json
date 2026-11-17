@@ -100,7 +100,7 @@
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
@@ -319,7 +319,9 @@
          "#7af0c8"
         ],
         "intensity": 0.75,
-        "seed": 3
+        "seed": 3,
+        "rate": 4,
+        "speed": 0.6
        },
        "start": 5.41,
        "enter": {
@@ -371,6 +373,7 @@
          ]
         ],
         "scale": 1.0,
+        "spin": 2.5,
         "stagger": 0.25,
         "draw": 1.0
        },
@@ -403,7 +406,7 @@
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
@@ -415,20 +418,6 @@
    "background": "#0b0d14",
    "transition": {
     "type": "cut"
-   },
-   "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.0
-      },
-      "to": {
-       "zoom": 1.04
-      },
-      "duration": 4,
-      "ease": "inOutSine"
-     }
-    ]
    },
    "layers": [
     {
@@ -446,7 +435,9 @@
        "#7af0c8"
       ],
       "intensity": 0.75,
-      "seed": 3
+      "seed": 3,
+      "rate": 4,
+      "speed": 0.6
      }
     },
     {
@@ -493,6 +484,7 @@
        ]
       ],
       "scale": 1.0,
+      "spin": 2.5,
       "stagger": 0.25,
       "draw": 1.0
      },
@@ -514,21 +506,10 @@
      }
     },
     {
-     "text": "one file  →  one film",
-     "font": "$mono",
-     "size": "2.6vh",
-     "color": "#8b90a0",
-     "y": "50%",
-     "enter": {
-      "preset": "fadeUp",
-      "delay": 0.6
-     }
-    },
-    {
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
@@ -540,20 +521,6 @@
    "background": "#07080c",
    "transition": {
     "type": "cut"
-   },
-   "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.0
-      },
-      "to": {
-       "zoom": 1.06
-      },
-      "duration": 9.5,
-      "ease": "linear"
-     }
-    ]
    },
    "layers": [
     {
@@ -668,7 +635,7 @@
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
@@ -691,12 +658,12 @@
        "zoom": 1.0
       },
       "to": {
-       "zoom": 1.12,
-       "x": 70,
-       "y": 30
+       "zoom": 1.06,
+       "x": 40,
+       "y": 15
       },
-      "duration": 7.5,
-      "ease": "inOutSine"
+      "duration": 4.5,
+      "ease": "outCubic"
      }
     ]
    },
@@ -728,8 +695,33 @@
      "component": "laptop",
      "props": {
       "screen": "dashboard",
-      "title": "Northwind",
+      "title": "spec.json",
       "accent": "#7cc4ff",
+      "items": [
+       "hook",
+       "spec",
+       "screen",
+       "kinetic",
+       "devices",
+       "speed",
+       "chart",
+       "particles",
+       "logo"
+      ],
+      "kpis": [
+       {
+        "label": "Frames",
+        "value": "3,450"
+       },
+       {
+        "label": "Scenes",
+        "value": "9"
+       },
+       {
+        "label": "Seconds",
+        "value": "57.5"
+       }
+      ],
       "open": 1.0,
       "delay": 0.3,
       "shadow": true
@@ -743,8 +735,13 @@
      "component": "phone",
      "props": {
       "screen": "chat",
-      "title": "Relay",
+      "title": "anikit-video",
       "accent": "#b9a6ff",
+      "items": [
+       "JSON in",
+       "MP4 out",
+       "No browser in the loop"
+      ],
       "delay": 1.1,
       "float": 6,
       "time": "9:41"
@@ -824,7 +821,7 @@
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
@@ -836,20 +833,6 @@
    "background": "#07080c",
    "transition": {
     "type": "cut"
-   },
-   "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.0
-      },
-      "to": {
-       "zoom": 1.05
-      },
-      "duration": 5.0,
-      "ease": "inOutSine"
-     }
-    ]
    },
    "layers": [
     {
@@ -881,7 +864,7 @@
      "component": "counter",
      "props": {
       "from": 0,
-      "to": 56,
+      "to": 32,
       "decimals": 0,
       "suffix": " s",
       "size": 300,
@@ -912,7 +895,7 @@
      "y": "66%"
     },
     {
-     "text": "3,510 frames · 1080p60 · H.264 · one 4-core cloud VM",
+     "text": "3,450 frames · 1080p60 · H.264 · one 4-core cloud VM",
      "style": "caption",
      "size": "2.6vh",
      "y": "71%",
@@ -935,7 +918,7 @@
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
@@ -1040,7 +1023,7 @@
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
@@ -1048,7 +1031,7 @@
   },
   {
    "id": "particles",
-   "duration": 5.0,
+   "duration": 4.0,
    "background": "#07080c",
    "transition": {
     "type": "crossfade",
@@ -1062,16 +1045,17 @@
        "JSON in.",
        "Film out."
       ],
-      "count": 9000,
-      "size": 2.8,
+      "count": 2600,
+      "size": 4.2,
+      "glow": false,
       "colors": [
        "#7cc4ff",
        "#b9a6ff"
       ],
-      "form": 1.1,
-      "hold": 0.9,
+      "form": 0.8,
+      "hold": 0.8,
       "exit": "explode",
-      "exitTime": 1.0,
+      "exitTime": 0.8,
       "seed": 4
      }
     }
@@ -1094,7 +1078,7 @@
       "to": {
        "zoom": 1.0
       },
-      "duration": 8.0,
+      "duration": 4.5,
       "ease": "outCubic"
      }
     ]
@@ -1105,14 +1089,18 @@
      "props": {
       "at": [
        0.5,
-       -0.15
+       -0.3
       ],
       "angle": 90,
       "spread": 60,
       "color": "#cfe3ff",
       "intensity": 0.35,
-      "dust": 80
-     }
+      "dust": 30,
+      "spin": 0
+     },
+     "width": 1920,
+     "height": 640,
+     "y": 320
     },
     {
      "component": "text-3d",
@@ -1126,7 +1114,8 @@
       "stagger": 0.08,
       "delay": 0.2,
       "tilt": 10,
-      "sway": 4,
+      "sway": 0,
+      "shine": 0,
       "scale": 0.78
      },
      "y": "45%"
@@ -1152,6 +1141,11 @@
       "ghosts": 3
      },
      "start": 0,
+     "end": 5.4,
+     "exit": {
+      "preset": "fadeOut",
+      "duration": 0.8
+     },
      "blend": "screen"
     },
     {
@@ -1182,7 +1176,7 @@
      "component": "grain",
      "props": {
       "amount": 0.035,
-      "rate": 24,
+      "rate": 0,
       "seed": 7
      }
     }
