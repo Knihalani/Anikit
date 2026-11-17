@@ -14,6 +14,7 @@ pub mod blur;
 pub mod diff;
 pub mod filter;
 pub mod glyphs;
+pub mod post;
 pub mod incremental;
 pub mod resample;
 pub mod smooth;
@@ -144,6 +145,10 @@ pub struct Renderer {
     frame_images: Arc<HashMap<dl::ImageId, Arc<Pixmap>>>,
     dynamic: Option<Arc<dyn DynamicImages>>,
     upscaler: upscale::Upscaler,
+    /// Post / film look applied to every frame (see [`post`]), and the frame index seeding its grain.
+    post: Option<post::PostSettings>,
+    post_frame: u64,
+    pp: post::PostProcessor,
     /// Low-res backdrop as Y, Cb, Cr planes (fused backdrop → YUV path).
     lo: [Vec<u8>; 3],
     /// Overlay op bounds and macroblock map (multi-box fused path).
@@ -174,6 +179,9 @@ impl Renderer {
             dynamic: None,
             upscaler: Default::default(),
             lo: Default::default(),
+            post: None,
+            post_frame: 0,
+            pp: Default::default(),
             box_rects: Vec::new(),
             box_map: MbMap::default(),
             lctx: None,
@@ -242,7 +250,23 @@ impl Renderer {
     /// Render `list` and return the frame (premultiplied RGBA8).
     pub fn render(&mut self, list: &DisplayList) -> &FrameRgba {
         self.render_region(list, None, true, None, None);
+        if let Some(p) = &self.post {
+            let (w, h) = (self.frame.width() as usize, self.frame.height() as usize);
+            self.pp.apply(self.frame.data_as_u8_slice_mut(), w, h, p, self.post_frame);
+        }
         &self.frame
+    }
+
+    /// Film look for the following frames (`None` = off). `frame_index` seeds
+    /// the animated grain: pass the video frame number so output is
+    /// deterministic whichever worker renders it.
+    pub fn set_post(&mut self, post: Option<post::PostSettings>, frame_index: u64) {
+        let post = post.filter(|p| !p.is_identity());
+        if post != self.post {
+            self.invalidate();
+        }
+        self.post = post;
+        self.post_frame = frame_index;
     }
 
     /// Render all of `list`, or only the pixels of `region` (`[x0, y0, x1, y1)`,
@@ -546,6 +570,11 @@ impl Renderer {
     /// produced directly from upscaled rows, and the RGBA [`Self::frame`] is not
     /// fully updated: call [`Self::render`] when you need the RGBA pixels.
     pub fn render_yuv(&mut self, list: &DisplayList, out: &mut YuvFrame) {
+        if self.post.is_some() {
+            self.render(list);
+            rgba_to_yuv420(&self.frame, out);
+            return;
+        }
         if !self.render_region(list, None, true, None, Some(out)) {
             rgba_to_yuv420(&self.frame, out);
         }
