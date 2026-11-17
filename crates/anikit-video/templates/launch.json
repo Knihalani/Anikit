@@ -114,7 +114,7 @@
         }
       },
       "example": {
-        "value": 76,
+        "value": 365,
         "suffix": " fps",
         "label": "1080p, end to end, on a 4-core VM"
       }

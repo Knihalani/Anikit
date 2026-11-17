@@ -35,7 +35,7 @@ A 20–35 s launch film with a broadcast-style HUD (beat counter, section label,
 ## Example
 
 ```json
-{"product":"Anikit Video","hook":"Video, without the browser.","tagline":"Programmatic video for AI agents, rendered natively.","url":"anikit.dev","features":[{"title":"No headless browser","body":"Native Rust, every core, no headless browser."},{"title":"Built for agents","body":"One JSON spec, clear errors, an MCP server."}],"stat":{"value":76,"suffix":" fps","label":"1080p, end to end, on a 4-core VM"},"cta":"Start building"}
+{"product":"Anikit Video","hook":"Video, without the browser.","tagline":"Programmatic video for AI agents, rendered natively.","url":"anikit.dev","features":[{"title":"No headless browser","body":"Native Rust, every core, no headless browser."},{"title":"Built for agents","body":"One JSON spec, clear errors, an MCP server."}],"stat":{"value":365,"suffix":" fps","label":"1080p, end to end, on a 4-core VM"},"cta":"Start building"}
 ```
 
 Create: MCP `create_from_template {template: "launch", params, brand, format}`, or `anikit-video templates expand launch params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.

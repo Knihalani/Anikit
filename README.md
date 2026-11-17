@@ -1,5 +1,30 @@
 # Anikit
 
+## Anikit Video: programmatic video for agents
+
+A JSON spec goes in and an MP4 comes out, rendered natively in Rust with its own H.264 encoder (`ak264`). There is no browser in the loop.
+
+```bash
+anikit-video new launch --dir my-launch   # a template filled from a few params
+anikit-video render my-launch/spec.json -o launch.mp4
+```
+
+- **Speed.** Measured on a 4-vCPU Xeon @ 2.10 GHz VM, end to end including encode and audio mux; see [`docs/video/render.md`](docs/video/render.md) and [`docs/video/BENCHMARKS.md`](docs/video/BENCHMARKS.md):
+  - the `launch` template renders 29 s of 1080p30 in 2.2–2.4 s;
+  - matched 1080p compositions render 19–42× faster than the fastest Remotion and HyperFrames settings tried, and 37–88× faster than their defaults.
+- **For agents.**
+  - Templates and a prompt library.
+  - An MCP server (`anikit-video mcp`).
+  - A shorthand spec with "did you mean" errors.
+  - `critique --render`, which checks contrast, overlap and safe areas on rendered frames.
+  - A full launch-video session costs about 2k tokens. Start at [`docs/video/AGENTS.md`](docs/video/AGENTS.md) and [`skills/anikit-video/SKILL.md`](skills/anikit-video/SKILL.md).
+- **Films made with it.** Each is a spec in [`examples/video/`](examples/video/):
+  - *Spec to Screen*: 55 s at 1080p60, rendered in about 17 s;
+  - *Pulse*: 36 s at 9:16, about 7 s;
+  - *Telemetry*: 46 s at 1080p60, about 10 s.
+
+## The animation engine
+
 **A web animation engine with a Rust core.** One `no_std` Rust engine for timing, easing, springs, colours, paths, morphing, timelines, 2D physics, 3D maths, particle clouds, a solid 3D renderer, a film grade and GIF encoding. It compiles to WebAssembly for the browser (TypeScript API) and to a native extension for Python, and renders films in Node frame-exactly — no WebGL, no editor.
 
 The landing page in [`site/`](site/) is built entirely with Anikit: a scroll-driven "poster film" where 150,000 particles print as ink on paper and glow as light on dark, colour fields flood from scene to scene, giant letters fall into a physics world full of sand, every word on screen can be dropped and thrown, and holding Space slows the whole engine down. [`site/demo/record-demo.mjs`](site/demo/record-demo.mjs) renders a directed, frame-exact 1080p60 film of it (virtual time, motion blur, camera moves).

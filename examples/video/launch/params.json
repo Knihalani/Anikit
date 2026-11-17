@@ -7,6 +7,6 @@
     { "title": "Speaks JSON", "body": "One declarative spec, typed templates, clear errors." },
     { "title": "Built for agents", "body": "An MCP server that can see its own work." }
   ],
-  "stat": { "value": 76, "suffix": " fps", "label": "1080p, end to end, on a 4-core VM" },
+  "stat": { "value": 365, "suffix": " fps", "label": "1080p, end to end, on a 4-core VM" },
   "cta": "npm i anikit"
 }
