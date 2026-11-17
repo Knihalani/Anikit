@@ -9,7 +9,7 @@
 use super::style::*;
 use super::text::{Face, TextStyle};
 use super::{Component, Ctx, Error, Prepare};
-use crate::dl::{Blend, Filter, Op, Path, Rgba};
+use crate::dl::{Blend, Op, Path, Rgba};
 use crate::text::FontStore;
 use kurbo::Shape;
 use serde::Deserialize;
@@ -129,6 +129,18 @@ fn sample_inside(path: &Path, n: usize, seed: u64) -> Vec<[f32; 2]> {
 #[inline]
 fn dot(p: &mut Path, x: f32, y: f32, r: f32) {
     let (x, y, r) = (x as f64, y as f64, r as f64);
+    if r < 3.0 {
+        // Small dots: an octagon is indistinguishable and far cheaper to
+        // rasterise than four cubics (thousands of dots per frame).
+        const D: f64 = std::f64::consts::FRAC_1_SQRT_2;
+        const K: [(f64, f64); 8] = [(1.0, 0.0), (D, D), (0.0, 1.0), (-D, D), (-1.0, 0.0), (-D, -D), (0.0, -1.0), (D, -D)];
+        p.move_to((x + r, y));
+        for (cx, cy) in &K[1..] {
+            p.line_to((x + cx * r, y + cy * r));
+        }
+        p.close_path();
+        return;
+    }
     let c = r * 0.552_284_75;
     p.move_to((x + r, y));
     p.curve_to((x + r, y + c), (x + c, y + r), (x, y + r));
@@ -204,7 +216,7 @@ impl Default for ParticleText {
             face: Face::Display,
             form: 1.6,
             hold: 1.4,
-            exit: "blow".into(),
+            exit: "none".into(),
             exit_time: 1.6,
             delay: 0.0,
             glow: true,
@@ -344,7 +356,9 @@ impl Component for ParticleText {
             let tt = t * 1.7 + p.phase;
             x += tt.sin() * 0.9 * k * settle;
             y += (tt * 1.3).cos() * 0.9 * k * settle;
-            let twinkle = 0.75 + 0.25 * (t * 3.1 + p.phase * 3.0).sin();
+            // Twinkle steps 10×/s so held text repeats frames (cheap downstream).
+            let tw_t = (t * 10.0).floor() / 10.0;
+            let twinkle = 0.75 + 0.25 * (tw_t * 3.1 + p.phase * 3.0).sin();
             if exiting {
                 let xs = clamp01((x - (cx - half_w)) / (2.0 * half_w).max(1.0));
                 let qd = (0.5 * xs + 0.3 * p.e[0]) * self.exit_time * 0.55;
@@ -389,13 +403,22 @@ impl Component for ParticleText {
             mix(cols[i], cols[i + 1], f - i as f32)
         };
         let mut dots = Vec::new();
+        let mut halos = Vec::new();
         for (b, d) in core.into_iter().enumerate() {
             if d.is_empty() {
                 continue;
             }
             let mut p = Path::from_vec(Vec::with_capacity(d.len() * 6));
+            let bright = b % NA == NA - 1;
+            let mut hp = Path::new();
             for [x, y, r] in d {
                 dot(&mut p, x, y, r);
+                if bright && self.glow {
+                    dot(&mut hp, x, y, r * 2.6);
+                }
+            }
+            if !hp.is_empty() {
+                halos.push((b / NA, hp));
             }
             let (ci, ai) = (b / NA, b % NA);
             let c = shade(grad(ci as f32 / (NB - 1) as f32), if ai == NA - 1 { 0.12 } else { 0.0 });
@@ -412,10 +435,12 @@ impl Component for ParticleText {
         } else {
             1.0
         };
-        if self.glow && bloom > 0.02 && !dots.is_empty() {
-            // Bloom: the brightest dots again, blurred, underneath.
-            push_layer(&mut out, bloom, Blend::Add, vec![Filter::Blur(6.0 * k)]);
-            out.extend(dots.iter().filter(|d| d.0).map(|d| d.1.clone()));
+        if self.glow && bloom > 0.02 {
+            // Bloom without a blur pass: bright dots again, larger and faint, added.
+            push_layer(&mut out, bloom, Blend::Add, Vec::new());
+            for (ci, hp) in halos {
+                out.push(fill(hp, solid(alpha(grad(ci as f32 / (NB - 1) as f32), 0.16))));
+            }
             out.push(Op::PopLayer);
         }
         out.extend(dots.into_iter().map(|d| d.1));
@@ -437,7 +462,7 @@ mod tests {
     fn forms_reforms_and_leaves() {
         let th = Theme::default();
         let a = preview::host();
-        let c = build("particle-text", &json!({"words": ["Hello", "World"]})).unwrap();
+        let c = build("particle-text", &json!({"words": ["Hello", "World"], "exit": "blow"})).unwrap();
         let end = c.component.duration().unwrap();
         assert!((end - (2.0 * 3.0 + 1.6 * 1.6)).abs() < 1e-3, "{end}");
         for (tag, t) in [("start", 0.4f32), ("hello", 2.5), ("between", 3.8), ("world", 5.6), ("exit", 6.5)] {

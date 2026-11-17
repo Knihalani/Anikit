@@ -346,6 +346,31 @@ pub fn canonical(kind: &str) -> String {
     alias.to_string()
 }
 
+/// Every image file a component's props refer to (`src`, `srcs`, `avatar`,
+/// `image`, parallax `layers[].src`, `cards[].src`, image marquee `items`), so
+/// the evaluator can load them before the component asks `Assets::media`.
+pub fn media_srcs(props: &Value) -> Vec<String> {
+    fn is_image(s: &str) -> bool {
+        let l = s.to_ascii_lowercase();
+        [".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"].iter().any(|e| l.ends_with(e))
+    }
+    fn walk(v: &Value, out: &mut Vec<String>) {
+        match v {
+            Value::String(s) if is_image(s) => {
+                if !out.contains(s) {
+                    out.push(s.clone());
+                }
+            }
+            Value::Array(a) => a.iter().for_each(|x| walk(x, out)),
+            Value::Object(m) => m.iter().filter(|(k, _)| k.as_str() != "data").for_each(|(_, x)| walk(x, out)),
+            _ => {}
+        }
+    }
+    let mut out = Vec::new();
+    walk(props, &mut out);
+    out
+}
+
 /// Shared shorthands: `data` means the main data of any data component, and a
 /// flat number array is a single line series.
 fn shorthand(kind: &str, obj: &mut Map<String, Value>) {
@@ -557,6 +582,7 @@ mod tests {
         assert!(build("chart.line", &serde_json::json!({"data": [3, 7, 5]})).is_ok());
         assert!(build("chart.donut", &serde_json::json!({"data": [3, 7, 5]})).is_ok());
         assert!(build("bg.mesh", &Value::Null).is_ok());
+        assert_eq!(media_srcs(&serde_json::json!({"src": "a.png", "layers": [{"src": "b.JPG"}], "text": "x.png?no", "audio": "m.mp3"})), vec!["a.png", "b.JPG"]);
         assert!(build("title", &serde_json::json!({"text": "Hi"})).is_ok());
         assert!(build("counter", &serde_json::json!({"value": 10})).is_ok());
         let e = build("code", &serde_json::json!({"lineNumbrs": false})).err().unwrap();

@@ -11,6 +11,25 @@ use crate::critique::critique;
 use crate::templates::{brand::Brand, suggest, Format, Template, BUILTIN};
 use crate::{mcp, prompts};
 
+/// Write to stdout; a closed pipe (`anikit-video templates | head`) ends the process quietly.
+fn emit(s: std::fmt::Arguments) {
+    use std::io::Write;
+    let mut o = std::io::stdout().lock();
+    if let Err(e) = o.write_fmt(s).and_then(|_| o.flush()) {
+        if e.kind() == std::io::ErrorKind::BrokenPipe {
+            std::process::exit(0);
+        }
+    }
+}
+
+macro_rules! out {
+    ($($t:tt)*) => { emit(format_args!($($t)*)) };
+}
+macro_rules! outln {
+    () => { emit(format_args!("\n")) };
+    ($($t:tt)*) => { emit(format_args!("{}\n", format_args!($($t)*))) };
+}
+
 pub const HELP: &str = "\
 Agent commands:
   anikit-video new <template> [--brand brand.json] [--from README.md] [--format 16:9] [--dir DIR]
@@ -31,7 +50,11 @@ pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "promp
 
 /// Run an agent command. `args` excludes the program name.
 pub fn run(args: &[String]) -> Option<i32> {
-    let cmd = args.first()?.as_str();
+    let cmd = args.first().map(|s| s.as_str()).unwrap_or("--help");
+    if matches!(cmd, "--help" | "-h" | "help") {
+        print!("Render: anikit-video render|still|sheet|check|info|schema SPEC [options]   (anikit-video render spec.json -o out.mp4)\n{HELP}");
+        return Some(0);
+    }
     if !COMMANDS.contains(&cmd) {
         return None;
     }
@@ -139,10 +162,10 @@ fn cmd_templates(args: &[String]) -> Result<(), String> {
         None | Some("list") => {
             if a.has("json") {
                 let v: Vec<Value> = BUILTIN.iter().map(|(n, _)| Template::builtin(n).map(|t| t.summary()).unwrap_or(Value::Null)).collect();
-                print!("{}", pretty(&Value::Array(v)));
+                out!("{}", pretty(&Value::Array(v)));
             } else {
                 for (n, _) in BUILTIN {
-                    println!("{}", Template::builtin(n)?.one_line());
+                    outln!("{}", Template::builtin(n)?.one_line());
                 }
             }
             Ok(())
@@ -150,15 +173,15 @@ fn cmd_templates(args: &[String]) -> Result<(), String> {
         Some("schema") => {
             let t = Template::builtin(a.pos.get(1).ok_or("usage: templates schema <name> [--json]")?)?;
             if a.has("json") {
-                print!("{}", pretty(&t.param_schema()));
+                out!("{}", pretty(&t.param_schema()));
             } else {
-                println!("{}", t.compact_params());
+                outln!("{}", t.compact_params());
             }
             Ok(())
         }
         Some("guide") => {
             let t = Template::builtin(a.pos.get(1).ok_or("usage: templates guide <name>")?)?;
-            print!("{}", prompts::template_guide(&t));
+            out!("{}", prompts::template_guide(&t));
             Ok(())
         }
         Some("expand") => {
@@ -182,16 +205,22 @@ fn cmd_templates(args: &[String]) -> Result<(), String> {
                             eprintln!("{} {}: {}", &k[..k.len() - 1], d["path"].as_str().unwrap_or(""), d["message"].as_str().unwrap_or(""));
                         }
                     }
+                    for n in r.notes.iter().filter(|n| n.severity != "tip") {
+                        eprintln!("{} {}: {} → {}", n.severity, n.path, n.message, n.fix);
+                    }
+                    for n in t.expansion_notes(&params, &spec, r.duration) {
+                        eprintln!("{n}");
+                    }
                     eprintln!("wrote {o} ({:.1} s, critique {}/100)", r.duration, r.score);
                 }
-                None => print!("{}", pretty(&spec)),
+                None => out!("{}", pretty(&spec)),
             }
             Ok(())
         }
         Some(other) => {
             // `templates launch` = guide for a template name.
             if let Ok(t) = Template::builtin(other) {
-                print!("{}", prompts::template_guide(&t));
+                out!("{}", prompts::template_guide(&t));
                 return Ok(());
             }
             let subs = ["list", "schema", "guide", "expand"];
@@ -205,12 +234,12 @@ fn cmd_prompt(args: &[String]) -> Result<(), String> {
     match args.first() {
         None => {
             for (n, d) in prompts::list() {
-                println!("{n:<26} {d}");
+                outln!("{n:<26} {d}");
             }
             Ok(())
         }
         Some(n) => {
-            print!("{}", prompts::get(n)?);
+            out!("{}", prompts::get(n)?);
             Ok(())
         }
     }
@@ -222,9 +251,9 @@ fn cmd_critique(args: &[String]) -> Result<(), String> {
     let spec = read_json(path)?;
     let r = critique(&spec);
     if a.has("json") {
-        print!("{}", pretty(&serde_json::to_value(&r).unwrap()));
+        out!("{}", pretty(&serde_json::to_value(&r).unwrap()));
     } else {
-        print!("{}", r.to_text());
+        out!("{}", r.to_text());
     }
     Ok(())
 }
@@ -256,12 +285,12 @@ fn cmd_preview(args: &[String]) -> Result<(), String> {
             let t: f32 = t.parse().map_err(|_| format!("--at: '{t}' is not a number of seconds"))?;
             (p.frame(t, width), format!("{stem}-{t}s.png"))
         }
-        None => (p.sheet(None, width.unwrap_or(480)), format!("{stem}-sheet.png")),
+        None => (p.sheet(None, width.unwrap_or(640)), format!("{stem}-sheet.png")),
     };
     let out = a.get("o").or(a.get("out")).map(String::from).unwrap_or(default_out);
     write(Path::new(&out), "")?;
     std::fs::write(&out, crate::preview::png(&img)).map_err(|e| format!("cannot write {out}: {e}"))?;
-    println!("{out} ({}×{}, video {:.1} s)", img.width, img.height, p.ev.duration);
+    outln!("{out} ({}×{}, video {:.1} s)", img.width, img.height, p.ev.duration);
     Ok(())
 }
 
@@ -496,14 +525,14 @@ fn cmd_new(args: &[String]) -> Result<(), String> {
         dur = report.duration,
     );
     write(&dir.join("NEXT.md"), &next)?;
-    println!("created {d}/params.json, brand.json, spec.json, NEXT.md ({:.1} s, critique {}/100)", report.duration, report.score);
+    outln!("created {d}/params.json, brand.json, spec.json, NEXT.md ({:.1} s, critique {}/100)", report.duration, report.score);
     for n in report.notes.iter().filter(|n| n.severity != "tip").take(5) {
-        println!("  {} {}: {}", n.severity, n.path, n.message);
+        outln!("  {} {}: {}", n.severity, n.path, n.message);
     }
     if facts.name.is_some() && !leftover.is_empty() {
-        println!("  still example copy (replace): {}", leftover.join(", ").replace('`', ""));
+        outln!("  still example copy (replace): {}", leftover.join(", ").replace('`', ""));
     }
-    println!("next: edit {d}/params.json, then follow {d}/NEXT.md");
+    outln!("next: edit {d}/params.json, then follow {d}/NEXT.md");
     Ok(())
 }
 

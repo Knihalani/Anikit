@@ -268,10 +268,12 @@ pub struct Checklist {
     pub delay: f32,
     /// Strike through checked items (to-do style) instead of highlighting them.
     pub strike: bool,
+    /// Horizontal placement of the list in the box: 0 left, 0.5 centre (default), 1 right. Vertically centred.
+    pub align: f32,
 }
 impl Default for Checklist {
     fn default() -> Self {
-        Checklist { items: Vec::new(), stagger: 0.35, check_after: 0.25, font_size: 36.0, color: None, delay: 0.0, strike: false }
+        Checklist { items: Vec::new(), stagger: 0.35, check_after: 0.25, font_size: 36.0, color: None, delay: 0.0, strike: false, align: 0.5 }
     }
 }
 impl Prepare for Checklist {}
@@ -311,6 +313,12 @@ impl Component for Checklist {
             }
             out.extend(rise(o, p, fs * 0.6));
         }
+        // Centre the list as a block (left-aligned rows).
+        let fs = self.font_size;
+        let st = sans(fs, 500, th.text);
+        let bw = fs * 1.15 + fs * 0.6 + self.items.iter().map(|it| ctx.assets.measure(it, &st)).fold(0.0, f32::max);
+        let bh = (self.items.len() as f32 - 1.0).max(0.0) * fs * 1.9 + fs * 1.15;
+        transform_ops(&mut out, &translate((ctx.width - bw) * self.align, (ctx.height - bh).max(0.0) * 0.5));
         out
     }
     fn duration(&self) -> Option<f32> {

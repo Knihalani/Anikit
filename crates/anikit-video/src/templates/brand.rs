@@ -13,7 +13,7 @@ use super::color;
 pub struct Colors {
     /// Main brand colour (buttons, highlights, gradients).
     pub primary: Option<String>,
-    /// Second brand colour (gradient partner, charts). Default: primary shifted 40° in hue.
+    /// Second brand colour (gradient partner, charts). Default: primary shifted −20° in hue (an analogous, on-brand partner).
     pub secondary: Option<String>,
     /// Sparing highlight colour (underlines, a single number). Default: secondary.
     pub accent: Option<String>,
@@ -139,7 +139,7 @@ impl Brand {
             // Pure white/black is harsh on screen; soften a touch.
             color::mix(t, bg, 0.04)
         });
-        let secondary = p(&self.colors.secondary).unwrap_or_else(|| color::hue_shift(primary, 40.0));
+        let secondary = p(&self.colors.secondary).unwrap_or_else(|| color::hue_shift(primary, -20.0));
         let accent = p(&self.colors.accent).unwrap_or(secondary);
         let surface = p(&self.colors.surface).unwrap_or_else(|| color::mix(bg, text, if light { 0.04 } else { 0.07 }));
         let muted = p(&self.colors.muted).unwrap_or_else(|| color::mix(text, bg, 0.38));

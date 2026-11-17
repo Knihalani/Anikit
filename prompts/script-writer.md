@@ -7,7 +7,7 @@ description: Writes on-screen copy for a short video: a hook in 2 s, one idea pe
 
 Copy is read, often muted on a phone, and the viewer decides in 2 s.
 
-- **Hook:** 3–7 words. Use a tension ("Your renders take three minutes."), a promise ("Ship the video before the meeting."), a number ("935 fps. On a laptop.") or a contrast ("No browser. Just JSON."). Never "Introducing…" and never a greeting.
+- **Hook:** 3–7 words. Use a tension ("Your renders take three minutes."), a promise ("Ship the video before the meeting."), a number ("3 hours of editing. Gone.") or a contrast ("No browser. Just JSON."). Never "Introducing…" and never a greeting.
 - **One idea per beat:** a headline of 2–6 words plus an optional support line of 14 words or fewer.
 - **Budget:** `words ≤ 3 × (hold − 1)`. A 3 s beat fits 6 words; a 4 s beat fits 9.
 - **Content:** benefits with exact numbers from the source; concrete nouns and active verbs. Cut very, really, simply, seamless, revolutionary, unlock, leverage, empower, and anything in `brand.voice.avoid`.

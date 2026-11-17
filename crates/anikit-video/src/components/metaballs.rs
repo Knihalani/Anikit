@@ -150,6 +150,7 @@ impl Metaballs {
 
 impl Component for Metaballs {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        let t = step(t, AMBIENT_RATE);
         let (w, h) = (ctx.width, ctx.height);
         let k = h / 1080.0;
         let cell = (self.detail * k).max(2.0);

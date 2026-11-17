@@ -49,7 +49,11 @@ pub(crate) mod prop {
     pub const FILL: usize = 22;
     /// Stroke colour (OKLab + alpha), 4 slots.
     pub const STROKE: usize = 26;
-    pub const N: usize = 30;
+    /// Layer depth (parallax and depth of field); camera focus plane and aperture.
+    pub const DEPTH: usize = 30;
+    pub const FOCUS: usize = 31;
+    pub const APERTURE: usize = 32;
+    pub const N: usize = 33;
 
     /// Default values.
     pub const DEFAULTS: [f32; N] = {
@@ -92,6 +96,9 @@ pub(crate) mod prop {
             "progress" => (PROGRESS, 1),
             "zoom" => (ZOOM, 1),
             "wipe" => (WIPE, 1),
+            "depth" => (DEPTH, 1),
+            "focus" => (FOCUS, 1),
+            "aperture" => (APERTURE, 1),
             "fill" | "color" => (FILL, 4),
             "stroke" => (STROKE, 4),
             _ => return None,
@@ -330,6 +337,8 @@ pub(crate) struct SceneC {
     pub camera: Node,
     pub shake: Option<(f32, f32, f32, f32, f32)>,
     pub layers: Vec<Node>,
+    /// Some layer or the camera uses depth (parallax / depth of field).
+    pub depth: bool,
 }
 
 /// Timing summary of one scene.
@@ -355,6 +364,8 @@ pub struct Evaluator {
     pub(crate) easings: Vec<Easing>,
     pub(crate) scenes: Vec<SceneC>,
     pub(crate) overlay: Vec<Node>,
+    /// Word-synced captions (TEXT's caption track) and the bottom-centre point they hang from.
+    pub(crate) captions: Option<(crate::text::captions::CaptionTrack, [f32; 2])>,
     pub(crate) theme: theme::Theme,
     pub(crate) ctheme: crate::components::Theme,
 }
@@ -377,6 +388,8 @@ struct Cx<'a> {
     ev: &'a Evaluator,
     scene_t: f32,
     gt: f32,
+    /// Depth-of-field blur added to the node being emitted (top-level layers only).
+    dof: f32,
 }
 
 impl Evaluator {
@@ -425,6 +438,7 @@ impl Evaluator {
             return false;
         }
         node_static(&s.camera, a, b) && s.layers.iter().all(|n| node_static(n, a, b)) && self.overlay.iter().all(|n| node_static(n, t0, t1))
+            && self.captions.as_ref().is_none_or(|(tr, _)| t1 - t0 < 0.05 && tr.page_text(t0).is_none() && tr.page_text(t1).is_none())
     }
 
     /// The display list at time `t` (seconds).
@@ -463,10 +477,13 @@ impl Evaluator {
             let e = self.easings[s.trans.ease as usize].ease(p as f64) as f32;
             self.emit_transition(prev, s, t, p, e, &mut out.ops);
         }
-        let cx = Cx { ev: self, scene_t: t, gt: t };
+        let cx = Cx { ev: self, scene_t: t, gt: t, dof: 0.0 };
         let frame = [self.width as f32, self.height as f32];
         for n in &self.overlay {
             self.emit_node(n, &cx, &dl::IDENTITY, frame, 1.0, &mut out.ops);
+        }
+        if let Some((tr, [x, y])) = &self.captions {
+            tr.ops(t, translate(*x, *y), &mut out.ops);
         }
     }
 
@@ -477,7 +494,7 @@ impl Evaluator {
             out.push(Op::RoundRect { x: 0.0, y: 0.0, w, h, radius: 0.0, paint, transform: *xf });
         }
         let lt = t - s.start;
-        let cx = Cx { ev: self, scene_t: lt, gt: t };
+        let cx = Cx { ev: self, scene_t: lt, gt: t, dof: 0.0 };
         // Camera.
         let mut v = [0.0f32; prop::N];
         self.props(&s.camera, &cx, lt, &mut v);
@@ -506,8 +523,27 @@ impl Evaluator {
             let m = dl::mul(&translate(w * 0.5, h * 0.5), &dl::mul(&rotate(rot), &dl::mul(&scale(zoom, zoom), &translate(-w * 0.5 - cxp, -h * 0.5 - cyp))));
             dl::mul(xf, &m)
         };
+        let (focus, aperture) = (v[prop::FOCUS], v[prop::APERTURE].max(0.0));
+        let panning = cxp != 0.0 || cyp != 0.0;
         for n in &s.layers {
-            self.emit_node(n, &cx, &cam, [w, h], 1.0, out);
+            if !s.depth {
+                self.emit_node(n, &cx, &cam, [w, h], 1.0, out);
+                continue;
+            }
+            // Parallax and depth of field from the layer's depth.
+            let mut lv = [0.0f32; prop::N];
+            let lt = (lt - n.start).max(0.0);
+            self.props(n, &cx, lt, &mut lv);
+            let d = lv[prop::DEPTH];
+            let lcam = if panning && d != 0.0 {
+                let k = 1.0 / (1.0 + d.max(-0.9));
+                let m = dl::mul(&translate(w * 0.5, h * 0.5), &dl::mul(&rotate(rot), &dl::mul(&scale(zoom, zoom), &translate(-w * 0.5 - cxp * k, -h * 0.5 - cyp * k))));
+                dl::mul(xf, &m)
+            } else {
+                cam
+            };
+            let dcx = Cx { dof: (d - focus).abs() * aperture, ..Cx { ev: self, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0 } };
+            self.emit_node(n, &dcx, &lcam, [w, h], 1.0, out);
         }
     }
 
@@ -668,7 +704,7 @@ impl Evaluator {
         let _ = psize;
         let (w, h) = (v[prop::W].max(0.0), v[prop::H].max(0.0));
         let xf = dl::mul(parent, &local_xf(&v, n.anchor, w, h));
-        let blur = v[prop::BLUR].max(0.0);
+        let blur = v[prop::BLUR].max(0.0) + cx.dof;
         let wipe = v[prop::WIPE].clamp(0.0, 1.0);
         let is_leaf = matches!(n.kind, Kind::Text { kinetic: None, .. } | Kind::Image { .. } | Kind::Video { .. })
             || matches!(&n.kind, Kind::Shape { fill, stroke, .. } if fill.is_none() || stroke.is_none());
@@ -786,6 +822,21 @@ impl Evaluator {
                         layout.chars.get(k).map_or(u32::MAX, |u| u.glyphs.start)
                     };
                     match split {
+                        None if layout.outline.is_some() && limit == u32::MAX => {
+                            // Outlined text (TEXT's glyph outline paths): fill (unless hollow), then the stroke.
+                            let (paths, stroke, _, hollow) = layout.outline.as_ref().unwrap();
+                            let mut sc = oklab_to_rgba([v[prop::STROKE], v[prop::STROKE + 1], v[prop::STROKE + 2], v[prop::STROKE + 3]]);
+                            sc.0[3] *= alpha;
+                            // Stroke under the fill (paint-order: stroke), so the outline frames the letters.
+                            for (r, p) in layout.runs.iter().zip(paths) {
+                                let w = if *hollow { v[prop::SW] } else { v[prop::SW] * 2.0 };
+                                out.push(Op::Stroke { path: p.clone(), paint: Paint::Solid(sc), stroke: dl::Stroke { width: w, ..stroke.clone() }, transform: bxf });
+                                if !hollow {
+                                    let paint = fill.clone().unwrap_or(Paint::Solid(with_alpha(r.color, alpha)));
+                                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: r.glyphs.clone(), paint, transform: bxf });
+                                }
+                            }
+                        }
                         None => emit_glyphs(out, layout, 0..layout.glyphs.len() as u32, limit, fill.as_ref(), alpha, &bxf),
                         Some(sp) => {
                             for (u, unit) in layout.units(sp.by).iter().enumerate() {
@@ -849,7 +900,7 @@ impl Evaluator {
                 }
             }
             Kind::Group { children } => {
-                let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt };
+                let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0 };
                 for c in children {
                     self.emit_node(c, &ccx, &xf, [w, h], alpha, out);
                 }
@@ -871,8 +922,9 @@ impl Evaluator {
                         transform: xf,
                     });
                 }
+                let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0 };
                 for c in children {
-                    self.emit_node(c, cx, &xf, [w, h], alpha, out);
+                    self.emit_node(c, &ccx, &xf, [w, h], alpha, out);
                 }
             }
             Kind::Component(c, th) => {

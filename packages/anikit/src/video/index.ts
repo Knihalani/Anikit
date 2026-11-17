@@ -21,6 +21,9 @@ import type {
 } from './spec';
 
 export type * from './spec';
+export { COMPONENT_KINDS } from './components';
+export type { ComponentKind, ComponentProps, ComponentPropsMap } from './components';
+import type { ComponentKind, ComponentProps } from './components';
 
 /** Friendly aliases accepted wherever a preset name is (`animate: 'rise'`). */
 export const PRESET_ALIASES: Readonly<Record<string, PresetName>> = {
@@ -109,8 +112,8 @@ export class LayerList {
     this.layers.push({ type: 'group', ...normalize(o), layers: kids.layers } as GroupLayer);
     return this;
   }
-  /** Add a component (`'barChart'`, `'code'`, `'browser'`, …; see `anikit-video info --components`). */
-  component(component: string, props?: Record<string, unknown>, o?: ComponentOptions): this {
+  /** Add a component (`'bar-chart'`, `'code'`, `'browser'`, `'mesh-gradient'`, …): every kind in `COMPONENT_KINDS`, typed per kind. */
+  component<K extends ComponentKind>(component: K, props?: ComponentProps<K>, o?: ComponentOptions): this {
     this.layers.push({ type: 'component', component, ...(props ? { props } : {}), ...normalize(o) } as ComponentLayer);
     return this;
   }

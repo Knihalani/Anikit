@@ -115,7 +115,8 @@ pub fn template_guide(t: &Template) -> String {
                 let sty = sp.get("type").and_then(|x| x.as_str()).unwrap_or("string");
                 let sreq = if sp.get("required") == Some(&Value::Bool(true)) { "yes" } else { "" };
                 let sd = sp.get("description").and_then(|x| x.as_str()).unwrap_or("");
-                out += &format!("| `{k}[].{sk}` | {sty} | {sreq} | {} | {sd} |\n", limits(sp));
+                let sep = if p.get("type").and_then(|x| x.as_str()) == Some("array") { "[]." } else { "." };
+                out += &format!("| `{k}{sep}{sk}` | {sty} | {sreq} | {} | {sd} |\n", limits(sp));
             }
         }
     }

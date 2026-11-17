@@ -36,7 +36,7 @@ pub const SPRINGS: &[&str] = &["gentle", "wobbly", "stiff", "slow", "molasses", 
 pub const ANIM_PROPS: &[&str] = &[
     "x", "y", "width", "height", "scale", "scaleX", "scaleY", "rotation", "skewX", "skewY", "opacity", "blur", "radius",
     "fill", "color", "stroke", "strokeWidth", "trimStart", "trimEnd", "reveal", "value", "size", "letterSpacing",
-    "progress", "zoom",
+    "progress", "zoom", "depth", "focus", "aperture",
 ];
 
 /// Short preset aliases (`rise` = `fadeUp`, …). `exit` picks the exit form.

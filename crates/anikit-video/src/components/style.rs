@@ -266,7 +266,28 @@ pub fn spring(t: f32, speed: f32) -> f32 {
     let z = 0.62f32;
     let wd = w * (1.0 - z * z).sqrt();
     let e = (-z * w * t).exp();
+    // Settled: return exactly 1 so later frames are bit-identical (dedupe,
+    // incremental render and P_Skip all key on identical ops).
+    if e < 2e-4 {
+        return 1.0;
+    }
     1.0 - e * ((wd * t).cos() + (z * w / wd) * (wd * t).sin())
+}
+
+/// Update rate for slow ambient effects (bokeh, dust, snow, stars, rays,
+/// blobs): their time steps 15×/s, so their drift (a fraction of a pixel per
+/// step) reads as smooth while half the frames at 30 fps repeat exactly —
+/// cheap for incremental render, dedupe and the encoder.
+pub const AMBIENT_RATE: f32 = 15.0;
+
+/// `t` stepped down to `rate` updates per second.
+#[inline]
+pub fn step(t: f32, rate: f32) -> f32 {
+    if rate <= 0.0 {
+        t
+    } else {
+        (t * rate).floor() / rate
+    }
 }
 
 /// Smooth pseudo-random in `[0, 1)` from an integer seed.
