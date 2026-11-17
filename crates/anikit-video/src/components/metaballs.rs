@@ -9,7 +9,7 @@
 
 use super::style::*;
 use super::{Component, Ctx, Error, Prepare};
-use crate::dl::{Blend, Op, Paint, Path, Rgba};
+use crate::dl::{Op, Paint, Path, Rgba};
 use serde::Deserialize;
 use std::f32::consts::TAU;
 
@@ -201,23 +201,19 @@ impl Component for Metaballs {
         };
         if self.glow {
             // Coloured bloom: one soft radial per blob, screened underneath.
-            push_layer(&mut out, 1.0, Blend::Screen, Vec::new());
             for &(x, y, r) in &blobs {
                 let c = grad_at(x, y);
                 let gr = r * 2.3;
                 out.push(circle(x, y, gr, radial(x, y, gr, vec![(0.0, alpha(c, 0.35)), (0.45, alpha(c, 0.16)), (1.0, alpha(c, 0.0))])));
             }
-            out.push(Op::PopLayer);
         }
         out.push(fill(body.clone(), paint));
         if self.gloss {
             // Soft specular light up-left inside each blob (always within its edge).
-            push_layer(&mut out, 1.0, Blend::Screen, Vec::new());
             for &(x, y, r) in &blobs {
                 let (hx, hy, hr) = (x - 0.24 * r, y - 0.3 * r, 0.6 * r);
                 out.push(circle(hx, hy, hr, radial(hx, hy, hr, vec![(0.0, Rgba([1.0, 1.0, 1.0, 0.3])), (0.5, Rgba([1.0, 1.0, 1.0, 0.12])), (1.0, Rgba([1.0, 1.0, 1.0, 0.0]))])));
             }
-            out.push(Op::PopLayer);
         }
         out
     }

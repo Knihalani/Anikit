@@ -173,8 +173,14 @@ impl Server {
                 Ok(vec![text(&lines.join("\n"))])
             }
             "critique_spec" => {
-                let (spec, _) = self.spec_arg(a)?;
-                let r = critique(&spec);
+                let (spec, path) = self.spec_arg(a)?;
+                let mut r = critique(&spec);
+                if a.get("render") == Some(&Value::Bool(true)) {
+                    let p = crate::preview::Preview::new(spec.clone(), path.parent().unwrap_or(Path::new(".")))?;
+                    let extra = crate::render_check::check(&p.ev);
+                    r.score = extra.iter().fold(r.score as i32, |s, n| s - if n.severity == "error" { 15 } else { 6 }).max(0) as u32;
+                    r.notes.extend(extra);
+                }
                 let mut lines = vec![format!("score {}/100 · {:.1} s", r.score, r.duration)];
                 lines.extend(r.notes.iter().map(|n| format!("{} {}: {} → {}", n.severity, n.path, n.message, n.fix)));
                 Ok(vec![text(&lines.join("\n"))])
@@ -381,7 +387,7 @@ pub fn tools() -> Vec<Value> {
             "return_spec": { "type": "boolean" }
         }), &["template", "params"]) }),
         json!({ "name": "validate_spec", "description": "Errors/warnings, one line each, with did-you-mean.", "inputSchema": obj(spec(), &[]) }),
-        json!({ "name": "critique_spec", "description": "Design review without rendering: reading time, hook, contrast, safe areas, pacing. One line per issue with a fix.", "inputSchema": obj(spec(), &[]) }),
+        json!({ "name": "critique_spec", "description": "Design review: reading time, hook, contrast, safe areas, pacing. render:true also checks rendered frames (contrast vs real pixels, overlaps, cut text). One line per issue with a fix.", "inputSchema": obj(with(spec(), json!({ "render": { "type": "boolean" } })), &[]) }),
         json!({ "name": "render_still", "description": "One frame → PNG path.", "inputSchema": obj(img(json!({ "at": { "type": "number", "description": "seconds" } })), &[]) }),
         json!({ "name": "render_contact_sheet", "description": "One frame per scene in one PNG → path. Cheapest full review.", "inputSchema": obj(img(json!({ "frames": { "type": "integer" } })), &[]) }),
         json!({ "name": "render_video", "description": "Final render → path.", "inputSchema": obj(with(spec(), json!({ "out": { "type": "string", "description": "e.g. out.mp4" }, "quality": { "type": "string", "description": "draft|standard|high" } })), &[]) }),

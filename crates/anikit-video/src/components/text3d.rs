@@ -372,9 +372,11 @@ impl Component for Text3d {
     }
 
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
-        // Pose updates at most 30×/s: at 60 fps every other frame reuses the
-        // same render (CPU raster is the cost here).
-        let fps = ctx.fps.clamp(1.0, 30.0);
+        // Pose updates at most 30×/s during the intro and 15×/s once only the
+        // slow sway and glint move: frames in between reuse the same render
+        // (CPU raster is the cost here).
+        let settled = t - self.delay > self.intro_end() + 0.2 && self.spin == 0.0;
+        let fps = ctx.fps.clamp(1.0, if settled { 15.0 } else { 30.0 });
         let frame = (t * fps).round();
         let t = frame / fps;
         let local = t - self.delay;

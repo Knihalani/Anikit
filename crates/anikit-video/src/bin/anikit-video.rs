@@ -162,11 +162,11 @@ fn resolve_time(ev: &Evaluator, s: &str) -> Result<f32, String> {
     if let Some(id) = s.strip_prefix('@') {
         return ev.scene_start(id).map(|t| t + 0.75_f32.min(ev.duration)).ok_or_else(|| format!("no scene '{id}'"));
     }
-    let (n, mul) = match s.strip_suffix('f') {
-        Some(r) => (r, 1.0 / ev.fps),
-        None => (s.strip_suffix('s').unwrap_or(s), 1.0),
-    };
-    n.parse::<f32>().map(|v| v * mul).map_err(|_| format!("bad time '{s}'"))
+    if let Some(r) = s.strip_suffix('f') {
+        // Exactly the render path's frame time, so a still matches the video frame bit for bit.
+        return r.trim().parse::<u32>().map(|i| pipeline::frame_time(ev, i)).map_err(|_| format!("bad frame '{s}'"));
+    }
+    s.strip_suffix('s').unwrap_or(s).parse::<f32>().map_err(|_| format!("bad time '{s}'"))
 }
 
 fn main() -> ExitCode {

@@ -45,7 +45,7 @@ pub struct EncoderConfig {
 
 impl Default for EncoderConfig {
     fn default() -> Self {
-        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: false, cabac: true, skip_threshold: 0 }
+        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0 }
     }
 }
 
@@ -73,6 +73,33 @@ pub struct FrameHints {
     pub changed: Option<Vec<bool>>,
     /// Known translations (seeds for motion search).
     pub motions: Vec<MotionHint>,
+}
+
+impl FrameHints {
+    /// Per-macroblock motion hints from a global camera transform (zoom, pan,
+    /// rotation), for frames where every macroblock changes.
+    ///
+    /// `prev_of` maps a current-frame luma position to where that content was in
+    /// the previous frame: `(px, py) = (a·x + b·y + c, d·x + e·y + f)` with
+    /// `[a, b, c, d, e, f]`. Each macroblock gets the integer motion of its
+    /// centre; quarter-pel refinement (on by default) finishes the job.
+    /// Macroblocks that don't move get no hint.
+    pub fn from_affine(width: u32, height: u32, prev_of: [f64; 6]) -> FrameHints {
+        let [a, b, c, d, e, f] = prev_of;
+        let (mbw, mbh) = (width.div_ceil(16), height.div_ceil(16));
+        let mut motions = Vec::new();
+        for my in 0..mbh {
+            for mx in 0..mbw {
+                let (x, y) = (mx as f64 * 16.0 + 8.0, my as f64 * 16.0 + 8.0);
+                let (px, py) = (a * x + b * y + c, d * x + e * y + f);
+                let (dx, dy) = ((x - px).round() as i32, (y - py).round() as i32);
+                if (dx, dy) != (0, 0) {
+                    motions.push(MotionHint { x: mx * 16, y: my * 16, w: 16, h: 16, dx, dy });
+                }
+            }
+        }
+        FrameHints { changed: None, motions }
+    }
 }
 
 /// Per-frame statistics.
@@ -505,7 +532,8 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
         }
 
-        let try_i4 = best_cost > lambda as u32 * 24 + 256 && (c.idr || kind != Kind::P16 || best_cost > lambda as u32 * 64 + 1024);
+        // In P frames I4x4 rarely beats the best of P16/I16 unless both are poor.
+        let try_i4 = best_cost > lambda as u32 * 24 + 256 && (c.idr || best_cost > lambda as u32 * 64 + 1024);
         if try_i4 {
             // Encode I4x4 tentatively (writes recon).
             let mut cd = Coded::new();
@@ -657,29 +685,34 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             let centre = d;
             for &(sx, sy) in pat {
                 let cand = (centre.0 + sx * step, centre.1 + sy * step);
-                match (&win, self.c.hpel) {
-                    (Some(w), _) => w.pred(cand.0, cand.1, &mut p),
-                    (None, Some(hp)) => hp.pred(
-                        &self.c.refp.y,
-                        bx + (cand.0 >> 2) as isize,
-                        by + (cand.1 >> 2) as isize,
-                        cand.0 & 3,
-                        cand.1 & 3,
-                        &mut p,
-                    ),
+                let (gx, gy, fx, fy) = (bx + (cand.0 >> 2) as isize, by + (cand.1 >> 2) as isize, cand.0 & 3, cand.1 & 3);
+                let sad = match (&win, self.c.hpel) {
+                    (Some(w), _) => {
+                        w.pred(cand.0, cand.1, &mut p);
+                        crate::simd::sad16(src_y, 16, &p, 16)
+                    }
+                    (None, Some(hp)) => hp.sad(&self.c.refp.y, gx, gy, fx, fy, src_y),
                     _ => unreachable!(),
-                }
+                };
                 let q = (base_q.0 + cand.0, base_q.1 + cand.1);
-                let cst = crate::simd::sad16(src_y, 16, &p, 16) + mvcost(q);
+                let cst = sad + mvcost(q);
                 if cst < best {
                     best = cst;
                     it.mv = q;
                     d = cand;
-                    it.pred = p;
                 }
             }
         }
         if it.mv != start {
+            let (cx, cy) = (d.0, d.1);
+            match (&win, self.c.hpel) {
+                (Some(w), _) => w.pred(cx, cy, &mut p),
+                (None, Some(hp)) => {
+                    hp.pred(&self.c.refp.y, bx + (cx >> 2) as isize, by + (cy >> 2) as isize, cx & 3, cy & 3, &mut p)
+                }
+                _ => unreachable!(),
+            }
+            it.pred = p;
             let c = dsp::satd(src_y, &it.pred, 16, 16) + mvcost(it.mv);
             it.cost = c;
             it.sad = best - mvcost(it.mv);
@@ -1896,9 +1929,11 @@ impl Encoder {
         } else {
             let mbw = self.mbw;
             let Pic { y, u, v } = &mut self.cur;
-            match &hints.changed {
+            // A change map of the wrong length is a caller bug; compare every
+            // macroblock instead of failing the encode.
+            debug_assert!(hints.changed.as_ref().is_none_or(|c| c.len() == nmb), "ak264: changed map must have one entry per macroblock");
+            match hints.changed.as_ref().filter(|c| c.len() == nmb) {
                 Some(c) => {
-                    assert_eq!(c.len(), nmb, "ak264: changed map must have one entry per macroblock");
                     // Only macroblocks that may have changed are compared (exactly).
                     for (i, (dst, &maybe)) in self.changed.iter_mut().zip(c.iter()).enumerate() {
                         *dst = maybe && crate::diff::load_mb(y, u, v, f, i % mbw, i / mbw, true);

@@ -99,3 +99,55 @@ fn mutations_never_panic() {
     }
     eprintln!("{n} mutated specs ok");
 }
+
+#[test]
+fn mutated_specs_render_without_panicking() {
+    use anikit_video::templates::{brand::Brand, Format, Template};
+    let showcase: Value = serde_json::from_str(include_str!("../../../docs/video/examples/showcase.json")).unwrap();
+    let t = Template::builtin("launch").unwrap();
+    let launch = t.expand(&t.example_params(), &Brand::default(), Format::parse("16:9").unwrap()).unwrap();
+    let bases = [showcase, launch];
+    let alls: Vec<Vec<Vec<Value>>> = bases
+        .iter()
+        .map(|b| {
+            let mut all = Vec::new();
+            paths(b, &mut Vec::new(), &mut all);
+            all
+        })
+        .collect();
+    let opts = Options { load_assets: false, ..Default::default() };
+    let mut r = Rng(0xDEAD_BEEF_1234_5678);
+    let mut rendered = 0;
+    for it in 0..1500 {
+        let (base, all) = (&bases[it % 2], &alls[it % 2]);
+        let mut v = base.clone();
+        for _ in 0..1 + r.below(3) {
+            let p = all[r.below(all.len())].clone();
+            let ptr: String = p.iter().map(|s| match s { Value::String(k) => format!("/{}", k.replace('~', "~0").replace('/', "~1")), x => format!("/{x}") }).collect();
+            if let Some(slot) = v.pointer_mut(&ptr) {
+                *slot = random_value(&mut r);
+            }
+        }
+        let text = v.to_string();
+        let res = std::panic::catch_unwind(|| {
+            if let Ok(p) = anikit_video::spec::parse_json(&text) {
+                if let (Some(ev), _) = Evaluator::build(&p.spec, &opts) {
+                    // Small frames keep this fast; scale exercises transforms too.
+                    for k in 0..3 {
+                        let t = ev.duration * k as f32 / 2.0;
+                        let _ = anikit_video::pipeline::render_rgba(&ev, t, 0.08);
+                    }
+                    return true;
+                }
+            }
+            false
+        });
+        match res {
+            Ok(true) => rendered += 1,
+            Ok(false) => {}
+            Err(_) => panic!("render panic on spec:\n{text}"),
+        }
+    }
+    eprintln!("{rendered} mutated specs rendered");
+    assert!(rendered > 100, "too few mutated specs reached the renderer: {rendered}");
+}

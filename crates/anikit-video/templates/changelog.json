@@ -42,7 +42,7 @@
       "required": true,
       "minItems": 3,
       "maxItems": 6,
-      "description": "The changes, most exciting first. Each is one short line.",
+      "description": "The changes, most exciting first: a short line each, plus an optional detail.",
       "items": {
         "type": "object",
         "properties": {
@@ -62,13 +62,20 @@
             "maxWords": 8,
             "description": "The change as a benefit. Short: it sits in a card.",
             "maxChars": 34
+          },
+          "body": {
+            "type": "string",
+            "maxWords": 14,
+            "maxChars": 90,
+            "description": "Optional one-line detail under the change."
           }
         }
       },
       "example": [
         {
           "type": "new",
-          "text": "Vertical video templates"
+          "text": "Vertical video templates",
+          "body": "Export 9:16 and 1:1 cuts from the same project."
         },
         {
           "type": "new",
@@ -148,8 +155,8 @@
             "$let": {
               "tw": "fmt.landscape ? fmt.w * 0.38 : fmt.safe.w",
               "ts": "fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5",
-              "lines": "ceil(len((title ?? 'What is new') + ' in ' + (product ?? brand.name)) * 0.48 * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.38 : fmt.safe.w))",
-              "top": "fmt.landscape ? fmt.h * 0.5 - (ceil(len((title ?? 'What is new') + ' in ' + (product ?? brand.name)) * 0.48 * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.38 : fmt.safe.w)) * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) * 1.1 + fmt.u * 14) / 2 : (fmt.portrait ? fmt.h * 0.14 : fmt.h * 0.1)",
+              "lines": "2",
+              "top": "fmt.landscape ? fmt.h * 0.5 - (2 * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) * 1.1 + fmt.u * 14) / 2 : (fmt.portrait ? fmt.h * 0.14 : fmt.h * 0.1)",
               "ax": "fmt.landscape ? fmt.safe.left : fmt.cx",
               "an": "fmt.landscape ? 'topLeft' : 'top'",
               "al": "fmt.landscape ? 'left' : 'center'"
@@ -173,7 +180,7 @@
                 "height": "{{fmt.u * 7}}"
               },
               {
-                "text": "{{(title ?? 'What is new') + ' in ' + (product ?? brand.name)}}",
+                "text": "{{(title ?? 'What is new') + '\n[' + (product ?? brand.name) + ']{$accent}'}}",
                 "style": "title",
                 "weight": 750,
                 "width": "{{tw}}",
@@ -181,7 +188,8 @@
                 "x": "{{ax}}",
                 "anchor": "{{an}}",
                 "y": "{{top + fmt.u * 4.5}}",
-                "enter": "pop by char from center"
+                "enter": "pop by char from center",
+                "lineHeight": 1.05
               },
               {
                 "$if": "date",
@@ -219,21 +227,6 @@
                   "width": "{{vw * 0.9}}",
                   "height": "{{vw * 0.9 / 1.6 + fmt.u * 6}}"
                 }
-              },
-              {
-                "type": "component",
-                "component": "toast",
-                "props": {
-                  "title": "{{'Updated to ' + version}}",
-                  "kind": "success",
-                  "delay": 1.1,
-                  "from": "{{fmt.landscape ? 'right' : 'bottom'}}",
-                  "width": "{{fmt.u * 46}}"
-                },
-                "x": "{{vx}}",
-                "y": "{{vy + vw * 0.27}}",
-                "width": "{{fmt.u * 50}}",
-                "height": "{{fmt.u * 14}}"
               }
             ]
           },
@@ -254,7 +247,7 @@
             "duration": 0.5,
             "ease": "inOutQuart"
           },
-          "duration": "{{max(2.8, readtime(it.text) + 1.4)}}",
+          "duration": "{{max(2.8, readtime(it.text + ' ' + (it.body ?? '')) + 1.4)}}",
           "layers": [
             {
               "$use": "backdrop",
@@ -270,7 +263,7 @@
               "props": {
                 "label": "{{upper(product ?? brand.name)}}",
                 "solid": true,
-                "color": "{{brand.colors.primary}}",
+                "color": "{{brand.colors.fill}}",
                 "size": "{{fmt.u * 2.3}}",
                 "align": 0
               },
@@ -320,45 +313,119 @@
               }
             },
             {
-              "type": "component",
-              "component": "progress-ring",
-              "props": {
-                "from": "{{k / len(items)}}",
-                "to": "{{(k + 1) / len(items)}}",
-                "duration": "{{max(2.8, readtime(it.text) + 1.4) - 0.6}}",
-                "delay": 0.2,
-                "size": "{{fmt.portrait ? fmt.u * 40 : fmt.u * 38}}",
-                "thickness": "{{fmt.u * 1.4}}",
-                "color": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? '#3B82F6' : '#22C55E')}}",
-                "percent": false
-              },
+              "type": "shape",
+              "shape": "circle",
               "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.17 : fmt.cx}}",
               "y": "{{fmt.portrait ? fmt.h * 0.34 : (fmt.square ? fmt.h * 0.33 : fmt.h * 0.52)}}",
-              "width": "{{fmt.portrait ? fmt.u * 52 : fmt.u * 44}}",
-              "height": "{{fmt.portrait ? fmt.u * 52 : fmt.u * 44}}"
-            },
-            {
-              "text": "{{(k + 1) < 10 ? '0' + str(k + 1) : str(k + 1)}}",
-              "style": "stat",
-              "size": "{{fmt.portrait ? fmt.u * 15 : fmt.u * 13}}",
-              "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.17 : fmt.cx}}",
-              "y": "{{(fmt.portrait ? fmt.h * 0.34 : (fmt.square ? fmt.h * 0.33 : fmt.h * 0.52)) - fmt.u * 1.5}}",
-              "enter": "pop by char from center"
-            },
-            {
-              "text": "{{'of ' + ((len(items)) < 10 ? '0' + str(len(items)) : str(len(items)))}}",
-              "style": "caption",
-              "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.17 : fmt.cx}}",
-              "y": "{{(fmt.portrait ? fmt.h * 0.34 : (fmt.square ? fmt.h * 0.33 : fmt.h * 0.52)) + fmt.u * 7}}",
+              "width": "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 1.7}}",
+              "height": "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 1.7}}",
+              "fill": "radial-gradient({{alpha(it.type == 'new' ? brand.colors.fill : (it.type == 'improved' ? '#2563EB' : '#15803D'), 0.35)}} 0%, {{alpha(it.type == 'new' ? brand.colors.fill : (it.type == 'improved' ? '#2563EB' : '#15803D'), 0)}} 70%)",
               "enter": {
                 "preset": "fadeIn",
-                "delay": 0.4
+                "duration": 0.6
+              }
+            },
+            {
+              "$if": "it.type == 'new'",
+              "then": {
+                "type": "shape",
+                "shape": "star",
+                "sides": 4,
+                "innerRadius": 0.3,
+                "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.17 : fmt.cx}}",
+                "y": "{{fmt.portrait ? fmt.h * 0.34 : (fmt.square ? fmt.h * 0.33 : fmt.h * 0.52)}}",
+                "width": "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22)}}",
+                "height": "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22)}}",
+                "fill": "{{it.type == 'new' ? brand.colors.fill : (it.type == 'improved' ? '#2563EB' : '#15803D')}}",
+                "enter": {
+                  "preset": "rotateIn",
+                  "duration": 0.6
+                }
+              }
+            },
+            {
+              "$if": "it.type == 'improved'",
+              "then": {
+                "type": "shape",
+                "shape": "polygon",
+                "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.17 : fmt.cx}}",
+                "y": "{{fmt.portrait ? fmt.h * 0.34 : (fmt.square ? fmt.h * 0.33 : fmt.h * 0.52)}}",
+                "width": "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 0.72}}",
+                "height": "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22)}}",
+                "points": [
+                  [
+                    "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 0.42}}",
+                    0
+                  ],
+                  [
+                    0,
+                    "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 0.58}}"
+                  ],
+                  [
+                    "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 0.33}}",
+                    "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 0.58}}"
+                  ],
+                  [
+                    "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 0.24}}",
+                    "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22)}}"
+                  ],
+                  [
+                    "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 0.72}}",
+                    "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 0.38}}"
+                  ],
+                  [
+                    "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 0.4}}",
+                    "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 0.38}}"
+                  ]
+                ],
+                "fill": "{{it.type == 'new' ? brand.colors.fill : (it.type == 'improved' ? '#2563EB' : '#15803D')}}",
+                "enter": {
+                  "preset": "popIn",
+                  "duration": 0.5
+                }
+              }
+            },
+            {
+              "$if": "it.type == 'fixed'",
+              "then": {
+                "type": "shape",
+                "shape": "line",
+                "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.17 : fmt.cx}}",
+                "y": "{{fmt.portrait ? fmt.h * 0.34 : (fmt.square ? fmt.h * 0.33 : fmt.h * 0.52)}}",
+                "width": "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22)}}",
+                "height": "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 0.78}}",
+                "points": [
+                  [
+                    0,
+                    "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 0.42}}"
+                  ],
+                  [
+                    "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 0.36}}",
+                    "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22) * 0.78}}"
+                  ],
+                  [
+                    "{{(fmt.portrait ? fmt.u * 26 : fmt.u * 22)}}",
+                    0
+                  ]
+                ],
+                "stroke": {
+                  "color": "{{it.type == 'new' ? brand.colors.fill : (it.type == 'improved' ? '#2563EB' : '#15803D')}}",
+                  "width": "{{fmt.u * 3}}",
+                  "cap": "round",
+                  "join": "round"
+                },
+                "enter": {
+                  "preset": "drawOn",
+                  "duration": 0.6,
+                  "delay": 0.15
+                }
               }
             },
             {
               "$let": {
                 "ln": "ceil(len(it.text) * 0.46 * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.44 : fmt.safe.w))",
-                "ts": "fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5"
+                "ts": "fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5",
+                "bh": "it.body ? (fmt.portrait ? fmt.u * 11 : fmt.u * 9) : 0"
               },
               "in": [
                 {
@@ -368,10 +435,10 @@
                     "shape": "rect",
                     "x": "{{fmt.safe.left}}",
                     "anchor": "topLeft",
-                    "y": "{{fmt.h * 0.5 - (fmt.u * 10 + ln * ts * 1.08) / 2}}",
+                    "y": "{{fmt.h * 0.5 - (fmt.u * 10 + ln * ts * 1.08 + bh) / 2}}",
                     "width": "{{fmt.u * 0.7}}",
-                    "height": "{{fmt.u * 10 + ln * ts * 1.08}}",
-                    "fill": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? '#3B82F6' : '#22C55E')}}",
+                    "height": "{{fmt.u * 10 + ln * ts * 1.08 + bh}}",
+                    "fill": "{{it.type == 'new' ? brand.colors.fill : (it.type == 'improved' ? '#2563EB' : '#15803D')}}",
                     "radius": "{{fmt.u * 0.35}}",
                     "enter": {
                       "preset": "wipeIn",
@@ -386,14 +453,14 @@
                   "props": {
                     "label": "{{upper(it.type)}}",
                     "solid": true,
-                    "color": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? '#3B82F6' : '#22C55E')}}",
+                    "color": "{{it.type == 'new' ? brand.colors.fill : (it.type == 'improved' ? '#2563EB' : '#15803D')}}",
                     "size": "{{fmt.portrait ? fmt.u * 3.6 : fmt.u * 3}}",
                     "align": "{{fmt.landscape ? 0 : 0.5}}",
                     "delay": 0.15
                   },
                   "x": "{{fmt.landscape ? fmt.safe.left + fmt.u * 3 : fmt.cx}}",
                   "anchor": "{{fmt.landscape ? 'left' : 'center'}}",
-                  "y": "{{fmt.landscape ? fmt.h * 0.5 - (fmt.u * 10 + ln * ts * 1.08) / 2 + fmt.u * 3.2 : (fmt.portrait ? fmt.h * 0.55 : fmt.h * 0.56)}}",
+                  "y": "{{fmt.landscape ? fmt.h * 0.5 - (fmt.u * 10 + ln * ts * 1.08 + bh) / 2 + fmt.u * 3.2 : (fmt.portrait ? fmt.h * 0.55 : fmt.h * 0.56)}}",
                   "width": "{{fmt.u * 40}}",
                   "height": "{{fmt.u * 9}}"
                 },
@@ -405,8 +472,24 @@
                   "align": "{{fmt.landscape ? 'left' : 'center'}}",
                   "x": "{{fmt.landscape ? fmt.safe.left + fmt.u * 3 : '50%'}}",
                   "anchor": "{{fmt.landscape ? 'topLeft' : 'top'}}",
-                  "y": "{{fmt.landscape ? fmt.h * 0.5 - (fmt.u * 10 + ln * ts * 1.08) / 2 + fmt.u * 9 : (fmt.portrait ? fmt.h * 0.6 : fmt.h * 0.61)}}",
+                  "y": "{{fmt.landscape ? fmt.h * 0.5 - (fmt.u * 10 + ln * ts * 1.08 + bh) / 2 + fmt.u * 9 : (fmt.portrait ? fmt.h * 0.6 : fmt.h * 0.61)}}",
                   "enter": "mask by word up"
+                },
+                {
+                  "$if": "it.body",
+                  "then": {
+                    "text": "{{it.body}}",
+                    "style": "subtitle",
+                    "width": "{{fmt.landscape ? fmt.w * 0.42 : fmt.safe.w}}",
+                    "align": "{{fmt.landscape ? 'left' : 'center'}}",
+                    "x": "{{fmt.landscape ? fmt.safe.left + fmt.u * 3 : '50%'}}",
+                    "anchor": "{{fmt.landscape ? 'topLeft' : 'top'}}",
+                    "y": "{{(fmt.landscape ? fmt.h * 0.5 - (fmt.u * 10 + ln * ts * 1.08 + bh) / 2 + fmt.u * 9 : (fmt.portrait ? fmt.h * 0.6 : fmt.h * 0.61)) + ln * ts * 1.08 + fmt.u * 2}}",
+                    "enter": {
+                      "preset": "fadeUp",
+                      "delay": 0.4
+                    }
+                  }
                 }
               ]
             }
@@ -427,6 +510,25 @@
               "seed": 41,
               "floor": true,
               "intensity": 0.38
+            }
+          },
+          {
+            "type": "component",
+            "component": "sparks",
+            "props": {
+              "bursts": [
+                1.6
+              ],
+              "origin": [
+                0.5,
+                "{{fmt.portrait ? 0.56 : 0.65}}"
+              ],
+              "count": 90,
+              "colors": [
+                "{{brand.colors.primary}}",
+                "{{brand.colors.secondary}}"
+              ],
+              "seed": 5
             }
           },
           {
@@ -462,25 +564,6 @@
                 "preset": "fadeIn",
                 "delay": 1.0
               }
-            }
-          },
-          {
-            "type": "component",
-            "component": "sparks",
-            "props": {
-              "bursts": [
-                1.6
-              ],
-              "origin": [
-                0.5,
-                "{{fmt.portrait ? 0.56 : 0.65}}"
-              ],
-              "count": 90,
-              "colors": [
-                "{{brand.colors.primary}}",
-                "{{brand.colors.secondary}}"
-              ],
-              "seed": 5
             }
           }
         ]

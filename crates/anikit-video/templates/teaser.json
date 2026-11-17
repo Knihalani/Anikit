@@ -80,115 +80,118 @@
         "as": "w",
         "index": "i",
         "do": {
-          "$let": {
-            "hot": "flash && i % 3 == 2",
-            "d": "(len(split(w, '')) > 1 ? beat * 1.5 : max(beat, 0.8)) * (last ? 1.6 : 1)"
-          },
-          "in": {
-            "id": "beat-{{i + 1}}",
-            "duration": "{{d}}",
-            "background": "{{hot ? (contrast(brand.colors.primary) == '#000000' ? darken(brand.colors.primary, 0.62) : brand.colors.primary) : '$bgDeep'}}",
-            "transition": "cut",
-            "camera": {
-              "animate": [
-                {
-                  "from": {
-                    "zoom": "{{i % 2 ? 1.14 : 1.08}}",
-                    "rotation": "{{i % 2 ? -1.2 : 1.2}}"
-                  },
-                  "to": {
-                    "zoom": 1,
-                    "rotation": 0
-                  },
-                  "duration": "{{d}}",
-                  "ease": "outExpo"
-                }
-              ]
+          "$if": "!(last && (upper(trim(w)) == upper(brand.name) || upper(trim(w)) == upper(brand.name) + '.' || upper(trim(w)) == upper(brand.name) + '!'))",
+          "then": {
+            "$let": {
+              "hot": "flash && i % 3 == 2",
+              "d": "(len(split(w, '')) > 1 ? beat * 1.5 : max(beat, 0.8)) * (last ? 1.6 : 1)"
             },
-            "layers": [
-              {
-                "$if": "!hot",
-                "then": [
+            "in": {
+              "id": "beat-{{i + 1}}",
+              "duration": "{{d}}",
+              "background": "{{hot ? (contrast(brand.colors.primary) == '#000000' ? brand.colors.backgroundDeep : brand.colors.primary) : '$bgDeep'}}",
+              "transition": "cut",
+              "camera": {
+                "animate": [
                   {
-                    "$use": "backdrop",
-                    "with": {
-                      "seed": "{{3 + i * 7}}",
-                      "intensity": 0.26,
-                      "still": true
+                    "from": {
+                      "zoom": "{{i % 2 ? 1.14 : 1.08}}",
+                      "rotation": "{{i % 2 ? -1.2 : 1.2}}"
+                    },
+                    "to": {
+                      "zoom": 1,
+                      "rotation": 0
+                    },
+                    "duration": "{{d}}",
+                    "ease": "outExpo"
+                  }
+                ]
+              },
+              "layers": [
+                {
+                  "$if": "!hot",
+                  "then": [
+                    {
+                      "$use": "backdrop",
+                      "with": {
+                        "seed": "{{3 + i * 7}}",
+                        "intensity": 0.26,
+                        "still": true
+                      }
+                    },
+                    {
+                      "type": "component",
+                      "component": "kinetic-grid",
+                      "props": {
+                        "shape": "dot",
+                        "wave": "radial",
+                        "colors": [
+                          "{{brand.colors.primary}}",
+                          "{{brand.colors.secondary}}"
+                        ],
+                        "speed": 2,
+                        "cols": "{{fmt.portrait ? 20 : 30}}"
+                      },
+                      "opacity": 0.05
                     }
-                  },
-                  {
+                  ],
+                  "else": {
                     "type": "component",
                     "component": "kinetic-grid",
                     "props": {
                       "shape": "dot",
                       "wave": "radial",
                       "colors": [
+                        "{{mix(brand.colors.primary, '#000000', 0.25)}}",
+                        "{{mix(brand.colors.primary, '#FFFFFF', 0.2)}}"
+                      ],
+                      "speed": 2,
+                      "cols": "{{fmt.portrait ? 20 : 30}}"
+                    },
+                    "opacity": 0.12
+                  }
+                },
+                {
+                  "$if": "i % 4 == 1 && !hot",
+                  "then": {
+                    "type": "component",
+                    "component": "metaballs",
+                    "props": {
+                      "colors": [
                         "{{brand.colors.primary}}",
                         "{{brand.colors.secondary}}"
                       ],
-                      "speed": 2,
-                      "cols": "{{fmt.portrait ? 12 : 18}}"
+                      "seed": "{{i}}"
                     },
-                    "opacity": 0.16
+                    "y": "{{fmt.portrait ? '88%' : '86%'}}",
+                    "width": "{{fmt.portrait ? fmt.w * 0.9 : fmt.w * 0.5}}",
+                    "height": "{{fmt.portrait ? fmt.h * 0.22 : fmt.h * 0.3}}",
+                    "opacity": 0.3
                   }
-                ],
-                "else": {
-                  "type": "component",
-                  "component": "kinetic-grid",
-                  "props": {
-                    "shape": "dot",
-                    "wave": "radial",
-                    "colors": [
-                      "{{mix(brand.colors.primary, '#000000', 0.25)}}",
-                      "{{mix(brand.colors.primary, '#FFFFFF', 0.2)}}"
-                    ],
-                    "speed": 2,
-                    "cols": "{{fmt.portrait ? 12 : 18}}"
-                  },
-                  "opacity": 0.3
+                },
+                {
+                  "text": "{{((i + 1) < 10 ? '0' + str(i + 1) : str(i + 1)) + ' / ' + ((len(words) - ((upper(trim(words[-1])) == upper(brand.name) || upper(trim(words[-1])) == upper(brand.name) + '.' || upper(trim(words[-1])) == upper(brand.name) + '!') ? 1 : 0)) < 10 ? '0' + str(len(words) - ((upper(trim(words[-1])) == upper(brand.name) || upper(trim(words[-1])) == upper(brand.name) + '.' || upper(trim(words[-1])) == upper(brand.name) + '!') ? 1 : 0)) : str(len(words) - ((upper(trim(words[-1])) == upper(brand.name) || upper(trim(words[-1])) == upper(brand.name) + '.' || upper(trim(words[-1])) == upper(brand.name) + '!') ? 1 : 0)))}}",
+                  "font": "$mono",
+                  "size": "{{fmt.portrait ? fmt.u * 3.2 : fmt.u * 2.6}}",
+                  "weight": 600,
+                  "letterSpacing": "0.12em",
+                  "color": "{{hot ? (contrast(brand.colors.primary) == '#000000' ? brand.colors.text : brand.colors.onPrimary) : alpha(brand.colors.text, 0.75)}}",
+                  "y": "{{fmt.safe.top + fmt.u * 2}}"
+                },
+                {
+                  "id": "word-{{i + 1}}",
+                  "text": "{{upper(w)}}",
+                  "style": "hero",
+                  "weight": 900,
+                  "letterSpacing": "-0.04em",
+                  "lineHeight": 0.95,
+                  "size": "{{len(w) <= 6 ? (fmt.portrait ? '24vmin' : '19vmin') : len(w) <= 11 ? (fmt.portrait ? '17vmin' : '15vmin') : (fmt.portrait ? '13vmin' : '12vmin')}}",
+                  "width": "{{fmt.safe.w}}",
+                  "color": "{{hot ? (contrast(brand.colors.primary) == '#000000' ? brand.colors.primary : '$onPrimary') : '$text'}}",
+                  "enter": "{{i % 3 == 0 ? 'pop by char from center 0.35s 25ms outBack' : i % 3 == 1 ? 'mask by word up' : 'rise by char 0.4s 20ms'}}"
                 }
-              },
-              {
-                "$if": "i % 4 == 1 && !hot",
-                "then": {
-                  "type": "component",
-                  "component": "metaballs",
-                  "props": {
-                    "colors": [
-                      "{{brand.colors.primary}}",
-                      "{{brand.colors.secondary}}"
-                    ],
-                    "seed": "{{i}}"
-                  },
-                  "y": "{{fmt.portrait ? '58%' : '55%'}}",
-                  "width": "{{fmt.portrait ? fmt.w * 0.9 : fmt.w * 0.5}}",
-                  "height": "{{fmt.portrait ? fmt.h * 0.4 : fmt.h * 0.7}}",
-                  "opacity": 0.85
-                }
-              },
-              {
-                "text": "{{((i + 1) < 10 ? '0' + str(i + 1) : str(i + 1)) + ' / ' + (len(words) < 10 ? '0' + str(len(words)) : str(len(words)))}}",
-                "font": "$mono",
-                "size": "{{fmt.u * 2.2}}",
-                "weight": 600,
-                "letterSpacing": "0.12em",
-                "color": "{{hot ? (contrast(brand.colors.primary) == '#000000' ? brand.colors.text : brand.colors.onPrimary) : '$muted'}}",
-                "y": "{{fmt.safe.top + fmt.u * 2}}"
-              },
-              {
-                "id": "word-{{i + 1}}",
-                "text": "{{upper(w)}}",
-                "style": "hero",
-                "weight": 900,
-                "letterSpacing": "-0.04em",
-                "lineHeight": 0.95,
-                "size": "{{len(w) <= 6 ? (fmt.portrait ? '24vmin' : '19vmin') : len(w) <= 11 ? (fmt.portrait ? '17vmin' : '15vmin') : (fmt.portrait ? '13vmin' : '12vmin')}}",
-                "width": "{{fmt.safe.w}}",
-                "color": "{{hot ? (contrast(brand.colors.primary) == '#000000' ? '$text' : '$onPrimary') : '$text'}}",
-                "enter": "{{i % 3 == 0 ? 'pop by char from center 0.35s 25ms outBack' : i % 3 == 1 ? 'mask by word up' : 'rise by char 0.4s 20ms'}}"
-              }
-            ]
+              ]
+            }
           }
         }
       },
@@ -209,21 +212,6 @@
           },
           {
             "type": "component",
-            "component": "kinetic-grid",
-            "props": {
-              "shape": "dot",
-              "wave": "radial",
-              "colors": [
-                "{{brand.colors.primary}}",
-                "{{brand.colors.secondary}}"
-              ],
-              "speed": 1.5,
-              "cols": "{{fmt.portrait ? 12 : 18}}"
-            },
-            "opacity": 0.16
-          },
-          {
-            "type": "component",
             "component": "sparks",
             "props": {
               "bursts": [
@@ -241,6 +229,21 @@
               "power": 1.2,
               "seed": 3
             }
+          },
+          {
+            "type": "component",
+            "component": "kinetic-grid",
+            "props": {
+              "shape": "dot",
+              "wave": "radial",
+              "colors": [
+                "{{brand.colors.primary}}",
+                "{{brand.colors.secondary}}"
+              ],
+              "speed": 1.5,
+              "cols": "{{fmt.portrait ? 20 : 30}}"
+            },
+            "opacity": 0.06
           },
           {
             "$if": "brand.logo",
@@ -265,7 +268,11 @@
                   "fontSize": "{{fmt.portrait ? fmt.u * 20 : fmt.u * 17}}",
                   "weight": 900,
                   "seed": 7,
-                  "glow": true
+                  "glow": true,
+                  "form": 1.0,
+                  "hold": 0.3,
+                  "exit": "fade",
+                  "exitTime": 0.5
                 },
                 "y": "{{payoff ? '44%' : '50%'}}",
                 "width": "{{fmt.safe.w}}",
@@ -333,7 +340,8 @@
               "style": "subtitle",
               "color": "{{brand.colors.text}}",
               "background": "{{alpha(brand.colors.backgroundDeep, 0.6)}}",
-              "highlight": "{{brand.colors.accent}}"
+              "highlight": "{{brand.colors.accent}}",
+              "size": "{{fmt.portrait ? '4.6vmin' : '3.4vmin'}}"
             },
             {
               "cues": {
@@ -359,7 +367,8 @@
               "style": "subtitle",
               "color": "{{brand.colors.text}}",
               "background": "{{alpha(brand.colors.backgroundDeep, 0.6)}}",
-              "highlight": "{{brand.colors.accent}}"
+              "highlight": "{{brand.colors.accent}}",
+              "size": "{{fmt.portrait ? '4.6vmin' : '3.4vmin'}}"
             },
             {
               "$if": "captions.src",

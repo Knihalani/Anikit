@@ -39,5 +39,8 @@ A fresh agent with only `skills/anikit-video/SKILL.md` did three tasks end to en
 | 3 | Launch | 3 | 2.0k | 6.5/10 | over-length not scored → `length` warning with per-scene seconds; title repeated 3× per frame (toast) → removed; accent drifted to crimson → accent = primary lifted to 4.5:1 |
 | 3 | Teaser | 4 | 1.2k | 5/10 | white captions unreadable on lime flash frames → light primaries flash a darkened tint with light text |
 | 3 | Changelog | 2 | 1.0k | 6.5/10 | red IMPROVED chip read as an error → semantic blue; NEW = primary, FIXED = green |
+| 4 | Launch / Teaser / Changelog | 2–4 each | 1.1–2.7k | 6.5 / 6 / 5 | white labels on brand fills (80% of render warnings) → `fill` token + auto label colour; particles over text → behind; expand now runs the render check |
+| 5 | Calibration: flagship film *Telemetry* | – | – | 8/10 | the scale's anchor for this engine |
+| 5 | Launch / Teaser / Changelog | 2 each | 1.0–2.0k | 6 / 6 / 5.5 | gaps vs Telemetry: static generic hero UI, one layout repeated, little typographic density → launch redesign; teaser flash never full-bleed → brand fill |
 
-Runs 2 and 3 used a stricter grader ("10 = ship it for a real launch"). Rendering was 165–240 fps; `preview` takes about 0.04 s.
+Runs 2–5 used a stricter grader ("10 = ship it for a real launch"). Rendering was 165–240 fps; `preview` takes about 0.04 s.

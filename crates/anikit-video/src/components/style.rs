@@ -70,6 +70,31 @@ pub fn alpha(c: Rgba, a: f32) -> Rgba {
     Rgba([c.0[0], c.0[1], c.0[2], c.0[3] * a])
 }
 
+/// WCAG relative luminance of an sRGB colour.
+pub fn luminance(c: Rgba) -> f32 {
+    let f = |v: f32| if v <= 0.040_45 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) };
+    0.2126 * f(c.0[0]) + 0.7152 * f(c.0[1]) + 0.0722 * f(c.0[2])
+}
+
+/// WCAG contrast ratio between two colours.
+pub fn contrast(a: Rgba, b: Rgba) -> f32 {
+    let (la, lb) = (luminance(a), luminance(b));
+    (la.max(lb) + 0.05) / (la.min(lb) + 0.05)
+}
+
+/// White or near-black, whichever reads better on every one of `fills`
+/// (all stops of a gradient): maximises the worst-case WCAG contrast.
+pub fn on_color(fills: &[Rgba]) -> Rgba {
+    let white = Rgba([1.0, 1.0, 1.0, 1.0]);
+    let ink = Rgba([0.07, 0.07, 0.09, 1.0]);
+    let worst = |c: Rgba| fills.iter().map(|f| contrast(c, *f)).fold(f32::MAX, f32::min);
+    if worst(white) >= worst(ink) {
+        white
+    } else {
+        ink
+    }
+}
+
 /// Lighten (`amt > 0`) or darken (`amt < 0`) towards white/black.
 pub fn shade(c: Rgba, amt: f32) -> Rgba {
     if amt >= 0.0 {

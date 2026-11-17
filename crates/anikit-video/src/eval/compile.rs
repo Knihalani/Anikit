@@ -241,7 +241,18 @@ impl Evaluator {
             let depth = camera.base[prop::APERTURE] != 0.0
                 || camera.tracks.iter().any(|t| t.slot as usize == prop::APERTURE)
                 || layers.iter().any(|n| n.base[prop::DEPTH] != 0.0 || n.tracks.iter().any(|t| t.slot as usize == prop::DEPTH) || n.exprs.iter().any(|e| e.0 as usize == prop::DEPTH));
-            scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth });
+            // Leading layers that fill the frame and don't move are the backdrop.
+            let (fw, fh) = (c.w, c.h);
+            let bg_layers = layers
+                .iter()
+                .take_while(|n| {
+                    let b = &n.base;
+                    let covers = b[prop::W] >= fw - 1.0 && b[prop::H] >= fh - 1.0 && (b[prop::X] - n.anchor[0] * b[prop::W]) <= 1.0 && (b[prop::Y] - n.anchor[1] * b[prop::H]) <= 1.0;
+                    let still = b[prop::ROT] == 0.0 && b[prop::SX] >= 1.0 && b[prop::SY] >= 1.0 && n.tracks.iter().all(|t| !matches!(t.slot as usize, prop::X | prop::Y | prop::W | prop::H | prop::SX | prop::SY | prop::ROT));
+                    covers && still && n.start <= 0.0 && n.exprs.is_empty() && !matches!(n.kind, Kind::Text { .. })
+                })
+                .count();
+            scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth, bg_layers });
             t = start + dur;
             prev_dur = dur;
         }
@@ -2486,11 +2497,16 @@ impl C<'_> {
         } else if let Some(c) = self.theme.colors.get("text") {
             st.style.color = text::Color(*c);
         }
-        st.highlight_box = col(self, &f.background, "captions.background");
+        // `background`: a pill behind the caption line; `highlightBox`: a box behind the spoken word.
+        st.background = col(self, &f.background, "captions.background");
+        if st.background.is_some() {
+            st.radius = 0.5;
+        }
+        st.highlight_box = col(self, &f.highlight_box, "captions.highlightBox");
         // With a box behind the spoken word, keep its text colour by default (an accent on an accent box vanishes).
         st.highlight = match col(self, &f.highlight, "captions.highlight") {
             Some(c) => Some(c),
-            None if st.highlight_box.is_some() => Some(st.style.color),
+            None if st.highlight_box.is_some() || st.background.is_some() => Some(st.style.color),
             None => self.theme.colors.get("accent").map(|c| text::Color(*c)),
         };
         if let Some(n) = f.max_words {

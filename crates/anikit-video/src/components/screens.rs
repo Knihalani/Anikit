@@ -263,9 +263,26 @@ fn app(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32, wide: bool) {
     border(&mut e, x, y, w, hh, fs * 0.9, alpha(s.acc, 0.4));
     let pad = fs * 1.4;
     let hsz = (fs * if wide { 1.8 } else { 1.3 }).min(hh * 0.22);
-    s.fit(&mut e, s.it(0, "Welcome"), hsz, 700, s.text, x + pad, y + pad + hsz * 0.9, w - 2.0 * pad);
+    // On wide screens the side panel starts at 62 % of the width.
+    let title_w = if wide { w * 0.62 - pad * 1.6 } else { w - 2.0 * pad };
+    // Headline: one line if it fits, else two (the second fitted/ellipsized).
+    let head = s.it(0, "Welcome");
+    let hst = TextStyle::new(Face::Sans, hsz, 700, s.text);
+    let lines = super::text::wrap(s.ctx.assets, head, &hst, title_w);
+    let mut ly = y + pad + hsz * 0.9;
+    if lines.len() <= 1 || s.ctx.assets.measure(head, &hst) * 0.8 <= title_w {
+        s.fit(&mut e, head, hsz, 700, s.text, x + pad, ly, title_w);
+    } else {
+        let size2 = hsz * 0.85;
+        let st2 = TextStyle::new(Face::Sans, size2, 700, s.text);
+        let two = super::text::wrap(s.ctx.assets, head, &st2, title_w);
+        s.fit(&mut e, &two[0], size2, 700, s.text, x + pad, ly, title_w);
+        ly += size2 * 1.15;
+        let rest = two[1..].join(" ");
+        s.fit(&mut e, &rest, size2, 700, s.text, x + pad, ly, title_w);
+    }
     // Skeleton paragraph under the headline.
-    let mut ly = y + pad + hsz * 1.6;
+    let mut ly = ly + hsz * 0.7;
     for (k, f) in [0.86f32, 0.78, 0.55].iter().enumerate() {
         if ly + fs * 2.6 > y + hh - fs * 2.4 {
             break;
@@ -340,7 +357,7 @@ fn chat(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32) {
     let mut yy = y + fs * 0.5;
     let maxw = w * 0.75;
     for (i, (mine, text)) in msgs.iter().enumerate() {
-        let st = TextStyle::new(Face::Sans, fs * 0.85, 400, if *mine { Rgba([1.0, 1.0, 1.0, 1.0]) } else { s.text });
+        let st = TextStyle::new(Face::Sans, fs * 0.85, 400, if *mine { on_color(&[s.acc]) } else { s.text });
         let lines = super::text::wrap(s.ctx.assets, text, &st, maxw - fs * 1.6);
         let bw = lines.iter().map(|l| s.ctx.assets.measure(l, &st)).fold(0.0, f32::max) + fs * 1.6;
         let bh = lines.len() as f32 * fs * 1.25 + fs * 0.9;
@@ -468,7 +485,7 @@ fn settings(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32) {
         s.txt(&mut e, "you@company.com", fs * 0.8, 400, s.text, x + fs, fy + fs * 1.5, 0.0);
         let bw = fs * 7.0;
         e.push(rect(x + w - bw, fy + fs * 3.0, bw, fs * 2.2, fs * 1.1, solid(s.acc)));
-        s.txt(&mut e, "Save", fs * 0.8, 600, Rgba([1.0, 1.0, 1.0, 1.0]), x + w - bw * 0.5, fy + fs * 4.4, 0.5);
+        s.txt(&mut e, "Save", fs * 0.8, 600, on_color(&[s.acc]), x + w - bw * 0.5, fy + fs * 4.4, 0.5);
         s.item(o, 2 + n, e);
     }
     let _ = Path::new();

@@ -99,7 +99,7 @@ impl Component for Chat {
             if t < think_start {
                 break;
             }
-            let st = sans(fs, 400, if mine { Rgba([1.0, 1.0, 1.0, 1.0]) } else { th.text });
+            let st = sans(fs, 400, if mine { on_color(&[shade(th.accent, 0.1), shade(th.accent, -0.08)]) } else { th.text });
             let mut o = Vec::new();
             if t < at {
                 // Typing indicator.

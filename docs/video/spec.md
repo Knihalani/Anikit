@@ -27,6 +27,8 @@ A scene string is a title card (`"Title | subtitle"`); a layer string is centred
 
 Theme colours (used as `$name`): `primary secondary accent bg surface text muted`. Text styles: `title heading subtitle body caption label code`.
 
+**Reuse (fewer tokens):** `"defs": { "card": {…layer or scene…} }`, then `{ "use": "card", "with": { "title": "Hi" }, "x": 200 }` anywhere a layer or scene goes. Overrides deep-merge; `"$title"` in the def is replaced. `"repeat": 3` copies a layer or scene, with `"$i"` (0-based), `"$n"` and arithmetic `"=160 + $i*420"`. `{ "repeat": 3, "scenes": [ … ] }` loops a sequence of scenes.
+
 ## Scenes
 
 `id` · `duration` (default 3, or `"auto"`) · `background` · `transition` (into this scene) · `camera` · `markers` · `layers` · `audio`.
@@ -74,7 +76,7 @@ Animatable: `x y width height scale scaleX scaleY rotation skewX skewY opacity b
 
 ```json
 "audio": [ { "src": "music.mp3", "volume": 0.7, "fadeOut": 1.5, "duck": true }, { "sfx": "whoosh", "at": "@drop" } ],
-"captions": { "src": "voice.srt", "background": "$accent", "maxWords": 3 }
+"captions": { "src": "voice.srt", "highlightBox": "$accent", "maxWords": 3 }   // or "background" for a pill behind the line
 ```
 
 SFX: `click tick pop whoosh swoosh rise riser drop impact ding chime typing success`.
