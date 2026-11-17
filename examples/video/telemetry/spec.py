@@ -593,8 +593,8 @@ def scene_overtake():
     for k, m in enumerate((150, 100, 50)):
         bf = 0.2 - m / race.TRACK_M - 0.012
         bx, by = xf(*TRACK[sample_idx(bf)])
-        zoom_layers.append(text(str(m), bx, by + 86, 22, MUTED, MONO, 800, "center"))
-        zoom_layers.append(rect(bx, by + 60, 3, 18, "#FFFFFF40", anchor="center"))
+        zoom_layers.append(text(str(m), bx, by + 128, 22, MUTED, MONO, 800, "center"))
+        zoom_layers.append(rect(bx, by + 100, 3, 22, "#FFFFFF40", anchor="center"))
     for code in ("MAR", "OKA"):
         pts = [(t, xf(*track_point(frac_at(code, T_of(t)), lambda a, b: (a, b)))) for t in ts]
         off = 22 if code == "OKA" else -22  # lateral line: OKA on the inside
@@ -607,6 +607,22 @@ def scene_overtake():
             nx, ny = -(b[1] - a[1]), (b[0] - a[0])
             ln = math.hypot(nx, ny) or 1
             pp.append((t, (x + nx / ln * off, y + ny / ln * off)))
+        def at_T(T, off=off):
+            f = frac_at(code, T) % 1.0
+            x, y = xf(*track_point(f, lambda a, b: (a, b)))
+            i = sample_idx(f)
+            a2, b2 = TRACK[(i - 4) % NS], TRACK[(i + 4) % NS]
+            nx, ny = -(b2[1] - a2[1]), (b2[0] - a2[0])
+            ln = math.hypot(nx, ny) or 1
+            return x + nx / ln * off, y + ny / ln * off
+
+        # light trail: ghosts a few hundredths of a race-second behind
+        for k in range(6, 0, -1):
+            lag = 0.07 * k
+            gp = [(t, at_T(T_of(t) - lag)) for t in ts[::2]]
+            zoom_layers.append({"shape": "circle", "width": r(22 - 2.2 * k), "height": r(22 - 2.2 * k), "fill": COL[code],
+                                "opacity": r(0.5 - 0.07 * k, 2), "x": r(gp[0][1][0]), "y": r(gp[0][1][1]),
+                                "animate": [kf({"x": [(t, p[0]) for t, p in gp], "y": [(t, p[1]) for t, p in gp]}, dur)]})
         tag_y = -46 if code == "MAR" else 46
         car = [
             {"shape": "rect", "width": 62, "height": 24, "radius": 8, "fill": COL[code], "stroke": {"color": "#05070B", "width": 3},
@@ -699,7 +715,8 @@ def scene_overtake():
     layers.append(slow)
     layers += replay_wipe_in()
     return {"id": "overtake", "duration": dur, "background": BG, "transition": "cut",
-            "camera": {"shake": {"amount": 6, "frequency": 9, "at": r(t_pass - 0.1), "duration": 0.5}},
+            "camera": {"shake": {"amount": 6, "frequency": 9, "at": r(t_pass - 0.1), "duration": 0.5},
+                       "animate": [{"keyframes": {"zoom": [1, 1.06, 1.03]}, "at": r(t_pass - 0.05), "duration": 0.6, "ease": "outExpo"}]},
             "layers": layers}
 
 
