@@ -239,7 +239,8 @@ pub fn scale_list(dl: &mut DisplayList, s: f32) {
                         *blur *= s;
                     }
                     dl::Filter::Glow { radius, .. } => *radius *= s,
-                    dl::Filter::ColorMatrix(_) => {}
+                    dl::Filter::Halftone(h) => h.cell *= s,
+                    dl::Filter::ColorMatrix(_) | dl::Filter::Tone(_) => {}
                 }
             }
         }
@@ -522,11 +523,11 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
         let d = done.fetch_add(1, Ordering::Relaxed) + 1;
         if opts.progress {
             if let Ok(mut lr) = last_report.try_lock() {
-                if lr.elapsed().as_secs_f32() > 0.5 {
+                if lr.elapsed().as_secs_f32() > progress_every() {
                     *lr = Instant::now();
                     let el = t0.elapsed().as_secs_f32();
                     let fps = d as f32 / el.max(1e-6);
-                    eprint!("\rrender {d}/{n} frames  {fps:.0} fps  {el:.1}s  ETA {:.0}s   ", (n as f32 - d as f32) / fps.max(1e-6));
+                    progress_line(&format!("render {d}/{n} frames  {fps:.0} fps  {el:.1}s  ETA {:.0}s", (n as f32 - d as f32) / fps.max(1e-6)));
                 }
             }
         }
@@ -1206,11 +1207,11 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
             if tx.send(items).is_err() {
                 break; // the encoder failed; its error is reported below
             }
-            if opts.progress && (last_report.elapsed().as_secs_f32() > 0.5 || end == f1) {
+            if opts.progress && (last_report.elapsed().as_secs_f32() > progress_every() || end == f1) {
                 last_report = Instant::now();
                 let el = t0.elapsed().as_secs_f32();
                 let fps = done as f32 / el.max(1e-6);
-                eprint!("\rrender {done}/{n} frames  {fps:.0} fps  {el:.1}s  ETA {:.0}s   ", (n as f32 - done as f32) / fps.max(1e-6));
+                progress_line(&format!("render {done}/{n} frames  {fps:.0} fps  {el:.1}s  ETA {:.0}s", (n as f32 - done as f32) / fps.max(1e-6)));
             }
             start = end;
         }
@@ -1364,3 +1365,21 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
     };
     Estimate { secs, frame_ms, changing, threads, heaviest }
 }
+/// Seconds between progress reports: twice a second on a terminal, every 15 s
+/// when stderr is a pipe or a log (an agent's tool output), so a long render
+/// adds a few lines to its context instead of hundreds.
+fn progress_every() -> f32 {
+    use std::io::IsTerminal;
+    if std::io::stderr().is_terminal() { 0.5 } else { 15.0 }
+}
+
+/// One progress report: redrawn in place on a terminal, a plain line otherwise.
+fn progress_line(s: &str) {
+    use std::io::IsTerminal;
+    if std::io::stderr().is_terminal() {
+        eprint!("\r{s}   ");
+    } else {
+        eprintln!("{s}");
+    }
+}
+
