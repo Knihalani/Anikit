@@ -781,6 +781,11 @@ impl Scene3d {
                 .map(|d| {
                     particles::Sim::new(d, 1.0 / dt.max(1e-4), floor_y, assets).map(|mut s| {
                         s.set_colliders(colliders.clone());
+                        // Small previews simulate an exact subset of the particles,
+                        // so each pixel sees about the density it would at 1080p.
+                        if h <= 400 {
+                            s.set_stride(((1080.0 / h.max(1) as f32).powi(2) as usize).clamp(1, 16));
+                        }
                         s
                     })
                 })
