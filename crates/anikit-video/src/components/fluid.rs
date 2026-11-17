@@ -353,7 +353,7 @@ impl Fluid {
                 for (i, m) in mask.iter().enumerate() {
                     if *m > 0.0 {
                         for c in 0..3 {
-                            f.dye[c][i] += col[c] * w.amount * m * if self.look == "ink" { 1.0 } else { 1.0 };
+                            f.dye[c][i] += col[c] * w.amount * m;
                         }
                         f.heat[i] += w.heat * m;
                     }

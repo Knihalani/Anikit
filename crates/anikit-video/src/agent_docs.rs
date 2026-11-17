@@ -69,6 +69,11 @@ pub fn docs(topic: Option<&str>) -> Result<String, String> {
     if t == "music" {
         return Ok(crate::music::docs().to_string());
     }
+    if let Some(k) = t.strip_prefix("key ") {
+        // The key as typed (keys are camelCase).
+        let raw = topic.unwrap_or("").trim();
+        return key_doc(raw.get(4..).unwrap_or(k).trim());
+    }
     if t == "essentials" || t == "all" {
         // Everything a typical piece needs in one read (about 13k characters).
         let mut s = String::from("# Essentials: one read for a typical piece\n\nLoop: write s.json → `anikit-video preview s.json` (repeat) → ONE `render s.json -o out.mp4`. More: `anikit-video docs <topic>` (3d, particles, physics, post, pacing, taste, critique).\n\n");
@@ -191,6 +196,58 @@ pub fn snippets(name: Option<&str>) -> Result<String, String> {
     }
 }
 
+/// `docs key <name>`: every spec property with that name, from the JSON
+/// Schema (type, description, examples), a few lines each.
+fn key_doc(name: &str) -> Result<String, String> {
+    let schema: Value = serde_json::from_str(&crate::spec::schema_json()).map_err(|e| e.to_string())?;
+    let defs = schema.get("definitions").or_else(|| schema.get("$defs")).and_then(|d| d.as_object()).cloned().unwrap_or_default();
+    let mut out = String::new();
+    let mut all = std::collections::BTreeSet::new();
+    let ty = |p: &Value| -> String {
+        if let Some(r) = p.get("$ref").and_then(|r| r.as_str()) {
+            return r.rsplit('/').next().unwrap_or(r).to_string();
+        }
+        for k in ["anyOf", "oneOf", "allOf"] {
+            if let Some(a) = p.get(k).and_then(|a| a.as_array()) {
+                return a.iter().filter_map(|x| x.get("$ref").and_then(|r| r.as_str()).map(|r| r.rsplit('/').next().unwrap_or(r).to_string()).or_else(|| x.get("type").map(|t| t.to_string().replace('"', "")))).collect::<Vec<_>>().join(" | ");
+            }
+        }
+        p.get("type").map(|t| t.to_string().replace('"', "")).unwrap_or_default()
+    };
+    for (def, d) in &defs {
+        let Some(props) = d.get("properties").and_then(|p| p.as_object()) else { continue };
+        for (k, p) in props {
+            all.insert(k.clone());
+            if k.eq_ignore_ascii_case(name) {
+                let desc = p.get("description").and_then(|d| d.as_str()).unwrap_or("").replace('\n', " ");
+                let ex = p.get("examples").map(|e| format!("\n  e.g. {}", crate::agent_cli::compact_json(e))).unwrap_or_default();
+                // An object type: list its fields, so one call answers "what goes inside".
+                let t = ty(p);
+                // Follow `A | null` and `string | AObj` wrappers one level down.
+                let mut names: Vec<String> = t.split(" | ").map(str::to_string).collect();
+                for n in names.clone() {
+                    if let Some(a) = defs.get(&n).and_then(|d| d.get("anyOf").or_else(|| d.get("oneOf"))).and_then(|a| a.as_array()) {
+                        names.extend(a.iter().filter_map(|x| x.get("$ref").and_then(|r| r.as_str()).map(|r| r.rsplit('/').next().unwrap_or(r).to_string())));
+                        if a.iter().any(|x| x.get("type").and_then(|t| t.as_str()) == Some("string")) {
+                            names.push("string".into());
+                        }
+                    }
+                }
+                let fields = names.iter().filter_map(|n| defs.get(n)).filter_map(|d| d.get("properties").and_then(|p| p.as_object())).map(|p| p.keys().cloned().collect::<Vec<_>>().join(", ")).collect::<Vec<_>>().join(" / ");
+                let fields = if !fields.is_empty() && names.iter().any(|n| n == "string") { format!("a string, or {{ {fields} }}") } else { fields };
+                let fields = if fields.is_empty() { String::new() } else { format!("\n  fields: {fields}") };
+                let desc = if desc.is_empty() { String::new() } else { format!("\n  {desc}") };
+                out += &format!("{def}.{k}: {t}{desc}{fields}{ex}\n");
+            }
+        }
+    }
+    if out.is_empty() {
+        let hint = suggest(name, all.iter().map(|s| s.as_str())).map(|s| format!(" Did you mean '{s}'?")).unwrap_or_default();
+        return Err(format!("no spec key '{name}'.{hint} (`anikit-video schema` has them all)"));
+    }
+    Ok(out)
+}
+
 /// A shader-library entry as a minimal ready spec (layer, filter or transition).
 fn library_spec(n: &str) -> Option<(String, Value)> {
     let e = anikit_shader::library::ALL.iter().find(|e| e.name == n)?;
@@ -223,6 +280,8 @@ mod tests {
             crate::spec::parse::from_value(spec).unwrap_or_else(|d| panic!("{}: {:?}", v["name"], d.iter().map(|x| x.to_string()).collect::<Vec<_>>()));
         }
         assert!(snippets(None).unwrap().contains("type-slam"));
+        assert!(docs(Some("key anchor")).unwrap().contains("anchor"));
+        assert!(docs(Some("key ancor")).unwrap_err().contains("anchor"));
         let e = docs(Some("essentials")).unwrap();
         assert!(e.len() < 15_000 && e.contains("compositions") && e.contains("shader"), "{}", e.len());
         assert!(snippets(Some("snap-zoom")).unwrap().contains("\"shake\""));
