@@ -475,9 +475,9 @@ def cmd_sync_bench(args):
     subprocess.run(["tar", "-x", "-C", str(src)], input=tar, check=True)
     env = dict(os.environ, ANIKIT_BENCH_CACHE=str(BENCH / "cache"))
     tool = src / "docs/video/judge/benchmark/tools/bench.py"
-    subprocess.run([sys.executable, "-I", str(tool), "fetch"], cwd=src, env=env)
+    subprocess.run([sys.executable, "-I", str(tool), "fetch", "--refresh"], cwd=src, env=env)
     shutil.rmtree(BENCH / "export", ignore_errors=True)
-    subprocess.run([sys.executable, "-I", str(tool), "export", "--out", str(BENCH / "export")], cwd=src, env=env, check=True)
+    subprocess.run([sys.executable, "-I", str(tool), "export", "--no-thumbs", "--out", str(BENCH / "export")], cwd=src, env=env, check=True)
 
 
 def cmd_batch(args):
