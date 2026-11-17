@@ -10,3 +10,4 @@ anikit-video critique spec.json --render --pack rv/  # then open rv/review.md an
 - The pack: a 1 fps strip, before/after frames at each cut, the worst frame per detector (boxed), the energy peak, and a rubric you answer by looking.
 - The score is **not a quality verdict**: the frames are. Read docs/video/quality/BAR.md once.
 - MCP: `critique_spec { path, render: true, detail }`.
+- **World rules:** declare the art direction at the top of the spec, `"world": {"palette": ["#0e1712", "#f2b92e"], "fonts": ["JetBrains Mono"]}`, and `critique` points out colours and faces that drift outside it (tips; the renderer ignores `world`).
