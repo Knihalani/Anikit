@@ -1,27 +1,32 @@
 //! The `scene3d` renderer: a ray tracer with physically based shading.
 //!
-//! * **Visibility:** primary rays per pixel, adaptively supersampled (4
-//!   samples, 16 where the 4 disagree), resolved in a tone-mapped weighted
-//!   space so bright highlights on edges don't alias.
-//! * **Shading:** GGX/Schlick split-sum specular from the analytic,
-//!   pre-filtered studio environment ([`super::env`]); mirror and glossy
-//!   reflections of the scene itself are traced (up to `max_depth` bounces),
-//!   so chrome reflects the other letters and the floor.
-//! * **Shadows:** the key softbox is an area light sampled with shadow rays
-//!   (soft, contact-hardening shadows); ambient occlusion is traced too.
-//!   On the floor both are baked once per static layout into a smooth texture
-//!   ([`FloorVis`]), so the floor never shows sampling noise.
-//! * **Floor:** a glossy dark plane whose reflection is kept in its own buffer
-//!   and blurred by the distance to what it reflects (contact-sharp, softer
-//!   further away), fading into the backdrop with distance.
-//!
-//! The image then goes through [`super::post`]: depth of field, motion blur,
-//! bloom, ACES tone mapping and dithering.
+//! * **Geometry:** shapes (triangle BVHs or analytic spheres) placed by
+//!   instances (rigid transform + uniform scale); a top-level hierarchy over
+//!   the instances' world boxes is rebuilt per frame, so thousands of moving
+//!   instances stay cheap.
+//! * **Visibility:** one primary ray per pixel, then a second pass adds
+//!   jittered samples only where neighbours disagree (object edges, sharp
+//!   reflections). Samples resolve in tone-mapped weighted space so bright
+//!   highlights don't alias.
+//! * **Shading:** GGX/Schlick split-sum specular against the analytic,
+//!   pre-filtered environment ([`super::env`]); reflections of the scene are
+//!   traced. Glass is a dielectric with Fresnel reflection, refraction and
+//!   Beer–Lambert absorption (thick edges go deep green). Thin glass (panes)
+//!   lets primary rays continue straight through, so what's behind stays in
+//!   the denoised G-buffer instead of becoming noisy secondary shading.
+//! * **Diffuse light** for primary surfaces is split into albedo × (ambient ×
+//!   AO + key × visibility); AO and key visibility come from few traced rays
+//!   and are denoised edge-aware in [`super::post`]. The floor can use a
+//!   baked visibility texture instead ([`FloorVis`]).
+//! * **Floor:** a plane whose reflection lives in its own buffer and is blurred
+//!   by the distance to what it reflects; it fades into the backdrop.
+//! * **Haze:** exponential fog towards the haze colour.
 
-use super::bvh::Bvh;
+use super::bvh::{Bvh, Tlas};
 use super::env::Env;
 use super::math::*;
 use std::sync::Arc;
+use vello_cpu::Pixmap;
 
 #[derive(Clone, Debug)]
 pub struct Material {
@@ -31,14 +36,105 @@ pub struct Material {
     pub roughness: f32,
     /// Dielectric reflectance scale (1 = F0 0.04).
     pub specular: f32,
+    /// Emitted radiance (linear, already multiplied by strength).
     pub emissive: V3,
     /// Clear lacquer on top (0..1).
     pub clearcoat: f32,
+    /// 0 = opaque, 1 = clear dielectric (glass).
+    pub transmission: f32,
+    pub ior: f32,
+    /// Absorption per metre inside the material (Beer–Lambert, linear RGB).
+    pub absorb: V3,
+    /// How much a texture glows on its own (0 = only lit, 1 = a screen).
+    pub tex_glow: f32,
 }
 
 impl Material {
     pub fn chrome() -> Material {
-        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0 }
+        Material { base: v3(0.94, 0.94, 0.96), metallic: 1.0, roughness: 0.06, specular: 1.0, emissive: v3(0.0, 0.0, 0.0), clearcoat: 0.0, transmission: 0.0, ior: 1.5, absorb: v3(0.0, 0.0, 0.0), tex_glow: 0.7 }
+    }
+}
+
+/// An image texture (premultiplied sRGB RGBA8), or a flat average for far LODs.
+#[derive(Clone)]
+pub enum Tex {
+    Image(Arc<Pixmap>),
+    /// Linear premultiplied RGBA.
+    Flat([f32; 4]),
+}
+
+/// Which faces show the texture (object-space normal direction).
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum Face {
+    Front,
+    Back,
+    Both,
+}
+
+fn srgb_lut() -> &'static [f32; 256] {
+    static L: std::sync::OnceLock<[f32; 256]> = std::sync::OnceLock::new();
+    L.get_or_init(|| {
+        std::array::from_fn(|i| {
+            let v = i as f32 / 255.0;
+            if v <= 0.04045 {
+                v / 12.92
+            } else {
+                ((v + 0.055) / 1.055).powf(2.4)
+            }
+        })
+    })
+}
+
+impl Tex {
+    /// Linear premultiplied RGBA at `uv` (bilinear, clamped).
+    #[inline]
+    pub fn sample(&self, u: f32, v: f32) -> [f32; 4] {
+        match self {
+            Tex::Flat(c) => *c,
+            Tex::Image(pm) => {
+                let (w, h) = (pm.width() as usize, pm.height() as usize);
+                let data = pm.data_as_u8_slice();
+                let x = (u.clamp(0.0, 1.0) * w as f32 - 0.5).clamp(0.0, w as f32 - 1.0);
+                let y = (v.clamp(0.0, 1.0) * h as f32 - 0.5).clamp(0.0, h as f32 - 1.0);
+                let (ix, iy) = (x as usize, y as usize);
+                let (tx, ty) = (x - ix as f32, y - iy as f32);
+                let (ix1, iy1) = ((ix + 1).min(w - 1), (iy + 1).min(h - 1));
+                let lut = srgb_lut();
+                let texel = |i: usize| -> [f32; 4] {
+                    let o = i * 4;
+                    let a = data[o + 3];
+                    if a == 0 {
+                        return [0.0; 4];
+                    }
+                    let af = a as f32 / 255.0;
+                    let un = |c: u8| lut[((c as u32 * 255 + a as u32 / 2) / a as u32).min(255) as usize] * af;
+                    [un(data[o]), un(data[o + 1]), un(data[o + 2]), af]
+                };
+                let (a, b, c, d) = (texel(iy * w + ix), texel(iy * w + ix1), texel(iy1 * w + ix), texel(iy1 * w + ix1));
+                std::array::from_fn(|k| (a[k] * (1.0 - tx) + b[k] * tx) * (1.0 - ty) + (c[k] * (1.0 - tx) + d[k] * tx) * ty)
+            }
+        }
+    }
+
+    /// Average colour (for far LODs).
+    pub fn average(pm: &Pixmap) -> [f32; 4] {
+        let lut = srgb_lut();
+        let data = pm.data_as_u8_slice();
+        let mut acc = [0.0f64; 4];
+        let step = (data.len() / 4 / 4096).max(1);
+        let mut n = 0.0f64;
+        for px in data.chunks_exact(4).step_by(step) {
+            let a = px[3];
+            if a > 0 {
+                let af = a as f32 / 255.0;
+                for k in 0..3 {
+                    acc[k] += (lut[((px[k] as u32 * 255 + a as u32 / 2) / a as u32).min(255) as usize] * af) as f64;
+                }
+                acc[3] += af as f64;
+            }
+            n += 1.0;
+        }
+        std::array::from_fn(|k| (acc[k] / n.max(1.0)) as f32)
     }
 }
 
@@ -50,6 +146,9 @@ pub enum Shape {
     Sphere,
 }
 
+/// A hit in object space: distance, shading normal, geometric normal, UV.
+type ObjHit = (f32, V3, V3, [f32; 2]);
+
 impl Shape {
     pub fn bounds(&self) -> (V3, V3) {
         match self {
@@ -57,18 +156,19 @@ impl Shape {
             Shape::Sphere => (v3(-1.0, -1.0, -1.0), v3(1.0, 1.0, 1.0)),
         }
     }
-    /// Closest hit: (t, object-space shading normal, object-space geometric normal).
     #[inline]
-    fn hit(&self, o: V3, d: V3, tmin: f32, tmax: f32) -> Option<(f32, V3, V3)> {
+    fn hit(&self, o: V3, d: V3, tmin: f32, tmax: f32) -> Option<ObjHit> {
         match self {
             Shape::Mesh(b) => b.intersect(o, d, tmin, tmax).map(|h| {
                 let tr = &b.tris[h.tri as usize];
                 let w = 1.0 - h.u - h.v;
-                (h.t, add(add(scale(tr.n[0], w), scale(tr.n[1], h.u)), scale(tr.n[2], h.v)), cross(tr.e1, tr.e2))
+                let uv = [tr.uv[0][0] * w + tr.uv[1][0] * h.u + tr.uv[2][0] * h.v, tr.uv[0][1] * w + tr.uv[1][1] * h.u + tr.uv[2][1] * h.v];
+                (h.t, add(add(scale(tr.n[0], w), scale(tr.n[1], h.u)), scale(tr.n[2], h.v)), cross(tr.e1, tr.e2), uv)
             }),
             Shape::Sphere => sphere_t(o, d, tmin, tmax).map(|t| {
                 let n = madd(o, d, t);
-                (t, n, n)
+                let uv = [0.5 + n.x.atan2(n.z) / std::f32::consts::TAU, 0.5 - n.y.clamp(-1.0, 1.0).asin() / std::f32::consts::PI];
+                (t, n, n, uv)
             }),
         }
     }
@@ -99,12 +199,19 @@ fn sphere_t(o: V3, d: V3, tmin: f32, tmax: f32) -> Option<f32> {
     (t1 > tmin && t1 < tmax).then_some(t1)
 }
 
-pub struct Object {
-    pub shape: Shape,
+/// One placed object.
+#[derive(Clone)]
+pub struct Inst {
+    pub shape: u32,
     pub xf: Xf,
     /// Transform one frame earlier (for motion vectors).
     pub prev: Xf,
-    pub mat: Material,
+    pub mat: u32,
+    pub tex: Option<(Tex, Face)>,
+    /// Thin glass: primary rays pass straight through (no lateral offset).
+    pub thin: bool,
+    /// Casts shadows and occludes.
+    pub shadow: bool,
 }
 
 /// Baked floor lighting: key-light visibility and ambient occlusion over a
@@ -150,9 +257,13 @@ pub struct Floor {
     pub roughness: f32,
     /// Extra mirror reflectance on top of Fresnel (0 = plain lacquer).
     pub mirror: f32,
-    /// Light pool: the key's light on the floor falls off around this centre.
+    /// Overall reflection strength (0 = matte paper, 1 = lacquer).
+    pub reflect: f32,
+    /// Light pool: the key's light on the floor falls off around this centre
+    /// (radius 0 = no falloff).
     pub pool: (f32, f32, f32),
-    /// The floor fades into the backdrop between these distances from the pool centre.
+    /// The floor fades into the backdrop between these distances from the
+    /// pool centre (equal = never).
     pub fade: (f32, f32),
     pub vis: Option<Arc<FloorVis>>,
 }
@@ -161,12 +272,15 @@ pub struct Floor {
 pub struct Camera {
     pub pos: V3,
     pub target: V3,
+    /// Vertical field of view (degrees).
     pub fov: f32,
     /// Focus distance (world units) and aperture (blur-circle radius in
     /// pixels at 1080p for points at infinity).
     pub focus: f32,
     pub aperture: f32,
     pub roll: f32,
+    /// Shutter as a fraction of the frame interval.
+    pub shutter: f32,
 }
 
 impl Camera {
@@ -182,28 +296,36 @@ impl Camera {
 }
 
 pub struct Scene {
-    pub objects: Vec<Object>,
+    pub shapes: Vec<Shape>,
+    pub mats: Vec<Material>,
+    pub insts: Vec<Inst>,
+    pub tlas: Tlas,
     pub env: Env,
     pub floor: Option<Floor>,
     /// Backdrop colours (linear): at the horizon and at the top of frame.
     pub backdrop: (V3, V3),
     /// A soft glow on the backdrop: direction, colour, angular width (1 - cos).
     pub glow: (V3, V3, f32),
-    pub exposure: f32,
+    /// Exponential haze: density per metre, and colour (linear).
+    pub haze: (f32, V3),
 }
 
 #[derive(Clone, Copy)]
 pub struct Quality {
-    pub min_spp: u32,
-    pub max_spp: u32,
+    /// Extra samples where a pixel disagrees with its neighbours.
+    pub edge_spp: u32,
     pub ao_rays: u32,
     pub shadow_rays: u32,
     pub max_depth: u32,
+    /// Glass interfaces a ray may cross.
+    pub max_glass: u32,
+    /// Luminance contrast (tone-mapped) that triggers refinement.
+    pub contrast: f32,
 }
 
 impl Default for Quality {
     fn default() -> Self {
-        Quality { min_spp: 4, max_spp: 16, ao_rays: 6, shadow_rays: 4, max_depth: 3 }
+        Quality { edge_spp: 8, ao_rays: 2, shadow_rays: 2, max_depth: 3, max_glass: 10, contrast: 0.05 }
     }
 }
 
@@ -214,17 +336,49 @@ struct Surf {
     p: V3,
     ng: V3,
     ns: V3,
-    /// Object index, or `usize::MAX` for the floor.
+    uv: [f32; 2],
+    /// Object-space geometric normal (for texture faces).
+    on: V3,
+    /// Instance index, or `FLOOR`.
     obj: usize,
 }
 
 const FLOOR: usize = usize::MAX;
-const EPS: f32 = 1e-3;
+const EPS: f32 = 1e-4;
+
+/// Diffuse lighting split for denoising: albedo, unoccluded ambient,
+/// unshadowed key, and the AO / key visibility to apply to them.
+#[derive(Clone, Copy, Default)]
+struct Diffuse {
+    alb: V3,
+    amb: V3,
+    key: V3,
+    ao: f32,
+    vk: f32,
+    /// Environment specular (already weighted) that AO should occlude.
+    spec: V3,
+}
+
+impl Diffuse {
+    #[inline]
+    fn light(&self) -> V3 {
+        add(mul(self.alb, add(scale(self.amb, self.ao), scale(self.key, self.vk))), scale(self.spec, self.ao))
+    }
+}
 
 /// Per-pixel output of the primary pass.
 #[derive(Clone, Copy, Default)]
 pub struct Px {
+    /// Everything except primary diffuse light and the floor reflection.
     pub col: [f32; 3],
+    /// Diffuse albedo (with throughput) and its unoccluded light.
+    pub alb: [f32; 3],
+    pub amb: [f32; 3],
+    pub key: [f32; 3],
+    pub ao: f32,
+    pub vk: f32,
+    /// Environment specular to occlude with the denoised AO.
+    pub spec: [f32; 3],
     pub refl: [f32; 3],
     /// Weighted floor coverage and reflection blur radius (pixels).
     pub cov: f32,
@@ -232,64 +386,155 @@ pub struct Px {
     /// View depth (distance along the camera axis) and motion (pixels per frame).
     pub depth: f32,
     pub vel: [f32; 2],
+    /// Normal (for edge-aware denoising) and hit id.
+    pub nrm: [f32; 3],
+    pub id: u32,
 }
 
+#[derive(Clone, Copy)]
 struct Sample {
     col: V3,
+    dif: Diffuse,
     refl: V3,
     floor: bool,
     rad: f32,
     depth: f32,
     vel: (f32, f32),
+    nrm: V3,
     id: usize,
 }
 
+impl Sample {
+    #[inline]
+    fn total(&self) -> V3 {
+        add(add(self.col, self.refl), self.dif.light())
+    }
+}
+
+#[inline]
+fn fresnel_dielectric(cos_i: f32, eta: f32) -> f32 {
+    // eta = n_i / n_t
+    let sin2_t = eta * eta * (1.0 - cos_i * cos_i).max(0.0);
+    if sin2_t >= 1.0 {
+        return 1.0;
+    }
+    let cos_t = (1.0 - sin2_t).sqrt();
+    let rs = (eta * cos_i - cos_t) / (eta * cos_i + cos_t);
+    let rp = (cos_i - eta * cos_t) / (cos_i + eta * cos_t);
+    0.5 * (rs * rs + rp * rp)
+}
+
+#[inline]
+fn refract(d: V3, n: V3, eta: f32) -> Option<V3> {
+    let c = -dot(d, n);
+    let k = 1.0 - eta * eta * (1.0 - c * c);
+    (k >= 0.0).then(|| norm(add(scale(d, eta), scale(n, eta * c - k.sqrt()))))
+}
+
 impl Scene {
+    pub fn new(shapes: Vec<Shape>, mats: Vec<Material>, insts: Vec<Inst>, env: Env, floor: Option<Floor>) -> Scene {
+        let mut s = Scene {
+            shapes,
+            mats,
+            insts,
+            tlas: Tlas::new(&[]),
+            env,
+            floor,
+            backdrop: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)),
+            glow: (v3(0.0, 0.0, -1.0), v3(0.0, 0.0, 0.0), 0.1),
+            haze: (0.0, v3(0.0, 0.0, 0.0)),
+        };
+        s.rebuild();
+        s
+    }
+
+    /// Rebuild the top-level hierarchy after instances moved.
+    pub fn rebuild(&mut self) {
+        let boxes: Vec<(V3, V3)> = self.insts.iter().map(|i| self.world_box(i)).collect();
+        self.tlas = Tlas::new(&boxes);
+    }
+
+    pub fn world_box(&self, i: &Inst) -> (V3, V3) {
+        let (blo, bhi) = self.shapes[i.shape as usize].bounds();
+        let (mut lo, mut hi) = (v3(f32::MAX, f32::MAX, f32::MAX), v3(f32::MIN, f32::MIN, f32::MIN));
+        for k in 0..8 {
+            let c = v3(if k & 1 == 0 { blo.x } else { bhi.x }, if k & 2 == 0 { blo.y } else { bhi.y }, if k & 4 == 0 { blo.z } else { bhi.z });
+            let p = i.xf.point(c);
+            lo = vmin(lo, p);
+            hi = vmax(hi, p);
+        }
+        (lo, hi)
+    }
+
     fn trace(&self, o: V3, d: V3, tmax: f32) -> Option<Surf> {
         let mut best: Option<Surf> = None;
         let mut tm = tmax;
         if let Some(f) = &self.floor {
-            if d.y < -1e-6 {
+            if d.y < -1e-7 {
                 let t = (f.y - o.y) / d.y;
                 if t > EPS && t < tm {
                     tm = t;
                     let up = v3(0.0, 1.0, 0.0);
-                    best = Some(Surf { t, p: madd(o, d, t), ng: up, ns: up, obj: FLOOR });
+                    best = Some(Surf { t, p: madd(o, d, t), ng: up, ns: up, uv: [0.0; 2], on: up, obj: FLOOR });
                 }
             }
         }
-        for (i, ob) in self.objects.iter().enumerate() {
+        self.tlas.visit(o, d, EPS, tm, |k, tm| {
+            let ob = &self.insts[k as usize];
             let lo = ob.xf.point_inv(o);
             let ld = scale(ob.xf.rot_inv(d), 1.0 / ob.xf.s);
-            if let Some((t, sn, gn)) = ob.shape.hit(lo, ld, EPS, tm) {
-                tm = t;
-                let ng = norm(ob.xf.rot(gn));
-                let ns = norm(ob.xf.rot(sn));
-                best = Some(Surf { t, p: madd(o, d, t), ng, ns, obj: i });
+            if let Some((t, sn, gn, uv)) = self.shapes[ob.shape as usize].hit(lo, ld, EPS, tm) {
+                best = Some(Surf { t, p: madd(o, d, t), ng: norm(ob.xf.rot(gn)), ns: norm(ob.xf.rot(sn)), uv, on: norm(gn), obj: k as usize });
+                t
+            } else {
+                tm
             }
-        }
+        });
         best
     }
 
-    fn occluded(&self, o: V3, d: V3, tmax: f32, floor: bool) -> bool {
+    /// Light getting through along a segment (0 = blocked); glass lets most through.
+    fn transmit(&self, o: V3, d: V3, tmax: f32, floor: bool) -> f32 {
         if floor {
             if let Some(f) = &self.floor {
-                if d.y < -1e-6 && (f.y - o.y) / d.y < tmax && (f.y - o.y) / d.y > EPS {
-                    return true;
+                if d.y < -1e-7 {
+                    let t = (f.y - o.y) / d.y;
+                    if t > EPS && t < tmax {
+                        return 0.0;
+                    }
                 }
             }
         }
-        for ob in &self.objects {
+        let mut vis = 1.0f32;
+        self.tlas.visit(o, d, EPS, tmax, |k, tm| {
+            let ob = &self.insts[k as usize];
+            if !ob.shadow {
+                return tm;
+            }
             let lo = ob.xf.point_inv(o);
             let ld = scale(ob.xf.rot_inv(d), 1.0 / ob.xf.s);
-            if ob.shape.occluded(lo, ld, EPS, tmax) {
-                return true;
+            if self.shapes[ob.shape as usize].occluded(lo, ld, EPS, tm) {
+                let m = &self.mats[ob.mat as usize];
+                if m.transmission > 0.0 {
+                    // Glass: about 85% through each pane (two interfaces).
+                    vis *= (1.0 - 0.15 * m.transmission.min(1.0)) * m.transmission.min(1.0);
+                    if vis < 0.02 {
+                        vis = 0.0;
+                        return -1.0;
+                    }
+                    tm
+                } else {
+                    vis = 0.0;
+                    -1.0
+                }
+            } else {
+                tm
             }
-        }
-        false
+        });
+        vis
     }
 
-    /// The backdrop seen by camera rays that miss everything.
+    /// The backdrop seen by rays that miss everything.
     #[inline]
     pub fn backdrop(&self, d: V3) -> V3 {
         let base = lerp3(self.backdrop.0, self.backdrop.1, smoothstep(-0.05, 0.6, d.y));
@@ -297,21 +542,28 @@ impl Scene {
         madd(base, c, (-(1.0 - dot(d, g)) / w.max(1e-4)).exp())
     }
 
+    /// Haze between a ray origin and a hit at distance `t`.
+    #[inline]
+    fn hazed(&self, c: V3, t: f32) -> V3 {
+        if self.haze.0 <= 0.0 {
+            return c;
+        }
+        lerp3(c, self.haze.1, 1.0 - (-self.haze.0 * t).exp())
+    }
+
     /// Key softbox visibility (0..1) and ambient occlusion (0..1) at `p`.
     fn visibility(&self, p: V3, n: V3, rays_k: u32, rays_ao: u32, rot: (f32, f32), ao_dist: f32) -> (f32, f32) {
         let o = madd(p, n, 2e-3);
         let mut vk = 1.0;
         if let Some(k) = self.env.key_box() {
-            if rays_k > 0 && dot(n, k.c) > -0.5 {
-                let mut lit = 0;
+            if rays_k > 0 && dot(n, k.c) > -0.3 {
+                let mut lit = 0.0;
                 for i in 0..rays_k {
                     let (a, b) = r2(i, rot);
                     let d = k.dir_at(a * 2.0 - 1.0, b * 2.0 - 1.0);
-                    if dot(d, n) <= 0.0 || !self.occluded(o, d, 1e6, false) {
-                        lit += 1;
-                    }
+                    lit += if dot(d, n) <= 0.0 { 1.0 } else { self.transmit(o, d, 1e6, false) };
                 }
-                vk = lit as f32 / rays_k as f32;
+                vk = lit / rays_k as f32;
             }
         }
         let mut ao = 1.0;
@@ -321,9 +573,7 @@ impl Scene {
             for i in 0..rays_ao {
                 let (a, b) = r2(i, rot2);
                 let d = cosine_dir(n, a, b);
-                if self.occluded(o, d, ao_dist, true) {
-                    sum += 1.0;
-                }
+                sum += 1.0 - self.transmit(o, d, ao_dist, true);
             }
             ao = 1.0 - sum / rays_ao as f32;
         }
@@ -342,260 +592,397 @@ impl Scene {
         }
     }
 
-    /// Radiance arriving along a secondary ray.
-    fn radiance(&self, o: V3, d: V3, depth: u32, q: &Quality, rough: f32, rot: (f32, f32)) -> V3 {
+    /// Environment seen by a secondary ray that escapes.
+    #[inline]
+    fn sky(&self, d: V3, rough: f32) -> V3 {
+        self.env.radiance(d, rough)
+    }
+
+    /// Radiance arriving along a secondary ray (diffuse resolved inline).
+    fn radiance(&self, o: V3, d: V3, depth: u32, glass: u32, q: &Quality, rough: f32, rot: (f32, f32)) -> V3 {
         match self.trace(o, d, 1e6) {
             Some(s) => {
-                if s.obj == FLOOR {
-                    let (c, r, f, _) = self.shade_floor(&s, d, depth, q, rot);
-                    let b = self.backdrop(d);
-                    lerp3(add(c, r), b, f)
+                let c = if s.obj == FLOOR {
+                    let (dif, r, f, _) = self.shade_floor(&s, d, depth, q, rot, true);
+                    lerp3(add(r, dif.light()), self.backdrop(d), f)
                 } else {
-                    self.shade_obj(&s, d, depth, q, rot)
-                }
+                    let (c, dif) = self.shade_obj(&s, d, depth, glass, q, rot, true);
+                    add(c, dif.light())
+                };
+                self.hazed(c, s.t)
             }
-            None => self.env.radiance(d, rough),
+            None => self.sky(d, rough),
         }
     }
 
-    /// Floor: (diffuse colour, reflection, fade to backdrop, reflected hit distance).
-    fn shade_floor(&self, s: &Surf, d: V3, depth: u32, q: &Quality, rot: (f32, f32)) -> (V3, V3, f32, f32) {
+    /// Floor: (diffuse split, reflection, fade to backdrop, reflected hit distance).
+    fn shade_floor(&self, s: &Surf, d: V3, depth: u32, q: &Quality, rot: (f32, f32), inline_vis: bool) -> (Diffuse, V3, f32, f32) {
         let f = self.floor.as_ref().unwrap();
         let p = s.p;
+        let up = v3(0.0, 1.0, 0.0);
         let (vk, ao) = match &f.vis {
             Some(v) => {
                 let a = v.sample(p.x, p.z);
                 (a[0], a[1])
             }
-            None => (1.0, 1.0),
+            None => {
+                let (nk, na) = if inline_vis { (q.shadow_rays.min(1), q.ao_rays.min(1)) } else { (q.shadow_rays, q.ao_rays) };
+                self.visibility(p, up, nk, na, rot, 1.2)
+            }
         };
         let dx = p.x - f.pool.0;
         let dz = p.z - f.pool.1;
         let r2d = dx * dx + dz * dz;
-        let pool = (-r2d / (f.pool.2 * f.pool.2)).exp();
-        let up = v3(0.0, 1.0, 0.0);
-        let light = add(scale(self.env.diffuse(up), ao), scale(self.key_diffuse(up), vk * pool * ao.sqrt()));
-        let diffuse = mul(f.color, light);
-        let fade = smoothstep(f.fade.0, f.fade.1, r2d.sqrt());
+        let pool = if f.pool.2 > 0.0 { (-r2d / (f.pool.2 * f.pool.2)).exp() } else { 1.0 };
+        let dif = Diffuse { alb: f.color, amb: self.env.diffuse(up), key: scale(self.key_diffuse(up), pool), ao, vk: vk * ao.sqrt(), spec: v3(0.0, 0.0, 0.0) };
+        let fade = if f.fade.1 > f.fade.0 { smoothstep(f.fade.0, f.fade.1, r2d.sqrt()) } else { 0.0 };
         // Reflection: Fresnel lacquer plus an optional mirror boost.
         let nv = (-d.y).clamp(1e-4, 1.0);
         let fr = 0.04 + 0.96 * (1.0 - nv).powi(5);
-        let k = (fr + f.mirror * (1.0 - fr)) * (1.0 - fade);
+        let k = (fr + f.mirror * (1.0 - fr)) * (1.0 - fade) * f.reflect;
         let mut refl = v3(0.0, 0.0, 0.0);
         let mut dist = 0.0;
         if k > 1e-3 {
             let r = v3(d.x, -d.y, d.z);
+            let miss = |r: V3| self.backdrop(r);
             if depth < q.max_depth {
                 match self.trace(madd(p, up, 1e-3), r, 1e6) {
                     Some(h) if h.obj != FLOOR => {
                         dist = h.t;
-                        refl = self.shade_obj(&h, r, depth + 1, q, rot);
+                        let (c, dd) = self.shade_obj(&h, r, depth + 1, 0, q, rot, true);
+                        refl = self.hazed(add(c, dd.light()), h.t);
                     }
                     _ => {
-                        // Past the objects the floor mirrors the dark backdrop
-                        // (plus a trace of the studio lights).
                         dist = 1e3;
-                        refl = madd(self.backdrop(r), self.env.radiance(r, f.roughness.max(0.3)), 0.05);
+                        refl = miss(r);
                     }
                 }
             } else {
-                refl = madd(self.backdrop(r), self.env.radiance(r, f.roughness.max(0.3)), 0.05);
+                refl = miss(r);
                 dist = 1e3;
             }
             refl = scale(refl, k);
         }
-        (diffuse, refl, fade, dist)
+        // What the floor reflects, it doesn't scatter (so at grazing angles a
+        // white floor turns into exactly the backdrop: a seamless cyc).
+        let mut dif = dif;
+        dif.alb = scale(dif.alb, 1.0 - k.min(1.0));
+        (dif, refl, fade, dist)
     }
 
-    fn shade_obj(&self, s: &Surf, d: V3, depth: u32, q: &Quality, rot: (f32, f32)) -> V3 {
-        let ob = &self.objects[s.obj];
-        let m = &ob.mat;
+    #[inline]
+    fn print(&self, ob: &Inst, s: &Surf) -> Option<[f32; 4]> {
+        let (t, face) = ob.tex.as_ref()?;
+        let front = s.on.z > 0.5;
+        let back = s.on.z < -0.5;
+        let ok = match face {
+            Face::Front => front,
+            Face::Back => back,
+            Face::Both => front || back,
+        };
+        ok.then(|| t.sample(s.uv[0], s.uv[1]))
+    }
+
+    /// Radiance of a texture print: lit like paper plus its own glow.
+    #[inline]
+    fn print_light(&self, t: [f32; 4], n: V3, glow: f32) -> V3 {
+        let c = v3(t[0], t[1], t[2]);
+        let lit = add(self.env.diffuse(n), self.key_diffuse(n));
+        add(scale(c, glow * 1.6), scale(mul(c, lit), 1.0 - glow))
+    }
+
+    /// An object surface: (non-diffuse light, diffuse split). With
+    /// `inline_vis`, visibility is traced here with few rays (secondary hits);
+    /// otherwise the caller fills `ao`/`vk`.
+    fn shade_obj(&self, s: &Surf, d: V3, depth: u32, glass: u32, q: &Quality, rot: (f32, f32), inline_vis: bool) -> (V3, Diffuse) {
+        let ob = &self.insts[s.obj];
+        let m = &self.mats[ob.mat as usize];
+        let entering = dot(s.ng, d) < 0.0;
         let (mut ng, mut n) = (s.ng, s.ns);
-        if dot(ng, d) > 0.0 {
+        if !entering {
             ng = scale(ng, -1.0);
         }
         if dot(n, ng) < 0.0 {
             n = scale(n, -1.0);
         }
         let v = scale(d, -1.0);
-        // Keep the shading normal facing the viewer.
         let mut nv = dot(n, v);
         if nv < 0.02 {
             n = norm(madd(n, v, 0.02 - nv));
             nv = dot(n, v).max(1e-4);
         }
+        let mut out = v3(0.0, 0.0, 0.0);
+        let mut cover = 0.0;
+        if let Some(t) = self.print(ob, s) {
+            out = self.print_light(t, n, m.tex_glow);
+            cover = t[3];
+            if cover >= 0.999 {
+                return (add(out, m.emissive), Diffuse::default());
+            }
+        }
+        let keep = 1.0 - cover;
+
+        if m.transmission > 0.0 {
+            // Dielectric interface.
+            let eta = if entering { 1.0 / m.ior } else { m.ior };
+            let fr = fresnel_dielectric(nv.min(1.0), eta);
+            let rough = m.roughness.clamp(0.0, 1.0);
+            let r = reflect(d, n);
+            let refl_l = if depth < q.max_depth.min(2) && entering { self.radiance(madd(s.p, ng, 1e-4), r, depth + 1, glass + 1, q, rough, rot) } else { self.sky(r, rough.max(0.05)) };
+            let mut c = scale(refl_l, fr);
+            if glass < q.max_glass {
+                let dir = if ob.thin { Some(d) } else { refract(d, n, eta) };
+                match dir {
+                    Some(t) => {
+                        let tl = self.radiance(madd(s.p, ng, -1e-4), t, depth, glass + 1, q, rough, rot);
+                        c = madd(c, tl, (1.0 - fr) * m.transmission);
+                    }
+                    None => c = madd(c, refl_l, 1.0 - fr),
+                }
+            }
+            // Beer–Lambert over the path inside (exiting: s.t was inside).
+            if !entering {
+                c = mul(c, absorb(m.absorb, s.t));
+            }
+            return (madd(add(out, m.emissive), c, keep), Diffuse::default());
+        }
+
         let rough = m.roughness.clamp(0.02, 1.0);
         let f0 = lerp3(v3(0.04 * m.specular, 0.04 * m.specular, 0.04 * m.specular), m.base, m.metallic);
         let ab = env_brdf(rough, nv);
         let spec_w = madd(scale(f0, ab.0), v3(1.0, 1.0, 1.0), ab.1);
         let diff_col = scale(m.base, 1.0 - m.metallic);
-        let needs_diffuse = luma(diff_col) > 0.01;
-        let rotp = (rot.1 * 0.37 + s.p.x * 13.7 % 1.0, rot.0 * 0.61 + s.p.z * 7.3 % 1.0);
-        let (vk, ao) = if needs_diffuse || rough > 0.3 {
-            let (nk, na) = if depth == 0 && needs_diffuse { (q.shadow_rays * 3, q.ao_rays * 3) } else if depth == 0 { (q.shadow_rays, q.ao_rays) } else { (q.shadow_rays.min(2), q.ao_rays.min(2)) };
-            self.visibility(s.p, ng, nk, na, rotp, 0.8)
-        } else {
-            (1.0, 1.0)
-        };
-        // Specular: trace the reflection (sharp and glossy), fall back to the
-        // pre-filtered environment for rough surfaces.
+        let needs_diffuse = luma(diff_col) > 0.005;
+        let rotp = (rot.1 * 0.37 + (s.p.x * 13.7).rem_euclid(1.0), rot.0 * 0.61 + (s.p.z * 7.3).rem_euclid(1.0));
+        let (vk, ao) = if inline_vis && (needs_diffuse || rough > 0.3) { self.visibility(s.p, ng, q.shadow_rays.min(1), q.ao_rays.min(1), rotp, 0.8) } else { (1.0, 1.0) };
+        // Specular: trace the reflection; the pre-filtered environment takes
+        // over for rough surfaces. On primary hits the environment part is
+        // occluded later by the denoised AO (so rough metal stays clean).
         let mut r = reflect(d, n);
         let rg = dot(r, ng);
         if rg < 0.01 {
             r = norm(madd(r, ng, 0.01 - rg));
         }
         let rough_mix = smoothstep(0.18, 0.5, rough);
-        let env_l = scale(self.env.radiance(r, rough), ao.powf(0.5 + rough));
-        let traced = if depth < q.max_depth && rough_mix < 1.0 {
-            let l = self.radiance(madd(s.p, ng, 1e-3), r, depth + 1, q, rough, rot);
-            lerp3(l, env_l, rough_mix)
+        let env_raw = self.sky(r, rough);
+        let traced = if depth < q.max_depth && rough_mix < 1.0 { self.radiance(madd(s.p, ng, 1e-4), r, depth + 1, glass, q, rough, rot) } else { v3(0.0, 0.0, 0.0) };
+        let (traced, env_spec) = if inline_vis {
+            (lerp3(traced, scale(env_raw, ao.powf(0.5 + rough)), rough_mix), v3(0.0, 0.0, 0.0))
         } else {
-            env_l
+            (scale(traced, 1.0 - rough_mix), scale(mul(env_raw, spec_w), rough_mix * keep))
         };
         let mut c = mul(traced, spec_w);
+        let kd = 1.0 - luma(spec_w).min(1.0);
+        let mut dif = Diffuse::default();
         if needs_diffuse {
-            let light = add(scale(self.env.diffuse(n), ao), scale(self.key_diffuse(n), vk));
-            let kd = 1.0 - luma(spec_w).min(1.0);
-            c = madd(c, mul(diff_col, light), kd);
+            dif = Diffuse { alb: scale(diff_col, kd * keep), amb: self.env.diffuse(n), key: self.key_diffuse(n), ao, vk, spec: v3(0.0, 0.0, 0.0) };
+        }
+        dif.spec = env_spec;
+        if !inline_vis && luma(env_spec) > 0.0 {
+            dif.ao = ao;
         }
         if m.clearcoat > 0.0 {
             let fc = (0.04 + 0.96 * (1.0 - nv).powi(5)) * m.clearcoat;
-            c = madd(scale(c, 1.0 - fc), self.env.radiance(r, 0.03), fc);
+            c = madd(scale(c, 1.0 - fc), self.sky(r, 0.03), fc);
+            dif.alb = scale(dif.alb, 1.0 - fc);
+            dif.spec = scale(dif.spec, 1.0 - fc);
         }
-        add(c, m.emissive)
+        (madd(add(out, m.emissive), c, keep), dif)
     }
 
-    fn primary(&self, cam: &Camera, prev: &Camera, w: usize, h: usize, sx: f32, sy: f32, q: &Quality, rot: (f32, f32)) -> Sample {
+    #[inline]
+    pub fn cam_ray(cam: &Camera, w: usize, h: usize, sx: f32, sy: f32) -> V3 {
         let (f, r, u) = cam.basis();
         let th = (cam.fov * 0.5).to_radians().tan();
         let aspect = w as f32 / h as f32;
         let nx = (sx / w as f32 * 2.0 - 1.0) * th * aspect;
         let ny = (1.0 - sy / h as f32 * 2.0) * th;
-        let d = norm(add(f, add(scale(r, nx), scale(u, ny))));
-        let project_prev = |p: V3| -> (f32, f32) {
-            let (pf, pr, pu) = prev.basis();
-            let pth = (prev.fov * 0.5).to_radians().tan();
-            let q = sub(p, prev.pos);
-            let z = dot(q, pf).max(1e-4);
-            let px = (dot(q, pr) / z / (pth * aspect) + 1.0) * 0.5 * w as f32;
-            let py = (1.0 - dot(q, pu) / z / pth) * 0.5 * h as f32;
-            (px, py)
-        };
-        match self.trace(cam.pos, d, 1e6) {
-            None => Sample { col: self.backdrop(d), refl: v3(0.0, 0.0, 0.0), floor: false, rad: 0.0, depth: 1e4, vel: (0.0, 0.0), id: usize::MAX - 1 },
-            Some(s) => {
-                let depth = dot(sub(s.p, cam.pos), f);
-                let prev_p = if s.obj == FLOOR {
-                    s.p
-                } else {
-                    let ob = &self.objects[s.obj];
-                    ob.prev.point(ob.xf.point_inv(s.p))
-                };
-                let (ppx, ppy) = project_prev(prev_p);
-                let vel = (sx - ppx, sy - ppy);
-                if s.obj == FLOOR {
-                    let (c, refl, fade, dist) = self.shade_floor(&s, d, 0, q, rot);
-                    let col = lerp3(c, self.backdrop(d), fade);
-                    let fl = self.floor.as_ref().unwrap();
-                    let focal = h as f32 * 0.5 / th;
-                    let rad = (fl.roughness * dist.min(50.0) / depth.max(1e-3) * focal * 0.5).min(48.0);
-                    Sample { col, refl, floor: true, rad, depth, vel, id: FLOOR }
-                } else {
-                    let col = self.shade_obj(&s, d, 0, q, rot);
-                    Sample { col, refl: v3(0.0, 0.0, 0.0), floor: false, rad: 0.0, depth, vel, id: s.obj }
-                }
-            }
-        }
+        norm(add(f, add(scale(r, nx), scale(u, ny))))
     }
 
-    /// Render the primary pass for rows `y0..y1` into `out` (row-major, `w` wide).
+    fn primary(&self, cam: &Camera, prev: &Camera, w: usize, h: usize, sx: f32, sy: f32, q: &Quality, rot: (f32, f32)) -> Sample {
+        let d = Self::cam_ray(cam, w, h, sx, sy);
+        let (f, _, _) = cam.basis();
+        let th = (cam.fov * 0.5).to_radians().tan();
+        let aspect = w as f32 / h as f32;
+        let (pf, pr, pu) = prev.basis();
+        let pth = (prev.fov * 0.5).to_radians().tan();
+        let project_prev = |p: V3| -> (f32, f32) {
+            let q = sub(p, prev.pos);
+            let z = dot(q, pf).max(1e-4);
+            ((dot(q, pr) / z / (pth * aspect) + 1.0) * 0.5 * w as f32, (1.0 - dot(q, pu) / z / pth) * 0.5 * h as f32)
+        };
+        // Walk through thin glass: each pane adds its reflection (and print)
+        // to `col` and attenuates what's behind it, which stays "primary".
+        let mut o = cam.pos;
+        let mut thr = v3(1.0, 1.0, 1.0);
+        let mut col = v3(0.0, 0.0, 0.0);
+        let mut travelled = 0.0;
+        // (view depth, normal, id, motion) of the first surface.
+        let mut first: Option<(f32, V3, usize, (f32, f32))> = None;
+        let mut inside_since: Option<f32> = None;
+        let none = v3(0.0, 0.0, 0.0);
+        for layer in 0..=q.max_glass {
+            let Some(s) = self.trace(o, d, 1e6) else {
+                let b = mul(self.backdrop(d), thr);
+                let (depth, nrm, id, vel) = first.unwrap_or((1e4, none, usize::MAX - 1, (0.0, 0.0)));
+                return Sample { col: add(col, b), dif: Diffuse::default(), refl: none, floor: false, rad: 0.0, depth, vel, nrm, id };
+            };
+            let dist = travelled + s.t;
+            let haze_f = if self.haze.0 > 0.0 { (-self.haze.0 * dist).exp() } else { 1.0 };
+            let depth_v = dot(sub(s.p, cam.pos), f);
+            let prev_p = if s.obj == FLOOR {
+                s.p
+            } else {
+                let ob = &self.insts[s.obj];
+                ob.prev.point(ob.xf.point_inv(s.p))
+            };
+            let (ppx, ppy) = project_prev(prev_p);
+            let here = (depth_v, s.ns, s.obj, (sx - ppx, sy - ppy));
+            let (fd, fnrm, fid, fvel) = first.unwrap_or(here);
+            if s.obj != FLOOR {
+                let ob = &self.insts[s.obj];
+                let m = &self.mats[ob.mat as usize];
+                if ob.thin && m.transmission > 0.0 && layer < q.max_glass {
+                    // A thin pane's interface.
+                    let entering = dot(s.ng, d) < 0.0;
+                    if first.is_none() {
+                        first = Some(here);
+                    }
+                    let ngf = if entering { s.ng } else { scale(s.ng, -1.0) };
+                    let mut n = s.ns;
+                    if dot(n, ngf) < 0.0 {
+                        n = scale(n, -1.0);
+                    }
+                    let nv = dot(n, scale(d, -1.0)).clamp(1e-4, 1.0);
+                    let eta = if entering { 1.0 / m.ior } else { m.ior };
+                    let fr = fresnel_dielectric(nv, eta);
+                    let mut a = 0.0;
+                    if let Some(t) = self.print(ob, &s) {
+                        col = add(col, scale(mul(self.print_light(t, n, m.tex_glow), thr), haze_f));
+                        a = t[3];
+                    }
+                    let r = reflect(d, n);
+                    let rl = if entering && fr * (1.0 - a) * luma(thr) > 0.004 { self.radiance(madd(s.p, ngf, 1e-4), r, 1, layer + 1, q, m.roughness, rot) } else { self.sky(r, m.roughness.max(0.05)) };
+                    col = add(col, scale(mul(rl, thr), fr * (1.0 - a) * haze_f));
+                    let mut tthr = scale(thr, (1.0 - fr) * (1.0 - a) * m.transmission);
+                    if entering {
+                        inside_since = Some(dist);
+                    } else {
+                        let inside = inside_since.map(|t0| dist - t0).unwrap_or(s.t);
+                        tthr = mul(tthr, absorb(m.absorb, inside));
+                        inside_since = None;
+                    }
+                    thr = tthr;
+                    if luma(thr) < 0.004 {
+                        return Sample { col, dif: Diffuse::default(), refl: none, floor: false, rad: 0.0, depth: fd, vel: fvel, nrm: fnrm, id: fid };
+                    }
+                    o = madd(s.p, d, 1e-4);
+                    travelled = dist;
+                    continue;
+                }
+            }
+            // An opaque (or thick glass) surface: the primary hit proper.
+            let haze_add = scale(self.haze.1, 1.0 - haze_f);
+            if s.obj == FLOOR {
+                let (mut dif, refl, fade, rdist) = self.shade_floor(&s, d, 0, q, rot, false);
+                let bd = self.backdrop(d);
+                let keepf = (1.0 - fade) * haze_f;
+                dif.alb = mul(dif.alb, scale(thr, keepf));
+                let col = add(col, mul(thr, add(scale(bd, fade * haze_f), haze_add)));
+                let fl = self.floor.as_ref().unwrap();
+                let focal = h as f32 * 0.5 / th;
+                let rad = (fl.roughness * rdist.min(50.0) / depth_v.max(1e-3) * focal * 0.5).min(48.0);
+                let direct = first.is_none();
+                // Seen through glass, the reflection isn't blurred separately.
+                let (refl, col) = if direct { (mul(scale(refl, haze_f), thr), col) } else { (none, add(col, mul(scale(refl, haze_f), thr))) };
+                return Sample { col, dif, refl, floor: direct, rad, depth: fd, vel: fvel, nrm: fnrm, id: fid };
+            }
+            let (c, mut dif) = self.shade_obj(&s, d, 0, layer, q, rot, false);
+            if luma(dif.alb) > 0.0 || luma(dif.spec) > 0.0 {
+                let ng = if dot(s.ng, d) < 0.0 { s.ng } else { scale(s.ng, -1.0) };
+                let nk = if luma(dif.alb) > 0.0 { q.shadow_rays } else { 0 };
+                let (vk, ao) = self.visibility(s.p, ng, nk, q.ao_rays, rot, 0.8);
+                dif.vk = vk;
+                dif.ao = ao;
+            }
+            dif.alb = mul(dif.alb, scale(thr, haze_f));
+            dif.spec = mul(dif.spec, scale(thr, haze_f));
+            let col = add(col, mul(thr, add(scale(c, haze_f), haze_add)));
+            return Sample { col, dif, refl: none, floor: false, rad: 0.0, depth: fd, vel: fvel, nrm: fnrm, id: fid };
+        }
+        let (depth, nrm, id, vel) = first.unwrap_or((1e4, none, usize::MAX - 1, (0.0, 0.0)));
+        Sample { col, dif: Diffuse::default(), refl: none, floor: false, rad: 0.0, depth, vel, nrm, id }
+    }
+
+    /// Render the primary pass for rows `y0..y1`: one centre sample per pixel,
+    /// then `edge_spp` more where a pixel disagrees with a neighbour.
     pub fn render_rows(&self, cam: &Camera, prev: &Camera, w: usize, h: usize, y0: usize, y1: usize, q: &Quality, out: &mut [Px]) {
-        let mut samples: Vec<Sample> = Vec::with_capacity(q.max_spp as usize);
-        for y in y0..y1 {
+        let ya = y0.saturating_sub(1);
+        let yb = (y1 + 1).min(h);
+        let mut centre: Vec<Sample> = Vec::with_capacity((yb - ya) * w);
+        for y in ya..yb {
             for x in 0..w {
                 let hs = hash2(x as u32, y as u32);
                 let rot = (u01(hs), u01(hash2(hs, 0x9e37)));
+                centre.push(self.primary(cam, prev, w, h, x as f32 + 0.5, y as f32 + 0.5, q, rot));
+            }
+        }
+        let tms: Vec<f32> = centre
+            .iter()
+            .map(|s| {
+                // Perceptual (gamma) tone-mapped luminance, so dark detail
+                // such as floor reflections also triggers refinement.
+                let l = luma(s.total()).max(0.0);
+                (l / (1.0 + l)).powf(1.0 / 2.2)
+            })
+            .collect();
+        let mut samples: Vec<Sample> = Vec::with_capacity(q.edge_spp as usize + 1);
+        for y in y0..y1 {
+            for x in 0..w {
+                let ci = (y - ya) * w + x;
+                let c = &centre[ci];
+                let mut refine = false;
+                for (dx, dy) in [(-1i32, 0i32), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1), (-1, 1), (1, -1)] {
+                    let (nx, ny) = (x as i32 + dx, y as i32 + dy);
+                    if nx < 0 || nx >= w as i32 || ny < ya as i32 || ny >= yb as i32 {
+                        continue;
+                    }
+                    let ni = (ny as usize - ya) * w + nx as usize;
+                    if centre[ni].id != c.id || (tms[ni] - tms[ci]).abs() > q.contrast {
+                        refine = true;
+                        break;
+                    }
+                }
                 samples.clear();
-                let take = |i: u32, samples: &mut Vec<Sample>| {
-                    let (a, b) = r2(i, rot);
-                    let srot = (u01(hash2(hs, i * 2 + 1)), u01(hash2(hs, i * 2 + 2)));
-                    samples.push(self.primary(cam, prev, w, h, x as f32 + a, y as f32 + b, q, srot));
-                };
-                for i in 0..q.min_spp {
-                    take(i, &mut samples);
-                }
-                // Refine where the first samples disagree.
-                let tm = |s: &Sample| {
-                    let l = luma(add(s.col, s.refl));
-                    l / (1.0 + l)
-                };
-                let (mut lo, mut hi) = (f32::MAX, f32::MIN);
-                let id0 = samples[0].id;
-                let mut mixed = false;
-                for s in &samples {
-                    let v = tm(s);
-                    lo = lo.min(v);
-                    hi = hi.max(v);
-                    mixed |= s.id != id0;
-                }
-                if mixed || hi - lo > 0.04 {
-                    for i in q.min_spp..q.max_spp {
-                        take(i, &mut samples);
+                samples.push(*c);
+                if refine {
+                    let hs = hash2(x as u32, y as u32);
+                    let rot = (u01(hs), u01(hash2(hs, 0x5bd1)));
+                    for i in 0..q.edge_spp {
+                        let (a, b) = r2(i, rot);
+                        let srot = (u01(hash2(hs, i * 2 + 1)), u01(hash2(hs, i * 2 + 2)));
+                        samples.push(self.primary(cam, prev, w, h, x as f32 + a, y as f32 + b, q, srot));
                     }
                 }
-                // Resolve with tone-mapped weights (bright highlights don't alias).
-                let mut px = Px::default();
-                let mut wsum = 0.0;
-                let mut best_d = f32::MAX;
-                let mut fl_w = 0.0;
-                for s in &samples {
-                    let wt = 1.0 / (1.0 + luma(add(s.col, s.refl)));
-                    wsum += wt;
-                    for k in 0..3 {
-                        px.col[k] += get(s.col, k) * wt;
-                        px.refl[k] += get(s.refl, k) * wt;
-                    }
-                    if s.floor {
-                        px.cov += wt;
-                        px.rad += s.rad * wt;
-                        fl_w += wt;
-                    }
-                    if s.depth < best_d {
-                        best_d = s.depth;
-                        px.vel = [s.vel.0, s.vel.1];
-                    }
-                }
-                for k in 0..3 {
-                    px.col[k] /= wsum;
-                    px.refl[k] /= wsum;
-                }
-                if fl_w > 0.0 {
-                    px.rad /= fl_w;
-                }
-                px.cov /= wsum;
-                px.depth = best_d;
-                out[(y - y0) * w + x] = px;
+                out[(y - y0) * w + x] = resolve(&samples);
             }
         }
     }
 
-    /// Bake key visibility and AO over the floor around the objects.
+    /// Bake key visibility and AO over the floor around the objects (for
+    /// static layouts: noise-free contact shadows).
     pub fn bake_floor(&mut self, res: usize, rays: u32) {
         let Some(f) = &self.floor else { return };
-        if self.objects.is_empty() {
+        if self.insts.is_empty() {
             return;
         }
         let (mut lo, mut hi) = (v3(f32::MAX, f32::MAX, f32::MAX), v3(f32::MIN, f32::MIN, f32::MIN));
-        for o in &self.objects {
-            let (blo, bhi) = o.shape.bounds();
-            for k in 0..8 {
-                let c = v3(if k & 1 == 0 { blo.x } else { bhi.x }, if k & 2 == 0 { blo.y } else { bhi.y }, if k & 4 == 0 { blo.z } else { bhi.z });
-                let p = o.xf.point(c);
-                lo = vmin(lo, p);
-                hi = vmax(hi, p);
-            }
+        for o in &self.insts {
+            let (a, b) = self.world_box(o);
+            lo = vmin(lo, a);
+            hi = vmax(hi, b);
         }
-        // Margin: shadows reach out about the objects' height.
         let m = (hi.y - f.y).max(0.5) * 1.6;
         let (x0, x1, z0, z1) = (lo.x - m, hi.x + m, lo.z - m, hi.z + m);
         let aspect = (x1 - x0) / (z1 - z0);
@@ -616,7 +1003,6 @@ impl Scene {
         use rayon::prelude::*;
         let rows: Vec<Vec<[f32; 2]>> = if rayon::current_thread_index().is_some() { (0..nz).map(row).collect() } else { (0..nz).into_par_iter().map(row).collect() };
         let raw: Vec<[f32; 2]> = rows.into_iter().flatten().collect();
-        // A small blur removes the remaining sampling noise.
         let mut data = raw.clone();
         for k in 0..nz {
             for i in 0..nx {
@@ -641,6 +1027,77 @@ impl Scene {
         let vis = FloorVis { x0, z0, x1, z1, nx, nz, data };
         self.floor.as_mut().unwrap().vis = Some(Arc::new(vis));
     }
+}
+
+/// Combine a pixel's samples with tone-mapped weights (bright highlights
+/// don't alias). AO and key visibility average weighted by albedo, so the
+/// denoiser can filter them as scalars.
+fn resolve(samples: &[Sample]) -> Px {
+    let mut px = Px::default();
+    let mut wsum = 0.0;
+    let mut best_d = f32::MAX;
+    let mut fl_w = 0.0;
+    let mut vis_w = 0.0;
+    let mut amb = v3(0.0, 0.0, 0.0);
+    let mut key = v3(0.0, 0.0, 0.0);
+    let mut alb_l = 0.0;
+    for s in samples {
+        let wt = 1.0 / (1.0 + luma(s.total()));
+        wsum += wt;
+        let d = &s.dif;
+        for k in 0..3 {
+            px.col[k] += get(s.col, k) * wt;
+            px.refl[k] += get(s.refl, k) * wt;
+            px.alb[k] += get(d.alb, k) * wt;
+            px.spec[k] += get(d.spec, k) * wt;
+        }
+        let la = (luma(d.alb) + luma(d.spec)) * wt;
+        amb = madd(amb, d.amb, la);
+        key = madd(key, d.key, la);
+        alb_l += la;
+        px.ao += d.ao * la;
+        px.vk += d.vk * la;
+        vis_w += la;
+        if s.floor {
+            px.cov += wt;
+            px.rad += s.rad * wt;
+            fl_w += wt;
+        }
+        if s.depth < best_d {
+            best_d = s.depth;
+            px.vel = [s.vel.0, s.vel.1];
+            px.nrm = [s.nrm.x, s.nrm.y, s.nrm.z];
+            px.id = s.id as u32;
+        }
+    }
+    for k in 0..3 {
+        px.col[k] /= wsum;
+        px.refl[k] /= wsum;
+        px.alb[k] /= wsum;
+        px.spec[k] /= wsum;
+    }
+    if alb_l > 0.0 {
+        px.amb = [amb.x / alb_l, amb.y / alb_l, amb.z / alb_l];
+        px.key = [key.x / alb_l, key.y / alb_l, key.z / alb_l];
+    }
+    if vis_w > 0.0 {
+        px.ao /= vis_w;
+        px.vk /= vis_w;
+    } else {
+        px.ao = 1.0;
+        px.vk = 1.0;
+    }
+    if fl_w > 0.0 {
+        px.rad /= fl_w;
+    }
+    px.cov /= wsum;
+    px.depth = best_d;
+    px
+}
+
+#[inline]
+fn absorb(sigma: V3, dist: f32) -> V3 {
+    v3((-sigma.x * dist).exp(), (-sigma.y * dist).exp(), (-sigma.z * dist).exp())
 }
 
 /// Split-sum environment BRDF (scale, bias) for F0 (Karis' analytic fit).
