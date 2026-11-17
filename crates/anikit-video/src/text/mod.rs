@@ -8,6 +8,7 @@
 //! * [`kinetic`]: per-unit animations that emit display-list ops for a time `t`.
 //! * [`code`]: syntax highlighting into styled spans.
 
+pub mod captions;
 pub mod code;
 pub mod color;
 pub mod fonts;

@@ -365,7 +365,12 @@ A cue plays a file (`src`) or a built-in sound effect (`sfx`: `click`, `tick`, `
 "captions": [ { "text": "Meet Anikit Video", "at": 0.5, "end": 2.2 }, { "text": "JSON in, MP4 out", "at": 2.4, "end": 4 } ]
 ```
 
-Captions are text layers drawn over every scene.
+Captions are text layers drawn over every scene. With word timings, the spoken word lights up in `highlight` (default `$accent`):
+
+```json
+"captions": { "highlight": "$accent", "cues": [
+  { "text": "", "at": 0.5, "end": 2.4, "words": [["Meet", 0.5, 0.8], ["Anikit", 0.8, 1.3], ["Video", 1.3, 2.0]] } ] }
+```
 
 ## Validation and messages
 
@@ -378,7 +383,7 @@ warning scenes[0].layers[1].colour: unknown key, did you mean 'color'?
 warning scenes[2].layers[3].start: 4.5 s is after the scene ends (4 s); the layer is never visible
 ```
 
-With `--json`, the output is `{ "ok": bool, "errors": [{ "path", "message", "suggestion" }], "warnings": [...], "duration": s, "frames": n, "scenes": [{ "id", "start", "end" }] }`.
+With `--json`, the output is one compact line: `{ "ok": bool, "errors": ["scenes[1].layers[0].type: unknown layer type 'txt', did you mean 'text'?"], "warnings": [...], "duration": s, "frames": n, "scenes": [{ "id", "start", "end" }] }`.
 
 ## CLI
 
@@ -387,7 +392,8 @@ anikit-video check  spec.json [--json]                      validate, print erro
 anikit-video still  spec.json --at 2.5 -o f.png [--watch]   one frame (--at @sceneId works too)
 anikit-video sheet  spec.json -o sheet.png [--cols 4 --rows 3 --width 480]
 anikit-video render spec.json -o out.mp4 [--quality draft|good|best] [--from 2 --to 5] [--scale 0.5]
-                    [--codec h264|h265|vp9|av1|prores|gif|png]   (default from the extension: .webm vp9, .gif, .mov prores)
+                    [--codec ak264|h264|h265|vp9|av1|prores|gif|png]
+                    default by extension: .mp4 → ak264 (our encoder; x264 with --quality best), .webm vp9, .gif, .mov prores, .mkv av1
 anikit-video info [--components]                              encoders and the component catalogue
 anikit-video schema [-o spec.schema.json]
 ```
@@ -438,6 +444,8 @@ anikit-video schema [-o spec.schema.json]
 
 ## Notes for implementers
 
-- `spec` (serde types + schema) → `eval::Evaluator::new(spec, assets)` resolves themes, units, presets, stagger and expressions into per-property tracks once; `eval(t)` produces a `dl::DisplayList`.
-- Expressions with `%`/`vw`/`vh` units inside (e.g. `"=50% + 200*cos(t)"`) are resolved against the property's reference length.
-- Component plugins implement `eval::Component` (see `crates/anikit-video/src/eval/component.rs`).
+- `spec::parse_str` / `parse_json` / `parse_yaml` → `Parsed { spec, warnings }` (unknown keys, with paths and suggestions).
+- `eval::Evaluator::new(&spec, Options { base_dir, fonts, load_assets })` compiles once: themes, units, text layout (TEXT's `FontStore`), box layout, presets, stagger and expressions become per-property keyframe tracks. Errors come back as `SpecErrors` (every diagnostic); warnings stay in `evaluator.diagnostics`.
+- `eval_into(t, &mut DisplayList)` is pure and cheap (a few µs per frame). `is_static(t0, t1)` is a conservative "nothing changes in this span".
+- `evaluator.assets` (`SharedAssets`) holds fonts and images (user images, decoded video frames, component-generated images), implements `components::Assets`, and hands renderers versioned `render::Assets` snapshots.
+- `pipeline::render_video(&ev, &RenderOptions, &mut dyn Encoder)`: parallel batches, one `Renderer` per worker thread, dedupe of identical display lists, changed-macroblock hints for ak264, and the encoder on its own thread.

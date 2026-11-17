@@ -5,7 +5,7 @@ description: How to fill the 'teaser' template well.
 
 # Template guide: Social teaser (9:16 first) (`teaser`)
 
-A 6–12 s vertical teaser for Reels, TikTok and Shorts: rapid kinetic words, one per beat, in huge type with punch-in camera hits and colour flashes, ending on the logo and a payoff line. Also works in 16:9 and 1:1.
+A 6–12 s vertical teaser for Reels, TikTok and Shorts: one word per beat in huge kinetic type (pop, scramble, mask) on a living brand mesh, with punch-in camera hits, brand-colour flashes and glitch cuts, ending on the logo with a starfield and a burst of sparks.
 
 **Typical length:** 6–12 s. **Formats:** 16:9, 9:16 and 1:1 (pass `--format`); the layout adapts automatically.
 

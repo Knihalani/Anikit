@@ -646,3 +646,43 @@ pub unsafe fn quant8_sse41(v: &mut [i16], m: u16, bias: u16, cnt: &mut [i16]) {
     let c = _mm_add_epi16(_mm_add_epi16(c, _mm_set1_epi16(1)), nz);
     _mm_storeu_si128(cnt.as_mut_ptr() as *mut __m128i, c);
 }
+
+/// SAD of two contiguous 64-byte blocks (8×8).
+#[inline(always)]
+pub fn sad64(a: &[u8; 64], b: &[u8; 64]) -> u32 {
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: SSE2 is baseline; arrays are 64 bytes.
+    unsafe {
+        use std::arch::x86_64::*;
+        let mut acc = _mm_setzero_si128();
+        for i in 0..4 {
+            let x = _mm_loadu_si128(a.as_ptr().add(i * 16) as *const __m128i);
+            let y = _mm_loadu_si128(b.as_ptr().add(i * 16) as *const __m128i);
+            acc = _mm_add_epi64(acc, _mm_sad_epu8(x, y));
+        }
+        (_mm_cvtsi128_si64(acc) + _mm_extract_epi16(acc, 4) as i64) as u32
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    a.iter().zip(b).map(|(&x, &y)| (x as i32 - y as i32).unsigned_abs()).sum()
+}
+
+/// `clip((base + b*x) >> 5)` for x in 0..16.
+#[inline(always)]
+pub fn plane_row16(base: i32, b: i32) -> [u8; 16] {
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: SSE2 is baseline.
+    unsafe {
+        use std::arch::x86_64::*;
+        let v: [__m128i; 4] = core::array::from_fn(|k| {
+            let k = k as i32 * 4;
+            _mm_srai_epi32(_mm_setr_epi32(base + b * k, base + b * (k + 1), base + b * (k + 2), base + b * (k + 3)), 5)
+        });
+        let lo = _mm_packs_epi32(v[0], v[1]);
+        let hi = _mm_packs_epi32(v[2], v[3]);
+        let mut o = [0u8; 16];
+        _mm_storeu_si128(o.as_mut_ptr() as *mut __m128i, _mm_packus_epi16(lo, hi));
+        o
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    core::array::from_fn(|x| ((base + b * x as i32) >> 5).clamp(0, 255) as u8)
+}

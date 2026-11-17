@@ -70,12 +70,6 @@ impl BitWriter {
         self.put(pad, 0);
         self.flush();
     }
-    /// Pad with zero bits to the byte boundary and flush.
-    pub fn align_zero(&mut self) {
-        let pad = (8 - self.n % 8) % 8;
-        self.put(pad, 0);
-        self.flush();
-    }
     /// Append whole bytes (the writer must be byte aligned).
     pub fn append_bytes(&mut self, b: &[u8]) {
         self.flush();

@@ -18,7 +18,7 @@ fn styles() -> Vec<(&'static str, Kinetic)> {
         ("type", Kinetic { stagger: Some(0.04), duration: Some(0.0), ..k(KineticStyle::Typewriter { caret: true, caret_color: None, blink: 1.0 }, UnitKind::Char) }),
         ("scramble", Kinetic { stagger: Some(0.04), ..k(KineticStyle::Scramble { charset: "ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&".into(), rate: 20.0, seed: 1 }, UnitKind::Char) }),
         ("wave", k(KineticStyle::Wave { amplitude: 0.2, wavelength: 8.0, speed: 0.8 }, UnitKind::Char)),
-        ("highlight", Kinetic { stagger: Some(0.25), ..k(KineticStyle::HighlightSweep { color: Color::rgba(0.49, 0.36, 1.0, 0.55), padding: 0.08, radius: 0.12 }, UnitKind::Word) }),
+        ("highlight", Kinetic { stagger: Some(0.25), ..k(KineticStyle::HighlightSweep { color: Some(Color::rgba(0.49, 0.36, 1.0, 0.55)), padding: 0.08, radius: 0.12 }, UnitKind::Word) }),
         ("mask", k(KineticStyle::MaskReveal { direction: Direction::Up }, UnitKind::Word)),
         ("flip", Kinetic { unit: None, ..k(KineticStyle::Flip, UnitKind::Char) }),
         ("tracking", Kinetic { unit: None, ..k(KineticStyle::Tracking { spread: 0.6 }, UnitKind::Char) }),
@@ -221,4 +221,18 @@ fn shareable_across_render_threads() {
     let seq: Vec<usize> = (0..60).map(|f| { let mut o = vec![]; plan.ops(f as f32 / 60.0, anikit_video::dl::IDENTITY, &mut o); o.len() }).collect();
     let par: Vec<usize> = (0..60).into_par_iter().map(|f| { let mut o = vec![]; plan.ops(f as f32 / 60.0, anikit_video::dl::IDENTITY, &mut o); o.len() }).collect();
     assert_eq!(seq, par);
+}
+
+#[test]
+fn highlight_defaults_to_accent() {
+    let fonts = store();
+    let mut sp = spec();
+    sp.style.accent = Color::hex("#ff0000").unwrap();
+    let plan = KineticPlan::new(fonts, fonts.layout(&sp), &"highlight".parse().unwrap());
+    let mut o = vec![];
+    plan.ops(10.0, anikit_video::dl::IDENTITY, &mut o);
+    let c = o.iter().find_map(|op| match op { Op::RoundRect { paint: anikit_video::dl::Paint::Solid(c), .. } => Some(c.0), _ => None }).unwrap();
+    assert_eq!(c, [1.0, 0.0, 0.0, 0.3]);
+    let k: Kinetic = serde_json::from_str(r##"{"style": {"type": "highlight", "color": "#00ff0080"}}"##).unwrap();
+    assert!(matches!(k.style, KineticStyle::HighlightSweep { color: Some(_), .. }));
 }

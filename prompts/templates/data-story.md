@@ -5,7 +5,7 @@ description: How to fill the 'data-story' template well.
 
 # Template guide: Data story (`data-story`)
 
-A 15–30 s data narrative: a headline hook, 1–3 bar charts that grow in with counting value labels (the key bar highlighted), an optional big counter stat and a one-line takeaway with its source.
+A 15–30 s data narrative on a living brand mesh: a kinetic headline over a rising area chart, 1–3 animated bar charts beside their conclusions (the key bar highlighted), a big counting stat, and a takeaway with a sparkline stat tile and its source.
 
 **Typical length:** 15–30 s. **Formats:** 16:9, 9:16 and 1:1 (pass `--format`); the layout adapts automatically.
 

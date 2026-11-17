@@ -1,7 +1,7 @@
 {
   "name": "teaser",
   "title": "Social teaser (9:16 first)",
-  "description": "A 6–12 s vertical teaser for Reels, TikTok and Shorts: rapid kinetic words, one per beat, in huge type with punch-in camera hits and colour flashes, ending on the logo and a payoff line. Also works in 16:9 and 1:1.",
+  "description": "A 6–12 s vertical teaser for Reels, TikTok and Shorts: one word per beat in huge kinetic type (pop, scramble, mask) on a living brand mesh, with punch-in camera hits, brand-colour flashes and glitch cuts, ending on the logo with a starfield and a burst of sparks.",
   "duration": "6–12 s",
   "tags": [
     "teaser",
@@ -68,7 +68,7 @@
     "theme": {
       "$use": "theme"
     },
-    "background": "$bg",
+    "background": "$bgDeep",
     "transition": "cut",
     "scenes": [
       {
@@ -78,18 +78,26 @@
         "do": {
           "$let": {
             "hot": "flash && i % 3 == 2",
-            "d": "(len(split(w, '')) > 1 ? beat * 1.5 : beat) * (last ? 1.6 : 1)"
+            "d": "(len(split(w, '')) > 1 ? beat * 1.5 : max(beat, 0.8)) * (last ? 1.6 : 1)"
           },
           "in": {
             "id": "beat-{{i + 1}}",
             "duration": "{{d}}",
-            "background": "{{hot ? 'linear-gradient(135deg, ' + brand.colors.primary + ', ' + brand.colors.secondary + ')' : 'radial-gradient(circle at 50% 45%, ' + brand.colors.surface + ', ' + brand.colors.background + ')'}}",
+            "background": "{{hot ? 'linear-gradient(135deg, ' + brand.colors.primary + ', ' + brand.colors.secondary + ')' : '$bgDeep'}}",
+            "transition": {
+              "$if": "i > 0 && i % 3 == 0",
+              "then": {
+                "type": "glitch",
+                "duration": 0.2
+              },
+              "else": "cut"
+            },
             "camera": {
               "animate": [
                 {
                   "from": {
-                    "zoom": "{{i % 2 ? 1.14 : 1.08}}",
-                    "rotation": "{{i % 2 ? -1.2 : 1.2}}"
+                    "zoom": "{{i % 2 ? 1.16 : 1.1}}",
+                    "rotation": "{{i % 2 ? -1.5 : 1.5}}"
                   },
                   "to": {
                     "zoom": 1,
@@ -104,11 +112,10 @@
               {
                 "$if": "!hot",
                 "then": {
-                  "$use": "glows",
+                  "$use": "backdrop",
                   "with": {
-                    "strength": 0.7,
-                    "gx": "{{i % 2 ? '85%' : '15%'}}",
-                    "gy": "{{i % 2 ? '80%' : '20%'}}"
+                    "seed": "{{3 + i * 7}}",
+                    "intensity": 0.3
                   }
                 }
               },
@@ -119,11 +126,10 @@
                 "size": "{{len(w) <= 6 ? (fmt.portrait ? '22vmin' : '18vmin') : len(w) <= 11 ? (fmt.portrait ? '16vmin' : '14vmin') : (fmt.portrait ? '12vmin' : '11vmin')}}",
                 "width": "{{fmt.safe.w}}",
                 "color": "{{hot ? '$onPrimary' : '$text'}}",
-                "enter": {
-                  "preset": "{{i % 3 == 0 ? 'zoomIn' : i % 3 == 1 ? 'fadeUp' : 'popIn'}}",
-                  "duration": "{{min(0.45, beat * 0.7)}}",
-                  "ease": "outExpo"
-                }
+                "enter": "{{i % 3 == 0 ? 'pop by char from center 0.35s 25ms outBack' : i % 3 == 1 ? 'scramble 0.3s' : 'mask by word up'}}"
+              },
+              {
+                "$use": "grain"
               }
             ]
           }
@@ -135,13 +141,12 @@
           "type": "zoom",
           "duration": 0.3
         },
-        "duration": "{{payoff ? max(2.4, readtime(payoff) + 0.9) : 2.2}}",
-        "background": "radial-gradient(circle at 50% 45%, $surface, $bgDeep)",
+        "duration": "{{payoff ? max(2.6, readtime(payoff) + 1.0) : 2.4}}",
         "camera": {
           "animate": [
             {
               "from": {
-                "zoom": 1.1
+                "zoom": 1.12
               },
               "to": {
                 "zoom": 1
@@ -153,11 +158,41 @@
         },
         "layers": [
           {
-            "$use": "glows",
+            "$use": "backdrop",
             "with": {
-              "gx": "50%",
-              "gy": "42%",
-              "strength": 1
+              "seed": 41,
+              "intensity": 0.35
+            }
+          },
+          {
+            "type": "component",
+            "component": "starfield",
+            "props": {
+              "count": 220,
+              "fly": true,
+              "color": "{{brand.colors.text}}",
+              "seed": 5
+            },
+            "opacity": 0.7
+          },
+          {
+            "type": "component",
+            "component": "sparks",
+            "props": {
+              "bursts": [
+                0.15
+              ],
+              "origin": [
+                0.5,
+                "{{payoff ? 0.45 : 0.5}}"
+              ],
+              "count": 90,
+              "colors": [
+                "{{brand.colors.accent}}",
+                "{{brand.colors.primary}}"
+              ],
+              "power": 1.1,
+              "seed": 3
             }
           },
           {
@@ -175,11 +210,7 @@
               "style": "hero",
               "width": "{{fmt.safe.w}}",
               "y": "{{payoff ? '45%' : '50%'}}",
-              "split": "chars",
-              "enter": {
-                "preset": "popIn",
-                "stagger": 0.03
-              }
+              "enter": "pop by char from center"
             }
           },
           {
@@ -195,6 +226,9 @@
                 "delay": 0.35
               }
             }
+          },
+          {
+            "$use": "grain"
           }
         ]
       }
