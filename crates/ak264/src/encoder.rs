@@ -421,7 +421,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         // Early inter: the predicted candidates already match (typical for layers
         // moving coherently) → no intra analysis, no search.
         if !c.idr {
-            let q = self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, true);
+            let q = self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, true, None);
             if q.sad <= lambda as u32 * 24 {
                 self.code_inter(mbx, mby, src_y, src_c, &q);
                 return;
@@ -454,7 +454,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         // (Skipped too when the predicted candidates are far worse than intra.)
         let hopeless = inter.as_ref().is_some_and(|q| q.sad > 4 * best16.0);
         if !c.idr && best16.0 > lambda as u32 * 4 && !hopeless {
-            let full = self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, false);
+            let full = self.motion_search(mbx, mby, src_y, mvp, skip_mv, mbi, false, inter.as_ref());
             if full.cost < inter.as_ref().map_or(u32::MAX, |q| q.cost) {
                 inter = Some(full);
             }
@@ -508,6 +508,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         skip_mv: (i32, i32),
         mbi: usize,
         quick: bool,
+        seed: Option<&Inter>,
     ) -> Inter {
         let c = self.c;
         let lambda = c.lambda as u32;
@@ -527,29 +528,41 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mut best = (u32::MAX, (0, 0));
         let mut cands = [(0i32, 0i32); 7];
         let mut n = 0;
-        let mut push = |mv: (i32, i32)| {
-            let mv = clamp(mv);
-            if !cands[..n].contains(&mv) {
-                cands[n] = mv;
-                n += 1;
+        fn push_c(cands: &mut [(i32, i32); 7], n: &mut usize, mv: (i32, i32)) {
+            if !cands[..*n].contains(&mv) {
+                cands[*n] = mv;
+                *n += 1;
             }
-        };
-        push((0, 0));
-        push(round(skip_mv));
-        push(round(mvp));
+        }
+        macro_rules! push {
+            ($mv:expr) => {
+                push_c(&mut cands, &mut n, clamp($mv))
+            };
+        }
+        push!((0, 0));
+        push!(round(skip_mv));
+        push!(round(mvp));
         let h = c.hint[mbi];
         if h != NO_HINT {
-            push(round((h.0 as i32, h.1 as i32)));
+            push!(round((h.0 as i32, h.1 as i32)));
         }
         let (x, y) = (mbx as isize, mby as isize);
+        // A quick search already evaluated the candidates above.
+        let known = if let Some(q) = seed {
+            let mv = (q.mv.0 >> 2, q.mv.1 >> 2);
+            best = (q.sad + mvcost((mv.0 * 4, mv.1 * 4)), mv);
+            n
+        } else {
+            0
+        };
         if !quick {
             for nb in [self.nb(x - 1, y), self.nb(x, y - 1), self.nb(x + 1, y - 1)] {
                 if nb.inter {
-                    push(round(nb.mv));
+                    push!(round(nb.mv));
                 }
             }
         }
-        for &mv in &cands[..n] {
+        for &mv in &cands[known..n] {
             let s = eval(mv);
             if s < best.0 {
                 best = (s, mv);
