@@ -18,6 +18,9 @@ pub struct MusicCue {
     pub gain: f64,
     /// Duck under voice-over by this many dB (None = never).
     pub duck: Option<f64>,
+    /// Video length and voice-over flag the score was bound with (`onNotes`): the render
+    /// uses them too, so the sound matches the pictures exactly.
+    pub pinned: Option<(f64, bool)>,
 }
 
 /// Parse the spec's `music` value.
@@ -71,7 +74,7 @@ fn parse_inner(v: &serde_json::Value, base: &Path) -> Result<MusicCue, String> {
             anikit_music::custom::TrackAuto::parse(au, &a.grid, &format!("track '{}'.automate", t.name))?;
         }
     }
-    Ok(MusicCue { at: spec.at.unwrap_or(0.0), gain: spec.gain.unwrap_or(0.0), duck, spec, base: base.to_path_buf() })
+    Ok(MusicCue { at: spec.at.unwrap_or(0.0), gain: spec.gain.unwrap_or(0.0), duck, spec, base: base.to_path_buf(), pinned: None })
 }
 
 /// The exact time (video seconds) of `@beatN` / `@barN` (1-based).
@@ -81,10 +84,48 @@ pub fn marker(cue: &MusicCue, kind: &str, n: usize) -> Result<f64, String> {
     Ok(cue.at + g.secs((n.max(1) - 1) as f64 * unit))
 }
 
+/// One note of the generated music, on the video timeline.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ScoreNote {
+    /// Track name and role (`drums`, `bass`, `lead`, …).
+    pub track: String,
+    pub role: String,
+    /// Video seconds of the note's start (on the grid, swing included; humanisation is ignored).
+    pub t: f64,
+    /// Length in seconds.
+    pub dur: f64,
+    /// MIDI key (GM drum key on drum tracks) and velocity 0..1.
+    pub key: f32,
+    pub vel: f32,
+    /// Beat position from the music's start (fractional).
+    pub beat: f64,
+}
+
+/// Every note the music will play for a video of `video_len` seconds, sorted by time.
+/// It uses the same arrangement as [`render_track`], so pictures bound to it land on the sound.
+pub fn score(cue: &MusicCue, video_len: f64, has_voice: bool) -> Result<Vec<ScoreNote>, String> {
+    let opts = RenderOpts { video_length: Some((video_len - cue.at).max(0.1)), base_dir: Some(cue.base.clone()), rate: audio::DEFAULT_RATE, stems: false };
+    let mut spec = cue.spec.clone();
+    if has_voice && spec.underscore.is_none() {
+        spec.underscore = Some(true);
+    }
+    let a = anikit_music::arrange(&spec, &opts)?;
+    let mut out = Vec::new();
+    for tr in &a.tracks {
+        for n in &tr.notes {
+            let (t0, t1) = if tr.straight { (a.grid.secs(n.t), a.grid.secs(n.t + n.len)) } else { (a.grid.swung(n.t), a.grid.swung(n.t + n.len)) };
+            out.push(ScoreNote { track: tr.name.clone(), role: tr.role.clone(), t: cue.at + t0, dur: (t1 - t0).max(0.0), key: n.key, vel: n.vel, beat: n.t });
+        }
+    }
+    out.sort_by(|x, y| x.t.total_cmp(&y.t).then(x.key.total_cmp(&y.key)));
+    Ok(out)
+}
+
 /// Render the music for a video of `video_len` seconds into a float WAV at
 /// `wav`, returning the track that places it (ducked under voice when the
 /// video has voice-over).
 pub fn render_track(cue: &MusicCue, video_len: f64, wav: &Path, has_voice: bool) -> Result<Track, String> {
+    let (video_len, has_voice) = cue.pinned.unwrap_or((video_len, has_voice));
     let opts = RenderOpts { video_length: Some((video_len - cue.at).max(0.1)), base_dir: Some(cue.base.clone()), rate: audio::DEFAULT_RATE, stems: false };
     // Under voice-over, play the underscore mix (no melody) unless the spec says otherwise.
     let mut spec = cue.spec.clone();
