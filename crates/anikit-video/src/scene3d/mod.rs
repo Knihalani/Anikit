@@ -541,7 +541,9 @@ impl Scene3d {
 impl Component for Scene3d {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
         let p = self.p();
-        let (w, h) = (ctx.width.round().max(2.0) as u32, ctx.height.round().max(2.0) as u32);
+        // Previews and reviews (`still --width`, `critique --render`) trace at the size they show.
+        let ps = crate::eval::shader::preview_scale();
+        let (w, h) = ((ctx.width * ps).round().max(2.0) as u32, (ctx.height * ps).round().max(2.0) as u32);
         let fps = ctx.fps.max(1.0);
         let frame = (t * fps).round();
         let t = frame / fps;
