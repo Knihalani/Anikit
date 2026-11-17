@@ -403,6 +403,8 @@ pub struct Evaluator {
     pub diagnostics: Vec<Diagnostic>,
     /// Audio tracks on the global timeline (paths resolved).
     pub audio: Vec<crate::audio::Track>,
+    /// Generated music (the spec's `music`), rendered when the audio is mixed.
+    pub music: Option<Arc<crate::music::MusicCue>>,
     /// Fonts and images, shared with the renderers.
     pub assets: Arc<SharedAssets>,
     pub(crate) easings: Vec<Easing>,
@@ -415,7 +417,7 @@ pub struct Evaluator {
     pub(crate) theme: theme::Theme,
     pub(crate) ctheme: crate::components::Theme,
     /// Beat grid and loudness of the music, when expressions read them.
-    pub(crate) music: Option<Arc<beat_markers::Music>>,
+    pub(crate) groove: Option<Arc<beat_markers::Music>>,
     /// Motion-blur shutter in seconds (0 = off). Default half a frame (180°).
     pub shutter: f32,
     /// The spec asked for motion blur itself (otherwise only `--quality high` applies it).
@@ -854,7 +856,7 @@ impl Evaluator {
                 fps: self.fps as f64,
                 ..Default::default()
             };
-            let vars = match &self.music {
+            let vars = match &self.groove {
                 Some(m) if n.exprs.iter().any(|(_, e)| e.music) || n.cexprs.iter().any(|(_, e)| e.music) => {
                     let (beat, bar, level, bpm) = m.at(cx.gt as f64);
                     Vars { beat, bar, level, bpm, ..vars }

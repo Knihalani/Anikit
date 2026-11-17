@@ -21,7 +21,7 @@
 //!                  "texture": { "composition": "film", "frame": "=i" } } ] }
 //! ```
 
-#![allow(clippy::too_many_arguments, clippy::needless_range_loop, clippy::type_complexity)]
+#![allow(clippy::too_many_arguments, clippy::needless_range_loop, clippy::type_complexity, clippy::question_mark, clippy::new_without_default)]
 
 pub mod bvh;
 pub mod env;

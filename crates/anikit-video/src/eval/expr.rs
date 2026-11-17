@@ -59,6 +59,8 @@ pub struct Expr {
     pub dynamic: bool,
     /// Whether it reads the music (`beat`, `bar`, `level`, `bpm`).
     pub music: bool,
+    /// Whether it reads the loudness (`level`), which needs the audio itself.
+    pub level: bool,
 }
 
 const VARS: &[&str] = &["t", "T", "gt", "p", "i", "n", "w", "h", "fps", "frame", "pi", "e", "tau", "beat", "bar", "level", "bpm"];
@@ -405,7 +407,8 @@ impl Expr {
         }
         let music = p.out.iter().any(|i| matches!(i, Ins::Var(13..=16)));
         let dynamic = music || p.out.iter().any(|i| matches!(i, Ins::Var(0..=3) | Ins::Var(9)));
-        let mut e = Expr { code: p.out, dynamic, music };
+        let level = p.out.iter().any(|i| matches!(i, Ins::Var(15)));
+        let mut e = Expr { code: p.out, dynamic, music, level };
         e.fold();
         Ok(e)
     }
@@ -647,6 +650,7 @@ pub struct ColorExpr {
     args: Vec<Expr>,
     pub dynamic: bool,
     pub music: bool,
+    pub level: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -718,13 +722,14 @@ impl ColorExpr {
             return Ok(ColorExpr {
                 dynamic: cond.dynamic || a.dynamic || b.dynamic,
                 music: cond.music || a.music || b.music,
+                level: cond.level || a.level || b.level,
                 kind: ColorKind::Select(Box::new(a), Box::new(b)),
                 args: vec![cond],
             });
         }
         if !s.contains('(') {
             let c = color(s).ok_or_else(|| format!("'{s}' isn't a colour"))?;
-            return Ok(ColorExpr { kind: ColorKind::Const(c), args: Vec::new(), dynamic: false, music: false });
+            return Ok(ColorExpr { kind: ColorKind::Const(c), args: Vec::new(), dynamic: false, music: false, level: false });
         }
         let open = s.find('(').ok_or("a colour expression is rgb(…), hsl(…), oklch(…) or mix(a, b, x)")?;
         let name = s[..open].trim().to_ascii_lowercase();
@@ -759,7 +764,7 @@ impl ColorExpr {
                 });
             }
         };
-        Ok(ColorExpr { dynamic: args.iter().any(|a| a.dynamic), music: args.iter().any(|a| a.music), kind, args })
+        Ok(ColorExpr { dynamic: args.iter().any(|a| a.dynamic), music: args.iter().any(|a| a.music), level: args.iter().any(|a| a.level), kind, args })
     }
 
     /// Straight-alpha sRGB 0..1.

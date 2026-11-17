@@ -93,7 +93,9 @@ struct C<'a> {
     /// The colour expression the last `paint` call compiled (claimed by the caller for its slot).
     last_cexpr: Option<super::expr::ColorExpr>,
     /// Music analysis for `beat`/`bar`/`level`/`bpm` in expressions (loaded on first use).
-    music: Option<Result<Arc<super::beat_markers::Music>, String>>,
+    groove: Option<Result<Arc<super::beat_markers::Music>, String>>,
+    /// `groove` includes the loudness envelope.
+    groove_level: bool,
     /// The spec's theme as written (nested compositions inherit it).
     spec_theme: Option<spec::Theme>,
 }
@@ -154,7 +156,8 @@ impl Evaluator {
             assets: opts.assets.clone().unwrap_or_else(|| Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new()))))),
             comps,
             spec_theme: spec.theme.clone(),
-            music: None,
+            groove: None,
+            groove_level: false,
             last_cexpr: None,
             uniform_slots: Vec::new(),
         };
@@ -311,6 +314,16 @@ impl Evaluator {
             }
         }
         audio.append(&mut c.audio_extra);
+        let music = match &spec.music {
+            Some(v) => match crate::music::parse(v, &opts.base_dir) {
+                Ok(m) => Some(Arc::new(m)),
+                Err(e) => {
+                    c.d.push(Diagnostic::error("music", e));
+                    None
+                }
+            },
+            None => None,
+        };
         c.smarkers.clear();
         c.scene_start = 0.0;
         c.scene_dur = duration;
@@ -323,6 +336,7 @@ impl Evaluator {
             duration,
             diagnostics: Vec::new(),
             audio,
+            music,
             assets: c.assets,
             easings: c.easings,
             scenes,
@@ -333,7 +347,7 @@ impl Evaluator {
             theme: c.theme,
             comps: c.comps.into_iter().map(|(n, e, _)| (n, e)).collect(),
             shutter,
-            music: c.music.and_then(|m| m.ok()),
+            groove: c.groove.and_then(|m| m.ok()),
             shutter_explicit: matches!(spec.motion_blur, Some(spec::MotionBlur::On(true)) | Some(spec::MotionBlur::Shutter { .. })),
         };
         (Some(ev), c.d)
@@ -509,11 +523,8 @@ impl C<'_> {
             Num::Str(s) => {
                 if let Some(e) = s.trim().strip_prefix('=') {
                     match Expr::compile(e, refl as f64, self.w as f64, self.h as f64) {
-                        Ok(x) if x.music && self.music.is_none() => {
-                            self.music = Some(self.beat_marks.music());
-                            if let Some(Err(m)) = &self.music {
-                                self.d.push(Diagnostic::error(path, format!("expression uses the music: {m}")));
-                            }
+                        Ok(x) if x.music && (self.groove.is_none() || (x.level && !self.groove_level)) => {
+                            self.load_groove(x.level, path);
                             V::E(x)
                         }
                         Ok(x) => match x.constant() {
@@ -631,11 +642,8 @@ impl C<'_> {
                 let mut resolve = |c: &str| self.theme.color(c).map(|x| x.0);
                 match super::expr::ColorExpr::compile(&src, &mut resolve) {
                     Ok(ce) => {
-                        if ce.music && self.music.is_none() {
-                            self.music = Some(self.beat_marks.music());
-                            if let Some(Err(m)) = &self.music {
-                                self.d.push(Diagnostic::error(path, format!("colour expression uses the music: {m}")));
-                            }
+                        if ce.music && (self.groove.is_none() || (ce.level && !self.groove_level)) {
+                            self.load_groove(ce.level, path);
                         }
                         let c = Rgba(ce.eval(&super::expr::Vars { w: self.w as f64, h: self.h as f64, fps: self.fps as f64, ..Default::default() }));
                         self.last_cexpr = Some(ce);
@@ -1998,6 +2006,17 @@ impl C<'_> {
         let m = super::local_xf(&n.base, n.anchor, w, h);
         p.apply_affine(kurbo::Affine::new(m.map(|x| x as f64)));
         Some(p)
+    }
+
+    /// Load the music for expressions (with its loudness envelope when `level` is read).
+    fn load_groove(&mut self, level: bool, path: &str) {
+        let need = level || self.groove_level;
+        let g = self.beat_marks.music(need);
+        if let Err(m) = &g {
+            self.d.push(Diagnostic::error(path, format!("expression uses the music: {m}")));
+        }
+        self.groove = Some(g);
+        self.groove_level = need;
     }
 
     /// Resolve a `post` value (RENDER's presets and settings); `"none"` gives `None`.

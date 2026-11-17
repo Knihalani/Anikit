@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/anikit-core", "crates/anikit-wasm", "crates/anikit-py", "crates/anikit-node", "crates/anikit-video", "crates/ak264", "crates/anikit-shader"]
+members = ["crates/anikit-core", "crates/anikit-wasm", "crates/anikit-py", "crates/anikit-node", "crates/anikit-video", "crates/ak264", "crates/anikit-shader", "crates/anikit-music"]
 default-members = ["crates/anikit-core"]
 
 [workspace.package]

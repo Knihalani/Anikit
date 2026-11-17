@@ -451,3 +451,16 @@ fn draw_layer_primitives_in_frame_pixels() {
     assert!(e.iter().any(|m| m.contains("draw[1].colors") && m.contains("one per point")), "{e:?}");
     assert!(e.iter().any(|m| m.contains("draw[2].d")), "{e:?}");
 }
+
+#[test]
+fn expressions_follow_generated_music() {
+    // Generated music gives the exact grid: at 120 bpm, beat = 2 * t.
+    let ev = build(r##"{ "music": { "style": "lofi", "bpm": 120 }, "motionBlur": false, "scenes": [ { "duration": 4, "layers": [
+        { "shape": "rect", "width": 10, "height": 10, "x": "=100 * beat", "y": "=100 + 100 * level" } ] } ] }"##);
+    let x_at = |t: f32| {
+        let dl = ev.eval(t);
+        dl.ops.iter().find_map(|o| match o { Op::RoundRect { transform, .. } => Some(transform[4]), _ => None }).unwrap()
+    };
+    let (a, b) = (x_at(1.0), x_at(2.0));
+    assert!((b - a - 200.0).abs() < 1.0, "{a} {b}");
+}
