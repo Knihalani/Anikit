@@ -220,24 +220,41 @@ def _get_status(url):
         return 599
 
 
-def still_urls(p):
-    urls = list(p["stills"])
+YT_ID = re.compile(r"(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/shorts/|youtube\.com/embed/)([\w-]{11})")
+
+
+def still_sources(p):
+    """[(candidates, kind)]: candidate URLs tried in order. kind: frame (a true frame of the film),
+    thumb (a designed poster/thumbnail, may not be a frame), studio (a still from the owner's page)."""
+    out, seen = [], set()
     u = p.get("url", "")
-    m = re.search(r"(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/shorts/)([\w-]{11})", u)
+    m = YT_ID.search(u)
     if m:
         vid = m.group(1)
-        for n in ("maxresdefault", "hq1", "hq2", "hq3"):
-            s = f"https://i.ytimg.com/vi/{vid}/{n}.jpg"
-            if s not in urls:
-                urls.append(s)
-    elif "vimeo.com" in u and not any("vimeocdn" in s for s in urls):
+        # YouTube's own auto-frames at 25/50/75%: 1280x720 when available, else 640x480, else 480x360
+        for n in (1, 2, 3):
+            out.append(([f"https://i.ytimg.com/vi/{vid}/{q}{n}.jpg" for q in ("maxres", "sd", "hq")], "frame"))
+        out.append(([f"https://i.ytimg.com/vi/{vid}/maxresdefault.jpg", f"https://i.ytimg.com/vi/{vid}/sddefault.jpg"], "thumb"))
+        seen.update(f"https://i.ytimg.com/vi/{vid}/{q}{n}.jpg" for q in ("maxres", "sd", "hq") for n in (1, 2, 3))
+        seen.update(f"https://i.ytimg.com/vi/{vid}/{q}.jpg" for q in ("maxresdefault", "sddefault", "hqdefault", "oardefault"))
+    elif "vimeo.com" in u:
         try:
             t = oembed(u).get("thumbnail_url")
             if t:
-                urls.append(re.sub(r"_\d+(x\d+)?(\.jpg)?$", "_1280", t) if "_" in t else t)
+                out.append(([re.sub(r"_\d+(x\d+)?$", "_1280", t), t], "thumb"))
         except Exception:
             pass
-    return urls
+    for s in p["stills"]:
+        if s in seen or "vimeocdn" in s and any(k == "thumb" for _, k in out):
+            continue
+        sm = YT_ID.search(s) or re.search(r"i\.ytimg\.com/vi/([\w-]{11})/", s)
+        kind = "frame" if re.search(r"/(hq|sd|maxres)[123]\.jpg", s) else "thumb" if ("ytimg" in s or "vimeocdn" in s) else "studio"
+        out.append(([s], kind)); seen.add(s)
+    return out
+
+
+def still_urls(p):
+    return [c[0] for c, _ in still_sources(p)]
 
 
 def cmd_fetch(a):
@@ -245,26 +262,36 @@ def cmd_fetch(a):
     for p in _select(load(), a.slugs):
         d = CACHE / p["slug"]
         d.mkdir(parents=True, exist_ok=True)
-        for i, s in enumerate(still_urls(p)):
-            ext = os.path.splitext(urllib.parse.urlparse(s).path)[1] or ".jpg"
-            if ext.lower() not in (".jpg", ".jpeg", ".png", ".webp", ".gif"):
-                ext = ".jpg"
-            f = d / f"{i:02d}{ext}"
-            if f.exists() and f.stat().st_size > 0:
+        old = d / "stills.json"
+        manifest = json.loads(old.read_text()) if old.exists() and not a.refresh else {}
+        for i, (cands, kind) in enumerate(still_sources(p)):
+            key = cands[0]
+            if key in manifest and (d / manifest[key]["file"]).exists():
                 n_ok += 1
                 continue
-            try:
-                data = _get(s)
-                if len(data) < 2000:  # YouTube's grey placeholder is ~1 KB
-                    raise ValueError("placeholder")
-                f.write_bytes(data)
+            for s in cands:
+                try:
+                    data = _get(s)
+                    if len(data) < 2000:  # YouTube's grey placeholder is ~1 KB
+                        raise ValueError("placeholder")
+                except Exception as e:
+                    err = e
+                    continue
+                ext = os.path.splitext(urllib.parse.urlparse(s).path)[1].lower()
+                ext = ext if ext in (".jpg", ".jpeg", ".png", ".webp") else ".jpg"
+                f = f"{len(manifest):02d}-{kind}{ext}"
+                (d / f).write_bytes(data)
+                manifest[key] = {"file": f, "url": s, "kind": kind, "bytes": len(data)}
                 n_ok += 1
-            except Exception as e:
+                break
+            else:
                 n_fail += 1
-                print(f"  miss {p['slug']} {s} ({e})", file=sys.stderr)
+                print(f"  miss {p['slug']} {key} ({err})", file=sys.stderr)
+        old.write_text(json.dumps(manifest, indent=1) + "\n")
         (d / "SOURCE.txt").write_text(f"{p['title']} — {p.get('studio')} ({p.get('year')})\n{p.get('url')}\n"
                                       "Official stills, cached for evaluation only. Do not commit or redistribute.\n")
     print(f"stills: {n_ok} cached, {n_fail} missing → {CACHE}")
+
 
 # ---------------------------------------------------------------- match
 
@@ -522,21 +549,64 @@ def style_tags(p):
 
 
 def cmd_export(a):
-    """Write the JUDGE's layout: <out>/index.json + <out>/<slug>/01.jpg… from the cached stills (fetch first)."""
+    """Write the JUDGE's layout: <out>/index.json + <out>/<slug>/01.jpg… from the cached stills (fetch first).
+    True frames come first, then studio stills, then designed thumbnails (flagged "thumb": true)."""
     import shutil
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
+    order = {"frame": 0, "studio": 1, "thumb": 2}
     idx = []
     for p in _select(load(), a.slugs):
         src = CACHE / p["slug"]
-        imgs = sorted(f for f in src.glob("*") if f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp")) if src.is_dir() else []
-        d = out / p["slug"]; d.mkdir(exist_ok=True)
-        for i, f in enumerate(imgs[:8], 1):
-            shutil.copyfile(f, d / f"{i:02d}{f.suffix.lower()}")
+        mf = src / "stills.json"
+        entries = sorted(json.loads(mf.read_text()).values(), key=lambda e: (order.get(e["kind"], 3), e["file"])) if mf.exists() else []
+        if a.no_thumbs:
+            entries = [e for e in entries if e["kind"] != "thumb"]
+        d = out / p["slug"]
+        if d.exists():
+            shutil.rmtree(d)
+        d.mkdir()
+        frames = []
+        for i, e in enumerate(entries[:8], 1):
+            ext = os.path.splitext(e["file"])[1]
+            name = f"{i:02d}{ext}"
+            shutil.copyfile(src / e["file"], d / name)
+            w, h = _img_size(src / e["file"])
+            frames.append({"file": name, "kind": e["kind"], "thumb": e["kind"] == "thumb", "w": w, "h": h, "src": e["url"]})
+        real = sum(1 for f in frames if not f["thumb"])
         idx.append(dict(slug=p["slug"], title=p["title"], studio=p.get("studio"), year=p.get("year"), url=p.get("url"),
                         format=p.get("aspect"), category=p["category"], style_tags=style_tags(p), pace=p.get("pace"),
-                        length_s=p.get("length_s"), file=p["path"], frames=len(imgs[:8]), measured=p.get("measured")))
+                        length_s=p.get("length_s"), file=p["path"], frames=len(frames), real_frames=real,
+                        frame_info=frames, measured=p.get("measured")))
     (out / "index.json").write_text(json.dumps(idx, indent=1, ensure_ascii=False) + "\n")
-    print(f"{len(idx)} refs → {out}  ({sum(1 for r in idx if r['frames'])} with frames)")
+    print(f"{len(idx)} refs → {out}  ({sum(1 for r in idx if r['real_frames'] >= 4)} with ≥4 real frames, "
+          f"{sum(1 for r in idx if r['real_frames'] >= 3)} with ≥3)")
+
+
+def _img_size(path):
+    """(w, h) of a JPEG/PNG/WebP without dependencies; (None, None) if unknown."""
+    import struct
+    try:
+        b = Path(path).read_bytes()
+        if b[:8] == b"\x89PNG\r\n\x1a\n":
+            return struct.unpack(">II", b[16:24])
+        if b[:4] == b"RIFF" and b[8:12] == b"WEBP":
+            if b[12:16] == b"VP8 ":
+                w, h = struct.unpack("<HH", b[26:30]); return w & 0x3FFF, h & 0x3FFF
+            if b[12:16] == b"VP8L":
+                v = int.from_bytes(b[21:25], "little"); return (v & 0x3FFF) + 1, ((v >> 14) & 0x3FFF) + 1
+            if b[12:16] == b"VP8X":
+                return int.from_bytes(b[24:27], "little") + 1, int.from_bytes(b[27:30], "little") + 1
+        i = 2
+        while i < len(b) - 9:
+            if b[i] != 0xFF:
+                i += 1; continue
+            m = b[i + 1]; ln = struct.unpack(">H", b[i + 2:i + 4])[0]
+            if m in (0xC0, 0xC1, 0xC2):
+                h, w = struct.unpack(">HH", b[i + 5:i + 9]); return w, h
+            i += 2 + ln
+    except Exception:
+        pass
+    return None, None
 
 
 def cmd_match(a):
@@ -609,13 +679,13 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("index").set_defaults(f=cmd_index)
-    for name, f in (("verify", cmd_verify), ("fetch", cmd_fetch)):
-        s = sub.add_parser(name); s.add_argument("slugs", nargs="*"); s.set_defaults(f=f)
+    s = sub.add_parser("verify"); s.add_argument("slugs", nargs="*"); s.set_defaults(f=cmd_verify)
+    s = sub.add_parser("fetch"); s.add_argument("slugs", nargs="*"); s.add_argument("--refresh", action="store_true"); s.set_defaults(f=cmd_fetch)
     s = sub.add_parser("match")
     s.add_argument("--spec"); s.add_argument("--analysis"); s.add_argument("--tags"); s.add_argument("--text")
     s.add_argument("-n", type=int, default=3); s.add_argument("--json", action="store_true"); s.set_defaults(f=cmd_match)
     sub.add_parser("stats").set_defaults(f=cmd_stats)
-    s = sub.add_parser("export"); s.add_argument("--out", required=True); s.add_argument("slugs", nargs="*"); s.set_defaults(f=cmd_export)
+    s = sub.add_parser("export"); s.add_argument("--out", required=True); s.add_argument("--no-thumbs", action="store_true"); s.add_argument("slugs", nargs="*"); s.set_defaults(f=cmd_export)
     s = sub.add_parser("measure"); s.add_argument("slug"); s.add_argument("clip"); s.set_defaults(f=cmd_measure)
     a = ap.parse_args()
     a.f(a)
