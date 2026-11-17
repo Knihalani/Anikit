@@ -561,27 +561,51 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
         ..Default::default()
     };
     let prof = Profile::default();
+    // Encode the audio to AAC while the frames render, so the final mux is a stream copy.
+    let m4a = audio.map(|_| out.with_extension(format!("audio-{}.m4a", std::process::id())));
+    let aac_job = match (audio, &m4a) {
+        (Some(a), Some(m)) => {
+            let (a, m) = (a.to_path_buf(), m.clone());
+            Some(std::thread::spawn(move || {
+                std::process::Command::new("ffmpeg")
+                    .args(["-hide_banner", "-loglevel", "error", "-y", "-i"])
+                    .arg(&a)
+                    .args(["-c:a", "aac", "-b:a", "192k"])
+                    .arg(&m)
+                    .stdin(std::process::Stdio::null())
+                    .output()
+            }))
+        }
+        _ => None,
+    };
     let annexb = render_fused(ev, opts, &cfg, &prof);
     let t_enc = t0.elapsed();
     let tm = Instant::now();
     match audio {
         None => std::fs::write(out, ak264::mp4::mux(&annexb, w, h, ev.fps as f64)).map_err(|e| format!("can't write {}: {e}", out.display()))?,
-        Some(a) => {
+        Some(_) => {
             // Mux from a temp MP4 (real timestamps), not a raw H.264 pipe: ffmpeg can stall
             // draining a timestamp-less pipe while it waits on the audio input.
             let tmp = out.with_extension(format!("video-{}.mp4", std::process::id()));
             std::fs::write(&tmp, ak264::mp4::mux(&annexb, w, h, ev.fps as f64)).map_err(|e| format!("can't write {}: {e}", tmp.display()))?;
+            let m4a = m4a.clone().unwrap();
+            let aac = aac_job.unwrap().join().map_err(|_| "audio encoder thread panicked".to_string())?.map_err(|e| format!("can't start ffmpeg for audio: {e}"))?;
+            if !aac.status.success() {
+                let _ = std::fs::remove_file(&tmp);
+                return Err(format!("ffmpeg (audio) failed: {}", String::from_utf8_lossy(&aac.stderr).trim()));
+            }
             let o = std::process::Command::new("ffmpeg")
                 .args(["-hide_banner", "-loglevel", "error", "-y", "-i"])
                 .arg(&tmp)
                 .arg("-i")
-                .arg(a)
-                .args(["-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart"])
+                .arg(&m4a)
+                .args(["-map", "0:v", "-map", "1:a", "-c", "copy", "-shortest", "-movflags", "+faststart"])
                 .arg(out)
                 .stdin(std::process::Stdio::null())
                 .output()
                 .map_err(|e| format!("can't start ffmpeg for the audio mux: {e}"));
             let _ = std::fs::remove_file(&tmp);
+            let _ = std::fs::remove_file(&m4a);
             let o = o?;
             if !o.status.success() {
                 return Err(format!("ffmpeg failed: {}", String::from_utf8_lossy(&o.stderr).trim()));
