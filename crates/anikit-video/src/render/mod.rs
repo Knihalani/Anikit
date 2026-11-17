@@ -144,8 +144,8 @@ pub struct Renderer {
     frame_images: Arc<HashMap<dl::ImageId, Arc<Pixmap>>>,
     dynamic: Option<Arc<dyn DynamicImages>>,
     upscaler: upscale::Upscaler,
-    /// Two upscaled rows (fused backdrop → YUV path).
-    pair: Vec<u8>,
+    /// Low-res backdrop as Y, Cb, Cr planes (fused backdrop → YUV path).
+    lo: [Vec<u8>; 3],
     /// Low-resolution smooth backdrop, its context and content key.
     lctx: Option<RenderContext>,
     smooth_lo: Pixmap,
@@ -170,7 +170,7 @@ impl Renderer {
             frame_images: Default::default(),
             dynamic: None,
             upscaler: Default::default(),
-            pair: Vec::new(),
+            lo: Default::default(),
             lctx: None,
             smooth_lo: Pixmap::new(1, 1),
             smooth_key: None,
@@ -335,41 +335,42 @@ impl Renderer {
         });
         let small = rgn.is_none_or(|r| ((r[2] - r[0]) * (r[3] - r[1])) as f64 <= 0.6 * (wu * hu) as f64);
         if let (true, true, Some(yuv), Some((_, pix, dev))) = (full, small, yuv, &backdrop) {
-            // Fused: YUV straight from upscaled row pairs (cache-resident), with
-            // RGBA + vello only inside the macroblock-aligned box of the ops on top.
+            // Fused: YUV straight from the upscaled backdrop planes, with RGBA +
+            // vello only inside the macroblock-aligned box of the ops on top.
             fused = true;
             yuv.resize(w as u32, h as u32);
-            self.pair.resize(wu * 2 * 4, 0);
-            if let Some([x0, y0, x1, y1]) = rgn {
-                self.rpix.resize((x1 - x0) as u16, (y1 - y0) as u16);
-            }
+            // Convert the (small) backdrop to YUV 4:4:4 once, then upscale the
+            // planes straight into the frame: 1.5 bytes per pixel instead of
+            // upscaling 4 and converting. (Conversion is affine, so this matches
+            // converting the upscaled RGBA to within rounding.)
             let (pw, ph) = (pix.width() as usize, pix.height() as usize);
-            for y in (0..hu).step_by(2) {
-                let rows = (hu - y).min(2);
-                let band = rgn.filter(|r| y >= r[1] && y < r[3]);
-                let pair = &mut self.pair[..wu * rows * 4];
-                self.upscaler.run(pix.data_as_u8_slice(), pw, ph, *dev, pair, wu, rows, 0, y as i64);
-                match band {
-                    Some(r) => {
-                        // Seed the box's backdrop pixels from these rows.
-                        let (bw, rpw) = ((r[2] - r[0]) * 4, self.rpix.width() as usize * 4);
-                        let rp = self.rpix.data_as_u8_slice_mut();
-                        for k in 0..rows {
-                            let o = (y + k - r[1]) * rpw;
-                            rp[o..o + bw].copy_from_slice(&pair[(k * wu + r[0]) * 4..(k * wu + r[0]) * 4 + bw]);
-                        }
-                        if r[0] > 0 {
-                            yuv::convert_into(pair, wu, rows, [0, 0, r[0], rows], yuv, (0, y));
-                        }
-                        if r[2] < wu {
-                            yuv::convert_into(pair, wu, rows, [r[2], 0, wu, rows], yuv, (0, y));
-                        }
-                    }
-                    None => yuv::convert_into(pair, wu, rows, [0, 0, wu, rows], yuv, (0, y)),
+            let [ly, lu, lv] = &mut self.lo;
+            yuv::rgba_to_yuv444(pix.data_as_u8_slice(), ly, lu, lv);
+            let (cw, ch) = (wu.div_ceil(2), hu.div_ceil(2));
+            let cdev = Rect::new(dev.x0 / 2.0, dev.y0 / 2.0, dev.x1 / 2.0, dev.y1 / 2.0);
+            let (ys, cs) = (yuv.y_stride, yuv.c_stride);
+            self.upscaler.run_plane(&self.lo[0], pw, ph, *dev, &mut yuv.y, ys, wu, hu, 0, 0);
+            self.upscaler.run_plane(&self.lo[1], pw, ph, cdev, &mut yuv.u, cs, cw, ch, 0, 0);
+            self.upscaler.run_plane(&self.lo[2], pw, ph, cdev, &mut yuv.v, cs, cw, ch, 0, 0);
+            // Odd sizes: the last chroma column/row covers one pixel, centred half a
+            // pixel earlier than a full 2×2 block.
+            let edges = [(wu % 2 == 1, false), (false, hu % 2 == 1), (wu % 2 == 1, hu % 2 == 1)];
+            for (ex, ey) in edges {
+                if !(ex || ey) || (ex && ey && !(wu % 2 == 1 && hu % 2 == 1)) {
+                    continue;
                 }
+                let (sx, sy) = (if ex { 0.25 } else { 0.0 }, if ey { 0.25 } else { 0.0 });
+                let d = cdev + kurbo::Vec2::new(sx, sy);
+                let (x0, y0) = (if ex { cw - 1 } else { 0 }, if ey { ch - 1 } else { 0 });
+                let (ow, oh) = (if ex { 1 } else { cw }, if ey { 1 } else { ch });
+                let o = y0 * cs + x0;
+                self.upscaler.run_plane(&self.lo[1], pw, ph, d, &mut yuv.u[o..], cs, ow, oh, x0 as i64, y0 as i64);
+                self.upscaler.run_plane(&self.lo[2], pw, ph, d, &mut yuv.v[o..], cs, ow, oh, x0 as i64, y0 as i64);
             }
             if let Some([x0, y0, x1, y1]) = rgn {
                 let (rw, rh) = ((x1 - x0) as u16, (y1 - y0) as u16);
+                self.rpix.resize(rw, rh);
+                self.upscaler.run(pix.data_as_u8_slice(), pw, ph, *dev, self.rpix.data_as_u8_slice_mut(), rw as usize, rh as usize, x0 as i64, y0 as i64);
                 self.rpix.set_may_have_transparency(false);
                 let rctx = self.rctx.get_or_insert_with(|| RenderContext::new(rw, rh));
                 rctx.reset_and_resize(rw, rh);

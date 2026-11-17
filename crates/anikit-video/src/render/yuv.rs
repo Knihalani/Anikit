@@ -323,6 +323,24 @@ pub(crate) fn convert_into(src: &[u8], w: usize, h: usize, r: Region, out: &mut 
     kernel(src, w, h, out, r, off);
 }
 
+/// Premultiplied RGBA8 (composited over black) → full-resolution Y, Cb, Cr
+/// planes (4:4:4), same fixed-point maths as the 4:2:0 kernel.
+pub(crate) fn rgba_to_yuv444(src: &[u8], y: &mut Vec<u8>, u: &mut Vec<u8>, v: &mut Vec<u8>) {
+    let n = src.len() / 4;
+    y.clear();
+    u.clear();
+    v.clear();
+    y.reserve(n);
+    u.reserve(n);
+    v.reserve(n);
+    for p in src.chunks_exact(4) {
+        y.push(luma(p));
+        let (cu, cv) = chroma(4 * p[0] as i32, 4 * p[1] as i32, 4 * p[2] as i32);
+        u.push(cu);
+        v.push(cv);
+    }
+}
+
 /// Scalar reference (floating point), for tests.
 pub fn reference_pixel(r: f64, g: f64, b: f64) -> (f64, f64, f64) {
     let y = 16.0 + 219.0 / 255.0 * (0.2126 * r + 0.7152 * g + 0.0722 * b);

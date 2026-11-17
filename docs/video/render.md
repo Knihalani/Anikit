@@ -67,7 +67,7 @@ This applies once the run paints a frame's worth of pixels with a gradient or im
 
 ### Fused backdrop → YUV
 
-When `render_yuv` has a backdrop and the ops drawn over it fit in a macroblock-aligned box covering at most 60% of the frame, the YUV comes straight from upscaled row pairs that stay in cache. Only the box goes through RGBA and vello: it is seeded from the same rows. The full RGBA frame is never written, so `frame()` is stale afterwards; call `render()` when you need RGBA. The output is within 2 LSB of `render()` followed by RGBA→YUV conversion (tested). On the launch template this is about 8% faster than the unfused path.
+When `render_yuv` has a backdrop and the ops drawn over it fit in a macroblock-aligned box covering at most 60% of the frame, the low-res backdrop is converted to YUV 4:4:4 once and its planes are upscaled straight into the YUV frame: 1.5 bytes per pixel, with no full-frame RGBA. Odd frame sizes get edge-corrected chroma. Only the box goes through RGBA and vello. The full RGBA frame is never written, so `frame()` is stale afterwards; call `render()` when you need RGBA. The output is within 2 LSB of `render()` followed by RGBA→YUV conversion (tested). On the launch template (restarted, slower VM) render + YUV goes from 6.4 ms unfused to 4.9 ms.
 
 ### Incremental frames
 
