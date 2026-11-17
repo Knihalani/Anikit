@@ -18,6 +18,7 @@ pub const PAGES: &[(&str, &str)] = &[
     ("3d", include_str!("../docs-cli/3d.md")),
     ("particles", include_str!("../docs-cli/particles.md")),
     ("physics", include_str!("../docs-cli/physics.md")),
+    ("fluid", include_str!("../docs-cli/fluid.md")),
     ("post", include_str!("../docs-cli/post.md")),
     ("pacing", include_str!("../docs-cli/pacing.md")),
     ("critique", include_str!("../docs-cli/critique.md")),
@@ -45,7 +46,7 @@ pub const RECIPES: &[(&str, &str)] = &[
 ];
 
 const ALIASES: &[(&str, &str)] = &[
-    ("scene3d", "3d"), ("scene-3d", "3d"), ("three", "3d"), ("shaders", "shader"), ("glsl", "shader"), ("audio", "music"),
+    ("scene3d", "3d"), ("ink", "fluid"), ("smoke", "fluid"), ("fire", "fluid"), ("scene-3d", "3d"), ("three", "3d"), ("shaders", "shader"), ("glsl", "shader"), ("audio", "music"),
     ("sound", "music"), ("sfx", "music"), ("keyframes", "animation"), ("expression", "expressions"), ("scripts", "script"), ("rhai", "script"), ("drawing", "draw"), ("motion-graphics", "mograph"), ("repeater", "mograph"), ("trails", "mograph"), ("echo", "mograph"), ("text", "primitives"),
     ("shapes", "primitives"), ("paths", "primitives"), ("grade", "post"), ("motion-blur", "camera"), ("composition", "compositions"),
     ("review", "critique"), ("pace", "pacing"), ("index", "start"), ("anything", "make-anything"),
