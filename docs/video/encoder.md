@@ -158,19 +158,19 @@ Real-clip frames were rendered with `--codec png` and converted to yuv420p
 
 | Clip | ak264 | vs veryfast | vs ultrafast | vs medium |
 |---|---|---|---|---|
-| launch | 321 fps, 2044 KB, 47.8 dB | **2.9× faster, 0.88× size*** (≈ 109 fps, 2322 KB) | 0.9× speed, **0.62× size** (≈ 339 fps, 3324 KB) | 6.3× faster, 1.11× size (≈ 51 fps, 1849 KB) |
-| tutorial | 901 fps, 489 KB, 51.2 dB | **5.0× faster**, 1.07× size (≈ 182 fps, 455 KB) | **2.5× faster, 0.85× size*** (≈ 355 fps, 577 KB) | 8.5× faster, 1.30× size (≈ 106 fps, 377 KB) |
-| full | 434 fps, 1058 KB, 48.9 dB | **2.8× faster**, 1.16× size (≈ 152 fps, 915 KB) | **1.2× faster, 0.62× size** (≈ 374 fps, 1704 KB) | 5.0× faster, 1.48× size (≈ 86 fps, 717 KB) |
-| spec-to-screen | 139 fps, 8374 KB, 42.0 dB | **1.5× faster, 0.98× size** (≈ 91 fps, 8557 KB) | 0.5× speed, **0.48× size** (≈ 295 fps, 17508 KB) | 3.3× faster, 1.40× size (≈ 42 fps, 5972 KB) |
+| launch | 349 fps, 2061 KB, 47.8 dB | **3.2× faster, 0.90× size*** (≈ 109 fps, 2302 KB) | 1.0× speed, **0.62× size** (≈ 340 fps, 3305 KB) | 6.9× faster, 1.12× size (≈ 51 fps, 1834 KB) |
+| tutorial | 750 fps, 492 KB, 51.2 dB | **4.1× faster**, 1.08× size (≈ 182 fps, 455 KB) | **2.1× faster, 0.85× size*** (≈ 355 fps, 577 KB) | 7.1× faster, 1.31× size (≈ 106 fps, 376 KB) |
+| full | 425 fps, 1075 KB, 48.9 dB | **2.8× faster**, 1.18× size (≈ 152 fps, 915 KB) | **1.1× faster, 0.63× size** (≈ 374 fps, 1704 KB) | 4.9× faster, 1.50× size (≈ 86 fps, 717 KB) |
+| spec-to-screen | 161 fps, 8332 KB, 42.0 dB | **1.8× faster, 0.97× size** (≈ 91 fps, 8557 KB) | 0.5× speed, **0.48× size** (≈ 295 fps, 17508 KB) | 3.8× faster, 1.40× size (≈ 42 fps, 5972 KB) |
 
 **Reading it:**
 
-- Against veryfast, ak264 is 1.5–5× faster at about the same size (0.88–1.16×).
-- Against ultrafast, files are 15–52% smaller. Speed ranges from 2.5× faster
+- Against veryfast, ak264 is 1.8–4× faster at about the same size (0.90–1.18×).
+- Against ultrafast, files are 15–52% smaller. Speed ranges from 2.1× faster
   (text) to 0.5× (spec-to-screen, the hardest clip: nearly every macroblock
   changes with sub-pixel motion of smooth gradients). On that clip ultrafast is
   faster but needs twice the bytes for the same PSNR.
-- Medium is still 11–48% smaller. The gap is B-frames, smaller partitions and
+- Medium is still 12–50% smaller. The gap is B-frames, smaller partitions and
   psycho-visual tuning, which ak264 doesn't have.
 - On content that is mostly static between frames, the margin grows a lot. On the
   synthetic `hold` scene (held text), ak264 is 13× faster than veryfast and 21%
@@ -181,10 +181,13 @@ Real-clip frames were rendered with `--codec png` and converted to yuv420p
 
 | Clip, QP 26 | integer-pel | quarter-pel (default) |
 |---|---|---|
-| launch | 395 fps, 2420 KB, 47.52 dB | 321 fps, 2044 KB (−16%), 47.79 dB |
-| tutorial | ≈ 940 fps, 499 KB, 51.13 dB | 901 fps, 489 KB (−2%), 51.22 dB |
-| full (synthetic) | 565 fps, 903 KB, 48.12 dB | 434 fps, 1058 KB (+17%), 48.90 dB |
-| spec-to-screen | 160 fps, 12825 KB, 41.83 dB | 139 fps, 8374 KB (−35%), 42.03 dB |
+| launch | 395 fps, 2420 KB, 47.52 dB | 349 fps, 2061 KB (−15%), 47.75 dB |
+| tutorial | ≈ 940 fps, 499 KB, 51.13 dB | 750–900 fps, 492 KB (−1%), 51.21 dB |
+| full (synthetic) | 565 fps, 903 KB, 48.12 dB | 425 fps, 1075 KB (+19%), 48.90 dB |
+| spec-to-screen | 160 fps, 12825 KB, 41.83 dB | 161 fps, 8332 KB (−35%), 42.03 dB |
+
+(Integer-pel rows were measured before the I4x4 gate change below; quarter-pel rows
+after it. The gate made spec-to-screen about 18% cheaper in instructions.)
 
 On spec-to-screen the saving grows with QP: −24% at QP 22 and −46% at QP 30.
 
@@ -196,15 +199,18 @@ On spec-to-screen the saving grows with QP: −24% at QP 22 and −46% at QP 30.
 
 | Encoder | Setting | fps | KB | PSNR-Y | PSNR-all |
 |---|---|---|---|---|---|
-| ak264 chunks | qp 22 / 26 / 30 | 110 / 133–139 / 152 | 16935 / 8374 / 4216 | 43.55 / 42.03 / 40.08 | 44.73 / 43.05 / 41.17 |
+| ak264 chunks | qp 22 / 26 / 30 | 133 / 161 / 198 | 16934 / 8332 / 4202 | 43.55 / 42.03 / 40.07 | 44.73 / 43.04 / 41.17 |
 | ak264 chunks, integer-pel | qp 22 / 26 / 30 | 117 / 160 / 193 | 22160 / 12825 / 7816 | 43.45 / 41.83 / 39.83 | 44.63 / 42.85 / 40.94 |
-| ak264 1 thread | qp 22 / 26 / 30 | 34 / 43 / 51 | 16799 / 8292 / 4184 | 43.54 / 42.02 / 40.06 | |
-| ak264 4 slices | qp 22 / 26 / 30 | 82 / 101 / 115 | 17088 / 8498 / 4334 | 43.54 / 42.02 / 40.05 | |
+| ak264 1 thread | qp 22 / 26 / 30 | 43 / 53 / 58 | 16794 / 8241 / 4149 | 43.54 / 42.02 / 40.06 | |
+| ak264 4 slices | qp 22 / 26 / 30 | 88 / 113 / 131 | 17081 / 8493 / 4321 | 43.54 / 42.01 / 40.05 | |
 | x264 ultrafast | crf 18 / 23 / 28 | 222 / 276 / 315 | 61502 / 24532 / 12158 | 45.83 / 43.14 / 40.83 | 46.99 / 44.34 / 41.99 |
 | x264 veryfast | crf 18 / 23 / 28 | 73 / 105 / 109 | 21760 / 4296 / 1627 | 43.52 / 40.93 / 38.41 | 44.67 / 42.15 / 39.70 |
 | x264 medium | crf 18 / 23 / 28 | 25 / 41 / 56 | 23138 / 6294 / 2474 | 43.96 / 42.13 / 40.35 | 45.28 / 43.43 / 41.62 |
 
-One thread spends about 23 ms per frame here (43 fps). By inclusive instruction
+One thread spends about 19 ms per frame here (53 fps at QP 26). In P frames,
+I4x4 is tried only when both P16x16 and I16x16 cost more than λ·64 + 1024: before
+that gate, I4x4 trials were a quarter of the instructions while winning about 30
+macroblocks per frame. The profile below was taken before the gate. By inclusive instruction
 count, a profile splits that roughly as follows:
 
 | Work | Share |
@@ -222,6 +228,12 @@ Perceptual skip (`skip_threshold`) was measured and left off. At QP 26 it saved
 only 0.6–4% (launch 2420 → 2328 KB at T = 2) while costing 0.4–1.3 dB, which is
 worse than raising the QP. On `full`, T = 1 made the file 20% larger. Holding slow
 backgrounds still in the renderer removes ±1 drift at the source instead.
+
+For camera moves, `FrameHints::from_affine(w, h, [a, b, c, d, e, f])` turns the
+camera transform into one motion hint per macroblock. In tests, zooms of 1.5%, 6%
+and 12% per frame (192×128) produced byte-identical output with or without the
+hints, because the motion search already finds that motion. The hints matter only
+when motion goes beyond the search range, for example fast zooms at 1080p.
 
 ### Full tables (luma PSNR in dB)
 
