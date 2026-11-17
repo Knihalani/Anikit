@@ -60,6 +60,7 @@ pub fn category(check: &str) -> &'static str {
         "pace" | "dead-air" | "rhythm" | "arc" | "ending" | "beat" | "pacing" | "length" => "time",
         "reading-time" | "legibility" | "contrast" | "render-contrast" | "typography" | "density" | "render-overlap" | "type-scale" | "text-crisp" => "text",
         "hook" | "structure" | "placeholder" | "copy" | "music" => "story",
+        "motion" => "time",
         "frame-fill" | "layout" => "composition",
         "flicker" | "judder" | "banding" | "audio" | "render-frame" => "technical",
         _ => "composition",
@@ -144,6 +145,7 @@ pub fn review_pack(spec: &Value, base: &std::path::Path, range: Option<(f64, f64
             r.notes.extend(notes);
             let (cn, worst) = crate::review::composition(&p.ev, &samples, &tl);
             r.notes.extend(cn);
+            r.notes.extend(crate::review_taste::checks(&samples, &tl));
             let (line, an) = crate::review::audio(&p.ev, base);
             if let Some(l) = line {
                 r.summary += &format!("\n{l}");

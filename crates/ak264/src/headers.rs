@@ -3,6 +3,8 @@
 use crate::bits::BitWriter;
 
 pub(crate) const LOG2_MAX_FRAME_NUM: u32 = 8;
+/// pic_order_cnt_lsb bits (POC type 0, used with B-frames).
+pub(crate) const LOG2_MAX_POC_LSB: u32 = 16;
 
 pub(crate) struct SeqInfo {
     pub mbw: usize,
@@ -12,6 +14,8 @@ pub(crate) struct SeqInfo {
     pub fps: f64,
     pub full_range: bool,
     pub cabac: bool,
+    /// B-frames: POC type 0, two reference frames, one frame of reordering.
+    pub bframes: bool,
 }
 
 /// (level_idc, MaxMBPS, MaxFS)
@@ -76,8 +80,14 @@ pub(crate) fn write_sps(w: &mut BitWriter, s: &SeqInfo, level: u8) {
     w.put(8, level as u32);
     w.ue(0); // sps id
     w.ue(LOG2_MAX_FRAME_NUM - 4);
-    w.ue(2); // pic_order_cnt_type
-    w.ue(1); // max_num_ref_frames
+    if s.bframes {
+        w.ue(0); // pic_order_cnt_type
+        w.ue(LOG2_MAX_POC_LSB - 4);
+        w.ue(2); // max_num_ref_frames
+    } else {
+        w.ue(2); // pic_order_cnt_type
+        w.ue(1); // max_num_ref_frames
+    }
     w.bit(false); // gaps
     w.ue(s.mbw as u32 - 1);
     w.ue(s.mbh as u32 - 1);
@@ -120,8 +130,8 @@ pub(crate) fn write_sps(w: &mut BitWriter, s: &SeqInfo, level: u8) {
     w.ue(0); // max_bits_per_mb_denom
     w.ue(13); // log2_max_mv_length_horizontal
     w.ue(11); // log2_max_mv_length_vertical
-    w.ue(0); // max_num_reorder_frames
-    w.ue(1); // max_dec_frame_buffering
+    w.ue(s.bframes as u32); // max_num_reorder_frames
+    w.ue(1 + s.bframes as u32); // max_dec_frame_buffering
     w.trailing();
 }
 
@@ -155,24 +165,38 @@ pub(crate) struct SliceHdr {
     pub cabac: bool,
     /// Slice QP − the picture's initial QP (the configured QP).
     pub qp_delta: i32,
+    /// B slice (non-reference, spatial direct).
+    pub b: bool,
+    /// pic_order_cnt_lsb when the stream uses POC type 0.
+    pub poc: Option<u32>,
 }
 
 pub(crate) fn write_slice_header(w: &mut BitWriter, h: &SliceHdr) {
     w.ue(h.first_mb);
-    w.ue(if h.idr { 7 } else { 5 }); // I / P, all slices of the picture alike
+    w.ue(if h.idr { 7 } else if h.b { 6 } else { 5 }); // I / B / P, all slices of the picture alike
     w.ue(0);
     w.put(LOG2_MAX_FRAME_NUM, h.frame_num);
     if h.idr {
         w.ue(h.idr_id);
-    } else {
+    }
+    if let Some(p) = h.poc {
+        w.put(LOG2_MAX_POC_LSB, p & ((1 << LOG2_MAX_POC_LSB) - 1));
+    }
+    if h.b {
+        w.bit(true); // direct_spatial_mv_pred_flag
+    }
+    if !h.idr {
         w.bit(false); // num_ref_idx_active_override
         w.bit(false); // ref_pic_list_modification_flag_l0
+        if h.b {
+            w.bit(false); // ref_pic_list_modification_flag_l1
+        }
     }
-    // dec_ref_pic_marking (nal_ref_idc != 0)
+    // dec_ref_pic_marking (nal_ref_idc != 0; B-frames are not references)
     if h.idr {
         w.bit(false);
         w.bit(false);
-    } else {
+    } else if !h.b {
         w.bit(false);
     }
     if h.cabac && !h.idr {
