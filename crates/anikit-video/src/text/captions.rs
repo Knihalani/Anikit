@@ -179,6 +179,10 @@ pub struct CaptionStyle {
     /// Extra scale on the word being spoken as it starts (0 = none).
     pub pop: f32,
     pub uppercase: bool,
+    /// Box behind each caption line (pill when `radius` ≥ 0.5).
+    pub background: Option<Color>,
+    /// Background corner radius in em.
+    pub radius: f32,
 }
 
 impl Default for CaptionStyle {
@@ -200,6 +204,8 @@ impl Default for CaptionStyle {
             upcoming: Upcoming::Dim,
             pop: 0.12,
             uppercase: false,
+            background: None,
+            radius: 0.25,
         }
     }
 }
@@ -234,9 +240,13 @@ impl CaptionTrack {
                 if st.uppercase {
                     text = text.to_uppercase();
                 }
+                let mut style = st.style.clone();
+                if let Some(bg) = st.background {
+                    style.background = Some(super::layout::LineBackground { color: bg, padding: [0.35, 0.12], radius: st.radius });
+                }
                 let spec = TextSpec {
                     text,
-                    style: st.style.clone(),
+                    style,
                     width: Some(st.width),
                     align: Align::Center,
                     max_lines: Some(st.max_lines.max(1)),
@@ -297,7 +307,11 @@ impl CaptionTrack {
         // Page entrance: quick fade and lift.
         let enter = ((t - p.start) / 0.12).clamp(0.0, 1.0);
         let base = dl::mul(&base, &[1.0, 0.0, 0.0, 1.0, 0.0, (1.0 - enter) * l.font_size * 0.15]);
-        l.begin_effects(base, out);
+        // Backgrounds stay put (no pop) and fade in with the page.
+        l.background_ops(enter, base, out);
+        if !l.filters.is_empty() {
+            out.push(Op::PushLayer { opacity: 1.0, blend: dl::Blend::Normal, filters: l.filters.clone(), clip: None, cache_key: None });
+        }
         let em = l.font_size;
         for (i, u) in l.words.iter().enumerate() {
             let (ws, we) = p.words[i];

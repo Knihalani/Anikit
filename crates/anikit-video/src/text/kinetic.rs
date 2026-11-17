@@ -453,7 +453,7 @@ impl TextLayout {
         let mut gi = u.glyphs.start;
         while gi < u.glyphs.end {
             let run = self.glyphs[gi as usize].run;
-            let mut glyphs = Vec::with_capacity((u.glyphs.end - gi) as usize);
+            let mut glyphs = super::pool::take((u.glyphs.end - gi) as usize);
             while gi < u.glyphs.end && self.glyphs[gi as usize].run == run {
                 let g = self.glyphs[gi as usize];
                 glyphs.push(self.runs[run as usize].glyphs[g.index as usize]);
@@ -643,8 +643,6 @@ impl KineticPlan {
     fn body(&self, t: f32, transform: Affine, out: &mut Vec<Op>) {
         let l = &*self.layout;
         let units = l.units(self.unit);
-        // Units at rest are batched into one op per glyph run.
-        let mut rest: Vec<Vec<dl::Glyph>> = vec![Vec::new(); l.runs.len()];
         let mut any_rest = false;
         let mut decos_rest = true;
         match &self.k.style {
@@ -717,6 +715,9 @@ impl KineticPlan {
             }
             _ => {}
         }
+        // Units at rest are batched into one op per glyph run (buffers from the pool).
+        let mut rest: Vec<Vec<dl::Glyph>> = REST.with(|r| std::mem::take(&mut *r.borrow_mut()));
+        rest.resize_with(l.runs.len(), Vec::new);
         let mut caret_at: Option<[f32; 4]> = None;
         for (i, u) in units.iter().enumerate() {
             let p = self.progress(i, t);
@@ -730,7 +731,11 @@ impl KineticPlan {
             if p >= 1.0 || matches!(self.k.style, KineticStyle::Typewriter { .. }) {
                 for gi in u.glyphs.clone() {
                     let g = l.glyphs[gi as usize];
-                    rest[g.run as usize].push(l.runs[g.run as usize].glyphs[g.index as usize]);
+                    let slot = &mut rest[g.run as usize];
+                    if slot.capacity() == 0 {
+                        *slot = super::pool::take(l.runs[g.run as usize].glyphs.len());
+                    }
+                    slot.push(l.runs[g.run as usize].glyphs[g.index as usize]);
                 }
                 any_rest = true;
                 continue;
@@ -844,13 +849,20 @@ impl KineticPlan {
             }
         }
         if any_rest {
-            for (ri, g) in rest.into_iter().enumerate() {
+            for (ri, g) in rest.iter_mut().enumerate() {
                 if !g.is_empty() {
                     let r = &l.runs[ri];
-                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: g, paint: l.paint(r, 1.0), transform });
+                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: std::mem::take(g), paint: l.paint(r, 1.0), transform });
                 }
             }
         }
+        for g in rest.iter_mut() {
+            if g.capacity() > 0 {
+                super::pool::give(std::mem::take(g));
+            }
+        }
+        rest.clear();
+        REST.with(|r| *r.borrow_mut() = rest);
         if decos_rest {
             self.decorations(transform, 1.0, out);
         }
@@ -914,11 +926,19 @@ impl KineticPlan {
         out.push(Op::Glyphs {
             font: r.font,
             size: r.size,
-            glyphs: vec![dl::Glyph { id: gid, x, y: base.y }],
+            glyphs: {
+                let mut v = super::pool::take(1);
+                v.push(dl::Glyph { id: gid, x, y: base.y });
+                v
+            },
             paint: l.paint(r, 0.75),
             transform,
         });
     }
+}
+
+thread_local! {
+    static REST: std::cell::RefCell<Vec<Vec<dl::Glyph>>> = const { std::cell::RefCell::new(Vec::new()) };
 }
 
 #[inline]
@@ -1055,8 +1075,15 @@ impl CounterPlan {
     /// Emit the counter at time `t`; `(0, 0)` is the top-left (left align),
     /// top-centre or top-right of the text.
     pub fn ops(&self, t: f32, transform: Affine, out: &mut Vec<Op>) {
-        let s = self.text(t);
-        let mut glyphs = Vec::with_capacity(s.len());
+        thread_local! {
+            static BUF: std::cell::RefCell<String> = const { std::cell::RefCell::new(String::new()) };
+        }
+        let s = BUF.with(|b| {
+            let mut b = b.borrow_mut();
+            format_number_into(&mut b, self.value(t), self.c.decimals, &self.c.separator, &self.c.prefix, &self.c.suffix);
+            std::mem::take(&mut *b)
+        });
+        let mut glyphs = super::pool::take(s.len());
         let mut x = 0.0;
         for ch in s.chars() {
             if let Some((_, g, a)) = self.table.iter().find(|e| e.0 == ch) {
@@ -1064,6 +1091,7 @@ impl CounterPlan {
                 x += a;
             }
         }
+        BUF.with(|b| *b.borrow_mut() = s);
         let shift = match self.c.align {
             super::layout::Align::Center => -x * 0.5,
             super::layout::Align::Right => -x,
@@ -1085,26 +1113,39 @@ impl CounterPlan {
 
 /// Format `v` with fixed decimals and a thousands separator.
 pub fn format_number(v: f64, decimals: u32, sep: &str, prefix: &str, suffix: &str) -> String {
-    let s = format!("{:.*}", decimals as usize, v.abs());
-    let (int, frac) = s.split_once('.').map_or((s.as_str(), ""), |(a, b)| (a, b));
-    let mut out = String::with_capacity(s.len() + 8 + prefix.len() + suffix.len());
-    let neg = v < 0.0 && s.chars().any(|c| c.is_ascii_digit() && c != '0');
+    let mut out = String::new();
+    format_number_into(&mut out, v, decimals, sep, prefix, suffix);
+    out
+}
+
+/// [`format_number`] into a reused buffer (cleared first; no allocation once warm).
+pub fn format_number_into(out: &mut String, v: f64, decimals: u32, sep: &str, prefix: &str, suffix: &str) {
+    use std::fmt::Write;
+    out.clear();
+    // Digits first, at the end of the buffer, then assembled in front.
+    let _ = write!(out, "{:.*}", decimals as usize, v.abs());
+    let digits_len = out.len();
+    let neg = v < 0.0 && out.bytes().any(|c| c.is_ascii_digit() && c != b'0');
+    let int_len = out.find('.').unwrap_or(digits_len);
     if neg {
         out.push('-');
     }
     out.push_str(prefix);
-    for (i, ch) in int.chars().enumerate() {
-        if i > 0 && (int.len() - i) % 3 == 0 {
+    for i in 0..int_len {
+        if i > 0 && (int_len - i).is_multiple_of(3) {
             out.push_str(sep);
         }
+        let ch = out.as_bytes()[i] as char;
         out.push(ch);
     }
-    if !frac.is_empty() {
-        out.push('.');
-        out.push_str(frac);
+    if int_len < digits_len {
+        for i in int_len..digits_len {
+            let ch = out.as_bytes()[i] as char;
+            out.push(ch);
+        }
     }
     out.push_str(suffix);
-    out
+    out.drain(..digits_len);
 }
 
 /// A text block ready for evaluation: its layout plus optional enter and exit
