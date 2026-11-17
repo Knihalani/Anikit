@@ -7,7 +7,7 @@
 
 use super::style::*;
 use super::{Component, Ctx, Error, Prepare};
-use crate::dl::{Blend, Op, Paint, Path, Rgba};
+use crate::dl::{Op, Paint, Path, Rgba};
 use anikit_core::morph::{prepare_many, MorphSeq};
 use anikit_core::path::Path as CPath;
 use serde::Deserialize;
@@ -196,9 +196,7 @@ impl Component for Morph {
         let mut out = Vec::new();
         if self.glow {
             let gcol = cols[cols.len() / 2];
-            push_layer(&mut out, 1.0, Blend::Screen, Vec::new());
             out.push(circle(cx, cy, r * 1.9, radial(cx, cy, r * 1.9, vec![(0.0, alpha(gcol, 0.5)), (0.45, alpha(gcol, 0.16)), (1.0, alpha(gcol, 0.0))])));
-            out.push(Op::PopLayer);
         }
         out.push(fill(path.clone(), paint));
         // Glossy top light: a soft white radial clipped by the shape itself.

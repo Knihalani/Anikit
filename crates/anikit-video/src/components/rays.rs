@@ -5,7 +5,7 @@
 
 use super::style::*;
 use super::{Component, Ctx, Error, Prepare};
-use crate::dl::{Blend, Op, Paint, Path, Rgba};
+use crate::dl::{Op, Paint, Path, Rgba};
 use anikit_core::noise::Noise;
 use kurbo::Shape;
 use serde::Deserialize;
@@ -113,7 +113,9 @@ impl Component for GodRays {
         let diag = (w * w + h * h).sqrt();
         let beams = self.beams(t, diag);
         let mut out = Vec::new();
-        push_layer(&mut out, 1.0, Blend::Screen, Vec::new());
+        // Light over a dark scene: plain source-over of faint light colours
+        // looks like screen blending without a full-frame layer composite.
+
         // Ambient bloom around the source.
         let br = diag * 0.45;
         let (x0, y0, x1, y1) = ((sx - br).max(0.0), (sy - br).max(0.0), (sx + br).min(w), (sy + br).min(h));
@@ -162,7 +164,6 @@ impl Component for GodRays {
                 }
             }
         }
-        out.push(Op::PopLayer);
         out
     }
 }
@@ -261,7 +262,9 @@ impl Component for LensFlare {
         let k = self.intensity * fl;
         let u = h;
         let mut out = Vec::new();
-        push_layer(&mut out, 1.0, Blend::Screen, Vec::new());
+        // Light over a dark scene: plain source-over of faint light colours
+        // looks like screen blending without a full-frame layer composite.
+
         // Wide halo and hot core.
         out.push(circle(lx, ly, u * 0.42, radial(lx, ly, u * 0.42, vec![(0.0, alpha(c, 0.5 * k)), (0.2, alpha(c, 0.2 * k)), (1.0, alpha(c, 0.0))])));
         out.push(circle(lx, ly, u * 0.05, radial(lx, ly, u * 0.05, vec![(0.0, Rgba([1.0, 1.0, 1.0, k.min(1.0)])), (0.35, alpha(shade(c, 0.6), 0.8 * k)), (1.0, alpha(c, 0.0))])));
@@ -308,7 +311,6 @@ impl Component for LensFlare {
                 _ => out.push(circle(gx, gy, r, radial(gx, gy, r, vec![(0.0, alpha(tint, a * 1.3)), (1.0, alpha(tint, 0.0))]))),
             }
         }
-        out.push(Op::PopLayer);
         out
     }
 
