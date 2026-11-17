@@ -422,6 +422,14 @@ impl Template {
         let spec = self.doc.get("spec").unwrap();
         let mut out = expand_value(spec, &mut sc, &defs, "spec").map(|v| v.unwrap_or(Value::Null)).map_err(|e| vec![format!("template '{}': {e}", self.name)])?;
         if let (Some(lv), Some(m)) = (look.as_ref().and(look_v), out.as_object_mut()) {
+            // Template layers choose their own entrances: the look's default does not apply.
+            let lv = match lv {
+                Value::Object(mut o) if o.contains_key("base") => {
+                    o.insert("enter".into(), Value::Null);
+                    Value::Object(o)
+                }
+                other => json!({"base": other, "enter": null}),
+            };
             m.insert("look".into(), lv);
         }
         Ok(out)

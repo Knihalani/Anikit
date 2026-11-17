@@ -154,10 +154,11 @@ pub fn apply(mut v: Value) -> Result<Value, Vec<Diagnostic>> {
     let empty = Vec::new();
     let backdrop = look.get("backdrop").and_then(|x| x.as_array()).unwrap_or(&empty);
     let post = look.get("post").and_then(|x| x.as_array()).unwrap_or(&empty);
-    let enter = look.get("enter");
-    let shadow = look.get("textShadow");
-    let glow = look.get("textGlow");
-    let camera = look.get("camera");
+    let some = |k: &str| look.get(k).filter(|x| !x.is_null());
+    let enter = some("enter");
+    let shadow = some("textShadow");
+    let glow = some("textGlow");
+    let camera = some("camera");
     if let Some(Value::Array(scenes)) = root.get_mut("scenes") {
         for scene in scenes.iter_mut() {
             if let Value::String(s) = scene {
