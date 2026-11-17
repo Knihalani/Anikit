@@ -10,7 +10,11 @@ fn main() {
     let qp: u8 = a.get(3).and_then(|s| s.parse().ok()).unwrap_or(24);
     let (w, h) = (1920, 1080);
     let s = Scene::preset(&scene, w, h);
-    let bufs: Vec<YuvBuffer> = (0..n).map(|t| s.frame(t)).collect();
+    let bufs: Vec<YuvBuffer> = if let Some(p) = scene.strip_prefix("file:") {
+        let data = std::fs::read(p).unwrap();
+        let (ys, cs) = ((w * h) as usize, (w * h / 4) as usize);
+        data.chunks_exact(ys + 2 * cs).take(n as usize).map(|f| YuvBuffer { width: w, height: h, y: f[..ys].to_vec(), u: f[ys..ys + cs].to_vec(), v: f[ys + cs..].to_vec() }).collect()
+    } else { (0..n).map(|t| s.frame(t)).collect() };
     let src: Vec<u8> = bufs.iter().flat_map(|b| b.to_bytes()).collect();
     let frames: Vec<YuvFrame> = bufs.iter().map(|b| b.frame()).collect();
     let dir = std::env::temp_dir();
