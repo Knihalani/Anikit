@@ -845,7 +845,7 @@ impl Scene3d {
         let prof = std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some();
         if prof {
             trace::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed);
-            for r in trace::RAYS.iter().chain(&trace::TIMES) {
+            for r in trace::RAYS.iter().chain(&trace::TIMES).chain(&trace::CYCLES) {
                 r.store(0, std::sync::atomic::Ordering::Relaxed);
             }
         }
@@ -999,6 +999,17 @@ impl Scene3d {
             );
             let tm: Vec<u64> = trace::TIMES.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
             eprintln!("  wall: centre pass {:.0} ms, refinement {:.0} ms ({:.1}% of pixels refined)", tm[0] as f64 / 1e3, tm[1] as f64 / 1e3, tm[2] as f64 * 100.0 / (w * h) as f64);
+            {
+                // TSC ticks per µs, calibrated once.
+                static HZ: std::sync::OnceLock<f64> = std::sync::OnceLock::new();
+                let hz = *HZ.get_or_init(|| {
+                    let (c, t) = (trace::tsc(), std::time::Instant::now());
+                    while t.elapsed().as_millis() < 50 {}
+                    (trace::tsc() - c) as f64 / t.elapsed().as_secs_f64() / 1e6
+                });
+                let cy: Vec<f64> = trace::CYCLES.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed) as f64 / hz / 1e3).collect();
+                eprintln!("  cpu (thread-sum): closest-hit traversal {:.0} ms, shadow/AO traversal {:.0} ms", cy[0], cy[1]);
+            }
             let r: Vec<u64> = trace::RAYS.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
             eprintln!("  rays: {:.2}M closest ({:.2}M radiance, {:.2}M floor reflections), {:.2}M shadow/AO, {:.2} primary samples per pixel", r[0] as f64 / 1e6, r[3] as f64 / 1e6, r[4] as f64 / 1e6, r[1] as f64 / 1e6, r[2] as f64 / (w * h) as f64);
         }

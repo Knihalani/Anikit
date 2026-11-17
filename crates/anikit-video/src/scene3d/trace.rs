@@ -657,6 +657,42 @@ fn count(k: usize) {
         });
     }
 }
+/// Profiling: CPU time in closest-hit (0) and shadow/AO (1) traversal, in
+/// TSC ticks (`ANIKIT_SCENE3D_PROFILE`; a few ns of overhead per ray).
+pub static CYCLES: [std::sync::atomic::AtomicU64; 2] = [const { std::sync::atomic::AtomicU64::new(0) }; 2];
+struct Cycles(usize, u64);
+impl Cycles {
+    #[inline(always)]
+    fn start(k: usize) -> Option<Cycles> {
+        PROFILE.load(std::sync::atomic::Ordering::Relaxed).then(|| Cycles(k, tsc()))
+    }
+}
+impl Drop for Cycles {
+    #[inline(always)]
+    fn drop(&mut self) {
+        let d = tsc().wrapping_sub(self.1);
+        thread_local!(static LOCAL: std::cell::Cell<[u64; 2]> = const { std::cell::Cell::new([0; 2]) });
+        LOCAL.with(|c| {
+            let mut v = c.get();
+            v[self.0] += d;
+            if v[self.0] > 1 << 24 {
+                CYCLES[self.0].fetch_add(v[self.0], std::sync::atomic::Ordering::Relaxed);
+                v[self.0] = 0;
+            }
+            c.set(v);
+        });
+    }
+}
+/// Time-stamp counter (0 off x86).
+#[inline(always)]
+pub fn tsc() -> u64 {
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: rdtsc has no preconditions.
+    return unsafe { std::arch::x86_64::_rdtsc() };
+    #[cfg(not(target_arch = "x86_64"))]
+    0
+}
+
 /// Neighbour normals on a smooth specular object closer than this cosine
 /// don't trigger edge samples (`ANIKIT_SCENE3D_NCOS` overrides; -2 = off).
 fn normal_cos() -> f32 {
@@ -872,6 +908,7 @@ impl Scene {
     /// Closest hit; with `camera`, objects hidden from the camera (cards) are skipped.
     fn trace_f(&self, o: V3, d: V3, tmax: f32, camera: bool) -> Option<Surf> {
         count(0);
+        let _c = Cycles::start(0);
         let mut best: Option<Surf> = None;
         let mut tm = tmax;
         if let Some(f) = &self.floor {
@@ -911,6 +948,7 @@ impl Scene {
     /// Light getting through along a segment (0 = blocked); glass lets most through.
     fn transmit(&self, o: V3, d: V3, tmax: f32, floor: bool) -> f32 {
         count(1);
+        let _c = Cycles::start(1);
         if floor {
             if let Some(f) = &self.floor {
                 if d.y < -1e-7 {
@@ -1544,6 +1582,8 @@ impl Scene {
             }
         });
         let t_centre = clock.elapsed();
+        let snap = |a: &[std::sync::atomic::AtomicU64]| a.iter().map(|v| v.load(std::sync::atomic::Ordering::Relaxed)).collect::<Vec<u64>>();
+        let (r0, c0) = (snap(&RAYS), snap(&CYCLES));
         let refined = std::sync::atomic::AtomicU64::new(0);
         let (centre, tms) = (&centre, &tms);
         assert_eq!(out.len(), w * h);
@@ -1622,6 +1662,8 @@ impl Scene {
             TIMES[0].fetch_add(t_centre.as_micros() as u64, Relaxed);
             TIMES[1].fetch_add((clock.elapsed() - t_centre).as_micros() as u64, Relaxed);
             TIMES[2].fetch_add(refined.load(Relaxed), Relaxed);
+            let (r1, c1) = (snap(&RAYS), snap(&CYCLES));
+            eprintln!("  refinement: {:.2}M closest rays ({:.2}M primary samples), {:.0}% of closest-hit traversal ticks", (r1[0] - r0[0]) as f64 / 1e6, (r1[2] - r0[2]) as f64 / 1e6, (c1[0] - c0[0]) as f64 * 100.0 / c1[0].max(1) as f64);
         }
     }
 

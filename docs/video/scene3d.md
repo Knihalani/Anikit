@@ -192,6 +192,13 @@ The hot parts live in `scene3d/kernel/`:
   and Möller–Trumbore kernels picked at run time (`ANIKIT_NO_AVX2=1` forces
   the baseline). Both paths compute the same bits as the portable reference
   (unit tested).
+- `sbvh.rs`: the mesh hierarchy build. Binned SAH over all three axes with
+  spatial splits: a node straddled by long thin triangles (extruded text,
+  slabs, bevel strips) is cut at a plane, and those triangles go to both
+  sides with clipped boxes, so siblings stop overlapping. Duplicated
+  references are capped at 1× the triangle count. Same hits, about 1.8×
+  faster rays on text and slabs (`bvh_bench`: text 238 → 128 ns, slab
+  151 → 84 ns). Large meshes build in parallel (650k triangles: 1.3 s).
 - `post.rs`: the post stack on structure-of-arrays planes, row-parallel,
   hot loops in `simd_fn!` kernels (AVX2 + baseline, same bits).
 - `envk.rs`: environment softboxes evaluated eight lanes at a time (same
