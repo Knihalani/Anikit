@@ -4,14 +4,14 @@
 
 ## 1. Logline
 
-A video is just thousands of still pictures, and this film follows one short written request as a machine
-the size of a book turns it into 3,600 of them, lined up across a bright studio floor, faster than the
-fastest browser setup can take 175 screenshots, then packs them into one MP4 that plays in your hand: you come away
-knowing what Anikit Video does and feeling how fast it is.
+A video is just thousands of still pictures. This film follows one short written request as a low aluminium
+machine turns it into 3,600 of them, laid out across a bright studio floor, in the time the fastest browser
+setup manages 175, then packs them into one MP4 that plays in your hand. You come away knowing what Anikit
+Video does and feeling how fast it is.
 
 ## 2. Concept
 
-**Video is a line of glass frames, and we walk down it.**
+**Video is a strip of glass frames, and we run alongside it.**
 
 The whole film is one unbroken camera journey through a single bright, physical place: an infinite white
 photo studio (a seamless cyclorama). Every frame of a video is a real object here, a thin pane of glass with
@@ -19,19 +19,23 @@ a picture printed on it. That one idea carries the whole story and needs no prio
 
 - **Beginning (the request).** A single pane floats in the empty studio. On it, an agent's request in plain
   words: *"Make a 60-second launch film for Sundial. 1080p, 60 fps."* The pane turns over: on the back is
-  the plan the agent wrote, a short JSON spec. It slides into a small aluminium machine on the floor.
-- **Middle (the frames).** Out of the machine's other side comes frame 1, then 2, 3… then a torrent: a
-  ribbon of upright glass panes, standing one behind another like cards in a file drawer, racing across the floor to the horizon, 3,600 of them, with a counter riding along.
-  The camera drifts sideways and finds a second line beside it, the way browsers do it: a row of browser
-  windows, each one opening, drawing, *screenshotting* a single frame. That line has managed 175 panes
-  when ours has finished all 3,600. The two lines **are** the bar chart; their lengths are measured numbers.
-  Then the camera swings round to the start of our line, lines up with it, and flies straight down it.
-  Passing through the panes at the right speed, they fuse into motion like a flipbook: the Sundial film
-  plays around us. The frames *are* the video.
-- **End (the file).** At the end of the line the 3,600 panes slam together and crush down into one small glass tile, the
-  MP4, etched with its name. It slides into a phone and plays. The camera pulls back until the whole studio
-  fits in frame: *this film was written as one spec and rendered in N
-  seconds.* Chrome logo on the studio floor.
+  the plan the agent wrote, a short JSON spec. It drops, like bread into a toaster, into the top slot of a
+  low aluminium machine on the floor.
+- **Middle (the frames).** The machine's light blinks and it rolls forward, leaving a pane standing where the
+  plan went in: frame 1, a finished picture. Then 2, 3, 4… then it accelerates away towards the horizon, laying
+  frames behind it like track: a strip of 3,600 upright glass panes standing side by side, with a counter.
+  The camera chases it, then drops down beside the finished strip and catches up with a second machine on
+  a parallel lane: a browser window on a cart, the way other tools do it, flashing a screenshot per frame.
+  It started at the same moment and is still crawling at a few hundred frames. Labels stand by the strip:
+  *all 3,600 frames in 3.4 s* vs *fastest browser setup: 69.1 s*.
+  Then the camera turns to face our strip and accelerates alongside it until it passes exactly one pane
+  per frame of video. At that speed the panes lock still on screen and the Sundial film **plays**, like a
+  film running through a projector gate. The frames *are* the video.
+- **End (the file).** The camera brakes; the whole strip folds up like an accordion into a stack that
+  rushes in from the horizon, then crushes down into one small glass tile, the MP4, etched with its name.
+  It slides into a phone and plays. The camera pulls back until the whole studio fits in frame: *this film
+  was written as one spec* (and, if the measured time is impressive, *rendered in N seconds*). Chrome logo
+  on the studio floor.
 
 Not a slide in sight: every caption is a physical object or etched type that lives in the studio and gets
 passed by the camera. The film never cuts; transitions are camera moves.
@@ -58,11 +62,11 @@ One continuous camera move; "shots" are beats of it. Beat = 0.5 s at 120 BPM (30
 |---|---|---|---|---|---|
 | 1 | 0:00–0:06 (6 s) | Empty white studio. One glass pane hovers at eye height, soft shadow below. On it, a chat bubble: *"Make a 60-second launch film for Sundial. 1080p, 60 fps."* | 85 mm, slow push-in from 3 m; focus rack from the blurred floor grid to the words. | Someone has asked for a video, in plain words. | Glass PBR, studio env, soft shadow, DOF rack, UI as a texture on a 3D plane. |
 | 2 | 0:06–0:12 (6 s) | The pane turns over on a spring. The back holds 18 lines of JSON (scenes, text, a 3D model, music); lines highlight in sequence. Standing type beside it: **"An agent writes the plan."** | 90° orbit round the pane while dollying back to 35 mm framing. | The request has become a short written plan the computer can follow. | Camera orbit, refraction through glass, code component on a 3D plane, 3D kinetic type. |
-| 3 | 0:12–0:20 (8 s) | The pane glides down into the slot of a small aluminium machine on the floor (LED blinks orange). From its far side slides **frame 1** of the Sundial film: a finished, designed picture. Etched type: **"Anikit Video turns it into frames."** | Low tracking shot following the pane through and past the machine; focus hands off from spec to frame 1. | A machine reads the plan and produces the video's pictures, one at a time. | Aluminium and emissive PBR, physical motion, UI-in-3D, focus hand-off. |
-| 4 | 0:20–0:30 (10 s) | Frames 2, 3, 4… then a torrent: panes stand upright one behind another, like cards in a file drawer, each facing back toward the machine, and stamp out accelerating into a ribbon racing across the floor to the horizon. Orange counter above the newest pane counts **0 → 3,600 frames**; label **"60 seconds of 1080p · 60 fps"**. | Crane up and back to a high three-quarter view; the line dissolves into haze. | A video is thousands of still pictures, and this machine makes them extremely fast. | Thousands of instanced panes, motion blur, depth haze, counter, crane move. |
-| 5 | 0:30–0:40 (10 s) | Camera drifts left to a second line: grey browser windows, each one opening, drawing, flashing a shutter and dropping a single pane. It has 175 panes when the orange line hits 3,600. Floor labels at each line's head: **"Anikit Video 3.4 s"** and **"Fastest browser setup 69.1 s"**; then **"No browser. 21× faster."** | Lateral truck across both lines, then rise to a top-down view where the two lines read as a bar chart. | Other tools screenshot a web browser frame by frame; Anikit doesn't need one, and is far faster. | Data viz built from the world itself, browser UI on 3D planes, shutter flashes, top-down camera. |
-| 6 | 0:40–0:50 (10 s) | Camera swings to the start of the orange line, lines up with it (the panes face us, one behind the next) and accelerates straight through them. At this speed they fuse into motion: the Sundial launch film plays around us (a chrome-and-glass device spinning, its app UI, a chart rising, the word **Sundial**). | 35 mm, flying along the line axis at exactly one pane per frame, so the picture plays at true speed; pane edges whip past at the frame's border. | Those frames *are* the video: run through them and it plays. | The signature move: flipbook fusion, motion blur, a film-within-the-film (3D product, UI, chart, kinetic type). |
-| 7 | 0:50–0:58 (8 s) | At the end of the line all 3,600 panes slam together, accordion-style, then the stack visibly crushes down (compression) to a matchbox-sized glass tile with faint strata inside. Etched: **"sundial-launch.mp4 · H.264 · 1920×1080 · 60 fps"**; standing type: **"Its own H.264 encoder. One file."** | Camera brakes hard and pulls back as the panes stack toward it; slow orbit round the tile. | All the frames get packed into one ordinary video file. | Spring physics on thousands of objects, thick glass, etched type, orbit. |
+| 3 | 0:12–0:20 (8 s) | The pane rises and drops, edge first, into the top slot of a low aluminium machine (LED blinks orange). The machine rolls forward 1.7 m and leaves a pane standing where the plan went in: **frame 1** of the Sundial film, a finished, designed picture. Standing type: **"Anikit Video turns it into frames."** | Descending three-quarter shot onto the machine, then low and close on frame 1; focus hands off from the spec to frame 1. | A machine reads the plan and produces the video's pictures, one at a time. | Aluminium and emissive PBR, physical motion, UI-in-3D, focus hand-off. |
+| 4 | 0:20–0:30 (10 s) | Frames 2, 3, 4 on the beat, then the machine accelerates away to the horizon laying a strip of upright panes side by side. Orange counter **0 → 3,600 / 3,600 frames**. A grey browser cart on a parallel lane starts at the same moment and falls far behind. | Rise and chase: the camera climbs and flies after the machine; the strip streams beneath. | A video is thousands of still pictures, and this machine makes them extremely fast. | 3,600 instanced glass panes, motion blur, depth haze, counter, chase move. |
+| 5 | 0:30–0:40 (10 s) | The camera drops down beside our finished strip and catches the browser cart, still working: each frame it opens, draws and *flashes a screenshot*; its counter reads ~200 / 3,600. Type standing by our strip: **"Anikit Video: all 3,600 frames in 3.4 s"**, on the cart **"Fastest browser setup: 69.1 s"**, then **"No browser. 21× faster."** | Low tracking shot at the cart's speed, our strip in the foreground, the cart beyond. | Other tools screenshot a web browser frame by frame; Anikit doesn't need one and is far faster. | Browser UI on 3D planes, shutter flashes, standing 3D type, tracking camera. |
+| 6 | 0:40–0:50 (10 s) | The camera turns to face our strip and accelerates alongside it. Panes sweep past, then at exactly one pane per video frame they lock still and the Sundial launch film plays in them (a chrome-and-glass device turning, its app UI, a chart rising, the word **Sundial**), while the floor streaks past. | 35 mm, 2.4 m from the strip at pane height, accelerating to 102 m/s (1.7 m per frame at 60 fps), shutter closing as it locks. | Those frames *are* the video: run past them at the right speed and it plays. | The signature move: the projector-gate lock, motion blur, a film within the film (3D product, UI, chart, kinetic type). |
+| 7 | 0:50–0:58 (8 s) | The camera brakes. The strip folds like an accordion: every pane turns 90° and they rush in from the horizon into one long stack, which crushes down into a block and then a matchbox-sized glass tile with faint strata inside. Etched: **"sundial-launch.mp4 · H.264 · 1920×1080 · 60 fps"**; standing type: **"Its own H.264 encoder. One file."** | Hold as the stack arrives; slow arc down onto the tile. | All the frames get packed into one ordinary video file. | Animation of 3,600 objects, thick glass, etched type, arc. |
 | 8 | 0:58–1:06 (8 s) | The tile slides into a phone standing on the floor; its screen lights with the Sundial film. Camera keeps pulling back, up and up, until the whole studio is a small bright island. Huge floor type: **"This film was one spec. Rendered in N s."** (N = this film's measured render time, filled in by the parent before the final render.) | Continuous pull-back and crane to a high wide; studio lights dim to warm dusk, the orange lines glow. | The film you just watched was made the same way, in N seconds. | Device model with a live screen texture, extreme pull-back, light change, scale. |
 | 9 | 1:06–1:12 (6 s) | Chrome **Anikit Video** lettering rises out of the floor, reflecting the studio; below it in mono: `anikit-video render spec.json`. Tagline: **"Words in. Film out."** | Slow descending push-in to the logo, last 2 s locked off. | This is Anikit Video, and using it is one command. | Chrome extruded type, reflections, soft shadow, final hold. |
 
