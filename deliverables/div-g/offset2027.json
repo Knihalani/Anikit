@@ -1,0 +1,207 @@
+{
+  "size": "16:9",
+  "fps": 30,
+  "background": "#EEF1F4",
+  "intent": {
+    "pace": "steady",
+    "genre": "brand-film"
+  },
+  "music": {
+    "style": "acoustic",
+    "bpm": 96,
+    "key": "Em",
+    "mood": "bright",
+    "hits": [
+      "@bar4"
+    ],
+    "instruments": {
+      "lead": "nylon-guitar"
+    },
+    "end": "ring",
+    "seed": 7
+  },
+  "defs": {
+    "tag": {
+      "layers": [
+        {
+          "shape": "rect",
+          "width": "=$w",
+          "height": 64,
+          "fill": "#132A7A",
+          "anchor": "topLeft",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "text": "$num",
+          "font": "JetBrains Mono",
+          "size": 26,
+          "weight": 700,
+          "color": "#F2B705",
+          "anchor": "left",
+          "x": 26,
+          "y": 32
+        },
+        {
+          "text": "$label",
+          "font": "JetBrains Mono",
+          "size": 26,
+          "weight": 500,
+          "color": "#F4F6FA",
+          "anchor": "left",
+          "x": 88,
+          "y": 32
+        }
+      ],
+      "x": 96,
+      "y": 84,
+      "anchor": "topLeft"
+    }
+  },
+  "scenes": [
+    {
+      "duration": 15,
+      "layers": [
+        {
+          "src": "tiles.glsl",
+          "channels": [
+            {
+              "layers": [
+                {
+                  "shape": "rect",
+                  "width": 1920,
+                  "height": 1080,
+                  "fill": "#000"
+                },
+                {
+                  "text": "OFFSET",
+                  "font": "Inter Display",
+                  "weight": 900,
+                  "size": 410,
+                  "color": "#fff",
+                  "letterSpacing": "0.02em",
+                  "x": "50%",
+                  "y": "40%"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "use": "tag",
+          "with": {
+            "num": "01",
+            "label": "one module",
+            "w": 330
+          },
+          "start": 0.15,
+          "end": 2.45,
+          "enter": "wipe",
+          "exit": "wipe"
+        },
+        {
+          "use": "tag",
+          "with": {
+            "num": "02",
+            "label": "one rule",
+            "w": 290
+          },
+          "start": 2.55,
+          "end": 4.95,
+          "enter": "wipe",
+          "exit": "wipe"
+        },
+        {
+          "use": "tag",
+          "with": {
+            "num": "03",
+            "label": "offset",
+            "w": 260
+          },
+          "start": 5.05,
+          "end": 7.4,
+          "enter": "wipe",
+          "exit": "wipe"
+        },
+        {
+          "use": "tag",
+          "with": {
+            "num": "04",
+            "label": "a system",
+            "w": 300
+          },
+          "start": 7.5,
+          "end": 11.2,
+          "enter": "wipe",
+          "exit": "wipe"
+        },
+        {
+          "layers": [
+            {
+              "shape": "rect",
+              "width": 400,
+              "height": 64,
+              "fill": "#F4F6FA",
+              "anchor": "topLeft",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "text": "OFFSET 2027 · LISBOA",
+              "font": "JetBrains Mono",
+              "size": 26,
+              "weight": 700,
+              "color": "#132A7A",
+              "anchor": "left",
+              "x": 26,
+              "y": 32
+            }
+          ],
+          "x": 1424,
+          "y": 84,
+          "anchor": "topLeft",
+          "start": 0.15,
+          "end": 7.4,
+          "enter": "wipe",
+          "exit": "wipe"
+        },
+        {
+          "text": "2027",
+          "font": "Inter Display",
+          "weight": 900,
+          "size": 130,
+          "color": "#132A7A",
+          "letterSpacing": "-0.01em",
+          "x": "50%",
+          "y": "66%",
+          "start": 9.2,
+          "enter": "mask by line up"
+        },
+        {
+          "text": "Design conference · Theme: **Systems**",
+          "font": "Inter Display",
+          "weight": 500,
+          "size": 46,
+          "color": "#F4F6FA",
+          "x": 144,
+          "y": "88.5%",
+          "anchor": "left",
+          "start": 12.2,
+          "enter": "mask by line up"
+        },
+        {
+          "text": "Lisboa · 3–5 June 2027",
+          "font": "Inter Display",
+          "weight": 700,
+          "size": 46,
+          "color": "#F2B705",
+          "x": 1776,
+          "y": "88.5%",
+          "anchor": "right",
+          "start": 12.5,
+          "enter": "mask by line up"
+        }
+      ]
+    }
+  ]
+}
