@@ -265,7 +265,7 @@ fn main() -> ExitCode {
         };
     }
     if matches!(raw.first().map(String::as_str), Some("--version" | "-V" | "version")) {
-        println!("anikit-video {}", env!("CARGO_PKG_VERSION"));
+        println!("anikit-video {} ({} {})", env!("CARGO_PKG_VERSION"), env!("ANIKIT_GIT"), env!("ANIKIT_GIT_DATE"));
         return ExitCode::SUCCESS;
     }
     if let Some(code) = anikit_video::music::run(&raw) {
