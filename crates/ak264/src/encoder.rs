@@ -94,6 +94,12 @@ pub struct FrameHints {
     pub changed: Option<Vec<bool>>,
     /// Known translations (seeds for motion search).
     pub motions: Vec<MotionHint>,
+    /// Film grain the renderer added: standard deviation of the luma grain at
+    /// mid-grey, in 8-bit code values (0 = none). The renderer's grain weight
+    /// `0.35 + 2.6·l·(1−l)` (l = luma 0..1) is applied per block. The SSIM floor
+    /// then treats that much missing source variance as free, so re-drawn
+    /// random grain doesn't drive the QP down while lost detail still does.
+    pub grain: f32,
 }
 
 impl FrameHints {
@@ -119,7 +125,7 @@ impl FrameHints {
                 }
             }
         }
-        FrameHints { changed: None, motions }
+        FrameHints { changed: None, motions, grain: 0.0 }
     }
 }
 
@@ -1522,8 +1528,11 @@ fn dc_flags(cd: &Coded, i16: bool) -> u8 {
 }
 
 /// Mean SSIM of the luma planes over 8×8 blocks on a 2×2-subsampled block grid
-/// (enough for rate decisions; not the reporting metric).
-fn ssim_luma(a: &crate::frame::Plane, b: &crate::frame::Plane, w: usize, h: usize) -> f64 {
+/// (enough for rate decisions; not the reporting metric). `a` is the source;
+/// with a grain hint, the expected grain variance is taken off its variance
+/// (the clean signal's), and each block's value is capped at 1.
+fn ssim_luma(a: &crate::frame::Plane, b: &crate::frame::Plane, w: usize, h: usize, grain: f32) -> f64 {
+    let g = grain as f64;
     const C1: f64 = 6.5025; // (0.01·255)²
     const C2: f64 = 58.5225; // (0.03·255)²
     let (mut sum, mut n) = (0f64, 0u32);
@@ -1544,10 +1553,15 @@ fn ssim_luma(a: &crate::frame::Plane, b: &crate::frame::Plane, w: usize, h: usiz
                 }
             }
             let (ma, mb) = (sa as f64 / 64.0, sb as f64 / 64.0);
-            let va = saa as f64 / 64.0 - ma * ma;
+            let mut va = saa as f64 / 64.0 - ma * ma;
+            if g > 0.0 {
+                let l = ((ma - 16.0) / 219.0).clamp(0.0, 1.0);
+                let s = g * (0.35 + 2.6 * l * (1.0 - l));
+                va = (va - s * s).max(0.0);
+            }
             let vb = sbb as f64 / 64.0 - mb * mb;
             let cab = sab as f64 / 64.0 - ma * mb;
-            sum += ((2.0 * ma * mb + C1) * (2.0 * cab + C2)) / ((ma * ma + mb * mb + C1) * (va + vb + C2));
+            sum += (((2.0 * ma * mb + C1) * (2.0 * cab + C2)) / ((ma * ma + mb * mb + C1) * (va + vb + C2))).min(1.0);
             n += 1;
         }
     }
@@ -2013,6 +2027,8 @@ pub struct Encoder {
     qsets_smooth: Vec<QpSet>,
     /// Frame QP offset from the SSIM floor (≤ 0).
     qp_adj: i32,
+    /// Grain hint of the frame being coded.
+    grain: f32,
     level: u8,
     cur: Pic,
     /// Macroblocks where `recon` (the picture before the reference) differs from `refp`.
@@ -2059,6 +2075,7 @@ impl Encoder {
             qsets,
             qsets_smooth,
             qp_adj: 0,
+            grain: 0.0,
             level,
             cur: Pic::new(mbw, mbh, 0),
             stale: vec![true; mbw * mbh],
@@ -2128,6 +2145,7 @@ impl Encoder {
             self.frame_in_gop = 0;
         }
         self.out.clear();
+        self.grain = hints.grain.max(0.0);
         let mut stats = FrameStats { idr, ..Default::default() };
         let nmb = self.mbw * self.mbh;
         let mut any_changed = true;
@@ -2265,7 +2283,7 @@ impl Encoder {
             if idr && self.cfg.ssim_floor > 0.0 {
                 // An IDR has no history to steer by: measure it, and if it is
                 // below the floor code it once more at the estimated QP.
-                let s = ssim_luma(&self.cur.y, &self.recon.y, w, h);
+                let s = ssim_luma(&self.cur.y, &self.recon.y, w, h, self.grain);
                 let old = self.qp_adj;
                 self.floor_update(s, 200.0, 12);
                 if self.qp_adj < old {
@@ -2283,7 +2301,7 @@ impl Encoder {
             self.recon.extend();
             std::mem::swap(&mut self.recon, &mut self.refp);
             if self.cfg.ssim_floor > 0.0 {
-                let s = ssim_luma(&self.cur.y, &self.refp.y, w, h);
+                let s = ssim_luma(&self.cur.y, &self.refp.y, w, h, self.grain);
                 self.floor_update(s, 400.0, 4);
             }
             if self.cfg.subpel {

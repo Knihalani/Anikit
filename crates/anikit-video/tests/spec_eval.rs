@@ -504,3 +504,12 @@ fn update_script_cost() {
     let (a, b) = (time(&ev, &mut dl), time(&plain, &mut dl));
     eprintln!("update script: {:.1} µs per layer per frame", a - b);
 }
+
+#[test]
+fn text_expressions_render_numbers() {
+    let ev = build(r##"{ "scenes": [ { "duration": 3, "layers": [ { "text": "=t < 1 ? 10 : floor(t * 100)", "style": "title" } ] } ] }"##);
+    let glyphs = |t: f32| ev.eval(t).ops.iter().map(|o| match o { Op::Glyphs { glyphs, .. } => glyphs.len(), _ => 0 }).sum::<usize>();
+    assert_eq!(glyphs(0.5), 2); // "10"
+    assert_eq!(glyphs(2.5), 3); // "250"
+    assert!(!ev.is_static(0.5, 2.5));
+}

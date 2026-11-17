@@ -47,6 +47,23 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};
 use trace::{Floor, FloorVis, Inst, Material, Quality, Scene, Shape, Tex};
 
+/// Run `f` (which may use rayon) while the caller holds a simulation lock
+/// (particle stepping, rapier, building particle sims), without letting the
+/// caller run other work meanwhile. A rayon worker that waits on its own
+/// pool, or even in `install` on another pool, steals other frames' tasks,
+/// and one of those can need the lock it holds: a deadlock. So `f` runs on a
+/// separate pool, started from a plain scoped thread that the caller simply
+/// joins (blocking, not stealing). Same thread count as the global pool,
+/// so results match.
+pub(crate) fn sim_blocking<R: Send>(f: impl FnOnce() -> R + Send) -> R {
+    std::thread::scope(|s| s.spawn(|| sim_pool().install(f)).join().unwrap_or_else(|e| std::panic::resume_unwind(e)))
+}
+
+fn sim_pool() -> &'static rayon::ThreadPool {
+    static P: OnceLock<rayon::ThreadPool> = OnceLock::new();
+    P.get_or_init(|| rayon::ThreadPoolBuilder::new().num_threads(rayon::current_num_threads()).thread_name(|i| format!("anikit-sim-{i}")).build().expect("scene3d: can't start the simulation thread pool"))
+}
+
 /// Spec shorthand, applied before parsing:
 /// - a layer `{ "scene3d": {...}, ...layer keys }` becomes
 ///   `{ "component": "scene3d", "props": {...}, ...layer keys }`;
@@ -228,6 +245,8 @@ impl Prepare for Scene3d {
             }
         }
         let objs_v: Vec<Value> = match m.get("objects") {
+            // A physics-only scene is not the lookdev demo: no stray "ANIKIT" wordmark.
+            None if m.contains_key("physics") => Vec::new(),
             None => lookdev_objects(m),
             Some(Value::Array(a)) => {
                 // `{ "script": "..." }` items expand to the objects they return.
@@ -683,7 +702,10 @@ impl Scene3d {
 
         let mut px = post::Planes::new(w * h);
         let mut q = p.quality;
-        if crate::components::reference() || std::env::var_os("ANIKIT_SCENE3D_REFERENCE").is_some() {
+        // Converged sampling is opt-in (scene3d_bench --reference). qbench's
+        // reference mode doesn't switch it on: its committed baseline was
+        // measured against standard sampling (see PERF before changing this).
+        if std::env::var_os("ANIKIT_SCENE3D_REFERENCE").is_some() {
             // Converged sampling with the same image model: 1 + 24 samples per
             // pixel everywhere, 4 shadow and AO rays per sample.
             q.full = true;
@@ -733,7 +755,7 @@ impl Scene3d {
         if p.parts.is_empty() {
             return None;
         }
-        let sims = p.psims.get_or_init(|| {
+        let sims = p.psims.get_or_init(|| sim_blocking(|| {
             let floor_y = p.floor.as_ref().map(|f| f.y);
             let colliders: Vec<spec::ObjDef> = p.objs.iter().filter(|o| o.collide && o.phys.is_none()).cloned().collect();
             p.parts
@@ -745,7 +767,7 @@ impl Scene3d {
                     })
                 })
                 .collect()
-        });
+        }));
         let sims = match sims {
             Ok(s) => s,
             Err(e) => {

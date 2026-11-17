@@ -1,0 +1,422 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "background": "#F4EFE6",
+ "intent": {
+  "pace": "calm",
+  "genre": "launch"
+ },
+ "music": {
+  "style": "piano",
+  "bpm": 96,
+  "key": "F",
+  "mood": "warm",
+  "end": "ring"
+ },
+ "audio": [
+  {
+   "sfx": "tick",
+   "at": 0.95,
+   "volume": 0.35,
+   "duck": 0
+  },
+  {
+   "sfx": "tick",
+   "at": 5.4,
+   "volume": 0.35,
+   "duck": 0
+  },
+  {
+   "sfx": "chime",
+   "at": 10.0,
+   "volume": 0.3,
+   "duck": 0
+  }
+ ],
+ "scenes": [
+  {
+   "duration": 15,
+   "camera": {
+    "y": "=t < 10 ? -40 + 80*fract((t + 0.55)/2.5) : -22.4 + 10*(t - 10)",
+    "zoom": "=t < 10 ? 1 + 0.015*fract((t + 0.55)/2.5) : 1.0033 + 0.004*(t - 10)"
+   },
+   "layers": [
+    {
+     "layers": [
+      {
+       "shape": "rect",
+       "width": 3,
+       "height": 5800,
+       "fill": "#B8321C",
+       "x": 1400,
+       "y": -400,
+       "anchor": "topLeft",
+       "opacity": 0.85
+      },
+      {
+       "text": "Your first draft",
+       "font": "Instrument Serif",
+       "size": 150,
+       "color": "#1B1A17",
+       "x": 200,
+       "y": 250,
+       "anchor": "topLeft",
+       "start": 0.0,
+       "letterSpacing": "-0.01em",
+       "enter": "mask by line up"
+      },
+      {
+       "text": "is a mess.",
+       "font": "Instrument Serif",
+       "size": 150,
+       "color": "#1B1A17",
+       "x": 200,
+       "y": 420,
+       "anchor": "topLeft",
+       "start": 0.0,
+       "letterSpacing": "-0.01em",
+       "enter": {
+        "preset": "mask by line up",
+        "delay": 0.25
+       }
+      },
+      {
+       "shape": "path",
+       "d": "M0 6 C 82.8 0, 193.2 12, 276 4",
+       "stroke": "#B8321C",
+       "strokeWidth": 7,
+       "fill": "none",
+       "x": 384,
+       "y": 500,
+       "anchor": "topLeft",
+       "start": 0.95,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.35,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "text": "*honest.*",
+       "font": "Instrument Serif",
+       "size": 64,
+       "color": "#B8321C",
+       "x": 1460,
+       "y": 470,
+       "anchor": "topLeft",
+       "start": 1.15,
+       "animate": [
+        {
+         "from": {
+          "opacity": 0,
+          "x": 1490
+         },
+         "duration": 0.35,
+         "ease": "outCubic"
+        }
+       ]
+      },
+      {
+       "text": "Margin reads it",
+       "font": "Instrument Serif",
+       "size": 150,
+       "color": "#1B1A17",
+       "x": 200,
+       "y": 1330,
+       "anchor": "topLeft",
+       "start": 0
+      },
+      {
+       "text": "*with you.*",
+       "font": "Instrument Serif",
+       "size": 150,
+       "color": "#B8321C",
+       "x": 200,
+       "y": 1500,
+       "anchor": "topLeft",
+       "start": 0
+      },
+      {
+       "text": "*tighter*",
+       "font": "Instrument Serif",
+       "size": 58,
+       "color": "#B8321C",
+       "x": 1460,
+       "y": 1310,
+       "anchor": "topLeft",
+       "start": 3.0,
+       "animate": [
+        {
+         "from": {
+          "opacity": 0,
+          "x": 1490
+         },
+         "duration": 0.35,
+         "ease": "outCubic"
+        }
+       ]
+      },
+      {
+       "text": "*cut this*",
+       "font": "Instrument Serif",
+       "size": 58,
+       "color": "#B8321C",
+       "x": 1460,
+       "y": 1420,
+       "anchor": "topLeft",
+       "start": 3.35,
+       "animate": [
+        {
+         "from": {
+          "opacity": 0,
+          "x": 1490
+         },
+         "duration": 0.35,
+         "ease": "outCubic"
+        }
+       ]
+      },
+      {
+       "text": "*yes.*",
+       "font": "Instrument Serif",
+       "size": 58,
+       "color": "#B8321C",
+       "x": 1460,
+       "y": 1530,
+       "anchor": "topLeft",
+       "start": 3.7,
+       "animate": [
+        {
+         "from": {
+          "opacity": 0,
+          "x": 1490
+         },
+         "duration": 0.35,
+         "ease": "outCubic"
+        }
+       ]
+      },
+      {
+       "text": "CUTS THE FILLER",
+       "font": "Inter",
+       "size": 50,
+       "color": "#6B655C",
+       "x": 200,
+       "y": 2340,
+       "anchor": "topLeft",
+       "start": 0.0,
+       "letterSpacing": "0.14em",
+       "weight": 600
+      },
+      {
+       "text": "This is a very, very",
+       "font": "Instrument Serif",
+       "size": 96,
+       "color": "#1B1A17",
+       "x": 200,
+       "y": 2440,
+       "anchor": "topLeft",
+       "start": 0.0
+      },
+      {
+       "text": "unique idea.",
+       "font": "Instrument Serif",
+       "size": 96,
+       "color": "#1B1A17",
+       "x": 200,
+       "y": 2560,
+       "anchor": "topLeft",
+       "start": 0.0
+      },
+      {
+       "shape": "path",
+       "d": "M0 6 C 57.0 0, 133.0 12, 190 4",
+       "stroke": "#B8321C",
+       "strokeWidth": 7,
+       "fill": "none",
+       "x": 600,
+       "y": 2500,
+       "anchor": "topLeft",
+       "start": 5.4,
+       "animate": [
+        {
+         "from": {
+          "trimEnd": 0
+         },
+         "to": {
+          "trimEnd": 1
+         },
+         "duration": 0.35,
+         "ease": "inOutSine"
+        }
+       ]
+      },
+      {
+       "text": "*one is plenty.*",
+       "font": "Instrument Serif",
+       "size": 54,
+       "color": "#B8321C",
+       "x": 1460,
+       "y": 2460,
+       "anchor": "topLeft",
+       "start": 5.75,
+       "animate": [
+        {
+         "from": {
+          "opacity": 0,
+          "x": 1490
+         },
+         "duration": 0.35,
+         "ease": "outCubic"
+        }
+       ]
+      },
+      {
+       "text": "KEEPS YOUR VOICE",
+       "font": "Inter",
+       "size": 50,
+       "color": "#6B655C",
+       "x": 200,
+       "y": 3420,
+       "anchor": "topLeft",
+       "start": 0.0,
+       "letterSpacing": "0.14em",
+       "weight": 600
+      },
+      {
+       "text": "\u201cI wrote this at 3 a.m.",
+       "font": "Instrument Serif",
+       "size": 96,
+       "color": "#1B1A17",
+       "x": 200,
+       "y": 3520,
+       "anchor": "topLeft",
+       "start": 0.0
+      },
+      {
+       "text": "and I meant every word.\u201d",
+       "font": "Instrument Serif",
+       "size": 96,
+       "color": "#1B1A17",
+       "x": 200,
+       "y": 3640,
+       "anchor": "topLeft",
+       "start": 0.0
+      },
+      {
+       "text": "*leave it.*",
+       "font": "Instrument Serif",
+       "size": 58,
+       "color": "#B8321C",
+       "x": 1460,
+       "y": 3570,
+       "anchor": "topLeft",
+       "start": 8.3,
+       "animate": [
+        {
+         "from": {
+          "opacity": 0,
+          "x": 1490
+         },
+         "duration": 0.35,
+         "ease": "outCubic"
+        }
+       ]
+      },
+      {
+       "text": "Margin",
+       "font": "Instrument Serif",
+       "size": 340,
+       "color": "#1B1A17",
+       "x": 1340,
+       "y": 4540,
+       "anchor": "topRight",
+       "start": 0.0,
+       "letterSpacing": "-0.02em",
+       "enter": {
+        "preset": "mask by line up",
+        "delay": 0.15
+       }
+      },
+      {
+       "text": "Edits in the margin.",
+       "font": "Instrument Serif",
+       "size": 54,
+       "color": "#1B1A17",
+       "x": 1460,
+       "y": 4650,
+       "anchor": "topLeft",
+       "start": 0.0
+      },
+      {
+       "text": "*Never in your voice.*",
+       "font": "Instrument Serif",
+       "size": 54,
+       "color": "#B8321C",
+       "x": 1460,
+       "y": 4720,
+       "anchor": "topLeft",
+       "start": 0.0
+      },
+      {
+       "text": "margin.app",
+       "font": "JetBrains Mono",
+       "size": 50,
+       "color": "#6B655C",
+       "x": 1460,
+       "y": 4880,
+       "anchor": "topLeft",
+       "start": 0.0
+      }
+     ],
+     "x": 0,
+     "y": 200,
+     "anchor": "topLeft",
+     "width": 1920,
+     "height": 5800,
+     "animate": [
+      {
+       "to": {
+        "y": -880
+       },
+       "at": 1.95,
+       "duration": 0.55,
+       "ease": "inOutCubic"
+      },
+      {
+       "to": {
+        "y": -1960
+       },
+       "at": 4.45,
+       "duration": 0.55,
+       "ease": "inOutCubic"
+      },
+      {
+       "to": {
+        "y": -3040
+       },
+       "at": 6.95,
+       "duration": 0.55,
+       "ease": "inOutCubic"
+      },
+      {
+       "to": {
+        "y": -4120
+       },
+       "at": 9.45,
+       "duration": 0.55,
+       "ease": "inOutCubic"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -195,6 +195,8 @@ pub struct EncodeSpec {
     /// Adaptive quantisation strength, 0 (off, default) to 2: spends bits on flat areas
     /// (gradients, skies) and saves them on busy texture.
     pub aq: Option<f64>,
+    /// Constant quantiser 0–51 (lower = better and bigger). Default 23 (19 high, 28 draft). `render --crf` overrides.
+    pub crf: Option<f64>,
 }
 
 /// `motionBlur`: on/off, or a shutter angle.
@@ -319,6 +321,10 @@ pub struct Gradient {
 #[serde(rename_all = "camelCase")]
 pub struct Scene {
     pub id: Option<String>,
+    /// Free text for the author (ignored by the renderer): what this shot
+    /// shows and why, e.g. the reference shot it recreates (`analyze --spec`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
     /// Reuse: the name of an entry in top-level `defs`; other keys here override it
     /// (expanded before typing, see `spec/reuse.rs`).
     #[serde(rename = "use", default, skip_serializing_if = "Option::is_none")]

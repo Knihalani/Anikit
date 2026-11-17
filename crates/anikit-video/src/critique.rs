@@ -499,6 +499,8 @@ pub fn critique(raw: &Value) -> Report {
         cx.note("tip", "pacing", "scenes", format!("{total:.0} s vertical video; social platforms favour 6–30 s"), "cut to the hook, two beats and the payoff");
     }
     sameness(raw, spec, &mut cx);
+    recipe_copy(raw, &mut cx);
+    medium(raw, &mut cx);
     bar(spec, &mut cx);
     if applied.is_some() {
         let off = crate::looks::layer_offsets(raw);
@@ -633,8 +635,17 @@ fn walk_layer(cx: &mut Ctx, layer: &Value, path: &str, scene_dur: f64, bg: color
     f(cx, l, path, start + enter_delay, end, bg_here);
     for key in ["children", "layers"] {
         if let Some(kids) = l.get(key).and_then(|k| k.as_array()) {
+            // A filled shape inside a group backs the siblings drawn after it
+            // (a pill or card behind its label).
+            let mut backing = bg_here;
             for (i, k) in kids.iter().enumerate() {
-                walk_layer(cx, k, &format!("{path}.{key}[{i}]"), scene_dur, bg_here, start, f);
+                walk_layer(cx, k, &format!("{path}.{key}[{i}]"), scene_dur, backing, start, f);
+                if k.get("shape").is_some() && k.get("text").is_none() {
+                    if let Some(mut c) = k.get("fill").or_else(|| k.get("color")).and_then(|c| cx.color(c)) {
+                        c[3] *= k.get("opacity").and_then(|o| o.as_f64()).unwrap_or(1.0).clamp(0.0, 1.0);
+                        backing = color::over(c, backing);
+                    }
+                }
             }
         }
     }
@@ -706,6 +717,106 @@ fn bar(spec: &Value, cx: &mut Ctx) {
 }
 
 /// Generic defaults make every video look the same: flag them and suggest a direction.
+/// Leaf `key=value` pairs that make a spec's design (words and timing aside).
+fn design_leaves(v: &Value, out: &mut std::collections::BTreeSet<String>) {
+    match v {
+        Value::Object(m) => {
+            for (k, x) in m {
+                if matches!(k.as_str(), "text" | "about" | "cost" | "duration" | "start" | "end" | "at") {
+                    continue;
+                }
+                match x {
+                    Value::String(s) => {
+                        out.insert(format!("{k}={s}"));
+                    }
+                    Value::Number(n) => {
+                        out.insert(format!("{k}={n}"));
+                    }
+                    _ => design_leaves(x, out),
+                }
+            }
+        }
+        Value::Array(a) => a.iter().for_each(|x| design_leaves(x, out)),
+        _ => {}
+    }
+}
+
+/// A spec that is mostly a recipe with new words: say so, since the recipe
+/// is a technique to borrow, not the piece.
+fn recipe_copy(raw: &Value, cx: &mut Ctx) {
+    let mut mine = std::collections::BTreeSet::new();
+    design_leaves(raw, &mut mine);
+    for (name, src) in crate::agent_docs::RECIPES {
+        let Ok(r) = serde_json::from_str::<Value>(src) else { continue };
+        let mut theirs = std::collections::BTreeSet::new();
+        design_leaves(&r["spec"], &mut theirs);
+        if theirs.len() < 12 {
+            continue;
+        }
+        let common = theirs.intersection(&mine).count() as f64;
+        let (shared, of_mine) = (common / theirs.len() as f64, common / mine.len().max(1) as f64);
+        // Most of the recipe, making up most of this spec: one borrowed shot in
+        // a bigger piece is fine.
+        if shared >= 0.6 && of_mine >= 0.5 {
+            cx.note("warning", "recipe", "scenes", format!("{:.0}% of this spec's design is the `{name}` recipe with new words", shared * 100.0), "build the shots from this brief's own nouns: its object as the 3D hero, its data as particles or physics, its world as the shader; borrow the recipe's technique, not its shots");
+            return;
+        }
+    }
+}
+
+/// 3D and music chosen by habit rather than by the idea: the same set and
+/// materials in every 3D scene, words traced under defocus or at reduced
+/// resolution, and electronic music on a calm piece.
+fn medium(raw: &Value, cx: &mut Ctx) {
+    let scenes = raw.get("scenes").and_then(|s| s.as_array()).cloned().unwrap_or_default();
+    let mut sets = Vec::new();
+    for (si, sc) in scenes.iter().enumerate() {
+        let Some(layers) = sc.get("layers").and_then(|l| l.as_array()) else { continue };
+        for (li, l) in layers.iter().enumerate() {
+            if !l.get("component").and_then(|c| c.as_str()).is_some_and(|c| c == "scene3d" || c == "scene-3d") {
+                continue;
+            }
+            let p = l.get("props").cloned().unwrap_or(Value::Null);
+            let env = p.get("env").map(|e| e.to_string()).unwrap_or_default();
+            let mut mats = std::collections::BTreeSet::new();
+            let mut text = false;
+            if let Some(objs) = p.get("objects").and_then(|o| o.as_array()) {
+                for o in objs {
+                    if let Some(m) = o.get("material") {
+                        mats.insert(m.as_str().map(str::to_string).unwrap_or_else(|| m.to_string()));
+                    }
+                    text |= o.get("text").is_some();
+                }
+            }
+            let path = format!("scenes[{si}].layers[{li}]");
+            let res = p.get("resolution").and_then(|r| r.as_f64()).unwrap_or(1.0);
+            let defocus = ["aperture", "dof", "focus"].iter().any(|k| p.get(*k).is_some() || p.get("camera").and_then(|c| c.get(*k)).is_some());
+            if text && (res < 1.0 || defocus) {
+                cx.note("warning", "legibility", &path, format!("3D words are traced {}; type must be crisp at full resolution while it is read", if res < 1.0 { format!("at resolution {res}") } else { "under depth of field".into() }),
+                    "drop `resolution` (drafts reduce it automatically) and keep the words in the focal plane, or set the words as a 2D text layer over the 3D");
+            }
+            sets.push((path, env, mats));
+        }
+    }
+    let studio = |e: &str| ["studio", "cyc"].iter().any(|k| e.contains(k));
+    let shiny = |m: &std::collections::BTreeSet<String>| m.iter().any(|x| ["chrome", "glass", "gold", "metal"].iter().any(|k| x.contains(k)));
+    if sets.len() >= 2 && sets.iter().all(|(_, e, m)| *e == sets[0].1 && *m == sets[0].2) {
+        cx.note("warning", "sameness", &sets[0].0, format!("every 3D scene uses the same set and materials ({} {})", sets[0].1, sets[0].2.iter().cloned().collect::<Vec<_>>().join(", ")),
+            "use 3D only where the idea is physical, and give each 3D shot its own world; tell the rest in 2D type, illustration or shaders");
+    } else if let Some((p, _, _)) = sets.iter().find(|(_, e, m)| studio(e) && shiny(m)) {
+        cx.note("tip", "sameness", p, "a studio/cyc set with chrome or glass is the default 3D look".into(), "build the set from the brief's world (its materials, place and light), or tell this shot in 2D");
+    }
+    let style = match raw.get("music") {
+        Some(Value::String(s)) => s.clone(),
+        Some(m) => m.get("style").and_then(|s| s.as_str()).unwrap_or("").to_string(),
+        None => String::new(),
+    };
+    let pace = raw.get("intent").and_then(|i| i.get("pace")).and_then(|p| p.as_str()).unwrap_or("");
+    if ["synthwave", "house", "trap", "dnb", "tech"].contains(&style.as_str()) && matches!(pace, "calm" | "steady") {
+        cx.note("tip", "audio", "music", format!("electronic `{style}` score on a {pace} piece"), "acoustic, orchestral, piano or ambient usually suit a calm or brand piece; keep electronic for electronic concepts");
+    }
+}
+
 fn sameness(raw: &Value, spec: &Value, cx: &mut Ctx) {
     let scenes = spec.get("scenes").and_then(|s| s.as_array()).cloned().unwrap_or_default();
     if scenes.len() < 2 {
@@ -849,6 +960,41 @@ pub fn all_text(v: &Value) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn text_on_a_backing_shape_in_a_group_uses_the_shape() {
+        let spec = serde_json::json!({ "scenes": [{ "duration": 3, "background": "#f4f1ea", "layers": [
+            { "layers": [ { "shape": "rect", "width": 400, "height": 90, "fill": "#111111" }, { "text": "Ship it", "color": "#f4f1ea" } ] }
+        ] }] });
+        let r = critique(&spec);
+        assert!(!r.notes.iter().any(|n| n.check == "contrast"), "{}", r.to_text());
+    }
+
+    #[test]
+    fn habitual_3d_and_music_are_flagged() {
+        let sc = |m: &str| serde_json::json!({ "duration": 2, "layers": [{ "component": "scene3d", "props": { "env": "studio", "aperture": 2.8, "objects": [{ "text": "SIFT", "material": m }] } }] });
+        let spec = serde_json::json!({ "intent": {"pace": "calm"}, "music": "synthwave", "scenes": [sc("chrome"), sc("chrome")] });
+        let r = critique(&spec);
+        let checks: Vec<_> = r.notes.iter().map(|n| (n.check, n.message.clone())).collect();
+        assert!(r.notes.iter().any(|n| n.check == "legibility" && n.message.contains("depth of field")), "{checks:?}");
+        assert!(r.notes.iter().any(|n| n.check == "sameness" && n.message.contains("same set")), "{checks:?}");
+        assert!(r.notes.iter().any(|n| n.check == "audio" && n.message.contains("synthwave")), "{checks:?}");
+    }
+
+    #[test]
+    fn recipe_with_new_words_is_flagged() {
+        let (_, spec) = crate::agent_docs::recipe_spec("launch-sting").unwrap();
+        let r = critique(&spec);
+        assert!(r.notes.iter().any(|n| n.check == "recipe"), "{:?}", r.notes);
+        let own = serde_json::json!({"scenes": [{"duration": 2, "layers": [{"text": "Hi", "font": "Fraunces", "color": "#ff5a1f"}]}, {"duration": 2, "layers": [{"shape": "rect", "fill": "#111111"}]}]});
+        assert!(!critique(&own).notes.iter().any(|n| n.check == "recipe"));
+        // One borrowed shot inside a bigger piece is a technique, not a copy.
+        let (_, whip) = crate::agent_docs::recipe_spec("whip-transition").unwrap();
+        let mut big = spec.clone();
+        big["scenes"].as_array_mut().unwrap().extend(whip["scenes"].as_array().unwrap().iter().cloned());
+        let r = critique(&big);
+        assert!(!r.notes.iter().any(|n| n.check == "recipe" && n.message.contains("whip")), "{:?}", r.notes);
+    }
+
     #[test]
     fn sameness_flags_generic_defaults_not_a_look() {
         let generic = serde_json::json!({ "theme": { "colors": { "primary": "#7C5CFF" } }, "scenes": [

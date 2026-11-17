@@ -1,5 +1,5 @@
 {
- "about": "A 10 s launch sting that combines particles, ray-traced chrome, beat-slammed type, a raymarched shader world and generated music. Every cut lands on the beat at 124 BPM, with sfx on the hits. Swap the name, words and colours, or move a shot to another beat.",
+ "about": "A 10 s launch sting that cuts four media on the beat at 124 BPM: particles forming the name, a ray-traced aluminium wordmark in the same night world, keyed warm by the fire of the first shot, beat-slammed type and a raymarched shader set, scored by a band (rock: guitar, bass, drums) with sfx on just three moments. Taste decision it demonstrates: one world carried across media, cuts on the beats that matter, real instruments instead of a synth bed (TASTE.md §6–7). Don't use it as the piece: it is a technique sampler; a real launch builds its shots from the product's own nouns and picks pace from the brief (critique flags a spec that is mostly this recipe). Don't use it for calm, crafted or trust-led brands.",
  "cost": "draft ~69 s, final ~238 s (1080p, 4 cores)",
  "spec": {
   "size": "16:9",
@@ -8,7 +8,7 @@
    "genre": "launch"
   },
   "music": {
-   "style": "house",
+   "style": "rock",
    "bpm": 124,
    "key": "Am",
    "mood": "driving"
@@ -135,7 +135,7 @@
      {
       "component": "scene3d",
       "props": {
-       "env": "studio",
+       "env": "night",
        "camera": {
         "keys": [
          {
@@ -174,17 +174,25 @@
         {
          "text": "NOVA",
          "height": 0.8,
-         "material": "chrome"
-        },
+         "material": "aluminium"
+        }
+       ],
+       "lights": [
         {
-         "type": "sphere",
-         "radius": 0.26,
          "pos": [
-          1.5,
-          0.26,
-          0.9
+          -2.6,
+          1.4,
+          3.2
          ],
-         "material": "glass"
+         "target": [
+          0,
+          0.4,
+          0
+         ],
+         "angle": 42,
+         "penumbra": 0.6,
+         "intensity": 45,
+         "color": "#ffb35c"
         }
        ]
       }

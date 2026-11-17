@@ -229,6 +229,8 @@ pub struct MusicSpec {
     pub hits: Vec<TimeRef>,
     /// Override the progression (`"Am F C G"` or numerals `"vi IV I V"`).
     pub chords: Option<String>,
+    /// Swap every part's instrument: `acoustic`, `orchestral`, `band`, `piano`, `electronic` or `hybrid` (the style's own).
+    pub instrumentation: Option<String>,
     /// Override instruments by role: `{"lead":"violin","chords":"piano"}`.
     pub instruments: BTreeMap<String, String>,
     /// Drop roles from a style: `["lead","drums"]`.
@@ -273,7 +275,7 @@ fn serde_path_to_error_free(de: &mut serde_json::Deserializer<serde_json::de::St
         if let Some(rest) = msg.strip_prefix("unknown field `") {
             let name = rest.split('`').next().unwrap_or("");
             let fields = [
-                "style", "bpm", "key", "meter", "swing", "mood", "length", "sections", "hits", "chords", "instruments", "mute", "tracks", "sfx", "master", "seed", "fit", "end", "midi", "at", "duck", "define", "fx", "automate",
+                "style", "bpm", "key", "meter", "swing", "mood", "length", "sections", "hits", "chords", "instruments", "mute", "tracks", "sfx", "master", "seed", "fit", "end", "midi", "at", "duck", "define", "fx", "automate", "instrumentation",
                 "inst", "clips", "notes", "drums", "steps", "play", "bass", "melody", "bars", "repeat", "octave", "vel", "transpose", "gain", "pan", "width", "reverb", "delay",
                 "duck", "eq", "comp", "drive", "lp", "hp", "humanize", "straight", "name", "at", "lufs", "ceiling", "fadeOut", "fadeIn", "reverbGain",
             ];

@@ -480,6 +480,13 @@
             "null"
           ]
         },
+        "notes": {
+          "description": "Free text for the author (ignored by the renderer): what this shot\nshows and why, e.g. the reference shot it recreates (`analyze --spec`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "use": {
           "description": "Reuse: the name of an entry in top-level `defs`; other keys here override it\n(expanded before typing, see `spec/reuse.rs`).",
           "type": [
@@ -2845,6 +2852,14 @@
       "properties": {
         "aq": {
           "description": "Adaptive quantisation strength, 0 (off, default) to 2: spends bits on flat areas\n(gradients, skies) and saves them on busy texture.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "crf": {
+          "description": "Constant quantiser 0–51 (lower = better and bigger). Default 23 (19 high, 28 draft). `render --crf` overrides.",
           "type": [
             "number",
             "null"

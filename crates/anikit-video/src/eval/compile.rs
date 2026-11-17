@@ -214,6 +214,14 @@ impl Evaluator {
                 (shutter.clamp(0.0, 720.0) as f32 / 360.0) / c.fps
             }
         };
+        let encode_crf = spec.encode.as_ref().and_then(|e| e.crf).and_then(|q| {
+            if (0.0..=51.0).contains(&q) {
+                Some(q.round() as u8)
+            } else {
+                c.d.push(Diagnostic::error("encode.crf", format!("{q} is out of range (0..51)")));
+                None
+            }
+        });
         let encode_aq = spec.encode.as_ref().and_then(|e| e.aq).filter(|a| {
             let ok = (0.0..=2.0).contains(a);
             if !ok {
@@ -358,6 +366,7 @@ impl Evaluator {
             comps: c.comps.into_iter().map(|(n, e, _)| (n, e)).collect(),
             shutter,
             encode_aq: encode_aq.map(|a| a as f32),
+            encode_crf,
             groove: c.groove.and_then(|m| m.ok()),
             shutter_explicit: matches!(spec.motion_blur, Some(spec::MotionBlur::On(true)) | Some(spec::MotionBlur::Shutter { .. })),
         };
@@ -1047,6 +1056,15 @@ impl C<'_> {
     }
 
     fn layer(&mut self, l: &Layer, path: &str, pc: PCtx) -> Option<Node> {
+        // `"text": "=expr"`: a number computed per frame (an animatable counter).
+        let expr_text;
+        let l = match &l.text {
+            Some(t) if t.trim_start().starts_with('=') && l.value.is_none() => {
+                expr_text = Layer { text: Some("{value}".into()), value: Some(Num::Str(t.trim().to_string())), ..l.clone() };
+                &expr_text
+            }
+            _ => l,
+        };
         // `"animate": "rise"` (a lone preset) means `"enter": "rise"`.
         let norm;
         let l = match &l.animate {
@@ -2905,6 +2923,23 @@ impl C<'_> {
         // The theme's material (surface, motion, glow…) fills props the layer leaves out.
         if let Ok(m) = serde_json::to_value(&self.theme.material) {
             props = crate::components::with_material(&name, &props, &m);
+        }
+        // Audio files a component reads itself (the visualizer's `src`) resolve
+        // against the spec's folder, like every other asset; otherwise a relative
+        // path only worked from that folder and the visualizer silently fell back
+        // to its synthetic groove.
+        if let Some(obj) = props.as_object_mut() {
+            if let Some(serde_json::Value::String(src)) = obj.get("src") {
+                let l = src.to_ascii_lowercase();
+                let audio = [".mp3", ".wav", ".flac", ".ogg", ".m4a", ".aac", ".mp4"].iter().any(|e| l.ends_with(e));
+                let p = std::path::Path::new(src);
+                if audio && p.is_relative() {
+                    let full = self.o.base_dir.join(p);
+                    if full.exists() {
+                        obj.insert("src".into(), serde_json::Value::String(full.to_string_lossy().into_owned()));
+                    }
+                }
+            }
         }
         // Load the images the component refers to, so `Assets::media` finds them.
         for src in crate::components::media_srcs(&props) {

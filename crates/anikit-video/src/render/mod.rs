@@ -1177,24 +1177,35 @@ fn text_gamma(pm: &mut Pixmap, c: Rgba) {
         return;
     }
     let ca = (c.0[3].clamp(0.0, 1.0) * 255.0).round().max(1.0);
-    let lut: Vec<u8> = (0..=255u32)
-        .map(|a| {
-            let cov = (a as f32 / ca).min(1.0);
-            (cov.powf(e) * ca).round().min(255.0) as u8
-        })
-        .collect();
-    for p in pm.data_as_u8_slice_mut().chunks_exact_mut(4) {
-        let a = p[3];
-        if a == 0 || a as f32 >= ca {
-            continue;
-        }
-        let na = lut[a as usize];
-        let k = na as u32 * 256 / a as u32;
-        for v in &mut p[..3] {
-            *v = ((*v as u32 * k + 128) >> 8).min(na as u32) as u8;
-        }
-        p[3] = na;
+    // (new alpha, colour scale ×256) per coverage byte; built once per
+    // (alpha, exponent), the same integer maths as per pixel.
+    thread_local! {
+        static LUT: std::cell::RefCell<(u64, [(u8, u32); 256])> = const { std::cell::RefCell::new((u64::MAX, [(0, 0); 256])) };
     }
+    LUT.with(|cell| {
+        let mut cell = cell.borrow_mut();
+        let key = ((ca as u64) << 32) | e.to_bits() as u64;
+        if cell.0 != key {
+            cell.0 = key;
+            for a in 0..256u32 {
+                // Empty and full coverage stay as they are (identity entries).
+                cell.1[a as usize] = if a == 0 || a as f32 >= ca {
+                    (a as u8, 256)
+                } else {
+                    let na = ((a as f32 / ca).powf(e) * ca).round().min(255.0) as u8;
+                    (na, na as u32 * 256 / a)
+                };
+            }
+        }
+        let lut = &cell.1;
+        for p in pm.data_as_u8_slice_mut().chunks_exact_mut(4) {
+            let (na, k) = lut[p[3] as usize];
+            for v in &mut p[..3] {
+                *v = ((*v as u32 * k + 128) >> 8).min(na as u32) as u8;
+            }
+            p[3] = na;
+        }
+    });
 }
 
 struct Card {

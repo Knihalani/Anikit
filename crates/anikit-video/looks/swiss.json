@@ -1,7 +1,7 @@
 {
  "title": "Swiss grid",
  "summary": "White, black and signal red; heavy uppercase grotesk on a strict grid; hard wipes and snaps.",
- "direction": "International Typographic Style. Strict modular grid, flush-left heavy grotesk in uppercase, numbers huge, one signal red. Information is architecture: rules, columns, index numbers. Motion snaps on the grid (wipes, slides with outExpo), no drift, no glow, no shadows, square corners.",
+ "direction": "International Typographic Style. Strict modular grid, flush-left heavy grotesk in uppercase, numbers huge, one signal red. Information is architecture: rules, columns, index numbers. Motion snaps on the grid (wipes, slides with outExpo), no drift, no glow, no shadows, square corners. Fits: data, transport, architecture, information-first launches. Not for: warm or human stories. Score: precise percussion, piano ostinato, minimal; cuts on the grid.",
  "mode": "light",
  "theme": {
   "colors": {

@@ -985,8 +985,14 @@ impl Sim {
         }
         let st = g.as_mut().unwrap();
         let before = (st.frames.len(), std::time::Instant::now(), st.steps);
-        while st.frames.len() <= k + 1 {
-            self.advance(st);
+        if st.frames.len() <= k + 1 {
+            // Rapier steps in parallel: on the simulation pool while the lock
+            // is held (see `scene3d::sim_pool`).
+            super::sim_blocking(|| {
+                while st.frames.len() <= k + 1 {
+                    self.advance(st);
+                }
+            });
         }
         if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() && st.frames.len() > before.0 {
             let w = st.world.as_ref().unwrap();
@@ -1219,6 +1225,14 @@ mod tests {
             let gap = len(sub(v3(a[k][0], a[k][1], a[k][2]), v3(a[k - 1][0], a[k - 1][1], a[k - 1][2])));
             assert!(gap < 0.12, "link {k} stretched to {gap}");
         }
+    }
+
+    #[test]
+    fn identical_at_any_thread_count() {
+        let spec = serde_json::json!({ "bodies": [ { "type": "box", "size": 0.2, "count": 300, "layout": "pile" } ] });
+        let run = |threads: usize| rayon::ThreadPoolBuilder::new().num_threads(threads).build().unwrap().install(|| sim(spec.clone()).sim.at(1.5).0);
+        let (a, b) = (run(1), run(4));
+        assert!(a.iter().zip(b.iter()).all(|(x, y)| x.iter().zip(y).all(|(p, q)| p.to_bits() == q.to_bits())));
     }
 
     #[test]

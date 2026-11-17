@@ -10,6 +10,6 @@
   { "line": [0, 1000, 1920, 1000], "stroke": "$muted", "width": 1 } ] } ] } ] }
 ```
 
-- Coordinates are frame pixels: the layer covers its parent. Each item takes one of `d`, `points` (`closed`, `smooth`), `circle [x, y, r]`, `rect [x, y, w, h]` (`radius`) or `line [x1, y1, x2, y2]`.
+- Coordinates are frame pixels: the layer covers its parent. (A `shape: "path"` layer with `d` is different: it is placed by its bounding box like any shape, so `x`/`y` move the path's centre. For raw coordinates, use `draw`.) Each item takes one of `d`, `points` (`closed`, `smooth`), `circle [x, y, r]`, `rect [x, y, w, h]` (`radius`) or `line [x1, y1, x2, y2]`.
 - Style per item: `fill`, `stroke`, `width`, `cap` (`butt round square`), `join`, `opacity`. `colors` gives one colour per point (gradient segments).
 - The layer animates like any layer (transforms, presets, `trimEnd`; `"enter": "draw"` draws every stroke on). Generate large drawings with a `script`.

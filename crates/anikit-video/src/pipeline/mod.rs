@@ -434,6 +434,9 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
             // Held frame: provably identical to the previous one; skip eval and render.
             let fi = (f0 + k) as f32;
             let (post, blur) = frame_look(ev, opts.quality, (f0 + k) as u32);
+            // The film grain post adds (σ of luma grain at mid-grey, 8-bit codes), so the
+            // encoder's SSIM floor doesn't spend bits re-coding random grain.
+            hints.grain = post.as_ref().map_or(0.0, |p| p.grain * 89.4);
             let sh = if blur || ev.shutter_explicit || opts.quality == Quality::Best { ev.shutter * 0.5 } else { 0.0 };
             if continuing && !post.as_ref().is_some_and(|p| p.grain > 0.0) && ev.is_static((fi - 1.0) / ev.fps - sh, fi / ev.fps + sh) {
                 prof.unchanged.fetch_add(1, Ordering::Relaxed);
@@ -452,6 +455,9 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
             let continuing = !starts.contains(&k) && *last == Some(k.wrapping_sub(1));
             let t = Instant::now();
             r.set_quality(render_quality(opts.quality));
+            // Tell the encoder how much grain the post stack draws (σ in 8-bit luma at mid-grey),
+            // so re-drawn random grain isn't spent bits on.
+            let grain = post.as_ref().map(|p| p.grain * 89.4).unwrap_or(0.0);
             r.set_post(post, (f0 + k) as u64);
             use crate::render::incremental::Update;
             let upd = if blur {
@@ -484,6 +490,7 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
                 copy_yuv(yuv, buf, None);
                 hints.changed = None;
             }
+            hints.grain = grain;
             *last = Some(k);
             prof.copy_ns.fetch_add(ns(t), Ordering::Relaxed);
             w.returned = Some(Instant::now());
@@ -512,6 +519,15 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
         eprintln!();
     }
     out
+}
+
+/// Default chunk length for `n` frames: up to 16 chunks of 30–300 frames, or, when the
+/// spec has expensive layers (3D, shaders, video), chunks of 8+ frames (up to 16), so a
+/// short heavy clip keeps every core busy. Depends only on the spec, never the machine.
+pub fn default_gop(n: usize, heavy: bool) -> u32 {
+    let min_len = if heavy { 8 } else { 30 };
+    let count = n.div_ceil(300).max(n.div_ceil(min_len).min(16)).clamp(1, n.max(1));
+    n.div_ceil(count).max(1) as u32
 }
 
 /// Independently encoded chunks for `n` frames. `gop > 0` caps their length;
@@ -748,12 +764,13 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
     let n = (f1 - f0) as usize;
     let threads = rayon::current_num_threads().max(1);
     // Chunk length: fixed by the frame count alone (never the machine), so output is identical on any core count.
-    let gop = std::env::var("ANIKIT_GOP").ok().and_then(|g| g.parse().ok()).unwrap_or_else(|| chunk_plan(n, 0).iter().map(|r| r.1 - r.0).max().unwrap_or(1) as u32);
-    let qp = match opts.quality {
+    let gop = std::env::var("ANIKIT_GOP").ok().and_then(|g| g.parse().ok()).unwrap_or_else(|| default_gop(n, ev.has_heavy_layers()));
+    // `--crf` / `encode.crf` (constant quantiser, lower = bigger and better) over the quality default.
+    let qp = ev.encode_crf.unwrap_or(match opts.quality {
         Quality::Draft => 28,
         Quality::Good => 23,
         Quality::Best => 19,
-    };
+    });
     let cfg = ak264::EncoderConfig {
         width: w,
         height: h,

@@ -1,0 +1,1505 @@
+{
+  "source": "docs/video/skills/launch-examples/fernway/fernway.mp4",
+  "global": {
+    "width": 1080,
+    "height": 1920,
+    "aspect": "9:16",
+    "fps": 30.0,
+    "analysed_fps": 30.0,
+    "duration": 15.0,
+    "shot_count": 12,
+    "median_shot": 0.934,
+    "mean_shot": 1.25,
+    "longest_shot": 1.9,
+    "shortest_shot": 0.933,
+    "cuts_per_minute": 44.0,
+    "pace": "fast",
+    "palette": [
+      {
+        "hex": "#242F2E",
+        "share": 0.33,
+        "l": 0.3,
+        "c": 0.016
+      },
+      {
+        "hex": "#080E17",
+        "share": 0.26,
+        "l": 0.16,
+        "c": 0.021
+      },
+      {
+        "hex": "#5D635C",
+        "share": 0.12,
+        "l": 0.49,
+        "c": 0.013
+      },
+      {
+        "hex": "#E5E8C9",
+        "share": 0.12,
+        "l": 0.92,
+        "c": 0.041
+      },
+      {
+        "hex": "#868980",
+        "share": 0.09,
+        "l": 0.63,
+        "c": 0.015
+      },
+      {
+        "hex": "#C6CAA8",
+        "share": 0.08,
+        "l": 0.83,
+        "c": 0.046
+      }
+    ],
+    "transition_mix": [
+      [
+        "cut",
+        9
+      ],
+      [
+        "zoom",
+        2
+      ]
+    ],
+    "technique_mix": [
+      [
+        "scene3d",
+        10
+      ],
+      [
+        "2d-motion-graphics",
+        1
+      ],
+      [
+        "kinetic-type",
+        1
+      ]
+    ],
+    "mean_luma": 0.42,
+    "grain": 0.001,
+    "vignette": 0.55,
+    "glow": 0.46,
+    "style_summary": "9:16 mid-tone clip, 15.0 s, 12 shots (median 0.93 s, longest 1.90 s): fast pace. Transitions: 9 cut, 2 zoom. Palette led by #242F2E, #080E17, #5D635C. Camera moves in 10/12 shots; text in 2/12. Looks like: scene3d ×10, 2d-motion-graphics ×1, kinetic-type ×1. Finish: vignette, bloom/glow. Music ≈ 128 BPM; 100% of cuts on a beat."
+  },
+  "shots": [
+    {
+      "index": 0,
+      "start": 0.0,
+      "end": 0.967,
+      "duration": 0.967,
+      "transition_in": "start",
+      "palette": [
+        {
+          "hex": "#070E17",
+          "share": 0.47,
+          "l": 0.16,
+          "c": 0.023
+        },
+        {
+          "hex": "#202C2C",
+          "share": 0.45,
+          "l": 0.28,
+          "c": 0.017
+        },
+        {
+          "hex": "#394039",
+          "share": 0.07,
+          "l": 0.36,
+          "c": 0.016
+        },
+        {
+          "hex": "#F2DBA0",
+          "share": 0.01,
+          "l": 0.9,
+          "c": 0.079
+        },
+        {
+          "hex": "#997541",
+          "share": 0.01,
+          "l": 0.59,
+          "c": 0.082
+        }
+      ],
+      "luma": 0.24,
+      "contrast": 0.1,
+      "saturation": 0.022,
+      "key": "low-key",
+      "camera": {
+        "pan_x": -0.061,
+        "pan_y": 0.013,
+        "zoom": 1.463,
+        "rotate": -0.48,
+        "shake": 0.14,
+        "label": "push in + pan right"
+      },
+      "motion": [
+        0.96,
+        1.27,
+        1.03,
+        1.13
+      ],
+      "motion_mean": 1.1,
+      "depth": {
+        "sharpness": 0.009,
+        "defocus_share": 0.5,
+        "dof": "soft"
+      },
+      "look": "rendered-3d",
+      "look_score": 0.91,
+      "text": [],
+      "text_coverage": -0.0,
+      "grain": 0.0,
+      "vignette": 0.55,
+      "glow": 0.53,
+      "points": 0,
+      "technique": [
+        "scene3d"
+      ],
+      "key_time": 0.533,
+      "grade": {
+        "black": 0.14,
+        "mid": 0.24,
+        "white": 0.44,
+        "warmth": 0.0,
+        "tint": -0.016,
+        "label": "clean blacks, soft, rolled-off highlights, low contrast, neutral, green tint, near monochrome"
+      },
+      "layout": {
+        "symmetry": 0.74,
+        "weight_x": 0.46,
+        "weight_y": 0.44,
+        "label": "centred"
+      },
+      "motion_character": "steady"
+    },
+    {
+      "index": 1,
+      "start": 0.967,
+      "end": 1.9,
+      "duration": 0.933,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#2B3937",
+          "share": 0.25,
+          "l": 0.33,
+          "c": 0.018
+        },
+        {
+          "hex": "#838C86",
+          "share": 0.24,
+          "l": 0.63,
+          "c": 0.013
+        },
+        {
+          "hex": "#6C7470",
+          "share": 0.2,
+          "l": 0.55,
+          "c": 0.011
+        },
+        {
+          "hex": "#41504C",
+          "share": 0.16,
+          "l": 0.42,
+          "c": 0.02
+        },
+        {
+          "hex": "#5C6662",
+          "share": 0.14,
+          "l": 0.5,
+          "c": 0.014
+        }
+      ],
+      "luma": 0.48,
+      "contrast": 0.11,
+      "saturation": 0.015,
+      "key": "mid-key",
+      "camera": {
+        "pan_x": -0.001,
+        "pan_y": 0.007,
+        "zoom": 0.839,
+        "rotate": 0.26,
+        "shake": 0.03,
+        "label": "pull out"
+      },
+      "motion": [
+        1.88,
+        0.1,
+        0.15,
+        0.09
+      ],
+      "motion_mean": 0.56,
+      "depth": {
+        "sharpness": 0.012,
+        "defocus_share": 0.0,
+        "dof": "deep"
+      },
+      "look": "rendered-3d",
+      "look_score": 0.89,
+      "text": [],
+      "text_coverage": -0.0,
+      "grain": 0.002,
+      "vignette": 0.36,
+      "glow": 0.0,
+      "points": 0,
+      "technique": [
+        "scene3d"
+      ],
+      "key_time": 1.333,
+      "grade": {
+        "black": 0.3,
+        "mid": 0.51,
+        "white": 0.65,
+        "warmth": 0.002,
+        "tint": -0.015,
+        "label": "lifted (milky) blacks, soft, rolled-off highlights, low contrast, neutral, green tint, near monochrome"
+      },
+      "layout": {
+        "symmetry": 0.89,
+        "weight_x": 0.51,
+        "weight_y": 0.57,
+        "label": "centred"
+      },
+      "motion_character": "bursts"
+    },
+    {
+      "index": 2,
+      "start": 1.9,
+      "end": 2.833,
+      "duration": 0.933,
+      "transition_in": "zoom",
+      "palette": [
+        {
+          "hex": "#202D2C",
+          "share": 0.48,
+          "l": 0.29,
+          "c": 0.018
+        },
+        {
+          "hex": "#080E17",
+          "share": 0.46,
+          "l": 0.16,
+          "c": 0.022
+        },
+        {
+          "hex": "#F9E1A0",
+          "share": 0.03,
+          "l": 0.91,
+          "c": 0.087
+        },
+        {
+          "hex": "#6E4D2D",
+          "share": 0.02,
+          "l": 0.45,
+          "c": 0.064
+        },
+        {
+          "hex": "#BA8A42",
+          "share": 0.01,
+          "l": 0.67,
+          "c": 0.106
+        }
+      ],
+      "luma": 0.26,
+      "contrast": 0.14,
+      "saturation": 0.025,
+      "key": "low-key",
+      "camera": {
+        "pan_x": 0.003,
+        "pan_y": 0.008,
+        "zoom": 0.756,
+        "rotate": 0.53,
+        "shake": 0.05,
+        "label": "pull out"
+      },
+      "motion": [
+        1.96,
+        0.08,
+        0.07,
+        0.1
+      ],
+      "motion_mean": 0.55,
+      "depth": {
+        "sharpness": 0.012,
+        "defocus_share": 0.0,
+        "dof": "soft"
+      },
+      "look": "rendered-3d",
+      "look_score": 0.74,
+      "text": [],
+      "text_coverage": -0.0,
+      "grain": 0.0,
+      "vignette": 0.64,
+      "glow": 0.72,
+      "points": 0,
+      "technique": [
+        "scene3d"
+      ],
+      "key_time": 2.4,
+      "grade": {
+        "black": 0.14,
+        "mid": 0.24,
+        "white": 0.92,
+        "warmth": 0.002,
+        "tint": -0.015,
+        "label": "clean blacks, clean highlights, medium contrast, neutral, green tint, near monochrome"
+      },
+      "layout": {
+        "symmetry": 0.82,
+        "weight_x": 0.49,
+        "weight_y": 0.39,
+        "label": "top-heavy"
+      },
+      "motion_character": "bursts"
+    },
+    {
+      "index": 3,
+      "start": 2.833,
+      "end": 3.767,
+      "duration": 0.934,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#616A65",
+          "share": 0.34,
+          "l": 0.51,
+          "c": 0.013
+        },
+        {
+          "hex": "#303C3A",
+          "share": 0.24,
+          "l": 0.34,
+          "c": 0.015
+        },
+        {
+          "hex": "#7A817A",
+          "share": 0.22,
+          "l": 0.59,
+          "c": 0.013
+        },
+        {
+          "hex": "#47534E",
+          "share": 0.19,
+          "l": 0.43,
+          "c": 0.018
+        },
+        {
+          "hex": "#D3CDA8",
+          "share": 0.02,
+          "l": 0.85,
+          "c": 0.05
+        }
+      ],
+      "luma": 0.48,
+      "contrast": 0.11,
+      "saturation": 0.016,
+      "key": "mid-key",
+      "camera": {
+        "pan_x": -0.026,
+        "pan_y": 0.026,
+        "zoom": 1.384,
+        "rotate": 0.49,
+        "shake": 0.18,
+        "label": "push in"
+      },
+      "motion": [
+        2.56,
+        1.09,
+        0.66,
+        0.07
+      ],
+      "motion_mean": 1.1,
+      "depth": {
+        "sharpness": 0.02,
+        "defocus_share": 0.0,
+        "dof": "deep"
+      },
+      "look": "rendered-3d",
+      "look_score": 0.89,
+      "text": [],
+      "text_coverage": -0.0,
+      "grain": 0.002,
+      "vignette": 0.29,
+      "glow": 0.4,
+      "points": 0,
+      "technique": [
+        "scene3d"
+      ],
+      "key_time": 3.2,
+      "grade": {
+        "black": 0.31,
+        "mid": 0.5,
+        "white": 0.67,
+        "warmth": 0.004,
+        "tint": -0.014,
+        "label": "lifted (milky) blacks, soft, rolled-off highlights, low contrast, neutral, green tint, near monochrome"
+      },
+      "layout": {
+        "symmetry": 0.83,
+        "weight_x": 0.5,
+        "weight_y": 0.57,
+        "label": "centred"
+      },
+      "motion_character": "snap-then-settle"
+    },
+    {
+      "index": 4,
+      "start": 3.767,
+      "end": 5.633,
+      "duration": 1.866,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#070E18",
+          "share": 0.49,
+          "l": 0.16,
+          "c": 0.024
+        },
+        {
+          "hex": "#232F2D",
+          "share": 0.39,
+          "l": 0.29,
+          "c": 0.016
+        },
+        {
+          "hex": "#858A83",
+          "share": 0.11,
+          "l": 0.63,
+          "c": 0.011
+        },
+        {
+          "hex": "#D9C38E",
+          "share": 0.01,
+          "l": 0.82,
+          "c": 0.074
+        },
+        {
+          "hex": "#69573F",
+          "share": 0.01,
+          "l": 0.47,
+          "c": 0.044
+        }
+      ],
+      "luma": 0.27,
+      "contrast": 0.15,
+      "saturation": 0.021,
+      "key": "low-key",
+      "camera": {
+        "pan_x": 0.156,
+        "pan_y": -0.037,
+        "zoom": 1.081,
+        "rotate": 0.73,
+        "shake": 0.26,
+        "label": "push in + pan left"
+      },
+      "motion": [
+        2.57,
+        1.39,
+        1.61,
+        1.13,
+        1.09,
+        1.02,
+        0.85
+      ],
+      "motion_mean": 1.38,
+      "depth": {
+        "sharpness": 0.024,
+        "defocus_share": 0.25,
+        "dof": "deep"
+      },
+      "look": "rendered-3d",
+      "look_score": 0.79,
+      "text": [],
+      "text_coverage": -0.0,
+      "grain": 0.0,
+      "vignette": 0.71,
+      "glow": 0.0,
+      "points": 0,
+      "technique": [
+        "scene3d"
+      ],
+      "key_time": 4.8,
+      "grade": {
+        "black": 0.14,
+        "mid": 0.24,
+        "white": 0.64,
+        "warmth": 0.002,
+        "tint": -0.014,
+        "label": "clean blacks, soft, rolled-off highlights, low contrast, neutral, green tint, near monochrome"
+      },
+      "layout": {
+        "symmetry": 0.85,
+        "weight_x": 0.48,
+        "weight_y": 0.42,
+        "label": "centred"
+      },
+      "motion_character": "snap-then-settle"
+    },
+    {
+      "index": 5,
+      "start": 5.633,
+      "end": 6.567,
+      "duration": 0.934,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#E6E6D2",
+          "share": 0.82,
+          "l": 0.92,
+          "c": 0.026
+        },
+        {
+          "hex": "#BAB89B",
+          "share": 0.07,
+          "l": 0.78,
+          "c": 0.039
+        },
+        {
+          "hex": "#34322F",
+          "share": 0.06,
+          "l": 0.32,
+          "c": 0.006
+        },
+        {
+          "hex": "#222222",
+          "share": 0.04,
+          "l": 0.25,
+          "c": 0.001
+        },
+        {
+          "hex": "#716D5D",
+          "share": 0.01,
+          "l": 0.53,
+          "c": 0.024
+        }
+      ],
+      "luma": 0.84,
+      "contrast": 0.2,
+      "saturation": 0.025,
+      "key": "high-key",
+      "camera": {
+        "pan_x": 0.004,
+        "pan_y": -0.003,
+        "zoom": 0.884,
+        "rotate": -4.65,
+        "shake": 0.1,
+        "label": "pull out"
+      },
+      "motion": [
+        3.46,
+        1.51,
+        0.37,
+        0.02
+      ],
+      "motion_mean": 1.34,
+      "depth": {
+        "sharpness": 0.038,
+        "defocus_share": 0.25,
+        "dof": "deep"
+      },
+      "look": "flat-2d",
+      "look_score": 0.0,
+      "text": [],
+      "text_coverage": -0.0,
+      "grain": 0.001,
+      "vignette": 0.2,
+      "glow": 0.0,
+      "points": 14,
+      "technique": [
+        "2d-motion-graphics"
+      ],
+      "key_time": 6.133,
+      "grade": {
+        "black": 0.25,
+        "mid": 0.89,
+        "white": 0.99,
+        "warmth": 0.017,
+        "tint": -0.002,
+        "label": "lifted (milky) blacks, bright, clipped highlights, medium contrast, warm, near monochrome"
+      },
+      "layout": {
+        "symmetry": 0.81,
+        "weight_x": 0.48,
+        "weight_y": 0.37,
+        "label": "top-heavy"
+      },
+      "motion_character": "bursts"
+    },
+    {
+      "index": 6,
+      "start": 6.567,
+      "end": 7.5,
+      "duration": 0.933,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#868C86",
+          "share": 0.38,
+          "l": 0.63,
+          "c": 0.011
+        },
+        {
+          "hex": "#070C14",
+          "share": 0.26,
+          "l": 0.15,
+          "c": 0.02
+        },
+        {
+          "hex": "#6C706A",
+          "share": 0.19,
+          "l": 0.54,
+          "c": 0.011
+        },
+        {
+          "hex": "#1C2727",
+          "share": 0.17,
+          "l": 0.26,
+          "c": 0.015
+        },
+        {
+          "hex": "#A6AC93",
+          "share": 0.0,
+          "l": 0.73,
+          "c": 0.037
+        }
+      ],
+      "luma": 0.43,
+      "contrast": 0.21,
+      "saturation": 0.015,
+      "key": "mid-key",
+      "camera": {
+        "pan_x": 0.069,
+        "pan_y": 0.068,
+        "zoom": 1.404,
+        "rotate": 0.02,
+        "shake": 0.25,
+        "label": "push in + pan left"
+      },
+      "motion": [
+        3.15,
+        2.57,
+        2.45,
+        2.29
+      ],
+      "motion_mean": 2.62,
+      "depth": {
+        "sharpness": 0.028,
+        "defocus_share": 0.18,
+        "dof": "deep"
+      },
+      "look": "rendered-3d",
+      "look_score": 0.62,
+      "text": [
+        {
+          "bbox": [
+            0.234,
+            0.058,
+            0.525,
+            0.048
+          ],
+          "height": 0.048,
+          "align": "center",
+          "position": "top",
+          "confidence": 0.22,
+          "ink": "light-on-dark",
+          "ink_share": 0.25,
+          "weight": "regular"
+        }
+      ],
+      "text_coverage": 0.03,
+      "grain": 0.001,
+      "vignette": 0.85,
+      "glow": 0.0,
+      "points": 20,
+      "technique": [
+        "scene3d"
+      ],
+      "key_time": 6.933,
+      "grade": {
+        "black": 0.14,
+        "mid": 0.54,
+        "white": 0.65,
+        "warmth": 0.006,
+        "tint": -0.009,
+        "label": "clean blacks, soft, rolled-off highlights, medium contrast, neutral, near monochrome"
+      },
+      "layout": {
+        "symmetry": 0.84,
+        "weight_x": 0.5,
+        "weight_y": 0.46,
+        "label": "centred"
+      },
+      "motion_character": "steady"
+    },
+    {
+      "index": 7,
+      "start": 7.5,
+      "end": 9.4,
+      "duration": 1.9,
+      "transition_in": "zoom",
+      "palette": [
+        {
+          "hex": "#0B1019",
+          "share": 0.52,
+          "l": 0.17,
+          "c": 0.02
+        },
+        {
+          "hex": "#25302E",
+          "share": 0.43,
+          "l": 0.3,
+          "c": 0.016
+        },
+        {
+          "hex": "#70593A",
+          "share": 0.02,
+          "l": 0.48,
+          "c": 0.054
+        },
+        {
+          "hex": "#C8BD90",
+          "share": 0.02,
+          "l": 0.8,
+          "c": 0.061
+        },
+        {
+          "hex": "#EFDAA0",
+          "share": 0.0,
+          "l": 0.89,
+          "c": 0.079
+        }
+      ],
+      "luma": 0.25,
+      "contrast": 0.12,
+      "saturation": 0.022,
+      "key": "low-key",
+      "camera": {
+        "pan_x": -0.435,
+        "pan_y": 0.175,
+        "zoom": 1.733,
+        "rotate": 47.91,
+        "shake": 0.55,
+        "label": "push in + pan right + roll + handheld/shake"
+      },
+      "motion": [
+        3.02,
+        2.59,
+        2.09,
+        2.01,
+        1.7,
+        1.32,
+        1.1,
+        0.77
+      ],
+      "motion_mean": 1.83,
+      "depth": {
+        "sharpness": 0.032,
+        "defocus_share": 0.33,
+        "dof": "shallow"
+      },
+      "look": "rendered-3d",
+      "look_score": 0.55,
+      "text": [
+        {
+          "bbox": [
+            0.131,
+            0.196,
+            0.717,
+            0.074
+          ],
+          "height": 0.074,
+          "align": "center",
+          "position": "top",
+          "confidence": 0.17,
+          "ink": "light-on-dark",
+          "ink_share": 0.28,
+          "weight": "regular"
+        }
+      ],
+      "text_coverage": 0.05,
+      "grain": 0.0,
+      "vignette": 0.49,
+      "glow": 0.54,
+      "points": 13,
+      "technique": [
+        "kinetic-type",
+        "scene3d"
+      ],
+      "key_time": 8.533,
+      "grade": {
+        "black": 0.15,
+        "mid": 0.22,
+        "white": 0.81,
+        "warmth": 0.004,
+        "tint": -0.014,
+        "label": "clean blacks, clean highlights, medium contrast, neutral, green tint, near monochrome"
+      },
+      "layout": {
+        "symmetry": 0.64,
+        "weight_x": 0.47,
+        "weight_y": 0.39,
+        "label": "top-heavy"
+      },
+      "motion_character": "snap-then-settle"
+    },
+    {
+      "index": 8,
+      "start": 9.4,
+      "end": 11.267,
+      "duration": 1.867,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#C6CDAC",
+          "share": 0.52,
+          "l": 0.83,
+          "c": 0.046
+        },
+        {
+          "hex": "#E1EBC6",
+          "share": 0.45,
+          "l": 0.92,
+          "c": 0.051
+        },
+        {
+          "hex": "#2F2D28",
+          "share": 0.02,
+          "l": 0.3,
+          "c": 0.01
+        },
+        {
+          "hex": "#A29574",
+          "share": 0.01,
+          "l": 0.67,
+          "c": 0.049
+        },
+        {
+          "hex": "#77573B",
+          "share": 0.01,
+          "l": 0.48,
+          "c": 0.059
+        }
+      ],
+      "luma": 0.86,
+      "contrast": 0.1,
+      "saturation": 0.048,
+      "key": "high-key",
+      "camera": {
+        "pan_x": -0.007,
+        "pan_y": 0.036,
+        "zoom": 0.993,
+        "rotate": -1.05,
+        "shake": 0.17,
+        "label": "static"
+      },
+      "motion": [
+        2.1,
+        0.04,
+        0.01,
+        2.03,
+        0.14,
+        0.0,
+        0.0
+      ],
+      "motion_mean": 0.62,
+      "depth": {
+        "sharpness": 0.028,
+        "defocus_share": 0.0,
+        "dof": "deep"
+      },
+      "look": "rendered-3d",
+      "look_score": 0.63,
+      "text": [],
+      "text_coverage": -0.0,
+      "grain": 0.001,
+      "vignette": 0.16,
+      "glow": 0.5,
+      "points": 8,
+      "technique": [
+        "scene3d"
+      ],
+      "key_time": 10.4,
+      "grade": {
+        "black": 0.43,
+        "mid": 0.87,
+        "white": 0.94,
+        "warmth": 0.034,
+        "tint": -0.001,
+        "label": "lifted (milky) blacks, clean highlights, medium contrast, warm, desaturated"
+      },
+      "layout": {
+        "symmetry": 0.82,
+        "weight_x": 0.5,
+        "weight_y": 0.59,
+        "label": "bottom-heavy"
+      },
+      "motion_character": "bursts"
+    },
+    {
+      "index": 9,
+      "start": 11.267,
+      "end": 12.2,
+      "duration": 0.933,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#232E2C",
+          "share": 0.49,
+          "l": 0.29,
+          "c": 0.015
+        },
+        {
+          "hex": "#090E17",
+          "share": 0.42,
+          "l": 0.16,
+          "c": 0.02
+        },
+        {
+          "hex": "#F9E6AC",
+          "share": 0.05,
+          "l": 0.93,
+          "c": 0.077
+        },
+        {
+          "hex": "#624B33",
+          "share": 0.03,
+          "l": 0.43,
+          "c": 0.048
+        },
+        {
+          "hex": "#A88B59",
+          "share": 0.01,
+          "l": 0.65,
+          "c": 0.076
+        }
+      ],
+      "luma": 0.28,
+      "contrast": 0.17,
+      "saturation": 0.024,
+      "key": "low-key",
+      "camera": {
+        "pan_x": -0.002,
+        "pan_y": -0.014,
+        "zoom": 1.129,
+        "rotate": 0.59,
+        "shake": 0.29,
+        "label": "push in"
+      },
+      "motion": [
+        1.74,
+        0.5,
+        0.73,
+        0.69
+      ],
+      "motion_mean": 0.92,
+      "depth": {
+        "sharpness": 0.022,
+        "defocus_share": 0.18,
+        "dof": "deep"
+      },
+      "look": "rendered-3d",
+      "look_score": 0.72,
+      "text": [
+        {
+          "bbox": [
+            0.484,
+            0.731,
+            0.214,
+            0.026
+          ],
+          "height": 0.026,
+          "align": "right",
+          "position": "bottom",
+          "confidence": 0.33,
+          "ink": "light-on-dark",
+          "ink_share": 0.41,
+          "weight": "bold"
+        },
+        {
+          "bbox": [
+            0.303,
+            0.731,
+            0.139,
+            0.026
+          ],
+          "height": 0.026,
+          "align": "left",
+          "position": "bottom",
+          "confidence": 0.36,
+          "ink": "light-on-dark",
+          "ink_share": 0.41,
+          "weight": "bold"
+        }
+      ],
+      "text_coverage": 0.01,
+      "grain": 0.001,
+      "vignette": 0.78,
+      "glow": 0.56,
+      "points": 8,
+      "technique": [
+        "scene3d"
+      ],
+      "key_time": 11.733,
+      "grade": {
+        "black": 0.14,
+        "mid": 0.26,
+        "white": 0.94,
+        "warmth": 0.004,
+        "tint": -0.012,
+        "label": "clean blacks, clean highlights, medium contrast, neutral, green tint, near monochrome"
+      },
+      "layout": {
+        "symmetry": 0.93,
+        "weight_x": 0.51,
+        "weight_y": 0.38,
+        "label": "top-heavy"
+      },
+      "motion_character": "snap-then-settle"
+    },
+    {
+      "index": 10,
+      "start": 12.2,
+      "end": 13.133,
+      "duration": 0.933,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#656E6A",
+          "share": 0.3,
+          "l": 0.53,
+          "c": 0.012
+        },
+        {
+          "hex": "#828A84",
+          "share": 0.27,
+          "l": 0.62,
+          "c": 0.013
+        },
+        {
+          "hex": "#2C3937",
+          "share": 0.26,
+          "l": 0.33,
+          "c": 0.018
+        },
+        {
+          "hex": "#44524E",
+          "share": 0.17,
+          "l": 0.43,
+          "c": 0.019
+        },
+        {
+          "hex": "#E0CB9E",
+          "share": 0.0,
+          "l": 0.85,
+          "c": 0.064
+        }
+      ],
+      "luma": 0.49,
+      "contrast": 0.11,
+      "saturation": 0.015,
+      "key": "mid-key",
+      "camera": {
+        "pan_x": 0.0,
+        "pan_y": 0.007,
+        "zoom": 0.837,
+        "rotate": 0.23,
+        "shake": 0.04,
+        "label": "pull out"
+      },
+      "motion": [
+        1.85,
+        0.0,
+        0.01,
+        0.0
+      ],
+      "motion_mean": 0.47,
+      "depth": {
+        "sharpness": 0.014,
+        "defocus_share": 0.0,
+        "dof": "deep"
+      },
+      "look": "rendered-3d",
+      "look_score": 0.91,
+      "text": [],
+      "text_coverage": -0.0,
+      "grain": 0.002,
+      "vignette": 0.36,
+      "glow": 0.0,
+      "points": 0,
+      "technique": [
+        "scene3d"
+      ],
+      "key_time": 12.533,
+      "grade": {
+        "black": 0.3,
+        "mid": 0.51,
+        "white": 0.65,
+        "warmth": 0.002,
+        "tint": -0.015,
+        "label": "lifted (milky) blacks, soft, rolled-off highlights, low contrast, neutral, green tint, near monochrome"
+      },
+      "layout": {
+        "symmetry": 0.89,
+        "weight_x": 0.5,
+        "weight_y": 0.57,
+        "label": "centred"
+      },
+      "motion_character": "bursts"
+    },
+    {
+      "index": 11,
+      "start": 13.133,
+      "end": 15.0,
+      "duration": 1.867,
+      "transition_in": "cut",
+      "palette": [
+        {
+          "hex": "#1F2C2B",
+          "share": 0.63,
+          "l": 0.28,
+          "c": 0.017
+        },
+        {
+          "hex": "#080E15",
+          "share": 0.3,
+          "l": 0.16,
+          "c": 0.019
+        },
+        {
+          "hex": "#504939",
+          "share": 0.03,
+          "l": 0.41,
+          "c": 0.027
+        },
+        {
+          "hex": "#D5D4AA",
+          "share": 0.02,
+          "l": 0.86,
+          "c": 0.056
+        },
+        {
+          "hex": "#938967",
+          "share": 0.01,
+          "l": 0.63,
+          "c": 0.049
+        }
+      ],
+      "luma": 0.26,
+      "contrast": 0.11,
+      "saturation": 0.02,
+      "key": "low-key",
+      "camera": {
+        "pan_x": -0.001,
+        "pan_y": -0.006,
+        "zoom": 0.992,
+        "rotate": 0.9,
+        "shake": 0.04,
+        "label": "static"
+      },
+      "motion": [
+        1.67,
+        0.21,
+        0.13,
+        0.11,
+        0.07,
+        0.05,
+        0.04
+      ],
+      "motion_mean": 0.33,
+      "depth": {
+        "sharpness": 0.034,
+        "defocus_share": 0.08,
+        "dof": "deep"
+      },
+      "look": "rendered-3d",
+      "look_score": 0.5,
+      "text": [
+        {
+          "bbox": [
+            0.134,
+            0.71,
+            0.408,
+            0.033
+          ],
+          "height": 0.033,
+          "align": "left",
+          "position": "bottom",
+          "confidence": 0.22,
+          "ink": "light-on-dark",
+          "ink_share": 0.33,
+          "weight": "bold"
+        },
+        {
+          "bbox": [
+            0.723,
+            0.71,
+            0.141,
+            0.033
+          ],
+          "height": 0.033,
+          "align": "right",
+          "position": "bottom",
+          "confidence": 0.24,
+          "ink": "light-on-dark",
+          "ink_share": 0.33,
+          "weight": "bold"
+        }
+      ],
+      "text_coverage": 0.02,
+      "grain": 0.001,
+      "vignette": 0.66,
+      "glow": 0.46,
+      "points": 10,
+      "technique": [
+        "scene3d"
+      ],
+      "key_time": 14.133,
+      "grade": {
+        "black": 0.15,
+        "mid": 0.26,
+        "white": 0.7,
+        "warmth": -0.0,
+        "tint": -0.016,
+        "label": "clean blacks, soft, rolled-off highlights, medium contrast, neutral, green tint, near monochrome"
+      },
+      "layout": {
+        "symmetry": 0.64,
+        "weight_x": 0.5,
+        "weight_y": 0.39,
+        "label": "top-heavy"
+      },
+      "motion_character": "bursts"
+    }
+  ],
+  "transitions": [
+    {
+      "at": 0.967,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.8018992
+    },
+    {
+      "at": 1.9,
+      "duration": 0.0,
+      "type": "zoom",
+      "direction": null,
+      "strength": 0.82198954
+    },
+    {
+      "at": 2.833,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.848704
+    },
+    {
+      "at": 3.767,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.8089996
+    },
+    {
+      "at": 5.633,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.9572147
+    },
+    {
+      "at": 6.567,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.9099966
+    },
+    {
+      "at": 7.5,
+      "duration": 0.0,
+      "type": "zoom",
+      "direction": null,
+      "strength": 0.89775676
+    },
+    {
+      "at": 9.4,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.9680034
+    },
+    {
+      "at": 11.267,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.94673
+    },
+    {
+      "at": 12.2,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.80866617
+    },
+    {
+      "at": 13.133,
+      "duration": 0.0,
+      "type": "cut",
+      "direction": null,
+      "strength": 0.82767177
+    }
+  ],
+  "flashes": [],
+  "audio": {
+    "bpm": 127.9,
+    "beats": [
+      0.0,
+      0.469,
+      0.938,
+      1.407,
+      1.876,
+      2.345,
+      2.814,
+      3.283,
+      3.752,
+      4.221,
+      4.69,
+      5.159,
+      5.628,
+      6.097,
+      6.566,
+      7.035,
+      7.504,
+      7.973,
+      8.442,
+      8.911,
+      9.38,
+      9.849,
+      10.318,
+      10.787,
+      11.256,
+      11.725,
+      12.194,
+      12.663,
+      13.132,
+      13.601,
+      14.07,
+      14.539,
+      15.008
+    ],
+    "downbeats": [
+      1.407,
+      3.283,
+      5.159,
+      7.035,
+      8.911,
+      10.787,
+      12.663,
+      14.539
+    ],
+    "onsets": [
+      1.873,
+      3.754,
+      6.099,
+      7.039,
+      7.504,
+      8.908,
+      9.384,
+      9.849,
+      10.789,
+      10.917,
+      11.254,
+      11.73,
+      12.194,
+      12.426,
+      12.542,
+      12.658,
+      13.831
+    ],
+    "hits": [
+      12.194
+    ],
+    "loudness": [
+      0.14,
+      0.13,
+      0.14,
+      0.13,
+      0.39,
+      0.43,
+      0.17,
+      0.31,
+      0.27,
+      0.25,
+      0.32,
+      0.33,
+      0.33,
+      0.43,
+      0.46,
+      0.96,
+      0.83,
+      0.84,
+      0.66,
+      0.52,
+      0.51,
+      0.52,
+      0.52,
+      0.43,
+      0.44,
+      0.4,
+      0.33,
+      0.37,
+      0.36,
+      0.34,
+      0.51,
+      0.52,
+      0.39,
+      0.37,
+      0.33,
+      0.33,
+      0.35,
+      0.28,
+      0.29,
+      0.35,
+      0.35,
+      0.31,
+      0.35,
+      0.69,
+      0.33,
+      0.67,
+      0.59,
+      0.48,
+      0.96,
+      0.95,
+      0.75,
+      0.67,
+      0.47,
+      0.31,
+      0.24,
+      0.22,
+      0.18,
+      0.13,
+      0.05,
+      0.02,
+      0.0
+    ],
+    "cuts_on_beat": 1.0,
+    "cuts_on_downbeat": 0.0
+  },
+  "timing": {
+    "decode": 2.218,
+    "analyse": 0.307,
+    "audio": 0.036,
+    "total": 2.566
+  },
+  "notes": [
+    "Heuristics, not ground truth: confirm every guess by looking at the sheet and key frames.",
+    "transition types: cut, crossfade, fadeBlack, fadeWhite, flash (bright frame at the cut), whip (blurred fast pan at the cut), zoom, wipe.",
+    "camera: a similarity model (pan, zoom, roll) fitted to 8×8 block motion at 160 px; pan_x/pan_y in frame widths/heights over the shot.",
+    "look: flat-2d = hard edges between flat fills (vector motion graphics); rendered-3d = smooth shading, clean pixels; photographic = smooth shading with grain; minimal = a nearly empty frame.",
+    "text: boxes of dense high-contrast strokes; no OCR. height ×100 ≈ the vh size to use.",
+    "cuts inside very fast action (every frame changes a lot) can be missed: a long shot with high `motion` may hide several; check its frames.",
+    "grain/vignette/glow: relative measures; compare shots against each other and against your recreation's analysis."
+  ]
+}

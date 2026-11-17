@@ -78,7 +78,8 @@ fn main() {
     std::fs::create_dir_all(out).unwrap();
     println!("{:<34} {:>5} {:>9} {:>9} {:>8} {:>7} {:>9} {:>9}", "spec", "t", "PSNR-Y", "SSIM", "ΔE p99.9", "ΔE max", "fast", "reference");
     for (spec, t) in pairs {
-        let src = std::fs::read_to_string(&spec).unwrap();
+        // Measure the exact path: draft particle splats are softer by design.
+        let src = std::fs::read_to_string(&spec).unwrap().replace("\"quality\": \"draft\"", "\"quality\": \"standard\"");
         let mut frames = Vec::new();
         let mut times = Vec::new();
         for refm in [false, true] {

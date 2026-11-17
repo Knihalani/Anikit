@@ -180,7 +180,7 @@ impl BeatMarkers {
         let Some((path, at, trim)) = &self.src else {
             return Some(Err(format!("'@{name}' needs music: add an `audio` track with a `src`")));
         };
-        let beats = self.beats.get_or_insert_with(|| decode_file(path).map(|p| refine(&analyze_pcm(&p))));
+        let beats = self.beats.get_or_insert_with(|| beats_cached(path));
         let b = match beats {
             Ok(b) => b,
             Err(e) => return Some(Err(e.clone())),
@@ -196,6 +196,20 @@ impl BeatMarkers {
 /// Fit one steady grid to the onsets nearest the detected beats (least
 /// squares, then twice more without outliers), extend it back
 /// to 0, and take bars as every 4th beat in the detected downbeat phase.
+/// Refined beats of a music file, through the on-disk cache (decode plus
+/// analysis is ~200 ms for a 36 s track; a cached result is a file read).
+pub fn beats_cached(path: &std::path::Path) -> Result<Beats, String> {
+    let key = crate::diskcache::key("beats1", path, &[]);
+    if let Some(b) = key.as_deref().and_then(crate::diskcache::get).and_then(|v| serde_json::from_slice::<Beats>(&v).ok()) {
+        return Ok(b);
+    }
+    let b = refine(&analyze_pcm(&decode_file(path)?));
+    if let (Some(k), Ok(v)) = (key, serde_json::to_vec(&b)) {
+        crate::diskcache::put(&k, &v);
+    }
+    Ok(b)
+}
+
 pub fn refine(b: &Beats) -> Beats {
     if b.beats.len() < 4 {
         return b.clone();

@@ -18,7 +18,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|beats|music|docs|recipes|new|templates|looks|prompt|critique|preview|mcp|--version> [spec.json|spec.yaml] [options]
-  render spec.json -o out.mp4   [--quality draft|good|best] [--codec ak264|h264|h265|vp9|av1|prores|gif|png]
+  render spec.json -o out.mp4   [--quality draft|good|best] [--crf 0-51] [--codec ak264|h264|h265|vp9|av1|prores|gif|png]
                                 [--from S] [--to S] [--scale K] [--no-audio]
   still  spec.json -o f.png     [--at S | --at @scene] [--scale K | --width W] [--watch]
   sheet  spec.json -o sheet.png [--frames N | --cols 4 --rows 3] [--width 480]
@@ -27,6 +27,8 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|b
   schema [-o file]              print the JSON Schema of the spec
   beats  music.wav              tempo, beats and bars (use them as \"@beat17\", \"@bar5\")
   music  spec.json -o out.wav   generate a mastered soundtrack (anikit-video docs music)
+  analyze ref.mp4 [-o analysis.json] [--sheet sheet.jpg] [--spec draft.json]
+                                reverse-engineer a reference video (anikit-video docs analyze)
 common: --json (machine-readable output)
 start:  docs [topic] | recipes [name] (-o file) | music | critique --render | looks | templates | preview | mcp | --version";
 
@@ -352,6 +354,32 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             }
             Ok(ExitCode::SUCCESS)
         }
+        "analyze" => {
+            let path = a.input.as_deref().ok_or("missing video (an MP4/WebM/GIF/MOV, a directory of frames, or a frame%04d.png pattern)")?;
+            let opts = anikit_video::analyze::Options { sequence_fps: a.num("--fps")?.map(f64::from).unwrap_or(30.0), audio: !a.has("--no-audio"), ..Default::default() };
+            let an = anikit_video::analyze::analyze(Path::new(path), &opts)?;
+            let js = serde_json::to_string_pretty(&an).map_err(|e| e.to_string())?;
+            match a.get("-o").or(a.get("--out")) {
+                Some(o) => std::fs::write(o, js + "\n").map_err(|e| format!("{o}: {e}"))?,
+                None if !json => println!("{js}"),
+                None => {}
+            }
+            if let Some(sh) = a.get("--sheet") {
+                let (w, h, px) = anikit_video::analyze::contact_sheet(&an);
+                let img = image::RgbImage::from_raw(w, h, px).ok_or("sheet buffer")?;
+                img.save(sh).map_err(|e| format!("{sh}: {e}"))?;
+            }
+            if let Some(sp) = a.get("--spec") {
+                let spec = anikit_video::analyze::draft_spec(&an);
+                std::fs::write(sp, serde_json::to_string_pretty(&spec).map_err(|e| e.to_string())? + "\n").map_err(|e| format!("{sp}: {e}"))?;
+            }
+            if json {
+                println!("{}", serde_json::json!({ "ok": true, "summary": an.global.style_summary, "shots": an.shots.len(), "seconds": an.timing.total }));
+            } else {
+                eprintln!("{}\nanalysed in {:.2} s (decode {:.2}, analyse {:.2}, audio {:.2})", an.global.style_summary, an.timing.total, an.timing.decode, an.timing.analyse, an.timing.audio);
+            }
+            Ok(ExitCode::SUCCESS)
+        }
         "sheet" => {
             let path = need_input(a)?;
             let out = PathBuf::from(a.get("-o").unwrap_or("sheet.png"));
@@ -384,11 +412,17 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
         "render" => {
             let path = need_input(a)?;
             let out = PathBuf::from(a.get("-o").or(a.get("--out")).unwrap_or("out.mp4"));
-            let (ev, d) = match build(path, json, true) {
+            let (mut ev, d) = match build(path, json, true) {
                 Ok(x) => x,
                 Err(c) => return Ok(c),
             };
             warn(&d, json);
+            if let Some(q) = a.num("--crf")? {
+                if !(0.0..=51.0).contains(&q) {
+                    return Err(format!("--crf: use 0..51 (got {q})"));
+                }
+                ev.encode_crf = Some(q.round() as u8);
+            }
             let quality = match a.get("--quality") {
                 None => Quality::Good,
                 Some(q) => Quality::parse(q).ok_or_else(|| format!("--quality: use draft, standard or high (got '{q}')"))?,

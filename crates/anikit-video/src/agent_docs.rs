@@ -24,6 +24,8 @@ pub const PAGES: &[(&str, &str)] = &[
     ("expressions", include_str!("../docs-cli/expressions.md")),
     ("script", include_str!("../docs-cli/script.md")),
     ("draw", include_str!("../docs-cli/draw.md")),
+    ("launch", include_str!("../docs-cli/launch.md")),
+    ("analyze", include_str!("../docs-cli/analyze.md")),
 ];
 
 /// Hand-built shots: `(name, {"about", "spec"})`.
@@ -42,6 +44,8 @@ const ALIASES: &[(&str, &str)] = &[
     ("sound", "music"), ("sfx", "music"), ("keyframes", "animation"), ("expression", "expressions"), ("scripts", "script"), ("rhai", "script"), ("drawing", "draw"), ("text", "primitives"),
     ("shapes", "primitives"), ("paths", "primitives"), ("grade", "post"), ("motion-blur", "camera"), ("composition", "compositions"),
     ("review", "critique"), ("pace", "pacing"), ("index", "start"), ("anything", "make-anything"),
+    ("launch-video", "launch"), ("product", "launch"), ("announcement", "launch"),
+    ("analyse", "analyze"), ("reverse", "analyze"), ("reference", "analyze"),
 ];
 
 /// A docs page: `None` (or `start`) is the index; `component <kind>` / `components` come from the registry.
@@ -197,4 +201,3 @@ mod tests {
         assert!(recipes(Some("kinetic-slm")).unwrap_err().contains("did you mean 'kinetic-slam'"));
     }
 }
-

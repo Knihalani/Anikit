@@ -69,8 +69,11 @@ fn main() {
     println!("| encoder | settings | fps | size KB | PSNR-Y | PSNR-all |");
     println!("|---|---|---|---|---|---|");
     for &qp in &qps {
-        let hints: Vec<FrameHints> =
-            (0..n).map(|t| if t == 0 || file.is_some() { FrameHints::default() } else { s.hints(t) }).collect();
+        // GRAIN=<σ>: the renderer's grain hint (single-thread and hinted runs)
+        let grain: f32 = std::env::var("GRAIN").ok().and_then(|v| v.parse().ok()).unwrap_or(0.0);
+        let hints: Vec<FrameHints> = (0..n)
+            .map(|t| if t == 0 || file.is_some() { FrameHints { grain, ..Default::default() } } else { FrameHints { grain, ..s.hints(t) } })
+            .collect();
         for (label, threads, chunked) in [
             ("ak264 1 thread", 1usize, 0),
             ("ak264 4 slices", 4, 0),
@@ -94,7 +97,7 @@ fn main() {
                 let mut e = Encoder::new(cfg.clone());
                 let mut out = Vec::new();
                 for f in &frames {
-                    out.extend_from_slice(e.encode(f, &FrameHints::default()));
+                    out.extend_from_slice(e.encode(f, &FrameHints { grain, ..Default::default() }));
                 }
                 out
             };
