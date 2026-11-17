@@ -843,7 +843,7 @@ fn debug() -> u8 {
 
 /// Write a primary pass and its post settings to `path` (see [`load`]).
 pub fn dump(path: &std::path::Path, px: &[Px], w: usize, h: usize, p: &Post) {
-    let mut b: Vec<u8> = Vec::with_capacity(px.len() * std::mem::size_of::<Px>() + 64);
+    let mut b: Vec<u8> = Vec::with_capacity(std::mem::size_of_val(px) + 64);
     for v in [w as f32, h as f32, p.focus, p.aperture, p.shutter, p.bloom, p.exposure, p.vignette, (p.tonemap == Tonemap::Neutral) as u32 as f32, p.denoise as f32] {
         b.extend_from_slice(&v.to_le_bytes());
     }
