@@ -9,8 +9,8 @@ A 55-second launch film for Anikit Video, at 1920×1080 and 60 fps, made only fr
 | 0:15.5 | Spec to Screen, full frame | the same layers at full size |
 | 0:19.5 | Write it. / Check it. / Render it. / No browser. | kinetic `mask`/`blur` type with real CLI commands |
 | 0:27.5 | Product shots, generated | `laptop` (dashboard screen), `phone` (chat screen), `bokeh`, `badge` |
-| 0:35 | "This 55-second film rendered in 31 s", plus 935 fps renderer alone and 1,268 fps encoder alone | `counter`, `progress-bar` |
-| 0:39 | Encoder-speed bar chart, 9.4× | `bar-chart`, `counter` |
+| 0:35 | "This 55-second film rendered in N s" | `counter`, `progress-bar` |
+| 0:39 | End-to-end wall time vs Remotion and HyperFrames, 20× | `bar-chart`, `counter` |
 | 0:43.5 | JSON in. / Film out. | `particleText` |
 | 0:47 | Chrome ANIKIT logo with a lens-flare sweep | `text-3d`, `lensFlare`, `godRays` |
 
@@ -37,18 +37,15 @@ Measured on a 4-core cloud VM (Xeon, AVX2) with `--json` and the default ak264 e
 
 | Output | Frames | Wall time | Render fps | File size |
 |---|---|---|---|---|
-| 1920×1080, 60 fps, H.264 + AAC, 55 s | 3300 | 30.9–34.3 s (2 runs, engine at 596aea8) | 96–107 fps | 32.8 MB |
+| 1920×1080, 60 fps, H.264 + AAC, 55 s | 3300 | 21.5–24.8 s (2 runs, engine at 596aea8) | 133–153 fps | 29.0 MB |
 
 That is about 1.8× faster than real time, end to end, including the chrome text-3d, the globe and the particle text.
 
-The spec is designed to keep renders fast and files small. The film grain is static, the aurora steps at 4 Hz, the camera settles and holds instead of drifting, and the logo holds its final pose for the last 3 s. Held frames are nearly free for both the renderer and ak264. The "rendered in" stat in the film is `RENDER_SECONDS` in `build.py`: re-measure and update it after an engine change.
+The spec is designed to keep renders fast and files small. The film grain is static, the aurora steps at 4 Hz, every camera move is a punch of 0.5 s or less that then holds, and the logo holds its final pose for the last 3 s. Held frames are nearly free for both the renderer and ak264. The "rendered in" stat in the film is `RENDER_SECONDS` in `build.py`: re-measure and update it after an engine change.
 
 ## The numbers in the film
 
-Every figure comes from the measured benchmarks in `docs/video/`:
+Every figure is measured:
 
-- **Rendered in N s:** this film's own end-to-end wall time (see **Render**).
-- **935 fps, renderer alone:** `docs/video/encoder.md`: "our renderer draws 1080p at roughly 935 fps on 4 cores".
-- **1,268 fps, encoder alone:** `docs/video/encoder.md`, headline table, ak264 on `typical` at QP 26 (49.8 dB).
-- **Bar chart:** the same row. x264 veryfast at the same PSNR runs at ≈ 147 fps, ak264 at 1268 fps, and ak264 with renderer hints at 1389 fps.
-- **9.4×:** 1389 ÷ 147, the "9.4× with hints" figure in that table.
+- **"Rendered in N s":** this film's own end-to-end wall time. `RENDER_SECONDS` in `build.py` is set from the final measured render on the release machine (machines vary: 21.5–24.8 s here, 43.9 s on another 4-core VM).
+- **Bar chart and 20×:** `docs/video/BENCHMARKS.md`, composition (d), 60 s of 1080p60 kinetic type, default settings, median of 3 on a 4 vCPU Xeon. Anikit Video takes 6.95 s, Remotion 139.5 s and HyperFrames 152.0 s. 139.5 ÷ 6.95 = 20.1.

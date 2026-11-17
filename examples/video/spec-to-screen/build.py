@@ -13,7 +13,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BEAT = 0.5  # 120 BPM grid: every cut lands on a beat
 TOTAL, FRAMES = 55.0, 3300
 # End-to-end wall time of `anikit-video render spec.json` (see README); update after re-measuring.
-RENDER_SECONDS, RENDER_DECIMALS = 31, 0
+RENDER_SECONDS, RENDER_DECIMALS = 31, 0  # placeholder until the final measured render
 
 # ---------------------------------------------------------------- palette
 INK, SURF, TEXT, MUTED = "#07080c", "#12141c", "#f4f2ee", "#8b90a0"
@@ -70,7 +70,6 @@ scenes = []
 # 0 – 4 s. Two hard beats of type: "This film" / "is a JSON file."
 scenes.append({
     "id": "hook", "duration": 4.5, "background": INK,
-    "camera": {"animate": [{"from": {"zoom": 1.0}, "to": {"zoom": 1.07}, "duration": 4.5, "ease": "inOutSine"}]},
     "layers": [
         {"shape": "circle", "width": 1100, "height": 520, "fill": ICE, "opacity": 0, "blur": 160, "y": "52%",
          "animate": [{"to": {"opacity": 0.10}, "duration": 1.6, "ease": "outCubic"},
@@ -104,7 +103,7 @@ done = lambda i: round(TYPE_AT + sched[i][1] + 0.05, 2)  # line i finished typin
 SPEC_DUR = 11.0  # cut on the beat at 15.5 s
 
 # stage: the "screen" on the right that the spec compiles into
-SW, SH, SX, SY = 900, 506.25, 1400, 540
+SW, SH, SX, SY = 800, 450, 1475, 540
 ARCS = [[37.8, -122.4, 51.5, -0.1], [51.5, -0.1, 35.7, 139.7], [37.8, -122.4, -33.9, 151.2],
         [35.7, 139.7, 1.35, 103.8]]
 
@@ -134,17 +133,17 @@ scenes.append({
     "id": "spec", "duration": SPEC_DUR, "background": INK,
     "transition": {"type": "cut"},
     "camera": {"animate": [
-        *[{"to": {"zoom": round(1.0 + 0.0066 * (k + 1), 4)}, "at": done(i), "duration": 0.6, "ease": "outExpo"}
+        *[{"to": {"zoom": round(1.0 + 0.0035 * (k + 1), 4)}, "at": done(i), "duration": 0.4, "ease": "outCubic"}
           for k, i in enumerate((1, 2, 4, 6, 7, 8))],
-        {"to": {"zoom": ZOOM, "x": SX - 960, "y": SY - 540}, "at": SPEC_DUR - 1.4, "duration": 1.4, "ease": "inOutQuart"},
+        {"to": {"zoom": ZOOM, "x": SX - 960, "y": SY - 540}, "at": SPEC_DUR - 1.1, "duration": 1.1, "ease": "inOutQuart"},
     ]},
     "layers": [
         comp("grid", {"cell": 64, "color": "#ffffff0a", "fade": 0.8}),
-                comp("code", {"code": CODE, "language": "json", "title": "spec.json", "fontSize": 28, "typing": CPS,
+                comp("code", {"code": CODE, "language": "json", "title": "spec.json", "fontSize": 32, "typing": CPS,
                       "delay": TYPE_AT, "chrome": "mac", "glow": "#7cc4ff30",
                       "highlights": [{"lines": [i + 1], "at": done(i) - TYPE_AT, "until": done(i) - TYPE_AT + 0.7, "dim": False}
                                      for i in (1, 2, 4, 6, 7, 8)]},
-             x=495, y=SY, width=870, height=680, enter={"preset": "fadeUp", "duration": 0.6}),
+             x=555, y=SY, width=1010, height=820, enter={"preset": "fadeUp", "duration": 0.6}),
         # the stage frame draws on when "size" is typed
         rect(SW + 2, SH + 2, radius=19, fill="none", stroke={"color": "#ffffff33", "width": 2}, x=SX, y=SY,
              start=done(1) - 0.6, enter={"preset": "drawOn", "duration": 0.6}),
@@ -193,7 +192,6 @@ scenes.append({"id": "kinetic", "duration": 8.5, "background": INK, "transition"
 scenes.append({
     "id": "devices", "duration": 7.5, "background": "radial-gradient(#141826, %s)" % INK,
     "transition": {"type": "push", "direction": "up", "duration": 0.5, "ease": "inOutQuart"},
-    "camera": {"animate": [{"from": {"zoom": 1.0}, "to": {"zoom": 1.06, "x": 40, "y": 15}, "duration": 4.5, "ease": "outCubic"}]},
     "layers": [
         comp("bokeh", {"count": 14, "colors": [ICE, LILAC], "minSize": 60, "maxSize": 220, "speed": 0.3, "seed": 5},
              opacity=0.35),
@@ -233,27 +231,25 @@ scenes.append({
              width=900, height=40, y="66%"),
         text("%s frames · 1080p60 · one 4-core VM" % format(FRAMES, ","), style="caption",
              size="2.6vh", y="71%", enter={"preset": "fadeIn", "delay": 0.6}),
-        text("[935 fps]{%s} renderer alone      [1,268 fps]{%s} encoder alone" % (TEXT, TEXT), style="caption",
-             size="2.6vh", y="84%", enter={"preset": "fadeUp", "delay": 0.8}),
         grain,
     ],
 })
 scenes.append({
     "id": "chart", "duration": 5.0, "background": INK, "transition": {"type": "slide", "direction": "left", "duration": 0.5, "ease": "inOutQuart"},
     "layers": [
-        text("Encoder speed, typical motion graphics", style="heading", size="5vh", x=160, y="15%", anchor="left",
-             kinetic="rise by word 0.5s 50ms outExpo"),
-        text("1080p · frames per second · same quality (≈ 50 dB)", style="caption", x=160,
+        text("60 s of 1080p60 motion graphics → MP4", style="heading", size="5vh", x=160, y="15%",
+             anchor="left", kinetic="rise by word 0.5s 50ms outExpo"),
+        text("Wall time in seconds, same composition, default settings · lower is better", style="caption", x=160,
              y="22%", anchor="left", enter={"preset": "fadeIn", "delay": 0.3}),
-        comp("bar-chart", {"values": [147, 1268, 1389], "labels": ["x264 veryfast", "ak264", "ak264 + renderer hints"],
-                           "horizontal": True, "highlight": 2, "colors": [MUTED, ICE, LILAC], "fontSize": 30,
-                           "delay": 0.4, "stagger": 0.15, "grid": False},
-             width=1000, height=520, x=160 + 500, y="58%"),
-        comp("counter", {"from": 1, "to": 9.4, "decimals": 1, "suffix": "×", "size": 220, "delay": 1.2,
-                         "duration": 1.4, "gradient": [TEXT, LILAC], "label": "vs x264 veryfast, same quality"},
-             width=480, height=420, x=1500, y="56%"),
-        text("Source: docs/video/encoder.md", font="$mono", size=24, color=MUTED, x=160, y="89%", anchor="left",
-             enter={"preset": "fadeIn", "delay": 1.0}),
+        comp("bar-chart", {"values": [6.95, 139.5, 152.0], "labels": ["Anikit Video", "Remotion", "HyperFrames"],
+                           "horizontal": True, "highlight": 0, "colors": [ICE, MUTED, MUTED], "fontSize": 30,
+                           "format": {"suffix": " s", "decimals": 1}, "delay": 0.4, "stagger": 0.15, "grid": False},
+             width=1000, height=440, x=160 + 500, y="56%"),
+        comp("counter", {"from": 1, "to": 20, "suffix": "×", "size": 220, "delay": 1.2,
+                         "duration": 1.4, "gradient": [TEXT, ICE], "label": "faster than Remotion"},
+             width=480, height=420, x=1500, y="54%"),
+        text("Measured: docs/video/BENCHMARKS.md · 4 vCPU Xeon · median of 3", font="$mono", size=24, color=MUTED,
+             x=160, y="86%", anchor="left", enter={"preset": "fadeIn", "delay": 1.0}),
         grain,
     ],
 })
@@ -272,7 +268,6 @@ LOGO = 8.0
 scenes.append({
     "id": "logo", "duration": LOGO, "background": "radial-gradient(#10131d, #040508)",
     "transition": {"type": "fadeBlack", "duration": 0.5},
-    "camera": {"animate": [{"from": {"zoom": 1.08}, "to": {"zoom": 1.0}, "duration": 4.5, "ease": "outCubic"}]},
     "layers": [
         comp("godRays", {"at": [0.5, -0.3], "angle": 90, "spread": 60, "color": "#cfe3ff", "intensity": 0.35,
                          "dust": 30, "spin": 0}, width=1920, height=640, y=320),

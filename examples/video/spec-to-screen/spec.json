@@ -26,20 +26,6 @@
    "id": "hook",
    "duration": 4.5,
    "background": "#07080c",
-   "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.0
-      },
-      "to": {
-       "zoom": 1.07
-      },
-      "duration": 4.5,
-      "ease": "inOutSine"
-     }
-    ]
-   },
    "layers": [
     {
      "shape": "circle",
@@ -117,60 +103,60 @@
     "animate": [
      {
       "to": {
-       "zoom": 1.0066
+       "zoom": 1.0035
       },
       "at": 1.49,
-      "duration": 0.6,
-      "ease": "outExpo"
+      "duration": 0.4,
+      "ease": "outCubic"
      },
      {
       "to": {
-       "zoom": 1.0132
+       "zoom": 1.007
       },
       "at": 1.98,
-      "duration": 0.6,
-      "ease": "outExpo"
+      "duration": 0.4,
+      "ease": "outCubic"
      },
      {
       "to": {
-       "zoom": 1.0198
+       "zoom": 1.0105
       },
       "at": 3.67,
-      "duration": 0.6,
-      "ease": "outExpo"
+      "duration": 0.4,
+      "ease": "outCubic"
      },
      {
       "to": {
-       "zoom": 1.0264
+       "zoom": 1.014
       },
       "at": 5.41,
-      "duration": 0.6,
-      "ease": "outExpo"
+      "duration": 0.4,
+      "ease": "outCubic"
      },
      {
       "to": {
-       "zoom": 1.033
+       "zoom": 1.0175
       },
       "at": 6.72,
-      "duration": 0.6,
-      "ease": "outExpo"
+      "duration": 0.4,
+      "ease": "outCubic"
      },
      {
       "to": {
-       "zoom": 1.0396
+       "zoom": 1.021
       },
       "at": 7.85,
-      "duration": 0.6,
-      "ease": "outExpo"
+      "duration": 0.4,
+      "ease": "outCubic"
      },
      {
       "to": {
-       "zoom": 2.1333333333333333,
-       "x": 440,
+       "zoom": 2.4,
+       "x": 515,
        "y": 0
       },
-      "at": 9.6,
-      "duration": 1.4,
+      "at": 9.9,
+      "duration": 1.1,
       "ease": "inOutQuart"
      }
     ]
@@ -190,7 +176,7 @@
       "code": "{\n  \"size\": \"16:9\",\n  \"fps\": 60,\n  \"scenes\": [{\n    \"background\": \"#0b0d14\",\n    \"layers\": [\n      { \"component\": \"aurora\" },\n      { \"text\": \"Spec to Screen\" },\n      { \"component\": \"globe\" }\n    ]\n  }]\n}",
       "language": "json",
       "title": "spec.json",
-      "fontSize": 28,
+      "fontSize": 32,
       "typing": 26.0,
       "delay": 0.6,
       "chrome": "mac",
@@ -246,10 +232,10 @@
        }
       ]
      },
-     "x": 495,
+     "x": 555,
      "y": 540,
-     "width": 870,
-     "height": 680,
+     "width": 1010,
+     "height": 820,
      "enter": {
       "preset": "fadeUp",
       "duration": 0.6
@@ -257,15 +243,15 @@
     },
     {
      "shape": "rect",
-     "width": 902,
-     "height": 508.25,
+     "width": 802,
+     "height": 452,
      "radius": 19,
      "fill": "none",
      "stroke": {
       "color": "#ffffff33",
       "width": 2
      },
-     "x": 1400,
+     "x": 1475,
      "y": 540,
      "start": 0.89,
      "enter": {
@@ -278,19 +264,19 @@
      "font": "$mono",
      "size": 26,
      "color": "#8b90a0",
-     "x": 950.0,
-     "y": 827.125,
+     "x": 1075.0,
+     "y": 799.0,
      "anchor": "left",
      "start": 1.98,
      "enter": "fadeIn"
     },
     {
      "type": "group",
-     "x": 1400,
+     "x": 1475,
      "y": 540,
      "width": 1920,
      "height": 1080,
-     "scale": 0.46875,
+     "scale": 0.4166666666666667,
      "clip": true,
      "radius": 40,
      "layers": [
@@ -644,22 +630,6 @@
     "duration": 0.5,
     "ease": "inOutQuart"
    },
-   "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.0
-      },
-      "to": {
-       "zoom": 1.06,
-       "x": 40,
-       "y": 15
-      },
-      "duration": 4.5,
-      "ease": "outCubic"
-     }
-    ]
-   },
    "layers": [
     {
      "component": "bokeh",
@@ -898,16 +868,6 @@
      }
     },
     {
-     "text": "[935 fps]{#f4f2ee} renderer alone      [1,268 fps]{#f4f2ee} encoder alone",
-     "style": "caption",
-     "size": "2.6vh",
-     "y": "84%",
-     "enter": {
-      "preset": "fadeUp",
-      "delay": 0.8
-     }
-    },
-    {
      "component": "grain",
      "props": {
       "amount": 0.035,
@@ -929,7 +889,7 @@
    },
    "layers": [
     {
-     "text": "Encoder speed, typical motion graphics",
+     "text": "60 s of 1080p60 motion graphics → MP4",
      "style": "heading",
      "size": "5vh",
      "x": 160,
@@ -938,7 +898,7 @@
      "kinetic": "rise by word 0.5s 50ms outExpo"
     },
     {
-     "text": "1080p · frames per second · same quality (≈ 50 dB)",
+     "text": "Wall time in seconds, same composition, default settings · lower is better",
      "style": "caption",
      "x": 160,
      "y": "22%",
@@ -952,60 +912,63 @@
      "component": "bar-chart",
      "props": {
       "values": [
-       147,
-       1268,
-       1389
+       6.95,
+       139.5,
+       152.0
       ],
       "labels": [
-       "x264 veryfast",
-       "ak264",
-       "ak264 + renderer hints"
+       "Anikit Video",
+       "Remotion",
+       "HyperFrames"
       ],
       "horizontal": true,
-      "highlight": 2,
+      "highlight": 0,
       "colors": [
-       "#8b90a0",
        "#7cc4ff",
-       "#b9a6ff"
+       "#8b90a0",
+       "#8b90a0"
       ],
       "fontSize": 30,
+      "format": {
+       "suffix": " s",
+       "decimals": 1
+      },
       "delay": 0.4,
       "stagger": 0.15,
       "grid": false
      },
      "width": 1000,
-     "height": 520,
+     "height": 440,
      "x": 660,
-     "y": "58%"
+     "y": "56%"
     },
     {
      "component": "counter",
      "props": {
       "from": 1,
-      "to": 9.4,
-      "decimals": 1,
+      "to": 20,
       "suffix": "×",
       "size": 220,
       "delay": 1.2,
       "duration": 1.4,
       "gradient": [
        "#f4f2ee",
-       "#b9a6ff"
+       "#7cc4ff"
       ],
-      "label": "vs x264 veryfast, same quality"
+      "label": "faster than Remotion"
      },
      "width": 480,
      "height": 420,
      "x": 1500,
-     "y": "56%"
+     "y": "54%"
     },
     {
-     "text": "Source: docs/video/encoder.md",
+     "text": "Measured: docs/video/BENCHMARKS.md · 4 vCPU Xeon · median of 3",
      "font": "$mono",
      "size": 24,
      "color": "#8b90a0",
      "x": 160,
-     "y": "89%",
+     "y": "86%",
      "anchor": "left",
      "enter": {
       "preset": "fadeIn",
@@ -1061,20 +1024,6 @@
    "transition": {
     "type": "fadeBlack",
     "duration": 0.5
-   },
-   "camera": {
-    "animate": [
-     {
-      "from": {
-       "zoom": 1.08
-      },
-      "to": {
-       "zoom": 1.0
-      },
-      "duration": 4.5,
-      "ease": "outCubic"
-     }
-    ]
    },
    "layers": [
     {
