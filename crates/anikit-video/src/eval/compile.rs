@@ -1262,10 +1262,20 @@ impl C<'_> {
         let (paint, c) = self.paint(&col, &format!("{path}.color")).unwrap_or((PaintC::Solid, Rgba([1.0; 4])));
         n.base[prop::FILL..prop::FILL + 4].copy_from_slice(&rgba_to_oklab(c));
         n.base[prop::SIZE] = size;
-        if l.stroke.is_some() {
-            self.d.push(Diagnostic::warning(format!("{path}.stroke"), "outlined text is not supported yet; ignored"));
-        }
+        // Outlined text: `stroke` (colour or object); `color: "none"` draws only the outline.
+        let hollow = matches!(&st.color, Some(spec::Paint::Css(c)) if c.trim() == "none" || c.trim() == "transparent");
+        let outline = match &l.stroke {
+            Some(sk) => self.stroke(&sk.0, l.stroke_width.as_ref(), &format!("{path}.stroke")).map(|(_, c, w)| {
+                n.base[prop::STROKE..prop::STROKE + 4].copy_from_slice(&rgba_to_oklab(c));
+                n.base[prop::SW] = w;
+                text::layout::Outline { width: w / size, color: Some(text::Color(c)), hollow }
+            }),
+            None => None,
+        };
+        let accent = self.theme.colors.get("accent").copied().unwrap_or(Rgba([1.0, 0.36, 0.66, 1.0]));
         let style = text::TextStyle {
+            outline,
+            accent: text::Color(accent),
             font: family,
             weight,
             italic: st.italic.unwrap_or(false),

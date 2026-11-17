@@ -223,6 +223,7 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `letterSpacing` | length or `"0.05em"` | `0` | |
 | `uppercase` | bool | `false` | |
 | `maxLines` | integer | none | Truncates with an ellipsis. |
+| `stroke` | colour or stroke | none | Outlined text: `"#000"` or `{ "color": "$accent", "width": 3 }` (px). Drawn under the fill; with `"color": "none"` only the outline shows. |
 | `split` | `chars` / `words` / `lines` | none | Splits the text into units so `enter`/`exit` presets stagger across them (kinetic type). |
 | `kinetic` | string or object | none | A text animation from the text engine, as shorthand: `"rise"`, `"pop by char from center 0.4s 30ms outBack"`, `"scramble"`, `"typewriter"`, `"wave by word"`, `"highlight words"`, `"mask by line up"`. Styles: `rise`, `fade`, `blur`, `pop`, `typewriter`, `scramble`, `wave`, `highlight`, `mask`. An `enter` that isn't a layer preset (for example `"enter": "scramble"`) is treated as `kinetic`. |
 | `reveal` | 0..1 | `1` | Fraction of characters shown (animate it for a typewriter; the `typewriter` preset does). |

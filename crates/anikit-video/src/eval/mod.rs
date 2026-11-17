@@ -816,6 +816,21 @@ impl Evaluator {
                         layout.chars.get(k).map_or(u32::MAX, |u| u.glyphs.start)
                     };
                     match split {
+                        None if layout.outline.is_some() && limit == u32::MAX => {
+                            // Outlined text (TEXT's glyph outline paths): fill (unless hollow), then the stroke.
+                            let (paths, stroke, _, hollow) = layout.outline.as_ref().unwrap();
+                            let mut sc = oklab_to_rgba([v[prop::STROKE], v[prop::STROKE + 1], v[prop::STROKE + 2], v[prop::STROKE + 3]]);
+                            sc.0[3] *= alpha;
+                            // Stroke under the fill (paint-order: stroke), so the outline frames the letters.
+                            for (r, p) in layout.runs.iter().zip(paths) {
+                                let w = if *hollow { v[prop::SW] } else { v[prop::SW] * 2.0 };
+                                out.push(Op::Stroke { path: p.clone(), paint: Paint::Solid(sc), stroke: dl::Stroke { width: w, ..stroke.clone() }, transform: bxf });
+                                if !hollow {
+                                    let paint = fill.clone().unwrap_or(Paint::Solid(with_alpha(r.color, alpha)));
+                                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: r.glyphs.clone(), paint, transform: bxf });
+                                }
+                            }
+                        }
                         None => emit_glyphs(out, layout, 0..layout.glyphs.len() as u32, limit, fill.as_ref(), alpha, &bxf),
                         Some(sp) => {
                             for (u, unit) in layout.units(sp.by).iter().enumerate() {

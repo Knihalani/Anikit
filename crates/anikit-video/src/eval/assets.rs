@@ -6,10 +6,10 @@
 //! evaluated, so the store is append-only with a version number; a render
 //! worker re-snapshots when the version it holds is stale.
 
-use crate::components::{self, text::Face as CFace};
+use crate::components;
 use crate::dl::{self, ImageId, Op};
 use crate::render;
-use crate::text::{self, FontStore, TextSpec};
+use crate::text::FontStore;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};
@@ -102,41 +102,21 @@ impl SharedAssets {
     }
 }
 
-fn family(f: CFace) -> &'static str {
-    match f {
-        CFace::Sans => "Inter",
-        CFace::Display => "Inter Display",
-        CFace::Mono => "JetBrains Mono",
-        CFace::Serif => "Instrument Serif",
-    }
-}
 
-fn spec_for(s: &str, st: &components::TextStyle) -> TextSpec {
-    TextSpec::plain(
-        s,
-        text::TextStyle {
-            font: family(st.face).into(),
-            weight: st.weight as f32,
-            size: st.size,
-            color: text::Color(st.color),
-            letter_spacing: st.tracking,
-            features: st.tabular.then(|| "\"tnum\" on".to_string()),
-            ..Default::default()
-        },
-    )
-}
 
 impl components::Assets for SharedAssets {
     fn image(&self, key: u64, w: u32, h: u32, make: &mut dyn FnMut() -> Vec<u8>) -> ImageId {
         if let Some(id) = self.by_key.read().unwrap().get(&key) {
             return *id;
         }
-        // Hold the key lock while making it so two threads don't both build it.
+        // Make the pixels outside the lock (another thread may race us to the
+        // same key; the first insert wins and the duplicate image is unused).
+        let px = make();
         let mut keys = self.by_key.write().unwrap();
         if let Some(id) = keys.get(&key) {
             return *id;
         }
-        let id = self.add_rgba(w, h, make()).unwrap_or(ImageId(u32::MAX));
+        let id = self.add_rgba(w, h, px).unwrap_or(ImageId(u32::MAX));
         keys.insert(key, id);
         id
     }
@@ -148,14 +128,10 @@ impl components::Assets for SharedAssets {
     }
 
     fn text(&self, s: &str, st: &components::TextStyle, x: f32, y: f32) -> (Vec<Op>, f32) {
-        let l = self.fonts.layout(&spec_for(s, st));
-        let base = l.lines.first().map_or(st.size * 0.8, |u| u.baseline);
-        let mut ops = Vec::new();
-        l.ops([1.0, 0.0, 0.0, 1.0, x, y - base], &mut ops);
-        (ops, l.width)
+        components::host::draw_text(&self.fonts, s, st, x, y)
     }
 
     fn measure(&self, s: &str, st: &components::TextStyle) -> f32 {
-        self.fonts.layout(&spec_for(s, st)).width
+        components::host::measure_text(&self.fonts, s, st)
     }
 }
