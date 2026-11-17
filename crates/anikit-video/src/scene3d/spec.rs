@@ -261,7 +261,7 @@ pub struct TKey {
     pub t: f32,
     pub pos: Option<V3>,
     pub rot: Option<V3>,
-    pub scale: Option<f32>,
+    pub scale: Option<V3>,
     /// `linear`, `smooth` (default), `in`, `out`.
     pub ease: u8,
 }
@@ -285,13 +285,15 @@ pub struct ObjDef {
     pub parts: Vec<(u32, u32)>,
     pub pos: [Num; 3],
     pub rot: [Num; 3],
-    pub scale: Num,
+    pub scale: [Num; 3],
     pub keys: Vec<TKey>,
     /// Degrees per second about X, Y, Z.
     pub spin: V3,
     pub count: u32,
     pub lanes: u32,
-    pub tex: Option<TexSpec>,
+    pub tex: Vec<TexSpec>,
+    /// Visible to the camera (false: a reflector card).
+    pub cam: bool,
     pub thin: bool,
     pub shadow: bool,
     /// Half width of the shape in metres (texture LOD).
@@ -305,14 +307,14 @@ pub struct ObjDef {
 
 impl ObjDef {
     pub fn dynamic(&self) -> bool {
-        !self.keys.is_empty() || self.spin != v3(0.0, 0.0, 0.0) || self.pos.iter().chain(self.rot.iter()).chain(std::iter::once(&self.scale)).any(|n| n.dynamic()) || self.start > 0.0 || self.end.is_finite()
+        !self.keys.is_empty() || self.spin != v3(0.0, 0.0, 0.0) || self.pos.iter().chain(self.rot.iter()).chain(self.scale.iter()).any(|n| n.dynamic()) || self.start > 0.0 || self.end.is_finite()
     }
 
     pub fn xf_at(&self, t: f32, i: u32, lane: u32) -> Xf {
         let vars = Vars { t: t as f64, scene_t: lane as f64, gt: t as f64, i: i as f64, n: self.count as f64, ..Vars::default() };
         let mut pos = eval3(&self.pos, &vars);
         let mut rot = eval3(&self.rot, &vars);
-        let mut sc = self.scale.at(&vars);
+        let mut sc = eval3(&self.scale, &vars);
         if !self.keys.is_empty() {
             let pick = |get: &dyn Fn(&TKey) -> Option<V3>| -> Option<V3> {
                 let ks: Vec<&TKey> = self.keys.iter().filter(|k| get(k).is_some()).collect();
@@ -341,19 +343,19 @@ impl ObjDef {
             if let Some(r) = pick(&|k| k.rot) {
                 rot = add(rot, r);
             }
-            if let Some(s) = pick(&|k| k.scale.map(|s| v3(s, s, s))) {
-                sc *= s.x;
+            if let Some(s) = pick(&|k| k.scale) {
+                sc = mul(sc, s);
             }
         }
         rot = madd(rot, self.spin, t);
-        Xf::new(pos, rot, (sc * self.scale_mul).max(1e-6))
+        Xf::new(pos, rot, vmax(scale(sc, self.scale_mul), v3(1e-6, 1e-6, 1e-6)))
     }
 }
 
 const OBJ_KEYS: &[&str] = &[
-    "type", "src", "text", "font", "weight", "tracking", "height", "depth", "bevel", "size", "radius", "tube", "material", "pos", "position", "rot", "rotation", "scale", "keys", "spin", "count", "lanes", "texture", "thin", "shadow", "start", "end", "name",
+    "type", "src", "text", "font", "weight", "tracking", "height", "depth", "bevel", "size", "radius", "tube", "material", "pos", "position", "rot", "rotation", "scale", "keys", "spin", "count", "lanes", "texture", "thin", "shadow", "start", "end", "name", "camera", "align", "color", "intensity",
 ];
-const TYPES: &[&str] = &["text", "box", "slab", "pane", "plane", "sphere", "cylinder", "torus", "phone", "model"];
+const TYPES: &[&str] = &["text", "box", "slab", "pane", "plane", "sphere", "cylinder", "torus", "phone", "model", "card"];
 
 /// Shapes are deduplicated by their JSON description.
 pub struct Shapes {
@@ -429,7 +431,13 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
             let font = m.get("font").and_then(|x| x.as_str()).unwrap_or("Inter").to_string();
             let (wt, tr, hh) = (gf("weight", 800.0)?, gf("tracking", 0.02)?, gf("height", 1.0)?);
             let (dp, bv) = (gf("depth", hh * 0.34)?, gf("bevel", hh * 0.045)?);
-            let s = shapes.add(key, || geom::text(&text, &font, wt, tr, hh, dp, bv).map(mesh_shape).map_err(|e| format!("{path}: {e}")))?;
+            let align = match m.get("align").and_then(|a| a.as_str()).unwrap_or("center") {
+                "left" => -1.0,
+                "right" => 1.0,
+                "center" | "centre" => 0.0,
+                o => return Err(format!("{path}.align: unknown `{o}` (left, center, right)")),
+            };
+            let s = shapes.add(format!("{key}|{align}"), || geom::text(&text, &font, wt, tr, hh, dp, bv, align).map(mesh_shape).map_err(|e| format!("{path}: {e}")))?;
             (s, hh * text.chars().count() as f32 * 0.4)
         }
         "box" => {
@@ -448,6 +456,12 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
         "phone" => {
             let sz = size3([0.075, 0.16, 0.008])?;
             (shapes.add(key, || Ok(mesh_shape(geom::phone(sz))))?, sz[0] * 0.5)
+        }
+        "card" => {
+            // A reflector card: a flat emitter (bright card) or absorber
+            // (black flag) that shows only in reflections and lighting.
+            let sz = size3([2.0, 1.2, 0.0])?;
+            (shapes.add(format!("plane|{}|{}", sz[0], sz[1]), || Ok(mesh_shape(geom::plane(sz[0], sz[1]))))?, sz[0] * 0.5)
         }
         "plane" => {
             let sz = size3([1.0, 1.0, 0.0])?;
@@ -506,6 +520,11 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
     };
     let mat = match m.get("material") {
         Some(x) => material(x, named, &format!("{path}.material"))?,
+        None if ty == "card" => {
+            let c = m.get("color").map(|c| color(c, &format!("{path}.color"))).transpose()?.unwrap_or(v3(1.0, 1.0, 1.0));
+            let k = gf("intensity", 1.5)?;
+            Material { base: v3(0.0, 0.0, 0.0), metallic: 0.0, roughness: 1.0, specular: 0.0, emissive: scale(c, k), ..Material::chrome() }
+        }
         None => builtin_material(if ty == "slab" || ty == "pane" { "glass" } else { "chrome" }).unwrap(),
     };
     if let Some(t) = m.get("thin") {
@@ -522,7 +541,8 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
     let zero = || [Num::C(0.0), Num::C(0.0), Num::C(0.0)];
     let pos = m.get("pos").or(m.get("position")).map(|x| vec3(x, &format!("{path}.pos"))).transpose()?.unwrap_or_else(zero);
     let rot = m.get("rot").or(m.get("rotation")).map(|x| vec3(x, &format!("{path}.rot"))).transpose()?.unwrap_or_else(zero);
-    let scale_n = m.get("scale").map(|x| num(x, &format!("{path}.scale"))).transpose()?.unwrap_or(Num::C(1.0));
+    // A number (uniform) or [sx, sy, sz]; items may be expressions. Scale 0 hides.
+    let scale_n = m.get("scale").map(|x| vec3(x, &format!("{path}.scale"))).transpose()?.unwrap_or([Num::C(1.0), Num::C(1.0), Num::C(1.0)]);
     let mut keys = Vec::new();
     if let Some(ks) = m.get("keys") {
         let a = ks.as_array().ok_or_else(|| format!("{path}.keys: expected an array"))?;
@@ -539,7 +559,13 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
                 t,
                 pos: km.get("pos").map(|x| v3c(x, &format!("{kp}.pos"))).transpose()?,
                 rot: km.get("rot").map(|x| v3c(x, &format!("{kp}.rot"))).transpose()?,
-                scale: km.get("scale").map(|x| f(x, &format!("{kp}.scale"))).transpose()?,
+                scale: km
+                    .get("scale")
+                    .map(|x| match x {
+                        Value::Number(_) => f(x, &format!("{kp}.scale")).map(|s| v3(s, s, s)),
+                        _ => v3c(x, &format!("{kp}.scale")),
+                    })
+                    .transpose()?,
                 ease: match km.get("ease").and_then(|e| e.as_str()).unwrap_or("smooth") {
                     "linear" => 0,
                     "in" => 2,
@@ -558,21 +584,24 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
             v3(f(&a[0], path)?, f(&a[1], path)?, f(&a[2], path)?)
         }
     };
+    // One texture, or a list (e.g. a different composition on each face).
     let tex = match m.get("texture") {
-        None => None,
-        Some(t) => Some(texture(t, &format!("{path}.texture"))?),
+        None => Vec::new(),
+        Some(Value::Array(a)) => a.iter().enumerate().map(|(j, t)| texture(t, &format!("{path}.texture[{j}]"))).collect::<Res<_>>()?,
+        Some(t) => vec![texture(t, &format!("{path}.texture"))?],
     };
+    let cam = m.get("camera").map(|x| x.as_bool().ok_or_else(|| format!("{path}.camera: expected true or false"))).transpose()?.unwrap_or(ty != "card");
     let count = m.get("count").map(|x| f(x, &format!("{path}.count"))).transpose()?.unwrap_or(1.0).max(0.0) as u32;
     let lanes = m.get("lanes").map(|x| f(x, &format!("{path}.lanes"))).transpose()?.unwrap_or(1.0).max(1.0) as u32;
     if count as u64 * lanes as u64 > 200_000 {
         return Err(format!("{path}: {} instances is too many (max 200000)", count as u64 * lanes as u64));
     }
-    let shadow = m.get("shadow").and_then(|x| x.as_bool()).unwrap_or(true);
+    let shadow = m.get("shadow").and_then(|x| x.as_bool()).unwrap_or(ty != "card");
     let start = gf("start", 0.0)?;
     let end = m.get("end").map(|x| f(x, &format!("{path}.end"))).transpose()?.unwrap_or(f32::INFINITY);
     let scale_mul = if ty == "sphere" { extent } else { 1.0 };
     let extent = if ty == "sphere" { 1.0 } else { extent };
-    Ok(ObjDef { parts, pos, rot, scale: scale_n, keys, spin, count, lanes, tex, thin, shadow, extent, start, end, scale_mul })
+    Ok(ObjDef { parts, cam, pos, rot, scale: scale_n, keys, spin, count, lanes, tex, thin, shadow, extent, start, end, scale_mul })
 }
 
 fn texture(v: &Value, path: &str) -> Res<TexSpec> {
@@ -851,4 +880,47 @@ pub fn env(v: &Value, path: &str) -> Res<EnvSpec> {
     })?;
     let haze = haze.unwrap_or(if canon == "cyc" { 0.0015 } else { 0.0 });
     Ok(EnvSpec { env: e, name: canon, tint, haze })
+}
+
+// ------------------------------------------------------------ lights
+
+/// `lights`: extra area lights (softboxes or strips, as far as the
+/// environment) added to `env`:
+/// `[{ "dir": [x, y, z], "size": [w, h] (degrees), "roll", "color", "intensity", "soft", "key": true }]`.
+/// They light diffuse surfaces and show as crisp shapes in reflections; the
+/// one marked `key` also casts the traced soft shadows.
+pub fn lights(v: &Value, env: &Env, path: &str) -> Res<Env> {
+    let a = v.as_array().ok_or_else(|| format!("{path}: expected an array of lights"))?;
+    let mut boxes = env.boxes.clone();
+    let mut key = env.key;
+    for (j, l) in a.iter().enumerate() {
+        let p = format!("{path}[{j}]");
+        let m = l.as_object().ok_or_else(|| format!("{p}: expected an object"))?;
+        check_keys(m, &["dir", "size", "roll", "color", "intensity", "soft", "key"], &p)?;
+        let d = m.get("dir").and_then(|d| d.as_array()).filter(|d| d.len() == 3).ok_or_else(|| format!("{p}.dir: expected a direction [x, y, z] towards the light"))?;
+        let dir = v3(f(&d[0], &p)?, f(&d[1], &p)?, f(&d[2], &p)?);
+        if len(dir) < 1e-6 {
+            return Err(format!("{p}.dir: must not be zero"));
+        }
+        let (sw, sh) = match m.get("size") {
+            None => (20.0, 20.0),
+            Some(Value::Array(s)) if s.len() == 2 => (f(&s[0], &p)?, f(&s[1], &p)?),
+            Some(x) => {
+                let s = f(x, &format!("{p}.size"))?;
+                (s, s)
+            }
+        };
+        let c = m.get("color").map(|c| color(c, &format!("{p}.color"))).transpose()?.unwrap_or(v3(1.0, 1.0, 1.0));
+        let k = m.get("intensity").map(|x| f(x, &format!("{p}.intensity"))).transpose()?.unwrap_or(4.0);
+        let roll = m.get("roll").map(|x| f(x, &format!("{p}.roll"))).transpose()?.unwrap_or(0.0);
+        let mut b = super::env::Softbox::new(dir, sw.clamp(0.5, 170.0), sh.clamp(0.5, 170.0), roll, scale(c, k));
+        if let Some(s) = m.get("soft") {
+            b.soft = f(s, &format!("{p}.soft"))?.max(0.0);
+        }
+        boxes.push(b);
+        if m.get("key").and_then(|k| k.as_bool()).unwrap_or(false) {
+            key = Some(boxes.len() - 1);
+        }
+    }
+    Ok(Env::new(boxes, key, env.zenith, env.horizon, env.ground, env.band))
 }

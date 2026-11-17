@@ -207,11 +207,15 @@ pub struct Inst {
     /// Transform one frame earlier (for motion vectors).
     pub prev: Xf,
     pub mat: u32,
-    pub tex: Option<(Tex, Face)>,
+    /// Texture prints, each on its faces (e.g. one front, another back).
+    pub tex: Vec<(Tex, Face)>,
     /// Thin glass: primary rays pass straight through (no lateral offset).
     pub thin: bool,
     /// Casts shadows and occludes.
     pub shadow: bool,
+    /// Seen by camera rays (false for reflector cards: they only show in
+    /// reflections and light the scene).
+    pub cam: bool,
     /// Which object, instance index and lane this came from (for textures).
     pub obj: u32,
     pub i: u32,
@@ -495,6 +499,11 @@ impl Scene {
     }
 
     fn trace(&self, o: V3, d: V3, tmax: f32) -> Option<Surf> {
+        self.trace_f(o, d, tmax, false)
+    }
+
+    /// Closest hit; with `camera`, objects hidden from the camera (cards) are skipped.
+    fn trace_f(&self, o: V3, d: V3, tmax: f32, camera: bool) -> Option<Surf> {
         count(0);
         let mut best: Option<Surf> = None;
         let mut tm = tmax;
@@ -510,10 +519,13 @@ impl Scene {
         }
         self.tlas.visit(o, d, EPS, tm, |k, tm| {
             let ob = &self.insts[k as usize];
+            if camera && !ob.cam {
+                return tm;
+            }
             let lo = ob.xf.point_inv(o);
-            let ld = scale(ob.xf.rot_inv(d), 1.0 / ob.xf.s);
+            let ld = ob.xf.dir_inv(d);
             if let Some((t, sn, gn, uv)) = self.shapes[ob.shape as usize].hit(lo, ld, EPS, tm) {
-                best = Some(Surf { t, p: madd(o, d, t), ng: norm(ob.xf.rot(gn)), ns: norm(ob.xf.rot(sn)), uv, on: norm(gn), obj: k as usize });
+                best = Some(Surf { t, p: madd(o, d, t), ng: ob.xf.normal(gn), ns: ob.xf.normal(sn), uv, on: norm(gn), obj: k as usize });
                 t
             } else {
                 tm
@@ -542,7 +554,7 @@ impl Scene {
                 return tm;
             }
             let lo = ob.xf.point_inv(o);
-            let ld = scale(ob.xf.rot_inv(d), 1.0 / ob.xf.s);
+            let ld = ob.xf.dir_inv(d);
             if self.shapes[ob.shape as usize].occluded(lo, ld, EPS, tm) {
                 let m = &self.mats[ob.mat as usize];
                 if m.transmission > 0.0 {
@@ -710,15 +722,16 @@ impl Scene {
 
     #[inline]
     fn print(&self, ob: &Inst, s: &Surf) -> Option<[f32; 4]> {
-        let (t, face) = ob.tex.as_ref()?;
         let front = s.on.z > 0.5;
         let back = s.on.z < -0.5;
-        let ok = match face {
-            Face::Front => front,
-            Face::Back => back,
-            Face::Both => front || back,
-        };
-        ok.then(|| t.sample(s.uv[0], s.uv[1]))
+        ob.tex
+            .iter()
+            .find(|(_, face)| match face {
+                Face::Front => front,
+                Face::Back => back,
+                Face::Both => front || back,
+            })
+            .map(|(t, _)| t.sample(s.uv[0], s.uv[1]))
     }
 
     /// Radiance of a texture print: lit like paper plus its own glow.
@@ -873,7 +886,7 @@ impl Scene {
         let mut inside_since: Option<f32> = None;
         let none = v3(0.0, 0.0, 0.0);
         for layer in 0..=q.max_glass {
-            let Some(s) = self.trace(o, d, 1e6) else {
+            let Some(s) = self.trace_f(o, d, 1e6, true) else {
                 let b = mul(self.backdrop(d), thr);
                 let (depth, nrm, id, vel) = first.unwrap_or((1e4, none, usize::MAX - 1, (0.0, 0.0)));
                 return Sample { col: add(col, b), dif: Diffuse::default(), refl: none, floor: false, rad: 0.0, rf: 1.0, rw: 0.0, vw: 1.0, depth, vel, nrm, id };

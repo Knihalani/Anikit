@@ -44,7 +44,7 @@ use std::sync::{Arc, Mutex};
 use trace::{Floor, FloorVis, Inst, Material, Quality, Scene, Shape, Tex};
 
 const TOP_KEYS: &[&str] = &[
-    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "vignette", "denoise",
+    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "vignette", "denoise", "lights", "fog",
 ];
 
 /// The `scene3d` component (kind names `scene3d`, `scene-3d`, `3d.scene`).
@@ -151,7 +151,10 @@ impl Prepare for Scene3d {
         let lookdev = !m.contains_key("objects");
         // The lookdev shot keeps its dark studio unless told otherwise.
         let env_v = m.get("env").cloned().unwrap_or(if lookdev { Value::from("studio") } else { Value::Null });
-        let es = spec::env(&env_v, "env").map_err(Error)?;
+        let mut es = spec::env(&env_v, "env").map_err(Error)?;
+        if let Some(l) = m.get("lights") {
+            es.env = spec::lights(l, &es.env, "lights").map_err(Error)?;
+        }
         let bright = matches!(es.name.as_str(), "cyc" | "sunset");
 
         let mut named: HashMap<String, Material> = HashMap::new();
@@ -227,6 +230,22 @@ impl Prepare for Scene3d {
             let hz = (es.haze, v3(0.006, 0.006, 0.008));
             ((v3(0.006, 0.006, 0.008), v3(0.0015, 0.0015, 0.002)), (norm(v3(0.0, 0.12, -1.0)), v3(0.05, 0.045, 0.06), 0.09), hz, 1.0, post::Tonemap::Aces)
         };
+        // `fog`: { "density": per metre, "color" } overrides the env's haze.
+        let haze = match m.get("fog") {
+            None => haze,
+            Some(Value::Number(d)) => (d.as_f64().unwrap_or(0.0) as f32, haze.1),
+            Some(Value::Object(f)) => {
+                for k in f.keys() {
+                    if !["density", "color"].contains(&k.as_str()) {
+                        return Err(Error(format!("fog: unknown key `{k}` (density, color)")));
+                    }
+                }
+                let d = num_or(f, "density", haze.0).map_err(Error)?;
+                let c = f.get("color").map(|c| spec::color(c, "fog.color")).transpose().map_err(Error)?.unwrap_or(haze.1);
+                (d, c)
+            }
+            Some(_) => return Err(Error("`fog` must be a density (per metre) or { density, color }".into())),
+        };
         let tonemap = match m.get("tonemap").and_then(|t| t.as_str()) {
             None => tonemap,
             Some("aces") => post::Tonemap::Aces,
@@ -295,12 +314,12 @@ fn instances(objs: &[ObjDef], t: f32, dt: f32) -> Vec<Inst> {
             for i in 0..o.count {
                 let xf = o.xf_at(t, i, lane);
                 // Scale ≈ 0 hides an instance: it costs nothing (no texture, not traced).
-                if xf.s <= 1e-4 * o.scale_mul.max(1e-6) {
+                if xf.smin() <= 1e-4 * o.scale_mul.max(1e-6) {
                     continue;
                 }
                 let prev = if dt > 0.0 { o.xf_at(t - dt, i, lane) } else { xf };
                 for &(shape, mat) in &o.parts {
-                    out.push(Inst { shape, xf, prev, mat, tex: None, thin: o.thin, shadow: o.shadow, obj: oi as u32, i, lane });
+                    out.push(Inst { shape, xf, prev, mat, tex: Vec::new(), thin: o.thin, shadow: o.shadow, cam: o.cam, obj: oi as u32, i, lane });
                 }
             }
         }
@@ -388,9 +407,9 @@ impl Scene3d {
         let mut infos: HashMap<String, Option<crate::components::CompInfo>> = HashMap::new();
         let mut n = 0usize;
         for k in 0..scene.insts.len() {
-            let inst = &scene.insts[k];
+            let inst = scene.insts[k].clone();
             let o = &p.objs[inst.obj as usize];
-            let Some(ts) = &o.tex else { continue };
+            for ts in &o.tex {
             let info = *infos.entry(ts.comp.clone()).or_insert_with(|| assets.composition_info(&ts.comp));
             let Some(info) = info else { continue };
             let fps = info.fps.max(1.0);
@@ -405,7 +424,7 @@ impl Scene3d {
             let ct = if ts.looped && dur > 0.0 { ct.rem_euclid(dur) } else { ct.clamp(0.0, (dur - 1e-4).max(0.0)) };
             let frame = ((ct * fps + 1e-3).floor().max(0.0)) as u32;
             // On-screen size → LOD.
-            let (lo, hi) = scene.world_box(inst);
+            let (lo, hi) = scene.world_box(&inst);
             let c = scale(add(lo, hi), 0.5);
             let rel = sub(c, cam.pos);
             let z = dot(rel, fwd);
@@ -417,7 +436,7 @@ impl Scene3d {
                 let m = r / zz / th;
                 sx.abs() < 1.0 + m * aspect.max(1.0) && sy.abs() < 1.0 + m
             };
-            let px_w = if z > 1e-3 { o.extent * 2.0 * inst.xf.s * focal_px / z } else { 0.0 };
+            let px_w = if z > 1e-3 { o.extent * 2.0 * inst.xf.smax() * focal_px / z } else { 0.0 };
             let tex = if on_screen && px_w >= 6.0 {
                 let lod = ((info.width as f32 / px_w.max(1.0)).log2().floor().max(0.0) as u8).min(5);
                 match assets.composition_frame(&ts.comp, ct, lod) {
@@ -438,7 +457,8 @@ impl Scene3d {
                 });
                 Tex::Flat(avg)
             };
-            scene.insts[k].tex = Some((tex, ts.face));
+            scene.insts[k].tex.push((tex, ts.face));
+            }
         }
         n
     }
@@ -545,6 +565,37 @@ mod tests {
         let e = scene(json!({ "objects": [ { "src": "missing.glb" } ] })).err().unwrap();
         assert!(e.contains("can't read"), "{e}");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn cards_scale_lights_and_texture_lists() {
+        let s = scene(json!({
+            "env": "cyc", "quality": "draft",
+            "lights": [ { "dir": [1, 1, 1], "size": [10, 40], "intensity": 6 } ],
+            "fog": { "density": 0.01, "color": "#ffffff" },
+            "camera": { "keys": [ { "t": 0, "pos": [0, 1, 4], "target": [0, 0.5, 0], "fov": 40 } ] },
+            "objects": [
+                { "type": "card", "size": [6, 4], "pos": [0, 1, 2], "rot": [0, 180, 0], "color": "#000" },
+                { "type": "box", "size": [1, 1, 1], "scale": [2, 0.5, 1], "pos": [0, 0.25, 0], "material": "matte",
+                  "texture": [ { "composition": "a", "face": "front" }, { "composition": "b", "face": "back" } ] },
+                { "type": "sphere", "scale": "=[1, 0, 1]" },
+                { "text": "AK", "align": "left", "height": 0.3 }
+            ]
+        }))
+        .unwrap();
+        let p = s.p();
+        let insts = instances(&p.objs, 0.0, 0.0);
+        assert_eq!(insts.len(), 3, "the zero-scale sphere is hidden");
+        assert!(!insts[0].cam && insts[1].cam, "cards are invisible to the camera");
+        assert_eq!(p.objs[1].tex.len(), 2);
+        assert!((insts[1].xf.s.x - 2.0).abs() < 1e-6 && (insts[1].xf.s.y - 0.5).abs() < 1e-6);
+        assert_eq!(p.env.boxes.len(), env::Env::preset("cyc", v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)).unwrap().boxes.len() + 1);
+        // The card covers the whole view but isn't seen: the box and cyc are.
+        let px = s.render(0.0, 1.0 / 30.0, 64, 36, None);
+        let mean = px.chunks_exact(4).map(|q| q[0] as f32).sum::<f32>() / (64.0 * 36.0);
+        assert!(mean > 120.0, "card must not black out the frame: {mean}");
+        let e = scene(json!({ "objects": [], "lights": [ { "dir": [0, 0, 0] } ] })).err().unwrap();
+        assert!(e.contains("must not be zero"), "{e}");
     }
 
     #[test]
