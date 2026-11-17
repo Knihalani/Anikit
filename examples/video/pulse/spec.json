@@ -286,7 +286,7 @@
           "y": "74%",
           "size": "6vh",
           "color": "#b3acd6",
-          "start": "@beat26",
+          "start": "@bar7",
           "end": "@beat29",
           "kinetic": {"style": "typewriter", "duration": 0.8}
         },
