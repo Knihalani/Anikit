@@ -56,7 +56,9 @@
               "kinetic": {"style": {"type": "glitch", "amount": 0.2}, "unit": "char", "stagger": 0.06, "duration": 0.45},
               "glow": {"radius": 40, "intensity": 0.8, "color": "#7b5cff"},
               "y": "44%",
-              "end": "@beat2"
+              "end": "@beat2",
+              "fit": true,
+              "width": 737
             },
             {
               "text": "PULSE",
@@ -66,7 +68,9 @@
               "y": "44%",
               "color": "#22e4ff",
               "start": "@beat2",
-              "end": "@beat3"
+              "end": "@beat3",
+              "fit": true,
+              "width": 737
             },
             {
               "text": "PULSE",
@@ -76,7 +80,9 @@
               "y": "44%",
               "color": "#ff2e88",
               "start": "@beat3",
-              "end": "@beat4"
+              "end": "@beat4",
+              "fit": true,
+              "width": 737
             },
             {
               "text": "PULSE",
@@ -86,7 +92,9 @@
               "y": "44%",
               "color": "#c8ff1a",
               "start": "@beat4",
-              "end": "@beat5"
+              "end": "@beat5",
+              "fit": true,
+              "width": 737
             },
             {
               "text": "PULSE",
@@ -95,7 +103,9 @@
               "glow": {"radius": 40, "intensity": 0.8, "color": "#7b5cff"},
               "y": "44%",
               "color": "#f6f4ff",
-              "start": "@beat5"
+              "start": "@beat5",
+              "fit": true,
+              "width": 737
             }
           ]
         },
@@ -107,7 +117,9 @@
           "size": "8vh",
           "y": "66%",
           "start": "@bar2",
-          "kinetic": {"style": {"type": "karaoke", "active": "#ff2e88", "dim": 0.18}, "unit": "word", "stagger": 0.5}
+          "kinetic": {"style": {"type": "karaoke", "active": "#ff2e88", "dim": 0.18}, "unit": "word", "stagger": 0.5},
+          "fit": true,
+          "width": 809
         }
       ]
     },
@@ -138,7 +150,9 @@
           "style": "mega",
           "y": "40%",
           "kinetic": {"style": {"type": "mask", "direction": "up"}, "unit": "word", "stagger": 0.5, "duration": 0.4},
-          "size": "13vh"
+          "size": "13vh",
+          "fit": true,
+          "width": 805
         },
         {"text": "01 / 04", "style": "tag", "y": "14%", "color": "#22e4ff"}
       ]
@@ -170,7 +184,9 @@
           "style": "mega",
           "size": "11vh",
           "y": "70%",
-          "kinetic": {"style": "pop", "unit": "char", "stagger": 0.07, "duration": 0.35, "ease": "outBack"}
+          "kinetic": {"style": "pop", "unit": "char", "stagger": 0.07, "duration": 0.35, "ease": "outBack"},
+          "fit": true,
+          "width": 805
         },
         {"text": "02 / 04", "style": "tag", "y": "14%", "color": "#22e4ff"}
       ]
@@ -186,7 +202,9 @@
           "text": "CITY ON\nMUTE",
           "style": "mega",
           "size": "12vh",
-          "kinetic": {"style": "slide", "unit": "word", "stagger": 0.5, "duration": 0.4, "ease": "outExpo"}
+          "kinetic": {"style": "slide", "unit": "word", "stagger": 0.5, "duration": 0.4, "ease": "outExpo"},
+          "fit": true,
+          "width": 805
         },
         {"text": "03 / 04", "style": "tag", "y": "14%", "color": "#22e4ff"}
       ]
@@ -207,7 +225,9 @@
           "style": "mega",
           "size": "12vh",
           "color": "#07060f",
-          "kinetic": {"style": "drop", "unit": "word", "stagger": 0.5, "duration": 0.45}
+          "kinetic": {"style": "drop", "unit": "word", "stagger": 0.5, "duration": 0.45},
+          "fit": true,
+          "width": 805
         },
         {"text": "04 / 04", "style": "tag", "y": "14%", "color": "#07060f"}
       ]
@@ -288,7 +308,9 @@
           "color": "#b3acd6",
           "start": "@bar7",
           "end": "@beat29",
-          "kinetic": {"style": "typewriter", "duration": 0.8}
+          "kinetic": {"style": "typewriter", "duration": 0.8},
+          "fit": true,
+          "width": 830
         },
         {"shape": "rect", "width": "100%", "height": "100%", "fill": "#c8ff1a", "start": "@bar9", "enter": {"preset": "fadeIn", "duration": 0.08}},
         {
@@ -331,7 +353,9 @@
               "color": "#07060f",
               "y": "46%",
               "start": "@bar9+0.5",
-              "kinetic": {"style": "pop", "unit": "char", "stagger": 0.05, "duration": 0.3}
+              "kinetic": {"style": "pop", "unit": "char", "stagger": 0.05, "duration": 0.3},
+              "fit": true,
+              "width": 761
             }
           ]
         },
@@ -385,7 +409,9 @@
           "size": "7.8vh",
           "color": "#07060f",
           "y": "73%",
-          "kinetic": {"style": {"type": "karaoke", "active": "#ff2e88", "dim": 0.22}, "unit": "word", "stagger": 0.5}
+          "kinetic": {"style": {"type": "karaoke", "active": "#ff2e88", "dim": 0.22}, "unit": "word", "stagger": 0.5},
+          "fit": true,
+          "width": 790
         }
       ]
     },
@@ -415,7 +441,9 @@
           "color": "#c8ff1a",
           "y": "76%",
           "kinetic": {"style": "flip", "unit": "word", "stagger": 0.5, "duration": 0.35},
-          "size": "9.6vh"
+          "size": "9.6vh",
+          "fit": true,
+          "width": 790
         }
       ]
     },
@@ -437,11 +465,42 @@
           "color": "#07060f",
           "start": 0,
           "end": 0.5,
-          "enter": {"preset": "zoomIn", "duration": 0.2}
+          "enter": {"preset": "zoomIn", "duration": 0.2},
+          "fit": true,
+          "width": 783
         },
-        {"text": "THAN", "style": "mega", "size": "17vh", "color": "#f6f4ff", "start": 0.5, "end": 1, "enter": {"preset": "zoomIn", "duration": 0.2}},
-        {"text": "THE", "style": "mega", "size": "22vh", "color": "#07060f", "start": 1, "end": 1.5, "enter": {"preset": "zoomIn", "duration": 0.2}},
-        {"text": "CITY", "style": "mega", "size": "20.2vh", "color": "#f6f4ff", "start": 1.5, "enter": {"preset": "zoomIn", "duration": 0.2}}
+        {
+          "text": "THAN",
+          "style": "mega",
+          "size": "17vh",
+          "color": "#f6f4ff",
+          "start": 0.5,
+          "end": 1,
+          "enter": {"preset": "zoomIn", "duration": 0.2},
+          "fit": true,
+          "width": 783
+        },
+        {
+          "text": "THE",
+          "style": "mega",
+          "size": "22vh",
+          "color": "#07060f",
+          "start": 1,
+          "end": 1.5,
+          "enter": {"preset": "zoomIn", "duration": 0.2},
+          "fit": true,
+          "width": 783
+        },
+        {
+          "text": "CITY",
+          "style": "mega",
+          "size": "20.2vh",
+          "color": "#f6f4ff",
+          "start": 1.5,
+          "enter": {"preset": "zoomIn", "duration": 0.2},
+          "fit": true,
+          "width": 783
+        }
       ]
     },
     {
@@ -456,7 +515,9 @@
           "style": "mega",
           "size": "15.7vh",
           "color": "#07060f",
-          "kinetic": {"style": "rise", "unit": "word", "stagger": 0.5, "duration": 0.35, "ease": "outExpo"}
+          "kinetic": {"style": "rise", "unit": "word", "stagger": 0.5, "duration": 0.35, "ease": "outExpo"},
+          "fit": true,
+          "width": 790
         },
         {
           "component": "visualizer",
@@ -491,7 +552,9 @@
               "style": "big",
               "size": "9vh",
               "y": "50%",
-              "kinetic": {"style": {"type": "karaoke", "active": "#c8ff1a", "dim": 0.25}, "unit": "word", "stagger": 0.5}
+              "kinetic": {"style": {"type": "karaoke", "active": "#c8ff1a", "dim": 0.25}, "unit": "word", "stagger": 0.5},
+              "fit": true,
+              "width": 798
             }
           ]
         }
@@ -522,7 +585,9 @@
           "size": "12.5vh",
           "y": "42%",
           "color": "linear-gradient(90deg, $lime, $accent)",
-          "kinetic": {"style": "tracking", "unit": "char", "duration": 0.8, "ease": "outExpo"}
+          "kinetic": {"style": "tracking", "unit": "char", "duration": 0.8, "ease": "outExpo"},
+          "fit": true,
+          "width": 830
         },
         {"text": "1 JSON file → 1 MP4", "style": "tag", "y": "54%", "width": 900, "start": "@beat69", "kinetic": "rise"},
         {"text": "made with anikit-video", "style": "tag", "color": "#c8ff1a", "y": "58.5%", "start": "@beat70", "kinetic": "rise"},
