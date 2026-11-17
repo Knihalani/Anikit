@@ -836,14 +836,20 @@ fn draw_ops_culled(st: &mut State, assets: &View, ctx: &mut RenderContext, ops: 
 #[allow(clippy::too_many_arguments)]
 fn draw_shadow_sprite(st: &mut State, ctx: &mut RenderContext, card: &Card, dx: f32, dy: f32, sigma: f32, c: Rgba) {
     let dev = card.transform.transform_rect_bbox(card.rect);
-    let (w, h) = (dev.width(), dev.height());
-    let r = card.radius as f64 * card.scale as f64;
-    let m = (sigma * 3.0).ceil() as f64 + 1.0;
+    // The sprite is drawn from the quantised key values, so its pixels depend
+    // only on the key, never on which frame filled the cache first.
     let q = |v: f64| (v * 16.0).round() as u64;
+    let dq = |v: f64| q(v) as f64 / 16.0;
+    let (w, h) = (dq(dev.width()), dq(dev.height()));
+    let r = dq(card.radius as f64 * card.scale as f64);
+    let sigma = dq(sigma as f64) as f32;
+    let cq = c.0.map(|v| (v.clamp(0.0, 1.0) * 1023.0).round() as u32);
+    let c = Rgba(cq.map(|v| v as f32 / 1023.0));
+    let m = (sigma * 3.0).ceil() as f64 + 1.0;
     let key = {
         use std::hash::{Hash, Hasher};
         let mut hs = std::collections::hash_map::DefaultHasher::new();
-        (q(w), q(h), q(r), q(sigma as f64), c.0.map(|v| (v * 1023.0) as u32)).hash(&mut hs);
+        (q(w), q(h), q(r), q(sigma as f64), cq).hash(&mut hs);
         hs.finish()
     };
     let now = st.frame_no;
