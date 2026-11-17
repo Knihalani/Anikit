@@ -471,6 +471,13 @@
             }
           },
           {
+            "$use": "confetti",
+            "with": {
+              "at": 1.5,
+              "oy": "{{fmt.portrait ? 0.53 : 0.58}}"
+            }
+          },
+          {
             "$if": "brand.logo",
             "then": {
               "src": "{{brand.logo}}",
@@ -505,13 +512,6 @@
                 "preset": "fadeIn",
                 "delay": 0.9
               }
-            }
-          },
-          {
-            "$use": "confetti",
-            "with": {
-              "at": 1.5,
-              "oy": "{{fmt.portrait ? 0.53 : 0.58}}"
             }
           },
           {
