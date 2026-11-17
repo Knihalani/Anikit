@@ -193,6 +193,25 @@ def maison():
          "layers": [fabric,
                     {"shape": "rect", "x": 320, "y": 430, "width": 640, "height": 860,
                      "fill": "linear-gradient(160deg, #ffffff22, #00000000 40%, #00000055)"}]},
+        # per-word treatments of the plate (clipped to it)
+        {"type": "group", "x": 520, "y": 540, "width": 640, "height": 860, "clip": True, "layers": [
+            # wool: a fine weave
+            {"type": "group", "start": 5.8, "end": 7.25, "enter": {"preset": "fadeIn", "duration": 0.2},
+             "animate": [{"from": {"scale": 1.08}, "to": {"scale": 1.0}, "duration": 1.45, "ease": "outCubic"}],
+             "layers": [rect(320, 4 + 8 * r, 640, 3, "#00000030") for r in range(108)]
+                       + [rect(4 + 8 * c, 430, 2, 860, "#ffffff10") for c in range(80)]},
+            # silk: glossy bands sliding across on the bias
+            {"type": "group", "start": 7.25, "end": 8.7, "layers": [
+                rect(f"=-300 + 1300 * (t / 1.45) + {o}", 430, 120, 1400,
+                     "linear-gradient(90deg, #ffffff00, #ffd9e055, #ffffff00)", skewX=-30, blend="screen")
+                for o in (0, 260, 520)]},
+            # shadow: the plate goes dark, a slit of light crosses it
+            {"type": "group", "start": 8.7, "end": 10.2, "layers": [
+                rect(320, 430, 640, 860, "#0A0204", opacity="=0.75 * smoothstep(0, 0.3, t)"),
+                rect("=40 + 560 * smoothstep(0.1, 1.4, t)", 430, 26, 860,
+                     "linear-gradient(90deg, #ff6a7a00, #ffb3bd, #ff6a7a00)", blend="screen",
+                     glow={"radius": 30, "color": "#ff6a7a"})]},
+        ]},
         rect(520, 540, 640, 860, "none", stroke={"color": INK, "width": 1}),
         # masthead
         txt("MAISON LUNE", 1160, 140, 26, INK, weight=600, letterSpacing="0.42em", anchor="left"),
