@@ -305,6 +305,16 @@ impl Evaluator {
             }
         }
         audio.append(&mut c.audio_extra);
+        let music = match &spec.music {
+            Some(v) => match crate::music::parse(v, &opts.base_dir) {
+                Ok(m) => Some(Arc::new(m)),
+                Err(e) => {
+                    c.d.push(Diagnostic::error("music", e));
+                    None
+                }
+            },
+            None => None,
+        };
         c.smarkers.clear();
         c.scene_start = 0.0;
         c.scene_dur = duration;
@@ -317,6 +327,7 @@ impl Evaluator {
             duration,
             diagnostics: Vec::new(),
             audio,
+            music,
             assets: c.assets,
             easings: c.easings,
             scenes,
