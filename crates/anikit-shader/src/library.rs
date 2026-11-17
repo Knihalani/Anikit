@@ -59,7 +59,8 @@ lib! {
     "hero", Image, 48, "Product shot: one object (torus, cube, pill, gem, sphere, twisted bar) on a glossy studio floor, plastic or metal.";
     "mesh-gradient", Image, 32, "Soft animated mesh gradient: four colours drifting and folding into each other, with film grain. Backgrounds for titles and products.";
     "ocean", Image, 191, "Open sea to the horizon under a low sun: swell and chop, Fresnel sky reflection, glitter path, crest glow, foam.";
-    "growth", Image, 0, "A living reaction-diffusion simulation (spots, labyrinths, coral) lit as a glossy relief. Multi-pass.";
+    "growth", Image, 75, "A living reaction-diffusion simulation (spots, labyrinths, coral) lit as a glossy relief. Multi-pass.";
+    "flow-lines", Image, 449, "Curves grow from seeds along a swirling flow field and draw themselves on paper in a weighted palette.";
     "caustics", Image, 51, "Pool-floor caustics from a moving water surface (ray density via derivatives).";
     "flow-ink", Image, 151, "Two inks marbled by a curl-noise flow field on paper.";
     "turing", Image, 25, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
