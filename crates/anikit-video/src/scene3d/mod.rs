@@ -351,8 +351,15 @@ impl Prepare for Scene3d {
             Some(Value::Bool(false)) => None,
             v => {
                 let mut fp = if es.name == "hdri" {
-                    // A neutral ground that catches shadows and melts into the HDRI's horizon.
-                    FloorParams { y: 0.0, color: v3(0.18, 0.18, 0.18), roughness: 0.55, mirror: 0.0, reflect: 0.2, pool: (0.0, 0.0, 0.0), fade: (6.0, 40.0) }
+                    // A ground that catches shadows, with the albedo that makes it
+                    // match the HDRI's own ground under the HDRI's light, so it
+                    // melts into the photographed horizon.
+                    let up = v3(0.0, 1.0, 0.0);
+                    let lit = add(es.env.diffuse(up), es.env.key_box().map(|k| scale(k.radiance, es.env.key_solid_angle * dot(up, k.c).max(0.0) / std::f32::consts::PI)).unwrap_or(v3(0.0, 0.0, 0.0)));
+                    let g = es.env.map.as_ref().map(|m| m.ground()).unwrap_or(v3(0.1, 0.1, 0.1));
+                    let alb = |a: f32, b: f32| (a / b.max(1e-5)).clamp(0.03, 0.85);
+                    let color = v3(alb(g.x, lit.x), alb(g.y, lit.y), alb(g.z, lit.z));
+                    FloorParams { y: 0.0, color, roughness: 0.6, mirror: 0.0, reflect: 0.12, pool: (0.0, 0.0, 0.0), fade: (4.0, 18.0) }
                 } else if bright {
                     let color = match es.name.as_str() {
                         "overcast" => v3(0.2, 0.27, 0.12),
@@ -440,6 +447,26 @@ impl Prepare for Scene3d {
                 }
             }
             "city" => (backdrop, (0.012, v3(0.01, 0.012, 0.03)), auto_exp),
+            "hdri" => {
+                // HDRIs are scene-referred at whatever level they were shot:
+                // expose so a white card facing a typical direction (the mean
+                // over eight around-the-horizon normals, tilted up 20°)
+                // reads light grey. `env.exposure` offsets this in stops.
+                let kd = |n: V3| {
+                    es.env.key_box().map(|k| scale(k.radiance, es.env.key_solid_angle * dot(n, k.c).max(0.0) * (1.0 - k.falloff / 3.0) / std::f32::consts::PI)).unwrap_or(v3(0.0, 0.0, 0.0))
+                };
+                // (Up itself is left out: an overhead noon sun would expose
+                // for the tops of things and leave every face in the dark.)
+                let mut irr = 0.0;
+                for k in 0..8 {
+                    let a = k as f32 * std::f32::consts::TAU / 8.0;
+                    let n = norm(v3(a.cos(), 0.36, a.sin()));
+                    irr += luma(add(es.env.diffuse(n), kd(n)));
+                }
+                irr /= 8.0;
+                let e = 0.9 / irr.max(1e-4);
+                (backdrop, (es.haze, es.env.map.as_ref().map(|m| m.mean()).unwrap_or(v3(0.5, 0.5, 0.5))), e)
+            }
             _ => (backdrop, haze, auto_exp),
         };
         let caustics = if es.name == "underwater" { 1.0 } else { 0.0 };

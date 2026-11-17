@@ -137,6 +137,9 @@ def ph_textures():
         for r in ("1k", "2k"):
             files = []
             for role, key in PH_MAPS.items():
+                if role == "albedo" and key not in f:
+                    # Colour variants (`col_1`, `col_01`…): the first one.
+                    key = next((k for k in sorted(f) if k.lower().startswith("col")), key)
                 h = f.get(key, {}).get(r, {}).get("jpg")
                 if role == "displacement":
                     h = f.get(key, {}).get(r, {}).get("png") or h

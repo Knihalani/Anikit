@@ -413,7 +413,10 @@ impl Library {
         let dir = self.dir_for(&e, &res);
         let marker = dir.join(OK);
         if let Ok(m) = std::fs::read_to_string(&marker) {
-            if let Ok(f) = self.cached_files(&e, &res, &dir, &m) {
+            // Same version, and every pinned plain file still there (an index
+            // update can add a file without a new upstream version).
+            let complete = files.iter().all(|f| f.unzip || dir.join(&f.path).exists());
+            if let (true, Ok(f)) = (complete, self.cached_files(&e, &res, &dir, &m)) {
                 return Ok(f);
             }
         }
