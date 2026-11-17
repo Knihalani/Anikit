@@ -199,13 +199,13 @@ Place backgrounds first in a scene's layers.
 
 | Kind | Props |
 |---|---|
-| `meshGradient` | `colors` (3–6 blobs), `base`, `speed`, `warp` (0 gives round blobs, 1 gives swirls), `intensity` (default 0.75), `seed`, `detail`, `rate` (field keyframes per second, blended in between; default 12) |
-| `aurora` | `colors` (ribbons), `sky` (`[top, horizon]`), `speed`, `intensity`, `seed`, `rate` (default 12) |
+| `meshGradient` | `colors` (3–6 blobs), `base`, `speed`, `warp` (0 gives round blobs, 1 gives swirls), `intensity` (default 0.75), `seed`, `detail`, `rate` (field updates per second, held in between so frames repeat; default 8), `smooth` (blend between updates instead) |
+| `aurora` | `colors` (ribbons), `sky` (`[top, horizon]`), `speed`, `intensity`, `seed`, `rate` (default 12, held), `smooth` |
 | `gradient` | `colors`, `kind` (`linear` or `radial`), `angle`, `spin` (degrees per second) |
-| `grain` | `amount` (0.03–0.1 is subtle), `size`, `rate` (new patterns per second), `seed`. Put it last, as an overlay. |
+| `grain` | `amount` (0.03–0.1 is subtle), `size`, `rate` (new patterns per second; default 0 = static, which is free to encode), `seed`. Put it last, as an overlay. |
 | `grid` | `cell`, `color`, `lineWidth`, `fade`, `perspective` (receding floor), `horizon`, `speed` (scroll), `reveal` (seconds to draw on) |
 | `dots` | `spacing`, `radius`, `color`, `fade`, `wave` (a travelling highlight) |
-| `lightLeak` | `colors`, `intensity`, `speed`, `seed` |
+| `lightLeak` | `colors`, `intensity`, `speed`, `seed`, `rate` (updates per second, held; default 10) |
 | `bokeh` | `count`, `colors`, `minSize`, `maxSize`, `speed`, `seed` |
 | `starfield` | `count`, `color`, `fly` (warp speed), `speed`, `seed` |
 
@@ -359,7 +359,7 @@ Thousands of glowing particles fly in from all around, form the text, hold with 
 | `weight`, `face` | `800`, `display` | |
 | `form` | `1.6` | Seconds to fly in and to re-form. |
 | `hold` | `1.4` | Seconds each word holds. |
-| `exit` | `"blow"` | `blow` (wind), `explode`, `fade`, or `none` to stay. |
+| `exit` | `"none"` | `none` (the text stays), `blow` (wind), `explode` or `fade`. |
 | `exitTime` | `1.6` | |
 | `delay`, `glow`, `seed` | `0`, `true`, `1` | |
 | `blend` | `screen` | `normal` draws solid dots, so dark particles show on a light background. |
@@ -572,81 +572,81 @@ Music ducks smoothly under voice tracks. The master bus has a soft limiter.
 ## Cost per frame
 
 1080p from `cargo run --release -p anikit-video --example component_cost`:
-- **eval** builds the ops (3D kinds rasterise on all cores here);
+- **eval** builds the ops (3D kinds rasterise here, on all cores; serially when called from frame-parallel renders);
 - **full render** rasterises every frame from scratch;
 - **incremental YUV** is the pipeline's path, which redraws only what changed since the previous frame;
 - **static frames** counts frames identical to the one before (from 0.5 s to 1.5 s). Those are deduplicated and encode as P_Skip almost free.
 
-Slow ambient effects step their time (backgrounds 6–15 updates per second, ambient particles 15 per second) and settled springs land exactly on 1, so most frames repeat once entrances end.
+Slow ambient effects step their time (backgrounds 8–15 updates per second, ambient particles and rays 15 per second, 3D poses 30 per second during entrances and 15 once settled). Attention pulses stop after 3 cycles, and settled springs land exactly on 1. Most frames therefore repeat once entrances end. Light effects and grain draw straight into the frame, with no full-frame blend layers.
 
 | kind | eval ms | full render ms | incremental YUV ms | static frames |
 |---|---:|---:|---:|---:|
-| `code` | 0.027 | 1.84 | 0.00 | 29/29 |
-| `terminal` | 0.011 | 1.25 | 0.20 | 21/29 |
-| `bar-chart` | 0.051 | 2.03 | 2.01 | 7/29 |
-| `line-chart` | 0.028 | 1.64 | 2.84 | 0/29 |
-| `area-chart` | 0.024 | 2.40 | 3.69 | 0/29 |
-| `donut-chart` | 0.042 | 1.32 | 1.42 | 0/29 |
-| `pie-chart` | 0.006 | 1.52 | 0.68 | 0/29 |
-| `counter` | 0.016 | 0.91 | 0.93 | 0/29 |
-| `stat` | 0.016 | 5.93 | 8.73 | 0/29 |
-| `phone` | 0.005 | 3.84 | 5.07 | 7/29 |
-| `laptop` | 0.006 | 4.20 | 4.45 | 7/29 |
-| `browser` | 0.006 | 11.35 | 11.25 | 7/29 |
-| `card` | 0.006 | 5.07 | 5.65 | 14/29 |
-| `button` | 0.004 | 0.78 | 0.13 | 14/29 |
-| `toggle` | 0.001 | 0.70 | 0.04 | 4/29 |
-| `badge` | 0.003 | 0.64 | 0.02 | 14/29 |
-| `avatar` | 0.003 | 0.68 | 0.02 | 17/29 |
-| `avatar-stack` | 0.010 | 0.66 | 0.05 | 14/29 |
-| `progress-bar` | 0.009 | 1.58 | 0.79 | 0/29 |
-| `progress-ring` | 0.009 | 0.73 | 0.16 | 0/29 |
-| `toast` | 0.006 | 0.81 | 0.23 | 11/29 |
-| `cursor` | 0.001 | 0.66 | 0.15 | 5/29 |
-| `tooltip` | 0.003 | 0.70 | 0.10 | 14/29 |
-| `callout` | 0.007 | 0.75 | 0.86 | 0/29 |
-| `arrow` | 0.000 | 0.70 | 0.03 | 23/29 |
-| `lower-third` | 0.006 | 0.75 | 0.46 | 14/29 |
-| `title-card` | 0.015 | 0.84 | 0.60 | 19/29 |
-| `mesh-gradient` | 0.279 | 2.52 | 1.09 | 22/29 |
-| `aurora` | 1.607 | 2.33 | 1.71 | 18/29 |
-| `grain` | 0.000 | 14.66 | 0.00 | 29/29 |
-| `grid` | 0.001 | 2.51 | 0.00 | 29/29 |
-| `dots` | 0.298 | 4.99 | 0.75 | 29/29 |
-| `light-leak` | 0.002 | 13.62 | 4.46 | 20/29 |
-| `bokeh` | 0.007 | 10.35 | 5.88 | 14/29 |
-| `starfield` | 0.087 | 1.08 | 1.41 | 14/29 |
-| `gradient` | 0.000 | 1.86 | 0.00 | 29/29 |
-| `confetti` | 0.024 | 0.83 | 2.21 | 0/29 |
-| `sparks` | 0.003 | 3.41 | 2.52 | 3/29 |
-| `snow` | 0.035 | 0.94 | 1.27 | 14/29 |
-| `dust` | 0.031 | 9.67 | 5.68 | 14/29 |
-| `particle-text` | 1.005 | 18.43 | 19.88 | 0/29 |
-| `morph` | 0.001 | 11.48 | 10.53 | 0/29 |
-| `metaballs` | 0.089 | 15.19 | 9.09 | 14/29 |
-| `god-rays` | 0.040 | 20.33 | 10.93 | 14/29 |
-| `lens-flare` | 0.003 | 10.34 | 6.21 | 14/29 |
-| `model` | 32.984 | 2.01 | 2.80 | 0/29 |
-| `text-3d` | 19.773 | 1.68 | 2.08 | 0/29 |
-| `globe` | 0.316 | 9.81 | 11.84 | 0/29 |
-| `wipe` | 0.001 | 2.02 | 2.52 | 9/29 |
-| `iris` | 0.001 | 0.60 | 1.08 | 13/29 |
-| `glitch` | 0.000 | 0.59 | 0.00 | 29/29 |
-| `chat` | 0.016 | 0.68 | 0.35 | 5/29 |
-| `prompt` | 0.018 | 2.09 | 2.67 | 0/29 |
-| `checklist` | 0.006 | 0.66 | 0.37 | 0/29 |
-| `quote` | 0.021 | 0.71 | 0.60 | 11/29 |
-| `table` | 0.009 | 3.05 | 0.70 | 23/29 |
-| `timeline` | 0.013 | 0.68 | 0.33 | 0/29 |
-| `marquee` | 0.045 | 0.81 | 0.40 | 0/29 |
-| `spotlight` | 0.002 | 0.95 | 1.40 | 11/29 |
-| `keys` | 0.012 | 0.68 | 0.05 | 14/29 |
-| `visualizer` | 0.007 | 3.31 | 4.61 | 0/29 |
-| `ken-burns` | 0.004 | 10.38 | 11.75 | 0/29 |
-| `tile-reveal` | 0.005 | 3.08 | 4.33 | 0/29 |
-| `kinetic-grid` | 0.013 | 1.68 | 2.92 | 0/29 |
-| `reactions` | 0.007 | 0.91 | 0.39 | 0/29 |
-| `card-stack` | 0.018 | 8.13 | 7.63 | 4/29 |
-| `lottie` | 0.000 | 0.63 | 0.00 | 29/29 |
+| `code` | 0.025 | 1.31 | 0.00 | 29/29 |
+| `terminal` | 0.012 | 1.26 | 0.05 | 21/29 |
+| `bar-chart` | 0.054 | 1.80 | 1.72 | 7/29 |
+| `line-chart` | 0.025 | 1.51 | 2.91 | 0/29 |
+| `area-chart` | 0.025 | 2.41 | 3.83 | 0/29 |
+| `donut-chart` | 0.036 | 1.24 | 1.15 | 0/29 |
+| `pie-chart` | 0.006 | 1.38 | 0.59 | 0/29 |
+| `counter` | 0.013 | 0.85 | 0.78 | 0/29 |
+| `stat` | 0.016 | 5.58 | 8.03 | 0/29 |
+| `phone` | 0.005 | 3.60 | 4.44 | 7/29 |
+| `laptop` | 0.003 | 4.12 | 4.37 | 7/29 |
+| `browser` | 0.007 | 12.02 | 12.01 | 7/29 |
+| `card` | 0.007 | 5.11 | 5.68 | 14/29 |
+| `button` | 0.004 | 0.75 | 0.12 | 14/29 |
+| `toggle` | 0.000 | 0.65 | 0.04 | 4/29 |
+| `badge` | 0.003 | 0.66 | 0.02 | 14/29 |
+| `avatar` | 0.003 | 0.68 | 0.03 | 17/29 |
+| `avatar-stack` | 0.010 | 0.70 | 0.05 | 14/29 |
+| `progress-bar` | 0.009 | 1.61 | 0.87 | 0/29 |
+| `progress-ring` | 0.010 | 0.76 | 0.20 | 0/29 |
+| `toast` | 0.007 | 0.87 | 0.22 | 11/29 |
+| `cursor` | 0.001 | 0.68 | 0.07 | 5/29 |
+| `tooltip` | 0.003 | 0.70 | 0.08 | 14/29 |
+| `callout` | 0.006 | 0.68 | 0.06 | 0/29 |
+| `arrow` | 0.000 | 0.62 | 0.02 | 23/29 |
+| `lower-third` | 0.006 | 0.70 | 0.08 | 14/29 |
+| `title-card` | 0.015 | 0.81 | 0.26 | 19/29 |
+| `mesh-gradient` | 0.299 | 2.84 | 0.57 | 22/29 |
+| `aurora` | 1.549 | 2.92 | 0.86 | 18/29 |
+| `grain` | 0.000 | 3.33 | 0.00 | 29/29 |
+| `grid` | 0.001 | 2.29 | 0.00 | 29/29 |
+| `dots` | 0.253 | 4.94 | 0.80 | 29/29 |
+| `light-leak` | 0.002 | 2.97 | 1.36 | 20/29 |
+| `bokeh` | 0.007 | 1.34 | 1.34 | 14/29 |
+| `starfield` | 0.093 | 1.07 | 1.40 | 14/29 |
+| `gradient` | 0.000 | 2.62 | 0.00 | 29/29 |
+| `confetti` | 0.025 | 0.84 | 2.20 | 0/29 |
+| `sparks` | 0.003 | 3.66 | 2.85 | 3/29 |
+| `snow` | 0.034 | 1.01 | 1.34 | 14/29 |
+| `dust` | 0.034 | 1.18 | 1.36 | 14/29 |
+| `particle-text` | 0.894 | 19.39 | 24.62 | 0/29 |
+| `morph` | 0.001 | 2.86 | 3.70 | 0/29 |
+| `metaballs` | 0.106 | 3.53 | 2.56 | 14/29 |
+| `god-rays` | 0.065 | 8.84 | 5.80 | 14/29 |
+| `lens-flare` | 0.003 | 2.68 | 2.20 | 14/29 |
+| `model` | 32.058 | 1.99 | 2.63 | 0/29 |
+| `text-3d` | 19.764 | 1.62 | 2.05 | 0/29 |
+| `globe` | 0.297 | 8.94 | 11.22 | 0/29 |
+| `wipe` | 0.001 | 2.04 | 2.68 | 9/29 |
+| `iris` | 0.001 | 0.66 | 1.09 | 13/29 |
+| `glitch` | 0.000 | 0.63 | 0.00 | 29/29 |
+| `chat` | 0.021 | 0.74 | 0.10 | 5/29 |
+| `prompt` | 0.018 | 2.25 | 1.96 | 0/29 |
+| `checklist` | 0.008 | 0.72 | 0.12 | 0/29 |
+| `quote` | 0.023 | 0.77 | 0.08 | 11/29 |
+| `table` | 0.008 | 3.09 | 0.25 | 23/29 |
+| `timeline` | 0.011 | 0.69 | 0.20 | 0/29 |
+| `marquee` | 0.043 | 0.71 | 0.40 | 0/29 |
+| `spotlight` | 0.002 | 1.06 | 1.50 | 11/29 |
+| `keys` | 0.014 | 0.74 | 0.06 | 14/29 |
+| `visualizer` | 0.008 | 3.32 | 5.10 | 0/29 |
+| `ken-burns` | 0.004 | 13.77 | 13.08 | 0/29 |
+| `tile-reveal` | 0.005 | 2.92 | 4.06 | 0/29 |
+| `kinetic-grid` | 0.016 | 1.68 | 1.59 | 14/29 |
+| `reactions` | 0.009 | 1.00 | 0.43 | 0/29 |
+| `card-stack` | 0.020 | 7.16 | 7.92 | 4/29 |
+| `lottie` | 0.000 | 0.66 | 0.00 | 29/29 |
 
-Totals: eval 90.44 ms, full render 255.14 ms, incremental 193.17 ms
+Totals: eval 56.01 ms, full render 178.56 ms, incremental 157.14 ms
