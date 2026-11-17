@@ -611,7 +611,7 @@ fn fused_backdrop_yuv_matches_rgba_path() {
         let image_bg = Op::Image { image: ImageId(5), dst: [0.0, 0.0, w as f32, h as f32], opacity: 1.0, transform: IDENTITY };
         let grad_bg = Op::RoundRect { x: 0.0, y: 0.0, w: w as f32, h: h as f32, radius: 0.0, paint: Paint::Radial { c: [80.0, 48.0], r: 120.0, stops: vec![(0.0, rgba(0.2, 0.1, 0.4, 1.0)), (1.0, rgba(0.0, 0.05, 0.1, 1.0))] }, transform: IDENTITY };
         for bg in [image_bg, grad_bg] {
-            for top in [vec![], vec![card(37.0, 21.0, 40.0, 30.0, Paint::Solid(rgba(1.0, 1.0, 1.0, 0.8)))], vec![card(-10.0, 0.0, 400.0, 20.0, solid(1.0, 0.0, 0.0))]] {
+            for top in [vec![], vec![card(37.0, 21.0, 40.0, 30.0, Paint::Solid(rgba(1.0, 1.0, 1.0, 0.8)))], vec![card(-10.0, 0.0, 400.0, 20.0, solid(1.0, 0.0, 0.0))], vec![card(4.0, 4.0, 20.0, 12.0, solid(0.0, 1.0, 0.0)), card(120.0, 70.0, 30.0, 15.0, Paint::Solid(rgba(1.0, 0.5, 0.0, 0.6)))]] {
                 let mut ops = vec![bg.clone()];
                 ops.extend(top);
                 let l = DisplayList { width: w, height: h, background: rgba(0.0, 0.0, 0.0, 1.0), ops };

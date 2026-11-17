@@ -298,6 +298,36 @@ fn hash_op_with(op: &Op, image_gen: &dyn Fn(crate::dl::ImageId) -> u64) -> u64 {
     h.finish()
 }
 
+/// Frame-space bounds of each op (grown by the filters around it); `None` for
+/// layer markers and ops that draw nothing.
+pub(crate) fn op_rects(ops: &[Op], out: &mut Vec<Option<Rect>>) {
+    out.clear();
+    let mut stack: Vec<[f32; 4]> = Vec::new();
+    let mut m = [0f32; 4];
+    for op in ops {
+        match op {
+            Op::PushLayer { filters, .. } => {
+                stack.push(m);
+                for fl in filters {
+                    let fm = filter::margin(fl);
+                    for k in 0..4 {
+                        m[k] += fm[k];
+                    }
+                }
+                out.push(None);
+            }
+            Op::PopLayer => {
+                m = stack.pop().unwrap_or([0.0; 4]);
+                out.push(None);
+            }
+            _ => out.push(
+                ops_bounds(std::slice::from_ref(op), Affine::IDENTITY)
+                    .map(|r| Rect::new(r.x0 - m[0] as f64 - 1.0, r.y0 - m[1] as f64 - 1.0, r.x1 + m[2] as f64 + 1.0, r.y1 + m[3] as f64 + 1.0)),
+            ),
+        }
+    }
+}
+
 /// Automatic cache key for a filtered layer: its content, filters and
 /// frame-space transform. `None` when the layer draws images (their pixels can
 /// change under the same id).
@@ -525,7 +555,7 @@ fn refresh_yuv(snap: &mut Vec<u8>, frame: &[u8], w: u32, h: u32, [x0, y0, x1, y1
 
 /// Bounding boxes (in macroblocks, `[x0, y0, x1, y1)`) of the 8-connected
 /// components of `map`, merged where they overlap and down to `max` boxes.
-fn cluster(map: &MbMap, max: usize) -> Vec<[u32; 4]> {
+pub(crate) fn cluster(map: &MbMap, max: usize) -> Vec<[u32; 4]> {
     let (w, h) = (map.mb_width, map.mb_height);
     let mut seen = vec![false; w * h];
     let mut boxes: Vec<[u32; 4]> = Vec::new();
