@@ -36,6 +36,12 @@
    "subtitle": {
     "color": "$muted"
    }
+  },
+  "material": {
+   "surface": "flat",
+   "shadow": 0.8,
+   "glow": 0.2,
+   "motion": "soft"
   }
  },
  "transition": {

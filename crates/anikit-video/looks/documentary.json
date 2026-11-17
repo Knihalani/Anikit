@@ -32,6 +32,12 @@
     "letterSpacing": "0.2em",
     "size": "2.4vh"
    }
+  },
+  "material": {
+   "surface": "flat",
+   "shadow": 0.4,
+   "glow": 0,
+   "motion": "soft"
   }
  },
  "transition": {

@@ -39,6 +39,12 @@
     "color": "$primary",
     "size": "2.4vh"
    }
+  },
+  "material": {
+   "surface": "paper",
+   "shadow": 0.1,
+   "glow": 0,
+   "motion": "soft"
   }
  },
  "transition": {
