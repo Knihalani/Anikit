@@ -1922,24 +1922,46 @@ impl C<'_> {
         (Kind::Video { frames, natural: nat, fit, rate, speed, looped }, nat)
     }
 
+    /// Load an image file referenced by a component and register it under its `src`.
+    fn load_media(&mut self, src: &str, path: &str) {
+        let full = self.o.base_dir.join(src);
+        if self.image_ids.contains_key(&full) || !self.o.load_assets {
+            if let Some(&(id, _)) = self.image_ids.get(&full) {
+                self.assets.add_media(src, ImageId(id));
+            }
+            return;
+        }
+        if !full.exists() {
+            self.d.push(Diagnostic::warning(path.to_string(), format!("image not found: {}", full.display())));
+            return;
+        }
+        match image::open(&full).map_err(|e| e.to_string()).and_then(|img| {
+            let rgba = img.to_rgba8();
+            let (w, h) = rgba.dimensions();
+            self.assets.add_rgba(w, h, rgba.into_raw()).map(|id| (id, [w as f32, h as f32]))
+        }) {
+            Ok((id, nat)) => {
+                self.assets.add_media(src, id);
+                self.image_ids.insert(full, (id.0, nat));
+            }
+            Err(e) => self.d.push(Diagnostic::warning(path.to_string(), format!("can't decode image {src}: {e}"))),
+        }
+    }
+
     fn component_layer(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>) -> Option<(Kind, [f32; 2])> {
         let raw = l.component.clone().unwrap_or_default();
-        // Accept camelCase (`barChart`) as well as the catalogue's kebab-case (`bar-chart`).
-        let mut name = String::new();
-        for ch in raw.chars() {
-            if ch.is_ascii_uppercase() {
-                name.push('-');
-                name.push(ch.to_ascii_lowercase());
-            } else {
-                name.push(ch);
-            }
-        }
+        // camelCase (`barChart`), kebab-case and short aliases (`chart.bar`) all resolve.
+        let name = crate::components::canonical(&raw);
         let names: Vec<&str> = crate::components::KINDS.iter().map(|k| k.name).collect();
         if !names.contains(&name.as_str()) {
             self.d.push(Diagnostic::error(format!("{path}.component"), format!("unknown component '{raw}'")).suggest(suggest(&name, &names)));
             return None;
         }
         let props = l.props.clone().unwrap_or(serde_json::Value::Object(Default::default()));
+        // Load the images the component refers to, so `Assets::media` finds them.
+        for src in crate::components::media_srcs(&props) {
+            self.load_media(&src, &format!("{path}.props"));
+        }
         match crate::components::build(&name, &props) {
             Ok(p) => {
                 let size = [gw.or(p.w).unwrap_or(self.w), gh.or(p.h).unwrap_or(self.h)];

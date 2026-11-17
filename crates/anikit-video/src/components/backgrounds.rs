@@ -122,7 +122,9 @@ impl Component for Gradient {
         let paint = if self.kind.as_deref() == Some("radial") {
             radial(w * 0.5, h * 0.5, (w * w + h * h).sqrt() * 0.5, stops)
         } else {
-            let a = (self.angle.unwrap_or(90.0) + self.spin * t).to_radians();
+            // Spin updates 15×/s (held between), so frames repeat and encode almost free.
+            let ts = if self.spin != 0.0 { (t * 15.0).floor() / 15.0 } else { 0.0 };
+            let a = (self.angle.unwrap_or(90.0) + self.spin * ts).to_radians();
             let (s, c) = a.sin_cos();
             let half = 0.5 * (w * c.abs() + h * s.abs());
             Paint::Linear { p0: [w * 0.5 - c * half, h * 0.5 - s * half], p1: [w * 0.5 + c * half, h * 0.5 + s * half], stops }

@@ -118,6 +118,8 @@ pub struct Card {
     pub glow: bool,
     pub delay: f32,
     pub out: Option<f32>,
+    /// Title size (default scales with the card); the body is 0.62× it.
+    pub font_size: Option<f32>,
 }
 impl Prepare for Card {}
 impl Component for Card {
@@ -137,14 +139,14 @@ impl Component for Card {
         if self.glow {
             o.push(Op::Stroke { path: rrect_path(0.5, 0.5, w - 1.0, h - 1.0, th.radius), paint: crate::dl::Paint::Linear { p0: [0.0, 0.0], p1: [w, h], stops: vec![(0.0, alpha(acc, 0.9)), (0.5, alpha(acc, 0.1)), (1.0, alpha(acc, 0.6))] }, stroke: line(1.5, [0.0, 1.0]), transform: IDENTITY });
         }
-        let pad = (w.min(h) * 0.09).clamp(18.0, 36.0);
+        let pad = (w.min(h) * 0.09).clamp(18.0, 56.0);
         let mut y = pad;
         if let Some(k) = self.icon.as_deref().filter(|k| !k.is_empty()) {
             let s = (pad * 1.5).min(48.0);
             icon_tile(&mut o, k, pad, y, s, acc);
             y += s + pad * 0.7;
         }
-        let ts = sans((w * 0.065).clamp(18.0, 30.0), 600, th.text).tracking(-0.01);
+        let ts = sans(self.font_size.unwrap_or_else(|| (w * 0.065).min(h * 0.16).clamp(18.0, 60.0)), 600, th.text).tracking(-0.01);
         for l in wrap(ctx.assets, &self.title, &ts, w - 2.0 * pad) {
             y += ts.size * 1.0;
             draw(&mut o, ctx.assets, &l, &ts, pad, y, 0.0);
