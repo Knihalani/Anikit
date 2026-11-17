@@ -17,7 +17,6 @@ pub const PAGES: &[(&str, &str)] = &[
     ("3d", include_str!("../docs-cli/3d.md")),
     ("particles", include_str!("../docs-cli/particles.md")),
     ("physics", include_str!("../docs-cli/physics.md")),
-    ("music", include_str!("../docs-cli/music.md")),
     ("post", include_str!("../docs-cli/post.md")),
     ("pacing", include_str!("../docs-cli/pacing.md")),
     ("critique", include_str!("../docs-cli/critique.md")),
@@ -29,6 +28,7 @@ pub const PAGES: &[(&str, &str)] = &[
 
 /// Hand-built shots: `(name, {"about", "spec"})`.
 pub const RECIPES: &[(&str, &str)] = &[
+    ("launch-sting", include_str!("../recipes/launch-sting.json")),
     ("kinetic-slam", include_str!("../recipes/kinetic-slam.json")),
     ("whip-transition", include_str!("../recipes/whip-transition.json")),
     ("chrome-hero", include_str!("../recipes/chrome-hero.json")),
@@ -48,22 +48,20 @@ const ALIASES: &[(&str, &str)] = &[
 pub fn docs(topic: Option<&str>) -> Result<String, String> {
     let t = topic.unwrap_or("start").trim().to_lowercase();
     if t == "components" || t == "component" {
-        let mut s = String::from("# Components: prebuilt widgets (shortcuts built from primitives)\n\n");
-        for k in crate::components::KINDS {
-            s += &format!("- `{}`: {} e.g. `{}`\n", k.name, k.summary, k.example);
-        }
-        return Ok(s);
+        return Ok(crate::components::docs::index());
     }
     if let Some(kind) = t.strip_prefix("component ") {
-        let k = crate::components::KINDS.iter().find(|k| k.name == kind.trim()).ok_or_else(|| format!("unknown component '{kind}'; `anikit-video docs components` lists them"))?;
-        return Ok(format!("# `{}`\n\n{}\n\n```json\n{{ \"component\": \"{}\", \"props\": {} }}\n```\n\nAll props: docs/video/components.md#{}\n", k.name, k.summary, k.name, k.example, k.name));
+        return crate::components::docs::doc(kind.trim()).ok_or_else(|| format!("unknown component '{kind}'; `anikit-video docs components` lists them"));
     }
     let t = ALIASES.iter().find(|(a, _)| *a == t).map(|(_, b)| b.to_string()).unwrap_or(t);
+    if t == "music" {
+        return Ok(crate::music::docs().to_string());
+    }
     if let Some((_, md)) = PAGES.iter().find(|(n, _)| *n == t) {
         return Ok(md.to_string());
     }
-    let hint = suggest(&t, PAGES.iter().map(|(n, _)| *n)).map(|s| format!("did you mean '{s}'? ")).unwrap_or_default();
-    Err(format!("unknown docs topic '{t}'. {hint}Topics: {}, components", PAGES.iter().map(|(n, _)| *n).collect::<Vec<_>>().join(", ")))
+    let hint = suggest(&t, PAGES.iter().map(|(n, _)| *n).chain(["music", "components"])).map(|s| format!("did you mean '{s}'? ")).unwrap_or_default();
+    Err(format!("unknown docs topic '{t}'. {hint}Topics: {}, music, components", PAGES.iter().map(|(n, _)| *n).collect::<Vec<_>>().join(", ")))
 }
 
 /// `uniform float speed; // = 1.0  doc` → ("speed", "float", "1.0").
@@ -163,7 +161,7 @@ mod tests {
         assert!(docs(None).unwrap().contains("docs 3d"));
         assert!(docs(Some("scene3d")).unwrap().contains("scene3d"));
         assert!(docs(Some("shadr")).unwrap_err().contains("did you mean 'shader'"));
-        assert!(docs(Some("components")).unwrap().contains("bar-chart"));
+        assert!(docs(Some("components")).unwrap().contains("terminal"));
         assert!(recipes(None).unwrap().contains("kinetic-slam") && recipes(None).unwrap().contains("sdf-scene"));
         assert!(recipes(Some("chrome-hero")).unwrap().contains("scene3d"));
         assert!(recipes(Some("aurora")).unwrap().contains("\"shader\": \"aurora\""));

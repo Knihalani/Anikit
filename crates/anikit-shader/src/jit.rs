@@ -110,6 +110,8 @@ struct Frame<'m> {
     ctl: Vec<Ctl>,
     /// Whether the caller's mask was its own entry mask at the call.
     entry_full: bool,
+    /// Loops (real or unrolled) currently open in this frame.
+    loops: usize,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -133,6 +135,8 @@ struct Lower<'m, 'b> {
     killed: Variable,
     has_kill: bool,
     full: bool,
+    /// Expressions emitted by loop unrolling so far (bounded code growth).
+    unrolled: usize,
     env: Value,
     sample_ref: FuncRef,
     fetch_ref: FuncRef,
@@ -681,7 +685,16 @@ impl<'m, 'b> Lower<'m, 'b> {
             (K::F, O::Add) => b.ins().fadd(x, y),
             (K::F, O::Subtract) => b.ins().fsub(x, y),
             (K::F, O::Multiply) => b.ins().fmul(x, y),
-            (K::F, O::Divide) => b.ins().fdiv(x, y),
+            (K::F, O::Divide) => match const_splat_f32(b, y) {
+                // Dividing by a constant: multiply by its reciprocal. Exact for powers
+                // of two, within 1.5 ulp otherwise (GLSL allows 2.5), and a multiply
+                // has a third of a divide's latency on the march loops' critical path.
+                Some(k) if k != 0.0 && k.is_finite() && (1.0 / k).is_normal() => {
+                    let r = fsplat(b, 1.0 / k);
+                    b.ins().fmul(x, r)
+                }
+                _ => b.ins().fdiv(x, y),
+            },
             (K::F, O::Modulo) => {
                 let q = b.ins().fdiv(x, y);
                 let t = b.ins().trunc(q);
@@ -951,7 +964,34 @@ impl<'m, 'b> Lower<'m, 'b> {
             M::Exp2 => map1!(vm::exp2),
             M::Log => map1!(vm::log),
             M::Log2 => map1!(vm::log2),
-            M::Pow => map2!(vm::pow),
+            // A small whole-number exponent (Fresnel's `pow(1.0 - c, 5.0)`, `pow(x, 2.0)`) is a
+            // few multiplies by repeated squaring: faster than exp2(y·log2 x) and closer to exact.
+            M::Pow => (0..n)
+                .map(|i| {
+                    let (xv, yv) = (at(&x, i), at(&y, i));
+                    match const_splat_f32(b, yv) {
+                        Some(k) if k.fract() == 0.0 && (1.0..=16.0).contains(&k) => {
+                            let mut e = k as u32;
+                            let mut base = xv;
+                            let mut acc: Option<Value> = None;
+                            while e > 0 {
+                                if e & 1 == 1 {
+                                    acc = Some(match acc {
+                                        None => base,
+                                        Some(a) => b.ins().fmul(a, base),
+                                    });
+                                }
+                                e >>= 1;
+                                if e > 0 {
+                                    base = b.ins().fmul(base, base);
+                                }
+                            }
+                            acc.unwrap_or(xv)
+                        }
+                        _ => vm::pow(&mut *b, xv, yv),
+                    }
+                })
+                .collect::<Vec<Value>>(),
             M::Dot if int => {
                 let mut s = b.ins().imul(x[0], y[0]);
                 for i in 1..x.len() {
@@ -1325,7 +1365,10 @@ impl<'m, 'b> Lower<'m, 'b> {
 
     fn lower_block(&mut self, stmts: &'m [S]) -> R<()> {
         for (i, st) in stmts.iter().enumerate() {
-            self.stmt(st)?;
+            match self.unroll_plan(stmts, i) {
+                Some(plan) => self.unroll(plan)?,
+                None => self.stmt(st)?,
+            }
             if matches!(st, S::Break | S::Continue | S::Return { .. } | S::Kill) {
                 return Ok(()); // the rest of the block is unreachable
             }
@@ -1343,6 +1386,151 @@ impl<'m, 'b> Lower<'m, 'b> {
                 return Ok(());
             }
         }
+        Ok(())
+    }
+
+    /// A counted loop `for (int i = c0; i OP n; i += k)` with a short constant
+    /// trip count and no way out but its guard can be emitted as straight-line
+    /// copies with `i` a constant in each. Then everything that depends only on
+    /// uniforms and `i` (the `sin(iTime + float(i))` of a Shadertoy scene) is
+    /// loop-invariant and Cranelift hoists it out of the pixel loop. Same
+    /// arithmetic, so the output is bit-identical.
+    fn unroll_plan(&self, stmts: &'m [S], at: usize) -> Option<Unroll<'m>> {
+        const MAX_TRIPS: usize = 16;
+        const MAX_COPY: usize = 4000; // expressions per unrolled loop
+        const MAX_TOTAL: usize = 60000; // per kernel
+        let S::Loop { body, continuing, break_if: None } = &stmts[at] else { return None };
+        let fr = self.frames.last()?;
+        let f = fr.f;
+        let local = |h: Handle<E>| match f.expressions[h] {
+            E::LocalVariable(l) => Some(l),
+            _ => None,
+        };
+        let int_lit = |h: Handle<E>| -> Option<i64> {
+            match f.expressions[h] {
+                E::Literal(naga::Literal::I32(v)) => Some(v as i64),
+                E::Literal(naga::Literal::U32(v)) => Some(v as i64),
+                E::Literal(naga::Literal::AbstractInt(v)) | E::Literal(naga::Literal::I64(v)) => Some(v),
+                E::Constant(c) => match self.m.global_expressions[self.m.constants[c].init] {
+                    naga::Expression::Literal(naga::Literal::I32(v)) => Some(v as i64),
+                    naga::Expression::Literal(naga::Literal::U32(v)) => Some(v as i64),
+                    _ => None,
+                },
+                _ => None,
+            }
+        };
+        // Guard: Emits, then `if (!(i OP n)) break;` (or `if (i OP n) {} else break;`).
+        let g = body.iter().position(|st| !matches!(st, S::Emit(_)))?;
+        let S::If { condition, accept, reject } = &body[g] else { return None };
+        let is_break = |b: &naga::Block| b.len() == 1 && matches!(b[0], S::Break);
+        let cmp = if is_break(accept) && reject.is_empty() {
+            match f.expressions[*condition] {
+                E::Unary { op: naga::UnaryOperator::LogicalNot, expr } => expr,
+                _ => return None,
+            }
+        } else if accept.is_empty() && is_break(reject) {
+            *condition
+        } else {
+            return None;
+        };
+        let E::Binary { op, left, right } = f.expressions[cmp] else { return None };
+        let E::Load { pointer } = f.expressions[left] else { return None };
+        let lv = local(pointer)?;
+        if !matches!(f.local_variables[lv].ty, ty if matches!(self.m.types[ty].inner, naga::TypeInner::Scalar(naga::Scalar { kind: naga::ScalarKind::Sint | naga::ScalarKind::Uint, width: 4 }))) {
+            return None;
+        }
+        let bound = int_lit(right)?;
+        // Continuing: only `i = i ± k`.
+        let mut step = None;
+        for st in continuing.iter() {
+            match st {
+                S::Emit(_) => {}
+                S::Store { pointer, value } if local(*pointer) == Some(lv) && step.is_none() => {
+                    let E::Binary { op: sop, left: l2, right: r2 } = f.expressions[*value] else { return None };
+                    let E::Load { pointer: p2 } = f.expressions[l2] else { return None };
+                    if local(p2) != Some(lv) {
+                        return None;
+                    }
+                    let k = int_lit(r2)?;
+                    step = Some(match sop {
+                        naga::BinaryOperator::Add => k,
+                        naga::BinaryOperator::Subtract => -k,
+                        _ => return None,
+                    });
+                }
+                _ => return None,
+            }
+        }
+        let step = step.filter(|k| *k != 0)?;
+        // The counter's value on entry: a constant store just before the loop, or
+        // the declaration's initialiser for a loop that runs once per call.
+        let stores_lv = |st: &S| matches!(st, S::Store { pointer, .. } if local(*pointer) == Some(lv))
+            || matches!(st, S::Call { arguments, .. } if arguments.iter().any(|a| local(*a) == Some(lv)));
+        let prev = stmts[..at].iter().rev().find(|st| !matches!(st, S::Emit(_)));
+        let start = match prev {
+            Some(S::Store { pointer, value }) if local(*pointer) == Some(lv) => int_lit(*value)?,
+            _ => {
+                if fr.loops > 0 || any_stmt(&f.body, &|st| stores_lv(st) && !continuing.iter().any(|c| std::ptr::eq(c, st))) {
+                    return None;
+                }
+                int_lit(f.local_variables[lv].init?)?
+            }
+        };
+        // The body (after the guard) may not leave early or touch the counter.
+        let rest = &body[g + 1..];
+        if contains_ret(rest) || any_stmt(rest, &|st| matches!(st, S::Kill) || stores_lv(st)) || leaves_loop(rest) {
+            return None;
+        }
+        // Trip count.
+        let test = |v: i64| match op {
+            naga::BinaryOperator::Less => v < bound,
+            naga::BinaryOperator::LessEqual => v <= bound,
+            naga::BinaryOperator::Greater => v > bound,
+            naga::BinaryOperator::GreaterEqual => v >= bound,
+            naga::BinaryOperator::NotEqual => v != bound,
+            _ => false,
+        };
+        if !matches!(op, naga::BinaryOperator::Less | naga::BinaryOperator::LessEqual | naga::BinaryOperator::Greater | naga::BinaryOperator::GreaterEqual | naga::BinaryOperator::NotEqual) {
+            return None;
+        }
+        let mut vals = Vec::new();
+        let mut v = start;
+        while test(v) {
+            if vals.len() >= MAX_TRIPS {
+                return None;
+            }
+            vals.push(v);
+            v += step;
+        }
+        let weight = block_weight(self.m, rest) + block_weight(self.m, &body[..g]);
+        if weight * vals.len() > MAX_COPY || self.unrolled + weight * vals.len() > MAX_TOTAL {
+            return None;
+        }
+        Some(Unroll { lv, guard: &body[..g], rest, vals, end: v, weight })
+    }
+
+    fn unroll(&mut self, u: Unroll<'m>) -> R<()> {
+        let root = self.frames.last().unwrap().locals[u.lv.index()];
+        let var = self.roots[root][0];
+        let entry = self.mask_for(self.root_owner[root]);
+        let old = self.b.use_var(var);
+        self.unrolled += u.weight * u.vals.len();
+        self.frames.last_mut().unwrap().loops += 1;
+        for &v in &u.vals {
+            // Every lane sees the constant; lanes not running here don't read it.
+            let c = isplat(&mut self.b, v as i32);
+            self.b.def_var(var, c);
+            self.lower_block(u.guard)?;
+            self.lower_block(u.rest)?;
+        }
+        self.frames.last_mut().unwrap().loops -= 1;
+        // After the loop the counter holds its exit value, in the lanes that ran it.
+        let e = isplat(&mut self.b, u.end as i32);
+        let fin = match entry {
+            None => e,
+            Some(m) => sel(&mut self.b, m, e, old),
+        };
+        self.b.def_var(var, fin);
         Ok(())
     }
 
@@ -1429,6 +1617,7 @@ impl<'m, 'b> Lower<'m, 'b> {
                 self.b.ins().brif(ok, body_b, &[], exit, &[]);
                 self.b.switch_to_block(body_b);
                 self.frames.last_mut().unwrap().ctl.push(Ctl::Loop { mask, cnt });
+                self.frames.last_mut().unwrap().loops += 1;
                 self.lower_block(body)?;
                 // Continuing: every lane that didn't break or return.
                 let lm = self.b.use_var(mask);
@@ -1445,6 +1634,7 @@ impl<'m, 'b> Lower<'m, 'b> {
                     self.b.def_var(mask, lm);
                 }
                 self.frames.last_mut().unwrap().ctl.pop();
+                self.frames.last_mut().unwrap().loops -= 1;
                 self.b.ins().jump(hdr, &[]);
                 self.b.switch_to_block(exit);
                 let r = self.b.use_var(ret);
@@ -1641,7 +1831,7 @@ impl<'m, 'b> Lower<'m, 'b> {
             ret_vars.push(v);
         }
         let entry_full = self.full;
-        self.frames.push(Frame { f, fi, args, ex: vec![None; f.expressions.len()], locals: Vec::new(), ret, ret_vars, ret_kinds, ctl: Vec::new(), entry_full });
+        self.frames.push(Frame { f, fi, args, ex: vec![None; f.expressions.len()], locals: Vec::new(), ret, ret_vars, ret_kinds, ctl: Vec::new(), entry_full, loops: 0 });
         // Inside the callee, "full" means "the lanes it was called with".
         self.full = true;
         // Expressions that need no Emit (literals, constants, arguments,
@@ -1737,7 +1927,7 @@ fn emitted_set(body: &naga::Block, n: usize) -> Vec<bool> {
     set
 }
 
-fn any_stmt(b: &naga::Block, f: &dyn Fn(&S) -> bool) -> bool {
+fn any_stmt(b: &[S], f: &dyn Fn(&S) -> bool) -> bool {
     b.iter().any(|st| {
         f(st)
             || match st {
@@ -1748,6 +1938,68 @@ fn any_stmt(b: &naga::Block, f: &dyn Fn(&S) -> bool) -> bool {
                 _ => false,
             }
     })
+}
+
+/// `v` is `splat(f32const k)`: k.
+fn const_splat_f32(b: &FunctionBuilder, v: Value) -> Option<f32> {
+    use cranelift_codegen::ir::{InstructionData, Opcode, ValueDef};
+    let dfg = &b.func.dfg;
+    let ValueDef::Result(inst, _) = dfg.value_def(v) else { return None };
+    let InstructionData::Unary { opcode: Opcode::Splat, arg } = dfg.insts[inst] else { return None };
+    let ValueDef::Result(ci, _) = dfg.value_def(arg) else { return None };
+    match dfg.insts[ci] {
+        InstructionData::UnaryIeee32 { opcode: Opcode::F32const, imm } => Some(f32::from_bits(imm.bits())),
+        _ => None,
+    }
+}
+
+/// A loop body to emit as straight-line copies (see `Lower::unroll_plan`).
+struct Unroll<'m> {
+    lv: Handle<naga::LocalVariable>,
+    guard: &'m [S],
+    rest: &'m [S],
+    vals: Vec<i64>,
+    end: i64,
+    weight: usize,
+}
+
+/// Does a loop body `break` or `continue` its own loop (not a nested one)?
+fn leaves_loop(b: &[S]) -> bool {
+    b.iter().any(|st| match st {
+        S::Break | S::Continue => true,
+        S::Block(b) => leaves_loop(b),
+        S::If { accept, reject, .. } => leaves_loop(accept) || leaves_loop(reject),
+        // `break` in a switch is the switch's; `continue` is the loop's.
+        S::Switch { cases, .. } => cases.iter().any(|c| continues(&c.body)),
+        _ => false,
+    })
+}
+
+/// A `continue` outside any nested loop.
+fn continues(b: &[S]) -> bool {
+    b.iter().any(|st| match st {
+        S::Continue => true,
+        S::Block(b) => continues(b),
+        S::If { accept, reject, .. } => continues(accept) || continues(reject),
+        S::Switch { cases, .. } => cases.iter().any(|c| continues(&c.body)),
+        _ => false,
+    })
+}
+
+/// Rough size of a block once lowered: emitted expressions, with calls
+/// counted as their callee's (they are inlined).
+fn block_weight(m: &naga::Module, b: &[S]) -> usize {
+    b.iter()
+        .map(|st| match st {
+            S::Emit(r) => r.clone().count(),
+            S::Block(b) => block_weight(m, b),
+            S::If { accept, reject, .. } => 1 + block_weight(m, accept) + block_weight(m, reject),
+            S::Switch { cases, .. } => cases.iter().map(|c| block_weight(m, &c.body)).sum(),
+            S::Loop { body, continuing, .. } => 8 + block_weight(m, body) + block_weight(m, continuing),
+            S::Call { function, .. } => 4 + m.functions[*function].expressions.len(),
+            _ => 1,
+        })
+        .sum()
 }
 
 /// Can this statement turn lanes off (break, continue, return, discard)?
@@ -1763,7 +2015,7 @@ fn may_exit(st: &S) -> bool {
     }
 }
 
-fn contains_ret(b: &naga::Block) -> bool {
+fn contains_ret(b: &[S]) -> bool {
     any_stmt(b, &|s| matches!(s, S::Return { .. } | S::Kill))
 }
 
@@ -1892,6 +2144,7 @@ pub fn compile(m: &naga::Module, info: &ModuleInfo, entry: Handle<naga::Function
             killed,
             has_kill,
             full: true,
+            unrolled: 0,
             env,
             sample_ref,
             fetch_ref,

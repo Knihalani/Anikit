@@ -464,3 +464,43 @@ fn expressions_follow_generated_music() {
     let (a, b) = (x_at(1.0), x_at(2.0));
     assert!((b - a - 200.0).abs() < 1.0, "{a} {b}");
 }
+
+#[test]
+fn scripts_anywhere_helpers_and_update() {
+    // A script inside draw items (any array) splices; helpers return SVG paths and palette colours.
+    let ev = build(r##"{ "size": [200, 100], "motionBlur": false, "scenes": [ { "background": "#000000", "layers": [ { "draw": [
+        { "script": "let o = []; for k in 0..5 { o.push(#{ d: path_star(20 + k * 40, 50, 15, 6, 5), fill: palette(\"viridis\", k / 4.0) }) } o" },
+        { "circle": [100, 90, 4], "fill": "#fff" } ] } ] } ] }"##);
+    let dl = ev.eval(1.0);
+    assert_eq!(dl.ops.iter().filter(|o| matches!(o, Op::Fill { .. })).count(), 6);
+    // Deterministic helpers.
+    let s = r##"{ "scenes": [ { "layers": [ { "script": "[#{ text: fmt(fbm(1.5, 2.5, 4) + noise3(1, 2, 3) + ease(\"outBack\", 0.5), 6) + palette(\"sunset\", 0.3) + path_circle(0, 0, 10) }]" } ] } ] }"##;
+    assert_eq!(build(s).eval(1.0), build(s).eval(1.0));
+    // Per-frame update scripts set props each frame.
+    let ev = build(r##"{ "motionBlur": false, "scenes": [ { "duration": 2, "layers": [
+        { "shape": "rect", "width": 10, "height": 10, "update": "#{ x: 100 + 400 * t, fill: if t > 1 { \"#ff0000\" } else { \"#00ff00\" } }" } ] } ] }"##);
+    let x_at = |t: f32| ev.eval(t).ops.iter().find_map(|o| match o { Op::RoundRect { transform, .. } => Some(transform[4]), _ => None }).unwrap();
+    assert!((x_at(1.0) - x_at(0.5) - 200.0).abs() < 0.5);
+    assert!(!ev.is_static(0.1, 0.2));
+    let e = errors(r##"{ "scenes": [ { "layers": [ { "text": "a", "update": "#{ rotaton: t }" }, { "text": "b", "update": "42" } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("'rotaton'") && m.contains("did you mean 'rotation'")), "{e:?}");
+    assert!(e.iter().any(|m| m.contains("layers[1].update") && m.contains("map")), "{e:?}");
+}
+
+/// Cost of one `update` script per layer per frame (printed; run with --release for real numbers).
+#[test]
+fn update_script_cost() {
+    let ev = build(r##"{ "scenes": [ { "duration": 2, "layers": [
+        { "shape": "rect", "width": 10, "height": 10, "update": "#{ x: 960 + 300 * sin(t * 2.0), y: 540 + 100 * cos(t * 3.0), rotation: t * 45.0, fill: hsl(t * 90, 80, 60) }" } ] } ] }"##);
+    let plain = build(r##"{ "scenes": [ { "duration": 2, "layers": [ { "shape": "rect", "width": 10, "height": 10 } ] } ] }"##);
+    let mut dl = anikit_video::dl::DisplayList::default();
+    let time = |e: &Evaluator, dl: &mut anikit_video::dl::DisplayList| {
+        let t0 = std::time::Instant::now();
+        for k in 0..2000 {
+            e.eval_into((k % 60) as f32 / 30.0, dl);
+        }
+        t0.elapsed().as_secs_f64() / 2000.0 * 1e6
+    };
+    let (a, b) = (time(&ev, &mut dl), time(&plain, &mut dl));
+    eprintln!("update script: {:.1} µs per layer per frame", a - b);
+}
