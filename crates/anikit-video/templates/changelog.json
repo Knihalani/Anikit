@@ -137,8 +137,8 @@
               "to": {
                 "zoom": 1
               },
-              "duration": 3,
-              "ease": "outCubic"
+              "duration": 0.9,
+              "ease": "outExpo"
             }
           ]
         },
@@ -180,7 +180,7 @@
                 "height": "{{fmt.u * 7}}"
               },
               {
-                "text": "{{(title ?? 'What is new') + '\n[' + (product ?? brand.name) + ']{$accent}'}}",
+                "text": "{{(title ?? 'What is new') + ' in\n[' + (product ?? brand.name) + ']{$accent}'}}",
                 "style": "title",
                 "weight": 750,
                 "width": "{{tw}}",
@@ -247,7 +247,7 @@
             "duration": 0.5,
             "ease": "inOutQuart"
           },
-          "duration": "{{max(2.8, readtime(it.text + ' ' + (it.body ?? '')) + 1.4)}}",
+          "duration": "{{max(2.6, readtime(it.text + ' ' + (it.body ?? '')) + 0.9)}}",
           "layers": [
             {
               "$use": "backdrop",

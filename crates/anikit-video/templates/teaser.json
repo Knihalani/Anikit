@@ -89,7 +89,7 @@
             "in": {
               "id": "beat-{{i + 1}}",
               "duration": "{{d}}",
-              "background": "{{hot ? (contrast(brand.colors.primary) == '#000000' ? brand.colors.backgroundDeep : brand.colors.primary) : '$bgDeep'}}",
+              "background": "{{hot ? brand.colors.fill : '$bgDeep'}}",
               "transition": "cut",
               "camera": {
                 "animate": [
@@ -102,7 +102,7 @@
                       "zoom": 1,
                       "rotation": 0
                     },
-                    "duration": "{{d}}",
+                    "duration": 0.9,
                     "ease": "outExpo"
                   }
                 ]
@@ -175,7 +175,7 @@
                   "size": "{{fmt.portrait ? fmt.u * 3.2 : fmt.u * 2.6}}",
                   "weight": 600,
                   "letterSpacing": "0.12em",
-                  "color": "{{hot ? (contrast(brand.colors.primary) == '#000000' ? brand.colors.text : brand.colors.onPrimary) : alpha(brand.colors.text, 0.75)}}",
+                  "color": "{{hot ? alpha('#FFFFFF', 0.8) : alpha(brand.colors.text, 0.75)}}",
                   "y": "{{fmt.safe.top + fmt.u * 2}}"
                 },
                 {
@@ -187,7 +187,7 @@
                   "lineHeight": 0.95,
                   "size": "{{len(w) <= 6 ? (fmt.portrait ? '24vmin' : '19vmin') : len(w) <= 11 ? (fmt.portrait ? '17vmin' : '15vmin') : (fmt.portrait ? '13vmin' : '12vmin')}}",
                   "width": "{{fmt.safe.w}}",
-                  "color": "{{hot ? (contrast(brand.colors.primary) == '#000000' ? brand.colors.primary : '$onPrimary') : '$text'}}",
+                  "color": "{{hot ? '#FFFFFF' : '$text'}}",
                   "enter": "{{i % 3 == 0 ? 'pop by char from center 0.35s 25ms outBack' : i % 3 == 1 ? 'mask by word up' : 'rise by char 0.4s 20ms'}}"
                 }
               ]
@@ -272,7 +272,8 @@
                   "form": 1.0,
                   "hold": 0.3,
                   "exit": "fade",
-                  "exitTime": 0.5
+                  "exitTime": 0.5,
+                  "count": 5000
                 },
                 "y": "{{payoff ? '44%' : '50%'}}",
                 "width": "{{fmt.safe.w}}",

@@ -387,7 +387,7 @@
                     "form": 1.0,
                     "size": 2.4,
                     "glow": "{{brand.theme != 'light'}}",
-                    "count": 14000,
+                    "count": 5000,
                     "colors": [
                       "{{brand.colors.text}}",
                       "{{brand.colors.secondary}}"
