@@ -325,12 +325,48 @@ impl HpelPlanes {
 
     /// Prediction of the block whose integer top-left sample is (x, y) at the
     /// quarter-pel fraction (fx, fy) ∈ [0, 3]².
-    pub fn pred(&self, g: &Plane, x: isize, y: isize, fx: i32, fy: i32, out: &mut [u8; 256]) {
+    /// SAD of the prediction [`Self::pred`] would produce against `src` (16×16).
+    pub fn sad(&self, g: &Plane, x: isize, y: isize, fx: i32, fy: i32, src: &[u8; 256]) -> u32 {
+        #[cfg(target_arch = "x86_64")]
+        {
+            let s = g.stride;
+            let o = g.off(x, y);
+            let (p1, p2) = self.sources(g, fx, fy);
+            assert!(o + p1.1 + 15 * s + 16 <= p1.0.len());
+            if let Some(q) = p2 {
+                assert!(o + q.1 + 15 * s + 16 <= q.0.len());
+            }
+            // SAFETY: the asserts above bound every 16-byte row read.
+            unsafe {
+                use std::arch::x86_64::*;
+                let a = p1.0.as_ptr().add(o + p1.1);
+                let b = p2.map(|q| q.0.as_ptr().add(o + q.1));
+                let mut acc = _mm_setzero_si128();
+                for r in 0..16 {
+                    let mut v = _mm_loadu_si128(a.add(r * s) as *const __m128i);
+                    if let Some(b) = b {
+                        v = _mm_avg_epu8(v, _mm_loadu_si128(b.add(r * s) as *const __m128i));
+                    }
+                    let t = _mm_loadu_si128(src.as_ptr().add(r * 16) as *const __m128i);
+                    acc = _mm_add_epi64(acc, _mm_sad_epu8(v, t));
+                }
+                (_mm_cvtsi128_si64(acc) + _mm_extract_epi64::<1>(acc)) as u32
+            }
+        }
+        #[cfg(not(target_arch = "x86_64"))]
+        {
+            let mut p = [0u8; 256];
+            self.pred(g, x, y, fx, fy, &mut p);
+            crate::simd::sad16(src, 16, &p, 16)
+        }
+    }
+
+    #[allow(clippy::type_complexity)]
+    fn sources<'s>(&'s self, g: &'s Plane, fx: i32, fy: i32) -> ((&'s [u8], usize), Option<(&'s [u8], usize)>) {
         let s = g.stride;
-        let o = g.off(x, y);
         let (gd, b, h, j) = (&g.data, &self.b.data, &self.h.data, &self.j.data);
         type P<'a> = (&'a [u8], usize);
-        let (p1, p2): (P, Option<P>) = match (fx, fy) {
+        let r: (P, Option<P>) = match (fx, fy) {
             (0, 0) => ((gd, 0), None),
             (1, 0) => ((gd, 0), Some((b, 0))),
             (2, 0) => ((b, 0), None),
@@ -348,6 +384,13 @@ impl HpelPlanes {
             (3, 2) => ((j, 0), Some((h, 1))),
             _ => ((j, 0), None),
         };
+        r
+    }
+
+    pub fn pred(&self, g: &Plane, x: isize, y: isize, fx: i32, fy: i32, out: &mut [u8; 256]) {
+        let s = g.stride;
+        let o = g.off(x, y);
+        let (p1, p2) = self.sources(g, fx, fy);
         let (q1, end1) = (o + p1.1, o + p1.1 + 15 * s + 16);
         assert!(end1 <= p1.0.len());
         if let Some(q) = p2 {
@@ -469,8 +512,11 @@ mod planes_test {
                 for dx in -3..=3 {
                     let (mut a, mut b) = ([0u8; 256], [0u8; 256]);
                     w.pred(dx, dy, &mut a);
-                    hp.pred(&p, x + (dx >> 2) as isize, y + (dy >> 2) as isize, dx & 3, dy & 3, &mut b);
+                    let (gx, gy) = (x + (dx >> 2) as isize, y + (dy >> 2) as isize);
+                    hp.pred(&p, gx, gy, dx & 3, dy & 3, &mut b);
                     assert_eq!(a, b, "({x},{y}) d=({dx},{dy})");
+                    let src: [u8; 256] = core::array::from_fn(|i| (i * 7 % 256) as u8);
+                    assert_eq!(hp.sad(&p, gx, gy, dx & 3, dy & 3, &src), crate::simd::sad16(&src, 16, &b, 16));
                 }
             }
         }

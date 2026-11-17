@@ -657,29 +657,34 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             let centre = d;
             for &(sx, sy) in pat {
                 let cand = (centre.0 + sx * step, centre.1 + sy * step);
-                match (&win, self.c.hpel) {
-                    (Some(w), _) => w.pred(cand.0, cand.1, &mut p),
-                    (None, Some(hp)) => hp.pred(
-                        &self.c.refp.y,
-                        bx + (cand.0 >> 2) as isize,
-                        by + (cand.1 >> 2) as isize,
-                        cand.0 & 3,
-                        cand.1 & 3,
-                        &mut p,
-                    ),
+                let (gx, gy, fx, fy) = (bx + (cand.0 >> 2) as isize, by + (cand.1 >> 2) as isize, cand.0 & 3, cand.1 & 3);
+                let sad = match (&win, self.c.hpel) {
+                    (Some(w), _) => {
+                        w.pred(cand.0, cand.1, &mut p);
+                        crate::simd::sad16(src_y, 16, &p, 16)
+                    }
+                    (None, Some(hp)) => hp.sad(&self.c.refp.y, gx, gy, fx, fy, src_y),
                     _ => unreachable!(),
-                }
+                };
                 let q = (base_q.0 + cand.0, base_q.1 + cand.1);
-                let cst = crate::simd::sad16(src_y, 16, &p, 16) + mvcost(q);
+                let cst = sad + mvcost(q);
                 if cst < best {
                     best = cst;
                     it.mv = q;
                     d = cand;
-                    it.pred = p;
                 }
             }
         }
         if it.mv != start {
+            let (cx, cy) = (d.0, d.1);
+            match (&win, self.c.hpel) {
+                (Some(w), _) => w.pred(cx, cy, &mut p),
+                (None, Some(hp)) => {
+                    hp.pred(&self.c.refp.y, bx + (cx >> 2) as isize, by + (cy >> 2) as isize, cx & 3, cy & 3, &mut p)
+                }
+                _ => unreachable!(),
+            }
+            it.pred = p;
             let c = dsp::satd(src_y, &it.pred, 16, 16) + mvcost(it.mv);
             it.cost = c;
             it.sad = best - mvcost(it.mv);
