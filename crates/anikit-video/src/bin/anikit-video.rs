@@ -18,7 +18,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema> [spec.json|spec.yaml] [options]
-  render spec.json -o out.mp4   [--quality draft|good|best] [--codec h264|h265|vp9|av1|prores|gif|png]
+  render spec.json -o out.mp4   [--quality draft|good|best] [--codec ak264|h264|h265|vp9|av1|prores|gif|png]
                                 [--from S] [--to S] [--scale K] [--no-audio]
   still  spec.json -o f.png     [--at S | --at @scene] [--scale K] [--watch]
   sheet  spec.json -o sheet.png [--cols 4] [--rows 3] [--width 480]
@@ -121,16 +121,25 @@ fn build(path: &str, json: bool, load_assets: bool) -> Result<(Evaluator, Vec<Di
 
 fn report(d: &[Diagnostic], json: bool, ev: Option<&Evaluator>) {
     if json {
-        let errors: Vec<_> = d.iter().filter(|x| x.severity == Severity::Error).collect();
-        let warnings: Vec<_> = d.iter().filter(|x| x.severity == Severity::Warning).collect();
+        // Compact (token-efficient): one string per issue, "path: message, did you mean 'x'?".
+        let line = |x: &Diagnostic| {
+            let mut s = if x.path.is_empty() { x.message.clone() } else { format!("{}: {}", x.path, x.message) };
+            if let Some(g) = &x.suggestion {
+                s += &format!(", did you mean '{g}'?");
+            }
+            s
+        };
+        let errors: Vec<String> = d.iter().filter(|x| x.severity == Severity::Error).map(line).collect();
+        let warnings: Vec<String> = d.iter().filter(|x| x.severity == Severity::Warning).map(line).collect();
         let mut v = serde_json::json!({ "ok": errors.is_empty(), "errors": errors, "warnings": warnings });
         if let Some(ev) = ev {
             v["width"] = ev.width.into();
             v["height"] = ev.height.into();
             v["fps"] = ev.fps.into();
-            v["duration"] = ev.duration.into();
+            let r = |x: f32| ((x as f64) * 1000.0).round() / 1000.0;
+            v["duration"] = r(ev.duration).into();
             v["frames"] = ev.frames().into();
-            v["scenes"] = serde_json::to_value(ev.scenes()).unwrap();
+            v["scenes"] = ev.scenes().iter().map(|s| serde_json::json!({ "id": s.id, "start": r(s.start), "end": r(s.end) })).collect();
         }
         println!("{v}");
     } else {
@@ -318,7 +327,11 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                 Some(q) => Quality::parse(q).ok_or_else(|| format!("--quality: use draft, good or best (got '{q}')"))?,
             };
             let codec = match a.get("--codec") {
-                None => Codec::from_path(&out),
+                // Our encoder by default for MP4; x264 for `--quality best` (smallest files).
+                None => match Codec::from_path(&out) {
+                    Codec::H264 if quality != Quality::Best => Codec::Ak264,
+                    c => c,
+                },
                 Some(c) => Codec::parse(c).ok_or_else(|| format!("--codec: unknown '{c}'"))?,
             };
             let from = a.get("--from").map(|s| resolve_time(&ev, s)).transpose()?;

@@ -171,3 +171,44 @@ fn contextual_key_suggestions() {
     assert!(e.iter().any(|m| m == "warning: scenes[0].layers[0].enter.dellay: unknown key (ignored), did you mean 'delay'?"), "{e:?}");
     assert!(e.iter().any(|m| m == "warning: scenes[0].ease: 'ease' is not valid here (ignored)"), "{e:?}");
 }
+
+#[test]
+fn static_spans() {
+    let ev = build(r#"{ "scenes": [ { "duration": 3, "layers": [ { "text": "x", "enter": { "preset": "fadeUp", "duration": 0.5 } } ] },
+        { "duration": 3, "transition": { "type": "crossfade", "duration": 0.5 }, "layers": [ { "shape": "rect", "rotation": "=t*10" } ] } ] }"#);
+    assert!(!ev.is_static(0.0, 0.4));
+    assert!(ev.is_static(1.0, 2.0));
+    assert!(!ev.is_static(2.4, 2.7)); // transition
+    assert!(!ev.is_static(3.5, 4.0)); // expression of t
+    // The static claim must agree with the display lists.
+    assert_eq!(ev.eval(1.0), ev.eval(2.0));
+}
+
+#[test]
+fn is_static_never_lies() {
+    let ev = build(include_str!("../../../docs/video/examples/showcase.json"));
+    let mut claims = 0;
+    for i in 0..ev.frames() - 1 {
+        let (a, b) = (i as f32 / ev.fps, (i + 1) as f32 / ev.fps);
+        if ev.is_static(a, b) {
+            claims += 1;
+            assert_eq!(ev.eval(a), ev.eval(b), "frame {i}");
+        }
+    }
+    eprintln!("{claims} static claims");
+}
+
+#[test]
+fn caption_word_highlight() {
+    let ev = build(r##"{ "scenes": [ { "duration": 3, "layers": [] } ],
+        "captions": { "highlight": "#ff0000", "cues": [ { "text": "", "at": 0.5, "end": 2.5, "words": [["Hello", 0.5, 1.0], ["world", 1.0, 2.0]] } ] } }"##);
+    let colors = |t: f32| -> Vec<[f32; 4]> {
+        ev.eval(t).ops.iter().filter_map(|o| match o { Op::Glyphs { paint: anikit_video::dl::Paint::Solid(c), .. } => Some(c.0), _ => None }).collect()
+    };
+    let a = colors(0.8);
+    assert_eq!(a.len(), 2);
+    assert!(a[0][0] > 0.95 && a[0][1] < 0.1, "first word highlighted: {a:?}");
+    assert!(a[1][1] > 0.8, "second word plain: {a:?}");
+    let b = colors(1.5);
+    assert!(b[1][0] > 0.95 && b[1][1] < 0.1 && b[0][1] > 0.8, "{b:?}");
+}

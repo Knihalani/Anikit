@@ -47,15 +47,15 @@ pub struct Summary {
     pub output: String,
     pub width: u32,
     pub height: u32,
-    pub fps: f32,
+    pub fps: f64,
     pub frames: u32,
     /// Frames skipped because they were identical to the previous one.
     pub deduped: u32,
-    pub duration: f32,
+    pub duration: f64,
     /// Wall-clock seconds.
-    pub seconds: f32,
+    pub seconds: f64,
     /// Frames per second achieved, end to end.
-    pub render_fps: f32,
+    pub render_fps: f64,
     pub bytes: u64,
     pub codec: String,
 }
@@ -448,13 +448,17 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
         output: enc.output().to_string(),
         width: w,
         height: h,
-        fps: ev.fps,
+        fps: round3(ev.fps as f64),
         frames: n,
         deduped,
-        duration: n as f32 / ev.fps,
-        seconds: secs,
-        render_fps: n as f32 / secs.max(1e-6),
+        duration: round3((n as f32 / ev.fps) as f64),
+        seconds: round3(secs as f64),
+        render_fps: (n as f64 / secs.max(1e-6) as f64).round(),
         bytes,
         codec: enc.name().to_string(),
     })
+}
+
+fn round3(x: f64) -> f64 {
+    (x * 1000.0).round() / 1000.0
 }
