@@ -48,7 +48,9 @@ const TOOLDEFS = {
       "h264-best": ["--codec", "h264", "--quality", "best"],
     },
     render: (comp, out, extra) => [AV, ["render", `anikit/${comp}.json`, "-o", out, "--quiet", ...extra], {}],
-    reference: (comp, dir) => [AV, ["render", `anikit/${comp}.json`, "--codec", "png", "-o", path.join(dir, "f.png"), "--quiet"], {}],
+    // One `still` per frame (true RGB). `render --codec png` is not used: it pipes 4:2:0 YUV to ffmpeg
+    // without signalling BT.709, so its PNGs are chroma-subsampled with BT.601-shifted colours.
+    reference: (comp, dir) => ["bash", ["-c", `seq 0 ${FRAMES - 1} | xargs -P ${os.cpus().length} -I{} "${AV}" still anikit/${comp}.json --at {}f -o "${dir}/f_{}.png" > /dev/null`], {}],
     still: (comp, out) => [AV, ["still", `anikit/${comp}.json`, "--at", "0", "-o", out], {}],
   },
   remotion: {
@@ -194,12 +196,13 @@ for (const tool of TOOLS) {
   const def = TOOLDEFS[tool];
   for (const comp of COMPS) {
     // Lossless reference (one render, not timed for the tables).
-    let ref = null;
+    let ref = null, refreshed = false;
     if (!flag("no-quality")) {
       const dir = path.join(OUT, "ref", tool, comp);
       const pat = path.join(dir, "ref", "%05d.png");
       if (fs.existsSync(path.join(dir, "ref", "00600.png")) && !flag("fresh-ref")) ref = { pattern: pat, count: FRAMES };
       else {
+        refreshed = true;
         fs.rmSync(dir, { recursive: true, force: true });
         fs.mkdirSync(dir, { recursive: true });
         const [c, a, e] = def.reference(comp, dir);
@@ -210,6 +213,7 @@ for (const tool of TOOLS) {
         log(`  ${ref.count} frames, ${r.wall.toFixed(1)} s`);
       }
       // Ceiling: the reference through lossless 4:2:0 BT.709 (x264 -qp 0). No 4:2:0 MP4 can beat this.
+      if (refreshed) results.ceiling = (results.ceiling || []).filter((c) => !(c.tool === tool && c.comp === comp));
       if (!results.ceiling?.find((c) => c.tool === tool && c.comp === comp)) {
         const ll = path.join(OUT, "ref", tool, comp, "lossless420.mp4");
         spawnSync("ffmpeg", ["-y", "-v", "error", "-framerate", String(FPS), "-i", ref.pattern, "-vf", "scale=out_color_matrix=bt709:out_range=tv,format=yuv420p",
