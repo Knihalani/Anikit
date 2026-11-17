@@ -308,19 +308,23 @@ def rain():
 def nosleep():
     ACID, BLACK, RED = "#E8FF2E", "#0A0A0A", "#FF2E2E"
     beat = 60 / 128
+    disp = dict(font="Inter Display", weight=900, letterSpacing="-0.04em")
     layers = [rect(960, 540, W, H, BLACK)]
+    # outlined marquee rows behind everything, alternating directions
+    for r in range(7):
+        y = 60 + r * 160
+        d = 1 if r % 2 == 0 else -1
+        layers.append(txt("NO SLEEP  ·  " * 8, f"={960 + d * 300} + {d} * gt * 140 - {d} * 1400 * floor(({d} * gt * 140 + 700) / 1400)",
+                          y, 150, "none", **disp, stroke={"color": ACID + "40", "width": 2}))
     # frame 0: the title, full bleed
-    layers.append({"type": "group", "end": 2.0 * beat * 4 * 0 + 1.88, "layers": [
-        txt("NO\nSLEEP", 960, 560, 470, ACID, font="Inter Display", weight=900, lineHeight=0.82,
-            letterSpacing="-0.04em", exit={"preset": "zoomOut", "duration": 0.3}),
+    layers.append({"type": "group", "end": 1.88, "layers": [
+        txt("NO\nSLEEP", 960, 560, 470, ACID, **disp, lineHeight=0.82, exit={"preset": "zoomOut", "duration": 0.3}),
     ]})
     lyric = ["CITY", "LIGHTS", "DON'T", "BLINK", "SO", "WHY", "SHOULD", "I", "NO", "SLEEP", "NO", "SLEEP",
              "TILL", "THE", "SUN", "COMES", "UP", "RED", "NO", "SLEEP", "TONIGHT", "WE", "RUN", "THE", "STREETS",
              "ELECTRIC", "NO", "SLEEP", "NO", "SLEEP"]
-    t0 = 1.88
-    i = 0
-    t = t0
-    styles = ["slam", "invert", "split", "scramble", "slam", "skew"]
+    styles = ["slam", "invert", "stack", "scramble", "slam", "skew"]
+    t, i = 1.88, 0
     while t < SECONDS - beat and i < 200:
         word = lyric[i % len(lyric)]
         st = styles[i % len(styles)]
@@ -332,28 +336,34 @@ def nosleep():
         g = {"type": "group", "start": round(t, 4), "end": round(t + beat, 4), "layers": []}
         if bg != BLACK:
             g["layers"].append(rect(960, 540, W, H, bg))
-        base = dict(font="Inter Display", weight=900, letterSpacing="-0.04em")
-        if st == "split":
-            g["layers"] += [
-                txt(word, 960, 560, size, fg, **base, clip={"shape": "rect", "width": 1920, "height": 300, "y": 0},
-                    animate=[{"from": {"x": 700}, "duration": beat * 0.6, "ease": "outExpo"}]),
-                txt(word, 960, 560, size, fg, **base,
-                    animate=[{"from": {"x": 1220}, "duration": beat * 0.6, "ease": "outExpo"}], opacity=0.9),
-            ]
+        # outline echo: a bigger hollow copy that blows out behind the word
+        g["layers"].append(txt(word, 960, 560, size, "none", **disp, stroke={"color": fg + "90", "width": 3},
+                               animate=[{"from": {"scale": 1.0, "opacity": 1}, "to": {"scale": 1.5, "opacity": 0},
+                                         "duration": beat, "ease": "outCubic"}]))
+        if st == "stack":
+            for k, dy in enumerate((-0.92, 0.0, 0.92)):
+                filled = dy == 0.0
+                g["layers"].append(txt(word, 960, 560 + dy * size, size, fg if filled else "none", **disp,
+                                       stroke=None if filled else {"color": fg, "width": 3},
+                                       animate=[{"from": {"y": f"{'+' if dy <= 0 else '-'}{abs(dy) * size * 0.4 + 40:.0f}"},
+                                                 "duration": beat * 0.6, "ease": "outExpo"}]))
         elif st == "scramble":
-            g["layers"].append(txt(word, 960, 560, size, fg, **base, kinetic="scramble"))
+            g["layers"].append(txt(word, 960, 560, size, fg, **disp, kinetic="scramble"))
         elif st == "skew":
-            g["layers"].append(txt(word, 960, 560, size, fg, **base, skewX=-14,
+            g["layers"].append(txt(word, 960, 560, size, fg, **disp, skewX=-14,
                                    animate=[{"from": {"scale": 1.35, "skewX": -30}, "duration": beat * 0.7,
                                              "ease": "outExpo"}]))
         else:
-            g["layers"].append(txt(word, 960, 560, size, fg, **base,
+            g["layers"].append(txt(word, 960, 560, size, fg, **disp,
                                    animate=[{"from": {"scale": 1.6, "opacity": 0}, "duration": beat * 0.35,
                                              "ease": "outExpo"},
                                             {"to": {"scale": 0.94}, "at": beat * 0.35, "duration": beat * 0.65,
                                              "ease": "linear"}]))
-        # a thin rule and the timecode, like a lyric sheet
+        if i % 2 == 1:   # a red slash rips across on the off-beats
+            g["layers"].append(rect("=-300 + 2520 * smoothstep(0, 0.22, t)", 540, 90, 1500, RED, skewX=-28,
+                                    blend="normal", opacity=0.92))
         g["layers"].append(txt(f"{i + 1:03d}", 80, 1010, 22, fg, font="JetBrains Mono", weight=600, anchor="left"))
+        g["layers"].append(txt("NO SLEEP — 128", 1840, 1010, 22, fg, font="JetBrains Mono", weight=600, anchor="right"))
         layers.append(g)
         t += beat
         i += 1
