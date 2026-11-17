@@ -135,6 +135,8 @@ pub struct Spec {
     /// `{ "preset": "cinematic", "bloom": 0.4, … }`. Default none.
     #[schemars(with = "Option<PostValue>")]
     pub post: Option<serde_json::Value>,
+    /// Encoder tuning (the built-in ak264 MP4 encoder): `{ "aq": 0.8 }`.
+    pub encode: Option<EncodeSpec>,
     /// Motion blur on moving content: `true` (180° shutter), `false`, or `{ "shutter": 90 }` (degrees).
     /// Default: on at `--quality high` only (it renders several sub-frames per moving frame).
     pub motion_blur: Option<MotionBlur>,
@@ -184,6 +186,15 @@ pub enum PostValue {
     Preset(String),
     /// `{ "preset": "cinematic", …any post setting… }`.
     Custom(serde_json::Map<String, serde_json::Value>),
+}
+
+/// `encode`: encoder tuning.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct EncodeSpec {
+    /// Adaptive quantisation strength, 0 (off, default) to 2: spends bits on flat areas
+    /// (gradients, skies) and saves them on busy texture.
+    pub aq: Option<f64>,
 }
 
 /// `motionBlur`: on/off, or a shutter angle.
@@ -530,6 +541,10 @@ pub struct Layer {
     #[serde(default, deserialize_with = "de::opt_layers")]
     #[schemars(with = "Option<Vec<de::LayerItem>>")]
     pub children: Option<Vec<Layer>>,
+
+    /// Per-frame script: returns props to set this frame, e.g. `"#{ x: 960 + 200 * sin(t), fill: hsl(t * 90, 80, 60) }"`.
+    /// Sees `t T gt p i n w h fps frame beat bar level bpm`. Runs every frame (a few µs).
+    pub update: Option<serde_json::Value>,
 
     // ---- draw
     /// Raw drawing: primitives in frame pixels (the layer defaults to the parent's box), each

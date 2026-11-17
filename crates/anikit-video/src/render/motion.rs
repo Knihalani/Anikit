@@ -16,8 +16,11 @@
 //! - Blurred layers (glows, shadows) sample only every σ/2, and sub-pixel
 //!   drift in scale or opacity is held at the centre value, so cached glyph
 //!   runs and filtered layers are reused across samples.
+//! - Image content (shader layers, 3D scenes, video frames) is made once per
+//!   frame: samples reuse the centre frame's pixels, blurred by the layer's
+//!   own movement only, so expensive layers never cost per sample.
 //!
-//! [`Renderer::set_brute_force_motion`] (and `Quality::Reference`) renders 64
+//! [`Renderer::set_brute_force_motion`] (and `Quality::Reference`) renders full
 //! full frames instead: the ground truth `examples/mb_bench.rs` measures against.
 
 use super::incremental::{hash_op, op_rects};
@@ -27,6 +30,9 @@ use kurbo::{Affine, Rect, Shape, Vec2};
 
 /// Most samples per frame.
 pub const MAX_SAMPLES: usize = 32;
+
+/// Most samples per frame at [`super::Quality::Reference`].
+pub const REFERENCE_SAMPLES: usize = 96;
 /// Longest streak (px at 1080p): faster motion gets a shorter effective
 /// shutter, as motion-graphics renderers clamp blur, so samples stay ≤ 1.25 px apart.
 pub const MAX_STREAK: f64 = 40.0;
@@ -224,6 +230,22 @@ fn changes(a: &[Op], b: &[Op], ra: &[Option<Rect>], rb: &[Option<Rect>], cut: f6
             event: true,
             vel: None,
         });
+    }
+}
+
+/// Image content (shader frames, 3D scenes, video) is costly to make: a
+/// sample shows the centre frame's pixels for each image op (matched in
+/// order), which still blurs by its own movement, so the content is never
+/// re-rendered per sample.
+fn freeze_images(ops: &mut [Op], center: &[Op]) {
+    let theirs = center.iter().filter_map(|o| if let Op::Image { image, .. } = o { Some(*image) } else { None });
+    let n = center.iter().filter(|o| matches!(o, Op::Image { .. })).count();
+    if ops.iter().filter(|o| matches!(o, Op::Image { .. })).count() != n {
+        return;
+    }
+    let mine = ops.iter_mut().filter_map(|o| if let Op::Image { image, .. } = o { Some(image) } else { None });
+    for (a, b) in mine.zip(theirs) {
+        *a = b;
     }
 }
 
@@ -510,7 +532,7 @@ impl Renderer {
         let boxed_area: usize = boxes.iter().map(|(b, _, _)| (b[2] - b[0]) * (b[3] - b[1])).sum();
         if reference || boxed_area * 10 >= w * h * 6 {
             let (n, smear) = if reference {
-                (64, None)
+                (((d / 0.5).ceil() as usize).clamp(8, REFERENCE_SAMPLES), None)
             } else {
                 plan(Rect::new(0.0, 0.0, w as f64, h as f64))
             };
@@ -591,6 +613,9 @@ impl Renderer {
                     }
                 }
                 snap(&mut l.ops[k..], &center.ops[k.min(center.ops.len())..], &rects[1]);
+                if !reference {
+                    freeze_images(&mut l.ops, &center.ops);
+                }
                 if full {
                     self.render(&l);
                 } else {

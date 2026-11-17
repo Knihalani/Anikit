@@ -86,21 +86,23 @@ pub fn power_spectrum(l: &[f32], r: &[f32], rate: f32) -> (f64, Vec<f64>) {
 pub fn analyze(l: &[f32], r: &[f32], rate: f32) -> Report {
     let n = l.len().min(r.len());
     let (l, r) = (&l[..n], &r[..n]);
-    let loud = measure(l, r, rate);
-    let (mut sl, mut sr, mut slr, mut ml, mut mr, mut clip) = (0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0usize);
-    for (&a, &b) in l.iter().zip(r) {
-        let (a, b) = (a as f64, b as f64);
-        sl += a * a;
-        sr += b * b;
-        slr += a * b;
-        ml += a;
-        mr += b;
-        clip += (a.abs() >= 0.9999) as usize + (b.abs() >= 0.9999) as usize;
-    }
+    let stats = || {
+        let (mut sl, mut sr, mut slr, mut ml, mut mr, mut clip) = (0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0usize);
+        for (&a, &b) in l.iter().zip(r) {
+            let (a, b) = (a as f64, b as f64);
+            sl += a * a;
+            sr += b * b;
+            slr += a * b;
+            ml += a;
+            mr += b;
+            clip += (a.abs() >= 0.9999) as usize + (b.abs() >= 0.9999) as usize;
+        }
+        (sl, sr, slr, ml, mr, clip)
+    };
+    let (loud, ((sl, sr, slr, ml, mr, clip), (bw, pow))) = rayon::join(|| measure(l, r, rate), || rayon::join(stats, || power_spectrum(l, r, rate)));
     let nn = n.max(1) as f64;
     let rms = ((sl + sr) / (2.0 * nn)).sqrt();
     let db = |x: f64| if x > 0.0 { 20.0 * x.log10() } else { -200.0 };
-    let (bw, pow) = power_spectrum(l, r, rate);
     let mut band = [0.0f64; 5];
     let (mut total, mut moment) = (0.0f64, 0.0f64);
     for (k, p) in pow.iter().enumerate().skip(1) {

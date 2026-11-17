@@ -143,6 +143,17 @@
         }
       ]
     },
+    "encode": {
+      "description": "Encoder tuning (the built-in ak264 MP4 encoder): `{ \"aq\": 0.8 }`.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EncodeSpec"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "motionBlur": {
       "description": "Motion blur on moving content: `true` (180° shutter), `false`, or `{ \"shutter\": 90 }` (degrees).\nDefault: on at `--quality high` only (it renders several sub-frames per moving frame).",
       "anyOf": [
@@ -1674,6 +1685,9 @@
           },
           "default": null
         },
+        "update": {
+          "description": "Per-frame script: returns props to set this frame, e.g. `\"#{ x: 960 + 200 * sin(t), fill: hsl(t * 90, 80, 60) }\"`.\nSees `t T gt p i n w h fps frame beat bar level bpm`. Runs every frame (a few µs)."
+        },
         "draw": {
           "description": "Raw drawing: primitives in frame pixels (the layer defaults to the parent's box), each\nwith its own fill and stroke. The layer's transforms, opacity, animation and `trimStart`/`trimEnd` apply.",
           "type": [
@@ -2822,6 +2836,20 @@
               "type": "null"
             }
           ]
+        }
+      }
+    },
+    "EncodeSpec": {
+      "description": "`encode`: encoder tuning.",
+      "type": "object",
+      "properties": {
+        "aq": {
+          "description": "Adaptive quantisation strength, 0 (off, default) to 2: spends bits on flat areas\n(gradients, skies) and saves them on busy texture.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
         }
       }
     },

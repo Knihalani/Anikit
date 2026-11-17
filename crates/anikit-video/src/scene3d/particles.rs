@@ -37,7 +37,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 const KEYS: &[&str] = &[
-    "type", "name", "count", "seed", "emit", "velocity", "spread", "normal_speed", "life", "flow", "attractors", "gravity", "drag", "target", "collide", "bounce", "friction", "size", "size_var", "color", "color_by", "speed_range", "opacity", "emissive", "blend", "lit", "start", "end", "substeps", "stretch",
+    "type", "name", "count", "seed", "emit", "velocity", "spread", "normal_speed", "life", "flow", "attractors", "gravity", "drag", "target", "collide", "bounce", "friction", "size", "size_var", "color", "color_by", "speed_range", "opacity", "emissive", "blend", "lit", "start", "end", "substeps", "stretch", "shadows", "force",
 ];
 const EMIT_KEYS: &[&str] = &["shape", "pos", "position", "radius", "size", "surface", "axis", "image", "composition", "frame", "threshold", "rot", "rotation"];
 
@@ -70,6 +70,8 @@ enum Emit {
     Image { pts: Arc<Vec<(V3, [f32; 3])>>, cdf: Arc<Vec<f32>>, texel: f32, normal: V3 },
     /// An image or composition, resolved on first render.
     Pending(Arc<Map<String, Value>>),
+    /// Custom: position (and optionally velocity) as expressions of `i`, `age` (the spawn cycle), `t`.
+    Expr { pos: Arc<[PExpr; 3]>, vel: Option<Arc<[PExpr; 3]>> },
 }
 
 #[derive(Clone)]
@@ -122,6 +124,11 @@ pub struct Def {
     pub shadows: bool,
     /// Hash of the description (disk cache key).
     key: u64,
+    /// Custom acceleration field, size, colour and opacity per particle.
+    force: Option<Arc<[PExpr; 3]>>,
+    size_e: Option<PExpr>,
+    color_e: Option<Arc<[PExpr; 3]>>,
+    opacity_e: Option<PExpr>,
 }
 
 fn gf(m: &Map<String, Value>, k: &str, d: f32, path: &str) -> Res<f32> {
@@ -147,6 +154,12 @@ fn emit(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, named: &
         return emit(o, shapes, mats, named, objects, path);
     }
     let m = v.as_object().ok_or_else(|| format!("{path}: expected an emitter like {{ \"shape\": \"sphere\", \"radius\": 1 }} or an object like {{ \"text\": \"ANIKIT\" }}"))?;
+    // Custom spawn rule: "pos": "=[…]" expressions.
+    if let Some(Value::String(ps)) = m.get("pos").or(m.get("position")) {
+        spec::check_keys(m, &["pos", "position", "vel", "velocity"], path)?;
+        let vel = m.get("vel").or(m.get("velocity")).map(|x| pexpr3(x, &format!("{path}.vel"))).transpose()?.map(Arc::new);
+        return Ok(Emit::Expr { pos: Arc::new(pexpr3(&Value::String(ps.clone()), &format!("{path}.pos"))?), vel });
+    }
     let pos = m.get("pos").or(m.get("position")).map(|x| v3c(x, &format!("{path}.pos"))).transpose()?;
     if m.contains_key("image") || m.contains_key("composition") {
         spec::check_keys(m, EMIT_KEYS, path)?;
@@ -236,8 +249,13 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
             Some(Target { emit: emit(&Value::Object(tm), shapes, mats, named, objects, &p)?, from, to: to.max(from + 1e-3) })
         }
     };
+    let color_e = match m.get("color") {
+        Some(Value::String(c)) if c.trim_start().starts_with('=') => Some(Arc::new(pexpr3(&Value::String(c.clone()), &format!("{path}.color"))?)),
+        _ => None,
+    };
     let colors = match m.get("color") {
         None => vec![v3(1.0, 1.0, 1.0)],
+        Some(_) if color_e.is_some() => vec![v3(1.0, 1.0, 1.0)],
         Some(Value::Array(a)) if a.iter().all(|x| x.is_string()) => a.iter().enumerate().map(|(k, x)| spec::color(x, &format!("{path}.color[{k}]"))).collect::<Res<Vec<_>>>()?,
         Some(x) => vec![spec::color(x, &format!("{path}.color"))?],
     };
@@ -289,12 +307,18 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
         collide: m.get("collide").and_then(|x| x.as_bool()).unwrap_or(true),
         bounce: gf(m, "bounce", 0.3, path)?,
         friction: gf(m, "friction", 0.3, path)?.clamp(0.0, 1.0),
-        size: gf(m, "size", 0.004, path)?.max(1e-5),
+        size: match m.get("size") {
+            Some(Value::String(_)) => 0.004,
+            _ => gf(m, "size", 0.004, path)?.max(1e-5),
+        },
         size_var: gf(m, "size_var", 0.5, path)?.clamp(0.0, 1.0),
         colors,
         color_by,
         speed_range: sr,
-        opacity: gf(m, "opacity", 1.0, path)?.clamp(0.0, 1.0),
+        opacity: match m.get("opacity") {
+            Some(Value::String(_)) => 1.0,
+            _ => gf(m, "opacity", 1.0, path)?.clamp(0.0, 1.0),
+        },
         emissive: gf(m, "emissive", if blend == Blend::Add { 1.0 } else { 0.0 }, path)?,
         blend,
         lit: m.get("lit").and_then(|x| x.as_bool()).unwrap_or(blend == Blend::Over),
@@ -303,12 +327,99 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
         substeps: gf(m, "substeps", 2.0, path)?.clamp(1.0, 16.0) as u32,
         stretch: gf(m, "stretch", 1.0, path)?.max(0.0),
         shadows: m.get("shadows").and_then(|x| x.as_bool()).unwrap_or(blend == Blend::Over),
+        force: m.get("force").map(|x| pexpr3(x, &format!("{path}.force"))).transpose()?.map(Arc::new),
+        size_e: match m.get("size") {
+            Some(Value::String(x)) => Some(PExpr::compile(x, &format!("{path}.size"))?),
+            _ => None,
+        },
+        color_e,
+        opacity_e: match m.get("opacity") {
+            Some(Value::String(x)) => Some(PExpr::compile(x, &format!("{path}.opacity"))?),
+            _ => None,
+        },
         key: {
             // An image emitter's file can change under the same spec.
             let stamp = emit_v.get("image").and_then(|x| x.as_str()).and_then(|f| std::fs::metadata(f).ok()).and_then(|m| m.modified().ok()).map(|t| format!("{t:?}")).unwrap_or_default();
             crate::components::style::fnv(&[b"anikit-particles-v1", v.to_string().as_bytes(), emit_v.to_string().as_bytes(), stamp.as_bytes()])
         },
     })
+}
+
+// ------------------------------------------------------------------ expressions
+
+/// A per-particle expression. Variables: `x`, `y`, `z` (position, m), `vx`,
+/// `vy`, `vz` (velocity, m/s), `t` (seconds), `age` (0–1 over a life, or
+/// seconds / 4 without `life`), `i` (particle id), plus every expression
+/// function (`sin`, `noise`, `rand`, `clamp`, `mix` …). In emitters, `i` is the
+/// particle and `age` the spawn cycle.
+#[derive(Clone)]
+pub struct PExpr(Arc<crate::eval::expr::Expr>);
+
+/// Particle variables onto the expression engine's slots.
+const PVARS: &[(&str, &str)] = &[("vx", "T"), ("vy", "gt"), ("vz", "p"), ("age", "n"), ("x", "w"), ("y", "h"), ("z", "fps")];
+
+impl PExpr {
+    fn compile(src: &str, path: &str) -> Res<PExpr> {
+        let src = src.strip_prefix('=').unwrap_or(src);
+        let b = src.as_bytes();
+        let mut out = String::with_capacity(src.len());
+        let mut i = 0;
+        'scan: while i < b.len() {
+            let start_ok = i == 0 || !(b[i - 1].is_ascii_alphanumeric() || b[i - 1] == b'_');
+            if start_ok {
+                for (from, to) in PVARS {
+                    let e = i + from.len();
+                    if src[i..].starts_with(from) && b.get(e).is_none_or(|c| !(c.is_ascii_alphanumeric() || *c == b'_')) {
+                        out.push_str(to);
+                        i = e;
+                        continue 'scan;
+                    }
+                }
+            }
+            out.push(b[i] as char);
+            i += 1;
+        }
+        crate::eval::expr::Expr::compile(&out, 1.0, 1920.0, 1080.0).map(|e| PExpr(Arc::new(e))).map_err(|e| format!("{path}: expression `{src}`: {e}"))
+    }
+
+    #[inline]
+    fn at(&self, p: V3, v: V3, t: f32, age: f32, i: usize) -> f32 {
+        let vars = Vars { t: t as f64, scene_t: v.x as f64, gt: v.y as f64, p: v.z as f64, i: i as f64, n: age as f64, w: p.x as f64, h: p.y as f64, fps: p.z as f64, ..Vars::default() };
+        self.0.eval(&vars) as f32
+    }
+}
+
+/// `"=[a, b, c]"`: three per-particle expressions.
+fn pexpr3(v: &Value, path: &str) -> Res<[PExpr; 3]> {
+    let s = v.as_str().ok_or_else(|| format!("{path}: expected \"=[x, y, z]\" (expressions of x, y, z, vx, vy, vz, t, age, i)"))?;
+    let body = s.strip_prefix('=').unwrap_or(s).trim();
+    let inner = body.strip_prefix('[').and_then(|b| b.strip_suffix(']')).ok_or_else(|| format!("{path}: expected \"=[x, y, z]\""))?;
+    let mut parts = Vec::new();
+    let (mut depth, mut cur) = (0, String::new());
+    for c in inner.chars() {
+        match c {
+            '(' | '[' => {
+                depth += 1;
+                cur.push(c)
+            }
+            ')' | ']' => {
+                depth -= 1;
+                cur.push(c)
+            }
+            ',' if depth == 0 => parts.push(std::mem::take(&mut cur)),
+            _ => cur.push(c),
+        }
+    }
+    parts.push(cur);
+    if parts.len() != 3 {
+        return Err(format!("{path}: expected 3 expressions, got {}", parts.len()));
+    }
+    Ok([PExpr::compile(&parts[0], path)?, PExpr::compile(&parts[1], path)?, PExpr::compile(&parts[2], path)?])
+}
+
+#[inline]
+fn eval3p(e: &[PExpr; 3], p: V3, v: V3, t: f32, age: f32, i: usize) -> V3 {
+    v3(e[0].at(p, v, t, age, i), e[1].at(p, v, t, age, i), e[2].at(p, v, t, age, i))
 }
 
 // ------------------------------------------------------------------ emitters
@@ -364,6 +475,7 @@ fn sample(e: &Emit, seed: u32, i: u32, k: u32) -> (V3, V3, Option<[f32; 3]>) {
             (add(p, j), *normal, Some(c))
         }
         Emit::Pending(_) => (v3(0.0, 0.0, 0.0), v3(0.0, 1.0, 0.0), None),
+        Emit::Expr { pos, .. } => (eval3p(pos, v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0), 0.0, k as f32, i as usize), v3(0.0, 1.0, 0.0), None),
     }
 }
 
@@ -576,6 +688,8 @@ pub struct Sim {
     tgt: Option<Targets>,
     flows: Option<(FlowGrid, FlowGrid)>,
     floor_y: Option<f32>,
+    /// Scene objects particles bounce off (`"collide": true`).
+    colliders: Vec<ObjDef>,
     /// Disk checkpoint key: the description, fps and floor.
     key: u64,
     state: Mutex<SimState>,
@@ -621,10 +735,19 @@ impl Sim {
             tgt,
             flows,
             floor_y: if def.collide { floor_y } else { None },
+            colliders: Vec::new(),
             key: crate::components::style::fnv(&[&def.key.to_le_bytes(), &fps.to_bits().to_le_bytes(), &floor_y.unwrap_or(f32::NAN).to_bits().to_le_bytes()]),
             state: Mutex::new(SimState { live: None, snaps: HashMap::new(), order: Vec::new(), checkpoints: Vec::new(), steps: 0, sim_ms: 0.0 }),
             busy: std::sync::atomic::AtomicBool::new(false),
         })
+    }
+
+    /// Objects particles collide with: spheres exactly, everything else as
+    /// its oriented bounding box. Animated objects push particles along.
+    pub fn set_colliders(&mut self, objs: Vec<ObjDef>) {
+        if self.def.collide {
+            self.colliders = objs;
+        }
     }
 
     /// Birth time and cycle length of particle `i` (`life` systems recycle).
@@ -656,7 +779,10 @@ impl Sim {
         let d = &self.def;
         let (p, n, _) = sample(&self.emit, d.seed, i as u32, k);
         let r = |j: u32| hu(d.seed ^ k.wrapping_mul(0x27d4_eb2f), i as u32, j) * 2.0 - 1.0;
-        let v = add(add(d.vel, scale(n, d.normal_speed)), scale(v3(r(11), r(12), r(13)), d.spread));
+        let mut v = add(add(d.vel, scale(n, d.normal_speed)), scale(v3(r(11), r(12), r(13)), d.spread));
+        if let Emit::Expr { vel: Some(e), .. } = &self.emit {
+            v = add(v, eval3p(e, p, v3(0.0, 0.0, 0.0), self.birth(i), k as f32, i));
+        }
         (p, v)
     }
 
@@ -724,6 +850,34 @@ impl Sim {
         let t0 = d.start + live.frame as f32 * self.dt;
         let chunk = 1 << 14;
         // Attractor positions per substep.
+        // Collider instances per substep.
+        enum PCol {
+            Ball(V3, f32),
+            Obb(Xf, V3, V3),
+        }
+        let cols: Vec<Vec<PCol>> = (0..sub)
+            .map(|s| {
+                let t = t0 + (s as f32 + 1.0) * h;
+                let mut v = Vec::new();
+                for o in &self.colliders {
+                    for lane in 0..o.lanes {
+                        for i in 0..o.count {
+                            let xf = o.xf_at(t, i, lane);
+                            v.push(match &o.col {
+                                spec::Col::Ball => PCol::Ball(xf.t, xf.smax()),
+                                spec::Col::Cuboid { c, h } => PCol::Obb(xf, *c, *h),
+                                spec::Col::Cylinder { c, hh, r } => PCol::Obb(xf, *c, v3(*r, *hh, *r)),
+                                spec::Col::Hull(pts) => {
+                                    let (lo, hi) = pts.iter().fold((v3(f32::MAX, f32::MAX, f32::MAX), v3(f32::MIN, f32::MIN, f32::MIN)), |(a, b), q| (vmin(a, *q), vmax(b, *q)));
+                                    PCol::Obb(xf, scale(add(lo, hi), 0.5), scale(super::math::sub(hi, lo), 0.5))
+                                }
+                            });
+                        }
+                    }
+                }
+                v
+            })
+            .collect();
         let att: Vec<Vec<(V3, f32, f32, f32)>> = (0..sub)
             .map(|s| {
                 let t = t0 + (s as f32 + 0.5) * h;
@@ -784,6 +938,16 @@ impl Sim {
                         }
                         let (x, y, z) = (px[j], py[j], pz[j]);
                         let (mut ax, mut ay, mut az) = (g.x, g.y, g.z);
+                        if let Some(fe) = &d.force {
+                            let age = match life {
+                                Some(l) => ((t - (d.start + hu(d.seed, i as u32, 17) * l)) / l).rem_euclid(1.0),
+                                None => ((t - d.start) / 4.0).clamp(0.0, 0.999),
+                            };
+                            let f = eval3p(fe, v3(x, y, z), v3(vx[j], vy[j], vz[j]), t, age, i);
+                            ax += f.x;
+                            ay += f.y;
+                            az += f.z;
+                        }
                         let (mut ux, mut uy, mut uz) = (vx[j], vy[j], vz[j]);
                         if let Some(fg) = flow {
                             let a = fg.sample((x + off.x) * inv, (y + off.y) * inv, (z + off.z) * inv);
@@ -834,7 +998,44 @@ impl Sim {
                                 uz *= 1.0 - d.friction;
                             }
                         }
-                        let _ = (&mut nx, &mut nz);
+                        for c in &cols[s as usize] {
+                            // Push out along the surface normal; bounce and slide.
+                            let (n, pen) = match c {
+                                PCol::Ball(cc, r) => {
+                                    let dv = super::math::sub(v3(nx, ny, nz), *cc);
+                                    let l = len(dv);
+                                    let rr = r + d.size;
+                                    if l >= rr || l < 1e-9 {
+                                        continue;
+                                    }
+                                    (scale(dv, 1.0 / l), rr - l)
+                                }
+                                PCol::Obb(xf, cc, hh) => {
+                                    let lp = super::math::sub(xf.point_inv(v3(nx, ny, nz)), *cc);
+                                    let (dx, dy, dz) = ((hh.x - lp.x.abs()) * xf.s.x, (hh.y - lp.y.abs()) * xf.s.y, (hh.z - lp.z.abs()) * xf.s.z);
+                                    if dx <= 0.0 || dy <= 0.0 || dz <= 0.0 {
+                                        continue;
+                                    }
+                                    let (ln, pen) = if dx <= dy && dx <= dz {
+                                        (v3(lp.x.signum(), 0.0, 0.0), dx)
+                                    } else if dy <= dz {
+                                        (v3(0.0, lp.y.signum(), 0.0), dy)
+                                    } else {
+                                        (v3(0.0, 0.0, lp.z.signum()), dz)
+                                    };
+                                    (norm(xf.rot(ln)), pen)
+                                }
+                            };
+                            let q = madd(v3(nx, ny, nz), n, pen + d.size * 0.5);
+                            (nx, ny, nz) = (q.x, q.y, q.z);
+                            let u = v3(ux, uy, uz);
+                            let vn = dot(u, n);
+                            if vn < 0.0 {
+                                let tang = scale(super::math::sub(u, scale(n, vn)), 1.0 - d.friction);
+                                let u2 = add(tang, scale(n, -vn * d.bounce));
+                                (ux, uy, uz) = (u2.x, u2.y, u2.z);
+                            }
+                        }
                         (px[j], py[j], pz[j], vx[j], vy[j], vz[j]) = (nx, ny, nz, ux, uy, uz);
                     }
                 }
@@ -936,7 +1137,7 @@ impl Sim {
     }
 
     fn checkpoint_path(&self, frame: i64) -> Option<std::path::PathBuf> {
-        Some(super::sim_cache_dir()?.join(format!("parts-{:016x}-{frame}.bin", self.key)))
+        Some(super::sim_cache_dir()?.join(format!("parts2-{:016x}-{frame}.bin", self.key)))
     }
 
     /// Write a checkpoint to the disk cache (exact state; written once, renamed into place).
@@ -1000,12 +1201,13 @@ impl Sim {
 
     /// Colour (linear) and opacity of particle `i` at `t`, given its speed.
     #[inline]
-    fn look(&self, i: usize, t: f32, p: V3, speed: f32) -> ([f32; 3], f32) {
+    fn look(&self, i: usize, t: f32, p: V3, vel: V3) -> ([f32; 3], f32) {
         let d = &self.def;
         let age = self.age(i, t);
         if age < 0.0 {
             return ([0.0; 3], 0.0);
         }
+        let speed = len(vel);
         let x = match d.color_by {
             ColorBy::Random => hu(d.seed, i as u32, 41),
             ColorBy::Age => age,
@@ -1013,7 +1215,10 @@ impl Sim {
             ColorBy::Height => (p.y / 3.0).clamp(0.0, 1.0),
             ColorBy::Source => 0.0,
         };
-        let c = if let (ColorBy::Source, Some(sc)) = (d.color_by, &self.src_col) {
+        let c = if let Some(e) = &d.color_e {
+            let c = eval3p(e, p, vel, t, age, i);
+            [c.x.max(0.0), c.y.max(0.0), c.z.max(0.0)]
+        } else if let (ColorBy::Source, Some(sc)) = (d.color_by, &self.src_col) {
             sc[i]
         } else if d.colors.len() == 1 {
             [d.colors[0].x, d.colors[0].y, d.colors[0].z]
@@ -1027,7 +1232,11 @@ impl Sim {
             Some(_) => smoothstep(0.0, 0.08, age) * (1.0 - smoothstep(0.75, 1.0, age)),
             None => 1.0,
         };
-        (c, a * d.opacity)
+        let op = match &d.opacity_e {
+            Some(e) => e.at(p, vel, t, age, i).clamp(0.0, 1.0),
+            None => d.opacity,
+        };
+        (c, a * op)
     }
 }
 
@@ -1082,9 +1291,140 @@ struct Pyr {
     lv: Vec<(usize, usize, Vec<f32>)>,
     /// Levels anything was splatted into (empty ones skip the collapse).
     used: [bool; 8],
+    /// Defocus bins (see `BINS`), allocated when first used.
+    bins: Vec<Option<Vec<f32>>>,
+    /// Rows (full resolution) this pyramid owns; level l owns rows `band >> l`.
+    /// Threads split the image into bands, so every texel is summed by one
+    /// thread in particle order: byte-identical at any thread count.
+    band: (i32, i32),
+}
+
+/// Defocus bins: disc radius (px at full resolution) and the pyramid level it
+/// lives at, so the disc is 2–2.8 texels across there. Particles splat a
+/// point into the bins bracketing their blur; each used bin is convolved with
+/// its disc once, so out-of-focus particles get real lens bokeh (discs, not
+/// Gaussian blobs) at the cost of a point splat.
+const BINS: [(f32, usize); 17] = [
+    (4.0, 1), (4.757, 1), (5.657, 1), (6.727, 1),
+    (8.0, 2), (9.514, 2), (11.31, 2), (13.45, 2),
+    (16.0, 3), (19.03, 3), (22.63, 3), (26.91, 3),
+    (32.0, 4), (38.05, 4), (45.25, 4), (53.82, 4), (64.0, 4),
+];
+
+/// Stamps for small footprints: a disc of radius r (0..4 px in 1/16 steps)
+/// seen through the tent pixel filter, at 8×8 sub-pixel phases, as 11×11
+/// weights summing to 1. Exact small particles cost one table lookup.
+const ST_R: usize = 65;
+const ST_P: usize = 16;
+const ST_N: usize = 11;
+const ST_C: usize = ST_N / 2;
+
+fn stamps() -> &'static (Vec<f32>, Vec<[u8; 4]>) {
+    static T: std::sync::OnceLock<(Vec<f32>, Vec<[u8; 4]>)> = std::sync::OnceLock::new();
+    T.get_or_init(|| {
+        use rayon::prelude::*;
+        let per = ST_P * ST_P * ST_N * ST_N;
+        let mut t = vec![0.0f32; ST_R * per];
+        t.par_chunks_mut(per).enumerate().for_each(|(ri, t)| {
+        {
+            let r = ri as f32 / 16.0;
+            for py in 0..ST_P {
+                for px in 0..ST_P {
+                    // Particle centre inside the stamp's middle pixel, at this phase.
+                    let (cx, cy) = (ST_C as f32 + (px as f32 + 0.5) / ST_P as f32, ST_C as f32 + (py as f32 + 0.5) / ST_P as f32);
+                    let o = (py * ST_P + px) * ST_N * ST_N;
+                    let step = (r / 12.0).max(0.02);
+                    let m = (r / step).ceil() as i32;
+                    let mut tot = 0.0;
+                    for j in -m..=m {
+                        for i in -m..=m {
+                            let (dx, dy) = (i as f32 * step, j as f32 * step);
+                            if dx * dx + dy * dy > r * r && !(i == 0 && j == 0) {
+                                continue;
+                            }
+                            // Tent filter: the point's share of each pixel centre.
+                            let (qx, qy) = (cx + dx - 0.5, cy + dy - 0.5);
+                            let (ix, iy) = (qx.floor(), qy.floor());
+                            let (tx, ty) = (qx - ix, qy - iy);
+                            for (ox, oy, wt) in [(0, 0, (1.0 - tx) * (1.0 - ty)), (1, 0, tx * (1.0 - ty)), (0, 1, (1.0 - tx) * ty), (1, 1, tx * ty)] {
+                                let (x, y) = (ix as i32 + ox, iy as i32 + oy);
+                                if (0..ST_N as i32).contains(&x) && (0..ST_N as i32).contains(&y) {
+                                    t[o + y as usize * ST_N + x as usize] += wt;
+                                }
+                            }
+                            tot += 1.0;
+                        }
+                    }
+                    for v in &mut t[o..o + ST_N * ST_N] {
+                        *v /= tot;
+                    }
+
+                }
+            }
+        }
+        });
+        // Tight bounds of each stamp's non-zero weights.
+        let boxes = (0..ST_R * ST_P * ST_P)
+            .map(|k| {
+                let o = k * ST_N * ST_N;
+                let (mut b, mut q) = ([ST_N as u8, 0, ST_N as u8, 0], false);
+                for y in 0..ST_N {
+                    for x in 0..ST_N {
+                        if t[o + y * ST_N + x] > 1e-7 {
+                            b = [b[0].min(x as u8), b[1].max(x as u8), b[2].min(y as u8), b[3].max(y as u8)];
+                            q = true;
+                        }
+                    }
+                }
+                if q { b } else { [ST_C as u8, ST_C as u8, ST_C as u8, ST_C as u8] }
+            })
+            .collect();
+        (t, boxes)
+    })
+}
+
+/// Disc radius (texels at its level) of bin `b`: smaller than nominal by the
+/// blur its level adds (the point splat and the upsampling tents), so the
+/// total matches a disc of the nominal radius through the pixel filter.
+fn bin_rho(b: usize) -> f32 {
+    let (r, l) = BINS[b];
+    let lv = (4f32.powi(l as i32) + (4f32.powi(l as i32 + 1) - 4.0) / 3.0) / 6.0;
+    let rd = (r * r - 4.0 * (lv - 1.0 / 6.0)).max(0.25).sqrt();
+    rd / (1u32 << l) as f32
+}
+
+/// Normalised disc kernel of radius `rho` texels (anti-aliased edge).
+fn disc_kernel(rho: f32) -> Vec<(i32, i32, f32)> {
+    let m = (rho + 1.0).ceil() as i32;
+    let mut k = Vec::new();
+    let mut sum = 0.0;
+    for dy in -m..=m {
+        for dx in -m..=m {
+            // Coverage of the texel by the disc, by 4×4 sampling.
+            let mut c = 0.0;
+            for sy in 0..4 {
+                for sx in 0..4 {
+                    let (x, y) = (dx as f32 + (sx as f32 + 0.5) / 4.0 - 0.5, dy as f32 + (sy as f32 + 0.5) / 4.0 - 0.5);
+                    if x * x + y * y <= rho * rho {
+                        c += 1.0 / 16.0;
+                    }
+                }
+            }
+            if c > 0.0 {
+                k.push((dx, dy, c));
+                sum += c;
+            }
+        }
+    }
+    k.iter().map(|&(x, y, c)| (x, y, c / sum)).collect()
 }
 
 impl Pyr {
+    #[inline(always)]
+    fn rows(&self, l: usize) -> (i32, i32) {
+        (self.band.0 >> l, if self.band.1 == i32::MAX { i32::MAX } else { self.band.1 >> l })
+    }
+
     fn new(w: usize, h: usize, levels: usize, c: usize) -> Pyr {
         let mut lv = Vec::new();
         let (mut cw, mut ch) = (w, h);
@@ -1093,12 +1433,13 @@ impl Pyr {
             cw = cw.div_ceil(2).max(1);
             ch = ch.div_ceil(2).max(1);
         }
-        Pyr { c, lv, used: [false; 8] }
+        Pyr { c, lv, used: [false; 8], bins: vec![None; BINS.len()], band: (0, i32::MAX) }
     }
     /// Reference splat: a disc of radius `r` (px) at full resolution seen
     /// through the tent pixel filter (the fast path's reconstruction), by
     /// dense sampling of the disc.
     fn disc(&mut self, x: f32, y: f32, r: f32, v: &[f32; 8]) {
+        let (r0, r1) = self.rows(0);
         let c = self.c;
         self.used[0] = true;
         let (w, h, buf) = &mut self.lv[0];
@@ -1124,7 +1465,7 @@ impl Pyr {
             }
         }
         for ((px, py), n) in cells {
-            if px < 0 || py < 0 || px >= w || py >= h {
+            if px < 0 || py < r0.max(0) || px >= w || py >= h.min(r1) {
                 continue;
             }
             let wt = n / total;
@@ -1135,10 +1476,142 @@ impl Pyr {
         }
     }
 
+    /// An exact small disc (radius < 4 px) from the stamp table, full
+    /// resolution, bilinear between the four nearest of 16×16 sub-pixel
+    /// phases, over the union of their tight bounds.
+    #[inline(always)]
+    fn stamp(&mut self, x: f32, y: f32, r: f32, v: &[f32; 8]) {
+        match self.c {
+            3 => self.stamp_c::<3>(x, y, r, v),
+            4 => self.stamp_c::<4>(x, y, r, v),
+            _ => self.stamp_c::<7>(x, y, r, v),
+        }
+    }
+
+    #[inline(always)]
+    fn stamp_c<const C: usize>(&mut self, x: f32, y: f32, r: f32, v: &[f32; 8]) {
+        let (r0, r1) = self.rows(0);
+        let c = C;
+        self.used[0] = true;
+        let (tab, boxes) = stamps();
+        let (w, h, buf) = &mut self.lv[0];
+        let (w, h) = (*w as i32, *h as i32);
+        let (fx, fy) = (x.floor(), y.floor());
+        let ph = |f: f32| {
+            let u = f * ST_P as f32 - 0.5;
+            let p0 = (u.floor() as i32).clamp(0, ST_P as i32 - 2) as usize;
+            (p0, u - p0 as f32)
+        };
+        let ((px, tx), (py, ty)) = (ph(x - fx), ph(y - fy));
+        let ri = ((r * 16.0).round() as usize).min(ST_R - 1);
+        let kk = |py: usize, px: usize| (ri * ST_P + py) * ST_P + px;
+        let ks = [kk(py, px), kk(py, px + 1), kk(py + 1, px), kk(py + 1, px + 1)];
+        let ws = [(1.0 - tx) * (1.0 - ty), tx * (1.0 - ty), (1.0 - tx) * ty, tx * ty];
+        let mut bx = [ST_N as u8, 0, ST_N as u8, 0];
+        for &k in &ks {
+            let b = boxes[k];
+            bx = [bx[0].min(b[0]), bx[1].max(b[1]), bx[2].min(b[2]), bx[3].max(b[3])];
+        }
+        let st = |k: usize| &tab[k * ST_N * ST_N..(k + 1) * ST_N * ST_N];
+        let (s0, s1, s2, s3) = (st(ks[0]), st(ks[1]), st(ks[2]), st(ks[3]));
+        let (ox, oy) = (fx as i32 - ST_C as i32, fy as i32 - ST_C as i32);
+        let (xa, xb) = ((bx[0] as i32).max(-ox), (bx[1] as i32).min(w - 1 - ox));
+        if xa > xb {
+            return;
+        }
+        for sy in bx[2] as i32..=bx[3] as i32 {
+            let yy = oy + sy;
+            if yy < r0.max(0) || yy >= h.min(r1) {
+                continue;
+            }
+            let base = sy as usize * ST_N;
+            let row = &mut buf[(yy * w + ox + xa) as usize * c..(yy * w + ox + xb + 1) as usize * c];
+            let vv: [f32; C] = std::array::from_fn(|j| v[j]);
+            for (k, o) in row.chunks_exact_mut(C).enumerate() {
+                let i = base + xa as usize + k;
+                let wt = s0[i] * ws[0] + s1[i] * ws[1] + s2[i] * ws[2] + s3[i] * ws[3];
+                for j in 0..C {
+                    o[j] += vv[j] * wt;
+                }
+            }
+        }
+    }
+
+    /// Bilinear point splat into defocus bin `b`.
+    #[inline(always)]
+    fn splat_bin(&mut self, b: usize, x: f32, y: f32, v: &[f32; 8]) {
+        let (r0, r1) = self.rows(BINS[b].1);
+        let c = self.c;
+        let l = BINS[b].1;
+        let (w, h) = (self.lv[l].0, self.lv[l].1);
+        let buf = self.bins[b].get_or_insert_with(|| vec![0.0; w * h * c]);
+        let f = 1.0 / (1u32 << l) as f32;
+        let (fx, fy) = (x * f - 0.5, y * f - 0.5);
+        let (ix, iy) = (fx.floor(), fy.floor());
+        let (tx, ty) = (fx - ix, fy - iy);
+        let (ix, iy) = (ix as i32, iy as i32);
+        let (w, h) = (w as i32, h as i32);
+        for (dx, dy, wt) in [(0, 0, (1.0 - tx) * (1.0 - ty)), (1, 0, tx * (1.0 - ty)), (0, 1, (1.0 - tx) * ty), (1, 1, tx * ty)] {
+            let (xx, yy) = (ix + dx, iy + dy);
+            if xx < 0 || yy < r0.max(0) || xx >= w || yy >= h.min(r1) {
+                continue;
+            }
+            let o = &mut buf[(yy * w + xx) as usize * c..][..c];
+            for k in 0..c {
+                o[k] += v[k] * wt;
+            }
+        }
+    }
+
+    /// Convolve every used bin with its disc and add it into its level.
+    fn resolve_bins(&mut self, par: bool) {
+        use rayon::prelude::*;
+        let c = self.c;
+        for b in 0..BINS.len() {
+            let Some(src) = self.bins[b].take() else { continue };
+            let l = BINS[b].1;
+            let ker = disc_kernel(bin_rho(b));
+            let (w, h, dst) = &mut self.lv[l];
+            let (w, h) = (*w as i32, *h as i32);
+            self.used[l] = true;
+            let row = |(y, out): (usize, &mut [f32])| {
+                for x in 0..w {
+                    let o = &mut out[x as usize * c..(x as usize + 1) * c];
+                    for &(dx, dy, k) in &ker {
+                        let (sx, sy) = (x + dx, y as i32 + dy);
+                        if sx < 0 || sy < 0 || sx >= w || sy >= h {
+                            continue;
+                        }
+                        let s = &src[(sy * w + sx) as usize * c..][..c];
+                        for j in 0..c {
+                            o[j] += s[j] * k;
+                        }
+                    }
+                }
+            };
+            if par {
+                dst.par_chunks_mut(w as usize * c).enumerate().for_each(row);
+            } else {
+                dst.chunks_mut(w as usize * c).enumerate().for_each(row);
+            }
+        }
+    }
+
     /// Bilinear splat at level `l`, pixel coordinates of level 0.
     #[inline(always)]
+    #[allow(dead_code)]
     fn splat(&mut self, l: usize, x: f32, y: f32, v: &[f32; 8]) {
-        let c = self.c;
+        match self.c {
+            3 => self.splat_c::<3>(l, x, y, v),
+            4 => self.splat_c::<4>(l, x, y, v),
+            _ => self.splat_c::<7>(l, x, y, v),
+        }
+    }
+
+    #[inline(always)]
+    fn splat_c<const C: usize>(&mut self, l: usize, x: f32, y: f32, v: &[f32; 8]) {
+        let (r0, r1) = self.rows(l);
+        let c = C;
         self.used[l] = true;
         let (w, h, buf) = &mut self.lv[l];
         let f = 1.0 / (1u32 << l) as f32;
@@ -1149,11 +1622,11 @@ impl Pyr {
         let (w, h) = (*w as i32, *h as i32);
         for (dx, dy, wt) in [(0, 0, (1.0 - tx) * (1.0 - ty)), (1, 0, tx * (1.0 - ty)), (0, 1, (1.0 - tx) * ty), (1, 1, tx * ty)] {
             let (xx, yy) = (ix + dx, iy + dy);
-            if xx < 0 || yy < 0 || xx >= w || yy >= h {
+            if xx < 0 || yy < r0.max(0) || xx >= w || yy >= h.min(r1) {
                 continue;
             }
-            let o = &mut buf[(yy * w + xx) as usize * c..][..c];
-            for k in 0..c {
+            let o = &mut buf[(yy * w + xx) as usize * c..][..C];
+            for k in 0..C {
                 o[k] += v[k] * wt;
             }
         }
@@ -1220,7 +1693,10 @@ impl ShadowMap {
                 if op <= 0.0 {
                     continue;
                 }
-                let size = d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0);
+                let size = match &d.size_e {
+                    Some(e) => e.at(v3(p[0], p[1], p[2]), v3(0.0, 0.0, 0.0), t, sim.age(i, t), i).max(0.0),
+                    None => d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0),
+                };
                 let od = op * std::f32::consts::PI * size * size / texel_area;
                 let e = ext(p);
                 let (fx, fy) = ((e.x - lo.x) * k.x - 0.5, (e.y - lo.y) * k.y - 0.5);
@@ -1321,6 +1797,8 @@ pub struct View<'a> {
     pub key: (V3, V3),
     pub amb: (V3, V3),
     pub shadow: Option<&'a ShadowMap>,
+    /// Draft: in-focus particles as plain tent splats (about 2× faster, softer).
+    pub draft: bool,
 }
 
 struct Proj {
@@ -1389,17 +1867,23 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
     let lvar: Vec<f32> = (0..=levels).map(|l| (4f32.powi(l as i32) + (4f32.powi(l as i32 + 1) - 4.0) / 3.0) / 6.0).collect();
     // A disc of radius r seen through the tent pixel filter has variance r²/4 + 1/6:
     // split the particle between the two levels whose variances bracket it.
-    let lvl_of = |r: f32| -> (usize, f32) {
+    // Kernels in order of blur: a point at full resolution, then the defocus
+    // bins (disc plus the splat/upsample blur of their level).
+    // Bins are sized so disc + level blur has the variance of a disc of
+    // their nominal radius through the tent filter (see `bin_rho`).
+    let kvar: Vec<f32> = std::iter::once(16.0 * 0.25 + 1.0 / 6.0).chain(BINS.iter().map(|&(r, _)| r * r * 0.25 + 1.0 / 6.0)).collect();
+    let kern_of = |r: f32| -> (usize, f32) {
         let v = r * r * 0.25 + 1.0 / 6.0;
-        let mut l = 0;
-        while l + 1 < levels && lvar[l + 1] <= v {
-            l += 1;
+        let mut k = 0;
+        while k + 1 < kvar.len() && kvar[k + 1] <= v {
+            k += 1;
         }
-        if l + 1 >= levels {
-            return (levels - 1, 0.0);
+        if k + 1 >= kvar.len() {
+            return (kvar.len() - 1, 0.0);
         }
-        (l, ((v - lvar[l]) / (lvar[l + 1] - lvar[l])).clamp(0.0, 1.0))
+        (k, ((v - kvar[k]) / (kvar[k + 1] - kvar[k])).clamp(0.0, 1.0))
     };
+    let _ = &lvar;
     // Channel layout: emission only for glowing systems, absorption only for `over` ones.
     let emits = systems.iter().any(|(s, _)| s.def.blend == Blend::Add || s.def.emissive > 0.0);
     let absorbs = systems.iter().any(|(s, _)| s.def.blend == Blend::Over);
@@ -1413,9 +1897,12 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
     for (sim, snap) in systems {
         let d = &sim.def;
         let n = snap.pos.len();
-        let per = n.div_ceil(threads).max(1);
-        let work = |range: std::ops::Range<usize>| -> Pyr {
+        // Bands of rows (multiples of 64, so every level splits exactly).
+        let band_h = (h.div_ceil(threads).div_ceil(64) * 64) as i32;
+        let work = |band: (i32, i32)| -> Pyr {
+            let range = 0..n;
             let mut py = Pyr::new(w, h, levels, c);
+            py.band = band;
             for j in range {
                 let i = snap.id[j] as usize;
                 let p = v3(snap.pos[j][0], snap.pos[j][1], snap.pos[j][2]);
@@ -1423,7 +1910,10 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 if z < 0.05 {
                     continue;
                 }
-                let size = d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0);
+                let size = match &d.size_e {
+                    Some(e) => e.at(p, snap.vel(j), t, sim.age(i, t), i).max(0.0),
+                    None => d.size * (1.0 + d.size_var * (hu(d.seed, i as u32, 7) - 0.5) * 2.0),
+                };
                 let r_px = size * pj.k / z;
                 let coc = if v.aperture > 0.05 { (v.aperture * s * (1.0 - v.focus / z.min(v.focus * 8.0)).abs()).min(28.0 * s) } else { 0.0 };
                 let foot = (r_px * r_px + coc * coc).sqrt();
@@ -1436,19 +1926,33 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 if ix >= 0 && iy >= 0 && (ix as usize) < w && (iy as usize) < h && v.depth[iy as usize * w + ix as usize] < z - size * 2.0 {
                     continue;
                 }
-                let vel = snap.vel(j);
-                let speed = len(vel);
-                let (col, a) = sim.look(i, t, p, speed);
-                if a <= 0.0 {
-                    continue;
+                // Threads own bands of rows: a cheap first cull (no motion yet).
+                let banded = py.band != (0, i32::MAX);
+                if banded && (sy + foot + 6.0 + 64.0 < py.band.0 as f32 || (py.band.1 != i32::MAX && sy - foot - 6.0 - 64.0 > py.band.1 as f32)) {
+                    // Far from the band; only a very long streak could reach it.
+                    let vel = snap.vel(j);
+                    let dt_s = v.shutter * sim.dt * d.stretch;
+                    if len(vel) * dt_s * pj.k / z < 64.0 {
+                        continue;
+                    }
                 }
+                let vel = snap.vel(j);
                 // Screen motion over the shutter: where the point was half a shutter ago.
                 let back = madd(p, vel, -v.shutter * sim.dt * d.stretch);
                 let (bx, by, _) = pp.at(back);
                 let (bx, by) = (sx + (bx - sx) * if v.shutter > 0.0 { 1.0 } else { 0.0 }, sy + (by - sy) * if v.shutter > 0.0 { 1.0 } else { 0.0 });
                 let (mx, my) = (sx - bx, sy - by);
                 let ml = (mx * mx + my * my).sqrt();
-                let (l, lw) = lvl_of(foot);
+                let reach = foot + 6.0 + my.abs() * 0.5;
+                if banded && (sy + reach < py.band.0 as f32 || (py.band.1 != i32::MAX && sy - reach > py.band.1 as f32)) {
+                    continue;
+                }
+                let (col, a) = sim.look(i, t, p, vel);
+                if a <= 0.0 {
+                    continue;
+                }
+                let (kk, lw) = if foot < 4.0 { (usize::MAX, 0.0) } else { kern_of(foot) };
+                let l = if kk == 0 || kk == usize::MAX { 0 } else { BINS[kk - 1].1 };
                 let tex = (1u32 << l) as f32;
                 let ns = ((ml / tex).ceil() as usize).clamp(1, 24);
                 // Energy: projected disc area (world size) — in focus it's smaller than a pixel.
@@ -1518,21 +2022,35 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 let (v0, v1) = (val.map(|x| x * inv * (1.0 - lw)), val.map(|x| x * inv * lw));
                 for k in 0..ns {
                     let u = if ns == 1 { 0.0 } else { (k as f32 + 0.5) * inv - 0.5 };
+                    let (x, y) = (sx + mx * u, sy + my * u);
+                    if kk == usize::MAX {
+                        if foot < 0.25 || v.draft {
+                            // Disc ⊗ tent ≈ the tent itself.
+                            py.splat(0, x, y, &v0);
+                        } else {
+                            py.stamp(x, y, foot, &v0);
+                        }
+                        continue;
+                    }
                     if lw < 0.999 {
-                        py.splat(l, sx + mx * u, sy + my * u, &v0);
+                        if kk == 0 {
+                            py.stamp(x, y, 3.99, &v0);
+                        } else {
+                            py.splat_bin(kk - 1, x, y, &v0);
+                        }
                     }
                     if lw > 0.001 {
-                        py.splat(l + 1, sx + mx * u, sy + my * u, &v1);
+                        py.splat_bin(kk, x, y, &v1);
                     }
                 }
             }
             py
         };
         if threads == 1 {
-            pyrs.push(work(0..n));
+            pyrs.push(work((0, i32::MAX)));
         } else {
             use rayon::prelude::*;
-            let parts: Vec<Pyr> = (0..threads).into_par_iter().map(|k| work(k * per..((k + 1) * per).min(n))).collect();
+            let parts: Vec<Pyr> = (0..threads as i32).into_par_iter().map(|k| work((k * band_h, if k as usize + 1 == threads { i32::MAX } else { (k + 1) * band_h }))).collect();
             pyrs.extend(parts);
         }
     }
@@ -1548,6 +2066,13 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
         for l in 0..levels {
             acc.used[l] |= p.used[l];
         }
+        for (a, b) in acc.bins.iter_mut().zip(p.bins) {
+            match (a.as_mut(), b) {
+                (Some(x), Some(y)) => x.iter_mut().zip(&y).for_each(|(x, y)| *x += y),
+                (None, Some(y)) => *a = Some(y),
+                _ => {}
+            }
+        }
         for (a, b) in acc.lv.iter_mut().zip(p.lv) {
             if par {
                 a.2.par_chunks_mut(1 << 16).zip(b.2.par_chunks(1 << 16)).for_each(|(x, y)| x.iter_mut().zip(y).for_each(|(x, y)| *x += y));
@@ -1556,6 +2081,9 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
             }
         }
     }
+    let t_reduce = clock.elapsed();
+    acc.resolve_bins(par);
+    let t_bins = clock.elapsed();
     for l in (1..levels).rev() {
         if !acc.used[l] {
             continue;
@@ -1590,7 +2118,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
     }
     let prof = std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some();
     if prof {
-        eprintln!("  splat: points {:.0} ms, collapse {:.0} ms", t_splat.as_secs_f64() * 1e3, (clock.elapsed() - t_splat).as_secs_f64() * 1e3);
+        eprintln!("  splat: points {:.0} ms, reduce {:.0} ms, bins {:.0} ms, collapse {:.0} ms", t_splat.as_secs_f64() * 1e3, (t_reduce - t_splat).as_secs_f64() * 1e3, (t_bins - t_reduce).as_secs_f64() * 1e3, (clock.elapsed() - t_bins).as_secs_f64() * 1e3);
     }
     let buf = std::mem::take(&mut acc.lv[0].2);
     Layer { w, h, c, eo, ab, buf }
@@ -1635,6 +2163,36 @@ mod tests {
     }
 
     #[test]
+    fn particles_stay_out_of_colliders() {
+        let mut s = sim(serde_json::json!({ "count": 4000, "emit": { "shape": "box", "pos": [0, 3, 0], "size": [0.6, 0.2, 0.6] }, "gravity": -9.8, "size": 0.005 }));
+        let mut shapes = spec::Shapes::new();
+        let ball = spec::object(&serde_json::json!({ "type": "sphere", "radius": 0.5, "pos": [0, 1, 0], "collide": true }), &mut shapes, &mut Vec::new(), &HashMap::new(), "b").unwrap();
+        let cube = spec::object(&serde_json::json!({ "type": "box", "size": 0.6, "pos": [0, 0.3, 1.5], "rot": [0, 30, 0], "collide": true }), &mut shapes, &mut Vec::new(), &HashMap::new(), "c").unwrap();
+        s.set_colliders(vec![ball, cube]);
+        for f in [10, 20, 30, 45, 60] {
+            let q = s.at(f as f32 / 30.0);
+            for p in &q.pos {
+                let d = len(super::super::math::sub(v3(p[0], p[1], p[2]), v3(0.0, 1.0, 0.0)));
+                assert!(d > 0.49, "particle inside the sphere at frame {f}: {d}");
+            }
+        }
+    }
+
+    #[test]
+    fn splats_are_identical_at_any_thread_count() {
+        let s = sim(serde_json::json!({ "count": 30000, "emit": { "shape": "ball", "radius": 0.4, "pos": [0, 1, 0] }, "size": 0.004, "velocity": [1.5, 0, 0], "blend": "over" }));
+        let snap = s.at(0.1);
+        let (w, h) = (320usize, 180usize);
+        let depth = vec![1e9f32; w * h];
+        let cam = Camera { pos: v3(0.0, 1.0, 3.0), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus: 2.0, aperture: 8.0, roll: 0.0, shutter: 0.5 };
+        let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: 2.0, aperture: 8.0, shutter: 0.5, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.2, 0.2, 0.2), v3(0.1, 0.1, 0.1)), shadow: None, draft: false };
+        let one = rayon::ThreadPoolBuilder::new().num_threads(1).build().unwrap().install(|| render(&[(&s, snap.clone())], &v, 0.1).buf);
+        // From a plain thread the splatter splits the frame over the global pool's threads.
+        let many = std::thread::scope(|sc| sc.spawn(|| render(&[(&s, snap.clone())], &v, 0.1).buf).join().unwrap());
+        assert!(rayon::current_num_threads() < 2 || one.iter().zip(&many).all(|(a, b)| a.to_bits() == b.to_bits()), "layers differ between 1 and {} threads", rayon::current_num_threads());
+    }
+
+    #[test]
     fn particles_bounce_off_the_floor() {
         let s = sim(serde_json::json!({ "count": 2000, "emit": { "shape": "box", "pos": [0, 1, 0], "size": 1 }, "gravity": -9.8, "velocity": [0, -5, 0] }));
         let q = s.at(2.0);
@@ -1649,7 +2207,7 @@ mod tests {
         let depth = vec![1e9f32; w * h];
         let total = |focus: f32, ap: f32| {
             let cam = Camera { pos: v3(0.0, 1.0, 4.0), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus, aperture: ap, roll: 0.0, shutter: 0.0 };
-            let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus, aperture: ap, shutter: 0.0, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)), shadow: None };
+            let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus, aperture: ap, shutter: 0.0, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)), shadow: None, draft: false };
             render(&[(&s, snap.clone())], &v, 0.0).emitted()
         };
         let (sharp, blurred) = (total(4.0, 0.0), total(1.0, 30.0));

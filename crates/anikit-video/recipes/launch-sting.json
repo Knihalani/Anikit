@@ -1,0 +1,483 @@
+{
+ "about": "A 10 s launch sting that combines particles, ray-traced chrome, beat-slammed type, a raymarched shader world and generated music. Every cut lands on the beat at 124 BPM, with sfx on the hits. Swap the name, words and colours, or move a shot to another beat.",
+ "cost": "renders in about 58 s at 1080p on 4 cores",
+ "spec": {
+  "size": "16:9",
+  "intent": {
+   "pace": "fast",
+   "genre": "launch"
+  },
+  "music": {
+   "style": "house",
+   "bpm": 124,
+   "key": "Am",
+   "mood": "driving"
+  },
+  "audio": [
+   {
+    "sfx": "whoosh",
+    "at": 1.785
+   },
+   {
+    "sfx": "impact",
+    "at": 3.871
+   },
+   {
+    "sfx": "riser",
+    "at": 6.29
+   }
+  ],
+  "post": {
+   "preset": "punchy",
+   "bloom": 0.3
+  },
+  "scenes": [
+   {
+    "id": "ignite",
+    "duration": 1.935,
+    "layers": [
+     {
+      "component": "scene3d",
+      "props": {
+       "env": "night",
+       "camera": {
+        "keys": [
+         {
+          "t": 0,
+          "pos": [
+           0,
+           0.9,
+           4.6
+          ],
+          "target": [
+           0,
+           0.85,
+           0
+          ],
+          "focal": 38
+         },
+         {
+          "t": 1.935,
+          "pos": [
+           0,
+           0.9,
+           3.6
+          ],
+          "target": [
+           0,
+           0.85,
+           0
+          ],
+          "focal": 42
+         }
+        ]
+       },
+       "objects": [
+        {
+         "type": "particles",
+         "count": 200000,
+         "emit": {
+          "text": "NOVA",
+          "height": 0.6,
+          "pos": [
+           0,
+           0.6,
+           0
+          ]
+         },
+         "flow": {
+          "strength": 0.35,
+          "scale": 0.6,
+          "evolve": 0.3,
+          "drift": [
+           0,
+           0.3,
+           0
+          ]
+         },
+         "gravity": 0.05,
+         "drag": 0.4,
+         "life": 2,
+         "size": 0.0035,
+         "color": [
+          "#fff1c2",
+          "#ffb35c",
+          "#ff5a1f"
+         ],
+         "colorBy": "age",
+         "emissive": 3,
+         "blend": "add"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "id": "hero",
+    "duration": 1.935,
+    "transition": "cut",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "x": -1500
+       },
+       "to": {
+        "x": 0
+       },
+       "duration": 0.22,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    "layers": [
+     {
+      "component": "scene3d",
+      "props": {
+       "env": "studio",
+       "camera": {
+        "keys": [
+         {
+          "t": 0,
+          "pos": [
+           -2.4,
+           0.8,
+           6.2
+          ],
+          "target": [
+           0,
+           0.4,
+           0
+          ],
+          "focal": 45,
+          "fstop": 2.4
+         },
+         {
+          "t": 1.935,
+          "pos": [
+           1.6,
+           0.7,
+           5.6
+          ],
+          "target": [
+           0,
+           0.4,
+           0
+          ],
+          "focal": 52,
+          "fstop": 2.2
+         }
+        ]
+       },
+       "objects": [
+        {
+         "text": "NOVA",
+         "height": 0.8,
+         "material": "chrome"
+        },
+        {
+         "type": "sphere",
+         "radius": 0.26,
+         "pos": [
+          1.5,
+          0.26,
+          0.9
+         ],
+         "material": "glass"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "id": "slam-1",
+    "duration": 0.484,
+    "transition": "cut",
+    "background": "#0A0A0A",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "zoom": 1.15,
+        "rotation": -3
+       },
+       "to": {
+        "zoom": 1,
+        "rotation": 0
+       },
+       "duration": 0.2,
+       "ease": "outExpo"
+      }
+     ],
+     "shake": {
+      "amount": 7,
+      "at": 0,
+      "duration": 0.15
+     }
+    },
+    "layers": [
+     {
+      "text": "CHARGES",
+      "font": "Inter Display",
+      "size": "24vh",
+      "weight": 900,
+      "color": "#F4F4F0",
+      "letterSpacing": "-0.05em",
+      "x": "42%",
+      "animate": [
+       {
+        "from": {
+         "scale": 2.0,
+         "opacity": 0,
+         "blur": 16
+        },
+        "duration": 0.12,
+        "ease": "outExpo"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "slam-2",
+    "duration": 0.484,
+    "transition": "cut",
+    "background": "#F4F4F0",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "zoom": 1.15,
+        "rotation": 3
+       },
+       "to": {
+        "zoom": 1,
+        "rotation": 0
+       },
+       "duration": 0.2,
+       "ease": "outExpo"
+      }
+     ],
+     "shake": {
+      "amount": 7,
+      "at": 0,
+      "duration": 0.15
+     }
+    },
+    "layers": [
+     {
+      "text": "IN",
+      "font": "Inter Display",
+      "size": "24vh",
+      "weight": 900,
+      "color": "#0A0A0A",
+      "letterSpacing": "-0.05em",
+      "x": "60%",
+      "animate": [
+       {
+        "from": {
+         "scale": 2.0,
+         "opacity": 0,
+         "blur": 16
+        },
+        "duration": 0.12,
+        "ease": "outExpo"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "slam-3",
+    "duration": 0.484,
+    "transition": "cut",
+    "background": "#FF5A1F",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "zoom": 1.15,
+        "rotation": -3
+       },
+       "to": {
+        "zoom": 1,
+        "rotation": 0
+       },
+       "duration": 0.2,
+       "ease": "outExpo"
+      }
+     ],
+     "shake": {
+      "amount": 7,
+      "at": 0,
+      "duration": 0.15
+     }
+    },
+    "layers": [
+     {
+      "text": "NINE",
+      "font": "Inter Display",
+      "size": "24vh",
+      "weight": 900,
+      "color": "#0A0A0A",
+      "letterSpacing": "-0.05em",
+      "x": "44%",
+      "animate": [
+       {
+        "from": {
+         "scale": 2.0,
+         "opacity": 0,
+         "blur": 16
+        },
+        "duration": 0.12,
+        "ease": "outExpo"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "slam-4",
+    "duration": 1.268,
+    "transition": "cut",
+    "background": "#0A0A0A",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "zoom": 1.15,
+        "rotation": 3
+       },
+       "to": {
+        "zoom": 1,
+        "rotation": 0
+       },
+       "duration": 0.2,
+       "ease": "outExpo"
+      }
+     ],
+     "shake": {
+      "amount": 7,
+      "at": 0,
+      "duration": 0.15
+     }
+    },
+    "layers": [
+     {
+      "text": "MINUTES.",
+      "font": "Inter Display",
+      "size": "24vh",
+      "weight": 900,
+      "color": "#FFB35C",
+      "letterSpacing": "-0.05em",
+      "x": "57%",
+      "animate": [
+       {
+        "from": {
+         "scale": 2.0,
+         "opacity": 0,
+         "blur": 16
+        },
+        "duration": 0.12,
+        "ease": "outExpo"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "world",
+    "duration": 1.935,
+    "transition": {
+     "type": "zoom-blur",
+     "duration": 0.3
+    },
+    "layers": [
+     {
+      "shader": "sdf-scene",
+      "uniforms": {
+       "speed": 1.2
+      }
+     },
+     {
+      "shape": "rect",
+      "width": "110%",
+      "height": "130%",
+      "x": "0%",
+      "y": "0%",
+      "anchor": "center",
+      "fill": "radial-gradient(#F4EFE6F2, #F4EFE6C0 40%, #F4EFE600 72%)"
+     },
+     {
+      "text": "Built\n*to last*.",
+      "font": "Instrument Serif",
+      "size": "13vh",
+      "lineHeight": 0.92,
+      "color": "#1A1714",
+      "align": "left",
+      "anchor": "topLeft",
+      "x": "7%",
+      "y": "9%",
+      "enter": {
+       "preset": "mask by line up",
+       "delay": 0.1
+      }
+     }
+    ]
+   },
+   {
+    "id": "end",
+    "duration": 1.935,
+    "transition": "cut",
+    "background": "#0A0A0A",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "zoom": 1.15
+       },
+       "to": {
+        "zoom": 1
+       },
+       "duration": 0.2,
+       "ease": "outExpo"
+      },
+      {
+       "to": {
+        "zoom": 1.06
+       },
+       "at": 0.25,
+       "duration": 1.8,
+       "ease": "linear"
+      }
+     ]
+    },
+    "layers": [
+     {
+      "text": "NOVA",
+      "font": "Inter Display",
+      "size": "30vh",
+      "weight": 900,
+      "color": "#F4F4F0",
+      "letterSpacing": "-0.04em",
+      "y": "44%"
+     },
+     {
+      "text": "nova.energy",
+      "size": "4vh",
+      "weight": 600,
+      "color": "#FFB35C",
+      "letterSpacing": "0.1em",
+      "y": "68%",
+      "enter": {
+       "preset": "fadeUp",
+       "delay": 0.3
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

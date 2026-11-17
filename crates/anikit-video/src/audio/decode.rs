@@ -25,7 +25,8 @@ pub fn decode_file(path: impl AsRef<Path>) -> Result<Pcm, String> {
 /// every visualizer and again by the mixer (about 120 ms each for 36 s of FLAC).
 pub fn decode_file_at(path: impl AsRef<Path>, rate: u32) -> Result<Pcm, String> {
     type Key = (std::path::PathBuf, u64, u128, u32);
-    static CACHE: std::sync::OnceLock<std::sync::Mutex<Vec<(Key, std::sync::Arc<Pcm>)>>> = std::sync::OnceLock::new();
+    type Cache = std::sync::Mutex<Vec<(Key, std::sync::Arc<Pcm>)>>;
+    static CACHE: std::sync::OnceLock<Cache> = std::sync::OnceLock::new();
     let path = path.as_ref();
     let meta = std::fs::metadata(path).ok();
     let key: Option<Key> = meta.map(|m| {

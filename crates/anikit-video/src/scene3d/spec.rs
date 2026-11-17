@@ -330,6 +330,8 @@ pub struct TexSpec {
 /// `count`/`lanes`, a whole array of instances.
 #[derive(Clone)]
 pub struct ObjDef {
+    /// Open geometry that reads `t`: (type, description, path, shape id), rebuilt every frame.
+    pub regen: Option<Arc<(String, Map<String, Value>, String, u32)>>,
     /// (shape, material) per part: one for primitives, one per glTF primitive for models.
     pub parts: Vec<(u32, u32)>,
     pub pos: [Num; 3],
@@ -376,7 +378,7 @@ pub enum Col {
 
 impl ObjDef {
     pub fn dynamic(&self) -> bool {
-        self.anim.is_some() || self.phys.is_some() || !self.keys.is_empty() || self.spin != v3(0.0, 0.0, 0.0) || self.pos.iter().chain(self.rot.iter()).chain(self.scale.iter()).any(|n| n.dynamic()) || self.start > 0.0 || self.end.is_finite()
+        self.anim.is_some() || self.regen.is_some() || self.phys.is_some() || !self.keys.is_empty() || self.spin != v3(0.0, 0.0, 0.0) || self.pos.iter().chain(self.rot.iter()).chain(self.scale.iter()).any(|n| n.dynamic()) || self.start > 0.0 || self.end.is_finite()
     }
 
     pub fn xf_at(&self, t: f32, i: u32, lane: u32) -> Xf {
@@ -423,8 +425,9 @@ impl ObjDef {
 
 pub const OBJ_KEYS: &[&str] = &[
     "type", "src", "text", "font", "weight", "tracking", "height", "depth", "bevel", "size", "radius", "tube", "material", "pos", "position", "rot", "rotation", "scale", "keys", "spin", "count", "lanes", "texture", "thin", "shadow", "start", "end", "name", "camera", "align", "color", "intensity", "speed", "collide",
+    "d", "path", "points", "segments", "sides", "x", "y", "z", "u", "v", "expr", "res", "vertices", "faces", "flat",
 ];
-const TYPES: &[&str] = &["text", "box", "slab", "pane", "plane", "sphere", "cylinder", "torus", "phone", "model", "card"];
+const TYPES: &[&str] = &["text", "box", "slab", "pane", "plane", "sphere", "cylinder", "torus", "phone", "model", "card", "extrude", "lathe", "tube", "surface", "heightfield", "mesh"];
 
 /// Shapes are deduplicated by their JSON description.
 pub struct Shapes {
@@ -454,7 +457,7 @@ impl Shapes {
     }
 }
 
-fn mesh_shape(m: anikit_core::raster::Mesh) -> Shape {
+pub fn mesh_shape(m: anikit_core::raster::Mesh) -> Shape {
     if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() {
         eprintln!("scene3d: mesh with {} triangles", m.idx.len() / 3);
     }
@@ -495,6 +498,7 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
     let mut model_mats: Vec<Material> = Vec::new();
     let mut model_anim: Option<Arc<ModelAnim>> = None;
     let mut extra: Vec<u32> = Vec::new();
+    let mut dyn_geom = false;
     let (shape, extent) = match ty.as_str() {
         "text" => {
             let text = m.get("text").and_then(|x| x.as_str()).unwrap_or("ANIKIT").to_string();
@@ -601,6 +605,17 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
             }
             (first.unwrap(), ext.x.max(ext.z) * k * 0.5)
         }
+        "extrude" | "lathe" | "tube" | "surface" | "heightfield" | "mesh" => {
+            // Open geometry: deduplicated by its whole description.
+            let gkey = format!("{ty}|{}", serde_json::to_string(m).unwrap_or_default());
+            let mesh = super::authoring::build(&ty, m, path, 0.0)?.unwrap();
+            dyn_geom = super::authoring::is_dynamic(m);
+            let mut r: f32 = 0.0;
+            for q in mesh.pos.chunks_exact(3) {
+                r = r.max((q[0] * q[0] + q[2] * q[2]).sqrt());
+            }
+            (shapes.add(gkey, || Ok(mesh_shape(mesh)))?, r)
+        }
         _ => unreachable!(),
     };
     let mat = match m.get("material") {
@@ -689,7 +704,8 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
     let col = collider_of(&ty, &parts.iter().map(|p| &shapes.list[p.0 as usize]).collect::<Vec<_>>(), path)?;
     let collide = m.get("collide").map(|x| x.as_bool().ok_or_else(|| format!("{path}.collide: expected true or false"))).transpose()?.unwrap_or(false);
     let name = m.get("name").and_then(|x| x.as_str()).map(|s| s.to_string());
-    Ok(ObjDef { anim: model_anim, parts, cam, name, pos, rot, scale: scale_n, keys, spin, count, lanes, tex, thin, shadow, extent, start, end, scale_mul, col, collide, phys: None })
+    let regen = dyn_geom.then(|| Arc::new((ty.clone(), m.clone(), path.to_string(), shape)));
+    Ok(ObjDef { regen, anim: model_anim, parts, cam, name, pos, rot, scale: scale_n, keys, spin, count, lanes, tex, thin, shadow, extent, start, end, scale_mul, col, collide, phys: None })
 }
 
 /// The collision shape for an object type: boxes from their bounds, spheres

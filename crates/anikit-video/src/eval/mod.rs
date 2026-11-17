@@ -300,6 +300,8 @@ pub(crate) struct Node {
     pub end: f32,
     pub base: [f32; prop::N],
     pub exprs: Vec<(u8, Expr)>,
+    /// Per-frame `update` script (compiled once).
+    pub update: Option<Arc<rhai::AST>>,
     /// Per-frame colours (`"fill": "=hsl(t * 60, 70, 55)"`) for the 4-slot colour at `slot`.
     pub cexprs: Vec<(u8, expr::ColorExpr)>,
     pub tracks: Vec<Track>,
@@ -419,6 +421,8 @@ pub struct Evaluator {
     pub(crate) ctheme: crate::components::Theme,
     /// Beat grid and loudness of the music, when expressions read them.
     pub(crate) groove: Option<Arc<beat_markers::Music>>,
+    /// Encoder adaptive-quantisation strength (`encode.aq`), when the spec sets it.
+    pub encode_aq: Option<f32>,
     /// Motion-blur shutter in seconds (0 = off). Default half a frame (180°).
     pub shutter: f32,
     /// The spec asked for motion blur itself (otherwise only `--quality high` applies it).
@@ -895,6 +899,45 @@ impl Evaluator {
                 }
             }
         }
+        if let Some(ast) = &n.update {
+            self.run_update(ast, n, cx, lt, v);
+        }
+    }
+
+    /// Apply a layer's `update` script: its returned props win for this frame.
+    fn run_update(&self, ast: &rhai::AST, n: &Node, cx: &Cx, lt: f32, v: &mut [f32; prop::N]) {
+        let dur = (n.end - n.start).max(1e-6);
+        let (beat, bar, level, bpm) = self.groove.as_ref().map(|m| m.at(cx.gt as f64)).unwrap_or_default();
+        let vals = [
+            lt as f64,
+            cx.scene_t as f64,
+            cx.gt as f64,
+            (lt / dur).clamp(0.0, 1.0) as f64,
+            n.index as f64,
+            n.count as f64,
+            self.width as f64,
+            self.height as f64,
+            self.fps as f64,
+            (cx.gt * self.fps).floor() as f64,
+            beat,
+            bar,
+            level,
+            bpm,
+        ];
+        let Ok(map) = crate::spec::script::run_update(ast, &vals) else { return };
+        for (k, val) in map {
+            let Some((slot, ch)) = prop::lookup(k.as_str()) else { continue };
+            if ch == 4 {
+                if let Some(c) = val.clone().into_immutable_string().ok().and_then(|s| self.theme.color(&s)) {
+                    v[slot..slot + 4].copy_from_slice(&rgba_to_oklab(c));
+                }
+            } else if let Some(x) = val.as_float().ok().or_else(|| val.as_int().ok().map(|i| i as f64)) {
+                v[slot] = x as f32;
+                if ch == 2 {
+                    v[slot + 1] = x as f32;
+                }
+            }
+        }
     }
 
     fn emit_node(&self, n: &Node, cx: &Cx, parent: &Affine, psize: [f32; 2], po: f32, out: &mut Vec<Op>) {
@@ -1271,7 +1314,7 @@ fn node_static(n: &Node, a: f32, b: f32) -> bool {
         return true; // invisible throughout
     }
     let (la, lb) = (a - n.start, b - n.start);
-    if n.exprs.iter().any(|(_, e)| e.dynamic) || n.cexprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
+    if n.update.is_some() || n.exprs.iter().any(|(_, e)| e.dynamic) || n.cexprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
         return false;
     }
     match &n.kind {

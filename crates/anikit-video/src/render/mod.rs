@@ -16,6 +16,7 @@ pub mod filter;
 pub mod glyphs;
 pub mod post;
 pub mod incremental;
+mod grain;
 pub mod motion;
 pub mod resample;
 pub mod smooth;
@@ -178,6 +179,7 @@ pub struct Renderer {
     /// Motion-blur accumulator (linear RGB).
     motion_acc: Vec<f32>,
     motion_tmp: Vec<f32>,
+    grain: Vec<grain::Grain>,
     motion_brute: bool,
     quality: Quality,
     /// Low-res backdrop as Y, Cb, Cr planes (fused backdrop → YUV path).
@@ -215,6 +217,7 @@ impl Renderer {
             pp: Default::default(),
             motion_acc: Vec::new(),
             motion_tmp: Vec::new(),
+            grain: Vec::new(),
             motion_brute: false,
             quality: Quality::Standard,
             box_rects: Vec::new(),
@@ -261,6 +264,12 @@ impl Renderer {
     /// pipeline uses this instead of a new renderer, keeping output independent
     /// of when other threads intern fonts.
     pub fn update_assets(&mut self, assets: Arc<Assets>) {
+        self.assets = assets;
+    }
+
+    /// Replace the font table with a superset of the current one (faces are
+    /// append-only: existing ids must keep their faces). Caches stay valid.
+    pub fn set_fonts(&mut self, assets: Arc<Assets>) {
         self.assets = assets;
     }
 
@@ -361,6 +370,36 @@ impl Renderer {
     /// Returns true when it wrote `yuv` directly (fused backdrop path; the RGBA
     /// frame is then only partly updated).
     pub(crate) fn render_region(
+        &mut self,
+        list: &DisplayList,
+        region: Option<[u32; 4]>,
+        new_frame: bool,
+        rects: Option<&[Option<Rect>]>,
+        yuv: Option<&mut YuvFrame>,
+    ) -> bool {
+        // Trailing film grain: render the rest with every fast path, then blend
+        // the grain straight into the frame (the caller converts to YUV).
+        let mut layers = std::mem::take(&mut self.grain);
+        let (w, h) = (list.width.clamp(1, u16::MAX as u32), list.height.clamp(1, u16::MAX as u32));
+        let at = if self.st.reference {
+            None
+        } else {
+            let view = View { assets: &self.assets, frame: &self.frame_images, dynamic: self.dynamic.as_deref() };
+            grain::tail(&list.ops, w as f64, h as f64, list.background, &view, &mut layers)
+        };
+        let Some(k) = at else {
+            self.grain = layers;
+            return self.render_region_inner(list, region, new_frame, rects, yuv);
+        };
+        let head = DisplayList { width: list.width, height: list.height, background: list.background, ops: list.ops[..k].to_vec() };
+        self.render_region_inner(&head, region, new_frame, rects.map(|r| &r[..k.min(r.len())]), None);
+        let [x0, y0, x1, y1] = region.unwrap_or([0, 0, w, h]).map(|v| v as usize);
+        grain::apply(&layers, self.frame.data_as_u8_slice_mut(), w as usize, [x0, y0, x1.min(w as usize), y1.min(h as usize)]);
+        self.grain = layers;
+        false
+    }
+
+    fn render_region_inner(
         &mut self,
         list: &DisplayList,
         region: Option<[u32; 4]>,
@@ -841,14 +880,20 @@ fn draw_ops_culled(st: &mut State, assets: &View, ctx: &mut RenderContext, ops: 
 #[allow(clippy::too_many_arguments)]
 fn draw_shadow_sprite(st: &mut State, ctx: &mut RenderContext, card: &Card, dx: f32, dy: f32, sigma: f32, c: Rgba) {
     let dev = card.transform.transform_rect_bbox(card.rect);
-    let (w, h) = (dev.width(), dev.height());
-    let r = card.radius as f64 * card.scale as f64;
-    let m = (sigma * 3.0).ceil() as f64 + 1.0;
+    // The sprite is drawn from the quantised key values, so its pixels depend
+    // only on the key, never on which frame filled the cache first.
     let q = |v: f64| (v * 16.0).round() as u64;
+    let dq = |v: f64| q(v) as f64 / 16.0;
+    let (w, h) = (dq(dev.width()), dq(dev.height()));
+    let r = dq(card.radius as f64 * card.scale as f64);
+    let sigma = dq(sigma as f64) as f32;
+    let cq = c.0.map(|v| (v.clamp(0.0, 1.0) * 1023.0).round() as u32);
+    let c = Rgba(cq.map(|v| v as f32 / 1023.0));
+    let m = (sigma * 3.0).ceil() as f64 + 1.0;
     let key = {
         use std::hash::{Hash, Hasher};
         let mut hs = std::collections::hash_map::DefaultHasher::new();
-        (q(w), q(h), q(r), q(sigma as f64), c.0.map(|v| (v * 1023.0) as u32)).hash(&mut hs);
+        (q(w), q(h), q(r), q(sigma as f64), cq).hash(&mut hs);
         hs.finish()
     };
     let now = st.frame_no;

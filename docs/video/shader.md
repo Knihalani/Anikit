@@ -80,6 +80,14 @@ Habits that make shaders look finished:
 3. **Control flow** runs SPMD-style under an execution mask. An `if` runs a branch only when some lane takes it, and loops run while any lane is active. `break`, `continue`, `return` and `discard` switch lanes off. Uniform control flow therefore costs only a mask test. Calls are inlined, and maths that depends only on uniforms is hoisted out of the pixel loop.
 4. **Threads.** Rows of quads run on rayon across all cores. Output is premultiplied RGBA8 straight into the display list as an `Op::Image`. Pixels are made only when the renderer asks for them, so occluded or duplicate frames cost nothing. A shader that never reads `iTime` renders once.
 
+**Loop unrolling.** Counted loops with a short constant trip count, such as `for (int i = 0; i < 6; i++)`, become straight-line copies with `i` a constant in each, as long as nothing but the guard leaves them. Everything that depends only on uniforms and `i`, like the `sin(iTime + float(i))` that places each sphere of a Shadertoy scene, then no longer varies per pixel and is hoisted out of the pixel loop. The arithmetic is the same, so the output is byte-identical. On a typical Shadertoy raymarch (six moving metaballs, shadows, AO, one reflection bounce) this went from 2867 to 1087 ms per 1080p frame. `turing` went from 144 to 26 ms.
+
+**Two quads at a time.** Each kernel iteration shades two neighbouring 2×2 quads as one 8-lane SPMD program: one branch structure, with masks per quad. A raymarch spends its time waiting on a serial chain (each step's distance feeds the next), so two independent chains let the CPU overlap them. The scene above went from 971 to 691 ms per frame (1.41×), `hero` 58 → 48, `particles` 116 → 98, `liquid-chrome` 141 → 125. Every library shader's output is byte-identical to one quad at a time. Compiling takes about twice as long, so `anikit-video still` (one frame) uses one quad, and renders use two. `ANIKIT_SHADER_GROUPS=1|2` overrides this; in Rust, call `anikit_shader::set_lane_groups`.
+
+**`pow` with a whole-number exponent** from 1 to 16 (Fresnel's `pow(1.0 - c, 5.0)`) compiles to repeated squaring: a few multiplies instead of `exp2(y·log2 x)`, and closer to exact. liquid-chrome went from 163 to 139 ms, caustics from 58 to 50.
+
+**Division by a constant** compiles to a multiply by the reciprocal. That is exact for powers of two and within 1.5 ulp otherwise; GLSL allows 2.5. A multiply has about a third of a divide's latency, which matters in the serial `smin` chains of a raymarch: 1106 → 985 ms on the scene above, with 27 of 2 M pixels changing by 1–4/255.
+
 The JIT was built directly; there is no interpreter step. The masking optimisation is worth noting: when a store's lanes equal the lanes its function was entered with, it skips the mask blend. That took the SDF scene from 1190 to 358 ms per frame, because it lets Cranelift hoist uniform maths.
 
 **Accuracy and determinism.** `sin cos tan exp exp2 log log2 asin acos atan sinh cosh tanh` use Cephes-style range reduction and minimax polynomials. The tests check them against `f64` at under 4 ulp over the ranges shaders use (sin and cos to ±100, exp to ±80, log over 10⁻³⁰…10³⁰). `sqrt`, `floor`, division and the like are IEEE-exact. There are no fused multiply-adds, so x86-64 and aarch64 agree, and frames are bit-identical between runs and thread counts.
@@ -180,7 +188,7 @@ void mainImage(out vec4 c, in vec2 p) {
 ```
 
 - **Channels.** A channel `"A"` (in the layer's `channels` or a buffer's) reads buffer A. If A runs earlier in the order, it reads this frame's A; if A is the reading pass itself or a later one, it reads last frame's A (feedback). On the layer's first frame, previous buffers are zero. Buffer channels can also be `"noise"` or `"none"`, with `wrap` and `filter` options as usual.
-- **Determinism.** Frame *n* is the same whether the render reaches it in order or a still jumps straight to it: a jump runs the buffers from the layer's first frame. Running from the start makes a still deep into a long feedback shot cost *n* buffer frames (about 10 ms each at 960×540). Renders step one frame at a time.
+- **Determinism.** Frame *n* is the same whether the render reaches it in order or a still jumps straight to it: a jump runs the buffers from the layer's first frame. Running from the start makes a still deep into a long feedback shot cost *n* buffer frames (about 6 ms each at 960×540). Float buffers and `texelFetch` are sampled inline, with no call per read. Renders step one frame at a time.
 - **Uniforms.** Buffers see the spec's uniform values (or the declared defaults), not animated ones. Otherwise a frame would depend on how it was reached. Animate the image pass, or drive buffers from `iTime`, `iAudio` and `iBeat`.
 
 ### WGSL
@@ -195,6 +203,8 @@ Write `fn mainImage(fragCoord: vec2f) -> vec4f` (or `fn transition(uv: vec2f) ->
 | `liquid-chrome` | layer | a liquid-metal mass with drops that merge and tear away, mirror chrome in a studio or night sky. `speed`, `env` (0 studio … 1 night), `film` (iridescence), `background` (0 = cut out, with `"alpha": true`), `size` |
 | `aurora` | layer | aurora curtains over a ridge, mirrored in a lake. Heavy (~1 s/frame); `"lake": 0` + `lake-mirror` is 1.33× faster. `speed`, `intensity`, `lake` |
 | `hero` | layer | product shot: one object on a glossy studio floor, turning under softboxes. `shape` (0 torus, 1 rounded cube, 2 pill, 3 gem, 4 sphere, 5 twisted bar), `color`, `metal`, `rough`, `speed`, `size`, `background`, `floor_` |
+| `mesh-gradient` | layer | soft animated mesh gradient: four colours drifting and folding into each other, film grain. The background for titles and product shots. `color1`…`color4` (hex strings work), `speed`, `warp`, `softness`, `grain` |
+| `ocean` | layer | open sea to the horizon under a low sun: peaked swell and chop, Fresnel sky reflection, the sun's glitter path, light through crests. `speed`, `sun` (0 high … 1 on the horizon), `swell`, `chop`, `color`, `sky` |
 | `caustics` | layer | pool-floor caustics; ray density from the refraction map's derivatives. `speed`, `depth`, `tint` |
 | `flow-ink` | layer | two inks marbled by a curl-noise flow field. `speed`, `ink`, `ink2`, `paper` |
 | `light-shafts` | layer | sun through a window into a hazy room: pane-shaped beams, mullion shadows, leaves outside, drifting haze, dust glinting in the light. `angle`, `spread` (0 parallel … 1 fanning), `panes`, `color`, `intensity`, `haze`, `dust`, `speed` |
@@ -216,31 +226,33 @@ Reel of the newer recipes and a feedback buffer: [`shots/recipes.mp4`](shots/rec
 
 ## Performance
 
-Milliseconds per frame at **1920×1080**, on **4 cores** (Xeon @ 2.1 GHz, AVX2), release build. Compile time is the one-off parse + validate + JIT. Filters and transitions are timed with full-HD channel textures already bound.
+Milliseconds per frame at **1920×1080**, on **4 cores** (Xeon @ 2.1 GHz, AVX2), release build. Compile time is the one-off parse + validate + JIT, for the two-quad kernels renders use (`still` compiles one-quad kernels in about half the time). Filters and transitions are timed with full-HD channel textures already bound.
 Generated by `cargo run --release -p anikit-shader --example library_bench`:
 
 | shader | use | compile ms | ms/frame | ms/frame 2×2 SS |
 |---|---|---|---|---|
-| `sdf-scene` | layer | 29 | 303 | 615 |
-| `liquid-chrome` | layer | 93 | 286 | 499 |
-| `aurora` | layer | 31 | 968 | 4061 |
-| `hero` | layer | 9 | 60 | 133 |
-| `caustics` | layer | 8 | 55 | 234 |
-| `flow-ink` | layer | 6 | 161 | 768 |
-| `turing` | layer | 4 | 156 | 359 |
-| `light-shafts` | layer | 12 | 115 | 218 |
-| `particles` | layer | 14 | 144 | 281 |
-| `film-burn` | filter | 6 | 90 | 166 |
-| `lake-mirror` | filter | 10 | 33 | 74 |
-| `glitch` | filter | 8 | 28 | 137 |
-| `burn` | transition | 6 | 62 | 166 |
-| `ripple` | transition | 6 | 54 | 115 |
-| `pixelate` | transition | 3 | 21 | 61 |
-| `swirl` | transition | 4 | 39 | 89 |
-| `ink-bleed` | transition | 7 | 71 | 180 |
-| `warp-wipe` | transition | 5 | 36 | 85 |
-| `luma-melt` | transition | 3 | 21 | 56 |
-| `zoom-blur` | transition | 8 | 134 | 233 |
+| `sdf-scene` | layer | 317 | 265 | 549 |
+| `liquid-chrome` | layer | 141 | 125 | 236 |
+| `aurora` | layer | 92 | 708 | 2824 |
+| `hero` | layer | 137 | 48 | 97 |
+| `mesh-gradient` | layer | 12 | 32 | 172 |
+| `ocean` | layer | 49 | 191 | 563 |
+| `caustics` | layer | 14 | 51 | 215 |
+| `flow-ink` | layer | 57 | 151 | 672 |
+| `turing` | layer | 20 | 25 | 93 |
+| `light-shafts` | layer | 28 | 91 | 167 |
+| `particles` | layer | 64 | 98 | 191 |
+| `film-burn` | filter | 19 | 77 | 147 |
+| `lake-mirror` | filter | 12 | 31 | 73 |
+| `glitch` | filter | 8 | 27 | 133 |
+| `burn` | transition | 16 | 52 | 161 |
+| `ripple` | transition | 8 | 34 | 83 |
+| `pixelate` | transition | 5 | 22 | 63 |
+| `swirl` | transition | 7 | 38 | 88 |
+| `ink-bleed` | transition | 15 | 59 | 114 |
+| `warp-wipe` | transition | 6 | 29 | 66 |
+| `luma-melt` | transition | 5 | 20 | 52 |
+| `zoom-blur` | transition | 14 | 129 | 216 |
 
 Compiling is a one-off. Kernels are cached process-wide by source and uniform set, so a shader used by many layers, compositions or transitions compiles once. Every shader in a spec is JIT-compiled in parallel before the first frame is evaluated, which took the showcase spec's build from 1114 ms to 114 ms.
 

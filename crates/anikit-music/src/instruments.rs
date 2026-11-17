@@ -132,7 +132,11 @@ pub fn names() -> Vec<(&'static str, Vec<&'static str>)> {
         ("sampled (GM bank)", crate::sf2::bank::NAMES.to_vec()),
         ("physical models (phys:NAME)", crate::physical::PRESETS.to_vec()),
         ("synths (synth:NAME)", crate::synth::PRESETS.to_vec()),
-        ("drum kits (drums:NAME)", crate::synth::KITS.iter().copied().chain(KITS.iter().map(|x| x.0)).collect()),
+        ("drum kits (drums:NAME; synth kits first, then GM kits)", {
+            let mut k: Vec<&str> = crate::synth::KITS.to_vec();
+            k.extend(KITS.iter().map(|x| x.0).filter(|n| !crate::synth::KITS.contains(n)));
+            k
+        }),
         ("packs (anikit-video music fetch …)", crate::sf2::packs::PACKS.iter().map(|p| p.name).collect()),
     ]
 }
