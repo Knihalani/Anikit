@@ -869,6 +869,23 @@ impl Scene3d {
         let mut insts = instances(&p.objs, t, dt);
         // Textures need world boxes, so build the hierarchy first.
         scene.insts = std::mem::take(&mut insts);
+        // Focus pulls onto named objects (rack focus between keys).
+        if p.camera.focuses_on_objects() {
+            let centre_of = |name: &str, prev: bool| -> Option<V3> {
+                let oi = p.objs.iter().position(|o| o.name.as_deref() == Some(name))?;
+                let inst = scene.insts.iter().find(|i| i.obj as usize == oi)?;
+                let mut i2 = inst.clone();
+                if prev {
+                    i2.xf = inst.prev;
+                }
+                let (lo, hi) = scene.world_box(&i2);
+                Some(scale(add(lo, hi), 0.5))
+            };
+            let shutter = cam.shutter;
+            cam = p.camera.at_with(t, aspect, p.default_aperture, &|n| centre_of(n, false));
+            cam.shutter = shutter;
+            prev_cam = p.camera.at_with(t - dt, aspect, p.default_aperture, &|n| centre_of(n, true));
+        }
         // A camera aimed at (or following) a named object.
         if let Some(name) = &p.camera.target_obj {
             if let Some(oi) = p.objs.iter().position(|o| o.name.as_deref() == Some(name)) {
@@ -1171,6 +1188,32 @@ mod tests {
         let s = scene(json!({ "text": "ANIKIT", "quality": "draft", "primitives": false })).unwrap();
         let px = s.render(1.0, 1.0 / 30.0, 64, 36, None);
         assert!(px.chunks_exact(4).any(|p| p[0] > 40));
+    }
+
+    #[test]
+    fn camera_lens_shake_and_rack_focus() {
+        let b = (v3(0.0, 0.5, 0.0), 1.0);
+        // A lens on a preset keeps the framing: longer lens, further away.
+        let c50 = spec::camera(&json!({ "preset": "static", "lens": "normal50" }), b, "camera").unwrap();
+        let c135 = spec::camera(&json!({ "preset": "static", "lens": "tele135" }), b, "camera").unwrap();
+        let d = |c: &spec::CamSpec| len(sub(c.keys[0].pos, c.keys[0].target));
+        assert!(d(&c135) > d(&c50) * 2.3, "{} {}", d(&c135), d(&c50));
+        // Handheld noise: deterministic, small (well under 5% of the frame), and alive.
+        let h = spec::camera(&json!({ "preset": "static", "shake": "handheld" }), b, "camera").unwrap();
+        let (a0, a1) = (h.at(1.0, 16.0 / 9.0, 0.0), h.at(1.0, 16.0 / 9.0, 0.0));
+        assert_eq!(a0.target.x.to_bits(), a1.target.x.to_bits());
+        let base = c50.at(1.0, 16.0 / 9.0, 0.0);
+        let _ = base;
+        let moved: Vec<f32> = (0..20).map(|k| len(sub(h.at(k as f32 * 0.1, 16.0 / 9.0, 0.0).target, h.keys[0].target))).collect();
+        let dist = len(sub(h.keys[0].pos, h.keys[0].target));
+        assert!(moved.iter().any(|&m| m > 1e-4) && moved.iter().all(|&m| m / dist < 0.05), "{moved:?}");
+        // Rack focus between two named objects.
+        let r = spec::camera(&json!({ "keys": [ { "t": 0, "pos": [0, 1, 5], "target": [0, 0.5, 0], "focus": "near", "fstop": 2 }, { "t": 1, "pos": [0, 1, 5], "target": [0, 0.5, 0], "focus": "far", "fstop": 2 } ] }), b, "camera").unwrap();
+        assert!(r.focuses_on_objects());
+        let res = |n: &str| match n { "near" => Some(v3(0.0, 1.0, 3.0)), _ => Some(v3(0.0, 1.0, -5.0)) };
+        let (f0, f1) = (r.at_with(0.0, 16.0 / 9.0, 0.0, &res).focus, r.at_with(1.0, 16.0 / 9.0, 0.0, &res).focus);
+        assert!((f0 - 2.0).abs() < 1e-3 && (f1 - 10.0).abs() < 1e-3, "{f0} {f1}");
+        assert!(spec::camera(&json!({ "preset": "static", "shake": "handheldd" }), b, "camera").err().unwrap().contains("did you mean `handheld`"));
     }
 
     #[test]
