@@ -954,3 +954,31 @@ fn solid_background_backdrop_matches_clear() {
     let worst = a.y.iter().zip(&b.y).chain(a.u.iter().zip(&b.u)).chain(a.v.iter().zip(&b.v)).map(|(p, q)| p.abs_diff(*q)).max().unwrap();
     assert!(worst <= 1, "max YUV diff {worst}");
 }
+
+/// Change tracking follows image content, not allocation: the same pixels
+/// re-made in a new `Arc` (a cache refilled) are no change, so which regions
+/// redraw (and so the output) never depends on cache timing.
+#[test]
+fn same_pixels_in_a_new_allocation_are_unchanged() {
+    use anikit_video::render::incremental::Update;
+    use anikit_video::render::{MbMap, YuvFrame};
+    let frame = |v: u8| {
+        let mut p = vello_cpu::Pixmap::new(32, 32);
+        p.data_as_u8_slice_mut().chunks_mut(4).for_each(|c| c.copy_from_slice(&[v, v / 2, 255 - v, 255]));
+        Arc::new(p)
+    };
+    let l = DisplayList {
+        width: 96,
+        height: 64,
+        background: rgba(0.1, 0.1, 0.1, 1.0),
+        ops: vec![Op::Image { image: ImageId(5), dst: [4.0, 4.0, 40.0, 40.0], opacity: 1.0, transform: IDENTITY }],
+    };
+    let mut r = Renderer::new(Arc::new(Assets::default()));
+    let (mut yuv, mut changed) = (YuvFrame::default(), MbMap::default());
+    r.set_frame_image(ImageId(5), frame(40));
+    assert_eq!(r.render_yuv_incremental(&l, &mut yuv, &mut changed), Update::Full);
+    r.set_frame_image(ImageId(5), frame(40));
+    assert_eq!(r.render_yuv_incremental(&l, &mut yuv, &mut changed), Update::Unchanged);
+    r.set_frame_image(ImageId(5), frame(41));
+    assert!(matches!(r.render_yuv_incremental(&l, &mut yuv, &mut changed), Update::Partial { .. }));
+}
