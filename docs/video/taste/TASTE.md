@@ -31,6 +31,8 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 - Louder is not better. Making everything bigger and bolder is Vignelli's "intellectual vulgarity"; "in a world where everybody screams, silence is noticeable. White space provides the silence."
 - Type as the image works best when the concept calls for it. Bass: titles carry "the prime underlying core of the film's story… in some metaphorical way". Cooper's scratched *Se7en* type was "from the mind of the killer". Elastic's *True Detective* double exposures mean "internally divided". It is never a default effect.
 
+**Type's role in world-class work (REFS benchmark).** In 61 of 79 pieces type is absent or supporting; it leads in 18 and is the whole piece in 3. Where it leads, it is one face set with restraint, or made of the film's own material (Se7en's scratched emulsion, Catch Me If You Can's rubber stamps). A headline-led film is one valid choice among many, and usually not the strongest. An image-led story with type in support tends to read as more crafted.
+
 **Rules.**
 - **Scale: pick one ratio per piece and reuse 2–4 sizes.**
   - 2:1 or more, with two sizes only, for statements and kinetic cards.
@@ -91,6 +93,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
     - a complementary pair at unequal saturation;
     - flat primaries as signifiers;
     - earth tones from a material.
+- **What the benchmark shows:** 43 of 87 are tagged limited (2–4 colours plus one accent, held across the film), 39 are dark, and only 11 are light-ground. That describes what tends to work, not a default to copy: a light, saturated piece can be just as strong when the subject calls for it.
 - **Source the palette** from the subject: a photograph, a material, an era, a painting, or the brand's real colours. Colour-wheel generators and tool defaults tend to give the generic look.
 - **Saturation budget.** Keep most of the area low to mid chroma. Spend full saturation on the accent and the climax beat *(heuristic: flag > ~25% of the area at high chroma)*.
 - **Levels (EBU R103).** 8-bit video runs 16–235 nominal, 5–246 preferred. Out-of-range pixels matter beyond 1% of the image. Lift the deepest blacks slightly unless the piece is deliberately graphic, and keep large areas off clip; clipped white is for speculars and small type.
@@ -266,6 +269,13 @@ Each section runs **principles → rules (numbers from practice) → tells → c
   - TV ads: < 2 s.
   - Music video: ~2 s.
   - Cinematic social ads: ~1.2 s, with a range of 0.5–7.5 s.
+- **The REFS benchmark** (87 world-class short-form pieces; `docs/video/judge/benchmark/WHAT-WORLD-CLASS-LOOKS-LIKE.md`) puts the median shot at **2.5 s** overall:
+  - 1.0 s for sport and broadcast;
+  - 1.5 s for idents and UI launches;
+  - 2.0 s for product launches;
+  - 3.5 s for explainers, illustration and titles;
+  - 8 s or more for data stories.
+  Pace in most of the set comes from change *inside* the shot. The camera moves in 50 of 79 pieces, and morphs, sims settling and secondary motion do the rest. So dead air is a better thing to judge than cut count, except for sport and social.
 - **Spread matters as much as the mean.** Shot-length CV (sd/mean) of 0.6–1.2 is healthy; < 0.4 is metronomic ⚙; > 1.5 means one shot dominates *(heuristic on lognormal)*. Aim for max/median ≥ 3.
 - **Fast showcase** (20–60 s):
   - median shot 1–2 s;
