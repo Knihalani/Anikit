@@ -27,6 +27,7 @@ A spec is JSON: `{ "size": "16:9", "scenes": [ { "duration": 2, "layers": [ ... 
 | `docs post` | grades, bloom, halation, grain, motion blur |
 | `docs pacing` | intent, beat-cut timing, holds that stay alive |
 | `docs critique` | the reviewer and the review pack |
+| `docs analyze` | reverse-engineer a reference video: shots, pacing, palette, camera, beats → a draft spec |
 | `docs make-anything` | escape hatches and how to combine them |
 | `docs expressions` · `docs script` · `docs draw` | per-frame maths and colours (music-reactive), generator loops, raw paths and points |
 

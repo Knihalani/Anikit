@@ -9,6 +9,8 @@ description: Make extraordinary motion videos fast with anikit-video, a native r
 
 **Need detail? Don't grep the docs: run `anikit-video docs <topic>`** (30 lines each, with a working example): `primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything`.
 
+**Have a reference video?** "Make one like this": `anikit-video analyze ref.mp4 --sheet s.jpg --spec draft.json`, then follow `skills/anikit-reverse-video/SKILL.md`.
+
 ## Build from the open primitives (anything is possible)
 
 A spec: `{ "size": "16:9", "intent": {"pace": "fast"}, "music": "synthwave", "scenes": [ { "duration": 1.2, "layers": [ … ] } ] }`.
