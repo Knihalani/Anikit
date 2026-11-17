@@ -145,6 +145,14 @@ float sdSpruce(vec2 q, float th, float seed){
     return d;
 }
 
+// dry-brush edge: erode/extend a silhouette's edge with bristle streaks running along `dir` (re-drawn on twos)
+float brushEdge(float d, vec2 p, vec2 dir, float w){
+    vec2 q = vec2(dot(p, dir), dot(p, vec2(-dir.y, dir.x)));
+    float b = boilT();
+    float n = vn(vec2(q.x*18.0, q.y*420.0) + b*0.37) * 0.65 + vn(vec2(q.x*60.0, q.y*900.0) + b*1.1) * 0.35;
+    return d + w*(n - 0.5)*2.0*smoothstep(w*3.0, 0.0, abs(d));
+}
+
 // filmic finish: tone, grain, vignette (call last)
 vec3 finish(vec3 col, vec2 fc, vec2 res){
     vec2 uv = fc/res;

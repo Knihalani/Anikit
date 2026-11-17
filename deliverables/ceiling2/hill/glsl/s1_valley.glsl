@@ -72,10 +72,11 @@ void mainImage(out vec4 o, in vec2 fc){
         }
     }
     float shape = min(dh, tD);
-    shape += 0.0009*(vn(sp*420.0 + boilT()*3.0) - 0.5) + 0.0012*(vn(sp*90.0) - 0.5);
+    shape = brushEdge(shape, sp, vec2(1.0, 0.0), 0.0022);
+    shape += 0.0003*(vn(sp*420.0 + boilT()*3.0) - 0.5) + 0.0012*(vn(sp*90.0) - 0.5);
     float c1 = cov(shape, px);
     // body: near-black, bounce light from the snow rising from the bottom, fur strokes
-    vec3 body = mix(hex(10.,11.,34.), hex(30.,34.,84.), smoothstep(-0.18, -0.34, y1)*0.8);
+    vec3 body = mix(hex(6.,7.,22.), hex(26.,30.,76.), smoothstep(-0.20, -0.34, y1)*0.7);
     // fur: short tangential strokes, a little lighter, densest near the lit top
     vec2 fp = vec2(x1, y1)*vec2(60.0, 90.0);
     vec2 fcl = floor(fp);

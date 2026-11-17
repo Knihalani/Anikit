@@ -28,6 +28,7 @@ void mainImage(out vec4 o, in vec2 fc){
     vec2 hp = sp + bo*0.6;
     float brow = 0.38 - 0.55*(hp.x - 0.1) - 0.35*(hp.x - 0.1)*(hp.x - 0.1);
     float dHead = (hp.y - brow)*0.85;
+    dHead = brushEdge(dHead, sp, normalize(vec2(1.0, -0.6)), 0.003);
     float tD = 1e3;
     float tci = floor(hp.x/0.05);
     for(int k=-2;k<=2;k++){
@@ -52,9 +53,18 @@ void mainImage(out vec4 o, in vec2 fc){
     vec3 body = mix(hex(8.,9.,28.), hex(20.,22.,58.), smoothstep(-0.6, 0.4, hp.x - hp.y*0.4));
     body += hex(60.,66.,150.)*0.45*smoothstep(-0.06, 0.0, hp.y - brow)*step(hp.y, brow + 0.002);
     // the lantern lights the fur near it
-    float lit = exp(-ld*3.2);
-    body += hex(40.,44.,100.)*stroke*0.35;
-    body += warm*(0.10 + 0.45*stroke)*lit;
+    // the lantern's light, drawn as a shape: a hard-edged wedge thrown up the creature's face
+    vec2 lv = sp - lanW;
+    float la = atan(lv.y, lv.x);
+    float cone = smoothstep(0.50, 0.47, abs(la - 2.42))*step(hp.y, brow - 0.004);          // ~34 degrees wide, aimed up-left
+    float reach = smoothstep(0.98, 0.80, ld + 0.08*(fbm(sp*6.0) - 0.5));
+    float wedge = cone*reach;
+    // falloff inside the wedge in three painted steps, stippled between them
+    float fall = spray(fc, 1.0 - ld*0.95, 0.35);
+    float band = floor(fall*3.0 + 0.5)/3.0;
+    body = mix(body, mix(hex(70.,40.,30.), hex(232.,150.,80.), band)*(0.55 + 0.45*stroke), wedge*0.9*lamp);
+    body += hex(40.,44.,100.)*stroke*0.30*(1.0 - wedge);
+    body += warm*0.12*exp(-ld*4.0);
     // moonlit snow lying on the brow
     float snowOn = smoothstep(0.035, 0.0, brow - hp.y + 0.012*(fbm(hp*vec2(30.0, 10.0)) - 0.5))*step(hp.y, brow);
     body = mix(body, mix(hex(110.,118.,200.), hex(200.,204.,248.), exp(-md*1.5)), snowOn*(1.0 - 0.9*smoothstep(0.6, 1.0, eye)*smoothstep(0.2, 0.0, abs(hp.x + 0.1))*0.0));

@@ -145,6 +145,14 @@ float sdSpruce(vec2 q, float th, float seed){
     return d;
 }
 
+// dry-brush edge: erode/extend a silhouette's edge with bristle streaks running along `dir` (re-drawn on twos)
+float brushEdge(float d, vec2 p, vec2 dir, float w){
+    vec2 q = vec2(dot(p, dir), dot(p, vec2(-dir.y, dir.x)));
+    float b = boilT();
+    float n = vn(vec2(q.x*18.0, q.y*420.0) + b*0.37) * 0.65 + vn(vec2(q.x*60.0, q.y*900.0) + b*1.1) * 0.35;
+    return d + w*(n - 0.5)*2.0*smoothstep(w*3.0, 0.0, abs(d));
+}
+
 // filmic finish: tone, grain, vignette (call last)
 vec3 finish(vec3 col, vec2 fc, vec2 res){
     vec2 uv = fc/res;
@@ -248,10 +256,11 @@ void mainImage(out vec4 o, in vec2 fc){
     headU = min(headU, mix(1e3, ant, step(0.01, wake)));
     dh = min(dh, headU);
     float shape = min(dh, tD);
-    shape += 0.0007*(vn(sp*420.0 + boilT()*3.0) - 0.5) + 0.0012*(vn(sp*90.0) - 0.5);
+    shape = brushEdge(shape, sp, vec2(1.0, 0.0), 0.0022);
+    shape += 0.0003*(vn(sp*420.0 + boilT()*3.0) - 0.5) + 0.0012*(vn(sp*90.0) - 0.5);
     float c1 = cov(shape, px);
     // body: near-black, bounce light from the snow rising from the bottom, fur strokes
-    vec3 body = mix(hex(10.,11.,34.), hex(30.,34.,84.), smoothstep(-0.18, -0.34, y1)*0.8);
+    vec3 body = mix(hex(6.,7.,22.), hex(26.,30.,76.), smoothstep(-0.20, -0.34, y1)*0.7);
     // fur: short tangential strokes, a little lighter, densest near the lit top
     vec2 fp = vec2(x1, y1)*vec2(60.0, 90.0);
     vec2 fcl = floor(fp);
