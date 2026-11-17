@@ -146,6 +146,9 @@ pub struct Renderer {
     upscaler: upscale::Upscaler,
     /// Low-res backdrop as Y, Cb, Cr planes (fused backdrop → YUV path).
     lo: [Vec<u8>; 3],
+    /// Overlay op bounds and macroblock map (multi-box fused path).
+    box_rects: Vec<Option<Rect>>,
+    box_map: MbMap,
     /// Low-resolution smooth backdrop, its context and content key.
     lctx: Option<RenderContext>,
     smooth_lo: Pixmap,
@@ -171,6 +174,8 @@ impl Renderer {
             dynamic: None,
             upscaler: Default::default(),
             lo: Default::default(),
+            box_rects: Vec::new(),
+            box_map: MbMap::default(),
             lctx: None,
             smooth_lo: Pixmap::new(1, 1),
             smooth_key: None,
@@ -385,7 +390,26 @@ impl Renderer {
                 self.upscaler.run_plane(&self.lo[1], pw, ph, d, &mut yuv.u[o..], cs, ow, oh, x0 as i64, y0 as i64);
                 self.upscaler.run_plane(&self.lo[2], pw, ph, d, &mut yuv.v[o..], cs, ow, oh, x0 as i64, y0 as i64);
             }
-            if let Some([x0, y0, x1, y1]) = rgn {
+            // Normal blending: draw the ops in a few tight boxes (clustered
+            // macroblocks), each on a transparent canvas composited in YUV.
+            let boxes: Vec<[usize; 4]> = match rgn {
+                Some(_) if normal_only => {
+                    incremental::op_rects(ops, &mut self.box_rects);
+                    let (mw, mh) = (wu.div_ceil(16), hu.div_ceil(16));
+                    self.box_map.reset(mw, mh, false);
+                    for r in self.box_rects.iter().flatten() {
+                        self.box_map.mark_rect(r.inflate(-1.0, -1.0));
+                    }
+                    incremental::cluster(&self.box_map, 6)
+                        .into_iter()
+                        .map(|b| [b[0] as usize * 16, b[1] as usize * 16, (b[2] as usize * 16).min(wu), (b[3] as usize * 16).min(hu)])
+                        .filter(|b| b[2] > b[0] && b[3] > b[1])
+                        .collect()
+                }
+                Some(r) => vec![r],
+                None => Vec::new(),
+            };
+            for [x0, y0, x1, y1] in boxes {
                 let (rw, rh) = ((x1 - x0) as u16, (y1 - y0) as u16);
                 self.rpix.resize(rw, rh);
                 let box_settings = if normal_only {
@@ -398,7 +422,8 @@ impl Renderer {
                 let rctx = self.rctx.get_or_insert_with(|| RenderContext::new(rw, rh));
                 rctx.reset_and_resize(rw, rh);
                 st.org = (x0 as i32, y0 as i32);
-                draw_ops(st, &assets, rctx, ops, Affine::translate((-(x0 as f64), -(y0 as f64))));
+                let cull = normal_only.then(|| Cull { region: Rect::new(0.0, 0.0, rw as f64, rh as f64), rects: &self.box_rects, org: (x0 as f64, y0 as f64) });
+                draw_ops_culled(st, &assets, rctx, ops, Affine::translate((-(x0 as f64), -(y0 as f64))), cull);
                 rctx.flush();
                 rctx.render_with(&mut self.rpix, &mut st.res, box_settings);
                 rctx.reset();

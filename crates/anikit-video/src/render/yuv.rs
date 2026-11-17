@@ -394,25 +394,35 @@ fn composite_over_inner(src: &[u8], rw: usize, rh: usize, (x0, y0): (usize, usiz
         let (ra, rb) = (cy * 2, (cy * 2 + 1).min(rh - 1));
         let (sa, sb) = (&src[ra * row..(ra + 1) * row], &src[rb * row..(rb + 1) * row]);
         let o = (y0 / 2 + cy) * cs + x0 / 2;
-        for cx in 0..cw {
-            let (xa, xb) = (cx * 2 * 4, ((cx * 2 + 1).min(rw - 1)) * 4);
-            let at = |k: usize| sa[xa + k] as i32 + sa[xb + k] as i32 + sb[xa + k] as i32 + sb[xb + k] as i32;
-            let asum = at(3);
-            if asum == 0 {
+        // Skip 8-block (16-pixel) spans that are transparent in both rows.
+        let clear = |x: usize, n: usize| {
+            let (a, b) = (&sa[x * 4..(x + n) * 4], &sb[x * 4..(x + n) * 4]);
+            a.chunks_exact(4).zip(b.chunks_exact(4)).all(|(p, q)| p[3] | q[3] == 0)
+        };
+        for span in (0..cw).step_by(8) {
+            if clear(span * 2, 16.min(rw - span * 2)) {
                 continue;
             }
-            let (r, g, b) = (at(0), at(1), at(2));
-            let cu = (UR * r + UG * g + UB * b + (1 << 14)) >> 15;
-            let cv = (VR * r + VG * g + VB * b + (1 << 14)) >> 15;
-            let keep = 1020 - asum;
-            let mix = |c: u8, s: i32| {
-                let d = c as i32 - 128;
-                // d · keep / 1020, rounded half away from zero.
-                let m = (d.abs() * keep + 510) / 1020;
-                (128 + s + if d < 0 { -m } else { m }).clamp(0, 255) as u8
-            };
-            out.u[o + cx] = mix(out.u[o + cx], cu);
-            out.v[o + cx] = mix(out.v[o + cx], cv);
+            for cx in span..(span + 8).min(cw) {
+                let (xa, xb) = (cx * 2 * 4, ((cx * 2 + 1).min(rw - 1)) * 4);
+                let at = |k: usize| sa[xa + k] as i32 + sa[xb + k] as i32 + sb[xa + k] as i32 + sb[xb + k] as i32;
+                let asum = at(3);
+                if asum == 0 {
+                    continue;
+                }
+                let (r, g, b) = (at(0), at(1), at(2));
+                let cu = (UR * r + UG * g + UB * b + (1 << 14)) >> 15;
+                let cv = (VR * r + VG * g + VB * b + (1 << 14)) >> 15;
+                let keep = 1020 - asum;
+                let mix = |c: u8, s: i32| {
+                    let d = c as i32 - 128;
+                    // d · keep / 1020, rounded half away from zero.
+                    let m = (d.abs() * keep + 510) / 1020;
+                    (128 + s + if d < 0 { -m } else { m }).clamp(0, 255) as u8
+                };
+                out.u[o + cx] = mix(out.u[o + cx], cu);
+                out.v[o + cx] = mix(out.v[o + cx], cv);
+            }
         }
     }
 }

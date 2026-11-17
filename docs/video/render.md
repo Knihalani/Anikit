@@ -71,6 +71,9 @@ When `render_yuv` has a backdrop and the ops drawn over it fit in a macroblock-a
 
 ### Incremental frames
 
+**Op alignment (insertion-tolerant):** ops are matched by content hash, in order, with a 24-op look-ahead resync, so an inserted or removed op marks only its own bounds. An unmatched layer marker, for example a clip that moved by 1 px or a wipe that widened, marks its whole subtree's old and new bounds (leaf bounds already include enclosing filter margins) instead of forcing a full frame. Any pixel outside the marks is covered by the same ops in the same order. Full-frame incremental renders take the fused backdrop → YUV path when it applies. On the launch template: Full 421 → 312 of 868 frames and Partial 27 → 136. The remaining Full frames are ones where the animated background glows really change every pixel.
+
+
 `render_yuv_incremental` is the fastest path for real videos. Each worker keeps its previous frame and does the following:
 
 1. Fingerprint every op: a content hash, plus device bounds grown by the filters that enclose it.
@@ -122,6 +125,19 @@ Source: `cargo run --release -p anikit-video --example parts_bench`. Single thre
 | Text: 1500 glyphs @ 24 px / 360 glyphs @ 96 px | 1.36 / 1.77 |
 | Blur layer 400×300, σ 8 / full-frame blur, σ 20 | 1.19 / 8.2 |
 | YUV conversion alone (AVX2) | 0.75 |
+
+### End to end (templates, after the speed phase)
+
+`anikit-video render` at 1080p30 with the `ak264` encoder, on a restarted VM that measures about 1.5–2× slower than the one used for the tables above:
+
+| Template | Frames | Wall time | Throughput |
+|---|---|---|---|
+| launch | 752 | 2.38 s | 315 fps (was 167 before the backdrop paths) |
+| testimonial | 699 | 2.11 s | 332 fps |
+| tutorial | 818 | 2.04 s | 400 fps |
+| logo-reveal | 120 | 0.51 s | 235 fps |
+
+Single-thread `render_yuv` on these templates now costs 4–5 ms per frame. Most of that is the 1080p plane writes, the overlay boxes and text; the background gradients are nearly free.
 
 ### What moved the numbers
 
