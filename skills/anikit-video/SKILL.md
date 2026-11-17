@@ -7,13 +7,13 @@ description: Make extraordinary motion videos fast with anikit-video, a native r
 
 ## Process (each step is cheap; skipping them is what costs)
 
-1. **Concept, three lines:** the one image only *this* brief could have, built from its own nouns; the medium the idea asks for (2D type, illustration, paths and shaders are first-class; 3D when the idea is physical or material); the sound (acoustic or orchestral unless the idea is electronic). `anikit-video docs taste` (one page) has what tends to land. Depth when a shot needs it: `docs/video/craft/` (graphic-design, illustration, art-direction, 3d-design, editing, grading, music, storytelling, ai-tells); these are long, so list a file's headings with `grep -n '^##'` and read only the section you need.
+1. **Concept, three lines:** start from the image, not the copy (in most world-class pieces type is absent or supporting): the one image only *this* brief could have, built from its own nouns; the medium the idea asks for (2D type, illustration, paths and shaders are first-class; 3D when the idea is physical or material); the sound (acoustic or orchestral unless the idea is electronic). `anikit-video docs taste` (one page) has what tends to land. Depth when a shot needs it: `docs/video/craft/` (graphic-design, illustration, art-direction, 3d-design, editing, grading, music, storytelling, ai-tells); these are long, so list a file's headings with `grep -n '^##'` and read only the section you need.
 2. **Reference:** with web access, look at a few pieces of top work in this genre and name what makes them good. Local images: `anikit-video board refs/` turns them into palette, type and texture tokens.
 3. **Style frames:** write 2–3 contrasting first frames as one-scene specs in one file, `preview` it, and pick the strongest before building the rest.
 4. **Build, then loop:** `anikit-video preview s.json` (~1 s for 2D) validates, prints unknown keys first, writes `s-sheet.png` (one frame per second), the top notes, pace and a final-render estimate. Look at the sheet; fix; repeat. `--at 1,4.5,8` writes several moments in one image at full detail.
 5. **Ship gate** (below), then **ONE** `anikit-video render s.json -o out.mp4 --sheet contact.png` (background it when the estimate is minutes; it prints one line every 15 s). Later fixes: `render --from A --to B`.
 
-Write the spec directly. For repetitive layers use `"repeat": 40` with `$i`, `defs`/`use`, or a `{ "script": … }` layer, not a Python generator. Patch one value with `anikit-video set s.json <path> <value>`.
+Everything here is a starting point, never a ceiling: anything the spec keys don't cover, a GLSL `shader`, a `draw` layer of raw paths and points, or a `script` layer can build. Write the spec directly. For repetitive layers use `"repeat": 40` with `$i`, `defs`/`use`, or a `{ "script": … }` layer, not a Python generator. Patch one value with `anikit-video set s.json <path> <value>`.
 
 ## The spec in one screen
 
