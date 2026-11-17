@@ -234,9 +234,9 @@ impl Prepare for Scene3d {
         };
         let quality_s = m.get("quality").and_then(|q| q.as_str()).unwrap_or("standard");
         let (quality, denoise, bake) = match quality_s {
-            "draft" => (Quality { edge_spp: 3, ao_rays: 1, shadow_rays: 1, max_depth: 2, max_glass: 6, contrast: 0.08 }, 3, (384, 24)),
-            "standard" => (Quality::default(), 4, (768, 64)),
-            "high" => (Quality { edge_spp: 16, ao_rays: 4, shadow_rays: 4, max_depth: 4, max_glass: 14, contrast: 0.035 }, 4, (1024, 128)),
+            "draft" => (Quality { edge_spp: 3, ao_rays: 1, shadow_rays: 1, max_depth: 2, max_glass: 6, contrast: 0.1, secondary_rays: 0 }, 5, (384, 24)),
+            "standard" => (Quality::default(), 5, (768, 64)),
+            "high" => (Quality { edge_spp: 16, ao_rays: 3, shadow_rays: 3, max_depth: 4, max_glass: 14, contrast: 0.035, secondary_rays: 4 }, 5, (1024, 128)),
             o => return Err(Error(format!("unknown quality `{o}`; expected draft, standard or high"))),
         };
         let denoise = num_or(m, "denoise", denoise as f32).map_err(Error)? as u32;
@@ -311,6 +311,12 @@ impl Scene3d {
     pub fn render(&self, t: f32, dt: f32, w: usize, h: usize, root: Option<&Evaluator>) -> Vec<u8> {
         let p = self.p();
         let prof = std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some();
+        if prof {
+            trace::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed);
+            for r in &trace::RAYS {
+                r.store(0, std::sync::atomic::Ordering::Relaxed);
+            }
+        }
         let clock = std::time::Instant::now();
         let aspect = w as f32 / h as f32;
         let mut cam = p.camera.at(t, aspect, p.default_aperture);
@@ -330,7 +336,7 @@ impl Scene3d {
         let t_setup = clock.elapsed();
 
         let mut px = vec![trace::Px::default(); w * h];
-        let band = 8usize;
+        let band = 32usize;
         let q = p.quality;
         let body = |(k, rows): (usize, &mut [trace::Px])| {
             let y0 = k * band;
@@ -355,6 +361,8 @@ impl Scene3d {
                 ms(t_trace - t_setup),
                 ms(clock.elapsed() - t_trace)
             );
+            let r: Vec<u64> = trace::RAYS.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
+            eprintln!("  rays: {:.2}M closest ({:.2}M radiance, {:.2}M floor reflections), {:.2}M shadow/AO, {:.2} primary samples per pixel", r[0] as f64 / 1e6, r[3] as f64 / 1e6, r[4] as f64 / 1e6, r[1] as f64 / 1e6, r[2] as f64 / (w * h) as f64);
         }
         out
     }

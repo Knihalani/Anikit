@@ -378,6 +378,9 @@ impl Shapes {
 }
 
 fn mesh_shape(m: anikit_core::raster::Mesh) -> Shape {
+    if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() {
+        eprintln!("scene3d: mesh with {} triangles", m.idx.len() / 3);
+    }
     Shape::Mesh(Arc::new(Bvh::with_uv(&m.pos, &m.nrm, &m.uv, &m.idx)))
 }
 

@@ -38,9 +38,19 @@ pub struct Hit {
     pub v: f32,
 }
 
+/// The part of a triangle traversal touches (36 bytes, cache friendly);
+/// normals and UVs live in [`Bvh::tris`] and are read only for the hit.
+#[derive(Clone, Copy)]
+pub struct Hot {
+    pub v0: V3,
+    pub e1: V3,
+    pub e2: V3,
+}
+
 pub struct Bvh {
     nodes: Vec<Node>,
     pub tris: Vec<Tri>,
+    hot: Vec<Hot>,
     pub lo: V3,
     pub hi: V3,
 }
@@ -168,8 +178,9 @@ impl Bvh {
             stack.push(l + 1);
         }
         let tris: Vec<Tri> = order.iter().map(|&i| tris[i as usize]).collect();
+        let hot: Vec<Hot> = tris.iter().map(|t| Hot { v0: t.v0, e1: t.e1, e2: t.e2 }).collect();
         let (lo, hi) = if n == 0 { (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)) } else { (nodes[0].lo, nodes[0].hi) };
-        Bvh { nodes, tris, lo, hi }
+        Bvh { nodes, tris, hot, lo, hi }
     }
 
     /// Closest hit along `o + t·d` with `t` in `(tmin, tmax)`.
@@ -190,7 +201,7 @@ impl Bvh {
             let node = &self.nodes[ni as usize];
             if node.count > 0 {
                 for k in node.first..node.first + node.count {
-                    let tr = &self.tris[k as usize];
+                    let tr = &self.hot[k as usize];
                     if let Some((t, u, v)) = tri_hit(tr, o, d, tmin, tmax) {
                         tmax = t;
                         best = Some(Hit { t, tri: k, u, v });
@@ -247,7 +258,7 @@ impl Bvh {
             let node = &self.nodes[ni as usize];
             if node.count > 0 {
                 for k in node.first..node.first + node.count {
-                    if tri_hit(&self.tris[k as usize], o, d, tmin, tmax).is_some() {
+                    if tri_hit(&self.hot[k as usize], o, d, tmin, tmax).is_some() {
                         return true;
                     }
                 }
@@ -396,7 +407,25 @@ impl Tlas {
     }
 }
 
-#[inline]
+/// NaN-oblivious min/max (plain compare + select; `f32::min` adds NaN handling).
+#[inline(always)]
+fn fmin(a: f32, b: f32) -> f32 {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+#[inline(always)]
+fn fmax(a: f32, b: f32) -> f32 {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
+#[inline(always)]
 fn slab(n: &Node, o: V3, inv: V3, tmin: f32, tmax: f32) -> Option<f32> {
     let t1 = (n.lo.x - o.x) * inv.x;
     let t2 = (n.hi.x - o.x) * inv.x;
@@ -404,13 +433,13 @@ fn slab(n: &Node, o: V3, inv: V3, tmin: f32, tmax: f32) -> Option<f32> {
     let t4 = (n.hi.y - o.y) * inv.y;
     let t5 = (n.lo.z - o.z) * inv.z;
     let t6 = (n.hi.z - o.z) * inv.z;
-    let a = t1.min(t2).max(t3.min(t4)).max(t5.min(t6)).max(tmin);
-    let b = t1.max(t2).min(t3.max(t4)).min(t5.max(t6)).min(tmax);
+    let a = fmax(fmax(fmax(fmin(t1, t2), fmin(t3, t4)), fmin(t5, t6)), tmin);
+    let b = fmin(fmin(fmin(fmax(t1, t2), fmax(t3, t4)), fmax(t5, t6)), tmax);
     (a <= b).then_some(a)
 }
 
 #[inline]
-fn tri_hit(tr: &Tri, o: V3, d: V3, tmin: f32, tmax: f32) -> Option<(f32, f32, f32)> {
+fn tri_hit(tr: &Hot, o: V3, d: V3, tmin: f32, tmax: f32) -> Option<(f32, f32, f32)> {
     let p = cross(d, tr.e2);
     let det = dot(tr.e1, p);
     if det.abs() < 1e-12 {
@@ -449,7 +478,7 @@ mod tests {
             let d = norm(v3(rnd() * 0.5, rnd() * 0.5, -1.0));
             let fast = b.intersect(o, d, 1e-4, 1e9).map(|h| h.t);
             let mut best: Option<f32> = None;
-            for t in &b.tris {
+            for t in &b.hot {
                 if let Some((t, _, _)) = tri_hit(t, o, d, 1e-4, best.unwrap_or(1e9)) {
                     best = Some(t);
                 }
