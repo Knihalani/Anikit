@@ -117,3 +117,51 @@ Measured with `diagnose -- depth`:
 6. **Score to picture** (gap 7): the video's cut times drive section boundaries, crashes and impacts, with a stop before big reveals.
 
 Before/after renders of four genres will be added next to this file as the fixes land.
+
+## Progress: round 1 (composition engine, arrangement, performance)
+
+The new code is in `src/compose.rs`, wired in by `style.rs`. It fixes gaps 1–4, part of 6, and nothing yet for 5 and 7.
+
+- **Harmony:**
+  - Verse, build and peak sections get different progressions.
+  - Builds and pre-peak bars end on the dominant (a half cadence), and the piece ends with IV–V before the final tonic.
+  - Every 8 bars a dominant lands on the last two beats before the loop restarts on the tonic.
+  - Colour tones are added by style: add9, sus2, m7, maj7 and V7; lofi and jazz get 9ths.
+  - The bass moves by step using inversions.
+  - Repeats bring borrowed and secondary chords: iv, V/V, and a major V in minor keys.
+- **Melody:**
+  - Each line is an 8-bar sentence built from one motif: statement, sequence on the next chord, variation, half cadence, statement, sequence, climax a third higher, then a full cadence.
+  - Strong beats sit on chord tones, phrasing is legato, and dynamics arch towards the climax.
+  - The same section role always gets the same motif seed, so the chorus hook returns note-for-note.
+- **Countermelody:** a guide-tone line (the 3rd or 7th of each chord, voice-led) plays under the lead in peak sections.
+- **Arrangement:**
+  - Drums get ghost snares, an open-hat lift and snare pickup every 4 bars, a tom fill every 8, and a crash every 8 bars at full energy.
+  - Electronic styles sweep a low-pass filter open through each build.
+  - Everything stops for the half beat before each drop.
+- **Performance:**
+  - Hats are accented by position in the beat (velocity SD went from 0.02–0.10 to 0.14–0.23).
+  - Lofi and jazz have a laid-back backbeat.
+  - Piano-family chords sustain to each chord change (a sustain-pedal model).
+- **Stereo:** each role gets a default pan and pads are widened. Correlation is now 0.4–0.98 (cinematic 0.66, ambient 0.40), but lofi, jazz and pop are still about 0.95.
+
+Measured with `diagnose`:
+
+| Measure | Before | After |
+|---|---|---|
+| Drum bars exactly repeating 4 bars earlier | up to 29 of 37 | mostly 0–4 (trap 13 of 29, dnb 9 of 37) |
+| House/pop melody steps (vs leaps) | 34–37 % | 59–63 % |
+| Distinct note lengths in accompaniment | 1–2 | 2–6 |
+
+- Every style still masters to −14.0 LUFS and −1.02 dBTP with no clipping.
+- **Speed** for single 40 s renders: cinematic 29.5×, house 31×, acoustic 41×, lofi 43× real time.
+
+Before and after renders, 40 s each:
+
+| Genre | Before | After |
+|---|---|---|
+| Cinematic | [v2-cinematic-before.ogg](v2-cinematic-before.ogg) | [v2-cinematic-after.ogg](v2-cinematic-after.ogg) |
+| Acoustic | [v2-acoustic-before.ogg](v2-acoustic-before.ogg) | [v2-acoustic-after.ogg](v2-acoustic-after.ogg) |
+| Lofi | [v2-lofi-before.ogg](v2-lofi-before.ogg) | [v2-lofi-after.ogg](v2-lofi-after.ogg) |
+| Electronic (house) | [v2-electronic-before.ogg](v2-electronic-before.ogg) | [v2-electronic-after.ogg](v2-electronic-after.ogg) |
+
+**Next:** score to picture (the video's cuts drive section boundaries and hits), better samples by default when the packs are cached, and stereo for the narrow styles.
