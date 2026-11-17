@@ -237,7 +237,7 @@
             "$use": "backdrop",
             "with": {
               "seed": 9,
-              "intensity": 0.28
+              "intensity": 0.2
             }
           },
           {
@@ -363,7 +363,7 @@
             "with": {
               "seed": 31,
               "floor": true,
-              "intensity": 0.3
+              "intensity": 0.22
             }
           },
           {
@@ -378,10 +378,10 @@
                   "form": 1.0,
                   "size": 2.4,
                   "glow": true,
+                  "count": 14000,
                   "colors": [
-                    "{{brand.colors.primary}}",
-                    "{{brand.colors.secondary}}",
-                    "{{brand.colors.accent}}"
+                    "{{brand.colors.text}}",
+                    "{{brand.colors.secondary}}"
                   ]
                 },
                 "y": "{{fmt.portrait ? '46%' : '46%'}}",
