@@ -26,6 +26,7 @@
 pub mod authoring;
 pub mod bvh;
 pub mod rig;
+pub mod sets;
 pub mod env;
 pub mod geom;
 pub mod gltf;
@@ -112,7 +113,7 @@ pub fn shorthand(mut v: Value) -> Value {
 }
 
 const TOP_KEYS: &[&str] = &[
-    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline", "rig",
+    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline", "rig", "set",
 ];
 
 /// The `scene3d` component (kind names `scene3d`, `scene-3d`, `3d.scene`).
@@ -310,6 +311,12 @@ impl Prepare for Scene3d {
                 .collect(),
             None => objs_v,
         };
+        // `set`: a stage built around the subject (plinth, steps, field, ...).
+        let set = m.get("set").map(|v| sets::build(v, "set")).transpose().map_err(Error)?;
+        let objs_v: Vec<Value> = match &set {
+            Some(b) => objs_v.into_iter().chain(b.objects.iter().cloned()).collect(),
+            None => objs_v,
+        };
         let outline = match m.get("outline") {
             None if look_outline => Some((1.6, [22u8, 20, 24])),
             None | Some(Value::Bool(false)) => None,
@@ -351,6 +358,7 @@ impl Prepare for Scene3d {
         // Floor.
         let floor = match m.get("floor") {
             Some(Value::Bool(false)) => None,
+            None if set.as_ref().is_some_and(|b| b.no_floor) => None,
             v => {
                 let mut fp = if bright {
                     let color = match es.name.as_str() {
@@ -368,6 +376,9 @@ impl Prepare for Scene3d {
                 } else {
                     FloorParams { y: 0.0, color: v3(0.035, 0.035, 0.04), roughness: 0.09, mirror: 0.06, reflect: 1.0, pool: (0.0, 0.0, 5.0), fade: (7.0, 16.0) }
                 };
+                if let Some(y) = set.as_ref().and_then(|b| b.floor_y) {
+                    fp.y = y;
+                }
                 if let Some(Value::Object(fm)) = v {
                     for k in fm.keys() {
                         if !["color", "roughness", "reflect", "mirror", "y"].contains(&k.as_str()) {
@@ -1234,6 +1245,11 @@ mod tests {
 
     #[test]
     fn errors_suggest_fixes() {
+        for set in ["plinth", "podium", "steps", "sweep", "field", "arches", "terrain"] {
+            scene(json!({ "set": set, "objects": [ { "type": "sphere", "radius": 0.3, "pos": [0, 0.3, 0] } ] })).unwrap();
+        }
+        let e = scene(json!({ "set": "plint", "objects": [] })).err().unwrap();
+        assert!(e.contains("did you mean `plinth`"), "{e}");
         for look in ["toon", "ink", "clay", "paper", "cardboard", "gouache"] {
             scene(json!({ "look": look, "objects": [ { "type": "sphere", "color": "#E4572E" } ] })).unwrap();
         }

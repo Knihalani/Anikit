@@ -97,6 +97,23 @@ You are not limited to the preset shapes. These types build a mesh from your des
 
 Shapes whose expressions use `t` (seconds) are rebuilt every frame: waves, growing tubes, morphing surfaces (`examples/video/lookdev/wave.json`). This costs about 44 ms per frame for a 160² heightfield plus a 300-segment tube, and turns off the baked floor. Shapes without `t` are built once. Motion blur follows object motion, not deformation. To generate many objects, put `{ "script": "..." }` in `objects`; it expands to the items it returns. Cost: tracing a mesh costs about the same as the preset shapes of similar screen size. A 160×32 surface or a 128² heightfield adds under 5 ms to scene build, and render time is set by pixels covered, not by triangle count.
 
+## Sets
+
+Build a stage, not a void. `set` adds a designed set around the subject as ordinary objects, so materials, keys and expressions still apply. It takes a name, `{ "preset", "color", "material", "size", "shape", "density" }`, or a list of these.
+
+| `set` | What it builds |
+|---|---|
+| `plinth` / `podium` | A two-tier round (or square) stand. The floor drops to its base, so objects at y = 0 sit on top. |
+| `steps` | Four stepped blocks rising behind the subject. |
+| `sweep` | A seamless cyc of any `color`: floor, curve and wall in one piece, with no horizon line. |
+| `field` | An abstract field of columns with noise heights, rising with distance, with a clearing for the subject (`density` 0.25–3). |
+| `arches` | A receding corridor of half-buried rings. |
+| `terrain` | Rolling fBm ground that flattens near the subject (replaces the floor). |
+
+`{ "env": "cyc", "rig": "rembrandt", "look": "clay", "set": { "preset": "sweep", "color": "#C8664A" }, "objects": [ ... ] }`
+
+Stills (each with its spec): `docs/video/shots/3d-sets/`. Measured 1080p traces on 4 cores: 0.52–0.82 s (`field` has 784 instanced columns).
+
 ## Camera language
 
 - **`lens`** on the camera: `wide24` (f/8), `normal35`, `normal50` (f/4), `portrait85` (f/2.8), `macro100` (f/5.6), `tele135` (f/4), `tele200`. It sets the focal length and working aperture for keys that set neither. On a preset it also moves the camera to keep the framing, so a `tele135` push compresses the background instead of cropping in.
