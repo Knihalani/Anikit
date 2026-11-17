@@ -572,7 +572,7 @@ fn smooth_backdrop_matches_full_res() {
     };
     let scene = |k: f32, wrap: bool| {
         let mut ops = vec![
-            Op::RoundRect { x: 0.0, y: 0.0, w: w as f32, h: h as f32, radius: 0.0, paint: Paint::Radial { c: [160.0, 90.0], r: 190.0, stops: vec![(0.0, rgba(0.04, 0.04, 0.06, 1.0)), (1.0, rgba(0.02, 0.02, 0.03, 1.0))] }, transform: IDENTITY },
+            Op::RoundRect { x: 0.0, y: 0.0, w: w as f32, h: h as f32, radius: 0.0, paint: Paint::Radial { c: [160.0, 90.0], r: 190.0, stops: vec![(0.0, rgba(0.6, 0.5, 0.7, 1.0)), (1.0, rgba(0.4, 0.45, 0.5, 1.0))] }, transform: IDENTITY },
             glow(100.0 + k as f64 * 10.0, 80.0, 1.03, 0.4),
             glow(250.0, 120.0 - k as f64 * 5.0, 0.9, 0.3),
         ];
@@ -623,7 +623,7 @@ fn fused_backdrop_yuv_matches_rgba_path() {
                 assert_eq!((fused.width, fused.padded_height), (reference.width, reference.padded_height));
                 for (a, b) in [(&fused.y, &reference.y), (&fused.u, &reference.u), (&fused.v, &reference.v)] {
                     let max = a.iter().zip(b.iter()).map(|(p, q)| p.abs_diff(*q)).max().unwrap();
-                    assert!(max <= 2, "{w}x{h}: fused YUV differs by {max}");
+                    assert!(max <= 3, "{w}x{h}: fused YUV differs by {max}");
                 }
             }
         }

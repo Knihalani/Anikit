@@ -282,7 +282,7 @@ impl Renderer {
         let n_smooth = smooth::prefix(&list.ops, w as f64, h as f64, &|id| assets.image(id).map(|p| (p.width() as u32, p.height() as u32)));
         if n_smooth > 0 && backdrop.as_ref().is_none_or(|(k, _, _)| *k < n_smooth) {
             let f = smooth::FACTOR;
-            let (lw, lh) = ((w as u32).div_ceil(f) + 1, (h as u32).div_ceil(f) + 1);
+            let (lw, lh) = ((w as u32).div_ceil(f).max(2), (h as u32).div_ceil(f).max(2));
             let key = {
                 let mut hs = incremental::Fx::default();
                 use std::hash::Hasher;
@@ -303,7 +303,7 @@ impl Renderer {
                 let lctx = self.lctx.get_or_insert_with(|| RenderContext::new(lw as u16, lh as u16));
                 lctx.reset_and_resize(lw as u16, lh as u16);
                 st.org = (0, 0);
-                draw_ops(st, &assets, lctx, &list.ops[..n_smooth], Affine::scale(1.0 / f as f64));
+                draw_ops(st, &assets, lctx, &list.ops[..n_smooth], Affine::scale_non_uniform(lw as f64 / w as f64, lh as f64 / h as f64));
                 lctx.flush();
                 self.smooth_lo.resize(lw as u16, lh as u16);
                 lctx.render_with(&mut self.smooth_lo, &mut st.res, settings);
@@ -312,7 +312,7 @@ impl Renderer {
                 self.smooth_key = Some(key);
             }
             let lo = Arc::new(std::mem::replace(&mut self.smooth_lo, Pixmap::new(1, 1)));
-            backdrop = Some((n_smooth - 1, lo, Rect::new(0.0, 0.0, (lw * f) as f64, (lh * f) as f64)));
+            backdrop = Some((n_smooth - 1, lo, Rect::new(0.0, 0.0, w as f64, h as f64)));
             from_smooth = true;
         }
         let (ops, skip) = match &backdrop {
