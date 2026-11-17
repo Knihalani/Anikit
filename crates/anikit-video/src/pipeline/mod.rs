@@ -220,6 +220,8 @@ pub fn scale_list(dl: &mut DisplayList, s: f32) {
 
 struct Worker {
     version: u64,
+    /// The asset store the renderer draws from.
+    store: Arc<crate::eval::SharedAssets>,
     renderer: Option<Renderer>,
     dl: DisplayList,
     /// Fused mode: this thread's incremental YUV frame, change map and last frame index.
@@ -236,7 +238,7 @@ thread_local! {
 
 /// Run `f` with this thread's renderer, (re)creating it when assets changed.
 fn new_worker() -> Worker {
-    Worker { version: 0, renderer: None, dl: DisplayList::default(), yuv: YuvFrame::default(), map: crate::render::MbMap::new(0, 0), last: None, returned: None }
+    Worker { version: 0, store: Arc::default(), renderer: None, dl: DisplayList::default(), yuv: YuvFrame::default(), map: crate::render::MbMap::new(0, 0), last: None, returned: None }
 }
 
 /// This thread's worker state. A nested call (rayon work-stealing while the state is
@@ -251,19 +253,25 @@ fn with_worker<R>(f: impl FnOnce(&mut Worker) -> R) -> R {
 
 /// Create (or re-create, when fonts were added) this worker's renderer.
 fn ensure_renderer(ev: &Evaluator, w: &mut Worker) {
-    // Only new font faces need a new renderer; images come from a live source.
+    // Only new font faces need new assets; images come from a live source. New faces are
+    // swapped into the existing renderer (ids are stable), never a new renderer: dropping
+    // its incremental state at a moment set by other threads made output nondeterministic.
     let v = (ev.assets.font_count() as u64) ^ ((Arc::as_ptr(&ev.assets) as u64) << 16);
-    if w.renderer.is_none() || w.version != v {
-        let mut r = Renderer::new(ev.assets.snapshot_fonts());
-        let a = ev.assets.clone();
-        r.set_image_source(Arc::new(move |id| a.pixmap(id)));
-        w.renderer = Some(r);
-        w.version = v;
-        w.last = None;
+    match &mut w.renderer {
+        Some(r) if w.version != v && Arc::ptr_eq(&ev.assets, &w.store) => r.update_assets(ev.assets.snapshot_fonts()),
+        Some(_) if w.version == v => {}
+        _ => {
+            let mut r = Renderer::new(ev.assets.snapshot_fonts());
+            let a = ev.assets.clone();
+            r.set_image_source(Arc::new(move |id| a.pixmap(id)));
+            w.renderer = Some(r);
+            w.store = ev.assets.clone();
+            w.last = None;
+        }
     }
+    w.version = v;
 }
 
-/// Run `f` with this thread's renderer, (re)creating it when assets changed.
 fn with_renderer<R>(ev: &Evaluator, f: impl FnOnce(&mut Renderer, &mut DisplayList) -> R) -> R {
     with_worker(|w| {
         ensure_renderer(ev, w);
@@ -358,11 +366,20 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
         }
         v
     };
-    let starts: std::collections::HashSet<usize> = ak264::chunk_ranges(n, cfg.gop).into_iter().map(|r| r.0).collect();
-    let out = ak264::encode_parallel(cfg, n, |k, buf, hints| {
+    // Deterministic output: chunk ranges don't depend on the thread count, and each
+    // chunk renders with its own state (fresh at the chunk start, then incremental
+    // frame by frame), whichever thread runs it.
+    let ranges = chunk_plan(n, cfg.gop);
+    let starts: std::collections::HashSet<usize> = ranges.iter().map(|r| r.0).collect();
+    let chunk_start = |k: usize| ranges[ranges.partition_point(|r| r.0 <= k) - 1].0;
+    let workers: std::sync::Mutex<std::collections::HashMap<usize, Worker>> = Default::default();
+    let out = ak264::encode_ranges(cfg, ranges.clone(), |k, buf, hints| {
         let t = Instant::now();
-        // One worker borrow for the whole frame (eval and render must share its state).
-        with_worker(|w| {
+        let c = chunk_start(k);
+        // A fresh renderer per chunk: some renderer caches still change pixels depending on
+        // what they drew before, so reusing one across chunks isn't deterministic.
+        let mut wk = if k == c { None } else { workers.lock().unwrap().remove(&c) }.unwrap_or_else(new_worker);
+        (|w: &mut Worker| {
             ensure_renderer(ev, w);
             if let (Some(r), Some(l)) = (w.returned.take(), w.last) {
                 if l + 1 == k && !starts.contains(&k) {
@@ -426,7 +443,10 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
             *last = Some(k);
             prof.copy_ns.fetch_add(ns(t), Ordering::Relaxed);
             w.returned = Some(Instant::now());
-        });
+        })(&mut wk);
+        if ranges.iter().any(|r| r.0 == c && k + 1 < r.1) {
+            workers.lock().unwrap().insert(c, wk);
+        }
         let d = done.fetch_add(1, Ordering::Relaxed) + 1;
         if opts.progress {
             if let Ok(mut lr) = last_report.try_lock() {
@@ -442,6 +462,14 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
         eprintln!();
     }
     out
+}
+
+/// Independently encoded chunks for `n` frames. `gop > 0` caps their length;
+/// otherwise up to 16 equal chunks of 30–300 frames (enough to keep 16 cores busy).
+/// Depends only on its arguments, never on the machine.
+pub fn chunk_plan(n: usize, gop: u32) -> Vec<(usize, usize)> {
+    let count = if gop > 0 { n.div_ceil(gop as usize) } else { n.div_ceil(300).max(n.div_ceil(30).min(16)) }.clamp(1, n.max(1));
+    (0..count).map(|i| (i * n / count, (i + 1) * n / count)).filter(|r| r.1 > r.0).collect()
 }
 
 /// Frame `i`'s finishing look, and whether it gets motion blur (never in drafts; by default only at high quality).
@@ -594,8 +622,8 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
     let f1 = opts.to.map(|t| (t * ev.fps).round() as u32).unwrap_or(total).clamp(f0, total);
     let n = (f1 - f0) as usize;
     let threads = rayon::current_num_threads().max(1);
-    // Enough chunks to keep every core busy, long enough to compress well.
-    let gop = std::env::var("ANIKIT_GOP").ok().and_then(|g| g.parse().ok()).unwrap_or((n / (threads * 3)).clamp(30, 300) as u32);
+    // Chunk length: fixed by the frame count alone (never the machine), so output is identical on any core count.
+    let gop = std::env::var("ANIKIT_GOP").ok().and_then(|g| g.parse().ok()).unwrap_or_else(|| chunk_plan(n, 0).iter().map(|r| r.1 - r.0).max().unwrap_or(1) as u32);
     let qp = match opts.quality {
         Quality::Draft => 28,
         Quality::Good => 23,
@@ -761,8 +789,8 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
     let f0 = opts.from.map(|t| (t * ev.fps).round() as u32).unwrap_or(0).min(total);
     let f1 = opts.to.map(|t| (t * ev.fps).round() as u32).unwrap_or(total).clamp(f0, total);
     let n = f1 - f0;
-    let threads = rayon::current_num_threads().max(1) as u32;
-    let batch = (threads * 4).max(8);
+    // Fixed batch and run sizes (never the core count), so output is identical on any machine.
+    let batch = 64;
     let wants_hints = enc.wants_hints();
     type Item = (Arc<YuvFrame>, bool, Option<Vec<bool>>);
     // The encoder runs on its own thread, one batch behind the renderers.
@@ -807,12 +835,13 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
             }
             prev_hash = ph;
             // Render changed frames; diff display lists for renderer-aware encoders.
-            // Contiguous runs per worker, so each renderer's incremental state follows the timeline.
-            let per = lists.len().div_ceil(threads as usize).max(1);
+            // Contiguous runs of 16 frames, each with its own state (a full render first,
+            // then incremental), so the pixels don't depend on which thread ran what.
             let frames: Vec<(Option<YuvFrame>, Option<Vec<bool>>)> = (0..lists.len())
                 .collect::<Vec<_>>()
-                .par_chunks(per)
+                .par_chunks(16)
                 .flat_map_iter(|ks| {
+                    let mut wk = new_worker();
                     ks.iter()
                         .map(|&k| {
                             if same[k] {
@@ -829,7 +858,8 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
                             } else {
                                 None
                             };
-                            let f = with_worker(|w| {
+                            let f = {
+                                let w = &mut wk;
                                 ensure_renderer(ev, w);
                                 let Worker { renderer, yuv, map, last, .. } = &mut *w;
                                 let r = renderer.as_mut().unwrap();
@@ -839,9 +869,9 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
                                 } else {
                                     r.render_yuv_incremental(dl, yuv, map);
                                 }
-                                *last = None; // the fused path must not reuse this state as its chunk continuation
+                                *last = None;
                                 yuv.clone()
-                            });
+                            };
                             (Some(f), hint)
                         })
                         .collect::<Vec<_>>()
