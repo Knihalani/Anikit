@@ -59,15 +59,20 @@ lib! {
     "hero", Image, 48, "Product shot: one object (torus, cube, pill, gem, sphere, twisted bar) on a glossy studio floor, plastic or metal.";
     "mesh-gradient", Image, 32, "Soft animated mesh gradient: four colours drifting and folding into each other, with film grain. Backgrounds for titles and products.";
     "ocean", Image, 191, "Open sea to the horizon under a low sun: swell and chop, Fresnel sky reflection, glitter path, crest glow, foam.";
+    "growth", Image, 75, "A living reaction-diffusion simulation (spots, labyrinths, coral) lit as a glossy relief. Multi-pass.";
+    "flow-lines", Image, 449, "Curves grow from seeds along a swirling flow field and draw themselves on paper in a weighted palette.";
+    "ink", Image, 340, "A drop of ink blooming in backlit water: billows, torn tendrils, a second ink curling through.";
+    "soap-film", Image, 104, "Macro of a draining soap film: physically based thin-film colour bands swirling, black film at the top.";
     "caustics", Image, 51, "Pool-floor caustics from a moving water surface (ray density via derivatives).";
     "flow-ink", Image, 151, "Two inks marbled by a curl-noise flow field on paper.";
     "turing", Image, 25, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
     "light-shafts", Image, 91, "Sun through a window into a hazy room: pane-shaped beams with mullions and leaves, drifting haze, glinting dust.";
     "particles", Image, 98, "Glowing particles drifting in depth with bokeh (depth of field), one pass.";
-    "halftone", Filter, 60, "Printed dots: CMYK screens at classic angles (or one black screen) on paper.";
+    "glass", Filter, 80, "The layers below seen through fluted, ribbed, rippled or pebbled glass: refraction, colour fringes, frost.";
+    "halftone", Filter, 29, "Printed dots: CMYK screens at classic angles (or one black screen) on paper.";
     "risograph", Filter, 28, "Two or three spot inks, out of register, with stencil grain: the risograph look.";
     "linocut", Filter, 19, "Carved block print: solid ink, tone-following gouges, bold outlines, paper tooth.";
-    "watercolour", Filter, 80, "Washes that bleed and pool dark at their edges, with paper granulation.";
+    "watercolour", Filter, 34, "Washes that bleed and pool dark at their edges, with paper granulation.";
     "crosshatch", Filter, 25, "Pen or pencil hatching: more directions for darker tones, hand wobble, outlines.";
     "film", Filter, 25, "Photochemical stock: filmic curve, lifted blacks, red halation, gate weave, midtone grain.";
     "dither", Filter, 18, "Ordered (Bayer) dither into a 2- or 3-colour palette at a chosen pixel size.";
@@ -114,8 +119,15 @@ mod tests {
     #[test]
     fn every_builtin_compiles() {
         for e in super::ALL {
-            if let Err(err) = crate::Shader::compile(e.src) {
-                panic!("{}: {err}", e.name);
+            // Multi-pass recipes compile pass by pass.
+            let srcs: Vec<String> = match crate::split_passes(e.src) {
+                Some(p) => std::iter::once(p.image).chain(p.buffers.into_iter().map(|b| b.1)).collect(),
+                None => vec![e.src.to_string()],
+            };
+            for src in srcs {
+                if let Err(err) = crate::Shader::compile(&src) {
+                    panic!("{}: {err}", e.name);
+                }
             }
         }
     }

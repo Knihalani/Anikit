@@ -1,0 +1,17 @@
+{ "size": "1080p", "fps": 30,
+  "scenes": [ { "duration": 5, "background": "#ecebe6", "layers": [
+    { "shape": "rect", "x": "4vw", "y": "8vh", "anchor": "topLeft", "width": 6, "height": "84vh", "fill": "#e2231a",
+      "animate": [ { "from": { "scaleY": 0 }, "duration": 0.7, "ease": "outExpo" } ] },
+    { "text": "04", "font": "Archivo", "size": "62vh", "weight": 900, "axes": { "wdth": 62 }, "color": "#e2231a",
+      "letterSpacing": "-0.06em", "lineHeight": 0.8, "align": "left", "x": "6vw", "y": "6vh", "anchor": "topLeft",
+      "features": "tnum",
+      "animate": [ { "keyframes": { "axes.wdth": [62, 125], "axes.wght": [900, 100] }, "at": 0.3, "duration": 3.6, "ease": "inOutQuart" } ] },
+    { "text": "Form follows\nthe grid.", "font": "Archivo", "size": "9vh", "weight": 700, "axes": { "wdth": 100 }, "color": "#111",
+      "letterSpacing": "-0.035em", "lineHeight": 0.92, "align": "left", "x": "52vw", "y": "8vh", "anchor": "topLeft",
+      "enter": { "preset": "mask by line up", "delay": 0.5 } },
+    { "text": "Neue Typografie in Bewegung — a study in hierarchy, rhythm and negative space. Set flush left, ragged right, on a 12-column grid with 4vw margins.",
+      "font": "Archivo", "size": "2.6vh", "weight": 400, "color": "#111", "lineHeight": 1.35, "align": "left",
+      "x": "52vw", "y": "62vh", "anchor": "topLeft", "width": "30vw", "enter": { "preset": "fade", "delay": 1.1 } },
+    { "text": "ZÜRICH  ·  MMXXVI  ·  NR. 04", "font": "IBM Plex Mono", "size": "1.9vh", "weight": 500, "color": "#111",
+      "letterSpacing": "0.14em", "align": "left", "x": "52vw", "y": "88vh", "anchor": "topLeft", "enter": { "preset": "fade", "delay": 1.4 } }
+  ] } ] }

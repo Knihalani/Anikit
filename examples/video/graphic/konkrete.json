@@ -1,0 +1,74 @@
+{
+  "size": [1920, 1080], "fps": 30, "intent": "fast",
+  "background": "#eeebe3",
+  "fonts": { "Archivo": "fonts/Archivo.ttf" },
+  "theme": { "colors": { "paper": "#eeebe3", "ink": "#121212", "red": "#e2231a" }, "fonts": { "heading": "Archivo", "body": "Archivo" } },
+  "music": { "style": "jazz", "bpm": 138, "key": "Dm", "mood": "tense bright" },
+  "transition": "cut",
+  "grid": { "columns": 12, "rows": 8, "margin": [54, 72], "gutter": 20, "baseline": 10,
+            "areas": { "head": "1-12/5-8", "label": "1-3/1", "num": "10-12/1", "right": "7-12/1-8", "left": "1-6/1-8", "foot": "1-12/8" } },
+  "scenes": [
+    { "id": "construct", "duration": "3 beats", "layers": [
+      { "cell": "right", "shape": "circle", "width": 952, "height": 952, "anchor": "bottomRight", "fill": "$red",
+        "animate": [ { "from": { "scale": 0.0 }, "duration": 0.55, "ease": "outExpo" } ] },
+      { "cell": "head", "anchor": "bottomLeft", "text": "Konkrete", "size": 330, "weight": 900, "lineHeight": 0.8, "letterSpacing": "-0.045em", "color": "$ink",
+        "kinetic": "mask by char up 0.5s 35ms outExpo" },
+      { "cell": "label", "text": "Ausstellung\nNr. 01", "size": 24, "weight": 600, "lineHeight": 1.25, "color": "$ink", "enter": { "preset": "fadeIn", "duration": 0.2 } },
+      { "cell": "num", "anchor": "topRight", "text": "1936—2027", "size": 24, "weight": 600, "color": "$ink", "enter": { "preset": "fadeIn", "duration": 0.2, "delay": 0.1 } }
+    ] },
+    { "id": "arcs", "duration": "3 beats", "background": "$ink", "layers": [
+      { "shape": "arc", "x": 1280, "y": 540, "width": 1300, "height": 1300, "startAngle": 0, "endAngle": 180, "innerRadius": 0.82, "fill": "$red",
+        "animate": [ { "from": { "rotation": -180 }, "duration": 0.9, "ease": "outExpo" } ] },
+      { "shape": "arc", "x": 1280, "y": 540, "width": 1000, "height": 1000, "startAngle": 90, "endAngle": 270, "innerRadius": 0.76, "fill": "$paper",
+        "animate": [ { "from": { "rotation": 160 }, "duration": 0.9, "ease": "outExpo" } ] },
+      { "shape": "arc", "x": 1280, "y": 540, "width": 700, "height": 700, "startAngle": 180, "endAngle": 450, "innerRadius": 0.62, "fill": "$red",
+        "animate": [ { "from": { "rotation": -120 }, "duration": 0.9, "ease": "outExpo" } ] },
+      { "shape": "circle", "x": 1280, "y": 540, "width": 260, "height": 260, "fill": "$paper",
+        "animate": [ { "from": { "scale": 0 }, "duration": 0.5, "ease": "outBack", "at": 0.15 } ] },
+      { "cell": "1-5/6-8", "anchor": "bottomLeft", "text": "Kreis,\nBogen,\nRing.", "size": 96, "weight": 800, "lineHeight": 0.92, "letterSpacing": "-0.03em", "color": "$paper",
+        "kinetic": "mask by line up 0.45s 60ms outExpo" },
+      { "cell": "label", "text": "02 — Form", "size": 24, "weight": 600, "color": "$paper" }
+    ] },
+    { "id": "ramp", "duration": "2 beats", "layers": [
+      { "x": 960, "y": 540, "width": 2300, "height": 1800, "rotation": -15,
+        "pattern": { "kind": "dots", "spacing": 26, "mark": 0.96, "ramp": [0.02, 1] }, "fill": "$ink",
+        "animate": [ { "from": { "x": 1260 }, "duration": 0.85, "ease": "outQuart" } ] },
+      { "cell": "1-7/3-6", "shape": "rect", "fill": "$red", "animate": [ { "from": { "scaleX": 0 }, "duration": 0.4, "ease": "outExpo" } ], "anchor": "left" },
+      { "cell": "1-7/3-6", "anchor": "left", "x": 112, "text": "Fläche", "size": 260, "weight": 900, "letterSpacing": "-0.05em", "color": "$paper",
+        "kinetic": "mask by char up 0.4s 30ms outExpo" }
+    ] },
+    { "id": "kay", "duration": "2 beats", "background": "$red", "layers": [
+      { "text": "K", "x": 1220, "y": 640, "size": 1500, "weight": 900, "color": "$ink",
+        "animate": [ { "from": { "x": 1900, "rotation": 8 }, "duration": 0.6, "ease": "outExpo" } ] },
+      { "cell": "1-4/2-8", "pattern": { "kind": "lines", "spacing": 18, "mark": 0.5, "angle": -45 }, "fill": "$ink",
+        "animate": [ { "from": { "scaleY": 0 }, "duration": 0.5, "ease": "outExpo" } ], "anchor": "top" },
+      { "cell": "label", "x": 72, "y": 54, "text": "03 — Zeichen", "size": 24, "weight": 600, "color": "$paper" }
+    ] },
+    { "id": "screen", "duration": "3 beats", "layers": [
+      { "cell": "left", "shape": "circle", "width": 820, "height": 820, "anchor": "center",
+        "fill": { "type": "radial", "center": [0.32, 0.3], "radius": 0.9, "stops": ["#ffffff", "#000000"] },
+        "halftone": { "cell": 16, "angle": 45, "ink": "$ink", "paper": "none" },
+        "animate": [ { "from": { "scale": 0.6, "rotation": -40 }, "duration": 0.8, "ease": "outExpo" } ] },
+      { "cell": "8-12/2-7", "text": "Raster ist Ordnung. Ordnung ist Freiheit der Form.", "size": 64, "weight": 700, "lineHeight": 1.05, "letterSpacing": "-0.02em", "color": "$ink",
+        "kinetic": "rise by word 0.4s 45ms outExpo" },
+      { "cell": "8-12/8", "anchor": "bottomLeft", "text": "04 — Raster, 16 px, 45°", "size": 24, "weight": 600, "color": "$red" }
+    ] },
+    { "id": "tiles", "duration": "2 beats", "background": "$ink", "layers": [
+      { "cell": "1-6/1-8", "pattern": { "kind": "truchet", "spacing": 60, "mark": 0.2, "seed": 11 }, "fill": "$paper",
+        "animate": [ { "from": { "opacity": 0, "scale": 1.15 }, "duration": 0.5, "ease": "outExpo" } ] },
+      { "cell": "7-12/1-8", "pattern": { "kind": "arcs", "spacing": 122, "seed": 5 }, "fill": "$red",
+        "animate": [ { "from": { "y": 300 }, "duration": 0.6, "ease": "outExpo" } ] }
+    ] },
+    { "id": "poster", "duration": "8 beats", "layers": [
+      { "cell": "right", "shape": "circle", "width": 952, "height": 952, "anchor": "bottomRight", "fill": "$red",
+        "animate": [ { "from": { "x": "+600" }, "duration": 0.7, "ease": "outExpo" } ] },
+      { "cell": "right", "shape": "arc", "width": 952, "height": 952, "anchor": "bottomRight", "startAngle": 0, "endAngle": 180, "innerRadius": 0.5, "fill": "$ink",
+        "animate": [ { "from": { "rotation": 90 }, "duration": 1.0, "ease": "outExpo", "at": 0.15 } ] },
+      { "cell": "head", "anchor": "bottomLeft", "y": 836, "text": "Konkrete\nKunst", "size": 300, "weight": 900, "lineHeight": 0.8, "letterSpacing": "-0.045em", "color": "$ink",
+        "kinetic": "mask by line up 0.6s 90ms outExpo" },
+      { "cell": "1-3/1-2", "text": "Halle für Gestaltung\nAusstellung Nr. 01", "size": 24, "weight": 600, "lineHeight": 1.25, "color": "$ink", "enter": { "preset": "fadeIn", "duration": 0.3, "delay": 0.4 } },
+      { "cell": "4-6/1-2", "text": "12.3.—30.6.2027\nDi—So 10—18 Uhr", "size": 24, "weight": 600, "lineHeight": 1.25, "color": "$ink", "enter": { "preset": "fadeIn", "duration": 0.3, "delay": 0.5 } },
+      { "cell": "foot", "anchor": "bottomLeft", "text": "Zwanzig Positionen der konkreten Gestaltung", "size": 24, "weight": 600, "color": "$ink", "enter": { "preset": "fadeIn", "duration": 0.3, "delay": 0.6 } }
+    ] }
+  ]
+}

@@ -104,9 +104,10 @@ fn resolve_one(name: &str, base: Option<&Path>) -> Result<Arc<dyn Instrument>, S
     if let Some(i) = crate::sf2::pack_instrument(&lower) {
         return Ok(i);
     }
-    // Deeper samples by default when the pack is in the cache (`anikit-video music fetch salamander`).
-    if matches!(lower.as_str(), "piano" | "grand-piano" | "bright-piano") {
-        if let Some(i) = crate::sf2::pack_instrument("salamander-piano") {
+    // Recorded instruments from cached packs replace the GM samples by default
+    // (`anikit-video music fetch essentials`).
+    for p in pack_defaults(&lower) {
+        if let Some(i) = crate::sf2::pack_instrument(p) {
             return Ok(i);
         }
     }
@@ -133,6 +134,24 @@ fn resolve_one(name: &str, base: Option<&Path>) -> Result<Arc<dyn Instrument>, S
 }
 
 /// Where a name resolves (same order as [`resolve`], files excluded):
+/// Pack instruments that stand in for a common name when their pack is
+/// cached, best first.
+pub fn pack_defaults(name: &str) -> &'static [&'static str] {
+    match name {
+        "piano" | "grand-piano" | "bright-piano" => &["salamander-piano", "splendid-piano"],
+        "wurli" | "wurlitzer" => &["wurlitzer"],
+        "bass" | "finger-bass" | "fingered-bass" | "electric-bass" | "bass-guitar" => &["finger-bass-yr"],
+        "pick-bass" | "picked-bass" => &["picked-bass-yr"],
+        "nylon-guitar" | "classical-guitar" | "spanish-guitar" => &["nylon-guitar-fp"],
+        "clean-guitar" | "electric-guitar" | "jazz-guitar" => &["clean-guitar-fsbs"],
+        _ => &[],
+    }
+}
+
+fn pack_cached(friendly: &str) -> bool {
+    crate::sf2::packs::INSTRUMENTS.iter().find(|x| x.0 == friendly).is_some_and(|x| crate::sf2::packs::is_cached(x.1))
+}
+
 /// `"synth"`, `"synth-kit"`, `"physical"`, `"sampled"`, `"sampled-kit"`, `"pack"` or `"unknown"`.
 pub fn source(name: &str) -> &'static str {
     for n in name.split('|').map(|n| n.trim().to_ascii_lowercase()) {
@@ -152,7 +171,7 @@ pub fn source(name: &str) -> &'static str {
             }
         } else if n.starts_with("gm:") {
             "sampled"
-        } else if crate::sf2::packs::INSTRUMENTS.iter().any(|x| x.0 == n) && crate::sf2::packs::INSTRUMENTS.iter().find(|x| x.0 == n).is_some_and(|x| crate::sf2::packs::is_cached(x.1)) {
+        } else if pack_cached(&n) || pack_defaults(&n).iter().any(|p| pack_cached(p)) {
             "pack"
         } else if crate::synth::PRESETS.contains(&n.as_str()) {
             "synth"
@@ -185,4 +204,91 @@ pub fn names() -> Vec<(&'static str, Vec<&'static str>)> {
         }),
         ("packs (anikit-video music fetch …)", crate::sf2::packs::PACKS.iter().map(|p| p.name).collect()),
     ]
+}
+
+/// A drum kit placed across the stereo field by GM key (audience view):
+/// kick and snare centre, hats right, ride and floor tom left, toms spread,
+/// crashes either side, hand percussion wide. Balance-style (the voice's own
+/// stereo is kept), allocation-free.
+pub struct KitStage(pub Arc<dyn Instrument>);
+
+/// Pan (−1…1) for a GM drum key.
+pub fn kit_pan(key: i32) -> f32 {
+    match key {
+        35 | 36 => 0.0,
+        37 | 38 | 40 => 0.05,
+        39 => -0.12,
+        42 | 44 | 46 => 0.35,
+        41 | 43 => -0.4,
+        45 => -0.2,
+        47 | 48 => 0.05,
+        50 => 0.28,
+        49 => -0.35,
+        57 => 0.4,
+        51 | 53 | 59 => -0.3,
+        52 | 55 => 0.45,
+        54 => -0.5,
+        56 => 0.3,
+        69 | 70 | 82 => 0.55,
+        60..=68 => -0.45,
+        _ => 0.0,
+    }
+}
+
+impl Instrument for KitStage {
+    fn voice(&self, note: &crate::voice::NoteOn) -> Box<dyn crate::voice::Voice> {
+        let p = kit_pan(note.key.round() as i32);
+        // Round-robin emulation: every hit is a slightly different strike (±8 cents,
+        // ±5 % level), so repeated hats and snares don't machine-gun. Deterministic per note.
+        let mut on = *note;
+        let mut rng = crate::voice::Rng::new(note.seed ^ 0x2B0B);
+        on.key += rng.bi() * 0.08;
+        on.vel = (on.vel * (1.0 + 0.05 * rng.bi())).clamp(0.01, 1.0);
+        let inner = self.0.voice(&on);
+        if p == 0.0 {
+            return inner;
+        }
+        let (gl, gr) = crate::voice::pan_gains(p);
+        let s = std::f32::consts::SQRT_2;
+        Box::new(StagedVoice { inner, gl: gl * s, gr: gr * s })
+    }
+    fn mono(&self) -> bool {
+        self.0.mono()
+    }
+    fn ordered_voices(&self) -> bool {
+        self.0.ordered_voices()
+    }
+    fn voice_legato(&self, note: &crate::voice::NoteOn, legato: bool) -> Box<dyn crate::voice::Voice> {
+        let _ = legato;
+        self.voice(note)
+    }
+}
+
+struct StagedVoice {
+    inner: Box<dyn crate::voice::Voice>,
+    gl: f32,
+    gr: f32,
+}
+
+impl crate::voice::Voice for StagedVoice {
+    fn render(&mut self, l: &mut [f32], r: &mut [f32]) -> bool {
+        let n = l.len();
+        let mut bl = [0.0f32; crate::voice::BLOCK];
+        let mut br = [0.0f32; crate::voice::BLOCK];
+        let alive = self.inner.render(&mut bl[..n], &mut br[..n]);
+        for i in 0..n {
+            l[i] += bl[i] * self.gl;
+            r[i] += br[i] * self.gr;
+        }
+        alive
+    }
+    fn release(&mut self) {
+        self.inner.release();
+    }
+    fn exclusive(&self) -> u32 {
+        self.inner.exclusive()
+    }
+    fn kill(&mut self) {
+        self.inner.kill();
+    }
 }

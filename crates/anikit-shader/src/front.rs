@@ -109,6 +109,10 @@ pub struct Parsed {
     pub entry: naga::Handle<naga::Function>,
 }
 
+/// Building blocks (`ak_noise`, `ak_fbm`, `ak_palette`, `ak_tonemap`, …),
+/// prepended when a GLSL shader mentions `ak_`.
+pub const AK_GLSL: &str = include_str!("ak.glsl");
+
 /// Shadertoy inputs every shader gets (private globals filled per quad).
 pub const BUILTIN_GLSL: &str = "float iTime; float iTimeDelta; float iFrameRate; int iFrame; vec3 iResolution; vec4 iMouse; vec4 iDate; float iSampleRate; vec3 iChannelResolution[4]; float iChannelTime[4]; float progress; float ratio; vec4 iAudio; vec4 iBeat;";
 const BUILTIN_WGSL: &str = "var<private> iTime: f32; var<private> iTimeDelta: f32; var<private> iFrameRate: f32; var<private> iFrame: i32; var<private> iResolution: vec3f; var<private> iMouse: vec4f; var<private> iDate: vec4f; var<private> iSampleRate: f32; var<private> iChannelResolution: array<vec3f, 4>; var<private> iChannelTime: array<f32, 4>; var<private> progress: f32; var<private> ratio: f32; var<private> iAudio: vec4f; var<private> iBeat: vec4f;";
@@ -378,6 +382,11 @@ fn parse_glsl(src: &str, kind: Kind, extra: &[Extra]) -> Result<Parsed, ShaderEr
         ));
     }
     pre.push('\n');
+    // The ak_ standard library, when the shader uses any of it.
+    if body.contains("ak_") {
+        pre.push_str(AK_GLSL);
+        pre.push('\n');
+    }
     let pre_lines = pre.matches('\n').count() as u32;
     let full = format!("{pre}{body}\nvoid main() {{}}\n");
 

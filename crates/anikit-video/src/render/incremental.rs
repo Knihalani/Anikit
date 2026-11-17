@@ -216,6 +216,30 @@ fn hash_filter(h: &mut impl Hasher, fl: &Filter) {
                 f(h, v);
             }
         }
+        Filter::Tone(t) => {
+            h.write_u8(4);
+            h.write_u8(t.levels);
+            f(h, t.amount);
+            if let Some(m) = &t.map {
+                h.write(m.as_flattened());
+            }
+        }
+        Filter::Ink { amount, scale, seed, ox, oy } => {
+            h.write_u8(6);
+            h.write_u32(*seed);
+            for v in [*amount, *scale, *ox, *oy] {
+                f(h, v);
+            }
+        }
+        Filter::Halftone(ht) => {
+            h.write_u8(5);
+            h.write_u8(ht.shape);
+            for v in [ht.cell, ht.angle, ht.gain, ht.ox, ht.oy] {
+                f(h, v);
+            }
+            hash_rgba(h, &ht.ink);
+            hash_rgba(h, &ht.paper);
+        }
     }
 }
 

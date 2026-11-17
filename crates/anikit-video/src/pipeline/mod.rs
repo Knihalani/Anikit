@@ -239,7 +239,9 @@ pub fn scale_list(dl: &mut DisplayList, s: f32) {
                         *blur *= s;
                     }
                     dl::Filter::Glow { radius, .. } => *radius *= s,
-                    dl::Filter::ColorMatrix(_) => {}
+                    dl::Filter::Halftone(h) => h.cell *= s,
+                    dl::Filter::Ink { scale, .. } => *scale *= s,
+                    dl::Filter::ColorMatrix(_) | dl::Filter::Tone(_) => {}
                 }
             }
         }
@@ -522,11 +524,11 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
         let d = done.fetch_add(1, Ordering::Relaxed) + 1;
         if opts.progress {
             if let Ok(mut lr) = last_report.try_lock() {
-                if lr.elapsed().as_secs_f32() > 0.5 {
+                if lr.elapsed().as_secs_f32() > progress_every() {
                     *lr = Instant::now();
                     let el = t0.elapsed().as_secs_f32();
                     let fps = d as f32 / el.max(1e-6);
-                    eprint!("\rrender {d}/{n} frames  {fps:.0} fps  {el:.1}s  ETA {:.0}s   ", (n as f32 - d as f32) / fps.max(1e-6));
+                    progress_line(&format!("render {d}/{n} frames  {fps:.0} fps  {el:.1}s  ETA {:.0}s", (n as f32 - d as f32) / fps.max(1e-6)));
                 }
             }
         }
@@ -625,6 +627,50 @@ fn chunk_keys(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderConfig, 
             Some(format!("chunk1-{:016x}", h.finish()))
         })
         .collect()
+}
+
+/// A cache key for a still at `t` (same inputs as the chunk cache: the evaluated frame,
+/// image contents, look, scale and this binary); `None` when the frame has images whose
+/// content can't be keyed. `ANIKIT_RENDER_CACHE=0` turns it off.
+pub fn still_key(ev: &Evaluator, t: f32, scale: f32) -> Option<String> {
+    use std::collections::hash_map::DefaultHasher;
+    if std::env::var_os("ANIKIT_RENDER_CACHE").is_some_and(|v| v == "0") {
+        return None;
+    }
+    let mut dl = ev.eval(t);
+    scale_list(&mut dl, scale);
+    let mut keys = Vec::new();
+    let mut ok = true;
+    let mut id_key = |id: &mut dl::ImageId| {
+        match ev.assets.content_key(*id) {
+            Some(k) => keys.push(k),
+            None => ok = false,
+        }
+        *id = dl::ImageId(0);
+    };
+    for op in &mut dl.ops {
+        let paint = match op {
+            Op::Image { image, .. } => {
+                id_key(image);
+                None
+            }
+            Op::Fill { paint, .. } | Op::Stroke { paint, .. } | Op::RoundRect { paint, .. } | Op::Glyphs { paint, .. } => Some(paint),
+            _ => None,
+        };
+        if let Some(dl::Paint::Image { image, .. }) = paint {
+            id_key(image);
+        }
+    }
+    if !ok {
+        return None;
+    }
+    let exe = std::env::current_exe().ok().and_then(|p| std::fs::metadata(p).ok()).map(|m| (m.len(), m.modified().ok()));
+    let mut h = DefaultHasher::new();
+    ("anikit-still-1", format!("{exe:?}"), scale.to_bits(), t.to_bits()).hash(&mut h);
+    hash_list(&dl).hash(&mut h);
+    keys.hash(&mut h);
+    format!("{:?}{}", ev.post_at(t), ev.needs_blur(t, false)).hash(&mut h);
+    Some(format!("still1-{:016x}", h.finish()))
 }
 
 /// Default chunk length for `n` frames: up to 16 chunks of 30–300 frames, or, when the
@@ -739,10 +785,34 @@ fn straight(pm: &crate::render::FrameRgba) -> (u32, u32, Vec<u8>) {
 /// Save straight RGBA8 as PNG.
 pub fn save_png(path: &std::path::Path, w: u32, h: u32, rgba: Vec<u8>) -> Result<(), String> {
     let img = image::RgbaImage::from_raw(w, h, rgba).ok_or("bad image buffer")?;
+    // JPEG has no alpha: write RGB (quality 92) when asked for .jpg.
+    if path.extension().is_some_and(|e| e.eq_ignore_ascii_case("jpg") || e.eq_ignore_ascii_case("jpeg")) {
+        let rgb = image::DynamicImage::ImageRgba8(img).to_rgb8();
+        let f = std::fs::File::create(path).map_err(|e| format!("can't write {}: {e}", path.display()))?;
+        let mut enc = image::codecs::jpeg::JpegEncoder::new_with_quality(std::io::BufWriter::new(f), 92);
+        return enc.encode_image(&rgb).map_err(|e| format!("can't write {}: {e}", path.display()));
+    }
     img.save(path).map_err(|e| format!("can't write {}: {e}", path.display()))
 }
 
 /// A contact sheet: `cols × rows` frames evenly spread over the video, each `cell_w` wide.
+/// A cache key for a contact sheet: its layout plus every cell's still key.
+pub fn sheet_key(ev: &Evaluator, cols: u32, rows: u32, cell_w: u32) -> Option<String> {
+    use std::collections::hash_map::DefaultHasher;
+    let n = cols * rows;
+    let scale = cell_w as f32 / ev.width as f32;
+    let cells: Option<Vec<String>> = (0..n)
+        .into_par_iter()
+        .map(|k| {
+            let t = if n > 1 { ev.duration * (k as f32 + 0.5) / n as f32 } else { ev.duration * 0.5 };
+            still_key(ev, t, scale)
+        })
+        .collect();
+    let mut h = DefaultHasher::new();
+    ("anikit-sheet-1", cols, rows, cell_w, cells?).hash(&mut h);
+    Some(format!("sheet1-{:016x}", h.finish()))
+}
+
 pub fn contact_sheet(ev: &Evaluator, cols: u32, rows: u32, cell_w: u32) -> (u32, u32, Vec<u8>) {
     let n = cols * rows;
     let scale = cell_w as f32 / ev.width as f32;
@@ -1177,11 +1247,11 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
             if tx.send(items).is_err() {
                 break; // the encoder failed; its error is reported below
             }
-            if opts.progress && (last_report.elapsed().as_secs_f32() > 0.5 || end == f1) {
+            if opts.progress && (last_report.elapsed().as_secs_f32() > progress_every() || end == f1) {
                 last_report = Instant::now();
                 let el = t0.elapsed().as_secs_f32();
                 let fps = done as f32 / el.max(1e-6);
-                eprint!("\rrender {done}/{n} frames  {fps:.0} fps  {el:.1}s  ETA {:.0}s   ", (n as f32 - done as f32) / fps.max(1e-6));
+                progress_line(&format!("render {done}/{n} frames  {fps:.0} fps  {el:.1}s  ETA {:.0}s", (n as f32 - done as f32) / fps.max(1e-6)));
             }
             start = end;
         }
@@ -1335,3 +1405,21 @@ pub fn estimate(ev: &Evaluator, opts: &RenderOptions, heavy_after: f64) -> Estim
     };
     Estimate { secs, frame_ms, changing, threads, heaviest }
 }
+/// Seconds between progress reports: twice a second on a terminal, every 15 s
+/// when stderr is a pipe or a log (an agent's tool output), so a long render
+/// adds a few lines to its context instead of hundreds.
+fn progress_every() -> f32 {
+    use std::io::IsTerminal;
+    if std::io::stderr().is_terminal() { 0.5 } else { 15.0 }
+}
+
+/// One progress report: redrawn in place on a terminal, a plain line otherwise.
+fn progress_line(s: &str) {
+    use std::io::IsTerminal;
+    if std::io::stderr().is_terminal() {
+        eprint!("\r{s}   ");
+    } else {
+        eprintln!("{s}");
+    }
+}
+

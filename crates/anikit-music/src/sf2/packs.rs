@@ -26,10 +26,33 @@ pub struct Pack {
     pub branch: &'static str,
     /// Credit line that must accompany published work using the pack (empty if none required).
     pub credit: &'static str,
+    /// Sparse-checkout patterns (gitignore syntax, e.g. `/*.sfz`); empty =
+    /// the whole repository.
+    pub sparse: &'static [&'static str],
 }
 
 /// Known packs.
 pub const PACKS: &[Pack] = &[
+    Pack {
+        name: "splendid",
+        description: "Splendid Grand Piano — Akai Steinway samples, 4 velocity layers, SFZ + FLAC",
+        license: "Public domain (released by Akai, 2000)",
+        size: "≈150 MB",
+        url: "https://github.com/sfzinstruments/SplendidGrandPiano",
+        branch: "master",
+        credit: "",
+        sparse: &[],
+    },
+    Pack {
+        name: "epianos",
+        description: "Greg Sullivan E-Pianos — Wurlitzer EP200, Yamaha CP80, Hohner Pianet T (SFZ + FLAC)",
+        license: "CC BY 3.0",
+        size: "≈40 MB",
+        url: "https://github.com/sfzinstruments/GregSullivan.E-Pianos",
+        branch: "master",
+        credit: "E-Pianos by Greg Sullivan (CC BY 3.0), SFZ mapping by kinwie",
+        sparse: &[],
+    },
     Pack {
         name: "vsco2-ce",
         description: "VS Chamber Orchestra 2: Community Edition — orchestral strings (sections and solo), \
@@ -39,6 +62,7 @@ pub const PACKS: &[Pack] = &[
         url: "https://github.com/sgossner/VSCO-2-CE",
         branch: "SFZ",
         credit: "",
+        sparse: &[],
     },
     Pack {
         name: "salamander",
@@ -49,11 +73,54 @@ pub const PACKS: &[Pack] = &[
         url: "https://github.com/sfzinstruments/SalamanderGrandPiano",
         branch: "master",
         credit: "Salamander Grand Piano V3 by Alexander Holm (CC BY 3.0), SFZ mapping by kinwie",
+        sparse: &[],
+    },
+    Pack {
+        name: "freepats-bass",
+        description: "FreePats electric bass YR — Yamaha RBX, finger and picked, one sample per semitone E1–D#2 (SFZ + FLAC)",
+        license: "CC0 1.0 (public domain dedication)",
+        size: "≈13 MB",
+        url: "https://github.com/freepats/electric-bass-YR",
+        branch: "2019-09-30",
+        credit: "",
+        sparse: &[],
+    },
+    Pack {
+        name: "freepats-nylon",
+        description: "FreePats Spanish classical guitar — nylon strings, 48 regions (SFZ + FLAC)",
+        license: "CC0 1.0 (public domain dedication)",
+        size: "≈5 MB",
+        url: "https://github.com/freepats/spanish-classical-guitar",
+        branch: "v1.0.0",
+        credit: "",
+        sparse: &[],
+    },
+    Pack {
+        name: "freepats-eguitar",
+        description: "FreePats clean electric guitar FSBS — bridge pickup, small set (SFZ + FLAC)",
+        license: "CC0 1.0 (public domain dedication)",
+        size: "≈3 MB (sparse checkout of the small set)",
+        url: "https://github.com/freepats/electric-guitar-FSBS-clean",
+        branch: "2026-08-07",
+        credit: "",
+        sparse: &["/*.sfz", "/*.txt", "/samples/bridge/small/"],
     },
 ];
 
+/// Packs recorded over a narrow range: their edge samples are stretched to
+/// cover every key (see [`SfzOptions::extend`]).
+const EXTEND: &[&str] = &["freepats-bass", "freepats-nylon", "freepats-eguitar"];
+
 /// Friendly name → (pack, SFZ file inside it).
 pub const INSTRUMENTS: &[(&str, &str, &str)] = &[
+    ("splendid-piano", "splendid", "Splendid Grand Piano.sfz"),
+    ("finger-bass-yr", "freepats-bass", "FingerBassYR 20190930.sfz"),
+    ("picked-bass-yr", "freepats-bass", "PickedBassYR 20190930.sfz"),
+    ("nylon-guitar-fp", "freepats-nylon", "SpanishClassicalGuitar-20190618.sfz"),
+    ("clean-guitar-fsbs", "freepats-eguitar", "EGuitarFSBS-clean bridge small 20260807.sfz"),
+    ("wurlitzer", "epianos", "Wurlitzer EP200/Wurlitzer EP200.sfz"),
+    ("cp80", "epianos", "CP80/CP80.sfz"),
+    ("pianet", "epianos", "Pianet T/Pianet T.sfz"),
     ("salamander-piano", "salamander", "Salamander Grand Piano V3.sfz"),
     ("salamander", "salamander", "Salamander Grand Piano V3.sfz"),
     ("vsco-violins", "vsco2-ce", "ViolinEnsSusVib.sfz"),
@@ -119,9 +186,21 @@ pub fn is_cached(name: &str) -> bool {
     pack_dir(name).join(".git").exists() || pack_dir(name).join(".anikit-complete").exists()
 }
 
+/// The small packs worth having for everyday scores (≈210 MB): a better grand
+/// piano, vintage electric pianos, a real electric bass, nylon and clean
+/// electric guitars. `fetch("essentials")` gets them all.
+pub const ESSENTIALS: &[&str] = &["splendid", "epianos", "freepats-bass", "freepats-nylon", "freepats-eguitar"];
+
 /// Download a pack into the cache (`git clone --depth 1`); returns its
 /// directory. Does nothing if it is already there.
 pub fn fetch(name: &str) -> Result<PathBuf, String> {
+    if name == "essentials" {
+        let mut last = cache_dir();
+        for p in ESSENTIALS {
+            last = fetch(p)?;
+        }
+        return Ok(last.parent().map(PathBuf::from).unwrap_or(last));
+    }
     let pack = PACKS
         .iter()
         .find(|p| p.name == name)
@@ -133,11 +212,23 @@ pub fn fetch(name: &str) -> Result<PathBuf, String> {
     std::fs::create_dir_all(cache_dir()).map_err(|e| format!("cannot create {}: {e}", cache_dir().display()))?;
     let tmp = cache_dir().join(format!(".{name}.partial-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&tmp);
-    let st = Command::new("git")
-        .args(["clone", "--depth", "1", "--single-branch", "--branch", pack.branch, pack.url])
-        .arg(&tmp)
-        .status()
-        .map_err(|e| format!("cannot run git (is it installed?): {e}"))?;
+    let mut clone = Command::new("git");
+    clone.args(["clone", "--depth", "1", "--single-branch", "--branch", pack.branch]);
+    if !pack.sparse.is_empty() {
+        clone.args(["--filter=blob:none", "--sparse"]);
+    }
+    let st = clone.arg(pack.url).arg(&tmp).status().map_err(|e| format!("cannot run git (is it installed?): {e}"))?;
+    let st = if st.success() && !pack.sparse.is_empty() {
+        Command::new("git")
+            .arg("-C")
+            .arg(&tmp)
+            .args(["sparse-checkout", "set", "--no-cone"])
+            .args(pack.sparse)
+            .status()
+            .map_err(|e| format!("cannot run git: {e}"))?
+    } else {
+        st
+    };
     if !st.success() {
         let _ = std::fs::remove_dir_all(&tmp);
         return Err(format!("git clone of {} failed ({st})", pack.url));
@@ -171,7 +262,8 @@ pub fn pack_instrument(name: &str) -> Option<Arc<dyn Instrument>> {
         return Some(i.clone());
     }
     // Lenient: a sparse or partial checkout still plays what it has.
-    let inst: Arc<dyn Instrument> = Arc::new(SfzInstrument::load_with(&path, SfzOptions { skip_missing: true }).ok()?);
+    let opt = SfzOptions { skip_missing: true, extend: EXTEND.contains(&pack.as_str()) };
+    let inst: Arc<dyn Instrument> = Arc::new(SfzInstrument::load_with(&path, opt).ok()?);
     cache.lock().ok()?.insert(path, inst.clone());
     Some(inst)
 }
@@ -195,12 +287,12 @@ mod tests {
     #[ignore]
     fn sf2_packs_load_cached_instruments() {
         use crate::sf2::tests::{measure_freq, note, render};
-        for name in ["vsco-violins", "vsco-timpani", "salamander-piano"] {
+        for name in ["vsco-violins", "vsco-timpani", "salamander-piano", "splendid-piano", "wurlitzer", "finger-bass-yr", "picked-bass-yr", "nylon-guitar-fp", "clean-guitar-fsbs"] {
             let Some(inst) = pack_instrument(name) else {
                 eprintln!("{name}: pack not cached, skipped");
                 continue;
             };
-            let key = if name.contains("timpani") { 43.0 } else { 69.0 };
+            let key = if name.contains("timpani") || name.contains("bass") { 43.0 } else { 69.0 };
             let mut v = inst.voice(&note(key, 0.7));
             let (l, r, _) = render(v.as_mut(), 2.0, 1.5, 128);
             let m: Vec<f32> = l.iter().zip(&r).map(|(a, b)| a + b).collect();

@@ -1,0 +1,22 @@
+[
+ {"name": "div-a-halde", "src": "git:claude/epic-ramanujan-qe7x4w-v-div-a:deliverables/div-a/halde-guji.mp4", "tags": ["illustration","square","motion-design"], "format": "1:1"},
+ {"name": "div-b-railyard", "src": "git:claude/epic-ramanujan-qe7x4w-v-div-b:deliverables/div-b/railyard.mp4", "tags": ["product-launch","motion-design","editorial-data"]},
+ {"name": "div-c-substation", "src": "git:claude/epic-ramanujan-qe7x4w-v-div-c:deliverables/div-c/substation.mp4", "tags": ["music-video","kinetic-type","vertical"], "format": "9:16"},
+ {"name": "div-d-burrow", "src": "git:claude/epic-ramanujan-qe7x4w-v-div-d:deliverables/div-d/burrow.mp4", "tags": ["illustration","product-launch"]},
+ {"name": "div-e-arctic", "src": "git:claude/epic-ramanujan-qe7x4w-v-div-e:deliverables/div-e/arctic-sea-ice.mp4", "tags": ["editorial-data"]},
+ {"name": "div-f-calibre9", "src": "git:claude/epic-ramanujan-qe7x4w-v-div-f:deliverables/div-f/calibre9.mp4", "tags": ["luxury","3d-cg","product-launch"]},
+ {"name": "div-g-offset", "src": "git:claude/epic-ramanujan-qe7x4w-v-div-g:deliverables/div-g/offset2027.mp4", "tags": ["title-sequence","kinetic-type","motion-design"]},
+ {"name": "blind-swell", "src": "git:claude/epic-ramanujan-qe7x4w-v-blind-ak2:deliverables/blind-b2/swell.mp4", "tags": ["editorial-data","3d-cg","motion-design"]},
+ {"name": "launch-tern", "src": "git:claude/epic-ramanujan-qe7x4w-v-launch-test:deliverables/launch-test/tern.mp4", "tags": ["product-launch","editorial-data"]},
+ {"name": "sift", "src": "docs/video/skills/launch-examples/sift/sift.mp4", "tags": ["product-launch","kinetic-type","3d-cg"]},
+ {"name": "fernway", "src": "docs/video/skills/launch-examples/fernway/fernway.mp4", "tags": ["product-launch","kinetic-type"]},
+ {"name": "margin", "src": "docs/video/skills/launch-examples/margin/margin.mp4", "tags": ["product-launch","kinetic-type"]},
+ {"name": "rej-meridian", "src": "docs/video/quality/rejected/meridian-slow.jpg", "grid": "2x2", "tags": ["3d-cg","motion-design","title-sequence"]},
+ {"name": "rej-lighthouse", "src": "docs/video/quality/rejected/lighthouse-slow.jpg", "grid": "2x2", "tags": ["3d-cg","title-sequence"]},
+ {"name": "rej-tidewater", "src": "docs/video/quality/rejected/tidewater-slow.jpg", "grid": "2x2", "tags": ["product-launch","3d-cg"]},
+ {"name": "rej-northern-silver", "src": "docs/video/quality/rejected/northern-silver-slow.jpg", "grid": "2x3", "tags": ["3d-cg","motion-design"]},
+ {"name": "rej-launch-template", "src": "docs/video/quality/rejected/launch-template-post.jpg", "grid": "1x2", "tags": ["product-launch","motion-design"]},
+ {"name": "rej-spec-to-screen", "src": "docs/video/quality/rejected/spec-to-screen-sheet.jpg", "grid": "5x4", "tags": ["product-launch","kinetic-type"]},
+ {"name": "rej-films-drafts", "src": "docs/video/quality/rejected/films-inner-drafts.jpg", "grid": "3x2", "tags": ["motion-design","kinetic-type"]},
+ {"name": "rej-components", "src": "docs/video/quality/rejected/components-gallery.jpg", "grid": "8x6", "tags": ["motion-design"]}
+]

@@ -1,0 +1,25 @@
+{
+  "slug": "bbc-two-ident",
+  "title": "BBC Two — idents",
+  "studio": "BUCK",
+  "year": 2018,
+  "url": "https://buck.co/work/bbc2",
+  "frame_sources": [
+    "https://cdn.sanity.io/images/uk7b627p/production/55d4ac8c6e0bb525c35aff322da21a037c5fd8ac-1920x1080.jpg",
+    "https://cdn.sanity.io/images/uk7b627p/production/ae024da8cd4e6f95f34eecf3b592b3a9b5600c92-1920x1080.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/eea16302ef57b138ecca84babad774f8ccb44f21-2048x1161.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/63066719dff5ecfe7f753d5dc8ed9863d0f7028c-2048x1898.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/6e8e13e2399fe4bcf168798ca9cd4aaef537d1c9-2048x1898.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/cba7ec463dc8071af773f0374fb9f915014b41dc-2048x1161.png"
+  ],
+  "style_tags": [
+    "ident",
+    "3d-cg",
+    "motion-design"
+  ],
+  "format": "16:9",
+  "medium": "3D",
+  "description": "Textured toy-like 3D blocks, cylinders and foam shapes in teal, coral and silver tumble across a pegboard, settling with the BBC Two wordmark.",
+  "why_top_tier": "Tactile materials and satisfying physics in a 10-second broadcast ident.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright BBC"
+}

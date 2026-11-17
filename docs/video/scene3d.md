@@ -97,6 +97,88 @@ You are not limited to the preset shapes. These types build a mesh from your des
 
 Shapes whose expressions use `t` (seconds) are rebuilt every frame: waves, growing tubes, morphing surfaces (`examples/video/lookdev/wave.json`). This costs about 44 ms per frame for a 160² heightfield plus a 300-segment tube, and turns off the baked floor. Shapes without `t` are built once. Motion blur follows object motion, not deformation. To generate many objects, put `{ "script": "..." }` in `objects`; it expands to the items it returns. Cost: tracing a mesh costs about the same as the preset shapes of similar screen size. A 160×32 surface or a 128² heightfield adds under 5 ms to scene build, and render time is set by pixels covered, not by triangle count.
 
+## Imperfections
+
+Perfect CG surfaces read as fake. Real products have fingerprints, wipes, fine scratches that show only in a highlight, uneven sheen and dust. Add them on any material:
+- `"imperfections": 0.4`: one believable mix (roughness variation, smudges, scratches, a little dust).
+- Or each, 0–1: `roughnessVariation`, `smudges`, `scratches`, `dust` (on up-facing surfaces; even metal goes grey there).
+
+They stick to the object (object space), are deterministic, and show mostly where a highlight crosses them. That's why they pair well with `rig: "product"` and `animate: "sweep"`. Use 0.2–0.4 for hero products and 0.6+ for worn props.
+
+`{ "extends": "lacquer", "imperfections": 0.4 }` · `{ "extends": "glass", "smudges": 0.5 }`
+
+Cost: measured on the comparison scene (3 objects, 1080p, 4 cores), trace went from 0.76 s to 1.02 s at 0.6, because uneven highlights get more edge samples. Proof: `docs/video/shots/3d-imperfections/compare.jpg` (clean vs `imperfections: 0.6`, with 100% crops).
+
+## Sets
+
+Build a stage, not a void. `set` adds a designed set around the subject as ordinary objects, so materials, keys and expressions still apply. It takes a name, `{ "preset", "color", "material", "size", "shape", "density" }`, or a list of these.
+
+| `set` | What it builds |
+|---|---|
+| `plinth` / `podium` | A two-tier round (or square) stand. The floor drops to its base, so objects at y = 0 sit on top. |
+| `steps` | Four stepped blocks rising behind the subject. |
+| `sweep` | A seamless cyc of any `color`: floor, curve and wall in one piece, with no horizon line. |
+| `field` | An abstract field of columns with noise heights, rising with distance, with a clearing for the subject (`density` 0.25–3). |
+| `arches` | A receding corridor of half-buried rings. |
+| `terrain` | Rolling fBm ground that flattens near the subject (replaces the floor). |
+
+`{ "env": "cyc", "rig": "rembrandt", "look": "clay", "set": { "preset": "sweep", "color": "#C8664A" }, "objects": [ ... ] }`
+
+Stills (each with its spec): `docs/video/shots/3d-sets/`. Measured 1080p traces on 4 cores: 0.52–0.82 s (`field` has 784 instanced columns).
+
+## Camera language
+
+- **`lens`** on the camera: `wide24` (f/8), `normal35`, `normal50` (f/4), `portrait85` (f/2.8), `macro100` (f/5.6), `tele135` (f/4), `tele200`. It sets the focal length and working aperture for keys that set neither. On a preset it also moves the camera to keep the framing, so a `tele135` push compresses the background instead of cropping in.
+  Use 85–135 for hero product shots, 100 macro for details, and 24 only for scale.
+- **Rack focus:** a key's `focus` can name an object, e.g. `{ "t": 1.8, ..., "focus": "logo" }`. Focus pulls between the keys' objects, with the same easing as the move. Hold about 0.5 s either side of a 0.6–1.2 s pull.
+- **`shake`:** rotational camera noise, sized as a fraction of the frame so it reads the same at any lens. It is three bands of smooth noise plus roll. All presets are deterministic.
+  - `breath`: a locked-off camera that's alive, 0.15% of the frame at 0.3 Hz. Use it on every "static" shot.
+  - `handheld`: 0.6% at 0.8 Hz, 0.35° roll.
+  - `shoulder`: 0.4% at 0.55 Hz.
+  - `run`: 1.8% at 1.9 Hz with a vertical bob.
+  - Custom: `{ "frame": 0.004, "frequency": 0.7, "roll": 0.2, "bob": 0 }`. A plain number is still the old positional wobble, in metres.
+
+`{ "lens": "tele135", "shake": "breath", "keys": [ { "t": 0, "pos": [-0.2, 0.85, 10.5], "target": [-0.1, 0.4, 0], "focus": "bottle", "fstop": 2.8 }, { "t": 1.8, "pos": [-0.1, 0.85, 10.1], "target": [-0.05, 0.4, 0], "focus": "logo", "fstop": 2.8 } ] }`
+
+Proof: `docs/video/shots/3d-camera/rack-focus.mp4` (3 s, 1080p30, rendered in 51 s on 4 cores) and `.jpg`.
+
+## Lighting rigs
+
+Light like a gaffer, not with an HDRI default. `rig` places a named setup around the camera's view, at set illuminance ratios. It replaces the env's softboxes; the env's sky stays as dim ambient.
+
+| `rig` | Setup | Ratio |
+|---|---|---|
+| `rembrandt` | key 45° side, 40° up; soft fill opposite; cool rim behind | 4:1 |
+| `loop` | key 30° side; fill; soft back light | 3:1 |
+| `clamshell` (`beauty`) | big key above the lens, fill below, two edge strips | 2:1 |
+| `butterfly` | high frontal key, low fill | 3:1 |
+| `product` (`edge`) | big top key, two tall strips at ±115° for edge highlights on metal and glass, black flags at ±75°, front fill | 3:1 |
+| `high-key` | huge soft key and fill, back light | 1.5:1 |
+| `low-key` (`noir`) | hard side key, cool hard rim | 16:1 |
+| `split` | key at 90°, no fill | — |
+| `rim` (`silhouette`) | two kickers from behind, faint front fill | 12:1 |
+| `golden` | low warm sun through foliage (gobo), cool sky fill | 5:1 |
+| `window` | crisp daylight through window panes (gobo) | 6:1 |
+| `top` | one overhead source (pendant, skylight) | 10:1 |
+
+Tune it with an object: `{ "preset": "rembrandt", "ratio": 6, "rim": 1.5, "key": 1.2, "angle": 60, "height": 25, "warmth": 0.4, "gobo": "blinds", "goboScale": 0.4, "softness": 0.1, "beam": true }`.
+- `angle`/`height`: the key's azimuth from the camera (+ = camera left) and elevation, in degrees.
+- `ratio`: (key + fill) : fill. `rim` and `key` scale those lights.
+- `warmth`: -1 cool to +1 warm; individual lights keep their own warm/cool contrast.
+- `gobo`: `blinds`, `window` or `leaves` (a cookie in front of the key); `goboScale` is the pattern period in metres.
+- `beam`: haze plus volumetric shafts, so the key reads as a beam.
+
+- `animate`: light that moves, which is how studios make chrome come alive. `start` and `duration` (default 2.5 s) set the timing.
+  - `sweep`: the strips travel 130° across the back, so a highlight runs along every edge.
+  - `reveal`: rim first, then the key, then the fill (from silhouette to fully lit).
+
+  `{ "preset": "product", "animate": "sweep", "duration": 3 }`
+
+  Animated rigs rebuild the lights each frame (about 2 ms) and skip the baked floor.
+
+Stills (one scene, six rigs) and `sweep.mp4` (3 s, 1080p30, rendered in 43 s on 4 cores): `docs/video/shots/3d-rigs/`. Rigs cost nothing extra: a rig is a few softboxes, the same as an env. Gobos add one pattern lookup per shaded point. Measured 1080p traces on 4 cores: 0.62–0.79 s.
+Why and how studios light: `docs/video/craft/3d-design.md`.
+
 ## Looks and worlds beyond the studio
 
 Not every shot should be a chrome product on a white cyc. One word changes the whole style:
@@ -119,6 +201,17 @@ Not every shot should be a chrome product on a white cyc. One word changes the w
   - `underwater`: teal water, light from the surface, moving caustics on the sand and objects, depth haze.
 
 Cost: the styles shade in the same pass as PBR, so they cost the same or less. Outlines add about 30 ms per 1080p frame (measured: toon 1.03–1.07 s with outlines, 1.00 s without). Example 1080p traces on 4 cores: toon 0.70 s, ink 0.97 s, clay/paper/gouache about 0.66 s, city 1.44 s (four shadowed lights).
+
+## Real-world light, materials and models (CC0 library)
+
+Photographed light and scanned surfaces, by name (details: `anikit-video docs assets`; find them with `anikit-video assets search <words> --type hdri|texture|model|lut`):
+
+- **`env: {"hdri": "polyhaven:hdri/<slug>", "rotate": 0, "exposure": 0, "background": true}`**: the HDRI lights the scene, appears in reflections and behind the subject (`"blur"` softens it like a long lens; `false` keeps the scene's own backdrop). The sun, or a studio's brightest compact lamp, is lifted out of the map and becomes the traced key, so it casts real shadows; the rest is pre-filtered for rough reflections and projected to 9 SH terms for diffuse. The scene is exposed for the light around the horizon, and the default floor takes the albedo that matches the HDRI's own ground, so it melts into the photographed horizon. `exposure` offsets in stops; `key: false` keeps the sun in the map.
+- **`material: {"texture": "ambientcg:Wood049", "scale": 1}`**: a PBR set (albedo, normal, roughness, AO, metalness) on any object, triplanar in object space (no UVs, nothing swims as it moves), mip-mapped by ray footprint. `scale` 1 is the texture's real-world size; `color` tints; an explicit `roughness`/`metallic` overrides the maps; `"mapping": "uv"` uses mesh UVs; `textureRotate`, `normalStrength`.
+- **`floor: {"texture": "ambientcg:WoodFloor051", "scale": 1}`**: a textured ground (albedo, AO, roughness-varied reflection, normal-shaded key); `color` tints it.
+- **`{"type": "model", "src": "polyhaven:model/<slug>"}`**: textured glTF (base colour, normal, metal-roughness, occlusion; alpha cutouts for leaves). Any `.glb`/`.gltf` path works the same way.
+
+Stills (spec beside each in `examples/video/asset-library/`): `docs/video/shots/asset-library/` holds one scene under four HDRIs (`hdri-sheet.jpg`), six materials, three models and six film LUTs. 1080p traces: 1.3 s per HDRI shot and 2.2 s for the textured models, on 4 cores. The first use downloads (1.5 MB for a 1k HDRI, 16–25 MB for a 2k material); later uses read the cache.
 
 ## Rules that keep it looking expensive
 
@@ -161,6 +254,14 @@ object id or in tone-mapped luminance with *unshadowed* diffuse light (AO
 noise is denoised in post and must not trigger supersampling). Secondary
 rays whose whole-path weight is below 0.3% take the pre-filtered
 environment instead (`W_MIN`).
+
+Tried and rejected: temporal reuse of refined (edge) pixels. Reprojected
+history with an id/depth check and a 3×3 luminance clamp doubled ΔE p99.9 on
+`cyc` (14.7 → 31) and raised flicker (42 → 74), because sub-pixel motion
+changes an edge pixel's coverage and a clamp built from centre samples
+accepts any mix. Limiting reuse to whole-pixel motion removes the error but
+also the reuse: every lookdev shot has a moving camera. Speed gain at best
+~3%.
 
 Measure every change:
 

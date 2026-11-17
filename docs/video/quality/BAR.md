@@ -52,7 +52,7 @@ These thresholds are for **fast intents** (hype, launch, music, social), which i
 
 It FAILS if any of these is true:
 - any shot holds longer than 2.5 s without a major change;
-- the median shot is longer than 1.5 s;
+- the median shot is longer than 2.0 s (benchmark: 1.0 s sport, 1.5 s idents, 2.0 s launch, 2.5 s overall; dead air matters more than cut count);
 - more than 20% of seconds look like the second before.
 
 The target is cuts or major changes on the beat every 0.5–1.5 s (120–140 BPM), with energetic camera work: whips, snaps, speed ramps, impacts and match cuts.

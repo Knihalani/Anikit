@@ -1,0 +1,463 @@
+{
+  "name": "control-stranger-things",
+  "tags": [
+    "title-sequence",
+    "kinetic-type"
+  ],
+  "refs": [
+    "vertigo",
+    "thank-you-for-smoking",
+    "semi-permanent-sydney-2014"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 8,
+      "composition": 8,
+      "typography": 9,
+      "colour": 8,
+      "light_texture": 8,
+      "motion": 8,
+      "craft": 9,
+      "originality": 7
+    },
+    "overall": 8.12,
+    "judged_professional": "3/3",
+    "pro_rate": 1.0,
+    "mean_rank": 3,
+    "gaps": [
+      "The idea of assembling the logo is clear and mostly decorative. Unlike B, the frames carry no metaphor beyond the period reference.",
+      "The palette stays red on black throughout. There is no colour turn or tonal change like the red-to-green shift in B.",
+      "The credit type is set as a centred default and every frame uses the same layout. Integrating the names into the letter crops would give more variety.",
+      "Originality is capped because it is deliberately a pastiche of Richard Greenberg-era and King-paperback type; Vertigo invented a visual language, while this curates one",
+      "The centred, small grotesk credits are default-ish and don't take part in the idea; set them in a period face or let them interact with the glyphs",
+      "It is one move (slow drift and resolve) for its whole length; there is no second idea or surprise of the kind the Vertigo spirals provide",
+      "The credits sit centred in a plain sans that does not engage with the hero letterforms; integrating them as A and B do would lift every frame",
+      "A single red-on-black palette with no change across the piece; B shows how a colour turn mid-sequence can add tension",
+      "The composition logic is the same in every frame (a crop of a letter around a centred credit), so the surprise rests on the final reveal alone"
+    ],
+    "tells": [
+      "The logotype itself is the whole set. Extreme crops of glowing outlined serif letters slide past the credits and slowly come together into the full title, so the frames show choreography and a payoff.",
+      "The red neon glow has real softness, bloom and grain, and it reads as backlit film or a lit-up book cover rather than a flat vector stroke.",
+      "The choice of an ITC Benguiat-style face and the lockup with ruled lines are a precise period reference that does narrative work.",
+      "Against it: the credits are centred, small, in a plain sans, and sit in the same position in every frame. The repetition is deliberate, but the composition of the credits barely changes.",
+      "Stranger Things (Imaginary Forces): extreme macro crops of the ITC Benguiat-style logotype glide past as abstract red neon shapes and slowly resolve into the full logo, a clear piece of choreography of reveal",
+      "Typography with a specific point of view. The custom-modified Benguiat with rule lines carries 1980s Stephen King paperback nostalgia, and the letterforms are the only image",
+      "The light is the craft: soft red glow, filmic grain and a halation falloff that imitates an analogue film-out",
+      "The composition evolves from frame to frame (huge counters, then partial letters, then a lattice of words, then the lockup) while the credit stays fixed at centre as an anchor",
+      "Restraint is used as an asset: black ground and a single red would be an AI tell elsewhere, but here the red is the period reference and the frames are dense with letterform",
+      "The hero is a custom, period-referenced outlined serif logotype (ITC Benguiat-style), and its letterforms are the whole set: extreme crops of serifs and counters frame each credit",
+      "Clear choreography: the camera pulls back from abstract glowing strokes to legible fragments ('RANG', 'ING') and finally to the full lockup. The reveal builds over the six frames",
+      "Neon-tube light has believable falloff, bloom and grain; the red on black feels like a material, not a flat fill",
+      "Restraint is the idea: nothing but type and light, which serves the 80s Stephen King / paperback-cover reference"
+    ]
+  },
+  "refs_summary": {
+    "vertigo": {
+      "overall": 9.38,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "thank-you-for-smoking": {
+      "overall": 8.5,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "semi-permanent-sydney-2014": {
+      "overall": 6.12,
+      "judged_professional": "3/3",
+      "mean_rank": 4
+    }
+  },
+  "ref_mean": 8.0,
+  "delta": 0.12,
+  "trials": [
+    {
+      "key": {
+        "A": "semi-permanent-sydney-2014",
+        "B": "vertigo",
+        "C": "candidate",
+        "D": "thank-you-for-smoking"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 5,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "Each frame builds a credit around a monogram initial (&, TMP, J, FX) that breaks apart into simulated smoke or powder. That is a real typographic system tied to each speaker, not a slide with the words swapped.",
+              "The fluid and particle simulation has volume, internal shading and falloff that change from frame to frame. The fourth and fifth frames show the letters dissolving into a pigment cloud, so the motion has weight and a direction.",
+              "It ends on a proper title card (SEMI-PERMANENT / SYDNEY | 2014) with a deliberate cut-out treatment in the letters, so the sequence lands somewhere.",
+              "Against it: the single teal accent on a dark ground with a perspective grid and bokeh is very much the 2014 Cinema 4D conference-opener look. The grotesk sans with tracked-caps subtitles under the names is close to the default."
+            ],
+            "gaps": [
+              "Replace the stock vignette, grid floor and bokeh with an environment or material that says something about this conference. Right now the backdrop could belong to any event.",
+              "Take the palette beyond one teal with a dark falloff. Bring in a second colour or a material shift so the frames are not tonally identical.",
+              "Push the type past a clean grotesk with small tracked captions. Make the scale contrast more extreme, or let the smoke actually build the letterforms, so the typography is the idea rather than a carrier for the effect."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.98,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "The central idea belongs to this film alone: an extreme close-up of an eye, washed blood red, gives birth to Lissajous and spirograph spirals. The obsession, the disorientation and the act of looking all become one image.",
+              "The palette is strange and deliberate. Saturated red photography gives way to black fields with magenta and then mint-green line figures, and colour is used for narrative effect.",
+              "The structure is a loop: eye, spiral, abstract spirals, then back to the eye for the director's credit. The spirals change shape and colour between frames, which implies continuous rotation and growth.",
+              "The slab-serif outline title has a period voice. The credit blocks are set against the spirals with real scale contrast and asymmetric placement, as in the art-direction frame."
+            ],
+            "gaps": [
+              "This is the reference point here, so the gaps are small. Some middle credit cards fall back on a conventional stacked list beside the figure.",
+              "The abstract spiral frames sit on flat black. Some photographic texture carried through from the eye would tighten the link between the two halves.",
+              "Some credit text is very small against the spirals. Holding the reading hierarchy a little better would help."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The logotype itself is the whole set. Extreme crops of glowing outlined serif letters slide past the credits and slowly come together into the full title, so the frames show choreography and a payoff.",
+              "The red neon glow has real softness, bloom and grain, and it reads as backlit film or a lit-up book cover rather than a flat vector stroke.",
+              "The choice of an ITC Benguiat-style face and the lockup with ruled lines are a precise period reference that does narrative work.",
+              "Against it: the credits are centred, small, in a plain sans, and sit in the same position in every frame. The repetition is deliberate, but the composition of the credits barely changes."
+            ],
+            "gaps": [
+              "The idea of assembling the logo is clear and mostly decorative. Unlike B, the frames carry no metaphor beyond the period reference.",
+              "The palette stays red on black throughout. There is no colour turn or tonal change like the red-to-green shift in B.",
+              "The credit type is set as a centred default and every frame uses the same layout. Integrating the names into the letter crops would give more variety."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "The idea is witty and specific to the film: every credit is set as packaging for its own invented cigarette brand. The satire of tobacco marketing is built into the form.",
+              "The typography has a strong point of view and changes from card to card. There is a ribbon banner, script, a serif with LIGHTS, a geometric sans with a sunburst, an Art Deco face for the menthol pack and a script-over-bold lockup, each matched to a believable pack style.",
+              "There is real print texture: worn paper, foil-gold borders, registration marks, halftone engravings of a dog, an eagle and a plane. The palette moves between blue, cream, orange, red and green without losing coherence.",
+              "Every frame works as a poster on its own, and the last frame of rows of filters works as a punchline."
+            ],
+            "gaps": [
+              "The frames suggest mostly cuts or pans across flat packs. Each card plays the same move, so the choreography between cards is weaker than the transformations in B.",
+              "Each pack is close-cropped and front-on. Varying the camera, depth or material, such as cellophane glint or the fold of a pack, would add physical space.",
+              "The concept is one strong joke repeated six times. A structural escalation or a turn, the way B returns to the eye, would lift it to the top tier."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "D",
+          "C",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 31.4,
+        "cost_usd": 0.15854079999999998,
+        "tokens": 71791,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "semi-permanent-sydney-2014",
+        "B": "vertigo",
+        "C": "thank-you-for-smoking",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 5,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "Conference/event title sequence (Semi-Permanent Sydney 2014): each speaker gets their initials or a glyph (&, TMP, J, FX) that breaks into simulated teal smoke or powder, which is a real system rather than a one-off effect",
+              "Fluid/particle sims are art-directed: the smoke fills the letter counters, and frame 5 dissolves the type entirely into a powder burst before the final logo resolves, so the sequence clearly builds",
+              "Scale contrast between the giant monogram and the small tracked-caps name and role is deliberate and shows a hierarchy system",
+              "Against it: dark vignetted ground, a perspective grid, a single cyan/teal accent and a generic geometric grotesk. That is the 2014 'epic conference opener' look and sits uncomfortably close to the template tells",
+              "Every frame uses the same layout of centred glyph, name and small caps on dark, so variety comes only from the sim and not from composition"
+            ],
+            "gaps": [
+              "Find a concept tied to the event or the speakers instead of 'letters explode into coloured smoke'. Vertigo's spiral says something about the film; this smoke says nothing about Semi-Permanent",
+              "Break the one-accent-on-dark palette and the generic grotesk: commission or choose a face with a point of view and let colour change per speaker or per act",
+              "Vary composition and camera between cards (crops, scale, letterforms bleeding off frame the way Stranger Things does) so the frames stop reading as one layout with the names swapped"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.98,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "Saul Bass's Vertigo (1958). The idea is inseparable from the film: an extreme close-up of an eye, from which Lissajous/spirograph spirals emerge, makes obsession and dizziness visible",
+              "Red-monochrome photography alternates with black fields of violet and then green line-work. The palette is unusual and narrative, and the green anticipates the film's Judy/Madeleine green",
+              "Slab-serif outline title type sits directly in the eye and is integrated with the image; on the black frames the credits are set as justified blocks around the spiral form",
+              "The frame sequence shows a structure: the eye, the spiral born in the pupil, a series of mutating spirals, then a return to the eye for the director credit. It is choreographed and bookended",
+              "Every frame works as a poster; the line-work has real optical depth and moir\u00e9"
+            ],
+            "gaps": [
+              "Serves as the benchmark",
+              "The credit blocks on the spiral frames are somewhat dense and conventional next to the title card",
+              "The mid-section spirals read as variations rather than escalation; a modern jury might ask for one more surprise in the middle act"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "Thank You For Smoking: every credit is rendered as a different period cigarette pack (Blended Mild crest, Honey-Toasted Lights hound, Lights eagle and stars, a red filter pack with sunburst, a Menthol pack with palm and plane, and a final row of filters)",
+              "The typography is the idea. Each name gets a pastiche face that fits its brand (script, Clarendon-like serif, condensed sans, Art Deco menthol caps), with perfect period detailing: 'UNDERAGE SALE PROHIBITED', 'PREMIUM BLEND', tax stamps",
+              "Paper texture, print registration, foil gold and halftone illustration give it real material quality",
+              "The palette changes card to card while staying in a coherent mid-century packaging world; the irony is pointed and memorable",
+              "Tight crops show the camera moving across and over the packs rather than presenting them flat"
+            ],
+            "gaps": [
+              "Motion is mostly slow pans across flat print; it needs more choreography between cards (transitions, turning or folding packs) to match Vertigo's sense of progression",
+              "Light is graphic and flat by design; some physical depth (the foil catching light, the cellophane) would lift it from a clever print idea to a cinematic one",
+              "The concept is a single repeated gag; there is no structural turn or escalation before the director card"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Stranger Things (Imaginary Forces): extreme macro crops of the ITC Benguiat-style logotype glide past as abstract red neon shapes and slowly resolve into the full logo, a clear piece of choreography of reveal",
+              "Typography with a specific point of view. The custom-modified Benguiat with rule lines carries 1980s Stephen King paperback nostalgia, and the letterforms are the only image",
+              "The light is the craft: soft red glow, filmic grain and a halation falloff that imitates an analogue film-out",
+              "The composition evolves from frame to frame (huge counters, then partial letters, then a lattice of words, then the lockup) while the credit stays fixed at centre as an anchor",
+              "Restraint is used as an asset: black ground and a single red would be an AI tell elsewhere, but here the red is the period reference and the frames are dense with letterform"
+            ],
+            "gaps": [
+              "Originality is capped because it is deliberately a pastiche of Richard Greenberg-era and King-paperback type; Vertigo invented a visual language, while this curates one",
+              "The centred, small grotesk credits are default-ish and don't take part in the idea; set them in a period face or let them interact with the glyphs",
+              "It is one move (slow drift and resolve) for its whole length; there is no second idea or surprise of the kind the Vertigo spirals provide"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "D",
+          "A"
+        ]
+      },
+      "meta": {
+        "seconds": 33.4,
+        "cost_usd": 0.1599878,
+        "tokens": 71853,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "thank-you-for-smoking",
+        "B": "vertigo",
+        "C": "semi-permanent-sydney-2014",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 9,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "A specific idea that fits only this film: every credit is set as a fake cigarette-pack label, so the title sequence is itself an ad for the product the film satirises",
+              "Typography changes with every pack and suits each brand: a banner serif with a crest, a brush script ('Cameron Bright'), a condensed slab for 'LIGHTS', wide caps over a sunburst, a deco serif for menthol, and an italic script paired with heavy caps for the director",
+              "Period-correct printed texture: gold foil stripes, slight off-register and paper grain, engraved animals and crests, scalloped borders, and small copy like 'honey-toasted tobacco lights' and 'underage sale prohibited'",
+              "Each frame has its own palette (royal blue/gold, orange/cream, red-white-blue, red/navy, mint/green, red/white with filter tips), yet the whole set reads as one system",
+              "The final frame, a row of cigarette filters under the director credit, is a witty payoff"
+            ],
+            "gaps": [
+              "From the stills, the motion looks like mostly lateral pans across flat packs; choreography between frames needs to escalate as it does in B, rather than stay a catalogue of tracking shots",
+              "Every frame is a crop of a single surface; the piece needs one shift in scale or depth (opening a pack, a dimensional reveal) to break the flatness",
+              "The structure is a gallery of variations, so it lacks the build to a single emotional climax that B's return to the eye achieves"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.98,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "The concept carries the film's theme: an extreme close-up of an eye gives way to Lissajous/spirograph spirals that stand for obsession and vertigo, then the sequence returns to the eye",
+              "A bold palette: a monochrome red-tinted face, black voids, then violet and later acid-green line forms. Nothing about it is a default",
+              "An expressive outlined slab/Clarendon title, against tightly ranked right-aligned credit blocks with a clear hierarchy (small role labels, larger names)",
+              "The frames show real choreography: a photographic face, the spiral emerging from the pupil, abstract spirals that turn and change colour, then the eye again. This is a closed loop with tension in it",
+              "Photographic skin, lashes and specular highlights next to precise generated line work: two materials playing against each other on purpose"
+            ],
+            "gaps": [
+              "The credit-block layouts on black are functional and a little static compared with the hero frames",
+              "The middle section leans on repeating the spiral motif, so variety drops slightly between frames 3 and 5",
+              "The title type sits on top of the image rather than being built into it, unlike A, where the type is the object"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 6,
+              "colour": 4,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "A dark vignetted ground, a faint 3D grid floor, and a single teal accent throughout: very close to the generic 'tasteful' look",
+              "The type is a stock geometric/grotesk sans, with small tracked caps under bold names, laid out like a slide",
+              "The same structure repeats across frames: a large monogram letter dissolving into ink/smoke plus a speaker name. One layout with the words swapped",
+              "Ink-in-water and particle simulation used as an effect without a subject, typical of 2010s conference openers",
+              "Against that, the simulations are well integrated (letters eroding into fluid with a sense of volume), and the monograms built from speaker initials show some typographic intent, which points to a competent studio rather than a template"
+            ],
+            "gaps": [
+              "There is no concept tied to the subject; the smoke-letter treatment could brand any event. It needs an idea about Semi-Permanent itself, the way A's packs are about tobacco",
+              "The single teal-on-black palette and the repeated vignette need a deliberate, evolving colour system and compositions that change from frame to frame",
+              "The default grotesk with tracked-caps subtitles should be replaced by type with a point of view and real scale contrast that interacts with the image"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The hero is a custom, period-referenced outlined serif logotype (ITC Benguiat-style), and its letterforms are the whole set: extreme crops of serifs and counters frame each credit",
+              "Clear choreography: the camera pulls back from abstract glowing strokes to legible fragments ('RANG', 'ING') and finally to the full lockup. The reveal builds over the six frames",
+              "Neon-tube light has believable falloff, bloom and grain; the red on black feels like a material, not a flat fill",
+              "Restraint is the idea: nothing but type and light, which serves the 80s Stephen King / paperback-cover reference"
+            ],
+            "gaps": [
+              "The credits sit centred in a plain sans that does not engage with the hero letterforms; integrating them as A and B do would lift every frame",
+              "A single red-on-black palette with no change across the piece; B shows how a colour turn mid-sequence can add tension",
+              "The composition logic is the same in every frame (a crop of a letter around a centred credit), so the surprise rests on the final reveal alone"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 32.5,
+        "cost_usd": 0.1606032,
+        "tokens": 71879,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.479,
+  "judge_seconds": 97.3,
+  "verdict": "PASS"
+}

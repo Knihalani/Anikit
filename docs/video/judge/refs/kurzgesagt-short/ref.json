@@ -1,0 +1,24 @@
+{
+  "slug": "kurzgesagt-short",
+  "title": "Kurzgesagt — Europe's Next Ice Age (Short)",
+  "studio": "Kurzgesagt",
+  "year": 2024,
+  "url": "https://www.youtube.com/shorts/i981tDgvhPg",
+  "frame_sources": [
+    "https://i.ytimg.com/vi/i981tDgvhPg/maxresdefault.jpg",
+    "https://i.ytimg.com/vi/i981tDgvhPg/maxres1.jpg",
+    "https://i.ytimg.com/vi/i981tDgvhPg/maxres2.jpg",
+    "https://i.ytimg.com/vi/i981tDgvhPg/maxres3.jpg"
+  ],
+  "style_tags": [
+    "explainer",
+    "vertical",
+    "illustration",
+    "editorial-data"
+  ],
+  "format": "9:16",
+  "medium": "2D",
+  "description": "A vertical climate short: map of Europe, a mammoth, scientist characters, bold type stacked in the 9:16 frame.",
+  "why_top_tier": "Kurzgesagt's explainer craft reformatted natively for vertical.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright Kurzgesagt GmbH"
+}

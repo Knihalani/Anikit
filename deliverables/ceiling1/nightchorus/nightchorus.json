@@ -1,0 +1,1876 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "background": "#000",
+ "fonts": {
+  "Anton": "../fonts/Anton.ttf",
+  "Monoton": "../fonts/Monoton.ttf",
+  "Bebas Neue": "../fonts/Bebas_Neue.ttf",
+  "UnifrakturMaguntia": "../fonts/UnifrakturMaguntia.ttf",
+  "Six Caps": "../fonts/Six_Caps.ttf",
+  "Rubik Mono One": "../fonts/Rubik_Mono_One.ttf",
+  "Bodoni Moda Black": "../fonts/Bodoni_Moda_ital_wght_1_900.ttf",
+  "Instrument Sans": "../fonts/Instrument_Sans_wght_700.ttf",
+  "Bungee Shade": "../fonts/Bungee_Shade.ttf",
+  "Archivo Black": "../fonts/Archivo_Black.ttf",
+  "Big Shoulders Display Black": "../fonts/Big_Shoulders_Display_wght_900.ttf",
+  "Major Mono Display": "../fonts/Major_Mono_Display.ttf"
+ },
+ "transition": "cut",
+ "intent": {
+  "pace": "frantic"
+ },
+ "music": {
+  "bpm": 128,
+  "key": "Fm",
+  "length": "7 bars",
+  "seed": 7,
+  "define": {
+   "grit": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "saw",
+       "voices": 3,
+       "detune": 14
+      },
+      {
+       "wave": "square",
+       "semis": -12,
+       "level": 0.6
+      }
+     ],
+     "sub": 0.5,
+     "filter": {
+      "type": "ladder",
+      "cutoff": 380,
+      "res": 0.35,
+      "drive": 3,
+      "env": 3.2
+     },
+     "fenv": [
+      0.001,
+      0.12,
+      0.0,
+      0.08
+     ],
+     "amp": [
+      0.001,
+      0.2,
+      0.7,
+      0.05
+     ],
+     "mono": true
+    }
+   },
+   "buzz": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "square",
+       "pw": 0.3
+      },
+      {
+       "wave": "saw",
+       "semis": 12,
+       "level": 0.4
+      }
+     ],
+     "filter": {
+      "type": "bp",
+      "cutoff": 1800,
+      "res": 0.5
+     },
+     "lfo": {
+      "rate": 30,
+      "trem": 0.5
+     },
+     "amp": [
+      0.005,
+      0.1,
+      0.8,
+      0.1
+     ]
+    }
+   }
+  },
+  "tracks": [
+   {
+    "name": "kick",
+    "inst": "drums:techno",
+    "clips": [
+     {
+      "at": 1,
+      "bars": 4,
+      "drums": {
+       "kick": "X...x...x...x..o",
+       "tom": "................"
+      }
+     },
+     {
+      "at": 5,
+      "bars": 1,
+      "drums": {
+       "kick": "X...............",
+       "crash": "........X......."
+      }
+     },
+     {
+      "at": 6,
+      "bars": 2,
+      "drums": {
+       "kick": "X.......X.......",
+       "tom": "..............x."
+      }
+     }
+    ],
+    "fx": [
+     {
+      "type": "comp",
+      "threshold": -12,
+      "ratio": 4
+     },
+     {
+      "type": "saturate",
+      "drive": 0.4
+     }
+    ]
+   },
+   {
+    "name": "tops",
+    "inst": "drums:909",
+    "clips": [
+     {
+      "at": 1,
+      "bars": 1,
+      "drums": {
+       "hat": "..x...x...x...x."
+      }
+     },
+     {
+      "at": 2,
+      "bars": 2,
+      "drums": {
+       "hat": "x.xxx.xxx.xxx.xX",
+       "clap": "....x.......x...",
+       "rim": "...x..x....x..x."
+      }
+     },
+     {
+      "at": 4,
+      "bars": 1,
+      "drums": {
+       "hat": "xxxxxxxxxxxxxxxx",
+       "clap": "....x.......x.x.",
+       "snare": "........x.x.xxxx"
+      }
+     },
+     {
+      "at": 5,
+      "bars": 1,
+      "drums": {
+       "clap": "........X.......",
+       "ohh": "........X......."
+      }
+     },
+     {
+      "at": 6,
+      "bars": 1,
+      "drums": {
+       "hat": "x.x.x.x.x.x.x.x.",
+       "clap": "....x.......x..."
+      }
+     }
+    ],
+    "gain": -3
+   },
+   {
+    "name": "bass",
+    "inst": "grit",
+    "clips": [
+     {
+      "at": 1,
+      "bars": 4,
+      "notes": "o2 l16 (F2 r F2 F3 r F2 Ab2 r F2 r Eb3 F2 r C3 Eb2 r)x3 F2 r F2 F3 r F2 Ab2 r Db3 Db3 C3 C3 Bb2 Bb2 Ab2 G2"
+     },
+     {
+      "at": 5,
+      "bars": 1,
+      "notes": "o2 F1/16 r/16 r/8 r/4 Db2/2"
+     },
+     {
+      "at": 6,
+      "bars": 2,
+      "notes": "o2 l16 (F2 r F2 F3 r F2 Ab2 r F2 r Eb3 F2 r C3 Eb2 r) F1/1"
+     }
+    ],
+    "duck": 6,
+    "gain": -2,
+    "automate": {
+     "synth.cutoff": [
+      [
+       0,
+       260
+      ],
+      [
+       "@bar4",
+       900
+      ],
+      [
+       "@bar5",
+       400
+      ],
+      [
+       "@bar6",
+       1200
+      ]
+     ]
+    },
+    "fx": [
+     {
+      "type": "saturate",
+      "drive": 0.5
+     }
+    ]
+   },
+   {
+    "name": "stab",
+    "inst": "synth:stab-house",
+    "clips": [
+     {
+      "at": 2,
+      "bars": 3,
+      "notes": "o4 l16 (r r [F4 Ab4 C5] r r r r [F4 Ab4 C5] r r [Eb4 G4 Bb4] r r r r r)x3"
+     },
+     {
+      "at": 5,
+      "bars": 1,
+      "notes": "o4 r/2 [Db4 F4 Ab4 C5]/2"
+     },
+     {
+      "at": 6,
+      "bars": 1,
+      "notes": "o4 l16 (r r [F4 Ab4 C5] r r r r [F4 Ab4 C5] r r [Eb4 G4 Bb4] r r r r r)"
+     }
+    ],
+    "gain": -6,
+    "fx": [
+     {
+      "type": "delay",
+      "note": "1/8d",
+      "feedback": 0.3,
+      "wet": 0.2
+     }
+    ]
+   },
+   {
+    "name": "buzz",
+    "inst": "buzz",
+    "clips": [
+     {
+      "at": 1,
+      "bars": 1,
+      "notes": "o3 F3/4 r/4 F3/8 r/8 r/4"
+     },
+     {
+      "at": 5,
+      "bars": 1,
+      "notes": "o3 r/2 [F3 C4]/2"
+     },
+     {
+      "at": 7,
+      "bars": 1,
+      "notes": "o3 F3/8 r/8 F3/16 r/16 r/8 r/2"
+     }
+    ],
+    "gain": -12,
+    "pan": 0.2
+   }
+  ],
+  "sfx": [
+   {
+    "sfx": "impact",
+    "at": "@8.4375"
+   },
+   {
+    "sfx": "reverse-cymbal",
+    "at": "@8.4375"
+   }
+  ],
+  "end": "ring",
+  "followCuts": false
+ },
+ "post": {
+  "grain": 0.035,
+  "halation": 0.25,
+  "bloom": 0.25,
+  "vignette": 0.25,
+  "aberration": 0.05
+ },
+ "scenes": [
+  {
+   "duration": 0.9375,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "radial-gradient(#140A10, #020102)"
+    },
+    {
+     "text": "A HALCYON\nPICTURE",
+     "font": "Monoton",
+     "size": 250,
+     "lineHeight": 1.02,
+     "align": "center",
+     "letterSpacing": "0.03em",
+     "y": "44%",
+     "color": "#FF2D7A",
+     "blur": 28,
+     "opacity": "=t<0.06?0:(t<0.10?1:(t<0.16?0.15:(t<0.2?1:(t<0.24?0.3:1))))",
+     "blend": "add"
+    },
+    {
+     "text": "A HALCYON\nPICTURE",
+     "font": "Monoton",
+     "size": 250,
+     "lineHeight": 1.02,
+     "align": "center",
+     "letterSpacing": "0.03em",
+     "y": "44%",
+     "color": "#FF2D7A",
+     "blur": 8,
+     "opacity": "=t<0.06?0:(t<0.10?1:(t<0.16?0.15:(t<0.2?1:(t<0.24?0.3:1))))",
+     "blend": "add"
+    },
+    {
+     "text": "A HALCYON\nPICTURE",
+     "font": "Monoton",
+     "size": 250,
+     "lineHeight": 1.02,
+     "align": "center",
+     "letterSpacing": "0.03em",
+     "y": "44%",
+     "color": "#FFD2E4",
+     "glow": "#FF2D7A",
+     "opacity": "=t<0.06?0:(t<0.10?1:(t<0.16?0.15:(t<0.2?1:(t<0.24?0.3:1))))"
+    },
+    {
+     "text": "A HALCYON\nPICTURE",
+     "font": "Monoton",
+     "size": 250,
+     "lineHeight": 1.02,
+     "align": "center",
+     "letterSpacing": "0.03em",
+     "y": "112%",
+     "color": "#FF2D7A",
+     "scaleY": -0.55,
+     "blur": 10,
+     "opacity": "=0.28*(t<0.06?0:(t<0.10?1:(t<0.16?0.15:(t<0.2?1:(t<0.24?0.3:1)))))"
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.07
+      },
+      "duration": 0.9375,
+      "ease": "linear"
+     }
+    ]
+   }
+  },
+  {
+   "duration": 0.9375,
+   "layers": [
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R;  float m=0.0; float r2=length(f-R*vec2(0.22,0.8)); float b=smoothstep(0.4,0.6,0.5+0.5*sin(r2*0.5+iTime*6.0)); o=vec4(mix(vec3(0.03,0.0,0.03),vec3(0.93,0.07,0.36),b),1.0);  }"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float r=length(f-R*vec2(0.5,0.5)); float ring=smoothstep(0.35,0.65,0.5+0.5*sin(r*0.55 - iTime*12.0));\n  vec3 col = mix(vec3(0.000,0.851,0.710), vec3(1.0,0.98,0.92), ring);\n  o = vec4(col*m, m);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "MIRA\nOYELARAN",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.88,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "fit": true,
+         "width": 1760,
+         "height": 900,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "animate": [
+      {
+       "from": {
+        "scale": 1.18
+       },
+       "duration": 0.22,
+       "ease": "outExpo"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 0.46875,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#000"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float cs=24.0; vec2 cell=floor(f/cs); vec2 c=(cell+0.5)*cs; float mm=texture(iChannel0,c/R).a;\n  float r=length(f-c)/cs; float on=step(0.5,mm);\n  float chase = 0.75+0.25*step(0.5,fract((cell.x+cell.y)*0.25 - iTime*4.0));\n  float bulb=smoothstep(0.36,0.30,r); float halo=exp(-r*r*7.0);\n  vec3 w=vec3(1.000,0.769,0.420);\n  vec3 col = on*(w*bulb*1.3*chase + w*halo*0.45) + (1.0-on)*w*0.05*bulb;\n  o = vec4(col, max(on*max(bulb,halo*0.8), 1.0*bulb));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "TOMAS VELD",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.88,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "fit": true,
+         "width": 1820,
+         "height": 700,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 0.46875,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#F2E600"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float ang=0.785; mat2 rot=mat2(cos(ang),-sin(ang),sin(ang),cos(ang));\n  vec2 q=rot*f; float cs=16.0*(1.0+2.0*exp(-iTime*10.0)); vec2 cc=(floor(q/cs)+0.5)*cs; vec2 back=transpose(rot)*cc;\n  float v=textureLod(iChannel0, back/R, 2.5).a;\n  float shade = mix(1.0, 0.45, uv.y);\n  float rad = sqrt(v*shade)*0.62*cs;\n  float d = length(q-cc);\n  float dot_ = smoothstep(rad+0.8, rad-0.8, d);\n  o = vec4(vec3(0.02)*dot_, dot_);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "JUNO ABARA",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.88,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "fit": true,
+         "width": 1860,
+         "height": 900,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.08
+      },
+      "to": {
+       "zoom": 1.0
+      },
+      "duration": 0.46875,
+      "ease": "outCubic"
+     }
+    ]
+   }
+  },
+  {
+   "duration": 0.46875,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#1531FF"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float oo=14.0*(1.0+5.0*exp(-iTime*9.0)); float r=texture(iChannel0, uv+vec2(oo,0.0)/R).a, g=m, b=texture(iChannel0, uv-vec2(oo,0.0)/R).a;\n  vec3 col=vec3(r, g, b); col = col*vec3(1.0);\n  o = vec4(col, max(max(r,g),b));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "ISAK\nLINDQVIST",
+         "font": "Bebas Neue",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.82,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "fit": true,
+         "width": 1760,
+         "height": 980,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 0.46875,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#EFE7DA"
+    },
+    {
+     "text": "Renata Sol\u00e9",
+     "font": "UnifrakturMaguntia",
+     "size": 400,
+     "width": 1900,
+     "scale": "=1+0.05*t",
+     "color": "#C8102E",
+     "stroke": {
+      "color": "#111",
+      "width": 6
+     },
+     "shadow": {
+      "x": 8,
+      "y": 8,
+      "blur": 0,
+      "color": "#111"
+     }
+    },
+    {
+     "text": "with",
+     "font": "Instrument Sans",
+     "size": 40,
+     "color": "#111",
+     "letterSpacing": "0.18em",
+     "y": "24%",
+     "uppercase": true
+    }
+   ]
+  },
+  {
+   "duration": 0.46875,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#0B0B0B"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  vec3 col=vec3(0.0); float a=0.0;\n  for(int k=1;k<15;k++){ float fk=float(k); vec2 off=vec2(-1.0,1.0)*fk*2.0*min(1.0,0.25+iTime*5.0)/R; float s=texture(iChannel0,uv+off).a;\n     float hit = step(0.5,s)*(1.0-a); col += hit*mix(vec3(0.878,0.149,0.106), vec3(0.878,0.149,0.106)*0.18, fk/15.0); a=max(a,step(0.5,s)); }\n  col = mix(col, vec3(0.961,0.922,0.867), m); a=max(a,m);\n  o = vec4(col*a, a);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "KENJI\nARAMAKI",
+         "font": "Archivo Black",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.9,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "fit": true,
+         "width": 1600,
+         "height": 860,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "text": "casting",
+     "font": "Instrument Sans",
+     "size": 36,
+     "color": "#F5EBDD",
+     "letterSpacing": "0.18em",
+     "y": "8%",
+     "uppercase": true
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.06
+      },
+      "duration": 0.46875
+     }
+    ]
+   }
+  },
+  {
+   "duration": 0.46875,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#E3120B"
+    },
+    {
+     "text": "ODILE MARCHETTI",
+     "font": "Six Caps",
+     "size": 1250,
+     "color": "#FFF4E8",
+     "x": "=1300-t*900",
+     "anchor": "center",
+     "width": 4000,
+     "lineHeight": 0.8
+    },
+    {
+     "shape": "rect",
+     "width": 260,
+     "height": 64,
+     "fill": "#111",
+     "x": "50%",
+     "y": "91%"
+    },
+    {
+     "text": "editor",
+     "font": "Instrument Sans",
+     "size": 36,
+     "color": "#FFF4E8",
+     "letterSpacing": "0.18em",
+     "y": "91%",
+     "uppercase": true
+    }
+   ]
+  },
+  {
+   "duration": 0.46875,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#0A0A0A"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float s = step(0.5, fract((f.x + f.y*0.0)/14.0 + iTime*0.0));\n  float h = step(0.5, fract((f.y+iTime*90.0)/18.0));\n  vec3 col = mix(vec3(1.000,1.000,1.000), vec3(1.000,0.353,0.000), h);\n  o = vec4(col*m, m);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "SAUL\nKIM",
+         "font": "Rubik Mono One",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.95,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "54%",
+         "fit": true,
+         "width": 1700,
+         "height": 820,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "text": "production design",
+     "font": "Instrument Sans",
+     "size": 36,
+     "color": "#FF5A00",
+     "letterSpacing": "0.18em",
+     "y": "7%",
+     "uppercase": true
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "x": -60
+      },
+      "to": {
+       "x": 0
+      },
+      "duration": 0.46875,
+      "ease": "outExpo"
+     }
+    ]
+   }
+  },
+  {
+   "duration": 0.46875,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "radial-gradient(#0E4A33, #031A12)"
+    },
+    {
+     "text": "*Lev Ansari*",
+     "font": "Bodoni Moda",
+     "weight": 900,
+     "size": 300,
+     "width": 1800,
+     "color": "linear-gradient(180deg, #FFF1B8, #D9A441 55%, #8A5A12)",
+     "shadow": {
+      "x": 0,
+      "y": 10,
+      "blur": 40,
+      "color": "#000a"
+     }
+    },
+    {
+     "text": "cinematography",
+     "font": "Instrument Sans",
+     "size": 36,
+     "color": "#E8C979",
+     "letterSpacing": "0.18em",
+     "y": "20%",
+     "uppercase": true
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.14
+      },
+      "to": {
+       "zoom": 1.0
+      },
+      "duration": 0.3,
+      "ease": "outExpo"
+     }
+    ]
+   }
+  },
+  {
+   "duration": 0.46875,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#020407"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float b1=mb(uv,1.0), b3=mb(uv,3.0), b5=mb(uv,5.0);\n  float tube=exp(-pow((b1-0.5)/0.16,2.0));\n  float core=exp(-pow((b1-0.5)/0.06,2.0));\n  float glow=exp(-pow((b3-0.5)/0.32,2.0))*0.55 + exp(-pow((b5-0.45)/0.4,2.0))*0.35;\n  float fl = 0.88+0.12*step(0.25,hash(vec2(floor(iTime*24.0),7.0)));\n  vec3 c = vec3(0.149,0.878,1.000);\n  vec3 col = (c*tube*1.3 + vec3(1.0,0.96,0.92)*core*0.8 + c*glow)*fl*1.0;\n  float a = clamp(max(max(tube, core), glow)*1.0, 0.0, 1.0);\n  o = vec4(col, a);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "HAZE &\nCINDER",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.92,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "56%",
+         "fit": true,
+         "width": 1400,
+         "height": 700,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "text": "music",
+     "font": "Instrument Sans",
+     "size": 36,
+     "color": "#26E0FF",
+     "letterSpacing": "0.18em",
+     "y": "8%",
+     "uppercase": true
+    }
+   ]
+  },
+  {
+   "duration": 0.46875,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#000"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float cs=9.0; vec2 cell=floor(f/cs); vec2 c=(cell+0.5)*cs; float mm=texture(iChannel0,c/R).a;\n  vec2 d=abs(f-c)/cs; float px=step(d.x,0.40)*step(d.y,0.40);\n  float sub = fract(f.x/cs*3.0);\n  vec3 rgb = vec3(step(sub,0.333), step(0.333,sub)*step(sub,0.666), step(0.666,sub));\n  vec3 base = vec3(1.000,1.000,1.000);\n  vec3 col = (base*0.55 + rgb*base*0.9)*px*mm*1.2 + base*0.04*px;\n  o = vec4(col, px*max(mm, 0.12));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "WRITTEN &\nDIRECTED BY",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.9,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "fit": true,
+         "width": 1800,
+         "height": 900,
+         "size": 900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 0.23438,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#FFFFFF"
+    },
+    {
+     "text": "ADA",
+     "font": "Anton",
+     "size": 900,
+     "color": "#000",
+     "letterSpacing": "-0.01em"
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.0
+      },
+      "to": {
+       "zoom": 1.04
+      },
+      "duration": 0.234375
+     }
+    ]
+   }
+  },
+  {
+   "duration": 0.23438,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#000"
+    },
+    {
+     "text": "ADA",
+     "font": "Anton",
+     "size": 900,
+     "color": "#FFFFFF",
+     "letterSpacing": "-0.01em"
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.06
+      },
+      "to": {
+       "zoom": 1.1
+      },
+      "duration": 0.234375
+     }
+    ]
+   }
+  },
+  {
+   "duration": 0.23438,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#FF2D7A"
+    },
+    {
+     "text": "KOV\u00c1\u010c",
+     "font": "Anton",
+     "size": 640,
+     "color": "#000",
+     "letterSpacing": "-0.01em"
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.12
+      },
+      "to": {
+       "zoom": 1.1600000000000001
+      },
+      "duration": 0.234375
+     }
+    ]
+   }
+  },
+  {
+   "duration": 0.23438,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#000"
+    },
+    {
+     "text": "KOV\u00c1\u010c",
+     "font": "Anton",
+     "size": 640,
+     "color": "#FF2D7A",
+     "letterSpacing": "-0.01em"
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.18
+      },
+      "to": {
+       "zoom": 1.22
+      },
+      "duration": 0.234375
+     }
+    ]
+   }
+  },
+  {
+   "duration": 0.9375,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#000"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float b1=mb(uv,1.0), b3=mb(uv,3.0), b5=mb(uv,5.0);\n  float tube=exp(-pow((b1-0.5)/0.16,2.0));\n  float core=exp(-pow((b1-0.5)/0.06,2.0));\n  float glow=exp(-pow((b3-0.5)/0.32,2.0))*0.55 + exp(-pow((b5-0.45)/0.4,2.0))*0.35;\n  float fl = 0.88+0.12*step(0.25,hash(vec2(floor(iTime*24.0),1.0)));\n  vec3 c = vec3(1.000,0.176,0.478);\n  vec3 col = (c*tube*1.3 + vec3(1.0,0.96,0.92)*core*0.8 + c*glow)*fl*1.0;\n  float a = clamp(max(max(tube, core), glow)*1.0, 0.0, 1.0);\n  o = vec4(col, a);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.447?0:(t<0.480?0.7:(t<0.547?0:(t<0.580?0.4:0.1)))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float cs=20.0; vec2 cell=floor(f/cs); vec2 c=(cell+0.5)*cs; float mm=texture(iChannel0,c/R).a;\n  float r=length(f-c)/cs; float on=step(0.5,mm);\n  float chase = 0.75+0.25*step(0.5,fract((cell.x+cell.y)*0.25 - iTime*4.0));\n  float bulb=smoothstep(0.36,0.30,r); float halo=exp(-r*r*7.0);\n  vec3 w=vec3(1.000,0.769,0.420);\n  vec3 col = on*(w*bulb*1.3*chase + w*halo*0.45) + (1.0-on)*w*0.05*bulb;\n  o = vec4(col, max(on*max(bulb,halo*0.8), 0.0*bulb));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.245?0:(t<0.278?0.7:(t<0.345?0:(t<0.378?0.4:0.1)))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float r=length(f-R*vec2(0.5,0.5)); float ring=smoothstep(0.35,0.65,0.5+0.5*sin(r*0.55 - iTime*12.0));\n  vec3 col = mix(vec3(0.000,0.851,0.710), vec3(1.0,0.98,0.92), ring);\n  o = vec4(col*m, m);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.789?0:(t<0.822?0.7:(t<0.889?0:(t<0.922?0.4:0.1)))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float ang=0.785; mat2 rot=mat2(cos(ang),-sin(ang),sin(ang),cos(ang));\n  vec2 q=rot*f; float cs=14.0*(1.0+2.0*exp(-iTime*10.0)); vec2 cc=(floor(q/cs)+0.5)*cs; vec2 back=transpose(rot)*cc;\n  float v=textureLod(iChannel0, back/R, 2.5).a;\n  float shade = mix(1.0, 0.45, uv.y);\n  float rad = sqrt(v*shade)*0.62*cs;\n  float d = length(q-cc);\n  float dot_ = smoothstep(rad+0.8, rad-0.8, d);\n  o = vec4(vec3(0.949,0.902,0.000)*dot_, dot_);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.066?0:(t<0.099?0.7:(t<0.166?0:(t<0.199?0.4:0.1)))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float oo=9.0*(1.0+5.0*exp(-iTime*9.0)); float r=texture(iChannel0, uv+vec2(oo,0.0)/R).a, g=m, b=texture(iChannel0, uv-vec2(oo,0.0)/R).a;\n  vec3 col=vec3(r, g, b); col = col*vec3(1.0);\n  o = vec4(col, max(max(r,g),b));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.424?0:(t<0.457?0.7:(t<0.524?0:(t<0.557?0.4:0.1)))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  vec3 col=vec3(0.0); float a=0.0;\n  for(int k=1;k<15;k++){ float fk=float(k); vec2 off=vec2(-0.6,1.0)*fk*2.0*min(1.0,0.25+iTime*5.0)/R; float s=texture(iChannel0,uv+off).a;\n     float hit = step(0.5,s)*(1.0-a); col += hit*mix(vec3(0.878,0.149,0.106), vec3(0.878,0.149,0.106)*0.18, fk/15.0); a=max(a,step(0.5,s)); }\n  col = mix(col, vec3(0.961,0.922,0.867), m); a=max(a,m);\n  o = vec4(col*a, a);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.300?0:(t<0.333?0.7:(t<0.400?0:(t<0.433?0.4:0.1)))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float cs=12.0; vec2 cell=floor(f/cs); vec2 c=(cell+0.5)*cs; float mm=texture(iChannel0,c/R).a;\n  vec2 d=abs(f-c)/cs; float px=step(d.x,0.40)*step(d.y,0.40);\n  float sub = fract(f.x/cs*3.0);\n  vec3 rgb = vec3(step(sub,0.333), step(0.333,sub)*step(sub,0.666), step(0.666,sub));\n  vec3 base = vec3(0.353,0.627,1.000);\n  vec3 col = (base*0.55 + rgb*base*0.9)*px*mm*1.2 + base*0.04*px;\n  o = vec4(col, px*max(mm, 0.0));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.626?0:(t<0.659?0.7:(t<0.726?0:(t<0.759?0.4:0.1)))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float s = step(0.5, fract((f.x + f.y*0.0)/14.0 + iTime*0.0));\n  float h = step(0.5, fract((f.y+iTime*90.0)/18.0));\n  vec3 col = mix(vec3(1.000,1.000,1.000), vec3(1.000,0.353,0.000), h);\n  o = vec4(col*m, m);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.662?0:(t<0.695?0.7:(t<0.762?0:(t<0.795?0.4:0.1)))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float b1=mb(uv,1.0), b3=mb(uv,3.0), b5=mb(uv,5.0);\n  float tube=exp(-pow((b1-0.5)/0.16,2.0));\n  float core=exp(-pow((b1-0.5)/0.06,2.0));\n  float glow=exp(-pow((b3-0.5)/0.32,2.0))*0.55 + exp(-pow((b5-0.45)/0.4,2.0))*0.35;\n  float fl = 0.88+0.12*step(0.25,hash(vec2(floor(iTime*24.0),2.0)));\n  vec3 c = vec3(0.149,0.878,1.000);\n  vec3 col = (c*tube*1.3 + vec3(1.0,0.96,0.92)*core*0.8 + c*glow)*fl*1.0;\n  float a = clamp(max(max(tube, core), glow)*1.0, 0.0, 1.0);\n  o = vec4(col, a);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.223?0:(t<0.256?0.7:(t<0.323?0:(t<0.356?0.4:0.1)))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float cs=20.0; vec2 cell=floor(f/cs); vec2 c=(cell+0.5)*cs; float mm=texture(iChannel0,c/R).a;\n  float r=length(f-c)/cs; float on=step(0.5,mm);\n  float chase = 0.75+0.25*step(0.5,fract((cell.x+cell.y)*0.25 - iTime*4.0));\n  float bulb=smoothstep(0.36,0.30,r); float halo=exp(-r*r*7.0);\n  vec3 w=vec3(0.918,0.949,1.000);\n  vec3 col = on*(w*bulb*1.3*chase + w*halo*0.45) + (1.0-on)*w*0.05*bulb;\n  o = vec4(col, max(on*max(bulb,halo*0.8), 0.0*bulb));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.753?0:(t<0.786?0.7:(t<0.853?0:(t<0.886?0.4:0.1)))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float ang=0.785; mat2 rot=mat2(cos(ang),-sin(ang),sin(ang),cos(ang));\n  vec2 q=rot*f; float cs=14.0*(1.0+2.0*exp(-iTime*10.0)); vec2 cc=(floor(q/cs)+0.5)*cs; vec2 back=transpose(rot)*cc;\n  float v=textureLod(iChannel0, back/R, 2.5).a;\n  float shade = mix(1.0, 0.45, uv.y);\n  float rad = sqrt(v*shade)*0.62*cs;\n  float d = length(q-cc);\n  float dot_ = smoothstep(rad+0.8, rad-0.8, d);\n  o = vec4(vec3(1.000,0.176,0.478)*dot_, dot_);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.040?0:(t<0.073?0.7:(t<0.140?0:(t<0.173?0.4:0.1)))"
+    }
+   ]
+  },
+  {
+   "duration": 2.8125,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#000"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float b1=mb(uv,1.0), b3=mb(uv,3.0), b5=mb(uv,5.0);\n  float tube=exp(-pow((b1-0.5)/0.16,2.0));\n  float core=exp(-pow((b1-0.5)/0.06,2.0));\n  float glow=exp(-pow((b3-0.5)/0.32,2.0))*0.55 + exp(-pow((b5-0.45)/0.4,2.0))*0.35;\n  float fl = 0.88+0.12*step(0.25,hash(vec2(floor(iTime*24.0),1.0)));\n  vec3 c = vec3(1.000,0.176,0.478);\n  vec3 col = (c*tube*1.3 + vec3(1.0,0.96,0.92)*core*0.8 + c*glow)*fl*1.0;\n  float a = clamp(max(max(tube, core), glow)*1.0, 0.0, 1.0);\n  o = vec4(col, a);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float cs=20.0; vec2 cell=floor(f/cs); vec2 c=(cell+0.5)*cs; float mm=texture(iChannel0,c/R).a;\n  float r=length(f-c)/cs; float on=step(0.5,mm);\n  float chase = 0.75+0.25*step(0.5,fract((cell.x+cell.y)*0.25 - iTime*4.0));\n  float bulb=smoothstep(0.36,0.30,r); float halo=exp(-r*r*7.0);\n  vec3 w=vec3(1.000,0.769,0.420);\n  vec3 col = on*(w*bulb*1.3*chase + w*halo*0.45) + (1.0-on)*w*0.05*bulb;\n  o = vec4(col, max(on*max(bulb,halo*0.8), 0.0*bulb));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float r=length(f-R*vec2(0.5,0.5)); float ring=smoothstep(0.35,0.65,0.5+0.5*sin(r*0.55 - iTime*12.0));\n  vec3 col = mix(vec3(0.000,0.851,0.710), vec3(1.0,0.98,0.92), ring);\n  o = vec4(col*m, m);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float ang=0.785; mat2 rot=mat2(cos(ang),-sin(ang),sin(ang),cos(ang));\n  vec2 q=rot*f; float cs=14.0*(1.0+2.0*exp(-iTime*10.0)); vec2 cc=(floor(q/cs)+0.5)*cs; vec2 back=transpose(rot)*cc;\n  float v=textureLod(iChannel0, back/R, 2.5).a;\n  float shade = mix(1.0, 0.45, uv.y);\n  float rad = sqrt(v*shade)*0.62*cs;\n  float d = length(q-cc);\n  float dot_ = smoothstep(rad+0.8, rad-0.8, d);\n  o = vec4(vec3(0.949,0.902,0.000)*dot_, dot_);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float oo=9.0*(1.0+5.0*exp(-iTime*9.0)); float r=texture(iChannel0, uv+vec2(oo,0.0)/R).a, g=m, b=texture(iChannel0, uv-vec2(oo,0.0)/R).a;\n  vec3 col=vec3(r, g, b); col = col*vec3(1.0);\n  o = vec4(col, max(max(r,g),b));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  vec3 col=vec3(0.0); float a=0.0;\n  for(int k=1;k<15;k++){ float fk=float(k); vec2 off=vec2(-0.6,1.0)*fk*2.0*min(1.0,0.25+iTime*5.0)/R; float s=texture(iChannel0,uv+off).a;\n     float hit = step(0.5,s)*(1.0-a); col += hit*mix(vec3(0.878,0.149,0.106), vec3(0.878,0.149,0.106)*0.18, fk/15.0); a=max(a,step(0.5,s)); }\n  col = mix(col, vec3(0.961,0.922,0.867), m); a=max(a,m);\n  o = vec4(col*a, a);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float cs=12.0; vec2 cell=floor(f/cs); vec2 c=(cell+0.5)*cs; float mm=texture(iChannel0,c/R).a;\n  vec2 d=abs(f-c)/cs; float px=step(d.x,0.40)*step(d.y,0.40);\n  float sub = fract(f.x/cs*3.0);\n  vec3 rgb = vec3(step(sub,0.333), step(0.333,sub)*step(sub,0.666), step(0.666,sub));\n  vec3 base = vec3(0.353,0.627,1.000);\n  vec3 col = (base*0.55 + rgb*base*0.9)*px*mm*1.2 + base*0.04*px;\n  o = vec4(col, px*max(mm, 0.0));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float s = step(0.5, fract((f.x + f.y*0.0)/14.0 + iTime*0.0));\n  float h = step(0.5, fract((f.y+iTime*90.0)/18.0));\n  vec3 col = mix(vec3(1.000,1.000,1.000), vec3(1.000,0.353,0.000), h);\n  o = vec4(col*m, m);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float b1=mb(uv,1.0), b3=mb(uv,3.0), b5=mb(uv,5.0);\n  float tube=exp(-pow((b1-0.5)/0.16,2.0));\n  float core=exp(-pow((b1-0.5)/0.06,2.0));\n  float glow=exp(-pow((b3-0.5)/0.32,2.0))*0.55 + exp(-pow((b5-0.45)/0.4,2.0))*0.35;\n  float fl = 0.88+0.12*step(0.25,hash(vec2(floor(iTime*24.0),2.0)));\n  vec3 c = vec3(0.149,0.878,1.000);\n  vec3 col = (c*tube*1.3 + vec3(1.0,0.96,0.92)*core*0.8 + c*glow)*fl*1.0;\n  float a = clamp(max(max(tube, core), glow)*1.0, 0.0, 1.0);\n  o = vec4(col, a);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float cs=20.0; vec2 cell=floor(f/cs); vec2 c=(cell+0.5)*cs; float mm=texture(iChannel0,c/R).a;\n  float r=length(f-c)/cs; float on=step(0.5,mm);\n  float chase = 0.75+0.25*step(0.5,fract((cell.x+cell.y)*0.25 - iTime*4.0));\n  float bulb=smoothstep(0.36,0.30,r); float halo=exp(-r*r*7.0);\n  vec3 w=vec3(0.918,0.949,1.000);\n  vec3 col = on*(w*bulb*1.3*chase + w*halo*0.45) + (1.0-on)*w*0.05*bulb;\n  o = vec4(col, max(on*max(bulb,halo*0.8), 0.0*bulb));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float ang=0.785; mat2 rot=mat2(cos(ang),-sin(ang),sin(ang),cos(ang));\n  vec2 q=rot*f; float cs=14.0*(1.0+2.0*exp(-iTime*10.0)); vec2 cc=(floor(q/cs)+0.5)*cs; vec2 back=transpose(rot)*cc;\n  float v=textureLod(iChannel0, back/R, 2.5).a;\n  float shade = mix(1.0, 0.45, uv.y);\n  float rad = sqrt(v*shade)*0.62*cs;\n  float d = length(q-cc);\n  float dot_ = smoothstep(rad+0.8, rad-0.8, d);\n  o = vec4(vec3(1.000,0.176,0.478)*dot_, dot_);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    },
+    {
+     "text": "a film by ada kov\u00e1\u010d",
+     "font": "Instrument Sans",
+     "size": 34,
+     "color": "#B8B2A8",
+     "letterSpacing": "0.18em",
+     "y": "94%",
+     "uppercase": true,
+     "opacity": "=t<1.2?0:1"
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.12
+      },
+      "to": {
+       "zoom": 1.0
+      },
+      "duration": 0.25,
+      "ease": "outExpo"
+     },
+     {
+      "to": {
+       "zoom": 1.05
+      },
+      "at": 0.25,
+      "duration": 2.5625,
+      "ease": "linear"
+     }
+    ],
+    "shake": {
+     "amount": 14,
+     "at": 0,
+     "duration": 0.3
+    }
+   }
+  },
+  {
+   "duration": 0.9375,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#000"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float b1=mb(uv,1.0), b3=mb(uv,3.0), b5=mb(uv,5.0);\n  float tube=exp(-pow((b1-0.5)/0.16,2.0));\n  float core=exp(-pow((b1-0.5)/0.06,2.0));\n  float glow=exp(-pow((b3-0.5)/0.32,2.0))*0.55 + exp(-pow((b5-0.45)/0.4,2.0))*0.35;\n  float fl = 0.88+0.12*step(0.25,hash(vec2(floor(iTime*24.0),1.0)));\n  vec3 c = vec3(1.000,0.176,0.478);\n  vec3 col = (c*tube*1.3 + vec3(1.0,0.96,0.92)*core*0.8 + c*glow)*fl*1.0;\n  float a = clamp(max(max(tube, core), glow)*1.0, 0.0, 1.0);\n  o = vec4(col, a);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.833?1:(t<0.868?0.2:(t<0.903?1:0))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float cs=20.0; vec2 cell=floor(f/cs); vec2 c=(cell+0.5)*cs; float mm=texture(iChannel0,c/R).a;\n  float r=length(f-c)/cs; float on=step(0.5,mm);\n  float chase = 0.75+0.25*step(0.5,fract((cell.x+cell.y)*0.25 - iTime*4.0));\n  float bulb=smoothstep(0.36,0.30,r); float halo=exp(-r*r*7.0);\n  vec3 w=vec3(1.000,0.769,0.420);\n  vec3 col = on*(w*bulb*1.3*chase + w*halo*0.45) + (1.0-on)*w*0.05*bulb;\n  o = vec4(col, max(on*max(bulb,halo*0.8), 0.0*bulb));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.524?1:(t<0.559?0.2:(t<0.594?1:0))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float r=length(f-R*vec2(0.5,0.5)); float ring=smoothstep(0.35,0.65,0.5+0.5*sin(r*0.55 - iTime*12.0));\n  vec3 col = mix(vec3(0.000,0.851,0.710), vec3(1.0,0.98,0.92), ring);\n  o = vec4(col*m, m);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.679?1:(t<0.714?0.2:(t<0.749?1:0))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float ang=0.785; mat2 rot=mat2(cos(ang),-sin(ang),sin(ang),cos(ang));\n  vec2 q=rot*f; float cs=14.0*(1.0+2.0*exp(-iTime*10.0)); vec2 cc=(floor(q/cs)+0.5)*cs; vec2 back=transpose(rot)*cc;\n  float v=textureLod(iChannel0, back/R, 2.5).a;\n  float shade = mix(1.0, 0.45, uv.y);\n  float rad = sqrt(v*shade)*0.62*cs;\n  float d = length(q-cc);\n  float dot_ = smoothstep(rad+0.8, rad-0.8, d);\n  o = vec4(vec3(0.949,0.902,0.000)*dot_, dot_);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.292?1:(t<0.327?0.2:(t<0.362?1:0))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float oo=9.0*(1.0+5.0*exp(-iTime*9.0)); float r=texture(iChannel0, uv+vec2(oo,0.0)/R).a, g=m, b=texture(iChannel0, uv-vec2(oo,0.0)/R).a;\n  vec3 col=vec3(r, g, b); col = col*vec3(1.0);\n  o = vec4(col, max(max(r,g),b));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.137?1:(t<0.172?0.2:(t<0.207?1:0))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  vec3 col=vec3(0.0); float a=0.0;\n  for(int k=1;k<15;k++){ float fk=float(k); vec2 off=vec2(-0.6,1.0)*fk*2.0*min(1.0,0.25+iTime*5.0)/R; float s=texture(iChannel0,uv+off).a;\n     float hit = step(0.5,s)*(1.0-a); col += hit*mix(vec3(0.878,0.149,0.106), vec3(0.878,0.149,0.106)*0.18, fk/15.0); a=max(a,step(0.5,s)); }\n  col = mix(col, vec3(0.961,0.922,0.867), m); a=max(a,m);\n  o = vec4(col*a, a);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.756?1:(t<0.791?0.2:(t<0.826?1:0))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float cs=12.0; vec2 cell=floor(f/cs); vec2 c=(cell+0.5)*cs; float mm=texture(iChannel0,c/R).a;\n  vec2 d=abs(f-c)/cs; float px=step(d.x,0.40)*step(d.y,0.40);\n  float sub = fract(f.x/cs*3.0);\n  vec3 rgb = vec3(step(sub,0.333), step(0.333,sub)*step(sub,0.666), step(0.666,sub));\n  vec3 base = vec3(0.353,0.627,1.000);\n  vec3 col = (base*0.55 + rgb*base*0.9)*px*mm*1.2 + base*0.04*px;\n  o = vec4(col, px*max(mm, 0.0));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.601?1:(t<0.636?0.2:(t<0.671?1:0))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float s = step(0.5, fract((f.x + f.y*0.0)/14.0 + iTime*0.0));\n  float h = step(0.5, fract((f.y+iTime*90.0)/18.0));\n  vec3 col = mix(vec3(1.000,1.000,1.000), vec3(1.000,0.353,0.000), h);\n  o = vec4(col*m, m);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.215?1:(t<0.250?0.2:(t<0.285?1:0))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float b1=mb(uv,1.0), b3=mb(uv,3.0), b5=mb(uv,5.0);\n  float tube=exp(-pow((b1-0.5)/0.16,2.0));\n  float core=exp(-pow((b1-0.5)/0.06,2.0));\n  float glow=exp(-pow((b3-0.5)/0.32,2.0))*0.55 + exp(-pow((b5-0.45)/0.4,2.0))*0.35;\n  float fl = 0.88+0.12*step(0.25,hash(vec2(floor(iTime*24.0),2.0)));\n  vec3 c = vec3(0.149,0.878,1.000);\n  vec3 col = (c*tube*1.3 + vec3(1.0,0.96,0.92)*core*0.8 + c*glow)*fl*1.0;\n  float a = clamp(max(max(tube, core), glow)*1.0, 0.0, 1.0);\n  o = vec4(col, a);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF}[U]{#FFFFFF00}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.060?1:(t<0.095?0.2:(t<0.130?1:0))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float cs=20.0; vec2 cell=floor(f/cs); vec2 c=(cell+0.5)*cs; float mm=texture(iChannel0,c/R).a;\n  float r=length(f-c)/cs; float on=step(0.5,mm);\n  float chase = 0.75+0.25*step(0.5,fract((cell.x+cell.y)*0.25 - iTime*4.0));\n  float bulb=smoothstep(0.36,0.30,r); float halo=exp(-r*r*7.0);\n  vec3 w=vec3(0.918,0.949,1.000);\n  vec3 col = on*(w*bulb*1.3*chase + w*halo*0.45) + (1.0-on)*w*0.05*bulb;\n  o = vec4(col, max(on*max(bulb,halo*0.8), 0.0*bulb));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF}[S]{#FFFFFF00}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.447?1:(t<0.482?0.2:(t<0.517?1:0))"
+    },
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float ang=0.785; mat2 rot=mat2(cos(ang),-sin(ang),sin(ang),cos(ang));\n  vec2 q=rot*f; float cs=14.0*(1.0+2.0*exp(-iTime*10.0)); vec2 cc=(floor(q/cs)+0.5)*cs; vec2 back=transpose(rot)*cc;\n  float v=textureLod(iChannel0, back/R, 2.5).a;\n  float shade = mix(1.0, 0.45, uv.y);\n  float rad = sqrt(v*shade)*0.62*cs;\n  float d = length(q-cc);\n  float dot_ = smoothstep(rad+0.8, rad-0.8, d);\n  o = vec4(vec3(1.000,0.176,0.478)*dot_, dot_);\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "[N]{#FFFFFF00}[I]{#FFFFFF00}[G]{#FFFFFF00}[H]{#FFFFFF00}[T]{#FFFFFF00}\n[C]{#FFFFFF00}[H]{#FFFFFF00}[O]{#FFFFFF00}[R]{#FFFFFF00}[U]{#FFFFFF00}[S]{#FFFFFF}",
+         "font": "Anton",
+         "color": "#fff",
+         "align": "center",
+         "lineHeight": 0.86,
+         "letterSpacing": "0em",
+         "x": "50%",
+         "y": "50%",
+         "size": 500,
+         "width": 1900
+        }
+       ],
+       "mipmaps": true
+      }
+     ],
+     "opacity": "=t<0.369?1:(t<0.404?0.2:(t<0.439?1:0))"
+    }
+   ],
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.05
+      },
+      "to": {
+       "zoom": 1.07
+      },
+      "duration": 0.9375
+     }
+    ]
+   }
+  },
+  {
+   "duration": 0.5,
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#000"
+    }
+   ]
+  }
+ ]
+}

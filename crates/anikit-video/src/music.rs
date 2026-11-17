@@ -86,7 +86,12 @@ pub fn marker(cue: &MusicCue, kind: &str, n: usize) -> Result<f64, String> {
 /// video has voice-over).
 pub fn render_track(cue: &MusicCue, video_len: f64, wav: &Path, has_voice: bool) -> Result<Track, String> {
     let opts = RenderOpts { video_length: Some((video_len - cue.at).max(0.1)), base_dir: Some(cue.base.clone()), rate: audio::DEFAULT_RATE, stems: false };
-    let r = anikit_music::render(&cue.spec, &opts)?;
+    // Under voice-over, play the underscore mix (no melody) unless the spec says otherwise.
+    let mut spec = cue.spec.clone();
+    if has_voice && spec.underscore.is_none() {
+        spec.underscore = Some(true);
+    }
+    let r = anikit_music::render(&spec, &opts)?;
     let pcm = audio::Pcm { rate: r.rate, channels: 2, samples: r.interleaved() };
     audio::write_wav(wav, &pcm, audio::WavFormat::Float32)?;
     Ok(Track {
@@ -107,22 +112,23 @@ In a video spec:   "music": {"style":"lofi","bpm":84,"key":"Dm","mood":"warm","h
   or just          "music": "synthwave"         (fills the video; @beatN/@barN follow its exact grid)
 Standalone:        anikit-video music '{"style":"house","length":"15s"}' -o bed.wav [--stems DIR] [--midi out.mid]
                    anikit-video music --style trap --bpm 140 --key Cm --length 20s -o out.ogg   (ogg/mp3/flac via ffmpeg)
-                   anikit-video music styles | instruments | sfx | fetch salamander|vsco2
+                   anikit-video music styles | instruments | sfx | fetch essentials|salamander|vsco2-ce
 
 STYLES  played instruments: orchestral acoustic piano jazz rock corporate pop lofi · hybrid: cinematic-hybrid
         synth-led: house synthwave trap tech dnb ambient   (aliases: epic trailer edm chill 80s classical upbeat folk …)
 CHOOSING (your call; see docs/video/taste/TASTE.md §7): pick from the film's concept, not habit.
   works: piano/acoustic/orchestral for warm, human, editorial or documentary films; band for energetic product launches;
-         synth-led for tech, night, futurist or club-energy films; cinematic-hybrid for trailers and reveals.
+         synth-led for tech, night, futurist or club-energy films; cinematic-hybrid for trailers and reveals (45 s+: three acts, climax → silence + false ending → bigger act III).
   avoid: a generic synth bed under a calm brand or people film; a busy beat under voice-over; four-on-the-floor under slow footage.
   "instrumentation": "acoustic|orchestral|band|piano|electronic|hybrid" keeps a style's groove and swaps its instruments,
   e.g. {"style":"house","instrumentation":"band"}; per-part {"instruments":{"lead":"violin"}} wins over both.
-KEYS    instrumentation  bpm  key "Am" "F# dorian"  meter "6/8"  swing 0..1  mood "dark epic"  length "15s"|"8 bars"  seed N
+KEYS    instrumentation  bpm  key "Am" "F# dorian"  meter "6/8"  swing 0..1 (0.16 loose, 0.45 lofi, 0.667 triplet)  mood "dark epic"  length "15s"|"8 bars"  seed N
         sections ["intro:4","build:4","drop:8","outro:2"] or [{"name":"drop","bars":8,"energy":1}]
         hits ["@2.0","@bar9"] → impact + section change there; tempo nudged (±8%) so hits land on beats (fit:false to keep bpm)
         chords "vi IV I V" | "Am F C G"   instruments {"lead":"violin","drums":"drums:909"}   mute ["lead"]
         sfx [{"sfx":"riser","at":"@bar5"}]  (aligned by hit point: a riser PEAKS at "at")   end ring|fade|cut
         master {"lufs":-14,"ceiling":-1,"reverb":"hall"}   video-only: at (s), gain (dB), duck (dB under voice, default 10)
+        underscore: true drops lead/countermelody (automatic under voice-over; false keeps the melody)
         scores to picture: scene cuts move section starts and get cymbal accents (followCuts:false to stop)
 TRACKS  (add to a style, or write everything yourself)
   {"inst":"piano","chords":"C Am F G","play":"broken"}        play: pad block stabs arp[-updown][/16] strum pulse/8 power broken x..x..x.
@@ -140,7 +146,7 @@ MAKE ANYTHING (example: docs/video/music/custom.json)
              "sub":0.3, "noise":0, "filter":{"type":"ladder|lp|lp4|bp|formant","cutoff":800,"res":0.4,"drive":1.5,"env":2,"track":0.5},
              "amp":[a,d,s,r], "fenv":[a,d,s,r], "lfo":{"rate":5,"vib":8,"cutoff":0.5,"trem":0.2}, "pitch":[12,0.05], "glide":0.05, "mono":true}},
              "kit": {"sampler": {"zones":[{"file":"kick.wav","key":36},{"file":"c4.wav","root":"C4","lo":48,"hi":72,"vel":[1,90],"loop":[s,e]}],"release":0.3}}}
-  then {"inst":"wob", …}.  Per track: "fx":[{"type":"eq|comp|delay|reverb|chorus|saturate|widener|transient|filter|gain", …params}]
+  then {"inst":"wob", …}.  Per track: "fx":[{"type":"eq|comp|delay|reverb|chorus|saturate|widener|transient|filter|gain|autopan", …params}]
   "automate": {"volume"|"pan"|"lp"|"hp"|"reverb"|"delay"|"synth.cutoff|res|drive|env|vib|…": [[beat, v], ["@bar5", v]] or "=400+3000*saw(bar/4)"}
         expr vars beat bar t bpm; fns sin cos abs min max clamp mix saw tri sq step smooth exp log pow
 INSTRUMENTS (sampled GM bank bundled; `music instruments` lists all) piano epiano rhodes organ strings violin cello
@@ -149,6 +155,8 @@ INSTRUMENTS (sampled GM bank bundled; `music instruments` lists all) piano epian
         · synths: pad-warm pad-glass lead-saw pluck bell-fm epiano-fm supersaw bass-808 bass-reese bass-acid keys-lofi
         · kits: drums:808 909 trap lofi house techno cinematic, drums (GM) drums:jazz brush orchestra
         · files: "my.sfz", "font.sf2#0"   · fallbacks: "salamander-piano|piano"
+        · deeper samples: `anikit-video music fetch essentials` (≈210 MB: Splendid Grand, Wurlitzer/CP80/Pianet, real bass,
+          nylon + clean guitars); then piano/bass/guitar names use them automatically (credit "E-Pianos by Greg Sullivan, CC BY 3.0" when used)
 EXAMPLES
   {"music":{"style":"cinematic-hybrid","key":"Dm","hits":["@bar5"],"sfx":[{"sfx":"braam","at":"@bar5"}]}}
   {"music":{"style":"lofi","mood":"chill","chords":"ii7 V7 Imaj7 vi7","instruments":{"lead":"kalimba"}}}
@@ -196,6 +204,8 @@ fn cmd_music(args: &[String]) -> Result<(), String> {
             flags.insert(if k == "o" { "out".into() } else { k }, v);
         } else if input.is_none() {
             input = Some(a.clone());
+        } else if input.as_deref() == Some("fetch") && !flags.contains_key("pack") {
+            flags.insert("pack".into(), a.clone());
         } else {
             return Err(format!("unexpected argument '{a}'"));
         }
@@ -218,7 +228,7 @@ fn cmd_music(args: &[String]) -> Result<(), String> {
             return Ok(());
         }
         Some("fetch") => {
-            let pack = flags.get("pack").cloned().or_else(|| args.get(1).cloned()).ok_or("fetch which pack? (salamander, vsco2)")?;
+            let pack = flags.get("pack").cloned().ok_or("fetch which pack? (essentials, salamander, vsco2-ce, …)")?;
             let p = anikit_music::sf2::packs::fetch(&pack)?;
             println!("{}", p.display());
             return Ok(());

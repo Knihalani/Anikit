@@ -1,0 +1,22 @@
+{
+  "slug": "demo-festival",
+  "title": "DEMO Festival — trailer",
+  "studio": "Studio Dumbar",
+  "year": 2023,
+  "url": "https://www.youtube.com/watch?v=g9YUmNSGh1A",
+  "frame_sources": [
+    "https://i.ytimg.com/vi/g9YUmNSGh1A/maxresdefault.jpg",
+    "https://i.ytimg.com/vi/g9YUmNSGh1A/maxres2.jpg",
+    "https://i.ytimg.com/vi/g9YUmNSGh1A/maxres3.jpg"
+  ],
+  "style_tags": [
+    "music-video",
+    "kinetic-type",
+    "ident"
+  ],
+  "format": "16:9",
+  "medium": "mixed",
+  "description": "DEMO, a festival of motion design on station screens: bold letters on platform screens, liquid 3D glyphs and a red name card.",
+  "why_top_tier": "The world's largest motion festival identity, by a leading type-in-motion studio.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright Studio Dumbar/DEPT"
+}
