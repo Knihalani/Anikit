@@ -31,6 +31,12 @@ L.append({"text":"OCTAVA — Festival for New Music — Basel 2027","font":"Fami
 L.append({"shape":"rect","width":1920,"height":1080,"fill":VER,"x":960,"y":540,"start":4.0,"end":6.0})
 words=[("14—29",400,4.0),("MAY",640,4.5),("2027",560,5.0),("BASEL",440,5.5)]
 for i,(w,sz,t0) in enumerate(words):
+    step=sz*0.8
+    # the stack: echoes of the word in outline, above and below, arriving a frame apart
+    for e in (-3,-2,-1,1,2,3):
+        L.append({"text":w,"font":"Archivo Expanded","size":sz,"color":"#00000000","stroke":{"color":INK,"width":3},"x":960,"y":540+e*step,
+                  "start":round(t0+abs(e)*0.033,3),"end":t0+0.5,"letterSpacing":"-0.02em","width":3000,"opacity":max(0.25,1-abs(e)*0.22),
+                  "animate":[{"from":{"x":960+(700 if i%2==0 else -700)*(1+abs(e)*0.15)},"duration":0.2,"ease":"outExpo"},{"to":{"x":960+(-90 if i%2==0 else 90)*(1+abs(e)*0.4)},"at":0.2,"duration":0.3,"ease":"linear"}]})
     L.append({"text":w,"font":"Archivo Expanded","size":sz,"color":INK,"x":960,"y":540,"start":t0,"end":t0+0.5,"letterSpacing":"-0.02em","width":3000,
               "animate":[{"from":{"x":960+(700 if i%2==0 else -700)},"duration":0.2,"ease":"outExpo"},{"to":{"x":960+(-90 if i%2==0 else 90)},"at":0.2,"duration":0.3,"ease":"linear"}]})
 for k in range(16):
