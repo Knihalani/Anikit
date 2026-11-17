@@ -206,7 +206,8 @@
           {
             "$use": "backdrop",
             "with": {
-              "seed": 5
+              "seed": 5,
+              "still": true
             }
           },
           {
@@ -259,7 +260,7 @@
                 "height": "{{(fmt.portrait ? fmt.safe.w : (fmt.square ? fmt.w * 0.78 : fmt.w * 0.5)) / 1.6 + fmt.u * 6}}",
                 "y": "{{fmt.portrait ? '58%' : (fmt.square ? '64%' : '50%')}}",
                 "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.25 : '50%'}}",
-                "bob": true
+                "still": true
               }
             },
             "else": [
@@ -273,7 +274,7 @@
                   "delay": 0.5,
                   "sendAt": 999,
                   "fontSize": "{{fmt.portrait ? fmt.u * 3.6 : fmt.u * 2.6}}",
-                  "glow": true
+                  "glow": false
                 },
                 "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.23 : '50%'}}",
                 "y": "{{fmt.landscape ? fmt.h * 0.3 : fmt.h * 0.42}}",
@@ -341,13 +342,13 @@
                 "animate": [
                   {
                     "from": {
-                      "zoom": 1
+                      "zoom": 1.04
                     },
                     "to": {
-                      "zoom": 1.025
+                      "zoom": 1
                     },
-                    "duration": "{{readtime(f.title + ' ' + (f.body ?? '')) + 1.5}}",
-                    "ease": "inOutSine"
+                    "duration": 0.9,
+                    "ease": "outExpo"
                   }
                 ]
               },
@@ -734,7 +735,8 @@
             "with": {
               "seed": 31,
               "floor": true,
-              "intensity": 0.42
+              "intensity": 0.42,
+              "still": true
             }
           },
           {
@@ -840,7 +842,7 @@
         "props": {
           "from": "{{(k - 1) / ((hook ? 1 : 0) + 2 + len(features) + (stat ? 1 : 0))}}",
           "to": "{{k / ((hook ? 1 : 0) + 2 + len(features) + (stat ? 1 : 0))}}",
-          "duration": "{{dur}}",
+          "duration": 0.6,
           "thickness": "{{fmt.u * 0.35}}",
           "color": "{{brand.colors.primary}}",
           "percent": false

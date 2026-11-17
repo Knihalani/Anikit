@@ -130,7 +130,8 @@
                           "{{brand.colors.secondary}}"
                         ],
                         "speed": 2,
-                        "cols": "{{fmt.portrait ? 20 : 30}}"
+                        "cols": "{{fmt.portrait ? 20 : 30}}",
+                        "step": "{{beat}}"
                       },
                       "opacity": 0.05
                     }
@@ -146,7 +147,8 @@
                         "{{mix(brand.colors.primary, '#FFFFFF', 0.2)}}"
                       ],
                       "speed": 2,
-                      "cols": "{{fmt.portrait ? 20 : 30}}"
+                      "cols": "{{fmt.portrait ? 20 : 30}}",
+                      "step": "{{beat}}"
                     },
                     "opacity": 0.12
                   }
@@ -241,7 +243,8 @@
                 "{{brand.colors.secondary}}"
               ],
               "speed": 1.5,
-              "cols": "{{fmt.portrait ? 20 : 30}}"
+              "cols": "{{fmt.portrait ? 20 : 30}}",
+              "step": "{{beat}}"
             },
             "opacity": 0.06
           },

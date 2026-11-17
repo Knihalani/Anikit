@@ -21,6 +21,7 @@ fn main() {
     let ev = Evaluator::new(&p.spec, Options { base_dir: std::path::Path::new(&path).parent().unwrap().into(), ..Default::default() }).unwrap();
     let mut changed: BTreeMap<&str, u32> = BTreeMap::new();
     let mut frames_with_layer_change = 0;
+    let mut per_sec: BTreeMap<usize, u32> = BTreeMap::new();
     let mut prev = ev.eval(0.0);
     for i in 1..ev.frames() {
         let cur = ev.eval(i as f32 / ev.fps);
@@ -35,6 +36,16 @@ fn main() {
             }
         }
         frames_with_layer_change += lc as u32;
+        if let Some(at) = std::env::var("CHURN_AT").ok().and_then(|v| v.parse::<f32>().ok()) {
+            let t = i as f32 / ev.fps;
+            if t >= at && t < at + 1.0 {
+                let ks: Vec<String> = (0..prev.ops.len().max(cur.ops.len())).filter(|&k| prev.ops.get(k) != cur.ops.get(k)).map(|k| format!("{k}:{}", cur.ops.get(k).or(prev.ops.get(k)).map(kind).unwrap_or("?"))).take(8).collect();
+                println!("t={t:.2} {}", ks.join(" "));
+            }
+        }
+        if prev.ops != cur.ops {
+            *per_sec.entry((i as f32 / ev.fps) as usize).or_default() += 1;
+        }
         if lc && std::env::var_os("CHURN_DETAIL").is_some() {
             // First changed layer push: what is it?
             for k in 0..prev.ops.len().max(cur.ops.len()) {
@@ -56,6 +67,8 @@ fn main() {
         prev = cur;
     }
     println!("frames with a changed layer push/pop: {frames_with_layer_change}/{}", ev.frames());
+    let total: u32 = per_sec.values().sum();
+    println!("frames that differ from the previous one: {total}/{} (per second: {:?})", ev.frames(), per_sec.values().collect::<Vec<_>>());
     for (k, v) in changed {
         println!("{k:14} {v}");
     }
