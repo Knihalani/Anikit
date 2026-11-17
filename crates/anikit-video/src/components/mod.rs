@@ -26,11 +26,13 @@ use serde_json::{Map, Value};
 use std::sync::Arc;
 
 pub mod style;
+pub mod fxkit;
 pub mod polish;
 pub mod host;
 pub mod text;
 
 pub mod backgrounds;
+pub mod bgfx;
 pub mod blocks;
 pub mod charts;
 pub mod code;
@@ -516,7 +518,7 @@ fn shorthand(kind: &str, obj: &mut Map<String, Value>) {
 
 /// camelCase keys → snake_case, recursively (except inside `data`, which is
 /// foreign JSON such as a Lottie file).
-fn snake_keys(m: Map<String, Value>) -> Map<String, Value> {
+pub fn snake_keys(m: Map<String, Value>) -> Map<String, Value> {
     fn conv(v: Value) -> Value {
         match v {
             Value::Object(m) => Value::Object(snake_keys(m)),

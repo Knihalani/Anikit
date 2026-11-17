@@ -51,6 +51,13 @@ pub struct Reactions {
     pub life: f32,
     pub delay: f32,
     pub seed: u32,
+    /// `emoji` (glossy colour drawings) or `flat` (one-colour silhouettes
+    /// in `colors`, for a cleaner, branded look).
+    pub style: String,
+    /// Colours for `flat` (default: the theme palette, one per kind).
+    pub colors: Vec<Color>,
+    /// A ring and a few sparks burst out as each reaction pops in.
+    pub burst: bool,
     #[serde(skip)]
     shapes: Vec<Vec<Op>>,
     #[serde(skip)]
@@ -71,6 +78,9 @@ impl Default for Reactions {
             life: 2.8,
             delay: 0.0,
             seed: 1,
+            style: "emoji".into(),
+            colors: Vec::new(),
+            burst: true,
             shapes: Vec::new(),
             which: Vec::new(),
         }
@@ -100,6 +110,7 @@ impl Prepare for Reactions {
         if !(self.life > 0.0 && self.size > 0.0 && self.duration >= 0.0) {
             return Err(Error("`life` and `size` must be > 0, `duration` ≥ 0".into()));
         }
+        super::fxkit::choice("style", &self.style, &["emoji", "flat"])?;
         self.shapes = (0..KINDS.len()).map(shape).collect();
         Ok(())
     }
@@ -339,11 +350,34 @@ impl Component for Reactions {
             }
             let mut m: Affine = dl::mul(&translate(x, y), &rotate_about(rot, 0.0, 0.0));
             m = dl::mul(&m, &[s, 0.0, 0.0, s, 0.0, 0.0]);
+            let flat = self.style == "flat";
+            let fc = if self.colors.is_empty() { ctx.theme.pal(kind) } else { self.colors[kind % self.colors.len()].0 };
             let mut ops = if KINDS[kind] == "100" {
                 hundred(ctx)
+            } else if flat {
+                silhouette(&self.shapes[kind], fc)
             } else {
                 self.shapes[kind].clone()
             };
+            if KINDS[kind] == "100" && flat {
+                ops = silhouette(&ops, fc);
+            }
+            // Pop burst: a thin ring and sparks flying out, gone in 0.4 s.
+            if self.burst && age < 0.4 {
+                let q = age / 0.4;
+                let e = ease_out(q);
+                let bc = if flat { fc } else { KIND_COLORS[kind] };
+                let rr = size * (0.35 + 0.5 * e);
+                let a = (1.0 - q) * op;
+                o.push(Op::Stroke { path: circle_path(x, y, rr), paint: solid(alpha(bc, 0.7 * a)), stroke: line((size * 0.035 * (1.0 - q)).max(0.6), [0.0, 1.0]), transform: IDENTITY });
+                let mut sp = Path::new();
+                for j in 0..6 {
+                    let ang = ph + j as f32 * std::f32::consts::TAU / 6.0;
+                    let d = size * (0.45 + 0.4 * e);
+                    super::fxkit::dot(&mut sp, x + ang.cos() * d, y + ang.sin() * d, size * 0.035 * (1.0 - q * 0.7));
+                }
+                o.push(fill(sp, solid(alpha(bc, a))));
+            }
             if KINDS[kind] == "fire" {
                 // Flicker.
                 let f = 1.0 + 0.06 * (age * 23.0 + ph).sin();
@@ -361,6 +395,69 @@ impl Component for Reactions {
             None => Some(self.delay + self.duration + self.life * 1.15),
         }
     }
+}
+
+/// Accent colour of each kind (for the pop burst).
+const KIND_COLORS: [Rgba; 7] = [
+    Rgba([1.0, 0.27, 0.45, 1.0]),
+    Rgba([0.3, 0.58, 1.0, 1.0]),
+    Rgba([1.0, 0.55, 0.15, 1.0]),
+    Rgba([1.0, 0.8, 0.2, 1.0]),
+    Rgba([1.0, 0.85, 0.3, 1.0]),
+    Rgba([1.0, 0.2, 0.33, 1.0]),
+    Rgba([1.0, 0.78, 0.25, 1.0]),
+];
+
+/// Flat version of a drawing: the main shape in `c`, details in white or
+/// a deep shade of `c`; shadows and gloss dropped.
+fn silhouette(ops: &[Op], c: Rgba) -> Vec<Op> {
+    let deep = shade(c, -0.55);
+    let light = hot_white(c);
+    let mut first = true;
+    let mut out = Vec::new();
+    for op in ops {
+        let pick = |p: &Paint| -> Option<Rgba> {
+            match p {
+                Paint::Solid(s) if s.0[3] < 0.5 => None,
+                Paint::Solid(s) if luminance(*s) > 0.8 => Some(Rgba([1.0; 4])),
+                Paint::Solid(_) => Some(deep),
+                Paint::Radial { stops, .. } if stops.first().is_some_and(|s| s.1 .0[0] > 0.99 && s.1 .0[1] > 0.99 && s.1 .0[2] > 0.99 && s.1 .0[3] < 0.99) => None,
+                _ => Some(light),
+            }
+        };
+        match op {
+            Op::Fill { paint: Paint::Solid(s), .. } if s.0[3] < 0.5 => {}
+            Op::Fill { path, paint, rule, transform } => {
+                let col = if first { Some(c) } else { pick(paint) };
+                if let Some(col) = col {
+                    first = false;
+                    out.push(Op::Fill { path: path.clone(), paint: solid(col), rule: *rule, transform: *transform });
+                }
+            }
+            Op::Stroke { path, paint, stroke, transform } => {
+                let col = if first { Some(c) } else { pick(paint) };
+                if let Some(col) = col {
+                    out.push(Op::Stroke { path: path.clone(), paint: solid(col), stroke: stroke.clone(), transform: *transform });
+                }
+            }
+            Op::RoundRect { x, y, w, h, radius, paint, transform } => {
+                if let Some(col) = if first { Some(c) } else { pick(paint) } {
+                    first = false;
+                    out.push(Op::RoundRect { x: *x, y: *y, w: *w, h: *h, radius: *radius, paint: solid(col), transform: *transform });
+                }
+            }
+            Op::Glyphs { font, size, glyphs, transform, .. } => {
+                first = false;
+                out.push(Op::Glyphs { font: *font, size: *size, glyphs: glyphs.clone(), paint: solid(c), transform: *transform });
+            }
+            _ => {}
+        }
+    }
+    out
+}
+
+fn hot_white(c: Rgba) -> Rgba {
+    mix(c, Rgba([1.0, 1.0, 1.0, 1.0]), 0.55)
 }
 
 /// "100" with two underlines, slanted, in the unit box.

@@ -283,10 +283,30 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                         let (w, h, px) = pipeline::render_rgba(&ev, t, scale);
                         pipeline::save_png(&out, w, h, px)?;
                         let ms = t0.elapsed().as_secs_f32() * 1000.0;
+                        // Cost per shader layer, scaled to the full-size render: the
+                        // number to watch when a render would be slow.
+                        let full = (ev.width as f32 * ev.height as f32) / (w as f32 * h as f32).max(1.0);
+                        // (Shaders render at the output size, so their cost scales with its area.)
+                        let shaders: Vec<_> = ev
+                            .shader_stats()
+                            .into_iter()
+                            .map(|s| serde_json::json!({ "layer": s.label, "ms": s.ms, "ms_full_size": s.ms * full, "width": s.width, "height": s.height, "supersample": s.supersample }))
+                            .collect();
                         if json {
-                            println!("{}", serde_json::json!({ "ok": true, "output": out, "at": t, "width": w, "height": h, "ms": ms, "warnings": d }));
+                            println!("{}", serde_json::json!({ "ok": true, "output": out, "at": t, "width": w, "height": h, "ms": ms, "shaders": shaders, "warnings": d }));
                         } else {
                             eprintln!("wrote {} ({w}×{h}, t = {t:.2} s) in {ms:.0} ms", out.display());
+                            for s in ev.shader_stats() {
+                                let f = s.ms * full;
+                                let note = if f > 400.0 {
+                                    "  ← heavy: cut march steps / noise octaves, bound the scene, or drop supersample (docs/video/shader.md#performance)"
+                                } else if f > 200.0 {
+                                    "  ← slow-ish"
+                                } else {
+                                    ""
+                                };
+                                eprintln!("  shader {}: ≈ {f:.0} ms/frame at full size{}{note}", s.label, if s.supersample { ", supersampled" } else { "" });
+                            }
                         }
                     }
                     Err(c) => {

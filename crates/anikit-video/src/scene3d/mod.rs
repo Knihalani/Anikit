@@ -21,10 +21,15 @@
 //!                  "texture": { "composition": "film", "frame": "=i" } } ] }
 //! ```
 
+#![allow(clippy::too_many_arguments, clippy::needless_range_loop, clippy::type_complexity)]
+
 pub mod bvh;
 pub mod env;
 pub mod geom;
+pub mod gltf;
 pub mod math;
+pub mod particles;
+pub mod physics;
 pub mod post;
 pub mod spec;
 pub mod trace;
@@ -42,7 +47,7 @@ use std::sync::{Arc, Mutex, OnceLock};
 use trace::{Floor, FloorVis, Inst, Material, Quality, Scene, Shape, Tex};
 
 const TOP_KEYS: &[&str] = &[
-    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "vignette", "denoise",
+    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "vignette", "denoise", "physics",
 ];
 
 /// The `scene3d` component (kind names `scene3d`, `scene-3d`, `3d.scene`).
@@ -84,6 +89,9 @@ struct Prepared {
     quality: Quality,
     denoise: u32,
     key: u64,
+    /// Particle systems, and their simulations (made on the first frame, which knows the fps).
+    parts: Vec<particles::Def>,
+    psims: OnceLock<Result<Vec<particles::Sim>, String>>,
     /// Composition textures (shared by every frame and thread).
     textures: OnceLock<CompTextures>,
     /// Average colour per (composition, frame), for far panes.
@@ -169,8 +177,25 @@ impl Prepare for Scene3d {
         let mut shapes = spec::Shapes::new();
         let mut mats = Vec::new();
         let mut objs = Vec::new();
+        let mut parts = Vec::new();
         for (i, o) in objs_v.iter().enumerate() {
+            if o.get("type").and_then(|t| t.as_str()) == Some("particles") {
+                parts.push(particles::parse(o, &mut shapes, &mut mats, &named, &objs_v, &format!("objects[{i}]")).map_err(Error)?);
+                continue;
+            }
             objs.push(spec::object(o, &mut shapes, &mut mats, &named, &format!("objects[{i}]")).map_err(Error)?);
+        }
+
+        // Physics: body groups become objects whose transforms come from the simulation.
+        if let Some(pv) = m.get("physics") {
+            let floor_y = match m.get("floor") {
+                Some(Value::Bool(false)) => None,
+                Some(Value::Object(fm)) => Some(num_or(fm, "y", 0.0).map_err(Error)?),
+                _ => Some(0.0),
+            };
+            let parsed = physics::parse(pv, &objs_v, &mut shapes, &mut mats, &named, &objs, floor_y).map_err(Error)?;
+            objs = objs.into_iter().enumerate().filter(|(i, _)| !parsed.templates.contains(i)).map(|(_, o)| o).collect();
+            objs.extend(parsed.objs);
         }
         let shapes = shapes.list;
 
@@ -234,9 +259,9 @@ impl Prepare for Scene3d {
         };
         let quality_s = m.get("quality").and_then(|q| q.as_str()).unwrap_or("standard");
         let (quality, denoise, bake) = match quality_s {
-            "draft" => (Quality { edge_spp: 3, ao_rays: 1, shadow_rays: 1, max_depth: 2, max_glass: 6, contrast: 0.08 }, 3, (384, 24)),
-            "standard" => (Quality::default(), 4, (768, 64)),
-            "high" => (Quality { edge_spp: 16, ao_rays: 4, shadow_rays: 4, max_depth: 4, max_glass: 14, contrast: 0.035 }, 4, (1024, 128)),
+            "draft" => (Quality { edge_spp: 3, ao_rays: 1, shadow_rays: 1, max_depth: 2, max_glass: 6, contrast: 0.1, secondary_rays: 0 }, 5, (384, 24)),
+            "standard" => (Quality::default(), 5, (768, 64)),
+            "high" => (Quality { edge_spp: 16, ao_rays: 3, shadow_rays: 3, max_depth: 4, max_glass: 14, contrast: 0.035, secondary_rays: 4 }, 5, (1024, 128)),
             o => return Err(Error(format!("unknown quality `{o}`; expected draft, standard or high"))),
         };
         let denoise = num_or(m, "denoise", denoise as f32).map_err(Error)? as u32;
@@ -273,6 +298,8 @@ impl Prepare for Scene3d {
             quality,
             denoise,
             key,
+            parts,
+            psims: OnceLock::new(),
             textures: OnceLock::new(),
             averages: Mutex::new(HashMap::new()),
         });
@@ -291,11 +318,27 @@ fn instances(objs: &[ObjDef], t: f32, dt: f32) -> Vec<Inst> {
         if t < o.start || t >= o.end {
             continue;
         }
+        if let Some((sim, first)) = &o.phys {
+            let (a, b, u) = sim.at(t);
+            let (pa, pb, pu) = if dt > 0.0 { sim.at(t - dt) } else { (a.clone(), b.clone(), u) };
+            let first = *first as usize;
+            for i in 0..o.count as usize {
+                let s = sim.scale_of(first + i);
+                let xf = physics::xf_of(&physics::lerp_pose(&a[first + i], &b[first + i], u), s);
+                let prev = physics::xf_of(&physics::lerp_pose(&pa[first + i], &pb[first + i], pu), s);
+                for &(shape, mat) in &o.parts {
+                    out.push(Inst { shape, xf, prev, mat, tex: None, thin: o.thin, shadow: o.shadow });
+                }
+            }
+            continue;
+        }
         for lane in 0..o.lanes {
             for i in 0..o.count {
                 let xf = o.xf_at(t, i, lane);
                 let prev = if dt > 0.0 { o.xf_at(t - dt, i, lane) } else { xf };
-                out.push(Inst { shape: o.shape, xf, prev, mat: o.mat, tex: None, thin: o.thin, shadow: o.shadow });
+                for &(shape, mat) in &o.parts {
+                    out.push(Inst { shape, xf, prev, mat, tex: None, thin: o.thin, shadow: o.shadow });
+                }
             }
         }
     }
@@ -311,6 +354,12 @@ impl Scene3d {
     pub fn render(&self, t: f32, dt: f32, w: usize, h: usize, root: Option<&Evaluator>) -> Vec<u8> {
         let p = self.p();
         let prof = std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some();
+        if prof {
+            trace::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed);
+            for r in &trace::RAYS {
+                r.store(0, std::sync::atomic::Ordering::Relaxed);
+            }
+        }
         let clock = std::time::Instant::now();
         let aspect = w as f32 / h as f32;
         let mut cam = p.camera.at(t, aspect, p.default_aperture);
@@ -330,7 +379,7 @@ impl Scene3d {
         let t_setup = clock.elapsed();
 
         let mut px = vec![trace::Px::default(); w * h];
-        let band = 8usize;
+        let band = 32usize;
         let q = p.quality;
         let body = |(k, rows): (usize, &mut [trace::Px])| {
             let y0 = k * band;
@@ -344,19 +393,75 @@ impl Scene3d {
             px.par_chunks_mut(band * w).enumerate().for_each(body);
         }
         let t_trace = clock.elapsed();
+        let layer = self.particles(t, dt, &cam, &prev, &mut px, w, h, root);
+        let t_parts = clock.elapsed();
         let pp = post::Post { focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, bloom: p.bloom, exposure: p.exposure, vignette: p.vignette, tonemap: p.tonemap, denoise: p.denoise };
-        let out = post::process(&px, w, h, &pp);
+        let out = post::process(&px, w, h, &pp, layer.as_ref());
         if prof {
             let ms = |d: std::time::Duration| d.as_secs_f64() * 1e3;
             eprintln!(
-                "scene3d t={t:.3} {w}x{h}: setup {:.0} ms ({} instances, {n_tex} textured), trace {:.0} ms, post {:.0} ms",
+                "scene3d t={t:.3} {w}x{h}: setup {:.0} ms ({} instances, {n_tex} textured), trace {:.0} ms, particles {:.0} ms, post {:.0} ms",
                 ms(t_setup),
                 scene.insts.len(),
                 ms(t_trace - t_setup),
-                ms(clock.elapsed() - t_trace)
+                ms(t_parts - t_trace),
+                ms(clock.elapsed() - t_parts)
             );
+            let r: Vec<u64> = trace::RAYS.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
+            eprintln!("  rays: {:.2}M closest ({:.2}M radiance, {:.2}M floor reflections), {:.2}M shadow/AO, {:.2} primary samples per pixel", r[0] as f64 / 1e6, r[3] as f64 / 1e6, r[4] as f64 / 1e6, r[1] as f64 / 1e6, r[2] as f64 / (w * h) as f64);
         }
         out
+    }
+
+    /// Simulate and splat the particle systems live at `t`.
+    #[allow(clippy::too_many_arguments)]
+    fn particles(&self, t: f32, dt: f32, cam: &trace::Camera, prev: &trace::Camera, px: &mut [trace::Px], w: usize, h: usize, root: Option<&Evaluator>) -> Option<particles::Layer> {
+        let p = self.p();
+        if p.parts.is_empty() {
+            return None;
+        }
+        let sims = p.psims.get_or_init(|| {
+            let cache = p.textures.get_or_init(|| CompTextures::new(1 << 30));
+            let floor_y = p.floor.as_ref().map(|f| f.y);
+            p.parts.iter().map(|d| particles::Sim::new(d, 1.0 / dt.max(1e-4), floor_y, root, cache)).collect()
+        });
+        let sims = match sims {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("scene3d particles: {e}");
+                return None;
+            }
+        };
+        let live: Vec<(&particles::Sim, Arc<particles::Snap>)> = sims.iter().filter(|s| t >= s.def.start && t < s.def.end).map(|s| (s, s.at(t))).collect();
+        if live.is_empty() {
+            return None;
+        }
+        let depth: Vec<f32> = px.iter().map(|q| q.depth).collect();
+        let up = v3(0.0, 1.0, 0.0);
+        let key = p.env.key_box().map(|k| (k.c, scale(k.radiance, p.env.key_solid_angle))).unwrap_or((up, v3(0.0, 0.0, 0.0)));
+        // Particle shadows on the scene: dim the key light by the particles' transmittance.
+        let shadow = particles::ShadowMap::build(&live, key.0, t);
+        if let Some(sm) = &shadow {
+            let (fwd, _, _) = cam.basis();
+            let body = |(y, row): (usize, &mut [trace::Px])| {
+                for (x, q) in row.iter_mut().enumerate() {
+                    if q.depth > 1e5 || q.vk <= 0.0 {
+                        continue;
+                    }
+                    let d = Scene::cam_ray(cam, w, h, x as f32 + 0.5, y as f32 + 0.5);
+                    let wp = madd(cam.pos, d, q.depth / dot(d, fwd).max(1e-4));
+                    q.vk *= sm.trans(wp);
+                }
+            };
+            use rayon::prelude::*;
+            if rayon::current_thread_index().is_some() {
+                px.chunks_mut(w).enumerate().for_each(body);
+            } else {
+                px.par_chunks_mut(w).enumerate().for_each(body);
+            }
+        }
+        let view = particles::View { cam, prev, w, h, depth: &depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key, amb: (p.env.diffuse(up), p.env.diffuse(scale(up, -1.0))), shadow: shadow.as_ref() };
+        Some(particles::render(&live, &view, t))
     }
 
     /// Give each textured instance its composition frame at a level of detail
@@ -373,7 +478,8 @@ impl Scene3d {
             if t < o.start || t >= o.end {
                 continue;
             }
-            let count = (o.lanes * o.count) as usize;
+            let np = o.parts.len();
+            let count = (o.lanes * o.count) as usize * np;
             let comp = o.tex.as_ref().and_then(|ts| root.and_then(|r| r.composition(&ts.comp)).map(|c| (ts, c)));
             let Some((ts, comp)) = comp else {
                 k += count;
@@ -421,8 +527,10 @@ impl Scene3d {
                         });
                         Tex::Flat(avg)
                     };
-                    scene.insts[k].tex = Some((tex, ts.face));
-                    k += 1;
+                    for j in 0..np {
+                        scene.insts[k + j].tex = Some((tex.clone(), ts.face));
+                    }
+                    k += np;
                 }
             }
         }
@@ -441,5 +549,110 @@ impl Component for Scene3d {
         let root = ctx.root;
         let image = ctx.assets.image(key, w, h, &mut || self.render(t, 1.0 / fps, w as usize, h as usize, root));
         vec![Op::Image { image, dst: [0.0, 0.0, ctx.width, ctx.height], opacity: 1.0, transform: crate::dl::IDENTITY }]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn scene(v: Value) -> Result<Scene3d, String> {
+        let mut s = Scene3d::try_from(v)?;
+        s.prepare().map_err(|e| e.0)?;
+        Ok(s)
+    }
+
+    #[test]
+    fn renders_cyc_objects_deterministically() {
+        let s = scene(json!({
+            "env": "cyc", "quality": "draft",
+            "camera": { "keys": [ { "t": 0, "pos": [0, 1, 4], "target": [0, 0.4, 0], "focal": 35 } ] },
+            "objects": [
+                { "text": "AK", "height": 0.5, "material": "chrome" },
+                { "type": "slab", "count": 3, "pos": "=[i - 1, 0.47, -1]", "material": "glass" },
+                { "type": "sphere", "radius": 0.2, "pos": [1, 0.2, 0.5], "material": "matte" }
+            ]
+        }))
+        .unwrap();
+        let a = s.render(0.0, 1.0 / 30.0, 96, 54, None);
+        let b = s.render(0.0, 1.0 / 30.0, 96, 54, None);
+        assert_eq!(a.len(), 96 * 54 * 4);
+        assert_eq!(a, b, "frames must be deterministic");
+        // A bright cyc: the mean is light, and the objects add contrast.
+        let lum: Vec<f32> = a.chunks_exact(4).map(|p| (p[0] as f32 + p[1] as f32 + p[2] as f32) / 765.0).collect();
+        let mean = lum.iter().sum::<f32>() / lum.len() as f32;
+        let min = lum.iter().cloned().fold(1.0f32, f32::min);
+        assert!(mean > 0.6, "cyc should be bright, mean {mean}");
+        assert!(min < 0.45, "objects should show, min {min}");
+    }
+
+    #[test]
+    fn lookdev_props_still_work() {
+        let s = scene(json!({ "text": "ANIKIT", "quality": "draft", "primitives": false })).unwrap();
+        let px = s.render(1.0, 1.0 / 30.0, 64, 36, None);
+        assert!(px.chunks_exact(4).any(|p| p[0] > 40));
+    }
+
+    #[test]
+    fn errors_suggest_fixes() {
+        let e = scene(json!({ "objects": [ { "type": "sphere", "material": "crome" } ] })).err().unwrap();
+        assert!(e.contains("did you mean `chrome`"), "{e}");
+        let e = scene(json!({ "objects": [ { "type": "spere" } ] })).err().unwrap();
+        assert!(e.contains("did you mean `sphere`"), "{e}");
+        let e = scene(json!({ "env": "cyk", "objects": [] })).err().unwrap();
+        assert!(e.contains("did you mean `cyc`"), "{e}");
+        let e = scene(json!({ "objects": [ { "type": "box", "postion": [0, 0, 0] } ] })).err().unwrap();
+        assert!(e.contains("did you mean `position`"), "{e}");
+        let e = scene(json!({ "objects": [], "camra": "orbit" })).err().unwrap();
+        assert!(e.contains("did you mean `camera`"), "{e}");
+    }
+
+    #[test]
+    fn instances_follow_expressions_and_keys() {
+        let s = scene(json!({
+            "objects": [
+                { "type": "box", "count": 4, "lanes": 2, "pos": "=[1.7*i, 0.5, -4*lane]" },
+                { "type": "sphere", "keys": [ { "t": 0, "pos": [0, 0, 0] }, { "t": 2, "pos": [2, 0, 0], "ease": "linear" } ] }
+            ]
+        }))
+        .unwrap();
+        let p = s.p();
+        let insts = instances(&p.objs, 1.0, 0.0);
+        assert_eq!(insts.len(), 9);
+        assert!((insts[3].xf.t.x - 5.1).abs() < 1e-4);
+        assert!((insts[4].xf.t.z + 4.0).abs() < 1e-4);
+        assert!((insts[8].xf.t.x - 1.0).abs() < 1e-4, "linear key halfway");
+    }
+
+    #[test]
+    fn imports_gltf_models() {
+        let dir = std::env::temp_dir().join(format!("scene3d-model-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("tri.gltf");
+        gltf::tests::write_triangle(&p);
+        let s = scene(json!({ "objects": [ { "type": "model", "src": p.to_str().unwrap(), "height": 2.0, "count": 2, "pos": "=[i * 3, 0, 0]" } ] })).unwrap();
+        let insts = instances(&s.p().objs, 0.0, 0.0);
+        assert_eq!(insts.len(), 2);
+        // glTF materials come through: red, non-metal.
+        assert!(s.p().mats[insts[0].mat as usize].base.x > 0.99 && s.p().mats[insts[0].mat as usize].metallic == 0.0);
+        let e = scene(json!({ "objects": [ { "src": "missing.glb" } ] })).err().unwrap();
+        assert!(e.contains("can't read"), "{e}");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn camera_lens_and_linear_track() {
+        let cs = spec::camera(&json!({ "interp": "linear", "keys": [
+            { "t": 0, "pos": [0, 1, 0], "target": [10, 1, 0], "focal": 35, "fstop": 2.8, "shutter": 0.5 },
+            { "t": 6, "pos": [612, 1, 0], "target": [622, 1, 0], "focal": 35, "fstop": 2.8, "shutter": 0.0 } ] }), (v3(0.0, 0.0, 0.0), 1.0), "camera")
+        .unwrap();
+        let c = cs.at(3.0, 16.0 / 9.0, 0.0);
+        assert!((c.pos.x - 306.0).abs() < 1e-3, "exactly linear: {}", c.pos.x);
+        assert!((c.shutter - 0.25).abs() < 1e-4);
+        // 35 mm on a 36 mm-wide sensor: about 54.4° horizontal.
+        let hf = 2.0 * ((c.fov.to_radians() * 0.5).tan() * 16.0 / 9.0).atan();
+        assert!((hf.to_degrees() - 54.43).abs() < 0.1, "{}", hf.to_degrees());
+        assert!(c.aperture > 0.5, "f/2.8 at 10 m focus blurs the far field");
     }
 }
