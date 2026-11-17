@@ -157,6 +157,7 @@ pub struct GradSpec {
 pub enum FillSpec {
     Color(String),
     Grad(GradSpec),
+    Image(ImageFill),
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -343,6 +344,43 @@ pub struct ShapeSpec {
     pub lag: f32,
     pub visible: bool,
     pub seed: Option<u32>,
+    /// Per-shape light (any of `angle`, `rim`, `color`, `shadow`, `strength`; the rest come from the global `light`).
+    pub light: Option<LightOver>,
+    /// Per-shape inks to snap to (`[]` turns snapping off for this shape).
+    pub inks: Option<Vec<String>>,
+    /// Per-shape line gaps on the lit side (default: the hand's).
+    pub gaps: Option<f32>,
+    /// Per-shape boil rate in redraws per second (default: the hand's; 0 = still).
+    pub boil: Option<f32>,
+}
+
+#[derive(Deserialize, Clone, Debug, Default)]
+#[serde(default, deny_unknown_fields)]
+pub struct LightOver {
+    pub angle: Option<f32>,
+    pub rim: Option<f32>,
+    pub color: Option<String>,
+    pub shadow: Option<String>,
+    pub strength: Option<f32>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct ImageFill {
+    /// An image (or video) file, like any layer `src`.
+    pub image: String,
+    /// `"cover"` (default), `"contain"`, `"stretch"` or `"tile"`.
+    #[serde(default)]
+    pub fit: Option<String>,
+    /// Extra zoom (default 1).
+    #[serde(default)]
+    pub scale: Option<f32>,
+    /// Pan inside the shape, fraction of the box (default [0.5, 0.5]).
+    #[serde(default)]
+    pub focus: Option<[f32; 2]>,
+    /// The colour that shading, rims and line work derive from (default mid grey).
+    #[serde(default)]
+    pub base: Option<String>,
 }
 impl Default for ShapeSpec {
     fn default() -> Self {
@@ -393,6 +431,10 @@ impl Default for ShapeSpec {
             lag: 0.0,
             visible: true,
             seed: None,
+            light: None,
+            inks: None,
+            gaps: None,
+            boil: None,
         }
     }
 }
@@ -427,6 +469,12 @@ pub struct CycleFull {
     pub amount: Option<f32>,
     /// Offset 0..1 (0.5 puts a leg or arm in opposition).
     pub phase: f32,
+    /// Per-channel amplitudes replacing the style's (degrees, view px, scale fractions).
+    pub rotate: Option<f32>,
+    pub x: Option<f32>,
+    pub y: Option<f32>,
+    pub sx: Option<f32>,
+    pub sy: Option<f32>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -444,6 +492,7 @@ struct PCycle {
     speed: f32,
     amount: f32,
     phase: f32,
+    amp: [Option<f32>; 5],
 }
 
 fn cycle_of(c: &Option<CycleSpec>) -> Result<Option<PCycle>, Error> {
@@ -460,31 +509,24 @@ fn cycle_of(c: &Option<CycleSpec>) -> Result<Option<PCycle>, Error> {
         "wave" => 1.6,
         _ => 0.5,
     });
-    Ok(Some(PCycle { style: f.style, speed, amount: f.amount.unwrap_or(1.0), phase: f.phase }))
+    Ok(Some(PCycle { style: f.style, speed, amount: f.amount.unwrap_or(1.0), phase: f.phase, amp: [f.rotate, f.x, f.y, f.sx, f.sy] }))
 }
 
 fn cycle_at(c: &PCycle, t: f32) -> Pose {
     let ph = (t * c.speed + c.phase) * TAU;
-    let a = c.amount;
     let (s, s1) = (ph.sin(), (ph + 1.1).sin());
-    let mut p = Pose { sx: 1.0, sy: 1.0, op: 1.0, ..Default::default() };
-    match c.style.as_str() {
-        "idle" => {
-            p.rot = 1.5 * a * s;
-            p.dy = 2.0 * a * s1;
-            p.sy = 1.0 + 0.006 * a * s1;
-        }
-        "breathe" => {
-            p.sy = 1.0 + 0.02 * a * s;
-            p.sx = 1.0 - 0.006 * a * s;
-        }
-        "walk" => p.rot = 24.0 * a * s,
-        // One bob per step: twice per walk cycle, with a quick dip (contact) and a slow rise.
-        "bob" => p.dy = -7.0 * a * s.abs().powf(0.8),
-        "wave" => p.rot = 18.0 * a * s + 4.0 * a * (2.0 * ph).sin(),
-        _ => p.rot = 4.0 * a * (s * s * s),
-    }
-    p
+    // Style defaults per channel: (rotate°, x px, y px, sx, sy) amplitudes and waveforms.
+    let (d, wave): ([f32; 5], [f32; 5]) = match c.style.as_str() {
+        "idle" => ([1.5, 0.0, 2.0, 0.0, 0.006], [s, s, s1, s1, s1]),
+        "breathe" => ([0.0, 0.0, 0.0, -0.006, 0.02], [s, s, s, s, s]),
+        "walk" => ([24.0, 0.0, 0.0, 0.0, 0.0], [s, s, s.abs(), s, s]),
+        // One bob per step: twice per walk cycle.
+        "bob" => ([0.0, 0.0, -7.0, 0.0, 0.0], [s, s, s.abs().powf(0.8), s, s]),
+        "wave" => ([18.0, 0.0, 0.0, 0.0, 0.0], [s + 0.22 * (2.0 * ph).sin(), s, s, s, s]),
+        _ => ([4.0, 0.0, 0.0, 0.0, 0.0], [s * s * s, s, s, s, s]),
+    };
+    let ch = |i: usize| c.amp[i].unwrap_or(d[i]) * c.amount * wave[i];
+    Pose { rot: ch(0), dx: ch(1), dy: ch(2), sx: 1.0 + ch(3), sy: 1.0 + ch(4), op: 1.0 }
 }
 impl Default for GroupSpec {
     fn default() -> Self {
@@ -571,6 +613,7 @@ struct Grad {
 enum PFill {
     Solid(Rgba),
     Grad(Grad),
+    Image { src: String, fit: String, scale: f32, focus: [f32; 2], base: Rgba },
 }
 
 impl PFill {
@@ -579,6 +622,7 @@ impl PFill {
         match self {
             PFill::Solid(c) => *c,
             PFill::Grad(g) => grad_at(&g.stops, 0.5),
+            PFill::Image { base, .. } => *base,
         }
     }
 }
@@ -666,6 +710,19 @@ struct PShape {
     seed: u32,
     /// Outline + hatching only (no flat fill or shade).
     paint_over: bool,
+    lt: Lit,
+    gaps: f32,
+    boil: f32,
+}
+
+/// The light one shape sees.
+#[derive(Clone, Debug)]
+struct Lit {
+    dir: [f32; 2],
+    rim: [f32; 2],
+    color: Rgba,
+    tint: Rgba,
+    strength: f32,
 }
 
 #[derive(Clone, Debug)]
@@ -686,11 +743,8 @@ struct PGroup {
 struct Prepared {
     shapes: Vec<PShape>,
     groups: Vec<PGroup>,
-    light: [f32; 2],
-    rim_light: [f32; 2],
     light_color: Rgba,
     shadow_tint: Rgba,
-    strength: f32,
     cache: Mutex<HashMap<u64, (Vec<Op>, Vec<Op>)>>,
     hash: u64,
 }
@@ -1090,6 +1144,10 @@ struct Resolver {
 
 impl Resolver {
     fn color(&self, s: &str) -> Result<Rgba, Error> {
+        Ok(self.snap(self.color_raw(s)?))
+    }
+
+    fn color_raw(&self, s: &str) -> Result<Rgba, Error> {
         let c = if let Some(k) = s.strip_prefix('$') {
             // Palette names arrive snake_cased (the spec's keys are), so `$wallHi` finds `wall_hi`.
             let snake = super::kebab(k).replace('-', "_");
@@ -1101,7 +1159,7 @@ impl Resolver {
         } else {
             parse_color(s).ok_or_else(|| err(format!("not a colour: {s:?} (use \"#rrggbb\", \"$1\" for a palette swatch, or a CSS colour)")))?
         };
-        Ok(self.snap(c))
+        Ok(c)
     }
 
     fn snap(&self, c: Rgba) -> Rgba {
@@ -1140,6 +1198,15 @@ impl Resolver {
                 }
                 stops.sort_by(|a, b| a.0.total_cmp(&b.0));
                 Some(PFill::Grad(Grad { radial: kind == "radial", stops, angle: g.angle, center: g.center, radius: g.radius.unwrap_or(0.75).max(0.01), dither: g.dither.unwrap_or(0.12).max(0.0), steps: g.steps }))
+            }
+            FillSpec::Image(f) => {
+                let fit = f.fit.clone().unwrap_or_else(|| "cover".into());
+                one_of("image fit", &fit, &["cover", "contain", "stretch", "tile"])?;
+                let base = match &f.base {
+                    Some(c) => self.color(c)?,
+                    None => Rgba([0.5, 0.5, 0.5, 1.0]),
+                };
+                Some(PFill::Image { src: f.image.clone(), fit, scale: f.scale.unwrap_or(1.0).max(0.01), focus: f.focus.unwrap_or([0.5, 0.5]), base })
             }
         })
     }
@@ -1244,14 +1311,9 @@ impl Prepare for Illo {
         }
         let rv = Resolver { palette, inks };
 
-        let la = self.light.angle.to_radians();
-        let ra = self.light.rim.unwrap_or(self.light.angle).to_radians();
         let mut p = Prepared {
-            light: [la.cos(), la.sin()],
-            rim_light: [ra.cos(), ra.sin()],
             light_color: rv.color(&self.light.color)?,
             shadow_tint: rv.color(&self.light.shadow)?,
-            strength: self.light.strength.max(0.0),
             ..Default::default()
         };
         let hand_color = self.hand.color.as_deref().map(|c| rv.color(c)).transpose()?;
@@ -1410,6 +1472,37 @@ impl Prepare for Illo {
             };
             let bb = bbox(&base);
             let origin = s.origin.unwrap_or([((bb.x0 + bb.x1) * 0.5) as f32, ((bb.y0 + bb.y1) * 0.5) as f32]);
+            let rv_own;
+            let rv = match &s.inks {
+                None => &rv,
+                Some(list) => {
+                    let mut inks = Vec::new();
+                    for c in list {
+                        let c = rv.color_raw(c).map_err(ctx)?;
+                        inks.push((c, lab(c)));
+                    }
+                    rv_own = Resolver { palette: rv.palette.clone(), inks };
+                    &rv_own
+                }
+            };
+            let lt = {
+                let o = s.light.clone().unwrap_or_default();
+                let a = o.angle.unwrap_or(self.light.angle).to_radians();
+                let r = o.rim.or(o.angle.filter(|_| self.light.rim.is_none())).or(self.light.rim).unwrap_or(self.light.angle).to_radians();
+                Lit {
+                    dir: [a.cos(), a.sin()],
+                    rim: [r.cos(), r.sin()],
+                    color: match &o.color {
+                        Some(c) => rv.color(c).map_err(ctx)?,
+                        None => p.light_color,
+                    },
+                    tint: match &o.shadow {
+                        Some(c) => rv.color(c).map_err(ctx)?,
+                        None => p.shadow_tint,
+                    },
+                    strength: o.strength.unwrap_or(self.light.strength).max(0.0),
+                }
+            };
             let fill = match &s.fill {
                 Some(f) => rv.fill(f).map_err(ctx)?,
                 None if closed && s.stroke.is_none() => Some(PFill::Solid(Rgba([0.5, 0.5, 0.5, 1.0]))),
@@ -1433,8 +1526,8 @@ impl Prepare for Illo {
                     Some(c) => rv.color(c).map_err(ctx)?,
                     None => match (hand_color, &fill) {
                         (Some(h), _) => h,
-                        (None, Some(f)) => line_tone(f.base(), p.shadow_tint, self.hand.darken),
-                        (None, None) => line_tone(Rgba([0.2, 0.18, 0.22, 1.0]), p.shadow_tint, 0.3),
+                        (None, Some(f)) => line_tone(f.base(), lt.tint, self.hand.darken),
+                        (None, None) => line_tone(Rgba([0.2, 0.18, 0.22, 1.0]), lt.tint, 0.3),
                     },
                 };
                 let w = s.weight.unwrap_or(self.hand.weight);
@@ -1477,7 +1570,7 @@ impl Prepare for Illo {
                         flatten: f.flatten,
                         color: match &f.color {
                             Some(c) => rv.color(c).map_err(ctx)?,
-                            None => p.shadow_tint,
+                            None => lt.tint,
                         },
                         opacity: clamp01(f.opacity.unwrap_or(0.7)),
                         blur: f.blur.max(0.0),
@@ -1574,6 +1667,9 @@ impl Prepare for Illo {
                 visible: s.visible,
                 seed: s.seed.unwrap_or_else(|| (i as u32).wrapping_mul(0x9e37_79b9) ^ self.seed.wrapping_mul(0x85eb_ca6b)),
                 paint_over: self.paint_over && closed,
+                lt,
+                gaps: s.gaps.unwrap_or(self.hand.gaps),
+                boil: s.boil.unwrap_or(self.hand.boil).max(0.0),
             });
         }
         p.hash = fnv(&[b"illo", format!("{:?}", p.shapes.len()).as_bytes(), self.seed.to_le_bytes().as_slice()]);
@@ -1850,6 +1946,8 @@ impl State {
 
 struct Frame<'a> {
     il: &'a Illo,
+    /// Local time (for video fills).
+    t: f32,
     states: Vec<State>,
     /// View → box scale.
     k: f32,
@@ -1877,7 +1975,6 @@ impl Illo {
     }
 
     fn states(&self, t: f32, fit: &[f32; 6]) -> Vec<State> {
-        let frame = if self.hand.boil > 0.0 { (t * self.hand.boil).floor().max(0.0) as u32 + 1 } else { 0 };
         self.p
             .shapes
             .iter()
@@ -1889,6 +1986,7 @@ impl Illo {
                     Some(g) => mul(&self.group_m(g, ts, 0), &own),
                     None => own,
                 };
+                let frame = if s.boil > 0.0 { (t * s.boil).floor().max(0.0) as u32 + 1 } else { 0 };
                 State { m: mul(fit, &g), op: s.opacity * pose.op.clamp(0.0, 1.0), morph, frame }
             })
             .collect()
@@ -1943,7 +2041,7 @@ impl Frame<'_> {
         let Some(sh) = &s.shadow else { return out };
         let bb = bbox(b);
         let size = (bb.width().min(bb.height()) as f32).max(1.0);
-        let [lx, ly] = pp.light;
+        let [lx, ly] = s.lt.dir;
         let mut sp = b.clone();
         if let Some(f) = sh.flatten {
             // Heights above the base scale by `f` (positive: the shadow falls back,
@@ -1957,7 +2055,7 @@ impl Frame<'_> {
         sp = moved(&sp, -lx * d + sh.dx * k, -ly * d + sh.dy * k);
         let clip = sh.clip.map(|c| (self.body(c, false), IDENTITY));
         let filters = if sh.blur > 0.0 { vec![Filter::Blur(sh.blur * k)] } else { Vec::new() };
-        out.push(Op::PushLayer { opacity: sh.opacity * op * pp.strength.min(1.0), blend: Blend::Multiply, filters, clip, cache_key: None });
+        out.push(Op::PushLayer { opacity: sh.opacity * op * s.lt.strength.min(1.0), blend: Blend::Multiply, filters, clip, cache_key: None });
         out.push(Op::Fill { path: sp, paint: Paint::Solid(sh.color), rule: FillRule::NonZero, transform: IDENTITY });
         out.push(Op::PopLayer);
         out
@@ -1975,8 +2073,8 @@ impl Frame<'_> {
         }
         let size = (bb.width().min(bb.height()) as f32).max(1.0);
         let big = |pad: f64| kurbo::Rect::new(bb.x0 - pad, bb.y0 - pad, bb.x1 + pad, bb.y1 + pad).to_path(0.1);
-        let [lx, ly] = pp.light;
-        let strength = pp.strength;
+        let [lx, ly] = s.lt.dir;
+        let strength = s.lt.strength;
 
         let clip = s.clip.map(|c| (self.body(c, false), IDENTITY));
         let outer = op < 0.999 || s.blend != Blend::Normal || clip.is_some() || !s.cut.is_empty();
@@ -1991,7 +2089,8 @@ impl Frame<'_> {
             let bf = moved(&b, mr[0], mr[1]);
             let paint = match fill {
                 PFill::Solid(c) => Paint::Solid(*c),
-                PFill::Grad(g) => self.grad_paint(g, &bf, s.seed),
+                PFill::Grad(g) => self.grad_paint(g, &bf, s.seed, s.lt.dir),
+                PFill::Image { src, fit, scale, focus, .. } => self.image_paint(src, fit, *scale, *focus, &bf),
             };
             if !s.paint_over {
                 out.push(Op::Fill { path: bf.clone(), paint, rule: FillRule::NonZero, transform: IDENTITY });
@@ -2006,7 +2105,7 @@ impl Frame<'_> {
                 let off = sh.offset * size;
                 let mut p = big((off + sh.soft * size * 3.0 + 4.0) as f64);
                 p.extend(moved(&bf, lx * off, ly * off).iter());
-                let col = sh.color.unwrap_or_else(|| shadow_tone(base, pp.shadow_tint, amt));
+                let col = sh.color.unwrap_or_else(|| shadow_tone(base, s.lt.tint, amt));
                 let soft = sh.soft * size;
                 if soft > 0.3 {
                     out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: vec![Filter::Blur(soft)], clip: None, cache_key: None });
@@ -2017,18 +2116,18 @@ impl Frame<'_> {
                 }
                 // Rim: the sliver a copy pushed away from the (rim) light leaves uncovered.
                 if sh.rim > 0.0 && sh.rim_amount > 0.0 {
-                    let [rx, ry] = pp.rim_light;
+                    let [rx, ry] = s.lt.rim;
                     let rw = (sh.rim * size).clamp(1.2 * k, 14.0 * k);
                     let mut p = big((rw + 4.0) as f64);
                     p.extend(moved(&bf, -rx * rw, -ry * rw).iter());
-                    let mut rc = sh.rim_color.unwrap_or_else(|| rim_tone(base, pp.light_color, (0.9 * strength).min(1.2)));
+                    let mut rc = sh.rim_color.unwrap_or_else(|| rim_tone(base, s.lt.color, (0.9 * strength).min(1.2)));
                     rc.0[3] *= sh.rim_amount;
                     out.push(Op::Fill { path: p, paint: Paint::Solid(rc), rule: FillRule::EvenOdd, transform: IDENTITY });
                 }
                 out.push(Op::PopLayer);
             }
             if let Some(tx) = &s.texture {
-                self.texture_ops(&mut out, tx, &bf, base, s.seed, &st_m(&self.states[i]));
+                self.texture_ops(&mut out, tx, &bf, base, s.seed, &st_m(&self.states[i]), &s.lt);
             }
             if let Some((amt, sc)) = s.grain.filter(|_| !s.paint_over) {
                 let tile = grain_tile(self.ctx);
@@ -2044,7 +2143,7 @@ impl Frame<'_> {
             let frame = self.states[i].frame;
             let jit = if frame > 0 { il.hand.boil_amount * k } else { 0.0 };
             let seed = s.seed ^ 0x6c1e ^ frame.wrapping_mul(0x9e37_79b9);
-            let path = if s.closed { outline_path(&b, [w[0] * k, w[1] * k], pp.light, il.hand.gaps, jit, seed) } else { open_lines(&b, [w[0] * k, w[1] * k], s.taper, jit, seed) };
+            let path = if s.closed { outline_path(&b, [w[0] * k, w[1] * k], s.lt.dir, s.gaps, jit, seed) } else { open_lines(&b, [w[0] * k, w[1] * k], s.taper, jit, seed) };
             out.push(Op::Fill { path, paint: Paint::Solid(lc), rule: FillRule::NonZero, transform: IDENTITY });
         }
         if !s.cut.is_empty() {
@@ -2062,9 +2161,35 @@ impl Frame<'_> {
     }
 
     /// A dithered OKLab gradient as an image locked to the shape's box.
-    fn grad_paint(&self, g: &Grad, b: &Path, seed: u32) -> Paint {
+    /// An image (or video frame) mapped onto the shape's box.
+    fn image_paint(&self, src: &str, fit: &str, scale: f32, focus: [f32; 2], b: &Path) -> Paint {
+        let Some((id, iw, ih)) = self.ctx.assets.media(src, self.t) else { return Paint::Solid(Rgba([0.5, 0.5, 0.5, 1.0])) };
         let bb = bbox(b);
-        let [lx, ly] = self.il.p.light;
+        let (bw, bh) = (bb.width().max(1.0) as f32, bb.height().max(1.0) as f32);
+        let (iw, ih) = (iw.max(1) as f32, ih.max(1) as f32);
+        let (sx, sy) = match fit {
+            "stretch" => (bw / iw, bh / ih),
+            "contain" => {
+                let k = (bw / iw).min(bh / ih);
+                (k, k)
+            }
+            "tile" => (self.k, self.k),
+            _ => {
+                let k = (bw / iw).max(bh / ih);
+                (k, k)
+            }
+        };
+        let (sx, sy) = (sx * scale, sy * scale);
+        // Image placed so its `focus` point sits at the same fraction of the box.
+        let ox = bb.x0 as f32 + (bw - iw * sx) * focus[0];
+        let oy = bb.y0 as f32 + (bh - ih * sy) * focus[1];
+        // Paint transforms map local → image pixels.
+        Paint::Image { image: id, transform: [1.0 / sx, 0.0, 0.0, 1.0 / sy, -ox / sx, -oy / sy], opacity: 1.0 }
+    }
+
+    fn grad_paint(&self, g: &Grad, b: &Path, seed: u32, light: [f32; 2]) -> Paint {
+        let bb = bbox(b);
+        let [lx, ly] = light;
         let (w, h) = ((bb.width().ceil() as usize + 4).clamp(2, 2048), (bb.height().ceil() as usize + 4).clamp(2, 2048));
         let (ox, oy) = (bb.x0.floor() as f32 - 2.0, bb.y0.floor() as f32 - 2.0);
         let mut kb = Vec::new();
@@ -2123,11 +2248,10 @@ impl Frame<'_> {
         Paint::Image { image: id, transform: [1.0, 0.0, 0.0, 1.0, -ox, -oy], opacity: 1.0 }
     }
 
-    fn texture_ops(&self, out: &mut Vec<Op>, tx: &PTex, b: &Path, base: Rgba, seed: u32, m: &[f32; 6]) {
-        let pp = &self.il.p;
+    fn texture_ops(&self, out: &mut Vec<Op>, tx: &PTex, b: &Path, base: Rgba, seed: u32, m: &[f32; 6], lt: &Lit) {
         let bb = bbox(b);
         let k = self.k;
-        let ink = tx.color.unwrap_or_else(|| shadow_tone(base, pp.shadow_tint, 1.0));
+        let ink = tx.color.unwrap_or_else(|| shadow_tone(base, lt.tint, 1.0));
         match tx.style.as_str() {
             "paper" => {
                 let (w, h) = (self.ctx.width.ceil().clamp(4.0, 4096.0) as usize, self.ctx.height.ceil().clamp(4.0, 4096.0) as usize);
@@ -2143,7 +2267,7 @@ impl Frame<'_> {
                 let o = (hash01(seed ^ 0x77) * 256.0).floor();
                 let tm = mul(&[1.0 / sc, 0.0, 0.0, 1.0 / sc, o, o], &mul(&[k, 0.0, 0.0, k, 0.0, 0.0], &inv(m)));
                 // Specks of the shadow ink, denser towards the shadow side.
-                let [lx, ly] = pp.light;
+                let [lx, ly] = lt.dir;
                 let c = (bb.center().x as f32, bb.center().y as f32);
                 let ext = 0.5 * (bb.width() as f32 * lx.abs() + bb.height() as f32 * ly.abs()).max(1.0);
                 out.push(Op::PushLayer { opacity: clamp01(tx.amount), blend: Blend::Multiply, filters: Vec::new(), clip: Some((b.clone(), IDENTITY)), cache_key: None });
@@ -2162,7 +2286,7 @@ impl Frame<'_> {
             "halftone" => {
                 let (w, h) = ((bb.width().ceil() as usize + 4).clamp(2, 2048), (bb.height().ceil() as usize + 4).clamp(2, 2048));
                 let (ox, oy) = (bb.x0.floor() as f32 - 2.0, bb.y0.floor() as f32 - 2.0);
-                let [lx, ly] = pp.light;
+                let [lx, ly] = lt.dir;
                 let cell = tx.scale * k.max(0.25);
                 let ang = tx.angle.to_radians();
                 let amt = tx.amount;
@@ -2197,7 +2321,7 @@ impl Frame<'_> {
             }
             style => {
                 let style = if style == "hatch" { "hatch" } else { style };
-                let light_deg = pp.light[1].atan2(pp.light[0]).to_degrees();
+                let light_deg = lt.dir[1].atan2(lt.dir[0]).to_degrees();
                 let (lines, dots) = hatch_lines(b.clone(), style, tx.angle, tx.scale * k, light_deg, (0.0, tx.amount), 1.3 * k, 0.5, seed);
                 out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: Some((b.clone(), IDENTITY)), cache_key: None });
                 let mut buckets: [Path; 3] = Default::default();
@@ -2366,7 +2490,7 @@ impl Component for Illo {
             _ => (IDENTITY, 1.0),
         };
         let states = self.states(t, &fit);
-        let fr = Frame { il: self, states, k, ctx };
+        let fr = Frame { il: self, t, states, k, ctx };
         let dims = [ctx.width.to_bits(), ctx.height.to_bits()];
         let n = self.p.shapes.len();
         let mut lists: Vec<(Vec<Op>, Vec<Op>)> = Vec::with_capacity(n);
@@ -2377,6 +2501,9 @@ impl Component for Illo {
             }
             // Everything the shape's ops depend on.
             let mut deps = vec![fr.states[i].hash(), i as u64, self.p.hash, dims[0] as u64, dims[1] as u64];
+            if matches!(s.fill, Some(PFill::Image { .. })) {
+                deps.push(t.to_bits() as u64);
+            }
             for d in s.clip.iter().chain(s.cut.iter()).chain(s.shadow.as_ref().and_then(|sh| sh.clip).iter()) {
                 deps.push(fr.states[*d].hash());
             }

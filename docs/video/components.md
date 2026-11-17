@@ -784,6 +784,53 @@ Computed once per size and cached as one dithered image: free after the first fr
 
 Examples: `examples/video/illustration/{hatch,paper,cutout}.json`; stills in `docs/video/shots/illustration/`.
 
+## Illustration toolkit (`illo`)
+
+A whole illustration in one layer: a list of shapes drawn in order, lit by one light, drawn by one hand and printed with one set of textures, so the result looks like a single studio piece rather than assembled clip-art. Coordinates are in box pixels, or in a design space set with `view: [w, h]` (fitted, centred).
+
+```json
+{ "component": "illo", "props": {
+  "view": [1920, 1080],
+  "palette": { "skin": "#f2a487", "hair": "#161b3d", "sun": "#ffd9a0" },
+  "light": { "angle": 330, "rim": 195, "color": "$sun", "shadow": "#3a2470" },
+  "hand": { "weight": [1, 4], "wobble": 0.8, "rough": 0.5, "boil": 6 },
+  "grain": 0.06, "misregister": [1.5, 1], "onTwos": true,
+  "groups": [ { "name": "head", "pivot": [1030, 860], "cycle": "idle" } ],
+  "shapes": [
+    { "shape": "path", "name": "face", "d": "M1040 190 C…Z", "fill": "$skin", "group": "head", "shade": { "amount": 0.85, "offset": 0.12 } },
+    { "shape": "ellipse", "cx": 1182, "cy": 522, "rx": 40, "ry": 24, "fill": "#e2513a", "opacity": 0.3, "clipTo": "face", "group": "head" },
+    { "shape": "path", "d": "M1030 150 C…Z", "fill": "$hair", "group": "head", "shadow": { "dist": 0, "dx": 22, "dy": 16, "clipTo": "face" } }
+  ] } }
+```
+
+**Shapes** (`shapes[]`, drawn in order):
+
+| Key | Meaning |
+|---|---|
+| `shape` | `"path"` (`d`, or `points` with `smooth`/`closed`), `"circle"` (`cx cy r`), `"ellipse"` (`cx cy rx ry`), `"rect"` (`x y w h` or `cx cy w h`, `radius`), `"polygon"` (`points`, or regular `cx cy r n`), `"star"` (`cx cy r n inner`), `"blob"` (`cx cy r`/`rx ry`, `lumpy`, `n`, `seed`). Open paths draw as tapered brush lines. |
+| `name`, `group`, `visible` | Name for references; the group (bone) it belongs to; `false` keeps it only as a clip/cut mask. |
+| `fill` | `"#hex"`, `"$swatch"`, `"none"`, a gradient `{ "stops": [...], "gradient": "linear"/"radial", "angle", "center", "radius", "dither" (0.12), "steps" }` (OKLab, dithered with grain, default direction lit → shadow), or an image `{ "image": "photo.jpg", "fit": "cover"/"contain"/"stretch"/"tile", "scale", "focus", "base" }`. |
+| `shade` | `true`, an amount, or `{ amount 0.6, offset 0.2, soft 0, rim 0.035, rimAmount 0.9, color, rimColor }`: the silhouette offset towards the light leaves a hue-shifted form shadow; offset away from the rim light leaves a crisp rim. Sizes are fractions of the shape. |
+| `shadow` | A hard cast shadow: a distance, or `{ dist, dx, dy, flatten, color, opacity 0.7, blur 0, clipTo }`. `flatten` lays it on the ground (0.2–0.5 falls back, negative falls forward); `clipTo` paints it on that shape only, right above it. |
+| `grain`, `texture` | Grain amount (or `{ amount, scale }`), locked to the shape. Texture `"paper"`, `"halftone"`, `"riso"`, `"hatch"`, `"crosshatch"`, `"stipple"`, `"scribble"`, or `{ style, amount, scale, angle, color }`: halftone dots and hatching grow towards the shadow side. |
+| `outline`, `weight`, `lineColor`/`stroke`, `taper`, `gaps` | Hand-drawn line: heavy on the shadow side, thin (and broken by `gaps`) where the light hits; colour defaults to the fill darkened. |
+| `wobble`, `rough`, `corners`, `boil` | Per-shape overrides of the hand (edge wobble, edge breakup in px, corner radius, redraws per second). |
+| `clipTo`, `cut` | Draw only inside another shape (highlights, shadows, patterns), or subtract shapes (holes, crescents). |
+| `opacity`, `blend`, `misregister` | Layer opacity, blend (`multiply`, `screen`, `overlay`, …), fill offset from the line plate. |
+| `rotate`, `scale`, `origin` | Static transform about `origin` (default: the shape's centre). |
+| `animate`, `sway`, `lag` | Keyframes `[{ t, x, y, rotate, scale, sx, sy, squash, opacity, d, ease }]` (or `{ keys, loop, ease }`; `d` morphs by arc length, mismatched paths cross-fade); a sine `sway { rotate, x, y, scale, period, phase }`; a delay in seconds for follow-through. |
+| `light`, `inks` | Per-shape light (`angle`, `rim`, `color`, `shadow`, `strength`) and inks (`[]` = no snapping). |
+
+**Global keys:** `palette` (array → `"$1"`… or object → `"$name"`), `inks` (every colour snaps to the nearest), `overprint` (all shapes multiply), `light { angle 225, rim, color, shadow, strength }`, `hand { weight [0.8, 4], wobble 1.5, rough 0.6, boil 0, boilAmount 0.8, color, darken 0.5, outline false, gaps 0.15 }`, `corners` (`"sharp"`, `"soft"`, `"round"` or px), defaults `shade`/`grain`/`texture`/`misregister` for every shape, `onTwos`/`stepFps`, `seed`, `svg` (paste SVG markup: its paths, circles, ellipses, rects, polygons and lines become the first shapes, named by `id`), `paintOver` (outline plus hatching, no flat fills).
+
+**Groups (bones):** `groups: [{ name, parent, pivot, x, y, rotate, scale, animate, sway, lag, cycle }]`. A `cycle` is `"idle"`, `"breathe"`, `"walk"`, `"bob"`, `"wave"` or `"nod"`, or `{ style, speed, amount, phase, rotate, x, y, sx, sy }` with every amplitude editable; children inherit their parent's motion, and `lag` gives secondary follow-through.
+
+**Lighting.** Pick one `light.angle` for the piece (0 = from the right, 90 = from below, 225 = top-left) and a `light.shadow` ambient colour: form and cast shadows rotate their hue towards it instead of going grey. Put `rim` on the opposite side for back-lit edges. Use `shade` on masses, `shadow` with `flatten` for objects on a surface, and `shadow.clipTo` for shadows that fall on a wall or a face.
+
+**Texture.** Keep grain at 0.04–0.08, halftone for print-style shading (8–12 px cells at 45°), `riso` specks on large flat areas, and `paper` on light grounds. Gradients use `steps` 2–6 with `dither` for screen-print value bands. Everything is locked to its shape, so it moves with it.
+
+Cost: shapes are cached per state, so static shapes cost a clone; see `cargo run --release -p anikit-video --example component_cost illo`. Examples: `examples/video/illustration/illo-*.json`; stills in `docs/video/shots/illustration/illo-*.png`.
+
 ## Lottie
 
 ### `lottie`
