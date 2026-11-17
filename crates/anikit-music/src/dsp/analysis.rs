@@ -56,16 +56,18 @@ pub fn power_spectrum(l: &[f32], r: &[f32], rate: f32) -> (f64, Vec<f64>) {
     let n = 8192usize;
     let len = l.len().min(r.len());
     let fft = FftPlanner::<f32>::new().plan_fft_forward(n);
-    let win: Vec<f32> = (0..n).map(|i| 0.5 - 0.5 * (std::f32::consts::TAU * i as f32 / n as f32).cos()).collect();
+    // Sine window at 50 % overlap is power-complementary, and starting half a
+    // frame early weights every sample (including the very first) equally.
+    let win: Vec<f32> = (0..n).map(|i| (std::f32::consts::PI * (i as f32 + 0.5) / n as f32).sin()).collect();
     let mut pow = vec![0.0f64; n / 2 + 1];
     let mut buf = vec![Complex::<f32>::default(); n];
     let mut scratch = vec![Complex::<f32>::default(); fft.get_inplace_scratch_len()];
     let hop = n / 2;
-    let mut start = 0usize;
-    loop {
+    let mut start = -(hop as isize);
+    while start < len as isize {
         for (i, b) in buf.iter_mut().enumerate() {
-            let j = start + i;
-            *b = if j < len { Complex::new(l[j] * win[i], r[j] * win[i]) } else { Complex::default() };
+            let j = start + i as isize;
+            *b = if j >= 0 && (j as usize) < len { Complex::new(l[j as usize] * win[i], r[j as usize] * win[i]) } else { Complex::default() };
         }
         fft.process_with_scratch(&mut buf, &mut scratch);
         for (k, p) in pow.iter_mut().enumerate() {
@@ -75,10 +77,7 @@ pub fn power_spectrum(l: &[f32], r: &[f32], rate: f32) -> (f64, Vec<f64>) {
             let xr = (a - c) * 0.5;
             *p += (xl.norm_sqr() + xr.norm_sqr()) as f64;
         }
-        start += hop;
-        if start + hop >= len.max(1) {
-            break;
-        }
+        start += hop as isize;
     }
     (rate as f64 / n as f64, pow)
 }

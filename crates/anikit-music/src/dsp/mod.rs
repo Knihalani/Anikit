@@ -15,6 +15,9 @@
 //!   [`master`]: the master chain and true-peak [`Limiter`];
 //!   [`analysis`]: QA metrics ([`Report`])
 
+// Index loops read more clearly than iterator chains in multi-buffer DSP code.
+#![allow(clippy::needless_range_loop)]
+
 pub mod analysis;
 pub mod biquad;
 pub mod chorus;

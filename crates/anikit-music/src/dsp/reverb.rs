@@ -200,7 +200,7 @@ const LINE_MS: [f32; N] = [
 const DIFF_MS: [[f32; 4]; 2] = [[4.77, 3.59, 12.73, 9.30], [5.03, 3.77, 13.27, 8.77]];
 
 fn is_prime(n: usize) -> bool {
-    n >= 2 && (2..).take_while(|d| d * d <= n).all(|d| n % d != 0)
+    n >= 2 && (2..).take_while(|d| d * d <= n).all(|d| !n.is_multiple_of(d))
 }
 
 fn prime_near(x: f32) -> usize {
@@ -268,7 +268,7 @@ impl Reverb {
         let ms = |v: f32| v * 0.001 * rate;
         let pre_d = ms(s.predelay).round() as usize;
         // Early reflections: deterministic sparse taps over 3..(70·size) ms.
-        let mut rng = Rng::new(0x5EED_0E4);
+        let mut rng = Rng::new(0x05EE_D0E4);
         let er_span = 70.0 * s.size.sqrt();
         let mut er = [(0usize, 0.0f32, 0.0f32); ER_TAPS];
         for (k, e) in er.iter_mut().enumerate() {
@@ -317,9 +317,9 @@ impl Reverb {
             rot[i] = (w.cos(), w.sin());
         }
         let eq = [
-            if s.low_cut > 0.0 { Biquad::new(FilterKind::HighPass, rate, s.low_cut, 0.7071, 0.0) } else { Biquad::from_coefs(super::biquad::Coefs::IDENTITY) },
+            if s.low_cut > 0.0 { Biquad::new(FilterKind::HighPass, rate, s.low_cut, std::f32::consts::FRAC_1_SQRT_2, 0.0) } else { Biquad::from_coefs(super::biquad::Coefs::IDENTITY) },
             if s.high_cut > 0.0 && s.high_cut < rate * 0.49 {
-                Biquad::new(FilterKind::LowPass, rate, s.high_cut, 0.7071, 0.0)
+                Biquad::new(FilterKind::LowPass, rate, s.high_cut, std::f32::consts::FRAC_1_SQRT_2, 0.0)
             } else {
                 Biquad::from_coefs(super::biquad::Coefs::IDENTITY)
             },
@@ -560,11 +560,11 @@ mod tests {
         let late = 48_000..96_000;
         let mut hl = l.clone();
         let mut hr = r.clone();
-        let mut hp = Biquad::new(FilterKind::HighPass, 48_000.0, 8000.0, 0.7071, 0.0);
+        let mut hp = Biquad::new(FilterKind::HighPass, 48_000.0, 8000.0, std::f32::consts::FRAC_1_SQRT_2, 0.0);
         hp.process(&mut hl, &mut hr);
         let mut ll = l.clone();
         let mut lr = r.clone();
-        let mut lp = Biquad::new(FilterKind::LowPass, 48_000.0, 1000.0, 0.7071, 0.0);
+        let mut lp = Biquad::new(FilterKind::LowPass, 48_000.0, 1000.0, std::f32::consts::FRAC_1_SQRT_2, 0.0);
         lp.process(&mut ll, &mut lr);
         let e = |x: &[f32], rg: std::ops::Range<usize>| x[rg].iter().map(|v| (*v as f64).powi(2)).sum::<f64>();
         let hi_ratio = e(&hl, late.clone()) / e(&hl, 0..48_000);

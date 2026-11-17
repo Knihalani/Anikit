@@ -93,9 +93,9 @@ impl Saturator {
                 dn2: Downsampler2::new(false),
                 dn1,
                 z2: 0.0,
-                pre: Biquad::new(FilterKind::HighShelf, rate, 3000.0, 0.7071, 4.0),
-                post: Biquad::new(FilterKind::HighShelf, rate, 3000.0, 0.7071, -4.0),
-                dc: Biquad::new(FilterKind::HighPass, rate, 8.0, 0.7071, 0.0),
+                pre: Biquad::new(FilterKind::HighShelf, rate, 3000.0, std::f32::consts::FRAC_1_SQRT_2, 4.0),
+                post: Biquad::new(FilterKind::HighShelf, rate, 3000.0, std::f32::consts::FRAC_1_SQRT_2, -4.0),
+                dc: Biquad::new(FilterKind::HighPass, rate, 8.0, std::f32::consts::FRAC_1_SQRT_2, 0.0),
                 dry: DelayLine::new(128),
             }
         };

@@ -97,7 +97,7 @@ impl Compressor {
             ms: 0.0,
             gr: 0.0,
             makeup: db_to_gain(p.makeup),
-            sc_hp: p.sc_hp.filter(|f| *f > 0.0).map(|f| Biquad::new(FilterKind::HighPass, rate, f, 0.7071, 0.0)),
+            sc_hp: p.sc_hp.filter(|f| *f > 0.0).map(|f| Biquad::new(FilterKind::HighPass, rate, f, std::f32::consts::FRAC_1_SQRT_2, 0.0)),
             dl: DelayLine::new(look + 1),
             dr: DelayLine::new(look + 1),
             look,

@@ -85,7 +85,7 @@ impl TruePeak {
 /// analog prototype so they match BS.1770 at 48 kHz and work at any rate.
 pub fn k_weighting(rate: f64) -> [[f64; 5]; 2] {
     // Stage 1: high-shelf pre-filter.
-    let f0 = 1681.974_450_955_533;
+    let f0 = 1_681.974_450_955_533;
     let g = 3.999_843_853_973_347;
     let q = 0.707_175_236_955_419_6;
     let k = (std::f64::consts::PI * f0 / rate).tan();

@@ -36,7 +36,7 @@ impl Coefs {
     pub const IDENTITY: Coefs = Coefs { b0: 1.0, b1: 0.0, b2: 0.0, a1: 0.0, a2: 0.0 };
 
     /// RBJ cookbook design. `q` is the quality factor (for shelves: the shelf
-    /// slope expressed as Q, 0.7071 = Butterworth-like); `gain_db` is used by
+    /// slope expressed as Q, std::f32::consts::FRAC_1_SQRT_2 = Butterworth-like); `gain_db` is used by
     /// peak and shelf types. Frequencies are clamped inside (1 Hz, 0.49·rate).
     pub fn new(kind: FilterKind, rate: f32, freq: f32, q: f32, gain_db: f32) -> Coefs {
         let fs = rate as f64;
@@ -196,7 +196,7 @@ pub struct EqParams {
     pub high: f32,
     /// High-shelf corner (Hz).
     pub high_freq: f32,
-    /// Shelf slope as Q (0.7071 = Butterworth-like, no overshoot).
+    /// Shelf slope as Q (std::f32::consts::FRAC_1_SQRT_2 = Butterworth-like, no overshoot).
     pub shelf_q: f32,
     /// Spectral tilt in dB around a 1 kHz pivot (+ = brighter): −tilt/2 low shelf, +tilt/2 high shelf.
     pub tilt: f32,
@@ -334,7 +334,7 @@ impl Svf {
         f.set(freq, q);
         f
     }
-    /// Set cutoff (Hz) and resonance Q (0.5 = no peak, 0.7071 = Butterworth, higher = resonant).
+    /// Set cutoff (Hz) and resonance Q (0.5 = no peak, std::f32::consts::FRAC_1_SQRT_2 = Butterworth, higher = resonant).
     #[inline]
     pub fn set(&mut self, freq: f32, q: f32) {
         let f = freq.clamp(5.0, self.rate * 0.49);
@@ -429,21 +429,21 @@ mod tests {
     #[test]
     fn rbj_responses() {
         let fs = 48_000.0;
-        let lp = Coefs::new(FilterKind::LowPass, fs, 1000.0, 0.7071, 0.0);
+        let lp = Coefs::new(FilterKind::LowPass, fs, 1000.0, std::f32::consts::FRAC_1_SQRT_2, 0.0);
         assert!((db(&lp, 1000.0) + 3.01).abs() < 0.02);
         assert!(db(&lp, 50.0).abs() < 0.01);
         assert!(db(&lp, 10_000.0) < -38.0);
-        let hp = Coefs::new(FilterKind::HighPass, fs, 100.0, 0.7071, 0.0);
+        let hp = Coefs::new(FilterKind::HighPass, fs, 100.0, std::f32::consts::FRAC_1_SQRT_2, 0.0);
         assert!((db(&hp, 100.0) + 3.01).abs() < 0.02);
         assert!(db(&hp, 10.0) < -39.0);
         let pk = Coefs::new(FilterKind::Peak, fs, 400.0, 1.0, -3.0);
         assert!((db(&pk, 400.0) + 3.0).abs() < 1e-6);
         assert!(db(&pk, 20.0).abs() < 0.05);
-        let ls = Coefs::new(FilterKind::LowShelf, fs, 120.0, 0.7071, -2.0);
+        let ls = Coefs::new(FilterKind::LowShelf, fs, 120.0, std::f32::consts::FRAC_1_SQRT_2, -2.0);
         assert!((db(&ls, 10.0) + 2.0).abs() < 0.02);
         assert!((db(&ls, 120.0) + 1.0).abs() < 0.02);
         assert!(db(&ls, 5000.0).abs() < 0.01);
-        let hs = Coefs::new(FilterKind::HighShelf, fs, 8000.0, 0.7071, 2.0);
+        let hs = Coefs::new(FilterKind::HighShelf, fs, 8000.0, std::f32::consts::FRAC_1_SQRT_2, 2.0);
         assert!((db(&hs, 8000.0) - 1.0).abs() < 0.02);
         assert!((db(&hs, 23_000.0) - 2.0).abs() < 0.05);
         let bp = Coefs::new(FilterKind::BandPass, fs, 2000.0, 2.0, 0.0);
