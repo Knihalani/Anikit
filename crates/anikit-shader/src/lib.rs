@@ -115,6 +115,30 @@ impl Shader {
         Self::compile_with(src, &[])
     }
 
+    /// Like [`Shader::compile_with`], but shared: each distinct (source,
+    /// extra uniforms) is compiled once per process and reused, so repeated
+    /// layers, re-renders and watch mode pay no JIT time. Errors aren't cached.
+    pub fn compile_shared(src: &str, extra: &[(&str, UType)]) -> Result<std::sync::Arc<Shader>, ShaderError> {
+        use std::hash::{Hash, Hasher};
+        use std::sync::{Arc, Mutex, OnceLock};
+        type Cache = Mutex<HashMap<u64, Arc<OnceLock<Result<Arc<Shader>, ShaderError>>>>>;
+        static CACHE: OnceLock<Cache> = OnceLock::new();
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        src.hash(&mut h);
+        for (n, t) in extra {
+            n.hash(&mut h);
+            format!("{t:?}").hash(&mut h);
+        }
+        let key = h.finish();
+        let cell = CACHE.get_or_init(Default::default).lock().unwrap().entry(key).or_default().clone();
+        // Concurrent requests for the same shader wait for one compile.
+        let r = cell.get_or_init(|| Shader::compile_with(src, extra).map(Arc::new)).clone();
+        if r.is_err() {
+            CACHE.get().unwrap().lock().unwrap().remove(&key);
+        }
+        r
+    }
+
     /// Compile, declaring `extra` uniforms (name, type) the source may use
     /// without declaring them.
     pub fn compile_with(src: &str, extra: &[(&str, UType)]) -> Result<Shader, ShaderError> {
@@ -465,5 +489,19 @@ mod layout {
             assert_eq!(off(std::ptr::addr_of!((*p).chan) as _), crate::texture::ENV_CHAN as usize);
         }
         assert_eq!(std::mem::size_of::<crate::texture::ChanInfo>(), crate::texture::CHAN_SIZE as usize);
+    }
+}
+
+#[cfg(test)]
+mod shared {
+    #[test]
+    fn compile_shared_reuses_kernels() {
+        let src = "void mainImage(out vec4 c, in vec2 p) { c = vec4(0.25); }";
+        let a = crate::Shader::compile_shared(src, &[]).unwrap();
+        let b = crate::Shader::compile_shared(src, &[]).unwrap();
+        assert!(std::sync::Arc::ptr_eq(&a, &b));
+        let c = crate::Shader::compile_shared(src, &[("k", crate::UType::Float)]).unwrap();
+        assert!(!std::sync::Arc::ptr_eq(&a, &c));
+        assert!(crate::Shader::compile_shared("void mainImage(out vec4 c, in vec2 p) { c = vec4(nope); }", &[]).is_err());
     }
 }
