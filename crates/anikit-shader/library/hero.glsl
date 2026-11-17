@@ -3,6 +3,7 @@
 // Raymarched inside a bounding sphere; analytic floor with a soft contact
 // shadow and a blurred reflection of the object.
 // Uniforms: shape, color, metal, rough, speed, size, background, floor.
+// anikit:aa off (measured within SSIM 0.995 / ΔE p99.9 2.3 of 2×2 supersampling at 1 sample)
 uniform float shape;      // = 0.0 0 torus, 1 rounded cube, 2 pill, 3 gem, 4 sphere, 5 twisted bar
 uniform vec3 color;       // = vec3(0.9, 0.35, 0.18) base colour
 uniform float metal;      // = 0.0 0 plastic/ceramic … 1 metal

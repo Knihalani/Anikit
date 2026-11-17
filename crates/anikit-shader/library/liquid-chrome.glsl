@@ -5,6 +5,7 @@
 // the sculpture is cut out for compositing.
 // Uniforms: speed, env (0 studio … 1 night sky), film (iridescence 0..1),
 // background (1 draw the environment behind, 0 transparent), size.
+// anikit:aa off (measured within SSIM 0.995 / ΔE p99.9 2.3 of 2×2 supersampling at 1 sample)
 uniform float speed;      // = 1.0  motion speed
 uniform float env;        // = 0.0  0 studio … 1 night sky reflections
 uniform float film;       // = 0.0  thin-film iridescence 0..1

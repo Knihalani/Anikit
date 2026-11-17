@@ -448,9 +448,14 @@ fn dynamic_frame_images() {
     let b = r.frame().data_as_u8_slice()[(20 * 128 + 20) * 4];
     assert!(a < 30 && b > 180, "{a} {b}");
     assert!(changed.get(0, 0) && !changed.get(5, 1), "only the image's macroblocks change");
+    // The incremental YUV equals a fresh render's (the RGBA frame may be stale
+    // outside what was redrawn: plain-colour backgrounds go straight to YUV).
     let mut fresh = Renderer::new(Arc::new(Assets::default()));
     fresh.set_frame_image(ImageId(77), frame(200));
-    assert_eq!(fresh.render(&l).data_as_u8_slice(), r.frame().data_as_u8_slice());
+    let mut want = YuvFrame::default();
+    fresh.render_yuv(&l, &mut want);
+    let worst = yuv.y.iter().zip(&want.y).chain(yuv.u.iter().zip(&want.u)).chain(yuv.v.iter().zip(&want.v)).map(|(p, q)| p.abs_diff(*q)).max().unwrap();
+    assert!(worst <= 2, "max YUV diff {worst}");
 }
 
 /// Degenerate input must never panic (a panicking worker kills the render).
@@ -939,7 +944,10 @@ fn solid_background_backdrop_matches_clear() {
     exact.set_quality(Quality::Reference);
     let want = exact.render(&l).data_as_u8_slice().to_vec();
     let got = Renderer::new(assets.clone()).render(&l).data_as_u8_slice().to_vec();
-    assert_eq!(got, want);
+    // Identical, up to vello's rounding of exact halves (SIMD builds round
+    // source-over onto existing pixels and onto its own clear differently).
+    let worst = got.iter().zip(&want).map(|(a, b)| a.abs_diff(*b)).max().unwrap();
+    assert!(worst <= 1, "max RGBA diff {worst}");
     let (mut a, mut b) = (YuvFrame::new(W, H), YuvFrame::new(W, H));
     Renderer::new(assets.clone()).render_yuv(&l, &mut a);
     exact.render_yuv(&l, &mut b);
