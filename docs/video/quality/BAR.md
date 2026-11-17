@@ -36,7 +36,13 @@ The user's verdict on Meridian, Lighthouse Keeper, Tidewater and Northern Silver
 
 Every one of them was a single 6–7 s slow dolly, with the same composition in all four quarters of the shot. A still checklist can't catch that, so clips now also face the two tests below.
 
-### Pace: run `python3 docs/video/quality/pace.py clip.mp4 --strip strip.png`
+### Pace: run `python3 docs/video/quality/pace.py clip.mp4 --strip strip.png`, or `anikit-video critique spec.json --render`
+
+These limits are for a **fast** intent (the user's taste for showcase work). `critique --render` judges against the spec's `"intent"`:
+- frantic: 1.2 s longest shot, 0.7 s median;
+- fast: the limits below;
+- steady: 6 s and 3.5 s;
+- calm: long holds are allowed, but a calm piece is still flagged if it is lifeless (dead air) or defective.
 
 These thresholds are for **fast intents** (hype, launch, music, social), which is what this user wants for the flagship. Calm intents (brand films, explainers) may hold longer, but every hold must stay *alive*: motion, light change or parallax, with no dead air. `critique` judges pace against the spec's declared `intent`.
 
