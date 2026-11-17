@@ -84,7 +84,9 @@ fn present(o: Vec<Op>, t: f32, delay: f32, float: f32, cx: f32, cy: f32) -> Vec<
         return Vec::new();
     }
     let mut o = o;
-    let bob = float * ((t - delay) * 1.1).sin();
+    // Whole-pixel bob: the device only moves when the rounded offset changes,
+    // so most frames repeat exactly (cheap to render and encode).
+    let bob = (float * ((t - delay) * 1.1).sin()).round();
     let m = crate::dl::mul(&translate(0.0, (1.0 - p) * 60.0 + bob), &scale_about(lerp(0.92, 1.0, p), cx, cy));
     transform_ops(&mut o, &m);
     with_opacity(o, clamp01(p * 1.5))

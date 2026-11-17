@@ -266,6 +266,11 @@ pub fn spring(t: f32, speed: f32) -> f32 {
     let z = 0.62f32;
     let wd = w * (1.0 - z * z).sqrt();
     let e = (-z * w * t).exp();
+    // Settled: return exactly 1 so later frames are bit-identical (dedupe,
+    // incremental render and P_Skip all key on identical ops).
+    if e < 2e-4 {
+        return 1.0;
+    }
     1.0 - e * ((wd * t).cos() + (z * w / wd) * (wd * t).sin())
 }
 

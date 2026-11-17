@@ -1373,7 +1373,7 @@ impl C<'_> {
         if split.is_some() && (counter.is_some() || kinetic.is_some()) {
             self.d.push(Diagnostic::warning(format!("{path}.split"), "split is ignored on counters and kinetic text"));
         }
-        let split = if counter.is_some() || kinetic.is_some() { None } else { split.map(|by| SplitC { by, tracks: Vec::new(), delays: Vec::new() }) };
+        let split = if counter.is_some() || kinetic.is_some() { None } else { split.map(|by| SplitC { by, tracks: Vec::new(), delays: Vec::new(), unit_tracks: Vec::new() }) };
         let has_split = split.is_some();
         (Kind::Text { layout, wrap, paint, run_colors, split, counter, kinetic }, nat, chars, has_split, from_enter)
     }
@@ -1922,24 +1922,46 @@ impl C<'_> {
         (Kind::Video { frames, natural: nat, fit, rate, speed, looped }, nat)
     }
 
+    /// Load an image file referenced by a component and register it under its `src`.
+    fn load_media(&mut self, src: &str, path: &str) {
+        let full = self.o.base_dir.join(src);
+        if self.image_ids.contains_key(&full) || !self.o.load_assets {
+            if let Some(&(id, _)) = self.image_ids.get(&full) {
+                self.assets.add_media(src, ImageId(id));
+            }
+            return;
+        }
+        if !full.exists() {
+            self.d.push(Diagnostic::warning(path.to_string(), format!("image not found: {}", full.display())));
+            return;
+        }
+        match image::open(&full).map_err(|e| e.to_string()).and_then(|img| {
+            let rgba = img.to_rgba8();
+            let (w, h) = rgba.dimensions();
+            self.assets.add_rgba(w, h, rgba.into_raw()).map(|id| (id, [w as f32, h as f32]))
+        }) {
+            Ok((id, nat)) => {
+                self.assets.add_media(src, id);
+                self.image_ids.insert(full, (id.0, nat));
+            }
+            Err(e) => self.d.push(Diagnostic::warning(path.to_string(), format!("can't decode image {src}: {e}"))),
+        }
+    }
+
     fn component_layer(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>) -> Option<(Kind, [f32; 2])> {
         let raw = l.component.clone().unwrap_or_default();
-        // Accept camelCase (`barChart`) as well as the catalogue's kebab-case (`bar-chart`).
-        let mut name = String::new();
-        for ch in raw.chars() {
-            if ch.is_ascii_uppercase() {
-                name.push('-');
-                name.push(ch.to_ascii_lowercase());
-            } else {
-                name.push(ch);
-            }
-        }
+        // camelCase (`barChart`), kebab-case and short aliases (`chart.bar`) all resolve.
+        let name = crate::components::canonical(&raw);
         let names: Vec<&str> = crate::components::KINDS.iter().map(|k| k.name).collect();
         if !names.contains(&name.as_str()) {
             self.d.push(Diagnostic::error(format!("{path}.component"), format!("unknown component '{raw}'")).suggest(suggest(&name, &names)));
             return None;
         }
         let props = l.props.clone().unwrap_or(serde_json::Value::Object(Default::default()));
+        // Load the images the component refers to, so `Assets::media` finds them.
+        for src in crate::components::media_srcs(&props) {
+            self.load_media(&src, &format!("{path}.props"));
+        }
         match crate::components::build(&name, &props) {
             Ok(p) => {
                 let size = [gw.or(p.w).unwrap_or(self.w), gh.or(p.h).unwrap_or(self.h)];
@@ -2404,8 +2426,8 @@ impl C<'_> {
     }
 
     fn captions(&mut self, cap: &spec::Captions, duration: f32) -> Vec<Node> {
-        let (cues, style, y, color): (Vec<spec::CaptionCue>, String, Option<Num>, Option<String>) = match cap {
-            spec::Captions::Cues(c) => (c.clone(), "caption".into(), None, None),
+        let (cues, style, y, color, highlight): (Vec<spec::CaptionCue>, String, Option<Num>, Option<String>, Option<String>) = match cap {
+            spec::Captions::Cues(c) => (c.clone(), "caption".into(), None, None, None),
             spec::Captions::File(f) => {
                 let mut cues = f.cues.clone().unwrap_or_default();
                 if let Some(src) = &f.src {
@@ -2415,13 +2437,21 @@ impl C<'_> {
                         Err(e) => self.d.push(Diagnostic::error("captions.src", format!("can't read {}: {e}", full.display()))),
                     }
                 }
-                (cues, f.style.clone().unwrap_or_else(|| "caption".into()), f.y.clone(), f.color.clone())
+                (cues, f.style.clone().unwrap_or_else(|| "caption".into()), f.y.clone(), f.color.clone(), f.highlight.clone())
             }
         };
         let mut out = Vec::new();
+        let hl = highlight.unwrap_or_else(|| "$accent".into());
+        let hl_c = self.color(&hl, "captions.highlight").unwrap_or(Rgba([1.0, 0.8, 0.2, 1.0]));
         for (i, c) in cues.iter().enumerate() {
+            let words = c.words.as_ref().filter(|w| !w.is_empty());
+            let text = match words {
+                Some(w) => w.iter().map(|x| x.0.as_str()).collect::<Vec<_>>().join(" "),
+                None => c.text.clone(),
+            };
             let l = Layer {
-                text: Some(c.text.clone()),
+                text: Some(text),
+                split: words.map(|_| "words".to_string()),
                 style: Some(StyleRef::Name(style.clone())),
                 color: Some(spec::Paint::Css(color.clone().unwrap_or_else(|| "$text".into()))),
                 y: Some(y.clone().unwrap_or(Num::Str("88%".into()))),
@@ -2433,7 +2463,29 @@ impl C<'_> {
                 ..Default::default()
             };
             let pc = PCtx { size: [self.w, self.h], t0: 0.0, end: duration, delay: 0.0, index: i, count: cues.len(), in_box: false };
-            if let Some(n) = self.layer(&l, &format!("captions[{i}]"), pc) {
+            if let Some(mut n) = self.layer(&l, &format!("captions[{i}]"), pc) {
+                if let (Some(w), Kind::Text { split: Some(sp), .. }) = (words, &mut n.kind) {
+                    // Highlight each word while it's spoken (times relative to the cue).
+                    let base = rgba_to_oklab(oklab_to_rgba([n.base[prop::FILL], n.base[prop::FILL + 1], n.base[prop::FILL + 2], n.base[prop::FILL + 3]]));
+                    let on = rgba_to_oklab(hl_c);
+                    sp.unit_tracks = w
+                        .iter()
+                        .map(|(_, a, e)| {
+                            let (a, e) = ((*a as f32 - n.start).max(0.0), (*e as f32 - n.start).max(0.0));
+                            (0..4)
+                                .map(|k| Track {
+                                    slot: (prop::FILL + k) as u8,
+                                    segs: vec![
+                                        Seg { t0: 0.0, t1: 0.0, v0: base[k], v1: base[k], ease: 0, hold_before: true },
+                                        Seg { t0: a, t1: a + 0.06, v0: base[k], v1: on[k], ease: 0, hold_before: false },
+                                        Seg { t0: e, t1: e + 0.06, v0: on[k], v1: base[k], ease: 0, hold_before: false },
+                                    ],
+                                })
+                                .collect()
+                        })
+                        .collect();
+                    sp.delays = vec![0.0; w.len()];
+                }
                 out.push(n);
             }
         }

@@ -1,0 +1,13 @@
+# Standalone (not a workspace member): OpenH264 comparison for docs/video/encoder.md.
+# cargo run --release --manifest-path crates/ak264/bench-openh264/Cargo.toml -- <scene> <frames> <bitrate_kbps...>
+[package]
+name = "ak264-bench-openh264"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+ak264 = { path = ".." }
+openh264 = "0.8"
