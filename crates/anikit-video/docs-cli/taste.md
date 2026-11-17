@@ -3,7 +3,7 @@
 Every frame can be striking as a still, and every second worth hearing, and "incredible" comes in many forms: spectacle, wit, beauty, clarity, rhythm, surprise, craft. Nothing here is a rule or a house style. It is what tends to work, what tends to fail and why, and how to check. Depth and sources: `docs/video/taste/TASTE.md` (§1 type · §2 colour · §3 composition · §4 light · §5 motion · §6 editing · §7 sound · §8 concept · §9 tells · §11 ambition).
 
 **Routes to a striking frame, and the tools that make each one cheap:**
-- **Illustration and print:** components `brush`, `sketch`, `hatch`, `paper`, `cutout` (`docs component brush`, …); one-line style filters `{"shader": "halftone|risograph|linocut|watercolour|crosshatch|screenprint|print-offset|dither|film", "filter": true}`.
+- **Illustration and print:** components `brush`, `sketch`, `hatch`, `paper`, `cutout` (`docs components`); one-line style filters `{"shader": "halftone|risograph|linocut|watercolour|crosshatch|screenprint|print-offset|dither|film", "filter": true}`.
 - **Graphic design and data:** paths and `repeat`/`script` for dense fields of real data, type set as the image.
 - **Light and material:** `scene3d` with a motivated key; non-photoreal `"look": "toon|ink|hatch|clay|paper|cardboard|gouache"` (or `photo`) with `outline`; environments beyond the studio: `overcast`, `interior`, `city`, `underwater` (`docs 3d`).
 - **Spectacle and texture:** your own GLSL worlds, particles and physics as imagery, grain and print texture.
