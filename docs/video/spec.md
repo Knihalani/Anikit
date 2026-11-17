@@ -43,7 +43,7 @@ Every layer: `x y` (default centre) · `anchor` (`center`, `topLeft`, …) · `w
 
 | Type | Keys |
 |---|---|
-| text | `text` (`**bold**`, `*italic*`, `[word]{$accent}`) · `style` · `font size weight color align lineHeight letterSpacing uppercase maxLines` · `stroke` · `split` (`chars words lines`) · `kinetic` · `reveal` · `value` with `"{value:,}"` |
+| text | `text` (`**bold**`, `*italic*`, `[word]{$accent}`) · `style` · `font size weight color align lineHeight letterSpacing uppercase maxLines` · `fit: true` (shrink to `width`) · `stroke` · `split` (`chars words lines`) · `kinetic` · `reveal` · `value` with `"{value:,}"` |
 | shape | `shape` (`rect circle line arrow polygon star path`) · `fill` · `stroke` · `strokeWidth` · `radius` · `points` · `d` · `sides` · `trimStart trimEnd` |
 | image / video | `src` · `fit` (`contain cover fill none`) · `radius` · video: `trimStart speed volume loop` |
 | box | flexbox: `style { direction gap padding align justify wrap background radius border columns }` · `children` |

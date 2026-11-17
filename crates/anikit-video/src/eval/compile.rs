@@ -890,7 +890,7 @@ impl C<'_> {
             ("reveal", l.reveal.is_some()),
         ];
         let shape_only = [("shape", l.shape.is_some()), ("points", l.points.is_some()), ("d", l.d.is_some()), ("sides", l.sides.is_some())];
-        let img_only = [("src", l.src.is_some()), ("fit", l.fit.is_some())];
+        let img_only = [("src", l.src.is_some()), ("fit", l.fit.is_some() && kind != "text")];
         let check = |d: &mut Vec<Diagnostic>, list: &[(&str, bool)], ok: bool, owner: &str| {
             if !ok {
                 for (k, set) in list {
@@ -1297,6 +1297,26 @@ impl C<'_> {
         let (plain, spans) = self.markup(&raw, path);
         let run_colors = !spans.is_empty();
         let mut tspec = text::TextSpec { text: plain.clone(), spans, style, width: given_w, align, max_lines: l.max_lines, ..Default::default() };
+        // `fit: true`: shrink (never grow) so the widest line fits `width`
+        // (default 85% of the parent), keeping the author's line breaks.
+        match l.fit.as_deref() {
+            None | Some("false") => {}
+            Some("true") => {
+                let target = given_w.unwrap_or(pc.size[0] * 0.85);
+                let mut probe = tspec.clone();
+                probe.width = None;
+                for _ in 0..3 {
+                    let w0 = self.assets.fonts.layout(&probe).width;
+                    if w0 <= target + 0.5 {
+                        break;
+                    }
+                    probe.style.size *= target / w0;
+                }
+                tspec.style.size = probe.style.size;
+                n.base[prop::SIZE] = probe.style.size;
+            }
+            Some(x) => self.d.push(Diagnostic::error(format!("{path}.fit"), format!("on text, 'fit' is true or false (got '{x}')"))),
+        }
         // Counter template.
         let mut counter = None;
         if let Some(i) = plain.find("{value") {

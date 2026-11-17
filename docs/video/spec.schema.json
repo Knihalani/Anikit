@@ -1427,10 +1427,14 @@
           ]
         },
         "fit": {
-          "description": "`contain`, `cover`, `fill`, `none`. One of: contain, cover, fill, none.",
-          "type": [
-            "string",
-            "null"
+          "description": "Images: `contain`, `cover`, `fill`, `none`. Text: `true` shrinks the\nsize (never grows it) so the widest line fits `width` (default 85% of\nthe parent), keeping line breaks. One of: contain, cover, fill, none.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FitValue"
+            },
+            {
+              "type": "null"
+            }
           ],
           "examples": [
             "contain",
@@ -2102,6 +2106,17 @@
           "format": "double"
         }
       }
+    },
+    "FitValue": {
+      "description": "`fit`: an image mode (`\"cover\"`) or, on text, `true`. Derefs to the word\n(`\"true\"` / `\"false\"` for booleans) so callers match on strings.",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ]
     },
     "AudioCue": {
       "description": "An audio cue: a file (`src`) or a built-in sound effect (`sfx`).",
