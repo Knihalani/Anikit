@@ -407,6 +407,7 @@ fn empty_node(kind: Kind) -> Node {
         base: prop::DEFAULTS,
         exprs: Vec::new(),
         cexprs: Vec::new(),
+        update: None,
         tracks: Vec::new(),
         loops: Vec::new(),
         anchor: [0.5, 0.5],
@@ -1125,6 +1126,33 @@ impl C<'_> {
             _ => self.component_layer(l, path, given_w, given_h)?,
         };
         n.kind = kind_v;
+        if let Some(code) = &l.update {
+            match crate::spec::script::compile_update(code, path) {
+                Ok(ast) => {
+                    let src = code.to_string();
+                    let reads = |w: &str| src.split(|c: char| !c.is_ascii_alphanumeric()).any(|x| x == w);
+                    if ["beat", "bar", "level", "bpm"].iter().any(|w| reads(w)) && (self.groove.is_none() || (reads("level") && !self.groove_level)) {
+                        self.load_groove(reads("level"), &format!("{path}.update"));
+                    }
+                    // A trial run at t = 0 reports runtime errors and unknown props now, not silently per frame.
+                    let mut vals = [0.0f64; 14];
+                    (vals[6], vals[7], vals[8]) = (self.w as f64, self.h as f64, self.fps as f64);
+                    match crate::spec::script::run_update(&ast, &vals) {
+                        Ok(m) => {
+                            for k in m.keys() {
+                                if prop::lookup(k.as_str()).is_none() {
+                                    let names = ["x", "y", "width", "height", "scale", "scaleX", "scaleY", "rotation", "skewX", "skewY", "opacity", "blur", "radius", "strokeWidth", "trimStart", "trimEnd", "reveal", "value", "size", "letterSpacing", "progress", "zoom", "wipe", "depth", "fill", "color", "stroke"];
+                                    self.d.push(Diagnostic::error(format!("{path}.update"), format!("update: '{k}' isn't an animatable property")).suggest(suggest(k.as_str(), &names)));
+                                }
+                            }
+                        }
+                        Err(e) => self.d.push(Diagnostic::error(format!("{path}.update"), format!("update: {e} (it must return a map like #{{ x: 100 }})"))),
+                    }
+                    n.update = Some(Arc::new(ast));
+                }
+                Err(d) => self.d.push(d),
+            }
+        }
         n.base[prop::W] = given_w.unwrap_or(nat[0]);
         n.base[prop::H] = given_h.unwrap_or(nat[1]);
         let natural = match &n.kind {

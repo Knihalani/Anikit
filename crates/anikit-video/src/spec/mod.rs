@@ -531,6 +531,10 @@ pub struct Layer {
     #[schemars(with = "Option<Vec<de::LayerItem>>")]
     pub children: Option<Vec<Layer>>,
 
+    /// Per-frame script: returns props to set this frame, e.g. `"#{ x: 960 + 200 * sin(t), fill: hsl(t * 90, 80, 60) }"`.
+    /// Sees `t T gt p i n w h fps frame beat bar level bpm`. Runs every frame (a few µs).
+    pub update: Option<serde_json::Value>,
+
     // ---- draw
     /// Raw drawing: primitives in frame pixels (the layer defaults to the parent's box), each
     /// with its own fill and stroke. The layer's transforms, opacity, animation and `trimStart`/`trimEnd` apply.
