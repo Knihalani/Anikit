@@ -1,0 +1,25 @@
+{
+  "slug": "australian-open",
+  "title": "Australian Open — campaign",
+  "studio": "BUCK",
+  "year": 2020,
+  "url": "https://buck.co/work/australian-open",
+  "frame_sources": [
+    "https://cdn.sanity.io/images/uk7b627p/production/2c9c0d1f3b7e52d21bb70cbf0bcade1543813bc7-1920x1080.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/dd0c905335c69f776b67f6243969421410f0c521-1920x1920.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/513a8469481bbf5e78a717ef61a2d33e036151fd-3840x3840.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/f6af557b622496792940845887a21cdf6ed8f766-1921x1921.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/c2870e6b484c4de688427a6eac1b085894638064-3808x2349.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/67b7b28dc9aaddb6be57a5952f0f1b1c17b2951c-1920x1080.png"
+  ],
+  "style_tags": [
+    "sports-broadcast",
+    "illustration",
+    "motion-design"
+  ],
+  "format": "16:9",
+  "medium": "2D",
+  "description": "Bold illustrated tennis: a player under fireworks, an isometric stadium, a dragon-like ball, sunny fan scenes and electric-green splashes. Saturated blue, yellow and coral.",
+  "why_top_tier": "Gives a grand slam a full illustrative identity with energetic animation.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright Tennis Australia"
+}

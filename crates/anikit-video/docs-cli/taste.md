@@ -10,7 +10,9 @@ Every frame can be striking as a still, and every second worth hearing, and "inc
 - **References:** `anikit-video board refs/` turns 3–6 real-world images from outside tech (paintings, posters, prints, film stills, architecture) into palette, value, texture and line tokens (`docs board`).
 
 **What tends to land:**
-- **One idea only this brief could have.** Swap in a competitor's name: if it still works, it's probably generic. Ideas often come from references outside the category; writing 3 directions that differ on every axis and keeping the most specific helps.
+- **One idea only this brief could have.** Swap in a competitor's name: if it still works, it's probably generic. Good ideas tend to come late: 30+ one-liners, then turn the obvious one (reverse it, remove what's taken for granted, borrow a medium from another world), with references from outside the category (`docs/video/craft/art-direction.md`).
+- **A shape chosen on purpose.** A question in the first second, one turn, a payoff held ~1.5–2.5 s (memory needs it), then a small button. There are 20 structures to pick from in `docs/video/craft/storytelling.md`, from chain reaction and reversal to a story told through an interface or a loop.
+- **One material pushed to the limit.** Award winners put their craft into one thing (real smoke, gravel with weight, one tile rule) rather than five effects (`docs/video/craft/award-level.md`).
 - **Density with intent.** A paused frame reads as a designed still: a subject, a world, texture, a reason for each layer. Restraint can be rich, but empty frames tend to read as unfinished.
 - **Legible words.** Brightness contrast of about 4.5:1 or more (colour-only contrast smears in MP4), ~36 px or larger at 1080p, kept sharp while read, held for max(0.83 s, chars/15) after they settle.
 - **Hierarchy and placement.** A few sizes with clear steps; off-centre with room to move, or symmetry that commits; light you could point to.

@@ -75,6 +75,12 @@ pub trait Instrument: Send + Sync {
     fn ordered_voices(&self) -> bool {
         self.mono()
     }
+    /// Start a note knowing whether it is played legato (it starts before the
+    /// previous note ends). Mono synths glide only on legato notes.
+    fn voice_legato(&self, note: &NoteOn, legato: bool) -> Box<dyn Voice> {
+        let _ = legato;
+        self.voice(note)
+    }
 }
 
 /// Small, fast deterministic RNG (SplitMix64 seeding + xorshift*).
