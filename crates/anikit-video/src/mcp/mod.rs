@@ -400,7 +400,7 @@ pub fn tools() -> Vec<Value> {
         json!({ "name": "render_contact_sheet", "description": "One frame per scene in one PNG → path. Cheapest full review.", "inputSchema": obj(img(json!({ "frames": { "type": "integer" } })), &[]) }),
         json!({ "name": "render_video", "description": "Final render → path.", "inputSchema": obj(with(spec(), json!({ "out": { "type": "string", "description": "e.g. out.mp4" }, "quality": { "type": "string", "description": "draft|standard|high" } })), &[]) }),
         json!({ "name": "list_looks", "description": "Art-direction looks (palette, type, motion, world layers). name → its direction; full:true → JSON to override.", "inputSchema": obj(json!({ "name": { "type": "string" }, "full": { "type": "boolean" } }), &[]) }),
-        json!({ "name": "get_prompt", "description": "Prompt library: launch-video-generator, script-writer, storyboarder, critic, copy-guard, brand-kit, motion-rules, template:<name>.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &["name"]) }),
+        json!({ "name": "get_prompt", "description": "Prompt library: director, launch-video-generator, script-writer, storyboarder, critic, copy-guard, brand-kit, motion-rules, template:<name>.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &["name"]) }),
     ]
 }
 

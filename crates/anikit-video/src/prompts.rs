@@ -8,6 +8,7 @@ use crate::templates::{suggest, Template, BUILTIN};
 
 /// `(name, markdown)` for every hand-written prompt.
 pub const PROMPTS: &[(&str, &str)] = &[
+    ("director", include_str!("../../../prompts/director.md")),
     ("launch-video-generator", include_str!("../../../prompts/launch-video-generator.md")),
     ("script-writer", include_str!("../../../prompts/script-writer.md")),
     ("storyboarder", include_str!("../../../prompts/storyboarder.md")),

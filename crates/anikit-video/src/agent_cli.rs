@@ -38,7 +38,7 @@ Agent commands:
   anikit-video templates schema <name> [--json] a template's parameters (compact; --json: JSON Schema)
   anikit-video templates guide <name>           how to fill it well (markdown)
   anikit-video templates expand <name> [params.json] [--brand brand.json] [--format 9:16] [--look noir] [-o spec.json]
-  anikit-video prompt [name]        list prompts, or print one (e.g. launch-video-generator)
+  anikit-video prompt [name]        list prompts, or print one (e.g. director)
   anikit-video looks [name] [--json] art-direction looks (palette, type, motion, world); a spec takes \"look\": \"noir\"
   anikit-video critique <spec.json> [--render] [--json]  design review; --render also checks rendered frames
                                     (contrast against real pixels, overlaps, cut text, empty frames)
