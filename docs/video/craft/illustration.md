@@ -2,13 +2,15 @@
 
 Research notes on why illustrated motion work looks studio-made or looks like generic "AI slop", and what Anikit Video should build next. Read this with [`../taste/TASTE.md`](../taste/TASTE.md), which covers general taste. This file covers illustration and 2D or hybrid animation only.
 
-Numbers marked **(rule of thumb)** come from common studio and teaching practice and are starting values, not laws. Other numbers are linked to their source.
+**How to read the advice.** Nothing here is a law. Each tendency says what usually happens and why, and when to choose otherwise. Every "tell" listed below is a valid choice in some style. A held still frame is Saul Bass. A smooth gradient is Haugomat's sky. A mirrored face is a Byzantine icon or a Wes Anderson tableau. The aim is that every choice is *made*, not defaulted. Numbers marked **(rule of thumb)** are starting values from common studio and teaching practice. Numbers marked **(observed)** are my reading of published work, not the artist's statement. Everything else is linked.
+
+Tools named below: available now are `brush`, `sketch`, `hatch`, `paper` and `cutout` (`docs/video/components.md`), shape and `draw` layers, post `grain`/`aberration`, `steps(n)` easing, and the shader style filters (`halftone risograph linocut watercolour crosshatch screenprint print-offset dither`). **Planned, not yet built:** the `illo` vector toolkit (lit flat shapes, inks, grain) and the `landscape`, `plants`, `clouds` and `water` generators. Keys shown for planned tools are proposals.
 
 ---
 
 ## 0. The diagnosis in one paragraph
 
-Generic illustration is what you get when nobody makes decisions. Every shape is the same weight, every colour is mid-saturation, the light comes from nowhere, every edge is a perfect bezier, and everything moves on ones with the same ease. Critics of Corporate Memphis say it plainly: it is flat, bright, solid colour, "cartoon-like figures with disproportionate features", and the figures "lack defining characteristics" ([Wikipedia](https://en.wikipedia.org/wiki/Corporate_Memphis), [Marketplace](https://www.marketplace.org/story/2021/04/15/a-primer-on-corporate-memphis-big-techs-favorite-design-trend)). It spread because stock libraries such as unDraw and Freepik let non-illustrators produce it cheaply ([Eye on Design](https://eyeondesign.aiga.org/what-the-think-pieces-about-corporate-memphis-tell-us-about-the-state-of-illustration/), [Jim Nielsen](https://notes.jim-nielsen.com/n/2021-05-28-1225/)). AI output fails the same way: when details are missing, a model "falls back on patterns that appear most frequently" ([getimg](https://getimg.ai/blog/what-is-ai-slop-why-its-getting-worse)), and slop is "what happens when nobody makes enough decisions" ([Creativepool](https://creativepool.com/bilder-studio/news/ai-slop-is-a-taste-problem-not-a-technology-problem.35112)). Flat style is not the problem. Flat art has a long, rich history ([Eye on Design](https://eyeondesign.aiga.org/what-the-think-pieces-about-corporate-memphis-tell-us-about-the-state-of-illustration/)). The problem is defaults. Studio work is a stack of deliberate, slightly wrong-looking, consistent decisions, and the engine's job is to make each of those decisions cheap to state in JSON.
+Generic illustration is what you get when nobody makes decisions. Every shape is the same weight, every colour is mid-saturation, the light comes from nowhere, every edge is a perfect bezier, and everything moves on ones with the same ease. Critics of Corporate Memphis say it plainly: it is flat, bright, solid colour, "cartoon-like figures with disproportionate features", and the figures "lack defining characteristics" ([Wikipedia](https://en.wikipedia.org/wiki/Corporate_Memphis), [Marketplace](https://www.marketplace.org/story/2021/04/15/a-primer-on-corporate-memphis-big-techs-favorite-design-trend)). It spread because stock libraries let non-illustrators produce it cheaply ([Eye on Design](https://eyeondesign.aiga.org/what-the-think-pieces-about-corporate-memphis-tell-us-about-the-state-of-illustration/), [Jim Nielsen](https://notes.jim-nielsen.com/n/2021-05-28-1225/)). AI output fails the same way: when details are missing, a model "falls back on patterns that appear most frequently" ([getimg](https://getimg.ai/blog/what-is-ai-slop-why-its-getting-worse)), and slop is "what happens when nobody makes enough decisions" ([Creativepool](https://creativepool.com/bilder-studio/news/ai-slop-is-a-taste-problem-not-a-technology-problem.35112)). Flat style is not the problem. Flat art has a long, rich history ([Eye on Design](https://eyeondesign.aiga.org/what-the-think-pieces-about-corporate-memphis-tell-us-about-the-state-of-illustration/)). The problem is defaults. Studio work is a stack of deliberate, consistent decisions, and the engine's job is to make each decision cheap to state in JSON.
 
 ---
 
@@ -16,196 +18,265 @@ Generic illustration is what you get when nobody makes decisions. Every shape is
 
 | Studio / film | Signature decisions worth stealing |
 |---|---|
-| **Spider-Verse** (Sony Imageworks) | Animation is "stepped", mostly on twos. In the studio's words, "Animating on 2s doesn't mean mathematically every other frame… More often than not, it's 12 fps, but it's a fluid scale" ([VFX Voice / SideFX](https://www.sidefx.com/community/spider-man-into-the-spider-verse/)). Comp tools replace optical effects with print effects. A halftone tool lets artists set dot size, angle and spacing, and dot density tracks the shading. A hatch tool sets thickness from shading. **ChromaShifter** replaces depth-of-field blur with colour offset ([Foundry](https://www.foundry.com/insights/film-tv/graphic-look-in-comp-spiderman)). Halftone on rim lights is sometimes locked to the character and sometimes loose, or a swinging character seems to be "swimming through a pattern" (same source). In *Across*, rates run from ones up to 6s, and Spider-Punk's guitar, jacket and outline each run on different rates ([Yahoo/IndieWire](https://ca.news.yahoo.com/inside-5-mind-blowing-dimensions-130000004.html)). Ink lines are drawn on keyframes and interpolated, and **MaskToInk** renders a mask "as if made of wet ink" ([befores & afters](https://beforesandafters.com/2023/06/28/this-was-the-first-cg-animated-movie-ive-ever-heard-of-that-actually-had-a-dedicated-inking-team/), [SIGGRAPH 2023](https://history.siggraph.org/learning/linework-in-spider-man-across-the-spider-verse-by-grochola-maccari-lee-and-boulet-gilly)). |
-| **Klaus** (SPA Studios) | 2D drawings are lit in **up to 8 layers**: key or shadow, ambient occlusion, SSS, rim, eye specular and bounce. Each layer is a set of drawn shapes that a line-tracking system pins to the animation. Then a separate texture pass adds a subtle grain that "travels with the character", and compositors set a different texture amount per material. Lines are kept "only where needed", so value replaces outline ([befores & afters](https://beforesandafters.com/2019/11/14/heres-what-made-the-2d-animation-in-klaus-look-3d/), [80.lv](https://80.lv/articles/klaus-look-development-simulating-3d-effects-in-2d/)). Light terms were cut down to key, bounce, ambient, occlusion and rim so the result would not look "too 3D" ([Cartoon Brew](https://cartoonbrew.com/feature-film/how-klaus-draws-on-centuries-old-artistic-principles-to-push-2d-animation-forward-182325.html)). A colour script covered about one shot in four. |
-| **Arcane** (Fortiche) | 3D sets get painted matte textures projected onto them. Lines are freehand and "slightly uneven". Detail rises only where characters interact and is softened elsewhere ([80.lv](https://80.lv/articles/arcane-artists-show-how-they-combine-traditional-art-3d-for-backgrounds)). Highlights and shadows are painted into textures instead of lit, and smoke and fire are 2D FX ([VFX Voice](https://vfxvoice.com/riot-games-and-fortiche-get-revolutionary-with-arcane-season-2/), [RedShark](https://redsharknews.com/why-netflixs-arcane-looks-so-good-how-fortiche-ramped-up-the-animation-pipeline)). |
-| **Cartoon Saloon** (*Wolfwalkers*, *Song of the Sea*) | **Line style carries meaning.** The town gets a rigid, uniform "woodblock" line. The forest and wolves get a scratchy pencil line, and the pencil and charcoal under-drawings stay in the final frames. Wolfvision is a third style ([Awards Radar](https://awardsradar.com/2021/03/04/interview-wolfwalkers-artists-on-creating-magic-between-the-lines/), [Frame.io](https://blog.frame.io/2021/05/03/made-in-frame-wolfwalkers/)). *Song of the Sea* uses loose watercolour backgrounds, Celtic swirls hidden in shells, clouds and rocks, and city backgrounds made "mainly of squares and triangles" ([Hot Press](https://hotpress.com/culture/song-of-the-sea-14592226), [Animation Obsessive](https://animationobsessive.substack.com/p/art-directing-song-of-the-sea)). |
-| **Puss in Boots: The Last Wish** (DreamWorks) | The goal was a "fairy tale painting look". Frame rate is tied to story: Puss shifts to stepped twos when he is fantasising, and the wolf "brings him back to reality" ([Cartoon Brew](https://www.cartoonbrew.com/feature-film/puss-in-boots-joel-crawford-inbtwn-224324.html), [befores & afters](https://beforesandafters.com/2023/01/11/heres-how-dreamworks-lent-a-whole-new-brand-of-stylized-look-and-feel-to-puss-in-boots-the-last-wish)). |
-| **TMNT: Mutant Mayhem** | "Imply teenage imperfection everywhere." Models were approved in asymmetric poses, and the asymmetry was put back after rigging. Tileable maps and bump maps were banned and materials painted instead. **Motion blur was replaced by scribbles drawn in comp**, defocus by scribble bokeh, and glows were removed as "too digital". Seven light channels each got their own treatment (scribble, cross-hatch, stepped). 2D FX were stepped ([befores & afters](https://beforesandafters.com/2023/09/07/we-wanted-to-imply-teenage-imperfection-everywhere/)). |
-| **Mitchells vs the Machines** | The human world is made of "thousands of watercolour brushstrokes", with painterly outlines on CG. The 2D doodle layer ("Katie-vision") is meant to look amateurish. Painterly sims have 2D FX on top ([befores & afters](https://beforesandafters.com/2021/04/29/behind-the-early-2d-3d-test-for-the-mitchells-vs-the-machines/), [CGW](https://www.cgw.com/Publications/CGW/2021/July-August-September-2021/3D-with-a-Twist.aspx)). |
-| **Disney / Eyvind Earle** (*Sleeping Beauty*) | Trees start as a gouache blob, then get "smaller and smaller leaves". Square trees sit against curvy ground cover, and the horizontal and vertical planes carry into the character design ([Gurney](https://gurneyjourney.blogspot.com/2019/02/eyvind-earle-video-bio.html), [SIGGRAPH poster](https://history.siggraph.org/wp-content/uploads/2022/12/2014-Poster-97-Murphy_Stylized-Trees-and-Landscapes.pdf)). |
-| **Golden Wolf, Buck, Animade, Moross** (motion-design studios) | Cel and frame-by-frame animation (TVPaint for roughs and cleanup) over designed, rig-light shapes ([CGW](https://cgw.com/Publications/CGW/2021/Jan-Feb-March-2021/Between-Two-Worlds.aspx), [Toon Boom](https://www.toonboom.com/?p=18220), [Motionographer](https://motionographer.com/2025/05/12/studio-stories-12-years-of-golden-wolf/)). Buck made Facebook's *Alegria* guide, the source of Corporate Memphis ([Wikipedia](https://en.wikipedia.org/wiki/Corporate_Memphis)). That system worked inside Buck's own animation and became slop once it was copied without the animation, the timing or the concept. |
-| **Gobelins** | Strong graphic and character design, plus character animation. Layout is often done in 3D and finished in 2D. Students are pushed toward different styles, not a house style ([WeTransfer](https://wepresent.wetransfer.com/story/pioneers-gobelins-school-france/), [Animation Career Review](https://www.animationcareerreview.com/articles/gobelins-l%E2%80%99ecole-de-l%E2%80%99images-eric-riewer-discusses-program%E2%80%99s-unique-pedagogy-and-success)). |
+| **Spider-Verse** (Sony Imageworks) | Animation is "stepped", mostly on twos. In the studio's words, "Animating on 2s doesn't mean mathematically every other frame… More often than not, it's 12 fps, but it's a fluid scale" ([SideFX](https://www.sidefx.com/community/spider-man-into-the-spider-verse/)). Comp tools replace optical effects with print effects. A halftone tool lets artists set dot size, angle and spacing, and dot density tracks the shading. A hatch tool sets thickness from shading. **ChromaShifter** replaces depth-of-field blur with colour offset ([Foundry](https://www.foundry.com/insights/film-tv/graphic-look-in-comp-spiderman)). In *Across*, rates run from ones up to 6s, and Spider-Punk's guitar, jacket and outline each run on different rates ([Yahoo/IndieWire](https://ca.news.yahoo.com/inside-5-mind-blowing-dimensions-130000004.html)). |
+| **Klaus** (SPA Studios) | 2D drawings are lit in **up to 8 layers**: key or shadow, ambient occlusion, SSS, rim, eye specular and bounce. Each layer is a set of drawn shapes that a line-tracking system pins to the animation. A separate texture pass adds grain that "travels with the character", with a different amount per material. Lines are kept "only where needed", so value replaces outline ([befores & afters](https://beforesandafters.com/2019/11/14/heres-what-made-the-2d-animation-in-klaus-look-3d/)). A colour script covered about one shot in four. |
+| **Arcane** (Fortiche) | 3D sets get painted matte textures projected onto them. Lines are freehand and "slightly uneven". Detail rises only where characters interact ([80.lv](https://80.lv/articles/arcane-artists-show-how-they-combine-traditional-art-3d-for-backgrounds)). Light is painted into textures, and smoke and fire are 2D FX ([VFX Voice](https://vfxvoice.com/riot-games-and-fortiche-get-revolutionary-with-arcane-season-2/)). |
+| **Cartoon Saloon** | **Line style carries meaning**: a rigid "woodblock" line for the town, a scratchy pencil line for the forest, and wolfvision as a third style ([Awards Radar](https://awardsradar.com/2021/03/04/interview-wolfwalkers-artists-on-creating-magic-between-the-lines/), [Frame.io](https://blog.frame.io/2021/05/03/made-in-frame-wolfwalkers/)). |
+| **Puss in Boots: The Last Wish** | The goal was a "fairy tale painting look". Frame rate is tied to story: stepped twos when Puss is fantasising ([Cartoon Brew](https://www.cartoonbrew.com/feature-film/puss-in-boots-joel-crawford-inbtwn-224324.html), [befores & afters](https://beforesandafters.com/2023/01/11/heres-how-dreamworks-lent-a-whole-new-brand-of-stylized-look-and-feel-to-puss-in-boots-the-last-wish)). |
+| **TMNT: Mutant Mayhem** | "Imply teenage imperfection everywhere." Models were approved asymmetric, painted materials replaced tileable maps, **scribbles replaced motion blur**, scribble bokeh replaced defocus, and glows were removed as "too digital". Seven light channels each got their own treatment ([befores & afters](https://beforesandafters.com/2023/09/07/we-wanted-to-imply-teenage-imperfection-everywhere/)). |
+| **Mitchells vs the Machines** | "Thousands of watercolour brushstrokes", painterly outlines on CG, and a deliberately amateur doodle layer ([befores & afters](https://beforesandafters.com/2021/04/29/behind-the-early-2d-3d-test-for-the-mitchells-vs-the-machines/), [CGW](https://www.cgw.com/Publications/CGW/2021/July-August-September-2021/3D-with-a-Twist.aspx)). |
+| **Eyvind Earle** (*Sleeping Beauty*) | Trees start as a gouache blob and get "smaller and smaller leaves". Square trees sit against curvy ground cover ([Gurney](https://gurneyjourney.blogspot.com/2019/02/eyvind-earle-video-bio.html), [SIGGRAPH poster](https://history.siggraph.org/wp-content/uploads/2022/12/2014-Poster-97-Murphy_Stylized-Trees-and-Landscapes.pdf)). |
+| **Golden Wolf, Buck, Animade, Moross** | Cel and frame-by-frame animation over designed, rig-light shapes ([CGW](https://cgw.com/Publications/CGW/2021/Jan-Feb-March-2021/Between-Two-Worlds.aspx), [Toon Boom](https://www.toonboom.com/?p=18220), [Motionographer](https://motionographer.com/2025/05/12/studio-stories-12-years-of-golden-wolf/)). Buck made Facebook's *Alegria* guide, the source of Corporate Memphis. The system worked inside Buck's own animation and became slop when it was copied without the timing or the concept. |
+| **Gobelins** | Strong graphic and character design. Layout is often done in 3D and finished in 2D, and there is no house style ([WeTransfer](https://wepresent.wetransfer.com/story/pioneers-gobelins-school-france/)). |
 
-**The pattern.** Every one of these productions *removes* default CG or vector perfection: motion blur, soft defocus, uniform lines, smooth 24 fps motion, symmetric models and tileable texture. Then each puts back a **specific, consistent, motivated** imperfection: halftone, scribble blur, pencil line, stepped rate, painted light shapes.
+**The pattern.** These productions tend to *remove* default CG or vector perfection, such as motion blur, soft defocus, uniform lines and smooth 24 fps motion. Then each puts back a **specific, consistent, motivated** imperfection.
 
-### Editorial and print references
+### Print processes
 
-- **Malika Favre**: she fills the page, then removes material until only the essential lines remain. Negative space carries the second reading. Colour comes last and serves the story ([Wallpaper](https://wallpaper.com/design/hide-and-seek-by-malika-favre-at-kemistry-gallery-london), [CC Magazine](https://ccmagazine.es/en/interview-with-the-illustrator-malika-favre/)). In practice that is 2–4 flat colours with no outlines, and figure and ground share edges.
-- **Tom Haugomat**: a cool, pastel, mid-century palette, tiny figures in large fields, and light as the subject ([Handsome Frank](https://handsomefrank.com/illustrators/tom-haugomat)).
-- **Owen Davey**: a "fairly limited colour palette" per piece, geometric shapes and texture. He sketches on paper and builds in Photoshop ([Friday Illustrated](https://www.fridayillustrated.com/every-artist-self-taught-way-think-interview-illustrator-owen-davey/), [Grain Edit](https://grainedit.com/?p=10410)).
-- **Jean Jullien / Andrew Footit**: a single confident black brush line with flat fills. The idea is the image: humour and "visual efficiency" ([It's Nice That](https://www.itsnicethat.com/features/review-of-the-year-2015-illustration-jean-jullien), [Eye on Design](https://eyeondesign.aiga.org/how-illustrator-jean-jullien-fights-creative-fatigue-makes-the-most-of-his-limited-skills/)). Line variation comes from the brush itself, not from added effects.
-- **Risograph**: translucent spot inks overprint into new colours (pink over blue gives purple). Registration shifts **0–3 mm** between drums. Large dark blocks print blotchy. "Grain Touch" is a random diffusion dither, and halftones run around **71–106 lpi** ([Oxford Green Print](https://oxfordgreenprint.com/home/design-for-riso/), [CCS](https://campus.collegeforcreativestudies.edu/imaging-center/2021/06/22/registration-trapping/), [Kenji Liu](https://atlasofmaking.kenjiliu.com/techniques/risograph)). Shops stock different drum colours, including fluorescent pink, yellow, aqua, federal blue, mint and violet ([Utah Book Arts](https://lib.utah.edu/collections/book-arts/risograph.php), [Moniker Press](https://monikerpress.ca/colours)).
-- **Screen print / offset**: screens sit at 0°, 15°, 45° and 75°. The darkest ink goes at 45°, and inks that overprint as tints should be at least 15° apart ([PrintWiki](https://printwiki.org/Traditional_Color_Angles), [FESPA](https://fespa.com/en/news-media/screen-separations-in-printing)). Garment screens run 45–55 lpi, so the dots are visible on purpose. In trapping, the darker ink overprints the spread of the lighter one.
-- **Lino / woodcut**: relief printing, so carved-away areas stay paper. Lino gives smooth, fluid gouge marks. Woodcut shows wood grain. The look is strong black and white, outline cuts plus hatch and stipple gouges ([Bachelorprint](https://www.bachelorprint.com/printing-guide/printmaking/woodcut), [Hickman](https://hickmandesign.co.uk/blog/history/what-is-lino-printing)). Gouge marks *follow the form*, unlike screen-space hatching.
+- **Risograph.** Translucent spot inks overprint into new colours. Registration shifts **0–3 mm** between drums, large dark blocks print blotchy, "Grain Touch" is a random diffusion dither, and halftones run around **71–106 lpi** ([Oxford Green Print](https://oxfordgreenprint.com/home/design-for-riso/), [CCS](https://campus.collegeforcreativestudies.edu/imaging-center/2021/06/22/registration-trapping/), [Kenji Liu](https://atlasofmaking.kenjiliu.com/techniques/risograph)). Drum colours vary by shop: fluorescent pink, yellow, aqua, federal blue, mint and others ([Utah Book Arts](https://lib.utah.edu/collections/book-arts/risograph.php)).
+- **Screen print and offset.** Screens sit at 0°, 15°, 45° and 75°, with the darkest ink at 45°, and overprinting tints go at least 15° apart ([PrintWiki](https://printwiki.org/Traditional_Color_Angles), [FESPA](https://fespa.com/en/news-media/screen-separations-in-printing)). Garment screens run 45–55 lpi, so the dots are visible. In trapping, the darker ink overprints the lighter one.
+- **Lino and woodcut.** Relief printing, so carved-away areas stay paper. The look is strong black and white, and the gouge marks *follow the form* ([Bachelorprint](https://www.bachelorprint.com/printing-guide/printmaking/woodcut), [Hickman](https://hickmandesign.co.uk/blog/history/what-is-lino-printing)).
 
 ---
 
 ## 2. Principles, with numbers
 
-### Palette and value
+### Palette and value: several starting points
 
-- **Palette size.** Editorial vector work uses 3–6 inks plus paper (rule of thumb). Riso and screen print use 2–4 spot inks, and overprints give 1–3 more for free. A "limited palette" exercise is 2–3 colours ([Creative Bloq](https://creativebloq.com/illustration/create-illustration-limited-colour-palette-5148613)). **Stock and AI illustration typically shows 8–15 unrelated mid-saturation hues. That alone reads as clip-art.**
-- **Proportion.** About 60 / 30 / 10 dominant / secondary / accent. In greyscale this means 60% light, 30% mid and 10% dark, and the 10% must differ from both in hue, value *or* saturation ([Made Good Designs](https://madegooddesigns.com/60-30-10-color-rule/), [Studio Matrx](https://www.studiomatrx.org/students/interior-design-foundations/colour-hue-value-saturation-interiors)).
-- **Value first.** Design in 3 values (notan: light, mid, dark), squint, then add hue. A frame should read in greyscale at thumbnail size. Keep the darkest dark and lightest light, about 5–10% of area, at the focal point (rule of thumb). Klaus and Arcane use a colour script, roughly one keyframe per 4 shots ([befores & afters](https://beforesandafters.com/2019/11/14/heres-what-made-the-2d-animation-in-klaus-look-3d/)).
-- **Shift hue, not only value.** Shadows go cooler and more saturated, and highlights go warmer (or the reverse under cold light). Never shade by multiplying with black or adding a grey gradient. A shadow is the local colour rotated about 10–30° in hue toward the ambient colour and dropped 15–30% in lightness (rule of thumb, in OKLCH).
-- **Paper is a colour.** Off-white stocks (cotton, kraft, newsprint) are part of the palette. Pure `#fff` with pure black reads as digital.
+No single palette formula has authority. "60/30/10" comes from interior-design folklore and has no traceable origin ([Made Good Designs](https://madegooddesigns.com/60-30-10-color-rule/) repeats it without a source). Treat it as one option among these:
+
+- **Notan / value first.** Design the frame in 2–3 values, light, mid and dark, before any hue. Value carries the read, and hue is decoration on top ([Studio Matrx](https://www.studiomatrx.org/students/interior-design-foundations/colour-hue-value-saturation-interiors)). Test: a greyscale thumbnail about 200 px wide. If the focal point does not pop there, hue will not save it.
+- **Gamut masking** (James Gurney, after Walter Sargent, 1920s). Draw a shape, usually a triangle, on the colour wheel and use only colours inside it. Where you place the shape sets the mood ([Gurney Journey](https://gurneyjourney.blogspot.com/2011/09/part-3-gamut-masking-method.html), [Krita docs](https://docs.krita.org/user_manual/gamut_masks.html)). This is the best fit for an engine: a mask is data, and fills can be validated or snapped against it.
+- **Monochrome plus one accent.** One hue family in 3–5 values, plus one saturated accent at the focal point, for example Hanuka's neon pink below.
+- **Analogous.** 3 neighbouring hues within about 60° of each other, with value doing the contrast. This is Haugomat's and Ghibli's quiet register.
+- **Spot inks.** 2–4 print inks plus their overprints plus paper (riso, screen print).
+- **Proportion (60/30/10 and similar).** One dominant field, one secondary and a small accent is a useful *default* for giving one colour the room. Choose otherwise when the image depends on two equal fields: Favre's figure and ground, or Bass's split posters.
+
+Further tendencies:
+- **Palette size.** Editorial vector work tends to use 3–6 colours plus paper (observed). Stock and AI illustration tends to show 8–15 unrelated mid-saturation hues, because nothing constrains them. Choose more when the subject is variety itself, as in Ngai's dense pattern work, where a strong value structure holds the many hues together.
+- **Shadows tend to rotate hue.** Shadows shifted 10–30° in hue toward the ambient colour and 15–30% darker in OKLCH read as light (rule of thumb). Multiplying by grey reads as a filter because real light has colour. Choose a grey or black shadow for noir, newsprint or one-ink work, where that limit is the look.
+- **Paper tends to be a colour.** Off-white stock reads as a made object, and `#fff` with pure black reads as screen. Choose pure white for Swiss-style graphic work or Favre-like crispness.
 
 ### Shape language
 
-- Circles read as friendly or soft, squares as stable or stubborn, triangles as dynamic or threatening. Mix them per character. **Straights against curves**: every curved contour should meet a straighter one on the opposite side (classic character-design teaching, see [Creative Bloq](https://creativebloq.com/how-to/simplfy-figures-for-animation)).
-- **Big, medium, small.** Proportions of about 60 / 30 / 10 again, or 1 : ⅓ : ⅑ in scale steps (rule of thumb). Corporate Memphis breaks this with uniform rubbery limbs and a tiny head that is neither big nor small, just odd.
-- **Silhouette test.** Fill the character black. It must read as that character, in that pose, with the limbs separated from the body.
-- **Asymmetry on purpose.** Tilt eyes 2–5°, offset one shoulder, never mirror a face perfectly (Mutant Mayhem's rule above).
-- **Tangents are bugs.** Edges that just touch, such as a hand on the horizon or a head on a frame edge, flatten depth. Either overlap or separate clearly.
+- Circles tend to read as friendly, squares as stable and triangles as dynamic. Straights tend to be set against curves ([Creative Bloq](https://creativebloq.com/how-to/simplfy-figures-for-animation)).
+- **Big, medium, small.** Scale steps of about 1 : ⅓ : ⅑ give hierarchy (rule of thumb). Corporate Memphis tends to use uniformly rubbery limbs, so nothing leads.
+- **Silhouette test.** A solid-black fill tends to reveal whether a pose reads. Choose an overlapping, ambiguous silhouette when the ambiguity is the idea, as in Favre's double readings.
+- **Asymmetry.** Small asymmetries such as a 2–5° eye tilt or an offset shoulder tend to read as alive, because real faces are asymmetric (Mutant Mayhem). Choose mirrored symmetry for icons, masks, heraldry, Anderson-style frontal staging and folk patterns, where formality is the point.
+- **Tangents.** Edges that just touch tend to flatten depth because the eye can't tell which is in front. Overlap or separate them, unless you want a deliberate graphic lock-up.
 
 ### Line
 
-- **Three weights.** Thin (interior detail), medium (contours) and thick (outer silhouette, overlaps, shadow-side accents) ([Cursa](https://cursa.app/en/page/digital-drawing-on-a-tablet-clean-line-art-techniques-line-weight-tapers-and-corners), [Proko](https://proko.com/course-lesson/how-to-draw-with-line-weight/notes)). A workable ratio is about **1 : 1.6–2 : 3** (rule of thumb). The heaviest weight goes at the focal point, and weight drops with distance.
-- **Thick and thin within one stroke.** Swell on the curve and taper at both ends. Line is heavier on the side away from the light, and heavier where forms overlap.
-- **Line colour.** A pure-black outline over colour reads as a colouring book. Studios colour the line, darker and more saturated than the fill it bounds, or drop it entirely where value separates the shapes (Klaus).
-- **Lines don't always close.** Leave 1–3 px gaps where light hits, and let lines overshoot a little at corners (rule of thumb from inking).
+- **Three weights.** Thin for interior, medium for contour and thick for silhouette, overlaps and the shadow side ([Proko](https://proko.com/course-lesson/how-to-draw-with-line-weight/notes), [Cursa](https://cursa.app/en/page/digital-drawing-on-a-tablet-clean-line-art-techniques-line-weight-tapers-and-corners)). The ratio is about **1 : 1.6–2 : 3** (rule of thumb). Choose a monoline for the woodblock, ligne claire or Jullien register, where uniform weight is the style.
+- **Line colour.** A coloured line, darker than its fill, tends to sit inside the image. A black line tends to read as a colouring book, unless black is the only ink and the image is about the line (Jullien).
+- **Open lines.** Gaps of 1–3 px where light hits and slight overshoot at corners tend to read as inked by hand (rule of thumb).
 
 ### Texture amount
 
-- Grain and paper sit at **3–8% luminance amplitude** at final size (rule of thumb). Raise it to 10–15% only for a deliberate print look. The engine's paper stocks use 3–6% (`illus_fill.rs`), which is in range.
-- **Texture travels with the object** (Klaus), unless the medium is the paper. Screen-locked grain says "filter". Object-locked grain says "painted".
-- **Set texture per material.** Skin gets less than cloth or rock (Klaus compositors).
-- Grain size should be **1–2 px at 1080p**, or the H.264 encoder smears it to mush. Check after encoding.
+- Grain at **3–8% luminance amplitude** tends to read as material, not filter (rule of thumb). The current paper stocks use 3–6%. Go to 10–15% for a deliberate print look.
+- **Object-locked texture** tends to read as painted, and screen-locked texture as a filter (Klaus: grain "travels with the character"). Choose screen-locked when the medium is the paper or film itself.
+- Grain of **1–2 px at 1080p** tends to survive H.264. Finer grain smears, so check after encoding.
 
 ### Timing
 
-- **Ones, twos, threes.** At 24 fps, twos is 12 drawings a second and threes is 8. Spider-Verse used twos for most character action, ones for fast camera-relative motion, and up to 6s for snappy pose-to-pose ([Yahoo](https://ca.news.yahoo.com/inside-5-mind-blowing-dimensions-130000004.html)). **Rule:** camera moves and pans stay on ones, even when characters step, or the background strobes.
-- **Mixed rates per part** (Spider-Punk). Body on 3s with the outline boiling on 2s reads as hand-made. A whole frame on one rate reads as a "low-fps filter".
-- **Boil.** Redraw jitter at **4–12 fps**, about 8 fps typical ([PremiumBeat](https://www.premiumbeat.com/blog/how-to-create-line-boil-animations)). A cycle of 3–4 redraws is enough ([Medium](https://medium.com/the-inspired-animator/how-to-apply-a-hand-crafted-look-to-your-animations-in-after-effects-2da1c5dbd282)). Amplitude is 0.5–1.5 px at 1080p for "alive", and 2–4 px for "Squigglevision".
-- **Holds.** A pose needs about 6–8 frames (¼–⅓ s) to read and 12+ to land a beat. A *moving hold* drifts 2–5% toward a more extreme version of the pose instead of freezing ([Animation Mentor](https://animationmentor.com/blog/why-all-animators-need-to-master-the-moving-hold), [AnimSchool](https://blog.animschool.edu/tag/moving-holds/)). In stepped work, hold the last drawing 2–4 frames longer than the timing suggests.
-- **Smears and multiples.** Distort the subject across **1–2 frames** between keys, or duplicate it, as in Looney Tunes multiples. These replace motion blur ([Wikipedia](https://en.wikipedia.org/wiki/Smear_frame), [AnimSchool](https://blog.animschool.edu/?p=608)). Mutant Mayhem used scribbles in place of blur.
-- **Squash and stretch.** Keep area constant: `sx·sy = 1`. At impact, squash to about 0.7–0.8 by 1.25–1.4 for 1–2 frames, then overshoot to 1.1 and settle (rule of thumb, Williams-style).
-- **Anticipation and overshoot.** Anticipation takes about ⅓ of the main action's duration, in the opposite direction, at 10–20% of the amplitude. Overshoot is 5–15%.
-- **Secondary motion.** Hair, cloth, ears and leaves lag the primary by 2–4 frames and settle 4–8 frames later. If the secondary action is more noticeable than the primary, it is wrong ([Prolific](https://prolificstudio.co/blog/secondary-action-in-animation/)).
+- **Ones, twos and threes.** At 24 fps, twos is 12 drawings a second. Characters on twos with camera moves on ones tends to avoid background strobing. Choose stepped camera moves for a deliberately handmade or stop-motion register.
+- **Mixed rates per part** (Spider-Punk) tends to read as hand-made. One rate for the whole frame tends to read as a "low-fps filter".
+- **Boil.** Re-seeding at **4–12 fps**, about 8 typical ([PremiumBeat](https://www.premiumbeat.com/blog/how-to-create-line-boil-animations)), with a 3–4 drawing cycle and 0.5–1.5 px amplitude at 1080p for "alive", or 2–4 px for Squigglevision.
+- **Holds.** A pose tends to need 6–8 frames to read and 12+ to land. A *moving hold* drifts 2–5% toward a stronger pose ([Animation Mentor](https://animationmentor.com/blog/why-all-animators-need-to-master-the-moving-hold)). **A fully still frame is a valid choice**: Saul Bass titles, Steinberg-like editorial gags and Anderson tableaux hold dead still, because stillness makes the composition the event. Choose it when the image is the joke or the statement.
+- **Smears and multiples.** Distort across **1–2 frames** in place of blur ([Wikipedia](https://en.wikipedia.org/wiki/Smear_frame), [AnimSchool](https://blog.animschool.edu/?p=608)).
+- **Squash and stretch.** Keep `sx·sy ≈ 1`. Impact at 0.7–0.8 × 1.25–1.4 for 1–2 frames, then overshoot to 1.1 (rule of thumb). Choose rigid bodies for cut-paper or mechanical subjects.
+- **Anticipation.** About ⅓ of the action's duration, at 10–20% of its amplitude. Overshoot 5–15%.
+- **Secondary motion.** Lag the primary by 2–4 frames and settle 4–8 frames later. Secondary that out-shouts the primary tends to pull focus ([Prolific](https://prolificstudio.co/blog/secondary-action-in-animation/)).
 
 ---
 
-## 3. Techniques by subject
+## 3. Reference hands
+
+Ten hands analysed for what makes them recognisable and how to get there with Anikit. Numbers are (observed) unless linked.
+
+### Christoph Niemann: the idea is the image
+- **Recognisable by** the "Sunday Sketch": a real object on paper plus a few ink lines that turn it into something else, "an exercise in seeing" ([NPR](https://www.npr.org/2016/10/31/499807738/how-does-christoph-niemann-make-art-look-effortless-with-a-lot-of-work)). He aims for the "perfect level of abstraction", which he puts at Charlie Brown, "a circle with dots", because more abstract becomes obscure ([Creative Independent](https://thecreativeindependent.com/people/Illustrator-christoph-niemann-on-meeting-the-needs-of-your-client/)). He starts from a punch line and works backwards. Formally: 1 ink line weight, 0–2 flat colours, a lot of white, and the gag lands in one read.
+- **With Anikit:** an `image` layer (the object) plus a `sketch` with 3–8 paths in `ink` texture, `pressure: "even"`, `draw` 0.6 s per path, `boil` 0 (his lines are still) and `paper` `"cotton"`. Hold the finished frame 1.5–2 s. The hold is the payoff.
+
+### Malika Favre: subtraction and negative space
+- **Recognisable by** filling the page, then removing until only the essential lines remain ([Wallpaper](https://wallpaper.com/design/hide-and-seek-by-malika-favre-at-kemistry-gallery-london)). Negative space carries a second reading, and she first used it as a device in *Alphabunnies* ([Big Cartel](https://blog.bigcartel.com/malika-favre-interview)). Colour comes last ([CC Magazine](https://ccmagazine.es/en/interview-with-the-illustrator-malika-favre/)). Formally: 2–4 flat colours, often one near-black plus one saturated plus a pale, no outlines, shared edges between figure and ground, and repeated op-art stripes.
+- **With Anikit:** shape layers with `path` and no stroke. Figure and ground share a single path edge (draw the ground as the figure's complement). A smooth fill is right here, so no grain or at most 2%. Motion: slow mask reveals that flip the figure-ground reading. Planned `illo` inks would enforce the 3-colour set.
+
+### Jean Jullien: one confident brush line
+- **Recognisable by** a black brush line, often a single gesture, and humour from observation with "visual efficiency" ([It's Nice That](https://www.itsnicethat.com/features/review-of-the-year-2015-illustration-jean-jullien), [Eye on Design](https://eyeondesign.aiga.org/how-illustrator-jean-jullien-fights-creative-fatigue-makes-the-most-of-his-limited-skills/)). Line weight varies 1 : 2–3 inside one stroke from brush pressure. Fills are 1–3 flat colours that sometimes miss the line.
+- **With Anikit:** `brush` with `texture: "ink"`, `pressure: "swell"`, size about 10–14 px at 1080p and `taper: [0.15, 0.3]`. Put the flat fill under it, offset 3–6 px from the line. Boil at 8 fps, 0.8 px. Stroke-on in drawing order over 0.4–0.8 s.
+
+### Tomer Hanuka: sharp ink, dramatic colour, one neon
+- **Recognisable by** sharp inking, dynamic shading and limited palettes with "a dash of neon pink" ([Creative Bloq](https://creativebloq.com/computer-arts/tomer-hanuka-8108799), [Spectator](https://stuyspec.com/article/tomer-hanukas-polychromatic-fantasy)). He picks a palette per drawing rather than forcing one, and adds small soft highlights digitally at the end. Formally: 1 dominant hue family across 4–6 values plus a fluorescent accent under about 5% of the area, thin precise contours, and large dark masses with hard shadow shapes.
+- **With Anikit:** `brush` `ink` at 3–5 px, `pressure: "taper"`. Hard shadow shapes as separate shape layers in the dominant hue at −30% L. One accent shape in `#ff2e88`-like neon. A few soft radial highlights (shape layer with `blur` 6–12 px), which are valid here because the artist uses them.
+
+### Brecht Vandenbroucke: gouache, vivid colour, dark jokes
+- **Recognisable by** paintbrush and gouache with "vivid colours", surreal and absurdist humour with dark undertones, and ATAK as his influence ([Pictoplasma](https://conference.pictoplasma.com/?p=2684), [It's Nice That](https://www.itsnicethat.com/articles/brecht-vandenbroucke)). Formally: high-chroma complementaries (red and green, blue and orange), opaque flat gouache areas with visible brush edges, wonky perspective and no line hierarchy.
+- **With Anikit:** shapes filled flat, then a `brush` with `texture: "dry"` along each shape edge in the same colour, so the edge looks painted. `paper` `"cotton"` at tooth 0.4. 6–8 saturated colours are valid here because the value structure stays simple. The planned `illo` gouache fill would add opaque brush streaks inside shapes.
+
+### Victo Ngai: line first, pattern everywhere
+- **Recognisable by** line drawing as the base. She builds by layering over initial lines, starting from acrylic ink on stiff card for texture, using diagonal marks for rock and ovals for soft moss ([Apple masterclass](https://apps.apple.com/us/story/id1470268360)). She studies colour in context ([Creative Bloq](https://www.creativebloq.com/art/digital-art/inside-the-work-of-award-winning-illustrator-victo-ngai-philosophy-process-and-the-tools-behind-it-all)). Formally: dense pattern fills, many hues held together by a clear warm/cool split, and a fine monoline.
+- **With Anikit:** `sketch` of the whole drawing in `pencil` or fine `ink`, then a `hatch` per region with `style` (`hatch` for rock at 45°, `stipple` for moss) and `toneFrom`/`toneTo` set by `light`. Colour fills go *under* the line layer. Gap: pattern fills (waves, scales, clouds) as a fill `style` are not built yet.
+
+### Cartoon Saloon (*Wolfwalkers*, *Song of the Sea*, *Kells*)
+- **Recognisable by** line style that carries meaning: a rigid woodblock line for the town and scratchy pencil and charcoal for the forest ([Awards Radar](https://awardsradar.com/2021/03/04/interview-wolfwalkers-artists-on-creating-magic-between-the-lines/)). Flattened, decorative perspective. Celtic swirls hidden in shells, clouds and rocks, watercolour backgrounds, and city backgrounds made "mainly of squares and triangles" ([Hot Press](https://hotpress.com/culture/song-of-the-sea-14592226), [Animation Obsessive](https://animationobsessive.substack.com/p/art-directing-song-of-the-sea)).
+- **With Anikit:** two `sketch` styles in one film. Town: `ink`, `pressure: "even"`, `boil` 0. Forest: `pencil`, `boil` 12, 1.5 px. `paper` `"watercolor"`. Spirals come from `path` arcs. Planned `clouds` with a spiral-bump option and `plants` on a circle grammar would fit.
+
+### Spider-Verse line work
+- **Recognisable by** ink lines drawn on keyframes and interpolated, so lines follow form, plus **MaskToInk** turning masks into wet-ink shapes ([befores & afters](https://beforesandafters.com/2023/06/28/this-was-the-first-cg-animated-movie-ive-ever-heard-of-that-actually-had-a-dedicated-inking-team/), [SIGGRAPH](https://history.siggraph.org/learning/linework-in-spider-man-across-the-spider-verse-by-grochola-maccari-lee-and-boulet-gilly)). Halftone on shading, chroma offset for defocus, mixed frame rates per part ([Foundry](https://www.foundry.com/insights/film-tv/graphic-look-in-comp-spiderman)).
+- **With Anikit:** `brush` `ink` lines with `pressure: "flick"` for accent lines on the shadow side only. The `halftone` shader filter on the shadow group alone (not the frame). `aberration` for defocused planes. `steps(12)`-style easing on characters until per-layer fps exists.
+
+### Klaus: lighting on 2D
+- **Recognisable by** drawn light shapes in layers (key or shadow, rim, bounce, occlusion, eye specular), a warm transition band at the terminator, minimal outlines, and grain that travels with the character ([befores & afters](https://beforesandafters.com/2019/11/14/heres-what-made-the-2d-animation-in-klaus-look-3d/), [Cartoon Brew](https://cartoonbrew.com/feature-film/how-klaus-draws-on-centuries-old-artistic-principles-to-push-2d-animation-forward-182325.html)).
+- **With Anikit:** today, stack per character a base fill, a shadow shape clipped to it (hue +15°, L −20%), a rim shape 3–5 px wide on the edge away from the key, and a warm 4–8 px band along the terminator at 30% opacity. Planned `illo` lit flat shapes would generate these from one `light` direction.
+
+### Studio Ghibli backgrounds (Kazuo Oga)
+- **Recognisable by** Nicker poster colour, which works like opaque watercolour. Oga used about 21 colours at the time ([Animation Obsessive](https://animationobsessive.substack.com/p/what-kazuo-oga-thinks-about-when), [Gurney](https://gurneyjourney.blogspot.com/2018/05/painting-in-ghibli-style.html)). A wet base coat (*ji-nuri*) goes on before the paper dries, so cloud edges are soft. Greens are layered dark to light, with leaf clusters catching warm light on top. Formally: soft-edged sky gradients (valid here), hard-edged foliage clusters, and 4–6 greens from blue-green shadow to yellow-green light.
+- **With Anikit:** sky as a smooth 2–3 stop gradient plus `paper` `"watercolor"` at tooth 0.3. Foliage as `cutout`-free shape clusters, dark first and lit last, with `brush` `dry` accents. Planned `landscape`, `plants` and `clouds` generators should default to this layering order.
+
+---
+
+## 4. Techniques by subject
 
 ### Characters
-- Build from 3–5 primitive masses (big, medium, small), then cut negative space (Favre). Give each figure **one** exaggerated trait, not a generic stretch of every limb.
-- Light in layers, Klaus-lite: base fill, **one** hard-edged shadow shape (local colour hue-shifted), **one** rim shape on the side away from the key, an optional bounce from the ground colour, and a tiny cheek or nose warm-up at the terminator.
-- Faces: specular dots in the eyes and lids that overlap the iris. Mouths are shapes, not lines.
-- Line follows meaning: clean for "civilised", scratchy for "wild" (Wolfwalkers).
+- Build from 3–5 primitive masses, then cut negative space. One exaggerated trait tends to beat a generic stretch of every limb.
+- Light in layers, Klaus-lite: base, one hard shadow shape, one rim, an optional ground bounce, and a warm terminator band.
+- Line can follow meaning: clean for "civilised", scratchy for "wild".
 
 ### Environments
-- 3–5 depth planes. Atmospheric perspective: each plane back moves toward the sky colour, loses about 20–30% contrast and saturation, and loses line weight (rule of thumb).
-- Detail falls off from the focal point. Arcane softens everywhere characters don't interact.
-- Geometric stylisation should be consistent: Earle's square trees, *Song of the Sea*'s squares and triangles in the city, Celtic swirls hidden in natural forms.
+- 3–5 depth planes. Each plane back moves toward the sky colour and loses 20–30% contrast and line weight (rule of thumb).
+- Detail falls off from the focal point (Arcane). Geometric stylisation stays consistent (Earle's square trees).
 
 ### Plants
-- Earle method: a big silhouette blob, then smaller clusters, then a few individual leaves on the lit edge only. Never draw every leaf at the same size.
-- Plants sway as secondary motion. Phase-offset each cluster by its distance from the root. Bend from the base with a 1–3° rotation, a 2–4 s period, and noise on top.
-- Use 3 greens at most (light, mid, dark) plus a warm leaf accent.
+- Earle and Oga method: a silhouette blob, then smaller clusters, then a few leaves on the lit edge. Uniform leaf size tends to read as clip-art.
+- Sway as secondary motion: 1–3° rotation at the base, a 2–4 s period, and phase offset by distance from the root.
 
 ### Clouds and sky
-- Clouds are a few designed shapes: a flat bottom, a lit top made of 3–7 bumps of different sizes, a shadow shape on the underside in the sky's complementary colour, and a rim on the edge toward the sun.
-- They drift as parallax planes, never as blur. For a painted sky, use 2–3 colour bands with dithered or grained transitions. A smooth vector gradient gives the "stock gradient" tell.
+- Clouds as designed shapes: a flat bottom, 3–7 top bumps of different sizes, an underside shadow shape and a sun-side rim. Oga's soft wet-edge clouds are the other register, so pick one per film.
+- Drift as parallax planes. Skies are 2–3 colour bands with dithered or grained transitions, or a smooth gradient on watercolour paper.
 
 ### Water
-- Water is designed highlights, not a gradient. Use 2–3 values, highlight shapes such as lozenges, zig-zags or scallops that cycle at 6–8 fps, and reflections as broken, stepped horizontal slices. Gilland's *Elemental Magic* treats splashes, ripples and waves as hand-drawn shape families ([Routledge](https://www.routledge.com/Elemental-Magic-Volume-I-The-Art-of-Special-Effects-Animation-1st-Edition/Gilland/p/book/9780240811635)).
-- Splashes are drawn on twos, and droplets break into **shapes with lines of action**, not particles.
+- Designed highlights in 2–3 values, as glint shapes cycling at 6–8 fps, with reflections as broken stepped slices. Gilland's *Elemental Magic* treats splashes, ripples and waves as shape families ([Routledge](https://www.routledge.com/Elemental-Magic-Volume-I-The-Art-of-Special-Effects-Animation-1st-Edition/Gilland/p/book/9780240811635)).
 
 ### Light
-- **Rim light on flat shapes.** Use a thin offset copy of the silhouette (inset 2–6 px toward the light), clipped to the shape, in a warm tint. Halftone the rim when it should read as light rather than texture (Spider-Verse).
-- **Cast shadows are shapes.** Draw a hard-edged polygon in the ground's hue-shifted colour at 60–85% strength (multiply), then add contact darkening where the object meets the ground. A blurred drop shadow is the strongest single "UI, not illustration" tell.
-- **Gradient plus grain.** A two-stop gradient no longer than about 30% of the shape, dithered or stippled so it never bands, with grain on top. A pure vector gradient reads as 2014-era flat design.
-- **God rays and glows** are drawn shapes at low opacity with an additive or screen blend, sometimes halftoned. Soft bloom reads digital (Mutant Mayhem removed glows).
+- **Rim** on flat shapes: an inset offset copy clipped to the silhouette, 2–6 px, warm. Halftone it to read as light.
+- **Cast shadows** as hard polygons at 60–85% multiply, with contact darkening. Blurred drop shadows tend to read as UI. Choose them for a deliberately soft, paper-cutout-under-glass look.
+- **Gradient plus grain**: a short two-stop gradient (≤ 30% of the shape) with dither or grain.
 
 ### Texture
-- **Grain overlay**: multiply or overlay, 3–8%, object-locked, with a different seed per object.
-- **Halftone**: dots whose size follows the shading, at angle 15° or 45°. Coarse (8–20 px cells at 1080p) for pop style, fine for print style.
-- **Misregistration**: each ink plane offset 1–4 px in an independent direction (riso shifts 0–3 mm on paper), optionally wobbling by a pixel per boil frame. Overprints multiply.
-- **Edge breakup**: rough the vector edges with 0.5–2 px noise at a scale of 3–10 px, so they look like ink on paper, especially on large shapes.
+- **Grain** at 3–8%, object-locked, with a seed per object. **Halftone** with dot size from shading, at 15° or 45°, in 8–20 px cells for pop. **Misregistration** of 1–4 px per ink plane. **Edge breakup** of 0.5–2 px noise at a 3–10 px scale.
 
 ---
 
-## 4. What makes vector work hand-made, not clip-art
+## 5. Worked transformations: clip-art → studio
 
-| Clip-art / AI default | Hand-made equivalent |
+### An apple
+**Clip-art version.** A red `#e53935` circle with a heart notch, a linear gradient from light red to dark red, a white elliptical highlight at top left, a green leaf with a centre vein, a 2 px black outline, a Gaussian drop shadow and a pure white ground. Tells: a gradient with no light source, a generic highlight shape, uniform line, a floating shadow, and 5+ unrelated colours.
+
+**Studio decisions:**
+1. **Reference and palette.** Riso two-ink: fluorescent pink `#ff48b0` and federal blue `#3255a4`, with overprint `≈ #5a2f7a` and cream paper `#f3eee2`. That is 3 colours plus paper, from a gamut mask over the red–blue arc.
+2. **Shape.** The apple is not a circle. It is wider at the shoulders (w : h ≈ 1.1 : 1) and asymmetric, with the stalk 8° off vertical and the bottom flattened where it sits. Straight on the shadow side, curved on the lit side.
+3. **Value.** Notan in 3 values: paper (light), pink (mid), overprint (dark). The shadow is a hard crescent on the right taking 30% of the apple, in overprint.
+4. **Light.** A rim on the far left edge: a 4 px sliver of paper showing through. A cast shadow as a flat blue ellipse, 1.6 × the apple's width, offset 20° away from the light, with a darker contact line 3 px tall.
+5. **Line.** No outline on the body. The stalk is a `brush` `ink` stroke, `pressure: "taper"`, 6→1 px. The leaf is one `cutout`-style shape with a `dry` brush vein.
+6. **Texture.** Pink and blue planes misregistered by (2, −1) px and (−1, 2) px. Grain 6%, plus `halftone` on the shadow crescent only, 10 px cells at 45°.
+7. **Motion.** The apple drops in on twos and squashes to 0.82 × 1.22 for 2 frames on landing. The leaf lags 3 frames and settles in 6. Boil 8 fps, 0.8 px. Hold 1.5 s with a moving hold of 2% leaf rotation.
+
+### A fox
+**Clip-art version.** An orange `#ff9800` fox from rounded rectangles: a symmetric head, two triangle ears, a white muzzle, black dot eyes with white glints, a smooth-gradient bushy tail, every line 3 px black, running in a 60 fps tween with ease-in-out.
+
+**Studio decisions:**
+1. **Concept.** One trait: a *sly* fox, so a long pointed snout (head length 1.4 × the clip-art's) and half-lidded eyes. Shape language: triangles for the head and tail, one big curve for the back.
+2. **Palette.** Monochrome plus accent: rust in 4 values (`#e2703a`, `#b84f26`, `#7d3318`, `#3e1a0e`) on a blue-grey snow ground `#c9d3dc`. The accent is the cold blue in the shadows, which picks up the ground colour. 5 colours in total.
+3. **Silhouette.** Readable in solid black. The tail is 45% of body length (a big shape) and the ears are the small shapes. Tilt the head 6° and set one ear back 10°.
+4. **Light.** Low winter sun from behind left. The shadow side is cooled 25° in hue toward blue, and a warm 3 px rim runs along the back and tail. A hard cast shadow, stretched 2.5× long, falls in blue on the snow.
+5. **Line.** Three weights: silhouette 4 px, interior 2 px, whisker and fur flicks 1 px, all `ink` with `taper`. Line colour is `#3e1a0e`, not black. Fur at the tail tip and chest is 6–10 `pressure: "flick"` strokes, with gaps on the lit edge.
+6. **Texture.** `hatch` `style: "hatch"` at 30° on the shadow side of the body, `toneFrom` 0.2 to `toneTo` 0.7. `paper` `"cotton"`.
+7. **Motion.** A trot on twos with a 10-drawing cycle (5 poses), the tail on threes lagging 3 frames. On the turn to camera, a 1-frame smear stretches the snout 1.5×. The camera pans on ones. The final pose is a moving hold with the eyes narrowing over 12 frames.
+
+### A city skyline
+**Clip-art version.** 12 rectangles of random heights in 8 pastel colours, window grids of identical yellow squares, a sky gradient from blue to purple, a sun circle with a glow, a uniform 2 px outline, and every building at the same detail.
+
+**Studio decisions:**
+1. **Reference.** A Haugomat-like dusk. Analogous palette from one gamut-mask triangle covering orange to magenta to violet: sky `#f2a36b` to `#c25a7a`, three building planes `#7a3d6b`, `#4f2a5e`, `#2b1a3f`, and window accent `#ffd27a`. 6 colours.
+2. **Planes and value.** 3 depth planes. The far plane is closest to the sky colour (contrast −60%). The near plane is the darkest. The value steps between planes are even, about 18 L each in OKLCH.
+3. **Shape.** Building widths vary 1 : 3 : 9 (big, medium, small), and heights are composed, not random: one tall landmark at the 1/3 line with a gap beside it for negative space. Roofs get 2–3 distinct silhouettes (a water tower, a stepped crown, an antenna). No tangent where a roof meets the horizon or the frame edge.
+4. **Detail falloff.** Windows only on the near plane, about 15% lit, clustered rather than gridded. The far plane is pure silhouette.
+5. **Light.** The sun sets behind the landmark, so a 3 px rim of `#ffd27a` runs along the landmark's edge only. God rays are 3 flat wedge shapes at 8% screen blend. Choose a smooth sky gradient here (valid for this reference) on `paper` `"watercolor"`, with 4% grain.
+6. **Texture.** Edge breakup is not wanted for crisp Haugomat buildings. For a riso reading instead: 2 inks, a 2 px misregistration and a halftone sky.
+7. **Motion.** A parallax truck-left: far plane 0.2×, mid 0.5×, near 1×, and a foreground lamppost 2× as a flat dark silhouette. Window lights flick on one at a time on 4-frame steps. A slow push of 3% scale across 6 s. The last 1.5 s holds dead still for the title.
+
+---
+
+## 6. What makes vector work hand-made, not clip-art
+
+| Clip-art / AI default | Hand-made equivalent (when the style calls for it) |
 |---|---|
 | Perfect bezier edges, uniform stroke | Edge breakup, pressure swell and taper, overshoots, small gaps |
-| 8–15 unrelated hues, pure white ground | 3–6 inks plus a paper colour, overprints, a 60/30/10 split |
-| Gaussian drop shadow, glow, blur | Hard cast-shadow shapes, drawn rim, halftone or scribble for blur and defocus |
-| Linear gradient fills | Hard-edged value steps, or dithered, stippled or hatched gradients |
-| Symmetric faces and poses | Deliberate asymmetry, a line of action through every pose |
-| Every element at full detail | Detail falls off from the focal point. Silhouettes simplify with distance |
-| Generic people with stretched limbs | Specific characters with one exaggerated trait. Shapes chosen from personality |
-| Texture as one screen-space overlay | Texture per object and per material, moving with it |
-| Smooth 60 fps tween, same ease everywhere | Stepped poses, holds, smears, mixed rates, eases chosen per action |
-| Decoration fills the empty space (blobs, leaves, sparkles) | Negative space is used. Each element earns its place |
-| Perfect registration of line and colour | Small offsets between line and fill. Colour sometimes misses the line |
+| 8–15 unrelated hues, pure white ground | A gamut mask or 3–6 inks plus paper, value first |
+| Gaussian drop shadow, glow, blur | Hard cast-shadow shapes, drawn rim, halftone or scribble for blur |
+| Linear gradient fills, unmotivated | Value steps, dithered or stippled gradients, or a deliberate smooth gradient on textured paper |
+| Default symmetry | Chosen asymmetry, or chosen formal symmetry |
+| Everything at full detail | Detail falls off from the focal point |
+| Generic people with stretched limbs | Specific characters with one exaggerated trait |
+| One screen-space texture overlay | Texture per object and per material, moving with it |
+| Smooth tween, same ease everywhere | Stepped poses, holds (still or moving), smears, mixed rates |
+| Decoration fills the empty space | Negative space used on purpose |
 
 ---
 
-## 5. Motion techniques specific to illustration
+## 7. Motion techniques specific to illustration
 
-1. **Stepped timing** per layer (twos or threes) and per part, with the camera on ones.
-2. **Line boil**: re-seed the jitter at 4–12 fps with a 3–4 drawing cycle. Boil the *fill edges and textures* too, not only strokes.
-3. **Shape morphs** between designed poses (cut-paper or flat style). Match vertex counts, ease between them, and put the morph *on twos*. A tweened smooth morph reads as vector software, and a stepped one reads as drawn.
-4. **Smears** in place of motion blur: stretch along the velocity for 1–2 frames, add multiples for repeated actions, and use speed lines or scribbles.
-5. **Squash and stretch** that preserves area, triggered by velocity and impact.
-6. **Secondary and overlapping action**: a chain of lag springs on child parts such as hair, ears, leaves and scarves.
-7. **Parallax and multiplane**: Disney's multiplane camera used up to 7 glass planes, the far ones moving slowest ([Wikipedia](https://en.wikipedia.org/wiki/Multiplane_camera)). A practical speed ratio is far 0.1–0.3×, mid 0.5×, focal plane 1× and foreground 1.5–2.5× (rule of thumb). Blur the foreground with a *graphic* treatment (flat dark silhouette or halftone), not Gaussian.
-8. **2.5D camera**: flat cards in 3D, with a slow push of 2–5% scale over a shot, or a truck move. Painted projection (Arcane) gives a painting depth on a camera move. Characters stay stepped while the camera moves on ones.
-9. **Cut-paper / cut-out animation**: rotate pieces at their pivots, no deformation, stepped on twos or threes. Drop shadows lift and offset when a piece "lifts".
-10. **Stroke-on reveals** in drawing order (outline, then fill, then detail), not all strokes at once.
-11. **Holds with life**: boil plus a moving hold, so a held frame is never dead.
-12. **Frame rate as storytelling**: switch a character from twos to ones at the emotional peak (Puss in Boots, Miles).
+1. **Stepped timing** per layer and per part. The camera tends to stay on ones.
+2. **Line boil** at 4–12 fps with a 3–4 drawing cycle, on fill edges and textures too. Choose 0 for still editorial lines (Niemann).
+3. **Shape morphs** between designed poses with matched vertex counts, played stepped.
+4. **Smears and multiples** for 1–2 frames, plus speed lines or scribbles.
+5. **Squash and stretch** that preserves area.
+6. **Secondary action**: lag springs on hair, ears, leaves and tails.
+7. **Parallax and multiplane**: Disney used up to 7 planes ([Wikipedia](https://en.wikipedia.org/wiki/Multiplane_camera)). Speed ratios of far 0.1–0.3×, mid 0.5×, focal 1× and foreground 1.5–2.5× (rule of thumb).
+8. **2.5D camera**: flat cards in depth, a 2–5% push per shot, painted projection (Arcane).
+9. **Cut-paper animation**: pivots, no deformation, on twos or threes, with the shadow lifting on a lift.
+10. **Stroke-on reveals** in drawing order.
+11. **Holds**: still (Bass, editorial) or moving (character work), chosen per shot.
+12. **Frame rate as storytelling**: switch rate at the emotional peak.
 
 ---
 
-## 6. Gap list for Anikit Video, ranked by impact
+## 8. Gap list for Anikit Video, ranked by impact
 
-What exists today: brush strokes (`ink/dry/marker/pencil`, pressure presets, stroke-on, `boil`), `sketch`, hatch, stipple and scribble fills, paper stocks (`cotton kraft canvas watercolor newsprint`), `cutout` (torn and cut paper with lift), shape layers with gradients, `shadow`, `glow` and `blur`, post `grain` and `aberration`, `steps(n)` easing, and shader style filters (`halftone risograph linocut watercolour crosshatch screenprint print-offset dither`) that work on the **whole composite**.
+Existing: `brush` (`ink dry marker pencil`, pressure `swell taper even flick`, stroke-on, `boil`), `sketch`, `hatch` (`hatch crosshatch stipple scribble`, `toneFrom`/`toneTo` from a `light` direction), `paper` (`cotton kraft canvas watercolor newsprint`), `cutout` (torn or cut, lift shadow), shapes with gradients, `shadow`/`glow`/`blur`, post `grain` and `aberration`, `steps(n)` easing, and whole-composite shader style filters. Planned: `illo`, `landscape`, `plants`, `clouds`, `water`.
 
-| # | Gap | Why it matters | One-line implementation idea |
+| # | Gap | Why | One-line implementation idea |
 |---|---|---|---|
-| 1 | **Per-layer frame rate ("on twos")** | The biggest single tell of studio 2D. Today everything moves on ones, or `steps()` quantises one tween, not the layer clock | `"fps": 12` or `"on": 2` on any layer or group: sample its animation time at `floor(t·fps)/fps`, camera excluded. Plus `"rateAt"` keyframes to switch rate at story beats |
-| 2 | **Lit flat shapes (shadow, rim and cast-shadow shapes)** | Turns flat fill into Klaus or Favre lighting without 3D | `"light": {"dir": 135, "shadow": 0.25, "rim": "#ffd9a0"}` on shape groups: offset-and-clip the silhouette for the shadow and rim, hue-shift in OKLCH, plus a `castShadow` shape projected onto a ground line |
-| 3 | **Palette and ink system with overprint** | Fixes the 15-hue stock look in one place | `"inks": ["#ff48b0", "#0078bf", "#ffe800"]` at video level: every fill snaps to the nearest ink or ink overprint (multiply), and a validator warns above 6 inks |
-| 4 | **Per-layer print look (halftone, misregistration, grain locked to the object)** | Today's filters are global screen-space. Studios lock texture to the object and vary it per material | `"print": {"halftone": 10, "angle": 15, "misregister": 2, "grain": 0.05}` per layer, rendered in layer space before compositing. Plates come from the ink split in #3 |
-| 5 | **Edge breakup on vector fills** | Perfect beziers are the clip-art tell. Brushes fix strokes but not fills | `"edge": {"rough": 1.2, "scale": 6, "boil": 8}`: displace flattened fill outlines with seeded noise, re-seeded at the boil rate |
-| 6 | **Dithered or textured gradients** | Smooth gradients band in H.264 and read as stock | `"gradient": {..., "texture": "stipple"/"grain"/"bayer"/"hatch"}`: threshold the gradient ramp against a noise or pattern field |
-| 7 | **Smears and multiples from velocity** | Replaces motion blur, which reads as CG | `"smear": {"stretch": 1.5, "multiples": 3}` when speed exceeds a threshold: scale along velocity for 1–2 stepped frames, or draw ghost copies with falling opacity |
-| 8 | **Squash and stretch plus secondary lag** | Gives life without hand keyframing | `"squash": true` (area-preserving scale from acceleration) and `"follow": {"parent": "body", "lag": 3, "spring": "wobbly"}` for child parts |
-| 9 | **Pose morph between shapes** | Cut-paper and flat character animation | `"morph": ["d1", "d2", "d3"]` with vertex resampling by arc length, played on the layer's stepped rate |
-| 10 | **Parallax planes and a 2.5D camera preset** | Depth with no 3D modelling | `"plane": 0.3` on layers (camera offset × plane), with a `"multiplane"` camera preset that pushes 3% and pans |
-| 11 | **Graphic defocus and blur** (halftone, scribble, chroma-shift) | Spider-Verse and Mutant Mayhem replaced optical blur | `"defocus": {"style": "chroma"|"halftone"|"scribble", "amount": 0.6}` per depth plane in place of Gaussian `blur` |
-| 12 | **Hatch and stipple driven by light** | Today hatch is a fill. It should follow shading | Make `hatch` and `stipple` density a function of the shading from #2 (dark side dense, lit side empty), with direction from the shape's long axis |
-| 13 | **Line styles by world and line colour** | Cartoon Saloon meaning-through-line. Black outlines read as a colouring book | `"lineStyle"` theme tokens (`clean`, `woodblock`, `pencil`) applied to every shape outline. Line colour defaults to the fill darkened in OKLCH, not `#000` |
-| 14 | **Linocut and woodcut gouge fill that follows form** | The current linocut filter is screen-space | A gouge-stroke fill along the shape's medial axis or flow field, with tapered white cuts and an optional wood-grain displacement |
-| 15 | **Designed water, cloud and foliage generators** | Environments are where generic shows most | Components `cloud` (bumps, shadow, rim), `foliage` (Earle blob plus leaf clusters plus lit-edge leaves) and `water-glints` (shape cycles at 6–8 fps), all palette-aware |
-| 16 | **Texture per material and object-locked boil of paper and texture** | Klaus "grain travels with the character" | Give each layer a texture seed and a UV origin that follows its transform. Optional `"texture": {"amount": 0.04}` per layer |
-| 17 | **Illustration lint (`still --lint illus`)** | Agents need feedback on taste, not only syntax | Count hues, check greyscale value spread and contrast at the focal point, flag Gaussian drop shadows, pure black lines, unused negative space and uniform stroke width |
-
----
-
-## 7. How agents should use this today
-
-- Pick a reference first (riso zine, Favre poster, Cartoon Saloon forest, Spider-Verse comic), then pick 3–5 inks and a paper. Write them down in `theme.colors`.
-- Use brushes with `taper` or `swell` pressure for every outline. Use `boil` 8 and amount about 1 on everything hand-drawn, including still frames.
-- Replace `shadow: true` on illustrated objects with a hand-placed darker shape. Replace `blur` with a halftone or risograph shader filter on that group.
-- Use `steps(n)` eases on character tweens until per-layer frame rate exists. Keep camera moves smooth.
-- Finish with one global print filter at low strength *or* paper grain, not both stacked high.
+| 1 | **Per-layer frame rate** | The biggest single tell of studio 2D | `"fps": 12` or `"on": 2` on any layer or group: sample time at `floor(t·fps)/fps`, camera excluded, plus `rateAt` keyframes |
+| 2 | **Lit flat shapes** (`illo`) | Klaus- or Favre-grade light without 3D | `"light": {"dir": 135, "shadow": 0.25, "rim": "#ffd9a0"}`: offset-and-clip silhouettes, hue-shift in OKLCH, `castShadow` onto a ground line |
+| 3 | **Inks and gamut mask** (`illo`) | Fixes the 15-hue look in one place | `"inks": [...]` or `"gamut": {"triangle": [h1, h2, h3]}` at video level: snap fills, multiply overprints, warn when outside |
+| 4 | **Per-layer print look** | Global filters can't lock texture to objects | `"print": {"halftone": 10, "angle": 15, "misregister": 2, "grain": 0.05}` rendered in layer space |
+| 5 | **Edge breakup on vector fills** | Perfect beziers tend to read as clip-art | `"edge": {"rough": 1.2, "scale": 6, "boil": 8}` displaces flattened outlines with seeded noise |
+| 6 | **Textured gradients** | Smooth gradients band in H.264 | `"gradient": {..., "texture": "stipple"/"grain"/"bayer"}`: threshold against a noise field |
+| 7 | **Smears and multiples** | Replace CG motion blur | `"smear": {"stretch": 1.5, "multiples": 3}` above a speed threshold, for 1–2 stepped frames |
+| 8 | **Squash and stretch plus follow-through** | Life without hand keys | `"squash": true` (area-preserving, from acceleration) and `"follow": {"parent", "lag": 3, "spring"}` |
+| 9 | **Pose morphs** | Cut-paper and flat character animation | `"morph": ["d1", "d2"]`, resampled by arc length, played on the layer's rate |
+| 10 | **Parallax planes and a 2.5D camera** | Depth without modelling | `"plane": 0.3` per layer, plus a `multiplane` camera preset |
+| 11 | **Graphic defocus** | Spider-Verse and Mutant Mayhem | `"defocus": {"style": "chroma"/"halftone"/"scribble"}` per plane |
+| 12 | **Hatch tied to lit shapes** | `hatch` takes a light direction but not the shape's shading | Feed `illo` shading into `hatch` density and orient strokes along the shape's long axis |
+| 13 | **Line-style tokens and line colour** | Cartoon Saloon meaning-through-line | Theme `lineStyle` (`woodblock`, `pencil`, `clean`). Line colour defaults to the fill at −35% L |
+| 14 | **Pattern fills** (waves, scales, Celtic spirals, clouds) | Ngai and Saloon density | New `hatch` styles that tile a motif along a flow field, clipped to the shape |
+| 15 | **Environment generators** | Environments are where generic shows most | `landscape`, `plants` (Earle blob, clusters, lit leaves), `clouds` (bump or wet-edge), `water` (glint cycles), all ink-aware |
+| 16 | **Object-locked texture per material** | "Grain travels with the character" | Per-layer texture seed and UV origin that follow the transform, with an amount per layer |
+| 17 | **Illustration lint** | Agents need feedback on taste | `still --lint illus`: hue count versus mask, greyscale focal contrast, Gaussian shadows, uniform strokes. It warns and never blocks |
 
 ---
 
 ## Checklist for a studio-grade illustrated shot
 
-1. One named reference style, and one sentence saying why this style fits this story.
-2. 3–6 inks plus a paper colour. 60/30/10 split. Reads in 3 values in greyscale at thumbnail size.
-3. Silhouettes read in solid black. Big, medium and small shapes, straights against curves, one deliberate asymmetry.
-4. Lines in 3 weights with pressure taper, coloured, not pure black. Gaps where light hits.
-5. Light is designed: one shadow shape, one rim, hard cast shadows. No Gaussian drop shadows or glows.
-6. Texture is 3–8%, locked to objects, varied by material. Gradients are dithered or stippled, never smooth.
-7. Characters on twos or threes, camera on ones. At least one rate change or hold timed to the story.
-8. Smears or scribbles instead of motion blur. Area-preserving squash. Secondary parts lag 2–4 frames.
-9. Something is always alive: boil at 4–12 fps, moving holds, swaying plants. No frame is fully static.
-10. Depth from 3–5 parallax planes with atmospheric fade. Detail falls off from the focal point, and negative space is used.
+1. Is there one named reference hand and one sentence on why it fits this story?
+2. Did the palette come from a method (notan, gamut mask, inks, monochrome plus accent)? Does it read in greyscale at thumbnail size?
+3. Do the silhouettes read? Are there big, medium and small shapes? Are symmetry and asymmetry both chosen?
+4. Do lines have chosen weights and colour (a hierarchy or a deliberate monoline)?
+5. Is the light designed: shadow shape, rim, cast shadow? Is any soft shadow or glow there on purpose?
+6. Is texture 3–8% and object-locked, unless the medium is the paper? Is every smooth gradient a choice?
+7. Is the frame rate chosen per layer, with at least one rate change or hold timed to the story?
+8. Does fast motion use smears or scribbles, does squash keep area, and do secondary parts lag?
+9. Is every hold either alive (boil, moving hold) or still on purpose?
+10. Does depth come from planes and atmospheric fade? Does detail fall off from the focal point, and is the negative space used?
