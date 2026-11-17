@@ -1042,21 +1042,26 @@ impl Sim {
             });
         live.frame += 1;
         if live.frame % SORT_EVERY == 0 {
+            let c = std::time::Instant::now();
             self.sort(live);
+            if std::env::var_os("ANIKIT_PARTICLES_PROFILE").is_some() {
+                eprintln!("particles: sort {:.0} ms", c.elapsed().as_secs_f64() * 1e3);
+            }
         }
     }
 
     fn snap(&self, live: &Live) -> Snap {
         use rayon::prelude::*;
         let n = live.px.len();
-        let m = (0..n).into_par_iter().with_min_len(1 << 14).map(|i| live.vx[i].abs().max(live.vy[i].abs()).max(live.vz[i].abs())).reduce(|| 1e-6f32, f32::max);
+        const CH: usize = 1 << 15;
+        let m = live.vx.par_chunks(CH).zip(live.vy.par_chunks(CH)).zip(live.vz.par_chunks(CH)).map(|((a, b), c)| a.iter().zip(b).zip(c).fold(1e-6f32, |m, ((x, y), z)| m.max(x.abs()).max(y.abs()).max(z.abs()))).reduce(|| 1e-6f32, f32::max);
         let vs = m / 32767.0;
         let iv = 1.0 / vs;
         let q = |v: f32| (v * iv).round().clamp(-32767.0, 32767.0) as i16;
         Snap {
             id: live.id.clone(),
-            pos: (0..n).into_par_iter().with_min_len(1 << 14).map(|i| [live.px[i], live.py[i], live.pz[i]]).collect(),
-            vel: (0..n).into_par_iter().with_min_len(1 << 14).map(|i| [q(live.vx[i]), q(live.vy[i]), q(live.vz[i])]).collect(),
+            pos: (0..n).into_par_iter().with_min_len(CH).map(|i| [live.px[i], live.py[i], live.pz[i]]).collect(),
+            vel: (0..n).into_par_iter().with_min_len(CH).map(|i| [q(live.vx[i]), q(live.vy[i]), q(live.vz[i])]).collect(),
             vscale: vs,
             t: self.def.start + live.frame as f32 * self.dt,
         }
@@ -1101,8 +1106,12 @@ impl Sim {
             }
         };
         let s0 = st.steps;
+        let prof = std::env::var_os("ANIKIT_PARTICLES_PROFILE").is_some();
+        let (mut t_step, mut t_snap) = (0.0f64, 0.0f64);
         while live.frame < f {
+            let c0 = std::time::Instant::now();
             self.step_frame(&mut live);
+            t_step += c0.elapsed().as_secs_f64();
             st.steps += 1;
             if live.frame % CHECK_EVERY == 0 && !st.checkpoints.iter().any(|c| c.frame == live.frame) {
                 if (st.checkpoints.len() + 1) * self.def.count * 24 < CHECK_BUDGET {
@@ -1112,12 +1121,19 @@ impl Sim {
             }
             // Frames close behind the target are likely asked for next (render batches).
             if f - live.frame <= 24 && live.frame < f {
+                let c1 = std::time::Instant::now();
                 let s = Arc::new(self.snap(&live));
+                t_snap += c1.elapsed().as_secs_f64();
                 st.snaps.insert(live.frame, s);
                 st.order.push(live.frame);
             }
         }
+        let c1 = std::time::Instant::now();
         let s = Arc::new(self.snap(&live));
+        t_snap += c1.elapsed().as_secs_f64();
+        if prof {
+            eprintln!("particles: step {:.0} ms, snapshots {:.0} ms", t_step * 1e3, t_snap * 1e3);
+        }
         st.snaps.insert(f, s.clone());
         st.order.push(f);
         if st.live.as_ref().is_none_or(|l| l.frame <= live.frame) {
