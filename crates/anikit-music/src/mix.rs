@@ -180,6 +180,9 @@ pub fn mix(a: &Arrangement, dry: Vec<(Vec<f32>, Vec<f32>)>, rate: u32, frames: u
         add(&mut l, &s.l, 1.0);
         add(&mut r, &s.r, 1.0);
     }
+    if a.style == "lofi" {
+        lofi_texture(&mut l, &mut r, rate, a.seed);
+    }
     fades(a, &mut l, &mut r, rate);
     let tp = Instant::now();
     let rep = dsp::master(&mut l, &mut r, rate, a.master.lufs as f32, a.master.ceiling as f32);
@@ -290,6 +293,61 @@ pub(crate) fn reverb_ir(rate: u32, p: &dsp::ReverbParams) -> std::sync::Arc<(dsp
     ir
 }
 
+/// The lofi signature: tape wow (0.15 %, 0.8 Hz) and flutter (0.05 %, 9 Hz) from a
+/// modulated delay, a gentle 8.5 kHz low-pass, vinyl crackle (sparse clicks,
+/// ≈ −40 dBFS before mastering) and faint hiss. Deterministic from the seed.
+fn lofi_texture(l: &mut [f32], r: &mut [f32], rate: u32, seed: u64) {
+    let n = l.len();
+    let fs = rate as f64;
+    // Wow and flutter: read behind by base ± modulation (seconds); pitch deviation = 2πfA.
+    let (base, wow_a, wow_f, fl_a, fl_f) = (0.004, 0.0015 / (std::f64::consts::TAU * 0.8), 0.8, 0.0005 / (std::f64::consts::TAU * 9.0), 9.0);
+    let (sl, sr) = (l.to_vec(), r.to_vec());
+    for i in 0..n {
+        let t = i as f64 / fs;
+        let d = (base + wow_a * (std::f64::consts::TAU * wow_f * t).sin() + fl_a * (std::f64::consts::TAU * fl_f * t).sin()) * fs;
+        let p = i as f64 - d;
+        if p < 0.0 {
+            l[i] = 0.0;
+            r[i] = 0.0;
+            continue;
+        }
+        let k = p.floor() as usize;
+        let f = (p - k as f64) as f32;
+        let k1 = (k + 1).min(n - 1);
+        l[i] = sl[k] + (sl[k1] - sl[k]) * f;
+        r[i] = sr[k] + (sr[k1] - sr[k]) * f;
+    }
+    dsp::Eq::new(rate as f32, &dsp::EqParams { lp: Some(8500.0), ..Default::default() }).process(l, r);
+    // Crackle and hiss.
+    let mut rng = crate::voice::Rng::new(seed ^ 0x7617);
+    let mut hp = (0.0f32, 0.0f32);
+    let mut i = 0usize;
+    while i < n {
+        // ≈ 25 clicks per second, exponential gaps.
+        let gap = (-(rng.f32().max(1e-6)).ln() * fs as f32 / 25.0) as usize + 1;
+        i += gap;
+        if i >= n {
+            break;
+        }
+        let amp = 0.01 * (0.3 + rng.f32() * rng.f32() * 2.0);
+        let len = 6 + rng.below(18);
+        let pan = rng.f32();
+        for j in 0..len.min(n - i) {
+            let v = amp * rng.bi() * (1.0 - j as f32 / len as f32);
+            l[i + j] += v * (1.0 - 0.4 * pan);
+            r[i + j] += v * (0.6 + 0.4 * pan);
+        }
+    }
+    for k in 0..n {
+        // Hiss: high-passed noise ≈ −62 dBFS.
+        let w = rng.bi() * 0.0012;
+        hp.0 = 0.7 * hp.0 + w;
+        hp.1 = 0.7 * hp.1 + rng.bi() * 0.0012;
+        l[k] += w - hp.0 * 0.3;
+        r[k] += hp.1 * 0.7;
+    }
+}
+
 fn add_env(dst: &mut [f32], src: &[f32], g: &[f32]) {
     for ((d, s), g) in dst.iter_mut().zip(src).zip(g) {
         *d += s * g.max(0.0);
@@ -357,6 +415,42 @@ fn process_track(l: &mut [f32], r: &mut [f32], m: &TrackMix, rate: u32, pump: Op
     Ok(())
 }
 
+/// SFX are deterministic per (name, params, rate): cache renders in memory and on disk.
+fn cached_sfx(name: &str, raw: &serde_json::Value, p: &crate::sfx::SfxParams, rate: u32) -> Result<crate::sfx::Sfx, String> {
+    use std::collections::HashMap;
+    use std::sync::{Mutex, OnceLock};
+    static MEM: OnceLock<Mutex<HashMap<String, crate::sfx::Sfx>>> = OnceLock::new();
+    let key = format!("{name}|{raw}|{rate}|sfx-v1");
+    let mem = MEM.get_or_init(Default::default);
+    if let Some(x) = mem.lock().unwrap().get(&key) {
+        return Ok(x.clone());
+    }
+    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+    for b in key.bytes() {
+        h = (h ^ b as u64).wrapping_mul(0x100_0000_01b3);
+    }
+    let file = crate::sf2::packs::cache_dir().join(format!("sfx-{h:016x}.f32"));
+    if let Ok(b) = std::fs::read(&file) {
+        let v: Vec<f32> = b.chunks_exact(4).map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect();
+        if !v.is_empty() && (v.len() - 1).is_multiple_of(2) {
+            let n = (v.len() - 1) / 2;
+            let x = crate::sfx::Sfx { hit: v[0], l: v[1..1 + n].to_vec(), r: v[1 + n..].to_vec() };
+            mem.lock().unwrap().insert(key, x.clone());
+            return Ok(x);
+        }
+    }
+    let x = crate::sfx::sfx(name, p, rate)?;
+    let bytes: Vec<u8> = std::iter::once(&x.hit).chain(&x.l).chain(&x.r).flat_map(|f| f.to_le_bytes()).collect();
+    if std::fs::create_dir_all(file.parent().unwrap_or(std::path::Path::new("."))).is_ok() {
+        let tmp = file.with_extension(format!("tmp{}", std::process::id()));
+        if std::fs::write(&tmp, &bytes).is_ok() {
+            let _ = std::fs::rename(&tmp, &file);
+        }
+    }
+    mem.lock().unwrap().insert(key, x.clone());
+    Ok(x)
+}
+
 /// Place every SFX so its hit point lands on its time.
 type StereoBuf = (Vec<f32>, Vec<f32>);
 
@@ -369,7 +463,7 @@ fn render_sfx(a: &Arrangement, rate: u32, frames: usize) -> Result<Option<Stereo
         .par_iter()
         .map(|s| {
             let p: crate::sfx::SfxParams = serde_json::from_value(s.params.clone()).map_err(|e| format!("sfx '{}': {e}", s.name))?;
-            Ok((s.at, s.gain, crate::sfx::sfx(&s.name, &p, rate)?))
+            Ok((s.at, s.gain, cached_sfx(&s.name, &s.params, &p, rate)?))
         })
         .collect::<Result<_, String>>()?;
     let mut l = vec![0.0f32; frames];

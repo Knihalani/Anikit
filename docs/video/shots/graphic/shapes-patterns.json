@@ -1,0 +1,10 @@
+{ "size": [1920,1080], "background": "#f1ece1",
+  "scenes": [ { "duration": 1, "layers": [
+    { "shape": "pattern", "pattern": {"kind":"truchet","spacing":60,"mark":0.16,"seed":4}, "x":0,"y":0,"anchor":"topLeft","width":640,"height":540, "fill":"#1b1b1b"},
+    { "pattern": {"kind":"dots","spacing":22,"mark":0.9,"angle":45,"ramp":[0.05,1]}, "x":640,"y":0,"anchor":"topLeft","width":640,"height":540, "fill":"#e4572e"},
+    { "pattern": {"kind":"arcs","spacing":90,"seed":9}, "x":1280,"y":0,"anchor":"topLeft","width":640,"height":540, "fill":"#2b4acb"},
+    { "shape": "squircle", "exponent": 5, "x": 320, "y": 810, "width": 420, "height": 420, "fill": "#2b4acb"},
+    { "shape": "blob", "sides": 7, "wobble": 0.6, "seed": 3, "x": 800, "y": 810, "width": 440, "height": 380, "fill": "#ffb400", "blend":"multiply"},
+    { "shape": "arc", "startAngle": -90, "endAngle": 180, "innerRadius": 0.55, "x": 1200, "y": 810, "width": 400, "height": 400, "fill": "#e4572e"},
+    { "pattern": "waves 30", "x": 1660, "y": 810, "width": 460, "height": 460, "fill": "#1b1b1b", "duotone": ["#1b1b1b","#e4572e"]}
+  ]}]}

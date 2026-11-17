@@ -1,0 +1,1 @@
+OFL display families downloaded from Google Fonts (fonts.googleapis.com/css2 → fonts.gstatic.com) for the CEILING-1 pieces, because the engine bundles only Inter, Instrument Serif and JetBrains Mono. Each is under the SIL Open Font License 1.1. In a spec, refer to them by their internal family name (e.g. "Bodoni Moda" + weight 900 + *italic*), not by the key in `fonts`.

@@ -103,6 +103,7 @@ dependencies = [
  "anikit-core",
  "anikit-music",
  "anikit-shader",
+ "flate2",
  "glifo",
  "image",
  "kurbo",

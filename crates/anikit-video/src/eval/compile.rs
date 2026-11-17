@@ -101,6 +101,9 @@ struct C<'a> {
     groove_level: bool,
     /// The spec's theme as written (nested compositions inherit it).
     spec_theme: Option<spec::Theme>,
+    /// The video's grid, and the grid in force for the layers being compiled.
+    video_grid: Option<spec::GridSpec>,
+    grid: Option<spec::GridSpec>,
 }
 
 fn size_preset(s: &str) -> Option<[u32; 2]> {
@@ -164,6 +167,8 @@ impl Evaluator {
             groove_level: false,
             last_cexpr: None,
             uniform_slots: Vec::new(),
+            video_grid: spec.grid.clone(),
+            grid: None,
         };
         c.assets.shaders.bind(&c.assets);
         c.ease_ids.insert("linear".into(), 0);
@@ -440,6 +445,7 @@ fn empty_node(kind: Kind) -> Node {
         blend: Blend::Normal,
         shadow: None,
         glow: None,
+        treat: Vec::new(),
         clip: false,
         clip_path: None,
         wipe_dir: 0,
@@ -978,7 +984,22 @@ impl C<'_> {
             }
         }
         let pc = PCtx { size: [self.w, self.h], t0: 0.0, end: dur, delay: 0.0, index: 0, count: s.layers.len(), in_box: false };
-        let layers = self.layers(&s.layers, &format!("{path}.layers"), pc, None);
+        self.grid = s.grid.clone().or_else(|| self.video_grid.clone());
+        let (overlay, under) = match self.grid.clone() {
+            Some(g) => match grid_show(&g) {
+                0 => (None, false),
+                m => (Some(self.grid_overlay(&g, [self.w, self.h], m == 2, &format!("{path}.grid"))), m == 2),
+            },
+            None => (None, false),
+        };
+        let mut layers = Vec::new();
+        if let (Some(o), true) = (&overlay, under) {
+            layers.extend(self.layers(o, &format!("{path}.grid"), pc, None));
+        }
+        layers.extend(self.layers(&s.layers, &format!("{path}.layers"), pc, None));
+        if let (Some(o), false) = (&overlay, under) {
+            layers.extend(self.layers(o, &format!("{path}.grid"), pc, None));
+        }
         Built { camera, shake, layers, bg, bg_color }
     }
 
@@ -1100,7 +1121,7 @@ impl C<'_> {
         }
         Some(if l.text.is_some() {
             "text"
-        } else if l.shape.is_some() {
+        } else if l.shape.is_some() || l.pattern.is_some() {
             "shape"
         } else if l.component.is_some() {
             "component"
@@ -1198,6 +1219,14 @@ impl C<'_> {
             }
             _ => l,
         };
+        let celled;
+        let l = match &l.cell {
+            Some(c) => {
+                celled = self.place_in_cell(l, c, path, pc.size);
+                &celled
+            }
+            None => l,
+        };
         let kind = self.infer_kind(l, path)?;
         self.uniform_slots.clear();
         let label = match (kind, &l.component) {
@@ -1262,7 +1291,23 @@ impl C<'_> {
             "group" => {
                 let size = [given_w.unwrap_or(pw), given_h.unwrap_or(ph)];
                 let cpc = PCtx { size, t0: start, end, delay: 0.0, index: 0, count: 0, in_box: false };
-                let kids = self.layers(l.layers.as_deref().unwrap_or(&[]), &format!("{path}.layers"), cpc, l.stagger.as_ref());
+                let saved = l.grid.as_ref().map(|g| self.grid.replace(g.clone()));
+                let mut kids = self.layers(l.layers.as_deref().unwrap_or(&[]), &format!("{path}.layers"), cpc, l.stagger.as_ref());
+                if let Some(g) = l.grid.as_ref() {
+                    let m = grid_show(g);
+                    if m != 0 {
+                        let o = self.grid_overlay(g, size, m == 2, &format!("{path}.grid"));
+                        let ok = self.layers(&o, &format!("{path}.grid"), cpc, None);
+                        if m == 2 {
+                            kids.splice(0..0, ok);
+                        } else {
+                            kids.extend(ok);
+                        }
+                    }
+                }
+                if let Some(prev) = saved {
+                    self.grid = prev;
+                }
                 (Kind::Group { children: kids }, size)
             }
             "box" => self.box_layer(l, path, given_w, given_h, start, end, pc, &mut n),
@@ -1408,6 +1453,7 @@ impl C<'_> {
             };
             n.glow = Some(Filter::Glow { radius: g.radius.unwrap_or(24.0) as f32, intensity: g.intensity.unwrap_or(1.0) as f32, color });
         }
+        self.treatments(l, path, &mut n);
         if matches!(n.kind, Kind::Image { .. } | Kind::Video { .. }) {
             if let Some(r) = &l.radius {
                 let refl = n.base[prop::W].min(n.base[prop::H]);
@@ -2048,8 +2094,283 @@ impl C<'_> {
         (plain, spans)
     }
 
+    /// Resolve a grid spec against a box.
+    fn grid_c(&mut self, g: &spec::GridSpec, size: [f32; 2], path: &str) -> super::graphic::GridC {
+        let (fw, fh) = (self.w, self.h);
+        let m = self.grid_lens(&g.margin, "margin", (fh.min(fw) * 0.05).round(), [size[1], size[0]], path);
+        let margin = match m.len() {
+            1 => [m[0]; 4],
+            2 => [m[0], m[1], m[0], m[1]],
+            4 => [m[0], m[1], m[2], m[3]],
+            _ => {
+                self.d.push(Diagnostic::error(format!("{path}.margin"), "margin takes 1, 2 or 4 lengths"));
+                [m[0]; 4]
+            }
+        };
+        let gt = self.grid_lens(&g.gutter, "gutter", (fh.min(fw) * 0.02).round(), [size[0], size[1]], path);
+        let gutter = if gt.len() >= 2 { [gt[0], gt[1]] } else { [gt[0]; 2] };
+        let cols = g.columns.unwrap_or(12).clamp(1, 200);
+        let rows = g.rows.unwrap_or(8).clamp(1, 200);
+        let gc = super::graphic::GridC { cols, rows, margin, gutter, baseline: g.baseline.map(|b| b as f32).filter(|b| *b >= 2.0), size };
+        if gc.col_w() <= 0.0 || gc.row_h() <= 0.0 {
+            self.d.push(Diagnostic::error(path, "the grid's margins and gutters leave no room for its fields"));
+        }
+        gc
+    }
+
+    fn grid_lens(&mut self, v: &Option<serde_json::Value>, key: &str, def: f32, refl: [f32; 2], path: &str) -> Vec<f32> {
+        let items: Vec<serde_json::Value> = match v {
+            None => return vec![def],
+            Some(serde_json::Value::Array(a)) => a.clone(),
+            Some(x) => vec![x.clone()],
+        };
+        if items.is_empty() {
+            return vec![def];
+        }
+        let mut out = Vec::new();
+        for (i, x) in items.iter().enumerate() {
+            match serde_json::from_value::<Num>(x.clone()) {
+                Ok(n) => out.push(self.len_c(&n, &format!("{path}.{key}"), refl[i % 2], 16.0)),
+                Err(_) => {
+                    self.d.push(Diagnostic::error(format!("{path}.{key}"), "expected a length or an array of lengths"));
+                    out.push(def);
+                }
+            }
+        }
+        out
+    }
+
+    /// A copy of `l` placed in its grid cell.
+    fn place_in_cell(&mut self, l: &Layer, c: &serde_json::Value, path: &str, size: [f32; 2]) -> Layer {
+        let cp = format!("{path}.cell");
+        let Some(g) = self.grid.clone() else {
+            self.d.push(Diagnostic::error(&cp, "'cell' needs a grid: add \"grid\": { \"columns\": 12, \"rows\": 8 } to the video, the scene or a parent group"));
+            return l.clone();
+        };
+        let gc = self.grid_c(&g, size, &cp);
+        let range = match c {
+            serde_json::Value::String(s) => match g.areas.as_ref().and_then(|a| a.get(s.as_str())) {
+                Some(r) => super::graphic::parse_cell(r, gc.cols, gc.rows).map_err(|e| format!("area '{s}': {e}")),
+                None if !s.trim_start().starts_with(|c: char| c.is_ascii_digit()) => {
+                    let names: Vec<&str> = g.areas.as_ref().map(|a| a.keys().map(|k| k.as_str()).collect()).unwrap_or_default();
+                    Err(if names.is_empty() { format!("unknown grid area '{s}' (the grid has no `areas`)") } else { format!("unknown grid area '{s}' (areas: {})", names.join(", ")) })
+                }
+                None => super::graphic::parse_cell(s, gc.cols, gc.rows),
+            },
+            serde_json::Value::Array(a) if (2..=4).contains(&a.len()) => {
+                let v: Vec<u32> = a.iter().map(|x| x.as_f64().unwrap_or(1.0).max(1.0) as u32).collect();
+                let (c0, r0) = (v[0], v[1]);
+                let (nc, nr) = (v.get(2).copied().unwrap_or(1), v.get(3).copied().unwrap_or(1));
+                if c0 + nc - 1 > gc.cols || r0 + nr - 1 > gc.rows {
+                    Err(format!("[{c0}, {r0}, {nc}, {nr}] runs past the {}×{} grid", gc.cols, gc.rows))
+                } else {
+                    Ok((c0, c0 + nc - 1, r0, r0 + nr - 1))
+                }
+            }
+            serde_json::Value::Number(n) => super::graphic::parse_cell(&n.to_string(), gc.cols, gc.rows),
+            _ => Err("expected an area name, a range like \"1-6/2-4\" or [col, row, cols, rows]".into()),
+        };
+        let (c0, c1, r0, r1) = match range {
+            Ok(r) => r,
+            Err(e) => {
+                let mut d = Diagnostic::error(&cp, e);
+                if let (serde_json::Value::String(s), Some(a)) = (c, &g.areas) {
+                    let names: Vec<&String> = a.keys().collect();
+                    d = d.suggest(suggest(s, &names));
+                }
+                self.d.push(d);
+                return l.clone();
+            }
+        };
+        let [x, y, w, h] = gc.rect(c0, c1, r0, r1);
+        let anchor = match &l.anchor {
+            None => [0.0, 0.0],
+            Some(spec::Anchor::Xy([a, b])) => [*a as f32, *b as f32],
+            Some(spec::Anchor::Name(s)) => match s.as_str() {
+                "top" => [0.5, 0.0],
+                "bottom" => [0.5, 1.0],
+                "left" => [0.0, 0.5],
+                "right" => [1.0, 0.5],
+                "topRight" => [1.0, 0.0],
+                "bottomLeft" => [0.0, 1.0],
+                "bottomRight" => [1.0, 1.0],
+                "center" | "centre" => [0.5, 0.5],
+                _ => [0.0, 0.0],
+            },
+        };
+        let is_text = l.text.is_some() || l.kind.as_deref() == Some("text");
+        let mut o = l.clone();
+        o.cell = None;
+        if o.anchor.is_none() {
+            o.anchor = Some(spec::Anchor::Name("topLeft".into()));
+        }
+        if o.x.is_none() {
+            o.x = Some(Num::Num((x + anchor[0] * w) as f64));
+        }
+        if o.y.is_none() {
+            o.y = Some(Num::Num((y + anchor[1] * h) as f64));
+        }
+        if o.width.is_none() {
+            o.width = Some(Num::Num(w as f64));
+        }
+        if is_text {
+            if o.align.is_none() {
+                o.align = Some(if anchor[0] < 0.25 { "left" } else if anchor[0] > 0.75 { "right" } else { "center" }.into());
+            }
+            if let (Some(b), Some(Num::Num(sz))) = (gc.baseline, &o.size) {
+                // Leading on the baseline grid: the nearest whole number of baseline units.
+                let lh = o.line_height.unwrap_or(1.2) * sz;
+                let snapped = ((lh / b as f64).round().max(1.0)) * b as f64;
+                o.line_height = Some(snapped / sz);
+            }
+        } else if o.height.is_none() {
+            o.height = Some(Num::Num(h as f64));
+        }
+        o
+    }
+
+    /// Layers that draw a grid (fields tinted, baseline lines) for checking a layout.
+    fn grid_overlay(&mut self, g: &spec::GridSpec, size: [f32; 2], under: bool, path: &str) -> Vec<Layer> {
+        let gc = self.grid_c(g, size, path);
+        let mut out = Vec::new();
+        if under {
+            // A hairline drawing of the field edges: a visible design element, not a debug tint.
+            let col = g.color.clone().unwrap_or_else(|| "#12121240".into());
+            let line = |x: f32, y: f32, w: f32, h: f32| Layer {
+                shape: Some("rect".into()),
+                x: Some(Num::Num(x as f64)),
+                y: Some(Num::Num(y as f64)),
+                width: Some(Num::Num(w as f64)),
+                height: Some(Num::Num(h as f64)),
+                anchor: Some(spec::Anchor::Name("topLeft".into())),
+                fill: Some(spec::Paint::Css(col.clone())),
+                ..Default::default()
+            };
+            let full = gc.rect(1, gc.cols, 1, gc.rows);
+            for c in 1..=gc.cols {
+                let [x, _, w, _] = gc.rect(c, c, 1, 1);
+                out.push(line(x, full[1], 1.0, full[3]));
+                out.push(line(x + w - 1.0, full[1], 1.0, full[3]));
+            }
+            for r in 1..=gc.rows {
+                let [_, y, _, h] = gc.rect(1, 1, r, r);
+                out.push(line(full[0], y, full[2], 1.0));
+                out.push(line(full[0], y + h - 1.0, full[2], 1.0));
+            }
+            return out;
+        }
+        let tint = g.color.clone().unwrap_or_else(|| "#ff2d7a22".into());
+        let rect = |x: f32, y: f32, w: f32, h: f32, fill: &str| Layer {
+            shape: Some("rect".into()),
+            x: Some(Num::Num(x as f64)),
+            y: Some(Num::Num(y as f64)),
+            width: Some(Num::Num(w.max(0.5) as f64)),
+            height: Some(Num::Num(h.max(0.5) as f64)),
+            anchor: Some(spec::Anchor::Name("topLeft".into())),
+            fill: Some(spec::Paint::Css(fill.into())),
+            ..Default::default()
+        };
+        for c in 1..=gc.cols {
+            for r in 1..=gc.rows {
+                let [x, y, w, h] = gc.rect(c, c, r, r);
+                out.push(rect(x, y, w, h, &tint));
+            }
+        }
+        if let Some(b) = gc.baseline {
+            let mut y = gc.margin[0];
+            while y <= size[1] - gc.margin[2] + 0.5 {
+                out.push(rect(gc.margin[3], y, size[0] - gc.margin[1] - gc.margin[3], 1.0, "#00b3ff55"));
+                y += b;
+            }
+        }
+        out
+    }
+
+    /// Image treatments (`duotone`, `gradientMap`, `posterize`, `halftone`) as layer filters.
+    fn treatments(&mut self, l: &Layer, path: &str, n: &mut Node) {
+        let mut stops: Option<Vec<(f32, Rgba)>> = None;
+        if let Some(d) = &l.duotone {
+            if d.len() != 2 {
+                self.d.push(Diagnostic::error(format!("{path}.duotone"), "duotone takes two colours: [shadows, highlights]"));
+            } else {
+                let v: Vec<serde_json::Value> = d.iter().map(|c| serde_json::Value::String(c.clone())).collect();
+                stops = self.stops(&v, &format!("{path}.duotone"));
+            }
+        }
+        if let Some(g) = &l.gradient_map {
+            if stops.is_some() {
+                self.d.push(Diagnostic::warning(format!("{path}.gradientMap"), "both duotone and gradientMap given; gradientMap wins"));
+            }
+            stops = self.stops(g, &format!("{path}.gradientMap"));
+        }
+        let levels = l.posterize.map(|p| p.clamp(0, 64) as u8).unwrap_or(0);
+        if l.posterize == Some(1) {
+            self.d.push(Diagnostic::warning(format!("{path}.posterize"), "posterize needs at least 2 levels"));
+        }
+        if stops.is_some() || levels >= 2 {
+            let map = stops.map(|mut st| {
+                st.sort_by(|a, b| a.0.total_cmp(&b.0));
+                let labs: Vec<(f32, [f32; 4])> = st.iter().map(|(o, c)| (*o, rgba_to_oklab(*c))).collect();
+                let mut m = Box::new([[0u8; 3]; 256]);
+                let [lo, hi] = l.tone_range.unwrap_or([0.0, 1.0]).map(|v| v as f32);
+                for (i, out) in m.iter_mut().enumerate() {
+                    let mut t = ((i as f32 / 255.0 - lo) / (hi - lo).max(1e-3)).clamp(0.0, 1.0);
+                    if levels >= 2 {
+                        let k = (levels - 1) as f32;
+                        t = (t * k).round() / k;
+                    }
+                    let k = labs.iter().position(|(o, _)| *o >= t).unwrap_or(labs.len() - 1);
+                    let lab = if k == 0 {
+                        labs[0].1
+                    } else {
+                        let (a, b) = (labs[k - 1], labs[k]);
+                        let f = if b.0 > a.0 { ((t - a.0) / (b.0 - a.0)).clamp(0.0, 1.0) } else { 1.0 };
+                        std::array::from_fn(|j| a.1[j] + (b.1[j] - a.1[j]) * f)
+                    };
+                    let c = super::oklab_to_rgba(lab);
+                    *out = [0, 1, 2].map(|j| (c.0[j].clamp(0.0, 1.0) * 255.0 + 0.5) as u8);
+                }
+                m
+            });
+            let amount = l.tone_amount.unwrap_or(1.0).clamp(0.0, 1.0) as f32;
+            // With a map, posterising is baked into it.
+            let levels = if map.is_some() { 0 } else { levels };
+            n.treat.push(Filter::Tone(Arc::new(dl::ToneLut { map, levels, amount })));
+        }
+        if let Some(h) = &l.halftone {
+            let hp = format!("{path}.halftone");
+            let hs = match h {
+                spec::HalftoneValue::Cell(c) => spec::HalftoneSpec { cell: Some(*c), ..Default::default() },
+                spec::HalftoneValue::Full(f) => f.clone(),
+            };
+            let shape = match hs.shape.as_deref().unwrap_or("dot") {
+                "dot" | "dots" | "round" => 0,
+                "line" | "lines" => 1,
+                "square" | "diamond" => 2,
+                x => {
+                    self.d.push(Diagnostic::error(format!("{hp}.shape"), format!("unknown halftone shape '{x}'")).suggest(suggest(x, &["dot", "line", "square"])));
+                    0
+                }
+            };
+            let col = |me: &mut Self, v: &Option<String>, key: &str, none: &str| -> Rgba {
+                match v.as_deref() {
+                    None => Rgba([0.0; 4]),
+                    Some(x) if x == none || x == "none" || x == "source" => Rgba([0.0; 4]),
+                    Some(x) => me.color(x, &format!("{hp}.{key}")).unwrap_or(Rgba([0.0, 0.0, 0.0, 1.0])),
+                }
+            };
+            let ink = col(self, &hs.ink, "ink", "source");
+            let paper = col(self, &hs.paper, "paper", "none");
+            let cell = hs.cell.unwrap_or(10.0) as f32;
+            if cell < 3.0 {
+                self.d.push(Diagnostic::warning(format!("{hp}.cell"), "cells under 3 px alias into moiré after encoding; use 4 px or more"));
+            }
+            n.treat.push(Filter::Halftone(dl::Halftone { cell: cell.max(2.0), angle: hs.angle.unwrap_or(45.0) as f32, shape, ink, paper, gain: hs.gain.unwrap_or(1.0) as f32, ox: 0.0, oy: 0.0 }));
+        }
+    }
+
     fn shape_layer(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>, n: &mut Node) -> (Kind, [f32; 2]) {
-        let sname = l.shape.as_deref().unwrap_or("rect");
+        let sname = l.shape.as_deref().unwrap_or(if l.pattern.is_some() { "pattern" } else { "rect" });
         let shape_s = if self.word(sname, val::SHAPES, &format!("{path}.shape"), "shape") { sname } else { "rect" };
         let (w, h) = match (gw, gh) {
             (Some(w), Some(h)) => (w, h),
@@ -2093,6 +2414,53 @@ impl C<'_> {
                     }
                 }
                 (ShapeKind::Path, bp, [0.0, 0.0])
+            }
+            "superellipse" | "squircle" => (ShapeKind::Path, super::graphic::superellipse(w as f64, h as f64, l.exponent.unwrap_or(4.0)), [w, h]),
+            "blob" => (ShapeKind::Path, super::graphic::blob(w as f64, h as f64, l.sides.unwrap_or(6), l.wobble.unwrap_or(0.3), l.seed.unwrap_or(1)), [w, h]),
+            "arc" => {
+                let a = l.start_angle.unwrap_or(0.0);
+                let b = l.end_angle.unwrap_or(270.0);
+                (ShapeKind::Path, super::graphic::arc(w as f64, h as f64, a, b, l.inner_radius.unwrap_or(0.0)), [w, h])
+            }
+            "pattern" => {
+                let (w, h) = (gw.unwrap_or(self.w), gh.unwrap_or(self.h));
+                let pp = format!("{path}.pattern");
+                let pat = match &l.pattern {
+                    None => {
+                        self.d.push(Diagnostic::error(&pp, "a pattern shape needs 'pattern' (e.g. \"dots 32\")"));
+                        None
+                    }
+                    Some(spec::PatternValue::Short(s)) => {
+                        let mut it = s.split_whitespace();
+                        let kind = it.next().unwrap_or("dots").to_string();
+                        let spacing = it.next().and_then(|x| x.trim_end_matches("px").parse::<f64>().ok()).unwrap_or(40.0);
+                        Some(super::graphic::Pat { kind, spacing, mark: None, angle: 0.0, seed: l.seed.unwrap_or(1), jitter: 0.0, ramp: None })
+                    }
+                    Some(spec::PatternValue::Full(f)) => Some(super::graphic::Pat {
+                        kind: f.kind.clone(),
+                        spacing: f.spacing.unwrap_or(40.0),
+                        mark: f.mark,
+                        angle: f.angle.unwrap_or(0.0),
+                        seed: f.seed.or(l.seed).unwrap_or(1),
+                        jitter: f.jitter.unwrap_or(0.0),
+                        ramp: f.ramp,
+                    }),
+                };
+                let bp = match pat {
+                    Some(mut pt) => {
+                        if !super::graphic::PATTERNS.contains(&pt.kind.as_str()) {
+                            self.d.push(Diagnostic::error(&pp, format!("unknown pattern '{}'", pt.kind)).suggest(suggest(&pt.kind, super::graphic::PATTERNS)));
+                            pt.kind = "dots".into();
+                        }
+                        if pt.spacing < 4.0 {
+                            self.d.push(Diagnostic::warning(&pp, "spacing under 4 px turns to moiré after encoding"));
+                        }
+                        super::graphic::pattern(w as f64, h as f64, &pt)
+                    }
+                    None => Path::new(),
+                };
+                n.clip = true;
+                (ShapeKind::Path, bp, [w, h])
             }
             "polygon" | "star" => {
                 let mut bp = Path::new();
@@ -2213,7 +2581,7 @@ impl C<'_> {
                 0
             }
         };
-        let full = self.o.base_dir.join(&src);
+        let full = self.media_path(&src, path);
         let (id, nat) = if let Some(&(i, nat)) = self.image_ids.get(&full) {
             (i, nat)
         } else if !full.exists() {
@@ -2883,9 +3251,26 @@ impl C<'_> {
         (Kind::Video { frames, natural: nat, fit, rate, speed, looped }, nat)
     }
 
+    /// Where an image `src` lives: library refs (`polyhaven:texture/…`,
+    /// `ambientcg:…`) are fetched once (the albedo map of a texture set);
+    /// anything else is relative to the spec. A failed fetch is reported here
+    /// and yields a path that doesn't exist (so callers skip the image).
+    fn media_path(&mut self, src: &str, path: &str) -> std::path::PathBuf {
+        if !crate::assetlib::is_ref(src) {
+            return self.o.base_dir.join(src);
+        }
+        match crate::assetlib::get(src) {
+            Ok(f) => f.main(),
+            Err(e) => {
+                self.d.push(Diagnostic::error(format!("{path}.src"), e));
+                std::path::PathBuf::from("\0missing-asset")
+            }
+        }
+    }
+
     /// Load an image file referenced by a component and register it under its `src`.
     fn load_media(&mut self, src: &str, path: &str) {
-        let full = self.o.base_dir.join(src);
+        let full = self.media_path(src, path);
         if self.image_ids.contains_key(&full) || !self.o.load_assets {
             if let Some(&(id, _)) = self.image_ids.get(&full) {
                 self.assets.add_media(src, ImageId(id));
@@ -3078,6 +3463,35 @@ impl C<'_> {
 
     #[allow(clippy::too_many_arguments)]
     fn shader_layer(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>, start: f32, end: f32, n: &mut Node) -> Option<(Kind, [f32; 2])> {
+        // A single-file multi-pass source (`//--- buffer A: …` / `//--- image: …`
+        // sections) becomes buffers + the image pass, unless the spec sets them.
+        let raw = match (l.shader.as_deref(), l.src.as_deref()) {
+            (Some(s), _) => super::shader::resolve_source(s).map(str::to_string),
+            (None, Some(f)) if !f.ends_with(".wgsl") => std::fs::read_to_string(self.o.base_dir.join(f)).ok(),
+            _ => None,
+        };
+        if let Some(sections) = raw.as_deref().and_then(anikit_shader::split_passes) {
+            let mut l2 = l.clone();
+            l2.src = None;
+            l2.shader = Some(sections.image);
+            if l2.channels.is_none() {
+                l2.channels = Some(sections.image_channels.into_iter().map(serde_json::Value::String).collect());
+            }
+            if l2.buffers.is_none() {
+                l2.buffers = Some(
+                    sections
+                        .buffers
+                        .into_iter()
+                        .map(|(name, src, ch)| (name, crate::spec::ShaderBuffer { shader: Some(src), src: None, channels: Some(ch.into_iter().map(serde_json::Value::String).collect()) }))
+                        .collect(),
+                );
+            }
+            return self.shader_layer_inner(&l2, path, gw, gh, start, end, n);
+        }
+        self.shader_layer_inner(l, path, gw, gh, start, end, n)
+    }
+
+    fn shader_layer_inner(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>, start: f32, end: f32, n: &mut Node) -> Option<(Kind, [f32; 2])> {
         use super::shader::{ChannelC, ShaderC, UNIFORM_SLOTS};
         let (shader, text, vals) = self.compile_shader(l.shader.as_deref(), l.src.as_deref(), l.uniforms.as_ref(), path)?;
         if shader.kind != anikit_shader::Kind::Image {
@@ -4062,4 +4476,14 @@ fn buf_slot_opt(name: &str) -> Option<usize> {
 
 fn buf_slot(name: &str) -> usize {
     buf_slot_opt(name).unwrap_or(0)
+}
+
+/// A grid's `show`: 0 off, 1 over the layers, 2 under them.
+fn grid_show(g: &spec::GridSpec) -> u8 {
+    match &g.show {
+        Some(serde_json::Value::Bool(true)) => 1,
+        Some(serde_json::Value::String(s)) if s == "under" => 2,
+        Some(serde_json::Value::String(s)) if s == "over" => 1,
+        _ => 0,
+    }
 }

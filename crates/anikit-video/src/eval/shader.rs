@@ -261,6 +261,16 @@ thread_local! {
     static PREVIEW_SCALE: Cell<f32> = const { Cell::new(1.0) };
 }
 
+thread_local! {
+    /// Largest render size per shader content in this frame (from the scale pass).
+    static SIZES: std::cell::RefCell<HashMap<u64, (f32, f32)>> = std::cell::RefCell::new(HashMap::new());
+}
+
+/// Forget the previous frame's shader sizes.
+pub(crate) fn reset_sizes() {
+    SIZES.with(|m| m.borrow_mut().clear());
+}
+
 /// Set the output scale for evaluations on this thread (1 = full size).
 pub fn set_preview_scale(s: f32) {
     PREVIEW_SCALE.with(|c| c.set(if s.is_finite() && s > 0.0 { s.min(1.0) } else { 1.0 }));
@@ -645,9 +655,31 @@ impl Evaluator {
         // Render at device resolution (times the preview scale).
         let ps = preview_scale();
         let (sx, sy) = ((xf[0] * xf[0] + xf[1] * xf[1]).sqrt() * ps, (xf[2] * xf[2] + xf[3] * xf[3]).sqrt() * ps);
-        let (dw, dh) = if sc.filter { ((fw * ps).round().max(1.0), (fh * ps).round().max(1.0)) } else { ((w * sx).round().clamp(1.0, MAX_SIDE), (h * sy).round().clamp(1.0, MAX_SIDE)) };
+        let (mut dw, mut dh) = if sc.filter { ((fw * ps).round().max(1.0), (fh * ps).round().max(1.0)) } else { ((w * sx).round().clamp(1.0, MAX_SIDE), (h * sy).round().clamp(1.0, MAX_SIDE)) };
         if w < 0.5 || h < 0.5 {
             return;
+        }
+        // The same shader content shown more than once in a frame (e.g. inside
+        // compositions at different scales) renders once, at the largest size.
+        let content = {
+            let mut hs = std::collections::hash_map::DefaultHasher::new();
+            sc.id.hash(&mut hs);
+            hash_f32s(&mut hs, &[w, h, lt, v[prop::PROGRESS], cx.gt]);
+            for (_, off, n) in &sc.uniforms {
+                hash_f32s(&mut hs, &v[prop::U0 + off..prop::U0 + off + n]);
+            }
+            hs.finish()
+        };
+        if super::collecting_scales() {
+            SIZES.with(|m| {
+                let mut m = m.borrow_mut();
+                let e = m.entry(content).or_insert((0.0, 0.0));
+                *e = (e.0.max(dw), e.1.max(dh));
+            });
+            return;
+        }
+        if let Some((mw, mh)) = SIZES.with(|m| m.borrow().get(&content).copied()) {
+            (dw, dh) = (dw.max(mw), dh.max(mh));
         }
         let mut chans = Vec::with_capacity(sc.channels.len());
         for (c, o) in &sc.channels {
@@ -681,6 +713,9 @@ impl Evaluator {
 
     /// A shader transition between two scenes' ops (`from` = channel 0, `to` = channel 1).
     pub(super) fn emit_shader_transition(&self, sc: &ShaderC, from: (Vec<Op>, Rgba), to: (Vec<Op>, Rgba), t: f32, progress: f32, out: &mut Vec<Op>) {
+        if super::collecting_scales() {
+            return;
+        }
         let (w, h) = (self.width, self.height);
         let mk = |(ops, bg): (Vec<Op>, Rgba)| frame_list(w, h, bg, ops);
         let o = ChanOpts { wrap: Wrap::Clamp, filter: Filter::Linear, mipmaps: false };
