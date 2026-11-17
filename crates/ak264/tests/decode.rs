@@ -335,3 +335,46 @@ fn perceptual_skip_bounds_drift() {
         assert!(m <= 3, "max error {m}");
     }
 }
+
+#[test]
+fn affine_zoom_hints() {
+    // A slow camera zoom (1.5% per frame about the centre): every macroblock
+    // changes; per-MB hints from the camera transform seed the search.
+    let (w, h) = (192u32, 128u32);
+    let (cx, cy, z) = (w as f64 / 2.0, h as f64 / 2.0, 1.015f64);
+    let tex = |x: f64, y: f64| 128.0 + 60.0 * (x * 0.21).sin() * (y * 0.17).cos() + 40.0 * ((x + y) * 0.05).sin();
+    let frames: Vec<YuvBuffer> = (0..8)
+        .map(|t| {
+            let s = z.powi(t);
+            let mut b = YuvBuffer::new(w, h);
+            for y in 0..h as usize {
+                for x in 0..w as usize {
+                    let (u, v) = (cx + (x as f64 - cx) / s, cy + (y as f64 - cy) / s);
+                    b.y[y * w as usize + x] = tex(u, v).clamp(0.0, 255.0) as u8;
+                }
+            }
+            b.u.fill(128);
+            b.v.fill(128);
+            b
+        })
+        .collect();
+    let hints = FrameHints::from_affine(w, h, [1.0 / z, 0.0, cx - cx / z, 0.0, 1.0 / z, cy - cy / z]);
+    // the top-left corner's content moves outwards
+    let d0 = ((8.0 - (cx + (8.0 - cx) / z)).round() as i32, (8.0 - (cy + (8.0 - cy) / z)).round() as i32);
+    assert!(hints.motions.iter().any(|m| m.x == 0 && m.y == 0 && (m.dx, m.dy) == d0));
+    let c = EncoderConfig { qp: 24, ..cfg(w, h) };
+    let mut e = Encoder::new(c.clone());
+    let mut stream = Vec::new();
+    let none = FrameHints::default();
+    for (t, f) in frames.iter().enumerate() {
+        stream.extend_from_slice(e.encode(&f.frame(), if t == 0 { &none } else { &hints }));
+    }
+    let (plain, _) = roundtrip(c, &frames, "zoom0");
+    // hints may only help the search
+    assert!(stream.len() <= plain.len() + plain.len() / 20, "{} vs {}", stream.len(), plain.len());
+    if have_ffmpeg() {
+        let (_, d) = decode(&stream, "zoom1");
+        let src: Vec<u8> = frames.iter().flat_map(|f| f.to_bytes()).collect();
+        assert!(psnr(&d, &src) > 38.0);
+    }
+}
