@@ -72,8 +72,7 @@ def strip_instances(k, fid):
     x = f"({xc}+(({x0})+(({xs})-({x0}))*{u}-{xc})*(1+({shrink}-1)*{c}))"
     vis = f"clamp(({n})-i,0,1)*(1-{step(T['shrink0'])})"
     return {
-        "type": "instances", "count": Wd.FRAMES,
-        "shape": {"type": "slab", "size": [Wd.PANE_W, Wd.PANE_H, Wd.PANE_T], "radius": 0.03},
+        "type": "slab", "count": Wd.FRAMES, "size": [Wd.PANE_W, Wd.PANE_H, Wd.PANE_T], "radius": 0.03,
         "material": "pane",
         "pos": f"=[{x}, {Wd.PANE_Y}, {Wd.lane_z(k)}]",
         "rot": f"=[0, {yaw}, 0]",
@@ -89,17 +88,25 @@ def sample_keys(fn, t0, t1, hz=KEY_HZ):
     n = max(1, int(round((t1 - t0) * hz)))
     for s in range(n + 1):
         t = t0 + (t1 - t0) * s / n
-        keys.append(dict(t=round(t, 4), **fn(t)))
+        keys.append(dict(t=round(t, 4), ease="linear", **fn(t)))
     return keys
 
 
-def request_obj(k):
-    def at(t):
-        pos, yaw, vis = Wd.request_pose(k, t)
-        return {"pos": r3(pos), "rot": [0, round(yaw, 2), 0], "scale": 1 if vis else 0}
-    return {"type": "slab", "size": [Wd.PANE_W, Wd.PANE_H, Wd.PANE_T], "radius": 0.03, "material": "pane",
-            "texture": [{"composition": f"req{k}", "face": "front"}, {"composition": f"plan{k}", "face": "back"}],
-            "keys": sample_keys(at, 0.0, Wd.drop_time(k) + 0.1)}
+def request_objs(k):
+    """The request (front) and the plan (back) as two 8 mm slabs back to back."""
+    out = []
+    for side, comp in ((0, f"req{k}"), (1, f"plan{k}")):
+        def at(t, side=side):
+            pos, yaw, vis = Wd.request_pose(k, t)
+            a = math.radians(yaw)
+            nx, nz = math.sin(a), math.cos(a)          # the request side's outward normal
+            off = 0.0045 if side == 0 else -0.0045     # request slab in front, plan slab behind it
+            p = (pos[0] + nx * off, pos[1], pos[2] + nz * off)
+            return {"pos": r3(p), "rot": [0, round(yaw + 180 * side, 2), 0], "scale": 1 if vis else 0}
+        out.append({"type": "slab", "size": [Wd.PANE_W, Wd.PANE_H, 0.007], "radius": 0.03, "material": "pane",
+                    "texture": {"composition": comp, "face": "front"}, "end": Wd.drop_time(k) + 0.1,
+                    "keys": sample_keys(at, 0.0, Wd.drop_time(k) + 0.1)})
+    return out
 
 
 def machine_objs():
@@ -110,7 +117,7 @@ def machine_objs():
     def at(dx, y, dz=0.0):
         return lambda t: {"pos": r3((Wd.machine_x(Wd.emitted(t)) + dx, y, zc + dz))}
     t1 = T["stream1"] + 0.3
-    objs = [{"type": "box", "size": [depth, hgt, zw], "radius": 0.03, "material": "aluminium-bead",
+    objs = [{"type": "box", "size": [depth, hgt, zw], "radius": 0.03, "material": "machine",
              "keys": sample_keys(at(0, hgt / 2), 0.0, t1)}]
     for k in range(Wd.LANES):
         z = Wd.lane_z(k)
@@ -123,42 +130,33 @@ def machine_objs():
 
 
 def rail_objs():
-    out = []
-    for k in range(Wd.LANES):
-        z = Wd.lane_z(k)
-
-        def at(t, z=z):
-            n = Wd.emitted(t)
-            x1 = Wd.machine_x(n) - 1.0 if t < T["stream1"] + 0.2 else Wd.pane_x(Wd.FRAMES - 1) + 0.8
-            if t >= T["fold0"]:
-                x1 = -1.0
-            length = max(0.001, x1 + 1.0)
-            return {"pos": r3((-1.0 + length / 2, 0.001, z)), "scale": [round(length, 3), 1, 1]}
-        out.append({"type": "box", "size": [1.0, 0.002, 0.1], "material": "rail",
-                    "keys": sample_keys(at, T["frame1_0"], T["fold0"] + 0.05, hz=15)})
-    return out
+    """An orange rail segment under every laid pane (so the rail grows with the strip)."""
+    n = emitted_expr()
+    vis = f"clamp(({n})-i,0,1)*(1-{step(T['fold0'])})"
+    return [{"type": "box", "count": Wd.FRAMES, "size": [Wd.PITCH, 0.003, 0.08], "material": "rail", "shadow": False,
+             "pos": f"=[{Wd.PITCH}*i-0.15, 0.0015, {Wd.lane_z(k)}]", "scale": f"={vis}"} for k in range(Wd.LANES)]
 
 
 def tile_screen_objs():
-    """Each lane's crushed stack -> block -> tile -> rising screen that plays its film."""
+    """Each lane's crushed stack -> a glass block that shrinks into a tile; then a screen that rises and plays."""
     out = []
     xc = Wd.fold_centre()
     for k, f in enumerate(Wd.FILMS):
-        def at(t, k=k):
-            if t < T["rise0"]:
-                bs = Wd.block_scale(t)
-                pos = (xc, Wd.PANE_Y * bs + 0.01, Wd.block_z(k, t))
-                # a block 0.25 thick in x, 0.9 high, 1.6 deep in z: the slab turned 90 degrees, thickened
-                return {"pos": r3(pos), "rot": [0, 90, 0], "scale": [round(bs, 4), round(bs, 4), round(bs * 0.25 / 0.03, 4)]}
+        def blk(t, k=k):
+            bs = Wd.block_scale(t)
+            return {"pos": r3((xc, Wd.PANE_Y * bs + 0.01, Wd.block_z(k, t))), "scale": round(bs, 4)}
+        out.append({"type": "box", "size": [0.25, Wd.PANE_H, Wd.PANE_W], "radius": 0.02, "material": "pane",
+                    "start": T["shrink0"] - 0.6, "end": T["rise0"] + 0.02,
+                    "keys": sample_keys(blk, T["shrink0"] - 0.6, T["rise0"] + 0.02)})
+
+        def scr(t, k=k):
             pos, yaw, sc = Wd.screen_pose(k, t)
-            thick = Wd.lerp(0.25 * 0.12 / 0.03, 1.0, Wd.smoother(Wd.seg(t, T["rise0"], T["rise0"] + 1.0)))
-            return {"pos": r3(pos), "rot": [0, round(yaw, 2), 0], "scale": [round(sc, 4), round(sc, 4), round(sc * thick, 4)]}
-        keys = [dict(t=0.0, pos=[xc, -5, 0], scale=[0, 0, 0]), dict(t=T["shrink0"] - 0.01, pos=[xc, -5, 0], scale=[0, 0, 0])]
-        keys += sample_keys(at, T["shrink0"], Wd.DURATION)
+            return {"pos": r3(pos), "rot": [0, round(yaw, 2), 0], "scale": round(sc, 4)}
         out.append({"type": "slab", "size": [Wd.PANE_W, Wd.PANE_H, 0.03], "radius": 0.03, "material": "pane",
+                    "start": T["rise0"],
                     "texture": {"composition": f["id"], "frame": f"=max(0, (t - {T['rise0'] + 1.0}) * {Wd.FPS})",
                                 "face": "front"},
-                    "keys": keys})
+                    "keys": sample_keys(scr, T["rise0"], Wd.DURATION)})
     return out
 
 
@@ -182,7 +180,7 @@ def caption_objs():
         keys += sample_keys(at, max(0.0, c["t0"] - 0.05), min(Wd.DURATION, c["t1"] + 0.05), hz=30)
         out.append({"type": "text", "text": c["text"], "height": h, "depth": h * (0.34 if logo else 0.06),
                     "bevel": h * (0.045 if logo else 0.01), "font": "Inter Display", "weight": 800 if logo else 650,
-                    "material": "chrome" if logo else "ink", "align": "center", "rot": [0, c.get("yaw", 0), 0],
+                    "material": "chrome" if logo else "ink", "rot": [0, c.get("yaw", 0), 0],
                     "keys": keys})
     return out
 
@@ -195,7 +193,7 @@ def camera():
         keys.append({"t": round(t, 5), "pos": r3(Wd.cam_pos(t), 5), "target": r3(Wd.cam_tgt(t), 5),
                      "focal": round(Wd.cam_focal(t), 2), "focus": round(Wd.cam_focus(t), 3),
                      "fstop": 2.8, "shutter": round(Wd.shutter(t) / 360, 3)})
-    return {"interp": "linear", "keys": keys}
+    return {"interp": "linear", "ease": False, "keys": keys}
 
 
 # --- 2D compositions for the requests and the plans -----------------------------------------
@@ -229,14 +227,25 @@ def plan_comp(k):
     ]}
 
 
-def build():
+PROXY_COLOURS = ["#C2552B", "#1F5C4E", "#1B4E8C", "#D9C21E"]
+
+
+def proxy_comp(k):
+    c = PROXY_COLOURS[k % 4]
+    return {"size": [960, 540], "duration": Wd.FILM_SECONDS, "layers": [
+        F.rect(480, 270, 900, 480, f"linear-gradient(135deg, {c}, #101010)", radius=6),
+        F.txt("{value:0}", 480, 280, 220, "#ffffffd0", font="Inter Display", weight=800, value="=floor(t * 60) + 1"),
+    ]}
+
+
+def build(proxy=False):
     # lanes whose film is not built yet show Fold (a 3D shader) so the outer world can be judged
-    comps = {f["id"]: getattr(F, f["id"], F.fold)() for f in Wd.FILMS}
+    comps = {f["id"]: (proxy_comp(k) if proxy else getattr(F, f["id"], F.fold)()) for k, f in enumerate(Wd.FILMS)}
     for k in range(Wd.LANES):
         comps[f"req{k}"] = request_comp(k)
         comps[f"plan{k}"] = plan_comp(k)
     objects = []
-    objects += [request_obj(k) for k in range(Wd.LANES)]
+    objects += [o for k in range(Wd.LANES) for o in request_objs(k)]
     objects += machine_objs()
     objects += rail_objs()
     objects += [strip_instances(k, f["id"]) for k, f in enumerate(Wd.FILMS)]
@@ -251,6 +260,7 @@ def build():
             "led": {"base": "#FF5A1F", "emissive": "#FF5A1F", "emissiveStrength": 6},
             "rail": {"base": "#FF5A1F", "emissive": "#FF5A1F", "emissiveStrength": 1.5, "roughness": 0.5},
             "ink": {"base": "#15171A", "metallic": 0, "roughness": 0.45},
+            "machine": {"extends": "aluminium-bead", "base": "#D0D2D4", "metallic": 1, "roughness": 0.55},
         },
         "objects": objects,
         "quality": "standard",
@@ -262,10 +272,10 @@ def build():
                     "layers": [{"component": "scene3d", "props": scene3d}]}],
         "audio": [{"src": "music.mp3", "volume": 0.9}],
     }
-    out = HERE / "spec.json"
+    out = HERE / ("spec-proxy.json" if proxy else "spec.json")
     out.write_text(json.dumps(spec, separators=(",", ":")))
     print(f"{out}: {out.stat().st_size / 1024:.0f} KB, {len(objects)} objects, {len(comps)} compositions")
 
 
 if __name__ == "__main__":
-    build()
+    build(proxy="--proxy" in sys.argv)

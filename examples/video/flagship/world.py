@@ -298,11 +298,13 @@ def _keys():
         dict(t=7.0, pos=(-10.5, 3.4, 9.5), tgt=(-1.5, 1.0, -8.5), f=40, fd=12.0),
         # shot 2: orbit while the plans appear
         dict(t=11.0, pos=(-9.0, 5.0, 11.0), tgt=(0.0, 0.8, -9.0), f=36, fd=14.0),
-        # shot 3: descend to a three-quarter view; the six first frames stand in rows
-        dict(t=15.0, pos=(-6.0, 5.5, 11.0), tgt=(0.5, 0.6, -8.0), f=34, fd=14.0),
-        dict(t=17.5, pos=(6.0, 5.0, 10.0), tgt=(0.0, 0.5, -9.0), f=34, fd=14.0),
-        # shot 4: crane up and back over the highway of strips, then dive forward to lane 0
-        dict(t=21.5, pos=(-30.0, 12.0, 14.0), tgt=(60.0, 0.0, mid_z), f=30, fd=60, v=(25.0, 0.0, 0.0)),
+        # shot 3: come down low beside the machine as the last plans drop in; it rolls off and
+        # leaves the first frames standing, receding across the lanes; focus on lane 0's frame 1
+        dict(t=15.0, pos=(-2.2, 0.85, 3.6), tgt=(0.4, 0.55, -2.5), f=35, fd=4.0),
+        dict(t=17.6, pos=(-1.4, 0.62, 2.7), tgt=(0.9, 0.48, -3.2), f=40, fd=2.9),
+        dict(t=19.4, pos=(-3.0, 1.3, 3.6), tgt=(6.0, 0.4, -4.0), f=35, fd=5.0),
+        # shot 4: rise over the lanes and look down the highway of strips as the machine races off
+        dict(t=22.0, pos=(-6.0, 3.0, mid_z * 0.5), tgt=(40.0, 0.0, mid_z), f=32, fd=20.0, v=(12.0, 0.0, 0.0)),
         dict(t=T["run0"], pos=run_pos(T["run0"]), dir=run_dir(T["run0"]), f=RUN_FOCAL, fd=4.4, v=(V, 0, 0)),
         dict(t=T["run1"], pos=run_pos(T["run1"]), dir=run_dir(T["run1"]), f=RUN_FOCAL, fd=4.4, v=(V, 0, 0)),
         dict(t=T["brake1"], pos=(x_brake, CAM_LOCK_Y + 0.15, zl + 0.6), dir=(0.0, -0.1, -CAM_Z), f=35, fd=3.0,
@@ -419,7 +421,7 @@ def shutter(t):
 
 CAPTIONS = [
     dict(text="An agent writes each plan.", at=(-6.5, 0.0, -3.0), h=0.45, t0=7.6, t1=12.6, kind="stand"),
-    dict(text="Anikit Video turns each into frames.", at=(-3.4, 0.0, 2.4), h=0.42, t0=16.2, t1=20.0,
+    dict(text="Anikit Video turns each into frames.", at=(-1.2, 0.0, -14.5), h=0.42, t0=16.2, t1=20.0,
          kind="stand"),
     *[dict(text=f["file"], at=None, lane=k, h=0.02, t0=55.0, t1=58.4, kind="etched") for k, f in enumerate(FILMS)],
     dict(text="Anikit Video", at=None, h=0.6, t0=T["logo0"], t1=DURATION, kind="logo"),
