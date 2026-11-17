@@ -1527,31 +1527,24 @@ fn dc_flags(cd: &Coded, i16: bool) -> u8 {
     f
 }
 
-/// Mean SSIM of the luma planes over 8×8 blocks on a 2×2-subsampled block grid
+/// Luma PSNR (dB) above which the SSIM floor no longer lowers the QP.
+const FLOOR_PSNR_CAP: f64 = 45.0;
+
+/// Mean SSIM (and PSNR) of the luma planes over 8×8 blocks on a 2×2-subsampled block grid
 /// (enough for rate decisions; not the reporting metric). `a` is the source;
 /// with a grain hint, the expected grain variance is taken off its variance
 /// (the clean signal's), and each block's value is capped at 1.
-fn ssim_luma(a: &crate::frame::Plane, b: &crate::frame::Plane, w: usize, h: usize, grain: f32) -> f64 {
+fn ssim_luma(a: &crate::frame::Plane, b: &crate::frame::Plane, w: usize, h: usize, grain: f32) -> (f64, f64) {
     let g = grain as f64;
+    let mut sse = 0u64;
     const C1: f64 = 6.5025; // (0.01·255)²
     const C2: f64 = 58.5225; // (0.03·255)²
     let (mut sum, mut n) = (0f64, 0u32);
     for by in (0..h / 8).step_by(2) {
         for bx in (0..w / 8).step_by(2) {
             let (oa, ob) = (a.off(bx as isize * 8, by as isize * 8), b.off(bx as isize * 8, by as isize * 8));
-            let (mut sa, mut sb, mut saa, mut sbb, mut sab) = (0u32, 0u32, 0u32, 0u32, 0u32);
-            for y in 0..8 {
-                let ra = &a.data[oa + y * a.stride..oa + y * a.stride + 8];
-                let rb = &b.data[ob + y * b.stride..ob + y * b.stride + 8];
-                for x in 0..8 {
-                    let (p, q) = (ra[x] as u32, rb[x] as u32);
-                    sa += p;
-                    sb += q;
-                    saa += p * p;
-                    sbb += q * q;
-                    sab += p * q;
-                }
-            }
+            let [sa, sb, saa, sbb, sab] = crate::simd::ssim_stats8(&a.data[oa..], a.stride, &b.data[ob..], b.stride);
+            sse += saa as u64 + sbb as u64 - 2 * sab as u64;
             let (ma, mb) = (sa as f64 / 64.0, sb as f64 / 64.0);
             let mut va = saa as f64 / 64.0 - ma * ma;
             if g > 0.0 {
@@ -1566,9 +1559,10 @@ fn ssim_luma(a: &crate::frame::Plane, b: &crate::frame::Plane, w: usize, h: usiz
         }
     }
     if n == 0 {
-        1.0
+        (1.0, 99.0)
     } else {
-        sum / n as f64
+        let mse = sse as f64 / (64 * n) as f64;
+        (sum / n as f64, 10.0 * (65025.0 / mse.max(1e-3)).log10())
     }
 }
 
@@ -2320,15 +2314,18 @@ impl Encoder {
         &self.out
     }
 
-    /// Moves the frame QP offset towards the SSIM floor after a frame measured
+    /// Moves the frame QP offset towards the SSIM floor (only while the
+    /// frame's luma PSNR is below `FLOOR_PSNR_CAP`) after a frame measured
     /// `s`: down by the shortfall × `gain` (1..=`max_step`), up by one when
     /// there is margin; never above the configured QP or below it by more than
     /// `ssim_max_drop`.
-    fn floor_update(&mut self, s: f64, gain: f64, max_step: i32) {
+    fn floor_update(&mut self, (s, psnr): (f64, f64), gain: f64, max_step: i32) {
         // + 0.002: this estimate (8×8 blocks, every other one) reads about that
         // much higher than the usual overlapping-window SSIM
         let f = self.cfg.ssim_floor as f64 + 0.002;
-        if s < f {
+        // Above ~45 dB the remaining error is not visible, however low SSIM
+        // reads on fine texture: don't spend bits there (e.g. --crf 18).
+        if s < f && psnr < FLOOR_PSNR_CAP {
             self.qp_adj -= ((f - s) * gain).ceil().clamp(1.0, max_step as f64) as i32;
         } else if s > f + 0.004 {
             self.qp_adj += 1;
