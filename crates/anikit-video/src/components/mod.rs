@@ -303,8 +303,8 @@ kinds! {
     "product-shot" => product_shot::ProductShot, "A phone on a stone plinth lit by low sun through window blinds: ray-traced device (titanium frame, Fresnel glass, the screen from a named composition), volumetric light shafts, dust, slow weighted camera move.", r##"{"screen":"ui"}"##;
     "now-playing" => now_playing::NowPlaying, "A music app's Now Playing screen (390 pt grid): printed cover art, serif title, live scrubber with real timecodes, transport, volume.", r##"{"title":"Salt & Glass","artist":"Maren Holt"}"##;
     // Illustration
-    "brush" => illustration::BrushStroke, "Hand-made brush stroke along an SVG path or points: variable-width outline with pressure and tapered tips, ink/dry/marker/pencil texture, stroke-on drawing and line boil.", r##"{"points":[[160,520],[420,300],[760,420],[1100,220]],"width":34,"texture":"dry","draw":1.2,"boil":12}"##;
-    "sketch" => illustration::Sketch, "Several brush paths drawn on one after another (stagger), sharing texture, pressure, draw and line-boil settings: a whole illustration in one layer.", r##"{"paths":[{"d":"M200 500 C 300 200, 600 200, 700 480"},{"d":"M260 470 Q 450 560 650 460","texture":"pencil"},{"points":[[380,330],[420,300],[470,330]],"width":6}],"draw":0.8,"stagger":0.3,"boil":8}"##;
+    "brush" => illustration::BrushStroke, "Hand-made brush stroke along an SVG path or points: variable-width outline with pressure and tapered tips, ink/dry/marker/pencil texture, stroke-on drawing and line boil.", r##"{"points":[[160,520],[420,300],[760,420],[1100,220]],"size":34,"texture":"dry","draw":1.2,"boil":12}"##;
+    "sketch" => illustration::Sketch, "Several brush paths drawn on one after another (stagger), sharing texture, pressure, draw and line-boil settings: a whole illustration in one layer.", r##"{"paths":[{"d":"M200 500 C 300 200, 600 200, 700 480"},{"d":"M260 470 Q 450 560 650 460","texture":"pencil"},{"points":[[380,330],[420,300],[470,330]],"size":6}],"draw":0.8,"stagger":0.3,"boil":8}"##;
     // Lottie
     "lottie" => lottie::Lottie, "Minimal Lottie player (shape layers, transforms, trim paths).", r##"{"src":"anim.json"}"##;
 }

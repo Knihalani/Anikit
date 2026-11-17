@@ -457,7 +457,7 @@ Hand-made marks for illustrated videos: paint a scene on paper instead of placin
 ### `brush`: one brush stroke
 
 ```json
-{ "type": "component", "component": "brush", "props": { "d": "M160 480 C 560 400, 900 600, 1300 470", "texture": "dry", "color": "#b5432f", "width": 110, "pressure": "taper", "draw": 0.9, "boil": 12 } }
+{ "type": "component", "component": "brush", "props": { "d": "M160 480 C 560 400, 900 600, 1300 470", "texture": "dry", "color": "#b5432f", "size": 110, "pressure": "taper", "draw": 0.9, "boil": 12 } }
 ```
 
 | Prop | Default | Meaning |
@@ -466,7 +466,7 @@ Hand-made marks for illustrated videos: paint a scene on paper instead of placin
 | `points` | | `[[x, y], …]` the stroke passes through (smoothed). Give `d` or `points`. |
 | `units` | `px` | `px` in the layer box, or `fraction` (0–1 of the box). |
 | `color` | theme text | Paint colour. |
-| `width` | `18` | Full width in px at full pressure. |
+| `size` | `18` | Brush width in px at full pressure (`width`/`height` are the layer box). |
 | `pressure` | `swell` | Values 0–1 spread over the length (`[0.3, 1, 0.6]`) or a preset: `swell` (fat middle), `taper` (heavy start, thin end), `even` or `flick` (fast attack, long thin tail). |
 | `taper` | `[0.12, 0.3]` | Tip lengths `[start, end]` as fractions of the stroke. |
 | `texture` | `ink` | `ink` (crisp, slightly wobbly edges), `dry` (bristle streaks with gaps that run out along the stroke), `marker` (flat translucent ink, darker where the nib lands and lifts, drag streaks) or `pencil` (many short jittered graphite strands; pressure sets their density). |
@@ -479,14 +479,14 @@ Hand-made marks for illustrated videos: paint a scene on paper instead of placin
 | `boilAmount` | `1.5` | Boil amplitude in px. |
 
 ### `sketch`: a whole drawing in one layer
-Several paths sharing the brush, draw-on and boil settings. `paths` is a list of `{ d | points, color, width, pressure, taper, texture, opacity, seed, delay }`; unset keys come from the sketch. Every `brush` prop except `d`/`points` is also a sketch prop (`width` defaults to `10`), plus `stagger` (default `0.25` s): path *i* starts drawing at `delay + i × stagger + paths[i].delay`.
+Several paths sharing the brush, draw-on and boil settings. `paths` is a list of `{ d | points, color, size, pressure, taper, texture, opacity, seed, delay }`; unset keys come from the sketch. Every `brush` prop except `d`/`points` is also a sketch prop (`size` defaults to `10`), plus `stagger` (default `0.25` s): path *i* starts drawing at `delay + i × stagger + paths[i].delay`.
 
 ```json
 { "type": "component", "component": "sketch", "props": { "draw": 0.6, "stagger": 0.1, "boil": 8, "color": "#23211f", "paths": [
-  { "d": "M1470 330 A 125 125 0 1 1 1469 318", "texture": "marker", "color": "#f0a43a", "width": 92, "pressure": "even" },
-  { "d": "M-40 900 C 380 770, 820 830, 1120 890 S 1700 790, 1960 860", "texture": "dry", "color": "#41604f", "width": 170, "pressure": "even" },
-  { "points": [[438, 735], [528, 615], [622, 735]], "width": 15 },
-  { "d": "M880 380 q 34 -30 68 0 q 34 -30 68 0", "width": 7 }
+  { "d": "M1470 330 A 125 125 0 1 1 1469 318", "texture": "marker", "color": "#f0a43a", "size": 92, "pressure": "even" },
+  { "d": "M-40 900 C 380 770, 820 830, 1120 890 S 1700 790, 1960 860", "texture": "dry", "color": "#41604f", "size": 170, "pressure": "even" },
+  { "points": [[438, 735], [528, 615], [622, 735]], "size": 15 },
+  { "d": "M880 380 q 34 -30 68 0 q 34 -30 68 0", "size": 7 }
 ] } }
 ```
 

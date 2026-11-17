@@ -345,18 +345,19 @@ fn stroke_ops(out: &mut Vec<Op>, b: &Brush, line: &Line, total: f32, frame: u32)
             let mut body = Path::new();
             ribbon(&mut body, line, 0, m - 1, &|i| {
                 let s = line.s[i];
-                (0.0, hw[i] * (0.82 + 0.1 * vnoise(s / 11.0, seed ^ 3)), hw[i] * (0.82 + 0.1 * vnoise(s / 13.0, seed ^ 4)))
+                let k = 1.0 - 0.3 * s / total;
+                (0.0, k * hw[i] * (0.86 + 0.08 * vnoise(s / 11.0, seed ^ 3)), k * hw[i] * (0.86 + 0.08 * vnoise(s / 13.0, seed ^ 4)))
             });
-            out.push(fill(body, col(0.16)));
-            let nb = (b.width / 2.0).clamp(7.0, 22.0) as usize;
+            out.push(fill(body, col(0.2)));
+            let nb = (b.width / 3.0).clamp(8.0, 40.0) as usize;
             let mut buckets: [Path; 4] = Default::default();
             let mut rng = Rng::new(seed as u64 * 7919 + 17);
             for j in 0..nb {
                 let f = -0.95 + 1.9 * (j as f32 + 0.5 + rng.range(-0.35, 0.35)) / nb as f32;
-                let thick = rng.range(0.55, 1.5) / nb as f32;
+                let thick = rng.range(0.8, 2.3) / nb as f32;
                 let end = 1.0 - rng.range(0.0, 0.45) * f.abs().powf(1.3) - rng.range(0.0, 0.08);
                 let start = rng.range(0.0, 0.03);
-                let freq = rng.range(18.0, 55.0);
+                let freq = rng.range(45.0, 160.0);
                 let bs = seed.wrapping_add(j as u32 * 131);
                 let alpha_b = rng.range(0.5, 1.0);
                 // Walk the samples, splitting into runs where the bristle carries paint.
@@ -364,7 +365,7 @@ fn stroke_ops(out: &mut Vec<Op>, b: &Brush, line: &Line, total: f32, frame: u32)
                 while i < m {
                     let carries = |i: usize| {
                         let u = line.s[i] / total;
-                        let thresh = 0.85 - 1.1 * u * u - 0.25 * f.abs();
+                        let thresh = 0.8 - 0.8 * u * u - 0.22 * f.abs();
                         u >= start && u <= end && vnoise(line.s[i] / freq, bs) < thresh
                     };
                     if !carries(i) {
@@ -385,7 +386,7 @@ fn stroke_ops(out: &mut Vec<Op>, b: &Brush, line: &Line, total: f32, frame: u32)
                     let bi = ((level * 4.0) as usize).min(3);
                     ribbon(&mut buckets[bi], line, a, z, &|k| {
                         let s = line.s[k];
-                        let ends = tip((s - sa) / 6.0) * tip((sz - s) / 9.0);
+                        let ends = tip((s - sa) / 16.0) * tip((sz - s) / 28.0);
                         let h = hw[k] * thick * ends * (1.0 + 0.3 * vnoise(s / 7.0, bs ^ 9));
                         (f * hw[k] + 0.6 * vnoise(s / 30.0, bs ^ 5), h, h)
                     });
@@ -431,7 +432,7 @@ fn stroke_ops(out: &mut Vec<Op>, b: &Brush, line: &Line, total: f32, frame: u32)
                 let f = rng.range(-0.85, 0.85);
                 let mut s = rng.range(0.0, 10.0);
                 while s < head {
-                    let len = rng.range(7.0, 24.0);
+                    let len = rng.range(14.0, 42.0);
                     let e = (s + len).min(head);
                     let i0 = line.s.partition_point(|&x| x < s).min(m - 1);
                     let i1 = line.s.partition_point(|&x| x < e).min(m - 1);
@@ -451,7 +452,7 @@ fn stroke_ops(out: &mut Vec<Op>, b: &Brush, line: &Line, total: f32, frame: u32)
                             }
                         }
                     }
-                    s = e + rng.range(0.5, 4.0);
+                    s = e + rng.range(0.3, 2.5);
                 }
             }
             for (k, p) in groups.into_iter().enumerate() {
@@ -546,7 +547,8 @@ pub struct BrushStroke {
     /// "px" (default) or "fraction".
     pub units: String,
     pub color: Option<Color>,
-    pub width: f32,
+    /// Brush size: full width in px at full pressure (`width` is the layer box).
+    pub size: f32,
     pub pressure: Pressure,
     /// Tip lengths as fractions of the stroke: [start, end].
     pub taper: [f32; 2],
@@ -574,7 +576,7 @@ impl Default for BrushStroke {
             points: None,
             units: "px".into(),
             color: None,
-            width: 18.0,
+            size: 18.0,
             pressure: Pressure::default(),
             taper: [0.12, 0.3],
             texture: "ink".into(),
@@ -602,14 +604,14 @@ fn check_common(units: &str, texture: &str, ease_name: &str, width: f32, p: &Pre
         return Err(unknown("ease", ease_name, EASES));
     }
     if width.is_nan() || width <= 0.0 {
-        return Err(Error("width: must be > 0".into()));
+        return Err(Error("size: must be > 0".into()));
     }
     check_pressure(p)
 }
 
 impl Prepare for BrushStroke {
     fn prepare(&mut self) -> Result<(), Error> {
-        check_common(&self.units, &self.texture, &self.ease, self.width, &self.pressure)?;
+        check_common(&self.units, &self.texture, &self.ease, self.size, &self.pressure)?;
         self.lines = centrelines(&self.d, &self.points, self.units == "fraction")?;
         Ok(())
     }
@@ -638,7 +640,7 @@ impl Component for BrushStroke {
         let key = fnv(&[&k.to_bits().to_le_bytes(), &frame.to_le_bytes(), &sx.to_bits().to_le_bytes(), &sy.to_bits().to_le_bytes()]);
         let b = Brush {
             color: self.color.map(|c| c.0).unwrap_or(ctx.theme.text),
-            width: self.width,
+            width: self.size,
             pressure: self.pressure.clone(),
             taper: self.taper,
             texture: self.texture.clone(),
@@ -665,7 +667,8 @@ pub struct SketchPath {
     pub d: Option<String>,
     pub points: Option<Vec<[f32; 2]>>,
     pub color: Option<Color>,
-    pub width: Option<f32>,
+    #[serde(alias = "width")]
+    pub size: Option<f32>,
     pub pressure: Option<Pressure>,
     pub taper: Option<[f32; 2]>,
     pub texture: Option<String>,
@@ -681,7 +684,8 @@ pub struct Sketch {
     pub paths: Vec<SketchPath>,
     pub units: String,
     pub color: Option<Color>,
-    pub width: f32,
+    /// Brush size: full width in px at full pressure (`width` is the layer box).
+    pub size: f32,
     pub pressure: Pressure,
     pub taper: [f32; 2],
     pub texture: String,
@@ -706,7 +710,7 @@ impl Default for Sketch {
             paths: Vec::new(),
             units: "px".into(),
             color: None,
-            width: 10.0,
+            size: 10.0,
             pressure: Pressure::default(),
             taper: [0.12, 0.3],
             texture: "ink".into(),
@@ -726,14 +730,14 @@ impl Default for Sketch {
 
 impl Prepare for Sketch {
     fn prepare(&mut self) -> Result<(), Error> {
-        check_common(&self.units, &self.texture, &self.ease, self.width, &self.pressure)?;
+        check_common(&self.units, &self.texture, &self.ease, self.size, &self.pressure)?;
         if self.paths.is_empty() {
             return Err(Error("paths: give at least one {\"d\": …} or {\"points\": …}".into()));
         }
         let frac = self.units == "fraction";
         for (i, p) in self.paths.iter().enumerate() {
             let tex = p.texture.as_deref().unwrap_or(&self.texture);
-            check_common(&self.units, tex, &self.ease, p.width.unwrap_or(self.width), p.pressure.as_ref().unwrap_or(&self.pressure))
+            check_common(&self.units, tex, &self.ease, p.size.unwrap_or(self.size), p.pressure.as_ref().unwrap_or(&self.pressure))
                 .map_err(|e| Error(format!("paths[{i}].{}", e.0)))?;
             self.lines.push(centrelines(&p.d, &p.points, frac).map_err(|e| Error(format!("paths[{i}].{}", e.0)))?);
         }
@@ -760,7 +764,7 @@ impl Component for Sketch {
             for (i, p) in self.paths.iter().enumerate() {
                 let b = Brush {
                     color: p.color.map(|c| c.0).unwrap_or(base),
-                    width: p.width.unwrap_or(self.width),
+                    width: p.size.unwrap_or(self.size),
                     pressure: p.pressure.clone().unwrap_or_else(|| self.pressure.clone()),
                     taper: p.taper.unwrap_or(self.taper),
                     texture: p.texture.clone().unwrap_or_else(|| self.texture.clone()),
