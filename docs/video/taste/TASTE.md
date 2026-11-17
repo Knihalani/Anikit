@@ -2,7 +2,7 @@
 
 What separates work a studio would post from generic, templated or "AI slop" video, distilled from practitioners and research (every claim is sourced in [`sources.md`](sources.md)). It exists because the user rejected work as "AI slop", "boring", "generic", "slow", "text hard to read and looks low resolution", "too much synthesizer", "lighting is off", "don't force 3D", "the same 3D visuals every time" (`docs/video/quality/BAR.md`).
 
-**This is not a style.** Every section gives *ranges, reasons and contrasting valid choices*. The only universal rule: every choice is made for this subject, on purpose, and you can say why. A default you didn't choose is the tell (prg.sh, 925Studios); a choice that would fit any product is wrong (swap test, §8). If two of your pieces look alike, at least one of them is wrong: **range is the goal**. Two briefs should come out as different in medium, world, palette, type, motion and sound as two studios' work would (taste pass step 1, *Diverge*).
+**This is not a style and not a rulebook.** It describes what tends to work and why, what tends to fail and why, and how to check, with ranges and contrasting valid choices. The one through-line: every choice is made for this subject, on purpose, and you can say why. A default you didn't choose is the tell (prg.sh, 925Studios); a choice that would fit any product is wrong (swap test, §8). If two of your pieces look alike, at least one of them is wrong: **range is the goal**. Two briefs should come out as different in medium, world, palette, type, motion and sound as two studios' work would (taste pass step 1, *Diverge*).
 
 Each section runs **principles → rules (numbers from practice) → tells → checks**. Numbers marked *(heuristic)* are our proposals built on sources; tune them by eye. `anikit-video critique` implements the checks marked ⚙.
 
@@ -14,7 +14,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 - Structure beats typeface. Vignelli did a career with ~4 faces: "it is not the type but what you do with it that counts".
 - Contrast of scale is the main tool, with few sizes. Vignelli: "one or two type sizes at the most", the large "usually twice as big". Bringhurst: "don't compose without a scale".
 - Louder is not better. Making everything bigger and bolder is Vignelli's "intellectual vulgarity"; "in a world where everybody screams, silence is noticeable. White space provides the silence."
-- Type becomes the image only when the concept demands it. Bass: titles carry "the prime underlying core of the film's story… in some metaphorical way". Cooper's scratched *Se7en* type was "from the mind of the killer". Elastic's *True Detective* double exposures mean "internally divided". It is never a default effect.
+- Type as the image works best when the concept calls for it. Bass: titles carry "the prime underlying core of the film's story… in some metaphorical way". Cooper's scratched *Se7en* type was "from the mind of the killer". Elastic's *True Detective* double exposures mean "internally divided". It is never a default effect.
 
 **Rules.**
 - **Scale: pick one ratio per piece and reuse 2–4 sizes.**
@@ -25,7 +25,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
   - Where a hero exists, it should be ≥ 3:1 against the next size.
 - **Size floor (1080p).**
   - BBC subtitles set lines at 7–8% of frame height (76–86 px). That is the comfortable reading size.
-  - ~4% (≈ 43 px line, ≈ 36 px type) is the floor for any secondary text that must be read *(heuristic)*.
+  - ~4% (≈ 43 px line, ≈ 36 px type) is a practical floor for secondary text meant to be read *(heuristic)*.
   - Under ~28 px, or thin weights (≤ 300) under ~40 px, H.264 and phone downscaling make text look "low resolution".
 - **Legibility comes from luma, not hue.** MP4 stores colour at half resolution (4:2:0), so red-on-blue or any equal-luma pair smears even when the PNG looked fine.
   - Contrast: ≥ 4.5:1 for text and 3:1 for large text (WCAG). Or APCA Lc ≥ 75 for body and ≥ 45 for large headlines.
@@ -37,9 +37,9 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 - **Tracking runs opposite to size.**
   - Tighten display type ~2% (Inter: −0.022 em at ≥ 32 px).
   - Track all-caps and labels +5–10%.
-  - Never letterspace lowercase without a reason.
+  - Letterspaced lowercase tends to look accidental unless there's a reason.
 - **Leading.** Text +10–15%; display 0.9–1.1; all-caps stacks 0.8–0.95.
-- **Pairing.** The default is one family varied by weight and size, with two families at most. If you pair, make the contrast clear: serif display with grotesk text, or mono labels with a humanist head. Never pair two similar grotesks.
+- **Pairing.** The default is one family varied by weight and size, with two families at most. If you pair, make the contrast clear: serif display with grotesk text, or mono labels with a humanist head. Two similar grotesks together tend to look like a mistake.
 - **Safe area (EBU R95).** Graphics-safe is 5% (96 px and 54 px at 1080p); action-safe is 3.5%. Bleed type off-frame only deliberately, as image.
 
 **Tells.**
@@ -67,7 +67,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 - Colour has a script over time. Pixar colour scripts (Eggleston, Romano) map emotion scene by scene: the palette changes with the arc rather than staying one look throughout.
 
 **Rules.**
-- **Values first.** Plan 3–4 value groups. The strongest light–dark difference in the frame sits at the focal point. Hierarchy must survive greyscale.
+- **Values first.** Plan 3–4 value groups. The strongest light–dark difference in the frame sits at the focal point. Hierarchy that survives greyscale tends to read instantly.
 - **Palette.** One dominant family, one support and one accent, plus neutrals. Put the accent on ≲ 10% of the area, where the meaning is. More than ~4 saturated hue families means no colour means anything ⚙.
   - 60-30-10 is interior-design folklore with no traceable source; it is a starting ratio, not a law.
   - Valid and contrasting systems:
@@ -76,7 +76,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
     - a complementary pair at unequal saturation;
     - flat primaries as signifiers;
     - earth tones from a material.
-- **Source the palette** from the subject: a photograph, a material, an era, a painting, or the brand's real colours. Never from a colour-wheel generator or a tool default.
+- **Source the palette** from the subject: a photograph, a material, an era, a painting, or the brand's real colours. Colour-wheel generators and tool defaults tend to give the generic look.
 - **Saturation budget.** Keep most of the area low to mid chroma. Spend full saturation on the accent and the climax beat *(heuristic: flag > ~25% of the area at high chroma)*.
 - **Levels (EBU R103).** 8-bit video runs 16–235 nominal, 5–246 preferred. Out-of-range pixels matter beyond 1% of the image. Lift the deepest blacks slightly unless the piece is deliberately graphic, and keep large areas off clip; clipped white is for speculars and small type.
 - **Grading order.** Set contrast (black and white points) first, then neutral balance, then the creative look (lift/gamma/gain). Skin sits near the 123° I-line on a vectorscope.
@@ -107,7 +107,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
   - Symmetry works as a sustained system: Kubrick's one-point perspective, which reads as control and unease, or Anderson's, which is storybook and poised.
   - One centred title on an empty field is a slide.
 - **Balance is weight × distance from centre** (Arnheim; McManus 2011 confirms it as a loose tendency). A small, bright, saturated accent far off-centre can balance a big dull mass.
-- **Negative space must be shaped.** It can be one-sided (lead room and direction), textured, or a system repeated across shots. Even margins around a small cluster read as a keynote. Müller-Brockmann: white space in an asymmetric grid is active.
+- **Negative space works when it is shaped.** It can be one-sided (lead room and direction), textured, or a system repeated across shots. Even margins around a small cluster read as a keynote. Müller-Brockmann: white space in an asymmetric grid is active.
 - **Space is a choice** (Block): deep, flat, limited or ambiguous. Flat graphic space is as valid as deep 3D space. Mixing them by accident is the tell.
 
 **Rules.**
@@ -151,7 +151,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
   - 1:1–2:1 is high-key: open, commercial.
   - 3:1–4:1 is the natural dramatic default.
   - 8:1 or more is low-key: noir, tension.
-  - Birn: fill at ½ to ⅛ of the key; the fills together never compete with it.
+  - Birn: fill at ½ to ⅛ of the key; the fills together usually stay below it.
 - **Key position.** 15–45° off the camera axis and 15–45° above it is the start. Then move it: 90° side light for texture, top light, or a back/edge key with the camera on the shadow side for shape.
 - **Colour temperature.** One dominant temperature per shot. A warm practical (~2700–3200 K) against a cool ambient (~5600 K+), or the inverse for night, is a choice, not a default.
 - **Exposure (Rec.709).**
@@ -159,7 +159,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
   - Keep large areas out of the top ~5% unless they are meant to read as a light.
   - The subject is ≥ 1 stop brighter than the background, or a deliberate silhouette.
 - **Tone mapping.** Use a filmic/AgX-style roll-off so emissives and suns go to white instead of flat clipped blobs.
-- **HDRI.** Use it for ambient light and reflections, add area lights for key and shape, and never use it as the visible backdrop ("off-the-shelf HDRIs can be too generic").
+- **HDRI.** Use it for ambient light and reflections, add area lights for key and shape, and avoid it as the visible backdrop ("off-the-shelf HDRIs can be too generic").
 
 **Tells.**
 - Flat sourceless 1:1 light with no cast shadows.
@@ -171,7 +171,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 - Forcing 3D light onto content that is graphic by nature (Block: flat space is valid).
 
 **Checks.**
-- Point to the source: every highlight, shadow and glow must agree with it.
+- Point to the source: every highlight, shadow and glow should agree with it.
 - Luma histogram:
   - flag Y ≥ 0.98 above 0.5–1% of the frame (excluding intended lights);
   - flag Y ≤ 0.02 above 2–5% (non-noir);
@@ -202,7 +202,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
   - ~0.15 is "barely bouncy, more brisk" (≈ 0.6% overshoot).
   - ~0.3 is noticeable (≈ 4.6%).
   - Above 0.4 is "use with caution" (≥ 10%, cartoon).
-  - Tasteful overshoot is 1–5% of the travel. Opacity and colour never overshoot.
+  - Tasteful overshoot is 1–5% of the travel. Opacity and colour look wrong when they overshoot.
 - **Overlap and stagger.**
   - Parts of one object: 1–3 frames apart.
   - Separate items: 20–80 ms apart, with the total sweep ≲ 500 ms unless the sweep is the hero *(heuristic)*.
@@ -254,7 +254,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 - **Spread matters as much as the mean.** Shot-length CV (sd/mean) of 0.6–1.2 is healthy; < 0.4 is metronomic ⚙; > 1.5 means one shot dominates *(heuristic on lognormal)*. Aim for max/median ≥ 3.
 - **Fast showcase** (20–60 s):
   - median shot 1–2 s;
-  - bursts of 2–4 shots at 0.3–0.5 s, never as the constant;
+  - bursts of 2–4 shots at 0.3–0.5 s, which stop working as the constant;
   - at least one 3–6 s breath after the densest run or under the title.
   - The repo's fast-intent limits (≤ 2.5 s per shot, ≤ 1.5 s median; `docs pacing`) are this user's showcase taste. Calm and steady pieces hold longer, but every hold develops.
 - **Form.** Cold open (hook) → introduce → escalate → climax without resolution → title → **button** (one last beat after the title). The quiet middle is what lets the loud end land.
@@ -293,7 +293,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 - **A specific instrument becomes the film's identity:** Göransson's bass recorder for *The Mandalorian*, "warm and intimate".
 - **Silence is structure.** Wallfisch plans silence while spotting a film. Burwell: "do more with less". Wall-to-wall sound leaves the loud moments "nothing to contrast against."
 - **Spot before you score.** Decide where each cue starts and stops and what it hits.
-- **Don't mirror every motion.** Mickey-mousing ("most vulgar", Cocteau) only restates the picture; use it only in play and comedy.
+- **Mirroring every motion tends to cheapen it.** Mickey-mousing ("most vulgar", Cocteau) only restates the picture; it suits play and comedy.
 - **Signature sounds wear out.** The *Inception* BRAAAM became a cliché. Risers, whooshes and sub-drops on everything are next.
 - **Stock "corporate uplifting" is written to fit anything,** so it fits nothing. Music supervisors look for "something other people don't know about".
 
@@ -311,8 +311,8 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 - **Synths only when the concept is electronic.** Even then, give the synth one job (pad *or* bass *or* lead), and keep it ≲ 30% of the voices otherwise *(heuristic)* ⚙ (`music` tip).
 - **Vary between pieces.** Change at least 2 of: lead family, tempo (±15 BPM), mode and groove.
 - **Arc.** Start sparse with 1–2 voices, build to 3–5, peak, then drop to near silence before the final hit or name. Plan at least one silence of 0.5–2 s, or a bar's rest, and land the reveal right after it.
-- **Sound effects.** At most 1 riser per 30 s and 0–3 impacts per minute; never a whoosh on every cut. Match the material: paper, glass, wood or a click beat generic air. A single real sound can be the logo sting (Apple's doorbell).
-- **Sync.** Viewers detect audio up to 45 ms early or 125 ms late (ITU-R BT.1359). Put hits on the frame or one frame late, never early. Pick 3–6 hit points per minute rather than chasing every cut.
+- **Sound effects.** At most 1 riser per 30 s and 0–3 impacts per minute; a whoosh on every cut wears thin fast. Match the material: paper, glass, wood or a click beat generic air. A single real sound can be the logo sting (Apple's doorbell).
+- **Sync.** Viewers detect audio up to 45 ms early or 125 ms late (ITU-R BT.1359). Hits on the frame or one frame late feel right; early hits feel wrong. Pick 3–6 hit points per minute rather than chasing every cut.
 - **Loudness.**
   - Web delivery: −14 to −16 LUFS integrated, true peak ≤ −1 dBTP (≤ −2 if louder than −14). Spotify and YouTube normalise to ≈ −14 and only turn audio *down*.
   - Broadcast (EBU R128): −23 LUFS ±0.5, ≤ −1 dBTP.
@@ -330,14 +330,14 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 
 **Checks.**
 - Mute test: do the pictures alone tell it?
-- Audio-only test: does the music alone suggest *this* subject? If it fits any product, it fails.
+- Audio-only test: does the music alone suggest *this* subject? If it would fit any product, it's probably generic.
 - Loudness gate ⚙ (`audio`).
-- Hit frames against onset frames: within 1 frame, never early.
+- Hit frames against onset frames: within 1 frame, not early.
 
 ## 8. Concept, originality and taste
 
 **Principles.**
-- **One idea that only fits this subject: the swap test.** Put a competitor's logo or name on it. If it still works, it fails (Brandautopsy; Neumeier: "no other company should be able to improve its icon by using part of yours").
+- **One idea that only fits this subject: the swap test.** Put a competitor's logo or name on it. If it still works, it's probably generic (Brandautopsy; Neumeier: "no other company should be able to improve its icon by using part of yours").
 - **Concept first, then style.** A style copied without its concept goes "from Buck to… yuck" (Honig). Corporate Memphis began as Buck's commissioned system for Facebook, and became a template once it was copied without the reason.
 - **Every detail carries meaning.** Vignelli is against "stripes and swash of color splashed across pages for no reason", and against fashion. Rams: "Less, but better"; honest; "thorough down to the last detail"; innovation "can never be an end in itself."
 - **Paul Graham, "Taste for Makers".** Good design is simple, suggestive, often slightly funny, strange and daring, and it is redesign: "rare to get things right the first time". "If you don't know where your ideas are coming from, you're probably imitating an imitator." Draw from nature and the real source material, not from other people's output.
@@ -347,15 +347,15 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 
 **Rules.**
 - **Write the idea as one sentence** with a metaphor taken from the subject's own data, mechanism, history or physical material. Swap-test it.
-- **Look outside the category for references.** Take them from print, title design, scientific illustration, posters, documentary or architecture, never from other tech launch videos (they are where the clichés come from). Write down what you take from each.
+- **Look outside the category for references.** Take them from print, title design, scientific illustration, posters, documentary or architecture, rather than other tech launch videos (they are where the clichés come from). Write down what you take from each.
 - **Include at least 3 subject-only elements:** the real UI, real data, real names and numbers, the product's own shapes and sounds.
-- **The medium follows the idea.** Set type, illustration and paths, real UI, photography-style compositing, shader worlds and ray-traced 3D are equal options. Use 3D only where depth carries meaning, for one or two moments or for the whole piece if the idea *is* spatial. Never use the same environment, material or motif as a previous piece.
+- **The medium follows the idea.** Set type, illustration and paths, real UI, photography-style compositing, shader worlds and ray-traced 3D are equal options. 3D tends to earn its cost where depth carries meaning, for one or two moments or for the whole piece if the idea *is* spatial. Reusing a previous piece's environment, material or motif makes the work read as samey.
 - **One motion idea per piece.** Animate the signified: a word that builds is built.
 - **Redesign pass.** Make 2–3 concept variants and pick one. Then cut 20–30% of the elements or the duration, and swap-test again.
 - **Series variety.** Within any 5 pieces, no two share a palette, a typeface, a lead instrument, a 3D motif or an opening move.
-- **References vs copying.** Borrow the *grammar* of a reference (its pacing curve, framing logic, how type meets image), never its shots, palette or exact moves (`skills/anikit-reverse-video`). Recipes are techniques, not pieces (critique flags a spec that is mostly a recipe).
+- **References vs copying.** Borrow the *grammar* of a reference (its pacing curve, framing logic, how type meets image), not its shots, palette or exact moves (`skills/anikit-reverse-video`). Recipes are techniques, not pieces (critique flags a spec that is mostly a recipe).
 
-## 9. Catalogue of tells (avoid unless the concept truly demands it, and say why)
+## 9. Catalogue of tells (they read as defaults; use one only when the concept truly calls for it, and know why)
 
 **Visual.**
 - Indigo/violet → blue gradients.
@@ -391,7 +391,7 @@ Each section runs **principles → rules (numbers from practice) → tells → c
   - count-up numbers;
   - floaty camera drift, which AI-video vendors recommend *because* it hides artifacts.
 
-Restraint swapped for 3D clichés is still a cliché. Restraint must be rich (§11), never empty.
+Restraint swapped for 3D clichés is still a cliché. Restraint works when it is rich (§11); empty restraint reads as unfinished.
 
 **The SaaS layout** (the fifth verdict, "generic, boring and samey"):
 - a UI screenshot or phone sitting beside a block of copy in an empty frame, which is a landing page in motion;
@@ -423,7 +423,7 @@ Use a UI only when the brief is literally a UI demo, and even then stage it: ext
 - Seamless, revolutionary, unlock, leverage, "We're excited".
 - Claims with no number or demonstration.
 
-## 10. The taste pass (run before any final render)
+## 10. The taste pass (checks worth running before a final render)
 
 Step 1 happens before designing; the rest happen on the `critique --pack` strip, its cut pairs and three full-size stills, listening once muted and once audio-only.
 
@@ -440,12 +440,12 @@ Step 1 happens before designing; the rest happen on the `critique --pack` strip,
 11. **Motion.** Fast attack and long settle. One element leads. Entrances vary by role. Fast moves are blurred. Overshoot ≤ 5% unless the piece is playful.
 12. **Rhythm and arc.** Pace matches the declared intent. Shot lengths vary (CV ≳ 0.6), with a breath after the densest run. Cuts land on action or comprehension, with beats saved for the key hits. Hook by 1 s, peak at about ⅔, then land on a held frame or a button.
 13. **Sound.** Instruments come from the concept (synths only if it's electronic). At least one silence. Hits on the frame. Sfx are rare and match the material. −14 to −16 LUFS, ≤ −1 dBTP.
-14. **The bar.** Would a senior motion designer scroll past this on Vimeo? Name the trend it looks like; if you can, it fails. No placeholder, no filler copy, and no §9 tell without a stated reason.
+14. **The bar.** Would a senior motion designer scroll past this on Vimeo? Name the trend it looks like; if you can, consider another direction. No placeholder, no filler copy, and no §9 tell without a stated reason.
 15. **Cut 20%.** Remove the weakest shot, word or effect. If it got better, cut again.
 
 ## 11. Ambition: amazing, not merely correct
 
-Correct is not enough. The fourth rejection (Margin) passed every rule above and was still "complete AI slop", because it was empty and recognisable as a trend. Vimeo's Staff Pick tenets are concept, craft, execution and originality, with one question: "Does it look and sound amazing?" Award work can be restrained in palette, but never in idea, world logic, detail per frame or choreography.
+Correct is not enough. The fourth rejection (Margin) met every guideline above and was still "complete AI slop", because it was empty and recognisable as a trend. Vimeo's Staff Pick tenets are concept, craft, execution and originality, with one question: "Does it look and sound amazing?" Award work can be restrained in palette, but never in idea, world logic, detail per frame or choreography.
 
 **Principles.**
 - **Idea first, polish last.** Clair (Elastic): the idea is the core of the apple; style is only the skin. Holmedal (ManvsMachine): don't get "distracted with execution (garnish) until the foundation is in place", and "make sure everything is motivated and has purpose."
@@ -465,7 +465,7 @@ Correct is not enough. The fourth rejection (Margin) passed every rule above and
   - particles and rigid-body physics with a cause on screen;
   - ray-traced objects in a motivated key;
   - compositions used as textures.
-- Gradients never stand in for imagery.
+- Gradients standing in for imagery tend to read as placeholder.
 - **Texture at the edges:** grain, halation, slight jitter or misregistration chosen for the world, kept off words while they are read.
 - **Choreography:**
   - one element's exit is the next one's entrance;

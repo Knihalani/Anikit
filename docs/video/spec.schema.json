@@ -143,6 +143,17 @@
         }
       ]
     },
+    "cut": {
+      "description": "Default scene length: `\"bar\"`, `\"2 beats\"`, `\"4 bars\"` (at the music's tempo) or seconds.\nScenes without a `duration` cut on that grid.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Num"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "encode": {
       "description": "Encoder tuning (the built-in ak264 MP4 encoder): `{ \"aq\": 0.8 }`.",
       "anyOf": [
@@ -573,6 +584,9 @@
           "additionalProperties": {
             "$ref": "#/$defs/Num"
           }
+        },
+        "stack": {
+          "description": "Lay out the scene's free-floating layers (no `x`/`y`) as one centred column:\n`true`, a gap in px, or `{ \"gap\": 24, \"align\": \"start|center|end\" }`. Expanded at load."
         },
         "layers": {
           "description": "Drawn bottom to top.",
@@ -1038,7 +1052,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "description": "`text`, `shape`, `image`, `video`, `group`, `box`, `component`. Inferred when omitted. One of: text, shape, image, video, group, box, component, composition, shader, draw.",
+          "description": "`text`, `shape`, `image`, `video`, `group`, `box`, `component`. Inferred when omitted. One of: text, shape, image, video, group, box, component, composition, shader, draw, dots.",
           "type": [
             "string",
             "null"
@@ -1053,7 +1067,8 @@
             "component",
             "composition",
             "shader",
-            "draw"
+            "draw",
+            "dots"
           ]
         },
         "id": {
@@ -1811,6 +1826,17 @@
         },
         "update": {
           "description": "Per-frame script: returns props to set this frame, e.g. `\"#{ x: 960 + 200 * sin(t), fill: hsl(t * 90, 80, 60) }\"`.\nSees `t T gt p i n w h fps frame beat bar level bpm`. Runs every frame (a few µs)."
+        },
+        "dots": {
+          "description": "Data points drawn as dots in frame pixels (thousands are fine: one path per colour):\n`{ \"data\": [[x, y], …] | \"points.csv\", \"size\": 4, \"color\": \"$accent\", \"appear\": \"=t * 800 - i\" }`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DotsSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "draw": {
           "description": "Raw drawing: primitives in frame pixels (the layer defaults to the parent's box), each\nwith its own fill and stroke. The layer's transforms, opacity, animation and `trimStart`/`trimEnd` apply.",
@@ -2758,6 +2784,47 @@
         {
           "type": "string"
         }
+      ]
+    },
+    "DotsSpec": {
+      "description": "`dots`: many points from an array or a CSV file (`x,y[,colour]` per line).",
+      "type": "object",
+      "properties": {
+        "data": {
+          "description": "`[[x, y], …]` or `[[x, y, \"#colour\"], …]` in frame pixels, or a CSV path."
+        },
+        "size": {
+          "description": "Dot diameter in px (default 4).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "color": {
+          "description": "Colour of dots without their own (default `$text`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "appear": {
+          "description": "Per-dot scale 0..1, an expression of `i` (index), `n` (count), `t`… e.g.\n`\"=clamp(t * 2000 - i, 0, 1)\"` to reveal dots in order. Default 1.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "shape": {
+          "description": "`circle` (default) or `square` (faster for very many tiny dots).",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "data"
       ]
     },
     "DrawItem": {

@@ -19,10 +19,12 @@
 //! (`skills/anikit-reverse-video/SKILL.md`) pairs it with an agent looking
 //! at the contact sheet.
 
+mod board;
 mod draft;
 mod image_ops;
 mod sheet;
 
+pub use board::{board, board_sheet, collect as collect_images, Board};
 pub use draft::draft_spec;
 pub use sheet::contact_sheet;
 
