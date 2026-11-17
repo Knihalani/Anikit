@@ -901,14 +901,39 @@ pub fn env(v: &Value, path: &str) -> Res<EnvSpec> {
 /// `[{ "dir": [x, y, z], "size": [w, h] (degrees), "roll", "color", "intensity", "soft", "key": true }]`.
 /// They light diffuse surfaces and show as crisp shapes in reflections; the
 /// one marked `key` also casts the traced soft shadows.
-pub fn lights(v: &Value, env: &Env, path: &str) -> Res<Env> {
+pub fn lights(v: &Value, env: &Env, path: &str) -> Res<(Env, Vec<super::trace::Light>)> {
     let a = v.as_array().ok_or_else(|| format!("{path}: expected an array of lights"))?;
     let mut boxes = env.boxes.clone();
     let mut key = env.key;
+    let mut local = Vec::new();
     for (j, l) in a.iter().enumerate() {
         let p = format!("{path}[{j}]");
         let m = l.as_object().ok_or_else(|| format!("{p}: expected an object"))?;
-        check_keys(m, &["dir", "size", "roll", "color", "intensity", "soft", "key"], &p)?;
+        check_keys(m, &["dir", "size", "roll", "color", "intensity", "soft", "key", "pos", "target", "angle", "penumbra", "shadow", "type"], &p)?;
+        if let Some(pos) = m.get("pos") {
+            // A local point light, or a spot light when it has a `target`.
+            let v3c = |x: &Value, q: &str| -> Res<V3> {
+                let a = x.as_array().filter(|a| a.len() == 3).ok_or_else(|| format!("{q}: expected [x, y, z]"))?;
+                Ok(v3(f(&a[0], q)?, f(&a[1], q)?, f(&a[2], q)?))
+            };
+            let pos = v3c(pos, &format!("{p}.pos"))?;
+            let c = m.get("color").map(|c| color(c, &format!("{p}.color"))).transpose()?.unwrap_or(v3(1.0, 1.0, 1.0));
+            let k = m.get("intensity").map(|x| f(x, &format!("{p}.intensity"))).transpose()?.unwrap_or(10.0);
+            let (dir, co, ci) = match m.get("target") {
+                Some(t) => {
+                    let tg = v3c(t, &format!("{p}.target"))?;
+                    let ang = m.get("angle").map(|x| f(x, &format!("{p}.angle"))).transpose()?.unwrap_or(30.0).clamp(1.0, 179.0);
+                    let pen = m.get("penumbra").map(|x| f(x, &format!("{p}.penumbra"))).transpose()?.unwrap_or(0.25).clamp(0.0, 1.0);
+                    let outer = (ang * 0.5).to_radians();
+                    let inner = outer * (1.0 - pen);
+                    (norm(sub(tg, pos)), outer.cos(), inner.cos())
+                }
+                None => (v3(0.0, -1.0, 0.0), -1.0, -1.0),
+            };
+            let shadow = m.get("shadow").and_then(|x| x.as_bool()).unwrap_or(true);
+            local.push(super::trace::Light { pos, power: scale(c, k), dir, cos_outer: co, cos_inner: ci, shadow });
+            continue;
+        }
         let d = m.get("dir").and_then(|d| d.as_array()).filter(|d| d.len() == 3).ok_or_else(|| format!("{p}.dir: expected a direction [x, y, z] towards the light"))?;
         let dir = v3(f(&d[0], &p)?, f(&d[1], &p)?, f(&d[2], &p)?);
         if len(dir) < 1e-6 {
@@ -934,5 +959,5 @@ pub fn lights(v: &Value, env: &Env, path: &str) -> Res<Env> {
             key = Some(boxes.len() - 1);
         }
     }
-    Ok(Env::new(boxes, key, env.zenith, env.horizon, env.ground, env.band))
+    Ok((Env::new(boxes, key, env.zenith, env.horizon, env.ground, env.band), local))
 }

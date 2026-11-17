@@ -316,6 +316,8 @@ pub struct Scene {
     pub glow: (V3, V3, f32),
     /// Exponential haze: density per metre, and colour (linear).
     pub haze: (f32, V3),
+    /// Local point and spot lights.
+    pub lights: Vec<Light>,
 }
 
 #[derive(Clone, Copy)]
@@ -336,6 +338,65 @@ pub struct Quality {
 impl Default for Quality {
     fn default() -> Self {
         Quality { edge_spp: 6, ao_rays: 1, shadow_rays: 1, max_depth: 3, max_glass: 10, contrast: 0.06, secondary_rays: 0 }
+    }
+}
+
+/// A local point or spot light (inverse-square falloff, hard traced shadow).
+#[derive(Clone, Debug)]
+pub struct Light {
+    pub pos: V3,
+    /// Colour × intensity: radiance factor at 1 m.
+    pub power: V3,
+    /// Spot axis and cone (cosines of the outer and inner half angles);
+    /// a point light has `cos_outer` = -1.
+    pub dir: V3,
+    pub cos_outer: f32,
+    pub cos_inner: f32,
+    pub shadow: bool,
+}
+
+impl Scene {
+    /// Light arriving at `p` (normal `n`) from the local lights: (diffuse
+    /// irradiance factor for albedo 1, GGX specular toward `v`).
+    fn local_lights(&self, p: V3, n: V3, v: V3, rough: f32, f0: V3) -> (V3, V3) {
+        let mut dif = v3(0.0, 0.0, 0.0);
+        let mut spec = v3(0.0, 0.0, 0.0);
+        for l in &self.lights {
+            let to = sub(l.pos, p);
+            let d2 = dot(to, to).max(1e-4);
+            let dist = d2.sqrt();
+            let ld = scale(to, 1.0 / dist);
+            let nl = dot(n, ld);
+            if nl <= 0.0 {
+                continue;
+            }
+            let mut k = 1.0 / d2;
+            if l.cos_outer > -1.0 {
+                let c = dot(scale(ld, -1.0), l.dir);
+                k *= smoothstep(l.cos_outer, l.cos_inner.max(l.cos_outer + 1e-4), c);
+            }
+            if k <= 1e-7 {
+                continue;
+            }
+            if l.shadow && self.transmit(madd(p, n, 2e-3), ld, dist - 2e-3, false) <= 0.0 {
+                continue;
+            }
+            let e = scale(l.power, k * nl);
+            dif = add(dif, e);
+            // GGX highlight (roughness floored so small lights don't sparkle).
+            let a = rough.max(0.08) * rough.max(0.08);
+            let hv = norm(add(ld, v));
+            let nh = dot(n, hv).max(0.0);
+            let nv = dot(n, v).max(1e-4);
+            let dd = nh * nh * (a * a - 1.0) + 1.0;
+            let dterm = a * a / (std::f32::consts::PI * dd * dd);
+            let kk = a * 0.5;
+            let g = (nl / (nl * (1.0 - kk) + kk)) * (nv / (nv * (1.0 - kk) + kk));
+            let vh = dot(v, hv).max(0.0);
+            let fr = madd(f0, sub(v3(1.0, 1.0, 1.0), f0), (1.0 - vh).powi(5));
+            spec = add(spec, scale(mul(fr, e), dterm * g / (4.0 * nv)));
+        }
+        (dif, spec)
     }
 }
 
@@ -475,6 +536,7 @@ impl Scene {
             backdrop: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)),
             glow: (v3(0.0, 0.0, -1.0), v3(0.0, 0.0, 0.0), 0.1),
             haze: (0.0, v3(0.0, 0.0, 0.0)),
+            lights: Vec::new(),
         };
         s.rebuild();
         s
@@ -678,7 +740,8 @@ impl Scene {
         let dz = p.z - f.pool.1;
         let r2d = dx * dx + dz * dz;
         let pool = if f.pool.2 > 0.0 { (-r2d / (f.pool.2 * f.pool.2)).exp() } else { 1.0 };
-        let dif = Diffuse { alb: f.color, amb: self.env.diffuse(up), key: scale(self.key_diffuse(up), pool), ao, vk: vk * ao.sqrt(), spec: v3(0.0, 0.0, 0.0) };
+        let (ll, _) = if self.lights.is_empty() { (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)) } else { self.local_lights(p, up, scale(d, -1.0), 1.0, v3(0.0, 0.0, 0.0)) };
+        let dif = Diffuse { alb: f.color, amb: add(self.env.diffuse(up), ll), key: scale(self.key_diffuse(up), pool), ao, vk: vk * ao.sqrt(), spec: v3(0.0, 0.0, 0.0) };
         let fade = if f.fade.1 > f.fade.0 { smoothstep(f.fade.0, f.fade.1, r2d.sqrt()) } else { 0.0 };
         // Reflection: Fresnel lacquer plus an optional mirror boost.
         let nv = (-d.y).clamp(1e-4, 1.0);
@@ -830,10 +893,12 @@ impl Scene {
             (scale(traced, 1.0 - rough_mix), scale(mul(env_raw, spec_w), rough_mix * keep))
         };
         let mut c = mul(traced, spec_w);
+        let (ll, lspec) = if self.lights.is_empty() { (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)) } else { self.local_lights(s.p, n, v, rough, f0) };
+        c = add(c, scale(lspec, keep));
         let kd = 1.0 - luma(spec_w).min(1.0);
         let mut dif = Diffuse::default();
         if needs_diffuse {
-            dif = Diffuse { alb: scale(diff_col, kd * keep), amb: self.env.diffuse(n), key: self.key_diffuse(n), ao, vk, spec: v3(0.0, 0.0, 0.0) };
+            dif = Diffuse { alb: scale(diff_col, kd * keep), amb: add(self.env.diffuse(n), ll), key: self.key_diffuse(n), ao, vk, spec: v3(0.0, 0.0, 0.0) };
         }
         dif.spec = env_spec;
         if !inline_vis && luma(env_spec) > 0.0 {

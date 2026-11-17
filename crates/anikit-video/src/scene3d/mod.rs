@@ -76,6 +76,7 @@ struct Prepared {
     backdrop: (V3, V3),
     glow: (V3, V3, f32),
     haze: (f32, V3),
+    lights: Vec<trace::Light>,
     camera: CamSpec,
     default_aperture: f32,
     shutter: Option<f32>,
@@ -152,8 +153,11 @@ impl Prepare for Scene3d {
         // The lookdev shot keeps its dark studio unless told otherwise.
         let env_v = m.get("env").cloned().unwrap_or(if lookdev { Value::from("studio") } else { Value::Null });
         let mut es = spec::env(&env_v, "env").map_err(Error)?;
+        let mut local_lights = Vec::new();
         if let Some(l) = m.get("lights") {
-            es.env = spec::lights(l, &es.env, "lights").map_err(Error)?;
+            let (e, loc) = spec::lights(l, &es.env, "lights").map_err(Error)?;
+            es.env = e;
+            local_lights = loc;
         }
         let bright = matches!(es.name.as_str(), "cyc" | "sunset");
 
@@ -283,6 +287,7 @@ impl Prepare for Scene3d {
             backdrop,
             glow,
             haze,
+            lights: local_lights,
             camera,
             default_aperture: num_or(m, "aperture", if lookdev { 26.0 } else { 0.0 }).map_err(Error)?,
             shutter: m.get("shutter").and_then(|s| s.as_f64()).map(|s| s as f32),
@@ -353,6 +358,7 @@ impl Scene3d {
         scene.backdrop = p.backdrop;
         scene.glow = p.glow;
         scene.haze = p.haze;
+        scene.lights = p.lights.clone();
         let mut insts = instances(&p.objs, t, dt);
         // Textures need world boxes, so build the hierarchy first.
         scene.insts = std::mem::take(&mut insts);
@@ -594,6 +600,9 @@ mod tests {
         let px = s.render(0.0, 1.0 / 30.0, 64, 36, None);
         let mean = px.chunks_exact(4).map(|q| q[0] as f32).sum::<f32>() / (64.0 * 36.0);
         assert!(mean > 120.0, "card must not black out the frame: {mean}");
+        let spot = scene(json!({ "objects": [], "lights": [ { "pos": [0, 3, 0], "target": [0, 0, 0], "angle": 40, "intensity": 20 }, { "pos": [1, 1, 1] } ] })).unwrap();
+        assert_eq!(spot.p().lights.len(), 2);
+        assert!(spot.p().lights[0].cos_outer > 0.9 && spot.p().lights[1].cos_outer == -1.0);
         let e = scene(json!({ "objects": [], "lights": [ { "dir": [0, 0, 0] } ] })).err().unwrap();
         assert!(e.contains("must not be zero"), "{e}");
     }
