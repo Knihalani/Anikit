@@ -86,7 +86,12 @@ pub fn marker(cue: &MusicCue, kind: &str, n: usize) -> Result<f64, String> {
 /// video has voice-over).
 pub fn render_track(cue: &MusicCue, video_len: f64, wav: &Path, has_voice: bool) -> Result<Track, String> {
     let opts = RenderOpts { video_length: Some((video_len - cue.at).max(0.1)), base_dir: Some(cue.base.clone()), rate: audio::DEFAULT_RATE, stems: false };
-    let r = anikit_music::render(&cue.spec, &opts)?;
+    // Under voice-over, play the underscore mix (no melody) unless the spec says otherwise.
+    let mut spec = cue.spec.clone();
+    if has_voice && spec.underscore.is_none() {
+        spec.underscore = Some(true);
+    }
+    let r = anikit_music::render(&spec, &opts)?;
     let pcm = audio::Pcm { rate: r.rate, channels: 2, samples: r.interleaved() };
     audio::write_wav(wav, &pcm, audio::WavFormat::Float32)?;
     Ok(Track {
@@ -123,6 +128,7 @@ KEYS    instrumentation  bpm  key "Am" "F# dorian"  meter "6/8"  swing 0..1 (0.1
         chords "vi IV I V" | "Am F C G"   instruments {"lead":"violin","drums":"drums:909"}   mute ["lead"]
         sfx [{"sfx":"riser","at":"@bar5"}]  (aligned by hit point: a riser PEAKS at "at")   end ring|fade|cut
         master {"lufs":-14,"ceiling":-1,"reverb":"hall"}   video-only: at (s), gain (dB), duck (dB under voice, default 10)
+        underscore: true drops lead/countermelody (automatic under voice-over; false keeps the melody)
         scores to picture: scene cuts move section starts and get cymbal accents (followCuts:false to stop)
 TRACKS  (add to a style, or write everything yourself)
   {"inst":"piano","chords":"C Am F G","play":"broken"}        play: pad block stabs arp[-updown][/16] strum pulse/8 power broken x..x..x.

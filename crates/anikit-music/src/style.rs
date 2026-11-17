@@ -766,7 +766,11 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
     let mut kicks: Vec<f64> = Vec::new();
     let mut sfx: Vec<SfxPlan> = Vec::new();
     if let Some(st) = style {
-        let muted = |r: &str| spec.mute.iter().any(|m| m.eq_ignore_ascii_case(r));
+        let underscore = spec.underscore == Some(true);
+        let muted = |r: &str| {
+            spec.mute.iter().any(|m| m.eq_ignore_ascii_case(r))
+                || (underscore && matches!(r, "lead" | "melody" | "right" | "pluck" | "bells" | "glock" | "counter"))
+        };
         // Drums first (the 808 bass follows the kicks).
         let mut drum_notes: Vec<Note> = Vec::new();
         let has_kit = match &instrumentation {
@@ -1513,5 +1517,19 @@ mod cut_tests {
         let off = MusicSpec::from_json(r#"{"style":"pop","bpm":120,"length":"40s","cuts":[13.9],"followCuts":false}"#).unwrap();
         let b = compose(&off, None).unwrap();
         assert!(!b.tracks.iter().find(|t| t.role == "drums").unwrap().notes.iter().any(|n| n.key == 57.0));
+    }
+}
+
+#[cfg(test)]
+mod underscore_tests {
+    use super::*;
+
+    #[test]
+    fn underscore_drops_the_melody_but_keeps_the_bed() {
+        let full = compose(&MusicSpec::from_json(r#"{"style":"pop","length":"30s"}"#).unwrap(), None).unwrap();
+        let under = compose(&MusicSpec::from_json(r#"{"style":"pop","length":"30s","underscore":true}"#).unwrap(), None).unwrap();
+        assert!(full.tracks.iter().any(|t| t.role == "pluck" || t.role == "counter"));
+        assert!(!under.tracks.iter().any(|t| matches!(t.role.as_str(), "pluck" | "lead" | "counter")));
+        assert!(under.tracks.iter().any(|t| t.role == "drums") && under.tracks.iter().any(|t| t.role == "piano"));
     }
 }
