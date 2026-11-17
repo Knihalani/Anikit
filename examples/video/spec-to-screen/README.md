@@ -9,7 +9,7 @@ A 58.5-second launch film for Anikit Video, at 1920×1080 and 60 fps, made only 
 | 0:15.5 | Spec to Screen, full frame | the same layers at full size |
 | 0:19.5 | Write it. / Check it. / Render it. / No browser. | kinetic `mask`/`blur` type with real CLI commands |
 | 0:28.5 | Product shots, generated | `laptop` (dashboard screen), `phone` (chat screen), `bokeh`, `badge` |
-| 0:36 | 935 fps rendered, 1,268 fps encoded | `counter` |
+| 0:36 | "This 58-second film rendered in 56 s", plus 935 fps renderer alone and 1,268 fps encoder alone | `counter`, `progress-bar` |
 | 0:40.5 | Encode-speed bar chart, 9.4× | `bar-chart`, `counter` |
 | 0:46 | JSON in. / Film out. | `particleText` |
 | 0:50.5 | Chrome ANIKIT logo with a lens-flare sweep | `text-3d`, `lensFlare`, `godRays` |
@@ -22,6 +22,8 @@ Every cut lands on a beat of the 120 BPM score.
 - `music.mp3` is the score, synthesised by `music.py` (numpy additive synthesis, then ffmpeg/libmp3lame).
 - `poster.png` is the frame at 0:55.
 
+The film also relies on an engine fix: `SharedAssets::image` no longer holds its lock while building an image, since text-3d's parallel build could deadlock the render.
+
 ```sh
 python3 examples/video/spec-to-screen/music.py    # optional: regenerates music.mp3
 python3 examples/video/spec-to-screen/build.py    # optional: regenerates spec.json
@@ -31,13 +33,20 @@ target/release/anikit-video render examples/video/spec-to-screen/spec.json -o sp
 
 ## Render
 
-RENDER_STATS
+Measured on a 4-core cloud VM (Xeon, AVX2) with `--json` and the default ak264 encoder:
+
+| Output | Frames | Wall time | Render fps | File size |
+|---|---|---|---|---|
+| 1920×1080, 60 fps, H.264 + AAC, 58.5 s | 3510 | 56.1 s | 63 fps | 65.1 MB |
+
+That is faster than real time, end to end, including the chrome text-3d, the globe and 9,000 particles. The "rendered in" stat in the film is `RENDER_SECONDS` in `build.py`: re-measure and update it after an engine change.
 
 ## The numbers in the film
 
 Every figure comes from the measured benchmarks in `docs/video/`:
 
-- **935 fps rendered:** `docs/video/encoder.md`: "our renderer draws 1080p at roughly 935 fps on 4 cores".
-- **1,268 fps encoded:** `docs/video/encoder.md`, headline table, ak264 on `typical` at QP 26 (49.8 dB).
+- **Rendered in N s:** this film's own end-to-end wall time (see **Render**).
+- **935 fps, renderer alone:** `docs/video/encoder.md`: "our renderer draws 1080p at roughly 935 fps on 4 cores".
+- **1,268 fps, encoder alone:** `docs/video/encoder.md`, headline table, ak264 on `typical` at QP 26 (49.8 dB).
 - **Bar chart:** the same row. x264 veryfast at the same PSNR runs at ≈ 147 fps, ak264 at 1268 fps, and ak264 with renderer hints at 1389 fps.
 - **9.4×:** 1389 ÷ 147, the "9.4× with hints" figure in that table.
