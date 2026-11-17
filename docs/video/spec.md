@@ -23,7 +23,7 @@ A scene string is a title card (`"Title | subtitle"`); a layer string is centred
 
 ## Top level
 
-`size` (`"16:9"` `"9:16"` `"1:1"` `"4:5"` `"720p"` `"4k"` or `[w, h]`) · `fps` · `background` · `theme { colors, fonts, radius, styles }` · `scenes` · `transition` · `markers { name: time }` (plus automatic `"@beat17"`, `"@bar5+0.25"` from the first music track) · `audio [...]` · `captions` · `fonts { family: file }` · `duration` · `compositions`.
+`size` (`"16:9"` `"9:16"` `"1:1"` `"4:5"` `"720p"` `"4k"` or `[w, h]`) · `fps` · `background` · `theme { colors, fonts, radius, styles }` · `scenes` · `transition` · `markers { name: time }` (plus automatic `"@beat17"`, `"@bar5+0.25"` from the first music track) · `audio [...]` · `captions` · `fonts { family: file }` · `duration` · `compositions` · `post` (`clean cinematic dreamy punchy noir vintage`, or `{ "preset": "cinematic", "bloom": 0.4 }`; per scene too) · `motionBlur` (`true`, or `{ "shutter": 90 }`; default only with `--quality high`).
 
 Theme colours (used as `$name`): `primary secondary accent bg surface text muted`. Text styles: `title heading subtitle body caption label code`.
 
@@ -33,7 +33,7 @@ Theme colours (used as `$name`): `primary secondary accent bg surface text muted
 
 `id` · `duration` (default 3, or `"auto"`) · `background` · `transition` (into this scene) · `camera` · `markers` · `layers` · `audio`.
 
-Transitions: `cut crossfade fadeBlack fadeWhite slide push zoom wipe iris blur glitch morphCut`, as a string or `{ "type": "slide", "direction": "left", "duration": 0.6 }`.
+Transitions: `cut crossfade fadeBlack fadeWhite slide push zoom wipe iris blur glitch morphCut`, shader transitions `burn ripple pixelate swirl ink-bleed warp-wipe luma-melt zoom-blur`, or your own `{ "type": "shader", "shader": "vec4 transition(vec2 uv) {…}" }` (gl-transitions API). Write one as a string or as `{ "type": "slide", "direction": "left", "duration": 0.6 }`.
 
 Camera: `{ "zoom": 1, "x": 0, "y": 0, "rotation": 0, "focus": 0, "aperture": 0, "animate": [...], "shake": { "amount": 8, "at": "@drop", "duration": 0.4 } }`.
 
@@ -52,6 +52,9 @@ Every layer: `x y` (default centre) · `anchor` (`center`, `topLeft`, …) · `w
 | group | `layers` |
 | composition | `composition` (a name from top-level `"compositions": { "ui": { "size": [800, 500], "duration": 4, "background": "#111", "layers": [...] } }`, or `scenes`) · `fit` · `trimStart speed` · `loop: true`. It has its own clock and is clipped to its box; 3D layers use it as a texture |
 | component | `component` (`bar-chart line-chart donut-chart counter stat code terminal phone laptop browser card button toast cursor lower-third title-card mesh-gradient aurora grid confetti model lottie …`; `anikit-video info --components`) · `props` |
+| shader | `shader` (Shadertoy GLSL `mainImage`, WGSL, or a built-in: `sdf-scene liquid-chrome aurora caustics flow-ink turing film-burn glitch`) or `src: "fx.glsl"` · `uniforms` (animatable by name) · `channels` (`below noise` · image/video · `#composition` · `{layers}`) · `filter` · `supersample` · `alpha` |
+
+**Shaders** run JIT-compiled on the CPU at full resolution: `{ "shader": "aurora", "uniforms": { "intensity": 1.4 } }`. `"filter": true` reads the composited layers below as `iChannel0` and replaces them. Guide, built-ins, costs and limits: [`shader.md`](shader.md).
 
 ## Animation
 

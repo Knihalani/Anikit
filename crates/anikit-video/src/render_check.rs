@@ -191,6 +191,16 @@ fn sample_times(ev: &Evaluator) -> Vec<(f32, String)> {
     v
 }
 
+/// [`check`], with paths in the author's own spec (a look's backdrop layers removed).
+pub fn check_spec(raw: &serde_json::Value, ev: &Evaluator) -> Vec<Note> {
+    let off = crate::looks::layer_offsets(raw);
+    let mut n = check(ev);
+    for x in &mut n {
+        x.path = crate::looks::remap_path(&off, &x.path);
+    }
+    n
+}
+
 /// Run the pixel checks.
 pub fn check(ev: &Evaluator) -> Vec<Note> {
     const SCALE: f32 = 0.5;

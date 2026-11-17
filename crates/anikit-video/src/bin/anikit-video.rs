@@ -4,7 +4,7 @@
 //!   anikit-video still  spec.json --at 2.5 -o frame.png [--scale K] [--watch]
 //!   anikit-video sheet  spec.json -o contact.png [--cols 4 --rows 3 --width 480]
 //!   anikit-video check  spec.json
-//!   anikit-video info   [--components]
+//!   anikit-video info   [--components] [--shaders]
 //!   anikit-video schema [-o spec.schema.json]
 //!
 //! Add `--json` for machine-readable output on stdout. Progress goes to stderr.
@@ -23,7 +23,7 @@ const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema> 
   still  spec.json -o f.png     [--at S | --at @scene] [--scale K | --width W] [--watch]
   sheet  spec.json -o sheet.png [--frames N | --cols 4 --rows 3] [--width 480]
   check  spec.json              validate; print errors, warnings and timing
-  info   [--components]         version, encoders, component catalogue
+  info   [--components] [--shaders]  version, encoders, component and shader catalogue
   schema [-o file]              print the JSON Schema of the spec
   beats  music.wav              tempo, beats and bars (use them as \"@beat17\", \"@bar5\")
 common: --json (machine-readable output)
@@ -41,7 +41,7 @@ impl Args {
         let cmd = it.next().ok_or(USAGE)?;
         let mut input = None;
         let mut flags = Vec::new();
-        const BOOL: &[&str] = &["--json", "--watch", "--no-audio", "--components", "--quiet", "--profile"];
+        const BOOL: &[&str] = &["--json", "--watch", "--no-audio", "--components", "--shaders", "--quiet", "--profile"];
         while let Some(a) = it.next() {
             if a.starts_with('-') && a.len() > 1 {
                 let (k, v) = match a.split_once('=') {
@@ -214,7 +214,7 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             let kinds: Vec<_> = anikit_video::components::KINDS.iter().map(|k| serde_json::json!({ "name": k.name, "summary": k.summary, "example": serde_json::from_str::<serde_json::Value>(k.example).unwrap_or_default() })).collect();
             let ff = std::process::Command::new("ffmpeg").arg("-version").output().ok().and_then(|o| String::from_utf8(o.stdout).ok()).and_then(|s| s.lines().next().map(str::to_string));
             if json {
-                println!("{}", serde_json::json!({ "version": env!("CARGO_PKG_VERSION"), "threads": rayon::current_num_threads(), "ffmpeg": ff, "codecs": ["h264","h265","vp9","av1","prores","gif","png"], "components": kinds }));
+                println!("{}", serde_json::json!({ "version": env!("CARGO_PKG_VERSION"), "threads": rayon::current_num_threads(), "ffmpeg": ff, "codecs": ["h264","h265","vp9","av1","prores","gif","png"], "components": kinds, "shaders": anikit_shader::library::names() }));
             } else {
                 println!("anikit-video {}  ({} threads)", env!("CARGO_PKG_VERSION"), rayon::current_num_threads());
                 println!("ffmpeg: {}", ff.unwrap_or_else(|| "not found".into()));
@@ -225,6 +225,18 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                     }
                 } else {
                     println!("components: {} (see --components)", kinds.len());
+                }
+                if a.has("--shaders") {
+                    for e in anikit_shader::library::ALL {
+                        let u = match e.use_ {
+                            anikit_shader::library::Use::Image => "layer",
+                            anikit_shader::library::Use::Filter => "filter",
+                            anikit_shader::library::Use::Transition => "transition",
+                        };
+                        println!("  {:<14} {:<10} {}", e.name, u, e.about);
+                    }
+                } else {
+                    println!("shaders: {} built-in (see --shaders)", anikit_shader::library::ALL.len());
                 }
             }
             Ok(ExitCode::SUCCESS)

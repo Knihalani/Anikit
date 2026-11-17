@@ -1,5 +1,6 @@
 {
   "name": "tutorial",
+  "look": "risograph",
   "title": "Tutorial / code walkthrough",
   "description": "A coding tutorial: a title beside an editor; then 2–6 split-screen steps, each a numbered badge, title and note beside a code editor that types itself (with highlighted lines) or a terminal for one-line shell commands; then a checklist recap and a CTA with confetti.",
   "duration": "15–60 s",
@@ -308,7 +309,7 @@
             "$let": {
               "tw": "(fmt.landscape ? fmt.w * 0.36 : fmt.safe.w)",
               "ts": "(fmt.portrait ? fmt.u * 9 : fmt.u * 8)",
-              "lines": "ceil(len(title) * 0.52 * (fmt.portrait ? fmt.u * 9 : fmt.u * 8) / (fmt.landscape ? fmt.w * 0.36 : fmt.safe.w))",
+              "lines": "ceil(len(title) * cw * 1.04 * (fmt.portrait ? fmt.u * 9 : fmt.u * 8) / (fmt.landscape ? fmt.w * 0.36 : fmt.safe.w))",
               "top": "(fmt.landscape ? fmt.h * 0.5 - (ceil(len(title) * 0.52 * (fmt.portrait ? fmt.u * 9 : fmt.u * 8) / (fmt.landscape ? fmt.w * 0.36 : fmt.safe.w)) * (fmt.portrait ? fmt.u * 9 : fmt.u * 8) * 1.1 + fmt.u * 12) / 2 : (fmt.portrait ? fmt.h * 0.14 : fmt.h * 0.1))",
               "ax": "fmt.landscape ? fmt.safe.left : fmt.cx",
               "an": "fmt.landscape ? 'topLeft' : 'top'",
@@ -400,7 +401,7 @@
                 "$let": {
                   "tw": "(fmt.landscape ? fmt.w * 0.36 : fmt.safe.w)",
                   "ts": "(fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4)",
-                  "lines": "ceil(len(s.title) * 0.52 * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) / (fmt.landscape ? fmt.w * 0.36 : fmt.safe.w))",
+                  "lines": "ceil(len(s.title) * cw * 1.04 * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) / (fmt.landscape ? fmt.w * 0.36 : fmt.safe.w))",
                   "top": "(fmt.landscape ? fmt.h * 0.5 - (ceil(len(s.title) * 0.52 * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) / (fmt.landscape ? fmt.w * 0.36 : fmt.safe.w)) * (fmt.portrait ? fmt.u * 7.4 : fmt.u * 6.4) * 1.1 + fmt.u * 12) / 2 : (fmt.portrait ? fmt.h * 0.14 : fmt.h * 0.1))",
                   "ax": "fmt.landscape ? fmt.safe.left : fmt.cx",
                   "an": "fmt.landscape ? 'topLeft' : 'top'",

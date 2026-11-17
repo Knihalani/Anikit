@@ -208,3 +208,37 @@ Correctness: fused output decodes with ffmpeg and matches x264 `--quality high` 
 | `docs/video/examples/showcase.json` | 1920×1080 @ 30 | 222 | 0.44 s | **505 fps** | 23 | 642 KB |
 
 Rows marked *final* were re-measured at the final merge (6cd9679, 06:10 UTC; Intel Xeon @ 2.10 GHz, 4 vCPUs; 2–3 runs, range shown). The redesigned `launch` template first rendered at 219 fps because its HUD layers changed every frame; after stepping the HUD per beat and settling the camera punch it renders at 365–396 fps with 390 frames skipped. Expect run-to-run noise of about ±10% on this machine. The slow templates (logo-reveal, countdown) are dominated by effect components that change every frame (`text-3d`, `god-rays`, `lens-flare`, `globe`, `particle-text`).
+
+## Film look, motion blur and quality
+
+### Post (`render::post`)
+
+Call `Renderer::set_post(Some(settings), frame_index)` before each frame. `frame_index` seeds the animated grain, so output is deterministic whichever worker renders the frame.
+
+Settings come from `PostSpec`, the spec's `post` value: a preset name or `{"preset": "...", ...overrides}`. Presets: `none`, `clean`, `cinematic`, `dreamy`, `punchy`, `noir`, `vintage`.
+
+Pipeline, in linear light:
+1. lens distortion and chromatic aberration;
+2. multi-scale soft-knee bloom and halation (folded into one half-resolution glow buffer);
+3. exposure, white balance, lift/gamma/gain, contrast, saturation (the per-channel part is tabulated);
+4. tone map: a soft shoulder above white, or ACES;
+5. vignette;
+6. animated grain;
+7. dithered 8-bit output.
+
+Cost per 1080p frame on this VM: about 0 ms for `clean` (identity on 8-bit frames), about 95 ms for `cinematic`. Post forces full frames in incremental mode.
+
+### Motion blur (`render::motion`)
+
+`render_yuv_motion_blur(&mut |t| eval(t), t, shutter_seconds, &mut yuv)`:
+- If the shutter's open and close match the centre frame, it renders once.
+- Otherwise it takes 2–24 sub-frames, spaced evenly over the open shutter. The count comes from the largest on-screen displacement of matched ops, aiming for about 1.5 px per step.
+- Samples are averaged in linear light and dithered; post then runs once on the result.
+
+### Quality (`Renderer::set_quality`)
+
+- **`Standard`** (the default):
+  - leading gradient/glow backdrops are evaluated in float at full resolution and dithered once, so dark gradients don't band;
+  - enlarged images (≥ 2×) use a dithered cubic filter: B-spline from 12× up (fields: C²-smooth, no creases), Mitchell–Netravali below that (keeps detail);
+  - cached text runs get gamma-aware coverage.
+- **`Draft`** keeps the fastest paths: ¼-resolution gradient backdrops and bilinear upscaling.
