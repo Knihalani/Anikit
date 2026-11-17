@@ -218,7 +218,7 @@ pub struct MusicSpec {
     pub key: Option<String>,
     /// `"4/4"`, `"3/4"`, `"6/8"`.
     pub meter: Option<String>,
-    /// 0 (straight) … 1 (hard swing); 0.33 ≈ triplet feel.
+    /// 0 straight · 0.16 ≈ 54 % loose · 0.45 ≈ 61 % lofi · 0.667 triplet · 1 = 75 % (off-beat = 50 % + 25 % × swing).
     pub swing: Option<f64>,
     /// Free words: dark, happy, epic, chill, tense, sad, dreamy, uplifting, aggressive, mysterious…
     pub mood: Option<String>,
@@ -253,6 +253,9 @@ pub struct MusicSpec {
     pub gain: Option<f64>,
     /// Video only: duck under voice-over (`true` = 10 dB, a number = dB, `false` = never).
     pub duck: Option<serde_json::Value>,
+    /// Underscore mix: no lead melody or countermelody (for voice-over). Videos with
+    /// voice-over get it automatically unless this is `false`.
+    pub underscore: Option<bool>,
     /// Picture cuts (seconds on the music timeline): sections start on them where the form allows, and
     /// each gets a cymbal accent on the nearest beat. Filled from the video's scene cuts automatically.
     pub cuts: Vec<f64>,
@@ -280,7 +283,7 @@ fn serde_path_to_error_free(de: &mut serde_json::Deserializer<serde_json::de::St
         if let Some(rest) = msg.strip_prefix("unknown field `") {
             let name = rest.split('`').next().unwrap_or("");
             let fields = [
-                "style", "bpm", "key", "meter", "swing", "mood", "length", "sections", "hits", "chords", "instruments", "mute", "tracks", "sfx", "master", "seed", "fit", "end", "midi", "at", "duck", "define", "fx", "automate", "instrumentation", "cuts", "followCuts",
+                "style", "bpm", "key", "meter", "swing", "mood", "length", "sections", "hits", "chords", "instruments", "mute", "tracks", "sfx", "master", "seed", "fit", "end", "midi", "at", "duck", "define", "fx", "automate", "instrumentation", "cuts", "followCuts", "underscore",
                 "inst", "clips", "notes", "drums", "steps", "play", "bass", "melody", "bars", "repeat", "octave", "vel", "transpose", "gain", "pan", "width", "reverb", "delay",
                 "duck", "eq", "comp", "drive", "lp", "hp", "humanize", "straight", "name", "at", "lufs", "ceiling", "fadeOut", "fadeIn", "reverbGain",
             ];

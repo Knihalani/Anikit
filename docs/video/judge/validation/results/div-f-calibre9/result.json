@@ -1,0 +1,515 @@
+{
+  "name": "div-f-calibre9",
+  "tags": [
+    "luxury",
+    "3d-cg",
+    "product-launch"
+  ],
+  "refs": [
+    "osko-launch",
+    "the-crown",
+    "tiffany-holiday"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 3,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 4,
+      "motion": 3,
+      "craft": 4,
+      "originality": 2
+    },
+    "overall": 3.25,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Find a real idea: the hand-engraving process, time, or the wearer. Dramatise it the way D turns the crown's making into the show's theme, instead of listing specs",
+      "Replace the label-plus-serif slide template with typography that has scale contrast and sits inside the image, and break the repeated composition",
+      "Render real material: macro light raking across engraved metal, depth of field, dust, imperfection. The current dial is a shader pattern under flat light",
+      "It needs a real idea instead of a spec sheet, something only this watch could have, the way C builds the crown from molten metal.",
+      "Replace the procedural dial and flat render with real material and light: anisotropic brushing, specular sweep on the engraving, depth of field, dust.",
+      "Break the repeated text-left, watch-right layout. Choreograph scale and framing so type and object interact, and choose a face with a point of view.",
+      "Replace the spec-slide structure with an idea only this watch could have, such as the 72 hours made physical or the hand-finishing shown as process",
+      "Give the type a point of view: real scale contrast, a chosen face integrated with the dial, not label-over-serif repeated on every card",
+      "Build real material and light: a lit, engraved dial with depth, polished case reflections and macro choreography instead of a static centred render"
+    ],
+    "tells": [
+      "It is a textbook 'tasteful AI' system: dark navy ground, a small tracked-caps copper label ('GUILLOCH\u00c9 DIAL', 'POWER RESERVE', 'LIMITED RUN', 'ATELIER VAUCLAIR') over a generic editorial-serif headline, and a single copper accent",
+      "Four of the six frames repeat the same layout, with the watch on the right, text on the left and only the words changed. That is slide-deck structure",
+      "The idea is literal: product name, spec counter (0 h to 70 h), 'One of 150.', then a spec line. Nobody would remember it",
+      "The 'guilloch\u00e9' is a procedural swirl or moir\u00e9 pattern, not engraved metal. The watch is a symmetrical, stock-looking primitive with flat, unmotivated light",
+      "A HUD-style progress ring and a faint grid background are placeholder UI language",
+      "The textbook 'tasteful AI' formula: dark navy ground, small tracked-caps copper label ('GUILLOCH\u00c9 DIAL', 'POWER RESERVE', 'LIMITED RUN', 'ATELIER VAUCLAIR') above a generic editorial serif headline, with a single copper accent.",
+      "Four of the six frames reuse one layout (text left, centred watch right, tick ring around it) with the words swapped. That is slide-deck structure.",
+      "The idea is literal: product name plus spec numbers ('0 h' to '70 h', 'One of 150.') shown as a dial-gauge diagram of the feature.",
+      "The 'guilloch\u00e9' is a procedural swirl or wave pattern, flatly lit with no real metal response. The watch is a symmetrical vector-like render with placeholder-grade lugs and case.",
+      "Small grey spec line ('38 mm \u00b7 72 h \u00b7 150 pieces') under a thin rule: default UI-card typography with no craft idea.",
+      "The copy contradicts itself (70 h, then 72 h in the end card), which suggests nobody art-directed it.",
+      "A textbook generic-'tasteful-AI' layout: a small tracked-caps label in one copper accent ('GUILLOCH\u00c9 DIAL', 'POWER RESERVE', 'LIMITED RUN', 'ATELIER VAUCLAIR') above a default editorial-serif headline",
+      "Four of six frames repeat one composition (text block left, centred watch right, ring gauge around it) with only the words swapped, a slide-deck structure",
+      "The idea is literal: product name plus spec sheet (70 h, one of 150, 38 mm) with a progress ring drawn as a diagram of the feature",
+      "The 'guilloch\u00e9' is a procedural swirl/moir\u00e9, not engraved metal; the case and lugs are stock-primitive CG with flat, unmotivated light",
+      "Dark navy ground, a single copper accent and empty frames, with a faint background grid like placeholder UI"
+    ]
+  },
+  "refs_summary": {
+    "osko-launch": {
+      "overall": 6.5,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "the-crown": {
+      "overall": 9,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "tiffany-holiday": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.75,
+  "delta": -4.5,
+  "trials": [
+    {
+      "key": {
+        "A": "tiffany-holiday",
+        "B": "osko-launch",
+        "C": "candidate",
+        "D": "the-crown"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "A jewelled bird is the subject that carries the whole film. It moves from a clock face to a high overhead street shot, a stage, a brownstone facade, a dinner table and a painted desert, so the film covers a journey and not one repeated layout",
+              "The light is motivated and real: shallow-focus bokeh, practical window and string lights, a stage backlight cutting through haze, candlelight on glassware",
+              "The materials are rich: pav\u00e9-set metal, faceted glass, worn brick, a painterly sky in the last frame",
+              "The sparkle trail links every frame, which shows choreography across shots",
+              "The last frame changes from CG to a painted look. That switch is a deliberate surprise"
+            ],
+            "gaps": [
+              "The holiday-luxury formula (magic sparkle, NYC, taxi, ballerina) is familiar. It needs a stranger central idea to stand out against D's single obsessive metaphor",
+              "No type is visible in these frames. The film needs a title or end card treatment as considered as D's credits, which are woven into the image",
+              "The palette changes from teal night to warm interior to orange desert. One controlled palette, as D holds, would read as more authored"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "It has a real narrative device: an 'I.O.U.' note that recurs in a food container and an open fridge. This is a witty concept rather than a feature diagram",
+              "The film switches style on purpose between 3D clay-like product shots, flat character animation (a golf swing as a 3-pose sequence) and an emoji-like icon grid. This reads as a collaborative or anthology studio piece",
+              "The golf sequence and the frame with the fridge door open imply timed comedic beats",
+              "There are weaknesses: the icon grid and the isolated pink car on a cream card come close to stock or clip-art, and the aspect ratios vary"
+            ],
+            "gaps": [
+              "Unify the visual world. The jumps between flat vector, emoji grid and glossy 3D feel like assembled assets, not one authored language",
+              "The type is limited to the handwritten I.O.U. It needs a typographic system that carries the joke and the brand",
+              "Build density and depth into the flat frames (the car, the icons). They sit alone on empty grounds where A and D layer light and material"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "It is a textbook 'tasteful AI' system: dark navy ground, a small tracked-caps copper label ('GUILLOCH\u00c9 DIAL', 'POWER RESERVE', 'LIMITED RUN', 'ATELIER VAUCLAIR') over a generic editorial-serif headline, and a single copper accent",
+              "Four of the six frames repeat the same layout, with the watch on the right, text on the left and only the words changed. That is slide-deck structure",
+              "The idea is literal: product name, spec counter (0 h to 70 h), 'One of 150.', then a spec line. Nobody would remember it",
+              "The 'guilloch\u00e9' is a procedural swirl or moir\u00e9 pattern, not engraved metal. The watch is a symmetrical, stock-looking primitive with flat, unmotivated light",
+              "A HUD-style progress ring and a faint grid background are placeholder UI language"
+            ],
+            "gaps": [
+              "Find a real idea: the hand-engraving process, time, or the wearer. Dramatise it the way D turns the crown's making into the show's theme, instead of listing specs",
+              "Replace the label-plus-serif slide template with typography that has scale contrast and sits inside the image, and break the repeated composition",
+              "Render real material: macro light raking across engraved metal, depth of field, dust, imperfection. The current dial is a shader pattern under flat light"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 8
+            },
+            "tells": [
+              "One specific idea only this piece could have: extreme macro of molten metal forming into the crown, built as a metaphor for the monarchy being forged",
+              "The palette is restrained and deliberate: near-black, tarnished gold and cold silver-grey. Light pours in from the edges and shows the texture",
+              "Each credit is placed in negative space that the moving object leaves for it, so type and image are choreographed together",
+              "The type is a refined classical small-caps serif with generous tracking and small italic role labels, and the type size steps up to the 'THE CROWN' end title",
+              "Every frame works as a poster. The shots go from smoke and rock to wire, then jewels, then a facet, and build toward the reveal"
+            ],
+            "gaps": [
+              "The dark, precious macro-reveal look has been widely imitated since. A bolder break from the genre in palette or structure would push originality higher",
+              "The final title card is a conventional centred serif on a dark ground. A last-frame reveal integrated with the object would land harder",
+              "The credits are small and low-contrast and may be hard to read on small screens. Contrast could improve without losing the restraint"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 32.6,
+        "cost_usd": 0.15988940000000001,
+        "tokens": 72195,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "tiffany-holiday",
+        "B": "osko-launch",
+        "C": "the-crown",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A jewelled bird works as a recurring guide through the film: clock face, overhead street corner, stage, brownstone fa\u00e7ade, dinner table. That is a narrative thread, not a template.",
+              "Light is motivated and specific to each scene: practical window glow, string lights, a stage key with a haze-lit bird trail, candlelight with shallow depth of field.",
+              "Camera grammar varies a lot: macro close-up, top-down crane, wide proscenium, exterior pan, tabletop push-in. This suggests real choreography and edit rhythm.",
+              "Dense production design: crosswalk, yellow cab, tree, place settings, glassware, Manhattan skyline behind the brownstones.",
+              "No type is visible, and the piece doesn't need it. It is carried by image and a brand-coded colour accent (the teal clock, the green candles)."
+            ],
+            "gaps": [
+              "The last frame jumps to a painterly desert scene with a figure. The style change isn't prepared in the earlier frames, so it reads as a different film. Bridge it, or carry the bird through the transition.",
+              "The sparkle trail is a fairly familiar luxury-holiday device. A less expected way of showing the bird's path would make it more memorable.",
+              "Nothing here is as rigorous as C's single-material system. Tighten the palette and lens language so all six frames feel like one world."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A real concept with wit: the 'I.O.U' sticky note as a running gag (on a leftovers tub, inside an otherwise empty fridge), plus a golfer's three-pose swing-and-shame sequence. That is character animation with timing, not effect for its own sake.",
+              "Several deliberate rendering modes (soft 3D clay, flat vector character, glossy icons) and multiple delivery aspect ratios suggest a campaign system built for social.",
+              "The hand-lettered I.O.U is the one typographic idea, and it carries the joke.",
+              "The fridge pair (closed, then open with the note) is a clean before/after gag with motivated interior light."
+            ],
+            "gaps": [
+              "The style shifts from frame to frame read as a toolkit rather than one authored world. Pick a dominant language, or make the style changes themselves the idea.",
+              "The icon grid (coffee, beer, money, heart, gift) is close to emoji clip-art and symmetrical. Replace it with something staged and specific.",
+              "Frames are mostly centred objects on empty grounds, with little layering or depth. Build compositions that would each stand up as a poster."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 8,
+              "craft": 10,
+              "originality": 8
+            },
+            "tells": [
+              "One subject, a crown being formed and revealed in extreme macro (molten metal, gilt casting, set stones), carries the whole sequence. The idea belongs to this title and no other.",
+              "Real light and material: specular highlights on gold, smoke, refractions through faceted gems, very low-key exposure with a precise falloff.",
+              "Typography with a point of view: small, widely letter-spaced classical caps sit in the negative space the image leaves. Hierarchy shifts between role labels and names, ending on a restrained title card with a tiny 'THE' above 'CROWN'.",
+              "Composition changes every frame (diagonal, horizontal band, rising form, flanking cluster, centred gem), and each frame holds up as a poster.",
+              "A disciplined palette of black, bronze and pewter, with no stray accent."
+            ],
+            "gaps": [
+              "It is the benchmark here. The main risk is that slow macro-luxury material reveals have become a familiar title-sequence genre.",
+              "Credit placement settles into a lower-left or centred-upper habit. More interplay between type and form (type occluded by or wrapping the metal) would push it further.",
+              "The motion reads as mostly slow drift and reveal. One sharper beat of rhythm or scale change would add surprise."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The textbook 'tasteful AI' formula: dark navy ground, small tracked-caps copper label ('GUILLOCH\u00c9 DIAL', 'POWER RESERVE', 'LIMITED RUN', 'ATELIER VAUCLAIR') above a generic editorial serif headline, with a single copper accent.",
+              "Four of the six frames reuse one layout (text left, centred watch right, tick ring around it) with the words swapped. That is slide-deck structure.",
+              "The idea is literal: product name plus spec numbers ('0 h' to '70 h', 'One of 150.') shown as a dial-gauge diagram of the feature.",
+              "The 'guilloch\u00e9' is a procedural swirl or wave pattern, flatly lit with no real metal response. The watch is a symmetrical vector-like render with placeholder-grade lugs and case.",
+              "Small grey spec line ('38 mm \u00b7 72 h \u00b7 150 pieces') under a thin rule: default UI-card typography with no craft idea.",
+              "The copy contradicts itself (70 h, then 72 h in the end card), which suggests nobody art-directed it."
+            ],
+            "gaps": [
+              "It needs a real idea instead of a spec sheet, something only this watch could have, the way C builds the crown from molten metal.",
+              "Replace the procedural dial and flat render with real material and light: anisotropic brushing, specular sweep on the engraving, depth of field, dust.",
+              "Break the repeated text-left, watch-right layout. Choreograph scale and framing so type and object interact, and choose a face with a point of view."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.1,
+        "cost_usd": 0.163213,
+        "tokens": 72352,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "the-crown",
+        "B": "osko-launch",
+        "C": "tiffany-holiday",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Macro photography of molten, cast and encrusted gold with real material behaviour: pitted metal, specular glints, smoke and dust in the first frame",
+              "The film builds in an arc from raw ore and molten metal through worked filigree and set gems to the finished name, so the object is literally forged across the sequence",
+              "Credits are set in a small tracked classical roman that sits in the negative space each macro shot leaves, so the placement is chosen frame by frame and never fixed",
+              "Low-key, motivated light falling off into true black; the tight bronze-and-black palette fits the subject",
+              "Every framing is different (extreme close-up, rack-focus edge, overhead gem, wide end card), which implies a choreographed camera path"
+            ],
+            "gaps": [
+              "The end card is a fairly conventional centred serif wordmark on a dark ground and could be paired more boldly with the object",
+              "Dark-luxury-gold is a well-worn title-sequence register; the palette takes no risk",
+              "The typography is correct but quiet, and has no expressive scale moment"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A specific narrative device: a jewelled bird carries a trail of sparkle through Manhattan (a clock, a taxi corner, a stage, a brownstone, a dining table), ending in a painterly desert vista",
+              "Shots are fully varied (macro, top-down aerial, theatrical spotlit stage, exterior dusk, interior dinner), which shows real camera choreography and world-building",
+              "The light is rich and motivated: practical window glow, string lights, candles and a stage wash, each matched to its scene",
+              "A deliberate change of medium in the last frame, from CG/live hybrid to a painted landscape, gives the film its surprise beat",
+              "No type is visible; its absence suits a brand film that carries everything through image and the jewel object"
+            ],
+            "gaps": [
+              "Without on-screen type the piece gives up any typographic signature; an integrated title or end-line could brand the journey",
+              "The sparkle-trail-through-the-city device sits close to familiar holiday-luxury commercial convention",
+              "The tonal leap to the painterly desert is striking, but these six frames don't show what connects it to the city journey"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 7
+            },
+            "tells": [
+              "A specific, witty campaign idea: an 'I.O.U.' sticky note left where something was taken (the fridge, a Tupperware), plus a gift/payback icon set, which reads like a payments or gifting brand",
+              "The deliberate mix of mediums (soft-lit 3D still life, flat-vector character sequence, emoji-like icon grid, retro 3D fridge with a reflective floor) reads as a multi-artist case-study reel rather than one generated look",
+              "The golfer drawn in three poses (address, swing, head-in-hand) is staged gag animation with clear comic timing",
+              "The mixed aspect ratios (16:9, square, vertical) suggest social cutdowns of a real campaign",
+              "Weaknesses: the icon grid and pink car are close to emoji/vector-default and clip-art-like, and the frames share no visual system"
+            ],
+            "gaps": [
+              "The frames have no unifying visual language, so they read as a sampler, not one film with a poster-grade signature",
+              "The illustration in the icon and car frames is generic and vector-default; each needs a specific drawn point of view",
+              "Light and texture are thin in the flat frames compared with the material richness of A or C"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "A textbook generic-'tasteful-AI' layout: a small tracked-caps label in one copper accent ('GUILLOCH\u00c9 DIAL', 'POWER RESERVE', 'LIMITED RUN', 'ATELIER VAUCLAIR') above a default editorial-serif headline",
+              "Four of six frames repeat one composition (text block left, centred watch right, ring gauge around it) with only the words swapped, a slide-deck structure",
+              "The idea is literal: product name plus spec sheet (70 h, one of 150, 38 mm) with a progress ring drawn as a diagram of the feature",
+              "The 'guilloch\u00e9' is a procedural swirl/moir\u00e9, not engraved metal; the case and lugs are stock-primitive CG with flat, unmotivated light",
+              "Dark navy ground, a single copper accent and empty frames, with a faint background grid like placeholder UI"
+            ],
+            "gaps": [
+              "Replace the spec-slide structure with an idea only this watch could have, such as the 72 hours made physical or the hand-finishing shown as process",
+              "Give the type a point of view: real scale contrast, a chosen face integrated with the dial, not label-over-serif repeated on every card",
+              "Build real material and light: a lit, engraved dial with depth, polished case reflections and macro choreography instead of a static centred render"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.9,
+        "cost_usd": 0.1590124,
+        "tokens": 72121,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 5
+      },
+      "defects": [
+        "The pace check failed because the film is one continuous shot (12.0s). Every beat is a camera push or a pull-back, so there are no cuts to give it rhythm. Change per second peaks at 40 around 2-3s and then stays flat at about 10-15 for the rest of the film.",
+        "A translucent grey wedge appears over the dial during the power-reserve count (visible at 0 h, 33 h and 43 h). It reads like a leftover sweep or mask layer, not a designed element.",
+        "The hero watch looks flat and diagrammatic. The lugs are plain grey rectangles, the case has a simple gradient instead of real metal reflections, and the strap is missing. It falls apart next to the detailed macro guilloch\u00e9 shots.",
+        "The dial changes from a fine guilloch\u00e9 texture in the macro shots to a coarse 'twirl filter' swirl in the wide shots. The two don't match, and the wide version looks cheap.",
+        "The guilloch\u00e9 line pattern beats against the pixel grid at mid-distance (the close-up dial frames), producing moir\u00e9. This will shimmer during the camera move.",
+        "The orange accent squiggle on the dial is a stray-looking spline with no clear purpose. It reads as unfinished.",
+        "In the 'One of 150' pair the hands barely move and the outer tick ring only fades. The whole beat holds with little happening and doesn't build toward the end card."
+      ],
+      "gaps": [
+        "Motion: The camera moves (macro push, pull-back, counter) are clean and well eased, but the choreography is predictable. There are no rhythmic cuts, no match-cut from texture to object, no overlap or follow-through on the hands or crown, and no sense of mechanical weight. The 0\u219270 h counter is a linear tick-up, not a designed moment.",
+        "Sound: There is a plucked intro, a sustained pad from 2.4s, three clean transient hits (about 4.9, 5.4 and 6.8s) and a bell-like resolve at 9.8s that rings out with clear partials. It is competent, but the arrangement is sparse and the bed is static. There is no mechanical foley (ticking, winding, crown clicks) on a watch film, and the hits don't clearly line up with distinct picture events.",
+        "Finish: The lighting and materials on the case and lugs are far below luxury-watch CG standards (no believable reflections, no bevels catching light, no depth of field). The swirl dial and the wedge artifact break the premium illusion. The type is clean (a serif paired with a tracked small-caps label), but the layouts are generic."
+      ]
+    },
+    "meta": {
+      "seconds": 19.8,
+      "cost_usd": 0.1474336,
+      "tokens": 70231,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "calibre9.mp4: 12.0s, 1 shots, median 12.00s, longest 12.00s\nper-second change: [11.3, 17.4, 40.3, 18.1, 9.9, 11.6, 14.3, 15.2, 9.3, 11.8, 10.8]\nPACE: FAIL \u2014 longest shot 12.0s > 2.5s; median shot 12.0s > 1.5s"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 3,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 4,
+    "motion": 4.0,
+    "craft": 4.5,
+    "originality": 2,
+    "sound": 5
+  },
+  "full_overall": 3.61,
+  "cost_usd": 0.63,
+  "judge_seconds": 117.4,
+  "verdict": "FAIL"
+}

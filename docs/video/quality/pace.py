@@ -12,7 +12,7 @@ It can also write a 1-frame-per-second strip.
 
 FAIL rules (see BAR.md, "Pace"):
 - any shot longer than 2.5 s without a major change;
-- median shot length over 1.5 s;
+- median shot length over 2.0 s (REFS benchmark: 2.5 s overall, 1.5 s idents/UI, 1.0 s sport);
 - more than 20% of seconds look like the second before.
 """
 import json, subprocess, sys, tempfile, os
@@ -76,8 +76,8 @@ def main():
     fail = []
     if max(shots) > 2.5:
         fail.append(f"longest shot {max(shots):.1f}s > 2.5s")
-    if med > 1.5:
-        fail.append(f"median shot {med:.1f}s > 1.5s")
+    if med > 2.0:
+        fail.append(f"median shot {med:.1f}s > 2.0s")
     if diffs and same / len(diffs) > 0.2:
         fail.append(f"{same}/{len(diffs)} seconds look like the previous second")
     print(f"{os.path.basename(path)}: {dur:.1f}s, {len(shots)} shots, median {med:.2f}s, longest {max(shots):.2f}s")

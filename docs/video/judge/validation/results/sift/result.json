@@ -1,0 +1,509 @@
+{
+  "name": "sift",
+  "tags": [
+    "product-launch",
+    "kinetic-type",
+    "3d-cg"
+  ],
+  "refs": [
+    "osko-launch",
+    "offf-milano-2017",
+    "coinbase-system-update"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 4,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 5,
+      "motion": 4,
+      "craft": 4,
+      "originality": 2
+    },
+    "overall": 3.62,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 3.33,
+    "gaps": [
+      "Find a non-literal metaphor for email overload that a viewer would remember",
+      "Choose or draw type with a point of view instead of bevelled default sans",
+      "Build a palette and lighting design specific to the brand, beyond black, red and chrome",
+      "Find an idea beyond 'chaos \u2192 sorted \u2192 logo'; C builds a whole world, while this only illustrates the feature list",
+      "Replace the extruded default sans with a considered or custom face and real scale relationships integrated with the image",
+      "Commit to a distinctive palette and material language, with texture, real light motivation and continuity between shots, instead of preset chrome and a red accent",
+      "There is no idea beyond naming the feature; find a metaphor or world that only this product could own",
+      "The type has no point of view; commission or choose a face and build layouts with real scale contrast and integration instead of extruded default words",
+      "Replace the default black-floor render with a designed palette, material and light scheme, and stage the UI as something more than a floating card"
+    ],
+    "tells": [
+      "Extruded default grotesk in 3D ('Too much', 'Sorted', 'one line.', '214', 'Sift') is a stock type treatment with no typographic idea",
+      "The story is literal: too much mail, then a sorted inbox, then the product name. It is the product plus a diagram of the feature",
+      "The placeholder UI card uses invented names (Maya Chen, Daniel at Arcwell) and grey metadata pills",
+      "Black ground, one red accent and a chrome logo on a reflective floor: the generic 'tasteful AI' launch look",
+      "The domino falloff of cards is a stock 3D primitive gag",
+      "The DOF and reflections are competent but generic, with no specific material or texture",
+      "The idea is literal and obvious: 'Too much' with flying papers, then the inbox UI, then 'Sorted' with dominoes, then the product name 'Sift'. It's the feature diagram as a film",
+      "Default rounded grotesk extruded into stock 3D with a chrome or red material preset; no typographic point of view",
+      "Placeholder product UI ('Today', Maya Chen, Ops alerts, Newsletters) with tiny tracked-caps status labels; generic AI-ad copy",
+      "Dark ground plus a single red accent, and the big '214' on a pink field: the 'tasteful AI' formula. Reflective floor and DOF used as effect, not as storytelling",
+      "Default heavy grotesk extruded into 3D for each word ('Too much', 'Sorted', 'one line.', '214', 'Sift'), placed like slide headlines",
+      "Placeholder UI card with generic names (Maya Chen, Daniel at Arcwell, Lena Ortiz) and grey metadata, a classic auto-generated product mock",
+      "A literal problem-to-solution SaaS script: pile of paper becomes 'Sorted', then a big stat, then a chrome logo with a URL",
+      "Stock 3D primitives (falling cards, domino row, chrome text) on a black reflective floor with a single red accent: the generic 'tasteful AI' look"
+    ]
+  },
+  "refs_summary": {
+    "osko-launch": {
+      "overall": 3.25,
+      "judged_professional": "1/3",
+      "mean_rank": 3.67
+    },
+    "offf-milano-2017": {
+      "overall": 8.38,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "coinbase-system-update": {
+      "overall": 7.88,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 6.5,
+  "delta": -2.88,
+  "trials": [
+    {
+      "key": {
+        "A": "coinbase-system-update",
+        "B": "osko-launch",
+        "C": "candidate",
+        "D": "offf-milano-2017"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The whole film is built from ASCII and code characters: figures, planets, padlocks and coins are all made of glyphs, so the type is the image",
+              "Uses one bold, deliberate palette (International Klein-style blue with white) and holds it to the end",
+              "Frames differ a lot (running figure, coin flow field, orbiting planet, full-screen code log, triple padlock, coin grid), which points to real choreography",
+              "The 'Matching Cut Transition(\"circular\")' line in the code reads as an in-joke about the edit itself, which shows wit",
+              "Inverted highlight labels ('<<Crypto is...', 'Faster', '--Direct--') work as a typographic voice instead of slide titles"
+            ],
+            "gaps": [
+              "It is flat and screen-bound, with no physical light or material depth to match D's rendered world",
+              "The crypto/payments story still leans on obvious symbols (dollar signs, Bitcoin coins, padlocks)",
+              "The code-dump frame is a dense text wall with weak hierarchy and reads as filler instead of a composed poster"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "Styles clash from frame to frame: a dark 3D VW van, a glossy plastic fridge-shelf render, a flat vector golfer, a flat pink car, emoji-style icons, and a 3D retro fridge",
+              "Aspect ratios change between frames (landscape, near-square, portrait), so there is no single frame system",
+              "The icon grid (coffee, beer, winged cash, heart, gift) looks like a default emoji set placed on black like a slide",
+              "The handwritten 'I.O.U' sticky note is the only typography and is literal",
+              "The renders are smooth and generic with odd product shapes on the shelf, typical of generative output",
+              "The golfer is a three-pose clip-art sequence"
+            ],
+            "gaps": [
+              "Commit to one visual world and frame format so the IOU idea builds up instead of scattering",
+              "Design real typography and a hierarchy around the IOU idea instead of a single sticky note",
+              "Replace emoji and clip-art assets with authored illustration or lit 3D that has texture and motivated light"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 5,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "Extruded default grotesk in 3D ('Too much', 'Sorted', 'one line.', '214', 'Sift') is a stock type treatment with no typographic idea",
+              "The story is literal: too much mail, then a sorted inbox, then the product name. It is the product plus a diagram of the feature",
+              "The placeholder UI card uses invented names (Maya Chen, Daniel at Arcwell) and grey metadata pills",
+              "Black ground, one red accent and a chrome logo on a reflective floor: the generic 'tasteful AI' launch look",
+              "The domino falloff of cards is a stock 3D primitive gag",
+              "The DOF and reflections are competent but generic, with no specific material or texture"
+            ],
+            "gaps": [
+              "Find a non-literal metaphor for email overload that a viewer would remember",
+              "Choose or draw type with a point of view instead of bevelled default sans",
+              "Build a palette and lighting design specific to the brand, beyond black, red and chrome"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A coherent Art Deco clockwork world: gold, bronze and gunmetal with ornate mechanical detail in every frame",
+              "A custom geometric Deco display face, used consistently from the speaker credits to the end card",
+              "Real light work: specular gold, warm practicals, depth of field and dense layered machinery",
+              "Varied camera language (symmetrical tunnel, kaleidoscopic mirror, orbiting mechanism, macro sphere, rotating cube) shows planned choreography",
+              "The logo mark is built into objects (the cube face), and the end card resolves the system"
+            ],
+            "gaps": [
+              "The Deco/steampunk vocabulary is familiar territory for conference titles",
+              "The dark gold palette is close to genre convention",
+              "Credits are placed over the image instead of interacting with it in the mid frames"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "C",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 28.9,
+        "cost_usd": 0.157741,
+        "tokens": 72058,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "coinbase-system-update",
+        "B": "osko-launch",
+        "C": "offf-milano-2017",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "One committed system: everything (figure, coin, planet, padlocks, coin grid) is built from ASCII glyphs, so the medium is the message for a piece about crypto and code",
+              "A bold, single International-Klein-style blue held across every frame, with white glyphs, highlighted inverse-video labels ('<<Crypto is...', 'Faster', '--Direct--') used as typographic punctuation",
+              "Strong variety in scale and staging: a character walking, a flowing particle field, an orbiting sphere, a full-screen terminal dump, a triptych of padlocks, a 4x7 grid of coins. It reads as choreographed match cuts, not a repeated layout",
+              "Monospace type is the right choice here and is used with density and rhythm, not as a default"
+            ],
+            "gaps": [
+              "Lighting is close to flat; C gets depth and material from real light, while here depth comes only from glyph density. Add luminance falloff, bloom or a depth pass to the ASCII fields",
+              "The terminal-text frame is close to filler: lorem-like pseudo-code with a weaker image than its neighbours. Make the text frame a poster too",
+              "The concept (crypto = code = ASCII) is smart but familiar from the ASCII-shader trend. Push one moment of surprise that only this film could have"
+            ]
+          },
+          "B": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 2,
+              "craft": 2,
+              "originality": 2
+            },
+            "tells": [
+              "No visual system: a moonlit 3D van, a glossy plastic shelf render, flat-vector golfers, a flat pink car, emoji-like icons and a photoreal retro fridge all sit in one film, in inconsistent aspect ratios (16:9, 4:5, 9:16)",
+              "Generic AI-generation look: plastic textures, mushy product labels with no legible design, a hand-lettered 'I.O.U' sticky note repeated as the only 'type'",
+              "Icons set in a centred 3x2 grid on black, like a slide; clip-art coffee, beer, heart, gift, flying money",
+              "The golfer sequence is three static poses side by side, not animation; frames don't connect or choreograph"
+            ],
+            "gaps": [
+              "Pick one art direction (medium, palette, light) and hold it across every shot; right now there are six different tools' default styles",
+              "Design the typography: the 'I.O.U' note is the only text and it's a placeholder scrawl; build a typographic voice that carries the idea",
+              "Make shots that hand off to one another through match cuts, continuous camera and a shared object, instead of unrelated stills, and fix the aspect-ratio chaos"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "Deliberate Art Deco/clockwork world in gold, brass and black: kaleidoscopic tunnel, baroque biomechanical relief, orrery mechanisms, a geometric cube with an embossed logo",
+              "Real light and material: specular brass, shallow depth of field, warm practical glows, dust. Every frame reads as a poster",
+              "Custom Deco display face for credits ('MOMENT FACTORY', 'FUTURE DELUXE', 'TAVO') integrated into the architecture, and a resolve to a typographic end card",
+              "Clear camera progression from abstract tunnel to dense ornament to mechanism detail to object hero to title. Strong choreography"
+            ],
+            "gaps": [
+              "The gold-and-black luxe Deco mechanism is a well-worn festival-titles trope; A's idea is more specific to its subject",
+              "Some frames (the symmetrical tunnel, the ornament wall) rely on mirroring, which flattens the surprise",
+              "Credit type sits centred over the image in a few shots; it could lock more into the mechanism"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 5,
+              "motion": 4,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The idea is literal and obvious: 'Too much' with flying papers, then the inbox UI, then 'Sorted' with dominoes, then the product name 'Sift'. It's the feature diagram as a film",
+              "Default rounded grotesk extruded into stock 3D with a chrome or red material preset; no typographic point of view",
+              "Placeholder product UI ('Today', Maya Chen, Ops alerts, Newsletters) with tiny tracked-caps status labels; generic AI-ad copy",
+              "Dark ground plus a single red accent, and the big '214' on a pink field: the 'tasteful AI' formula. Reflective floor and DOF used as effect, not as storytelling"
+            ],
+            "gaps": [
+              "Find an idea beyond 'chaos \u2192 sorted \u2192 logo'; C builds a whole world, while this only illustrates the feature list",
+              "Replace the extruded default sans with a considered or custom face and real scale relationships integrated with the image",
+              "Commit to a distinctive palette and material language, with texture, real light motivation and continuity between shots, instead of preset chrome and a red accent"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "D",
+          "B"
+        ]
+      },
+      "meta": {
+        "seconds": 31.3,
+        "cost_usd": 0.1583328,
+        "tokens": 72080,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "offf-milano-2017",
+        "B": "osko-launch",
+        "C": "coinbase-system-update",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 6
+            },
+            "tells": [
+              "Art-deco geometry carried all the way through, from the kaleidoscopic corridor to the orrery mechanism to the sculpted cube with the 'F' monogram, so every frame belongs to one invented world",
+              "Real material work: brushed brass, chrome spheres, gilt edges, shallow depth of field and motivated warm practical light with bokeh",
+              "A custom display face for the credits (Moment Factory, Future Deluxe, TAVO, OFFF 2017 Milano) that echoes the deco ornament, set over the image rather than on slides",
+              "The framing moves from a symmetrical tunnel to a biomechanical mirror pattern to mechanism close-ups to a hero object, which shows a planned camera and scale progression"
+            ],
+            "gaps": [
+              "The ornate-baroque, Giger-meets-Gatsby title look is a well-worn festival-opener idiom; it needs a concept specific to this event rather than a general sense of luxury",
+              "Credits sit centred as small overlays and are never physically integrated into the machinery they ride on; let the type be machined into or revealed by the mechanism",
+              "The palette is a monochrome gold-black wash; one counterpoint colour or a change of light in a single beat would give the sequence a peak"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 6,
+              "originality": 6
+            },
+            "tells": [
+              "A committed single system: ASCII and glyph-built imagery on saturated ultramarine, with a walking figure, a planet, padlocks and a coin grid all rendered from characters",
+              "Real variety of scenes, from a character walk to a cosmic scale shift to a code wall to an array of icons, which implies choreographed match transitions",
+              "Weakness: the code-wall copy reads like generated filler ('matchcut_engine', 'Broadcasting Visual Layer', 'Matching Cut Transition(\"circular\")'), which looks like instructions leaking into the content",
+              "The icon vocabulary is literal crypto clip-art ($, Bitcoin coins, locks)"
+            ],
+            "gaps": [
+              "The idea is 'crypto = code = ASCII', which is the first thing anyone would think of; it needs an angle on the subject, not just a rendering treatment",
+              "The terminal text is undesigned filler; write and typeset it with hierarchy and purpose, or cut it",
+              "Flat blue with no depth, grain or light falloff; it needs dimensionality or texture to match A's richness of surface"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 5,
+              "craft": 6,
+              "originality": 5
+            },
+            "tells": [
+              "The recurring 'I.O.U.' note, from a fridge tupperware to an empty retro fridge, is a real, human comic premise",
+              "The illustration styles vary, including a moonlit van, a 3D fridge shelf, a flat golfer sequence and emoji-like icons, which reads as a multi-artist anthology; the golfer's three-pose gag is good timing",
+              "The frame formats are inconsistent (landscape, portrait, square) and the icon grid is generic emoji-like assets with little design",
+              "Type is limited to the handwritten 'I.O.U.', which suits the joke but gives no typographic system"
+            ],
+            "gaps": [
+              "Unify the anthology with a visual or structural thread so it reads as one film rather than a pile of assets",
+              "The icon grid of coffee, beer, money, heart and gift is clip-art; replace it with authored illustration that carries the joke",
+              "Give the light and staging more ambition across all frames, as the fridge reveal does, rather than objects isolated on flat grounds"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 4,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "Default heavy grotesk extruded into 3D for each word ('Too much', 'Sorted', 'one line.', '214', 'Sift'), placed like slide headlines",
+              "Placeholder UI card with generic names (Maya Chen, Daniel at Arcwell, Lena Ortiz) and grey metadata, a classic auto-generated product mock",
+              "A literal problem-to-solution SaaS script: pile of paper becomes 'Sorted', then a big stat, then a chrome logo with a URL",
+              "Stock 3D primitives (falling cards, domino row, chrome text) on a black reflective floor with a single red accent: the generic 'tasteful AI' look"
+            ],
+            "gaps": [
+              "There is no idea beyond naming the feature; find a metaphor or world that only this product could own",
+              "The type has no point of view; commission or choose a face and build layouts with real scale contrast and integration instead of extruded default words",
+              "Replace the default black-floor render with a designed palette, material and light scheme, and stage the UI as something more than a floating card"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 33.6,
+        "cost_usd": 0.16371259999999999,
+        "tokens": 72366,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 5,
+        "sound": 5,
+        "craft": 5
+      },
+      "defects": [
+        "The red rectangle in the 'Today' card shot looks like a placeholder or stray element. Between frames 1/6 s apart it jumps position instead of travelling, so it reads as a pop, not a designed move.",
+        "In the 'Sorted' shot a falling card blocks the 'e', so the hero word is unreadable at its key moment.",
+        "'one line.' is in heavy defocus and partly cut off at the frame edge. The key line of copy is soft and runs into the UI card behind it.",
+        "Opening 'Too much' frame: the card cloud overlaps and cuts into the 3D type, the depth of field is murky, and the floor reflection reads as grey mud.",
+        "The 214\u2192126 counter is a hard swap of extruded digits. There is no roll, mask or interpolation, and the '1' changes width, so the layout jumps.",
+        "At 1:1 the UI text is soft, with grainy compression noise and slightly mushy small-text edges. The red 'NEEDS YOU' / 'SORTED' tags are too small to read.",
+        "The 'Every thread,' type is blurred from defocus and motion blur at the same moment it has to be read.",
+        "The audio is lowpassed hard at ~18 kHz, which suggests a lossy or generated source chain. The tonal bed is a few static horizontal partials."
+      ],
+      "gaps": [
+        "Choreography: the piece relies on cuts every 0.9 s plus generic C4D moves (falling cards, domino row, chrome logo). There is no continuous motion idea carrying 'too much \u2192 sorted' through transitions, and the hero beats (counter, logo) have no designed easing or follow-through. This is template-level cause and effect.",
+        "Finish and art direction: a white/chrome/red default render look with muddy reflections and DOF that fights legibility. The flat pink '214' shot breaks the world's lighting, and the UI card lacks crisp, art-directed product rendering at 1:1.",
+        "Sound: a grid of transient hits plus three stock-shaped risers and a thin, static harmonic bed. There is little spectral development or foley that matches the paper/card material, and only one tonal change (~12.5 s). It is functional but not scored or designed to picture the way top studio sound is."
+      ]
+    },
+    "meta": {
+      "seconds": 19.6,
+      "cost_usd": 0.1475654,
+      "tokens": 70215,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "sift.mp4: 15.0s, 18 shots, median 0.93s, longest 1.88s\nper-second change: [73.8, 131.5, 94.4, 101.0, 34.6, 170.1, 69.5, 52.2, 101.6, 72.6, 84.7, 112.6, 44.0, 10.0]\nPACE: PASS"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 4,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 5,
+    "motion": 4.5,
+    "craft": 4.5,
+    "originality": 2,
+    "sound": 5
+  },
+  "full_overall": 3.89,
+  "cost_usd": 0.627,
+  "judge_seconds": 113.4,
+  "verdict": "FAIL"
+}

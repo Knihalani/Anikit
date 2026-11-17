@@ -279,8 +279,11 @@ fn main() -> ExitCode {
         };
     }
     if matches!(raw.first().map(String::as_str), Some("--version" | "-V" | "version")) {
-        println!("anikit-video {} ({})", env!("CARGO_PKG_VERSION"), option_env!("ANIKIT_BUILD").unwrap_or("dev build"));
+        println!("anikit-video {} ({} {})", env!("CARGO_PKG_VERSION"), env!("ANIKIT_GIT"), env!("ANIKIT_GIT_DATE"));
         return ExitCode::SUCCESS;
+    }
+    if let Some(code) = anikit_video::assetlib::run(&raw) {
+        return ExitCode::from(code as u8);
     }
     if let Some(code) = anikit_video::music::run(&raw) {
         return ExitCode::from(code as u8);

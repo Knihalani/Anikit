@@ -3,7 +3,7 @@
 //! so they vectorise; scratch memory is reused across frames.
 
 use super::blur::{blur, BlurScratch};
-use crate::dl::{Filter, Rgba};
+use crate::dl::{Filter, Halftone, Rgba, ToneLut};
 
 /// Reusable scratch buffers.
 #[derive(Default, Debug)]
@@ -37,6 +37,17 @@ pub fn sanitize(f: &Filter) -> Filter {
         Filter::Shadow { dx, dy, blur, color } => Filter::Shadow { dx: sane(dx, 4096.0), dy: sane(dy, 4096.0), blur: s(blur), color: c(color) },
         Filter::Glow { radius, intensity, color } => Filter::Glow { radius: s(radius), intensity: sane(intensity, 64.0).max(0.0), color: c(color) },
         Filter::ColorMatrix(m) => Filter::ColorMatrix(m.map(|v| sane(v, 1e6))),
+        Filter::Tone(ref t) => Filter::Tone(t.clone()),
+        Filter::Halftone(h) => Filter::Halftone(Halftone {
+            cell: sane(h.cell, 512.0).max(2.0),
+            angle: sane(h.angle, 3600.0),
+            gain: sane(h.gain, 8.0).max(0.05),
+            ink: c(h.ink),
+            paper: c(h.paper),
+            ox: sane(h.ox, 1e7),
+            oy: sane(h.oy, 1e7),
+            ..h
+        }),
     }
 }
 
@@ -49,7 +60,7 @@ pub fn margin(f: &Filter) -> [f32; 4] {
             [e + (-dx).max(0.0), e + (-dy).max(0.0), e + dx.max(0.0), e + dy.max(0.0)]
         }
         Filter::Glow { radius, .. } => [blur_extent(radius); 4],
-        Filter::ColorMatrix(_) => [0.0; 4],
+        Filter::ColorMatrix(_) | Filter::Tone(_) | Filter::Halftone(_) => [0.0; 4],
     }
 }
 
@@ -144,12 +155,174 @@ fn apply_inner(f: &Filter, buf: &mut [u8], w: usize, h: usize, s: &mut FilterScr
                 p[3] = (na * 255.0 + 0.5) as u8;
             }
         }
+        Filter::Tone(t) => tone(&t, buf),
+        Filter::Halftone(ht) => halftone(&ht, buf, w),
+    }
+}
+
+/// Gradient map / posterise through a 256-entry luma table.
+#[inline(always)]
+fn tone(t: &ToneLut, buf: &mut [u8]) {
+    let lv = t.levels as u32;
+    let q = |v: u32| if lv >= 2 { ((v * (lv - 1) + 127) / 255) * 255 / (lv - 1) } else { v };
+    let amt = (t.amount.clamp(0.0, 1.0) * 256.0) as u32;
+    for p in buf.chunks_exact_mut(4) {
+        let a = p[3] as u32;
+        if a == 0 {
+            continue;
+        }
+        // Unpremultiply (rounded).
+        let un = |v: u8| ((v as u32 * 255 + a / 2) / a).min(255);
+        let (r, g, b) = (un(p[0]), un(p[1]), un(p[2]));
+        let o = match &t.map {
+            Some(m) => {
+                let y = (54 * r + 183 * g + 19 * b + 128) >> 8;
+                let c = m[q(y.min(255)) as usize];
+                [c[0] as u32, c[1] as u32, c[2] as u32]
+            }
+            None => [q(r), q(g), q(b)],
+        };
+        let src = [r, g, b];
+        for c in 0..3 {
+            let v = (src[c] * (256 - amt) + o[c] * amt) >> 8;
+            p[c] = ((v * a + 127) / 255) as u8;
+        }
+    }
+}
+
+/// Radius (in cell units) at which a spot of `shape` covers fraction `k` of its cell.
+fn spot_radius(shape: u8, k: f32) -> f32 {
+    let k = k.clamp(0.0, 1.0);
+    match shape {
+        1 => k * 0.5,
+        2 => k.sqrt() * 0.5,
+        _ => {
+            // Round dot: area of {d < r} inside the unit cell, inverted by bisection.
+            let area = |r: f32| {
+                let pi = std::f32::consts::PI;
+                if r <= 0.5 {
+                    pi * r * r
+                } else if r >= std::f32::consts::FRAC_1_SQRT_2 {
+                    1.0
+                } else {
+                    pi * r * r - 4.0 * (r * r * (0.5 / r).acos() - 0.5 * (r * r - 0.25).sqrt())
+                }
+            };
+            let (mut lo, mut hi) = (0.0f32, std::f32::consts::FRAC_1_SQRT_2);
+            for _ in 0..24 {
+                let m = 0.5 * (lo + hi);
+                if area(m) < k {
+                    lo = m
+                } else {
+                    hi = m
+                }
+            }
+            0.5 * (lo + hi)
+        }
+    }
+}
+
+/// Amplitude-modulated halftone: each pixel's darkness is compared with the
+/// spot function of its screen cell (as a RIP does), so dot edges follow the
+/// image and the screen stays fixed to the frame.
+#[inline(always)]
+fn halftone(h: &Halftone, buf: &mut [u8], w: usize) {
+    let mut rt = [0f32; 257];
+    for (i, r) in rt.iter_mut().enumerate() {
+        *r = spot_radius(h.shape, (i.min(256) as f32 / 256.0 * h.gain).min(1.0));
+    }
+    let (sn, cs) = h.angle.to_radians().sin_cos();
+    let inv = 1.0 / h.cell;
+    let src_ink = h.ink.0[3] <= 0.0;
+    let paper_a = h.paper.0[3].clamp(0.0, 1.0);
+    let ink = h.ink.0.map(|v| v.clamp(0.0, 1.0) * 255.0);
+    let paper = h.paper.0.map(|v| v.clamp(0.0, 1.0) * 255.0);
+    for (y, row) in buf.chunks_exact_mut(w * 4).enumerate() {
+        let fy = y as f32 + 0.5 + h.oy;
+        for (x, p) in row.chunks_exact_mut(4).enumerate() {
+            let a = p[3] as u32;
+            if a == 0 {
+                continue;
+            }
+            let un = |v: u8| ((v as u32 * 255 + a / 2) / a).min(255) as f32;
+            let (r, g, b) = (un(p[0]), un(p[1]), un(p[2]));
+            let lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            let k = (255.0 - lum).max(0.0) * (256.0 / 255.0);
+            let rad = rt[(k as usize).min(256)];
+            let fx = x as f32 + 0.5 + h.ox;
+            let u = (fx * cs + fy * sn) * inv;
+            let v = (-fx * sn + fy * cs) * inv;
+            let du = u - u.floor() - 0.5;
+            let dv = v - v.floor() - 0.5;
+            let d = match h.shape {
+                1 => dv.abs(),
+                2 => du.abs().max(dv.abs()),
+                _ => (du * du + dv * dv).sqrt(),
+            };
+            let cov = ((rad - d) * h.cell + 0.5).clamp(0.0, 1.0);
+            let inkc = if src_ink { [r, g, b] } else { [ink[0], ink[1], ink[2]] };
+            let sa = a as f32 / 255.0;
+            if paper_a > 0.0 {
+                // Opaque print: paper under ink, keeping the layer's coverage.
+                let oa = sa * (paper_a + (1.0 - paper_a) * cov);
+                for c in 0..3 {
+                    let col = paper[c] * paper_a * (1.0 - cov) + inkc[c] * cov;
+                    p[c] = (col * sa + 0.5).min(255.0) as u8;
+                }
+                p[3] = (oa * 255.0 + 0.5) as u8;
+            } else {
+                let oa = sa * cov;
+                for c in 0..3 {
+                    p[c] = (inkc[c] * oa + 0.5) as u8;
+                }
+                p[3] = (oa * 255.0 + 0.5) as u8;
+            }
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn duotone_maps_black_and_white_to_the_pair() {
+        let mut m = Box::new([[0u8; 3]; 256]);
+        for (i, c) in m.iter_mut().enumerate() {
+            *c = [i as u8, 0, 255 - i as u8];
+        }
+        let t = ToneLut { map: Some(m), levels: 0, amount: 1.0 };
+        let mut buf = vec![0, 0, 0, 255, 255, 255, 255, 255, 64, 64, 64, 128];
+        apply(&Filter::Tone(std::sync::Arc::new(t.clone())), &mut buf, 3, 1, &mut FilterScratch::default());
+        assert_eq!(&buf[0..4], &[0, 0, 255, 255]);
+        assert_eq!(&buf[4..8], &[255, 0, 0, 255]);
+        // Half-alpha grey stays half-alpha, mapped to the middle.
+        assert_eq!(buf[11], 128);
+        assert!((buf[8] as i32 - 64).abs() <= 2 && (buf[10] as i32 - 64).abs() <= 2, "{:?}", &buf[8..12]);
+        // Posterise to 2 levels on luma.
+        let t2 = ToneLut { levels: 2, ..t };
+        let mut b2 = vec![100, 100, 100, 255, 160, 160, 160, 255];
+        apply(&Filter::Tone(std::sync::Arc::new(t2)), &mut b2, 2, 1, &mut FilterScratch::default());
+        assert_eq!(&b2[..4], &[0, 0, 255, 255]);
+        assert_eq!(&b2[4..], &[255, 0, 0, 255]);
+    }
+
+    #[test]
+    fn halftone_preserves_mean_tone() {
+        for shape in 0..3u8 {
+            for grey in [40u8, 128, 210] {
+                let (w, h) = (96, 96);
+                let mut buf: Vec<u8> = (0..w * h).flat_map(|_| [grey, grey, grey, 255]).collect();
+                let ht = Halftone { cell: 8.0, angle: 15.0, shape, ink: Rgba([0.0, 0.0, 0.0, 1.0]), paper: Rgba([1.0, 1.0, 1.0, 1.0]), gain: 1.0, ox: 0.0, oy: 0.0 };
+                apply(&Filter::Halftone(ht), &mut buf, w, h, &mut FilterScratch::default());
+                let mean = buf.chunks(4).map(|p| p[0] as f64).sum::<f64>() / (w * h) as f64;
+                assert!((mean - grey as f64).abs() < 14.0, "shape {shape} grey {grey}: mean {mean}");
+                // Binary-ish: most pixels are near ink or paper.
+                let mid = buf.chunks(4).filter(|p| p[0] > 40 && p[0] < 215).count();
+                assert!(mid < w * h / 3, "shape {shape} grey {grey}: {mid} mid-tones");
+            }
+        }
+    }
 
     #[test]
     fn blur_preserves_mass() {
