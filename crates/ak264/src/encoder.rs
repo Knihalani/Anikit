@@ -41,11 +41,15 @@ pub struct EncoderConfig {
     /// bounded by the threshold (it cannot accumulate). 0 = off; 1–2 hides
     /// renderer dither and ±1 drift.
     pub skip_threshold: u8,
+    /// Adaptive quantisation strength: per-macroblock QP offsets from local
+    /// variance and brightness (lower QP on flat and dark areas, where blocking is
+    /// visible; higher on busy ones). 0 = constant QP.
+    pub aq_strength: f32,
 }
 
 impl Default for EncoderConfig {
     fn default() -> Self {
-        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0 }
+        EncoderConfig { width: 0, height: 0, fps: 30.0, qp: 22, gop: 250, deblock: false, threads: 1, full_range: false, subpel: true, cabac: true, skip_threshold: 0, aq_strength: 0.5 }
     }
 }
 
@@ -131,6 +135,8 @@ pub(crate) struct MbInfo {
     pub nzc: [[u8; 4]; 2],
     /// I4x4 modes (raster), 2 when not I4x4.
     pub m4: [u8; 16],
+    /// QP_Y of the macroblock (for deblocking).
+    pub qp: u8,
     pub cbp: u8,
     /// intra_chroma_pred_mode (0 for inter).
     pub cmode: u8,
@@ -189,9 +195,8 @@ enum Kind {
     I4,
 }
 
-/// Shared, read-only state for coding one frame.
-pub(crate) struct FrameCtx<'a> {
-    pub mbw: usize,
+/// Everything that depends on the quantiser parameter, precomputed per QP.
+pub(crate) struct QpSet {
     pub q: Quant,
     pub qc: Quant,
     pub qs: QuantS,
@@ -207,6 +212,37 @@ pub(crate) struct FrameCtx<'a> {
     /// Per-4×4-block SAD bounds (luma, chroma AC), inter.
     pub zero_sad4: (u32, u32),
     pub lambda: i32,
+}
+
+impl QpSet {
+    fn new(qp: u8) -> Self {
+        let q = Quant::new(qp);
+        let qc = Quant::new(chroma_qp(qp));
+        let (qs, qcs) = (QuantS::new(&q), QuantS::new(&qc));
+        let (l, c) = crate::soa::zero_sad_bounds(&q, &qs, &qc, &qcs, false);
+        QpSet {
+            zero_sad: (l, c, crate::soa::chroma_dc_limit(&qc, false)),
+            zero_sad4: crate::soa::zero_sad4_bounds(&qs, &qcs, false),
+            zero_sad4_intra: crate::soa::zero_sad4_bounds(&qs, &qcs, true),
+            zero_dc_intra: (crate::soa::chroma_dc_limit(&q, true), crate::soa::chroma_dc_limit(&qc, true)),
+            zero_sad_intra: crate::soa::zero_sad_bounds(&q, &qs, &qc, &qcs, true),
+            lambda: (0.85f64 * 2f64.powf((qp as f64 - 12.0) / 6.0)).round().max(1.0) as i32,
+            q,
+            qc,
+            qs,
+            qcs,
+        }
+    }
+}
+
+/// Shared, read-only state for coding one frame.
+pub(crate) struct FrameCtx<'a> {
+    pub mbw: usize,
+    /// Slice (base) QP and the parameter sets of every QP.
+    pub qp: u8,
+    pub qsets: &'a [QpSet],
+    /// Adaptive quantisation strength (0 = off).
+    pub aq: f32,
     pub src: &'a Pic,
     pub refp: &'a Pic,
     pub changed: &'a [bool],
@@ -239,6 +275,7 @@ const SKIP_INFO: MbInfo = MbInfo {
     cbp: 0,
     cmode: 0,
     mvd: (0, 0),
+    qp: 0,
     dcf: 0,
 };
 
@@ -284,6 +321,14 @@ struct SliceEnc<'a, 'b> {
     skip_run: u32,
     stats: FrameStats,
     cabac: Option<crate::cabac::Cabac>,
+    /// Quantiser of the macroblock being coded (adaptive quantisation).
+    p: &'a QpSet,
+    mb_qp: u8,
+    /// QP of the previous macroblock in decoding order (QP_Y,PRED).
+    qp_pred: u8,
+    /// This / the previous macroblock coded a nonzero mb_qp_delta (CABAC context).
+    dqp_nz: bool,
+    dqp_prev_nz: bool,
 }
 
 #[inline(always)]
@@ -455,8 +500,10 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
 
     fn encode_mb(&mut self, mbx: usize, mby: usize, src_y: &[u8; 256], src_c: &[[u8; 64]; 2]) {
         let c = self.c;
+        self.mb_qp = if c.aq > 0.0 { (c.qp as i32 + aq_offset(src_y, src_c, c.aq)).clamp(0, 51) as u8 } else { c.qp };
+        self.p = &c.qsets[self.mb_qp as usize];
         let mbi = mby * c.mbw + mbx;
-        let lambda = c.lambda;
+        let lambda = self.p.lambda;
 
         let mut inter: Option<Inter> = None;
         let (mut mvp, mut skip_mv) = ((0, 0), (0, 0));
@@ -569,7 +616,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         seed: Option<&Inter>,
     ) -> Inter {
         let c = self.c;
-        let lambda = c.lambda as u32;
+        let lambda = self.p.lambda as u32;
         let w16 = (c.mbw * 16) as i32;
         let h16 = (c.refp.y.h) as i32;
         let (bx, by) = (mbx as i32 * 16, mby as i32 * 16);
@@ -668,7 +715,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         if it.sad == 0 || it.mv.0 & 3 != 0 || it.mv.1 & 3 != 0 {
             return;
         }
-        let lambda = self.c.lambda as u32;
+        let lambda = self.p.lambda as u32;
         let mvp = it.mvp;
         let mvcost = |q: (i32, i32)| -> u32 { lambda * (se_len(q.0 - mvp.0) + se_len(q.1 - mvp.1)) };
         let base_q = it.mv;
@@ -733,6 +780,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mvd = if skip { (0, 0) } else { (-mvp.0, -mvp.1) };
         let i = (mby - self.b.mby0) * self.c.mbw + mbx;
         self.b.info[i] = MbInfo {
+            qp: 0,
             kind: 0,
             skip,
             coded: false,
@@ -818,23 +866,23 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         // Residuals that provably quantise to zero are not transformed.
         let mut recon = [0u8; 256];
         let sad = crate::simd::sad16(src_y, 16, pred, 16);
-        let ry = if sad > self.c.zero_sad.0 && crate::simd::max_sad4(src_y, pred, 16, 16) > self.c.zero_sad4.0 {
-            luma_inter(src_y, pred, &self.c.qs, &mut cd, &mut recon);
+        let ry = if sad > self.p.zero_sad.0 && crate::simd::max_sad4(src_y, pred, 16, 16) > self.p.zero_sad4.0 {
+            luma_inter(src_y, pred, &self.p.qs, &mut cd, &mut recon);
             &recon
         } else {
             pred
         };
         let mut reconc = [[0u8; 64]; 2];
-        let zc = self.c.zero_sad.1;
+        let zc = self.p.zero_sad.1;
         let (s0, s1) = (crate::simd::sad64(&src_c[0], &predc[0]), crate::simd::sad64(&src_c[1], &predc[1]));
         // chroma: AC by block, DC (2x2 Hadamard of block sums) by the 8x8 SAD
-        let dc_ok = s0 <= self.c.zero_sad.2 && s1 <= self.c.zero_sad.2;
+        let dc_ok = s0 <= self.p.zero_sad.2 && s1 <= self.p.zero_sad.2;
         let rc = if (s0 > zc || s1 > zc)
             && !(dc_ok
-                && crate::simd::max_sad4(&src_c[0], &predc[0], 8, 8) <= self.c.zero_sad4.1
-                && crate::simd::max_sad4(&src_c[1], &predc[1], 8, 8) <= self.c.zero_sad4.1)
+                && crate::simd::max_sad4(&src_c[0], &predc[0], 8, 8) <= self.p.zero_sad4.1
+                && crate::simd::max_sad4(&src_c[1], &predc[1], 8, 8) <= self.p.zero_sad4.1)
         {
-            chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, false, &mut cd, &mut reconc);
+            chroma_resid(src_c, &predc, &self.p.qc, &self.p.qcs, false, &mut cd, &mut reconc);
             &reconc
         } else {
             &predc
@@ -844,6 +892,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mvd = if skip { (0, 0) } else { (mv.0 - mvp.0, mv.1 - mvp.1) };
         let i = (mby - self.b.mby0) * self.c.mbw + mbx;
         self.b.info[i] = MbInfo {
+            qp: 0,
             kind: 0,
             skip,
             coded: true,
@@ -942,8 +991,8 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
 
     /// Code luma as I4x4 into recon and `cd`. Returns (cost, modes raster).
     fn code_i4(&mut self, mbx: usize, mby: usize, src: &[u8; 256], cd: &mut Coded, _decide: bool) -> (u32, [u8; 16]) {
-        let lambda = self.c.lambda as u32;
-        let q = self.c.q;
+        let lambda = self.p.lambda as u32;
+        let q = self.p.q;
         let mut modes = [2u8; 16];
         let mut cost = lambda * if self.c.idr { 12 } else { 20 };
         let mut pred = [0u8; 16];
@@ -1013,13 +1062,13 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         modes: Option<[u8; 16]>,
         i16: Option<(&[u8; 256], &[u8; 256])>,
     ) {
-        let q = self.c.q;
+        let q = self.p.q;
         if let (Kind::I16(_), Some((src, pred))) = (kind, i16) {
             let mut recon = *pred;
             let sad = crate::simd::sad16(src, 16, pred, 16);
-            let (b4, dcl) = (self.c.zero_sad4_intra.0, self.c.zero_dc_intra.0);
-            if sad > self.c.zero_sad_intra.0 && !(sad < 2 * dcl && crate::simd::max_sad4(src, pred, 16, 16) <= b4) {
-                luma_i16(src, pred, &q, &self.c.qs, cd, &mut recon);
+            let (b4, dcl) = (self.p.zero_sad4_intra.0, self.p.zero_dc_intra.0);
+            if sad > self.p.zero_sad_intra.0 && !(sad < 2 * dcl && crate::simd::max_sad4(src, pred, 16, 16) <= b4) {
+                luma_i16(src, pred, &q, &self.p.qs, cd, &mut recon);
             }
             let base = self.yi(mbx * 16, mby * 16);
             for y in 0..16 {
@@ -1061,15 +1110,15 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
         let cmode = best.1;
         let mut reconc = [[0u8; 64]; 2];
-        let zc = self.c.zero_sad_intra.1;
+        let zc = self.p.zero_sad_intra.1;
         let (s0, s1) = (crate::simd::sad64(&src_c[0], &predc[0]), crate::simd::sad64(&src_c[1], &predc[1]));
-        let (b4, dcl) = (self.c.zero_sad4_intra.1, self.c.zero_dc_intra.1);
+        let (b4, dcl) = (self.p.zero_sad4_intra.1, self.p.zero_dc_intra.1);
         let zero_c = s0 <= dcl
             && s1 <= dcl
             && crate::simd::max_sad4(&src_c[0], &predc[0], 8, 8) <= b4
             && crate::simd::max_sad4(&src_c[1], &predc[1], 8, 8) <= b4;
         if (s0 > zc || s1 > zc) && !zero_c {
-            chroma_resid(src_c, &predc, &self.c.qc, &self.c.qcs, true, cd, &mut reconc);
+            chroma_resid(src_c, &predc, &self.p.qc, &self.p.qcs, true, cd, &mut reconc);
         } else {
             reconc = predc;
         }
@@ -1097,6 +1146,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
         let i = (mby - self.b.mby0) * self.c.mbw + mbx;
         self.b.info[i] = MbInfo {
+            qp: 0,
             kind: if is16 { 1 } else { 2 },
             skip: false,
             coded: true,
@@ -1142,6 +1192,13 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         }
     }
 
+    /// mb_qp_delta (CAVLC); the macroblock now has QP `mb_qp`.
+    fn cavlc_dqp(&mut self) {
+        let d = self.mb_qp as i32 - self.qp_pred as i32;
+        self.w.se(d);
+        self.qp_pred = self.mb_qp;
+    }
+
     /// end_of_slice_flag (CABAC).
     fn emit_end(&mut self, mbx: usize, mby: usize) {
         if let Some(cb) = self.cabac.as_mut() {
@@ -1159,7 +1216,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             self.w.se(mvd.1);
             self.w.ue(CBP_INTER[cd.cbp as usize] as u32);
             if cd.cbp != 0 {
-                self.w.se(0);
+                self.cavlc_dqp();
                 self.write_residual(mbx, mby, cd, false);
             }
             return;
@@ -1178,7 +1235,12 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         cb.mvd(w, 47, mvd.1, sy);
         cabac_cbp(cb, w, &a, &b, cd.cbp);
         if cd.cbp != 0 {
-            cb.decision(w, 60, 0); // mb_qp_delta = 0
+            let d = self.mb_qp as i32 - self.qp_pred as i32;
+            cabac_dqp(cb, w, d, self.dqp_prev_nz);
+            self.qp_pred = self.mb_qp;
+            self.dqp_nz = d != 0;
+            let cb = self.cabac.as_mut().unwrap();
+            let w = &mut *self.w;
             cabac_residual(cb, w, &a, &b, cd, false, false);
         }
     }
@@ -1196,7 +1258,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                     let cbpl = if cd.cbp & 15 != 0 { 1 } else { 0 };
                     self.w.ue(off + 1 + m as u32 + 4 * (cd.cbp >> 4) as u32 + 12 * cbpl);
                     self.w.ue(cmode as u32);
-                    self.w.se(0);
+                    self.cavlc_dqp();
                     self.write_residual(mbx, mby, cd, true);
                 }
                 _ => {
@@ -1210,7 +1272,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                     self.w.ue(cmode as u32);
                     self.w.ue(CBP_INTRA[cd.cbp as usize] as u32);
                     if cd.cbp != 0 {
-                        self.w.se(0);
+                        self.cavlc_dqp();
                         self.write_residual(mbx, mby, cd, false);
                     }
                 }
@@ -1275,7 +1337,12 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             cabac_cbp(cb, w, &a, &b, cd.cbp);
         }
         if is16 || cd.cbp != 0 {
-            cb.decision(w, 60, 0);
+            let d = self.mb_qp as i32 - self.qp_pred as i32;
+            cabac_dqp(cb, w, d, self.dqp_prev_nz);
+            self.qp_pred = self.mb_qp;
+            self.dqp_nz = d != 0;
+            let cb = self.cabac.as_mut().unwrap();
+            let w = &mut *self.w;
             cabac_residual(cb, w, &a, &b, cd, is16, true);
         }
     }
@@ -1396,6 +1463,42 @@ fn dc_flags(cd: &Coded, i16: bool) -> u8 {
         }
     }
     f
+}
+
+/// Adaptive-quantisation QP offset of a macroblock. One-sided: only flat
+/// macroblocks (where blocking and banding show) get a lower QP, more so when
+/// dark; busy ones keep the frame QP, so text and detail lose nothing.
+fn aq_offset(y: &[u8; 256], c: &[[u8; 64]; 2], strength: f32) -> i32 {
+    fn energy(p: &[u8], shift: u32) -> (u32, u32) {
+        let (mut s, mut ss) = (0u32, 0u32);
+        for &v in p {
+            s += v as u32;
+            ss += v as u32 * v as u32;
+        }
+        (ss - ((s * s) >> shift), s)
+    }
+    let (ey, sy) = energy(y, 8);
+    let e = ey + energy(&c[0], 6).0 + energy(&c[1], 6).0;
+    // flat: under about 4 levels² per luma sample
+    const FLAT: u32 = 1024;
+    if e >= FLAT {
+        return 0;
+    }
+    let flat = ((FLAT as f32).log2() - (e.max(1) as f32).log2()).min(4.0);
+    // limited-range black is 16: up to 3 more for the darkest flat areas
+    let mean = (sy >> 8) as f32;
+    let dark = ((80.0 - mean).max(0.0) / 16.0).min(3.0);
+    -(strength * (flat + dark)).round() as i32
+}
+
+/// mb_qp_delta: unary of the mapped value, contexts 60 + (previous MB coded a
+/// nonzero delta), 62, then 63.
+fn cabac_dqp(cb: &mut crate::cabac::Cabac, w: &mut BitWriter, d: i32, prev_nz: bool) {
+    let k = if d > 0 { 2 * d - 1 } else { -2 * d } as u32;
+    cb.decision(w, 60 + prev_nz as usize, (k > 0) as u32);
+    for i in 1..=k {
+        cb.decision(w, if i == 1 { 62 } else { 63 }, (i < k) as u32);
+    }
 }
 
 fn cabac_cbp(cb: &mut crate::cabac::Cabac, w: &mut BitWriter, a: &Option<MbInfo>, b: &Option<MbInfo>, cbp: u8) {
@@ -1716,12 +1819,17 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
         skip_run: 0,
         stats: FrameStats::default(),
         cabac: None,
+        p: &c.qsets[c.qp as usize],
+        mb_qp: c.qp,
+        qp_pred: c.qp,
+        dqp_nz: false,
+        dqp_prev_nz: false,
     };
     if c.cabac {
         while !s.w.byte_aligned() {
             s.w.put(1, 1); // cabac_alignment_one_bit
         }
-        s.cabac = Some(crate::cabac::Cabac::new(c.q.qp, !c.idr));
+        s.cabac = Some(crate::cabac::Cabac::new(c.qp, !c.idr));
     }
     let sy = &c.src.y;
     let su = &c.src.u;
@@ -1730,6 +1838,8 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
     let mut src_c = [[0u8; 64]; 2];
     for mby in mby0..mby1 {
         for mbx in 0..c.mbw {
+            s.dqp_prev_nz = s.dqp_nz;
+            s.dqp_nz = false;
             if !c.idr && !c.changed[mby * c.mbw + mbx] {
                 // Cheap P_Skip test: the skip MV is zero when A or B is missing or
                 // an inter neighbour with MV 0.
@@ -1756,6 +1866,7 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
                     let (mvp, skip_mv) = s.mv_pred(mbx, mby);
                     s.code_copy(mbx, mby, mvp, skip_mv);
                 }
+                s.b.info[(mby - mby0) * c.mbw + mbx].qp = s.qp_pred;
                 continue;
             }
             let o = sy.off(mbx as isize * 16, mby as isize * 16);
@@ -1770,6 +1881,7 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
             let b0 = s.w.bits_written();
             let (i0, n0) = (s.stats.intra16 + s.stats.intra4, s.stats.inter);
             s.encode_mb(mbx, mby, &src_y, &src_c);
+            s.b.info[(mby - mby0) * c.mbw + mbx].qp = s.qp_pred;
             let db = (s.w.bits_written() - b0) as u64;
             if s.stats.intra16 + s.stats.intra4 > i0 {
                 s.stats.bits_intra += db;
@@ -1781,7 +1893,7 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
     if c.slice_deblock {
         let b = &mut s.b;
         let mut view = crate::deblock::View { y: &mut *b.y, u: &mut *b.u, v: &mut *b.v, ys: s.ys, cs: s.cs, yp: s.yp, cp: s.cp };
-        crate::deblock::deblock_rows(&mut view, b.info, c.mbw, mby1 - mby0, &c.q, b.touched);
+        crate::deblock::deblock_rows(&mut view, b.info, c.mbw, mby1 - mby0, b.touched);
     }
     if let Some(cb) = s.cabac.take() {
         s.w.append_bytes(&cb.out);
@@ -1800,9 +1912,7 @@ pub struct Encoder {
     cfg: EncoderConfig,
     mbw: usize,
     mbh: usize,
-    q: Quant,
-    qc: Quant,
-    lambda: i32,
+    qsets: Vec<QpSet>,
     level: u8,
     cur: Pic,
     /// Macroblocks where `recon` (the picture before the reference) differs from `refp`.
@@ -1839,17 +1949,13 @@ impl Encoder {
         assert!(cfg.qp <= 51, "ak264: qp must be 0..=51");
         let mbw = (cfg.width as usize).div_ceil(16);
         let mbh = (cfg.height as usize).div_ceil(16);
-        let q = Quant::new(cfg.qp);
-        let qc = Quant::new(chroma_qp(cfg.qp));
-        let lambda = (0.85f64 * 2f64.powf((cfg.qp as f64 - 12.0) / 6.0)).round().max(1.0) as i32;
+        let qsets = (0..52).map(QpSet::new).collect();
         let level = level_idc(mbw, mbh, cfg.fps);
         let threads = cfg.threads.clamp(1, mbh);
         Encoder {
             mbw,
             mbh,
-            q,
-            qc,
-            lambda,
+            qsets,
             level,
             cur: Pic::new(mbw, mbh, 0),
             stale: vec![true; mbw * mbh],
@@ -2050,7 +2156,7 @@ impl Encoder {
         } else {
             self.encode_slices(idr, frame_num, &mut stats);
             if self.cfg.deblock && self.writers.len() == 1 {
-                crate::deblock::deblock(&mut self.recon, &self.info, self.mbw, self.mbh, &self.q, &mut self.touched);
+                crate::deblock::deblock(&mut self.recon, &self.info, self.mbw, self.mbh, &mut self.touched);
             }
             for ((st, inf), &t) in self.stale.iter_mut().zip(&self.info).zip(&self.touched) {
                 *st = inf.coded || t;
@@ -2145,19 +2251,9 @@ impl Encoder {
         }
         let ctx = FrameCtx {
             mbw: self.mbw,
-            q: self.q,
-            qc: self.qc,
-            qs: QuantS::new(&self.q),
-            qcs: QuantS::new(&self.qc),
-            zero_sad: {
-                let (l, c) = crate::soa::zero_sad_bounds(&self.q, &QuantS::new(&self.q), &self.qc, &QuantS::new(&self.qc), false);
-                (l, c, crate::soa::chroma_dc_limit(&self.qc, false))
-            },
-            zero_sad4: crate::soa::zero_sad4_bounds(&QuantS::new(&self.q), &QuantS::new(&self.qc), false),
-            zero_sad4_intra: crate::soa::zero_sad4_bounds(&QuantS::new(&self.q), &QuantS::new(&self.qc), true),
-            zero_dc_intra: (crate::soa::chroma_dc_limit(&self.q, true), crate::soa::chroma_dc_limit(&self.qc, true)),
-            zero_sad_intra: crate::soa::zero_sad_bounds(&self.q, &QuantS::new(&self.q), &self.qc, &QuantS::new(&self.qc), true),
-            lambda: self.lambda,
+            qp: self.cfg.qp,
+            qsets: &self.qsets,
+            aq: self.cfg.aq_strength,
             src: &self.cur,
             refp: &self.refp,
             changed: &self.changed,
