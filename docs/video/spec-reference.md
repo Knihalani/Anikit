@@ -180,7 +180,7 @@ Defaults: duration 0.5 s (glitch 0.3 s), ease `inOutCubic`.
 
 ## Layers
 
-Every layer has a `type`. You may leave it out when it is obvious: a layer with `text` is `text`, with `shape` is `shape`, with `src` is `image` (or `video` for `.mp4/.mov/.webm`), with `children` is `box`, with `layers` is `group`, with `component` is `component`, and with `composition` is `composition`.
+Every layer has a `type`. You may leave it out when it is obvious: a layer with `text` is `text`, with `shape` is `shape`, with `src` is `image` (or `video` for `.mp4/.mov/.webm`), with `children` is `box`, with `layers` is `group`, with `component` is `component`, with `composition` is `composition`, and with `shader` (or `src` ending in `.glsl`/`.wgsl`) is `shader`.
 
 ### Common keys (all layer types)
 
@@ -290,6 +290,38 @@ The component draws into its box: `width` × `height` (default: the whole parent
 `"post"` (video level, or per scene; a scene's value overrides, `"none"` turns it off) applies a finishing look after everything is drawn: a preset `clean`, `cinematic`, `dreamy`, `punchy`, `noir`, `vintage`, or an object with a preset and overrides, `{ "preset": "cinematic", "bloom": 0.4, "vignette": 0.3, "grain": 0.02 }`. Settings: `bloom bloomThreshold bloomKnee bloomRadius bloomTint halation aberration distortion exposure temperature tint lift gamma gain contrast saturation tonemap vignette vignetteSoftness grain grainSize dither`. Default: none.
 
 `"motionBlur"`: `true` (180° shutter), `false`, or `{ "shutter": 90 }` (degrees). Moving frames are rendered as several sub-frames averaged in linear light; still frames cost nothing extra. Default: on with `--quality high`, off otherwise (it costs several renders per moving frame), never in drafts.
+
+### `shader`
+
+A fragment shader, run JIT-compiled on the CPU at full resolution. Full guide: [`shader.md`](shader.md).
+
+```json
+{ "shader": "void mainImage(out vec4 fragColor, in vec2 fragCoord) { … }",
+  "uniforms": { "speed": 1.5, "tint": "#ff8800", "wobble": "=sin(t)" },
+  "channels": [ "below", "noise", "photo.jpg", "#dashboard", { "layers": [ … ], "wrap": "repeat" } ],
+  "animate": [ { "to": { "speed": 3 }, "duration": 2 } ] }
+```
+
+| Key | Meaning |
+|---|---|
+| `shader` | GLSL with `void mainImage(out vec4 fragColor, in vec2 fragCoord)`, WGSL with `fn mainImage(fragCoord: vec2f) -> vec4f`, or a built-in name (`anikit-video info --shaders`). `src: "fx.glsl"` loads a file. |
+| `uniforms` | name → number, `[x, y(, z, w)]`, colour or `"=expr"`. Declared with `uniform float name; // = default` in the source, or declared for you. They animate by name in `animate` (up to 12 floats per layer). |
+| `channels` | `iChannel0..3`: `"below"` (everything drawn so far), `"noise"`, an image/video path, `"#name"` or `{"composition": "name", "trimStart", "speed", "loop"}`, or inline `{"layers": [...]}`. Options: `wrap` (`clamp` `repeat` `mirror`), `filter` (`linear` `nearest`), `mipmaps`. |
+| `filter` | `true`: `iChannel0` defaults to `"below"` and the output replaces the whole frame. |
+| `supersample` | 2×2 sub-samples per pixel (4× cost). |
+| `alpha` | use `fragColor.a` as coverage (default opaque, like Shadertoy). |
+
+Inputs: `fragCoord` (pixel centre, y up), `iResolution`, `iTime` (seconds since the layer started), `iFrame`, `iTimeDelta`, `iFrameRate`, `iChannelResolution[4]`, `iMouse`/`iDate` (zero / fixed). The layer fills the frame unless `x y width height` say otherwise. `opacity`, `blend`, masks and presets apply as for an image.
+
+Shader transitions use the gl-transitions API (`vec4 transition(vec2 uv)` with `getFromColor`, `getToColor`, `progress`, `ratio`): `"transition": "burn"` or `{ "type": "shader", "shader": "…", "uniforms": { … } }`.
+
+Errors give the line and column inside your shader and suggest names:
+
+```
+error: scenes[0].layers[1].shader: shader: line 3:12: Unknown function 'smoothStep' (did you mean `smoothstep`?)
+error: scenes[0].layers[1].animate[0].to.intensty: 'intensty' is not animatable (this shader's uniforms: speed, intensity), did you mean 'intensity'?
+warning: scenes[0].layers[1].channels: the shader samples iChannel1 but no channel 1 is given (it reads as black)
+```
 
 ### `composition`
 

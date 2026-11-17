@@ -529,7 +529,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "description": "`cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`. One of: cut, crossfade, fade, fadeBlack, fadeWhite, slide, push, zoom, wipe, iris, blur, glitch, morphCut.",
+          "description": "`cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`. One of: cut, crossfade, fade, fadeBlack, fadeWhite, slide, push, zoom, wipe, iris, blur, glitch, morphCut, shader.",
           "type": [
             "string",
             "null"
@@ -547,7 +547,8 @@
             "iris",
             "blur",
             "glitch",
-            "morphCut"
+            "morphCut",
+            "shader"
           ]
         },
         "duration": {
@@ -616,6 +617,21 @@
             "null"
           ],
           "format": "double"
+        },
+        "shader": {
+          "description": "`type: \"shader\"`: a gl-transitions style shader (`vec4 transition(vec2 uv)` with\n`progress`, `getFromColor`, `getToColor`) or a built-in transition name.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "uniforms": {
+          "description": "Uniforms for a shader transition.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": true
         }
       }
     },
@@ -941,7 +957,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "description": "`text`, `shape`, `image`, `video`, `group`, `box`, `component`. Inferred when omitted. One of: text, shape, image, video, group, box, component, composition.",
+          "description": "`text`, `shape`, `image`, `video`, `group`, `box`, `component`. Inferred when omitted. One of: text, shape, image, video, group, box, component, composition, shader.",
           "type": [
             "string",
             "null"
@@ -954,7 +970,8 @@
             "group",
             "box",
             "component",
-            "composition"
+            "composition",
+            "shader"
           ]
         },
         "id": {
@@ -1685,6 +1702,50 @@
             {
               "type": "null"
             }
+          ]
+        },
+        "shader": {
+          "description": "Fragment shader: Shadertoy-style GLSL (`void mainImage(out vec4 fragColor, in vec2 fragCoord)`),\nWGSL (`fn mainImage(fragCoord: vec2f) -> vec4f`), or a built-in name (`aurora`, `liquid-chrome`, …;\n`anikit-video info --shaders`). `src: \"fx.glsl\"` loads one from a file.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "uniforms": {
+          "description": "Shader uniforms by name: a number, `[x, y(, z, w)]`, a colour or an `\"=expr\"`. Animatable by name in `animate`.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": true
+        },
+        "channels": {
+          "description": "Shader inputs `iChannel0..3`: `\"below\"`, `\"noise\"`, an image/video path, `{ \"layers\": [...] }`,\noptionally with `\"wrap\": \"repeat\"|\"mirror\"`, `\"filter\": \"nearest\"`, `\"mipmaps\": true`.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": true
+        },
+        "filter": {
+          "description": "Shader as a filter: `iChannel0` is everything drawn below, and the output replaces the frame.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "supersample": {
+          "description": "Shader: 2×2 supersampling (4 samples per pixel).",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "alpha": {
+          "description": "Shader: use `fragColor.a` as alpha (default: opaque, like Shadertoy).",
+          "type": [
+            "boolean",
+            "null"
           ]
         }
       }

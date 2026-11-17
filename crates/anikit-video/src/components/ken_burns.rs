@@ -183,7 +183,7 @@ impl KenBurns {
         let (top, horizon) = match self.colors.as_slice() {
             [a, b, ..] => (a.0, b.0),
             [a] => (a.0, shade(a.0, 0.5)),
-            [] => (shade(th.accent, -0.72), mix(th.pal(2), Rgba([1.0, 0.75, 0.5, 1.0]), 0.6)),
+            [] => (shade(th.accent, -0.72), mix(th.accent, Rgba([1.0, 0.85, 0.7, 1.0]), 0.55)),
         };
         let mut s = Vec::with_capacity(8);
         s.push(rect(0.0, 0.0, w, h, 0.0, Paint::Linear { p0: [0.0, 0.0], p1: [0.0, h * 0.68], stops: vec![(0.0, top), (0.6, mix(top, horizon, 0.45)), (1.0, horizon)] }));
