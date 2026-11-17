@@ -581,7 +581,7 @@ pub fn process(px: &[Px], w: usize, h: usize, p: &Post) -> Vec<u8> {
                 if l < 0.35 {
                     continue;
                 }
-                let n = (l * 1.5).ceil().clamp(3.0, 24.0) as usize;
+                let n = (l * 1.2).ceil().clamp(3.0, 16.0) as usize;
                 let mut acc = [0.0f32; 3];
                 for i in 0..n {
                     let t = (i as f32 + 0.5) / n as f32 - 0.5;
@@ -641,24 +641,37 @@ pub fn process(px: &[Px], w: usize, h: usize, p: &Post) -> Vec<u8> {
             cw = nw;
             ch = nh;
         }
-        // Sum levels back up (bilinear upsampling), wider levels weighted more gently.
+        // Sum levels back up progressively (each level adds the bilinear
+        // upsample of the coarser sum), wider levels weighted more gently; the
+        // full-resolution pass then needs a single lookup.
         let weights = [0.2, 0.22, 0.2, 0.16, 0.12, 0.06, 0.04];
         let total: f32 = weights.iter().take(levels.len()).sum();
-        par_rows(&mut hdr, w, |y, row| {
-            for x in 0..w {
-                let mut b = [0.0f32; 3];
-                for (li, (img, lw, lh)) in levels.iter().enumerate() {
-                    let f = (1 << (li + 1)) as f32;
-                    let c = fetch(img, *lw, *lh, (x as f32 + 0.5) / f - 0.5, (y as f32 + 0.5) / f - 0.5);
+        if !levels.is_empty() {
+            let mut acc: Img = levels.last().unwrap().0.iter().map(|c| c.map(|v| v * weights[levels.len() - 1])).collect();
+            for li in (0..levels.len() - 1).rev() {
+                let (img, lw, lh) = &levels[li];
+                let (cw2, ch2) = (levels[li + 1].1, levels[li + 1].2);
+                let mut next: Img = vec![[0.0; 3]; lw * lh];
+                let coarse = &acc;
+                par_rows(&mut next, *lw, |y, row| {
+                    for x in 0..*lw {
+                        let c = fetch(coarse, cw2, ch2, (x as f32 + 0.5) * 0.5 - 0.5, (y as f32 + 0.5) * 0.5 - 0.5);
+                        let own = img[y * lw + x];
+                        row[x] = std::array::from_fn(|k| own[k] * weights[li] + c[k]);
+                    }
+                });
+                acc = next;
+            }
+            let (lw, lh) = (levels[0].1, levels[0].2);
+            par_rows(&mut hdr, w, |y, row| {
+                for x in 0..w {
+                    let b = fetch(&acc, lw, lh, (x as f32 + 0.5) * 0.5 - 0.5, (y as f32 + 0.5) * 0.5 - 0.5);
                     for k in 0..3 {
-                        b[k] += c[k] * weights[li];
+                        row[x][k] = row[x][k] * (1.0 - p.bloom) + b[k] / total * p.bloom * 1.6;
                     }
                 }
-                for k in 0..3 {
-                    row[x][k] = row[x][k] * (1.0 - p.bloom) + b[k] / total * p.bloom * 1.6;
-                }
-            }
-        });
+            });
+        }
     }
 
     tick(&mut stages, &mut clock, "bloom");
@@ -670,13 +683,14 @@ pub fn process(px: &[Px], w: usize, h: usize, p: &Post) -> Vec<u8> {
         for x in 0..w {
             let c = hdr[y * w + x];
             let (dx, dy) = ((x as f32 - cx) * inv_d, (y as f32 - cy) * inv_d);
-            let vig = 1.0 - p.vignette * (dx * dx + dy * dy).powf(1.3) * 1.6;
+            let r2 = dx * dx + dy * dy;
+            let vig = 1.0 - p.vignette * r2 * r2.sqrt().sqrt() * 1.6;
             let hs = super::math::hash2(x as u32 ^ 0x51ed, y as u32 ^ 0x27d4);
             let dith = (super::math::u01(hs) + super::math::u01(super::math::hash2(hs, 77)) - 1.0) / 255.0;
             let e = [c[0] * p.exposure * vig, c[1] * p.exposure * vig, c[2] * p.exposure * vig];
             let mapped = if p.tonemap == Tonemap::Neutral { neutral(e) } else { aces(e) };
             for k in 0..3 {
-                row[x * 4 + k] = ((srgb(mapped[k]) + dith) * 255.0 + 0.5).clamp(0.0, 255.0) as u8;
+                row[x * 4 + k] = ((srgb_fast(mapped[k]) + dith) * 255.0 + 0.5).clamp(0.0, 255.0) as u8;
             }
             row[x * 4 + 3] = 255;
         }
@@ -723,6 +737,17 @@ fn neutral(c: [f32; 3]) -> [f32; 3] {
     c = c.map(|v| v * np / peak);
     let g = 1.0 - 1.0 / (DESAT * (peak - np) + 1.0);
     c.map(|v| (v * (1.0 - g) + np * g).clamp(0.0, 1.0))
+}
+
+/// sRGB encoding through a 4096-entry table with linear interpolation
+/// (within 0.02 of an 8-bit step of the exact curve).
+fn srgb_fast(v: f32) -> f32 {
+    static T: std::sync::OnceLock<Vec<f32>> = std::sync::OnceLock::new();
+    let t = T.get_or_init(|| (0..=4096).map(|i| srgb(i as f32 / 4096.0)).collect());
+    let x = v.clamp(0.0, 1.0) * 4096.0;
+    let i = (x as usize).min(4095);
+    let f = x - i as f32;
+    t[i] + (t[i + 1] - t[i]) * f
 }
 
 fn srgb(v: f32) -> f32 {
