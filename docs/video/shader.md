@@ -73,6 +73,31 @@ Habits that make shaders look finished:
 - **Edges.** Shader layers are anti-aliased by default; see `supersample` under Modes. A shader that is smooth everywhere (soft fields, gradients), or whose grain is meant to be per pixel, can opt out with a `// anikit:aa off` comment, or the spec can set `"supersample": false`. That is up to twice as fast.
 - **Cost.** It scales with pixels × steps × noise octaves. `still` prints it per layer. Keep each layer under about 200 ms/frame at 1080p and a 10 s, 30 fps shot renders in about a minute.
 
+## Building blocks (`ak_`)
+
+Any GLSL shader can call these without defining them. The library is included whenever the source mentions `ak_`, and calls are inlined, so unused ones cost nothing. A rich look takes a few lines:
+
+```glsl
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = ak_uv(fragCoord);                                  // centred, y up, aspect-correct
+    float ink = ak_fbm(ak_warp(uv * 1.5 + iTime * 0.05, 0.8), 6);  // marbled field
+    vec3 col = ak_mix(vec3(0.02, 0.05, 0.12), vec3(0.95, 0.55, 0.3), ink);   // OKLab blend
+    fragColor = vec4(ak_grain(ak_tonemap(col * 1.4), fragCoord, 1.0), 1.0);
+}
+```
+
+| Group | Functions |
+|---|---|
+| coordinates | `ak_uv(fragCoord)` (centred, −1..1 vertically), `ak_uv01(fragCoord)`, `ak_rot(angle)` (mat2) |
+| hashes | `ak_hash(float\|vec2\|vec3)`, `ak_hash2(vec2)`, `ak_hash3(vec3)`: arithmetic, no `sin` |
+| noise | `ak_noise(vec2\|vec3)` value noise, `ak_gnoise(vec2)` gradient noise, `ak_fbm(p, octaves)` (vec2 or vec3), `ak_ridged(p, octaves)`, `ak_warp(p, amount)` domain warp, `ak_curl(p)` divergence-free flow, `ak_voronoi(p)` → (nearest, second, cell id) |
+| colour | `ak_palette(t, a, b, c, d)` cosine palette, `ak_linear`/`ak_srgb`, `ak_tonemap(hdr)` (ACES fit + sRGB), `ak_oklab`/`ak_oklab_inv`, `ak_mix(a, b, t)` perceptual mix, `ak_iridescence(cosTheta, thickness)` thin film |
+| 2D shapes | `ak_circle`, `ak_box(vec2, vec2)`, `ak_segment`, `ak_fill(d)` anti-aliased fill of a distance |
+| 3D shapes | `ak_sphere`, `ak_box(vec3, vec3)`, `ak_torus`, `ak_capsule`, `ak_smin`/`ak_smax` (smooth union/subtraction), `ak_ray(ro, ta, uv, zoom)` camera ray |
+| finishing | `ak_grain(col, fragCoord, amount)` luma-weighted animated grain, `ak_vignette(col, uv, amount)` |
+
+The source is [`crates/anikit-shader/src/ak.glsl`](../../crates/anikit-shader/src/ak.glsl): about 170 lines, readable and commented.
+
 ## How it works
 
 1. **Front end.** The source is wrapped in a small prelude (the Shadertoy inputs, four channel textures), parsed and validated by [naga](https://github.com/gfx-rs/wgpu/tree/trunk/naga) (GLSL 450 or WGSL). Errors point at your line and column, with a "did you mean" for misspelt builtins (`smoothStep` → `smoothstep`, `lerp` → `mix`, `iGlobalTime` → `iTime`).
