@@ -621,9 +621,11 @@ fn fused_backdrop_yuv_matches_rgba_path() {
                 let mut reference = YuvFrame::default();
                 rgba_to_yuv420(Renderer::new(assets.clone()).render(&l), &mut reference);
                 assert_eq!((fused.width, fused.padded_height), (reference.width, reference.padded_height));
-                for (a, b) in [(&fused.y, &reference.y), (&fused.u, &reference.u), (&fused.v, &reference.v)] {
+                for (pi, (a, b)) in [(&fused.y, &reference.y), (&fused.u, &reference.u), (&fused.v, &reference.v)].into_iter().enumerate() {
                     let max = a.iter().zip(b.iter()).map(|(p, q)| p.abs_diff(*q)).max().unwrap();
-                    assert!(max <= 3, "{w}x{h}: fused YUV differs by {max}");
+                    // Chroma interpolated from low-res 4:4:4 vs averaged 2×2 blocks.
+                    let tol = if pi == 0 { 2 } else { 4 };
+                    assert!(max <= tol, "{w}x{h}: fused plane {pi} differs by {max}");
                 }
             }
         }
