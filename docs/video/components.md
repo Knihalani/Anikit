@@ -450,6 +450,48 @@ Thousands of particles swirl in through a curl-noise flow (with depth: near ones
 
 Two looks: `{ "text": "Launch", "colors": ["#ffd59e", "#ff7a59"], "exit": "blow" }` (warm swirling embers) vs `{ "text": "Launch", "flow": "spiral", "turbulence": 0, "sparkle": 0, "glow": false, "size": 2.6, "count": 3000 }` (a clean, graphic orbit-in).
 
+## Illustration
+
+Hand-made marks for illustrated videos: paint a scene on paper instead of placing UI on a dark background. Every stroke is a variable-width outline (the centreline offset by ±width/2 × pressure, with tapered tips), textured, deterministic by `seed`, and can draw on and "boil" like a hand-redrawn animation.
+
+### `brush`: one brush stroke
+
+```json
+{ "type": "component", "component": "brush", "props": { "d": "M160 480 C 560 400, 900 600, 1300 470", "texture": "dry", "color": "#b5432f", "width": 110, "pressure": "taper", "draw": 0.9, "boil": 12 } }
+```
+
+| Prop | Default | Meaning |
+|---|---|---|
+| `d` | | SVG path data. Each subpath is its own stroke; they draw on one after another. |
+| `points` | | `[[x, y], …]` the stroke passes through (smoothed). Give `d` or `points`. |
+| `units` | `px` | `px` in the layer box, or `fraction` (0–1 of the box). |
+| `color` | theme text | Paint colour. |
+| `width` | `18` | Full width in px at full pressure. |
+| `pressure` | `swell` | Values 0–1 spread over the length (`[0.3, 1, 0.6]`) or a preset: `swell` (fat middle), `taper` (heavy start, thin end), `even` or `flick` (fast attack, long thin tail). |
+| `taper` | `[0.12, 0.3]` | Tip lengths `[start, end]` as fractions of the stroke. |
+| `texture` | `ink` | `ink` (crisp, slightly wobbly edges), `dry` (bristle streaks with gaps that run out along the stroke), `marker` (flat translucent ink, darker where the nib lands and lifts, drag streaks) or `pencil` (many short jittered graphite strands; pressure sets their density). |
+| `opacity` | `1` | |
+| `seed` | `1` | Same seed, same stroke. |
+| `draw` | `0` | Seconds to draw the stroke on (`0` = already drawn). The tip keeps its taper while it grows. |
+| `delay` | `0` | Seconds before it starts. |
+| `ease` | `inOut` | `linear`, `in`, `out` or `inOut`. |
+| `boil` | `0` | Line boil: redraws per second of hand jitter (`8` or `12` = animated "on twos"; `0` = off). |
+| `boilAmount` | `1.5` | Boil amplitude in px. |
+
+### `sketch`: a whole drawing in one layer
+Several paths sharing the brush, draw-on and boil settings. `paths` is a list of `{ d | points, color, width, pressure, taper, texture, opacity, seed, delay }`; unset keys come from the sketch. Every `brush` prop except `d`/`points` is also a sketch prop (`width` defaults to `10`), plus `stagger` (default `0.25` s): path *i* starts drawing at `delay + i × stagger + paths[i].delay`.
+
+```json
+{ "type": "component", "component": "sketch", "props": { "draw": 0.6, "stagger": 0.1, "boil": 8, "color": "#23211f", "paths": [
+  { "d": "M1470 330 A 125 125 0 1 1 1469 318", "texture": "marker", "color": "#f0a43a", "width": 92, "pressure": "even" },
+  { "d": "M-40 900 C 380 770, 820 830, 1120 890 S 1700 790, 1960 860", "texture": "dry", "color": "#41604f", "width": 170, "pressure": "even" },
+  { "points": [[438, 735], [528, 615], [622, 735]], "width": 15 },
+  { "d": "M880 380 q 34 -30 68 0 q 34 -30 68 0", "width": 7 }
+] } }
+```
+
+Tips: use a warm paper `background` (`#f1ead8`), a limited palette of 3–5 earthy colours, wide `dry` strokes for masses, `ink` for contours and `pencil` for hatching. Full examples: `examples/video/illustration/`. Stills: `docs/video/shots/illustration/`.
+
 ## Shapes and light
 
 ### `morph`: shape morphing

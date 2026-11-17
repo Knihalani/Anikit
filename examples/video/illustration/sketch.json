@@ -1,0 +1,32 @@
+{
+  "size": "16:9",
+  "fps": 30,
+  "background": "#f1ead8",
+  "scenes": [
+    {
+      "duration": 3,
+      "layers": [
+        { "type": "component", "component": "sketch", "props": {
+          "draw": 0.6, "stagger": 0.09, "boil": 8, "boilAmount": 1.8, "seed": 4, "color": "#23211f", "width": 10,
+          "paths": [
+            { "d": "M1470 330 A 125 125 0 1 1 1469 318", "texture": "marker", "color": "#f0a43a", "width": 92, "pressure": "even", "opacity": 0.85 },
+            { "d": "M-40 760 C 300 600, 620 650, 920 720 S 1500 610, 1960 700", "texture": "dry", "color": "#8aa39b", "width": 120, "pressure": "even", "taper": [0.02, 0.1] },
+            { "d": "M-40 900 C 380 770, 820 830, 1120 890 S 1700 790, 1960 860", "texture": "dry", "color": "#41604f", "width": 170, "pressure": "even", "taper": [0.02, 0.08] },
+            { "d": "M-40 1010 C 500 950, 1100 1030, 1960 980", "texture": "dry", "color": "#2c4337", "width": 150, "pressure": "even", "taper": [0.02, 0.08] },
+            { "d": "M525 880 L 530 540", "width": 16, "pressure": "taper", "color": "#3b2a20" },
+            { "points": [[455, 650], [530, 545], [602, 648]], "width": 14, "color": "#1f3a2c" },
+            { "points": [[438, 735], [528, 615], [622, 735]], "width": 15, "color": "#1f3a2c" },
+            { "points": [[420, 825], [527, 690], [640, 825]], "width": 16, "color": "#1f3a2c" },
+            { "d": "M690 880 L 692 650", "width": 12, "pressure": "taper", "color": "#3b2a20" },
+            { "points": [[640, 730], [692, 650], [745, 730]], "width": 11, "color": "#1f3a2c" },
+            { "points": [[625, 805], [691, 705], [760, 805]], "width": 12, "color": "#1f3a2c" },
+            { "d": "M880 380 q 34 -30 68 0 q 34 -30 68 0", "width": 7, "pressure": "swell" },
+            { "d": "M1060 300 q 22 -20 44 0 q 22 -20 44 0", "width": 5, "pressure": "swell" },
+            { "d": "M120 170 C 400 130, 700 190, 1000 150", "texture": "pencil", "color": "#6b7a8c", "width": 22, "pressure": "flick" },
+            { "d": "M1100 950 l 30 -70 M1150 960 l 10 -80 M1190 955 l -14 -66", "texture": "pencil", "color": "#1b2a22", "width": 6 }
+          ]
+        } }
+      ]
+    }
+  ]
+}

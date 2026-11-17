@@ -1,0 +1,16 @@
+{
+  "size": "16:9",
+  "fps": 30,
+  "background": "#f1ead8",
+  "scenes": [
+    {
+      "duration": 3,
+      "layers": [
+        { "type": "component", "component": "brush", "props": { "d": "M180 250 C 520 120, 820 360, 1180 220 S 1640 160, 1760 260", "texture": "ink", "color": "#1d1b1a", "width": 46, "pressure": "swell", "draw": 0.9, "boil": 12, "seed": 3 } },
+        { "type": "component", "component": "brush", "props": { "d": "M160 480 C 560 400, 900 600, 1300 470 S 1660 420, 1780 520", "texture": "dry", "color": "#b5432f", "width": 110, "pressure": "taper", "taper": [0.04, 0.2], "draw": 0.9, "delay": 0.25, "boil": 12, "seed": 7 } },
+        { "type": "component", "component": "brush", "props": { "points": [[200, 720], [600, 660], [1000, 760], [1400, 690], [1740, 730]], "texture": "marker", "color": "#e9b43c", "width": 64, "pressure": "even", "opacity": 0.9, "draw": 0.9, "delay": 0.5, "boil": 12, "seed": 11 } },
+        { "type": "component", "component": "brush", "props": { "d": "M220 930 C 500 860, 760 990, 1040 900 S 1500 860, 1720 940", "texture": "pencil", "color": "#3a3f4a", "width": 26, "pressure": "flick", "draw": 0.9, "delay": 0.75, "boil": 12, "seed": 5 } }
+      ]
+    }
+  ]
+}
