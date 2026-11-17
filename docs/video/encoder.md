@@ -113,6 +113,14 @@ valid stream. Within a frame, slices can also run in parallel.
 - A second, independent decoder (Cisco OpenH264) decodes CABAC/Main and
   CAVLC/Baseline streams to exactly the same frames as ffmpeg:
   `cargo run --release --manifest-path crates/ak264/bench-openh264/Cargo.toml -- crosscheck`.
+- Browser playback: headless Chromium (Playwright) plays the MP4.
+  `canPlayType('avc1.4d4028')` returns "probably", playback advances, and a frame
+  drawn to a canvas matches the content. Run
+  `node crates/ak264/scripts/browser-check.js out.mp4`.
+- The stream is Main profile at a level computed from size and frame rate (4.0
+  for 1080p30), with an `avc1` sample entry and `avcC`. The VUI carries BT.709 and
+  the range, `max_num_reorder_frames = 0` and `max_dec_frame_buffering = 1`, as
+  strict players (Safari/QuickTime) expect for streams without B-frames.
 - PSNR is above 40 dB at the default QP on every test (47–50 dB in practice).
 - Unit tests check the transforms, the I4x4 prediction against the spec equations,
   the SIMD kernels against their scalar versions, and Exp-Golomb and emulation
