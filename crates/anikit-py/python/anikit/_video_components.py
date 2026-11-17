@@ -71,5 +71,7 @@ COMPONENT_KINDS = {
     "card-stack": "2.5D stack of image or titled cards; the front card swipes away every interval and the stack advances.",
     "product-shot": "A phone on a stone plinth lit by low sun through window blinds: ray-traced device (titanium frame, Fresnel glass, the screen from a named composition), volumetric light shafts, dust, slow weighted camera move.",
     "now-playing": "A music app's Now Playing screen (390 pt grid): printed cover art, serif title, live scrubber with real timecodes, transport, volume.",
+    "brush": "Hand-made brush stroke along an SVG path or points: variable-width outline with pressure and tapered tips, ink/dry/marker/pencil texture, stroke-on drawing and line boil.",
+    "sketch": "Several brush paths drawn on one after another (stagger), sharing texture, pressure, draw and line-boil settings: a whole illustration in one layer.",
     "lottie": "Minimal Lottie player (shape layers, transforms, trim paths).",
 }
