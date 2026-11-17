@@ -52,15 +52,18 @@ Copy budget: 15 s ≤ 20 words total, 30 s ≤ 40, 60 s ≤ 80. One idea per sho
   chrome/glass/aluminium, env `studio`/`night`/`cyc`; or `product-shot` (a phone on a plinth under window blinds).
 - **Chaos→order:** `particles` (`emit: {text}`, `flow`, 200k–400k) or `physics` (piles, dominoes, `timeScale` ramps).
 - **Worlds:** a library shader (`anikit-video recipes`) as the set, with type on top.
-- **Type lives in the world — never flat type on a solid or gradient fill** (BAR rule 1; it reads as a slide).
-  Every word shot uses one of these instead:
-  1. **Extruded 3D type** in the concept's set: a `scene3d` `text` object (`font`, `depth`, `bevel`) among the motif's
-     objects (falling tiles, terrain, fog), snapped in with `keys` (`rot` + `scale` 1.3 → 1 in 0.22 s) + `camera.shake`;
-  2. **Type made of particles** (`particles` `emit: {"text": …}` + `flow`), or emissive type that lights the set;
-  3. **Type as a texture** on the motif's objects (a composition of the word on panes, cards or a device screen);
-  4. **Type over the product's own UI or map** (the composition full-frame), cut on the beat;
-  5. **Type masked by the motif** (a group with `mask`/`clip` by the motif shape, or revealed by a moving light).
-  2D kinetic type (`split: chars`, 0.12 s `outExpo` slams) is fine *on top of* a 3D or UI shot, never on an empty fill.
+- **Type rule (mechanical; it applies to its author too).** Every word on screen is one of:
+  1. a `scene3d` **`text` object** in the concept's set (`font`, `depth`, `bevel`; snap in with `keys` `rot` +
+     `scale` 1.3 → 1 in 0.22 s and `camera.shake`);
+  2. part of a **texture on an object** (a composition on a pane, device screen or tile);
+  3. **particles** (`emit: {"text": …}`) or emissive 3D type that lights the set;
+  4. a 2D layer **masked by the motif** (`mask`/`clip` by the motif's shape).
+  The only top-level 2D `text` layers allowed are captions, legal lines and the end-card URL (≤ 4 vh). That means
+  no white sans beside a 3D object, no word in a coloured pill (that is placeholder UI, BAR #3) and no slam on a fill.
+- **Hero words must read at once:** ≥ 3:1 value contrast against the set behind them (light type on a dark set or
+  the reverse; add `emissive` 0.3–0.6 on 3D type) and **nothing passes in front of them for ≥ 0.5 s** (keep motif
+  objects behind the word's depth, e.g. falling tiles at z < −0.6 when the word is at z = 0).
+- **The end logo owns the frame:** ≥ 40% of the frame width for the last beat (move the camera, don't add text).
 - **Music:** `"music": {"style": "...", "bpm": 128, "key": "...", "hits": ["@bar3", "@bar7"], "end": "ring"}`.
   Scene durations in multiples of 0.469 s so cuts land on beats; `audio` sfx (`whoosh` on whips, `impact` on the
   reveal, `riser` peaking at the reveal, `click`/`tick` on UI changes). Pulse with `"=1 + 0.04*(1 - fract(beat))"`.
@@ -85,6 +88,7 @@ each 3D shot 1–3 s. 2D shots are nearly free; use many.
 
 ```bash
 anikit-video check s.json                                  # errors + real length (must equal the target)
+python3 -c "import json,sys; f=lambda L: [x for l in L for x in ([l.get('text')] if 'text' in l else []) + f(l.get('layers', []))]; print('2D text (captions/legal/URL only):', [w for sc in json.load(open(sys.argv[1]))['scenes'] for w in f(sc.get('layers', []))])" s.json
 anikit-video still s.json --at 0.3 --width 640 -o hook.png # the hook frame; then one still per scene
 anikit-video render s.json --quality draft --scale 0.5 -o draft.mp4
 python3 docs/video/quality/pace.py draft.mp4 --strip strip.png   # PACE: PASS required

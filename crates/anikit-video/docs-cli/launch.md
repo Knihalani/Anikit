@@ -10,8 +10,9 @@ fonts, aspect (16:9; 9:16 for Reels/TikTok; 1:1 for feed) and proof come from th
    → tension (3 cuts × 2 beats, 1–3 words) → reveal on `@bar3` (hero full-frame, impact) → 3 features (2 shots ×
    2 beats each) → proof (a fact from the brief or a demonstration, never a fake stat) → logo + CTA (2 + 4 beats).
 3. **Copy:** ≤ 20 words for 15 s, ≤ 4 per shot, product name on screen ≤ 2 times.
-   **No flat type on a solid/gradient fill:** extruded 3D `text` in the set, particle/emissive type, type as a
-   texture, type over the product UI, or type masked by the motif.
+   **Type rule:** every word is 3D `text` in the set, a texture on an object, particles, or masked by the motif;
+   top-level 2D text only for captions/legal/the end URL. Hero words ≥ 3:1 against the set, unobstructed ≥ 0.5 s;
+   the end logo ≥ 40% of the frame width.
 4. **Top end, where it serves the story:** UI as a composition texture on a `pane`/`box` in `scene3d`; `physics`
    piles/dominoes; `particles`; library shaders; `heightfield` worlds; sfx on hits.
 
