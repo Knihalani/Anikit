@@ -126,6 +126,34 @@ pub struct Spec {
     pub fonts: Option<BTreeMap<String, String>>,
     /// Override the total duration (truncate, or hold the last frame).
     pub duration: Option<Num>,
+    /// Named 2D sub-compositions: placed with a `composition` layer, or used as a texture in 3D.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compositions: Option<BTreeMap<String, Composition>>,
+}
+
+/// A 2D sub-composition with its own size and clock: layers (one scene) or scenes.
+#[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Composition {
+    /// Size preset or `[w, h]`. Default: the video size.
+    pub size: Option<Size>,
+    /// Seconds. Default: the length of its layers' animation (`"auto"`), or the sum of its scenes.
+    pub duration: Option<Num>,
+    /// Background (colour or gradient). Default transparent.
+    pub background: Option<Paint>,
+    /// The layers (one scene).
+    #[serde(default, deserialize_with = "de::opt_layers")]
+    #[schemars(with = "Option<Vec<de::LayerItem>>")]
+    pub layers: Option<Vec<Layer>>,
+    /// Or several scenes with transitions.
+    #[serde(default, deserialize_with = "de::opt_scenes")]
+    #[schemars(with = "Option<Vec<de::SceneItem>>")]
+    pub scenes: Option<Vec<Scene>>,
+    /// Default transition between its scenes.
+    pub transition: Option<Transition>,
+    /// Loop wherever it is used (default false: hold the last frame).
+    #[serde(rename = "loop")]
+    pub loop_: Option<bool>,
 }
 
 /// Theme: colour tokens (`"$name"`), font roles and text styles.
@@ -410,6 +438,10 @@ pub struct Layer {
     #[serde(default, deserialize_with = "de::opt_layers")]
     #[schemars(with = "Option<Vec<de::LayerItem>>")]
     pub children: Option<Vec<Layer>>,
+
+    // ---- composition (`trimStart`, `speed`, `loop: true` and `fit` apply too)
+    /// Name of an entry in top-level `compositions`.
+    pub composition: Option<String>,
 
     // ---- component
     pub component: Option<String>,

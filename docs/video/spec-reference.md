@@ -180,7 +180,7 @@ Defaults: duration 0.5 s (glitch 0.3 s), ease `inOutCubic`.
 
 ## Layers
 
-Every layer has a `type`. You may leave it out when it is obvious: a layer with `text` is `text`, with `shape` is `shape`, with `src` is `image` (or `video` for `.mp4/.mov/.webm`), with `children` is `box`, with `layers` is `group`, and with `component` is `component`.
+Every layer has a `type`. You may leave it out when it is obvious: a layer with `text` is `text`, with `shape` is `shape`, with `src` is `image` (or `video` for `.mp4/.mov/.webm`), with `children` is `box`, with `layers` is `group`, with `component` is `component`, and with `composition` is `composition`.
 
 ### Common keys (all layer types)
 
@@ -284,6 +284,22 @@ A flexbox container (CSS semantics) that lays out `children` automatically, so y
 `{ "component": "bar-chart", "props": { "values": [3, 7, 5, 9], "labels": ["Q1", "Q2", "Q3", "Q4"] } }` — a ready-made block: `code`, `terminal`, `bar-chart`, `line-chart`, `area-chart`, `donut-chart`, `pie-chart`, `counter`, `stat`, `phone`, `laptop`, `browser`, `card`, `button`, `toggle`, `badge`, `avatar`, `avatar-stack`, `progress-bar`, `progress-ring`, `toast`, `cursor`, `tooltip`, `callout`, `arrow`, `lower-third`, `title-card`, backgrounds (`mesh-gradient`, `aurora`, `grain`, `grid`, `dots`, `light-leak`, `bokeh`, `starfield`, `gradient`), particles (`confetti`, `sparks`, `snow`, `dust`), `model` (3D) and `lottie`. camelCase names (`barChart`) work too. `anikit-video info --components` prints every kind with a minimal example of its `props`.
 
 The component draws into its box: `width` × `height` (default: the whole parent), placed like any layer (`x`, `y`, `anchor`). Its own animation runs on the layer's local time (from `start`); the layer's transforms, `opacity`, `enter`/`exit` and `animate` apply on top. Components use the theme's colours (`primary` is their accent).
+
+### `composition`
+
+A 2D sub-composition: a small video of its own, defined once at the top level and placed like an image.
+
+```json
+"compositions": {
+  "dashboard": { "size": [800, 500], "duration": 4, "background": "$surface", "loop": true,
+                 "layers": [ { "component": "line-chart", "props": { "values": [2, 5, 3, 8] } } ] }
+},
+"scenes": [ { "layers": [ { "composition": "dashboard", "width": 1200, "rotation": -4, "enter": "rise" } ] } ]
+```
+
+A composition has `size` (default: the video size), `duration` (default: its layers' animation, or the sum of its `scenes`), `background` (default transparent), `layers` or `scenes` (with `transition`), and `loop`. It uses the video's fps, theme and fonts, and may place other compositions (no cycles).
+
+The layer draws it into its box with `fit` (default `contain`), clipped to the composition's bounds. Its clock is the layer's local time: composition time = `trimStart` + local × `speed`. Past the end it holds the last frame, or wraps with `"loop": true` (on the layer, or as the composition's default). Everything stays vector: it is as sharp as drawing the layers directly. 3D layers use the same compositions as textures (`Evaluator::composition(name)` gives its evaluator, and `CompTime::map` converts the clock).
 
 ## Animation
 
