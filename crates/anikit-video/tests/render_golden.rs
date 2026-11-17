@@ -766,3 +766,48 @@ fn motion_blur_smears_moving_layers_only() {
     let b = Renderer::new(assets).render(&still(t)).data_as_u8_slice().to_vec();
     assert_eq!(a, b);
 }
+
+/// The fast motion-blur path (box sampling, slide smear, coarse slots) against brute force.
+#[test]
+fn motion_blur_matches_brute_force() {
+    let assets = Arc::new(Assets::default());
+    let moved = |x: f32, y: f32, a: f32| {
+        let (s, c) = a.sin_cos();
+        [c, s, -s, c, x, y]
+    };
+    let bg = || Op::RoundRect { x: -20.0, y: -20.0, w: 136.0, h: 136.0, radius: 0.0, paint: solid(0.1, 0.1, 0.2), transform: IDENTITY };
+    // A slide (two cards translating together), a spin, and a card that pops in mid-shutter.
+    let scenes: Vec<Box<dyn Fn(f32) -> DisplayList>> = vec![
+        Box::new(move |t| {
+            let x = 1500.0 * t;
+            list(vec![
+                bg(),
+                Op::RoundRect { x: 0.0, y: 0.0, w: 30.0, h: 20.0, radius: 6.0, paint: solid(1.0, 1.0, 1.0), transform: moved(x, 20.0, 0.0) },
+                Op::RoundRect { x: 0.0, y: 0.0, w: 20.0, h: 30.0, radius: 4.0, paint: solid(1.0, 0.4, 0.2), transform: moved(x + 10.0, 50.0, 0.0) },
+            ])
+        }),
+        Box::new(move |t| list(vec![bg(), Op::RoundRect { x: -20.0, y: -6.0, w: 40.0, h: 12.0, radius: 2.0, paint: solid(1.0, 1.0, 1.0), transform: moved(48.0, 48.0, 30.0 * t) }])),
+        Box::new(move |t| {
+            let mut ops = vec![bg()];
+            if t > 0.05 {
+                ops.push(card(30.0, 30.0, 30.0, 30.0, solid(1.0, 1.0, 1.0)));
+            }
+            list(ops)
+        }),
+    ];
+    for (k, scene) in scenes.iter().enumerate() {
+        let mut eval = |t: f32| scene(t);
+        let fast = Renderer::new(assets.clone()).render_motion_blur(&mut eval, 0.05, 1.0 / 60.0).data_as_u8_slice().to_vec();
+        let mut brute = Renderer::new(assets.clone());
+        brute.set_brute_force_motion(true);
+        let want = brute.render_motion_blur(&mut eval, 0.05, 1.0 / 60.0).data_as_u8_slice().to_vec();
+        let (mut worst, mut sum) = (0u8, 0u64);
+        for (a, b) in fast.iter().zip(&want) {
+            worst = worst.max(a.abs_diff(*b));
+            sum += a.abs_diff(*b) as u64;
+        }
+        let mean = sum as f64 / fast.len() as f64;
+        println!("scene {k}: max {worst}, mean {mean:.3}");
+        assert!(worst <= 24 && mean < 0.5, "scene {k}: max {worst}, mean {mean:.3}");
+    }
+}
