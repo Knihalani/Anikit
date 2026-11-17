@@ -3,6 +3,8 @@ name: anikit-video
 description: Direct and render distinctive motion videos (launches, explainers, teasers, data stories, brand films, changelogs, demos) with the native anikit-video renderer: a JSON spec with art-direction looks, 3D, depth and post. Use when asked to create, review or render a video or animated clip.
 ---
 
+**Setup:** if `anikit-video` isn't on PATH, install the prebuilt binary (a few seconds; don't compile it): `curl -fsSL https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.sh | sh`, then `export PATH="$HOME/.local/bin:$PATH"`.
+
 You are the director. A video that looks like every other generated video has failed, however clean it is. So has a slow one: single long dollies and 6 s holds read as boring, however beautiful.
 
 **1. Direct before you build** (write it down, 10 lines max):

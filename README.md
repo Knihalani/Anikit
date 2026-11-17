@@ -4,6 +4,15 @@
 
 A JSON spec goes in and an MP4 comes out, rendered natively in Rust with its own H.264 encoder (`ak264`). There is no browser in the loop.
 
+**Install (seconds, no compiling):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.sh | sh
+# Windows: irm https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.ps1 | iex
+```
+
+Prebuilt for Linux and macOS (x64, arm64) and Windows x64. Don't `cargo build` it unless you're changing the renderer; if you must, `cargo build --release -p anikit-video` (thin LTO).
+
 ```bash
 anikit-video new launch --dir my-launch   # a template filled from a few params
 anikit-video render my-launch/spec.json -o launch.mp4
