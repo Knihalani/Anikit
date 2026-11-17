@@ -10,14 +10,14 @@ import os, subprocess
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SR, BPM, LEN = 44100, 120, 57.5
+SR, BPM, LEN = 44100, 120, 55.0
 BEAT = 60 / BPM
 N = int(SR * LEN)
 L, R = np.zeros(N), np.zeros(N)
 rng = np.random.default_rng(7)
 
 # sections (s) — keep in sync with build.py's printed scene starts
-SPEC, SCREEN, KINETIC, DEVICES, SPEED, CHART, PARTICLES, LOGO = 4.5, 15.5, 19.5, 28.5, 36.0, 40.5, 46.0, 49.5
+SPEC, SCREEN, KINETIC, DEVICES, SPEED, CHART, PARTICLES, LOGO = 4.5, 15.5, 19.5, 27.5, 35.0, 39.0, 43.5, 47.0
 
 
 def add(sig, t, gain=1.0, pan=0.0):

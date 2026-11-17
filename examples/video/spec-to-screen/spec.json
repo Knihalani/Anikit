@@ -517,7 +517,7 @@
   },
   {
    "id": "kinetic",
-   "duration": 9.5,
+   "duration": 8.5,
    "background": "#07080c",
    "transition": {
     "type": "cut"
@@ -625,13 +625,6 @@
      "color": "#8b90a0"
     },
     {
-     "text": "Native Rust → H.264.",
-     "style": "subtitle",
-     "start": 7.0,
-     "y": "70%",
-     "enter": "fadeUp"
-    },
-    {
      "component": "grain",
      "props": {
       "amount": 0.035,
@@ -711,7 +704,7 @@
       "kpis": [
        {
         "label": "Frames",
-        "value": "3,450"
+        "value": "3,300"
        },
        {
         "label": "Scenes",
@@ -719,7 +712,7 @@
        },
        {
         "label": "Seconds",
-        "value": "57.5"
+        "value": "55"
        }
       ],
       "open": 1.0,
@@ -829,7 +822,7 @@
   },
   {
    "id": "speed",
-   "duration": 5.0,
+   "duration": 4.5,
    "background": "#07080c",
    "transition": {
     "type": "cut"
@@ -853,7 +846,7 @@
      "y": "46%"
     },
     {
-     "text": "This 58-second film rendered in",
+     "text": "This 55-second film rendered in",
      "style": "heading",
      "size": "5.2vh",
      "y": "22%",
@@ -868,7 +861,7 @@
       "decimals": 0,
       "suffix": " s",
       "size": 300,
-      "duration": 1.4,
+      "duration": 2.2,
       "delay": 0.4,
       "gradient": [
        "#f4f2ee",
@@ -884,7 +877,7 @@
      "props": {
       "from": 0,
       "to": 100,
-      "duration": 1.4,
+      "duration": 2.2,
       "delay": 0.4,
       "thickness": 8,
       "color": "#7cc4ff",
@@ -895,13 +888,13 @@
      "y": "66%"
     },
     {
-     "text": "3,450 frames · 1080p60 · H.264 · one 4-core cloud VM",
+     "text": "3,300 frames · 1080p60 · one 4-core VM",
      "style": "caption",
      "size": "2.6vh",
      "y": "71%",
      "enter": {
       "preset": "fadeIn",
-      "delay": 1.0
+      "delay": 0.6
      }
     },
     {
@@ -911,7 +904,7 @@
      "y": "84%",
      "enter": {
       "preset": "fadeUp",
-      "delay": 1.2
+      "delay": 0.8
      }
     },
     {
@@ -926,7 +919,7 @@
   },
   {
    "id": "chart",
-   "duration": 6.0,
+   "duration": 5.0,
    "background": "#07080c",
    "transition": {
     "type": "slide",
@@ -945,7 +938,7 @@
      "kinetic": "rise by word 0.5s 50ms outExpo"
     },
     {
-     "text": "1080p · 240 frames · same quality (≈ 50 dB PSNR) · frames per second",
+     "text": "1080p · frames per second · same quality (≈ 50 dB)",
      "style": "caption",
      "x": 160,
      "y": "22%",
@@ -1066,7 +1059,7 @@
    "duration": 8.0,
    "background": "radial-gradient(#10131d, #040508)",
    "transition": {
-    "type": "fadeWhite",
+    "type": "fadeBlack",
     "duration": 0.5
    },
    "camera": {
@@ -1201,17 +1194,17 @@
   },
   {
    "sfx": "swoosh",
-   "at": 28.3,
+   "at": 27.3,
    "volume": 0.3
   },
   {
    "sfx": "swoosh",
-   "at": 40.3,
+   "at": 38.8,
    "volume": 0.25
   },
   {
    "sfx": "whoosh",
-   "at": 49.4,
+   "at": 46.9,
    "volume": 0.3
   }
  ]

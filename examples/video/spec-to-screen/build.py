@@ -11,7 +11,7 @@ import json, os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BEAT = 0.5  # 120 BPM grid: every cut lands on a beat
-TOTAL, FRAMES = 57.5, 3450
+TOTAL, FRAMES = 55.0, 3300
 # End-to-end wall time of `anikit-video render spec.json` (see README); update after re-measuring.
 RENDER_SECONDS, RENDER_DECIMALS = 31, 0
 
@@ -184,11 +184,9 @@ kin_layers += [
          kinetic="blur by word 0.6s 80ms outCubic", color=TEXT),
     text("No screen capture.", style="title", size="11vh", letterSpacing="-0.035em", start=6.5, y="54%",
          kinetic="blur by word 0.6s 80ms outCubic", color=MUTED),
-    text("Native Rust → H.264.", style="subtitle", start=7.0, y="70%",
-         enter="fadeUp"),
     grain,
 ]
-scenes.append({"id": "kinetic", "duration": 9.5, "background": INK, "transition": {"type": "cut"},
+scenes.append({"id": "kinetic", "duration": 8.5, "background": INK, "transition": {"type": "cut"},
                "layers": kin_layers})
 
 # ================================================================ 5. devices
@@ -222,30 +220,30 @@ scenes.append({
 
 # ================================================================ 6. numbers (measured; see README)
 scenes.append({
-    "id": "speed", "duration": 5.0, "background": INK, "transition": {"type": "cut"},
+    "id": "speed", "duration": 4.5, "background": INK, "transition": {"type": "cut"},
     "layers": [
         comp("grid", {"cell": 80, "color": "#ffffff08", "fade": 0.85}),
         {"shape": "circle", "width": 1200, "height": 600, "fill": ICE, "opacity": 0.10, "blur": 140, "y": "46%"},
         text("This %d-second film rendered in" % round(TOTAL), style="heading", size="5.2vh", y="22%",
              letterSpacing="-0.02em", kinetic="rise by word 0.5s 60ms outExpo"),
         comp("counter", {"from": 0, "to": RENDER_SECONDS, "decimals": RENDER_DECIMALS, "suffix": " s", "size": 300,
-                         "duration": 1.4, "delay": 0.4, "gradient": [TEXT, ICE]},
+                         "duration": 2.2, "delay": 0.4, "gradient": [TEXT, ICE]},
              width=1400, height=380, y="47%"),
-        comp("progress-bar", {"from": 0, "to": 100, "duration": 1.4, "delay": 0.4, "thickness": 8, "color": ICE, "percent": False},
+        comp("progress-bar", {"from": 0, "to": 100, "duration": 2.2, "delay": 0.4, "thickness": 8, "color": ICE, "percent": False},
              width=900, height=40, y="66%"),
-        text("%s frames · 1080p60 · H.264 · one 4-core cloud VM" % format(FRAMES, ","), style="caption",
-             size="2.6vh", y="71%", enter={"preset": "fadeIn", "delay": 1.0}),
+        text("%s frames · 1080p60 · one 4-core VM" % format(FRAMES, ","), style="caption",
+             size="2.6vh", y="71%", enter={"preset": "fadeIn", "delay": 0.6}),
         text("[935 fps]{%s} renderer alone      [1,268 fps]{%s} encoder alone" % (TEXT, TEXT), style="caption",
-             size="2.6vh", y="84%", enter={"preset": "fadeUp", "delay": 1.2}),
+             size="2.6vh", y="84%", enter={"preset": "fadeUp", "delay": 0.8}),
         grain,
     ],
 })
 scenes.append({
-    "id": "chart", "duration": 6.0, "background": INK, "transition": {"type": "slide", "direction": "left", "duration": 0.5, "ease": "inOutQuart"},
+    "id": "chart", "duration": 5.0, "background": INK, "transition": {"type": "slide", "direction": "left", "duration": 0.5, "ease": "inOutQuart"},
     "layers": [
         text("Encoder speed, typical motion graphics", style="heading", size="5vh", x=160, y="15%", anchor="left",
              kinetic="rise by word 0.5s 50ms outExpo"),
-        text("1080p · 240 frames · same quality (≈ 50 dB PSNR) · frames per second", style="caption", x=160,
+        text("1080p · frames per second · same quality (≈ 50 dB)", style="caption", x=160,
              y="22%", anchor="left", enter={"preset": "fadeIn", "delay": 0.3}),
         comp("bar-chart", {"values": [147, 1268, 1389], "labels": ["x264 veryfast", "ak264", "ak264 + renderer hints"],
                            "horizontal": True, "highlight": 2, "colors": [MUTED, ICE, LILAC], "fontSize": 30,
@@ -273,7 +271,7 @@ scenes.append({
 LOGO = 8.0
 scenes.append({
     "id": "logo", "duration": LOGO, "background": "radial-gradient(#10131d, #040508)",
-    "transition": {"type": "fadeWhite", "duration": 0.5},
+    "transition": {"type": "fadeBlack", "duration": 0.5},
     "camera": {"animate": [{"from": {"zoom": 1.08}, "to": {"zoom": 1.0}, "duration": 4.5, "ease": "outCubic"}]},
     "layers": [
         comp("godRays", {"at": [0.5, -0.3], "angle": 90, "spread": 60, "color": "#cfe3ff", "intensity": 0.35,
