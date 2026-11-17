@@ -201,6 +201,21 @@ impl EnvMap {
         }
     }
 
+    /// Mean radiance of the ground seen near the horizon (5° to 30° below it).
+    pub fn ground(&self) -> V3 {
+        let mut s = v3(0.0, 0.0, 0.0);
+        let mut n = 0.0;
+        for i in 0..6 {
+            let el = -(5.0 + i as f32 * 5.0f32).to_radians();
+            for k in 0..32 {
+                let a = k as f32 / 32.0 * TAU;
+                s = add(s, self.lookup(v3(el.cos() * a.cos(), el.sin(), el.cos() * a.sin()), 0.05));
+                n += 1.0;
+            }
+        }
+        scale(s, 1.0 / n)
+    }
+
     /// Mean radiance (for exposure hints).
     pub fn mean(&self) -> V3 {
         let l = self.levels.last().unwrap();

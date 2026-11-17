@@ -7,7 +7,7 @@ description: Make extraordinary motion videos fast with anikit-video, a native r
 
 ## Process (each step is cheap; skipping them is what costs)
 
-1. **Concept, three lines:** the one image only *this* brief could have, built from its own nouns; the medium the idea asks for (2D type, illustration, paths and shaders are first-class; 3D when the idea is physical or material); the sound (acoustic or orchestral unless the idea is electronic). `anikit-video docs taste` (one page) has what tends to land.
+1. **Concept, three lines:** the one image only *this* brief could have, built from its own nouns; the medium the idea asks for (2D type, illustration, paths and shaders are first-class; 3D when the idea is physical or material); the sound (acoustic or orchestral unless the idea is electronic). `anikit-video docs taste` (one page) has what tends to land. Depth when a shot needs it: `docs/video/craft/` (graphic-design, illustration, art-direction, 3d-design, editing, grading, music, storytelling, ai-tells); these are long, so list a file's headings with `grep -n '^##'` and read only the section you need.
 2. **Reference:** with web access, look at a few pieces of top work in this genre and name what makes them good. Local images: `anikit-video board refs/` turns them into palette, type and texture tokens.
 3. **Style frames:** write 2–3 contrasting first frames as one-scene specs in one file, `preview` it, and pick the strongest before building the rest.
 4. **Build, then loop:** `anikit-video preview s.json` (~1 s for 2D) validates, prints unknown keys first, writes `s-sheet.png` (one frame per second), the top notes, pace and a final-render estimate. Look at the sheet; fix; repeat. `--at 1,4.5,8` writes several moments in one image at full detail.
@@ -21,10 +21,11 @@ Write the spec directly. For repetitive layers use `"repeat": 40` with `$i`, `de
 
 - **Text:** `{ "text": "Make **anything**.", "font": "Display", "size": "14vh", "x": "8%", "y": "50%", "anchor": "left", "color": "#F4F1EA", "enter": "mask by line up" }`. Built-in faces are Inter, Instrument Serif and JetBrains Mono; load any TTF/OTF through `fonts`.
 - **Shapes and paths:** `{ "shape": "path", "d": "M0 200 C 300 0, 600 400, 900 120", "stroke": "#FF5A1F", "strokeWidth": 6, "animate": [{ "from": {"trimEnd": 0}, "to": {"trimEnd": 1}, "duration": 1 }] }`; `"shape": "rect"|"circle"` with `width`, `height`, `fill`.
-- **Motion:** `"animate": [{ "from": {"scale": 3, "blur": 20}, "duration": 0.25, "ease": "outExpo" }]`; expressions on any number or colour: `"x": "=960 + 300*sin(t*2)"`, `"rotation": "=t*90"` (`t` is layer time, `gt` global). A layer's own timing is `start`/`end`; entrances take `delay`.
+- **Motion:** `"animate": [{ "from": {"scale": 3, "blur": 20}, "duration": 0.25, "ease": "outExpo" }]`; expressions on any number or colour: `"x": "=960 + 300*sin(t*2)"`, `"rotation": "=t*90"` (`t` is layer time, `gt` global). A layer's own timing is `start`/`end`; an entrance delay goes inside it (`"enter": {"preset": "fade up", "delay": 0.2}`) and a tween's start is `"at"`. Scenes overlap by their transitions, so the video is shorter than the sum of durations: `preview` prints the real length.
 - **Camera:** `"camera": { "animate": [{ "from": {"zoom": 1.3}, "to": {"zoom": 1}, "duration": 0.3, "ease": "outExpo" }], "shake": {"amount": 8, "at": 0} }`, plus `"motionBlur": true`. Layer `depth` gives parallax.
 - **Shaders:** `{ "shader": "void mainImage(out vec4 o, in vec2 f) { … iTime … }", "uniforms": {"speed": 1} }`, a file with `{ "type": "shader", "src": "x.glsl" }`, or a library name (`anikit-video recipes` lists them). `"filter": true` treats the layers below.
 - **3D, particles, physics:** `{ "component": "scene3d", "props": { "objects": [ … ], "camera": "orbit" } }` (`docs 3d`, `docs particles`, `docs physics`).
+- **Real light, surfaces, objects (CC0, fetched once):** `"env": {"hdri": "polyhaven:hdri/studio_small_09"}`, `"material": {"texture": "ambientcg:Wood049"}`, `{"type": "model", "src": "polyhaven:model/Camera_01"}`, image `src` refs, `"post": {"lut": "anikit:lut/teal-orange"}`. Find them with `anikit-video assets search <words> --type hdri|texture|model|lut` (`docs assets`).
 - **Compositions:** `"compositions": { "ui": {…} }` → `{ "composition": "ui", "loop": true }`.
 - **Music and grade:** `"music": "orchestral"` or `{"style": "acoustic", "bpm": 96, "key": "D", "hits": ["@bar5"]}`; cut on `"@beat9"`/`"@bar2"`. `"post": {"preset": "cinematic", "bloom": 0.15}`.
 - **Look up one key:** `anikit-video docs key shadow` (its type, fields and examples, a few lines); a topic: `anikit-video docs <topic>` (1–3k characters each): `primitives animation expressions camera compositions shader 3d particles physics music post pacing draw script graphic` (`graphic`: modular grids and cells, squircles, patterns and custom tiles, duotone, halftone, riso inks, cutouts). `anikit-video snippets` has paste-able fragments.
@@ -38,7 +39,7 @@ Open the sheet and three full-size stills and answer in writing, a line each:
 1. **Is every frame visually striking on its own, a still someone would save?** It can be rich illustration, bold graphic design, beautiful light, spectacle, precise data design, texture or motion. What tends to get there: one strong image idea per shot, considered detail, real light and texture, contrast of scale. What tends not to: empty frames, a UI screenshot beside copy, default looks, generic type.
 2. **What would make a viewer stop scrolling?** Spectacle, wit, beauty, clarity, rhythm, surprise or craft: name the one this piece is going for.
 3. **Where is the weakest frame, and why?**
-4. **Does the sound do as much as the picture?**
+4. **Does the sound do as much as the picture?** `anikit-video critique s.json --render` measures loudness and whether cuts land on beats.
 5. **Is every word legible?** Full resolution, in focus, 4.5:1 contrast, held long enough to read.
 
 If an answer is weak, improve that one thing and preview again, then render once.

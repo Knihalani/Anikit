@@ -6,7 +6,7 @@ studio: "Spencer Susser (writer/director); Arch Model Studio (Andy Gent); animat
 client: "Humane Society International (now Humane World for Animals)"
 year: 2021
 url: https://www.youtube.com/watch?v=G393z8s8nFY
-alt_urls: [https://www.partizan.com/film/save-ralph, https://annecyfestival.com/about/archives/2022/award-winners]
+alt_urls: ["https://www.partizan.com/film/save-ralph", "https://annecyfestival.com/about/archives/2022/award-winners"]
 length_s: 262
 verified: oembed
 aspect: "16:9"

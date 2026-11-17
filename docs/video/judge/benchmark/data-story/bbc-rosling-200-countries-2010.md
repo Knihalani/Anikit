@@ -25,6 +25,7 @@ stills:
   - https://i.ytimg.com/vi/jbkSRLYSojo/hq1.jpg
   - https://i.ytimg.com/vi/jbkSRLYSojo/hq2.jpg
   - https://i.ytimg.com/vi/jbkSRLYSojo/hq3.jpg
+  - https://ichef.bbci.co.uk/images/ic/1920x1080/p02c35nh.jpg
 measured: null
 ---
 

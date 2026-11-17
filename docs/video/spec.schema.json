@@ -646,7 +646,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "description": "`cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`. One of: cut, crossfade, fade, fadeBlack, fadeWhite, slide, push, zoom, wipe, iris, blur, glitch, morphCut, shader.",
+          "description": "`cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`, `zoomThrough`, `reveal`, `blinds`, `split`, `whip`. One of: cut, crossfade, fade, fadeBlack, fadeWhite, slide, push, zoom, wipe, iris, blur, glitch, morphCut, shader, zoomThrough, reveal, blinds, split, whip.",
           "type": [
             "string",
             "null"
@@ -665,7 +665,12 @@
             "blur",
             "glitch",
             "morphCut",
-            "shader"
+            "shader",
+            "zoomThrough",
+            "reveal",
+            "blinds",
+            "split",
+            "whip"
           ]
         },
         "duration": {
@@ -741,6 +746,29 @@
             "string",
             "null"
           ]
+        },
+        "layer": {
+          "description": "`zoomThrough`: the `id` of a layer in the outgoing scene to fly into (the new scene shows through its shape).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "shape": {
+          "description": "`reveal`: `circle`, `diamond`, `square`, `star`, `blob`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "count": {
+          "description": "`blinds`: number of bars (default 8).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
         },
         "uniforms": {
           "description": "Uniforms for a shader transition.",
@@ -1299,6 +1327,28 @@
             }
           ]
         },
+        "inertia": {
+          "description": "Follow-through: a spring chases the layer's own motion, so every move overshoots and settles.\n`true`, a preset (`soft`, `bouncy`, `tight`, `heavy`) or `{\"stiffness\": 170, \"damping\": 12, \"mass\": 1, \"props\": [\"x\", \"y\", \"rotation\", \"scale\"]}`."
+        },
+        "posterizeTime": {
+          "description": "Posterize time (After Effects style): this layer and its children move at this many frames per second\n(`12` animates \"on twos\" at 24 fps: a handmade, stop-motion feel). The video's frame rate is unchanged.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "drag": {
+          "description": "Group drag (overlapping action): child i follows the group's own motion i × drag seconds later,\nso a moving group trails and settles part by part. Pairs well with `inertia` on the group.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "smear": {
+          "description": "Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default)."
+        },
         "matte": {
           "description": "Track matte: another layer of the scene (by `id`) whose alpha or luma shows this one.",
           "anyOf": [
@@ -1631,6 +1681,7 @@
           ]
         },
         "start": {
+          "description": "When the layer appears (seconds into the scene). `delay` means the same.",
           "anyOf": [
             {
               "$ref": "#/$defs/Num"
@@ -1654,6 +1705,17 @@
           "anyOf": [
             {
               "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "frames": {
+          "description": "Timing in frames instead of seconds: `\"frames\": 12` (only frame 12) or `[12, 18]` (frames 12–17).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Frames"
             },
             {
               "type": "null"
@@ -1822,6 +1884,17 @@
           "format": "uint32",
           "minimum": 0
         },
+        "maxWidth": {
+          "description": "Text: wrap at this width (px, `\"40vw\"`, `\"60%\"`) without fixing the box\nwidth (`width` wraps *and* sets the box).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "split": {
           "description": "`chars`, `words`, `lines`. One of: chars, words, lines.",
           "type": [
@@ -1856,6 +1929,31 @@
         },
         "kinetic": {
           "description": "Kinetic text animation (TEXT module): shorthand like `\"pop by char from center 0.4s 30ms outBack\"`, or an object."
+        },
+        "axes": {
+          "description": "Variable-font axes: `{\"wght\": 720, \"wdth\": 125, \"opsz\": 144, \"SOFT\": 100}`\n(`anikit-video fonts NAME` lists a face's axes). Animate one with\n`\"axes.wght\"` in `animate`; the text re-lays out per frame.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "features": {
+          "description": "OpenType features: `\"ss01 tnum smcp -liga\"` (or CSS `\"\\\"ss01\\\" on\"`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "typeset": {
+          "description": "Typesetting pass (default on): curly quotes, `...` → …, ` -- ` → –,\n`---` → —, and no one-word last line. `false` keeps the text verbatim.",
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "shape": {
           "description": "`rect`, `circle`, `ellipse`, `line`, `arrow`, `polygon`, `star`, `path`. One of: rect, circle, ellipse, line, arrow, polygon, star, path, superellipse, squircle, blob, arc, pattern.",
@@ -3009,6 +3107,24 @@
         }
       ]
     },
+    "Frames": {
+      "description": "`frames`: one frame number, or a half-open range `[first, end)` (frames into the scene).",
+      "anyOf": [
+        {
+          "type": "number",
+          "format": "double"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      ]
+    },
     "Preset": {
       "anyOf": [
         {
@@ -3424,6 +3540,16 @@
             "null"
           ],
           "format": "double"
+        },
+        "along": {
+          "description": "Colours along the stroke, start to end: a gradient that follows the path (and its `trimEnd` write-on).",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

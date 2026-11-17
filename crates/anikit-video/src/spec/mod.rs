@@ -570,7 +570,7 @@ string_or_struct!(Transition, TransitionObj, |s| TransitionObj { kind: Some(s.to
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct TransitionObj {
-    /// `cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`.
+    /// `cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`, `zoomThrough`, `reveal`, `blinds`, `split`, `whip`.
     #[serde(rename = "type")]
     pub kind: Option<String>,
     pub duration: Option<Num>,
@@ -585,6 +585,12 @@ pub struct TransitionObj {
     /// `type: "shader"`: a gl-transitions style shader (`vec4 transition(vec2 uv)` with
     /// `progress`, `getFromColor`, `getToColor`) or a built-in transition name.
     pub shader: Option<String>,
+    /// `zoomThrough`: the `id` of a layer in the outgoing scene to fly into (the new scene shows through its shape).
+    pub layer: Option<String>,
+    /// `reveal`: `circle`, `diamond`, `square`, `star`, `blob`.
+    pub shape: Option<String>,
+    /// `blinds`: number of bars (default 8).
+    pub count: Option<u32>,
     /// Uniforms for a shader transition.
     pub uniforms: Option<BTreeMap<String, serde_json::Value>>,
 }
@@ -637,6 +643,14 @@ pub enum Scale {
     Xy([Num; 2]),
 }
 
+/// `frames`: one frame number, or a half-open range `[first, end)` (frames into the scene).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum Frames {
+    One(f64),
+    Range([f64; 2]),
+}
+
 /// A layer. One flat type for every kind; `type` picks the kind (and is
 /// inferred when obvious). Keys that don't apply to the kind are warned about.
 #[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
@@ -685,6 +699,19 @@ pub struct Layer {
     /// Text animator with a range selector (After Effects style): units inside the range take these props.
     /// `{"by": "char", "y": 40, "opacity": 0, "duration": 0.8}` sweeps a reveal; see `docs mograph`.
     pub animator: Option<AnimatorSpec>,
+    /// Follow-through: a spring chases the layer's own motion, so every move overshoots and settles.
+    /// `true`, a preset (`soft`, `bouncy`, `tight`, `heavy`) or `{"stiffness": 170, "damping": 12, "mass": 1, "props": ["x", "y", "rotation", "scale"]}`.
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub inertia: Option<serde_json::Value>,
+    /// Posterize time (After Effects style): this layer and its children move at this many frames per second
+    /// (`12` animates "on twos" at 24 fps: a handmade, stop-motion feel). The video's frame rate is unchanged.
+    pub posterize_time: Option<f64>,
+    /// Group drag (overlapping action): child i follows the group's own motion i × drag seconds later,
+    /// so a moving group trails and settles part by part. Pairs well with `inertia` on the group.
+    pub drag: Option<f64>,
+    /// Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default).
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub smear: Option<serde_json::Value>,
     /// Track matte: another layer of the scene (by `id`) whose alpha or luma shows this one.
     pub matte: Option<MatteSpec>,
 
@@ -748,9 +775,13 @@ pub struct Layer {
     pub visible: Option<bool>,
 
     // ---- timing & animation
+    /// When the layer appears (seconds into the scene). `delay` means the same.
+    #[serde(alias = "delay")]
     pub start: Option<Num>,
     pub end: Option<Num>,
     pub duration: Option<Num>,
+    /// Timing in frames instead of seconds: `"frames": 12` (only frame 12) or `[12, 18]` (frames 12–17).
+    pub frames: Option<Frames>,
     pub enter: Option<Preset>,
     pub exit: Option<Preset>,
     /// Repeating motion: `float`, `pulse`, `spin`, `wiggle`, `breathe`, `blink`
@@ -779,12 +810,24 @@ pub struct Layer {
     /// so `anchor` and grid cells align the letters, not the line box. Default on for text in a grid `cell`.
     pub text_box_trim: Option<bool>,
     pub max_lines: Option<u32>,
+    /// Text: wrap at this width (px, `"40vw"`, `"60%"`) without fixing the box
+    /// width (`width` wraps *and* sets the box).
+    pub max_width: Option<Num>,
     /// `chars`, `words`, `lines`.
     pub split: Option<String>,
     pub reveal: Option<Num>,
     pub value: Option<Num>,
     /// Kinetic text animation (TEXT module): shorthand like `"pop by char from center 0.4s 30ms outBack"`, or an object.
     pub kinetic: Option<serde_json::Value>,
+    /// Variable-font axes: `{"wght": 720, "wdth": 125, "opsz": 144, "SOFT": 100}`
+    /// (`anikit-video fonts NAME` lists a face's axes). Animate one with
+    /// `"axes.wght"` in `animate`; the text re-lays out per frame.
+    pub axes: Option<BTreeMap<String, f64>>,
+    /// OpenType features: `"ss01 tnum smcp -liga"` (or CSS `"\"ss01\" on"`).
+    pub features: Option<String>,
+    /// Typesetting pass (default on): curly quotes, `...` → …, ` -- ` → –,
+    /// `---` → —, and no one-word last line. `false` keeps the text verbatim.
+    pub typeset: Option<bool>,
 
     // ---- shape
     /// `rect`, `circle`, `ellipse`, `line`, `arrow`, `polygon`, `star`, `path`.
@@ -1069,7 +1112,28 @@ pub enum Padding {
 /// Drop shadow.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Shadow(pub ShadowObj);
-string_or_struct!(Shadow, ShadowObj, |s| ShadowObj { color: (!s.is_empty()).then(|| s.to_string()), ..Default::default() });
+string_or_struct!(Shadow, ShadowObj, |s| css_shadow(s));
+
+/// `"#0008"` (a colour) or CSS shorthand `"0 4px 24px #0008"` (x, y, blur, colour).
+fn css_shadow(s: &str) -> ShadowObj {
+    let mut nums = Vec::new();
+    let mut rest = s.trim();
+    while let Some(tok) = rest.split_whitespace().next() {
+        match tok.trim_end_matches("px").parse::<f64>() {
+            Ok(v) if nums.len() < 3 => {
+                nums.push(v);
+                rest = rest[tok.len()..].trim_start();
+            }
+            _ => break,
+        }
+    }
+    ShadowObj {
+        x: nums.first().copied(),
+        y: nums.get(1).copied(),
+        blur: nums.get(2).copied(),
+        color: (!rest.is_empty()).then(|| rest.to_string()),
+    }
+}
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -1117,6 +1181,8 @@ pub struct StrokeObj {
     pub join: Option<String>,
     pub dash: Option<Vec<f64>>,
     pub dash_offset: Option<f64>,
+    /// Colours along the stroke, start to end: a gradient that follows the path (and its `trimEnd` write-on).
+    pub along: Option<Vec<String>>,
 }
 
 /// `loop`: a preset (name or object), or a bool for video clips.
@@ -1160,6 +1226,7 @@ string_or_struct!(Preset, PresetObj, |s| PresetObj { preset: Some(s.to_string())
 pub struct PresetObj {
     /// Preset name (`fadeUp`, `popIn`, `drawOn`, `typewriter`, …).
     pub preset: Option<String>,
+    #[serde(alias = "at")]
     pub delay: Option<Num>,
     pub duration: Option<Num>,
     pub ease: Option<String>,

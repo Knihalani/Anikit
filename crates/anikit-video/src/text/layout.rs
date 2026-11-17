@@ -52,6 +52,10 @@ pub struct TextStyle {
     pub strikethrough: bool,
     /// OpenType features in CSS syntax, e.g. `"tnum" on, "ss01" on`.
     pub features: Option<String>,
+    /// Variable-font axis coordinates, e.g. `[("wdth", 125.0), ("SOFT", 100.0)]`.
+    /// Without an explicit `opsz`, faces with an optical-size axis get
+    /// `opsz` = the font size in px (CSS `font-optical-sizing: auto`), except Inter.
+    pub axes: Vec<(String, f32)>,
     /// Outline the glyphs (`{ "width": 0.03, "hollow": true }`; width in em).
     pub outline: Option<Outline>,
     /// Colour for `==accent==` markup.
@@ -200,6 +204,7 @@ impl Default for TextStyle {
             underline: false,
             strikethrough: false,
             features: None,
+            axes: Vec::new(),
             accent: Color(Rgba([0.55, 0.48, 1.0, 1.0])),
             outline: None,
             background: None,
@@ -825,7 +830,8 @@ impl FontStore {
         if st.letter_spacing != 0.0 {
             b.push_default(StyleProperty::LetterSpacing(st.letter_spacing * size));
         }
-        b.push_default(StyleProperty::FontVariations(opsz(fam_base.1)));
+        let base_vars = variations(&fam_base, &st.axes, size);
+        b.push_default(StyleProperty::FontVariations(FontVariations::List(Cow::Borrowed(&base_vars))));
         if st.underline {
             b.push_default(StyleProperty::Underline(true));
         }
@@ -840,11 +846,13 @@ impl FontStore {
             if r.is_empty() {
                 continue;
             }
-            if s.font.is_some() {
-                b.push(StyleProperty::FontFamily(FontFamily::Source(Cow::Borrowed(&fam.0))), r.clone());
-                b.push(StyleProperty::FontVariations(opsz(fam.1)), r.clone());
-            }
             let ssize = s.size.map(|v| v * scale).unwrap_or(size);
+            if s.font.is_some() || s.size.is_some() {
+                if s.font.is_some() {
+                    b.push(StyleProperty::FontFamily(FontFamily::Source(Cow::Borrowed(&fam.0))), r.clone());
+                }
+                b.push(StyleProperty::FontVariations(FontVariations::List(Cow::Owned(variations(fam, &st.axes, ssize)))), r.clone());
+            }
             if s.size.is_some() {
                 b.push(StyleProperty::FontSize(ssize), r.clone());
             }
@@ -1021,12 +1029,75 @@ impl FontStore {
     }
 }
 
-fn opsz(display: bool) -> FontVariations<'static> {
-    if display {
-        FontVariations::Source(Cow::Borrowed("\"opsz\" 32"))
-    } else {
-        FontVariations::List(Cow::Borrowed(&[]))
+/// Typesetting pass for display text: curly quotes and apostrophes, `...` → …,
+/// ` -- ` → en dash, `---` → em dash, and a no-break space before the last
+/// word of each paragraph of 4+ words (no one-word last line).
+pub fn typeset(src: &str) -> String {
+    let src = src.replace("...", "\u{2026}").replace("---", "\u{2014}").replace(" -- ", " \u{2013} ");
+    let chars: Vec<char> = src.chars().collect();
+    let mut out = String::with_capacity(src.len() + 8);
+    for (i, &c) in chars.iter().enumerate() {
+        let prev = if i == 0 { None } else { Some(chars[i - 1]) };
+        let opens = prev.is_none_or(|p| p.is_whitespace() || "([{\u{2014}\u{2013}-/".contains(p));
+        match c {
+            '"' => out.push(if opens { '\u{201C}' } else { '\u{201D}' }),
+            '\'' => {
+                let next_digit = chars.get(i + 1).is_some_and(|n| n.is_ascii_digit());
+                // ’90s and rock ’n’ roll: an apostrophe, not an opening quote.
+                out.push(if opens && !next_digit && chars.get(i + 1).is_some_and(|n| *n != 'n') { '\u{2018}' } else { '\u{2019}' });
+            }
+            _ => out.push(c),
+        }
     }
+    out.split('\n')
+        .map(|para| {
+            let words = para.split(' ').filter(|w| !w.is_empty()).count();
+            match para.trim_end().rfind(' ') {
+                Some(k) if words >= 4 && para.trim_end().len() - k <= 12 => format!("{}\u{00A0}{}", &para[..k], &para[k + 1..]),
+                _ => para.to_string(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// OpenType features from a friendly list (`"ss01 tnum -liga"`, commas
+/// optional) or CSS (`"\"ss01\" on"`, passed through) to CSS syntax.
+pub fn features_css(src: &str) -> String {
+    if src.contains('"') || src.contains('\'') {
+        return src.to_string();
+    }
+    src.split(|c: char| c == ',' || c.is_whitespace())
+        .filter(|t| !t.is_empty())
+        .map(|t| match t.strip_prefix('-') {
+            Some(t) => format!("\"{t}\" 0"),
+            None => match t.split_once('=') {
+                Some((t, v)) => format!("\"{t}\" {v}"),
+                None => format!("\"{t}\" 1"),
+            },
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+/// Variation settings for a family list at `size` px: the explicit axes,
+/// plus an optical size (Inter Display = opsz 32; other faces: opsz = size).
+fn variations(fam: &(String, bool), axes: &[(String, f32)], size: f32) -> Vec<parley::FontVariation> {
+    use std::fmt::Write;
+    let mut css = String::new();
+    for (t, x) in axes {
+        if t.len() == 4 && t.bytes().all(|b| b.is_ascii_alphanumeric()) {
+            let _ = write!(css, "\"{t}\" {x},");
+        }
+    }
+    if !axes.iter().any(|(t, _)| t == "opsz") {
+        if fam.1 {
+            css.push_str("\"opsz\" 32");
+        } else if !fam.0.starts_with("\"Inter\"") {
+            let _ = write!(css, "\"opsz\" {size}");
+        }
+    }
+    parley::FontVariation::parse_css_list(&css).filter_map(Result::ok).collect()
 }
 
 /// Resolve a user family list to CSS (with emoji fallback) and whether it asks
@@ -1045,12 +1116,18 @@ fn family_css(sh: &mut super::fonts::Shaper, names: &str) -> (String, bool) {
         }
         match lower.as_str() {
             "serif" | "sans-serif" | "monospace" | "system-ui" | "cursive" | "fantasy" => out.push(lower.clone()),
-            _ => match sh.families.get(&lower) {
-                Some(f) => out.push(format!("\"{f}\"")),
-                // Unknown families are dropped so the default sans takes over.
-                None if sh.fcx.collection.family_id(n).is_some() => out.push(format!("\"{n}\"")),
-                None => {}
-            },
+            _ => {
+                if !sh.families.contains_key(&lower) {
+                    // A library family the compile pre-pass didn't see: fetch it now.
+                    let _ = super::fonts::load_library_locked(sh, n);
+                }
+                match sh.families.get(&lower) {
+                    Some(f) => out.push(format!("\"{f}\"")),
+                    // Unknown families are dropped so the default sans takes over.
+                    None if sh.fcx.collection.family_id(n).is_some() => out.push(format!("\"{n}\"")),
+                    None => {}
+                }
+            }
         }
     }
     if out.is_empty() {
@@ -1061,6 +1138,10 @@ fn family_css(sh: &mut super::fonts::Shaper, names: &str) -> (String, bool) {
     }
     for f in &sh.fallbacks {
         out.push(format!("\"{f}\""));
+    }
+    // Per-glyph fallback: characters the chosen face lacks (₂, →, ½…) come from Inter, not tofu.
+    if out.first().is_none_or(|f| f != "sans-serif" && f != "\"Inter\"") {
+        out.push("sans-serif".into());
     }
     (out.join(", "), display)
 }
@@ -1222,4 +1303,15 @@ fn markup_spans(base: &Span, style: &TextStyle) -> Vec<Span> {
     }
     flush(&mut cur, &on, &mut out);
     out
+}
+
+#[cfg(test)]
+mod typeset_tests {
+    #[test]
+    fn quotes_dashes_widows() {
+        assert_eq!(super::typeset("\"Hi,\" she said. It's 'fine'..."), "\u{201C}Hi,\u{201D} she said. It\u{2019}s \u{2018}fine\u{2019}\u{2026}");
+        assert_eq!(super::typeset("in '90s -- ok"), "in \u{2019}90s \u{2013}\u{00A0}ok");
+        assert_eq!(super::typeset("one two three four"), "one two three\u{00A0}four");
+        assert_eq!(super::typeset("two words"), "two words");
+    }
 }

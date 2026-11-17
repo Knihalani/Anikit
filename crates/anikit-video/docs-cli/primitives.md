@@ -13,7 +13,7 @@ Every layer: `x y` (default centre; px, `"50%"`, `"10vw"`) · `anchor` · `width
 ] } ] }
 ```
 
-- **text**: `text` (`**bold**`, `*italic*`, `[word]{$accent}`), `font` (Inter, Inter Display, Instrument Serif, JetBrains Mono, or your file via top-level `fonts`), `size weight color align lineHeight letterSpacing uppercase maxLines`, `fit: true`, `stroke`, `split: chars|words|lines`.
+- **text**: `text` (`**bold**`, `*italic*`, `[word]{$accent}`), `font` (any of ~130 library faces: `anikit-video fonts`, fetched on first use; bundled Inter, Instrument Serif, JetBrains Mono; or your file via top-level `fonts`), `size weight color align lineHeight letterSpacing uppercase maxLines`, `axes` (variable fonts, animatable as `axes.wght`), `features` (`"tnum smcp ss01"`; docs type), `fit: true`, `stroke`, `split: chars|words|lines`.
 - **shape**: `rect circle line arrow polygon star path` · `fill` (colour, `linear-gradient(...)`, `radial-gradient(...)`) · `stroke strokeWidth radius` · `trimStart trimEnd` (draw-on) · `d` (SVG path, local px; the layer sits at the path's top-left with `anchor: topLeft`).
 - **image/video**: `src` · `fit: cover|contain` · video `trimStart speed loop volume`.
 - **group**: `layers: [...]` (transforms apply to all). **box**: `children` + flexbox `style`.

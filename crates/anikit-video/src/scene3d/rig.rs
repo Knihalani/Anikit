@@ -166,6 +166,11 @@ pub struct Rig {
     gobo_scale: f32,
     gobo_soft: f32,
     pub beam: bool,
+    /// 0 still; 1 `sweep` (strips travel across, a highlight runs over chrome);
+    /// 2 `reveal` (rim first, then the key, then the fill).
+    pub anim: u8,
+    /// Animation start and length (seconds).
+    pub anim_t: (f32, f32),
 }
 
 pub fn parse(v: &Value, path: &str) -> Res<Rig> {
@@ -173,7 +178,7 @@ pub fn parse(v: &Value, path: &str) -> Res<Rig> {
     let (name, m) = match v {
         Value::String(s) => (s.clone(), &empty),
         Value::Object(m) => {
-            check_keys(m, &["preset", "ratio", "rim", "key", "angle", "height", "warmth", "gobo", "gobo_scale", "softness", "beam"], path)?;
+            check_keys(m, &["preset", "ratio", "rim", "key", "angle", "height", "warmth", "gobo", "gobo_scale", "softness", "beam", "animate", "duration", "start"], path)?;
             (m.get("preset").and_then(|p| p.as_str()).unwrap_or("rembrandt").to_string(), m)
         }
         _ => return Err(format!("{path}: expected a rig name or {{ preset, ratio, rim, ... }}")),
@@ -208,6 +213,13 @@ pub fn parse(v: &Value, path: &str) -> Res<Rig> {
         gobo_scale: g("gobo_scale", 0.6)?.max(0.01),
         gobo_soft: g("softness", 0.15)?.clamp(0.0, 1.0),
         beam: m.get("beam").and_then(|b| b.as_bool()).unwrap_or(false),
+        anim: match m.get("animate").and_then(|a| a.as_str()) {
+            None => 0,
+            Some("sweep") => 1,
+            Some("reveal") => 2,
+            Some(o) => return Err(format!("{path}.animate: unknown `{o}` (sweep, reveal)")),
+        },
+        anim_t: (g("start", 0.0)?, g("duration", 2.5)?.max(0.05)),
         p,
     })
 }
@@ -223,6 +235,16 @@ impl Rig {
     /// subject direction), plus the key's gobo. `level` is the key's diffuse
     /// irradiance factor (the scene's exposure is set from it).
     pub fn apply(&self, env: &Env, view: V3, level: f32) -> (Env, Gobo) {
+        self.apply_at(env, view, level, f32::INFINITY)
+    }
+
+    /// The rig at time `t` (its animation, if any; `t` = ∞ is the end state).
+    pub fn apply_at(&self, env: &Env, view: V3, level: f32, t: f32) -> (Env, Gobo) {
+        let u = if self.anim == 0 { 1.0 } else { ((t - self.anim_t.0) / self.anim_t.1).clamp(0.0, 1.0) };
+        let ease = |a: f32, b: f32| smoothstep(a, b, u);
+        // Sweep: strips travel 130° across the back; reveal: rim, then key, then fill.
+        let sweep = if self.anim == 1 { -65.0 + 130.0 * ease(0.0, 1.0) } else { 0.0 };
+        let (k_on, f_on, r_on) = if self.anim == 2 { (ease(0.25, 0.7), ease(0.55, 1.0), ease(0.0, 0.3)) } else { (1.0, 1.0, 1.0) };
         let cam_az = (-view.x).atan2(-view.z);
         let dir = |az: f32, el: f32| {
             let a = cam_az + az.to_radians();
@@ -245,16 +267,23 @@ impl Rig {
             b
         };
         let key_el = self.height.unwrap_or(self.p.key.el);
-        let mut boxes = vec![make(&self.p.key, self.key, self.angle, key_el)];
+        // (A switched-off key keeps a tiny level: it still carries the traced shadows.)
+        let mut boxes = vec![make(&self.p.key, (self.key * k_on).max(1e-4), self.angle, key_el)];
         if let Some(fl) = &self.p.fill {
             // Fill so that (key + fill) : fill = ratio on the key side vs the shadow side.
-            let e = self.key / (self.ratio - 1.0).max(1e-3);
+            let e = self.key / (self.ratio - 1.0).max(1e-3) * f_on;
             if e > 1e-3 {
                 boxes.push(make(fl, e, fl.az, fl.el));
             }
         }
         for r in &self.p.rim {
-            boxes.push(make(r, r.e * self.rim * self.key, r.az, r.el));
+            let az = if r.az >= 0.0 { r.az + sweep } else { r.az - sweep };
+            boxes.push(make(r, r.e * self.rim * self.key * r_on, az, r.el));
+        }
+        if self.anim == 1 && self.p.rim.is_empty() {
+            // Rigs without strips get one for the sweep.
+            let strip = L { az: 150.0 + sweep, el: 20.0, w: 6.0, h: 80.0, roll: 0.0, e: 1.5, warm: 0.0, soft: 0.01 };
+            boxes.push(make(&strip, strip.e * self.rim * self.key, strip.az, strip.el));
         }
         for x in &self.p.extra {
             boxes.push(make(x, x.e, x.az, x.el));
@@ -290,5 +319,12 @@ mod tests {
         let g = parse(&json!({ "preset": "window" }), "rig").unwrap().apply(&env, v3(0.0, 0.0, -1.0), 1.0).1;
         let lit: Vec<f32> = (0..50).map(|i| g.at(add(scale(g.u, i as f32 * 0.02), scale(g.v, 0.07)))).collect();
         assert!(lit.iter().any(|&x| x < 0.2) && lit.iter().any(|&x| x > 0.8), "window gobo casts mullions");
+        // A reveal starts dark (rim only) and ends at the full rig.
+        let rv = parse(&json!({ "preset": "rembrandt", "animate": "reveal", "duration": 2 }), "rig").unwrap();
+        let (e0, e1) = (rv.apply_at(&env, v3(0.0, 0.0, -1.0), 1.0, 0.0).0, rv.apply_at(&env, v3(0.0, 0.0, -1.0), 1.0, 2.0).0);
+        assert!(luma(e0.boxes[0].radiance) < luma(e1.boxes[0].radiance) * 0.01);
+        let sw = parse(&json!({ "preset": "product", "animate": "sweep" }), "rig").unwrap();
+        let (a, b) = (sw.apply_at(&env, v3(0.0, 0.0, -1.0), 1.0, 0.0).0, sw.apply_at(&env, v3(0.0, 0.0, -1.0), 1.0, 2.5).0);
+        assert!(dot(a.boxes[2].c, b.boxes[2].c) < 0.5, "the strip travels");
     }
 }

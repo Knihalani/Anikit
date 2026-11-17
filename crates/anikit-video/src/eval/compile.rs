@@ -104,6 +104,8 @@ struct C<'a> {
     /// The video's grid, and the grid in force for the layers being compiled.
     video_grid: Option<spec::GridSpec>,
     grid: Option<spec::GridSpec>,
+    /// Resting boxes `[left, top, right, bottom]` of the earlier siblings with an `id`, for `"=title.bottom + 24"`.
+    sib: Vec<(String, [f32; 4])>,
 }
 
 fn size_preset(s: &str) -> Option<[u32; 2]> {
@@ -122,6 +124,124 @@ fn size_preset(s: &str) -> Option<[u32; 2]> {
     })
 }
 const SIZE_NAMES: &[&str] = &["16:9", "9:16", "1:1", "4:5", "720p", "1080p", "1440p", "4k", "vertical", "square", "portrait"];
+
+impl C<'_> {
+    /// Resolve every font the spec names: library families are fetched on
+    /// first use (an error if that fails), unknown names warn with suggestions.
+    fn load_fonts(&mut self, spec: &Spec) {
+        let Ok(v) = serde_json::to_value(spec) else { return };
+        let fonts = self.assets.fonts.clone();
+        // The `fonts` map: files relative to the spec; each key is an alias for the family it adds.
+        for (key, file) in spec.fonts.iter().flatten() {
+            let low = file.to_ascii_lowercase();
+            if !(low.ends_with(".ttf") || low.ends_with(".otf") || low.ends_with(".ttc") || file.contains('/')) {
+                // `"fonts": {"heading": "Fraunces"}`: a library family under a nickname.
+                match fonts.ensure_family(file) {
+                    Ok(_) => match fonts.resolve_family(file) {
+                        Some(f) => fonts.add_alias(key, &f),
+                        None => self.d.push(Diagnostic::error(format!("fonts.{key}"), format!("'{file}' is neither a font file nor a library family; see `anikit-video fonts`"))),
+                    },
+                    Err(e) => self.d.push(Diagnostic::error(format!("fonts.{key}"), e)),
+                }
+                continue;
+            }
+            match fonts.add_font_file(self.o.base_dir.join(file)) {
+                Ok(names) if names.is_empty() => self.d.push(Diagnostic::error(format!("fonts.{key}"), format!("{file} contains no usable font"))),
+                Ok(names) => {
+                    if fonts.resolve_family(key).is_none() {
+                        fonts.add_alias(key, &names[0]);
+                    }
+                }
+                Err(e) => self.d.push(Diagnostic::error(format!("fonts.{key}"), format!("can't load {file}: {e}"))),
+            }
+        }
+        let mut seen = std::collections::HashSet::new();
+        for (path, name) in text::library::spec_font_names(&v) {
+            // Theme tokens (`$heading`) resolve to their family; a token the
+            // theme doesn't define is someone else's diagnostic.
+            let name = if name.starts_with('$') { self.theme.font(&name).to_string() } else { name };
+            if name.starts_with('$') || !seen.insert(name.to_lowercase()) {
+                continue;
+            }
+            const GENERIC: &[&str] = &["serif", "sans-serif", "monospace", "system-ui", "cursive", "fantasy", "inherit", "default"];
+            if GENERIC.contains(&name.to_lowercase().as_str()) || fonts.resolve_family(&name).is_some() {
+                continue;
+            }
+            let exact = text::library::find(&name).is_some();
+            match fonts.ensure_family(&name) {
+                Err(e) => self.d.push(Diagnostic::error(path, e)),
+                Ok(_) if fonts.resolve_family(&name).is_some() => {
+                    if let (false, Some(f)) = (exact, text::library::find_loose(&name)) {
+                        self.d.push(Diagnostic::warning(path, format!("font '{name}' resolved to the family '{}'; set weight/italic separately", f.name)));
+                    }
+                }
+                Ok(_) => {
+                    let s = text::library::suggest(&name);
+                    let hint = if s.is_empty() { None } else { Some(s.join("', '")) };
+                    self.d.push(
+                        Diagnostic::warning(path, format!("unknown font '{name}' (falls back to Inter); see `anikit-video fonts`")).suggest(hint),
+                    );
+                }
+            }
+        }
+    }
+}
+
+/// Visible ink bounds `[x0, y0, x1, y1]` of a layout (glyph outlines).
+fn ink_bounds(fonts: &FontStore, lay: &text::TextLayout) -> [f32; 4] {
+    use kurbo::Shape;
+    let mut b = [f32::MAX, f32::MAX, f32::MIN, f32::MIN];
+    for r in &lay.runs {
+        let bb = fonts.run_path(r, &r.glyphs).bounding_box();
+        if bb.width() > 0.0 {
+            b = [b[0].min(bb.x0 as f32), b[1].min(bb.y0 as f32), b[2].max(bb.x1 as f32), b[3].max(bb.y1 as f32)];
+        }
+    }
+    if b[0] > b[2] { [0.0, 0.0, lay.width, lay.height] } else { b }
+}
+
+fn anim_src_of(l: &Layer) -> String {
+    l.animate.as_ref().map(|a| format!("{a:?}")).unwrap_or_default()
+}
+
+impl C<'_> {
+    /// Static `axes` into the style; every axis (static or named in `animate`
+    /// as `axes.TAG`) gets a uniform slot so it can be tweened.
+    fn text_axes(&mut self, l: &Layer, anim: &str, style: &mut text::TextStyle, n: &mut Node, path: &str) {
+        let mut tags: Vec<(String, Option<f32>)> = Vec::new();
+        for (k, v) in l.axes.iter().flatten() {
+            if k.len() != 4 || !k.bytes().all(|b| b.is_ascii_alphanumeric()) {
+                self.d.push(Diagnostic::error(format!("{path}.axes.{k}"), "an axis tag is 4 letters, e.g. wght, wdth, opsz, slnt, ital or a custom one like SOFT"));
+                continue;
+            }
+            tags.push((k.clone(), Some(*v as f32)));
+        }
+        let mut rest = anim;
+        while let Some(i) = rest.find("axes.") {
+            let t: String = rest[i + 5..].chars().take(4).collect();
+            if t.len() == 4 && t.bytes().all(|b| b.is_ascii_alphanumeric()) && !tags.iter().any(|x| x.0 == t) {
+                tags.push((t, None));
+            }
+            rest = &rest[i + 5..];
+        }
+        if tags.is_empty() {
+            return;
+        }
+        if tags.len() > super::shader::UNIFORM_SLOTS {
+            self.d.push(Diagnostic::error(format!("{path}.axes"), format!("at most {} axes", super::shader::UNIFORM_SLOTS)));
+            tags.truncate(super::shader::UNIFORM_SLOTS);
+        }
+        // Axes with no static value start at the face's default.
+        let probe = text::TextSpec { text: "a".into(), style: style.clone(), ..Default::default() };
+        let face = self.assets.fonts.layout(&probe).runs.first().map(|r| r.font);
+        for (i, (t, v)) in tags.into_iter().enumerate() {
+            let v = v.or_else(|| face.and_then(|f| self.assets.fonts.axis_default(f, &t))).unwrap_or(0.0);
+            style.axes.push((t.clone(), v));
+            n.base[prop::U0 + i] = v;
+            self.uniform_slots.push((format!("axes.{t}"), i, 1));
+        }
+    }
+}
 
 impl Evaluator {
     /// Compile a spec. Fails if there is any error; warnings are kept in `diagnostics`.
@@ -169,6 +289,7 @@ impl Evaluator {
             uniform_slots: Vec::new(),
             video_grid: spec.grid.clone(),
             grid: None,
+            sib: Vec::new(),
         };
         c.assets.shaders.bind(&c.assets);
         c.ease_ids.insert("linear".into(), 0);
@@ -199,6 +320,7 @@ impl Evaluator {
         for (k, v) in bad {
             c.d.push(Diagnostic::error(format!("theme.colors.{k}"), format!("invalid colour '{v}'")));
         }
+        c.load_fonts(spec);
         if let Some(m) = &spec.markers {
             for (k, v) in m {
                 let t = c.time_raw(v, &format!("markers.{k}"));
@@ -257,7 +379,7 @@ impl Evaluator {
             let path = format!("scenes[{i}]");
             let id = s.id.clone().unwrap_or_else(|| format!("scene{}", i + 1));
             let trans = if i == 0 {
-                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0, shader: None }
+                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0, shader: None, layer: None, shape: 0, count: 0 }
             } else {
                 let (tr, tp) = match (&s.transition, &default_trans) {
                     (Some(t), _) => (Some(t), format!("{path}.transition")),
@@ -285,6 +407,13 @@ impl Evaluator {
                 ));
                 trans.dur = 0.5 * prev_dur.min(dur);
             }
+            // Scene timing never shrinks: a transition into this scene happens during the
+            // last `trans.dur` before its cut point, so cuts land at the sum of the scene
+            // durations (on the beat with musical durations) and the video is exactly as long
+            // as the durations add up to. The scene's own clock starts when the transition does.
+            let own = dur;
+            let in_dur = trans.dur;
+            dur += trans.dur;
             let start = t - trans.dur;
             c.scene_start = start;
             c.smarkers.clear();
@@ -332,7 +461,7 @@ impl Evaluator {
             };
             scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth, bg_layers, post });
             t = start + dur;
-            prev_dur = dur;
+            prev_dur = if auto { dur - in_dur } else { own };
         }
         let mut duration = t;
         if let Some(d) = &spec.duration {
@@ -457,8 +586,12 @@ fn empty_node(kind: Kind) -> Node {
         index: 0.0,
         count: 1.0,
         tag: u32::MAX,
+        id: None,
         fx: None,
         matte: None,
+        inertia: None,
+        posterize_time: 0.0,
+        drag: 0.0,
     }
 }
 
@@ -582,6 +715,7 @@ impl C<'_> {
             Num::Num(v) => V::C(*v as f32),
             Num::Str(s) => {
                 if let Some(e) = s.trim().strip_prefix('=') {
+                    let Some(e) = &self.sibling_refs(e, path) else { return V::C(0.0) };
                     match Expr::compile(e, refl as f64, self.w as f64, self.h as f64) {
                         Ok(x) if x.music && (self.groove.is_none() || (x.level && !self.groove_level)) => {
                             self.load_groove(x.level, path);
@@ -612,6 +746,68 @@ impl C<'_> {
         }
     }
 
+    /// Replace `id.left|right|top|bottom|cx|cy|width|height` (an earlier sibling's resting box) with its value.
+    fn sibling_refs(&mut self, e: &str, path: &str) -> Option<String> {
+        const PROPS: [&str; 8] = ["left", "right", "top", "bottom", "cx", "cy", "width", "height"];
+        if !e.contains('.') {
+            return Some(e.to_string());
+        }
+        let b = e.as_bytes();
+        let word = |c: u8| c.is_ascii_alphanumeric() || c == b'_' || c == b'-';
+        let mut out = String::with_capacity(e.len());
+        let mut i = 0;
+        while i < b.len() {
+            let starts = (b[i].is_ascii_alphabetic() || b[i] == b'_') && (i == 0 || !(word(b[i - 1]) || b[i - 1] == b'.'));
+            if starts {
+                // The longest earlier sibling id followed by `.prop`.
+                let hit = self
+                    .sib
+                    .iter()
+                    .filter_map(|(id, bx)| {
+                        let rest = e[i..].strip_prefix(id.as_str())?.strip_prefix('.')?;
+                        let p = PROPS.iter().find(|p| rest.starts_with(**p) && !rest.as_bytes().get(p.len()).is_some_and(|c| word(*c)))?;
+                        Some((id.len() + 1 + p.len(), *p, *bx))
+                    })
+                    .max_by_key(|h| h.0);
+                if let Some((len, p, [l, t, r, bt])) = hit {
+                    let v = match p {
+                        "left" => l,
+                        "right" => r,
+                        "top" => t,
+                        "bottom" => bt,
+                        "cx" => (l + r) * 0.5,
+                        "cy" => (t + bt) * 0.5,
+                        "width" => r - l,
+                        _ => bt - t,
+                    };
+                    out.push_str(&format!("({v})"));
+                    i += len;
+                    continue;
+                }
+                // `name.top` with no such sibling: say so, with the ids in scope.
+                let mut j = i;
+                while j < b.len() && (word(b[j])) {
+                    j += 1;
+                }
+                if b.get(j) == Some(&b'.') && PROPS.iter().any(|p| e[j + 1..].starts_with(p)) {
+                    let name = &e[i..j];
+                    let ids: Vec<&str> = self.sib.iter().map(|s| s.0.as_str()).collect();
+                    let known = if ids.is_empty() { "none with an id yet".to_string() } else { ids.join(", ") };
+                    let prop = e[j + 1..].split(|c: char| !c.is_ascii_alphanumeric()).next().unwrap_or("");
+                    self.d.push(
+                        Diagnostic::error(path, format!("'{name}.{prop}': no earlier sibling layer with id '{name}' (a layer can refer to siblings above it in the list: {known})"))
+                            .suggest(suggest(name, &ids)),
+                    );
+                    return None;
+                }
+            }
+            let ch = e[i..].chars().next().unwrap();
+            out.push(ch);
+            i += ch.len_utf8();
+        }
+        Some(out)
+    }
+
     fn len_c(&mut self, n: &Num, path: &str, refl: f32, em: f32) -> f32 {
         match self.len(n, path, refl, em) {
             V::C(v) => v,
@@ -639,7 +835,22 @@ impl C<'_> {
         if let Some(&i) = self.ease_ids.get(name) {
             return i;
         }
-        match Easing::parse(name) {
+        // Named curves from studio and design-system practice (docs/video/craft/motion-design.md).
+        let named = match name {
+            "glide" => Some("cubic-bezier(0.16, 1, 0.3, 1)"),
+            "snap" => Some("cubic-bezier(0.87, 0, 0.13, 1)"),
+            "land" => Some("cubic-bezier(0.25, 0.1, 0.1, 1)"),
+            "launch" => Some("cubic-bezier(0.7, 0, 0.84, 0)"),
+            "material" | "standard" => Some("cubic-bezier(0.2, 0, 0, 1)"),
+            "emphasizedDecelerate" => Some("cubic-bezier(0.05, 0.7, 0.1, 1)"),
+            "emphasizedAccelerate" => Some("cubic-bezier(0.3, 0, 0.8, 0.15)"),
+            "productive" => Some("cubic-bezier(0.2, 0, 0.38, 0.9)"),
+            "expressive" => Some("cubic-bezier(0.4, 0.14, 0.3, 1)"),
+            "expressiveEntrance" => Some("cubic-bezier(0, 0, 0.3, 1)"),
+            "expressiveExit" => Some("cubic-bezier(0.4, 0.14, 1, 1)"),
+            _ => None,
+        };
+        match Easing::parse(named.unwrap_or(name)) {
             Some(e) => {
                 let i = self.easings.len() as u32;
                 self.easings.push(e);
@@ -854,8 +1065,10 @@ impl C<'_> {
     // ---------- scenes ----------
 
     fn transition(&mut self, t: Option<&spec::Transition>, path: &str) -> TransC {
+        // No transition given: a hard cut (transitions are opt-in). An object without a
+        // `type` (`{ "duration": 0.6 }`) is a crossfade.
         let o = t.map(|t| t.0.clone()).unwrap_or_default();
-        let kind_s = o.kind.as_deref().unwrap_or("crossfade");
+        let kind_s = o.kind.as_deref().unwrap_or(if t.is_none() { "cut" } else { "crossfade" });
         let kind = match kind_s {
             "cut" | "none" => TransKind::Cut,
             "crossfade" | "fade" => TransKind::Crossfade,
@@ -869,6 +1082,11 @@ impl C<'_> {
             "glitch" => TransKind::Glitch,
             "morphCut" => TransKind::MorphCut,
             "shader" => TransKind::Shader,
+            "zoomThrough" => TransKind::ZoomThrough,
+            "reveal" => TransKind::Reveal,
+            "blinds" => TransKind::Blinds,
+            "split" => TransKind::Split,
+            "whip" => TransKind::Whip,
             k if anikit_shader::library::get(k).is_some_and(|e| e.use_ == anikit_shader::library::Use::Transition) => TransKind::Shader,
             k => {
                 self.d.push(Diagnostic::error(format!("{path}.type"), format!("unknown transition '{k}'")).suggest(suggest(k, val::TRANSITIONS)));
@@ -879,13 +1097,20 @@ impl C<'_> {
             TransKind::Cut => 0.0,
             TransKind::Glitch => 0.3,
             TransKind::MorphCut => 0.25,
+            TransKind::Whip => 0.35,
+            TransKind::ZoomThrough => 0.8,
             _ => 0.5,
         };
         let dur = match &o.duration {
             Some(d) if kind != TransKind::Cut => self.time_raw(d, &format!("{path}.duration")).max(0.0),
             _ => def,
         };
-        let ease = self.ease(o.ease.as_deref(), "inOutCubic", &format!("{path}.ease"));
+        let def_ease = match kind {
+            TransKind::ZoomThrough => "inQuad",
+            TransKind::Reveal | TransKind::Blinds | TransKind::Split | TransKind::Whip => "inOutExpo",
+            _ => "inOutCubic",
+        };
+        let ease = self.ease(o.ease.as_deref(), def_ease, &format!("{path}.ease"));
         let dir = match o.direction.as_deref() {
             None | Some("left") => [-1.0, 0.0],
             Some("right") => [1.0, 0.0],
@@ -917,7 +1142,22 @@ impl C<'_> {
             None
         };
         let kind = if kind == TransKind::Shader && shader.is_none() { TransKind::Crossfade } else { kind };
-        TransC { kind, dur, ease, dir, color, origin, amount, shader }
+        let shape = match o.shape.as_deref() {
+            None | Some("circle") => 0,
+            Some("diamond") => 1,
+            Some("square") => 2,
+            Some("star") => 3,
+            Some("blob") => 4,
+            Some(x) => {
+                let names = ["circle", "diamond", "square", "star", "blob"];
+                self.d.push(Diagnostic::error(format!("{path}.shape"), format!("unknown reveal shape '{x}'")).suggest(suggest(x, &names)));
+                0
+            }
+        };
+        if kind == TransKind::ZoomThrough && o.layer.is_none() {
+            self.d.push(Diagnostic::error(format!("{path}.layer"), "zoomThrough needs 'layer': the id of a layer in the previous scene to fly into"));
+        }
+        TransC { kind, dur, ease, dir, color, origin, amount, shader, layer: o.layer.clone(), shape, count: o.count.unwrap_or(8).clamp(1, 64) }
     }
 
     fn scene(&mut self, s: &spec::Scene, path: &str, dur: f32, default_bg: &spec::Paint) -> Built {
@@ -1016,15 +1256,27 @@ impl C<'_> {
         let delays = self.stagger_delays(stagger, ls.len(), &format!("{path}.stagger"));
         let mut out = Vec::new();
         let mut at: Vec<Option<usize>> = Vec::with_capacity(ls.len());
+        let outer_sib = std::mem::take(&mut self.sib);
         for (i, l) in ls.iter().enumerate() {
             let p = format!("{path}[{i}]");
             let cpc = PCtx { index: i, count: ls.len(), delay: delays[i], ..pc };
             at.push(None);
             if let Some(n) = self.layer(l, &p, cpc) {
+                if let Some(id) = &l.id {
+                    let rest = |k: usize| {
+                        n.exprs.iter().find(|e| e.0 as usize == k).map_or(n.base[k], |e| {
+                            e.1.eval(&super::expr::Vars { w: self.w as f64, h: self.h as f64, fps: self.fps as f64, ..Default::default() }) as f32
+                        })
+                    };
+                    let (x, y, w, h) = (rest(prop::X), rest(prop::Y), rest(prop::W), rest(prop::H));
+                    let (l0, t0) = (x - n.anchor[0] * w, y - n.anchor[1] * h);
+                    self.sib.push((id.clone(), [l0, t0, l0 + w, t0 + h]));
+                }
                 at[i] = Some(out.len());
                 out.push(n);
             }
         }
+        self.sib = outer_sib;
         if ls.iter().any(|l| l.matte.is_some()) {
             self.resolve_mattes(ls, path, &at, &mut out);
         }
@@ -1138,6 +1390,9 @@ impl C<'_> {
             ("align", l.align.is_some()),
             ("lineHeight", l.line_height.is_some()),
             ("reveal", l.reveal.is_some()),
+            ("maxWidth", l.max_width.is_some()),
+            ("axes", l.axes.is_some()),
+            ("features", l.features.is_some()),
         ];
         let shape_only = [("shape", l.shape.is_some()), ("points", l.points.is_some()), ("d", l.d.is_some()), ("sides", l.sides.is_some())];
         let img_only = [("src", l.src.is_some() && kind != "shader"), ("fit", l.fit.is_some() && kind != "text")];
@@ -1172,6 +1427,15 @@ impl C<'_> {
     }
 
     fn layer(&mut self, l: &Layer, path: &str, pc: PCtx) -> Option<Node> {
+        // `"shader": "scene.glsl"` means the shader's source file.
+        let shader_file;
+        let l = match &l.shader {
+            Some(f) if l.src.is_none() && [".glsl", ".wgsl", ".frag"].iter().any(|e| f.trim().to_ascii_lowercase().ends_with(e)) => {
+                shader_file = Layer { src: Some(f.trim().to_string()), shader: None, ..l.clone() };
+                &shader_file
+            }
+            _ => l,
+        };
         // `"text": "=expr"`: a number computed per frame (an animatable counter).
         let expr_text;
         let l = match &l.text {
@@ -1233,6 +1497,23 @@ impl C<'_> {
         } else if let Some(d) = &l.duration {
             end = start + self.time_raw(d, &format!("{path}.duration"));
         }
+        let start = match &l.frames {
+            Some(f) => {
+                if l.start.is_some() || l.end.is_some() || l.duration.is_some() {
+                    self.d.push(Diagnostic::warning(format!("{path}.frames"), "'frames' replaces start/end/duration; drop one of them"));
+                }
+                let [a, b] = match f {
+                    spec::Frames::One(a) => [*a, a + 1.0],
+                    spec::Frames::Range(r) => *r,
+                };
+                if b <= a {
+                    self.d.push(Diagnostic::error(format!("{path}.frames"), format!("empty range [{a}, {b}): the end frame is excluded, so use [{a}, {}] for one frame", a + 1.0)));
+                }
+                end = pc.t0 + (b / self.fps as f64) as f32;
+                pc.t0 + (a / self.fps as f64) as f32
+            }
+            None => start,
+        };
         if start >= self.scene_dur && self.scene_dur < 1e5 && pc.t0 == 0.0 {
             self.d.push(Diagnostic::warning(
                 format!("{path}.start"),
@@ -1249,6 +1530,7 @@ impl C<'_> {
         n.index = pc.index as f32;
         n.tag = tag;
         n.count = pc.count as f32;
+        n.id = l.id.as_deref().map(Into::into);
 
         // Size (explicit).
         let given_w = l.width.as_ref().map(|v| self.len_c(v, &format!("{path}.width"), pw, 16.0));
@@ -1709,7 +1991,11 @@ impl C<'_> {
             offset: l.offset_path.unwrap_or(0.0),
             twist: l.twist.unwrap_or(0.0),
         };
-        let any_mod = !mods.is_empty() || l.wiggle_path.is_some();
+        let along: Option<Vec<Rgba>> = l.stroke.as_ref().and_then(|s| s.0.along.as_ref()).map(|cs| {
+            cs.iter().enumerate().filter_map(|(i, c)| self.color(c, &format!("{path}.stroke.along[{i}]"))).collect()
+        });
+        let along = along.filter(|a| !a.is_empty());
+        let any_mod = !mods.is_empty() || l.wiggle_path.is_some() || along.is_some();
         if any_mod {
             let (w, h) = (n.base[prop::W] as f64, n.base[prop::H] as f64);
             if let Kind::Shape { shape, path: p, .. } = &mut n.kind {
@@ -1723,6 +2009,12 @@ impl C<'_> {
                 };
                 *shape = ShapeKind::Path;
                 *p = mods.apply(&src);
+                if let Some(cs) = &along {
+                    if l.wiggle_path.is_some() {
+                        self.d.push(Diagnostic::warning(format!("{path}.stroke.along"), "a gradient along the stroke ignores wigglePath"));
+                    }
+                    f.along = Some(fx::AlongC::build(p, cs, 96));
+                }
                 if let Some(wp) = &l.wiggle_path {
                     let detail = wp.detail.unwrap_or(32).clamp(3, 2000);
                     f.wiggle = Some([wp.amount.unwrap_or(10.0) as f32, detail as f32, wp.speed.unwrap_or(1.0) as f32, wp.seed.unwrap_or(1.0) as f32]);
@@ -1801,6 +2093,88 @@ impl C<'_> {
                 }
             }
         }
+        if let Some(iv) = &l.inertia {
+            let p = format!("{path}.inertia");
+            // (stiffness, damping, mass): damping ratio ≈ damping / (2·sqrt(stiffness·mass)).
+            let preset = |name: &str| match name {
+                "soft" => Some((90.0, 9.0, 1.0)),
+                "bouncy" => Some((220.0, 9.0, 1.0)),
+                "tight" => Some((400.0, 30.0, 1.0)),
+                "heavy" => Some((120.0, 16.0, 2.2)),
+                "" | "default" => Some((170.0, 14.0, 1.0)),
+                _ => None,
+            };
+            let mut props: Vec<String> = vec!["x".into(), "y".into(), "scaleX".into(), "scaleY".into(), "rotation".into()];
+            let params = match iv {
+                serde_json::Value::Bool(true) => preset(""),
+                serde_json::Value::Bool(false) => None,
+                serde_json::Value::String(s) => {
+                    let r = preset(s);
+                    if r.is_none() {
+                        self.d.push(Diagnostic::error(&p, format!("unknown inertia preset '{s}'")).suggest(suggest(s, &["soft", "bouncy", "tight", "heavy"])));
+                    }
+                    r
+                }
+                serde_json::Value::Object(m) => {
+                    for k in m.keys() {
+                        if !["stiffness", "damping", "mass", "props", "preset"].contains(&k.as_str()) {
+                            self.d.push(Diagnostic::warning(format!("{p}.{k}"), "unknown key (ignored)").suggest(suggest(k, &["stiffness", "damping", "mass", "props", "preset"])));
+                        }
+                    }
+                    let (k0, c0, m0) = m.get("preset").and_then(|x| x.as_str()).and_then(preset).unwrap_or((170.0, 14.0, 1.0));
+                    if let Some(serde_json::Value::Array(a)) = m.get("props") {
+                        props = a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect();
+                    }
+                    let g = |k: &str, d: f64| m.get(k).and_then(|x| x.as_f64()).unwrap_or(d);
+                    Some((g("stiffness", k0), g("damping", c0), g("mass", m0).max(0.01)))
+                }
+                _ => {
+                    self.d.push(Diagnostic::error(&p, "inertia is true, a preset name or {stiffness, damping, mass, props}"));
+                    None
+                }
+            };
+            if let Some((k, c, m)) = params {
+                let mut slots = Vec::new();
+                for name in &props {
+                    match prop::lookup(if name == "scale" { "scaleX" } else { name }) {
+                        Some((s, ch)) if ch <= 2 && !(prop::FILL..prop::FILL + 8).contains(&s) => {
+                            slots.push(s as u8);
+                            if name == "scale" {
+                                slots.push(prop::SY as u8);
+                            }
+                        }
+                        _ => self.d.push(Diagnostic::error(format!("{p}.props"), format!("'{name}' can't follow a spring (use x, y, rotation, scale, opacity, …)"))),
+                    }
+                }
+                slots.dedup();
+                n.inertia = Some(Box::new(fx::InertiaC { slots, stiffness: k as f32, damping: c as f32, mass: m as f32, table: Default::default() }));
+            }
+        }
+        if let Some(d) = l.drag {
+            if !matches!(n.kind, Kind::Group { .. }) {
+                self.d.push(Diagnostic::warning(format!("{path}.drag"), "'drag' applies to group layers (children trail the group's motion)"));
+            } else if (0.0..=2.0).contains(&d) {
+                n.drag = d as f32;
+            } else {
+                self.d.push(Diagnostic::error(format!("{path}.drag"), "drag is seconds per child (e.g. 0.04)"));
+            }
+        }
+        if let Some(p) = l.posterize_time {
+            if p > 0.0 && p <= 240.0 {
+                n.posterize_time = p as f32;
+            } else {
+                self.d.push(Diagnostic::error(format!("{path}.posterizeTime"), "posterizeTime is poses per second (e.g. 12)"));
+            }
+        }
+        f.smear = match &l.smear {
+            None | Some(serde_json::Value::Bool(false)) => None,
+            Some(serde_json::Value::Bool(true)) => Some(1.0),
+            Some(serde_json::Value::Number(x)) => Some(x.as_f64().unwrap_or(1.0).clamp(0.0, 10.0) as f32),
+            Some(_) => {
+                self.d.push(Diagnostic::error(format!("{path}.smear"), "smear is true or a strength (1 = default)"));
+                None
+            }
+        };
         if !f.is_empty() {
             n.fx = Some(Box::new(f));
         }
@@ -1840,7 +2214,16 @@ impl C<'_> {
         let size = st.size.as_ref().map(|s| self.len_c(s, &format!("{path}.size"), pc.size[1], 16.0)).unwrap_or(32.0).max(1.0);
         let weight = st.weight.as_ref().and_then(weight_value).unwrap_or(400.0);
         let ls = st.letter_spacing.as_ref().map(|s| self.len_c(s, &format!("{path}.letterSpacing"), size, size)).unwrap_or(0.0);
+        // Multi-line text anchored on its left defaults to flush left (centred
+        // paragraphs are rarely what a left anchor means).
+        let left_anchor = match &l.anchor {
+            Some(spec::Anchor::Name(a)) => a.to_ascii_lowercase().contains("left"),
+            Some(spec::Anchor::Xy([x, _])) => *x < 0.34,
+            None => false,
+        };
+        let multi = l.text.as_deref().is_some_and(|t| t.contains('\n')) || given_w.is_some() || l.max_width.is_some();
         let align = match st.align.as_deref() {
+            None if left_anchor && multi => text::Align::Left,
             None | Some("center") => text::Align::Center,
             Some("left") | Some("start") => text::Align::Left,
             Some("right") | Some("end") => text::Align::Right,
@@ -1850,7 +2233,11 @@ impl C<'_> {
                 text::Align::Center
             }
         };
+        let st_size = size;
         let mut raw = l.text.clone().unwrap_or_default();
+        if l.typeset != Some(false) && !raw.contains("{value") {
+            raw = text::layout::typeset(&raw);
+        }
         if st.uppercase == Some(true) {
             // Not inside `[word]{$token}` markup: colour tokens stay as written.
             let mut depth = 0;
@@ -1896,6 +2283,11 @@ impl C<'_> {
             line_height: st.line_height.unwrap_or(1.2) as f32,
             ..Default::default()
         };
+        let mut style = style;
+        if let Some(f) = &l.features {
+            style.features = Some(text::layout::features_css(f));
+        }
+        self.text_axes(l, &anim_src_of(l), &mut style, n, path);
         let (plain, spans) = self.markup(&raw, path);
         let run_colors = !spans.is_empty();
         // Text on a path never wraps: one line rides the path.
@@ -1919,7 +2311,36 @@ impl C<'_> {
                 tspec.style.size = probe.style.size;
                 n.base[prop::SIZE] = probe.style.size;
             }
-            Some(x) => self.d.push(Diagnostic::error(format!("{path}.fit"), format!("on text, 'fit' is true or false (got '{x}')"))),
+            Some(mode @ ("width" | "box" | "height")) => {
+                // Optical fit, grow or shrink: the *ink* (not the em box) fills
+                // `width` (default 90% of the parent) and, for "box"/"height",
+                // `height`. Line breaks are kept.
+                let tw = given_w.unwrap_or(pc.size[0] * 0.9);
+                let th = l.height.as_ref().map(|v| self.len_c(v, &format!("{path}.height"), pc.size[1], 16.0)).unwrap_or(pc.size[1] * 0.9);
+                let mut probe = tspec.clone();
+                probe.width = None;
+                for _ in 0..4 {
+                    let lay = self.assets.fonts.layout(&probe);
+                    let ink = ink_bounds(&self.assets.fonts, &lay);
+                    let (iw, ih) = ((ink[2] - ink[0]).max(1.0), (ink[3] - ink[1]).max(1.0));
+                    let k = match mode {
+                        "width" => tw / iw,
+                        "height" => th / ih,
+                        _ => (tw / iw).min(th / ih),
+                    };
+                    if (k - 1.0).abs() < 0.002 {
+                        break;
+                    }
+                    probe.style.size = (probe.style.size * k).clamp(1.0, 4000.0);
+                }
+                tspec.style.size = probe.style.size;
+                tspec.width = None;
+                n.base[prop::SIZE] = probe.style.size;
+            }
+            Some(x) => self.d.push(
+                Diagnostic::error(format!("{path}.fit"), format!("on text, 'fit' is true (shrink to width), \"width\", \"height\" or \"box\" (got '{x}')"))
+                    .suggest(suggest(x, &["width", "height", "box"])),
+            ),
         }
         // Counter template.
         let mut counter = None;
@@ -1955,8 +2376,9 @@ impl C<'_> {
             None => {
                 let l0 = self.assets.fonts.layout(&tspec);
                 // No width given and wider than the parent: wrap at 90% of it.
-                let maxw = pc.size[0] * 0.9;
-                if given_w.is_none() && l0.width > maxw && !pc.in_box {
+                let mw = l.max_width.as_ref().map(|v| self.len_c(v, &format!("{path}.maxWidth"), pc.size[0], st_size));
+                let maxw = mw.unwrap_or(pc.size[0] * 0.9);
+                if given_w.is_none() && l0.width > maxw && (!pc.in_box || mw.is_some()) {
                     tspec.width = Some(maxw);
                     self.assets.fonts.layout(&tspec)
                 } else {
@@ -2024,7 +2446,15 @@ impl C<'_> {
         }
         let split = if counter.is_some() || kinetic.is_some() { None } else { split.map(|by| SplitC { by, tracks: Vec::new(), delays: Vec::new(), unit_tracks: Vec::new() }) };
         let has_split = split.is_some();
-        (Kind::Text { layout, wrap, paint, run_colors, split, counter, kinetic }, nat, chars, has_split, from_enter)
+        // Animated variable axes or tracking: lay out again per frame (the
+        // static layout above is the base; values are quantised and cached).
+        let anim_src = l.animate.as_ref().map(|a| format!("{a:?}")).unwrap_or_default();
+        let dynamic = (counter.is_none() && kinetic.is_none() && (!self.uniform_slots.is_empty() || anim_src.contains("letterSpacing"))).then(|| {
+            n.base[prop::LS] = tspec.style.letter_spacing * tspec.style.size;
+            let axes = self.uniform_slots.iter().filter_map(|(name, o, _)| name.strip_prefix("axes.").map(|t| (t.to_string(), prop::U0 + o))).collect();
+            Box::new(DynText { spec: tspec.clone(), axes, ls: n.base[prop::LS] })
+        });
+        (Kind::Text { layout, wrap, paint, run_colors, split, counter, kinetic, dynamic }, nat, chars, has_split, from_enter)
     }
 
     /// Inline markup: `**bold**`, `*italic*`, `[text]{colour}`. Returns the plain text and spans (empty if none).
@@ -2806,6 +3236,14 @@ impl C<'_> {
         let ref_size = [gw.unwrap_or(pc.size[0]), gh.unwrap_or(pc.size[1])];
         let cpc = PCtx { size: ref_size, t0: start, end, delay: 0.0, index: 0, count: 0, in_box: true };
         let kids_spec = l.children.as_deref().unwrap_or(&[]);
+        for (k, ch) in kids_spec.iter().enumerate() {
+            if ch.x.is_some() || ch.y.is_some() {
+                self.d.push(Diagnostic::warning(
+                    format!("{path}.children[{k}]"),
+                    "x/y on a box child are ignored: the box lays its children out (use the box's style.align/justify/gap, or put the layer in a group to place it freely)",
+                ));
+            }
+        }
         let mut kids = self.layers(kids_spec, &format!("{path}.children"), cpc, l.stagger.as_ref());
         let gap = st.gap.as_ref().map(|g| self.len_c(g, &format!("{sp}.gap"), ref_size[0], 16.0)).unwrap_or(16.0);
         let pad: [f32; 4] = match &st.padding {

@@ -692,7 +692,7 @@ impl Brush {
             // Band edges across the width (-1..1), wandering a little along the stroke.
             let edge = |k: usize, s: f32| -> f32 {
                 if bands == 1 {
-                    return if k == 0 { -1.0 * rough(s, 0) } else { rough(s, 1) };
+                    return if k == 0 { -rough(s, 0) } else { rough(s, 1) };
                 }
                 let base = -1.0 + 2.0 * k as f32 / bands as f32;
                 if k == 0 || k == bands {
@@ -710,7 +710,7 @@ impl Brush {
                 ((nz - self.dry * (0.3 + 0.7 * u)) * 6.0).clamp(0.0, 1.0)
             };
             let mut run: Vec<(usize, f32)> = Vec::new();
-            let mut flush = |run: &mut Vec<(usize, f32)>, out: &mut BezPath| {
+            let flush = |run: &mut Vec<(usize, f32)>, out: &mut BezPath| {
                 if run.len() >= 2 {
                     let m = run.len();
                     for pass in 0..2 {

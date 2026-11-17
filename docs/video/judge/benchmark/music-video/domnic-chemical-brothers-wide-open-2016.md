@@ -6,7 +6,7 @@ studio: "Outsider (directors: Dom&Nic); VFX: The Mill; choreography: Wayne McGre
 client: "The Chemical Brothers / Virgin EMI"
 year: 2016
 url: https://www.youtube.com/watch?v=BC2dRkm8ATU
-alt_urls: [https://waynemcgregor.com/productions/wide-open, https://www.youtube.com/watch?v=ifAE5MWR-4k]
+alt_urls: ["https://waynemcgregor.com/productions/wide-open", "https://www.youtube.com/watch?v=ifAE5MWR-4k"]
 length_s: 331
 verified: oembed
 aspect: "16:9"
@@ -25,6 +25,10 @@ stills:
   - https://i.ytimg.com/vi/BC2dRkm8ATU/hq1.jpg
   - https://i.ytimg.com/vi/BC2dRkm8ATU/hq2.jpg
   - https://i.ytimg.com/vi/BC2dRkm8ATU/hq3.jpg
+  - https://waynemcgregor.com/assets/2Work/Wide-Open/wideopen_carousel_chemicalbrothers.jpg
+  - https://waynemcgregor.com/assets/2Work/Wide-Open/wideopen_carousel_chemicalbrothers2.jpg
+  - https://waynemcgregor.com/assets/2Work/Wide-Open/wideopen_carousel_chemicalbrothers3.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/The-Mill-Chemical-Brothers.png
 measured: null
 ---
 
