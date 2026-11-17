@@ -264,6 +264,8 @@ pub struct Profile {
     pub render_ns: AtomicU64,
     pub copy_ns: AtomicU64,
     pub unchanged: AtomicU64,
+    /// Frames skipped without evaluating (static spans).
+    pub held: AtomicU64,
     pub partial: AtomicU64,
     pub full: AtomicU64,
 }
@@ -335,13 +337,22 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
             let mut w = w.borrow_mut();
             let Worker { renderer, dl, yuv, map, last, .. } = &mut *w;
             let r = renderer.as_mut().unwrap();
+            let continuing = k % gop != 0 && *last == Some(k.wrapping_sub(1));
+            // Held frame: provably identical to the previous one; skip eval and render.
+            let fi = (f0 + k) as f32;
+            if continuing && ev.is_static((fi - 1.0) / ev.fps, fi / ev.fps) {
+                prof.unchanged.fetch_add(1, Ordering::Relaxed);
+                prof.held.fetch_add(1, Ordering::Relaxed);
+                hints.changed = Some(vec![false; map.mb_width * map.mb_height]);
+                *last = Some(k);
+                return;
+            }
             eval_frame(ev, (f0 + k) as u32, opts.scale, dl);
             prof.eval_ns.fetch_add(ns(t), Ordering::Relaxed);
             let t = Instant::now();
             let upd = r.render_yuv_incremental(dl, yuv, map);
             prof.render_ns.fetch_add(ns(t), Ordering::Relaxed);
             let t = Instant::now();
-            let continuing = k % gop != 0 && *last == Some(k.wrapping_sub(1));
             use crate::render::incremental::Update;
             match upd {
                 Update::Unchanged => prof.unchanged.fetch_add(1, Ordering::Relaxed),
@@ -538,8 +549,9 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
         let wall = t_enc.as_secs_f64() * 1e3 / n.max(1) as f64;
         let enc = (wall * threads as f64 - e - r - c).max(0.0);
         eprintln!(
-            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged, {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}  (remainder)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
+            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}  (remainder)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
             unchanged,
+            prof.held.load(Ordering::Relaxed),
             prof.partial.load(Ordering::Relaxed),
             prof.full.load(Ordering::Relaxed),
             1000.0 / wall,
