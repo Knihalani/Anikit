@@ -1,0 +1,208 @@
+{
+ "about": "Illustration from paths: a route drawn on as a single ink line over faint contour lines, its two ends marked and named, then a close crop on the destination. Taste decision it demonstrates: a 2D medium that comes from the subject (a journey is a line), negative space given texture instead of a gradient, two colours (navy ink on cream, the second ink only on the dots), motion with weight (draw-on on inOutQuart, dots that settle with a 3% overshoot) and an acoustic score (TASTE.md §2, §3, §5, §8). Replace the path with the brief's own shape: a route, a signal, a growth curve, an outline of its object. Don't use it for abstract claims with no shape of their own.",
+ "cost": "draft or final ~5 s (1080p, 4 cores)",
+ "spec": {
+  "size": "16:9",
+  "intent": {
+   "pace": "steady",
+   "genre": "explainer"
+  },
+  "music": {
+   "style": "acoustic",
+   "bpm": 96,
+   "key": "D",
+   "mood": "warm"
+  },
+  "scenes": [
+   {
+    "duration": 3.2,
+    "background": "#F2EEE4",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "zoom": 1.06,
+        "x": -40
+       },
+       "to": {
+        "zoom": 1,
+        "x": 0
+       },
+       "duration": 3.2,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    "layers": [
+     {
+      "shape": "path",
+      "d": "M0 140 C 300 80, 600 190, 900 120 S 1400 180, 1800 110",
+      "stroke": "#1E3550",
+      "strokeWidth": 2,
+      "fill": "none",
+      "opacity": 0.14,
+      "x": "3%",
+      "y": "9%",
+      "anchor": "topLeft"
+     },
+     {
+      "shape": "path",
+      "d": "M0 300 C 300 240, 600 350, 900 280 S 1400 340, 1800 270",
+      "stroke": "#1E3550",
+      "strokeWidth": 2,
+      "fill": "none",
+      "opacity": 0.14,
+      "x": "3%",
+      "y": "33%",
+      "anchor": "topLeft"
+     },
+     {
+      "shape": "path",
+      "d": "M0 460 C 300 400, 600 510, 900 440 S 1400 500, 1800 430",
+      "stroke": "#1E3550",
+      "strokeWidth": 2,
+      "fill": "none",
+      "opacity": 0.14,
+      "x": "3%",
+      "y": "60%",
+      "anchor": "topLeft"
+     },
+     {
+      "shape": "path",
+      "d": "M0 620 C 300 560, 600 670, 900 600 S 1400 660, 1800 590",
+      "stroke": "#1E3550",
+      "strokeWidth": 2,
+      "fill": "none",
+      "opacity": 0.14,
+      "x": "3%",
+      "y": "82%",
+      "anchor": "topLeft"
+     },
+     {
+      "shape": "path",
+      "d": "M0 330 C 160 300, 220 140, 420 170 S 700 360, 900 250 S 1180 40, 1400 90",
+      "stroke": "#1E3550",
+      "strokeWidth": 7,
+      "fill": "none",
+      "x": "12%",
+      "y": "22%",
+      "anchor": "topLeft",
+      "animate": [
+       {
+        "from": {
+         "trimEnd": 0
+        },
+        "to": {
+         "trimEnd": 1
+        },
+        "duration": 1.8,
+        "ease": "inOutQuart"
+       }
+      ]
+     },
+     {
+      "shape": "circle",
+      "width": 30,
+      "height": 30,
+      "fill": "#B8431A",
+      "x": "12%",
+      "y": "45.4%",
+      "animate": [
+       {
+        "from": {
+         "scale": 0
+        },
+        "to": {
+         "scale": 1
+        },
+        "duration": 0.35,
+        "ease": "outBack"
+       }
+      ]
+     },
+     {
+      "shape": "circle",
+      "width": 30,
+      "height": 30,
+      "fill": "#B8431A",
+      "x": "84.9%",
+      "y": "23.1%",
+      "start": 1.8,
+      "animate": [
+       {
+        "from": {
+         "scale": 0
+        },
+        "to": {
+         "scale": 1
+        },
+        "duration": 0.35,
+        "ease": "outBack"
+       }
+      ]
+     },
+     {
+      "text": "Lisbon",
+      "font": "Instrument Serif",
+      "size": "7vh",
+      "color": "#1E3550",
+      "x": "12%",
+      "y": "51%",
+      "anchor": "topLeft"
+     },
+     {
+      "text": "Porto",
+      "font": "Instrument Serif",
+      "size": "7vh",
+      "color": "#1E3550",
+      "x": "84.9%",
+      "y": "19%",
+      "anchor": "bottom",
+      "start": 1.9,
+      "enter": {
+       "preset": "mask by line up",
+       "duration": 0.4
+      }
+     },
+     {
+      "text": "313 km by the coast road",
+      "font": "JetBrains Mono",
+      "size": "3.4vh",
+      "uppercase": true,
+      "letterSpacing": "0.1em",
+      "color": "#1E3550",
+      "x": "12%",
+      "y": "88%",
+      "anchor": "left",
+      "start": 0.2
+     }
+    ]
+   },
+   {
+    "duration": 1.4,
+    "transition": "cut",
+    "background": "#1E3550",
+    "layers": [
+     {
+      "text": "Porto",
+      "font": "Instrument Serif",
+      "size": "34vh",
+      "color": "#F2EEE4",
+      "letterSpacing": "-0.03em",
+      "x": "8%",
+      "y": "55%",
+      "anchor": "left"
+     },
+     {
+      "shape": "circle",
+      "width": 60,
+      "height": 60,
+      "fill": "#B8431A",
+      "x": "80%",
+      "y": "38%"
+     }
+    ]
+   }
+  ]
+ }
+}
