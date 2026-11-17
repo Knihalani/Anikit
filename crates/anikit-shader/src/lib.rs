@@ -38,6 +38,10 @@ pub fn set_lane_groups(n: usize) {
 /// Directory for compiled kernels: `ANIKIT_SHADER_CACHE` (`0` turns the cache
 /// off), else `$XDG_CACHE_HOME/anikit/shaders`, else `~/.cache/anikit/shaders`.
 fn disk_dir() -> Option<std::path::PathBuf> {
+    // Unit tests compile for real unless a test points the cache somewhere.
+    if cfg!(test) && std::env::var_os("ANIKIT_SHADER_CACHE").is_none() {
+        return None;
+    }
     match std::env::var_os("ANIKIT_SHADER_CACHE") {
         Some(v) if v == "0" || v.is_empty() => None,
         Some(v) => Some(v.into()),
