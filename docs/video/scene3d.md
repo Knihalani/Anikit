@@ -97,6 +97,18 @@ You are not limited to the preset shapes. These types build a mesh from your des
 
 Shapes whose expressions use `t` (seconds) are rebuilt every frame: waves, growing tubes, morphing surfaces (`examples/video/lookdev/wave.json`). This costs about 44 ms per frame for a 160² heightfield plus a 300-segment tube, and turns off the baked floor. Shapes without `t` are built once. Motion blur follows object motion, not deformation. To generate many objects, put `{ "script": "..." }` in `objects`; it expands to the items it returns. Cost: tracing a mesh costs about the same as the preset shapes of similar screen size. A 160×32 surface or a 128² heightfield adds under 5 ms to scene build, and render time is set by pixels covered, not by triangle count.
 
+## Imperfections
+
+Perfect CG surfaces read as fake. Real products have fingerprints, wipes, fine scratches that show only in a highlight, uneven sheen and dust. Add them on any material:
+- `"imperfections": 0.4`: one believable mix (roughness variation, smudges, scratches, a little dust).
+- Or each, 0–1: `roughnessVariation`, `smudges`, `scratches`, `dust` (on up-facing surfaces; even metal goes grey there).
+
+They stick to the object (object space), are deterministic, and show mostly where a highlight crosses them. That's why they pair well with `rig: "product"` and `animate: "sweep"`. Use 0.2–0.4 for hero products and 0.6+ for worn props.
+
+`{ "extends": "lacquer", "imperfections": 0.4 }` · `{ "extends": "glass", "smudges": 0.5 }`
+
+Cost: measured on the comparison scene (3 objects, 1080p, 4 cores), trace went from 0.76 s to 1.02 s at 0.6, because uneven highlights get more edge samples. Proof: `docs/video/shots/3d-imperfections/compare.jpg` (clean vs `imperfections: 0.6`, with 100% crops).
+
 ## Sets
 
 Build a stage, not a void. `set` adds a designed set around the subject as ordinary objects, so materials, keys and expressions still apply. It takes a name, `{ "preset", "color", "material", "size", "shape", "density" }`, or a list of these.
