@@ -9,6 +9,7 @@ use crate::templates::suggest;
 /// `(topic, markdown)`; `start` is the index.
 pub const PAGES: &[(&str, &str)] = &[
     ("start", include_str!("../docs-cli/start.md")),
+    ("taste", include_str!("../docs-cli/taste.md")),
     ("primitives", include_str!("../docs-cli/primitives.md")),
     ("animation", include_str!("../docs-cli/animation.md")),
     ("camera", include_str!("../docs-cli/camera.md")),
@@ -30,6 +31,8 @@ pub const PAGES: &[(&str, &str)] = &[
 
 /// Hand-built shots: `(name, {"about", "spec"})`.
 pub const RECIPES: &[(&str, &str)] = &[
+    ("line-drawing", include_str!("../recipes/line-drawing.json")),
+    ("window-light", include_str!("../recipes/window-light.json")),
     ("launch-sting", include_str!("../recipes/launch-sting.json")),
     ("kinetic-slam", include_str!("../recipes/kinetic-slam.json")),
     ("whip-transition", include_str!("../recipes/whip-transition.json")),
@@ -45,7 +48,7 @@ const ALIASES: &[(&str, &str)] = &[
     ("shapes", "primitives"), ("paths", "primitives"), ("grade", "post"), ("motion-blur", "camera"), ("composition", "compositions"),
     ("review", "critique"), ("pace", "pacing"), ("index", "start"), ("anything", "make-anything"),
     ("launch-video", "launch"), ("product", "launch"), ("announcement", "launch"),
-    ("analyse", "analyze"), ("reverse", "analyze"), ("reference", "analyze"),
+    ("analyse", "analyze"), ("design", "taste"), ("style", "taste"), ("quality", "taste"), ("canon", "taste"), ("reverse", "analyze"), ("reference", "analyze"),
 ];
 
 /// A docs page: `None` (or `start`) is the index; `component <kind>` / `components` come from the registry.
@@ -104,7 +107,7 @@ pub fn recipe_spec(name: &str) -> Option<(String, Value)> {
 pub fn recipes(name: Option<&str>) -> Result<String, String> {
     let lib = anikit_shader::library::ALL;
     let Some(n) = name else {
-        let mut s = String::from("Shots (anikit-video recipes <name> prints a ready spec; costs are draft and final at 1080p on 4 cores, so iterate in draft and run a 3D final in the background):\n");
+        let mut s = String::from("Shots: techniques to borrow, each naming the taste decision it shows and when not to use it (anikit-video recipes <name>; docs taste first). Costs are draft and final at 1080p on 4 cores, so iterate in draft and run a 3D final in the background:\n");
         for (n, src) in RECIPES {
             let v: Value = serde_json::from_str(src).unwrap();
             let about = v["about"].as_str().unwrap_or("");
@@ -191,7 +194,8 @@ mod tests {
 
     #[test]
     fn lookups_aliases_and_suggestions() {
-        assert!(docs(None).unwrap().contains("docs 3d"));
+        assert!(docs(None).unwrap().contains("docs 3d") && docs(None).unwrap().contains("docs taste"));
+        assert!(docs(Some("taste")).unwrap().contains("Swap test") && docs(Some("design")).unwrap().contains("taste pass"));
         assert!(docs(Some("scene3d")).unwrap().contains("scene3d"));
         assert!(docs(Some("shadr")).unwrap_err().contains("did you mean 'shader'"));
         assert!(docs(Some("components")).unwrap().contains("terminal"));
