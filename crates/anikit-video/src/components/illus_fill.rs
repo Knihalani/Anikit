@@ -299,9 +299,9 @@ impl Hatch {
                 let mut pts = Vec::new();
                 let mut v = -rad;
                 let mut dir = 1.0f32;
-                let loop_r = s * 0.9;
-                let nloops = (2.0 * rad / (loop_r * 0.9)).ceil().max(4.0) as usize;
-                let per = 10usize;
+                let loop_r = s * 1.5;
+                let nloops = (2.0 * rad / (loop_r * 1.5)).ceil().max(4.0) as usize;
+                let per = 14usize;
                 while v < rad && pts.len() < 60000 {
                     let tc = self.tone_at(cx + vx * v, cy + vy * v, bb).max(0.08);
                     let sv = s / tc.powf(0.8);
@@ -337,7 +337,7 @@ impl Hatch {
                         // Break each line into hand strokes of uneven length.
                         let mut u = -rad;
                         while u < rad {
-                            let seg = rng.range(0.25, 0.7) * rad.max(60.0);
+                            let seg = rng.range(0.15, 0.45) * rad.max(60.0);
                             let u1 = (u + seg).min(rad);
                             let (mx, my) = (cx + ux * (u + u1) * 0.5 + vx * v, cy + uy * (u + u1) * 0.5 + vy * v);
                             let t = self.tone_at(mx, my, bb);
@@ -467,10 +467,10 @@ pub fn paper_field(kind: &str, color: Rgba, tooth: f32, fibers: f32, vignette: f
                 }
                 "watercolor" => {
                     // Cold-press: rounded bumps of ~8–20 px plus a finer grain.
-                    let b = 1.0 - vnoise2(fx / 9.0, fy / 9.0, sd ^ 7).abs();
-                    let b2 = 1.0 - vnoise2(fx / 4.0 + 3.1, fy / 4.0, sd ^ 8).abs();
-                    let b3 = vnoise2(fx / 22.0, fy / 22.0, sd ^ 9);
-                    b * b * 1.2 + b2 * 0.35 + b3 * 0.4 + 0.12 * fine
+                    let b = fbm2(fx / 11.0, fy / 11.0, 2, sd ^ 7) * 0.5 + 0.5;
+                    let b2 = fbm2(fx / 4.5 + 3.1, fy / 4.5, 2, sd ^ 8);
+                    let b3 = fbm2(fx / 28.0, fy / 28.0, 2, sd ^ 9);
+                    b * b * 1.6 + b2 * 0.3 + b3 * 0.45 + 0.1 * fine
                 }
                 "newsprint" => 0.35 * vnoise2(fx / 1.6, fy / 1.6, sd ^ 10) + 0.25 * fine + 0.2 * vnoise2(fx / 5.0, fy / 5.0, sd ^ 11),
                 "kraft" => 0.4 * vnoise2(fx / 2.2, fy / 2.2, sd ^ 12) + 0.3 * vnoise2(fx / 7.0, fy / 3.0, sd ^ 13) + 0.2 * fine,
