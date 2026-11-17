@@ -11,4 +11,7 @@
 - `bodies`: any object type (or `instance` of a named object), `count` up to 200 k, `layout: dominoes|grid|wall|pile|rain|expr`, `density friction restitution velocity angular ccd`.
 - `impulses` (radial pushes at times), `gravity`, `ground`, `start`, and `timeScale` as an expression of `t` = **speed ramps / slow motion**.
 - Bodies can carry live composition textures (10,000 video panes falling as dominoes).
-- Deterministic, cached per spec. Reference: docs/video/simulation.md.
+- **Joints:** `"chain": "ball"|"fixed"|"hinge"|"spring"|"rope"` links consecutive bodies (ropes of beads, bridges, banners); `"pin": "first"|"last"|"ends"|[i…]` fixes bodies to the world; `physics.joints: [{ "type": "hinge", "a": [group, i], "b": "world"|[group, i], "anchor": [x,y,z], "axis": [0,0,1], "length", "stiffness", "damping" }]`.
+- **Any shape:** a body can be any object, e.g. `{ "type": "model", "src": "part.glb" }` (glTF, convex hull) or `{ "text": "A" }`.
+- **Pushers and obstacles:** any object with `"collide": true` is a fixed collider, or a kinematic pusher if it's animated (`keys` or expressions of `t`).
+- Deterministic (rapier, enhanced determinism). Cached on disk per spec (`ANIKIT_CACHE`), so a later still or render of the same physics reads the frames instead of simulating. Reference: docs/video/simulation.md.

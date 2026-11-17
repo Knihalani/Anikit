@@ -138,6 +138,8 @@ struct Prepared {
     tonemap: post::Tonemap,
     quality: Quality,
     denoise: u32,
+    /// `quality: draft`: cheaper particle splats.
+    draft: bool,
     key: u64,
     /// Average colour per (composition, frame), for far panes; frame
     /// `u32::MAX` is the composition's fallback (its first frame).
@@ -352,6 +354,7 @@ impl Prepare for Scene3d {
             Some(o) => return Err(Error(format!("unknown tonemap `{o}`; expected aces or neutral"))),
         };
         let quality_s = m.get("quality").and_then(|q| q.as_str()).unwrap_or("standard");
+        let draft = quality_s == "draft";
         let (quality, denoise, bake) = match quality_s {
             "draft" => (Quality { edge_spp: 3, ao_rays: 1, shadow_rays: 1, max_depth: 2, max_glass: 6, contrast: 0.1, secondary_rays: 0, full: false }, 5, (384, 24)),
             "standard" => (Quality::default(), 5, (768, 64)),
@@ -432,6 +435,7 @@ impl Prepare for Scene3d {
             tonemap,
             quality,
             denoise,
+            draft,
             key,
             parts,
             psims: OnceLock::new(),
@@ -722,7 +726,9 @@ impl Scene3d {
         let up = v3(0.0, 1.0, 0.0);
         let key = p.env.key_box().map(|k| (k.c, scale(k.radiance, p.env.key_solid_angle))).unwrap_or((up, v3(0.0, 0.0, 0.0)));
         // Particle shadows on the scene: dim the key light by the particles' transmittance.
+        let c0 = std::time::Instant::now();
         let shadow = particles::ShadowMap::build(&live, key.0, t);
+        let c1 = c0.elapsed();
         if let Some(sm) = &shadow {
             let (fwd, _, _) = cam.basis();
             let body = |(y, row): (usize, &mut [trace::Px])| {
@@ -742,7 +748,10 @@ impl Scene3d {
                 px.par_chunks_mut(w).enumerate().for_each(body);
             }
         }
-        let view = particles::View { cam, prev, w, h, depth: &depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key, amb: (p.env.diffuse(up), p.env.diffuse(scale(up, -1.0))), shadow: shadow.as_ref() };
+        if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() && shadow.is_some() {
+            eprintln!("  particle shadows: map {:.0} ms, scene lookups {:.0} ms", c1.as_secs_f64() * 1e3, (c0.elapsed() - c1).as_secs_f64() * 1e3);
+        }
+        let view = particles::View { cam, prev, w, h, depth: &depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key, amb: (p.env.diffuse(up), p.env.diffuse(scale(up, -1.0))), shadow: shadow.as_ref(), draft: p.draft };
         Some(particles::render(&live, &view, t))
     }
 
