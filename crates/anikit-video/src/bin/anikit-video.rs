@@ -20,8 +20,8 @@ use std::time::Instant;
 const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema> [spec.json|spec.yaml] [options]
   render spec.json -o out.mp4   [--quality draft|good|best] [--codec ak264|h264|h265|vp9|av1|prores|gif|png]
                                 [--from S] [--to S] [--scale K] [--no-audio]
-  still  spec.json -o f.png     [--at S | --at @scene] [--scale K] [--watch]
-  sheet  spec.json -o sheet.png [--cols 4] [--rows 3] [--width 480]
+  still  spec.json -o f.png     [--at S | --at @scene] [--scale K | --width W] [--watch]
+  sheet  spec.json -o sheet.png [--frames N | --cols 4 --rows 3] [--width 480]
   check  spec.json              validate; print errors, warnings and timing
   info   [--components]         version, encoders, component catalogue
   schema [-o file]              print the JSON Schema of the spec
@@ -262,6 +262,11 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                     Ok((ev, d)) => {
                         warn(&d, json);
                         let t = resolve_time(&ev, a.get("--at").unwrap_or("0"))?;
+                        // `--width W` (as the MCP tools pass) sets the scale from the output width.
+                        let scale = match a.num("--width")? {
+                            Some(wd) if a.get("--scale").is_none() => (wd / ev.width as f32).clamp(0.05, 4.0),
+                            _ => scale,
+                        };
                         let (w, h, px) = pipeline::render_rgba(&ev, t, scale);
                         pipeline::save_png(&out, w, h, px)?;
                         let ms = t0.elapsed().as_secs_f32() * 1000.0;
@@ -302,8 +307,17 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                 Err(c) => return Ok(c),
             };
             warn(&d, json);
-            let cols = a.num("--cols")?.unwrap_or(4.0) as u32;
-            let rows = a.num("--rows")?.unwrap_or(3.0) as u32;
+            // `--frames N` picks a near-square grid of N frames.
+            let (dc, dr) = match a.num("--frames")? {
+                Some(n) => {
+                    let n = n.max(1.0);
+                    let c = n.sqrt().ceil();
+                    (c, (n / c).ceil())
+                }
+                None => (4.0, 3.0),
+            };
+            let cols = a.num("--cols")?.unwrap_or(dc) as u32;
+            let rows = a.num("--rows")?.unwrap_or(dr) as u32;
             let width = a.num("--width")?.unwrap_or(480.0) as u32;
             let (w, h, px) = pipeline::contact_sheet(&ev, cols.max(1), rows.max(1), width.max(16));
             pipeline::save_png(&out, w, h, px)?;
