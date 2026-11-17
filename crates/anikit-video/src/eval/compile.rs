@@ -1666,6 +1666,16 @@ impl C<'_> {
             },
         };
 
+        if l.text_box_trim == Some(true) {
+            if let Kind::Text { layout, .. } = &n.kind {
+                // Re-anchor so the anchor's y refers to the cap-top…baseline box.
+                let h = n.base[prop::H].max(1e-3);
+                let (top, bot) = (layout.cap_top, layout.last_baseline);
+                if bot > top {
+                    n.anchor[1] = (top + n.anchor[1] * (bot - top)) / h;
+                }
+            }
+        }
         if l.cell.is_none() && !pc.in_box {
             self.near_grid_check(l, path, &n, pc.size);
         }
@@ -1910,6 +1920,13 @@ impl C<'_> {
                 scale: sc,
                 opacity: o.opacity.unwrap_or(0.0) as f32,
                 stagger: r.stagger.unwrap_or(0.0) as f32,
+                ranks: {
+                    let order = r.order.as_deref().unwrap_or("forward");
+                    if !["forward", "reverse", "center", "random"].contains(&order) {
+                        self.d.push(Diagnostic::error(format!("{path}.repeat.order"), format!("unknown order '{order}'")).suggest(suggest(order, &["forward", "reverse", "center", "random"])));
+                    }
+                    fx::order_ranks(count.min(2000) as usize, order, r.seed.unwrap_or(1.0))
+                },
                 center: r.center.map(|c| [c[0] as f32, c[1] as f32]),
             });
         }
@@ -2657,6 +2674,9 @@ impl C<'_> {
             o.width = Some(Num::Num(w as f64));
         }
         if is_text {
+            if o.text_box_trim.is_none() {
+                o.text_box_trim = Some(true);
+            }
             if o.align.is_none() {
                 o.align = Some(if anchor[0] < 0.25 { "left" } else if anchor[0] > 0.75 { "right" } else { "center" }.into());
             }

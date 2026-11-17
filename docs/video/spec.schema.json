@@ -1857,6 +1857,13 @@
             "null"
           ]
         },
+        "textBoxTrim": {
+          "description": "Trim the text box to the first line's cap height and the last line's baseline (CSS `text-box: cap alphabetic`),\nso `anchor` and grid cells align the letters, not the line box. Default on for text in a grid `cell`.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "maxLines": {
           "type": [
             "integer",
@@ -2392,6 +2399,20 @@
         },
         "stagger": {
           "description": "Seconds of delay per copy (copy i plays i × stagger later).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "order": {
+          "description": "Stagger order: `forward` (default), `reverse`, `center` (middle first), `random` (with `seed`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "seed": {
           "type": [
             "number",
             "null"

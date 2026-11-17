@@ -202,3 +202,13 @@ fn generated_luts_need_no_network() {
     assert_eq!(mock.calls.load(Ordering::SeqCst), 0);
     let _ = std::fs::remove_dir_all(&l.root);
 }
+
+#[test]
+fn hdri_moods_point_into_the_index() {
+    for (mood, r, why) in HDRI_MOODS {
+        assert!(find(r).is_some_and(|e| e.kind == "hdri"), "{mood} → {r} is not an indexed HDRI");
+        assert!(!why.is_empty());
+    }
+    assert_eq!(hdri_mood("Night City"), Some("polyhaven:hdri/hansaplatz"));
+    assert_eq!(hdri_mood("nope"), None);
+}
