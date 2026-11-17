@@ -199,7 +199,7 @@ scenes.append({"id": "kinetic", "duration": 9.5, "background": INK, "transition"
 scenes.append({
     "id": "devices", "duration": 7.5, "background": "radial-gradient(#141826, %s)" % INK,
     "transition": {"type": "push", "direction": "up", "duration": 0.5, "ease": "inOutQuart"},
-    "camera": {"animate": [{"from": {"zoom": 1.0}, "to": {"zoom": 1.06, "x": 40}, "duration": 7.5, "ease": "inOutSine"}]},
+    "camera": {"animate": [{"from": {"zoom": 1.0}, "to": {"zoom": 1.12, "x": 70, "y": 30}, "duration": 7.5, "ease": "inOutSine"}]},
     "layers": [
         comp("bokeh", {"count": 14, "colors": [ICE, LILAC], "minSize": 60, "maxSize": 220, "speed": 0.3, "seed": 5},
              opacity=0.35),
@@ -209,6 +209,9 @@ scenes.append({
                         "shadow": True}, width=1180, height=720, x="44%", y="58%"),
         comp("phone", {"screen": "chat", "title": "Relay", "accent": LILAC, "delay": 1.1, "float": 6,
                        "time": "9:41"}, width=360, height=700, x="77%", y="60%"),
+        comp("cursor", {"path": [[1150, 980], [640, 540], [905, 540], [1150, 620], [1500, 640]],
+                        "times": [1.6, 2.6, 3.6, 4.6, 5.8], "clicks": [2.7, 3.7, 4.7, 5.9], "size": 34},
+             start=0),
         comp("badge", {"label": '"screen": "dashboard"', "color": ICE, "delay": 2.2}, width=420, height=56,
              x="30%", y="93%"),
         comp("badge", {"label": '"screen": "chat"', "color": LILAC, "delay": 2.5}, width=320, height=56,
