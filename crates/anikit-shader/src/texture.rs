@@ -163,7 +163,7 @@ impl Texture {
         let (u, v) = (if u.is_finite() { u } else { 0.0 }, if v.is_finite() { v } else { 0.0 });
         // Keep huge coordinates from overflowing the integer conversion.
         let (u, v) = (u.clamp(-1.0e6, 1.0e6), v.clamp(-1.0e6, 1.0e6));
-        if self.levels.len() == 1 || !(lod > 0.0) {
+        if self.levels.len() == 1 || lod.is_nan() || lod <= 0.0 {
             return self.sample_level(0, u, v);
         }
         let max = (self.levels.len() - 1) as f32;

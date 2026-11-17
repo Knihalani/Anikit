@@ -31,10 +31,14 @@ fn main() {
     let ta = test_card(w, h, 0);
     let tb = test_card(w, h, 1);
     println!("| shader | use | compile ms | ms/frame | ms/frame 2×2 SS |\n|---|---|---|---|---|");
+    let only = a.get(3).cloned();
     for e in ALL {
+        if only.as_ref().is_some_and(|o| !o.split(',').any(|n| n == e.name)) {
+            continue;
+        }
         let s = Shader::compile(e.src).unwrap_or_else(|err| panic!("{}: {err}", e.name));
         let mut px = vec![0u8; (w * h * 4) as usize];
-        let mut time = |ss: bool, n: usize, px: &mut Vec<u8>| {
+        let time = |ss: bool, n: usize, px: &mut Vec<u8>| {
             let mut f = Frame::new(w, h, 2.0);
             f.supersample = ss;
             f.channels = [Some(&ta), Some(&tb), None, None];

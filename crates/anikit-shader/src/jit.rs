@@ -1916,7 +1916,17 @@ pub fn compile(m: &naga::Module, info: &ModuleInfo, entry: Handle<naga::Function
         b.finalize(tcfg);
     }
     let insts = ctx.func.dfg.num_insts();
+    let dump = std::env::var_os("ANIKIT_SHADER_DUMP").is_some();
+    if dump {
+        ctx.set_disasm(true);
+        eprintln!("{}", ctx.func.display());
+    }
     module.define_function(fid, &mut ctx).map_err(|e| err(format!("JIT: {e:?}")))?;
+    if dump {
+        if let Some(c) = ctx.compiled_code() {
+            eprintln!("{}", c.vcode.as_deref().unwrap_or(""));
+        }
+    }
     module.clear_context(&mut ctx);
     module.finalize_definitions().map_err(|e| err(format!("JIT: {e}")))?;
     let code = module.get_finalized_function(fid);

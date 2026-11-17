@@ -319,6 +319,7 @@ fn hash_f32s<H: Hasher>(h: &mut H, v: &[f32]) {
 }
 
 impl Evaluator {
+    #[allow(clippy::too_many_arguments)]
     fn job_for(&self, sc: &ShaderC, cx: &Cx, v: &[f32; prop::N], size: (u32, u32), time: f32, progress: f32, chans: Vec<(ChanData, ChanOpts)>) -> ImageId {
         let mut uniforms: Vec<(String, Vec<f32>)> = sc.fixed.clone();
         for (name, off, n) in &sc.uniforms {

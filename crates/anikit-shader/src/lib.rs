@@ -12,6 +12,9 @@
 //! s.render(&Frame::new(64, 32, 0.0), &mut px);
 //! ```
 
+// Polynomial coefficients are written as published (Cephes); slot loops index parallel arrays.
+#![allow(clippy::excessive_precision, clippy::needless_range_loop)]
+
 pub mod front;
 pub mod jit;
 pub mod library;
@@ -271,7 +274,7 @@ impl Shader {
 
     /// Run the kernel over the frame; `put` writes one output pixel.
     fn run<P: Send>(&self, f: &Frame, out: &mut [P], w: usize, put: impl Fn(&mut P, [f32; 4]) + Sync) {
-        let h = if w == 0 { 0 } else { out.len() / w };
+        let h = out.len().checked_div(w).unwrap_or(0);
         if w == 0 || h == 0 {
             return;
         }

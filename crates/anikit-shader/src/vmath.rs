@@ -139,13 +139,25 @@ fn xor_sign(b: B, v: Value, sign: Value) -> Value {
     as_f(b, r)
 }
 
+/// Integer value of a float that is already integral and below 2²² in
+/// magnitude (rounding results): add 1.5·2²³ and read the low mantissa bits.
+/// Two instructions instead of the NaN-safe saturating conversion.
+fn int_of_integral(b: B, q: Value) -> Value {
+    let magic = fsplat(b, 12_582_912.0);
+    let t = b.ins().fadd(q, magic);
+    let ti = as_i(b, t);
+    let mi = isplat(b, 0x4B40_0000);
+    b.ins().isub(ti, mi)
+}
+
 /// Shared quadrant reduction: returns (sin(r), cos(r), quadrant) with x = r + q·π/2.
 fn sincos_core(b: B, x: Value) -> (Value, Value, Value) {
     let two_over_pi = fsplat(b, std::f32::consts::FRAC_2_PI);
     let t = b.ins().fmul(x, two_over_pi);
     let q = b.ins().nearest(t);
     let r = reduce(b, x, q, split(std::f64::consts::FRAC_PI_2, 12));
-    let qi = b.ins().fcvt_to_sint_sat(I32X4, q);
+    // Only the low two bits are used, so huge arguments are harmless.
+    let qi = int_of_integral(b, q);
     let r2 = b.ins().fmul(r, r);
     // sin(r) = r + r³·P(r²)
     let ps = poly(b, r2, &[-1.951_529_6e-4, 8.332_160_9e-3, -1.666_665_5e-1]);
@@ -232,7 +244,7 @@ pub fn exp(b: B, x: Value) -> Value {
     let q = b.ins().nearest(t);
     let r = reduce(b, xc, q, split(std::f64::consts::LN_2, 12));
     let p = exp_poly(b, r);
-    let n = b.ins().fcvt_to_sint_sat(I32X4, q);
+    let n = int_of_integral(b, q); // |q| ≤ 150 after clamping
     let v = ldexp_wide(b, p, n);
     // NaN in → NaN out.
     let nan = b.ins().fcmp(FloatCC::Unordered, x, x);
@@ -248,7 +260,7 @@ pub fn exp2(b: B, x: Value) -> Value {
     let ln2 = fsplat(b, std::f32::consts::LN_2);
     let r = b.ins().fmul(f, ln2);
     let p = exp_poly(b, r);
-    let n = b.ins().fcvt_to_sint_sat(I32X4, q);
+    let n = int_of_integral(b, q);
     let v = ldexp_wide(b, p, n);
     let nan = b.ins().fcmp(FloatCC::Unordered, x, x);
     sel(b, nan, x, v)

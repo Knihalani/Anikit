@@ -150,7 +150,8 @@ fn builtins_exact() {
 /// Transcendentals against f64, over the ranges shaders use.
 #[test]
 fn builtins_accuracy() {
-    let cases: &[(&str, fn(f64) -> f64, f32, f32)] = &[
+    type Case = (&'static str, fn(f64) -> f64, f32, f32);
+    let cases: &[Case] = &[
         ("sin", f64::sin, -100.0, 100.0),
         ("cos", f64::cos, -100.0, 100.0),
         ("tan", f64::tan, -1.5, 1.5),

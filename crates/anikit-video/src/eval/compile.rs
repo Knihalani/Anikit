@@ -2140,7 +2140,7 @@ impl C<'_> {
         let mut fixed = Vec::new();
         let mut off = 0;
         for u in &shader.uniforms {
-            let len = u.ty.len();
+            let len = u.ty.components();
             let given = vals.iter().find(|(k, _)| *k == u.name).map(|(_, v)| v.clone());
             if off + len > UNIFORM_SLOTS {
                 if let Some(Ok(v)) = given.clone().or(u.default.clone().map(Ok)) {
