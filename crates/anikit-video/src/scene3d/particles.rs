@@ -1095,6 +1095,46 @@ impl Pyr {
         }
         Pyr { c, lv, used: [false; 8] }
     }
+    /// Reference splat: a disc of radius `r` (px) at full resolution seen
+    /// through the tent pixel filter (the fast path's reconstruction), by
+    /// dense sampling of the disc.
+    fn disc(&mut self, x: f32, y: f32, r: f32, v: &[f32; 8]) {
+        let c = self.c;
+        self.used[0] = true;
+        let (w, h, buf) = &mut self.lv[0];
+        let (w, h) = (*w as i32, *h as i32);
+        // Points over the disc (a fine grid clipped to it; the centre for a point).
+        let step = (r / 12.0).clamp(0.02, 0.25);
+        let m = (r / step).ceil() as i32;
+        let mut cells: std::collections::HashMap<(i32, i32), f32> = std::collections::HashMap::new();
+        let mut total = 0.0f32;
+        for j in -m..=m {
+            for i in -m..=m {
+                let (dx, dy) = (i as f32 * step, j as f32 * step);
+                if dx * dx + dy * dy > r * r && !(i == 0 && j == 0) {
+                    continue;
+                }
+                let (qx, qy) = (x + dx - 0.5, y + dy - 0.5);
+                let (ix, iy) = (qx.floor(), qy.floor());
+                let (tx, ty) = (qx - ix, qy - iy);
+                for (ox, oy, wt) in [(0, 0, (1.0 - tx) * (1.0 - ty)), (1, 0, tx * (1.0 - ty)), (0, 1, (1.0 - tx) * ty), (1, 1, tx * ty)] {
+                    *cells.entry((ix as i32 + ox, iy as i32 + oy)).or_insert(0.0) += wt;
+                }
+                total += 1.0;
+            }
+        }
+        for ((px, py), n) in cells {
+            if px < 0 || py < 0 || px >= w || py >= h {
+                continue;
+            }
+            let wt = n / total;
+            let o = &mut buf[(py * w + px) as usize * c..][..c];
+            for k in 0..c {
+                o[k] += v[k] * wt;
+            }
+        }
+    }
+
     /// Bilinear splat at level `l`, pixel coordinates of level 0.
     #[inline(always)]
     fn splat(&mut self, l: usize, x: f32, y: f32, v: &[f32; 8]) {
@@ -1309,6 +1349,20 @@ impl Proj {
     }
 }
 
+static REFERENCE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Reference mode: particles splat as exact box-filtered discs (size and
+/// defocus) at 32 instants over the shutter, instead of the pyramid and
+/// adaptive streak samples. Slow; for measuring the fast path's error.
+pub fn set_reference(on: bool) {
+    REFERENCE.store(on, std::sync::atomic::Ordering::Relaxed);
+}
+
+#[inline]
+fn reference() -> bool {
+    REFERENCE.load(std::sync::atomic::Ordering::Relaxed) || std::env::var_os("ANIKIT_SCENE3D_REFERENCE").is_some()
+}
+
 /// acos to about 1e-4 (Abramowitz & Stegun 4.4.45).
 #[inline(always)]
 fn fast_acos(x: f32) -> f32 {
@@ -1324,12 +1378,28 @@ fn fast_acos(x: f32) -> f32 {
 /// Splat every live system into one layer.
 pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
     let clock = std::time::Instant::now();
+    let refm = reference();
     let (w, h) = (v.w, v.h);
     let levels = 6;
     let s = h as f32 / 1080.0;
     let pj = Proj::new(v.cam, w, h);
     let pp = Proj::new(v.prev, w, h);
-    let lvl_of = |r: f32| -> usize { (r.max(1.0).log2().floor() as usize).min(levels - 1) };
+    // Blur variance (px², per axis) of a splat at level l after upsampling to
+    // full resolution: a tent of half-width 2^l, plus one tent per upsample.
+    let lvar: Vec<f32> = (0..=levels).map(|l| (4f32.powi(l as i32) + (4f32.powi(l as i32 + 1) - 4.0) / 3.0) / 6.0).collect();
+    // A disc of radius r seen through the tent pixel filter has variance r²/4 + 1/6:
+    // split the particle between the two levels whose variances bracket it.
+    let lvl_of = |r: f32| -> (usize, f32) {
+        let v = r * r * 0.25 + 1.0 / 6.0;
+        let mut l = 0;
+        while l + 1 < levels && lvar[l + 1] <= v {
+            l += 1;
+        }
+        if l + 1 >= levels {
+            return (levels - 1, 0.0);
+        }
+        (l, ((v - lvar[l]) / (lvar[l + 1] - lvar[l])).clamp(0.0, 1.0))
+    };
     // Channel layout: emission only for glowing systems, absorption only for `over` ones.
     let emits = systems.iter().any(|(s, _)| s.def.blend == Blend::Add || s.def.emissive > 0.0);
     let absorbs = systems.iter().any(|(s, _)| s.def.blend == Blend::Over);
@@ -1378,7 +1448,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 let (bx, by) = (sx + (bx - sx) * if v.shutter > 0.0 { 1.0 } else { 0.0 }, sy + (by - sy) * if v.shutter > 0.0 { 1.0 } else { 0.0 });
                 let (mx, my) = (sx - bx, sy - by);
                 let ml = (mx * mx + my * my).sqrt();
-                let l = lvl_of(foot);
+                let (l, lw) = lvl_of(foot);
                 let tex = (1u32 << l) as f32;
                 let ns = ((ml / tex).ceil() as usize).clamp(1, 24);
                 // Energy: projected disc area (world size) — in focus it's smaller than a pixel.
@@ -1434,11 +1504,26 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                         }
                     }
                 }
+                if refm {
+                    // Exact: a box-filtered disc of the full footprint at 32 instants.
+                    let nt = if ml > 0.01 { 32 } else { 1 };
+                    let vv = val.map(|x| x / nt as f32);
+                    for k in 0..nt {
+                        let u = if nt == 1 { 0.0 } else { (k as f32 + 0.5) / nt as f32 - 0.5 };
+                        py.disc(sx + mx * u, sy + my * u, foot, &vv);
+                    }
+                    continue;
+                }
                 let inv = 1.0 / ns as f32;
-                let vv = val.map(|x| x * inv);
+                let (v0, v1) = (val.map(|x| x * inv * (1.0 - lw)), val.map(|x| x * inv * lw));
                 for k in 0..ns {
                     let u = if ns == 1 { 0.0 } else { (k as f32 + 0.5) * inv - 0.5 };
-                    py.splat(l, sx + mx * u - mx * 0.0, sy + my * u, &vv);
+                    if lw < 0.999 {
+                        py.splat(l, sx + mx * u, sy + my * u, &v0);
+                    }
+                    if lw > 0.001 {
+                        py.splat(l + 1, sx + mx * u, sy + my * u, &v1);
+                    }
                 }
             }
             py
