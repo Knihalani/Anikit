@@ -9,8 +9,16 @@ edition = "2021"
 license = "MIT"
 repository = "https://github.com/knihalani/anikit"
 
+# `cargo build --release`: fast to build from source (thin LTO, parallel codegen).
 [profile.release]
 opt-level = 3
+lto = "thin"
+codegen-units = 16
+
+# Published binaries (`.github/workflows/video-release.yml`): built once in CI, so
+# take every cross-crate optimisation.
+[profile.dist]
+inherits = "release"
 lto = "fat"
 codegen-units = 1
 
@@ -18,5 +26,14 @@ codegen-units = 1
 # maximum optimisation, everything inlined across crates.
 [profile.wasm]
 inherits = "release"
+lto = "fat"
+codegen-units = 1
 panic = "abort"
 strip = true
+
+# Fast-iterating optimised build (no fat LTO): `cargo build --profile dev-opt`.
+[profile.dev-opt]
+inherits = "release"
+lto = false
+codegen-units = 16
+incremental = true

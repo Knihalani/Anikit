@@ -24,6 +24,8 @@ schemars = "1"
 serde_ignored = "0.1.14"
 serde_path_to_error = "0.1.20"
 serde_norway = "0.9.42"
+# `script` blocks: sandboxed (no modules, no clock), deterministic.
+rhai = { version = "1.27", default-features = false, features = ["std", "serde", "sync", "no_module", "no_time", "no_custom_syntax"] }
 taffy = { version = "0.15.1", features = ["parse"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
 vello_cpu = "0.4.0"
@@ -35,6 +37,7 @@ anikit-music = { path = "../anikit-music" }
 symphonia = { version = "0.5", default-features = false, features = ["mp3", "wav", "pcm", "ogg", "vorbis", "flac", "aac", "isomp4"] }
 two-face = { version = "0.5.2", default-features = false }
 syntect = { version = "5.3.0", default-features = false, features = ["parsing"] }
+rapier3d = { version = "0.36", default-features = false, features = ["std", "dim3", "f32", "enhanced-determinism"] }
 
 [dev-dependencies]
 png = "0.18.1"

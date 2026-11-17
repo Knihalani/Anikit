@@ -1,6 +1,7 @@
 {
   "name": "tutorial",
   "look": "risograph",
+  "intent": { "pace": "steady", "genre": "explainer" },
   "title": "Tutorial / code walkthrough",
   "description": "A coding tutorial: a title beside an editor; then 2–6 split-screen steps, each a numbered badge, title and note beside a code editor that types itself (with highlighted lines) or a terminal for one-line shell commands; then a checklist recap and a CTA with confetti.",
   "duration": "15–60 s",

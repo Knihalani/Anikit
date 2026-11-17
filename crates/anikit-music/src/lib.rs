@@ -17,6 +17,7 @@
 //! let out = anikit_music::render(&spec, &Default::default()).unwrap();
 //! assert_eq!(out.rate, 48_000);
 //! ```
+#![allow(clippy::too_many_arguments, clippy::type_complexity)]
 
 pub mod voice;
 pub mod dsp;

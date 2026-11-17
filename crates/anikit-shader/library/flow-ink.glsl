@@ -1,9 +1,9 @@
 // Flow-field ink: dye advected through a curl-noise velocity field, folding
 // into marbled filaments. Two inks on paper. Uniforms: speed, ink, ink2, paper.
-uniform float speed; // = 1.0
-uniform vec3 ink;    // = vec3(0.05, 0.18, 0.45)
-uniform vec3 ink2;   // = vec3(0.85, 0.32, 0.18)
-uniform vec3 paper;  // = vec3(0.95, 0.93, 0.88)
+uniform float speed; // = 1.0  flow speed
+uniform vec3 ink;    // = vec3(0.05, 0.18, 0.45)  first ink colour
+uniform vec3 ink2;   // = vec3(0.85, 0.32, 0.18)  second ink colour
+uniform vec3 paper;  // = vec3(0.95, 0.93, 0.88)  paper colour
 
 vec2 hash22(vec2 p) {
     uvec2 q = uvec2(ivec2(floor(p)) + 32768);
@@ -12,25 +12,29 @@ vec2 hash22(vec2 p) {
     return vec2(q) * (2.0 / 4294967295.0) - 1.0;
 }
 
-// Gradient noise.
-float gnoise(vec2 p) {
+// Gradient noise with its analytic gradient: (value, d/dx, d/dy).
+vec3 gnoised(vec2 p) {
     vec2 i = floor(p), f = fract(p);
     vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
-    float a = dot(hash22(i), f);
-    float b = dot(hash22(i + vec2(1, 0)), f - vec2(1, 0));
-    float c = dot(hash22(i + vec2(0, 1)), f - vec2(0, 1));
-    float d = dot(hash22(i + vec2(1, 1)), f - vec2(1, 1));
-    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+    vec2 du = 30.0 * f * f * (f * (f - 2.0) + 1.0);
+    vec2 ga = hash22(i), gb = hash22(i + vec2(1, 0)), gc = hash22(i + vec2(0, 1)), gd = hash22(i + vec2(1, 1));
+    float a = dot(ga, f), b = dot(gb, f - vec2(1, 0)), c = dot(gc, f - vec2(0, 1)), d = dot(gd, f - vec2(1, 1));
+    float k = a - b - c + d;
+    float n = a + (b - a) * u.x + (c - a) * u.y + k * u.x * u.y;
+    vec2 g = ga + (gb - ga) * u.x + (gc - ga) * u.y + (ga - gb - gc + gd) * u.x * u.y
+           + du * vec2(b - a + k * u.y, c - a + k * u.x);
+    return vec3(n, g);
 }
 
-// Divergence-free velocity: the curl of a scalar potential.
+float gnoise(vec2 p) { return gnoised(p).x; }
+
+// Divergence-free velocity: the curl of a two-octave potential, from its
+// analytic gradient (one noise evaluation per octave).
 vec2 curl(vec2 p, float t) {
-    const float e = 0.02;
-    float n1 = gnoise(p + vec2(0, e) + t * 0.1) + 0.5 * gnoise(p * 2.1 + vec2(0, e) - t * 0.13);
-    float n2 = gnoise(p - vec2(0, e) + t * 0.1) + 0.5 * gnoise(p * 2.1 - vec2(0, e) - t * 0.13);
-    float n3 = gnoise(p + vec2(e, 0) + t * 0.1) + 0.5 * gnoise(p * 2.1 + vec2(e, 0) - t * 0.13);
-    float n4 = gnoise(p - vec2(e, 0) + t * 0.1) + 0.5 * gnoise(p * 2.1 - vec2(e, 0) - t * 0.13);
-    return vec2(n1 - n2, n4 - n3) / (2.0 * e);
+    vec3 a = gnoised(p + t * 0.1);
+    vec3 b = gnoised(p * 2.1 - t * 0.13);
+    vec2 g = a.yz + 0.5 * 2.1 * b.yz;
+    return vec2(g.y, -g.x);
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {

@@ -95,20 +95,21 @@ pub fn basis(n: V3) -> (V3, V3) {
     (v3(1.0 + s * n.x * n.x * a, s * b, -s * n.x), v3(b, s + n.y * n.y * a, -n.y))
 }
 
-/// A rigid transform with uniform scale: `p' = R·(s·p) + t`.
+/// Rotation, per-axis scale and translation: `p' = R·(s∘p) + t`.
 #[derive(Clone, Copy, Debug)]
 pub struct Xf {
     /// Rotation columns.
     pub r: [V3; 3],
-    pub s: f32,
+    /// Scale per local axis.
+    pub s: V3,
     pub t: V3,
 }
 
 impl Xf {
-    pub const IDENTITY: Xf = Xf { r: [v3(1.0, 0.0, 0.0), v3(0.0, 1.0, 0.0), v3(0.0, 0.0, 1.0)], s: 1.0, t: v3(0.0, 0.0, 0.0) };
+    pub const IDENTITY: Xf = Xf { r: [v3(1.0, 0.0, 0.0), v3(0.0, 1.0, 0.0), v3(0.0, 0.0, 1.0)], s: v3(1.0, 1.0, 1.0), t: v3(0.0, 0.0, 0.0) };
 
     /// Rotation from Euler angles in degrees (applied Y·X·Z: yaw, pitch, roll).
-    pub fn new(pos: V3, rot_deg: V3, s: f32) -> Xf {
+    pub fn new(pos: V3, rot_deg: V3, s: V3) -> Xf {
         let (x, y, z) = (rot_deg.x.to_radians(), rot_deg.y.to_radians(), rot_deg.z.to_radians());
         let rx = [v3(1.0, 0.0, 0.0), v3(0.0, x.cos(), x.sin()), v3(0.0, -x.sin(), x.cos())];
         let ry = [v3(y.cos(), 0.0, -y.sin()), v3(0.0, 1.0, 0.0), v3(y.sin(), 0.0, y.cos())];
@@ -126,17 +127,50 @@ impl Xf {
     }
     #[inline]
     pub fn point(&self, p: V3) -> V3 {
-        add(self.rot(scale(p, self.s)), self.t)
+        add(self.rot(mul(p, self.s)), self.t)
     }
     #[inline]
     pub fn point_inv(&self, p: V3) -> V3 {
-        scale(self.rot_inv(sub(p, self.t)), 1.0 / self.s)
+        let q = self.rot_inv(sub(p, self.t));
+        v3(q.x / self.s.x, q.y / self.s.y, q.z / self.s.z)
+    }
+    /// A world direction in local space (unnormalised, so ray `t` is preserved).
+    #[inline]
+    pub fn dir_inv(&self, d: V3) -> V3 {
+        let q = self.rot_inv(d);
+        v3(q.x / self.s.x, q.y / self.s.y, q.z / self.s.z)
+    }
+    /// A local normal in world space (inverse transpose), normalised.
+    #[inline]
+    pub fn normal(&self, n: V3) -> V3 {
+        norm(self.rot(v3(n.x / self.s.x, n.y / self.s.y, n.z / self.s.z)))
+    }
+    /// The largest and smallest axis scale.
+    #[inline]
+    pub fn smax(&self) -> f32 {
+        self.s.x.max(self.s.y).max(self.s.z)
+    }
+    #[inline]
+    pub fn smin(&self) -> f32 {
+        self.s.x.min(self.s.y).min(self.s.z)
     }
 }
 
 pub fn mat_mul(a: &[V3; 3], b: &[V3; 3]) -> [V3; 3] {
     let ap = |v: V3| add(add(scale(a[0], v.x), scale(a[1], v.y)), scale(a[2], v.z));
     [ap(b[0]), ap(b[1]), ap(b[2])]
+}
+
+/// Fractional part via truncation (std's `floor` is a software routine
+/// without SSE4.1).
+#[inline(always)]
+pub fn fract(x: f32) -> f32 {
+    let t = x - (x as i32) as f32;
+    if t < 0.0 {
+        t + 1.0
+    } else {
+        t
+    }
 }
 
 /// A small, fast hash for per-pixel sample decorrelation.
@@ -162,7 +196,7 @@ pub fn r2(i: u32, rot: (f32, f32)) -> (f32, f32) {
     const A2: f32 = 0.569_840_3;
     let a = rot.0 + A1 * i as f32;
     let b = rot.1 + A2 * i as f32;
-    (a - a.floor(), b - b.floor())
+    (fract(a), fract(b))
 }
 
 /// Cosine-weighted hemisphere direction around `n`.

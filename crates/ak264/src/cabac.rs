@@ -108,8 +108,10 @@ impl Cabac {
 
     #[inline(always)]
     pub fn decision(&mut self, _w: &mut BitWriter, ctx: usize, bin: u32) {
-        let c = &mut self.ctx[ctx];
-        let s = *c as usize;
+        debug_assert!(ctx < self.ctx.len());
+        // SAFETY: context indices are compile-time table offsets below 460.
+        let c = unsafe { self.ctx.get_unchecked_mut(ctx) };
+        let s = (*c & 127) as usize; // states are 7-bit; the mask lets the tables skip bounds checks
         // NEXT[s][bin]: full state transition including the MPS flip
         let lps = LPS[s][((self.range >> 6) & 3) as usize] as u32;
         self.range -= lps;
@@ -118,7 +120,10 @@ impl Cabac {
             self.range = lps;
         }
         *c = NEXT[s][bin as usize];
-        self.renorm();
+        // most MPS decisions leave range ≥ 256: nothing to shift or emit
+        if self.range < 256 {
+            self.renorm();
+        }
     }
 
     #[inline(always)]
@@ -212,42 +217,49 @@ impl Cabac {
 
     /// A residual block (`coeffs` in scan order, len 16/15/4) with its coded_block_flag
     /// context increment.
+    /// coded_block_flag = 0 for a block with no coefficients.
+    #[inline]
+    pub fn residual_empty(&mut self, w: &mut BitWriter, cat: Cat, cbf_inc: usize) {
+        self.decision(w, 85 + CBF_OFF[cat as usize] + cbf_inc, 0);
+    }
+
     pub fn residual(&mut self, w: &mut BitWriter, coeffs: &[i32], cat: Cat, cbf_inc: usize) {
         let c = cat as usize;
         let n = coeffs.len();
-        let mut last = usize::MAX;
-        for i in (0..n).rev() {
-            if coeffs[i] != 0 {
-                last = i;
-                break;
-            }
-        }
-        if last == usize::MAX {
+        debug_assert!(n <= 16);
+        // bit i set ⇔ coefficient i nonzero
+        let mask = coeffs.iter().enumerate().fold(0u32, |m, (i, &v)| m | (((v != 0) as u32) << i));
+        if mask == 0 {
             self.decision(w, 85 + CBF_OFF[c] + cbf_inc, 0);
             return;
         }
         self.decision(w, 85 + CBF_OFF[c] + cbf_inc, 1);
+        let last = 31 - mask.leading_zeros() as usize;
         let (sig, lst) = (105 + SIG_OFF[c], 166 + SIG_OFF[c]);
-        for (i, &v) in coeffs.iter().enumerate().take(n - 1) {
-            let inc = if cat == Cat::ChromaDc { i.min(2) } else { i };
-            if v != 0 {
-                self.decision(w, sig + inc, 1);
-                self.decision(w, lst + inc, (i == last) as u32);
-                if i == last {
-                    break;
-                }
-            } else {
-                self.decision(w, sig + inc, 0);
+        // significance map up to `last` (the last position of a full block is implicit)
+        let chroma_dc = cat == Cat::ChromaDc;
+        for i in 0..last.min(n - 1) {
+            let inc = if chroma_dc { i.min(2) } else { i };
+            let nz = (mask >> i) & 1;
+            self.decision(w, sig + inc, nz);
+            if nz != 0 {
+                self.decision(w, lst + inc, 0);
             }
         }
+        if last < n - 1 {
+            let inc = if chroma_dc { last.min(2) } else { last };
+            self.decision(w, sig + inc, 1);
+            self.decision(w, lst + inc, 1);
+        }
+        // levels, highest frequency first, nonzero coefficients only
         let base = 227 + ABS_OFF[c];
         let (mut gt1, mut eq1) = (0usize, 0usize);
-        let cap = if cat == Cat::ChromaDc { 3 } else { 4 };
-        for i in (0..=last).rev() {
+        let cap = if chroma_dc { 3 } else { 4 };
+        let mut m = mask;
+        while m != 0 {
+            let i = 31 - m.leading_zeros() as usize;
+            m &= !(1 << i);
             let v = coeffs[i];
-            if v == 0 {
-                continue;
-            }
             let a = v.unsigned_abs() - 1;
             let inc0 = if gt1 != 0 { 0 } else { (1 + eq1).min(4) };
             if a == 0 {

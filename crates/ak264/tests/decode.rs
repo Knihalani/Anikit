@@ -378,3 +378,35 @@ fn affine_zoom_hints() {
         assert!(psnr(&d, &src) > 38.0);
     }
 }
+
+#[test]
+fn adaptive_quant_is_bit_exact() {
+    // Flat dark areas next to busy ones: per-macroblock QPs differ, so
+    // mb_qp_delta, QP prediction across skips and per-edge deblocking QPs are
+    // all exercised, with both entropy coders and with slices.
+    let (w, h) = (176u32, 112u32);
+    let frames: Vec<YuvBuffer> = (0..6u32)
+        .map(|t| {
+            let mut b = YuvBuffer::new(w, h);
+            for y in 0..h as usize {
+                for x in 0..w as usize {
+                    let busy = (x / 32 + y / 32) % 2 == 0;
+                    let r = (x as u32 * 7919 + y as u32 * 104729 + t * 31337).wrapping_mul(2654435761) >> 28;
+                    b.y[y * w as usize + x] = if busy { (40 + r * 12 + x as u32 + t * 3) as u8 } else { (20 + x as u32 / 24 + (r & 1)) as u8 };
+                }
+            }
+            b.u.fill(128);
+            b.v.fill(129);
+            b
+        })
+        .collect();
+    for cabac in [false, true] {
+        for threads in [1, 3] {
+            let c = EncoderConfig { cabac, threads, deblock: true, aq_strength: 1.0, qp: 26, ..cfg(w, h) };
+            let (_, p) = roundtrip(c, &frames, &format!("aq{}{}", cabac as u8, threads));
+            if have_ffmpeg() {
+                assert!(p > 35.0, "{p}");
+            }
+        }
+    }
+}

@@ -1120,7 +1120,7 @@ mod tests {
     fn eval(l: &Lottie, t: f32, w: f32, h: f32) -> Vec<Op> {
         let th = Theme::default();
         let a = preview::host();
-        let ctx = Ctx { width: w, height: h, fps: 30.0, theme: &th, assets: a, root: None };
+        let ctx = Ctx { width: w, height: h, fps: 30.0, theme: &th, assets: a };
         l.eval(t, &ctx)
     }
 
@@ -1380,7 +1380,7 @@ mod tests {
         let l = lottie(json!({"data": demo()}));
         let th = Theme::default();
         let a = preview::host();
-        let ctx = Ctx { width: 400.0, height: 300.0, fps: 30.0, theme: &th, assets: a, root: None };
+        let ctx = Ctx { width: 400.0, height: 300.0, fps: 30.0, theme: &th, assets: a };
         for (i, t) in [0.0f32, 0.25, 0.5, 1.0, 1.5].iter().enumerate() {
             let ops = l.eval(*t, &ctx);
             preview::validate(&ops).unwrap();

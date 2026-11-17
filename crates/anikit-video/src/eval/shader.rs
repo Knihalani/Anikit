@@ -40,6 +40,146 @@ pub(crate) enum ChannelC {
     Layers(Vec<Node>),
     /// A named composition (`"#name"`), through the shared `CompTextures` cache.
     Comp { ev: Arc<Evaluator>, time: super::CompTime },
+    /// Buffer pass `0..4` (`"A"`…`"D"`) of this layer, at this frame.
+    Buffer(usize),
+}
+
+/// What a buffer pass reads per channel.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum BufChan {
+    None,
+    Noise,
+    /// Buffer `i`: this frame's when it runs earlier, else the previous frame's.
+    Buffer(usize),
+}
+
+pub(crate) struct BufPass {
+    /// Index 0..4 for A..D.
+    pub slot: usize,
+    pub shader: Arc<Shader>,
+    pub chans: Vec<(BufChan, ChanOpts)>,
+}
+
+/// Buffer passes of one shader layer, with their feedback state.
+pub(crate) struct Passes {
+    /// In render order (A, B, C, D as present).
+    pub bufs: Vec<BufPass>,
+    /// Some pass reads itself or a later pass: frame n depends on frame n − 1.
+    pub stateful: bool,
+    /// Some pass reads `iTime`/`iFrame`/….
+    pub dynamic: bool,
+    /// Uniform values the passes see: the spec's, not animated, so a frame is
+    /// the same however it was reached.
+    pub uniforms: Vec<(String, Vec<f32>)>,
+    pub audio: Option<Arc<super::audio_react::AudioFeatures>>,
+    /// Recent frames.
+    history: Mutex<VecDeque<Kept>>,
+}
+
+/// Frames of buffer state kept (each is up to 4 float textures at layer size).
+const HISTORY: usize = 2;
+
+type Bufs = Arc<[Option<Arc<Texture>>; 4]>;
+/// A kept frame of buffer state: (frame, size, textures by slot).
+type Kept = (i64, (u32, u32), Bufs);
+
+impl Passes {
+    pub fn new(bufs: Vec<BufPass>, uniforms: Vec<(String, Vec<f32>)>, audio: Option<Arc<super::audio_react::AudioFeatures>>) -> Passes {
+        let order: Vec<usize> = bufs.iter().map(|b| b.slot).collect();
+        let stateful = bufs.iter().enumerate().any(|(i, b)| {
+            b.chans.iter().any(|(c, _)| match c {
+                BufChan::Buffer(j) => order.iter().position(|s| s == j).is_none_or(|pj| pj >= i),
+                _ => false,
+            })
+        });
+        Passes { bufs, stateful, dynamic: false, uniforms, audio, history: Mutex::new(VecDeque::new()) }
+    }
+
+    /// Buffer textures at layer frame `n` (frame 0 starts from zero buffers).
+    /// `gt0` is the global time of layer frame 0 (for `iAudio`/`iBeat`).
+    fn at(&self, n: i64, size: (u32, u32), fps: f32, gt0: f32) -> Bufs {
+        let n = n.max(0);
+        if !self.stateful {
+            return self.step(n, size, fps, gt0, None);
+        }
+        // Resume from the latest kept frame at or before n; no lock is held while
+        // rendering (the renders use rayon, and a nested request must not block).
+        let (mut k, mut prev) = {
+            let h = self.history.lock().unwrap();
+            if let Some((_, _, b)) = h.iter().find(|(f, s, _)| *f == n && *s == size) {
+                return b.clone();
+            }
+            match h.iter().filter(|(f, s, _)| *f < n && *s == size).max_by_key(|(f, _, _)| *f) {
+                Some((f, _, b)) => (*f + 1, Some(b.clone())),
+                None => (0, None),
+            }
+        };
+        loop {
+            let cur = self.step(k, size, fps, gt0, prev.as_ref());
+            if k >= n.saturating_sub(HISTORY as i64 - 1) {
+                let mut h = self.history.lock().unwrap();
+                if !h.iter().any(|(f, s, _)| *f == k && *s == size) {
+                    h.push_back((k, size, cur.clone()));
+                    while h.len() > HISTORY {
+                        h.pop_front();
+                    }
+                }
+            }
+            if k == n {
+                return cur;
+            }
+            prev = Some(cur);
+            k += 1;
+        }
+    }
+
+    fn step(&self, k: i64, (w, h): (u32, u32), fps: f32, gt0: f32, prev: Option<&Bufs>) -> Bufs {
+        let zero = OnceLock::new();
+        let zero = || zero.get_or_init(|| Texture::from_f32_exact(w, h, Vec::new()));
+        let mut cur: [Option<Arc<Texture>>; 4] = Default::default();
+        let time = k as f32 / fps.max(1e-3);
+        let (audio, beat) = self.audio.as_ref().map_or(([0.0; 4], [0.0; 4]), |a| a.at(gt0 + time));
+        let unis: Vec<(&str, &[f32])> = self.uniforms.iter().map(|(n, v)| (n.as_str(), v.as_slice())).collect();
+        for b in &self.bufs {
+            // Bind: earlier passes this frame, the others from the previous frame
+            // (zero on frame 0). Channel options apply per binding, as views.
+            let views: Vec<Option<Texture>> = b
+                .chans
+                .iter()
+                .take(4)
+                .map(|(c, o)| match c {
+                    BufChan::Buffer(j) => {
+                        let t = cur[*j].clone().or_else(|| prev.and_then(|p| p[*j].clone()));
+                        Some(match &t {
+                            Some(t) => t.view(o.wrap, o.filter),
+                            None => zero().view(o.wrap, o.filter),
+                        })
+                    }
+                    _ => None,
+                })
+                .collect();
+            let mut chans: [Option<&Texture>; 4] = [None; 4];
+            for (i, (c, _)) in b.chans.iter().enumerate().take(4) {
+                chans[i] = match c {
+                    BufChan::None => None,
+                    BufChan::Noise => Some(noise_texture()),
+                    BufChan::Buffer(_) => views[i].as_ref(),
+                };
+            }
+            let mut f = Frame::new(w, h, time);
+            f.frame = k as i32;
+            f.fps = fps;
+            f.uniforms = &unis;
+            f.channels = chans;
+            f.audio = audio;
+            f.beat = beat;
+            f.alpha = true;
+            let px = b.shader.render_f32(&f);
+            cur[b.slot] = Some(Arc::new(Texture::from_f32_exact(w, h, px)));
+        }
+        // Passes that didn't run (none) keep nothing; the rest are this frame's.
+        Arc::new(cur)
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -64,6 +204,12 @@ pub(crate) struct ShaderC {
     pub dynamic: bool,
     /// Distinguishes layers in content keys.
     pub id: u64,
+    /// Spec path and shader name, for cost reports (`still` prints them).
+    pub label: Arc<str>,
+    /// Music features when the source reads `iAudio`/`iBeat`.
+    pub audio: Option<Arc<super::audio_react::AudioFeatures>>,
+    /// Buffer passes (`"buffers"`).
+    pub passes: Option<Arc<Passes>>,
 }
 
 /// Shared handle for transitions (`TransC` is `Clone + PartialEq + Debug`).
@@ -82,9 +228,17 @@ impl std::fmt::Debug for ShaderRef {
     }
 }
 
+/// `path (name)` for cost reports: a built-in's name or a file name; inline source is just the path.
+pub(crate) fn label(path: &str, src: Option<&str>) -> Arc<str> {
+    match src.map(str::trim) {
+        Some(s) if !s.contains(['(', '{', ';', '\n']) => format!("{path} ({s})").into(),
+        _ => path.into(),
+    }
+}
+
 /// True when the source animates by itself.
 pub(crate) fn uses_time(src: &str) -> bool {
-    ["iTime", "iFrame", "iDate", "iTimeDelta"].iter().any(|w| src.contains(w))
+    ["iTime", "iFrame", "iDate", "iTimeDelta", "iAudio", "iBeat"].iter().any(|w| src.contains(w))
 }
 
 /// Built-in name → source, or the source itself.
@@ -101,6 +255,31 @@ thread_local! {
     static FRAME_BG: Cell<Rgba> = const { Cell::new(Rgba([0.0, 0.0, 0.0, 1.0])) };
 }
 
+thread_local! {
+    /// Output scale of the frame being evaluated (`still --scale`): shaders render
+    /// at the size they will be shown, not at full size and then shrunk.
+    static PREVIEW_SCALE: Cell<f32> = const { Cell::new(1.0) };
+}
+
+/// Set the output scale for evaluations on this thread (1 = full size).
+pub fn set_preview_scale(s: f32) {
+    PREVIEW_SCALE.with(|c| c.set(if s.is_finite() && s > 0.0 { s.min(1.0) } else { 1.0 }));
+}
+
+pub(crate) fn preview_scale() -> f32 {
+    PREVIEW_SCALE.with(|c| c.get())
+}
+
+/// A frame-sized display list, shrunk to the preview scale.
+fn frame_list(w: u32, h: u32, background: Rgba, ops: Vec<Op>) -> DisplayList {
+    let mut dl = DisplayList { width: w, height: h, background, ops };
+    let s = preview_scale();
+    if s != 1.0 {
+        crate::pipeline::scale_list(&mut dl, s);
+    }
+    dl
+}
+
 pub(crate) fn set_frame_bg(c: Rgba) {
     FRAME_BG.with(|b| b.set(c));
 }
@@ -113,6 +292,8 @@ pub(crate) enum ChanData {
     List(DisplayList),
     /// Named composition at its own time (weak: the root evaluator owns it).
     Comp(Weak<Evaluator>, f32),
+    /// Buffer pass by slot (A = 0).
+    Buffer(usize),
 }
 
 pub(crate) struct Job {
@@ -127,6 +308,27 @@ pub(crate) struct Job {
     channels: Vec<(ChanData, ChanOpts)>,
     supersample: bool,
     alpha: bool,
+    label: Arc<str>,
+    /// `iAudio`, `iBeat`.
+    audio: [f32; 4],
+    beat: [f32; 4],
+    /// Buffer passes and the global time of layer frame 0.
+    passes: Option<(Arc<Passes>, f32)>,
+}
+
+/// Measured cost of one shader layer (or transition) over the renders so far.
+#[derive(Clone, Debug)]
+pub struct ShaderStat {
+    /// Spec path and shader name, e.g. `scenes[0].layers[1] (sdf-scene)`.
+    pub label: String,
+    /// Mean milliseconds per render (the shader alone, not its channels).
+    pub ms: f32,
+    /// Renders measured.
+    pub renders: u32,
+    /// Size rendered at (scaled for stills).
+    pub width: u32,
+    pub height: u32,
+    pub supersample: bool,
 }
 
 struct Entry {
@@ -143,11 +345,15 @@ struct Inner {
     with_result: VecDeque<u32>,
 }
 
+/// Per label: (total ms, renders, w, h, supersample).
+type Tally = (f64, u32, u32, u32, bool);
+
 /// Pending and recent shader renders, looked up by image id.
 #[derive(Default)]
 pub struct ShaderJobs {
     inner: Mutex<Inner>,
     assets: OnceLock<Weak<SharedAssets>>,
+    stats: Mutex<HashMap<Arc<str>, Tally>>,
 }
 
 /// Jobs kept (an evaluation batch is a few dozen frames ahead of rendering).
@@ -196,7 +402,16 @@ impl ShaderJobs {
         }
         // No lock is held while rendering: the shader and nested renders use rayon.
         let assets = self.assets.get().and_then(|w| w.upgrade());
-        let pm = Arc::new(run(&e.job, assets.as_ref()));
+        let (pm, ms) = run(&e.job, assets.as_ref());
+        let pm = Arc::new(pm);
+        {
+            let j = &e.job;
+            let mut st = self.stats.lock().unwrap();
+            let s = st.entry(j.label.clone()).or_insert((0.0, 0, j.w, j.h, j.supersample));
+            s.0 += ms;
+            s.1 += 1;
+            (s.2, s.3) = (j.w, j.h);
+        }
         *e.result.lock().unwrap() = Some(pm.clone());
         let mut g = self.inner.lock().unwrap();
         g.with_result.push_back(id.0);
@@ -210,6 +425,19 @@ impl ShaderJobs {
             }
         }
         Some(pm)
+    }
+
+    /// Cost of every shader rendered so far, most expensive first.
+    pub fn stats(&self) -> Vec<ShaderStat> {
+        let mut v: Vec<ShaderStat> = self
+            .stats
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|(l, &(ms, n, w, h, ss))| ShaderStat { label: l.to_string(), ms: (ms / n.max(1) as f64) as f32, renders: n, width: w, height: h, supersample: ss })
+            .collect();
+        v.sort_by(|a, b| b.ms.total_cmp(&a.ms));
+        v
     }
 
     pub(crate) fn owns(id: ImageId) -> bool {
@@ -283,10 +511,12 @@ fn noise_texture() -> &'static Texture {
     })
 }
 
-fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> Pixmap {
+fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> (Pixmap, f64) {
+    let bufs = job.passes.as_ref().map(|(p, gt0)| p.at(job.frame as i64, (job.w, job.h), job.fps, *gt0));
     let mut owned: Vec<Option<Texture>> = Vec::new();
     for (c, o) in &job.channels {
         owned.push(match c {
+            ChanData::Buffer(j) => bufs.as_ref().and_then(|b| b[*j].as_deref()).map(|t| t.view(o.wrap, o.filter)),
             ChanData::List(dl) => Some(list_texture(dl, assets, *o)),
             ChanData::Comp(ev, t) => match (ev.upgrade(), assets) {
                 (Some(ev), Some(a)) => {
@@ -303,7 +533,7 @@ fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> Pixmap {
         chans[i] = match c {
             ChanData::None => None,
             ChanData::Noise => Some(noise_texture()),
-            ChanData::List(_) | ChanData::Comp(..) => owned[i].as_ref(),
+            ChanData::List(_) | ChanData::Comp(..) | ChanData::Buffer(_) => owned[i].as_ref(),
         };
     }
     let unis: Vec<(&str, &[f32])> = job.uniforms.iter().map(|(n, v)| (n.as_str(), v.as_slice())).collect();
@@ -312,13 +542,19 @@ fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> Pixmap {
     f.fps = job.fps;
     f.progress = job.progress;
     f.uniforms = &unis;
+    f.audio = job.audio;
+    f.beat = job.beat;
     f.channels = chans;
     f.supersample = job.supersample;
     f.alpha = job.alpha;
+    // Smooth shader gradients would band in 8 bits; exact values are untouched.
+    f.dither = true;
     let mut pm = Pixmap::new(job.w.clamp(1, 65535) as u16, job.h.clamp(1, 65535) as u16);
+    let t0 = std::time::Instant::now();
     let opaque = job.shader.render(&f, pm.data_as_u8_slice_mut());
+    let ms = t0.elapsed().as_secs_f64() * 1000.0;
     pm.set_may_have_transparency(!opaque);
-    pm
+    (pm, ms)
 }
 
 // ---------------------------------------------------------------- emission
@@ -330,6 +566,11 @@ fn hash_f32s<H: Hasher>(h: &mut H, v: &[f32]) {
 }
 
 impl Evaluator {
+    /// Measured cost of every shader layer and transition rendered so far.
+    pub fn shader_stats(&self) -> Vec<ShaderStat> {
+        self.assets.shaders.stats()
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn job_for(&self, sc: &ShaderC, cx: &Cx, v: &[f32; prop::N], size: (u32, u32), time: f32, progress: f32, chans: Vec<(ChanData, ChanOpts)>) -> ImageId {
         let mut uniforms: Vec<(String, Vec<f32>)> = sc.fixed.clone();
@@ -337,6 +578,8 @@ impl Evaluator {
             let base = prop::U0 + off;
             uniforms.push((name.clone(), v[base..base + n].to_vec()));
         }
+        // Music at the global time (the audio track is on the global timeline).
+        let (audio, beat) = sc.audio.as_ref().map_or(([0.0; 4], [0.0; 4]), |a| a.at(cx.gt));
         // Content key: generators without composited inputs render once per distinct input.
         let key = if chans.iter().all(|(c, _)| !matches!(c, ChanData::List(_))) {
             let mut h = std::collections::hash_map::DefaultHasher::new();
@@ -356,6 +599,8 @@ impl Evaluator {
                 hash_f32s(&mut h, &[time, (cx.gt * self.fps).round()]);
             }
             hash_f32s(&mut h, &[progress]);
+            hash_f32s(&mut h, &audio);
+            hash_f32s(&mut h, &beat);
             Some(h.finish())
         } else {
             None
@@ -372,6 +617,10 @@ impl Evaluator {
             channels: chans,
             supersample: sc.supersample,
             alpha: sc.alpha,
+            label: sc.label.clone(),
+            audio,
+            beat,
+            passes: sc.passes.clone().map(|p| (p, cx.gt - time)),
         };
         self.assets.shaders.submit(job, key)
     }
@@ -380,9 +629,10 @@ impl Evaluator {
     #[allow(clippy::too_many_arguments)]
     pub(super) fn emit_shader(&self, sc: &ShaderC, cx: &Cx, v: &[f32; prop::N], xf: &Affine, w: f32, h: f32, alpha: f32, lt: f32, out: &mut Vec<Op>) {
         let (fw, fh) = (self.width as f32, self.height as f32);
-        // Render at device resolution.
-        let (sx, sy) = ((xf[0] * xf[0] + xf[1] * xf[1]).sqrt(), (xf[2] * xf[2] + xf[3] * xf[3]).sqrt());
-        let (dw, dh) = if sc.filter { (fw, fh) } else { ((w * sx).round().clamp(1.0, MAX_SIDE), (h * sy).round().clamp(1.0, MAX_SIDE)) };
+        // Render at device resolution (times the preview scale).
+        let ps = preview_scale();
+        let (sx, sy) = ((xf[0] * xf[0] + xf[1] * xf[1]).sqrt() * ps, (xf[2] * xf[2] + xf[3] * xf[3]).sqrt() * ps);
+        let (dw, dh) = if sc.filter { ((fw * ps).round().max(1.0), (fh * ps).round().max(1.0)) } else { ((w * sx).round().clamp(1.0, MAX_SIDE), (h * sy).round().clamp(1.0, MAX_SIDE)) };
         if w < 0.5 || h < 0.5 {
             return;
         }
@@ -392,12 +642,7 @@ impl Evaluator {
                 match c {
                     ChannelC::None => ChanData::None,
                     ChannelC::Noise => ChanData::Noise,
-                    ChannelC::Below => ChanData::List(DisplayList {
-                        width: self.width,
-                        height: self.height,
-                        background: FRAME_BG.with(|b| b.get()),
-                        ops: out.clone(),
-                    }),
+                    ChannelC::Below => ChanData::List(frame_list(self.width, self.height, FRAME_BG.with(|b| b.get()), out.clone())),
                     ChannelC::Layers(nodes) => {
                         let mut ops = Vec::new();
                         let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0 };
@@ -408,6 +653,7 @@ impl Evaluator {
                         ChanData::List(DisplayList { width: dw as u32, height: dh as u32, background: Rgba([0.0; 4]), ops })
                     }
                     ChannelC::Comp { ev, time } => ChanData::Comp(Arc::downgrade(ev), time.map(lt, ev.duration)),
+                    ChannelC::Buffer(j) => ChanData::Buffer(*j),
                 },
                 *o,
             ));
@@ -423,7 +669,7 @@ impl Evaluator {
     /// A shader transition between two scenes' ops (`from` = channel 0, `to` = channel 1).
     pub(super) fn emit_shader_transition(&self, sc: &ShaderC, from: (Vec<Op>, Rgba), to: (Vec<Op>, Rgba), t: f32, progress: f32, out: &mut Vec<Op>) {
         let (w, h) = (self.width, self.height);
-        let mk = |(ops, bg): (Vec<Op>, Rgba)| DisplayList { width: w, height: h, background: bg, ops };
+        let mk = |(ops, bg): (Vec<Op>, Rgba)| frame_list(w, h, bg, ops);
         let o = ChanOpts { wrap: Wrap::Clamp, filter: Filter::Linear, mipmaps: false };
         let mut chans = vec![(ChanData::List(mk(from)), o), (ChanData::List(mk(to)), o)];
         for (c, o) in sc.channels.iter().skip(2) {
@@ -431,7 +677,9 @@ impl Evaluator {
         }
         let cx = Cx { ev: self, scene_t: t, gt: t, dof: 0.0 };
         let v = [0.0f32; prop::N];
-        let image = self.job_for(sc, &cx, &v, (w, h), t, progress, chans);
+        let ps = preview_scale();
+        let size = (((w as f32 * ps).round() as u32).max(1), ((h as f32 * ps).round() as u32).max(1));
+        let image = self.job_for(sc, &cx, &v, size, t, progress, chans);
         out.push(Op::Image { image, dst: [0.0, 0.0, w as f32, h as f32], opacity: 1.0, transform: dl::IDENTITY });
     }
 }

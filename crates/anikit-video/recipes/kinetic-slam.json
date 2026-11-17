@@ -1,0 +1,397 @@
+{
+ "about": "Beat-cut kinetic type: one word per beat at 128 BPM, colour flips, snap zoom and impact shake on every cut. Swap the words; add \"music\" and set durations to \"@beat\" for an exact grid.",
+ "spec": {
+  "size": "16:9",
+  "intent": {
+   "pace": "frantic",
+   "genre": "social"
+  },
+  "motionBlur": true,
+  "scenes": [
+   {
+    "duration": 0.469,
+    "transition": "cut",
+    "background": "#0A0A0A",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "zoom": 1.18,
+        "rotation": 3
+       },
+       "to": {
+        "zoom": 1,
+        "rotation": 0
+       },
+       "duration": 0.22,
+       "ease": "outExpo"
+      }
+     ],
+     "shake": {
+      "amount": 8,
+      "at": 0,
+      "duration": 0.18
+     }
+    },
+    "layers": [
+     {
+      "text": "STOP",
+      "font": "Inter Display",
+      "size": "26vh",
+      "weight": 900,
+      "color": "#F4F4F0",
+      "letterSpacing": "-0.05em",
+      "x": "48%",
+      "animate": [
+       {
+        "from": {
+         "scale": 2.2,
+         "opacity": 0,
+         "blur": 18
+        },
+        "duration": 0.12,
+        "ease": "outExpo"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "duration": 0.938,
+    "transition": "cut",
+    "background": "#F4F4F0",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "zoom": 1.18,
+        "rotation": -3
+       },
+       "to": {
+        "zoom": 1,
+        "rotation": 0
+       },
+       "duration": 0.22,
+       "ease": "outExpo"
+      }
+     ],
+     "shake": {
+      "amount": 8,
+      "at": 0,
+      "duration": 0.18
+     }
+    },
+    "layers": [
+     {
+      "text": "SCROLLING.",
+      "font": "Inter Display",
+      "size": "26vh",
+      "weight": 900,
+      "color": "#0A0A0A",
+      "letterSpacing": "-0.05em",
+      "x": "52%",
+      "animate": [
+       {
+        "from": {
+         "scale": 2.2,
+         "opacity": 0,
+         "blur": 18
+        },
+        "duration": 0.12,
+        "ease": "outExpo"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "duration": 0.469,
+    "transition": "cut",
+    "background": "#FF3B1F",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "zoom": 1.18,
+        "rotation": 3
+       },
+       "to": {
+        "zoom": 1,
+        "rotation": 0
+       },
+       "duration": 0.22,
+       "ease": "outExpo"
+      }
+     ],
+     "shake": {
+      "amount": 8,
+      "at": 0,
+      "duration": 0.18
+     }
+    },
+    "layers": [
+     {
+      "text": "THIS",
+      "font": "Inter Display",
+      "size": "26vh",
+      "weight": 900,
+      "color": "#0A0A0A",
+      "letterSpacing": "-0.05em",
+      "x": "48%",
+      "animate": [
+       {
+        "from": {
+         "scale": 2.2,
+         "opacity": 0,
+         "blur": 18
+        },
+        "duration": 0.12,
+        "ease": "outExpo"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "duration": 0.469,
+    "transition": "cut",
+    "background": "#0A0A0A",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "zoom": 1.18,
+        "rotation": -3
+       },
+       "to": {
+        "zoom": 1,
+        "rotation": 0
+       },
+       "duration": 0.22,
+       "ease": "outExpo"
+      }
+     ],
+     "shake": {
+      "amount": 8,
+      "at": 0,
+      "duration": 0.18
+     }
+    },
+    "layers": [
+     {
+      "text": "IS",
+      "font": "Inter Display",
+      "size": "26vh",
+      "weight": 900,
+      "color": "#C8FF00",
+      "letterSpacing": "-0.05em",
+      "x": "52%",
+      "animate": [
+       {
+        "from": {
+         "scale": 2.2,
+         "opacity": 0,
+         "blur": 18
+        },
+        "duration": 0.12,
+        "ease": "outExpo"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "duration": 0.469,
+    "transition": "cut",
+    "background": "#0A0A0A",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "zoom": 1.18,
+        "rotation": 3
+       },
+       "to": {
+        "zoom": 1,
+        "rotation": 0
+       },
+       "duration": 0.22,
+       "ease": "outExpo"
+      }
+     ],
+     "shake": {
+      "amount": 8,
+      "at": 0,
+      "duration": 0.18
+     }
+    },
+    "layers": [
+     {
+      "text": "WHAT",
+      "font": "Inter Display",
+      "size": "26vh",
+      "weight": 900,
+      "color": "#F4F4F0",
+      "letterSpacing": "-0.05em",
+      "x": "48%",
+      "animate": [
+       {
+        "from": {
+         "scale": 2.2,
+         "opacity": 0,
+         "blur": 18
+        },
+        "duration": 0.12,
+        "ease": "outExpo"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "duration": 0.469,
+    "transition": "cut",
+    "background": "#F4F4F0",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "zoom": 1.18,
+        "rotation": -3
+       },
+       "to": {
+        "zoom": 1,
+        "rotation": 0
+       },
+       "duration": 0.22,
+       "ease": "outExpo"
+      }
+     ],
+     "shake": {
+      "amount": 8,
+      "at": 0,
+      "duration": 0.18
+     }
+    },
+    "layers": [
+     {
+      "text": "FAST",
+      "font": "Inter Display",
+      "size": "26vh",
+      "weight": 900,
+      "color": "#0A0A0A",
+      "letterSpacing": "-0.05em",
+      "x": "52%",
+      "animate": [
+       {
+        "from": {
+         "scale": 2.2,
+         "opacity": 0,
+         "blur": 18
+        },
+        "duration": 0.12,
+        "ease": "outExpo"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "duration": 0.469,
+    "transition": "cut",
+    "background": "#FF3B1F",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "zoom": 1.18,
+        "rotation": 3
+       },
+       "to": {
+        "zoom": 1,
+        "rotation": 0
+       },
+       "duration": 0.22,
+       "ease": "outExpo"
+      }
+     ],
+     "shake": {
+      "amount": 8,
+      "at": 0,
+      "duration": 0.18
+     }
+    },
+    "layers": [
+     {
+      "text": "LOOKS",
+      "font": "Inter Display",
+      "size": "26vh",
+      "weight": 900,
+      "color": "#0A0A0A",
+      "letterSpacing": "-0.05em",
+      "x": "48%",
+      "animate": [
+       {
+        "from": {
+         "scale": 2.2,
+         "opacity": 0,
+         "blur": 18
+        },
+        "duration": 0.12,
+        "ease": "outExpo"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "duration": 0.938,
+    "transition": "cut",
+    "background": "#0A0A0A",
+    "camera": {
+     "animate": [
+      {
+       "from": {
+        "zoom": 1.18,
+        "rotation": -3
+       },
+       "to": {
+        "zoom": 1,
+        "rotation": 0
+       },
+       "duration": 0.22,
+       "ease": "outExpo"
+      }
+     ],
+     "shake": {
+      "amount": 8,
+      "at": 0,
+      "duration": 0.18
+     }
+    },
+    "layers": [
+     {
+      "text": "LIKE.",
+      "font": "Inter Display",
+      "size": "26vh",
+      "weight": 900,
+      "color": "#C8FF00",
+      "letterSpacing": "-0.05em",
+      "x": "52%",
+      "animate": [
+       {
+        "from": {
+         "scale": 2.2,
+         "opacity": 0,
+         "blur": 18
+        },
+        "duration": 0.12,
+        "ease": "outExpo"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

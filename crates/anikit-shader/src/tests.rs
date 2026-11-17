@@ -359,3 +359,53 @@ fn inline_sampling_matches_reference() {
         }
     }
 }
+
+#[test]
+fn dither_keeps_exact_values_and_breaks_bands() {
+    let s = Shader::compile("void mainImage(out vec4 c, in vec2 p) { c = vec4(p.x < 32.0 ? 128.0 / 255.0 : 0.3017, 0.0, 1.0, 1.0); }").unwrap();
+    let mut f = Frame::new(64, 64, 0.0);
+    f.dither = true;
+    let mut px = vec![0u8; 64 * 64 * 4];
+    s.render(&f, &mut px);
+    let left: Vec<u8> = (0..64 * 64).filter(|i| i % 64 < 32).map(|i| px[i * 4]).collect();
+    assert!(left.iter().all(|&v| v == 128));
+    let right: Vec<f32> = (0..64 * 64).filter(|i| i % 64 >= 32).map(|i| px[i * 4] as f32).collect();
+    let mean = right.iter().sum::<f32>() / right.len() as f32;
+    assert!((mean - 0.3017 * 255.0).abs() < 0.05, "{mean}");
+    assert!(right.contains(&76.0) && right.contains(&77.0));
+}
+
+#[test]
+fn unrolled_loops_keep_glsl_semantics() {
+    // Counter value after the loop, divergent ifs around it, nested and
+    // decreasing loops, loops with a break (not unrolled), <= bounds.
+    let src = r#"
+float f(float x) {
+    float s = 0.0;
+    for (int i = 0; i < 6; i++) { float fi = float(i); s += sin(iTime + fi) * x + fi; }
+    return s;
+}
+void mainImage(out vec4 c, in vec2 p) {
+    int k = 0;
+    if (p.x > 2.0) { for (k = 0; k < 3; k++) { } }       // lanes that skip keep k = 0
+    float n = 0.0;
+    for (int a = 0; a < 3; a++) { for (int b = 4; b > 0; b--) { n += float(a * 10 + b); } }
+    float m = 0.0;
+    for (int i = 1; i <= 4; i++) { if (p.x > 3.0 && i == 3) break; m += float(i); }
+    float big = 0.0;
+    for (int i = 0; i < 40; i++) { big += 1.0; }          // too many trips: stays a loop
+    c = vec4(f(1.0), float(k) + n * 0.001, m, big);
+}"#;
+    let px = render(src, 8, 2);
+    let expect_f: f32 = (0..6).map(|i| (1.0 + i as f32).sin() + i as f32).sum();
+    for (x, p) in px.iter().take(8).enumerate() {
+        let fx = x as f32 + 0.5;
+        assert!(close(p[0], expect_f, 1e-5), "f: {} vs {expect_f}", p[0]);
+        let k = if fx > 2.0 { 3.0 } else { 0.0 };
+        let n: f32 = (0..3).flat_map(|a| (1..=4).map(move |b| (a * 10 + b) as f32)).sum();
+        assert!(close(p[1], k + n * 0.001, 1e-5), "x={x}: k/n {} vs {}", p[1], k + n * 0.001);
+        let m = if fx > 3.0 { 3.0 } else { 10.0 };
+        assert_eq!(p[2], m, "x={x}: m");
+        assert_eq!(p[3], 40.0);
+    }
+}
