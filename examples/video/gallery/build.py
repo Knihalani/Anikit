@@ -94,6 +94,9 @@ def props_for(kind, example, look):
     return p
 
 
+FULL_BLEED = {"mesh-gradient", "aurora", "grain", "grid", "dots", "light-leak", "bokeh", "starfield", "gradient",
+              "god-rays", "lens-flare", "confetti", "sparks", "snow", "dust", "wipe", "iris", "glitch", "spotlight",
+              "ken-burns", "tile-reveal", "kinetic-grid", "reactions", "visualizer", "cursor", "callout", "arrow"}
 OVERLAY_KINDS = {"grain", "wipe", "iris", "glitch", "spotlight", "lens-flare", "confetti", "sparks", "snow", "dust", "reactions"}
 
 
@@ -108,9 +111,14 @@ def build():
             if kind in OVERLAY_KINDS - {"lens-flare"}:
                 # give overlays something to sit on
                 layers.append({"type": "component", "component": "mesh-gradient", "props": {"theme": L["theme"]}})
-            layers.append({"type": "component", "component": kind, "props": props_for(kind, k["example"], look)})
-            layers.append({"type": "text", "text": f"{kind}  ·  {look}", "style": "caption", "color": L["caption"],
-                           "anchor": "bottomLeft", "x": 48, "y": 1040, "size": 22})
+            layer = {"type": "component", "component": kind, "props": props_for(kind, k["example"], look)}
+            if kind not in FULL_BLEED:
+                layer.update({"width": 1680, "height": 900, "y": 580})  # leave room for the caption
+            layers.append(layer)
+            pill = "#000000b3" if LOOKS[look]["theme"]["mode"] == "dark" else "#ffffffd9"
+            layers.append({"children": [{"type": "text", "text": f"{kind}  ·  {look}", "style": "caption", "color": L["caption"], "size": 20}],
+                           "style": {"background": pill, "padding": [6, 14], "radius": 999},
+                           "anchor": "topLeft", "x": 24, "y": 24})
             scenes.append({"id": f"{kind}-{look}", "duration": SECONDS, "background": L["background"],
                            "transition": "cut", "layers": layers})
     return {"size": "16:9", "fps": 60, "scenes": scenes}
