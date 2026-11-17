@@ -35,6 +35,8 @@ lib! {
     "caustics", Image, "Pool-floor caustics from a moving water surface (ray density via derivatives).";
     "flow-ink", Image, "Two inks marbled by a curl-noise flow field on paper.";
     "turing", Image, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
+    "light-shafts", Image, "Volumetric beams through slats from a hard light, with dust motes drifting in them.";
+    "particles", Image, "Glowing particles drifting in depth with bokeh (depth of field), one pass.";
     "film-burn", Filter, "Scorches the frame below from hot spots; animate `amount` 0 → 1.";
     "lake-mirror", Filter, "Reflects everything above a horizon in still, rippled water below it (pairs with aurora lake = 0).";
     "glitch", Filter, "Codec-style block displacement, row smears, RGB split and scanlines in bursts.";

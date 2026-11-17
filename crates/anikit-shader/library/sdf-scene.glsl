@@ -139,6 +139,8 @@ vec2 march(vec3 ro, vec3 rd, float tmax) {
         if (abs(h.x) < 0.0003 * t) return vec2(t, h.y);
         t += h.x;
         if (t > tmax) break;
+        // Nothing stands above the lintels (y 3.74): a rising ray past them is sky.
+        if (rd.y > 0.0 && ro.y + rd.y * t > 3.8) break;
     }
     return vec2(-1.0, 0.0);
 }
@@ -153,11 +155,13 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec3 rd = normalize(uv.x * uu + uv.y * vv + 1.6 * ww);
 
     vec3 col;
-    vec2 h = march(ro, rd, 60.0);
-    // The pool's water surface sits just below the deck.
+    // The pool's water surface sits just below the deck. Rays that reach it
+    // need only march as far as the surface: anything beyond is under water.
     float tw = rd.y < 0.0 ? (-0.06 - ro.y) / rd.y : 1e9;
     vec3 pw = ro + rd * tw;
-    bool water = tw > 0.0 && abs(pw.x) < POOL && (h.x < 0.0 || tw < h.x);
+    bool pool = tw > 0.0 && abs(pw.x) < POOL;
+    vec2 h = march(ro, rd, pool ? min(tw, 60.0) : 60.0);
+    bool water = pool && (h.x < 0.0 || tw < h.x);
     if (water) {
         // Mirror with Fresnel, a whisper of ripple, and the dark pool beneath.
         vec3 n = normalize(vec3(0.004 * sin(pw.z * 9.0 + t * 1.3) + 0.003 * sin(pw.x * 13.0 - t), 1.0, 0.003 * sin(pw.z * 17.0 - t * 2.1)));
