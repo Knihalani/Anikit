@@ -1,0 +1,39 @@
+{
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "scenes": [
+    {
+      "duration": 8,
+      "layers": [
+        {
+          "component": "physarum",
+          "props": {
+            "agents": 300000,
+            "resolution": 960,
+            "spawn": "random",
+            "facing": "random",
+            "sensor_angle": 22.5,
+            "sensor_distance": 9,
+            "turn": 45,
+            "step": 1,
+            "deposit": 1,
+            "decay": 0.9,
+            "diffuse": 1,
+            "colors": [
+              "#1b2a5a",
+              "#3d7bff",
+              "#9fe6ff",
+              "#ffffff"
+            ],
+            "exposure": 0.04,
+            "wrap": true,
+            "jitter": 8
+          }
+        }
+      ]
+    }
+  ]
+}
