@@ -11,6 +11,7 @@ and are reused from then on. Nothing is bundled in the binary.
     anikit-video assets search plant --type model
     anikit-video assets list --type lut          # all 16 film looks
     anikit-video assets info polyhaven:hdri/kloppenheim_06
+    anikit-video assets sheet sunset --type hdri -o pick.jpg   # look before choosing
 
 Each line: `id  type  one-line description  [tags]  size`. Types: `hdri texture model lut image`.
 

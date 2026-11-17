@@ -241,7 +241,13 @@ impl Server {
                 if hits.is_empty() {
                     return Ok(vec![text("no matches; try fewer or broader words (sunset, studio, wood, metal, plant)")]);
                 }
-                Ok(vec![text(&hits.iter().map(|e| format!("{}  [{}]  {}  ({})", e.id, e.kind, e.desc, e.tags.iter().take(6).cloned().collect::<Vec<_>>().join(", "))).collect::<Vec<_>>().join("\n"))])
+                let mut out = hits.iter().map(|e| format!("{}  [{}]  {}  ({})", e.id, e.kind, e.desc, e.tags.iter().take(6).cloned().collect::<Vec<_>>().join(", "))).collect::<Vec<_>>().join("\n");
+                if a.get("sheet") == Some(&json!(true)) {
+                    let p = std::env::temp_dir().join(format!("anikit-assets-{}.jpg", std::process::id()));
+                    crate::assetlib::sheet(crate::assetlib::global(), &hits, &p)?;
+                    out += &format!("\npreview sheet (numbered in this order): {}", p.display());
+                }
+                Ok(vec![text(&out)])
             }
             "get_asset" => {
                 let f = crate::assetlib::get(str_arg(a, "ref")?)?;
@@ -408,7 +414,7 @@ pub fn tools() -> Vec<Value> {
         json!({ "name": "render_video", "description": "Final render → path.", "inputSchema": obj(with(spec(), json!({ "out": { "type": "string", "description": "e.g. out.mp4" }, "quality": { "type": "string", "description": "draft|standard|high" } })), &[]) }),
         json!({ "name": "docs", "description": "Start here. Compact page per primitive (no topic: the index): taste (read before designing) primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything expressions script draw components.", "inputSchema": obj(json!({ "topic": { "type": "string" } }), &[]) }),
         json!({ "name": "recipes", "description": "Drop-in high-end shots (kinetic-slam, whip-transition, chrome-hero, particle-ignite, domino-cascade, ...) and the shader library. name → a ready spec or snippet.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &[]) }),
-        json!({ "name": "search_assets", "description": "Find CC0 HDRIs, PBR materials, glTF models and film LUTs by words (tags + one-line descriptions). Use the id directly in a spec: env.hdri, material.texture, model src, image src, post.lut.", "inputSchema": obj(json!({ "query": { "type": "string" }, "type": { "type": "string", "description": "hdri|texture|model|lut|image" }, "limit": { "type": "integer" } }), &["query"]) }),
+        json!({ "name": "search_assets", "description": "Find CC0 HDRIs, PBR materials, glTF models and film LUTs by words (tags + one-line descriptions). Use the id directly in a spec: env.hdri, material.texture, model src, image src, post.lut.", "inputSchema": obj(json!({ "query": { "type": "string" }, "type": { "type": "string", "description": "hdri|texture|model|lut|image" }, "limit": { "type": "integer" }, "sheet": { "type": "boolean", "description": "also render a labelled preview contact sheet (JPEG path)" } }), &["query"]) }),
         json!({ "name": "get_asset", "description": "Download (once, cached, checksum-verified) a library asset by ref and return its local files.", "inputSchema": obj(json!({ "ref": { "type": "string", "description": "e.g. polyhaven:hdri/kloppenheim_06" } }), &["ref"]) }),
         json!({ "name": "list_looks", "description": "Art-direction looks (palette, type, motion, world layers). name → its direction; full:true → JSON to override.", "inputSchema": obj(json!({ "name": { "type": "string" }, "full": { "type": "boolean" } }), &[]) }),
         json!({ "name": "get_prompt", "description": "Prompt library: director, launch-video-generator, script-writer, storyboarder, critic, copy-guard, brand-kit, motion-rules, template:<name>.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &["name"]) }),

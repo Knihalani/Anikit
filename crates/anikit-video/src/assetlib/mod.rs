@@ -722,6 +722,20 @@ fn cmd(args: &[String]) -> Result<(), String> {
             }
             Ok(())
         }
+        Some("sheet" | "look") => {
+            let q = pos[1..].join(" ");
+            let hits: Vec<&Entry> = if q.is_empty() { index().iter().filter(|e| kind.as_deref().is_none_or(|k| e.kind == k)).take(limit).collect() } else { search(&q, kind.as_deref(), limit) };
+            if hits.is_empty() {
+                return Err(format!("no matches for `{q}`"));
+            }
+            let o = PathBuf::from(out.unwrap_or_else(|| "assets-sheet.jpg".into()));
+            sheet(global(), &hits, &o)?;
+            for (i, e) in hits.iter().enumerate() {
+                println!("{:>2}  {}", i + 1, e.id);
+            }
+            eprintln!("wrote {} ({} previews)", o.display(), hits.len());
+            Ok(())
+        }
         Some("lut") => {
             let r = pos.get(1).ok_or("usage: assets lut <name> [-o look.cube]")?;
             let name = r.strip_prefix("anikit:lut/").unwrap_or(r);
@@ -751,12 +765,100 @@ fn cmd(args: &[String]) -> Result<(), String> {
             println!("{}", global().root.display());
             Ok(())
         }
-        Some(x) => Err(format!("unknown subcommand `{x}`. Use: search, list, info, get, lut, credits, path (`anikit-video docs assets`)")),
+        Some(x) => Err(format!("unknown subcommand `{x}`. Use: search, sheet, list, info, get, lut, credits, path (`anikit-video docs assets`)")),
         None => {
             print!("{DOCS}");
             Ok(())
         }
     }
+}
+
+/// A preview image URL (not pinned: previews are only for choosing).
+fn thumb_url(e: &Entry) -> Option<String> {
+    let (p, rest) = e.id.split_once(':')?;
+    let name = rest.rsplit('/').next()?;
+    match p {
+        "polyhaven" => Some(format!("https://cdn.polyhaven.com/asset_img/thumbs/{name}.png?width=320&height=320&format=webp")),
+        "ambientcg" => Some(format!("https://acg-media.struffelproductions.com/file/ambientCG-Web/media/thumbnail/256-JPG-242424/{name}.jpg")),
+        "khronos" => Some(format!("https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/{name}/screenshot/screenshot.jpg")),
+        _ => None,
+    }
+}
+
+/// A LUT preview: a hue × lightness ramp graded by the look (PNG, cached).
+fn lut_thumb(lib: &Library, e: &Entry) -> Result<PathBuf, String> {
+    let name = e.id.rsplit('/').next().unwrap_or(&e.id);
+    let path = lib.root.join("thumbs").join(format!("lut-{name}.png"));
+    if !path.exists() {
+        let l = lut::generated(name).ok_or("unknown LUT")?;
+        let (w, h) = (320u32, 180u32);
+        let img = image::RgbImage::from_fn(w, h, |x, y| {
+            // Top: a soft hue sweep; bottom: a grey ramp.
+            let u = x as f32 / (w - 1) as f32;
+            let c = if y < h * 3 / 4 {
+                let v = 1.0 - y as f32 / (h as f32 * 0.75) * 0.8;
+                let hue = u * 6.0;
+                let f = |k: f32| (((hue + k) % 6.0 - 3.0).abs() - 1.0).clamp(0.0, 1.0);
+                [v * (0.35 + 0.65 * f(0.0)), v * (0.35 + 0.65 * f(4.0)), v * (0.35 + 0.65 * f(2.0))]
+            } else {
+                [u, u, u]
+            };
+            let g = l.sample(c);
+            image::Rgb(g.map(|v| (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8))
+        });
+        std::fs::create_dir_all(path.parent().unwrap()).map_err(|e| e.to_string())?;
+        img.save(&path).map_err(|e| e.to_string())?;
+    }
+    Ok(path)
+}
+
+/// Download (once) and normalise an entry's preview to PNG.
+fn thumb(lib: &Library, e: &Entry) -> Result<PathBuf, String> {
+    if e.kind == "lut" {
+        return lut_thumb(lib, e);
+    }
+    let url = thumb_url(e).ok_or("no preview")?;
+    let safe: String = e.id.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect();
+    let png = lib.root.join("thumbs").join(format!("{safe}.png"));
+    if png.exists() {
+        return Ok(png);
+    }
+    if lib.offline {
+        return Err("offline".into());
+    }
+    std::fs::create_dir_all(png.parent().unwrap()).map_err(|e| e.to_string())?;
+    let tmp = png.with_extension("dl");
+    (lib.fetch)(&url, &tmp)?;
+    let img = image::open(&tmp).or_else(|_| image::load_from_memory(&std::fs::read(&tmp).unwrap_or_default())).map_err(|err| format!("preview of {}: {err}", e.id));
+    let _ = std::fs::remove_file(&tmp);
+    let img = img?;
+    img.thumbnail(320, 320).to_rgb8().save(&png).map_err(|e| e.to_string())?;
+    Ok(png)
+}
+
+/// A labelled contact sheet of previews, rendered by anikit's own 2D renderer.
+pub fn sheet(lib: &Library, hits: &[&Entry], out: &Path) -> Result<(), String> {
+    use serde_json::json;
+    let cols = 4usize;
+    let (cw, ch, lab) = (400.0f32, 225.0f32, 58.0f32);
+    let rows = hits.len().div_ceil(cols).max(1);
+    let (w, h) = (cols as f32 * cw + 40.0, rows as f32 * (ch + lab) + 40.0);
+    let mut layers = vec![];
+    for (i, e) in hits.iter().enumerate() {
+        let (x, y) = (20.0 + (i % cols) as f32 * cw + 10.0, 20.0 + (i / cols) as f32 * (ch + lab));
+        match thumb(lib, e) {
+            Ok(p) => layers.push(json!({ "src": p.to_string_lossy(), "fit": "cover", "width": cw - 20.0, "height": ch - 10.0, "x": x, "y": y, "anchor": "topLeft", "radius": 6 })),
+            Err(_) => layers.push(json!({ "shape": "rect", "width": cw - 20.0, "height": ch - 10.0, "x": x, "y": y, "anchor": "topLeft", "fill": "#2A2A2E", "radius": 6 })),
+        }
+        layers.push(json!({ "text": format!("{}  {}", i + 1, e.id), "font": "JetBrains Mono", "size": 15, "color": "#EDEDED", "x": x, "y": y + ch + 2.0, "anchor": "topLeft", "maxLines": 1 }));
+        let d: String = e.desc.chars().take(52).collect();
+        layers.push(json!({ "text": d, "font": "Inter", "size": 13, "color": "#9A9AA2", "x": x, "y": y + ch + 24.0, "anchor": "topLeft", "maxLines": 1 }));
+    }
+    let spec = json!({ "size": [w.round() as u32 / 2 * 2, h.round() as u32 / 2 * 2], "fps": 1, "background": "#141416", "scenes": [ { "duration": 1, "layers": layers } ] });
+    let p = crate::spec::parse::from_value(spec).map_err(|e| format!("sheet spec: {e:?}"))?;
+    let ev = crate::eval::Evaluator::new(&p.spec, crate::eval::Options::default()).map_err(|e| format!("sheet: {e}"))?;
+    let (w, h, px) = crate::pipeline::render_rgba(&ev, 0.0, 1.0);
+    crate::pipeline::save_png(out, w, h, px)
 }
 
 /// Every `provider:…` string in a spec's text (for credits).
