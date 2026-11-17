@@ -174,7 +174,7 @@ pub fn check(ev: &Evaluator) -> Vec<Note> {
             if b.size / SCALE < 16.0 {
                 continue;
             }
-            let large = b.size / SCALE >= fmt.width.min(fmt.height) as f32 * 0.04;
+            let large = b.size / SCALE >= fmt.width.min(fmt.height) as f32 * 0.03;
             let need = if large { 3.0 } else { 4.5 };
             if let Some(c) = worst_contrast(&bg, w, h, b.rect, b.color) {
                 if c < need {
