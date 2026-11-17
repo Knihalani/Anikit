@@ -2019,7 +2019,9 @@ impl C<'_> {
             self.d.push(x);
         }
         if let Some(ev) = ev {
-            self.comps.push((name.to_string(), Arc::new(ev), cdef.loop_.unwrap_or(false)));
+            let ev = Arc::new(ev);
+            self.assets.register_composition(name, &ev, cdef.loop_.unwrap_or(false));
+            self.comps.push((name.to_string(), ev, cdef.loop_.unwrap_or(false)));
         }
     }
 

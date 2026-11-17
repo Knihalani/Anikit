@@ -22,6 +22,9 @@ pub struct SharedAssets {
     by_key: RwLock<HashMap<u64, ImageId>>,
     media: RwLock<HashMap<String, ImageId>>,
     version: AtomicU64,
+    /// Named sub-compositions (weak: the root evaluator owns them) and their texture cache.
+    comps: RwLock<Vec<(String, std::sync::Weak<super::Evaluator>, bool)>>,
+    textures: std::sync::OnceLock<crate::pipeline::textures::CompTextures>,
 }
 
 impl Default for SharedAssets {
@@ -38,7 +41,29 @@ impl SharedAssets {
             by_key: RwLock::new(HashMap::new()),
             media: RwLock::new(HashMap::new()),
             version: AtomicU64::new(1),
+            comps: RwLock::new(Vec::new()),
+            textures: std::sync::OnceLock::new(),
         }
+    }
+
+    /// Make a compiled sub-composition reachable from components by name.
+    pub(crate) fn register_composition(&self, name: &str, ev: &Arc<super::Evaluator>, looped: bool) {
+        let mut c = self.comps.write().unwrap();
+        c.retain(|x| x.0 != name);
+        c.push((name.to_string(), Arc::downgrade(ev), looped));
+    }
+
+    fn comp(&self, name: &str) -> Option<(Arc<super::Evaluator>, bool)> {
+        let c = self.comps.read().unwrap();
+        c.iter().find(|x| x.0 == name).and_then(|x| Some((x.1.upgrade()?, x.2)))
+    }
+
+    /// The shared composition texture cache (`ANIKIT_TEXTURE_CACHE_MB`, default 2048 MB).
+    pub fn textures(&self) -> &crate::pipeline::textures::CompTextures {
+        self.textures.get_or_init(|| {
+            let mb = std::env::var("ANIKIT_TEXTURE_CACHE_MB").ok().and_then(|v| v.parse::<usize>().ok()).unwrap_or(2048);
+            crate::pipeline::textures::CompTextures::new(mb << 20)
+        })
     }
 
     /// Changes whenever an image or a font face is added.
@@ -105,6 +130,16 @@ impl SharedAssets {
 
 
 impl components::Assets for SharedAssets {
+    fn composition_info(&self, name: &str) -> Option<components::CompInfo> {
+        let (ev, looped) = self.comp(name)?;
+        Some(components::CompInfo { width: ev.width, height: ev.height, fps: ev.fps, duration: ev.duration, looped })
+    }
+
+    fn composition_frame(&self, name: &str, t: f32, lod: u8) -> Option<Arc<Pixmap>> {
+        let (ev, _) = self.comp(name)?;
+        Some(self.textures().get(&ev, t, lod))
+    }
+
     fn image(&self, key: u64, w: u32, h: u32, make: &mut dyn FnMut() -> Vec<u8>) -> ImageId {
         if let Some(id) = self.by_key.read().unwrap().get(&key) {
             return *id;
