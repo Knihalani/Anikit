@@ -251,25 +251,46 @@
               "y": "{{payoff ? '44%' : '50%'}}",
               "enter": "popIn"
             },
-            "else": {
-              "type": "component",
-              "component": "particle-text",
-              "props": {
-                "text": "{{upper(brand.name)}}",
-                "colors": [
-                  "{{brand.colors.text}}",
-                  "{{brand.colors.text}}",
-                  "{{brand.colors.primary}}"
-                ],
-                "fontSize": "{{fmt.portrait ? fmt.u * 20 : fmt.u * 17}}",
-                "weight": 900,
-                "seed": 7,
-                "glow": true
+            "else": [
+              {
+                "type": "component",
+                "component": "particle-text",
+                "props": {
+                  "text": "{{upper(brand.name)}}",
+                  "colors": [
+                    "{{brand.colors.text}}",
+                    "{{brand.colors.text}}",
+                    "{{brand.colors.primary}}"
+                  ],
+                  "fontSize": "{{fmt.portrait ? fmt.u * 20 : fmt.u * 17}}",
+                  "weight": 900,
+                  "seed": 7,
+                  "glow": true
+                },
+                "y": "{{payoff ? '44%' : '50%'}}",
+                "width": "{{fmt.safe.w}}",
+                "height": "{{fmt.u * 30}}"
               },
-              "y": "{{payoff ? '44%' : '50%'}}",
-              "width": "{{fmt.safe.w}}",
-              "height": "{{fmt.u * 30}}"
-            }
+              {
+                "text": "{{upper(brand.name)}}",
+                "style": "hero",
+                "weight": 900,
+                "letterSpacing": "-0.04em",
+                "size": "{{fmt.portrait ? fmt.u * 20 : fmt.u * 17}}",
+                "y": "{{payoff ? '44%' : '50%'}}",
+                "width": "{{fmt.safe.w}}",
+                "glow": {
+                  "radius": "{{fmt.u * 3}}",
+                  "intensity": 0.7,
+                  "color": "{{brand.colors.primary}}"
+                },
+                "enter": {
+                  "preset": "fadeIn",
+                  "delay": 1.2,
+                  "duration": 0.5
+                }
+              }
+            ]
           },
           {
             "$if": "payoff",

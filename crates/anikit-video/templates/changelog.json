@@ -305,9 +305,9 @@
               "type": "shape",
               "shape": "rect",
               "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.17 : fmt.cx}}",
-              "y": "{{fmt.portrait ? fmt.h * 0.3 : (fmt.square ? fmt.h * 0.3 : fmt.h * 0.52)}}",
-              "width": "{{fmt.portrait ? fmt.u * 60 : fmt.u * 50}}",
-              "height": "{{fmt.portrait ? fmt.u * 60 : fmt.u * 50}}",
+              "y": "{{fmt.portrait ? fmt.h * 0.34 : (fmt.square ? fmt.h * 0.33 : fmt.h * 0.52)}}",
+              "width": "{{fmt.portrait ? fmt.u * 50 : fmt.u * 50}}",
+              "height": "{{fmt.portrait ? fmt.u * 50 : fmt.u * 50}}",
               "radius": "{{fmt.u * 2.4}}",
               "fill": "{{alpha(brand.colors.surface, 0.55)}}",
               "stroke": {
@@ -327,13 +327,13 @@
                 "to": "{{(k + 1) / len(items)}}",
                 "duration": "{{max(2.8, readtime(it.text) + 1.4) - 0.6}}",
                 "delay": 0.2,
-                "size": "{{fmt.portrait ? fmt.u * 46 : fmt.u * 38}}",
+                "size": "{{fmt.portrait ? fmt.u * 40 : fmt.u * 38}}",
                 "thickness": "{{fmt.u * 1.4}}",
                 "color": "{{it.type == 'new' ? brand.colors.primary : (it.type == 'improved' ? brand.colors.secondary : '#22C55E')}}",
                 "percent": false
               },
               "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.17 : fmt.cx}}",
-              "y": "{{fmt.portrait ? fmt.h * 0.3 : (fmt.square ? fmt.h * 0.3 : fmt.h * 0.52)}}",
+              "y": "{{fmt.portrait ? fmt.h * 0.34 : (fmt.square ? fmt.h * 0.33 : fmt.h * 0.52)}}",
               "width": "{{fmt.portrait ? fmt.u * 52 : fmt.u * 44}}",
               "height": "{{fmt.portrait ? fmt.u * 52 : fmt.u * 44}}"
             },
@@ -342,14 +342,14 @@
               "style": "stat",
               "size": "{{fmt.portrait ? fmt.u * 15 : fmt.u * 13}}",
               "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.17 : fmt.cx}}",
-              "y": "{{(fmt.portrait ? fmt.h * 0.3 : (fmt.square ? fmt.h * 0.3 : fmt.h * 0.52)) - fmt.u * 1.5}}",
+              "y": "{{(fmt.portrait ? fmt.h * 0.34 : (fmt.square ? fmt.h * 0.33 : fmt.h * 0.52)) - fmt.u * 1.5}}",
               "enter": "pop by char from center"
             },
             {
               "text": "{{'of ' + ((len(items)) < 10 ? '0' + str(len(items)) : str(len(items)))}}",
               "style": "caption",
               "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.17 : fmt.cx}}",
-              "y": "{{(fmt.portrait ? fmt.h * 0.3 : (fmt.square ? fmt.h * 0.3 : fmt.h * 0.52)) + fmt.u * 7}}",
+              "y": "{{(fmt.portrait ? fmt.h * 0.34 : (fmt.square ? fmt.h * 0.33 : fmt.h * 0.52)) + fmt.u * 7}}",
               "enter": {
                 "preset": "fadeIn",
                 "delay": 0.4
