@@ -379,6 +379,49 @@ Measured with `cargo run --release -p ak264 --example quality -- <scene> 60 <qp>
 | full, 26 | 93 fps, 179 KB, 48.68 dB | 79 fps, 197 KB, 48.25 dB | 65 fps, 197 KB, 49.03 dB | 96 fps, 247 KB, 48.68 dB |
 | typical, 34 | 337 fps, 70 KB, 43.86 dB | 306 fps, 70 KB, 44.01 dB | 284 fps, 67 KB, 43.91 dB | 412 fps, 123 KB, 43.86 dB |
 
+### Low-level optimisation
+
+Every change below leaves the bitstream bit-identical: each clip's size and PSNR
+match exactly before and after. Wall-clock time on this shared VM varied by up to
+±30% between runs of the same binary, so the work was steered by instruction
+counts (callgrind, 20 frames, one thread). The pipeline's configuration is QP 23
+with deblocking on:
+
+| Clip | Before | After | Change |
+|---|---|---|---|
+| launch | 11.16 G | 9.06 G | −19% |
+| tutorial | 4.93 G | 4.01 G | −19% |
+| spec-to-screen | 13.30 G | 10.91 G | −18% |
+
+What changed:
+- **Sub-pel refinement:** AVX2 SAD two rows per step, one call per candidate
+  pattern, and a phase table instead of a match.
+- **I16 mode decision:** SADs of V, H, DC and plane come straight from the edges
+  (a SIMD plane ramp), and only the winning prediction is built.
+- **SATD:** the last butterfly stage uses |p + q| + |p − q| = 2·max(|p|, |q|),
+  which is exact and uses fewer operations.
+- **Chroma MC:** SSSE3 `pmaddubsw` bilinear interpolation.
+- **Deblocking:** one bounds check per edge and an SSE2 8×4 transpose for chroma
+  vertical edges. Internal-edge strengths come from a coefficient bitmask, and
+  edges without bS 4 skip the strong filter at compile time.
+- **CABAC:** decisions renormalise only when `range < 256`, with no bounds checks;
+  empty 4×4 blocks are a single bin; the residual coder walks a nonzero bitmask.
+- **Smaller items:**
+  - Block copies take one bounds check per block.
+  - An 8 KB table gives `se(v)` lengths for MV costs.
+  - Half-pel plane updates use hoisted row pointers and merge runs across
+    one-macroblock gaps.
+  - Change detection zeroes only the accumulators it uses.
+
+Two attempts made things worse and were dropped:
+- A register-resident sliding window for the vertical half-pel filter spilled
+  (12 YMM rows plus constants).
+- Wide row loads in the deblocking filter beat the compiler's own code by less
+  than the extra copies cost.
+
+A 4-candidate half-pel diamond is 33% cheaper but makes spec-to-screen 1.9%
+larger, so it was not kept.
+
 ### Adaptive quantisation (dark gradients)
 
 At constant QP 23, dark dithered gradients (a renderer's ±1 dither over a slow

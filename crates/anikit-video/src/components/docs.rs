@@ -41,15 +41,24 @@ pub fn doc(kind: &str) -> Option<String> {
     let secs = sections();
     if let Some((_, h, body)) = secs.iter().find(|(l, h, _)| *l == 3 && mentions(h, k.name)) {
         page.push_str(&format!("\n{h}\n{body}\n"));
-        return Some(page);
+        return Some(cap(page));
     }
-    // Grouped kinds: the group's text up to its first table, plus the table rows naming this kind.
+    // Grouped kinds: the table rows naming this kind first, then the group's shared prose.
     if let Some((_, h, body)) = secs.iter().find(|(l, _, b)| *l == 2 && mentions(b, k.name)) {
         page.push_str(&format!("\n{h}\n"));
         let mut header: Vec<&str> = Vec::new();
+        let mut rows = String::new();
+        let mut prose = String::new();
         let mut in_table = false;
-        let mut prose = 0;
+        let mut in_code = false;
         for line in body.lines() {
+            if line.starts_with("```") {
+                in_code = !in_code;
+                continue;
+            }
+            if in_code {
+                continue;
+            }
             if line.starts_with('|') {
                 if !in_table {
                     header.clear();
@@ -59,24 +68,37 @@ pub fn doc(kind: &str) -> Option<String> {
                     header.push(line);
                 } else if mentions(line, k.name) {
                     for hl in header.drain(..) {
-                        page.push_str(hl);
-                        page.push('\n');
+                        rows.push_str(hl);
+                        rows.push('\n');
                     }
-                    page.push_str(line);
-                    page.push('\n');
+                    rows.push_str(line);
+                    rows.push('\n');
                 }
             } else {
                 in_table = false;
-                // Shared prose (common props, looks) applies to every kind in the group.
-                if prose < 30 && !line.trim().is_empty() {
-                    prose += 1;
-                    page.push_str(line);
-                    page.push('\n');
+                if !line.trim().is_empty() {
+                    prose.push_str(line);
+                    prose.push('\n');
                 }
             }
         }
+        page.push_str(&rows);
+        page.push_str(&prose);
     }
-    Some(page)
+    Some(cap(page))
+}
+
+/// At most `MAX_LINES` lines, pointing at the full guide when cut.
+const MAX_LINES: usize = 15;
+
+fn cap(page: String) -> String {
+    let lines: Vec<&str> = page.lines().collect();
+    if lines.len() <= MAX_LINES {
+        return page;
+    }
+    let mut s = lines[..MAX_LINES - 1].join("\n");
+    s.push_str("\n… more in docs/video/components.md\n");
+    s
 }
 
 /// One line per kind: `camelName — summary`.
@@ -97,6 +119,8 @@ mod tests {
         for k in KINDS {
             let p = doc(k.name).unwrap();
             assert!(p.lines().count() >= 4, "{}: thin page\n{p}", k.name);
+            assert!(p.lines().count() <= MAX_LINES, "{}: long page", k.name);
+            assert!(p.contains(&camel(k.name)) || p.contains(k.name));
         }
         assert!(doc("barChart").unwrap().contains("bar"));
         assert!(doc("nope").is_none());
