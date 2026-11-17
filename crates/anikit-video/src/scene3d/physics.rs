@@ -985,8 +985,14 @@ impl Sim {
         }
         let st = g.as_mut().unwrap();
         let before = (st.frames.len(), std::time::Instant::now(), st.steps);
-        while st.frames.len() <= k + 1 {
-            self.advance(st);
+        if st.frames.len() <= k + 1 {
+            // Rapier steps in parallel: on the simulation pool while the lock
+            // is held (see `scene3d::sim_pool`).
+            super::sim_blocking(|| {
+                while st.frames.len() <= k + 1 {
+                    self.advance(st);
+                }
+            });
         }
         if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() && st.frames.len() > before.0 {
             let w = st.world.as_ref().unwrap();

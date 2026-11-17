@@ -1086,7 +1086,14 @@ impl Sim {
     }
 
     fn at_locked(&self, f: i64) -> Arc<Snap> {
-        let mut st = self.state.lock().unwrap();
+        let mut guard = self.state.lock().unwrap();
+        let st: &mut SimState = &mut guard;
+        // The parallel stepping runs on the simulation pool while the lock is
+        // held (see `scene3d::sim_pool`).
+        super::sim_blocking(move || self.at_locked_in(st, f))
+    }
+
+    fn at_locked_in(&self, st: &mut SimState, f: i64) -> Arc<Snap> {
         if let Some(s) = st.snaps.get(&f) {
             return s.clone();
         }
