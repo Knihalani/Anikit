@@ -1016,6 +1016,8 @@ impl C<'_> {
             "composition"
         } else if l.draw.is_some() {
             "draw"
+        } else if l.dots.is_some() {
+            "dots"
         } else if l.shader.is_some() || l.src.as_deref().is_some_and(|s| s.ends_with(".glsl") || s.ends_with(".wgsl") || s.ends_with(".frag")) {
             "shader"
         } else if l.children.is_some() {
@@ -1174,6 +1176,7 @@ impl C<'_> {
             "shader" => self.shader_layer(l, path, given_w, given_h, start, end, &mut n)?,
             "composition" => self.comp_layer(l, path)?,
             "draw" => (self.draw_layer(l, path), [given_w.unwrap_or(pw), given_h.unwrap_or(ph)]),
+            "dots" => (self.dots_layer(l, path), [given_w.unwrap_or(pw), given_h.unwrap_or(ph)]),
             _ => self.component_layer(l, path, given_w, given_h)?,
         };
         n.kind = kind_v;
@@ -2216,12 +2219,79 @@ impl C<'_> {
             self.d.push(x);
         }
         if let Some(ev) = ev {
+            if ev.layer_info.iter().any(|(_, k)| k == "shader") {
+                self.d.push(Diagnostic::warning(&path, format!("shader layers inside a composition render at the composition's size: iResolution is {}×{}, not the video's", ev.width, ev.height)));
+            }
             let ev = Arc::new(ev);
             self.assets.register_composition(name, &ev, cdef.loop_.unwrap_or(false));
             self.comps.push((name.to_string(), ev.clone(), cdef.loop_.unwrap_or(false)));
             return Some(ev);
         }
         None
+    }
+
+    fn dots_layer(&mut self, l: &Layer, path: &str) -> Kind {
+        let d = l.dots.clone().unwrap_or_default();
+        let base = d.color.as_deref().and_then(|c| self.color(c, &format!("{path}.dots.color"))).or_else(|| self.theme.color("$text")).unwrap_or(Rgba([1.0; 4]));
+        // Rows: [x, y] or [x, y, colour].
+        let rows: Vec<(f64, f64, Option<String>)> = match &d.data {
+            serde_json::Value::Array(a) => a
+                .iter()
+                .filter_map(|r| {
+                    let r = r.as_array()?;
+                    Some((r.first()?.as_f64()?, r.get(1)?.as_f64()?, r.get(2).and_then(|c| c.as_str()).map(str::to_string)))
+                })
+                .collect(),
+            serde_json::Value::String(file) => match std::fs::read_to_string(self.o.base_dir.join(file)) {
+                Ok(src) => src
+                    .lines()
+                    .filter_map(|line| {
+                        let mut f = line.split(',').map(str::trim);
+                        let x = f.next()?.parse().ok()?;
+                        let y = f.next()?.parse().ok()?;
+                        Some((x, y, f.next().filter(|c| !c.is_empty()).map(str::to_string)))
+                    })
+                    .collect(),
+                Err(e) => {
+                    self.d.push(Diagnostic::error(format!("{path}.dots.data"), format!("cannot read {file}: {e}")));
+                    Vec::new()
+                }
+            },
+            _ => {
+                self.d.push(Diagnostic::error(format!("{path}.dots.data"), "'data' is a list of [x, y] (or [x, y, colour]) or a CSV file path"));
+                Vec::new()
+            }
+        };
+        let mut groups: Vec<(Rgba, Vec<[f32; 2]>)> = Vec::new();
+        let mut cache: HashMap<String, Rgba> = HashMap::new();
+        for (x, y, c) in rows {
+            let col = match c {
+                Some(c) => match cache.get(&c) {
+                    Some(v) => *v,
+                    None => {
+                        let v = self.color(&c, &format!("{path}.dots.data")).unwrap_or(base);
+                        cache.insert(c, v);
+                        v
+                    }
+                },
+                None => base,
+            };
+            match groups.iter_mut().find(|g| g.0 == col) {
+                Some(g) => g.1.push([x as f32, y as f32]),
+                None => groups.push((col, vec![[x as f32, y as f32]])),
+            }
+        }
+        let appear = d.appear.as_deref().and_then(|a| {
+            let src = a.trim().strip_prefix('=').unwrap_or(a);
+            match Expr::compile(src, 1.0, self.w as f64, self.h as f64) {
+                Ok(e) => Some(e),
+                Err(m) => {
+                    self.d.push(Diagnostic::error(format!("{path}.dots.appear"), format!("expression: {m}")));
+                    None
+                }
+            }
+        });
+        Kind::Dots { groups, size: d.size.unwrap_or(4.0).max(0.1) as f32, appear, square: d.shape.as_deref() == Some("square") }
     }
 
     fn draw_layer(&mut self, l: &Layer, path: &str) -> Kind {

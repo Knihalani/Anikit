@@ -525,3 +525,16 @@ fn cut_on_the_music_grid_and_stack() {
     let ys: Vec<f32> = ev.eval(1.0).ops.iter().filter_map(|o| match o { Op::Glyphs { transform, .. } => Some(transform[5]), _ => None }).collect();
     assert!(ys.len() >= 2 && (ys[0] - ys[1]).abs() > 20.0, "{ys:?}");
 }
+
+#[test]
+fn dots_from_data_with_appear() {
+    let ev = build(r##"{ "size": [100, 100], "motionBlur": false, "scenes": [ { "duration": 2, "background": "#000000", "layers": [
+        { "dots": { "data": [[10, 10], [50, 50, "#ff0000"], [90, 90]], "size": 8, "color": "#ffffff", "appear": "=clamp(t * 3 - i, 0, 1)" } } ] } ] }"##);
+    let (w, _, p) = anikit_video::pipeline::render_rgba(&ev, 1.5, 1.0);
+    let px = |x: u32, y: u32| { let i = ((y * w + x) * 4) as usize; [p[i], p[i + 1], p[i + 2]] };
+    assert_eq!(px(10, 10), [255, 255, 255]);
+    assert_eq!(px(50, 50), [255, 0, 0]);
+    assert!(!ev.is_static(0.0, 1.0));
+    let (_, _, p0) = anikit_video::pipeline::render_rgba(&ev, 0.0, 1.0);
+    assert!(p0.chunks(4).all(|c| c[0] < 5), "nothing has appeared at t = 0");
+}
