@@ -29,7 +29,7 @@ macro_rules! lib {
 }
 
 lib! {
-    "sdf-scene", Image, "Raymarched still life: smooth-blended forms, soft shadows, ambient occlusion, fog.";
+    "sdf-scene", Image, "Portals at golden hour: concrete frames down a reflecting pool, backlit sun, soft shadows, AO, haze, slow dolly.";
     "liquid-chrome", Image, "Chrome metaballs reflecting a procedural studio.";
     "aurora", Image, "Aurora curtains over stars, mirrored in a lake.";
     "caustics", Image, "Pool-floor caustics from a moving water surface (ray density via derivatives).";

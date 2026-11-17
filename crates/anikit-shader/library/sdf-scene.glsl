@@ -1,100 +1,167 @@
-// Raymarched SDF still life: smooth-blended forms on a studio floor,
-// soft shadows, ambient occlusion, fog. Uniforms: speed, hue.
+// Portals at golden hour: a colonnade of thick concrete frames recedes down a
+// shallow reflecting pool; a low sun rakes through them, laying long soft
+// shadows across the stone, with warm haze toward the light. A slow dolly.
+// Raymarched SDF with soft shadows, ambient occlusion, a mirror pool with
+// Fresnel, aerial perspective and a filmic tone curve.
+// Uniforms: speed (dolly), sun (0 noon-ish … 1 sunset), haze.
 uniform float speed; // = 1.0
-uniform vec3 tint;   // = vec3(1.0, 0.55, 0.25)
+uniform float sun;   // = 0.75
+uniform float haze;  // = 1.0
 
-float smin(float a, float b, float k) {
-    float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
-    return mix(b, a, h) - k * h * (1.0 - h);
+const float PERIOD = 3.2;    // spacing of the frames along z
+const float POOL = 1.35;     // half-width of the pool
+
+float sdBox(vec3 p, vec3 b) {
+    vec3 q = abs(p) - b;
+    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
 }
 
-float sdTorus(vec3 p, vec2 t) { vec2 q = vec2(length(p.xz) - t.x, p.y); return length(q) - t.y; }
-float sdBox(vec3 p, vec3 b, float r) { vec3 q = abs(p) - b; return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r; }
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float vnoise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+}
 
-mat2 rot(float a) { float c = cos(a), s = sin(a); return mat2(c, s, -s, c); }
-
-// x: distance, y: material (0 floor, 1 blob, 2 ring, 3 box)
+// x: distance, y: material (1 stone floor, 2 frames, 3 pool floor)
 vec2 map(vec3 p) {
-    float t = iTime * speed;
-    vec2 res = vec2(p.y + 1.0, 0.0);
-    vec3 q = p - vec3(0.0, 0.1 + 0.15 * sin(t * 1.3), 0.0);
-    float blob = length(q) - 0.75;
-    blob = smin(blob, length(q - vec3(0.55 * sin(t), 0.45, 0.55 * cos(t))) - 0.38, 0.35);
-    blob = smin(blob, length(q - vec3(-0.6 * cos(t * 0.7), -0.25, 0.5 * sin(t * 0.7))) - 0.3, 0.3);
-    if (blob < res.x) res = vec2(blob, 1.0);
-    vec3 r = p - vec3(1.9, -0.35, 0.4);
-    r.xy *= rot(0.6 + 0.3 * sin(t * 0.5));
-    r.yz *= rot(t * 0.4);
-    float ring = sdTorus(r, vec2(0.55, 0.12));
-    if (ring < res.x) res = vec2(ring, 2.0);
-    vec3 b = p - vec3(-1.9, -0.45, 0.6);
-    b.xz *= rot(t * 0.3 + 0.5);
-    float box = sdBox(b, vec3(0.45), 0.08);
-    if (box < res.x) res = vec2(box, 3.0);
+    // Stone deck with the pool cut into it.
+    float deck = max(p.y, -sdBox(p - vec3(0.0, 0.0, 0.0), vec3(POOL, 0.25, 1e3)));
+    vec2 res = vec2(deck, 1.0);
+    float poolFloor = p.y + 0.25;
+    if (poolFloor < res.x) res = vec2(poolFloor, 3.0);
+    // Frames: two piers and a lintel, repeated along z.
+    vec3 q = p;
+    float cell = floor(q.z / PERIOD + 0.5);
+    q.z -= PERIOD * cell;
+    float w = 2.25, h = 3.4, t = 0.38, depth = 0.55;
+    float piers = sdBox(vec3(abs(q.x) - w, q.y - h * 0.5, q.z), vec3(t, h * 0.5, depth));
+    float lintel = sdBox(vec3(q.x, q.y - h, q.z), vec3(w + t, t * 0.9, depth));
+    float frame = min(piers, lintel);
+    // A chamfer groove on every frame face reads at grazing light.
+    frame = max(frame, -sdBox(vec3(q.x, q.y - h, q.z - depth), vec3(w + t + 0.1, 0.035, 0.03)));
+    if (frame < res.x) res = vec2(frame, 2.0);
     return res;
 }
 
-vec3 normal(vec3 p) {
-    const vec2 e = vec2(1.0, -1.0) * 0.0007;
+vec3 calcNormal(vec3 p) {
+    const vec2 e = vec2(1.0, -1.0) * 0.0006;
     return normalize(e.xyy * map(p + e.xyy).x + e.yyx * map(p + e.yyx).x + e.yxy * map(p + e.yxy).x + e.xxx * map(p + e.xxx).x);
 }
 
 float softShadow(vec3 ro, vec3 rd) {
-    float res = 1.0, t = 0.02;
-    for (int i = 0; i < 48; i++) {
+    float res = 1.0, t = 0.03;
+    for (int i = 0; i < 56; i++) {
         float h = map(ro + rd * t).x;
-        res = min(res, 10.0 * h / t);
-        t += clamp(h, 0.02, 0.25);
-        if (res < 0.002 || t > 8.0) break;
+        res = min(res, 9.0 * h / t);
+        t += clamp(h, 0.03, 0.4);
+        if (res < 0.002 || t > 30.0) break;
     }
-    return clamp(res, 0.0, 1.0);
+    res = clamp(res, 0.0, 1.0);
+    return res * res * (3.0 - 2.0 * res);
 }
 
 float ao(vec3 p, vec3 n) {
     float occ = 0.0, sca = 1.0;
     for (int i = 0; i < 5; i++) {
-        float h = 0.02 + 0.12 * float(i);
-        occ += (h - map(p + n * h).x) * sca;
-        sca *= 0.9;
+        float hr = 0.03 + 0.14 * float(i);
+        occ += (hr - map(p + n * hr).x) * sca;
+        sca *= 0.8;
     }
-    return clamp(1.0 - 2.5 * occ, 0.0, 1.0);
+    return clamp(1.0 - 1.6 * occ, 0.0, 1.0);
+}
+
+vec3 sunDir() {
+    // Low, ahead and to the left: the frames are backlit, and each throws a
+    // long shadow band back toward the camera.
+    float el = mix(0.45, 0.13, sun);
+    return normalize(vec3(-0.42, el, -1.0));
+}
+
+vec3 sky(vec3 rd) {
+    vec3 sd = sunDir();
+    float s = max(dot(rd, sd), 0.0);
+    vec3 top = mix(vec3(0.22, 0.38, 0.68), vec3(0.14, 0.2, 0.42), sun);
+    vec3 hor = mix(vec3(0.62, 0.6, 0.58), vec3(0.8, 0.42, 0.22), sun);
+    vec3 c = mix(hor, top, pow(clamp(rd.y * 1.6, 0.0, 1.0), 0.55));
+    c += vec3(1.0, 0.62, 0.3) * (pow(s, 6.0) * 0.9 + pow(s, 40.0) * 1.5) * sun;
+    c += vec3(1.0, 0.9, 0.7) * pow(s, 900.0) * 12.0;              // the disc
+    return c;
+}
+
+vec3 shade(vec3 ro, vec3 rd, float t, float m) {
+    vec3 p = ro + rd * t;
+    vec3 n = calcNormal(p);
+    vec3 sd = sunDir();
+    vec3 sunCol = mix(vec3(1.25, 1.15, 1.0), vec3(1.75, 0.98, 0.5), sun) * 2.6;
+    vec3 skyCol = mix(vec3(0.3, 0.4, 0.6), vec3(0.22, 0.3, 0.55), sun);
+    // Concrete: warm grey with board-form streaks and mottling.
+    float mott = vnoise(p.xz * 3.0 + p.y * 1.7) * 0.5 + vnoise(p.xy * 9.0 + p.z * 4.0) * 0.25 + vnoise(vec2(p.y * 40.0, p.x * 2.0 + p.z * 2.0)) * 0.12;
+    vec3 alb = vec3(0.56, 0.52, 0.47) * (0.82 + 0.3 * mott);
+    if (m < 1.5) alb = vec3(0.62, 0.57, 0.5) * (0.85 + 0.25 * vnoise(p.xz * 2.3));           // limestone deck
+    if (m > 2.5) alb = vec3(0.10, 0.16, 0.17);                                           // pool floor
+    float dif = max(dot(n, sd), 0.0) * softShadow(p + n * 0.004, sd);
+    float occ = ao(p, n);
+    float bounce = clamp(0.5 - 0.5 * n.y, 0.0, 1.0);
+    vec3 col = alb * (dif * sunCol + occ * (0.09 + 0.1 * n.y) * skyCol + occ * bounce * vec3(0.6, 0.34, 0.16) * 0.35);
+    // A faint sheen on the stone at grazing sun.
+    vec3 hv = normalize(sd - rd);
+    col += sunCol * 0.04 * pow(max(dot(n, hv), 0.0), 24.0) * dif;
+    return col;
+}
+
+vec3 aerial(vec3 col, vec3 rd, float t) {
+    vec3 sd = sunDir();
+    float s = max(dot(rd, sd), 0.0);
+    vec3 fogCol = mix(vec3(0.5, 0.52, 0.56), vec3(0.75, 0.48, 0.3), sun) * (0.35 + 1.4 * pow(s, 8.0));
+    float f = 1.0 - exp(-t * 0.011 * haze);
+    return mix(col, fogCol, f);
+}
+
+vec2 march(vec3 ro, vec3 rd, float tmax) {
+    float t = 0.02;
+    for (int i = 0; i < 140; i++) {
+        vec2 h = map(ro + rd * t);
+        if (abs(h.x) < 0.0003 * t) return vec2(t, h.y);
+        t += h.x;
+        if (t > tmax) break;
+    }
+    return vec2(-1.0, 0.0);
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec2 uv = (2.0 * fragCoord - iResolution.xy) / iResolution.y;
-    float a = 0.4 + 0.15 * iTime * speed;
-    vec3 ro = vec3(5.2 * sin(a), 1.4, 5.2 * cos(a));
-    vec3 ta = vec3(0.0, -0.1, 0.0);
+    float t = iTime * speed;
+    // Low camera, slightly off-axis, dollying toward the light.
+    vec3 ro = vec3(0.6, 0.95, 4.8 - t * 0.55);
+    vec3 ta = ro + vec3(-0.22, 0.1, -1.0);
     vec3 ww = normalize(ta - ro), uu = normalize(cross(ww, vec3(0, 1, 0))), vv = cross(uu, ww);
-    vec3 rd = normalize(uv.x * uu + uv.y * vv + 1.8 * ww);
+    vec3 rd = normalize(uv.x * uu + uv.y * vv + 1.6 * ww);
 
-    vec3 sky = mix(vec3(0.62, 0.68, 0.78), vec3(0.18, 0.22, 0.32), clamp(rd.y * 1.6 + 0.3, 0.0, 1.0));
-    vec3 col = sky;
-    float t = 0.0;
-    vec2 h = vec2(0.0);
-    bool hit = false;
-    for (int i = 0; i < 128; i++) {
-        h = map(ro + rd * t);
-        if (h.x < 0.0004 * t) { hit = true; break; }
-        t += h.x;
-        if (t > 30.0) break;
+    vec3 col;
+    vec2 h = march(ro, rd, 60.0);
+    // The pool's water surface sits just below the deck.
+    float tw = rd.y < 0.0 ? (-0.06 - ro.y) / rd.y : 1e9;
+    vec3 pw = ro + rd * tw;
+    bool water = tw > 0.0 && abs(pw.x) < POOL && (h.x < 0.0 || tw < h.x);
+    if (water) {
+        // Mirror with Fresnel, a whisper of ripple, and the dark pool beneath.
+        vec3 n = normalize(vec3(0.004 * sin(pw.z * 9.0 + t * 1.3) + 0.003 * sin(pw.x * 13.0 - t), 1.0, 0.003 * sin(pw.z * 17.0 - t * 2.1)));
+        vec3 rr = reflect(rd, n);
+        float fre = 0.02 + 0.98 * pow(1.0 - max(dot(-rd, n), 0.0), 5.0);
+        vec2 hr = march(pw + n * 0.01, rr, 60.0);
+        vec3 refl = hr.x > 0.0 ? aerial(shade(pw + n * 0.01, rr, hr.x, hr.y), rr, hr.x) : sky(rr);
+        vec3 under = vec3(0.03, 0.06, 0.065);
+        col = mix(under, refl, clamp(fre * 1.15 + 0.3, 0.0, 1.0));
+        col = aerial(col, rd, tw);
+    } else if (h.x > 0.0) {
+        col = aerial(shade(ro, rd, h.x, h.y), rd, h.x);
+    } else {
+        col = sky(rd);
     }
-    if (hit) {
-        vec3 p = ro + rd * t;
-        vec3 n = normal(p);
-        vec3 alb = h.y < 0.5 ? vec3(0.55) * (0.85 + 0.15 * mod(floor(p.x) + floor(p.z), 2.0))
-                 : h.y < 1.5 ? tint
-                 : h.y < 2.5 ? vec3(0.9, 0.92, 0.95) : vec3(0.2, 0.45, 0.85);
-        vec3 l = normalize(vec3(0.6, 0.8, 0.4));
-        float dif = max(dot(n, l), 0.0) * softShadow(p + n * 0.002, l);
-        float occ = ao(p, n);
-        float spe = pow(max(dot(reflect(rd, n), l), 0.0), h.y > 1.5 && h.y < 2.5 ? 64.0 : 16.0);
-        float fre = pow(clamp(1.0 + dot(n, rd), 0.0, 1.0), 3.0);
-        col = alb * (dif * vec3(1.25, 1.1, 0.95) + occ * (0.25 + 0.15 * n.y) * vec3(0.6, 0.7, 0.9));
-        col += spe * dif * 0.6 + fre * occ * sky * 0.25;
-        col = mix(col, sky, 1.0 - exp(-0.002 * t * t * t * 0.4));
-    }
-    col = pow(col, vec3(0.4545));
-    col *= 1.0 - 0.25 * dot(uv * 0.5, uv * 0.5);
-    fragColor = vec4(col, 1.0);
+    // Filmic tone curve (ACES fit), gentle vignette, gamma.
+    col *= 0.9;
+    col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
+    col *= 1.0 - 0.22 * dot(uv * 0.55, uv * 0.55);
+    fragColor = vec4(pow(clamp(col, 0.0, 1.0), vec3(0.4545)), 1.0);
 }

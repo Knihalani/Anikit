@@ -99,7 +99,7 @@ Write `fn mainImage(fragCoord: vec2f) -> vec4f` (or `fn transition(uv: vec2f) ->
 
 | Name | Use | What it is |
 |---|---|---|
-| `sdf-scene` | layer | raymarched still life: smooth-blended forms, soft shadows, AO, fog. Uniforms: `speed`, `tint` |
+| `sdf-scene` | layer | portals at golden hour: concrete frames receding down a reflecting pool, low backlit sun, soft shadows, AO, haze, a slow dolly. Uniforms: `speed`, `sun` (0 day … 1 sunset), `haze` |
 | `liquid-chrome` | layer | chrome metaballs reflecting a procedural studio. `speed`, `warmth` |
 | `aurora` | layer | aurora curtains over stars, mirrored in a lake. `speed`, `intensity` |
 | `caustics` | layer | pool-floor caustics; ray density from the refraction map's derivatives. `speed`, `depth`, `tint` |
