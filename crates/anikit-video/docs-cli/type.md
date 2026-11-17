@@ -57,3 +57,18 @@ condensed, wide, blackletter, script, hand, stencil, mono, pixel, display). Each
 | Playful | Kablammo (animate MORF), Shantell Sans (BNCE), Gluten, Bagel Fat One |
 | Fake 3D | Tilt Warp / Prism / Neon: animate XROT, YROT ±45 |
 Colour fonts (Nabla, Honk, Bungee Spice) draw their own palette; `color` doesn't tint them.
+
+## Type as material and as a window
+
+- **Gradients:** `color: "linear-gradient(90deg, #ff3d6e, #ffd23d)"` works on plain, split and kinetic text. On kinetic text
+  the gradient is drawn through each glyph's animated alpha.
+- **Anything inside the letters** (footage, image, shader, 3D, a group): give the text an `id` and put the fill layer *after* it with
+  `"matte": "<id>"`. The text then becomes the window and isn't drawn itself. Kinetic and split animations still drive the window:
+  ```json
+  { "id": "word", "text": "MOLTEN", "font": "Big Shoulders", "weight": 900, "size": "62vh", "kinetic": "mask by char up 0.7s 50ms outExpo" },
+  { "shader": "liquid-chrome", "width": "100%", "height": "100%", "matte": "word" }
+  ```
+  `{"layer": "word", "mode": "alphaInverted"}` knocks the word *out* of a plate. Footage inside a 50–70 vh compressed sans is the
+  classic title move; use heavy weights (800+) so enough of the image shows.
+- **Outline:** `stroke` + `strokeWidth`; `color: "none"` leaves only the outline. Layering a solid copy with a hollow copy
+  offset by 0.04 em gives an inline/offset print look.
