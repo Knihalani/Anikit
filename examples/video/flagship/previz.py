@@ -248,7 +248,7 @@ def render(t, w, h):
     if t >= Wd.T["logo0"]:
         rise = Wd.smoother(Wd.seg(t, Wd.T["logo0"], Wd.T["logo1"]))
         lx = Wd.LOGO_POS[0]
-        add_box((lx, 0.3 * rise, 0), (2.1, 0.3 * rise + 0.001, 0.08), (200, 205, 215))
+        add_box((lx, 0.3 * rise, Wd.LOGO_Z), (2.1, 0.3 * rise + 0.001, 0.08), (200, 205, 215))
 
     polys.sort(key=lambda q: -q[0])
     for _, pts, col, outline in polys:
@@ -265,12 +265,15 @@ def render(t, w, h):
     for c in Wd.CAPTIONS:
         if not (c["t0"] <= t < c["t1"]):
             continue
-        a = None if c["kind"] in ("counter", "cart") else Wd.caption_anchor(c)
+        a = None if c["kind"] in ("counter", "cart", "cart2") else Wd.caption_anchor(c)
         if c["kind"] == "counter":
             txt = f"{int(min(n, Wd.FRAMES)):,} / 3,600 frames"
             d.text((w * 0.05, h * 0.9), txt, fill=(255, 90, 31), font=font(h * 0.06), anchor="ls")
             continue
-        if c["kind"] == "cart":
+        if c["kind"] == "cart2":
+            a = (Wd.browser_x(t), 2.6, Wd.BROWSER_Z)
+            txt = f"Still rendering · {int(m)} / 3,600"
+        elif c["kind"] == "cart":
             a = (Wd.browser_x(t), 1.9, Wd.BROWSER_Z)
             txt = f"{c['text']}  ·  {int(m)} / 3,600"
         else:
@@ -281,7 +284,7 @@ def render(t, w, h):
         p = cam.proj(v)
         size = cam.fpx * c["h"] / v[2]
         col = (255, 90, 31) if c["kind"] == "counter" else (21, 23, 26)
-        d.text(tuple(p), txt, fill=col, font=font(min(size, h * 0.2)), anchor="ls" if c["kind"] != "logo" else "ms")
+        d.text(tuple(p), txt, fill=col, font=font(min(size, h * 0.2)), anchor="ms")
 
     # HUD
     shot = max(s for s0, s in SHOTS if t >= s0)

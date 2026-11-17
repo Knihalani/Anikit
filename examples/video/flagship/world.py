@@ -41,8 +41,8 @@ T = dict(
     ramp0=40.5, lock0=43.0, lock1=49.0, brake1=50.0,
     fold0=50.0, fold1=52.0,      # strip folds into a stack (lands on 52.0)
     crush0=52.5, crush1=54.0,    # stack compresses into a block
-    shrink0=54.5, shrink1=56.5,  # block shrinks into the tile
-    insert0=57.5, insert1=58.5,  # tile slides into the phone
+    shrink0=54.5, shrink1=56.3,  # block shrinks into the tile
+    insert0=56.9, insert1=58.0,  # tile slides into the phone
     screen=59.0,
     logo0=66.0, logo1=68.0,
 )
@@ -180,6 +180,7 @@ CAM_LOCK_Y = 0.55
 CAM_LOCK_X0 = 0.0              # filled in below (start of lock)
 
 REQ_POS = (-5.0, 1.05, 0.0)    # the request pane (shots 1-2)
+LOGO_Z = 22.0                  # the logo stands on the open side of the studio, facing -Z
 
 
 def _keys():
@@ -211,16 +212,18 @@ def _keys():
         dict(t=T["lock0"], pos=(x_lock0, CAM_LOCK_Y, CAM_Z), dir=look_strip, f=35, fd=CAM_Z, v=(V, 0, 0)),
         dict(t=T["lock1"], pos=(x_lock1, CAM_LOCK_Y, CAM_Z), dir=look_strip, f=35, fd=CAM_Z, v=(V, 0, 0)),
         dict(t=T["brake1"], pos=(x_brake, CAM_LOCK_Y + 0.1, CAM_Z + 0.4), dir=(0.0, -0.1, -CAM_Z), f=35, fd=CAM_Z, v=(0, 0, 0)),
-        # shot 7: hold while the strip folds, rise a little, then come in on the tile
+        # shot 7: hold while the strip folds, then come down onto the shrinking block / tile
         dict(t=53.0, pos=(x_brake + 0.4, 0.9, CAM_Z + 1.2), tgt=(x_brake, 0.47, 0), f=35, fd=3.4),
-        dict(t=56.5, pos=(x_brake + 0.2, 0.35, 1.3), tgt=(x_brake - 0.3, 0.12, 0.4), f=50, fd=1.1),
-        # shot 8: tile into the phone (macro), then the long pull-back
-        dict(t=59.5, pos=(x_brake - 0.7, 0.16, 1.32), tgt=(x_brake - 0.9, 0.09, 0.9), f=60, fd=0.47),
-        dict(t=60.8, pos=(x_brake - 0.72, 0.17, 1.38), tgt=(x_brake - 0.9, 0.09, 0.9), f=60, fd=0.52),
-        dict(t=65.5, pos=(x_brake + 40.0, 55.0, 70.0), tgt=(x_brake - 6.0, 0.0, 0.0), f=35, fd=80),
-        # shot 9: descend onto the logo
-        dict(t=70.0, pos=(x_brake - 4.0, 1.6, 9.0), tgt=(x_brake - 4.0, 0.6, 0.0), f=40, fd=9.0),
-        dict(t=72.0, pos=(x_brake - 4.0, 1.5, 8.6), tgt=(x_brake - 4.0, 0.6, 0.0), f=40, fd=8.6),
+        dict(t=56.0, pos=(x_brake + 0.35, 0.32, 1.45), tgt=(x_brake, 0.06, 0.0), f=50, fd=1.5, still=True),
+        # shot 8: follow the tile into the phone (macro), hold on the lit screen
+        dict(t=58.2, pos=(x_brake - 0.45, 0.2, 1.4), tgt=(x_brake - 0.82, 0.09, 0.8), f=60, fd=0.68, still=True),
+        dict(t=60.6, pos=(x_brake - 0.68, 0.17, 1.38), tgt=(x_brake - 0.9, 0.09, 0.9), f=60, fd=0.52, still=True),
+        # ... rise and look back down the other lane: the browser cart is still rendering
+        dict(t=63.2, pos=(x_brake + 4.0, 4.5, 9.0), dir=(browser_x(63.2) - x_brake - 4.0, -3.9, BROWSER_Z - 9.0), f=110, fd=250),
+        # ... then turn away from the lanes to the line of type, and on to the logo
+        dict(t=65.8, pos=(x_brake + 0.5, 1.5, 3.5), dir=(0.0, -0.08, 1.0), f=40, fd=7.0),
+        dict(t=70.0, pos=(x_brake, 1.35, LOGO_Z - 8.0), tgt=(x_brake, 0.55, LOGO_Z), f=40, fd=8.0),
+        dict(t=72.0, pos=(x_brake, 1.3, LOGO_Z - 7.5), tgt=(x_brake, 0.55, LOGO_Z), f=40, fd=7.5),
     ]
 
 
@@ -229,7 +232,7 @@ for _k in KEYS:
     if "dir" in _k:
         _m = math.sqrt(sum(c * c for c in _k["dir"]))
         _k["tgt"] = tuple(_k["pos"][i] + 3 * _k["dir"][i] / _m for i in range(3))
-LOGO_POS = (KEYS[-1]["pos"][0], 0.0, 0.0)
+LOGO_POS = (KEYS[-1]["pos"][0], 0.0, LOGO_Z)
 
 
 def _hermite(p0, p1, m0, m1, u, dt):
@@ -243,6 +246,8 @@ def _hermite(p0, p1, m0, m1, u, dt):
 
 def _tangent(k, field):
     i = KEYS.index(k)
+    if k.get("still"):
+        return (0.0, 0.0, 0.0)
     if "v" in k and field == "pos":
         return k["v"]
     if i == 0 or i == len(KEYS) - 1:
@@ -328,7 +333,8 @@ CAPTIONS = [
     dict(text="No browser. 21× faster.", at=(browser_x(39.0) + 12.0, 0.0, 1.3), h=0.6, t0=36.0, t1=41.0, kind="stand"),
     dict(text="sundial-launch.mp4 · H.264 · 1920×1080 · 60 fps", at=None, h=0.02, t0=56.0, t1=60.0, kind="etched"),
     dict(text="Its own H.264 encoder. One file.", at=(None, 0.0, 1.4), h=0.12, t0=54.0, t1=58.5, kind="stand"),
-    dict(text="This film was one spec. Rendered in N s.", at=(None, 0.0, 14.0), h=4.0, t0=61.0, t1=66.5, kind="floor"),
+    dict(text="Still rendering.", at=None, h=0.5, t0=61.2, t1=64.5, kind="cart2"),
+    dict(text="This film was one spec. Rendered in N s.", at=(None, 0.0, 10.0), h=0.45, t0=64.4, t1=68.5, kind="stand", yaw=180),
     dict(text="Anikit Video", at=None, h=0.6, t0=T["logo0"], t1=DURATION, kind="logo"),
     dict(text="Words in. Film out.", at=None, h=0.12, t0=68.0, t1=DURATION, kind="stand"),
 ]
@@ -341,6 +347,6 @@ def caption_anchor(c):
     if c["kind"] == "logo":
         return LOGO_POS
     if c["text"].startswith("Words in"):
-        return (LOGO_POS[0], 0.0, 0.9)
+        return (LOGO_POS[0], 0.0, LOGO_Z - 0.9)
     x, y, z = c["at"]
     return (xb if x is None else x, y, z)

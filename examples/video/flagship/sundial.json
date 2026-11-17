@@ -649,8 +649,8 @@
       },
       {
        "text": "6:40",
-       "x": 879.8,
-       "y": 479.4,
+       "x": 860.1,
+       "y": 475.9,
        "size": 20,
        "font": "JetBrains Mono",
        "color": "#ffffffb8",
@@ -673,8 +673,8 @@
       },
       {
        "text": "9:00",
-       "x": 984.1,
-       "y": 279.1,
+       "x": 970.0,
+       "y": 265.0,
        "size": 20,
        "font": "JetBrains Mono",
        "color": "#ffffffb8",
@@ -697,8 +697,8 @@
       },
       {
        "text": "12:30",
-       "x": 1299.1,
-       "y": 172.2,
+       "x": 1301.7,
+       "y": 152.4,
        "size": 20,
        "font": "JetBrains Mono",
        "color": "#ffffffb8",
@@ -721,8 +721,8 @@
       },
       {
        "text": "17:52",
-       "x": 1625.8,
-       "y": 532.2,
+       "x": 1645.8,
+       "y": 531.5,
        "size": 20,
        "font": "JetBrains Mono",
        "color": "#ffffffb8",

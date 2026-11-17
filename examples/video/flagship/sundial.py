@@ -67,7 +67,7 @@ def card(i, time, title, sub, hour):
 def tick(hour, label, color):
     a = (hour - 12) / 24 * 360
     import math
-    r_out = R + 46
+    r_out = R + 66
     x = CX + r_out * math.sin(math.radians(a))
     y = CY - r_out * math.cos(math.radians(a))
     return [
