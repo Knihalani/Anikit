@@ -50,6 +50,9 @@ struct Item {
     event: bool,
     /// Screen velocity (px per half shutter) when the op only translates.
     vel: Option<Vec2>,
+    /// Exactly the 16×16 blocks that change, when `rect` is much looser
+    /// (a clip growing or sweeping: only the band between its edges changes).
+    blocks: Option<Vec<(usize, usize)>>,
 }
 
 fn op_transform(op: &Op) -> Option<&crate::dl::Affine> {
@@ -174,12 +177,9 @@ fn changes(a: &[Op], b: &[Op], ra: &[Option<Rect>], rb: &[Option<Rect>], cut: f6
                 let (ba, bb) = (ta.transform_rect_bbox(pa.bounding_box()), tb.transform_rect_bbox(pb.bounding_box()));
                 let moved = edge_motion(ba, bb).max(corner_motion(pa.bounding_box(), ta, tb));
                 if moved < cut {
-                    out.push(Item {
-                        rect: ba.union(bb),
-                        moved,
-                        event: false,
-                        vel: None,
-                    });
+                    let rect = ba.union(bb);
+                    let blocks = clip_blocks(pa, ta, pb, tb, rect);
+                    out.push(Item { rect, moved, event: false, vel: None, blocks });
                 }
             }
             (Op::PushLayer { .. } | Op::PopLayer, _) => {}
@@ -193,6 +193,7 @@ fn changes(a: &[Op], b: &[Op], ra: &[Option<Rect>], rb: &[Option<Rect>], cut: f6
                             moved: 0.0,
                             event: true,
                             vel: None,
+                            blocks: None,
                         });
                         continue;
                     }
@@ -205,6 +206,7 @@ fn changes(a: &[Op], b: &[Op], ra: &[Option<Rect>], rb: &[Option<Rect>], cut: f6
                         moved: 0.0,
                         event: true,
                         vel: None,
+                        blocks: None,
                     });
                 } else {
                     out.push(Item {
@@ -212,6 +214,7 @@ fn changes(a: &[Op], b: &[Op], ra: &[Option<Rect>], rb: &[Option<Rect>], cut: f6
                         moved,
                         event: false,
                         vel: translation(x, y, xa),
+                        blocks: None,
                     });
                 }
             }
@@ -229,6 +232,7 @@ fn changes(a: &[Op], b: &[Op], ra: &[Option<Rect>], rb: &[Option<Rect>], cut: f6
             moved: 0.0,
             event: true,
             vel: None,
+            blocks: None,
         });
     }
 }
@@ -247,6 +251,73 @@ fn freeze_images(ops: &mut [Op], center: &[Op]) {
     for (a, b) in mine.zip(theirs) {
         *a = b;
     }
+}
+
+/// The 16×16 blocks (within `rect`, dilated by one) where clip `a` and clip
+/// `b` differ or either one's edge passes: tested at block corners and
+/// centres. `None` when that isn't much smaller than `rect`.
+fn clip_blocks(pa: &kurbo::BezPath, ta: Affine, pb: &kurbo::BezPath, tb: Affine, rect: Rect) -> Option<Vec<(usize, usize)>> {
+    let (ia, ib) = (ta.inverse(), tb.inverse());
+    let (bx0, by0) = ((rect.x0.max(0.0) / 16.0).floor() as usize, (rect.y0.max(0.0) / 16.0).floor() as usize);
+    let (bx1, by1) = ((rect.x1.max(0.0) / 16.0).ceil() as usize, (rect.y1.max(0.0) / 16.0).ceil() as usize);
+    if bx1 <= bx0 || by1 <= by0 || (bx1 - bx0) * (by1 - by0) < 64 || (bx1 - bx0) * (by1 - by0) > 1 << 16 {
+        return None;
+    }
+    let (gw, gh) = (bx1 - bx0 + 1, by1 - by0 + 1);
+    // Containment at grid corners (2 bits: in a, in b).
+    let at = |x: f64, y: f64| -> u8 {
+        let p = kurbo::Point::new(x, y);
+        (pa.winding(ia * p) != 0) as u8 | ((pb.winding(ib * p) != 0) as u8) << 1
+    };
+    let corner: Vec<u8> = (0..gh).flat_map(|j| (0..gw).map(move |i| (i, j))).map(|(i, j)| at(((bx0 + i) * 16) as f64, ((by0 + j) * 16) as f64)).collect();
+    let mut marked = vec![false; (gw - 1) * (gh - 1)];
+    for j in 0..gh - 1 {
+        for i in 0..gw - 1 {
+            let c = [corner[j * gw + i], corner[j * gw + i + 1], corner[(j + 1) * gw + i], corner[(j + 1) * gw + i + 1]];
+            let m = at(((bx0 + i) * 16 + 8) as f64, ((by0 + j) * 16 + 8) as f64);
+            // Same state everywhere, inside both or outside both: unchanged.
+            if !(c.iter().all(|&v| v == m) && (m == 0 || m == 3)) {
+                marked[j * (gw - 1) + i] = true;
+            }
+        }
+    }
+    let mut out = Vec::new();
+    let (mw, mh) = (gw - 1, gh - 1);
+    for j in 0..mh {
+        for i in 0..mw {
+            let near = (j.saturating_sub(1)..(j + 2).min(mh)).any(|y| (i.saturating_sub(1)..(i + 2).min(mw)).any(|x| marked[y * mw + x]));
+            if near {
+                out.push((bx0 + i, by0 + j));
+            }
+        }
+    }
+    (out.len() * 2 < mw * mh).then_some(out)
+}
+
+/// Row bands of 4 blocks: runs of marked columns (gaps ≤ 1 merged), as
+/// block boxes. Tighter than connected clusters for rings and sweeps.
+fn band_boxes(map: &super::diff::MbMap) -> Vec<[u32; 4]> {
+    let mut out = Vec::new();
+    for y0 in (0..map.mb_height).step_by(4) {
+        let y1 = (y0 + 4).min(map.mb_height);
+        let col = |x: usize| (y0..y1).any(|y| map.get(x, y));
+        let mut x = 0;
+        while x < map.mb_width {
+            if !col(x) {
+                x += 1;
+                continue;
+            }
+            let s = x;
+            let mut e = x + 1;
+            while e < map.mb_width && (col(e) || (e + 1 < map.mb_width && col(e + 1))) {
+                e += 1;
+            }
+            let rows: Vec<usize> = (y0..y1).filter(|&y| (s..e).any(|x| map.get(x, y))).collect();
+            out.push([s as u32, rows[0] as u32, e as u32, *rows.last().unwrap() as u32 + 1]);
+            x = e;
+        }
+    }
+    out
 }
 
 /// Hold sub-pixel drift at the centre frame's values in a sample list:
@@ -452,7 +523,13 @@ impl Renderer {
         // as many samples as its fastest content needs.
         let mut map = super::diff::MbMap::new(w.div_ceil(16), h.div_ceil(16));
         for i in items.iter().filter(|i| samples(i) > 1) {
-            map.mark_rect(i.rect.inflate(2.0, 2.0));
+            match &i.blocks {
+                Some(b) => {
+                    let (mw, mh) = (map.mb_width, map.mb_height);
+                    b.iter().filter(|(x, y)| *x < mw && *y < mh).for_each(|&(x, y)| map.set(x, y));
+                }
+                None => map.mark_rect(i.rect.inflate(2.0, 2.0)),
+            }
         }
         // Ops that don't change at all over the shutter.
         let aligned = ta.ops.len() == tc.ops.len() && tb.ops.len() == tc.ops.len();
@@ -516,7 +593,16 @@ impl Renderer {
             }
             (m, Some(streak / m as f64))
         };
-        let mut boxes: Vec<([usize; 4], usize, Option<Vec2>)> = super::incremental::cluster(&map, 8)
+        // Few loose boxes, or many tight bands when that covers far less.
+        let area = |bs: &[[u32; 4]]| bs.iter().map(|b| ((b[2] - b[0]) * (b[3] - b[1])) as usize).sum::<usize>();
+        let mut chosen = super::incremental::cluster(&map, 8);
+        if items.iter().any(|i| i.blocks.is_some()) {
+            let bands = band_boxes(&map);
+            if bands.len() <= 48 && area(&bands) * 2 < area(&chosen) {
+                chosen = bands;
+            }
+        }
+        let mut boxes: Vec<([usize; 4], usize, Option<Vec2>)> = chosen
             .into_iter()
             .map(|b| [b[0] as usize * 16, b[1] as usize * 16, (b[2] as usize * 16).min(w), (b[3] as usize * 16).min(h)])
             .filter(|b| b[2] > b[0] && b[3] > b[1])
