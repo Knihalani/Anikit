@@ -321,6 +321,10 @@ pub struct Gradient {
 #[serde(rename_all = "camelCase")]
 pub struct Scene {
     pub id: Option<String>,
+    /// Free text for the author (ignored by the renderer): what this shot
+    /// shows and why, e.g. the reference shot it recreates (`analyze --spec`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
     /// Reuse: the name of an entry in top-level `defs`; other keys here override it
     /// (expanded before typing, see `spec/reuse.rs`).
     #[serde(rename = "use", default, skip_serializing_if = "Option::is_none")]
