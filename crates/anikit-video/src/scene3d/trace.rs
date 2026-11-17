@@ -1130,7 +1130,8 @@ impl Scene {
             r = norm(madd(r, ng, 0.01 - rg));
         }
         let rough_mix = smoothstep(0.18, 0.5, rough);
-        let env_raw = self.sky(r, rough);
+        // (Weighted by `rough_mix`: smooth metal never needs the lookup.)
+        let env_raw = if rough_mix > 0.0 { self.sky(r, rough) } else { v3(0.0, 0.0, 0.0) };
         let traced = if depth < q.max_depth && rough_mix < 1.0 { weighted(luma(spec_w) * (1.0 - rough_mix) * keep, || self.radiance(madd(s.p, ng, 1e-4), r, depth + 1, glass, q, rough, rot)) } else { v3(0.0, 0.0, 0.0) };
         let (traced, env_spec) = if inline_vis {
             (lerp3(traced, scale(env_raw, ao.powf(0.5 + rough)), rough_mix), v3(0.0, 0.0, 0.0))

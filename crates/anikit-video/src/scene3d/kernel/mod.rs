@@ -29,6 +29,7 @@ macro_rules! simd_fn {
     };
 }
 
+pub mod envk;
 pub mod par;
 pub mod pool;
 pub mod post;
