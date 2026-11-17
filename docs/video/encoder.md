@@ -2,7 +2,7 @@
 
 `crates/ak264` is a pure-Rust H.264 (AVC) encoder written for Anikit Video. It
 exists because encoding, not rendering, was the bottleneck: our renderer draws
-1080p at roughly 935 fps on 4 cores, while x264 manages 70–140 fps on the same
+1080p at roughly 935 fps on 4 cores, while x264 veryfast manages 70–190 fps on the same
 content. ak264 is fast because it is told, or can cheaply find out, what changed
 between frames, and because it only implements the tools that pay off on motion
 graphics.
