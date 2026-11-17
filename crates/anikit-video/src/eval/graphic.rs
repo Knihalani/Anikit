@@ -459,3 +459,79 @@ mod grid_tests {
         assert!(parse_cell("0-3", 12, 8).is_err() && parse_cell("1-13", 12, 8).is_err());
     }
 }
+
+/// A cut-out outline of the box `w × h` (plus `grow` px all round): `torn` (fibrous,
+/// two-octave jitter every ~3 px), `scissor` (a few straight cuts per side) or `clean`.
+/// Returned as SVG path data in the box's coordinates.
+pub fn cutout_d(w: f64, h: f64, edge: &str, amount: f64, grow: f64, seed: u32) -> String {
+    let (x0, y0, x1, y1) = (-grow, -grow, w + grow, h + grow);
+    let corners = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)];
+    let mut pts: Vec<(f64, f64)> = Vec::new();
+    let mut k = 0u32;
+    for side in 0..4 {
+        let (a, b) = (corners[side], corners[(side + 1) % 4]);
+        let len = ((b.0 - a.0).powi(2) + (b.1 - a.1).powi(2)).sqrt();
+        // Inward normal (the outline runs clockwise in y-down space).
+        let (nx, ny) = (-(b.1 - a.1) / len.max(1e-9), (b.0 - a.0) / len.max(1e-9));
+        let (n, jitter): (usize, Box<dyn Fn(usize, usize) -> f64>) = match edge {
+            "scissor" => {
+                let n = 3 + (rnd(seed, 900 + side as u32) * 3.0) as usize;
+                (n, Box::new(move |i, _| if i == 0 { 0.0 } else { rnd(seed, 1000 + side as u32 * 16 + i as u32) * amount }))
+            }
+            "torn" => {
+                let n = (len / 3.0).ceil().max(4.0) as usize;
+                let s = seed;
+                let sd = side as u32;
+                (n, Box::new(move |i, n| {
+                    // Low-frequency wander + fibres; 0 at the corners so sides meet.
+                    let t = i as f64 / n as f64;
+                    let env = (t * std::f64::consts::PI).sin().powf(0.3);
+                    let lo = smooth_noise(s ^ (sd * 7919), t * len / 60.0);
+                    let hi = rnd(s, (sd << 20) ^ i as u32) - 0.5;
+                    (env * amount * (0.65 * lo + 0.35 * hi + 0.4)).max(0.0)
+                }))
+            }
+            _ => (1, Box::new(|_, _| 0.0)),
+        };
+        for i in 0..n {
+            let t = i as f64 / n as f64;
+            let j = jitter(i, n);
+            pts.push((a.0 + (b.0 - a.0) * t + nx * j, a.1 + (b.1 - a.1) * t + ny * j));
+            k += 1;
+        }
+    }
+    let _ = k;
+    let mut d = String::with_capacity(pts.len() * 16);
+    for (i, (x, y)) in pts.iter().enumerate() {
+        d += &format!("{}{:.2} {:.2} ", if i == 0 { "M" } else { "L" }, x, y);
+    }
+    d += "Z";
+    d
+}
+
+/// 1D value noise in [-0.5, 0.5], smooth.
+fn smooth_noise(seed: u32, x: f64) -> f64 {
+    let i = x.floor();
+    let f = x - i;
+    let s = f * f * (3.0 - 2.0 * f);
+    let a = rnd(seed, i as i64 as u32);
+    let b = rnd(seed, (i as i64 + 1) as u32);
+    a + (b - a) * s - 0.5
+}
+
+#[cfg(test)]
+mod cutout_tests {
+    use super::*;
+
+    #[test]
+    fn cutouts_stay_near_the_box() {
+        for edge in ["torn", "scissor", "clean"] {
+            let d = cutout_d(400.0, 300.0, edge, 10.0, 0.0, 4);
+            let p = BezPath::from_svg(&d).unwrap();
+            let bb = p.bounding_box();
+            assert!(bb.x0 >= -1.0 && bb.y0 >= -1.0 && bb.x1 <= 401.0 && bb.y1 <= 301.0, "{edge}: {bb:?}");
+            assert!(p.area().abs() > 400.0 * 300.0 * 0.85, "{edge}");
+            assert_eq!(d, cutout_d(400.0, 300.0, edge, 10.0, 0.0, 4));
+        }
+    }
+}

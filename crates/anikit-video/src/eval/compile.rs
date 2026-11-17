@@ -1200,6 +1200,17 @@ impl C<'_> {
             }
             None => l,
         };
+        let cut;
+        let l = match &l.cutout {
+            Some(c) => match self.cutout_group(l, c, path) {
+                Some(g) => {
+                    cut = g;
+                    &cut
+                }
+                None => l,
+            },
+            None => l,
+        };
         let kind = self.infer_kind(l, path)?;
         self.uniform_slots.clear();
         let label = match (kind, &l.component) {
@@ -2223,6 +2234,68 @@ impl C<'_> {
             }
         }
         out
+    }
+
+    /// `cutout`: the layer becomes a group of a paper rim (with a printed shadow) and the
+    /// layer itself clipped to a torn / scissor-cut outline of its box.
+    fn cutout_group(&mut self, l: &Layer, c: &spec::CutoutValue, path: &str) -> Option<Layer> {
+        let cp = format!("{path}.cutout");
+        let o = match c {
+            spec::CutoutValue::Edge(e) => spec::CutoutSpec { edge: Some(e.clone()), ..Default::default() },
+            spec::CutoutValue::Full(f) => f.clone(),
+        };
+        let edge = o.edge.clone().unwrap_or_else(|| "torn".into());
+        if !["torn", "scissor", "clean"].contains(&edge.as_str()) {
+            self.d.push(Diagnostic::error(&cp, format!("unknown cutout edge '{edge}'")).suggest(suggest(&edge, &["torn", "scissor", "clean"])));
+            return None;
+        }
+        let (Some(Num::Num(w)), Some(Num::Num(h))) = (&l.width, &l.height) else {
+            self.d.push(Diagnostic::error(&cp, "a cutout needs a numeric width and height (or a grid cell)"));
+            return None;
+        };
+        let (w, h) = (*w, *h);
+        let amount = o.amount.unwrap_or(if edge == "scissor" { 18.0 } else { 14.0 });
+        let rim = o.rim.unwrap_or(if edge == "torn" { 8.0 } else { 0.0 }).max(0.0);
+        let seed = o.seed.unwrap_or(1);
+        let inner_d = super::graphic::cutout_d(w, h, &edge, amount, 0.0, seed);
+        let rim_d = super::graphic::cutout_d(w, h, &edge, amount * 1.25, rim, seed.wrapping_add(17));
+        let mut inner = l.clone();
+        inner.cutout = None;
+        let mut g = Layer {
+            kind: Some("group".into()),
+            id: l.id.clone(),
+            width: Some(Num::Num(w)),
+            height: Some(Num::Num(h)),
+            ..Default::default()
+        };
+        // Placement, time and motion move to the group; looks stay on the content.
+        macro_rules! mv {
+            ($($f:ident),*) => { $( g.$f = inner.$f.take(); )* };
+        }
+        mv!(x, y, anchor, scale, scale_x, scale_y, rotation, skew_x, skew_y, opacity, start, end, duration, enter, exit, animate, loop_, depth, blend, step, boil, path, orient, repeat, echo);
+        inner.id = None;
+        inner.x = Some(Num::Num(w / 2.0));
+        inner.y = Some(Num::Num(h / 2.0));
+        let clip = Layer { shape: Some("path".into()), d: Some(inner_d), ..Default::default() };
+        inner.clip = Some(spec::Clip::Shape(Box::new(clip)));
+        let mut layers = Vec::new();
+        if rim > 0.0 || o.shadow != Some(false) {
+            let mut r = Layer {
+                shape: Some("path".into()),
+                d: Some(if rim > 0.0 { rim_d } else { super::graphic::cutout_d(w, h, &edge, amount, 0.0, seed) }),
+                x: Some(Num::Num(w / 2.0)),
+                y: Some(Num::Num(h / 2.0)),
+                fill: Some(spec::Paint::Css(o.rim_color.clone().unwrap_or_else(|| "#f4f1ea".into()))),
+                ..Default::default()
+            };
+            if o.shadow != Some(false) {
+                r.shadow = Some(spec::Shadow(spec::ShadowObj { x: Some(5.0), y: Some(7.0), blur: Some(3.0), color: Some("#00000059".into()) }));
+            }
+            layers.push(r);
+        }
+        layers.push(inner);
+        g.layers = Some(layers);
+        Some(g)
     }
 
     /// Image treatments (`duotone`, `gradientMap`, `posterize`, `halftone`) as layer filters.

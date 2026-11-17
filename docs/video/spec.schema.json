@@ -1574,6 +1574,17 @@
             }
           ]
         },
+        "cutout": {
+          "description": "Collage cut-out: `\"torn\"`, `\"scissor\"` or `\"clean\"`, or `{ \"edge\", \"amount\": px, \"rim\": px, \"rimColor\", \"shadow\": bool, \"seed\" }`.\nCuts the layer's box with that edge, backs it with a paper rim and a printed shadow. Needs a numeric `width`/`height` (or a `cell`).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CutoutValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "step": {
           "description": "Stepped time: the layer (and its children) animate at this many fps, or `\"twos\"`/`\"threes\"`/`\"fours\"`\nof the video's fps (stop-motion, hand-pulled print, cel looks) while the rest stays smooth."
         },
@@ -2829,6 +2840,68 @@
             "null"
           ],
           "format": "double"
+        },
+        "seed": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "CutoutValue": {
+      "description": "`cutout`: an edge name or the full settings.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/CutoutSpec"
+        }
+      ]
+    },
+    "CutoutSpec": {
+      "type": "object",
+      "properties": {
+        "edge": {
+          "description": "`torn` (default), `scissor` or `clean`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "amount": {
+          "description": "How far the edge bites in, px. Default 14 (torn), 18 (scissor).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "rim": {
+          "description": "Paper rim around the cut, px. Default 8 for torn, 0 otherwise.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "rimColor": {
+          "description": "Rim colour. Default `\"#f4f1ea\"`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "shadow": {
+          "description": "A tight printed shadow under the piece. Default true.",
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "seed": {
           "type": [

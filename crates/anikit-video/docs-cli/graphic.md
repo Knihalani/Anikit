@@ -31,6 +31,9 @@
   `posterize: N` (luma steps with a map, RGB steps alone), `toneRange: [black, white]` (stretch a flat source first),
   `toneAmount` 0..1, `halftone: 10` or `{cell, angle, shape: dot|line|square, ink, paper, gain}` (ink `"source"` keeps
   each dot's colour; paper `"none"` leaves only dots; the screen is fixed to the frame, as on press).
+- **Cutout** (collage) `"cutout": "torn"` | `"scissor"` | `"clean"` or `{edge, amount, rim, rimColor, shadow, seed}` on any
+  layer with a numeric width/height or a `cell`: clips it to a cut edge, backs it with a paper rim (torn: 8 px) and a tight
+  printed shadow. Motion, time and blend move to the piece, so `enter`/`animate` move paper and content together.
 - **Ink texture** `"inkTexture": 0.35` or `{amount, scale, seed}`: uneven coverage (blotches + pinholes) fixed to the frame,
   so it reads as ink on paper rather than a grain overlay. Use it on the ink layers only; leave type you must read lighter (≤ 0.2).
 - **Stepped time** `"step": "twos"` (or `"threes"`, or fps like `8`): the layer and its children animate held, like

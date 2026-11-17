@@ -176,6 +176,30 @@ pub struct GridSpec {
     pub color: Option<String>,
 }
 
+/// `cutout`: an edge name or the full settings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum CutoutValue {
+    Edge(String),
+    Full(CutoutSpec),
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CutoutSpec {
+    /// `torn` (default), `scissor` or `clean`.
+    pub edge: Option<String>,
+    /// How far the edge bites in, px. Default 14 (torn), 18 (scissor).
+    pub amount: Option<f64>,
+    /// Paper rim around the cut, px. Default 8 for torn, 0 otherwise.
+    pub rim: Option<f64>,
+    /// Rim colour. Default `"#f4f1ea"`.
+    pub rim_color: Option<String>,
+    /// A tight printed shadow under the piece. Default true.
+    pub shadow: Option<bool>,
+    pub seed: Option<u32>,
+}
+
 /// `inkTexture`: amount, or the full settings.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(untagged)]
@@ -670,6 +694,9 @@ pub struct Layer {
     /// Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ "amount", "scale": px, "seed" }`.
     /// Fixed to the frame like the paper, so moving shapes travel through it.
     pub ink_texture: Option<InkValue>,
+    /// Collage cut-out: `"torn"`, `"scissor"` or `"clean"`, or `{ "edge", "amount": px, "rim": px, "rimColor", "shadow": bool, "seed" }`.
+    /// Cuts the layer's box with that edge, backs it with a paper rim and a printed shadow. Needs a numeric `width`/`height` (or a `cell`).
+    pub cutout: Option<CutoutValue>,
     /// Stepped time: the layer (and its children) animate at this many fps, or `"twos"`/`"threes"`/`"fours"`
     /// of the video's fps (stop-motion, hand-pulled print, cel looks) while the rest stays smooth.
     #[schemars(with = "Option<serde_json::Value>")]

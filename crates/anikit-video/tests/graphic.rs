@@ -79,3 +79,16 @@ fn stepped_time_and_boil() {
     assert!(a != c && (a - 495.0).abs() <= 4.01 && (c - 495.0).abs() <= 4.01, "{a} {c}");
     assert_eq!(x_at(&boil, 0.30), c, "deterministic");
 }
+
+#[test]
+fn cutout_wraps_the_layer_in_a_rimmed_clipped_piece() {
+    let e = ev(r##"{ "scenes": [ { "layers": [ { "shape": "rect", "width": 400, "height": 300, "fill": "#123", "rotation": 5,
+        "cutout": { "edge": "torn", "rim": 8, "seed": 2 } } ] } ] }"##);
+    let ops = e.eval(0.5).ops;
+    // A rim (with its printed shadow) and the clipped content.
+    let shadows = ops.iter().filter(|o| matches!(o, Op::PushLayer { filters, .. } if filters.iter().any(|f| matches!(f, Filter::Shadow { .. })))).count();
+    let clips = ops.iter().filter(|o| matches!(o, Op::PushLayer { clip: Some(_), .. })).count();
+    assert_eq!((shadows, clips), (1, 1), "{ops:?}");
+    let bad = parse_json(r#"{ "scenes": [ { "layers": [ { "shape": "rect", "cutout": "ripped" } ] } ] }"#).unwrap();
+    assert!(Evaluator::new(&bad.spec, Options::default()).err().unwrap().to_string().contains("cutout"));
+}
