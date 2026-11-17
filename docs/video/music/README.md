@@ -124,7 +124,8 @@ Per-component speed (single thread, × real time):
   - Theory: keys, modes, chord symbols and Roman numerals, voice leading.
   - The note language and drum grids.
   - Arrangement helpers: play modes, basslines, a motif-based melody generator.
-  - 15 data-driven styles, with sections and energy, fills, crashes, risers and impacts.
+  - 15 data-driven styles, with sections and energy, fills, crashes, risers and impacts. Any explicit section can take `"stop": beats` for silence right before it (the trailer hole, a false ending), in any style.
+  - Long cinematic-hybrid cues (45 s or more) get a three-act trailer form: a build with a pulse that speeds up, a climax that stops dead, a false ending, then act III.
 - **Mix.**
   - Every track is loudness-matched to its role's level, so balance does not depend on where an instrument came from (sampled, model or synth).
   - Per-track processing: EQ, compressor, drive, width and pan, plus a sidechain pump from the kicks.

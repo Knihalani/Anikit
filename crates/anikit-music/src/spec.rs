@@ -68,6 +68,9 @@ pub struct SectionObj {
     pub energy: Option<f32>,
     /// Chords for this section only.
     pub chords: Option<String>,
+    /// Beats of silence right before this section: every part stops (ringing
+    /// notes are cut, the reverb tails ring on), then the section lands.
+    pub stop: Option<f64>,
 }
 
 /// A sound effect on the timeline, aligned by its hit point.

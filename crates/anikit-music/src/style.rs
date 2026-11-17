@@ -1219,6 +1219,21 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
             tracks.push(t);
         }
     }
+    // Explicit stops: silence before a section, in any style and on every track.
+    if !spec.sections.is_empty() {
+        for (sec, s) in sections.iter().zip(&spec.sections) {
+            let SectionSpec::Full(o) = s else { continue };
+            let Some(stop) = o.stop.filter(|&b| b > 0.0) else { continue };
+            let p = sec.bar * bpb;
+            let w0 = (p - stop).max(0.0);
+            for tr in tracks.iter_mut() {
+                tr.notes.retain(|n| !(n.t >= w0 - 1e-9 && n.t < p - 1e-9));
+                for n in tr.notes.iter_mut().filter(|n| n.t < w0 && n.t + n.len > w0) {
+                    n.len = (w0 - n.t).max(0.05);
+                }
+            }
+        }
+    }
     for c in &spec.sfx {
         let mut params = serde_json::Map::new();
         for (k, v) in &c.params {
@@ -1678,6 +1693,18 @@ mod trailer_tests {
         // Short cues keep the simple form.
         let s = compose(&MusicSpec::from_json(r#"{"style":"cinematic-hybrid","length":"30s"}"#).unwrap(), None).unwrap();
         assert!(!s.sections.iter().any(|x| x.name == "break"));
+    }
+
+    #[test]
+    fn explicit_section_stops_work_in_any_style() {
+        let j = r#"{"style":"piano","bpm":120,"sections":[{"name":"verse","bars":4},{"name":"chorus","bars":4,"stop":2}]}"#;
+        let a = compose(&MusicSpec::from_json(j).unwrap(), None).unwrap();
+        let p = 4.0 * a.grid.beats_per_bar;
+        assert!(a.tracks.iter().all(|t| !t.notes.iter().any(|n| n.t >= p - 2.0 && n.t < p)), "silent for 2 beats");
+        assert!(a.tracks.iter().all(|t| !t.notes.iter().any(|n| n.t < p - 2.0 && n.t + n.len > p - 2.0 + 1e-6)), "nothing rings in");
+        assert!(a.tracks.iter().any(|t| t.notes.iter().any(|n| (n.t - p).abs() < 1e-6)), "the chorus lands");
+        let b = compose(&MusicSpec::from_json(&j.replace(r#","stop":2"#, "")).unwrap(), None).unwrap();
+        assert!(b.tracks.iter().any(|t| t.notes.iter().any(|n| n.t >= p - 2.0 && n.t < p)));
     }
 
     #[test]
