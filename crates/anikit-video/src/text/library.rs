@@ -342,43 +342,6 @@ pub fn listing(query: &str, json: bool) -> String {
 const GENRES: &[&str] =
     &["grotesque", "geometric", "humanist", "didone", "serif", "slab", "condensed", "wide", "blackletter", "script", "hand", "stencil", "mono", "pixel", "display"];
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn sha256_known() {
-        assert_eq!(sha256_hex(b""), "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
-        assert_eq!(sha256_hex(b"abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
-        let long = vec![b'a'; 1000];
-        assert_eq!(sha256_hex(&long), "41edece42d63e8d9bf515a9ba6932e1c20cbc9f5a5d134645adb5db1b9737ea3");
-    }
-
-    #[test]
-    fn catalogue_is_consistent() {
-        assert!(families().len() >= 100);
-        for f in families() {
-            assert!(GENRES.contains(&f.genre.as_str()), "{}: genre {}", f.name, f.genre);
-            assert!(f.bundled || !f.files.is_empty(), "{}", f.name);
-            for p in &f.pairs {
-                assert!(find(p).is_some(), "{} pairs with unknown {p}", f.name);
-            }
-            for (_, _, sha) in &f.files {
-                assert_eq!(sha.len(), 64);
-            }
-        }
-        assert_eq!(find("big-shoulders").unwrap().name, "Big Shoulders");
-        assert_eq!(find("FRAUNCES").unwrap().name, "Fraunces");
-        assert!(suggest("Frances").contains(&"Fraunces"));
-        assert_eq!(search("didone")[0].genre, "didone");
-        assert_eq!(find_loose("Bodoni Moda Black").unwrap().name, "Bodoni Moda");
-        assert_eq!(find_loose("Bricolage").unwrap().name, "Bricolage Grotesque");
-        assert_eq!(find_loose("big shoulders bold italic").unwrap().name, "Big Shoulders");
-        assert!(find_loose("Zz").is_none());
-        assert!(search("SOFT").iter().any(|f| f.name == "Fraunces"));
-    }
-}
-
 /// Font names a spec mentions: string values under any key containing
 /// "font" (`font`, `fontFamily`, `theme.fonts.heading`…), split on commas,
 /// with their JSON paths. The top-level `fonts` map (name → file) is skipped.
@@ -414,4 +377,41 @@ pub fn spec_font_names(spec: &serde_json::Value) -> Vec<(String, String)> {
     let mut out = Vec::new();
     walk(spec, "", false, &mut out);
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sha256_known() {
+        assert_eq!(sha256_hex(b""), "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+        assert_eq!(sha256_hex(b"abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+        let long = vec![b'a'; 1000];
+        assert_eq!(sha256_hex(&long), "41edece42d63e8d9bf515a9ba6932e1c20cbc9f5a5d134645adb5db1b9737ea3");
+    }
+
+    #[test]
+    fn catalogue_is_consistent() {
+        assert!(families().len() >= 100);
+        for f in families() {
+            assert!(GENRES.contains(&f.genre.as_str()), "{}: genre {}", f.name, f.genre);
+            assert!(f.bundled || !f.files.is_empty(), "{}", f.name);
+            for p in &f.pairs {
+                assert!(find(p).is_some(), "{} pairs with unknown {p}", f.name);
+            }
+            for (_, _, sha) in &f.files {
+                assert_eq!(sha.len(), 64);
+            }
+        }
+        assert_eq!(find("big-shoulders").unwrap().name, "Big Shoulders");
+        assert_eq!(find("FRAUNCES").unwrap().name, "Fraunces");
+        assert!(suggest("Frances").contains(&"Fraunces"));
+        assert_eq!(search("didone")[0].genre, "didone");
+        assert_eq!(find_loose("Bodoni Moda Black").unwrap().name, "Bodoni Moda");
+        assert_eq!(find_loose("Bricolage").unwrap().name, "Bricolage Grotesque");
+        assert_eq!(find_loose("big shoulders bold italic").unwrap().name, "Big Shoulders");
+        assert!(find_loose("Zz").is_none());
+        assert!(search("SOFT").iter().any(|f| f.name == "Fraunces"));
+    }
 }

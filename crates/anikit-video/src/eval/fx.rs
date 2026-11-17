@@ -272,11 +272,14 @@ pub(crate) fn order_ranks(n: usize, order: &str, seed: f64) -> Vec<u32> {
     rank
 }
 
+/// One chunk of a path-following stroke gradient: (chunk path, start point, end point, start fraction, end fraction, start colour, end colour).
+pub(crate) type AlongChunk = (Path, [f32; 2], [f32; 2], f32, f32, crate::dl::Rgba, crate::dl::Rgba);
+
 /// A stroke gradient that follows the path.
 #[derive(Clone, Debug, PartialEq, Default)]
 pub(crate) struct AlongC {
     /// (chunk path, start point, end point, start fraction, end fraction, start colour, end colour).
-    pub chunks: Vec<(Path, [f32; 2], [f32; 2], f32, f32, crate::dl::Rgba, crate::dl::Rgba)>,
+    pub chunks: Vec<AlongChunk>,
 }
 
 impl AlongC {

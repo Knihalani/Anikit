@@ -440,7 +440,7 @@ mod ink_tests {
         assert_eq!(a, b);
         let mean = a.chunks(4).map(|p| p[3] as f64).sum::<f64>() / (w * h) as f64;
         assert!(mean < 250.0 && mean > 150.0, "{mean}");
-        assert!(a.chunks(4).all(|p| p[0] <= p[3] && p[3] <= 255));
+        assert!(a.chunks(4).all(|p| p[0] <= p[3]));
         // Frame-anchored: shifting the origin by a whole tile row moves the texture with it.
         let mut c = src[w * 4 * 8..].to_vec();
         apply(&Filter::Ink { amount: 0.5, scale: 16.0, seed: 3, ox: 0.0, oy: 8.0 }, &mut c, w, h - 8, &mut FilterScratch::default());
