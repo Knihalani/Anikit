@@ -77,7 +77,8 @@ fn main() {
             ("ak264 chunks", 1, 1),
             ("ak264 chunks + renderer hints", 1, 2),
         ] {
-            let cfg = EncoderConfig { width: w, height: h, qp, gop: 60, fps: 30.0, threads, ..Default::default() };
+            let subpel = std::env::var("SUBPEL").map(|v| v != "0").unwrap_or(false);
+            let cfg = EncoderConfig { width: w, height: h, qp, gop: 60, fps: 30.0, threads, subpel, skip_threshold: std::env::var("SKIPT").ok().and_then(|v| v.parse().ok()).unwrap_or(0), ..Default::default() };
             // warm-up
             let _ = encode_chunks(&cfg, &frames[..2.min(frames.len())], &[]);
             let reps: usize = std::env::var("REPS").ok().and_then(|v| v.parse().ok()).unwrap_or(3);
