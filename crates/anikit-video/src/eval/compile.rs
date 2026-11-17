@@ -2618,7 +2618,7 @@ impl C<'_> {
         if let Some(k) = &t.keyframes {
             for (name, vals) in k {
                 let p = format!("{path}.keyframes.{name}");
-                let Some((slot, ch)) = prop::lookup(name) else {
+                let Some((slot, ch)) = prop::lookup(name).or_else(|| self.uniform_lookup(name).map(|(s, _)| (s, 1))) else {
                     self.d.push(Diagnostic::error(p, format!("'{name}' is not animatable")).suggest(suggest(name, val::ANIM_PROPS)));
                     continue;
                 };

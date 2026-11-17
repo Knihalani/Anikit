@@ -1,0 +1,21 @@
+{ "size": [1920, 1080], "fps": 30,
+  "post": { "preset": "cinematic", "bloom": 0.35 },
+  "scenes": [ { "duration": 7, "background": "#020406", "layers": [
+    { "shader": "aurora", "uniforms": { "intensity": 1.15, "speed": 0.8 },
+      "animate": [ { "from": { "scale": 1.0 }, "to": { "scale": 1.06 }, "duration": 7, "ease": "inOutSine" },
+                   { "keyframes": { "intensity": [0.9, 1.35, 1.1] }, "duration": 7, "ease": "inOutSine" } ] },
+    { "shader": "liquid-chrome", "uniforms": { "env": 1, "film": 0.3, "background": 0, "speed": 0.9 },
+      "alpha": true, "supersample": true,
+      "x": 760, "y": 470, "width": 1100, "height": 1000,
+      "animate": [ { "from": { "scale": 1.0, "y": 490 }, "to": { "scale": 1.1, "y": 440 }, "duration": 7, "ease": "inOutSine" } ] },
+    { "shader": "liquid-chrome", "uniforms": { "env": 1, "film": 0.3, "background": 0, "speed": 0.9 },
+      "alpha": true, "opacity": 0.3, "blur": 8,
+      "x": 760, "y": 1060, "width": 1100, "height": 1000, "scaleY": -1,
+      "animate": [ { "from": { "scale": 1.0, "y": 1070 }, "to": { "scale": 1.1, "y": 1120 }, "duration": 7, "ease": "inOutSine" } ] },
+    { "text": "NORTHERN SILVER", "x": 1340, "y": 836, "anchor": "topLeft", "size": 30, "weight": 600,
+      "letterSpacing": 9, "color": "#dbe9e3", "enter": { "preset": "fadeUp", "delay": 1.2, "duration": 1.2 } },
+    { "shape": "rect", "x": 1340, "y": 884, "anchor": "topLeft", "width": 56, "height": 2, "fill": "#7fe3bd",
+      "enter": { "preset": "wipeIn", "delay": 1.6, "duration": 0.8 } },
+    { "text": "Liquid metal under the aurora.\nRendered on the CPU, frame by frame.", "x": 1340, "y": 904, "anchor": "topLeft",
+      "size": 19, "weight": 400, "lineHeight": 1.5, "align": "left", "color": "#9fb5ad", "enter": { "preset": "fadeUp", "delay": 1.9, "duration": 1.2 } }
+  ] } ] }
