@@ -29,7 +29,7 @@ Theme colours (used as `$name`): `primary secondary accent bg surface text muted
 
 **Generate:** `{ "script": "let out = []; for k in 0..24 { out.push(#{ shape: \"circle\", x: 80 * k }) } out" }` in any layer or scene list (Rhai: loops, maths, `rand`, `hsl`); a top-level `script` can rewrite `spec`. See [`authoring.md`](authoring.md).
 
-**Reuse (fewer tokens):** `"defs": { "card": {…layer or scene…} }`, then `{ "use": "card", "with": { "title": "Hi" }, "x": 200 }` anywhere a layer or scene goes. Overrides deep-merge; `"$title"` in the def is replaced. `"repeat": 3` copies a layer or scene, with `"$i"` (0-based), `"$n"` and arithmetic `"=160 + $i*420"`. `{ "repeat": 3, "scenes": [ … ] }` loops a sequence of scenes.
+**Reuse (fewer tokens):** `"defs": { "card": {…layer or scene…} }`, then `{ "use": "card", "with": { "title": "Hi" }, "x": 200 }` anywhere a layer or scene goes. Overrides deep-merge; `"$title"` in the def is replaced. A def can declare `"params": { "size": 34, "color": "$text" }` (defaults), and the use site passes them directly: `{ "use": "label", "size": 40 }`. `"repeat": 3` copies a layer or scene, with `"$i"` (0-based), `"$n"` and arithmetic `"=160 + $i*420"`. For scatters, vary each copy: `"x": "=rand($i, 0, 1920)"`, `"width": "=pick(rand($i + 7) * 3, 18, 24, 32)"`, `"fill": "=pick(rand($i) * 2, #fff, $accent)"`. `{ "repeat": 3, "scenes": [ … ] }` loops a sequence of scenes.
 
 ## Scenes
 

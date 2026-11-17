@@ -1,0 +1,8 @@
+{ "size": [1920,1080], "background": "#f3eee3",
+  "scenes": [ { "duration": 1, "layers": [
+    { "shader": "sdf-scene", "x": 0, "y": 0, "anchor": "topLeft", "width": 640, "height": 1080 },
+    { "shader": "sdf-scene", "x": 640, "y": 0, "anchor": "topLeft", "width": 640, "height": 1080, "duotone": ["#14213d", "#ffb703"] },
+    { "shader": "sdf-scene", "x": 1280, "y": 0, "anchor": "topLeft", "width": 640, "height": 1080, "halftone": {"cell": 11, "angle": 45, "ink": "#1d1d1b", "paper": "#f3eee3"} },
+    { "shader": "sdf-scene", "x": 1280, "y": 540, "anchor": "topLeft", "width": 640, "height": 540, "gradientMap": ["#2b1d52", "#e63946", "#ffd166", "#fffbea"], "posterize": 4 },
+    { "text": "HALF\nTONE", "size": 300, "weight": 900, "lineHeight": 0.82, "x": 640, "y": 540, "color": "linear-gradient(90deg, #000, #fff)", "halftone": {"cell": 14, "angle": 15, "ink": "#e4572e"} }
+  ]}]}

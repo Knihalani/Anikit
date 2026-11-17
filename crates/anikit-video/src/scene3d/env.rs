@@ -114,20 +114,32 @@ pub struct Env {
     pub key_solid_angle: f32,
     /// The boxes lane-wise, for [`Env::radiance`] (see `kernel::envk`).
     soa: Option<super::kernel::envk::Boxes>,
+    /// An HDRI replacing the gradient sky (see [`super::hdri`]).
+    pub map: Option<std::sync::Arc<super::hdri::EnvMap>>,
 }
 
 impl Env {
     pub fn new(boxes: Vec<Softbox>, key: Option<usize>, zenith: V3, horizon: V3, ground: V3, band: V3) -> Env {
         let soa = super::kernel::envk::Boxes::new(&boxes);
-        let mut e = Env { boxes, key, zenith, horizon, ground, band, sh: [v3(0.0, 0.0, 0.0); 9], key_solid_angle: 0.0, soa };
+        let mut e = Env { boxes, key, zenith, horizon, ground, band, sh: [v3(0.0, 0.0, 0.0); 9], key_solid_angle: 0.0, soa, map: None };
         e.key_solid_angle = key.map(|k| e.boxes[k].solid_angle()).unwrap_or(0.0);
         e.project_sh();
         e
     }
 
-    /// Background gradient (no softboxes).
+    /// Use an HDRI as the sky (lighting and reflections); diffuse is re-projected.
+    pub fn with_map(mut self, map: Option<std::sync::Arc<super::hdri::EnvMap>>) -> Env {
+        self.map = map;
+        self.project_sh();
+        self
+    }
+
+    /// Background gradient (no softboxes), or the HDRI.
     #[inline]
     fn sky(&self, d: V3, blur: f32) -> V3 {
+        if let Some(m) = &self.map {
+            return m.lookup(d, blur);
+        }
         let y = d.y;
         let base = if y >= 0.0 { lerp3(self.horizon, self.zenith, smoothstep(0.0, 0.7, y)) } else { lerp3(self.horizon, self.ground, smoothstep(0.0, 0.25, -y)) };
         let w = 0.035 + blur;
@@ -160,7 +172,8 @@ impl Env {
     }
 
     fn radiance_nokey(&self, d: V3) -> V3 {
-        let mut c = self.sky(d, 0.0);
+        // With an HDRI, a little blur: the SH projection samples it coarsely.
+        let mut c = self.sky(d, if self.map.is_some() { 0.03 } else { 0.0 });
         for (i, b) in self.boxes.iter().enumerate() {
             if Some(i) != self.key {
                 c = add(c, b.eval(d, 0.0));

@@ -1,0 +1,463 @@
+{
+  "name": "rej-launch-template",
+  "tags": [
+    "product-launch",
+    "motion-design"
+  ],
+  "refs": [
+    "coinbase-system-update",
+    "jpmorgan-payments",
+    "game-of-thrones"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 2,
+      "typography": 2,
+      "colour": 2,
+      "light_texture": 2,
+      "motion": 1,
+      "craft": 2,
+      "originality": 1
+    },
+    "overall": 1.75,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "There is no idea. It needs a concept and imagery instead of a feature list read off a slide",
+      "Type set in defaults with no scale contrast or relationship to the image; it needs typography with a point of view",
+      "There is no motion design, light or material. It needs actual choreography between distinct scenes and textured, lit frames",
+      "There is no idea. Find a visual metaphor for what 'no headless browser' feels like, instead of a slide with a screenshot",
+      "Replace default Inter-style type and the blurred gradient with a real typographic system and a deliberate palette and material",
+      "Choreograph a sequence: change scale, framing and subject between beats so the frames tell a progression instead of swapping text",
+      "It has no concept. It needs a visual idea that dramatises 'native Rust, no headless browser' instead of stating it beside a mock-up.",
+      "Type is set at defaults. Build a typographic system with real scale contrast, a chosen face and type that interacts with the image.",
+      "There is no choreography: one composition held for the whole film. It needs distinct, staged shots with physical motion, material and light."
+    ],
+    "tells": [
+      "The textbook template look: a dark ground, a blurred purple gradient blob, and a small tracked monospace caps label ('03 / 06 \u00b7 ...', 'FEATURE') above a bold generic-grotesk headline with grey body copy",
+      "Placeholder UI: a browser mockup filled with grey bars, pills and cards",
+      "Slide-deck structure: only two frames are populated and they are near-identical, with only the progress bar advancing, so almost nothing happens",
+      "The headline 'No headless browser' simply restates the feature, with no image, metaphor or subject",
+      "Textbook template: dark ground with a blurred purple blob, a small tracked-caps label ('03 / 06 \u00b7 ANIKIT VIDEO', 'FEATURE'), and a default bold-grotesk headline with grey subcopy",
+      "Placeholder UI mockup made of grey bars, pills and cards, which repeats the headline instead of showing anything",
+      "Only two distinct frames are visible and they are nearly identical. The only change is the progress bar, so nothing is happening; it plays like a slide deck",
+      "The copy is literal feature text ('No headless browser / Native Rust, every core') with no image, no light and no subject",
+      "Textbook 'AI slop' layout: tiny tracked-caps label ('03 / 06 \u00b7 ANIKIT VIDEO', 'FEATURE'), a default grotesk bold headline, grey body copy and a single accent colour.",
+      "Dark ground with blurred purple gradient blobs and an effect with no subject.",
+      "The UI is placeholder: browser chrome with grey bars, pill buttons and cards.",
+      "Only two frames are populated and they are near-identical, so the motion is essentially a fade and a progress bar. This is slide-deck structure.",
+      "The idea is literal: product name plus feature claim plus a screenshot mock-up. Nothing memorable."
+    ]
+  },
+  "refs_summary": {
+    "coinbase-system-update": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "jpmorgan-payments": {
+      "overall": 6.38,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "game-of-thrones": {
+      "overall": 9.38,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.79,
+  "delta": -6.04,
+  "trials": [
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "coinbase-system-update",
+        "C": "candidate",
+        "D": "jpmorgan-payments"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A distinctive idea that belongs to this piece alone: a clockwork map that builds its cities mechanically, framed by an armillary sphere, so the setting itself becomes the main title",
+              "Real material and texture throughout: patinated metal, carved wood, engraved bands, and a warm sunburst core with motivated light and lens bloom",
+              "Choreography from frame to frame: an extreme close-up on the engraved band, then low-angle flyovers of the cities as they rise, then the map, then the sphere resolving into the logo lockup, so the camera language changes and each beat pays off",
+              "Typography with a point of view: credits in spaced caps with house sigils, integrated into the terrain rather than laid on top, and a wordmark with a bespoke metallic treatment",
+              "Every frame works as a poster, with depth of field, layering and a deliberate bronze, umber and verdigris palette"
+            ],
+            "gaps": [
+              "It is the benchmark here. Its weakest spot is the flat parchment map frame, which carries less material richness than the 3D cities and could use more relief",
+              "The credit typography is classical and safe next to how inventive the image is",
+              "The gold sunburst in the first and last frames verges on a stock epic-fantasy glow"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 7,
+              "originality": 8
+            },
+            "tells": [
+              "A committed system: everything is drawn in ASCII and monospace characters on a single saturated electric-blue field, so the medium itself (code, characters) carries the message about money moving digitally",
+              "Real variety across frames: a figure walking through glyphs, a flow field of $ characters, a planet assembled from characters with an orbit ring, a terminal readout, padlocks, and a grid of coins, all of which suggests match cuts and transformations",
+              "Type is the image. Inverted highlight labels such as '<<Crypto is...' and 'Faster' act as typographic beats rather than slide headlines",
+              "The monochrome blue reads as a deliberate choice, not a default dark ground"
+            ],
+            "gaps": [
+              "The terminal frame is a readable wall of text with weak hierarchy, where it could be a composed typographic image",
+              "The ASCII-art look is familiar (it has been a widely used aesthetic since the mid-2010s), and the coin-grid ending is a literal crypto clich\u00e9, so it needs a more surprising final image",
+              "It is flat, with no light, depth or tactility; adding layering, varied glyph density, or some depth or parallax would give the frames the richness of A"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "Strong art-directed light: hard window-blind shadows raking across a warm sand ground, with believable glass and brushed-gold material response",
+              "A consistent product metaphor (the gold and glass coin token) carried through a wave graph, a phone, a node grid, a conveyor, a tablet and a lock stack, which suggests a designed system with some choreography",
+              "The phone and tablet UI carry a coherent brand mark and plausible content, so this is not placeholder UI",
+              "Against it: the cream ground with a single gold accent, generic glassmorphism coins and a literal lock-means-security icon all sit close to the 'tasteful AI' fintech look"
+            ],
+            "gaps": [
+              "The idea is literal (coin + chart + phone + lock = payments). It needs one specific, memorable visual thought that only this brand could own",
+              "Typography is nearly absent, and where it appears it is default UI set as product shots; there is no title or type idea integrated with the image",
+              "Compositions repeat (one hero object centred on a sand plane with a shadow), so it needs more variety of scale, camera and staging to match A's choreography"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 2,
+              "composition": 2,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 1,
+              "craft": 2,
+              "originality": 1
+            },
+            "tells": [
+              "The textbook template look: a dark ground, a blurred purple gradient blob, and a small tracked monospace caps label ('03 / 06 \u00b7 ...', 'FEATURE') above a bold generic-grotesk headline with grey body copy",
+              "Placeholder UI: a browser mockup filled with grey bars, pills and cards",
+              "Slide-deck structure: only two frames are populated and they are near-identical, with only the progress bar advancing, so almost nothing happens",
+              "The headline 'No headless browser' simply restates the feature, with no image, metaphor or subject"
+            ],
+            "gaps": [
+              "There is no idea. It needs a concept and imagery instead of a feature list read off a slide",
+              "Type set in defaults with no scale contrast or relationship to the image; it needs typography with a point of view",
+              "There is no motion design, light or material. It needs actual choreography between distinct scenes and textured, lit frames"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 30.8,
+        "cost_usd": 0.158498,
+        "tokens": 72120,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "game-of-thrones",
+        "B": "coinbase-system-update",
+        "C": "jpmorgan-payments",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "One clear idea that belongs only to this piece: the world is a clockwork map that builds itself, so the credits read as the story's geography",
+              "Every frame has real material: etched brass astrolabe bands, carved wood, parchment, all with practical-looking light flares and grime",
+              "The type has a point of view: a period-appropriate small-caps serif with a heraldic sigil next to each credit, placed in the 3D space instead of laid on top like a slide",
+              "Strong choreography between frames: astrolabe macro, then cogs pushing cities up, then the map at top-down, then a return to the astrolabe for the logo. It moves from close-up to overview and back, a loop with a payoff",
+              "Restrained, narrative palette: warm brass against cold slate, with burned-out sun flares carrying the transitions",
+              "This is an iconic, widely recognised title sequence, which counts heavily toward the professional verdict"
+            ],
+            "gaps": [
+              "It is the reference point here, so the gaps are relative: the credit type is small and conventional against how big the world is, and it could be built into the mechanism more boldly",
+              "The logo end-card leans on a stock lens-flare burst that is more generic than the rest of the film",
+              "The map frame is flatter and less lit than the mechanical frames, so the materials dip in the middle of the sequence"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Committed single-system concept: the whole film is rendered in ASCII and monospace glyphs, with characters, coins, padlocks and a planet all built from typed symbols. That suits the subject, crypto and code",
+              "A bold, deliberate palette: International Klein-style blue with white only, held all the way through",
+              "The frames vary a lot: a walking figure, a dollar-sign stream, an orbiting glyph planet, a full code-dump screen, padlocks, and a coin grid. That points to real choreography and match-cuts (the code even mentions a 'MatchCut Transition circular')",
+              "Typography is the medium itself, with knowing UI-label callouts ('<<Crypto is...', 'Faster', '--Direct--')"
+            ],
+            "gaps": [
+              "The ASCII-art look is a well-worn trend. It needs a twist that only this brand could own, such as glyphs that carry real meaning instead of mixed noise",
+              "It is flat with no depth or light. Layering, glow, or a change of scale across the glyph field would give it the material richness of A",
+              "The code-dump frame reads as filler text. The words should be written to land a line rather than act as texture"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 5,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "Polished, coherent 3D product world: frosted glass, brushed gold rims and a convincing hard window-light shadow. The light and materials are well handled and consistent",
+              "The brand UI is legible and plausible (J.P.Morgan wordmark, $2.45M balance, Monthly Summary), which is evidence of a real client deliverable",
+              "Varied staging: a wave, a phone, a tiled floor node, a conveyor, a tablet and a lock stack. Still, it is the same 'coin as the hero' object in every frame",
+              "The idea is literal fintech iconography (coin, padlock = secure, conveyor = flow). Competent but forgettable, and the cream-and-gold 'tasteful' look sits close to the AI-generated aesthetic"
+            ],
+            "gaps": [
+              "It needs a real idea beyond visualising features with a coin. Give the object a story or transformation that a viewer would remember",
+              "The palette and glassmorphism are the default luxury-fintech look of 2024\u201326. Push toward an unexpected colour or material",
+              "Typography plays almost no part. Bring type into the scenes with scale and intent instead of leaving it as small UI on screens"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 1,
+              "composition": 2,
+              "typography": 2,
+              "colour": 2,
+              "light_texture": 1,
+              "motion": 1,
+              "craft": 2,
+              "originality": 1
+            },
+            "tells": [
+              "Textbook template: dark ground with a blurred purple blob, a small tracked-caps label ('03 / 06 \u00b7 ANIKIT VIDEO', 'FEATURE'), and a default bold-grotesk headline with grey subcopy",
+              "Placeholder UI mockup made of grey bars, pills and cards, which repeats the headline instead of showing anything",
+              "Only two distinct frames are visible and they are nearly identical. The only change is the progress bar, so nothing is happening; it plays like a slide deck",
+              "The copy is literal feature text ('No headless browser / Native Rust, every core') with no image, no light and no subject"
+            ],
+            "gaps": [
+              "There is no idea. Find a visual metaphor for what 'no headless browser' feels like, instead of a slide with a screenshot",
+              "Replace default Inter-style type and the blurred gradient with a real typographic system and a deliberate palette and material",
+              "Choreograph a sequence: change scale, framing and subject between beats so the frames tell a progression instead of swapping text"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.6,
+        "cost_usd": 0.1573322,
+        "tokens": 72018,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "jpmorgan-payments",
+        "B": "coinbase-system-update",
+        "C": "game-of-thrones",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 8,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "The six frames are six different set-pieces: a coin riding a ribbon wave, a phone tap, an inlaid floor plate, a coin conveyor, a glass tablet and a stacking lock. That is real choreography, not one layout repeated.",
+              "The light is motivated and consistent: hard window-blind shadows raking across a warm stone ground, with caustics and refraction through the glass and gold.",
+              "The material work is coherent across frames: brushed gold, frosted glass, and a wood-and-gold inlay that looks like it came from an art-directed system.",
+              "The client typography (J.P. Morgan wordmark, balance UI) is integrated onto real surfaces instead of floating like a slide.",
+              "The weakness is the idea. It is a literal fintech feature tour in a cream-and-gold 'premium' palette that sits close to the generic luxury-CG look."
+            ],
+            "gaps": [
+              "Replace the feature-by-feature tour (coin \u2192 phone \u2192 lock) with one central metaphor that ties the shots together, the way C's clockwork map does.",
+              "The cream-and-gold palette is the expected 'premium finance' choice. Push it to something ownable, or add a disruptive accent.",
+              "Typography is just client UI on screens. Give it an editorial role (titles, scale contrast, type built into the material) so it carries meaning."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "It commits to one specific idea: the whole film is built from ASCII and monospace characters, so the medium (code, transactions) becomes the image. A walking figure, a planet and padlocks are all made of glyphs.",
+              "The palette is a deliberate, single, unusual ultramarine with white. Nothing is hedged.",
+              "The frames vary a lot: figurative ASCII, a particle stream of $ signs, an orbiting planet, a full-frame code dump with highlighted kinetic words ('Faster', '--Direct--'), padlocks that echo each other, and a grid of coins. That shows real choreography and escalation.",
+              "The typography has a point of view: highlighted word tags work as the narrative voice inside the texture, not as a slide.",
+              "The faux code shows a sense of humour ('Legacy Middleman Nodes: SKIPPED') and rewards close viewing."
+            ],
+            "gaps": [
+              "The ASCII-render look is a known aesthetic. Push the character system further (custom glyph set, density used as lighting) so it reads as authored, not a filter.",
+              "The code-dump frame is visually flat compared with the rest. Integrate the text layer with the image instead of cutting to a full-screen terminal.",
+              "There is less depth and physicality than C. Add layered parallax, glyph scale shifts or dimensional light to give the motion more weight."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 10,
+              "motion": 10,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "The idea belongs only to this piece: a clockwork, pop-up map of the world that builds itself, an astrolabe sun and the world's geography as a mechanism. It doubles as story orientation.",
+              "The texture is tactile and physical: carved leather and metal bands, aged wood, engraved brass, a parchment map. The light is warm and motivated by an in-world sun, with real bloom and falloff.",
+              "Every frame works as a poster: the engraved band, the fortress-city rising, the spiky tree mechanism, the armillary rings, the map drop and the logo lockup.",
+              "The credits are set in a characterful classical-capitals face with heraldic sigil bugs, placed in the scene's depth instead of on a slide.",
+              "The choreography between frames is clear: a camera flight between locations, with an orbit-then-plunge rhythm that ends on the title band."
+            ],
+            "gaps": [
+              "This is the benchmark entry. Remaining gaps are marginal: a few credit placements fight busy midground detail.",
+              "The overall palette is very sepia-heavy. A rare cool counter-note would give the warmth more contrast.",
+              "The map frame is the least sculptural shot and drops the mechanical density for a moment."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 2,
+              "light_texture": 2,
+              "motion": 1,
+              "craft": 3,
+              "originality": 1
+            },
+            "tells": [
+              "Textbook 'AI slop' layout: tiny tracked-caps label ('03 / 06 \u00b7 ANIKIT VIDEO', 'FEATURE'), a default grotesk bold headline, grey body copy and a single accent colour.",
+              "Dark ground with blurred purple gradient blobs and an effect with no subject.",
+              "The UI is placeholder: browser chrome with grey bars, pill buttons and cards.",
+              "Only two frames are populated and they are near-identical, so the motion is essentially a fade and a progress bar. This is slide-deck structure.",
+              "The idea is literal: product name plus feature claim plus a screenshot mock-up. Nothing memorable."
+            ],
+            "gaps": [
+              "It has no concept. It needs a visual idea that dramatises 'native Rust, no headless browser' instead of stating it beside a mock-up.",
+              "Type is set at defaults. Build a typographic system with real scale contrast, a chosen face and type that interacts with the image.",
+              "There is no choreography: one composition held for the whole film. It needs distinct, staged shots with physical motion, material and light."
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.8,
+        "cost_usd": 0.1601812,
+        "tokens": 72223,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.476,
+  "judge_seconds": 92.2,
+  "verdict": "FAIL"
+}
