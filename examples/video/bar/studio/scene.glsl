@@ -7,8 +7,11 @@ uniform float lift;   // = 0.0  phone lift off the floor (0..1, settles to 0)
 float sdRoundBox(vec3 p, vec3 b, float r) { vec3 q = abs(p) - b + r; return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r; }
 float smin(float a, float b, float k) { float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0); return mix(b, a, h) - k * h * (1.0 - h); }
 
-const vec3 PH = vec3(0.0, 0.055, 0.0);       // phone centre (half height 0.055)
-const vec3 HB = vec3(1.62, 0.05, 0.86);      // half extents: landscape phone
+const vec3 PH = vec3(0.0, 0.042, 0.0);       // phone centre (lies on the floor)
+const vec3 HB = vec3(1.62, 0.042, 0.75);     // half extents: a 19.5:9 phone in landscape
+const float CORNER = 0.24;                   // plan-view corner radius
+const float EDGE = 0.036;                    // rounded side band
+const vec2 SCR = vec2(1.565, 0.695);         // screen half extents (thin bezel)
 const float YAW = -0.32;
 
 vec3 toPhone(vec3 p) {
@@ -16,7 +19,21 @@ vec3 toPhone(vec3 p) {
     float c = cos(YAW), s = sin(YAW);
     return vec3(c * p.x - s * p.z, p.y, s * p.x + c * p.z);
 }
-float phone(vec3 p) { return sdRoundBox(toPhone(p), HB, 0.045); }
+float sdRoundRect(vec2 p, vec2 b, float r) { vec2 q = abs(p) - b + r; return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r; }
+float phone(vec3 p) {
+    vec3 q = toPhone(p);
+    float d2 = sdRoundRect(q.xz, HB.xz, CORNER);
+    vec2 w = vec2(d2 + EDGE, abs(q.y) - HB.y + EDGE);
+    return min(max(w.x, w.y), 0.0) + length(max(w, 0.0)) - EDGE;
+}
+// The studio as a reflection: white cove above, the sunlit floor below, the sun itself.
+vec3 env(vec3 r, vec3 sun) {
+    vec3 c = r.y > 0.0 ? mix(vec3(0.86, 0.88, 0.91), vec3(1.02), smoothstep(0.0, 0.6, r.y)) : vec3(0.78, 0.79, 0.81);
+    c += vec3(1.0, 0.97, 0.9) * pow(max(dot(r, sun), 0.0), 350.0) * 14.0;
+    // A softbox strip high in the cove gives the long edge its highlight.
+    c += vec3(0.6) * smoothstep(0.92, 0.99, dot(r, normalize(vec3(0.2, 0.75, 0.62))));
+    return c;
+}
 float room(vec3 p) { return smin(p.y, 9.0 - p.z, 2.5); }
 float map(vec3 p, out int id) {
     float a = phone(p), b = room(p);
@@ -81,22 +98,31 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec3 col;
     if (id == 1) {
         vec3 q = toPhone(p);
-        vec3 qn = toPhone(p + n) - q;
-        bool top = qn.y > 0.9;
-        vec2 suv = vec2(q.x / (HB.x - 0.07), q.z / (HB.z - 0.07)) * 0.5 + 0.5;
-        bool onScreen = top && all(greaterThan(suv, vec2(0.0))) && all(lessThan(suv, vec2(1.0)));
-        vec3 body = vec3(0.17, 0.18, 0.2);
-        float fres = 0.04 + 0.96 * pow(1.0 - max(dot(n, -rd), 0.0), 5.0);
-        vec3 env = mix(vec3(0.9, 0.91, 0.93), vec3(1.0), clamp(reflect(rd, n).y, 0.0, 1.0));
-        if (onScreen) {
-            vec3 scr = texture(iChannel0, vec2(suv.x, suv.y)).rgb;
-            float sheen = caustic(p.xz * 0.3 + 0.37) * 0.18;
-            col = scr * 0.93 + env * fres * 0.22 + sheen;
+        vec3 qn = normalize(toPhone(p + n) - q);
+        vec3 r = reflect(rd, n);
+        float ndv = max(dot(n, -rd), 0.0);
+        bool top = qn.y > 0.97;
+        if (top) {
+            float sd = sdRoundRect(q.xz, SCR, CORNER - 0.05);
+            // Screen content lives in the composition's middle band (keeps 16:9 type unstretched).
+            vec2 suv = vec2(q.x / SCR.x, q.z / SCR.y) * 0.5 + 0.5;
+            vec2 tuv = vec2(suv.x, 0.5 + (suv.y - 0.5) * (SCR.y / SCR.x) * (1920.0 / 1080.0));
+            vec3 scr = texture(iChannel0, tuv).rgb;
+            vec3 glass = mix(vec3(0.012, 0.013, 0.015), scr * 0.92, smoothstep(0.004, -0.004, sd));
+            float fres = 0.04 + 0.96 * pow(1.0 - ndv, 5.0);
+            // Sunlight through water lands on the glass too.
+            float pool = 1.0 - smoothstep(1.2, 3.4, length((p.xz - vec2(0.5, 0.2)) * vec2(0.62, 1.0)));
+            float sheen = pow(caustic(p.xz * 0.3 + vec2(0.0, 0.004)), 1.5) * 0.5 * pool * sh;
+            col = glass + env(r, sun) * fres * 0.9 + sheen;
         } else {
+            // Bead-blasted aluminium band: tinted reflection, a crisp sun glint, darker underneath.
+            vec3 metal = vec3(0.78, 0.79, 0.81);
+            float f = 0.65 + 0.35 * pow(1.0 - ndv, 5.0);
             vec3 h = normalize(sun - rd);
-            float spec = pow(max(dot(n, h), 0.0), 60.0) * sh;
-            col = body * (0.25 + 0.75 * dif * sh) * occ + env * fres * 0.5 + spec * 0.6;
-            if (top) col = mix(col, vec3(0.03, 0.035, 0.04) + env * fres * 0.4, 0.85);
+            float glint = pow(max(dot(n, h), 0.0), 140.0) * 5.0 * sh;
+            col = metal * env(r, sun) * f * mix(0.35, 1.0, smoothstep(-0.6, 0.4, qn.y)) * occ + glint;
+            // A thin antenna line, as on real phones.
+            col *= 1.0 - 0.5 * (1.0 - smoothstep(0.004, 0.008, abs(abs(q.x) - 1.2)));
         }
     } else {
         vec3 alb = vec3(0.94, 0.945, 0.95);

@@ -14,6 +14,14 @@ float vnoise(vec2 p) {
 float smin(float a, float b, float k) { float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0); return mix(b, a, h) - k * h * (1.0 - h); }
 
 float lanternSdf(vec3 p) { vec3 q = p - vec3(2.1, 0.0, 6.0); return max(length(q.xz) - 0.2, abs(q.y - 3.55) - 0.25); }
+// Glazing bars: 8 uprights and a mid rail, as a mask on the lantern glass.
+float glazing(vec3 p) {
+    vec3 q = p - vec3(2.1, 0.0, 6.0);
+    float a = atan(q.z, q.x) * 8.0 / 6.2831853;
+    float up = abs(fract(a) - 0.5);
+    float mid = abs(q.y - 3.55);
+    return min(smoothstep(0.035, 0.06, up), smoothstep(0.012, 0.022, mid));
+}
 
 // Tapered tower, gallery, lantern and cap, on a lumpy rock.
 float tower(vec3 p) {
@@ -24,14 +32,26 @@ float tower(vec3 p) {
     float gallery = max(length(q.xz) - 0.4, abs(q.y - 3.25) - 0.05);
     float lantern = max(length(q.xz) - 0.2, abs(q.y - 3.55) - 0.25);
     float cap = max(length(q.xz) - 0.28 * clamp((4.05 - q.y) / 0.25, 0.0, 1.0), abs(q.y - 3.92) - 0.13);
-    return min(min(body, gallery), min(lantern, cap));
+    float vent = length(q - vec3(0.0, 4.1, 0.0)) - 0.045;
+    // Gallery railing: a top rail and 24 balusters.
+    float rr = length(q.xz);
+    float rail = length(vec2(rr - 0.39, q.y - 3.43)) - 0.012;
+    float sector = 6.2831853 / 24.0;
+    float a = atan(q.z, q.x);
+    float ar = mod(a + sector * 0.5, sector) - sector * 0.5;
+    vec2 pb = vec2(rr * cos(ar), rr * sin(ar));
+    float bal = max(length(pb - vec2(0.39, 0.0)) - 0.007, abs(q.y - 3.36) - 0.07);
+    return min(min(min(body, gallery), min(lantern, cap)), min(vent, min(rail, bal)));
 }
 float rock(vec3 p) {
     vec3 q = p - vec3(2.1, -0.2, 6.0);
     float d = length(q * vec3(0.55, 1.4, 0.7)) - 0.9;
     d = smin(d, length((q - vec3(-1.1, -0.1, 0.4)) * vec3(0.8, 1.6, 0.9)) - 0.6, 0.5);
     d = smin(d, length((q - vec3(0.9, -0.2, -0.3)) * vec3(0.9, 1.8, 0.9)) - 0.55, 0.4);
-    return d + 0.16 * vnoise(p.xz * 2.5 + p.y * 3.0) + 0.07 * vnoise(p.xz * 7.0 - p.y * 5.0);
+    d += 0.16 * vnoise(p.xz * 2.5 + p.y * 3.0) + 0.07 * vnoise(p.xz * 7.0 - p.y * 5.0);
+    // Crevices: ridged high-frequency cuts.
+    d += 0.08 * (1.0 - abs(2.0 * vnoise(p.xz * 5.0 + p.y * 4.0) - 1.0)) - 0.03;
+    return d;
 }
 float map(vec3 p, out int id) {
     float t = tower(p), r = rock(p);
@@ -94,32 +114,44 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float tHit = hit ? t : (tSea < 1e8 ? tSea : tmax);
     if (hit) {
         vec3 p = ro + rd * t, n = normal(p);
-        vec3 alb = id == 1 ? vec3(0.62, 0.6, 0.56) : vec3(0.08, 0.075, 0.07);
-        if (id == 1) {
-            // Painted bands and the lit lantern glass.
-            float y = p.y;
-            alb *= mix(1.0, 0.18, step(0.5, fract(y * 0.9 + 0.25)) * step(y, 3.1));
+        vec3 alb = id == 1 ? vec3(0.62, 0.6, 0.56) : vec3(0.09, 0.085, 0.08);
+        if (id == 1 && p.y < 3.2) {
+            // Dressed stone courses: mortar lines and block-to-block variation.
+            float y = p.y / 0.11;
+            float ang = atan(p.z - LAMP.z, p.x - LAMP.x) * 3.0 + floor(y) * 0.5;
+            float mortar = smoothstep(0.0, 0.07, fract(y)) * smoothstep(1.0, 0.93, fract(y)) * smoothstep(0.0, 0.04, abs(fract(ang) - 0.5) - 0.44 + 0.05);
+            alb *= mix(0.45, 1.0, mortar) * (0.8 + 0.35 * hash(vec2(floor(y), floor(ang))));
         }
+        if (id == 2) alb *= 0.7 + 0.6 * vnoise(p.xz * 6.0 + p.y * 4.0);
         float dif = max(dot(n, moonDir), 0.0) * 0.9;
         vec3 l = LAMP - p; float ll = length(l);
         float lampLit = max(dot(n, l / ll), 0.0) / (1.0 + ll * ll * 1.5) * 2.2 * lamp;
         float rim = pow(1.0 - max(dot(n, -rd), 0.0), 3.0) * 0.25;
-        col = alb * (vec3(0.6, 0.65, 0.75) * dif + vec3(1.0, 0.82, 0.5) * lampLit) + rim * vec3(0.5, 0.52, 0.55) * 0.3;
+        float fill = max(dot(n, normalize(vec3(-0.7, 0.3, -0.65))), 0.0) * 0.22;
+        col = alb * (vec3(0.6, 0.65, 0.75) * (dif + fill) + vec3(1.0, 0.82, 0.5) * lampLit) + rim * vec3(0.5, 0.52, 0.55) * 0.3;
+        if (id == 2) {
+            // Wet rock: sharp moon and lamp highlights, wetter near the waterline.
+            vec3 r = reflect(rd, n);
+            float wet = smoothstep(0.6, 0.0, p.y + 0.1);
+            col += (vec3(0.7, 0.72, 0.78) * pow(max(dot(r, moonDir), 0.0), 50.0) * 0.8 + vec3(1.0, 0.85, 0.55) * pow(max(dot(r, normalize(l)), 0.0), 24.0) * 0.45 * lamp) * (0.25 + 0.75 * wet);
+        }
         if (id == 1 && lanternSdf(p) < 0.04) {
             // Glass with mullions, lit from inside.
-            float frame = smoothstep(0.012, 0.02, abs(p.y - 3.55));
-            col = vec3(1.0, 0.86, 0.55) * (1.6 * lamp + 0.04) * mix(0.45, 1.0, frame);
+            col = mix(vec3(0.05, 0.045, 0.04) + vec3(1.0, 0.86, 0.55) * 0.12 * lamp, vec3(1.0, 0.86, 0.55) * (1.6 * lamp + 0.04), glazing(p));
         }
     } else if (tSea < 1e8) {
         vec3 p = ro + rd * tSea;
         vec2 q = p.xz;
         float h = 0.0;
-        vec3 n = normalize(vec3(0.06 * sin(q.x * 3.1 + iTime * 1.3) + 0.04 * sin(q.x * 7.0 - q.y * 4.0 + iTime * 2.0) + 0.09 * (vnoise(q * 4.0 + iTime * 0.3) - 0.5) + 0.05 * (vnoise(q * 11.0 - iTime * 0.5) - 0.5),
+        float nearW = 1.0 + 1.6 * exp(-tSea * 0.22);
+        vec2 sw = vec2(0.08 * sin(q.x * 0.9 + q.y * 1.4 - iTime * 0.9), 0.07 * sin(q.y * 1.1 - q.x * 0.5 - iTime * 0.7)) * nearW;
+        vec3 n = normalize(vec3(sw.x + 0.06 * sin(q.x * 3.1 + iTime * 1.3) + 0.04 * sin(q.x * 7.0 - q.y * 4.0 + iTime * 2.0) + 0.09 * (vnoise(q * 4.0 + iTime * 0.3) - 0.5) + 0.05 * (vnoise(q * 11.0 - iTime * 0.5) - 0.5),
                                 1.0,
-                                0.05 * sin(q.y * 2.3 - iTime) + 0.05 * (vnoise(q * 2.7 - iTime * 0.2) - 0.5)));
+                                sw.y + (0.05 * sin(q.y * 2.3 - iTime) + 0.05 * (vnoise(q * 2.7 - iTime * 0.2) - 0.5)) * nearW));
         vec3 r = reflect(rd, n);
         float fres = 0.02 + 0.98 * pow(1.0 - max(dot(n, -rd), 0.0), 5.0);
-        vec3 refl = sky(r, 0.0) * 0.75 + vec3(1.0, 0.85, 0.55) * beam(p, r, 30.0) * 0.6;
+        float nearR = exp(-tSea * 0.12);
+        vec3 refl = sky(r, 0.0) * 0.75 + vec3(1.0, 0.85, 0.55) * beam(p, r, 30.0) * 0.6 * (1.0 - 0.8 * nearR) * (0.4 + 0.8 * vnoise(q * vec2(3.0, 18.0) + iTime));
         float moonGlint = pow(max(dot(r, normalize(vec3(-0.55, 0.32, 1.0))), 0.0), 120.0) * 2.5;
         refl += vec3(0.85, 0.87, 0.9) * moonGlint;
         // The lamp's glitter path on the water.
@@ -129,9 +161,15 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         float sparkle = pow(vnoise(q * vec2(2.5, 26.0) + vec2(iTime * 0.3, iTime * 1.6)) * vnoise(q * vec2(6.0, 41.0) - vec2(0.0, iTime * 1.1)), 3.0) * 4.0;
         float glitter = pow(max(dot(r, lv), 0.0), 30.0) * sparkle * 3.0 * lamp * near;
         vec2 mq = rd.xy / max(rd.z, 0.1) - vec2(-0.12, 0.0);
-        glitter += exp(-abs(mq.x) * 30.0) * sparkle * 1.6 * near;
-        col = vec3(0.004, 0.005, 0.006) + refl * fres + vec3(1.0, 0.82, 0.5) * (spec + glitter);
+        glitter += exp(-abs(mq.x) * 55.0) * sparkle * 0.7 * near;
+        col = vec3(0.004, 0.005, 0.006) + refl * fres + vec3(1.0, 0.82, 0.5) * (spec * (1.0 - 0.9 * near) * 0.6 + glitter);
         col *= 1.0 + h;
+        // Surf: foam where the swell breaks on the rock.
+        float dr = rock(vec3(p.x, 0.02, p.z));
+        float surge = 0.5 + 0.5 * sin(iTime * 1.6 - dr * 9.0);
+        float lace = vnoise(q * 7.0 + vec2(iTime * 0.6, -iTime * 0.4)) * vnoise(q * 17.0 - vec2(iTime * 0.9, 0.0));
+        float foam = smoothstep(0.12, 0.0, dr) * 0.9 + smoothstep(0.8, 0.05, dr) * smoothstep(0.12, 0.4, lace * (0.7 + 0.6 * surge));
+        col = mix(col, vec3(0.62, 0.63, 0.65) + vec3(1.0, 0.85, 0.55) * 0.2 * lamp, foam * 0.9);
     }
     // Sea fog: thicker low and far; lit by the beam.
     float bank = 0.35 + 1.3 * vnoise(vec2(rd.x * 2.2 + iTime * 0.07, rd.y * 7.0)) * vnoise(vec2(rd.x * 5.0 - iTime * 0.04, rd.y * 14.0 + 3.0));
