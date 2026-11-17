@@ -171,6 +171,11 @@ fn main() {
         excess,
         100.0 * flick / nflick.max(1.0)
     );
+    if let Ok(path) = std::env::var("DUMP") {
+        // raw I420 of frame FRAME (default: second to last) of the reconstruction
+        let k = std::env::var("FRAME").ok().and_then(|v| v.parse().ok()).unwrap_or(recon.len() - 2);
+        std::fs::write(path, recon[k].to_bytes()).unwrap();
+    }
     if let Ok(dir) = std::env::var("OUT") {
         // lifted 320×180 crop of the last P frame, ×4 nearest, as PGM
         let k = std::env::var("FRAME").ok().and_then(|v| v.parse().ok()).unwrap_or(recon.len() - 2);
