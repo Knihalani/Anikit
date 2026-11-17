@@ -268,6 +268,7 @@ One line turns everything below into a distinct, printed or photographed look. P
 | `dither` | ordered Bayer dither into a 2- or 3-colour palette | `pixel`, `dark`, `light`, `mid`, `levels` | 18 |
 | `screenprint` | flat poster colour in 1–3 ink layers, off register | `inks`, `ink1`…`ink3`, `paper`, `offset`, `texture_` | 30 |
 | `print-offset` | CMY plates drifting apart on fibrous paper | `amount`, `angle`, `paper`, `fibre` | 33 |
+| `glass` | the layers below through fluted (reeded), ribbed, rippled or pebbled glass: refraction, colour fringes, frost, highlights ([still](shots/filters/glass.jpg)) | `pattern`, `width`, `strength`, `dispersion`, `frost`, `angle`, `highlight`, `tint` | 80 |
 
 Before and after (left original, right filtered) for each one is in [`shots/filters/`](shots/filters/), and all nine are in [`shots/filters/all.jpg`](shots/filters/all.jpg). The filters are deterministic. Grain and gate weave follow `iFrame`, so they move every frame but repeat exactly. Like all filters they run at one sample per pixel. Sizes are given in pixels at 1080p and scale with the frame. Mix them: `film` over `screenprint` gives a printed poster scanned on film. `anikit-video info --shaders` lists every uniform with its default.
 

@@ -64,6 +64,7 @@ lib! {
     "turing", Image, 25, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
     "light-shafts", Image, 91, "Sun through a window into a hazy room: pane-shaped beams with mullions and leaves, drifting haze, glinting dust.";
     "particles", Image, 98, "Glowing particles drifting in depth with bokeh (depth of field), one pass.";
+    "glass", Filter, 80, "The layers below seen through fluted, ribbed, rippled or pebbled glass: refraction, colour fringes, frost.";
     "halftone", Filter, 60, "Printed dots: CMYK screens at classic angles (or one black screen) on paper.";
     "risograph", Filter, 28, "Two or three spot inks, out of register, with stencil grain: the risograph look.";
     "linocut", Filter, 19, "Carved block print: solid ink, tone-following gouges, bold outlines, paper tooth.";
