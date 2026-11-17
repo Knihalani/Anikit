@@ -11,12 +11,14 @@ pub mod beat_markers;
 mod compile;
 /// Shader layers and transitions (anikit-shader).
 pub(crate) mod shader;
+mod audio_react;
 pub mod expr;
 pub mod theme;
 
 use crate::dl::{self, Affine, Blend, DisplayList, Filter, Glyph, ImageId, Op, Paint, Path, Rgba};
 use crate::text::{kinetic::KineticPlan, TextLayout, TextSpec, UnitKind};
 pub use assets::SharedAssets;
+pub use shader::{set_preview_scale, ShaderStat};
 use crate::spec::Diagnostic;
 use anikit_core::easing::Easing;
 use expr::{Expr, Vars};
@@ -398,6 +400,8 @@ pub struct Evaluator {
     pub diagnostics: Vec<Diagnostic>,
     /// Audio tracks on the global timeline (paths resolved).
     pub audio: Vec<crate::audio::Track>,
+    /// Generated music (the spec's `music`), rendered when the audio is mixed.
+    pub music: Option<Arc<crate::music::MusicCue>>,
     /// Fonts and images, shared with the renderers.
     pub assets: Arc<SharedAssets>,
     pub(crate) easings: Vec<Easing>,

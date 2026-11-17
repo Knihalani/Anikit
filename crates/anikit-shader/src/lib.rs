@@ -43,15 +43,28 @@ pub struct Frame<'a> {
     pub progress: f32,
     /// `iMouse` (pixels; Shadertoy semantics).
     pub mouse: [f32; 4],
+    /// `iAudio`: music loudness now, 0..1 — (level, bass, mid, treble).
+    pub audio: [f32; 4],
+    /// `iBeat`: (pulse 1 → 0 after each beat, phase 0..1 through the beat,
+    /// beat number from 1, bar pulse 1 → 0 after each downbeat).
+    pub beat: [f32; 4],
     /// User uniforms by name (1–4 floats each).
     pub uniforms: &'a [(&'a str, &'a [f32])],
     /// Bound textures (`iChannel0..3`, `getFromColor` = 0, `getToColor` = 1).
     pub channels: [Option<&'a Texture>; 4],
     /// 2×2 supersampling (four shader invocations per output pixel).
     pub supersample: bool,
+    /// With `supersample`: shade once per pixel first and supersample only
+    /// pixels that differ from one of their 8 neighbours by more than [`ADAPTIVE_THRESHOLD`]
+    /// (edges, highlights, fine detail). Smooth regions keep the centre sample.
+    pub adaptive: bool,
     /// Treat `fragColor.a` as coverage (straight alpha). When false the
     /// output is opaque, as on Shadertoy.
     pub alpha: bool,
+    /// Dither the 8-bit output (`render`): `floor(v·255 + r)` with a fixed
+    /// per-pixel threshold `r` in [0, 1). Removes banding from smooth
+    /// gradients; values that are exactly representable are unchanged.
+    pub dither: bool,
 }
 
 impl<'a> Frame<'a> {
@@ -64,10 +77,14 @@ impl<'a> Frame<'a> {
             fps: 30.0,
             progress: 0.0,
             mouse: [0.0; 4],
+            audio: [0.0; 4],
+            beat: [0.0; 4],
             uniforms: &[],
             channels: [None; 4],
             supersample: false,
+            adaptive: true,
             alpha: false,
+            dither: false,
         }
     }
 }
@@ -103,6 +120,30 @@ impl Shader {
     /// Compile with no extra uniforms.
     pub fn compile(src: &str) -> Result<Shader, ShaderError> {
         Self::compile_with(src, &[])
+    }
+
+    /// Like [`Shader::compile_with`], but shared: each distinct (source,
+    /// extra uniforms) is compiled once per process and reused, so repeated
+    /// layers, re-renders and watch mode pay no JIT time. Errors aren't cached.
+    pub fn compile_shared(src: &str, extra: &[(&str, UType)]) -> Result<std::sync::Arc<Shader>, ShaderError> {
+        use std::hash::{Hash, Hasher};
+        use std::sync::{Arc, Mutex, OnceLock};
+        type Cache = Mutex<HashMap<u64, Arc<OnceLock<Result<Arc<Shader>, ShaderError>>>>>;
+        static CACHE: OnceLock<Cache> = OnceLock::new();
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        src.hash(&mut h);
+        for (n, t) in extra {
+            n.hash(&mut h);
+            format!("{t:?}").hash(&mut h);
+        }
+        let key = h.finish();
+        let cell = CACHE.get_or_init(Default::default).lock().unwrap().entry(key).or_default().clone();
+        // Concurrent requests for the same shader wait for one compile.
+        let r = cell.get_or_init(|| Shader::compile_with(src, extra).map(Arc::new)).clone();
+        if r.is_err() {
+            CACHE.get().unwrap().lock().unwrap().remove(&key);
+        }
+        r
     }
 
     /// Compile, declaring `extra` uniforms (name, type) the source may use
@@ -200,6 +241,8 @@ impl Shader {
         set("iSampleRate", &[48000.0]);
         set("progress", &[f.progress]);
         set("ratio", &[w / h.max(1.0)]);
+        set("iAudio", &f.audio);
+        set("iBeat", &f.beat);
         let mut cres = [0.0f32; 12];
         for (i, c) in f.channels.iter().enumerate() {
             if let Some(t) = c {
@@ -239,8 +282,63 @@ impl Shader {
     pub fn render_f32(&self, f: &Frame) -> Vec<[f32; 4]> {
         let (w, h) = (f.width as usize, f.height as usize);
         let mut out = vec![[0.0f32; 4]; w * h];
-        self.run(f, &mut out, w, |dst, px| *dst = px);
+        if f.supersample && f.adaptive {
+            let mut f1 = f.clone();
+            f1.supersample = false;
+            self.run(&f1, &mut out, w, |dst, px, _, _| *dst = px);
+            self.refine(f, &mut out, w, h);
+        } else {
+            self.run(f, &mut out, w, |dst, px, _, _| *dst = px);
+        }
         out
+    }
+
+    /// Adaptive supersampling: re-shade, with 2×2 sub-samples, every pixel that
+    /// differs from any of its 8 neighbours by more than the threshold in any channel.
+    fn refine(&self, f: &Frame, out: &mut [[f32; 4]], w: usize, h: usize) {
+        let th = ADAPTIVE_THRESHOLD;
+        let src: &[[f32; 4]] = out;
+        let differs = |a: [f32; 4], b: [f32; 4]| (0..4).any(|k| (a[k].clamp(0.0, 1.0) - b[k].clamp(0.0, 1.0)).abs() > th);
+        let flags: Vec<bool> = (0..w * h)
+            .into_par_iter()
+            .map(|i| {
+                let (x, y) = (i % w, i / w);
+                let c = src[i];
+                let (x0, x1) = (x.saturating_sub(1), (x + 1).min(w - 1));
+                let (y0, y1) = (y.saturating_sub(1), (y + 1).min(h - 1));
+                (y0..=y1).any(|yy| (x0..=x1).any(|xx| differs(c, src[yy * w + xx])))
+            })
+            .collect();
+        let mut fs = f.clone();
+        fs.supersample = true;
+        let uni = self.uniform_buffer(&fs);
+        let env = self.env(&fs);
+        let func = self.kernel.func;
+        let env_ptr = &env as *const Env as usize;
+        let uni_ptr = uni.as_ptr() as usize;
+        let hf = h as f32;
+        out.par_chunks_mut(w).enumerate().for_each_init(Vec::new, |buf: &mut Vec<f32>, (y, row)| {
+            let fl = &flags[y * w..y * w + w];
+            let mut x = 0;
+            while x < w {
+                if !fl[x] {
+                    x += 1;
+                    continue;
+                }
+                let s = x;
+                while x < w && fl[x] {
+                    x += 1;
+                }
+                let n = x - s;
+                buf.resize(n * 16, 0.0);
+                // SAFETY: as in `run`; one quad per pixel in supersample mode.
+                unsafe { func(env_ptr as *const Env, uni_ptr as *const u32, s as f32 + 0.5, hf - y as f32 - 0.5, n as i32, buf.as_mut_ptr()) };
+                for q in 0..n {
+                    let b = &buf[q * 16..q * 16 + 16];
+                    row[s + q] = std::array::from_fn(|k| (0..4).map(|l| sanitize(b[k * 4 + l])).sum::<f32>() * 0.25);
+                }
+            }
+        });
     }
 
     /// Shade into premultiplied RGBA8 (`width × height × 4` bytes), the
@@ -249,9 +347,10 @@ impl Shader {
         let (w, h) = (f.width as usize, f.height as usize);
         assert!(out.len() >= w * h * 4, "output buffer too small");
         let alpha = f.alpha;
+        let dither = f.dither;
         let opaque = std::sync::atomic::AtomicBool::new(true);
         let px: &mut [[u8; 4]] = bytemuck_rgba(&mut out[..w * h * 4]);
-        self.run(f, px, w, |dst, c| {
+        let convert = |dst: &mut [u8; 4], c: [f32; 4], x: usize, y: usize| {
             let q = |v: f32| -> f32 {
                 if v > 0.0 {
                     v.min(1.0)
@@ -260,13 +359,24 @@ impl Shader {
                 }
             };
             let a = if alpha { q(c[3]) } else { 1.0 };
-            *dst = [
-                (q(c[0]) * a * 255.0 + 0.5) as u8,
-                (q(c[1]) * a * 255.0 + 0.5) as u8,
-                (q(c[2]) * a * 255.0 + 0.5) as u8,
-                (a * 255.0 + 0.5) as u8,
-            ];
-        });
+            let vals = [q(c[0]) * a, q(c[1]) * a, q(c[2]) * a, a];
+            *dst = if dither {
+                let r = dither_thresholds(x as u32, y as u32);
+                std::array::from_fn(|k| (vals[k] * 255.0 + if k == 3 { 0.5 } else { r[k] }).min(255.0) as u8)
+            } else {
+                vals.map(|v| (v * 255.0 + 0.5) as u8)
+            };
+        };
+        if f.supersample && f.adaptive {
+            let fl = self.render_f32(f);
+            px.par_chunks_mut(w).zip(fl.par_chunks(w)).enumerate().for_each(|(y, (row, src))| {
+                for x in 0..w {
+                    convert(&mut row[x], src[x], x, y);
+                }
+            });
+        } else {
+            self.run(f, px, w, convert);
+        }
         if alpha {
             let any_t = out[..w * h * 4].par_chunks(4 * 1024).any(|c| c.chunks_exact(4).any(|p| p[3] != 255));
             opaque.store(!any_t, std::sync::atomic::Ordering::Relaxed);
@@ -275,7 +385,7 @@ impl Shader {
     }
 
     /// Run the kernel over the frame; `put` writes one output pixel.
-    fn run<P: Send>(&self, f: &Frame, out: &mut [P], w: usize, put: impl Fn(&mut P, [f32; 4]) + Sync) {
+    fn run<P: Send>(&self, f: &Frame, out: &mut [P], w: usize, put: impl Fn(&mut P, [f32; 4], usize, usize) + Sync) {
         let h = out.len().checked_div(w).unwrap_or(0);
         if w == 0 || h == 0 {
             return;
@@ -311,12 +421,12 @@ impl Shader {
                                 s[k] += sanitize(c[k]);
                             }
                         }
-                        put(&mut rows[q], s.map(|v| v * 0.25));
+                        put(&mut rows[q], s.map(|v| v * 0.25), q, py);
                     } else {
                         for (l, (dx, dy)) in [(0, 0), (1, 0), (0, 1), (1, 1)].into_iter().enumerate() {
                             let x = q * 2 + dx;
                             if x < w && dy < nrows {
-                                put(&mut rows[dy * w + x], lane(l).map(sanitize));
+                                put(&mut rows[dy * w + x], lane(l).map(sanitize), x, py + dy);
                             }
                         }
                     }
@@ -325,6 +435,23 @@ impl Shader {
         );
     }
 }
+
+/// Per-pixel dither thresholds in [0, 1) for r, g, b (a fixed hash pattern).
+fn dither_thresholds(x: u32, y: u32) -> [f32; 3] {
+    let mut h = x.wrapping_mul(0x8da6_b343) ^ y.wrapping_mul(0xd816_3841);
+    std::array::from_fn(|_| {
+        h ^= h >> 15;
+        h = h.wrapping_mul(0x2c1b_3c6d);
+        h ^= h >> 12;
+        h = h.wrapping_mul(0x297a_2d39);
+        h ^= h >> 15;
+        (h >> 8) as f32 * (1.0 / 16_777_216.0)
+    })
+}
+
+/// Adaptive supersampling re-shades a pixel when any channel differs from a
+/// neighbour by more than this (in output units; 1.5 / 255).
+pub const ADAPTIVE_THRESHOLD: f32 = 1.5 / 255.0;
 
 fn sanitize(v: f32) -> f32 {
     if v.is_nan() {
@@ -371,5 +498,19 @@ mod layout {
             assert_eq!(off(std::ptr::addr_of!((*p).chan) as _), crate::texture::ENV_CHAN as usize);
         }
         assert_eq!(std::mem::size_of::<crate::texture::ChanInfo>(), crate::texture::CHAN_SIZE as usize);
+    }
+}
+
+#[cfg(test)]
+mod shared {
+    #[test]
+    fn compile_shared_reuses_kernels() {
+        let src = "void mainImage(out vec4 c, in vec2 p) { c = vec4(0.25); }";
+        let a = crate::Shader::compile_shared(src, &[]).unwrap();
+        let b = crate::Shader::compile_shared(src, &[]).unwrap();
+        assert!(std::sync::Arc::ptr_eq(&a, &b));
+        let c = crate::Shader::compile_shared(src, &[("k", crate::UType::Float)]).unwrap();
+        assert!(!std::sync::Arc::ptr_eq(&a, &c));
+        assert!(crate::Shader::compile_shared("void mainImage(out vec4 c, in vec2 p) { c = vec4(nope); }", &[]).is_err());
     }
 }

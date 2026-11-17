@@ -134,11 +134,10 @@ unsafe fn satd8_sse41(a: *const u8, sa: usize, b: *const u8, sb: usize, h: usize
             let e = _mm_add_epi16(x, s1);
             let f = _mm_sub_epi16(s1, x);
             let x1 = _mm_blend_epi16(e, f, 0b1010_1010);
-            let s2 = _mm_shufflelo_epi16(_mm_shufflehi_epi16(x1, 0b01_00_11_10), 0b01_00_11_10);
-            let e = _mm_add_epi16(x1, s2);
-            let f = _mm_sub_epi16(s2, x1);
-            let x2 = _mm_blend_epi16(e, f, 0b1100_1100);
-            acc = _mm_add_epi32(acc, _mm_madd_epi16(_mm_abs_epi16(x2), ones));
+            // last stage as 2·max(|p|, |q|) (see satd16_avx2)
+            let ax = _mm_abs_epi16(x1);
+            let s2 = _mm_shufflelo_epi16(_mm_shufflehi_epi16(ax, 0b01_00_11_10), 0b01_00_11_10);
+            acc = _mm_add_epi32(acc, _mm_madd_epi16(_mm_max_epi16(ax, s2), ones));
         }
         y += 4;
     }
@@ -171,11 +170,11 @@ unsafe fn satd16_avx2(a: *const u8, sa: usize, b: *const u8, sb: usize, h: usize
             let e = _mm256_add_epi16(x, s1);
             let f = _mm256_sub_epi16(s1, x);
             let x1 = _mm256_blend_epi16(e, f, 0b1010_1010);
-            let s2 = _mm256_shufflelo_epi16(_mm256_shufflehi_epi16(x1, 0b01_00_11_10), 0b01_00_11_10);
-            let e = _mm256_add_epi16(x1, s2);
-            let f = _mm256_sub_epi16(s2, x1);
-            let x2 = _mm256_blend_epi16(e, f, 0b1100_1100);
-            acc = _mm256_add_epi32(acc, _mm256_madd_epi16(_mm256_abs_epi16(x2), ones));
+            // last stage: |p + q| + |p − q| = 2·max(|p|, |q|); every lane i holds
+            // max(|x1[i]|, |x1[i ^ 2]|), so the lane sum equals Σ|stage output|.
+            let ax = _mm256_abs_epi16(x1);
+            let s2 = _mm256_shufflelo_epi16(_mm256_shufflehi_epi16(ax, 0b01_00_11_10), 0b01_00_11_10);
+            acc = _mm256_add_epi32(acc, _mm256_madd_epi16(_mm256_max_epi16(ax, s2), ones));
         }
         y += 4;
     }
@@ -350,11 +349,10 @@ unsafe fn satd4x4_sse41(a: &[u8; 16], b: &[u8; 16]) -> u32 {
         let e = _mm_add_epi16(v, s1);
         let f = _mm_sub_epi16(s1, v);
         let x1 = _mm_blend_epi16(e, f, 0b1010_1010);
-        let s2 = _mm_shufflelo_epi16(_mm_shufflehi_epi16(x1, 0b01_00_11_10), 0b01_00_11_10);
-        let e = _mm_add_epi16(x1, s2);
-        let f = _mm_sub_epi16(s2, x1);
-        let x2 = _mm_blend_epi16(e, f, 0b1100_1100);
-        acc = _mm_add_epi32(acc, _mm_madd_epi16(_mm_abs_epi16(x2), _mm_set1_epi16(1)));
+        // last stage as 2·max(|p|, |q|) (see satd16_avx2)
+        let ax = _mm_abs_epi16(x1);
+        let s2 = _mm_shufflelo_epi16(_mm_shufflehi_epi16(ax, 0b01_00_11_10), 0b01_00_11_10);
+        acc = _mm_add_epi32(acc, _mm_madd_epi16(_mm_max_epi16(ax, s2), _mm_set1_epi16(1)));
     }
     let t = _mm_add_epi32(acc, _mm_shuffle_epi32(acc, 0b01_00_11_10));
     let t = _mm_add_epi32(t, _mm_shuffle_epi32(t, 0b10_11_00_01));
@@ -611,6 +609,104 @@ pub fn avg16(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
     core::array::from_fn(|i| ((a[i] as u16 + b[i] as u16 + 1) >> 1) as u8)
 }
 
+/// Copy a `W`×`h` block between strided buffers: one bounds check per block
+/// instead of one per row.
+#[inline(always)]
+pub fn copy_block<const W: usize>(dst: &mut [u8], doff: usize, ds: usize, src: &[u8], soff: usize, ss: usize, h: usize) {
+    assert!(h > 0 && doff + (h - 1) * ds + W <= dst.len() && soff + (h - 1) * ss + W <= src.len());
+    // SAFETY: the assert bounds every row; `dst` and `src` are distinct borrows.
+    unsafe {
+        let (d, s) = (dst.as_mut_ptr().add(doff), src.as_ptr().add(soff));
+        for y in 0..h {
+            core::ptr::copy_nonoverlapping(s.add(y * ss), d.add(y * ds), W);
+        }
+    }
+}
+
+/// Chroma bilinear MC of an 8×8 block at 1/8-sample phase (fx, fy) (8.4.2.2.2):
+/// `((8−fx)(8−fy)·A + fx(8−fy)·B + (8−fx)fy·C + fx·fy·D + 32) >> 6`, rows from
+/// `d[o ..]` with stride `s`.
+pub fn chroma_bilin8(d: &[u8], o: usize, s: usize, fx: i32, fy: i32, out: &mut [u8; 64]) {
+    assert!(o + 8 * s + 9 <= d.len() && (0..8).contains(&fx) && (0..8).contains(&fy));
+    let (w00, w01, w10, w11) = ((8 - fx) * (8 - fy), fx * (8 - fy), (8 - fx) * fy, fx * fy);
+    #[cfg(target_arch = "x86_64")]
+    if level() >= 1 {
+        #[target_feature(enable = "ssse3")]
+        unsafe fn f(p: *const u8, s: usize, w: [i32; 4], out: &mut [u8; 64]) {
+            use std::arch::x86_64::*;
+            // weights as (A, B) byte pairs for maddubs; every sum fits i16 (Σw = 64)
+            let wa = _mm_set1_epi16(((w[1] << 8) | w[0]) as i16);
+            let wb = _mm_set1_epi16(((w[3] << 8) | w[2]) as i16);
+            let r32 = _mm_set1_epi16(32);
+            let pair = |q: *const u8| _mm_unpacklo_epi8(_mm_loadl_epi64(q as *const __m128i), _mm_loadl_epi64(q.add(1) as *const __m128i));
+            let mut top = pair(p);
+            for y in 0..8 {
+                let bot = pair(p.add((y + 1) * s));
+                let v = _mm_add_epi16(_mm_maddubs_epi16(top, wa), _mm_maddubs_epi16(bot, wb));
+                let v = _mm_srli_epi16::<6>(_mm_add_epi16(v, r32));
+                _mm_storel_epi64(out.as_mut_ptr().add(y * 8) as *mut __m128i, _mm_packus_epi16(v, v));
+                top = bot;
+            }
+        }
+        // SAFETY: the assert bounds every read (9 bytes × 9 rows); SSSE3 detected.
+        unsafe { f(d.as_ptr().add(o), s, [w00, w01, w10, w11], out) };
+        return;
+    }
+    let (w00, w01, w10, w11) = (w00 as u16, w01 as u16, w10 as u16, w11 as u16);
+    for y in 0..8 {
+        let r0 = &d[o + y * s..o + y * s + 9];
+        let r1 = &d[o + (y + 1) * s..o + (y + 1) * s + 9];
+        for x in 0..8 {
+            let v = w00 * r0[x] as u16 + w01 * r0[x + 1] as u16 + w10 * r1[x] as u16 + w11 * r1[x + 1] as u16;
+            out[y * 8 + x] = ((v + 32) >> 6) as u8;
+        }
+    }
+}
+
+/// Sum of |second differences| of a 16×16 block, horizontally (x 1..15) and
+/// vertically (y 1..15).
+#[inline]
+pub fn second_diff16(p: &[u8; 256]) -> u32 {
+    let mut s = 0u32;
+    for y in 0..16 {
+        let r = &p[y * 16..y * 16 + 16];
+        for x in 1..15 {
+            s += (r[x - 1] as i32 + r[x + 1] as i32 - 2 * r[x] as i32).unsigned_abs();
+        }
+    }
+    for y in 1..15 {
+        for x in 0..16 {
+            s += (p[(y - 1) * 16 + x] as i32 + p[(y + 1) * 16 + x] as i32 - 2 * p[y * 16 + x] as i32).unsigned_abs();
+        }
+    }
+    s
+}
+
+/// Sum and sum of squares of a block whose length is a multiple of 16.
+#[inline]
+pub fn sum_sq(p: &[u8]) -> (u32, u32) {
+    assert!(p.len().is_multiple_of(16));
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: SSE2 is baseline on x86_64; every load is inside `p`.
+    unsafe {
+        use std::arch::x86_64::*;
+        let z = _mm_setzero_si128();
+        let (mut s, mut q) = (z, z);
+        for k in (0..p.len()).step_by(16) {
+            let v = _mm_loadu_si128(p.as_ptr().add(k) as *const __m128i);
+            s = _mm_add_epi64(s, _mm_sad_epu8(v, z));
+            let (lo, hi) = (_mm_unpacklo_epi8(v, z), _mm_unpackhi_epi8(v, z));
+            q = _mm_add_epi32(q, _mm_add_epi32(_mm_madd_epi16(lo, lo), _mm_madd_epi16(hi, hi)));
+        }
+        let s = (_mm_cvtsi128_si64(s) + _mm_cvtsi128_si64(_mm_unpackhi_epi64(s, s))) as u32;
+        let q = _mm_add_epi32(q, _mm_shuffle_epi32::<0b01_00_11_10>(q));
+        let q = _mm_add_epi32(q, _mm_shuffle_epi32::<0b10_11_00_01>(q));
+        (s, _mm_cvtsi128_si32(q) as u32)
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    p.iter().fold((0, 0), |(s, q), &v| (s + v as u32, q + v as u32 * v as u32))
+}
+
 /// Saturating pack of 16 i16 lanes to u8.
 #[inline(always)]
 pub fn pack16(v: &[i16; 16]) -> [u8; 16] {
@@ -769,6 +865,33 @@ unsafe fn max_sad4_16_ssse3(a: *const u8, b: *const u8, h: usize) -> u32 {
 
 #[cfg(test)]
 mod maxsad_test {
+    #[test]
+    fn chroma_bilin8_matches() {
+        let d: Vec<u8> = (0..20 * 12).map(|i| (i * 53 % 256) as u8).collect();
+        for fy in 0..8 {
+            for fx in 0..8 {
+                let mut a = [0u8; 64];
+                super::chroma_bilin8(&d, 3, 20, fx, fy, &mut a);
+                let (w00, w01, w10, w11) = ((8 - fx) * (8 - fy), fx * (8 - fy), (8 - fx) * fy, fx * fy);
+                for y in 0..8 {
+                    for x in 0..8 {
+                        let p = |xx: usize, yy: usize| d[3 + yy * 20 + xx] as i32;
+                        let v = (w00 * p(x, y) + w01 * p(x + 1, y) + w10 * p(x, y + 1) + w11 * p(x + 1, y + 1) + 32) >> 6;
+                        assert_eq!(a[y * 8 + x] as i32, v, "{fx},{fy} {x},{y}");
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn sum_sq_matches() {
+        let p: Vec<u8> = (0..256).map(|i| (i * 97 % 256) as u8).collect();
+        let r = p.iter().fold((0u32, 0u32), |(s, q), &v| (s + v as u32, q + v as u32 * v as u32));
+        assert_eq!(super::sum_sq(&p), r);
+        assert_eq!(super::sum_sq(&p[..64]), p[..64].iter().fold((0u32, 0u32), |(s, q), &v| (s + v as u32, q + v as u32 * v as u32)));
+    }
+
     #[test]
     fn max_sad4_matches() {
         for k in 0..20u32 {

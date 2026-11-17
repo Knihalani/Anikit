@@ -5,6 +5,7 @@
 //! (same subpaths and cubic counts, rotated to minimise travel), once, in
 //! `prepare`. A frame is a plain interpolation of control points.
 
+use super::fxkit;
 use super::style::*;
 use super::{Component, Ctx, Error, Prepare};
 use crate::dl::{Op, Paint, Path, Rgba};
@@ -75,7 +76,7 @@ pub struct Morph {
     pub shapes: Vec<String>,
     /// Size as a fraction of the box's shorter side.
     pub size: f32,
-    /// Fill gradient (2–3 colours). Default: theme accent → palette pink.
+    /// Fill gradient (1–3 colours). Default: shades of the theme accent.
     pub colors: Vec<Color>,
     /// Seconds per morph.
     pub duration: f32,
@@ -88,6 +89,9 @@ pub struct Morph {
     pub turn: f32,
     /// Soft coloured glow behind the shape.
     pub glow: bool,
+    /// `glossy` (shaded, lit rim, specular), `glass` (clear, bright rim,
+    /// caustic), `flat` (clean fill) or `outline` (line drawing).
+    pub material: String,
     /// Optional outline colour.
     pub stroke: Option<Color>,
     pub delay: f32,
@@ -98,12 +102,13 @@ pub struct Morph {
 
 impl Default for Morph {
     fn default() -> Self {
-        Morph { shapes: Vec::new(), size: 0.62, colors: Vec::new(), duration: 0.9, hold: 0.7, repeat: true, turn: 0.0, glow: true, stroke: None, delay: 0.0, seed: 1, seq: None }
+        Morph { shapes: Vec::new(), size: 0.62, colors: Vec::new(), duration: 0.9, hold: 0.7, repeat: true, turn: 0.0, glow: true, material: "glossy".into(), stroke: None, delay: 0.0, seed: 1, seq: None }
     }
 }
 
 impl Prepare for Morph {
     fn prepare(&mut self) -> Result<(), Error> {
+        fxkit::choice("material", &self.material, &["glossy", "glass", "flat", "outline"])?;
         if self.shapes.is_empty() {
             self.shapes = vec!["circle".into(), "star".into(), "heart".into(), "blob".into()];
         }
@@ -186,21 +191,53 @@ impl Component for Morph {
                 path.close_path();
             }
         }
-        let cols: Vec<Rgba> = if self.colors.is_empty() { vec![shade(ctx.theme.accent, 0.1), ctx.theme.pal(2), shade(ctx.theme.pal(4), 0.1)] } else { self.colors.iter().map(|c| c.0).collect() };
+        let mat = self.material.as_str();
+        let acc = ctx.theme.accent;
+        let cols: Vec<Rgba> = fxkit::colors_or(&self.colors, || match mat {
+            "glass" => vec![mix(ctx.theme.text, fxkit::kelvin(8000.0), 0.3)],
+            "flat" | "outline" => vec![acc],
+            _ => vec![shade(acc, 0.25), acc, shade(acc, -0.4)],
+        });
         let n = (cols.len() - 1).max(1) as f32;
-        let stops: Vec<(f32, Rgba)> = cols.iter().enumerate().map(|(i, c)| (i as f32 / n, *c)).collect();
         // The gradient turns slowly so the fill feels alive.
         let ga = (-50.0 + 20.0 * (t * 0.4).sin()).to_radians();
         let (gs, gc) = ga.sin_cos();
-        let paint = Paint::Linear { p0: [cx - gc * r * 1.1, cy - gs * r * 1.1], p1: [cx + gc * r * 1.1, cy + gs * r * 1.1], stops };
+        let lin = |stops: Vec<(f32, Rgba)>| Paint::Linear { p0: [cx - gc * r * 1.1, cy - gs * r * 1.1], p1: [cx + gc * r * 1.1, cy + gs * r * 1.1], stops };
+        let stops = |a: f32| -> Vec<(f32, Rgba)> { cols.iter().enumerate().map(|(i, c)| (i as f32 / n, alpha(*c, a))).collect() };
+        let white = Rgba([1.0, 1.0, 1.0, 1.0]);
+        // Light from the top left, independent of the shape's turn.
+        let key = |a0: f32, a1: f32| Paint::Linear { p0: [cx - r * 0.7, cy - r * 0.9], p1: [cx + r * 0.6, cy + r * 0.8], stops: vec![(0.0, alpha(white, a0)), (0.55, alpha(white, a1 * 0.3)), (1.0, alpha(white, a1))] };
         let mut out = Vec::new();
-        if self.glow {
+        if self.glow && mat != "outline" {
             let gcol = cols[cols.len() / 2];
-            out.push(circle(cx, cy, r * 1.9, radial(cx, cy, r * 1.9, vec![(0.0, alpha(gcol, 0.5)), (0.45, alpha(gcol, 0.16)), (1.0, alpha(gcol, 0.0))])));
+            out.push(fxkit::light(cx, cy + r * 0.1, r * 1.9, fxkit::gauss(gcol, if mat == "glass" { 0.25 } else { 0.42 })));
         }
-        out.push(fill(path.clone(), paint));
-        // Glossy top light: a soft white radial clipped by the shape itself.
-        out.push(fill(path.clone(), radial(cx - r * 0.35, cy - r * 0.55, r * 1.2, vec![(0.0, Rgba([1.0, 1.0, 1.0, 0.22])), (1.0, Rgba([1.0, 1.0, 1.0, 0.0]))])));
+        let rim_w = (r * 0.018).max(1.0);
+        match mat {
+            "outline" => {
+                out.push(Op::Stroke { path: path.clone(), paint: lin(stops(1.0)), stroke: line((r * 0.025).max(1.5), [0.0, 1.0]), transform: crate::dl::IDENTITY });
+            }
+            "flat" => out.push(fill(path.clone(), lin(stops(1.0)))),
+            "glass" => {
+                out.push(fill(path.clone(), lin(stops(0.14))));
+                // Caustic: light focused at the far side, and a bright rim.
+                out.push(fill(path.clone(), radial(cx + r * 0.3, cy + r * 0.4, r * 0.9, fxkit::gauss(fxkit::hot(cols[0], 0.5), 0.3))));
+                out.push(Op::Stroke { path: path.clone(), paint: key(0.95, 0.35), stroke: line(rim_w * 1.4, [0.0, 1.0]), transform: crate::dl::IDENTITY });
+                out.push(fill(path.clone(), radial(cx - r * 0.4, cy - r * 0.55, r * 0.7, vec![(0.0, alpha(white, 0.35)), (1.0, alpha(white, 0.0))])));
+            }
+            _ => {
+                // Glossy: gradient body, shadowed lower right, a soft top
+                // light, a lit rim and a crisp specular.
+                out.push(fill(path.clone(), lin(stops(1.0))));
+                out.push(fill(path.clone(), radial(cx + r * 0.45, cy + r * 0.55, r * 1.3, vec![(0.0, Rgba([0.0, 0.0, 0.0, 0.32])), (0.6, Rgba([0.0, 0.0, 0.0, 0.1])), (1.0, Rgba([0.0, 0.0, 0.0, 0.0]))])));
+                out.push(fill(path.clone(), radial(cx - r * 0.35, cy - r * 0.55, r * 1.2, vec![(0.0, alpha(white, 0.28)), (1.0, alpha(white, 0.0))])));
+                out.push(Op::Stroke { path: path.clone(), paint: key(0.7, 0.12), stroke: line(rim_w, [0.0, 1.0]), transform: crate::dl::IDENTITY });
+                // The specular stays on the surface: clipped to the shape.
+                out.push(Op::PushLayer { opacity: 1.0, blend: crate::dl::Blend::Normal, filters: Vec::new(), clip: Some((path.clone(), crate::dl::IDENTITY)), cache_key: None });
+                out.push(fxkit::ellipse(cx - r * 0.3, cy - r * 0.42, r * 0.2, r * 0.09, -0.55, vec![(0.0, alpha(white, 0.8)), (0.6, alpha(white, 0.5)), (1.0, alpha(white, 0.0))]));
+                out.push(Op::PopLayer);
+            }
+        }
         if let Some(s) = self.stroke {
             out.push(stroke_op(path, solid(s.0), (r * 0.02).max(1.0), [0.0, 1.0]));
         }

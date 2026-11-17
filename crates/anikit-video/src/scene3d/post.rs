@@ -307,7 +307,7 @@ fn box_blur(src: &[f32], w: usize, h: usize, r: usize, rows: bool) -> Vec<f32> {
     out
 }
 
-pub fn process(px: &[Px], w: usize, h: usize, p: &Post, vol: Option<Volume>) -> Vec<u8> {
+pub fn process(px: &[Px], w: usize, h: usize, p: &Post, vol: Option<Volume>, parts: Option<&super::particles::Layer>) -> Vec<u8> {
     let s = h as f32 / 1080.0;
     let mut clock = std::time::Instant::now();
     let mut stages: Vec<(&str, f64)> = Vec::new();
@@ -613,6 +613,15 @@ pub fn process(px: &[Px], w: usize, h: usize, p: &Post, vol: Option<Volume>) -> 
     }
 
     tick(&mut stages, &mut clock, "mblur");
+    // 3b. Particles (already blurred and streaked by their splatter) go in
+    // before bloom, so bright ones glow.
+    if let Some(l) = parts {
+        par_rows(&mut hdr, w, |y, row| {
+            for (x, c) in row.iter_mut().enumerate() {
+                *c = l.apply(y * w + x, *c);
+            }
+        });
+    }
     // 4. Bloom: a pyramid of blurred levels, mostly from highlights.
     if p.bloom > 0.0 {
         let mut levels: Vec<(Img, usize, usize)> = Vec::new();

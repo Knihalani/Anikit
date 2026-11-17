@@ -86,6 +86,8 @@ struct C<'a> {
     audio_extra: Vec<crate::audio::Track>,
     layer_info: Vec<(String, String)>,
     beat_marks: super::beat_markers::BeatMarkers,
+    /// Music analysed for `iAudio`/`iBeat` (once, on first use).
+    music: Option<Result<Arc<super::audio_react::AudioFeatures>, String>>,
     /// Uniform name → (slot after `prop::U0`, components) of the shader layer being compiled.
     uniform_slots: Vec<(String, usize, usize)>,
     /// Compiled sub-compositions by name, with their own `loop` default.
@@ -147,6 +149,7 @@ impl Evaluator {
             audio_extra: Vec::new(),
             layer_info: Vec::new(),
             beat_marks: super::beat_markers::BeatMarkers::new(spec, &opts.base_dir),
+            music: None,
             assets: opts.assets.clone().unwrap_or_else(|| Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new()))))),
             comps,
             spec_theme: spec.theme.clone(),
@@ -187,6 +190,7 @@ impl Evaluator {
                 c.gmarkers.insert(k.clone(), t);
             }
         }
+        c.prewarm_shaders(spec);
         if let Some(defs) = &spec.compositions {
             c.compositions(defs);
         }
@@ -304,6 +308,16 @@ impl Evaluator {
             }
         }
         audio.append(&mut c.audio_extra);
+        let music = match &spec.music {
+            Some(v) => match crate::music::parse(v, &opts.base_dir) {
+                Ok(m) => Some(Arc::new(m)),
+                Err(e) => {
+                    c.d.push(Diagnostic::error("music", e));
+                    None
+                }
+            },
+            None => None,
+        };
         c.smarkers.clear();
         c.scene_start = 0.0;
         c.scene_dur = duration;
@@ -316,6 +330,7 @@ impl Evaluator {
             duration,
             diagnostics: Vec::new(),
             audio,
+            music,
             assets: c.assets,
             easings: c.easings,
             scenes,
@@ -962,6 +977,7 @@ impl C<'_> {
             ("filter", l.filter.is_some()),
             ("supersample", l.supersample.is_some()),
             ("alpha", l.alpha.is_some()),
+            ("buffers", l.buffers.is_some()),
         ];
         let check = |d: &mut Vec<Diagnostic>, list: &[(&str, bool)], ok: bool, owner: &str| {
             if !ok {
@@ -2244,6 +2260,79 @@ impl C<'_> {
 
     // ---------- shader layers (SHADER module; runtime in `eval/shader.rs`) ----------
 
+    /// JIT every shader the spec uses in parallel, before compiling layers in
+    /// order: the layer pass then hits `Shader::compile_shared`'s cache, so
+    /// time to first frame is the slowest shader, not the sum.
+    fn prewarm_shaders(&mut self, spec: &Spec) {
+        fn walk<'a>(ls: &'a [Layer], out: &mut Vec<&'a Layer>) {
+            for l in ls {
+                if l.shader.is_some() || l.src.as_deref().is_some_and(|s| s.ends_with(".glsl") || s.ends_with(".wgsl") || s.ends_with(".frag")) {
+                    out.push(l);
+                }
+                walk(l.layers.as_deref().unwrap_or(&[]), out);
+                walk(l.children.as_deref().unwrap_or(&[]), out);
+            }
+        }
+        let mut layers = Vec::new();
+        let mut trans: Vec<&spec::TransitionObj> = Vec::new();
+        for sc in &spec.scenes {
+            walk(&sc.layers, &mut layers);
+            if let Some(t) = &sc.transition {
+                trans.push(&t.0);
+            }
+        }
+        for c in spec.compositions.iter().flat_map(|m| m.values()) {
+            walk(c.layers.as_deref().unwrap_or(&[]), &mut layers);
+        }
+        if layers.is_empty() && trans.is_empty() {
+            return;
+        }
+        // Resolve sources and uniform types exactly as the layer pass will
+        // (so the cache keys match), without reporting anything twice.
+        let saved = std::mem::take(&mut self.d);
+        let mut jobs: Vec<(String, Vec<(String, anikit_shader::UType)>)> = Vec::new();
+        for l in layers {
+            if let Some(j) = self.shader_source(l.shader.as_deref(), l.src.as_deref(), l.uniforms.as_ref(), "") {
+                jobs.push(j);
+            }
+        }
+        for t in trans {
+            let kind = t.kind.as_deref().unwrap_or("");
+            let named = anikit_shader::library::get(kind).is_some_and(|e| e.use_ == anikit_shader::library::Use::Transition);
+            if kind == "shader" || named {
+                let src = t.shader.clone().unwrap_or_else(|| kind.to_string());
+                if let Some(j) = self.shader_source(Some(&src), None, t.uniforms.as_ref(), "") {
+                    jobs.push(j);
+                }
+            }
+        }
+        self.d = saved;
+        use rayon::prelude::*;
+        jobs.par_iter().for_each(|(text, extra)| {
+            let ex: Vec<(&str, anikit_shader::UType)> = extra.iter().map(|(n, t)| (n.as_str(), *t)).collect();
+            let _ = anikit_shader::Shader::compile_shared(text, &ex);
+        });
+    }
+
+    /// Source text and spec-declared uniform types of a shader (no compile).
+    fn shader_source(&mut self, src_field: Option<&str>, file: Option<&str>, unis: Option<&BTreeMap<String, serde_json::Value>>, path: &str) -> Option<(String, Vec<(String, anikit_shader::UType)>)> {
+        let text = match (src_field, file) {
+            (Some(s), _) => super::shader::resolve_source(s)?.to_string(),
+            (None, Some(f)) => std::fs::read_to_string(self.o.base_dir.join(f)).ok()?,
+            _ => return None,
+        };
+        let mut extra = Vec::new();
+        for (k, v) in unis.into_iter().flatten() {
+            if let Some(x) = self.uniform_value(v, &format!("{path}.uniforms.{k}")) {
+                extra.push((k.clone(), match x {
+                    Ok(x) if x.len() > 1 => anikit_shader::UType::Vec(x.len() as u8),
+                    _ => anikit_shader::UType::Float,
+                }));
+            }
+        }
+        Some((text, extra))
+    }
+
     /// Spec uniform value → floats (or an expression string).
     fn uniform_value(&mut self, v: &serde_json::Value, path: &str) -> Option<Result<Vec<f32>, String>> {
         Some(Ok(match v {
@@ -2299,8 +2388,8 @@ impl C<'_> {
                 _ => UType::Float,
             }))
             .collect();
-        match anikit_shader::Shader::compile_with(&text, &extra) {
-            Ok(s) => Some((Arc::new(s), text, vals)),
+        match anikit_shader::Shader::compile_shared(&text, &extra) {
+            Ok(s) => Some((s, text, vals)),
             Err(e) => {
                 let field = if src_field.is_some() { "shader" } else { "src" };
                 self.d.push(Diagnostic::error(format!("{path}.{field}"), format!("shader: {e}")));
@@ -2376,6 +2465,7 @@ impl C<'_> {
             slots.push((u.name.clone(), off, len));
             off += len;
         }
+        let (passes, buf_names) = self.shader_buffers(l, path, &vals);
         let filter = l.filter.unwrap_or(false);
         let mut channels = Vec::new();
         let list: Vec<serde_json::Value> = match &l.channels {
@@ -2392,6 +2482,11 @@ impl C<'_> {
             let src = v.as_str().or_else(|| v.get("src").and_then(|s| s.as_str()));
             let comp_name = src.and_then(|x| x.strip_prefix('#')).or_else(|| v.get("composition").and_then(|x| x.as_str()));
             let c = match (src, v.get("layers")) {
+                (Some(b), _) if buf_names.iter().any(|n| n == b) => ChannelC::Buffer(buf_slot(b)),
+                (Some(b), _) if buf_slot_opt(b).is_some() => {
+                    self.d.push(Diagnostic::error(cp.clone(), format!("channel '{b}' reads buffer {b}, but the layer has no \"buffers\": {{\"{b}\": {{…}}}}")));
+                    ChannelC::None
+                }
                 _ if comp_name.is_some() => {
                     let name = comp_name.unwrap_or_default();
                     match self.comps.iter().find(|c| c.0 == name).cloned() {
@@ -2450,7 +2545,7 @@ impl C<'_> {
         }
         self.uniform_slots = slots.clone();
         let sc = ShaderC {
-            dynamic: super::shader::uses_time(&text),
+            dynamic: super::shader::uses_time(&text) || passes.as_ref().is_some_and(|p| p.stateful || p.dynamic),
             id: Self::shader_id(path, &text),
             shader,
             uniforms: slots,
@@ -2459,8 +2554,92 @@ impl C<'_> {
             filter,
             supersample: l.supersample.unwrap_or(false),
             alpha: l.alpha.unwrap_or(false),
+            label: super::shader::label(path, l.shader.as_deref().or(l.src.as_deref())),
+            audio: self.shader_audio(&text, path),
+            passes,
         };
         Some((Kind::Shader(Box::new(sc)), size))
+    }
+
+    /// Compile a shader layer's `"buffers"` (A–D). Returns the passes and the names given.
+    fn shader_buffers(&mut self, l: &Layer, path: &str, vals: &[(String, Result<Vec<f32>, String>)]) -> (Option<Arc<super::shader::Passes>>, Vec<String>) {
+        use super::shader::{BufChan, BufPass, Passes};
+        let Some(map) = &l.buffers else { return (None, Vec::new()) };
+        let mut bufs = Vec::new();
+        let mut names = Vec::new();
+        let mut dynamic = false;
+        let mut audio = None;
+        let mut uniforms: Vec<(String, Vec<f32>)> = Vec::new();
+        for (name, b) in map {
+            let bp = format!("{path}.buffers.{name}");
+            let Some(slot) = buf_slot_opt(name) else {
+                self.d.push(Diagnostic::error(bp, "buffers are named \"A\", \"B\", \"C\" or \"D\""));
+                continue;
+            };
+            let Some((shader, text, bvals)) = self.compile_shader(b.shader.as_deref(), b.src.as_deref(), l.uniforms.as_ref(), &bp) else { continue };
+            if shader.kind != anikit_shader::Kind::Image {
+                self.d.push(Diagnostic::error(format!("{bp}.shader"), "a buffer pass is an image shader (mainImage)"));
+                continue;
+            }
+            dynamic |= super::shader::uses_time(&text);
+            if audio.is_none() {
+                audio = self.shader_audio(&text, &bp);
+            }
+            // Static uniform values: declared defaults, then the spec's numbers.
+            for u in &shader.uniforms {
+                let v = bvals.iter().chain(vals.iter()).find(|(k, _)| *k == u.name).and_then(|(_, v)| v.clone().ok()).or_else(|| u.default.clone());
+                if let Some(v) = v {
+                    if !uniforms.iter().any(|(n, _)| *n == u.name) {
+                        uniforms.push((u.name.clone(), v));
+                    }
+                }
+            }
+            let mut chans = Vec::new();
+            for (i, v) in b.channels.iter().flatten().take(4).enumerate() {
+                let cp = format!("{bp}.channels[{i}]");
+                let o = self.channel_opts(v, &cp);
+                let src = v.as_str().or_else(|| v.get("src").and_then(|s| s.as_str())).unwrap_or("");
+                let c = match src {
+                    "noise" => BufChan::Noise,
+                    "" | "none" => BufChan::None,
+                    s if buf_slot_opt(s).is_some() && map.contains_key(s) => BufChan::Buffer(buf_slot(s)),
+                    s => {
+                        self.d.push(Diagnostic::error(cp, format!("a buffer channel is \"A\"…\"D\" (a buffer of this layer), \"noise\" or \"none\", not '{s}'")));
+                        BufChan::None
+                    }
+                };
+                chans.push((c, o));
+            }
+            names.push(name.clone());
+            bufs.push(BufPass { slot, shader, chans });
+        }
+        if bufs.is_empty() {
+            return (None, names);
+        }
+        let mut p = Passes::new(bufs, uniforms, audio);
+        p.dynamic = dynamic;
+        (Some(Arc::new(p)), names)
+    }
+
+    /// Music features for a shader that reads `iAudio`/`iBeat` (analysed once per spec).
+    fn shader_audio(&mut self, text: &str, path: &str) -> Option<Arc<super::audio_react::AudioFeatures>> {
+        if !text.contains("iAudio") && !text.contains("iBeat") {
+            return None;
+        }
+        if self.music.is_none() {
+            let r = match self.beat_marks.music() {
+                None => Err("iAudio/iBeat need music: add a top-level `audio` track with a `src` (they stay 0)".to_string()),
+                Some((p, at, trim)) => super::audio_react::AudioFeatures::load(p, *at, *trim).map(Arc::new).map_err(|e| format!("iAudio/iBeat: {e}")),
+            };
+            self.music = Some(r);
+        }
+        match self.music.as_ref()? {
+            Ok(a) => Some(a.clone()),
+            Err(e) => {
+                self.d.push(Diagnostic::warning(format!("{path}.shader"), e.clone()));
+                None
+            }
+        }
     }
 
     fn shader_transition(&mut self, src: &str, unis: Option<&BTreeMap<String, serde_json::Value>>, path: &str) -> Option<super::shader::ShaderRef> {
@@ -2492,6 +2671,9 @@ impl C<'_> {
             filter: false,
             supersample: false,
             alpha: false,
+            label: super::shader::label(path, Some(src)),
+            audio: self.shader_audio(&text, path),
+            passes: None,
         })))
     }
 
@@ -2649,7 +2831,7 @@ impl C<'_> {
         if let Some(k) = &t.keyframes {
             for (name, vals) in k {
                 let p = format!("{path}.keyframes.{name}");
-                let Some((slot, ch)) = prop::lookup(name) else {
+                let Some((slot, ch)) = prop::lookup(name).or_else(|| self.uniform_lookup(name).map(|(s, _)| (s, 1))) else {
                     self.d.push(Diagnostic::error(p, format!("'{name}' is not animatable")).suggest(suggest(name, val::ANIM_PROPS)));
                     continue;
                 };
@@ -3174,4 +3356,19 @@ fn components_theme(t: &Theme) -> crate::components::Theme {
     c.palette = pal;
     c.radius = t.radius;
     c
+}
+
+/// `"A"`…`"D"` → 0..4.
+fn buf_slot_opt(name: &str) -> Option<usize> {
+    match name {
+        "A" => Some(0),
+        "B" => Some(1),
+        "C" => Some(2),
+        "D" => Some(3),
+        _ => None,
+    }
+}
+
+fn buf_slot(name: &str) -> usize {
+    buf_slot_opt(name).unwrap_or(0)
 }

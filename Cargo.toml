@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/anikit-core", "crates/anikit-wasm", "crates/anikit-py", "crates/anikit-node", "crates/anikit-video", "crates/ak264", "crates/anikit-shader"]
+members = ["crates/anikit-core", "crates/anikit-wasm", "crates/anikit-py", "crates/anikit-node", "crates/anikit-video", "crates/ak264", "crates/anikit-shader", "crates/anikit-music"]
 default-members = ["crates/anikit-core"]
 
 [workspace.package]
@@ -30,3 +30,10 @@ lto = "fat"
 codegen-units = 1
 panic = "abort"
 strip = true
+
+# Fast-iterating optimised build (no fat LTO): `cargo build --profile dev-opt`.
+[profile.dev-opt]
+inherits = "release"
+lto = false
+codegen-units = 16
+incremental = true

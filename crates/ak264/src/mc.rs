@@ -230,14 +230,15 @@ impl HpelPlanes {
         let xlast = hi - 16;
         let lo = xa.saturating_sub(3).max(2).min(xlast);
         for y in a..b {
-            let row = d.add(y * s);
+            let (row, ob1, obo) = (d.add(y * s), b1.add(y * s), bo.add(y * s));
+            // full blocks from `lo`, then the last block aligned to `xlast`
             let mut x = lo;
             loop {
-                let xx = x.min(xlast);
+                let xx = if x < xlast { x } else { xlast };
                 let p = row.add(xx);
                 let v = tap(ld(p.sub(2)), ld(p.sub(1)), ld(p), ld(p.add(1)), ld(p.add(2)), ld(p.add(3)), c5, c20);
-                _mm256_storeu_si256(b1.add(y * s + xx) as *mut __m256i, v);
-                st8(bo.add(y * s + xx), v, c16);
+                _mm256_storeu_si256(ob1.add(xx) as *mut __m256i, v);
+                st8(obo.add(xx), v, c16);
                 if xx == xlast {
                     break;
                 }
@@ -247,28 +248,31 @@ impl HpelPlanes {
         let hi = (xb + 2).min(s);
         let xlast = hi - 16;
         let lo = xa.saturating_sub(3).min(xlast);
+        let (c3, c32) = (_mm256_set1_epi16(3), _mm256_set1_epi16(32));
         for y in va.max(2)..vb.min(rows - 3) {
+            let (p0, q0) = (d.add((y - 2) * s), b1.add((y - 2) * s) as *const i16);
+            let (oh, oj) = (ho.add(y * s), jo.add(y * s));
             let mut x0 = lo;
             loop {
-                let x = x0.min(xlast);
-                let p = d.add((y - 2) * s + x);
+                let x = if x0 < xlast { x0 } else { xlast };
+                let p = p0.add(x);
                 let v = tap(ld(p), ld(p.add(s)), ld(p.add(2 * s)), ld(p.add(3 * s)), ld(p.add(4 * s)), ld(p.add(5 * s)), c5, c20);
-                st8(ho.add(y * s + x), v, c16);
+                st8(oh.add(x), v, c16);
                 // j = (a - 5b + 20c + 512) >> 10 in 16 bits, exactly (floor shifts compose):
                 // ((((a - b) >> 2) - b + c) >> 2) + c == (a - 5b + 20c) >> 4, and with the
                 // 6-tap row sums in [-2550, 10710] no step leaves the i16 range.
-                let q = b1.add((y - 2) * s + x) as *const i16;
+                let q = q0.add(x);
                 let l = |k: usize| _mm256_loadu_si256(q.add(k * s) as *const __m256i);
                 let (ta, tb, tc) = (_mm256_add_epi16(l(0), l(5)), _mm256_add_epi16(l(1), l(4)), _mm256_add_epi16(l(2), l(3)));
                 let t = _mm256_srai_epi16(_mm256_sub_epi16(ta, tb), 2);
                 // (x + c) >> 2 == ((x + (c & 3)) >> 2) + (c >> 2), which stays inside i16
-                let x3 = _mm256_add_epi16(_mm256_sub_epi16(t, tb), _mm256_and_si256(tc, _mm256_set1_epi16(3)));
+                let x3 = _mm256_add_epi16(_mm256_sub_epi16(t, tb), _mm256_and_si256(tc, c3));
                 let t = _mm256_add_epi16(_mm256_srai_epi16(x3, 2), _mm256_srai_epi16(tc, 2));
                 let t = _mm256_add_epi16(t, tc);
-                let t = _mm256_srai_epi16(_mm256_add_epi16(t, _mm256_set1_epi16(32)), 6);
+                let t = _mm256_srai_epi16(_mm256_add_epi16(t, c32), 6);
                 let pk = _mm256_packus_epi16(t, t);
                 let pk = _mm256_permute4x64_epi64(pk, 0b1000);
-                _mm_storeu_si128(jo.add(y * s + x) as *mut __m128i, _mm256_castsi256_si128(pk));
+                _mm_storeu_si128(oj.add(x) as *mut __m128i, _mm256_castsi256_si128(pk));
                 if x == xlast {
                     break;
                 }
@@ -326,21 +330,51 @@ impl HpelPlanes {
     /// Prediction of the block whose integer top-left sample is (x, y) at the
     /// quarter-pel fraction (fx, fy) ∈ [0, 3]².
     /// SAD of the prediction [`Self::pred`] would produce against `src` (16×16).
+    /// SADs of the 16×16 predictions at quarter-pel offsets `cands` (each within
+    /// ±3, i.e. ±1 sample incl. phase) from the integer position (x, y).
+    pub fn sad_cands(&self, g: &Plane, x: isize, y: isize, cands: &[(i32, i32)], src: &[u8; 256], out: &mut [u32]) {
+        #[cfg(target_arch = "x86_64")]
+        {
+            if crate::simd::level() >= 2 {
+                let s = g.stride;
+                let o = g.off(x, y);
+                let n = g.data.len();
+                // reads reach (x−1, y−1) .. (x+1+1+15, y+1+1+15) (offset +1/+stride included)
+                assert!(o > s && o + 17 * s + 18 <= n);
+                debug_assert!(cands.iter().all(|c| c.0.abs() <= 3 && c.1.abs() <= 3));
+                let planes = [g.data.as_ptr(), self.b.data.as_ptr(), self.h.data.as_ptr(), self.j.data.as_ptr()];
+                // SAFETY: the asserts bound every read; AVX2 detected.
+                unsafe { sad_cands_avx2(&planes, o, s, cands, src, out) };
+                return;
+            }
+        }
+        for (c, r) in cands.iter().zip(out.iter_mut()) {
+            *r = self.sad(g, x + (c.0 >> 2) as isize, y + (c.1 >> 2) as isize, c.0 & 3, c.1 & 3, src);
+        }
+    }
+
     pub fn sad(&self, g: &Plane, x: isize, y: isize, fx: i32, fy: i32, src: &[u8; 256]) -> u32 {
         #[cfg(target_arch = "x86_64")]
         {
+            const T: [[u8; 4]; 16] = PHASE;
             let s = g.stride;
             let o = g.off(x, y);
-            let (p1, p2) = self.sources(g, fx, fy);
-            assert!(o + p1.1 + 15 * s + 16 <= p1.0.len());
-            if let Some(q) = p2 {
-                assert!(o + q.1 + 15 * s + 16 <= q.0.len());
-            }
-            // SAFETY: the asserts above bound every 16-byte row read.
+            let n = g.data.len();
+            debug_assert!(self.b.data.len() == n && self.h.data.len() == n && self.j.data.len() == n);
+            // every read is at o + {0, 1, s} + r·s + 0..16, r < 16
+            assert!(o + 16 * s + 16 <= n);
+            let t = T[((fy & 3) * 4 + (fx & 3)) as usize];
+            let planes = [g.data.as_ptr(), self.b.data.as_ptr(), self.h.data.as_ptr(), self.j.data.as_ptr()];
+            let off = |k: u8| [0, 1, s][k as usize];
+            // SAFETY: the assert bounds every read (all planes have the luma plane's
+            // length); AVX2 is only used when detected.
             unsafe {
+                let a = planes[t[0] as usize].add(o + off(t[1]));
+                let b = if t[2] < 4 { Some(planes[t[2] as usize].add(o + off(t[3]))) } else { None };
+                if crate::simd::level() >= 2 {
+                    return sad_avx2(a, b, s, src);
+                }
                 use std::arch::x86_64::*;
-                let a = p1.0.as_ptr().add(o + p1.1);
-                let b = p2.map(|q| q.0.as_ptr().add(o + q.1));
                 let mut acc = _mm_setzero_si128();
                 for r in 0..16 {
                     let mut v = _mm_loadu_si128(a.add(r * s) as *const __m128i);
@@ -431,6 +465,76 @@ impl HpelPlanes {
                 Some(q) => crate::simd::avg16(&a, q.0[i + q.1..i + q.1 + 16].try_into().unwrap()),
             };
         }
+    }
+}
+
+/// Sources per quarter-pel phase (index fy·4 + fx): (plane, offset) and an optional
+/// second (plane, offset) to average; planes 0..4 = full, b, h, j; offsets
+/// 0 = +0, 1 = +1, 2 = +stride; plane 4 = none.
+const PHASE: [[u8; 4]; 16] = [
+    [0, 0, 4, 0], // (0,0)
+    [0, 0, 1, 0], // (1,0)
+    [1, 0, 4, 0], // (2,0)
+    [1, 0, 0, 1], // (3,0)
+    [0, 0, 2, 0], // (0,1)
+    [1, 0, 2, 0], // (1,1)
+    [1, 0, 3, 0], // (2,1)
+    [1, 0, 2, 1], // (3,1)
+    [2, 0, 4, 0], // (0,2)
+    [2, 0, 3, 0], // (1,2)
+    [3, 0, 4, 0], // (2,2)
+    [3, 0, 2, 1], // (3,2)
+    [2, 0, 0, 2], // (0,3)
+    [2, 0, 1, 2], // (1,3)
+    [3, 0, 1, 2], // (2,3)
+    [2, 1, 1, 2], // (3,3)
+];
+
+/// SAD of 16 rows of 16 bytes at `a` (averaged with `b` when given), stride `s`,
+/// against `src`; two rows per 256-bit step.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn sad_avx2(a: *const u8, b: Option<*const u8>, s: usize, src: &[u8; 256]) -> u32 {
+    use std::arch::x86_64::*;
+    let row2 = |p: *const u8, r: usize| {
+        let lo = _mm_loadu_si128(p.add(r * s) as *const __m128i);
+        let hi = _mm_loadu_si128(p.add(r * s + s) as *const __m128i);
+        _mm256_inserti128_si256::<1>(_mm256_castsi128_si256(lo), hi)
+    };
+    let mut acc = _mm256_setzero_si256();
+    match b {
+        None => {
+            for r in (0..16).step_by(2) {
+                let t = _mm256_loadu_si256(src.as_ptr().add(r * 16) as *const __m256i);
+                acc = _mm256_add_epi64(acc, _mm256_sad_epu8(row2(a, r), t));
+            }
+        }
+        Some(b) => {
+            for r in (0..16).step_by(2) {
+                let v = _mm256_avg_epu8(row2(a, r), row2(b, r));
+                let t = _mm256_loadu_si256(src.as_ptr().add(r * 16) as *const __m256i);
+                acc = _mm256_add_epi64(acc, _mm256_sad_epu8(v, t));
+            }
+        }
+    }
+    let x = _mm_add_epi64(_mm256_castsi256_si128(acc), _mm256_extracti128_si256::<1>(acc));
+    (_mm_cvtsi128_si64(x) + _mm_extract_epi64::<1>(x)) as u32
+}
+
+/// [`HpelPlanes::sad_cands`]: one call for a whole candidate pattern.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn sad_cands_avx2(planes: &[*const u8; 4], o: usize, s: usize, cands: &[(i32, i32)], src: &[u8; 256], out: &mut [u32]) {
+    for (c, r) in cands.iter().zip(out.iter_mut()) {
+        let t = PHASE[((c.1 & 3) * 4 + (c.0 & 3)) as usize];
+        // whole-sample part of a ±3 quarter offset is −1 or 0; the clamp keeps any
+        // input inside the bounds the caller checked
+        let (ix, iy) = ((c.0 >> 2).clamp(-1, 0) as isize, (c.1 >> 2).clamp(-1, 0) as isize);
+        let base = (o as isize + iy * s as isize + ix) as usize;
+        let off = |k: u8| [0, 1, s][k as usize];
+        let a = planes[t[0] as usize].add(base + off(t[1]));
+        let b = if t[2] < 4 { Some(planes[t[2] as usize].add(base + off(t[3]))) } else { None };
+        *r = sad_avx2(a, b, s, src);
     }
 }
 

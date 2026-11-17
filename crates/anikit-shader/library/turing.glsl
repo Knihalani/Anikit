@@ -4,11 +4,11 @@
 // gives the same look without a simulation, identical at any frame.
 // Uniforms: scale, balance (−1 spots of colorA … 0 maze … 1 spots of colorB),
 // speed (slow drift), colours.
-uniform float scale;   // = 1.0
-uniform float balance; // = 0.0
-uniform float speed;   // = 1.0
-uniform vec3 colorA;   // = vec3(0.06, 0.07, 0.10)
-uniform vec3 colorB;   // = vec3(0.98, 0.72, 0.30)
+uniform float scale;   // = 1.0  pattern scale
+uniform float balance; // = 0.0  −1 spots … 0 maze … 1 holes
+uniform float speed;   // = 1.0  drift speed
+uniform vec3 colorA;   // = vec3(0.06, 0.07, 0.10)  background colour
+uniform vec3 colorB;   // = vec3(0.98, 0.72, 0.30)  pattern colour
 
 float h1(float n) { return fract(sin(n * 91.345) * 47453.5453); }
 
