@@ -105,6 +105,7 @@ fn wedge(x: f32, y: f32, ang: f32, half: f32, len: f32) -> Path {
 
 impl Component for GodRays {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        let t = step(t, AMBIENT_RATE);
         let (w, h) = (ctx.width, ctx.height);
         let k = h / 1080.0;
         let c = self.color.map(|c| c.0).unwrap_or(Rgba([1.0, 0.84, 0.6, 1.0]));

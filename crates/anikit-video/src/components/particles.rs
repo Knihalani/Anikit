@@ -265,6 +265,7 @@ impl Default for Snow {
 impl Prepare for Snow {}
 impl Component for Snow {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        let t = step(t, AMBIENT_RATE);
         let (w, h) = (ctx.width, ctx.height);
         let scale = h / 1080.0;
         let c = self.color.map(|c| c.0).unwrap_or(Rgba([1.0, 1.0, 1.0, 1.0]));
@@ -312,6 +313,7 @@ impl Default for Dust {
 impl Prepare for Dust {}
 impl Component for Dust {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
+        let t = step(t, AMBIENT_RATE);
         let (w, h) = (ctx.width, ctx.height);
         let scale = h / 1080.0;
         let c = self.color.map(|c| c.0).unwrap_or(parse_color("#ffe9c4").unwrap());
