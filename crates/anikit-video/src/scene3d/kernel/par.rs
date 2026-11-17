@@ -74,6 +74,15 @@ pub fn image<T: Pod + Default>(w: usize, h: usize, f: impl Fn(usize, &mut [T]) +
     v
 }
 
+/// `f(y)` for every row `0..h` (a few rows per task).
+pub fn each_row(h: usize, f: impl Fn(usize) + Sync + Send) {
+    if parallel() {
+        (0..h).into_par_iter().with_min_len(2).for_each(f);
+    } else {
+        (0..h).for_each(f);
+    }
+}
+
 /// Map `f` over `0..n` in parallel chunks, keeping order.
 pub fn map<T: Pod>(n: usize, f: impl Fn(usize) -> T + Sync + Send) -> Buf<T> {
     let mut v = Buf::uninit(n);

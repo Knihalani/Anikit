@@ -1,6 +1,6 @@
 {
  "about": "A 10 s launch sting that combines particles, ray-traced chrome, beat-slammed type, a raymarched shader world and generated music. Every cut lands on the beat at 124 BPM, with sfx on the hits. Swap the name, words and colours, or move a shot to another beat.",
- "cost": "renders in about 58 s at 1080p on 4 cores",
+ "cost": "draft ~69 s, final ~238 s (1080p, 4 cores)",
  "spec": {
   "size": "16:9",
   "intent": {

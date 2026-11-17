@@ -902,3 +902,47 @@ fn grain_fast_path_matches_vello() {
         assert!(worst <= 4 && mean < 0.5, "{blend:?}: max diff {worst}, mean {mean:.3}");
     }
 }
+
+/// Strokes reaching far off-screen are clipped to the view first: the
+/// visible pixels match the same lines ending just off-frame.
+#[test]
+fn long_strokes_clip_to_the_view() {
+    let assets = Arc::new(Assets::default());
+    let stroke = |far: f64| {
+        let mut p = BezPath::new();
+        for k in 0..6 {
+            let y = 10.0 + k as f64 * 15.0;
+            p.move_to((48.0, y));
+            p.line_to((48.0 - 100.0 * far, y + 30.0 * far));
+        }
+        list(vec![Op::Stroke { path: p, paint: solid(1.0, 0.8, 0.3), stroke: Stroke { width: 2.5, cap: 0, join: 0, miter_limit: 4.0, dash: vec![], dash_offset: 0.0, trim: [0.0, 1.0] }, transform: IDENTITY }])
+    };
+    // Ending just off-frame: drawn as is.
+    let near = Renderer::new(assets.clone()).render(&stroke(1.0)).data_as_u8_slice().to_vec();
+    // The same lines, 4000× longer: clipped before rasterising.
+    let far_list = stroke(4000.0);
+    let far = Renderer::new(assets.clone()).render(&far_list).data_as_u8_slice().to_vec();
+    let worst = near.iter().zip(&far).map(|(a, b)| a.abs_diff(*b)).max().unwrap();
+    assert!(near.iter().zip(&Renderer::new(assets).render(&list(vec![])).data_as_u8_slice().to_vec()).any(|(a, b)| a != b));
+    assert!(worst <= 1, "max diff {worst}");
+}
+
+/// A plain background colour acts as a backdrop (no full-frame clear and
+/// convert): the same pixels and YUV as vello clearing to it.
+#[test]
+fn solid_background_backdrop_matches_clear() {
+    use anikit_video::render::{Quality, YuvFrame};
+    let assets = Arc::new(Assets::default());
+    let mut l = list(vec![card(20.0, 30.0, 40.0, 25.0, solid(0.9, 0.4, 0.2)), card(10.0, 70.0, 70.0, 10.0, Paint::Solid(rgba(1.0, 1.0, 1.0, 0.5)))]);
+    l.background = rgba(0.137, 0.52, 0.81, 1.0);
+    let mut exact = Renderer::new(assets.clone());
+    exact.set_quality(Quality::Reference);
+    let want = exact.render(&l).data_as_u8_slice().to_vec();
+    let got = Renderer::new(assets.clone()).render(&l).data_as_u8_slice().to_vec();
+    assert_eq!(got, want);
+    let (mut a, mut b) = (YuvFrame::new(W, H), YuvFrame::new(W, H));
+    Renderer::new(assets.clone()).render_yuv(&l, &mut a);
+    exact.render_yuv(&l, &mut b);
+    let worst = a.y.iter().zip(&b.y).chain(a.u.iter().zip(&b.u)).chain(a.v.iter().zip(&b.v)).map(|(p, q)| p.abs_diff(*q)).max().unwrap();
+    assert!(worst <= 1, "max YUV diff {worst}");
+}

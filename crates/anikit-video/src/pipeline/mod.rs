@@ -76,7 +76,9 @@ pub struct StageProfile {
     pub render_ms: f64,
     pub copy_ms: f64,
     pub encode_ms: f64,
-    /// Cores waiting (load imbalance, startup), ms per frame.
+    /// Cores waiting (load imbalance, startup), ms per frame. Also counts work a
+    /// stage hands to other threads (nested parallelism in shaders, 3D, post): it
+    /// is wall × threads minus the per-frame stage times, so it overstates idling there.
     pub idle_ms: f64,
     /// Wall ms per frame for render + encode (excludes mux).
     pub wall_ms: f64,
@@ -512,6 +514,15 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
     out
 }
 
+/// Default chunk length for `n` frames: up to 16 chunks of 30–300 frames, or, when the
+/// spec has expensive layers (3D, shaders, video), chunks of 8+ frames (up to 16), so a
+/// short heavy clip keeps every core busy. Depends only on the spec, never the machine.
+pub fn default_gop(n: usize, heavy: bool) -> u32 {
+    let min_len = if heavy { 8 } else { 30 };
+    let count = n.div_ceil(300).max(n.div_ceil(min_len).min(16)).clamp(1, n.max(1));
+    n.div_ceil(count).max(1) as u32
+}
+
 /// Independently encoded chunks for `n` frames. `gop > 0` caps their length;
 /// otherwise up to 16 equal chunks of 30–300 frames (enough to keep 16 cores busy).
 /// Depends only on its arguments, never on the machine.
@@ -746,7 +757,7 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
     let n = (f1 - f0) as usize;
     let threads = rayon::current_num_threads().max(1);
     // Chunk length: fixed by the frame count alone (never the machine), so output is identical on any core count.
-    let gop = std::env::var("ANIKIT_GOP").ok().and_then(|g| g.parse().ok()).unwrap_or_else(|| chunk_plan(n, 0).iter().map(|r| r.1 - r.0).max().unwrap_or(1) as u32);
+    let gop = std::env::var("ANIKIT_GOP").ok().and_then(|g| g.parse().ok()).unwrap_or_else(|| default_gop(n, ev.has_heavy_layers()));
     let qp = match opts.quality {
         Quality::Draft => 28,
         Quality::Good => 23,
@@ -853,7 +864,7 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
     };
     if opts.profile {
         eprintln!(
-            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}\n  idle    {idle:7.3}  (cores waiting: load imbalance, mux, startup)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
+            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}\n  idle    {idle:7.3}  (cores waiting, or nested parallel work in shaders/3D/post: not counted per stage)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
             unchanged,
             sp.held,
             sp.partial,

@@ -177,6 +177,10 @@ pub struct TrackSpec {
     pub humanize: Option<f32>,
     /// Ignore swing.
     pub straight: bool,
+    /// Effect chain: `[{"type":"delay","note":"1/8d","wet":0.2}, {"type":"reverb","preset":"plate","wet":0.15}]`.
+    pub fx: Option<serde_json::Value>,
+    /// Automation: `{"lp": [[0, 400], ["@bar5", 8000]], "pan": "=0.4*sin(beat*pi/4)", "synth.cutoff": [[0, 300], [16, 3000]]}`.
+    pub automate: Option<serde_json::Value>,
 }
 
 /// Master bus settings.
@@ -247,6 +251,8 @@ pub struct MusicSpec {
     pub gain: Option<f64>,
     /// Video only: duck under voice-over (`true` = 10 dB, a number = dB, `false` = never).
     pub duck: Option<serde_json::Value>,
+    /// Custom instruments by name: `{"wob": {"synth": {…}}, "kit": {"sampler": {"zones": […]}}}`.
+    pub define: BTreeMap<String, serde_json::Value>,
 }
 
 impl MusicSpec {
@@ -267,7 +273,7 @@ fn serde_path_to_error_free(de: &mut serde_json::Deserializer<serde_json::de::St
         if let Some(rest) = msg.strip_prefix("unknown field `") {
             let name = rest.split('`').next().unwrap_or("");
             let fields = [
-                "style", "bpm", "key", "meter", "swing", "mood", "length", "sections", "hits", "chords", "instruments", "mute", "tracks", "sfx", "master", "seed", "fit", "end", "midi", "at", "duck",
+                "style", "bpm", "key", "meter", "swing", "mood", "length", "sections", "hits", "chords", "instruments", "mute", "tracks", "sfx", "master", "seed", "fit", "end", "midi", "at", "duck", "define", "fx", "automate",
                 "inst", "clips", "notes", "drums", "steps", "play", "bass", "melody", "bars", "repeat", "octave", "vel", "transpose", "gain", "pan", "width", "reverb", "delay",
                 "duck", "eq", "comp", "drive", "lp", "hp", "humanize", "straight", "name", "at", "lufs", "ceiling", "fadeOut", "fadeIn", "reverbGain",
             ];
@@ -280,7 +286,7 @@ fn serde_path_to_error_free(de: &mut serde_json::Deserializer<serde_json::de::St
 }
 
 const CLIP_KEYS: &[&str] = &["at", "notes", "drums", "steps", "chords", "play", "bass", "melody", "bars", "repeat", "octave", "vel", "transpose"];
-const TRACK_KEYS: &[&str] = &["name", "inst", "clips", "humanize", "straight", "gain", "pan", "width", "reverb", "delay", "duck", "eq", "comp", "drive", "lp", "hp"];
+const TRACK_KEYS: &[&str] = &["name", "inst", "clips", "humanize", "straight", "fx", "automate", "gain", "pan", "width", "reverb", "delay", "duck", "eq", "comp", "drive", "lp", "hp"];
 
 /// Unknown keys on tracks and clips (serde's `flatten` can't reject them).
 pub fn check_track_keys(v: &serde_json::Value) -> Result<(), String> {
@@ -344,6 +350,10 @@ pub struct TrackPlan {
     pub mix: TrackMix,
     pub humanize: f32,
     pub straight: bool,
+    /// Effect chain (see [`crate::custom::fx_chain`]).
+    pub fx: Option<serde_json::Value>,
+    /// Automation (see [`crate::custom::TrackAuto`]).
+    pub automate: Option<serde_json::Value>,
 }
 
 /// A placed sound effect.
@@ -375,6 +385,8 @@ pub struct Arrangement {
     pub end: String,
     /// Reverb preset for the bus.
     pub reverb: String,
+    /// Custom instrument definitions (the spec's `define`).
+    pub defines: BTreeMap<String, serde_json::Value>,
 }
 
 impl Arrangement {
@@ -444,6 +456,8 @@ pub fn compile_tracks(spec: &MusicSpec, grid: &Grid, key: &Key, song_chords: Opt
             mix,
             humanize: t.humanize.unwrap_or(if is_drums { 0.15 } else { 0.3 }),
             straight: t.straight,
+            fx: t.fx.clone(),
+            automate: t.automate.clone(),
         });
     }
     Ok(out)
