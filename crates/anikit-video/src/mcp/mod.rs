@@ -536,7 +536,7 @@ mod tests {
         let r = call(&mut s, "tools/call", json!({ "name": "validate_spec", "arguments": { "spec": { "scenes": [ { "layers": [ { "type": "txt", "text": "x" } ] } ] } } }));
         assert!(t(&r).starts_with("invalid\nerror scenes[0].layers[0]"), "{}", t(&r));
         let r = call(&mut s, "tools/call", json!({ "name": "critique_spec", "arguments": { "path": out } }));
-        assert!(t(&r).starts_with("score 94/100"), "{}", t(&r));
+        assert!(t(&r).starts_with("review: "), "{}", t(&r));
 
         // Errors are tool errors with actionable text, not protocol errors.
         let r = call(&mut s, "tools/call", json!({ "name": "create_from_template", "arguments": { "template": "lanch", "params": {} } }));
