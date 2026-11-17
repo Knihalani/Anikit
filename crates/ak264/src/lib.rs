@@ -23,6 +23,7 @@ mod encoder;
 mod frame;
 mod headers;
 mod intra;
+mod lookahead;
 mod mc;
 pub mod mp4;
 mod simd;
@@ -54,6 +55,7 @@ pub fn encode_chunks(cfg: &EncoderConfig, frames: &[YuvFrame], hints: &[FrameHin
                 let h = if hints.is_empty() { &none } else { &hints[t] };
                 out.extend_from_slice(e.encode(&frames[t], h));
             }
+            out.extend_from_slice(e.flush());
             out
         })
         .collect();
@@ -117,6 +119,7 @@ where
                 }
                 out.extend_from_slice(e.encode(&buf.frame(), &hints));
             }
+            out.extend_from_slice(e.flush());
             Some(out)
         })
         .collect()

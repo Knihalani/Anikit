@@ -40,6 +40,18 @@ impl YuvBuffer {
     pub fn frame(&self) -> YuvFrame<'_> {
         YuvFrame::new(self.width, self.height, &self.y, &self.u, &self.v)
     }
+    /// Copy a frame of the same size (any strides) into this buffer.
+    pub fn copy_from(&mut self, f: &YuvFrame) {
+        let (w, h) = (self.width as usize, self.height as usize);
+        let (cw, ch) = (w.div_ceil(2), h.div_ceil(2));
+        for y in 0..h {
+            self.y[y * w..y * w + w].copy_from_slice(&f.y[y * f.y_stride..y * f.y_stride + w]);
+        }
+        for y in 0..ch {
+            self.u[y * cw..y * cw + cw].copy_from_slice(&f.u[y * f.c_stride..y * f.c_stride + cw]);
+            self.v[y * cw..y * cw + cw].copy_from_slice(&f.v[y * f.c_stride..y * f.c_stride + cw]);
+        }
+    }
     /// Concatenated planes (the layout of ffmpeg's `-pix_fmt yuv420p` rawvideo).
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut o = Vec::with_capacity(self.y.len() * 3 / 2);

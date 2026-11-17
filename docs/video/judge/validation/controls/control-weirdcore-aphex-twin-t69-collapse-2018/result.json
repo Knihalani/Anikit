@@ -1,0 +1,481 @@
+{
+  "name": "control-weirdcore-aphex-twin-t69-collapse-2018",
+  "tags": [
+    "music-video",
+    "3d-cg",
+    "beat-sync",
+    "camera-move",
+    "colour-swap",
+    "dark",
+    "eerie",
+    "energetic",
+    "flash-frame",
+    "frantic",
+    "generative",
+    "glitch",
+    "kinetic-type",
+    "music-led",
+    "neon",
+    "noise-field",
+    "particles",
+    "photo",
+    "raw",
+    "saturated",
+    "shader",
+    "technical",
+    "type-supporting",
+    "cg-3d"
+  ],
+  "refs": [
+    "dissembargo-f1-2026-opening-titles",
+    "artcamp-moosajee-thom-yorke-last-i-heard-2019",
+    "nexus-smith-foulkes-honda-grrr-2004"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 6,
+      "composition": 6,
+      "typography": 5,
+      "colour": 5,
+      "light_texture": 6,
+      "motion": 7,
+      "craft": 5,
+      "originality": 7
+    },
+    "overall": 5.88,
+    "judged_professional": "3/3",
+    "pro_rate": 1.0,
+    "mean_rank": 3.67,
+    "gaps": [
+      "The frames have no compositional hierarchy. Each needs one dominant read and negative space, the way D isolates one figure.",
+      "The stock sky and fire plates and the default shard materials undercut the glitch idea. Every element should come from the same scanned or broken world.",
+      "The colour jumps between frames (grey, saturated red, lilac, orange). One controlled grade would tie the destruction into a single piece.",
+      "The finish is uneven: textures smear and stretch, and the red alley reads as an artefact more than a design choice. Each world needs one consistent rendering grammar.",
+      "The colour has no through-line. Every scene uses a different, unrelated palette. A governing grade would make it feel like one film.",
+      "The logo reveal is buried in the noise. The structure needs a clearer climax where the deformation resolves into the mark.",
+      "Commit to one palette and lighting language so the techniques build to a single world instead of a collage of effects.",
+      "Clean up stretched textures and glitch artefacts so the distortion looks intentional rather than accidental.",
+      "Anchor the spectacle with a subject or narrative beat; right now it is effect with only a logo as subject."
+    ],
+    "tells": [
+      "It is experimental work with photogrammetry and point-cloud material. Scanned buildings fold into a fan, a street turns into red datamosh-like smears, and terrain erupts into shards. It is clearly authored and deliberately broken, not an accidental artefact.",
+      "The logo is embossed into the shattered stone plaza: type integrated into the world, not laid on top of it.",
+      "Each frame shows a different transformation (top-down, tunnel, eruption, inverted orbit), so there is real variety of camera and event.",
+      "Against it: the skies are stock-looking HDRI and fire plates, the shards are rendered harshly and untextured, and the frames are cluttered without a clear focal hierarchy. The finish is uneven, more R&D than polished studio work.",
+      "The frames come from real procedural or photogrammetric deformation: a city folding into a monogram, an alley extruded in red, a terrain of crystalline shards, and buildings curled into a planetoid around a radial white sculpture. It is experimental 3D, not stock primitives.",
+      "The worlds and palettes vary strongly from frame to frame (cool grey, saturated red, pastel sky, fire-orange), which implies a fly-through structure with strong momentum.",
+      "There are signs of an authored brand mark embedded in the geometry (the emblem in frame 1).",
+      "Photogrammetry and procedural displacement: a logo extruded out of fractured stone terrain, a datamoshed red alley, crystalline spikes, and a polar-warped building ring around a radial sculpture. These are energetic, experimental, ident-style ideas.",
+      "Each frame uses a different technique and palette, which implies fast, varied motion, but the piece lacks a unifying look.",
+      "The colour jumps from grey to saturated red to stormy sky to fire with no deliberate system, so it reads closer to a VJ loop than to authored grading.",
+      "Displacement artefacts and stretched textures look in places like default effects rather than art-directed craft.",
+      "The only typography is the logo mark embossed in the terrain. That integration is good, but it's the only type gesture."
+    ]
+  },
+  "refs_summary": {
+    "dissembargo-f1-2026-opening-titles": {
+      "overall": 6.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    },
+    "artcamp-moosajee-thom-yorke-last-i-heard-2019": {
+      "overall": 7.5,
+      "judged_professional": "2/3",
+      "mean_rank": 2
+    },
+    "nexus-smith-foulkes-honda-grrr-2004": {
+      "overall": 6,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 6.71,
+  "delta": -0.83,
+  "trials": [
+    {
+      "key": {
+        "A": "nexus-smith-foulkes-honda-grrr-2004",
+        "B": "dissembargo-f1-2026-opening-titles",
+        "C": "candidate",
+        "D": "artcamp-moosajee-thom-yorke-last-i-heard-2019"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 5,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "Deliberately kitsch, maximalist 3D storybook world: rainbow, swan, deer and a peacock whose tail feathers spell 'CREATE', topiary letters, and seals balancing lettered balls to spell 'CHANGE'. Each word is built from a different object, so the type idea is specific and witty, not slide text.",
+              "A rusty, photoreal engine and a flamingo carrying an oar sit inside a saccharine CG paradise. The mismatch of materials is a surreal, collage-like choice, not a default.",
+              "The scenes are layered, with foreground, midground and background parallax, god rays and water reflections, and they are busy in the right way.",
+              "Against it: the first and third frames are almost identical, which suggests a held shot or a loop. The candy palette and evenly lit, early-2010s CG rendering now look dated and over-sweet."
+            ],
+            "gaps": [
+              "The pastel CG is lit flat and the same everywhere. Directional, motivated light and a grade with restraint would turn the kitsch from cheap-looking into knowing.",
+              "The repeated engine-and-flamingo frame suggests thin choreography. It needs more variety of shot scale and camera move from beat to beat.",
+              "The palette is the full rainbow everywhere. A tighter, deliberate palette like D's would give the irony some authorship."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 5,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "This is broadcast sports packaging: real shoots of the drivers with low-key red rim light, controlled shadow and skin texture. The light is motivated and professional.",
+              "Huge cropped surnames ('BOT\u2026', 'VER\u2026') sit behind the subjects in bold extended type. The scale contrast is good and the layering behind the head is competent, but it is a very familiar F1/UFC/NBA intro convention.",
+              "The first frame is a crowded key-art group composite with the logo bars across the top. It reads like a thumbnail or poster, not a designed moment in a sequence.",
+              "The structure is one portrait plus one name, repeated: the same layout with the driver swapped. The red and black palette is brand-default."
+            ],
+            "gaps": [
+              "There is no idea beyond 'driver + name'. It needs a concept specific to this season or this sport, like the single visual metaphor D carries through every frame.",
+              "The repeated portrait-and-name layout should change from beat to beat. Vary the framing, let type interact with motion and speed, and break the template.",
+              "The palette and grade are pure brand red and black. A more distinctive grade or texture (grain, smoke, rubber, heat) would make it memorable."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 5,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 5,
+              "originality": 7
+            },
+            "tells": [
+              "It is experimental work with photogrammetry and point-cloud material. Scanned buildings fold into a fan, a street turns into red datamosh-like smears, and terrain erupts into shards. It is clearly authored and deliberately broken, not an accidental artefact.",
+              "The logo is embossed into the shattered stone plaza: type integrated into the world, not laid on top of it.",
+              "Each frame shows a different transformation (top-down, tunnel, eruption, inverted orbit), so there is real variety of camera and event.",
+              "Against it: the skies are stock-looking HDRI and fire plates, the shards are rendered harshly and untextured, and the frames are cluttered without a clear focal hierarchy. The finish is uneven, more R&D than polished studio work."
+            ],
+            "gaps": [
+              "The frames have no compositional hierarchy. Each needs one dominant read and negative space, the way D isolates one figure.",
+              "The stock sky and fire plates and the default shard materials undercut the glitch idea. Every element should come from the same scanned or broken world.",
+              "The colour jumps between frames (grey, saturated red, lilac, orange). One controlled grade would tie the destruction into a single piece."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "It is high-contrast monochrome with heavy grain, haze and dust. The light is volumetric and motivated: a smoke burst lit from behind, fog under an overpass, a raking diagonal shaft that casts long crowd shadows.",
+              "The choreography is clear across the frames: a crowd fleeing smoke, then drifting through fog, then scattering across a light shaft, then a single luminous figure alone in darkness. The sequence narrows from the many to the one.",
+              "Every frame works as a poster, using scale, silhouette and negative space. Having no type serves the piece: it is pure image and atmosphere.",
+              "Doubts: the figures are soft and smeared, and the last figure's glowing, melted outline could be an AI-video artefact. That is why confidence is moderate, but the art direction and light continuity are consistent and deliberate."
+            ],
+            "gaps": [
+              "The figures need more defined anatomy and gait in the crowd shots. Soft, smeared silhouettes invite the 'AI' reading and weaken the human weight of the motion.",
+              "The final glowing figure needs a clearly designed treatment (a deliberate light source or material) so it reads as intent, not artefact.",
+              "Tonal range: the frames lean on the same haze-and-grain recipe. A sharper beat with true blacks or hard detail would add punctuation."
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 38.0,
+        "cost_usd": 0.15087060000000002,
+        "tokens": 70400,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "nexus-smith-foulkes-honda-grrr-2004",
+        "B": "dissembargo-f1-2026-opening-titles",
+        "C": "artcamp-moosajee-thom-yorke-last-i-heard-2019",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The kitsch is deliberate: an oversaturated storybook world with rainbows, sunbursts and a hedge maze, with a rusted, greasy engine block dropped into it. That collision has a point of view.",
+              "The type is built from objects in the scene: topiary letters, peacock-feather eye-spots spelling 'CREATE', and 'CHANGE' on striped balls balanced by seals on plinths. This is an integrated typographic idea, not text placed on top of the image.",
+              "The props are dense and specific: a flamingo carrying a paddle, deer, a swan, lily pads, and a rainbow-striped object entering from the edge of the frame. The materials differ (metal, feathers, glossy plastic, water reflections).",
+              "The camera and set change from wide landscape to lake tableau to circus stage, which suggests an authored journey rather than one repeated layout."
+            ],
+            "gaps": [
+              "The deliberately saccharine palette is close to stock 'fantasy' rendering. A more particular colour grade would make the irony sharper.",
+              "The sampled frames repeat the engine/flamingo shot. The piece needs more visible escalation and more change in scale and pacing from beat to beat.",
+              "The foreground skies and clouds have a pasted-in quality. They need the same material care as the engine so the collage reads as intended everywhere."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 6,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "This is a real broadcast title package shot with the actual drivers. The portrait lighting is controlled: hard key, red rim light, deep falloff, skin texture kept.",
+              "The type is cropped very large behind the heads ('BOT\u2026', '\u2026VER') in the series' own display face, so the names work as architecture.",
+              "The red/black grade is consistent across the series and fits the brand world.",
+              "The cuts move from a group key-art shot to tight close-ups and change scale, which suggests edited pacing."
+            ],
+            "gaps": [
+              "The format is a genre default: a moody driver close-up with a huge name behind it. It needs one idea that belongs only to this season or this sport.",
+              "The opening group frame is a flat composite in the style of a promotional poster, much weaker than the lit portraits. It should be cut or brought up to the same lighting standard.",
+              "There is little evidence of choreography between type and subject. The letters should interact with the light, the occlusion or the motion of the driver."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 5,
+              "originality": 7
+            },
+            "tells": [
+              "The frames come from real procedural or photogrammetric deformation: a city folding into a monogram, an alley extruded in red, a terrain of crystalline shards, and buildings curled into a planetoid around a radial white sculpture. It is experimental 3D, not stock primitives.",
+              "The worlds and palettes vary strongly from frame to frame (cool grey, saturated red, pastel sky, fire-orange), which implies a fly-through structure with strong momentum.",
+              "There are signs of an authored brand mark embedded in the geometry (the emblem in frame 1)."
+            ],
+            "gaps": [
+              "The finish is uneven: textures smear and stretch, and the red alley reads as an artefact more than a design choice. Each world needs one consistent rendering grammar.",
+              "The colour has no through-line. Every scene uses a different, unrelated palette. A governing grade would make it feel like one film.",
+              "The logo reveal is buried in the noise. The structure needs a clearer climax where the deformation resolves into the mark."
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 4,
+              "composition": 6,
+              "typography": 4,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 4,
+              "craft": 3,
+              "originality": 3
+            },
+            "tells": [
+              "The look is generic, 'tasteful' AI: high-contrast black and white, grain, haze, faceless silhouettes in smoke and shafts of light. It is atmosphere with no subject.",
+              "The figures are mushy and anatomically vague. The final lone figure is a smeared, glowing ghost with indistinct limbs and a doubled outline, which is typical of diffusion video.",
+              "Every frame uses the same emotional register and grammar (anonymous crowd, fog, backlight), so there is little variety or choreography.",
+              "There is no type, and its absence doesn't add anything. Nothing anchors the piece to an idea or a message."
+            ],
+            "gaps": [
+              "It needs a specific idea or protagonist. Right now the frames are interchangeable crowd moods that any prompt could produce.",
+              "Bodies and gesture need real performance and physical weight: legible faces, hands and footfall instead of melted silhouettes.",
+              "It needs an authored structure, such as a typographic or narrative device that builds across frames, plus a framing choice the viewer would remember."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 35.9,
+        "cost_usd": 0.14795540000000001,
+        "tokens": 70263,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "artcamp-moosajee-thom-yorke-last-i-heard-2019",
+        "B": "dissembargo-f1-2026-opening-titles",
+        "C": "nexus-smith-foulkes-honda-grrr-2004",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 6,
+              "originality": 8
+            },
+            "tells": [
+              "A strict monochrome, grainy palette that commits fully. It reads like reportage and evokes riot photography and crowd films.",
+              "Light is used as the subject: smoke backlit as a white wall, a hard diagonal light shaft that splits the crowd, and haze down a colonnade.",
+              "A clear arc across the frames: a crowd fleeing, then a drifting mass, then a scattered field, then one isolated figure. That shows thought about structure.",
+              "Every frame works as a poster. The silhouettes are graphic and the scale between the figures and the space is well judged.",
+              "Against this: the figures are soft and smeared, and the lone figure in the last frame looks melted and stretched. That is a possible generative tell and the reason confidence is low.",
+              "No type is visible. Its absence suits the documentary, wordless tone."
+            ],
+            "gaps": [
+              "Fix figure anatomy and edges, especially the final lone figure, so the closing image doesn't read as smeared or generative.",
+              "Add one detailed, readable human moment (a face or a gesture) to anchor the anonymous masses emotionally.",
+              "Vary the camera grammar more (a close insert, a different lens) so the choreography isn't all wide tableaux at the same distance."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 8,
+              "originality": 5
+            },
+            "tells": [
+              "Real talent shoot with properly lit hero portraits: red rim light, low-key faces and convincing skin texture.",
+              "Driver names are set huge, cropped and placed behind the head (BOT\u2026, VER\u2026). It's a standard sports-package device but it's executed cleanly.",
+              "A disciplined red and black palette that ties back to the brand.",
+              "The ensemble key-art frame is crowded and composited, which is typical of broadcast promo.",
+              "The idea is the genre default for a sports-season opener: hero walk-ups plus giant names. Nothing a viewer hasn't seen many times."
+            ],
+            "gaps": [
+              "Find a concept specific to this season or these rivalries rather than the generic portrait-plus-name formula.",
+              "Push the typography beyond cropped wide caps behind the head, for example letterforms that interact with light or motion, or a custom display face.",
+              "The group composite is cluttered and flat next to the portraits. Re-stage it with real light and depth or cut it."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 5,
+              "motion": 5,
+              "craft": 6,
+              "originality": 6
+            },
+            "tells": [
+              "Deliberate, ironic kitsch maximalism: a rusty engine floating in a candy landscape, a flamingo with an oar, a peacock tail spelling CREATE, and seals balancing balloons that spell CHANGE. These are authored visual puns, not generator output.",
+              "The letters are carried by objects in the scene (hedges, feathers, balls), so the type has an idea behind it even though the letterforms are bubbly defaults.",
+              "The rainbow and sunburst palette is saccharine on purpose, but the light is flat CG with little material depth beyond the engine.",
+              "The same frame appears twice in the sample, which suggests a long hold or a loop with little choreography.",
+              "It feels dated, like mid-2000s CG compositing, and the 'create change' message is literal."
+            ],
+            "gaps": [
+              "Give the light and materials real weight. Only the engine has texture, while the world around it is plastic and flat.",
+              "Push the irony or narrative further so the contrast between engine and fairy-tale becomes a memorable twist rather than a one-note gag.",
+              "Choreograph the transitions between tableaux. The frames read as separate set pieces with long holds."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.5,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 5,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 5,
+              "originality": 6
+            },
+            "tells": [
+              "Photogrammetry and procedural displacement: a logo extruded out of fractured stone terrain, a datamoshed red alley, crystalline spikes, and a polar-warped building ring around a radial sculpture. These are energetic, experimental, ident-style ideas.",
+              "Each frame uses a different technique and palette, which implies fast, varied motion, but the piece lacks a unifying look.",
+              "The colour jumps from grey to saturated red to stormy sky to fire with no deliberate system, so it reads closer to a VJ loop than to authored grading.",
+              "Displacement artefacts and stretched textures look in places like default effects rather than art-directed craft.",
+              "The only typography is the logo mark embossed in the terrain. That integration is good, but it's the only type gesture."
+            ],
+            "gaps": [
+              "Commit to one palette and lighting language so the techniques build to a single world instead of a collage of effects.",
+              "Clean up stretched textures and glitch artefacts so the distortion looks intentional rather than accidental.",
+              "Anchor the spectacle with a subject or narrative beat; right now it is effect with only a logo as subject."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 36.9,
+        "cost_usd": 0.14951520000000001,
+        "tokens": 70337,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.448,
+  "judge_seconds": 110.8,
+  "verdict": "PASS"
+}

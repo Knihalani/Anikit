@@ -1,0 +1,26 @@
+{
+  "slug": "hermes-buck",
+  "title": "Hermès — animated campaign",
+  "studio": "BUCK",
+  "year": 2019,
+  "url": "https://buck.co/work/hermes",
+  "frame_sources": [
+    "https://cdn.sanity.io/images/uk7b627p/production/39cb264c7712c75622b5760af1a7af521533f612-800x800.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/58b798c78e5397512ede44b52fb5db2f745cee3f-800x800.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/c79d08abc0380b55c761d2bff9b807280ebec8f5-800x800.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/d0e29760d90c972f1214610e34c6152529b22034-800x800.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/48f9cb6f7ea5480f4cdb6ae4d1ba8bd55bb4f393-800x800.png",
+    "https://cdn.sanity.io/images/uk7b627p/production/0911cc209f7a6533433602febf862c4dc1d33927-800x800.png"
+  ],
+  "style_tags": [
+    "luxury",
+    "illustration",
+    "motion-design",
+    "square"
+  ],
+  "format": "1:1",
+  "medium": "2D",
+  "description": "Circus animals, horseshoes and pattern-bands drawn in a silk-scarf style on deep Hermès red with tulip ornaments; later shots become dense op-art patterns.",
+  "why_top_tier": "Translates the house's scarf illustration tradition into motion with print-level detail.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright Hermès"
+}

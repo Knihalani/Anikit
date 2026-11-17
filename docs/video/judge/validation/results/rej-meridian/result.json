@@ -1,0 +1,471 @@
+{
+  "name": "rej-meridian",
+  "tags": [
+    "3d-cg",
+    "motion-design",
+    "title-sequence"
+  ],
+  "refs": [
+    "game-of-thrones",
+    "fitc-tokyo-2015",
+    "the-crown"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 4,
+      "typography": 2,
+      "colour": 4,
+      "light_texture": 4,
+      "motion": 2,
+      "craft": 3,
+      "originality": 2
+    },
+    "overall": 3,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It has no idea: nothing ties the corridor to whatever 'Meridian' is. Like B, it needs a concept specific to the subject that would drive both the world and the camera",
+      "The type needs to become a designed element (scale, placement, interaction with the architecture) rather than a corner label",
+      "It needs cuts, changes of scale and events between frames, plus real material detail in the architecture, so the piece moves past a single static render",
+      "Build a real idea and structure: change scale, viewpoint and events across the film, not one dolly through one corridor; study B's progression from map to mechanism to emblem",
+      "Give the architecture material and imperfection (stone, water caustics, dust, weathering) and light it with intent, not a default sun and bloom",
+      "Make the typography a designed element integrated with the space, with scale, a custom or deliberately chosen face and a resolve, instead of a corner label",
+      "It has no idea specific to the subject; it needs a concept the way B turns the world into a self-building mechanism",
+      "Materials and detail are needed: weathered stone, real water caustics and atmosphere, instead of untextured primitives under default sun-and-sky lighting",
+      "It needs choreography and typography with a point of view: varied shots, scale shifts, and type built into the architecture instead of a corner label"
+    ],
+    "tells": [
+      "One composition repeated across every frame: a symmetrical one-point-perspective corridor of plain extruded box arches over a reflecting pool. Little changes beyond a tiny drift forward",
+      "The only type is a small tracked-caps label, 'MERIDIAN', with an accent underline in the corner. This is the classic generic wordmark with no typographic idea, scale or integration",
+      "Stock primitive architecture on a flat desert plane with a featureless sky: an 'effect with no subject' and a generic AI or real-time-render look",
+      "The light is pleasant golden-hour but formulaic: one glowing vanishing-point portal and clean shadows, with no texture, weathering or material on the concrete",
+      "Only 4 frames were sampled and they are nearly identical, so there is no choreography, variety or surprise",
+      "The same symmetrical one-point composition (an infinite corridor of portals over a reflecting pool towards a glowing vanishing point) repeats in every frame with only small drift, so little happens",
+      "The geometry is stock 3D primitives: untextured extruded boxes on a featureless desert plane, with no material, weathering or detail",
+      "The only type is a small tracked-caps 'MERIDIAN' label in the corner with a tiny accent underline, the classic generic 'tasteful AI' brand tag, with no headline, no scale contrast and no typographic idea",
+      "The light is a default sun or sky setup with a soft bloom at the vanishing point; the warm haze is pleasant but generic",
+      "The idea is a literal 'light at the end of the tunnel / meridian line', obvious and unmemorable; the entry also has only 4 frames, which shows how little the sequence evolves",
+      "The same one-point-perspective composition repeats in every frame, so almost nothing happens across the sequence",
+      "The only type is a small tracked-caps label ('MERIDIAN') in a generic sans with a tiny accent underline, placed in the corner like a slide header: the stock 'tasteful AI' formula",
+      "Stock 3D primitives (box arches, a flat water channel, a plain desert plane) with no surface texture or detail",
+      "The idea is literal: a corridor toward a light, with 'Meridian' standing in for a concept",
+      "Only four frames, which suggests a very short or static piece"
+    ]
+  },
+  "refs_summary": {
+    "game-of-thrones": {
+      "overall": 9,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "fitc-tokyo-2015": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "the-crown": {
+      "overall": 8,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 8.25,
+  "delta": -5.25,
+  "trials": [
+    {
+      "key": {
+        "A": "the-crown",
+        "B": "game-of-thrones",
+        "C": "candidate",
+        "D": "fitc-tokyo-2015"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Macro shots of a crown taking shape: molten gold, cast metal, set gems. The object is built up over the sequence, which ties the image to the show's subject of power being formed",
+              "Real physically based light: caustics in the faceted stone, specular glints on the beading, smoke and shallow depth of field. The material reads as metal and stone, not stock 3D",
+              "Frames vary in scale and angle: close-ups of raw ore, a branch-like gold stroke, a rosette, a gem pavilion, then the reveal. That shows a planned camera path rather than one repeated layout",
+              "Credit type is small classical caps in a few weights, placed in the negative space each shot leaves, so the layout changes with every image",
+              "Palette is held to black, bronze and silver. Restrained, but motivated by the subject"
+            ],
+            "gaps": [
+              "The dark ground, small tracked classical caps and centred serif end title come close to the 'tasteful prestige' formula. The typography needs one less expected move, such as type that interacts with the metal or carries more scale contrast",
+              "The idea is literal: the crown is shown as a crown. B turns the whole world into a mechanism. A needs a second layer of meaning beyond the object being assembled",
+              "The motion implied is slow push-ins on single objects. There is little linkage between shots compared with B's continuous mechanical choreography"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 10,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A specific and memorable idea that only this piece could have: the world is a clockwork map whose cities unfold from gears, with an astrolabe sun at the centre. The concept also works as a recap device and as an orientation tool for the viewer",
+              "Dense, layered frames: engraved bands carrying narrative reliefs, mechanical towers, a parchment map with rivers, sun rings, and an emblem lockup. Every frame works as a poster",
+              "Typography has a point of view. Credits are set in a carved display face with small house sigils beside the names, and the logotype is integrated into the ironwork emblem",
+              "Warm sepia and brass with burnt-out sunlight, and real tooling and wood-and-metal textures throughout",
+              "Clear choreography: the frames move from the band, to cities unfolding, to the gear spire, to the astrolabe, to the map, to the emblem, as one continuous flight through a single machine"
+            ],
+            "gaps": [
+              "The flare and blooming on the brass are pushed hard in places and flatten detail at the extremes",
+              "Credit placement occasionally fights busy mechanical detail, for example over the spire and the map, and legibility suffers",
+              "The palette is strong but conventional for fantasy. A less expected colour hold would raise it further"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 5,
+              "motion": 2,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "One composition repeated across every frame: a symmetrical one-point-perspective corridor of plain extruded box arches over a reflecting pool. Little changes beyond a tiny drift forward",
+              "The only type is a small tracked-caps label, 'MERIDIAN', with an accent underline in the corner. This is the classic generic wordmark with no typographic idea, scale or integration",
+              "Stock primitive architecture on a flat desert plane with a featureless sky: an 'effect with no subject' and a generic AI or real-time-render look",
+              "The light is pleasant golden-hour but formulaic: one glowing vanishing-point portal and clean shadows, with no texture, weathering or material on the concrete",
+              "Only 4 frames were sampled and they are nearly identical, so there is no choreography, variety or surprise"
+            ],
+            "gaps": [
+              "It has no idea: nothing ties the corridor to whatever 'Meridian' is. Like B, it needs a concept specific to the subject that would drive both the world and the camera",
+              "The type needs to become a designed element (scale, placement, interaction with the architecture) rather than a corner label",
+              "It needs cuts, changes of scale and events between frames, plus real material detail in the architecture, so the piece moves past a single static render"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Type-led kinetic piece with a strong system: modular Latin letters are cut into fragments and mixed with katakana-like glyphs, so the Latin/Japanese pun is built into the letterforms",
+              "Each frame uses a different layout: a giant cropped 'D' with a target ring, a horizontal letter band, a framed grid of scattered glyphs, a diagonal slash with confetti-like strokes, a pixel-dot matrix of letters, and a collage lockup",
+              "Deliberate, unusual palette: hot pink, mint cyan, acid lime and violet on a near-black ground. The colour holds change from frame to frame but stay within one system",
+              "Texture is designed in through halftone dots, scanline grain, pixel matrices and print misregistration",
+              "The frames imply varied choreography, with scrolling, scattering, rotation and dot-matrix rebuilding, and the end lockup pulls the motifs together"
+            ],
+            "gaps": [
+              "The idea is mostly a formal type system. B has a narrative or world concept that makes it memorable beyond the style",
+              "The glitch and pixel vocabulary of the late 2010s risks reading as a genre exercise. One move that belongs only to this subject would set it apart",
+              "The frames are flat: they have depth of layering but no light. A dimensional or physical element would add the material richness that B and A carry"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 35.0,
+        "cost_usd": 0.162853,
+        "tokens": 72337,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "the-crown",
+        "B": "game-of-thrones",
+        "C": "fitc-tokyo-2015",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The macro photography of molten, cooling metal forming into jewelled regalia makes 'the crown being made' the idea itself, and it belongs to this subject only",
+              "The light is real and motivated: a low-key raking light picks out specular glints on gold and the facets of the gemstones, with smoke and haze adding depth",
+              "The credits are set in a carefully chosen spaced Trajan-like roman with small-cap role labels, placed asymmetrically to sit against the image, never on top of it",
+              "The sequence builds from raw ore to finished gem to the title card, and each frame changes scale and angle (rough mass, filament, fully worked setting)",
+              "The palette is deliberately limited to black, bronze and cold silver, which suits a period drama about royalty"
+            ],
+            "gaps": [
+              "Every shot uses the same move (shallow-focus macro drifting across metal), so it lacks the structural surprise and change of mode that B gets from moving between map and mechanism",
+              "The end title is centred on an almost empty dark ground, a safe and slightly generic resolve compared with the built, lit emblem in B",
+              "The dark-luxury macro look is an established genre language; it needs one unexpected cut or a change in scale to push it beyond the category"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "The concept is specific and memorable: the world as a clockwork map, with cities and castles cranking up out of the terrain, and the device doubles as a guide to the show's geography",
+              "The frames are dense and layered, with engraved astrolabe bands showing dragon iconography, miniature cities, gears and sigils, so every frame works as a poster",
+              "There is real material texture (worn wood, tarnished brass, engraved leather) and strong motivated light: a central sun flares through the astrolabe and the shadows are tabletop-scale",
+              "The frames show varied choreography: a close-up of the band, a low aerial over a city, a tower mechanism rising, a sweep of the armillary rings, a flat map with a pin, and the resolve on the emblem title",
+              "The type has a point of view: a custom-flavoured inscriptional serif, with heraldic sigil icons attached to each credit and labels set into the map itself"
+            ],
+            "gaps": [
+              "The credit placement in the lower third of the mid-sequence frames gets slightly lost against busy detail; the type could integrate more boldly with the mechanisms",
+              "The warm sepia grade is used throughout; a deliberate colour shift between regions would add a contrasting chapter",
+              "The final logo lockup is heavier and more conventional than the inventive frames that lead up to it"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 9,
+              "colour": 9,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "The typography is the subject: Latin glyphs break down into katakana-like fragments, pixel-grid letterforms and segmented display characters, which is a real typographic idea about Tokyo and signage systems",
+              "The palette is unusual and deliberate (hot pink, mint cyan, acid lime, violet on a near-black ground) and stays controlled throughout",
+              "Every frame has a different structure (large modular letters, horizontal band scan, framed glyph field, diagonal rotated grid, LED dot-matrix, layered collage resolve), which shows choreography and escalation",
+              "Printed or riso-like grain and texture on the flat colour fields stop it from looking vector-default",
+              "The final frame builds 'TOKYO' as a dense layered collage, a payoff that is earned by the earlier frames"
+            ],
+            "gaps": [
+              "It sits within a well-known glitch/HUD/kinetic-type genre language; it needs a sharper idea specific to this subject to rival B's concept",
+              "There is no real light or depth; everything is flat graphic planes, while B gets its emotion from material and illumination",
+              "Readability and hierarchy break down in the busiest frames (the dot-matrix frame especially), so the narrative message is weaker than the visual energy"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same symmetrical one-point composition (an infinite corridor of portals over a reflecting pool towards a glowing vanishing point) repeats in every frame with only small drift, so little happens",
+              "The geometry is stock 3D primitives: untextured extruded boxes on a featureless desert plane, with no material, weathering or detail",
+              "The only type is a small tracked-caps 'MERIDIAN' label in the corner with a tiny accent underline, the classic generic 'tasteful AI' brand tag, with no headline, no scale contrast and no typographic idea",
+              "The light is a default sun or sky setup with a soft bloom at the vanishing point; the warm haze is pleasant but generic",
+              "The idea is a literal 'light at the end of the tunnel / meridian line', obvious and unmemorable; the entry also has only 4 frames, which shows how little the sequence evolves"
+            ],
+            "gaps": [
+              "Build a real idea and structure: change scale, viewpoint and events across the film, not one dolly through one corridor; study B's progression from map to mechanism to emblem",
+              "Give the architecture material and imperfection (stone, water caustics, dust, weathering) and light it with intent, not a default sun and bloom",
+              "Make the typography a designed element integrated with the space, with scale, a custom or deliberately chosen face and a resolve, instead of a corner label"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 32.6,
+        "cost_usd": 0.160208,
+        "tokens": 72177,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "fitc-tokyo-2015",
+        "B": "game-of-thrones",
+        "C": "the-crown",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 9,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Built entirely from typography: Latin and katakana glyphs are broken into modular fragments that assemble into 'TOKYO' and pull apart again, so the type is the image",
+              "Unusual, deliberate palette of hot pink, cyan, acid lime and violet on near-black, with the ground changing from frame to frame",
+              "Every frame uses a different system (huge cropped letterform, horizontal scan band, framed glyph field, diagonal shard rain, dot-matrix pixels, layered collage), which points to real choreography rather than a repeated layout",
+              "Fine grain, print-like misregistration and dense micro-detail in the dot grids",
+              "Scale contrast is expressive: a frame-filling 'D' and target sit against tiny scattered glyphs"
+            ],
+            "gaps": [
+              "No physical light or material; the flat-graphic world never gains the dimensional depth and lighting that B's sculpted miniatures have",
+              "The glitch/data aesthetic is crowded territory; it needs one emotional or narrative beat beyond 'city as signal' to be as memorable as B's map idea",
+              "Frames 5\u20136 get busy enough to lose hierarchy; a clearer resolve or end card would land the piece the way B's logo lockup does"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 10,
+              "motion": 9,
+              "craft": 10,
+              "originality": 10
+            },
+            "tells": [
+              "A specific idea only this piece could have: the world rendered as a clockwork map that builds itself, with cities unfolding from cogs. It is a sequence people remember and share",
+              "Physical material is everywhere: engraved metal bands, wood, brass gears, parchment map, with motivated light coming from a central astrolabe sun",
+              "Clear choreography: an extreme close-up on a relief band, a tilt across a miniature city, a tower mechanism, the astrolabe rings, a pull-out to the map, then a logo resolve built from the same metalwork",
+              "Credits are set in a carefully chosen period serif with sigil icons and sit inside the world's perspective instead of reading like a slide",
+              "Warm, limited palette of brass, umber and verdigris that stays consistent with the subject"
+            ],
+            "gaps": [
+              "Typography is well chosen but conventional (centred trajan-like serif); the type is not part of the mechanism the way the imagery is",
+              "The credit text is small and sometimes fights busy detail (frame 3); it could use more integration or a dedicated negative space",
+              "The flare-heavy logo frame leans on bloom more than the rest of the piece and is the least restrained moment"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 7,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "The central idea is clear: molten gold and gemstones forming the crown, which works as a metaphor for how the institution is made",
+              "Macro photography/CG with convincing material: cooling metal crust, smoke, refractive stones, specular pinpoints, shallow depth of field",
+              "The palette is restrained and deliberate: near-black, burnished gold and cold silver for the title",
+              "Credits use a refined, widely tracked classical serif placed asymmetrically in negative space, with a clear size hierarchy between the role label and the name",
+              "Frames progress from raw ore to formed metal to set jewels to the title, so the piece has a material arc"
+            ],
+            "gaps": [
+              "Dark ground, small tracked serif and a single gold accent sit close to the generic 'prestige' formula; B's world-building idea is far more specific",
+              "Motion appears to be one register (slow macro drift); it lacks the scale changes and spatial reveals of B's camera",
+              "The end card is a plain centred wordmark on an empty dark field; it needs a lockup that grows out of the material as B's logo does"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.88,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 2,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same one-point-perspective composition repeats in every frame, so almost nothing happens across the sequence",
+              "The only type is a small tracked-caps label ('MERIDIAN') in a generic sans with a tiny accent underline, placed in the corner like a slide header: the stock 'tasteful AI' formula",
+              "Stock 3D primitives (box arches, a flat water channel, a plain desert plane) with no surface texture or detail",
+              "The idea is literal: a corridor toward a light, with 'Meridian' standing in for a concept",
+              "Only four frames, which suggests a very short or static piece"
+            ],
+            "gaps": [
+              "It has no idea specific to the subject; it needs a concept the way B turns the world into a self-building mechanism",
+              "Materials and detail are needed: weathered stone, real water caustics and atmosphere, instead of untextured primitives under default sun-and-sky lighting",
+              "It needs choreography and typography with a point of view: varied shots, scale shifts, and type built into the architecture instead of a corner label"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "C",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.5,
+        "cost_usd": 0.1559042,
+        "tokens": 71964,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.479,
+  "judge_seconds": 98.1,
+  "verdict": "FAIL"
+}

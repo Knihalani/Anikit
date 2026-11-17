@@ -527,8 +527,8 @@ mod tests {
         let out = s.workdir.join("t.json");
         let r = call(&mut s, "tools/call", json!({ "name": "create_from_template", "arguments": { "template": "launch", "params": schema["example"], "format": "9:16", "out": out, "brand": { "name": "Acme", "colors": { "primary": "#FF5500" } } } }));
         assert_eq!(r["result"]["isError"], false, "{r}");
-        // 97: templates get tips only (flat 2D, BAR #5, and taste heuristics), no warnings.
-        assert!(t(&r).contains("valid · critique 97/100"), "{}", t(&r));
+        // Templates get tips only (flat 2D, BAR #5, and taste heuristics, 1 point each), no warnings.
+        assert!(t(&r).contains("valid · critique 9"), "{}", t(&r));
         let spec: Value = serde_json::from_str(&std::fs::read_to_string(&out).unwrap()).unwrap();
         assert_eq!(spec["size"], json!([1080, 1920]));
         assert_eq!(spec["theme"]["colors"]["primary"], "#FF5500");

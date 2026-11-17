@@ -1,0 +1,62 @@
+{
+ "blender-studio-charge-2022": {
+  "aspect": "21:9",
+  "audio": {
+   "bpm": 120.1,
+   "cuts_on_beat": 0.36,
+   "cuts_on_downbeat": 0.11
+  },
+  "cuts_per_minute": 10.3,
+  "duration": 262.708,
+  "glow": 0.0,
+  "grain": 0.001,
+  "longest_shot": 86.5,
+  "mean_luma": 0.25,
+  "mean_shot": 5.711,
+  "median_shot": 1.625,
+  "pace": "steady",
+  "palette": [
+   "#161511",
+   "#42392F",
+   "#000000",
+   "#7D695D",
+   "#B1B2A6",
+   "#3E2695"
+  ],
+  "shot_count": 46,
+  "style_summary": "21:9 dark clip, 262.7 s, 46 shots (median 1.62 s, longest 86.50 s): steady pace. Transitions: 33 cut, 11 zoom, 1 crossfade. Palette led by #161511, #42392F, #000000. Camera moves in 36/46 shots; text in 3/46. Looks like: scene3d \u00d735, 2d-motion-graphics \u00d78, particles \u00d72, kinetic-type \u00d71. Finish: vignette. Music \u2248 120 BPM; 36% of cuts on a beat.",
+  "technique_mix": [
+   [
+    "scene3d",
+    35
+   ],
+   [
+    "2d-motion-graphics",
+    8
+   ],
+   [
+    "particles",
+    2
+   ],
+   [
+    "kinetic-type",
+    1
+   ]
+  ],
+  "transition_mix": [
+   [
+    "cut",
+    33
+   ],
+   [
+    "zoom",
+    11
+   ],
+   [
+    "crossfade",
+    1
+   ]
+  ],
+  "vignette": 0.6
+ }
+}

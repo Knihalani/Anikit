@@ -1,0 +1,513 @@
+{
+  "name": "div-a-halde",
+  "tags": [
+    "illustration",
+    "square",
+    "motion-design"
+  ],
+  "refs": [
+    "hermes-buck",
+    "calm-sleep",
+    "new-yorker-festival"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 3,
+      "composition": 4,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 4,
+      "motion": 3,
+      "craft": 4,
+      "originality": 2
+    },
+    "overall": 3.38,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "Find one ownable idea (e.g. the contour-line topography of the origin becoming the cup, the bean and the type) instead of a feature checklist",
+      "Commit to a typographic point of view: custom or characterful faces, extreme scale contrast, type that interacts with the illustration",
+      "Break the repeated slide grid; choreograph elements so they transform between frames and each frame works as a poster",
+      "Find an idea specific to this coffee (origin, landscape, the people, the ritual) in place of a feature list of process, notes and roast.",
+      "Break the slide grid: varied compositions, type that interacts with the image, real scale contrast, and a typeface chosen for this brand.",
+      "Replace flat icon illustration and paper overlay with real material, light and texture (bean, water, steam) and transitions where one frame grows out of the last.",
+      "No idea beyond listing product attributes; find one memorable visual metaphor for this coffee (origin landscape, process, ritual) and build the film around it",
+      "The typography is defaults on a slide grid; commission or choose a face with character and make the type do the work through scale, cropping and integration with the image",
+      "Replace the repeated label/headline/icon layout with varied, layered compositions and real material (actual coffee, paper, liquid, light) so every frame is a poster"
+    ],
+    "tells": [
+      "Slide-deck structure: numbered small tracked monospace labels ('02 / PROCESS', '03 / TASTING NOTES', '04 / ROAST') above a default-looking bold grotesk headline",
+      "Text placed like slides in the top-left or bottom-left with no typographic idea, scale play or integration with the image",
+      "Literal, obvious content: 'Washed.' illustrated with a blue brushstroke, tasting notes shown as fruit icons, roasting shown as a grid of beans",
+      "Frames 3 and 4 repeat the same layout with elements added; the end card is a centred logo with tagline",
+      "Cream/kraft ground, single accent and mostly empty frames: the generic 'tasteful AI' look; the kraft texture is the only material idea",
+      "A textbook 'tasteful AI' template: a small tracked mono caps label ('02 / PROCESS', '03 / TASTING NOTES') above a bold default-grotesk headline, set top-left like a slide.",
+      "Slide-deck structure: numbered sections, the same layout repeated, and one frame ('In the cup') shown twice, first with one item and then with three. Little happens beyond elements being added.",
+      "A literal, obvious idea: 'Washed.' illustrated with a blue brushstroke, the tasting notes drawn as a lemon/peach/leaf trio, roasting as a grid of beans, and an end card with the brand name and 'Now roasting.'",
+      "The illustrations are clip-art-like and symmetrical (a contour 'fingerprint', icon-grade fruit). The kraft-paper ground is a flat overlay, not material.",
+      "The type has no scale play, no integration with the image and no point of view. It is the default the template was set up with.",
+      "The textbook 'tasteful AI' formula: cream/kraft ground, small tracked mono-caps label ('02 / PROCESS', '03 / TASTING NOTES') above a bold default grotesk headline",
+      "Slide-deck structure: numbered sections, the same top-left label plus headline layout on every frame, words swapped",
+      "Literal, obvious idea: 'Washed.' with a blue brush stroke, a lemon for bergamot, a peach for peach, beans for roast",
+      "Clip-art-like line illustrations with flat fills; frames 3 and 4 repeat the same layout with icons added",
+      "The paper texture is a uniform overlay with flat, unmotivated light; the end card is a centred logo with a generic sign-off ('Now roasting.')"
+    ]
+  },
+  "refs_summary": {
+    "hermes-buck": {
+      "overall": 7.5,
+      "judged_professional": "3/3",
+      "mean_rank": 1.33
+    },
+    "calm-sleep": {
+      "overall": 6.12,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "new-yorker-festival": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.08,
+  "delta": -3.7,
+  "trials": [
+    {
+      "key": {
+        "A": "new-yorker-festival",
+        "B": "hermes-buck",
+        "C": "candidate",
+        "D": "calm-sleep"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Hand-painted dry-brush marks with real bristle texture and overlaps; nothing vector-default",
+              "Frame shape changes (tall portrait, letterbox window, square, wide), so the format itself is choreographed",
+              "Moves from a figurative Chrysler-style spire to a train-window vignette, then to woven plaid and road-map abstraction: the brush becomes the idea",
+              "Restrained, deliberate primary palette (cobalt, cadmium yellow, vermilion, green) held across very different images",
+              "Frames 4\u20136 read as transitions in progress (strokes resolving into a grid with yellow-black markers), which points to authored frame-by-frame animation",
+              "No type: its absence works, because the brushwork carries the voice"
+            ],
+            "gaps": [
+              "Mid-sequence abstract frames (4, 5) are less resolved as posters than frames 1\u20132; give each in-between a readable focal point",
+              "The city/travel story is only implied; one stronger narrative anchor would make the piece easier to remember",
+              "Light is purely flat gouache; a single tonal or grain shift between scenes would add depth without losing the hand"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 6,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Rich material rendering: twill/fabric grain on the ground, risograph-like stipple, halftone on the tiger and the balls",
+              "Deliberate oxblood palette with slate-teal foliage and warm accents, plus custom ornamental flora with eye motifs (peacock-feather / evil-eye details)",
+              "A coherent circus world (tiger, elephant, tarot and horseshoe, cannon, seal, strongman) drawn with a consistent and specific hand",
+              "The background pattern shifts between frames, so the field itself is animated",
+              "No type; its absence suits a pattern/print-led piece"
+            ],
+            "gaps": [
+              "Every frame is one centred object on the same field, close to a slide structure; vary scale, cropping and depth",
+              "Little evidence of interaction or choreography between subjects; let objects travel, collide or transform into each other",
+              "No payoff or reveal frame; build to a final composition that brings the menagerie together or delivers the brand/title"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "The figurative frames are drawn with real skill: specific profiles, freckles, hair masses, and rim light motivated by glowing orbs",
+              "Coherent sleep/meditation light logic (moon-phase spheres, a horizon reflection, a radial portal, headphones on a pillow)",
+              "But frames 2\u20133 are effect with no subject: mirrored gradients and a blurred radial blob",
+              "The soft-gradient wellness look (Calm/Headspace genre) is very widely imitated; the glass star in frame 4 approaches a stock 3D primitive",
+              "No type; its absence is fine but brings nothing"
+            ],
+            "gaps": [
+              "Replace the abstract gradient interludes with transitions that carry the figures or the moon motif, so every frame has a subject",
+              "Push past the genre palette; one unexpected hue or texture (grain, paper, print) would make it ownable",
+              "Drop the generic glass-star icon for an object specific to this story"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 5,
+              "light_texture": 5,
+              "motion": 4,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "Slide-deck structure: numbered small tracked monospace labels ('02 / PROCESS', '03 / TASTING NOTES', '04 / ROAST') above a default-looking bold grotesk headline",
+              "Text placed like slides in the top-left or bottom-left with no typographic idea, scale play or integration with the image",
+              "Literal, obvious content: 'Washed.' illustrated with a blue brushstroke, tasting notes shown as fruit icons, roasting shown as a grid of beans",
+              "Frames 3 and 4 repeat the same layout with elements added; the end card is a centred logo with tagline",
+              "Cream/kraft ground, single accent and mostly empty frames: the generic 'tasteful AI' look; the kraft texture is the only material idea"
+            ],
+            "gaps": [
+              "Find one ownable idea (e.g. the contour-line topography of the origin becoming the cup, the bean and the type) instead of a feature checklist",
+              "Commit to a typographic point of view: custom or characterful faces, extreme scale contrast, type that interacts with the illustration",
+              "Break the repeated slide grid; choreograph elements so they transform between frames and each frame works as a poster"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 31.8,
+        "cost_usd": 0.17357699999999998,
+        "tokens": 72149,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "new-yorker-festival",
+        "B": "hermes-buck",
+        "C": "calm-sleep",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 9,
+              "craft": 7,
+              "originality": 9
+            },
+            "tells": [
+              "Gestural, dry-brush painted frames: visible bristle drag and opacity build-up. Nothing looks like vector defaults.",
+              "The aspect ratio changes from frame to frame (tall portrait, near-square, landscape). That reads as a deliberate formal device, as if the frame itself is being animated.",
+              "A specific city/transit idea: an Art Deco spire becomes a subway window with a passenger, then a striped grid, then crossing tracks, then a yellow route line, then a map-like grid. Each shot is built from the brushstrokes of the one before.",
+              "The primary palette (cobalt, cadmium yellow, red, green, black, white) is restrained and committed, with a Bauhaus/Matisse echo, and doesn't look like a template accent colour.",
+              "No type. That serves the piece: the image carries the whole narrative, and type would flatten its painterly rhythm."
+            ],
+            "gaps": [
+              "Some middle frames (crossed white strokes, yellow route) are close to pure abstraction. Anchor them with one more figurative beat so the story survives a still read.",
+              "Finish is uneven: some edges and fills look like quick sketch passes next to more resolved frames like the subway window. Settle on one level of finish.",
+              "A closing frame that brings the city, the figure and the grid together would turn a strong sequence into a memorable ending."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 6,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Rich material finish: the oxblood ground has a woven/twill texture, there is halftone and grain on the animals, and soft cut-paper drop shadows give each object physical presence.",
+              "A specific world: circus iconography (tiger, caparisoned elephant, horseshoe with tarot cards, cannon, seal with ruff, strongman's barbell). The eye-flowers hidden in the botanical wallpaper add an uncanny detail of the kind only an illustrator brings.",
+              "An unusual, disciplined palette of deep red with slate teal, ochre and cream, held across every frame.",
+              "No type, and that suits a pattern- and object-led piece."
+            ],
+            "gaps": [
+              "The structure is one centred hero object on the same wallpaper, six times. The choreography reads as a carousel, so the objects need to interact, collide or transform into each other.",
+              "No camera or scale variation (no close-ups, no wides, no layering of objects at depth). Vary the framing so every frame is a different poster.",
+              "The idea stays decorative. Give it a narrative turn or reveal (the eyes in the flowers are the seed of one) so it is remembered and not just admired."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 7,
+              "originality": 5
+            },
+            "tells": [
+              "The figures are drawn with real skill: rim-lit profiles, freckles, the headphone figure sinking into a pillow. The light is motivated and glows from within.",
+              "There is a sequence logic (eclipse moons around a neck, a mirrored horizon, a portal, a glass star, a dreamer, sleep), so this reads as an editorial illustrator's work and not a generator.",
+              "On the other side, two of the six frames are effectively blurred gradient blobs (mirrored ripple, concentric portal), and the glass star reads like a stock-3D/glassmorphism trope.",
+              "The 'wellness app' pastel blue-peach palette is very familiar territory. No type is visible, which is neutral here."
+            ],
+            "gaps": [
+              "Replace the gradient-portal interludes with designed transitions that carry a subject. As they stand they are effect without content.",
+              "Push the palette and idea away from the meditation-app house style toward something only this piece could be.",
+              "Add texture or grain variation and stronger compositional contrast (scale, cropping, negative space) so the frames stop blending into one airbrushed haze."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 3,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 4,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "A textbook 'tasteful AI' template: a small tracked mono caps label ('02 / PROCESS', '03 / TASTING NOTES') above a bold default-grotesk headline, set top-left like a slide.",
+              "Slide-deck structure: numbered sections, the same layout repeated, and one frame ('In the cup') shown twice, first with one item and then with three. Little happens beyond elements being added.",
+              "A literal, obvious idea: 'Washed.' illustrated with a blue brushstroke, the tasting notes drawn as a lemon/peach/leaf trio, roasting as a grid of beans, and an end card with the brand name and 'Now roasting.'",
+              "The illustrations are clip-art-like and symmetrical (a contour 'fingerprint', icon-grade fruit). The kraft-paper ground is a flat overlay, not material.",
+              "The type has no scale play, no integration with the image and no point of view. It is the default the template was set up with."
+            ],
+            "gaps": [
+              "Find an idea specific to this coffee (origin, landscape, the people, the ritual) in place of a feature list of process, notes and roast.",
+              "Break the slide grid: varied compositions, type that interacts with the image, real scale contrast, and a typeface chosen for this brand.",
+              "Replace flat icon illustration and paper overlay with real material, light and texture (bean, water, steam) and transitions where one frame grows out of the last."
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.7,
+        "cost_usd": 0.1647924,
+        "tokens": 72428,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "calm-sleep",
+        "B": "hermes-buck",
+        "C": "new-yorker-festival",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Figurative illustration with real drawing skill: varied profiles, ear and neck anatomy, freckles, consistent rim-lit glow",
+              "Grain-dithered gradients and subsurface-style light on the skin read as deliberate rendering, not a default blur",
+              "Frames move from figure to abstract pulse to glassy star object and back to the figure, which suggests choreographed transitions rather than one repeated layout",
+              "The type is absent, and that works for a mood piece; but the peach-periwinkle 'calm/sleep app' palette is very familiar"
+            ],
+            "gaps": [
+              "The idea is generic wellness and sleep: add a specific narrative or visual metaphor that only this brand could own",
+              "Frames 2\u20133 are near-effect-only radial gradients with no subject; give the abstract beats some structure or a motif carried over from the figures",
+              "The palette is safe and on-trend; push one unexpected colour or a material contrast to break the soft-gradient sameness"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 7,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific world (circus and fortune-telling iconography) with a coherent invented vocabulary: tiger, elevated elephant, tarot and horseshoe, cannon, seal, strongman barbell",
+              "A deep oxblood ground with teal, ochre and cream is a deliberate, unusual palette held across every frame",
+              "Real texture: twill/fabric grain, paper-cut layering, small drop shadows and stippled shading give the pieces a tactile, cut-out depth",
+              "The foliage-and-eye border pattern shifts each frame, so the background is choreographed and not static; the objects swap like a reveal sequence",
+              "Witty details (peacock-eye flowers, frilly tutu on the seal, gloved hands on the barbell) reward a second look"
+            ],
+            "gaps": [
+              "Each frame is still one centred hero object on a pattern, so the composition repeats; vary scale, cropping and depth between beats",
+              "There is no visible type or narrative arc; a title or an end card with a typographic idea would give the piece a payoff",
+              "The implied motion is mostly swap and reveal; show objects interacting (the cannon firing, the seal tossing the ball to the strongman) for real choreography"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 6,
+              "originality": 8
+            },
+            "tells": [
+              "Hand-painted brush animation with visible stroke texture: a confident, gestural, Matisse/Bauhaus-ish New York city vocabulary (Chrysler spire, subway window, grid, traffic)",
+              "Frames change aspect ratio and abstraction level, from figurative to pure pattern, which implies energetic, varied choreography and morphing transitions",
+              "Primary-plus-blue palette is bold and consistent, used with intent",
+              "The roughness looks chosen rather than amateur, but some frames (green/white stripes, yellow loops) are thin and risk reading as unfinished"
+            ],
+            "gaps": [
+              "Some frames are near-empty brush tests; give every beat a poster-worthy composition with a clear focal subject",
+              "No type, and the absence is not used; hand-lettered type in the same brush language would make this an authored title piece",
+              "The finish varies from frame to frame; tighten edge quality and the colour layering so the looseness reads as controlled throughout"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 3,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 2
+            },
+            "tells": [
+              "The textbook 'tasteful AI' formula: cream/kraft ground, small tracked mono-caps label ('02 / PROCESS', '03 / TASTING NOTES') above a bold default grotesk headline",
+              "Slide-deck structure: numbered sections, the same top-left label plus headline layout on every frame, words swapped",
+              "Literal, obvious idea: 'Washed.' with a blue brush stroke, a lemon for bergamot, a peach for peach, beans for roast",
+              "Clip-art-like line illustrations with flat fills; frames 3 and 4 repeat the same layout with icons added",
+              "The paper texture is a uniform overlay with flat, unmotivated light; the end card is a centred logo with a generic sign-off ('Now roasting.')"
+            ],
+            "gaps": [
+              "No idea beyond listing product attributes; find one memorable visual metaphor for this coffee (origin landscape, process, ritual) and build the film around it",
+              "The typography is defaults on a slide grid; commission or choose a face with character and make the type do the work through scale, cropping and integration with the image",
+              "Replace the repeated label/headline/icon layout with varied, layered compositions and real material (actual coffee, paper, liquid, light) so every frame is a poster"
+            ]
+          }
+        },
+        "ranking": [
+          "B",
+          "A",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.3,
+        "cost_usd": 0.1555008,
+        "tokens": 71933,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": 5,
+        "craft": 6
+      },
+      "defects": [
+        "Fill shapes on the bergamot, the peach and the target in the opening topo are revealed by a radial wedge sweep. Mid-transition they read as Pac-Man cutouts, with a hard edge, no feathering and no brush logic.",
+        "The colour fills sit visibly off-register from the line art (the bergamot's yellow spills outside the rind, the peach's orange shifts down-left). The offset is the same on every element, so it reads as a fixed offset, not hand-printed misregistration.",
+        "The bean grid builds in strict reading order, one bean at a time, with the same stroke-on and fill-wipe on each. It is a mechanical stagger with no variation in timing, scale or arc.",
+        "The 'Washed.' ring does nothing but drift and scale slightly across the brush stroke. It looks like a leftover cursor, not a designed element.",
+        "Type blocks and labels are static once on screen. Nothing animates out; each section is cleared or replaced rather than moved on by a transition.",
+        "The paper vignette has blotchy, low-frequency luminance patches (top right, centre) that look like noise-based shading, not a lit surface.",
+        "In both 1/6 s pairs the only change is an incremental reveal. There is no secondary motion, no overlap and no follow-through.",
+        "It is a single 20 s shot that steps through sections like slides. 12 of 19 seconds are nearly static."
+      ],
+      "gaps": [
+        "Choreography: every beat is the same reveal-then-hold. Top studios link sections with match-moves (the topo rings could become the cup, the brush stroke could become water, the beans could become the final contour). They also vary tempo and use overlapping actions, with eased, weighted moves instead of linear wipes and sequential pops.",
+        "Sound: the bed is a dense, evenly loud loop of transients (~3 per second) at a constant level. It has one textural lift around 10.5 s and no dynamic arc. Hits are not tied to the section changes or reveals, and there are no designed foley cues (pour, rustle, roast crackle) that the illustrated subjects invite.",
+        "Finish: the hand-drawn concept is let down by procedural tells: hard-edged radial fill wipes, uniform misregistration, generic noise vignetting and identical per-instance animation. A top studio would hand-time the line boil, give the fills ink texture and reveal them with organic mattes."
+      ]
+    },
+    "meta": {
+      "seconds": 20.5,
+      "cost_usd": 0.1685686,
+      "tokens": 73036,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "halde-guji.mp4: 20.0s, 1 shots, median 20.00s, longest 20.00s\nper-second change: [8.4, 7.6, 3.9, 19.5, 6.0, 3.3, 15.9, 4.0, 4.1, 2.4, 4.0, 1.4, 1.0, 13.2, 10.3, 2.4, 15.6, 4.5, 1.5]\nPACE: FAIL \u2014 longest shot 20.0s > 2.5s; median shot 20.0s > 1.5s; 12/19 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 3,
+    "composition": 4,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 4,
+    "motion": 3.5,
+    "craft": 5.0,
+    "originality": 2,
+    "sound": 5
+  },
+  "full_overall": 3.72,
+  "cost_usd": 0.662,
+  "judge_seconds": 115.3,
+  "verdict": "FAIL"
+}
