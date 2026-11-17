@@ -8,11 +8,11 @@
 | Format | 16:9, 15 s, 128 BPM `house` | 9:16, 15 s, 128 BPM `cinematic-hybrid` |
 | Concept (`concepts.md`) | #5 **Physical simulation**. Noun: letters; verb: sorts; before→after: a falling pile → a neat stack. **Motif:** one red tile among white ones. **Turn:** the pile blown apart in slow motion, cut to the sorted inbox on a glass pane. | #4 **Data-driven** (the terrain is the map). Noun: a contour map; verb: guides; before→after: lost in fog → a lit trail. **Motif:** an amber trail of glowing beads that draws itself in every 3D shot and on the UI. **Turn:** out of the whiteout to the device standing on the ridge. |
 | Anikit capabilities | Ray-traced `scene3d` (dark studio, DOF); `physics` rain, pile with a slow-motion impulse, and dominoes; the UI composition as a pane texture; chrome extruded wordmark; generated music with hits on `@bar3`/`@bar7`; sfx | Ray-traced `heightfield` terrain with fog and a low key light; 220 instanced emissive beads drawn by an expression; the UI composition on a device; whiteout fog; generated music; sfx |
-| Shots | 17 detected, median 0.93 s, longest 1.87 s | 12 detected, median 0.93 s, longest 1.90 s |
+| Shots | 18 detected, median 0.93 s, longest 1.87 s | 12 detected, median 0.93 s, longest 1.90 s |
 | `pace.py` on the final | **PASS** | **PASS** (failed twice in draft: a dark-to-dark cut went undetected; fixed by alternating light and dark shots) |
 | Draft iterations (`--quality draft --scale 0.5`) | 3 renders, 40–50 s each | 3 renders, 44–45 s each |
-| Final render (default quality, 1080p) | 66.8 s (7 fps) → 27.8 MB | 106.4 s (4 fps; type shots trace at full resolution) → 52.5 MB |
-| Repo copy | re-encoded with ffmpeg x264 CRF 22 → 9.9 MB | re-encoded with ffmpeg x264 CRF 25 → 3.7 MB |
+| Final render (default quality, 1080p) | 74.8 s (6 fps) → 29.9 MB | 106.4 s (4 fps; type shots trace at full resolution) → 52.5 MB |
+| Repo copy | re-encoded with ffmpeg x264 CRF 22 → 10.4 MB | re-encoded with ffmpeg x264 CRF 25 → 3.7 MB |
 | `critique --render` errors | 0 | 1: the known contrast false positive on the backed "Works offline." label |
 | Wall time, first spec → final MP4 | ≈ 16 min | ≈ 13 min |
 | Tool calls, first spec → final MP4 | ≈ 22 | ≈ 18 |
@@ -32,9 +32,16 @@ puts its type inside the world:
   - the logo slam is 3D in fog.
 - **Fernway terrain contrast:** a grazing key light (intensity 22, 11° elevation), a lighter base and exposure 1.3.
 
+**Third pass on Sift (the mechanical type rule).** Every word is now 3D type in its set: "Sorted" beside the
+dominoes, "overnight." among them, "Every thread," / "one line." beside and in front of the inbox pane, and
+"Only what" / "needs you." in front of the focus pane. "Too much" now has emissive white type, with the tiles kept
+behind it. The end wordmark fills about 55% of the frame width. The proof's 2D label and the end tagline were
+removed. The self-test in SKILL.md now lists only `sift.mail` as 2D text.
+
 Remaining weak spots:
-- In Sift, the tiles occlude part of "Too much" (deliberate, but it reads as cropped);
-- Sift's end-card wordmark reads small at 16:9;
+- Fernway was not re-done for the mechanical rule. It still has 2D type ("Now what?", "Every switchback.", the
+  map shots' words) and the "Works offline." pill, which is BAR #3.
+- In Sift, "overnight." partly intersects the dominoes.
 - "Every trail *saved.*" still touches the device header in Fernway's f1b.
 
 ## Friction found, and what was done
