@@ -537,6 +537,9 @@ fn depth_of_field(hdr: &mut Img, depth: &[f32], w: usize, h: usize, p: &Post, s:
         let cc = coc[i];
         [c[0], c[1], c[2], hd[i], cc, smoothstep(0.4, 1.2, cc), 1.0 / (cc * cc).max(1.0), 0.0]
     });
+    // The same sets as lanes (dx, dy, radius), for the AVX2 gather.
+    let soa: Vec<[Vec<f32>; 3]> = sets.iter().map(|v| [v.iter().map(|p| p.0).collect(), v.iter().map(|p| p.1).collect(), v.iter().map(|p| p.2).collect()]).collect();
+    let avx = super::wide::avx2();
     // Half-res result: colour plus how much of it is blur (alpha).
     let out4: Buf<[f32; 4]> = par::image(hw, hh, |y, row: &mut [[f32; 4]]| {
         for x in 0..hw {
@@ -559,6 +562,21 @@ fn depth_of_field(hdr: &mut Img, depth: &[f32], w: usize, h: usize, p: &Post, s:
             }];
             let ang = u01(hash2(x as u32, y as u32 ^ 0xdead)) * std::f32::consts::TAU;
             let (ca, sa) = (ang.cos(), ang.sin());
+            #[cfg(target_arch = "x86_64")]
+            if avx {
+                let k = if rmax < 2.5 {
+                    0
+                } else if rmax < 5.0 {
+                    1
+                } else if rmax < 9.0 {
+                    2
+                } else {
+                    3
+                };
+                // SAFETY: the CPU has AVX2; taps holds hw × hh records.
+                row[x] = unsafe { dof_gather_avx2(&taps, hw, hh, x, y, &soa[k], rmax, ca, sa, c0) };
+                continue;
+            }
             let wt0 = ic;
             let mut acc = [c0[0] * wt0, c0[1] * wt0, c0[2] * wt0, sc * wt0];
             let mut wsum = wt0;
@@ -633,6 +651,65 @@ fn depth_of_field(hdr: &mut Img, depth: &[f32], w: usize, h: usize, p: &Post, s:
             }
         }
     });
+}
+
+/// The depth-of-field gather for one half-res pixel, eight taps at a time
+/// with AVX2 gathers: the scalar loop's arithmetic per tap (accumulated in
+/// eight partial sums, so the last bits can differ from the scalar order).
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2,fma")]
+#[allow(clippy::too_many_arguments)]
+unsafe fn dof_gather_avx2(taps: &[[f32; 8]], hw: usize, hh: usize, x: usize, y: usize, set: &[Vec<f32>; 3], rmax: f32, ca: f32, sa: f32, c0: [f32; 8]) -> [f32; 4] {
+    use std::arch::x86_64::*;
+    let (dc, cc, sc, ic) = (c0[3], c0[4], c0[5], c0[6]);
+    let n = set[0].len();
+    debug_assert!(n % 8 == 0 && taps.len() >= hw * hh);
+    let base = taps.as_ptr() as *const f32;
+    // SAFETY: (caller) AVX2 is available; every gathered index is clamped into the image.
+    unsafe {
+        let (vca, vsa, vr) = (_mm256_set1_ps(ca), _mm256_set1_ps(sa), _mm256_set1_ps(rmax));
+        let (vx, vy) = (_mm256_set1_ps(x as f32 + 0.5), _mm256_set1_ps(y as f32 + 0.5));
+        let zero = _mm256_setzero_ps();
+        let (xm, ym) = (_mm256_set1_ps(hw as f32 - 0.5), _mm256_set1_ps(hh as f32 - 0.5));
+        let (vdc, vcc, vsc, vic) = (_mm256_set1_ps(dc), _mm256_set1_ps(cc), _mm256_set1_ps(sc), _mm256_set1_ps(ic));
+        let (half, one) = (_mm256_set1_ps(0.5), _mm256_set1_ps(1.0));
+        let vhw = _mm256_set1_epi32(hw as i32);
+        let mut a = [zero; 5];
+        let mut k = 0;
+        while k < n {
+            let dx = _mm256_loadu_ps(set[0].as_ptr().add(k));
+            let dy = _mm256_loadu_ps(set[1].as_ptr().add(k));
+            let r = _mm256_loadu_ps(set[2].as_ptr().add(k));
+            let fx = _mm256_mul_ps(_mm256_sub_ps(_mm256_mul_ps(dx, vca), _mm256_mul_ps(dy, vsa)), vr);
+            let fy = _mm256_mul_ps(_mm256_add_ps(_mm256_mul_ps(dx, vsa), _mm256_mul_ps(dy, vca)), vr);
+            let sx = _mm256_cvttps_epi32(_mm256_min_ps(_mm256_max_ps(_mm256_add_ps(vx, fx), zero), xm));
+            let sy = _mm256_cvttps_epi32(_mm256_min_ps(_mm256_max_ps(_mm256_add_ps(vy, fy), zero), ym));
+            // Record index × 8 floats.
+            let idx = _mm256_slli_epi32::<3>(_mm256_add_epi32(_mm256_mullo_epi32(sy, vhw), sx));
+            let g = |f: i32| _mm256_i32gather_ps::<4>(base.add(f as usize), idx);
+            let (t0, t1, t2, t3, t4, t5, t6) = (g(0), g(1), g(2), g(3), g(4), g(5), g(6));
+            let dist = _mm256_mul_ps(r, vr);
+            let behind = _mm256_cmp_ps::<_CMP_GT_OQ>(t3, vdc);
+            let ct = _mm256_blendv_ps(t4, _mm256_min_ps(t4, vcc), behind);
+            let cover = _mm256_min_ps(_mm256_max_ps(_mm256_add_ps(_mm256_mul_ps(_mm256_sub_ps(ct, dist), half), half), zero), one);
+            let st = _mm256_blendv_ps(t5, _mm256_min_ps(t5, vsc), behind);
+            let it = _mm256_blendv_ps(t6, _mm256_max_ps(t6, vic), behind);
+            let wt = _mm256_mul_ps(cover, it);
+            a[0] = _mm256_add_ps(a[0], _mm256_mul_ps(t0, wt));
+            a[1] = _mm256_add_ps(a[1], _mm256_mul_ps(t1, wt));
+            a[2] = _mm256_add_ps(a[2], _mm256_mul_ps(t2, wt));
+            a[3] = _mm256_add_ps(a[3], _mm256_mul_ps(st, wt));
+            a[4] = _mm256_add_ps(a[4], wt);
+            k += 8;
+        }
+        let hsum = |v: __m256| {
+            let mut l = [0.0f32; 8];
+            _mm256_storeu_ps(l.as_mut_ptr(), v);
+            ((l[0] + l[1]) + (l[2] + l[3])) + ((l[4] + l[5]) + (l[6] + l[7]))
+        };
+        let wsum = ic + hsum(a[4]);
+        [(c0[0] * ic + hsum(a[0])) / wsum, (c0[1] * ic + hsum(a[1])) / wsum, (c0[2] * ic + hsum(a[2])) / wsum, (sc * ic + hsum(a[3])) / wsum]
+    }
 }
 
 /// Motion blur along each pixel's motion vector.
