@@ -546,14 +546,23 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             if !Self::intra16_modes_ok(&e16, m) {
                 continue;
             }
-            intra::pred16(&e16, m, &mut pred);
-            let s = if c.idr { dsp::satd(src_y, &pred, 16, 16) } else { crate::simd::sad16(src_y, 16, &pred, 16) };
-            if s < best16.0 {
-                best16 = (s, m);
-                pred16 = pred;
+            if c.idr {
+                intra::pred16(&e16, m, &mut pred);
+                let s = dsp::satd(src_y, &pred, 16, 16);
+                if s < best16.0 {
+                    best16 = (s, m);
+                    pred16 = pred;
+                }
+            } else {
+                // P frames: SAD straight from the edges, build only the winner
+                let s = intra::sad16_mode(&e16, m, src_y);
+                if s < best16.0 {
+                    best16 = (s, m);
+                }
             }
         }
         if !c.idr {
+            intra::pred16(&e16, best16.1, &mut pred16);
             best16.0 = dsp::satd(src_y, &pred16, 16, 16);
         }
         let cost16 = best16.0 + lambda as u32 * if c.idr { 4 } else { 8 };
