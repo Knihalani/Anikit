@@ -1110,14 +1110,6 @@
       "preset": "fadeUp",
       "delay": 2.8
      }
-    },
-    {
-     "component": "grain",
-     "props": {
-      "amount": 0.035,
-      "rate": 0,
-      "seed": 7
-     }
     }
    ]
   }

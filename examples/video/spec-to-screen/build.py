@@ -279,7 +279,6 @@ scenes.append({
              enter={"preset": "fadeIn", "delay": 1.6, "duration": 0.8}),
         text("anikit-video render spec.json", font="$mono", size="2.4vh", color=MUTED, y="80%",
              enter={"preset": "fadeUp", "delay": 2.8}),
-        grain,
     ],
 })
 

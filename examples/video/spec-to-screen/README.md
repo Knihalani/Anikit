@@ -37,7 +37,7 @@ Measured on a 4-core cloud VM (Xeon, AVX2) with `--json` and the default ak264 e
 
 | Output | Frames | Wall time | Render fps | File size |
 |---|---|---|---|---|
-| 1920×1080, 60 fps, H.264 + AAC, 55 s | 3300 | 17.1 s (engine at 218731e) | 193 fps | 29.5 MB |
+| 1920×1080, 60 fps, H.264 + AAC, 55 s | 3300 | 17.4 s (engine at 218731e) | 190 fps | 28.3 MB |
 
 That is about 1.8× faster than real time, end to end, including the chrome text-3d, the globe and the particle text.
 
