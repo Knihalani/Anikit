@@ -517,6 +517,14 @@ impl Renderer {
     }
 }
 
+/// Frame-space rectangles that may differ between two display lists.
+pub(crate) fn dirty_between(a: &DisplayList, b: &DisplayList) -> Vec<Rect> {
+    let (mut pa, mut pb) = (Vec::new(), Vec::new());
+    fingerprint(a, &mut pa, &|_| 0);
+    fingerprint(b, &mut pb, &|_| 0);
+    align_dirty(&pa, &pb)
+}
+
 /// Bounds of every op, where a layer marker (push or pop) stands for its whole
 /// subtree (whose leaf bounds already include the layer's filter margins).
 fn subtree_bounds(p: &[Print]) -> Vec<Option<Rect>> {
