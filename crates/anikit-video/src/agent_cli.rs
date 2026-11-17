@@ -31,6 +31,8 @@ macro_rules! outln {
 }
 
 pub const HELP: &str = "\
+Start: anikit-video docs   (compact pages per primitive; docs 3d, docs shader, docs particles, ...)
+       anikit-video recipes (drop-in high-end shots and the shader library)
 Agent commands:
   anikit-video new <template> [--brand brand.json] [--from README.md] [--format 16:9] [--dir DIR]
                                     scaffold a project: params.json, brand.json, spec.json, NEXT.md
@@ -50,7 +52,7 @@ Agent commands:
 ";
 
 /// Commands this module handles.
-pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "prompts", "looks", "look", "critique", "preview", "mcp"];
+pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "prompts", "looks", "look", "critique", "preview", "mcp", "docs", "doc", "recipes", "recipe"];
 
 /// Run an agent command. `args` excludes the program name.
 pub fn run(args: &[String]) -> Option<i32> {
@@ -68,6 +70,8 @@ pub fn run(args: &[String]) -> Option<i32> {
         "templates" | "template" => cmd_templates(rest),
         "prompt" | "prompts" => cmd_prompt(rest),
         "looks" | "look" => cmd_looks(rest),
+        "docs" | "doc" => crate::agent_docs::docs((!rest.is_empty()).then(|| rest.join(" ")).as_deref()).map(|s| out!("{s}")),
+        "recipes" | "recipe" => crate::agent_docs::recipes(rest.first().map(|s| s.as_str())).map(|s| out!("{s}")),
         "critique" => cmd_critique(rest),
         "preview" => cmd_preview(rest),
         "mcp" => mcp::serve_stdio().map_err(|e| e.to_string()),
@@ -628,6 +632,42 @@ fn cmd_looks(args: &[String]) -> Result<(), String> {
     let t = looks_text(a.pos.first().map(|s| s.as_str()), a.has("json"))?;
     out!("{t}");
     Ok(())
+}
+
+/// Pretty JSON with short arrays and leaf objects kept on one line (fewer tokens).
+pub fn compact_json(v: &Value) -> String {
+    fn go(v: &Value, ind: usize, out: &mut String) {
+        let flat = serde_json::to_string(v).unwrap();
+        if flat.len() + ind <= 110 {
+            out.push_str(&flat);
+            return;
+        }
+        let pad = " ".repeat(ind + 1);
+        match v {
+            Value::Object(m) => {
+                out.push_str("{\n");
+                for (i, (k, x)) in m.iter().enumerate() {
+                    out.push_str(&format!("{pad}{}: ", serde_json::to_string(k).unwrap()));
+                    go(x, ind + 1, out);
+                    out.push_str(if i + 1 < m.len() { ",\n" } else { "\n" });
+                }
+                out.push_str(&format!("{}}}", " ".repeat(ind)));
+            }
+            Value::Array(a) => {
+                out.push_str("[\n");
+                for (i, x) in a.iter().enumerate() {
+                    out.push_str(&pad);
+                    go(x, ind + 1, out);
+                    out.push_str(if i + 1 < a.len() { ",\n" } else { "\n" });
+                }
+                out.push_str(&format!("{}]", " ".repeat(ind)));
+            }
+            _ => out.push_str(&flat),
+        }
+    }
+    let mut s = String::new();
+    go(v, 0, &mut s);
+    s
 }
 
 #[cfg(test)]

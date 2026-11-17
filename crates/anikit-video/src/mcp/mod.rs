@@ -234,6 +234,8 @@ impl Server {
                 Ok(vec![text(&format!("rendered {}\n{}", out.display(), log.trim()))])
             }
             "get_prompt" => Ok(vec![text(&prompts::get(str_arg(a, "name")?)?)]),
+            "docs" => Ok(vec![text(&crate::agent_docs::docs(a.get("topic").and_then(|x| x.as_str()))?)]),
+            "recipes" => Ok(vec![text(&crate::agent_docs::recipes(a.get("name").and_then(|x| x.as_str()))?)]),
             "list_looks" => Ok(vec![text(&agent_cli::looks_text(a.get("name").and_then(|x| x.as_str()), a.get("full") == Some(&json!(true)))?)]),
             _ => {
                 let names: Vec<String> = tools().iter().filter_map(|t| t["name"].as_str().map(String::from)).collect();
@@ -391,6 +393,8 @@ pub fn tools() -> Vec<Value> {
         json!({ "name": "render_still", "description": "One frame → PNG path.", "inputSchema": obj(img(json!({ "at": { "type": "number", "description": "seconds" } })), &[]) }),
         json!({ "name": "render_contact_sheet", "description": "One frame per scene in one PNG → path. Cheapest full review.", "inputSchema": obj(img(json!({ "frames": { "type": "integer" } })), &[]) }),
         json!({ "name": "render_video", "description": "Final render → path.", "inputSchema": obj(with(spec(), json!({ "out": { "type": "string", "description": "e.g. out.mp4" }, "quality": { "type": "string", "description": "draft|standard|high" } })), &[]) }),
+        json!({ "name": "docs", "description": "Start here. Compact page per primitive (no topic: the index): primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything components.", "inputSchema": obj(json!({ "topic": { "type": "string" } }), &[]) }),
+        json!({ "name": "recipes", "description": "Drop-in high-end shots (kinetic-slam, whip-transition, chrome-hero, particle-ignite, domino-cascade, ...) and the shader library. name → a ready spec or snippet.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &[]) }),
         json!({ "name": "list_looks", "description": "Art-direction looks (palette, type, motion, world layers). name → its direction; full:true → JSON to override.", "inputSchema": obj(json!({ "name": { "type": "string" }, "full": { "type": "boolean" } }), &[]) }),
         json!({ "name": "get_prompt", "description": "Prompt library: director, launch-video-generator, script-writer, storyboarder, critic, copy-guard, brand-kit, motion-rules, template:<name>.", "inputSchema": obj(json!({ "name": { "type": "string" } }), &["name"]) }),
     ]

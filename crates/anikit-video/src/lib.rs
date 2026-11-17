@@ -15,6 +15,7 @@ pub mod audio;
 pub mod components;
 pub mod dl;
 pub mod agent_cli;
+pub mod agent_docs;
 pub mod critique;
 pub mod looks;
 pub mod mcp;
