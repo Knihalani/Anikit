@@ -52,6 +52,13 @@ pub struct DeclaredUniform {
     pub ty: UType,
     /// Default from a gl-transitions style `// = value` comment.
     pub default: Option<Vec<f32>>,
+    /// Prose after the default in that comment (`// = 0.5 how far it bends`).
+    pub doc: String,
+}
+
+/// The tunable uniforms a source declares, with defaults and docs.
+pub fn declared_uniforms(src: &str) -> Vec<DeclaredUniform> {
+    strip_uniforms(src).1
 }
 
 /// A compile error with a position in the agent's source.
@@ -202,6 +209,25 @@ fn parse_default(comment: &str) -> Option<Vec<f32>> {
     v.filter(|v| !v.is_empty())
 }
 
+/// The prose in a uniform's comment, after any `= value`.
+fn parse_doc(comment: &str) -> String {
+    let s = comment.trim_start_matches('/').trim();
+    let rest = match s.strip_prefix('=') {
+        None => s,
+        Some(v) => {
+            let v = v.trim_start();
+            let word: String = v.chars().take_while(|c| c.is_ascii_alphanumeric() || *c == '_').collect();
+            if !word.is_empty() && !word.starts_with(|c: char| c.is_ascii_digit()) && v[word.len()..].trim_start().starts_with('(') {
+                v.find(')').map_or("", |c| &v[c + 1..])
+            } else {
+                let end = v.find(|c: char| c.is_whitespace() || c == ';').unwrap_or(v.len());
+                &v[end..]
+            }
+        }
+    };
+    rest.trim().trim_start_matches(['—', '–', '-', ':', ',', ';']).trim().to_string()
+}
+
 /// Rewrite user uniform declarations. Returns the new source plus what was found.
 fn strip_uniforms(src: &str) -> (String, Vec<DeclaredUniform>, Vec<String>) {
     let mut out = String::with_capacity(src.len());
@@ -230,7 +256,7 @@ fn strip_uniforms(src: &str) -> (String, Vec<DeclaredUniform>, Vec<String>) {
                                 // `uniform float x = 1.0;`
                                 body.split_once('=').and_then(|(_, v)| parse_default(&format!("= {v}")))
                             });
-                            unis.push(DeclaredUniform { name: name.clone(), ty: ut, default });
+                            unis.push(DeclaredUniform { name: name.clone(), ty: ut, default, doc: parse_doc(comment) });
                             // Keep the declaration (minus `uniform` and any initialiser) on its line.
                             let indent = &line[..line.len() - t.len()];
                             let decl_txt = format!("{indent}{ty} {name};");
@@ -342,7 +368,7 @@ fn parse_glsl(src: &str, kind: Kind, extra: &[Extra]) -> Result<Parsed, ShaderEr
             UType::Vec(n) => format!("vec{n}"),
         };
         pre.push_str(&format!(" {ty} {};", e.name));
-        unis.push(DeclaredUniform { name: e.name.to_string(), ty: e.ty, default: None });
+        unis.push(DeclaredUniform { name: e.name.to_string(), ty: e.ty, default: None, doc: String::new() });
     }
     if kind == Kind::Transition {
         pre.push_str(&format!(
@@ -380,11 +406,11 @@ fn parse_wgsl(src: &str, kind: Kind, extra: &[Extra]) -> Result<Parsed, ShaderEr
             UType::Vec(n) => format!("vec{n}f"),
         };
         if src.contains(&format!("var<private> {}", e.name)) {
-            unis.push(DeclaredUniform { name: e.name.to_string(), ty: e.ty, default: None });
+            unis.push(DeclaredUniform { name: e.name.to_string(), ty: e.ty, default: None, doc: String::new() });
             continue;
         }
         pre.push_str(&format!(" var<private> {}: {ty};", e.name));
-        unis.push(DeclaredUniform { name: e.name.to_string(), ty: e.ty, default: None });
+        unis.push(DeclaredUniform { name: e.name.to_string(), ty: e.ty, default: None, doc: String::new() });
     }
     if kind == Kind::Transition {
         pre.push_str(" fn getFromColor(uv: vec2f) -> vec4f { return textureSampleLevel(iChannel0, iSampler0, uv, 0.0); } fn getToColor(uv: vec2f) -> vec4f { return textureSampleLevel(iChannel1, iSampler1, uv, 0.0); }");

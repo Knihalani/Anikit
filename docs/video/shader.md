@@ -119,7 +119,7 @@ Write `fn mainImage(fragCoord: vec2f) -> vec4f` (or `fn transition(uv: vec2f) ->
 | `luma-melt` | transition | the old scene melts away darkest-first. `softness`, `invert` |
 | `zoom-blur` | transition | a punch-in zoom blur with chromatic fringes. `strength` |
 
-The sources live in `crates/anikit-shader/library/*.glsl`. Copy one as a starting point: they are short and commented.
+`anikit-video info --shaders` lists every built-in with its measured cost and each uniform's default and meaning. `info --json` has the same under `"shader_library"`. The sources live in `crates/anikit-shader/library/*.glsl`. Copy one as a starting point: they are short and commented.
 
 ## Performance
 
