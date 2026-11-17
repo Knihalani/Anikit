@@ -28,7 +28,8 @@
     "letterSpacing": "-0.025em"
    },
    "label": {
-    "color": "$primary"
+    "color": "$primary",
+    "size": "2.4vh"
    }
   }
  },

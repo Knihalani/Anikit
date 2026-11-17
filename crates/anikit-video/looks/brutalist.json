@@ -39,7 +39,8 @@
    "label": {
     "weight": 700,
     "color": "$accent",
-    "letterSpacing": "0.02em"
+    "letterSpacing": "0.02em",
+    "size": "2.4vh"
    },
    "subtitle": {
     "align": "left"
@@ -67,8 +68,8 @@
    "id": "look-grain",
    "component": "grain",
    "props": {
-    "amount": 0.05,
-    "rate": 8
+    "amount": 0.045,
+    "rate": 2
    },
    "width": "100%",
    "height": "100%"

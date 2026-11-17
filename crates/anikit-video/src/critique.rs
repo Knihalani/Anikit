@@ -386,6 +386,12 @@ pub fn critique(raw: &Value) -> Report {
         cx.note("tip", "pacing", "scenes", format!("{total:.0} s vertical video; social platforms favour 6–30 s"), "cut to the hook, two beats and the payoff");
     }
     sameness(raw, spec, &mut cx);
+    if applied.is_some() {
+        let off = crate::looks::layer_offsets(raw);
+        for n in &mut cx.notes {
+            n.path = crate::looks::remap_path(&off, &n.path);
+        }
+    }
     let score = cx.notes.iter().fold(100i32, |s, n| s - match n.severity { "error" => 15, "warning" => 6, _ => 1 }).max(0) as u32;
     Report { score, duration: (total * 100.0).round() / 100.0, notes: cx.notes }
 }

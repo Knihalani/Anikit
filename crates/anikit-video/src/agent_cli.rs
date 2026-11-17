@@ -205,7 +205,7 @@ fn cmd_templates(args: &[String]) -> Result<(), String> {
                     let base = Path::new(o).parent().map(Path::to_path_buf).unwrap_or_default();
                     // Pixel checks too, so the printed score is the honest one.
                     if let Ok(p) = crate::preview::Preview::new(spec.clone(), &if base.as_os_str().is_empty() { PathBuf::from(".") } else { base.clone() }) {
-                        let extra = crate::render_check::check(&p.ev);
+                        let extra = crate::render_check::check_spec(&spec, &p.ev);
                         r.score = extra.iter().fold(r.score as i32, |s, n| s - if n.severity == "error" { 15 } else { 6 }).max(0) as u32;
                         r.notes.extend(extra);
                     }
@@ -263,7 +263,7 @@ fn cmd_critique(args: &[String]) -> Result<(), String> {
     if a.has("render") {
         let base = Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default();
         let p = crate::preview::Preview::new(spec.clone(), &base)?;
-        let extra = crate::render_check::check(&p.ev);
+        let extra = crate::render_check::check_spec(&spec, &p.ev);
         r.score = extra.iter().fold(r.score as i32, |s, n| s - if n.severity == "error" { 15 } else { 6 }).max(0) as u32;
         r.notes.extend(extra);
     }

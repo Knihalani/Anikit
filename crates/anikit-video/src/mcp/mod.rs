@@ -183,7 +183,7 @@ impl Server {
                 let mut r = critique(&spec);
                 if a.get("render") == Some(&Value::Bool(true)) {
                     let p = crate::preview::Preview::new(spec.clone(), path.parent().unwrap_or(Path::new(".")))?;
-                    let extra = crate::render_check::check(&p.ev);
+                    let extra = crate::render_check::check_spec(&spec, &p.ev);
                     r.score = extra.iter().fold(r.score as i32, |s, n| s - if n.severity == "error" { 15 } else { 6 }).max(0) as u32;
                     r.notes.extend(extra);
                 }

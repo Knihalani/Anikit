@@ -221,6 +221,53 @@ pub fn apply(mut v: Value) -> Result<Value, Vec<Diagnostic>> {
     Ok(v)
 }
 
+/// Per scene, how many look backdrop layers `apply` puts in front of the spec's own layers.
+pub fn layer_offsets(raw: &Value) -> Vec<usize> {
+    let Some(look) = raw.get("look").and_then(|l| resolve(l).ok()) else { return Vec::new() };
+    let n = look.get("backdrop").and_then(|b| b.as_array()).map_or(0, |b| b.len());
+    let v = crate::spec::reuse::expand(raw.clone()).unwrap_or_else(|_| raw.clone());
+    v.get("scenes")
+        .and_then(|s| s.as_array())
+        .map(|scenes| {
+            scenes
+                .iter()
+                .map(|sc| match sc {
+                    Value::String(_) => n,
+                    Value::Object(m) if m.get("look") == Some(&Value::Bool(false)) => 0,
+                    Value::Object(m) if m.get("layers").and_then(|l| l.as_array()).and_then(|l| l.first()).is_some_and(is_background) => 0,
+                    _ => n,
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Map a path in the looked spec (`scenes[2].layers[4]…`) back to the author's own spec.
+pub fn remap_path(offsets: &[usize], path: &str) -> String {
+    let parse = || -> Option<(usize, usize, usize, usize)> {
+        let rest = path.strip_prefix("scenes[")?;
+        let i_end = rest.find(']')?;
+        let si: usize = rest[..i_end].parse().ok()?;
+        let rest2 = rest[i_end..].strip_prefix("].layers[")?;
+        let j_end = rest2.find(']')?;
+        let li: usize = rest2[..j_end].parse().ok()?;
+        Some((si, li, "scenes[".len() + i_end + "].layers[".len(), j_end))
+    };
+    match parse() {
+        Some((si, li, start, len)) => {
+            let off = offsets.get(si).copied().unwrap_or(0);
+            if off == 0 {
+                return path.to_string();
+            }
+            if li < off {
+                return format!("scenes[{si}] (the look's backdrop){}", &path[start + len + 1..]);
+            }
+            format!("{}{}{}", &path[..start], li - off, &path[start + len..])
+        }
+        None => path.to_string(),
+    }
+}
+
 /// Brand defaults a look supplies to templates: `(theme, colors, fonts, radius)`.
 pub fn brand_defaults(look: &Value) -> Map<String, Value> {
     let mut out = Map::new();
@@ -295,5 +342,11 @@ mod tests {
         assert_eq!(s0[1]["enter"], "fade");
         assert_eq!(s0.last().unwrap()["id"], "look-grain");
         assert_eq!(v["scenes"][1]["layers"].as_array().unwrap().len(), 1);
+        let raw = json!({ "look": "neon-night", "scenes": [ { "layers": [ { "text": "a" } ] }, { "look": false, "layers": [] } ] });
+        let off = layer_offsets(&raw);
+        assert_eq!(off, vec![3, 0]);
+        assert_eq!(remap_path(&off, "scenes[0].layers[4].text"), "scenes[0].layers[1].text");
+        assert_eq!(remap_path(&off, "scenes[0].layers[1] (t=1s)"), "scenes[0] (the look's backdrop) (t=1s)");
+        assert_eq!(remap_path(&off, "scenes[1].layers[0]"), "scenes[1].layers[0]");
     }
 }

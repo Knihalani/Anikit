@@ -30,7 +30,8 @@
     "letterSpacing": "-0.03em"
    },
    "label": {
-    "color": "$accent"
+    "color": "$accent",
+    "size": "2.4vh"
    }
   }
  },

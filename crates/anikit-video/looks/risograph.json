@@ -34,7 +34,8 @@
     "color": "$text"
    },
    "label": {
-    "color": "$accent"
+    "color": "$accent",
+    "size": "2.4vh"
    }
   }
  },
@@ -74,9 +75,9 @@
    "id": "look-grain",
    "component": "grain",
    "props": {
-    "amount": 0.1,
+    "amount": 0.045,
     "size": 1.6,
-    "rate": 6
+    "rate": 2
    },
    "width": "100%",
    "height": "100%"

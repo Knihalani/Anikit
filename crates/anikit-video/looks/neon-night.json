@@ -31,7 +31,8 @@
    },
    "label": {
     "color": "$accent",
-    "letterSpacing": "0.3em"
+    "letterSpacing": "0.3em",
+    "size": "2.4vh"
    }
   }
  },

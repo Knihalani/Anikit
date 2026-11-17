@@ -38,7 +38,8 @@
    },
    "label": {
     "color": "$primary",
-    "letterSpacing": "0.04em"
+    "letterSpacing": "0.04em",
+    "size": "2.4vh"
    },
    "subtitle": {
     "align": "left"
