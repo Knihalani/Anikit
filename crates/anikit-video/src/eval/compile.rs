@@ -235,6 +235,14 @@ impl Evaluator {
             c.d.push(Diagnostic::error("scenes", "a video needs at least one scene"));
             return (None, c.d);
         }
+        // `"cut": "bar"` / `"2 beats"` / seconds: the length of scenes that don't set one.
+        let default_dur = match &spec.cut {
+            Some(cut) => {
+                let d = c.time_raw(cut, "cut");
+                if d > 0.0 { d } else { 3.0 }
+            }
+            None => 3.0,
+        };
         let mut scenes = Vec::new();
         let mut t = 0.0f32;
         let mut prev_dur = f32::INFINITY;
@@ -255,7 +263,7 @@ impl Evaluator {
             // Explicit durations first (needed for global markers inside the scene).
             let auto = matches!(&s.duration, Some(Num::Str(x)) if x == "auto");
             let mut dur = match &s.duration {
-                None => 3.0,
+                None => default_dur,
                 Some(_) if auto => 1e6,
                 Some(d) => c.time_raw(d, &format!("{path}.duration")),
             };
@@ -444,6 +452,19 @@ impl C<'_> {
     // ---------- units ----------
 
     /// Seconds from a time value (no marker origin adjustment).
+    /// `"2 beats"`, `"1 bar"`, `"4b"` → seconds at the music's tempo (`None` if not musical).
+    fn musical(&mut self, s: &str, path: &str) -> Option<f32> {
+        let low = s.to_ascii_lowercase();
+        let (num, unit) = ["beats", "beat", "bars", "bar", "b"].iter().find_map(|u| low.strip_suffix(u).map(|n| (n.trim().to_string(), *u)))?;
+        let k: f32 = if num.is_empty() { 1.0 } else { num.parse().ok()? };
+        if self.groove.is_none() {
+            self.load_groove(false, path);
+        }
+        let m = self.groove.as_ref()?.as_ref().ok()?;
+        let (beat, bar) = m.lengths();
+        Some(k * if unit.starts_with("bar") { bar } else { beat } as f32)
+    }
+
     fn time_raw(&mut self, n: &Num, path: &str) -> f32 {
         match self.time_m(n, path) {
             (t, Some(_)) => t,
@@ -457,6 +478,10 @@ impl C<'_> {
             Num::Num(v) => (*v as f32, None),
             Num::Str(s) => {
                 let s = s.trim();
+                // Musical lengths: "2 beats", "1 bar", "4b", "0.5bar" (from the music's tempo).
+                if let Some(t) = self.musical(s, path) {
+                    return (t, None);
+                }
                 if let Some(m) = s.strip_prefix('@') {
                     let (name, off) = match m.find(['+', '-']) {
                         Some(i) => (&m[..i], m[i..].parse::<f32>().ok()),

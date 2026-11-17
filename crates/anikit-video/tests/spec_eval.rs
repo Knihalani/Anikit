@@ -513,3 +513,15 @@ fn text_expressions_render_numbers() {
     assert_eq!(glyphs(2.5), 3); // "250"
     assert!(!ev.is_static(0.5, 2.5));
 }
+
+#[test]
+fn cut_on_the_music_grid_and_stack() {
+    let ev = build(r##"{ "music": { "style": "lofi", "bpm": 120 }, "cut": "2 bars", "transition": "cut", "scenes": [
+        { "stack": true, "layers": [ { "text": "A", "style": "title" }, { "text": "B" } ] }, { "duration": "1 bar", "layers": [ "C" ] }, { "duration": "4b", "layers": [ "D" ] } ] }"##);
+    let s = ev.scenes();
+    assert_eq!(s.len(), 3);
+    assert!((s[0].end - s[0].start - 4.0).abs() < 1e-3 && (s[1].end - s[1].start - 2.0).abs() < 1e-3 && (s[2].end - s[2].start - 2.0).abs() < 1e-3);
+    // Stacked: the two text layers are at different heights (one column), not both centred.
+    let ys: Vec<f32> = ev.eval(1.0).ops.iter().filter_map(|o| match o { Op::Glyphs { transform, .. } => Some(transform[5]), _ => None }).collect();
+    assert!(ys.len() >= 2 && (ys[0] - ys[1]).abs() > 20.0, "{ys:?}");
+}

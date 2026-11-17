@@ -135,6 +135,9 @@ pub struct Spec {
     /// `{ "preset": "cinematic", "bloom": 0.4, … }`. Default none.
     #[schemars(with = "Option<PostValue>")]
     pub post: Option<serde_json::Value>,
+    /// Default scene length: `"bar"`, `"2 beats"`, `"4 bars"` (at the music's tempo) or seconds.
+    /// Scenes without a `duration` cut on that grid.
+    pub cut: Option<Num>,
     /// Encoder tuning (the built-in ak264 MP4 encoder): `{ "aq": 0.8 }`.
     pub encode: Option<EncodeSpec>,
     /// Motion blur on moving content: `true` (180° shutter), `false`, or `{ "shutter": 90 }` (degrees).
@@ -347,6 +350,10 @@ pub struct Scene {
     pub post: Option<serde_json::Value>,
     /// Times relative to the scene start.
     pub markers: Option<BTreeMap<String, Num>>,
+    /// Lay out the scene's free-floating layers (no `x`/`y`) as one centred column:
+    /// `true`, a gap in px, or `{ "gap": 24, "align": "start|center|end" }`. Expanded at load.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stack: Option<serde_json::Value>,
     /// Drawn bottom to top.
     #[serde(deserialize_with = "de::layers")]
     #[schemars(with = "Vec<de::LayerItem>")]

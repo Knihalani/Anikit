@@ -33,7 +33,7 @@ Theme colours (used as `$name`): `primary secondary accent bg surface text muted
 
 ## Scenes
 
-`id` · `duration` (default 3, or `"auto"`) · `background` · `transition` (into this scene) · `camera` · `markers` · `layers` · `audio`.
+`id` · `duration` (default 3, `"auto"`, or musical: `"2 beats"`, `"1 bar"`, `"4b"`; top-level `"cut": "bar"` sets the default for every scene) · `stack` (`true`: free text layers as one centred column, no x/y needed) · `background` · `transition` (into this scene) · `camera` · `markers` · `layers` · `audio`.
 
 Transitions: `cut crossfade fadeBlack fadeWhite slide push zoom wipe iris blur glitch morphCut`, shader transitions `burn ripple pixelate swirl ink-bleed warp-wipe luma-melt zoom-blur`, or your own `{ "type": "shader", "shader": "vec4 transition(vec2 uv) {…}" }` (gl-transitions API). Write one as a string or as `{ "type": "slide", "direction": "left", "duration": 0.6 }`.
 
@@ -89,6 +89,8 @@ Animatable: `x y width height scale scaleX scaleY rotation skewX skewY opacity b
 SFX: `click tick pop whoosh swoosh rise riser drop impact ding chime typing success`.
 
 ## CLI
+
+Edit in place instead of rewriting: `anikit-video set spec.json scenes.intro.layers.title.text "New title"` (path by key, index or `id`; `--delete` removes).
 
 ```
 anikit-video check  spec.json [--json]          errors and warnings with paths and "did you mean"

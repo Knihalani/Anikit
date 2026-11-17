@@ -72,6 +72,16 @@ fn along(grid: &[f64], t: f64) -> f64 {
 }
 
 impl Music {
+    /// Seconds per beat and per bar.
+    pub fn lengths(&self) -> (f64, f64) {
+        let beat = 60.0 / self.bpm.max(1.0);
+        let bar = match self.bars.len() {
+            0 | 1 => 4.0 * beat,
+            n => (self.bars[n - 1] - self.bars[0]) / (n - 1) as f64,
+        };
+        (beat, bar)
+    }
+
     /// (beat, bar, level, bpm) at global time `t`.
     pub fn at(&self, t: f64) -> (f64, f64, f64, f64) {
         let k = ((t - self.start) * 100.0).floor();
