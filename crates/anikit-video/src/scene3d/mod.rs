@@ -25,6 +25,7 @@
 
 pub mod authoring;
 pub mod bvh;
+pub mod rig;
 pub mod env;
 pub mod geom;
 pub mod gltf;
@@ -111,7 +112,7 @@ pub fn shorthand(mut v: Value) -> Value {
 }
 
 const TOP_KEYS: &[&str] = &[
-    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline",
+    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline", "rig",
 ];
 
 /// The `scene3d` component (kind names `scene3d`, `scene-3d`, `3d.scene`).
@@ -146,6 +147,7 @@ struct Prepared {
     lights: Vec<trace::Light>,
     /// Underwater caustics strength (0 = off).
     caustics: f32,
+    gobo: rig::Gobo,
     /// Ink outlines: (width in px at 1080p, colour sRGB).
     outline: Option<(f32, [u8; 3])>,
     /// Volumetric light shafts in the fog.
@@ -394,6 +396,18 @@ impl Prepare for Scene3d {
         let bounds = if probe.insts.is_empty() { (v3(0.0, 0.5, 0.0), 1.0) } else { (scale(add(lo, hi), 0.5), len(sub(hi, lo)) * 0.5) };
         let cam_v = m.get("camera").cloned().unwrap_or(if lookdev { lookdev_camera() } else { Value::Null });
         let camera = spec::camera(&cam_v, bounds, "camera").map_err(Error)?;
+        // `rig`: a lighting setup placed around the camera's view at t = 0.
+        let rig = m.get("rig").map(|r| rig::parse(r, "rig")).transpose().map_err(Error)?;
+        let mut gobo = rig::Gobo::default();
+        if let Some(r) = &rig {
+            let c0 = camera.at(0.0, 16.0 / 9.0, 0.0);
+            let view = norm(sub(c0.target, c0.pos));
+            // Keep the env's key level so exposure and the look stay calibrated.
+            let level = es.env.key_box().map(|k| luma(k.radiance) * es.env.key_solid_angle * (1.0 - k.falloff / 3.0) / std::f32::consts::PI).unwrap_or(1.0).max(0.2);
+            let (e, g) = r.apply(&es.env, view, level);
+            es.env = e;
+            gobo = g;
+        }
         if let Some(n) = &camera.target_obj {
             if !objs.iter().any(|o| o.name.as_deref() == Some(n)) {
                 let names: Vec<&str> = objs.iter().filter_map(|o| o.name.as_deref()).collect();
@@ -464,6 +478,13 @@ impl Prepare for Scene3d {
                 (d, c)
             }
             Some(_) => return Err(Error("`fog` must be a density (per metre) or { density, color }".into())),
+        };
+        // A rig with `beam`: haze so the key reads as a volumetric beam.
+        let haze = if rig.as_ref().is_some_and(|r| r.beam) && !m.contains_key("fog") {
+            shafts = true;
+            (0.04, if bright { haze.1 } else { v3(0.004, 0.004, 0.005) })
+        } else {
+            haze
         };
         let tonemap = match m.get("tonemap").and_then(|t| t.as_str()) {
             None => tonemap,
@@ -544,6 +565,7 @@ impl Prepare for Scene3d {
             haze,
             lights: local_lights,
             caustics,
+            gobo,
             outline,
             shafts,
             camera,
@@ -842,6 +864,7 @@ impl Scene3d {
         scene.haze = p.haze;
         scene.lights = p.lights.clone();
         scene.caustics = p.caustics;
+        scene.gobo = p.gobo;
         scene.time = t;
         let mut insts = instances(&p.objs, t, dt);
         // Textures need world boxes, so build the hierarchy first.

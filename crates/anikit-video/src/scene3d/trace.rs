@@ -400,6 +400,8 @@ pub struct Scene {
     /// Underwater caustics on the key light (0 = off) and the time they animate with.
     pub caustics: f32,
     pub time: f32,
+    /// A gobo (cookie) in front of the key light.
+    pub gobo: super::rig::Gobo,
 }
 
 #[derive(Clone, Copy)]
@@ -785,6 +787,7 @@ impl Scene {
             inv: Vec::new(),
             caustics: 0.0,
             time: 0.0,
+            gobo: super::rig::Gobo::default(),
             up_light: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)),
         };
         let up = v3(0.0, 1.0, 0.0);
@@ -1199,8 +1202,9 @@ impl Scene {
     /// Underwater caustics: a bright, moving net of light (mean about 1).
     #[inline]
     fn caustic(&self, p: V3) -> f32 {
+        let g = self.gobo.at(p);
         if self.caustics <= 0.0 {
-            return 1.0;
+            return g;
         }
         let t = self.time;
         let mut a = 0.0;
@@ -1211,7 +1215,7 @@ impl Scene {
             a += (u * 6.0 + (w * 2.3 + t * 0.9).sin() * 0.9 + t * 1.1 + k as f32).sin();
         }
         let c = (1.0 - (a / 3.0).abs()).powi(6);
-        1.0 + self.caustics * (c * 3.2 - 0.45)
+        g * (1.0 + self.caustics * (c * 3.2 - 0.45))
     }
 
     /// Non-photoreal styles. They keep the diffuse split (so traced shadows and
