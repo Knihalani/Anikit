@@ -427,16 +427,20 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mut pred = [0u8; 256];
         let mut pred16 = [0u8; 256];
         let mut best16 = (u32::MAX, 2u8);
+        // SAD pre-selection, SATD for the winner (P frames); full SATD for IDRs.
         for m in 0..4u8 {
             if !Self::intra16_modes_ok(&e16, m) {
                 continue;
             }
             intra::pred16(&e16, m, &mut pred);
-            let s = dsp::satd(src_y, &pred, 16, 16);
+            let s = if c.idr { dsp::satd(src_y, &pred, 16, 16) } else { crate::simd::sad16(src_y, 16, &pred, 16) };
             if s < best16.0 {
                 best16 = (s, m);
                 pred16 = pred;
             }
+        }
+        if !c.idr {
+            best16.0 = dsp::satd(src_y, &pred16, 16, 16);
         }
         let cost16 = best16.0 + lambda as u32 * if c.idr { 4 } else { 8 };
         // Full motion search unless intra prediction is already near-perfect.
