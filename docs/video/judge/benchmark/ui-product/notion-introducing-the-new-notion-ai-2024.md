@@ -6,7 +6,7 @@ studio: "Notion (in-house; individual credits not published)"
 client: "Notion"
 year: 2024
 url: https://www.youtube.com/watch?v=S92KX8-Hmlc
-alt_urls: [https://www.notion.ai]
+alt_urls: ["https://www.notion.ai"]
 length_s: 57
 verified: oembed
 aspect: "16:9"

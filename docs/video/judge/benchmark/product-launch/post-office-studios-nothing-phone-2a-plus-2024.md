@@ -6,7 +6,7 @@ studio: "Post Office Studios, Mumbai (director: Prasad Kelkar)"
 client: "Nothing (creative agency: Made Thought)"
 year: 2024
 url: https://vimeo.com/999367912
-alt_urls: [https://stashmedia.tv/post-office-studios-conjures-scale-and-drama-for-the-nothing-2a-phone]
+alt_urls: ["https://stashmedia.tv/post-office-studios-conjures-scale-and-drama-for-the-nothing-2a-phone"]
 length_s: 65
 verified: oembed
 aspect: "16:9"

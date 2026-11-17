@@ -6,7 +6,7 @@ studio: "Linear (in-house; individual credits not published)"
 client: "Linear"
 year: 2026
 url: https://www.youtube.com/watch?v=mRql2VJ99gM
-alt_urls: [https://linear.app/changelog/2026-03-24-introducing-linear-agent]
+alt_urls: ["https://linear.app/changelog/2026-03-24-introducing-linear-agent"]
 length_s: 55
 verified: oembed
 aspect: "16:9"

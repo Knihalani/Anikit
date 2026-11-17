@@ -133,6 +133,17 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 | [Radiohead - Burn The Witch](music-video/hopewell-radiohead-burn-the-witch-2016.md) | Jacknife (director: Chris Hopewell) | 2016 | 4:00 | steady | stop-motion | [watch](https://www.youtube.com/watch?v=yI2oS2hoL0k) |
 | [Prince - Sign O' The Times (Official Music Video)](music-video/konersman-prince-sign-o-the-times-1987.md) | Bill Konersman (director/animator) | 1987 | 3:44 | steady | kinetic-type, 2d-vector | [watch](https://www.youtube.com/watch?v=8EdxM72EZ94) |
 
+### Social-first 9:16 / 1:1 (`social-vertical/`, 6)
+
+| Piece | Studio | Year | Length | Pace | Medium | Link |
+|---|---|---|---|---|---|---|
+| [A peek at some handmade magic 🪄 #MacBookNeo #Shorts](social-vertical/apple-macbook-neo-handmade-magic-2026.md) | Apple (production credits not published) | 2026 | ? | fast | stop-motion, live-action, mixed | [watch](https://www.youtube.com/shorts/y4DnsCzJTRQ) |
+| [Episode 6 - The Night Shift (DuoTV Finale)](social-vertical/duolingo-duotv-the-night-shift-2026.md) | Duolingo in-house design studio (ACD: Sarah Beth Morgan; head of design: Mig Reyes) | 2026 | ? | fast | 2d-illustrated, cel | [watch](https://www.youtube.com/shorts/lsNxpodd-14) |
+| [Wrapped 2025 Is Here](social-vertical/spotify-wrapped-2025-is-here-2025.md) | Spotify in-house creative (Global ECD: Jeremy Wirth); motion guidelines by Vucko per a contributor's portfolio (unverified) | 2025 | ? | frantic | kinetic-type, 2d-vector, collage | [watch](https://www.youtube.com/shorts/1-HSVoieS2U) |
+| [The latest chapter in Nike's never-ending pursuit of Innovation is here: The AIRMAX 1000 #shorts](social-vertical/nike-airmax-1000-short-2024.md) | Nike (CG launch visuals for the Airmax 1000 credited by Stash to Already Been Chewed; that this Short is that work is est.) | 2024 | ? | fast | photoreal-cg, 3d-cg | [watch](https://www.youtube.com/shorts/qlNWNuhLl4s) |
+| [Instagram_Motion-Identity-System_J_Motion-Sizzle_1920x1080](social-vertical/studio-dumbar-instagram-motion-identity-2024.md) | Studio Dumbar/DEPT® (with Instagram in-house brand design) | 2024 | 0:38 | fast | 2d-vector, kinetic-type, ui | [watch](https://vimeo.com/922022119) |
+| [Ep 1 | The One With Deep Fried Duo #duolingo #funny #languagelearning #sitcom](social-vertical/loop-duolingo-living-with-lily-ep1-2023.md) | Loop (showrunner: Nick Gallo; writer: Matt Powers) | 2023 | ? | steady | live-action | [watch](https://www.youtube.com/shorts/IZzFzfR4Fh8) |
+
 ### Sports & broadcast packages (`broadcast-sports/`, 7)
 
 | Piece | Studio | Year | Length | Pace | Medium | Link |

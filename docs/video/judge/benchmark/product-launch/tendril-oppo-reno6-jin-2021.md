@@ -6,7 +6,7 @@ studio: "Tendril (CD: Nidia Dias; directors: Miguel Rato & Joey Recoskie)"
 client: "OPPO"
 year: 2021
 url: https://vimeo.com/646512105
-alt_urls: [https://vimeo.com/647785908, https://www.stashmedia.tv/oppo-reno6-launch-films-by-tendril/, https://jrecoskie.myportfolio.com/oppo-reno6-series]
+alt_urls: ["https://vimeo.com/647785908", "https://www.stashmedia.tv/oppo-reno6-launch-films-by-tendril/", "https://jrecoskie.myportfolio.com/oppo-reno6-series"]
 length_s: 31
 verified: oembed
 aspect: "other"

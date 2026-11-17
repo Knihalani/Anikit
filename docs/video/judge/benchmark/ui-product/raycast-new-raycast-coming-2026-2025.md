@@ -6,7 +6,7 @@ studio: "Raycast (in-house; individual credits not published)"
 client: "Raycast"
 year: 2025
 url: https://www.youtube.com/watch?v=Mi173xGb0ZA
-alt_urls: [https://raycast.com/]
+alt_urls: ["https://raycast.com/"]
 length_s: 39
 verified: oembed
 aspect: "16:9"

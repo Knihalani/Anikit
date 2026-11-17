@@ -6,7 +6,7 @@ studio: "Morph Studio, Singapore (director: Vitas)"
 client: "XREAL"
 year: 2025
 url: https://vimeo.com/1145191776
-alt_urls: [https://www.stashmedia.tv/morph-studio-breeds-launch-film-for-xreal-1s-ar-glasses/]
+alt_urls: ["https://www.stashmedia.tv/morph-studio-breeds-launch-film-for-xreal-1s-ar-glasses/"]
 length_s: 26
 verified: oembed
 aspect: "16:9"

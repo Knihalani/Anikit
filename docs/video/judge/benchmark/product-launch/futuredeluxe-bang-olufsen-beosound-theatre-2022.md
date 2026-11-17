@@ -6,7 +6,7 @@ studio: "FutureDeluxe (director: Raj Davsi)"
 client: "Bang & Olufsen"
 year: 2022
 url: https://vimeo.com/746646949
-alt_urls: [https://www.stashmedia.tv/?p=90425, https://vimeo.com/747400200]
+alt_urls: ["https://www.stashmedia.tv/?p=90425", "https://vimeo.com/747400200"]
 length_s: 30
 verified: oembed
 aspect: "16:9"

@@ -6,7 +6,7 @@ studio: "Found, London"
 client: "Devialet (agency: La Manufacture Paris)"
 year: 2022
 url: https://vimeo.com/776941201
-alt_urls: [https://www.stashmedia.tv/found-takes-devialet-to-the-opera-de-paris/]
+alt_urls: ["https://www.stashmedia.tv/found-takes-devialet-to-the-opera-de-paris/"]
 length_s: 30
 verified: oembed
 aspect: "16:9"

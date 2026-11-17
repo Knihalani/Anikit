@@ -6,7 +6,7 @@ studio: "ManvsMachine (concept, design & direction)"
 client: "Nike Europe"
 year: 2016
 url: https://vimeo.com/192130017
-alt_urls: [https://lovethework.com/work-awards/entries/nike-air-max-17-the-art-of-negative-space-25094, https://www.stashmedia.tv/manvsmachine-nike-air-max-2017/]
+alt_urls: ["https://lovethework.com/work-awards/entries/nike-air-max-17-the-art-of-negative-space-25094", "https://www.stashmedia.tv/manvsmachine-nike-air-max-2017/"]
 length_s: 32
 verified: oembed
 aspect: "16:9"

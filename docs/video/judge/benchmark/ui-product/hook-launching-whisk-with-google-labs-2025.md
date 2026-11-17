@@ -6,7 +6,7 @@ studio: "Hook Studios"
 client: "Google Labs"
 year: 2025
 url: https://www.youtube.com/watch?v=dTtshFSBIQw
-alt_urls: [https://byhook.com/work/bringing-ideas-to-life-with-google-labs, https://www.stashmedia.tv/hook-taps-into-the-joy-of-the-creative-process-to-launch-whisk-for-google-labs/]
+alt_urls: ["https://byhook.com/work/bringing-ideas-to-life-with-google-labs", "https://www.stashmedia.tv/hook-taps-into-the-joy-of-the-creative-process-to-launch-whisk-for-google-labs/"]
 length_s: 52
 verified: oembed
 aspect: "16:9"

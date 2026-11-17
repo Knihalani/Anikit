@@ -1,28 +1,29 @@
 # What world-class looks like: patterns across the benchmark set
 
-This page sums up the ~85 pieces in [INDEX.md](INDEX.md): the best short-form motion work we could find in 14 categories, from title sequences and launch films to idents, explainers, generative art, data stories, music videos and social. It says what they have in common, with numbers, so a judge (or a maker) can hold one of our renders against it.
+This page sums up the 87 pieces in [INDEX.md](INDEX.md): the best short-form motion work we could find in 14 categories, from title sequences and launch films to idents, explainers, generative art, data stories, music videos and social. It says what they have in common, with numbers, so a judge (or a maker) can hold one of our renders against it.
 
-**How sure the numbers are.** Category counts, lengths and tags come from `bench.py stats` over the front matter. Shot lengths are *est.* (each piece file says how they were estimated) unless marked *measured*, which means `anikit-video analyze` ran on a clip we may legitimately hold (Creative Commons). The "N of 79" counts of qualities come from a keyword pass over each piece's **What makes it world-class** section. They are **lower bounds**: an analysis can show a quality without using the keyword.
+**How sure the numbers are.** Category counts, lengths and tags come from `bench.py stats` over the front matter. Shot lengths are *est.* (each piece file says how they were estimated) unless marked *measured*, which means `anikit-video analyze` ran on a clip we may legitimately hold (Creative Commons). The "N of 79" counts (taken before the last 8 pieces, social and two top-ups, were added) of qualities come from a keyword pass over each piece's **What makes it world-class** section. They are **lower bounds**: an analysis can show a quality without using the keyword.
 
 ## 1. The numbers
 
 | Measure | Value across the set |
 |---|---|
-| Pieces / categories | 79 + social (see INDEX) / 14 |
-| Year | 1991–2026; 69 of 79 from 2015 on (classics: Lambie-Nairn BBC2 1991, Se7en 1995, Catch Me If You Can 2002, Honda Grrr 2004, Rosling 2010, Metamorphosis 2012, Bear & Hare 2013, True Detective 2014) |
-| Length | median 86 s (p25 53 s, p75 153 s). Commercial work clusters at **30 s** (Devialet, B&O, Air Max 32 s, Oppo 31 s, Weetabix 30 s) and **38–68 s** (UI launches 38–57 s, sport trailers ~60 s). Art and music pieces run 4–8 min. |
+| Pieces / categories | 87 / 14 (5–7 per category); 86 URLs verified through oEmbed, 1 on the studio page |
+| Year | 1987–2026; 76 of 87 from 2015 on (classics: Prince *Sign o' the Times* lyric video 1987, Lambie-Nairn BBC2 1991, Se7en 1995, Catch Me If You Can 2002, Honda Grrr 2004, Rosling 2010, Metamorphosis 2012, Bear & Hare 2013, True Detective 2014) |
+| Length | median 86 s (p25 53 s, p75 162 s; 37 of 69 known lengths ≤ 90 s). Commercial work clusters at **30 s** (Devialet, B&O, Air Max 32 s, Oppo 31 s, Weetabix 30 s) and **38–68 s** (UI launches 38–57 s, sport trailers ~60 s). Art and music pieces run 4–8 min. |
 | Median shot (est., 44 pieces with an estimate) | **2.5 s overall**; 1.0 s broadcast/sport, 1.5 s idents and UI launches, 2.0 s product launches, 2.5 s CG, 3.0 s event openers, 3.5 s explainers, illustration and title sequences, 4.0 s award shorts, 8+ s data stories |
 | Median shot (measured) | Blender Studio *Charge* (2022, CC BY): **1.62 s**, 46 shots, 10.3 cuts/min, 36% of cuts on a beat at 120 BPM, mean luma 0.25 (low-key), vignette 0.6. Calibration (not in the set): Blender *Spring* (2019): 4.5 s median, 9.7 cuts/min, 24% on beat. |
-| Declared pace | steady 39, fast 30, calm 9, frantic 1 (Aphex Twin *T69 Collapse*, which failed the Harding flash test) |
-| Type's role | none 29, supporting 32, lead 17, type-only 1 |
-| Audio | music-led 47, VO-led 17, sound-design-led 14 |
-| Medium (multi-tag) | 3D/CG 34, kinetic type 19, mixed 19, 2D vector 16, 2D illustrated 16, live action 14, stylised 3D 12, generative 12, cel 10, sim 9, photoreal CG 9, UI 9, data viz 9, stop-motion 8 |
-| Palette (multi-tag) | limited 40, dark 37, saturated 36, high-contrast 24, brand colour 17, mono 12, light 10, neon 5 |
+| Declared pace | steady 41, fast 35, calm 9, frantic 2 (one is Aphex Twin *T69 Collapse*, which failed the Harding flash test) |
+| Type's role | none 34, supporting 32, lead 18, type-only 3 |
+| Audio | music-led 52, VO-led 17, sound-design-led 14, mixed 3, lyric 1 |
+| Medium (multi-tag) | 3D/CG 35, kinetic type 22, mixed 21, 2D vector 19, 2D illustrated 18, live action 16, stylised 3D 13, generative 12, cel 11, photoreal CG 10, UI 10, sim 9, stop-motion 9, data viz 9 |
+| Palette (multi-tag) | limited 43, saturated 42, dark 39, high-contrast 25, brand colour 22, mono 12, light 11, neon 5 |
+| Aspect | 16:9 75, 9:16 5 (social: Duolingo, Spotify Wrapped, Nike, Apple), wide/other 7 |
 | Techniques (multi-tag) | camera move 50, depth of field 24, rhythmic edit 23, kinetic type 22, macro 22, morph 21, hard cut 20, long take 17, beat sync 14, grain 13, instancing 12 |
 
 ### What the numbers say
 
-1. **Fast is not the same as many cuts.** The set's estimated median shot is 2.5 s, longer than the "fast" bar in `quality/BAR.md` (median ≤ 1.5 s). Only sport, ident and UI-launch work cuts that fast. The rest hold longer but **never hold still**: the pace comes from something changing inside the shot. That might be a camera that always moves (50 of 79 tag `camera-move`), a morph, a sim settling, a loop cycling, or secondary motion. Kurzgesagt holds 3–4 s with everything bobbing; *Feud* has no cuts at all for 76 s; Factory Fifteen's BBC Tokyo is one 60 s camera move through six worlds. Judge **dead air**, not cut count, unless the brief is sport or social.
+1. **Fast is not the same as many cuts.** The set's estimated median shot is 2.5 s, longer than the "fast" bar in `quality/BAR.md` (median ≤ 1.5 s). Only sport, ident, UI-launch and social work cuts that fast. The rest hold longer but **never hold still**: the pace comes from something changing inside the shot. That might be a camera that always moves (50 of 79 tag `camera-move`), a morph, a sim settling, a loop cycling, or secondary motion. Kurzgesagt holds 3–4 s with everything bobbing; *Feud* has no cuts at all for 76 s; Factory Fifteen's BBC Tokyo is one 60 s camera move through six worlds. Judge **dead air**, not cut count, unless the brief is sport or social.
 2. **Dark and limited is the norm, not the exception.** 40 of 79 are tagged `limited` and 37 `dark`; only 10 are light-ground pieces. A world-class palette is usually 2–4 colours plus one accent, held across the whole film (*Feud*'s three tuned colours, CW's three named colours, Stranger Things' single red on black, Nothing's white light on grey).
 3. **Most world-class motion is not type-led.** In 61 of 79 pieces type is absent or supporting. Where type leads (title sequences, Demo festival, Framer), it is a single typeface set with restraint, or the type is made of the film's own material (*Se7en*'s scratched emulsion, *Catch Me If You Can*'s rubber stamps, the Honda topiary). It is never a big centred sans headline over a backdrop.
 4. **3D and real materials dominate.** 34 of 79 use 3D/CG, and stop-motion, live action and photo add another ~25. The flat-vector pieces that make the cut (Kurzgesagt, Oddfellows, Giant Ant, Champ's TED-Ed) all add texture, a light source or layered depth: crayon fills, halftone, airbrushed gradients, a motivated light cone.

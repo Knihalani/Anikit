@@ -271,8 +271,14 @@ def cmd_fetch(a):
 def _walk_layers(node, out):
     if isinstance(node, dict):
         t = node.get("type")
+        if not t:  # shorthand layers: the type is implied by its key
+            t = next((k for k in ("text", "shader", "image", "video", "shape", "component", "composition") if k in node), None)
+            if t == "text" and not isinstance(node.get("text"), str):
+                t = None
         if t:
             out.append(("type", str(t)))
+        if "kinetic" in node:
+            out.append(("split", "kinetic"))
         c = node.get("component")
         if isinstance(c, str):
             out.append(("component", c))
@@ -283,6 +289,16 @@ def _walk_layers(node, out):
     elif isinstance(node, list):
         for v in node:
             _walk_layers(v, out)
+
+
+def _iter_dicts(node):
+    if isinstance(node, dict):
+        yield node
+        for v in node.values():
+            yield from _iter_dicts(v)
+    elif isinstance(node, list):
+        for v in node:
+            yield from _iter_dicts(v)
 
 
 def _lum(hexs):
@@ -315,11 +331,21 @@ def profile_from_spec(path):
         pr.setdefault("words", set()).add(look)
     items = []
     _walk_layers(raw.get("scenes", []), items)
+    for sc in raw.get("scenes", []):
+        if isinstance(sc, str):
+            items.append(("type", "text"))
+        elif isinstance(sc, dict):
+            for l in sc.get("layers", []):
+                if isinstance(l, str):
+                    items.append(("type", "text"))
     comps = [v.lower() for k, v in items if k == "component"]
     types = [v for k, v in items if k == "type"]
     n_text = types.count("text")
     n_layers = max(1, sum(1 for t in types if t in ("text", "shape", "image", "video", "group", "box", "component", "shader", "composition")))
     if any(c in ("scene3d", "model", "text3d", "productshot", "product_shot", "globe") or "3d" in c for c in comps):
+        pr["medium"].add("3d-cg")
+    shaders = [str(n.get("shader")).lower() for n in _iter_dicts(raw.get("scenes", [])) if isinstance(n.get("shader"), str)]
+    if any(x in sh for sh in shaders for x in ("chrome", "glass", "metal", "sdf", "3d", "raymarch")):
         pr["medium"].add("3d-cg")
     if "shader" in types or any(c in ("metaballs", "particles", "particletext", "starfield", "rays") for c in comps):
         pr["medium"].add("generative"); pr["techniques"].add("shader" if "shader" in types else "particles")
@@ -341,6 +367,8 @@ def profile_from_spec(path):
     theme = raw.get("theme") or {}
     cols = theme.get("colors") or theme.get("colours") or {}
     bg = raw.get("background")
+    if not isinstance(bg, str):
+        bg = next((sc.get("background") for sc in raw.get("scenes", []) if isinstance(sc, dict) and isinstance(sc.get("background"), str)), None)
     hexes = [v for v in list(cols.values()) + ([bg] if isinstance(bg, str) else []) if isinstance(v, str) and v.startswith("#")]
     ls = [x for x in map(_lum, hexes) if x]
     if ls:
@@ -397,11 +425,25 @@ def _jac(a, b):
     return len(a & b) / len(a | b) if a and b else 0.0
 
 
+CAT_HINT = {"ui": "ui-product", "data-viz": "data-story", "kinetic-type": "kinetic-type", "3d-cg": "cg-3d",
+            "photoreal-cg": "product-launch", "generative": "generative", "2d-illustrated": "illustration",
+            "2d-vector": "explainer-2d", "cel": "illustration"}
+PURPOSE_HINT = {"ui-demo": "ui-product", "launch": "product-launch", "explainer": "explainer-2d", "ident": "brand-idents",
+                "title-sequence": "kinetic-type", "music-video": "music-video", "lyric-video": "music-video",
+                "data-story": "data-story", "broadcast": "broadcast-sports", "promo": "event-promo", "social-ad": "social-vertical"}
+
+
 def score(pr, p):
     s, why = 0.0, []
+    hints = [CAT_HINT[m] for m in pr.get("medium", ()) if m in CAT_HINT] + [PURPOSE_HINT[x] for x in pr.get("purpose", ()) if x in PURPOSE_HINT] * 2
+    if pr.get("aspect") in ("9:16", "4:5"):
+        hints += ["social-vertical"] * 2
+    if hints and p["category"] in hints:
+        s += 2.0 * hints.count(p["category"]) / len(hints)
+        why.append(f"category {p['category']}")
     j = _jac(pr.get("medium", ()), p["medium"]); s += 3 * j
     if j: why.append("medium " + "/".join(sorted(set(pr["medium"]) & set(p["medium"]))))
-    if p.get("purpose") in pr.get("purpose", ()):
+    if p.get("purpose") in pr.get("purpose", ()) or (p["category"] == "ui-product" and "ui-demo" in pr.get("purpose", ())):
         s += 2.5; why.append(f"purpose {p['purpose']}")
     if pr.get("pace") and p.get("pace") in PACE:
         d = abs(PACE.index(pr["pace"]) - PACE.index(p["pace"]))

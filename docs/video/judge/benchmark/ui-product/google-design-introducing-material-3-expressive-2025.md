@@ -6,7 +6,7 @@ studio: "Google Design (in-house; individual credits not published)"
 client: "Google"
 year: 2025
 url: https://www.youtube.com/watch?v=n17dnMChX14
-alt_urls: [https://m3.material.io/]
+alt_urls: ["https://m3.material.io/"]
 length_s: 39
 verified: oembed
 aspect: "16:9"
