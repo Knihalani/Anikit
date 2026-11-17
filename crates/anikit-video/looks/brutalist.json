@@ -1,7 +1,7 @@
 {
  "title": "Brutalist mono",
  "summary": "Raw dark concrete, monospace everything, acid-lime ink, hard cuts and typing; loud and honest.",
- "direction": "Raw, honest, loud. Monospace for everything, uppercase, oversized, crammed to the edges; acid lime on dark concrete, black boxes, visible structure (borders, index numbers, timestamps). Motion is mechanical: typing, steps(), hard cuts and glitches. No rounded corners, no soft shadows, no gradients.",
+ "direction": "Raw, honest, loud. Monospace for everything, uppercase, oversized, crammed to the edges; acid lime on dark concrete, black boxes, visible structure (borders, index numbers, timestamps). Motion is mechanical: typing, steps(), hard cuts and glitches. No rounded corners, no soft shadows, no gradients. Fits: developer tools, manifestos, honest/anti-polish brands. Not for: luxury, health, children. Score: drums, distorted bass, found noise; silence between hits. Override the lime with the brand's own ink.",
  "mode": "dark",
  "theme": {
   "colors": {

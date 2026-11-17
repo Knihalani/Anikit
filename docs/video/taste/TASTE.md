@@ -2,7 +2,7 @@
 
 What separates work a studio would post from generic, templated or "AI slop" video, distilled from practitioners and research (every claim is sourced in [`sources.md`](sources.md)). It exists because the user rejected work as "AI slop", "boring", "generic", "slow", "text hard to read and looks low resolution", "too much synthesizer", "lighting is off", "don't force 3D", "the same 3D visuals every time" (`docs/video/quality/BAR.md`).
 
-**This is not a style.** Every section gives *ranges, reasons and contrasting valid choices*. The only universal rule: every choice is made for this subject, on purpose, and you can say why. A default you didn't choose is the tell (prg.sh, 925Studios); a choice that would fit any product is wrong (swap test, §8). If two of your pieces look alike, at least one of them is wrong.
+**This is not a style.** Every section gives *ranges, reasons and contrasting valid choices*. The only universal rule: every choice is made for this subject, on purpose, and you can say why. A default you didn't choose is the tell (prg.sh, 925Studios); a choice that would fit any product is wrong (swap test, §8). If two of your pieces look alike, at least one of them is wrong: **range is the goal**. Two briefs should come out as different in medium, world, palette, type, motion and sound as two studios' work would (taste pass step 1, *Diverge*).
 
 Each section runs **principles → rules (numbers from practice) → tells → checks**. Numbers marked *(heuristic)* are our proposals built on sources; tune them by eye. `anikit-video critique` implements the checks marked ⚙.
 
@@ -396,20 +396,20 @@ Each section runs **principles → rules (numbers from practice) → tells → c
 
 ## 10. The taste pass (run before any final render)
 
-Look at the `critique --pack` strip, the cut pairs and three full-size stills, and listen once muted and once audio-only.
+Step 1 happens before designing; the rest happen on the `critique --pack` strip, its cut pairs and three full-size stills, listening once muted and once audio-only.
 
-1. **Swap test.** With a competitor's name, it would no longer work. I can say the one idea in a sentence.
-2. **Medium.** Type, 2D, UI, photo, shader or 3D follows from the idea. 3D is not forced, and nothing repeats a previous piece's look.
-3. **Focal point.** Each still names its subject in under 1 s at thumbnail size, and the eye knows where to go next.
-4. **Composition.** Placement is chosen (off-centre with lead room, or committed symmetry). Negative space is shaped. Shot size varies.
-5. **Scale.** 2–4 type sizes on one ratio. The hero is ≥ 3:1 against the next size. Nothing shouts that doesn't need to.
-6. **Read.** Every word is crisp at 100% (no blur, defocus or bloom), ≥ 4.5:1 in luma, ≥ ~36 px, and held max(0.83 s, chars/15, words × 0.3) after it settles.
-7. **Values.** Hierarchy survives greyscale. There is no mid-grey mumble and no clipped or crushed areas unless intended.
-8. **Palette.** It comes from the subject: one base, one accent, ≤ 4 hue families. It changes with the arc.
-9. **Light.** I can point to the key. The ratio fits the mood, the subject separates from the background, and highlights roll off.
-10. **Motion.** Fast attack and long settle. One element leads. Entrances vary by role. Fast moves are blurred. Overshoot is ≤ 5% unless the piece is playful.
-11. **Rhythm.** Pace matches the declared intent. Shot lengths vary (CV ≳ 0.6), with a breath after the densest run. Cuts land on action or comprehension; beats are used for the key hits.
-12. **Arc.** It hooks by 1 s, escalates, peaks at ~⅔, and lands with a held end frame or a button.
-13. **Sound.** Instruments come from the concept (synths only if it is electronic). There is at least one silence, hits fall on the frame, sfx are rare and material-specific, and loudness is −14 to −16 LUFS at ≤ −1 dBTP.
-14. **Specific.** There are ≥ 3 subject-only elements: real UI, data, names. No placeholder, no filler copy, and no tell from §9 without a stated reason.
-15. **Cut 20%.** Remove the weakest shot, word or effect. If the piece got better, cut again.
+1. **Diverge.** From the brief, write 3 genuinely different directions, each with a medium, a world, a palette, a type choice, a motion character and a sound. Make them differ on every axis, not just in colour. Pick the one most specific to this brief. List what earlier pieces in this project used (medium, world, motif, palette, type, light, music) and make sure the chosen direction differs from all of them.
+2. **Swap test.** With a competitor's name it would stop working. The idea fits in one sentence, and there are ≥ 3 subject-only elements (real UI, data, names, the product's own shapes or sounds).
+3. **Medium.** It follows from the idea: type, 2D, UI, photo, shader or 3D. 3D only where depth means something.
+4. **Focal point.** Each still names its subject in < 1 s at thumbnail size, and the eye knows where to go next.
+5. **Composition.** Off-centre with lead room, or committed symmetry. Negative space is shaped. Shot size varies.
+6. **Scale.** 2–4 type sizes on one ratio. The hero is ≥ 3:1 against the next size. Nothing shouts that doesn't need to.
+7. **Read.** Every word is crisp at 100% (no blur, defocus or bloom), ≥ 4.5:1 in luma, ≥ ~36 px, and held max(0.83 s, chars/15, words × 0.3) after it settles.
+8. **Values.** Hierarchy survives greyscale. No mid-grey mumble, and no clipped or crushed areas unless intended.
+9. **Palette.** From the subject: one base, one accent, ≤ 4 hue families. It changes with the arc.
+10. **Light.** You can point to the key. The ratio fits the mood, the subject separates from the ground, and highlights roll off.
+11. **Motion.** Fast attack and long settle. One element leads. Entrances vary by role. Fast moves are blurred. Overshoot ≤ 5% unless the piece is playful.
+12. **Rhythm and arc.** Pace matches the declared intent. Shot lengths vary (CV ≳ 0.6), with a breath after the densest run. Cuts land on action or comprehension, with beats saved for the key hits. Hook by 1 s, peak at about ⅔, then land on a held frame or a button.
+13. **Sound.** Instruments come from the concept (synths only if it's electronic). At least one silence. Hits on the frame. Sfx are rare and match the material. −14 to −16 LUFS, ≤ −1 dBTP.
+14. **No tells.** No placeholder, no filler copy, and no §9 tell without a stated reason.
+15. **Cut 20%.** Remove the weakest shot, word or effect. If it got better, cut again.

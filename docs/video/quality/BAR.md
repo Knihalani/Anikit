@@ -1,5 +1,7 @@
 # The quality bar (read before showing anyone a frame)
 
+The positive canon behind these rules, with numbers and sources: [`../taste/TASTE.md`](../taste/TASTE.md) (run its §10 taste pass before any final render).
+
 The user has rejected, in their own words, everything in `rejected/`:
 
 - "all look terrible, like AI slop and are boring";

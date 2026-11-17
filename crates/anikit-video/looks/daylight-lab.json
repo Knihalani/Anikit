@@ -1,7 +1,7 @@
 {
  "title": "Daylight lab",
  "summary": "Bright white studio, precise grotesk, electric-blue signal, crisp soft shadows; calm and exact.",
- "direction": "A clean product lab at noon. Lots of white space, one electric-blue signal colour, tight tracked grotesk headlines left-aligned on a grid. Objects float on soft contact shadows. Motion is quick and exact (outExpo), cuts are pushes. Use 3D product shots (model, text-3d) lit like a studio. Avoid gradients and glow.",
+ "direction": "A clean product lab at noon. Lots of white space, one electric-blue signal colour, tight tracked grotesk headlines left-aligned on a grid. Objects float on soft contact shadows. Motion is quick and exact (outExpo), cuts are pushes. Show the product's real UI or photography; 3D only for a physical product, lit by one window-like key. Avoid gradients and glow. Fits: precise products, science, hardware. Not for: emotional stories or night-time worlds. Score: piano, marimba or pizzicato strings, not a synth bed. Override the blue with the product's real signal colour.",
  "mode": "light",
  "theme": {
   "colors": {
