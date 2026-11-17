@@ -123,6 +123,16 @@
           "type": "null"
         }
       ]
+    },
+    "compositions": {
+      "description": "Named 2D sub-compositions: placed with a `composition` layer, or used as a texture in 3D.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": {
+        "$ref": "#/$defs/Composition"
+      }
     }
   },
   "required": [
@@ -884,7 +894,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "description": "`text`, `shape`, `image`, `video`, `group`, `box`, `component`. Inferred when omitted. One of: text, shape, image, video, group, box, component.",
+          "description": "`text`, `shape`, `image`, `video`, `group`, `box`, `component`. Inferred when omitted. One of: text, shape, image, video, group, box, component, composition.",
           "type": [
             "string",
             "null"
@@ -896,7 +906,8 @@
             "video",
             "group",
             "box",
-            "component"
+            "component",
+            "composition"
           ]
         },
         "id": {
@@ -1534,6 +1545,13 @@
             "$ref": "#/$defs/LayerItem"
           },
           "default": null
+        },
+        "composition": {
+          "description": "Name of an entry in top-level `compositions`.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "component": {
           "type": [
@@ -2394,7 +2412,14 @@
           ]
         },
         "background": {
-          "description": "Box behind the word being spoken (TikTok style).",
+          "description": "A pill behind the caption line.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "highlightBox": {
+          "description": "A box behind the word being spoken (TikTok style).",
           "type": [
             "string",
             "null"
@@ -2431,6 +2456,85 @@
             {
               "type": "null"
             }
+          ]
+        }
+      }
+    },
+    "Composition": {
+      "description": "A 2D sub-composition with its own size and clock: layers (one scene) or scenes.",
+      "type": "object",
+      "properties": {
+        "size": {
+          "description": "Size preset or `[w, h]`. Default: the video size.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Size"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "duration": {
+          "description": "Seconds. Default: the length of its layers' animation (`\"auto\"`), or the sum of its scenes.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "background": {
+          "description": "Background (colour or gradient). Default transparent.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Paint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "layers": {
+          "description": "The layers (one scene).",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/LayerItem"
+          },
+          "default": null
+        },
+        "scenes": {
+          "description": "Or several scenes with transitions.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/SceneItem"
+          },
+          "default": null
+        },
+        "transition": {
+          "description": "Default transition between its scenes.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Transition"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "loop": {
+          "description": "Loop wherever it is used (default false: hold the last frame).",
+          "type": [
+            "boolean",
+            "null"
           ]
         }
       }

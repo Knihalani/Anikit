@@ -119,6 +119,9 @@ pub fn layers<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<Layer>, D::Error> {
 pub fn opt_layers<'de, D: Deserializer<'de>>(d: D) -> Result<Option<Vec<Layer>>, D::Error> {
     d.deserialize_seq(SeqV(LayerSeed)).map(Some)
 }
+pub fn opt_scenes<'de, D: Deserializer<'de>>(d: D) -> Result<Option<Vec<Scene>>, D::Error> {
+    d.deserialize_seq(SeqV(SceneSeed)).map(Some)
+}
 pub fn scenes<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<Scene>, D::Error> {
     d.deserialize_seq(SeqV(SceneSeed))
 }

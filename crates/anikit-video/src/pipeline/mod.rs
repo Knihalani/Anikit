@@ -7,6 +7,7 @@
 //! order.
 
 pub mod encode;
+pub mod textures;
 
 use crate::dl::{self, DisplayList, Op};
 use crate::eval::Evaluator;
@@ -553,7 +554,8 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
         fps: ev.fps as f64,
         qp,
         gop,
-        deblock: false,
+        // In-loop deblocking: off only for drafts (it costs encode time, and blocks show without it).
+        deblock: opts.quality != Quality::Draft,
         threads: 1,
         full_range: false,
         cabac: opts.quality != Quality::Draft,
