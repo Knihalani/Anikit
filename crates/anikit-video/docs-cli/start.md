@@ -3,6 +3,7 @@
 Install the prebuilt binary (seconds; do not build from source): `curl -fsSL https://raw.githubusercontent.com/knihalani/anikit/claude/epic-ramanujan-qe7x4w/install.sh | sh`. Then:
 
 ```bash
+anikit-video docs essentials       # ONE read (~13k chars): primitives, animation, expressions, compositions, shaders, music
 anikit-video docs <topic>        # one compact page per primitive (this list)
 anikit-video preview s.json      # THE loop: validate + s-sheet.png (1 frame/s) + critique + pace, ~1 s for 2D
 anikit-video preview s.json --at 2.4 -o f.png               # one moment at full size
@@ -37,4 +38,4 @@ A spec is JSON: `{ "size": "16:9", "scenes": [ { "duration": 2, "layers": [ ... 
 
 Shortcuts (optional): `anikit-video recipes` (drop-in high-end shots), `looks` (art direction),
 `info --components` (prebuilt widgets), `templates` (quick starts).
-Rules that always hold: hook in ≤ 2 s · cut words, not type size · one focal point · every choice made for this subject (`docs taste`) · judge frames, not scores.
+What tends to work: a hook in the first 2 s · cutting words rather than shrinking type · one focal point per shot · every choice made for this subject (`docs taste`) · judging frames, not numbers.

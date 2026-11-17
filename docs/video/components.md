@@ -450,6 +450,48 @@ Thousands of particles swirl in through a curl-noise flow (with depth: near ones
 
 Two looks: `{ "text": "Launch", "colors": ["#ffd59e", "#ff7a59"], "exit": "blow" }` (warm swirling embers) vs `{ "text": "Launch", "flow": "spiral", "turbulence": 0, "sparkle": 0, "glow": false, "size": 2.6, "count": 3000 }` (a clean, graphic orbit-in).
 
+## Illustration
+
+Hand-made marks for illustrated videos: paint a scene on paper instead of placing UI on a dark background. Every stroke is a variable-width outline (the centreline offset by ±width/2 × pressure, with tapered tips), textured, deterministic by `seed`, and can draw on and "boil" like a hand-redrawn animation.
+
+### `brush`: one brush stroke
+
+```json
+{ "type": "component", "component": "brush", "props": { "d": "M160 480 C 560 400, 900 600, 1300 470", "texture": "dry", "color": "#b5432f", "size": 110, "pressure": "taper", "draw": 0.9, "boil": 12 } }
+```
+
+| Prop | Default | Meaning |
+|---|---|---|
+| `d` | | SVG path data. Each subpath is its own stroke; they draw on one after another. |
+| `points` | | `[[x, y], …]` the stroke passes through (smoothed). Give `d` or `points`. |
+| `units` | `px` | `px` in the layer box, or `fraction` (0–1 of the box). |
+| `color` | theme text | Paint colour. |
+| `size` | `18` | Brush width in px at full pressure (`width`/`height` are the layer box). |
+| `pressure` | `swell` | Values 0–1 spread over the length (`[0.3, 1, 0.6]`) or a preset: `swell` (fat middle), `taper` (heavy start, thin end), `even` or `flick` (fast attack, long thin tail). |
+| `taper` | `[0.12, 0.3]` | Tip lengths `[start, end]` as fractions of the stroke. |
+| `texture` | `ink` | `ink` (crisp, slightly wobbly edges), `dry` (bristle streaks with gaps that run out along the stroke), `marker` (flat translucent ink, darker where the nib lands and lifts, drag streaks) or `pencil` (many short jittered graphite strands; pressure sets their density). |
+| `opacity` | `1` | |
+| `seed` | `1` | Same seed, same stroke. |
+| `draw` | `0` | Seconds to draw the stroke on (`0` = already drawn). The tip keeps its taper while it grows. |
+| `delay` | `0` | Seconds before it starts. |
+| `ease` | `inOut` | `linear`, `in`, `out` or `inOut`. |
+| `boil` | `0` | Line boil: redraws per second of hand jitter (`8` or `12` = animated "on twos"; `0` = off). |
+| `boilAmount` | `1.5` | Boil amplitude in px. |
+
+### `sketch`: a whole drawing in one layer
+Several paths sharing the brush, draw-on and boil settings. `paths` is a list of `{ d | points, color, size, pressure, taper, texture, opacity, seed, delay }`; unset keys come from the sketch. Every `brush` prop except `d`/`points` is also a sketch prop (`size` defaults to `10`), plus `stagger` (default `0.25` s): path *i* starts drawing at `delay + i × stagger + paths[i].delay`.
+
+```json
+{ "type": "component", "component": "sketch", "props": { "draw": 0.6, "stagger": 0.1, "boil": 8, "color": "#23211f", "paths": [
+  { "d": "M1470 330 A 125 125 0 1 1 1469 318", "texture": "marker", "color": "#f0a43a", "size": 92, "pressure": "even" },
+  { "d": "M-40 900 C 380 770, 820 830, 1120 890 S 1700 790, 1960 860", "texture": "dry", "color": "#41604f", "size": 170, "pressure": "even" },
+  { "points": [[438, 735], [528, 615], [622, 735]], "size": 15 },
+  { "d": "M880 380 q 34 -30 68 0 q 34 -30 68 0", "size": 7 }
+] } }
+```
+
+Tips: use a warm paper `background` (`#f1ead8`), a limited palette of 3–5 earthy colours, wide `dry` strokes for masses, `ink` for contours and `pencil` for hatching. Full examples: `examples/video/illustration/`. Stills: `docs/video/shots/illustration/`.
+
 ## Shapes and light
 
 ### `morph`: shape morphing
@@ -693,6 +735,54 @@ A rotating globe in the style of the Stripe and GitHub globes: land is drawn as 
 Two looks: `{ "arcs": [...], "markers": [...] }` (a night-blue data globe) vs `{ "dots": "all", "density": 1.6, "color": "#ffb547", "arcColor": ["#ffffff"], "glow": 0.4 }` (a dense golden sphere with white arcs).
 
 The component's duration is the time the last arc lands. **Cost** per frame at 1920×1080: eval under 1 ms, render 6–15 ms.
+
+## Illustration: fills, paper and collage
+
+Hand-made surfaces instead of UI-on-dark: hatching drawn on line by line, real paper stock and torn-paper collage. Shapes are `"rect"`, `"circle"`, `"blob"` (and `"star"` for cut-outs) fitted to the layer box, or an SVG path `d` in box pixels.
+
+### `hatch`
+| Prop | Default | Meaning |
+|---|---|---|
+| `shape`, `d` | `"rect"` | The shape to fill; lines are clipped to it. |
+| `style` | `"hatch"` | `"hatch"`, `"crosshatch"` (extra layers only in the shadows), `"stipple"` or `"scribble"`. |
+| `angle`, `spacing` | `35`, `9` | Line angle in degrees and line spacing at full tone, px. |
+| `tone` | `0.6` | Overall darkness 0–1: lighter tones skip lines or dots. |
+| `toneFrom`, `toneTo`, `light` | | Tone on the lit side and on the shadow side, with the light coming from `light` degrees (0 = right, 90 = below, default 225 = top left). |
+| `color`, `width` | `#2a2622`, `1.6` | Ink colour and line width (each stroke varies its pressure). |
+| `jitter` | `0.5` | Hand-drawn wobble: bow, waver and uneven stroke ends. |
+| `outline` | `false` | A wobbly ink outline of the shape. |
+| `boil` | `0` | Re-seed the hand-drawn jitter this many times a second (8–12 looks drawn); 0 = still. |
+| `seed`, `draw` | `1`, `0` | Seed, and seconds to hatch it on line by line. |
+
+### `paper`
+| Prop | Default | Meaning |
+|---|---|---|
+| `stock` | `"paper"` | (`kind` names the component, so the stock is `stock`.) `"paper"`, `"cotton"` (long fibres), `"kraft"` (brown with dark flecks), `"canvas"` (woven threads with slubs), `"watercolor"` (cold-press grain with mottled sizing), `"newsprint"` (grey, fine grain and specks). |
+| `color` | per kind | Stock colour. |
+| `tooth`, `fibers` | `0.6`, `0.5` | Surface relief (lit from the top left) and amount of fibres and flecks, 0–1. |
+| `vignette`, `seed` | `0.3`, `1` | Edge darkening, and the seed. |
+
+Computed once per size and cached as one dithered image: free after the first frame.
+
+### `cutout`
+| Prop | Default | Meaning |
+|---|---|---|
+| `shape`, `d` | `"rect"` | The cut shape. |
+| `color` / `texture` | `#d4553a` | A flat paper colour (with a faint grain), or a stock: `"paper"`, `"kraft"`, `"newsprint"`. |
+| `torn` | `0` | 0 = cleanly cut; up to 1 = a ragged, deckled tear with a lighter fibrous rim. |
+| `shadow` | `0.5` | Soft drop shadow, offset like paper lifted off the page (larger while it drops in). |
+| `rotate`, `wobble`, `boil` | `0`, `0.3`, `0` | Rotation in degrees, gentle hand-placed jitter, and its re-placement rate (fps; 0 = a slow drift). |
+| `enter`, `delay` | `"drop"`, `0` | `"drop"` (falls onto the page), `"slide"` or `"none"`, and when it starts. |
+
+```json
+{ "layers": [
+  { "component": "paper", "props": { "stock": "watercolor" } },
+  { "component": "hatch", "props": { "shape": "circle", "style": "crosshatch", "toneFrom": 0.15, "toneTo": 0.95, "outline": true, "boil": 10, "draw": 1.8 }, "width": 520, "height": 520 },
+  { "component": "cutout", "props": { "shape": "blob", "texture": "kraft", "torn": 0.7, "rotate": -8, "delay": 0.4 }, "x": "70%", "width": 360, "height": 260 }
+] }
+```
+
+Examples: `examples/video/illustration/{hatch,paper,cutout}.json`; stills in `docs/video/shots/illustration/`.
 
 ## Lottie
 

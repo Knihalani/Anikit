@@ -55,7 +55,7 @@ fn expand_examples_and_critique() {
         assert!(ok && r["notes"].as_array().unwrap().iter().all(|n| n["severity"] == "tip"), "{f}: {json}");
     }
     let (_, text, _) = run(&["critique", &format!("{ROOT}/examples/video/hello.json")], &d);
-    assert!(text.starts_with("score 100/100"), "{text}");
+    assert!(text.starts_with("review: 0 errors"), "{text}");
 }
 
 #[test]
@@ -106,6 +106,6 @@ fn preview_is_the_one_call_inner_loop() {
     std::fs::write(d.join("s.json"), r##"{"size":"16:9","scenes":[{"duration":2.5,"background":"#101014","layers":[{"text":"One call","x":"8%","anchor":"left","color":"#f4f1ea"}]}]}"##).unwrap();
     let (ok, out, err) = run(&["preview", "s.json"], &d);
     assert!(ok, "{out}{err}");
-    assert!(out.contains("sheet: s-sheet.png") && out.contains("score") && out.contains("intent"), "{out}");
+    assert!(out.contains("sheet: s-sheet.png") && out.contains("review: ") && out.contains("intent"), "{out}");
     assert!(d.join("s-sheet.png").is_file());
 }

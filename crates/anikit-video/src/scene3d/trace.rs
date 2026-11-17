@@ -1274,13 +1274,18 @@ impl Scene {
                     let d = (u - 0.5).abs() * 2.0;
                     1.0 - smoothstep(width - 0.12, width + 0.12, d)
                 };
+                // Line planes contain the view ray, so strokes run straight across
+                // the picture like pen hatching (no rings on curved surfaces).
+                let right = norm(cross(v, up));
+                let upv = cross(right, v);
+                let (a1, a2) = (norm(add(right, upv)), norm(sub(right, upv)));
                 let w1 = (1.0 - t) * 0.95;
-                let mut ink = line(norm(v3(1.0, 1.0, 0.3)), 48.0, w1);
+                let mut ink = line(a1, 55.0, w1);
                 if t < 0.5 {
-                    ink = ink.max(line(norm(v3(1.0, -0.8, -0.4)), 48.0, (0.5 - t) * 1.6));
+                    ink = ink.max(line(a2, 55.0, (0.5 - t) * 1.6));
                 }
                 if t < 0.2 {
-                    ink = ink.max(line(norm(v3(0.2, 0.3, 1.0)), 110.0, (0.2 - t) * 3.0));
+                    ink = ink.max(line(right, 90.0, (0.2 - t) * 3.0));
                 }
                 let paper = lerp3(v3(0.92, 0.9, 0.85), base, 0.15);
                 let alb = scale(lerp3(paper, v3(0.05, 0.05, 0.07), ink), 1.0);

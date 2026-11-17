@@ -83,9 +83,11 @@ impl Report {
     /// Plain-text rendering for the terminal: a short summary, then the issues
     /// most severe first (the first 6 unless `detail`).
     pub fn to_text_detail(&self, detail: bool) -> String {
-        let mut s = format!("score {}/100 (not a quality verdict) · {:.1} s", self.score, self.duration);
-        for (c, v) in &self.categories {
-            s += &format!(" · {c} {v}");
+        let count = |sev: &str| self.notes.iter().filter(|n| n.severity == sev).count();
+        let (e, w, t) = (count("error"), count("warning"), count("tip"));
+        let mut s = format!("review: {e} error{}, {w} warning{}, {t} tip{} · {:.1} s", if e == 1 { "" } else { "s" }, if w == 1 { "" } else { "s" }, if t == 1 { "" } else { "s" }, self.duration);
+        if let Some((c, _)) = self.categories.iter().filter(|(_, v)| *v < 100).min_by_key(|(_, v)| *v) {
+            s += &format!(" · most notes: {c}");
         }
         s += "\n";
         if !self.summary.is_empty() {
@@ -95,12 +97,21 @@ impl Report {
         let rank = |n: &&Note| match n.severity { "error" => 0, "warning" => 1, _ => 2 };
         let mut v: Vec<&Note> = self.notes.iter().collect();
         v.sort_by_key(rank);
-        let shown = if detail { v.len() } else { v.len().min(6) };
-        for n in &v[..shown] {
-            s += &format!("{:<7} {:<13} {}: {}\n        fix: {}\n", n.severity, n.check, n.path, n.message, n.fix);
+        // The short form: errors and warnings, one per check (the same advice
+        // about ten layers is one note), at most five.
+        let shown: Vec<&Note> = if detail {
+            v.clone()
+        } else {
+            let mut seen = std::collections::BTreeSet::new();
+            v.iter().filter(|n| n.severity != "tip" && seen.insert(n.check)).take(5).copied().collect()
+        };
+        for n in &shown {
+            let same = self.notes.iter().filter(|m| m.check == n.check && m.severity == n.severity).count();
+            let more = if !detail && same > 1 { format!(" (+{} more like it)", same - 1) } else { String::new() };
+            s += &format!("{:<7} {:<13} {}: {}{more}\n        try: {}\n", n.severity, n.check, n.path, n.message, n.fix);
         }
-        if shown < v.len() {
-            s += &format!("… {} more (--detail)\n", v.len() - shown);
+        if shown.len() < v.len() {
+            s += &format!("… {} more notes, tips included (--detail)\n", v.len() - shown.len());
         }
         s
     }
@@ -430,7 +441,8 @@ pub fn critique(raw: &Value) -> Report {
                 words_on_screen += words;
                 let visible = vis_to - vis_from;
                 // Single kinetic words and numbers (a teaser beat, a countdown) read in a glance.
-                let need = if words <= 2 && text.chars().count() <= 14 && visible < 1.5 { 0.35 + 0.15 * words as f64 } else { expr::read_time(text) };
+                // Labels, dates and numbers (a few short words) read in a glance too.
+                let need = if (words <= 2 && text.chars().count() <= 14 && visible < 1.5) || (words <= 4 && text.chars().count() <= 24) { 0.35 + 0.15 * words as f64 } else { expr::read_time(text) };
                 if words > 0 && visible + 0.05 < need {
                     cx.note("warning", "reading-time", p, format!("\"{}\" ({words} words) is readable for {visible:.1} s but needs about {need:.1} s", trunc(text, 40)),
                         format!("extend the scene/layer by {:.1} s or cut it to {} words", need - visible, ((visible - 1.0).max(0.3) * 3.0).floor().max(1.0)));
@@ -796,7 +808,7 @@ fn medium(raw: &Value, cx: &mut Ctx) {
             let res = p.get("resolution").and_then(|r| r.as_f64()).unwrap_or(1.0);
             let defocus = ["aperture", "dof", "focus"].iter().any(|k| p.get(*k).is_some() || p.get("camera").and_then(|c| c.get(*k)).is_some());
             if text && (res < 1.0 || defocus) {
-                cx.note("warning", "legibility", &path, format!("3D words are traced {}; type must be crisp at full resolution while it is read", if res < 1.0 { format!("at resolution {res}") } else { "under depth of field".into() }),
+                cx.note("warning", "legibility", &path, format!("3D words are traced {}; words read best crisp, at full resolution and in focus", if res < 1.0 { format!("at resolution {res}") } else { "under depth of field".into() }),
                     "drop `resolution` (drafts reduce it automatically) and keep the words in the focal plane, or set the words as a 2D text layer over the 3D");
             }
             sets.push((path, env, mats));

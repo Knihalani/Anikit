@@ -66,6 +66,18 @@ pub fn docs(topic: Option<&str>) -> Result<String, String> {
     if t == "music" {
         return Ok(crate::music::docs().to_string());
     }
+    if t == "essentials" || t == "all" {
+        // Everything a typical piece needs in one read (about 13k characters).
+        let mut s = String::from("# Essentials: one read for a typical piece\n\nLoop: write s.json → `anikit-video preview s.json` (repeat) → ONE `render s.json -o out.mp4`. More: `anikit-video docs <topic>` (3d, particles, physics, post, pacing, taste, critique).\n\n");
+        for p in ["primitives", "animation", "expressions", "compositions", "shader"] {
+            if let Some((_, md)) = PAGES.iter().find(|(n, _)| *n == p) {
+                s += md;
+                s += "\n";
+            }
+        }
+        s += crate::music::docs();
+        return Ok(s);
+    }
     if let Some((_, md)) = PAGES.iter().find(|(n, _)| *n == t) {
         return Ok(md.to_string());
     }
@@ -208,6 +220,8 @@ mod tests {
             crate::spec::parse::from_value(spec).unwrap_or_else(|d| panic!("{}: {:?}", v["name"], d.iter().map(|x| x.to_string()).collect::<Vec<_>>()));
         }
         assert!(snippets(None).unwrap().contains("type-slam"));
+        let e = docs(Some("essentials")).unwrap();
+        assert!(e.len() < 15_000 && e.contains("compositions") && e.contains("shader"), "{}", e.len());
         assert!(snippets(Some("snap-zoom")).unwrap().contains("\"shake\""));
     }
 
