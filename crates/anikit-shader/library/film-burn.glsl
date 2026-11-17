@@ -1,8 +1,8 @@
 // Film burn (filter): the frame below scorches from hot spots — amber
 // glow, a dark charred rim, a light leak. Use with "filter": true and
 // animate `amount` 0 → 1. Uniforms: amount, seed.
-uniform float amount; // = 0.5
-uniform float seed;   // = 1.0
+uniform float amount; // = 0.5  0 clean … 1 fully burnt; animate it
+uniform float seed;   // = 1.0  picks the hot spots
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1)) + seed * 13.7) * 43758.5453); }
 float vnoise(vec2 p) {

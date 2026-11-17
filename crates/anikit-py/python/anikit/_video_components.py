@@ -69,5 +69,7 @@ COMPONENT_KINDS = {
     "kinetic-grid": "Mesmerising grid of rounded squares or dots whose size, rotation and colour ripple with a wave.",
     "reactions": "Live-stream reactions (hearts, likes, fire, stars, sparkles, 100, laugh) floating up with wobble, pop and fade.",
     "card-stack": "2.5D stack of image or titled cards; the front card swipes away every interval and the stack advances.",
+    "product-shot": "A phone on a stone plinth lit by low sun through window blinds: ray-traced device (titanium frame, Fresnel glass, the screen from a named composition), volumetric light shafts, dust, slow weighted camera move.",
+    "now-playing": "A music app's Now Playing screen (390 pt grid): printed cover art, serif title, live scrubber with real timecodes, transport, volume.",
     "lottie": "Minimal Lottie player (shape layers, transforms, trim paths).",
 }

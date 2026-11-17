@@ -1,6 +1,7 @@
 {
   "name": "launch",
   "look": "daylight-lab",
+  "intent": { "pace": "steady", "genre": "launch" },
   "title": "Product launch",
   "description": "A 20–35 s launch film with a broadcast-style HUD (beat counter, section label, progress bar): optional kinetic hook; product reveal where a search types feature 1 and returns the features as results (or your screenshot in a browser); feature beats that cycle three layouts (split with a camera push, a full-bleed UI crop with callout and lower third, a centred title over feature cards); a proof counter in a brand ring (or a chart of your real series); a CTA with confetti.",
   "duration": "20–35 s",

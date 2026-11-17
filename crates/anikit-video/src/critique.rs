@@ -39,21 +39,111 @@ pub struct Note {
 /// The result of [`critique`].
 #[derive(Clone, Debug, Serialize)]
 pub struct Report {
-    /// 0..100: starts at 100, minus 15 per error, 6 per warning, 1 per tip.
+    /// 0..100: starts at 100, minus 15 per error, 6 per warning, 1 per tip. Not a quality verdict.
     pub score: u32,
     pub duration: f64,
     pub notes: Vec<Note>,
+    /// Per-category scores (`time`, `text`, `composition`, `story`, `technical`), same arithmetic.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub categories: Vec<(String, u32)>,
+    /// Intent versus what the render measured, and the energy curve (render reviews only).
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub summary: String,
+}
+
+/// The category a check belongs to.
+pub fn category(check: &str) -> &'static str {
+    match check {
+        "pace" | "dead-air" | "rhythm" | "arc" | "ending" | "beat" | "pacing" | "length" => "time",
+        "reading-time" | "legibility" | "contrast" | "render-contrast" | "typography" | "density" | "render-overlap" => "text",
+        "hook" | "structure" | "placeholder" | "copy" => "story",
+        "frame-fill" | "layout" => "composition",
+        "flicker" | "judder" | "banding" | "audio" | "render-frame" => "technical",
+        _ => "composition",
+    }
+}
+
+fn deduct(notes: &[&Note]) -> u32 {
+    notes.iter().fold(100i32, |s, n| s - match n.severity { "error" => 15, "warning" => 6, _ => 1 }).max(0) as u32
 }
 
 impl Report {
-    /// Plain-text rendering for the terminal.
-    pub fn to_text(&self) -> String {
-        let mut s = format!("score {}/100 · {:.1} s · {} notes\n", self.score, self.duration, self.notes.len());
-        for n in &self.notes {
+    /// Recompute the score and the category breakdown from the notes.
+    pub fn rescore(&mut self) {
+        self.score = deduct(&self.notes.iter().collect::<Vec<_>>());
+        self.categories = ["time", "text", "composition", "story", "technical"]
+            .iter()
+            .map(|c| (c.to_string(), deduct(&self.notes.iter().filter(|n| category(n.check) == *c).collect::<Vec<_>>())))
+            .collect();
+    }
+
+    /// Plain-text rendering for the terminal: a short summary, then the issues
+    /// most severe first (the first 6 unless `detail`).
+    pub fn to_text_detail(&self, detail: bool) -> String {
+        let mut s = format!("score {}/100 (not a quality verdict) · {:.1} s", self.score, self.duration);
+        for (c, v) in &self.categories {
+            s += &format!(" · {c} {v}");
+        }
+        s += "\n";
+        if !self.summary.is_empty() {
+            s += &self.summary;
+            s += "\n";
+        }
+        let rank = |n: &&Note| match n.severity { "error" => 0, "warning" => 1, _ => 2 };
+        let mut v: Vec<&Note> = self.notes.iter().collect();
+        v.sort_by_key(rank);
+        let shown = if detail { v.len() } else { v.len().min(6) };
+        for n in &v[..shown] {
             s += &format!("{:<7} {:<13} {}: {}\n        fix: {}\n", n.severity, n.check, n.path, n.message, n.fix);
+        }
+        if shown < v.len() {
+            s += &format!("… {} more (--detail)\n", v.len() - shown);
         }
         s
     }
+
+    /// [`Report::to_text_detail`] with every issue.
+    pub fn to_text(&self) -> String {
+        self.to_text_detail(true)
+    }
+}
+
+/// The full review: the spec heuristics and, with `render`, the pixel checks
+/// on sampled frames plus the time axis judged against the spec's intent.
+pub fn review(spec: &Value, base: &std::path::Path, range: Option<(f64, f64)>, render: bool) -> Report {
+    review_pack(spec, base, range, render, None).0
+}
+
+/// [`review`], optionally writing the review pack (see `review::write_pack`) to `pack`.
+pub fn review_pack(spec: &Value, base: &std::path::Path, range: Option<(f64, f64)>, render: bool, pack: Option<&std::path::Path>) -> (Report, Result<Vec<String>, String>) {
+    let mut r = critique_in_range(spec, range);
+    let mut files = Ok(Vec::new());
+    if render || pack.is_some() {
+        let base = if base.as_os_str().is_empty() { std::path::Path::new(".") } else { base };
+        if let Ok(p) = crate::preview::Preview::new(spec.clone(), base) {
+            r.notes.extend(crate::render_check::check_spec(spec, &p.ev));
+            let beats = crate::review::music_beats(spec, base);
+            let intent = crate::review::intent(spec, beats.as_ref().map(|b| b.bpm));
+            let samples = crate::review::Samples::take(&p.ev, 6.0, 192);
+            let (tl, notes) = crate::review::time_axis(&p.ev, &samples, &intent, beats.as_ref().map(|b| &b.beats[..]));
+            r.summary = crate::review::summary(&intent, &tl);
+            r.notes.extend(notes);
+            let (cn, worst) = crate::review::composition(&p.ev, &samples, &tl);
+            r.notes.extend(cn);
+            let (line, an) = crate::review::audio(&p.ev, base);
+            if let Some(l) = line {
+                r.summary += &format!("\n{l}");
+            }
+            r.notes.extend(an);
+            r.rescore();
+            if let Some(dir) = pack {
+                files = crate::review::write_pack(dir, &p, &tl, &worst, &r.to_text_detail(true));
+            }
+            return (r, files);
+        }
+    }
+    r.rescore();
+    (r, files)
 }
 
 struct Ctx<'a> {
@@ -403,7 +493,7 @@ pub fn critique(raw: &Value) -> Report {
         }
     }
     let score = cx.notes.iter().fold(100i32, |s, n| s - match n.severity { "error" => 15, "warning" => 6, _ => 1 }).max(0) as u32;
-    Report { score, duration: (total * 100.0).round() / 100.0, notes: cx.notes }
+    Report { score, duration: (total * 100.0).round() / 100.0, notes: cx.notes, categories: Vec::new(), summary: String::new() }
 }
 
 /// Device mockups showing a generated screen without the product's copy (or a

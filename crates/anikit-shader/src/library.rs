@@ -19,35 +19,55 @@ pub struct Entry {
     pub name: &'static str,
     pub use_: Use,
     pub about: &'static str,
+    /// Measured ms/frame at 1920×1080 on 4 cores (AVX2), no supersampling:
+    /// `cargo run --release -p anikit-shader --example library_bench`.
+    pub ms_1080p: u32,
     pub src: &'static str,
 }
 
+impl Entry {
+    /// The uniforms a spec can set, with defaults and docs.
+    pub fn uniforms(&self) -> Vec<crate::DeclaredUniform> {
+        crate::front::declared_uniforms(self.src)
+    }
+
+    /// `"layer"`, `"filter"` or `"transition"`: how a spec uses it.
+    pub fn use_name(&self) -> &'static str {
+        match self.use_ {
+            Use::Image => "layer",
+            Use::Filter => "filter",
+            Use::Transition => "transition",
+        }
+    }
+}
+
 macro_rules! lib {
-    ($( $name:literal, $use:ident, $about:literal; )*) => {
-        pub const ALL: &[Entry] = &[ $( Entry { name: $name, use_: Use::$use, about: $about, src: include_str!(concat!("../library/", $name, ".glsl")) }, )* ];
+    ($( $name:literal, $use:ident, $ms:literal, $about:literal; )*) => {
+        pub const ALL: &[Entry] = &[ $( Entry { name: $name, use_: Use::$use, about: $about, ms_1080p: $ms, src: include_str!(concat!("../library/", $name, ".glsl")) }, )* ];
     };
 }
 
 lib! {
-    "sdf-scene", Image, "Portals at golden hour: concrete frames down a reflecting pool, backlit sun, soft shadows, AO, haze, slow dolly.";
-    "liquid-chrome", Image, "Chrome metaballs reflecting a procedural studio.";
-    "aurora", Image, "Aurora curtains over stars, mirrored in a lake.";
-    "caustics", Image, "Pool-floor caustics from a moving water surface (ray density via derivatives).";
-    "flow-ink", Image, "Two inks marbled by a curl-noise flow field on paper.";
-    "turing", Image, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
-    "light-shafts", Image, "Volumetric beams through slats from a hard light, with dust motes drifting in them.";
-    "particles", Image, "Glowing particles drifting in depth with bokeh (depth of field), one pass.";
-    "film-burn", Filter, "Scorches the frame below from hot spots; animate `amount` 0 → 1.";
-    "lake-mirror", Filter, "Reflects everything above a horizon in still, rippled water below it (pairs with aurora lake = 0).";
-    "glitch", Filter, "Codec-style block displacement, row smears, RGB split and scanlines in bursts.";
-    "burn", Transition, "Old scene burns away along a noisy ember edge.";
-    "ripple", Transition, "A ring wave spreads from the centre carrying the new scene.";
-    "pixelate", Transition, "Pixel blocks grow, cross-fade, then resolve.";
-    "swirl", Transition, "A vortex twists the old scene and unwinds into the new one.";
-    "ink-bleed", Transition, "The new scene soaks in like ink, with a dark wet edge.";
-    "warp-wipe", Transition, "A soft angled wipe that smears pixels as it passes.";
-    "luma-melt", Transition, "The old scene melts away darkest-first.";
-    "zoom-blur", Transition, "Punch-in zoom blur with chromatic fringes; cuts at peak blur.";
+    "sdf-scene", Image, 303, "Portals at golden hour: concrete frames down a reflecting pool, backlit sun, soft shadows, AO, haze, slow dolly.";
+    "liquid-chrome", Image, 286, "Liquid metal: a heavy mass with drops that merge and tear away, mirror chrome in a studio or night sky; cut-out with background = 0.";
+    "aurora", Image, 968, "Aurora curtains over a ridge, mirrored in a lake. Heavy; lake = 0 + lake-mirror is faster.";
+    "hero", Image, 60, "Product shot: one object (torus, cube, pill, gem, sphere, twisted bar) on a glossy studio floor, plastic or metal.";
+    "caustics", Image, 55, "Pool-floor caustics from a moving water surface (ray density via derivatives).";
+    "flow-ink", Image, 161, "Two inks marbled by a curl-noise flow field on paper.";
+    "turing", Image, 156, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
+    "light-shafts", Image, 115, "Sun through a window into a hazy room: pane-shaped beams with mullions and leaves, drifting haze, glinting dust.";
+    "particles", Image, 144, "Glowing particles drifting in depth with bokeh (depth of field), one pass.";
+    "film-burn", Filter, 90, "Scorches the frame below from hot spots; animate `amount` 0 → 1.";
+    "lake-mirror", Filter, 33, "Reflects everything above a horizon in still, rippled water below it (pairs with aurora lake = 0).";
+    "glitch", Filter, 28, "Codec-style block displacement, row smears, RGB split and scanlines in bursts.";
+    "burn", Transition, 62, "Old scene burns away along a noisy ember edge.";
+    "ripple", Transition, 54, "A ring wave spreads from the centre carrying the new scene.";
+    "pixelate", Transition, 21, "Pixel blocks grow, cross-fade, then resolve.";
+    "swirl", Transition, 39, "A vortex twists the old scene and unwinds into the new one.";
+    "ink-bleed", Transition, 71, "The new scene soaks in like ink, with a dark wet edge.";
+    "warp-wipe", Transition, 36, "A soft angled wipe that smears pixels as it passes.";
+    "luma-melt", Transition, 21, "The old scene melts away darkest-first.";
+    "zoom-blur", Transition, 134, "Punch-in zoom blur with chromatic fringes; cuts at peak blur.";
 }
 
 /// A built-in by name.
@@ -62,6 +82,19 @@ pub fn names() -> Vec<&'static str> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn every_uniform_has_a_default_and_a_doc() {
+        for e in super::ALL {
+            for u in e.uniforms() {
+                assert!(u.default.is_some(), "{}.{}: no `// = default`", e.name, u.name);
+                assert!(!u.doc.is_empty(), "{}.{}: no doc after the default", e.name, u.name);
+            }
+        }
+        let u = crate::front::declared_uniforms("uniform vec3 tint; // = vec3(1.0, 0.5, 0.25) — water colour\nuniform float k; // = 2.5 how hard\n");
+        assert_eq!((u[0].default.as_deref(), u[0].doc.as_str()), (Some(&[1.0, 0.5, 0.25][..]), "water colour"));
+        assert_eq!((u[1].default.as_deref(), u[1].doc.as_str()), (Some(&[2.5][..]), "how hard"));
+    }
+
     #[test]
     fn every_builtin_compiles() {
         for e in super::ALL {

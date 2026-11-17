@@ -6,7 +6,7 @@
 
 use std::sync::OnceLock;
 
-pub const LAYER_TYPES: &[&str] = &["text", "shape", "image", "video", "group", "box", "component", "composition", "shader"];
+pub const LAYER_TYPES: &[&str] = &["text", "shape", "image", "video", "group", "box", "component", "composition", "shader", "draw"];
 pub const SHAPES: &[&str] = &["rect", "circle", "ellipse", "line", "arrow", "polygon", "star", "path"];
 pub const TRANSITIONS: &[&str] = &[
     "cut", "crossfade", "fade", "fadeBlack", "fadeWhite", "slide", "push", "zoom", "wipe", "iris", "blur", "glitch",

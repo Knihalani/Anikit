@@ -1,6 +1,7 @@
 {
   "name": "changelog",
   "look": "brutalist",
+  "intent": { "pace": "steady", "genre": "launch" },
   "title": "Changelog / what's new",
   "description": "A 12–30 s release recap: the version badge and headline beside the product's app screen, then one beat per change with a solid NEW / IMPROVED / FIXED chip, the change in big type and a progress ring counting through the release, then a version end card with a CTA and a sparks burst.",
   "duration": "12–30 s",

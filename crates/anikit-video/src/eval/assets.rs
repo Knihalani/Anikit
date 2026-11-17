@@ -27,6 +27,21 @@ pub struct SharedAssets {
     /// Named sub-compositions (weak: the root evaluator owns them) and their texture cache.
     comps: RwLock<Vec<(String, std::sync::Weak<super::Evaluator>, bool)>>,
     textures: std::sync::OnceLock<crate::pipeline::textures::CompTextures>,
+    /// Per-frame images ([`components::Assets::frame_image`]): a small ring,
+    /// so full-frame renders don't pile up. Ids are not reused for a long time.
+    volatile: RwLock<Volatile>,
+}
+
+/// First id of per-frame images.
+pub(crate) const VOLATILE_BASE: u32 = 0x6000_0000;
+/// Per-frame images kept: a frame is drawn right after it is evaluated on the
+/// same worker, so a few per core is plenty.
+const VOLATILE_SLOTS: usize = 96;
+
+#[derive(Default)]
+struct Volatile {
+    next: u32,
+    slots: Vec<Option<(u64, u32, Arc<Pixmap>)>>,
 }
 
 impl Default for SharedAssets {
@@ -46,6 +61,7 @@ impl SharedAssets {
             shaders: Default::default(),
             comps: RwLock::new(Vec::new()),
             textures: std::sync::OnceLock::new(),
+            volatile: RwLock::default(),
         }
     }
 
@@ -104,6 +120,11 @@ impl SharedAssets {
         if super::shader::ShaderJobs::owns(id) {
             return self.shaders.get(id);
         }
+        if (VOLATILE_BASE..super::shader::SHADER_BASE).contains(&id.0) {
+            let seq = id.0 - VOLATILE_BASE;
+            let v = self.volatile.read().unwrap();
+            return v.slots.get(seq as usize % VOLATILE_SLOTS)?.as_ref().filter(|s| s.1 == seq).map(|s| s.2.clone());
+        }
         self.images.read().unwrap().get(id.0 as usize).cloned()
     }
 
@@ -161,6 +182,29 @@ impl components::Assets for SharedAssets {
         let id = self.add_rgba(w, h, px).unwrap_or(ImageId(u32::MAX));
         keys.insert(key, id);
         id
+    }
+
+    fn frame_image(&self, key: u64, w: u32, h: u32, make: &mut dyn FnMut() -> Vec<u8>) -> ImageId {
+        {
+            let v = self.volatile.read().unwrap();
+            if let Some((_, seq, _)) = v.slots.iter().flatten().find(|s| s.0 == key) {
+                return ImageId(VOLATILE_BASE + seq);
+            }
+        }
+        let px = make();
+        let mut scratch = render::ImageStore::new();
+        if scratch.insert_rgba8(ImageId(0), w, h, px).is_err() {
+            return ImageId(u32::MAX);
+        }
+        let Some(pm) = scratch.get(ImageId(0)).cloned() else { return ImageId(u32::MAX) };
+        let mut v = self.volatile.write().unwrap();
+        if v.slots.len() < VOLATILE_SLOTS {
+            v.slots.resize(VOLATILE_SLOTS, None);
+        }
+        let seq = v.next;
+        v.next = (v.next + 1) % (super::shader::SHADER_BASE - VOLATILE_BASE);
+        v.slots[seq as usize % VOLATILE_SLOTS] = Some((key, seq, pm));
+        ImageId(VOLATILE_BASE + seq)
     }
 
     fn media(&self, src: &str, _t: f32) -> Option<(ImageId, u32, u32)> {

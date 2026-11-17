@@ -1,6 +1,6 @@
 // Transition: the frame breaks into growing pixel blocks, cross-fades,
 // then resolves into the new scene. Uniforms: blocks (smallest count across).
-uniform float blocks; // = 12.0
+uniform float blocks; // = 12.0  block count at the peak
 
 vec4 transition(vec2 uv) {
     float d = min(progress, 1.0 - progress) * 2.0;            // 0 → 1 → 0

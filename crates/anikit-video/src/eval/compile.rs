@@ -86,10 +86,18 @@ struct C<'a> {
     audio_extra: Vec<crate::audio::Track>,
     layer_info: Vec<(String, String)>,
     beat_marks: super::beat_markers::BeatMarkers,
+    /// Music analysed for `iAudio`/`iBeat` (once, on first use).
+    music: Option<Result<Arc<super::audio_react::AudioFeatures>, String>>,
     /// Uniform name → (slot after `prop::U0`, components) of the shader layer being compiled.
     uniform_slots: Vec<(String, usize, usize)>,
     /// Compiled sub-compositions by name, with their own `loop` default.
     comps: Vec<(String, Arc<Evaluator>, bool)>,
+    /// The colour expression the last `paint` call compiled (claimed by the caller for its slot).
+    last_cexpr: Option<super::expr::ColorExpr>,
+    /// Music analysis for `beat`/`bar`/`level`/`bpm` in expressions (loaded on first use).
+    groove: Option<Result<Arc<super::beat_markers::Music>, String>>,
+    /// `groove` includes the loudness envelope.
+    groove_level: bool,
     /// The spec's theme as written (nested compositions inherit it).
     spec_theme: Option<spec::Theme>,
 }
@@ -147,9 +155,13 @@ impl Evaluator {
             audio_extra: Vec::new(),
             layer_info: Vec::new(),
             beat_marks: super::beat_markers::BeatMarkers::new(spec, &opts.base_dir),
+            music: None,
             assets: opts.assets.clone().unwrap_or_else(|| Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new()))))),
             comps,
             spec_theme: spec.theme.clone(),
+            groove: None,
+            groove_level: false,
+            last_cexpr: None,
             uniform_slots: Vec::new(),
         };
         c.assets.shaders.bind(&c.assets);
@@ -305,6 +317,16 @@ impl Evaluator {
             }
         }
         audio.append(&mut c.audio_extra);
+        let music = match &spec.music {
+            Some(v) => match crate::music::parse(v, &opts.base_dir) {
+                Ok(m) => Some(Arc::new(m)),
+                Err(e) => {
+                    c.d.push(Diagnostic::error("music", e));
+                    None
+                }
+            },
+            None => None,
+        };
         c.smarkers.clear();
         c.scene_start = 0.0;
         c.scene_dur = duration;
@@ -317,6 +339,7 @@ impl Evaluator {
             duration,
             diagnostics: Vec::new(),
             audio,
+            music,
             assets: c.assets,
             easings: c.easings,
             scenes,
@@ -327,6 +350,7 @@ impl Evaluator {
             theme: c.theme,
             comps: c.comps.into_iter().map(|(n, e, _)| (n, e)).collect(),
             shutter,
+            groove: c.groove.and_then(|m| m.ok()),
             shutter_explicit: matches!(spec.motion_blur, Some(spec::MotionBlur::On(true)) | Some(spec::MotionBlur::Shutter { .. })),
         };
         (Some(ev), c.d)
@@ -382,6 +406,7 @@ fn empty_node(kind: Kind) -> Node {
         end: f32::INFINITY,
         base: prop::DEFAULTS,
         exprs: Vec::new(),
+        cexprs: Vec::new(),
         tracks: Vec::new(),
         loops: Vec::new(),
         anchor: [0.5, 0.5],
@@ -501,6 +526,10 @@ impl C<'_> {
             Num::Str(s) => {
                 if let Some(e) = s.trim().strip_prefix('=') {
                     match Expr::compile(e, refl as f64, self.w as f64, self.h as f64) {
+                        Ok(x) if x.music && (self.groove.is_none() || (x.level && !self.groove_level)) => {
+                            self.load_groove(x.level, path);
+                            V::E(x)
+                        }
                         Ok(x) => match x.constant() {
                             Some(c) => V::C(c as f32),
                             None => V::E(x),
@@ -609,7 +638,26 @@ impl C<'_> {
 
     /// Compile a paint. Returns the paint and its solid colour (for the colour slots).
     fn paint(&mut self, p: &spec::Paint, path: &str) -> Option<(PaintC, Rgba)> {
+        self.last_cexpr = None;
         match p {
+            spec::Paint::Css(s) if s.trim().starts_with('=') => {
+                let src = s.trim()[1..].to_string();
+                let mut resolve = |c: &str| self.theme.color(c).map(|x| x.0);
+                match super::expr::ColorExpr::compile(&src, &mut resolve) {
+                    Ok(ce) => {
+                        if ce.music && (self.groove.is_none() || (ce.level && !self.groove_level)) {
+                            self.load_groove(ce.level, path);
+                        }
+                        let c = Rgba(ce.eval(&super::expr::Vars { w: self.w as f64, h: self.h as f64, fps: self.fps as f64, ..Default::default() }));
+                        self.last_cexpr = Some(ce);
+                        Some((PaintC::Solid, c))
+                    }
+                    Err(m) => {
+                        self.d.push(Diagnostic::error(path, format!("colour expression: {m}")));
+                        None
+                    }
+                }
+            }
             spec::Paint::Css(s) => {
                 let st = s.trim();
                 if st.eq_ignore_ascii_case("none") || st.eq_ignore_ascii_case("transparent") {
@@ -923,6 +971,8 @@ impl C<'_> {
             "component"
         } else if l.composition.is_some() {
             "composition"
+        } else if l.draw.is_some() {
+            "draw"
         } else if l.shader.is_some() || l.src.as_deref().is_some_and(|s| s.ends_with(".glsl") || s.ends_with(".wgsl") || s.ends_with(".frag")) {
             "shader"
         } else if l.children.is_some() {
@@ -963,6 +1013,7 @@ impl C<'_> {
             ("filter", l.filter.is_some()),
             ("supersample", l.supersample.is_some()),
             ("alpha", l.alpha.is_some()),
+            ("buffers", l.buffers.is_some()),
         ];
         let check = |d: &mut Vec<Diagnostic>, list: &[(&str, bool)], ok: bool, owner: &str| {
             if !ok {
@@ -1070,6 +1121,7 @@ impl C<'_> {
             "box" => self.box_layer(l, path, given_w, given_h, start, end, pc, &mut n),
             "shader" => self.shader_layer(l, path, given_w, given_h, start, end, &mut n)?,
             "composition" => self.comp_layer(l, path)?,
+            "draw" => (self.draw_layer(l, path), [given_w.unwrap_or(pw), given_h.unwrap_or(ph)]),
             _ => self.component_layer(l, path, given_w, given_h)?,
         };
         n.kind = kind_v;
@@ -1367,6 +1419,9 @@ impl C<'_> {
         let col = st.color.clone().unwrap_or(spec::Paint::Css("$text".into()));
         let (paint, c) = self.paint(&col, &format!("{path}.color")).unwrap_or((PaintC::Solid, Rgba([1.0; 4])));
         n.base[prop::FILL..prop::FILL + 4].copy_from_slice(&rgba_to_oklab(c));
+        if let Some(ce) = self.last_cexpr.take() {
+            n.cexprs.push((prop::FILL as u8, ce));
+        }
         n.base[prop::SIZE] = size;
         // Outlined text: `stroke` (colour or object); `color: "none"` draws only the outline.
         let hollow = matches!(&st.color, Some(spec::Paint::Css(c)) if c.trim() == "none" || c.trim() == "transparent");
@@ -1700,6 +1755,9 @@ impl C<'_> {
             n.base[prop::FILL..prop::FILL + 4].copy_from_slice(&rgba_to_oklab(c));
             pc
         });
+        if let Some(ce) = self.last_cexpr.take() {
+            n.cexprs.push((prop::FILL as u8, ce));
+        }
         if let Some(c) = &l.color {
             self.d.push(Diagnostic::warning(format!("{path}.color"), "shapes use 'fill' (and 'stroke'); 'color' is for text").suggest(Some("fill")));
             let _ = c;
@@ -1715,6 +1773,9 @@ impl C<'_> {
             Some(so) => self.stroke(&so, l.stroke_width.as_ref(), &format!("{path}.stroke")).map(|(sc, c, w)| {
                 n.base[prop::STROKE..prop::STROKE + 4].copy_from_slice(&rgba_to_oklab(c));
                 n.base[prop::SW] = w;
+                if let Some(ce) = self.last_cexpr.take() {
+                    n.cexprs.push((prop::STROKE as u8, ce));
+                }
                 sc
             }),
             None => None,
@@ -1886,6 +1947,9 @@ impl C<'_> {
         let bg = match &st.background {
             Some(b) => self.paint(b, &format!("{sp}.background")).map(|(p, c)| {
                 n.base[prop::FILL..prop::FILL + 4].copy_from_slice(&rgba_to_oklab(c));
+                if let Some(ce) = self.last_cexpr.take() {
+                    n.cexprs.push((prop::FILL as u8, ce));
+                }
                 p
             }),
             None => None,
@@ -1946,6 +2010,17 @@ impl C<'_> {
         let m = super::local_xf(&n.base, n.anchor, w, h);
         p.apply_affine(kurbo::Affine::new(m.map(|x| x as f64)));
         Some(p)
+    }
+
+    /// Load the music for expressions (with its loudness envelope when `level` is read).
+    fn load_groove(&mut self, level: bool, path: &str) {
+        let need = level || self.groove_level;
+        let g = self.beat_marks.groove(need);
+        if let Err(m) = &g {
+            self.d.push(Diagnostic::error(path, format!("expression uses the music: {m}")));
+        }
+        self.groove = Some(g);
+        self.groove_level = need;
     }
 
     /// Resolve a `post` value (RENDER's presets and settings); `"none"` gives `None`.
@@ -2068,6 +2143,114 @@ impl C<'_> {
             return Some(ev);
         }
         None
+    }
+
+    fn draw_layer(&mut self, l: &Layer, path: &str) -> Kind {
+        use kurbo::Shape;
+        let mut out = Vec::new();
+        for (k, it) in l.draw.iter().flatten().enumerate() {
+            let p = format!("{path}.draw[{k}]");
+            let given = [it.d.is_some(), it.points.is_some(), it.circle.is_some(), it.rect.is_some(), it.line.is_some()];
+            if given.iter().filter(|g| **g).count() != 1 {
+                self.d.push(Diagnostic::error(&p, "give exactly one of 'd', 'points', 'circle', 'rect', 'line'"));
+                continue;
+            }
+            let closed = it.closed == Some(true);
+            let pt = |q: [f64; 2]| kurbo::Point::new(q[0], q[1]);
+            let mut bp = Path::new();
+            if let Some(d) = &it.d {
+                match Path::from_svg(d) {
+                    Ok(b) => bp = b,
+                    Err(e) => {
+                        self.d.push(Diagnostic::error(format!("{p}.d"), format!("invalid SVG path: {e}")));
+                        continue;
+                    }
+                }
+            } else if let Some(ps) = &it.points {
+                if ps.len() < 2 {
+                    self.d.push(Diagnostic::error(format!("{p}.points"), "needs at least 2 points"));
+                    continue;
+                }
+                bp.move_to(pt(ps[0]));
+                let n = ps.len();
+                if it.smooth == Some(true) && n > 2 {
+                    // Catmull-Rom through the points, as cubic Béziers.
+                    let get = |i: isize| pt(ps[if closed { i.rem_euclid(n as isize) as usize } else { i.clamp(0, n as isize - 1) as usize }]);
+                    for i in 0..(if closed { n } else { n - 1 }) as isize {
+                        let (p0, p1, p2, p3) = (get(i - 1), get(i), get(i + 1), get(i + 2));
+                        bp.curve_to(p1 + (p2 - p0) / 6.0, p2 - (p3 - p1) / 6.0, p2);
+                    }
+                } else {
+                    for q in &ps[1..] {
+                        bp.line_to(pt(*q));
+                    }
+                }
+                if closed {
+                    bp.close_path();
+                }
+            } else if let Some([cx, cy, r]) = it.circle {
+                bp = kurbo::Circle::new((cx, cy), r.max(0.0)).to_path(0.1);
+            } else if let Some([x, y, w, h]) = it.rect {
+                bp = kurbo::RoundedRect::new(x, y, x + w, y + h, it.radius.unwrap_or(0.0).max(0.0)).to_path(0.1);
+            } else if let Some([x1, y1, x2, y2]) = it.line {
+                bp.move_to((x1, y1));
+                bp.line_to((x2, y2));
+            }
+            let fill = it.fill.as_deref().filter(|f| *f != "none").and_then(|f| self.color(f, &format!("{p}.fill")));
+            let cap = match it.cap.as_deref() {
+                None | Some("butt") => 0,
+                Some("round") => 1,
+                Some("square") => 2,
+                Some(x) => {
+                    self.d.push(Diagnostic::error(format!("{p}.cap"), format!("unknown cap '{x}'")).suggest(suggest(x, &["butt", "round", "square"])));
+                    0
+                }
+            };
+            let join = match it.join.as_deref() {
+                None | Some("miter") => 0,
+                Some("round") => 1,
+                Some("bevel") => 2,
+                Some(x) => {
+                    self.d.push(Diagnostic::error(format!("{p}.join"), format!("unknown join '{x}'")).suggest(suggest(x, &["miter", "round", "bevel"])));
+                    0
+                }
+            };
+            let mut segs = Vec::new();
+            if let (Some(cs), Some(ps)) = (&it.colors, &it.points) {
+                let cols: Vec<Rgba> = cs.iter().enumerate().map(|(i, c)| self.color(c, &format!("{p}.colors[{i}]")).unwrap_or(Rgba([1.0; 4]))).collect();
+                if cols.len() != ps.len() {
+                    self.d.push(Diagnostic::error(format!("{p}.colors"), format!("{} colours for {} points (one per point)", cols.len(), ps.len())));
+                } else {
+                    let n = ps.len();
+                    for i in 0..(if closed { n } else { n - 1 }) {
+                        let (a, b) = (ps[i], ps[(i + 1) % n]);
+                        let mut sp = Path::new();
+                        sp.move_to(pt(a));
+                        sp.line_to(pt(b));
+                        segs.push((sp, [a[0] as f32, a[1] as f32], [b[0] as f32, b[1] as f32], cols[i], cols[(i + 1) % n]));
+                    }
+                }
+            }
+            // Stroked when asked, or when nothing else would show (lines, open polylines, no fill).
+            let stroked = segs.is_empty() && (it.stroke.is_some() || it.width.is_some() || fill.is_none());
+            let stroke = if stroked {
+                match it.stroke.as_deref() {
+                    Some(s) => self.color(s, &format!("{p}.stroke")),
+                    None => self.theme.color("$text"),
+                }
+            } else {
+                None
+            };
+            out.push(super::DrawC {
+                path: bp,
+                fill,
+                stroke,
+                style: (it.width.unwrap_or(2.0).max(0.0) as f32, cap, join),
+                segs,
+                opacity: it.opacity.unwrap_or(1.0).clamp(0.0, 1.0) as f32,
+            });
+        }
+        Kind::Draw(out)
     }
 
     fn comp_layer(&mut self, l: &Layer, path: &str) -> Option<(Kind, [f32; 2])> {
@@ -2450,6 +2633,7 @@ impl C<'_> {
             slots.push((u.name.clone(), off, len));
             off += len;
         }
+        let (passes, buf_names) = self.shader_buffers(l, path, &vals);
         let filter = l.filter.unwrap_or(false);
         let mut channels = Vec::new();
         let list: Vec<serde_json::Value> = match &l.channels {
@@ -2466,6 +2650,11 @@ impl C<'_> {
             let src = v.as_str().or_else(|| v.get("src").and_then(|s| s.as_str()));
             let comp_name = src.and_then(|x| x.strip_prefix('#')).or_else(|| v.get("composition").and_then(|x| x.as_str()));
             let c = match (src, v.get("layers")) {
+                (Some(b), _) if buf_names.iter().any(|n| n == b) => ChannelC::Buffer(buf_slot(b)),
+                (Some(b), _) if buf_slot_opt(b).is_some() => {
+                    self.d.push(Diagnostic::error(cp.clone(), format!("channel '{b}' reads buffer {b}, but the layer has no \"buffers\": {{\"{b}\": {{…}}}}")));
+                    ChannelC::None
+                }
                 _ if comp_name.is_some() => {
                     let name = comp_name.unwrap_or_default();
                     match self.comps.iter().find(|c| c.0 == name).cloned() {
@@ -2524,7 +2713,7 @@ impl C<'_> {
         }
         self.uniform_slots = slots.clone();
         let sc = ShaderC {
-            dynamic: super::shader::uses_time(&text),
+            dynamic: super::shader::uses_time(&text) || passes.as_ref().is_some_and(|p| p.stateful || p.dynamic),
             id: Self::shader_id(path, &text),
             shader,
             uniforms: slots,
@@ -2534,8 +2723,91 @@ impl C<'_> {
             supersample: l.supersample.unwrap_or(false),
             alpha: l.alpha.unwrap_or(false),
             label: super::shader::label(path, l.shader.as_deref().or(l.src.as_deref())),
+            audio: self.shader_audio(&text, path),
+            passes,
         };
         Some((Kind::Shader(Box::new(sc)), size))
+    }
+
+    /// Compile a shader layer's `"buffers"` (A–D). Returns the passes and the names given.
+    fn shader_buffers(&mut self, l: &Layer, path: &str, vals: &[(String, Result<Vec<f32>, String>)]) -> (Option<Arc<super::shader::Passes>>, Vec<String>) {
+        use super::shader::{BufChan, BufPass, Passes};
+        let Some(map) = &l.buffers else { return (None, Vec::new()) };
+        let mut bufs = Vec::new();
+        let mut names = Vec::new();
+        let mut dynamic = false;
+        let mut audio = None;
+        let mut uniforms: Vec<(String, Vec<f32>)> = Vec::new();
+        for (name, b) in map {
+            let bp = format!("{path}.buffers.{name}");
+            let Some(slot) = buf_slot_opt(name) else {
+                self.d.push(Diagnostic::error(bp, "buffers are named \"A\", \"B\", \"C\" or \"D\""));
+                continue;
+            };
+            let Some((shader, text, bvals)) = self.compile_shader(b.shader.as_deref(), b.src.as_deref(), l.uniforms.as_ref(), &bp) else { continue };
+            if shader.kind != anikit_shader::Kind::Image {
+                self.d.push(Diagnostic::error(format!("{bp}.shader"), "a buffer pass is an image shader (mainImage)"));
+                continue;
+            }
+            dynamic |= super::shader::uses_time(&text);
+            if audio.is_none() {
+                audio = self.shader_audio(&text, &bp);
+            }
+            // Static uniform values: declared defaults, then the spec's numbers.
+            for u in &shader.uniforms {
+                let v = bvals.iter().chain(vals.iter()).find(|(k, _)| *k == u.name).and_then(|(_, v)| v.clone().ok()).or_else(|| u.default.clone());
+                if let Some(v) = v {
+                    if !uniforms.iter().any(|(n, _)| *n == u.name) {
+                        uniforms.push((u.name.clone(), v));
+                    }
+                }
+            }
+            let mut chans = Vec::new();
+            for (i, v) in b.channels.iter().flatten().take(4).enumerate() {
+                let cp = format!("{bp}.channels[{i}]");
+                let o = self.channel_opts(v, &cp);
+                let src = v.as_str().or_else(|| v.get("src").and_then(|s| s.as_str())).unwrap_or("");
+                let c = match src {
+                    "noise" => BufChan::Noise,
+                    "" | "none" => BufChan::None,
+                    s if buf_slot_opt(s).is_some() && map.contains_key(s) => BufChan::Buffer(buf_slot(s)),
+                    s => {
+                        self.d.push(Diagnostic::error(cp, format!("a buffer channel is \"A\"…\"D\" (a buffer of this layer), \"noise\" or \"none\", not '{s}'")));
+                        BufChan::None
+                    }
+                };
+                chans.push((c, o));
+            }
+            names.push(name.clone());
+            bufs.push(BufPass { slot, shader, chans });
+        }
+        if bufs.is_empty() {
+            return (None, names);
+        }
+        let mut p = Passes::new(bufs, uniforms, audio);
+        p.dynamic = dynamic;
+        (Some(Arc::new(p)), names)
+    }
+
+    /// Music features for a shader that reads `iAudio`/`iBeat` (analysed once per spec).
+    fn shader_audio(&mut self, text: &str, path: &str) -> Option<Arc<super::audio_react::AudioFeatures>> {
+        if !text.contains("iAudio") && !text.contains("iBeat") {
+            return None;
+        }
+        if self.music.is_none() {
+            let r = match self.beat_marks.music() {
+                None => Err("iAudio/iBeat need music: add a top-level `audio` track with a `src` (they stay 0)".to_string()),
+                Some((p, at, trim)) => super::audio_react::AudioFeatures::load(p, *at, *trim).map(Arc::new).map_err(|e| format!("iAudio/iBeat: {e}")),
+            };
+            self.music = Some(r);
+        }
+        match self.music.as_ref()? {
+            Ok(a) => Some(a.clone()),
+            Err(e) => {
+                self.d.push(Diagnostic::warning(format!("{path}.shader"), e.clone()));
+                None
+            }
+        }
     }
 
     fn shader_transition(&mut self, src: &str, unis: Option<&BTreeMap<String, serde_json::Value>>, path: &str) -> Option<super::shader::ShaderRef> {
@@ -2568,6 +2840,8 @@ impl C<'_> {
             supersample: false,
             alpha: false,
             label: super::shader::label(path, Some(src)),
+            audio: self.shader_audio(&text, path),
+            passes: None,
         })))
     }
 
@@ -3250,4 +3524,19 @@ fn components_theme(t: &Theme) -> crate::components::Theme {
     c.palette = pal;
     c.radius = t.radius;
     c
+}
+
+/// `"A"`…`"D"` → 0..4.
+fn buf_slot_opt(name: &str) -> Option<usize> {
+    match name {
+        "A" => Some(0),
+        "B" => Some(1),
+        "C" => Some(2),
+        "D" => Some(3),
+        _ => None,
+    }
+}
+
+fn buf_slot(name: &str) -> usize {
+    buf_slot_opt(name).unwrap_or(0)
 }

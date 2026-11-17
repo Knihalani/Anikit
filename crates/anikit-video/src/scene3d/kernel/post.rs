@@ -28,6 +28,13 @@ pub struct Post {
     pub denoise: u32,
 }
 
+/// Half-resolution light added before depth of field (volumetric shafts).
+pub struct Volume<'a> {
+    pub px: &'a [[f32; 3]],
+    pub w: usize,
+    pub h: usize,
+}
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Tonemap {
     Aces,
@@ -74,6 +81,8 @@ struct Planes {
     id: Buf<u32>,
     /// 1 where the pixel has diffuse albedo or occludable specular (else 0).
     lit: Buf<f32>,
+    /// Weight of the traced visibility (0: checkerboard gap, filled by the denoiser).
+    vw: Buf<f32>,
     vel: Buf<[f32; 2]>,
 }
 
@@ -101,6 +110,7 @@ impl Planes {
             nz: alloc(n),
             id: alloc(n),
             lit: alloc(n),
+            vw: alloc(n),
             vel: alloc(n),
         };
         let o = (
@@ -121,6 +131,7 @@ impl Planes {
             Out(p.id.as_mut_ptr()),
             Out(p.lit.as_mut_ptr()),
             Out(p.vel.as_mut_ptr()),
+            Out(p.vw.as_mut_ptr()),
         );
         let body = |i0: usize, chunk: &[Px]| {
             for (j, q) in chunk.iter().enumerate() {
@@ -145,6 +156,7 @@ impl Planes {
                     let l = q.alb[0] + q.alb[1] + q.alb[2] + q.spec[0] + q.spec[1] + q.spec[2] > 1e-5;
                     o.15.put(i, if l { 1.0 } else { 0.0 });
                     o.16.put(i, q.vel);
+                    o.17.put(i, q.vw);
                 }
             }
         };
@@ -320,6 +332,9 @@ fn floor_reflection(pl: &Planes, w: usize, h: usize, s: f32) -> Option<Img> {
 fn denoise_vis(pl: &Planes, w: usize, h: usize, passes: u32) -> (Buf<f32>, Buf<f32>) {
     let mut ao = pl.ao.clone();
     let mut vk = pl.vk.clone();
+    // Checkerboard gaps need at least one pass to be filled.
+    let gaps = pl.vw.iter().any(|&v| v < 1.0);
+    let passes = if gaps { passes.max(1) } else { passes };
     if passes == 0 {
         return (ao, vk);
     }
@@ -327,12 +342,17 @@ fn denoise_vis(pl: &Planes, w: usize, h: usize, passes: u32) -> (Buf<f32>, Buf<f
     let inv_tol: Buf<f32> = par::map(w * h, |i| 1.0 / (pl.depth[i] * 0.02 + 1e-3));
     // Rows with nothing lit pass through untouched.
     let row_lit: Vec<bool> = (0..h).map(|y| pl.lit[y * w..y * w + w].iter().any(|&l| l > 0.0)).collect();
+    // lit × validity, for the first pass when there are gaps.
+    let gw: Buf<f32> = if gaps { par::map(w * h, |i| pl.lit[i] * pl.vw[i]) } else { Buf::uninit(0) };
     let k = [0.25f32, 0.5, 0.25];
     let mut ao2: Buf<f32> = Buf::uninit(w * h);
     let mut vk2: Buf<f32> = Buf::uninit(w * h);
     for pass in 0..passes {
         let step = 1usize << pass;
         let (sa, sv) = (&ao, &vk);
+        // Untraced pixels start with no weight and take their neighbours'
+        // values in the first pass.
+        let first_gaps = pass == 0 && gaps;
         let vo = Out(vk2.as_mut_ptr());
         par::rows(&mut ao2, w, |y, row| {
             let c0 = y * w;
@@ -366,7 +386,8 @@ fn denoise_vis(pl: &Planes, w: usize, h: usize, passes: u32) -> (Buf<f32>, Buf<f
                     let kk = ky * kx;
                     let n = xb - xa;
                     let t0 = (r0 as isize + dx + xa as isize) as usize;
-                    let (td, tid, tlit) = (&pl.depth[t0..t0 + n], &pl.id[t0..t0 + n], &pl.lit[t0..t0 + n]);
+                    let (td, tid) = (&pl.depth[t0..t0 + n], &pl.id[t0..t0 + n]);
+                    let tlit = if first_gaps { &gw[t0..t0 + n] } else { &pl.lit[t0..t0 + n] };
                     let (tnx, tny, tnz) = (&pl.nx[t0..t0 + n], &pl.ny[t0..t0 + n], &pl.nz[t0..t0 + n]);
                     let (ta, tv) = (&sa[t0..t0 + n], &sv[t0..t0 + n]);
                     let (cd, ct, cid) = (&cd[xa..xb], &ct[xa..xb], &cid[xa..xb]);
@@ -616,7 +637,7 @@ fn motion_blur(hdr: &mut Img, vel: &[[f32; 2]], w: usize, h: usize, shutter: f32
             if l < 0.35 {
                 continue;
             }
-            let n = (l * 1.5).ceil().clamp(3.0, 24.0) as usize;
+            let n = (l * 1.2).ceil().clamp(3.0, 16.0) as usize;
             let mut acc = [0.0f32; 3];
             for i in 0..n {
                 let t = (i as f32 + 0.5) / n as f32 - 0.5;
@@ -740,7 +761,12 @@ fn finish(hdr: &Img, w: usize, h: usize, p: &Post) -> Vec<u8> {
     let lut = srgb_lut();
     // Vignette factor (exposure folded in) as a function of the squared radius.
     const VN: usize = 1024;
-    let vt: Vec<f32> = (0..=VN + 1).map(|i| p.exposure * (1.0 - p.vignette * ((i as f32 / VN as f32).min(1.0)).powf(1.3) * 1.6)).collect();
+    let vt: Vec<f32> = (0..=VN + 1)
+        .map(|i| {
+            let r2 = (i as f32 / VN as f32).min(1.0);
+            p.exposure * (1.0 - p.vignette * r2 * r2.sqrt().sqrt() * 1.6)
+        })
+        .collect();
     let neutral_tm = p.tonemap == Tonemap::Neutral;
     par::rows(&mut out, w * 4, |y, row| {
         let dy = (y as f32 - cy) * inv_d;
@@ -774,7 +800,7 @@ fn debug() -> u8 {
     })
 }
 
-pub fn process(px: &[Px], w: usize, h: usize, p: &Post) -> Vec<u8> {
+pub fn process(px: &[Px], w: usize, h: usize, p: &Post, vol: Option<Volume>, parts: Option<&super::super::particles::Layer>) -> Vec<u8> {
     let s = h as f32 / 1080.0;
     let mut clock = std::time::Instant::now();
     let mut stages: Vec<(&str, f64)> = Vec::new();
@@ -806,6 +832,17 @@ pub fn process(px: &[Px], w: usize, h: usize, p: &Post) -> Vec<u8> {
         }
     });
     drop(rv);
+    if let Some(v) = &vol {
+        par::rows(&mut hdr, w, |y, row| {
+            let fy = (y as f32 + 0.5) * 0.5 - 0.5;
+            for x in 0..w {
+                let c = fetch(v.px, v.w, v.h, (x as f32 + 0.5) * 0.5 - 0.5, fy);
+                for k in 0..3 {
+                    row[x][k] += c[k];
+                }
+            }
+        });
+    }
     tick("compose");
     // 2. Depth of field.
     if p.aperture > 0.05 {
@@ -817,6 +854,15 @@ pub fn process(px: &[Px], w: usize, h: usize, p: &Post) -> Vec<u8> {
         motion_blur(&mut hdr, &pl.vel, w, h, p.shutter);
     }
     tick("mblur");
+    // 3b. Particles (already blurred and streaked by their splatter) go in
+    // before bloom, so bright ones glow.
+    if let Some(l) = parts {
+        par::rows(&mut hdr, w, |y, row| {
+            for (x, c) in row.iter_mut().enumerate() {
+                *c = l.apply(y * w + x, *c);
+            }
+        });
+    }
     // 4. Bloom.
     if p.bloom > 0.0 {
         bloom(&mut hdr, w, h, p.bloom);
