@@ -153,6 +153,8 @@ pub(crate) struct SliceHdr {
     /// Don't filter across slice boundaries (each slice deblocks itself).
     pub slice_edges: bool,
     pub cabac: bool,
+    /// Slice QP − the picture's initial QP (the configured QP).
+    pub qp_delta: i32,
 }
 
 pub(crate) fn write_slice_header(w: &mut BitWriter, h: &SliceHdr) {
@@ -176,7 +178,7 @@ pub(crate) fn write_slice_header(w: &mut BitWriter, h: &SliceHdr) {
     if h.cabac && !h.idr {
         w.ue(0); // cabac_init_idc
     }
-    w.se(0); // slice_qp_delta
+    w.se(h.qp_delta); // slice_qp_delta
     // disable_deblocking_filter_idc: 0 on, 1 off, 2 on except across slice edges
     let idc = if !h.deblock { 1 } else if h.slice_edges { 2 } else { 0 };
     w.ue(idc);

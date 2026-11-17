@@ -2756,7 +2756,10 @@ impl C<'_> {
             fixed,
             channels,
             filter,
-            supersample: l.supersample.unwrap_or(false),
+            // Anti-aliased by default (adaptive 2×2 where neighbours differ), except
+            // filters, which would soften the frame they read, and sources that
+            // opt out with `// anikit:aa off`.
+            supersample: l.supersample.unwrap_or(!filter && !anikit_shader::aa_off(&text)),
             alpha: l.alpha.unwrap_or(false),
             label: super::shader::label(path, l.shader.as_deref().or(l.src.as_deref())),
             audio: self.shader_audio(&text, path),
@@ -2923,6 +2926,11 @@ impl C<'_> {
         // Load the images the component refers to, so `Assets::media` finds them.
         for src in crate::components::media_srcs(&props) {
             self.load_media(&src, &format!("{path}.props"));
+        }
+        if name == "scene-3d" {
+            for (sub, msg) in crate::scene3d::lint(&props) {
+                self.d.push(Diagnostic::warning(format!("{path}.props{sub}"), msg));
+            }
         }
         match crate::components::build(&name, &props) {
             Ok(p) => {

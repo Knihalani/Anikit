@@ -236,7 +236,8 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                 }
                 if a.has("--shaders") {
                     for e in anikit_shader::library::ALL {
-                        println!("  {:<14} {:<10} ~{} ms/frame @1080p  {}", e.name, e.use_name(), e.ms_1080p, e.about);
+                        let aa = if e.aa_default() { " (+ default anti-aliasing, ~2–5×)" } else { "" };
+                        println!("  {:<14} {:<10} ~{} ms/frame @1080p{aa}  {}", e.name, e.use_name(), e.ms_1080p, e.about);
                         for u in e.uniforms() {
                             println!("  {:<27} {} = {}{}", "", u.name, fmt_default(u.default.as_deref()), if u.doc.is_empty() { String::new() } else { format!("  ({})", u.doc) });
                         }
@@ -414,7 +415,7 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             let job = if opts.audio { pipeline::audio_job(&ev, t0, dur, &wav) } else { None };
             let had_audio = job.is_some();
             // Before a long render, say how long and why (stderr; stdout stays JSON).
-            if !a.has("--quiet") {
+            if !a.has("--quiet") && (ev.has_heavy_layers() || ev.frames() > 3600) {
                 let est = pipeline::estimate(&ev, &opts, 20.0);
                 if est.secs >= 20.0 {
                     eprintln!("{est}. Faster: --quality draft, or --from/--to for a range.");
@@ -484,7 +485,7 @@ fn shader_library() -> serde_json::Value {
                     serde_json::json!({ "name": u.name, "type": ty, "default": default, "doc": u.doc })
                 })
                 .collect();
-            serde_json::json!({ "name": e.name, "use": e.use_name(), "about": e.about, "ms_1080p": e.ms_1080p, "uniforms": unis })
+            serde_json::json!({ "name": e.name, "use": e.use_name(), "about": e.about, "ms_1080p": e.ms_1080p, "anti_aliased": e.aa_default(), "uniforms": unis })
         })
         .collect()
 }

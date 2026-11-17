@@ -39,9 +39,67 @@ const LOOP_CAP: i64 = 1 << 20;
 
 pub struct Kernel {
     module: Option<JITModule>,
+    /// Code loaded from the disk cache (instead of `module`); held so the
+    /// executable memory lives as long as `func`.
+    _cached: Option<region::Allocation>,
     pub func: KernelFn,
     /// Number of Cranelift IR instructions (for stats).
     pub insts: usize,
+    /// Machine code and relocations, for the disk cache (fresh compiles only).
+    pub blob: Option<Vec<u8>>,
+}
+
+const BLOB_MAGIC: &[u8; 8] = b"AKSHJIT1";
+
+impl Kernel {
+    /// A kernel from a cached blob: copy the machine code into executable
+    /// memory and patch the absolute addresses of the sampler entry points.
+    /// `None` on anything unexpected (then the caller compiles).
+    #[cfg(target_arch = "x86_64")]
+    pub fn from_blob(b: &[u8]) -> Option<Kernel> {
+        let rd = |o: usize, n: usize| b.get(o..o + n);
+        if rd(0, 8)? != BLOB_MAGIC {
+            return None;
+        }
+        let u64_at = |o: usize| rd(o, 8).map(|x| u64::from_le_bytes(x.try_into().unwrap()));
+        let insts = u64_at(8)? as usize;
+        let len = u64_at(16)? as usize;
+        let code = rd(24, len)?;
+        let mut o = 24 + len;
+        let n = u64_at(o)? as usize;
+        o += 8;
+        let mut alloc = region::alloc(len.max(1), region::Protection::READ_WRITE).ok()?;
+        let base = alloc.as_mut_ptr::<u8>();
+        // SAFETY: `alloc` holds at least `len` writable bytes.
+        unsafe { std::ptr::copy_nonoverlapping(code.as_ptr(), base, len) };
+        for _ in 0..n {
+            let off = u64_at(o)? as usize;
+            let sym = *b.get(o + 8)?;
+            let addend = u64_at(o + 9)? as i64;
+            o += 17;
+            let target = match sym {
+                0 => texture::ak_sample as *const u8 as i64,
+                1 => texture::ak_fetch as *const u8 as i64,
+                _ => return None,
+            };
+            if off + 8 > len {
+                return None;
+            }
+            let v = (target + addend) as u64;
+            // SAFETY: in bounds (checked above); unaligned write of an 8-byte immediate.
+            unsafe { std::ptr::write_unaligned(base.add(off) as *mut u64, v) };
+        }
+        // SAFETY: the region is ours and fully written.
+        unsafe { region::protect(base, len.max(1), region::Protection::READ_EXECUTE).ok()? };
+        // SAFETY: the blob was produced by `compile` for exactly this signature.
+        let func: KernelFn = unsafe { std::mem::transmute::<*const u8, KernelFn>(base as *const u8) };
+        Some(Kernel { module: None, _cached: Some(alloc), func, insts, blob: None })
+    }
+
+    #[cfg(not(target_arch = "x86_64"))]
+    pub fn from_blob(_: &[u8]) -> Option<Kernel> {
+        None
+    }
 }
 
 // SAFETY: the compiled code is immutable once finalised; the module is only
@@ -2600,6 +2658,48 @@ pub fn compile(m: &naga::Module, info: &ModuleInfo, entry: Handle<naga::Function
         eprintln!("{}", ctx.func.display());
     }
     module.define_function(fid, &mut ctx).map_err(|e| err(format!("JIT: {e:?}")))?;
+    // The disk cache needs position-independent code apart from absolute
+    // calls to the two sampler entry points; anything else is not cached.
+    let mut blob = None;
+    if let Some(c) = ctx.compiled_code() {
+        let names = ctx.func.params.user_named_funcs();
+        let mut relocs = Vec::new();
+        let mut ok = cfg!(target_arch = "x86_64");
+        for r in c.buffer.relocs() {
+            let sym = match (&r.kind, &r.target) {
+                (cranelift_codegen::binemit::Reloc::Abs8, cranelift_codegen::RelocTarget::ExternalName(cranelift_codegen::ir::ExternalName::User(u))) => {
+                    let idx = names[*u].index;
+                    if idx == sample_id.as_u32() {
+                        Some(0u8)
+                    } else if idx == fetch_id.as_u32() {
+                        Some(1u8)
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            };
+            match sym {
+                Some(s) => relocs.push((r.offset as u64, s, r.addend)),
+                None => ok = false,
+            }
+        }
+        if ok {
+            let code = c.buffer.data();
+            let mut b = Vec::with_capacity(code.len() + 32 + relocs.len() * 17);
+            b.extend_from_slice(BLOB_MAGIC);
+            b.extend_from_slice(&(insts as u64).to_le_bytes());
+            b.extend_from_slice(&(code.len() as u64).to_le_bytes());
+            b.extend_from_slice(code);
+            b.extend_from_slice(&(relocs.len() as u64).to_le_bytes());
+            for (o, s, a) in relocs {
+                b.extend_from_slice(&o.to_le_bytes());
+                b.push(s);
+                b.extend_from_slice(&a.to_le_bytes());
+            }
+            blob = Some(b);
+        }
+    }
     if dump {
         if let Some(c) = ctx.compiled_code() {
             eprintln!("{}", c.vcode.as_deref().unwrap_or(""));
@@ -2612,5 +2712,5 @@ pub fn compile(m: &naga::Module, info: &ModuleInfo, entry: Handle<naga::Function
     let func: KernelFn = unsafe { std::mem::transmute::<*const u8, KernelFn>(code) };
     let _ = I64;
     let _ = Block::from_u32;
-    Ok(Kernel { module: Some(module), func, insts })
+    Ok(Kernel { module: Some(module), _cached: None, func, insts, blob })
 }

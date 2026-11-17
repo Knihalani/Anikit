@@ -31,6 +31,11 @@ impl Entry {
         crate::front::declared_uniforms(self.src)
     }
 
+    /// Anti-aliased by default as a layer (image shaders without `// anikit:aa off`).
+    pub fn aa_default(&self) -> bool {
+        self.use_ == Use::Image && !crate::aa_off(self.src)
+    }
+
     /// `"layer"`, `"filter"` or `"transition"`: how a spec uses it.
     pub fn use_name(&self) -> &'static str {
         match self.use_ {
@@ -50,7 +55,7 @@ macro_rules! lib {
 lib! {
     "sdf-scene", Image, 265, "Portals at golden hour: concrete frames down a reflecting pool, backlit sun, soft shadows, AO, haze, slow dolly.";
     "liquid-chrome", Image, 125, "Liquid metal: a heavy mass with drops that merge and tear away, mirror chrome in a studio or night sky; cut-out with background = 0.";
-    "aurora", Image, 708, "Aurora curtains over a ridge, mirrored in a lake. Heavy; lake = 0 + lake-mirror is faster.";
+    "aurora", Image, 499, "Aurora curtains over a ridge, mirrored in a lake. Heavy; lake = 0 + lake-mirror is faster.";
     "hero", Image, 48, "Product shot: one object (torus, cube, pill, gem, sphere, twisted bar) on a glossy studio floor, plastic or metal.";
     "mesh-gradient", Image, 32, "Soft animated mesh gradient: four colours drifting and folding into each other, with film grain. Backgrounds for titles and products.";
     "ocean", Image, 191, "Open sea to the horizon under a low sun: swell and chop, Fresnel sky reflection, glitter path, crest glow, foam.";

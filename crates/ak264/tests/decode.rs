@@ -174,7 +174,7 @@ fn hints_change_map_and_motion() {
                     dy: b.1 - a.1,
                 });
             }
-            hints = FrameHints { changed: Some(ch), motions };
+            hints = FrameHints { changed: Some(ch), motions, grain: 0.0 };
         }
         stream.extend_from_slice(e.encode(&frames[t].frame(), &hints));
         recon.extend_from_slice(&e.reconstruction().to_bytes());
@@ -276,6 +276,7 @@ fn large_motion_vectors_via_hints() {
             hints.push(FrameHints {
                 changed: None,
                 motions: vec![MotionHint { x: x0 as u32, y: y0 as u32, w: 96, h: 64, dx: 150, dy: 40 }],
+                grain: 0.0,
             });
         }
         frames.push(f);
@@ -409,4 +410,67 @@ fn adaptive_quant_is_bit_exact() {
             }
         }
     }
+}
+
+#[test]
+fn ssim_floor_lowers_qp_and_stays_bit_exact() {
+    // Busy noise at QP 32 is far below an SSIM floor of 0.99: the IDR is
+    // re-coded and later frames use a lower slice QP (slice_qp_delta < 0, with
+    // per-MB AQ deltas on top), with both entropy coders and with slices.
+    let (w, h) = (176u32, 112u32);
+    let frames: Vec<YuvBuffer> = (0..8u32)
+        .map(|t| {
+            let mut b = YuvBuffer::new(w, h);
+            for y in 0..h as usize {
+                for x in 0..w as usize {
+                    let r = (x as u32 * 7919 + y as u32 * 104729 + t * 31337).wrapping_mul(2654435761) >> 27;
+                    b.y[y * w as usize + x] = (60 + r * 3 + (x as u32 + t) % 40) as u8;
+                }
+            }
+            b.u.fill(128);
+            b.v.fill(129);
+            b
+        })
+        .collect();
+    for cabac in [false, true] {
+        for threads in [1, 3] {
+            let base = EncoderConfig { cabac, threads, deblock: true, qp: 32, gop: 4, ..cfg(w, h) };
+            let (b0, p0) = roundtrip(EncoderConfig { ssim_floor: 0.0, ..base.clone() }, &frames, &format!("sf0{}{}", cabac as u8, threads));
+            let (b1, p1) = roundtrip(EncoderConfig { ssim_floor: 0.99, ..base }, &frames, &format!("sf1{}{}", cabac as u8, threads));
+            assert!(b1.len() > b0.len(), "{} {}", b1.len(), b0.len());
+            if have_ffmpeg() {
+                assert!(p1 > p0 + 2.0, "{p1} {p0}");
+            }
+        }
+    }
+}
+
+#[test]
+fn grain_hint_keeps_ssim_floor_off_grain() {
+    // A mid-grey ramp with re-drawn random grain: without a hint the floor
+    // spends bits chasing the noise; with the renderer's grain level it
+    // doesn't, and the stream stays bit-exact.
+    let (w, h) = (176u32, 112u32);
+    let frames: Vec<YuvBuffer> = (0..6u32)
+        .map(|t| {
+            let mut b = YuvBuffer::new(w, h);
+            for y in 0..h as usize {
+                for x in 0..w as usize {
+                    let r = ((x as u32 * 7919 + y as u32 * 104729 + t * 31337).wrapping_mul(2654435761) >> 24) as i32 % 9 - 4;
+                    b.y[y * w as usize + x] = (110 + x as i32 / 6 + r) as u8;
+                }
+            }
+            b.u.fill(128);
+            b.v.fill(129);
+            b
+        })
+        .collect();
+    let base = EncoderConfig { deblock: true, qp: 30, gop: 3, ssim_floor: 0.985, ..cfg(w, h) };
+    let enc = |grain: f32, floor: f32| {
+        let mut e = Encoder::new(EncoderConfig { ssim_floor: floor, ..base.clone() });
+        frames.iter().map(|f| e.encode(&f.frame(), &FrameHints { grain, ..Default::default() }).len()).sum::<usize>()
+    };
+    let (off, chase, hinted) = (enc(0.0, 0.0), enc(0.0, 0.985), enc(2.6, 0.985));
+    assert!(chase > off * 3 / 2, "{chase} {off}");
+    assert!(hinted * 10 < off * 11, "{hinted} {off}");
 }

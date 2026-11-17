@@ -744,6 +744,8 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                 mix: TrackMix { reverb: 0.1, ..Default::default() },
                 humanize: 0.12,
                 straight: false,
+                fx: None,
+                automate: None,
             });
         }
         let level_of = |l: &Layer| l.level;
@@ -810,6 +812,8 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                 mix: TrackMix { gain: level_of(l), pan: l.pan, reverb: l.reverb, delay: l.delay, duck: l.duck, ..Default::default() },
                 humanize: l.humanize,
                 straight: false,
+                fx: None,
+                automate: None,
             });
         }
         // Risers into big sections, impacts on hits and drops.
@@ -890,6 +894,7 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
         seed,
         end,
         reverb: spec.master.reverb.clone().unwrap_or_else(|| style.map(|s| s.reverb).unwrap_or("hall").to_string()),
+        defines: spec.define.clone(),
     })
 }
 
