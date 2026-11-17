@@ -7,6 +7,7 @@
 //! then walks the tree and only interpolates.
 
 pub mod assets;
+pub mod beat_markers;
 mod compile;
 pub mod expr;
 pub mod theme;
