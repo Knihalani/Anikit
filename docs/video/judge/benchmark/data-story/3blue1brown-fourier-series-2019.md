@@ -6,7 +6,7 @@ studio: "3Blue1Brown (Grant Sanderson)"
 client: "Self-initiated"
 year: 2019
 url: https://www.youtube.com/watch?v=r6sGWTCMz2k
-alt_urls: [https://github.com/3b1b/manim]
+alt_urls: ["https://github.com/3b1b/manim"]
 length_s: null
 verified: oembed
 aspect: "16:9"
@@ -25,6 +25,10 @@ stills:
   - https://i.ytimg.com/vi/r6sGWTCMz2k/hq1.jpg
   - https://i.ytimg.com/vi/r6sGWTCMz2k/hq2.jpg
   - https://i.ytimg.com/vi/r6sGWTCMz2k/hq3.jpg
+  - https://storage.googleapis.com/3blue1brown-website-bucket/lessons/2019/fourier-series/fourier_intro_2.jpeg
+  - https://storage.googleapis.com/3blue1brown-website-bucket/lessons/2019/fourier-series/heat_0.jpeg
+  - https://storage.googleapis.com/3blue1brown-website-bucket/lessons/2019/fourier-series/heat_3.jpeg
+  - https://storage.googleapis.com/3blue1brown-website-bucket/lessons/2019/fourier-series/integ_2.jpeg
 measured: null
 ---
 

@@ -1,0 +1,7 @@
+{ "size": [1920, 1080], "fps": 30, "background": "#1B1A17", "scenes": [ { "duration": 1, "layers": [
+  { "src": "polyhaven:texture/concrete_layers_02", "fit": "cover", "width": "100%", "height": "100%", "opacity": 0.95 },
+  { "shape": "rect", "width": "100%", "height": "100%", "fill": "linear-gradient(90deg, #0E0D0BE6 0%, #0E0D0B99 45%, #0E0D0B00 75%)" },
+  { "text": "Poured, not printed.", "font": "Instrument Serif", "size": "12vh", "color": "#F2EDE4", "letterSpacing": "-0.02em", "x": "7%", "y": "40%", "anchor": "left" },
+  { "text": "A 2D image layer whose src is a library texture: polyhaven:texture/concrete_layers_02", "font": "Inter", "size": "2.1vh", "color": "#F2EDE4B3", "x": "7.3%", "y": "53%", "anchor": "left" },
+  { "text": "IMAGE LAYER  ·  CC0  ·  FETCHED ONCE", "font": "JetBrains Mono", "size": "1.5vh", "letterSpacing": "0.12em", "color": "#F2EDE499", "x": "4%", "y": "93%", "anchor": "left" }
+] } ] }

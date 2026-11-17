@@ -104,6 +104,8 @@ struct C<'a> {
     /// The video's grid, and the grid in force for the layers being compiled.
     video_grid: Option<spec::GridSpec>,
     grid: Option<spec::GridSpec>,
+    /// Resting boxes `[left, top, right, bottom]` of the earlier siblings with an `id`, for `"=title.bottom + 24"`.
+    sib: Vec<(String, [f32; 4])>,
 }
 
 fn size_preset(s: &str) -> Option<[u32; 2]> {
@@ -287,6 +289,7 @@ impl Evaluator {
             uniform_slots: Vec::new(),
             video_grid: spec.grid.clone(),
             grid: None,
+            sib: Vec::new(),
         };
         c.assets.shaders.bind(&c.assets);
         c.ease_ids.insert("linear".into(), 0);
@@ -376,7 +379,7 @@ impl Evaluator {
             let path = format!("scenes[{i}]");
             let id = s.id.clone().unwrap_or_else(|| format!("scene{}", i + 1));
             let trans = if i == 0 {
-                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0, shader: None }
+                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0, shader: None, layer: None, shape: 0, count: 0 }
             } else {
                 let (tr, tp) = match (&s.transition, &default_trans) {
                     (Some(t), _) => (Some(t), format!("{path}.transition")),
@@ -404,6 +407,13 @@ impl Evaluator {
                 ));
                 trans.dur = 0.5 * prev_dur.min(dur);
             }
+            // Scene timing never shrinks: a transition into this scene happens during the
+            // last `trans.dur` before its cut point, so cuts land at the sum of the scene
+            // durations (on the beat with musical durations) and the video is exactly as long
+            // as the durations add up to. The scene's own clock starts when the transition does.
+            let own = dur;
+            let in_dur = trans.dur;
+            dur += trans.dur;
             let start = t - trans.dur;
             c.scene_start = start;
             c.smarkers.clear();
@@ -451,7 +461,7 @@ impl Evaluator {
             };
             scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth, bg_layers, post });
             t = start + dur;
-            prev_dur = dur;
+            prev_dur = if auto { dur - in_dur } else { own };
         }
         let mut duration = t;
         if let Some(d) = &spec.duration {
@@ -565,14 +575,22 @@ fn empty_node(kind: Kind) -> Node {
         shadow: None,
         glow: None,
         treat: Vec::new(),
+        treat_slot: 0,
+        live_pattern: None,
+        step: 0.0,
+        boil: None,
         clip: false,
         clip_path: None,
         wipe_dir: 0,
         index: 0.0,
         count: 1.0,
         tag: u32::MAX,
+        id: None,
         fx: None,
         matte: None,
+        inertia: None,
+        posterize_time: 0.0,
+        drag: 0.0,
     }
 }
 
@@ -696,6 +714,7 @@ impl C<'_> {
             Num::Num(v) => V::C(*v as f32),
             Num::Str(s) => {
                 if let Some(e) = s.trim().strip_prefix('=') {
+                    let Some(e) = &self.sibling_refs(e, path) else { return V::C(0.0) };
                     match Expr::compile(e, refl as f64, self.w as f64, self.h as f64) {
                         Ok(x) if x.music && (self.groove.is_none() || (x.level && !self.groove_level)) => {
                             self.load_groove(x.level, path);
@@ -726,6 +745,68 @@ impl C<'_> {
         }
     }
 
+    /// Replace `id.left|right|top|bottom|cx|cy|width|height` (an earlier sibling's resting box) with its value.
+    fn sibling_refs(&mut self, e: &str, path: &str) -> Option<String> {
+        const PROPS: [&str; 8] = ["left", "right", "top", "bottom", "cx", "cy", "width", "height"];
+        if !e.contains('.') {
+            return Some(e.to_string());
+        }
+        let b = e.as_bytes();
+        let word = |c: u8| c.is_ascii_alphanumeric() || c == b'_' || c == b'-';
+        let mut out = String::with_capacity(e.len());
+        let mut i = 0;
+        while i < b.len() {
+            let starts = (b[i].is_ascii_alphabetic() || b[i] == b'_') && (i == 0 || !(word(b[i - 1]) || b[i - 1] == b'.'));
+            if starts {
+                // The longest earlier sibling id followed by `.prop`.
+                let hit = self
+                    .sib
+                    .iter()
+                    .filter_map(|(id, bx)| {
+                        let rest = e[i..].strip_prefix(id.as_str())?.strip_prefix('.')?;
+                        let p = PROPS.iter().find(|p| rest.starts_with(**p) && !rest.as_bytes().get(p.len()).is_some_and(|c| word(*c)))?;
+                        Some((id.len() + 1 + p.len(), *p, *bx))
+                    })
+                    .max_by_key(|h| h.0);
+                if let Some((len, p, [l, t, r, bt])) = hit {
+                    let v = match p {
+                        "left" => l,
+                        "right" => r,
+                        "top" => t,
+                        "bottom" => bt,
+                        "cx" => (l + r) * 0.5,
+                        "cy" => (t + bt) * 0.5,
+                        "width" => r - l,
+                        _ => bt - t,
+                    };
+                    out.push_str(&format!("({v})"));
+                    i += len;
+                    continue;
+                }
+                // `name.top` with no such sibling: say so, with the ids in scope.
+                let mut j = i;
+                while j < b.len() && (word(b[j])) {
+                    j += 1;
+                }
+                if b.get(j) == Some(&b'.') && PROPS.iter().any(|p| e[j + 1..].starts_with(p)) {
+                    let name = &e[i..j];
+                    let ids: Vec<&str> = self.sib.iter().map(|s| s.0.as_str()).collect();
+                    let known = if ids.is_empty() { "none with an id yet".to_string() } else { ids.join(", ") };
+                    let prop = e[j + 1..].split(|c: char| !c.is_ascii_alphanumeric()).next().unwrap_or("");
+                    self.d.push(
+                        Diagnostic::error(path, format!("'{name}.{prop}': no earlier sibling layer with id '{name}' (a layer can refer to siblings above it in the list: {known})"))
+                            .suggest(suggest(name, &ids)),
+                    );
+                    return None;
+                }
+            }
+            let ch = e[i..].chars().next().unwrap();
+            out.push(ch);
+            i += ch.len_utf8();
+        }
+        Some(out)
+    }
+
     fn len_c(&mut self, n: &Num, path: &str, refl: f32, em: f32) -> f32 {
         match self.len(n, path, refl, em) {
             V::C(v) => v,
@@ -753,7 +834,22 @@ impl C<'_> {
         if let Some(&i) = self.ease_ids.get(name) {
             return i;
         }
-        match Easing::parse(name) {
+        // Named curves from studio and design-system practice (docs/video/craft/motion-design.md).
+        let named = match name {
+            "glide" => Some("cubic-bezier(0.16, 1, 0.3, 1)"),
+            "snap" => Some("cubic-bezier(0.87, 0, 0.13, 1)"),
+            "land" => Some("cubic-bezier(0.25, 0.1, 0.1, 1)"),
+            "launch" => Some("cubic-bezier(0.7, 0, 0.84, 0)"),
+            "material" | "standard" => Some("cubic-bezier(0.2, 0, 0, 1)"),
+            "emphasizedDecelerate" => Some("cubic-bezier(0.05, 0.7, 0.1, 1)"),
+            "emphasizedAccelerate" => Some("cubic-bezier(0.3, 0, 0.8, 0.15)"),
+            "productive" => Some("cubic-bezier(0.2, 0, 0.38, 0.9)"),
+            "expressive" => Some("cubic-bezier(0.4, 0.14, 0.3, 1)"),
+            "expressiveEntrance" => Some("cubic-bezier(0, 0, 0.3, 1)"),
+            "expressiveExit" => Some("cubic-bezier(0.4, 0.14, 1, 1)"),
+            _ => None,
+        };
+        match Easing::parse(named.unwrap_or(name)) {
             Some(e) => {
                 let i = self.easings.len() as u32;
                 self.easings.push(e);
@@ -968,8 +1064,10 @@ impl C<'_> {
     // ---------- scenes ----------
 
     fn transition(&mut self, t: Option<&spec::Transition>, path: &str) -> TransC {
+        // No transition given: a hard cut (transitions are opt-in). An object without a
+        // `type` (`{ "duration": 0.6 }`) is a crossfade.
         let o = t.map(|t| t.0.clone()).unwrap_or_default();
-        let kind_s = o.kind.as_deref().unwrap_or("crossfade");
+        let kind_s = o.kind.as_deref().unwrap_or(if t.is_none() { "cut" } else { "crossfade" });
         let kind = match kind_s {
             "cut" | "none" => TransKind::Cut,
             "crossfade" | "fade" => TransKind::Crossfade,
@@ -983,6 +1081,11 @@ impl C<'_> {
             "glitch" => TransKind::Glitch,
             "morphCut" => TransKind::MorphCut,
             "shader" => TransKind::Shader,
+            "zoomThrough" => TransKind::ZoomThrough,
+            "reveal" => TransKind::Reveal,
+            "blinds" => TransKind::Blinds,
+            "split" => TransKind::Split,
+            "whip" => TransKind::Whip,
             k if anikit_shader::library::get(k).is_some_and(|e| e.use_ == anikit_shader::library::Use::Transition) => TransKind::Shader,
             k => {
                 self.d.push(Diagnostic::error(format!("{path}.type"), format!("unknown transition '{k}'")).suggest(suggest(k, val::TRANSITIONS)));
@@ -993,13 +1096,20 @@ impl C<'_> {
             TransKind::Cut => 0.0,
             TransKind::Glitch => 0.3,
             TransKind::MorphCut => 0.25,
+            TransKind::Whip => 0.35,
+            TransKind::ZoomThrough => 0.8,
             _ => 0.5,
         };
         let dur = match &o.duration {
             Some(d) if kind != TransKind::Cut => self.time_raw(d, &format!("{path}.duration")).max(0.0),
             _ => def,
         };
-        let ease = self.ease(o.ease.as_deref(), "inOutCubic", &format!("{path}.ease"));
+        let def_ease = match kind {
+            TransKind::ZoomThrough => "inQuad",
+            TransKind::Reveal | TransKind::Blinds | TransKind::Split | TransKind::Whip => "inOutExpo",
+            _ => "inOutCubic",
+        };
+        let ease = self.ease(o.ease.as_deref(), def_ease, &format!("{path}.ease"));
         let dir = match o.direction.as_deref() {
             None | Some("left") => [-1.0, 0.0],
             Some("right") => [1.0, 0.0],
@@ -1031,7 +1141,22 @@ impl C<'_> {
             None
         };
         let kind = if kind == TransKind::Shader && shader.is_none() { TransKind::Crossfade } else { kind };
-        TransC { kind, dur, ease, dir, color, origin, amount, shader }
+        let shape = match o.shape.as_deref() {
+            None | Some("circle") => 0,
+            Some("diamond") => 1,
+            Some("square") => 2,
+            Some("star") => 3,
+            Some("blob") => 4,
+            Some(x) => {
+                let names = ["circle", "diamond", "square", "star", "blob"];
+                self.d.push(Diagnostic::error(format!("{path}.shape"), format!("unknown reveal shape '{x}'")).suggest(suggest(x, &names)));
+                0
+            }
+        };
+        if kind == TransKind::ZoomThrough && o.layer.is_none() {
+            self.d.push(Diagnostic::error(format!("{path}.layer"), "zoomThrough needs 'layer': the id of a layer in the previous scene to fly into"));
+        }
+        TransC { kind, dur, ease, dir, color, origin, amount, shader, layer: o.layer.clone(), shape, count: o.count.unwrap_or(8).clamp(1, 64) }
     }
 
     fn scene(&mut self, s: &spec::Scene, path: &str, dur: f32, default_bg: &spec::Paint) -> Built {
@@ -1130,15 +1255,27 @@ impl C<'_> {
         let delays = self.stagger_delays(stagger, ls.len(), &format!("{path}.stagger"));
         let mut out = Vec::new();
         let mut at: Vec<Option<usize>> = Vec::with_capacity(ls.len());
+        let outer_sib = std::mem::take(&mut self.sib);
         for (i, l) in ls.iter().enumerate() {
             let p = format!("{path}[{i}]");
             let cpc = PCtx { index: i, count: ls.len(), delay: delays[i], ..pc };
             at.push(None);
             if let Some(n) = self.layer(l, &p, cpc) {
+                if let Some(id) = &l.id {
+                    let rest = |k: usize| {
+                        n.exprs.iter().find(|e| e.0 as usize == k).map_or(n.base[k], |e| {
+                            e.1.eval(&super::expr::Vars { w: self.w as f64, h: self.h as f64, fps: self.fps as f64, ..Default::default() }) as f32
+                        })
+                    };
+                    let (x, y, w, h) = (rest(prop::X), rest(prop::Y), rest(prop::W), rest(prop::H));
+                    let (l0, t0) = (x - n.anchor[0] * w, y - n.anchor[1] * h);
+                    self.sib.push((id.clone(), [l0, t0, l0 + w, t0 + h]));
+                }
                 at[i] = Some(out.len());
                 out.push(n);
             }
         }
+        self.sib = outer_sib;
         if ls.iter().any(|l| l.matte.is_some()) {
             self.resolve_mattes(ls, path, &at, &mut out);
         }
@@ -1289,6 +1426,15 @@ impl C<'_> {
     }
 
     fn layer(&mut self, l: &Layer, path: &str, pc: PCtx) -> Option<Node> {
+        // `"shader": "scene.glsl"` means the shader's source file.
+        let shader_file;
+        let l = match &l.shader {
+            Some(f) if l.src.is_none() && [".glsl", ".wgsl", ".frag"].iter().any(|e| f.trim().to_ascii_lowercase().ends_with(e)) => {
+                shader_file = Layer { src: Some(f.trim().to_string()), shader: None, ..l.clone() };
+                &shader_file
+            }
+            _ => l,
+        };
         // `"text": "=expr"`: a number computed per frame (an animatable counter).
         let expr_text;
         let l = match &l.text {
@@ -1320,6 +1466,17 @@ impl C<'_> {
             }
             None => l,
         };
+        let cut;
+        let l = match &l.cutout {
+            Some(c) => match self.cutout_group(l, c, path) {
+                Some(g) => {
+                    cut = g;
+                    &cut
+                }
+                None => l,
+            },
+            None => l,
+        };
         let kind = self.infer_kind(l, path)?;
         self.uniform_slots.clear();
         let label = match (kind, &l.component) {
@@ -1339,6 +1496,23 @@ impl C<'_> {
         } else if let Some(d) = &l.duration {
             end = start + self.time_raw(d, &format!("{path}.duration"));
         }
+        let start = match &l.frames {
+            Some(f) => {
+                if l.start.is_some() || l.end.is_some() || l.duration.is_some() {
+                    self.d.push(Diagnostic::warning(format!("{path}.frames"), "'frames' replaces start/end/duration; drop one of them"));
+                }
+                let [a, b] = match f {
+                    spec::Frames::One(a) => [*a, a + 1.0],
+                    spec::Frames::Range(r) => *r,
+                };
+                if b <= a {
+                    self.d.push(Diagnostic::error(format!("{path}.frames"), format!("empty range [{a}, {b}): the end frame is excluded, so use [{a}, {}] for one frame", a + 1.0)));
+                }
+                end = pc.t0 + (b / self.fps as f64) as f32;
+                pc.t0 + (a / self.fps as f64) as f32
+            }
+            None => start,
+        };
         if start >= self.scene_dur && self.scene_dur < 1e5 && pc.t0 == 0.0 {
             self.d.push(Diagnostic::warning(
                 format!("{path}.start"),
@@ -1355,6 +1529,7 @@ impl C<'_> {
         n.index = pc.index as f32;
         n.tag = tag;
         n.count = pc.count as f32;
+        n.id = l.id.as_deref().map(Into::into);
 
         // Size (explicit).
         let given_w = l.width.as_ref().map(|v| self.len_c(v, &format!("{path}.width"), pw, 16.0));
@@ -1491,6 +1666,10 @@ impl C<'_> {
             },
         };
 
+        if l.cell.is_none() && !pc.in_box {
+            self.near_grid_check(l, path, &n, pc.size);
+        }
+
         // Transform & appearance.
         match &l.scale {
             Some(spec::Scale::One(s)) => {
@@ -1546,6 +1725,39 @@ impl C<'_> {
             n.glow = Some(Filter::Glow { radius: g.radius.unwrap_or(24.0) as f32, intensity: g.intensity.unwrap_or(1.0) as f32, color });
         }
         self.treatments(l, path, &mut n);
+        if let Some(st) = &l.step {
+            let sp = format!("{path}.step");
+            n.step = match st {
+                serde_json::Value::Number(x) => x.as_f64().unwrap_or(0.0) as f32,
+                serde_json::Value::String(x) => match x.as_str() {
+                    "ones" => self.fps,
+                    "twos" => self.fps / 2.0,
+                    "threes" => self.fps / 3.0,
+                    "fours" => self.fps / 4.0,
+                    _ => {
+                        self.d.push(Diagnostic::error(&sp, format!("unknown step '{x}'")).suggest(suggest(x, &["twos", "threes", "fours"])));
+                        0.0
+                    }
+                },
+                _ => {
+                    self.d.push(Diagnostic::error(&sp, "expected fps (e.g. 12) or \"twos\" / \"threes\""));
+                    0.0
+                }
+            };
+            if n.step < 0.0 || n.step > self.fps * 1.001 {
+                self.d.push(Diagnostic::warning(&sp, format!("step {} fps is outside 0..{} (the video's fps); ignored", n.step, self.fps)));
+                n.step = 0.0;
+            }
+        }
+        if let Some(b) = &l.boil {
+            let (amt, rot, fps, seed) = match b {
+                spec::BoilValue::Px(px) => (*px, 0.0, 12.0, 1),
+                spec::BoilValue::Full(o) => (o.amount.unwrap_or(2.0), o.rotate.unwrap_or(0.0), o.fps.unwrap_or(12.0), o.seed.unwrap_or(1)),
+            };
+            if amt > 0.0 || rot > 0.0 {
+                n.boil = Some([amt as f32, rot as f32, (fps as f32).clamp(0.5, self.fps), seed as f32]);
+            }
+        }
         if matches!(n.kind, Kind::Image { .. } | Kind::Video { .. }) {
             if let Some(r) = &l.radius {
                 let refl = n.base[prop::W].min(n.base[prop::H]);
@@ -1768,7 +1980,11 @@ impl C<'_> {
             offset: l.offset_path.unwrap_or(0.0),
             twist: l.twist.unwrap_or(0.0),
         };
-        let any_mod = !mods.is_empty() || l.wiggle_path.is_some();
+        let along: Option<Vec<Rgba>> = l.stroke.as_ref().and_then(|s| s.0.along.as_ref()).map(|cs| {
+            cs.iter().enumerate().filter_map(|(i, c)| self.color(c, &format!("{path}.stroke.along[{i}]"))).collect()
+        });
+        let along = along.filter(|a| !a.is_empty());
+        let any_mod = !mods.is_empty() || l.wiggle_path.is_some() || along.is_some();
         if any_mod {
             let (w, h) = (n.base[prop::W] as f64, n.base[prop::H] as f64);
             if let Kind::Shape { shape, path: p, .. } = &mut n.kind {
@@ -1782,6 +1998,12 @@ impl C<'_> {
                 };
                 *shape = ShapeKind::Path;
                 *p = mods.apply(&src);
+                if let Some(cs) = &along {
+                    if l.wiggle_path.is_some() {
+                        self.d.push(Diagnostic::warning(format!("{path}.stroke.along"), "a gradient along the stroke ignores wigglePath"));
+                    }
+                    f.along = Some(fx::AlongC::build(p, cs, 96));
+                }
                 if let Some(wp) = &l.wiggle_path {
                     let detail = wp.detail.unwrap_or(32).clamp(3, 2000);
                     f.wiggle = Some([wp.amount.unwrap_or(10.0) as f32, detail as f32, wp.speed.unwrap_or(1.0) as f32, wp.seed.unwrap_or(1.0) as f32]);
@@ -1844,6 +2066,88 @@ impl C<'_> {
                 }
             }
         }
+        if let Some(iv) = &l.inertia {
+            let p = format!("{path}.inertia");
+            // (stiffness, damping, mass): damping ratio ≈ damping / (2·sqrt(stiffness·mass)).
+            let preset = |name: &str| match name {
+                "soft" => Some((90.0, 9.0, 1.0)),
+                "bouncy" => Some((220.0, 9.0, 1.0)),
+                "tight" => Some((400.0, 30.0, 1.0)),
+                "heavy" => Some((120.0, 16.0, 2.2)),
+                "" | "default" => Some((170.0, 14.0, 1.0)),
+                _ => None,
+            };
+            let mut props: Vec<String> = vec!["x".into(), "y".into(), "scaleX".into(), "scaleY".into(), "rotation".into()];
+            let params = match iv {
+                serde_json::Value::Bool(true) => preset(""),
+                serde_json::Value::Bool(false) => None,
+                serde_json::Value::String(s) => {
+                    let r = preset(s);
+                    if r.is_none() {
+                        self.d.push(Diagnostic::error(&p, format!("unknown inertia preset '{s}'")).suggest(suggest(s, &["soft", "bouncy", "tight", "heavy"])));
+                    }
+                    r
+                }
+                serde_json::Value::Object(m) => {
+                    for k in m.keys() {
+                        if !["stiffness", "damping", "mass", "props", "preset"].contains(&k.as_str()) {
+                            self.d.push(Diagnostic::warning(format!("{p}.{k}"), "unknown key (ignored)").suggest(suggest(k, &["stiffness", "damping", "mass", "props", "preset"])));
+                        }
+                    }
+                    let (k0, c0, m0) = m.get("preset").and_then(|x| x.as_str()).and_then(preset).unwrap_or((170.0, 14.0, 1.0));
+                    if let Some(serde_json::Value::Array(a)) = m.get("props") {
+                        props = a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect();
+                    }
+                    let g = |k: &str, d: f64| m.get(k).and_then(|x| x.as_f64()).unwrap_or(d);
+                    Some((g("stiffness", k0), g("damping", c0), g("mass", m0).max(0.01)))
+                }
+                _ => {
+                    self.d.push(Diagnostic::error(&p, "inertia is true, a preset name or {stiffness, damping, mass, props}"));
+                    None
+                }
+            };
+            if let Some((k, c, m)) = params {
+                let mut slots = Vec::new();
+                for name in &props {
+                    match prop::lookup(if name == "scale" { "scaleX" } else { name }) {
+                        Some((s, ch)) if ch <= 2 && !(prop::FILL..prop::FILL + 8).contains(&s) => {
+                            slots.push(s as u8);
+                            if name == "scale" {
+                                slots.push(prop::SY as u8);
+                            }
+                        }
+                        _ => self.d.push(Diagnostic::error(format!("{p}.props"), format!("'{name}' can't follow a spring (use x, y, rotation, scale, opacity, …)"))),
+                    }
+                }
+                slots.dedup();
+                n.inertia = Some(Box::new(fx::InertiaC { slots, stiffness: k as f32, damping: c as f32, mass: m as f32, table: Default::default() }));
+            }
+        }
+        if let Some(d) = l.drag {
+            if !matches!(n.kind, Kind::Group { .. }) {
+                self.d.push(Diagnostic::warning(format!("{path}.drag"), "'drag' applies to group layers (children trail the group's motion)"));
+            } else if (0.0..=2.0).contains(&d) {
+                n.drag = d as f32;
+            } else {
+                self.d.push(Diagnostic::error(format!("{path}.drag"), "drag is seconds per child (e.g. 0.04)"));
+            }
+        }
+        if let Some(p) = l.posterize_time {
+            if p > 0.0 && p <= 240.0 {
+                n.posterize_time = p as f32;
+            } else {
+                self.d.push(Diagnostic::error(format!("{path}.posterizeTime"), "posterizeTime is poses per second (e.g. 12)"));
+            }
+        }
+        f.smear = match &l.smear {
+            None | Some(serde_json::Value::Bool(false)) => None,
+            Some(serde_json::Value::Bool(true)) => Some(1.0),
+            Some(serde_json::Value::Number(x)) => Some(x.as_f64().unwrap_or(1.0).clamp(0.0, 10.0) as f32),
+            Some(_) => {
+                self.d.push(Diagnostic::error(format!("{path}.smear"), "smear is true or a strength (1 = default)"));
+                None
+            }
+        };
         if !f.is_empty() {
             n.fx = Some(Box::new(f));
         }
@@ -2229,6 +2533,56 @@ impl C<'_> {
         out
     }
 
+    /// A hand-placed layer whose edge sits a few px off a grid line reads as a mistake: say so, with the snap.
+    fn near_grid_check(&mut self, l: &Layer, path: &str, n: &Node, size: [f32; 2]) {
+        let Some(g) = self.grid.clone() else { return };
+        // Overprinted plates are offset on purpose; the grid overlay is the grid.
+        if path.contains(".grid[") || l.blend.as_deref().is_some_and(|b| b != "normal") || l.boil.is_some() {
+            return;
+        }
+        if !matches!((&l.x, &l.y), (Some(Num::Num(_)), _) | (_, Some(Num::Num(_)))) {
+            return;
+        }
+        let saved = self.d.len();
+        let gc = self.grid_c(&g, size, path);
+        self.d.truncate(saved);
+        let (w, h) = (n.base[prop::W], n.base[prop::H]);
+        let mut xs = Vec::new();
+        let mut ys = Vec::new();
+        for c in 1..=gc.cols {
+            let [x, _, cw, _] = gc.rect(c, c, 1, 1);
+            xs.extend([x, x + cw]);
+        }
+        for r in 1..=gc.rows {
+            let [_, y, _, rh] = gc.rect(1, 1, r, r);
+            ys.extend([y, y + rh]);
+        }
+        let near = |v: f32, lines: &[f32]| {
+            // On a line already (within rounding) means aligned: no advice.
+            if lines.iter().any(|l| (l - v).abs() <= 1.5) {
+                return None;
+            }
+            lines.iter().map(|l| (l - v, *l)).filter(|(d, _)| d.abs() < 8.0).min_by(|a, b| a.0.abs().total_cmp(&b.0.abs()))
+        };
+        let mut msgs = Vec::new();
+        // Only edges the author placed (left/right/top/bottom anchors), not centred layers.
+        if let (Some(Num::Num(x)), true) = (&l.x, n.anchor[0] < 0.01 || n.anchor[0] > 0.99) {
+            let left = *x as f32 - n.anchor[0] * w;
+            if let Some((d, line)) = near(left, &xs) {
+                msgs.push(format!("left edge {left:.0} px is {:.0} px off the grid line at {line:.0} (x = {:.0} snaps it)", d.abs(), *x as f32 + d));
+            }
+        }
+        if let (Some(Num::Num(y)), true) = (&l.y, n.anchor[1] < 0.01 || n.anchor[1] > 0.99) {
+            let top = *y as f32 - n.anchor[1] * h;
+            if let Some((d, line)) = near(top, &ys) {
+                msgs.push(format!("top edge {top:.0} px is {:.0} px off the grid line at {line:.0} (y = {:.0} snaps it)", d.abs(), *y as f32 + d));
+            }
+        }
+        if !msgs.is_empty() {
+            self.d.push(Diagnostic::warning(path, format!("almost on the grid: {}; or use \"cell\"", msgs.join("; "))));
+        }
+    }
+
     /// A copy of `l` placed in its grid cell.
     fn place_in_cell(&mut self, l: &Layer, c: &serde_json::Value, path: &str, size: [f32; 2]) -> Layer {
         let cp = format!("{path}.cell");
@@ -2375,8 +2729,72 @@ impl C<'_> {
         out
     }
 
+    /// `cutout`: the layer becomes a group of a paper rim (with a printed shadow) and the
+    /// layer itself clipped to a torn / scissor-cut outline of its box.
+    fn cutout_group(&mut self, l: &Layer, c: &spec::CutoutValue, path: &str) -> Option<Layer> {
+        let cp = format!("{path}.cutout");
+        let o = match c {
+            spec::CutoutValue::Edge(e) => spec::CutoutSpec { edge: Some(e.clone()), ..Default::default() },
+            spec::CutoutValue::Full(f) => f.clone(),
+        };
+        let edge = o.edge.clone().unwrap_or_else(|| "torn".into());
+        if !["torn", "scissor", "clean"].contains(&edge.as_str()) {
+            self.d.push(Diagnostic::error(&cp, format!("unknown cutout edge '{edge}'")).suggest(suggest(&edge, &["torn", "scissor", "clean"])));
+            return None;
+        }
+        let (Some(Num::Num(w)), Some(Num::Num(h))) = (&l.width, &l.height) else {
+            self.d.push(Diagnostic::error(&cp, "a cutout needs a numeric width and height (or a grid cell)"));
+            return None;
+        };
+        let (w, h) = (*w, *h);
+        let amount = o.amount.unwrap_or(if edge == "scissor" { 18.0 } else { 14.0 });
+        let rim = o.rim.unwrap_or(if edge == "torn" { 8.0 } else { 0.0 }).max(0.0);
+        let seed = o.seed.unwrap_or(1);
+        let inner_d = super::graphic::cutout_d(w, h, &edge, amount, 0.0, seed);
+        let rim_d = super::graphic::cutout_d(w, h, &edge, amount * 1.25, rim, seed.wrapping_add(17));
+        let mut inner = l.clone();
+        inner.cutout = None;
+        let mut g = Layer {
+            kind: Some("group".into()),
+            id: l.id.clone(),
+            width: Some(Num::Num(w)),
+            height: Some(Num::Num(h)),
+            ..Default::default()
+        };
+        // Placement, time and motion move to the group; looks stay on the content.
+        macro_rules! mv {
+            ($($f:ident),*) => { $( g.$f = inner.$f.take(); )* };
+        }
+        mv!(x, y, anchor, scale, scale_x, scale_y, rotation, skew_x, skew_y, opacity, start, end, duration, enter, exit, animate, loop_, depth, blend, step, boil, path, orient, repeat, echo);
+        inner.id = None;
+        inner.x = Some(Num::Num(w / 2.0));
+        inner.y = Some(Num::Num(h / 2.0));
+        let clip = Layer { shape: Some("path".into()), d: Some(inner_d), ..Default::default() };
+        inner.clip = Some(spec::Clip::Shape(Box::new(clip)));
+        let mut layers = Vec::new();
+        if rim > 0.0 || o.shadow != Some(false) {
+            let mut r = Layer {
+                shape: Some("path".into()),
+                d: Some(if rim > 0.0 { rim_d } else { super::graphic::cutout_d(w, h, &edge, amount, 0.0, seed) }),
+                x: Some(Num::Num(w / 2.0)),
+                y: Some(Num::Num(h / 2.0)),
+                fill: Some(spec::Paint::Css(o.rim_color.clone().unwrap_or_else(|| "#f4f1ea".into()))),
+                ..Default::default()
+            };
+            if o.shadow != Some(false) {
+                r.shadow = Some(spec::Shadow(spec::ShadowObj { x: Some(5.0), y: Some(7.0), blur: Some(3.0), color: Some("#00000059".into()) }));
+            }
+            layers.push(r);
+        }
+        layers.push(inner);
+        g.layers = Some(layers);
+        Some(g)
+    }
+
     /// Image treatments (`duotone`, `gradientMap`, `posterize`, `halftone`) as layer filters.
     fn treatments(&mut self, l: &Layer, path: &str, n: &mut Node) {
+        let mut ht_nums: Option<(Option<Num>, Option<Num>, Option<Num>)> = None;
+        let mut ink_num: Option<Num> = None;
         let mut stops: Option<Vec<(f32, Rgba)>> = None;
         if let Some(d) = &l.duotone {
             if d.len() != 2 {
@@ -2421,7 +2839,7 @@ impl C<'_> {
                 }
                 m
             });
-            let amount = l.tone_amount.unwrap_or(1.0).clamp(0.0, 1.0) as f32;
+            let amount = 1.0;
             // With a map, posterising is baked into it.
             let levels = if map.is_some() { 0 } else { levels };
             n.treat.push(Filter::Tone(Arc::new(dl::ToneLut { map, levels, amount })));
@@ -2429,7 +2847,7 @@ impl C<'_> {
         if let Some(h) = &l.halftone {
             let hp = format!("{path}.halftone");
             let hs = match h {
-                spec::HalftoneValue::Cell(c) => spec::HalftoneSpec { cell: Some(*c), ..Default::default() },
+                spec::HalftoneValue::Cell(c) => spec::HalftoneSpec { cell: Some(Num::Num(*c)), ..Default::default() },
                 spec::HalftoneValue::Full(f) => f.clone(),
             };
             let shape = match hs.shape.as_deref().unwrap_or("dot") {
@@ -2450,11 +2868,55 @@ impl C<'_> {
             };
             let ink = col(self, &hs.ink, "ink", "source");
             let paper = col(self, &hs.paper, "paper", "none");
-            let cell = hs.cell.unwrap_or(10.0) as f32;
+            let cell = match &hs.cell {
+                Some(Num::Num(c)) => *c as f32,
+                _ => 10.0,
+            };
             if cell < 3.0 {
                 self.d.push(Diagnostic::warning(format!("{hp}.cell"), "cells under 3 px alias into moiré after encoding; use 4 px or more"));
             }
-            n.treat.push(Filter::Halftone(dl::Halftone { cell: cell.max(2.0), angle: hs.angle.unwrap_or(45.0) as f32, shape, ink, paper, gain: hs.gain.unwrap_or(1.0) as f32, ox: 0.0, oy: 0.0 }));
+            n.treat.push(Filter::Halftone(dl::Halftone { cell: cell.max(2.0), angle: 45.0, shape, ink, paper, gain: 1.0, ox: 0.0, oy: 0.0 }));
+            ht_nums = Some((hs.cell.clone(), hs.angle.clone(), hs.gain.clone()));
+        }
+        if let Some(iv) = &l.ink_texture {
+            let (amount, scale, seed) = match iv {
+                spec::InkValue::Amount(a) => (Num::Num(*a), 28.0, 1),
+                spec::InkValue::Full(o) => (o.amount.clone().unwrap_or(Num::Num(0.35)), o.scale.unwrap_or(28.0), o.seed.unwrap_or(1)),
+            };
+            n.treat.push(Filter::Ink { amount: 0.35, scale: scale.max(1.0) as f32, seed, ox: 0.0, oy: 0.0 });
+            ink_num = Some(amount);
+        }
+        // Halftone on reading-size text breaks it into dots that H.264 smears.
+        if let (Some(_), Some(_), Some(Num::Num(sz))) = (&l.halftone, &l.text, &l.size) {
+            let cell = match &l.halftone {
+                Some(spec::HalftoneValue::Cell(c)) => *c,
+                Some(spec::HalftoneValue::Full(f)) => match &f.cell { Some(Num::Num(c)) => *c, _ => 10.0 },
+                None => 10.0,
+            };
+            if *sz < cell * 8.0 {
+                self.d.push(Diagnostic::warning(format!("{path}.halftone"), format!("halftone cells of {cell} px on {sz} px text: under ~8 cells per letter height it stops reading; use it on display type (≥ {} px) or a smaller cell", (cell * 8.0).round())));
+            }
+        }
+        // Animatable treatment parameters live in uniform slots after any shader uniforms,
+        // so `animate`, keyframes and "=expr" all reach them by name.
+        if !n.treat.is_empty() {
+            let used: usize = self.uniform_slots.iter().map(|(_, o, c)| o + c).max().unwrap_or(0);
+            if used + 5 > super::shader::UNIFORM_SLOTS {
+                self.d.push(Diagnostic::warning(path, "too many shader uniforms to also animate this layer's treatments; they stay fixed"));
+            } else {
+                let b = prop::U0 + used;
+                n.treat_slot = b as u8;
+                for (k, name) in ["toneAmount", "halftoneCell", "halftoneAngle", "halftoneGain", "inkAmount"].iter().enumerate() {
+                    self.uniform_slots.push((name.to_string(), used + k, 1));
+                }
+                let (c, a, g) = ht_nums.unwrap_or((None, None, None));
+                let one = Num::Num(1.0);
+                self.set(n, b, Some(l.tone_amount.as_ref().unwrap_or(&one)), &format!("{path}.toneAmount"), 1.0);
+                self.set(n, b + 1, Some(c.as_ref().unwrap_or(&Num::Num(10.0))), &format!("{path}.halftone.cell"), 1.0);
+                self.set(n, b + 2, Some(a.as_ref().unwrap_or(&Num::Num(45.0))), &format!("{path}.halftone.angle"), 1.0);
+                self.set(n, b + 3, Some(g.as_ref().unwrap_or(&one)), &format!("{path}.halftone.gain"), 1.0);
+                self.set(n, b + 4, Some(ink_num.as_ref().unwrap_or(&Num::Num(0.35))), &format!("{path}.inkTexture.amount"), 1.0);
+            }
         }
     }
 
@@ -2523,10 +2985,34 @@ impl C<'_> {
                         let mut it = s.split_whitespace();
                         let kind = it.next().unwrap_or("dots").to_string();
                         let spacing = it.next().and_then(|x| x.trim_end_matches("px").parse::<f64>().ok()).unwrap_or(40.0);
-                        Some(super::graphic::Pat { kind, spacing, mark: None, angle: 0.0, seed: l.seed.unwrap_or(1), jitter: 0.0, ramp: None })
+                        Some(super::graphic::Pat { kind, spacing, mark: None, angle: 0.0, seed: l.seed.unwrap_or(1), jitter: 0.0, ramp: None, tile: None, turns: 0, stagger: false, tile_stroke: 0.0, field: None, t: 0.0 })
                     }
                     Some(spec::PatternValue::Full(f)) => Some(super::graphic::Pat {
-                        kind: f.kind.clone(),
+                        kind: if f.kind.is_empty() && f.tile.is_some() { "tile".into() } else { f.kind.clone() },
+                        tile: match &f.tile {
+                            Some(d) => match Path::from_svg(d) {
+                                Ok(p) => Some(p),
+                                Err(e) => {
+                                    self.d.push(Diagnostic::error(format!("{pp}.tile"), format!("invalid SVG path: {e}")));
+                                    None
+                                }
+                            },
+                            None => None,
+                        },
+                        turns: f.turns.unwrap_or(0).min(360),
+                        stagger: f.stagger.unwrap_or(false),
+                        tile_stroke: f.tile_stroke.unwrap_or(0.0).max(0.0),
+                        field: match &f.field {
+                            Some(src) => match super::expr::Expr::compile_field(src.trim().trim_start_matches('='), self.w as f64, self.h as f64) {
+                                Ok(e) => Some(e),
+                                Err(e) => {
+                                    self.d.push(Diagnostic::error(format!("{pp}.field"), format!("field: {e}")));
+                                    None
+                                }
+                            },
+                            None => None,
+                        },
+                        t: 0.0,
                         spacing: f.spacing.unwrap_or(40.0),
                         mark: f.mark,
                         angle: f.angle.unwrap_or(0.0),
@@ -2541,8 +3027,14 @@ impl C<'_> {
                             self.d.push(Diagnostic::error(&pp, format!("unknown pattern '{}'", pt.kind)).suggest(suggest(&pt.kind, super::graphic::PATTERNS)));
                             pt.kind = "dots".into();
                         }
+                        if pt.kind == "tile" && pt.tile.is_none() {
+                            self.d.push(Diagnostic::error(&pp, "a \"tile\" pattern needs \"tile\": SVG path data centred on 0,0 (e.g. \"M-8 -8 L8 -8 L0 10 Z\")"));
+                        }
                         if pt.spacing < 4.0 {
                             self.d.push(Diagnostic::warning(&pp, "spacing under 4 px turns to moiré after encoding"));
+                        }
+                        if pt.field.as_ref().is_some_and(|e| e.dynamic) {
+                            n.live_pattern = Some(Arc::new((pt.clone(), [w as f64, h as f64])));
                         }
                         super::graphic::pattern(w as f64, h as f64, &pt)
                     }
@@ -2714,6 +3206,14 @@ impl C<'_> {
         let ref_size = [gw.unwrap_or(pc.size[0]), gh.unwrap_or(pc.size[1])];
         let cpc = PCtx { size: ref_size, t0: start, end, delay: 0.0, index: 0, count: 0, in_box: true };
         let kids_spec = l.children.as_deref().unwrap_or(&[]);
+        for (k, ch) in kids_spec.iter().enumerate() {
+            if ch.x.is_some() || ch.y.is_some() {
+                self.d.push(Diagnostic::warning(
+                    format!("{path}.children[{k}]"),
+                    "x/y on a box child are ignored: the box lays its children out (use the box's style.align/justify/gap, or put the layer in a group to place it freely)",
+                ));
+            }
+        }
         let mut kids = self.layers(kids_spec, &format!("{path}.children"), cpc, l.stagger.as_ref());
         let gap = st.gap.as_ref().map(|g| self.len_c(g, &format!("{sp}.gap"), ref_size[0], 16.0)).unwrap_or(16.0);
         let pad: [f32; 4] = match &st.padding {

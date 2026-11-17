@@ -6,7 +6,7 @@ studio: "Andreas Wannerstedt"
 client: "Self-initiated"
 year: 2020
 url: https://vimeo.com/454900647
-alt_urls: [https://www.instagram.com/andreaswannerstedt/]
+alt_urls: ["https://www.instagram.com/andreaswannerstedt/"]
 length_s: 60
 verified: oembed
 aspect: "16:9"                      # est.
@@ -22,6 +22,11 @@ anikit_features: [scene3d, camera, motionBlur, post, audio, mograph.repeat, "GAP
 awards: []
 stills:
   - https://i.vimeocdn.com/video/952196346-ace0f6662f641cbeb1b3fa97dc2091eeda0e66a5209eba33be528cce23400e92-d_1280?region=us
+  - https://cdn.myportfolio.com/1a59bd5334e07bdab23db8ff29d19008/aaca6379-99ce-44b3-89d6-022a2c2b5e0b_rw_1920.jpg?h=5ee403a2450fc47ccd46a00a088185be
+  - https://cdn.myportfolio.com/1a59bd5334e07bdab23db8ff29d19008/7a412e6f-eba1-4ecf-bfbe-c301e8dc4e17_rw_1920.jpg?h=cb164bc79e0f73d6896ac35c63a2b34e
+  - https://cdn.myportfolio.com/1a59bd5334e07bdab23db8ff29d19008/9472b80a-cb7e-448e-89a6-1c988c326443_rw_1920.jpg?h=f989c75bbabd03f9c0accdc990742db0
+  - https://cdn.myportfolio.com/1a59bd5334e07bdab23db8ff29d19008/fd5664c3-8b60-4685-81f1-137d74fbc603_rw_1920.jpg?h=f44a0cc8c9872b2114998429e663bc21
+  - https://cdn.myportfolio.com/1a59bd5334e07bdab23db8ff29d19008/07c08c20-cbfe-4299-8394-9192a35f32c6_rw_1920.jpg?h=64c1a64755d6c039ea51a57d6d130560
 measured: null
 ---
 

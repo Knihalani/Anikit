@@ -249,6 +249,16 @@ fn index_of(a: &[serde_json::Value], seg: &str) -> Option<usize> {
 }
 
 fn main() -> ExitCode {
+    // `anikit-video … | head` closes the pipe early: exit quietly instead of
+    // panicking with a backtrace into the caller's output.
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let msg = info.payload().downcast_ref::<String>().map(String::as_str).or_else(|| info.payload().downcast_ref::<&str>().copied()).unwrap_or("");
+        if msg.contains("Broken pipe") {
+            std::process::exit(0);
+        }
+        default_hook(info);
+    }));
     // Agent commands (new, templates, prompt, critique, preview, mcp) live in the library.
     let raw: Vec<String> = std::env::args().skip(1).collect();
     // `<command> --help` (or -h) prints that command's usage and succeeds, so
@@ -438,8 +448,20 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                             Some(wd) if a.get("--scale").is_none() => (wd / ev.width as f32).clamp(0.05, 4.0),
                             _ => scale,
                         };
-                        let (w, h, px) = pipeline::render_rgba(&ev, t, scale);
-                        pipeline::save_png(&out, w, h, px)?;
+                        // Repeated stills of an unchanged frame come from the render cache.
+                        let key = if out.extension().is_some_and(|e| e.eq_ignore_ascii_case("png")) { pipeline::still_key(&ev, t, scale) } else { None };
+                        let hit = key.as_deref().and_then(anikit_video::diskcache::get);
+                        let (w, h) = if let Some(bytes) = hit {
+                            std::fs::write(&out, bytes).map_err(|e| format!("cannot write {}: {e}", out.display()))?;
+                            ((ev.width as f32 * scale).round() as u32, (ev.height as f32 * scale).round() as u32)
+                        } else {
+                            let (w, h, px) = pipeline::render_rgba(&ev, t, scale);
+                            pipeline::save_png(&out, w, h, px)?;
+                            if let (Some(k), Ok(bytes)) = (&key, std::fs::read(&out)) {
+                                anikit_video::diskcache::put(k, &bytes);
+                            }
+                            (w, h)
+                        };
                         let ms = t0.elapsed().as_secs_f32() * 1000.0;
                         // Cost per shader layer, scaled to the full-size render: the
                         // number to watch when a render would be slow.
@@ -555,8 +577,22 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             let cols = a.num("--cols")?.unwrap_or(dc) as u32;
             let rows = a.num("--rows")?.unwrap_or(dr) as u32;
             let width = a.num("--width")?.unwrap_or(480.0) as u32;
-            let (w, h, px) = pipeline::contact_sheet(&ev, cols.max(1), rows.max(1), width.max(16));
-            pipeline::save_png(&out, w, h, px)?;
+            let (cols, rows, width) = (cols.max(1), rows.max(1), width.max(16));
+            let key = pipeline::sheet_key(&ev, cols, rows, width);
+            let (w, h) = match key.as_deref().and_then(anikit_video::diskcache::get) {
+                Some(bytes) => {
+                    std::fs::write(&out, &bytes).map_err(|e| format!("cannot write {}: {e}", out.display()))?;
+                    image::load_from_memory(&bytes).map(|i| (i.width(), i.height())).unwrap_or((0, 0))
+                }
+                None => {
+                    let (w, h, px) = pipeline::contact_sheet(&ev, cols, rows, width);
+                    pipeline::save_png(&out, w, h, px)?;
+                    if let (Some(k), Ok(bytes)) = (&key, std::fs::read(&out)) {
+                        anikit_video::diskcache::put(k, &bytes);
+                    }
+                    (w, h)
+                }
+            };
             if json {
                 println!("{}", serde_json::json!({ "ok": true, "output": out, "width": w, "height": h }));
             } else {
@@ -613,9 +649,47 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             let s = if codec == Codec::Ak264 {
                 // The audio (and any generated music) mixes on a thread while frames render.
                 pipeline::render_ak264_job(&ev, &opts, &out, job)
+            } else if matches!(codec, Codec::Gif | Codec::Png) || job.is_none() {
+                // No audio track in these formats: don't mix one.
+                FfmpegEncoder::new(&out, w, h, ev.fps, codec, quality, None).and_then(|mut enc| pipeline::render_video(&ev, &opts, &mut enc))
             } else {
-                let audio = job.map(|j| j.run()).transpose()?;
-                FfmpegEncoder::new(&out, w, h, ev.fps, codec, quality, audio.as_deref()).and_then(|mut enc| pipeline::render_video(&ev, &opts, &mut enc))
+                // The audio (and any generated music) mixes on a thread while the video
+                // encodes to a temporary file; then one stream-copy mux joins them.
+                let audio = job.map(|j| std::thread::spawn(move || j.run()));
+                let ext = out.extension().and_then(|e| e.to_str()).unwrap_or("mp4").to_string();
+                let tmp = out.with_extension(format!("video-{}.{ext}", std::process::id()));
+                let r = FfmpegEncoder::new(&tmp, w, h, ev.fps, codec, quality, None).and_then(|mut enc| pipeline::render_video(&ev, &opts, &mut enc));
+                let a = audio.map(|h| h.join().map_err(|_| "audio thread panicked".to_string()).and_then(|r| r)).transpose();
+                let r = match (r, a) {
+                    (Ok(mut s), Ok(Some(wav))) => {
+                        let ac = match codec {
+                            Codec::Vp9 => "libopus",
+                            Codec::ProRes => "pcm_s16le",
+                            _ => "aac",
+                        };
+                        let mut cmd = std::process::Command::new("ffmpeg");
+                        cmd.args(["-hide_banner", "-loglevel", "error", "-y", "-i"]).arg(&tmp).arg("-i").arg(&wav);
+                        cmd.args(["-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", ac, "-b:a", "192k"]);
+                        if matches!(ext.as_str(), "mp4" | "mov" | "m4v") {
+                            cmd.args(["-movflags", "+faststart"]);
+                        }
+                        let o = cmd.arg(&out).stdin(std::process::Stdio::null()).output().map_err(|e| format!("ffmpeg: {e}"))?;
+                        if !o.status.success() {
+                            Err(format!("muxing audio failed: {}", String::from_utf8_lossy(&o.stderr).trim()))
+                        } else {
+                            s.bytes = std::fs::metadata(&out).map(|m| m.len()).unwrap_or(s.bytes);
+                            s.output = out.to_string_lossy().into_owned();
+                            Ok(s)
+                        }
+                    }
+                    (Ok(mut s), Ok(None)) => std::fs::rename(&tmp, &out).map(|_| {
+                        s.output = out.to_string_lossy().into_owned();
+                        s
+                    }).map_err(|e| e.to_string()),
+                    (Err(e), _) | (_, Err(e)) => Err(e),
+                };
+                let _ = std::fs::remove_file(&tmp);
+                r
             };
             let audio = had_audio.then_some(());
             if audio.is_some() {

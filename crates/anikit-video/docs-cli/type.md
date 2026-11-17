@@ -20,12 +20,10 @@ condensed, wide, blackletter, script, hand, stencil, mono, pixel, display). Each
   turns fetching off. `anikit-video fonts --fetch all` pre-warms the cache (~80 MB). An unknown name gives a warning with
   suggestions. It works everywhere a font is named: layers, spans, `theme.fonts`, styles and components.
 - **Names are forgiving:** `"Bodoni Moda Black"` → Bodoni Moda (with a warning to set `weight` separately), and `"Bricolage"` → Bricolage
-  Grotesque. In the top-level `fonts` map, each key is an alias: `{"display": "brand.otf"}` or `{"heading": "Fraunces"}` lets you write `"font": "display"`.
-  Characters a face lacks (₂ → ½ ←) fall back to Inter per glyph instead of drawing as boxes.
+  Grotesque. Missing glyphs fall back to Inter per glyph. In the top-level `fonts` map, each key is an alias: `{"display": "brand.otf"}` or `{"heading": "Fraunces"}` lets you write `"font": "display"`.
 - **Paragraphs:** `maxWidth` wraps without fixing the box. Multi-line text with a left anchor (`topLeft`, `left`…) is set flush left unless `align` says otherwise.
 - **`axes`** sets variable-font coordinates: `{"wght": 720, "wdth": 125, "opsz": 144, "slnt": -10}`, or custom upper-case tags
-  (`SOFT`, `WONK`, `CASL`, `MONO`, `XROT`, `YEAR`, `MORF`, `BLED`, `SCAN`…). `fonts NAME` shows a face's axes and ranges.
-  Values outside the range are clamped.
+  (`SOFT`, `WONK`, `CASL`, `MONO`, `XROT`, `MORF`, `SCAN`…). `fonts NAME` shows axes and ranges; values are clamped.
 - **Animate axes** with `"axes.TAG"` in `animate` (in `from`/`to`/`keyframes`). The text is laid out again each frame, so
   width and weight changes reflow and stay centred on the box. An axis named only in `animate` starts at the face's default.
   `letterSpacing` in `animate` (px) also reflows now: a tracking-out over a 2–4 s hold is the classic title move.
@@ -36,7 +34,6 @@ condensed, wide, blackletter, script, hand, stencil, mono, pixel, display). Each
 - **Optical size is automatic.** On faces with an `opsz` axis (Fraunces, Bodoni Moda, Playfair, Newsreader, Literata, Source
   Serif 4, Big Shoulders, Bricolage Grotesque, DM Sans, Roboto Flex, Texturina…), `opsz` follows the font size in px. A
   200 px headline gets the hairline display cut and a 24 px caption gets the sturdy text cut. Set `axes.opsz` to override it.
-  Inter keeps its behaviour (`"Inter Display"` = opsz 32).
 - **`features`** turns on OpenType features: `"tnum"` (tabular figures for counters and tables), `"onum"` (old-style figures in
   serif text), `"smcp"` / `"c2sc"` (small caps), `"case"` (punctuation for all-caps), `"ss01"`–`"ss20"` (stylistic sets),
   `"dlig"`, `"zero"` and `"-liga"` (turn one off). Separate them with spaces or commas; `ss02=1` and the CSS form also work.

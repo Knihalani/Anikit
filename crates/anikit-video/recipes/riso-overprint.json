@@ -1,0 +1,609 @@
+{
+ "about": "A three-ink risograph zine: fluorescent pink, medium blue and yellow on cream stock. Every ink layer is \"blend\": \"multiply\", so overlaps mix the way inks do on paper. Misregistered plates are duplicate type offset 4–8 px with a slow \"boil\". The blob and the date are halftoned in their own ink. \"inkTexture\" gives the uneven stencil coverage and \"step\": \"threes\" gives a hand-pulled cadence. Swap the inks for real riso colours (see docs/video/craft/graphic-design.md §3) but keep it to 2–3 of them. It tends to fail when the inks are many or the type is thin. The full piece adds a reaction-diffusion shader page and uses Bricolage Grotesque.",
+ "cost": "~5 s final (1080p, 4 cores)",
+ "spec": {
+  "size": [
+   1920,
+   1080
+  ],
+  "fps": 30,
+  "intent": "fast",
+  "background": "#f3eee2",
+  "theme": {
+   "colors": {
+    "paper": "#f3eee2",
+    "pink": "#ff48b0",
+    "blue": "#3255a4",
+    "yellow": "#ffe800",
+    "teal": "#00838a"
+   },
+   "fonts": {
+    "heading": "Inter Display",
+    "body": "Inter Display",
+    "mono": "JetBrains Mono"
+   }
+  },
+  "post": {
+   "grain": 0.035,
+   "grainSize": 1.4
+  },
+  "transition": "cut",
+  "grid": {
+   "columns": 6,
+   "rows": 4,
+   "margin": [
+    48,
+    56
+   ],
+   "gutter": 16
+  },
+  "scenes": [
+   {
+    "id": "cover",
+    "duration": 1.452,
+    "layers": [
+     {
+      "shape": "blob",
+      "sides": 7,
+      "wobble": 0.55,
+      "seed": 12,
+      "x": 1240,
+      "y": 520,
+      "width": 1150,
+      "height": 980,
+      "fill": {
+       "type": "radial",
+       "center": [
+        0.35,
+        0.35
+       ],
+       "radius": 0.9,
+       "stops": [
+        "#ffd7ee",
+        "#ff48b0"
+       ]
+      },
+      "halftone": {
+       "cell": 12,
+       "angle": 75,
+       "ink": "$pink",
+       "gain": 1.15
+      },
+      "blend": "multiply",
+      "inkTexture": {
+       "amount": 0.22,
+       "scale": 30,
+       "seed": 1
+      },
+      "step": "threes",
+      "wigglePath": {
+       "amount": 14,
+       "detail": 9,
+       "speed": 0.6
+      },
+      "animate": [
+       {
+        "from": {
+         "scale": 0.3,
+         "rotation": -30
+        },
+        "duration": 0.7,
+        "ease": "outBack"
+       }
+      ]
+     },
+     {
+      "cell": "1-6/1-4",
+      "x": 64,
+      "y": 54,
+      "text": "PAPER\nWEEKEND",
+      "size": 300,
+      "weight": 800,
+      "lineHeight": 0.8,
+      "letterSpacing": "-0.04em",
+      "color": "$pink",
+      "blend": "multiply",
+      "inkTexture": {
+       "amount": 0.22,
+       "scale": 30,
+       "seed": 2
+      },
+      "boil": {
+       "amount": 3,
+       "fps": 8,
+       "seed": 2
+      },
+      "kinetic": "pop by char 0.4s 25ms outBack"
+     },
+     {
+      "cell": "1-6/1-4",
+      "text": "PAPER\nWEEKEND",
+      "size": 300,
+      "weight": 800,
+      "lineHeight": 0.8,
+      "letterSpacing": "-0.04em",
+      "color": "$blue",
+      "blend": "multiply",
+      "inkTexture": {
+       "amount": 0.22,
+       "scale": 30,
+       "seed": 3
+      },
+      "kinetic": "pop by char 0.4s 25ms outBack"
+     },
+     {
+      "cell": "1-3/4",
+      "anchor": "bottomLeft",
+      "text": "a small press fair · zines · prints · comics",
+      "font": "$mono",
+      "size": 26,
+      "color": "$blue",
+      "kinetic": "typewriter"
+     }
+    ]
+   },
+   {
+    "id": "overprint",
+    "duration": 0.968,
+    "background": "#f3eee2",
+    "layers": [
+     {
+      "shape": "circle",
+      "x": 760,
+      "y": 540,
+      "width": 760,
+      "height": 760,
+      "fill": "$yellow",
+      "blend": "multiply",
+      "inkTexture": {
+       "amount": 0.22,
+       "scale": 30,
+       "seed": 4
+      },
+      "animate": [
+       {
+        "from": {
+         "x": 260
+        },
+        "duration": 0.6,
+        "ease": "outExpo"
+       }
+      ]
+     },
+     {
+      "shape": "circle",
+      "x": 1160,
+      "y": 540,
+      "width": 760,
+      "height": 760,
+      "fill": "$blue",
+      "blend": "multiply",
+      "inkTexture": {
+       "amount": 0.22,
+       "scale": 30,
+       "seed": 5
+      },
+      "animate": [
+       {
+        "from": {
+         "x": 1660
+        },
+        "duration": 0.6,
+        "ease": "outExpo"
+       }
+      ]
+     },
+     {
+      "shape": "circle",
+      "x": 960,
+      "y": 540,
+      "width": 360,
+      "height": 360,
+      "fill": "$pink",
+      "blend": "multiply",
+      "inkTexture": {
+       "amount": 0.22,
+       "scale": 30,
+       "seed": 6
+      },
+      "animate": [
+       {
+        "from": {
+         "scale": 0
+        },
+        "duration": 0.45,
+        "ease": "outBack",
+        "at": 0.25
+       }
+      ]
+     },
+     {
+      "x": 960,
+      "y": 540,
+      "text": "ink on ink",
+      "size": 64,
+      "weight": 700,
+      "color": "$paper",
+      "enter": {
+       "preset": "fadeIn",
+       "duration": 0.15,
+       "delay": 0.4
+      }
+     }
+    ]
+   },
+   {
+    "id": "pages",
+    "duration": 1.452,
+    "background": "$yellow",
+    "layers": [
+     {
+      "x": 520,
+      "y": 560,
+      "width": 620,
+      "height": 820,
+      "rotation": -7,
+      "shape": "rect",
+      "fill": "$paper",
+      "animate": [
+       {
+        "from": {
+         "y": 1500,
+         "rotation": -25
+        },
+        "duration": 0.55,
+        "ease": "outExpo"
+       }
+      ]
+     },
+     {
+      "x": 520,
+      "y": 560,
+      "width": 560,
+      "height": 760,
+      "rotation": -7,
+      "pattern": {
+       "kind": "waves",
+       "spacing": 34,
+       "mark": 0.18
+      },
+      "fill": "$blue",
+      "blend": "multiply",
+      "inkTexture": {
+       "amount": 0.22,
+       "scale": 30,
+       "seed": 7
+      },
+      "animate": [
+       {
+        "from": {
+         "y": 1500,
+         "rotation": -25
+        },
+        "duration": 0.55,
+        "ease": "outExpo"
+       }
+      ]
+     },
+     {
+      "x": 1000,
+      "y": 520,
+      "width": 620,
+      "height": 820,
+      "rotation": 4,
+      "shape": "rect",
+      "fill": "$paper",
+      "animate": [
+       {
+        "from": {
+         "y": 1500,
+         "rotation": 20
+        },
+        "duration": 0.55,
+        "ease": "outExpo",
+        "at": 0.12
+       }
+      ]
+     },
+     {
+      "x": 1000,
+      "y": 520,
+      "width": 560,
+      "height": 760,
+      "rotation": 4,
+      "pattern": {
+       "kind": "checker",
+       "spacing": 70
+      },
+      "fill": "$pink",
+      "blend": "multiply",
+      "inkTexture": {
+       "amount": 0.22,
+       "scale": 30,
+       "seed": 8
+      },
+      "animate": [
+       {
+        "from": {
+         "y": 1500,
+         "rotation": 20
+        },
+        "duration": 0.55,
+        "ease": "outExpo",
+        "at": 0.12
+       }
+      ]
+     },
+     {
+      "x": 1460,
+      "y": 580,
+      "width": 620,
+      "height": 820,
+      "rotation": -3,
+      "shape": "rect",
+      "fill": "$paper",
+      "animate": [
+       {
+        "from": {
+         "y": 1500,
+         "rotation": -15
+        },
+        "duration": 0.55,
+        "ease": "outExpo",
+        "at": 0.24
+       }
+      ]
+     },
+     {
+      "x": 1460,
+      "y": 580,
+      "width": 560,
+      "height": 760,
+      "rotation": -3,
+      "pattern": {
+       "kind": "truchet",
+       "spacing": 56,
+       "mark": 0.22,
+       "seed": 3
+      },
+      "fill": "$teal",
+      "blend": "multiply",
+      "inkTexture": {
+       "amount": 0.22,
+       "scale": 30,
+       "seed": 9
+      },
+      "animate": [
+       {
+        "from": {
+         "y": 1500,
+         "rotation": -15
+        },
+        "duration": 0.55,
+        "ease": "outExpo",
+        "at": 0.24
+       }
+      ]
+     },
+     {
+      "x": 1460,
+      "y": 580,
+      "width": 460,
+      "height": 330,
+      "rotation": -3,
+      "shape": "rect",
+      "fill": "$paper",
+      "animate": [
+       {
+        "from": {
+         "y": 1500,
+         "rotation": -15
+        },
+        "duration": 0.55,
+        "ease": "outExpo",
+        "at": 0.24
+       }
+      ]
+     },
+     {
+      "x": 1460,
+      "y": 580,
+      "rotation": -3,
+      "text": "120\ntables",
+      "size": 124,
+      "weight": 800,
+      "lineHeight": 0.85,
+      "color": "$pink",
+      "blend": "multiply",
+      "inkTexture": {
+       "amount": 0.22,
+       "scale": 30,
+       "seed": 10
+      },
+      "animate": [
+       {
+        "from": {
+         "y": 1500,
+         "rotation": -15
+        },
+        "duration": 0.55,
+        "ease": "outExpo",
+        "at": 0.24
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "date",
+    "duration": 1.452,
+    "background": "$blue",
+    "layers": [
+     {
+      "text": "2—3\nMAY",
+      "size": 470,
+      "weight": 800,
+      "lineHeight": 0.78,
+      "letterSpacing": "-0.05em",
+      "color": "$yellow",
+      "x": 972,
+      "y": 566,
+      "kinetic": "pop by char 0.4s 40ms outBack"
+     },
+     {
+      "x": 960,
+      "y": 560,
+      "text": "2—3\nMAY",
+      "size": 470,
+      "weight": 800,
+      "lineHeight": 0.78,
+      "letterSpacing": "-0.05em",
+      "color": "$pink",
+      "halftone": {
+       "cell": 11,
+       "angle": 15,
+       "ink": "$pink",
+       "gain": 0.9
+      },
+      "kinetic": "pop by char 0.4s 40ms outBack"
+     }
+    ]
+   },
+   {
+    "id": "lockup",
+    "duration": 2.903,
+    "layers": [
+     {
+      "cell": "4-6/1-4",
+      "shape": "arc",
+      "width": 840,
+      "height": 840,
+      "anchor": "right",
+      "startAngle": 180,
+      "endAngle": 360,
+      "fill": "$pink",
+      "blend": "multiply",
+      "inkTexture": {
+       "amount": 0.22,
+       "scale": 30,
+       "seed": 11
+      },
+      "halftone": {
+       "cell": 9,
+       "angle": 75,
+       "ink": "$pink"
+      },
+      "animate": [
+       {
+        "from": {
+         "rotation": -180
+        },
+        "duration": 0.8,
+        "ease": "outExpo"
+       }
+      ]
+     },
+     {
+      "cell": "4-6/1-4",
+      "shape": "squircle",
+      "exponent": 3,
+      "width": 460,
+      "height": 460,
+      "anchor": "center",
+      "fill": "$yellow",
+      "blend": "multiply",
+      "inkTexture": {
+       "amount": 0.22,
+       "scale": 30,
+       "seed": 12
+      },
+      "animate": [
+       {
+        "from": {
+         "scale": 0,
+         "rotation": 45
+        },
+        "duration": 0.6,
+        "ease": "outBack",
+        "at": 0.2
+       }
+      ]
+     },
+     {
+      "cell": "1-4/1-3",
+      "x": 61,
+      "y": 53,
+      "text": "PAPER\nWEEKEND",
+      "size": 210,
+      "weight": 800,
+      "lineHeight": 0.8,
+      "letterSpacing": "-0.04em",
+      "color": "$pink",
+      "blend": "multiply",
+      "inkTexture": {
+       "amount": 0.22,
+       "scale": 30,
+       "seed": 13
+      },
+      "boil": {
+       "amount": 2.5,
+       "fps": 8,
+       "seed": 5
+      },
+      "kinetic": "mask by line up 0.5s 80ms outExpo"
+     },
+     {
+      "cell": "1-4/1-3",
+      "text": "PAPER\nWEEKEND",
+      "size": 210,
+      "weight": 800,
+      "lineHeight": 0.8,
+      "letterSpacing": "-0.04em",
+      "color": "$blue",
+      "blend": "multiply",
+      "inkTexture": {
+       "amount": 0.22,
+       "scale": 30,
+       "seed": 14
+      },
+      "kinetic": "mask by line up 0.5s 80ms outExpo"
+     },
+     {
+      "cell": "1-2/4",
+      "anchor": "bottomLeft",
+      "text": "2—3 May\nOld Tram Depot\nfree entry",
+      "font": "$mono",
+      "size": 28,
+      "lineHeight": 1.3,
+      "color": "$blue",
+      "enter": {
+       "preset": "fadeIn",
+       "duration": 0.2,
+       "delay": 0.5
+      }
+     },
+     {
+      "cell": "3/4",
+      "anchor": "bottomLeft",
+      "text": "risograph\n3 inks\n120 tables",
+      "font": "$mono",
+      "size": 28,
+      "lineHeight": 1.3,
+      "color": "$pink",
+      "blend": "multiply",
+      "inkTexture": {
+       "amount": 0.22,
+       "scale": 30,
+       "seed": 15
+      },
+      "enter": {
+       "preset": "fadeIn",
+       "duration": 0.2,
+       "delay": 0.6
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

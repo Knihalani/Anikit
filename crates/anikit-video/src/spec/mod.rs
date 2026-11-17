@@ -176,6 +176,68 @@ pub struct GridSpec {
     pub color: Option<String>,
 }
 
+/// `cutout`: an edge name or the full settings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum CutoutValue {
+    Edge(String),
+    Full(CutoutSpec),
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CutoutSpec {
+    /// `torn` (default), `scissor` or `clean`.
+    pub edge: Option<String>,
+    /// How far the edge bites in, px. Default 14 (torn), 18 (scissor).
+    pub amount: Option<f64>,
+    /// Paper rim around the cut, px. Default 8 for torn, 0 otherwise.
+    pub rim: Option<f64>,
+    /// Rim colour. Default `"#f4f1ea"`.
+    pub rim_color: Option<String>,
+    /// A tight printed shadow under the piece. Default true.
+    pub shadow: Option<bool>,
+    pub seed: Option<u32>,
+}
+
+/// `inkTexture`: amount, or the full settings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum InkValue {
+    Amount(f64),
+    Full(InkSpec),
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct InkSpec {
+    /// How much ink thins out in the worst spots (0..1). Default 0.35. Animatable as `inkAmount`, or `"=expr"`.
+    pub amount: Option<Num>,
+    /// Size of the blotches in px. Default 28.
+    pub scale: Option<f64>,
+    pub seed: Option<u32>,
+}
+
+/// `boil`: px, or the full settings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum BoilValue {
+    Px(f64),
+    Full(BoilSpec),
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BoilSpec {
+    /// Max offset in px. Default 2.
+    pub amount: Option<f64>,
+    /// Max rotation in degrees. Default 0.
+    pub rotate: Option<f64>,
+    /// New positions per second. Default 12.
+    pub fps: Option<f64>,
+    pub seed: Option<u32>,
+}
+
 /// `halftone`: a cell size in px, or the full settings.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(untagged)]
@@ -188,10 +250,11 @@ pub enum HalftoneValue {
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct HalftoneSpec {
-    /// Screen pitch in px (distance between dot centres). Default 10.
-    pub cell: Option<f64>,
+    /// Screen pitch in px (distance between dot centres). Default 10. Animatable as `halftoneCell` (also `halftoneAngle`,
+    /// `halftoneGain`), or `"=expr"`.
+    pub cell: Option<Num>,
     /// Screen angle in degrees. Default 45 (black ink); 15/75/0 for other plates.
-    pub angle: Option<f64>,
+    pub angle: Option<Num>,
     /// `dot` (default), `line` or `square`.
     pub shape: Option<String>,
     /// Ink colour. Default `"source"`: each dot keeps the layer's colour there.
@@ -199,7 +262,7 @@ pub struct HalftoneSpec {
     /// Paper colour under the dots, or `"none"` (default): only the dots remain.
     pub paper: Option<String>,
     /// Dot gain: > 1 darkens (fatter dots), < 1 lightens. Default 1.
-    pub gain: Option<f64>,
+    pub gain: Option<Num>,
 }
 
 /// `pattern`: a kind with an optional spacing (`"dots 32"`), or the full settings.
@@ -214,7 +277,9 @@ pub enum PatternValue {
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PatternSpec {
-    /// `dots`, `grid`, `lines`, `checker`, `triangles`, `diamonds`, `crosses`, `rings`, `waves`, `zigzag`, `truchet`, `arcs`, `scales`, `bricks`.
+    /// `dots`, `grid`, `lines`, `stripes`, `checker`, `triangles`, `diamonds`, `crosses`, `rings`, `waves`, `zigzag`, `truchet`, `arcs`,
+    /// `scales`, `bricks`, or `tile` (your own `tile` motif; implied when `tile` is given).
+    #[serde(default)]
     pub kind: String,
     /// Repeat distance in px. Default 40.
     pub spacing: Option<f64>,
@@ -228,6 +293,20 @@ pub struct PatternSpec {
     pub jitter: Option<f64>,
     /// Mark size from `[a, b]` across the box (left→right; with `angle` it follows the angle): a size ramp like a halftone. Fractions of `mark`.
     pub ramp: Option<[f64; 2]>,
+    /// Your own motif for `kind: "tile"` (the default when `tile` is given): SVG path data in px, centred on 0,0,
+    /// drawn at every lattice point and scaled by `mark` (default 1) × `ramp`.
+    pub tile: Option<String>,
+    /// Random rotation of each mark in steps of 360/turns degrees, seeded (`4` = quarter turns, Truchet-style).
+    pub turns: Option<u32>,
+    /// Shift every other row by half the spacing (brick / hexagonal lattice).
+    pub stagger: Option<bool>,
+    /// Stroke the `tile` motif at this width in px instead of filling it (open lines: squiggles, ticks, zigzags).
+    pub tile_stroke: Option<f64>,
+    /// Size of each mark as an expression (multiplies `mark` and `ramp`): `u`, `v` (0..1 across the box), `x`, `y`
+    /// (px from the centre), `d` (0 centre … 1 corner), `a` (angle), `r` (random per mark), `t`, plus the usual functions.
+    /// On `lines`/`stripes` it sets the weight along each line (op art); on `waves`/`zigzag` the amplitude.
+    /// Using `t` regenerates the pattern every frame. E.g. `"0.5 + 0.5 * sin(d * 18 - t * 3)"`.
+    pub field: Option<String>,
 }
 
 /// `dots`: many points from an array or a CSV file (`x,y[,colour]` per line).
@@ -471,7 +550,7 @@ string_or_struct!(Transition, TransitionObj, |s| TransitionObj { kind: Some(s.to
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct TransitionObj {
-    /// `cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`.
+    /// `cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`, `zoomThrough`, `reveal`, `blinds`, `split`, `whip`.
     #[serde(rename = "type")]
     pub kind: Option<String>,
     pub duration: Option<Num>,
@@ -486,6 +565,12 @@ pub struct TransitionObj {
     /// `type: "shader"`: a gl-transitions style shader (`vec4 transition(vec2 uv)` with
     /// `progress`, `getFromColor`, `getToColor`) or a built-in transition name.
     pub shader: Option<String>,
+    /// `zoomThrough`: the `id` of a layer in the outgoing scene to fly into (the new scene shows through its shape).
+    pub layer: Option<String>,
+    /// `reveal`: `circle`, `diamond`, `square`, `star`, `blob`.
+    pub shape: Option<String>,
+    /// `blinds`: number of bars (default 8).
+    pub count: Option<u32>,
     /// Uniforms for a shader transition.
     pub uniforms: Option<BTreeMap<String, serde_json::Value>>,
 }
@@ -538,6 +623,14 @@ pub enum Scale {
     Xy([Num; 2]),
 }
 
+/// `frames`: one frame number, or a half-open range `[first, end)` (frames into the scene).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum Frames {
+    One(f64),
+    Range([f64; 2]),
+}
+
 /// A layer. One flat type for every kind; `type` picks the kind (and is
 /// inferred when obvious). Keys that don't apply to the kind are warned about.
 #[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
@@ -586,6 +679,19 @@ pub struct Layer {
     /// Text animator with a range selector (After Effects style): units inside the range take these props.
     /// `{"by": "char", "y": 40, "opacity": 0, "duration": 0.8}` sweeps a reveal; see `docs mograph`.
     pub animator: Option<AnimatorSpec>,
+    /// Follow-through: a spring chases the layer's own motion, so every move overshoots and settles.
+    /// `true`, a preset (`soft`, `bouncy`, `tight`, `heavy`) or `{"stiffness": 170, "damping": 12, "mass": 1, "props": ["x", "y", "rotation", "scale"]}`.
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub inertia: Option<serde_json::Value>,
+    /// Posterize time (After Effects style): this layer and its children move at this many frames per second
+    /// (`12` animates "on twos" at 24 fps: a handmade, stop-motion feel). The video's frame rate is unchanged.
+    pub posterize_time: Option<f64>,
+    /// Group drag (overlapping action): child i follows the group's own motion i × drag seconds later,
+    /// so a moving group trails and settles part by part. Pairs well with `inertia` on the group.
+    pub drag: Option<f64>,
+    /// Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default).
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub smear: Option<serde_json::Value>,
     /// Track matte: another layer of the scene (by `id`) whose alpha or luma shows this one.
     pub matte: Option<MatteSpec>,
 
@@ -622,13 +728,26 @@ pub struct Layer {
     pub gradient_map: Option<Vec<serde_json::Value>>,
     /// Posterise to N tone levels (on luma when combined with `duotone`/`gradientMap`, else per channel).
     pub posterize: Option<u32>,
-    /// Strength of `duotone` / `gradientMap` / `posterize` (0..1). Default 1.
-    pub tone_amount: Option<f64>,
+    /// Strength of `duotone` / `gradientMap` / `posterize` (0..1). Default 1. Animatable (`toneAmount`), or `"=expr"`.
+    pub tone_amount: Option<Num>,
     /// Input luma range `[black, white]` (0..1) stretched to the full map before `duotone`/`gradientMap`:
     /// the pre-curve a print designer sets so a flat source still spans ink to paper. Default `[0, 1]`.
     pub tone_range: Option<[f64; 2]>,
     /// Print halftone screen: a cell size in px, or `{ "cell", "angle", "shape", "ink", "paper", "gain" }`.
     pub halftone: Option<HalftoneValue>,
+    /// Uneven ink coverage (riso, screenprint, letterpress): amount 0..1, or `{ "amount", "scale": px, "seed" }`.
+    /// Fixed to the frame like the paper, so moving shapes travel through it.
+    pub ink_texture: Option<InkValue>,
+    /// Collage cut-out: `"torn"`, `"scissor"` or `"clean"`, or `{ "edge", "amount": px, "rim": px, "rimColor", "shadow": bool, "seed" }`.
+    /// Cuts the layer's box with that edge, backs it with a paper rim and a printed shadow. Needs a numeric `width`/`height` (or a `cell`).
+    pub cutout: Option<CutoutValue>,
+    /// Stepped time: the layer (and its children) animate at this many fps, or `"twos"`/`"threes"`/`"fours"`
+    /// of the video's fps (stop-motion, hand-pulled print, cel looks) while the rest stays smooth.
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub step: Option<serde_json::Value>,
+    /// Boil: a seeded jitter re-drawn a few times a second: px, or `{ "amount": px, "rotate": deg, "fps": 12, "seed": 1 }`.
+    /// On a `multiply` ink layer it reads as plates drifting out of register.
+    pub boil: Option<BoilValue>,
     /// `true` clips children to the layer box, or a clip shape.
     pub clip: Option<Clip>,
     /// A layer whose alpha masks this one.
@@ -636,9 +755,13 @@ pub struct Layer {
     pub visible: Option<bool>,
 
     // ---- timing & animation
+    /// When the layer appears (seconds into the scene). `delay` means the same.
+    #[serde(alias = "delay")]
     pub start: Option<Num>,
     pub end: Option<Num>,
     pub duration: Option<Num>,
+    /// Timing in frames instead of seconds: `"frames": 12` (only frame 12) or `[12, 18]` (frames 12–17).
+    pub frames: Option<Frames>,
     pub enter: Option<Preset>,
     pub exit: Option<Preset>,
     /// Repeating motion: `float`, `pulse`, `spin`, `wiggle`, `breathe`, `blink`
@@ -704,7 +827,7 @@ pub struct Layer {
     /// `arc`: start and end angle in degrees (0 = 12 o'clock, clockwise). Default 0 and 270.
     pub start_angle: Option<f64>,
     pub end_angle: Option<f64>,
-    /// A generated pattern filling `width` × `height`: `"dots"`, `"truchet 48"`, or `{ "kind", "spacing", "mark", "angle", "seed", "jitter", "ramp" }`.
+    /// A generated pattern filling `width` × `height`: `"dots"`, `"truchet 48"`, or `{ "kind", "spacing", "mark", "angle", "seed", "jitter", "ramp", "tile", "tileStroke", "turns", "stagger" }` (`tile`: your own SVG motif).
     pub pattern: Option<PatternValue>,
     pub trim_start: Option<Num>,
     pub trim_end: Option<Num>,
@@ -966,7 +1089,28 @@ pub enum Padding {
 /// Drop shadow.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Shadow(pub ShadowObj);
-string_or_struct!(Shadow, ShadowObj, |s| ShadowObj { color: (!s.is_empty()).then(|| s.to_string()), ..Default::default() });
+string_or_struct!(Shadow, ShadowObj, |s| css_shadow(s));
+
+/// `"#0008"` (a colour) or CSS shorthand `"0 4px 24px #0008"` (x, y, blur, colour).
+fn css_shadow(s: &str) -> ShadowObj {
+    let mut nums = Vec::new();
+    let mut rest = s.trim();
+    while let Some(tok) = rest.split_whitespace().next() {
+        match tok.trim_end_matches("px").parse::<f64>() {
+            Ok(v) if nums.len() < 3 => {
+                nums.push(v);
+                rest = rest[tok.len()..].trim_start();
+            }
+            _ => break,
+        }
+    }
+    ShadowObj {
+        x: nums.first().copied(),
+        y: nums.get(1).copied(),
+        blur: nums.get(2).copied(),
+        color: (!rest.is_empty()).then(|| rest.to_string()),
+    }
+}
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -1014,6 +1158,8 @@ pub struct StrokeObj {
     pub join: Option<String>,
     pub dash: Option<Vec<f64>>,
     pub dash_offset: Option<f64>,
+    /// Colours along the stroke, start to end: a gradient that follows the path (and its `trimEnd` write-on).
+    pub along: Option<Vec<String>>,
 }
 
 /// `loop`: a preset (name or object), or a bool for video clips.
@@ -1057,6 +1203,7 @@ string_or_struct!(Preset, PresetObj, |s| PresetObj { preset: Some(s.to_string())
 pub struct PresetObj {
     /// Preset name (`fadeUp`, `popIn`, `drawOn`, `typewriter`, …).
     pub preset: Option<String>,
+    #[serde(alias = "at")]
     pub delay: Option<Num>,
     pub duration: Option<Num>,
     pub ease: Option<String>,
