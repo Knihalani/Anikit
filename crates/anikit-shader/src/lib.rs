@@ -219,16 +219,18 @@ impl Shader {
     fn env(&self, f: &Frame) -> Env {
         let mut sizes = [[0i32; 2]; 4];
         let mut channels = [std::ptr::null(); 4];
+        let mut chan = [texture::ChanInfo::NONE; 4];
         for (i, c) in f.channels.iter().enumerate() {
             if let Some(t) = c {
                 sizes[i] = [t.width() as i32, t.height() as i32];
                 channels[i] = *t as *const Texture;
+                chan[i] = texture::ChanInfo::of(t);
             }
         }
         if f.supersample {
-            Env { lane_dx: [-0.25, 0.25, -0.25, 0.25], lane_dy: [0.25, 0.25, -0.25, -0.25], qstep: 1.0, _pad: [0.0; 3], sizes, channels }
+            Env { lane_dx: [-0.25, 0.25, -0.25, 0.25], lane_dy: [0.25, 0.25, -0.25, -0.25], qstep: 1.0, _pad: [0.0; 3], sizes, channels, chan }
         } else {
-            Env { lane_dx: [0.0, 1.0, 0.0, 1.0], lane_dy: [0.0, 0.0, -1.0, -1.0], qstep: 2.0, _pad: [0.0; 3], sizes, channels }
+            Env { lane_dx: [0.0, 1.0, 0.0, 1.0], lane_dy: [0.0, 0.0, -1.0, -1.0], qstep: 2.0, _pad: [0.0; 3], sizes, channels, chan }
         }
     }
 
@@ -355,3 +357,19 @@ fn scalar_ints(m: &naga::Module, t: &naga::TypeInner) -> Vec<bool> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod layout {
+    #[test]
+    fn env_offsets_match_the_jit() {
+        let e = std::mem::MaybeUninit::<crate::texture::Env>::uninit();
+        let p = e.as_ptr();
+        // SAFETY: only field addresses are taken.
+        let off = |f: *const u8| f as usize - p as usize;
+        unsafe {
+            assert_eq!(off(std::ptr::addr_of!((*p).sizes) as _), crate::texture::ENV_SIZES as usize);
+            assert_eq!(off(std::ptr::addr_of!((*p).chan) as _), crate::texture::ENV_CHAN as usize);
+        }
+        assert_eq!(std::mem::size_of::<crate::texture::ChanInfo>(), crate::texture::CHAN_SIZE as usize);
+    }
+}
