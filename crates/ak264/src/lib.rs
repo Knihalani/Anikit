@@ -41,19 +41,18 @@ pub use frame::{YuvBuffer, YuvFrame};
 pub fn encode_chunks(cfg: &EncoderConfig, frames: &[YuvFrame], hints: &[FrameHints]) -> Vec<u8> {
     use rayon::prelude::*;
     assert!(hints.is_empty() || hints.len() == frames.len());
-    let gop = cfg.gop.max(1) as usize;
     let none = FrameHints::default();
-    let parts: Vec<Vec<u8>> = frames
-        .par_chunks(gop)
+    let parts: Vec<Vec<u8>> = chunk_ranges(frames.len(), cfg.gop)
+        .into_par_iter()
         .enumerate()
-        .map(|(ci, chunk)| {
+        .map(|(ci, (a, b))| {
             let mut c = cfg.clone();
             c.threads = 1;
             let mut e = Encoder::with_idr_base(c, ci as u32);
             let mut out = Vec::new();
-            for (k, f) in chunk.iter().enumerate() {
-                let h = if hints.is_empty() { &none } else { &hints[ci * gop + k] };
-                out.extend_from_slice(e.encode(f, h));
+            for t in a..b {
+                let h = if hints.is_empty() { &none } else { &hints[t] };
+                out.extend_from_slice(e.encode(&frames[t], h));
             }
             out
         })
@@ -75,22 +74,21 @@ where
     F: Fn(usize, &mut YuvBuffer, &mut FrameHints) + Sync,
 {
     use rayon::prelude::*;
-    let gop = cfg.gop.max(1) as usize;
-    let chunks = frames.div_ceil(gop);
-    let parts: Vec<Vec<u8>> = (0..chunks)
+    let parts: Vec<Vec<u8>> = chunk_ranges(frames, cfg.gop)
         .into_par_iter()
-        .map(|ci| {
+        .enumerate()
+        .map(|(ci, (a, b))| {
             let mut c = cfg.clone();
             c.threads = 1;
             let mut e = Encoder::with_idr_base(c, ci as u32);
             let mut buf = YuvBuffer::new(cfg.width, cfg.height);
             let mut hints = FrameHints::default();
             let mut out = Vec::new();
-            for t in ci * gop..((ci + 1) * gop).min(frames) {
+            for t in a..b {
                 hints.changed = None;
                 hints.motions.clear();
                 render(t, &mut buf, &mut hints);
-                if t == ci * gop {
+                if t == a {
                     hints.changed = None; // first frame of a chunk is an IDR
                 }
                 out.extend_from_slice(e.encode(&buf.frame(), &hints));
@@ -99,4 +97,18 @@ where
         })
         .collect();
     parts.concat()
+}
+
+/// Frame ranges of the independently encoded chunks: at most `gop` frames each,
+/// and (for short videos) a multiple of the core count so no core idles in the
+/// last round. Each chunk starts with an IDR.
+pub fn chunk_ranges(frames: usize, gop: u32) -> Vec<(usize, usize)> {
+    let gop = gop.max(1) as usize;
+    let mut n = frames.div_ceil(gop).max(1);
+    let cores = rayon::current_num_threads().max(1);
+    if !n.is_multiple_of(cores) && n < 4 * cores {
+        n = n.div_ceil(cores) * cores;
+    }
+    let n = n.min(frames.max(1));
+    (0..n).map(|i| (i * frames / n, (i + 1) * frames / n)).filter(|r| r.1 > r.0).collect()
 }

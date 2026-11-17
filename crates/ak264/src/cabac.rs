@@ -26,6 +26,37 @@ pub enum Cat {
     ChromaAc = 4,
 }
 
+/// rangeTabLPS indexed by the packed state (pStateIdx << 1 | valMPS).
+static LPS: [[u8; 4]; 128] = {
+    let mut t = [[0u8; 4]; 128];
+    let mut i = 0;
+    while i < 128 {
+        t[i] = RANGE_LPS[i >> 1];
+        i += 1;
+    }
+    t
+};
+
+/// Next packed state after coding `bin` in packed state `s`.
+static NEXT: [[u8; 2]; 128] = {
+    let mut t = [[0u8; 2]; 128];
+    let mut s = 0;
+    while s < 128 {
+        let (state, mps) = (s >> 1, (s & 1) as u8);
+        let mut bin = 0;
+        while bin < 2 {
+            t[s][bin] = if bin as u8 == mps {
+                (TRANS[state][1] << 1) | mps
+            } else {
+                (TRANS[state][0] << 1) | (mps ^ (state == 0) as u8)
+            };
+            bin += 1;
+        }
+        s += 1;
+    }
+    t
+};
+
 const CBF_OFF: [usize; 5] = [0, 4, 8, 12, 16];
 const SIG_OFF: [usize; 5] = [0, 15, 29, 44, 47];
 const ABS_OFF: [usize; 5] = [0, 10, 20, 30, 39];
@@ -77,18 +108,16 @@ impl Cabac {
 
     #[inline(always)]
     pub fn decision(&mut self, _w: &mut BitWriter, ctx: usize, bin: u32) {
-        let s = self.ctx[ctx];
-        let state = (s >> 1) as usize;
-        let lps = RANGE_LPS[state][((self.range >> 6) & 3) as usize] as u32;
+        let c = &mut self.ctx[ctx];
+        let s = *c as usize;
+        // NEXT[s][bin]: full state transition including the MPS flip
+        let lps = LPS[s][((self.range >> 6) & 3) as usize] as u32;
         self.range -= lps;
         if bin != (s & 1) as u32 {
             self.low += self.range;
             self.range = lps;
-            let nmps = (s & 1) ^ (state == 0) as u8;
-            self.ctx[ctx] = (TRANS[state][0] << 1) | nmps;
-        } else {
-            self.ctx[ctx] = (TRANS[state][1] << 1) | (s & 1);
         }
+        *c = NEXT[s][bin as usize];
         self.renorm();
     }
 

@@ -13,7 +13,7 @@ fn main() {
         let (ys, cs) = ((w * h) as usize, (w * h / 4) as usize);
         data.chunks_exact(ys + 2 * cs).take(n as usize).map(|f| YuvBuffer { width: w, height: h, y: f[..ys].to_vec(), u: f[ys..ys + cs].to_vec(), v: f[ys + cs..].to_vec() }).collect()
     } else { (0..n).map(|t| s.frame(t)).collect() };
-    let cfg = EncoderConfig { width: w, height: h, qp: 22, gop: 1000, deblock, ..Default::default() };
+    let cfg = EncoderConfig { width: w, height: h, qp: 22, gop: 1000, deblock, subpel: std::env::var("SUBPEL").is_ok(), ..Default::default() };
     let mut best = (f64::MAX, 0.0);
     for rep in 0..5 {
         let mut e = Encoder::new(cfg.clone());
