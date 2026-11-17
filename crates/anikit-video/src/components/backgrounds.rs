@@ -74,7 +74,8 @@ fn field_op(ctx: &Ctx, key: u64, make: impl FnOnce() -> Lin, size: (usize, usize
     let full = (ctx.width.ceil().clamp(16.0, 4096.0) as usize, ctx.height.ceil().clamp(16.0, 4096.0) as usize);
     let (w, h) = if size.0 <= full.0 && size.1 <= full.1 { full } else { size };
     let mut make = Some(make);
-    let id = ctx.assets.image(key, w as u32, h as u32, &mut || {
+    // Moving fields make a new image every frame: keep them in the per-frame ring.
+    let id = ctx.assets.frame_image(key, w as u32, h as u32, &mut || {
         make.take()
             .map(|m| {
                 let l = m();
@@ -95,7 +96,8 @@ fn image_size(ctx: &Ctx, sx: f32, sy: f32) -> (usize, usize) {
     (((ctx.width * sx).ceil() as usize).clamp(16, 2048), ((ctx.height * sy).ceil() as usize).clamp(16, 2048))
 }
 
-type KeyframeCache = std::sync::Mutex<Vec<(u64, std::sync::Arc<Lin>)>>;
+type KeyframeSlot = std::sync::Arc<std::sync::OnceLock<std::sync::Arc<Lin>>>;
+type KeyframeCache = std::sync::Mutex<Vec<(u64, KeyframeSlot)>>;
 
 /// Recently made keyframe fields, shared by the frames being evaluated in parallel.
 fn keyframe_cache() -> &'static KeyframeCache {
@@ -103,21 +105,25 @@ fn keyframe_cache() -> &'static KeyframeCache {
     C.get_or_init(Default::default)
 }
 
-/// The field for keyframe `key`, made once and kept while it is recent.
+/// The field for keyframe `key`, made once and kept while it is recent. Threads
+/// asking for a keyframe that another thread is making wait for it instead of
+/// making it again (neighbouring frames render in parallel and share keyframes).
 fn keyframe(key: u64, make: impl FnOnce() -> Lin) -> std::sync::Arc<Lin> {
-    if let Some(l) = keyframe_cache().lock().unwrap().iter().find(|e| e.0 == key).map(|e| e.1.clone()) {
-        return l;
-    }
-    // Made outside the lock (a rare duplicate is harmless).
-    let l = std::sync::Arc::new(make());
-    let mut c = keyframe_cache().lock().unwrap();
-    if !c.iter().any(|e| e.0 == key) {
-        if c.len() >= 16 {
-            c.remove(0);
+    let slot = {
+        let mut c = keyframe_cache().lock().unwrap();
+        match c.iter().find(|e| e.0 == key) {
+            Some(e) => e.1.clone(),
+            None => {
+                if c.len() >= 16 {
+                    c.remove(0);
+                }
+                let s: KeyframeSlot = Default::default();
+                c.push((key, s.clone()));
+                s
+            }
         }
-        c.push((key, l.clone()));
-    }
-    l
+    };
+    slot.get_or_init(|| std::sync::Arc::new(make())).clone()
 }
 
 /// Slow fields: computed at `rate` keyframes per second (at the field's own
@@ -137,22 +143,13 @@ fn keyframed(ctx: &Ctx, t: f32, rate: f32, key: impl Fn(f32) -> u64, make: impl 
     let f = if draft() { 0.0 } else { (f * 256.0).round() / 256.0 };
     let t1 = (k0 + 1.0) / rate;
     let (a, b) = (key(t0), key(t1));
-    let fk = fnv(&[b"kf", &a.to_le_bytes(), &b.to_le_bytes(), &f.to_bits().to_le_bytes()]);
-    vec![field_op(
-        ctx,
-        fk,
-        || {
-            let l0 = keyframe(a, || make(t0));
-            if f <= 0.0 {
-                return Lin { w: l0.w, h: l0.h, px: l0.px.clone() };
-            }
-            let l1 = keyframe(b, || make(t1));
-            let px = l0.px.iter().zip(l1.px.iter()).map(|(p, q)| p + (q - p) * f).collect();
-            Lin { w: l0.w, h: l0.h, px }
-        },
-        size,
-        1.0,
-    )]
+    // Two cached keyframe images, cross-faded by the renderer: no per-frame field,
+    // upsample or quantise. Both carry the same ordered dither, so it never beats.
+    let mut out = vec![field_op(ctx, a, || (*keyframe(a, || make(t0))).clone(), size, 1.0)];
+    if f > 0.0 {
+        out.push(field_op(ctx, b, || (*keyframe(b, || make(t1))).clone(), size, f));
+    }
+    out
 }
 
 // ------------------------------------------------------------------ gradient
@@ -299,6 +296,22 @@ impl Component for MeshGradient {
 
 impl MeshGradient {
     fn field(&self, t: f32, ctx: &Ctx, cols: &[Rgba], base: Rgba, size: (usize, usize)) -> Lin {
+        #[cfg(target_arch = "x86_64")]
+        if std::arch::is_x86_feature_detected!("avx2") {
+            // SAFETY: AVX2 checked above. Same arithmetic (no FMA), wider lanes.
+            return unsafe { self.field_avx2(t, ctx, cols, base, size) };
+        }
+        self.field_any(t, ctx, cols, base, size)
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[target_feature(enable = "avx2")]
+    unsafe fn field_avx2(&self, t: f32, ctx: &Ctx, cols: &[Rgba], base: Rgba, size: (usize, usize)) -> Lin {
+        self.field_any(t, ctx, cols, base, size)
+    }
+
+    #[inline(always)]
+    fn field_any(&self, t: f32, ctx: &Ctx, cols: &[Rgba], base: Rgba, size: (usize, usize)) -> Lin {
         let aspect = ctx.width / ctx.height.max(1.0);
         // Coarse field (smooth content), then a cubic upsample to the image.
         let (cw, ch) = if exact() { size } else { ((ctx.width / 3.0).ceil().max(8.0) as usize, (ctx.height / 3.0).ceil().max(8.0) as usize) };
@@ -353,10 +366,9 @@ impl MeshGradient {
                 }
                 if sheen > 0.0 {
                     // Satin: a soft height field of folds, lit from the top left.
-                    let hf = |x: f32, y: f32| bgfx::fbm2(x * 1.7 + wx * 0.6, y * 1.7 + wy * 0.6 + s * 0.8, 3, seed + 21);
-                    let e = 0.02;
-                    let h0 = hf(px, py);
-                    let (gx, gy) = ((hf(px + e, py) - h0) / e, (hf(px, py + e) - h0) / e);
+                    // Height-field slope, analytic (one noise pass instead of three).
+                    let (_, hx, hy) = bgfx::fbm2_d(px * 1.7 + wx * 0.6, py * 1.7 + wy * 0.6 + s * 0.8, 3, seed + 21);
+                    let (gx, gy) = (hx * 1.7, hy * 1.7);
                     let lit = (-(gx * 0.6 + gy * 0.8) * 0.7).tanh();
                     let spec = lit.max(0.0).powi(6);
                     lab[0] = (lab[0] * (1.0 + sheen * 0.22 * lit) + sheen * 0.2 * spec).max(0.0);

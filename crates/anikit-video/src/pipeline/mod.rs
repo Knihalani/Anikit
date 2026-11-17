@@ -452,6 +452,9 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
             let continuing = !starts.contains(&k) && *last == Some(k.wrapping_sub(1));
             let t = Instant::now();
             r.set_quality(render_quality(opts.quality));
+            // Tell the encoder how much grain the post stack draws (σ in 8-bit luma at mid-grey),
+            // so re-drawn random grain isn't spent bits on.
+            let grain = post.as_ref().map(|p| p.grain * 89.4).unwrap_or(0.0);
             r.set_post(post, (f0 + k) as u64);
             use crate::render::incremental::Update;
             let upd = if blur {
@@ -484,6 +487,7 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
                 copy_yuv(yuv, buf, None);
                 hints.changed = None;
             }
+            hints.grain = grain;
             *last = Some(k);
             prof.copy_ns.fetch_add(ns(t), Ordering::Relaxed);
             w.returned = Some(Instant::now());
@@ -758,11 +762,12 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
     let threads = rayon::current_num_threads().max(1);
     // Chunk length: fixed by the frame count alone (never the machine), so output is identical on any core count.
     let gop = std::env::var("ANIKIT_GOP").ok().and_then(|g| g.parse().ok()).unwrap_or_else(|| default_gop(n, ev.has_heavy_layers()));
-    let qp = match opts.quality {
+    // `--crf` / `encode.crf` (constant quantiser, lower = bigger and better) over the quality default.
+    let qp = ev.encode_crf.unwrap_or(match opts.quality {
         Quality::Draft => 28,
         Quality::Good => 23,
         Quality::Best => 19,
-    };
+    });
     let cfg = ak264::EncoderConfig {
         width: w,
         height: h,

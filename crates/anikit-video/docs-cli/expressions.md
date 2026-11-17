@@ -10,5 +10,6 @@
 - Variables: `t` (layer s) `T` (scene s) `gt` (video s) `p` (0..1) `frame` `i` `n` `w` `h` `fps`, plus music: `beat` `bar` (fractional), `level` (loudness 0..1), `bpm`.
 - Logic: `< <= > >= == != && || !`, `c ? a : b`, `if(c, a, b)`.
 - Functions: `sin cos tan atan2 abs floor fract mod min max clamp sqrt pow exp log hypot mix lerp remap smoothstep step pingpong ease easeIn easeOut spring tri saw square noise rand rand2`.
+- Text: `"text": "=floor(t * 100)"` shows a number every frame (counters, countdowns). For a format, use `"text": "{value:,} users"` with `"value": "=…"`. Results are numbers, not strings.
 - Colours: `=rgb(r, g, b[, a])`, `=hsl(h, s, l[, a])`, `=oklch(L, C, h)`, `=mix($a, $b, x)`, `=c ? colourA : colourB`. They work on `fill`, `stroke`, text `color` and box `background`.
 - Music-reactive: `"scale": "=1 + 0.3 * level"`, `"rotation": "=8 * (1 - fract(beat))"`. Needs `music` or an `audio` `src`.

@@ -23,6 +23,36 @@ const SR: u32 = 22_050;
 const N: usize = 2048;
 
 /// Precomputed band levels.
+impl Table {
+    /// Little-endian: bands, frames, looped, level, peak, beat count, beats.
+    fn encode(&self) -> Vec<u8> {
+        let mut v = Vec::with_capacity(16 + self.level.len() * 2 + self.beats.len() * 4);
+        v.extend((self.bands as u32).to_le_bytes());
+        v.extend((self.frames as u32).to_le_bytes());
+        v.push(self.looped as u8);
+        v.extend(&self.level);
+        v.extend(&self.peak);
+        v.extend((self.beats.len() as u32).to_le_bytes());
+        for b in &self.beats {
+            v.extend(b.to_le_bytes());
+        }
+        v
+    }
+
+    fn decode(b: &[u8]) -> Option<Table> {
+        let u32_at = |o: usize| b.get(o..o + 4).map(|x| u32::from_le_bytes([x[0], x[1], x[2], x[3]]) as usize);
+        let (bands, frames) = (u32_at(0)?, u32_at(4)?);
+        let looped = *b.get(8)? != 0;
+        let n = bands.checked_mul(frames)?;
+        let level = b.get(9..9 + n)?.to_vec();
+        let peak = b.get(9 + n..9 + 2 * n)?.to_vec();
+        let nb = u32_at(9 + 2 * n)?;
+        let o = 13 + 2 * n;
+        let beats = (0..nb).map(|i| u32_at(o + 4 * i).map(|x| f32::from_bits(x as u32))).collect::<Option<Vec<f32>>>()?;
+        (b.len() == o + 4 * nb).then_some(Table { bands, frames, level, peak, beats, looped })
+    }
+}
+
 struct Table {
     bands: usize,
     frames: usize,
@@ -200,12 +230,23 @@ impl Prepare for Visualizer {
             self.table = Some(t.clone());
             return Ok(());
         }
-        let decoded = self.src.as_deref().and_then(|s| crate::audio::decode_file_at(s, SR).ok()).filter(|p| p.frames() > N);
-        let (pcm, looped) = match decoded {
-            Some(p) => (p, false),
-            None => (synth(), true),
+        // Then the on-disk cache (repeat renders of a project skip decode and FFTs).
+        let dkey = self.src.as_deref().and_then(|s| crate::diskcache::key("vis1", std::path::Path::new(s), &[bands as u64, smoothing.to_bits() as u64, SR as u64, N as u64]));
+        let t = match dkey.as_deref().and_then(crate::diskcache::get).and_then(|b| Table::decode(&b)) {
+            Some(t) => Arc::new(t),
+            None => {
+                let decoded = self.src.as_deref().and_then(|s| crate::audio::decode_file_at(s, SR).ok()).filter(|p| p.frames() > N);
+                let (pcm, looped) = match decoded {
+                    Some(p) => (p, false),
+                    None => (synth(), true),
+                };
+                let t = analyse(&pcm, bands, smoothing, looped);
+                if let (Some(k), false) = (&dkey, looped) {
+                    crate::diskcache::put(k, &t.encode());
+                }
+                Arc::new(t)
+            }
         };
-        let t = Arc::new(analyse(&pcm, bands, smoothing, looped));
         let mut c = cache.lock().unwrap_or_else(|e| e.into_inner());
         // Bounded: a long-lived process may see many tracks.
         if c.len() > 32 {

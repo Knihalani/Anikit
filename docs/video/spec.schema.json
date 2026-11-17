@@ -1826,7 +1826,7 @@
           ]
         },
         "supersample": {
-          "description": "Shader: 2×2 supersampling (4 samples per pixel).",
+          "description": "Shader: anti-aliasing (adaptive 2×2 where neighbours differ). Default on for shader layers\nunless the source says `// anikit:aa off`; off for filters. `false` is up to 2× faster.",
           "type": [
             "boolean",
             "null"
@@ -2845,6 +2845,14 @@
       "properties": {
         "aq": {
           "description": "Adaptive quantisation strength, 0 (off, default) to 2: spends bits on flat areas\n(gradients, skies) and saves them on busy texture.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "crf": {
+          "description": "Constant quantiser 0–51 (lower = better and bigger). Default 23 (19 high, 28 draft). `render --crf` overrides.",
           "type": [
             "number",
             "null"

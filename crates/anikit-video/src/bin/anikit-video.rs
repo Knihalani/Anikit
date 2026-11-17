@@ -18,7 +18,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|beats|music|docs|recipes|new|templates|looks|prompt|critique|preview|mcp|--version> [spec.json|spec.yaml] [options]
-  render spec.json -o out.mp4   [--quality draft|good|best] [--codec ak264|h264|h265|vp9|av1|prores|gif|png]
+  render spec.json -o out.mp4   [--quality draft|good|best] [--crf 0-51] [--codec ak264|h264|h265|vp9|av1|prores|gif|png]
                                 [--from S] [--to S] [--scale K] [--no-audio]
   still  spec.json -o f.png     [--at S | --at @scene] [--scale K | --width W] [--watch]
   sheet  spec.json -o sheet.png [--frames N | --cols 4 --rows 3] [--width 480]
@@ -236,7 +236,8 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                 }
                 if a.has("--shaders") {
                     for e in anikit_shader::library::ALL {
-                        println!("  {:<14} {:<10} ~{} ms/frame @1080p  {}", e.name, e.use_name(), e.ms_1080p, e.about);
+                        let aa = if e.aa_default() { " (+ default anti-aliasing, ~2–5×)" } else { "" };
+                        println!("  {:<14} {:<10} ~{} ms/frame @1080p{aa}  {}", e.name, e.use_name(), e.ms_1080p, e.about);
                         for u in e.uniforms() {
                             println!("  {:<27} {} = {}{}", "", u.name, fmt_default(u.default.as_deref()), if u.doc.is_empty() { String::new() } else { format!("  ({})", u.doc) });
                         }
@@ -383,11 +384,17 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
         "render" => {
             let path = need_input(a)?;
             let out = PathBuf::from(a.get("-o").or(a.get("--out")).unwrap_or("out.mp4"));
-            let (ev, d) = match build(path, json, true) {
+            let (mut ev, d) = match build(path, json, true) {
                 Ok(x) => x,
                 Err(c) => return Ok(c),
             };
             warn(&d, json);
+            if let Some(q) = a.num("--crf")? {
+                if !(0.0..=51.0).contains(&q) {
+                    return Err(format!("--crf: use 0..51 (got {q})"));
+                }
+                ev.encode_crf = Some(q.round() as u8);
+            }
             let quality = match a.get("--quality") {
                 None => Quality::Good,
                 Some(q) => Quality::parse(q).ok_or_else(|| format!("--quality: use draft, standard or high (got '{q}')"))?,
@@ -484,7 +491,7 @@ fn shader_library() -> serde_json::Value {
                     serde_json::json!({ "name": u.name, "type": ty, "default": default, "doc": u.doc })
                 })
                 .collect();
-            serde_json::json!({ "name": e.name, "use": e.use_name(), "about": e.about, "ms_1080p": e.ms_1080p, "uniforms": unis })
+            serde_json::json!({ "name": e.name, "use": e.use_name(), "about": e.about, "ms_1080p": e.ms_1080p, "anti_aliased": e.aa_default(), "uniforms": unis })
         })
         .collect()
 }

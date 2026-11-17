@@ -177,7 +177,7 @@ impl Scene {
         let (w, h) = (self.width as i32, self.height as i32);
         let (mbw, mbh) = ((w as usize).div_ceil(16), (h as usize).div_ceil(16));
         if self.moving_bg {
-            return FrameHints { changed: Some(vec![true; mbw * mbh]), motions: vec![] };
+            return FrameHints { changed: Some(vec![true; mbw * mbh]), motions: vec![], grain: 0.0 };
         }
         let mut ch = vec![false; mbw * mbh];
         let mut mark = |x0: i32, y0: i32, x1: i32, y1: i32| {
@@ -207,6 +207,6 @@ impl Scene {
             let (px, py, ph) = (w - pw - w / 20, h / 12, h / 3);
             mark(px, py, px + pw, py + ph);
         }
-        FrameHints { changed: Some(ch), motions }
+        FrameHints { changed: Some(ch), motions, grain: 0.0 }
     }
 }
