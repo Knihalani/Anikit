@@ -92,6 +92,16 @@ impl Upscaler {
 
     #[allow(clippy::too_many_arguments)]
     fn run_c<const C: usize>(&mut self, src: &[u8], sw: usize, sh: usize, dev: Rect, out: &mut [u8], stride: usize, ow: usize, oh: usize, ox: i64, oy: i64) {
+        // A uniform source (a solid background): every filter gives that colour.
+        if sw * sh <= 16 && sw * sh > 0 && src[..sw * sh * C].chunks_exact(C).all(|p| p == &src[..C]) {
+            let px = &src[..C];
+            for row in out.chunks_mut(stride).take(oh) {
+                for o in row[..ow * C].chunks_exact_mut(C) {
+                    o.copy_from_slice(px);
+                }
+            }
+            return;
+        }
         // 1:1 at an integer offset: a plain copy (any filter would only blur).
         if dev.width() == sw as f64 && dev.height() == sh as f64 && dev.x0.fract() == 0.0 && dev.y0.fract() == 0.0 {
             let (bx, by) = (ox - dev.x0 as i64, oy - dev.y0 as i64);
@@ -250,24 +260,11 @@ impl Upscaler {
                 (idx, wi)
             })
             .collect();
-        // 1. Horizontal pass over every source row (sources are small when enlarging).
+        // Bands of output rows, each filtering only the source rows it needs
+        // (horizontally, into a band-local buffer that stays in cache), then
+        // the vertical pass: fixed point (rows ×4096, weights ×256 → ×2^20),
+        // with a tiled triangular dither (±0.5 LSB) in the rounding.
         let srow = sw * C;
-        let mut hrows = std::mem::take(&mut self.hrows);
-        hrows.clear();
-        hrows.resize(sh * ow * C, 0);
-        {
-            use rayon::prelude::*;
-            hrows.par_chunks_mut(ow * C).enumerate().for_each(|(r, hrow)| {
-                let s = &src[r * srow..(r + 1) * srow];
-                for (x, (idx, wi)) in cols.iter().enumerate() {
-                    for c in 0..C {
-                        hrow[x * C + c] = wi[0] * s[idx[0] * C + c] as i32 + wi[1] * s[idx[1] * C + c] as i32 + wi[2] * s[idx[2] * C + c] as i32 + wi[3] * s[idx[3] * C + c] as i32;
-                    }
-                }
-            });
-        }
-        // 2. Vertical pass, rows in parallel, fixed point (rows ×4096, weights
-        // ×256 → ×2^20), with a tiled triangular dither (±0.5 LSB) in the rounding.
         let row_len = ow * C;
         let dtab = dither_table();
         let x0 = ox as usize;
@@ -280,8 +277,8 @@ impl Upscaler {
         let zrows_ref = &zrows;
         #[cfg(target_arch = "x86_64")]
         let avx2 = std::arch::is_x86_feature_detected!("avx2");
-        use rayon::prelude::*;
-        out.par_chunks_mut(stride).take(oh).enumerate().for_each(|(y, orow)| {
+        // Output row y: its 4 source rows and fixed-point weights.
+        let taps = |y: usize| -> ([usize; 4], [i32; 4]) {
             let v = ((oy + y as i64) as f64 + 0.5 - dev.y0) * sy - 0.5;
             let j = v.floor();
             let wy = kernel((v - j) as f32);
@@ -289,25 +286,80 @@ impl Upscaler {
             let rs = [clampi(j - 1, sh), clampi(j, sh), clampi(j + 1, sh), clampi(j + 2, sh)];
             let mut wq = wy.map(|v| (v * 256.0).round() as i32);
             wq[1] += 256 - wq.iter().sum::<i32>();
-            let (r0, r1, r2, r3) = (
-                &hrows[rs[0] * row_len..(rs[0] + 1) * row_len],
-                &hrows[rs[1] * row_len..(rs[1] + 1) * row_len],
-                &hrows[rs[2] * row_len..(rs[2] + 1) * row_len],
-                &hrows[rs[3] * row_len..(rs[3] + 1) * row_len],
-            );
-            let yy = (oy + y as i64) as usize;
-            // The rounding offset (dither + ½) for this row, spread over channels
-            // (no dither on alpha): one of 64 rows, built once per call.
-            let z = &zrows_ref[(yy & 63) * row_len..(yy & 63) * row_len + row_len];
-            let d = &mut orow[..row_len];
-            #[cfg(target_arch = "x86_64")]
-            if avx2 {
-                // SAFETY: feature checked above.
-                unsafe { vrow_avx2::<C>([r0, r1, r2, r3], wq, z, d) };
+            (rs, wq)
+        };
+        // Exact 2× (the usual ½-res field): the taps repeat every 2 outputs,
+        // one source pixel apart, so the interior needs no index tables.
+        let (p0, p1) = (4usize, ow.saturating_sub(4) & !1);
+        let periodic = C == 1
+            && p1 > p0 + 2
+            && (p0..p1).all(|x| {
+                let (a, b) = (&cols[x], &cols[p0 + (x - p0) % 2]);
+                a.1 == b.1 && a.0[0] == b.0[0] + (x - p0) / 2 && a.0[3] == a.0[0] + 3
+            });
+        let hfilter = |r: usize, hrow: &mut [i32]| {
+            let s = &src[r * srow..(r + 1) * srow];
+            if periodic {
+                let ((ia, wa), (ib, wb)) = (cols[p0], cols[p0 + 1]);
+                let (ia, ib) = (ia[0], ib[0]);
+                let pairs = (p1 - p0) / 2;
+                let (sa, sb) = (&s[ia..ia + pairs + 3], &s[ib..ib + pairs + 3]);
+                for (k, o) in hrow[p0..p1].chunks_exact_mut(2).enumerate() {
+                    o[0] = wa[0] * sa[k] as i32 + wa[1] * sa[k + 1] as i32 + wa[2] * sa[k + 2] as i32 + wa[3] * sa[k + 3] as i32;
+                    o[1] = wb[0] * sb[k] as i32 + wb[1] * sb[k + 1] as i32 + wb[2] * sb[k + 2] as i32 + wb[3] * sb[k + 3] as i32;
+                }
+                for x in (0..p0).chain(p1..ow) {
+                    let (idx, wi) = &cols[x];
+                    hrow[x] = wi[0] * s[idx[0]] as i32 + wi[1] * s[idx[1]] as i32 + wi[2] * s[idx[2]] as i32 + wi[3] * s[idx[3]] as i32;
+                }
                 return;
             }
-            vrow::<C>([r0, r1, r2, r3], wq, z, d);
-        });
+            for (x, (idx, wi)) in cols.iter().enumerate() {
+                for c in 0..C {
+                    hrow[x * C + c] = wi[0] * s[idx[0] * C + c] as i32 + wi[1] * s[idx[1] * C + c] as i32 + wi[2] * s[idx[2] * C + c] as i32 + wi[3] * s[idx[3] * C + c] as i32;
+                }
+            }
+        };
+        const BAND: usize = 32;
+        let band = |(b, oband): (usize, &mut [u8])| {
+            let y0b = b * BAND;
+            let y1b = (y0b + BAND).min(oh);
+            // Source rows this band reads (monotonic in y, so a contiguous range).
+            let (lo, hi) = (0..4).fold((usize::MAX, 0), |(lo, hi), k| {
+                let (a, _) = taps(y0b);
+                let (z, _) = taps(y1b - 1);
+                (lo.min(a[k]).min(z[k]), hi.max(a[k]).max(z[k]))
+            });
+            HROWS.with(|cell| {
+                let mut h = cell.borrow_mut();
+                h.clear();
+                h.resize((hi - lo + 1) * row_len, 0);
+                for r in lo..=hi {
+                    hfilter(r, &mut h[(r - lo) * row_len..(r - lo + 1) * row_len]);
+                }
+                for (k, orow) in oband.chunks_mut(stride).enumerate().take(y1b - y0b) {
+                    let y = y0b + k;
+                    let (rs, wq) = taps(y);
+                    let row = |i: usize| &h[(rs[i] - lo) * row_len..(rs[i] - lo + 1) * row_len];
+                    let yy = (oy + y as i64) as usize;
+                    // The rounding offset (dither + ½) for this row, spread over channels
+                    // (no dither on alpha): one of 64 rows, built once per call.
+                    let z = &zrows_ref[(yy & 63) * row_len..(yy & 63) * row_len + row_len];
+                    let d = &mut orow[..row_len];
+                    #[cfg(target_arch = "x86_64")]
+                    if avx2 {
+                        // SAFETY: feature checked above.
+                        unsafe { vrow_avx2::<C>([row(0), row(1), row(2), row(3)], wq, z, d) };
+                        continue;
+                    }
+                    vrow::<C>([row(0), row(1), row(2), row(3)], wq, z, d);
+                }
+            });
+        };
+        use rayon::prelude::*;
+        let bands = (oh.div_ceil(BAND)).max(1);
+        out.par_chunks_mut(BAND * stride).take(bands).enumerate().for_each(band);
+        let hrows = std::mem::take(&mut self.hrows);
         self.hrows = hrows;
         self.zrows = zrows;
     }
@@ -366,6 +418,11 @@ unsafe fn vrow_avx2<const C: usize>(r: [&[i32]; 4], wq: [i32; 4], z: &[i32], d: 
         o[1] = o[1].min(al);
         o[2] = o[2].min(al);
     }
+}
+
+thread_local! {
+    /// Band-local horizontally filtered rows (per thread: bands run in parallel).
+    static HROWS: std::cell::RefCell<Vec<i32>> = const { std::cell::RefCell::new(Vec::new()) };
 }
 
 fn dither_table() -> &'static [i32] {

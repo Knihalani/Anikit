@@ -1,0 +1,9 @@
+{
+  "size": [1920, 1080], "fps": 30,
+  "scenes": [
+    { "duration": 3, "transition": "cut", "layers": [
+      { "shader": "hero" },
+      { "text": "Shader layer", "style": "title" }
+    ] }
+  ]
+}

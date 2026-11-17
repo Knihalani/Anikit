@@ -1,6 +1,6 @@
 {
  "about": "Physics: 240 ceramic dominoes in a fan topple, with a speed ramp into slow motion halfway. Change the count, path and timeScale expression.",
- "cost": "renders in about 44 s at 1080p on 4 cores",
+ "cost": "draft ~101 s, final ~376 s (1080p, 4 cores)",
  "spec": {
   "size": "16:9",
   "scenes": [

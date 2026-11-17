@@ -70,6 +70,11 @@ pub trait Instrument: Send + Sync {
     fn mono(&self) -> bool {
         false
     }
+    /// Voices share state across notes (glide, legato) and must be created in
+    /// note order; otherwise the engine creates them in parallel.
+    fn ordered_voices(&self) -> bool {
+        self.mono()
+    }
 }
 
 /// Small, fast deterministic RNG (SplitMix64 seeding + xorshift*).

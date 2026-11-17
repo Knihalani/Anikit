@@ -2907,6 +2907,11 @@ impl C<'_> {
         for src in crate::components::media_srcs(&props) {
             self.load_media(&src, &format!("{path}.props"));
         }
+        if name == "scene-3d" {
+            for (sub, msg) in crate::scene3d::lint(&props) {
+                self.d.push(Diagnostic::warning(format!("{path}.props{sub}"), msg));
+            }
+        }
         match crate::components::build(&name, &props) {
             Ok(p) => {
                 let size = [gw.or(p.w).unwrap_or(self.w), gh.or(p.h).unwrap_or(self.h)];
