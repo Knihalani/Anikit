@@ -786,6 +786,9 @@ pub struct Layer {
     pub line_height: Option<f64>,
     pub letter_spacing: Option<Num>,
     pub uppercase: Option<bool>,
+    /// Trim the text box to the first line's cap height and the last line's baseline (CSS `text-box: cap alphabetic`),
+    /// so `anchor` and grid cells align the letters, not the line box. Default on for text in a grid `cell`.
+    pub text_box_trim: Option<bool>,
     pub max_lines: Option<u32>,
     /// Text: wrap at this width (px, `"40vw"`, `"60%"`) without fixing the box
     /// width (`width` wraps *and* sets the box).

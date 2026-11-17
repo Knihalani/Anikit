@@ -1857,6 +1857,13 @@
             "null"
           ]
         },
+        "textBoxTrim": {
+          "description": "Trim the text box to the first line's cap height and the last line's baseline (CSS `text-box: cap alphabetic`),\nso `anchor` and grid cells align the letters, not the line box. Default on for text in a grid `cell`.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "maxLines": {
           "type": [
             "integer",
