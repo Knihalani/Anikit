@@ -47,7 +47,7 @@
         "bodies": [
          {
           "type": "pane",
-          "count": 1200,
+          "count": 600,
           "layout": "dominoes",
           "path": "fan",
           "angle": 100,
@@ -59,7 +59,20 @@
           "material": "glass"
          }
         ]
-       }
+       },
+       "quality": "draft",
+       "objects": [
+        {
+         "type": "sphere",
+         "radius": 0.25,
+         "pos": [
+          0,
+          0.25,
+          1.5
+         ],
+         "material": "chrome"
+        }
+       ]
       }
      }
     ]
