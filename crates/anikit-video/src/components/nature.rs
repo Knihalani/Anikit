@@ -1244,7 +1244,7 @@ impl Geo {
                 let cap = smoothstep(4.0 * sc, 1.0 * sc, depth);
                 let gully = smoothstep(0.55, 0.7, vnoise2(x / (12.0 * sc), y / (140.0 * sc), self.seed ^ 0x99));
                 let s = 0.18 + steep * (face - 0.18) + strata * 0.1 - cap * 0.5 + gully * 0.3;
-                (s, strata * 0.25 * steep)
+                (s, 0.0)
             }
             Terr::Forest | Terr::Woods => {
                 let mut s = 0.45;
@@ -3168,5 +3168,89 @@ impl Component for Water {
             ops.push(Op::Fill { path: p, paint: crate::dl::Paint::Solid(Rgba([c[0], c[1], c[2], a])), rule: crate::dl::FillRule::NonZero, transform: crate::dl::IDENTITY });
         }
         ops
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::{build, preview, Theme};
+    use super::*;
+
+    fn eval(kind: &str, props: serde_json::Value, t: f32) -> Vec<Op> {
+        let p = build(kind, &props).unwrap();
+        p.eval(t, 640.0, 360.0, 30.0, &Theme::default(), preview::host())
+    }
+
+    #[test]
+    fn step_time_holds_frames_on_twos() {
+        assert_eq!(step_time(0.5, false, None), 0.5);
+        let a = step_time(1.0 / 12.0 * 3.4, true, None);
+        assert!((a - 3.0 / 12.0).abs() < 1e-5, "{a}");
+        // stepFps wins over onTwos.
+        let b = step_time(0.9, true, Some(4.0));
+        assert!((b - 0.75).abs() < 1e-5, "{b}");
+        // Exact frame boundaries don't fall back a frame from float error.
+        assert!((step_time(0.5, true, None) - 0.5).abs() < 1e-5);
+    }
+
+    #[test]
+    fn environment_kinds_are_deterministic() {
+        for (kind, props) in [
+            ("landscape", serde_json::json!({"style": "risograph", "layers": 3, "seed": 4})),
+            ("plants", serde_json::json!({"style": "ink", "count": 4, "seed": 2})),
+            ("clouds", serde_json::json!({"style": "papercut", "count": 3})),
+            ("water", serde_json::json!({"style": "painterly"})),
+        ] {
+            let a = eval(kind, props.clone(), 1.25);
+            let b = eval(kind, props.clone(), 1.25);
+            assert_eq!(a, b, "{kind}");
+            preview::validate(&a).unwrap();
+        }
+    }
+
+    #[test]
+    fn finish_is_seeded_and_object_locked() {
+        let pal = Palette::resolve(&PalSpec::default(), "dusk").unwrap();
+        let mut cv = Canvas::new(48, 32);
+        cv.disc(24.0, 16.0, 12.0, pal.far, &|u, _| if u > 0.0 { 0.5 } else { 0.0 });
+        let f = Finish { ox: 0.0, oy: 0.0, edges: true, shadow: true, variant: 0, hard: true };
+        for st in [Style::Flat, Style::Riso, Style::Painterly, Style::Ink, Style::Papercut] {
+            let h1 = Hand::new(st, pal.clone(), 0.5, -30.0, 1, 1.0);
+            let h2 = Hand::new(st, pal.clone(), 0.5, -30.0, 2, 1.0);
+            let a = finish(&h1, &cv, f);
+            assert_eq!(a, finish(&h1, &cv, f), "{st:?} deterministic");
+            assert_ne!(a, finish(&h2, &cv, f), "{st:?} seeded");
+            // Premultiplied: colour never exceeds alpha.
+            assert!(a.chunks_exact(4).all(|p| p[0] <= p[3] && p[1] <= p[3] && p[2] <= p[3]), "{st:?}");
+        }
+    }
+
+    #[test]
+    fn ink_split_reproduces_colours_within_the_inks_gamut() {
+        let pal = Palette::resolve(&PalSpec::Name("dusk".into()), "dusk").unwrap();
+        for target in [[0.85, 0.45, 0.6], [0.2, 0.25, 0.5], [0.95, 0.85, 0.5]] {
+            let c = ink_split(&pal, target);
+            let printed: Vec<f32> = (0..3).map(|ch| pal.paper[ch] * (0..3).map(|k| 1.0 - c[k] * (1.0 - pal.inks[k][ch] / pal.paper[ch]).clamp(0.0, 0.97)).product::<f32>()).collect();
+            for ch in 0..3 {
+                assert!((printed[ch] - target[ch]).abs() < 0.08, "{target:?} → {c:?} prints {printed:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn custom_ridge_paths_and_overrides_apply() {
+        let r = ridge_from_path("M0 300 L320 120 L640 300", 640).unwrap();
+        assert!((r[0] - 300.0).abs() < 1.0 && (r[320] - 120.0).abs() < 1.0 && (r[480] - 210.0).abs() < 1.5);
+        let ops = eval("landscape", serde_json::json!({"ranges": [{"d": "M0 200 L640 150", "color": "#123456", "speed": 0, "stepFps": 6}], "hand": {"edge": 0, "halftone": 8}}), 0.5);
+        assert!(!ops.is_empty());
+    }
+
+    #[test]
+    fn bad_props_are_explained() {
+        let e = |p: serde_json::Value| build("landscape", &p).err().unwrap().0;
+        assert!(e(serde_json::json!({"style": "risograf"})).contains("risograph"));
+        assert!(e(serde_json::json!({"hand": {"inks": ["#f00"]}})).contains("exactly 3"));
+        assert!(build("plants", &serde_json::json!({"species": "oaks"})).err().unwrap().0.contains("species"));
+        assert!(build("clouds", &serde_json::json!({"look": "cumulous"})).err().unwrap().0.contains("cumulus"));
     }
 }
