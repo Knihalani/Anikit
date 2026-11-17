@@ -32,10 +32,11 @@ Two deliberately different fragments (not starting points):
       "animate": [ { "from": { "scaleX": 0 }, "duration": 0.6, "ease": "inOutExpo" } ] } ] } ] }
 ```
 
+Taste first (`docs taste`): 3 references outside tech, 3 directions, frames dense with made imagery.
 What works and why (advice, not bans; depth in docs/video/taste/TASTE.md): choose the medium the idea lives in
 (3D for physical ideas, type for word ideas) · go somewhere previous films didn't · if you can name the trend it
 resembles, rethink it · rich, layered frames over empty restraint · copy from the brief's real nouns, not aphorisms
 · crisp type (full resolution, in focus, ~4.5:1, held ~0.3 s + 0.06 s/char) · motivated light checked at 100% ·
 music chosen from the brand (acoustic for most, synths for electronic ideas) · the logo owns the end.
-Checks: `check` → stills at 100% → draft → `pace.py` (fast intents) → `critique --render --pack rv/` → TASTE §10 → final.
+Checks: `preview s.json` after every change → `critique --render --pack rv/` → TASTE §10 → final `render`.
 Examples (rejected by the user, kept as cautionary examples): docs/video/skills/launch-examples/.

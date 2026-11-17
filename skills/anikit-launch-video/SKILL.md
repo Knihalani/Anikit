@@ -5,7 +5,8 @@ description: Make a product launch, announcement or teaser video with anikit-vid
 
 # Launch video
 
-Read `skills/anikit-video/SKILL.md` first (setup, loop, costs, ship gate). Taste: `docs/video/taste/TASTE.md`.
+Read `skills/anikit-video/SKILL.md` first (setup, the loop, costs). Then `anikit-video docs taste` (canon:
+`docs/video/taste/TASTE.md`).
 Here: `concepts.md` (finding the idea), `beats.md` (timing to music). **There is no template.** If the film you are
 planning would fit any product, rethink it.
 
@@ -20,24 +21,26 @@ planning would fit any product, rethink it.
 
 ## Process
 1. **Brief:** ask nothing you can infer (features, audience, brand, length, aspect: 9:16 for Reels/TikTok, 1:1 for feed).
-2. **Idea** (`concepts.md`): the product's nouns and verbs, before → after, one motif. Write `concept.txt`. Look at
-   what earlier films in the folder used, and go somewhere new.
+2. **Idea** (`concepts.md`): the product's nouns and verbs, before → after, one motif. Gather 3 references from
+   outside tech and SaaS (print, title design, illustration, posters, documentary, architecture), sketch 3 directions
+   that differ on every axis, pick one and write `concept.txt`. Look at what earlier films used and go somewhere new.
 3. **Shape:** invent the structure this product needs. Inspiration only: one impossible camera move · a reverse
    reveal · one object transforming · a wordless demo · type as the set · a loop that returns changed · a time-lapse
    · a scale journey.
 4. **Tempo and music** from the brief and the idea (`docs music`, `beats.md`); declare `"intent"`.
-5. **Build, then look fast:** `anikit-video preview s.json` (one frame per scene) and `still s.json --at T` after
-   every change; draft renders (`--quality draft --scale 0.5`) only when motion matters.
-6. **Ship gate** (in `skills/anikit-video/SKILL.md`) + TASTE §10, then the final `render` at full quality. Look at
-   frames from the MP4 at 100%.
+5. **Build, then look fast:** `anikit-video preview s.json` after every change (it validates, writes a sheet with
+   one frame per second and prints the critique and pace); zoom in with `preview s.json --at T -o f.png`.
+6. **Before shipping:** `critique s.json --render --pack rv/` (look at every image), the taste pass (TASTE §10), then
+   the final `render` at full quality. Look at frames from the MP4 at 100%.
 
-## What works, what to avoid, why (advice, not bans; depth in TASTE.md)
+## What works, what to avoid, why (advice, not bans; depth in TASTE.md §1–§11)
 - **Medium:** pick the one the idea lives in: 3D for physical ideas, type for word ideas, simulation for data. Forced
   3D (Sift) and flat headlines on fills both read as templates (TASTE §1, §8).
 - **Freshness:** rejected looks so far are tile storms and dominoes on a cyc with chrome type (Sift), fogged terrain
   (Fernway), and cream paper with an editorial serif and aphorisms (Margin, "AI slop"). If you can name the trend a
-  frame resembles, rethink it (TASTE §9).
-- **Density:** rich, layered frames (subject, texture, secondary motion, hierarchy, light) beat empty restraint.
+  frame resembles (screenshot beside copy, UI on dark with one accent …), rethink it (TASTE §9).
+- **Density:** rich frames of made imagery (subject, texture, secondary motion, hierarchy, light) beat empty
+  restraint (TASTE §3, §11).
 - **Copy:** the brief's real nouns, numbers and actions; aphorisms that fit any brand are a tell.
 - **Type:** full resolution (2D, or `scene3d` `"resolution": 1` without `draft` in finals), in focus, with no blur,
   bloom or grain on words being read, about 4.5:1 contrast, phone-legible sizes, and held about 0.3 s + 0.06 s per

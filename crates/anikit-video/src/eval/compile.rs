@@ -333,7 +333,7 @@ impl Evaluator {
         }
         audio.append(&mut c.audio_extra);
         let music = match &spec.music {
-            Some(v) => match crate::music::parse(v, &opts.base_dir) {
+            Some(v) => match crate::music::parse_with_cuts(v, &opts.base_dir, &scenes.iter().skip(1).map(|s| (s.start + 0.5 * s.trans.dur) as f64).collect::<Vec<_>>()) {
                 Ok(m) => Some(Arc::new(m)),
                 Err(e) => {
                     c.d.push(Diagnostic::error("music", e));
