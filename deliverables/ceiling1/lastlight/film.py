@@ -49,9 +49,10 @@ def objects(arm="0", lift="0", spin=True, motes=True):
     sp=f"t*{SPIN}" if spin else "0"
     O=[
      {"type":"box","size":[40,0.4,30],"pos":[0,-0.2,0],"material":{"base":"#1A120C","roughness":0.55}},
-     {"type":"box","size":[4.7,0.75,3.7],"pos":[0,0.375,0],"material":LACQ,"name":"plinth","texture":{"composition":"walnut","face":"front"}},
+     {"type":"box","size":[4.7,0.75,3.7],"radius":0.12,"bevel":0.1,"pos":[0,0.375,0],"material":LACQ,"name":"plinth","texture":{"composition":"walnut","face":"front"}},
      {"type":"cylinder","radius":1.52,"height":0.18,"pos":[REC[0],0.84,REC[1]],"material":"aluminium-bead"},
-     {"type":"cylinder","radius":1.50,"height":0.02,"pos":[REC[0],0.935,REC[1]],"material":{"base":"#0a0a0c","roughness":0.25}},
+     {"type":"cylinder","radius":1.53,"height":0.012,"pos":[REC[0],0.932,REC[1]],"material":{"base":"#26221F","roughness":1.0}},
+     {"type":"cylinder","radius":1.50,"height":0.012,"pos":[REC[0],0.943,REC[1]],"material":{"base":"#0a0a0c","roughness":0.25}},
      {"type":"surface","x":"=1.5*v*cos(u*6.28318)","y":"=1.5*v*sin(u*6.28318)","z":"=0","u":[0,1,256],"v":[0.02,1,48],
       "pos":[REC[0],Y_REC,REC[1]],"rot":f"=[-90, 0, {sp}]","texture":{"composition":"grooves","face":"both"},
       "material":{"base":"#ffffff","roughness":0.14,"clearcoat":1},"name":"record"},
@@ -80,7 +81,10 @@ def objects(arm="0", lift="0", spin=True, motes=True):
     O.append({"type":"cylinder","radius":0.17,"height":0.3,"rot":f"=[90,0,0]",
               "pos":f"=[{PIV[0]}+({cx})*cos({A})-({cz})*sin({A}), 1.12+({lift}), {PIV[1]}+({cx})*sin({A})+({cz})*cos({A})]","material":"aluminium"})
     # headshell + cartridge + stylus at the arm's end (rel -1.0, 2.05 → extend a little)
-    for (rx,rz,sz,yo,mat) in [(-1.05,2.2,[0.24,0.1,0.38],1.03,{"base":"#111","roughness":0.35}),
+    O.append({"type":"extrude","d":"M0 12 L44 12 L50 6 L62 0 L64 3 L54 9 L50 18 L46 22 L8 22 L0 17 Z","height":0.075,"depth":0.2,"bevel":0.008,
+              "rot":f"=[0, -({arm})-90+0, 0]","material":{"base":"#141414","roughness":0.3,"clearcoat":0.6},
+              "pos":f"=[{PIV[0]}+(-1.05)*cos({A})-(1.98)*sin({A}), 1.03+({lift}), {PIV[1]}+(-1.05)*sin({A})+(2.02)*cos({A})]"})
+    for (rx,rz,sz,yo,mat) in [
                               (-1.05,2.27,[0.14,0.12,0.18],0.97,{"base":"#7A1E12","roughness":0.4}),
                               (-1.05,2.33,[0.008,0.07,0.008],0.93,"chrome")]:
         O.append({"type":"box","size":sz,"radius":min(sz)*0.3,"rot":f"=[0, -({arm}), 0]",
