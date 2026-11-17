@@ -231,3 +231,26 @@ fn buffer_names_are_checked() {
     assert!(all.contains("not 'Z'"), "{all}");
     assert!(all.contains("reads buffer C"), "{all}");
 }
+
+/// A shader inside a composition renders at the size it is shown (×2 for
+/// filtering, capped at its declared size); shown more than once, it renders
+/// once, at the largest of those sizes.
+#[test]
+fn composition_shaders_render_at_displayed_size() {
+    let spec = |extra: &str| {
+        format!(
+            r#"{{ "size": [400, 200], "compositions": {{ "c": {{ "size": [400, 200], "duration": 1, "layers": [
+                {{ "shader": "void mainImage(out vec4 o, in vec2 p) {{ o = vec4(p.x / iResolution.x, 0.5, 0.2, 1.0); }}" }} ] }} }},
+               "scenes": [ {{ "duration": 1, "layers": [ {{ "composition": "c", "width": 400, "height": 200, "x": 100, "y": 50, "scale": 0.2 }}{extra} ] }} ] }}"#
+        )
+    };
+    let small = build(&spec(""));
+    render_rgba(&small, 0.5, 1.0);
+    let s = &small.shader_stats()[0];
+    // 0.2 × 2 = 0.4, rounded up to ⅛ steps: 0.5 of 400 × 200.
+    assert_eq!((s.width, s.height, s.renders), (200, 100, 1), "{s:?}");
+    let both = build(&spec(r#", { "composition": "c", "width": 400, "height": 200, "x": 200, "y": 100 }"#));
+    render_rgba(&both, 0.5, 1.0);
+    let s = &both.shader_stats()[0];
+    assert_eq!((s.width, s.height, s.renders), (400, 200, 1), "{s:?}");
+}

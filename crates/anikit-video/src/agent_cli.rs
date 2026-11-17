@@ -277,7 +277,7 @@ fn cmd_critique(args: &[String]) -> Result<(), String> {
         out!("{}", pretty(&serde_json::to_value(&r).unwrap()));
     } else {
         out!("{}", r.to_text_detail(a.has("detail")));
-        out!("A score is not evidence of quality: look at full-size frames against docs/video/quality/BAR.md.\n");
+        out!("These are advice from heuristics, not a verdict: look at the frames themselves (preview sheet, full-size stills).\n");
     }
     Ok(())
 }
@@ -319,15 +319,30 @@ fn cmd_preview(args: &[String]) -> Result<(), String> {
         std::fs::write(&out, crate::preview::png(&img)).map_err(|e| format!("cannot write {out}: {e}"))?;
         let report = (!a.has("no-critique")).then(|| crate::critique::review(&spec, &base, None, true));
         crate::components::set_draft(was_draft);
+        // A rough final-render estimate: one full-size frame from each scene
+        // (up to 4) at final quality, times the frame count.
+        let est = {
+            let sc = p.ev.scenes();
+            let ts: Vec<f32> = sc.iter().take(4).map(|s| (s.start + s.end) * 0.5).collect();
+            let t1 = std::time::Instant::now();
+            for &t in &ts {
+                let _ = crate::pipeline::render_rgba(&p.ev, t.min(p.ev.duration - 0.01).max(0.0), 1.0);
+            }
+            let per = t1.elapsed().as_secs_f64() / ts.len().max(1) as f64;
+            // Measured against real finals: frames don't overlap much across
+            // cores yet, so the per-frame cost times the frame count is close.
+            per * p.ev.frames() as f64 + 1.0
+        };
         if a.has("json") {
-            out!("{}", pretty(&serde_json::json!({ "sheet": out, "seconds_per_cell": 1, "duration": p.ev.duration, "critique": report })));
+            out!("{}", pretty(&serde_json::json!({ "sheet": out, "seconds_per_cell": 1, "duration": p.ev.duration, "final_render_estimate_s": est.round(), "critique": report })));
             return Ok(());
         }
         outln!("sheet: {out} (one cell per second, {:.1} s video; open it and look)", p.ev.duration);
         if let Some(r) = report {
             out!("{}", r.to_text_detail(a.has("detail")));
         }
-        outln!("[{:.1} s] next: fix the notes, then `render {src} -o out.mp4`", t0.elapsed().as_secs_f32());
+        outln!("final render: roughly {} at full quality{}", if est < 90.0 { format!("{est:.0} s") } else { format!("{:.0} min", est / 60.0) }, if est < 90.0 { "" } else { " (start it in the background and keep working)" });
+        outln!("[preview took {:.1} s] next: look at the sheet, fix what matters, preview again; then ONE `render {src} -o out.mp4`", t0.elapsed().as_secs_f32());
         return Ok(());
     }
     let width = a.get("width").map(|w| w.parse::<u32>().map_err(|_| format!("--width: '{w}' is not a number"))).transpose()?;

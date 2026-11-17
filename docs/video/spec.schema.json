@@ -1093,13 +1093,141 @@
           "additionalProperties": true
         },
         "repeat": {
-          "description": "Emit this many copies; `\"$i\"` (0-based) and `\"$n\"` are available, and\n`\"=…\"` strings are arithmetic (`\"x\": \"=160 + $i * 420\"`).",
+          "description": "A number: emit this many copies at spec level (`\"$i\"`, `\"$n\"`, `\"=…\"` arithmetic).\nAn object: a render-time repeater (`{\"count\": 12, \"offset\": {\"rotate\": 30}, \"stagger\": 0.05}`).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RepeatValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "echo": {
+          "description": "Motion trails: draw earlier-time copies under the layer, `{\"count\": 6, \"delay\": 0.04, \"decay\": 0.6}`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EchoSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "path": {
+          "description": "Follow a motion path (SVG path data in parent pixels): `x`/`y` come from the path at `progress`\n(0..1, animatable; default: linear over the layer's life).",
           "type": [
-            "integer",
+            "string",
+            "null"
+          ]
+        },
+        "orient": {
+          "description": "With `path`: rotate the layer along the path's tangent (`true`, or an extra angle in degrees)."
+        },
+        "textPath": {
+          "description": "Text on a path: SVG path data (layer-local pixels); glyphs ride it, shifted by `pathOffset` px (animatable).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pathOffset": {
+          "description": "Text on a path: shift along the path in px (animatable as `pathOffset`).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dashOffset": {
+          "description": "Stroke dash offset in px, added to `stroke.dashOffset` (animatable as `dashOffset`; `\"=t*-120\"` marches ants).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "roundCorners": {
+          "description": "Shape modifier: round every corner of the outline by this radius (px).",
+          "type": [
+            "number",
             "null"
           ],
-          "format": "uint32",
-          "minimum": 0
+          "format": "double"
+        },
+        "zigzag": {
+          "description": "Shape modifier: zigzag the outline, `{\"size\": 12, \"ridges\": 20, \"smooth\": false}`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ZigzagSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "puckerBloat": {
+          "description": "Shape modifier: pucker (< 0) or bloat (> 0) the outline, −1..1.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "offsetPath": {
+          "description": "Shape modifier: grow (> 0) or shrink (< 0) the outline by this many px.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "twist": {
+          "description": "Shape modifier: twist the outline around its centre by this many degrees (more at the rim).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "wigglePath": {
+          "description": "Shape modifier: noise-displace the outline's vertices, `{\"amount\": 10, \"detail\": 24, \"speed\": 1, \"seed\": 1}` (animated, deterministic).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WigglePathSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "animator": {
+          "description": "Text animator with a range selector (After Effects style): units inside the range take these props.\n`{\"by\": \"char\", \"y\": 40, \"opacity\": 0, \"duration\": 0.8}` sweeps a reveal; see `docs mograph`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnimatorSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "matte": {
+          "description": "Track matte: another layer of the scene (by `id`) whose alpha or luma shows this one.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MatteSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "x": {
           "anyOf": [
@@ -1883,6 +2011,379 @@
           }
         }
       }
+    },
+    "RepeatValue": {
+      "description": "`repeat` on a layer: a spec-level copy count, or a render-time repeater.",
+      "anyOf": [
+        {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        {
+          "$ref": "#/$defs/RepeaterSpec"
+        }
+      ]
+    },
+    "RepeaterSpec": {
+      "description": "Render-time repeater (After Effects style): `count` copies, each offset from the last.",
+      "type": "object",
+      "properties": {
+        "count": {
+          "description": "Number of copies (including the original). Default 3.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "offset": {
+          "description": "Per-copy change: `x`, `y` (px), `rotate` (deg), `scale` (multiplier, number or `[sx, sy]`),\n`opacity` (added per copy, e.g. −0.1), `hue` (degrees per copy).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RepeatOffset"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stagger": {
+          "description": "Seconds of delay per copy (copy i plays i × stagger later).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "center": {
+          "description": "Rotation/scale centre `[x, y]` in parent pixels (default: the layer's own position).",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number",
+            "format": "double"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": false
+    },
+    "RepeatOffset": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "y": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "rotate": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "scale": true,
+        "opacity": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        }
+      },
+      "additionalProperties": false
+    },
+    "EchoSpec": {
+      "description": "`echo`: earlier-time copies drawn under the layer.",
+      "type": "object",
+      "properties": {
+        "count": {
+          "description": "Number of echoes. Default 5.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "delay": {
+          "description": "Seconds between echoes. Default 0.05.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "decay": {
+          "description": "Opacity multiplier per echo. Default 0.6.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "blend": {
+          "description": "Blend mode of the echoes (`normal`, `add`, `screen`, …). Default normal.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ZigzagSpec": {
+      "description": "`zigzag` shape modifier.",
+      "type": "object",
+      "properties": {
+        "size": {
+          "description": "Amplitude in px. Default 10.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "ridges": {
+          "description": "Ridges per segment (per closed outline for ellipses). Default 10.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "smooth": {
+          "description": "Smooth waves instead of sharp corners.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "WigglePathSpec": {
+      "description": "`wigglePath` shape modifier.",
+      "type": "object",
+      "properties": {
+        "amount": {
+          "description": "Displacement in px. Default 10.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "detail": {
+          "description": "Points the outline is resampled to. Default 32.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "speed": {
+          "description": "Noise cycles per second (0 = frozen). Default 1.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "seed": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AnimatorSpec": {
+      "description": "Text animator: per-unit property offsets, weighted by a range selector.",
+      "type": "object",
+      "properties": {
+        "by": {
+          "description": "`char` (default), `word`, `line`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "x": {
+          "description": "Offsets at full selection: `x`, `y` (px), `rotation` (deg), `scale` (multiplier), `opacity` (0..1), `blur` (px), `color`.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "y": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "rotation": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "scale": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "opacity": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "blur": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "start": {
+          "description": "Range start / end as fractions of the units (0..1). Defaults 0 and 1. Animatable as `rangeStart` / `rangeEnd`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "end": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "offset": {
+          "description": "Shifts the range (−1..1). Animatable as `rangeOffset`. When not given, it sweeps 0 → 1 over `duration` after `delay`\n(a left-to-right reveal of units that start at the animator's props).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "smooth": {
+          "description": "Edge softness as a fraction of all units (0 = hard). Default 0.25.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "order": {
+          "description": "`forward` (default), `reverse`, `center` (from the middle out), `random`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "seed": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "duration": {
+          "description": "Auto sweep: seconds, delay and ease. Defaults 1, 0, `outCubic`.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "delay": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "ease": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "MatteSpec": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/MatteObj"
+        }
+      ]
+    },
+    "MatteObj": {
+      "type": "object",
+      "properties": {
+        "layer": {
+          "description": "`id` of the matte layer (in the same scene; it is not drawn itself).",
+          "type": "string"
+        },
+        "mode": {
+          "description": "`alpha` (default), `alphaInverted`, `luma`, `lumaInverted`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "layer"
+      ]
     },
     "Anchor": {
       "description": "Anchor: `[ax, ay]` in 0..1 or a name (`center`, `topLeft`, …).",

@@ -1,0 +1,67 @@
+{
+  "size": "16:9", "fps": 30, "background": "#0a0a0c",
+  "theme": { "colors": { "ink": "#0a0a0c", "bone": "#f2efe8", "signal": "#ff5a1f", "dim": "#3a3a40" } },
+  "transition": "cut",
+  "scenes": [
+    { "id": "burst", "duration": 0.9, "notes": "48 bars swept on by a repeater stagger, a second tick ring counter-rotates",
+      "layers": [
+        { "shape": "rect", "x": 960, "y": 540, "width": 6, "height": 300, "radius": 3, "fill": "$bone", "anchor": [0.5, 1.45],
+          "repeat": { "count": 48, "offset": { "rotate": 7.5 }, "stagger": 0.009 },
+          "animate": { "from": { "scaleY": 0, "opacity": 0 }, "duration": 0.35, "ease": "outExpo" } },
+        { "shape": "rect", "x": 960, "y": 540, "width": 3, "height": 26, "fill": "$dim", "anchor": [0.5, 18.5],
+          "repeat": { "count": 120, "offset": { "rotate": 3 } }, "rotation": "=t*-40" },
+        { "shape": "circle", "x": 960, "y": 540, "width": 120, "height": 120, "fill": "$signal", "enter": { "preset": "popIn", "duration": 0.4 } },
+        { "text": "PULSE RECORDS / ID 07", "font": "JetBrains Mono", "size": 22, "letterSpacing": 4, "color": "$bone", "x": 160, "y": 1000, "anchor": "left",
+          "animator": { "opacity": 0, "order": "random", "seed": 3, "duration": 0.5, "smooth": 0.05 } }
+      ] },
+    { "id": "stripes", "duration": 0.9, "notes": "type fills the frame; orange stripes travel through the letters (track matte)",
+      "layers": [
+        { "text": "PULSE", "size": 460, "weight": 900, "letterSpacing": -18, "color": "$bone", "x": 960, "y": 560,
+          "animate": { "from": { "scale": 1.12 }, "duration": 0.9, "ease": "outExpo" } },
+        { "text": "PULSE", "size": 460, "weight": 900, "letterSpacing": -18, "color": "$signal", "x": 960, "y": 560, "matte": "bars",
+          "animate": { "from": { "scale": 1.12 }, "duration": 0.9, "ease": "outExpo" } },
+        { "id": "bars", "shape": "rect", "x": -200, "y": 540, "width": 34, "height": 1600, "rotation": 24, "fill": "#fff",
+          "repeat": { "count": 34, "offset": { "x": 72 } }, "animate": { "to": { "x": 120 }, "duration": 0.9, "ease": "linear" } },
+        { "text": "128", "font": "JetBrains Mono", "size": 22, "letterSpacing": 4, "color": "$bone", "x": 1760, "y": 80, "anchor": "right" }
+      ] },
+    { "id": "spiro", "duration": 0.9, "notes": "36 rotated ellipses draw on at once: a spirograph, additive where they cross",
+      "layers": [
+        { "shape": "ellipse", "x": 960, "y": 540, "width": 860, "height": 300, "fill": "none", "stroke": "$signal", "strokeWidth": 2, "blend": "add",
+          "repeat": { "count": 36, "offset": { "rotate": 5, "opacity": -0.012 }, "stagger": 0.006 },
+          "animate": { "from": { "trimEnd": 0 }, "duration": 0.6, "ease": "inOutCubic" }, "rotation": "=t*25" },
+        { "shape": "circle", "x": 960, "y": 540, "width": 18, "height": 18, "fill": "$bone" },
+        { "text": "SIDE A — 04:12", "font": "JetBrains Mono", "size": 22, "letterSpacing": 4, "color": "$bone", "x": 160, "y": 80, "anchor": "left" }
+      ] },
+    { "id": "tunnel", "duration": 0.9, "notes": "a repeater tunnel of rounded frames, each smaller, turned and dimmer; the whole tunnel pushes in",
+      "layers": [
+        { "type": "group", "x": 960, "y": 540, "width": 1920, "height": 1080,
+          "animate": { "from": { "scale": 0.7 }, "to": { "scale": 1.6 }, "duration": 0.9, "ease": "inQuad" },
+          "layers": [
+            { "shape": "rect", "x": 960, "y": 540, "width": 1500, "height": 860, "radius": 60, "fill": "none", "stroke": "$bone", "strokeWidth": 5,
+              "repeat": { "count": 22, "offset": { "rotate": 4, "scale": 0.86, "opacity": -0.04 }, "stagger": 0.015 },
+              "enter": { "preset": "fadeIn", "duration": 0.25 } } ] },
+        { "shape": "circle", "x": 960, "y": 540, "width": 70, "height": 70, "fill": "$signal" }
+      ] },
+    { "id": "orbit", "duration": 1.0, "notes": "three dots ride a figure-eight motion path with additive echo trails; words come in out of order",
+      "layers": [
+        { "shape": "circle", "width": 34, "height": 34, "fill": "$signal", "blend": "add",
+          "path": "M960 540 C 1260 140, 1660 340, 1460 540 S 1260 940, 960 540 S 660 140, 460 540 S 660 940, 960 540",
+          "progress": "=fract(t*0.9 + $i/3)", "repeat": 3,
+          "echo": { "count": 28, "delay": 0.007, "decay": 0.9, "blend": "add" } },
+        { "text": "ON THE ONE", "size": 150, "weight": 900, "letterSpacing": -4, "color": "$bone", "x": 960, "y": 540,
+          "animator": { "by": "char", "y": 90, "opacity": 0, "rotation": -12, "order": "random", "seed": 11, "duration": 0.55, "smooth": 0.15, "ease": "outExpo" } }
+      ] },
+    { "id": "end", "duration": 1.6, "notes": "button: wordmark rises in per character, a smooth zigzag rule writes on, marching ring around the dot",
+      "layers": [
+        { "text": "PULSE", "size": 300, "weight": 900, "letterSpacing": -12, "color": "$bone", "x": 860, "y": 470,
+          "animator": { "by": "char", "y": 160, "opacity": 0, "scale": 0.8, "duration": 0.6, "smooth": 0.3, "ease": "outExpo" } },
+        { "shape": "path", "d": "M0 0 L1100 0", "x": 860, "y": 680, "stroke": { "color": "$signal", "width": 6, "cap": "round" },
+          "zigzag": { "size": 14, "ridges": 22, "smooth": true }, "animate": { "at": 0.2, "from": { "trimEnd": 0 }, "duration": 0.7, "ease": "inOutCubic" } },
+        { "shape": "circle", "x": 1600, "y": 440, "width": 150, "height": 150, "fill": "none", "stroke": { "color": "$bone", "dash": [6, 10], "cap": "round" },
+          "strokeWidth": 4, "dashOffset": "=t*-80", "enter": { "preset": "popIn", "delay": 0.3 } },
+        { "shape": "circle", "x": 1600, "y": 440, "width": 64, "height": 64, "fill": "$signal", "enter": { "preset": "popIn", "delay": 0.35 } },
+        { "text": "RECORDS — EST. 2026", "font": "JetBrains Mono", "size": 26, "letterSpacing": 6, "color": "$bone", "x": 310, "y": 800, "anchor": "left",
+          "animator": { "opacity": 0, "x": -20, "delay": 0.45, "duration": 0.5, "smooth": 0.1 } }
+      ] }
+  ]
+}

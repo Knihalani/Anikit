@@ -25,6 +25,7 @@ pub const PAGES: &[(&str, &str)] = &[
     ("expressions", include_str!("../docs-cli/expressions.md")),
     ("script", include_str!("../docs-cli/script.md")),
     ("draw", include_str!("../docs-cli/draw.md")),
+    ("mograph", include_str!("../docs-cli/mograph.md")),
     ("launch", include_str!("../docs-cli/launch.md")),
     ("analyze", include_str!("../docs-cli/analyze.md")),
     ("board", include_str!("../docs-cli/board.md")),
@@ -45,7 +46,7 @@ pub const RECIPES: &[(&str, &str)] = &[
 
 const ALIASES: &[(&str, &str)] = &[
     ("scene3d", "3d"), ("scene-3d", "3d"), ("three", "3d"), ("shaders", "shader"), ("glsl", "shader"), ("audio", "music"),
-    ("sound", "music"), ("sfx", "music"), ("keyframes", "animation"), ("expression", "expressions"), ("scripts", "script"), ("rhai", "script"), ("drawing", "draw"), ("text", "primitives"),
+    ("sound", "music"), ("sfx", "music"), ("keyframes", "animation"), ("expression", "expressions"), ("scripts", "script"), ("rhai", "script"), ("drawing", "draw"), ("motion-graphics", "mograph"), ("repeater", "mograph"), ("trails", "mograph"), ("echo", "mograph"), ("text", "primitives"),
     ("shapes", "primitives"), ("paths", "primitives"), ("grade", "post"), ("motion-blur", "camera"), ("composition", "compositions"),
     ("review", "critique"), ("pace", "pacing"), ("index", "start"), ("anything", "make-anything"),
     ("launch-video", "launch"), ("product", "launch"), ("announcement", "launch"),
@@ -64,6 +65,18 @@ pub fn docs(topic: Option<&str>) -> Result<String, String> {
     let t = ALIASES.iter().find(|(a, _)| *a == t).map(|(_, b)| b.to_string()).unwrap_or(t);
     if t == "music" {
         return Ok(crate::music::docs().to_string());
+    }
+    if t == "essentials" || t == "all" {
+        // Everything a typical piece needs in one read (about 13k characters).
+        let mut s = String::from("# Essentials: one read for a typical piece\n\nLoop: write s.json → `anikit-video preview s.json` (repeat) → ONE `render s.json -o out.mp4`. More: `anikit-video docs <topic>` (3d, particles, physics, post, pacing, taste, critique).\n\n");
+        for p in ["primitives", "animation", "expressions", "compositions", "shader"] {
+            if let Some((_, md)) = PAGES.iter().find(|(n, _)| *n == p) {
+                s += md;
+                s += "\n";
+            }
+        }
+        s += crate::music::docs();
+        return Ok(s);
     }
     if let Some((_, md)) = PAGES.iter().find(|(n, _)| *n == t) {
         return Ok(md.to_string());
@@ -207,6 +220,8 @@ mod tests {
             crate::spec::parse::from_value(spec).unwrap_or_else(|d| panic!("{}: {:?}", v["name"], d.iter().map(|x| x.to_string()).collect::<Vec<_>>()));
         }
         assert!(snippets(None).unwrap().contains("type-slam"));
+        let e = docs(Some("essentials")).unwrap();
+        assert!(e.len() < 15_000 && e.contains("compositions") && e.contains("shader"), "{}", e.len());
         assert!(snippets(Some("snap-zoom")).unwrap().contains("\"shake\""));
     }
 

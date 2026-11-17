@@ -1,0 +1,53 @@
+{
+  "size": "16:9", "fps": 30, "background": "#1230e6",
+  "theme": { "colors": { "cobalt": "#1230e6", "cream": "#f4f1ea", "acid": "#d7ff3a", "deep": "#0a1a8a" } },
+  "transition": "cut",
+  "scenes": [
+    { "id": "make", "duration": 1.0, "notes": "a field of plus marks (repeater of a repeated row) behind one word assembling out of order",
+      "layers": [
+        { "type": "group", "x": 960, "y": 540, "width": 1920, "height": 1080, "layers": [
+          { "text": "+", "font": "JetBrains Mono", "size": 28, "color": "$deep", "x": 60, "y": 60,
+            "repeat": { "count": 24, "offset": { "x": 80 }, "stagger": 0.01 }, "enter": { "preset": "fadeIn", "duration": 0.2 } } ],
+          "repeat": { "count": 13, "offset": { "y": 80 }, "stagger": 0.02 } },
+        { "text": "MAKE", "size": 520, "weight": 900, "letterSpacing": -24, "color": "$cream", "x": 960, "y": 560,
+          "animator": { "by": "char", "scale": 0.2, "opacity": 0, "blur": 20, "rotation": -30, "order": "random", "seed": 5, "duration": 0.6, "smooth": 0.2, "ease": "outExpo" } }
+      ] },
+    { "id": "ring", "duration": 1.2, "notes": "words ride a circle around a wiggling, puckered star",
+      "layers": [
+        { "shape": "star", "x": 960, "y": 540, "width": 520, "height": 520, "sides": 8, "innerRadius": 0.55, "fill": "$acid",
+          "roundCorners": 30, "wigglePath": { "amount": 10, "detail": 48, "speed": 1.5, "seed": 2 }, "rotation": "=t*30",
+          "enter": { "preset": "popIn", "duration": 0.45 } },
+        { "text": "MOTION / DESIGN / IN A FEW LINES / MOTION / DESIGN / IN A FEW LINES / ", "font": "JetBrains Mono", "size": 40, "weight": 700, "letterSpacing": 6,
+          "color": "$cream", "x": 960, "y": 540, "width": 1000, "height": 1000,
+          "textPath": "M500 120 A380 380 0 1 1 499.9 120 Z", "pathOffset": "=t*160" }
+      ] },
+    { "id": "knockout", "duration": 1.0, "notes": "a cream disc grows and the word is cut out of it (inverted matte): the cobalt shows through the letters",
+      "layers": [
+        { "shape": "circle", "x": 960, "y": 540, "width": 2300, "height": 2300, "fill": "$cream", "matte": { "layer": "cut", "mode": "alphaInverted" },
+          "animate": { "from": { "scale": 0 }, "duration": 0.55, "ease": "outExpo" } },
+        { "id": "cut", "text": "CUT IT", "size": 400, "weight": 900, "letterSpacing": -14, "x": 960, "y": 560,
+          "animate": { "from": { "x": 1060 }, "duration": 1.0, "ease": "outCubic" } }
+      ] },
+    { "id": "wave", "duration": 1.2, "notes": "a range selector driven by an expression: a wave travels through the letters",
+      "layers": [
+        { "shape": "path", "d": "M0 0 L1920 0", "y": 250, "stroke": { "color": "$acid", "width": 5 }, "zigzag": { "size": 18, "ridges": 30 },
+          "x": "=960 - t*200" },
+        { "shape": "path", "d": "M0 0 L1920 0", "x": "=960 + t*200", "y": 830, "stroke": { "color": "$acid", "width": 5 }, "zigzag": { "size": 18, "ridges": 30 } },
+        { "text": "MOVE", "size": 440, "weight": 900, "letterSpacing": -10, "color": "$cream", "x": 960, "y": 540,
+          "animator": { "by": "char", "y": -110, "scale": 1.15, "color": "$acid", "start": 0, "end": 0.25, "offset": "=fract(t*1.1)*1.6 - 0.3", "smooth": 0.3 } }
+      ] },
+    { "id": "mark", "duration": 1.6, "notes": "button: a rounded star and its offset outlines expand out of it; wordmark and a write-on rule",
+      "layers": [
+        { "shape": "star", "x": 460, "y": 540, "width": 300, "height": 300, "sides": 6, "innerRadius": 0.5, "fill": "$acid", "roundCorners": 22,
+          "enter": { "preset": "popIn", "duration": 0.5 }, "rotation": "=t*20" },
+        { "shape": "star", "x": 460, "y": 540, "width": 300, "height": 300, "sides": 6, "innerRadius": 0.5, "fill": "none", "stroke": "$cream", "strokeWidth": 3,
+          "roundCorners": 22, "offsetPath": 26, "rotation": "=t*20",
+          "repeat": { "count": 5, "offset": { "scale": 1.18, "opacity": -0.18 }, "stagger": 0.07 },
+          "animate": { "from": { "scale": 0.4, "opacity": 0 }, "duration": 0.5, "ease": "outExpo" } },
+        { "text": "KINETIC", "size": 200, "weight": 900, "letterSpacing": -6, "color": "$cream", "x": 900, "y": 480, "anchor": "left",
+          "animator": { "by": "char", "x": 60, "opacity": 0, "duration": 0.5, "delay": 0.15, "smooth": 0.3, "ease": "outExpo" } },
+        { "text": "TYPE THAT MOVES LIKE YOU MEANT IT", "font": "JetBrains Mono", "size": 30, "letterSpacing": 5, "color": "$cream", "x": 910, "y": 640, "anchor": "left",
+          "animator": { "opacity": 0, "order": "random", "seed": 9, "delay": 0.4, "duration": 0.6, "smooth": 0.05 } }
+      ] }
+  ]
+}

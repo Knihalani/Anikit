@@ -350,7 +350,7 @@ impl Prepare for Scene3d {
             v => {
                 let mut fp = if bright {
                     let color = match es.name.as_str() {
-                        "overcast" => v3(0.16, 0.19, 0.12),
+                        "overcast" => v3(0.2, 0.27, 0.12),
                         "interior" => v3(0.32, 0.19, 0.1),
                         "underwater" => v3(0.5, 0.45, 0.33),
                         _ => scale(es.tint, 0.92),
@@ -420,11 +420,11 @@ impl Prepare for Scene3d {
         let (backdrop, haze, auto_exp) = match es.name.as_str() {
             "overcast" | "interior" | "underwater" => {
                 let irr = luma(backdrop.0).max(1e-4) / floor_l;
-                let e = match es.name.as_str() { "overcast" => 0.95, "interior" => 0.8, _ => 0.62 } / irr;
+                let e = match es.name.as_str() { "overcast" => 1.15, "interior" => 0.8, _ => 0.62 } / irr;
                 let at = |c: V3, l: f32| scale(c, l / luma(c).max(1e-4) / e);
                 match es.name.as_str() {
                     "overcast" => {
-                        let sky = (at(v3(0.8, 0.82, 0.84), 0.82), at(v3(0.6, 0.65, 0.72), 0.62));
+                        let sky = (at(v3(0.86, 0.88, 0.9), 0.9), at(v3(0.62, 0.7, 0.8), 0.72));
                         (sky, (0.012, sky.0), e)
                     }
                     "interior" => ((at(v3(0.9, 0.86, 0.8), 0.62), at(v3(0.86, 0.82, 0.76), 0.55)), (0.0, backdrop.0), e),
@@ -660,31 +660,45 @@ fn outlines(out: &mut [u8], px: &post::Planes, w: usize, h: usize, width: f32, i
         }
         dot(n_at(i), n_at(j)) < 0.6
     };
-    let mut cov = vec![0f32; w * h];
     use rayon::prelude::*;
+    // Edge pixels first (each pixel tests its right and lower neighbour), then
+    // a distance-limited dilation over that mask.
+    let mut mask = vec![0u8; w * h];
+    mask.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
+        for x in 0..w {
+            let i = y * w + x;
+            let mut e = (x + 1 < w && edge(i, i + 1)) || (y + 1 < h && edge(i, i + w));
+            e |= (x > 0 && edge(i, i - 1)) || (y > 0 && edge(i, i - w));
+            // Keep the line on the nearer side of a depth step.
+            if e && !bg(px.id[i]) {
+                row[x] = 1;
+            } else if e {
+                row[x] = 2;
+            }
+        }
+    });
+    let mut cov = vec![0f32; w * h];
     cov.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
         for x in 0..w {
             let i = y * w + x;
             let d = if bg(px.id[i]) { dmed } else { px.depth[i] };
-            let r = (width * scale_px * (dmed / d.max(0.05)).sqrt().clamp(0.6, 1.8)).max(0.6);
+            let r = (width * scale_px * (dmed / d.max(0.05)).sqrt().clamp(0.6, 1.8)).max(0.6) * 0.65;
             let ri = r.ceil() as i32;
             let mut best = f32::MAX;
             for dy in -ri..=ri {
+                let yy = y as i32 + dy;
+                if yy < 0 || yy >= h as i32 {
+                    continue;
+                }
                 for dx in -ri..=ri {
-                    if dx == 0 && dy == 0 {
-                        continue;
-                    }
-                    let (xx, yy) = (x as i32 + dx, y as i32 + dy);
-                    if xx < 0 || yy < 0 || xx >= w as i32 || yy >= h as i32 {
+                    let xx = x as i32 + dx;
+                    if xx < 0 || xx >= w as i32 || mask[yy as usize * w + xx as usize] == 0 {
                         continue;
                     }
                     let dist = ((dx * dx + dy * dy) as f32).sqrt();
-                    if dist < best && dist <= r + 0.5 && edge(i, yy as usize * w + xx as usize) {
-                        best = dist;
-                    }
+                    best = best.min(dist);
                 }
             }
-            // Lines sit on the nearer side of a depth step only.
             row[x] = if best == f32::MAX { 0.0 } else { (r + 0.5 - best).clamp(0.0, 1.0) };
         }
     });

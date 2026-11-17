@@ -11,6 +11,7 @@ pub mod beat_markers;
 mod compile;
 /// Shader layers and transitions (anikit-shader).
 pub(crate) mod shader;
+pub(crate) mod fx;
 mod audio_react;
 pub mod expr;
 pub mod theme;
@@ -58,8 +59,15 @@ pub(crate) mod prop {
     pub const DEPTH: usize = 30;
     pub const FOCUS: usize = 31;
     pub const APERTURE: usize = 32;
+    /// Text-on-a-path shift (px) and stroke dash offset (px).
+    pub const PATH_OFF: usize = 33;
+    pub const DASH_OFF: usize = 34;
+    /// Text animator range selector: start, end, offset (fractions of the units).
+    pub const RANGE0: usize = 35;
+    pub const RANGE1: usize = 36;
+    pub const RANGE_OFF: usize = 37;
     /// Shader uniforms: `UNIFORM_SLOTS` floats, mapped per layer by name.
-    pub const U0: usize = 33;
+    pub const U0: usize = 38;
     pub const N: usize = U0 + super::shader::UNIFORM_SLOTS;
 
     /// Default values.
@@ -74,6 +82,7 @@ pub(crate) mod prop {
         d[WIPE] = 1.0;
         d[FILL + 3] = 1.0;
         d[STROKE + 3] = 1.0;
+        d[RANGE1] = 1.0;
         d
     };
 
@@ -106,6 +115,11 @@ pub(crate) mod prop {
             "depth" => (DEPTH, 1),
             "focus" => (FOCUS, 1),
             "aperture" => (APERTURE, 1),
+            "pathOffset" => (PATH_OFF, 1),
+            "dashOffset" => (DASH_OFF, 1),
+            "rangeStart" => (RANGE0, 1),
+            "rangeEnd" => (RANGE1, 1),
+            "rangeOffset" => (RANGE_OFF, 1),
             "fill" | "color" => (FILL, 4),
             "stroke" => (STROKE, 4),
             _ => return None,
@@ -322,6 +336,11 @@ pub(crate) struct Node {
     pub count: f32,
     /// Index into `Evaluator::layer_info` (spec path and kind), for tagged evaluation.
     pub tag: u32,
+    /// Motion-graphics extras (repeater, echo, motion path, text path, wiggle path).
+    pub fx: Option<Box<fx::Fx>>,
+    /// Track matte: the matte layer (a sibling, not drawn itself) and mode
+    /// (0 alpha, 1 alphaInverted, 2 luma, 3 lumaInverted).
+    pub matte: Option<Box<(Node, u8)>>,
 }
 
 pub(crate) const PART_BG: u8 = 1;
@@ -384,6 +403,16 @@ pub struct OpTag {
     pub ops: std::ops::Range<usize>,
     /// Index for [`Evaluator::layer_info`].
     pub layer: u32,
+}
+
+thread_local! {
+    /// Composition display scales for this frame: `(collecting, scale per composition)`.
+    static COMP_SCALE: std::cell::RefCell<Option<(bool, std::collections::HashMap<usize, f32>)>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Whether this is the scale-collecting pass (shader layers emit nothing).
+pub(crate) fn collecting_scales() -> bool {
+    COMP_SCALE.with(|c| matches!(&*c.borrow(), Some((true, _))))
 }
 
 thread_local! {
@@ -495,12 +524,15 @@ impl std::fmt::Display for SpecErrors {
 }
 impl std::error::Error for SpecErrors {}
 
+#[derive(Clone, Copy)]
 struct Cx<'a> {
     ev: &'a Evaluator,
     scene_t: f32,
     gt: f32,
     /// Depth-of-field blur added to the node being emitted (top-level layers only).
     dof: f32,
+    /// Opacity multiplier for the node being emitted (repeater / echo copies).
+    amul: f32,
 }
 
 impl Evaluator {
@@ -592,7 +624,28 @@ impl Evaluator {
         out.width = self.width;
         out.height = self.height;
         recycle(&mut out.ops);
+        // With compositions: a first pass (no shader jobs) finds the largest
+        // scale each is shown at, so its pixel content renders once, at that size.
+        let top = !self.comps.is_empty() && COMP_SCALE.with(|c| c.borrow().is_none());
+        if top {
+            shader::reset_sizes();
+            COMP_SCALE.with(|c| *c.borrow_mut() = Some((true, std::collections::HashMap::new())));
+            // Tags belong to the real pass only.
+            let tags = TAGS.with(|tg| tg.borrow_mut().take());
+            let mut scratch = Vec::new();
+            self.emit_frame(t, false, &mut scratch);
+            TAGS.with(|tg| *tg.borrow_mut() = tags);
+            COMP_SCALE.with(|c| {
+                if let Some(st) = &mut *c.borrow_mut() {
+                    st.0 = false;
+                }
+            });
+        }
         out.background = self.emit_frame(t, false, &mut out.ops);
+        if top {
+            COMP_SCALE.with(|c| *c.borrow_mut() = None);
+            shader::reset_sizes();
+        }
     }
 
     /// Append the frame at `t` to `out` and return its background colour. With `bg_rect`
@@ -625,7 +678,7 @@ impl Evaluator {
             self.emit_transition(prev, s, t, p, e, out);
             black
         };
-        let cx = Cx { ev: self, scene_t: t, gt: t, dof: 0.0 };
+        let cx = Cx { ev: self, scene_t: t, gt: t, dof: 0.0, amul: 1.0 };
         let frame = [self.width as f32, self.height as f32];
         for n in &self.overlay {
             self.emit_node(n, &cx, &dl::IDENTITY, frame, 1.0, out);
@@ -681,7 +734,7 @@ impl Evaluator {
             out.push(Op::RoundRect { x: 0.0, y: 0.0, w, h, radius: 0.0, paint, transform: *xf });
         }
         let lt = t - s.start;
-        let cx = Cx { ev: self, scene_t: lt, gt: t, dof: 0.0 };
+        let cx = Cx { ev: self, scene_t: lt, gt: t, dof: 0.0, amul: 1.0 };
         // Camera.
         let mut v = [0.0f32; prop::N];
         self.props(&s.camera, &cx, lt, &mut v);
@@ -733,7 +786,7 @@ impl Evaluator {
             } else {
                 cam
             };
-            let dcx = Cx { dof: (d - focus).abs() * aperture, ..Cx { ev: self, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0 } };
+            let dcx = Cx { dof: (d - focus).abs() * aperture, ..Cx { ev: self, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0, amul: 1.0 } };
             self.emit_node(n, &dcx, &lcam, [w, h], 1.0, out);
         }
     }
@@ -956,13 +1009,88 @@ impl Evaluator {
     fn emit_node(&self, n: &Node, cx: &Cx, parent: &Affine, psize: [f32; 2], po: f32, out: &mut Vec<Op>) {
         let tagging = n.tag != u32::MAX && TAGS.with(|t| t.borrow().is_some());
         let start = out.len();
-        self.emit_node_inner(n, cx, parent, psize, po, out);
+        if n.matte.is_some() {
+            out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });
+        }
+        let body = out.len();
+        match n.fx.as_deref() {
+            Some(fx) if fx.repeat.is_some() || fx.echo.is_some() => self.emit_fx(n, fx, cx, parent, psize, po, out),
+            _ => self.emit_node_inner(n, cx, parent, psize, po, out),
+        }
+        if let Some(m) = n.matte.as_deref() {
+            let (mnode, mode) = (&m.0, m.1);
+            if out.len() == body {
+                out.truncate(start);
+            } else {
+                // Luma modes turn the matte's luminance into alpha; inverted modes cut instead of keep.
+                const LUMA: [f32; 20] = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.2126, 0.7152, 0.0722, 0.0, 0.0];
+                let filters = if mode >= 2 { vec![Filter::ColorMatrix(LUMA)] } else { Vec::new() };
+                let blend = if mode % 2 == 0 { Blend::DestIn } else { Blend::DestOut };
+                let mstart = out.len();
+                out.push(Op::PushLayer { opacity: 1.0, blend, filters, clip: None, cache_key: None });
+                let mb = out.len();
+                let mcx = Cx { amul: 1.0, ..*cx };
+                self.emit_node(mnode, &mcx, parent, psize, po, out);
+                if out.len() == mb {
+                    // An empty matte hides everything (keep modes) or nothing (cut modes).
+                    if blend == Blend::DestIn {
+                        recycle_from(out, start);
+                    } else {
+                        out.truncate(mstart);
+                        out.push(Op::PopLayer);
+                    }
+                } else {
+                    out.push(Op::PopLayer);
+                    out.push(Op::PopLayer);
+                }
+            }
+        }
         if tagging && out.len() > start {
             TAGS.with(|t| {
                 if let Some(v) = t.borrow_mut().as_mut() {
                     v.push(OpTag { ops: start..out.len(), layer: n.tag });
                 }
             });
+        }
+    }
+
+    /// Repeater and echo: the same node re-emitted at other times and transforms.
+    #[allow(clippy::too_many_arguments)]
+    fn emit_fx(&self, n: &Node, fx: &fx::Fx, cx: &Cx, parent: &Affine, psize: [f32; 2], po: f32, out: &mut Vec<Op>) {
+        let (ec, delay, decay, eblend) = fx.echo.as_ref().map_or((0, 0.0, 1.0, Blend::Normal), |e| (e.count, e.delay, e.decay, e.blend));
+        // Echoes (oldest first) share one blended layer; the live copy draws on top, unblended.
+        let layered = ec > 0 && eblend != Blend::Normal;
+        if layered {
+            out.push(Op::PushLayer { opacity: 1.0, blend: eblend, filters: Vec::new(), clip: None, cache_key: None });
+        }
+        for k in (0..=ec).rev() {
+            if k == 0 && layered {
+                out.push(Op::PopLayer);
+            }
+            let tk = k as f32 * delay;
+            let ak = decay.powi(k as i32);
+            if ak <= 0.002 {
+                continue;
+            }
+            match &fx.repeat {
+                None => {
+                    let c = Cx { scene_t: cx.scene_t - tk, gt: cx.gt - tk, amul: cx.amul * ak, ..*cx };
+                    self.emit_node_inner(n, &c, parent, psize, po, out);
+                }
+                Some(r) => {
+                    let ctr = r.center.unwrap_or([n.base[prop::X], n.base[prop::Y]]);
+                    for i in 0..r.count {
+                        let a = ak * r.alpha(i);
+                        if a <= 0.002 {
+                            continue;
+                        }
+                        let ts = tk + r.stagger * i as f32;
+                        let c = Cx { scene_t: cx.scene_t - ts, gt: cx.gt - ts, amul: cx.amul * a, ..*cx };
+                        let px = dl::mul(parent, &r.xf(i, ctr));
+                        self.emit_node_inner(n, &c, &px, psize, po, out);
+                    }
+                }
+            }
         }
     }
 
@@ -974,7 +1102,17 @@ impl Evaluator {
         let lt = st - n.start;
         let mut v = [0.0f32; prop::N];
         self.props(n, cx, lt, &mut v);
-        let opacity = v[prop::OPACITY].clamp(0.0, 1.0);
+        if let Some(fx) = n.fx.as_deref() {
+            if let Some(mp) = &fx.path {
+                let (q, ang) = mp.at(v[prop::PROGRESS] * mp.len());
+                v[prop::X] = q[0];
+                v[prop::Y] = q[1];
+                if let Some(o) = fx.orient {
+                    v[prop::ROT] += ang + o;
+                }
+            }
+        }
+        let opacity = (v[prop::OPACITY] * cx.amul).clamp(0.0, 1.0);
         if opacity <= 0.0005 {
             return;
         }
@@ -1027,6 +1165,15 @@ impl Evaluator {
         }
         match &n.kind {
             Kind::Shape { shape, fill, stroke, path } => {
+                let wiggled = match n.fx.as_deref() {
+                    Some(fx::Fx { wiggle: Some(w), wiggle_src, .. }) => {
+                        let mut p = take_path();
+                        fx::wiggle_into(wiggle_src, *w, lt, &mut p);
+                        Some(p)
+                    }
+                    _ => None,
+                };
+                let path = wiggled.as_ref().unwrap_or(path);
                 let sw = v[prop::SW];
                 let trimmed = v[prop::TRIM0] > 0.0 || v[prop::TRIM1] < 1.0;
                 let geom = |out: &mut Vec<Op>, paint: Paint, st: Option<dl::Stroke>| match (shape, st) {
@@ -1061,11 +1208,14 @@ impl Evaluator {
                             join: s.join,
                             miter_limit: 4.0,
                             dash: s.dash.clone(),
-                            dash_offset: s.dash_offset,
+                            dash_offset: s.dash_offset + v[prop::DASH_OFF],
                             trim: [v[prop::TRIM0].clamp(0.0, 1.0), v[prop::TRIM1].clamp(0.0, 1.0)],
                         };
                         geom(out, paint, Some(st));
                     }
+                }
+                if let Some(p) = wiggled {
+                    give_path(p);
                 }
             }
             Kind::Text { layout, wrap, paint, run_colors, split, counter, kinetic } => {
@@ -1098,7 +1248,67 @@ impl Evaluator {
                         let k = (reveal * layout.chars.len() as f32).floor() as usize;
                         layout.chars.get(k).map_or(u32::MAX, |u| u.glyphs.start)
                     };
+                    let tpath = n.fx.as_deref().and_then(|f| f.text_path.as_ref());
                     match split {
+                        None if n.fx.as_deref().is_some_and(|f| f.animator.is_some()) => {
+                            let an = n.fx.as_deref().unwrap().animator.as_ref().unwrap();
+                            let units = layout.units(an.by);
+                            let off = match an.auto {
+                                Some((delay, dur, e)) => self.easings[e as usize].ease(((lt - delay) / dur.max(1e-3)).clamp(0.0, 1.0) as f64) as f32 * (1.0 + an.smooth),
+                                None => v[prop::RANGE_OFF],
+                            };
+                            let (lo, hi) = (v[prop::RANGE0] + off, v[prop::RANGE1] + off);
+                            let nu = units.len().max(1) as f32;
+                            let base_c = [v[prop::FILL], v[prop::FILL + 1], v[prop::FILL + 2], v[prop::FILL + 3]];
+                            for (u, unit) in units.iter().enumerate() {
+                                let rank = an.order.get(u).map_or(u as f32, |r| *r as f32);
+                                let a = an.amount((rank + 0.5) / nu, lo, hi);
+                                let ua = (1.0 + (an.opacity - 1.0) * a).clamp(0.0, 1.0);
+                                if ua <= 0.0005 {
+                                    continue;
+                                }
+                                let [x0, y0, uw, uh] = unit.rect;
+                                let (cxu, cyu) = (x0 + uw * 0.5, y0 + uh * 0.5);
+                                let s = 1.0 + (an.scale - 1.0) * a;
+                                let m = dl::mul(&translate(cxu + an.dx * a, cyu + an.dy * a), &dl::mul(&rotate(an.rot * a), &dl::mul(&scale(s, s), &translate(-cxu, -cyu))));
+                                let uxf = dl::mul(&bxf, &m);
+                                let f2 = match (an.color, &fill) {
+                                    (Some(c), Some(Paint::Solid(_))) => {
+                                        let mut k = [0.0f32; 4];
+                                        for i in 0..4 {
+                                            k[i] = base_c[i] + (c[i] - base_c[i]) * a;
+                                        }
+                                        let mut c = oklab_to_rgba(k);
+                                        c.0[3] *= ua * alpha;
+                                        Some(Paint::Solid(c))
+                                    }
+                                    _ => fill.as_ref().map(|f| {
+                                        let mut f = f.clone();
+                                        scale_alpha(&mut f, ua);
+                                        f
+                                    }),
+                                };
+                                let ublur = an.blur * a;
+                                if ublur > 0.05 {
+                                    out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: vec![Filter::Blur(ublur)], clip: None, cache_key: None });
+                                }
+                                emit_glyphs(out, layout, unit.glyphs.clone(), limit, f2.as_ref(), alpha * ua, &uxf);
+                                if ublur > 0.05 {
+                                    out.push(Op::PopLayer);
+                                }
+                            }
+                        }
+                        None if tpath.is_some() => {
+                            // Text on a path: each character rides the path at its x (+ pathOffset), baseline on the line.
+                            let mp = tpath.unwrap();
+                            for unit in layout.units(UnitKind::Char) {
+                                let [x0, y0, uw, uh] = unit.rect;
+                                let cxu = x0 + uw * 0.5;
+                                let (q, ang) = mp.at(cxu + v[prop::PATH_OFF]);
+                                let uxf = dl::mul(&xf, &dl::mul(&translate(q[0], q[1]), &dl::mul(&rotate(ang), &translate(-cxu, -(y0 + uh * 0.78)))));
+                                emit_glyphs(out, layout, unit.glyphs.clone(), limit, fill.as_ref(), alpha, &uxf);
+                            }
+                        }
                         None if layout.outline.is_some() && limit == u32::MAX => {
                             // Outlined text (TEXT's glyph outline paths): fill (unless hollow), then the stroke.
                             let (paths, stroke, _, hollow) = layout.outline.as_ref().unwrap();
@@ -1253,17 +1463,34 @@ impl Evaluator {
                 // The nested layers' tags would name the wrong evaluator's layers: the
                 // whole composition is tagged as this layer by `emit_node`.
                 let tags = TAGS.with(|tg| tg.borrow_mut().take());
+                let k = (m[0] * m[3] - m[1] * m[2]).abs().sqrt();
+                // Pixel content inside (shader layers) renders at the largest size
+                // the composition is shown at in this frame: display scale ×2
+                // (headroom for filtering), in ⅛ steps, never above its declared size.
+                let ps = shader::preview_scale();
+                let want = (((k * 2.0 * 8.0).ceil() / 8.0).min(1.0) * ps).max(1.0 / 64.0);
+                let key = Arc::as_ptr(ev) as usize;
+                let inner = COMP_SCALE.with(|c| match &mut *c.borrow_mut() {
+                    Some((true, m)) => {
+                        let e = m.entry(key).or_insert(0.0);
+                        *e = e.max(want);
+                        want
+                    }
+                    Some((false, m)) => m.get(&key).copied().unwrap_or(0.0).max(want),
+                    None => want,
+                });
+                shader::set_preview_scale(inner);
                 ev.emit_frame(ct, true, out);
+                shader::set_preview_scale(ps);
                 TAGS.with(|tg| *tg.borrow_mut() = tags);
                 crate::components::transform_ops(&mut out[start..], &m);
-                let k = (m[0] * m[3] - m[1] * m[2]).abs().sqrt();
                 if (k - 1.0).abs() > 1e-4 {
                     scale_filters(&mut out[start..], k);
                 }
                 out.push(Op::PopLayer);
             }
             Kind::Group { children } => {
-                let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0 };
+                let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0, amul: 1.0 };
                 for c in children {
                     self.emit_node(c, &ccx, &xf, [w, h], alpha, out);
                 }
@@ -1285,7 +1512,7 @@ impl Evaluator {
                         transform: xf,
                     });
                 }
-                let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0 };
+                let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0, amul: 1.0 };
                 for c in children {
                     self.emit_node(c, &ccx, &xf, [w, h], alpha, out);
                 }
@@ -1614,6 +1841,18 @@ fn shape_path(s: &impl kurbo::Shape, tol: f64) -> Path {
 }
 
 /// Drain `ops`, returning glyph and path buffers to this thread's pools.
+/// Recycle the ops from `start` on.
+fn recycle_from(ops: &mut Vec<Op>, start: usize) {
+    for op in ops.drain(start..) {
+        match op {
+            Op::Glyphs { glyphs, .. } => crate::text::pool::give(glyphs),
+            Op::Fill { path, .. } | Op::Stroke { path, .. } => give_path(path),
+            Op::PushLayer { clip: Some((path, _)), .. } => give_path(path),
+            _ => {}
+        }
+    }
+}
+
 pub(crate) fn recycle(ops: &mut Vec<Op>) {
     for op in ops.drain(..) {
         match op {

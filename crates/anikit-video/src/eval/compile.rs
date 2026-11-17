@@ -45,7 +45,8 @@ struct TweenC {
     from: Vec<(usize, usize, ValS)>,
     to: Vec<(usize, usize, ValS)>,
     /// (slot, channels, [(time 0..1, value)])
-    kf: Vec<(usize, usize, Vec<(f32, ValS)>)>,
+    /// Per property: `(time 0..1, value, ease of the move into this key)`.
+    kf: Vec<(usize, usize, Vec<(f32, ValS, Option<u32>)>)>,
     repeat: i32,
     yoyo: bool,
 }
@@ -445,6 +446,8 @@ fn empty_node(kind: Kind) -> Node {
         index: 0.0,
         count: 1.0,
         tag: u32::MAX,
+        fx: None,
+        matte: None,
     }
 }
 
@@ -986,14 +989,74 @@ impl C<'_> {
     fn layers(&mut self, ls: &[Layer], path: &str, pc: PCtx, stagger: Option<&spec::Stagger>) -> Vec<Node> {
         let delays = self.stagger_delays(stagger, ls.len(), &format!("{path}.stagger"));
         let mut out = Vec::new();
+        let mut at: Vec<Option<usize>> = Vec::with_capacity(ls.len());
         for (i, l) in ls.iter().enumerate() {
             let p = format!("{path}[{i}]");
             let cpc = PCtx { index: i, count: ls.len(), delay: delays[i], ..pc };
+            at.push(None);
             if let Some(n) = self.layer(l, &p, cpc) {
+                at[i] = Some(out.len());
                 out.push(n);
             }
         }
+        if ls.iter().any(|l| l.matte.is_some()) {
+            self.resolve_mattes(ls, path, &at, &mut out);
+        }
         out
+    }
+
+    /// Track mattes: move each matte layer (by `id`, a sibling) into the layer it mattes.
+    fn resolve_mattes(&mut self, ls: &[Layer], path: &str, at: &[Option<usize>], out: &mut Vec<Node>) {
+        let mut pairs: Vec<(usize, usize, u8)> = Vec::new();
+        for (i, l) in ls.iter().enumerate() {
+            let Some(m) = &l.matte else { continue };
+            let m = &m.0;
+            let p = format!("{path}[{i}].matte");
+            let mode = match m.mode.as_deref().unwrap_or("alpha") {
+                "alpha" => 0,
+                "alphaInverted" => 1,
+                "luma" => 2,
+                "lumaInverted" => 3,
+                x => {
+                    let names = ["alpha", "alphaInverted", "luma", "lumaInverted"];
+                    self.d.push(Diagnostic::error(format!("{p}.mode"), format!("unknown matte mode '{x}'")).suggest(suggest(x, &names)));
+                    0
+                }
+            };
+            let Some(j) = ls.iter().position(|o| o.id.as_deref() == Some(m.layer.as_str())) else {
+                let ids: Vec<&str> = ls.iter().filter_map(|o| o.id.as_deref()).collect();
+                self.d.push(Diagnostic::error(format!("{p}.layer"), format!("no sibling layer with id '{}'", m.layer)).suggest(suggest(&m.layer, &ids)));
+                continue;
+            };
+            if j == i {
+                self.d.push(Diagnostic::error(format!("{p}.layer"), "a layer can't be its own matte"));
+                continue;
+            }
+            if let (Some(a), Some(b)) = (at[i], at[j]) {
+                pairs.push((a, b, mode));
+            }
+        }
+        // Take the matte nodes out (highest index first so indices stay valid).
+        let mut mattes: Vec<usize> = pairs.iter().map(|p| p.1).collect();
+        mattes.sort_unstable();
+        mattes.dedup();
+        let mut taken: Vec<(usize, Node)> = Vec::new();
+        for &k in mattes.iter().rev() {
+            if pairs.iter().any(|p| p.0 == k) {
+                continue; // a matted layer used as a matte: keep it simple, leave it drawn
+            }
+            taken.push((k, out.remove(k)));
+        }
+        let removed: Vec<usize> = taken.iter().map(|t| t.0).collect();
+        let shift = |k: usize| k - removed.iter().filter(|&&m| m < k).count();
+        for (a, b, mode) in pairs {
+            let Some(pos) = taken.iter().position(|t| t.0 == b) else {
+                self.d.push(Diagnostic::warning(format!("{path}[{a}].matte"), "each matte layer can matte one layer (and not be matted itself); ignored"));
+                continue;
+            };
+            let node = taken.remove(pos).1;
+            out[shift(a)].matte = Some(Box::new((node, mode)));
+        }
     }
 
     // ---------- layers ----------
@@ -1373,10 +1436,11 @@ impl C<'_> {
             }
         }
         // Components: progress 0 → 1 over the lifetime unless set.
-        if matches!(n.kind, Kind::Component(..)) && l.progress.is_none() && life_end.is_finite() {
+        if (matches!(n.kind, Kind::Component(..)) || l.path.is_some()) && l.progress.is_none() && life_end.is_finite() {
             tw.insert(0, TweenC { at: 0.0, dur: life_end.max(1e-3), ease: 0, from: vec![(prop::PROGRESS, 1, ValS::Abs(0.0))], to: vec![(prop::PROGRESS, 1, ValS::Abs(1.0))], kf: vec![], repeat: 0, yoyo: false });
         }
         n.tracks = self.tracks(&n.base, &n.exprs, &mut tw, life_end);
+        self.mograph(l, path, &mut n);
 
         // Split text: presets per unit.
         if let Some((enter, exit)) = split_presets {
@@ -1436,6 +1500,178 @@ impl C<'_> {
             }
         }
         Some(n)
+    }
+
+    /// Motion-graphics extras: repeater, echo, motion path, text path, shape modifiers.
+    fn mograph(&mut self, l: &Layer, path: &str, n: &mut Node) {
+        use super::fx::{self, EchoC, Fx, MPath, Mods, RepC};
+        self.set(n, prop::PATH_OFF, l.path_offset.as_ref(), &format!("{path}.pathOffset"), 1.0);
+        self.set(n, prop::DASH_OFF, l.dash_offset.as_ref(), &format!("{path}.dashOffset"), 1.0);
+        let mut f = Fx::default();
+        if let Some(spec::RepeatValue::Repeater(r)) = &l.repeat {
+            let o = r.offset.clone().unwrap_or_default();
+            let sc = match &o.scale {
+                None => [1.0, 1.0],
+                Some(serde_json::Value::Number(x)) => [x.as_f64().unwrap_or(1.0) as f32; 2],
+                Some(serde_json::Value::Array(a)) if a.len() == 2 => [a[0].as_f64().unwrap_or(1.0) as f32, a[1].as_f64().unwrap_or(1.0) as f32],
+                Some(_) => {
+                    self.d.push(Diagnostic::error(format!("{path}.repeat.offset.scale"), "scale is a multiplier per copy: a number or [sx, sy]"));
+                    [1.0, 1.0]
+                }
+            };
+            let count = r.count.unwrap_or(3);
+            if count > 2000 {
+                self.d.push(Diagnostic::warning(format!("{path}.repeat.count"), "more than 2000 copies; capped"));
+            }
+            f.repeat = Some(RepC {
+                count: count.min(2000),
+                d: [o.x.unwrap_or(0.0) as f32, o.y.unwrap_or(0.0) as f32],
+                rot: o.rotate.unwrap_or(0.0) as f32,
+                scale: sc,
+                opacity: o.opacity.unwrap_or(0.0) as f32,
+                stagger: r.stagger.unwrap_or(0.0) as f32,
+                center: r.center.map(|c| [c[0] as f32, c[1] as f32]),
+            });
+        }
+        if let Some(e) = &l.echo {
+            let blend = match e.blend.as_deref().unwrap_or("normal") {
+                "normal" => Blend::Normal,
+                "add" => Blend::Add,
+                "screen" => Blend::Screen,
+                "lighten" => Blend::Lighten,
+                "multiply" => Blend::Multiply,
+                "overlay" => Blend::Overlay,
+                "darken" => Blend::Darken,
+                "softLight" => Blend::SoftLight,
+                "difference" => Blend::Difference,
+                x => {
+                    self.d.push(Diagnostic::error(format!("{path}.echo.blend"), format!("unknown blend mode '{x}'")).suggest(suggest(x, val::BLENDS)));
+                    Blend::Normal
+                }
+            };
+            f.echo = Some(EchoC {
+                count: e.count.unwrap_or(5).min(64),
+                delay: e.delay.unwrap_or(0.05) as f32,
+                decay: e.decay.unwrap_or(0.6).clamp(0.0, 1.0) as f32,
+                blend,
+            });
+        }
+        let svg = |d: &str, key: &str, me: &mut Self| -> Option<MPath> {
+            match Path::from_svg(d) {
+                Ok(p) => {
+                    let m = MPath::from_path(&p);
+                    if m.is_none() {
+                        me.d.push(Diagnostic::error(format!("{path}.{key}"), "the path has no length"));
+                    }
+                    m
+                }
+                Err(e) => {
+                    me.d.push(Diagnostic::error(format!("{path}.{key}"), format!("invalid SVG path: {e}")));
+                    None
+                }
+            }
+        };
+        if let Some(d) = &l.path {
+            f.path = svg(d, "path", self);
+            f.orient = match &l.orient {
+                None | Some(serde_json::Value::Bool(false)) => None,
+                Some(serde_json::Value::Bool(true)) => Some(0.0),
+                Some(serde_json::Value::Number(x)) => Some(x.as_f64().unwrap_or(0.0) as f32),
+                Some(_) => {
+                    self.d.push(Diagnostic::error(format!("{path}.orient"), "orient is true/false or an extra angle in degrees"));
+                    None
+                }
+            };
+        } else if l.orient.is_some() {
+            self.d.push(Diagnostic::warning(format!("{path}.orient"), "'orient' needs 'path' (a motion path)"));
+        }
+        if let Some(d) = &l.text_path {
+            if matches!(n.kind, Kind::Text { kinetic: None, split: None, .. }) {
+                f.text_path = svg(d, "textPath", self);
+            } else {
+                self.d.push(Diagnostic::warning(format!("{path}.textPath"), "'textPath' applies to plain text layers (no split/kinetic)"));
+            }
+        }
+        // Shape modifiers.
+        let mods = Mods {
+            round: l.round_corners.unwrap_or(0.0).max(0.0),
+            zigzag: l.zigzag.as_ref().map(|z| (z.size.unwrap_or(10.0), z.ridges.unwrap_or(10).clamp(1, 500), z.smooth.unwrap_or(false))),
+            pucker: l.pucker_bloat.unwrap_or(0.0).clamp(-2.0, 2.0),
+            offset: l.offset_path.unwrap_or(0.0),
+            twist: l.twist.unwrap_or(0.0),
+        };
+        let any_mod = !mods.is_empty() || l.wiggle_path.is_some();
+        if any_mod {
+            let (w, h) = (n.base[prop::W] as f64, n.base[prop::H] as f64);
+            if let Kind::Shape { shape, path: p, .. } = &mut n.kind {
+                let src = match shape {
+                    ShapeKind::Rect => {
+                        let r = (n.base[prop::RADIUS] as f64).min(w.min(h) * 0.5).max(0.0);
+                        kurbo::Shape::to_path(&kurbo::RoundedRect::new(0.0, 0.0, w, h, r), 0.1)
+                    }
+                    ShapeKind::Ellipse => kurbo::Shape::to_path(&kurbo::Ellipse::new((w * 0.5, h * 0.5), (w * 0.5, h * 0.5), 0.0), 0.1),
+                    ShapeKind::Path => p.clone(),
+                };
+                *shape = ShapeKind::Path;
+                *p = mods.apply(&src);
+                if let Some(wp) = &l.wiggle_path {
+                    let detail = wp.detail.unwrap_or(32).clamp(3, 2000);
+                    f.wiggle = Some([wp.amount.unwrap_or(10.0) as f32, detail as f32, wp.speed.unwrap_or(1.0) as f32, wp.seed.unwrap_or(1.0) as f32]);
+                    f.wiggle_src = fx::resample(p, detail);
+                }
+            } else {
+                self.d.push(Diagnostic::warning(path, "shape modifiers (roundCorners, zigzag, puckerBloat, offsetPath, twist, wigglePath) apply to shape layers"));
+            }
+        }
+        if let Some(a) = &l.animator {
+            let units = match &n.kind {
+                Kind::Text { kinetic: None, split: None, layout, .. } => Some(layout.clone()),
+                _ => None,
+            };
+            match units {
+                None => self.d.push(Diagnostic::warning(format!("{path}.animator"), "'animator' applies to plain text layers (no split/kinetic)")),
+                Some(layout) => {
+                    let by = match a.by.as_deref().unwrap_or("char") {
+                        "char" | "chars" => crate::text::UnitKind::Char,
+                        "word" | "words" => crate::text::UnitKind::Word,
+                        "line" | "lines" => crate::text::UnitKind::Line,
+                        x => {
+                            self.d.push(Diagnostic::error(format!("{path}.animator.by"), format!("unknown unit '{x}'")).suggest(suggest(x, &["char", "word", "line"])));
+                            crate::text::UnitKind::Char
+                        }
+                    };
+                    let order = a.order.as_deref().unwrap_or("forward");
+                    if !["forward", "reverse", "center", "random"].contains(&order) {
+                        self.d.push(Diagnostic::error(format!("{path}.animator.order"), format!("unknown order '{order}'")).suggest(suggest(order, &["forward", "reverse", "center", "random"])));
+                    }
+                    let color = a.color.as_ref().and_then(|c| self.color(c, &format!("{path}.animator.color"))).map(rgba_to_oklab);
+                    self.set(n, prop::RANGE0, a.start.as_ref(), &format!("{path}.animator.start"), 1.0);
+                    self.set(n, prop::RANGE1, a.end.as_ref(), &format!("{path}.animator.end"), 1.0);
+                    self.set(n, prop::RANGE_OFF, a.offset.as_ref(), &format!("{path}.animator.offset"), 1.0);
+                    let animated = n.tracks.iter().any(|t| t.slot as usize == prop::RANGE_OFF);
+                    let auto = (a.offset.is_none() && !animated).then(|| {
+                        let e = self.ease(a.ease.as_deref(), "outCubic", &format!("{path}.animator.ease"));
+                        (a.delay.unwrap_or(0.0) as f32, a.duration.unwrap_or(1.0) as f32, e)
+                    });
+                    f.animator = Some(fx::AnimatorC {
+                        by,
+                        dx: a.x.unwrap_or(0.0) as f32,
+                        dy: a.y.unwrap_or(0.0) as f32,
+                        rot: a.rotation.unwrap_or(0.0) as f32,
+                        scale: a.scale.unwrap_or(1.0) as f32,
+                        opacity: a.opacity.unwrap_or(1.0) as f32,
+                        blur: a.blur.unwrap_or(0.0) as f32,
+                        color,
+                        smooth: a.smooth.unwrap_or(0.25).max(0.0) as f32,
+                        order: fx::order_ranks(layout.units(by).len(), order, a.seed.unwrap_or(1.0)),
+                        auto,
+                    });
+                }
+            }
+        }
+        if !f.is_empty() {
+            n.fx = Some(Box::new(f));
+        }
     }
 
     /// Returns (kind, natural size, char count, split?).
@@ -1530,7 +1766,9 @@ impl C<'_> {
         };
         let (plain, spans) = self.markup(&raw, path);
         let run_colors = !spans.is_empty();
-        let mut tspec = text::TextSpec { text: plain.clone(), spans, style, width: given_w, align, max_lines: l.max_lines, ..Default::default() };
+        // Text on a path never wraps: one line rides the path.
+        let wrap_w = if l.text_path.is_some() { None } else { given_w };
+        let mut tspec = text::TextSpec { text: plain.clone(), spans, style, width: wrap_w, align, max_lines: l.max_lines, ..Default::default() };
         // `fit: true`: shrink (never grow) so the widest line fits `width`
         // (default 85% of the parent), keeping the author's line breaks.
         match l.fit.as_deref() {
@@ -1648,7 +1886,7 @@ impl C<'_> {
         };
         let chars = layout.chars.len();
         let wrap = if counter.is_some() { None } else { tspec.width };
-        let nat = [wrap.unwrap_or(layout.width), layout.height];
+        let nat = [wrap.or(given_w).unwrap_or(layout.width), layout.height];
         if split.is_some() && (counter.is_some() || kinetic.is_some()) {
             self.d.push(Diagnostic::warning(format!("{path}.split"), "split is ignored on counters and kinetic text"));
         }
@@ -3184,12 +3422,27 @@ impl C<'_> {
                 let n = vals.len();
                 let mut list = Vec::new();
                 for (i, v) in vals.iter().enumerate() {
-                    let (tt, vv) = match v {
-                        serde_json::Value::Array(a) if a.len() == 2 && a[0].is_number() => (a[0].as_f64().unwrap() as f32, &a[1]),
-                        _ => (i as f32 / (n - 1) as f32, v),
+                    let (tt, vv, ke) = match v {
+                        serde_json::Value::Array(a) if a.len() == 2 && a[0].is_number() => (a[0].as_f64().unwrap() as f32, &a[1], None),
+                        // `[time, value, ease]`: the ease of the move into this key.
+                        serde_json::Value::Array(a) if a.len() == 3 && a[0].is_number() => {
+                            let e = match &a[2] {
+                                serde_json::Value::String(e) => Some(self.ease(Some(e), "linear", &format!("{p}[{i}][2]"))),
+                                serde_json::Value::Array(b) if b.len() == 4 && b.iter().all(|x| x.is_number()) => {
+                                    let e = format!("cubic-bezier({},{},{},{})", b[0], b[1], b[2], b[3]);
+                                    Some(self.ease(Some(&e), "linear", &format!("{p}[{i}][2]")))
+                                }
+                                _ => {
+                                    self.d.push(Diagnostic::error(format!("{p}[{i}][2]"), "a keyframe's third item is its ease: a name or [x1, y1, x2, y2]"));
+                                    None
+                                }
+                            };
+                            (a[0].as_f64().unwrap() as f32, &a[1], e)
+                        }
+                        _ => (i as f32 / (n - 1) as f32, v, None),
                     };
                     if let Some(x) = self.anim_val(name, vv, &format!("{p}[{i}]"), refs) {
-                        list.push((tt.clamp(0.0, 1.0), x));
+                        list.push((tt.clamp(0.0, 1.0), x, ke));
                     }
                 }
                 kf.push((slot, ch, list));
@@ -3288,15 +3541,15 @@ impl C<'_> {
                     let s = slot + c;
                     let c0 = cur(&tracks, s, t0);
                     let mut prev: Option<(f32, f32)> = None;
-                    for &(tt, v) in list {
+                    for &(tt, v, ke) in list {
                         let val = match v {
                             ValS::Color(col) => col[c],
                             v => apply(v, c0, 0),
                         };
                         if let Some((pt, pv)) = prev {
-                            segs.push((s, Seg { t0: t0 + pt * t.dur, t1: t0 + tt * t.dur, v0: pv, v1: val, ease: t.ease, hold_before: false }));
+                            segs.push((s, Seg { t0: t0 + pt * t.dur, t1: t0 + tt * t.dur, v0: pv, v1: val, ease: ke.unwrap_or(t.ease), hold_before: false }));
                         } else if tt > 0.0 {
-                            segs.push((s, Seg { t0, t1: t0 + tt * t.dur, v0: c0, v1: val, ease: t.ease, hold_before: false }));
+                            segs.push((s, Seg { t0, t1: t0 + tt * t.dur, v0: c0, v1: val, ease: ke.unwrap_or(t.ease), hold_before: false }));
                         }
                         prev = Some((tt, val));
                     }

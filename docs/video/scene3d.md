@@ -118,7 +118,7 @@ Not every shot should be a chrome product on a white cyc. One word changes the w
   - `city`: night city. Deep blue ambient, a sodium key, neon signage strips and four coloured practicals around the subject (unless you give `lights`), on a wet reflective floor.
   - `underwater`: teal water, light from the surface, moving caustics on the sand and objects, depth haze.
 
-Cost: the styles shade in the same pass as PBR, so they cost the same or less. Outlines add about 110 ms per 1080p frame (measured: toon 1.19 s with outlines, 1.07 s without). Example 1080p traces on 4 cores: toon 0.70 s, ink 0.97 s, clay/paper/gouache about 0.66 s, city 1.44 s (four shadowed lights).
+Cost: the styles shade in the same pass as PBR, so they cost the same or less. Outlines add about 30 ms per 1080p frame (measured: toon 1.03–1.07 s with outlines, 1.00 s without). Example 1080p traces on 4 cores: toon 0.70 s, ink 0.97 s, clay/paper/gouache about 0.66 s, city 1.44 s (four shadowed lights).
 
 ## Rules that keep it looking expensive
 
