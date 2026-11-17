@@ -173,6 +173,29 @@ pub fn fract(x: f32) -> f32 {
     }
 }
 
+/// `x.floor()` without a libm call (std's is a software routine without
+/// SSE4.1); exact for |x| < 2³¹.
+#[inline(always)]
+pub fn ffloor(x: f32) -> f32 {
+    let t = (x as i32) as f32;
+    if t > x {
+        t - 1.0
+    } else {
+        t
+    }
+}
+
+/// `x.ceil()` without a libm call; exact for |x| < 2³¹.
+#[inline(always)]
+pub fn fceil(x: f32) -> f32 {
+    let t = (x as i32) as f32;
+    if t < x {
+        t + 1.0
+    } else {
+        t
+    }
+}
+
 /// A small, fast hash for per-pixel sample decorrelation.
 #[inline]
 pub fn hash2(x: u32, y: u32) -> u32 {
