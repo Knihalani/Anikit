@@ -371,7 +371,7 @@ mod tests {
         }
         assert!(build("phone", &json!({"screen": "dashbord"})).err().unwrap().0.contains("dashboard"));
         // Product copy instead of invented data.
-        let items = json!(["Capture in one keystroke", "Handwriting search in sketches", "Offline mode", "Shared notebooks with live cursors", "Templates", "Version history"]);
+        let items = json!(["Offline mode on every device you own", "Handwriting search in sketches", "Offline mode", "Shared notebooks with live cursors", "Templates", "Version history"]);
         let mut ops = Vec::new();
         ops.extend(build("phone", &json!({"x": 0, "y": 0, "width": 300, "height": 540, "screen": "app", "title": "Quill", "items": items})).unwrap().eval(2.5, 960.0, 540.0, 30.0, &th, a));
         ops.extend(build("browser", &json!({"x": 300, "y": 20, "width": 660, "height": 420, "screen": "app", "title": "Quill", "items": items})).unwrap().eval(2.5, 960.0, 540.0, 30.0, &th, a));
@@ -380,5 +380,12 @@ mod tests {
         let ops = build("laptop", &json!({"screen": "dashboard", "title": "Quill", "items": items, "kpis": [{"label": "Notes captured this week", "value": "12,400"}]})).unwrap().eval(2.5, 960.0, 540.0, 30.0, &th, a);
         preview::validate(&ops).unwrap();
         preview::snapshot("screen-quill-kpi", 960, 540, th.background, ops, a);
+        // Contrast: a light orange brand gets dark labels.
+        let mut ops = Vec::new();
+        for (i, v) in ["primary", "gradient"].iter().enumerate() {
+            ops.extend(build("button", &json!({"x": 40 + 300 * i, "y": 40, "width": 280, "height": 80, "label": "Start free", "variant": v, "color": "#E8C23C"})).unwrap().eval(2.0, 960.0, 540.0, 30.0, &th, a));
+        }
+        ops.extend(build("badge", &json!({"x": 40, "y": 140, "width": 120, "height": 40, "label": "New", "solid": true, "color": "#7CF0A0"})).unwrap().eval(2.0, 960.0, 540.0, 30.0, &th, a));
+        preview::snapshot("contrast", 960, 540, th.background, ops, a);
     }
 }
