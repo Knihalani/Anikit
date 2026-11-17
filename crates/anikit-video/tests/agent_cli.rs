@@ -108,6 +108,9 @@ fn preview_is_the_one_call_inner_loop() {
     assert!(ok, "{out}{err}");
     assert!(out.contains("sheet: s-sheet.png") && out.contains("review: ") && out.contains("intent"), "{out}");
     assert!(d.join("s-sheet.png").is_file());
+    std::fs::write(d.join("u.json"), r##"{"scenes":[{"duration":2,"layers":[{"text":"Hi","lineCap":"round"}]}]}"##).unwrap();
+    let (_, out, _) = run(&["preview", "u.json"], &d);
+    assert!(out.contains("lineCap"), "unknown keys show in preview: {out}");
 }
 
 #[test]

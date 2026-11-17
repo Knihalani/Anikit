@@ -334,8 +334,18 @@ fn cmd_preview(args: &[String]) -> Result<(), String> {
             per * p.ev.frames() as f64 + 1.0
         };
         if a.has("json") {
-            out!("{}", pretty(&serde_json::json!({ "sheet": out, "seconds_per_cell": 1, "duration": p.ev.duration, "final_render_estimate_s": est.round(), "critique": report })));
+            let warns: Vec<String> = crate::spec::parse::from_value(spec.clone()).map(|p| p.warnings.iter().map(|d| d.to_string()).collect()).unwrap_or_default();
+            out!("{}", pretty(&serde_json::json!({ "spec_warnings": warns, "sheet": out, "seconds_per_cell": 1, "duration": p.ev.duration, "final_render_estimate_s": est.round(), "critique": report })));
             return Ok(());
+        }
+        // Spec warnings first (unknown or ignored keys): they are the cheapest
+        // fixes, and render would print them anyway after the expensive part.
+        let warns: Vec<String> = crate::spec::parse::from_value(spec.clone()).map(|p| p.warnings.iter().map(|d| d.to_string()).collect()).unwrap_or_default();
+        for w in warns.iter().take(8) {
+            outln!("spec {w}");
+        }
+        if warns.len() > 8 {
+            outln!("spec … {} more (anikit-video check {src})", warns.len() - 8);
         }
         outln!("sheet: {out} (one cell per second, {:.1} s video; open it and look)", p.ev.duration);
         if let Some(r) = report {
