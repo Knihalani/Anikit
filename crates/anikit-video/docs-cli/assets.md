@@ -19,7 +19,7 @@ Each line: `id  type  one-line description  [tags]  size`. Types: `hdri texture 
 
 | ref | what |
 |---|---|
-| `polyhaven:hdri/<slug>` | HDRI environment (1k default; `@2k`, `@4k`) |
+| `polyhaven:hdri/<slug>` | HDRI environment (1k; 2k when the background is sharp; `@4k`) |
 | `polyhaven:texture/<slug>` | PBR set: albedo, normal, roughness, AO, displacement (2k; `@1k`) |
 | `ambientcg:<AssetId>` | PBR set from ambientCG (e.g. `ambientcg:Wood049`, 2k) |
 | `polyhaven:model/<slug>` | glTF model with its textures (1k; `@2k`) |

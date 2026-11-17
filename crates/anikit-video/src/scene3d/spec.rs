@@ -1220,6 +1220,13 @@ fn hdri_env(v: &Value, path: &str) -> Res<Option<EnvSpec>> {
             Some(x) => return Err(format!("{path}.background: expected true, false, \"blur\" or a blur angle in degrees, got {x}")),
         };
     }
+    // A sharp background needs pixels: a 50 mm lens sees ~40° of 360°, so a
+    // 1k map gives ~110 px across a 1080p frame. Sharp → 2k unless asked;
+    // `@4k` keeps 4096 wide.
+    let src = if crate::assetlib::is_ref(&src) && !src.contains('@') && o.background == Background::Map(0.0) { format!("{src}@2k") } else { src };
+    if src.ends_with("@4k") {
+        o.max_width = 4096;
+    }
     let file = if crate::assetlib::is_ref(&src) {
         crate::assetlib::get(&src).map_err(|e| format!("{path}.hdri: {e}"))?.main()
     } else {
