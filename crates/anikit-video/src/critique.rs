@@ -634,8 +634,17 @@ fn walk_layer(cx: &mut Ctx, layer: &Value, path: &str, scene_dur: f64, bg: color
     f(cx, l, path, start + enter_delay, end, bg_here);
     for key in ["children", "layers"] {
         if let Some(kids) = l.get(key).and_then(|k| k.as_array()) {
+            // A filled shape inside a group backs the siblings drawn after it
+            // (a pill or card behind its label).
+            let mut backing = bg_here;
             for (i, k) in kids.iter().enumerate() {
-                walk_layer(cx, k, &format!("{path}.{key}[{i}]"), scene_dur, bg_here, start, f);
+                walk_layer(cx, k, &format!("{path}.{key}[{i}]"), scene_dur, backing, start, f);
+                if k.get("shape").is_some() && k.get("text").is_none() {
+                    if let Some(mut c) = k.get("fill").or_else(|| k.get("color")).and_then(|c| cx.color(c)) {
+                        c[3] *= k.get("opacity").and_then(|o| o.as_f64()).unwrap_or(1.0).clamp(0.0, 1.0);
+                        backing = color::over(c, backing);
+                    }
+                }
             }
         }
     }
@@ -897,6 +906,15 @@ pub fn all_text(v: &Value) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn text_on_a_backing_shape_in_a_group_uses_the_shape() {
+        let spec = serde_json::json!({ "scenes": [{ "duration": 3, "background": "#f4f1ea", "layers": [
+            { "layers": [ { "shape": "rect", "width": 400, "height": 90, "fill": "#111111" }, { "text": "Ship it", "color": "#f4f1ea" } ] }
+        ] }] });
+        let r = critique(&spec);
+        assert!(!r.notes.iter().any(|n| n.check == "contrast"), "{}", r.to_text());
+    }
+
     #[test]
     fn recipe_with_new_words_is_flagged() {
         let (_, spec) = crate::agent_docs::recipe_spec("launch-sting").unwrap();
