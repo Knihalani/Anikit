@@ -1,0 +1,25 @@
+{
+  "size": [1920, 1080],
+  "fps": 60,
+  "background": "#050505",
+  "compositions": {
+    "player": {
+      "size": [780, 1688],
+      "duration": 8,
+      "background": "#0b0d12",
+      "layers": [
+        { "component": "now-playing", "x": 0, "y": 0, "anchor": "topLeft", "width": 780, "height": 1688,
+          "props": { "title": "Salt & Glass", "artist": "Maren Holt", "album": "Low Tide Hours", "length": 243, "position": 106, "clock": "17:42" } }
+      ]
+    }
+  },
+  "scenes": [
+    {
+      "duration": 7,
+      "layers": [
+        { "component": "product-shot", "x": 0, "y": 0, "anchor": "topLeft", "width": 1920, "height": 1080,
+          "props": { "screen": "player" } }
+      ]
+    }
+  ]
+}

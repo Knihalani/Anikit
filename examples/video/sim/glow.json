@@ -1,0 +1,24 @@
+{
+  "size": [1920, 1080],
+  "fps": 30,
+  "scenes": [
+    {
+      "duration": 5,
+      "layers": [
+        { "component": "scene3d", "props": {
+          "env": "studio",
+          "quality": "draft",
+          "camera": { "keys": [
+            { "t": 0, "pos": [-1.2, 1.2, 4.6], "target": [0, 1.0, 0], "focal": 40, "fstop": 2.0, "focus": 4.4 },
+            { "t": 5, "pos": [1.6, 1.4, 4.0], "target": [0, 1.0, 0], "focal": 45, "fstop": 2.0, "focus": 4.0 } ] },
+          "objects": [
+            { "type": "particles", "count": 2000000,
+              "emit": { "text": "ANIKIT", "height": 1.0, "pos": [0, 0.6, 0] },
+              "flow": { "strength": 0.8, "scale": 0.8, "evolve": 0.2 }, "gravity": 0.15, "drag": 0.4, "life": 4,
+              "size": 0.0025, "color": ["#ffb35c", "#ff5a1f", "#7a2bff"], "colorBy": "age", "emissive": 3, "blend": "add" }
+          ]
+        } }
+      ]
+    }
+  ]
+}

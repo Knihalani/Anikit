@@ -1,9 +1,9 @@
 // Caustics: sunlight focused by a moving water surface onto a pool floor.
 // The floor brightness is the density of refracted rays (the Jacobian of
 // the refraction map, computed with derivatives). Uniforms: speed, depth, tint.
-uniform float speed; // = 1.0
-uniform float depth; // = 1.0
-uniform vec3 tint;   // = vec3(0.35, 0.75, 0.95)
+uniform float speed; // = 1.0  wave speed
+uniform float depth; // = 1.0  water depth: deeper focuses sharper lines
+uniform vec3 tint;   // = vec3(0.35, 0.75, 0.95)  water colour
 
 // Height of the water surface: a few travelling waves.
 float wave(vec2 p, float t) {

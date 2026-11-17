@@ -436,17 +436,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             }
             return;
         }
-        let (w00, w01, w10, w11) = ((8 - fx) * (8 - fy), fx * (8 - fy), (8 - fx) * fy, fx * fy);
-        let (w00, w01, w10, w11) = (w00 as u16, w01 as u16, w10 as u16, w11 as u16);
-        for y in 0..8 {
-            let r0: &[u8; 9] = d[o + y * s..o + y * s + 9].try_into().unwrap();
-            let r1: &[u8; 9] = d[o + (y + 1) * s..o + (y + 1) * s + 9].try_into().unwrap();
-            let row = &mut out[y * 8..y * 8 + 8];
-            for x in 0..8 {
-                let v = w00 * r0[x] as u16 + w01 * r0[x + 1] as u16 + w10 * r1[x] as u16 + w11 * r1[x + 1] as u16;
-                row[x] = ((v + 32) >> 6) as u8;
-            }
-        }
+        crate::simd::chroma_bilin8(d, o, s, fx, fy, out);
     }
 
     fn edges16(&self, mbx: usize, mby: usize) -> Edges<16> {
@@ -546,14 +536,23 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             if !Self::intra16_modes_ok(&e16, m) {
                 continue;
             }
-            intra::pred16(&e16, m, &mut pred);
-            let s = if c.idr { dsp::satd(src_y, &pred, 16, 16) } else { crate::simd::sad16(src_y, 16, &pred, 16) };
-            if s < best16.0 {
-                best16 = (s, m);
-                pred16 = pred;
+            if c.idr {
+                intra::pred16(&e16, m, &mut pred);
+                let s = dsp::satd(src_y, &pred, 16, 16);
+                if s < best16.0 {
+                    best16 = (s, m);
+                    pred16 = pred;
+                }
+            } else {
+                // P frames: SAD straight from the edges, build only the winner
+                let s = intra::sad16_mode(&e16, m, src_y);
+                if s < best16.0 {
+                    best16 = (s, m);
+                }
             }
         }
         if !c.idr {
+            intra::pred16(&e16, best16.1, &mut pred16);
             best16.0 = dsp::satd(src_y, &pred16, 16, 16);
         }
         let cost16 = best16.0 + lambda as u32 * if c.idr { 4 } else { 8 };
@@ -586,8 +585,8 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let try_i4 = best_cost > lambda as u32 * 24 + 256 && (c.idr || best_cost > lambda as u32 * 64 + 1024)
             // Smooth ramps (fades, soft gradients): 4×4 predictions turn them into a
             // staircase of 4×4 squares; I16 (plane) and inter keep them smooth.
-            // (At QP < 12 the steps are below one level, and I4 is more precise.)
-            && (self.mb_qp < 12 || crate::simd::second_diff16(src_y) >= SMOOTH_HF);
+            // (CAVLC at QP < 2: I16 DC levels would pass CAVLC's ±2047 escape.)
+            && ((!c.cabac && self.mb_qp < 2) || crate::simd::second_diff16(src_y) >= SMOOTH_HF);
         if try_i4 {
             // Encode I4x4 tentatively (writes recon).
             let mut cd = Coded::new();
@@ -706,9 +705,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mut pred = [0u8; 256];
         {
             let (r, rs) = self.luma_ref_int(mbx, mby, base);
-            for y in 0..16 {
-                pred[y * 16..y * 16 + 16].copy_from_slice(&r[y * rs..y * rs + 16]);
-            }
+            crate::simd::copy_block::<16>(&mut pred, 0, 16, r, 0, rs, 16);
         }
         let mv = base_q;
         let sad = best.0 - mvcost(base_q);
@@ -737,17 +734,23 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         const CROSS: [(i32, i32); 4] = [(0, -1), (-1, 0), (1, 0), (0, 1)];
         for (step, pat) in [(2, &SQ[..]), (1, &CROSS[..])] {
             let centre = d;
-            for &(sx, sy) in pat {
-                let cand = (centre.0 + sx * step, centre.1 + sy * step);
-                let (gx, gy, fx, fy) = (bx + (cand.0 >> 2) as isize, by + (cand.1 >> 2) as isize, cand.0 & 3, cand.1 & 3);
-                let sad = match (&win, self.c.hpel) {
-                    (Some(w), _) => {
-                        w.pred(cand.0, cand.1, &mut p);
-                        crate::simd::sad16(src_y, 16, &p, 16)
+            let mut cands = [(0i32, 0i32); 8];
+            for (c, &(sx, sy)) in cands.iter_mut().zip(pat) {
+                *c = (centre.0 + sx * step, centre.1 + sy * step);
+            }
+            let cands = &cands[..pat.len()];
+            let mut sads = [0u32; 8];
+            match (&win, self.c.hpel) {
+                (Some(w), _) => {
+                    for (c, r) in cands.iter().zip(sads.iter_mut()) {
+                        w.pred(c.0, c.1, &mut p);
+                        *r = crate::simd::sad16(src_y, 16, &p, 16);
                     }
-                    (None, Some(hp)) => hp.sad(&self.c.refp.y, gx, gy, fx, fy, src_y),
-                    _ => unreachable!(),
-                };
+                }
+                (None, Some(hp)) => hp.sad_cands(&self.c.refp.y, bx, by, cands, src_y, &mut sads),
+                _ => unreachable!(),
+            }
+            for (&cand, &sad) in cands.iter().zip(&sads) {
                 let q = (base_q.0 + cand.0, base_q.1 + cand.1);
                 let cst = sad + mvcost(q);
                 if cst < best {
@@ -847,9 +850,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let (r, rs) = self.luma_ref_int(mbx, mby, (mv.0 >> 2, mv.1 >> 2));
         debug_assert!(mv.0 & 3 == 0 && mv.1 & 3 == 0);
         let base = self.yi(mbx * 16, mby * 16);
-        for y in 0..16 {
-            self.b.y[base + y * self.ys..base + y * self.ys + 16].copy_from_slice(&r[y * rs..y * rs + 16]);
-        }
+        crate::simd::copy_block::<16>(self.b.y, base, self.ys, r, 0, rs, 16);
         let mut p = [0u8; 64];
         for comp in 0..2 {
             self.mc_chroma(comp, mbx, mby, mv, &mut p);
@@ -889,7 +890,7 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
                 && crate::simd::max_sad4(&src_c[0], &predc[0], 8, 8) <= self.p.zero_sad4.1
                 && crate::simd::max_sad4(&src_c[1], &predc[1], 8, 8) <= self.p.zero_sad4.1)
         {
-            chroma_resid(src_c, &predc, &self.p.qc, &self.p.qcs, false, &mut cd, &mut reconc);
+            chroma_resid(src_c, &predc, &self.p.qc, &self.p.qcs, false, self.dc_max(), &mut cd, &mut reconc);
             &reconc
         } else {
             &predc
@@ -924,15 +925,11 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
 
     fn store_recon(&mut self, mbx: usize, mby: usize, y16: &[u8; 256], c8: &[[u8; 64]; 2]) {
         let base = self.yi(mbx * 16, mby * 16);
-        for y in 0..16 {
-            self.b.y[base + y * self.ys..base + y * self.ys + 16].copy_from_slice(&y16[y * 16..y * 16 + 16]);
-        }
+        crate::simd::copy_block::<16>(self.b.y, base, self.ys, y16, 0, 16, 16);
         let base = self.ci(mbx * 8, mby * 8);
         let cs = self.cs;
-        for y in 0..8 {
-            self.b.u[base + y * cs..base + y * cs + 8].copy_from_slice(&c8[0][y * 8..y * 8 + 8]);
-            self.b.v[base + y * cs..base + y * cs + 8].copy_from_slice(&c8[1][y * 8..y * 8 + 8]);
-        }
+        crate::simd::copy_block::<8>(self.b.u, base, cs, &c8[0], 0, 8, 8);
+        crate::simd::copy_block::<8>(self.b.v, base, cs, &c8[1], 0, 8, 8);
     }
 
     fn edges4(&self, mbx: usize, mby: usize, bx: usize, by: usize) -> Edges4 {
@@ -1075,12 +1072,10 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             let sad = crate::simd::sad16(src, 16, pred, 16);
             let (b4, dcl) = (self.p.zero_sad4_intra.0, self.p.zero_dc_intra.0);
             if sad > self.p.zero_sad_intra.0 && !(sad < 2 * dcl && crate::simd::max_sad4(src, pred, 16, 16) <= b4) {
-                luma_i16(src, pred, &q, &self.p.qs, cd, &mut recon);
+                luma_i16(src, pred, &q, &self.p.qs, self.dc_max(), cd, &mut recon);
             }
             let base = self.yi(mbx * 16, mby * 16);
-            for y in 0..16 {
-                self.b.y[base + y * self.ys..base + y * self.ys + 16].copy_from_slice(&recon[y * 16..y * 16 + 16]);
-            }
+            crate::simd::copy_block::<16>(self.b.y, base, self.ys, &recon, 0, 16, 16);
         }
         // chroma mode decision
         let ec = [self.edges8(0, mbx, mby), self.edges8(1, mbx, mby)];
@@ -1125,16 +1120,14 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
             && crate::simd::max_sad4(&src_c[0], &predc[0], 8, 8) <= b4
             && crate::simd::max_sad4(&src_c[1], &predc[1], 8, 8) <= b4;
         if (s0 > zc || s1 > zc) && !zero_c {
-            chroma_resid(src_c, &predc, &self.p.qc, &self.p.qcs, true, cd, &mut reconc);
+            chroma_resid(src_c, &predc, &self.p.qc, &self.p.qcs, true, self.dc_max(), cd, &mut reconc);
         } else {
             reconc = predc;
         }
         let base = self.ci(mbx * 8, mby * 8);
         let cs = self.cs;
-        for y in 0..8 {
-            self.b.u[base + y * cs..base + y * cs + 8].copy_from_slice(&reconc[0][y * 8..y * 8 + 8]);
-            self.b.v[base + y * cs..base + y * cs + 8].copy_from_slice(&reconc[1][y * 8..y * 8 + 8]);
-        }
+        crate::simd::copy_block::<8>(self.b.u, base, cs, &reconc[0], 0, 8, 8);
+        crate::simd::copy_block::<8>(self.b.v, base, cs, &reconc[1], 0, 8, 8);
 
         // ---- syntax ----
         let modes4 = modes.unwrap_or([2; 16]);
@@ -1197,6 +1190,13 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         } else {
             self.skip_run += 1;
         }
+    }
+
+    /// Largest DC level: CAVLC escapes reach ±2047 in Main/Baseline; CABAC codes
+    /// the full ±2^15 range (which QP 0–3 needs for flat-area DCs).
+    #[inline]
+    fn dc_max(&self) -> i32 {
+        if self.c.cabac { 32767 } else { 2047 }
     }
 
     /// mb_qp_delta (CAVLC); the macroblock now has QP `mb_qp`.
@@ -1564,12 +1564,20 @@ fn cabac_residual(
             if cd.cbp & 15 == 0 {
                 break;
             }
+            if cd.nz[by * 4 + bx] == 0 {
+                cb.residual_empty(w, Cat::LumaAc, luma_inc(bx, by));
+                continue;
+            }
             for j in 0..15 {
                 scan[j] = blk[ZIGZAG[j + 1]] as i32;
             }
             cb.residual(w, &scan[..15], Cat::LumaAc, luma_inc(bx, by));
         } else {
             if cd.cbp & (1 << (k / 4)) == 0 {
+                continue;
+            }
+            if cd.nz[by * 4 + bx] == 0 {
+                cb.residual_empty(w, Cat::Luma4x4, luma_inc(bx, by));
                 continue;
             }
             for j in 0..16 {
@@ -1593,6 +1601,10 @@ fn cabac_residual(
                 let ia =
                     if bx > 0 { (cd.nzc[comp][by * 2] > 0) as usize } else { ext(a, intra, |m| m.nzc[comp][by * 2 + 1] > 0) };
                 let ib = if by > 0 { (cd.nzc[comp][bx] > 0) as usize } else { ext(b, intra, |m| m.nzc[comp][2 + bx] > 0) };
+                if cd.nzc[comp][blk] == 0 {
+                    cb.residual_empty(w, Cat::ChromaAc, ia + 2 * ib);
+                    continue;
+                }
                 let src = &cd.cac[comp][blk];
                 for j in 0..15 {
                     scan[j] = src[ZIGZAG[j + 1]] as i32;
@@ -1653,8 +1665,8 @@ macro_rules! multiversion {
 }
 
 multiversion!(luma_inter => luma_inter_impl(src: &[u8; 256], pred: &[u8; 256], qs: &QuantS, cd: &mut Coded, recon: &mut [u8; 256]));
-multiversion!(luma_i16 => luma_i16_impl(src: &[u8; 256], pred: &[u8; 256], q: &Quant, qs: &QuantS, cd: &mut Coded, recon: &mut [u8; 256]));
-multiversion!(chroma_resid => chroma_resid_impl(src: &[[u8; 64]; 2], pred: &[[u8; 64]; 2], qc: &Quant, qcs: &QuantS, intra: bool, cd: &mut Coded, recon: &mut [[u8; 64]; 2]));
+multiversion!(luma_i16 => luma_i16_impl(src: &[u8; 256], pred: &[u8; 256], q: &Quant, qs: &QuantS, dc_max: i32, cd: &mut Coded, recon: &mut [u8; 256]));
+multiversion!(chroma_resid => chroma_resid_impl(src: &[[u8; 64]; 2], pred: &[[u8; 64]; 2], qc: &Quant, qcs: &QuantS, intra: bool, dc_max: i32, cd: &mut Coded, recon: &mut [[u8; 64]; 2]));
 
 #[inline(always)]
 fn luma_inter_impl(src: &[u8; 256], pred: &[u8; 256], qs: &QuantS, cd: &mut Coded, recon: &mut [u8; 256]) {
@@ -1697,7 +1709,7 @@ fn luma_inter_impl(src: &[u8; 256], pred: &[u8; 256], qs: &QuantS, cd: &mut Code
 }
 
 #[inline(always)]
-fn luma_i16_impl(src: &[u8; 256], pred: &[u8; 256], q: &Quant, qs: &QuantS, cd: &mut Coded, recon: &mut [u8; 256]) {
+fn luma_i16_impl(src: &[u8; 256], pred: &[u8; 256], q: &Quant, qs: &QuantS, dc_max: i32, cd: &mut Coded, recon: &mut [u8; 256]) {
     let (mut c, ps) = soa::gather16(src, pred);
     soa::fdct(&mut c);
     let mut dc = [0i32; 16];
@@ -1716,8 +1728,7 @@ fn luma_i16_impl(src: &[u8; 256], pred: &[u8; 256], q: &Quant, qs: &QuantS, cd: 
             }
         }
     }
-    let mut dcl = luma_dc_forward(&dc, q);
-    clamp_levels(&mut dcl);
+    let dcl = luma_dc_forward(&dc, q).map(|v| v.clamp(-dc_max, dc_max));
     cd.dc = dcl;
     if any_ac {
         cd.cbp |= 15;
@@ -1737,6 +1748,7 @@ fn chroma_resid_impl(
     qc: &Quant,
     qcs: &QuantS,
     intra: bool,
+    dc_max: i32,
     cd: &mut Coded,
     recon: &mut [[u8; 64]; 2],
 ) {
@@ -1763,7 +1775,7 @@ fn chroma_resid_impl(
     }
     let mut any_dc = false;
     for comp in 0..2 {
-        let l = chroma_dc_forward(&dc[comp], qc, intra).map(|v| v.clamp(-2047, 2047));
+        let l = chroma_dc_forward(&dc[comp], qc, intra).map(|v| v.clamp(-dc_max, dc_max));
         cd.cdc[comp] = l;
         any_dc |= l.iter().any(|&v| v != 0);
     }
@@ -1875,14 +1887,10 @@ pub(crate) fn encode_slice(c: &FrameCtx, band: Band, w: &mut BitWriter) -> Frame
                 continue;
             }
             let o = sy.off(mbx as isize * 16, mby as isize * 16);
-            for y in 0..16 {
-                src_y[y * 16..y * 16 + 16].copy_from_slice(&sy.data[o + y * sy.stride..o + y * sy.stride + 16]);
-            }
+            crate::simd::copy_block::<16>(&mut src_y, 0, 16, &sy.data, o, sy.stride, 16);
             let o = su.off(mbx as isize * 8, mby as isize * 8);
-            for y in 0..8 {
-                src_c[0][y * 8..y * 8 + 8].copy_from_slice(&su.data[o + y * su.stride..o + y * su.stride + 8]);
-                src_c[1][y * 8..y * 8 + 8].copy_from_slice(&sv.data[o + y * sv.stride..o + y * sv.stride + 8]);
-            }
+            crate::simd::copy_block::<8>(&mut src_c[0], 0, 8, &su.data, o, su.stride, 8);
+            crate::simd::copy_block::<8>(&mut src_c[1], 0, 8, &sv.data, o, sv.stride, 8);
             let b0 = s.w.bits_written();
             let (i0, n0) = (s.stats.intra16 + s.stats.intra4, s.stats.inter);
             s.encode_mb(mbx, mby, &src_y, &src_c);
@@ -2226,7 +2234,9 @@ impl Encoder {
                         continue;
                     }
                     let x0 = x;
-                    while x < mbw && mask(x) {
+                    // a one-macroblock gap costs less to filter through than a
+                    // second run (rounding and dilation at both ends)
+                    while x < mbw && (mask(x) || (x + 1 < mbw && mask(x + 1))) {
                         x += 1;
                     }
                     f(if x0 == 0 { 0 } else { p + x0 * 16 }, if x == mbw { s } else { p + x * 16 });

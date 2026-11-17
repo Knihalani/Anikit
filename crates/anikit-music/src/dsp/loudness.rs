@@ -339,6 +339,29 @@ pub fn integrated_lufs(l: &[f32], r: &[f32], rate: f32) -> f64 {
 }
 
 /// True peak (dBTP) of a stereo buffer.
+/// Integrated loudness and true peak, computed in parallel (the fast path for
+/// iterative mastering; LRA and momentary/short-term maxima are left at −∞).
+pub fn fast_measure(l: &[f32], r: &[f32], rate: f32) -> Loudness {
+    let one = |x: &[f32]| {
+        let mut t = TruePeak::default();
+        let mut sp = 0.0f32;
+        for &v in x {
+            t.push(v);
+            sp = sp.max(v.abs());
+        }
+        (t.peak.max(sp), sp)
+    };
+    let (i, ((pa, sa), (pb, sb))) = rayon::join(|| integrated_lufs(l, r, rate), || rayon::join(|| one(l), || one(r)));
+    Loudness {
+        integrated: i,
+        lra: 0.0,
+        max_momentary: f64::NEG_INFINITY,
+        max_short_term: f64::NEG_INFINITY,
+        true_peak: to_db(pa.max(pb)),
+        sample_peak: to_db(sa.max(sb)),
+    }
+}
+
 pub fn true_peak_db(l: &[f32], r: &[f32]) -> f64 {
     let mut a = TruePeak::default();
     let mut b = TruePeak::default();

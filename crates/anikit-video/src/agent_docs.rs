@@ -35,7 +35,6 @@ pub const RECIPES: &[(&str, &str)] = &[
     ("particle-ignite", include_str!("../recipes/particle-ignite.json")),
     ("domino-cascade", include_str!("../recipes/domino-cascade.json")),
     ("raymarch-world", include_str!("../recipes/raymarch-world.json")),
-    ("rack-focus-parallax", include_str!("../recipes/rack-focus-parallax.json")),
 ];
 
 const ALIASES: &[(&str, &str)] = &[

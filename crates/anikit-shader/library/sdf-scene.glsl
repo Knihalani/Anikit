@@ -4,9 +4,9 @@
 // Raymarched SDF with soft shadows, ambient occlusion, a mirror pool with
 // Fresnel, aerial perspective and a filmic tone curve.
 // Uniforms: speed (dolly), sun (0 noon-ish … 1 sunset), haze.
-uniform float speed; // = 1.0
-uniform float sun;   // = 0.75
-uniform float haze;  // = 1.0
+uniform float speed; // = 1.0  dolly speed
+uniform float sun;   // = 0.75  0 high afternoon … 1 low sunset
+uniform float haze;  // = 1.0  aerial haze amount
 
 const float PERIOD = 3.2;    // spacing of the frames along z
 const float POOL = 1.35;     // half-width of the pool

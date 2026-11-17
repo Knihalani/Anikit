@@ -3,9 +3,9 @@
 // (1 = trace the lake here; 0 = sky only, then add the `lake-mirror` filter
 // on top, which reflects the rendered frame: about a third faster, and it
 // reflects any layer in between too).
-uniform float speed;     // = 1.0
-uniform float intensity; // = 1.0
-uniform float lake;      // = 1.0
+uniform float speed;     // = 1.0  time scale
+uniform float intensity; // = 1.0  curtain brightness
+uniform float lake;      // = 1.0  1 traces the lake reflection, 0 leaves it to the lake-mirror filter
 
 uint hashu(uint x) { x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16; return x; }
 float hash2(vec2 p) { return float(hashu(uint(int(p.x)) * 1973u + hashu(uint(int(p.y)) + 9277u))) / 4294967295.0; }

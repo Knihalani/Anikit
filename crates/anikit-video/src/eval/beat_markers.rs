@@ -130,7 +130,7 @@ impl BeatMarkers {
     /// Beat grid and loudness envelope for expressions (computed once). Generated
     /// `music` gives the exact grid (its envelope is rendered only when asked for);
     /// otherwise the first music `audio` track is analysed.
-    pub fn music(&mut self, level: bool) -> Result<std::sync::Arc<Music>, String> {
+    pub fn groove(&mut self, level: bool) -> Result<std::sync::Arc<Music>, String> {
         if let Some(m) = &self.music {
             let (g, at) = m.clone()?;
             let horizon = 1200.0 * g.bpm / 60.0; // 20 minutes of beats
@@ -158,6 +158,11 @@ impl BeatMarkers {
         let rms = if level { envelope(&pcm.mono(), pcm.rate, (trim * pcm.rate as f64) as usize) } else { Vec::new() };
         let shift = |v: &Vec<f64>| v.iter().map(|t| t - trim + at).collect::<Vec<f64>>();
         Ok(std::sync::Arc::new(Music { beats: shift(&b.beats), bars: shift(&b.downbeats), bpm: b.bpm, level: rms, start: at }))
+    }
+
+    /// The music: (file, timeline `at`, `trimStart`).
+    pub(crate) fn music(&self) -> Option<&(PathBuf, f64, f64)> {
+        self.src.as_ref()
     }
 
     /// `None` when `name` is not a beat marker; otherwise its global time or an error.

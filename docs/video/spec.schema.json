@@ -92,6 +92,14 @@
         "$ref": "#/$defs/AudioCue"
       }
     },
+    "music": {
+      "description": "Generated, mastered music (`anikit-video docs music`): `{\"style\":\"lofi\",\"bpm\":84,\"key\":\"Dm\",\"hits\":[\"@bar5\"]}`.\nFills the video's length; `@beatN`/`@barN` markers follow its exact grid.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": true
+    },
     "captions": {
       "description": "Burned-in captions.",
       "anyOf": [
@@ -1756,9 +1764,11 @@
             "kinetic-grid",
             "reactions",
             "card-stack",
+            "product-shot",
+            "now-playing",
             "lottie"
           ],
-          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, metaballs, god-rays, lens-flare, model, scene-3d, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, lottie."
+          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, metaballs, god-rays, lens-flare, model, scene-3d, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, product-shot, now-playing, lottie."
         },
         "props": true,
         "progress": {
@@ -1814,6 +1824,16 @@
             "boolean",
             "null"
           ]
+        },
+        "buffers": {
+          "description": "Shader: Shadertoy-style buffer passes `\"A\"`…`\"D\"`, rendered in order before the image\npass at full float precision. A channel `\"A\"` reads buffer A: this frame's if A ran\nearlier in the order, else the previous frame's (feedback, for simulations).",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "$ref": "#/$defs/ShaderBuffer"
+          }
         }
       }
     },
@@ -2507,6 +2527,35 @@
           "format": "double"
         }
       }
+    },
+    "ShaderBuffer": {
+      "description": "One buffer pass of a shader layer (`buffers.A`).",
+      "type": "object",
+      "properties": {
+        "shader": {
+          "description": "GLSL/WGSL source or a built-in name, as for a shader layer.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "src": {
+          "description": "Load the source from a file.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "channels": {
+          "description": "`iChannel0..3`: `\"A\"`…`\"D\"` (buffers), `\"noise\"`, or `\"none\"`; options as for layer channels.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": true
+        }
+      },
+      "additionalProperties": false
     },
     "AudioCue": {
       "description": "An audio cue: a file (`src`) or a built-in sound effect (`sfx`).",

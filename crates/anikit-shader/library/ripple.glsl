@@ -1,7 +1,7 @@
 // Transition: a ring wave spreads from the centre; the new scene rides in
 // behind it. Uniforms: amplitude, waves.
-uniform float amplitude; // = 0.03
-uniform float waves;     // = 30.0
+uniform float amplitude; // = 0.03  wave height
+uniform float waves;     // = 30.0  ring frequency
 
 vec4 transition(vec2 uv) {
     vec2 c = uv - 0.5;

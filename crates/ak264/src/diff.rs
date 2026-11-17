@@ -94,8 +94,22 @@ fn blocks_equal(a: &[u8], sa: usize, b: &[u8], sb: usize, n: usize) -> bool {
 #[target_feature(enable = "avx2")]
 unsafe fn row_diff_avx2(y: &Plane, u: &Plane, v: &Plane, f: &YuvFrame, mby: usize, n: usize, changed: &mut [bool]) {
     use std::arch::x86_64::*;
-    let mut acc = [_mm256_setzero_si256(); 256]; // per pair of macroblocks
     let pairs = n / 2;
+    let quads = n / 4;
+    assert!(pairs <= 256 && quads <= 128);
+    // accumulators: only the first `pairs` / `quads` are used, so only those are
+    // zeroed (zeroing all 12 KB every row of macroblocks showed in profiles)
+    let mut acc_m = [core::mem::MaybeUninit::<__m256i>::uninit(); 256]; // per pair of macroblocks
+    let mut cacc_m = [core::mem::MaybeUninit::<__m256i>::uninit(); 128]; // per 4 macroblocks (32 chroma bytes)
+    for a in &mut acc_m[..pairs] {
+        a.write(_mm256_setzero_si256());
+    }
+    for a in &mut cacc_m[..quads] {
+        a.write(_mm256_setzero_si256());
+    }
+    // SAFETY: elements 0..pairs / 0..quads are initialised above and only those are used.
+    let acc = core::slice::from_raw_parts_mut(acc_m.as_mut_ptr() as *mut __m256i, pairs);
+    let cacc = core::slice::from_raw_parts_mut(cacc_m.as_mut_ptr() as *mut __m256i, quads);
     let ys = f.y_stride;
     for r in 0..16 {
         let s = f.y.as_ptr().add((mby * 16 + r) * ys);
@@ -106,8 +120,6 @@ unsafe fn row_diff_avx2(y: &Plane, u: &Plane, v: &Plane, f: &YuvFrame, mby: usiz
             acc[p] = _mm256_or_si256(acc[p], _mm256_xor_si256(a, b));
         }
     }
-    let mut cacc = [_mm256_setzero_si256(); 128]; // per 4 macroblocks (32 chroma bytes)
-    let quads = n / 4;
     let cs = f.c_stride;
     for (pl, src) in [(u, f.u), (v, f.v)] {
         for r in 0..8 {
