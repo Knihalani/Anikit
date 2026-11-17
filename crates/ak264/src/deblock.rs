@@ -52,6 +52,9 @@ fn bs(p: &MbInfo, bp: usize, q: &MbInfo, bq: usize, mb_edge: bool) -> u8 {
 fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: usize, ls: usize, seg: &[u8; 4], p: &Params) {
     let mut v = [[0i16; N]; 8]; // p3 p2 p1 p0 q0 q1 q2 q3
     let vertical = xs == 1;
+    // Every access is in rows/columns o − 4·xs .. o + 3·xs (+ (N − 1)·ls): one check
+    // here, unchecked accesses below.
+    assert!(o >= 4 * xs && o + 3 * xs + (N - 1) * ls < d.len());
     if !CHROMA && vertical {
         let t = crate::simd::load_t16x8(d, o - 4, ls);
         for j in 0..8 {
@@ -62,16 +65,18 @@ fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: u
     } else if !vertical {
         let lo = if CHROMA { 2 } else { 0 };
         for j in lo..8 - lo {
-            let r = &d[o + j * xs - 4 * xs..][..N];
+            let b = o + j * xs - 4 * xs;
             for l in 0..N {
-                v[j][l] = r[l] as i16;
+                // SAFETY: within the asserted range (ls == 1 here).
+                v[j][l] = unsafe { *d.get_unchecked(b + l) } as i16;
             }
         }
     } else {
         for l in 0..N {
-            let r = &d[o + l * ls - 2..][..4];
+            let b = o + l * ls - 2;
             for j in 0..4 {
-                v[2 + j][l] = r[j] as i16;
+                // SAFETY: within the asserted range.
+                v[2 + j][l] = unsafe { *d.get_unchecked(b + j) } as i16;
             }
         }
     }
@@ -81,9 +86,11 @@ fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: u
     let mut s4 = [0i16; N]; // -1 where bS == 4
     let mut tc0 = [0i16; N];
     let shift = if N == 16 { 2 } else { 1 };
+    // per-strength constants, branch-free: tC0 for bS 1..3, 0 for bS 0 and 4
+    let tct = [0, p.tc0[0] as i16, p.tc0[1] as i16, p.tc0[2] as i16, 0];
     let segc: [(i16, i16, i16); 4] = core::array::from_fn(|k| {
-        let b = seg[k];
-        (-((b > 0) as i16), -((b == 4) as i16), if b > 0 && b < 4 { p.tc0[(b - 1) as usize] as i16 } else { 0 })
+        let b = seg[k].min(4);
+        (-((b != 0) as i16), -((b == 4) as i16), tct[b as usize])
     });
     for l in 0..N {
         let c = segc[l >> shift];
@@ -153,21 +160,27 @@ fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: u
     } else if !vertical {
         let (lo, hi) = if CHROMA { (3, 5) } else { (1, 7) };
         for j in lo..hi {
-            let r = &mut d[o + j * xs - 4 * xs..][..N];
+            let b = o + j * xs - 4 * xs;
             if N == 16 {
                 let row: &[i16; 16] = out[j][..16].try_into().unwrap();
-                r.copy_from_slice(&crate::simd::pack16(row));
+                let pk = crate::simd::pack16(row);
+                // SAFETY: within the asserted range (ls == 1 here).
+                unsafe { core::ptr::copy_nonoverlapping(pk.as_ptr(), d.as_mut_ptr().add(b), 16) };
             } else {
                 for l in 0..N {
-                    r[l] = out[j][l] as u8;
+                    // SAFETY: within the asserted range.
+                    unsafe { *d.get_unchecked_mut(b + l) = out[j][l] as u8 };
                 }
             }
         }
     } else {
         for l in 0..N {
-            let r = &mut d[o + l * ls - 1..][..2];
-            r[0] = out[3][l] as u8;
-            r[1] = out[4][l] as u8;
+            let b = o + l * ls - 1;
+            // SAFETY: within the asserted range.
+            unsafe {
+                *d.get_unchecked_mut(b) = out[3][l] as u8;
+                *d.get_unchecked_mut(b + 1) = out[4][l] as u8;
+            }
         }
     }
 }
