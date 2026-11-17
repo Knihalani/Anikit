@@ -97,17 +97,17 @@ pub static STYLES: &[StyleDef] = &[
         harmonic_rhythm: 1.0,
         prog_major: &["ii7 V7 Imaj7 vi7", "Imaj7 vi7 ii7 V7", "IVmaj7 iii7 ii7 Imaj7"],
         prog_minor: &["i7 iv7 VIImaj7 IIImaj7", "i9 iv7 i9 V7", "VImaj7 v7 i7 i7", "i7 VImaj7 iv7 v7"],
-        kit: "drums:lofi|drums",
+        kit: "drums:standard|drums",
         drums: [
             &[("kick", "x.........x....."), ("hat", "..x...x...x...x."), ("rim", "............x...")],
             &[("kick", "x.......x.x....."), ("snare", "....x.......x..."), ("hat", "x.o.x.o.x.o.x.oo")],
             &[("kick", "x.....x...x..x.."), ("snare", "....x.......x..o"), ("hat", "x.oxx.o.x.oxx.o."), ("shaker", "..x...x...x...x.")],
         ],
         layers: &[
-            Layer { pan: 0.0, reverb: 0.18, humanize: 0.45, ..layer("keys", "keys-lofi|epiano|rhodes", Gen::Chords("x.....x...x.....", 4, 62), 0.0, -5.0) },
+            Layer { pan: 0.0, reverb: 0.18, humanize: 0.45, ..layer("keys", "rhodes|epiano", Gen::Chords("x.....x...x.....", 4, 62), 0.0, -5.0) },
             Layer { humanize: 0.3, ..layer("bass", "bass|bass-synth", Gen::Bass("synco", 2), 0.35, -3.0) },
             Layer { pan: 0.25, reverb: 0.3, delay: 0.2, humanize: 0.5, ..layer("lead", "vibraphone|kalimba|vibes", Gen::Melody(0.6, 74, None), 0.55, -7.0) },
-            Layer { reverb: 0.4, ..layer("pad", "pad-warm|warm-pad", Gen::Chords("pad", 3, 60), 0.0, -14.0) },
+            Layer { reverb: 0.4, ..layer("pad", "slow-strings|strings", Gen::Chords("pad", 3, 60), 0.0, -14.0) },
         ],
         reverb: "room",
         impact: "boom",
@@ -212,7 +212,7 @@ pub static STYLES: &[StyleDef] = &[
         harmonic_rhythm: 1.0,
         prog_major: &["I V vi IV", "vi IV I V"],
         prog_minor: &["i VI III VII", "i VI VII i", "i iv VI V", "i VI iv VII"],
-        kit: "drums:cinematic|drums:orchestra|drums",
+        kit: "drums:orchestra|drums",
         drums: [
             &[("tom3", "x.........x.....")],
             &[("kick", "x.......x......."), ("tom3", "x..x..x...x..x.."), ("tom2", "......x.......x.")],
@@ -224,7 +224,7 @@ pub static STYLES: &[StyleDef] = &[
             Layer { reverb: 0.4, ..layer("brass", "french-horn|brass|brass-synth", Gen::Chords("pad", 3, 55), 0.8, -4.0) },
             Layer { reverb: 0.5, ..layer("choir", "choir|aahs|pad-choir", Gen::Chords("pad", 4, 64), 0.6, -9.0) },
             Layer { reverb: 0.35, humanize: 0.15, ..layer("piano", "piano", Gen::Ostinato("0..1..2.0..1..2.", 72), 0.0, -9.0) },
-            Layer { reverb: 0.2, humanize: 0.0, ..layer("sub", "bass-808|bass-sub", Gen::Downbeats(26, 2.0), 0.8, -3.0) },
+            Layer { reverb: 0.2, humanize: 0.0, ..layer("sub", "taiko|timpani", Gen::Downbeats(38, 2.0), 0.8, -3.0) },
         ],
         reverb: "hall",
         impact: "impact",
@@ -326,7 +326,7 @@ pub static STYLES: &[StyleDef] = &[
         harmonic_rhythm: 1.0,
         prog_major: &["I V vi IV", "vi IV I V", "I vi IV V", "IV I V vi"],
         prog_minor: &["i VI III VII", "vi IV I V"],
-        kit: "drums:909|drums",
+        kit: "drums:room|drums",
         drums: [
             &[("kick", "x.......x......."), ("snap", "....x.......x...")],
             &[("kick", "x.....x.x......."), ("clap", "....x.......x..."), ("hat", "x.x.x.x.x.x.x.x.")],
@@ -334,9 +334,9 @@ pub static STYLES: &[StyleDef] = &[
         ],
         layers: &[
             Layer { reverb: 0.25, humanize: 0.2, ..layer("piano", "piano|bright-piano", Gen::Chords("x..x..x.x..x..x.", 4, 62), 0.0, -3.0) },
-            Layer { duck: 3.0, ..layer("bass", "bass-synth|synth-bass|bass", Gen::Bass("pulse", 2), 0.4, -2.0) },
-            Layer { duck: 5.0, reverb: 0.4, ..layer("pad", "pad-warm|strings", Gen::Chords("pad", 4, 64), 0.5, -10.0) },
-            Layer { reverb: 0.25, delay: 0.25, pan: 0.2, ..layer("pluck", "pluck|arp-pluck", Gen::Melody(1.3, 76, Some("x.x..x.x..x.x...")), 0.8, -6.0) },
+            Layer { duck: 3.0, ..layer("bass", "finger-bass|bass", Gen::Bass("pulse", 2), 0.4, -2.0) },
+            Layer { duck: 5.0, reverb: 0.4, ..layer("pad", "strings", Gen::Chords("pad", 4, 64), 0.5, -10.0) },
+            Layer { reverb: 0.25, delay: 0.25, pan: 0.2, ..layer("pluck", "clean-guitar|nylon-guitar", Gen::Melody(1.3, 76, Some("x.x..x.x..x.x...")), 0.8, -6.0) },
         ],
         reverb: "plate",
         impact: "impact",
@@ -513,6 +513,60 @@ pub static STYLES: &[StyleDef] = &[
     },
 ];
 
+/// An instrumentation: which instrument plays each kind of part, whatever the style.
+#[derive(Debug, Clone, Copy)]
+pub struct Instrumentation {
+    pub name: &'static str,
+    /// Drum kit ("" = no drums).
+    pub kit: &'static str,
+    pub bass: &'static str,
+    pub chords: &'static str,
+    /// Pads and sustained beds ("" = dropped).
+    pub pad: &'static str,
+    pub lead: &'static str,
+    /// Arpeggios, ostinatos, bells.
+    pub arp: &'static str,
+}
+
+pub const INSTRUMENTATIONS: &[Instrumentation] = &[
+    Instrumentation { name: "acoustic", kit: "drums:brush|drums", bass: "upright-bass|bass", chords: "acoustic-guitar|steel-guitar", pad: "strings", lead: "nylon-guitar", arp: "nylon-guitar" },
+    Instrumentation { name: "orchestral", kit: "drums:orchestra|drums", bass: "contrabass|cello", chords: "pizzicato|strings", pad: "strings", lead: "violin|flute", arp: "harp" },
+    Instrumentation { name: "band", kit: "drums:room|drums", bass: "pick-bass|bass", chords: "piano", pad: "tonewheel-organ|strings", lead: "clean-guitar", arp: "clean-guitar" },
+    Instrumentation { name: "piano", kit: "", bass: "salamander-piano|piano", chords: "salamander-piano|piano", pad: "", lead: "salamander-piano|piano", arp: "salamander-piano|piano" },
+    Instrumentation { name: "electronic", kit: "drums:909", bass: "bass-synth", chords: "stab-house", pad: "pad-warm", lead: "lead-saw", arp: "arp-pluck" },
+];
+
+impl Instrumentation {
+    pub fn find(name: &str) -> Result<&'static Instrumentation, String> {
+        let n = name.trim().to_ascii_lowercase();
+        let n = match n.as_str() {
+            "real" | "live" | "unplugged" | "folk" => "acoustic",
+            "classical" | "strings" | "symphonic" => "orchestral",
+            "rock" | "live-band" => "band",
+            "solo-piano" => "piano",
+            "synth" | "synths" | "edm" => "electronic",
+            o => o,
+        };
+        INSTRUMENTATIONS.iter().find(|i| i.name == n).ok_or_else(|| {
+            let names: Vec<&str> = INSTRUMENTATIONS.iter().map(|i| i.name).chain(["hybrid"]).collect();
+            let hint = closest(n, &names).map(|b| format!(" — did you mean '{b}'?")).unwrap_or_default();
+            format!("music: instrumentation '{name}'{hint} (acoustic orchestral band piano electronic hybrid)")
+        })
+    }
+
+    /// The instrument for a style layer's role; `None` drops the part.
+    pub fn part(&self, role: &str) -> Option<&'static str> {
+        let x = match role {
+            "bass" | "808" | "sub" | "low" | "basses" => self.bass,
+            "keys" | "stabs" | "piano" | "comp" | "guitar" | "guitar2" | "clean" | "strum" | "picking" | "left" => self.chords,
+            "pad" | "glass" | "strings" | "choir" | "horns" | "brass" => self.pad,
+            "arp" | "ostinato" | "bells" | "glock" | "timpani" => self.arp,
+            _ => self.lead,
+        };
+        (!x.is_empty()).then_some(x)
+    }
+}
+
 /// Aliases → style names.
 const ALIASES: &[(&str, &str)] = &[
     ("cinematic", "cinematic-hybrid"),
@@ -609,6 +663,10 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
         None => None,
     };
     let (mood_minor, e_off, density, tempo_f) = mood(spec.mood.as_deref());
+    let instrumentation = match spec.instrumentation.as_deref() {
+        None | Some("hybrid") | Some("default") => None,
+        Some(name) => Some(Instrumentation::find(name)?),
+    };
     let minor = mood_minor.or(style.map(|s| s.minor)).unwrap_or(false);
     let key = match &spec.key {
         Some(k) => Key::parse(k).map_err(|e| format!("music: {e}"))?,
@@ -693,7 +751,11 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
         let muted = |r: &str| spec.mute.iter().any(|m| m.eq_ignore_ascii_case(r));
         // Drums first (the 808 bass follows the kicks).
         let mut drum_notes: Vec<Note> = Vec::new();
-        if !st.kit.is_empty() && !muted("drums") {
+        let has_kit = match &instrumentation {
+            Some(i) => !i.kit.is_empty(),
+            None => !st.kit.is_empty(),
+        };
+        if has_kit && !muted("drums") {
             for (si, s) in sections.iter().enumerate() {
                 let tier = if s.energy < 0.45 { 0 } else if s.energy < 0.8 { 1 } else { 2 };
                 let pat = st.drums[tier];
@@ -735,13 +797,18 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
             }
             kicks = drum_notes.iter().filter(|n| n.key == 36.0 || n.key == 35.0).map(|n| n.t).collect();
             kicks.sort_by(f64::total_cmp);
-            let inst = spec.instruments.get("drums").map(String::as_str).unwrap_or(st.kit).to_string();
+            let inst_override = spec.instruments.get("drums");
+            let inst = match (inst_override, &instrumentation) {
+                (Some(o), _) => o.clone(),
+                (None, Some(i)) => i.kit.to_string(),
+                (None, None) => st.kit.to_string(),
+            };
             tracks.push(TrackPlan {
                 name: "drums".into(),
                 role: "drums".into(),
                 inst,
                 notes: drum_notes,
-                mix: TrackMix { reverb: 0.1, ..Default::default() },
+                mix: TrackMix { reverb: 0.1, lp: if st.name == "lofi" && inst_override.is_none() { 6500.0 } else { 0.0 }, ..Default::default() },
                 humanize: 0.12,
                 straight: false,
                 fx: None,
@@ -803,7 +870,14 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
             if ns.is_empty() {
                 continue;
             }
-            let inst = spec.instruments.get(l.role).cloned().unwrap_or_else(|| l.inst.to_string());
+            let inst = match (spec.instruments.get(l.role), &instrumentation) {
+                (Some(o), _) => o.clone(),
+                (None, Some(i)) => match i.part(l.role) {
+                    Some(x) => x.to_string(),
+                    None => continue, // this instrumentation drops the part (e.g. pads under solo piano)
+                },
+                (None, None) => l.inst.to_string(),
+            };
             tracks.push(TrackPlan {
                 name: l.role.into(),
                 role: l.role.into(),
@@ -1122,5 +1196,46 @@ mod tests {
             let s = auto_sections(st, b, &[]);
             assert_eq!(s.iter().map(|x| x.bars).sum::<f64>(), b, "{b}: {s:?}");
         }
+    }
+}
+
+#[cfg(test)]
+mod instrumentation_tests {
+    use super::*;
+    use crate::instruments::source;
+
+    fn insts(json: &str) -> Vec<(String, String)> {
+        let a = compose(&MusicSpec::from_json(json).unwrap(), None).unwrap();
+        a.tracks.iter().map(|t| (t.role.clone(), t.inst.clone())).collect()
+    }
+
+    #[test]
+    fn non_electronic_styles_use_real_instruments() {
+        for s in ["lofi", "cinematic-hybrid", "pop", "orchestral", "rock", "corporate", "acoustic", "jazz", "piano"] {
+            for (role, inst) in insts(&format!(r#"{{"style":"{s}","length":"30s"}}"#)) {
+                let k = source(&inst);
+                assert!(!k.starts_with("synth"), "{s}: {role} uses {inst} ({k})");
+            }
+        }
+    }
+
+    #[test]
+    fn instrumentation_swaps_every_part() {
+        for (inst, synth_ok) in [("acoustic", false), ("orchestral", false), ("band", false), ("piano", false), ("electronic", true)] {
+            let t = insts(&format!(r#"{{"style":"house","instrumentation":"{inst}","length":"30s"}}"#));
+            assert!(!t.is_empty());
+            for (role, i) in &t {
+                let k = source(i);
+                assert!(synth_ok || !k.starts_with("synth"), "{inst}: {role} uses {i} ({k})");
+            }
+            if inst == "piano" {
+                assert!(t.iter().all(|(r, _)| r != "drums" && r != "pad"), "{t:?}");
+            }
+        }
+        // Per-role overrides still win.
+        let t = insts(r#"{"style":"house","instrumentation":"band","instruments":{"lead":"violin"},"length":"30s"}"#);
+        assert!(t.iter().any(|(r, i)| r == "lead" && i == "violin"));
+        let e = compose(&MusicSpec::from_json(r#"{"style":"house","instrumentation":"acustic"}"#).unwrap(), None).unwrap_err();
+        assert!(e.contains("did you mean 'acoustic'"), "{e}");
     }
 }
