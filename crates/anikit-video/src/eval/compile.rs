@@ -90,6 +90,8 @@ struct C<'a> {
     uniform_slots: Vec<(String, usize, usize)>,
     /// Compiled sub-compositions by name, with their own `loop` default.
     comps: Vec<(String, Arc<Evaluator>, bool)>,
+    /// The spec's theme as written (nested compositions inherit it).
+    spec_theme: Option<spec::Theme>,
 }
 
 fn size_preset(s: &str) -> Option<[u32; 2]> {
@@ -147,6 +149,7 @@ impl Evaluator {
             beat_marks: super::beat_markers::BeatMarkers::new(spec, &opts.base_dir),
             assets: opts.assets.clone().unwrap_or_else(|| Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new()))))),
             comps,
+            spec_theme: spec.theme.clone(),
             uniform_slots: Vec::new(),
         };
         c.assets.shaders.bind(&c.assets);
@@ -185,7 +188,7 @@ impl Evaluator {
             }
         }
         if let Some(defs) = &spec.compositions {
-            c.compositions(spec, defs);
+            c.compositions(defs);
         }
         let gpost = spec.post.as_ref().and_then(|p| c.post(p, "post"));
         let shutter = match &spec.motion_blur {
@@ -1972,7 +1975,7 @@ impl C<'_> {
     }
 
     /// Compile `compositions` in dependency order, each as a nested evaluator sharing this one's assets.
-    fn compositions(&mut self, spec: &Spec, defs: &BTreeMap<String, spec::Composition>) {
+    fn compositions(&mut self, defs: &BTreeMap<String, spec::Composition>) {
         // Names each composition references through `"composition": "…"` layers.
         fn refs(v: &serde_json::Value, out: &mut Vec<String>) {
             match v {
@@ -1999,19 +2002,21 @@ impl C<'_> {
             let ready = defs.keys().find(|k| !done.contains(&k.as_str()) && deps[k.as_str()].iter().all(|d| done.contains(&d.as_str()) || !defs.contains_key(d)));
             let Some(name) = ready else { break };
             done.push(name);
-            self.composition(spec, name, &defs[name]);
+            self.composition(name, &defs[name]);
         }
         for k in defs.keys().filter(|k| !done.contains(&k.as_str())) {
             self.d.push(Diagnostic::error(format!("compositions.{k}"), "compositions refer to each other in a cycle"));
         }
     }
 
-    fn composition(&mut self, spec: &Spec, name: &str, cdef: &spec::Composition) {
+    /// Compile one composition (also usable for anonymous inline ones: pass a unique
+    /// `name`, e.g. the layer path). Returns its evaluator; it is also registered by name.
+    pub(crate) fn composition(&mut self, name: &str, cdef: &spec::Composition) -> Option<Arc<Evaluator>> {
         let path = format!("compositions.{name}");
         let (scenes, from) = match (&cdef.layers, &cdef.scenes) {
             (Some(_), Some(_)) => {
                 self.d.push(Diagnostic::error(&path, "a composition has 'layers' or 'scenes', not both"));
-                return;
+                return None;
             }
             (_, Some(s)) => (s.clone(), "scenes"),
             (l, None) => (
@@ -2027,7 +2032,7 @@ impl C<'_> {
             size: cdef.size.clone().or(Some(spec::Size::Wh([self.w as u32, self.h as u32]))),
             fps: Some(self.fps as f64),
             background: Some(cdef.background.clone().unwrap_or(spec::Paint::Css("#00000000".into()))),
-            theme: spec.theme.clone(),
+            theme: self.spec_theme.clone(),
             scenes,
             transition: cdef.transition.clone(),
             duration: if from == "scenes" { cdef.duration.clone() } else { None },
@@ -2046,8 +2051,10 @@ impl C<'_> {
         if let Some(ev) = ev {
             let ev = Arc::new(ev);
             self.assets.register_composition(name, &ev, cdef.loop_.unwrap_or(false));
-            self.comps.push((name.to_string(), ev, cdef.loop_.unwrap_or(false)));
+            self.comps.push((name.to_string(), ev.clone(), cdef.loop_.unwrap_or(false)));
+            return Some(ev);
         }
+        None
     }
 
     fn comp_layer(&mut self, l: &Layer, path: &str) -> Option<(Kind, [f32; 2])> {
