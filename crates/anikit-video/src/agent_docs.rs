@@ -102,7 +102,8 @@ pub fn recipes(name: Option<&str>) -> Result<String, String> {
         for (n, src) in RECIPES {
             let v: Value = serde_json::from_str(src).unwrap();
             let about = v["about"].as_str().unwrap_or("");
-            s += &format!("  {n:20} {}\n", about.split(". ").next().unwrap_or(about).trim_end_matches('.'));
+            let cost = v["cost"].as_str().and_then(|c| c.split_whitespace().nth(3)).map(|c| format!(" [~{c} s]")).unwrap_or_default();
+            s += &format!("  {n:20} {}{cost}\n", about.split(". ").next().unwrap_or(about).trim_end_matches('.'));
         }
         s += "Shaders (one line in a spec: {\"shader\": \"<name>\", \"uniforms\": {...}}; filters add \"filter\": true; transitions: \"transition\": \"<name>\"):\n";
         for e in lib {

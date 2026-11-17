@@ -1,10 +1,11 @@
 {
- "about": "Physics: 1,200 glass dominoes in a fan topple, with a speed ramp into slow motion halfway. Change the count, path and timeScale expression.",
+ "about": "Physics: 240 ceramic dominoes in a fan topple, with a speed ramp into slow motion halfway. Change the count, path and timeScale expression.",
+ "cost": "renders in about 44 s at 1080p on 4 cores",
  "spec": {
   "size": "16:9",
   "scenes": [
    {
-    "duration": 4,
+    "duration": 3.5,
     "layers": [
      {
       "component": "scene3d",
@@ -27,7 +28,7 @@
           "focal": 32
          },
          {
-          "t": 4,
+          "t": 3.5,
           "pos": [
            1.5,
            1.6,
@@ -47,7 +48,7 @@
         "bodies": [
          {
           "type": "pane",
-          "count": 300,
+          "count": 240,
           "layout": "dominoes",
           "path": "fan",
           "angle": 100,
@@ -56,7 +57,7 @@
            0.9,
            0.03
           ],
-          "material": "glass"
+          "material": "ceramic"
          }
         ]
        },
