@@ -277,6 +277,16 @@ pub fn draw_screen(o: &mut Vec<Op>, ctx: &Ctx, c: &Content, look: &Look, host: H
     if mobile {
         let y0 = y + top;
         let (cx, cy, cw, ch) = (x, y0, w, h - top);
+        // Screens with a tab bar draw their content clipped above it, then the bar.
+        let tabs: Option<(&[(&str, &str)], usize)> = match c.kind {
+            "feed" | "list" => Some((&[("home", "Home"), ("search", "Search"), ("bell", "Activity"), ("inbox", "Inbox")], 0)),
+            "app" => Some((&[("home", "Home"), ("search", "Search"), ("inbox", "Inbox"), ("user", "Account")], 0)),
+            "chat" | "editor" | "settings" => None,
+            _ => Some((&[("home", "Home"), ("chart", "Analytics"), ("inbox", "Inbox"), ("settings", "Settings")], 1)),
+        };
+        if tabs.is_some() {
+            push_clip(o, x, y, w, cy + ch - TAB_H * u - y, 0.0);
+        }
         match c.kind {
             "chat" => m_chat(o, &s, cx, cy, cw, ch),
             "feed" | "list" => m_feed(o, &s, cx, cy, cw, ch),
@@ -284,6 +294,10 @@ pub fn draw_screen(o: &mut Vec<Op>, ctx: &Ctx, c: &Content, look: &Look, host: H
             "settings" => m_settings(o, &s, cx, cy, cw, ch),
             "app" => m_app(o, &s, cx, cy, cw, ch),
             _ => m_dashboard(o, &s, cx, cy, cw, ch),
+        }
+        if let Some((list, active)) = tabs {
+            o.push(Op::PopLayer);
+            m_tabbar(o, &s, cx, cy, cw, ch, list, active);
         }
     } else if c.kind == "editor" {
         d_editor(o, &s, x, y, w, h);
@@ -1028,7 +1042,7 @@ fn post(o: &mut Vec<Op>, s: &S, ps: &Post, x: f32, y: f32, w: f32, size: f32, id
     let liked_at = 1.5;
     let lt = s.lt(3.0);
     for (j, icn) in ["message", "repeat", "heart", "chart"].iter().enumerate() {
-        let ix = tx + (tw - 30.0 * u) * j as f32 / 4.0;
+        let ix = tx + (tw - 76.0 * u) * j as f32 / 4.0;
         let mut n = ps.counts[j];
         let mut c = p.muted;
         if j == 2 && idx == 0 && s.live() > 0.0 || (j == 2 && idx == 0 && s.motion == Motion::Still) {
@@ -1519,43 +1533,54 @@ fn d_app(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32) {
     let (x, w) = (x + pad, w - 2.0 * pad);
     // Featured card.
     let fy = y + 24.0 * u;
-    let fh = (h * 0.42).min(250.0 * u).max(170.0 * u);
+    // Few items: a bigger featured card instead of an empty list.
+    let rows = if s.items.is_empty() { 8.0 } else { s.items.len() as f32 };
+    let fh = (h - 24.0 * u - 80.0 * u - rows * 44.0 * u).min(h * 0.56).min(330.0 * u).max(170.0 * u);
     let mut e = Vec::new();
     s.card(&mut e, x, fy, w, fh);
     push_clip(&mut e, x, fy, w, fh, s.r);
     e.push(rect(x, fy, w, fh, 0.0, radial(x + w * 0.85, fy, w * 0.55, vec![(0.0, alpha(p.acc, if p.dark { 0.22 } else { 0.12 })), (1.0, alpha(p.acc, 0.0))])));
     e.push(Op::PopLayer);
     let ip = 28.0 * u;
-    let text_w = if w / u > 700.0 { w * 0.56 } else { w - 2.0 * ip };
-    ui::chip(&mut e, s.a(), "New", p.acc_text, x + ip, fy + ip + 10.0 * u, 12.0 * u, true);
+    let wide = w / u > 700.0;
+    let text_w = if wide { w * 0.56 } else { w - 2.0 * ip };
     let head = if s.items.is_empty() { format!("Welcome to {}", s.title) } else { s.items[0].clone() };
-    let hst = s.hst(26.0, 650, p.text);
+    let hst = s.hst(if fh > 260.0 * u { 30.0 } else { 26.0 }, 650, p.text);
     let lines = ui::wrap_lines(s.a(), &head, &hst, text_w, 2);
     let hl = hst.size * 1.18;
-    let mut ly = fy + ip + 34.0 * u + hst.size * 0.8;
+    // Left block, vertically centred: chip, headline, subline, buttons.
+    let block = 34.0 * u + hl * lines.len() as f32 + 22.0 * u + 28.0 * u + 34.0 * u;
+    let top = fy + ((fh - block) * 0.5).max(ip);
+    ui::chip(&mut e, s.a(), "New", p.acc_text, x + ip, top + 10.0 * u, 12.0 * u, true);
+    let mut ly = top + 34.0 * u + hst.size * 0.82;
     for l in &lines {
         draw(&mut e, s.a(), l, &hst, x + ip, ly, 0.0);
         ly += hl;
     }
     let sub = if s.items.is_empty() { "Set up your workspace in a few minutes.".to_string() } else { format!("Now available to everyone on {}.", s.title) };
     s.fit(&mut e, &sub, 14.0, 400, p.muted, x + ip, ly - hl + 26.0 * u, text_w);
-    let by = fy + fh - ip - 34.0 * u;
+    let by = ly - hl + 50.0 * u;
     let br = (s.r * 0.7).max(4.0 * u);
     let b1 = ui::button(&mut e, s.a(), p, if s.items.is_empty() { "Get started" } else { "Try it now" }, None, x + ip, by, 34.0 * u, true, br, false);
     ui::button(&mut e, s.a(), p, "Learn more", Some("arrow-up-right"), x + ip + b1 + 10.0 * u, by, 34.0 * u, false, br, false);
-    if w / u > 700.0 {
-        // Preview panel: the next items as a checklist.
+    if wide {
         let (px, py, pw, ph) = (x + w * 0.62, fy + ip, w * 0.38 - ip, fh - 2.0 * ip);
-        e.push(rect(px, py, pw, ph, s.r * 0.8, solid(if p.dark { p.sunken } else { p.side })));
-        border(&mut e, px, py, pw, ph, s.r * 0.8, p.line);
-        let list: Vec<String> = if s.items.len() > 1 { s.items[1..].iter().take(4).cloned().collect() } else { vec!["Invite your team".into(), "Connect your data".into(), "Create a project".into(), "Share a link".into()] };
-        let rh = (ph - 16.0 * u) / 4.0;
-        for (i, l) in list.iter().enumerate() {
-            let rc = py + 8.0 * u + rh * (i as f32 + 0.5);
-            let done_at = 0.9 + i as f32 * 0.35;
-            let done = if s.motion == Motion::Still { i < 2 } else { s.t > done_at && i < 3 };
-            ui::status(&mut e, p, if done { 4 } else { 1 }, px + 22.0 * u, rc, 8.0 * u);
-            s.fit(&mut e, l, 13.0, 500, if done { p.muted } else { p.text }, px + 40.0 * u, ui::mid(rc, 13.0 * u), pw - 56.0 * u);
+        let list: Vec<String> = if s.items.len() > 3 { s.items[1..].iter().take(4).cloned().collect() } else if s.items.is_empty() { vec!["Invite your team".into(), "Connect your data".into(), "Create a project".into(), "Share a link".into()] } else { Vec::new() };
+        if list.is_empty() {
+            // Few items: a product visual instead of a half-empty list.
+            photo(&mut e, s, px, py, pw, ph, s.r * 0.8, s.title.len() + 2);
+        } else {
+            e.push(rect(px, py, pw, ph, s.r * 0.8, solid(if p.dark { p.sunken } else { p.side })));
+            border(&mut e, px, py, pw, ph, s.r * 0.8, p.line);
+            let rh = ((ph - 16.0 * u) / 4.0).min(48.0 * u);
+            let py = py + (ph - rh * 4.0) * 0.5;
+            for (i, l) in list.iter().enumerate() {
+                let rc = py + rh * (i as f32 + 0.5);
+                let done_at = 0.9 + i as f32 * 0.35;
+                let done = if s.motion == Motion::Still { i < 2 } else { s.t > done_at && i < 3 };
+                ui::status(&mut e, p, if done { 4 } else { 1 }, px + 22.0 * u, rc, 8.0 * u);
+                s.fit(&mut e, l, 13.0, 500, if done { p.muted } else { p.text }, px + 40.0 * u, ui::mid(rc, 13.0 * u), pw - 56.0 * u);
+            }
         }
     }
     s.item(o, 2, e);
@@ -1629,11 +1654,14 @@ fn m_header(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, title: &str, right: 
     row + 62.0 * u
 }
 
-/// iOS tab bar with `active` selected; returns its top y.
-fn m_tabbar(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32, tabs: &[(&str, &str)], active: usize) -> f32 {
+/// Height of the iOS tab bar (with the home-indicator inset), in points.
+const TAB_H: f32 = 84.0;
+
+/// iOS tab bar with `active` selected.
+fn m_tabbar(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32, tabs: &[(&str, &str)], active: usize) {
     let u = s.u;
     let p = &s.p;
-    let th = 84.0 * u;
+    let th = TAB_H * u;
     let ty = y + h - th;
     let mut e = Vec::new();
     e.push(rect(x, ty, w, th, 0.0, solid(alpha(p.side, 0.96))));
@@ -1650,13 +1678,12 @@ fn m_tabbar(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32, tabs: &[(&st
         s.txt(&mut e, lab, 10.0, 500, c, cx, ty + 46.0 * u, 0.5);
     }
     s.item(o, 1, e);
-    ty
 }
 
 fn m_dashboard(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32) {
     let u = s.u;
     let p = &s.p;
-    let tb = m_tabbar(o, s, x, y, w, h, &[("home", "Home"), ("chart", "Analytics"), ("inbox", "Inbox"), ("settings", "Settings")], 1);
+    let tb = y + h - TAB_H * s.u;
     let mut yy = m_header(o, s, x, y, w, "Overview", None, true);
     let pad = 16.0 * u;
     let (x, w) = (x + pad, w - 2.0 * pad);
@@ -1825,7 +1852,7 @@ fn m_chat(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32) {
 fn m_feed(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32) {
     let u = s.u;
     let p = &s.p;
-    let tb = m_tabbar(o, s, x, y, w, h, &[("home", "Home"), ("search", "Search"), ("bell", "Activity"), ("inbox", "Inbox")], 0);
+    let tb = y + h - TAB_H * s.u;
     // Top bar: avatar, logo, sparkles.
     let mut e = Vec::new();
     let row = y + 26.0 * u;
@@ -2077,7 +2104,7 @@ fn m_settings(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32) {
 fn m_app(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32) {
     let u = s.u;
     let p = &s.p;
-    let tb = m_tabbar(o, s, x, y, w, h, &[("home", "Home"), ("search", "Search"), ("inbox", "Inbox"), ("user", "Account")], 0);
+    let tb = y + h - TAB_H * s.u;
     let mut yy = m_header(o, s, x, y, w, s.title, None, true);
     let pad = 16.0 * u;
     let (x, w) = (x + pad, w - 2.0 * pad);

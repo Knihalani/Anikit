@@ -112,7 +112,7 @@ fn reflection(o: &mut Vec<Op>, x: f32, y: f32, w: f32, h: f32, r: f32, strength:
         return;
     }
     let d = w.min(h) * 0.9;
-    o.push(rect(x, y, w, h, r, Paint::Linear { p0: [x, y], p1: [x + d, y + d], stops: vec![(0.0, Rgba([1.0, 1.0, 1.0, 0.09 * strength])), (0.45, Rgba([1.0, 1.0, 1.0, 0.03 * strength])), (1.0, Rgba([1.0, 1.0, 1.0, 0.0]))] }));
+    o.push(rect(x, y, w, h, r, Paint::Linear { p0: [x, y], p1: [x + d, y + d], stops: (0..=8).map(|i| { let f = i as f32 / 8.0; (f, Rgba([1.0, 1.0, 1.0, 0.09 * strength * (1.0 - f).powi(3)])) }).collect() }));
 }
 
 /// Shared entrance + float, applied about the device centre.
