@@ -175,7 +175,7 @@ def claude(prompt, cwd, max_turns=30):
     meta = {"seconds": round(time.time() - t0, 1), "cost_usd": d.get("total_cost_usd"),
             "tokens": sum(u.get(k, 0) for k in ("input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")),
             "models": list(d.get("modelUsage", {}).keys())}
-    return json.loads(m[-1]), meta
+    return json.loads(m[-1], strict=False), meta
 
 
 COMPARE_PROMPT = """You are on the final jury of an international motion-design award (the level of Ciclope, D&AD Pencils, Art of the Title, Vimeo Staff Picks). You have seen thousands of studio reels and you are hard to impress.

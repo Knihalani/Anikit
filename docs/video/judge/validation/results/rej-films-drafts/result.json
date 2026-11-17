@@ -1,0 +1,477 @@
+{
+  "name": "rej-films-drafts",
+  "tags": [
+    "motion-design",
+    "kinetic-type"
+  ],
+  "refs": [
+    "fitc-tokyo-2015",
+    "coinbase-system-update",
+    "catch-me-if-you-can"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 3,
+      "typography": 3,
+      "colour": 3,
+      "light_texture": 2,
+      "motion": 2,
+      "craft": 3,
+      "originality": 2
+    },
+    "overall": 2.5,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "There is no unifying concept. Pick one subject and build a world around it, as A does with the chase",
+      "Replace placeholder rectangles, blobs and UI cards with real image-making: illustration, texture, material and light",
+      "Typography needs a point of view: custom or characterful faces, expressive scale and integration with image, instead of label-over-headline slide layouts",
+      "Commit to one idea and one world; A shows how a single conceit can carry every frame",
+      "Replace default faces and slide layouts with typography that becomes the image (as A's letter stems become architecture)",
+      "Give the frames subject, material and light: real texture, characters or objects, and choreography that changes from frame to frame",
+      "Pick one subject and build a specific idea around it rather than a sampler of templates",
+      "Replace the placeholder (gradient blobs, the circle, UI cards) with designed imagery that has material, light and texture",
+      "Develop a typographic point of view, with custom or deliberately chosen faces, expressive scale and type working inside the image, and choreograph change across frames"
+    ],
+    "tells": [
+      "No single film: five unrelated layouts (weather/clock UI, fashion lookbook, data-story title, poster 'LIGHTS', sports-broadcast lower third) with no shared idea, palette or choreography",
+      "Textbook 'tasteful AI' tells: cream ground with small tracked-caps label over an editorial serif headline ('MAISON LUNE / The quiet hour.'); off-white slide with a grotesk headline and a lone blue circle",
+      "Placeholder UI: rounded cards, pills, glassy dial with a glowing dot on a sunset gradient",
+      "Default typography (Inter-like grotesk, generic italic serif, condensed italic sports sans) set like slides, with page numbers and 'Source: illustrative'",
+      "Gradient blobs and a blurred maroon rectangle standing in for imagery; stock stadium light flares; effect with no subject",
+      "Only five frames, and the composition doesn't develop. Each frame is a static template card",
+      "No single film: five unrelated slides (weather UI, fashion lookbook, data-story title, 'LIGHTS' poster, sports broadcast card), with no shared world or choreography",
+      "A textbook generic 'tasteful AI' look: cream ground, small tracked-caps label ('MAISON LUNE AUTUMN / WINTER') over an italic editorial serif, a single accent colour, mostly empty frame",
+      "Default typography: an Inter-like grotesk headline ('Where the Rain Goes') set like a slide over a lone blue circle, which is an effect with no subject",
+      "Placeholder UI: pill cards, a glassy clock dial and a gradient ground in the 'Sundial' frame",
+      "Stock broadcast template: italic bold sans 'HARBOUR CUP FINAL' with a centred underline, lens streak and generic stadium lights",
+      "An outline-echo word behind a heavy grotesk with a diagonal slash: a template trope with fake metadata ('002', 'NO SLEEP \u2014 128', 'Source: illustrative')",
+      "Five frames that do not belong together: a weather/day-planner UI, a fashion lookbook, a data-story title, a music title card and a sports broadcast card. There is no single film, idea or system",
+      "Classic 'tasteful AI' layouts: small tracked-caps labels ('MAISON LUNE AUTUMN / WINTER', 'TODAY \u00b7 THURSDAY') above a generic editorial serif ('The quiet hour.') or bold grotesk ('Where the Rain Goes')",
+      "Placeholder UI: rounded cards, pills, grey list rows, and a ring clock on a gradient",
+      "Effects with no subject: a lone blue circle on an empty cream ground, a blurred burgundy gradient rectangle standing in for imagery, and generic lens-flare stadium lights",
+      "The type is set like slides: centred or top-left headlines, default faces, outline echo text ('LIGHTS'), and a stock broadcast italic",
+      "A sixth frame is missing or empty, and nothing implies choreography between frames"
+    ]
+  },
+  "refs_summary": {
+    "fitc-tokyo-2015": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "coinbase-system-update": {
+      "overall": 6.62,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "catch-me-if-you-can": {
+      "overall": 9.38,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.87,
+  "delta": -5.37,
+  "trials": [
+    {
+      "key": {
+        "A": "catch-me-if-you-can",
+        "B": "fitc-tokyo-2015",
+        "C": "candidate",
+        "D": "coinbase-system-update"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific narrative idea: silhouette figures chase each other through airports, poolsides, lounges and runways. The world of the film is told in cut-paper graphic shorthand, and every scene has a reason to exist",
+              "Typography is part of the set. The vertical rules that drop through 'Catch me if you can' double as architecture, bars and elevator cables, and the cast names hang off them like signage",
+              "Each scene has its own palette (cyan, saffron/orange, acid green on black, bubblegum pink, midnight blue gradient), and together they read as one deliberate mid-century system",
+              "Real texture: hand-cut edges, ink grain, print-like flats, stencilled stars and a glow on the horizon in the last frame",
+              "Choreography is clear across the frames: the pursuer and the pursued recur, scale shifts from interiors to a planetary horizon, and the closing frame is a release",
+              "Every frame works as a poster; asymmetric, layered compositions with strong figure\u2013ground play"
+            ],
+            "gaps": [
+              "The type palette is period-correct but conservative. A few names sit as plain labels rather than being integrated as tightly as the title card",
+              "The final gradient-and-light-streak frame is more generic than the cut-paper scenes and slightly breaks the material language",
+              "Credit placement occasionally lands in leftover space (the Amy Adams frame) rather than being composed into the scene"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Custom modular letterforms that break apart into strokes, dots and kana-like fragments. The type is the subject, not a label",
+              "High variety across frames: macro letter crop, horizontal scan band, framed grid of glyphs, diagonal dynamic slash, LED dot-matrix, dense collage lock-up 'TOKYO'",
+              "Considered neon palette (coral, mint, chartreuse, violet on near-black) with print-misregistration and scanline texture",
+              "Frames imply fast, edited choreography: build-up from single glyphs to a saturated final resolve",
+              "Layering and density reward pausing; the frames aren't one repeated layout"
+            ],
+            "gaps": [
+              "The idea ('Tokyo = glitchy neon signage + kana') is a familiar trope; it needs a more specific concept only this piece could own",
+              "No image or world beyond type. A, by contrast, builds characters and scenes that carry an emotional arc",
+              "Late frames tip toward noise. Clearer hierarchy and moments of restraint would let the final lock-up land harder"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 8,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A committed single-system aesthetic: everything rendered in ASCII/monospace glyphs on an International Klein-style blue, including a walking figure, a planet, padlocks and coins",
+              "Real 3D form is converted to character density (shaded figure, sphere, coin grid), which takes pipeline craft beyond a filter preset",
+              "Varied scenes and transitions are implied: character walk, flow field of $ signs, orbiting planet, terminal log, lock cluster, coin array",
+              "The terminal text is written for the piece ('Matching Cut Transition(\"circular\")'), a self-aware detail",
+              "Against that: the subject is literal (crypto \u2192 dollar signs, padlocks, coins), and the monochrome ASCII look is a popular trend"
+            ],
+            "gaps": [
+              "The idea is literal and obvious: '$', padlocks and coin icons illustrate the brief rather than reframing it. It needs a metaphor viewers would remember",
+              "The single blue/white ground flattens hierarchy across frames. Introduce scale shifts, a second value or a moment of break to build an arc like A's palette journey",
+              "The terminal-log frame reads as filler text wall. Typographic hierarchy and composition there need the same care as the rendered scenes"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "No single film: five unrelated layouts (weather/clock UI, fashion lookbook, data-story title, poster 'LIGHTS', sports-broadcast lower third) with no shared idea, palette or choreography",
+              "Textbook 'tasteful AI' tells: cream ground with small tracked-caps label over an editorial serif headline ('MAISON LUNE / The quiet hour.'); off-white slide with a grotesk headline and a lone blue circle",
+              "Placeholder UI: rounded cards, pills, glassy dial with a glowing dot on a sunset gradient",
+              "Default typography (Inter-like grotesk, generic italic serif, condensed italic sports sans) set like slides, with page numbers and 'Source: illustrative'",
+              "Gradient blobs and a blurred maroon rectangle standing in for imagery; stock stadium light flares; effect with no subject",
+              "Only five frames, and the composition doesn't develop. Each frame is a static template card"
+            ],
+            "gaps": [
+              "There is no unifying concept. Pick one subject and build a world around it, as A does with the chase",
+              "Replace placeholder rectangles, blobs and UI cards with real image-making: illustration, texture, material and light",
+              "Typography needs a point of view: custom or characterful faces, expressive scale and integration with image, instead of label-over-headline slide layouts"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 33.0,
+        "cost_usd": 0.1619844,
+        "tokens": 72275,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "catch-me-if-you-can",
+        "B": "fitc-tokyo-2015",
+        "C": "coinbase-system-update",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "One clear idea: a 1960s cat-and-mouse chase told in silhouette, with the credits placed inside the scenes (airport, pool, elevator, piano lounge, night horizon)",
+              "The credit lines turn into architecture: the stems of the title letters become the posts of the set, and the green names hang from the elevator cables",
+              "Each frame has its own deliberate palette (cyan, orange/yellow, acid green, pink, night blue), so colour does the scene changes",
+              "Print texture like a hand-cut stamp (mottled whites, the paper-like woman by the pool) gives it real material instead of vector default",
+              "The silhouettes are asymmetric and full of attitude, and the scenes are choreographed as a journey; the small figure in the last frame closes the chase",
+              "Scale contrast between the huge title lockup and the small character credits; the 'MUSIC BY' lockup on the piano label is a typographic joke"
+            ],
+            "gaps": [
+              "It openly draws on Saul Bass / 60s modernism, so it is less original than its execution",
+              "The light is mostly flat colour fields; only the last frame uses light as a dramatic tool",
+              "The secondary credit type is a fairly standard grotesk, less custom than the title lockup"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "A kinetic type system built for the subject: Latin and katakana letterforms break apart into modular strokes and dot grids to spell TOKYO",
+              "Dense, layered frames: scanlines, dot-matrix fields, offset frames and red bars overlapping, with real texture and grain",
+              "The palette (hot pink, mint cyan, acid yellow-green, violet on near-black) is specific and handled with discipline",
+              "Strong variety from frame to frame: tight macro letter crop, banded horizontal wipe, framed field of glyphs, diagonal slash, pixel matrix, layered collage. That implies choreographed transitions",
+              "The glyph deconstruction is consistent, which shows a designed type system rather than a filter"
+            ],
+            "gaps": [
+              "The idea is a vibe (glitchy neon Tokyo) more than a story, so it is less memorable than A's narrative conceit",
+              "The cyberpunk glitch language is well worn; the piece needs a move that only it could make",
+              "There is no human or figurative anchor; the emotional register is all surface energy"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 7,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A committed single-medium system: everything is built from ASCII/monospace glyphs on an International Klein-style blue, including figures, coins, padlocks and a planet",
+              "Real rendering work: glyph density changes to model form and depth (the running figure, the ringed sphere), not just a filter",
+              "Varied staging: figure, flowing field, orbiting planet, full-screen code dump, padlocks, and a grid of rotating coins, all linked by match-cut logic (the code even names 'matchcut_engine')",
+              "The small reversed-out label boxes ('<<Crypto is...', 'Faster') carry the copy in a voice consistent with the system"
+            ],
+            "gaps": [
+              "The idea is literal (crypto = code, dollar signs, padlocks, coin icons) and the iconography stays on the obvious surface of the topic",
+              "One colour and one texture throughout limits the dynamic range; nothing breaks the system to surprise",
+              "The code-dump frame reads as filler text; the copy and type need a stronger editorial voice and scale contrast"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 3,
+              "originality": 1
+            },
+            "tells": [
+              "No single film: five unrelated slides (weather UI, fashion lookbook, data-story title, 'LIGHTS' poster, sports broadcast card), with no shared world or choreography",
+              "A textbook generic 'tasteful AI' look: cream ground, small tracked-caps label ('MAISON LUNE AUTUMN / WINTER') over an italic editorial serif, a single accent colour, mostly empty frame",
+              "Default typography: an Inter-like grotesk headline ('Where the Rain Goes') set like a slide over a lone blue circle, which is an effect with no subject",
+              "Placeholder UI: pill cards, a glassy clock dial and a gradient ground in the 'Sundial' frame",
+              "Stock broadcast template: italic bold sans 'HARBOUR CUP FINAL' with a centred underline, lens streak and generic stadium lights",
+              "An outline-echo word behind a heavy grotesk with a diagonal slash: a template trope with fake metadata ('002', 'NO SLEEP \u2014 128', 'Source: illustrative')"
+            ],
+            "gaps": [
+              "Commit to one idea and one world; A shows how a single conceit can carry every frame",
+              "Replace default faces and slide layouts with typography that becomes the image (as A's letter stems become architecture)",
+              "Give the frames subject, material and light: real texture, characters or objects, and choreography that changes from frame to frame"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.3,
+        "cost_usd": 0.159109,
+        "tokens": 72148,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "coinbase-system-update",
+        "B": "fitc-tokyo-2015",
+        "C": "catch-me-if-you-can",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 10,
+              "typography": 9,
+              "colour": 10,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific narrative idea: a cat-and-mouse chase told through silhouettes, with each frame carrying a different setting (airport lounge, poolside, elevator, cocktail piano, night horizon)",
+              "Vertical rules work as the system: they act as architecture, ladders, elevator shafts and descenders, and they cut through the title letterforms, so type and image are one structure",
+              "The palette changes with each scene (cyan, saffron/orange, acid green, pink, midnight blue) but the flat-colour system keeps it coherent and in period",
+              "Hand-cut, stamped textures on the figures; mid-century screen-print feel; credits are placed inside the scene, not laid on top",
+              "The sequence shows choreography: recurring hatted pursuer, location changes and a progression from day to night",
+              "Every frame works as a poster"
+            ],
+            "gaps": [
+              "Benchmark entry; the one gap is that the retro idiom openly leans on 1960s Bass-era precedent, so it scores slightly lower on originality",
+              "Light is purely graphic. The final frame's glow hints at depth that the rest of the piece does not develop",
+              "A few credit placements (the Steve Eastin/Chris Ellis stack) are more functional than expressive"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "The letterforms are clearly custom: cut and segmented glyphs mixed with katakana fragments, building toward 'TOKYO'",
+              "An unusual neon palette (coral, mint/cyan, chartreuse, violet on near-black) used with discipline",
+              "The layouts change a lot between frames: a giant cropped D with a target, a horizontal band with tracked S G, a bordered word-field, a diagonal scatter, dot-matrix glyphs, dense layered collage",
+              "Real texture: scanlines, halftone dots, grain and layered transparencies give the frames depth",
+              "Assembling and fragmenting the glyphs implies kinetic choreography"
+            ],
+            "gaps": [
+              "The idea is a familiar 'Tokyo glitch / city-as-signal' trope. It needs a more specific concept that only this piece could have, as C has",
+              "Some frames (the dot-matrix one) read as texture without a subject. Each beat should land on a clear image",
+              "No human or narrative anchor, and the type rarely carries meaning past the aesthetic"
+            ]
+          },
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "ASCII and character rendering of 3D-ish subjects (a walking figure, a coin, a planet with rings, padlocks, a coin grid) shows real rendering work rather than a preset",
+              "Scale and structure change between frames: a character, a flowing particle stream, a planet, a full code screen, a lock triptych, a grid of coins",
+              "Match cuts are implied: the code even references 'MatchCut Transition(circular)', and circular forms carry through",
+              "Against that: one-colour International Klein-ish blue with white is a well-worn crypto/tech look, and the type is default monospace in highlight boxes ('Crypto is...', 'Faster')"
+            ],
+            "gaps": [
+              "The idea is literal (crypto = code + coins + locks + '$'). It needs a metaphor a viewer would remember",
+              "Typography is default mono slugs. It needs a typographic voice with scale contrast and integration, as in B and C",
+              "A single flat blue with no light or material. A second accent or tonal depth would give it hierarchy and atmosphere"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "Five frames that do not belong together: a weather/day-planner UI, a fashion lookbook, a data-story title, a music title card and a sports broadcast card. There is no single film, idea or system",
+              "Classic 'tasteful AI' layouts: small tracked-caps labels ('MAISON LUNE AUTUMN / WINTER', 'TODAY \u00b7 THURSDAY') above a generic editorial serif ('The quiet hour.') or bold grotesk ('Where the Rain Goes')",
+              "Placeholder UI: rounded cards, pills, grey list rows, and a ring clock on a gradient",
+              "Effects with no subject: a lone blue circle on an empty cream ground, a blurred burgundy gradient rectangle standing in for imagery, and generic lens-flare stadium lights",
+              "The type is set like slides: centred or top-left headlines, default faces, outline echo text ('LIGHTS'), and a stock broadcast italic",
+              "A sixth frame is missing or empty, and nothing implies choreography between frames"
+            ],
+            "gaps": [
+              "Pick one subject and build a specific idea around it rather than a sampler of templates",
+              "Replace the placeholder (gradient blobs, the circle, UI cards) with designed imagery that has material, light and texture",
+              "Develop a typographic point of view, with custom or deliberately chosen faces, expressive scale and type working inside the image, and choreograph change across frames"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 30.1,
+        "cost_usd": 0.1575434,
+        "tokens": 72045,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.479,
+  "judge_seconds": 94.4,
+  "verdict": "FAIL"
+}

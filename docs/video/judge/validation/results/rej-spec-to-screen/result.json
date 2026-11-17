@@ -1,0 +1,472 @@
+{
+  "name": "rej-spec-to-screen",
+  "tags": [
+    "product-launch",
+    "kinetic-type"
+  ],
+  "refs": [
+    "coinbase-system-update",
+    "thank-you-for-smoking",
+    "fitc-tokyo-2015"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 3,
+      "typography": 2,
+      "colour": 2,
+      "light_texture": 2,
+      "motion": 3,
+      "craft": 3,
+      "originality": 1
+    },
+    "overall": 2.25,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "There is no idea beyond 'product name + feature list'. Find a conceit that dramatises the product, as D turns credits into the subject's own packaging",
+      "Replace the centred default-sans slides with a typographic system that has a point of view: scale contrast, layout, and integration with the image",
+      "Replace placeholder UI and stock chrome/aurora effects with designed, textured imagery and choreography between shots",
+      "It has no concept beyond feature-listing; it needs a single visual idea with its own world, as C has",
+      "Typography is defaults with no scale play or integration with image; it needs a chosen face and expressive layout",
+      "Light and texture are stock (vignette, chrome, god rays); it needs a deliberate palette, real materiality and frames that differ in structure",
+      "Find a concept. Right now it is a feature list read aloud. A's single conceit turns every frame into an object worth looking at",
+      "Replace default-sans centred headlines with typography that has scale contrast, a chosen face, and integration with image",
+      "Bring in real colour, material and light in place of the dark-gradient-and-chrome template, and vary composition so frames stop reading as the same slide"
+    ],
+    "tells": [
+      "A textbook 'tasteful AI' dark ground: centred bold-grotesk headlines ('This film', 'Check it.') floating in empty navy space with a small grey mono caption underneath",
+      "Slide-deck structure: the same centred-text layout repeats with the words swapped",
+      "Placeholder UI: a generic dashboard laptop and phone mock with grey cards, pills and a stock area chart",
+      "A literal feature diagram (a code editor beside a preview, and a benchmark bar chart reading '20\u00d7 faster') with nothing to remember",
+      "Stock aurora gradient blob, plus a chrome-bevel 3D logo under god rays as the finale: an effect with no subject",
+      "A single accent colour (lavender/blue) with flat, unmotivated light",
+      "The textbook generic dark-ground look: centred bold-sans headlines ('This film', 'Check it.') with a tiny monospace label underneath, in mostly empty frames",
+      "Default Inter-style grotesk with a single lavender accent word ('generated.'), set like slides",
+      "Placeholder UI: a dashboard mockup with cards, a line chart and pills, plus a code-editor window",
+      "Stock effects without a subject: an aurora blur and chrome 3D extruded logo text under god rays",
+      "Literal product pitch: the product name plus a benchmark bar chart ('20x faster'), with nothing memorable",
+      "Repeated slide-deck structure in which the same centred layout recurs with words swapped",
+      "Generic 'tasteful AI' dark ground with a centred bold-grotesk headline ('This film', 'Check it.') and tiny monospace caption beneath, which is slide-deck structure",
+      "Placeholder UI: a dashboard mockup with stat cards, a line chart, avatar pills and a phone with chat bubbles",
+      "Aurora-gradient blob, a bar chart claiming '20\u00d7 faster than Remotion', and a chrome 3D logotype with god rays. These are stock primitives and effects with no subject",
+      "The idea is literal product name plus feature diagram plus benchmark, a self-promo for an automated video tool. Nothing in it would be remembered",
+      "The light is flat and unmotivated, with no texture, material or palette idea beyond near-black plus one lavender accent"
+    ]
+  },
+  "refs_summary": {
+    "coinbase-system-update": {
+      "overall": 6.5,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "thank-you-for-smoking": {
+      "overall": 9.25,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    },
+    "fitc-tokyo-2015": {
+      "overall": 7.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    }
+  },
+  "ref_mean": 7.79,
+  "delta": -5.54,
+  "trials": [
+    {
+      "key": {
+        "A": "fitc-tokyo-2015",
+        "B": "coinbase-system-update",
+        "C": "candidate",
+        "D": "thank-you-for-smoking"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Kinetic type system that breaks Latin and katakana into modular glyph fragments ('TOKYO' rebuilt from stroke parts), which is a real typographic idea rather than set defaults",
+              "Deliberate neon palette (hot pink, cyan, acid lime, violet on near-black) held consistently but used differently in each frame",
+              "Every frame has a different structure: a cropped macro letter, a horizontal scan band, a framed glyph field, a diagonal slash layout, a dot-matrix grid, then a dense layered collage. That suggests choreographed shifts in scale and direction",
+              "Layered texture: halftone dots, grain, pixel noise and registration-mark details give it a print and screen-tech surface",
+              "The build from sparse to dense across the sequence suggests it was paced deliberately"
+            ],
+            "gaps": [
+              "The glitch/cyber-Tokyo vocabulary is a well-worn genre, so it needs a more specific idea than 'Tokyo, digitally fragmented' to stand out from many similar reels",
+              "Some middle frames (the dot-matrix one) are busy without a clear focal hierarchy. Add one dominant anchor per shot the way D does",
+              "Bring in a material or cultural reference (real signage, print ephemera) so the style comes from the subject, as D's packaging conceit does"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "Committed single-system aesthetic: everything (figures, coins, globe, padlocks) is rendered in ASCII on International Klein-like blue, with no stray stock assets",
+              "Varied compositions and shot types (a walking figure, a flow field, an orbiting sphere, a full code screen, a lock triptych, a grid of coin variants) imply match cuts and real choreography",
+              "The ASCII rendering has density gradients and volumetric shading, so it is more than a filter applied to stock footage",
+              "Against it: the concept is literal (crypto = $ signs, padlocks, coins, code), and the small label callouts ('Crypto is...', 'Faster') read like slide captions"
+            ],
+            "gaps": [
+              "The idea is the obvious one for the category (dollar signs, locks, Bitcoin coins). Find a metaphor only this brand could own",
+              "The typography is mostly default monospace and boxed label tags, with no scale contrast or typographic point of view in the headline moments",
+              "Mono-blue with white is striking but flat. Add depth, light falloff or a second material layer so frames feel lit rather than rendered"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 2,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 3,
+              "originality": 1
+            },
+            "tells": [
+              "A textbook 'tasteful AI' dark ground: centred bold-grotesk headlines ('This film', 'Check it.') floating in empty navy space with a small grey mono caption underneath",
+              "Slide-deck structure: the same centred-text layout repeats with the words swapped",
+              "Placeholder UI: a generic dashboard laptop and phone mock with grey cards, pills and a stock area chart",
+              "A literal feature diagram (a code editor beside a preview, and a benchmark bar chart reading '20\u00d7 faster') with nothing to remember",
+              "Stock aurora gradient blob, plus a chrome-bevel 3D logo under god rays as the finale: an effect with no subject",
+              "A single accent colour (lavender/blue) with flat, unmotivated light"
+            ],
+            "gaps": [
+              "There is no idea beyond 'product name + feature list'. Find a conceit that dramatises the product, as D turns credits into the subject's own packaging",
+              "Replace the centred default-sans slides with a typographic system that has a point of view: scale contrast, layout, and integration with the image",
+              "Replace placeholder UI and stock chrome/aurora effects with designed, textured imagery and choreography between shots"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific, ownable idea: each credit is set as a period cigarette pack, a satirical fit for a film about a tobacco lobbyist",
+              "Typography with a strong point of view: every name gets its own historically accurate packaging type (script, slab serif, condensed caps, deco), integrated with the label design",
+              "Rich, deliberate palette drawn from mid-century packaging (royal blue and gold, orange and cream, red and white, menthol green)",
+              "Real print texture: paper grain, foil, registration, an aged ink feel, plus heraldic crests, spaniel, eagle and aircraft engravings",
+              "Every frame works as a poster and every frame is different, yet the series is unmistakably one system. The tight crops and pans imply camera moves across physical objects",
+              "The final frame's row of filters is a witty close"
+            ],
+            "gaps": [
+              "The motion is mostly lateral pans across flat art. More dimensional camera work or transitions between packs would raise the choreography",
+              "The frame-to-frame structure (one pack per credit) is predictable once established. A late structural surprise could heighten the payoff",
+              "There is little light variation, as the lighting stays even like a flatbed scan. Some raking light on foil and embossing would add depth"
+            ]
+          }
+        },
+        "ranking": [
+          "D",
+          "A",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 31.7,
+        "cost_usd": 0.16036040000000001,
+        "tokens": 72192,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "fitc-tokyo-2015",
+        "B": "coinbase-system-update",
+        "C": "thank-you-for-smoking",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Modular, stencil-cut display letterforms (D, S G, TOKYO) built from the same geometric pieces as the graphic elements, so type and image are one system",
+              "Mixed Latin and katakana fragments scattered as a typographic field, with real scale contrast between the huge 'D' and the micro glyph grids",
+              "Deliberate palette of hot pink, mint cyan, acid lime and violet on near-black, with a cream-ground frame for variation",
+              "No two frames share a layout: tight crop, horizontal band, framed grid, diagonal slash, pixel-matrix letters, layered collage climax",
+              "Halftone dots, scanline and print-grain texture give the flat graphics some physical surface",
+              "The sequence builds from sparse to dense, so the edit is choreographed toward a final title reveal"
+            ],
+            "gaps": [
+              "The concept leans on familiar 'Tokyo cyber-glitch' tropes; it needs an idea that belongs only to this subject, the way C's cigarette-pack conceit does",
+              "Type stays decorative rather than meaningful; the names and words should carry content or wit, not only texture",
+              "The final collage nears visual noise; one clear hero image per frame would make every frame read as a poster"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 6,
+              "originality": 6
+            },
+            "tells": [
+              "A committed single-system look: everything (figure, planet, padlocks, coins) is rendered in ASCII characters on a saturated electric-blue ground",
+              "Bold monochrome palette held across all frames, which is a deliberate choice rather than a default",
+              "Varied scenes (walking figure, orbiting coin, terminal log, locks, coin grid) suggest real choreography and match cuts; the log even references 'matchcut_engine'",
+              "Weaknesses: the crypto iconography is literal (dollar signs, B coins, padlocks), the captions are small slide-like labels ('Crypto is...', 'Faster'), and the code-dump frame is filler"
+            ],
+            "gaps": [
+              "The idea is a literal 'crypto = fast, secure money' diagram; it needs a sharper metaphor or narrative a viewer would remember",
+              "Typography beyond the ASCII texture is just default monospace callout boxes; give the copy scale and a typographic voice",
+              "Frames 4 and 6 are flat walls of text or icons; they need depth, light and a hierarchy that focuses the eye"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "A specific idea only this film could have: every credit is set as a period cigarette-pack design, so the title sequence becomes the satire",
+              "Each frame uses a different, period-accurate typographic voice: banner serif, script, condensed sans, art-deco caps and a brush script over bold sans, all integrated with label furniture ('LIGHTS', 'MENTHOL', 'FILTER')",
+              "A rich, varied palette of royal blue, orange-cream, red/white/navy and mint, each drawn from real packaging traditions",
+              "Printed-paper texture, foil gold, engraved crests, a hound, a sunburst and an aircraft show tactile, researched detail",
+              "Every frame works as a poster, and the closing row of cigarettes under the director credit is a witty payoff"
+            ],
+            "gaps": [
+              "Motion is implied mostly as pans and slides across flat artwork, so camera choreography is the area with the most headroom",
+              "Depth is largely 2D; more dimensional light on foil and cellophane could add another layer of materiality",
+              "Compositions follow a similar crop-the-pack framing; one or two radical scale shifts would add surprise"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 2,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 3,
+              "originality": 1
+            },
+            "tells": [
+              "The textbook generic dark-ground look: centred bold-sans headlines ('This film', 'Check it.') with a tiny monospace label underneath, in mostly empty frames",
+              "Default Inter-style grotesk with a single lavender accent word ('generated.'), set like slides",
+              "Placeholder UI: a dashboard mockup with cards, a line chart and pills, plus a code-editor window",
+              "Stock effects without a subject: an aurora blur and chrome 3D extruded logo text under god rays",
+              "Literal product pitch: the product name plus a benchmark bar chart ('20x faster'), with nothing memorable",
+              "Repeated slide-deck structure in which the same centred layout recurs with words swapped"
+            ],
+            "gaps": [
+              "It has no concept beyond feature-listing; it needs a single visual idea with its own world, as C has",
+              "Typography is defaults with no scale play or integration with image; it needs a chosen face and expressive layout",
+              "Light and texture are stock (vignette, chrome, god rays); it needs a deliberate palette, real materiality and frames that differ in structure"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 29.1,
+        "cost_usd": 0.1562248,
+        "tokens": 71971,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "thank-you-for-smoking",
+        "B": "coinbase-system-update",
+        "C": "fitc-tokyo-2015",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 10,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 10,
+              "originality": 9
+            },
+            "tells": [
+              "The idea belongs to this film alone: every credit is set as a different fictional cigarette pack, so the branding of the vice itself becomes the title sequence's design language",
+              "Typography has a real point of view. Each name gets a lettering style true to its period, including the script 'Cameron Bright', the condensed serif 'David Koechner LIGHTS', the slab caps 'ROB LOWE' and the engraved small caps 'Kim Dickens'. Type and package design are one thing",
+              "Printed texture is everywhere: paper grain, misregistered inks, foil gold, heraldic crests, a hound engraving and a propeller plane. These are period-accurate, specific references and not clip art",
+              "The palette changes for every pack (royal blue/gold, orange/cream, red/white/blue, menthol green) but stays one coherent mid-century print world",
+              "Every frame works as a poster, and the closing row of filters under the director credit is a strong payoff"
+            ],
+            "gaps": [
+              "Benchmark entry; the remaining gap is motion. The frames suggest mostly lateral pans across flat artwork, so camera moves with more depth or dimensional handling of the packs would add weight",
+              "The framing is tight and repeated pack after pack. One cut that reveals a whole pack or carton would break the rhythm",
+              "The device is close to wall-to-wall. A deliberate disruption, such as a warning-label gag or a burn, would add surprise in the middle of the sequence"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 8,
+              "craft": 8,
+              "originality": 7
+            },
+            "tells": [
+              "Glyphs are built from modular geometric fragments that assemble and disassemble across frames: 'D' with target rings, scattered 'S G.', and a mixed Latin/katakana title that resolves as 'TOKYO'. That is a clear typographic system and not default type",
+              "The palette is deliberate and unusual: hot pink, cyan, acid lime, violet and saffron on near-black, with a printed, risograph-like texture",
+              "The layouts vary widely (centred band, framed grid, steep diagonal, pixel matrix, dense layered collage), which suggests real choreography and a build toward the final dense frame",
+              "The frames are layered, with halftone and pixel grids, scanline bands and overprinted blocks, so they read as designed density and not as an effect with no subject"
+            ],
+            "gaps": [
+              "The idea of glitch and Tokyo signage is a familiar genre. Compared with A's pack conceit, it needs a concept only this subject could own",
+              "The broken letterforms often turn into illegible noise. A clearer typographic payoff moment would anchor the system, as A's director-credit frame does",
+              "Texture is digital and uniform. Adding real material (print, neon, screens photographed in place) would give the light the specificity that A's printed packs have"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "Committed single-palette system of white ASCII/character art on electric blue, with characters forming figures, a planet, padlocks and a grid of coins. It has a consistent world and real variety in scale and layout across frames",
+              "The frames change meaningfully (walking figure, flowing $ stream, orbiting planet, code wall, locks, coin grid), which implies choreographed transitions, and a 'matchcut transition' is referenced in the copy",
+              "But the messaging is literal: 'Crypto is... Faster', padlocks for security, coins for crypto, and pseudo-code as filler. The idea is the feature list drawn in ASCII",
+              "Monospace type is used as texture more than with intent. The highlighted keyword labels feel bolted on"
+            ],
+            "gaps": [
+              "Replace the literal crypto iconography (coins, locks, $) with one specific visual idea about direct payment that only this brand could own, the way A turns credits into packs",
+              "Develop typographic hierarchy and scale contrast. The tiny highlighted labels and code dumps need a real typographic voice for the message",
+              "ASCII on flat blue is a widely used trend look. Push the palette, light or material, for example screen glow or print, past the default retro-terminal treatment"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 2,
+              "colour": 2,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 3,
+              "originality": 1
+            },
+            "tells": [
+              "Generic 'tasteful AI' dark ground with a centred bold-grotesk headline ('This film', 'Check it.') and tiny monospace caption beneath, which is slide-deck structure",
+              "Placeholder UI: a dashboard mockup with stat cards, a line chart, avatar pills and a phone with chat bubbles",
+              "Aurora-gradient blob, a bar chart claiming '20\u00d7 faster than Remotion', and a chrome 3D logotype with god rays. These are stock primitives and effects with no subject",
+              "The idea is literal product name plus feature diagram plus benchmark, a self-promo for an automated video tool. Nothing in it would be remembered",
+              "The light is flat and unmotivated, with no texture, material or palette idea beyond near-black plus one lavender accent"
+            ],
+            "gaps": [
+              "Find a concept. Right now it is a feature list read aloud. A's single conceit turns every frame into an object worth looking at",
+              "Replace default-sans centred headlines with typography that has scale contrast, a chosen face, and integration with image",
+              "Bring in real colour, material and light in place of the dark-gradient-and-chrome template, and vary composition so frames stop reading as the same slide"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.4,
+        "cost_usd": 0.1589616,
+        "tokens": 72119,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.476,
+  "judge_seconds": 92.2,
+  "verdict": "FAIL"
+}
