@@ -1222,6 +1222,14 @@ mod tests {
     }
 
     #[test]
+    fn identical_at_any_thread_count() {
+        let spec = serde_json::json!({ "bodies": [ { "type": "box", "size": 0.2, "count": 300, "layout": "pile" } ] });
+        let run = |threads: usize| rayon::ThreadPoolBuilder::new().num_threads(threads).build().unwrap().install(|| sim(spec.clone()).sim.at(1.5).0);
+        let (a, b) = (run(1), run(4));
+        assert!(a.iter().zip(b.iter()).all(|(x, y)| x.iter().zip(y).all(|(p, q)| p.to_bits() == q.to_bits())));
+    }
+
+    #[test]
     fn quaternion_round_trip() {
         let xf = Xf::new(v3(1.0, 2.0, 3.0), v3(30.0, -70.0, 145.0), v3(1.0, 1.0, 1.0));
         let q = quat_of(&xf.r);

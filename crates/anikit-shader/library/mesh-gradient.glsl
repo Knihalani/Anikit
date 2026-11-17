@@ -3,6 +3,7 @@
 // linear light with smooth inverse-distance weights over a gently warped
 // plane, plus fine film grain so the gradients never band.
 // Uniforms: color1..color4, speed, warp, softness, grain.
+// anikit:aa off (smooth colour fields; the film grain is meant to be per pixel)
 uniform vec3 color1;    // = vec3(0.98, 0.42, 0.33) first colour
 uniform vec3 color2;    // = vec3(0.36, 0.25, 0.95) second colour
 uniform vec3 color3;    // = vec3(0.07, 0.75, 0.82) third colour

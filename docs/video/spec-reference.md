@@ -308,7 +308,7 @@ A fragment shader, run JIT-compiled on the CPU at full resolution. Full guide: [
 | `uniforms` | name → number, `[x, y(, z, w)]`, colour or `"=expr"`. Declared with `uniform float name; // = default` in the source, or declared for you. They animate by name in `animate` (up to 12 floats per layer). |
 | `channels` | `iChannel0..3`: `"below"` (everything drawn so far), `"noise"`, an image/video path, `"#name"` or `{"composition": "name", "trimStart", "speed", "loop"}`, or inline `{"layers": [...]}`. Options: `wrap` (`clamp` `repeat` `mirror`), `filter` (`linear` `nearest`), `mipmaps`. |
 | `filter` | `true`: `iChannel0` defaults to `"below"` and the output replaces the whole frame. |
-| `supersample` | 2×2 sub-samples per pixel (4× cost). |
+| `supersample` | anti-aliasing: adaptive 2×2 where neighbouring pixels differ. On by default (off for filters and for sources with `// anikit:aa off`); `false` is up to 2× faster. |
 | `alpha` | use `fragColor.a` as coverage (default opaque, like Shadertoy). |
 | `buffers` | Shadertoy-style passes `{"A": {"shader"\|"src", "channels"}, …"D"}`, rendered in order before the image at float precision. Channel `"A"` reads buffer A: this frame's if A ran earlier, else last frame's (feedback). Buffers see the spec's uniform values, not animated ones. |
 

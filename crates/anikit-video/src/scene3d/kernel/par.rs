@@ -1,6 +1,8 @@
-//! Row-parallel helpers. Inside a rayon worker (the video pipeline renders
-//! several frames at once) they run serially, so frames don't fight over
-//! the pool; called from outside they spread rows over every core.
+//! Row-parallel helpers. They always split rows over the rayon pool, also
+//! when called from inside a rayon task (the video pipeline renders each
+//! chunk's frames in one task, often with fewer chunks than cores): nested
+//! work is stolen by idle threads, so a frame never runs on one core while
+//! the others wait. Results don't depend on the split (rows are independent).
 
 use super::pool::{Buf, Pod};
 use rayon::prelude::*;
@@ -19,10 +21,12 @@ impl<T> Shared<T> {
     }
 }
 
-/// Whether to split work across the pool (not when already on a worker).
+/// Whether to split work across the pool (always; kept as a switch for
+/// single-threaded debugging via `ANIKIT_SCENE3D_SERIAL=1`).
 #[inline]
 pub fn parallel() -> bool {
-    rayon::current_thread_index().is_none()
+    static S: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    !*S.get_or_init(|| std::env::var_os("ANIKIT_SCENE3D_SERIAL").is_some())
 }
 
 /// `f(y, row)` for every `w`-wide row of `buf`. On CPUs with AVX2 the row
