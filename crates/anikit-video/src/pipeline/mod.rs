@@ -439,6 +439,7 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
             let r = renderer.as_mut().unwrap();
             let continuing = !starts.contains(&k) && *last == Some(k.wrapping_sub(1));
             let t = Instant::now();
+            r.set_quality(render_quality(opts.quality));
             r.set_post(post, (f0 + k) as u64);
             use crate::render::incremental::Update;
             let upd = if blur {
@@ -504,6 +505,16 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
 pub fn chunk_plan(n: usize, gop: u32) -> Vec<(usize, usize)> {
     let count = if gop > 0 { n.div_ceil(gop as usize) } else { n.div_ceil(300).max(n.div_ceil(30).min(16)) }.clamp(1, n.max(1));
     (0..count).map(|i| (i * n / count, (i + 1) * n / count)).filter(|r| r.1 > r.0).collect()
+}
+
+/// Renderer settings for an output quality: only drafts take the fast approximations
+/// (¼-res smooth backdrops, bilinear upscales) that change visible output.
+pub fn render_quality(q: Quality) -> crate::render::Quality {
+    match q {
+        Quality::Draft => crate::render::Quality::Draft,
+        Quality::Good => crate::render::Quality::Standard,
+        Quality::Best => crate::render::Quality::High,
+    }
 }
 
 /// Frame `i`'s finishing look, and whether it gets motion blur (never in drafts; by default only at high quality).
@@ -988,6 +999,7 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
                                 ensure_renderer(ev, w);
                                 let Worker { renderer, yuv, map, last, .. } = &mut *w;
                                 let r = renderer.as_mut().unwrap();
+                                r.set_quality(render_quality(opts.quality));
                                 r.set_post(look.0.clone(), start as u64 + k as u64);
                                 if look.1 {
                                     render_blurred(ev, r, start + k as u32, opts.scale, yuv);

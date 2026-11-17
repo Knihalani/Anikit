@@ -1674,6 +1674,9 @@
           },
           "default": null
         },
+        "update": {
+          "description": "Per-frame script: returns props to set this frame, e.g. `\"#{ x: 960 + 200 * sin(t), fill: hsl(t * 90, 80, 60) }\"`.\nSees `t T gt p i n w h fps frame beat bar level bpm`. Runs every frame (a few µs)."
+        },
         "draw": {
           "description": "Raw drawing: primitives in frame pixels (the layer defaults to the parent's box), each\nwith its own fill and stroke. The layer's transforms, opacity, animation and `trimStart`/`trimEnd` apply.",
           "type": [

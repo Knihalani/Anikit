@@ -56,10 +56,58 @@ pub fn expand(mut v: Value) -> Result<Value, Vec<Diagnostic>> {
             }
         }
     }
+    // `{ "script": … }` anywhere else in an array (scene3d objects, draw items, emitters,
+    // keys, notes…): a returned list splices, an object replaces.
+    let size = cx.size;
+    splice_scripts(&mut v, "", size, &mut cx.errors);
     if cx.errors.is_empty() {
         Ok(v)
     } else {
         Err(cx.errors)
+    }
+}
+
+fn splice_scripts(v: &mut Value, path: &str, size: (u64, u64), errors: &mut Vec<Diagnostic>) {
+    match v {
+        Value::Array(items) => {
+            let mut out = Vec::with_capacity(items.len());
+            for (k, mut item) in std::mem::take(items).into_iter().enumerate() {
+                let p = format!("{path}[{k}]");
+                let code = match &mut item {
+                    Value::Object(m) if m.contains_key("script") && m.len() == 1 => m.remove("script"),
+                    _ => None,
+                };
+                match code {
+                    Some(code) => {
+                        let mut vars = Map::new();
+                        vars.insert("w".into(), size.0.into());
+                        vars.insert("h".into(), size.1.into());
+                        match super::script::items(&code, &vars, &p) {
+                            Ok(gen) => {
+                                let mut gen = Value::Array(gen);
+                                splice_scripts(&mut gen, &p, size, errors);
+                                if let Value::Array(g) = gen {
+                                    out.extend(g);
+                                }
+                            }
+                            Err(d) => errors.push(d),
+                        }
+                    }
+                    None => {
+                        splice_scripts(&mut item, &p, size, errors);
+                        out.push(item);
+                    }
+                }
+            }
+            *items = out;
+        }
+        Value::Object(m) => {
+            for (k, x) in m.iter_mut() {
+                let p = if path.is_empty() { k.clone() } else { format!("{path}.{k}") };
+                splice_scripts(x, &p, size, errors);
+            }
+        }
+        _ => {}
     }
 }
 
@@ -71,7 +119,7 @@ fn contains_reuse_keys(v: &Map<String, Value>) -> bool {
             _ => false,
         }
     }
-    v.get("scenes").is_some_and(walk) || v.get("compositions").is_some_and(walk)
+    v.values().any(walk)
 }
 
 /// Frame size for scripts (`w`, `h`): `[w, h]` or a common preset; default 1920×1080.

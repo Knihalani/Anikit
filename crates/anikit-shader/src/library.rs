@@ -48,25 +48,26 @@ macro_rules! lib {
 }
 
 lib! {
-    "sdf-scene", Image, 303, "Portals at golden hour: concrete frames down a reflecting pool, backlit sun, soft shadows, AO, haze, slow dolly.";
-    "liquid-chrome", Image, 286, "Liquid metal: a heavy mass with drops that merge and tear away, mirror chrome in a studio or night sky; cut-out with background = 0.";
-    "aurora", Image, 968, "Aurora curtains over a ridge, mirrored in a lake. Heavy; lake = 0 + lake-mirror is faster.";
-    "hero", Image, 60, "Product shot: one object (torus, cube, pill, gem, sphere, twisted bar) on a glossy studio floor, plastic or metal.";
-    "caustics", Image, 55, "Pool-floor caustics from a moving water surface (ray density via derivatives).";
-    "flow-ink", Image, 161, "Two inks marbled by a curl-noise flow field on paper.";
-    "turing", Image, 156, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
-    "light-shafts", Image, 115, "Sun through a window into a hazy room: pane-shaped beams with mullions and leaves, drifting haze, glinting dust.";
-    "particles", Image, 144, "Glowing particles drifting in depth with bokeh (depth of field), one pass.";
-    "film-burn", Filter, 90, "Scorches the frame below from hot spots; animate `amount` 0 → 1.";
+    "sdf-scene", Image, 292, "Portals at golden hour: concrete frames down a reflecting pool, backlit sun, soft shadows, AO, haze, slow dolly.";
+    "liquid-chrome", Image, 163, "Liquid metal: a heavy mass with drops that merge and tear away, mirror chrome in a studio or night sky; cut-out with background = 0.";
+    "aurora", Image, 696, "Aurora curtains over a ridge, mirrored in a lake. Heavy; lake = 0 + lake-mirror is faster.";
+    "hero", Image, 59, "Product shot: one object (torus, cube, pill, gem, sphere, twisted bar) on a glossy studio floor, plastic or metal.";
+    "mesh-gradient", Image, 40, "Soft animated mesh gradient: four colours drifting and folding into each other, with film grain. Backgrounds for titles and products.";
+    "caustics", Image, 58, "Pool-floor caustics from a moving water surface (ray density via derivatives).";
+    "flow-ink", Image, 155, "Two inks marbled by a curl-noise flow field on paper.";
+    "turing", Image, 26, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
+    "light-shafts", Image, 92, "Sun through a window into a hazy room: pane-shaped beams with mullions and leaves, drifting haze, glinting dust.";
+    "particles", Image, 114, "Glowing particles drifting in depth with bokeh (depth of field), one pass.";
+    "film-burn", Filter, 73, "Scorches the frame below from hot spots; animate `amount` 0 → 1.";
     "lake-mirror", Filter, 33, "Reflects everything above a horizon in still, rippled water below it (pairs with aurora lake = 0).";
-    "glitch", Filter, 28, "Codec-style block displacement, row smears, RGB split and scanlines in bursts.";
-    "burn", Transition, 62, "Old scene burns away along a noisy ember edge.";
-    "ripple", Transition, 54, "A ring wave spreads from the centre carrying the new scene.";
-    "pixelate", Transition, 21, "Pixel blocks grow, cross-fade, then resolve.";
-    "swirl", Transition, 39, "A vortex twists the old scene and unwinds into the new one.";
-    "ink-bleed", Transition, 71, "The new scene soaks in like ink, with a dark wet edge.";
-    "warp-wipe", Transition, 36, "A soft angled wipe that smears pixels as it passes.";
-    "luma-melt", Transition, 21, "The old scene melts away darkest-first.";
+    "glitch", Filter, 26, "Codec-style block displacement, row smears, RGB split and scanlines in bursts.";
+    "burn", Transition, 53, "Old scene burns away along a noisy ember edge.";
+    "ripple", Transition, 53, "A ring wave spreads from the centre carrying the new scene.";
+    "pixelate", Transition, 20, "Pixel blocks grow, cross-fade, then resolve.";
+    "swirl", Transition, 36, "A vortex twists the old scene and unwinds into the new one.";
+    "ink-bleed", Transition, 56, "The new scene soaks in like ink, with a dark wet edge.";
+    "warp-wipe", Transition, 28, "A soft angled wipe that smears pixels as it passes.";
+    "luma-melt", Transition, 20, "The old scene melts away darkest-first.";
     "zoom-blur", Transition, 134, "Punch-in zoom blur with chromatic fringes; cuts at peak blur.";
 }
 
