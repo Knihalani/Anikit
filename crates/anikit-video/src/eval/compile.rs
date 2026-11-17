@@ -187,6 +187,7 @@ impl Evaluator {
                 c.gmarkers.insert(k.clone(), t);
             }
         }
+        c.prewarm_shaders(spec);
         if let Some(defs) = &spec.compositions {
             c.compositions(defs);
         }
@@ -325,7 +326,6 @@ impl Evaluator {
             ctheme: components_theme(&c.theme),
             theme: c.theme,
             comps: c.comps.into_iter().map(|(n, e, _)| (n, e)).collect(),
-            shader_scale: std::sync::atomic::AtomicU32::new(1.0f32.to_bits()),
             shutter,
             shutter_explicit: matches!(spec.motion_blur, Some(spec::MotionBlur::On(true)) | Some(spec::MotionBlur::Shutter { .. })),
         };
@@ -2245,6 +2245,79 @@ impl C<'_> {
 
     // ---------- shader layers (SHADER module; runtime in `eval/shader.rs`) ----------
 
+    /// JIT every shader the spec uses in parallel, before compiling layers in
+    /// order: the layer pass then hits `Shader::compile_shared`'s cache, so
+    /// time to first frame is the slowest shader, not the sum.
+    fn prewarm_shaders(&mut self, spec: &Spec) {
+        fn walk<'a>(ls: &'a [Layer], out: &mut Vec<&'a Layer>) {
+            for l in ls {
+                if l.shader.is_some() || l.src.as_deref().is_some_and(|s| s.ends_with(".glsl") || s.ends_with(".wgsl") || s.ends_with(".frag")) {
+                    out.push(l);
+                }
+                walk(l.layers.as_deref().unwrap_or(&[]), out);
+                walk(l.children.as_deref().unwrap_or(&[]), out);
+            }
+        }
+        let mut layers = Vec::new();
+        let mut trans: Vec<&spec::TransitionObj> = Vec::new();
+        for sc in &spec.scenes {
+            walk(&sc.layers, &mut layers);
+            if let Some(t) = &sc.transition {
+                trans.push(&t.0);
+            }
+        }
+        for c in spec.compositions.iter().flat_map(|m| m.values()) {
+            walk(c.layers.as_deref().unwrap_or(&[]), &mut layers);
+        }
+        if layers.is_empty() && trans.is_empty() {
+            return;
+        }
+        // Resolve sources and uniform types exactly as the layer pass will
+        // (so the cache keys match), without reporting anything twice.
+        let saved = std::mem::take(&mut self.d);
+        let mut jobs: Vec<(String, Vec<(String, anikit_shader::UType)>)> = Vec::new();
+        for l in layers {
+            if let Some(j) = self.shader_source(l.shader.as_deref(), l.src.as_deref(), l.uniforms.as_ref(), "") {
+                jobs.push(j);
+            }
+        }
+        for t in trans {
+            let kind = t.kind.as_deref().unwrap_or("");
+            let named = anikit_shader::library::get(kind).is_some_and(|e| e.use_ == anikit_shader::library::Use::Transition);
+            if kind == "shader" || named {
+                let src = t.shader.clone().unwrap_or_else(|| kind.to_string());
+                if let Some(j) = self.shader_source(Some(&src), None, t.uniforms.as_ref(), "") {
+                    jobs.push(j);
+                }
+            }
+        }
+        self.d = saved;
+        use rayon::prelude::*;
+        jobs.par_iter().for_each(|(text, extra)| {
+            let ex: Vec<(&str, anikit_shader::UType)> = extra.iter().map(|(n, t)| (n.as_str(), *t)).collect();
+            let _ = anikit_shader::Shader::compile_shared(text, &ex);
+        });
+    }
+
+    /// Source text and spec-declared uniform types of a shader (no compile).
+    fn shader_source(&mut self, src_field: Option<&str>, file: Option<&str>, unis: Option<&BTreeMap<String, serde_json::Value>>, path: &str) -> Option<(String, Vec<(String, anikit_shader::UType)>)> {
+        let text = match (src_field, file) {
+            (Some(s), _) => super::shader::resolve_source(s)?.to_string(),
+            (None, Some(f)) => std::fs::read_to_string(self.o.base_dir.join(f)).ok()?,
+            _ => return None,
+        };
+        let mut extra = Vec::new();
+        for (k, v) in unis.into_iter().flatten() {
+            if let Some(x) = self.uniform_value(v, &format!("{path}.uniforms.{k}")) {
+                extra.push((k.clone(), match x {
+                    Ok(x) if x.len() > 1 => anikit_shader::UType::Vec(x.len() as u8),
+                    _ => anikit_shader::UType::Float,
+                }));
+            }
+        }
+        Some((text, extra))
+    }
+
     /// Spec uniform value → floats (or an expression string).
     fn uniform_value(&mut self, v: &serde_json::Value, path: &str) -> Option<Result<Vec<f32>, String>> {
         Some(Ok(match v {
@@ -2300,8 +2373,8 @@ impl C<'_> {
                 _ => UType::Float,
             }))
             .collect();
-        match anikit_shader::Shader::compile_with(&text, &extra) {
-            Ok(s) => Some((Arc::new(s), text, vals)),
+        match anikit_shader::Shader::compile_shared(&text, &extra) {
+            Ok(s) => Some((s, text, vals)),
             Err(e) => {
                 let field = if src_field.is_some() { "shader" } else { "src" };
                 self.d.push(Diagnostic::error(format!("{path}.{field}"), format!("shader: {e}")));
@@ -2460,6 +2533,7 @@ impl C<'_> {
             filter,
             supersample: l.supersample.unwrap_or(false),
             alpha: l.alpha.unwrap_or(false),
+            label: super::shader::label(path, l.shader.as_deref().or(l.src.as_deref())),
         };
         Some((Kind::Shader(Box::new(sc)), size))
     }
@@ -2493,6 +2567,7 @@ impl C<'_> {
             filter: false,
             supersample: false,
             alpha: false,
+            label: super::shader::label(path, Some(src)),
         })))
     }
 
@@ -2650,7 +2725,7 @@ impl C<'_> {
         if let Some(k) = &t.keyframes {
             for (name, vals) in k {
                 let p = format!("{path}.keyframes.{name}");
-                let Some((slot, ch)) = prop::lookup(name) else {
+                let Some((slot, ch)) = prop::lookup(name).or_else(|| self.uniform_lookup(name).map(|(s, _)| (s, 1))) else {
                     self.d.push(Diagnostic::error(p, format!("'{name}' is not animatable")).suggest(suggest(name, val::ANIM_PROPS)));
                     continue;
                 };

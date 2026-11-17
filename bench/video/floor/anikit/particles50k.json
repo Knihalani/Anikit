@@ -1,0 +1,4 @@
+{ "fps": 30, "theme": { "colors": { "bg": "#05040b" } },
+  "scenes": [ { "duration": 5, "layers": [
+    { "component": "particle-text", "props": { "text": "ANIKIT", "count": 50000, "size": 2 } }
+  ] } ] }

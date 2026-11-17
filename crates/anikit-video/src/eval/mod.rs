@@ -17,6 +17,7 @@ pub mod theme;
 use crate::dl::{self, Affine, Blend, DisplayList, Filter, Glyph, ImageId, Op, Paint, Path, Rgba};
 use crate::text::{kinetic::KineticPlan, TextLayout, TextSpec, UnitKind};
 pub use assets::SharedAssets;
+pub use shader::{set_preview_scale, ShaderStat};
 use crate::spec::Diagnostic;
 use anikit_core::easing::Easing;
 use expr::{Expr, Vars};
@@ -415,9 +416,6 @@ pub struct Evaluator {
     pub shutter_explicit: bool,
     /// Named sub-compositions (top-level `compositions`), in dependency order.
     pub(crate) comps: Vec<(String, Arc<Evaluator>)>,
-    /// Resolution factor for shader layers (f32 bits; 1.0 = device resolution).
-    /// Reviews sample small frames and set it below 1 so shaders shade fewer pixels.
-    pub shader_scale: std::sync::atomic::AtomicU32,
 }
 
 /// How a layer's clock maps onto a composition's clock.

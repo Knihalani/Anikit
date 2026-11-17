@@ -215,9 +215,9 @@ pub fn check_spec(raw: &serde_json::Value, ev: &Evaluator) -> Vec<Note> {
 /// Run the pixel checks.
 pub fn check(ev: &Evaluator) -> Vec<Note> {
     const SCALE: f32 = 0.5;
-    let prev = ev.shader_scale.swap(SCALE.to_bits(), std::sync::atomic::Ordering::Relaxed);
+    crate::eval::shader::set_preview_scale(SCALE);
     let notes = check_at(ev, SCALE);
-    ev.shader_scale.store(prev, std::sync::atomic::Ordering::Relaxed);
+    crate::eval::shader::set_preview_scale(1.0);
     notes
 }
 

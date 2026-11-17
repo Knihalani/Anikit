@@ -2,7 +2,7 @@
 
 use crate::encoder::MbInfo;
 use crate::frame::Pic;
-use crate::transform::{chroma_qp, Quant};
+use crate::transform::chroma_qp;
 
 const ALPHA: [u8; 52] = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 17, 20, 22, 25, 28, 32, 36, 40,
@@ -186,7 +186,7 @@ pub(crate) struct View<'a> {
 
 /// Deblock the whole picture (one slice). Marks every macroblock whose samples
 /// may change in `touched`.
-pub(crate) fn deblock(p: &mut Pic, info: &[MbInfo], mbw: usize, mbh: usize, q: &Quant, touched: &mut [bool]) {
+pub(crate) fn deblock(p: &mut Pic, info: &[MbInfo], mbw: usize, mbh: usize, touched: &mut [bool]) {
     let (ys, yp, cs, cp) = (p.y.stride, p.y.pad, p.u.stride, p.u.pad);
     let mut view = View {
         y: &mut p.y.data[yp * ys..],
@@ -197,31 +197,29 @@ pub(crate) fn deblock(p: &mut Pic, info: &[MbInfo], mbw: usize, mbh: usize, q: &
         yp,
         cp,
     };
-    deblock_rows(&mut view, info, mbw, mbh, q, touched);
+    deblock_rows(&mut view, info, mbw, mbh, touched);
 }
 
 /// Deblock the macroblock rows of `view` (`rows` of them); `info`/`touched` are
 /// band-local. Edges at the band's top are not filtered (a slice boundary with
 /// disable_deblocking_filter_idc 2, or the picture edge).
-pub(crate) fn deblock_rows(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, q: &Quant, touched: &mut [bool]) {
+pub(crate) fn deblock_rows(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, touched: &mut [bool]) {
     #[cfg(target_arch = "x86_64")]
     {
         if crate::simd::level() >= 2 {
             #[target_feature(enable = "avx2")]
-            unsafe fn f(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, q: &Quant, touched: &mut [bool]) {
-                deblock_impl(view, info, mbw, rows, q, touched)
+            unsafe fn f(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, touched: &mut [bool]) {
+                deblock_impl(view, info, mbw, rows, touched)
             }
             // SAFETY: AVX2 detected at run time.
-            return unsafe { f(view, info, mbw, rows, q, touched) };
+            return unsafe { f(view, info, mbw, rows, touched) };
         }
     }
-    deblock_impl(view, info, mbw, rows, q, touched)
+    deblock_impl(view, info, mbw, rows, touched)
 }
 
 #[inline(always)]
-fn deblock_impl(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, q: &Quant, touched: &mut [bool]) {
-    let lp = params(q.qp);
-    let cpar = params(chroma_qp(q.qp));
+fn deblock_impl(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, touched: &mut [bool]) {
     for mby in 0..rows {
         for mbx in 0..mbw {
             let i = mby * mbw + mbx;
@@ -233,7 +231,7 @@ fn deblock_impl(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, q: &Q
             {
                 continue;
             }
-            let (any, l, t) = deblock_mb(view, info, mbw, mbx, mby, &lp, &cpar);
+            let (any, l, t) = deblock_mb(view, info, mbw, mbx, mby);
             touched[i] |= any;
             if l {
                 touched[i - 1] = true;
@@ -247,7 +245,7 @@ fn deblock_impl(view: &mut View, info: &[MbInfo], mbw: usize, rows: usize, q: &Q
 
 /// Returns whether the left / top macroblock edges were filtered.
 #[inline(always)]
-fn deblock_mb(p: &mut View, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize, lp: &Params, cp: &Params) -> (bool, bool, bool) {
+fn deblock_mb(p: &mut View, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize) -> (bool, bool, bool) {
     let cur = &info[mby * mbw + mbx];
     // bS[dir][edge][segment]
     let mut b = [[[0u8; 4]; 4]; 2];
@@ -281,30 +279,40 @@ fn deblock_mb(p: &mut View, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize,
     if !any {
         return (false, false, false);
     }
+    // Internal edges use the macroblock's QP; edges to a neighbour use the
+    // average of both QPs (luma) and of both chroma QPs (chroma).
+    let avg = |a: u8, b: u8| ((a as u32 + b as u32 + 1) >> 1) as u8;
+    let (lpi, cpi) = (params(cur.qp), params(chroma_qp(cur.qp)));
+    let nb = |n: Option<&MbInfo>| match n {
+        Some(n) if n.qp != cur.qp => (params(avg(n.qp, cur.qp)), params(avg(chroma_qp(n.qp), chroma_qp(cur.qp)))),
+        _ => (lpi, cpi),
+    };
+    let (lpl, cpl) = nb(if mbx > 0 { Some(&info[mby * mbw + mbx - 1]) } else { None });
+    let (lpt, cpt) = nb(if mby > 0 { Some(&info[(mby - 1) * mbw + mbx]) } else { None });
     let (s, base) = (p.ys, mby * 16 * p.ys + p.yp + mbx * 16);
     for e in 0..4 {
         if b[0][e] == [0; 4] {
             continue;
         }
-        filter_edge::<16, false>(p.y, base + e * 4, 1, s, &b[0][e], lp);
+        filter_edge::<16, false>(p.y, base + e * 4, 1, s, &b[0][e], if e == 0 { &lpl } else { &lpi });
     }
     for e in 0..4 {
         if b[1][e] == [0; 4] {
             continue;
         }
-        filter_edge::<16, false>(p.y, base + e * 4 * s, s, 1, &b[1][e], lp);
+        filter_edge::<16, false>(p.y, base + e * 4 * s, s, 1, &b[1][e], if e == 0 { &lpt } else { &lpi });
     }
     let (s, base) = (p.cs, mby * 8 * p.cs + p.cp + mbx * 8);
     for pl in [&mut *p.u, &mut *p.v] {
         // chroma edges 0 and 4 use luma edges 0 and 2; chroma line l uses luma segment l/2.
         for (ce, le) in [(0usize, 0usize), (1, 2)] {
             if b[0][le] != [0; 4] {
-                filter_edge::<8, true>(pl, base + ce * 4, 1, s, &b[0][le], cp);
+                filter_edge::<8, true>(pl, base + ce * 4, 1, s, &b[0][le], if ce == 0 { &cpl } else { &cpi });
             }
         }
         for (ce, le) in [(0usize, 0usize), (1, 2)] {
             if b[1][le] != [0; 4] {
-                filter_edge::<8, true>(pl, base + ce * 4 * s, s, 1, &b[1][le], cp);
+                filter_edge::<8, true>(pl, base + ce * 4 * s, s, 1, &b[1][le], if ce == 0 { &cpt } else { &cpi });
             }
         }
     }

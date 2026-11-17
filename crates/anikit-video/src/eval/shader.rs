@@ -64,6 +64,8 @@ pub(crate) struct ShaderC {
     pub dynamic: bool,
     /// Distinguishes layers in content keys.
     pub id: u64,
+    /// Spec path and shader name, for cost reports (`still` prints them).
+    pub label: Arc<str>,
 }
 
 /// Shared handle for transitions (`TransC` is `Clone + PartialEq + Debug`).
@@ -79,6 +81,14 @@ impl PartialEq for ShaderRef {
 impl std::fmt::Debug for ShaderRef {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "ShaderRef({})", self.0.id)
+    }
+}
+
+/// `path (name)` for cost reports: a built-in's name or a file name; inline source is just the path.
+pub(crate) fn label(path: &str, src: Option<&str>) -> Arc<str> {
+    match src.map(str::trim) {
+        Some(s) if !s.contains(['(', '{', ';', '\n']) => format!("{path} ({s})").into(),
+        _ => path.into(),
     }
 }
 
@@ -99,6 +109,31 @@ pub(crate) fn resolve_source(s: &str) -> Option<&str> {
 thread_local! {
     /// Background colour of the frame being evaluated (filters composite onto it).
     static FRAME_BG: Cell<Rgba> = const { Cell::new(Rgba([0.0, 0.0, 0.0, 1.0])) };
+}
+
+thread_local! {
+    /// Output scale of the frame being evaluated (`still --scale`): shaders render
+    /// at the size they will be shown, not at full size and then shrunk.
+    static PREVIEW_SCALE: Cell<f32> = const { Cell::new(1.0) };
+}
+
+/// Set the output scale for evaluations on this thread (1 = full size).
+pub fn set_preview_scale(s: f32) {
+    PREVIEW_SCALE.with(|c| c.set(if s.is_finite() && s > 0.0 { s.min(1.0) } else { 1.0 }));
+}
+
+fn preview_scale() -> f32 {
+    PREVIEW_SCALE.with(|c| c.get())
+}
+
+/// A frame-sized display list, shrunk to the preview scale.
+fn frame_list(w: u32, h: u32, background: Rgba, ops: Vec<Op>) -> DisplayList {
+    let mut dl = DisplayList { width: w, height: h, background, ops };
+    let s = preview_scale();
+    if s != 1.0 {
+        crate::pipeline::scale_list(&mut dl, s);
+    }
+    dl
 }
 
 pub(crate) fn set_frame_bg(c: Rgba) {
@@ -127,6 +162,22 @@ pub(crate) struct Job {
     channels: Vec<(ChanData, ChanOpts)>,
     supersample: bool,
     alpha: bool,
+    label: Arc<str>,
+}
+
+/// Measured cost of one shader layer (or transition) over the renders so far.
+#[derive(Clone, Debug)]
+pub struct ShaderStat {
+    /// Spec path and shader name, e.g. `scenes[0].layers[1] (sdf-scene)`.
+    pub label: String,
+    /// Mean milliseconds per render (the shader alone, not its channels).
+    pub ms: f32,
+    /// Renders measured.
+    pub renders: u32,
+    /// Size rendered at (scaled for stills).
+    pub width: u32,
+    pub height: u32,
+    pub supersample: bool,
 }
 
 struct Entry {
@@ -143,11 +194,15 @@ struct Inner {
     with_result: VecDeque<u32>,
 }
 
+/// Per label: (total ms, renders, w, h, supersample).
+type Tally = (f64, u32, u32, u32, bool);
+
 /// Pending and recent shader renders, looked up by image id.
 #[derive(Default)]
 pub struct ShaderJobs {
     inner: Mutex<Inner>,
     assets: OnceLock<Weak<SharedAssets>>,
+    stats: Mutex<HashMap<Arc<str>, Tally>>,
 }
 
 /// Jobs kept (an evaluation batch is a few dozen frames ahead of rendering).
@@ -196,7 +251,16 @@ impl ShaderJobs {
         }
         // No lock is held while rendering: the shader and nested renders use rayon.
         let assets = self.assets.get().and_then(|w| w.upgrade());
-        let pm = Arc::new(run(&e.job, assets.as_ref()));
+        let (pm, ms) = run(&e.job, assets.as_ref());
+        let pm = Arc::new(pm);
+        {
+            let j = &e.job;
+            let mut st = self.stats.lock().unwrap();
+            let s = st.entry(j.label.clone()).or_insert((0.0, 0, j.w, j.h, j.supersample));
+            s.0 += ms;
+            s.1 += 1;
+            (s.2, s.3) = (j.w, j.h);
+        }
         *e.result.lock().unwrap() = Some(pm.clone());
         let mut g = self.inner.lock().unwrap();
         g.with_result.push_back(id.0);
@@ -210,6 +274,19 @@ impl ShaderJobs {
             }
         }
         Some(pm)
+    }
+
+    /// Cost of every shader rendered so far, most expensive first.
+    pub fn stats(&self) -> Vec<ShaderStat> {
+        let mut v: Vec<ShaderStat> = self
+            .stats
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|(l, &(ms, n, w, h, ss))| ShaderStat { label: l.to_string(), ms: (ms / n.max(1) as f64) as f32, renders: n, width: w, height: h, supersample: ss })
+            .collect();
+        v.sort_by(|a, b| b.ms.total_cmp(&a.ms));
+        v
     }
 
     pub(crate) fn owns(id: ImageId) -> bool {
@@ -283,7 +360,7 @@ fn noise_texture() -> &'static Texture {
     })
 }
 
-fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> Pixmap {
+fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> (Pixmap, f64) {
     let mut owned: Vec<Option<Texture>> = Vec::new();
     for (c, o) in &job.channels {
         owned.push(match c {
@@ -315,10 +392,14 @@ fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> Pixmap {
     f.channels = chans;
     f.supersample = job.supersample;
     f.alpha = job.alpha;
+    // Smooth shader gradients would band in 8 bits; exact values are untouched.
+    f.dither = true;
     let mut pm = Pixmap::new(job.w.clamp(1, 65535) as u16, job.h.clamp(1, 65535) as u16);
+    let t0 = std::time::Instant::now();
     let opaque = job.shader.render(&f, pm.data_as_u8_slice_mut());
+    let ms = t0.elapsed().as_secs_f64() * 1000.0;
     pm.set_may_have_transparency(!opaque);
-    pm
+    (pm, ms)
 }
 
 // ---------------------------------------------------------------- emission
@@ -330,6 +411,11 @@ fn hash_f32s<H: Hasher>(h: &mut H, v: &[f32]) {
 }
 
 impl Evaluator {
+    /// Measured cost of every shader layer and transition rendered so far.
+    pub fn shader_stats(&self) -> Vec<ShaderStat> {
+        self.assets.shaders.stats()
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn job_for(&self, sc: &ShaderC, cx: &Cx, v: &[f32; prop::N], size: (u32, u32), time: f32, progress: f32, chans: Vec<(ChanData, ChanOpts)>) -> ImageId {
         let mut uniforms: Vec<(String, Vec<f32>)> = sc.fixed.clone();
@@ -372,6 +458,7 @@ impl Evaluator {
             channels: chans,
             supersample: sc.supersample,
             alpha: sc.alpha,
+            label: sc.label.clone(),
         };
         self.assets.shaders.submit(job, key)
     }
@@ -380,10 +467,10 @@ impl Evaluator {
     #[allow(clippy::too_many_arguments)]
     pub(super) fn emit_shader(&self, sc: &ShaderC, cx: &Cx, v: &[f32; prop::N], xf: &Affine, w: f32, h: f32, alpha: f32, lt: f32, out: &mut Vec<Op>) {
         let (fw, fh) = (self.width as f32, self.height as f32);
-        // Render at device resolution.
-        let (sx, sy) = ((xf[0] * xf[0] + xf[1] * xf[1]).sqrt(), (xf[2] * xf[2] + xf[3] * xf[3]).sqrt());
-        let k = f32::from_bits(self.shader_scale.load(std::sync::atomic::Ordering::Relaxed)).clamp(0.05, 1.0);
-        let (dw, dh) = if sc.filter { (fw, fh) } else { ((w * sx * k).round().clamp(1.0, MAX_SIDE), (h * sy * k).round().clamp(1.0, MAX_SIDE)) };
+        // Render at device resolution (times the preview scale).
+        let ps = preview_scale();
+        let (sx, sy) = ((xf[0] * xf[0] + xf[1] * xf[1]).sqrt() * ps, (xf[2] * xf[2] + xf[3] * xf[3]).sqrt() * ps);
+        let (dw, dh) = if sc.filter { ((fw * ps).round().max(1.0), (fh * ps).round().max(1.0)) } else { ((w * sx).round().clamp(1.0, MAX_SIDE), (h * sy).round().clamp(1.0, MAX_SIDE)) };
         if w < 0.5 || h < 0.5 {
             return;
         }
@@ -393,12 +480,7 @@ impl Evaluator {
                 match c {
                     ChannelC::None => ChanData::None,
                     ChannelC::Noise => ChanData::Noise,
-                    ChannelC::Below => ChanData::List(DisplayList {
-                        width: self.width,
-                        height: self.height,
-                        background: FRAME_BG.with(|b| b.get()),
-                        ops: out.clone(),
-                    }),
+                    ChannelC::Below => ChanData::List(frame_list(self.width, self.height, FRAME_BG.with(|b| b.get()), out.clone())),
                     ChannelC::Layers(nodes) => {
                         let mut ops = Vec::new();
                         let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0 };
@@ -424,7 +506,7 @@ impl Evaluator {
     /// A shader transition between two scenes' ops (`from` = channel 0, `to` = channel 1).
     pub(super) fn emit_shader_transition(&self, sc: &ShaderC, from: (Vec<Op>, Rgba), to: (Vec<Op>, Rgba), t: f32, progress: f32, out: &mut Vec<Op>) {
         let (w, h) = (self.width, self.height);
-        let mk = |(ops, bg): (Vec<Op>, Rgba)| DisplayList { width: w, height: h, background: bg, ops };
+        let mk = |(ops, bg): (Vec<Op>, Rgba)| frame_list(w, h, bg, ops);
         let o = ChanOpts { wrap: Wrap::Clamp, filter: Filter::Linear, mipmaps: false };
         let mut chans = vec![(ChanData::List(mk(from)), o), (ChanData::List(mk(to)), o)];
         for (c, o) in sc.channels.iter().skip(2) {
@@ -432,7 +514,9 @@ impl Evaluator {
         }
         let cx = Cx { ev: self, scene_t: t, gt: t, dof: 0.0 };
         let v = [0.0f32; prop::N];
-        let image = self.job_for(sc, &cx, &v, (w, h), t, progress, chans);
+        let ps = preview_scale();
+        let size = (((w as f32 * ps).round() as u32).max(1), ((h as f32 * ps).round() as u32).max(1));
+        let image = self.job_for(sc, &cx, &v, size, t, progress, chans);
         out.push(Op::Image { image, dst: [0.0, 0.0, w as f32, h as f32], opacity: 1.0, transform: dl::IDENTITY });
     }
 }

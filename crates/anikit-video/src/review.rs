@@ -127,6 +127,28 @@ pub struct Samples {
     pub h: u32,
     /// RGB8 per sample.
     pub frames: Vec<Vec<u8>>,
+    /// The same frames averaged over 4×4 blocks: motion is measured on these,
+    /// so film grain and dither don't read as movement.
+    pub coarse: Vec<Vec<u8>>,
+}
+
+fn coarsen(f: &[u8], w: usize, h: usize) -> Vec<u8> {
+    let (cw, ch) = (w / 4, h / 4);
+    let mut out = vec![0u8; cw * ch * 3];
+    for cy in 0..ch {
+        for cx in 0..cw {
+            for c in 0..3 {
+                let mut t = 0u32;
+                for y in cy * 4..cy * 4 + 4 {
+                    for x in cx * 4..cx * 4 + 4 {
+                        t += f[(y * w + x) * 3 + c] as u32;
+                    }
+                }
+                out[(cy * cw + cx) * 3 + c] = (t / 16) as u8;
+            }
+        }
+    }
+    out
 }
 
 impl Samples {
@@ -134,11 +156,11 @@ impl Samples {
         let step = 1.0 / fps;
         let scale = (width as f32 / ev.width.max(1) as f32).min(1.0);
         // Shaders shade at the sample size too (restored afterwards).
-        let prev = ev.shader_scale.swap(scale.to_bits(), std::sync::atomic::Ordering::Relaxed);
+        crate::eval::shader::set_preview_scale(scale);
         let n = (ev.duration / step).floor() as usize + 1;
         let mut w = 0;
         let mut h = 0;
-        let frames = (0..n)
+        let frames: Vec<Vec<u8>> = (0..n)
             .map(|i| {
                 let mut dl = ev.eval((i as f32 * step).min(ev.duration - 0.01).max(0.0));
                 pipeline::scale_list(&mut dl, scale);
@@ -148,8 +170,9 @@ impl Samples {
                 px.chunks_exact(4).flat_map(|p| [p[0], p[1], p[2]]).collect()
             })
             .collect();
-        ev.shader_scale.store(prev, std::sync::atomic::Ordering::Relaxed);
-        Samples { step, w, h, frames }
+        crate::eval::shader::set_preview_scale(1.0);
+        let coarse = frames.iter().map(|f| coarsen(f, w as usize, h as usize)).collect();
+        Samples { step, w, h, frames, coarse }
     }
     pub fn time(&self, i: usize) -> f32 {
         i as f32 * self.step
@@ -186,7 +209,7 @@ pub fn sparkline(v: &[f32]) -> String {
 pub fn time_axis(ev: &Evaluator, s: &Samples, intent: &Intent, beats: Option<&[f64]>) -> (Timeline, Vec<Note>) {
     let n = s.frames.len();
     let dur = ev.duration;
-    let energy_raw: Vec<f32> = (1..n).map(|i| diff(&s.frames[i - 1], &s.frames[i])).collect();
+    let energy_raw: Vec<f32> = (1..n).map(|i| diff(&s.coarse[i - 1], &s.coarse[i])).collect();
     // Shots: scene starts plus hard visual changes.
     let mut cuts: Vec<f32> = ev.scenes().iter().map(|sc| sc.start).filter(|&t| t > 0.05 && t < dur - 0.05).collect();
     for (i, e) in energy_raw.iter().enumerate() {
@@ -205,7 +228,7 @@ pub fn time_axis(ev: &Evaluator, s: &Samples, intent: &Intent, beats: Option<&[f
     let median = sorted.get(sorted.len() / 2).copied().unwrap_or(dur);
     let longest = sorted.last().copied().unwrap_or(dur);
     let per = (1.0 / s.step).round().max(1.0) as usize;
-    let secs: Vec<f32> = (per..n).step_by(per).map(|i| diff(&s.frames[i - per], &s.frames[i])).collect();
+    let secs: Vec<f32> = (per..n).step_by(per).map(|i| diff(&s.coarse[i - per], &s.coarse[i])).collect();
     let same = if secs.is_empty() { 0.0 } else { secs.iter().filter(|d| **d < 6.0).count() as f32 / secs.len() as f32 };
     let energy: Vec<f32> = energy_raw.chunks(per).map(|c| c.iter().sum::<f32>() / c.len() as f32).collect();
     let on_beat = beats.filter(|b| !b.is_empty() && !cuts.is_empty()).map(|b| {
@@ -290,7 +313,7 @@ pub fn time_axis(ev: &Evaluator, s: &Samples, intent: &Intent, beats: Option<&[f
         }
         // Abrupt ending: still moving hard on the last frame.
         if n >= 4 {
-            let last = diff(&s.frames[n - 2], &s.frames[n - 1]);
+            let last = diff(&s.coarse[n - 2], &s.coarse[n - 1]);
             let typical = {
                 let mut v = energy_raw.clone();
                 v.sort_by(|a, b| a.total_cmp(b));
