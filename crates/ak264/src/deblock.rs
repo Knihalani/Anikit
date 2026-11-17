@@ -55,7 +55,7 @@ fn bs(p: &MbInfo, bp: usize, q: &MbInfo, bq: usize, mb_edge: bool) -> u8 {
 /// `ls` the step along it; `bs[l]` is the strength of line `l`.
 #[inline(always)]
 #[allow(clippy::manual_clamp)]
-fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: usize, ls: usize, seg: &[u8; 4], p: &Params) {
+fn filter_edge<const N: usize, const CHROMA: bool, const STRONG: bool>(d: &mut [u8], o: usize, xs: usize, ls: usize, seg: &[u8; 4], p: &Params) {
     let mut v = [[0i16; N]; 8]; // p3 p2 p1 p0 q0 q1 q2 q3
     let vertical = xs == 1;
     // Every access is in rows/columns o − 4·xs .. o + 3·xs (+ (N − 1)·ls): one check
@@ -122,8 +122,12 @@ fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: u
         if CHROMA {
             let tc = tc0 + 1;
             let delta = base_delta.max(-tc).min(tc);
-            let np0 = sel(strong, (2 * p1 + p0 + q1 + 2) >> 2, (p0 + delta).max(0).min(255));
-            let nq0 = sel(strong, (2 * q1 + q0 + p1 + 2) >> 2, (q0 - delta).max(0).min(255));
+            let (wp0, wq0) = ((p0 + delta).max(0).min(255), (q0 - delta).max(0).min(255));
+            let (np0, nq0) = if STRONG {
+                (sel(strong, (2 * p1 + p0 + q1 + 2) >> 2, wp0), sel(strong, (2 * q1 + q0 + p1 + 2) >> 2, wq0))
+            } else {
+                (wp0, wq0)
+            };
             out[3][l] = sel(filt, np0, p0);
             out[4][l] = sel(filt, nq0, q0);
         } else {
@@ -137,6 +141,14 @@ fn filter_edge<const N: usize, const CHROMA: bool>(d: &mut [u8], o: usize, xs: u
             let n_q1 = sel(aq, q1 + ((q2 + avg - (q1 << 1)) >> 1).max(-tc0).min(tc0), q1);
             let n_p0 = (p0 + delta).max(0).min(255);
             let n_q0 = (q0 - delta).max(0).min(255);
+            if !STRONG {
+                // no bS 4 on this edge: normal filter only
+                out[2][l] = sel(filt, n_p1, p1);
+                out[3][l] = sel(filt, n_p0, p0);
+                out[4][l] = sel(filt, n_q0, q0);
+                out[5][l] = sel(filt, n_q1, q1);
+                continue;
+            }
             let small = lt((p0 - q0).abs(), (alpha >> 2) + 2);
             let sp = ap & small;
             let sq = aq & small;
@@ -302,25 +314,42 @@ fn deblock_mb(p: &mut View, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize)
         if b[0][e] == [0; 4] {
             continue;
         }
-        filter_edge::<16, false>(p.y, base + e * 4, 1, s, &b[0][e], if e == 0 { &lpl } else { &lpi });
+        // only macroblock edges can carry bS 4 (the strong filter)
+        if e == 0 && b[0][0].contains(&4) {
+            filter_edge::<16, false, true>(p.y, base, 1, s, &b[0][0], &lpl);
+        } else {
+            filter_edge::<16, false, false>(p.y, base + e * 4, 1, s, &b[0][e], if e == 0 { &lpl } else { &lpi });
+        }
     }
     for e in 0..4 {
         if b[1][e] == [0; 4] {
             continue;
         }
-        filter_edge::<16, false>(p.y, base + e * 4 * s, s, 1, &b[1][e], if e == 0 { &lpt } else { &lpi });
+        if e == 0 && b[1][0].contains(&4) {
+            filter_edge::<16, false, true>(p.y, base, s, 1, &b[1][0], &lpt);
+        } else {
+            filter_edge::<16, false, false>(p.y, base + e * 4 * s, s, 1, &b[1][e], if e == 0 { &lpt } else { &lpi });
+        }
     }
     let (s, base) = (p.cs, mby * 8 * p.cs + p.cp + mbx * 8);
     for pl in [&mut *p.u, &mut *p.v] {
         // chroma edges 0 and 4 use luma edges 0 and 2; chroma line l uses luma segment l/2.
         for (ce, le) in [(0usize, 0usize), (1, 2)] {
             if b[0][le] != [0; 4] {
-                filter_edge::<8, true>(pl, base + ce * 4, 1, s, &b[0][le], if ce == 0 { &cpl } else { &cpi });
+                if ce == 0 && b[0][0].contains(&4) {
+                    filter_edge::<8, true, true>(pl, base, 1, s, &b[0][0], &cpl);
+                } else {
+                    filter_edge::<8, true, false>(pl, base + ce * 4, 1, s, &b[0][le], if ce == 0 { &cpl } else { &cpi });
+                }
             }
         }
         for (ce, le) in [(0usize, 0usize), (1, 2)] {
             if b[1][le] != [0; 4] {
-                filter_edge::<8, true>(pl, base + ce * 4 * s, s, 1, &b[1][le], if ce == 0 { &cpt } else { &cpi });
+                if ce == 0 && b[1][0].contains(&4) {
+                    filter_edge::<8, true, true>(pl, base, s, 1, &b[1][0], &cpt);
+                } else {
+                    filter_edge::<8, true, false>(pl, base + ce * 4 * s, s, 1, &b[1][le], if ce == 0 { &cpt } else { &cpi });
+                }
             }
         }
     }
