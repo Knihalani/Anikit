@@ -1,0 +1,2172 @@
+{
+ "size": "9:16",
+ "fps": 30,
+ "intent": {
+  "pace": "fast",
+  "genre": "launch"
+ },
+ "music": {
+  "style": "cinematic-hybrid",
+  "bpm": 128,
+  "key": "Dm",
+  "mood": "driving",
+  "hits": [
+   "@bar3",
+   "@bar7"
+  ],
+  "end": "ring"
+ },
+ "audio": [
+  {
+   "sfx": "whoosh",
+   "at": 0.9375
+  },
+  {
+   "sfx": "riser",
+   "at": 3.75
+  },
+  {
+   "sfx": "impact",
+   "at": 3.75
+  },
+  {
+   "sfx": "whoosh",
+   "at": 7.5
+  },
+  {
+   "sfx": "pop",
+   "at": 10.9125
+  },
+  {
+   "sfx": "impact",
+   "at": 12.1875
+  },
+  {
+   "sfx": "chime",
+   "at": 12.421875
+  }
+ ],
+ "post": {
+  "preset": "cinematic",
+  "grain": 0.05
+ },
+ "compositions": {
+  "map": {
+   "size": [
+    720,
+    1560
+   ],
+   "duration": 15,
+   "background": "#E6EEF2",
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 720,
+     "height": 1560,
+     "fill": "#E6EEF2",
+     "x": 0,
+     "y": 0,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-40 120 C 200 40, 420 220, 780 90",
+     "stroke": "#8FA9BC",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -40,
+     "y": 100,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-40 225 C 200 145, 420 325, 780 195",
+     "stroke": "#8FA9BC",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -40,
+     "y": 205,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-40 330 C 200 250, 420 430, 780 300",
+     "stroke": "#8FA9BC",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -40,
+     "y": 310,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-40 435 C 200 355, 420 535, 780 405",
+     "stroke": "#8FA9BC",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -40,
+     "y": 415,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-40 540 C 200 460, 420 640, 780 510",
+     "stroke": "#8FA9BC",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -40,
+     "y": 520,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-40 645 C 200 565, 420 745, 780 615",
+     "stroke": "#8FA9BC",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -40,
+     "y": 625,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-40 750 C 200 670, 420 850, 780 720",
+     "stroke": "#8FA9BC",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -40,
+     "y": 730,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-40 855 C 200 775, 420 955, 780 825",
+     "stroke": "#8FA9BC",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -40,
+     "y": 835,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-40 960 C 200 880, 420 1060, 780 930",
+     "stroke": "#8FA9BC",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -40,
+     "y": 940,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-40 1065 C 200 985, 420 1165, 780 1035",
+     "stroke": "#8FA9BC",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -40,
+     "y": 1045,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-40 1170 C 200 1090, 420 1270, 780 1140",
+     "stroke": "#8FA9BC",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -40,
+     "y": 1150,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-40 1275 C 200 1195, 420 1375, 780 1245",
+     "stroke": "#8FA9BC",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -40,
+     "y": 1255,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-40 1380 C 200 1300, 420 1480, 780 1350",
+     "stroke": "#8FA9BC",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -40,
+     "y": 1360,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-40 1485 C 200 1405, 420 1585, 780 1455",
+     "stroke": "#8FA9BC",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -40,
+     "y": 1465,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M120 1400 C 80 1150, 520 1050, 430 820 S 160 520, 360 300 S 600 160, 560 110",
+     "stroke": "#FFB23F",
+     "strokeWidth": 14,
+     "fill": "none",
+     "x": 110,
+     "y": 110,
+     "anchor": "topLeft",
+     "trimEnd": "=min(1, 0.25 + t*0.12)"
+    },
+    {
+     "text": "12 m",
+     "font": "JetBrains Mono",
+     "size": 22,
+     "color": "#4E6272",
+     "x": 470,
+     "y": 300,
+     "anchor": "topLeft"
+    },
+    {
+     "text": "BUOY",
+     "font": "JetBrains Mono",
+     "size": 22,
+     "color": "#4E6272",
+     "x": 300,
+     "y": 820,
+     "anchor": "topLeft"
+    },
+    {
+     "text": "8 m",
+     "font": "JetBrains Mono",
+     "size": 22,
+     "color": "#4E6272",
+     "x": 80,
+     "y": 640,
+     "anchor": "topLeft"
+    },
+    {
+     "text": "REEF",
+     "font": "JetBrains Mono",
+     "size": 22,
+     "color": "#4E6272",
+     "x": 520,
+     "y": 1080,
+     "anchor": "topLeft"
+    },
+    {
+     "text": "4 m",
+     "font": "JetBrains Mono",
+     "size": 22,
+     "color": "#4E6272",
+     "x": 260,
+     "y": 1240,
+     "anchor": "topLeft"
+    },
+    {
+     "text": "SHOAL",
+     "font": "JetBrains Mono",
+     "size": 22,
+     "color": "#4E6272",
+     "x": 90,
+     "y": 420,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "circle",
+     "width": 44,
+     "height": 44,
+     "fill": "#FFB23F",
+     "stroke": "#FFFFFF",
+     "strokeWidth": 6,
+     "x": 430,
+     "y": 820
+    },
+    {
+     "shape": "rect",
+     "width": 720,
+     "height": 200,
+     "fill": "#0B1622",
+     "x": 0,
+     "y": 0,
+     "anchor": "topLeft"
+    },
+    {
+     "text": "North Channel",
+     "font": "Instrument Serif",
+     "size": 64,
+     "color": "#DCE6EC",
+     "x": 40,
+     "y": 50,
+     "anchor": "topLeft"
+    },
+    {
+     "text": "OFFLINE \u00b7 6.4 NM \u00b7 NEXT MARK 0.3 NM",
+     "font": "JetBrains Mono",
+     "size": 22,
+     "color": "#FFB23F",
+     "x": 40,
+     "y": 140,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "rect",
+     "width": 640,
+     "height": 150,
+     "fill": "#0B1622",
+     "radius": 28,
+     "x": 40,
+     "y": 1370,
+     "anchor": "topLeft"
+    },
+    {
+     "text": "Keep the red buoy to port",
+     "font": "Inter Display",
+     "size": 40,
+     "weight": 700,
+     "color": "#DCE6EC",
+     "x": 80,
+     "y": 1410,
+     "anchor": "topLeft"
+    },
+    {
+     "text": "Mark 3 of 7",
+     "font": "JetBrains Mono",
+     "size": 24,
+     "color": "#FFB23F",
+     "x": 80,
+     "y": 1468,
+     "anchor": "topLeft"
+    }
+   ]
+  }
+ },
+ "scenes": [
+  {
+   "id": "hook",
+   "duration": 0.9375,
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 0.5,
+      "bloom": 0.45,
+      "exposure": 1.3,
+      "env": {
+       "preset": "night"
+      },
+      "fog": {
+       "density": 0.04,
+       "color": "#18222A"
+      },
+      "floor": {
+       "y": -0.9,
+       "color": "#121C26",
+       "roughness": 0.9
+      },
+      "lights": [
+       {
+        "dir": [
+         -0.85,
+         0.2,
+         -0.45
+        ],
+        "size": [
+         14,
+         5
+        ],
+        "color": "#FFC27A",
+        "intensity": 22,
+        "key": true
+       },
+       {
+        "dir": [
+         0.6,
+         0.5,
+         0.6
+        ],
+        "size": [
+         40,
+         20
+        ],
+        "color": "#6F8BB0",
+        "intensity": 2.5
+       }
+      ],
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          -5.5,
+          1.2,
+          3.5
+         ],
+         "target": [
+          -2,
+          0.3,
+          0
+         ],
+         "focal": 30,
+         "fstop": 4
+        },
+        {
+         "t": 0.9375,
+         "pos": [
+          -4.6,
+          1.0,
+          3.0
+         ],
+         "target": [
+          -1.5,
+          0.3,
+          0
+         ],
+         "focal": 32,
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "heightfield",
+        "expr": "=0.22*sin(x*0.8 + z*0.3) + 0.12*sin(x*1.9 - z*1.3) + 0.05*sin(x*6 + z*4)",
+        "size": [
+         14,
+         14
+        ],
+        "res": 160,
+        "material": {
+         "base": "#7F9CB3",
+         "roughness": 0.22
+        }
+       },
+       {
+        "type": "sphere",
+        "radius": 0.035,
+        "count": 220,
+        "pos": "=[(-5 + 10*i/n), (0.22*sin((-5 + 10*i/n)*0.8 + (1.6*sin(i/n*7.5))*0.3) + 0.12*sin((-5 + 10*i/n)*1.9 - (1.6*sin(i/n*7.5))*1.3) + 0.05*sin((-5 + 10*i/n)*6 + (1.6*sin(i/n*7.5))*4) + 0.06), (1.6*sin(i/n*7.5))]",
+        "scale": "=[(i/n < 0.0 + t*0.5 ? 1 : 0), (i/n < 0.0 + t*0.5 ? 1 : 0), (i/n < 0.0 + t*0.5 ? 1 : 0)]",
+        "material": {
+         "base": "#FFB23F",
+         "emissive": "#FFB23F",
+         "emissiveStrength": 6
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 0.9375,
+   "transition": "cut",
+   "camera": {
+    "shake": {
+     "amount": 7,
+     "at": 0,
+     "duration": 0.15
+    }
+   },
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 1,
+      "bloom": 0.45,
+      "exposure": 1.3,
+      "env": {
+       "preset": "night"
+      },
+      "fog": {
+       "density": 0.09,
+       "color": "#A7B6C2"
+      },
+      "floor": {
+       "y": -0.9,
+       "color": "#121C26",
+       "roughness": 0.9
+      },
+      "lights": [
+       {
+        "dir": [
+         -0.85,
+         0.2,
+         -0.45
+        ],
+        "size": [
+         14,
+         5
+        ],
+        "color": "#FFC27A",
+        "intensity": 22,
+        "key": true
+       },
+       {
+        "dir": [
+         0.6,
+         0.5,
+         0.6
+        ],
+        "size": [
+         40,
+         20
+        ],
+        "color": "#6F8BB0",
+        "intensity": 2.5
+       }
+      ],
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0,
+          0.95,
+          3.9
+         ],
+         "target": [
+          0,
+          0.85,
+          0.9
+         ],
+         "focal": 40,
+         "fstop": 4
+        },
+        {
+         "t": 0.9375,
+         "pos": [
+          0,
+          0.9,
+          3.7
+         ],
+         "target": [
+          0,
+          0.85,
+          0.9
+         ],
+         "focal": 41,
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "heightfield",
+        "expr": "=0.22*sin(x*0.8 + z*0.3) + 0.12*sin(x*1.9 - z*1.3) + 0.05*sin(x*6 + z*4)",
+        "size": [
+         14,
+         14
+        ],
+        "res": 160,
+        "material": {
+         "base": "#7F9CB3",
+         "roughness": 0.22
+        }
+       },
+       {
+        "text": "No coverage.",
+        "height": 0.5,
+        "depth": 0.16,
+        "bevel": 0.015,
+        "font": "Instrument Serif",
+        "material": {
+         "base": "#0B1622",
+         "roughness": 0.4
+        },
+        "pos": [
+         0,
+         0.62,
+         0.9
+        ],
+        "keys": [
+         {
+          "t": 0,
+          "rot": [
+           -25,
+           0,
+           0
+          ],
+          "scale": 1.3,
+          "ease": "outExpo"
+         },
+         {
+          "t": 0.22,
+          "rot": [
+           0,
+           0,
+           0
+          ],
+          "scale": 1
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "duration": 0.9375,
+   "transition": "cut",
+   "camera": {
+    "shake": {
+     "amount": 7,
+     "at": 0,
+     "duration": 0.15
+    }
+   },
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 1,
+      "bloom": 0.45,
+      "exposure": 1.3,
+      "env": {
+       "preset": "night"
+      },
+      "fog": {
+       "density": 0.04,
+       "color": "#18222A"
+      },
+      "floor": {
+       "y": -0.9,
+       "color": "#121C26",
+       "roughness": 0.9
+      },
+      "lights": [
+       {
+        "dir": [
+         -0.85,
+         0.2,
+         -0.45
+        ],
+        "size": [
+         14,
+         5
+        ],
+        "color": "#FFC27A",
+        "intensity": 22,
+        "key": true
+       },
+       {
+        "dir": [
+         0.6,
+         0.5,
+         0.6
+        ],
+        "size": [
+         40,
+         20
+        ],
+        "color": "#6F8BB0",
+        "intensity": 2.5
+       }
+      ],
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.3,
+          0.8,
+          3.8
+         ],
+         "target": [
+          0,
+          0.85,
+          0.9
+         ],
+         "focal": 40,
+         "fstop": 4
+        },
+        {
+         "t": 0.9375,
+         "pos": [
+          0.15,
+          0.78,
+          3.6
+         ],
+         "target": [
+          0,
+          0.85,
+          0.9
+         ],
+         "focal": 41,
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "heightfield",
+        "expr": "=0.22*sin(x*0.8 + z*0.3) + 0.12*sin(x*1.9 - z*1.3) + 0.05*sin(x*6 + z*4)",
+        "size": [
+         14,
+         14
+        ],
+        "res": 160,
+        "material": {
+         "base": "#7F9CB3",
+         "roughness": 0.22
+        }
+       },
+       {
+        "text": "No chart.",
+        "height": 0.5,
+        "depth": 0.16,
+        "bevel": 0.015,
+        "font": "Instrument Serif",
+        "material": {
+         "base": "#FFB23F",
+         "emissive": "#FFB23F",
+         "emissiveStrength": 4
+        },
+        "pos": [
+         0,
+         0.62,
+         0.9
+        ],
+        "keys": [
+         {
+          "t": 0,
+          "rot": [
+           25,
+           0,
+           0
+          ],
+          "scale": 1.3,
+          "ease": "outExpo"
+         },
+         {
+          "t": 0.22,
+          "rot": [
+           0,
+           0,
+           0
+          ],
+          "scale": 1
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "lost",
+   "duration": 0.9375,
+   "transition": "cut",
+   "camera": {
+    "shake": {
+     "amount": 10,
+     "at": 0,
+     "duration": 0.9
+    }
+   },
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 0.5,
+      "bloom": 0.45,
+      "exposure": 1.3,
+      "env": {
+       "preset": "night"
+      },
+      "fog": {
+       "density": 0.09,
+       "color": "#A7B6C2"
+      },
+      "floor": {
+       "y": -0.9,
+       "color": "#121C26",
+       "roughness": 0.9
+      },
+      "lights": [
+       {
+        "dir": [
+         -0.85,
+         0.2,
+         -0.45
+        ],
+        "size": [
+         14,
+         5
+        ],
+        "color": "#FFC27A",
+        "intensity": 22,
+        "key": true
+       },
+       {
+        "dir": [
+         0.6,
+         0.5,
+         0.6
+        ],
+        "size": [
+         40,
+         20
+        ],
+        "color": "#6F8BB0",
+        "intensity": 2.5
+       }
+      ],
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          -4.6,
+          2.4,
+          3.0
+         ],
+         "target": [
+          -2,
+          0.3,
+          0
+         ],
+         "focal": 24,
+         "fstop": 4
+        },
+        {
+         "t": 0.9375,
+         "pos": [
+          -4.0,
+          1.9,
+          2.4
+         ],
+         "target": [
+          -1.8,
+          0.3,
+          0
+         ],
+         "focal": 28,
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "heightfield",
+        "expr": "=0.22*sin(x*0.8 + z*0.3) + 0.12*sin(x*1.9 - z*1.3) + 0.05*sin(x*6 + z*4)",
+        "size": [
+         14,
+         14
+        ],
+        "res": 160,
+        "material": {
+         "base": "#7F9CB3",
+         "roughness": 0.22
+        }
+       },
+       {
+        "type": "sphere",
+        "radius": 0.035,
+        "count": 220,
+        "pos": "=[(-5 + 10*i/n), (0.22*sin((-5 + 10*i/n)*0.8 + (1.6*sin(i/n*7.5))*0.3) + 0.12*sin((-5 + 10*i/n)*1.9 - (1.6*sin(i/n*7.5))*1.3) + 0.05*sin((-5 + 10*i/n)*6 + (1.6*sin(i/n*7.5))*4) + 0.06), (1.6*sin(i/n*7.5))]",
+        "scale": "=[(i/n < 0.25 + t*-0.2 ? 1 : 0), (i/n < 0.25 + t*-0.2 ? 1 : 0), (i/n < 0.25 + t*-0.2 ? 1 : 0)]",
+        "material": {
+         "base": "#FFB23F",
+         "emissive": "#FFB23F",
+         "emissiveStrength": 6
+        }
+       }
+      ]
+     }
+    },
+    {
+     "text": "Which way?",
+     "font": "Instrument Serif",
+     "size": "15vw",
+     "color": "#DCE6EC",
+     "x": "50%",
+     "y": "28%",
+     "anchor": "center",
+     "enter": "mask by line up"
+    }
+   ]
+  },
+  {
+   "id": "reveal",
+   "duration": 1.875,
+   "transition": "cut",
+   "camera": {
+    "shake": {
+     "amount": 9,
+     "at": 0,
+     "duration": 0.2
+    }
+   },
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 0.5,
+      "bloom": 0.45,
+      "exposure": 1.3,
+      "env": {
+       "preset": "night"
+      },
+      "fog": {
+       "density": 0.04,
+       "color": "#18222A"
+      },
+      "floor": {
+       "y": -0.9,
+       "color": "#121C26",
+       "roughness": 0.9
+      },
+      "lights": [
+       {
+        "dir": [
+         -0.85,
+         0.2,
+         -0.45
+        ],
+        "size": [
+         14,
+         5
+        ],
+        "color": "#FFC27A",
+        "intensity": 22,
+        "key": true
+       },
+       {
+        "dir": [
+         0.6,
+         0.5,
+         0.6
+        ],
+        "size": [
+         40,
+         20
+        ],
+        "color": "#6F8BB0",
+        "intensity": 2.5
+       }
+      ],
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          -0.9,
+          0.7,
+          2.6
+         ],
+         "target": [
+          0,
+          1.0,
+          0
+         ],
+         "focal": 40,
+         "fstop": 4
+        },
+        {
+         "t": 1.875,
+         "pos": [
+          0.6,
+          1.3,
+          2.3
+         ],
+         "target": [
+          0,
+          0.95,
+          0
+         ],
+         "focal": 44,
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "heightfield",
+        "expr": "=0.22*sin(x*0.8 + z*0.3) + 0.12*sin(x*1.9 - z*1.3) + 0.05*sin(x*6 + z*4)",
+        "size": [
+         14,
+         14
+        ],
+        "res": 160,
+        "material": {
+         "base": "#7F9CB3",
+         "roughness": 0.22
+        }
+       },
+       {
+        "type": "sphere",
+        "radius": 0.035,
+        "count": 220,
+        "pos": "=[(-5 + 10*i/n), (0.22*sin((-5 + 10*i/n)*0.8 + (1.6*sin(i/n*7.5))*0.3) + 0.12*sin((-5 + 10*i/n)*1.9 - (1.6*sin(i/n*7.5))*1.3) + 0.05*sin((-5 + 10*i/n)*6 + (1.6*sin(i/n*7.5))*4) + 0.06), (1.6*sin(i/n*7.5))]",
+        "scale": "=[(i/n < 0.3 + t*0.2 ? 1 : 0), (i/n < 0.3 + t*0.2 ? 1 : 0), (i/n < 0.3 + t*0.2 ? 1 : 0)]",
+        "material": {
+         "base": "#FFB23F",
+         "emissive": "#FFB23F",
+         "emissiveStrength": 6
+        }
+       },
+       {
+        "type": "box",
+        "size": [
+         0.8,
+         1.66,
+         0.07
+        ],
+        "pos": [
+         0,
+         0.95,
+         0
+        ],
+        "material": "aluminium"
+       },
+       {
+        "type": "pane",
+        "size": [
+         0.72,
+         1.56,
+         0.01
+        ],
+        "pos": [
+         0,
+         0.95,
+         0.04
+        ],
+        "texture": "#map",
+        "material": {
+         "base": "#FFFFFF",
+         "glow": 0.3,
+         "roughness": 0.3
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "f1",
+   "duration": 0.9375,
+   "transition": "cut",
+   "background": "#E6EEF2",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.3
+      },
+      "to": {
+       "zoom": 1.05
+      },
+      "duration": 0.9375,
+      "ease": "outExpo"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "composition": "map",
+     "width": 1080,
+     "height": 2340,
+     "x": "50%",
+     "y": "55%"
+    },
+    {
+     "layers": [
+      {
+       "shape": "rect",
+       "width": 760,
+       "height": 190,
+       "fill": "#0B1622",
+       "x": 0,
+       "y": 0,
+       "anchor": "topLeft"
+      },
+      {
+       "text": "Charts offline.",
+       "font": "Inter Display",
+       "size": 84,
+       "weight": 900,
+       "color": "#DCE6EC",
+       "x": 44,
+       "y": 44,
+       "anchor": "topLeft"
+      }
+     ],
+     "x": "50%",
+     "y": "82%",
+     "anchor": "center",
+     "animate": [
+      {
+       "from": {
+        "scaleX": 0
+       },
+       "duration": 0.18,
+       "ease": "outExpo"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "f1b",
+   "duration": 0.9375,
+   "transition": "cut",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 0.5,
+      "bloom": 0.45,
+      "exposure": 1.3,
+      "env": {
+       "preset": "night"
+      },
+      "fog": {
+       "density": 0.04,
+       "color": "#18222A"
+      },
+      "floor": {
+       "y": -0.9,
+       "color": "#121C26",
+       "roughness": 0.9
+      },
+      "lights": [
+       {
+        "dir": [
+         -0.85,
+         0.2,
+         -0.45
+        ],
+        "size": [
+         14,
+         5
+        ],
+        "color": "#FFC27A",
+        "intensity": 22,
+        "key": true
+       },
+       {
+        "dir": [
+         0.6,
+         0.5,
+         0.6
+        ],
+        "size": [
+         40,
+         20
+        ],
+        "color": "#6F8BB0",
+        "intensity": 2.5
+       }
+      ],
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.5,
+          1.3,
+          1.3
+         ],
+         "target": [
+          0,
+          1.1,
+          0
+         ],
+         "focal": 50,
+         "fstop": 1.8
+        },
+        {
+         "t": 0.9375,
+         "pos": [
+          0.35,
+          1.2,
+          1.1
+         ],
+         "target": [
+          0,
+          1.0,
+          0
+         ],
+         "focal": 55,
+         "fstop": 1.8
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "heightfield",
+        "expr": "=0.22*sin(x*0.8 + z*0.3) + 0.12*sin(x*1.9 - z*1.3) + 0.05*sin(x*6 + z*4)",
+        "size": [
+         14,
+         14
+        ],
+        "res": 160,
+        "material": {
+         "base": "#7F9CB3",
+         "roughness": 0.22
+        }
+       },
+       {
+        "type": "box",
+        "size": [
+         0.8,
+         1.66,
+         0.07
+        ],
+        "pos": [
+         0,
+         0.95,
+         0
+        ],
+        "material": "aluminium"
+       },
+       {
+        "type": "pane",
+        "size": [
+         0.72,
+         1.56,
+         0.01
+        ],
+        "pos": [
+         0,
+         0.95,
+         0.04
+        ],
+        "texture": "#map",
+        "material": {
+         "base": "#FFFFFF",
+         "glow": 0.3,
+         "roughness": 0.3
+        }
+       }
+      ]
+     }
+    },
+    {
+     "text": "Every harbour *saved.*",
+     "font": "Instrument Serif",
+     "size": "9vw",
+     "width": "84%",
+     "color": "#DCE6EC",
+     "x": "50%",
+     "y": "8%",
+     "anchor": "center",
+     "enter": "mask by line up"
+    }
+   ]
+  },
+  {
+   "id": "f2",
+   "duration": 1.875,
+   "transition": "cut",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "x": 1200
+      },
+      "to": {
+       "x": 0
+      },
+      "duration": 0.22,
+      "ease": "outExpo"
+     }
+    ]
+   },
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 0.5,
+      "bloom": 0.45,
+      "exposure": 1.3,
+      "env": {
+       "preset": "night"
+      },
+      "fog": {
+       "density": 0.04,
+       "color": "#18222A"
+      },
+      "floor": {
+       "y": -0.9,
+       "color": "#121C26",
+       "roughness": 0.9
+      },
+      "lights": [
+       {
+        "dir": [
+         -0.85,
+         0.2,
+         -0.45
+        ],
+        "size": [
+         14,
+         5
+        ],
+        "color": "#FFC27A",
+        "intensity": 22,
+        "key": true
+       },
+       {
+        "dir": [
+         0.6,
+         0.5,
+         0.6
+        ],
+        "size": [
+         40,
+         20
+        ],
+        "color": "#6F8BB0",
+        "intensity": 2.5
+       }
+      ],
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          -4.5,
+          1.6,
+          2.5
+         ],
+         "target": [
+          -2.5,
+          0.4,
+          0.8
+         ],
+         "focal": 28,
+         "fstop": 4
+        },
+        {
+         "t": 0.9375,
+         "pos": [
+          -2.0,
+          1.3,
+          2.2
+         ],
+         "target": [
+          0,
+          0.4,
+          -0.6
+         ],
+         "focal": 30,
+         "fstop": 4
+        },
+        {
+         "t": 1.875,
+         "pos": [
+          0.5,
+          1.2,
+          2.0
+         ],
+         "target": [
+          2.5,
+          0.4,
+          0.6
+         ],
+         "focal": 32,
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "heightfield",
+        "expr": "=0.22*sin(x*0.8 + z*0.3) + 0.12*sin(x*1.9 - z*1.3) + 0.05*sin(x*6 + z*4)",
+        "size": [
+         14,
+         14
+        ],
+        "res": 160,
+        "material": {
+         "base": "#7F9CB3",
+         "roughness": 0.22
+        }
+       },
+       {
+        "type": "sphere",
+        "radius": 0.035,
+        "count": 220,
+        "pos": "=[(-5 + 10*i/n), (0.22*sin((-5 + 10*i/n)*0.8 + (1.6*sin(i/n*7.5))*0.3) + 0.12*sin((-5 + 10*i/n)*1.9 - (1.6*sin(i/n*7.5))*1.3) + 0.05*sin((-5 + 10*i/n)*6 + (1.6*sin(i/n*7.5))*4) + 0.06), (1.6*sin(i/n*7.5))]",
+        "scale": "=[(i/n < 0.0 + t*0.55 ? 1 : 0), (i/n < 0.0 + t*0.55 ? 1 : 0), (i/n < 0.0 + t*0.55 ? 1 : 0)]",
+        "material": {
+         "base": "#FFB23F",
+         "emissive": "#FFB23F",
+         "emissiveStrength": 6
+        }
+       }
+      ]
+     }
+    },
+    {
+     "text": "Every",
+     "font": "Inter Display",
+     "size": "17vw",
+     "weight": 900,
+     "color": "#DCE6EC",
+     "x": "50%",
+     "y": "14%",
+     "anchor": "center",
+     "letterSpacing": "-0.04em",
+     "animate": [
+      {
+       "from": {
+        "scale": 1.6,
+        "opacity": 0
+       },
+       "duration": 0.12,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "text": "*channel.*",
+     "font": "Instrument Serif",
+     "size": "17vw",
+     "color": "#FFB23F",
+     "x": "50%",
+     "y": "24%",
+     "anchor": "center",
+     "start": 0.9375,
+     "animate": [
+      {
+       "from": {
+        "scale": 1.6,
+        "opacity": 0
+       },
+       "duration": 0.12,
+       "ease": "outExpo"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "f3",
+   "duration": 1.875,
+   "transition": "cut",
+   "background": "#DCE6EC",
+   "camera": {
+    "animate": [
+     {
+      "from": {
+       "zoom": 1.2
+      },
+      "to": {
+       "zoom": 1
+      },
+      "duration": 0.25,
+      "ease": "outExpo"
+     },
+     {
+      "to": {
+       "zoom": 1.15,
+       "y": -120
+      },
+      "at": 0.9375,
+      "duration": 0.2,
+      "ease": "outExpo"
+     }
+    ],
+    "shake": {
+     "amount": 6,
+     "at": 0.9375,
+     "duration": 0.12
+    }
+   },
+   "layers": [
+    {
+     "shape": "path",
+     "d": "M-60 300 C 300 200, 700 420, 1140 260",
+     "stroke": "#A7BDCB",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -60,
+     "y": 250,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-60 430 C 300 330, 700 550, 1140 390",
+     "stroke": "#A7BDCB",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -60,
+     "y": 380,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-60 560 C 300 460, 700 680, 1140 520",
+     "stroke": "#A7BDCB",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -60,
+     "y": 510,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-60 690 C 300 590, 700 810, 1140 650",
+     "stroke": "#A7BDCB",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -60,
+     "y": 640,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-60 820 C 300 720, 700 940, 1140 780",
+     "stroke": "#A7BDCB",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -60,
+     "y": 770,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-60 950 C 300 850, 700 1070, 1140 910",
+     "stroke": "#A7BDCB",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -60,
+     "y": 900,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-60 1080 C 300 980, 700 1200, 1140 1040",
+     "stroke": "#A7BDCB",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -60,
+     "y": 1030,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-60 1210 C 300 1110, 700 1330, 1140 1170",
+     "stroke": "#A7BDCB",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -60,
+     "y": 1160,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-60 1340 C 300 1240, 700 1460, 1140 1300",
+     "stroke": "#A7BDCB",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -60,
+     "y": 1290,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-60 1470 C 300 1370, 700 1590, 1140 1430",
+     "stroke": "#A7BDCB",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -60,
+     "y": 1420,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-60 1600 C 300 1500, 700 1720, 1140 1560",
+     "stroke": "#A7BDCB",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -60,
+     "y": 1550,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M-60 1730 C 300 1630, 700 1850, 1140 1690",
+     "stroke": "#A7BDCB",
+     "strokeWidth": 4,
+     "fill": "none",
+     "x": -60,
+     "y": 1680,
+     "anchor": "topLeft"
+    },
+    {
+     "shape": "path",
+     "d": "M220 1300 C 260 700, 820 900, 860 520",
+     "stroke": "#FFB23F",
+     "strokeWidth": 10,
+     "fill": "none",
+     "x": 220,
+     "y": 520,
+     "anchor": "topLeft",
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.7,
+       "ease": "inOutExpo"
+      }
+     ]
+    },
+    {
+     "shape": "circle",
+     "width": 70,
+     "height": 70,
+     "fill": "#FFB23F",
+     "x": 220,
+     "y": 1300,
+     "glow": "#FFB23F",
+     "scale": "=1 + 0.25*(1 - fract(beat))"
+    },
+    {
+     "shape": "circle",
+     "width": 70,
+     "height": 70,
+     "fill": "#0B1622",
+     "x": 860,
+     "y": 520,
+     "start": 0.6
+    },
+    {
+     "text": "Share your fix",
+     "font": "Inter Display",
+     "size": "13vw",
+     "weight": 900,
+     "color": "#0B1622",
+     "x": "50%",
+     "y": "76%",
+     "anchor": "center",
+     "letterSpacing": "-0.04em"
+    },
+    {
+     "text": "*offshore.*",
+     "font": "Instrument Serif",
+     "size": "14vw",
+     "color": "#B0570A",
+     "x": "50%",
+     "y": "76%",
+     "anchor": "center",
+     "start": 0.9375,
+     "animate": [
+      {
+       "from": {
+        "scale": 1.6,
+        "opacity": 0,
+        "blur": 10
+       },
+       "duration": 0.12,
+       "ease": "outExpo"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "duration": 0.9375,
+   "transition": "cut",
+   "camera": {
+    "shake": {
+     "amount": 7,
+     "at": 0,
+     "duration": 0.15
+    }
+   },
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 1,
+      "bloom": 0.45,
+      "exposure": 1.3,
+      "env": {
+       "preset": "night"
+      },
+      "fog": {
+       "density": 0.04,
+       "color": "#18222A"
+      },
+      "floor": {
+       "y": -0.9,
+       "color": "#121C26",
+       "roughness": 0.9
+      },
+      "lights": [
+       {
+        "dir": [
+         -0.85,
+         0.2,
+         -0.45
+        ],
+        "size": [
+         14,
+         5
+        ],
+        "color": "#FFC27A",
+        "intensity": 22,
+        "key": true
+       },
+       {
+        "dir": [
+         0.6,
+         0.5,
+         0.6
+        ],
+        "size": [
+         40,
+         20
+        ],
+        "color": "#6F8BB0",
+        "intensity": 2.5
+       }
+      ],
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0,
+          1.0,
+          3.0
+         ],
+         "target": [
+          0,
+          0.95,
+          0.9
+         ],
+         "focal": 40,
+         "fstop": 4
+        },
+        {
+         "t": 0.9375,
+         "pos": [
+          0,
+          0.95,
+          2.7
+         ],
+         "target": [
+          0,
+          0.95,
+          0.9
+         ],
+         "focal": 42,
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "heightfield",
+        "expr": "=0.22*sin(x*0.8 + z*0.3) + 0.12*sin(x*1.9 - z*1.3) + 0.05*sin(x*6 + z*4)",
+        "size": [
+         14,
+         14
+        ],
+        "res": 160,
+        "material": {
+         "base": "#7F9CB3",
+         "roughness": 0.22
+        }
+       },
+       {
+        "text": "0",
+        "height": 1.0,
+        "depth": 0.16,
+        "bevel": 0.015,
+        "font": "Instrument Serif",
+        "material": {
+         "base": "#FFB23F",
+         "emissive": "#FFB23F",
+         "emissiveStrength": 4
+        },
+        "pos": [
+         0,
+         0.62,
+         0.9
+        ],
+        "keys": [
+         {
+          "t": 0,
+          "rot": [
+           -25,
+           0,
+           0
+          ],
+          "scale": 1.3,
+          "ease": "outExpo"
+         },
+         {
+          "t": 0.22,
+          "rot": [
+           0,
+           0,
+           0
+          ],
+          "scale": 1
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "text": "BARS NEEDED",
+     "font": "JetBrains Mono",
+     "size": "6vw",
+     "color": "#DCE6EC",
+     "x": "50%",
+     "y": "74%",
+     "anchor": "center"
+    }
+   ]
+  },
+  {
+   "duration": 0.9375,
+   "transition": "cut",
+   "camera": {
+    "shake": {
+     "amount": 7,
+     "at": 0,
+     "duration": 0.15
+    }
+   },
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 1,
+      "bloom": 0.45,
+      "exposure": 1.3,
+      "env": {
+       "preset": "night"
+      },
+      "fog": {
+       "density": 0.09,
+       "color": "#A7B6C2"
+      },
+      "floor": {
+       "y": -0.9,
+       "color": "#121C26",
+       "roughness": 0.9
+      },
+      "lights": [
+       {
+        "dir": [
+         -0.85,
+         0.2,
+         -0.45
+        ],
+        "size": [
+         14,
+         5
+        ],
+        "color": "#FFC27A",
+        "intensity": 22,
+        "key": true
+       },
+       {
+        "dir": [
+         0.6,
+         0.5,
+         0.6
+        ],
+        "size": [
+         40,
+         20
+        ],
+        "color": "#6F8BB0",
+        "intensity": 2.5
+       }
+      ],
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0,
+          0.95,
+          3.9
+         ],
+         "target": [
+          0,
+          0.85,
+          0.9
+         ],
+         "focal": 40,
+         "fstop": 4
+        },
+        {
+         "t": 0.9375,
+         "pos": [
+          0,
+          0.9,
+          3.7
+         ],
+         "target": [
+          0,
+          0.85,
+          0.9
+         ],
+         "focal": 41,
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "heightfield",
+        "expr": "=0.22*sin(x*0.8 + z*0.3) + 0.12*sin(x*1.9 - z*1.3) + 0.05*sin(x*6 + z*4)",
+        "size": [
+         14,
+         14
+        ],
+        "res": 160,
+        "material": {
+         "base": "#7F9CB3",
+         "roughness": 0.22
+        }
+       },
+       {
+        "text": "Tideline",
+        "height": 0.5,
+        "depth": 0.16,
+        "bevel": 0.015,
+        "font": "Instrument Serif",
+        "material": {
+         "base": "#0B1622",
+         "roughness": 0.4
+        },
+        "pos": [
+         0,
+         0.62,
+         0.9
+        ],
+        "keys": [
+         {
+          "t": 0,
+          "rot": [
+           -25,
+           0,
+           0
+          ],
+          "scale": 1.3,
+          "ease": "outExpo"
+         },
+         {
+          "t": 0.22,
+          "rot": [
+           0,
+           0,
+           0
+          ],
+          "scale": 1
+         }
+        ]
+       },
+       {
+        "type": "sphere",
+        "radius": 0.035,
+        "count": 220,
+        "pos": "=[(-5 + 10*i/n), (0.22*sin((-5 + 10*i/n)*0.8 + (1.6*sin(i/n*7.5))*0.3) + 0.12*sin((-5 + 10*i/n)*1.9 - (1.6*sin(i/n*7.5))*1.3) + 0.05*sin((-5 + 10*i/n)*6 + (1.6*sin(i/n*7.5))*4) + 0.06), (1.6*sin(i/n*7.5))]",
+        "scale": "=[(i/n < 0.3 + t*0.8 ? 1 : 0), (i/n < 0.3 + t*0.8 ? 1 : 0), (i/n < 0.3 + t*0.8 ? 1 : 0)]",
+        "material": {
+         "base": "#FFB23F",
+         "emissive": "#FFB23F",
+         "emissiveStrength": 6
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "end",
+   "duration": 1.875,
+   "transition": "cut",
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "quality": "draft",
+      "resolution": 0.5,
+      "bloom": 0.45,
+      "exposure": 1.3,
+      "env": {
+       "preset": "night"
+      },
+      "fog": {
+       "density": 0.04,
+       "color": "#18222A"
+      },
+      "floor": {
+       "y": -0.9,
+       "color": "#121C26",
+       "roughness": 0.9
+      },
+      "lights": [
+       {
+        "dir": [
+         -0.85,
+         0.2,
+         -0.45
+        ],
+        "size": [
+         14,
+         5
+        ],
+        "color": "#FFC27A",
+        "intensity": 22,
+        "key": true
+       },
+       {
+        "dir": [
+         0.6,
+         0.5,
+         0.6
+        ],
+        "size": [
+         40,
+         20
+        ],
+        "color": "#6F8BB0",
+        "intensity": 2.5
+       }
+      ],
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0,
+          6.5,
+          3.2
+         ],
+         "target": [
+          0,
+          0,
+          -0.2
+         ],
+         "focal": 24,
+         "fstop": 4
+        },
+        {
+         "t": 1.875,
+         "pos": [
+          0,
+          5.8,
+          2.6
+         ],
+         "target": [
+          0,
+          0,
+          -0.2
+         ],
+         "focal": 26,
+         "fstop": 4
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "heightfield",
+        "expr": "=0.22*sin(x*0.8 + z*0.3) + 0.12*sin(x*1.9 - z*1.3) + 0.05*sin(x*6 + z*4)",
+        "size": [
+         14,
+         14
+        ],
+        "res": 160,
+        "material": {
+         "base": "#7F9CB3",
+         "roughness": 0.22
+        }
+       },
+       {
+        "type": "sphere",
+        "radius": 0.035,
+        "count": 220,
+        "pos": "=[(-5 + 10*i/n), (0.22*sin((-5 + 10*i/n)*0.8 + (1.6*sin(i/n*7.5))*0.3) + 0.12*sin((-5 + 10*i/n)*1.9 - (1.6*sin(i/n*7.5))*1.3) + 0.05*sin((-5 + 10*i/n)*6 + (1.6*sin(i/n*7.5))*4) + 0.06), (1.6*sin(i/n*7.5))]",
+        "scale": "=[(i/n < 0.6 + t*0.3 ? 1 : 0), (i/n < 0.6 + t*0.3 ? 1 : 0), (i/n < 0.6 + t*0.3 ? 1 : 0)]",
+        "material": {
+         "base": "#FFB23F",
+         "emissive": "#FFB23F",
+         "emissiveStrength": 6
+        }
+       }
+      ]
+     }
+    },
+    {
+     "text": "Tideline",
+     "font": "Instrument Serif",
+     "size": "22vw",
+     "color": "#DCE6EC",
+     "x": "50%",
+     "y": "30%",
+     "anchor": "center",
+     "animate": [
+      {
+       "from": {
+        "scale": 1.4,
+        "opacity": 0,
+        "blur": 12
+       },
+       "duration": 0.2,
+       "ease": "outExpo"
+      }
+     ]
+    },
+    {
+     "text": "Sea charts that never drop.",
+     "font": "Inter Display",
+     "size": "6vw",
+     "weight": 600,
+     "color": "#DCE6EC",
+     "x": "50%",
+     "y": "72%",
+     "anchor": "center",
+     "enter": {
+      "preset": "fadeUp",
+      "delay": 0.4
+     }
+    },
+    {
+     "text": "tideline.app",
+     "font": "JetBrains Mono",
+     "size": "5.5vw",
+     "color": "#FFB23F",
+     "x": "50%",
+     "y": "79%",
+     "anchor": "center",
+     "enter": {
+      "preset": "fadeUp",
+      "delay": 0.7
+     }
+    }
+   ]
+  }
+ ]
+}

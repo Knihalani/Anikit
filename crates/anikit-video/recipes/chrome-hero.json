@@ -1,5 +1,5 @@
 {
- "about": "Ray-traced chrome wordmark on a studio set: glossy floor, glass and gold accents, a slow dolly with real depth of field. Change the text, materials and camera keys.",
+ "about": "Ray-traced material and lens technique: a wordmark with PBR chrome, glass and gold accents, a glossy floor, a slow dolly and real depth of field. Canon flag: chrome type on a studio set is the exact look the user rejected as repeated and forced (BAR, third rejection; TASTE.md §4, §8). Use it to learn materials, area-light reflections and DOF, then apply them to the brief's own object, in its own world, with a motivated key. Don't use it as a hero shot, for a brand whose medium is flat or editorial, or twice in a series.",
  "cost": "draft ~40 s, final ~160 s (1080p, 4 cores)",
  "spec": {
   "size": "16:9",

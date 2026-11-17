@@ -3,7 +3,9 @@ name: anikit-reverse-video
 description: Reverse-engineer a reference video (MP4, WebM, GIF or a frame sequence) and recreate its structure, pacing, style and techniques as an Anikit Video spec adapted to the user's own content. Use when the user says "make one like this", shares a reference clip, or asks how a video was made.
 ---
 
-**Rule zero: recreate, don't copy.** Take the *structure, pacing, style and techniques* of the reference: shot rhythm, transitions, camera language, palette mood, type treatment and finish. Never reuse its footage, frames, logos, characters, trademarks, music or copy, and never trace its artwork. Use the user's own product, words and assets. If the user asks for a pixel copy of someone else's work, say no and offer the "in the style of" version.
+**Rule zero: recreate, don't copy.** Take the *structure, pacing, style and techniques* of the reference: shot rhythm, transitions, camera language, palette mood, type treatment and finish. Never reuse its footage, frames, logos, characters, trademarks, music or copy, and never trace its artwork. Use the user's own product, words and assets. If the user asks for a pixel copy of someone else's work, say no and offer the "in the style of" version. Borrow the *grammar* (pacing curve, framing logic, how type meets image), never the shots: `docs/video/taste/TASTE.md` §8, "References vs copying". If the reference itself shows a trend tell (§9, including the "tasteful AI" look), don't recreate that part.
+
+**What it can and can't recreate:** motion design (type, 2D/vector, UI, shader worlds, rendered 3D, particles) recreates well. Live-action footage (people, real places, camera-original photography) can't be rebuilt in a motion-graphics engine: keep its *cutting, framing, grade and type* and say plainly that the imagery itself will differ (or use the user's own footage as video layers).
 
 **Setup:** `anikit-video` on PATH (see `skills/anikit-video/SKILL.md`), plus `ffmpeg`.
 
@@ -13,53 +15,61 @@ description: Reverse-engineer a reference video (MP4, WebM, GIF or a frame seque
 anikit-video analyze ref.mp4 -o ref.json --sheet ref-sheet.jpg --spec draft.json
 ```
 
-Takes a few seconds (one decode pass at 640 px). Read `global.style_summary` first, then `global` (pace, median and longest shot, transition mix, palette, grain, vignette, glow) and `audio` (bpm, `cuts_on_beat`, `hits`). `anikit-video docs analyze` explains every field.
+A few seconds (one decode pass at 640 px). `anikit-video docs analyze` explains every field. Per shot you get timing and transition, palette, **grade** (black/mid/white points, warmth, tint, saturation, in words), **layout** (symmetry, centre of weight), camera move, **motion character** (snap-then-settle, builds, steady, bursts), depth of field, texture (grain, glow, vignette), look (flat-2d / rendered-3d / photographic) and **type boxes** (size in vh, alignment, light-on-dark or dark-on-light, thin/regular/bold). Plus tempo, beats and cuts-on-beat.
 
-## 2. Look (the numbers are heuristics; your eyes decide)
+`draft.json` is a **timed skeleton only**: scenes at the shot times, transitions, camera moves, theme tokens from the palette, music tempo and post finish, and per scene a `notes` string describing the reference shot. Its `layers` are empty on purpose: the tool doesn't invent content.
 
-Open `ref-sheet.jpg`. Each cell is one shot: number, start, length, incoming transition (the border colour), camera label, technique guess, text boxes (cyan) and palette. The bottom strip is the timeline with beats and bars. For any shot you can't read from the thumbnail, extract its key frame: `ffmpeg -ss <key_time> -i ref.mp4 -frames:v 1 k.png`, and look at it.
+## 2. Look, and write a style breakdown before you build
 
-Then write a short breakdown, one line per shot or group of shots:
-- **What it is and how it was made:** 3D render, live footage, flat vector, kinetic type, particles, shader backdrop, UI capture.
-- **Camera and motion:** push in, whip, orbit, speed ramp, parallax, shake.
-- **Cut and timing:** cut on beat, hold length, where the energy peaks (loudness and `motion` curves).
-- **Finish:** grade (key and contrast), grain, bloom, vignette, depth of field, motion blur.
+The numbers can't tell a serif from a sans or chrome from paper. You must look:
 
-Correct the tool when your eyes disagree. `look` and `technique` are guesses; a dark photo can read as `rendered-3d`, and busy textures can look like text.
+1. Open `ref-sheet.jpg`.
+2. Extract every key frame at full size and look at each one:
+   `ffmpeg -ss <key_time> -i ref.mp4 -frames:v 1 shotN.png`. Also look at 2–3 frames inside long or busy shots.
+3. Write `breakdown.md`, one block per shot (or per group of identical shots), with:
+   - **Subject and medium:** what is in frame; 2D vector, UI, paper/print, rendered 3D (which materials), shader abstraction, particles, footage.
+   - **Type:** family class (serif / grotesk / geometric / mono / script), case, weight, size as vh, tracking, alignment, line count, where it sits, how it enters (mask, scale-in, typewriter…).
+   - **Layout:** grid, margins, symmetry, focal point.
+   - **Light and grade:** key-light direction, mood, black and white points, warm or cool, saturation (use `grade.label`).
+   - **Motion:** camera move and ease (from `camera` and `motion_character`), object motion, overshoot or snap.
+   - **Texture:** grain, glow or bloom, blur, vignette.
+   - **Recurring motif:** the one element that carries across shots (a line, a colour, a shape). This is usually what makes the style recognisable. Keep it.
+   - Vocabulary and numbers for each line are in `docs/video/taste/TASTE.md`: §1 Typography (scale ratio, tracking, read time), §2 Colour (value structure, palette size), §3 Composition (placement, negative space, lens), §4 Light (key:fill ratio, key direction), §5 Motion (durations, easing, overshoot).
+
+Correct the tool wherever your eyes disagree.
 
 ## 3. Map each technique to Anikit
 
 | In the reference | In Anikit (`anikit-video docs <topic>`) |
 |---|---|
-| Hard cuts on the beat | `"music": {"bpm": …}` + scene `duration: "@bar1"` or `"@beat4"` (`docs music`, `docs pacing`) |
-| Crossfade, dip to black or white, wipe, zoom | scene `transition` (`crossfade`, `fadeBlack`, `fadeWhite`, `wipe`, `zoom`) |
-| Whip pan | `recipes whip-transition`, `motionBlur` (`docs camera`) |
-| Push-in or drift | scene `camera.animate` zoom/x/y; parallax with layer `depth` |
-| Kinetic headline | text `enter` kinetic styles (`docs animation`), `recipes kinetic-slam` |
-| Chrome, glass or product 3D | `scene3d` (`docs 3d`, `recipes chrome-hero`) |
-| Sparks, dust, particle logo | `docs particles`, `recipes particle-ignite` |
-| Abstract animated backdrop | library shader (`anikit-video recipes`: aurora, mesh-gradient, liquid-chrome…) or your own GLSL (`docs shader`) |
-| Grain, bloom, vignette, grade | `post` (`docs post`) |
-| Live footage | the user's own clips as video layers, or rebuild the idea in 3D or 2D. Never the reference's footage. |
+| Cuts on the beat | `music` bpm from the analysis + scene durations on `@beat`/`@bar` (`docs music`, `docs pacing`) |
+| Crossfade, dip, wipe, zoom | scene `transition` |
+| Whip, snap zoom, push-in, drift | `camera.animate` with `outExpo` snaps or `inOutSine` drifts, `motionBlur` (`docs camera`) |
+| Serif/sans/mono type system, mask reveals | text `font`, `weight`, `letterSpacing`, `enter: "mask by line up"`, kinetic styles (`docs animation`) |
+| Flat vector, charts, maps, UI | shapes, paths, `compositions` (`docs primitives`, `docs compositions`) |
+| Rendered 3D: terrain, product, type in a world | `scene3d`: heightfields, extruded text, materials, lights, fog (`docs 3d`) |
+| Glowing lines, dust, sparks | emissive instances or `particles` (`docs particles`) |
+| Abstract animated backgrounds | your own GLSL matched to the palette (`docs shader`), not a random library shader |
+| Grade, grain, bloom, vignette | `post` with values from `grade` and texture (`docs post`) |
 
-## 4. Recreate for the user's content
+## 4. Build each shot to match its breakdown, with the user's content
 
-Start from `draft.json`. It already has one scene per shot at the measured times, the transitions, theme tokens from the palette, the camera moves, placeholder text in the detected boxes, music at the detected tempo, `post` and a starting layer per technique. Then:
-1. Replace every placeholder with the user's nouns, product and copy (1–4 words per shot).
-2. Upgrade each shot's starting layer to what step 2 says it really is.
-3. Keep the rhythm: same shot count and lengths (±10%), the same transition types and the same beat alignment. Change the music style if the user wants, but keep the tempo band.
-4. Keep the palette *roles* (dark or light base, one accent), shifted to the user's brand colours if they have them.
+Start from `draft.json` (timing, transitions, camera, palette, tempo). For each scene, read its `notes` and your breakdown, then build layers that match **the same medium, type treatment, layout, light, grade and motif**, with the user's subject and words. Swap the nouns, not the style: if the reference shows a glowing route over dark terrain, the user's version shows a glowing route over *their* world, lit the same way. Keep shot lengths (±10%), transitions and beat alignment. Never import the reference's footage, logos, characters or copy. `anikit-video check s.json` must pass.
 
-`anikit-video check s.json` must pass.
-
-## 5. Verify side by side
+## 5. Compare side by side, and iterate until it reads as "same style"
 
 ```bash
-anikit-video critique s.json --render --pack rv/            # look at rv/ (strip, cut frames, review.md)
-python3 docs/video/quality/pace.py rv/render.mp4            # or your render's path
+anikit-video render s.json -o out.mp4 --scale 0.5
 anikit-video analyze out.mp4 -o out.json --sheet out-sheet.jpg
+# pair frames at the reference's key times
+for t in $(jq -r '.shots[].key_time' ref.json); do
+  ffmpeg -v error -ss $t -i ref.mp4 -frames:v 1 -vf scale=-2:360 r_$t.png
+  ffmpeg -v error -ss $t -i out.mp4 -frames:v 1 -vf scale=-2:360 o_$t.png
+done
 ```
 
-Compare `ref-sheet.jpg` with `out-sheet.jpg`, and `ref.json` `global` with `out.json` `global`: shot count, median and longest shot, pace, transition mix, palette roles, `cuts_on_beat`. Fix the largest gap and repeat. Then tell the user what you took from the reference (structure, timing and techniques) and what is theirs.
+Put each pair next to each other and look. For every pair ask: would a viewer say this is the same designer's work? Check typeface class, weight and size, colour and grade, light direction, motif, and density of detail. Also compare `global` and each shot's `grade`, `layout` and `motion_character` in `ref.json` vs `out.json`. Fix the worst pair, re-render it with `still --at`, and repeat. Check the rhythm against `TASTE.md` §6 (shot-length variation, a breath after the run, cuts on action) and run the taste pass (`anikit-video docs taste`). Then run `critique s.json --render --pack rv/` and `python3 docs/video/quality/pace.py out.mp4`, and check docs/video/quality/BAR.md (crisp readable text, motivated light, no forced 3D).
 
-Worked examples with sheets and renders: `docs/video/skills/reverse-examples/`.
+Tell the user what you took from the reference (structure, timing, type system, grade, motif) and what is theirs.
+
+Worked examples: `docs/video/skills/reverse-examples/` (`nasa-to-soil/` recreates an outside public-domain piece; `fernway-to-tideline/` one of ours; both with pair sheets).

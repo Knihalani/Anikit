@@ -15,4 +15,6 @@ Copy is read, often muted on a phone, and the viewer decides in 2 s.
 - **End:** product name, a verb-first CTA of 2–4 words, and the URL.
 - **Sound-off test:** read only the screens; the story must hold. Use sentence case, and be consistent with full stops.
 
-Output a table (`# | beat | copy | words | min hold`) with `min hold = max(1.5, words/3 + 1)`, then 2 alternative hooks.
+- **Specific (swap test):** if a competitor's name fits the line, rewrite it with this product's own noun, number or verb (`docs taste` §8). No weightless pairs ("Build faster. Ship smarter.").
+
+Output a table (`# | beat | copy | words | min hold`) with `min hold = max(1.5, words/3 + 1, chars/15)` after the text settles (single words cut to a beat may hold 0.4–0.6 s), then 2 alternative hooks.

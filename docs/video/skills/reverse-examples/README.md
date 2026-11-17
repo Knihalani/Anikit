@@ -1,5 +1,73 @@
 # Reverse-engineering examples
 
+## `nasa-to-soil/`: an outside reference (start here)
+
+- **Reference:** NASA Scientific Visualization Studio, *Global Temperature Anomalies from 1880 to 2023*, vertical version (`GISTEMP_1880-2023_vert.mp4`, svs.gsfc.nasa.gov/5207). It's 30 s, 1080×1920, and a NASA work in the public domain. It's not redistributed here: only analysis numbers, our sheets and short frame excerpts in `pairs.jpg` are included, credited to NASA SVS.
+- **Recreation:** the same design grammar for a different subject, soil moisture 1950–2024. The data and the geography are illustrative and invented: procedural noise with a drying trend, not a measurement, and not Earth.
+- **Style breakdown from looking at the frames:**
+  - one continuous take, two orthographic globes stacked on black, centred, almost filling the width;
+  - a diverging colour field (cool ↔ neutral ↔ warm) that steps year by year with a slow trend;
+  - hairline dark coastlines and borders over the field, faint relief shading, soft limb darkening;
+  - a slim vertical legend with tiny units at the left;
+  - a thick grey timeline with ticks, where the played portion is lighter and the year rides the playhead;
+  - no music, no cuts, no camera move.
+- **How it's built:** one GLSL shader layer (both globes, colour map, invented coastlines and relief, legend gradient) plus text and shapes for the legend and timeline, using `=…` expressions for the year and the playhead. `make.py` writes `soil.json`.
+- **One iteration from the analysis comparison:** the first render read "clean highlights, near monochrome" against the reference's "rolled-off highlights, desaturated" (and had a false cut on a hard year step). Pulling the neutral down to grey and widening the field fixed both: the second render reads 1 shot, medium contrast, desaturated, like the reference.
+
+**Open `pairs.jpg`:** six moments, reference left and recreation right.
+
+| | Reference | Recreation |
+|---|---|---|
+| shots / pace | 1 / calm | 1 / calm |
+| grade (`analyze`) | crushed blacks, rolled-off highlights, medium contrast, warm, desaturated | crushed blacks, clean highlights, medium contrast, warm, desaturated |
+| layout | centred, symmetry 0.81 | centred |
+| motion character | steady | steady |
+| analyze time | 6.3 s (30 s of 1080×1920) | 3.2 s |
+| render | | 3 min 5 s at `--scale 0.5` (shader ≈ 290 ms/frame at full size) |
+
+**Honest verdict:** a viewer would place the two as the same kind of piece and the same visual system: layout, colour logic, linework, legend, timeline and year stepping all match. Gaps:
+- The reference's real geography is far denser: detailed coasts, every border, hillshaded terrain. The invented land is sparse, and its relief reads as grainy white texture.
+- The legend lacks the reference's arrow caps and dual °F/°C scale.
+- The field is less saturated at its extremes.
+
+**Against BAR.md:** not the tasteful-AI look (no cream paper, serif or aphorisms). The type is crisp and legible, and the light is the data's own. But it's a faithful scientific-visualisation style, not a launch piece, and its density of detail is below the reference's.
+
+## `fernway-to-tideline/`: our own render as reference
+
+- **Reference:** `docs/video/skills/launch-examples/fernway/fernway.mp4`, our own 15 s 9:16 motion-design launch.
+- **Recreation:** the same style for a different product, *Tideline* (offline sea charts).
+- **Method:** following `skills/anikit-reverse-video/SKILL.md`:
+  1. `analyze` gives 12 shots, median 0.93 s, 128 BPM, 100% of cuts on a beat, and a grade of lifted blacks with low contrast.
+  2. Looking at the key frames gives the style breakdown: dark rendered terrain at dusk with a warm key light; an **amber glowing bead route as the recurring motif**; a high-contrast serif for statements (one glowing amber word); a heavy grotesk plus italic serif for feature lines; a mono for data; chart-paper inserts with an orange route and a dark label bar; a phone in the world; fast snaps on the beat; a serif wordmark end card.
+  3. Each shot is rebuilt with the same medium, type system, light and motif, but new subject and copy: a swell instead of ridges, a sea route, depth soundings, "No coverage. / No chart. / Every *channel.*".
+- `make.py` writes `tideline.json`.
+
+**Open `pairs.jpg`:** each reference key frame (left) next to the recreation at the same time (right).
+
+| | Fernway (reference) | Tideline (recreation) |
+|---|---|---|
+| shots / median / longest | 12 / 0.93 s / 1.90 s | 12 / 0.93 s / 1.90 s |
+| pace / tempo / cuts on a beat | fast / 128 BPM / 100% | fast / 128 BPM / 100% |
+| analyze time (15 s, 1080×1920) | 2.4 s | 2.9 s |
+| render (`--scale 0.5`, 4 cores) | | 1 min 48 s |
+
+Honest gaps:
+- Shot 3 shows mirrored fragments of the extruded word reflecting in the water.
+- Shot 11 has a stray glint.
+- The sea reads as rolling hills more than water.
+
+Files:
+- `ref-analysis.json`, `ref-sheet.jpg`: analysis of the reference.
+- `draft.json`: the skeleton `--spec`, with `notes` per scene and no invented layers.
+- `recreate-analysis.json`, `recreate-sheet.jpg`: analysis of the recreation.
+- `tideline.mp4`: the recreation.
+
+**Limit:** motion design recreates well. Live-action or character-animation footage can't be rebuilt in a motion-graphics engine, only its cutting, framing, grade and type.
+
+## First attempt (rejected): Big Buck Bunny and Sintel trailers
+
+The files below are kept as a record of what *not* to do. The timing matched, but the recreations were placeholder art (centred caps on white, circles on a stock shader, a torus), because the old draft invented layers and the agent built from numbers without studying the frames. Their `*-draft.json` files predate the skeleton draft.
+
 `anikit-video analyze` on two public trailers, then a recreation of each one's *structure, pacing and style* for a made-up product, following `skills/anikit-reverse-video/SKILL.md`. No footage, characters, logos or music from the references are in the recreations.
 
 References (Blender Foundation open movies, CC BY 3.0, © Blender Foundation, www.blender.org; used here only for analysis and the side-by-side comparison):

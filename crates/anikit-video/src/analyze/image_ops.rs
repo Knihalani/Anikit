@@ -539,7 +539,28 @@ pub fn text_regions(l: &[f32], w: usize, h: usize) -> Vec<TextRegion> {
         };
         let cy = bx[1] + bx[3] / 2.0;
         let position = if cy < 0.36 { "top" } else if cy > 0.64 { "bottom" } else { "middle" };
-        out.push(TextRegion { bbox: bx.map(|v| (v * 1000.0).round() / 1000.0), height: (hf * 1000.0).round() / 1000.0, align: align.into(), position: position.into(), confidence: r2(density) });
+        // Ink: the minority side of the box's lightness split.
+        let (mut sum, mut cnt) = (0.0f32, 0.0f32);
+        for y in y0..=y1 {
+            for x in x0..=x1 {
+                sum += l[y * w + x];
+                cnt += 1.0;
+            }
+        }
+        let mid = sum / cnt;
+        let bright = (y0..=y1).flat_map(|y| (x0..=x1).map(move |x| (x, y))).filter(|&(x, y)| l[y * w + x] > mid).count() as f32 / cnt;
+        let (ink, ink_share) = if bright < 0.5 { ("light-on-dark", bright) } else { ("dark-on-light", 1.0 - bright) };
+        let weight = if ink_share < 0.16 { "thin" } else if ink_share < 0.28 { "regular" } else { "bold" };
+        out.push(TextRegion {
+            bbox: bx.map(|v| (v * 1000.0).round() / 1000.0),
+            height: (hf * 1000.0).round() / 1000.0,
+            align: align.into(),
+            position: position.into(),
+            confidence: r2(density),
+            ink: ink.into(),
+            ink_share: r2(ink_share),
+            weight: weight.into(),
+        });
     }
     out.sort_by(|a, b| (b.bbox[2] * b.bbox[3]).total_cmp(&(a.bbox[2] * a.bbox[3])));
     out.truncate(6);
