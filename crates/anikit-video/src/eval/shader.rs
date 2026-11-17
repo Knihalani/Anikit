@@ -558,6 +558,7 @@ fn run(job: &Job, assets: Option<&Arc<SharedAssets>>) -> (Pixmap, f64) {
     f.supersample = (job.supersample && !crate::components::style::draft()) || reference;
     f.adaptive = !reference;
     f.threshold = anikit_shader::AA_THRESHOLD;
+    f.max_refine = anikit_shader::AA_MAX_REFINE;
     f.alpha = job.alpha;
     // Smooth shader gradients would band in 8 bits; exact values are untouched.
     f.dither = true;
