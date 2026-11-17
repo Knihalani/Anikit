@@ -1,0 +1,84 @@
+{
+ "about": "A word made of 400k glowing particles that ignites, drifts on curl-noise flow and burns out. Change the emitter text, colours and flow.",
+ "spec": {
+  "size": "16:9",
+  "scenes": [
+   {
+    "duration": 4,
+    "layers": [
+     {
+      "component": "scene3d",
+      "props": {
+       "env": "night",
+       "camera": {
+        "keys": [
+         {
+          "t": 0,
+          "pos": [
+           0,
+           0.7,
+           3.6
+          ],
+          "target": [
+           0,
+           0.6,
+           0
+          ],
+          "focal": 40
+         },
+         {
+          "t": 4,
+          "pos": [
+           0,
+           0.7,
+           3.0
+          ],
+          "target": [
+           0,
+           0.6,
+           0
+          ],
+          "focal": 42
+         }
+        ]
+       },
+       "objects": [
+        {
+         "type": "particles",
+         "count": 400000,
+         "emit": {
+          "text": "IGNITE",
+          "height": 0.9,
+          "pos": [
+           0,
+           0.6,
+           0
+          ]
+         },
+         "flow": {
+          "strength": 0.9,
+          "scale": 0.7,
+          "evolve": 0.25
+         },
+         "gravity": 0.2,
+         "drag": 0.4,
+         "life": 3,
+         "size": 0.0035,
+         "color": [
+          "#fff1c2",
+          "#ffb35c",
+          "#ff5a1f",
+          "#7a2bff"
+         ],
+         "colorBy": "age",
+         "emissive": 3,
+         "blend": "add"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  ]
+ }
+}
