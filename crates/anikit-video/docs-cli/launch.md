@@ -15,8 +15,8 @@ inspiration, not options) → choose tempo from the idea → build → check.
 Two deliberately different fragments (not starting points):
 
 ```json
-{ "size": "16:9", "intent": { "pace": "calm", "genre": "launch" }, "music": { "style": "ambient", "bpm": 72, "key": "D" },
-  "scenes": [ { "duration": 6, "layers": [ { "component": "scene3d", "props": { "env": "cyc", "quality": "draft", "resolution": 0.5,
+{ "size": "16:9", "intent": { "pace": "calm", "genre": "launch" }, "music": { "style": "piano", "bpm": 72, "key": "D" },
+  "scenes": [ { "duration": 6, "layers": [ { "component": "scene3d", "props": { "env": "cyc", "resolution": 1,
     "camera": { "keys": [ { "t": 0, "pos": [-2.5, 0.8, 4], "target": [0, 0.5, 0], "focal": 50, "fstop": 2 },
                           { "t": 6, "pos": [2.5, 0.6, 3.6], "target": [0, 0.5, 0], "focal": 55, "fstop": 2 } ] },
     "objects": [ { "type": "lathe", "points": [[0, 0], [0.3, 0.05], [0.36, 0.5], [0.2, 0.9], [0, 0.92]], "material": "ceramic" },
@@ -24,15 +24,18 @@ Two deliberately different fragments (not starting points):
 ```
 
 ```json
-{ "size": "9:16", "intent": { "pace": "frantic", "genre": "launch" }, "music": { "style": "dnb", "bpm": 172, "hits": ["@bar3"] },
-  "scenes": [ { "duration": 1.4, "camera": { "shake": { "amount": 8, "at": 0, "duration": 0.15 } }, "layers": [
-    { "component": "scene3d", "props": { "env": "night", "quality": "draft", "resolution": 0.5, "camera": "static",
-      "objects": [ { "type": "particles", "count": 300000, "emit": { "text": "SHIP", "height": 0.8, "pos": [0, 0.6, 0] },
-        "flow": 0.6, "life": 2, "size": 0.004, "color": ["#C8FF00", "#00E5FF"], "colorBy": "age", "emissive": 3, "blend": "add" } ] } } ] } ] }
+{ "size": "9:16", "intent": { "pace": "fast", "genre": "launch" }, "music": { "style": "acoustic", "bpm": 112, "hits": ["@bar3"] },
+  "background": "#F3EEE4", "scenes": [ { "duration": 2.2, "layers": [
+    { "text": "Write it *once.*", "font": "Instrument Serif", "size": "17vw", "color": "#1B1A17", "x": "8%", "y": "38%",
+      "anchor": "left", "lineHeight": 0.95, "letterSpacing": "-0.02em", "enter": "mask by line up" },
+    { "shape": "rect", "width": "84%", "height": 3, "fill": "#C2410C", "x": "8%", "y": "52%", "anchor": "left",
+      "animate": [ { "from": { "scaleX": 0 }, "duration": 0.6, "ease": "inOutExpo" } ] } ] } ] }
 ```
 
-Quality checks: no flat type (every word is 3D `text`, a texture, particles, or masked by the motif; 2D text only
-for captions, legal lines and the URL) · hero words ≥ 3:1 against the set and unobstructed ≥ 0.5 s · logo ≥ 40%
-of the frame width at the end · BAR.md's nine fail rules · `check` → `still --at 0.3` → draft render → `pace.py`
-for fast intents → `critique --render --pack rv/` (look at every image) → final `render` (`--crf N` sets size).
-Worked examples (two possible films, not the format): docs/video/skills/launch-examples/.
+Quality checks (BAR.md, "Third rejection"): the medium comes from the concept; 2D typography is first-class, 3D only
+where the idea is physical · never repeat a previous film's medium, world, motif, materials or music · every word
+at full resolution (no scene3d `resolution` < 1 or `draft` in finals; no DOF, blur, bloom or grain on words being
+read), ≥ 4.5:1 contrast, held ≥ 0.3 s + 0.06 s per character · motivated key, fill and rim, with exposure checked
+at 100% · acoustic or organic music first, synths only for electronic concepts · the logo owns the end ·
+`check` → stills at 100% → draft → `pace.py` (fast intents) → `critique --render --pack rv/` → final render.
+Examples (rejected by the user, kept as cautionary examples): docs/video/skills/launch-examples/.

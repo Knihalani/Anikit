@@ -21,6 +21,9 @@ Test: if you swap in another product's name and the idea still works, it is too 
 
 ## Examples (to show the range, not options to choose from)
 
+The first two were made and **rejected by the user**: illegible low-resolution 3D type, synth-heavy scores and
+forced 3D. They are listed so you avoid their worlds (tiles, dominoes, cyc, chrome or lacquer type, terrain and fog).
+
 - *An email triage app* (`docs/video/skills/launch-examples/sift`): letters as physical tiles in a storm; the turn
   is the storm frozen, then everything in one sorted line. A single red tile is the motif.
 - *An offline trail-map app* (`launch-examples/fernway`): the terrain *is* the map; an amber trail of light draws

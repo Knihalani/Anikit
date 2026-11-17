@@ -1,4 +1,43 @@
-# Launch-video skill: two end-to-end runs
+# Launch-video skill examples
+
+## Margin (after the rejection): 2D editorial typography, solo piano
+
+`margin/` (`make.py`, `margin.json`, `margin.mp4`, `margin-contact.jpg`). It is one possible film, not the format.
+- **Product:** a fictional writing app that edits in the margin.
+- **Idea:** the film is one manuscript page that the camera reads down, one passage per bar. The product shows up
+  as red pencil in the margin: a strike, then a note. The motif is the red margin rule, which becomes the logo's
+  axis at the end.
+- **Medium:** 2D type only. `Instrument Serif` at 150 px for hero lines and 96 px for body, `Inter` 50 px tracked
+  labels, `JetBrains Mono` for the URL. One accent (#B8321C on #F4EFE6, about 5:1); ink on paper is about 15:1.
+- **Music:** generated `piano`, 96 BPM, F; each move to the next passage lands on a downbeat (bar = 2.5 s).
+  The final MP4 measures −14.0 LUFS (ffmpeg ebur128).
+- **Results:**
+  - rendered at 1080p in 1.6 s with `render --crf 16` (7.4 MB);
+  - every word was checked at 100% crop from the MP4 itself: crisp, with no blur or grain on type;
+  - holds are at least 0.3 s + 0.06 s per character.
+- **Honest notes:**
+  - `critique --render` calls 93% of seconds static. The only motion between passages is a slow per-bar drift and
+    push plus the pencil marks, so it reads as a very calm piece. Give it more motion if the brief is energetic.
+  - The end card's two lines sit slightly outside title-safe (warning).
+  - Spec-level contrast warnings on the margin notes are false positives: the render-level check passes.
+  - `critique`'s audio estimate said −28 LUFS while the MP4 measures −14.0 LUFS, which looks like a critique bug.
+
+## Sift and Fernway: two end-to-end runs (REJECTED, kept as cautionary examples)
+
+> **The user rejected Sift.** Their words: "the text is hard to read and looks low resolution, I'm hearing too much
+> synthesizer in the music, and the lighting is off … Don't force 3D where it doesn't fit and don't use the same 3D
+> visuals every time." Fernway shares the same faults: reduced-resolution 3D type, DOF and grain on words, a
+> synth-leaning score (`cinematic-hybrid`), and 3D used by default. **Don't copy either film.**
+>
+> Causes, now fixed in the skill:
+> - every `scene3d` kept `"resolution": 0.5` and `"quality": "draft"` in the final;
+> - words sat in shallow DOF under bloom and grain;
+> - the repo copies were re-encoded at CRF 22–25;
+> - Sift used `house`, a synth style;
+> - an instruction made every word 3D;
+> - both films reused cyc floors, lacquer and chrome type, tiles and dominoes.
+>
+> See BAR.md, "Third rejection", and the quality checks in `skills/anikit-launch-video/SKILL.md`.
 
 **These are two possible films, not the format.** They were made with an earlier version of the skill that
 prescribed a fixed structure (hook → tension → reveal → three features → proof → logo at 128 BPM); that

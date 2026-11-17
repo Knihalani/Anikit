@@ -58,25 +58,42 @@ planning would fit any product, it is wrong: design it from this product's own s
 - **Simulation:** `physics` (piles, dominoes, impulses, `timeScale` speed ramps); `particles` (emit from text, images
   or compositions; flow and attractors; millions of points).
 - **Shader worlds:** your own GLSL or the library (`anikit-video recipes`) as a set, filter or transition.
-- **Type inside the world:** extruded 3D `text`, type as a texture, particle type, or type masked by the motif.
+- **Typography:** 2D type with real design (`split`, masks, grids, kinetic motion); 3D `text`, type as a texture or
+  particle type when the idea is physical.
 - **Music and sound:** a generated score in any style and tempo (`"music": {...}`, `hits`), `@beatN`/`@barN`
   timing, `beat`/`bar`/`level` expressions, and sfx (`whoosh`, `impact`, `riser`, `click`, `chime` …).
 - **Camera:** keyed 3D cameras, whips, snap zooms, shake, rack focus and real motion blur.
 
-## Quality checks (must pass before the final render)
+## Quality checks (must pass before the final render; see BAR.md, "Third rejection")
 
-- **No flat type.** Every word is 3D `text` in the set, part of a texture on an object, particles or emissive type,
-  or masked by the motif. Top-level 2D `text` is only for captions, legal lines and the end URL. No headline on a
-  solid or gradient fill, no word in a coloured pill (BAR #1, #3). Self-test (lists every 2D text layer):
-  `python3 -c "import json,sys; f=lambda L: [x for l in L for x in ([l.get('text')] if 'text' in l else []) + f(l.get('layers', []))]; print([w for sc in json.load(open(sys.argv[1]))['scenes'] for w in f(sc.get('layers', []))])" s.json`
-- **Hero words read at once:** ≥ 3:1 contrast against the set, and nothing passes in front of them for ≥ 0.5 s.
-- **The end logo owns the frame:** about 40% or more of the frame width.
-- **Every frame passes BAR** (`docs/video/quality/BAR.md`, all nine fail rules), judged by looking at full-size frames.
-- **Loop:** `anikit-video check s.json` (errors and the real length) → `still --at 0.3` (is frame 1 intriguing with
-  no context?) → `render --quality draft --scale 0.5` → for fast intents, `python3 docs/video/quality/pace.py draft.mp4`
-  → `critique s.json --render --pack rv/` (open `rv/review.md` and look at every image) → final `render`.
-- Then ask: can you name the idea and the motif from the strip alone? Would this film fit a different product? (If
-  yes, redesign it.) Would the brand's team ship it?
+- **The medium comes from the concept.** Well-designed 2D typography (a deliberate typeface, size, grid, kerning
+  and motion), UI, illustration, compositing and shader work are first-class. Use 3D only where the idea is
+  physical or material. The fix for flat, slide-like design is *design*, not an extra dimension.
+- **Never repeat a look.** Before designing, list what the previous films in this folder and in
+  `docs/video/skills/launch-examples/` used (medium, world, motif, materials, light, palette, music), then avoid
+  all of it. No default cyc, no chrome or lacquer type, no falling tiles or dominoes.
+- **Every word is crisp and instantly readable:**
+  - rendered at full resolution: 2D text layers, or `scene3d` at `"resolution": 1` and never `"quality": "draft"`
+    in a final;
+  - no DOF, motion blur, bloom or grain on words while they are being read;
+  - ≥ 4.5:1 contrast against what is behind them;
+  - minimum sizes: 16:9 ≥ 4.5 vh for body and ≥ 9 vh for hero words; 9:16 ≥ 5 vw and ≥ 11 vw; 1:1 ≥ 4.5 vw and ≥ 10 vw;
+  - held for at least the reading time, ≈ 0.3 s + 0.06 s per character, before any cut or exit.
+- **Motivated light:** a key, a fill and a rim that fit the world, with the key's direction readable. Check exposure
+  on stills at 100%: no clipped whites on type or product and no crushed blacks.
+- **Music suits the brand and the concept:**
+  - acoustic or organic first: `piano`, `acoustic`, `orchestral`, `cinematic`, `jazz`, `rock`, `pop` styles, or your
+    own `tracks` with piano, strings, cello, nylon or steel guitar, harp, marimba, kalimba, timpani, brass or GM drums;
+  - synths (`house`, `synthwave`, `tech`, `dnb`, `trap`; the `pad-*`, `lead-saw`, `supersaw`, `bass-808` instruments)
+    only when the concept is electronic. Sift used `house` and the user heard "too much synthesizer";
+  - `anikit-video music instruments` lists everything.
+- **The end logo owns the frame**, and every frame passes BAR (`docs/video/quality/BAR.md`), judged at 100% crop.
+- **Loop:** `anikit-video check s.json` → `still --at 0.3` (is frame 1 intriguing with no context?) → stills of every
+  word at 100% crop → `render --quality draft --scale 0.5` → `pace.py` for fast intents →
+  `critique s.json --render --pack rv/` (look at every image) → final `render` at full quality, then check frames
+  from the MP4 itself at 100%.
+- Then ask: can you name the idea from the strip alone? Would this film fit a different product? (If yes, redesign
+  it.) Would the brand's team ship it?
 
 ## Gotchas
 
@@ -86,5 +103,11 @@ planning would fit any product, it is wrong: design it from this product's own s
 - Keep a camera above any `heightfield` (inside it the frame turns flat white). A dark set under `night` needs a
   low key light (`intensity` 10–20).
 - `pace.py` can miss a cut between two shots of similar brightness.
-- 3D and particles cost 0.3–1.5 s a frame: iterate with `"quality": "draft"`, `"resolution": 0.5`.
+- 3D and particles cost 0.3–1.5 s a frame: iterate with `"quality": "draft"` and `"resolution": 0.5`, but **the final
+  must use `"resolution": 1` and no `draft`.**
+- **Why Sift's type looked low-resolution:** every `scene3d` shot kept the iteration settings in the final
+  (`"resolution": 0.5`, which traces at half size and upscales, plus `"quality": "draft"`). On top of that the words
+  sat inside shallow DOF (`fstop` 2–3), under bloom and `post` grain, and were then re-encoded at CRF 22. Fix: words
+  in 2D layers, or 3D at full resolution with the word in the focal plane; no grain on type; `render --crf 18` or
+  lower for type-heavy finals.
 - `render --crf N` sets the file size (higher N = smaller file). `"text": "=expr"` evaluates expressions.
