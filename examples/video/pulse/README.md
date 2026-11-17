@@ -32,9 +32,9 @@ These numbers come from a 4-core cloud VM (Intel Xeon @ 2.10 GHz) using the defa
 
 | | |
 |---|---|
-| Render wall time | **8.3 s** for 36 s of video |
-| Render speed | **130 fps** (1080 frames, 4.3× real time) |
-| Output | 28.6 MB MP4 (H.264 1080×1920 + AAC), mastered to −11.8 LUFS |
+| Render wall time | **7.6 s** for 36 s of video |
+| Render speed | **142 fps** (1080 frames, 4.7× real time) |
+| Output | 26.2 MB MP4 (H.264 1080×1920 + AAC), mastered to −11.8 LUFS |
 | Beat detection | 120.0 BPM; the grid is within 4 ms of the true beat |
 | Sync | All 53 cuts and word reveals are within **3.4 ms** of a detected beat (one frame is 33 ms) |
 
@@ -58,6 +58,7 @@ These are small and additive, with tests and doc lines:
 
 - **Beat markers.** `"@beat17"` and `"@bar9+0.5"` resolve to the beat grid detected in the spec's music track (`src/eval/beat_markers.rs`). The detector's grid is refitted to the onsets, which removed about 60 ms of drift over 36 s.
 - **`kinetic-grid` `step`:** the wave snaps forward once per beat and then holds, so frames between kicks are identical. It reads as more rhythmic, and the file is 16% smaller.
+- **Text `fit: true`:** shrinks a line (never grows it) to fit its `width`, keeping line breaks. Every lyric here is fitted to 830 px at the peak of its beat punch, which leaves at least 120 px of margin on each side.
 - **`anikit-video beats music.wav [--json]`** prints the tempo, beats and bars.
 - **`particle-text`** has two new props:
   - `blend: "normal"` gives dark particles on a light background;
