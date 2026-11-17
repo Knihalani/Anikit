@@ -183,6 +183,17 @@ impl Evaluator {
         if let Some(defs) = &spec.compositions {
             c.compositions(spec, defs);
         }
+        let gpost = spec.post.as_ref().and_then(|p| c.post(p, "post"));
+        let shutter = match &spec.motion_blur {
+            None | Some(spec::MotionBlur::On(true)) => 0.5 / c.fps,
+            Some(spec::MotionBlur::On(false)) => 0.0,
+            Some(spec::MotionBlur::Shutter { shutter }) => {
+                if !(0.0..=720.0).contains(shutter) {
+                    c.d.push(Diagnostic::error("motionBlur.shutter", format!("{shutter}° is out of range (0..720)")));
+                }
+                (shutter.clamp(0.0, 720.0) as f32 / 360.0) / c.fps
+            }
+        };
         let default_bg = spec.background.clone().unwrap_or(spec::Paint::Css("$bg".into()));
         let default_trans = spec.transition.clone();
         if spec.scenes.is_empty() {
@@ -266,7 +277,11 @@ impl Evaluator {
                     covers && still && n.start <= 0.0 && n.exprs.is_empty() && !matches!(n.kind, Kind::Text { .. })
                 })
                 .count();
-            scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth, bg_layers });
+            let post = match &s.post {
+                Some(p) => c.post(p, &format!("{path}.post")),
+                None => gpost.clone(),
+            };
+            scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth, bg_layers, post });
             t = start + dur;
             prev_dur = dur;
         }
@@ -303,6 +318,8 @@ impl Evaluator {
             ctheme: components_theme(&c.theme),
             theme: c.theme,
             comps: c.comps.into_iter().map(|(n, e, _)| (n, e)).collect(),
+            shutter,
+            shutter_explicit: matches!(spec.motion_blur, Some(spec::MotionBlur::On(true)) | Some(spec::MotionBlur::Shutter { .. })),
         };
         (Some(ev), c.d)
     }
@@ -1888,6 +1905,45 @@ impl C<'_> {
         let m = super::local_xf(&n.base, n.anchor, w, h);
         p.apply_affine(kurbo::Affine::new(m.map(|x| x as f64)));
         Some(p)
+    }
+
+    /// Resolve a `post` value (RENDER's presets and settings); `"none"` gives `None`.
+    fn post(&mut self, v: &serde_json::Value, path: &str) -> Option<crate::render::post::PostSettings> {
+        use crate::render::post::{PostSettings, PostSpec, PRESETS};
+        // The spec is camelCase (`bloomThreshold`); the settings are snake_case.
+        let snake = |k: &str| k.chars().fold(String::new(), |mut o, ch| {
+            if ch.is_ascii_uppercase() {
+                o.push('_');
+                o.push(ch.to_ascii_lowercase());
+            } else {
+                o.push(ch);
+            }
+            o
+        });
+        let camel = |k: &str| k.split('_').enumerate().map(|(i, w)| if i == 0 { w.to_string() } else { w[..1].to_uppercase() + &w[1..] }).collect::<String>();
+        let v = match v {
+            serde_json::Value::Object(m) => serde_json::Value::Object(m.iter().map(|(k, x)| (snake(k), x.clone())).collect()),
+            x => x.clone(),
+        };
+        let r = serde_json::from_value::<PostSpec>(v).map_err(|e| e.to_string()).and_then(|p| p.resolve());
+        match r {
+            Ok(s) => (!s.is_identity()).then_some(s),
+            Err(e) => {
+                let word = e.split('"').nth(1).unwrap_or_default().to_string();
+                let (msg, sug) = if e.contains("field") {
+                    let fields: Vec<String> = serde_json::to_value(PostSettings::preset("clean"))
+                        .ok()
+                        .and_then(|v| v.as_object().map(|m| m.keys().map(|k| camel(k)).collect()))
+                        .unwrap_or_default();
+                    let w = camel(&word);
+                    (format!("unknown post setting '{w}'"), suggest(&w, &fields))
+                } else {
+                    (e, suggest(&word, PRESETS))
+                };
+                self.d.push(Diagnostic::error(path, msg).suggest(sug));
+                None
+            }
+        }
     }
 
     /// Compile `compositions` in dependency order, each as a nested evaluator sharing this one's assets.

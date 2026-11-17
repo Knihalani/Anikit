@@ -355,6 +355,8 @@ pub(crate) struct SceneC {
     pub depth: bool,
     /// How many leading layers are the backdrop (full-frame backgrounds).
     pub bg_layers: usize,
+    /// Effective finishing look (the scene's or the video's).
+    pub post: Option<crate::render::post::PostSettings>,
 }
 
 /// One layer's ops in a tagged evaluation.
@@ -398,6 +400,10 @@ pub struct Evaluator {
     pub(crate) captions: Option<(crate::text::captions::CaptionTrack, [f32; 2])>,
     pub(crate) theme: theme::Theme,
     pub(crate) ctheme: crate::components::Theme,
+    /// Motion-blur shutter in seconds (0 = off). Default half a frame (180°).
+    pub shutter: f32,
+    /// The spec asked for motion blur itself (otherwise only `--quality high` applies it).
+    pub shutter_explicit: bool,
     /// Named sub-compositions (top-level `compositions`), in dependency order.
     pub(crate) comps: Vec<(String, Arc<Evaluator>)>,
 }
@@ -580,6 +586,18 @@ impl Evaluator {
             }
         }
         background
+    }
+
+    /// The finishing look at `t` (the incoming scene's during a transition), or `None`.
+    pub fn post_at(&self, t: f32) -> Option<&crate::render::post::PostSettings> {
+        let i = self.scenes.iter().rposition(|s| s.start <= t).unwrap_or(0);
+        self.scenes.get(i).and_then(|s| s.post.as_ref())
+    }
+
+    /// Whether frame time `t` needs motion blur: a shutter is set and something moves while it is open.
+    /// Pass `default_on` for renders where motion blur is on unless the spec says otherwise.
+    pub fn needs_blur(&self, t: f32, default_on: bool) -> bool {
+        (default_on || self.shutter_explicit) && self.shutter > 0.0 && !self.is_static(t - self.shutter * 0.5, t + self.shutter * 0.5)
     }
 
     /// Named sub-composition (top-level `compositions`). Evaluate it like any video:
