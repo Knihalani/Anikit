@@ -254,6 +254,16 @@ fn index_of(a: &[serde_json::Value], seg: &str) -> Option<usize> {
 }
 
 fn main() -> ExitCode {
+    // `anikit-video … | head` closes the pipe early: exit quietly instead of
+    // panicking with a backtrace into the caller's output.
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let msg = info.payload().downcast_ref::<String>().map(String::as_str).or_else(|| info.payload().downcast_ref::<&str>().copied()).unwrap_or("");
+        if msg.contains("Broken pipe") {
+            std::process::exit(0);
+        }
+        default_hook(info);
+    }));
     // Agent commands (new, templates, prompt, critique, preview, mcp) live in the library.
     let raw: Vec<String> = std::env::args().skip(1).collect();
     // `<command> --help` (or -h) prints that command's usage and succeeds, so

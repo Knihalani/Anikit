@@ -21,7 +21,7 @@ Write the spec directly. For repetitive layers use `"repeat": 40` with `$i`, `de
 
 - **Text:** `{ "text": "Make **anything**.", "font": "Display", "size": "14vh", "x": "8%", "y": "50%", "anchor": "left", "color": "#F4F1EA", "enter": "mask by line up" }`. Built-in faces are Inter, Instrument Serif and JetBrains Mono; load any TTF/OTF through `fonts`.
 - **Shapes and paths:** `{ "shape": "path", "d": "M0 200 C 300 0, 600 400, 900 120", "stroke": "#FF5A1F", "strokeWidth": 6, "animate": [{ "from": {"trimEnd": 0}, "to": {"trimEnd": 1}, "duration": 1 }] }`; `"shape": "rect"|"circle"` with `width`, `height`, `fill`.
-- **Motion:** `"animate": [{ "from": {"scale": 3, "blur": 20}, "duration": 0.25, "ease": "outExpo" }]`; expressions on any number or colour: `"x": "=960 + 300*sin(t*2)"`, `"rotation": "=t*90"` (`t` is layer time, `gt` global). A layer's own timing is `start`/`end`; entrances take `delay`.
+- **Motion:** `"animate": [{ "from": {"scale": 3, "blur": 20}, "duration": 0.25, "ease": "outExpo" }]`; expressions on any number or colour: `"x": "=960 + 300*sin(t*2)"`, `"rotation": "=t*90"` (`t` is layer time, `gt` global). A layer's own timing is `start`/`end`; an entrance delay goes inside it (`"enter": {"preset": "fade up", "delay": 0.2}`) and a tween's start is `"at"`. Scenes overlap by their transitions, so the video is shorter than the sum of durations: `preview` prints the real length.
 - **Camera:** `"camera": { "animate": [{ "from": {"zoom": 1.3}, "to": {"zoom": 1}, "duration": 0.3, "ease": "outExpo" }], "shake": {"amount": 8, "at": 0} }`, plus `"motionBlur": true`. Layer `depth` gives parallax.
 - **Shaders:** `{ "shader": "void mainImage(out vec4 o, in vec2 f) { … iTime … }", "uniforms": {"speed": 1} }`, a file with `{ "type": "shader", "src": "x.glsl" }`, or a library name (`anikit-video recipes` lists them). `"filter": true` treats the layers below.
 - **3D, particles, physics:** `{ "component": "scene3d", "props": { "objects": [ … ], "camera": "orbit" } }` (`docs 3d`, `docs particles`, `docs physics`).
@@ -38,7 +38,7 @@ Open the sheet and three full-size stills and answer in writing, a line each:
 1. **Is every frame visually striking on its own, a still someone would save?** It can be rich illustration, bold graphic design, beautiful light, spectacle, precise data design, texture or motion. What tends to get there: one strong image idea per shot, considered detail, real light and texture, contrast of scale. What tends not to: empty frames, a UI screenshot beside copy, default looks, generic type.
 2. **What would make a viewer stop scrolling?** Spectacle, wit, beauty, clarity, rhythm, surprise or craft: name the one this piece is going for.
 3. **Where is the weakest frame, and why?**
-4. **Does the sound do as much as the picture?**
+4. **Does the sound do as much as the picture?** `anikit-video critique s.json --render` measures loudness and whether cuts land on beats.
 5. **Is every word legible?** Full resolution, in focus, 4.5:1 contrast, held long enough to read.
 
 If an answer is weak, improve that one thing and preview again, then render once.
