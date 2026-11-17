@@ -29,7 +29,12 @@ pub enum Tonemap {
 /// Edge-aware à-trous filter over (AO, key visibility): passes at steps 1,
 /// 2, 4, … with a 3×3 tent kernel, stopped by depth, normal and id.
 fn denoise_vis(px: &[Px], w: usize, h: usize, passes: u32) -> Vec<[f32; 2]> {
+    // Checkerboard gaps need at least one pass to be filled.
+    let passes = if px.iter().any(|q| q.vw < 1.0) { passes.max(1) } else { passes };
     let mut cur: Vec<[f32; 2]> = px.iter().map(|q| [q.ao, q.vk]).collect();
+    // Pixels whose visibility wasn't traced (checkerboard) start with no
+    // weight and take their neighbours' values in the first pass.
+    let mut valid: Vec<f32> = px.iter().map(|q| q.vw).collect();
     // Only pixels with diffuse albedo matter.
     let lit: Vec<bool> = px.iter().map(|q| q.alb[0] + q.alb[1] + q.alb[2] + q.spec[0] + q.spec[1] + q.spec[2] > 1e-5).collect();
     let k = [0.25f32, 0.5, 0.25];
@@ -69,7 +74,7 @@ fn denoise_vis(px: &[Px], w: usize, h: usize, passes: u32) -> Vec<[f32; 2]> {
                         nd *= nd;
                         nd *= nd;
                         nd *= nd;
-                        let wt = ky * kx * nd * nd / (1.0 + dz * dz);
+                        let wt = ky * kx * nd * nd / (1.0 + dz * dz) * valid[j];
                         let v = src[j];
                         acc[0] += v[0] * wt;
                         acc[1] += v[1] * wt;
@@ -87,6 +92,7 @@ fn denoise_vis(px: &[Px], w: usize, h: usize, passes: u32) -> Vec<[f32; 2]> {
         } else {
             cur.par_chunks_mut(w).enumerate().for_each(body);
         }
+        valid.iter_mut().for_each(|v| *v = 1.0);
     }
     cur
 }
