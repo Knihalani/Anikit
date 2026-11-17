@@ -17,6 +17,8 @@ use std::path::{Path, PathBuf};
 pub struct BeatMarkers {
     src: Option<(PathBuf, f64, f64)>,
     beats: Option<Result<Beats, String>>,
+    /// Generated music (`music` key): its exact grid and start time — no analysis needed.
+    music: Option<Result<(anikit_music::Grid, f64), String>>,
 }
 
 fn secs(n: &Option<Num>) -> f64 {
@@ -42,12 +44,34 @@ impl BeatMarkers {
         let src = spec.audio.iter().flatten().find(|c| c.src.is_some() && c.voice != Some(true)).map(|c| {
             (base.join(c.src.as_deref().unwrap_or_default()), secs(&c.at), secs(&c.trim_start))
         });
-        BeatMarkers { src, beats: None }
+        let music = spec.music.as_ref().map(|v| {
+            let v = match v {
+                serde_json::Value::String(s) => serde_json::json!({ "style": s }),
+                v => v.clone(),
+            };
+            let m = anikit_music::MusicSpec::from_json(&v.to_string())?;
+            Ok((anikit_music::beat_grid(&m)?, m.at.unwrap_or(0.0)))
+        });
+        BeatMarkers { src, beats: None, music }
+    }
+
+    /// The music: (file, timeline `at`, `trimStart`).
+    pub(crate) fn music(&self) -> Option<&(PathBuf, f64, f64)> {
+        self.src.as_ref()
     }
 
     /// `None` when `name` is not a beat marker; otherwise its global time or an error.
     pub fn resolve(&mut self, name: &str) -> Option<Result<f32, String>> {
         let (kind, n) = parse(name)?;
+        if let Some(m) = &self.music {
+            return Some(match m {
+                Ok((g, at)) => {
+                    let unit = if kind == "bar" { g.beats_per_bar } else { 1.0 };
+                    Ok((at + g.secs(n.saturating_sub(1) as f64 * unit)) as f32)
+                }
+                Err(e) => Err(format!("'@{name}': {e}")),
+            });
+        }
         let Some((path, at, trim)) = &self.src else {
             return Some(Err(format!("'@{name}' needs music: add an `audio` track with a `src`")));
         };
@@ -149,5 +173,19 @@ mod tests {
         let b1 = m.resolve("beat1").unwrap().unwrap();
         assert!((b1 - 1.0).abs() < 0.03, "beat1 = {b1}");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn generated_music_gives_an_exact_grid() {
+        let spec: Spec = serde_json::from_str(r#"{ "scenes": [ { "layers": [] } ], "music": { "style": "house", "bpm": 120, "at": 0.5 } }"#).unwrap();
+        let mut m = BeatMarkers::new(&spec, Path::new("."));
+        assert_eq!(m.resolve("beat1").unwrap().unwrap(), 0.5);
+        assert_eq!(m.resolve("beat3").unwrap().unwrap(), 1.5);
+        assert_eq!(m.resolve("bar2").unwrap().unwrap(), 2.5);
+        // Hits nudge the tempo; markers follow the nudged grid exactly.
+        let spec: Spec = serde_json::from_str(r#"{ "scenes": [ { "layers": [] } ], "music": { "style": "house", "bpm": 128, "hits": ["@2.0"] } }"#).unwrap();
+        let mut m = BeatMarkers::new(&spec, Path::new("."));
+        let b = (1..20).map(|n| m.resolve(&format!("beat{n}")).unwrap().unwrap()).find(|t| (t - 2.0).abs() < 1e-4);
+        assert!(b.is_some(), "a beat lands exactly on the 2.0 s hit");
     }
 }

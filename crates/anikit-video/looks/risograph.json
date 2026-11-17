@@ -83,7 +83,8 @@
    "props": {
     "amount": 0.035,
     "size": 1.6,
-    "rate": 24
+    "rate": 24,
+    "blend": "normal"
    },
    "width": "100%",
    "height": "100%"

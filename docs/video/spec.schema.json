@@ -281,6 +281,17 @@
           "additionalProperties": {
             "$ref": "#/$defs/TextStyle"
           }
+        },
+        "material": {
+          "description": "Material defaults every component takes unless its props say otherwise.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Material"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
@@ -384,6 +395,50 @@
           "type": "string"
         }
       ]
+    },
+    "Material": {
+      "description": "Art-direction defaults for components (a look's finish). Explicit component props win.",
+      "type": "object",
+      "properties": {
+        "surface": {
+          "description": "`flat`, `glass`, `outline`, `paper` or `solid`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "shadow": {
+          "description": "Shadow depth 0..1.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "glow": {
+          "description": "Glow intensity 0..1 (0 = none).",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "texture": {
+          "description": "Texture (film grain) 0..1.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "motion": {
+          "description": "`snappy`, `soft`, `bouncy`, `mechanical` or `smooth`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
     },
     "SceneItem": {
       "description": "Schema helper: a scene or a string (a title card).",
@@ -1669,6 +1724,7 @@
             "god-rays",
             "lens-flare",
             "model",
+            "scene-3d",
             "text-3d",
             "globe",
             "wipe",
@@ -1691,7 +1747,7 @@
             "card-stack",
             "lottie"
           ],
-          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, metaballs, god-rays, lens-flare, model, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, lottie."
+          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, metaballs, god-rays, lens-flare, model, scene-3d, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, lottie."
         },
         "props": true,
         "progress": {
@@ -1747,6 +1803,16 @@
             "boolean",
             "null"
           ]
+        },
+        "buffers": {
+          "description": "Shader: Shadertoy-style buffer passes `\"A\"`…`\"D\"`, rendered in order before the image\npass at full float precision. A channel `\"A\"` reads buffer A: this frame's if A ran\nearlier in the order, else the previous frame's (feedback, for simulations).",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "$ref": "#/$defs/ShaderBuffer"
+          }
         }
       }
     },
@@ -2299,6 +2365,35 @@
           "type": "string"
         }
       ]
+    },
+    "ShaderBuffer": {
+      "description": "One buffer pass of a shader layer (`buffers.A`).",
+      "type": "object",
+      "properties": {
+        "shader": {
+          "description": "GLSL/WGSL source or a built-in name, as for a shader layer.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "src": {
+          "description": "Load the source from a file.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "channels": {
+          "description": "`iChannel0..3`: `\"A\"`…`\"D\"` (buffers), `\"noise\"`, or `\"none\"`; options as for layer channels.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": true
+        }
+      },
+      "additionalProperties": false
     },
     "AudioCue": {
       "description": "An audio cue: a file (`src`) or a built-in sound effect (`sfx`).",

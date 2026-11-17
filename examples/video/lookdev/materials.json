@@ -1,0 +1,123 @@
+{
+  "size": [
+    1920,
+    1080
+  ],
+  "fps": 60,
+  "scenes": [
+    {
+      "duration": 5,
+      "layers": [
+        {
+          "component": "scene3d",
+          "props": {
+            "env": "cyc",
+            "camera": "push",
+            "objects": [
+              {
+                "type": "sphere",
+                "radius": 0.35,
+                "count": 1,
+                "pos": [
+                  -2.975,
+                  0.35,
+                  0
+                ],
+                "material": "chrome"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.35,
+                "pos": [
+                  -2.125,
+                  0.35,
+                  0
+                ],
+                "material": "car-paint"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.35,
+                "pos": [
+                  -1.275,
+                  0.35,
+                  0
+                ],
+                "material": "copper"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.35,
+                "pos": [
+                  -0.425,
+                  0.35,
+                  0
+                ],
+                "material": "glass"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.35,
+                "pos": [
+                  0.425,
+                  0.35,
+                  0
+                ],
+                "material": "aluminium-bead"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.35,
+                "pos": [
+                  1.275,
+                  0.35,
+                  0
+                ],
+                "material": "lacquer"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.35,
+                "pos": [
+                  2.125,
+                  0.35,
+                  0
+                ],
+                "material": "gold"
+              },
+              {
+                "type": "sphere",
+                "radius": 0.35,
+                "pos": [
+                  2.975,
+                  0.35,
+                  0
+                ],
+                "material": "titanium"
+              },
+              {
+                "type": "card",
+                "size": [
+                  8,
+                  0.6
+                ],
+                "pos": [
+                  0,
+                  0.6,
+                  3
+                ],
+                "rot": [
+                  0,
+                  180,
+                  0
+                ],
+                "color": "#000",
+                "intensity": 0
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

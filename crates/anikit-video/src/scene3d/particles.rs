@@ -172,7 +172,7 @@ fn emit(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, named: &
     let od: ObjDef = spec::object(&Value::Object(om), shapes, mats, named, path)?;
     let xf = od.xf_at(0.0, 0, 0);
     if od.parts.len() == 1 && matches!(shapes.list[od.parts[0].0 as usize], Shape::Sphere) {
-        return Ok(Emit::Sphere { c: xf.t, r: xf.s, surface: true });
+        return Ok(Emit::Sphere { c: xf.t, r: xf.smax(), surface: true });
     }
     let mut tris: Vec<[V3; 3]> = Vec::new();
     for p in &od.parts {
@@ -368,7 +368,7 @@ fn sample(e: &Emit, seed: u32, i: u32, k: u32) -> (V3, V3, Option<[f32; 3]>) {
 }
 
 /// Resolve image / composition emitters (needs the spec's compositions).
-fn resolve(e: &Emit, root: Option<&crate::eval::Evaluator>, cache: &crate::pipeline::textures::CompTextures) -> Res<Emit> {
+fn resolve(e: &Emit, assets: Option<&dyn crate::components::Assets>) -> Res<Emit> {
     let Emit::Pending(m) = e else { return Ok(e.clone()) };
     let path = "particles.emit";
     let (w, h, px): (usize, usize, Vec<[f32; 4]>) = if let Some(file) = m.get("image").and_then(|x| x.as_str()) {
@@ -377,9 +377,9 @@ fn resolve(e: &Emit, root: Option<&crate::eval::Evaluator>, cache: &crate::pipel
         (w, h, img.pixels().map(|p| p.0).collect())
     } else {
         let name = m.get("composition").and_then(|x| x.as_str()).unwrap_or("").trim_start_matches('#');
-        let comp = root.and_then(|r| r.composition(name)).ok_or_else(|| format!("{path}.composition: no composition `{name}`"))?;
-        let ct = m.get("frame").and_then(|x| x.as_f64()).unwrap_or(0.0) as f32 / comp.fps.max(1.0);
-        let pm = cache.get(comp, ct, 0);
+        let info = assets.and_then(|a| a.composition_info(name)).ok_or_else(|| format!("{path}.composition: no composition `{name}`"))?;
+        let ct = m.get("frame").and_then(|x| x.as_f64()).unwrap_or(0.0) as f32 / info.fps.max(1.0);
+        let pm = assets.and_then(|a| a.composition_frame(name, ct, 0)).ok_or_else(|| format!("{path}.composition: can't render `{name}`"))?;
         let (w, h) = (pm.width() as usize, pm.height() as usize);
         let data = pm.data_as_u8_slice();
         let px = data.chunks_exact(4).map(|c| {
@@ -399,7 +399,7 @@ fn resolve(e: &Emit, root: Option<&crate::eval::Evaluator>, cache: &crate::pipel
     };
     let c = m.get("pos").or(m.get("position")).map(|x| v3c(x, path)).transpose()?.unwrap_or(v3(0.0, size.1 * 0.5 + 0.2, 0.0));
     let rot = m.get("rot").or(m.get("rotation")).map(|x| v3c(x, path)).transpose()?.unwrap_or(v3(0.0, 0.0, 0.0));
-    let xf = Xf::new(c, rot, 1.0);
+    let xf = Xf::new(c, rot, v3(1.0, 1.0, 1.0));
     let thr = m.get("threshold").and_then(|x| x.as_f64()).unwrap_or(0.05) as f32;
     let mut pts = Vec::new();
     let mut cdf = Vec::new();
@@ -590,9 +590,9 @@ const SNAP_BUDGET: usize = 3 << 30;
 const CHECK_BUDGET: usize = 2 << 30;
 
 impl Sim {
-    pub fn new(def: &Def, fps: f32, floor_y: Option<f32>, root: Option<&crate::eval::Evaluator>, cache: &crate::pipeline::textures::CompTextures) -> Res<Sim> {
-        let emit = resolve(&def.emit, root, cache)?;
-        let target = def.target.as_ref().map(|t| resolve(&t.emit, root, cache)).transpose()?;
+    pub fn new(def: &Def, fps: f32, floor_y: Option<f32>, assets: Option<&dyn crate::components::Assets>) -> Res<Sim> {
+        let emit = resolve(&def.emit, assets)?;
+        let target = def.target.as_ref().map(|t| resolve(&t.emit, assets)).transpose()?;
         let n = def.count;
         let src_col = match &emit {
             Emit::Image { .. } => Some((0..n).map(|i| sample(&emit, def.seed, i as u32, 0).2.unwrap_or([1.0; 3])).collect()),
@@ -1836,7 +1836,7 @@ mod tests {
         std::env::set_var("ANIKIT_CACHE", "off");
         let mut shapes = spec::Shapes::new();
         let d = parse(&v, &mut shapes, &mut Vec::new(), &HashMap::new(), &[], "p").unwrap();
-        Sim::new(&d, 30.0, Some(0.0), None, &crate::pipeline::textures::CompTextures::new(1 << 20)).unwrap()
+        Sim::new(&d, 30.0, Some(0.0), None).unwrap()
     }
 
     #[test]

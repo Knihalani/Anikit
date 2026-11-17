@@ -546,6 +546,8 @@ Two looks: `{ "lens": "anamorphic", "path": [[0.1, 0.4], [0.9, 0.45]], "duration
 ## 3D
 
 ### `scene3d`: ray-traced 3D scenes
+Agent guide: [`scene3d.md`](scene3d.md). It also covers `lights`, `fog`, reflector cards (`type: card`), per-axis `scale`, texture lists and text `align`.
+
 A software ray tracer for product films: PBR materials (chrome, aluminium, glass and more), a procedural HDR studio, soft traced shadows, glossy floor reflections, haze, depth of field, motion blur, bloom and tone mapping. Any spec `composition` can be a live texture, including on thousands of instances at per-instance frame offsets. Kind names: `scene3d`, `scene-3d`, `3d.scene`. Examples: `examples/video/lookdev/` (`cyc.json`, `panes.json`, `glass.json`, and `chrome.json`, the phase-1 dark-studio shot).
 
 ```json
@@ -566,7 +568,7 @@ A software ray tracer for product films: PBR materials (chrome, aluminium, glass
 | Prop | Default | Meaning |
 |---|---|---|
 | `env` | `cyc` | `cyc` (bright warm-white cyclorama: a seamless floor and backdrop, a big soft key from the upper left, a strip light, black flags for chrome contrast), `studio`, `night`, `neon` or `sunset`. Or `{ "preset", "color": "#EEEBE5", "key": [x, y, z], "haze": 0.0015 }`. |
-| `camera` | `orbit` | A preset (`orbit`, `dolly`, `crane`, `static`, or `{ "preset", "duration", "degrees", "height" }`), framed on the objects. Or keys: `{ "interp": "smooth"\|"linear", "ease": false, "shake": 0.01, "keys": [ { "t", "pos", "target", "focal" (mm, 36 mm-wide sensor) or "fov" (vertical degrees), "focus" (m; default is the target distance), "fstop" or "aperture" (px at 1080p), "shutter" (0 means no blur), "roll" } ] }`. A dense per-frame key list is fine. |
+| `camera` | `orbit` | A preset (`push`, `reveal`, `flyby`, `orbit` (5 s by default), `dolly`, `crane`, `static`, or `{ "preset", "duration", "degrees", "height" }`), framed on the objects. Or keys: `{ "interp": "smooth"\|"linear", "ease": false, "shake": 0.01, "keys": [ { "t", "pos", "target", "focal" (mm, 36 mm-wide sensor) or "fov" (vertical degrees), "focus" (m; default is the target distance), "fstop" or "aperture" (px at 1080p), "shutter" (0 means no blur), "roll" } ] }`. A dense per-frame key list is fine. |
 | `objects` | | See below. |
 | `materials` | | Named materials: `{ "brushed": { "extends": "aluminium", "roughness": 0.3 } }`. |
 | `floor` | per env | `false`, or `{ "color", "roughness", "reflect", "mirror", "y" }`. |
@@ -582,7 +584,7 @@ A software ray tracer for product films: PBR materials (chrome, aluminium, glass
   - text has `text`, `font`, `weight`, `tracking`, `height` (cap height, m), `depth`, `bevel`;
   - spheres and cylinders have `radius`; cylinders also `height`;
   - tori have `radius` and `tube`;
-  - a `model` is a glTF 2.0 file: `src` (`.glb`, or `.gltf` with `.bin` files or data URIs, relative to the working directory), fitted to `height` or with its largest side fitted to `size`, standing on y = 0. It keeps its node transforms and per-primitive PBR factors (base colour, metallic, roughness, emission, transmission, IOR); `material` overrides them. Image textures, skins and animations aren't read.
+  - a `model` is a glTF 2.0 file: `src` (`.glb`, or `.gltf` with `.bin` files or data URIs, relative to the working directory), fitted to `height` or with its largest side fitted to `size`, standing on y = 0. It keeps its node transforms and per-primitive PBR factors (base colour, metallic, roughness, emission, transmission, IOR); `material` overrides them. Node animation (translation, rotation, scale channels) plays and loops at `speed`. Image textures and skins aren't read.
 - **Placement:** `pos`, `rot` (degrees, yaw·pitch·roll order Y·X·Z) and `scale`. Each takes a number, `[x, y, z]` whose items may be `"=expr"`, or `"=[a, b, c]"`. Expressions can use `t`, `i` (instance index), `lane` and `n`.
 - **Animation:** `keys: [{ "t", "pos", "rot", "scale", "ease": "smooth|linear|in|out" }]` (added on top of the base placement); `spin` (degrees per second, a number for Y or `[x, y, z]`); `start` and `end`.
 - **Instances:** `count` and `lanes`. A shared mesh is placed per instance, with a top-level hierarchy rebuilt each frame.
@@ -597,14 +599,22 @@ A software ray tracer for product films: PBR materials (chrome, aluminium, glass
 - **Floor:** a static layout gets its floor shadows and AO baked once. Floor reflections are blurred through a pyramid by the distance to what they reflect, then faded and hazed.
 - **Post:** half-resolution scatter-as-gather DOF, motion blur from motion vectors, bloom, tone map, vignette and dithering.
 
-**Cost** at 1920×1080 on 4 cores (`standard`, measured):
-- The pipeline renders the cyc example at about 1.4 s per frame (60 frames in 82 s).
-- Single stills: trace 1.3–2.0 s and post 0.6–0.9 s with 4 threads.
+**Cost** at 1920×1080 on 4 cores (`standard`, measured through `render` → MP4):
+- The cyc example renders 60 frames in 79 s (1.31 s/frame).
+- 3,601 textured glass panes render 60 frames in 80 s (1.33 s/frame).
+- One thread spends about 4.0 s tracing and 1.2 s in post per frame.
 - `ANIKIT_SCENE3D_PROFILE=1` prints per-stage ms and ray counts.
+
+**What a rasteriser can't do here:**
+- true mirror and glossy reflections of the scene itself;
+- refraction and tinted glass you can see through, layer after layer;
+- soft area-light shadows and contact occlusion;
+- a seamless lit cyclorama;
+- composition textures on thousands of instances, each at its own frame.
 
 **Known limits:**
 - Thick glass resting on the floor reads metallic (the floor plane and the bottom face coincide). Lift it 1 mm.
-- glTF models load geometry and PBR factors only (no image textures or animation).
+- glTF models load geometry, PBR factors and node animation (no image textures or skinning).
 
 ### `model`: product spin and orbit
 Rendered with `anikit-core`'s CPU rasteriser at native resolution, supersampled 2× for anti-aliasing, with studio lighting and a transparent background.

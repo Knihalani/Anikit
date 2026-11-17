@@ -242,6 +242,14 @@ impl Renderer {
         &self.assets
     }
 
+    /// Swap in a newer snapshot of the same asset store (e.g. after fonts were
+    /// added; ids are stable, so caches and incremental state stay valid). The
+    /// pipeline uses this instead of a new renderer, keeping output independent
+    /// of when other threads intern fonts.
+    pub fn update_assets(&mut self, assets: Arc<Assets>) {
+        self.assets = assets;
+    }
+
     /// Dynamic-image hook: draw `pixmap` (premultiplied RGBA8) for `id` in the
     /// following renders, overriding [`Assets::images`] — for decoded video
     /// frames or other per-frame textures. Set it before each frame whose

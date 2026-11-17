@@ -310,8 +310,9 @@ A fragment shader, run JIT-compiled on the CPU at full resolution. Full guide: [
 | `filter` | `true`: `iChannel0` defaults to `"below"` and the output replaces the whole frame. |
 | `supersample` | 2×2 sub-samples per pixel (4× cost). |
 | `alpha` | use `fragColor.a` as coverage (default opaque, like Shadertoy). |
+| `buffers` | Shadertoy-style passes `{"A": {"shader"\|"src", "channels"}, …"D"}`, rendered in order before the image at float precision. Channel `"A"` reads buffer A: this frame's if A ran earlier, else last frame's (feedback). Buffers see the spec's uniform values, not animated ones. |
 
-Inputs: `fragCoord` (pixel centre, y up), `iResolution`, `iTime` (seconds since the layer started), `iFrame`, `iTimeDelta`, `iFrameRate`, `iChannelResolution[4]`, `iMouse`/`iDate` (zero / fixed). The layer fills the frame unless `x y width height` say otherwise. `opacity`, `blend`, masks and presets apply as for an image.
+Inputs: `fragCoord` (pixel centre, y up), `iResolution`, `iTime` (seconds since the layer started), `iFrame`, `iTimeDelta`, `iFrameRate`, `iChannelResolution[4]`, `iMouse`/`iDate` (zero / fixed), `iAudio` (music level, bass, mid, treble) and `iBeat` (pulse, phase, beat number, bar pulse). The layer fills the frame unless `x y width height` say otherwise. `opacity`, `blend`, masks and presets apply as for an image.
 
 Shader transitions use the gl-transitions API (`vec4 transition(vec2 uv)` with `getFromColor`, `getToColor`, `progress`, `ratio`): `"transition": "burn"` or `{ "type": "shader", "shader": "…", "uniforms": { … } }`.
 

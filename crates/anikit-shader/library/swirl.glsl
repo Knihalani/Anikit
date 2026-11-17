@@ -1,7 +1,7 @@
 // Transition: a vortex twists the old scene and unwinds into the new one.
 // Uniforms: turns, radius.
-uniform float turns;  // = 1.5
-uniform float radius; // = 0.8
+uniform float turns;  // = 1.5  twist at the peak
+uniform float radius; // = 0.8  vortex radius in uv
 
 vec4 transition(vec2 uv) {
     vec2 c = uv - 0.5;
