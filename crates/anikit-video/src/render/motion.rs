@@ -30,9 +30,6 @@ use kurbo::{Affine, Rect, Shape, Vec2};
 
 /// Most samples per frame.
 pub const MAX_SAMPLES: usize = 32;
-
-/// Most samples per frame at [`super::Quality::Reference`].
-pub const REFERENCE_SAMPLES: usize = 96;
 /// Longest streak (px at 1080p): faster motion gets a shorter effective
 /// shutter, as motion-graphics renderers clamp blur, so samples stay ≤ 1.25 px apart.
 pub const MAX_STREAK: f64 = 40.0;
