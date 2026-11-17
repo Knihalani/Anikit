@@ -24,6 +24,10 @@ stills:
   - https://i.vimeocdn.com/video/619854803-6e95cd2fffc6949358a8d11efb08a6328bb378315423c297d0cfda8189adc2cb-d_1280
   - https://prologue.com/wp-content/uploads/2022/02/FEUD_S1_marked_01.png
   - https://www.artofthetitle.com/assets/sm/upload/vy/kn/8f/8j/feud_t.jpg
+  - https://www.motionpictures.org/wp-content/uploads/2017/04/Stepping.jpg
+  - https://www.motionpictures.org/wp-content/uploads/2017/04/Dragging.jpg
+  - https://www.motionpictures.org/wp-content/uploads/2017/04/Color_Red.jpg
+  - https://www.motionpictures.org/wp-content/uploads/2017/04/Oscars.jpg
 measured: null
 ---
 

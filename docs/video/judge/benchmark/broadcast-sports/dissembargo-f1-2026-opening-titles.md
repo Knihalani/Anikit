@@ -25,6 +25,9 @@ stills:
   - https://i.ytimg.com/vi/Sks_fMr2Yss/hq1.jpg
   - https://i.ytimg.com/vi/Sks_fMr2Yss/hq2.jpg
   - https://i.ytimg.com/vi/Sks_fMr2Yss/hq3.jpg
+  - https://images.squarespace-cdn.com/content/v1/64a2e088ff6efe7b7f676dff/b9ccb069-4336-4dee-9865-5334c240706b/close-up-of-2026-f1-car-suspension-dissembargo.png?format=1500w
+  - https://images.squarespace-cdn.com/content/v1/64a2e088ff6efe7b7f676dff/7d5e0b9d-165b-48a4-93eb-02de70d93b2c/f1-driver-walking-through-red-light-streaks-dissembargo.png?format=1500w
+  - https://images.squarespace-cdn.com/content/v1/64a2e088ff6efe7b7f676dff/680a5729-94f6-4709-af1c-60594fd7a904/2026-f1-car-on-a-sweeping-white-dissembargo.png?format=1500w
 measured: null
 ---
 

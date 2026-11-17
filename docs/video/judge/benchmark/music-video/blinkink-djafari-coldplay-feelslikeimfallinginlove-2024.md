@@ -25,6 +25,8 @@ stills:
   - https://i.ytimg.com/vi/V3IVdLo-2NM/hq1.jpg
   - https://i.ytimg.com/vi/V3IVdLo-2NM/hq2.jpg
   - https://i.ytimg.com/vi/V3IVdLo-2NM/hq3.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Coldplay-feelslikeimfallinginlove-Music-Videoby-Raman-Djafari2.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/Coldplay-feelslikeimfallinginlove-Music-Videoby-Raman-Djafari3.jpg
 measured: null
 ---
 

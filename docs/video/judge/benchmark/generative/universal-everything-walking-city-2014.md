@@ -22,6 +22,10 @@ anikit_features: [scene3d, scene3d.instances, camera, post, motionBlur, audio, "
 awards: ["Prix Ars Electronica 2014 Golden Nica"]
 stills:
   - https://i.vimeocdn.com/video/477386526-70ba52542b331c855705a1a54198d51278067bef12b0ab13d30314e445b94e69-d_1280?region=us
+  - https://static.universaleverything.com/wp-content/uploads/2013/11/18160857/walking.jpg
+  - https://www.thisiscolossal.com/wp-content/uploads/2014/02/walking.jpg
+  - https://www.stashmedia.tv/wp-content/uploads/2014/02/UE_Walking-City.png
+  - https://www.cartoonbrew.com/wp-content/uploads/2014/07/walkingcity.jpg
 measured: null
 ---
 

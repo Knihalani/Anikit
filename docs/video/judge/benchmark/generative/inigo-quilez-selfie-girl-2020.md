@@ -25,6 +25,7 @@ stills:
   - https://i.ytimg.com/vi/8--5LwHRhjk/hq1.jpg
   - https://i.ytimg.com/vi/8--5LwHRhjk/hq2.jpg
   - https://i.ytimg.com/vi/8--5LwHRhjk/hq3.jpg
+  - https://www.shadertoy.com/media/shaders/WsSBzh.jpg
 measured: null
 ---
 

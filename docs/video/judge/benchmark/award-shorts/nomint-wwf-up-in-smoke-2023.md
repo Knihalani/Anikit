@@ -24,6 +24,9 @@ stills:
   - https://i.vimeocdn.com/video/1768666192-0fe5b0aceba4ad797284bd44fb42eed98ff03fd85a5e3e7e3197f5d09edc20de-d_1280
   - https://www.thisiscolossal.com/wp-content/uploads/2023/12/WWF_Up_in_Smoke_16_9_c.jpg
   - https://www.thisiscolossal.com/wp-content/uploads/2023/12/WWF_Up_in_Smoke_16_9_a.jpg
+  - https://m.itsnicethat.com/original_images/nomint-wwf-up-in-smoke-animation-itsnicethat-05.jpg?class=w1440
+  - https://m.itsnicethat.com/original_images/nomint-wwf-up-in-smoke-animation-itsnicethat-04.jpg?class=w1440
+  - https://www.stashmedia.tv/wp-content/uploads/WWF-Up-in-Smoke-ad-Nomint-Stop-motion3.jpg
 measured: null
 ---
 

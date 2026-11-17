@@ -25,6 +25,8 @@ stills:
   - https://i.ytimg.com/vi/UXqq0ZvbOnk/hq1.jpg
   - https://i.ytimg.com/vi/UXqq0ZvbOnk/hq2.jpg
   - https://i.ytimg.com/vi/UXqq0ZvbOnk/hq3.jpg
+  - https://studio.blender.org/files/public/header/project/f6/76/f67601c6f69b2d7f65a5e5d97e73c4d7.png
+  - https://studio.blender.org/files/public/header/blog/d5/65/d565eedccd5967feda7081ecd3d6f141.png
 measured: null
 ---
 

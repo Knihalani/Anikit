@@ -25,6 +25,9 @@ stills:
   - https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1595265273704-RQQR0BGIG3VPXLWCOQFQ/GA20_02_RIghtNow_S04_v06.jpg
   - https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1595265607133-T5E4CVO93RGYCNMUEY3T/GA20_02_RIghtNow_ChurchWide_v02.jpg
   - https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1595266123148-TY08OXXON3C8CAK4CZN9/GA20_02_RIghtNow_Tanzania_Wide_v04.jpg
+  - https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1598921206895-LPBVTPQNJUKAYDT3YAZ6/GA20_02_RIghtNow_S_11_v02.jpg
+  - https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1595265470191-PEEVB027OLMEFL0G1QLC/GA20_02_RIghtNow_NYC_CU_v03.jpg
+  - https://images.squarespace-cdn.com/content/v1/5eb30ed4b30b4e725009cd7b/1595266304614-33WIZM4Q2NRNQM6KORGV/GA20_02_RightNow_S_02_v03.jpg
 measured: null
 ---
 

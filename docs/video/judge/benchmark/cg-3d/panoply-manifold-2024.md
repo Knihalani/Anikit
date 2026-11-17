@@ -22,6 +22,12 @@ anikit_features: [scene3d, scene3d.physics, composition, text, camera, post, mot
 awards: []
 stills:
   - https://i.vimeocdn.com/video/1941015928-3482f0ccb1e173e546994220c38c7d3469d3d8d66fe68165167771cb8575d8aa-d_1280?region=us
+  - https://panoply.co.uk/api/media/file/MAN24_HoldFrame.jpg
+  - https://panoply.co.uk/api/media/file/MAN24_16x9_09.jpg
+  - https://panoply.co.uk/api/media/file/MAN24_16x9_10.jpg
+  - https://panoply.co.uk/api/media/file/MAN24_16x9_12.jpg
+  - https://panoply.co.uk/api/media/file/MAN24_16x9_13.jpg
+  - https://panoply.co.uk/api/media/file/MAN24_16x9_14.jpg
 measured: null
 ---
 
