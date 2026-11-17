@@ -52,6 +52,7 @@ lib! {
     "liquid-chrome", Image, 163, "Liquid metal: a heavy mass with drops that merge and tear away, mirror chrome in a studio or night sky; cut-out with background = 0.";
     "aurora", Image, 696, "Aurora curtains over a ridge, mirrored in a lake. Heavy; lake = 0 + lake-mirror is faster.";
     "hero", Image, 59, "Product shot: one object (torus, cube, pill, gem, sphere, twisted bar) on a glossy studio floor, plastic or metal.";
+    "mesh-gradient", Image, 40, "Soft animated mesh gradient: four colours drifting and folding into each other, with film grain. Backgrounds for titles and products.";
     "caustics", Image, 58, "Pool-floor caustics from a moving water surface (ray density via derivatives).";
     "flow-ink", Image, 155, "Two inks marbled by a curl-noise flow field on paper.";
     "turing", Image, 26, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
