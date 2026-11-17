@@ -72,14 +72,16 @@ pub(crate) struct Passes {
     /// the same however it was reached.
     pub uniforms: Vec<(String, Vec<f32>)>,
     pub audio: Option<Arc<super::audio_react::AudioFeatures>>,
-    /// Recent frames: (frame, size, textures by slot).
-    history: Mutex<VecDeque<(i64, (u32, u32), Bufs)>>,
+    /// Recent frames.
+    history: Mutex<VecDeque<Kept>>,
 }
 
 /// Frames of buffer state kept (each is up to 4 float textures at layer size).
 const HISTORY: usize = 2;
 
 type Bufs = Arc<[Option<Arc<Texture>>; 4]>;
+/// A kept frame of buffer state: (frame, size, textures by slot).
+type Kept = (i64, (u32, u32), Bufs);
 
 impl Passes {
     pub fn new(bufs: Vec<BufPass>, uniforms: Vec<(String, Vec<f32>)>, audio: Option<Arc<super::audio_react::AudioFeatures>>) -> Passes {
