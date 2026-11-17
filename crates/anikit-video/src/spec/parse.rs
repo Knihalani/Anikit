@@ -93,7 +93,8 @@ fn strip_pos(s: &str) -> String {
 
 /// Deserialize a JSON value, reporting unknown keys as warnings and type
 /// errors with their path.
-pub fn from_value(v: serde_json::Value) -> Result<Parsed, Vec<Diagnostic>> {
+pub fn from_value(mut v: serde_json::Value) -> Result<Parsed, Vec<Diagnostic>> {
+    bezier_eases(&mut v);
     let v = super::reuse::expand(v)?;
     // `{"scene3d": {...}}` on a layer or a scene is shorthand for the scene3d component.
     let v = crate::scene3d::shorthand(v);
@@ -213,5 +214,27 @@ fn segments(p: &serde_ignored::Path, out: &mut Vec<Seg2>) {
             out.push(Seg2::Key(key.clone()));
         }
         Path::Some { parent } | Path::NewtypeStruct { parent } | Path::NewtypeVariant { parent } => segments(parent, out),
+    }
+}
+
+/// `"ease": [x1, y1, x2, y2]` anywhere means `"cubic-bezier(x1,y1,x2,y2)"`.
+fn bezier_eases(v: &mut serde_json::Value) {
+    use serde_json::Value;
+    match v {
+        Value::Object(m) => {
+            for (k, x) in m.iter_mut() {
+                if k == "ease" {
+                    if let Value::Array(a) = x {
+                        if a.len() == 4 && a.iter().all(Value::is_number) {
+                            *x = Value::String(format!("cubic-bezier({},{},{},{})", a[0], a[1], a[2], a[3]));
+                            continue;
+                        }
+                    }
+                }
+                bezier_eases(x);
+            }
+        }
+        Value::Array(a) => a.iter_mut().for_each(bezier_eases),
+        _ => {}
     }
 }

@@ -45,7 +45,8 @@ struct TweenC {
     from: Vec<(usize, usize, ValS)>,
     to: Vec<(usize, usize, ValS)>,
     /// (slot, channels, [(time 0..1, value)])
-    kf: Vec<(usize, usize, Vec<(f32, ValS)>)>,
+    /// Per property: `(time 0..1, value, ease of the move into this key)`.
+    kf: Vec<(usize, usize, Vec<(f32, ValS, Option<u32>)>)>,
     repeat: i32,
     yoyo: bool,
 }
@@ -3315,12 +3316,27 @@ impl C<'_> {
                 let n = vals.len();
                 let mut list = Vec::new();
                 for (i, v) in vals.iter().enumerate() {
-                    let (tt, vv) = match v {
-                        serde_json::Value::Array(a) if a.len() == 2 && a[0].is_number() => (a[0].as_f64().unwrap() as f32, &a[1]),
-                        _ => (i as f32 / (n - 1) as f32, v),
+                    let (tt, vv, ke) = match v {
+                        serde_json::Value::Array(a) if a.len() == 2 && a[0].is_number() => (a[0].as_f64().unwrap() as f32, &a[1], None),
+                        // `[time, value, ease]`: the ease of the move into this key.
+                        serde_json::Value::Array(a) if a.len() == 3 && a[0].is_number() => {
+                            let e = match &a[2] {
+                                serde_json::Value::String(e) => Some(self.ease(Some(e), "linear", &format!("{p}[{i}][2]"))),
+                                serde_json::Value::Array(b) if b.len() == 4 && b.iter().all(|x| x.is_number()) => {
+                                    let e = format!("cubic-bezier({},{},{},{})", b[0], b[1], b[2], b[3]);
+                                    Some(self.ease(Some(&e), "linear", &format!("{p}[{i}][2]")))
+                                }
+                                _ => {
+                                    self.d.push(Diagnostic::error(format!("{p}[{i}][2]"), "a keyframe's third item is its ease: a name or [x1, y1, x2, y2]"));
+                                    None
+                                }
+                            };
+                            (a[0].as_f64().unwrap() as f32, &a[1], e)
+                        }
+                        _ => (i as f32 / (n - 1) as f32, v, None),
                     };
                     if let Some(x) = self.anim_val(name, vv, &format!("{p}[{i}]"), refs) {
-                        list.push((tt.clamp(0.0, 1.0), x));
+                        list.push((tt.clamp(0.0, 1.0), x, ke));
                     }
                 }
                 kf.push((slot, ch, list));
@@ -3419,15 +3435,15 @@ impl C<'_> {
                     let s = slot + c;
                     let c0 = cur(&tracks, s, t0);
                     let mut prev: Option<(f32, f32)> = None;
-                    for &(tt, v) in list {
+                    for &(tt, v, ke) in list {
                         let val = match v {
                             ValS::Color(col) => col[c],
                             v => apply(v, c0, 0),
                         };
                         if let Some((pt, pv)) = prev {
-                            segs.push((s, Seg { t0: t0 + pt * t.dur, t1: t0 + tt * t.dur, v0: pv, v1: val, ease: t.ease, hold_before: false }));
+                            segs.push((s, Seg { t0: t0 + pt * t.dur, t1: t0 + tt * t.dur, v0: pv, v1: val, ease: ke.unwrap_or(t.ease), hold_before: false }));
                         } else if tt > 0.0 {
-                            segs.push((s, Seg { t0, t1: t0 + tt * t.dur, v0: c0, v1: val, ease: t.ease, hold_before: false }));
+                            segs.push((s, Seg { t0, t1: t0 + tt * t.dur, v0: c0, v1: val, ease: ke.unwrap_or(t.ease), hold_before: false }));
                         }
                         prev = Some((tt, val));
                     }

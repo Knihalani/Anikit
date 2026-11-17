@@ -26,3 +26,5 @@
 - **Shape modifiers** (any shape; applied offset → round → pucker → zigzag → twist): `roundCorners` px, `offsetPath` px
   (±), `puckerBloat` −1..1, `zigzag {size, ridges, smooth}`, `twist` deg, `wigglePath {amount, detail, speed, seed}` (animated, deterministic).
 - **Dashes**: `stroke.dash` + `dashOffset` (animatable: `"=t*-60"` marches) — combine with `trimEnd` for write-ons.
+- **Easing**: any name (`outExpo`, `inOutBack`, `elastic.out(1, 0.3)`, `steps(4)`), `"ease": [x1, y1, x2, y2]` (cubic-bezier),
+  `"spring": {"stiffness": 300, "damping": 18}`; per keyframe: `"keyframes": {"x": [[0, 200], [0.5, 960, "outBack"], [1, 1700, [0.9, 0, 0.1, 1]]]}` (the ease *into* that key).
