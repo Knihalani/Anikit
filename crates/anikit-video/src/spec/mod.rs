@@ -271,6 +271,11 @@ pub struct TransitionObj {
     pub origin: Option<[Num; 2]>,
     pub amount: Option<f64>,
     pub intensity: Option<f64>,
+    /// `type: "shader"`: a gl-transitions style shader (`vec4 transition(vec2 uv)` with
+    /// `progress`, `getFromColor`, `getToColor`) or a built-in transition name.
+    pub shader: Option<String>,
+    /// Uniforms for a shader transition.
+    pub uniforms: Option<BTreeMap<String, serde_json::Value>>,
 }
 
 /// Scene camera.
@@ -447,6 +452,23 @@ pub struct Layer {
     pub component: Option<String>,
     pub props: Option<serde_json::Value>,
     pub progress: Option<Num>,
+
+    // ---- shader (SHADER module: `eval/shader.rs`, crate `anikit-shader`)
+    /// Fragment shader: Shadertoy-style GLSL (`void mainImage(out vec4 fragColor, in vec2 fragCoord)`),
+    /// WGSL (`fn mainImage(fragCoord: vec2f) -> vec4f`), or a built-in name (`aurora`, `liquid-chrome`, …;
+    /// `anikit-video info --shaders`). `src: "fx.glsl"` loads one from a file.
+    pub shader: Option<String>,
+    /// Shader uniforms by name: a number, `[x, y(, z, w)]`, a colour or an `"=expr"`. Animatable by name in `animate`.
+    pub uniforms: Option<BTreeMap<String, serde_json::Value>>,
+    /// Shader inputs `iChannel0..3`: `"below"`, `"noise"`, an image/video path, `{ "layers": [...] }`,
+    /// optionally with `"wrap": "repeat"|"mirror"`, `"filter": "nearest"`, `"mipmaps": true`.
+    pub channels: Option<Vec<serde_json::Value>>,
+    /// Shader as a filter: `iChannel0` is everything drawn below, and the output replaces the frame.
+    pub filter: Option<bool>,
+    /// Shader: 2×2 supersampling (4 samples per pixel).
+    pub supersample: Option<bool>,
+    /// Shader: use `fragColor.a` as alpha (default: opaque, like Shadertoy).
+    pub alpha: Option<bool>,
 }
 
 /// `style`: a theme text-style name (text layers) or a box style (box layers).

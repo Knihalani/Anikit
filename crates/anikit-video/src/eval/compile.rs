@@ -88,6 +88,8 @@ struct C<'a> {
     beat_marks: super::beat_markers::BeatMarkers,
     /// Compiled sub-compositions by name, with their own `loop` default.
     comps: Vec<(String, Arc<Evaluator>, bool)>,
+    /// Uniform name → (slot after `prop::U0`, components) of the shader layer being compiled.
+    uniform_slots: Vec<(String, usize, usize)>,
 }
 
 fn size_preset(s: &str) -> Option<[u32; 2]> {
@@ -145,7 +147,9 @@ impl Evaluator {
             beat_marks: super::beat_markers::BeatMarkers::new(spec, &opts.base_dir),
             assets: opts.assets.clone().unwrap_or_else(|| Arc::new(SharedAssets::new(opts.fonts.clone().unwrap_or_else(|| Arc::new(FontStore::new()))))),
             comps,
+            uniform_slots: Vec::new(),
         };
+        c.assets.shaders.bind(&c.assets);
         c.ease_ids.insert("linear".into(), 0);
         // Size & fps.
         match &spec.size {
@@ -197,7 +201,7 @@ impl Evaluator {
             let path = format!("scenes[{i}]");
             let id = s.id.clone().unwrap_or_else(|| format!("scene{}", i + 1));
             let trans = if i == 0 {
-                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0 }
+                TransC { kind: TransKind::Cut, dur: 0.0, ease: 0, dir: [-1.0, 0.0], color: Rgba([0.0, 0.0, 0.0, 1.0]), origin: [0.0; 2], amount: 0.0, shader: None }
             } else {
                 let (tr, tp) = match (&s.transition, &default_trans) {
                     (Some(t), _) => (Some(t), format!("{path}.transition")),
@@ -738,6 +742,8 @@ impl C<'_> {
             "blur" => TransKind::Blur,
             "glitch" => TransKind::Glitch,
             "morphCut" => TransKind::MorphCut,
+            "shader" => TransKind::Shader,
+            k if anikit_shader::library::get(k).is_some_and(|e| e.use_ == anikit_shader::library::Use::Transition) => TransKind::Shader,
             k => {
                 self.d.push(Diagnostic::error(format!("{path}.type"), format!("unknown transition '{k}'")).suggest(suggest(k, val::TRANSITIONS)));
                 TransKind::Crossfade
@@ -778,7 +784,14 @@ impl C<'_> {
             TransKind::Glitch => o.intensity.unwrap_or(1.0) as f32,
             _ => o.amount.unwrap_or(0.0) as f32,
         };
-        TransC { kind, dur, ease, dir, color, origin, amount }
+        let shader = if kind == TransKind::Shader {
+            let src = o.shader.clone().unwrap_or_else(|| kind_s.to_string());
+            self.shader_transition(&src, o.uniforms.as_ref(), path)
+        } else {
+            None
+        };
+        let kind = if kind == TransKind::Shader && shader.is_none() { TransKind::Crossfade } else { kind };
+        TransC { kind, dur, ease, dir, color, origin, amount, shader }
     }
 
     fn scene(&mut self, s: &spec::Scene, path: &str, dur: f32, default_bg: &spec::Paint) -> Built {
@@ -889,6 +902,8 @@ impl C<'_> {
             "component"
         } else if l.composition.is_some() {
             "composition"
+        } else if l.shader.is_some() || l.src.as_deref().is_some_and(|s| s.ends_with(".glsl") || s.ends_with(".wgsl") || s.ends_with(".frag")) {
+            "shader"
         } else if l.children.is_some() {
             "box"
         } else if l.layers.is_some() {
@@ -958,6 +973,7 @@ impl C<'_> {
             _ => l,
         };
         let kind = self.infer_kind(l, path)?;
+        self.uniform_slots.clear();
         let label = match (kind, &l.component) {
             ("component", Some(c)) => format!("component:{c}"),
             _ => kind.to_string(),
@@ -1024,6 +1040,7 @@ impl C<'_> {
             }
             "box" => self.box_layer(l, path, given_w, given_h, start, end, pc, &mut n),
             "composition" => self.comp_layer(l, path)?,
+            "shader" => self.shader_layer(l, path, given_w, given_h, start, end, &mut n)?,
             _ => self.component_layer(l, path, given_w, given_h)?,
         };
         n.kind = kind_v;
@@ -2140,6 +2157,240 @@ impl C<'_> {
         }
     }
 
+    // ---------- shader layers (SHADER module; runtime in `eval/shader.rs`) ----------
+
+    /// Spec uniform value → floats (or an expression string).
+    fn uniform_value(&mut self, v: &serde_json::Value, path: &str) -> Option<Result<Vec<f32>, String>> {
+        Some(Ok(match v {
+            serde_json::Value::Number(x) => vec![x.as_f64().unwrap_or(0.0) as f32],
+            serde_json::Value::Bool(b) => vec![*b as u8 as f32],
+            serde_json::Value::Array(a) => a.iter().take(4).map(|x| x.as_f64().unwrap_or(0.0) as f32).collect(),
+            serde_json::Value::String(s) if s.trim_start().starts_with('=') => return Some(Err(s.clone())),
+            serde_json::Value::String(s) => {
+                let c = self.color(s, path)?;
+                if c.0[3] < 1.0 {
+                    c.0.to_vec()
+                } else {
+                    c.0[..3].to_vec()
+                }
+            }
+            _ => {
+                self.d.push(Diagnostic::error(path, "a uniform is a number, [x, y(, z, w)], a colour or an \"=expression\""));
+                return None;
+            }
+        }))
+    }
+
+    fn compile_shader(&mut self, src_field: Option<&str>, file: Option<&str>, unis: Option<&BTreeMap<String, serde_json::Value>>, path: &str) -> Option<(Arc<anikit_shader::Shader>, String, Vec<(String, Result<Vec<f32>, String>)>)> {
+        use anikit_shader::UType;
+        let text = match (src_field, file) {
+            (Some(s), _) => match super::shader::resolve_source(s) {
+                Some(t) => t.to_string(),
+                None => {
+                    let names = anikit_shader::library::names();
+                    self.d.push(Diagnostic::error(format!("{path}.shader"), format!("unknown built-in shader '{s}' (or write GLSL with a mainImage function)")).suggest(suggest(s.trim(), &names)));
+                    return None;
+                }
+            },
+            (None, Some(f)) => match std::fs::read_to_string(self.o.base_dir.join(f)) {
+                Ok(t) => t,
+                Err(e) => {
+                    self.d.push(Diagnostic::error(format!("{path}.src"), format!("can't read shader {f}: {e}")));
+                    return None;
+                }
+            },
+            _ => return None,
+        };
+        let mut vals = Vec::new();
+        for (k, v) in unis.into_iter().flatten() {
+            if let Some(x) = self.uniform_value(v, &format!("{path}.uniforms.{k}")) {
+                vals.push((k.clone(), x));
+            }
+        }
+        let extra: Vec<(&str, UType)> = vals
+            .iter()
+            .map(|(k, v)| (k.as_str(), match v {
+                Ok(x) if x.len() > 1 => UType::Vec(x.len() as u8),
+                _ => UType::Float,
+            }))
+            .collect();
+        match anikit_shader::Shader::compile_with(&text, &extra) {
+            Ok(s) => Some((Arc::new(s), text, vals)),
+            Err(e) => {
+                let field = if src_field.is_some() { "shader" } else { "src" };
+                self.d.push(Diagnostic::error(format!("{path}.{field}"), format!("shader: {e}")));
+                None
+            }
+        }
+    }
+
+    fn shader_id(path: &str, text: &str) -> u64 {
+        use std::hash::{Hash, Hasher};
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        path.hash(&mut h);
+        text.hash(&mut h);
+        h.finish()
+    }
+
+    fn channel_opts(&mut self, v: &serde_json::Value, path: &str) -> super::shader::ChanOpts {
+        use anikit_shader::{Filter, Wrap};
+        let wrap = match v.get("wrap").and_then(|w| w.as_str()) {
+            None | Some("clamp") => Wrap::Clamp,
+            Some("repeat") => Wrap::Repeat,
+            Some("mirror") => Wrap::Mirror,
+            Some(w) => {
+                self.d.push(Diagnostic::error(format!("{path}.wrap"), format!("unknown wrap '{w}'")).suggest(suggest(w, &["clamp", "repeat", "mirror"])));
+                Wrap::Clamp
+            }
+        };
+        let filter = match v.get("filter").and_then(|w| w.as_str()) {
+            Some("nearest") => Filter::Nearest,
+            _ => Filter::Linear,
+        };
+        let mipmaps = v.get("mipmaps").and_then(|m| m.as_bool()).unwrap_or(false);
+        super::shader::ChanOpts { wrap, filter, mipmaps }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn shader_layer(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>, start: f32, end: f32, n: &mut Node) -> Option<(Kind, [f32; 2])> {
+        use super::shader::{ChannelC, ShaderC, UNIFORM_SLOTS};
+        let (shader, text, vals) = self.compile_shader(l.shader.as_deref(), l.src.as_deref(), l.uniforms.as_ref(), path)?;
+        if shader.kind != anikit_shader::Kind::Image {
+            self.d.push(Diagnostic::error(format!("{path}.shader"), "this is a transition shader; use it as a scene transition: {\"transition\": {\"type\": \"shader\", \"shader\": …}}"));
+            return None;
+        }
+        let size = [gw.unwrap_or(self.w), gh.unwrap_or(self.h)];
+        // Uniform slots: declared defaults, then spec values (numbers or expressions).
+        let mut slots = Vec::new();
+        let mut fixed = Vec::new();
+        let mut off = 0;
+        for u in &shader.uniforms {
+            let len = u.ty.len();
+            let given = vals.iter().find(|(k, _)| *k == u.name).map(|(_, v)| v.clone());
+            if off + len > UNIFORM_SLOTS {
+                if let Some(Ok(v)) = given.clone().or(u.default.clone().map(Ok)) {
+                    fixed.push((u.name.clone(), v));
+                }
+                self.d.push(Diagnostic::warning(format!("{path}.uniforms.{}", u.name), format!("more than {UNIFORM_SLOTS} uniform floats: '{}' can't be animated", u.name)));
+                continue;
+            }
+            if let Some(d) = &u.default {
+                for (i, x) in d.iter().take(len).enumerate() {
+                    n.base[prop::U0 + off + i] = *x;
+                }
+            }
+            match given {
+                Some(Ok(v)) => {
+                    for (i, x) in v.iter().take(len).enumerate() {
+                        n.base[prop::U0 + off + i] = *x;
+                    }
+                }
+                Some(Err(e)) => self.set(n, prop::U0 + off, Some(&Num::Str(e)), &format!("{path}.uniforms.{}", u.name), 1.0),
+                None => {}
+            }
+            slots.push((u.name.clone(), off, len));
+            off += len;
+        }
+        let filter = l.filter.unwrap_or(false);
+        let mut channels = Vec::new();
+        let list: Vec<serde_json::Value> = match &l.channels {
+            Some(c) => c.clone(),
+            None if filter => vec![serde_json::Value::String("below".into())],
+            None => Vec::new(),
+        };
+        if list.len() > 4 {
+            self.d.push(Diagnostic::error(format!("{path}.channels"), "at most 4 channels (iChannel0..3)"));
+        }
+        for (i, v) in list.iter().take(4).enumerate() {
+            let cp = format!("{path}.channels[{i}]");
+            let o = self.channel_opts(v, &cp);
+            let src = v.as_str().or_else(|| v.get("src").and_then(|s| s.as_str()));
+            let c = match (src, v.get("layers")) {
+                (Some("below"), _) => ChannelC::Below,
+                (Some("noise"), _) => ChannelC::Noise,
+                (Some("") | Some("none"), _) => ChannelC::None,
+                (Some(file), _) => {
+                    // An image or video, stretched over the layer (uv 0..1 covers it).
+                    let synth: Layer = serde_json::from_value(serde_json::json!({ "src": file, "width": "100%", "height": "100%", "fit": "fill", "x": "50%", "y": "50%" })).unwrap_or_default();
+                    let pc = PCtx { size, t0: start, end, delay: 0.0, index: 0, count: 1, in_box: false };
+                    let saved = std::mem::take(&mut self.uniform_slots);
+                    let node = self.layer(&synth, &cp, pc);
+                    self.uniform_slots = saved;
+                    ChannelC::Layers(node.into_iter().collect())
+                }
+                (None, Some(ls)) => {
+                    let g: Layer = match serde_json::from_value(serde_json::json!({ "layers": ls })) {
+                        Ok(g) => g,
+                        Err(e) => {
+                            self.d.push(Diagnostic::error(format!("{cp}.layers"), e.to_string()));
+                            Layer::default()
+                        }
+                    };
+                    let pc = PCtx { size, t0: start, end, delay: 0.0, index: 0, count: 0, in_box: false };
+                    let saved = std::mem::take(&mut self.uniform_slots);
+                    let kids = self.layers(g.layers.as_deref().unwrap_or(&[]), &format!("{cp}.layers"), pc, None);
+                    self.uniform_slots = saved;
+                    ChannelC::Layers(kids)
+                }
+                _ => {
+                    self.d.push(Diagnostic::error(cp, "a channel is \"below\", \"noise\", an image/video path or {\"layers\": [...]}"));
+                    ChannelC::None
+                }
+            };
+            channels.push((c, o));
+        }
+        for (i, used) in shader.channels_used.iter().enumerate() {
+            if *used && channels.get(i).is_none_or(|(c, _)| matches!(c, ChannelC::None)) {
+                self.d.push(Diagnostic::warning(format!("{path}.channels"), format!("the shader samples iChannel{i} but no channel {i} is given (it reads as black)")));
+            }
+        }
+        self.uniform_slots = slots.clone();
+        let sc = ShaderC {
+            dynamic: super::shader::uses_time(&text),
+            id: Self::shader_id(path, &text),
+            shader,
+            uniforms: slots,
+            fixed,
+            channels,
+            filter,
+            supersample: l.supersample.unwrap_or(false),
+            alpha: l.alpha.unwrap_or(false),
+        };
+        Some((Kind::Shader(Box::new(sc)), size))
+    }
+
+    fn shader_transition(&mut self, src: &str, unis: Option<&BTreeMap<String, serde_json::Value>>, path: &str) -> Option<super::shader::ShaderRef> {
+        use super::shader::{ChanOpts, ChannelC, ShaderC, ShaderRef};
+        let (shader, text, vals) = self.compile_shader(Some(src), None, unis, path)?;
+        if shader.kind != anikit_shader::Kind::Transition {
+            self.d.push(Diagnostic::error(format!("{path}.shader"), "a transition shader defines vec4 transition(vec2 uv) using getFromColor(uv), getToColor(uv) and progress"));
+            return None;
+        }
+        let mut fixed: Vec<(String, Vec<f32>)> = Vec::new();
+        for (k, v) in vals {
+            match v {
+                Ok(v) => fixed.push((k, v)),
+                Err(_) => self.d.push(Diagnostic::error(format!("{path}.uniforms.{k}"), "transition uniforms can't be expressions")),
+            }
+        }
+        let o = ChanOpts { wrap: anikit_shader::Wrap::Clamp, filter: anikit_shader::Filter::Linear, mipmaps: false };
+        let mut channels = vec![(ChannelC::Below, o), (ChannelC::Below, o)];
+        if shader.channels_used[2] {
+            channels.push((ChannelC::Noise, ChanOpts { wrap: anikit_shader::Wrap::Repeat, ..o }));
+        }
+        Some(ShaderRef(Arc::new(ShaderC {
+            dynamic: true,
+            id: Self::shader_id(path, &text),
+            shader,
+            uniforms: Vec::new(),
+            fixed,
+            channels,
+            filter: false,
+            supersample: false,
+            alpha: false,
+        })))
+    }
+
     fn component_layer(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>) -> Option<(Kind, [f32; 2])> {
         let raw = l.component.clone().unwrap_or_default();
         // camelCase (`barChart`), kebab-case and short aliases (`chart.bar`) all resolve.
@@ -2168,8 +2419,19 @@ impl C<'_> {
 
     // ---------- animation ----------
 
+    /// A shader uniform's animation slot (only while compiling that shader layer).
+    fn uniform_lookup(&self, name: &str) -> Option<(usize, usize)> {
+        self.uniform_slots.iter().find(|(n, _, _)| n == name).map(|(_, o, c)| (prop::U0 + o, *c))
+    }
+
     fn anim_val(&mut self, name: &str, v: &serde_json::Value, path: &str, refs: [f32; 2]) -> Option<ValS> {
-        let (slot, ch) = prop::lookup(name)?;
+        let (slot, ch) = prop::lookup(name).or_else(|| self.uniform_lookup(name))?;
+        if slot >= prop::U0 {
+            return match v.as_f64() {
+                Some(x) => Some(ValS::Abs(x as f32)),
+                None => self.bad_val(path, &v.to_string()),
+            };
+        }
         let refl = match slot {
             prop::X | prop::W => refs[0],
             prop::Y | prop::H => refs[1],
@@ -2209,7 +2471,16 @@ impl C<'_> {
         let mut out = Vec::new();
         for (k, v) in m {
             let p = format!("{path}.{k}");
-            match prop::lookup(k) {
+            if let (Some((slot, n)), Some(arr)) = (self.uniform_lookup(k), v.as_array()) {
+                // A vector uniform: one track per component.
+                for (i, x) in arr.iter().take(n).enumerate() {
+                    if let Some(x) = self.anim_val(k, x, &format!("{p}[{i}]"), refs) {
+                        out.push((slot + i, 1, x));
+                    }
+                }
+                continue;
+            }
+            match prop::lookup(k).or_else(|| self.uniform_lookup(k)) {
                 Some((slot, ch)) => {
                     if let Some(x) = self.anim_val(k, v, &p, refs) {
                         out.push((slot, ch, x));

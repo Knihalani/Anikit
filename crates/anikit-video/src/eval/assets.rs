@@ -22,6 +22,8 @@ pub struct SharedAssets {
     by_key: RwLock<HashMap<u64, ImageId>>,
     media: RwLock<HashMap<String, ImageId>>,
     version: AtomicU64,
+    /// Shader layer renders, made on demand by [`Self::pixmap`].
+    pub(crate) shaders: super::shader::ShaderJobs,
 }
 
 impl Default for SharedAssets {
@@ -38,6 +40,7 @@ impl SharedAssets {
             by_key: RwLock::new(HashMap::new()),
             media: RwLock::new(HashMap::new()),
             version: AtomicU64::new(1),
+            shaders: Default::default(),
         }
     }
 
@@ -73,6 +76,9 @@ impl SharedAssets {
 
     /// An image by id (for `render::Renderer::set_image_source`).
     pub fn pixmap(&self, id: ImageId) -> Option<Arc<Pixmap>> {
+        if super::shader::ShaderJobs::owns(id) {
+            return self.shaders.get(id);
+        }
         self.images.read().unwrap().get(id.0 as usize).cloned()
     }
 
