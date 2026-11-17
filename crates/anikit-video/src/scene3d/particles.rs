@@ -632,8 +632,9 @@ impl FlowGrid {
 
 /// Particle state at one frame, compact: positions, and velocity quantised to i16.
 pub struct Snap {
-    /// Particle ids (slot `j` holds particle `id[j]`; slots are kept in spatial order).
-    pub id: Vec<u32>,
+    /// Particle ids (slot `j` holds particle `id[j]`; slots are kept in spatial
+    /// order). Shared with the live state until the next re-sort.
+    pub id: Arc<Vec<u32>>,
     pub pos: Vec<[f32; 3]>,
     pub vel: Vec<[i16; 3]>,
     pub vscale: f32,
@@ -653,7 +654,7 @@ impl Snap {
 
 struct Live {
     frame: i64,
-    id: Vec<u32>,
+    id: Arc<Vec<u32>>,
     px: Vec<f32>,
     py: Vec<f32>,
     pz: Vec<f32>,
@@ -792,7 +793,7 @@ impl Sim {
         let pv: Vec<(V3, V3)> = (0..n).into_par_iter().map(|i| self.spawn(i, 0)).collect();
         let mut live = Live {
             frame: 0,
-            id: (0..n as u32).collect(),
+            id: Arc::new((0..n as u32).collect()),
             px: pv.iter().map(|q| q.0.x).collect(),
             py: pv.iter().map(|q| q.0.y).collect(),
             pz: pv.iter().map(|q| q.0.z).collect(),
@@ -837,7 +838,7 @@ impl Sim {
         keys.par_sort_unstable_by_key(|&(m, i)| (m, id[i as usize]));
         let gather = |a: &Vec<f32>| -> Vec<f32> { keys.par_iter().with_min_len(1 << 14).map(|&(_, i)| a[i as usize]).collect() };
         let (px, py, pz, vx, vy, vz) = (gather(&live.px), gather(&live.py), gather(&live.pz), gather(&live.vx), gather(&live.vy), gather(&live.vz));
-        live.id = keys.par_iter().with_min_len(1 << 14).map(|&(_, i)| live.id[i as usize]).collect();
+        live.id = Arc::new(keys.par_iter().with_min_len(1 << 14).map(|&(_, i)| live.id[i as usize]).collect());
         (live.px, live.py, live.pz, live.vx, live.vy, live.vz) = (px, py, pz, vx, vy, vz);
     }
 
@@ -1166,7 +1167,7 @@ impl Sim {
         let mut b = Vec::with_capacity(16 + n * 28);
         b.extend_from_slice(b"AKPART02");
         b.extend_from_slice(&(n as u64).to_le_bytes());
-        for v in &live.id {
+        for v in live.id.iter() {
             b.extend_from_slice(&v.to_le_bytes());
         }
         for a in [&live.px, &live.py, &live.pz, &live.vx, &live.vy, &live.vz] {
@@ -1193,7 +1194,7 @@ impl Sim {
                     if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() {
                         eprintln!("particles: checkpoint at frame {k} from the cache");
                     }
-                    return Some(Live { frame: k, id, px: col(0), py: col(1), pz: col(2), vx: col(3), vy: col(4), vz: col(5) });
+                    return Some(Live { frame: k, id: Arc::new(id), px: col(0), py: col(1), pz: col(2), vx: col(3), vy: col(4), vz: col(5) });
                 }
             }
             k -= CHECK_EVERY;
