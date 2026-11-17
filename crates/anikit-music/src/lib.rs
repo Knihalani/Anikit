@@ -18,5 +18,11 @@ pub mod sf2;
 pub mod physical;
 pub mod synth;
 pub mod sfx;
+pub mod theory;
+pub mod notes;
+pub mod seq;
+pub mod midi;
+pub mod arrange;
+pub mod spec;
 
 pub use voice::{key_to_freq, Instrument, NoteOn, Rng, Voice, BLOCK, RATE};
