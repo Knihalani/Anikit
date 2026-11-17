@@ -160,7 +160,8 @@ struct Frame {
 }
 
 struct SimState {
-    live: Option<Fields>,
+    /// Live states (a render works on several stretches of the timeline at once).
+    lives: Vec<Fields>,
     frames: HashMap<u64, Arc<Frame>>,
     checkpoints: Vec<Fields>,
 }
@@ -269,7 +270,7 @@ impl Fluid {
         let (nx, ny) = if aspect >= 1.0 { (long as usize, (long / aspect).round().max(8.0) as usize) } else { ((long * aspect).round().max(8.0) as usize, long as usize) };
         let (dx, dy) = (nx * self.detail as usize, ny * self.detail as usize);
         let word = self.text.as_ref().map(|w| word_mask(w, dx, dy, aspect));
-        Sim { nx, ny, dx, dy, word, state: Mutex::new(SimState { live: None, frames: HashMap::new(), checkpoints: Vec::new() }) }
+        Sim { nx, ny, dx, dy, word, state: Mutex::new(SimState { lives: Vec::new(), frames: HashMap::new(), checkpoints: Vec::new() }) }
     }
 
     fn init(&self, s: &Sim) -> Fields {
@@ -520,14 +521,16 @@ impl Fluid {
             return fr.clone();
         }
         let noise = Noise::new(self.seed);
-        let start = match st.live.take() {
-            Some(l) if l.step <= target => l,
-            ahead => {
-                st.live = ahead;
-                st.checkpoints.iter().filter(|c| c.step <= target).max_by_key(|c| c.step).cloned().unwrap_or_else(|| self.init(s))
-            }
+        // Resume from the latest live state or checkpoint at or before the target.
+        let best_live = st.lives.iter().enumerate().filter(|(_, l)| l.step <= target).max_by_key(|(_, l)| l.step).map(|(k, l)| (k, l.step));
+        let best_cp = st.checkpoints.iter().filter(|c| c.step <= target).map(|c| c.step).max();
+        let start = match (best_live, best_cp) {
+            (Some((k, ls)), cp) if cp.is_none_or(|c| ls >= c) => st.lives.swap_remove(k),
+            (_, Some(c)) => st.checkpoints.iter().find(|x| x.step == c).cloned().unwrap(),
+            _ => self.init(s),
         };
         let st_ref = &mut *st;
+        let (from, clock) = (start.step, std::time::Instant::now());
         let out = crate::scene3d::sim_blocking(|| {
             let mut f = start;
             while f.step < target {
@@ -538,6 +541,9 @@ impl Fluid {
             }
             f
         });
+        if std::env::var_os("ANIKIT_FLUID_PROFILE").is_some() {
+            eprintln!("fluid: steps {from}..{target} in {:.0} ms", clock.elapsed().as_secs_f64() * 1e3);
+        }
         let fr = Arc::new(Frame { dye: out.dye.clone(), heat: out.heat.clone() });
         st.frames.insert(target, fr.clone());
         // Keep a window of recent frames.
@@ -548,8 +554,11 @@ impl Fluid {
                 st.frames.remove(k);
             }
         }
-        if st.live.as_ref().is_none_or(|l| l.step <= out.step) {
-            st.live = Some(out);
+        st.lives.push(out);
+        if st.lives.len() > 8 {
+            // Drop the one furthest behind.
+            let k = st.lives.iter().enumerate().min_by_key(|(_, l)| l.step).map(|(k, _)| k).unwrap();
+            st.lives.swap_remove(k);
         }
         fr
     }
