@@ -33,7 +33,7 @@ impl Preview {
         for (name, file) in parsed.spec.fonts.iter().flatten() {
             fonts.add_font_file(base_dir.join(file)).map_err(|e| format!("fonts.{name}: can't load {file}: {e}"))?;
         }
-        let opts = Options { base_dir: base_dir.to_path_buf(), fonts: Some(Arc::new(fonts)), load_assets: true };
+        let opts = Options { base_dir: base_dir.to_path_buf(), fonts: Some(Arc::new(fonts)), load_assets: true, assets: None };
         let ev = Evaluator::new(&parsed.spec, opts).map_err(|e| e.to_string())?;
         Ok(Preview { ev })
     }

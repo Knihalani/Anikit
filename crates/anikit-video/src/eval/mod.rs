@@ -258,6 +258,13 @@ pub(crate) enum Kind {
     Group {
         children: Vec<Node>,
     },
+    /// A nested 2D composition, drawn as vectors in its own clipped layer.
+    Comp {
+        ev: Arc<Evaluator>,
+        natural: [f32; 2],
+        fit: u8,
+        time: CompTime,
+    },
     Box {
         children: Vec<Node>,
         bg: Option<PaintC>,
@@ -348,6 +355,8 @@ pub(crate) struct SceneC {
     pub depth: bool,
     /// How many leading layers are the backdrop (full-frame backgrounds).
     pub bg_layers: usize,
+    /// Effective finishing look (the scene's or the video's).
+    pub post: Option<crate::render::post::PostSettings>,
 }
 
 /// One layer's ops in a tagged evaluation.
@@ -391,6 +400,42 @@ pub struct Evaluator {
     pub(crate) captions: Option<(crate::text::captions::CaptionTrack, [f32; 2])>,
     pub(crate) theme: theme::Theme,
     pub(crate) ctheme: crate::components::Theme,
+    /// Motion-blur shutter in seconds (0 = off). Default half a frame (180°).
+    pub shutter: f32,
+    /// The spec asked for motion blur itself (otherwise only `--quality high` applies it).
+    pub shutter_explicit: bool,
+    /// Named sub-compositions (top-level `compositions`), in dependency order.
+    pub(crate) comps: Vec<(String, Arc<Evaluator>)>,
+}
+
+/// How a layer's clock maps onto a composition's clock.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CompTime {
+    /// Composition time at the layer's start (`trimStart`).
+    pub trim: f32,
+    /// Playback rate (`speed`).
+    pub speed: f32,
+    /// Wrap at the end instead of holding the last frame.
+    pub looped: bool,
+}
+
+impl Default for CompTime {
+    fn default() -> Self {
+        CompTime { trim: 0.0, speed: 1.0, looped: false }
+    }
+}
+
+impl CompTime {
+    /// Composition time for layer-local time `lt`, for a composition lasting `dur` seconds.
+    pub fn map(&self, lt: f32, dur: f32) -> f32 {
+        let t = self.trim + lt * self.speed;
+        if self.looped && dur > 0.0 {
+            t.rem_euclid(dur)
+        } else {
+            // Hold the last frame (layers end exclusively at the duration).
+            t.clamp(0.0, (dur - 1e-4).max(0.0))
+        }
+    }
 }
 
 /// Errors from building an evaluator: all diagnostics, at least one an error.
@@ -495,6 +540,12 @@ impl Evaluator {
         out.width = self.width;
         out.height = self.height;
         recycle(&mut out.ops);
+        out.background = self.emit_frame(t, false, &mut out.ops);
+    }
+
+    /// Append the frame at `t` to `out` and return its background colour. With `bg_rect`
+    /// a solid background is drawn as a rectangle too (nested compositions).
+    fn emit_frame(&self, t: f32, bg_rect: bool, out: &mut Vec<Op>) -> Rgba {
         let t = t.clamp(0.0, self.duration.max(0.0));
         // Active scenes: the one at t, plus the previous one while transitioning in.
         let mut cur = 0;
@@ -506,35 +557,59 @@ impl Evaluator {
         let s = &self.scenes[cur];
         let local = t - s.start;
         let in_trans = cur > 0 && s.trans.kind != TransKind::Cut && local < s.trans.dur && s.trans.dur > 0.0;
-        if !in_trans {
-            match s.bg {
-                PaintC::Solid => out.background = s.bg_color,
-                _ => out.background = Rgba([0.0, 0.0, 0.0, 1.0]),
-            }
-            self.emit_scene(s, t, &dl::IDENTITY, true, &mut out.ops);
+        let black = Rgba([0.0, 0.0, 0.0, 1.0]);
+        let background = if !in_trans {
+            let solid = matches!(s.bg, PaintC::Solid);
+            self.emit_scene(s, t, &dl::IDENTITY, solid && !(bg_rect && s.bg_color.0[3] > 0.0), out);
+            if solid { s.bg_color } else { black }
         } else {
-            out.background = Rgba([0.0, 0.0, 0.0, 1.0]);
             let prev = &self.scenes[cur - 1];
             let p = (local / s.trans.dur).clamp(0.0, 1.0);
             let e = self.easings[s.trans.ease as usize].ease(p as f64) as f32;
-            self.emit_transition(prev, s, t, p, e, &mut out.ops);
-        }
+            self.emit_transition(prev, s, t, p, e, out);
+            black
+        };
         let cx = Cx { ev: self, scene_t: t, gt: t, dof: 0.0 };
         let frame = [self.width as f32, self.height as f32];
         for n in &self.overlay {
-            self.emit_node(n, &cx, &dl::IDENTITY, frame, 1.0, &mut out.ops);
+            self.emit_node(n, &cx, &dl::IDENTITY, frame, 1.0, out);
         }
         if let Some((tr, [x, y])) = &self.captions {
-            let start = out.ops.len();
-            tr.ops(t, translate(*x, *y), &mut out.ops);
-            if out.ops.len() > start {
+            let start = out.len();
+            tr.ops(t, translate(*x, *y), out);
+            if out.len() > start {
                 TAGS.with(|tg| {
                     if let Some(v) = tg.borrow_mut().as_mut() {
-                        v.push(OpTag { ops: start..out.ops.len(), layer: u32::MAX });
+                        v.push(OpTag { ops: start..out.len(), layer: u32::MAX });
                     }
                 });
             }
         }
+        background
+    }
+
+    /// The finishing look at `t` (the incoming scene's during a transition), or `None`.
+    pub fn post_at(&self, t: f32) -> Option<&crate::render::post::PostSettings> {
+        let i = self.scenes.iter().rposition(|s| s.start <= t).unwrap_or(0);
+        self.scenes.get(i).and_then(|s| s.post.as_ref())
+    }
+
+    /// Whether frame time `t` needs motion blur: a shutter is set and something moves while it is open.
+    /// Pass `default_on` for renders where motion blur is on unless the spec says otherwise.
+    pub fn needs_blur(&self, t: f32, default_on: bool) -> bool {
+        (default_on || self.shutter_explicit) && self.shutter > 0.0 && !self.is_static(t - self.shutter * 0.5, t + self.shutter * 0.5)
+    }
+
+    /// Named sub-composition (top-level `compositions`). Evaluate it like any video:
+    /// `eval_into(t, &mut dl)` gives its frame at composition time `t` (map a layer's clock
+    /// with [`CompTime::map`]); `is_static` says when a cached texture stays valid.
+    pub fn composition(&self, name: &str) -> Option<&Arc<Evaluator>> {
+        self.comps.iter().find(|c| c.0 == name).map(|c| &c.1)
+    }
+
+    /// All sub-compositions by name, in dependency order.
+    pub fn compositions(&self) -> impl Iterator<Item = (&str, &Arc<Evaluator>)> {
+        self.comps.iter().map(|(n, e)| (n.as_str(), e))
     }
 
     fn emit_scene(&self, s: &SceneC, t: f32, xf: &Affine, bg_done: bool, out: &mut Vec<Op>) {
@@ -985,6 +1060,25 @@ impl Evaluator {
                     out.push(Op::Image { image: frames[k], dst, opacity: alpha, transform: xf });
                 }
             }
+            Kind::Comp { ev, natural, fit, time } => {
+                let ct = time.map(lt, ev.duration);
+                let dst = fit_rect(*natural, [w, h], *fit);
+                let m = dl::mul(&xf, &[dst[2] / natural[0].max(1.0), 0.0, 0.0, dst[3] / natural[1].max(1.0), dst[0], dst[1]]);
+                let r = kurbo::Rect::new(0.0, 0.0, natural[0] as f64, natural[1] as f64);
+                out.push(Op::PushLayer { opacity: alpha, blend: Blend::Normal, filters: Vec::new(), clip: Some((shape_path(&r, 0.1), m)), cache_key: None });
+                let start = out.len();
+                // The nested layers' tags would name the wrong evaluator's layers: the
+                // whole composition is tagged as this layer by `emit_node`.
+                let tags = TAGS.with(|tg| tg.borrow_mut().take());
+                ev.emit_frame(ct, true, out);
+                TAGS.with(|tg| *tg.borrow_mut() = tags);
+                crate::components::transform_ops(&mut out[start..], &m);
+                let k = (m[0] * m[3] - m[1] * m[2]).abs().sqrt();
+                if (k - 1.0).abs() > 1e-4 {
+                    scale_filters(&mut out[start..], k);
+                }
+                out.push(Op::PopLayer);
+            }
             Kind::Group { children } => {
                 let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0 };
                 for c in children {
@@ -1065,6 +1159,26 @@ impl Evaluator {
 
 /// Emit glyphs `range` (indices into `layout.glyphs`) below `limit`, one op per run.
 /// Is a node (and its subtree) unchanged over scene times `[a, b]`?
+/// Scale blur, shadow and glow sizes (ops moved under a scaling transform).
+pub(crate) fn scale_filters(ops: &mut [Op], s: f32) {
+    for op in ops {
+        if let Op::PushLayer { filters, .. } = op {
+            for f in filters {
+                match f {
+                    Filter::Blur(r) => *r *= s,
+                    Filter::Shadow { dx, dy, blur, .. } => {
+                        *dx *= s;
+                        *dy *= s;
+                        *blur *= s;
+                    }
+                    Filter::Glow { radius, .. } => *radius *= s,
+                    Filter::ColorMatrix(_) => {}
+                }
+            }
+        }
+    }
+}
+
 fn node_static(n: &Node, a: f32, b: f32) -> bool {
     // Appears or disappears inside the span.
     if (n.start > a && n.start <= b) || (n.end > a && n.end <= b) {
@@ -1085,6 +1199,14 @@ fn node_static(n: &Node, a: f32, b: f32) -> bool {
             sp.tracks.iter().all(|t| t.still(la - md, lb))
         }
         Kind::Video { frames, .. } => frames.len() <= 1,
+        Kind::Comp { ev, time, .. } => {
+            let (ca, cb) = (time.map(la, ev.duration), time.map(lb, ev.duration));
+            if time.looped && (cb < ca || lb - la >= ev.duration / time.speed.abs().max(1e-6)) {
+                ev.is_static(0.0, ev.duration)
+            } else {
+                ev.is_static(ca.min(cb), ca.max(cb))
+            }
+        }
         Kind::Component(c, _) => c.duration().is_some_and(|d| la >= d),
         _ => true,
     }

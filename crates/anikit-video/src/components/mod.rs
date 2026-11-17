@@ -72,6 +72,27 @@ pub trait Assets: Sync {
     fn text(&self, s: &str, style: &TextStyle, x: f32, y: f32) -> (Vec<Op>, f32);
     /// Advance width of one line of text, without drawing it.
     fn measure(&self, s: &str, style: &TextStyle) -> f32;
+    /// A named 2D sub-composition (top-level `compositions`): size, clock and loop default.
+    fn composition_info(&self, _name: &str) -> Option<CompInfo> {
+        None
+    }
+    /// Its frame at composition time `t` (snapped to its frame grid) as premultiplied
+    /// RGBA8, downscaled by `2^lod`. Deterministic, cached and shared across threads.
+    fn composition_frame(&self, _name: &str, _t: f32, _lod: u8) -> Option<std::sync::Arc<vello_cpu::Pixmap>> {
+        None
+    }
+}
+
+/// Size and clock of a named sub-composition (see [`Assets::composition_info`]).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CompInfo {
+    pub width: u32,
+    pub height: u32,
+    pub fps: f32,
+    /// Seconds.
+    pub duration: f32,
+    /// The composition's own `loop` default.
+    pub looped: bool,
 }
 
 /// Per-frame context handed to [`Component::eval`].
