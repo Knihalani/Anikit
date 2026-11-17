@@ -160,6 +160,8 @@ Before → after, same benchmarks:
 
 Before the fused path (render batches → separate encoder thread), the benchmark of record ran at 109 fps.
 
+**After the backdrop and settle fixes from RENDER, COMPONENTS and AGENTS (merged 02:40 UTC):** the current `new launch` template renders 901 frames in 2.55 s = **353 fps** with ak264. 404 frames are skipped as Unchanged (eval 0.5 / render 6.2 / encode 4.7 CPU ms per frame). The older launch spec above now runs at 268 fps.
+
 `--profile` on the benchmark of record (CPU ms per frame, summed over 4 threads): eval 0.5, render 17–18 (all 881 frames Full), copy 0.4, encode 10–12. Two things keep it from being incremental:
 
 1. The animated `mesh-gradient` backdrop changes every pixel of every frame (a keyframe blend), so no frame is Unchanged or Partial. Removing it gives 333 fps; `speed: 0` gives 230 fps.
