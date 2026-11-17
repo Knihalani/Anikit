@@ -1,0 +1,16 @@
+[package]
+name = "anikit-shader"
+description = "Shadertoy-style GLSL/WGSL fragment shaders, JIT-compiled to native SIMD code with Cranelift and run on the CPU."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+naga = { version = "30", features = ["glsl-in", "wgsl-in"] }
+cranelift-codegen = "0.137"
+cranelift-frontend = "0.137"
+cranelift-jit = "0.137"
+cranelift-module = "0.137"
+cranelift-native = "0.137"
+rayon = "1"
