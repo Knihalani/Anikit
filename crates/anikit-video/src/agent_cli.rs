@@ -50,7 +50,11 @@ pub const COMMANDS: &[&str] = &["new", "templates", "template", "prompt", "promp
 
 /// Run an agent command. `args` excludes the program name.
 pub fn run(args: &[String]) -> Option<i32> {
-    let cmd = args.first()?.as_str();
+    let cmd = args.first().map(|s| s.as_str()).unwrap_or("--help");
+    if matches!(cmd, "--help" | "-h" | "help") {
+        print!("Render: anikit-video render|still|sheet|check|info|schema SPEC [options]   (anikit-video render spec.json -o out.mp4)\n{HELP}");
+        return Some(0);
+    }
     if !COMMANDS.contains(&cmd) {
         return None;
     }
@@ -200,6 +204,9 @@ fn cmd_templates(args: &[String]) -> Result<(), String> {
                         for d in v[k].as_array().into_iter().flatten() {
                             eprintln!("{} {}: {}", &k[..k.len() - 1], d["path"].as_str().unwrap_or(""), d["message"].as_str().unwrap_or(""));
                         }
+                    }
+                    for n in t.expansion_notes(&params, &spec, r.duration) {
+                        eprintln!("{n}");
                     }
                     eprintln!("wrote {o} ({:.1} s, critique {}/100)", r.duration, r.score);
                 }

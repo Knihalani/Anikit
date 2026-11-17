@@ -166,6 +166,7 @@ impl Server {
                 let base = std::env::current_dir().unwrap_or_default();
                 let mut lines = vec![summary_line(&spec, &base, &out)];
                 lines.extend(issue_lines(&spec, &base));
+                lines.extend(t.expansion_notes(&params, &spec, critique(&spec).duration));
                 if a.get("return_spec") == Some(&Value::Bool(true)) {
                     lines.push(spec.to_string());
                 }

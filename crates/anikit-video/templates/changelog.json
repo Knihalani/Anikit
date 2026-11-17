@@ -60,7 +60,8 @@
             "type": "string",
             "required": true,
             "maxWords": 8,
-            "description": "The change as a benefit."
+            "description": "The change as a benefit. Short: it sits in a card.",
+            "maxChars": 34
           }
         }
       },
