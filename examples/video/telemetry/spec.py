@@ -187,7 +187,7 @@ def backdrop(seed=1):
 
 # ---- scene 1: open ---------------------------------------------------------------
 def scene_open():
-    xf = map_xf(1380, 560, 1.15)
+    xf = map_xf(1340, 540, 0.98)
     d = track_d(xf)
     dur = 4.4
     return {
@@ -207,13 +207,13 @@ def scene_open():
             text("FINAL LAPS  —  TELEMETRY RECAP", M + 44, 694, 26, MUTED, MONO, 500, "left", letterSpacing="0.1em",
                  enter={"preset": "fadeIn", "delay": 1.1}),
             group([
-                rect(M + 44, 760, 380, 64, PANEL),
+                rect(M + 44, 760, 470, 64, PANEL),
                 rect(M + 44, 760, 6, 64, RED),
                 text("LAP", M + 72, 792, 22, MUTED, MONO, 600, "left"),
                 text("{value:0}", M + 200, 792, 40, TEXT, MONO, 800, "right", value=54,
                      animate=[kf({"value": [(0, 50), (1.6, 54)]}, 1.6, at=0.0, ease="outCubic")]),
                 text("/ 58", M + 210, 792, 40, MUTED, MONO, 500, "left"),
-                text("5.112 KM", M + 404, 792, 20, MUTED, MONO, 500, "right"),
+                text("5.112 KM", M + 494, 792, 20, MUTED, MONO, 500, "right"),
             ], enter={"preset": "fadeUp", "delay": 1.2}),
         ],
     }
@@ -369,7 +369,9 @@ def scene_map():
         rect(px + 60, py - 110, 300, 64, PANEL, anchor="topLeft"),
         rect(px + 60, py - 110, 6, 64, GREEN, anchor="topLeft"),
         text("OVERTAKE · T7", px + 80, py - 92, 16, GREEN, MONO, 800, "left", letterSpacing="0.08em"),
-        text("IVE  ▸  P3", px + 80, py - 64, 26, TEXT, HEAD, 800, "left"),
+        text("IVE", px + 80, py - 64, 26, TEXT, HEAD, 800, "left"),
+        {"shape": "polygon", "points": [[0, -8], [9, 6], [-9, 6]], "x": r(px + 150), "y": r(py - 66), "width": 18, "height": 14, "fill": GREEN},
+        text("P3", px + 172, py - 64, 26, TEXT, HEAD, 800, "left"),
     ], start=r(tp - 0.1), end=r(tp + 2.6), enter={"preset": "fadeIn", "duration": 0.2}, exit="fadeOut"))
     return {"id": "map", "duration": dur, "background": BG,
             "transition": {"type": "push", "direction": "left", "duration": 0.5, "ease": "inOutQuart"},
@@ -512,9 +514,8 @@ def scene_onboard():
     layers.append(text("DELTA TO MAR · LAP 56", dx + 24, dy + 32, 17, MUTED, MONO, 700, "left", letterSpacing="0.08em"))
     layers.append(text("{value:0.000}", dx + 24, dy + 100, 76, GREEN, MONO, 800, "left", value=0,
                        animate=[kf({"value": delta}, dur)]))
-    layers.append(text("S", dx + 376, dy + 140, 18, MUTED, MONO, 600, "right"))
     # minimap
-    mxf = map_xf(1660, 775, 0.33)
+    mxf = map_xf(1680, 775, 0.27)
     layers.append(rect(1480, dy, W - M - 1480 + 30, 170, PANEL, opacity=0.85))
     layers.append(path(track_d(mxf, step=6), "#FFFFFF40", 4))
     layers.append(path(track_d(mxf, 0, span_f, 4), accent, 4, opacity=0.6))
@@ -588,7 +589,6 @@ def scene_overtake():
         bx, by = xf(*TRACK[sample_idx(bf)])
         zoom_layers.append(text(str(m), bx, by + 86, 22, MUTED, MONO, 800, "center"))
         zoom_layers.append(rect(bx, by + 60, 3, 18, "#FFFFFF40", anchor="center"))
-    zoom_layers.append(text("TURN 1", ax + 60, ay - 90, 30, TEXT, HEAD, 900, "left", letterSpacing="0.1em", italic=True, enter={"preset": "fadeIn", "delay": 0.5}))
     for code in ("MAR", "OKA"):
         pts = [(t, xf(*track_point(frac_at(code, T_of(t)), lambda a, b: (a, b)))) for t in ts]
         off = 22 if code == "OKA" else -22  # lateral line: OKA on the inside
@@ -601,13 +601,18 @@ def scene_overtake():
             nx, ny = -(b[1] - a[1]), (b[0] - a[0])
             ln = math.hypot(nx, ny) or 1
             pp.append((t, (x + nx / ln * off, y + ny / ln * off)))
-        trail = []
+        tag_y = -46 if code == "MAR" else 46
         car = [
             {"shape": "rect", "width": 62, "height": 24, "radius": 8, "fill": COL[code], "stroke": {"color": "#05070B", "width": 3},
              "glow": {"radius": 18, "intensity": 0.8, "color": COL[code]}},
-            rect(0, -44, 62, 34, "#05070BDD", anchor="center", radius=4),
-            text(code, 0, -44, 20, TEXT, MONO, 800, "center"),
+            rect(0, tag_y, 62, 34, "#05070BDD", anchor="center", radius=4, stroke={"color": COL[code], "width": 2}),
+            text(code, 0, tag_y, 20, TEXT, MONO, 800, "center"),
         ]
+        if code == "MAR":
+            car.append(group([rect(0, tag_y - 40, 140, 30, RED, anchor="center", radius=3),
+                              text("LOCK-UP", 0, tag_y - 40, 18, "#fff", MONO, 800, "center", width=150)],
+                             width=0, height=0, start=r(t_pass - 0.55), end=r(t_pass + 1.4),
+                             enter={"preset": "popIn", "duration": 0.25}, exit={"preset": "fadeOut", "duration": 0.2}))
         # heading so the car points along the track
         rots = []
         prev = None
@@ -671,8 +676,11 @@ def scene_overtake():
         rect(W / 2, H - 170, 760, 96, COL["OKA"], anchor="center", skewX=-10),
         text("OKAFOR TAKES THE LEAD", W / 2, H - 170, 50, "#05070B", HEAD, 900, "center", italic=True),
     ], start=t_pass + 0.15, enter={"preset": "wipeIn", "direction": "right", "duration": 0.35, "ease": "outExpo"}))
-    layers.append(text("LOCK-UP · MAR", W / 2 - 300, H - 290, 22, RED, MONO, 800, "center", start=t_pass - 0.55, end=t_pass + 1.6,
-                       enter={"preset": "fadeIn", "duration": 0.15}, exit="fadeOut"))
+    layers.append(group([
+        rect(M, H - 150, 8, 86, RED),
+        text("TURN 1", M + 32, H - 124, 44, TEXT, HEAD, 900, "left", italic=True, letterSpacing="0.04em"),
+        text("BRAKING ZONE  ·  2ND GEAR HAIRPIN  ·  140 KM/H APEX", M + 34, H - 80, 18, MUTED, MONO, 700, "left", letterSpacing="0.08em"),
+    ], enter={"preset": "fadeRight", "delay": 0.4, "duration": 0.5, "ease": "outExpo"}))
     # replay tag
     layers.append(group([
         rect(M, 52, 200, 44, RED, skewX=-12),
@@ -838,10 +846,6 @@ def build():
                   "fonts": {"heading": "Inter Display", "body": "Inter", "mono": "JetBrains Mono"}},
         "background": BG,
         "scenes": [scene_open(), scene_map(), onboard, scene_overtake(), scene_fastest(), scene_analysis(), scene_winner()],
-        "audio": [
-            {"sfx": "riser", "at": 0.0, "volume": 0.5},
-            {"sfx": "impact", "at": 0.45, "volume": 0.6},
-        ],
     }
     with open(os.path.join(HERE, "spec.json"), "w") as f:
         json.dump(spec, f, separators=(",", ":"))
