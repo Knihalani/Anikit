@@ -1293,6 +1293,10 @@ struct Pyr {
     used: [bool; 8],
     /// Defocus bins (see `BINS`), allocated when first used.
     bins: Vec<Option<Vec<f32>>>,
+    /// Rows (full resolution) this pyramid owns; level l owns rows `band >> l`.
+    /// Threads split the image into bands, so every texel is summed by one
+    /// thread in particle order: byte-identical at any thread count.
+    band: (i32, i32),
 }
 
 /// Defocus bins: disc radius (px at full resolution) and the pyramid level it
@@ -1416,6 +1420,11 @@ fn disc_kernel(rho: f32) -> Vec<(i32, i32, f32)> {
 }
 
 impl Pyr {
+    #[inline(always)]
+    fn rows(&self, l: usize) -> (i32, i32) {
+        (self.band.0 >> l, if self.band.1 == i32::MAX { i32::MAX } else { self.band.1 >> l })
+    }
+
     fn new(w: usize, h: usize, levels: usize, c: usize) -> Pyr {
         let mut lv = Vec::new();
         let (mut cw, mut ch) = (w, h);
@@ -1424,12 +1433,13 @@ impl Pyr {
             cw = cw.div_ceil(2).max(1);
             ch = ch.div_ceil(2).max(1);
         }
-        Pyr { c, lv, used: [false; 8], bins: vec![None; BINS.len()] }
+        Pyr { c, lv, used: [false; 8], bins: vec![None; BINS.len()], band: (0, i32::MAX) }
     }
     /// Reference splat: a disc of radius `r` (px) at full resolution seen
     /// through the tent pixel filter (the fast path's reconstruction), by
     /// dense sampling of the disc.
     fn disc(&mut self, x: f32, y: f32, r: f32, v: &[f32; 8]) {
+        let (r0, r1) = self.rows(0);
         let c = self.c;
         self.used[0] = true;
         let (w, h, buf) = &mut self.lv[0];
@@ -1455,7 +1465,7 @@ impl Pyr {
             }
         }
         for ((px, py), n) in cells {
-            if px < 0 || py < 0 || px >= w || py >= h {
+            if px < 0 || py < r0.max(0) || px >= w || py >= h.min(r1) {
                 continue;
             }
             let wt = n / total;
@@ -1480,6 +1490,7 @@ impl Pyr {
 
     #[inline(always)]
     fn stamp_c<const C: usize>(&mut self, x: f32, y: f32, r: f32, v: &[f32; 8]) {
+        let (r0, r1) = self.rows(0);
         let c = C;
         self.used[0] = true;
         let (tab, boxes) = stamps();
@@ -1510,7 +1521,7 @@ impl Pyr {
         }
         for sy in bx[2] as i32..=bx[3] as i32 {
             let yy = oy + sy;
-            if yy < 0 || yy >= h {
+            if yy < r0.max(0) || yy >= h.min(r1) {
                 continue;
             }
             let base = sy as usize * ST_N;
@@ -1529,6 +1540,7 @@ impl Pyr {
     /// Bilinear point splat into defocus bin `b`.
     #[inline(always)]
     fn splat_bin(&mut self, b: usize, x: f32, y: f32, v: &[f32; 8]) {
+        let (r0, r1) = self.rows(BINS[b].1);
         let c = self.c;
         let l = BINS[b].1;
         let (w, h) = (self.lv[l].0, self.lv[l].1);
@@ -1541,7 +1553,7 @@ impl Pyr {
         let (w, h) = (w as i32, h as i32);
         for (dx, dy, wt) in [(0, 0, (1.0 - tx) * (1.0 - ty)), (1, 0, tx * (1.0 - ty)), (0, 1, (1.0 - tx) * ty), (1, 1, tx * ty)] {
             let (xx, yy) = (ix + dx, iy + dy);
-            if xx < 0 || yy < 0 || xx >= w || yy >= h {
+            if xx < 0 || yy < r0.max(0) || xx >= w || yy >= h.min(r1) {
                 continue;
             }
             let o = &mut buf[(yy * w + xx) as usize * c..][..c];
@@ -1598,6 +1610,7 @@ impl Pyr {
 
     #[inline(always)]
     fn splat_c<const C: usize>(&mut self, l: usize, x: f32, y: f32, v: &[f32; 8]) {
+        let (r0, r1) = self.rows(l);
         let c = C;
         self.used[l] = true;
         let (w, h, buf) = &mut self.lv[l];
@@ -1609,7 +1622,7 @@ impl Pyr {
         let (w, h) = (*w as i32, *h as i32);
         for (dx, dy, wt) in [(0, 0, (1.0 - tx) * (1.0 - ty)), (1, 0, tx * (1.0 - ty)), (0, 1, (1.0 - tx) * ty), (1, 1, tx * ty)] {
             let (xx, yy) = (ix + dx, iy + dy);
-            if xx < 0 || yy < 0 || xx >= w || yy >= h {
+            if xx < 0 || yy < r0.max(0) || xx >= w || yy >= h.min(r1) {
                 continue;
             }
             let o = &mut buf[(yy * w + xx) as usize * c..][..C];
@@ -1884,9 +1897,12 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
     for (sim, snap) in systems {
         let d = &sim.def;
         let n = snap.pos.len();
-        let per = n.div_ceil(threads).max(1);
-        let work = |range: std::ops::Range<usize>| -> Pyr {
+        // Bands of rows (multiples of 64, so every level splits exactly).
+        let band_h = (h.div_ceil(threads).div_ceil(64) * 64) as i32;
+        let work = |band: (i32, i32)| -> Pyr {
+            let range = 0..n;
             let mut py = Pyr::new(w, h, levels, c);
+            py.band = band;
             for j in range {
                 let i = snap.id[j] as usize;
                 let p = v3(snap.pos[j][0], snap.pos[j][1], snap.pos[j][2]);
@@ -1910,17 +1926,31 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                 if ix >= 0 && iy >= 0 && (ix as usize) < w && (iy as usize) < h && v.depth[iy as usize * w + ix as usize] < z - size * 2.0 {
                     continue;
                 }
-                let vel = snap.vel(j);
-                let (col, a) = sim.look(i, t, p, vel);
-                if a <= 0.0 {
-                    continue;
+                // Threads own bands of rows: a cheap first cull (no motion yet).
+                let banded = py.band != (0, i32::MAX);
+                if banded && (sy + foot + 6.0 + 64.0 < py.band.0 as f32 || (py.band.1 != i32::MAX && sy - foot - 6.0 - 64.0 > py.band.1 as f32)) {
+                    // Far from the band; only a very long streak could reach it.
+                    let vel = snap.vel(j);
+                    let dt_s = v.shutter * sim.dt * d.stretch;
+                    if len(vel) * dt_s * pj.k / z < 64.0 {
+                        continue;
+                    }
                 }
+                let vel = snap.vel(j);
                 // Screen motion over the shutter: where the point was half a shutter ago.
                 let back = madd(p, vel, -v.shutter * sim.dt * d.stretch);
                 let (bx, by, _) = pp.at(back);
                 let (bx, by) = (sx + (bx - sx) * if v.shutter > 0.0 { 1.0 } else { 0.0 }, sy + (by - sy) * if v.shutter > 0.0 { 1.0 } else { 0.0 });
                 let (mx, my) = (sx - bx, sy - by);
                 let ml = (mx * mx + my * my).sqrt();
+                let reach = foot + 6.0 + my.abs() * 0.5;
+                if banded && (sy + reach < py.band.0 as f32 || (py.band.1 != i32::MAX && sy - reach > py.band.1 as f32)) {
+                    continue;
+                }
+                let (col, a) = sim.look(i, t, p, vel);
+                if a <= 0.0 {
+                    continue;
+                }
                 let (kk, lw) = if foot < 4.0 { (usize::MAX, 0.0) } else { kern_of(foot) };
                 let l = if kk == 0 || kk == usize::MAX { 0 } else { BINS[kk - 1].1 };
                 let tex = (1u32 << l) as f32;
@@ -2017,10 +2047,10 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
             py
         };
         if threads == 1 {
-            pyrs.push(work(0..n));
+            pyrs.push(work((0, i32::MAX)));
         } else {
             use rayon::prelude::*;
-            let parts: Vec<Pyr> = (0..threads).into_par_iter().map(|k| work(k * per..((k + 1) * per).min(n))).collect();
+            let parts: Vec<Pyr> = (0..threads as i32).into_par_iter().map(|k| work((k * band_h, if k as usize + 1 == threads { i32::MAX } else { (k + 1) * band_h }))).collect();
             pyrs.extend(parts);
         }
     }
@@ -2146,6 +2176,20 @@ mod tests {
                 assert!(d > 0.49, "particle inside the sphere at frame {f}: {d}");
             }
         }
+    }
+
+    #[test]
+    fn splats_are_identical_at_any_thread_count() {
+        let s = sim(serde_json::json!({ "count": 30000, "emit": { "shape": "ball", "radius": 0.4, "pos": [0, 1, 0] }, "size": 0.004, "velocity": [1.5, 0, 0], "blend": "over" }));
+        let snap = s.at(0.1);
+        let (w, h) = (320usize, 180usize);
+        let depth = vec![1e9f32; w * h];
+        let cam = Camera { pos: v3(0.0, 1.0, 3.0), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus: 2.0, aperture: 8.0, roll: 0.0, shutter: 0.5 };
+        let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus: 2.0, aperture: 8.0, shutter: 0.5, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.2, 0.2, 0.2), v3(0.1, 0.1, 0.1)), shadow: None, draft: false };
+        let one = rayon::ThreadPoolBuilder::new().num_threads(1).build().unwrap().install(|| render(&[(&s, snap.clone())], &v, 0.1).buf);
+        // From a plain thread the splatter splits the frame over the global pool's threads.
+        let many = std::thread::scope(|sc| sc.spawn(|| render(&[(&s, snap.clone())], &v, 0.1).buf).join().unwrap());
+        assert!(rayon::current_num_threads() < 2 || one.iter().zip(&many).all(|(a, b)| a.to_bits() == b.to_bits()), "layers differ between 1 and {} threads", rayon::current_num_threads());
     }
 
     #[test]
