@@ -61,6 +61,8 @@ Flagged ones are still compared exactly, so a loose box costs only a compare.
 Without hints, every macroblock is compared (fused with the copy into the encoder's
 buffer), which costs about 10% of a mostly static frame.
 
+`FrameHints.grain` is the film grain the renderer added: the standard deviation of the luma grain at mid-grey, in 8-bit code values. For anikit-video's post grain this is `grain × 219 / √6`, about 3.1 for `cinematic`. The SSIM floor then treats that much missing source variance as free, so grain that is re-drawn every frame doesn't drive the QP down, while lost detail still does.
+
 `FrameHints.motions` lists known translations, e.g. layer `(x, y, w, h)` moved by
 `(dx, dy)`. They seed motion search for the macroblocks they cover.
 
@@ -544,7 +546,12 @@ At a constant QP 23, two renderer specs delivered a visibly lower SSIM than the 
 | post | 0.950 / 0.951, 42.8 dB, 1.1 MB | 0.977 / 0.981, 47.0 dB, 21.6 MB | 0.977 / 0.988, 49.0 dB, 31.7 MB |
 | particles, UI, text, … | ≥ 0.993 | unchanged (bit-identical) | – |
 
-The floor removes the visible loss on `shader` for 4.4× the bytes. For reference, x264 `medium` without B-frames reaches about 0.97 at 3.0–3.4 MB, so a coding-efficiency gap of about 2× on this kind of content remains: x264 has RD mode decision, several references, 8×8 transforms and trellis quantisation. On `post`, the bytes go to coding random grain, which is expensive with any encoder. Synthesising the grain at playback, or rendering it with a fixed pattern, would be far cheaper than encoding it.
+The floor removes the visible loss on `shader` for 4.4× the bytes. For reference, x264 `medium` without B-frames reaches about 0.97 at 3.0–3.4 MB, so a coding-efficiency gap of about 2× on this kind of content remains: x264 has RD mode decision, several references, 8×8 transforms and trellis quantisation. On `post`, without a hint, the bytes go to coding random grain, which is expensive with any encoder. With `FrameHints.grain` = 3.1 (the `cinematic` grain), `post` stays at QP 23: 1.1 MB, 1.0× the size.
+
+- Its grain-compensated SSIM is 0.994 min. This is the floor's own measure: the source variance minus the grain's, per 8×8 block.
+- Its 2×2-downsampled SSIM is 0.982. That measure still contains half the grain amplitude, so it would need QP 20, at 5× the size, to reach 0.985.
+
+The same compensation applied to grain-free `shader` still reads 0.975 at QP 23, so real detail loss is still caught. Synthesising the grain at playback, or rendering it with a fixed pattern, would be far cheaper than encoding it.
 
 ## Limitations and next steps
 

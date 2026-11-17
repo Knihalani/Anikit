@@ -1826,7 +1826,7 @@
           ]
         },
         "supersample": {
-          "description": "Shader: 2×2 supersampling (4 samples per pixel).",
+          "description": "Shader: anti-aliasing (adaptive 2×2 where neighbours differ). Default on for shader layers\nunless the source says `// anikit:aa off`; off for filters. `false` is up to 2× faster.",
           "type": [
             "boolean",
             "null"

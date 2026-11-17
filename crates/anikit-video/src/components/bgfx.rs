@@ -118,6 +118,15 @@ pub fn hash2(x: i32, y: i32, seed: u32) -> f32 {
     (h >> 8) as f32 * (2.0 / (1u32 << 24) as f32) - 1.0
 }
 
+/// `x.floor()` without the libm call the x86-64 baseline makes for it (no
+/// SSE4.1 `roundps`): truncate, then step down for negative fractions.
+/// Identical to `floor` for |x| < 2³¹ (all noise coordinates); vectorises.
+#[inline(always)]
+pub fn ffloor(x: f32) -> f32 {
+    let t = x as i32 as f32;
+    t - if t > x { 1.0 } else { 0.0 }
+}
+
 #[inline]
 fn quintic(t: f32) -> f32 {
     t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
@@ -126,7 +135,7 @@ fn quintic(t: f32) -> f32 {
 /// Smooth 2D value noise in `[-1, 1]` (C² continuous).
 #[inline]
 pub fn vnoise2(x: f32, y: f32, seed: u32) -> f32 {
-    let (xf, yf) = (x.floor(), y.floor());
+    let (xf, yf) = (ffloor(x), ffloor(y));
     let (xi, yi) = (xf as i32, yf as i32);
     let (u, v) = (quintic(x - xf), quintic(y - yf));
     let a = hash2(xi, yi, seed);
@@ -136,6 +145,43 @@ pub fn vnoise2(x: f32, y: f32, seed: u32) -> f32 {
     let ab = a + (b - a) * u;
     let cd = c + (d - c) * u;
     ab + (cd - ab) * v
+}
+
+/// [`vnoise2`] with its analytic gradient: `(value, d/dx, d/dy)`.
+#[inline]
+pub fn vnoise2_d(x: f32, y: f32, seed: u32) -> (f32, f32, f32) {
+    let (xf, yf) = (ffloor(x), ffloor(y));
+    let (xi, yi) = (xf as i32, yf as i32);
+    let (fx, fy) = (x - xf, y - yf);
+    let (u, v) = (quintic(fx), quintic(fy));
+    let dq = |t: f32| 30.0 * t * t * (t - 1.0) * (t - 1.0);
+    let (du, dv) = (dq(fx), dq(fy));
+    let a = hash2(xi, yi, seed);
+    let b = hash2(xi + 1, yi, seed);
+    let c = hash2(xi, yi + 1, seed);
+    let d = hash2(xi + 1, yi + 1, seed);
+    let ab = a + (b - a) * u;
+    let cd = c + (d - c) * u;
+    let val = ab + (cd - ab) * v;
+    let gx = ((b - a) + ((d - c) - (b - a)) * v) * du;
+    let gy = (cd - ab) * dv;
+    (val, gx, gy)
+}
+
+/// [`fbm2`] with its analytic gradient: `(value, d/dx, d/dy)`.
+pub fn fbm2_d(x: f32, y: f32, octaves: u32, seed: u32) -> (f32, f32, f32) {
+    let (mut s, mut gx, mut gy, mut a, mut f, mut n) = (0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
+    for o in 0..octaves {
+        let (rx, ry) = (x * f * 0.96 - y * f * 0.28, x * f * 0.28 + y * f * 0.96);
+        let (v, dx, dy) = vnoise2_d(rx + o as f32 * 17.13, ry - o as f32 * 7.7, seed.wrapping_add(o * 101));
+        s += a * v;
+        gx += a * f * (dx * 0.96 + dy * 0.28);
+        gy += a * f * (-dx * 0.28 + dy * 0.96);
+        n += a;
+        a *= 0.5;
+        f *= 2.03;
+    }
+    (s / n, gx / n, gy / n)
 }
 
 /// Gradient-free 1D noise that evolves with time `t`: value noise over (x, t).
@@ -187,6 +233,7 @@ pub fn smoothstep(a: f32, b: f32, x: f32) -> f32 {
 // ---------------------------------------------------------------- images
 
 /// A linear-light RGB float image.
+#[derive(Clone)]
 pub struct Lin {
     pub w: usize,
     pub h: usize,
@@ -417,7 +464,7 @@ fn dither_tile() -> &'static [f32] {
 pub fn one_minus_exp_neg(x: f32) -> f32 {
     // e^-x = 2^(-x·log2 e); split into integer and fractional parts.
     let y = (-x * std::f32::consts::LOG2_E).max(-126.0);
-    let fl = y.floor();
+    let fl = ffloor(y);
     let f = y - fl;
     // 2^f on [0, 1): degree-4 polynomial.
     let p = 1.0 + f * (std::f32::consts::LN_2 + f * (0.240_226_5 + f * (0.055_504_11 + f * 0.009_618_13)));
@@ -479,6 +526,22 @@ pub fn blur1(a: &mut [f32], r: usize, passes: usize) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn fbm_gradient_matches_finite_differences() {
+        for k in 0..200 {
+            let (x, y) = (k as f32 * 0.137 - 9.0, k as f32 * 0.071 + 3.0);
+            let (v, gx, gy) = super::fbm2_d(x, y, 3, 21);
+            assert!((v - super::fbm2(x, y, 3, 21)).abs() < 1e-6);
+            let e = 1e-3;
+            let fx = (super::fbm2(x + e, y, 3, 21) - super::fbm2(x - e, y, 3, 21)) / (2.0 * e);
+            let fy = (super::fbm2(x, y + e, 3, 21) - super::fbm2(x, y - e, 3, 21)) / (2.0 * e);
+            assert!((gx - fx).abs() < 0.02 && (gy - fy).abs() < 0.02, "{k}: {gx} {fx} {gy} {fy}");
+        }
+        assert_eq!(super::ffloor(-1.5), -2.0);
+        assert_eq!(super::ffloor(2.0), 2.0);
+        assert_eq!(super::ffloor(-3.0), -3.0);
+    }
+
     use super::*;
     #[test]
     fn oklab_roundtrip() {
