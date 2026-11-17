@@ -45,8 +45,8 @@ fn expand_examples_and_critique() {
         let out = d.join("spec.json");
         let (ok, _, err) = run(&["templates", "expand", "launch", &params, "--brand", &brand, "--format", f, "-o", out.to_str().unwrap()], &d);
         assert!(ok, "{err}");
-        // 94: the quality bar flags templates as flat 2D (BAR #5), and nothing else.
-        assert!(err.contains("critique 94/100") && err.contains("BAR #5"), "{f}: {err}");
+        // 88: the quality bar flags templates as flat 2D (BAR #5) and slow (BAR pace), and nothing else.
+        assert!(err.contains("critique 88/100") && err.contains("BAR #5") && err.contains("BAR pace"), "{f}: {err}");
         let (ok, json, _) = run(&["critique", out.to_str().unwrap(), "--json"], &d);
         let r: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert!(ok && r["score"] == 94, "{f}: {json}");
