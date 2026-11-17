@@ -19,6 +19,10 @@ condensed, wide, blackletter, script, hand, stencil, mono, pixel, display). Each
   every machine. If a fetch fails, `check` reports an error that names the file and folder to put it in. `ANIKIT_OFFLINE=1`
   turns fetching off. `anikit-video fonts --fetch all` pre-warms the cache (~80 MB). An unknown name gives a warning with
   suggestions. It works everywhere a font is named: layers, spans, `theme.fonts`, styles and components.
+- **Names are forgiving:** `"Bodoni Moda Black"` → Bodoni Moda (with a warning to set `weight` separately), and `"Bricolage"` → Bricolage
+  Grotesque. In the top-level `fonts` map, each key is an alias: `{"display": "brand.otf"}` or `{"heading": "Fraunces"}` lets you write `"font": "display"`.
+  Characters a face lacks (₂ → ½ ←) fall back to Inter per glyph instead of drawing as boxes.
+- **Paragraphs:** `maxWidth` wraps without fixing the box. Multi-line text with a left anchor (`topLeft`, `left`…) is set flush left unless `align` says otherwise.
 - **`axes`** sets variable-font coordinates: `{"wght": 720, "wdth": 125, "opsz": 144, "slnt": -10}`, or custom upper-case tags
   (`SOFT`, `WONK`, `CASL`, `MONO`, `XROT`, `YEAR`, `MORF`, `BLED`, `SCAN`…). `fonts NAME` shows a face's axes and ranges.
   Values outside the range are clamped.

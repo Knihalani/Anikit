@@ -664,6 +664,9 @@ pub struct Layer {
     pub letter_spacing: Option<Num>,
     pub uppercase: Option<bool>,
     pub max_lines: Option<u32>,
+    /// Text: wrap at this width (px, `"40vw"`, `"60%"`) without fixing the box
+    /// width (`width` wraps *and* sets the box).
+    pub max_width: Option<Num>,
     /// `chars`, `words`, `lines`.
     pub split: Option<String>,
     pub reveal: Option<Num>,

@@ -67,6 +67,33 @@ pub fn find(name: &str) -> Option<&'static Family> {
     families().iter().find(|f| key(&f.name) == k)
 }
 
+/// Style words a family name may carry (`"Bodoni Moda Black Italic"`).
+const STYLE_WORDS: &[&str] = &[
+    "thin", "hairline", "extralight", "ultralight", "light", "regular", "book", "normal", "medium", "semibold", "demibold", "bold",
+    "extrabold", "ultrabold", "black", "heavy", "italic", "oblique", "variable", "vf",
+];
+
+/// A forgiving lookup for names that aren't exact: trailing style words are
+/// dropped (`"Bodoni Moda Black"` → Bodoni Moda) and a unique prefix matches
+/// (`"Bricolage"` → Bricolage Grotesque).
+pub fn find_loose(name: &str) -> Option<&'static Family> {
+    let mut words: Vec<&str> = name.split(|c: char| c.is_whitespace() || c == '-' || c == '_').filter(|w| !w.is_empty()).collect();
+    while words.len() > 1 && STYLE_WORDS.contains(&words.last().unwrap().to_lowercase().as_str()) {
+        words.pop();
+    }
+    let base = words.join(" ");
+    if let Some(f) = find(&base) {
+        return Some(f);
+    }
+    let k = key(&base);
+    if k.len() < 4 {
+        return None;
+    }
+    let hits: Vec<&Family> = families().iter().filter(|f| key(&f.name).starts_with(&k)).collect();
+    // "Big Shoulders" also prefixes "Big Shoulders Stencil": prefer the shortest.
+    hits.into_iter().min_by_key(|f| f.name.len())
+}
+
 /// Families matching every word of `query` against name, genre, description
 /// and axis tags (empty query: all). Name matches rank first.
 pub fn search(query: &str) -> Vec<&'static Family> {
@@ -344,6 +371,10 @@ mod tests {
         assert_eq!(find("FRAUNCES").unwrap().name, "Fraunces");
         assert!(suggest("Frances").contains(&"Fraunces"));
         assert_eq!(search("didone")[0].genre, "didone");
+        assert_eq!(find_loose("Bodoni Moda Black").unwrap().name, "Bodoni Moda");
+        assert_eq!(find_loose("Bricolage").unwrap().name, "Bricolage Grotesque");
+        assert_eq!(find_loose("big shoulders bold italic").unwrap().name, "Big Shoulders");
+        assert!(find_loose("Zz").is_none());
         assert!(search("SOFT").iter().any(|f| f.name == "Fraunces"));
     }
 }

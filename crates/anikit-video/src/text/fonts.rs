@@ -71,6 +71,7 @@ pub(crate) struct Shaper {
 /// Fonts for one render: loaded once, shared read-only (`Arc<FontStore>`).
 pub struct FontStore {
     paths: Mutex<HashMap<(u32, u16, u32), Arc<kurbo::BezPath>>>,
+    files: Mutex<HashMap<std::path::PathBuf, Vec<String>>>,
     pub(crate) shaper: Mutex<Shaper>,
     faces: RwLock<Vec<Arc<Face>>>,
     index: Mutex<HashMap<FaceKey, FontId>>,
@@ -99,6 +100,7 @@ impl FontStore {
         let fcx = FontContext { collection, source_cache: SourceCache::default() };
         let store = FontStore {
             paths: Mutex::new(HashMap::new()),
+            files: Mutex::new(HashMap::new()),
             shaper: Mutex::new(Shaper { fcx, lcx: LayoutContext::new(), families: HashMap::new(), emoji: None, fallbacks: Vec::new() }),
             faces: RwLock::new(Vec::new()),
             index: Mutex::new(HashMap::new()),
@@ -188,9 +190,23 @@ impl FontStore {
         r
     }
 
-    /// Register a font file from disk.
+    /// Register a font file from disk (once per path; again returns its families).
     pub fn add_font_file(&self, path: impl AsRef<Path>) -> std::io::Result<Vec<String>> {
-        Ok(self.add_font_bytes(std::fs::read(path)?))
+        let path = path.as_ref().to_path_buf();
+        if let Some(n) = self.files.lock().unwrap().get(&path) {
+            return Ok(n.clone());
+        }
+        let names = self.add_font_bytes(std::fs::read(&path)?);
+        self.files.lock().unwrap().insert(path, names.clone());
+        Ok(names)
+    }
+
+    /// Make `alias` (case-insensitive) name the family `target`.
+    pub fn add_alias(&self, alias: &str, target: &str) {
+        let mut s = self.shaper.lock().unwrap();
+        s.families.insert(alias.trim().to_lowercase(), target.to_string());
+        drop(s);
+        self.cache.write().unwrap().clear();
     }
 
     /// Canonical family name for a user-supplied name or alias (case-insensitive).
@@ -278,7 +294,7 @@ pub(crate) fn load_library_locked(s: &mut Shaper, name: &str) -> Result<bool, St
     if s.families.contains_key(&lower) {
         return Ok(false);
     }
-    let Some(fam) = super::library::find(name) else { return Ok(false) };
+    let Some(fam) = super::library::find(name).or_else(|| super::library::find_loose(name)) else { return Ok(false) };
     if fam.bundled || s.families.contains_key(&fam.name.to_lowercase()) {
         if let Some(t) = s.families.get(&fam.name.to_lowercase()).cloned() {
             s.families.insert(lower, t);

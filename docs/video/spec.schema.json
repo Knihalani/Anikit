@@ -1776,6 +1776,17 @@
           "format": "uint32",
           "minimum": 0
         },
+        "maxWidth": {
+          "description": "Text: wrap at this width (px, `\"40vw\"`, `\"60%\"`) without fixing the box\nwidth (`width` wraps *and* sets the box).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "split": {
           "description": "`chars`, `words`, `lines`. One of: chars, words, lines.",
           "type": [

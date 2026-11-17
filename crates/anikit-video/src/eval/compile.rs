@@ -129,6 +129,30 @@ impl C<'_> {
     fn load_fonts(&mut self, spec: &Spec) {
         let Ok(v) = serde_json::to_value(spec) else { return };
         let fonts = self.assets.fonts.clone();
+        // The `fonts` map: files relative to the spec; each key is an alias for the family it adds.
+        for (key, file) in spec.fonts.iter().flatten() {
+            let low = file.to_ascii_lowercase();
+            if !(low.ends_with(".ttf") || low.ends_with(".otf") || low.ends_with(".ttc") || file.contains('/')) {
+                // `"fonts": {"heading": "Fraunces"}`: a library family under a nickname.
+                match fonts.ensure_family(file) {
+                    Ok(_) => match fonts.resolve_family(file) {
+                        Some(f) => fonts.add_alias(key, &f),
+                        None => self.d.push(Diagnostic::error(format!("fonts.{key}"), format!("'{file}' is neither a font file nor a library family; see `anikit-video fonts`"))),
+                    },
+                    Err(e) => self.d.push(Diagnostic::error(format!("fonts.{key}"), e)),
+                }
+                continue;
+            }
+            match fonts.add_font_file(self.o.base_dir.join(file)) {
+                Ok(names) if names.is_empty() => self.d.push(Diagnostic::error(format!("fonts.{key}"), format!("{file} contains no usable font"))),
+                Ok(names) => {
+                    if fonts.resolve_family(key).is_none() {
+                        fonts.add_alias(key, &names[0]);
+                    }
+                }
+                Err(e) => self.d.push(Diagnostic::error(format!("fonts.{key}"), format!("can't load {file}: {e}"))),
+            }
+        }
         let mut seen = std::collections::HashSet::new();
         for (path, name) in text::library::spec_font_names(&v) {
             // Theme tokens (`$heading`) resolve to their family; a token the
@@ -141,9 +165,14 @@ impl C<'_> {
             if GENERIC.contains(&name.to_lowercase().as_str()) || fonts.resolve_family(&name).is_some() {
                 continue;
             }
+            let exact = text::library::find(&name).is_some();
             match fonts.ensure_family(&name) {
                 Err(e) => self.d.push(Diagnostic::error(path, e)),
-                Ok(_) if fonts.resolve_family(&name).is_some() => {}
+                Ok(_) if fonts.resolve_family(&name).is_some() => {
+                    if let (false, Some(f)) = (exact, text::library::find_loose(&name)) {
+                        self.d.push(Diagnostic::warning(path, format!("font '{name}' resolved to the family '{}'; set weight/italic separately", f.name)));
+                    }
+                }
                 Ok(_) => {
                     let s = text::library::suggest(&name);
                     let hint = if s.is_empty() { None } else { Some(s.join("', '")) };
@@ -1223,6 +1252,9 @@ impl C<'_> {
             ("align", l.align.is_some()),
             ("lineHeight", l.line_height.is_some()),
             ("reveal", l.reveal.is_some()),
+            ("maxWidth", l.max_width.is_some()),
+            ("axes", l.axes.is_some()),
+            ("features", l.features.is_some()),
         ];
         let shape_only = [("shape", l.shape.is_some()), ("points", l.points.is_some()), ("d", l.d.is_some()), ("sides", l.sides.is_some())];
         let img_only = [("src", l.src.is_some() && kind != "shader"), ("fit", l.fit.is_some() && kind != "text")];
@@ -1844,7 +1876,16 @@ impl C<'_> {
         let size = st.size.as_ref().map(|s| self.len_c(s, &format!("{path}.size"), pc.size[1], 16.0)).unwrap_or(32.0).max(1.0);
         let weight = st.weight.as_ref().and_then(weight_value).unwrap_or(400.0);
         let ls = st.letter_spacing.as_ref().map(|s| self.len_c(s, &format!("{path}.letterSpacing"), size, size)).unwrap_or(0.0);
+        // Multi-line text anchored on its left defaults to flush left (centred
+        // paragraphs are rarely what a left anchor means).
+        let left_anchor = match &l.anchor {
+            Some(spec::Anchor::Name(a)) => a.to_ascii_lowercase().contains("left"),
+            Some(spec::Anchor::Xy([x, _])) => *x < 0.34,
+            None => false,
+        };
+        let multi = l.text.as_deref().is_some_and(|t| t.contains('\n')) || given_w.is_some() || l.max_width.is_some();
         let align = match st.align.as_deref() {
+            None if left_anchor && multi => text::Align::Left,
             None | Some("center") => text::Align::Center,
             Some("left") | Some("start") => text::Align::Left,
             Some("right") | Some("end") => text::Align::Right,
@@ -1854,6 +1895,7 @@ impl C<'_> {
                 text::Align::Center
             }
         };
+        let st_size = size;
         let mut raw = l.text.clone().unwrap_or_default();
         if l.typeset != Some(false) && !raw.contains("{value") {
             raw = text::layout::typeset(&raw);
@@ -1996,8 +2038,9 @@ impl C<'_> {
             None => {
                 let l0 = self.assets.fonts.layout(&tspec);
                 // No width given and wider than the parent: wrap at 90% of it.
-                let maxw = pc.size[0] * 0.9;
-                if given_w.is_none() && l0.width > maxw && !pc.in_box {
+                let mw = l.max_width.as_ref().map(|v| self.len_c(v, &format!("{path}.maxWidth"), pc.size[0], st_size));
+                let maxw = mw.unwrap_or(pc.size[0] * 0.9);
+                if given_w.is_none() && l0.width > maxw && (!pc.in_box || mw.is_some()) {
                     tspec.width = Some(maxw);
                     self.assets.fonts.layout(&tspec)
                 } else {

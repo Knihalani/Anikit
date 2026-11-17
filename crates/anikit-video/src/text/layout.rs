@@ -1131,6 +1131,10 @@ fn family_css(sh: &mut super::fonts::Shaper, names: &str) -> (String, bool) {
     for f in &sh.fallbacks {
         out.push(format!("\"{f}\""));
     }
+    // Per-glyph fallback: characters the chosen face lacks (₂, →, ½…) come from Inter, not tofu.
+    if out.first().is_none_or(|f| f != "sans-serif" && f != "\"Inter\"") {
+        out.push("sans-serif".into());
+    }
     (out.join(", "), display)
 }
 
