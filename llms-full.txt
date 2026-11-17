@@ -2538,7 +2538,7 @@ anikit-video render spec.json -o out.mp4
 anikit-video templates                              # quick starts; expand <t> --look <name> to restyle
 ```
 
-**Method:** logline → one feeling → a look → a shot list of what the viewer *understands* → one signature image (3D `text-3d`/`model`/`globe`/`scene3d`, generative, real footage, depth parallax) → vary the layout every shot → judge in motion. `anikit-video prompt director` gives the full procedure. A worked example is [`examples/video/directed/`](../../examples/video/directed/).
+**Method:** logline → one feeling → a look → a beat-cut shot list (12–25 shots in a 15 s test; each one says what the viewer *understands*) → show what browsers can't (`docs/video/quality/ONLY_ANIKIT.md`) → energetic camera (whips, snaps, speed ramps, impacts, match cuts) → judge against [`quality/BAR.md`](quality/BAR.md) and its pace check (`python3 docs/video/quality/pace.py out.mp4`). `anikit-video prompt director` gives the procedure.
 
 **Looks:** `"look": "noir"` at the top of a spec sets the palette, type, text styles, entrance, transition, camera, backdrop and post. `["editorial", "noir"]` composes looks; `{"base": "swiss", "theme": {"colors": {"primary": "#0050FF"}}}` overrides one; a scene with `"look": false` opts out. Spec keys always win.
 
@@ -2598,7 +2598,7 @@ A scene string is a title card (`"Title | subtitle"`); a layer string is centred
 
 ## Top level
 
-`size` (`"16:9"` `"9:16"` `"1:1"` `"4:5"` `"720p"` `"4k"` or `[w, h]`) · `fps` · `background` · `theme { colors, fonts, radius, styles }` · `scenes` · `transition` · `markers { name: time }` (plus automatic `"@beat17"`, `"@bar5+0.25"` from the first music track) · `audio [...]` · `captions` · `fonts { family: file }` · `duration` · `compositions`.
+`size` (`"16:9"` `"9:16"` `"1:1"` `"4:5"` `"720p"` `"4k"` or `[w, h]`) · `fps` · `background` · `theme { colors, fonts, radius, styles }` · `scenes` · `transition` · `markers { name: time }` (plus automatic `"@beat17"`, `"@bar5+0.25"` from the first music track) · `audio [...]` · `captions` · `fonts { family: file }` · `duration` · `compositions` · `post` (`clean cinematic dreamy punchy noir vintage`, or `{ "preset": "cinematic", "bloom": 0.4 }`; per scene too) · `motionBlur` (`true`, or `{ "shutter": 90 }`; default only with `--quality high`).
 
 Theme colours (used as `$name`): `primary secondary accent bg surface text muted`. Text styles: `title heading subtitle body caption label code`.
 
@@ -2608,7 +2608,7 @@ Theme colours (used as `$name`): `primary secondary accent bg surface text muted
 
 `id` · `duration` (default 3, or `"auto"`) · `background` · `transition` (into this scene) · `camera` · `markers` · `layers` · `audio`.
 
-Transitions: `cut crossfade fadeBlack fadeWhite slide push zoom wipe iris blur glitch morphCut`, as a string or `{ "type": "slide", "direction": "left", "duration": 0.6 }`.
+Transitions: `cut crossfade fadeBlack fadeWhite slide push zoom wipe iris blur glitch morphCut`, shader transitions `burn ripple pixelate swirl ink-bleed warp-wipe luma-melt zoom-blur`, or your own `{ "type": "shader", "shader": "vec4 transition(vec2 uv) {…}" }` (gl-transitions API). Write one as a string or as `{ "type": "slide", "direction": "left", "duration": 0.6 }`.
 
 Camera: `{ "zoom": 1, "x": 0, "y": 0, "rotation": 0, "focus": 0, "aperture": 0, "animate": [...], "shake": { "amount": 8, "at": "@drop", "duration": 0.4 } }`.
 
@@ -2627,6 +2627,9 @@ Every layer: `x y` (default centre) · `anchor` (`center`, `topLeft`, …) · `w
 | group | `layers` |
 | composition | `composition` (a name from top-level `"compositions": { "ui": { "size": [800, 500], "duration": 4, "background": "#111", "layers": [...] } }`, or `scenes`) · `fit` · `trimStart speed` · `loop: true`. It has its own clock and is clipped to its box; 3D layers use it as a texture |
 | component | `component` (`bar-chart line-chart donut-chart counter stat code terminal phone laptop browser card button toast cursor lower-third title-card mesh-gradient aurora grid confetti model lottie …`; `anikit-video info --components`) · `props` |
+| shader | `shader` (Shadertoy GLSL `mainImage`, WGSL, or a built-in: `sdf-scene liquid-chrome aurora caustics flow-ink turing film-burn glitch`) or `src: "fx.glsl"` · `uniforms` (animatable by name) · `channels` (`below noise` · image/video · `#composition` · `{layers}`) · `filter` · `supersample` · `alpha` |
+
+**Shaders** run JIT-compiled on the CPU at full resolution: `{ "shader": "aurora", "uniforms": { "intensity": 1.4 } }`. `"filter": true` reads the composited layers below as `iChannel0` and replaces them. Guide, built-ins, costs and limits: [`shader.md`](shader.md).
 
 ## Animation
 

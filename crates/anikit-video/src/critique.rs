@@ -306,6 +306,15 @@ pub fn critique(raw: &Value) -> Report {
                 if let Some(f) = l.get("font").and_then(|f| f.as_str()) {
                     fonts.insert(f.to_string());
                 }
+                // Components that show words (a terminal, a prompt, a title card) count for the hook.
+                if first_text_at.is_none() && l.get("component").is_some() {
+                    if let Some(p) = l.get("props").and_then(|p| p.as_object()) {
+                        if ["text", "title", "lines", "code", "label", "words", "messages", "items"].iter().any(|k| p.get(*k).is_some_and(|v| !v.is_null())) {
+                            let delay = p.get("delay").and_then(|d| d.as_f64()).unwrap_or(0.0);
+                            first_text_at = Some(scene_start.max(0.0) + vis_from + delay + 0.3);
+                        }
+                    }
+                }
                 let Some(raw) = l.get("text").and_then(|t| t.as_str()) else { return };
                 let text_owned = with_value(raw, l.get("value"));
                 let text = text_owned.as_str();
@@ -386,6 +395,7 @@ pub fn critique(raw: &Value) -> Report {
         cx.note("tip", "pacing", "scenes", format!("{total:.0} s vertical video; social platforms favour 6–30 s"), "cut to the hook, two beats and the payoff");
     }
     sameness(raw, spec, &mut cx);
+    bar(spec, &mut cx);
     if applied.is_some() {
         let off = crate::looks::layer_offsets(raw);
         for n in &mut cx.notes {
@@ -552,6 +562,45 @@ fn check_safe(cx: &mut Ctx, layer: &Value, path: &str) {
     }
 }
 
+/// The quality bar (`docs/video/quality/BAR.md`): patterns a viewer reads as slides or slop.
+fn bar(spec: &Value, cx: &mut Ctx) {
+    const WASH: &[&str] = &["mesh-gradient", "aurora", "gradient", "bokeh", "light-leak"];
+    let scenes = spec.get("scenes").and_then(|s| s.as_array()).cloned().unwrap_or_default();
+    let mut slides = Vec::new();
+    for (si, sc) in scenes.iter().enumerate() {
+        let layers = sc.get("layers").and_then(|l| l.as_array()).cloned().unwrap_or_default();
+        let wash = layers.iter().any(|l| l.get("component").and_then(|c| c.as_str()).is_some_and(|c| WASH.contains(&c)));
+        let rest: Vec<&Value> = layers.iter().filter(|l| !l.get("component").and_then(|c| c.as_str()).is_some_and(|c| WASH.contains(&c) || c == "grain")).collect();
+        let centred_text_only = !rest.is_empty() && rest.iter().all(|l| l.get("text").is_some() && l.get("x").is_none() && l.get("component").is_none());
+        if wash && centred_text_only {
+            slides.push(format!("scenes[{si}]"));
+        }
+    }
+    if !slides.is_empty() {
+        cx.note("warning", "bar", &slides[0], format!("centred text on a gradient or blob backdrop ({} scene{}): reads as a slide (BAR #1–2)", slides.len(), if slides.len() == 1 { "" } else { "s" }), "compose the frame: a subject with light and material (3D, a shader, photography), type placed with intent, the frame filled");
+    }
+    let dims = |v: &Value| -> bool {
+        fn walk(v: &Value) -> bool {
+            match v {
+                Value::Object(m) => {
+                    m.contains_key("shader")
+                        || m.get("type").and_then(|t| t.as_str()) == Some("shader")
+                        || m.get("component").and_then(|c| c.as_str()).is_some_and(|c| ["text-3d", "model", "globe", "scene3d", "ken-burns"].contains(&c))
+                        || m.get("aperture").is_some()
+                        || m.get("src").and_then(|s| s.as_str()).is_some_and(|s| !s.ends_with(".svg"))
+                        || m.values().any(walk)
+                }
+                Value::Array(a) => a.iter().any(walk),
+                _ => false,
+            }
+        }
+        walk(v)
+    };
+    if scenes.len() >= 2 && !dims(spec) {
+        cx.note("warning", "bar", "scenes", "flat 2D only: no 3D, light, lens or real imagery anywhere (BAR #5)".into(), "give the film a world with depth: a shader or text-3d/model/scene3d subject, camera depth + aperture, or real photos");
+    }
+}
+
 /// Generic defaults make every video look the same: flag them and suggest a direction.
 fn sameness(raw: &Value, spec: &Value, cx: &mut Ctx) {
     let scenes = spec.get("scenes").and_then(|s| s.as_array()).cloned().unwrap_or_default();
@@ -627,7 +676,11 @@ fn sameness(raw: &Value, spec: &Value, cx: &mut Ctx) {
         "sameness",
         "spec",
         format!("generic: {}; this will look like every other generated video", signals.join("; ")),
-        format!("give it a point of view: set \"look\" (e.g. \"{a}\" or \"{b}\"; anikit-video looks), vary layouts and entrances per beat, and build one signature visual (3D, a shader, real footage)"),
+        if has_look {
+            "vary layouts and entrances per beat, and build one signature visual from the brief's own subject (3D, paths, real footage)".to_string()
+        } else {
+            format!("give it a point of view: set \"look\" (e.g. \"{a}\" or \"{b}\"; anikit-video looks), vary layouts and entrances per beat, and build one signature visual (3D, paths, real footage)")
+        },
     );
 }
 
@@ -734,7 +787,8 @@ mod template_quality {
                 for b in [Brand::default(), Brand::from_json(r##"{"theme":"light","colors":{"primary":"#0F766E"},"logo":"logo.svg"}"##).unwrap()] {
                     let spec = t.expand(&t.example_params(), &b, Format::parse(f).unwrap()).unwrap();
                     let r = super::critique(&spec);
-                    let bad: Vec<_> = r.notes.iter().filter(|n| n.severity != "tip").collect();
+                    // Templates are flat 2D quick starts: the quality bar (BAR #5) flags that honestly.
+                    let bad: Vec<_> = r.notes.iter().filter(|n| n.severity != "tip" && n.check != "bar").collect();
                     if !bad.is_empty() {
                         failures += &format!("--- {name} {f} {}\n", b.theme.as_deref().unwrap_or("dark"));
                         for n in bad {

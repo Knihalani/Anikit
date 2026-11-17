@@ -31,6 +31,12 @@
     "color": "$accent",
     "size": "2.4vh"
    }
+  },
+  "material": {
+   "surface": "flat",
+   "shadow": 0.9,
+   "glow": 0,
+   "motion": "bouncy"
   }
  },
  "transition": {
