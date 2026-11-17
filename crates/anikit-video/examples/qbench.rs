@@ -51,7 +51,8 @@ const FLAG_DE_MAX: f64 = 5.0;
 /// baseline by more than this.
 const DELIVERED_SSIM_SLACK: f64 = 0.002;
 const DELIVERED_PSNR_SLACK: f64 = 0.3;
-const DELIVERED_MIN_SSIM: f64 = 0.97;
+/// Reported (⚑), not failed: grain and noise are expensive for any lossy encoder.
+const DELIVERED_FLAG_SSIM: f64 = 0.97;
 
 // ---------------------------------------------------------------- corpus
 
@@ -69,6 +70,9 @@ struct Entry {
     to: Option<f32>,
     /// Timed runs for this entry (overrides `--runs`; for very slow content).
     runs: Option<usize>,
+    /// Time the whole spec rather than `from..to` (short clips time too noisily).
+    #[serde(default)]
+    time_full: bool,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone)]
@@ -215,6 +219,8 @@ struct FrameStats {
     de_max: f64,
     /// Pixels with spatial ΔE above one JND.
     de_over: u64,
+    /// Spatially pooled CIEDE2000: 99.9th percentile (1.0 ≈ one JND).
+    de00_p999: f64,
     /// Plain per-pixel CIE76 ΔE (no pooling): counts ±1 LSB dither as "visible"; informational.
     raw_de_p999: f64,
     raw_de_max: f64,
@@ -311,6 +317,52 @@ impl Lab {
     }
 }
 
+/// CIEDE2000 colour difference (kL = kC = kH = 1).
+fn de2000(a: [f32; 3], b: [f32; 3]) -> f64 {
+    let (l1, a1, b1) = (a[0] as f64, a[1] as f64, a[2] as f64);
+    let (l2, a2, b2) = (b[0] as f64, b[1] as f64, b[2] as f64);
+    let c1 = (a1 * a1 + b1 * b1).sqrt();
+    let c2 = (a2 * a2 + b2 * b2).sqrt();
+    let cm = (c1 + c2) / 2.0;
+    let g = 0.5 * (1.0 - (cm.powi(7) / (cm.powi(7) + 25f64.powi(7))).sqrt());
+    let (a1p, a2p) = (a1 * (1.0 + g), a2 * (1.0 + g));
+    let (c1p, c2p) = ((a1p * a1p + b1 * b1).sqrt(), (a2p * a2p + b2 * b2).sqrt());
+    let hp = |b: f64, a: f64| if a == 0.0 && b == 0.0 { 0.0 } else { b.atan2(a).to_degrees().rem_euclid(360.0) };
+    let (h1p, h2p) = (hp(b1, a1p), hp(b2, a2p));
+    let dlp = l2 - l1;
+    let dcp = c2p - c1p;
+    let dhp = if c1p * c2p == 0.0 {
+        0.0
+    } else if (h2p - h1p).abs() <= 180.0 {
+        h2p - h1p
+    } else if h2p - h1p > 180.0 {
+        h2p - h1p - 360.0
+    } else {
+        h2p - h1p + 360.0
+    };
+    let dhp_big = 2.0 * (c1p * c2p).sqrt() * (dhp.to_radians() / 2.0).sin();
+    let lm = (l1 + l2) / 2.0;
+    let cmp = (c1p + c2p) / 2.0;
+    let hm = if c1p * c2p == 0.0 {
+        h1p + h2p
+    } else if (h1p - h2p).abs() <= 180.0 {
+        (h1p + h2p) / 2.0
+    } else if h1p + h2p < 360.0 {
+        (h1p + h2p + 360.0) / 2.0
+    } else {
+        (h1p + h2p - 360.0) / 2.0
+    };
+    let t = 1.0 - 0.17 * (hm - 30.0).to_radians().cos() + 0.24 * (2.0 * hm).to_radians().cos() + 0.32 * (3.0 * hm + 6.0).to_radians().cos()
+        - 0.20 * (4.0 * hm - 63.0).to_radians().cos();
+    let dtheta = 30.0 * (-((hm - 275.0) / 25.0).powi(2)).exp();
+    let rc = 2.0 * (cmp.powi(7) / (cmp.powi(7) + 25f64.powi(7))).sqrt();
+    let sl = 1.0 + 0.015 * (lm - 50.0).powi(2) / (20.0 + (lm - 50.0).powi(2)).sqrt();
+    let sc = 1.0 + 0.045 * cmp;
+    let sh = 1.0 + 0.015 * cmp * t;
+    let rt = -(2.0 * dtheta.to_radians()).sin() * rc;
+    ((dlp / sl).powi(2) + (dcp / sc).powi(2) + (dhp_big / sh).powi(2) + rt * (dcp / sc) * (dhp_big / sh)).sqrt()
+}
+
 /// Percentile from a histogram of values quantised at `step`.
 fn hist_pct(hist: &[u64], step: f64, p: f64) -> f64 {
     let total: u64 = hist.iter().sum();
@@ -381,10 +433,12 @@ fn compare(lab: &Lab, test: &Frame, refr: &Frame) -> (FrameStats, Vec<f32>, Vec<
     let mut de = vec![0f32; w * h];
     let mut hist = vec![0u64; 10001];
     let mut raw_hist = vec![0u64; 10001];
+    let mut h00 = vec![0u64; 10001];
     let (mut max, mut raw_max, mut over) = (0f64, 0f64, 0u64);
     let err: Vec<f32> = test.y.iter().zip(&refr.y).map(|(a, b)| *a as f32 - *b as f32).collect();
     if identical {
         hist[0] = (w * h) as u64;
+        h00[0] = (w * h) as u64;
         raw_hist[0] = (w * h) as u64;
     } else {
         let (st, sr) = (spatial(test), spatial(refr));
@@ -402,7 +456,10 @@ fn compare(lab: &Lab, test: &Frame, refr: &Frame) -> (FrameStats, Vec<f32>, Vec<
                 raw_max = raw_max.max(rd);
                 // Pooled.
                 let q = |p: &[Vec<f32>; 3]| lab.labf(p[0][i], p[1][c], p[2][c]);
-                let d = d76(q(&st), q(&sr));
+                let (la, lb) = (q(&st), q(&sr));
+                let d = d76(la, lb);
+                let d00 = if d < 0.05 { d } else { de2000(la, lb) };
+                h00[((d00 * 100.0) as usize).min(10000)] += 1;
                 de[i] = d as f32;
                 hist[((d * 100.0) as usize).min(10000)] += 1;
                 max = max.max(d);
@@ -418,6 +475,7 @@ fn compare(lab: &Lab, test: &Frame, refr: &Frame) -> (FrameStats, Vec<f32>, Vec<
         de_max: max,
         de_over: over,
         raw_de_p999: hist_pct(&raw_hist, 0.01, 0.999),
+        de00_p999: hist_pct(&h00, 0.01, 0.999),
         raw_de_max: raw_max,
         flicker_p999: 0.0,
     };
@@ -454,6 +512,7 @@ struct Fidelity {
     de_max_frame: usize,
     raw_de_p999_max: f64,
     raw_de_max: f64,
+    de00_p999_max: f64,
     flicker_p999_max: f64,
     flicker_frame: usize,
     /// Frames failing a threshold.
@@ -492,6 +551,7 @@ fn fidelity(lab: &Lab, test: &[Frame], refs: &[Frame], heat: Option<&Path>, gate
         f.de_p999_max = f.de_p999_max.max(s.de_p999);
         f.raw_de_p999_max = f.raw_de_p999_max.max(s.raw_de_p999);
         f.raw_de_max = f.raw_de_max.max(s.raw_de_max);
+        f.de00_p999_max = f.de00_p999_max.max(s.de00_p999);
         if s.de_max > f.de_max {
             f.de_max = s.de_max;
             f.de_max_frame = k;
@@ -561,6 +621,8 @@ struct Row {
     kind: String,
     skipped: Option<String>,
     frames: usize,
+    /// Frames in the timed renders (the whole spec with `time_full`).
+    timed_frames: usize,
     size: String,
     startup_ms: f64,
     first_frame_ms: f64,
@@ -572,6 +634,8 @@ struct Row {
     render: Fidelity,
     delivered: Fidelity,
     delivered_regressed: bool,
+    /// Two default renders of the same clip disagreed.
+    nondeterministic: Option<String>,
     pass: bool,
     flags: Vec<String>,
 }
@@ -658,7 +722,11 @@ fn main() {
         let t_audio0 = e.from.unwrap_or(0.0);
         let dur = e.to.unwrap_or(ev.duration) - t_audio0;
         // 1. Timed default renders (fresh evaluator each time, so no warm caches carry over).
+        // `--exact-components`: the default pipeline with only the components' own
+        // shortcuts off (what would switching them to exact cost?).
+        let exact_components = has("--exact-components");
         anikit_video::components::set_draft(false);
+        anikit_video::components::set_reference(exact_components);
         let mut walls = Vec::new();
         let runs = e.runs.unwrap_or(runs).min(runs);
         for run in 0..runs {
@@ -666,7 +734,11 @@ fn main() {
             let ev = &ev;
             let t = Instant::now();
             let audio = pipeline::mix_audio(ev, t_audio0, dur, &wav).unwrap_or(None);
-            let s = pipeline::render_ak264(ev, &options(e, false), &mp4, audio.as_deref()).expect("render");
+            let mut o = options(e, false);
+            if e.time_full {
+                (o.from, o.to) = (None, None);
+            }
+            let s = pipeline::render_ak264(ev, &o, &mp4, audio.as_deref()).expect("render");
             walls.push(t.elapsed().as_secs_f64());
             if audio.is_some() {
                 let _ = std::fs::remove_file(&wav);
@@ -677,8 +749,19 @@ fn main() {
             }
         }
         row.wall_s = median(walls);
-        row.fps = n as f64 / row.wall_s;
+        row.timed_frames = if e.time_full { ev.frames() as usize } else { n };
+        row.fps = row.timed_frames as f64 / row.wall_s;
+        if e.time_full {
+            // The quality passes need the clip's own MP4.
+            let ev = build(&spec_path).unwrap();
+            let audio = pipeline::mix_audio(&ev, t_audio0, dur, &wav).unwrap_or(None);
+            pipeline::render_ak264(&ev, &options(e, false), &mp4, audio.as_deref()).expect("render");
+            if audio.is_some() {
+                let _ = std::fs::remove_file(&wav);
+            }
+        }
         eprintln!("   default: {:.3} s, {:.0} fps", row.wall_s, row.fps);
+        anikit_video::components::set_reference(false);
         // 2. Reference.
         let t = Instant::now();
         let ev_r = build(&spec_path).unwrap();
@@ -687,6 +770,7 @@ fn main() {
         row.reference_s = t.elapsed().as_secs_f64();
         eprintln!("   reference: {:.1} s", row.reference_s);
         // 3. Render fidelity: tap the default pipeline's frames.
+        anikit_video::components::set_reference(exact_components);
         let ev_t = build(&spec_path).unwrap();
         let slots: Mutex<Vec<Option<Frame>>> = Mutex::new(vec![None; n]);
         let tap = |k: usize, b: &ak264::YuvBuffer| {
@@ -695,8 +779,35 @@ fn main() {
         };
         let tmp = out_dir.join(format!("{}.tap.mp4", e.name));
         pipeline::render_ak264_tap(&ev_t, &options(e, false), &tmp, None, Some(&tap)).expect("tapped render");
-        let _ = std::fs::remove_file(&tmp);
         let test: Vec<Frame> = slots.into_inner().unwrap().into_iter().map(|f| f.expect("frame not tapped")).collect();
+        // Determinism: a second default render of the clip must give the same frames.
+        {
+            let ev2 = build(&spec_path).unwrap();
+            let slots2: Mutex<Vec<Option<Frame>>> = Mutex::new(vec![None; n]);
+            let tap2 = |k: usize, b: &ak264::YuvBuffer| {
+                slots2.lock().unwrap()[k] = Some(Frame::from_buffer(b));
+            };
+            pipeline::render_ak264_tap(&ev2, &options(e, false), &tmp, None, Some(&tap2)).expect("tapped render");
+            let again: Vec<Frame> = slots2.into_inner().unwrap().into_iter().map(|f| f.unwrap()).collect();
+            let diff: Vec<usize> = (0..n).filter(|&k| test[k].y != again[k].y || test[k].u != again[k].u || test[k].v != again[k].v).collect();
+            if let Some(&k) = diff.first() {
+                let (a, b) = (&test[k], &again[k]);
+                let (mut x0, mut y0, mut x1, mut y1) = (usize::MAX, usize::MAX, 0, 0);
+                for (i, (p, q)) in a.y.iter().zip(&b.y).enumerate() {
+                    if p != q {
+                        let (x, y) = (i % a.w, i / a.w);
+                        (x0, y0, x1, y1) = (x0.min(x), y0.min(y), x1.max(x), y1.max(y));
+                    }
+                }
+                row.nondeterministic = Some(format!("{} frames differ between two renders, first {k} (luma box {x0},{y0}–{x1},{y1})", diff.len()));
+                eprintln!("   NONDETERMINISTIC: {}", row.nondeterministic.as_ref().unwrap());
+                if has("--dump-nondet") {
+                    dump(&out_dir.join(format!("{}-nondet{k}", e.name)), a, b, None);
+                }
+            }
+        }
+        let _ = std::fs::remove_file(&tmp);
+        anikit_video::components::set_reference(false);
         for k in get("--dump").into_iter().flat_map(|v| v.split(',').filter_map(|x| x.parse::<usize>().ok()).collect::<Vec<_>>()) {
             if k < n {
                 dump(&out_dir.join(format!("{}-f{k}", e.name)), &test[k], &refs[k], k.checked_sub(1).map(|j| (&test[j], &refs[j])));
@@ -712,7 +823,10 @@ fn main() {
             row.flags.push(format!("decoded {} frames, expected {}", dec.len(), refs.len()));
         }
         let regress = baseline.delivered.get(&e.name).is_some_and(|(s, p)| df.ssim_min < s - DELIVERED_SSIM_SLACK || df.psnr_y_mean < p - DELIVERED_PSNR_SLACK);
-        row.delivered_regressed = regress || df.ssim_min < DELIVERED_MIN_SSIM;
+        row.delivered_regressed = regress;
+        if df.ssim_min < DELIVERED_FLAG_SSIM {
+            row.flags.push(format!("delivered SSIM {:.4} (grain/noise vs QP)", df.ssim_min));
+        }
         new_base.delivered.insert(e.name.clone(), ((df.ssim_min * 1e4).floor() / 1e4, (df.psnr_y_mean * 100.0).floor() / 100.0));
         if rf.de_max > FLAG_DE_MAX {
             row.flags.push(format!("max ΔE {:.1} at frame {} (see {})", rf.de_max, rf.de_max_frame, heat.file_name().unwrap().to_string_lossy()));
@@ -721,11 +835,14 @@ fn main() {
         if worst > 0 {
             row.flags.push(format!("{worst} px > 1 JND in the worst frame"));
         }
-        row.pass = rf.failing.is_empty() && !row.delivered_regressed;
+        row.pass = rf.failing.is_empty() && !row.delivered_regressed && row.nondeterministic.is_none();
+        if let Some(nd) = &row.nondeterministic {
+            row.flags.push(format!("NONDETERMINISTIC: {nd}"));
+        }
         row.render = rf;
         row.delivered = df;
         let _ = std::fs::write(out_dir.join(format!("{}.frames.json", e.name)), serde_json::to_string(&rstats).unwrap());
-        eprintln!("   render SSIM min {:.5}, PSNR-Y min {:.2}, ΔE p99.9 {:.2}, flicker {:.0}; delivered SSIM min {:.4}", row.render.ssim_min, row.render.psnr_y_min, row.render.de_p999_max, row.render.flicker_p999_max, row.delivered.ssim_min);
+        eprintln!("   render SSIM min {:.5}, PSNR-Y min {:.2}, ΔE76 p99.9 {:.2}, ΔE00 p99.9 {:.2}, flicker {:.1}; delivered SSIM min {:.4}", row.render.ssim_min, row.render.psnr_y_min, row.render.de_p999_max, row.render.de00_p999_max, row.render.flicker_p999_max, row.delivered.ssim_min);
         rows.push(row);
     }
     print_table(&rows);
@@ -746,7 +863,7 @@ fn main() {
 }
 
 fn print_table(rows: &[Row]) {
-    println!("\n| spec | content | frames | wall s | fps | ms/frame: eval · render · copy · encode · idle | startup ms · 1st frame ms | render SSIM min | PSNR-Y min | ΔE p99.9 / max | raw ΔE p99.9 | flicker p99.9 | delivered SSIM min / PSNR-Y | result |");
+    println!("\n| spec | content | frames (timed) | wall s | fps | ms/frame: eval · render · copy · encode · idle | startup ms · 1st frame ms | render SSIM min | PSNR-Y min | ΔE p99.9 / max | raw ΔE p99.9 | flicker p99.9 | delivered SSIM min / PSNR-Y | result |");
     println!("|---|---|---:|---:|---:|---|---|---:|---:|---:|---:|---:|---|---|");
     for r in rows {
         if let Some(s) = &r.skipped {
@@ -757,10 +874,11 @@ fn print_table(rows: &[Row]) {
         let res = if r.pass { "PASS".to_string() } else { format!("**FAIL** ({} frames{})", r.render.failing.len(), if r.delivered_regressed { ", delivered regressed" } else { "" }) };
         let flags = if r.flags.is_empty() { String::new() } else { format!(" ⚑ {}", r.flags.join("; ")) };
         println!(
-            "| {} | {} | {} | {:.2} | {:.0} | {:.2} · {:.2} · {:.2} · {:.2} · {:.2} | {:.0} · {:.0} | {:.5} | {:.2} | {:.2} / {:.1} | {:.1} | {:.1} | {:.4} / {:.2} | {}{} |",
+            "| {} | {} | {} ({}) | {:.2} | {:.0} | {:.2} · {:.2} · {:.2} · {:.2} · {:.2} | {:.0} · {:.0} | {:.5} | {:.2} | {:.2} / {:.1} | {:.1} | {:.1} | {:.4} / {:.2} | {}{} |",
             r.name,
             r.kind,
             r.frames,
+            r.timed_frames,
             r.wall_s,
             r.fps,
             p.eval_ms,
