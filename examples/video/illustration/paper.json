@@ -4,7 +4,7 @@
     {
       "duration": 4,
       "layers": [
-        { "component": "paper", "props": { "kind": "watercolor", "tooth": 0.7, "fibers": 0.5, "vignette": 0.35, "seed": 3 } },
+        { "component": "paper", "props": { "stock": "watercolor", "tooth": 0.7, "fibers": 0.5, "vignette": 0.35, "seed": 3 } },
         { "text": "Cold press, 300 gsm", "style": "title", "color": "#3b332b", "y": "50%" }
       ]
     }

@@ -284,33 +284,37 @@ impl Hatch {
                         let y = bb.1 + (j as f32 + hash01(hs ^ 0x9e37)) * g;
                         let t = self.tone_at(x, y, bb);
                         // Ordered threshold: denser dots in shadow.
-                        if hash01(hs ^ 0x51ed) < t * t * 1.1 {
-                            let r = self.width * (0.45 + 0.35 * hash01(hs ^ 0xabc)) * (0.8 + 0.4 * t);
+                        if hash01(hs ^ 0x51ed) < t * 1.05 {
+                            let r = self.width * (0.55 + 0.4 * hash01(hs ^ 0xabc)) * (0.8 + 0.4 * t);
                             dots.extend(kurbo::Circle::new((x as f64, y as f64), r as f64).path_elements(0.2));
                         }
                     }
                 }
             }
             "scribble" => {
-                // One continuous loopy line sweeping across the shape.
+                // One continuous line of small loops, sweeping back and forth across the shape.
                 let a = self.angle.to_radians();
                 let (ux, uy) = (a.cos(), a.sin());
                 let (vx, vy) = (-uy, ux);
                 let mut pts = Vec::new();
                 let mut v = -rad;
-                let mut th: f32 = 0.0;
-                let amp = rad;
-                while v < rad && pts.len() < 20000 {
-                    let o = amp * th.sin();
-                    let loop_r = s * 0.9 * (0.6 + 0.4 * vnoise2(th * 0.3, 1.0, seed));
-                    let x = cx + ux * (o + loop_r * th.cos() * 0.3) + vx * (v + loop_r * (th * 7.0).sin() * 0.5 * jit);
-                    let y = cy + uy * (o + loop_r * th.cos() * 0.3) + vy * (v + loop_r * (th * 7.0).sin() * 0.5 * jit);
-                    pts.push((x, y));
-                    let t = self.tone_at(x, y, bb).max(0.05);
-                    let dth = 0.09;
-                    th += dth;
-                    // Advance across lines slower where it is darker.
-                    v += s * 0.5 * dth / std::f32::consts::PI / t * (0.8 + 0.4 * rng.f());
+                let mut dir = 1.0f32;
+                let loop_r = s * 0.9;
+                let nloops = (2.0 * rad / (loop_r * 0.9)).ceil().max(4.0) as usize;
+                let per = 10usize;
+                while v < rad && pts.len() < 60000 {
+                    let tc = self.tone_at(cx + vx * v, cy + vy * v, bb).max(0.08);
+                    let sv = s / tc.powf(0.8);
+                    for i in 0..nloops * per {
+                        let f = i as f32 / (nloops * per) as f32;
+                        let ph = f * nloops as f32 * std::f32::consts::TAU + rng.range(-0.15, 0.15) * jit;
+                        let lr = loop_r * (0.7 + 0.5 * vnoise2(f * 9.0, v * 0.05, seed));
+                        let uu = dir * (-rad + 2.0 * rad * f) + lr * ph.cos();
+                        let vv = v + sv * f + lr * 0.8 * ph.sin();
+                        pts.push((cx + ux * uu + vx * vv, cy + uy * uu + vy * vv));
+                    }
+                    v += sv;
+                    dir = -dir;
                 }
                 let mut p = Path::new();
                 if let Some(f) = pts.first() {
@@ -495,12 +499,12 @@ pub fn paper_field(kind: &str, color: Rgba, tooth: f32, fibers: f32, vignette: f
     let mut rng = Rng::new(seed as u64 * 31 + 7);
     let area = (w * h) as f32;
     let (count, len, dark, hamp, fleck) = match kind {
-        "cotton" => (area / 220.0, (12.0, 45.0), -0.05, 0.35, 0.0),
-        "kraft" => (area / 300.0, (6.0, 30.0), -0.10, 0.2, area / 900.0),
-        "newsprint" => (area / 500.0, (4.0, 18.0), -0.12, 0.1, area / 1400.0),
-        "watercolor" => (area / 900.0, (10.0, 40.0), 0.03, 0.25, 0.0),
-        "canvas" => (area / 3000.0, (6.0, 20.0), 0.04, 0.2, 0.0),
-        _ => (area / 700.0, (8.0, 35.0), 0.035, 0.25, area / 9000.0),
+        "cotton" => (area / 260.0, (14.0, 50.0), 0.07, 0.5, 0.0),
+        "kraft" => (area / 300.0, (6.0, 30.0), -0.16, 0.3, area / 700.0),
+        "newsprint" => (area / 450.0, (4.0, 18.0), -0.14, 0.15, area / 1200.0),
+        "watercolor" => (area / 1200.0, (10.0, 40.0), 0.05, 0.35, 0.0),
+        "canvas" => (area / 3000.0, (6.0, 20.0), 0.06, 0.3, 0.0),
+        _ => (area / 800.0, (8.0, 35.0), 0.06, 0.35, area / 20000.0),
     };
     let count = (count * fibers * 2.0) as usize;
     let splat = |x: f32, y: f32, a: f32, ha: f32, alb: &mut [f32], hgt: &mut [f32]| {
@@ -549,9 +553,9 @@ pub fn paper_field(kind: &str, color: Rgba, tooth: f32, fibers: f32, vignette: f
     // Light it: emboss from the top left, then albedo and vignette.
     let base = lin3(color);
     let tooth_k = tooth * match kind {
-        "canvas" => 0.16,
-        "watercolor" => 0.14,
-        _ => 0.11,
+        "canvas" => 0.30,
+        "watercolor" => 0.30,
+        _ => 0.24,
     };
     let mut out = Lin::new(w, h);
     let (cx, cy) = (w as f32 * 0.5, h as f32 * 0.5);
@@ -581,7 +585,8 @@ pub fn paper_field(kind: &str, color: Rgba, tooth: f32, fibers: f32, vignette: f
 #[serde(default, deny_unknown_fields)]
 pub struct Paper {
     /// `"paper"` (default), `"cotton"`, `"kraft"`, `"canvas"`, `"watercolor"` or `"newsprint"`.
-    pub kind: String,
+    /// (`kind` is the component name in a spec layer, so the stock is `stock`.)
+    pub stock: String,
     /// Stock colour (default per kind).
     pub color: Option<Color>,
     /// Surface relief 0..1 (default 0.6).
@@ -594,12 +599,12 @@ pub struct Paper {
 }
 impl Default for Paper {
     fn default() -> Self {
-        Paper { kind: "paper".into(), color: None, tooth: 0.6, fibers: 0.5, vignette: 0.3, seed: 1 }
+        Paper { stock: "paper".into(), color: None, tooth: 0.6, fibers: 0.5, vignette: 0.3, seed: 1 }
     }
 }
 impl Prepare for Paper {
     fn prepare(&mut self) -> Result<(), Error> {
-        check_one("paper kind", &self.kind, PAPER_KINDS)
+        check_one("paper stock", &self.stock, PAPER_KINDS)
     }
 }
 
@@ -616,8 +621,8 @@ fn bytemuck_f(v: &[f32]) -> Vec<u8> {
 impl Component for Paper {
     fn eval(&self, _t: f32, ctx: &Ctx) -> Vec<Op> {
         let (w, h) = (ctx.width.ceil().clamp(4.0, 4096.0) as usize, ctx.height.ceil().clamp(4.0, 4096.0) as usize);
-        let color = self.color.map(|c| c.0).unwrap_or_else(|| paper_default(&self.kind));
-        let id = paper_image(ctx, &self.kind, color, self.tooth, self.fibers, self.vignette, self.seed, w, h);
+        let color = self.color.map(|c| c.0).unwrap_or_else(|| paper_default(&self.stock));
+        let id = paper_image(ctx, &self.stock, color, self.tooth, self.fibers, self.vignette, self.seed, w, h);
         vec![Op::Image { image: id, dst: [0.0, 0.0, w as f32, h as f32], opacity: 1.0, transform: IDENTITY }]
     }
 }
@@ -701,10 +706,10 @@ impl Cutout {
             // Irregular tear: big wander plus fine ragged teeth.
             let tear = |i: usize, sx: u32| {
                 let u = i as f32 * 2.0;
-                -tn * (4.0 + 5.0 * (fbm2(u / 70.0, 0.5, 3, sd ^ sx) * 0.5 + 0.5) + 1.6 * vnoise2(u / 3.0, 2.0, sd ^ sx ^ 1).abs())
+                -tn * (4.0 + 12.0 * (fbm2(u / 90.0, 0.5, 4, sd ^ sx) * 0.5 + 0.5) + 2.5 * vnoise2(u / 3.0, 2.0, sd ^ sx ^ 1).abs() + 1.2 * vnoise2(u / 1.2, 5.0, sd ^ sx ^ 2).abs())
             };
             let o = displaced(&r, |i, _| tear(i, 1) + tn * 2.0);
-            let rim = |i: usize| tear(i, 1) + tn * 2.0 - tn * (2.5 + 5.0 * (vnoise2(i as f32 * 2.0 / 25.0, 7.0, sd ^ 3) * 0.5 + 0.5).powi(2)) - tn * 1.0 * vnoise2(i as f32 * 2.0 / 2.5, 1.0, sd ^ 4).abs();
+            let rim = |i: usize| tear(i, 1) + tn * 2.0 - tn * (2.0 + 9.0 * (vnoise2(i as f32 * 2.0 / 40.0, 7.0, sd ^ 3) * 0.5 + 0.5).powi(2)) - tn * 1.8 * vnoise2(i as f32 * 2.0 / 2.5, 1.0, sd ^ 4).abs();
             let inn = displaced(&r, |i, _| rim(i));
             outer.extend(o.iter());
             inner.extend(inn.iter());
@@ -713,7 +718,7 @@ impl Cutout {
             let area: f32 = (0..n).map(|i| r[i].0 * r[(i + 1) % n].1 - r[(i + 1) % n].0 * r[i].1).sum();
             let sign = if area > 0.0 { 1.0 } else { -1.0 };
             for i in (0..n).step_by(2) {
-                if rng.f() > 0.35 * tn {
+                if rng.f() > 0.6 * tn {
                     continue;
                 }
                 let (a, b) = (r[(i + n - 1) % n], r[(i + 1) % n]);
@@ -723,7 +728,7 @@ impl Cutout {
                 let e = tear(i, 1) + tn * 2.0;
                 let (px, py) = (r[i].0 + nx * (e - 0.5), r[i].1 + ny * (e - 0.5));
                 let ang = ny.atan2(nx) + rng.range(-0.9, 0.9);
-                let fl = rng.range(1.5, 5.0) * tn;
+                let fl = rng.range(1.5, 6.0) * tn;
                 fib.move_to((px as f64, py as f64));
                 fib.quad_to(((px + ang.cos() * fl * 0.5 + rng.range(-1.0, 1.0)) as f64, (py + ang.sin() * fl * 0.5 + rng.range(-1.0, 1.0)) as f64), ((px + ang.cos() * fl) as f64, (py + ang.sin() * fl) as f64));
             }
@@ -772,7 +777,7 @@ impl Component for Cutout {
         if self.shadow > 0.0 {
             let sh = self.shadow;
             let (sdx, sdy) = (3.0 + 10.0 * lift, 5.0 + 16.0 * lift);
-            out.push(Op::PushLayer { opacity: 1.0, blend: dl::Blend::Multiply, filters: vec![dl::Filter::Shadow { dx: sdx, dy: sdy, blur: 6.0 + 14.0 * lift, color: Rgba([0.12, 0.08, 0.05, (0.45 * sh) * (1.0 - 0.4 * lift)]) }], clip: None, cache_key: None });
+            out.push(Op::PushLayer { opacity: 1.0, blend: dl::Blend::Multiply, filters: vec![dl::Filter::Shadow { dx: sdx, dy: sdy, blur: 6.0 + 14.0 * lift, color: Rgba([0.12, 0.08, 0.05, (0.7 * sh) * (1.0 - 0.4 * lift)]) }], clip: None, cache_key: None });
             out.push(fill_op(outer.clone(), Rgba([0.0, 0.0, 0.0, 1.0]), m));
             out.push(Op::PopLayer);
             // Contact shadow, tight.
@@ -786,7 +791,7 @@ impl Component for Cutout {
             None => self.color.0,
         };
         if self.torn > 0.001 {
-            let rim = mix(base, Rgba([0.97, 0.95, 0.9, 1.0]), 0.82);
+            let rim = mix(base, Rgba([0.98, 0.965, 0.93, 1.0]), 0.88);
             out.push(fill_op(outer.clone(), rim, m));
             out.push(Op::Stroke { path: fib, paint: dl::Paint::Solid(alpha(rim, 0.9)), stroke: super::style::line(0.7, [0.0, 1.0]), transform: m });
         }
@@ -799,7 +804,7 @@ impl Component for Cutout {
             None => ("paper", base),
         };
         // Flat colours still get a faint paper grain so they don't look vector-flat.
-        let (tooth, fibers) = if self.texture.is_some() { (0.7, 0.6) } else { (0.45, 0.25) };
+        let (tooth, fibers) = if self.texture.is_some() { (0.8, 0.6) } else { (0.7, 0.35) };
         let id = paper_image(ctx, kind, col, tooth, fibers, 0.0, s, bw.min(4096), bh.min(4096));
         out.push(Op::Image { image: id, dst: [x0 - 1.0, y0 - 1.0, bw as f32, bh as f32], opacity: 1.0, transform: m });
         out.push(Op::PopLayer);

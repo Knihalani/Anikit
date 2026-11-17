@@ -715,7 +715,7 @@ Hand-made surfaces instead of UI-on-dark: hatching drawn on line by line, real p
 ### `paper`
 | Prop | Default | Meaning |
 |---|---|---|
-| `kind` | `"paper"` | `"paper"`, `"cotton"` (long fibres), `"kraft"` (brown with dark flecks), `"canvas"` (woven threads with slubs), `"watercolor"` (cold-press grain with mottled sizing), `"newsprint"` (grey, fine grain and specks). |
+| `stock` | `"paper"` | (`kind` names the component, so the stock is `stock`.) `"paper"`, `"cotton"` (long fibres), `"kraft"` (brown with dark flecks), `"canvas"` (woven threads with slubs), `"watercolor"` (cold-press grain with mottled sizing), `"newsprint"` (grey, fine grain and specks). |
 | `color` | per kind | Stock colour. |
 | `tooth`, `fibers` | `0.6`, `0.5` | Surface relief (lit from the top left) and amount of fibres and flecks, 0–1. |
 | `vignette`, `seed` | `0.3`, `1` | Edge darkening, and the seed. |
@@ -734,7 +734,7 @@ Computed once per size and cached as one dithered image: free after the first fr
 
 ```json
 { "layers": [
-  { "component": "paper", "props": { "kind": "watercolor" } },
+  { "component": "paper", "props": { "stock": "watercolor" } },
   { "component": "hatch", "props": { "shape": "circle", "style": "crosshatch", "toneFrom": 0.15, "toneTo": 0.95, "outline": true, "boil": 10, "draw": 1.8 }, "width": 520, "height": 520 },
   { "component": "cutout", "props": { "shape": "blob", "texture": "kraft", "torn": 0.7, "rotate": -8, "delay": 0.4 }, "x": "70%", "width": 360, "height": 260 }
 ] }
