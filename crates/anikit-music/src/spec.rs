@@ -428,12 +428,20 @@ pub fn compile_tracks(spec: &MusicSpec, grid: &Grid, key: &Key, song_chords: Opt
             notes.extend(n);
         }
         let role = if is_drums { "drums" } else if clips.iter().any(|c| c.bass.is_some()) { "bass" } else { "music" };
+        // `gain` is relative to a sensible default level for the role (tracks are
+        // loudness-matched in the mixer, so 0 always sits right).
+        let mut mix = t.mix.clone();
+        mix.gain += match role {
+            "drums" => 0.0,
+            "bass" => -2.0,
+            _ => -5.0,
+        };
         out.push(TrackPlan {
             name,
             role: role.into(),
             inst: t.inst.clone(),
             notes,
-            mix: t.mix.clone(),
+            mix,
             humanize: t.humanize.unwrap_or(if is_drums { 0.15 } else { 0.3 }),
             straight: t.straight,
         });
@@ -565,7 +573,7 @@ mod tests {
         let k = Key::parse("C").unwrap();
         let t = compile_tracks(&spec, &g, &k, None, None).unwrap();
         assert_eq!(t.len(), 4);
-        assert_eq!(t[0].mix.gain, -3.0);
+        assert_eq!(t[0].mix.gain, -8.0);
         assert_eq!(t[1].role, "bass");
         assert_eq!(t[2].notes.iter().filter(|n| n.key == 36.0).count(), 16);
         assert_eq!(t[3].notes[0].t, 8.0); // bar 3
