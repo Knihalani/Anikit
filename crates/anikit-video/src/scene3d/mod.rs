@@ -136,6 +136,8 @@ struct Prepared {
     tonemap: post::Tonemap,
     quality: Quality,
     denoise: u32,
+    /// `quality: draft`: cheaper particle splats.
+    draft: bool,
     key: u64,
     /// Average colour per (composition, frame), for far panes; frame
     /// `u32::MAX` is the composition's fallback (its first frame).
@@ -336,6 +338,7 @@ impl Prepare for Scene3d {
             Some(o) => return Err(Error(format!("unknown tonemap `{o}`; expected aces or neutral"))),
         };
         let quality_s = m.get("quality").and_then(|q| q.as_str()).unwrap_or("standard");
+        let draft = quality_s == "draft";
         let (quality, denoise, bake) = match quality_s {
             "draft" => (Quality { edge_spp: 3, ao_rays: 1, shadow_rays: 1, max_depth: 2, max_glass: 6, contrast: 0.1, secondary_rays: 0 }, 5, (384, 24)),
             "standard" => (Quality::default(), 5, (768, 64)),
@@ -377,6 +380,7 @@ impl Prepare for Scene3d {
             tonemap,
             quality,
             denoise,
+            draft,
             key,
             parts,
             psims: OnceLock::new(),
@@ -641,7 +645,7 @@ impl Scene3d {
                 px.par_chunks_mut(w).enumerate().for_each(body);
             }
         }
-        let view = particles::View { cam, prev, w, h, depth: &depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key, amb: (p.env.diffuse(up), p.env.diffuse(scale(up, -1.0))), shadow: shadow.as_ref() };
+        let view = particles::View { cam, prev, w, h, depth: &depth, focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, key, amb: (p.env.diffuse(up), p.env.diffuse(scale(up, -1.0))), shadow: shadow.as_ref(), draft: p.draft };
         Some(particles::render(&live, &view, t))
     }
 

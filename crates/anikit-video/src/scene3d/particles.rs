@@ -1315,17 +1315,20 @@ const ST_P: usize = 16;
 const ST_N: usize = 11;
 const ST_C: usize = ST_N / 2;
 
-fn stamps() -> &'static [f32] {
-    static T: std::sync::OnceLock<Vec<f32>> = std::sync::OnceLock::new();
+fn stamps() -> &'static (Vec<f32>, Vec<[u8; 4]>) {
+    static T: std::sync::OnceLock<(Vec<f32>, Vec<[u8; 4]>)> = std::sync::OnceLock::new();
     T.get_or_init(|| {
-        let mut t = vec![0.0f32; ST_R * ST_P * ST_P * ST_N * ST_N];
-        for ri in 0..ST_R {
+        use rayon::prelude::*;
+        let per = ST_P * ST_P * ST_N * ST_N;
+        let mut t = vec![0.0f32; ST_R * per];
+        t.par_chunks_mut(per).enumerate().for_each(|(ri, t)| {
+        {
             let r = ri as f32 / 16.0;
             for py in 0..ST_P {
                 for px in 0..ST_P {
                     // Particle centre inside the stamp's middle pixel, at this phase.
                     let (cx, cy) = (ST_C as f32 + (px as f32 + 0.5) / ST_P as f32, ST_C as f32 + (py as f32 + 0.5) / ST_P as f32);
-                    let o = ((ri * ST_P + py) * ST_P + px) * ST_N * ST_N;
+                    let o = (py * ST_P + px) * ST_N * ST_N;
                     let step = (r / 12.0).max(0.02);
                     let m = (r / step).ceil() as i32;
                     let mut tot = 0.0;
@@ -1351,10 +1354,28 @@ fn stamps() -> &'static [f32] {
                     for v in &mut t[o..o + ST_N * ST_N] {
                         *v /= tot;
                     }
+
                 }
             }
         }
-        t
+        });
+        // Tight bounds of each stamp's non-zero weights.
+        let boxes = (0..ST_R * ST_P * ST_P)
+            .map(|k| {
+                let o = k * ST_N * ST_N;
+                let (mut b, mut q) = ([ST_N as u8, 0, ST_N as u8, 0], false);
+                for y in 0..ST_N {
+                    for x in 0..ST_N {
+                        if t[o + y * ST_N + x] > 1e-7 {
+                            b = [b[0].min(x as u8), b[1].max(x as u8), b[2].min(y as u8), b[3].max(y as u8)];
+                            q = true;
+                        }
+                    }
+                }
+                if q { b } else { [ST_C as u8, ST_C as u8, ST_C as u8, ST_C as u8] }
+            })
+            .collect();
+        (t, boxes)
     })
 }
 
@@ -1445,16 +1466,26 @@ impl Pyr {
         }
     }
 
-    /// An exact small disc (radius < 4 px) from the stamp table, full resolution.
+    /// An exact small disc (radius < 4 px) from the stamp table, full
+    /// resolution, bilinear between the four nearest of 16×16 sub-pixel
+    /// phases, over the union of their tight bounds.
     #[inline(always)]
     fn stamp(&mut self, x: f32, y: f32, r: f32, v: &[f32; 8]) {
-        let c = self.c;
+        match self.c {
+            3 => self.stamp_c::<3>(x, y, r, v),
+            4 => self.stamp_c::<4>(x, y, r, v),
+            _ => self.stamp_c::<7>(x, y, r, v),
+        }
+    }
+
+    #[inline(always)]
+    fn stamp_c<const C: usize>(&mut self, x: f32, y: f32, r: f32, v: &[f32; 8]) {
+        let c = C;
         self.used[0] = true;
-        let tab = stamps();
+        let (tab, boxes) = stamps();
         let (w, h, buf) = &mut self.lv[0];
         let (w, h) = (*w as i32, *h as i32);
         let (fx, fy) = (x.floor(), y.floor());
-        // Bilinear between the four nearest phases (16 per pixel axis), nearest radius (1/16 px).
         let ph = |f: f32| {
             let u = f * ST_P as f32 - 0.5;
             let p0 = (u.floor() as i32).clamp(0, ST_P as i32 - 2) as usize;
@@ -1462,31 +1493,34 @@ impl Pyr {
         };
         let ((px, tx), (py, ty)) = (ph(x - fx), ph(y - fy));
         let ri = ((r * 16.0).round() as usize).min(ST_R - 1);
-        let at = |py: usize, px: usize| ((ri * ST_P + py) * ST_P + px) * ST_N * ST_N;
-        let (o00, o01, o10, o11) = (at(py, px), at(py, px + 1), at(py + 1, px), at(py + 1, px + 1));
-        let (w00, w01, w10, w11) = ((1.0 - tx) * (1.0 - ty), tx * (1.0 - ty), (1.0 - tx) * ty, tx * ty);
-        let (bx, by) = (fx as i32 - ST_C as i32, fy as i32 - ST_C as i32);
-        // Only rows/columns the radius can reach.
-        let reach = (r + 1.5).ceil() as usize;
-        let (a, b) = (ST_C.saturating_sub(reach), (ST_C + reach + 1).min(ST_N));
-        for sy in a..b {
-            let yy = by + sy as i32;
+        let kk = |py: usize, px: usize| (ri * ST_P + py) * ST_P + px;
+        let ks = [kk(py, px), kk(py, px + 1), kk(py + 1, px), kk(py + 1, px + 1)];
+        let ws = [(1.0 - tx) * (1.0 - ty), tx * (1.0 - ty), (1.0 - tx) * ty, tx * ty];
+        let mut bx = [ST_N as u8, 0, ST_N as u8, 0];
+        for &k in &ks {
+            let b = boxes[k];
+            bx = [bx[0].min(b[0]), bx[1].max(b[1]), bx[2].min(b[2]), bx[3].max(b[3])];
+        }
+        let st = |k: usize| &tab[k * ST_N * ST_N..(k + 1) * ST_N * ST_N];
+        let (s0, s1, s2, s3) = (st(ks[0]), st(ks[1]), st(ks[2]), st(ks[3]));
+        let (ox, oy) = (fx as i32 - ST_C as i32, fy as i32 - ST_C as i32);
+        let (xa, xb) = ((bx[0] as i32).max(-ox), (bx[1] as i32).min(w - 1 - ox));
+        if xa > xb {
+            return;
+        }
+        for sy in bx[2] as i32..=bx[3] as i32 {
+            let yy = oy + sy;
             if yy < 0 || yy >= h {
                 continue;
             }
-            for sx in a..b {
-                let xx = bx + sx as i32;
-                if xx < 0 || xx >= w {
-                    continue;
-                }
-                let k = sy * ST_N + sx;
-                let wt = tab[o00 + k] * w00 + tab[o01 + k] * w01 + tab[o10 + k] * w10 + tab[o11 + k] * w11;
-                if wt == 0.0 {
-                    continue;
-                }
-                let o = &mut buf[(yy * w + xx) as usize * c..][..c];
-                for j in 0..c {
-                    o[j] += v[j] * wt;
+            let base = sy as usize * ST_N;
+            let row = &mut buf[(yy * w + ox + xa) as usize * c..(yy * w + ox + xb + 1) as usize * c];
+            let vv: [f32; C] = std::array::from_fn(|j| v[j]);
+            for (k, o) in row.chunks_exact_mut(C).enumerate() {
+                let i = base + xa as usize + k;
+                let wt = s0[i] * ws[0] + s1[i] * ws[1] + s2[i] * ws[2] + s3[i] * ws[3];
+                for j in 0..C {
+                    o[j] += vv[j] * wt;
                 }
             }
         }
@@ -1555,7 +1589,16 @@ impl Pyr {
     #[inline(always)]
     #[allow(dead_code)]
     fn splat(&mut self, l: usize, x: f32, y: f32, v: &[f32; 8]) {
-        let c = self.c;
+        match self.c {
+            3 => self.splat_c::<3>(l, x, y, v),
+            4 => self.splat_c::<4>(l, x, y, v),
+            _ => self.splat_c::<7>(l, x, y, v),
+        }
+    }
+
+    #[inline(always)]
+    fn splat_c<const C: usize>(&mut self, l: usize, x: f32, y: f32, v: &[f32; 8]) {
+        let c = C;
         self.used[l] = true;
         let (w, h, buf) = &mut self.lv[l];
         let f = 1.0 / (1u32 << l) as f32;
@@ -1569,8 +1612,8 @@ impl Pyr {
             if xx < 0 || yy < 0 || xx >= w || yy >= h {
                 continue;
             }
-            let o = &mut buf[(yy * w + xx) as usize * c..][..c];
-            for k in 0..c {
+            let o = &mut buf[(yy * w + xx) as usize * c..][..C];
+            for k in 0..C {
                 o[k] += v[k] * wt;
             }
         }
@@ -1741,6 +1784,8 @@ pub struct View<'a> {
     pub key: (V3, V3),
     pub amb: (V3, V3),
     pub shadow: Option<&'a ShadowMap>,
+    /// Draft: in-focus particles as plain tent splats (about 2× faster, softer).
+    pub draft: bool,
 }
 
 struct Proj {
@@ -1949,7 +1994,12 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
                     let u = if ns == 1 { 0.0 } else { (k as f32 + 0.5) * inv - 0.5 };
                     let (x, y) = (sx + mx * u, sy + my * u);
                     if kk == usize::MAX {
-                        py.stamp(x, y, foot, &v0);
+                        if foot < 0.25 || v.draft {
+                            // Disc ⊗ tent ≈ the tent itself.
+                            py.splat(0, x, y, &v0);
+                        } else {
+                            py.stamp(x, y, foot, &v0);
+                        }
                         continue;
                     }
                     if lw < 0.999 {
@@ -2001,7 +2051,9 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
             }
         }
     }
+    let t_reduce = clock.elapsed();
     acc.resolve_bins(par);
+    let t_bins = clock.elapsed();
     for l in (1..levels).rev() {
         if !acc.used[l] {
             continue;
@@ -2036,7 +2088,7 @@ pub fn render(systems: &[(&Sim, Arc<Snap>)], v: &View, t: f32) -> Layer {
     }
     let prof = std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some();
     if prof {
-        eprintln!("  splat: points {:.0} ms, collapse {:.0} ms", t_splat.as_secs_f64() * 1e3, (clock.elapsed() - t_splat).as_secs_f64() * 1e3);
+        eprintln!("  splat: points {:.0} ms, reduce {:.0} ms, bins {:.0} ms, collapse {:.0} ms", t_splat.as_secs_f64() * 1e3, (t_reduce - t_splat).as_secs_f64() * 1e3, (t_bins - t_reduce).as_secs_f64() * 1e3, (clock.elapsed() - t_bins).as_secs_f64() * 1e3);
     }
     let buf = std::mem::take(&mut acc.lv[0].2);
     Layer { w, h, c, eo, ab, buf }
@@ -2111,7 +2163,7 @@ mod tests {
         let depth = vec![1e9f32; w * h];
         let total = |focus: f32, ap: f32| {
             let cam = Camera { pos: v3(0.0, 1.0, 4.0), target: v3(0.0, 1.0, 0.0), fov: 30.0, focus, aperture: ap, roll: 0.0, shutter: 0.0 };
-            let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus, aperture: ap, shutter: 0.0, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)), shadow: None };
+            let v = View { cam: &cam, prev: &cam, w, h, depth: &depth, focus, aperture: ap, shutter: 0.0, key: (v3(0.0, 1.0, 0.0), v3(1.0, 1.0, 1.0)), amb: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)), shadow: None, draft: false };
             render(&[(&s, snap.clone())], &v, 0.0).emitted()
         };
         let (sharp, blurred) = (total(4.0, 0.0), total(1.0, 30.0));
