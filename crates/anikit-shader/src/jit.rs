@@ -685,7 +685,16 @@ impl<'m, 'b> Lower<'m, 'b> {
             (K::F, O::Add) => b.ins().fadd(x, y),
             (K::F, O::Subtract) => b.ins().fsub(x, y),
             (K::F, O::Multiply) => b.ins().fmul(x, y),
-            (K::F, O::Divide) => b.ins().fdiv(x, y),
+            (K::F, O::Divide) => match const_splat_f32(b, y) {
+                // Dividing by a constant: multiply by its reciprocal. Exact for powers
+                // of two, within 1.5 ulp otherwise (GLSL allows 2.5), and a multiply
+                // has a third of a divide's latency on the march loops' critical path.
+                Some(k) if k != 0.0 && k.is_finite() && (1.0 / k).is_normal() => {
+                    let r = fsplat(b, 1.0 / k);
+                    b.ins().fmul(x, r)
+                }
+                _ => b.ins().fdiv(x, y),
+            },
             (K::F, O::Modulo) => {
                 let q = b.ins().fdiv(x, y);
                 let t = b.ins().trunc(q);
@@ -1902,6 +1911,19 @@ fn any_stmt(b: &[S], f: &dyn Fn(&S) -> bool) -> bool {
                 _ => false,
             }
     })
+}
+
+/// `v` is `splat(f32const k)`: k.
+fn const_splat_f32(b: &FunctionBuilder, v: Value) -> Option<f32> {
+    use cranelift_codegen::ir::{InstructionData, Opcode, ValueDef};
+    let dfg = &b.func.dfg;
+    let ValueDef::Result(inst, _) = dfg.value_def(v) else { return None };
+    let InstructionData::Unary { opcode: Opcode::Splat, arg } = dfg.insts[inst] else { return None };
+    let ValueDef::Result(ci, _) = dfg.value_def(arg) else { return None };
+    match dfg.insts[ci] {
+        InstructionData::UnaryIeee32 { opcode: Opcode::F32const, imm } => Some(f32::from_bits(imm.bits())),
+        _ => None,
+    }
 }
 
 /// A loop body to emit as straight-line copies (see `Lower::unroll_plan`).
