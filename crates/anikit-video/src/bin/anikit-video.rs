@@ -268,6 +268,9 @@ fn main() -> ExitCode {
         println!("anikit-video {}", env!("CARGO_PKG_VERSION"));
         return ExitCode::SUCCESS;
     }
+    if let Some(code) = anikit_video::assetlib::run(&raw) {
+        return ExitCode::from(code as u8);
+    }
     if let Some(code) = anikit_video::music::run(&raw) {
         return ExitCode::from(code as u8);
     }
