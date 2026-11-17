@@ -339,7 +339,6 @@ impl Component for Dust {
             }
         }
         let mut o = Vec::new();
-        push_layer(&mut o, 1.0, Blend::Screen, Vec::new());
         if self.glow {
             for (x, y, r) in halos {
                 let hr = r * 5.0;
@@ -348,7 +347,6 @@ impl Component for Dust {
         }
         o.push(fill(dim, solid(alpha(c, 0.35))));
         o.push(fill(bright, solid(alpha(c, 0.85))));
-        o.push(Op::PopLayer);
         let _ = IDENTITY;
         o
     }

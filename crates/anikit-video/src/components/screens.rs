@@ -263,7 +263,9 @@ fn app(o: &mut Vec<Op>, s: &S, x: f32, y: f32, w: f32, h: f32, wide: bool) {
     border(&mut e, x, y, w, hh, fs * 0.9, alpha(s.acc, 0.4));
     let pad = fs * 1.4;
     let hsz = (fs * if wide { 1.8 } else { 1.3 }).min(hh * 0.22);
-    s.fit(&mut e, s.it(0, "Welcome"), hsz, 700, s.text, x + pad, y + pad + hsz * 0.9, w - 2.0 * pad);
+    // On wide screens the side panel starts at 62 % of the width.
+    let title_w = if wide { w * 0.62 - pad * 1.6 } else { w - 2.0 * pad };
+    s.fit(&mut e, s.it(0, "Welcome"), hsz, 700, s.text, x + pad, y + pad + hsz * 0.9, title_w);
     // Skeleton paragraph under the headline.
     let mut ly = y + pad + hsz * 1.6;
     for (k, f) in [0.86f32, 0.78, 0.55].iter().enumerate() {
