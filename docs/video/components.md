@@ -201,10 +201,10 @@ Pixel fields (`aurora`, `meshGradient`, `gradient`) are computed in linear light
 
 | Kind | Props |
 |---|---|
-| `meshGradient` | `colors` (3–6 blobs; default: an analogous set around the theme accent), `base` (default: theme background), `speed`, `warp` (0 gives round blobs, 1 swirls, 2 marbling), `scale` (blob size), `intensity` (default 0.8), `sheen` (satin folds lit from the top left; default 0.25, 1 is glossy silk), `vignette` (default 0.25), `seed`, `detail` (resolution multiplier), `rate` (keyframes per second; default 5 × speed) |
+| `meshGradient` | `colors` (3–6 blobs; default: an analogous set around the theme accent), `base` (default: theme background), `speed`, `warp` (0 gives round blobs, 1 swirls, 2 marbling), `scale` (blob size), `intensity` (default 0.8), `sheen` (satin folds lit from the top left, so the mesh reads as a material rather than a blob wash; default 0.85, 0 is matte), `vignette` (default 0.25), `seed`, `detail` (resolution multiplier), `rate` (keyframes per second; default 5 × speed) |
 | `aurora` | `colors` (from the lower edge upwards; default green → teal → rose), `sky` (`[top, horizon]`), `curtains` (1–5, default 3, near to far), `horizon` (lower edge of the nearest curtain, 0–1), `height`, `rays` (0 is a smooth glow, 1 is strongly rayed), `density` (ray fineness), `glow` (volumetric haze), `fold` (how much curtains bunch and fold), `sway` (flow-field bending of the rays), `stars` (0–1), `landscape` (mountain silhouette), `speed`, `intensity`, `seed`, `detail` |
 | `gradient` | `colors` (interpolated in OKLab), `kind` (`linear`, `radial` or `conic`), `angle`, `spin` (degrees per second), `center` (`[x, y]` fractions), `radius`, `smooth` (0 gives linear spacing, 1 an S-curve between stops) |
-| `grain` | `amount` (default 0.06), `size`, `rate` (new patterns per second; default 24), `softness` (0 is digital, 1 is soft film clumps), `blend` (`overlay` (default, luminance-weighted like film), `soft-light`, or `normal`, which is even and also shows in blacks), `seed` |
+| `grain` | `amount` (default 0.016: fine and cheap to encode, about 1.3× the file size of the same film without grain; 0.04 and up is visible film grain), `size`, `rate` (new positions per second; default every frame; 0 is static), `softness` (0 is crisp blue noise, 1 is soft film clumps), `blend` (`overlay` (default, luminance-weighted like film), `soft-light`, or `normal`, which is even and also shows in blacks), `seed` |
 | `grid` | `cell`, `color`, `lineWidth`, `major` (a brighter line every n cells), `fade`, `perspective` (a true 1/z floor with fog towards the horizon), `horizon`, `speed` (scroll), `reveal` (seconds to draw on), `glow` (line halo, or a horizon glow in perspective), `glowColor`, `scan` (seconds per sweep of a glowing scan line) |
 | `dots` | `spacing`, `radius`, `color`, `fade`, `shape` (`circle`, `square` or `plus`), `stagger` (hex packing), `drift` (`[x, y]` px/s), `wave` (a travelling ring of light), `waveColor`, `speed` |
 | `lightLeak` | `colors` (default: warm film amber, rose and gold), `intensity`, `speed`, `scale`, `streak` (anamorphic streaks; default 0.35), `position` (`edges`, `corner` or `top`), `blend` (`normal` or `screen`; screen costs a full-frame layer), `seed` |
@@ -213,10 +213,10 @@ Pixel fields (`aurora`, `meshGradient`, `gradient`) are computed in linear light
 
 Two looks per kind, for example:
 
-- `meshGradient`: `{}` (calm, theme-tinted) · `{"colors": ["#ff7a59", "#ffc36b", "#ff4f8b", "#6a2cff"], "base": "#1a0b2e", "sheen": 1, "warp": 1.4, "scale": 1.3, "intensity": 1}` (glossy silk)
+- `meshGradient`: `{}` (theme-tinted satin) · `{"colors": ["#ff7a59", "#ffc36b", "#ff4f8b", "#6a2cff"], "base": "#1a0b2e", "sheen": 1, "warp": 1.4, "scale": 1.3, "intensity": 1}` (glossy silk)
 - `aurora`: `{}` (three rayed curtains) · `{"curtains": 1, "rays": 0.3, "colors": ["#ff9a5c", "#ff4f8b", "#7a5cff"], "landscape": true, "stars": 1}` (one soft dusk ribbon over mountains)
 - `gradient`: `{}` (neutral) · `{"kind": "conic", "colors": ["#0f2027", "#2c5364", "#0f2027"], "center": [0.3, 0.7]}`
-- `grain`: `{}` · `{"amount": 0.12, "size": 1.6, "softness": 1, "blend": "normal", "rate": 12}` (heavy 16 mm)
+- `grain`: `{}` · `{"amount": 0.06, "size": 1.6, "softness": 1, "blend": "normal"}` (heavy 16 mm; costs bitrate)
 - `grid`: `{"major": 4}` (blueprint) · `{"perspective": true, "glow": 1, "glowColor": "#ff3df0", "scan": 3, "speed": 0.5}` (neon floor)
 - `dots`: `{}` · `{"shape": "plus", "spacing": 40, "stagger": true, "wave": true, "waveColor": "#3ddc97"}`
 - `lightLeak`: `{}` · `{"position": "corner", "colors": ["#7ad7ff", "#ffffff"], "streak": 1, "blend": "screen"}` (cool anamorphic flare)
