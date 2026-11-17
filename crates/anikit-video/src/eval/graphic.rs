@@ -112,7 +112,7 @@ pub fn arc(w: f64, h: f64, start: f64, end: f64, inner: f64) -> BezPath {
 pub const PATTERNS: &[&str] = &["tile", "dots", "grid", "lines", "stripes", "checker", "triangles", "diamonds", "crosses", "rings", "waves", "zigzag", "truchet", "arcs", "scales", "bricks"];
 
 /// Parameters of a pattern.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Pat {
     pub kind: String,
     pub spacing: f64,
@@ -129,6 +129,10 @@ pub struct Pat {
     pub stagger: bool,
     /// Stroke the `tile` motif at this width (px) instead of filling it (for open lines: squiggles, ticks).
     pub tile_stroke: f64,
+    /// Per-mark size multiplier as an expression of `u v x y d a r` (and `t`); line weight along lines, wave amplitude.
+    pub field: Option<super::expr::Expr>,
+    /// Time for `field` (seconds since the layer started).
+    pub t: f64,
 }
 
 fn default_mark(kind: &str) -> f64 {
@@ -168,6 +172,21 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
         }
         None => 1.0,
     };
+    // Field: a size multiplier per mark from its position (pattern space, centred on the box).
+    let half_diag = ((w * w + h * h).sqrt() * 0.5).max(1.0);
+    let field = |x: f64, y: f64, i: i64, j: i64| -> f64 {
+        match &pt.field {
+            None => 1.0,
+            Some(e) => {
+                let r = rnd(pt.seed ^ 0x5f35, ((i as u32) << 16) ^ (j as u32));
+                let f = [(x + w * 0.5) / w.max(1.0), (y + h * 0.5) / h.max(1.0), x, y, (x * x + y * y).sqrt() / half_diag, y.atan2(x), r];
+                let v = super::expr::Vars { t: pt.t, scene_t: pt.t, gt: pt.t, w, h, f, ..Default::default() };
+                let k = e.eval(&v);
+                if k.is_finite() { k.max(0.0) } else { 0.0 }
+            }
+        }
+    };
+    let sc = |x: f64, y: f64, i: i64, j: i64| ramp(x) * field(x, y, i, j);
     let mut fill = BezPath::new();
     let mut line = BezPath::new();
     let mut idx = 0u32;
@@ -202,7 +221,7 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
                         let (jx, jy) = jit(i, j);
                         let x = i as f64 * s + jx + if pt.stagger && j.rem_euclid(2) == 1 { s * 0.5 } else { 0.0 };
                         let y = j as f64 * s + jy;
-                        let k = pt.mark.unwrap_or(1.0) * ramp(x);
+                        let k = pt.mark.unwrap_or(1.0) * sc(x, y, i, j);
                         if k <= 0.001 {
                             continue;
                         }
@@ -223,7 +242,7 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
                     let (jx, jy) = jit(i, j);
                     let x = i as f64 * s + jx + if pt.stagger && j.rem_euclid(2) == 1 { s * 0.5 } else { 0.0 };
                     let y = j as f64 * s + jy;
-                    let r = 0.5 * mark * s * ramp(x);
+                    let r = 0.5 * mark * s * sc(x, y, i, j);
                     if r > 0.05 {
                         fill.extend(kurbo::Circle::new((x, y), r).path_elements(0.05));
                     }
@@ -236,7 +255,7 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
                     let (jx, jy) = jit(i, j);
                     let x = i as f64 * s + jx;
                     let y = j as f64 * s + jy;
-                    let k = mark * ramp(x);
+                    let k = mark * sc(x, y, i, j);
                     match pt.kind.as_str() {
                         "diamonds" => {
                             let r = 0.5 * s * k;
@@ -292,6 +311,7 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
                             let x = x0 + k as f64 * wl / steps_per as f64;
                             let ph = k as f64 / steps_per as f64 * TAU;
                             let dy = if pt.kind == "waves" { ph.sin() * amp } else if k % 2 == 0 { -amp } else { amp };
+                            let dy = if pt.field.is_some() { dy * field(x, y, k, j) } else { dy };
                             if k == 0 {
                                 line.move_to((x, y + dy))
                             } else {
@@ -312,7 +332,22 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
                     }
                 }
             }
-            if pt.ramp.is_some() && matches!(pt.kind.as_str(), "lines" | "stripes") {
+            if pt.field.is_some() && matches!(pt.kind.as_str(), "lines" | "stripes") {
+                // Field-driven weight (op art): each line is a band whose width follows the field along it.
+                line = BezPath::new();
+                let step = (s * 0.25).clamp(2.0, 8.0);
+                let m = ((2.0 * half) / step).ceil() as i64;
+                for j in lo..=hi {
+                    let y = j as f64 * s;
+                    let hw = |k: i64| {
+                        let x = -half + k as f64 * step;
+                        (x, 0.5 * s * mark * sc(x, y, k, j))
+                    };
+                    let mut pts: Vec<(f64, f64)> = (0..=m).map(|k| { let (x, a) = hw(k); (x, y - a) }).collect();
+                    pts.extend((0..=m).rev().map(|k| { let (x, a) = hw(k); (x, y + a) }));
+                    poly(&mut fill, &pts);
+                }
+            } else if pt.ramp.is_some() && matches!(pt.kind.as_str(), "lines" | "stripes") {
                 // Ramped line weight: build each line as a tapered quad instead.
                 line = BezPath::new();
                 for j in lo..=hi {
@@ -328,7 +363,7 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
                     let (jx, jy) = jit(i, j);
                     let x = i as f64 * s + jx;
                     let y = j as f64 * s + jy;
-                    let arm = s * 0.25 * ramp(x);
+                    let arm = s * 0.25 * sc(x, y, i, j);
                     line.move_to((x - arm, y));
                     line.line_to((x + arm, y));
                     line.move_to((x, y - arm));
@@ -343,7 +378,7 @@ pub fn pattern(w: f64, h: f64, pt: &Pat) -> BezPath {
                     if pt.kind == "rings" {
                         let x = i as f64 * s + jx;
                         let y = j as f64 * s + jy;
-                        line.extend(kurbo::Circle::new((x, y), s * 0.35 * ramp(x)).path_elements(0.05));
+                        line.extend(kurbo::Circle::new((x, y), s * 0.35 * sc(x, y, i, j)).path_elements(0.05));
                     } else {
                         let x = i as f64 * s + if j.rem_euclid(2) == 0 { 0.0 } else { s * 0.5 } + jx;
                         let y = j as f64 * s * 0.5 + jy;
@@ -408,7 +443,7 @@ mod tests {
     fn patterns_are_deterministic_and_cover() {
         for k in PATTERNS {
             let tile = (*k == "tile").then(|| BezPath::from_svg("M-10 -10 L10 -10 L0 12 Z").unwrap());
-            let pt = Pat { kind: k.to_string(), spacing: 40.0, mark: None, angle: 15.0, seed: 2, jitter: 0.0, ramp: None, tile, turns: 4, stagger: true, tile_stroke: 0.0 };
+            let pt = Pat { kind: k.to_string(), spacing: 40.0, mark: None, angle: 15.0, seed: 2, jitter: 0.0, ramp: None, tile, turns: 4, stagger: true, tile_stroke: 0.0, field: None, t: 0.0 };
             let a = pattern(400.0, 300.0, &pt);
             let b = pattern(400.0, 300.0, &pt);
             assert_eq!(a, b, "{k}");

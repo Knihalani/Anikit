@@ -329,6 +329,8 @@ pub(crate) struct Node {
     pub glow: Option<Filter>,
     /// Image treatments (tone map, halftone), applied first.
     pub treat: Vec<Filter>,
+    /// A pattern whose `field` reads `t`: regenerated every frame (pattern, box size).
+    pub live_pattern: Option<Arc<(graphic::Pat, [f64; 2])>>,
     /// First of 5 animatable slots for the treatments (toneAmount, halftone cell/angle/gain, ink amount); 0 = none.
     pub treat_slot: u8,
     /// Stepped time in fps (0 = smooth): the layer animates "on twos" etc.
@@ -1216,8 +1218,12 @@ impl Evaluator {
         }
         match &n.kind {
             Kind::Shape { shape, fill, stroke, path } => {
-                let wiggled = match n.fx.as_deref() {
-                    Some(fx::Fx { wiggle: Some(w), wiggle_src, .. }) => {
+                let wiggled = match (n.fx.as_deref(), n.live_pattern.as_deref()) {
+                    (_, Some((pat, [pw, ph]))) => {
+                        let pt = graphic::Pat { t: lt as f64, ..pat.clone() };
+                        Some(graphic::pattern(*pw, *ph, &pt))
+                    }
+                    (Some(fx::Fx { wiggle: Some(w), wiggle_src, .. }), None) => {
                         let mut p = take_path();
                         fx::wiggle_into(wiggle_src, *w, lt, &mut p);
                         Some(p)
@@ -1651,7 +1657,7 @@ fn node_static(n: &Node, a: f32, b: f32) -> bool {
         return true; // invisible throughout
     }
     let (la, lb) = (a - n.start, b - n.start);
-    if n.boil.is_some() || n.update.is_some() || n.exprs.iter().any(|(_, e)| e.dynamic) || n.cexprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
+    if n.boil.is_some() || n.live_pattern.is_some() || n.update.is_some() || n.exprs.iter().any(|(_, e)| e.dynamic) || n.cexprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
         return false;
     }
     match &n.kind {

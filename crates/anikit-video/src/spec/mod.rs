@@ -302,6 +302,11 @@ pub struct PatternSpec {
     pub stagger: Option<bool>,
     /// Stroke the `tile` motif at this width in px instead of filling it (open lines: squiggles, ticks, zigzags).
     pub tile_stroke: Option<f64>,
+    /// Size of each mark as an expression (multiplies `mark` and `ramp`): `u`, `v` (0..1 across the box), `x`, `y`
+    /// (px from the centre), `d` (0 centre … 1 corner), `a` (angle), `r` (random per mark), `t`, plus the usual functions.
+    /// On `lines`/`stripes` it sets the weight along each line (op art); on `waves`/`zigzag` the amplitude.
+    /// Using `t` regenerates the pattern every frame. E.g. `"0.5 + 0.5 * sin(d * 18 - t * 3)"`.
+    pub field: Option<String>,
 }
 
 /// `dots`: many points from an array or a CSV file (`x,y[,colour]` per line).

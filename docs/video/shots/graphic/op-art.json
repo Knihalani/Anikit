@@ -1,0 +1,9 @@
+{ "size": [1920, 1080], "fps": 30, "background": "#f2efe8",
+  "scenes": [ { "duration": 4, "layers": [
+    { "x": 480, "y": 540, "width": 960, "height": 1080, "fill": "#111",
+      "pattern": { "kind": "lines", "spacing": 22, "mark": 0.9, "field": "0.08 + 0.92 * (0.5 + 0.5 * sin(d * 22 - t * 2.5))" } },
+    { "x": 1440, "y": 540, "width": 960, "height": 1080, "fill": "#111",
+      "pattern": { "kind": "dots", "spacing": 26, "stagger": true, "mark": 1.05, "field": "smoothstep(0.15, 0.9, 0.5 + 0.5 * sin(x * 0.012 + sin(y * 0.01 + t) * 2))" } },
+    { "x": 1440, "y": 540, "width": 700, "height": 300, "fill": "#e2231a", "blend": "multiply",
+      "pattern": { "kind": "waves", "spacing": 18, "mark": 0.2, "field": "1.6 * (1 - u)" } }
+  ] } ] }

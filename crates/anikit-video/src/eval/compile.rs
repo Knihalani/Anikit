@@ -447,6 +447,7 @@ fn empty_node(kind: Kind) -> Node {
         glow: None,
         treat: Vec::new(),
         treat_slot: 0,
+        live_pattern: None,
         step: 0.0,
         boil: None,
         clip: false,
@@ -2493,7 +2494,7 @@ impl C<'_> {
                         let mut it = s.split_whitespace();
                         let kind = it.next().unwrap_or("dots").to_string();
                         let spacing = it.next().and_then(|x| x.trim_end_matches("px").parse::<f64>().ok()).unwrap_or(40.0);
-                        Some(super::graphic::Pat { kind, spacing, mark: None, angle: 0.0, seed: l.seed.unwrap_or(1), jitter: 0.0, ramp: None, tile: None, turns: 0, stagger: false, tile_stroke: 0.0 })
+                        Some(super::graphic::Pat { kind, spacing, mark: None, angle: 0.0, seed: l.seed.unwrap_or(1), jitter: 0.0, ramp: None, tile: None, turns: 0, stagger: false, tile_stroke: 0.0, field: None, t: 0.0 })
                     }
                     Some(spec::PatternValue::Full(f)) => Some(super::graphic::Pat {
                         kind: if f.kind.is_empty() && f.tile.is_some() { "tile".into() } else { f.kind.clone() },
@@ -2510,6 +2511,17 @@ impl C<'_> {
                         turns: f.turns.unwrap_or(0).min(360),
                         stagger: f.stagger.unwrap_or(false),
                         tile_stroke: f.tile_stroke.unwrap_or(0.0).max(0.0),
+                        field: match &f.field {
+                            Some(src) => match super::expr::Expr::compile_field(src.trim().trim_start_matches('='), self.w as f64, self.h as f64) {
+                                Ok(e) => Some(e),
+                                Err(e) => {
+                                    self.d.push(Diagnostic::error(format!("{pp}.field"), format!("field: {e}")));
+                                    None
+                                }
+                            },
+                            None => None,
+                        },
+                        t: 0.0,
                         spacing: f.spacing.unwrap_or(40.0),
                         mark: f.mark,
                         angle: f.angle.unwrap_or(0.0),
@@ -2529,6 +2541,9 @@ impl C<'_> {
                         }
                         if pt.spacing < 4.0 {
                             self.d.push(Diagnostic::warning(&pp, "spacing under 4 px turns to moiré after encoding"));
+                        }
+                        if pt.field.as_ref().is_some_and(|e| e.dynamic) {
+                            n.live_pattern = Some(Arc::new((pt.clone(), [w as f64, h as f64])));
                         }
                         super::graphic::pattern(w as f64, h as f64, &pt)
                     }

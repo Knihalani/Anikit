@@ -121,3 +121,16 @@ fn custom_tile_patterns() {
     let bad = parse_json(r#"{ "scenes": [ { "layers": [ { "pattern": { "kind": "tile" }, "width": 100, "height": 100 } ] } ] }"#).unwrap();
     assert!(Evaluator::new(&bad.spec, Options::default()).err().unwrap().to_string().contains("tile"));
 }
+
+#[test]
+fn pattern_fields() {
+    let path_at = |e: &Evaluator, t: f32| e.eval(t).ops.iter().find_map(|o| if let Op::Fill { path, .. } = o { Some(path.clone()) } else { None }).unwrap();
+    let fixed = ev(r#"{ "scenes": [ { "layers": [ { "pattern": { "kind": "dots", "spacing": 20, "field": "u" }, "width": 400, "height": 200 } ] } ] }"#);
+    assert_eq!(path_at(&fixed, 0.1), path_at(&fixed, 0.9));
+    let live = ev(r#"{ "scenes": [ { "duration": 2, "layers": [ { "pattern": { "kind": "lines", "spacing": 20, "field": "0.5 + 0.5 * sin(d * 10 - t * 3)" }, "width": 400, "height": 200 } ] } ] }"#);
+    assert_ne!(path_at(&live, 0.1), path_at(&live, 0.9));
+    assert_eq!(path_at(&live, 0.5), path_at(&live, 0.5));
+    // Field variables are only valid in fields.
+    let bad = parse_json(r#"{ "scenes": [ { "layers": [ { "shape": "rect", "x": "=u * 100" } ] } ] }"#).unwrap();
+    assert!(Evaluator::new(&bad.spec, Options::default()).err().unwrap().to_string().contains("field"));
+}

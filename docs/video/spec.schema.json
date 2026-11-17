@@ -3513,6 +3513,13 @@
             "null"
           ],
           "format": "double"
+        },
+        "field": {
+          "description": "Size of each mark as an expression (multiplies `mark` and `ramp`): `u`, `v` (0..1 across the box), `x`, `y`\n(px from the centre), `d` (0 centre … 1 corner), `a` (angle), `r` (random per mark), `t`, plus the usual functions.\nOn `lines`/`stripes` it sets the weight along each line (op art); on `waves`/`zigzag` the amplitude.\nUsing `t` regenerates the pattern every frame. E.g. `\"0.5 + 0.5 * sin(d * 18 - t * 3)\"`.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
