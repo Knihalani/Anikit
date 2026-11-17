@@ -16,6 +16,9 @@
 //! - Blurred layers (glows, shadows) sample only every σ/2, and sub-pixel
 //!   drift in scale or opacity is held at the centre value, so cached glyph
 //!   runs and filtered layers are reused across samples.
+//! - Image content (shader layers, 3D scenes, video frames) is made once per
+//!   frame: samples reuse the centre frame's pixels, blurred by the layer's
+//!   own movement only, so expensive layers never cost per sample.
 //!
 //! [`Renderer::set_brute_force_motion`] (and `Quality::Reference`) renders 64
 //! full frames instead: the ground truth `examples/mb_bench.rs` measures against.
@@ -224,6 +227,22 @@ fn changes(a: &[Op], b: &[Op], ra: &[Option<Rect>], rb: &[Option<Rect>], cut: f6
             event: true,
             vel: None,
         });
+    }
+}
+
+/// Image content (shader frames, 3D scenes, video) is costly to make: a
+/// sample shows the centre frame's pixels for each image op (matched in
+/// order), which still blurs by its own movement, so the content is never
+/// re-rendered per sample.
+fn freeze_images(ops: &mut [Op], center: &[Op]) {
+    let theirs = center.iter().filter_map(|o| if let Op::Image { image, .. } = o { Some(*image) } else { None });
+    let n = center.iter().filter(|o| matches!(o, Op::Image { .. })).count();
+    if ops.iter().filter(|o| matches!(o, Op::Image { .. })).count() != n {
+        return;
+    }
+    let mine = ops.iter_mut().filter_map(|o| if let Op::Image { image, .. } = o { Some(image) } else { None });
+    for (a, b) in mine.zip(theirs) {
+        *a = b;
     }
 }
 
@@ -591,6 +610,9 @@ impl Renderer {
                     }
                 }
                 snap(&mut l.ops[k..], &center.ops[k.min(center.ops.len())..], &rects[1]);
+                if !reference {
+                    freeze_images(&mut l.ops, &center.ops);
+                }
                 if full {
                     self.render(&l);
                 } else {

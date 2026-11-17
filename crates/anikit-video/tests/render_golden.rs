@@ -811,3 +811,32 @@ fn motion_blur_matches_brute_force() {
         assert!(worst <= 24 && mean < 0.5, "scene {k}: max {worst}, mean {mean:.3}");
     }
 }
+
+/// Image content (shader layers, 3D scenes) is fetched once per blurred
+/// frame, not per sub-frame sample, even when it changes over the shutter.
+#[test]
+fn motion_blur_fetches_image_content_once() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let assets = Arc::new(Assets::default());
+    let mut r = Renderer::new(assets);
+    let fetched = Arc::new(std::sync::Mutex::new(std::collections::HashSet::new()));
+    let calls = Arc::new(AtomicUsize::new(0));
+    let (f2, c2) = (fetched.clone(), calls.clone());
+    r.set_image_source(Arc::new(move |id: ImageId| {
+        c2.fetch_add(1, Ordering::Relaxed);
+        f2.lock().unwrap().insert(id.0);
+        let mut p = vello_cpu::Pixmap::new(16, 16);
+        p.data_as_u8_slice_mut().fill(200);
+        Some(Arc::new(p))
+    }));
+    // A "shader" whose frame id changes with time, moving fast, plus a moving card.
+    let mut eval = |t: f32| {
+        let x = 1200.0 * t;
+        list(vec![
+            Op::Image { image: ImageId(0x7000_0000 + (t * 1e4) as u32), dst: [0.0, 0.0, 16.0, 16.0], opacity: 1.0, transform: [1.0, 0.0, 0.0, 1.0, x, 40.0] },
+            card(x, 10.0, 20.0, 20.0, solid(1.0, 1.0, 1.0)),
+        ])
+    };
+    r.render_motion_blur(&mut eval, 0.05, 1.0 / 60.0);
+    assert_eq!(fetched.lock().unwrap().len(), 1, "image content fetched for {:?}", fetched.lock().unwrap());
+}
