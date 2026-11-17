@@ -45,6 +45,52 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};
 use trace::{Floor, FloorVis, Inst, Material, Quality, Scene, Shape, Tex};
 
+/// Spec shorthand, applied before parsing:
+/// - a layer `{ "scene3d": {...}, ...layer keys }` becomes
+///   `{ "component": "scene3d", "props": {...}, ...layer keys }`;
+/// - a scene `{ "scene3d": {...}, ... }` gets that layer first in its `layers`
+///   (full frame, behind everything else).
+pub fn shorthand(mut v: Value) -> Value {
+    fn layer(l: &mut Value) {
+        if let Value::Object(m) = l {
+            if let Some(props) = m.remove("scene3d") {
+                m.insert("component".into(), Value::from("scene3d"));
+                m.insert("props".into(), props);
+            }
+            if let Some(Value::Array(ls)) = m.get_mut("layers") {
+                ls.iter_mut().for_each(layer);
+            }
+            if let Some(Value::Array(ls)) = m.get_mut("children") {
+                ls.iter_mut().for_each(layer);
+            }
+        }
+    }
+    fn scene(s: &mut Value) {
+        if let Value::Object(m) = s {
+            if let Some(props) = m.remove("scene3d") {
+                let l = serde_json::json!({ "component": "scene3d", "props": props });
+                match m.get_mut("layers") {
+                    Some(Value::Array(ls)) => ls.insert(0, l),
+                    _ => {
+                        m.insert("layers".into(), Value::Array(vec![l]));
+                    }
+                }
+            }
+            if let Some(Value::Array(ls)) = m.get_mut("layers") {
+                ls.iter_mut().for_each(layer);
+            }
+            if let Some(Value::Array(ss)) = m.get_mut("scenes") {
+                ss.iter_mut().for_each(scene);
+            }
+        }
+    }
+    scene(&mut v);
+    if let Some(Value::Object(cs)) = v.get_mut("compositions") {
+        cs.values_mut().for_each(scene);
+    }
+    v
+}
+
 const TOP_KEYS: &[&str] = &[
     "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "vignette", "denoise", "lights", "fog", "physics",
 ];
@@ -818,6 +864,16 @@ mod tests {
         let _ = s.render(1.0, 1.0 / 30.0, 32, 18, None);
         let e = scene(json!({ "camera": { "target": "cra", "keys": [ { "t": 0, "pos": [0, 1, 5] } ] }, "objects": [ { "type": "box", "name": "car" } ] })).err().unwrap();
         assert!(e.contains("did you mean `car`"), "{e}");
+    }
+
+    #[test]
+    fn shorthand_expands_layers_and_scenes() {
+        let v = shorthand(json!({ "scenes": [ { "duration": 2, "scene3d": { "env": "cyc" }, "layers": [ "Hello" ] }, { "layers": [ { "scene3d": { "env": "neon" }, "opacity": 0.5 } ] } ] }));
+        assert_eq!(v["scenes"][0]["layers"][0]["component"], "scene3d");
+        assert_eq!(v["scenes"][0]["layers"][0]["props"]["env"], "cyc");
+        assert_eq!(v["scenes"][0]["layers"][1], "Hello");
+        assert_eq!(v["scenes"][1]["layers"][0]["props"]["env"], "neon");
+        assert_eq!(v["scenes"][1]["layers"][0]["opacity"], 0.5);
     }
 
     #[test]

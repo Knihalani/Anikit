@@ -18,6 +18,15 @@
 
 ## Start here (copy, then edit)
 
+The shortest form is a scene key. It renders full-frame behind the scene's other layers:
+
+```json
+{ "scenes": [ { "duration": 4, "scene3d": { "env": "studio", "camera": "push", "objects": [ { "text": "ANIKIT", "material": "chrome" } ] },
+                "layers": [ { "text": "Ray-traced", "y": "85%", "style": "subtitle" } ] } ] }
+```
+
+A layer can also be `{ "scene3d": {...}, "opacity": 0.8, ... }`, or the long form below:
+
 ```json
 { "component": "scene3d", "props": {
   "env": "cyc",
