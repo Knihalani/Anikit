@@ -588,6 +588,28 @@
             }
           ]
         },
+        "focus": {
+          "description": "Depth in focus (layers at this `depth` are sharp). Default 0. Animatable (focus pulls).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "aperture": {
+          "description": "Depth-of-field strength: blur σ in px per unit of |depth − focus|. Default 0 (off).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "animate": {
           "anyOf": [
             {
@@ -999,6 +1021,17 @@
             "difference"
           ],
           "description": "One of: normal, add, multiply, screen, overlay, darken, lighten, softLight, difference."
+        },
+        "depth": {
+          "description": "Distance from the focal plane (0 = the plane, positive = farther, negative = nearer).\nFarther layers move less when the camera pans (parallax) and blur with the camera's `aperture`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Num"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "shadow": {
           "anyOf": [
@@ -1488,7 +1521,14 @@
             "sparks",
             "snow",
             "dust",
+            "particle-text",
+            "morph",
+            "metaballs",
+            "god-rays",
+            "lens-flare",
             "model",
+            "text-3d",
+            "globe",
             "wipe",
             "iris",
             "glitch",
@@ -1501,9 +1541,15 @@
             "marquee",
             "spotlight",
             "keys",
+            "visualizer",
+            "ken-burns",
+            "tile-reveal",
+            "kinetic-grid",
+            "reactions",
+            "card-stack",
             "lottie"
           ],
-          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, model, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, lottie."
+          "description": "Component kind. One of: code, terminal, bar-chart, line-chart, area-chart, donut-chart, pie-chart, counter, stat, phone, laptop, browser, card, button, toggle, badge, avatar, avatar-stack, progress-bar, progress-ring, toast, cursor, tooltip, callout, arrow, lower-third, title-card, mesh-gradient, aurora, grain, grid, dots, light-leak, bokeh, starfield, gradient, confetti, sparks, snow, dust, particle-text, morph, metaballs, god-rays, lens-flare, model, text-3d, globe, wipe, iris, glitch, chat, prompt, checklist, quote, table, timeline, marquee, spotlight, keys, visualizer, ken-burns, tile-reveal, kinetic-grid, reactions, card-stack, lottie."
         },
         "props": true,
         "progress": {

@@ -212,3 +212,31 @@ fn caption_word_highlight() {
     let b = colors(1.5);
     assert!(b[1][0] > 0.95 && b[1][1] < 0.1 && b[0][1] > 0.8, "{b:?}");
 }
+
+#[test]
+fn depth_of_field_and_parallax() {
+    let ev = build(r##"{ "scenes": [ { "duration": 2,
+        "camera": { "aperture": 10, "animate": [ { "to": { "focus": 2, "x": 100 }, "at": 0, "duration": 1, "ease": "linear" } ] },
+        "layers": [ { "shape": "rect", "id": "near", "anchor": "topLeft", "x": 0, "y": 0, "width": 10, "height": 10 },
+                    { "shape": "rect", "id": "far", "anchor": "topLeft", "x": 0, "y": 0, "width": 10, "height": 10, "depth": 2 } ] } ] }"##);
+    let info = |t: f32| {
+        let dl = ev.eval(t);
+        let mut blurs = Vec::new();
+        let mut xs = Vec::new();
+        for o in &dl.ops {
+            match o {
+                Op::PushLayer { filters, .. } => blurs.push(filters.iter().find_map(|f| match f { anikit_video::dl::Filter::Blur(r) => Some(*r), _ => None }).unwrap_or(0.0)),
+                Op::RoundRect { transform, .. } => xs.push(transform[4]),
+                _ => {}
+            }
+        }
+        (blurs, xs)
+    };
+    // t=0: focus 0 → near sharp (no layer), far blurred by |2-0|*10 = 20.
+    let (b, _) = info(0.0);
+    assert_eq!(b, vec![20.0]);
+    // t=1: focus 2 → far sharp, near blurred 20; camera x=100: near moves -100, far moves -100/(1+2).
+    let (b, xs) = info(1.0);
+    assert_eq!(b, vec![20.0]);
+    assert!((xs[0] + 100.0).abs() < 0.01 && (xs[1] + 33.333).abs() < 0.01, "{xs:?}");
+}

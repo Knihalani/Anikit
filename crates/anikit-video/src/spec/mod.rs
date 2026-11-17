@@ -238,6 +238,10 @@ pub struct Camera {
     pub y: Option<Num>,
     pub zoom: Option<Num>,
     pub rotation: Option<Num>,
+    /// Depth in focus (layers at this `depth` are sharp). Default 0. Animatable (focus pulls).
+    pub focus: Option<Num>,
+    /// Depth-of-field strength: blur σ in px per unit of |depth − focus|. Default 0 (off).
+    pub aperture: Option<Num>,
     #[serde(default, deserialize_with = "de::opt_tweens")]
     #[schemars(with = "Option<de::AnimateItem>")]
     pub animate: Option<Vec<Tween>>,
@@ -300,6 +304,9 @@ pub struct Layer {
     pub opacity: Option<Num>,
     pub blur: Option<Num>,
     pub blend: Option<String>,
+    /// Distance from the focal plane (0 = the plane, positive = farther, negative = nearer).
+    /// Farther layers move less when the camera pans (parallax) and blur with the camera's `aperture`.
+    pub depth: Option<Num>,
     pub shadow: Option<Shadow>,
     pub glow: Option<Glow>,
     /// `true` clips children to the layer box, or a clip shape.

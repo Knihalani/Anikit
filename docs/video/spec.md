@@ -169,6 +169,13 @@ Defaults: duration 0.5 s (glitch 0.3 s), ease `inOutCubic`.
 
 `x`/`y` pan the view (px; positive `x` moves the camera right, so content moves left), `zoom` scales about the centre of the frame, and `rotation` is in degrees. `shake` adds smooth noise (`amount` px, `frequency` Hz), optionally limited to a window that decays to zero at its end.
 
+**Depth (parallax and depth of field).** Give layers a `depth` (0 = the focal plane, positive = farther, negative = nearer). When the camera pans, a layer moves by `1 / (1 + depth)` of the pan, so backgrounds drift slower than the foreground. Set `camera.aperture` (blur σ in px per unit of |depth − focus|) to blur layers away from `camera.focus`. `depth`, `focus` and `aperture` are all animatable, which gives you focus pulls:
+
+```json
+"camera": { "aperture": 8, "animate": [ { "to": { "focus": 2, "x": 120 }, "duration": 2, "ease": "inOutSine" } ] },
+"layers": [ { "component": "aurora", "depth": 3 }, { "text": "Sharp, then soft", "style": "title" }, { "src": "phone.png", "depth": 2 } ]
+```
+
 ## Layers
 
 Every layer has a `type`. You may leave it out when it is obvious: a layer with `text` is `text`, with `shape` is `shape`, with `src` is `image` (or `video` for `.mp4/.mov/.webm`), with `children` is `box`, with `layers` is `group`, and with `component` is `component`.
@@ -186,6 +193,7 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `skewX`, `skewY` | degrees | `0` | |
 | `opacity` | 0..1 | `1` | |
 | `blur` | px | `0` | Gaussian blur of the layer. |
+| `depth` | number | `0` | Parallax and depth of field (see **Camera**). |
 | `blend` | string | `"normal"` | `normal`, `add`, `multiply`, `screen`, `overlay`, `darken`, `lighten`, `softLight`, `difference`. |
 | `shadow` | shadow | none | `{ "x": 0, "y": 12, "blur": 32, "color": "#0008" }` or `true` for a soft default. |
 | `glow` | glow | none | `{ "radius": 24, "intensity": 1, "color": "$primary" }` or a colour string. |
@@ -327,7 +335,7 @@ Three layers of control, from simplest to most precise.
 - `spring`: instead of `ease` + `duration`: a preset (`gentle`, `wobbly`, `stiff`, `slow`, `molasses`, `snappy`, `bouncy`) or `{ "stiffness": 180, "damping": 12, "mass": 1 }`; duration becomes the settle time.
 - `repeat` (count, `-1` = forever) and `yoyo` (bool) repeat a tween.
 
-**Animatable properties:** `x`, `y`, `width`, `height`, `scale`, `scaleX`, `scaleY`, `rotation`, `skewX`, `skewY`, `opacity`, `blur`, `radius`, `fill`/`color` (interpolated in OKLab), `stroke`(colour), `strokeWidth`, `trimStart`, `trimEnd`, `reveal`, `value`, `wipe`, `zoom` (camera).
+**Animatable properties:** `x`, `y`, `width`, `height`, `scale`, `scaleX`, `scaleY`, `rotation`, `skewX`, `skewY`, `opacity`, `blur`, `radius`, `fill`/`color` (interpolated in OKLab), `stroke`(colour), `strokeWidth`, `trimStart`, `trimEnd`, `reveal`, `value`, `wipe`, `depth`; camera: `zoom`, `focus`, `aperture`.
 
 **Easings:** `linear`, `ease`, `easeIn`, `easeOut`, `easeInOut`; Penner names as `in`/`out`/`inOut` + `Sine`, `Quad`, `Cubic`, `Quart`, `Quint`, `Expo`, `Circ`, `Back`, `Elastic`, `Bounce` (e.g. `outCubic`, `inOutBack`; `easeOutCubic` also works); `cubicBezier(0.2, 0, 0, 1)`; `steps(4)`; springs `gentle`, `wobbly`, `stiff`, `slow`, `molasses`, `snappy`, `bouncy`.
 

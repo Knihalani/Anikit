@@ -236,7 +236,10 @@ impl Evaluator {
                     }
                 }
             }
-            scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers });
+            let depth = camera.base[prop::APERTURE] != 0.0
+                || camera.tracks.iter().any(|t| t.slot as usize == prop::APERTURE)
+                || layers.iter().any(|n| n.base[prop::DEPTH] != 0.0 || n.tracks.iter().any(|t| t.slot as usize == prop::DEPTH) || n.exprs.iter().any(|e| e.0 as usize == prop::DEPTH));
+            scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth });
             t = start + dur;
             prev_dur = dur;
         }
@@ -763,6 +766,8 @@ impl C<'_> {
             self.set(&mut camera, prop::Y, cam.y.as_ref(), &format!("{cp}.y"), self.h);
             self.set(&mut camera, prop::ZOOM, cam.zoom.as_ref(), &format!("{cp}.zoom"), 1.0);
             self.set(&mut camera, prop::ROT, cam.rotation.as_ref(), &format!("{cp}.rotation"), 1.0);
+            self.set(&mut camera, prop::FOCUS, cam.focus.as_ref(), &format!("{cp}.focus"), 1.0);
+            self.set(&mut camera, prop::APERTURE, cam.aperture.as_ref(), &format!("{cp}.aperture"), 1.0);
             let mut tw = Vec::new();
             if let Some(a) = &cam.animate {
                 for (k, t) in a.iter().enumerate() {
@@ -1048,6 +1053,7 @@ impl C<'_> {
         self.set(&mut n, prop::OPACITY, l.opacity.as_ref(), &format!("{path}.opacity"), 1.0);
         self.set(&mut n, prop::BLUR, l.blur.as_ref(), &format!("{path}.blur"), ph);
         self.set(&mut n, prop::PROGRESS, l.progress.as_ref(), &format!("{path}.progress"), 1.0);
+        self.set(&mut n, prop::DEPTH, l.depth.as_ref(), &format!("{path}.depth"), 1.0);
         if let Some(b) = &l.blend {
             n.blend = match b.as_str() {
                 "normal" => Blend::Normal,
