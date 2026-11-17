@@ -137,6 +137,9 @@ def ph_textures():
         for r in ("1k", "2k"):
             files = []
             for role, key in PH_MAPS.items():
+                if role == "albedo" and key not in f:
+                    # Colour variants (`col_1`, `col_01`…): the first one.
+                    key = next((k for k in sorted(f) if k.lower().startswith("col")), key)
                 h = f.get(key, {}).get(r, {}).get("jpg")
                 if role == "displacement":
                     h = f.get(key, {}).get(r, {}).get("png") or h
@@ -155,6 +158,19 @@ def ph_textures():
         if dim:
             e["size_m"] = round(dim[0] / 1000.0, 3)  # real-world width in metres
         out.append(e)
+    return out
+
+
+def alpha_maps(slug, f, r):
+    """Cutout maps (leaves): Poly Haven's glTF uses JPEG colour, so alpha lives
+    in separate `*_alpha` files next to the textures (`<slug>_<part>_alpha_<r>.png`)."""
+    out = []
+    for key in sorted(f):
+        if key.lower().endswith("alpha"):
+            h = f[key].get(r, {}).get("png") or f[key].get(r, {}).get("jpg")
+            if h:
+                ext = h["url"].rsplit(".", 1)[1]
+                out.append({"path": f"textures/{slug}_{key}_{r}.{ext}", "url": h["url"], "size": h["size"], "md5": h["md5"]})
     return out
 
 
@@ -177,6 +193,7 @@ def ph_models():
             files = [{"path": g["url"].rsplit("/", 1)[1], "url": g["url"], "size": g["size"], "md5": g["md5"], "role": "main"}]
             for p, h in sorted(g.get("include", {}).items()):
                 files.append({"path": p, "url": h["url"], "size": h["size"], "md5": h["md5"]})
+            files += alpha_maps(k, f, r)
             res[r] = files
         if not res:
             continue

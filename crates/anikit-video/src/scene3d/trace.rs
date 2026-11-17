@@ -206,6 +206,19 @@ impl Shape {
             }),
         }
     }
+    /// Texture coordinates of a hit from [`Shape::hit_t`].
+    #[inline]
+    fn uv_at(&self, h: (f32, u32, f32, f32)) -> [f32; 2] {
+        match self {
+            Shape::Mesh(b) => {
+                let tr = &b.tris[h.1 as usize];
+                let w = 1.0 - h.2 - h.3;
+                [tr.uv[0][0] * w + tr.uv[1][0] * h.2 + tr.uv[2][0] * h.3, tr.uv[0][1] * w + tr.uv[1][1] * h.2 + tr.uv[2][1] * h.3]
+            }
+            Shape::Sphere => [0.0, 0.0],
+        }
+    }
+
     /// Object-space direction of +u on a triangle (spheres: around +y).
     fn tangent(&self, tri: u32, n: V3) -> V3 {
         match self {
@@ -325,6 +338,8 @@ pub struct Floor {
     /// pool centre (equal = never).
     pub fade: (f32, f32),
     pub vis: Option<Arc<FloorVis>>,
+    /// PBR texture set on the ground (`Material::pbr` numbering), 0 = none.
+    pub pbr: u32,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -806,7 +821,7 @@ fn refract(d: V3, n: V3, eta: f32) -> Option<V3> {
 impl Scene {
     pub fn new(shapes: Vec<Shape>, mats: Vec<Material>, insts: Vec<Inst>, env: Env, floor: Option<Floor>) -> Scene {
         let mut s = Scene {
-            pbr: if mats.iter().any(|m| m.pbr != 0) { super::pbr::snapshot() } else { Vec::new() },
+            pbr: if mats.iter().any(|m| m.pbr != 0) || floor.as_ref().is_some_and(|f| f.pbr != 0) { super::pbr::snapshot() } else { Vec::new() },
             texel_angle: 1.0 / 1000.0,
             shapes,
             mats,
@@ -865,6 +880,32 @@ impl Scene {
         (lo, hi)
     }
 
+    /// The texture set whose alpha cuts this instance out, if any.
+    #[inline]
+    fn cutout(&self, ob: &Inst) -> Option<&super::pbr::PbrSet> {
+        let m = &self.mats[ob.mat as usize];
+        if m.pbr == 0 {
+            return None;
+        }
+        self.pbr.get(m.pbr as usize - 1).filter(|s| s.alpha.is_some()).map(|s| &**s)
+    }
+
+    /// Closest object-space hit, skipping cut-out texels (a few layers deep).
+    #[inline]
+    fn hit_obj(&self, ob: &Inst, lo: V3, ld: V3, tm: f32) -> Option<(f32, u32, f32, f32)> {
+        let shape = &self.shapes[ob.shape as usize];
+        let Some(set) = self.cutout(ob) else { return shape.hit_t(lo, ld, EPS, tm) };
+        let mut tmin = EPS;
+        for _ in 0..12 {
+            let h = shape.hit_t(lo, ld, tmin, tm)?;
+            if set.solid(shape.uv_at(h)) {
+                return Some(h);
+            }
+            tmin = h.0 + 1e-5 * (1.0 + h.0);
+        }
+        None
+    }
+
     fn trace(&self, o: V3, d: V3, tmax: f32) -> Option<Surf> {
         self.trace_f(o, d, tmax, false)
     }
@@ -893,7 +934,7 @@ impl Scene {
                 return tm;
             }
             let (lo, ld) = self.to_object(k as usize, o, d);
-            if let Some(hh) = self.shapes[ob.shape as usize].hit_t(lo, ld, EPS, tm) {
+            if let Some(hh) = self.hit_obj(ob, lo, ld, tm) {
                 obj = Some((k, lo, ld, hh));
                 hh.0
             } else {
@@ -928,7 +969,11 @@ impl Scene {
                 return tm;
             }
             let (lo, ld) = self.to_object(k as usize, o, d);
-            if self.shapes[ob.shape as usize].occluded(lo, ld, EPS, tm) {
+            let occ = match self.cutout(ob) {
+                Some(_) => self.hit_obj(ob, lo, ld, tm).is_some(),
+                None => self.shapes[ob.shape as usize].occluded(lo, ld, EPS, tm),
+            };
+            if occ {
                 let m = &self.mats[ob.mat as usize];
                 if m.transmission > 0.0 {
                     // Glass: about 85% through each pane (two interfaces).
@@ -1058,13 +1103,29 @@ impl Scene {
         let r2d = dx * dx + dz * dz;
         let pool = if f.pool.2 > 0.0 { (-r2d / (f.pool.2 * f.pool.2)).exp() } else { 1.0 };
         let (ll, _) = if self.lights.is_empty() { (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)) } else { self.local_lights(p, up, scale(d, -1.0), 1.0, v3(0.0, 0.0, 0.0)) };
-        let dif = Diffuse { alb: f.color, amb: add(self.up_light.0, ll), key: scale(self.up_light.1, pool * self.caustic(p)), ao, vk: vk * ao.sqrt(), spec: v3(0.0, 0.0, 0.0) };
+        // A textured ground: albedo, AO, roughness (reflection strength) and
+        // normal-map shading of the key, planar in world x/z.
+        let (alb, key_k, refl_k) = match self.pbr.get((f.pbr as usize).wrapping_sub(1)).filter(|_| f.pbr != 0) {
+            Some(set) => {
+                let footprint = s.t * self.texel_angle / (-d.y).abs().max(0.08);
+                let x = set.sample(v3(p.x, 0.0, p.z), up, [0.0, 0.0], v3(1.0, 0.0, 0.0), footprint, |v| v);
+                let key_k = match (x.n, self.env.key_box()) {
+                    (Some(n), Some(k)) => (dot(n, k.c).max(0.0) / dot(up, k.c).max(0.05)).min(2.0),
+                    _ => 1.0,
+                };
+                // Rough patches reflect less (relative to the floor's own roughness).
+                let refl_k = x.rough.map(|r| ((1.0 - r) / (1.0 - f.roughness).max(0.05)).clamp(0.0, 1.5)).unwrap_or(1.0);
+                (scale(mul(f.color, x.base), x.ao), key_k, refl_k)
+            }
+            None => (f.color, 1.0, 1.0),
+        };
+        let dif = Diffuse { alb, amb: add(self.up_light.0, ll), key: scale(self.up_light.1, pool * self.caustic(p) * key_k), ao, vk: vk * ao.sqrt(), spec: v3(0.0, 0.0, 0.0) };
         let fade = if f.fade.1 > f.fade.0 { smoothstep(f.fade.0, f.fade.1, r2d.sqrt()) } else { 0.0 };
         // Reflection: Fresnel lacquer plus an optional mirror boost.
         let nv = (-d.y).clamp(1e-4, 1.0);
         let fr = 0.04 + 0.96 * (1.0 - nv).powi(5);
         // (The fade to backdrop is applied by the caller, after any blur.)
-        let k = (fr + f.mirror * (1.0 - fr)) * f.reflect;
+        let k = (fr + f.mirror * (1.0 - fr)) * f.reflect * refl_k;
         let mut refl = v3(0.0, 0.0, 0.0);
         let mut dist = 0.0;
         if k > 1e-3 {

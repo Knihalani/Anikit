@@ -74,6 +74,9 @@ fn index_is_curated_pinned_and_cc0() {
         *by_kind.entry(e.kind.as_str()).or_default() += 1;
         if e.kind != "lut" {
             assert!(e.res.contains_key(&e.default), "{}: default res", e.id);
+            if e.kind == "texture" && !e.id.starts_with("ambientcg:") {
+                assert!(e.res.values().all(|fs| fs.iter().any(|f| f.role.as_deref() == Some("albedo"))), "{}: no albedo map", e.id);
+            }
             for f in e.res.values().flatten() {
                 assert!(f.md5.is_some() || f.sha256.is_some(), "{}: {} is not pinned", e.id, f.url);
                 assert!(f.url.starts_with("https://"), "{}", f.url);

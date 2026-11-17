@@ -165,6 +165,17 @@ Not every shot should be a chrome product on a white cyc. One word changes the w
 
 Cost: the styles shade in the same pass as PBR, so they cost the same or less. Outlines add about 30 ms per 1080p frame (measured: toon 1.03–1.07 s with outlines, 1.00 s without). Example 1080p traces on 4 cores: toon 0.70 s, ink 0.97 s, clay/paper/gouache about 0.66 s, city 1.44 s (four shadowed lights).
 
+## Real-world light, materials and models (CC0 library)
+
+Photographed light and scanned surfaces, by name (details: `anikit-video docs assets`; find them with `anikit-video assets search <words> --type hdri|texture|model|lut`):
+
+- **`env: {"hdri": "polyhaven:hdri/<slug>", "rotate": 0, "exposure": 0, "background": true}`**: the HDRI lights the scene, appears in reflections and behind the subject (`"blur"` softens it like a long lens; `false` keeps the scene's own backdrop). The sun, or a studio's brightest compact lamp, is lifted out of the map and becomes the traced key, so it casts real shadows; the rest is pre-filtered for rough reflections and projected to 9 SH terms for diffuse. The scene is exposed for the light around the horizon, and the default floor takes the albedo that matches the HDRI's own ground, so it melts into the photographed horizon. `exposure` offsets in stops; `key: false` keeps the sun in the map.
+- **`material: {"texture": "ambientcg:Wood049", "scale": 1}`**: a PBR set (albedo, normal, roughness, AO, metalness) on any object, triplanar in object space (no UVs, nothing swims as it moves), mip-mapped by ray footprint. `scale` 1 is the texture's real-world size; `color` tints; an explicit `roughness`/`metallic` overrides the maps; `"mapping": "uv"` uses mesh UVs; `textureRotate`, `normalStrength`.
+- **`floor: {"texture": "ambientcg:WoodFloor051", "scale": 1}`**: a textured ground (albedo, AO, roughness-varied reflection, normal-shaded key); `color` tints it.
+- **`{"type": "model", "src": "polyhaven:model/<slug>"}`**: textured glTF (base colour, normal, metal-roughness, occlusion; alpha cutouts for leaves). Any `.glb`/`.gltf` path works the same way.
+
+Stills (spec beside each in `examples/video/asset-library/`): `docs/video/shots/asset-library/` holds one scene under four HDRIs (`hdri-sheet.jpg`), six materials, three models and six film LUTs. 1080p traces: 1.3 s per HDRI shot and 2.2 s for the textured models, on 4 cores. The first use downloads (1.5 MB for a 1k HDRI, 16–25 MB for a 2k material); later uses read the cache.
+
 ## Rules that keep it looking expensive
 
 1. **Chrome needs something dark to reflect.** On `cyc`, add a black `card` in front of the subject or slightly above the camera. On `studio`, it already has contrast.
