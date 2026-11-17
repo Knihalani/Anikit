@@ -49,6 +49,10 @@ pub struct Frame<'a> {
     pub channels: [Option<&'a Texture>; 4],
     /// 2×2 supersampling (four shader invocations per output pixel).
     pub supersample: bool,
+    /// With `supersample`: shade once per pixel first and supersample only
+    /// pixels that differ from one of their 8 neighbours by more than [`ADAPTIVE_THRESHOLD`]
+    /// (edges, highlights, fine detail). Smooth regions keep the centre sample.
+    pub adaptive: bool,
     /// Treat `fragColor.a` as coverage (straight alpha). When false the
     /// output is opaque, as on Shadertoy.
     pub alpha: bool,
@@ -71,6 +75,7 @@ impl<'a> Frame<'a> {
             uniforms: &[],
             channels: [None; 4],
             supersample: false,
+            adaptive: true,
             alpha: false,
             dither: false,
         }
@@ -244,8 +249,63 @@ impl Shader {
     pub fn render_f32(&self, f: &Frame) -> Vec<[f32; 4]> {
         let (w, h) = (f.width as usize, f.height as usize);
         let mut out = vec![[0.0f32; 4]; w * h];
-        self.run(f, &mut out, w, |dst, px, _, _| *dst = px);
+        if f.supersample && f.adaptive {
+            let mut f1 = f.clone();
+            f1.supersample = false;
+            self.run(&f1, &mut out, w, |dst, px, _, _| *dst = px);
+            self.refine(f, &mut out, w, h);
+        } else {
+            self.run(f, &mut out, w, |dst, px, _, _| *dst = px);
+        }
         out
+    }
+
+    /// Adaptive supersampling: re-shade, with 2×2 sub-samples, every pixel that
+    /// differs from any of its 8 neighbours by more than the threshold in any channel.
+    fn refine(&self, f: &Frame, out: &mut [[f32; 4]], w: usize, h: usize) {
+        let th = ADAPTIVE_THRESHOLD;
+        let src: &[[f32; 4]] = out;
+        let differs = |a: [f32; 4], b: [f32; 4]| (0..4).any(|k| (a[k].clamp(0.0, 1.0) - b[k].clamp(0.0, 1.0)).abs() > th);
+        let flags: Vec<bool> = (0..w * h)
+            .into_par_iter()
+            .map(|i| {
+                let (x, y) = (i % w, i / w);
+                let c = src[i];
+                let (x0, x1) = (x.saturating_sub(1), (x + 1).min(w - 1));
+                let (y0, y1) = (y.saturating_sub(1), (y + 1).min(h - 1));
+                (y0..=y1).any(|yy| (x0..=x1).any(|xx| differs(c, src[yy * w + xx])))
+            })
+            .collect();
+        let mut fs = f.clone();
+        fs.supersample = true;
+        let uni = self.uniform_buffer(&fs);
+        let env = self.env(&fs);
+        let func = self.kernel.func;
+        let env_ptr = &env as *const Env as usize;
+        let uni_ptr = uni.as_ptr() as usize;
+        let hf = h as f32;
+        out.par_chunks_mut(w).enumerate().for_each_init(Vec::new, |buf: &mut Vec<f32>, (y, row)| {
+            let fl = &flags[y * w..y * w + w];
+            let mut x = 0;
+            while x < w {
+                if !fl[x] {
+                    x += 1;
+                    continue;
+                }
+                let s = x;
+                while x < w && fl[x] {
+                    x += 1;
+                }
+                let n = x - s;
+                buf.resize(n * 16, 0.0);
+                // SAFETY: as in `run`; one quad per pixel in supersample mode.
+                unsafe { func(env_ptr as *const Env, uni_ptr as *const u32, s as f32 + 0.5, hf - y as f32 - 0.5, n as i32, buf.as_mut_ptr()) };
+                for q in 0..n {
+                    let b = &buf[q * 16..q * 16 + 16];
+                    row[s + q] = std::array::from_fn(|k| (0..4).map(|l| sanitize(b[k * 4 + l])).sum::<f32>() * 0.25);
+                }
+            }
+        });
     }
 
     /// Shade into premultiplied RGBA8 (`width × height × 4` bytes), the
@@ -257,7 +317,7 @@ impl Shader {
         let dither = f.dither;
         let opaque = std::sync::atomic::AtomicBool::new(true);
         let px: &mut [[u8; 4]] = bytemuck_rgba(&mut out[..w * h * 4]);
-        self.run(f, px, w, |dst, c, x, y| {
+        let convert = |dst: &mut [u8; 4], c: [f32; 4], x: usize, y: usize| {
             let q = |v: f32| -> f32 {
                 if v > 0.0 {
                     v.min(1.0)
@@ -273,7 +333,17 @@ impl Shader {
             } else {
                 vals.map(|v| (v * 255.0 + 0.5) as u8)
             };
-        });
+        };
+        if f.supersample && f.adaptive {
+            let fl = self.render_f32(f);
+            px.par_chunks_mut(w).zip(fl.par_chunks(w)).enumerate().for_each(|(y, (row, src))| {
+                for x in 0..w {
+                    convert(&mut row[x], src[x], x, y);
+                }
+            });
+        } else {
+            self.run(f, px, w, convert);
+        }
         if alpha {
             let any_t = out[..w * h * 4].par_chunks(4 * 1024).any(|c| c.chunks_exact(4).any(|p| p[3] != 255));
             opaque.store(!any_t, std::sync::atomic::Ordering::Relaxed);
@@ -345,6 +415,10 @@ fn dither_thresholds(x: u32, y: u32) -> [f32; 3] {
         (h >> 8) as f32 * (1.0 / 16_777_216.0)
     })
 }
+
+/// Adaptive supersampling re-shades a pixel when any channel differs from a
+/// neighbour by more than this (in output units; 1.5 / 255).
+pub const ADAPTIVE_THRESHOLD: f32 = 1.5 / 255.0;
 
 fn sanitize(v: f32) -> f32 {
     if v.is_nan() {

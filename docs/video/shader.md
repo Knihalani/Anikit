@@ -87,7 +87,7 @@ Options per channel:
 
 More keys:
 
-- `"supersample": true` renders 2×2 sub-samples per pixel (4× cost). Use it for thin bright detail; most shaders are smooth enough without it, and `fwidth`-based edges are already anti-aliased.
+- `"supersample": true` gives 2×2 anti-aliasing, adaptively. Every pixel is shaded once, and only pixels that differ from one of their 8 neighbours by more than 1.5/255 (edges, highlights, fine detail) are re-shaded with 4 sub-samples. That is about 2.4× faster than full 2×2. Measured against full 2×2 at 1080p (liquid-chrome, sdf-scene, Fold, turing): PSNR 85–101 dB, 0.001% of samples off by more than 1/255, worst pixel 7/255.
 - `"alpha": true` uses `fragColor.a` as coverage. By default the output is opaque, as on Shadertoy.
 - `src: "fx.glsl"` (or `.wgsl`) loads the code from a file.
 
@@ -149,7 +149,7 @@ What costs time is pixels × work per pixel:
 - **Raymarch steps and noise octaves** dominate. `aurora` and `flow-ink` evaluate around 100 noise lookups per pixel. Halving octaves or steps halves the time.
 - **Texture reads**: plain bilinear or nearest reads with clamp or repeat wrap are inlined as SIMD gathers. Mipmapped and mirror-wrapped channels go through a sampler call, which is slower because the call spills the shader's registers. `zoom-blur` reads 32 texels per pixel, which is why it costs a third of a second per frame.
 - **Maths on uniforms** (`sin(iTime)` and rotation matrices from time) is free: it is hoisted. Divergent branches cost both sides only in quads that actually diverge.
-- **Supersampling** costs about 4×. A layer smaller than the frame costs proportionally less.
+- **Supersampling** costs about 1.5–2× when adaptive (4× for full 2×2). A layer smaller than the frame costs proportionally less, and raymarchers should bound their scene: `liquid-chrome` skips every ray that misses its bounding sphere.
 - **Static shaders** (no `iTime`) render once per distinct uniform set.
 
 ## Limits

@@ -20,10 +20,14 @@ float fbm(vec2 p) {
 
 // Curtain brightness at ground-plane position q (x across, z away).
 float curtain(vec2 q, float t) {
-    float fold = fbm(vec2(q.x * 0.22 + t * 0.12, t * 0.05)) * 7.0 - 3.5;   // where the sheet runs
+    // The sheet's path folds at two scales; where it turns edge-on it brightens.
+    float fold = fbm(vec2(q.x * 0.22 + t * 0.12, t * 0.05)) * 7.0 - 3.5 + 1.1 * sin(q.x * 0.85 + t * 0.45);
     float d = abs(q.y - 6.0 - fold - 1.5 * sin(q.x * 0.27 + t * 0.3));
-    float rays = 0.15 + 0.85 * vnoise(vec2(q.x * 5.0 + fold * 3.0 + t * 0.8, t * 0.2)); // vertical striations
-    return (exp(-d * 6.0) * 1.6 + exp(-d * 1.2) * 0.25) * rays;
+    // Rays: coarse bands plus fine fast striations, dragged along by the folds.
+    float coarse = vnoise(vec2(q.x * 5.0 + fold * 3.0 + t * 0.8, t * 0.2));
+    float fine = vnoise(vec2(q.x * 21.0 + fold * 9.0 + t * 2.2, t * 0.6));
+    float rays = 0.12 + 0.88 * (0.55 * coarse + 0.45 * fine * fine * 1.6);
+    return (exp(-d * 7.5) * 2.0 + exp(-d * 1.4) * 0.2) * rays;
 }
 
 vec2 pix;

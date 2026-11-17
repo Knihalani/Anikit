@@ -17,23 +17,31 @@ float smin(float a, float b, float k) {
     return min(a, b) - h * h * h * k * (1.0 / 6.0);
 }
 
+// Bounding radius of everything `map` can produce (before `size`).
+const float BOUND = 2.15;
+
 float map(vec3 p) {
     float t = iTime * speed * 0.35;
     p /= size;
-    // A heavy liquid sphere whose surface carries slow, low-order waves…
-    float w = 0.055 * sin(2.0 * p.x + 1.3 * t) * sin(2.0 * p.y - 0.9 * t + 1.0)
-            + 0.04 * sin(3.0 * p.z + 1.1 * t + 2.0) * sin(2.5 * p.x - 0.7 * t);
+    // A heavy liquid mass whose surface wobbles in a few low modes…
+    float w = 0.06 * sin(2.1 * p.x + 1.3 * t) * sin(1.9 * p.y - 0.9 * t + 1.0)
+            + 0.045 * sin(3.0 * p.z + 1.1 * t + 2.0) * sin(2.6 * p.x - 0.7 * t)
+            + 0.022 * sin(5.3 * p.y + 2.0 * t) * sin(4.7 * p.z - 1.7 * t);
     float d = length(p) - 0.95 - w;
-    // …and three drops orbiting just above it, pulled in and released.
+    // …and drops that fall into it, neck, merge and tear away again: each one's
+    // orbit radius swings from inside the mass to well outside it.
     for (int i = 0; i < 3; i++) {
         float fi = float(i);
-        float a = t * (0.9 + 0.23 * fi) + fi * 2.094;
-        // Tilted, equatorial orbits 120° apart: drops pass in front of and
-        // behind the mass, and never pair up symmetrically.
-        float r = 1.3 + 0.2 * sin(t * 1.1 + fi * 1.9);
+        float a = t * (0.55 + 0.17 * fi) + fi * 2.094;
+        float r = 1.18 + 0.5 * sin(t * 0.62 + fi * 2.3);
         vec3 c = vec3(cos(a) * r, 0.0, sin(a) * r);
-        c.y = 0.32 * c.x - 0.1 + 0.18 * sin(a * 2.0 + fi);
-        d = smin(d, length(p - c) - (0.2 + 0.04 * fi), 0.42);
+        c.y = 0.3 * c.x - 0.08 + 0.2 * sin(a * 2.0 + fi);
+        // Stretch each drop along its path into a teardrop while it moves.
+        vec3 q = p - c;
+        vec3 tang = vec3(-sin(a), 0.0, cos(a));
+        q -= tang * dot(q, tang) * 0.28;
+        float rad = 0.25 + 0.04 * sin(t * 1.7 + fi * 2.0);
+        d = smin(d, length(q) - rad, 0.55);
     }
     return d * size;
 }
@@ -68,18 +76,26 @@ vec3 studio(vec3 d) {
 }
 
 vec3 night(vec3 d) {
-    // What the metal sees outdoors at night: dark teal sky with tall aurora
-    // curtains (strongest behind the camera's left), a dark ridge, a black lake
-    // carrying a soft copy of the light.
-    vec3 c = mix(vec3(0.01, 0.02, 0.035), vec3(0.03, 0.05, 0.08), smoothstep(0.0, 0.8, d.y));
+    // What the metal sees outdoors: near-black sky (stars would shimmer once
+    // shrunk to sub-pixel size in the reflection), the aurora as a
+    // sharp bright core over a soft glow (a crisp key highlight in the metal),
+    // a dark ridge, and the lake mirroring the core.
     float az = atan(d.x, -d.z);
-    float curtains = 0.6 + 0.4 * sin(az * 7.0 + 1.3) * sin(az * 3.1 - 0.4);
-    float band = smoothstep(0.04, 0.1, d.y) * smoothstep(0.42, 0.14, d.y) * curtains;
-    c += vec3(0.12, 1.9, 0.85) * band * (0.55 + 0.45 * sin(az + 0.6));
-    c += vec3(0.6, 0.22, 1.0) * 0.3 * smoothstep(0.3, 0.42, d.y) * smoothstep(0.65, 0.42, d.y) * curtains;
-    c = mix(vec3(0.004, 0.007, 0.009), c, smoothstep(0.0, 0.03, d.y - 0.02 * sin(az * 5.0)));   // ridge
-    vec3 lake = vec3(0.003, 0.008, 0.01) + vec3(0.06, 0.8, 0.4) * 0.25 * exp(d.y * 9.0) * curtains;
-    return mix(lake, c, smoothstep(-0.01, 0.0, d.y));
+    float y = abs(d.y);
+    vec3 c = mix(vec3(0.004, 0.008, 0.016), vec3(0.012, 0.022, 0.045), smoothstep(0.0, 0.9, y));
+    float curtains = 0.55 + 0.45 * sin(az * 7.0 + 1.3) * sin(az * 3.0 - 0.4);   // integer frequencies: no seam at the azimuth wrap
+    float lift = 0.24 + 0.04 * sin(az * 5.0) + 0.02 * sin(az * 13.0);
+    // Below the horizon (the lake) the core is softer: the water isn't a perfect mirror.
+    float sharp = d.y >= 0.0 ? 30.0 : 11.0;
+    float core = exp(-pow((y - lift) * sharp, 2.0)) * curtains;
+    float glow = exp(-pow((y - lift - 0.03) * 7.0, 2.0)) * (0.7 + 0.3 * curtains);
+    vec3 green = vec3(0.12, 1.0, 0.55);
+    c += green * (5.0 * core + 0.8 * glow);
+    c += vec3(0.55, 0.2, 1.0) * 0.18 * exp(-pow((y - 0.5) * 4.0, 2.0));
+    float ridge = 0.025 + 0.012 * sin(az * 4.0 + 1.0) + 0.006 * sin(az * 11.0);
+    c = mix(vec3(0.003, 0.005, 0.007), c, smoothstep(ridge - 0.008, ridge + 0.008, y));
+    // Below the horizon the lake: same sky, mirrored and darkened.
+    return d.y >= 0.0 ? c : c * 0.22 + vec3(0.0, 0.002, 0.004);
 }
 
 vec3 environment(vec3 d) {
@@ -107,7 +123,13 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float alpha = background;
     float tt = 0.0;
     bool hit = false;
-    for (int i = 0; i < 110; i++) {
+    // Rays that miss the bounding sphere skip the march entirely.
+    float bR = BOUND * size;
+    float bb = dot(ro, rd);
+    float disc = bb * bb - dot(ro, ro) + bR * bR;
+    int steps = disc > 0.0 ? 110 : 0;
+    tt = disc > 0.0 ? max(-bb - sqrt(disc), 0.0) : 0.0;
+    for (int i = 0; i < steps; i++) {
         float d = map(ro + rd * tt);
         if (d < 0.0004 * tt) { hit = true; break; }
         tt += d;
