@@ -83,6 +83,12 @@ fn resolve_one(name: &str, base: Option<&Path>) -> Result<Arc<dyn Instrument>, S
         };
         return font.instrument(b, p).ok_or_else(|| format!("'{name}': no preset {b}:{p}"));
     }
+    if pl.ends_with(".sfz") {
+        return crate::sf2::load_sfz(file(path));
+    }
+    if let Some(i) = crate::sf2::pack_instrument(&lower) {
+        return Ok(i);
+    }
     if let Some(i) = bank::by_name(&lower) {
         return Ok(i);
     }

@@ -183,7 +183,7 @@ pub fn render_part(part: &Part, grid: &Grid, rate: u32, frames: usize) -> (Vec<f
     let rendered: Vec<(usize, Vec<f32>, Vec<f32>)> = groups
         .into_par_iter()
         .map(|mut g| {
-            let g0 = g.first().map(|j| j.start).unwrap_or(0);
+            let g0 = g.iter().map(|j| j.start).min().unwrap_or(0);
             let mut l: Vec<f32> = Vec::new();
             let mut r: Vec<f32> = Vec::new();
             for j in g.iter_mut() {
