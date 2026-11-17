@@ -679,7 +679,7 @@ impl skrifa::outline::OutlinePen for Flatten {
 
 /// Lay `text` out with the bundled fonts and return each visible character's
 /// contours in em units (y up).
-fn glyph_outlines(text: &str, font: &str, weight: f32, tracking: f32) -> Vec<Vec<Vec<[f32; 2]>>> {
+pub(crate) fn glyph_outlines(text: &str, font: &str, weight: f32, tracking: f32) -> Vec<Vec<Vec<[f32; 2]>>> {
     use skrifa::instance::{LocationRef, NormalizedCoord, Size};
     use skrifa::outline::DrawSettings;
     use skrifa::MetadataProvider;
@@ -709,7 +709,7 @@ fn glyph_outlines(text: &str, font: &str, weight: f32, tracking: f32) -> Vec<Vec
 }
 
 /// Scale a logo's contours (any units, y up) to about one em tall.
-fn normalise_logo(cs: Vec<Vec<[f32; 2]>>) -> Result<Vec<Vec<[f32; 2]>>, Error> {
+pub(crate) fn normalise_logo(cs: Vec<Vec<[f32; 2]>>) -> Result<Vec<Vec<[f32; 2]>>, Error> {
     let (mut lo, mut hi) = ([f32::INFINITY; 2], [f32::NEG_INFINITY; 2]);
     for p in cs.iter().flatten() {
         if !p[0].is_finite() || !p[1].is_finite() {
@@ -730,7 +730,7 @@ fn normalise_logo(cs: Vec<Vec<[f32; 2]>>) -> Result<Vec<Vec<[f32; 2]>>, Error> {
 
 /// Minimal SVG path parser (y down in, y up out): M L H V C S Q T Z, upper
 /// and lower case. Arcs are not supported.
-fn parse_svg_path(d: &str) -> Result<Vec<Vec<[f32; 2]>>, String> {
+pub(crate) fn parse_svg_path(d: &str) -> Result<Vec<Vec<[f32; 2]>>, String> {
     let mut toks: Vec<Result<char, f32>> = Vec::new();
     let b = d.as_bytes();
     let mut i = 0;
@@ -887,7 +887,7 @@ fn area2(p: &[[f32; 2]]) -> f32 {
 }
 
 /// Drop duplicate and collinear points; `None` when nothing with area is left.
-fn clean(mut c: Vec<[f32; 2]>) -> Option<Vec<[f32; 2]>> {
+pub(crate) fn clean(mut c: Vec<[f32; 2]>) -> Option<Vec<[f32; 2]>> {
     let eps = 1e-4;
     c.dedup_by(|a, b| (a[0] - b[0]).abs() < eps && (a[1] - b[1]).abs() < eps);
     while c.len() > 1 && {
@@ -1186,6 +1186,11 @@ fn simple_inset(outer: &[[f32; 2]], holes: &[Vec<[f32; 2]>], d: f32) -> bool {
 /// Extrude one letter's contours `2·hz` deep with a quarter-round bevel of
 /// `b`. Caps get a vertical normal tilt of `pillow` per em (word space).
 fn extrude(cs: &[Vec<[f32; 2]>], hz: f32, bevel: f32, pillow: f32) -> Mesh {
+    extrude_segs(cs, hz, bevel, pillow, BEVEL_SEGS)
+}
+
+/// [`extrude`] with `segs` segments per quarter-round bevel.
+pub(crate) fn extrude_segs(cs: &[Vec<[f32; 2]>], hz: f32, bevel: f32, pillow: f32, bevel_segs: usize) -> Mesh {
     let mut m = Mesh::default();
     let push = |m: &mut Mesh, p: [f32; 3], n: [f32; 3]| -> u32 {
         let i = (m.pos.len() / 3) as u32;
@@ -1202,7 +1207,7 @@ fn extrude(cs: &[Vec<[f32; 2]>], hz: f32, bevel: f32, pillow: f32) -> Mesh {
         while b > 0.0 && !simple_inset(&outer, &holes, b) {
             b = if b < bevel * 0.1 { 0.0 } else { b * 0.6 };
         }
-        let segs = if b > 0.0 { BEVEL_SEGS } else { 0 };
+        let segs = if b > 0.0 { bevel_segs } else { 0 };
         // Profile from back to front: (inset, z, normal xy weight, normal z).
         let mut prof: Vec<(f32, f32, f32, f32)> = Vec::new();
         for k in (0..=segs).rev() {

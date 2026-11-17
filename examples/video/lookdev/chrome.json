@@ -1,0 +1,14 @@
+{
+  "size": [1920, 1080],
+  "fps": 60,
+  "background": "#000000",
+  "scenes": [
+    {
+      "duration": 9,
+      "transition": "cut",
+      "layers": [
+        { "component": "scene3d", "props": { "text": "ANIKIT", "env": "studio", "material": "chrome", "quality": "standard" } }
+      ]
+    }
+  ]
+}
