@@ -1,0 +1,15 @@
+{
+  "size": [1920, 1080], "fps": 30,
+  "scenes": [
+    { "duration": 2, "transition": "cut", "layers": [
+      { "component": "mesh-gradient", "props": { "colors": ["#1b1f4b", "#6a3df0", "#ff5f8f", "#0bb3d9"], "speed": 0.6 } },
+      { "component": "light-leak" },
+      { "text": "Gradient fields", "style": "title", "enter": "rise", "glow": { "color": "#a98bff", "radius": 24 } }
+    ] },
+    { "duration": 2, "transition": "crossfade", "layers": [
+      { "component": "aurora", "props": { "speed": 1.2 } },
+      { "shape": "circle", "width": 520, "height": 520, "fill": "radial-gradient(#ff7ad966, #ff7ad900)", "animate": [ { "to": { "x": 1300, "y": 380 }, "duration": 2, "ease": "inOutSine" } ] },
+      { "text": "Aurora + glow", "style": "heading", "y": 860, "shadow": true }
+    ] }
+  ]
+}
