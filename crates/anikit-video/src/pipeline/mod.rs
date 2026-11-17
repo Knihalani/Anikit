@@ -434,6 +434,9 @@ pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::Encod
             // Held frame: provably identical to the previous one; skip eval and render.
             let fi = (f0 + k) as f32;
             let (post, blur) = frame_look(ev, opts.quality, (f0 + k) as u32);
+            // The film grain post adds (σ of luma grain at mid-grey, 8-bit codes), so the
+            // encoder's SSIM floor doesn't spend bits re-coding random grain.
+            hints.grain = post.as_ref().map_or(0.0, |p| p.grain * 89.4);
             let sh = if blur || ev.shutter_explicit || opts.quality == Quality::Best { ev.shutter * 0.5 } else { 0.0 };
             if continuing && !post.as_ref().is_some_and(|p| p.grain > 0.0) && ev.is_static((fi - 1.0) / ev.fps - sh, fi / ev.fps + sh) {
                 prof.unchanged.fetch_add(1, Ordering::Relaxed);
