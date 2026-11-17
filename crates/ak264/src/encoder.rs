@@ -737,17 +737,23 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         const CROSS: [(i32, i32); 4] = [(0, -1), (-1, 0), (1, 0), (0, 1)];
         for (step, pat) in [(2, &SQ[..]), (1, &CROSS[..])] {
             let centre = d;
-            for &(sx, sy) in pat {
-                let cand = (centre.0 + sx * step, centre.1 + sy * step);
-                let (gx, gy, fx, fy) = (bx + (cand.0 >> 2) as isize, by + (cand.1 >> 2) as isize, cand.0 & 3, cand.1 & 3);
-                let sad = match (&win, self.c.hpel) {
-                    (Some(w), _) => {
-                        w.pred(cand.0, cand.1, &mut p);
-                        crate::simd::sad16(src_y, 16, &p, 16)
+            let mut cands = [(0i32, 0i32); 8];
+            for (c, &(sx, sy)) in cands.iter_mut().zip(pat) {
+                *c = (centre.0 + sx * step, centre.1 + sy * step);
+            }
+            let cands = &cands[..pat.len()];
+            let mut sads = [0u32; 8];
+            match (&win, self.c.hpel) {
+                (Some(w), _) => {
+                    for (c, r) in cands.iter().zip(sads.iter_mut()) {
+                        w.pred(c.0, c.1, &mut p);
+                        *r = crate::simd::sad16(src_y, 16, &p, 16);
                     }
-                    (None, Some(hp)) => hp.sad(&self.c.refp.y, gx, gy, fx, fy, src_y),
-                    _ => unreachable!(),
-                };
+                }
+                (None, Some(hp)) => hp.sad_cands(&self.c.refp.y, bx, by, cands, src_y, &mut sads),
+                _ => unreachable!(),
+            }
+            for (&cand, &sad) in cands.iter().zip(&sads) {
                 let q = (base_q.0 + cand.0, base_q.1 + cand.1);
                 let cst = sad + mvcost(q);
                 if cst < best {
