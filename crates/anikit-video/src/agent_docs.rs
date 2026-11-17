@@ -27,6 +27,7 @@ pub const PAGES: &[(&str, &str)] = &[
     ("draw", include_str!("../docs-cli/draw.md")),
     ("launch", include_str!("../docs-cli/launch.md")),
     ("analyze", include_str!("../docs-cli/analyze.md")),
+    ("board", include_str!("../docs-cli/board.md")),
 ];
 
 /// Hand-built shots: `(name, {"about", "spec"})`.
@@ -48,7 +49,7 @@ const ALIASES: &[(&str, &str)] = &[
     ("shapes", "primitives"), ("paths", "primitives"), ("grade", "post"), ("motion-blur", "camera"), ("composition", "compositions"),
     ("review", "critique"), ("pace", "pacing"), ("index", "start"), ("anything", "make-anything"),
     ("launch-video", "launch"), ("product", "launch"), ("announcement", "launch"),
-    ("analyse", "analyze"), ("design", "taste"), ("style", "taste"), ("quality", "taste"), ("canon", "taste"), ("reverse", "analyze"), ("reference", "analyze"),
+    ("analyse", "analyze"), ("design", "taste"), ("style", "taste"), ("quality", "taste"), ("canon", "taste"), ("reverse", "analyze"), ("reference", "analyze"), ("moodboard", "board"), ("mood-board", "board"), ("references", "board"),
 ];
 
 /// A docs page: `None` (or `start`) is the index; `component <kind>` / `components` come from the registry.
@@ -240,7 +241,7 @@ mod tests {
     #[test]
     fn lookups_aliases_and_suggestions() {
         assert!(docs(None).unwrap().contains("docs 3d") && docs(None).unwrap().contains("docs taste"));
-        assert!(docs(Some("taste")).unwrap().contains("Swap test") && docs(Some("design")).unwrap().contains("taste pass"));
+        assert!(docs(Some("taste")).unwrap().contains("striking as a still") && docs(Some("design")).unwrap().contains("What tends to land"));
         assert!(docs(Some("scene3d")).unwrap().contains("scene3d"));
         assert!(docs(Some("shadr")).unwrap_err().contains("did you mean 'shader'"));
         assert!(docs(Some("components")).unwrap().contains("terminal"));

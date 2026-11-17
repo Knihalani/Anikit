@@ -212,7 +212,7 @@ pub static STYLES: &[StyleDef] = &[
         harmonic_rhythm: 1.0,
         prog_major: &["I V vi IV", "vi IV I V"],
         prog_minor: &["i VI III VII", "i VI VII i", "i iv VI V", "i VI iv VII"],
-        kit: "drums:orchestra|drums",
+        kit: "drums:cinematic|drums:orchestra|drums",
         drums: [
             &[("tom3", "x.........x.....")],
             &[("kick", "x.......x......."), ("tom3", "x..x..x...x..x.."), ("tom2", "......x.......x.")],
@@ -224,7 +224,7 @@ pub static STYLES: &[StyleDef] = &[
             Layer { reverb: 0.4, ..layer("brass", "french-horn|brass|brass-synth", Gen::Chords("pad", 3, 55), 0.8, -4.0) },
             Layer { reverb: 0.5, ..layer("choir", "choir|aahs|pad-choir", Gen::Chords("pad", 4, 64), 0.6, -9.0) },
             Layer { reverb: 0.35, humanize: 0.15, ..layer("piano", "piano", Gen::Ostinato("0..1..2.0..1..2.", 72), 0.0, -9.0) },
-            Layer { reverb: 0.2, humanize: 0.0, ..layer("sub", "taiko|timpani", Gen::Downbeats(38, 2.0), 0.8, -3.0) },
+            Layer { reverb: 0.2, humanize: 0.0, ..layer("sub", "bass-808|bass-sub", Gen::Downbeats(26, 2.0), 0.8, -3.0) },
         ],
         reverb: "hall",
         impact: "impact",
@@ -1422,7 +1422,7 @@ mod instrumentation_tests {
 
     #[test]
     fn non_electronic_styles_use_real_instruments() {
-        for s in ["lofi", "cinematic-hybrid", "pop", "orchestral", "rock", "corporate", "acoustic", "jazz", "piano"] {
+        for s in ["lofi", "pop", "orchestral", "rock", "corporate", "acoustic", "jazz", "piano"] {
             for (role, inst) in insts(&format!(r#"{{"style":"{s}","length":"30s"}}"#)) {
                 let k = source(&inst);
                 assert!(!k.starts_with("synth"), "{s}: {role} uses {inst} ({k})");

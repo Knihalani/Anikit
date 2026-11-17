@@ -893,11 +893,29 @@ impl Scene3d {
             q.ao_rays = q.ao_rays.max(4);
             q.shadow_rays = q.shadow_rays.max(4);
         }
+        // Drafts (`quality: draft` or `--quality draft`) are for iterating on
+        // composition, light direction and colour: one sample per pixel (no
+        // edge supersampling), one traced reflection bounce, few glass layers.
+        // Standard and high quality are untouched.
+        let draft = (p.draft || crate::components::draft()) && !q.full;
+        if draft {
+            q.edge_spp = 0;
+            q.max_depth = q.max_depth.min(1);
+            q.max_glass = q.max_glass.min(4);
+            q.ao_rays = q.ao_rays.min(1);
+            q.shadow_rays = q.shadow_rays.min(1);
+            q.secondary_rays = 0;
+        }
         scene.render_frame(&cam, &prev, w, h, &q, &mut px);
         let t_trace = clock.elapsed();
         let layer = self.particles(t, dt, &cam, &prev, &mut px, w, h, assets);
         let t_parts = clock.elapsed();
-        let pp = post::Post { focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, bloom: p.bloom, exposure: p.exposure, vignette: p.vignette, tonemap: p.tonemap, denoise: p.denoise };
+        let mut pp = post::Post { focus: cam.focus, aperture: cam.aperture, shutter: cam.shutter, bloom: p.bloom, exposure: p.exposure, vignette: p.vignette, tonemap: p.tonemap, denoise: p.denoise };
+        if draft {
+            // Drafts: a lighter denoise and no motion blur (focus blur stays: it is composition).
+            pp.denoise = pp.denoise.min(2);
+            pp.shutter = 0.0;
+        }
         if let Some(path) = std::env::var_os("ANIKIT_SCENE3D_DUMP") {
             // Development aid: the primary pass and post settings, for examples/post_bench.
             post::dump(std::path::Path::new(&path), &px, w, h, &pp);
@@ -946,6 +964,11 @@ impl Scene3d {
                 .map(|d| {
                     particles::Sim::new(d, 1.0 / dt.max(1e-4), floor_y, assets).map(|mut s| {
                         s.set_colliders(colliders.clone());
+                        // Small previews simulate an exact subset of the particles,
+                        // so each pixel sees about the density it would at 1080p.
+                        if h <= 400 {
+                            s.set_stride(((1080.0 / h.max(1) as f32).powi(2) as usize).clamp(1, 16));
+                        }
                         s
                     })
                 })
@@ -1068,9 +1091,10 @@ impl Component for Scene3d {
         let p = self.p();
         // Previews and reviews (`still --width`, `critique --render`) trace at the size they show.
         // `resolution` (0.25–1): trace at a fraction of the layer size and upscale. Unset, it is
-        // full size at standard/high quality and half size in drafts (`--quality draft`), so
-        // iterating is fast and final renders lose nothing.
-        let default_res = if crate::components::draft() { 0.5 } else { 1.0 };
+        // full size at standard/high quality and 0.3 of it in drafts (`--quality draft`,
+        // one sample per pixel: composition, light and colour), so iterating is fast and
+        // final renders lose nothing.
+        let default_res = if crate::components::draft() || p.draft { 0.3 } else { 1.0 };
         let res = self.raw.get("resolution").and_then(|r| r.as_f64()).unwrap_or(default_res).clamp(0.25, 1.0) as f32;
         let ps = crate::eval::shader::preview_scale() * res;
         let (w, h) = ((ctx.width * ps).round().max(2.0) as u32, (ctx.height * ps).round().max(2.0) as u32);

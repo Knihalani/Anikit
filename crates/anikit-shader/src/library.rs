@@ -64,6 +64,15 @@ lib! {
     "turing", Image, 25, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
     "light-shafts", Image, 91, "Sun through a window into a hazy room: pane-shaped beams with mullions and leaves, drifting haze, glinting dust.";
     "particles", Image, 98, "Glowing particles drifting in depth with bokeh (depth of field), one pass.";
+    "halftone", Filter, 60, "Printed dots: CMYK screens at classic angles (or one black screen) on paper.";
+    "risograph", Filter, 28, "Two or three spot inks, out of register, with stencil grain: the risograph look.";
+    "linocut", Filter, 19, "Carved block print: solid ink, tone-following gouges, bold outlines, paper tooth.";
+    "watercolour", Filter, 80, "Washes that bleed and pool dark at their edges, with paper granulation.";
+    "crosshatch", Filter, 25, "Pen or pencil hatching: more directions for darker tones, hand wobble, outlines.";
+    "film", Filter, 25, "Photochemical stock: filmic curve, lifted blacks, red halation, gate weave, midtone grain.";
+    "dither", Filter, 18, "Ordered (Bayer) dither into a 2- or 3-colour palette at a chosen pixel size.";
+    "screenprint", Filter, 30, "Flat poster colour: tones as 1–3 ink layers, off register, with ink texture.";
+    "print-offset", Filter, 33, "Cheap print: cyan, magenta and yellow plates drift apart on fibrous paper.";
     "film-burn", Filter, 77, "Scorches the frame below from hot spots; animate `amount` 0 → 1.";
     "lake-mirror", Filter, 31, "Reflects everything above a horizon in still, rippled water below it (pairs with aurora lake = 0).";
     "glitch", Filter, 27, "Codec-style block displacement, row smears, RGB split and scanlines in bursts.";

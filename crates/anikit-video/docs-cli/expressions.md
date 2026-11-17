@@ -13,3 +13,4 @@
 - Text: `"text": "=floor(t * 100)"` shows a number every frame (counters, countdowns). For a format, use `"text": "{value:,} users"` with `"value": "=…"`. Results are numbers, not strings.
 - Colours: `=rgb(r, g, b[, a])`, `=hsl(h, s, l[, a])`, `=oklch(L, C, h)`, `=mix($a, $b, x)`, `=c ? colourA : colourB`. They work on `fill`, `stroke`, text `color` and box `background`.
 - Music-reactive: `"scale": "=1 + 0.3 * level"`, `"rotation": "=8 * (1 - fract(beat))"`. Needs `music` or an `audio` `src`.
+- `t` is the layer's own clock: it starts at 0 when the layer starts. For a layer with `start: 4`, `"=t > 5 ? …"` fires at 9 s on the video. Use `gt` (video seconds) or `T` (scene seconds) when you think in absolute times; use `t` to keep a layer self-contained when you move it.

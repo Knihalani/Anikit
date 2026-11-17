@@ -20,7 +20,7 @@ Score each 0–2 (cap the total at 9 if the piece passes the swap test, i.e. it 
 9. **Sound:** instrumentation fits the concept; space and one silence; hits on the frame, not every cut whooshed.
 10. **Variety:** no look, environment, 3D motif or opening move repeated from a previous piece.
 
-A BAR failure (centred headline on a gradient, blob backdrop, placeholder UI, small content in an empty frame, slides, stock-demo look, effect without subject, forced 3D, repeated look, blurred/low-res text, unmotivated light, generic score, visible defects) fails the frame whatever the score. Name the frame and the rule.
+Common reasons a frame reads as generic (BAR.md: centred headline on a gradient, blob backdrop, placeholder UI, small content in an empty frame, slides, stock-demo look, effect without subject, forced 3D, repeated look, blurred/low-res text, unmotivated light, generic score, visible defects) matter more than any score. Name the frame, what it reads as and why, and what to try instead.
 
 Output:
 ```

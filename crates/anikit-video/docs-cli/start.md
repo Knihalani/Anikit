@@ -15,7 +15,7 @@ A spec is JSON: `{ "size": "16:9", "scenes": [ { "duration": 2, "layers": [ ... 
 
 | Topic | What you get |
 |---|---|
-| `docs taste` | **read before designing:** the 15-line taste pass (type, colour, composition, light, motion, rhythm, sound, concept) |
+| `docs taste` | **read before designing:** routes to a striking frame (and the tools for each), what tends to land with a viewer and listener, what tends to fail |
 | `docs primitives` | text, shapes, SVG paths, images, groups: full styling |
 | `docs animation` | keyframes and `=expressions` on any property, presets, kinetic type |
 | `docs camera` | zoom/pan/whip, shake, depth + rack focus, motion blur |
@@ -29,6 +29,7 @@ A spec is JSON: `{ "size": "16:9", "scenes": [ { "duration": 2, "layers": [ ... 
 | `docs pacing` | intent, beat-cut timing, holds that stay alive |
 | `docs critique` | the reviewer and the review pack |
 | `docs analyze` | reverse-engineer a reference video: shots, pacing, palette, camera, beats → a draft spec |
+| `docs board` | a look from reference images (paintings, photos, posters): palette, value, texture, composition → theme tokens |
 | `docs make-anything` | escape hatches and how to combine them |
 | `docs launch` | launch/product videos: principles, process, quality checks; no template (skill: skills/anikit-launch-video) |
 | `docs expressions` · `docs script` · `docs draw` | per-frame maths and colours (music-reactive), generator loops, raw paths and points |

@@ -29,6 +29,6 @@ Create: MCP `create_from_template {template: "logo-reveal", params, brand, forma
 
 ## Tips
 
-- A template gives every product the same structure, which is what the user rejected: use it for a fast draft, then make it this product's (a palette from its own assets, a typeface chosen for it, its real UI or object as the hero, a score whose instruments fit it). For an original film, use the `director` prompt or skills/anikit-launch-video. Run the taste pass first: `anikit-video docs taste`.
-- Hold every line for max(0.83 s, chars/15, words × 0.3) after it settles, and keep words crisp (no blur or glow while they are read). Cut words, never type size.
-- Chrome with god rays and a lens flare is the default 3D look the user rejected. Prefer `minimal`, or a reveal built from the brand's own shape, unless the brand really is chrome.
+- A template gives every product the same structure, so used as-is it tends to look like every other video made from it. It works well as a fast draft that you then make this product's own: a palette from its assets, a typeface chosen for it, its real UI or object as the hero, a score whose instruments fit it. For an original film, see the `director` prompt or skills/anikit-launch-video, and `anikit-video docs taste`.
+- Lines read comfortably when held for max(0.83 s, chars/15, words × 0.3) after they settle, sharp, with no blur or glow while read. If a line doesn't fit, cutting words usually works better than shrinking type.
+- Chrome with god rays and a lens flare tends to read as the default 3D sting. `minimal`, or a reveal built from the brand's own shape, usually feels more specific, unless the brand really is chrome.
