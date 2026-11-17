@@ -20,7 +20,7 @@ from PIL import Image, ImageDraw, ImageFont
 sys.path.insert(0, str(Path(__file__).parent))
 import world as Wd  # noqa: E402
 
-SHOTS = [(0, 1), (6, 2), (12, 3), (20, 4), (30, 5), (40, 6), (50, 7), (58, 8), (66, 9)]
+SHOTS = [(0, 1), (7, 2), (12, 3), (18, 4), (26, 5), (50, 6), (58, 7), (66, 8)]
 
 
 def font(px):
@@ -100,19 +100,23 @@ def box_faces(c, s, yaw=0.0):
     return [([corners[k] for k in f], n) for f, n in faces]
 
 
-def frame_colour(j):
-    """The inner film, as a colour per frame (so playback reads as a smooth colour change)."""
-    t = j / Wd.FPS
-    h = (t / 60.0 + 0.55) % 1.0
+LANE_HUES = [(0.09, 0.55, 0.95), (0.0, 0.55, 0.55), (0.62, 0.75, 0.85), (0.18, 0.9, 0.95), (0.45, 0.6, 0.5),
+             (0.98, 0.8, 0.8)]
+
+
+def frame_colour(k, j):
+    """Film k's frame j, as a colour (hue family per film; drifts with time so playback reads)."""
     import colorsys
-    r, g, b = colorsys.hsv_to_rgb(h, 0.45, 0.85)
+    h0, s0, v0 = LANE_HUES[k]
+    t = j / Wd.FPS
+    h = (h0 + 0.06 * math.sin(t * 0.9)) % 1.0
+    v = v0 * (0.75 + 0.25 * math.sin(t * 2.3))
+    r, g, b = colorsys.hsv_to_rgb(h, s0, v)
     return (int(r * 255), int(g * 255), int(b * 255))
 
 
 def render(t, w, h):
     cam = Cam(t, w, h)
-    img = Image.new("RGB", (w, h))
-    # cyc: warm white gradient, horizon where the floor meets the curve
     hz = h / 2 - cam.fpx * cam.f[1] / max(1e-3, math.hypot(cam.f[0], cam.f[2]))
     arr = np.zeros((h, w, 3), np.uint8)
     yy = np.arange(h)[:, None]
@@ -122,7 +126,8 @@ def render(t, w, h):
     arr[:] = (sky * (1 - m) + floor * m).astype(np.uint8)
     img = Image.fromarray(arr)
     d = ImageDraw.Draw(img)
-    polys = []  # (depth, pts2d, colour, outline)
+    polys = []
+    labels = []
 
     def add_quad(pts, col, outline=None, two_sided=True, normal=None):
         v = cam.view(pts)
@@ -141,155 +146,128 @@ def render(t, w, h):
         polys.append((float(v[:, 2].mean()), [tuple(q) for q in p2], c, outline))
 
     def add_box(c, s, col, yaw=0.0, outline=(90, 90, 90)):
-        for f, n in box_faces(c, s, yaw):
-            add_quad(np.array(f), col, outline, two_sided=False, normal=n)
+        for f, nrm in box_faces(c, s, yaw):
+            add_quad(np.array(f), col, outline, two_sided=False, normal=nrm)
 
-    # floor grid (1 m near the camera)
+    # floor grid
     gx, gz = cam.p[0], cam.p[2]
     R = 40 if cam.p[1] < 10 else 400
     step = 1 if cam.p[1] < 10 else 20
-    for k in range(int(gx - R) // step * step, int(gx + R) + 1, step):
-        a, b = cam.view([(k, 0, gz - R), (k, 0, gz + R)])
-        if a[2] < cam.near and b[2] < cam.near:
-            continue
-        seg = clip_near(np.array([a, b, b]), cam.near)
-        if seg is not None:
-            p2 = cam.proj(seg[:2])
-            d.line([tuple(p2[0]), tuple(p2[1])], fill=(214, 209, 200))
-    for k in range(int(gz - R) // step * step, int(gz + R) + 1, step):
-        a, b = cam.view([(gx - R, 0, k), (gx + R, 0, k)])
-        if a[2] < cam.near and b[2] < cam.near:
-            continue
-        seg = clip_near(np.array([a, b, b]), cam.near)
-        if seg is not None:
-            p2 = cam.proj(seg[:2])
-            d.line([tuple(p2[0]), tuple(p2[1])], fill=(214, 209, 200))
+    for axis in (0, 2):
+        c0 = gx if axis == 0 else gz
+        for k in range(int(c0 - R) // step * step, int(c0 + R) + 1, step):
+            if axis == 0:
+                a, b = cam.view([(k, 0, gz - R), (k, 0, gz + R)])
+            else:
+                a, b = cam.view([(gx - R, 0, k), (gx + R, 0, k)])
+            if a[2] < cam.near and b[2] < cam.near:
+                continue
+            sg = clip_near(np.array([a, b, b]), cam.near)
+            if sg is not None:
+                p2 = cam.proj(sg[:2])
+                d.line([tuple(p2[0]), tuple(p2[1])], fill=(214, 209, 200))
 
     M = Wd.MACHINE
     n = Wd.emitted(t)
     mx = Wd.machine_x(n)
-    add_box((mx, M["y1"] / 2, 0), ((M["x1"] - M["x0"]) / 2, M["y1"] / 2, M["z1"]), (176, 178, 182))
-    led_on = Wd.T["led"] <= t < Wd.T["led"] + 0.25 or (Wd.T["stream0"] <= t <= Wd.T["stream1"])
-    add_box((mx + 0.6, M["y1"] + 0.005, M["z1"] - 0.08), (0.03, 0.005, 0.03), (255, 90, 31) if led_on else (90, 60, 50))
-    # browser machine: a standing white browser window on a cart
-    m = Wd.browser_emitted(t)
-    add_box((Wd.machine_x(m), 0.7, Wd.BROWSER_Z), (0.9, 0.7, 0.15), (205, 208, 213))
+    if t < Wd.T["stream1"] + 0.5:
+        add_box((mx, M["y1"] / 2, (M["z0"] + M["z1"]) / 2), ((M["x1"] - M["x0"]) / 2, M["y1"] / 2, (M["z1"] - M["z0"]) / 2),
+                (176, 178, 182))
+        for k in range(Wd.LANES):
+            on = Wd.drop_time(k) <= t < Wd.drop_time(k) + 0.3 or Wd.T["stream0"] <= t
+            add_box((mx + 0.6, M["y1"] + 0.005, Wd.lane_z(k) + 0.3), (0.03, 0.005, 0.03),
+                    (255, 90, 31) if on else (90, 60, 50))
 
-    # request pane
-    pos, yaw, vis = Wd.request_pose(t)
-    if vis:
-        front = math.cos(math.radians(yaw)) > 0   # front (chat) faces +Z
-        col = (150, 205, 235) if front else (40, 44, 52)
-        add_box(pos, (Wd.PANE_W / 2, Wd.PANE_H / 2, Wd.PANE_T / 2), col, yaw=yaw, outline=(120, 180, 170))
+    # requests
+    for k in range(Wd.LANES):
+        pos, yaw, vis = Wd.request_pose(k, t)
+        if vis:
+            front = math.cos(math.radians(yaw)) > 0
+            col = (150, 205, 235) if front else (40, 44, 52)
+            add_box(pos, (Wd.PANE_W / 2, Wd.PANE_H / 2, Wd.PANE_T / 2), col, yaw=yaw, outline=(120, 180, 170))
+            v = cam.view([pos])[0]
+            if front and v[2] > 0 and cam.fpx * Wd.PANE_W / v[2] > 160:
+                labels.append((pos, f"req {k + 1}: {Wd.FILMS[k]['name']}", 0.09))
 
-    # strip panes
-    in_fold = t >= Wd.T["fold0"]
+    # strips
     xc = Wd.fold_centre()
-    jc = int(round((xc + 0.15) / Wd.PITCH))
-    labels = []
-    if not in_fold:
-        js = np.arange(0, int(math.ceil(n)))
-        xs = js * Wd.PITCH - 0.15
-        # cull by view
-        cx = cam.view(np.stack([xs, np.full_like(xs, Wd.PANE_Y), np.zeros_like(xs)], -1))
-        keep = cx[:, 2] > -2
-        js, xs, cx = js[keep], xs[keep], cx[keep]
-        for j, x, v in zip(js, xs, cx):
-            if v[2] > 0:
-                sz = cam.fpx * Wd.PANE_W / v[2]
-                if sz < 1.2:
-                    p = cam.proj(v)
-                    d.point(tuple(p), fill=(140, 150, 150))
-                    continue
-            hw, hh = Wd.PANE_W / 2, Wd.PANE_H / 2
-            quad = np.array([(x - hw, Wd.PANE_Y - hh, 0), (x + hw, Wd.PANE_Y - hh, 0),
-                             (x + hw, Wd.PANE_Y + hh, 0), (x - hw, Wd.PANE_Y + hh, 0)])
-            add_quad(quad, frame_colour(j), (60, 140, 120))
-            if v[2] > 0 and cam.fpx * Wd.PANE_W / v[2] > 120:
-                labels.append((v[2], (x, Wd.PANE_Y, 0.01), f"{j + 1}"))
-        # orange rail under the strip
-        if n > 0:
-            x_far = mx - 1.0
-            add_quad(np.array([(-1.0, 0.002, -0.06), (x_far, 0.002, -0.06), (x_far, 0.002, 0.06), (-1.0, 0.002, 0.06)]),
-                     (255, 90, 31))
+    jc = Wd.fold_jc()
+    if t < Wd.T["fold0"]:
+        nn = int(math.ceil(n))
+        if nn > 0:
+            js = np.arange(nn)
+            xs = js * Wd.PITCH - 0.15
+            for k in range(Wd.LANES):
+                z = Wd.lane_z(k)
+                cx = cam.view(np.stack([xs, np.full_like(xs, Wd.PANE_Y), np.full_like(xs, z)], -1))
+                keep = (cx[:, 2] > -2) & (np.abs(cx[:, 0]) < cx[:, 2] * 2 + 3)
+                for j, x, v in zip(js[keep], xs[keep], cx[keep]):
+                    if v[2] > 0 and cam.fpx * Wd.PANE_W / v[2] < 1.2:
+                        d.point(tuple(cam.proj(v)), fill=frame_colour(k, j))
+                        continue
+                    hw, hh = Wd.PANE_W / 2, Wd.PANE_H / 2
+                    quad = np.array([(x - hw, Wd.PANE_Y - hh, z), (x + hw, Wd.PANE_Y - hh, z),
+                                     (x + hw, Wd.PANE_Y + hh, z), (x - hw, Wd.PANE_Y + hh, z)])
+                    add_quad(quad, frame_colour(k, j), (60, 140, 120))
+                    if v[2] > 0 and cam.fpx * Wd.PANE_W / v[2] > 140:
+                        labels.append(((x, Wd.PANE_Y, z + 0.01), f"{Wd.FILMS[k]['name']} · {j + 1}", 0.08))
+                x_far = min(mx - 1.0, xs[-1] + 0.8)
+                add_quad(np.array([(-1.0, 0.002, z - 0.06), (x_far, 0.002, z - 0.06), (x_far, 0.002, z + 0.06),
+                                   (-1.0, 0.002, z + 0.06)]), (255, 90, 31))
+    elif t < Wd.T["shrink0"]:
+        step = 1 if t < Wd.T["fold1"] else 4
+        for j in range(0, Wd.FRAMES, step):
+            x, yw = Wd.pane_pose_fold(j, t)
+            if abs(x - cam.p[0]) > 300:
+                continue
+            for k in range(Wd.LANES):
+                add_box((x, Wd.PANE_Y, Wd.lane_z(k)), (Wd.PANE_W / 2, Wd.PANE_H / 2, Wd.PANE_T / 2), frame_colour(k, j),
+                        yaw=yw, outline=None)
     else:
         bs = Wd.block_scale(t)
-        if t < Wd.T["crush1"]:
-            for j in range(0, Wd.FRAMES, 3 if t > Wd.T["fold1"] else 1):
-                x, y, z, yw = Wd.pane_pose_fold(j, t, xc, jc)
-                if abs(x - cam.p[0]) > 400:
-                    continue
-                add_box((x, y, z), (Wd.PANE_W / 2, Wd.PANE_H / 2, Wd.PANE_T / 2), frame_colour(j), yaw=yw,
-                        outline=None)
-        else:
-            # the block, shrinking into the tile; the tile slides into the phone
-            ins = Wd.smoother(Wd.seg(t, Wd.T["insert0"], Wd.T["insert1"]))
-            ph = np.array(Wd.PHONE_OFFSET) + (xc, 0, 0)
-            base = np.array((xc, Wd.PANE_Y * bs + 0.01, 0.0))
-            tgt = ph + (0, 0.09, 0)
-            c = base + (tgt - base) * ins
-            if ins < 1:
-                add_box(tuple(c), (0.15 * bs, Wd.PANE_H / 2 * bs, Wd.PANE_W / 2 * bs), (170, 220, 210))
-        # phone, standing on a little stand
-        ph = np.array(Wd.PHONE_OFFSET) + (xc, 0, 0)
-        on = t >= Wd.T["screen"]
-        add_box((ph[0], 0.085, ph[2]), (0.0375, 0.08, 0.004), (30, 32, 36), yaw=-25)
-        if on:
-            add_box((ph[0] + 0.002, 0.085, ph[2] + 0.005), (0.034, 0.075, 0.001), frame_colour(int((t - 59) * 60)), yaw=-25)
-
-    # browser strip
-    for j in range(int(math.ceil(m))):
-        x = Wd.pane_x(j)
-        quad = np.array([(x - 0.8, 0.02, Wd.BROWSER_Z), (x + 0.8, 0.02, Wd.BROWSER_Z),
-                         (x + 0.8, 0.92, Wd.BROWSER_Z), (x - 0.8, 0.92, Wd.BROWSER_Z)])
-        add_quad(quad, (150, 156, 164), (110, 115, 120))
+        for k in range(Wd.LANES):
+            if t < Wd.T["rise0"]:
+                add_box((xc, Wd.PANE_Y * bs + 0.01, Wd.block_z(k, t)), (0.125 * bs, Wd.PANE_H / 2 * bs, Wd.PANE_W / 2 * bs),
+                        (170, 220, 210))
+            else:
+                pos, yaw, sc = Wd.screen_pose(k, t)
+                add_box(pos, (Wd.PANE_W / 2 * sc, Wd.PANE_H / 2 * sc, 0.01 + 0.03 * sc), frame_colour(k, int((t - 59) * 60)),
+                        yaw=yaw, outline=(30, 30, 30))
+                if sc > 0.8:
+                    labels.append(((pos[0], pos[1], pos[2] + 0.05), Wd.FILMS[k]["name"], 0.12))
 
     # logo
     if t >= Wd.T["logo0"]:
         rise = Wd.smoother(Wd.seg(t, Wd.T["logo0"], Wd.T["logo1"]))
-        lx = Wd.LOGO_POS[0]
-        add_box((lx, 0.3 * rise, Wd.LOGO_Z), (2.1, 0.3 * rise + 0.001, 0.08), (200, 205, 215))
+        lx, _, lz = Wd.LOGO_POS
+        add_box((lx, 0.3 * rise, lz), (2.1, 0.3 * rise + 0.001, 0.08), (200, 205, 215))
 
     polys.sort(key=lambda q: -q[0])
     for _, pts, col, outline in polys:
         d.polygon(pts, fill=col, outline=outline)
 
-    for z, P, txt in labels:
+    for P, txt, hh in labels:
         v = cam.view([P])[0]
         if v[2] <= cam.near:
             continue
         p = cam.proj(v)
-        d.text(tuple(p), txt, fill=(20, 20, 20), font=font(cam.fpx * 0.25 / v[2]), anchor="mm")
+        d.text(tuple(p), txt, fill=(20, 20, 20), font=font(cam.fpx * hh / v[2]), anchor="mm")
 
-    # captions
     for c in Wd.CAPTIONS:
         if not (c["t0"] <= t < c["t1"]):
             continue
-        a = None if c["kind"] in ("counter", "cart", "cart2") else Wd.caption_anchor(c)
-        if c["kind"] == "counter":
-            txt = f"{int(min(n, Wd.FRAMES)):,} / 3,600 frames"
-            d.text((w * 0.05, h * 0.9), txt, fill=(255, 90, 31), font=font(h * 0.06), anchor="ls")
-            continue
-        if c["kind"] == "cart2":
-            a = (Wd.browser_x(t), 2.6, Wd.BROWSER_Z)
-            txt = f"Still rendering · {int(m)} / 3,600"
-        elif c["kind"] == "cart":
-            a = (Wd.browser_x(t), 1.9, Wd.BROWSER_Z)
-            txt = f"{c['text']}  ·  {int(m)} / 3,600"
-        else:
-            txt = c["text"]
+        a = Wd.caption_anchor(c)
         v = cam.view([a])[0]
         if v[2] <= cam.near:
             continue
         p = cam.proj(v)
         size = cam.fpx * c["h"] / v[2]
-        col = (255, 90, 31) if c["kind"] == "counter" else (21, 23, 26)
-        d.text(tuple(p), txt, fill=col, font=font(min(size, h * 0.2)), anchor="ms")
+        d.text(tuple(p), c["text"], fill=(21, 23, 26), font=font(min(size, h * 0.2)), anchor="ms")
 
-    # HUD
     shot = max(s for s0, s in SHOTS if t >= s0)
     beat = int(t / Wd.BEAT)
-    hud = f"{int(t // 60)}:{t % 60:05.2f}  shot {shot}  bar {beat // 4 + 1}.{beat % 4 + 1}  f={Wd.cam_focal(t):.0f}mm"
+    hud = (f"{int(t // 60)}:{t % 60:05.2f}  shot {shot}  bar {beat // 4 + 1}.{beat % 4 + 1}  "
+           f"f={Wd.cam_focal(t):.0f}mm  shutter={Wd.shutter(t):.0f}")
     d.rectangle([0, h - 18, w, h], fill=(0, 0, 0))
     d.text((6, h - 16), hud, fill=(255, 255, 255), font=font(12))
     if abs(t / Wd.BEAT - round(t / Wd.BEAT)) < 0.02:
