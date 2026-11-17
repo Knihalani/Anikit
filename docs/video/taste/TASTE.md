@@ -17,7 +17,7 @@ TASTE.md is the index and the short pass (§10). Each craft doc in `docs/video/c
 | [`award-level.md`](../craft/award-level.md) | 17 winning short-form pieces: one idea, one material pushed to the limit, systems, type that carries meaning | §11 |
 | [`ai-tells.md`](../craft/ai-tells.md) | what reads as generated in 2024–26, and automatable checks | §9 |
 | [`review-div.md`](../craft/review-div.md) | why the div-a…g films read as boring: seven structural failures | §9, §11 |
-| `typography.md`, `graphic-design.md`, `motion-design.md`, `3d-design.md`, `illustration.md`, `sound-design.md`, `music.md`, `generative.md` | domain depth from the TYPE, GRAPHIC, MOGRAPH, 3D, COMPONENTS, SOUND, MUSIC and SHADER sessions (as they land) | §1–§7, §11 |
+| `typography.md`, `graphic-design.md` (grids at 1080p, spot colour, halftone, shape language), `motion-design.md`, `3d-design.md` (light ratios, look-dev, lenses), `illustration.md` (10 reference hands, clip-art→studio), `sound-design.md`, `music.md` (scoring to picture, per-style numbers), `generative.md` (authored, not demo-scene) | domain depth from the TYPE, GRAPHIC, MOGRAPH, 3D, COMPONENTS, SOUND, MUSIC and SHADER sessions (as they land) | §1–§7, §11 |
 
 Each section runs **principles → rules (numbers from practice) → tells → checks**. Numbers marked *(heuristic)* are our proposals built on sources; tune them by eye. `anikit-video critique` implements the checks marked ⚙.
 
