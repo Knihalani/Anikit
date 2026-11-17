@@ -708,7 +708,11 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
     let mut sections = if !spec.sections.is_empty() {
         explicit_sections(&spec.sections, total_bars)?
     } else if let Some(s) = style {
-        auto_sections(s, total_bars, &hit_bars)
+        let mut secs = auto_sections(s, total_bars, &hit_bars);
+        if spec.follow_cuts != Some(false) && !spec.cuts.is_empty() {
+            snap_to_cuts(&mut secs, &spec.cuts.iter().map(|&c| c / grid.bar()).collect::<Vec<_>>(), total_bars);
+        }
+        secs
     } else {
         vec![Section { name: "main".into(), bar: 0.0, bars: total_bars, energy: 0.8 }]
     };
@@ -1063,6 +1067,22 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                 }
             }
         }
+        // Picture cuts: a cymbal accent on the beat nearest each cut (≥ 2 bars apart).
+        if spec.follow_cuts != Some(false) {
+            if let Some(dr) = tracks.iter_mut().find(|t| t.role == "drums") {
+                let mut last = f64::NEG_INFINITY;
+                for &c in &spec.cuts {
+                    let b = (c / grid.beat()).round();
+                    let t = grid.secs(b) - grid.offset;
+                    if (t - c).abs() <= 0.3 * grid.beat() && b - last >= 2.0 * bpb && b < total_beats {
+                        if !dr.notes.iter().any(|n| (n.t - b).abs() < 0.26 && (n.key == 49.0 || n.key == 57.0)) {
+                            dr.notes.push(Note { t: b, len: 2.0, key: 57.0, vel: 0.62 });
+                        }
+                        last = b;
+                    }
+                }
+            }
+        }
         // Risers into big sections, impacts on hits and drops.
         for (si, s) in sections.iter().enumerate().skip(1) {
             let prev = &sections[si - 1];
@@ -1285,6 +1305,24 @@ pub fn auto_sections(st: &StyleDef, bars: f64, hit_bars: &[f64]) -> Vec<Section>
     out
 }
 
+/// Move section boundaries onto picture cuts (in bars) when a cut lies within
+/// two bars of a boundary, keeping every section at least two bars long.
+pub fn snap_to_cuts(secs: &mut [Section], cuts: &[f64], total: f64) {
+    for i in 1..secs.len() {
+        let b = secs[i].bar;
+        let Some(&c) = cuts.iter().map(|c| c.round()).collect::<Vec<_>>().iter().filter(|&&c| (c - b).abs() <= 2.0 && c > 0.0).min_by(|x, y| (*x - b).abs().total_cmp(&(*y - b).abs())) else { continue };
+        let lo = secs[i - 1].bar + 2.0;
+        let hi = secs[i].bar + secs[i].bars - 2.0;
+        if c >= lo && c <= hi && (c - b).abs() > 1e-9 {
+            let d = c - b;
+            secs[i - 1].bars += d;
+            secs[i].bar = c;
+            secs[i].bars -= d;
+        }
+    }
+    let _ = total;
+}
+
 /// Nudge the tempo within ±8 % so the hits land on beats (downbeats preferred).
 pub fn fit_tempo(hits: &[f64], bpm: f64, bpb: f64) -> f64 {
     let cost = |b: f64| {
@@ -1410,5 +1448,24 @@ mod instrumentation_tests {
         assert!(t.iter().any(|(r, i)| r == "lead" && i == "violin"));
         let e = compose(&MusicSpec::from_json(r#"{"style":"house","instrumentation":"acustic"}"#).unwrap(), None).unwrap_err();
         assert!(e.contains("did you mean 'acoustic'"), "{e}");
+    }
+}
+
+#[cfg(test)]
+mod cut_tests {
+    use super::*;
+
+    #[test]
+    fn sections_and_accents_follow_picture_cuts() {
+        // 120 bpm, 4/4: a bar is 2 s. The chorus would start at bar 10 (20 s); a cut at
+        // 18.0 s (bar 9) is within two bars, so the chorus moves onto it.
+        let spec = MusicSpec::from_json(r#"{"style":"pop","bpm":120,"length":"40s","cuts":[13.9, 18.0]}"#).unwrap();
+        let a = compose(&spec, None).unwrap();
+        assert!(a.sections.iter().any(|s| s.bar == 9.0 && s.name == "chorus"), "{:?}", a.sections);
+        let d = a.tracks.iter().find(|t| t.role == "drums").unwrap();
+        assert!(d.notes.iter().any(|n| n.t == 28.0 && n.key == 57.0), "cymbal on the beat nearest 13.9 s");
+        let off = MusicSpec::from_json(r#"{"style":"pop","bpm":120,"length":"40s","cuts":[13.9],"followCuts":false}"#).unwrap();
+        let b = compose(&off, None).unwrap();
+        assert!(!b.tracks.iter().find(|t| t.role == "drums").unwrap().notes.iter().any(|n| n.key == 57.0));
     }
 }
