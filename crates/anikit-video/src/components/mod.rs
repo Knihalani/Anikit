@@ -61,6 +61,7 @@ pub mod card_stack;
 pub mod now_playing;
 pub mod product_shot;
 pub mod illus_fill;
+pub mod illo;
 
 #[cfg(test)]
 pub(crate) mod preview;
@@ -309,6 +310,7 @@ kinds! {
     "hatch" => illus_fill::Hatch, "Hand-drawn hatched, cross-hatched, stippled or scribbled fill of a shape, with a tone gradient from a light direction, wobble, boil and a line-by-line draw-on.", r##"{"shape":"circle","style":"crosshatch","toneFrom":0.2,"toneTo":0.9,"draw":1.5}"##;
     "paper" => illus_fill::Paper, "Full-frame paper stock with real tooth: paper, cotton, kraft, canvas weave, cold-press watercolor or newsprint; computed once and dithered.", r##"{"stock":"watercolor"}"##;
     "cutout" => illus_fill::Cutout, "Cut or torn paper shape (flat colour or paper/kraft/newsprint stock) with a fibrous rim, lifted drop shadow, hand-placed wobble and a drop or slide entrance.", r##"{"shape":"blob","texture":"kraft","torn":0.7}"##;
+    "illo" => illo::Illo, "Illustration toolkit: a scene graph of layered vector shapes (paths, circles, rects, blobs, polygons, stars, groups) lit by one global light into hue-shifted form shadows, rims and hard cast shadows, with dithered OKLab gradients, object-locked grain, halftone, riso, paper or hatch, a consistent hand (weighted, broken outlines; wobble; boil), palette and ink snapping, clip and cut, keyframes, morphs, sway and stepped timing.", r##"{"palette":["#e2603f","#2f4858","#f3e6cf"],"light":{"angle":225},"hand":{"outline":true},"grain":0.06,"shapes":[{"shape":"rect","x":0,"y":470,"w":1280,"h":250,"fill":"$2"},{"shape":"blob","name":"pot","cx":640,"cy":380,"r":150,"fill":"$1","shade":true,"shadow":{"flatten":0.3},"texture":"halftone"},{"shape":"ellipse","cx":590,"cy":320,"rx":40,"ry":22,"fill":"$3","clipTo":"pot","opacity":0.8},{"shape":"path","points":[[640,240],[660,150],[700,110]],"smooth":true}]}"##;
     // Lottie
     "lottie" => lottie::Lottie, "Minimal Lottie player (shape layers, transforms, trim paths).", r##"{"src":"anim.json"}"##;
 }
