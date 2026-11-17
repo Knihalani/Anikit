@@ -336,7 +336,7 @@ impl HpelPlanes {
                 let o = g.off(x, y);
                 let n = g.data.len();
                 // reads reach (x−1, y−1) .. (x+1+1+15, y+1+1+15) (offset +1/+stride included)
-                assert!(o >= s + 1 && o + 17 * s + 18 <= n);
+                assert!(o > s && o + 17 * s + 18 <= n);
                 assert!(cands.len() <= out.len() && cands.iter().all(|c| c.0.abs() <= 3 && c.1.abs() <= 3));
                 let planes = [g.data.as_ptr(), self.b.data.as_ptr(), self.h.data.as_ptr(), self.j.data.as_ptr()];
                 // SAFETY: the asserts bound every read; AVX2 detected.
