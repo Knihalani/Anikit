@@ -453,7 +453,7 @@ impl Evaluator {
     pub fn eval_into(&self, t: f32, out: &mut DisplayList) {
         out.width = self.width;
         out.height = self.height;
-        out.ops.clear();
+        recycle(&mut out.ops);
         let t = t.clamp(0.0, self.duration.max(0.0));
         // Active scenes: the one at t, plus the previous one while transitioning in.
         let mut cur = 0;
@@ -603,7 +603,7 @@ impl Evaluator {
                     _ => [0.0, 0.0, w, h * e],
                 };
                 let clip = kurbo::Rect::new(r[0] as f64, r[1] as f64, r[2] as f64, r[3] as f64);
-                layer(out, 1.0, vec![], Some((kurbo::Shape::to_path(&clip, 0.1), id)));
+                layer(out, 1.0, vec![], Some((shape_path(&clip, 0.1), id)));
                 self.emit_scene(b, t, &id, false, out);
                 out.push(Op::PopLayer);
             }
@@ -615,7 +615,7 @@ impl Evaluator {
                     .map(|(x, y)| ((x - ox) * (x - ox) + (y - oy) * (y - oy)).sqrt())
                     .fold(0.0, f32::max);
                 let c = kurbo::Circle::new((ox as f64, oy as f64), (far * e).max(0.01) as f64);
-                layer(out, 1.0, vec![], Some((kurbo::Shape::to_path(&c, 0.1), id)));
+                layer(out, 1.0, vec![], Some((shape_path(&c, 0.1), id)));
                 self.emit_scene(b, t, &id, false, out);
                 out.push(Op::PopLayer);
             }
@@ -637,7 +637,7 @@ impl Evaluator {
                     let r = hash01(frame * 31.0 + i as f64);
                     let dx = if r > 0.45 { (hash01(frame * 7.0 + i as f64 * 3.0) as f32 - 0.5) * w * 0.12 * k * tr.amount } else { 0.0 };
                     let clip = kurbo::Rect::new(0.0, y0 as f64, w as f64, y1 as f64);
-                    layer(out, 1.0, vec![], Some((kurbo::Shape::to_path(&clip, 0.1), id)));
+                    layer(out, 1.0, vec![], Some((shape_path(&clip, 0.1), id)));
                     self.emit_scene(sc, t, &translate(dx, 0.0), false, out);
                     out.push(Op::PopLayer);
                 }
@@ -737,12 +737,12 @@ impl Evaluator {
                     _ => [0.0, h * (1.0 - wipe), w, h],
                 };
                 let r = kurbo::Rect::new(r[0] as f64, r[1] as f64, r[2] as f64, r[3] as f64);
-                Some((kurbo::Shape::to_path(&r, 0.1), xf))
+                Some((shape_path(&r, 0.1), xf))
             } else if let Some(p) = &n.clip_path {
                 Some((p.clone(), xf))
             } else if n.clip {
                 let rr = kurbo::RoundedRect::new(0.0, 0.0, w as f64, h as f64, v[prop::RADIUS].max(0.0) as f64);
-                Some((kurbo::Shape::to_path(&rr, 0.1), xf))
+                Some((shape_path(&rr, 0.1), xf))
             } else {
                 None
             };
@@ -757,18 +757,18 @@ impl Evaluator {
                     (ShapeKind::Rect, None) => out.push(Op::RoundRect { x: 0.0, y: 0.0, w, h, radius: v[prop::RADIUS].min(w.min(h) * 0.5).max(0.0), paint, transform: xf }),
                     (ShapeKind::Rect, Some(s)) => {
                         let rr = kurbo::RoundedRect::new(0.0, 0.0, w as f64, h as f64, v[prop::RADIUS].min(w.min(h) * 0.5).max(0.0) as f64);
-                        out.push(Op::Stroke { path: kurbo::Shape::to_path(&rr, 0.1), paint, stroke: s, transform: xf })
+                        out.push(Op::Stroke { path: shape_path(&rr, 0.1), paint, stroke: s, transform: xf })
                     }
                     (ShapeKind::Ellipse, s) => {
                         let e = kurbo::Ellipse::new((w as f64 * 0.5, h as f64 * 0.5), (w as f64 * 0.5, h as f64 * 0.5), 0.0);
-                        let path = kurbo::Shape::to_path(&e, 0.1);
+                        let path = shape_path(&e, 0.1);
                         match s {
                             None => out.push(Op::Fill { path, paint, rule: dl::FillRule::NonZero, transform: xf }),
                             Some(s) => out.push(Op::Stroke { path, paint, stroke: s, transform: xf }),
                         }
                     }
-                    (ShapeKind::Path, None) => out.push(Op::Fill { path: path.clone(), paint, rule: dl::FillRule::NonZero, transform: xf }),
-                    (ShapeKind::Path, Some(s)) => out.push(Op::Stroke { path: path.clone(), paint, stroke: s, transform: xf }),
+                    (ShapeKind::Path, None) => out.push(Op::Fill { path: copy_path(path), paint, rule: dl::FillRule::NonZero, transform: xf }),
+                    (ShapeKind::Path, Some(s)) => out.push(Op::Stroke { path: copy_path(path), paint, stroke: s, transform: xf }),
                 };
                 if let Some(f) = fill {
                     if !trimmed || stroke.is_none() {
@@ -834,7 +834,7 @@ impl Evaluator {
                                 out.push(Op::Stroke { path: p.clone(), paint: Paint::Solid(sc), stroke: dl::Stroke { width: w, ..stroke.clone() }, transform: bxf });
                                 if !hollow {
                                     let paint = fill.clone().unwrap_or(Paint::Solid(with_alpha(r.color, alpha)));
-                                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: r.glyphs.clone(), paint, transform: bxf });
+                                    out.push(Op::Glyphs { font: r.font, size: r.size, glyphs: crate::text::pool::copy(&r.glyphs), paint, transform: bxf });
                                 }
                             }
                         }
@@ -917,7 +917,7 @@ impl Evaluator {
                     let mut c = *c;
                     c.0[3] *= alpha;
                     out.push(Op::Stroke {
-                        path: kurbo::Shape::to_path(&rr, 0.1),
+                        path: shape_path(&rr, 0.1),
                         paint: Paint::Solid(c),
                         stroke: dl::Stroke { width: *bw, cap: 0, join: 0, miter_limit: 4.0, dash: vec![], dash_offset: 0.0, trim: [0.0, 1.0] },
                         transform: xf,
@@ -1011,7 +1011,7 @@ fn emit_glyphs(out: &mut Vec<Op>, layout: &TextLayout, range: std::ops::Range<u3
     while i < end {
         let run = layout.glyphs[i as usize].run;
         let r = &layout.runs[run as usize];
-        let mut glyphs = Vec::new();
+        let mut glyphs = crate::text::pool::take(16);
         while i < end && layout.glyphs[i as usize].run == run {
             let g = layout.glyphs[i as usize];
             let gl = r.glyphs[g.index as usize];
@@ -1175,4 +1175,50 @@ pub(crate) fn format_value(v: f64, decimals: usize, thousands: bool) -> String {
         out.push(c);
     }
     format!("{sign}{out}{frac}")
+}
+
+// ---- buffer pools: steady-state eval reuses last frame's allocations
+
+thread_local! {
+    static PATHS: std::cell::RefCell<Vec<Path>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+fn take_path() -> Path {
+    PATHS.with(|p| p.borrow_mut().pop()).unwrap_or_default()
+}
+
+fn give_path(mut p: Path) {
+    p.truncate(0);
+    PATHS.with(|v| {
+        let mut v = v.borrow_mut();
+        if v.len() < 4096 {
+            v.push(p);
+        }
+    });
+}
+
+/// A pooled copy of `src`.
+fn copy_path(src: &Path) -> Path {
+    let mut p = take_path();
+    p.extend(src.iter());
+    p
+}
+
+/// A pooled path of a kurbo shape.
+fn shape_path(s: &impl kurbo::Shape, tol: f64) -> Path {
+    let mut p = take_path();
+    p.extend(s.path_elements(tol));
+    p
+}
+
+/// Drain `ops`, returning glyph and path buffers to this thread's pools.
+pub(crate) fn recycle(ops: &mut Vec<Op>) {
+    for op in ops.drain(..) {
+        match op {
+            Op::Glyphs { glyphs, .. } => crate::text::pool::give(glyphs),
+            Op::Fill { path, .. } | Op::Stroke { path, .. } => give_path(path),
+            Op::PushLayer { clip: Some((path, _)), .. } => give_path(path),
+            _ => {}
+        }
+    }
 }
