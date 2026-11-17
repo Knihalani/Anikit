@@ -1587,6 +1587,45 @@ impl Evaluator {
                             let (lo, hi) = (v[prop::RANGE0] + off, v[prop::RANGE1] + off);
                             let nu = units.len().max(1) as f32;
                             let base_c = [v[prop::FILL], v[prop::FILL + 1], v[prop::FILL + 2], v[prop::FILL + 3]];
+                            // Axis animators change advances: shift each unit by the growth of the units
+                            // before it on its line, re-aligning the line (left/centre/right).
+                            let shifts: Vec<f32> = if an.axes.is_empty() {
+                                Vec::new()
+                            } else {
+                                let fonts = &self.assets.fonts;
+                                let mut deltas = Vec::with_capacity(units.len());
+                                for (u, unit) in units.iter().enumerate() {
+                                    let rank = an.order.get(u).map_or(u as f32, |r| *r as f32);
+                                    let a = an.amount((rank + 0.5) / nu, lo, hi);
+                                    let mut d = 0.0;
+                                    if a > 0.001 {
+                                        for gi in unit.glyphs.clone() {
+                                            let g = layout.glyphs[gi as usize];
+                                            let r = &layout.runs[g.run as usize];
+                                            let gid = r.glyphs[g.index as usize].id;
+                                            let nf = fonts.toward_axes(r.font, &an.axes, a);
+                                            d += fonts.advance(nf, gid, r.size) - fonts.advance(r.font, gid, r.size);
+                                        }
+                                    }
+                                    deltas.push((unit.rect[1], d));
+                                }
+                                let mut out_s = vec![0.0; deltas.len()];
+                                let mut i = 0;
+                                while i < deltas.len() {
+                                    let mut j = i;
+                                    while j < deltas.len() && (deltas[j].0 - deltas[i].0).abs() < 1.0 {
+                                        j += 1;
+                                    }
+                                    let total: f32 = deltas[i..j].iter().map(|x| x.1).sum();
+                                    let mut acc = -total * an.align;
+                                    for k in i..j {
+                                        out_s[k] = acc;
+                                        acc += deltas[k].1;
+                                    }
+                                    i = j;
+                                }
+                                out_s
+                            };
                             for (u, unit) in units.iter().enumerate() {
                                 let rank = an.order.get(u).map_or(u as f32, |r| *r as f32);
                                 let a = an.amount((rank + 0.5) / nu, lo, hi);
@@ -1598,6 +1637,11 @@ impl Evaluator {
                                 let (cxu, cyu) = (x0 + uw * 0.5, y0 + uh * 0.5);
                                 let s = 1.0 + (an.scale - 1.0) * a;
                                 let m = dl::mul(&translate(cxu + an.dx * a, cyu + an.dy * a), &dl::mul(&rotate(an.rot * a), &dl::mul(&scale(s, s), &translate(-cxu, -cyu))));
+                                let m = match shifts.get(u) {
+                                    // Glyphs grow rightwards from their pen position: move by the growth before them.
+                                    Some(sh) => dl::mul(&translate(*sh, 0.0), &m),
+                                    None => m,
+                                };
                                 let uxf = dl::mul(&bxf, &m);
                                 let f2 = match (an.color, &fill) {
                                     (Some(c), Some(Paint::Solid(_))) => {
@@ -1619,7 +1663,15 @@ impl Evaluator {
                                 if ublur > 0.05 {
                                     out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: vec![Filter::Blur(ublur)], clip: None, cache_key: None });
                                 }
+                                let at = out.len();
                                 emit_glyphs(out, layout, unit.glyphs.clone(), limit, f2.as_ref(), alpha * ua, &uxf);
+                                if !an.axes.is_empty() && a > 0.001 {
+                                    for op in &mut out[at..] {
+                                        if let Op::Glyphs { font, .. } = op {
+                                            *font = self.assets.fonts.toward_axes(*font, &an.axes, a);
+                                        }
+                                    }
+                                }
                                 if ublur > 0.05 {
                                     out.push(Op::PopLayer);
                                 }
