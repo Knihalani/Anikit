@@ -51,6 +51,16 @@ impl Default for SharedAssets {
 }
 
 impl SharedAssets {
+    /// Drop the per-frame images (the volatile ring: component fields, rays,
+    /// particle text), which hold up to 96 full-frame pixmaps. Call only when no
+    /// display list that refers to them is in flight, e.g. when a render is done;
+    /// later frames rebuild them on demand, with the same ids as a fresh build.
+    pub fn release_frame_images(&self) {
+        let mut v = self.volatile.write().unwrap();
+        v.slots.clear();
+        v.next = 0;
+    }
+
     pub fn new(fonts: Arc<FontStore>) -> Self {
         SharedAssets {
             fonts,
@@ -299,5 +309,19 @@ mod tests {
         });
         assert_ne!(outer, a.image(2, 1, 1, &mut || unreachable!()));
         assert_eq!(outer, a.image(1, 1, 1, &mut || unreachable!()));
+    }
+
+    /// Releasing the per-frame ring frees its pixmaps and restarts the ids, so
+    /// the next render hands out the same ids as a fresh evaluator.
+    #[test]
+    fn release_frame_images_restarts_ring() {
+        let a = SharedAssets::new(Arc::new(FontStore::new()));
+        let first = a.frame_image(7, 2, 2, &mut || vec![9; 16]);
+        let second = a.frame_image(8, 2, 2, &mut || vec![3; 16]);
+        assert_ne!(first, second);
+        assert!(a.pixmap(first).is_some());
+        a.release_frame_images();
+        assert!(a.pixmap(first).is_none());
+        assert_eq!(a.frame_image(8, 2, 2, &mut || vec![3; 16]), first);
     }
 }
