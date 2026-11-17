@@ -5,7 +5,7 @@ description: How to fill the 'countdown' template well.
 
 # Template guide: Event countdown (`countdown`)
 
-An event intro (name, date, place), a big N…1 countdown where each number pops in inside a ring that draws itself over the second, then a 'Live now' or save-the-date end card.
+An event countdown: kicker badge, event, date and place beside a spinning globe with live arcs; a big N…1 countdown with glowing rings that draw each second and a spark burst at zero; then a particle-text 'Live now' with confetti, or a save-the-date card.
 
 **Typical length:** 8–18 s. **Formats:** 16:9, 9:16 and 1:1 (pass `--format`); the layout adapts automatically.
 
