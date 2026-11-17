@@ -56,3 +56,14 @@ The target is cuts or major changes on the beat every 0.5–1.5 s (120–140 BPM
 ### "Beyond other tools"
 
 Every shot must show something that a browser-based tool (Remotion or HyperFrames with WebGL or three.js) can't realistically do. See `docs/video/quality/ONLY_ANIKIT.md`; BENCH maintains it, verified against those tools. A pretty shader or a 3D logo alone does not count: competitors can embed those too.
+
+## Third rejection: Sift (forced 3D, low legibility, synth-heavy score)
+
+The user's verdict on the Sift launch example (`docs/video/skills/launch-examples/sift/`): "the text is hard to read and looks low resolution, I'm hearing too much synthesizer in the music, and the lighting is off … Don't force 3D where it doesn't fit and don't use the same 3D visuals every time." On the reverse-engineer examples: "not good."
+
+So, in addition to the checks above, a piece FAILS if:
+- **3D is forced.** The medium must come from the concept. Well-set 2D typography, illustration, UI, photography-style compositing and shader work are first-class; "make every word 3D" is a template, not a fix for flat design.
+- **It repeats a look.** Same environment, cyc floor, chrome/lacquer type, falling-tiles or domino motif as a previous piece. Vary the medium, light, lens, palette and materials every time.
+- **Text is not crisp and instantly readable.** Every word at full resolution (no reduced-resolution tracing, no DOF, motion blur or bloom on words while they are meant to be read), ≥ 4.5:1 contrast, set in a deliberate typeface at a deliberate size, held long enough to read.
+- **The light is unmotivated.** Blown highlights, muddy blacks, flat ambient fill, or light that doesn't match the world. Check stills at 100% for exposure and a clear key light.
+- **The score is generic.** Instrumentation must suit the brand and concept (acoustic, orchestral, band, piano, percussion, found sound…); synthesizers only when the concept calls for them.
