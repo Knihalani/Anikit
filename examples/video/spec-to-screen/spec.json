@@ -792,7 +792,7 @@
   },
   {
    "id": "speed",
-   "duration": 4.5,
+   "duration": 4.0,
    "background": "#07080c",
    "transition": {
     "type": "cut"
@@ -882,10 +882,7 @@
    "duration": 5.0,
    "background": "#07080c",
    "transition": {
-    "type": "slide",
-    "direction": "left",
-    "duration": 0.5,
-    "ease": "inOutQuart"
+    "type": "cut"
    },
    "layers": [
     {

@@ -218,7 +218,7 @@ scenes.append({
 
 # ================================================================ 6. numbers (measured; see README)
 scenes.append({
-    "id": "speed", "duration": 4.5, "background": INK, "transition": {"type": "cut"},
+    "id": "speed", "duration": 4.0, "background": INK, "transition": {"type": "cut"},
     "layers": [
         comp("grid", {"cell": 80, "color": "#ffffff08", "fade": 0.85}),
         {"shape": "circle", "width": 1200, "height": 600, "fill": ICE, "opacity": 0.10, "blur": 140, "y": "46%"},
@@ -235,7 +235,7 @@ scenes.append({
     ],
 })
 scenes.append({
-    "id": "chart", "duration": 5.0, "background": INK, "transition": {"type": "slide", "direction": "left", "duration": 0.5, "ease": "inOutQuart"},
+    "id": "chart", "duration": 5.0, "background": INK, "transition": {"type": "cut"},
     "layers": [
         text("60 s of 1080p60 motion graphics → MP4", style="heading", size="5vh", x=160, y="15%",
              anchor="left", kinetic="rise by word 0.5s 50ms outExpo"),
