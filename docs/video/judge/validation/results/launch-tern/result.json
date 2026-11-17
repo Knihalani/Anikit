@@ -1,0 +1,507 @@
+{
+  "name": "launch-tern",
+  "tags": [
+    "product-launch",
+    "editorial-data"
+  ],
+  "refs": [
+    "osko-launch",
+    "kurzgesagt-short",
+    "cosmos-spacetime-odyssey"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 4,
+      "composition": 4,
+      "typography": 3,
+      "colour": 4,
+      "light_texture": 3,
+      "motion": 3,
+      "craft": 4,
+      "originality": 3
+    },
+    "overall": 3.5,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a real visual idea beyond 'spectrogram + phone + map'. For example, make birdsong itself the typographic or graphic material, the way A makes cosmic and biological forms rhyme",
+      "The type should be designed, not set: scale contrast, a chosen face, type interacting with the sound visualisation instead of slide-placed text blocks",
+      "Light, texture and atmosphere (dawn, foliage, field grain) are needed so frames are posters rather than UI screens, with real choreography between shots instead of a repeated layout",
+      "Find a real idea in the subject, such as birdsong becoming visible form or the spectrogram turning into flight paths or the migration itself, instead of feature-by-feature slides",
+      "Replace the default grotesk and accent-colour system with type that has a point of view: scale contrast, type that responds to frequency, and integration with the spectrogram image",
+      "Add light, texture and place (dawn, forest, a real bird) and vary composition and camera between frames so the film has choreography and memorable posters",
+      "Turn the spectrogram into the image itself: let the birdsong strokes become the bird, the letterforms, or the migration line, the way C turns the eye into the title",
+      "Replace default grotesk slide layouts with typography that has a point of view: scale contrast, a type idea tied to sound and frequency, and integration with the image",
+      "Add real light, texture and material (dawn forest, paper field-guide, analogue instrument) and give each frame a distinct, choreographed composition instead of repeated layouts"
+    ],
+    "tells": [
+      "The textbook 'tasteful AI' launch look: near-black teal ground, a single orange accent, default grotesk (Inter-like) headlines with a small monospace timestamp",
+      "Frames 2 and 3 share an identical layout (phone mock-up on the left, the headline 'Tern hears it. And names it while it sings.' on the right) with only the bird name swapped. This is slide-deck structure",
+      "A generic phone UI mock-up with list rows and a tab bar is effectively placeholder product UI",
+      "The spectrogram frames repeat with little change. The ending is a centred logo plus a two-line feature summary in the accent colour. The idea is literal: product name plus a feature diagram",
+      "Flat, unmotivated light with no material or depth; the map uses a stock dotted-scatter treatment",
+      "It matches the generic 'tasteful AI' formula: a near-black teal ground, a single orange accent, white bold grotesk headlines with a small grey sub-label, and a mostly empty frame",
+      "Typography uses defaults (an Inter-like grotesk plus a mono for timestamps) laid out like slides. Headline, Latin name and timestamp stack the same way each time.",
+      "Frames 2 and 3 repeat one composition with the bird name swapped, and frames 1 and 5 repeat the spectrogram. The structure is a slide deck with little happening.",
+      "The idea is literal: product name, phone mockup of the UI, a map of the feature, then a logo end card with a two-line feature list. The spectrogram is the only interesting image, and it is used as a background.",
+      "The textbook 'tasteful AI' launch look: near-black teal ground, a single orange accent, a default grotesk (Inter-like) headline with a small subhead, and mostly empty frames",
+      "Slide-deck structure: frames 2 and 3 are the same phone-plus-headline layout with only the bird name swapped. Frames 1 and 5 are the same spectrogram grid",
+      "Placeholder-grade UI in the phone mock (grey list rows, tab bar), and a literal 'product name + diagram of the feature' approach",
+      "The end card is a centred logo plus a two-line feature list in default type: no scale contrast, no typographic idea",
+      "The spectrogram-as-birdsong is the one seed of an idea, but it is shown as a chart rather than turned into image or type"
+    ]
+  },
+  "refs_summary": {
+    "osko-launch": {
+      "overall": 6.62,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    },
+    "kurzgesagt-short": {
+      "overall": 6.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "cosmos-spacetime-odyssey": {
+      "overall": 8.38,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.25,
+  "delta": -3.75,
+  "trials": [
+    {
+      "key": {
+        "A": "cosmos-spacetime-odyssey",
+        "B": "osko-launch",
+        "C": "candidate",
+        "D": "kurzgesagt-short"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Each frame is a full CG environment with real texture: cratered rock around a nebula pool, wet iris with a craft inside it, a nautilus shell in sand with footprints, an accretion disc with comets, a fibrous DNA helix",
+              "A clear visual chain from macro to micro: crater, eye, shell, galaxy, DNA, then a nebula that becomes an eye. The piece rhymes cosmic and biological forms, so the idea is specific to this show",
+              "Lighting is motivated in every frame (rim light on the shell, the disc's core glare, haze behind the helix), with depth of field and atmosphere",
+              "The end card resolves the motif: an iris placed inside the Helix nebula, under a widely tracked COSMOS title"
+            ],
+            "gaps": [
+              "The credit type is a stock, small, tracked grotesk dropped into the lower thirds. It is not integrated with the imagery the way the image ideas are",
+              "Space-documentary staples (nebula, DNA, eye of the universe) border on clich\u00e9; the payoff eye-nebula is a familiar trope",
+              "The palette is a conventional cool teal-and-orange cinematic grade with no unusual colour decision"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "A real comedic concept: an I.O.U. sticky note left in place of what was taken (an empty tupperware between bottles, an empty retro fridge), a gift economy of coffee, beer, cash and hearts. It is witty and shareable",
+              "The film deliberately switches medium: a stylised 3D night-drive with a VW bus, tactile 3D fridge-shelf props, flat character animation of a golfer's swing and slump, a 2D convertible, an emoji-like icon grid. This reads as a directed campaign system rather than a template",
+              "The golfer triptych shows real character timing and pose-to-pose acting (setup, follow-through, despair)",
+              "The fridge reveal pays off with good light: interior glow spilling onto a reflective floor, and a before/after diptych"
+            ],
+            "gaps": [
+              "Visual consistency is weak: the icon grid and the 2D car look like stock-illustration assets next to stronger 3D shots",
+              "Typography is only the handwritten 'I.O.U.' note; there is no typographic system or title design",
+              "Several frames (car on cream, icon grid on black) are mostly empty and lack the density and lit texture of the best entry"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 5,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 5,
+              "originality": 3
+            },
+            "tells": [
+              "The textbook 'tasteful AI' launch look: near-black teal ground, a single orange accent, default grotesk (Inter-like) headlines with a small monospace timestamp",
+              "Frames 2 and 3 share an identical layout (phone mock-up on the left, the headline 'Tern hears it. And names it while it sings.' on the right) with only the bird name swapped. This is slide-deck structure",
+              "A generic phone UI mock-up with list rows and a tab bar is effectively placeholder product UI",
+              "The spectrogram frames repeat with little change. The ending is a centred logo plus a two-line feature summary in the accent colour. The idea is literal: product name plus a feature diagram",
+              "Flat, unmotivated light with no material or depth; the map uses a stock dotted-scatter treatment"
+            ],
+            "gaps": [
+              "It needs a real visual idea beyond 'spectrogram + phone + map'. For example, make birdsong itself the typographic or graphic material, the way A makes cosmic and biological forms rhyme",
+              "The type should be designed, not set: scale contrast, a chosen face, type interacting with the sound visualisation instead of slide-placed text blocks",
+              "Light, texture and atmosphere (dawn, foliage, field grain) are needed so frames are posters rather than UI screens, with real choreography between shots instead of a repeated layout"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A strong house illustration language: saturated purple, cyan and magenta palette, distinctive bird characters, consistent stroke-free shapes with soft gradient shading",
+              "Narrative staging varies shot to shot: a villain at a STOP button before a world map, a title card over a stylised heat map of Europe, a card-matching gag with a speech bubble, a woolly mammoth on ice",
+              "The title type is a bold rounded face with an offset dark extrusion, integrated with the map",
+              "Vertical explainer-short format with burned-in kinetic captions, which is consistent with a professional educational studio's social output"
+            ],
+            "gaps": [
+              "The idea is house-style explainer delivery rather than a piece-specific visual concept; it lacks a memorable single image",
+              "Light and texture are flat by design; there is no material depth compared with A's lit CG",
+              "Captions are small default-looking subtitle text that undercuts the otherwise designed typography"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "D",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 30.2,
+        "cost_usd": 0.15801700000000002,
+        "tokens": 72079,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "cosmos-spacetime-odyssey",
+        "B": "osko-launch",
+        "C": "kurzgesagt-short",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A visual metaphor carries the whole film: a nebula inside a crater, the Helix nebula as an iris, a nautilus spiral echoed by a galaxy disc and a DNA helix. Scales from micro to cosmic are linked by matching shapes.",
+              "Real material and light: wet rock, sand grain, the translucent shell, the specular highlight on the iris, volumetric haze around the accretion disc",
+              "Credits are small and placed into negative space each image leaves for them. The widely tracked COSMOS title sits across the eye and works with the image.",
+              "Every frame is a different subject and scale. It has clear choreography and builds to the title reveal."
+            ],
+            "gaps": [
+              "The credit typography is a safe, small, tracked sans, and its treatment is the same in every frame. It could take more risk in scale or integration.",
+              "The dark-blue and amber cosmic palette is expected for the genre",
+              "Some transitions are inferred to be match-cuts on circular forms, a device that is now familiar. A less obvious connective logic would lift it."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 7
+            },
+            "tells": [
+              "A recurring narrative device, the I.O.U. sticky note, appears in a food container and again in an empty fridge. It is a witty idea that runs through the piece.",
+              "A range of styles (stylised 3D van on night hills, glossy 3D fridge with reflections, flat 2D character pose sequence, 3D icon set), all held to one tone",
+              "The golfer's three-pose sequence shows animation thinking: anticipation, follow-through, payoff",
+              "Aspect ratios vary from 16:9 to vertical, which points to real multi-platform deliverables"
+            ],
+            "gaps": [
+              "It reads more as a reel of separate assets than one authored film, and there is no single visual world as in A",
+              "The icon grid (coffee, beer, money, heart, gift) is close to stock emoji and has no idea of its own",
+              "Type is limited to the handwritten I.O.U. There is no typographic voice and no use of light as storytelling beyond the fridge glow."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A coherent, owned house illustration style: rounded flat vector, a saturated purple, orange and cyan palette, and consistent character design (villain at the console, birds, mammoth)",
+              "Each frame is a different staged scene, with a character acting, a map title card and a gag scene, so it is clearly choreographed storytelling rather than one repeated layout",
+              "The title card uses a heavy rounded display face with an outline over a contour map, which is on-brand and legible at vertical scale",
+              "Craft is consistent in line weights, shading and gradients across scenes"
+            ],
+            "gaps": [
+              "The style is a recognisable house formula. The piece is competent within it but adds little that is surprising.",
+              "The burned-in caption subtitles are small default sans and work against the illustration",
+              "Light and texture are flat by design, with no depth or material compared with A's photoreal texture"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 4,
+              "typography": 3,
+              "colour": 4,
+              "light_texture": 3,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "It matches the generic 'tasteful AI' formula: a near-black teal ground, a single orange accent, white bold grotesk headlines with a small grey sub-label, and a mostly empty frame",
+              "Typography uses defaults (an Inter-like grotesk plus a mono for timestamps) laid out like slides. Headline, Latin name and timestamp stack the same way each time.",
+              "Frames 2 and 3 repeat one composition with the bird name swapped, and frames 1 and 5 repeat the spectrogram. The structure is a slide deck with little happening.",
+              "The idea is literal: product name, phone mockup of the UI, a map of the feature, then a logo end card with a two-line feature list. The spectrogram is the only interesting image, and it is used as a background."
+            ],
+            "gaps": [
+              "Find a real idea in the subject, such as birdsong becoming visible form or the spectrogram turning into flight paths or the migration itself, instead of feature-by-feature slides",
+              "Replace the default grotesk and accent-colour system with type that has a point of view: scale contrast, type that responds to frequency, and integration with the spectrogram image",
+              "Add light, texture and place (dawn, forest, a real bird) and vary composition and camera between frames so the film has choreography and memorable posters"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.5,
+        "cost_usd": 0.15354420000000002,
+        "tokens": 71840,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "kurzgesagt-short",
+        "B": "osko-launch",
+        "C": "cosmos-spacetime-odyssey",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.8,
+            "scores": {
+              "idea": 7,
+              "composition": 7,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "A coherent, owned house illustration style: rounded geometry, saturated off-primary palette (violet, cyan, hot orange) used the same way across very different scenes",
+              "Narrative choreography: villain at the control room, a stylised thermal map title card, character gag scene, mammoth. These are distinct staged scenes, not one layout with the words swapped",
+              "The title card integrates heavy rounded type with a contour-map ground, and the map's colour bands double as layout",
+              "Only 4 frames (vertical short), and the burned-in captions are a small default-ish subtitle face that sits awkwardly inside the art (on the STOP box)",
+              "Explainer conventions done expertly, but recognisably house-formula rather than surprising"
+            ],
+            "gaps": [
+              "Captions are bolted on in a generic small sans. Integrate the subtitles into the art direction the way C integrates its credits",
+              "Lighting is flat cel shading throughout. Add atmospheric depth (haze, glow, rim light) to the ice-age scenes so the cold reads as material, not just colour",
+              "The idea follows the explainer formula (map, character gag, mascot animal). Find one visual metaphor specific to 'Europe's next ice age' that carries the whole short"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 6,
+              "craft": 6,
+              "originality": 6
+            },
+            "tells": [
+              "A recurring conceit (the hand-lettered 'I.O.U' note on the fridge and on leftovers) gives a narrative thread about owing people",
+              "Expressive character work: the golfer's swing-to-despair sequence has real acting and pose-to-pose timing",
+              "The fridge pair has motivated light (interior glow spilling onto a reflective floor)",
+              "However: styles lurch between night-scene 3D, glossy rendered 3D, flat vector, and emoji-like icons, with mixed aspect ratios. It reads like a reel or anthology of commissions rather than one designed film",
+              "The icon grid (coffee, beer, money with wings, heart, gift) is close to stock emoji and is the weakest frame"
+            ],
+            "gaps": [
+              "No unifying art direction. Pick one material language (the lit 3D fridge world is strongest) and carry the IOU idea through it",
+              "Typography is limited to a handwritten note. Give the piece a typographic voice that carries the 'owing' idea across scenes",
+              "The emoji-grid frame is clip-art level. Replace it with a staged, lit scene that earns its place"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 9,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "A specific through-idea, macro to micro and back: crater-nebula, eye with a seed in the pupil, nautilus, protoplanetary disc, DNA helix, then a Helix-nebula eye. The rhymes (circle, spiral, eye) chain the shots together",
+              "The final title lock-up puts the 'O' of COSMOS in the pupil of a nebula-iris. The type is integrated with the image, and widely tracked caps with real optical restraint",
+              "Real light and texture throughout: wet sand, shell translucency, volumetric dust, shallow depth of field",
+              "Credits are placed with care in each composition rather than in a fixed slot",
+              "Every frame works as a poster, and the palette moves from cool blues to warm sand to fire-orange in a deliberate arc"
+            ],
+            "gaps": [
+              "The credit typography is small and conventional. A bolder typographic gesture mid-sequence could raise it further",
+              "The eye-as-cosmos metaphor is well worn in science titles. The DNA and crater shots lean on familiar CG stock imagery",
+              "Within-frame layering of type and image only peaks at the end lock-up. Bring that integration into the middle shots"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 4,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 2,
+              "motion": 3,
+              "craft": 4,
+              "originality": 3
+            },
+            "tells": [
+              "The textbook 'tasteful AI' launch look: near-black teal ground, a single orange accent, a default grotesk (Inter-like) headline with a small subhead, and mostly empty frames",
+              "Slide-deck structure: frames 2 and 3 are the same phone-plus-headline layout with only the bird name swapped. Frames 1 and 5 are the same spectrogram grid",
+              "Placeholder-grade UI in the phone mock (grey list rows, tab bar), and a literal 'product name + diagram of the feature' approach",
+              "The end card is a centred logo plus a two-line feature list in default type: no scale contrast, no typographic idea",
+              "The spectrogram-as-birdsong is the one seed of an idea, but it is shown as a chart rather than turned into image or type"
+            ],
+            "gaps": [
+              "Turn the spectrogram into the image itself: let the birdsong strokes become the bird, the letterforms, or the migration line, the way C turns the eye into the title",
+              "Replace default grotesk slide layouts with typography that has a point of view: scale contrast, a type idea tied to sound and frequency, and integration with the image",
+              "Add real light, texture and material (dawn forest, paper field-guide, analogue instrument) and give each frame a distinct, choreographed composition instead of repeated layouts"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 34.3,
+        "cost_usd": 0.1624962,
+        "tokens": 72293,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "critic": {
+    "answer": {
+      "scores": {
+        "motion": 4,
+        "sound": 4,
+        "craft": 5
+      },
+      "defects": [
+        "Pacing is static: 3 shots over 20s with a 10s longest hold, and 11 of 19 seconds barely change from the previous second. The phone/title shot is close to a still slide while the species name swaps.",
+        "The species swap from Wood Thrush to Northern Cardinal is a hard text replace. There is no staggered build, no mask and no type animation; the list items just appear.",
+        "The map is crude, low-poly vector art: faceted Great Lakes, jagged coastlines and a hand-drawn-looking Florida and Gulf. It falls apart in the close-up map shot.",
+        "The map 'pulse' is just a ring added around a flat dot, with no ease or falloff. The migration dots read as a scatter, not motion with direction or flow.",
+        "In the closing spectrogram, the dashes drift at uniform linear speed with no motion blur. They read as particles from a default emitter, not as sound.",
+        "The end card's ghost spectrogram axis labels and the faint 'LIVE' tag sit under the logo as leftover residue. The cross-fade is a lazy dissolve, not a designed transition.",
+        "Phone UI micro-type (6\u20137px labels, 'HEARD THIS MORNING', the tab bar) is soft and unreadable at delivery size.",
+        "The audio birdsong is plainly synthetic: single-partial sine sweeps and pure-tone dots with no harmonics, breath or room. The white-noise risers (about 2.6s and 7\u201310s) are stock broadband sweeps that stop at a hard band edge."
+      ],
+      "gaps": [
+        "Choreography and pace: top studio work would cut or re-frame every 1\u20132s and drive the phone, title and map with linked, eased camera moves and matched transitions. This piece holds slides and dissolves between three static set-ups.",
+        "Sound design: the birdsong needs real or convincingly designed calls with harmonics, plus room tone and a produced bed. The arrangement needs real dynamics; here it is sine chirps, two generic noise risers, metronomic ticks from 10 to 16s and one late pad chord at 16.3s. The one strength is that the on-screen spectrogram matches the audio chirps; push that much harder.",
+        "Finish and world-building: the map geography, the particle spectrogram and the UI micro-type need to reach the polish of the headline typography. Right now the clean type sits on top of placeholder-grade map geometry and default particle behaviour."
+      ]
+    },
+    "meta": {
+      "seconds": 19.7,
+      "cost_usd": 0.14780700000000002,
+      "tokens": 70322,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "pace": "tern.mp4: 20.0s, 3 shots, median 5.00s, longest 10.00s\nper-second change: [3.9, 4.6, 8.3, 5.9, 1.1, 5.4, 1.4, 6.6, 7.7, 19.1, 13.3, 4.2, 2.0, 1.6, 16.4, 11.2, 7.3, 1.0, 0.7]\nPACE: FAIL \u2014 longest shot 10.0s > 2.5s; median shot 5.0s > 1.5s; 11/19 seconds look like the previous second"
+  },
+  "full_scores": {
+    "idea": 4,
+    "composition": 4,
+    "typography": 3,
+    "colour": 4,
+    "light_texture": 3,
+    "motion": 3.5,
+    "craft": 4.5,
+    "originality": 3,
+    "sound": 4
+  },
+  "full_overall": 3.67,
+  "cost_usd": 0.622,
+  "judge_seconds": 112.7,
+  "verdict": "FAIL"
+}

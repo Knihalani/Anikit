@@ -36,6 +36,11 @@ fn main() {
         if only.as_ref().is_some_and(|o| !o.split(',').any(|n| n == e.name)) {
             continue;
         }
+        if anikit_shader::split_passes(e.src).is_some() {
+            // Multi-pass recipes need buffers: time them with `anikit-video still`.
+            println!("| `{}` | multi-pass | – | see `anikit-video still` | – |", e.name);
+            continue;
+        }
         let s = Shader::compile(e.src).unwrap_or_else(|err| panic!("{}: {err}", e.name));
         let mut px = vec![0u8; (w * h * 4) as usize];
         let time = |ss: bool, n: usize, px: &mut Vec<u8>| {

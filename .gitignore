@@ -17,3 +17,7 @@ isolate-*-v8.log
 
 # anikit-video MCP/builder scratch files
 .anikit-video/
+
+# Benchmark-set stills and reference clips (evaluation only, never committed): docs/video/judge/benchmark/README
+.cache/benchmark/
+.cache/

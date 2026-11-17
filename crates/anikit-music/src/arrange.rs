@@ -404,11 +404,14 @@ pub fn bassline(chords: &[ChordAt], pattern: &str, key: &Key, oct: i32, vel: f32
                 if ks.is_empty() {
                     push(t0, len, r, vel);
                 }
+                // Occasional octave jump on later hits, the trap signature; the note
+                // before a jump runs into it so the 808 slides (mono glide on legato).
+                let keys: Vec<i32> = (0..ks.len()).map(|i| if i > 0 && rng.f32() < 0.2 { r + 12 } else { r }).collect();
                 for (i, &k) in ks.iter().enumerate() {
                     let end = ks.get(i + 1).copied().unwrap_or(t0 + len);
-                    // Occasional octave jump on later hits, the trap signature.
-                    let key = if i > 0 && rng.f32() < 0.2 { r + 12 } else { r };
-                    push(k, (end - k) * 0.97, key, vel * if i == 0 { 1.0 } else { 0.9 });
+                    let slide = keys.get(i + 1).is_some_and(|&n| n != keys[i]);
+                    let l = if slide { end - k + 0.06 } else { (end - k) * 0.97 };
+                    push(k, l, keys[i], vel * if i == 0 { 1.0 } else { 0.9 });
                 }
             }
             other => {

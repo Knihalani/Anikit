@@ -70,6 +70,11 @@ pub struct PostSettings {
     pub grain_size: f32,
     /// Dither the 8-bit output (on by default: removes banding).
     pub dither: bool,
+    /// A 3D LUT applied after tone mapping: `anikit:lut/<look>` (`assets list --type lut`),
+    /// another library ref, or a `.cube` path.
+    pub lut: Option<String>,
+    /// How much of the LUT (0..1).
+    pub lut_mix: f32,
 }
 
 impl Default for PostSettings {
@@ -97,6 +102,8 @@ impl Default for PostSettings {
             grain: 0.0,
             grain_size: 1.3,
             dither: true,
+            lut: None,
+            lut_mix: 1.0,
         }
     }
 }
@@ -201,6 +208,7 @@ impl PostSettings {
             && self.tonemap != Tonemap::Aces
             && self.vignette == 0.0
             && self.grain == 0.0
+            && (self.lut.is_none() || self.lut_mix <= 0.0)
         // An 8-bit input stays within 0..1 and on the 8-bit grid without the
         // effects above, so the soft shoulder and dither change nothing.
     }
@@ -241,7 +249,11 @@ impl PostSpec {
                     }
                     obj.insert(k.clone(), val.clone());
                 }
-                serde_json::from_value(v).map_err(|e| format!("post: {e}"))
+                let s: PostSettings = serde_json::from_value(v).map_err(|e| format!("post: {e}"))?;
+                if let Some(l) = &s.lut {
+                    crate::assetlib::lut::load(l).map_err(|e| format!("post.lut: {e}"))?;
+                }
+                Ok(s)
             }
         }
     }
@@ -419,6 +431,9 @@ impl PostProcessor {
         };
         let (lut, grade, img, dith) = (&self.to_srgb[..], &self.grade, &self.img, &self.dith);
         let (sat, tonemap, vig, dither) = (p.saturation, p.tonemap, p.vignette, p.dither);
+        // Checked when the spec was resolved; a LUT that fails now is skipped.
+        let grade_lut = p.lut.as_deref().filter(|_| p.lut_mix > 0.0).and_then(|l| crate::assetlib::lut::load(l).ok());
+        let lut_mix = p.lut_mix.clamp(0.0, 1.0);
         let enc = |v: f32| -> f32 {
             let s = v.clamp(0.0, 1.0).sqrt() * SRGB_LUT as f32;
             let i = (s as usize).min(SRGB_LUT - 1);
@@ -498,6 +513,12 @@ impl PostProcessor {
                 }
                 // Encode, then grain (strongest in the midtones) and dither in 8-bit units.
                 let mut o = [enc(c[0]), enc(c[1]), enc(c[2])];
+                if let Some(l) = &grade_lut {
+                    let g = l.sample([o[0] / 255.0, o[1] / 255.0, o[2] / 255.0]);
+                    for k in 0..3 {
+                        o[k] += (g[k] * 255.0 - o[k]) * lut_mix;
+                    }
+                }
                 if grain_amp > 0.0 {
                     let (gx, gy) = ((x as f32 / gsize) as u32, (y as f32 / gsize) as u32);
                     let g = (hash01(gx, gy, seed) + hash01(gx, gy, seed ^ 0x68e3_1da4) - 1.0) * grain_amp;
@@ -732,6 +753,21 @@ mod tests {
             }
         }
         v
+    }
+
+    #[test]
+    fn lut_grades_and_mix_zero_is_off() {
+        let base = PostSettings { dither: false, ..Default::default() };
+        let mono = PostSettings { lut: Some("anikit:lut/mono-silver".into()), ..base.clone() };
+        assert!(!mono.is_identity());
+        let mut px = [200u8, 60, 40, 255].repeat(16);
+        PostProcessor::default().apply(&mut px, 4, 4, &mono, 0);
+        assert!((px[0] as i32 - px[1] as i32).abs() <= 2 && (px[1] as i32 - px[2] as i32).abs() <= 2, "{:?}", &px[..4]);
+        let off = PostSettings { lut_mix: 0.0, ..mono };
+        assert!(off.is_identity());
+        // Unknown LUTs fail when the spec resolves, naming the built-ins.
+        let bad = PostSpec::Custom(Box::new(PostCustom { preset: None, fields: serde_json::from_str(r#"{"lut": "anikit:lut/teal-ornge"}"#).unwrap() }));
+        assert!(bad.resolve().unwrap_err().contains("teal-orange"));
     }
 
     #[test]

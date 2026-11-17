@@ -25,9 +25,12 @@
 
 pub mod authoring;
 pub mod bvh;
+pub mod rig;
 pub mod env;
 pub mod geom;
 pub mod gltf;
+pub mod hdri;
+pub mod pbr;
 pub mod kernel;
 pub mod math;
 pub mod particles;
@@ -111,7 +114,7 @@ pub fn shorthand(mut v: Value) -> Value {
 }
 
 const TOP_KEYS: &[&str] = &[
-    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline",
+    "text", "font", "weight", "env", "material", "primitives", "camera", "objects", "materials", "floor", "aperture", "shutter", "bloom", "exposure", "tonemap", "quality", "resolution", "vignette", "denoise", "lights", "fog", "physics", "glass_layers", "look", "outline", "rig",
 ];
 
 /// The `scene3d` component (kind names `scene3d`, `scene-3d`, `3d.scene`).
@@ -146,6 +149,7 @@ struct Prepared {
     lights: Vec<trace::Light>,
     /// Underwater caustics strength (0 = off).
     caustics: f32,
+    gobo: rig::Gobo,
     /// Ink outlines: (width in px at 1080p, colour sRGB).
     outline: Option<(f32, [u8; 3])>,
     /// Volumetric light shafts in the fog.
@@ -348,7 +352,10 @@ impl Prepare for Scene3d {
         let floor = match m.get("floor") {
             Some(Value::Bool(false)) => None,
             v => {
-                let mut fp = if bright {
+                let mut fp = if es.name == "hdri" {
+                    // A neutral ground that catches shadows and melts into the HDRI's horizon.
+                    FloorParams { y: 0.0, color: v3(0.18, 0.18, 0.18), roughness: 0.55, mirror: 0.0, reflect: 0.2, pool: (0.0, 0.0, 0.0), fade: (6.0, 40.0) }
+                } else if bright {
                     let color = match es.name.as_str() {
                         "overcast" => v3(0.2, 0.27, 0.12),
                         "interior" => v3(0.32, 0.19, 0.1),
@@ -394,6 +401,18 @@ impl Prepare for Scene3d {
         let bounds = if probe.insts.is_empty() { (v3(0.0, 0.5, 0.0), 1.0) } else { (scale(add(lo, hi), 0.5), len(sub(hi, lo)) * 0.5) };
         let cam_v = m.get("camera").cloned().unwrap_or(if lookdev { lookdev_camera() } else { Value::Null });
         let camera = spec::camera(&cam_v, bounds, "camera").map_err(Error)?;
+        // `rig`: a lighting setup placed around the camera's view at t = 0.
+        let rig = m.get("rig").map(|r| rig::parse(r, "rig")).transpose().map_err(Error)?;
+        let mut gobo = rig::Gobo::default();
+        if let Some(r) = &rig {
+            let c0 = camera.at(0.0, 16.0 / 9.0, 0.0);
+            let view = norm(sub(c0.target, c0.pos));
+            // Keep the env's key level so exposure and the look stay calibrated.
+            let level = es.env.key_box().map(|k| luma(k.radiance) * es.env.key_solid_angle * (1.0 - k.falloff / 3.0) / std::f32::consts::PI).unwrap_or(1.0).max(0.2);
+            let (e, g) = r.apply(&es.env, view, level);
+            es.env = e;
+            gobo = g;
+        }
         if let Some(n) = &camera.target_obj {
             if !objs.iter().any(|o| o.name.as_deref() == Some(n)) {
                 let names: Vec<&str> = objs.iter().filter_map(|o| o.name.as_deref()).collect();
@@ -464,6 +483,13 @@ impl Prepare for Scene3d {
                 (d, c)
             }
             Some(_) => return Err(Error("`fog` must be a density (per metre) or { density, color }".into())),
+        };
+        // A rig with `beam`: haze so the key reads as a volumetric beam.
+        let haze = if rig.as_ref().is_some_and(|r| r.beam) && !m.contains_key("fog") {
+            shafts = true;
+            (0.04, if bright { haze.1 } else { v3(0.004, 0.004, 0.005) })
+        } else {
+            haze
         };
         let tonemap = match m.get("tonemap").and_then(|t| t.as_str()) {
             None => tonemap,
@@ -544,6 +570,7 @@ impl Prepare for Scene3d {
             haze,
             lights: local_lights,
             caustics,
+            gobo,
             outline,
             shafts,
             camera,
@@ -605,9 +632,11 @@ pub fn lint(props: &Value) -> Vec<(String, String)> {
     let mut out = Vec::new();
     let env = match props.get("env") {
         Some(Value::String(s)) => s.as_str(),
+        Some(Value::Object(m)) if m.contains_key("hdri") => "hdri",
         Some(Value::Object(m)) => m.get("preset").and_then(|p| p.as_str()).unwrap_or("cyc"),
         _ => "cyc",
     };
+    let env = if crate::assetlib::is_ref(env) || env.ends_with(".hdr") { "hdri" } else { env };
     let objs = props.get("objects").and_then(|o| o.as_array()).cloned().unwrap_or_default();
     let mat_of = |o: &Value| -> String {
         match o.get("material").or(props.get("material")) {
@@ -842,10 +871,30 @@ impl Scene3d {
         scene.haze = p.haze;
         scene.lights = p.lights.clone();
         scene.caustics = p.caustics;
+        scene.gobo = p.gobo;
         scene.time = t;
+        // One pixel's angle: picks texture mips (vertical fov over output rows).
+        scene.texel_angle = (2.0 * (cam.fov.to_radians() * 0.5).tan() / h.max(1) as f32).max(1e-5);
         let mut insts = instances(&p.objs, t, dt);
         // Textures need world boxes, so build the hierarchy first.
         scene.insts = std::mem::take(&mut insts);
+        // Focus pulls onto named objects (rack focus between keys).
+        if p.camera.focuses_on_objects() {
+            let centre_of = |name: &str, prev: bool| -> Option<V3> {
+                let oi = p.objs.iter().position(|o| o.name.as_deref() == Some(name))?;
+                let inst = scene.insts.iter().find(|i| i.obj as usize == oi)?;
+                let mut i2 = inst.clone();
+                if prev {
+                    i2.xf = inst.prev;
+                }
+                let (lo, hi) = scene.world_box(&i2);
+                Some(scale(add(lo, hi), 0.5))
+            };
+            let shutter = cam.shutter;
+            cam = p.camera.at_with(t, aspect, p.default_aperture, &|n| centre_of(n, false));
+            cam.shutter = shutter;
+            prev_cam = p.camera.at_with(t - dt, aspect, p.default_aperture, &|n| centre_of(n, true));
+        }
         // A camera aimed at (or following) a named object.
         if let Some(name) = &p.camera.target_obj {
             if let Some(oi) = p.objs.iter().position(|o| o.name.as_deref() == Some(name)) {
@@ -1148,6 +1197,32 @@ mod tests {
         let s = scene(json!({ "text": "ANIKIT", "quality": "draft", "primitives": false })).unwrap();
         let px = s.render(1.0, 1.0 / 30.0, 64, 36, None);
         assert!(px.chunks_exact(4).any(|p| p[0] > 40));
+    }
+
+    #[test]
+    fn camera_lens_shake_and_rack_focus() {
+        let b = (v3(0.0, 0.5, 0.0), 1.0);
+        // A lens on a preset keeps the framing: longer lens, further away.
+        let c50 = spec::camera(&json!({ "preset": "static", "lens": "normal50" }), b, "camera").unwrap();
+        let c135 = spec::camera(&json!({ "preset": "static", "lens": "tele135" }), b, "camera").unwrap();
+        let d = |c: &spec::CamSpec| len(sub(c.keys[0].pos, c.keys[0].target));
+        assert!(d(&c135) > d(&c50) * 2.3, "{} {}", d(&c135), d(&c50));
+        // Handheld noise: deterministic, small (well under 5% of the frame), and alive.
+        let h = spec::camera(&json!({ "preset": "static", "shake": "handheld" }), b, "camera").unwrap();
+        let (a0, a1) = (h.at(1.0, 16.0 / 9.0, 0.0), h.at(1.0, 16.0 / 9.0, 0.0));
+        assert_eq!(a0.target.x.to_bits(), a1.target.x.to_bits());
+        let base = c50.at(1.0, 16.0 / 9.0, 0.0);
+        let _ = base;
+        let moved: Vec<f32> = (0..20).map(|k| len(sub(h.at(k as f32 * 0.1, 16.0 / 9.0, 0.0).target, h.keys[0].target))).collect();
+        let dist = len(sub(h.keys[0].pos, h.keys[0].target));
+        assert!(moved.iter().any(|&m| m > 1e-4) && moved.iter().all(|&m| m / dist < 0.05), "{moved:?}");
+        // Rack focus between two named objects.
+        let r = spec::camera(&json!({ "keys": [ { "t": 0, "pos": [0, 1, 5], "target": [0, 0.5, 0], "focus": "near", "fstop": 2 }, { "t": 1, "pos": [0, 1, 5], "target": [0, 0.5, 0], "focus": "far", "fstop": 2 } ] }), b, "camera").unwrap();
+        assert!(r.focuses_on_objects());
+        let res = |n: &str| match n { "near" => Some(v3(0.0, 1.0, 3.0)), _ => Some(v3(0.0, 1.0, -5.0)) };
+        let (f0, f1) = (r.at_with(0.0, 16.0 / 9.0, 0.0, &res).focus, r.at_with(1.0, 16.0 / 9.0, 0.0, &res).focus);
+        assert!((f0 - 2.0).abs() < 1e-3 && (f1 - 10.0).abs() < 1e-3, "{f0} {f1}");
+        assert!(spec::camera(&json!({ "preset": "static", "shake": "handheldd" }), b, "camera").err().unwrap().contains("did you mean `handheld`"));
     }
 
     #[test]

@@ -19,7 +19,7 @@ use std::time::Instant;
 
 const USAGE: &str = "usage: anikit-video <render|still|sheet|check|info|schema|beats|music|docs|recipes|new|templates|looks|prompt|critique|preview|mcp|--version> [spec.json|spec.yaml] [options]
   render spec.json -o out.mp4   [--quality draft|good|best] [--crf 0-51] [--codec ak264|h264|h265|vp9|av1|prores|gif|png]
-                                [--from S] [--to S] [--scale K] [--no-audio]
+                                [--from S] [--to S] [--scale K] [--no-audio] [--sheet contact.png]
   still  spec.json -o f.png     [--at S | --at @scene] [--scale K | --width W] [--watch]
   sheet  spec.json -o sheet.png [--frames N | --cols 4 --rows 3] [--width 480]
   check  spec.json              validate; print errors, warnings and timing
@@ -267,6 +267,22 @@ fn main() -> ExitCode {
     if matches!(raw.first().map(String::as_str), Some("--version" | "-V" | "version")) {
         println!("anikit-video {} ({} {})", env!("CARGO_PKG_VERSION"), env!("ANIKIT_GIT"), env!("ANIKIT_GIT_DATE"));
         return ExitCode::SUCCESS;
+    }
+    // `<command> --help` (or -h) prints that command's usage and succeeds, so
+    // agents probing a command never mistake a usage error for a stale build.
+    if raw.len() >= 2 && raw[1..].iter().any(|a| a == "--help" || a == "-h") {
+        let cmd = raw[0].as_str();
+        let both = format!("{USAGE}\n{}", anikit_video::agent_cli::HELP);
+        let lines: Vec<&str> = both.lines().filter(|l| l.trim_start().starts_with(cmd) || l.contains(&format!("anikit-video {cmd}"))).collect();
+        if lines.is_empty() {
+            println!("{USAGE}");
+        } else {
+            println!("{}\n(more: anikit-video docs essentials)", lines.join("\n"));
+        }
+        return ExitCode::SUCCESS;
+    }
+    if let Some(code) = anikit_video::assetlib::run(&raw) {
+        return ExitCode::from(code as u8);
     }
     if let Some(code) = anikit_video::music::run(&raw) {
         return ExitCode::from(code as u8);
@@ -690,6 +706,18 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                     s.render_fps,
                     s.bytes as f32 / 1024.0
                 );
+            }
+            // `--sheet f.png`: a contact sheet of the final (one cell per second,
+            // 480 px), so nobody tiles frames out of the MP4 by hand.
+            if let Some(sp) = a.get("--sheet") {
+                let n = ev.duration.ceil().max(1.0) as u32;
+                let cols = (n as f32).sqrt().ceil() as u32;
+                let rows = n.div_ceil(cols);
+                let (sw, sh, px) = pipeline::contact_sheet(&ev, cols, rows, 480);
+                pipeline::save_png(Path::new(sp), sw, sh, px)?;
+                if !json {
+                    eprintln!("sheet: {sp} ({} frames spread over the video)", cols * rows);
+                }
             }
             Ok(ExitCode::SUCCESS)
         }
