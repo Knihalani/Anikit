@@ -4,6 +4,7 @@
 //! swipes away (left, right, up, or alternating) and the stack advances,
 //! with the swiped card returning to the back.
 
+use super::polish::Surface;
 use super::style::*;
 use super::text::{draw, wrap, Face, TextStyle};
 use super::{transform_ops, with_opacity, Component, Ctx, Error, Prepare};
@@ -63,6 +64,14 @@ pub struct CardStack {
     #[serde(rename = "loop")]
     pub looping: bool,
     pub delay: f32,
+    /// Card face: omitted = rich gradient faces from the palette (or each
+    /// card's `color`); a surface (solid, glass, outline, flat, paper) gives
+    /// quiet UI cards in the theme colours instead.
+    pub surface: Option<Surface>,
+    /// Title face: display (default), sans, serif, mono.
+    pub face: Option<Face>,
+    /// Faint motion trail on the card being swiped away.
+    pub trail: bool,
     #[serde(skip)]
     specs: Vec<CardSpec>,
 }
@@ -82,6 +91,9 @@ impl Default for CardStack {
             radius: None,
             looping: true,
             delay: 0.0,
+            surface: None,
+            face: None,
+            trail: true,
             specs: Vec::new(),
         }
     }
@@ -205,6 +217,13 @@ impl Component for CardStack {
                 card.push(rect(x0, y0, cw, ch, r, solid(Rgba([0.0, 0.0, 0.0, dark]))));
             }
             transform_ops(&mut card, &full);
+            if self.trail && d == 0.0 && p > 0.0 && dir != 0.0 {
+                // Velocity of the swipe this frame, for a motion trail.
+                let dt = 1.0 / ctx.fps.max(1.0);
+                let q0 = ease_in_out(p);
+                let q1 = ease_in_out((p - dt / sw).max(0.0));
+                card = super::polish::smear(card, dir * (bw * 0.5 + cw * 0.8) * (q0 - q1), -ch * 0.08 * (q0 - q1));
+            }
             ops.extend(card);
             layers.push((e, with_opacity(ops, op)));
         }
@@ -235,6 +254,11 @@ impl CardStack {
                 o.push(rect(x, y + h * 0.45, w, h * 0.55, 0.0, vgrad(y + h * 0.45, y + h, Rgba([0.0, 0.0, 0.0, 0.0]), Rgba([0.0, 0.0, 0.0, 0.7]))));
             }
             o.push(Op::PopLayer);
+        } else if let Some(sf) = self.surface {
+            super::polish::finish(o, th, sf, x, y, w, h, r, 0.0, s.color.map(|c| c.0));
+            let eb = s.eyebrow.clone().unwrap_or_else(|| format!("{:02}", i + 1));
+            let es = TextStyle::new(Face::Mono, (h * 0.06).max(10.0), 600, th.accent).tracking(0.08);
+            draw(o, ctx.assets, &eb, &es, x + pad, y + pad + es.size * 0.8, 0.0);
         } else {
             // Rich gradient face with a soft orb of light.
             o.push(rect(x, y, w, h, r, Paint::Linear { p0: [x, y], p1: [x + w, y + h], stops: vec![(0.0, shade(base, -0.05)), (1.0, shade(mix(base, th.pal(i + 1), 0.35), -0.55))] }));
@@ -251,8 +275,18 @@ impl CardStack {
             draw(o, ctx.assets, &eb, &es, x + pad, y + pad + es.size * 0.8, 0.0);
         }
         // Title and body, bottom-left.
-        let ts = TextStyle::new(Face::Display, (h * 0.13).max(14.0), 700, white).tracking(-0.02);
-        let bs = TextStyle::new(Face::Sans, (h * 0.055).max(10.0), 450, Rgba([1.0, 1.0, 1.0, 0.78]));
+        let quiet = media.is_none() && self.surface.is_some();
+        let ink = match (quiet, self.surface, s.color) {
+            (true, Some(Surface::Solid | Surface::Flat | Surface::Paper), Some(c)) => on_color(&[c.0]),
+            (true, _, _) => th.text,
+            _ => white,
+        };
+        let tsz = (h * 0.13).max(14.0);
+        let ts = match self.face {
+            None => TextStyle::new(Face::Display, tsz, 700, ink).tracking(-0.02),
+            f => super::polish::face_style(f, tsz, 700, ink),
+        };
+        let bs = TextStyle::new(Face::Sans, (h * 0.055).max(10.0), 450, alpha(ink, 0.75));
         let body = if s.body.is_empty() { Vec::new() } else { wrap(ctx.assets, &s.body, &bs, w - pad * 2.0).into_iter().take(3).collect() };
         let mut by = y + h - pad - (body.len() as f32 - 1.0).max(0.0) * bs.size * 1.35;
         if !body.is_empty() {
@@ -264,7 +298,10 @@ impl CardStack {
         if !s.title.is_empty() {
             draw(o, ctx.assets, &s.title, &ts, x + pad, by, 0.0);
         }
-        border(o, x, y, w, h, r, Rgba([1.0, 1.0, 1.0, 0.14]));
+        if !quiet {
+            border(o, x, y, w, h, r, Rgba([1.0, 1.0, 1.0, 0.14]));
+            super::polish::bevel(o, x, y, w, h, r, 1.0);
+        }
     }
 }
 

@@ -82,7 +82,7 @@ pub struct Visualizer {
     pub style: String,
     /// Number of bands (bars); default 48 for bars, 96 for circle, 32 for wave.
     pub bands: Option<u32>,
-    /// Gradient colours (low → high); default accent → cyan.
+    /// Gradient colours (low → high); default: a ramp of the theme accent.
     pub colors: Vec<Color>,
     /// Release smoothing 0..1 (higher = slower fall).
     pub smoothing: f32,
@@ -144,7 +144,7 @@ impl Visualizer {
     }
     fn colors(&self, ctx: &Ctx) -> Vec<Rgba> {
         if self.colors.is_empty() {
-            vec![ctx.theme.accent, ctx.theme.pal(2), ctx.theme.pal(1)]
+            vec![shade(ctx.theme.accent, -0.25), ctx.theme.accent, shade(ctx.theme.accent, 0.5)]
         } else {
             self.colors.iter().map(|c| c.0).collect()
         }
