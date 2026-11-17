@@ -13,7 +13,8 @@
 
 - **Grid** `grid` on the video, a scene (replaces) or a `group` (for its children): `columns` (12), `rows` (8), `margin`
   (length, `[v, h]` or `[t, r, b, l]`; default 5% of the short side), `gutter` (length or `[col, row]`; default 2%),
-  `baseline` px, `areas` name → range, `show: true` draws fields and baselines to check a layout.
+  `baseline` px, `areas` name → range, `show: true` tints fields and baselines over the scene to check a layout;
+  `show: "under"` draws the field edges as hairlines beneath the layers (a guidelines look; `color` sets them).
 - **Cell** `"cell": "head"` | `"1-6/2-4"` (columns 1–6, rows 2–4) | `"7/1"` | `"9-"` (column 9 to the end, all rows) |
   `[col, row, cols, rows]`. Sets x, y, width, and height (not for text). `anchor` picks the point of the cell (default
   `topLeft`; `bottomLeft` sits a caption on the field's foot) and text alignment follows it. With `baseline`, a text's

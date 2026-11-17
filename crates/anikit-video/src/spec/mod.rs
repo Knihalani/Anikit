@@ -168,8 +168,12 @@ pub struct GridSpec {
     pub baseline: Option<f64>,
     /// Named areas: name → cell range (`"1-8/1-3"` = columns 1–8, rows 1–3).
     pub areas: Option<BTreeMap<String, String>>,
-    /// Draw the grid over the scene (fields, and baseline lines when set), to check a layout.
-    pub show: Option<bool>,
+    /// Draw the grid: `true` (over the scene, to check a layout) or `"under"` (beneath the layers, as a
+    /// visible design element, e.g. brand guidelines). Fields and baseline lines when set.
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub show: Option<serde_json::Value>,
+    /// Colour of the drawn grid. Default a translucent magenta over, a 25% ink hairline under.
+    pub color: Option<String>,
 }
 
 /// `halftone`: a cell size in px, or the full settings.

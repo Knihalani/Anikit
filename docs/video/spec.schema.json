@@ -1105,9 +1105,12 @@
           }
         },
         "show": {
-          "description": "Draw the grid over the scene (fields, and baseline lines when set), to check a layout.",
+          "description": "Draw the grid: `true` (over the scene, to check a layout) or `\"under\"` (beneath the layers, as a\nvisible design element, e.g. brand guidelines). Fields and baseline lines when set."
+        },
+        "color": {
+          "description": "Colour of the drawn grid. Default a translucent magenta over, a 25% ink hairline under.",
           "type": [
-            "boolean",
+            "string",
             "null"
           ]
         }

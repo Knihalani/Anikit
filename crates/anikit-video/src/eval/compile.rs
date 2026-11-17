@@ -956,13 +956,20 @@ impl C<'_> {
         }
         let pc = PCtx { size: [self.w, self.h], t0: 0.0, end: dur, delay: 0.0, index: 0, count: s.layers.len(), in_box: false };
         self.grid = s.grid.clone().or_else(|| self.video_grid.clone());
-        let overlay = match self.grid.clone() {
-            Some(g) if g.show == Some(true) => Some(self.grid_overlay(&g, [self.w, self.h], &format!("{path}.grid"))),
-            _ => None,
+        let (overlay, under) = match self.grid.clone() {
+            Some(g) => match grid_show(&g) {
+                0 => (None, false),
+                m => (Some(self.grid_overlay(&g, [self.w, self.h], m == 2, &format!("{path}.grid"))), m == 2),
+            },
+            None => (None, false),
         };
-        let mut layers = self.layers(&s.layers, &format!("{path}.layers"), pc, None);
-        if let Some(o) = overlay {
-            layers.extend(self.layers(&o, &format!("{path}.grid"), pc, None));
+        let mut layers = Vec::new();
+        if let (Some(o), true) = (&overlay, under) {
+            layers.extend(self.layers(o, &format!("{path}.grid"), pc, None));
+        }
+        layers.extend(self.layers(&s.layers, &format!("{path}.layers"), pc, None));
+        if let (Some(o), false) = (&overlay, under) {
+            layers.extend(self.layers(o, &format!("{path}.grid"), pc, None));
         }
         Built { camera, shake, layers, bg, bg_color }
     }
@@ -1256,9 +1263,17 @@ impl C<'_> {
                 let cpc = PCtx { size, t0: start, end, delay: 0.0, index: 0, count: 0, in_box: false };
                 let saved = l.grid.as_ref().map(|g| self.grid.replace(g.clone()));
                 let mut kids = self.layers(l.layers.as_deref().unwrap_or(&[]), &format!("{path}.layers"), cpc, l.stagger.as_ref());
-                if let Some(g) = l.grid.as_ref().filter(|g| g.show == Some(true)) {
-                    let o = self.grid_overlay(g, size, &format!("{path}.grid"));
-                    kids.extend(self.layers(&o, &format!("{path}.grid"), cpc, None));
+                if let Some(g) = l.grid.as_ref() {
+                    let m = grid_show(g);
+                    if m != 0 {
+                        let o = self.grid_overlay(g, size, m == 2, &format!("{path}.grid"));
+                        let ok = self.layers(&o, &format!("{path}.grid"), cpc, None);
+                        if m == 2 {
+                            kids.splice(0..0, ok);
+                        } else {
+                            kids.extend(ok);
+                        }
+                    }
                 }
                 if let Some(prev) = saved {
                     self.grid = prev;
@@ -2119,9 +2134,36 @@ impl C<'_> {
     }
 
     /// Layers that draw a grid (fields tinted, baseline lines) for checking a layout.
-    fn grid_overlay(&mut self, g: &spec::GridSpec, size: [f32; 2], path: &str) -> Vec<Layer> {
+    fn grid_overlay(&mut self, g: &spec::GridSpec, size: [f32; 2], under: bool, path: &str) -> Vec<Layer> {
         let gc = self.grid_c(g, size, path);
         let mut out = Vec::new();
+        if under {
+            // A hairline drawing of the field edges: a visible design element, not a debug tint.
+            let col = g.color.clone().unwrap_or_else(|| "#12121240".into());
+            let line = |x: f32, y: f32, w: f32, h: f32| Layer {
+                shape: Some("rect".into()),
+                x: Some(Num::Num(x as f64)),
+                y: Some(Num::Num(y as f64)),
+                width: Some(Num::Num(w as f64)),
+                height: Some(Num::Num(h as f64)),
+                anchor: Some(spec::Anchor::Name("topLeft".into())),
+                fill: Some(spec::Paint::Css(col.clone())),
+                ..Default::default()
+            };
+            let full = gc.rect(1, gc.cols, 1, gc.rows);
+            for c in 1..=gc.cols {
+                let [x, _, w, _] = gc.rect(c, c, 1, 1);
+                out.push(line(x, full[1], 1.0, full[3]));
+                out.push(line(x + w - 1.0, full[1], 1.0, full[3]));
+            }
+            for r in 1..=gc.rows {
+                let [_, y, _, h] = gc.rect(1, 1, r, r);
+                out.push(line(full[0], y, full[2], 1.0));
+                out.push(line(full[0], y + h - 1.0, full[2], 1.0));
+            }
+            return out;
+        }
+        let tint = g.color.clone().unwrap_or_else(|| "#ff2d7a22".into());
         let rect = |x: f32, y: f32, w: f32, h: f32, fill: &str| Layer {
             shape: Some("rect".into()),
             x: Some(Num::Num(x as f64)),
@@ -2135,7 +2177,7 @@ impl C<'_> {
         for c in 1..=gc.cols {
             for r in 1..=gc.rows {
                 let [x, y, w, h] = gc.rect(c, c, r, r);
-                out.push(rect(x, y, w, h, "#ff2d7a22"));
+                out.push(rect(x, y, w, h, &tint));
             }
         }
         if let Some(b) = gc.baseline {
@@ -4292,4 +4334,14 @@ fn buf_slot_opt(name: &str) -> Option<usize> {
 
 fn buf_slot(name: &str) -> usize {
     buf_slot_opt(name).unwrap_or(0)
+}
+
+/// A grid's `show`: 0 off, 1 over the layers, 2 under them.
+fn grid_show(g: &spec::GridSpec) -> u8 {
+    match &g.show {
+        Some(serde_json::Value::Bool(true)) => 1,
+        Some(serde_json::Value::String(s)) if s == "under" => 2,
+        Some(serde_json::Value::String(s)) if s == "over" => 1,
+        _ => 0,
+    }
 }
