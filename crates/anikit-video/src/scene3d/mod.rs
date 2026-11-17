@@ -660,31 +660,45 @@ fn outlines(out: &mut [u8], px: &post::Planes, w: usize, h: usize, width: f32, i
         }
         dot(n_at(i), n_at(j)) < 0.6
     };
-    let mut cov = vec![0f32; w * h];
     use rayon::prelude::*;
+    // Edge pixels first (each pixel tests its right and lower neighbour), then
+    // a distance-limited dilation over that mask.
+    let mut mask = vec![0u8; w * h];
+    mask.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
+        for x in 0..w {
+            let i = y * w + x;
+            let mut e = (x + 1 < w && edge(i, i + 1)) || (y + 1 < h && edge(i, i + w));
+            e |= (x > 0 && edge(i, i - 1)) || (y > 0 && edge(i, i - w));
+            // Keep the line on the nearer side of a depth step.
+            if e && !bg(px.id[i]) {
+                row[x] = 1;
+            } else if e {
+                row[x] = 2;
+            }
+        }
+    });
+    let mut cov = vec![0f32; w * h];
     cov.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
         for x in 0..w {
             let i = y * w + x;
             let d = if bg(px.id[i]) { dmed } else { px.depth[i] };
-            let r = (width * scale_px * (dmed / d.max(0.05)).sqrt().clamp(0.6, 1.8)).max(0.6);
+            let r = (width * scale_px * (dmed / d.max(0.05)).sqrt().clamp(0.6, 1.8)).max(0.6) * 0.65;
             let ri = r.ceil() as i32;
             let mut best = f32::MAX;
             for dy in -ri..=ri {
+                let yy = y as i32 + dy;
+                if yy < 0 || yy >= h as i32 {
+                    continue;
+                }
                 for dx in -ri..=ri {
-                    if dx == 0 && dy == 0 {
-                        continue;
-                    }
-                    let (xx, yy) = (x as i32 + dx, y as i32 + dy);
-                    if xx < 0 || yy < 0 || xx >= w as i32 || yy >= h as i32 {
+                    let xx = x as i32 + dx;
+                    if xx < 0 || xx >= w as i32 || mask[yy as usize * w + xx as usize] == 0 {
                         continue;
                     }
                     let dist = ((dx * dx + dy * dy) as f32).sqrt();
-                    if dist < best && dist <= r + 0.5 && edge(i, yy as usize * w + xx as usize) {
-                        best = dist;
-                    }
+                    best = best.min(dist);
                 }
             }
-            // Lines sit on the nearer side of a depth step only.
             row[x] = if best == f32::MAX { 0.0 } else { (r + 0.5 - best).clamp(0.0, 1.0) };
         }
     });
