@@ -29,3 +29,22 @@ Those frames scored 100/100 on `critique --render` and up to 8/10 from an LLM gr
 
 - Judge every shot against this list *before* sending it to the parent. A failing frame never reaches the user.
 - Show work as one composed shot (5–8 s) at a time, not as galleries of isolated parts.
+
+## Second rejection: pace and "beyond other tools"
+
+The user's verdict on Meridian, Lighthouse Keeper, Tidewater and Northern Silver (stills in `rejected/*-slow.jpg`): "super boring, look generic, they don't show anything incredible/beyond what other products can do, super slow paced, aren't visually impressive."
+
+Every one of them was a single 6–7 s slow dolly, with the same composition in all four quarters of the shot. A still checklist can't catch that, so clips now also face the two tests below.
+
+### Pace: run `python3 docs/video/quality/pace.py clip.mp4 --strip strip.png`
+
+It FAILS if any of these is true:
+- any shot holds longer than 2.5 s without a major change;
+- the median shot is longer than 1.5 s;
+- more than 20% of seconds look like the second before.
+
+The target is cuts or major changes on the beat every 0.5–1.5 s (120–140 BPM), with energetic camera work: whips, snaps, speed ramps, impacts and match cuts.
+
+### "Beyond other tools"
+
+Every shot must show something that a browser-based tool (Remotion or HyperFrames with WebGL or three.js) can't realistically do. See `docs/video/quality/ONLY_ANIKIT.md`; BENCH maintains it, verified against those tools. A pretty shader or a 3D logo alone does not count: competitors can embed those too.
