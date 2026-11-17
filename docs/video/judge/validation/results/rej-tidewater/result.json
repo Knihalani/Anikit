@@ -1,0 +1,467 @@
+{
+  "name": "rej-tidewater",
+  "tags": [
+    "product-launch",
+    "3d-cg"
+  ],
+  "refs": [
+    "osko-launch",
+    "wealthsimple-trade",
+    "jpmorgan-payments"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 2,
+      "composition": 3,
+      "typography": 3,
+      "colour": 3,
+      "light_texture": 4,
+      "motion": 2,
+      "craft": 3,
+      "originality": 2
+    },
+    "overall": 2.75,
+    "judged_professional": "0/3",
+    "pro_rate": 0.0,
+    "mean_rank": 4,
+    "gaps": [
+      "No idea beyond 'show the app'; it needs a visual concept rooted in sailing and tide (water, weather, time) that only this product could own",
+      "No choreography: six beats of the same frame; it needs changes in scale, camera, environment and type behaviour like A's object-led sequence",
+      "Typography and palette are defaults; it needs a chosen face, expressive scale and integration of type with image and material",
+      "Find an idea that is specific to coastal sailing (tide, wind, the decision to go) and stage it as a sequence of distinct, choreographed shots instead of one device beauty-shot.",
+      "Give the typography a point of view: a chosen face, expressive scale, and type integrated with the water and motion rather than a slide headline in the top-left.",
+      "Build real material and light (sea, weather, boat, time of day) with a deliberate palette, replacing the generic caustic overlay and flat device mock.",
+      "No idea beyond 'show the app'; build a concept around the sea, timing and risk that only a sailing product could own",
+      "Type is default grotesk with a tracked-caps label; give the typography scale, a point of view, and integration with the image",
+      "There is no choreography: one static layout over four frames; design distinct shots with camera, light and pacing the way C does"
+    ],
+    "tells": [
+      "The same composition across all frames: one tablet mock-up on a caustic-water backdrop, with only a slight camera drift",
+      "Slide-style headline 'Know exactly when to go.' in a default bold grotesk, with a small tracked-caps blue label beneath; the textbook generic SaaS-AI layout",
+      "A literal, obvious idea: product name plus a screenshot of the feature (a tide curve), with nothing a viewer would remember",
+      "Single blue accent on a near-white ground; generic water caustics used as an effect with no subject",
+      "Placeholder-grade UI and a device mock-up with a stock bevel; text placed like a deck slide",
+      "One composition is repeated across every frame: a tilted UI tablet on a caustic-water background, with the headline added and nudged. Very little happens.",
+      "Slide-style typography: a default bold grotesk headline ('Know exactly when to go.') in the corner, a small tracked-caps label in a single blue accent, and no scale play or integration with the image.",
+      "The idea is literal: product name + screenshot of the feature (a 'safe to sail' window on a tide curve) + benefit tagline.",
+      "The water caustics are an effect with no subject. The pale grey-blue palette is generic, and the device is a flat black slab with placeholder-scale UI text.",
+      "It has only 4 sampled frames, consistent with a short, static template render.",
+      "Textbook 'tasteful AI' template: a bold generic grotesk headline ('Know exactly when to go.') with a small tracked-caps label in one accent blue beneath it ('TIDEWATER \u00b7 TIDES, GUSTS AND SAFE WINDOWS FOR COASTAL SAILORS')",
+      "The same composition in all four frames: the headline appears and the tablet barely drifts, so almost nothing happens",
+      "A placeholder-style product UI on a generic slab device, over a stock water-caustics background (effect without a subject)",
+      "Literal idea: the product name plus a screenshot of the feature; no sea, boat, weather or human moment",
+      "Flat, cool, unmotivated light; type set like a slide in the top-left"
+    ]
+  },
+  "refs_summary": {
+    "osko-launch": {
+      "overall": 6.12,
+      "judged_professional": "3/3",
+      "mean_rank": 2.67
+    },
+    "wealthsimple-trade": {
+      "overall": 6.38,
+      "judged_professional": "3/3",
+      "mean_rank": 2.33
+    },
+    "jpmorgan-payments": {
+      "overall": 7.88,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 6.79,
+  "delta": -4.04,
+  "trials": [
+    {
+      "key": {
+        "A": "jpmorgan-payments",
+        "B": "osko-launch",
+        "C": "candidate",
+        "D": "wealthsimple-trade"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "Raking window light with long, soft, motivated shadows across every frame; it reads as a real art-directed lighting setup, not flat studio fill",
+              "A consistent material language (brushed gold, frosted glass, iridescent coin edges, wood-grain tiles with gold inlays) carried through six very different set-ups",
+              "Clear choreography: the coin-token motif travels from a wave-form to a phone, a floor node, a glass conveyor, a tablet UI and a stacked lock, so the frames are connected by a single object rather than repeated",
+              "Restrained brand type (J.P.Morgan wordmark, a UI set with a real numeric hierarchy at $2.45M) sits inside the objects as material rather than being slapped on as a headline",
+              "Varied camera grammar: low oblique, top-down, macro and isometric tracking"
+            ],
+            "gaps": [
+              "The idea is still a familiar fintech trope (glass coins and glowing UI as 'secure, fast payments'); it needs one conceptual turn a viewer would retell",
+              "Typography never gets a moment of its own; one typographic beat with scale contrast would give the piece a voice beyond its rendering",
+              "The cream-and-gold palette is luxurious but safe; one disruptive colour or texture shift would make a frame memorable rather than merely beautiful"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.6,
+            "scores": {
+              "idea": 7,
+              "composition": 6,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 5,
+              "motion": 7,
+              "craft": 6,
+              "originality": 7
+            },
+            "tells": [
+              "A real narrative thread (I.O.U. sticky notes, a raided fridge, owed coffees and beers) gives it an idea with wit, the opposite of an effect with no subject",
+              "Deliberate mix of media: 3D night scene, photoreal-ish fridge shelf, flat character illustration with a golf-swing pose sequence and emoji-style icon grid, delivered in multiple aspect ratios like a campaign cutdown suite",
+              "The golf triptych shows real character-animation key poses with comic timing (swing, follow-through, facepalm)",
+              "The hand-lettered I.O.U. recurs as a typographic anchor across styles"
+            ],
+            "gaps": [
+              "Style cohesion is weak: the jumps between 3D, flat vector and icon grids read as a compilation, not one authored world; it needs a unifying rendering or palette rule",
+              "Several frames (the pink car on cream, the icon grid on black) are near clip-art-default, centred and empty; they need A-level staging, light and layering",
+              "Lighting is mostly flat or generic; it needs motivated light and texture like A's to give the jokes material weight"
+            ]
+          },
+          "C": {
+            "verdict": "not professional",
+            "confidence": 0.92,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "The same composition across all frames: one tablet mock-up on a caustic-water backdrop, with only a slight camera drift",
+              "Slide-style headline 'Know exactly when to go.' in a default bold grotesk, with a small tracked-caps blue label beneath; the textbook generic SaaS-AI layout",
+              "A literal, obvious idea: product name plus a screenshot of the feature (a tide curve), with nothing a viewer would remember",
+              "Single blue accent on a near-white ground; generic water caustics used as an effect with no subject",
+              "Placeholder-grade UI and a device mock-up with a stock bevel; text placed like a deck slide"
+            ],
+            "gaps": [
+              "No idea beyond 'show the app'; it needs a visual concept rooted in sailing and tide (water, weather, time) that only this product could own",
+              "No choreography: six beats of the same frame; it needs changes in scale, camera, environment and type behaviour like A's object-led sequence",
+              "Typography and palette are defaults; it needs a chosen face, expressive scale and integration of type with image and material"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 7,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A clear formal through-line: every subject is a circle (earbud case, steering wheel, cannabis bud, porthole socket, ball TV, glowing stadium ring), suggesting match-cut choreography between varied products",
+              "Considered muted palette of blush, sage-blue, dove grey and a final deep navy break, with soft but believable studio light and good material rendering (leather, frosted plastic, plant matter)",
+              "Absence of type works for a match-cut object reel, though it leaves the piece without a voice"
+            ],
+            "gaps": [
+              "Centred hero objects on plain seamless backdrops border on product-render default; it needs layered frames with depth and context so each frame is a poster",
+              "The circle-motif idea is a known reel device; it needs a narrative or conceptual reason linking these objects so the transitions mean something",
+              "The UI pills around the steering wheel and the glossy final ring slip toward stock iconography; it needs the material specificity and light drama that A sustains"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 30.6,
+        "cost_usd": 0.1558168,
+        "tokens": 71956,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "jpmorgan-payments",
+        "B": "osko-launch",
+        "C": "wealthsimple-trade",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.86,
+            "scores": {
+              "idea": 7,
+              "composition": 8,
+              "typography": 7,
+              "colour": 8,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 7
+            },
+            "tells": [
+              "One material system runs through the whole film: gold-rimmed glass coins/discs with iridescent edges, brushed-gold inlays and a sandy paper ground. It reads as an art-directed world, not a stack of effects.",
+              "The light is motivated and consistent: one raking window light with long, raked shadows, crossing every frame. Caustics show through the glass, and shadows on the surface carry colour.",
+              "The frames are varied and choreographed: a wave form, a coin landing on a card with ripples, a top-down tiled floor with a glowing socket, a conveyor tube, a glass tablet with a stylus, and a stacking coin that resolves on a lock. The coin is the through-line, and it transforms in each frame.",
+              "The type is restrained and correct for the brand: the brand's own wordmark and a set UI figure ($2.45M) inside the glass device, integrated into the object rather than laid over it.",
+              "It leans towards the luxury-fintech idiom (gold, glass, cream), which keeps it from being surprising."
+            ],
+            "gaps": [
+              "The idea is the category default (payments = gold coins + glass UI + padlock). It needs one conceit specific to this brand that a viewer would retell.",
+              "The palette is a safe cream/gold monochrome. A single unexpected counter-colour or a darker act would add contrast and memorability across the sequence.",
+              "The closing lock icon is a literal security clich\u00e9. End on an image only this film could have instead."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.62,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A formal through-line, the circle, is carried across very different objects: an earbud case, a steering wheel, a cannabis-bud sphere, a socket/porthole, a ball TV with a chess board, and a stadium/chip ring. That suggests a deliberate match-cut structure.",
+              "The materials are convincing: leather stitching on the wheel, a frosted crystalline core in the socket, molded plastic on the TV. The pastel grounds (dusty pink, sage, mauve, navy) are chosen per object.",
+              "Every subject sits centred on a seamless backdrop, so the frames feel like a product-render catalogue more than a choreographed film.",
+              "No type is visible. The piece can carry itself visually, but with no titling there is nothing to anchor the meaning of the circle motif.",
+              "The traffic-sign UI icons floating around the wheel are clip-art-like and the weakest element."
+            ],
+            "gaps": [
+              "Composition is the same every time: a centred object on a flat ground. Vary scale, cropping and camera, and show the transitions between objects, to get A's poster-level framing.",
+              "The light is soft-box generic. Give it one motivated, directional key with real shadows, as A does, to give the shapes weight and mood.",
+              "The circle device is a formal trick without a message. Tie it to a brand or narrative idea, and replace the stock UI icon pills with designed graphics."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.58,
+            "scores": {
+              "idea": 7,
+              "composition": 5,
+              "typography": 5,
+              "colour": 6,
+              "light_texture": 5,
+              "motion": 6,
+              "craft": 6,
+              "originality": 6
+            },
+            "tells": [
+              "There is a real, witty idea: the 'I.O.U.' sticky note left in the fridge, a theme of owing small favours (coffee, beer, money with wings, a heart, a gift), a golfer's swing ending in a facepalm, and a joke that pays off on an open retro fridge.",
+              "The film mixes media and aspect ratios (16:9, square, vertical, dark 3D, flat 2D), which reads as a deliverables suite for social. The reel lacks a unified world.",
+              "The 3D fridge with reflection and the night van scene have decent light. The flat 2D golfer and pink car are competent but generic, near stock-vector illustration.",
+              "The emoji-style icon grid is the weakest frame: a template-like 3\u00d72 layout on black.",
+              "The only typography is the handwritten 'I.O.U.' note. It is charming and does the work, but there is no broader type system."
+            ],
+            "gaps": [
+              "Unify the art direction. Choose either the tactile 3D fridge world or a distinctive 2D style, rather than mixing generic flat vector with toy-like 3D.",
+              "Replace the emoji icon grid and the stock-style golfer with frames that carry the I.O.U. idea through composition and gesture.",
+              "Bring A's level of lighting and material craft to the 3D shots. The pantry shelf in particular looks plasticky and flatly lit."
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 2,
+              "composition": 3,
+              "typography": 3,
+              "colour": 3,
+              "light_texture": 4,
+              "motion": 2,
+              "craft": 3,
+              "originality": 2
+            },
+            "tells": [
+              "One composition is repeated across every frame: a tilted UI tablet on a caustic-water background, with the headline added and nudged. Very little happens.",
+              "Slide-style typography: a default bold grotesk headline ('Know exactly when to go.') in the corner, a small tracked-caps label in a single blue accent, and no scale play or integration with the image.",
+              "The idea is literal: product name + screenshot of the feature (a 'safe to sail' window on a tide curve) + benefit tagline.",
+              "The water caustics are an effect with no subject. The pale grey-blue palette is generic, and the device is a flat black slab with placeholder-scale UI text.",
+              "It has only 4 sampled frames, consistent with a short, static template render."
+            ],
+            "gaps": [
+              "Find an idea that is specific to coastal sailing (tide, wind, the decision to go) and stage it as a sequence of distinct, choreographed shots instead of one device beauty-shot.",
+              "Give the typography a point of view: a chosen face, expressive scale, and type integrated with the water and motion rather than a slide headline in the top-left.",
+              "Build real material and light (sea, weather, boat, time of day) with a deliberate palette, replacing the generic caustic overlay and flat device mock."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 37.2,
+        "cost_usd": 0.16778880000000002,
+        "tokens": 72557,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "wealthsimple-trade",
+        "B": "osko-launch",
+        "C": "jpmorgan-payments",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.65,
+            "scores": {
+              "idea": 6,
+              "composition": 7,
+              "typography": 5,
+              "colour": 7,
+              "light_texture": 7,
+              "motion": 6,
+              "craft": 7,
+              "originality": 6
+            },
+            "tells": [
+              "A consistent formal system: every frame centres a circular object (earbud case, steering wheel, a sphere of foliage, a plug socket, a ball-shaped TV, a ring-shaped stadium), so the circle runs through the whole film like a theme",
+              "Muted, considered grounds (blush, sage-teal, putty, grey) with one deep-navy closing frame; the palette is deliberate",
+              "Varied aspect ratios (16:9, 4:3, 1:1) suggest a studio cutting one piece for several placements",
+              "Soft studio light with believable materials (leather wheel, rubber cable, plastic shell), though the light is evenly flat",
+              "Against it: every frame is a centred object on an empty ground, which repeats one composition; the overlay icons on the steering wheel are generic UI pictograms; there is no visible type"
+            ],
+            "gaps": [
+              "Composition never varies (centred hero object on an empty ground every time); add scale shifts, crops and camera moves the way C's shots do",
+              "Light is soft and even with no directional shadow or atmosphere; give it a key light and cast shadows that model the forms",
+              "The circle motif is a formal exercise without a stated idea; tie the objects together with a narrative or a typographic thread"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.7,
+            "scores": {
+              "idea": 8,
+              "composition": 7,
+              "typography": 6,
+              "colour": 7,
+              "light_texture": 6,
+              "motion": 7,
+              "craft": 7,
+              "originality": 8
+            },
+            "tells": [
+              "A specific, witty narrative device: the hand-lettered 'I.O.U' note recurs in a tub on a fridge shelf and inside a retro fridge, which pays the idea off",
+              "Mixed media used on purpose: a night-scene camper van, a 3D fridge interior, flat character illustration (a golfer's swing in three poses), a 6-up icon grid, a lit fridge with its reflection",
+              "Real choreography across frames: the golf swing is shown as sequential poses, the fridge goes from closed to open with the note revealed, and the icons (coffee, beer, cash, heart, gift) set up the debts",
+              "Humour and storytelling a viewer would remember",
+              "Weaker spots: the fridge-shelf frame has muddy, plasticky rendering, the icon grid is close to stock emoji, and the styles don't fully cohere"
+            ],
+            "gaps": [
+              "Unify the art direction so the 3D, flat-illustration and icon styles read as one designed world",
+              "The icon grid (cups, beer, cash, heart, gift) is near-stock emoji; draw it in the piece's own language",
+              "Lift the light and material quality of the 3D shots (the fridge shelf, the tub) to the level of C's directional, textured light"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 9,
+              "typography": 7,
+              "colour": 9,
+              "light_texture": 9,
+              "motion": 8,
+              "craft": 9,
+              "originality": 8
+            },
+            "tells": [
+              "One clear visual metaphor carried through: a glass-and-gold coin or token rides a wave, lands on a phone, plugs into a tiled network, travels a conveyor, appears on a tablet balance and locks into a stack",
+              "Real directional light: hard window light raking across, long cast shadows, caustics through the glass, warm gold rim highlights",
+              "A deliberate, restrained palette of warm sand, champagne gold and glass, matched to a private-bank brand (J.P. Morgan Payments)",
+              "Every frame works as a poster, and the camera angle and scale change each time: wide still life, overhead network, conveyor, close stack",
+              "Branding and UI type (the $2.45M balance, the J.P. Morgan wordmark) sit inside the objects rather than on top as slides"
+            ],
+            "gaps": [
+              "The UI typography on the tablet is fairly generic product-UI; a more distinctive typographic layer would raise it",
+              "Glass-and-gold fintech is a familiar 2024\u201326 trope; push one frame further into surprise",
+              "The lock-stack ending is a literal security metaphor; a less obvious final beat would make it memorable"
+            ]
+          },
+          "D": {
+            "verdict": "not professional",
+            "confidence": 0.93,
+            "scores": {
+              "idea": 2,
+              "composition": 2,
+              "typography": 2,
+              "colour": 3,
+              "light_texture": 3,
+              "motion": 1,
+              "craft": 3,
+              "originality": 1
+            },
+            "tells": [
+              "Textbook 'tasteful AI' template: a bold generic grotesk headline ('Know exactly when to go.') with a small tracked-caps label in one accent blue beneath it ('TIDEWATER \u00b7 TIDES, GUSTS AND SAFE WINDOWS FOR COASTAL SAILORS')",
+              "The same composition in all four frames: the headline appears and the tablet barely drifts, so almost nothing happens",
+              "A placeholder-style product UI on a generic slab device, over a stock water-caustics background (effect without a subject)",
+              "Literal idea: the product name plus a screenshot of the feature; no sea, boat, weather or human moment",
+              "Flat, cool, unmotivated light; type set like a slide in the top-left"
+            ],
+            "gaps": [
+              "No idea beyond 'show the app'; build a concept around the sea, timing and risk that only a sailing product could own",
+              "Type is default grotesk with a tracked-caps label; give the typography scale, a point of view, and integration with the image",
+              "There is no choreography: one static layout over four frames; design distinct shots with camera, light and pacing the way C does"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "B",
+          "A",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.4,
+        "cost_usd": 0.1604974,
+        "tokens": 72205,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.484,
+  "judge_seconds": 99.2,
+  "verdict": "FAIL"
+}

@@ -73,6 +73,31 @@ Habits that make shaders look finished:
 - **Edges.** Shader layers are anti-aliased by default; see `supersample` under Modes. A shader that is smooth everywhere (soft fields, gradients), or whose grain is meant to be per pixel, can opt out with a `// anikit:aa off` comment, or the spec can set `"supersample": false`. That is up to twice as fast.
 - **Cost.** It scales with pixels × steps × noise octaves. `still` prints it per layer. Keep each layer under about 200 ms/frame at 1080p and a 10 s, 30 fps shot renders in about a minute.
 
+## Building blocks (`ak_`)
+
+Any GLSL shader can call these without defining them. The library is included whenever the source mentions `ak_`, and calls are inlined, so unused ones cost nothing. A rich look takes a few lines:
+
+```glsl
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = ak_uv(fragCoord);                                  // centred, y up, aspect-correct
+    float ink = ak_fbm(ak_warp(uv * 1.5 + iTime * 0.05, 0.8), 6);  // marbled field
+    vec3 col = ak_mix(vec3(0.02, 0.05, 0.12), vec3(0.95, 0.55, 0.3), ink);   // OKLab blend
+    fragColor = vec4(ak_grain(ak_tonemap(col * 1.4), fragCoord, 1.0), 1.0);
+}
+```
+
+| Group | Functions |
+|---|---|
+| coordinates | `ak_uv(fragCoord)` (centred, −1..1 vertically), `ak_uv01(fragCoord)`, `ak_rot(angle)` (mat2) |
+| hashes | `ak_hash(float\|vec2\|vec3)`, `ak_hash2(vec2)`, `ak_hash3(vec3)`: arithmetic, no `sin` |
+| noise | `ak_noise(vec2\|vec3)` value noise, `ak_gnoise(vec2)` gradient noise, `ak_fbm(p, octaves)` (vec2 or vec3), `ak_ridged(p, octaves)`, `ak_warp(p, amount)` domain warp, `ak_curl(p)` divergence-free flow, `ak_voronoi(p)` → (nearest, second, cell id) |
+| colour | `ak_palette(t, a, b, c, d)` cosine palette, `ak_linear`/`ak_srgb`, `ak_tonemap(hdr)` (ACES fit + sRGB), `ak_oklab`/`ak_oklab_inv`, `ak_mix(a, b, t)` perceptual mix, `ak_iridescence(cosTheta, thickness)` thin film |
+| 2D shapes | `ak_circle`, `ak_box(vec2, vec2)`, `ak_segment`, `ak_fill(d)` anti-aliased fill of a distance |
+| 3D shapes | `ak_sphere`, `ak_box(vec3, vec3)`, `ak_torus`, `ak_capsule`, `ak_smin`/`ak_smax` (smooth union/subtraction), `ak_ray(ro, ta, uv, zoom)` camera ray |
+| finishing | `ak_grain(col, fragCoord, amount)` luma-weighted animated grain, `ak_vignette(col, uv, amount)` |
+
+The source is [`crates/anikit-shader/src/ak.glsl`](../../crates/anikit-shader/src/ak.glsl): about 170 lines, readable and commented.
+
 ## How it works
 
 1. **Front end.** The source is wrapped in a small prelude (the Shadertoy inputs, four channel textures), parsed and validated by [naga](https://github.com/gfx-rs/wgpu/tree/trunk/naga) (GLSL 450 or WGSL). Errors point at your line and column, with a "did you mean" for misspelt builtins (`smoothStep` → `smoothstep`, `lerp` → `mix`, `iGlobalTime` → `iTime`).
@@ -191,6 +216,22 @@ void mainImage(out vec4 c, in vec2 p) {
 - **Determinism.** Frame *n* is the same whether the render reaches it in order or a still jumps straight to it: a jump runs the buffers from the layer's first frame. Running from the start makes a still deep into a long feedback shot cost *n* buffer frames (about 6 ms each at 960×540). Float buffers and `texelFetch` are sampled inline, with no call per read. Renders step one frame at a time.
 - **Uniforms.** Buffers see the spec's uniform values (or the declared defaults), not animated ones. Otherwise a frame would depend on how it was reached. Animate the image pass, or drive buffers from `iTime`, `iAudio` and `iBeat`.
 
+### One file, several passes
+
+A `.glsl` file (or a built-in) can carry its own buffers, as on Shadertoy. Text before the first section is common code shared by every pass. Then add one section per pass:
+
+```glsl
+float step_(vec2 p) { … }          // common: every pass sees this
+
+//--- buffer A: A, noise            // buffer A reads itself (last frame) and noise
+void mainImage(out vec4 c, in vec2 p) { … }
+
+//--- image: A                      // the visible pass reads A
+void mainImage(out vec4 c, in vec2 p) { … }
+```
+
+The header after the colon lists the pass's channels. A spec's own `buffers` or `channels` override the file's. Errors report the line in the file. `growth` is built this way.
+
 ### WGSL
 
 Write `fn mainImage(fragCoord: vec2f) -> vec4f` (or `fn transition(uv: vec2f) -> vec4f`). The same inputs are private globals. Channels are `iChannel0..3` (`texture_2d<f32>`) with samplers `iSampler0..3`.
@@ -205,6 +246,7 @@ Write `fn mainImage(fragCoord: vec2f) -> vec4f` (or `fn transition(uv: vec2f) ->
 | `hero` | layer | product shot: one object on a glossy studio floor, turning under softboxes. `shape` (0 torus, 1 rounded cube, 2 pill, 3 gem, 4 sphere, 5 twisted bar), `color`, `metal`, `rough`, `speed`, `size`, `background`, `floor_` |
 | `mesh-gradient` | layer | soft animated mesh gradient: four colours drifting and folding into each other, film grain. The background for titles and product shots. `color1`…`color4` (hex strings work), `speed`, `warp`, `softness`, `grain` |
 | `ocean` | layer | open sea to the horizon under a low sun: peaked swell and chop, Fresnel sky reflection, the sun's glitter path, light through crests. `speed`, `sun` (0 high … 1 on the horizon), `swell`, `chop`, `color`, `sky` |
+| `growth` | layer | a living reaction–diffusion simulation (Gray–Scott, 4 steps per frame in buffers A–D): coral labyrinths by default, spots or mitosis by `feed`/`kill`, lit as a glossy relief ([still](shots/generative/growth.jpg)). A still at *t* runs every frame before it, so preview with `--scale 0.5`. `feed`, `kill`, `scale`, `color`, `color2`, `light`, `speed` |
 | `caustics` | layer | pool-floor caustics; ray density from the refraction map's derivatives. `speed`, `depth`, `tint` |
 | `flow-ink` | layer | two inks marbled by a curl-noise flow field. `speed`, `ink`, `ink2`, `paper` |
 | `light-shafts` | layer | sun through a window into a hazy room: pane-shaped beams, mullion shadows, leaves outside, drifting haze, dust glinting in the light. `angle`, `spread` (0 parallel … 1 fanning), `panes`, `color`, `intensity`, `haze`, `dust`, `speed` |
@@ -243,6 +285,7 @@ One line turns everything below into a distinct, printed or photographed look. P
 | `dither` | ordered Bayer dither into a 2- or 3-colour palette | `pixel`, `dark`, `light`, `mid`, `levels` | 18 |
 | `screenprint` | flat poster colour in 1–3 ink layers, off register | `inks`, `ink1`…`ink3`, `paper`, `offset`, `texture_` | 30 |
 | `print-offset` | CMY plates drifting apart on fibrous paper | `amount`, `angle`, `paper`, `fibre` | 33 |
+| `glass` | the layers below through fluted (reeded), ribbed, rippled or pebbled glass: refraction, colour fringes, frost, highlights ([still](shots/filters/glass.jpg)) | `pattern`, `width`, `strength`, `dispersion`, `frost`, `angle`, `highlight`, `tint` | 80 |
 
 Before and after (left original, right filtered) for each one is in [`shots/filters/`](shots/filters/), and all nine are in [`shots/filters/all.jpg`](shots/filters/all.jpg). The filters are deterministic. Grain and gate weave follow `iFrame`, so they move every frame but repeat exactly. Like all filters they run at one sample per pixel. Sizes are given in pixels at 1080p and scale with the frame. Mix them: `film` over `screenprint` gives a printed poster scanned on film. `anikit-video info --shaders` lists every uniform with its default.
 

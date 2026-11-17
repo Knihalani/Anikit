@@ -1,0 +1,25 @@
+{
+  "slug": "vertigo",
+  "title": "Vertigo — main titles",
+  "studio": "Saul Bass (with John Whitney)",
+  "year": 1958,
+  "url": "https://www.artofthetitle.com/title/vertigo/",
+  "frame_sources": [
+    "https://www.artofthetitle.com/assets/sm/upload/p0/md/14/nz/vertigo_c.jpg?k=040fd442ef#tile3",
+    "https://www.artofthetitle.com/assets/sm/upload/p0/md/14/nz/vertigo_c.jpg?k=040fd442ef#tile4",
+    "https://www.artofthetitle.com/assets/sm/upload/p0/md/14/nz/vertigo_c.jpg?k=040fd442ef#tile5",
+    "https://www.artofthetitle.com/assets/sm/upload/p0/md/14/nz/vertigo_c.jpg?k=040fd442ef#tile6",
+    "https://www.artofthetitle.com/assets/sm/upload/p0/md/14/nz/vertigo_c.jpg?k=040fd442ef#tile7",
+    "https://www.artofthetitle.com/assets/sm/upload/p0/md/14/nz/vertigo_c.jpg?k=040fd442ef#tile8"
+  ],
+  "style_tags": [
+    "title-sequence",
+    "kinetic-type",
+    "generative"
+  ],
+  "format": "16:9",
+  "medium": "mixed",
+  "description": "Close-ups of an eye tinted red give way to Lissajous/spirograph spirals in green, violet and red on black, generated with John Whitney's mechanical analog computer. Slab serif credits.",
+  "why_top_tier": "The origin of computer-generated motion graphics; hypnotic guilloché-like curves that still read as contemporary.",
+  "licence": "fair-use thumbnail for internal evaluation; copyright Paramount / Universal"
+}

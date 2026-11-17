@@ -2613,7 +2613,7 @@ impl C<'_> {
                 0
             }
         };
-        let full = self.o.base_dir.join(&src);
+        let full = self.media_path(&src, path);
         let (id, nat) = if let Some(&(i, nat)) = self.image_ids.get(&full) {
             (i, nat)
         } else if !full.exists() {
@@ -3283,9 +3283,26 @@ impl C<'_> {
         (Kind::Video { frames, natural: nat, fit, rate, speed, looped }, nat)
     }
 
+    /// Where an image `src` lives: library refs (`polyhaven:texture/…`,
+    /// `ambientcg:…`) are fetched once (the albedo map of a texture set);
+    /// anything else is relative to the spec. A failed fetch is reported here
+    /// and yields a path that doesn't exist (so callers skip the image).
+    fn media_path(&mut self, src: &str, path: &str) -> std::path::PathBuf {
+        if !crate::assetlib::is_ref(src) {
+            return self.o.base_dir.join(src);
+        }
+        match crate::assetlib::get(src) {
+            Ok(f) => f.main(),
+            Err(e) => {
+                self.d.push(Diagnostic::error(format!("{path}.src"), e));
+                std::path::PathBuf::from("\0missing-asset")
+            }
+        }
+    }
+
     /// Load an image file referenced by a component and register it under its `src`.
     fn load_media(&mut self, src: &str, path: &str) {
-        let full = self.o.base_dir.join(src);
+        let full = self.media_path(src, path);
         if self.image_ids.contains_key(&full) || !self.o.load_assets {
             if let Some(&(id, _)) = self.image_ids.get(&full) {
                 self.assets.add_media(src, ImageId(id));
@@ -3478,6 +3495,35 @@ impl C<'_> {
 
     #[allow(clippy::too_many_arguments)]
     fn shader_layer(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>, start: f32, end: f32, n: &mut Node) -> Option<(Kind, [f32; 2])> {
+        // A single-file multi-pass source (`//--- buffer A: …` / `//--- image: …`
+        // sections) becomes buffers + the image pass, unless the spec sets them.
+        let raw = match (l.shader.as_deref(), l.src.as_deref()) {
+            (Some(s), _) => super::shader::resolve_source(s).map(str::to_string),
+            (None, Some(f)) if !f.ends_with(".wgsl") => std::fs::read_to_string(self.o.base_dir.join(f)).ok(),
+            _ => None,
+        };
+        if let Some(sections) = raw.as_deref().and_then(anikit_shader::split_passes) {
+            let mut l2 = l.clone();
+            l2.src = None;
+            l2.shader = Some(sections.image);
+            if l2.channels.is_none() {
+                l2.channels = Some(sections.image_channels.into_iter().map(serde_json::Value::String).collect());
+            }
+            if l2.buffers.is_none() {
+                l2.buffers = Some(
+                    sections
+                        .buffers
+                        .into_iter()
+                        .map(|(name, src, ch)| (name, crate::spec::ShaderBuffer { shader: Some(src), src: None, channels: Some(ch.into_iter().map(serde_json::Value::String).collect()) }))
+                        .collect(),
+                );
+            }
+            return self.shader_layer_inner(&l2, path, gw, gh, start, end, n);
+        }
+        self.shader_layer_inner(l, path, gw, gh, start, end, n)
+    }
+
+    fn shader_layer_inner(&mut self, l: &Layer, path: &str, gw: Option<f32>, gh: Option<f32>, start: f32, end: f32, n: &mut Node) -> Option<(Kind, [f32; 2])> {
         use super::shader::{ChannelC, ShaderC, UNIFORM_SLOTS};
         let (shader, text, vals) = self.compile_shader(l.shader.as_deref(), l.src.as_deref(), l.uniforms.as_ref(), path)?;
         if shader.kind != anikit_shader::Kind::Image {

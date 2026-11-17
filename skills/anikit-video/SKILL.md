@@ -7,7 +7,7 @@ description: Make extraordinary motion videos fast with anikit-video, a native r
 
 **Taste first:** before designing, read `anikit-video docs taste` (one page: routes to a striking frame and the tools for each, what tends to land and what tends to fail; depth in `docs/video/taste/TASTE.md`).
 
-**The loop:** write `s.json` → `anikit-video preview s.json` (repeat; ~1 s for 2D: validates, writes `s-sheet.png` with one frame per second, prints the top notes, pace and a final-render estimate; look at the sheet) → the ship gate below → ONE final `anikit-video render s.json -o out.mp4` (background it when the estimate is minutes) → `render --from A --to B` only to check or fix a shot. Zoom in with `preview s.json --at 2.4 -o f.png`. Hand-built contact sheets aren't needed: `preview` writes one.
+**The loop:** write `s.json` → `anikit-video preview s.json` (repeat; ~1 s for 2D: validates, writes `s-sheet.png` with one frame per second, prints the top notes, pace and a final-render estimate; look at the sheet) → the ship gate below → ONE final `anikit-video render s.json -o out.mp4` (background it when the estimate is minutes) → `render --from A --to B` only to check or fix a shot. Zoom in with `preview s.json --at 2.4 -o f.png`, or several moments in one image with `--at 1,4.5,8`. Hand-built contact sheets aren't needed: `preview` writes one, and `render … --sheet contact.png` writes one of the final.
 
 **Need detail? Read `anikit-video docs essentials` once (one page, ~13k characters), or `anikit-video docs <topic>`** (30 lines each, with a working example): `primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything graphic` (`graphic`: modular grids, squircles, patterns, duotone, halftone, riso inks).
 
