@@ -317,10 +317,12 @@
                   "props": {
                     "text": "{{name}}",
                     "exit": "none",
+                    "size": 2.4,
+                    "glow": true,
+                    "count": 14000,
                     "colors": [
-                      "{{brand.colors.primary}}",
-                      "{{brand.colors.secondary}}",
-                      "{{brand.colors.accent}}"
+                      "{{brand.colors.text}}",
+                      "{{brand.colors.secondary}}"
                     ]
                   },
                   "y": "{{tagline ? (fmt.portrait ? '45%' : '44%') : '50%'}}",

@@ -5,7 +5,7 @@ description: How to fill the 'testimonial' template well.
 
 # Template guide: Testimonial / quote (`testimonial`)
 
-1–3 customer quotes, each with a big accent quote mark, the words fading up in reading rhythm, the author (optional circular avatar, role and company) and an optional star rating, then a logo end card. Paced by word count.
+1–3 customer quotes, each revealed word by word with stars and the author beside a large avatar with floating reactions; an optional 'loved by' hook with an avatar stack and a scrolling company strip; a gradient CTA end card with confetti.
 
 **Typical length:** 8–30 s. **Formats:** 16:9, 9:16 and 1:1 (pass `--format`); the layout adapts automatically.
 
@@ -23,11 +23,13 @@ description: How to fill the 'testimonial' template well.
 | `cta` | string |  | ≤ 4 words | Call to action on the end card. Default: the brand kit's `voice.cta`. |
 | `url` | string |  | ≤ 32 chars | Address on the end card. Default: the brand kit's `voice.url`. |
 | `music` | string |  |  | Optional music file. Warm, mid-tempo (80–110 BPM) suits testimonials. |
+| `companies` | array |  |  | Optional customer or company names for a scrolling logo strip on the hook and end card. |
+| `product` | string |  | ≤ 3 words | Name on the end card. Default: the brand kit's `name`. |
 
 ## Example
 
 ```json
-{"headline":"Loved by 4,000 teams","quotes":[{"quote":"We replaced a week of motion work with one prompt. The renders are faster than our preview used to be.","author":"Maya Okafor","role":"Head of Growth, Fieldnote","rating":5},{"quote":"It just does what the spec says. Every time.","author":"Jonas Berg","role":"Staff Engineer, Tiller"}],"cta":"Join them","url":"fieldnote.app"}
+{"headline":"Loved by product teams","quotes":[{"quote":"We replaced a week of motion work with one prompt.","author":"Maya Okafor","role":"Head of Growth, Fieldnote","rating":5},{"quote":"It just does what the spec says. Every time.","author":"Jonas Berg","role":"Staff Engineer, Tiller"}],"cta":"Join them","url":"fieldnote.app","companies":["Fieldnote","Tiller","Northwind","Lumen","Arcade"],"product":"Anikit Video"}
 ```
 
 Create: MCP `create_from_template {template: "testimonial", params, brand, format}`, or `anikit-video templates expand testimonial params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.

@@ -140,9 +140,9 @@
           {
             "$let": {
               "tw": "(fmt.landscape ? fmt.w * 0.46 : fmt.safe.w)",
-              "ts": "(fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5)",
-              "lines": "ceil(len(event) * 0.52 * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.46 : fmt.safe.w))",
-              "top": "(fmt.landscape ? fmt.h * 0.46 - (ceil(len(event) * 0.52 * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.46 : fmt.safe.w)) * (fmt.portrait ? fmt.u * 10.5 : fmt.u * 9.5) * 1.1 + fmt.u * 12) / 2 : (fmt.portrait ? fmt.h * 0.14 : fmt.h * 0.1))",
+              "ts": "(fmt.portrait ? fmt.u * 8.6 : fmt.u * 9.5)",
+              "lines": "ceil(len(event) * 0.52 * (fmt.portrait ? fmt.u * 8.6 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.46 : fmt.safe.w))",
+              "top": "(fmt.landscape ? fmt.h * 0.46 - (ceil(len(event) * 0.52 * (fmt.portrait ? fmt.u * 8.6 : fmt.u * 9.5) / (fmt.landscape ? fmt.w * 0.46 : fmt.safe.w)) * (fmt.portrait ? fmt.u * 8.6 : fmt.u * 9.5) * 1.1 + fmt.u * 12) / 2 : (fmt.portrait ? fmt.h * 0.14 : fmt.h * 0.1))",
               "ax": "fmt.landscape ? fmt.safe.left : fmt.cx",
               "an": "fmt.landscape ? 'topLeft' : 'top'",
               "al": "fmt.landscape ? 'left' : 'center'"

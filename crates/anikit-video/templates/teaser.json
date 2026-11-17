@@ -57,6 +57,11 @@
     "music": {
       "type": "string",
       "description": "Optional music file; a strong beat is what makes a teaser work."
+    },
+    "captions": {
+      "type": "any",
+      "description": "Optional burned-in captions. true: a caption line timed to each beat (the running phrase), for sound-off viewing. Or a list of {text, at, end} cues in seconds (e.g. for a voice-over), or {\"src\": \"subs.srt\"}.",
+      "example": true
     }
   },
   "spec": {
@@ -235,6 +240,59 @@
     ],
     "audio": {
       "$use": "music"
+    },
+    "captions": {
+      "$if": "captions == true",
+      "then": {
+        "$let": {
+          "durs": {
+            "$each": "words",
+            "as": "w",
+            "index": "i",
+            "do": "{{(len(split(w, '')) > 1 ? beat * 1.5 : max(beat, 0.8)) * (last ? 1.6 : 1)}}"
+          }
+        },
+        "in": {
+          "cues": {
+            "$each": "words",
+            "as": "w",
+            "index": "i",
+            "do": {
+              "text": "{{join(slice(words, i - i % 3, i + 1), ' ')}}",
+              "at": "{{sum(slice(durs, 0, i)) - 0.2 * floor(i / 3)}}",
+              "end": "{{sum(slice(durs, 0, i + 1)) - 0.2 * floor(i / 3)}}"
+            }
+          },
+          "y": "{{fmt.portrait ? fmt.h * 0.74 : fmt.h * 0.86}}",
+          "style": "subtitle",
+          "color": "{{brand.colors.text}}",
+          "background": "{{alpha(brand.colors.backgroundDeep, 0.55)}}",
+          "highlight": "{{brand.colors.accent}}"
+        }
+      },
+      "else": {
+        "$if": "captions",
+        "then": {
+          "$merge": [
+            {
+              "y": "{{fmt.portrait ? fmt.h * 0.74 : fmt.h * 0.86}}",
+              "style": "subtitle",
+              "color": "{{brand.colors.text}}",
+              "background": "{{alpha(brand.colors.backgroundDeep, 0.55)}}",
+              "highlight": "{{brand.colors.accent}}"
+            },
+            {
+              "$if": "captions.src",
+              "then": {
+                "src": "{{captions.src}}"
+              },
+              "else": {
+                "cues": "{{captions}}"
+              }
+            }
+          ]
+        }
+      }
     }
   }
 }

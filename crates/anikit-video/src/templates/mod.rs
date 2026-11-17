@@ -429,7 +429,10 @@ fn param_to_schema(p: &Value) -> Value {
         "object" => ("object", None),
         _ => ("string", None),
     };
-    s.insert("type".into(), json!(jt));
+    // `any`: several shapes are accepted (e.g. `true` or a list); the description says which.
+    if ty != "any" {
+        s.insert("type".into(), json!(jt));
+    }
     if let Some(f) = fmt {
         s.insert("format".into(), json!(f));
     }

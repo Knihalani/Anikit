@@ -5,7 +5,7 @@ description: How to fill the 'tutorial' template well.
 
 # Template guide: Tutorial / code walkthrough (`tutorial`)
 
-A title card, then 2–6 steps, each with a step number, a one-line explanation and a code window that types itself out (timed so typing ends with time left to read), with optional highlighted lines, then a recap and call to action.
+A coding tutorial: a title beside an editor; then 2–6 split-screen steps, each a numbered badge, title and note beside a code editor that types itself (with highlighted lines) or a terminal for one-line shell commands; then a checklist recap and a CTA with confetti.
 
 **Typical length:** 15–60 s. **Formats:** 16:9, 9:16 and 1:1 (pass `--format`); the layout adapts automatically.
 
@@ -30,7 +30,7 @@ A title card, then 2–6 steps, each with a step number, a one-line explanation 
 ## Example
 
 ```json
-{"title":"Render a video from JSON in 3 steps","subtitle":"No browser, no timeline editor. Two minutes.","language":"bash","steps":[{"title":"Install the CLI","body":"One binary, no browser to download.","code":"cargo install anikit-video","language":"bash"},{"title":"Describe your video","body":"Scenes and layers in plain JSON.","code":"{\n  \"scenes\": [\n    { \"layers\": [\n      { \"text\": \"Hello\", \"enter\": \"fadeUp\" }\n    ] }\n  ]\n}","language":"json","highlight":[4]},{"title":"Render it","body":"Every core, straight to MP4.","code":"anikit-video render hello.json -o hello.mp4","language":"bash"}],"recap":"Your first video, in under a minute.","cta":"Read the docs","url":"anikit.dev/docs"}
+{"title":"Render a video from JSON in 3 steps","subtitle":"No browser, no timeline editor.","language":"bash","steps":[{"title":"Install the CLI","body":"One binary, no browser to download.","code":"cargo install anikit-video","language":"bash"},{"title":"Describe your video","body":"Scenes and layers in plain JSON.","code":"{\n  \"scenes\": [\n    { \"layers\": [\n      { \"text\": \"Hello\", \"enter\": \"fadeUp\" }\n    ] }\n  ]\n}","language":"json","highlight":[4]},{"title":"Render it","body":"Every core, straight to MP4.","code":"anikit-video render hello.json -o hello.mp4","language":"bash"}],"recap":"Your first video, from one JSON file.","cta":"Read the docs","url":"anikit.dev/docs"}
 ```
 
 Create: MCP `create_from_template {template: "tutorial", params, brand, format}`, or `anikit-video templates expand tutorial params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.
