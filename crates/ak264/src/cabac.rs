@@ -120,7 +120,10 @@ impl Cabac {
             self.range = lps;
         }
         *c = NEXT[s][bin as usize];
-        self.renorm();
+        // most MPS decisions leave range ≥ 256: nothing to shift or emit
+        if self.range < 256 {
+            self.renorm();
+        }
     }
 
     #[inline(always)]
