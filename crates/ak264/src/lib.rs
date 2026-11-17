@@ -106,7 +106,7 @@ pub fn chunk_ranges(frames: usize, gop: u32) -> Vec<(usize, usize)> {
     let gop = gop.max(1) as usize;
     let mut n = frames.div_ceil(gop).max(1);
     let cores = rayon::current_num_threads().max(1);
-    if n % cores != 0 && n < 4 * cores {
+    if !n.is_multiple_of(cores) && n < 4 * cores {
         n = n.div_ceil(cores) * cores;
     }
     let n = n.min(frames.max(1));
