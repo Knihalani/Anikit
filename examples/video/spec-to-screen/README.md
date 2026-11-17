@@ -47,5 +47,5 @@ The spec is designed to keep renders fast and files small. The film grain is sta
 
 Every figure is measured:
 
-- **"Rendered in N s":** this film's own end-to-end wall time. `RENDER_SECONDS` in `build.py` is set from the final measured render on the release machine (machines vary: 17.1 s here on 218731e, 25.3 s on another 4-core VM).
+- **"Rendered in N s":** this film's own end-to-end wall time. `RENDER_SECONDS` in `build.py` is set from the final measured render on the release machine (final: 17 s, the median of three renders on 6cd9679 was 16.7 s, range 16.0–16.9 s, on a 4-vCPU Xeon @ 2.10 GHz; earlier builds and other VMs measured 17–25 s).
 - **Bar chart and 20×:** `docs/video/BENCHMARKS.md`, composition (d), 60 s of 1080p60 kinetic type, default settings, median of 3 on a 4 vCPU Xeon. Anikit Video takes 6.95 s, Remotion 139.5 s and HyperFrames 152.0 s. 139.5 ÷ 6.95 = 20.1.

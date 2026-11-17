@@ -13,7 +13,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BEAT = 0.5  # 120 BPM grid: every cut lands on a beat
 TOTAL, FRAMES = 55.0, 3300
 # End-to-end wall time of `anikit-video render spec.json` (see README); update after re-measuring.
-RENDER_SECONDS, RENDER_DECIMALS = 31, 0  # placeholder until the final measured render
+RENDER_SECONDS, RENDER_DECIMALS = 17, 0  # measured: median of 3 final renders on main, 4-core VM (16.0–16.9 s)
 
 # ---------------------------------------------------------------- palette
 INK, SURF, TEXT, MUTED = "#07080c", "#12141c", "#f4f2ee", "#8b90a0"

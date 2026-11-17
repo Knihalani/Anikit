@@ -191,7 +191,7 @@ Correctness: fused output decodes with ffmpeg and matches x264 `--quality high` 
 
 | Content | Size | Frames | Wall | Throughput | Skipped | File |
 |---|---|---|---|---|---|---|
-| template `launch` | 1920×1080 @ 30 | 868 | 3.96 s | **219 fps** | 0 | 4565 KB |
+| template `launch` (final, 6cd9679) | 1920×1080 @ 30 | 868 | 2.19–2.38 s | **365–396 fps** | 390 | 3119 KB |
 | template `tutorial` | 1920×1080 @ 30 | 807 | 2.52 s | **321 fps** | 218 | 2951 KB |
 | template `changelog` | 1920×1080 @ 30 | 620 | 1.98 s | **314 fps** | 241 | 2774 KB |
 | template `data-story` | 1920×1080 @ 30 | 616 | 2.29 s | **269 fps** | 133 | 2198 KB |
@@ -201,9 +201,10 @@ Correctness: fused output decodes with ffmpeg and matches x264 `--quality high` 
 | template `teaser` | 1920×1080 @ 30 | 275 | 1.83 s | **150 fps** | 21 | 2547 KB |
 | template `countdown` | 1920×1080 @ 30 | 466 | 3.49 s | **134 fps** | 0 | 5969 KB |
 | template `logo-reveal` | 1920×1080 @ 30 | 120 | 1.78 s | **67 fps** | 0 | 907 KB |
-| film `spec-to-screen` (with audio) | 1920×1080 @ 60 | 3300 | 21.00 s | **157 fps** | 983 | 30035 KB |
-| film `pulse` (with audio) | 1080×1920 @ 30 | 1080 | 7.63 s | **142 fps** | 102 | 26473 KB |
-| film `telemetry` (with audio) | 1920×1080 @ 60 | 2742 | 10.66 s | **257 fps** | 273 | 14615 KB |
+| film `spec-to-screen` (with audio, final) | 1920×1080 @ 60 | 3300 | 16.0–16.9 s | **196–206 fps** | 981 | 31262 KB |
+| film `pulse` (with audio, final) | 1080×1920 @ 30 | 1080 | 6.8–7.2 s | **150–159 fps** | 102 | 25587 KB |
+| film `telemetry` (with audio, final) | 1920×1080 @ 60 | 2742 | 9.8–10.7 s | **256–281 fps** | 273 | 14615 KB |
+| film `telemetry` vertical cut (with audio) | 1080×1920 @ 60 | 885 | 3.14 s | **282 fps** | 79 | 6456 KB |
 | `docs/video/examples/showcase.json` | 1920×1080 @ 30 | 222 | 0.44 s | **505 fps** | 23 | 642 KB |
 
-The `launch` template changed at checkpoint 5: its new HUD layers keep changing, so no frame is skippable any more (0 skipped, 219 fps). The previous launch spec still renders at 299 fps with 416 frames skipped on the same build. Expect run-to-run noise of about ±10% on this machine. The slow templates (logo-reveal, countdown) are dominated by effect components that change every frame (`text-3d`, `god-rays`, `lens-flare`, `globe`, `particle-text`).
+Rows marked *final* were re-measured at the final merge (6cd9679, 06:10 UTC; Intel Xeon @ 2.10 GHz, 4 vCPUs; 2–3 runs, range shown). The redesigned `launch` template first rendered at 219 fps because its HUD layers changed every frame; after stepping the HUD per beat and settling the camera punch it renders at 365–396 fps with 390 frames skipped. Expect run-to-run noise of about ±10% on this machine. The slow templates (logo-reveal, countdown) are dominated by effect components that change every frame (`text-3d`, `god-rays`, `lens-flare`, `globe`, `particle-text`).

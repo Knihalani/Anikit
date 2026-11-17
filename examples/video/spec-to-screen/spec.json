@@ -827,7 +827,7 @@
      "component": "counter",
      "props": {
       "from": 0,
-      "to": 31,
+      "to": 17,
       "decimals": 0,
       "suffix": " s",
       "size": 300,
