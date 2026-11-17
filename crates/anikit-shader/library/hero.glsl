@@ -146,7 +146,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         // Glossy reflection of the object, fading with height above the floor.
         vec3 rr = reflect(rd, vec3(0.0, 1.0, 0.0));
         float tr = march(p + rr * 0.002, rr, 48);
-        vec3 refl = tr > 0.0 ? shadeObj(p + rr * tr, rr) * exp(-tr * 1.6) : vec3(0.0);
+        vec3 refl = tr > 0.0 ? shadeObj(p + rr * tr, rr) * exp(-tr * 3.2) : vec3(0.0);
         float fre = 0.06 + 0.5 * pow(1.0 - max(-rd.y, 0.0), 5.0);
         col = mix(col, base + refl * (0.35 + fre), far);
     }

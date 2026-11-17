@@ -212,7 +212,7 @@ Write `fn mainImage(fragCoord: vec2f) -> vec4f` (or `fn transition(uv: vec2f) ->
 | `luma-melt` | transition | the old scene melts away darkest-first. `softness`, `invert` |
 | `zoom-blur` | transition | a punch-in zoom blur with chromatic fringes. `strength` |
 
-`anikit-video info --shaders` lists every built-in with its measured cost and each uniform's default and meaning. `info --json` has the same under `"shader_library"`. The sources live in `crates/anikit-shader/library/*.glsl`. Copy one as a starting point: they are short and commented.
+Reel of the newer recipes and a feedback buffer: [`shots/recipes.mp4`](shots/recipes.mp4) (spec [`examples/recipes.json`](examples/recipes.json); 13 s of 1080p rendered in 60 s on 4 cores). `anikit-video info --shaders` lists every built-in with its measured cost and each uniform's default and meaning. `info --json` has the same under `"shader_library"`. The sources live in `crates/anikit-shader/library/*.glsl`. Copy one as a starting point: they are short and commented.
 
 ## Performance
 

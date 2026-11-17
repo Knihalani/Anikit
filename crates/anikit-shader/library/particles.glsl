@@ -43,9 +43,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             float d = length(p - pos) / r;
             if (d >= 1.0) continue;                       // most pixels miss: skip the shading
             // Bokeh: a soft disc with a brighter rim when defocused; a sharp glow in focus.
-            float disc = smoothstep(1.0, 1.0 - 0.25 - 0.5 * (1.0 - blur), d);
+            float sharp = 1.0 - min(blur, 1.0);               // 1 in focus … 0 fully defocused
+            float disc = smoothstep(1.0, 1.0 - 0.25 - 0.5 * sharp, d);
             float rim = smoothstep(0.75, 1.0, d) * disc * blur;
-            float core = exp(-d * d * 6.0) * (1.0 - blur);
+            float core = exp(-d * d * 6.0) * sharp;
             float energy = (disc * 0.35 + rim * 0.4 + core) / (1.0 + 6.0 * blur * blur);
             float tw = 0.7 + 0.3 * sin(t * (2.0 + 3.0 * h.y) + h.x * 50.0);
             col += mix(color, color2, smoothstep(0.35, 0.65, h.y)) * energy * tw * mix(1.1, 0.5, z);
