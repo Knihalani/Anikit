@@ -26,13 +26,18 @@ shorthand for an entrance preset. The spec reference is
 from __future__ import annotations
 
 import copy
+import difflib
+import warnings
 import json
 import os
 import subprocess
 import tempfile
 from typing import Any, Callable, Dict, List, Optional, Union
 
+from ._video_components import COMPONENT_KINDS
+
 __all__ = [
+    "COMPONENT_KINDS",
     "video", "Video", "SceneBuilder", "LayerList", "template", "render", "absolutize", "PRESET_ALIASES",
     "AnikitVideoError",
 ]
@@ -130,6 +135,10 @@ class LayerList:
 
     def component(self, component: str, props: Optional[Json] = None, **opts: Any) -> "LayerList":
         """Add a component (``barChart``, ``code``, ``browser``, …)."""
+        kebab = "".join("-" + c.lower() if c.isupper() else c for c in component).replace("_", "-")
+        if "." not in component and kebab not in COMPONENT_KINDS:
+            near = difflib.get_close_matches(kebab, list(COMPONENT_KINDS), n=1)
+            warnings.warn(f"anikit.video: unknown component kind '{component}'" + (f", did you mean '{near[0]}'?" if near else ""), stacklevel=2)
         layer: Json = {"type": "component", "component": component}
         if props:
             layer["props"] = props
