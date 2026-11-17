@@ -361,6 +361,12 @@ pub struct Shapes {
     seen: HashMap<String, u32>,
 }
 
+impl Default for Shapes {
+    fn default() -> Self {
+        Shapes::new()
+    }
+}
+
 impl Shapes {
     pub fn new() -> Shapes {
         Shapes { list: Vec::new(), seen: HashMap::new() }

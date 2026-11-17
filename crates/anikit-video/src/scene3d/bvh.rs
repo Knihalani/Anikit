@@ -47,8 +47,24 @@ pub struct Hot {
     pub e2: V3,
 }
 
+/// Four children per node, bounds stored lane-wise so the four slab tests
+/// run side by side (LLVM vectorises the lane loops). `cnt[k] == 0` means
+/// child `k` is the node `kid[k]`; otherwise it is a leaf of `cnt[k]`
+/// triangles starting at `kid[k]`; `kid[k] == u32::MAX` is an empty lane.
+#[derive(Clone, Copy)]
+#[repr(C, align(32))]
+struct Node4 {
+    lo: [[f32; 4]; 3],
+    hi: [[f32; 4]; 3],
+    kid: [u32; 4],
+    cnt: [u32; 4],
+}
+
 pub struct Bvh {
+    /// The binary tree the 4-wide one was collapsed from (tests traverse it as a reference).
+    #[allow(dead_code)]
     nodes: Vec<Node>,
+    nodes4: Vec<Node4>,
     pub tris: Vec<Tri>,
     hot: Vec<Hot>,
     pub lo: V3,
@@ -180,63 +196,50 @@ impl Bvh {
         let tris: Vec<Tri> = order.iter().map(|&i| tris[i as usize]).collect();
         let hot: Vec<Hot> = tris.iter().map(|t| Hot { v0: t.v0, e1: t.e1, e2: t.e2 }).collect();
         let (lo, hi) = if n == 0 { (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)) } else { (nodes[0].lo, nodes[0].hi) };
-        Bvh { nodes, tris, hot, lo, hi }
+        let nodes4 = if n == 0 { Vec::new() } else { collapse(&nodes) };
+        Bvh { nodes, nodes4, tris, hot, lo, hi }
     }
 
     /// Closest hit along `o + t·d` with `t` in `(tmin, tmax)`.
     #[inline]
     pub fn intersect(&self, o: V3, d: V3, tmin: f32, mut tmax: f32) -> Option<Hit> {
-        if self.tris.is_empty() {
+        if self.nodes4.is_empty() {
             return None;
         }
-        let inv = v3(1.0 / d.x, 1.0 / d.y, 1.0 / d.z);
+        let inv = [1.0 / d.x, 1.0 / d.y, 1.0 / d.z];
+        let org = [o.x, o.y, o.z];
         let mut best: Option<Hit> = None;
-        let mut stack = [0u32; 64];
+        let mut stack = [(0u32, 0u32, 0.0f32); 96];
         let mut sp = 0usize;
-        let mut ni = 0u32;
-        if slab(&self.nodes[0], o, inv, tmin, tmax).is_none() {
-            return None;
-        }
-        loop {
-            let node = &self.nodes[ni as usize];
-            if node.count > 0 {
-                for k in node.first..node.first + node.count {
-                    let tr = &self.hot[k as usize];
-                    if let Some((t, u, v)) = tri_hit(tr, o, d, tmin, tmax) {
+        // (child, count, tnear); count 0 = inner node.
+        stack[0] = (0, 0, tmin);
+        sp += 1;
+        while sp > 0 {
+            sp -= 1;
+            let (kid, cnt, tn) = stack[sp];
+            if tn > tmax {
+                continue;
+            }
+            if cnt > 0 {
+                for k in kid..kid + cnt {
+                    if let Some((t, u, v)) = tri_hit(&self.hot[k as usize], o, d, tmin, tmax) {
                         tmax = t;
                         best = Some(Hit { t, tri: k, u, v });
                     }
                 }
-            } else {
-                let (a, b) = (node.first, node.first + 1);
-                let ta = slab(&self.nodes[a as usize], o, inv, tmin, tmax);
-                let tb = slab(&self.nodes[b as usize], o, inv, tmin, tmax);
-                match (ta, tb) {
-                    (Some(x), Some(y)) => {
-                        let (near, far) = if x <= y { (a, b) } else { (b, a) };
-                        if sp < 64 {
-                            stack[sp] = far;
-                            sp += 1;
-                        }
-                        ni = near;
-                        continue;
-                    }
-                    (Some(_), None) => {
-                        ni = a;
-                        continue;
-                    }
-                    (None, Some(_)) => {
-                        ni = b;
-                        continue;
-                    }
-                    _ => {}
+                continue;
+            }
+            let n = &self.nodes4[kid as usize];
+            let (near, hit) = slab4(n, org, inv, tmin, tmax);
+            // Push hit children far-to-near so the nearest pops first.
+            let mut order = [0usize, 1, 2, 3];
+            order.sort_unstable_by(|a, b| near[*b].total_cmp(&near[*a]));
+            for &l in &order {
+                if hit[l] && sp < stack.len() {
+                    stack[sp] = (n.kid[l], n.cnt[l], near[l]);
+                    sp += 1;
                 }
             }
-            if sp == 0 {
-                break;
-            }
-            sp -= 1;
-            ni = stack[sp];
         }
         best
     }
@@ -244,50 +247,126 @@ impl Bvh {
     /// Whether anything is hit along the segment (shadow and AO rays).
     #[inline]
     pub fn occluded(&self, o: V3, d: V3, tmin: f32, tmax: f32) -> bool {
-        if self.tris.is_empty() {
+        if self.nodes4.is_empty() {
             return false;
         }
-        let inv = v3(1.0 / d.x, 1.0 / d.y, 1.0 / d.z);
-        let mut stack = [0u32; 64];
-        let mut sp = 0usize;
-        let mut ni = 0u32;
-        if slab(&self.nodes[0], o, inv, tmin, tmax).is_none() {
-            return false;
-        }
-        loop {
-            let node = &self.nodes[ni as usize];
-            if node.count > 0 {
-                for k in node.first..node.first + node.count {
+        let inv = [1.0 / d.x, 1.0 / d.y, 1.0 / d.z];
+        let org = [o.x, o.y, o.z];
+        let mut stack = [(0u32, 0u32); 96];
+        let mut sp = 1usize;
+        while sp > 0 {
+            sp -= 1;
+            let (kid, cnt) = stack[sp];
+            if cnt > 0 {
+                for k in kid..kid + cnt {
                     if tri_hit(&self.hot[k as usize], o, d, tmin, tmax).is_some() {
                         return true;
                     }
                 }
-            } else {
-                let (a, b) = (node.first, node.first + 1);
-                let ta = slab(&self.nodes[a as usize], o, inv, tmin, tmax).is_some();
-                let tb = slab(&self.nodes[b as usize], o, inv, tmin, tmax).is_some();
-                if ta && tb {
-                    if sp < 64 {
-                        stack[sp] = b;
-                        sp += 1;
-                    }
-                    ni = a;
-                    continue;
-                } else if ta {
-                    ni = a;
-                    continue;
-                } else if tb {
-                    ni = b;
-                    continue;
+                continue;
+            }
+            let n = &self.nodes4[kid as usize];
+            let (_, hit) = slab4(n, org, inv, tmin, tmax);
+            for l in 0..4 {
+                if hit[l] && sp < stack.len() {
+                    stack[sp] = (n.kid[l], n.cnt[l]);
+                    sp += 1;
                 }
             }
-            if sp == 0 {
-                return false;
+        }
+        false
+    }
+
+    /// Reference traversal of the binary tree (tests compare against it).
+    #[cfg(test)]
+    fn intersect2(&self, o: V3, d: V3, tmin: f32, mut tmax: f32) -> Option<f32> {
+        let inv = v3(1.0 / d.x, 1.0 / d.y, 1.0 / d.z);
+        let mut best = None;
+        let mut stack = vec![0u32];
+        while let Some(ni) = stack.pop() {
+            let node = &self.nodes[ni as usize];
+            if slab(node, o, inv, tmin, tmax).is_none() {
+                continue;
             }
-            sp -= 1;
-            ni = stack[sp];
+            if node.count > 0 {
+                for k in node.first..node.first + node.count {
+                    if let Some((t, _, _)) = tri_hit(&self.hot[k as usize], o, d, tmin, tmax) {
+                        tmax = t;
+                        best = Some(t);
+                    }
+                }
+            } else {
+                stack.push(node.first);
+                stack.push(node.first + 1);
+            }
+        }
+        best
+    }
+}
+
+/// Four slab tests at once: per-lane entry distance and hit mask.
+#[inline(always)]
+fn slab4(n: &Node4, o: [f32; 3], inv: [f32; 3], tmin: f32, tmax: f32) -> ([f32; 4], [bool; 4]) {
+    let mut a = [tmin; 4];
+    let mut b = [tmax; 4];
+    for ax in 0..3 {
+        for l in 0..4 {
+            let t1 = (n.lo[ax][l] - o[ax]) * inv[ax];
+            let t2 = (n.hi[ax][l] - o[ax]) * inv[ax];
+            a[l] = fmax(a[l], fmin(t1, t2));
+            b[l] = fmin(b[l], fmax(t1, t2));
         }
     }
+    let mut hit = [false; 4];
+    for l in 0..4 {
+        hit[l] = a[l] <= b[l] && n.kid[l] != u32::MAX;
+    }
+    (a, hit)
+}
+
+/// Collapse a binary BVH into a 4-wide one: each node adopts up to four
+/// descendants, opening the largest inner child first.
+fn collapse(nodes: &[Node]) -> Vec<Node4> {
+    let area = |n: &Node| {
+        let d = sub(n.hi, n.lo);
+        d.x * d.y + d.y * d.z + d.z * d.x
+    };
+    let mut out: Vec<Node4> = Vec::new();
+    // (binary node index, slot in `out`)
+    let mut todo = vec![(0usize, 0usize)];
+    out.push(Node4 { lo: [[0.0; 4]; 3], hi: [[0.0; 4]; 3], kid: [u32::MAX; 4], cnt: [0; 4] });
+    while let Some((bi, slot)) = todo.pop() {
+        let root = &nodes[bi];
+        let mut kids: Vec<usize> = if root.count > 0 { vec![bi] } else { vec![root.first as usize, root.first as usize + 1] };
+        while kids.len() < 4 {
+            // Open the largest inner child.
+            let pick = kids.iter().enumerate().filter(|(_, &k)| nodes[k].count == 0).max_by(|a, b| area(&nodes[*a.1]).total_cmp(&area(&nodes[*b.1])));
+            let Some((i, &k)) = pick else { break };
+            kids.remove(i);
+            kids.push(nodes[k].first as usize);
+            kids.push(nodes[k].first as usize + 1);
+        }
+        let mut n4 = Node4 { lo: [[f32::MAX; 4]; 3], hi: [[f32::MIN; 4]; 3], kid: [u32::MAX; 4], cnt: [0; 4] };
+        for (l, &k) in kids.iter().enumerate() {
+            let c = &nodes[k];
+            for ax in 0..3 {
+                n4.lo[ax][l] = get(c.lo, ax);
+                n4.hi[ax][l] = get(c.hi, ax);
+            }
+            if c.count > 0 {
+                n4.kid[l] = c.first;
+                n4.cnt[l] = c.count;
+            } else {
+                let s = out.len();
+                out.push(Node4 { lo: [[0.0; 4]; 3], hi: [[0.0; 4]; 3], kid: [u32::MAX; 4], cnt: [0; 4] });
+                n4.kid[l] = s as u32;
+                n4.cnt[l] = 0;
+                todo.push((k, s));
+            }
+        }
+        out[slot] = n4;
+    }
+    out
 }
 
 /// Top-level hierarchy over world-space boxes (one per object instance),
@@ -488,6 +567,8 @@ mod tests {
                 assert!((a - c).abs() < 1e-4);
             }
             assert_eq!(b.occluded(o, d, 1e-4, 1e9), best.is_some());
+            let two = b.intersect2(o, d, 1e-4, 1e9);
+            assert_eq!(two.is_some(), best.is_some());
         }
     }
 }
