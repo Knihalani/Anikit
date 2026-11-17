@@ -1,0 +1,34 @@
+use anikit_music::dsp;
+use std::time::Instant;
+fn main() {
+    let n = 48_000 * 120;
+    let mut rng = anikit_music::Rng::new(1);
+    let l: Vec<f32> = (0..n).map(|_| rng.bi() * 0.1).collect();
+    let r = l.clone();
+    let t = Instant::now();
+    let x = dsp::loudness::integrated_lufs(&l, &r, 48_000.0);
+    println!("integrated {:?} {x}", t.elapsed());
+    let (mut a, mut b) = (l.clone(), r.clone());
+    let t = Instant::now();
+    let kicks: Vec<f64> = (0..240).map(|i| i as f64 * 0.5).collect();
+    use dsp::Processor;
+    dsp::Ducker::new(48_000.0, &dsp::DuckerParams { depth: -6.0, ..Default::default() }, &kicks).process(&mut a, &mut b);
+    println!("ducker {:?}", t.elapsed());
+    let t = Instant::now();
+    let env = dsp::loudness::peak_env(&l, &r);
+    println!("peak_env {:?} {}", t.elapsed(), env.len());
+    let t = Instant::now();
+    let mut lim = dsp::Limiter::new(48_000.0, &Default::default());
+    lim.process_env(&mut a, &mut b, &env, 1.0);
+    println!("limiter env {:?}", t.elapsed());
+    let t = Instant::now();
+    let mut c = dsp::Compressor::new(48_000.0, &Default::default());
+    c.process(&mut a, &mut b);
+    println!("comp {:?}", t.elapsed());
+    let t = Instant::now();
+    let _ = dsp::analyze(&a, &b, 48_000.0);
+    println!("analyze {:?}", t.elapsed());
+    let t = Instant::now();
+    let _ = dsp::loudness::true_peak_par(&a, &b);
+    println!("tp par {:?}", t.elapsed());
+}

@@ -106,8 +106,40 @@ pub fn arrange(spec: &MusicSpec, opts: &RenderOpts) -> Result<Arrangement, Strin
     Ok(a)
 }
 
+/// Set flush-to-zero and denormals-are-zero on this thread (x86): decaying
+/// filter and reverb states otherwise crawl through the subnormal range,
+/// where arithmetic is ~100× slower. Deterministic either way.
+pub fn ftz() {
+    #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+    #[allow(deprecated)]
+    unsafe {
+        #[cfg(target_arch = "x86_64")]
+        use std::arch::x86_64::{_mm_getcsr, _mm_setcsr};
+        #[cfg(target_arch = "x86")]
+        use std::arch::x86::{_mm_getcsr, _mm_setcsr};
+        // SAFETY: only sets the FTZ (bit 15) and DAZ (bit 6) flags of MXCSR.
+        _mm_setcsr(_mm_getcsr() | 0x8040);
+    }
+}
+
+/// The engine's thread pool: one worker per core, FTZ/DAZ on every worker.
+fn pool() -> &'static rayon::ThreadPool {
+    static POOL: std::sync::OnceLock<rayon::ThreadPool> = std::sync::OnceLock::new();
+    POOL.get_or_init(|| {
+        let n = std::env::var("ANIKIT_MUSIC_THREADS").ok().and_then(|v| v.parse().ok()).unwrap_or_else(rayon::current_num_threads);
+        rayon::ThreadPoolBuilder::new().num_threads(n).thread_name(|i| format!("anikit-music-{i}")).start_handler(|_| ftz()).build().expect("thread pool")
+    })
+}
+
 /// Render a spec to mastered stereo.
 pub fn render(spec: &MusicSpec, opts: &RenderOpts) -> Result<Rendered, String> {
+    pool().install(|| {
+        ftz();
+        render_inner(spec, opts)
+    })
+}
+
+fn render_inner(spec: &MusicSpec, opts: &RenderOpts) -> Result<Rendered, String> {
     let t0 = Instant::now();
     let a = arrange(spec, opts)?;
     let compose = t0.elapsed().as_secs_f64();
