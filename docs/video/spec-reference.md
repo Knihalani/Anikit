@@ -380,6 +380,36 @@ A cue plays a file (`src`) or a built-in sound effect (`sfx`: `click`, `tick`, `
 
 Word-synced captions over every scene, short-form style: words are grouped into pages of `maxWords` (default 4), and the spoken word pops in and lights up in `highlight` (default `$accent`), or sits on a `background` box. Without word timings they're estimated from the text. `src` reads SRT or WebVTT (including VTT word timestamps). Other keys: `color`, `size` (default 6% of the frame's short side), `y` (bottom of the captions, default `90%`), `uppercase`, `upcoming` (`dim`, `hidden` or `show` for words not yet spoken), and `style` (a theme text style's font and weight).
 
+## Reuse: `defs`, `use`, `with`, `repeat`
+
+Repeated structure costs tokens, so a spec can name it once. This is a pure JSON expansion done before anything else (`spec/reuse.rs`). `anikit-video check` reports problems in it with paths like any other key.
+
+```json
+{
+  "defs": {
+    "stat": { "type": "box", "width": 360, "children": [
+      { "text": "$label", "style": "label" },
+      { "text": "$value", "style": "title", "color": "$accent" } ] }
+  },
+  "scenes": [
+    { "layers": [
+      { "use": "stat", "repeat": 3, "x": "=200 + $i * 420", "with": { "label": "Metric $i", "value": "=10 * ($i + 1)" } }
+    ] },
+    { "repeat": 2, "scenes": [ { "duration": 1, "layers": ["Take $i"] }, { "duration": 1, "layers": ["Cut"] } ] }
+  ]
+}
+```
+
+- **`defs`** (top level): named scenes or layers. A def may itself `use` another def. Cycles are an error.
+- **`use`**: allowed anywhere a scene or layer is expected. The other keys on the object deep-merge onto the def: objects merge key by key, while arrays (such as `layers`) and scalars replace.
+- **`with`**: values for `"$name"` placeholders in the def. A string that is exactly `"$name"` takes the value's type (number, object, …), and inside a longer string the value is interpolated (`"Metric $i"`). Names that `with` doesn't bind are left alone, so theme tokens such as `"$accent"` keep working.
+- **`repeat: N`** on a scene or layer emits N copies (up to 1000), with `"$i"` (0, 1, …) and `"$n"` bound throughout, including in `with`.
+- **Arithmetic:** a string starting with `=` is evaluated after substitution, with `+ - * / %` and parentheses: `"x": "=160 + $i * 420"`, `"at": "=0.5 * $i"`.
+- **Scene sequences:** in `scenes`, `{ "scenes": [ … ] }` is spliced in place. With `repeat`, it loops a whole run of scenes.
+- **Errors:** `error: scenes[0].layers[0].use: unknown def 'stats' (defs: stat), did you mean 'stat'?`
+
+**Saving on the long benchmark** (`bench/video/anikit/long.json`, the 4-scene kinetic sequence played 3×): written as `{ "repeat": 3, "scenes": [ …4 scenes… ] }` ([`examples/long-reuse.json`](examples/long-reuse.json)), it is **2,215 B instead of 6,273 B minified (≈550 instead of ≈1,570 tokens, −65%)**. It expands to an identical spec, checked by `tests/spec_reuse.rs`.
+
 ## Validation and messages
 
 `anikit-video check spec.json` prints errors (the video cannot render) and warnings (it renders, but probably not as intended), each with a path:

@@ -27,6 +27,8 @@ A scene string is a title card (`"Title | subtitle"`); a layer string is centred
 
 Theme colours (used as `$name`): `primary secondary accent bg surface text muted`. Text styles: `title heading subtitle body caption label code`.
 
+**Reuse (fewer tokens):** `"defs": { "card": {…layer or scene…} }`, then `{ "use": "card", "with": { "title": "Hi" }, "x": 200 }` anywhere a layer or scene goes. Overrides deep-merge; `"$title"` in the def is replaced. `"repeat": 3` copies a layer or scene, with `"$i"` (0-based), `"$n"` and arithmetic `"=160 + $i*420"`. `{ "repeat": 3, "scenes": [ … ] }` loops a sequence of scenes.
+
 ## Scenes
 
 `id` · `duration` (default 3, or `"auto"`) · `background` · `transition` (into this scene) · `camera` · `markers` · `layers` · `audio`.

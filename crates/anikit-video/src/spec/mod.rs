@@ -11,6 +11,7 @@
 
 mod de;
 pub mod parse;
+pub mod reuse;
 pub mod validate;
 
 use schemars::JsonSchema;
@@ -106,6 +107,9 @@ pub struct Spec {
     pub background: Option<Paint>,
     /// Colour tokens, fonts and text styles.
     pub theme: Option<Theme>,
+    /// Reusable scenes and layers, referenced with `{ "use": "name", "with": {…}, …overrides }`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub defs: Option<BTreeMap<String, serde_json::Value>>,
     /// The scenes, in order.
     #[serde(deserialize_with = "de::scenes")]
     #[schemars(with = "Vec<de::SceneItem>")]
@@ -192,6 +196,17 @@ pub struct Gradient {
 #[serde(rename_all = "camelCase")]
 pub struct Scene {
     pub id: Option<String>,
+    /// Reuse: the name of an entry in top-level `defs`; other keys here override it
+    /// (expanded before typing, see `spec/reuse.rs`).
+    #[serde(rename = "use", default, skip_serializing_if = "Option::is_none")]
+    pub use_def: Option<String>,
+    /// Values for `"$param"` placeholders in the `use`d def.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub with: Option<BTreeMap<String, serde_json::Value>>,
+    /// Emit this many copies; `"$i"` (0-based) and `"$n"` are available, and
+    /// `"=…"` strings are arithmetic (`"x": "=160 + $i * 420"`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repeat: Option<u32>,
     /// Seconds (or a time string), or `"auto"`. Default 3.
     pub duration: Option<Num>,
     pub background: Option<Paint>,
@@ -287,6 +302,17 @@ pub struct Layer {
     #[serde(rename = "type")]
     pub kind: Option<String>,
     pub id: Option<String>,
+    /// Reuse: the name of an entry in top-level `defs`; other keys here override it
+    /// (expanded before typing, see `spec/reuse.rs`).
+    #[serde(rename = "use", default, skip_serializing_if = "Option::is_none")]
+    pub use_def: Option<String>,
+    /// Values for `"$param"` placeholders in the `use`d def.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub with: Option<BTreeMap<String, serde_json::Value>>,
+    /// Emit this many copies; `"$i"` (0-based) and `"$n"` are available, and
+    /// `"=…"` strings are arithmetic (`"x": "=160 + $i * 420"`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repeat: Option<u32>,
 
     // ---- transform & appearance (all kinds)
     pub x: Option<Num>,
