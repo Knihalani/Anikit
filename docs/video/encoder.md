@@ -143,6 +143,8 @@ Real-clip frames were rendered with `--codec png` and converted to yuv420p
 
 **How the numbers were measured:**
 
+- Test setup: a 4-vCPU VM (Intel Xeon @ 2.10 GHz, AVX2), rustc 1.97.0, release
+  profile. x264 is libx264 0.164.3108 through ffmpeg 6.1.1 (Ubuntu packages).
 - fps is wall clock for the whole encode, best of 2–3 runs. Timings on this VM vary
   by about ±10%.
 - ak264 uses `encode_chunks` with GOP 60. On 4 cores, 300 frames become 8 chunks
@@ -175,6 +177,19 @@ Real-clip frames were rendered with `--codec png` and converted to yuv420p
 - On content that is mostly static between frames, the margin grows a lot. On the
   synthetic `hold` scene (held text), ak264 is 13× faster than veryfast and 21%
   smaller. With renderer change maps it is 24× faster.
+
+**Where ak264 loses:**
+
+- x264 medium (and slower presets) makes 12–50% smaller files at the same PSNR.
+  ak264 has no B-frames, no partitions below 16×16, no 8×8 transform, one reference
+  frame and no psycho-visual tuning.
+- On the hardest full-change content (spec-to-screen), x264 ultrafast is about 2×
+  faster, though it needs about 2× the bytes for the same PSNR.
+- veryfast is up to 18% smaller on synthetic full-frame motion (`full`).
+- ak264 has no rate control, only constant QP, so it can't hit a target bitrate.
+- All numbers are luma PSNR. No perceptual metric (SSIM, VMAF) was measured, and
+  x264's psycho-visual tuning is invisible to PSNR, which favours ak264's
+  comparisons.
 
 **Quarter-pel is the default since it pays on real renderer output.** Integer-pel
 (`subpel: false`) is 15–25% faster but much larger on smooth sub-pixel motion:
@@ -283,7 +298,7 @@ cargo run --release --manifest-path crates/ak264/bench-openh264/Cargo.toml -- ty
 
 ### Earlier synthetic results
 
-These use 240 frames: `hold` is held text, and `typical` is sliding cards plus a pulsing panel. They were measured before the later speed work, so the ak264 numbers are conservative.
+These use 240 frames: `hold` is held text, and `typical` is sliding cards plus a pulsing panel. They were measured with the earlier defaults (integer-pel). Quarter-pel, now the default, costs about 20% speed on `typical` for a 3% smaller file, so treat these speeds as an upper bound for today's defaults.
 
 | Scene | ak264 (4 cores) | x264 veryfast at the same PSNR | Speed | Size |
 |---|---|---|---|---|
