@@ -1310,108 +1310,79 @@
        },
        {
         "shape": "path",
+        "name": "eyeWhite",
+        "d": "M 1176 414 C 1188 402, 1204 400, 1214 410 C 1206 424, 1190 426, 1176 414 Z",
+        "fill": "#f6e7da",
+        "group": "eye",
+        "wobble": 0.3,
+        "rough": 0.2
+       },
+       {
+        "shape": "circle",
+        "cx": 1203,
+        "cy": 413,
+        "r": 8,
+        "fill": "$ink",
+        "clipTo": "eyeWhite",
+        "group": "eye",
+        "wobble": 0,
+        "rough": 0
+       },
+       {
+        "shape": "circle",
+        "cx": 1206,
+        "cy": 410,
+        "r": 2.2,
+        "fill": "#ffffff",
+        "clipTo": "eyeWhite",
+        "group": "eye",
+        "wobble": 0,
+        "rough": 0
+       },
+       {
+        "shape": "path",
         "points": [
          [
-          1168,
-          412
+          1172,
+          413
          ],
          [
           1190,
-          424
+          401
          ],
          [
-          1214,
-          414
+          1216,
+          408
          ]
         ],
         "smooth": true,
         "stroke": "$ink",
         "weight": [
          2,
-         5
+         5.5
         ],
-        "taper": 0.3,
-        "group": "head"
+        "taper": 0.25,
+        "group": "eye"
        },
        {
         "shape": "path",
         "points": [
          [
-          1176,
-          418
+          1212,
+          406
          ],
          [
-          1172,
-          432
+          1222,
+          400
          ]
         ],
         "stroke": "$ink",
         "weight": [
-         1.2,
-         3
+         1,
+         2.5
         ],
-        "taper": 0.45,
-        "group": "head"
-       },
-       {
-        "shape": "path",
-        "points": [
-         [
-          1188,
-          423
-         ],
-         [
-          1187,
-          437
-         ]
-        ],
-        "stroke": "$ink",
-        "weight": [
-         1.2,
-         3
-        ],
-        "taper": 0.45,
-        "group": "head"
-       },
-       {
-        "shape": "path",
-        "points": [
-         [
-          1200,
-          422
-         ],
-         [
-          1202,
-          436
-         ]
-        ],
-        "stroke": "$ink",
-        "weight": [
-         1.2,
-         3
-        ],
-        "taper": 0.45,
-        "group": "head"
-       },
-       {
-        "shape": "path",
-        "points": [
-         [
-          1210,
-          417
-         ],
-         [
-          1215,
-          431
-         ]
-        ],
-        "stroke": "$ink",
-        "weight": [
-         1.2,
-         3
-        ],
-        "taper": 0.45,
-        "group": "head"
+        "taper": 0.4,
+        "group": "eye"
        },
        {
         "shape": "path",
@@ -1987,11 +1958,11 @@
          1040,
          300
         ],
-        "lag": 0.18,
-        "cycle": {
-         "style": "idle",
-         "amount": 0.5,
-         "phase": 0.2
+        "lag": 0.08,
+        "spring": {
+         "stiffness": 70,
+         "damping": 6,
+         "drag": 0.1
         }
        },
        {
@@ -2001,11 +1972,22 @@
          1092,
          692
         ],
-        "lag": 0.25,
-        "cycle": {
-         "style": "wave",
-         "amount": 0.35,
-         "speed": 0.6
+        "spring": {
+         "stiffness": 40,
+         "damping": 3,
+         "drag": 0.4
+        }
+       },
+       {
+        "name": "eye",
+        "parent": "head",
+        "pivot": [
+         1196,
+         414
+        ],
+        "blink": {
+         "every": 2.6,
+         "seed": 3
         }
        }
       ],

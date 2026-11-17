@@ -107,10 +107,13 @@ pub struct HandSpec {
     pub outline: bool,
     /// Break the line where the light hits hardest, 0..1 (default 0.15).
     pub gaps: f32,
+    /// Boil re-seeds the fills' edge wobble and roughness too, not only the line work
+    /// (livelier, but every shape is redrawn at the boil rate).
+    pub boil_edges: bool,
 }
 impl Default for HandSpec {
     fn default() -> Self {
-        HandSpec { weight: [0.8, 4.0], wobble: 1.5, rough: 0.6, boil: 0.0, boil_amount: 0.8, color: None, darken: 0.5, outline: false, gaps: 0.15 }
+        HandSpec { weight: [0.8, 4.0], wobble: 1.5, rough: 0.6, boil: 0.0, boil_amount: 0.8, color: None, darken: 0.5, outline: false, gaps: 0.15, boil_edges: false }
     }
 }
 
@@ -352,6 +355,8 @@ pub struct ShapeSpec {
     pub gaps: Option<f32>,
     /// Per-shape boil rate in redraws per second (default: the hand's; 0 = still).
     pub boil: Option<f32>,
+    /// Squash shut now and then about `origin` (an eye): `true` or `{ every, hold, close, open, min, seed }`.
+    pub blink: Option<OnOff<BlinkSpec>>,
 }
 
 #[derive(Deserialize, Clone, Debug, Default)]
@@ -435,6 +440,7 @@ impl Default for ShapeSpec {
             inks: None,
             gaps: None,
             boil: None,
+            blink: None,
         }
     }
 }
@@ -457,6 +463,77 @@ pub struct GroupSpec {
     pub cycle: Option<CycleSpec>,
     /// Seconds this group trails its parent's motion (secondary action).
     pub lag: f32,
+    /// Squash closed now and then (eyelids): `true` or `{ every, hold, close, open, min, seed }`.
+    pub blink: Option<OnOff<BlinkSpec>>,
+    /// Follow the parent through a damped spring (hair, tails, cloth): `{ stiffness, damping, drag }`.
+    pub spring: Option<SpringSpec>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(default, deny_unknown_fields)]
+pub struct BlinkSpec {
+    /// Mean seconds between blinks (default 3.2; each interval varies ±40%).
+    pub every: f32,
+    /// Seconds to close, held shut, and to open (defaults 2, 2 and 3 frames at 24 fps).
+    pub close: f32,
+    pub hold: f32,
+    pub open: f32,
+    /// Vertical scale when shut (default 0.08).
+    pub min: f32,
+    pub seed: u32,
+}
+impl Default for BlinkSpec {
+    fn default() -> Self {
+        BlinkSpec { every: 3.2, close: 2.0 / 24.0, hold: 2.0 / 24.0, open: 3.0 / 24.0, min: 0.08, seed: 1 }
+    }
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(default, deny_unknown_fields)]
+pub struct SpringSpec {
+    /// Angular stiffness (default 90) and damping (default 9): lower damping overshoots more.
+    pub stiffness: f32,
+    pub damping: f32,
+    /// Degrees of swing per pixel the parent's pivot moves sideways (default 0.15).
+    pub drag: f32,
+}
+impl Default for SpringSpec {
+    fn default() -> Self {
+        SpringSpec { stiffness: 90.0, damping: 9.0, drag: 0.15 }
+    }
+}
+
+fn blink_of(b: &Option<OnOff<BlinkSpec>>) -> Option<BlinkSpec> {
+    match b {
+        None | Some(OnOff::On(false)) => None,
+        Some(OnOff::On(true)) => Some(BlinkSpec::default()),
+        Some(OnOff::Amount(e)) => Some(BlinkSpec { every: e.max(0.2), ..Default::default() }),
+        Some(OnOff::Full(f)) => Some(f.clone()),
+    }
+}
+
+/// Vertical scale of a blinking part at `t`: 1 open, `min` shut.
+fn blink_at(b: &BlinkSpec, t: f32) -> f32 {
+    let every = b.every.max(0.2);
+    let k = (t / every).floor();
+    // This interval's blink starts at a seeded offset inside it.
+    for kk in [k - 1.0, k] {
+        let start = (kk + 0.2 + 0.6 * hash01((kk as i32 as u32).wrapping_mul(0x9e37_79b9) ^ b.seed.wrapping_mul(0x85eb_ca6b))) * every;
+        let u = t - start;
+        let (c, h, o) = (b.close.max(1e-3), b.hold.max(0.0), b.open.max(1e-3));
+        let shut = if u < 0.0 || u > c + h + o {
+            continue;
+        } else if u < c {
+            u / c
+        } else if u < c + h {
+            1.0
+        } else {
+            1.0 - (u - c - h) / o
+        };
+        let e = shut * shut * (3.0 - 2.0 * shut);
+        return 1.0 - (1.0 - b.min) * e;
+    }
+    1.0
 }
 
 #[derive(Deserialize, Clone, Debug, Default)]
@@ -530,7 +607,7 @@ fn cycle_at(c: &PCycle, t: f32) -> Pose {
 }
 impl Default for GroupSpec {
     fn default() -> Self {
-        GroupSpec { name: String::new(), parent: None, x: 0.0, y: 0.0, rotate: 0.0, scale: None, origin: [0.0, 0.0], pivot: None, animate: None, sway: None, cycle: None, lag: 0.0 }
+        GroupSpec { name: String::new(), parent: None, x: 0.0, y: 0.0, rotate: 0.0, scale: None, origin: [0.0, 0.0], pivot: None, animate: None, sway: None, cycle: None, lag: 0.0, blink: None, spring: None }
     }
 }
 
@@ -713,6 +790,7 @@ struct PShape {
     lt: Lit,
     gaps: f32,
     boil: f32,
+    blink: Option<BlinkSpec>,
 }
 
 /// The light one shape sees.
@@ -737,6 +815,8 @@ struct PGroup {
     sway: Option<Sway>,
     cycle: Option<PCycle>,
     lag: f32,
+    blink: Option<BlinkSpec>,
+    spring: Option<SpringSpec>,
 }
 
 #[derive(Default)]
@@ -746,11 +826,13 @@ struct Prepared {
     light_color: Rgba,
     shadow_tint: Rgba,
     cache: Mutex<HashMap<u64, (Vec<Op>, Vec<Op>)>>,
+    /// Shapes whose ops never change over time.
+    still: Vec<bool>,
     hash: u64,
 }
 
 const SHAPES: &[&str] = &["path", "circle", "ellipse", "rect", "blob", "polygon", "star"];
-const TEXTURES: &[&str] = &["paper", "halftone", "riso", "hatch", "crosshatch", "stipple", "scribble"];
+const TEXTURES: &[&str] = &["paper", "halftone", "riso", "contour", "hatch", "crosshatch", "stipple", "scribble"];
 const BLENDS: &[&str] = &["normal", "multiply", "screen", "overlay", "darken", "lighten", "softLight", "add", "difference"];
 const EASES: &[&str] = &["linear", "in", "out", "inOut", "outBack", "inOutBack", "step"];
 const MORPH_N: usize = 160;
@@ -1350,6 +1432,8 @@ impl Prepare for Illo {
                 scale: num2(&g.scale, [1.0, 1.0]),
                 origin: g.pivot.unwrap_or(g.origin),
                 cycle: cycle_of(&g.cycle).map_err(|e| err(format!("group {:?}: {}", g.name, e.0)))?,
+                blink: blink_of(&g.blink),
+                spring: g.spring.clone(),
                 anim: anim_of(&g.animate)?,
                 sway: g.sway.clone(),
                 lag: g.lag,
@@ -1583,7 +1667,7 @@ impl Prepare for Illo {
                 Some(GrainOpt::Amount(a)) => (a > 0.0).then_some((a, 1.4)),
                 Some(GrainOpt::Full(g)) => Some((g.amount.unwrap_or(0.06), g.scale.unwrap_or(1.4).max(0.5))),
             };
-            let paint_tex = (self.paint_over && closed && fill.is_some()).then(|| TextureSpec::Full(TextureFull { style: "hatch".into(), amount: Some(0.75), scale: Some(7.0), ..Default::default() }));
+            let paint_tex = (self.paint_over && closed && fill.is_some()).then(|| TextureSpec::Full(TextureFull { style: "contour".into(), amount: Some(0.8), scale: Some(7.0), ..Default::default() }));
             let texture = match s.texture.clone().or(paint_tex).or(if closed { g_tex.clone() } else { None }) {
                 None => None,
                 Some(t) => {
@@ -1597,6 +1681,7 @@ impl Prepare for Illo {
                         one_of("texture", &f.style, TEXTURES).map_err(ctx)?;
                         let (amt, sc, an) = match f.style.as_str() {
                             "paper" => (0.5, 1.0, 0.0),
+                            "contour" => (0.75, 8.0, 0.0),
                             "halftone" => (0.85, 9.0, 45.0),
                             "riso" => (0.35, 1.5, 0.0),
                             _ => (0.6, 7.0, 35.0),
@@ -1670,9 +1755,38 @@ impl Prepare for Illo {
                 lt,
                 gaps: s.gaps.unwrap_or(self.hand.gaps),
                 boil: s.boil.unwrap_or(self.hand.boil).max(0.0),
+                blink: blink_of(&s.blink),
             });
         }
-        p.hash = fnv(&[b"illo", format!("{:?}", p.shapes.len()).as_bytes(), self.seed.to_le_bytes().as_slice()]);
+        let group_still = |g: Option<usize>| {
+            let mut cur = g;
+            let mut depth = 0;
+            while let Some(c) = cur {
+                let gr = &p.groups[c];
+                if gr.anim.is_some() || gr.sway.is_some() || gr.cycle.is_some() || gr.blink.is_some() || depth > 16 {
+                    return false;
+                }
+                cur = gr.parent;
+                depth += 1;
+            }
+            true
+        };
+        let mut still: Vec<bool> = p
+            .shapes
+            .iter()
+            .map(|s| s.anim.is_none() && s.sway.is_none() && s.blink.is_none() && !matches!(s.fill, Some(PFill::Image { .. })) && group_still(s.group) && !(s.boil > 0.0 && (s.line.is_some() || self.hand.boil_edges)))
+            .collect();
+        for _ in 0..3 {
+            for (i, s) in p.shapes.iter().enumerate() {
+                let sc = s.shadow.as_ref().and_then(|sh| sh.clip);
+                if s.clip.iter().chain(s.cut.iter()).chain(sc.iter()).any(|&d| !still[d]) {
+                    still[i] = false;
+                }
+            }
+        }
+        p.still = still;
+        // Identifies this illustration's content (render-cache keys build on it).
+        p.hash = fnv(&[b"illo", format!("{:?}{:?}{:?}{:?}", p.shapes, p.groups, self.hand, self.view).as_bytes(), self.seed.to_le_bytes().as_slice()]);
         self.p = p;
         Ok(())
     }
@@ -1920,7 +2034,10 @@ struct State {
     m: [f32; 6],
     op: f32,
     morph: Morph,
+    /// Boil redraw (line work).
     frame: u32,
+    /// Boil redraw of the fill edges (0 unless `hand.boilEdges`).
+    edge: u32,
 }
 
 impl State {
@@ -1939,7 +2056,7 @@ impl State {
         b.extend_from_slice(&(a as u32).to_le_bytes());
         b.extend_from_slice(&(c as u32).to_le_bytes());
         b.extend_from_slice(&u.to_bits().to_le_bytes());
-        b.extend_from_slice(&self.frame.to_le_bytes());
+        b.extend_from_slice(&self.edge.to_le_bytes());
         fnv(&[&b])
     }
 }
@@ -1967,11 +2084,44 @@ impl Illo {
             pose.sx *= q.sx;
             pose.sy *= q.sy;
         }
+        if let Some(b) = &gr.blink {
+            pose.sy *= blink_at(b, tl);
+        }
+        if let (Some(sp), Some(p)) = (&gr.spring, gr.parent) {
+            pose.rot += self.spring_lag(sp, p, gr.origin, tl, depth);
+        }
         let own = trs(gr.x + pose.dx, gr.y + pose.dy, gr.rotate + pose.rot, [gr.scale[0] * pose.sx, gr.scale[1] * pose.sy], gr.origin);
         match gr.parent {
             Some(p) if depth < 16 => mul(&self.group_m(p, tl, depth + 1), &own),
             _ => own,
         }
+    }
+
+    /// Extra rotation of a spring-follower bone: a damped spring chasing its parent's
+    /// angle (plus sideways drag of the pivot), simulated from t = 0 so it is deterministic.
+    fn spring_lag(&self, sp: &SpringSpec, parent: usize, pivot: [f32; 2], t: f32, depth: u32) -> f32 {
+        if t <= 0.0 || depth > 12 {
+            return 0.0;
+        }
+        let input = |tt: f32| {
+            let m = self.group_m(parent, tt, depth + 1);
+            m[1].atan2(m[0]).to_degrees() + sp.drag * (m[0] * pivot[0] + m[2] * pivot[1] + m[4])
+        };
+        // The last two seconds are enough for any reasonably damped spring to settle,
+        // starting at rest; this keeps nested chains cheap.
+        let dt = 1.0 / 48.0;
+        let steps = ((t.min(2.0) / dt).ceil() as usize).max(1);
+        let start = t - steps as f32 * dt;
+        let mut y = input(start);
+        let mut v = 0.0;
+        let mut u = y;
+        for i in 1..=steps {
+            u = input(start + i as f32 * dt);
+            let a = sp.stiffness * (u - y) - sp.damping * v;
+            v += a * dt;
+            y += v * dt;
+        }
+        y - u
     }
 
     fn states(&self, t: f32, fit: &[f32; 6]) -> Vec<State> {
@@ -1980,14 +2130,18 @@ impl Illo {
             .iter()
             .map(|s| {
                 let ts = t - s.lag;
-                let (pose, morph) = pose_at(&s.anim, &s.sway, ts);
+                let (mut pose, morph) = pose_at(&s.anim, &s.sway, ts);
+                if let Some(b) = &s.blink {
+                    pose.sy *= blink_at(b, ts);
+                }
                 let own = trs(pose.dx, pose.dy, s.rotate + pose.rot, [s.scale[0] * pose.sx, s.scale[1] * pose.sy], s.origin);
                 let g = match s.group {
                     Some(g) => mul(&self.group_m(g, ts, 0), &own),
                     None => own,
                 };
                 let frame = if s.boil > 0.0 { (t * s.boil).floor().max(0.0) as u32 + 1 } else { 0 };
-                State { m: mul(fit, &g), op: s.opacity * pose.op.clamp(0.0, 1.0), morph, frame }
+                let edge = if self.hand.boil_edges { frame } else { 0 };
+                State { m: mul(fit, &g), op: s.opacity * pose.op.clamp(0.0, 1.0), morph, frame, edge }
             })
             .collect()
     }
@@ -2010,30 +2164,31 @@ impl Frame<'_> {
             }
             (Morph::Cross(a, b, _), Some(an)) => rings_path(&an.morphs[if which { b } else { a }]),
         };
-        let seed = s.seed ^ st.frame.wrapping_mul(0x2545_f491);
+        let seed = s.seed ^ st.edge.wrapping_mul(0x2545_f491);
         let mut p = if s.closed { roughen(&local, s.wobble, s.rough, seed) } else { local };
         p.apply_affine(kaff(&st.m));
         p
     }
 
     /// `(cast shadow, everything else)` for shape `i`.
-    fn ops(&self, i: usize) -> (Vec<Op>, Vec<Op>) {
+    /// `key` identifies this state of the shape: its layers are cached by the renderer under it.
+    fn ops(&self, i: usize, key: u64, line_key: u64) -> (Vec<Op>, Vec<Op>) {
         let st = self.states[i];
         let b = self.body(i, false);
-        let shadow = self.shadow_ops(i, &b, st.op);
+        let shadow = self.shadow_ops(i, &b, st.op, key ^ 0x5ad0_5ad0);
         let body = match st.morph {
             Morph::Cross(_, _, u) => {
-                let mut out = super::with_opacity(self.shape_ops(i, b, 1.0), 1.0 - u);
-                out.extend(super::with_opacity(self.shape_ops(i, self.body(i, true), 1.0), u));
+                let mut out = super::with_opacity(self.shape_ops(i, b, 1.0, key ^ 0xa, line_key ^ 0xa), 1.0 - u);
+                out.extend(super::with_opacity(self.shape_ops(i, self.body(i, true), 1.0, key ^ 0xb, line_key ^ 0xb), u));
                 super::with_opacity(out, st.op)
             }
-            _ => self.shape_ops(i, b, st.op),
+            _ => self.shape_ops(i, b, st.op, key, line_key),
         };
         (shadow, body)
     }
 
     /// Cast shadow: a hard silhouette away from the light (or laid on the ground).
-    fn shadow_ops(&self, i: usize, b: &Path, op: f32) -> Vec<Op> {
+    fn shadow_ops(&self, i: usize, b: &Path, op: f32, key: u64) -> Vec<Op> {
         let pp = &self.il.p;
         let s = &pp.shapes[i];
         let k = self.k;
@@ -2055,13 +2210,13 @@ impl Frame<'_> {
         sp = moved(&sp, -lx * d + sh.dx * k, -ly * d + sh.dy * k);
         let clip = sh.clip.map(|c| (self.body(c, false), IDENTITY));
         let filters = if sh.blur > 0.0 { vec![Filter::Blur(sh.blur * k)] } else { Vec::new() };
-        out.push(Op::PushLayer { opacity: sh.opacity * op * s.lt.strength.min(1.0), blend: Blend::Multiply, filters, clip, cache_key: None });
+        out.push(Op::PushLayer { opacity: sh.opacity * op * s.lt.strength.min(1.0), blend: Blend::Multiply, filters, clip, cache_key: Some(key) });
         out.push(Op::Fill { path: sp, paint: Paint::Solid(sh.color), rule: FillRule::NonZero, transform: IDENTITY });
         out.push(Op::PopLayer);
         out
     }
 
-    fn shape_ops(&self, i: usize, b: Path, op: f32) -> Vec<Op> {
+    fn shape_ops(&self, i: usize, b: Path, op: f32, key: u64, line_key: u64) -> Vec<Op> {
         let il = self.il;
         let pp = &il.p;
         let s = &pp.shapes[i];
@@ -2077,10 +2232,9 @@ impl Frame<'_> {
         let strength = s.lt.strength;
 
         let clip = s.clip.map(|c| (self.body(c, false), IDENTITY));
-        let outer = op < 0.999 || s.blend != Blend::Normal || clip.is_some() || !s.cut.is_empty();
-        if outer {
-            out.push(Op::PushLayer { opacity: op, blend: s.blend, filters: Vec::new(), clip, cache_key: None });
-        }
+        // One layer per shape, cached by the renderer under the shape's state key: a static
+        // shape is rasterised once and blitted after that.
+        out.push(Op::PushLayer { opacity: op, blend: s.blend, filters: Vec::new(), clip: clip.clone(), cache_key: Some(key) });
         if !s.cut.is_empty() {
             out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });
         }
@@ -2139,13 +2293,6 @@ impl Frame<'_> {
                 out.push(Op::PopLayer);
             }
         }
-        if let Some((lc, w)) = s.line {
-            let frame = self.states[i].frame;
-            let jit = if frame > 0 { il.hand.boil_amount * k } else { 0.0 };
-            let seed = s.seed ^ 0x6c1e ^ frame.wrapping_mul(0x9e37_79b9);
-            let path = if s.closed { outline_path(&b, [w[0] * k, w[1] * k], s.lt.dir, s.gaps, jit, seed) } else { open_lines(&b, [w[0] * k, w[1] * k], s.taper, jit, seed) };
-            out.push(Op::Fill { path, paint: Paint::Solid(lc), rule: FillRule::NonZero, transform: IDENTITY });
-        }
         if !s.cut.is_empty() {
             out.push(Op::PushLayer { opacity: 1.0, blend: Blend::DestOut, filters: Vec::new(), clip: None, cache_key: None });
             for &c in &s.cut {
@@ -2154,13 +2301,20 @@ impl Frame<'_> {
             out.push(Op::PopLayer);
             out.push(Op::PopLayer);
         }
-        if outer {
+        out.push(Op::PopLayer);
+        // The line work in a layer of its own, so boiling lines don't redraw the fills.
+        if let Some((lc, w)) = s.line {
+            let frame = self.states[i].frame;
+            let jit = if frame > 0 { il.hand.boil_amount * k } else { 0.0 };
+            let seed = s.seed ^ 0x6c1e ^ frame.wrapping_mul(0x9e37_79b9);
+            let path = if s.closed { outline_path(&b, [w[0] * k, w[1] * k], s.lt.dir, s.gaps, jit, seed) } else { open_lines(&b, [w[0] * k, w[1] * k], s.taper, jit, seed) };
+            out.push(Op::PushLayer { opacity: op, blend: s.blend, filters: Vec::new(), clip, cache_key: Some(line_key) });
+            out.push(Op::Fill { path, paint: Paint::Solid(lc), rule: FillRule::NonZero, transform: IDENTITY });
             out.push(Op::PopLayer);
         }
         out
     }
 
-    /// A dithered OKLab gradient as an image locked to the shape's box.
     /// An image (or video frame) mapped onto the shape's box.
     fn image_paint(&self, src: &str, fit: &str, scale: f32, focus: [f32; 2], b: &Path) -> Paint {
         let Some((id, iw, ih)) = self.ctx.assets.media(src, self.t) else { return Paint::Solid(Rgba([0.5, 0.5, 0.5, 1.0])) };
@@ -2187,6 +2341,7 @@ impl Frame<'_> {
         Paint::Image { image: id, transform: [1.0 / sx, 0.0, 0.0, 1.0 / sy, -ox / sx, -oy / sy], opacity: 1.0 }
     }
 
+    /// A dithered OKLab gradient as an image locked to the shape's box.
     fn grad_paint(&self, g: &Grad, b: &Path, seed: u32, light: [f32; 2]) -> Paint {
         let bb = bbox(b);
         let [lx, ly] = light;
@@ -2317,6 +2472,87 @@ impl Frame<'_> {
                 });
                 out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: Some((b.clone(), IDENTITY)), cache_key: None });
                 out.push(Op::Image { image: id, dst: [ox, oy, w as f32, h as f32], opacity: 1.0, transform: IDENTITY });
+                out.push(Op::PopLayer);
+            }
+            "contour" => {
+                // Lines that follow the form: insets of the outline, drawn only where the
+                // shape is dark enough for them (more rings, heavier, towards the shadow side).
+                let [lx, ly] = lt.dir;
+                let c = bb.center();
+                let ext = 0.5 * (bb.width() as f32 * lx.abs() + bb.height() as f32 * ly.abs()).max(1.0);
+                let sp = tx.scale * k;
+                let maxd = 0.5 * (bb.width().min(bb.height()) as f32);
+                let nrings = ((maxd / sp) as usize).clamp(1, 60);
+                let mut buckets: [Path; 3] = Default::default();
+                for (ri, ring) in rings(b, (sp * 0.5).clamp(1.5, 4.0)).into_iter().enumerate() {
+                    let m = ring.len();
+                    if m < 4 {
+                        continue;
+                    }
+                    let pts: Vec<[f32; 2]> = ring.iter().map(|&(x, y)| [x, y]).collect();
+                    let sign = if signed_area(&pts) > 0.0 { 1.0 } else { -1.0 };
+                    let normals: Vec<[f32; 2]> = (0..m)
+                        .map(|i| {
+                            let (a, q) = (pts[(i + m - 2) % m], pts[(i + 2) % m]);
+                            let (tx_, ty_) = (q[0] - a[0], q[1] - a[1]);
+                            let l = (tx_ * tx_ + ty_ * ty_).sqrt().max(1e-6);
+                            [ty_ / l * sign, -tx_ / l * sign]
+                        })
+                        .collect();
+                    for kk in 1..=nrings {
+                        // Ring spacing widens a little inwards (line scale varies).
+                        let d = sp * (kk as f32 - 0.4) * (1.0 + 0.05 * kk as f32);
+                        let gate = kk as f32 / (nrings as f32 + 1.0);
+                        let rs = seed ^ (kk as u32).wrapping_mul(0x9e37_79b9) ^ (ri as u32) << 7;
+                        let mut on = false;
+                        let mut arc = 0.0;
+                        let mut tone_sum = 0.0;
+                        let mut seg = Path::new();
+                        let flush = |seg: &mut Path, tone_sum: f32, buckets: &mut [Path; 3]| {
+                            if !seg.elements().is_empty() {
+                                let bi = (tone_sum * 3.0).clamp(0.0, 2.0) as usize;
+                                buckets[bi].extend(seg.iter());
+                                *seg = Path::new();
+                            }
+                        };
+                        for i in 0..=m {
+                            let j = i % m;
+                            let p0 = pts[j];
+                            let q = [p0[0] - normals[j][0] * d, p0[1] - normals[j][1] * d];
+                            let proj = -((q[0] - c.x as f32) * lx + (q[1] - c.y as f32) * ly) / ext;
+                            let tone = tx.amount * smoothstep(-0.8, 0.9, proj);
+                            // Lines break up a little, like hand hatching.
+                            let keep = tone > gate + 0.12 * vnoise(arc / 40.0, rs) && d < maxd * 0.98;
+                            let w = 1.6 * vnoise(arc / 30.0, rs ^ 5);
+                            let qq = Point::new((q[0] - normals[j][0] * w) as f64, (q[1] - normals[j][1] * w) as f64);
+                            if keep {
+                                if on {
+                                    seg.line_to(qq);
+                                } else {
+                                    seg.move_to(qq);
+                                    on = true;
+                                }
+                                tone_sum = tone;
+                            } else if on {
+                                flush(&mut seg, tone_sum, &mut buckets);
+                                on = false;
+                            }
+                            let nx = pts[(j + 1) % m];
+                            arc += ((nx[0] - p0[0]).powi(2) + (nx[1] - p0[1]).powi(2)).sqrt();
+                        }
+                        flush(&mut seg, tone_sum, &mut buckets);
+                    }
+                }
+                out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: Some((b.clone(), IDENTITY)), cache_key: None });
+                for (bi, p) in buckets.into_iter().enumerate() {
+                    if !p.elements().is_empty() {
+                        let mut col = ink;
+                        col.0[3] = 0.6 + 0.15 * bi as f32;
+                        let mut st = super::style::line((0.8 + 0.55 * bi as f32) * k, [0.0, 1.0]);
+                        st.cap = 1;
+                        out.push(Op::Stroke { path: p, paint: Paint::Solid(col), stroke: st, transform: IDENTITY });
+                    }
+                }
                 out.push(Op::PopLayer);
             }
             style => {
@@ -2494,9 +2730,11 @@ impl Component for Illo {
         let dims = [ctx.width.to_bits(), ctx.height.to_bits()];
         let n = self.p.shapes.len();
         let mut lists: Vec<(Vec<Op>, Vec<Op>)> = Vec::with_capacity(n);
+        let mut keys: Vec<u64> = Vec::with_capacity(n);
         for (i, s) in self.p.shapes.iter().enumerate() {
             if !s.visible {
                 lists.push(Default::default());
+                keys.push(0);
                 continue;
             }
             // Everything the shape's ops depend on.
@@ -2508,16 +2746,20 @@ impl Component for Illo {
                 deps.push(fr.states[*d].hash());
             }
             let key = fnv(&[&deps.iter().flat_map(|v| v.to_le_bytes()).collect::<Vec<u8>>()]);
-            let hit = self.p.cache.lock().ok().and_then(|c| c.get(&key).cloned());
+            // Boiling line work changes every redraw; the fills keep `key`.
+            let frame = fr.states[i].frame;
+            let line_key = if s.line.is_some() && frame > 0 { fnv(&[&key.to_le_bytes(), &frame.to_le_bytes()]) } else { key };
+            keys.push(line_key);
+            let hit = self.p.cache.lock().ok().and_then(|c| c.get(&line_key).cloned());
             lists.push(match hit {
                 Some(o) => o,
                 None => {
-                    let o = fr.ops(i);
+                    let o = fr.ops(i, key, line_key);
                     if let Ok(mut c) = self.p.cache.lock() {
                         if c.len() > 4096 {
                             c.clear();
                         }
-                        c.insert(key, o.clone());
+                        c.insert(line_key, o.clone());
                     }
                     o
                 }
@@ -2531,16 +2773,57 @@ impl Component for Illo {
                 on[c].push(i);
             }
         }
-        let mut out = Vec::new();
+        // Paint order: (shape, is-shadow).
+        let mut order: Vec<(usize, bool)> = Vec::with_capacity(n * 2);
         for j in 0..n {
             if !on.iter().any(|v| v.contains(&j)) {
-                out.extend(lists[j].0.iter().cloned());
+                order.push((j, true));
             }
-            out.extend(lists[j].1.iter().cloned());
+            order.push((j, false));
             for &i in &on[j] {
-                out.extend(lists[i].0.iter().cloned());
+                order.push((i, true));
             }
         }
+        // Consecutive still shapes go into one cached layer: after the first frame the
+        // whole static part of the picture is a single blit. A shape that blends with
+        // what is below it only joins a run that holds everything below it.
+        let mut out = Vec::new();
+        let mut run: Vec<Op> = Vec::new();
+        let mut run_keys: Vec<u8> = Vec::new();
+        let mut members: Vec<usize> = Vec::new();
+        let mut grounded = false;
+        let flush = |out: &mut Vec<Op>, run: &mut Vec<Op>, run_keys: &mut Vec<u8>, members: &mut Vec<usize>| {
+            if !run.is_empty() {
+                out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: None, cache_key: Some(fnv(&[b"illo-run", run_keys])) });
+                out.append(run);
+                out.push(Op::PopLayer);
+            }
+            run_keys.clear();
+            members.clear();
+        };
+        for (i, shadow) in order {
+            let ops = if shadow { &lists[i].0 } else { &lists[i].1 };
+            if ops.is_empty() {
+                continue;
+            }
+            let s = &self.p.shapes[i];
+            let needs_backdrop = if shadow { s.shadow.as_ref().and_then(|sh| sh.clip).is_none_or(|c| !members.contains(&c)) } else { s.blend != Blend::Normal };
+            if self.p.still[i] && (run.is_empty() || grounded || !needs_backdrop) && (grounded || !needs_backdrop || out.is_empty()) {
+                if run.is_empty() {
+                    grounded = out.is_empty();
+                }
+                run.extend(ops.iter().cloned());
+                run_keys.extend_from_slice(&keys[i].to_le_bytes());
+                run_keys.push(shadow as u8);
+                if !shadow {
+                    members.push(i);
+                }
+            } else {
+                flush(&mut out, &mut run, &mut run_keys, &mut members);
+                out.extend(ops.iter().cloned());
+            }
+        }
+        flush(&mut out, &mut run, &mut run_keys, &mut members);
         out
     }
 
@@ -2684,9 +2967,80 @@ mod tests {
     }
 
     #[test]
+    fn blink_spring_and_contour() {
+        let b = BlinkSpec::default();
+        let shut = (0..2000).map(|i| blink_at(&b, i as f32 / 100.0)).fold(1.0f32, f32::min);
+        assert!(shut < 0.1, "blinks close: {shut}");
+        assert_eq!(blink_at(&BlinkSpec { every: 3.0, ..b.clone() }, 0.0), 1.0);
+        let v = serde_json::json!({
+            "groups": [{"name": "head", "pivot": [200, 300], "animate": {"keys": [{"t": 0, "x": 0}, {"t": 0.5, "x": 200}]}},
+                       {"name": "hair", "parent": "head", "pivot": [200, 200], "spring": {"stiffness": 60, "damping": 4}}],
+            "shapes": [{"shape": "rect", "x": 150, "y": 200, "w": 100, "h": 200, "group": "hair", "fill": "#334", "texture": "contour", "shade": true}]
+        });
+        // The hair swings back while the head moves, then settles.
+        let ops_mid = eval(v.clone(), 0.4);
+        let ops_end = eval(v.clone(), 3.0);
+        assert_ne!(ops_mid, ops_end);
+        assert!(ops_end.iter().any(|o| matches!(o, Op::Stroke { .. })), "contour hatching");
+    }
+
+    #[test]
     fn deterministic_with_boil() {
         let v = serde_json::json!({"hand": {"boil": 8, "outline": true}, "grain": 0.06, "texture": "halftone", "shapes": [{"shape": "blob", "cx": 300, "cy": 300, "r": 120, "fill": "$1", "shade": true, "shadow": {"flatten": 0.3}}], "palette": ["#3a7d5c"]});
         assert_eq!(eval(v.clone(), 1.0), eval(v.clone(), 1.0));
         assert_ne!(eval(v.clone(), 1.0), eval(v, 1.2));
     }
+    /// `cargo test --release -p anikit-video --lib illo::tests::cost -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn cost() {
+        use std::sync::Arc;
+        for (name, boil) in [("illo-still-life", true), ("illo-portrait", true), ("illo-still-life", false), ("illo-portrait", false)] {
+            let path = format!("{}/../../examples/video/illustration/{name}.json", env!("CARGO_MANIFEST_DIR"));
+            let mut spec: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+            if !boil {
+                spec["scenes"][0]["layers"][0]["props"]["hand"]["boil"] = Value::from(0);
+            }
+            let name = format!("{name}{}", if boil { "" } else { " (no boil)" });
+            let props = &spec["scenes"][0]["layers"][0]["props"];
+            let host = preview::host();
+            let theme = Theme::default();
+            let t0 = std::time::Instant::now();
+            let p = build("illo", props).unwrap();
+            let build_ms = t0.elapsed().as_secs_f64() * 1e3;
+            let t1 = std::time::Instant::now();
+            let _ = p.eval(0.0, 1920.0, 1080.0, 24.0, &theme, host);
+            let first_ms = t1.elapsed().as_secs_f64() * 1e3;
+            let n = 48;
+            let t2 = std::time::Instant::now();
+            let lists: Vec<Vec<Op>> = (1..=n).map(|f| p.eval(f as f32 / 24.0, 1920.0, 1080.0, 24.0, &theme, host)).collect();
+            let eval_ms = t2.elapsed().as_secs_f64() * 1e3 / n as f64;
+            let mut r = crate::render::Renderer::new(Arc::new(host.render_assets(None)));
+            let dl = |ops: &Vec<Op>| dl::DisplayList { width: 1920, height: 1080, background: theme.background, ops: ops.clone() };
+            r.render(&dl(&lists[0]));
+            let t3 = std::time::Instant::now();
+            for ops in &lists {
+                r.render(&dl(ops));
+            }
+            let render_ms = t3.elapsed().as_secs_f64() * 1e3 / n as f64;
+            let t4 = std::time::Instant::now();
+            for _ in 0..10 {
+                r.render(&dl(&lists[n - 1]));
+            }
+            println!("  same frame again: {:.2} ms, {} cache hits", t4.elapsed().as_secs_f64() * 1e2, r.last_cache_hits());
+            // The pipeline's path: incremental render straight to YUV (unchanged regions skipped).
+            let mut r = crate::render::Renderer::new(Arc::new(host.render_assets(None)));
+            let mut yuv = crate::render::YuvFrame::new(1920, 1080);
+            let mut mb = crate::render::MbMap::new(120, 68);
+            r.render_yuv_incremental(&dl(&lists[0]), &mut yuv, &mut mb);
+            let t5 = std::time::Instant::now();
+            for ops in &lists[1..] {
+                r.render_yuv_incremental(&dl(ops), &mut yuv, &mut mb);
+            }
+            println!("  incremental YUV: {:.2} ms/frame", t5.elapsed().as_secs_f64() * 1e3 / (n - 1) as f64);
+            let uniq = lists.windows(2).filter(|w| w[0] != w[1]).count() + 1;
+            println!("{name}: build {build_ms:.1} ms, first eval {first_ms:.1} ms, eval {eval_ms:.2} ms/frame, full render {render_ms:.2} ms/frame, {uniq}/{n} distinct frames, {} ops", lists[0].len());
+        }
+    }
+
 }
