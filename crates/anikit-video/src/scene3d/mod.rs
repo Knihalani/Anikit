@@ -1480,6 +1480,9 @@ mod asset_tests {
         s2.prepare().map_err(|e| e.0).unwrap();
         let top2 = mean(&s2.render(0.0, 1.0 / 30.0, 64, 36, None)[..64 * 4 * 4]);
         assert!(top2[2] + 20.0 < top[2], "{top2:?} vs {top:?}");
+        // A mood that isn't one names the moods (no network needed to fail).
+        let e = Scene3d::try_from(json!({ "env": { "hdri": "sunsett" } })).and_then(|mut s| s.prepare().map_err(|e| e.0)).err().unwrap_or_default();
+        assert!(e.contains("sunset") && e.contains("mood"), "{e}");
         // Unknown keys and bad values are reported.
         let bad = Scene3d::try_from(json!({ "env": { "hdri": hdr.to_string_lossy(), "rotation": 3 } })).and_then(|mut s| s.prepare().map_err(|e| e.0));
         let msg = bad.err().unwrap_or_default();

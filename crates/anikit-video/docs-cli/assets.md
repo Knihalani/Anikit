@@ -13,7 +13,7 @@ and are reused from then on. Nothing is bundled in the binary.
     anikit-video assets info polyhaven:hdri/kloppenheim_06
     anikit-video assets sheet sunset --type hdri -o pick.jpg   # look before choosing
 
-Each line: `id  type  one-line description  [tags]  size`. Types: `hdri texture model lut image`.
+Lines read `id  type  description  [tags]  size`; types `hdri texture model lut image`.
 
 ## Refs
 
@@ -26,8 +26,7 @@ Each line: `id  type  one-line description  [tags]  size`. Types: `hdri texture 
 | `khronos:<Name>` | CC0 glTF sample model (GLB) |
 | `anikit:lut/<name>` | film LUT, generated locally (no download) |
 
-Any Poly Haven slug or ambientCG id works even if it isn't in the curated index
-(looked up live). The curated ~230 are pinned and have descriptions.
+Any Poly Haven slug or ambientCG id works live; the curated ~230 are pinned and described.
 
 ## Use them
 
@@ -39,6 +38,7 @@ Any Poly Haven slug or ambientCG id works even if it isn't in the curated index
       ]
     }
 
+- Or a curated mood: `"hdri": "studio" | "studio-warm" | "studio-dark" | "sunrise" | "golden-hour" | "sunset" | "dramatic-sky" | "noon" | "park" | "overcast" | "sky" | "interior" | "night" | "night-city"`.
 - `env.hdri`: lighting, reflections and background from the HDRI. `rotate` (degrees, spins the
   world), `exposure` (stops), `background`: `true` (sharp), `"blur"` (soft, keeps focus on the
   subject), `false` (lighting only; the floor/backdrop stays). The sun in an outdoor HDRI becomes a

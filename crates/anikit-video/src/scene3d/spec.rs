@@ -1191,6 +1191,16 @@ fn hdri_env(v: &Value, path: &str) -> Res<Option<EnvSpec>> {
         Value::Object(m) if m.contains_key("hdri") => (m["hdri"].as_str().ok_or_else(|| format!("{path}.hdri: expected an asset ref or .hdr path"))?.to_string(), Some(m)),
         _ => return Ok(None),
     };
+    // A curated mood (`"hdri": "sunset"`) names a library HDRI.
+    let src = match crate::assetlib::hdri_mood(&src) {
+        Some(r) => r.to_string(),
+        None if !crate::assetlib::is_ref(&src) && !src.contains('.') => {
+            let moods: Vec<&str> = crate::assetlib::HDRI_MOODS.iter().map(|m| m.0).collect();
+            let hint = crate::components::style::closest(&src, &moods).map(|c| format!("; did you mean `{c}`?")).unwrap_or_default();
+            return Err(format!("{path}.hdri: `{src}` is not a mood ({}), an asset ref (`polyhaven:hdri/…`) or an .hdr path{hint}", moods.join(", ")));
+        }
+        None => src,
+    };
     let mut o = Opts::default();
     let mut haze = 0.0;
     if let Some(m) = m {
@@ -1232,9 +1242,12 @@ fn hdri_env(v: &Value, path: &str) -> Res<Option<EnvSpec>> {
     } else {
         std::path::PathBuf::from(&src)
     };
-    static CACHE: std::sync::OnceLock<std::sync::Mutex<HashMap<String, (std::sync::Arc<super::hdri::EnvMap>, Option<super::env::Softbox>)>>> = std::sync::OnceLock::new();
+    // Loaded maps, most recent last; a few are kept (a 2k map is ~33 MB) so a
+    // long-lived process (the MCP server) doesn't grow without bound.
+    type Loaded = (String, std::sync::Arc<super::hdri::EnvMap>, Option<super::env::Softbox>);
+    static CACHE: std::sync::OnceLock<std::sync::Mutex<Vec<Loaded>>> = std::sync::OnceLock::new();
     let ck = format!("{}|{:?}", file.display(), (o.rotate, o.exposure, o.background, o.bg_exposure, o.extract_key));
-    let hit = CACHE.get_or_init(Default::default).lock().unwrap().get(&ck).cloned();
+    let hit = CACHE.get_or_init(Default::default).lock().unwrap().iter().find(|x| x.0 == ck).map(|x| (x.1.clone(), x.2.clone()));
     let (map, key) = match hit {
         Some(x) => x,
         None => {
@@ -1243,7 +1256,11 @@ fn hdri_env(v: &Value, path: &str) -> Res<Option<EnvSpec>> {
                 eprintln!("hdri {}: key {:?} ({:.0}% of the light), mean {:?}", file.display(), k.as_ref().map(|k| (k.c, k.radiance, k.hu.atan().to_degrees() * 2.0)), m.key_fraction * 100.0, m.mean());
             }
             let x = (std::sync::Arc::new(m), k);
-            CACHE.get_or_init(Default::default).lock().unwrap().insert(ck, x.clone());
+            let mut c = CACHE.get_or_init(Default::default).lock().unwrap();
+            if c.len() >= 6 {
+                c.remove(0);
+            }
+            c.push((ck, x.0.clone(), x.1.clone()));
             x
         }
     };
