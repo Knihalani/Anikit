@@ -279,6 +279,44 @@ impl Env {
                 let warm = Softbox::new(v3(-0.6, 0.12, 0.8), 80.0, 18.0, 0.0, v3(1.6, 0.8, 0.4));
                 Env::new(vec![sun, sky, warm], Some(0), v3(0.06, 0.08, 0.16), v3(0.5, 0.28, 0.14), v3(0.04, 0.03, 0.03), v3(0.6, 0.3, 0.1))
             }
+            "overcast" => {
+                // An overcast landscape: a huge soft sky overhead, barely any key
+                // direction, cool-grey light and a pale horizon.
+                let mut sky = Softbox::new(v3(0.15, 1.0, 0.2), 150.0, 150.0, 0.0, v3(1.25, 1.32, 1.42));
+                sky.falloff = 0.9;
+                sky.soft = 0.3;
+                let horizon = Softbox::new(v3(0.0, 0.08, -1.0), 170.0, 14.0, 0.0, v3(0.9, 0.93, 0.95));
+                Env::new(vec![sky, horizon], Some(0), v3(0.62, 0.66, 0.72), v3(0.78, 0.8, 0.82), v3(0.2, 0.22, 0.17), v3(0.0, 0.0, 0.0))
+            }
+            "interior" | "window" => {
+                // Interior daylight: one bright window to the side (a crisp,
+                // directional key), warm bounce from the room, cool sky fill.
+                let mut win = Softbox::new(norm(v3(-1.0, 0.45, 0.25)), 26.0, 40.0, 0.0, v3(9.0, 8.6, 7.8));
+                win.falloff = 0.05;
+                win.soft = 0.01;
+                let fill = Softbox::new(v3(-0.6, 0.4, 0.8), 60.0, 40.0, 0.0, v3(0.25, 0.3, 0.38));
+                let bounce = Softbox::new(v3(0.7, -0.2, 0.3), 120.0, 60.0, 0.0, v3(0.3, 0.22, 0.14));
+                Env::new(vec![win, fill, bounce], Some(0), v3(0.09, 0.08, 0.07), v3(0.13, 0.11, 0.09), v3(0.1, 0.07, 0.05), v3(0.0, 0.0, 0.0))
+            }
+            "city" | "night-city" => {
+                // Night city: deep blue ambient, a sodium street-light key,
+                // coloured signage strips (local practicals are added by the scene).
+                let mut key = Softbox::new(v3(0.3, 1.0, 0.2), 30.0, 24.0, 0.0, v3(2.2, 1.3, 0.55));
+                key.falloff = 0.2;
+                let a = Softbox::new(v3(-1.0, 0.2, -0.3), 5.0, 60.0, 0.0, v3(3.5, 0.4, 2.2));
+                let b = Softbox::new(v3(1.0, 0.25, -0.5), 5.0, 50.0, 0.0, v3(0.3, 2.4, 3.6));
+                let c = Softbox::new(v3(0.2, 0.15, -1.0), 80.0, 6.0, 0.0, v3(1.6, 1.0, 0.5));
+                Env::new(vec![key, a, b, c], Some(0), v3(0.004, 0.006, 0.016), v3(0.02, 0.025, 0.05), v3(0.006, 0.006, 0.01), v3(0.05, 0.04, 0.06))
+            }
+            "underwater" => {
+                // Underwater: light from the surface far above, cyan-teal
+                // everywhere, deep blue below (caustics come from the scene).
+                let mut sun = Softbox::new(v3(0.15, 1.0, 0.1), 40.0, 40.0, 0.0, v3(3.2, 4.6, 4.4));
+                sun.falloff = 0.4;
+                sun.soft = 0.1;
+                let surface = Softbox::new(v3(0.0, 1.0, 0.0), 160.0, 160.0, 0.0, v3(0.25, 0.6, 0.62));
+                Env::new(vec![sun, surface], Some(0), v3(0.06, 0.26, 0.3), v3(0.03, 0.14, 0.18), v3(0.01, 0.04, 0.07), v3(0.0, 0.0, 0.0))
+            }
             _ => return None,
         })
     }
