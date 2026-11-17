@@ -59,6 +59,7 @@ pub mod reactions;
 pub mod card_stack;
 pub mod now_playing;
 pub mod product_shot;
+pub mod illus_fill;
 
 #[cfg(test)]
 pub(crate) mod preview;
@@ -301,6 +302,10 @@ kinds! {
     // Product
     "product-shot" => product_shot::ProductShot, "A phone on a stone plinth lit by low sun through window blinds: ray-traced device (titanium frame, Fresnel glass, the screen from a named composition), volumetric light shafts, dust, slow weighted camera move.", r##"{"screen":"ui"}"##;
     "now-playing" => now_playing::NowPlaying, "A music app's Now Playing screen (390 pt grid): printed cover art, serif title, live scrubber with real timecodes, transport, volume.", r##"{"title":"Salt & Glass","artist":"Maren Holt"}"##;
+    // Illustration
+    "hatch" => illus_fill::Hatch, "Hand-drawn hatched, cross-hatched, stippled or scribbled fill of a shape, with a tone gradient from a light direction, wobble, boil and a line-by-line draw-on.", r##"{"shape":"circle","style":"crosshatch","toneFrom":0.2,"toneTo":0.9,"draw":1.5}"##;
+    "paper" => illus_fill::Paper, "Full-frame paper stock with real tooth: paper, cotton, kraft, canvas weave, cold-press watercolor or newsprint; computed once and dithered.", r##"{"kind":"watercolor"}"##;
+    "cutout" => illus_fill::Cutout, "Cut or torn paper shape (flat colour or paper/kraft/newsprint stock) with a fibrous rim, lifted drop shadow, hand-placed wobble and a drop or slide entrance.", r##"{"shape":"blob","texture":"kraft","torn":0.7}"##;
     // Lottie
     "lottie" => lottie::Lottie, "Minimal Lottie player (shape layers, transforms, trim paths).", r##"{"src":"anim.json"}"##;
 }

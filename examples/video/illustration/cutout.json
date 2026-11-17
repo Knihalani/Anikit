@@ -1,0 +1,15 @@
+{
+  "size": "16:9",
+  "scenes": [
+    {
+      "duration": 4,
+      "layers": [
+        { "component": "paper", "props": { "kind": "canvas", "color": "#e6dcc8", "seed": 5 } },
+        { "component": "cutout", "props": { "shape": "rect", "texture": "newsprint", "torn": 0.8, "rotate": -4, "shadow": 0.6, "enter": "slide", "seed": 2 }, "x": "36%", "y": "48%", "width": 720, "height": 460 },
+        { "component": "cutout", "props": { "shape": "circle", "color": "#d9502e", "torn": 0.6, "rotate": 6, "shadow": 0.7, "enter": "drop", "delay": 0.4, "boil": 6, "seed": 3 }, "x": "64%", "y": "40%", "width": 380, "height": 380 },
+        { "component": "cutout", "props": { "shape": "star", "texture": "kraft", "rotate": 12, "shadow": 0.6, "wobble": 0.5, "enter": "drop", "delay": 0.8, "seed": 6 }, "x": "74%", "y": "70%", "width": 300, "height": 300 },
+        { "component": "cutout", "props": { "shape": "blob", "color": "#2f5d8a", "torn": 0.9, "rotate": -10, "enter": "drop", "delay": 1.1, "seed": 8 }, "x": "22%", "y": "76%", "width": 360, "height": 240 }
+      ]
+    }
+  ]
+}

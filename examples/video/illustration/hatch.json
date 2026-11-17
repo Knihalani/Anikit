@@ -1,0 +1,14 @@
+{
+  "size": "16:9",
+  "scenes": [
+    {
+      "duration": 4,
+      "layers": [
+        { "component": "paper", "props": { "kind": "cotton", "seed": 2 } },
+        { "component": "hatch", "props": { "shape": "circle", "style": "crosshatch", "toneFrom": 0.15, "toneTo": 0.95, "light": 225, "spacing": 8, "width": 1.5, "color": "#2b2520", "outline": true, "boil": 10, "draw": 1.8, "seed": 4 }, "x": "34%", "y": "52%", "width": 520, "height": 520 },
+        { "component": "hatch", "props": { "shape": "blob", "style": "stipple", "toneFrom": 0.1, "toneTo": 0.85, "light": 200, "spacing": 9, "width": 2.2, "color": "#8a3324", "boil": 8, "seed": 7 }, "x": "72%", "y": "40%", "width": 420, "height": 340 },
+        { "component": "hatch", "props": { "shape": "rect", "style": "scribble", "tone": 0.45, "spacing": 10, "width": 1.4, "color": "#2e4a6b", "boil": 8, "draw": 2, "seed": 9 }, "x": "72%", "y": "78%", "width": 440, "height": 160 }
+      ]
+    }
+  ]
+}
