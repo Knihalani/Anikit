@@ -32,7 +32,7 @@ Combine them. `anikit-video docs make-anything` lists the escape hatches.
 
 ## Shortcuts (optional; each is made from the primitives above)
 
-- `anikit-video recipes`: drop-in high-end shots to adapt (kinetic-slam, whip-transition, chrome-hero, particle-ignite, domino-cascade, raymarch-world, rack-focus-parallax) and the shader library.
+- `anikit-video recipes`: drop-in high-end shots to adapt (kinetic-slam, whip-transition, chrome-hero, particle-ignite, domino-cascade, raymarch-world) and the shader library.
 - `anikit-video looks`: art direction (palette, type, motion, grade). Use `"look": "noir"`.
 - `anikit-video info --components`: prebuilt widgets (charts, devices, UI).
 - `anikit-video templates`: quick starts. They are optional; don't let them define the piece.
