@@ -17,7 +17,7 @@
 **What makes them great:** every light has a reason; darkness is used, not avoided; the camera stays close to material and action (macro, shallow focus, slow purposeful moves); sound and silence carry the tension.
 
 ## Shots
-1. **0–2.4 s, top-down:** the record spins at a true 33⅓ (200°/s); the label text curves around the spindle (polar-mapped surface); a clock ticks once a second.
+1. **0–2.4 s, establishing, 35 mm, into the sun:** the source fans through the haze, dust drifts, the turntable is a silhouette with its arm parked; a clock ticks once a second. (An earlier cut opened top-down on the spinning record, at a true 33⅓ = 200°/s, with the label text curving around the spindle via the polar-mapped surface; it was the weakest frame, so it was replaced.)
 2. **2.4–4.2 s, low behind the arm, into the sun:** the tonearm lifts (cue-lever click) and swings out over the record in silhouette against the shaft; strobe dots on the platter rim.
 3. **4.2–6.4 s, record level, 85 mm:** the stylus descends; the gap of light between the cartridge and the label closes; the tick stops; near silence.
 4. **6.4–10 s, crane back with a slow zoom-out (75 → 38 mm):** contact. Crackle and hiss start under a Db major 9 piano chord and strings as the camera pulls back to reveal the turntable in its shaft of light; ORRERY / MODEL ONE · MADE TO BE LISTENED TO.

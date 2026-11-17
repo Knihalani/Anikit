@@ -121,7 +121,7 @@ ARM_PLAY=0.0      # playing angle (arm geometry is drawn in the playing position
 ARM_REST=-24.0    # parked on its rest
 scenes=[]
 # S1 macro along the outer grooves, low, into the light; label soft in the distance
-scenes.append(shot(2.4, keys((0,[-0.4,7.6,0.02],[-0.4,0.94,0],50,5.6),(2.4,[-0.4,6.6,0.02],[-0.4,0.94,0],50,5.6)), arm=str(ARM_REST)))
+scenes.append(shot(2.4, keys((0,[3.6,1.05,3.9],[-1.0,1.9,-2.0],35,2.8,5.6),(2.4,[3.3,1.02,3.6],[-1.0,2.05,-2.0],35,2.8,5.4)), arm=str(ARM_REST)))
 # S2 the arm swings out, in silhouette against the shaft: low, far side, looking toward the sun
 scenes.append(shot(1.8, keys((0,[2.6,1.05,3.2],[0.6,1.25,-1.0],50,2.8),(1.8,[2.3,1.05,3.0],[0.4,1.25,-1.0],50,2.8)),
     arm=f"{ARM_REST}+({ARM_PLAY-ARM_REST})*smoothstep(0.2,1.5,t)", lift="0.15*smoothstep(0.0,0.3,t)"))
