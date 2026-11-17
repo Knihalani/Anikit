@@ -430,6 +430,9 @@ pub struct Scene {
     pub glow: (V3, V3, f32),
     /// Exponential haze: density per metre, and colour (linear).
     pub haze: (f32, V3),
+    /// Height fog: falloff height in metres (0 = uniform) and base height.
+    /// Density is `haze.0 · e^{-(y - base)/falloff}` above the base.
+    pub haze_height: (f32, f32),
     /// Local point and spot lights.
     pub lights: Vec<Light>,
     /// Per instance: world → object transform as three rows of
@@ -835,6 +838,7 @@ impl Scene {
             backdrop: (v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0)),
             glow: (v3(0.0, 0.0, -1.0), v3(0.0, 0.0, 0.0), 0.1),
             haze: (0.0, v3(0.0, 0.0, 0.0)),
+            haze_height: (0.0, 0.0),
             lights: Vec::new(),
             inv: Vec::new(),
             caustics: 0.0,
@@ -1010,6 +1014,28 @@ impl Scene {
 
     /// Haze between a ray origin and a hit at distance `t`.
     #[inline]
+    /// Fog optical depth along `o + d·t`, `t` in [0, dist]: uniform, or
+    /// height fog integrated in closed form (dense near the floor, thin above).
+    #[inline]
+    pub fn fog_depth(&self, o: V3, d: V3, dist: f32) -> f32 {
+        let (h, y0) = self.haze_height;
+        if h <= 0.0 {
+            return self.haze.0 * dist;
+        }
+        let e = |y: f32| (-(y - y0).max(0.0) / h).exp();
+        let (ya, yb) = (o.y, o.y + d.y * dist);
+        if d.y.abs() * dist < 1e-3 * h {
+            return self.haze.0 * e(ya) * dist;
+        }
+        // Below the base the density is constant: split the ray there.
+        let (lo, hi) = (ya.min(yb), ya.max(yb));
+        let per_y = dist / (yb - ya).abs();
+        let below = (y0.min(hi) - lo).max(0.0) * per_y;
+        let (a, b) = (lo.max(y0), hi.max(y0));
+        // ∫ e^{-(y-y0)/h} dt over the part above the base (y = ya + d.y t).
+        self.haze.0 * (below + h * (e(a) - e(b)) * per_y)
+    }
+
     fn hazed(&self, c: V3, t: f32) -> V3 {
         if self.haze.0 <= 0.0 {
             return c;
@@ -1509,13 +1535,22 @@ impl Scene {
         for layer in 0..=q.max_glass {
             let Some(s) = self.trace_f(o, d, 1e6, true) else {
                 // Fog covers the backdrop too (as if it were 200 m away).
-                let bd = if self.haze.0 > 0.0 { lerp3(self.backdrop(d), self.haze.1, 1.0 - (-self.haze.0 * 200.0).exp()) } else { self.backdrop(d) };
+                let bd = if self.haze.0 > 0.0 {
+                    let mut k = 1.0 - (-self.fog_depth(cam.pos, d, 200.0)).exp();
+                    if self.haze_height.0 > 0.0 {
+                        // A fog layer seen from above meets the sky softly, not at a hard line.
+                        k = k.max(smoothstep(0.14, 0.0, d.y) * (1.0 - (-self.haze.0 * 60.0).exp()));
+                    }
+                    lerp3(self.backdrop(d), self.haze.1, k)
+                } else {
+                    self.backdrop(d)
+                };
                 let b = mul(bd, thr);
                 let (depth, nrm, id, vel) = first.unwrap_or((1e4, none, usize::MAX - 1, (0.0, 0.0)));
                 return Sample { col: add(col, b), dif: Diffuse::default(), refl: none, floor: 0, rad: 0.0, rf: 1.0, rw: 0.0, vw: 1.0, depth, vel, nrm, _pad: 0, id };
             };
             let dist = travelled + s.t;
-            let haze_f = if self.haze.0 > 0.0 { (-self.haze.0 * dist).exp() } else { 1.0 };
+            let haze_f = if self.haze.0 > 0.0 { (-self.fog_depth(cam.pos, d, dist)).exp() } else { 1.0 };
             let depth_v = dot(sub(s.p, cam.pos), f);
             let prev_p = if s.obj == FLOOR {
                 s.p

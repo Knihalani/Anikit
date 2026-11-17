@@ -147,6 +147,7 @@ struct Prepared {
     backdrop: (V3, V3),
     glow: (V3, V3, f32),
     haze: (f32, V3),
+    haze_height: (f32, f32),
     lights: Vec<trace::Light>,
     /// Underwater caustics strength (0 = off).
     caustics: f32,
@@ -548,16 +549,21 @@ impl Prepare for Scene3d {
         }
         // `fog`: { "density": per metre, "color", "shafts" } overrides the env's haze.
         let mut shafts = false;
+        let mut haze_height = (0.0f32, 0.0f32);
         let haze = match m.get("fog") {
             None => haze,
             Some(Value::Number(d)) => (d.as_f64().unwrap_or(0.0) as f32, haze.1),
             Some(Value::Object(f)) => {
                 for k in f.keys() {
-                    if !["density", "color", "shafts"].contains(&k.as_str()) {
-                        return Err(Error(format!("fog: unknown key `{k}` (density, color, shafts)")));
+                    if !["density", "color", "shafts", "height", "base"].contains(&k.as_str()) {
+                        return Err(Error(format!("fog: unknown key `{k}` (density, color, shafts, height, base)")));
                     }
                 }
                 shafts = f.get("shafts").and_then(|x| x.as_bool()).unwrap_or(false);
+                if let Some(h) = f.get("height") {
+                    let h = h.as_f64().filter(|h| *h > 0.0).ok_or_else(|| Error("fog.height: expected a falloff height in metres (> 0)".into()))? as f32;
+                    haze_height = (h, num_or(f, "base", 0.0).map_err(Error)?);
+                }
                 let d = num_or(f, "density", haze.0).map_err(Error)?;
                 let c = f.get("color").map(|c| spec::color(c, "fog.color")).transpose().map_err(Error)?.unwrap_or(haze.1);
                 (d, c)
@@ -648,6 +654,7 @@ impl Prepare for Scene3d {
             backdrop,
             glow,
             haze,
+            haze_height,
             lights: local_lights,
             caustics,
             gobo,
@@ -1035,6 +1042,7 @@ impl Scene3d {
         scene.backdrop = p.backdrop;
         scene.glow = p.glow;
         scene.haze = p.haze;
+        scene.haze_height = p.haze_height;
         scene.lights = p.lights.clone();
         scene.caustics = p.caustics;
         scene.gobo = p.gobo;
@@ -1396,6 +1404,27 @@ mod tests {
         let (f0, f1) = (r.at_with(0.0, 16.0 / 9.0, 0.0, &res).focus, r.at_with(1.0, 16.0 / 9.0, 0.0, &res).focus);
         assert!((f0 - 2.0).abs() < 1e-3 && (f1 - 10.0).abs() < 1e-3, "{f0} {f1}");
         assert!(spec::camera(&json!({ "preset": "static", "shake": "handheldd" }), b, "camera").err().unwrap().contains("did you mean `handheld`"));
+    }
+
+    #[test]
+    fn height_fog_integrates_exactly() {
+        let e = env::Env::preset_tinted("studio", v3(1.0, 0.0, 0.0), v3(0.0, 0.0, 1.0), v3(1.0, 1.0, 1.0), v3(0.0, 1.0, 0.0)).unwrap();
+        let mut sc = Scene::new(Vec::new(), Vec::new(), Vec::new(), e, None);
+        sc.haze = (0.2, v3(0.5, 0.5, 0.5));
+        sc.haze_height = (0.8, 0.0);
+        for (o, d) in [(v3(0.0, 0.5, 0.0), norm(v3(1.0, 0.3, 0.0))), (v3(0.0, 3.0, 0.0), norm(v3(0.2, -0.4, 1.0))), (v3(0.0, 1.0, 0.0), v3(1.0, 0.0, 0.0))] {
+            let n = 20000;
+            let dist = 10.0;
+            let mut acc = 0.0f64;
+            for k in 0..n {
+                let y = o.y + d.y * dist * (k as f32 + 0.5) / n as f32;
+                acc += 0.2 * (-(y.max(0.0)) as f64 / 0.8).exp() * (dist / n as f32) as f64;
+            }
+            let got = sc.fog_depth(o, d, dist) as f64;
+            assert!((got - acc).abs() < 1e-3 * acc.max(1e-3), "{got} vs {acc}");
+        }
+        sc.haze_height = (0.0, 0.0);
+        assert!((sc.fog_depth(v3(0.0, 0.0, 0.0), v3(0.0, 1.0, 0.0), 5.0) - 1.0).abs() < 1e-6);
     }
 
     #[test]
