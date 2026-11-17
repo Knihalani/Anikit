@@ -334,7 +334,21 @@ impl Renderer {
             (r[2] > r[0] && r[3] > r[1]).then_some(r)
         });
         let small = rgn.is_none_or(|r| ((r[2] - r[0]) * (r[3] - r[1])) as f64 <= 0.6 * (wu * hu) as f64);
-        if let (true, true, Some(yuv), Some((_, pix, dev))) = (full, small, yuv, &backdrop) {
+        // Ops whose top-level layers all blend normally can be drawn on a
+        // transparent box and composited over the backdrop in YUV space.
+        let mut depth = 0usize;
+        let normal_only = ops.iter().all(|o| match o {
+            Op::PushLayer { blend, .. } => {
+                depth += 1;
+                depth > 1 || *blend == Blend::Normal
+            }
+            Op::PopLayer => {
+                depth = depth.saturating_sub(1);
+                true
+            }
+            _ => true,
+        });
+        if let (true, true, Some(yuv), Some((_, pix, dev))) = (full, small || normal_only, yuv, &backdrop) {
             // Fused: YUV straight from the upscaled backdrop planes, with RGBA +
             // vello only inside the macroblock-aligned box of the ops on top.
             fused = true;
@@ -374,17 +388,26 @@ impl Renderer {
             if let Some([x0, y0, x1, y1]) = rgn {
                 let (rw, rh) = ((x1 - x0) as u16, (y1 - y0) as u16);
                 self.rpix.resize(rw, rh);
-                self.upscaler.run(pix.data_as_u8_slice(), pw, ph, *dev, self.rpix.data_as_u8_slice_mut(), rw as usize, rh as usize, x0 as i64, y0 as i64);
-                self.rpix.set_may_have_transparency(false);
+                let box_settings = if normal_only {
+                    RasterizerSettings { target_init: TargetInit::Clear(AlphaColor::TRANSPARENT), ..Default::default() }
+                } else {
+                    self.upscaler.run(pix.data_as_u8_slice(), pw, ph, *dev, self.rpix.data_as_u8_slice_mut(), rw as usize, rh as usize, x0 as i64, y0 as i64);
+                    self.rpix.set_may_have_transparency(false);
+                    settings
+                };
                 let rctx = self.rctx.get_or_insert_with(|| RenderContext::new(rw, rh));
                 rctx.reset_and_resize(rw, rh);
                 st.org = (x0 as i32, y0 as i32);
                 draw_ops(st, &assets, rctx, ops, Affine::translate((-(x0 as f64), -(y0 as f64))));
                 rctx.flush();
-                rctx.render_with(&mut self.rpix, &mut st.res, settings);
+                rctx.render_with(&mut self.rpix, &mut st.res, box_settings);
                 rctx.reset();
                 st.org = (0, 0);
-                yuv::convert_into(self.rpix.data_as_u8_slice(), rw as usize, rh as usize, [0, 0, rw as usize, rh as usize], yuv, (x0, y0));
+                if normal_only {
+                    yuv::composite_over(self.rpix.data_as_u8_slice(), rw as usize, rh as usize, (x0, y0), yuv);
+                } else {
+                    yuv::convert_into(self.rpix.data_as_u8_slice(), rw as usize, rh as usize, [0, 0, rw as usize, rh as usize], yuv, (x0, y0));
+                }
             }
             yuv::pad(yuv);
         } else if full {

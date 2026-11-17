@@ -355,7 +355,7 @@ fn incremental_matches_full_render() {
         let l = if i == 7 { scene(6) } else { l };
         kinds.push(inc.render_yuv_incremental(&l, &mut yi, &mut changed));
         let mut yf = YuvFrame::default();
-        full.render_yuv(&l, &mut yf);
+        anikit_video::render::rgba_to_yuv420(full.render(&l), &mut yf);
         // Same pixels up to float rounding (sub-region tiles see shifted coordinates).
         for (pa, pb) in [(&yi.y, &yf.y), (&yi.u, &yf.u), (&yi.v, &yf.v)] {
             let bad = pa.iter().zip(pb.iter()).filter(|(a, b)| a.abs_diff(**b) > 0).count();
