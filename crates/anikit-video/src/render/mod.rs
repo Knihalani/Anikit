@@ -16,6 +16,7 @@ pub mod filter;
 pub mod glyphs;
 pub mod post;
 pub mod incremental;
+mod grain;
 pub mod motion;
 pub mod resample;
 pub mod smooth;
@@ -178,6 +179,7 @@ pub struct Renderer {
     /// Motion-blur accumulator (linear RGB).
     motion_acc: Vec<f32>,
     motion_tmp: Vec<f32>,
+    grain: Vec<grain::Grain>,
     motion_brute: bool,
     quality: Quality,
     /// Low-res backdrop as Y, Cb, Cr planes (fused backdrop → YUV path).
@@ -215,6 +217,7 @@ impl Renderer {
             pp: Default::default(),
             motion_acc: Vec::new(),
             motion_tmp: Vec::new(),
+            grain: Vec::new(),
             motion_brute: false,
             quality: Quality::Standard,
             box_rects: Vec::new(),
@@ -261,6 +264,12 @@ impl Renderer {
     /// pipeline uses this instead of a new renderer, keeping output independent
     /// of when other threads intern fonts.
     pub fn update_assets(&mut self, assets: Arc<Assets>) {
+        self.assets = assets;
+    }
+
+    /// Replace the font table with a superset of the current one (faces are
+    /// append-only: existing ids must keep their faces). Caches stay valid.
+    pub fn set_fonts(&mut self, assets: Arc<Assets>) {
         self.assets = assets;
     }
 
@@ -361,6 +370,36 @@ impl Renderer {
     /// Returns true when it wrote `yuv` directly (fused backdrop path; the RGBA
     /// frame is then only partly updated).
     pub(crate) fn render_region(
+        &mut self,
+        list: &DisplayList,
+        region: Option<[u32; 4]>,
+        new_frame: bool,
+        rects: Option<&[Option<Rect>]>,
+        yuv: Option<&mut YuvFrame>,
+    ) -> bool {
+        // Trailing film grain: render the rest with every fast path, then blend
+        // the grain straight into the frame (the caller converts to YUV).
+        let mut layers = std::mem::take(&mut self.grain);
+        let (w, h) = (list.width.clamp(1, u16::MAX as u32), list.height.clamp(1, u16::MAX as u32));
+        let at = if self.st.reference {
+            None
+        } else {
+            let view = View { assets: &self.assets, frame: &self.frame_images, dynamic: self.dynamic.as_deref() };
+            grain::tail(&list.ops, w as f64, h as f64, list.background, &view, &mut layers)
+        };
+        let Some(k) = at else {
+            self.grain = layers;
+            return self.render_region_inner(list, region, new_frame, rects, yuv);
+        };
+        let head = DisplayList { width: list.width, height: list.height, background: list.background, ops: list.ops[..k].to_vec() };
+        self.render_region_inner(&head, region, new_frame, rects.map(|r| &r[..k.min(r.len())]), None);
+        let [x0, y0, x1, y1] = region.unwrap_or([0, 0, w, h]).map(|v| v as usize);
+        grain::apply(&layers, self.frame.data_as_u8_slice_mut(), w as usize, [x0, y0, x1.min(w as usize), y1.min(h as usize)]);
+        self.grain = layers;
+        false
+    }
+
+    fn render_region_inner(
         &mut self,
         list: &DisplayList,
         region: Option<[u32; 4]>,
@@ -552,10 +591,15 @@ impl Renderer {
                 Some(r) => vec![r],
                 None => Vec::new(),
             };
+            // Draft only: draw each box on a transparent canvas and composite in
+            // YUV (alpha and chroma per 2×2 block: up to ~2.5 ΔE at glow and text
+            // edges in qbench). Otherwise the box is seeded with the upscaled
+            // backdrop in RGBA and converted exactly.
+            let yuv_composite = normal_only && self.quality == Quality::Draft;
             for [x0, y0, x1, y1] in boxes {
                 let (rw, rh) = ((x1 - x0) as u16, (y1 - y0) as u16);
                 self.rpix.resize(rw, rh);
-                let box_settings = if normal_only {
+                let box_settings = if yuv_composite {
                     RasterizerSettings { target_init: TargetInit::Clear(AlphaColor::TRANSPARENT), ..Default::default() }
                 } else {
                     self.upscaler.run(pix.data_as_u8_slice(), pw, ph, *dev, self.rpix.data_as_u8_slice_mut(), rw as usize, rh as usize, x0 as i64, y0 as i64);
@@ -571,7 +615,7 @@ impl Renderer {
                 rctx.render_with(&mut self.rpix, &mut st.res, box_settings);
                 rctx.reset();
                 st.org = (0, 0);
-                if normal_only {
+                if yuv_composite {
                     yuv::composite_over(self.rpix.data_as_u8_slice(), rw as usize, rh as usize, (x0, y0), yuv);
                 } else {
                     yuv::convert_into(self.rpix.data_as_u8_slice(), rw as usize, rh as usize, [0, 0, rw as usize, rh as usize], yuv, (x0, y0));
@@ -944,12 +988,14 @@ fn draw_cached_run(
         st.run = run;
         return ok;
     }
-    let (qx, qy) = (((tx - fx) * 4.0).round() as u8, ((ty - fy) * 4.0).round() as u8);
-    let (ox, oy) = (qx as f64 / 4.0, qy as f64 / 4.0);
+    // The exact sub-pixel phase: static text still hits the cache every frame,
+    // and moving text lands where it should (quarter-pixel phases made slow
+    // eases advance in visible ¼ px steps).
+    let (ox, oy) = (tx - fx, ty - fy);
     let key = {
         use std::hash::{Hash, Hasher};
         let mut hs = std::collections::hash_map::DefaultHasher::new();
-        (font_id.0, size.to_bits(), qx, qy, c.0.map(f32::to_bits), lin.map(f64::to_bits)).hash(&mut hs);
+        (font_id.0, size.to_bits(), ox.to_bits(), oy.to_bits(), c.0.map(f32::to_bits), lin.map(f64::to_bits)).hash(&mut hs);
         for g in glyphs {
             (g.id, g.x.to_bits(), g.y.to_bits()).hash(&mut hs);
         }
@@ -1028,8 +1074,9 @@ fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix
         blit(ctx, pix.clone(), x0, y0, alpha);
         return true;
     }
+    // Exact placement: quarter-pixel snapping made slow moves (Ken Burns) step.
     let reference = st.reference;
-    let q = |v: f64| if reference { v } else { (v * 4.0).round() / 4.0 };
+    let q = |v: f64| v;
     let (fx, fy) = (x0.floor(), y0.floor());
     let (px, py, qw, qh) = (q(x0 - fx), q(y0 - fy), q(ew), q(eh));
     if qw < 1.0 || qh < 1.0 || qw > 8192.0 || qh > 8192.0 {
@@ -1052,10 +1099,9 @@ fn draw_image_fast(st: &mut State, ctx: &mut RenderContext, id: dl::ImageId, pix
     // Enlarged images (low-res fields, small textures) get the smooth cubic
     // filter at standard quality, every time; others are resampled once they repeat.
     let enlarge = st.cubic && (qw >= 2.0 * iw || qh >= 2.0 * ih);
-    let seen_last = reference || st.seen.insert(key, now).is_some_and(|f| f + 1 >= now);
-    if !seen_last && !enlarge {
-        return false;
-    }
+    // Always resample (no "bilinear until seen twice"): the filter must not depend
+    // on cache history, or a static image pops on its second frame and output
+    // depends on which frames a renderer happened to draw before.
     let (ow, oh) = ((px + qw).ceil() as usize, (py + qh).ceil() as usize);
     if enlarge {
         st.resample_buf.resize(ow * oh * 4, 0);
