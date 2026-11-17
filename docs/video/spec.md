@@ -43,7 +43,7 @@ Camera: `{ "zoom": 1, "x": 0, "y": 0, "rotation": 0, "focus": 0, "aperture": 0, 
 
 `type` is inferred: `text` → text, `shape` → shape, `src` → image/video, `children` → box, `layers` → group, `component` → component.
 
-Every layer: `x y` (default centre) · `anchor` (`center`, `topLeft`, …) · `width height` · `scale rotation skewX skewY opacity blur` · `blend` · `shadow` (`true` or `{x, y, blur, color}`) · `glow` · `clip` · `mask` · `depth` · `start end duration` · `enter exit loop animate` · `stagger`.
+Every layer: `x y` (default centre; relative to an earlier sibling: `"y": "=title.bottom + 24"`, `"x": "=card.right + 40"`, with `left right top bottom cx cy width height`) · `anchor` (`center`, `topLeft`, …) · `width height` · `scale rotation skewX skewY opacity blur` · `blend` · `shadow` (`true` or `{x, y, blur, color}`) · `glow` · `clip` · `mask` · `depth` · `start end duration` · `enter exit loop animate` · `stagger`.
 
 | Type | Keys |
 |---|---|

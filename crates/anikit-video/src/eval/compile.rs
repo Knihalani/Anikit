@@ -104,6 +104,8 @@ struct C<'a> {
     /// The video's grid, and the grid in force for the layers being compiled.
     video_grid: Option<spec::GridSpec>,
     grid: Option<spec::GridSpec>,
+    /// Resting boxes `[left, top, right, bottom]` of the earlier siblings with an `id`, for `"=title.bottom + 24"`.
+    sib: Vec<(String, [f32; 4])>,
 }
 
 fn size_preset(s: &str) -> Option<[u32; 2]> {
@@ -169,6 +171,7 @@ impl Evaluator {
             uniform_slots: Vec::new(),
             video_grid: spec.grid.clone(),
             grid: None,
+            sib: Vec::new(),
         };
         c.assets.shaders.bind(&c.assets);
         c.ease_ids.insert("linear".into(), 0);
@@ -584,6 +587,7 @@ impl C<'_> {
             Num::Num(v) => V::C(*v as f32),
             Num::Str(s) => {
                 if let Some(e) = s.trim().strip_prefix('=') {
+                    let Some(e) = &self.sibling_refs(e, path) else { return V::C(0.0) };
                     match Expr::compile(e, refl as f64, self.w as f64, self.h as f64) {
                         Ok(x) if x.music && (self.groove.is_none() || (x.level && !self.groove_level)) => {
                             self.load_groove(x.level, path);
@@ -612,6 +616,68 @@ impl C<'_> {
                 }
             }
         }
+    }
+
+    /// Replace `id.left|right|top|bottom|cx|cy|width|height` (an earlier sibling's resting box) with its value.
+    fn sibling_refs(&mut self, e: &str, path: &str) -> Option<String> {
+        const PROPS: [&str; 8] = ["left", "right", "top", "bottom", "cx", "cy", "width", "height"];
+        if !e.contains('.') {
+            return Some(e.to_string());
+        }
+        let b = e.as_bytes();
+        let word = |c: u8| c.is_ascii_alphanumeric() || c == b'_' || c == b'-';
+        let mut out = String::with_capacity(e.len());
+        let mut i = 0;
+        while i < b.len() {
+            let starts = (b[i].is_ascii_alphabetic() || b[i] == b'_') && (i == 0 || !(word(b[i - 1]) || b[i - 1] == b'.'));
+            if starts {
+                // The longest earlier sibling id followed by `.prop`.
+                let hit = self
+                    .sib
+                    .iter()
+                    .filter_map(|(id, bx)| {
+                        let rest = e[i..].strip_prefix(id.as_str())?.strip_prefix('.')?;
+                        let p = PROPS.iter().find(|p| rest.starts_with(**p) && !rest.as_bytes().get(p.len()).is_some_and(|c| word(*c)))?;
+                        Some((id.len() + 1 + p.len(), *p, *bx))
+                    })
+                    .max_by_key(|h| h.0);
+                if let Some((len, p, [l, t, r, bt])) = hit {
+                    let v = match p {
+                        "left" => l,
+                        "right" => r,
+                        "top" => t,
+                        "bottom" => bt,
+                        "cx" => (l + r) * 0.5,
+                        "cy" => (t + bt) * 0.5,
+                        "width" => r - l,
+                        _ => bt - t,
+                    };
+                    out.push_str(&format!("({v})"));
+                    i += len;
+                    continue;
+                }
+                // `name.top` with no such sibling: say so, with the ids in scope.
+                let mut j = i;
+                while j < b.len() && (word(b[j])) {
+                    j += 1;
+                }
+                if b.get(j) == Some(&b'.') && PROPS.iter().any(|p| e[j + 1..].starts_with(p)) {
+                    let name = &e[i..j];
+                    let ids: Vec<&str> = self.sib.iter().map(|s| s.0.as_str()).collect();
+                    let known = if ids.is_empty() { "none with an id yet".to_string() } else { ids.join(", ") };
+                    let prop = e[j + 1..].split(|c: char| !c.is_ascii_alphanumeric()).next().unwrap_or("");
+                    self.d.push(
+                        Diagnostic::error(path, format!("'{name}.{prop}': no earlier sibling layer with id '{name}' (a layer can refer to siblings above it in the list: {known})"))
+                            .suggest(suggest(name, &ids)),
+                    );
+                    return None;
+                }
+            }
+            let ch = e[i..].chars().next().unwrap();
+            out.push(ch);
+            i += ch.len_utf8();
+        }
+        Some(out)
     }
 
     fn len_c(&mut self, n: &Num, path: &str, refl: f32, em: f32) -> f32 {
@@ -1020,15 +1086,27 @@ impl C<'_> {
         let delays = self.stagger_delays(stagger, ls.len(), &format!("{path}.stagger"));
         let mut out = Vec::new();
         let mut at: Vec<Option<usize>> = Vec::with_capacity(ls.len());
+        let outer_sib = std::mem::take(&mut self.sib);
         for (i, l) in ls.iter().enumerate() {
             let p = format!("{path}[{i}]");
             let cpc = PCtx { index: i, count: ls.len(), delay: delays[i], ..pc };
             at.push(None);
             if let Some(n) = self.layer(l, &p, cpc) {
+                if let Some(id) = &l.id {
+                    let rest = |k: usize| {
+                        n.exprs.iter().find(|e| e.0 as usize == k).map_or(n.base[k], |e| {
+                            e.1.eval(&super::expr::Vars { w: self.w as f64, h: self.h as f64, fps: self.fps as f64, ..Default::default() }) as f32
+                        })
+                    };
+                    let (x, y, w, h) = (rest(prop::X), rest(prop::Y), rest(prop::W), rest(prop::H));
+                    let (l0, t0) = (x - n.anchor[0] * w, y - n.anchor[1] * h);
+                    self.sib.push((id.clone(), [l0, t0, l0 + w, t0 + h]));
+                }
                 at[i] = Some(out.len());
                 out.push(n);
             }
         }
+        self.sib = outer_sib;
         if ls.iter().any(|l| l.matte.is_some()) {
             self.resolve_mattes(ls, path, &at, &mut out);
         }

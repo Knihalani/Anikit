@@ -78,9 +78,10 @@ fn yaml() {
 fn timeline_and_transitions() {
     let ev = build(r##"{ "scenes": [ { "duration": 2, "layers": [] }, { "duration": 3, "transition": { "type": "slide", "duration": 0.5 }, "layers": [] }, { "duration": 1, "transition": "cut", "layers": [] } ] }"##);
     let s = ev.scenes();
-    assert_eq!((s[1].start, s[1].end), (1.5, 4.5));
-    assert_eq!((s[2].start, s[2].end), (4.5, 5.5));
-    assert_eq!(ev.duration, 5.5);
+    // The slide plays over the last 0.5 s of scene 1; scene 2 still gets its full 3 s after it.
+    assert_eq!((s[1].start, s[1].end), (1.5, 5.0));
+    assert_eq!((s[2].start, s[2].end), (5.0, 6.0));
+    assert_eq!(ev.duration, 6.0, "the sum of the scene durations");
 }
 
 #[test]
@@ -583,4 +584,18 @@ fn natural_forms_are_accepted() {
     let ev = build(r##"{ "transition": "crossfade", "scenes": [ { "duration": 2, "layers": [ "a" ] }, { "duration": 3, "layers": [ "b" ] } ] }"##);
     assert_eq!(ev.duration, 5.0, "transitions don't shorten the video");
     assert_eq!(ev.scenes()[1].end, 5.0);
+}
+
+#[test]
+fn relative_layout_refers_to_earlier_siblings() {
+    let ev = build(r##"{ "scenes": [ { "layers": [
+        { "id": "card", "shape": "rect", "x": 400, "y": 300, "width": 200, "height": 100 },
+        { "id": "side-note", "shape": "rect", "anchor": "topLeft", "x": "=card.right + 20", "y": "=card.bottom + 10", "width": "=card.width / 2", "height": 40 },
+        { "shape": "rect", "anchor": "topLeft", "x": "=side-note.left", "y": "=side-note.bottom + 8 * sin(t * 0)", "width": 10, "height": 10 } ] } ] }"##);
+    let rects: Vec<[f32; 6]> = ev.eval(1.0).ops.iter().filter_map(|o| match o { Op::RoundRect { transform, .. } => Some(*transform), _ => None }).collect();
+    assert_eq!((rects[0][4], rects[0][5]), (300.0, 250.0));
+    assert_eq!((rects[1][4], rects[1][5]), (520.0, 360.0), "right of and below the card");
+    assert_eq!((rects[2][4], rects[2][5]), (520.0, 400.0), "ids with hyphens, inside a bigger expression");
+    let e = errors(r##"{ "scenes": [ { "layers": [ { "id": "card", "shape": "rect" }, { "text": "x", "y": "=crad.bottom + 10" } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("crad") && m.contains("card")), "{e:?}");
 }
