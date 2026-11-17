@@ -1,0 +1,225 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 30,
+ "background": "#000000",
+ "scenes": [
+  {
+   "duration": 1,
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": {
+       "hdri": "polyhaven:hdri/studio_small_09",
+       "rotate": 30,
+       "background": "blur"
+      },
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0,
+          1.4,
+          11.5
+         ],
+         "target": [
+          0,
+          0.12,
+          0
+         ],
+         "focal": 58,
+         "fstop": 5.6
+        }
+       ]
+      },
+      "objects": [
+       {
+        "type": "sphere",
+        "radius": 0.46,
+        "pos": [
+         -2.8000000000000003,
+         0.46,
+         0
+        ],
+        "rot": [
+         0,
+         0,
+         0
+        ],
+        "material": {
+         "texture": "ambientcg:Wood049"
+        }
+       },
+       {
+        "type": "sphere",
+        "radius": 0.46,
+        "pos": [
+         -1.6800000000000002,
+         0.46,
+         0
+        ],
+        "rot": [
+         0,
+         25,
+         0
+        ],
+        "material": {
+         "texture": "ambientcg:Marble012"
+        }
+       },
+       {
+        "type": "sphere",
+        "radius": 0.46,
+        "pos": [
+         -0.56,
+         0.46,
+         0
+        ],
+        "rot": [
+         0,
+         50,
+         0
+        ],
+        "material": {
+         "texture": "polyhaven:texture/rusty_metal_02"
+        }
+       },
+       {
+        "type": "sphere",
+        "radius": 0.46,
+        "pos": [
+         0.56,
+         0.46,
+         0
+        ],
+        "rot": [
+         0,
+         75,
+         0
+        ],
+        "material": {
+         "texture": "polyhaven:texture/fabric_pattern_07"
+        }
+       },
+       {
+        "type": "sphere",
+        "radius": 0.46,
+        "pos": [
+         1.6800000000000002,
+         0.46,
+         0
+        ],
+        "rot": [
+         0,
+         100,
+         0
+        ],
+        "material": {
+         "texture": "ambientcg:Terrazzo013"
+        }
+       },
+       {
+        "type": "sphere",
+        "radius": 0.46,
+        "pos": [
+         2.8000000000000003,
+         0.46,
+         0
+        ],
+        "rot": [
+         0,
+         125,
+         0
+        ],
+        "material": {
+         "texture": "ambientcg:Marble016"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "text": "Wood049",
+     "font": "JetBrains Mono",
+     "size": "1.5vh",
+     "letterSpacing": "0.12em",
+     "uppercase": true,
+     "color": "#1A1A1AB3",
+     "x": "11.00%",
+     "y": "57.5%",
+     "anchor": "center"
+    },
+    {
+     "text": "Marble012",
+     "font": "JetBrains Mono",
+     "size": "1.5vh",
+     "letterSpacing": "0.12em",
+     "uppercase": true,
+     "color": "#1A1A1AB3",
+     "x": "26.60%",
+     "y": "57.5%",
+     "anchor": "center"
+    },
+    {
+     "text": "rusty_metal_02",
+     "font": "JetBrains Mono",
+     "size": "1.5vh",
+     "letterSpacing": "0.12em",
+     "uppercase": true,
+     "color": "#1A1A1AB3",
+     "x": "42.20%",
+     "y": "57.5%",
+     "anchor": "center"
+    },
+    {
+     "text": "fabric_pattern_07",
+     "font": "JetBrains Mono",
+     "size": "1.5vh",
+     "letterSpacing": "0.12em",
+     "uppercase": true,
+     "color": "#1A1A1AB3",
+     "x": "57.80%",
+     "y": "57.5%",
+     "anchor": "center"
+    },
+    {
+     "text": "Terrazzo013",
+     "font": "JetBrains Mono",
+     "size": "1.5vh",
+     "letterSpacing": "0.12em",
+     "uppercase": true,
+     "color": "#1A1A1AB3",
+     "x": "73.40%",
+     "y": "57.5%",
+     "anchor": "center"
+    },
+    {
+     "text": "Marble016",
+     "font": "JetBrains Mono",
+     "size": "1.5vh",
+     "letterSpacing": "0.12em",
+     "uppercase": true,
+     "color": "#1A1A1AB3",
+     "x": "89.00%",
+     "y": "57.5%",
+     "anchor": "center"
+    },
+    {
+     "text": "material.texture",
+     "font": "JetBrains Mono",
+     "size": "1.5vh",
+     "letterSpacing": "0.12em",
+     "uppercase": true,
+     "color": "#1A1A1AB3",
+     "x": "4%",
+     "y": "93%",
+     "anchor": "left"
+    }
+   ]
+  }
+ ]
+}

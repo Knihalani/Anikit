@@ -128,6 +128,38 @@ pub(crate) mod prop {
     }
 }
 
+/// Text whose layout depends on animated values (variable axes in uniform
+/// slots, letter spacing in `prop::LS`).
+pub(crate) struct DynText {
+    pub spec: crate::text::TextSpec,
+    /// Axis tag and its slot (`prop::U0 + i`).
+    pub axes: Vec<(String, usize)>,
+    /// Base letter spacing in px (`prop::LS`).
+    pub ls: f32,
+}
+
+impl DynText {
+    /// The layout for the current values, or `None` when they match the base.
+    fn relayout(&self, fonts: &crate::text::FontStore, v: &[f32; prop::N]) -> Option<Arc<TextLayout>> {
+        let q = |x: f32| (x * 10.0).round() / 10.0;
+        let ls_changed = (v[prop::LS] - self.ls).abs() > 0.01;
+        let ax_changed = self.axes.iter().any(|(t, slot)| self.spec.style.axes.iter().any(|(t2, b)| t2 == t && (q(v[*slot]) - q(*b)).abs() > 1e-4));
+        if !ls_changed && !ax_changed {
+            return None;
+        }
+        let mut sp = self.spec.clone();
+        for (t, slot) in &self.axes {
+            if let Some(a) = sp.style.axes.iter_mut().find(|a| &a.0 == t) {
+                a.1 = q(v[*slot]);
+            }
+        }
+        if ls_changed {
+            sp.style.letter_spacing = (v[prop::LS] * 20.0).round() / 20.0 / sp.style.size.max(1.0);
+        }
+        Some(fonts.layout(&sp))
+    }
+}
+
 /// One interpolation segment of a property track.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct Seg {
@@ -254,6 +286,8 @@ pub(crate) enum Kind {
         split: Option<SplitC>,
         counter: Option<Counter>,
         kinetic: Option<KineticPlan>,
+        /// Animated variable axes / tracking: re-laid out per frame.
+        dynamic: Option<Box<DynText>>,
     },
     Shape {
         shape: ShapeKind,
@@ -329,6 +363,14 @@ pub(crate) struct Node {
     pub glow: Option<Filter>,
     /// Image treatments (tone map, halftone), applied first.
     pub treat: Vec<Filter>,
+    /// A pattern whose `field` reads `t`: regenerated every frame (pattern, box size).
+    pub live_pattern: Option<Arc<(graphic::Pat, [f64; 2])>>,
+    /// First of 5 animatable slots for the treatments (toneAmount, halftone cell/angle/gain, ink amount); 0 = none.
+    pub treat_slot: u8,
+    /// Stepped time in fps (0 = smooth): the layer animates "on twos" etc.
+    pub step: f32,
+    /// Boil: `[px, degrees, fps, seed]` seeded jitter.
+    pub boil: Option<[f32; 4]>,
     /// Clip children to the box (with radius).
     pub clip: bool,
     /// A clip path in the layer's local box (clip shapes, shape masks).
@@ -339,11 +381,19 @@ pub(crate) struct Node {
     pub count: f32,
     /// Index into `Evaluator::layer_info` (spec path and kind), for tagged evaluation.
     pub tag: u32,
+    /// The spec `id` (transitions find layers by it).
+    pub id: Option<Box<str>>,
     /// Motion-graphics extras (repeater, echo, motion path, text path, wiggle path).
     pub fx: Option<Box<fx::Fx>>,
     /// Track matte: the matte layer (a sibling, not drawn itself) and mode
     /// (0 alpha, 1 alphaInverted, 2 luma, 3 lumaInverted).
     pub matte: Option<Box<(Node, u8)>>,
+    /// Inertia: a spring that follows the layer's own animated transform (follow-through, overshoot).
+    pub inertia: Option<Box<fx::InertiaC>>,
+    /// Posterize time: frames per second of this subtree's motion (0 = off).
+    pub posterize_time: f32,
+    /// Group drag: seconds of lag per child on the group's own transform.
+    pub drag: f32,
 }
 
 pub(crate) const PART_BG: u8 = 1;
@@ -363,6 +413,11 @@ pub(crate) struct TransC {
     pub amount: f32,
     /// `TransKind::Shader`: the compiled gl-transitions style shader.
     pub shader: Option<shader::ShaderRef>,
+    /// `zoomThrough`: id of the outgoing scene's layer to fly into.
+    pub layer: Option<String>,
+    /// `reveal` shape (0 circle, 1 diamond, 2 square, 3 star, 4 blob); `blinds` bar count.
+    pub shape: u8,
+    pub count: u32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -379,6 +434,11 @@ pub(crate) enum TransKind {
     Glitch,
     MorphCut,
     Shader,
+    ZoomThrough,
+    Reveal,
+    Blinds,
+    Split,
+    Whip,
 }
 
 pub(crate) struct SceneC {
@@ -510,7 +570,7 @@ impl CompTime {
             t.rem_euclid(dur)
         } else {
             // Hold the last frame (layers end exclusively at the duration).
-            t.clamp(0.0, (dur - 1e-4).max(0.0))
+            t.clamp(0.0, (dur - 5e-4).max(0.0))
         }
     }
 }
@@ -740,6 +800,41 @@ impl Evaluator {
         }
         let lt = t - s.start;
         let cx = Cx { ev: self, scene_t: lt, gt: t, dof: 0.0, amul: 1.0 };
+        let (cam, v, panning) = self.scene_cam(s, t, xf);
+        let (cxp, cyp, rot, zoom) = (v[0], v[1], v[2], v[3]);
+        let (focus, aperture) = (v[4], v[5]);
+        for (li, n) in s.layers.iter().enumerate() {
+            let is_bg = li < s.bg_layers;
+            if (is_bg && part & PART_BG == 0) || (!is_bg && part & PART_FG == 0) {
+                continue;
+            }
+            if !s.depth {
+                self.emit_node(n, &cx, &cam, [w, h], 1.0, out);
+                continue;
+            }
+            // Parallax and depth of field from the layer's depth.
+            let mut lv = [0.0f32; prop::N];
+            let lt = (lt - n.start).max(0.0);
+            self.props(n, &cx, lt, &mut lv);
+            let d = lv[prop::DEPTH];
+            let lcam = if panning && d != 0.0 {
+                let k = 1.0 / (1.0 + d.max(-0.9));
+                let m = dl::mul(&translate(w * 0.5, h * 0.5), &dl::mul(&rotate(rot), &dl::mul(&scale(zoom, zoom), &translate(-w * 0.5 - cxp * k, -h * 0.5 - cyp * k))));
+                dl::mul(xf, &m)
+            } else {
+                cam
+            };
+            let dcx = Cx { dof: (d - focus).abs() * aperture, ..Cx { ev: self, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0, amul: 1.0 } };
+            self.emit_node(n, &dcx, &lcam, [w, h], 1.0, out);
+        }
+    }
+
+    /// A scene's camera transform at global time `t` (after `xf`), with
+    /// `[x, y, rotation, zoom, focus, aperture]` and whether it pans.
+    fn scene_cam(&self, s: &SceneC, t: f32, xf: &Affine) -> (Affine, [f32; 6], bool) {
+        let (w, h) = (self.width as f32, self.height as f32);
+        let lt = t - s.start;
+        let cx = Cx { ev: self, scene_t: lt, gt: t, dof: 0.0, amul: 1.0 };
         // Camera.
         let mut v = [0.0f32; prop::N];
         self.props(&s.camera, &cx, lt, &mut v);
@@ -770,30 +865,7 @@ impl Evaluator {
         };
         let (focus, aperture) = (v[prop::FOCUS], v[prop::APERTURE].max(0.0));
         let panning = cxp != 0.0 || cyp != 0.0;
-        for (li, n) in s.layers.iter().enumerate() {
-            let is_bg = li < s.bg_layers;
-            if (is_bg && part & PART_BG == 0) || (!is_bg && part & PART_FG == 0) {
-                continue;
-            }
-            if !s.depth {
-                self.emit_node(n, &cx, &cam, [w, h], 1.0, out);
-                continue;
-            }
-            // Parallax and depth of field from the layer's depth.
-            let mut lv = [0.0f32; prop::N];
-            let lt = (lt - n.start).max(0.0);
-            self.props(n, &cx, lt, &mut lv);
-            let d = lv[prop::DEPTH];
-            let lcam = if panning && d != 0.0 {
-                let k = 1.0 / (1.0 + d.max(-0.9));
-                let m = dl::mul(&translate(w * 0.5, h * 0.5), &dl::mul(&rotate(rot), &dl::mul(&scale(zoom, zoom), &translate(-w * 0.5 - cxp * k, -h * 0.5 - cyp * k))));
-                dl::mul(xf, &m)
-            } else {
-                cam
-            };
-            let dcx = Cx { dof: (d - focus).abs() * aperture, ..Cx { ev: self, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0, amul: 1.0 } };
-            self.emit_node(n, &dcx, &lcam, [w, h], 1.0, out);
-        }
+        (cam, [cxp, cyp, rot, zoom, focus, aperture], panning)
     }
 
     fn emit_transition(&self, a: &SceneC, b: &SceneC, t: f32, p: f32, e: f32, out: &mut Vec<Op>) {
@@ -897,6 +969,135 @@ impl Evaluator {
                 self.emit_scene(b, t, &id, false, out);
                 out.push(Op::PopLayer);
             }
+            TransKind::ZoomThrough => {
+                // Fly into a layer of the outgoing scene: the whole scene scales up about that
+                // layer, which drifts to the frame centre, and the new scene shows through its shape.
+                let found = tr.layer.as_deref().and_then(|id| a.layers.iter().find(|n| n.id.as_deref() == Some(id)));
+                let Some(ln) = found else {
+                    self.emit_scene(b, t, &id, false, out);
+                    return;
+                };
+                let (cam, _, _) = self.scene_cam(a, t, &id);
+                let acx = Cx { ev: self, scene_t: t - a.start, gt: t, dof: 0.0, amul: 1.0 };
+                let mut v = [0.0f32; prop::N];
+                self.props(ln, &acx, (t - a.start - ln.start).max(0.0), &mut v);
+                let (lw, lh) = (v[prop::W].max(1.0), v[prop::H].max(1.0));
+                let f = dl::mul(&cam, &local_xf(&v, ln.anchor, lw, lh));
+                let c = [f[0] * lw * 0.5 + f[2] * lh * 0.5 + f[4], f[1] * lw * 0.5 + f[3] * lh * 0.5 + f[5]];
+                let s0 = (f[0] * f[3] - f[1] * f[2]).abs().sqrt() * lw.min(lh);
+                let zmax = (6.0 * (w * w + h * h).sqrt() / s0.max(1.0)).max(2.0);
+                let z = zmax.powf(e);
+                let to = [c[0] + (w * 0.5 - c[0]) * e, c[1] + (h * 0.5 - c[1]) * e];
+                let m = dl::mul(&translate(to[0], to[1]), &dl::mul(&scale(z, z), &translate(-c[0], -c[1])));
+                self.emit_scene(a, t, &m, false, out);
+                // The new scene, fading up inside the layer's shape over the first third.
+                layer(out, (e / 0.3).min(1.0), vec![], None);
+                self.emit_scene(b, t, &id, false, out);
+                out.push(Op::PushLayer { opacity: 1.0, blend: Blend::DestIn, filters: Vec::new(), clip: None, cache_key: None });
+                let mb = out.len();
+                self.emit_node(ln, &acx, &dl::mul(&m, &cam), [w, h], 1.0, out);
+                if out.len() == mb {
+                    out.push(Op::RoundRect { x: 0.0, y: 0.0, w, h, radius: 0.0, paint: Paint::Solid(Rgba([0.0, 0.0, 0.0, 1.0])), transform: id });
+                }
+                out.push(Op::PopLayer);
+                out.push(Op::PopLayer);
+            }
+            TransKind::Reveal => {
+                self.emit_scene(a, t, &id, false, out);
+                let (ox, oy) = (tr.origin[0], tr.origin[1]);
+                let far = [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)].iter().map(|(x, y)| ((x - ox).powi(2) + (y - oy).powi(2)).sqrt()).fold(0.0, f32::max);
+                // Radius that covers the frame for each shape (its inscribed circle must reach `far`).
+                let k = [1.0, 1.42, 1.42, 2.7, 1.25][tr.shape as usize];
+                let r = (far * k * e).max(0.01) as f64;
+                let spin = (tr.amount * e).to_radians() as f64;
+                let pts: Vec<(f64, f64)> = match tr.shape {
+                    1 => (0..4).map(|i| (i as f64 * std::f64::consts::FRAC_PI_2, r)).collect(),
+                    2 => (0..4).map(|i| (std::f64::consts::FRAC_PI_4 + i as f64 * std::f64::consts::FRAC_PI_2, r)).collect(),
+                    3 => (0..10).map(|i| (i as f64 * std::f64::consts::PI / 5.0 - std::f64::consts::FRAC_PI_2, if i % 2 == 0 { r } else { r * 0.5 })).collect(),
+                    4 => (0..36)
+                        .map(|i| {
+                            let a = i as f64 * std::f64::consts::TAU / 36.0;
+                            (a, r * (1.0 + 0.12 * noise1(i as f64 * 0.7 + e as f64 * 3.0) + 0.06 * (3.0 * a + e as f64 * 4.0).sin()))
+                        })
+                        .collect(),
+                    _ => Vec::new(),
+                };
+                let path = if pts.is_empty() {
+                    shape_path(&kurbo::Circle::new((ox as f64, oy as f64), r), 0.1)
+                } else {
+                    let mut p = Path::new();
+                    for (i, (a, rr)) in pts.iter().enumerate() {
+                        let q = (ox as f64 + rr * (a + spin).cos(), oy as f64 + rr * (a + spin).sin());
+                        if i == 0 {
+                            p.move_to(q)
+                        } else {
+                            p.line_to(q)
+                        }
+                    }
+                    p.close_path();
+                    p
+                };
+                layer(out, 1.0, vec![], Some((path, id)));
+                self.emit_scene(b, t, &id, false, out);
+                out.push(Op::PopLayer);
+            }
+            TransKind::Blinds => {
+                self.emit_scene(a, t, &id, false, out);
+                // Bars across the travel direction, each opening a little after the previous one.
+                let n = tr.count.max(1) as usize;
+                let horiz = tr.dir[0] != 0.0;
+                let span = if horiz { w } else { h };
+                let bar = span / n as f32;
+                let spread = 0.5;
+                let mut p = Path::new();
+                for i in 0..n {
+                    let k = if tr.dir[0] + tr.dir[1] < 0.0 { n - 1 - i } else { i };
+                    let d = k as f32 / n as f32 * spread;
+                    let f = ((e * (1.0 + spread) - d) / 1.0).clamp(0.0, 1.0);
+                    if f <= 0.0 {
+                        continue;
+                    }
+                    let a0 = i as f32 * bar;
+                    let r = if horiz { kurbo::Rect::new(a0 as f64, 0.0, (a0 + bar * f + 0.5) as f64, h as f64) } else { kurbo::Rect::new(0.0, a0 as f64, w as f64, (a0 + bar * f + 0.5) as f64) };
+                    p.extend(shape_path(&r, 0.1));
+                }
+                if p.elements().is_empty() {
+                    return;
+                }
+                layer(out, 1.0, vec![], Some((p, id)));
+                self.emit_scene(b, t, &id, false, out);
+                out.push(Op::PopLayer);
+            }
+            TransKind::Split => {
+                // The old scene splits down the middle and both halves slide apart over the new one.
+                self.emit_scene(b, t, &id, false, out);
+                // left/right: the halves part sideways; up/down: they part vertically.
+                let horiz = tr.dir[1] != 0.0;
+                let halves = if horiz { [[0.0, 0.0, w, h * 0.5], [0.0, h * 0.5, w, h]] } else { [[0.0, 0.0, w * 0.5, h], [w * 0.5, 0.0, w, h]] };
+                for (i, r) in halves.iter().enumerate() {
+                    let sgn = if i == 0 { -1.0 } else { 1.0 };
+                    let off = if horiz { translate(0.0, sgn * h * 0.5 * e) } else { translate(sgn * w * 0.5 * e, 0.0) };
+                    let clip = kurbo::Rect::new(r[0] as f64, r[1] as f64, r[2] as f64, r[3] as f64);
+                    layer(out, 1.0, vec![], Some((shape_path(&clip, 0.1), off)));
+                    self.emit_scene(a, t, &off, false, out);
+                    out.push(Op::PopLayer);
+                }
+            }
+            TransKind::Whip => {
+                // A whip pan: both scenes travel a full frame, blurred by their speed (peak mid-move).
+                let speed = 4.0 * e * (1.0 - e);
+                let blur = (tr.amount.max(0.0) + 1.0) * 36.0 * speed;
+                let filters = if blur > 0.5 { vec![Filter::Blur(blur)] } else { Vec::new() };
+                let (dx, dy) = (tr.dir[0] * w, tr.dir[1] * h);
+                let st = 1.0 + 0.25 * speed;
+                let stretch = |tx: f32, ty: f32| dl::mul(&translate(tx + w * 0.5, ty + h * 0.5), &dl::mul(&scale(if dx != 0.0 { st } else { 1.0 }, if dy != 0.0 { st } else { 1.0 }), &translate(-w * 0.5, -h * 0.5)));
+                layer(out, 1.0, filters.clone(), None);
+                self.emit_scene(a, t, &stretch(dx * e, dy * e), false, out);
+                out.push(Op::PopLayer);
+                layer(out, 1.0, filters, None);
+                self.emit_scene(b, t, &stretch(-dx * (1.0 - e), -dy * (1.0 - e)), false, out);
+                out.push(Op::PopLayer);
+            }
             TransKind::Glitch => {
                 let (sc, k) = if p < 0.5 { (a, p * 2.0) } else { (b, (1.0 - p) * 2.0) };
                 let bands = 9;
@@ -917,6 +1118,23 @@ impl Evaluator {
 
     /// Compute a node's property values at local time `lt`.
     fn props(&self, n: &Node, cx: &Cx, lt: f32, v: &mut [f32; prop::N]) {
+        self.props_raw(n, cx, lt, v);
+        if let Some(ic) = n.inertia.as_deref() {
+            let table = ic.table.get_or_init(|| {
+                // Sample the layer's own motion and run the spring once (deterministic, 240 Hz).
+                let life = (n.end - n.start).min(self.duration.max(1.0) + 1.0).clamp(0.0, 600.0);
+                let mut tv = [0.0f32; prop::N];
+                ic.simulate(life, |t| {
+                    let c = Cx { scene_t: n.start + t, gt: cx.gt - (cx.scene_t - n.start - t), ..*cx };
+                    self.props_raw(n, &c, t, &mut tv);
+                    tv
+                })
+            });
+            ic.apply(table, lt, v);
+        }
+    }
+
+    fn props_raw(&self, n: &Node, cx: &Cx, lt: f32, v: &mut [f32; prop::N]) {
         *v = n.base;
         if !n.exprs.is_empty() || !n.cexprs.is_empty() {
             let dur = (n.end - n.start).max(1e-6);
@@ -973,6 +1191,7 @@ impl Evaluator {
         if let Some(ast) = &n.update {
             self.run_update(ast, n, cx, lt, v);
         }
+        apply_path(n, v);
     }
 
     /// Apply a layer's `update` script: its returned props win for this frame.
@@ -1013,6 +1232,15 @@ impl Evaluator {
 
     fn emit_node(&self, n: &Node, cx: &Cx, parent: &Affine, psize: [f32; 2], po: f32, out: &mut Vec<Op>) {
         let tagging = n.tag != u32::MAX && TAGS.with(|t| t.borrow().is_some());
+        let pcx;
+        let cx = if n.posterize_time > 0.0 {
+            // Hold each pose for 1/posterizeTime s: quantize the clock this subtree sees.
+            let st = (cx.scene_t * n.posterize_time + 1e-4).floor() / n.posterize_time;
+            pcx = Cx { scene_t: st, gt: cx.gt - (cx.scene_t - st), ..*cx };
+            &pcx
+        } else {
+            cx
+        };
         let start = out.len();
         if n.matte.is_some() {
             out.push(Op::PushLayer { opacity: 1.0, blend: Blend::Normal, filters: Vec::new(), clip: None, cache_key: None });
@@ -1101,21 +1329,34 @@ impl Evaluator {
 
     fn emit_node_inner(&self, n: &Node, cx: &Cx, parent: &Affine, psize: [f32; 2], _po: f32, out: &mut Vec<Op>) {
         let st = cx.scene_t;
-        if st < n.start || st >= n.end {
+        // Half-open [start, end), with both edges nudged by 0.1 ms so float noise in
+        // `start + 1/fps` can't show a one-frame layer on two frames.
+        if st < n.start - 1e-4 || st >= n.end - 1e-4 {
             return;
         }
+        // Stepped time ("on twos"): this layer and its children see time held at `step` fps.
+        let stepped;
+        let cx = if n.step > 0.0 {
+            let lt = st - n.start;
+            let held = (lt * n.step + 1e-4).floor() / n.step;
+            let d = lt - held;
+            stepped = Cx { scene_t: st - d, gt: cx.gt - d, ..*cx };
+            &stepped
+        } else {
+            cx
+        };
+        let st = cx.scene_t;
         let lt = st - n.start;
         let mut v = [0.0f32; prop::N];
         self.props(n, cx, lt, &mut v);
-        if let Some(fx) = n.fx.as_deref() {
-            if let Some(mp) = &fx.path {
-                let (q, ang) = mp.at(v[prop::PROGRESS] * mp.len());
-                v[prop::X] = q[0];
-                v[prop::Y] = q[1];
-                if let Some(o) = fx.orient {
-                    v[prop::ROT] += ang + o;
-                }
-            }
+        if let Some([amt, rot, fps, seed]) = n.boil {
+            // Boil: a seeded jitter re-drawn `fps` times a second (hand-drawn / misregistered plates).
+            let k = ((cx.gt * fps) + 1e-4).floor() as i64 as u32;
+            let sd = seed as u32;
+            let r = |j: u32| (graphic::rnd(sd, k.wrapping_mul(3).wrapping_add(j)) as f32 - 0.5) * 2.0;
+            v[prop::X] += r(0) * amt;
+            v[prop::Y] += r(1) * amt;
+            v[prop::ROT] += r(2) * rot;
         }
         let opacity = (v[prop::OPACITY] * cx.amul).clamp(0.0, 1.0);
         if opacity <= 0.0005 {
@@ -1123,7 +1364,24 @@ impl Evaluator {
         }
         let _ = psize;
         let (w, h) = (v[prop::W].max(0.0), v[prop::H].max(0.0));
-        let xf = dl::mul(parent, &local_xf(&v, n.anchor, w, h));
+        let mut xf = dl::mul(parent, &local_xf(&v, n.anchor, w, h));
+        if let Some(k) = n.fx.as_deref().and_then(|f| f.smear) {
+            // Smear: stretch along the frame's travel (velocity from one frame earlier), volume kept.
+            let dt = 1.0 / self.fps.max(1.0);
+            let mut pv = [0.0f32; prop::N];
+            let pc = Cx { scene_t: cx.scene_t - dt, gt: cx.gt - dt, ..*cx };
+            self.props(n, &pc, lt - dt, &mut pv);
+            let (dx, dy) = (v[prop::X] - pv[prop::X], v[prop::Y] - pv[prop::Y]);
+            let speed = (dx * dx + dy * dy).sqrt();
+            let size = (w * v[prop::SX].abs()).max(h * v[prop::SY].abs()).max(1.0);
+            let s = (1.0 + k * 0.6 * speed / size).min(4.0);
+            if s > 1.01 {
+                let ang = dy.atan2(dx).to_degrees();
+                let (cx0, cy0) = (v[prop::X], v[prop::Y]);
+                let m = dl::mul(&translate(cx0, cy0), &dl::mul(&rotate(ang), &dl::mul(&scale(s, 1.0 / s.sqrt()), &dl::mul(&rotate(-ang), &translate(-cx0, -cy0)))));
+                xf = dl::mul(parent, &dl::mul(&m, &local_xf(&v, n.anchor, w, h)));
+            }
+        }
         let blur = v[prop::BLUR].max(0.0) + cx.dof;
         let wipe = v[prop::WIPE].clamp(0.0, 1.0);
         let is_leaf = matches!(n.kind, Kind::Text { kinetic: None, .. } | Kind::Image { .. } | Kind::Video { .. } | Kind::Shader(_))
@@ -1140,6 +1398,26 @@ impl Evaluator {
         let mut alpha = opacity;
         if needs_layer {
             let mut filters = n.treat.clone();
+            if n.treat_slot != 0 {
+                let b = n.treat_slot as usize;
+                for f in filters.iter_mut() {
+                    match f {
+                        Filter::Tone(t) => {
+                            let a = v[b].clamp(0.0, 1.0);
+                            if (a - t.amount).abs() > 1e-4 {
+                                *t = Arc::new(dl::ToneLut { amount: a, ..(**t).clone() });
+                            }
+                        }
+                        Filter::Halftone(h) => {
+                            h.cell = v[b + 1].max(2.0);
+                            h.angle = v[b + 2];
+                            h.gain = v[b + 3].max(0.05);
+                        }
+                        Filter::Ink { amount, .. } => *amount = v[b + 4].clamp(0.0, 1.0),
+                        _ => {}
+                    }
+                }
+            }
             if blur > 0.05 {
                 filters.push(Filter::Blur(blur));
             }
@@ -1171,8 +1449,12 @@ impl Evaluator {
         }
         match &n.kind {
             Kind::Shape { shape, fill, stroke, path } => {
-                let wiggled = match n.fx.as_deref() {
-                    Some(fx::Fx { wiggle: Some(w), wiggle_src, .. }) => {
+                let wiggled = match (n.fx.as_deref(), n.live_pattern.as_deref()) {
+                    (_, Some((pat, [pw, ph]))) => {
+                        let pt = graphic::Pat { t: lt as f64, ..pat.clone() };
+                        Some(graphic::pattern(*pw, *ph, &pt))
+                    }
+                    (Some(fx::Fx { wiggle: Some(w), wiggle_src, .. }), None) => {
                         let mut p = take_path();
                         fx::wiggle_into(wiggle_src, *w, lt, &mut p);
                         Some(p)
@@ -1205,7 +1487,24 @@ impl Evaluator {
                         geom(out, paint, None);
                     }
                 }
-                if let Some(s) = stroke {
+                let along = n.fx.as_deref().and_then(|f| f.along.as_ref());
+                if let (Some(_), Some(al)) = (stroke, along) {
+                    // Gradient along the path: each chunk carries its slice of the colours (and of the trim).
+                    let (t0, t1) = (v[prop::TRIM0].clamp(0.0, 1.0), v[prop::TRIM1].clamp(0.0, 1.0));
+                    if sw > 0.0 && t1 > t0 {
+                        let fade = |c: Rgba| Rgba([c.0[0], c.0[1], c.0[2], c.0[3] * alpha]);
+                        for (p, p0, p1, u0, u1, c0, c1) in &al.chunks {
+                            if *u1 <= t0 || *u0 >= t1 {
+                                continue;
+                            }
+                            let span = (u1 - u0).max(1e-6);
+                            let trim = [((t0 - u0) / span).clamp(0.0, 1.0), ((t1 - u0) / span).clamp(0.0, 1.0)];
+                            let paint = Paint::Linear { p0: *p0, p1: *p1, stops: vec![(0.0, fade(*c0)), (1.0, fade(*c1))] };
+                            let st = dl::Stroke { width: sw, cap: 1, join: 1, miter_limit: 4.0, dash: vec![], dash_offset: 0.0, trim };
+                            out.push(Op::Stroke { path: copy_path(p), paint, stroke: st, transform: xf });
+                        }
+                    }
+                } else if let Some(s) = stroke {
                     if sw > 0.0 && v[prop::TRIM1] > v[prop::TRIM0] {
                         let paint = self.paint(&s.paint, &v, prop::STROKE, [w, h], alpha);
                         let st = dl::Stroke {
@@ -1224,17 +1523,25 @@ impl Evaluator {
                     give_path(p);
                 }
             }
-            Kind::Text { layout, wrap, paint, run_colors, split, counter, kinetic } => {
+            Kind::Text { layout, wrap, paint, run_colors, split, counter, kinetic, dynamic } => {
                 let owned;
                 let layout = if let Some(c) = counter {
                     owned = self.layout_counter(c, v[prop::VALUE]);
+                    &owned
+                } else if let Some(l) = dynamic.as_ref().and_then(|d| d.relayout(&self.assets.fonts, &v)) {
+                    owned = l;
                     &owned
                 } else {
                     layout
                 };
                 let lsize = [wrap.unwrap_or(layout.width), layout.height];
                 // Centre the block in the layer box (it may differ when the box is wider).
-                let ox = (w - lsize[0]) * 0.5;
+                // Re-laid-out text (animated axes / tracking) keeps its aligned edge.
+                let ox = match dynamic.as_ref().map(|d| d.spec.align) {
+                    Some(crate::text::Align::Left) => 0.0,
+                    Some(crate::text::Align::Right) => w - lsize[0],
+                    _ => (w - lsize[0]) * 0.5,
+                };
                 let oy = (h - lsize[1]) * 0.5;
                 let bxf = if ox.abs() > 0.01 || oy.abs() > 0.01 { dl::mul(&xf, &translate(ox, oy)) } else { xf };
                 if let Some(k) = kinetic {
@@ -1497,8 +1804,18 @@ impl Evaluator {
             }
             Kind::Group { children } => {
                 let ccx = Cx { ev: cx.ev, scene_t: cx.scene_t, gt: cx.gt, dof: 0.0, amul: 1.0 };
-                for c in children {
-                    self.emit_node(c, &ccx, &xf, [w, h], alpha, out);
+                for (i, c) in children.iter().enumerate() {
+                    if n.drag > 0.0 && i > 0 {
+                        // Drag: this child sees the group's transform from i × drag seconds ago.
+                        let d = n.drag * i as f32;
+                        let mut gv = [0.0f32; prop::N];
+                        let gcx = Cx { scene_t: cx.scene_t - d, gt: cx.gt - d, ..*cx };
+                        self.props(n, &gcx, (lt - d).max(0.0), &mut gv);
+                        let gxf = dl::mul(parent, &local_xf(&gv, n.anchor, gv[prop::W].max(0.0), gv[prop::H].max(0.0)));
+                        self.emit_node(c, &ccx, &gxf, [w, h], alpha, out);
+                    } else {
+                        self.emit_node(c, &ccx, &xf, [w, h], alpha, out);
+                    }
                 }
             }
             Kind::Box { children, bg, border } => {
@@ -1589,6 +1906,7 @@ pub(crate) fn scale_filters(ops: &mut [Op], s: f32) {
                     }
                     Filter::Glow { radius, .. } => *radius *= s,
                     Filter::Halftone(h) => h.cell *= s,
+                    Filter::Ink { scale, .. } => *scale *= s,
                     Filter::ColorMatrix(_) | Filter::Tone(_) => {}
                 }
             }
@@ -1605,7 +1923,7 @@ fn node_static(n: &Node, a: f32, b: f32) -> bool {
         return true; // invisible throughout
     }
     let (la, lb) = (a - n.start, b - n.start);
-    if n.update.is_some() || n.exprs.iter().any(|(_, e)| e.dynamic) || n.cexprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
+    if n.boil.is_some() || n.live_pattern.is_some() || n.update.is_some() || n.exprs.iter().any(|(_, e)| e.dynamic) || n.cexprs.iter().any(|(_, e)| e.dynamic) || !n.loops.is_empty() || !n.tracks.iter().all(|t| t.still(la, lb)) {
         return false;
     }
     match &n.kind {
@@ -1848,6 +2166,21 @@ fn shape_path(s: &impl kurbo::Shape, tol: f64) -> Path {
 }
 
 /// Drain `ops`, returning glyph and path buffers to this thread's pools.
+/// Motion path: position (and orientation) from the path at `progress`.
+#[inline]
+fn apply_path(n: &Node, v: &mut [f32; prop::N]) {
+    if let Some(fx) = n.fx.as_deref() {
+        if let Some(mp) = &fx.path {
+            let (q, ang) = mp.at(v[prop::PROGRESS] * mp.len());
+            v[prop::X] = q[0];
+            v[prop::Y] = q[1];
+            if let Some(o) = fx.orient {
+                v[prop::ROT] += ang + o;
+            }
+        }
+    }
+}
+
 /// Recycle the ops from `start` on.
 fn recycle_from(ops: &mut Vec<Op>, start: usize) {
     for op in ops.drain(start..) {

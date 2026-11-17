@@ -27,6 +27,7 @@ pub const PAGES: &[(&str, &str)] = &[
     ("script", include_str!("../docs-cli/script.md")),
     ("draw", include_str!("../docs-cli/draw.md")),
     ("mograph", include_str!("../docs-cli/mograph.md")),
+    ("type", include_str!("../docs-cli/type.md")),
     ("graphic", include_str!("../docs-cli/graphic.md")),
     ("launch", include_str!("../docs-cli/launch.md")),
     ("analyze", include_str!("../docs-cli/analyze.md")),
@@ -46,11 +47,15 @@ pub const RECIPES: &[(&str, &str)] = &[
     ("particle-ignite", include_str!("../recipes/particle-ignite.json")),
     ("domino-cascade", include_str!("../recipes/domino-cascade.json")),
     ("raymarch-world", include_str!("../recipes/raymarch-world.json")),
+    ("swiss-grid-poster", include_str!("../recipes/swiss-grid-poster.json")),
+    ("riso-overprint", include_str!("../recipes/riso-overprint.json")),
+    ("torn-collage", include_str!("../recipes/torn-collage.json")),
+    ("op-art-field", include_str!("../recipes/op-art-field.json")),
 ];
 
 const ALIASES: &[(&str, &str)] = &[
     ("scene3d", "3d"), ("ink", "fluid"), ("smoke", "fluid"), ("fire", "fluid"), ("scene-3d", "3d"), ("three", "3d"), ("shaders", "shader"), ("glsl", "shader"), ("audio", "sound"),
-    ("sfx", "sound"), ("sound-design", "sound"), ("foley", "sound"), ("ambience", "sound"), ("keyframes", "animation"), ("expression", "expressions"), ("scripts", "script"), ("rhai", "script"), ("drawing", "draw"), ("motion-graphics", "mograph"), ("repeater", "mograph"), ("trails", "mograph"), ("echo", "mograph"), ("grid", "graphic"), ("pattern", "graphic"), ("patterns", "graphic"), ("halftone", "graphic"), ("duotone", "graphic"), ("print", "graphic"), ("graphic-design", "graphic"), ("layout", "graphic"), ("text", "primitives"),
+    ("sfx", "sound"), ("sound-design", "sound"), ("foley", "sound"), ("ambience", "sound"), ("keyframes", "animation"), ("expression", "expressions"), ("scripts", "script"), ("rhai", "script"), ("drawing", "draw"), ("motion-graphics", "mograph"), ("typography", "type"), ("fonts", "type"), ("font", "type"), ("axes", "type"), ("variable", "type"), ("features", "type"), ("opentype", "type"), ("repeater", "mograph"), ("trails", "mograph"), ("echo", "mograph"), ("grid", "graphic"), ("pattern", "graphic"), ("patterns", "graphic"), ("halftone", "graphic"), ("duotone", "graphic"), ("print", "graphic"), ("graphic-design", "graphic"), ("layout", "graphic"), ("text", "primitives"),
     ("shapes", "primitives"), ("paths", "primitives"), ("grade", "post"), ("motion-blur", "camera"), ("composition", "compositions"),
     ("review", "critique"), ("pace", "pacing"), ("index", "start"), ("anything", "make-anything"),
     ("launch-video", "launch"), ("product", "launch"), ("announcement", "launch"),
@@ -77,7 +82,7 @@ pub fn docs(topic: Option<&str>) -> Result<String, String> {
     }
     if t == "essentials" || t == "all" {
         // Everything a typical piece needs in one read (about 13k characters).
-        let mut s = String::from("# Essentials: one read for a typical piece\n\nLoop: write s.json → `anikit-video preview s.json` (repeat) → ONE `render s.json -o out.mp4`. More: `anikit-video docs <topic>` (3d, particles, physics, post, pacing, taste, critique).\n\n");
+        let mut s = String::from("# Essentials: one read for a typical piece\n\nLoop: write s.json → `anikit-video preview s.json` (repeat) → ONE `render s.json -o out.mp4`. More: `anikit-video docs <topic>` (3d, particles, physics, post, pacing, taste, critique, graphic: grids, patterns, print treatments).\n\n");
         for p in ["primitives", "animation", "expressions", "compositions", "shader"] {
             if let Some((_, md)) = PAGES.iter().find(|(n, _)| *n == p) {
                 s += md;
@@ -126,6 +131,17 @@ pub fn recipe_spec(name: &str) -> Option<(String, Value)> {
     Some((about, v["spec"].clone()))
 }
 
+/// A list line: the first clause, cut at a word near 90 characters (the
+/// full text is one `recipes <name>` away).
+fn short(about: &str) -> String {
+    let first = about.split(". ").next().unwrap_or(about).trim_end_matches('.');
+    if first.chars().count() <= 90 {
+        return first.to_string();
+    }
+    let cut: String = first.chars().take(90).collect();
+    format!("{}…", cut.rsplit_once(' ').map(|(a, _)| a).unwrap_or(&cut).trim_end_matches([',', ';']))
+}
+
 /// The recipe list, or one recipe: its notes and a ready spec.
 pub fn recipes(name: Option<&str>) -> Result<String, String> {
     let lib = anikit_shader::library::ALL;
@@ -135,11 +151,11 @@ pub fn recipes(name: Option<&str>) -> Result<String, String> {
             let v: Value = serde_json::from_str(src).unwrap();
             let about = v["about"].as_str().unwrap_or("");
             let cost = v["cost"].as_str().map(|c| format!(" [{}]", c.split(" (").next().unwrap_or(c))).unwrap_or_default();
-            s += &format!("  {n:20} {}{cost}\n", about.split(". ").next().unwrap_or(about).trim_end_matches('.'));
+            s += &format!("  {n:20} {}{cost}\n", short(about));
         }
         s += "Shaders (one line in a spec: {\"shader\": \"<name>\", \"uniforms\": {...}}; filters add \"filter\": true; transitions: \"transition\": \"<name>\"):\n";
         for e in lib {
-            s += &format!("  {:13} {:10} {}\n", e.name, format!("{:?}", e.use_).to_lowercase(), e.about);
+            s += &format!("  {:13} {:10} {}\n", e.name, format!("{:?}", e.use_).to_lowercase(), short(e.about));
         }
         return Ok(s);
     };

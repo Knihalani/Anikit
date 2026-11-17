@@ -8,6 +8,7 @@
 ```
 
 - Variables: `t` (layer s) `T` (scene s) `gt` (video s) `p` (0..1) `frame` `i` `n` `w` `h` `fps`, plus music: `beat` `bar` (fractional), `level` (loudness 0..1), `bpm`.
+- Siblings: `id.left` `id.right` `id.top` `id.bottom` `id.cx` `id.cy` `id.width` `id.height` read the resting box of an earlier layer in the same list (by its `id`, hyphens allowed): `"y": "=title.bottom + 24"`, `"x": "=card.right + 40"`. Values are the box after layout, before animation; mix them with anything else (`"=title.bottom + 24 + 6 * sin(t)"`).
 - Logic: `< <= > >= == != && || !`, `c ? a : b`, `if(c, a, b)`.
 - Random variation (deterministic): `rand(seed)` 0..1, `rand(seed, lo, hi)`, `pick(k, a, b, …)` (the k-th value, wrapping; also for colours: `"=pick(rand($i) * 3, #fff, $accent, $primary)"`). With `repeat`, `$i` seeds each copy.
 - Functions: `sin cos tan atan2 abs floor fract mod min max clamp sqrt pow exp log hypot mix lerp remap smoothstep step pingpong ease easeIn easeOut spring tri saw square noise rand rand2`.

@@ -19,6 +19,8 @@ Start a value with `=`. It works for any numeric property (`x y width height sca
 | Units | `50%` (of the parent) · `10vw` `8vh` `5vmin` · `500ms` · `30deg` |
 | Colours | `=rgb(r, g, b[, a])` (0–255, alpha 0–1) · `=hsl(h, s, l[, a])` (degrees, 0–100) · `=oklch(L, C, h[, a])` · `=mix(colourA, colourB, x)` (in OKLab) · `=cond ? colourA : colourB`; every argument is an expression and colours may be tokens (`$accent`) |
 
+Place a layer relative to an earlier sibling with its `id`: `"y": "=title.bottom + 24"`, `"x": "=card.right + 40"` (`left right top bottom cx cy width height`; the box at rest, before animation).
+
 `beat`, `bar`, `level` and `bpm` read the first `audio` track with a `src` (the music, not a voice-over). Shake on every beat: `"x": "=960 + 12 * (1 - fract(beat)) * sin(t * 90)"`.
 
 ## 2. Scripts: loops and logic inside the spec

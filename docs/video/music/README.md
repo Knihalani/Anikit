@@ -34,7 +34,7 @@ defines its own instruments, gives each track its own effect chain, and automate
 - **`define`** names custom instruments:
   - `{"synth": {…}}`: up to three oscillators (saw, square, tri, sine, supersaw; unison voices and detune), sub, noise, filter, amp and filter envelopes, LFO, pitch envelope and glide. A definition can start from any synth preset via `base`.
   - `{"sampler": {"zones": […]}}`: your own audio files with key range, root note, velocity layers, loop points, tuning and round robin.
-- **`fx`** is a per-track effect chain. Available types: eq, comp, delay (tempo-synced `note`), reverb (wet/dry insert), chorus, saturate, widener, transient, filter and gain.
+- **`fx`** is a per-track effect chain. Available types: eq, comp, delay (tempo-synced `note`), reverb (wet/dry insert), chorus, saturate, widener, transient, filter, gain and autopan (a stereo tremolo: `rate` in Hz or `note` such as "1/8", `depth` 0–1).
 - **`automate`** changes values over time, as keyframes in beats or `@bar`/`@beat` times, or as `"=expr"` written in `beat`, `bar` and `t`. It can drive two kinds of target:
   - track parameters (volume, pan, swept low-pass and high-pass filters, reverb and delay sends), applied continuously;
   - patch parameters of a custom synth (`synth.cutoff`, `synth.res`, `synth.drive`, `synth.env`, `synth.vib`, …), applied at each note-on.
@@ -116,7 +116,7 @@ Per-component speed (single thread, × real time):
 
 - **Instruments.**
   - Sampled: the bundled GeneralUser GS General MIDI bank, re-encoded as compact Vorbis SF3 (5.9 MB). SF2, SF3 and SFZ files also load.
-  - Optional packs: `anikit-video music fetch salamander|vsco2`.
+  - Optional packs: `anikit-video music fetch essentials` (≈210 MB: Splendid grand, Wurlitzer/CP80/Pianet, FreePats CC0 bass, nylon and clean electric guitars). Once cached, they replace the GM samples for piano, bass, pick-bass, nylon-guitar and clean-guitar automatically. Bigger packs: `fetch salamander`, `fetch vsco2-ce`.
   - Physical and modal models: Karplus-Strong guitars, harp and koto; modal marimba, vibraphone, bells, kalimba and handpan.
   - Synths and drum machines.
   - See `LICENSES.md` for every licence.

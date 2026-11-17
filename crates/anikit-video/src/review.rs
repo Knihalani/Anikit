@@ -530,7 +530,9 @@ pub fn composition(ev: &Evaluator, s: &Samples, tl: &Timeline) -> (Vec<Note>, Ve
     }
     // Centred, symmetric layouts repeated.
     let mid = |l: &Layout| (((l.bbox[0] + l.bbox[2]) / 2.0 - 0.5).abs(), ((l.bbox[1] + l.bbox[3]) / 2.0 - 0.5).abs());
-    let centred: Vec<&(f32, Layout)> = lays.iter().filter(|(_, l)| mid(l).0 < 0.06 && mid(l).1 < 0.12).collect();
+    // A full-bleed image (a shader world, a photo) fills the frame: its box is
+    // centred by definition, so it says nothing about the composition.
+    let centred: Vec<&(f32, Layout)> = lays.iter().filter(|(_, l)| mid(l).0 < 0.06 && mid(l).1 < 0.12 && l.occupied < 0.8).collect();
     if lays.len() >= 4 && centred.len() * 10 >= lays.len() * 7 {
         let (t, l) = centred[0];
         worst.push(("centred".into(), *t, l.bbox));

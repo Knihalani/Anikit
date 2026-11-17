@@ -10,7 +10,7 @@ A video is one JSON (or YAML) file: `anikit-video render spec.json -o out.mp4`. 
 ] }
 ```
 
-A scene string is a title card (`"Title | subtitle"`); a layer string is centred body text. Defaults: 1920×1080, 30 fps, 3 s scenes, dark theme, Inter, 0.5 s crossfades, every layer centred.
+A scene string is a title card (`"Title | subtitle"`); a layer string is centred body text. Defaults: 1920×1080, 30 fps, 3 s scenes, dark theme, Inter, hard cuts between scenes (add a `transition` to blend; it plays in the last part of the outgoing scene, so total length is always the sum of scene durations), every layer centred.
 
 ## Values
 
@@ -35,7 +35,7 @@ Theme colours (used as `$name`): `primary secondary accent bg surface text muted
 
 `id` · `duration` (default 3, `"auto"`, or musical: `"2 beats"`, `"1 bar"`, `"4b"`; top-level `"cut": "bar"` sets the default for every scene) · `stack` (`true`: free text layers as one centred column, no x/y needed) · `background` · `transition` (into this scene) · `camera` · `markers` · `layers` · `audio`.
 
-Transitions: `cut crossfade fadeBlack fadeWhite slide push zoom wipe iris blur glitch morphCut`, shader transitions `burn ripple pixelate swirl ink-bleed warp-wipe luma-melt zoom-blur`, or your own `{ "type": "shader", "shader": "vec4 transition(vec2 uv) {…}" }` (gl-transitions API). Write one as a string or as `{ "type": "slide", "direction": "left", "duration": 0.6 }`.
+Transitions: `cut crossfade fadeBlack fadeWhite slide push zoom wipe iris blur glitch morphCut`, shader transitions `burn ripple pixelate swirl ink-bleed warp-wipe luma-melt zoom-blur`, or your own `{ "type": "shader", "shader": "vec4 transition(vec2 uv) {…}" }` (gl-transitions API). Write one as a string or as `{ "type": "slide", "direction": "left", "duration": 0.6 }`. No transition means a hard cut. A transition into a scene plays during the last `duration` seconds of the previous scene, so scenes never get shorter and the video length is the sum of scene durations.
 
 Camera: `{ "zoom": 1, "x": 0, "y": 0, "rotation": 0, "focus": 0, "aperture": 0, "animate": [...], "shake": { "amount": 8, "at": "@drop", "duration": 0.4 } }`.
 
@@ -43,7 +43,7 @@ Camera: `{ "zoom": 1, "x": 0, "y": 0, "rotation": 0, "focus": 0, "aperture": 0, 
 
 `type` is inferred: `text` → text, `shape` → shape, `src` → image/video, `children` → box, `layers` → group, `component` → component.
 
-Every layer: `x y` (default centre) · `anchor` (`center`, `topLeft`, …) · `width height` · `scale rotation skewX skewY opacity blur` · `blend` · `shadow` (`true` or `{x, y, blur, color}`) · `glow` · `clip` · `mask` · `depth` · `start end duration` · `enter exit loop animate` · `stagger`.
+Every layer: `x y` (default centre; relative to an earlier sibling: `"y": "=title.bottom + 24"`, `"x": "=card.right + 40"`, with `left right top bottom cx cy width height`) · `anchor` (`center`, `topLeft`, …) · `width height` · `scale rotation skewX skewY opacity blur` · `blend` · `shadow` (`true` or `{x, y, blur, color}`) · `glow` · `clip` · `mask` · `depth` · `start end duration` (half-open: visible from `start` up to, not including, `end`) · `frames` (`12` = only frame 12, `[12, 18]` = frames 12–17, counted in the scene) · `enter exit loop animate` · `stagger`.
 
 | Type | Keys |
 |---|---|
