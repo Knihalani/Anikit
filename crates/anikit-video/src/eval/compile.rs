@@ -104,6 +104,8 @@ struct C<'a> {
     /// The video's grid, and the grid in force for the layers being compiled.
     video_grid: Option<spec::GridSpec>,
     grid: Option<spec::GridSpec>,
+    /// Resting boxes `[left, top, right, bottom]` of the earlier siblings with an `id`, for `"=title.bottom + 24"`.
+    sib: Vec<(String, [f32; 4])>,
 }
 
 fn size_preset(s: &str) -> Option<[u32; 2]> {
@@ -169,6 +171,7 @@ impl Evaluator {
             uniform_slots: Vec::new(),
             video_grid: spec.grid.clone(),
             grid: None,
+            sib: Vec::new(),
         };
         c.assets.shaders.bind(&c.assets);
         c.ease_ids.insert("linear".into(), 0);
@@ -285,6 +288,13 @@ impl Evaluator {
                 ));
                 trans.dur = 0.5 * prev_dur.min(dur);
             }
+            // Scene timing never shrinks: a transition into this scene happens during the
+            // last `trans.dur` before its cut point, so cuts land at the sum of the scene
+            // durations (on the beat with musical durations) and the video is exactly as long
+            // as the durations add up to. The scene's own clock starts when the transition does.
+            let own = dur;
+            let in_dur = trans.dur;
+            dur += trans.dur;
             let start = t - trans.dur;
             c.scene_start = start;
             c.smarkers.clear();
@@ -332,7 +342,7 @@ impl Evaluator {
             };
             scenes.push(SceneC { id, start, dur, bg, bg_color, trans, camera, shake, layers, depth, bg_layers, post });
             t = start + dur;
-            prev_dur = dur;
+            prev_dur = if auto { dur - in_dur } else { own };
         }
         let mut duration = t;
         if let Some(d) = &spec.duration {
@@ -577,6 +587,7 @@ impl C<'_> {
             Num::Num(v) => V::C(*v as f32),
             Num::Str(s) => {
                 if let Some(e) = s.trim().strip_prefix('=') {
+                    let Some(e) = &self.sibling_refs(e, path) else { return V::C(0.0) };
                     match Expr::compile(e, refl as f64, self.w as f64, self.h as f64) {
                         Ok(x) if x.music && (self.groove.is_none() || (x.level && !self.groove_level)) => {
                             self.load_groove(x.level, path);
@@ -605,6 +616,68 @@ impl C<'_> {
                 }
             }
         }
+    }
+
+    /// Replace `id.left|right|top|bottom|cx|cy|width|height` (an earlier sibling's resting box) with its value.
+    fn sibling_refs(&mut self, e: &str, path: &str) -> Option<String> {
+        const PROPS: [&str; 8] = ["left", "right", "top", "bottom", "cx", "cy", "width", "height"];
+        if !e.contains('.') {
+            return Some(e.to_string());
+        }
+        let b = e.as_bytes();
+        let word = |c: u8| c.is_ascii_alphanumeric() || c == b'_' || c == b'-';
+        let mut out = String::with_capacity(e.len());
+        let mut i = 0;
+        while i < b.len() {
+            let starts = (b[i].is_ascii_alphabetic() || b[i] == b'_') && (i == 0 || !(word(b[i - 1]) || b[i - 1] == b'.'));
+            if starts {
+                // The longest earlier sibling id followed by `.prop`.
+                let hit = self
+                    .sib
+                    .iter()
+                    .filter_map(|(id, bx)| {
+                        let rest = e[i..].strip_prefix(id.as_str())?.strip_prefix('.')?;
+                        let p = PROPS.iter().find(|p| rest.starts_with(**p) && !rest.as_bytes().get(p.len()).is_some_and(|c| word(*c)))?;
+                        Some((id.len() + 1 + p.len(), *p, *bx))
+                    })
+                    .max_by_key(|h| h.0);
+                if let Some((len, p, [l, t, r, bt])) = hit {
+                    let v = match p {
+                        "left" => l,
+                        "right" => r,
+                        "top" => t,
+                        "bottom" => bt,
+                        "cx" => (l + r) * 0.5,
+                        "cy" => (t + bt) * 0.5,
+                        "width" => r - l,
+                        _ => bt - t,
+                    };
+                    out.push_str(&format!("({v})"));
+                    i += len;
+                    continue;
+                }
+                // `name.top` with no such sibling: say so, with the ids in scope.
+                let mut j = i;
+                while j < b.len() && (word(b[j])) {
+                    j += 1;
+                }
+                if b.get(j) == Some(&b'.') && PROPS.iter().any(|p| e[j + 1..].starts_with(p)) {
+                    let name = &e[i..j];
+                    let ids: Vec<&str> = self.sib.iter().map(|s| s.0.as_str()).collect();
+                    let known = if ids.is_empty() { "none with an id yet".to_string() } else { ids.join(", ") };
+                    let prop = e[j + 1..].split(|c: char| !c.is_ascii_alphanumeric()).next().unwrap_or("");
+                    self.d.push(
+                        Diagnostic::error(path, format!("'{name}.{prop}': no earlier sibling layer with id '{name}' (a layer can refer to siblings above it in the list: {known})"))
+                            .suggest(suggest(name, &ids)),
+                    );
+                    return None;
+                }
+            }
+            let ch = e[i..].chars().next().unwrap();
+            out.push(ch);
+            i += ch.len_utf8();
+        }
+        Some(out)
     }
 
     fn len_c(&mut self, n: &Num, path: &str, refl: f32, em: f32) -> f32 {
@@ -849,8 +922,10 @@ impl C<'_> {
     // ---------- scenes ----------
 
     fn transition(&mut self, t: Option<&spec::Transition>, path: &str) -> TransC {
+        // No transition given: a hard cut (transitions are opt-in). An object without a
+        // `type` (`{ "duration": 0.6 }`) is a crossfade.
         let o = t.map(|t| t.0.clone()).unwrap_or_default();
-        let kind_s = o.kind.as_deref().unwrap_or("crossfade");
+        let kind_s = o.kind.as_deref().unwrap_or(if t.is_none() { "cut" } else { "crossfade" });
         let kind = match kind_s {
             "cut" | "none" => TransKind::Cut,
             "crossfade" | "fade" => TransKind::Crossfade,
@@ -1011,15 +1086,27 @@ impl C<'_> {
         let delays = self.stagger_delays(stagger, ls.len(), &format!("{path}.stagger"));
         let mut out = Vec::new();
         let mut at: Vec<Option<usize>> = Vec::with_capacity(ls.len());
+        let outer_sib = std::mem::take(&mut self.sib);
         for (i, l) in ls.iter().enumerate() {
             let p = format!("{path}[{i}]");
             let cpc = PCtx { index: i, count: ls.len(), delay: delays[i], ..pc };
             at.push(None);
             if let Some(n) = self.layer(l, &p, cpc) {
+                if let Some(id) = &l.id {
+                    let rest = |k: usize| {
+                        n.exprs.iter().find(|e| e.0 as usize == k).map_or(n.base[k], |e| {
+                            e.1.eval(&super::expr::Vars { w: self.w as f64, h: self.h as f64, fps: self.fps as f64, ..Default::default() }) as f32
+                        })
+                    };
+                    let (x, y, w, h) = (rest(prop::X), rest(prop::Y), rest(prop::W), rest(prop::H));
+                    let (l0, t0) = (x - n.anchor[0] * w, y - n.anchor[1] * h);
+                    self.sib.push((id.clone(), [l0, t0, l0 + w, t0 + h]));
+                }
                 at[i] = Some(out.len());
                 out.push(n);
             }
         }
+        self.sib = outer_sib;
         if ls.iter().any(|l| l.matte.is_some()) {
             self.resolve_mattes(ls, path, &at, &mut out);
         }
@@ -1167,6 +1254,15 @@ impl C<'_> {
     }
 
     fn layer(&mut self, l: &Layer, path: &str, pc: PCtx) -> Option<Node> {
+        // `"shader": "scene.glsl"` means the shader's source file.
+        let shader_file;
+        let l = match &l.shader {
+            Some(f) if l.src.is_none() && [".glsl", ".wgsl", ".frag"].iter().any(|e| f.trim().to_ascii_lowercase().ends_with(e)) => {
+                shader_file = Layer { src: Some(f.trim().to_string()), shader: None, ..l.clone() };
+                &shader_file
+            }
+            _ => l,
+        };
         // `"text": "=expr"`: a number computed per frame (an animatable counter).
         let expr_text;
         let l = match &l.text {
@@ -1217,6 +1313,23 @@ impl C<'_> {
         } else if let Some(d) = &l.duration {
             end = start + self.time_raw(d, &format!("{path}.duration"));
         }
+        let start = match &l.frames {
+            Some(f) => {
+                if l.start.is_some() || l.end.is_some() || l.duration.is_some() {
+                    self.d.push(Diagnostic::warning(format!("{path}.frames"), "'frames' replaces start/end/duration; drop one of them"));
+                }
+                let [a, b] = match f {
+                    spec::Frames::One(a) => [*a, a + 1.0],
+                    spec::Frames::Range(r) => *r,
+                };
+                if b <= a {
+                    self.d.push(Diagnostic::error(format!("{path}.frames"), format!("empty range [{a}, {b}): the end frame is excluded, so use [{a}, {}] for one frame", a + 1.0)));
+                }
+                end = pc.t0 + (b / self.fps as f64) as f32;
+                pc.t0 + (a / self.fps as f64) as f32
+            }
+            None => start,
+        };
         if start >= self.scene_dur && self.scene_dur < 1e5 && pc.t0 == 0.0 {
             self.d.push(Diagnostic::warning(
                 format!("{path}.start"),
@@ -2529,6 +2642,14 @@ impl C<'_> {
         let ref_size = [gw.unwrap_or(pc.size[0]), gh.unwrap_or(pc.size[1])];
         let cpc = PCtx { size: ref_size, t0: start, end, delay: 0.0, index: 0, count: 0, in_box: true };
         let kids_spec = l.children.as_deref().unwrap_or(&[]);
+        for (k, ch) in kids_spec.iter().enumerate() {
+            if ch.x.is_some() || ch.y.is_some() {
+                self.d.push(Diagnostic::warning(
+                    format!("{path}.children[{k}]"),
+                    "x/y on a box child are ignored: the box lays its children out (use the box's style.align/justify/gap, or put the layer in a group to place it freely)",
+                ));
+            }
+        }
         let mut kids = self.layers(kids_spec, &format!("{path}.children"), cpc, l.stagger.as_ref());
         let gap = st.gap.as_ref().map(|g| self.len_c(g, &format!("{sp}.gap"), ref_size[0], 16.0)).unwrap_or(16.0);
         let pad: [f32; 4] = match &st.padding {

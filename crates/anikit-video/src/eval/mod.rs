@@ -508,7 +508,7 @@ impl CompTime {
             t.rem_euclid(dur)
         } else {
             // Hold the last frame (layers end exclusively at the duration).
-            t.clamp(0.0, (dur - 1e-4).max(0.0))
+            t.clamp(0.0, (dur - 5e-4).max(0.0))
         }
     }
 }
@@ -1099,7 +1099,9 @@ impl Evaluator {
 
     fn emit_node_inner(&self, n: &Node, cx: &Cx, parent: &Affine, psize: [f32; 2], _po: f32, out: &mut Vec<Op>) {
         let st = cx.scene_t;
-        if st < n.start || st >= n.end {
+        // Half-open [start, end), with both edges nudged by 0.1 ms so float noise in
+        // `start + 1/fps` can't show a one-frame layer on two frames.
+        if st < n.start - 1e-4 || st >= n.end - 1e-4 {
             return;
         }
         let lt = st - n.start;
