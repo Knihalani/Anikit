@@ -66,7 +66,7 @@ def pts(ix, f):
 
 layers = []
 def frame_layer(t0, items, extra=None):
-    L = {"draw": items, "start": round(t0, 4), "end": round(t0 + 1.0 / FPS - 1e-4, 4)}
+    L = {"draw": items, "start": round(t0 - 0.25 / FPS, 5), "end": round(t0 + 0.75 / FPS, 5)}
     if extra: L.update(extra)
     layers.append(L)
 
@@ -82,7 +82,7 @@ def text(s, x, y, size, color=INK, font="Libre Franklin", weight=300, start=0, e
 # ------------------------------------------------------------------ timeline
 A0, A1 = 0.0, 3.4          # the breath (one year)
 B0, B1 = 3.4, 4.0          # the year shrinks into its place on the spiral
-S0, S1 = 3.7, 7.4          # 68 years spiral out
+S0, S1 = 3.5, 7.4          # 68 years spiral out
 M0, M1 = 7.6, 9.2          # the spiral unrolls into the curve
 END = 12.4
 
@@ -99,7 +99,7 @@ for m in range(12):
     x0, y0 = CX + 432 * math.cos(a), CY - 432 * math.sin(a)
     x1, y1 = CX + 446 * math.cos(a), CY - 446 * math.sin(a)
     ring.append({"line": [round(x0, 1), round(y0, 1), round(x1, 1), round(y1, 1)], "stroke": MUTED, "width": 1.5})
-layers.append({"draw": ring, "start": 0.0, "end": B1, "animate": [{"from": {"opacity": 0}, "duration": 0.6},
+layers.append({"draw": ring, "start": 0.0, "end": B1, "animate": [{"from": {"opacity": 0.4}, "duration": 0.4},
                {"to": {"opacity": 0}, "at": B0 - 0.0, "duration": 0.4}]})
 for m in range(12):
     a = math.pi / 2 - 2 * math.pi * (m + 0.5) / 12
@@ -110,7 +110,7 @@ nA = len(LAST)
 for f in range(int(A0 * FPS), int(B1 * FPS)):
     t = f / FPS
     if t < B0:
-        u = ease_io((t - 0.25) / 2.4)
+        u = ease_io((t + 0.15) / 2.6)
         FL = fine(LAST)
         k = max(2, int(round(u * (len(FL) - 1))) + 1)
         P = P2(FL[:k], rA)
@@ -134,9 +134,9 @@ for i, lab, dx, dy in ((pk, "May 2026  %.1f" % D[pk][3], 44, 30), (tr, "Oct 2025
     x, y = pA(D[i])
     text(lab, x + dx, y + dy, 22, INK, font="IBM Plex Mono", weight=400, start=2.0 if i == pk else 0.6, end=B0, fade=0.3)
 
-text("ONE YEAR AT MAUNA LOA", 120, 150, 22, "#FF8A6A", font="IBM Plex Mono", weight=400, start=0.1, end=B0 + 0.2,
+text("ONE YEAR AT MAUNA LOA", 120, 150, 22, "#FF8A6A", font="IBM Plex Mono", weight=400, start=0.0, end=B0 + 0.2,
      letterSpacing="0.16em")
-text("Every year,\nthe planet\ntakes a breath.", 120, 200, 76, INK, weight=300, start=0.25, end=B0 + 0.2,
+text("Every year,\nthe planet\ntakes a breath.", 120, 200, 76, INK, weight=300, start=0.0, end=B0 + 0.2,
      letterSpacing="-0.02em")
 text("Each spring the northern forests leaf out\nand pull carbon from the air. From May to\nSeptember, carbon dioxide falls by about %.0f ppm.\nIn winter, it all comes back." % (D[pk][3] - D[LAST[-1]][3]),
      120, 520, 27, "#B9C1CA", weight=300, start=0.9, end=B0 + 0.2, lineHeight=1.42)
@@ -169,10 +169,10 @@ for f in range(int(S0 * FPS), int(M0 * FPS)):
     # live year + ppm readout (exact monthly values from the data)
     d = D[min(N - 1, (kf - 1) // SUB)]
     layers.append({"text": str(d[0]), "font": "IBM Plex Mono", "size": 132, "weight": 400, "color": ycol(d[2]),
-                   "x": 120, "y": 430, "anchor": "topLeft", "start": round(t, 4), "end": round(t + 1 / FPS - 1e-4, 4),
+                   "x": 120, "y": 430, "anchor": "topLeft", "start": round(t - 0.25 / FPS, 5), "end": round(t + 0.75 / FPS, 5),
                    "letterSpacing": "-0.03em"})
     layers.append({"text": "%.1f ppm" % d[3], "font": "IBM Plex Mono", "size": 40, "weight": 400, "color": INK,
-                   "x": 126, "y": 600, "anchor": "topLeft", "start": round(t, 4), "end": round(t + 1 / FPS - 1e-4, 4)})
+                   "x": 126, "y": 600, "anchor": "topLeft", "start": round(t - 0.25 / FPS, 5), "end": round(t + 0.75 / FPS, 5)})
 
 text("68 YEARS, 68 BREATHS", 120, 150, 22, "#FF8A6A", font="IBM Plex Mono", weight=400, start=S0, end=M0 + 0.1, letterSpacing="0.16em")
 text("Each loop is a year.\nEach sits a little\nfurther out.", 120, 200, 56, INK, weight=300, start=S0 + 0.1, end=M0 + 0.1, letterSpacing="-0.015em")

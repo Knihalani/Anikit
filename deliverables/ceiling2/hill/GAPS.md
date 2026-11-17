@@ -20,7 +20,23 @@ The idea and the staging hold up: the scale contrast in the eye shot, the reveal
 ### Iteration 2 (after the first comparison)
 Light is now drawn as a shape: the lantern throws a hard-edged, stippled wedge of warm light up the creature's face, Hilda-style, instead of a radial glow. The blacks are deeper, and silhouettes get a dry-brush edge (`brushEdge`: bristle streaks along a direction, re-drawn on twos). The eye shot gained most. Hand-drawn interior line and real character animation are still missing (gaps 1–2).
 
+### Blind judge (scripts/judge.py, -v-judge branch)
+Run 1: **FAIL, 3.62** (refs: Mad Men, Tintin and Spider-Verse titles, mean 8.71; judged pro 0/3). The critic's defects:
+- a blank flat frame at about 60–70%;
+- the light wedge is a hard polygon with no volumetric falloff;
+- the eye opens as a vector morph with no lid squash;
+- the walk is stiff and moves as one rigid silhouette;
+- the hatch texture is uniform and procedural;
+- the snow is one layer of soft dots;
+- the title is a generic italic serif that competes with the reveal.
+
+**The blank frames were real, and an engine bug** (gap 0 below).
+
+Run 2, after the clean render: **FAIL, 3.75** (ref mean 8.50). Removing the defect barely moved the score, so the gap is craft and idea execution, not the blank frames.
+
 ## Gaps, ranked (most limiting first)
+
+0. **P0 render-cache bug: stale or blank chunks are spliced into renders.** The final had 3 flat background-colour frames (8.12 s, 8.92 s, 8.96 s). `still` at those exact times is correct, and so is `render --from 7.8 --to 9.4`. A full re-render reported `render cache: reused 16/16 chunks` and reproduced the blank frames byte for byte. With `ANIKIT_RENDER_CACHE=0`, the render is clean, and exactly those 3 frames differ. So some earlier render produced blank frames, possibly a transient or race in shader evaluation, and the chunk cache then preserved them indefinitely. *Workaround:* `ANIKIT_RENDER_CACHE=0` for finals. *Want:* the cache key covers shader file contents, the cache validates chunks (no flat or NaN frames), and the render-time blank frame itself is found and fixed.
 
 1. **No painterly / drawn rendering primitive for shader-built worlds.** `brush`/`sketch`/`hatch` are separate vector components, so they can't follow a shader's shapes or be used *inside* GLSL. Every surface texture had to be faked with hash noise (stipple and fur dashes), and it reads as "procedural", not painted.
    *Workaround:* `spray()` (12 fps re-seeded stipple) and a tangential-dash fur pattern.

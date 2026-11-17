@@ -13,6 +13,19 @@
 ## Honest verdict next to the references
 The cutting, the stains and the reveal work, and it reads as a real organism growing on the beat. At 100% the printed-plate cuts look engraved. Jenson's work is in another league for organic complexity: agents (physarum) in 3D with volumetric light, against our 2D Gray-Scott, which forms simple worms and rings at 1,200 generations. The engine's per-frame step budget and the lack of particle↔field coupling are why.
 
+### Blind judge
+Run 1: **FAIL, 4.25** (refs: FITC Tokyo, BBC Two vertical ident, Kurzgesagt; mean 7.37). The critic's defects:
+- a moiré-striped blob, which is a fresh spore with dense contour lines;
+- terraced iso-contours read as posterisation;
+- grain over flat darks;
+- zoomed cuts are soft (upscaled simulation);
+- arbitrary crops of the dish;
+- growth is invisible between 1/6 s pairs, so the motion comes only from cuts and palette flips;
+- hard palette swaps;
+- tiny end text.
+
+All of these are fair.
+
 ## Gaps, ranked
 1. **No agent/particle simulation that writes into a field.** Physarum (Jenson), boids leaving trails and ink diffusion all need particles depositing into a texture and reading it back. Fragment buffers can only *gather*, never *scatter*. scene3d particles can't read or write a 2D field either. *Workaround:* Gray-Scott, which is gather-only. *Want:* a `sim` layer with N agents (positions in a float buffer), a deposit pass (splat to a buffer) and a sense pass, or a scatter/atomic-add op for buffers.
 2. **Only 4 buffer passes a frame cap the simulation speed.** A Gray-Scott pattern needs thousands of steps, so this one gets 120 a second. *Workaround:* a coarse stencil (`SC = 3.6` px offsets plus 1-px coupling) to make the pattern grow 3.6× faster in screen space. *Want:* `"steps": N` on a buffer (run the pass N times a frame), or buffer ping-pong loops.
