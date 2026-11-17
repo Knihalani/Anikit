@@ -372,5 +372,5 @@ fn dither_keeps_exact_values_and_breaks_bands() {
     let right: Vec<f32> = (0..64 * 64).filter(|i| i % 64 >= 32).map(|i| px[i * 4] as f32).collect();
     let mean = right.iter().sum::<f32>() / right.len() as f32;
     assert!((mean - 0.3017 * 255.0).abs() < 0.05, "{mean}");
-    assert!(right.iter().any(|&v| v == 76.0) && right.iter().any(|&v| v == 77.0));
+    assert!(right.contains(&76.0) && right.contains(&77.0));
 }
