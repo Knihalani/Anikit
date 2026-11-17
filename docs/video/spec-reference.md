@@ -236,6 +236,7 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `letterSpacing` | length or `"0.05em"` | `0` | |
 | `uppercase` | bool | `false` | |
 | `maxLines` | integer | none | Truncates with an ellipsis. |
+| `textBoxTrim` | bool | `false` (`true` in a grid `cell`) | Align by cap height and last baseline instead of the line box (CSS `text-box: cap alphabetic`). |
 | `fit` | bool | `false` | `true` shrinks the size (never grows it) so the widest line fits `width` (default 85% of the parent), keeping your line breaks. Use it for big kinetic words on 9:16. |
 | `stroke` | colour or stroke | none | Outlined text: `"#000"` or `{ "color": "$accent", "width": 3 }` (px). Drawn under the fill; with `"color": "none"` only the outline shows. |
 | `split` | `chars` / `words` / `lines` | none | Splits the text into units so `enter`/`exit` presets stagger across them (kinetic type). |

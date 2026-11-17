@@ -1384,6 +1384,16 @@ impl C<'_> {
             },
         };
 
+        if l.text_box_trim == Some(true) {
+            if let Kind::Text { layout, .. } = &n.kind {
+                // Re-anchor so the anchor's y refers to the cap-top…baseline box.
+                let h = n.base[prop::H].max(1e-3);
+                let (top, bot) = (layout.cap_top, layout.last_baseline);
+                if bot > top {
+                    n.anchor[1] = (top + n.anchor[1] * (bot - top)) / h;
+                }
+            }
+        }
         if l.cell.is_none() && !pc.in_box {
             self.near_grid_check(l, path, &n, pc.size);
         }
@@ -2220,6 +2230,9 @@ impl C<'_> {
             o.width = Some(Num::Num(w as f64));
         }
         if is_text {
+            if o.text_box_trim.is_none() {
+                o.text_box_trim = Some(true);
+            }
             if o.align.is_none() {
                 o.align = Some(if anchor[0] < 0.25 { "left" } else if anchor[0] > 0.75 { "right" } else { "center" }.into());
             }

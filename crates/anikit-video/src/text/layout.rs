@@ -421,6 +421,10 @@ pub struct TextLayout {
     pub height: f32,
     /// Base font size actually used (differs from the style's after auto-fit).
     pub font_size: f32,
+    /// Cap-height line of the first line and the last line's baseline (layout y): the box
+    /// `textBoxTrim` aligns (CSS `text-box: cap alphabetic`).
+    pub cap_top: f32,
+    pub last_baseline: f32,
     /// True when `max_lines` cut the text.
     pub truncated: bool,
     /// Block-wide fill overriding run colours (gradient text).
@@ -909,6 +913,9 @@ impl FontStore {
                 };
                 let size = run.font_size();
                 let fm = *run.font_metrics();
+                if li == 0 && out.cap_top == 0.0 {
+                    out.cap_top = m.baseline - fm.cap_height.filter(|c| *c > 0.0).unwrap_or(size * 0.7);
+                }
                 let top = m.baseline - fm.ascent;
                 let h = fm.ascent + fm.descent;
                 for cl in run.visual_clusters() {
@@ -991,6 +998,7 @@ impl FontStore {
             if line_text.start == usize::MAX {
                 line_text = line.text_range().start..line.text_range().start;
             }
+            out.last_baseline = m.baseline;
             out.lines.push(Unit {
                 rect: [m.offset + m.inline_min_coord, m.block_min_coord, m.advance - m.hanging_advance, m.block_max_coord - m.block_min_coord],
                 baseline: m.baseline,
