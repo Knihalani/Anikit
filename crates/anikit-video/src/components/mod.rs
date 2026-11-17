@@ -46,6 +46,7 @@ pub mod three;
 pub mod globe;
 pub mod transitions;
 pub mod ui;
+pub mod uikit;
 pub mod visualizer;
 pub mod ken_burns;
 pub mod tiles;
