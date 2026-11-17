@@ -13,7 +13,7 @@ use crate::voice::Voice;
 use std::sync::Arc;
 
 /// Control-rate period in frames.
-pub const SUB: usize = 32;
+pub const SUB: usize = 64;
 /// Zero frames before and after every sample buffer.
 pub const PAD: usize = 16;
 /// Half the size of a loop-stitch window.
@@ -390,64 +390,122 @@ fn lfo_value(l: &Lfo, t: f32) -> f32 {
     }
 }
 
-/// Zero-delay-feedback state-variable filter (Simper / TPT form).
+/// Zero-delay-feedback state-variable filter (Simper / TPT form), run
+/// [`SB`] samples at a time in state-space form so the per-sample feedback
+/// chain does not bound throughput: for a block, `y = P·s + H·x` and
+/// `s' = A^SB·s + G·x`, with the matrices derived from the one-sample
+/// recurrence in `f64` (`H` is the Toeplitz matrix of the impulse response).
+/// Output lanes are independent, so LLVM vectorises them; the arithmetic
+/// order is fixed, so results are identical with or without SIMD.
 #[derive(Clone, Copy, Default)]
 struct Svf {
-    a1: f32,
-    a2: f32,
-    a3: f32,
-    k: f32,
-    ic1: [f32; 2],
-    ic2: [f32; 2],
+    p0: [f32; SB],
+    p1: [f32; SB],
+    /// `[0; SB−1]` followed by the impulse response `h[0..SB]`.
+    imp: [f32; 2 * SB - 1],
+    m: [[f32; 2]; 2],
+    g: [[f32; 2]; SB],
+    ic: [[f32; 2]; 2],
+}
+
+/// Filter block length.
+const SB: usize = 8;
+
+/// Sum of 8 products in a fixed tree order.
+#[inline(always)]
+fn dot8(a: &[f32], x: &[f32; 8]) -> f32 {
+    ((a[0] * x[0] + a[1] * x[1]) + (a[2] * x[2] + a[3] * x[3])) + ((a[4] * x[4] + a[5] * x[5]) + (a[6] * x[6] + a[7] * x[7]))
 }
 
 impl Svf {
-    fn set(&mut self, fc_hz: f32, q: f32, rate: f32) {
-        let fc = fc_hz.clamp(5.0, 0.45 * rate);
-        let g = (std::f32::consts::PI * fc / rate).tan();
-        let k = 1.0 / q.max(0.05);
-        self.a1 = 1.0 / (1.0 + g * (g + k));
-        self.a2 = g * self.a1;
-        self.a3 = g * self.a2;
-        self.k = k;
-    }
-    #[inline]
-    fn run(&mut self, kind: FilterKind, ch: usize, x: &mut [f32]) {
-        let (a1, a2, a3, k) = (self.a1, self.a2, self.a3, self.k);
-        let (mut ic1, mut ic2) = (self.ic1[ch], self.ic2[ch]);
-        if kind == FilterKind::Off {
-            return;
+    fn set(&mut self, kind: FilterKind, fc_hz: f32, q: f32, rate: f32) {
+        let fc = (fc_hz as f64).clamp(5.0, 0.45 * rate as f64);
+        let g = (std::f64::consts::PI * fc / rate as f64).tan();
+        let k = 1.0 / (q as f64).max(0.05);
+        let a1 = 1.0 / (1.0 + g * (g + k));
+        let a2 = g * a1;
+        let a3 = g * a2;
+        // s' = A s + B x ; y = C s + D x   (s = [ic1, ic2])
+        let (a00, a01, a10, a11) = (2.0 * a1 - 1.0, -2.0 * a2, 2.0 * a2, 1.0 - 2.0 * a3);
+        let (b0, b1) = (2.0 * a2, 2.0 * a3);
+        let (c, d) = match kind {
+            FilterKind::Lp => ([a2, 1.0 - a3], a3),
+            FilterKind::Bp => ([a1, -a2], a2),
+            FilterKind::Hp => ([-k * a1 - a2, k * a2 - (1.0 - a3)], 1.0 - k * a2 - a3),
+            _ => ([-k * a1, k * a2], 1.0 - k * a2),
+        };
+        // row vector r = C·A^k and column vector v = A^k·B, k = 0..SB
+        let mut r = c;
+        let mut v = [b0, b1];
+        let mut vs = [[0f64; 2]; SB];
+        self.imp = [0.0; 2 * SB - 1];
+        self.imp[SB - 1] = d as f32;
+        for kk in 0..SB {
+            self.p0[kk] = r[0] as f32;
+            self.p1[kk] = r[1] as f32;
+            if kk + 1 < SB {
+                // h[kk+1] = C·A^kk·B
+                self.imp[SB + kk] = (r[0] * b0 + r[1] * b1) as f32;
+            }
+            vs[kk] = v;
+            r = [r[0] * a00 + r[1] * a10, r[0] * a01 + r[1] * a11];
+            v = [a00 * v[0] + a01 * v[1], a10 * v[0] + a11 * v[1]];
         }
-        for s in x.iter_mut() {
-            let v0 = *s;
-            let v3 = v0 - ic2;
-            let v1 = a1 * ic1 + a2 * v3;
-            let v2 = ic2 + a2 * ic1 + a3 * v3;
-            ic1 = 2.0 * v1 - ic1;
-            ic2 = 2.0 * v2 - ic2;
-            *s = match kind {
-                FilterKind::Lp => v2,
-                FilterKind::Hp => v0 - k * v1 - v2,
-                FilterKind::Bp => v1,
-                _ => v0 - k * v1,
-            };
+        // g[j] = A^(SB−1−j)·B
+        for j in 0..SB {
+            let w = vs[SB - 1 - j];
+            self.g[j] = [w[0] as f32, w[1] as f32];
+        }
+        // A^SB by repeated squaring (SB = 8)
+        let sq = |m: [f64; 4]| {
+            [
+                m[0] * m[0] + m[1] * m[2],
+                m[0] * m[1] + m[1] * m[3],
+                m[2] * m[0] + m[3] * m[2],
+                m[2] * m[1] + m[3] * m[3],
+            ]
+        };
+        let an = sq(sq(sq([a00, a01, a10, a11])));
+        self.m = [[an[0] as f32, an[2] as f32], [an[1] as f32, an[3] as f32]];
+    }
+
+    #[inline(always)]
+    fn run(&mut self, ch: usize, x: &mut [f32; SUB]) {
+        let mut s = self.ic[ch];
+        let (p0, p1, imp, m, g) = (&self.p0, &self.p1, &self.imp, &self.m, &self.g);
+        let gc0 = [g[0][0], g[1][0], g[2][0], g[3][0], g[4][0], g[5][0], g[6][0], g[7][0]];
+        let gc1 = [g[0][1], g[1][1], g[2][1], g[3][1], g[4][1], g[5][1], g[6][1], g[7][1]];
+        for blk in x.chunks_exact_mut(SB) {
+            let xs: [f32; SB] = blk.try_into().unwrap();
+            // reversed input so that y[k] = Σ_j imp[SB−1+k−j]·x[j] reads imp forwards
+            let xr = [xs[7], xs[6], xs[5], xs[4], xs[3], xs[2], xs[1], xs[0]];
+            let mut y = [0f32; SB];
+            for k in 0..SB {
+                y[k] = (p0[k] * s[0] + p1[k] * s[1]) + dot8(&imp[k..k + SB], &xr);
+            }
+            let n0 = (m[0][0] * s[0] + m[1][0] * s[1]) + dot8(&gc0, &xs);
+            let n1 = (m[0][1] * s[0] + m[1][1] * s[1]) + dot8(&gc1, &xs);
+            s = [n0, n1];
+            blk.copy_from_slice(&y);
         }
         // denormal guard
-        if ic1.abs() < 1e-20 {
-            ic1 = 0.0;
+        for v in s.iter_mut() {
+            if v.abs() < 1e-20 {
+                *v = 0.0;
+            }
         }
-        if ic2.abs() < 1e-20 {
-            ic2 = 0.0;
-        }
-        self.ic1[ch] = ic1;
-        self.ic2[ch] = ic2;
+        self.ic[ch] = s;
     }
 }
 
-/// One sounding sample layer.
+/// One sounding sample layer. Audio is produced one control period
+/// ([`SUB`] frames of voice time) at a time into an internal buffer, so the
+/// output never depends on how the caller splits blocks and every inner loop
+/// runs over a fixed-size array.
 pub struct Osc {
     p: OscParams,
     interp: Interp,
+    nch: usize,
     pos: u64,
     inc: u64,
     bucket: usize,
@@ -455,9 +513,7 @@ pub struct Osc {
     vol: VolEnv,
     menv: ModEnv,
     t: f32, // voice time in seconds at the next control update
-    sub_left: usize,
-    g: f32, // gain at the start of the current control period
-    g_step: f32,
+    g: f32, // gain at the end of the last period
     gl: f32,
     gr: f32,
     svf: Svf,
@@ -466,7 +522,10 @@ pub struct Osc {
     kill_n: f32, // frames since kill() (exact integers in f32)
     kill_step: f32,
     ended: bool,
+    finished: bool,
     static_pitch: bool,
+    out: [[f32; SUB]; 2],
+    rd: usize,
 }
 
 const FADE: f32 = 0.005;
@@ -501,23 +560,28 @@ impl Osc {
         }
         let static_pitch = p.mod_env_pitch == 0.0 && p.mod_lfo_pitch == 0.0 && p.vib_lfo_pitch == 0.0;
         let inc = Self::to_fixed(p.ratio);
-        let (gl, gr) = crate::voice::pan_gains(p.pan);
+        let nch = p.sample.ch.len().clamp(1, 2);
+        let (mut gl, mut gr) = crate::voice::pan_gains(p.pan);
+        if nch == 2 {
+            // stereo samples: pan acts as balance, unity at centre
+            gl *= std::f32::consts::SQRT_2;
+            gr *= std::f32::consts::SQRT_2;
+        }
         let mut svf = Svf::default();
         if p.filter != FilterKind::Off {
-            svf.set(cents_to_hz(p.fc), p.q, p.rate);
+            svf.set(p.filter, cents_to_hz(p.fc), p.q, p.rate);
         }
         Osc {
             pos: ((p.start as u64) + PAD as u64) << 32,
             inc,
             bucket: interp::bucket(p.ratio),
             interp,
+            nch,
             stitch,
             vol: VolEnv::new(p.vol_env),
             menv: ModEnv::new(p.mod_env),
             t: 0.0,
-            sub_left: 0,
             g: 0.0,
-            g_step: 0.0,
             gl,
             gr,
             svf,
@@ -526,7 +590,10 @@ impl Osc {
             kill_n: 0.0,
             kill_step: 0.0,
             ended: false,
+            finished: false,
             static_pitch,
+            out: [[0.0; SUB]; 2],
+            rd: SUB,
             p,
         }
     }
@@ -560,17 +627,17 @@ impl Osc {
         self.p.exclusive
     }
 
-    fn control(&mut self) {
+    /// Advance the control state by one period; returns the gain target.
+    fn control(&mut self) -> f32 {
         let dt = SUB as f32 / self.p.rate;
         let tmid = self.t + 0.5 * dt;
         self.vol.advance(dt);
         self.menv.advance(dt);
         self.t += dt;
         let menv = self.menv.v;
-        let mlfo = lfo_value(&self.p.mod_lfo, tmid);
-        let vlfo = lfo_value(&self.p.vib_lfo, tmid);
-
+        let mlfo = if self.p.mod_lfo.freq > 0.0 { lfo_value(&self.p.mod_lfo, tmid) } else { 0.0 };
         if !self.static_pitch {
+            let vlfo = lfo_value(&self.p.vib_lfo, tmid);
             let cents = menv * self.p.mod_env_pitch + mlfo * self.p.mod_lfo_pitch + vlfo * self.p.vib_lfo_pitch;
             let r = self.p.ratio * ((cents / 1200.0) as f64).exp2();
             self.inc = Self::to_fixed(r);
@@ -578,36 +645,22 @@ impl Osc {
         }
         if self.p.filter != FilterKind::Off {
             let fc = self.p.fc + menv * self.p.mod_env_fc + mlfo * self.p.mod_lfo_fc;
-            if fc != self.fc_last {
+            if (fc - self.fc_last).abs() >= 3.0 {
                 self.fc_last = fc;
-                self.svf.set(cents_to_hz(fc), self.p.q, self.p.rate);
+                self.svf.set(self.p.filter, cents_to_hz(fc), self.p.q, self.p.rate);
             }
         }
-        let mut cb = self.p.atten - mlfo * self.p.mod_lfo_vol;
-        cb = cb.max(-200.0);
-        let mut target = self.p.gain * self.vol.value() * cb_to_amp(cb);
         if self.vol.stage == Stage::Done {
-            target = 0.0;
+            return 0.0;
         }
-        self.g_step = (target - self.g) / SUB as f32;
-    }
-
-    /// Gain at the end of the current control period.
-    #[inline]
-    fn g_end(&self) -> f32 {
-        self.g + self.g_step * SUB as f32
-    }
-
-    fn done(&self) -> bool {
-        self.ended
-            || (self.vol.stage == Stage::Done && self.g <= 1e-9 && self.sub_left == 0)
-            || self.kill_step * self.kill_n >= 1.0
+        let cb = (self.p.atten - mlfo * self.p.mod_lfo_vol).max(-200.0);
+        self.p.gain * self.vol.value() * cb_to_amp(cb)
     }
 
     /// Fill `out[c][..n]` with interpolated sample frames; returns frames
     /// produced (fewer than `n` when the sample ends).
     fn read(&mut self, out: &mut [[f32; SUB]; 2], n: usize) -> usize {
-        let nch = self.p.sample.ch.len().min(2);
+        let nch = self.nch;
         let lft = interp::left(self.interp) as u64;
         let rgt = interp::right(self.interp) as u64;
         let pad = PAD as u64;
@@ -645,16 +698,16 @@ impl Osc {
             let k = dist.div_ceil(self.inc) as usize;
             let m = k.min(n - done).max(1);
             let mut np = self.pos;
-            for c in 0..nch {
+            for (c, oc) in out.iter_mut().enumerate().take(nch) {
                 let (data, pos): (&[f32], u64) = if use_stitch {
                     (&self.stitch[c][..], self.pos - (base << 32))
                 } else {
                     (&self.p.sample.ch[c][..], self.pos)
                 };
-                let o = &mut out[c][done..done + m];
+                let o = &mut oc[done..done + m];
                 let r = match self.interp {
                     Interp::Cubic => interp::cubic(data, pos, self.inc, o),
-                    Interp::Sinc => interp::sinc(data, &interp::tables()[self.bucket], pos, self.inc, o),
+                    Interp::Sinc => interp::sinc(data, interp::table(self.bucket), pos, self.inc, o),
                 };
                 np = if use_stitch { r + (base << 32) } else { r };
             }
@@ -664,65 +717,99 @@ impl Osc {
         done
     }
 
+    /// Produce the next control period into `self.out`.
+    fn produce(&mut self) {
+        #[cfg(target_arch = "x86_64")]
+        if interp::has_avx2() {
+            // SAFETY: the CPU supports AVX2 (checked at run time). No FMA is
+            // enabled, so results are identical to the baseline build.
+            unsafe { self.produce_avx2() };
+            return;
+        }
+        self.produce_impl();
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[target_feature(enable = "avx2")]
+    unsafe fn produce_avx2(&mut self) {
+        self.produce_impl();
+    }
+
+    #[inline(always)]
+    fn produce_impl(&mut self) {
+        let target = self.control();
+        let mut buf = [[0f32; SUB]; 2];
+        let got = self.read(&mut buf, SUB);
+        let nch = self.nch;
+        if self.p.filter != FilterKind::Off {
+            for (c, b) in buf.iter_mut().enumerate().take(nch) {
+                self.svf.run(c, b);
+            }
+        }
+        // linear gain ramp from the previous period's end to the new target
+        let g0 = self.g;
+        let gs = (target - g0) * (1.0 / SUB as f32);
+        let mut ramp = [0f32; SUB];
+        for (i, v) in ramp.iter_mut().enumerate() {
+            *v = g0 + gs * (i + 1) as f32;
+        }
+        if self.kill_step > 0.0 {
+            let (kn, ks) = (self.kill_n, self.kill_step);
+            for (i, v) in ramp.iter_mut().enumerate() {
+                *v *= (1.0 - ks * (kn + (i + 1) as f32)).max(0.0);
+            }
+            self.kill_n = kn + SUB as f32;
+        }
+        for (b, o) in buf.iter().zip(self.out.iter_mut()).take(nch) {
+            for ((o, x), g) in o.iter_mut().zip(b.iter()).zip(ramp.iter()) {
+                *o = x * g;
+            }
+        }
+        self.g = target;
+        self.rd = 0;
+        if got < SUB
+            || self.ended
+            || (self.vol.stage == Stage::Done && target == 0.0)
+            || self.kill_step * self.kill_n >= 1.0
+        {
+            self.finished = true;
+        }
+    }
+
     /// Render additively into `l`/`r`. Returns `false` once finished.
     pub fn render(&mut self, l: &mut [f32], r: &mut [f32]) -> bool {
         let n = l.len().min(r.len());
         let mut off = 0;
-        let mut buf = [[0f32; SUB]; 2];
         while off < n {
-            if self.done() {
-                return false;
-            }
-            if self.sub_left == 0 {
-                self.control();
-                self.sub_left = SUB;
-            }
-            let m = self.sub_left.min(n - off);
-            let got = self.read(&mut buf, m);
-            if self.p.filter != FilterKind::Off {
-                for c in 0..self.p.sample.ch.len().min(2) {
-                    self.svf.run(self.p.filter, c, &mut buf[c][..got]);
+            if self.rd == SUB {
+                if self.finished {
+                    return false;
                 }
+                self.produce();
             }
-            // gain ramp × pan (× kill fade); indices count from the start of
-            // the control period so any block split gives identical samples
-            let j = (SUB - self.sub_left) as f32;
-            let (g0, gs) = (self.g, self.g_step);
-            let (kn, ks) = (self.kill_n, self.kill_step);
-            let lo = &mut l[off..off + got];
-            let ro = &mut r[off..off + got];
+            let m = (SUB - self.rd).min(n - off);
             let (gl, gr) = (self.gl, self.gr);
-            if self.p.sample.ch.len() >= 2 {
-                let (bl, br) = buf.split_at(1);
-                for i in 0..got {
-                    let fi = (i + 1) as f32;
-                    let g = (g0 + gs * (j + fi)) * (1.0 - ks * (kn + fi)).max(0.0);
-                    lo[i] += bl[0][i] * g * gl * std::f32::consts::SQRT_2;
-                    ro[i] += br[0][i] * g * gr * std::f32::consts::SQRT_2;
+            let lo = &mut l[off..off + m];
+            let ro = &mut r[off..off + m];
+            let src0 = &self.out[0][self.rd..self.rd + m];
+            if self.nch == 2 {
+                let src1 = &self.out[1][self.rd..self.rd + m];
+                for (o, x) in lo.iter_mut().zip(src0) {
+                    *o += x * gl;
+                }
+                for (o, x) in ro.iter_mut().zip(src1) {
+                    *o += x * gr;
                 }
             } else {
-                for i in 0..got {
-                    let fi = (i + 1) as f32;
-                    let g = (g0 + gs * (j + fi)) * (1.0 - ks * (kn + fi)).max(0.0);
-                    let x = buf[0][i] * g;
-                    lo[i] += x * gl;
-                    ro[i] += x * gr;
+                for ((ol, or), x) in lo.iter_mut().zip(ro.iter_mut()).zip(src0) {
+                    *ol += x * gl;
+                    *or += x * gr;
                 }
             }
-            if ks > 0.0 {
-                self.kill_n = kn + m as f32;
-            }
-            self.sub_left -= m;
-            if self.sub_left == 0 {
-                self.g = self.g_end();
-            }
+            self.rd += m;
             off += m;
-            if got < m {
-                self.ended = true;
-                return false;
-            }
         }
-        !self.done()
+        !(self.finished && self.rd == SUB)
     }
 }
 
