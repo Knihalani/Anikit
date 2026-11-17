@@ -129,7 +129,7 @@ KEYS    instrumentation  bpm  key "Am" "F# dorian"  meter "6/8"  swing 0..1 (0.1
         sfx [{"sfx":"riser","at":"@bar5"}]  (aligned by hit point: a riser PEAKS at "at")   end ring|fade|cut
         master {"lufs":-14,"ceiling":-1,"reverb":"hall"}   video-only: at (s), gain (dB), duck (dB under voice, default 10)
         underscore: true drops lead/countermelody (automatic under voice-over; false keeps the melody)
-        scores to picture: scene cuts move section starts and get cymbal accents (followCuts:false to stop)
+        scores to picture: scene cuts move section starts, get cymbal accents and swell into bigger sections (followCuts:false to stop)
 TRACKS  (add to a style, or write everything yourself)
   {"inst":"piano","chords":"C Am F G","play":"broken"}        play: pad block stabs arp[-updown][/16] strum pulse/8 power broken x..x..x.
   {"inst":"bass","chords":"C Am F G","bass":"walk"}           bass: root half pulse octave walk house synco rock arp 808

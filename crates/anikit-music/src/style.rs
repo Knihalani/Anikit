@@ -1178,6 +1178,18 @@ pub fn compose(spec: &MusicSpec, video_length: Option<f64>) -> Result<Arrangemen
                 }
             }
         }
+        // A cut that opens a bigger section gets a reverse cymbal swelling into it
+        // (risers already cover drops in riser styles).
+        if spec.follow_cuts != Some(false) {
+            for (si, s) in sections.iter().enumerate().skip(1) {
+                let at = grid.secs(s.bar * bpb);
+                let rise = s.energy > sections[si - 1].energy + 0.15;
+                let riser_here = st.riser && s.energy >= 0.85 && sections[si - 1].energy < s.energy - 0.2;
+                if rise && !riser_here && spec.cuts.iter().any(|&c| (c - at).abs() <= 0.3 * grid.beat()) {
+                    sfx.push(SfxPlan { name: "reverse-cymbal".into(), at, gain: -12.0, params: serde_json::json!({ "seed": seed }) });
+                }
+            }
+        }
         // Risers into big sections, impacts on hits and drops.
         for (si, s) in sections.iter().enumerate().skip(1) {
             let prev = &sections[si - 1];
@@ -1603,9 +1615,24 @@ mod cut_tests {
         assert!(a.sections.iter().any(|s| s.bar == 9.0 && s.name == "chorus"), "{:?}", a.sections);
         let d = a.tracks.iter().find(|t| t.role == "drums").unwrap();
         assert!(d.notes.iter().any(|n| n.t == 28.0 && n.key == 57.0), "cymbal on the beat nearest 13.9 s");
+        // Pop already has a riser into that chorus: no extra swell.
+        assert!(!a.sfx.iter().any(|x| x.name == "reverse-cymbal"));
         let off = MusicSpec::from_json(r#"{"style":"pop","bpm":120,"length":"40s","cuts":[13.9],"followCuts":false}"#).unwrap();
         let b = compose(&off, None).unwrap();
         assert!(!b.tracks.iter().find(|t| t.role == "drums").unwrap().notes.iter().any(|n| n.key == 57.0));
+    }
+
+    #[test]
+    fn cuts_into_bigger_sections_get_a_reverse_swell() {
+        let plain = compose(&MusicSpec::from_json(r#"{"style":"acoustic","bpm":120,"length":"40s"}"#).unwrap(), None).unwrap();
+        let bpb = plain.grid.beats_per_bar;
+        let w = plain.sections.windows(2).find(|w| w[1].energy > w[0].energy + 0.15).expect("a rising boundary");
+        let t = plain.grid.secs(w[1].bar * bpb);
+        let a = compose(&MusicSpec::from_json(&format!(r#"{{"style":"acoustic","bpm":120,"length":"40s","cuts":[{t}]}}"#)).unwrap(), None).unwrap();
+        assert!(a.sfx.iter().any(|x| x.name == "reverse-cymbal" && (x.at - t).abs() < 1e-6));
+        let off = compose(&MusicSpec::from_json(&format!(r#"{{"style":"acoustic","bpm":120,"length":"40s","cuts":[{t}],"followCuts":false}}"#)).unwrap(), None).unwrap();
+        assert!(!off.sfx.iter().any(|x| x.name == "reverse-cymbal"));
+        assert!(!plain.sfx.iter().any(|x| x.name == "reverse-cymbal"), "no cuts, no swell");
     }
 }
 
