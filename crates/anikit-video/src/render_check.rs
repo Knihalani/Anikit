@@ -190,7 +190,11 @@ pub fn check(ev: &Evaluator) -> Vec<Note> {
             if !transition {
                 if b.rect[0] < -1.0 || b.rect[1] < -1.0 || b.rect[2] > w as f32 + 1.0 || b.rect[3] > h as f32 + 1.0 {
                     push(format!("f{where_}{i}"), Note { severity: "error", check: "render-frame", path: at(b.rect), message: "text is cut by the frame edge".into(), fix: "move it inside the frame or give it a narrower width".into() });
-                } else if b.rect[0] < left - 2.0 || b.rect[2] > w as f32 - right + 2.0 || b.rect[1] < top - 2.0 || b.rect[3] > h as f32 - bottom + 2.0 {
+                } else if {
+                    // Camera moves nudge type a little; flag only real overflows (> 1.5% of the frame).
+                    let (tx, ty) = (w as f32 * 0.015, h as f32 * 0.015);
+                    b.rect[0] < left - tx || b.rect[2] > w as f32 - right + tx || b.rect[1] < top - ty || b.rect[3] > h as f32 - bottom + ty
+                } {
                     push(format!("s{where_}{i}"), Note { severity: "warning", check: "render-safe", path: at(b.rect), message: "text extends outside the title-safe area".into(), fix: "keep it inside the safe margins (9:16: top 12%, bottom 20%)".into() });
                 }
             }
