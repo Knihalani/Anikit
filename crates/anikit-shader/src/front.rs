@@ -180,19 +180,24 @@ fn glsl_utype(t: &str) -> Option<UType> {
 }
 
 fn parse_default(comment: &str) -> Option<Vec<f32>> {
-    // `// = 0.5`, `// = vec2(1.0, 2.0)`, `// = true`
+    // `// = 0.5`, `// = vec2(1.0, 2.0)`, `// = true`, with any prose after the value.
     let s = comment.trim_start_matches('/').trim();
-    let s = s.strip_prefix('=')?.trim().trim_end_matches(';').trim();
-    if s == "true" {
-        return Some(vec![1.0]);
-    }
-    if s == "false" {
-        return Some(vec![0.0]);
-    }
-    let inner = match (s.find('('), s.rfind(')')) {
-        (Some(a), Some(b)) if b > a => &s[a + 1..b],
-        _ => s,
+    let s = s.strip_prefix('=')?.trim();
+    let word: String = s.chars().take_while(|c| c.is_ascii_alphanumeric() || *c == '_').collect();
+    let inner = if !word.is_empty() && !word.starts_with(|c: char| c.is_ascii_digit()) && s[word.len()..].trim_start().starts_with('(') {
+        // A constructor: up to its closing parenthesis.
+        let open = s.find('(')?;
+        let close = open + s[open..].find(')')?;
+        &s[open + 1..close]
+    } else {
+        // A bare number or bool: the first token.
+        s.split(|c: char| c.is_whitespace() || c == ';' || c == ',').next().unwrap_or("")
     };
+    match inner {
+        "true" => return Some(vec![1.0]),
+        "false" => return Some(vec![0.0]),
+        _ => {}
+    }
     let v: Option<Vec<f32>> = inner.split(',').map(|p| p.trim().trim_end_matches('f').parse::<f32>().ok()).collect();
     v.filter(|v| !v.is_empty())
 }
@@ -528,6 +533,10 @@ mod tests {
         assert_eq!(u.len(), 2);
         assert_eq!(u[0].default, Some(vec![0.5]));
         assert_eq!(u[1].default, Some(vec![1.0, -1.0]));
+        assert_eq!(parse_default("// = 1.0   overall fold amount (0 = a plain slab)"), Some(vec![1.0]));
+        assert_eq!(parse_default("// = vec3(1.0, 0.5, 0.2) warm tint"), Some(vec![1.0, 0.5, 0.2]));
+        assert_eq!(parse_default("// = -2.5; comment"), Some(vec![-2.5]));
+        assert_eq!(parse_default("// = true"), Some(vec![1.0]));
         assert_eq!(smp, vec!["disp".to_string()]);
         assert_eq!(s.lines().count(), 4);
     }

@@ -302,7 +302,10 @@ pub fn process(px: &[Px], w: usize, h: usize, p: &Post, parts: Option<&super::pa
     // each pixel's blur radius (contact-sharp, softer with distance), wider
     // vertically like real glossy reflections, normalised by floor coverage
     // so it never bleeds onto objects.
-    let rv0: Vec<[f32; 4]> = px.iter().map(|q| [q.refl[0], q.refl[1], q.refl[2], q.cov]).collect();
+    // Weighted by the coverage of samples that traced a reflection (a
+    // checkerboard on rough floors); every floor pixel then takes the colour
+    // per unit of that, times its own floor coverage.
+    let rv0: Vec<[f32; 4]> = px.iter().map(|q| [q.refl[0], q.refl[1], q.refl[2], q.rcov]).collect();
     // The radius field comes from one ray per pixel and can alternate
     // between rows (hit / miss); a 9×9 box average keeps the blur coherent.
     let rad0: Vec<f32> = px.iter().map(|q| if q.cov > 0.0 { q.rad * s } else { 0.0 }).collect();
@@ -313,7 +316,7 @@ pub fn process(px: &[Px], w: usize, h: usize, p: &Post, parts: Option<&super::pa
     // two levels around its own σ (bilinear lookups). Fixed kernels can't
     // ripple the way a per-pixel variable kernel does, and the whole stack
     // costs about a third of one full-resolution pass.
-    let maxr = rad.iter().cloned().fold(0.0f32, f32::max) * 0.5 * 1.35;
+    let maxr = (rad.iter().cloned().fold(0.0f32, f32::max) * 0.5 * 1.35).max(if px.iter().any(|q| q.rcov < q.cov * 0.5) { 2.6 } else { 0.0 });
     struct Lvl {
         sig: f32,
         w: usize,
@@ -361,10 +364,15 @@ pub fn process(px: &[Px], w: usize, h: usize, p: &Post, parts: Option<&super::pa
     let rv: Vec<[f32; 4]> = (0..w * h)
         .map(|i| {
             let c = rv0[i];
-            if c[3] <= 0.0 {
-                return c;
+            let own = px[i].cov;
+            if own <= 0.0 {
+                return [0.0; 4];
             }
-            let sg = rad[i] * 0.5 * 1.35;
+            let mut sg = rad[i] * 0.5 * 1.35;
+            if c[3] < own * 0.5 {
+                // A checkerboard gap: borrow from the neighbours.
+                sg = sg.max(2.5);
+            }
             let (x, y) = (i % w, i / w);
             let mut k = 0;
             while k + 1 < levels.len() && levels[k + 1].sig < sg {
@@ -380,12 +388,12 @@ pub fn process(px: &[Px], w: usize, h: usize, p: &Post, parts: Option<&super::pa
             };
             // Colour per unit coverage, times this pixel's own coverage.
             if m[3] > 1e-6 {
-                let f = c[3] / m[3];
+                let f = own / m[3];
                 let r = px[i].rf;
                 [m[0] * f * r, m[1] * f * r, m[2] * f * r, c[3]]
             } else {
                 let r = px[i].rf;
-                [c[0] * r, c[1] * r, c[2] * r, c[3]]
+                [c[0] * r, c[1] * r, c[2] * r, own]
             }
         })
         .collect();

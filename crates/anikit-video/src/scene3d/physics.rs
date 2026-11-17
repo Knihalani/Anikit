@@ -313,7 +313,7 @@ pub fn parse(v: &Value, raw_objects: &[Value], shapes: &mut spec::Shapes, mats: 
         let mut obj = spec::object(&Value::Object(om), shapes, mats, named, &path)?;
         obj.lanes = 1;
         let gfl = |k: &str, d: f32| -> Res<f32> { gm.get(k).map(|x| spec::f(x, &format!("{path}.{k}"))).transpose().map(|o| o.unwrap_or(d)) };
-        let mat_glass = mats[obj.mat as usize].transmission > 0.5;
+        let mat_glass = obj.parts.iter().any(|p| mats[p.1 as usize].transmission > 0.5);
         let col = obj.col.clone();
         let (lo, hi) = col_bounds(&col);
         let gd = GroupDef {

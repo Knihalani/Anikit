@@ -999,9 +999,12 @@ impl<'m, 'b> Lower<'m, 'b> {
                 if x.len() == 1 {
                     vec![vm::sign(b, x[0])]
                 } else {
+                    // One divide and n multiplies (≤ 1 ulp from v / l): divides are the slowest SIMD op.
                     let s = dot(b, &x, &x);
                     let l = b.ins().sqrt(s);
-                    x.iter().map(|&v| b.ins().fdiv(v, l)).collect()
+                    let one = fsplat(b, 1.0);
+                    let r = b.ins().fdiv(one, l);
+                    x.iter().map(|&v| b.ins().fmul(v, r)).collect()
                 }
             }
             M::FaceForward => {

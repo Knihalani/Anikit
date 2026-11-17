@@ -169,10 +169,15 @@ fn emit(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, named: &
     om.remove("count");
     let od: ObjDef = spec::object(&Value::Object(om), shapes, mats, named, path)?;
     let xf = od.xf_at(0.0, 0, 0);
-    let tris: Vec<[V3; 3]> = match &shapes.list[od.shape as usize] {
-        Shape::Mesh(b) => b.tris.iter().map(|t| [xf.point(t.v0), xf.point(add(t.v0, t.e1)), xf.point(add(t.v0, t.e2))]).collect(),
-        Shape::Sphere => return Ok(Emit::Sphere { c: xf.t, r: xf.s, surface: true }),
-    };
+    if od.parts.len() == 1 && matches!(shapes.list[od.parts[0].0 as usize], Shape::Sphere) {
+        return Ok(Emit::Sphere { c: xf.t, r: xf.s, surface: true });
+    }
+    let mut tris: Vec<[V3; 3]> = Vec::new();
+    for p in &od.parts {
+        if let Shape::Mesh(b) = &shapes.list[p.0 as usize] {
+            tris.extend(b.tris.iter().map(|t| [xf.point(t.v0), xf.point(add(t.v0, t.e1)), xf.point(add(t.v0, t.e2))]));
+        }
+    }
     let mut cdf = Vec::with_capacity(tris.len());
     let mut acc = 0.0f32;
     for t in &tris {

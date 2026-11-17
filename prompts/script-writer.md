@@ -9,7 +9,7 @@ Copy is read, often muted on a phone, and the viewer decides in 2 s.
 
 - **Hook:** 3–7 words. Use a tension ("Your renders take three minutes."), a promise ("Ship the video before the meeting."), a number ("3 hours of editing. Gone.") or a contrast ("No browser. Just JSON."). Never "Introducing…" and never a greeting.
 - **One idea per beat:** a headline of 2–6 words plus an optional support line of 14 words or fewer.
-- **Budget:** `words ≤ 3 × (hold − 1)`. A 3 s beat fits 6 words; a 4 s beat fits 9.
+- **Budget:** `words ≤ 3 × (hold − 1)`. With fast cuts, a shot shows 1–4 words, and one sentence runs across several shots.
 - **Content:** benefits with exact numbers from the source; concrete nouns and active verbs. Cut very, really, simply, seamless, revolutionary, unlock, leverage, empower, and anything in `brand.voice.avoid`.
 - **Shape:** feature titles share one shape and length ("Renders in seconds." / "Runs anywhere.").
 - **End:** product name, a verb-first CTA of 2–4 words, and the URL.
