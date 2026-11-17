@@ -26,6 +26,7 @@
 pub mod bvh;
 pub mod env;
 pub mod geom;
+pub mod gltf;
 pub mod math;
 pub mod post;
 pub mod spec;
@@ -297,7 +298,9 @@ fn instances(objs: &[ObjDef], t: f32, dt: f32) -> Vec<Inst> {
             for i in 0..o.count {
                 let xf = o.xf_at(t, i, lane);
                 let prev = if dt > 0.0 { o.xf_at(t - dt, i, lane) } else { xf };
-                out.push(Inst { shape: o.shape, xf, prev, mat: o.mat, tex: None, thin: o.thin, shadow: o.shadow });
+                for &(shape, mat) in &o.parts {
+                    out.push(Inst { shape, xf, prev, mat, tex: None, thin: o.thin, shadow: o.shadow });
+                }
             }
         }
     }
@@ -383,7 +386,8 @@ impl Scene3d {
             if t < o.start || t >= o.end {
                 continue;
             }
-            let count = (o.lanes * o.count) as usize;
+            let np = o.parts.len();
+            let count = (o.lanes * o.count) as usize * np;
             let comp = o.tex.as_ref().and_then(|ts| root.and_then(|r| r.composition(&ts.comp)).map(|c| (ts, c)));
             let Some((ts, comp)) = comp else {
                 k += count;
@@ -431,8 +435,10 @@ impl Scene3d {
                         });
                         Tex::Flat(avg)
                     };
-                    scene.insts[k].tex = Some((tex, ts.face));
-                    k += 1;
+                    for j in 0..np {
+                        scene.insts[k + j].tex = Some((tex.clone(), ts.face));
+                    }
+                    k += np;
                 }
             }
         }
@@ -525,6 +531,22 @@ mod tests {
         assert!((insts[3].xf.t.x - 5.1).abs() < 1e-4);
         assert!((insts[4].xf.t.z + 4.0).abs() < 1e-4);
         assert!((insts[8].xf.t.x - 1.0).abs() < 1e-4, "linear key halfway");
+    }
+
+    #[test]
+    fn imports_gltf_models() {
+        let dir = std::env::temp_dir().join(format!("scene3d-model-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("tri.gltf");
+        gltf::tests::write_triangle(&p);
+        let s = scene(json!({ "objects": [ { "type": "model", "src": p.to_str().unwrap(), "height": 2.0, "count": 2, "pos": "=[i * 3, 0, 0]" } ] })).unwrap();
+        let insts = instances(&s.p().objs, 0.0, 0.0);
+        assert_eq!(insts.len(), 2);
+        // glTF materials come through: red, non-metal.
+        assert!(s.p().mats[insts[0].mat as usize].base.x > 0.99 && s.p().mats[insts[0].mat as usize].metallic == 0.0);
+        let e = scene(json!({ "objects": [ { "src": "missing.glb" } ] })).err().unwrap();
+        assert!(e.contains("can't read"), "{e}");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

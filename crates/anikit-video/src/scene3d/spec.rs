@@ -281,8 +281,8 @@ pub struct TexSpec {
 /// `count`/`lanes`, a whole array of instances.
 #[derive(Clone)]
 pub struct ObjDef {
-    pub shape: u32,
-    pub mat: u32,
+    /// (shape, material) per part: one for primitives, one per glTF primitive for models.
+    pub parts: Vec<(u32, u32)>,
     pub pos: [Num; 3],
     pub rot: [Num; 3],
     pub scale: Num,
@@ -351,9 +351,9 @@ impl ObjDef {
 }
 
 const OBJ_KEYS: &[&str] = &[
-    "type", "text", "font", "weight", "tracking", "height", "depth", "bevel", "size", "radius", "tube", "material", "pos", "position", "rot", "rotation", "scale", "keys", "spin", "count", "lanes", "texture", "thin", "shadow", "start", "end", "name",
+    "type", "src", "text", "font", "weight", "tracking", "height", "depth", "bevel", "size", "radius", "tube", "material", "pos", "position", "rot", "rotation", "scale", "keys", "spin", "count", "lanes", "texture", "thin", "shadow", "start", "end", "name",
 ];
-const TYPES: &[&str] = &["text", "box", "slab", "pane", "plane", "sphere", "cylinder", "torus", "phone"];
+const TYPES: &[&str] = &["text", "box", "slab", "pane", "plane", "sphere", "cylinder", "torus", "phone", "model"];
 
 /// Shapes are deduplicated by their JSON description.
 pub struct Shapes {
@@ -403,6 +403,7 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
             t
         }
         None if m.contains_key("text") => "text".into(),
+        None if m.contains_key("src") => "model".into(),
         None if m.contains_key("count") => "slab".into(),
         None => return Err(format!("{path}: missing `type` (one of {})", TYPES.join(", "))),
     };
@@ -420,6 +421,8 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
     };
     let key = format!("{ty}|{}|{}|{}|{}|{}|{}|{}|{}|{}", m.get("text").map(|x| x.to_string()).unwrap_or_default(), m.get("font").map(|x| x.to_string()).unwrap_or_default(), m.get("weight").map(|x| x.to_string()).unwrap_or_default(), m.get("tracking").map(|x| x.to_string()).unwrap_or_default(), m.get("height").map(|x| x.to_string()).unwrap_or_default(), m.get("depth").map(|x| x.to_string()).unwrap_or_default(), m.get("bevel").map(|x| x.to_string()).unwrap_or_default(), m.get("size").map(|x| x.to_string()).unwrap_or_default(), m.get("radius").map(|x| x.to_string()).unwrap_or_default());
     let mut thin = false;
+    let mut model_mats: Vec<Material> = Vec::new();
+    let mut extra: Vec<u32> = Vec::new();
     let (shape, extent) = match ty.as_str() {
         "text" => {
             let text = m.get("text").and_then(|x| x.as_str()).unwrap_or("ANIKIT").to_string();
@@ -463,6 +466,42 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
             let (r, tb) = (gf("radius", 0.5)?, gf("tube", 0.08)?);
             (shapes.add(key, || Ok(mesh_shape(geom::torus(r, tb))))?, r + tb)
         }
+        "model" => {
+            // glTF / GLB: every primitive becomes a part with its own material,
+            // fitted to `height` (or the largest side to `size`) and standing
+            // on y = 0, centred on x and z.
+            let src = m.get("src").and_then(|x| x.as_str()).ok_or_else(|| format!("{path}: a model needs `src` (a .glb or .gltf file)"))?;
+            let parts = super::gltf::load(std::path::Path::new(src)).map_err(|e| format!("{path}.src: {e}"))?;
+            let (mut lo, mut hi) = (v3(f32::MAX, f32::MAX, f32::MAX), v3(f32::MIN, f32::MIN, f32::MIN));
+            for pt in &parts {
+                for q in pt.mesh.pos.chunks_exact(3) {
+                    lo = vmin(lo, v3(q[0], q[1], q[2]));
+                    hi = vmax(hi, v3(q[0], q[1], q[2]));
+                }
+            }
+            let ext = sub(hi, lo);
+            let k = match (m.get("height"), m.get("size")) {
+                (Some(h), _) => f(h, &format!("{path}.height"))? / ext.y.max(1e-6),
+                (None, Some(sz)) => f(sz, &format!("{path}.size"))? / ext.x.max(ext.y).max(ext.z).max(1e-6),
+                _ => 1.0,
+            };
+            let mut first = None;
+            for (j, mut pt) in parts.into_iter().enumerate() {
+                for q in pt.mesh.pos.chunks_exact_mut(3) {
+                    q[0] = (q[0] - (lo.x + hi.x) * 0.5) * k;
+                    q[1] = (q[1] - lo.y) * k;
+                    q[2] = (q[2] - (lo.z + hi.z) * 0.5) * k;
+                }
+                let id = shapes.add(format!("{key}|{src}|{j}|{k}"), || Ok(mesh_shape(pt.mesh)))?;
+                if first.is_none() {
+                    first = Some(id);
+                } else {
+                    extra.push(id);
+                }
+                model_mats.push(pt.mat);
+            }
+            (first.unwrap(), ext.x.max(ext.z) * k * 0.5)
+        }
         _ => unreachable!(),
     };
     let mat = match m.get("material") {
@@ -472,8 +511,14 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
     if let Some(t) = m.get("thin") {
         thin = t.as_bool().ok_or_else(|| format!("{path}.thin: expected true or false"))?;
     }
-    mats.push(mat);
-    let mat = mats.len() as u32 - 1;
+    // Parts: an explicit material overrides a model's own.
+    let mut parts = Vec::new();
+    let all: Vec<u32> = std::iter::once(shape).chain(extra.iter().copied()).collect();
+    for (j, sh) in all.iter().enumerate() {
+        let pm = if m.contains_key("material") || model_mats.is_empty() { mat.clone() } else { model_mats[j].clone() };
+        mats.push(pm);
+        parts.push((*sh, mats.len() as u32 - 1));
+    }
     let zero = || [Num::C(0.0), Num::C(0.0), Num::C(0.0)];
     let pos = m.get("pos").or(m.get("position")).map(|x| vec3(x, &format!("{path}.pos"))).transpose()?.unwrap_or_else(zero);
     let rot = m.get("rot").or(m.get("rotation")).map(|x| vec3(x, &format!("{path}.rot"))).transpose()?.unwrap_or_else(zero);
@@ -527,7 +572,7 @@ pub fn object(v: &Value, shapes: &mut Shapes, mats: &mut Vec<Material>, named: &
     let end = m.get("end").map(|x| f(x, &format!("{path}.end"))).transpose()?.unwrap_or(f32::INFINITY);
     let scale_mul = if ty == "sphere" { extent } else { 1.0 };
     let extent = if ty == "sphere" { 1.0 } else { extent };
-    Ok(ObjDef { shape, mat, pos, rot, scale: scale_n, keys, spin, count, lanes, tex, thin, shadow, extent, start, end, scale_mul })
+    Ok(ObjDef { parts, pos, rot, scale: scale_n, keys, spin, count, lanes, tex, thin, shadow, extent, start, end, scale_mul })
 }
 
 fn texture(v: &Value, path: &str) -> Res<TexSpec> {
