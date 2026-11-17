@@ -94,6 +94,7 @@ fn strip_pos(s: &str) -> String {
 /// Deserialize a JSON value, reporting unknown keys as warnings and type
 /// errors with their path.
 pub fn from_value(v: serde_json::Value) -> Result<Parsed, Vec<Diagnostic>> {
+    let v = super::reuse::expand(v)?;
     let mut warnings = Vec::new();
     let mut track = serde_path_to_error::Track::new();
     let res = {
