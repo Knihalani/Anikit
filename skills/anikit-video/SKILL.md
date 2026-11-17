@@ -12,7 +12,9 @@ You are the director. A video that looks like every other generated video has fa
 
 **2. Choose a world:** `anikit-video looks` lists 10 (daylight-lab, editorial, swiss, brutalist, y2k-chrome, noir, risograph, neon-night, soft-clay, documentary). Pick from the brief's audience and feeling, never by habit, and pick a different one for different briefs. `"look": "noir"` at the top of the spec sets the palette, type, motion, transitions, camera, backdrop and grain. Compose (`["editorial", "noir"]`) or override (`{"base": "swiss", "theme": {"colors": {"primary": "#0050FF"}}}`). `anikit-video looks <name>` gives its direction in one paragraph: follow it.
 
-**3. Build one signature image** that no template has, and give it the longest hold:
+**3. Build the world from the brief's own nouns.** Sailing means water, tide lines and rope; coffee means cherries, hands, soil and a map; horror means sea, rock and fog. Draw them with shapes and paths (`shape: "path"` with `d`, lines that draw on with `trimEnd`, `morph`) or with real photos. Stock effects (a halftone or kinetic grid, bokeh, a mesh) are seasoning, never the subject, and never the same one across your videos.
+
+**Then build one signature image** that no template has, and give it the longest hold:
 - 3D: `text-3d` (extruded chrome or matte type), `model` (rounded box, torus, knot, an extruded logo or an `.obj`), `globe`, and `scene3d` when `anikit-video info --components` lists it;
 - generative: `particle-text`, `metaballs`, `kinetic-grid`, `morph`, `god-rays`, `tile-reveal`;
 - real: photos or footage via `ken-burns` or `src` with `fit: "cover"`;
@@ -23,7 +25,10 @@ You are the director. A video that looks like every other generated video has fa
 - Use scale contrast: one huge thing per frame, everything else small.
 - Entrances follow role: a headline `"mask by line up"`, a name `"pop by char from center"`, data `countUp`/`drawOn`.
 - Motivate transitions: `zoom` into the object, `iris` on a circle, `cut` on the beat.
-- Hold still once a shot has landed.
+- Hold the frame once a shot has landed, but never freeze for more than 2 s: give the hold a slow push (`zoom` 1 → 1.04), drifting dust or a breathing light.
+- Hand off between shots: an outgoing text never crossfades over an incoming one. Use a push, slide or cut, or an exit and then the entrance.
+- Fill the format. In 9:16 and 1:1, stack the composition top to bottom: no band of empty frame bigger than a third.
+- Match materials to the look. In flat looks (daylight-lab, swiss, editorial, risograph), 3D is matte (`metallic: 0`, `roughness: 0.8`, the look's colours); chrome belongs to y2k-chrome and noir. Show the brand once, at the end.
 
 **5. Write the spec:**
 - [`docs/video/spec.md`](../../docs/video/spec.md) is the one-page cheat sheet. `defs`/`use`/`repeat` keep specs short.

@@ -306,6 +306,15 @@ pub fn critique(raw: &Value) -> Report {
                 if let Some(f) = l.get("font").and_then(|f| f.as_str()) {
                     fonts.insert(f.to_string());
                 }
+                // Components that show words (a terminal, a prompt, a title card) count for the hook.
+                if first_text_at.is_none() && l.get("component").is_some() {
+                    if let Some(p) = l.get("props").and_then(|p| p.as_object()) {
+                        if ["text", "title", "lines", "code", "label", "words", "messages", "items"].iter().any(|k| p.get(*k).is_some_and(|v| !v.is_null())) {
+                            let delay = p.get("delay").and_then(|d| d.as_f64()).unwrap_or(0.0);
+                            first_text_at = Some(scene_start.max(0.0) + vis_from + delay + 0.3);
+                        }
+                    }
+                }
                 let Some(raw) = l.get("text").and_then(|t| t.as_str()) else { return };
                 let text_owned = with_value(raw, l.get("value"));
                 let text = text_owned.as_str();
@@ -627,7 +636,11 @@ fn sameness(raw: &Value, spec: &Value, cx: &mut Ctx) {
         "sameness",
         "spec",
         format!("generic: {}; this will look like every other generated video", signals.join("; ")),
-        format!("give it a point of view: set \"look\" (e.g. \"{a}\" or \"{b}\"; anikit-video looks), vary layouts and entrances per beat, and build one signature visual (3D, a shader, real footage)"),
+        if has_look {
+            "vary layouts and entrances per beat, and build one signature visual from the brief's own subject (3D, paths, real footage)".to_string()
+        } else {
+            format!("give it a point of view: set \"look\" (e.g. \"{a}\" or \"{b}\"; anikit-video looks), vary layouts and entrances per beat, and build one signature visual (3D, paths, real footage)")
+        },
     );
 }
 
