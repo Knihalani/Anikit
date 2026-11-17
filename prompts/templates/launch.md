@@ -24,10 +24,10 @@ A 15–35 s launch film on a living brand mesh: optional kinetic hook, product r
 | `features[].image` | image |  |  | Optional screenshot for this beat. Without image or code, a generated product UI is shown. |
 | `features[].code` | text |  | ≤ 400 chars | Optional code snippet shown in an editor window for this beat (dev tools). |
 | `stat` | object |  |  | Optional proof point shown as a big animated number. |
-| `stat[].value` | number | yes |  |  |
-| `stat[].prefix` | string |  | ≤ 3 chars |  |
-| `stat[].suffix` | string |  | ≤ 4 chars |  |
-| `stat[].label` | string | yes | ≤ 8 words |  |
+| `stat.value` | number | yes |  |  |
+| `stat.prefix` | string |  | ≤ 3 chars |  |
+| `stat.suffix` | string |  | ≤ 4 chars |  |
+| `stat.label` | string | yes | ≤ 8 words |  |
 | `cta` | string |  | ≤ 4 words | Call to action on the end card. Default: the brand kit's `voice.cta`. |
 | `music` | string |  |  | Optional music file (MP3/WAV). Pick something with a clear beat around 100–124 BPM. |
 

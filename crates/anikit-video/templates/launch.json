@@ -261,7 +261,7 @@
             "duration": 0.6,
             "ease": "inOutQuart"
           },
-          "duration": "{{readtime(f.title + ' ' + (f.body ?? '')) + 2.0}}",
+          "duration": "{{readtime(f.title + ' ' + (f.body ?? '')) + 1.4}}",
           "layers": [
             {
               "$use": "backdrop",
@@ -349,8 +349,8 @@
                   {
                     "$use": "device",
                     "with": {
-                      "kind": "{{f.image || i % 2 == 0 ? 'browser' : 'phone'}}",
-                      "screen": "{{stat && i == 0 ? 'dashboard' : ['app', 'feed', 'settings', 'chat'][i % 4]}}",
+                      "kind": "browser",
+                      "screen": "{{['app', 'feed', 'settings', 'app'][i % 4]}}",
                       "src": "{{f.image}}",
                       "url": "{{url}}",
                       "x": "{{vx}}",

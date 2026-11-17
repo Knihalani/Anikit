@@ -205,6 +205,9 @@ fn cmd_templates(args: &[String]) -> Result<(), String> {
                             eprintln!("{} {}: {}", &k[..k.len() - 1], d["path"].as_str().unwrap_or(""), d["message"].as_str().unwrap_or(""));
                         }
                     }
+                    for n in r.notes.iter().filter(|n| n.severity != "tip") {
+                        eprintln!("{} {}: {} → {}", n.severity, n.path, n.message, n.fix);
+                    }
                     for n in t.expansion_notes(&params, &spec, r.duration) {
                         eprintln!("{n}");
                     }
@@ -282,7 +285,7 @@ fn cmd_preview(args: &[String]) -> Result<(), String> {
             let t: f32 = t.parse().map_err(|_| format!("--at: '{t}' is not a number of seconds"))?;
             (p.frame(t, width), format!("{stem}-{t}s.png"))
         }
-        None => (p.sheet(None, width.unwrap_or(480)), format!("{stem}-sheet.png")),
+        None => (p.sheet(None, width.unwrap_or(640)), format!("{stem}-sheet.png")),
     };
     let out = a.get("o").or(a.get("out")).map(String::from).unwrap_or(default_out);
     write(Path::new(&out), "")?;

@@ -22,10 +22,10 @@ A 15–30 s data narrative on a living brand mesh: a kinetic headline over a ris
 | `charts[].highlight` | integer |  |  | Index of the bar to highlight. Default: the largest. |
 | `charts[].bars` | array | yes | 2–6 items |  |
 | `stat` | object |  |  | Optional big number after the charts. |
-| `stat[].value` | number | yes |  |  |
-| `stat[].prefix` | string |  | ≤ 3 chars |  |
-| `stat[].suffix` | string |  | ≤ 5 chars |  |
-| `stat[].label` | string | yes | ≤ 8 words |  |
+| `stat.value` | number | yes |  |  |
+| `stat.prefix` | string |  | ≤ 3 chars |  |
+| `stat.suffix` | string |  | ≤ 5 chars |  |
+| `stat.label` | string | yes | ≤ 8 words |  |
 | `takeaway` | string | yes | ≤ 12 words | The one sentence to remember. |
 | `source` | string |  | ≤ 60 chars | Data source, shown small on the last scene. |
 | `music` | string |  |  | Optional music file (MP3/WAV). |

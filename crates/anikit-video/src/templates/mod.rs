@@ -276,8 +276,9 @@ impl Template {
         let text = spec.to_string();
         let has_screen = text.contains("\"screen\":");
         let has_image = ["screenshot", "image", "images", "src"].iter().any(|k| params.to_string().contains(&format!("\"{k}\"")));
-        if has_screen && !has_image {
-            v.push("note: no screenshots given, so device frames show generated app screens built from your copy (product name, features); pass `screenshot` / `image` params for real product screens".into());
+        let takes_images = self.doc.get("params").map(|p| p.to_string()).is_some_and(|p| p.contains("\"type\":\"image\""));
+        if has_screen && !has_image && takes_images {
+            v.push("note: no screenshots given, so device frames show generated app screens built from your copy; pass `screenshot` / `image` params for real product screens".into());
         }
         v
     }

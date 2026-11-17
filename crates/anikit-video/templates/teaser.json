@@ -37,9 +37,9 @@
     "beat": {
       "type": "seconds",
       "default": 0.6,
-      "minimum": 0.35,
+      "minimum": 0.6,
       "maximum": 1.2,
-      "description": "Seconds per one-word beat (two- and three-word beats get 1.5×). 0.5–0.65 feels energetic; match it to the music (60 / BPM × 1 or × 2).",
+      "description": "Seconds per one-word beat (two- and three-word beats get 1.5×). 0.6–0.7 feels energetic and stays readable; match it to the music (60 / BPM × 1 or × 2).",
       "example": 0.6
     },
     "payoff": {
