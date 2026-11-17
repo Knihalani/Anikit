@@ -326,7 +326,8 @@
           "base": "{{brand.colors.backgroundDeep}}",
           "intensity": "{{(intensity ?? 0.38) * (brand.theme == 'light' ? 0.6 : 1)}}",
           "seed": "{{seed ?? 1}}",
-          "speed": 0.6
+          "speed": 0.6,
+          "rate": 6
         }
       },
       {
@@ -345,11 +346,15 @@
       }
     ],
     "grain": {
-      "id": "grain",
-      "type": "component",
-      "component": "grain",
-      "props": {
-        "amount": 0.04
+      "$if": "grain",
+      "then": {
+        "id": "grain",
+        "type": "component",
+        "component": "grain",
+        "props": {
+          "amount": 0.04,
+          "rate": 0
+        }
       }
     },
     "device": [
@@ -379,10 +384,9 @@
                 "src": "{{src}}"
               },
               "else": {
-                "colors": [
-                  "{{brand.colors.primary}}",
-                  "{{brand.colors.secondary}}"
-                ]
+                "screen": "{{screen ?? 'dashboard'}}",
+                "title": "{{brand.name}}",
+                "accent": "{{brand.colors.primary}}"
               }
             },
             {
@@ -412,8 +416,7 @@
         ],
         "delay": "{{delay ?? 0.5}}"
       },
-      "x": "{{fmt.cx - (len(label) * (fmt.portrait ? fmt.u * 4.6 : fmt.u * 3.6) * 0.29 + (fmt.portrait ? fmt.u * 4.6 : fmt.u * 3.6) * 1.2)}}",
-      "anchor": "left",
+      "x": "50%",
       "y": "{{y ?? '60%'}}",
       "width": "{{fmt.w * 0.6}}",
       "height": "{{fmt.u * 14}}"

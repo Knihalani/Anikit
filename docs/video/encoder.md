@@ -40,7 +40,7 @@ Other entry points:
 | `qp` | 22 | Constant quantiser (0–51). 20–26 is visually lossless for motion graphics; ≥ 40 dB PSNR up to about QP 30 on our content. |
 | `gop` | 250 | IDR interval, which is also the chunk length for parallel encoding. |
 | `cabac` | `true` | Main profile with CABAC. `false` gives Constrained Baseline with CAVLC: 35–60% larger files, slightly faster. |
-| `deblock` | `false` | The in-loop filter. It helps only at QP ≥ 34 (+0.1–0.2 dB) and costs about 25% speed; at QP ≤ 28 it *lowers* PSNR on this content (sharp edges, and copied macroblocks next to changing areas get re-filtered every frame). |
+| `deblock` | `false` | The in-loop filter. It helps only at QP ≥ 34 (+0.1–0.2 dB) and costs about 25% speed; at QP ≤ 28 it *lowers* PSNR on this content (sharp edges, and copied macroblocks next to changing areas get re-filtered every frame). | With `threads > 1`, each slice deblocks its own rows in parallel (`disable_deblocking_filter_idc` 2).
 | `subpel` | `false` | Quarter-pel motion refinement (exact 6-tap interpolation). On our scenes it saves 3–4% size for 20–40% more time. Turn it on for slow sub-pixel pans. |
 | `threads` | 1 | Slices per frame for `encode()`. Chunk-parallel modes ignore it. |
 | `full_range` | `false` | Signals the colour range (BT.709 primaries/matrix are always signalled). |

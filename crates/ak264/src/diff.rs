@@ -189,3 +189,19 @@ pub(crate) fn flag_row(y: &Plane, u: &Plane, v: &Plane, f: &YuvFrame, mby: usize
     #[cfg(not(target_arch = "x86_64"))]
     let _ = (y, u, v, full_cols);
 }
+
+/// Copy macroblocks `mbx0..mbx1` of row `mby` (all inside the picture) from `f`.
+pub(crate) fn copy_run(y: &mut Plane, u: &mut Plane, v: &mut Plane, f: &YuvFrame, mby: usize, mbx0: usize, mbx1: usize) {
+    let (x0, n) = (mbx0 * 16, (mbx1 - mbx0) * 16);
+    for r in mby * 16..mby * 16 + 16 {
+        let d = (r + y.pad) * y.stride + y.pad + x0;
+        y.data[d..d + n].copy_from_slice(&f.y[r * f.y_stride + x0..r * f.y_stride + x0 + n]);
+    }
+    let (x0, n) = (mbx0 * 8, (mbx1 - mbx0) * 8);
+    for (pl, src) in [(u, f.u), (v, f.v)] {
+        for r in mby * 8..mby * 8 + 8 {
+            let d = (r + pl.pad) * pl.stride + pl.pad + x0;
+            pl.data[d..d + n].copy_from_slice(&src[r * f.c_stride + x0..r * f.c_stride + x0 + n]);
+        }
+    }
+}
