@@ -248,7 +248,7 @@ impl PostSpec {
 
 // ------------------------------------------------------------------ processing
 
-fn srgb_to_linear(v: f32) -> f32 {
+pub(crate) fn srgb_to_linear(v: f32) -> f32 {
     if v <= 0.04045 {
         v / 12.92
     } else {
@@ -256,12 +256,18 @@ fn srgb_to_linear(v: f32) -> f32 {
     }
 }
 
-fn linear_to_srgb(v: f32) -> f32 {
+pub(crate) fn linear_to_srgb(v: f32) -> f32 {
     if v <= 0.0031308 {
         v * 12.92
     } else {
         1.055 * v.powf(1.0 / 2.4) - 0.055
     }
+}
+
+/// Triangular dither in −1..1 LSB, fixed per pixel.
+#[inline(always)]
+pub(crate) fn tri_dither(x: u32, y: u32) -> f32 {
+    hash01(x, y, 0x1234_5678) + hash01(x, y, 0x9abc_def0) - 1.0
 }
 
 /// Integer hash → uniform 0..1.
@@ -428,7 +434,7 @@ impl PostProcessor {
                 }
                 if p.dither {
                     // Triangular noise, ±1 LSB, fixed per pixel (static regions stay static).
-                    let d = hash01(x as u32, y as u32, 0x1234_5678) + hash01(x as u32, y as u32, 0x9abc_def0) - 1.0;
+                    let d = tri_dither(x as u32, y as u32);
                     for v in &mut o {
                         *v += d;
                     }

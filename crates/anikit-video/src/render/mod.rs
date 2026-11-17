@@ -16,6 +16,7 @@ pub mod filter;
 pub mod glyphs;
 pub mod post;
 pub mod incremental;
+pub mod motion;
 pub mod resample;
 pub mod smooth;
 pub mod trim;
@@ -149,6 +150,8 @@ pub struct Renderer {
     post: Option<post::PostSettings>,
     post_frame: u64,
     pp: post::PostProcessor,
+    /// Motion-blur accumulator (linear RGB).
+    motion_acc: Vec<f32>,
     /// Low-res backdrop as Y, Cb, Cr planes (fused backdrop → YUV path).
     lo: [Vec<u8>; 3],
     /// Overlay op bounds and macroblock map (multi-box fused path).
@@ -182,6 +185,7 @@ impl Renderer {
             post: None,
             post_frame: 0,
             pp: Default::default(),
+            motion_acc: Vec::new(),
             box_rects: Vec::new(),
             box_map: MbMap::default(),
             lctx: None,
