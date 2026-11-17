@@ -1132,7 +1132,7 @@ pub fn format_number_into(out: &mut String, v: f64, decimals: u32, sep: &str, pr
     }
     out.push_str(prefix);
     for i in 0..int_len {
-        if i > 0 && (int_len - i) % 3 == 0 {
+        if i > 0 && (int_len - i).is_multiple_of(3) {
             out.push_str(sep);
         }
         let ch = out.as_bytes()[i] as char;
