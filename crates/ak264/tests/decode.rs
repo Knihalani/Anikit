@@ -119,7 +119,11 @@ fn chunks_concatenate() {
     let mut e = Encoder::new(c.clone());
     let mut recon = Vec::new();
     let mut seq = Vec::new();
-    for f in &frames {
+    let starts: Vec<usize> = chunk_ranges(frames.len(), c.gop).iter().map(|r| r.0).collect();
+    for (t, f) in frames.iter().enumerate() {
+        if starts.contains(&t) {
+            e.force_idr();
+        }
         seq.extend_from_slice(e.encode(f, &FrameHints::default()));
         recon.extend_from_slice(&e.reconstruction().to_bytes());
     }
