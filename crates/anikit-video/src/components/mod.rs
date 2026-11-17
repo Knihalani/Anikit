@@ -28,6 +28,7 @@ use std::sync::Arc;
 pub mod style;
 pub mod docs;
 pub mod fxkit;
+pub mod fxpix;
 pub mod polish;
 pub mod host;
 pub mod text;
