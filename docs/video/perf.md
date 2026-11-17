@@ -78,20 +78,25 @@ Add an entry when you add a feature with its own fast paths. If a component has 
 
 Same VM throughout: 4 vCPU (Intel Xeon @ 2.1 GHz), 16 GB, Linux 6.18. Wall time is the median of 3 runs. In the fps column, entries marked "(timed)" time the whole spec; the others time the clip.
 
-### Now (`qbench`, latest merged trunk + render + components + 3D + shader)
+### Now (`qbench --gate`, after merging main 43f56da; one run each)
 
-| spec | frames (timed) | wall s | fps | CPU ms/frame: eval · render · copy · encode · idle | startup · 1st frame ms | render SSIM min | PSNR-Y min | ΔE p99.9 / max | flicker | delivered SSIM min / PSNR-Y | result |
-|---|---:|---:|---:|---|---|---:|---:|---:|---:|---|---|
-| ui | 120 (600) | 0.33 | 1840 | 0.02 · 0.37 · 0.03 · 0.91 · 0.81 | 2 · 13 | 1.00000 | 99.0 | 0.00 / 0.1 | 0.0 | 0.9992 / 53.1 | PASS (bit-identical to reference) |
-| text | 120 (600) | 0.76 | 786 | 0.01 · 1.48 · 0.06 · 2.64 · 0.42 | 1 · 10 | 1.00000 | 89.7 | 0.00 / 0.3 | 0.0 | 0.9996 / 55.4 | PASS |
-| explainer | 120 (600) | 0.34 | 1785 | 0.01 · 0.54 · 0.04 · 1.26 · 0.77 | 2 · 9 | 1.00000 | 85.7 | 0.00 / 0.5 | 0.0 | 0.9988 / 52.7 | PASS |
-| backdrop | 105 | 1.51 | 70 | 10.86 · 24.39 · 0.44 · 16.98 · 5.19 | 1 · 65 | 0.98919 | 47.5 | 3.29 / 12.3 | 2.7 | 0.9813 / 47.0 | KNOWN: components' low-res mesh field |
-| particles | 120 | 2.21 | 54 | 1.61 · 17.97 · 0.38 · 22.57 · 30.52 | 143 · 9 | 0.98844 | 34.4 | 35.3 / 61.4 | 65.0 | 0.9857 / 42.4 | KNOWN: fxkit shortcuts (visible) |
-| launch | 120 (1005) | 7.73 | 130 | 0.73 · 26.02 · 0.16 · 4.91 · 5.05 | 3 · 79 | 0.99337 | 47.8 | 2.51 / 3.2 | 1.9 | 0.9821 / 48.1 | KNOWN: mesh field |
-| scene3d | 9 | 12.31 | 0.7 | 4096 · 12 · 0.6 · 11 · 1349 | 1658 · 1523 | 1.00000 | 93.4 | 1.28 / 2.3 | 0.0 | 0.9948 / 50.7 | PASS (3D has no reference knobs yet) |
-| shader | 60 | 51.06 | 1.2 | 0.02 · 3350 · 0.49 · 38.6 · 13.9 | 30 · 861 | 1.00000 | 92.0 | 1.02 / 1.8 | 0.0 | 0.9319 / 39.8 | PASS |
-| post | 90 | 7.56 | 12 | 0.03 · 307 · 0.52 · 20.4 · 7.8 | 1 · 138 | 0.99866 | 55.2 | 0.96 / **25.2** | 1.6 | 0.9504 / 42.7 | PASS; ⚑ a visible strip at frame 0 (motion-blur boxes, reported to RENDER) |
-| audio | 120 | 1.20 | 100 | 0.05 · 19.57 · 0.27 · 12.01 · 5.25 | 590 · 35 | 0.99957 | 62.9 | 1.51 / 1.8 | 0.9 | 0.9942 / 47.6 | PASS |
+| spec | frames (timed) | wall s | fps | CPU ms/frame: eval · render · copy · encode · idle* | startup · 1st frame ms | render SSIM min | ΔE p99.9 / max | flicker | delivered SSIM min / PSNR-Y | result |
+|---|---:|---:|---:|---|---|---:|---:|---:|---|---|
+| ui | 120 (600) | 0.35 | 1729 | 0.05 · 0.57 · 0.04 · 1.24 · 0.41 | 4 · 17 | 1.00000 | 0.00 / 0.1 | 0.0 | 0.9993 / 53.2 | PASS |
+| text | 120 (600) | 0.84 | 712 | 0.01 · 2.09 · 0.07 · 2.59 · 0.84 | 2 · 11 | 1.00000 | 0.00 / 0.0 | 0.0 | 0.9996 / 55.4 | PASS |
+| explainer | 120 (600) | 0.35 | 1709 | 0.01 · 0.61 · 0.05 · 1.45 · 0.20 | 2 · 9 | 1.00000 | 0.00 / 0.5 | 0.0 | 0.9989 / 53.1 | PASS |
+| backdrop | 105 | 1.44 | 73 | 10.5 · 23.7 · 0.48 · 15.6 · 4.7 | 2 · 52 | 0.98919 | 3.29 / 12.3 | 2.7 | 0.9813 / 47.0 | KNOWN (COMPONENTS) |
+| particles | 120 | 2.38 | 51 | 1.5 · 19.2 · 0.41 · 23.1 · 34.2 | 133 · 11 | 0.98832 | 36.1 / 61.4 | 64.9 | 0.9855 / 42.2 | KNOWN (COMPONENTS) |
+| launch | 120 (1005) | 6.29 | 160 | 0.78 · 15.5 · 0.16 · 4.9 · 3.7 | 4 · 72 | 0.99337 | 2.51 / 3.2 | 1.9 | 0.9821 / 48.1 | KNOWN (COMPONENTS) |
+| scene3d | 9 | 13.39 | 0.7 | 1464 · 11 · 0.5 · 10.6 · 4465* | 1502 · 1525 | 1.00000 | 1.27 / 2.3 | 0.0 | 0.9948 / 50.5 | PASS (no 3D reference knobs yet) |
+| shader-hero | 60 | 4.28 | 14 | 0.02 · 133 · 0.52 · 6.1 · 146* | 66 · 77 | 0.99955 | 1.17 / 9.2 | 2.8 | 0.9964 / 50.6 | PASS |
+| shader (aurora) | 60 | 53.5 | 1.1 | 0.03 · 1711 · 0.51 · 40.3 · 1817* | 30 · 921 | 0.95376 | 2.71 / 10.9 | 1.6 | 0.9410 / 40.3 | KNOWN (SHADER: aliasing vs 2×2 supersampled reference) |
+| post | 90 | 7.28 | 12 | 0.03 · 216 · 0.48 · 18.0 · 88.6* | 1 · 129 | 0.99864 | 0.97 / 8.8 | 1.6 | 0.9504 / 42.7 | PASS |
+| audio | 120 | 1.13 | 106 | 0.05 · 17.5 · 0.30 · 11.2 · 6.0 | 595 · 33 | 0.99957 | 1.51 / 1.8 | 0.9 | 0.9942 / 47.6 | PASS |
+
+\* idle is wall × threads minus the per-frame stage times, so for stages with nested parallelism (shaders, 3D, post) it includes their work on other threads. Rendering frames of short clips in parallel was tried and gained nothing; the cores are already busy.
+
+Output is byte-identical between 1 and 4 threads (checked: launch, product, backdrop, shader-hero, post).
 
 KNOWN means the entry is over the thresholds today, recorded in `qbench/baseline.json` (`known`, with an owner). It passes the gate only while it gets no worse. Run `qbench --exact-components` to see what removing those shortcuts costs: particles pass at 43 fps instead of 54; the mesh field drops to 4 fps, so it needs a better fast path, not the exact one.
 

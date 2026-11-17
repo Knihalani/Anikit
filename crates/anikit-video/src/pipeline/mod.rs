@@ -76,7 +76,9 @@ pub struct StageProfile {
     pub render_ms: f64,
     pub copy_ms: f64,
     pub encode_ms: f64,
-    /// Cores waiting (load imbalance, startup), ms per frame.
+    /// Cores waiting (load imbalance, startup), ms per frame. Also counts work a
+    /// stage hands to other threads (nested parallelism in shaders, 3D, post): it
+    /// is wall × threads minus the per-frame stage times, so it overstates idling there.
     pub idle_ms: f64,
     /// Wall ms per frame for render + encode (excludes mux).
     pub wall_ms: f64,
@@ -852,7 +854,7 @@ pub fn render_ak264_job_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::pat
     };
     if opts.profile {
         eprintln!(
-            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}\n  idle    {idle:7.3}  (cores waiting: load imbalance, mux, startup)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
+            "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}\n  idle    {idle:7.3}  (cores waiting, or nested parallel work in shaders/3D/post: not counted per stage)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
             unchanged,
             sp.held,
             sp.partial,
