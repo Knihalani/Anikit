@@ -197,6 +197,82 @@ fn filter_edge<const N: usize, const CHROMA: bool, const STRONG: bool>(d: &mut [
     }
 }
 
+/// One chroma edge in both chroma planes at once: lanes 0..8 are the 8 lines of
+/// Cb, lanes 8..16 the same lines of Cr (they share bS and QP), so the filter runs
+/// as one 16-lane pass instead of two 8-lane ones.
+#[inline(always)]
+#[allow(clippy::manual_clamp)]
+fn filter_chroma_uv<const STRONG: bool>(u: &mut [u8], v: &mut [u8], o: usize, xs: usize, ls: usize, seg: &[u8; 4], p: &Params) {
+    let vertical = xs == 1;
+    assert!(o >= 2 * xs && o + xs + 7 * ls < u.len() && o + xs + 7 * ls < v.len());
+    let mut w = [[0i16; 16]; 4]; // p1 p0 q0 q1
+    if vertical {
+        let (tu, tv) = (crate::simd::load_t8x4(u, o - 2, ls), crate::simd::load_t8x4(v, o - 2, ls));
+        for j in 0..4 {
+            for l in 0..8 {
+                w[j][l] = tu[j][l] as i16;
+                w[j][l + 8] = tv[j][l] as i16;
+            }
+        }
+    } else {
+        for j in 0..4 {
+            let b = o + j * xs - 2 * xs;
+            let (mut ru, mut rv) = ([0u8; 8], [0u8; 8]);
+            ru.copy_from_slice(&u[b..b + 8]);
+            rv.copy_from_slice(&v[b..b + 8]);
+            for l in 0..8 {
+                w[j][l] = ru[l] as i16;
+                w[j][l + 8] = rv[l] as i16;
+            }
+        }
+    }
+    let (alpha, beta) = (p.alpha as i16, p.beta as i16);
+    let segc: [(i16, i16, i16); 4] = core::array::from_fn(|k| {
+        let b = seg[k].min(4);
+        (-((b != 0) as i16), -((b == 4) as i16), p.tct[b as usize])
+    });
+    let (mut bsm, mut s4, mut tc0) = ([0i16; 16], [0i16; 16], [0i16; 16]);
+    for l in 0..16 {
+        // chroma line l (of 8) uses luma segment l / 2
+        let c = segc[(l & 7) >> 1];
+        bsm[l] = c.0;
+        s4[l] = c.1;
+        tc0[l] = c.2;
+    }
+    let sel = |m: i16, a: i16, b: i16| (a & m) | (b & !m);
+    let lt = |a: i16, b: i16| -((a < b) as i16);
+    let (mut np0, mut nq0) = ([0i16; 16], [0i16; 16]);
+    for l in 0..16 {
+        let (p1, p0, q0, q1) = (w[0][l], w[1][l], w[2][l], w[3][l]);
+        let filt = bsm[l] & lt((p0 - q0).abs(), alpha) & lt((p1 - p0).abs(), beta) & lt((q1 - q0).abs(), beta);
+        let base_delta = (((q0 - p0) << 2) + (p1 - q1) + 4) >> 3;
+        let tc = tc0[l] + 1;
+        let delta = base_delta.max(-tc).min(tc);
+        let (wp0, wq0) = ((p0 + delta).max(0).min(255), (q0 - delta).max(0).min(255));
+        let (a0, b0) = if STRONG {
+            let strong = s4[l];
+            (sel(strong, (2 * p1 + p0 + q1 + 2) >> 2, wp0), sel(strong, (2 * q1 + q0 + p1 + 2) >> 2, wq0))
+        } else {
+            (wp0, wq0)
+        };
+        np0[l] = sel(filt, a0, p0);
+        nq0[l] = sel(filt, b0, q0);
+    }
+    let pu: [u8; 8] = core::array::from_fn(|l| np0[l] as u8);
+    let qu: [u8; 8] = core::array::from_fn(|l| nq0[l] as u8);
+    let pv: [u8; 8] = core::array::from_fn(|l| np0[l + 8] as u8);
+    let qv: [u8; 8] = core::array::from_fn(|l| nq0[l + 8] as u8);
+    if vertical {
+        crate::simd::store_t8x2(u, o - 1, ls, &pu, &qu);
+        crate::simd::store_t8x2(v, o - 1, ls, &pv, &qv);
+    } else {
+        u[o - xs..o - xs + 8].copy_from_slice(&pu);
+        u[o..o + 8].copy_from_slice(&qu);
+        v[o - xs..o - xs + 8].copy_from_slice(&pv);
+        v[o..o + 8].copy_from_slice(&qv);
+    }
+}
+
 /// Mutable planes of a band of macroblock rows, starting at the band's first
 /// sample row (`yp`/`cp` are the horizontal pads).
 pub(crate) struct View<'a> {
@@ -332,24 +408,27 @@ fn deblock_mb(p: &mut View, info: &[MbInfo], mbw: usize, mbx: usize, mby: usize)
         }
     }
     let (s, base) = (p.cs, mby * 8 * p.cs + p.cp + mbx * 8);
-    for pl in [&mut *p.u, &mut *p.v] {
-        // chroma edges 0 and 4 use luma edges 0 and 2; chroma line l uses luma segment l/2.
-        for (ce, le) in [(0usize, 0usize), (1, 2)] {
-            if b[0][le] != [0; 4] {
-                if ce == 0 && b[0][0].contains(&4) {
-                    filter_edge::<8, true, true>(pl, base, 1, s, &b[0][0], &cpl);
-                } else {
-                    filter_edge::<8, true, false>(pl, base + ce * 4, 1, s, &b[0][le], if ce == 0 { &cpl } else { &cpi });
-                }
+    // chroma edges 0 and 4 use luma edges 0 and 2; chroma line l uses luma segment l/2
+    let (u, v) = (&mut *p.u, &mut *p.v);
+    for (ce, le) in [(0usize, 0usize), (1, 2)] {
+        let bs = &b[0][le];
+        if *bs != [0; 4] {
+            let par = if ce == 0 { &cpl } else { &cpi };
+            if ce == 0 && bs.contains(&4) {
+                filter_chroma_uv::<true>(u, v, base, 1, s, bs, par);
+            } else {
+                filter_chroma_uv::<false>(u, v, base + ce * 4, 1, s, bs, par);
             }
         }
-        for (ce, le) in [(0usize, 0usize), (1, 2)] {
-            if b[1][le] != [0; 4] {
-                if ce == 0 && b[1][0].contains(&4) {
-                    filter_edge::<8, true, true>(pl, base, s, 1, &b[1][0], &cpt);
-                } else {
-                    filter_edge::<8, true, false>(pl, base + ce * 4 * s, s, 1, &b[1][le], if ce == 0 { &cpt } else { &cpi });
-                }
+    }
+    for (ce, le) in [(0usize, 0usize), (1, 2)] {
+        let bs = &b[1][le];
+        if *bs != [0; 4] {
+            let par = if ce == 0 { &cpt } else { &cpi };
+            if ce == 0 && bs.contains(&4) {
+                filter_chroma_uv::<true>(u, v, base, s, 1, bs, par);
+            } else {
+                filter_chroma_uv::<false>(u, v, base + ce * 4 * s, s, 1, bs, par);
             }
         }
     }
