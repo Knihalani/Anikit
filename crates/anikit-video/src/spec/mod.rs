@@ -846,6 +846,9 @@ pub struct AnimatorSpec {
     pub opacity: Option<f64>,
     pub blur: Option<f64>,
     pub color: Option<String>,
+    /// Variable-font axis values at full selection, e.g. `{"wght": 900, "wdth": 125}`
+    /// (a weight wave across the units). Spacing stays that of the base text.
+    pub axes: Option<BTreeMap<String, f64>>,
     /// Range start / end as fractions of the units (0..1). Defaults 0 and 1. Animatable as `rangeStart` / `rangeEnd`.
     pub start: Option<Num>,
     pub end: Option<Num>,

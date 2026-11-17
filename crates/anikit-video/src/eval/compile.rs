@@ -1830,6 +1830,13 @@ impl C<'_> {
                         opacity: a.opacity.unwrap_or(1.0) as f32,
                         blur: a.blur.unwrap_or(0.0) as f32,
                         color,
+                        axes: a.axes.iter().flatten().filter(|(k, _)| k.len() == 4).map(|(k, v)| (k.clone(), *v as f32)).collect(),
+                        align: match l.align.as_deref() {
+                            Some("left" | "start") => 0.0,
+                            Some("right" | "end") => 1.0,
+                            None if matches!(&l.anchor, Some(spec::Anchor::Name(a)) if a.to_ascii_lowercase().contains("left")) => 0.0,
+                            _ => 0.5,
+                        },
                         smooth: a.smooth.unwrap_or(0.25).max(0.0) as f32,
                         order: fx::order_ranks(layout.units(by).len(), order, a.seed.unwrap_or(1.0)),
                         auto,
