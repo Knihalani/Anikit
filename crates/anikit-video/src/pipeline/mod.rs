@@ -62,7 +62,33 @@ pub struct Summary {
     pub render_fps: f64,
     pub bytes: u64,
     pub codec: String,
+    /// Per-stage timing (fused ak264 path only).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub profile: Option<StageProfile>,
 }
+
+/// Where the time went in a fused render, CPU ms per frame summed over threads.
+#[derive(Clone, Debug, Default, serde::Serialize)]
+pub struct StageProfile {
+    pub threads: usize,
+    pub gop: u32,
+    pub eval_ms: f64,
+    pub render_ms: f64,
+    pub copy_ms: f64,
+    pub encode_ms: f64,
+    /// Cores waiting (load imbalance, startup), ms per frame.
+    pub idle_ms: f64,
+    /// Wall ms per frame for render + encode (excludes mux).
+    pub wall_ms: f64,
+    pub mux_ms: f64,
+    pub unchanged: u64,
+    pub held: u64,
+    pub partial: u64,
+    pub full: u64,
+}
+
+/// Called with every frame exactly as it goes to the encoder (index within the range, tight 4:2:0 planes).
+pub type Tap<'a> = &'a (dyn Fn(usize, &ak264::YuvBuffer) + Sync);
 
 /// Hash a display list (bit-exact on floats), for dedupe.
 pub fn hash_list(dl: &DisplayList) -> u64 {
@@ -339,6 +365,11 @@ fn copy_yuv(src: &YuvFrame, dst: &mut ak264::YuvBuffer, map: Option<&crate::rend
 /// rasterised) and encodes its chunk, and unchanged macroblocks skip both
 /// rasterising and encoding. Returns the Annex-B stream.
 pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderConfig, prof: &Profile) -> Vec<u8> {
+    render_fused_tap(ev, opts, cfg, prof, None)
+}
+
+/// [`render_fused`], showing each finished frame to `tap` before it is encoded.
+pub fn render_fused_tap(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderConfig, prof: &Profile, tap: Option<Tap>) -> Vec<u8> {
     let total = ev.frames();
     let f0 = opts.from.map(|t| (t * ev.fps).round() as u32).unwrap_or(0).min(total) as usize;
     let f1 = opts.to.map(|t| (t * ev.fps).round() as u32).unwrap_or(total).clamp(f0 as u32, total) as usize;
@@ -427,6 +458,9 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
             prof.copy_ns.fetch_add(ns(t), Ordering::Relaxed);
             w.returned = Some(Instant::now());
         });
+        if let Some(tap) = tap {
+            tap(k, buf);
+        }
         let d = done.fetch_add(1, Ordering::Relaxed) + 1;
         if opts.progress {
             if let Ok(mut lr) = last_report.try_lock() {
@@ -586,6 +620,11 @@ pub fn mix_audio(ev: &Evaluator, t0: f32, dur: f32, wav: &std::path::Path) -> Re
 /// Render to an MP4 with ak264 in fused mode (see [`render_fused`]); muxes
 /// without ffmpeg when there is no audio.
 pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path, audio: Option<&std::path::Path>) -> Result<Summary, String> {
+    render_ak264_tap(ev, opts, out, audio, None)
+}
+
+/// [`render_ak264`], showing each frame to `tap` as it goes to the encoder (for the quality harness).
+pub fn render_ak264_tap(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path, audio: Option<&std::path::Path>, tap: Option<Tap>) -> Result<Summary, String> {
     let t0 = Instant::now();
     let w = (((ev.width as f32 * opts.scale).round() as u32).max(2)) & !1;
     let h = (((ev.height as f32 * opts.scale).round() as u32).max(2)) & !1;
@@ -633,7 +672,7 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
         }
         _ => None,
     };
-    let annexb = render_fused(ev, opts, &cfg, &prof);
+    let annexb = render_fused_tap(ev, opts, &cfg, &prof, tap);
     let t_enc = t0.elapsed();
     let tm = Instant::now();
     match audio {
@@ -670,20 +709,35 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
     let t_mux = tm.elapsed();
     let secs = t0.elapsed().as_secs_f32();
     let unchanged = prof.unchanged.load(Ordering::Relaxed) as u32;
+    let per = |x: &AtomicU64| x.load(Ordering::Relaxed) as f64 / 1e6 / n.max(1) as f64;
+    let (e, r, c) = (per(&prof.eval_ns), per(&prof.render_ns), per(&prof.copy_ns));
+    let wall = t_enc.as_secs_f64() * 1e3 / n.max(1) as f64;
+    let enc = per(&prof.encode_ns);
+    let idle = (wall * threads as f64 - e - r - c - enc).max(0.0);
+    let sp = StageProfile {
+        threads,
+        gop,
+        eval_ms: e,
+        render_ms: r,
+        copy_ms: c,
+        encode_ms: enc,
+        idle_ms: idle,
+        wall_ms: wall,
+        mux_ms: t_mux.as_secs_f64() * 1e3,
+        unchanged: unchanged as u64,
+        held: prof.held.load(Ordering::Relaxed),
+        partial: prof.partial.load(Ordering::Relaxed),
+        full: prof.full.load(Ordering::Relaxed),
+    };
     if opts.profile {
-        let per = |x: &AtomicU64| x.load(Ordering::Relaxed) as f64 / 1e6 / n.max(1) as f64;
-        let (e, r, c) = (per(&prof.eval_ns), per(&prof.render_ns), per(&prof.copy_ns));
-        let wall = t_enc.as_secs_f64() * 1e3 / n.max(1) as f64;
-        let enc = per(&prof.encode_ns);
-        let idle = (wall * threads as f64 - e - r - c - enc).max(0.0);
         eprintln!(
             "profile ({n} frames, {threads} threads, gop {gop}; CPU ms/frame summed over threads)\n  eval    {e:7.3}\n  render  {r:7.3}  (incremental+YUV: {} unchanged ({} held, not even evaluated), {} partial, {} full)\n  copy    {c:7.3}\n  encode  {enc:7.3}\n  idle    {idle:7.3}  (cores waiting: load imbalance, mux, startup)\n  wall    {wall:7.3} ms/frame = {:.0} fps; mux {:.0} ms",
             unchanged,
-            prof.held.load(Ordering::Relaxed),
-            prof.partial.load(Ordering::Relaxed),
-            prof.full.load(Ordering::Relaxed),
+            sp.held,
+            sp.partial,
+            sp.full,
             1000.0 / wall,
-            t_mux.as_secs_f64() * 1e3
+            sp.mux_ms
         );
     }
     Ok(Summary {
@@ -698,6 +752,7 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
         render_fps: (n as f64 / secs.max(1e-6) as f64).round(),
         bytes: std::fs::metadata(out).map(|m| m.len()).unwrap_or(0),
         codec: "ak264".into(),
+        profile: Some(sp),
     })
 }
 
@@ -743,6 +798,7 @@ fn render_video_rgba(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder
         render_fps: (n as f64 / secs.max(1e-6) as f64).round(),
         bytes,
         codec: enc.name().to_string(),
+        profile: None,
     })
 }
 
@@ -898,6 +954,7 @@ pub fn render_video(ev: &Evaluator, opts: &RenderOptions, enc: &mut dyn Encoder)
         render_fps: (n as f64 / secs.max(1e-6) as f64).round(),
         bytes,
         codec: enc.name().to_string(),
+        profile: None,
     })
 }
 
