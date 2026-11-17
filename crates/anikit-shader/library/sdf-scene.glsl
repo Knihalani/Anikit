@@ -86,6 +86,13 @@ vec3 sky(vec3 rd) {
     vec3 c = mix(hor, top, pow(clamp(rd.y * 1.6, 0.0, 1.0), 0.55));
     c += vec3(1.0, 0.62, 0.3) * (pow(s, 6.0) * 0.9 + pow(s, 40.0) * 1.5) * sun;
     c += vec3(1.0, 0.9, 0.7) * pow(s, 900.0) * 12.0;              // the disc
+    // Thin high cirrus, lit warm toward the sun.
+    if (rd.y > 0.0) {
+        vec2 cp = rd.xz / (rd.y + 0.08) * vec2(0.35, 1.6);
+        float cl = vnoise(cp * 1.3 + vec2(iTime * 0.01, 0.0)) * 0.6 + vnoise(cp * 3.7) * 0.3 + vnoise(cp * 9.1) * 0.1;
+        cl = smoothstep(0.52, 0.85, cl) * smoothstep(0.0, 0.12, rd.y) * smoothstep(0.7, 0.2, rd.y);
+        c = mix(c, mix(vec3(0.85, 0.82, 0.8), vec3(1.0, 0.7, 0.45), sun) * (0.75 + 0.6 * pow(s, 4.0)), cl * 0.35);
+    }
     return c;
 }
 
@@ -93,12 +100,19 @@ vec3 shade(vec3 ro, vec3 rd, float t, float m) {
     vec3 p = ro + rd * t;
     vec3 n = calcNormal(p);
     vec3 sd = sunDir();
+    if (m < 1.5 && n.y > 0.9) {
+        // Wind-rippled sand beyond the deck; fine wear on the deck itself.
+        float out_ = smoothstep(2.9, 3.4, abs(p.x));
+        float hx = vnoise(vec2(p.x * 1.1 + p.z * 0.4, p.z * 3.5)) - vnoise(vec2(p.x * 1.1 + p.z * 0.4 + 0.05, p.z * 3.5));
+        float hz = vnoise(vec2(p.x * 1.1 + p.z * 0.4, p.z * 3.5)) - vnoise(vec2(p.x * 1.1 + p.z * 0.4, p.z * 3.5 + 0.05));
+        n = normalize(n + vec3(hx, 0.0, hz) * mix(0.6, 9.0, out_));
+    }
     vec3 sunCol = mix(vec3(1.25, 1.15, 1.0), vec3(1.75, 0.98, 0.5), sun) * 2.6;
     vec3 skyCol = mix(vec3(0.3, 0.4, 0.6), vec3(0.22, 0.3, 0.55), sun);
     // Concrete: warm grey with board-form streaks and mottling.
     float mott = vnoise(p.xz * 3.0 + p.y * 1.7) * 0.5 + vnoise(p.xy * 9.0 + p.z * 4.0) * 0.25 + vnoise(vec2(p.y * 40.0, p.x * 2.0 + p.z * 2.0)) * 0.12;
     vec3 alb = vec3(0.56, 0.52, 0.47) * (0.82 + 0.3 * mott);
-    if (m < 1.5) alb = vec3(0.62, 0.57, 0.5) * (0.85 + 0.25 * vnoise(p.xz * 2.3));           // limestone deck
+    if (m < 1.5) alb = mix(vec3(0.62, 0.57, 0.5) * (0.85 + 0.25 * vnoise(p.xz * 2.3)), vec3(0.7, 0.52, 0.36) * (0.9 + 0.2 * vnoise(p.xz * 0.7)), smoothstep(2.9, 3.4, abs(p.x)));   // limestone deck, then sand
     if (m > 2.5) alb = vec3(0.10, 0.16, 0.17);                                           // pool floor
     float dif = max(dot(n, sd), 0.0) * softShadow(p + n * 0.004, sd);
     float occ = ao(p, n);
