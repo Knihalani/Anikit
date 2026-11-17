@@ -223,6 +223,8 @@ pub struct HandOpts {
     pub misregister: Option<Vec<[f32; 2]>>,
     /// Risograph tint steps (0 = continuous tone).
     pub tints: Option<f32>,
+    /// Risograph plate snapping 0..0.45: coverage below it prints nothing, above `1 - solid` prints solid.
+    pub solid: Option<f32>,
     /// Edge breakup amplitude (0 = clean edges).
     pub edge: Option<f32>,
     /// Edge breakup feature size in px.
@@ -772,6 +774,8 @@ fn riso_print(hand: &Hand, out: &mut [f32], w: usize, h: usize, f: Finish, seed:
     let mut al = vec![0.0f32; n];
     let mut memo: std::collections::HashMap<u32, C3> = std::collections::HashMap::new();
     let tints = hand.opts.tints.unwrap_or(4.0);
+    let solid = hand.opts.solid.unwrap_or(0.15).clamp(0.0, 0.45);
+    let (solid_lo, solid_hi) = (solid, 1.0 - solid);
     for i in 0..n {
         al[i] = out[i * 4 + 3];
         if al[i] <= 0.0 {
@@ -792,6 +796,9 @@ fn riso_print(hand: &Hand, out: &mut [f32], w: usize, h: usize, f: Finish, seed:
         } else {
             c
         };
+        // Push near-empty and near-full plates to paper and solid ink: prints read as
+        // flat spot colour with halftone only in between, not a screen everywhere.
+        let c = c.map(|v| ((v - solid_lo) / (solid_hi - solid_lo)).clamp(0.0, 1.0));
         cov[i * 3..i * 3 + 3].copy_from_slice(&c);
     }
     let sc = hand.scale;
@@ -1242,7 +1249,8 @@ impl Geo {
                 let face = if slope * lx < 0.0 { -0.25 } else { 0.6 };
                 let strata = ((y / (16.0 * sc) + vnoise2(x / (200.0 * sc), y / (50.0 * sc), self.seed) * 0.8).fract() < 0.3) as u8 as f32 * (0.5 + 0.5 * steep);
                 let cap = smoothstep(4.0 * sc, 1.0 * sc, depth);
-                let gully = smoothstep(0.55, 0.7, vnoise2(x / (12.0 * sc), y / (140.0 * sc), self.seed ^ 0x99));
+                // Erosion gullies on the cliff faces only, wide enough to read as shapes.
+                let gully = smoothstep(0.5, 0.62, vnoise2(x / (34.0 * sc), y / (220.0 * sc), self.seed ^ 0x99)) * steep;
                 let s = 0.18 + steep * (face - 0.18) + strata * 0.1 - cap * 0.5 + gully * 0.3;
                 (s, 0.0)
             }

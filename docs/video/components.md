@@ -798,7 +798,7 @@ Whole illustrated worlds from a few props: `landscape` (sky, sun or moon and lay
 | `grain`, `light`, `seed` | `0.5`, varies, `1` | Texture amount; light direction in degrees (0 = from above, negative = from the left); seed. |
 | `boil` | `0` | Edge re-draws per second (edges are re-seeded; 3 variants cycle). |
 | `onTwos` / `stepFps` | off | Step the component's own animation (sway, glints, drift, boil) at 12 fps or at any rate. Camera parallax and push stay smooth. |
-| `hand` | `{}` | Every knob behind the preset, so a spec can go past it: `shade` (shadow multiply tint), `highlight`, `paper`, `ink`, `inks` (3), `halftone` (cell px), `angles` (3 degrees), `misregister` (3 `[dx, dy]`), `tints` (riso tint steps, 0 = continuous), `edge`, `edgeScale`, `soften`, `cel`, `contrast`, `brush`, `hatch` (spacing, 0 = off), `hatchAngle`, `outline` (0 = off), `rim`, `lift`, `liftBlur`, `liftOffset`. |
+| `hand` | `{}` | Every knob behind the preset, so a spec can go past it: `shade` (shadow multiply tint), `highlight`, `paper`, `ink`, `inks` (3), `halftone` (cell px), `angles` (3 degrees), `misregister` (3 `[dx, dy]`), `tints` (riso tint steps, 0 = continuous), `solid` (snap thin plates to paper and dense ones to solid ink), `edge`, `edgeScale`, `soften`, `cel`, `contrast`, `brush`, `hatch` (spacing, 0 = off), `hatchAngle`, `outline` (0 = off), `rim`, `lift`, `liftBlur`, `liftOffset`. |
 
 Shadows multiply towards a cool or complementary tint, and lit faces lift towards the light colour; neither is plain darkening. `flat`, `risograph` and `papercut` quantise shading into cel steps (`hand.cel` toggles this).
 
