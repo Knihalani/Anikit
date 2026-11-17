@@ -180,7 +180,7 @@
                 "height": "{{fmt.u * 7}}"
               },
               {
-                "text": "{{(title ?? 'What is new') + '\\n' + (product ?? brand.name)}}",
+                "text": "{{(title ?? 'What is new') + '\n[' + (product ?? brand.name) + ']{$accent}'}}",
                 "style": "title",
                 "weight": 750,
                 "width": "{{tw}}",
