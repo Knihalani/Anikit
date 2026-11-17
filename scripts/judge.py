@@ -118,11 +118,27 @@ def panel(frames, out):
 # ---------------------------------------------------------------- references
 
 def load_refs():
+    """refs/index.json, plus any refs/<slug>/ref.json not yet in it."""
+    refs = {}
     idx = REFS / "index.json"
-    if not idx.exists():
-        sys.exit(f"no reference index at {idx}")
-    refs = json.loads(idx.read_text())
-    return [r for r in refs if (REFS / r["slug"]).is_dir()]
+    if idx.exists():
+        refs = {r["slug"]: r for r in json.loads(idx.read_text())}
+    for f in REFS.glob("*/ref.json"):
+        try:
+            r = json.loads(f.read_text())
+            refs.setdefault(r["slug"], r)
+        except (json.JSONDecodeError, KeyError):
+            pass
+    out = []
+    for r in refs.values():
+        r.setdefault("style_tags", [])
+        if r.get("category") and r["category"] not in r["style_tags"]:
+            r["style_tags"] = [r["category"]] + list(r["style_tags"])
+        if (REFS / r["slug"]).is_dir() and len(list((REFS / r["slug"]).glob("0*.jpg"))) >= 3:
+            out.append(r)
+    if not out:
+        sys.exit(f"no references in {REFS}")
+    return out
 
 
 def ref_frames(slug):
