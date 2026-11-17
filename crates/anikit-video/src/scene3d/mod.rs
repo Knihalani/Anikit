@@ -549,7 +549,6 @@ impl Scene3d {
         }
 
         let mut px: kernel::pool::Buf<trace::Px> = kernel::pool::Buf::uninit(w * h);
-        let band = 32usize;
         let mut q = p.quality;
         if std::env::var_os("ANIKIT_SCENE3D_REFERENCE").is_some() {
             // Converged sampling with the same image model: 1 + 24 samples per
@@ -559,17 +558,7 @@ impl Scene3d {
             q.ao_rays = q.ao_rays.max(4);
             q.shadow_rays = q.shadow_rays.max(4);
         }
-        let body = |(k, rows): (usize, &mut [trace::Px])| {
-            let y0 = k * band;
-            let y1 = (y0 + rows.len() / w).min(h);
-            scene.render_rows(&cam, &prev, w, h, y0, y1, &q, rows);
-        };
-        use rayon::prelude::*;
-        if rayon::current_thread_index().is_some() {
-            px.chunks_mut(band * w).enumerate().for_each(body);
-        } else {
-            px.par_chunks_mut(band * w).enumerate().for_each(body);
-        }
+        scene.render_frame(&cam, &prev, w, h, &q, &mut px);
         let t_trace = clock.elapsed();
         let layer = self.particles(t, dt, &cam, &prev, &mut px, w, h, assets);
         let t_parts = clock.elapsed();
@@ -593,7 +582,7 @@ impl Scene3d {
                 ms(clock.elapsed() - t_parts)
             );
             let tm: Vec<u64> = trace::TIMES.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
-            eprintln!("  cpu: centre pass {:.0} ms, refinement {:.0} ms ({:.1}% of pixels refined)", tm[0] as f64 / 1e3, tm[1] as f64 / 1e3, tm[2] as f64 * 100.0 / (w * h) as f64);
+            eprintln!("  wall: centre pass {:.0} ms, refinement {:.0} ms ({:.1}% of pixels refined)", tm[0] as f64 / 1e3, tm[1] as f64 / 1e3, tm[2] as f64 * 100.0 / (w * h) as f64);
             let r: Vec<u64> = trace::RAYS.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
             eprintln!("  rays: {:.2}M closest ({:.2}M radiance, {:.2}M floor reflections), {:.2}M shadow/AO, {:.2} primary samples per pixel", r[0] as f64 / 1e6, r[3] as f64 / 1e6, r[4] as f64 / 1e6, r[1] as f64 / 1e6, r[2] as f64 / (w * h) as f64);
         }

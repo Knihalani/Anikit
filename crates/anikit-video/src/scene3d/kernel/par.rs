@@ -5,6 +5,20 @@
 use super::pool::{Buf, Pod};
 use rayon::prelude::*;
 
+/// A raw pointer that tasks may write through at disjoint indices.
+#[derive(Clone, Copy)]
+pub struct Shared<T>(pub *mut T);
+// SAFETY: users write disjoint elements only (see `at`).
+unsafe impl<T> Send for Shared<T> {}
+unsafe impl<T> Sync for Shared<T> {}
+impl<T> Shared<T> {
+    /// Pointer to element `i`; the caller guarantees no other task touches it.
+    #[inline(always)]
+    pub fn at(self, i: usize) -> *mut T {
+        self.0.wrapping_add(i)
+    }
+}
+
 /// Whether to split work across the pool (not when already on a worker).
 #[inline]
 pub fn parallel() -> bool {

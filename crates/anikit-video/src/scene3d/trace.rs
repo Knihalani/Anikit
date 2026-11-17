@@ -156,7 +156,37 @@ impl Shape {
             Shape::Sphere => (v3(-1.0, -1.0, -1.0), v3(1.0, 1.0, 1.0)),
         }
     }
+    /// Closest hit distance and where (triangle and barycentrics; unused for
+    /// spheres), without the surface attributes ([`Shape::surface`]).
     #[inline]
+    fn hit_t(&self, o: V3, d: V3, tmin: f32, tmax: f32) -> Option<(f32, u32, f32, f32)> {
+        match self {
+            Shape::Mesh(b) => b.intersect(o, d, tmin, tmax).map(|h| (h.t, h.tri, h.u, h.v)),
+            Shape::Sphere => sphere_t(o, d, tmin, tmax).map(|t| (t, 0, 0.0, 0.0)),
+        }
+    }
+
+    /// The attributes of a hit found by [`Shape::hit_t`] (same values as [`Shape::hit`]).
+    #[inline]
+    fn surface(&self, o: V3, d: V3, h: (f32, u32, f32, f32)) -> ObjHit {
+        let (t, tri, u, v) = h;
+        match self {
+            Shape::Mesh(b) => {
+                let tr = &b.tris[tri as usize];
+                let w = 1.0 - u - v;
+                let uv = [tr.uv[0][0] * w + tr.uv[1][0] * u + tr.uv[2][0] * v, tr.uv[0][1] * w + tr.uv[1][1] * u + tr.uv[2][1] * v];
+                (t, add(add(scale(tr.n[0], w), scale(tr.n[1], u)), scale(tr.n[2], v)), cross(tr.e1, tr.e2), uv)
+            }
+            Shape::Sphere => {
+                let n = madd(o, d, t);
+                let uv = [0.5 + n.x.atan2(n.z) / std::f32::consts::TAU, 0.5 - n.y.clamp(-1.0, 1.0).asin() / std::f32::consts::PI];
+                (t, n, n, uv)
+            }
+        }
+    }
+
+    #[inline]
+    #[allow(dead_code)]
     fn hit(&self, o: V3, d: V3, tmin: f32, tmax: f32) -> Option<ObjHit> {
         match self {
             Shape::Mesh(b) => b.intersect(o, d, tmin, tmax).map(|h| {
@@ -589,7 +619,7 @@ fn count(k: usize) {
         });
     }
 }
-/// Profiling: CPU µs in the centre pass and the refinement pass, refined pixels.
+/// Profiling: wall µs of the centre pass and the refinement pass, refined pixels.
 pub static TIMES: [std::sync::atomic::AtomicU64; 3] = [const { std::sync::atomic::AtomicU64::new(0) }; 3];
 pub static PROFILE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 const EPS: f32 = 1e-4;
@@ -623,6 +653,7 @@ fn weighted<R>(k: f32, f: impl FnOnce() -> R) -> R {
 /// Diffuse lighting split for denoising: albedo, unoccluded ambient,
 /// unshadowed key, and the AO / key visibility to apply to them.
 #[derive(Clone, Copy, Default)]
+#[repr(C)]
 struct Diffuse {
     alb: V3,
     amb: V3,
@@ -676,11 +707,13 @@ pub struct Px {
 unsafe impl super::kernel::pool::Pod for Px {}
 
 #[derive(Clone, Copy)]
+#[repr(C)]
 struct Sample {
     col: V3,
     dif: Diffuse,
     refl: V3,
-    floor: bool,
+    /// 1 for a directly seen floor sample.
+    floor: u32,
     rad: f32,
     /// Floor reflection fade × haze, applied after the blur.
     rf: f32,
@@ -691,8 +724,12 @@ struct Sample {
     depth: f32,
     vel: (f32, f32),
     nrm: V3,
+    _pad: u32,
     id: usize,
 }
+
+// SAFETY: `repr(C)`, only f32/u32/usize fields laid out without padding.
+unsafe impl super::kernel::pool::Pod for Sample {}
 
 impl Sample {
     #[inline]
@@ -776,6 +813,9 @@ impl Scene {
                 }
             }
         }
+        // The nearest object hit so far: instance, object-space ray, hit.
+        // Surface attributes are computed once, for the final hit only.
+        let mut obj: Option<(u32, V3, V3, (f32, u32, f32, f32))> = None;
         self.tlas.visit(o, d, EPS, tm, |k, tm| {
             let ob = &self.insts[k as usize];
             if camera && !ob.cam {
@@ -783,13 +823,18 @@ impl Scene {
             }
             let lo = ob.xf.point_inv(o);
             let ld = ob.xf.dir_inv(d);
-            if let Some((t, sn, gn, uv)) = self.shapes[ob.shape as usize].hit(lo, ld, EPS, tm) {
-                best = Some(Surf { t, p: madd(o, d, t), ng: ob.xf.normal(gn), ns: ob.xf.normal(sn), uv, on: norm(gn), obj: k as usize });
-                t
+            if let Some(hh) = self.shapes[ob.shape as usize].hit_t(lo, ld, EPS, tm) {
+                obj = Some((k, lo, ld, hh));
+                hh.0
             } else {
                 tm
             }
         });
+        if let Some((k, lo, ld, hh)) = obj {
+            let ob = &self.insts[k as usize];
+            let (t, sn, gn, uv) = self.shapes[ob.shape as usize].surface(lo, ld, hh);
+            best = Some(Surf { t, p: madd(o, d, t), ng: ob.xf.normal(gn), ns: ob.xf.normal(sn), uv, on: norm(gn), obj: k as usize });
+        }
         best
     }
 
@@ -1144,7 +1189,7 @@ impl Scene {
                 let bd = if self.haze.0 > 0.0 { lerp3(self.backdrop(d), self.haze.1, 1.0 - (-self.haze.0 * 200.0).exp()) } else { self.backdrop(d) };
                 let b = mul(bd, thr);
                 let (depth, nrm, id, vel) = first.unwrap_or((1e4, none, usize::MAX - 1, (0.0, 0.0)));
-                return Sample { col: add(col, b), dif: Diffuse::default(), refl: none, floor: false, rad: 0.0, rf: 1.0, rw: 0.0, vw: 1.0, depth, vel, nrm, id };
+                return Sample { col: add(col, b), dif: Diffuse::default(), refl: none, floor: 0, rad: 0.0, rf: 1.0, rw: 0.0, vw: 1.0, depth, vel, nrm, _pad: 0, id };
             };
             let dist = travelled + s.t;
             let haze_f = if self.haze.0 > 0.0 { (-self.haze.0 * dist).exp() } else { 1.0 };
@@ -1202,7 +1247,7 @@ impl Scene {
                     }
                     thr = tthr;
                     if luma(thr) < 0.004 {
-                        return Sample { col, dif: Diffuse::default(), refl: none, floor: false, rad: 0.0, rf: 1.0, rw: 0.0, vw: 1.0, depth: fd, vel: fvel, nrm: fnrm, id: fid };
+                        return Sample { col, dif: Diffuse::default(), refl: none, floor: 0, rad: 0.0, rf: 1.0, rw: 0.0, vw: 1.0, depth: fd, vel: fvel, nrm: fnrm, _pad: 0, id: fid };
                     }
                     o = madd(s.p, d, 1e-4);
                     travelled = dist;
@@ -1225,7 +1270,7 @@ impl Scene {
                 // applies (so far, hazed floor can't gather near reflections).
                 // Seen through glass, it isn't blurred separately.
                 let (refl, col) = if direct { (mul(refl, thr), col) } else { (none, add(col, mul(scale(refl, keepf), thr))) };
-                return Sample { col, dif, refl, floor: direct, rad, rf: keepf, rw: if skip_refl { 0.0 } else { 1.0 }, vw: if skip_vis && self.floor.as_ref().is_some_and(|f| f.vis.is_none()) { 0.0 } else { 1.0 }, depth: fd, vel: fvel, nrm: fnrm, id: fid };
+                return Sample { col, dif, refl, floor: direct as u32, rad, rf: keepf, rw: if skip_refl { 0.0 } else { 1.0 }, vw: if skip_vis && self.floor.as_ref().is_some_and(|f| f.vis.is_none()) { 0.0 } else { 1.0 }, depth: fd, vel: fvel, nrm: fnrm, _pad: 0, id: fid };
             }
             let (c, mut dif) = weighted(luma(thr) * haze_f, || self.shade_obj(&s, d, 0, layer, q, rot, false));
             if (luma(dif.alb) > 0.0 || luma(dif.spec) > 0.0) && !skip_vis {
@@ -1238,59 +1283,65 @@ impl Scene {
             dif.alb = mul(dif.alb, scale(thr, haze_f));
             dif.spec = mul(dif.spec, scale(thr, haze_f));
             let col = add(col, mul(thr, add(scale(c, haze_f), haze_add)));
-            return Sample { col, dif, refl: none, floor: false, rad: 0.0, rf: 1.0, rw: 0.0, vw: if skip_vis { 0.0 } else { 1.0 }, depth: fd, vel: fvel, nrm: fnrm, id: fid };
+            return Sample { col, dif, refl: none, floor: 0, rad: 0.0, rf: 1.0, rw: 0.0, vw: if skip_vis { 0.0 } else { 1.0 }, depth: fd, vel: fvel, nrm: fnrm, _pad: 0, id: fid };
         }
         let (depth, nrm, id, vel) = first.unwrap_or((1e4, none, usize::MAX - 1, (0.0, 0.0)));
-        Sample { col, dif: Diffuse::default(), refl: none, floor: false, rad: 0.0, rf: 1.0, rw: 0.0, vw: 1.0, depth, vel, nrm, id }
+        Sample { col, dif: Diffuse::default(), refl: none, floor: 0, rad: 0.0, rf: 1.0, rw: 0.0, vw: 1.0, depth, vel, nrm, _pad: 0, id }
     }
 
-    /// Render the primary pass for rows `y0..y1`: one centre sample per pixel,
-    /// then `edge_spp` more where a pixel disagrees with a neighbour.
-    pub fn render_rows(&self, cam: &Camera, prev: &Camera, w: usize, h: usize, y0: usize, y1: usize, q: &Quality, out: &mut [Px]) {
-        let ya = y0.saturating_sub(1);
-        let yb = (y1 + 1).min(h);
+    /// Tone-mapped perceptual luminance for the refinement test. Diffuse light
+    /// is taken unshadowed: AO and key visibility come from one noisy ray each
+    /// and are denoised in post, so their noise must not trigger supersampling
+    /// (it covered whole matte surfaces); geometric and shading edges still do.
+    #[inline]
+    fn contrast_luma(s: &Sample) -> f32 {
+        let d = &s.dif;
+        let lit = add(mul(d.alb, add(d.amb, d.key)), d.spec);
+        let l = luma(add(add(s.col, s.refl), lit)).max(0.0);
+        (l / (1.0 + l)).powf(1.0 / 2.2)
+    }
+
+    /// The primary pass over the whole frame, in two row-parallel phases: one
+    /// centre sample per pixel, then `edge_spp` more where a pixel disagrees
+    /// with a neighbour, resolved into `out` (`w × h`). Fine-grained rows keep
+    /// the cores evenly loaded, and no centre sample is computed twice.
+    pub fn render_frame(&self, cam: &Camera, prev: &Camera, w: usize, h: usize, q: &Quality, out: &mut [Px]) {
+        use super::kernel::{par, pool::Buf};
         let (rig, prev) = (&Rig::new(cam, w, h), &Rig::new(prev, w, h));
         let clock = std::time::Instant::now();
-        let mut centre: Vec<Sample> = Vec::with_capacity((yb - ya) * w);
-        for y in ya..yb {
+        let mut centre: Buf<Sample> = Buf::uninit(w * h);
+        let mut tms: Buf<f32> = Buf::uninit(w * h);
+        let tp = par::Shared(tms.as_mut_ptr());
+        let rough_floor = self.floor.as_ref().is_some_and(|f| f.roughness >= 0.2);
+        par::rows(&mut centre, w, |y, row| {
             for x in 0..w {
                 let hs = hash2(x as u32, y as u32);
                 let rot = (u01(hs), u01(hash2(hs, 0x9e37)));
                 // Rough floors are blurred anyway: trace their reflections on a checkerboard.
                 let odd = !q.full && (x + y) & 1 == 1;
-                let skip = if odd { (self.floor.as_ref().is_some_and(|f| f.roughness >= 0.2) as u8) | 2 } else { 0 };
-                centre.push(self.primary(rig, prev, x as f32 + 0.5, y as f32 + 0.5, q, rot, skip));
+                let skip = if odd { (rough_floor as u8) | 2 } else { 0 };
+                let s = self.primary(rig, prev, x as f32 + 0.5, y as f32 + 0.5, q, rot, skip);
+                // SAFETY: pixel (x, y) belongs to this row's task only.
+                unsafe { *tp.at(y * w + x) = Self::contrast_luma(&s) };
+                row[x] = s;
             }
-        }
+        });
         let t_centre = clock.elapsed();
-        let mut refined = 0u64;
-        let tms: Vec<f32> = centre
-            .iter()
-            .map(|s| {
-                // Perceptual (gamma) tone-mapped luminance, so dark detail
-                // such as floor reflections also triggers refinement. Diffuse
-                // light is taken unshadowed: AO and key visibility come from
-                // one noisy ray each and are denoised in post, so their noise
-                // must not trigger supersampling (it covered whole matte
-                // surfaces); geometric and shading edges still do.
-                let d = &s.dif;
-                let lit = add(mul(d.alb, add(d.amb, d.key)), d.spec);
-                let l = luma(add(add(s.col, s.refl), lit)).max(0.0);
-                (l / (1.0 + l)).powf(1.0 / 2.2)
-            })
-            .collect();
-        let mut samples: Vec<Sample> = Vec::with_capacity(q.edge_spp as usize + 1);
-        for y in y0..y1 {
+        let refined = std::sync::atomic::AtomicU64::new(0);
+        let (centre, tms) = (&centre, &tms);
+        par::rows(out, w, |y, row| {
+            let mut samples: Vec<Sample> = Vec::with_capacity(q.edge_spp as usize + 1);
+            let mut nref = 0u64;
             for x in 0..w {
-                let ci = (y - ya) * w + x;
+                let ci = y * w + x;
                 let c = &centre[ci];
                 let mut refine = q.full;
                 for (dx, dy) in [(-1i32, 0i32), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1), (-1, 1), (1, -1)] {
                     let (nx, ny) = (x as i32 + dx, y as i32 + dy);
-                    if nx < 0 || nx >= w as i32 || ny < ya as i32 || ny >= yb as i32 {
+                    if nx < 0 || nx >= w as i32 || ny < 0 || ny >= h as i32 {
                         continue;
                     }
-                    let ni = (ny as usize - ya) * w + nx as usize;
+                    let ni = ny as usize * w + nx as usize;
                     if centre[ni].id != c.id || (tms[ni] - tms[ci]).abs() > q.contrast {
                         refine = true;
                         break;
@@ -1299,7 +1350,7 @@ impl Scene {
                 samples.clear();
                 samples.push(*c);
                 if refine {
-                    refined += 1;
+                    nref += 1;
                     // Two stages: half the samples, then the rest only where they
                     // still disagree (object edges always get all of them).
                     let hs = hash2(x as u32, y as u32);
@@ -1327,14 +1378,15 @@ impl Scene {
                         }
                     }
                 }
-                out[(y - y0) * w + x] = resolve(&samples);
+                row[x] = resolve(&samples);
             }
-        }
+            refined.fetch_add(nref, std::sync::atomic::Ordering::Relaxed);
+        });
         if PROFILE.load(std::sync::atomic::Ordering::Relaxed) {
             use std::sync::atomic::Ordering::Relaxed;
             TIMES[0].fetch_add(t_centre.as_micros() as u64, Relaxed);
             TIMES[1].fetch_add((clock.elapsed() - t_centre).as_micros() as u64, Relaxed);
-            TIMES[2].fetch_add(refined, Relaxed);
+            TIMES[2].fetch_add(refined.load(Relaxed), Relaxed);
         }
     }
 
@@ -1472,7 +1524,7 @@ fn resolve(samples: &[Sample]) -> Px {
         px.vk += d.vk * la * s.vw;
         vis_w += la * s.vw;
         px.vw += la;
-        if s.floor {
+        if s.floor != 0 {
             px.cov += wt;
             px.rad += s.rad * wt;
             px.rf += s.rf * wt;
