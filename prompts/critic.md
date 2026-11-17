@@ -13,7 +13,7 @@ Look at the contact sheet first, then run `critique_spec`, then read the spec. S
 4. **Hierarchy:** 3 type levels or fewer.
 5. **Contrast and size:** at least 4.5:1 and 2.2vmin.
 6. **Safe areas.**
-7. **Pacing:** 2–5 s beats, end card held 3 s or more.
+7. **Pacing:** a cut or major change every 0.5–1.5 s on the beat, no shot over 2.5 s, and energetic camera work. `pace.py` must pass.
 8. **Motion:** out-eases, small distances, staggers of 0.04–0.12.
 9. **Point of view:** a chosen look, one signature image, layouts that vary per shot (critique's `sameness` note is a fail).
 10. **Story:** each shot changes what the viewer understands; copy is benefits with numbers, no filler.
