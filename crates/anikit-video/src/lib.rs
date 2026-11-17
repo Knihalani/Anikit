@@ -16,6 +16,7 @@ pub mod components;
 pub mod dl;
 pub mod agent_cli;
 pub mod critique;
+pub mod looks;
 pub mod mcp;
 pub mod preview;
 pub mod prompts;

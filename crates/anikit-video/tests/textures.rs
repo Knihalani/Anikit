@@ -36,3 +36,16 @@ fn deterministic_shared_capped_and_parallel() {
     }
     assert!(small.stats().bytes <= 64 * 36 * 4 * 5, "{:?}", small.stats());
 }
+
+#[test]
+fn components_reach_compositions_through_assets() {
+    use anikit_video::components::Assets;
+    let p = parse_json(SRC).unwrap();
+    let ev = Evaluator::new(&p.spec, Options::default()).unwrap();
+    let info = ev.assets.composition_info("film").unwrap();
+    assert_eq!((info.width, info.height, info.duration, info.looped), (64, 36, 2.0, false));
+    let a = ev.assets.composition_frame("film", 0.5, 1).unwrap();
+    let b = CompTextures::new(usize::MAX).get(ev.composition("film").unwrap(), 0.5, 1);
+    assert_eq!(a.data_as_u8_slice(), b.data_as_u8_slice());
+    assert!(ev.assets.composition_info("nope").is_none());
+}

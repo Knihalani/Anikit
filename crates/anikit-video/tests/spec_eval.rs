@@ -295,7 +295,7 @@ fn tagged_eval_identifies_layers() {
 
 // ---------- compositions ----------
 
-const COMP: &str = r##"{ "size": [400, 200], "background": "#000000",
+const COMP: &str = r##"{ "size": [400, 200], "background": "#000000", "motionBlur": false,
   "compositions": { "badge": { "size": [100, 50], "duration": 2, "background": "#ff0000",
       "layers": [ { "shape": "rect", "width": 50, "height": 50, "x": 75, "fill": "#00ff00",
                     "animate": [ { "from": { "opacity": 0 }, "at": 1, "duration": 0.5 } ] } ] } },
@@ -357,4 +357,20 @@ fn composition_diagnostics() {
     assert!(ev.composition("a").unwrap().composition("z").is_some());
     let e = errors(r##"{ "compositions": { "ui": { "layers": [ "a" ], "sizee": 3 } }, "scenes": [ "x" ] }"##);
     assert!(e.iter().any(|m| m.contains("compositions.ui.sizee") && m.contains("'size'")), "{e:?}");
+}
+
+#[test]
+fn post_and_motion_blur_spec() {
+    let e = errors(r##"{ "post": "cinematc", "scenes": [ { "post": { "preset": "noir", "bloomTreshold": 0.5 }, "layers": [ "a" ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("error: post:") && m.contains("did you mean 'cinematic'")), "{e:?}");
+    assert!(e.iter().any(|m| m.contains("scenes[0].post") && m.contains("did you mean 'bloomThreshold'")), "{e:?}");
+    let ev = build(r##"{ "post": "cinematic", "motionBlur": { "shutter": 90 }, "scenes": [ { "layers": [ "a" ] }, { "post": "none", "layers": [ "b" ] } ] }"##);
+    assert!(ev.post_at(1.0).is_some() && ev.post_at(5.0).is_none());
+    assert!((ev.shutter - 0.25 / 30.0).abs() < 1e-6 && ev.shutter_explicit);
+    let ev = build(r##"{ "scenes": [ { "layers": [ { "text": "a", "animate": [ { "to": { "x": 0 }, "duration": 1 } ] } ] } ] }"##);
+    assert!(!ev.shutter_explicit && ev.needs_blur(0.5, true) && !ev.needs_blur(0.5, false) && !ev.needs_blur(2.0, true));
+    // Stills apply the look.
+    let plain = anikit_video::pipeline::render_rgba(&build(r##"{ "size": [64, 36], "scenes": [ "x" ] }"##), 1.0, 1.0).2;
+    let graded = anikit_video::pipeline::render_rgba(&build(r##"{ "size": [64, 36], "post": "noir", "scenes": [ "x" ] }"##), 1.0, 1.0).2;
+    assert_ne!(plain, graded);
 }

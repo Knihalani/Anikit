@@ -10,6 +10,12 @@ use kurbo::Rect;
 
 #[derive(Default, Debug)]
 pub struct Upscaler {
+    /// Use the smooth, dithered cubic filter instead of bilinear.
+    pub cubic: bool,
+    /// Cubic kernel: `None` picks from the scale (B-spline for ≥ 12× enlargement,
+    /// Mitchell otherwise); `Some(true)` forces B-spline, `Some(false)` Mitchell.
+    pub bspline: Option<bool>,
+    hrows: Vec<i32>,
     xtab: Vec<(u32, u32, u32)>,
     rows: [Vec<u8>; 2],
     row_ids: [usize; 2],
@@ -58,6 +64,11 @@ unsafe fn gather_row(s: &[u8], (idx, wts): &(Vec<i32>, Vec<i32>), r: &mut [u8]) 
 }
 
 impl Upscaler {
+    /// A smooth (cubic B-spline) upscaler.
+    pub fn cubic() -> Self {
+        Self { cubic: true, ..Default::default() }
+    }
+
     /// Forget cached rows (the source pixels changed in place).
     pub fn invalidate(&mut self) {
         self.key = None;
@@ -79,6 +90,20 @@ impl Upscaler {
 
     #[allow(clippy::too_many_arguments)]
     fn run_c<const C: usize>(&mut self, src: &[u8], sw: usize, sh: usize, dev: Rect, out: &mut [u8], stride: usize, ow: usize, oh: usize, ox: i64, oy: i64) {
+        // 1:1 at an integer offset: a plain copy (any filter would only blur).
+        if dev.width() == sw as f64 && dev.height() == sh as f64 && dev.x0.fract() == 0.0 && dev.y0.fract() == 0.0 {
+            let (bx, by) = (ox - dev.x0 as i64, oy - dev.y0 as i64);
+            if bx >= 0 && by >= 0 && bx as usize + ow <= sw && by as usize + oh <= sh {
+                for y in 0..oh {
+                    let s = ((by as usize + y) * sw + bx as usize) * C;
+                    out[y * stride..y * stride + ow * C].copy_from_slice(&src[s..s + ow * C]);
+                }
+                return;
+            }
+        }
+        if self.cubic {
+            return self.run_cubic::<C>(src, sw, sh, dev, out, stride, ow, oh, ox, oy);
+        }
         #[cfg(target_arch = "x86_64")]
         if std::arch::is_x86_feature_detected!("avx2") {
             // SAFETY: feature checked above.
@@ -171,6 +196,130 @@ impl Upscaler {
             }
         }
     }
+}
+
+/// Mitchell–Netravali (B = C = 1/3) weights for fractional offset `t`, taps at −1, 0, 1, 2:
+/// sharp enough for photos and screenshots, without visible ringing.
+#[inline(always)]
+fn mitchell(t: f32) -> [f32; 4] {
+    let k = |x: f32| -> f32 {
+        let x = x.abs();
+        let (b, c) = (1.0 / 3.0, 1.0 / 3.0);
+        if x < 1.0 {
+            ((12.0 - 9.0 * b - 6.0 * c) * x * x * x + (-18.0 + 12.0 * b + 6.0 * c) * x * x + (6.0 - 2.0 * b)) / 6.0
+        } else if x < 2.0 {
+            ((-b - 6.0 * c) * x * x * x + (6.0 * b + 30.0 * c) * x * x + (-12.0 * b - 48.0 * c) * x + (8.0 * b + 24.0 * c)) / 6.0
+        } else {
+            0.0
+        }
+    };
+    [k(t + 1.0), k(t), k(1.0 - t), k(2.0 - t)]
+}
+
+/// Cubic B-spline weights (sum 1) for fractional offset `t`, taps at −1, 0, 1, 2.
+#[inline(always)]
+fn bspline(t: f32) -> [f32; 4] {
+    let (t2, t3) = (t * t, t * t * t);
+    [(1.0 - t).powi(3) / 6.0, (3.0 * t3 - 6.0 * t2 + 4.0) / 6.0, (-3.0 * t3 + 3.0 * t2 + 3.0 * t + 1.0) / 6.0, t3 / 6.0]
+}
+
+impl Upscaler {
+    /// Smooth upscale: separable cubic B-spline (C²-continuous, no ringing),
+    /// so low-res fields show no bilinear creases, plus a fixed per-pixel
+    /// triangular dither when rounding to 8 bits so smooth ramps don't band.
+    #[allow(clippy::too_many_arguments, clippy::needless_range_loop)]
+    fn run_cubic<const C: usize>(&mut self, src: &[u8], sw: usize, sh: usize, dev: Rect, out: &mut [u8], stride: usize, ow: usize, oh: usize, ox: i64, oy: i64) {
+        let (sx, sy) = (sw as f64 / dev.width(), sh as f64 / dev.height());
+        let clampi = |i: i64, n: usize| i.clamp(0, n as i64 - 1) as usize;
+        // Very low-res sources (fields, ≥ 12× enlargement) get the smoothest
+        // filter; ordinary images the sharper Mitchell kernel.
+        let smooth = self.bspline.unwrap_or(sx <= 1.0 / 12.0 && sy <= 1.0 / 12.0);
+        let kernel: fn(f32) -> [f32; 4] = if smooth { bspline } else { mitchell };
+        // Column taps: 4 source indices and weights (fixed point, sum 4096).
+        let cols: Vec<([usize; 4], [i32; 4])> = (0..ow)
+            .map(|x| {
+                let u = ((ox + x as i64) as f64 + 0.5 - dev.x0) * sx - 0.5;
+                let i = u.floor();
+                let w = kernel((u - i) as f32);
+                let i = i as i64;
+                let idx = [clampi(i - 1, sw), clampi(i, sw), clampi(i + 1, sw), clampi(i + 2, sw)];
+                let mut wi = w.map(|v| (v * 4096.0).round() as i32);
+                wi[1] += 4096 - wi.iter().sum::<i32>();
+                (idx, wi)
+            })
+            .collect();
+        // 1. Horizontal pass over every source row (sources are small when enlarging).
+        let srow = sw * C;
+        let mut hrows = std::mem::take(&mut self.hrows);
+        hrows.clear();
+        hrows.resize(sh * ow * C, 0);
+        {
+            use rayon::prelude::*;
+            hrows.par_chunks_mut(ow * C).enumerate().for_each(|(r, hrow)| {
+                let s = &src[r * srow..(r + 1) * srow];
+                for (x, (idx, wi)) in cols.iter().enumerate() {
+                    for c in 0..C {
+                        hrow[x * C + c] = wi[0] * s[idx[0] * C + c] as i32 + wi[1] * s[idx[1] * C + c] as i32 + wi[2] * s[idx[2] * C + c] as i32 + wi[3] * s[idx[3] * C + c] as i32;
+                    }
+                }
+            });
+        }
+        // 2. Vertical pass, rows in parallel, fixed point (rows ×4096, weights
+        // ×256 → ×2^20), with a tiled triangular dither (±0.5 LSB) in the rounding.
+        let row_len = ow * C;
+        let dtab = dither_table();
+        let x0 = ox as usize;
+        use rayon::prelude::*;
+        out.par_chunks_mut(stride).take(oh).enumerate().for_each(|(y, orow)| {
+            let v = ((oy + y as i64) as f64 + 0.5 - dev.y0) * sy - 0.5;
+            let j = v.floor();
+            let wy = kernel((v - j) as f32);
+            let j = j as i64;
+            let rs = [clampi(j - 1, sh), clampi(j, sh), clampi(j + 1, sh), clampi(j + 2, sh)];
+            let mut wq = wy.map(|v| (v * 256.0).round() as i32);
+            wq[1] += 256 - wq.iter().sum::<i32>();
+            let (r0, r1, r2, r3) = (
+                &hrows[rs[0] * row_len..(rs[0] + 1) * row_len],
+                &hrows[rs[1] * row_len..(rs[1] + 1) * row_len],
+                &hrows[rs[2] * row_len..(rs[2] + 1) * row_len],
+                &hrows[rs[3] * row_len..(rs[3] + 1) * row_len],
+            );
+            let yy = (oy + y as i64) as usize;
+            let dt = &dtab[(yy & 63) * 64..(yy & 63) * 64 + 64];
+            let d = &mut orow[..row_len];
+            for (x, (((o, a), b), (c, e))) in d.chunks_exact_mut(C).zip(r0.chunks_exact(C)).zip(r1.chunks_exact(C)).zip(r2.chunks_exact(C).zip(r3.chunks_exact(C))).enumerate() {
+                let dz = dt[(x0 + x) & 63];
+                for k in 0..C {
+                    let v = wq[0] * a[k] + wq[1] * b[k] + wq[2] * c[k] + wq[3] * e[k];
+                    // No dither on alpha.
+                    let z = if C == 4 && k == 3 { 1 << 19 } else { dz };
+                    o[k] = ((v + z) >> 20).clamp(0, 255) as u8;
+                }
+                // Premultiplied: overshoot (Mitchell's lobes) must not exceed alpha.
+                if C == 4 {
+                    let al = o[3];
+                    for v in &mut o[..3] {
+                        *v = (*v).min(al);
+                    }
+                }
+            }
+        });
+        self.hrows = hrows;
+    }
+}
+
+/// 64×64 tile of rounding offsets in 1/2^20 units: 0.5 (round) plus a
+/// triangular dither of ±0.5 LSB, fixed per pixel position.
+fn dither_table() -> &'static [i32] {
+    static T: std::sync::OnceLock<Vec<i32>> = std::sync::OnceLock::new();
+    T.get_or_init(|| {
+        (0..64 * 64)
+            .map(|i| {
+                let d = super::post::tri_dither((i % 64) as u32, (i / 64) as u32) * 0.5;
+                ((0.5 + d) * (1 << 20) as f32) as i32
+            })
+            .collect()
+    })
 }
 
 #[cfg(test)]

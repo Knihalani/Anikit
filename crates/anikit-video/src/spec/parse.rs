@@ -95,6 +95,7 @@ fn strip_pos(s: &str) -> String {
 /// errors with their path.
 pub fn from_value(v: serde_json::Value) -> Result<Parsed, Vec<Diagnostic>> {
     let v = super::reuse::expand(v)?;
+    let v = crate::looks::apply(v)?;
     let mut warnings = Vec::new();
     let mut track = serde_path_to_error::Track::new();
     let res = {
