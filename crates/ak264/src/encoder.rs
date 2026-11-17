@@ -1586,12 +1586,20 @@ fn cabac_residual(
             if cd.cbp & 15 == 0 {
                 break;
             }
+            if cd.nz[by * 4 + bx] == 0 {
+                cb.residual_empty(w, Cat::LumaAc, luma_inc(bx, by));
+                continue;
+            }
             for j in 0..15 {
                 scan[j] = blk[ZIGZAG[j + 1]] as i32;
             }
             cb.residual(w, &scan[..15], Cat::LumaAc, luma_inc(bx, by));
         } else {
             if cd.cbp & (1 << (k / 4)) == 0 {
+                continue;
+            }
+            if cd.nz[by * 4 + bx] == 0 {
+                cb.residual_empty(w, Cat::Luma4x4, luma_inc(bx, by));
                 continue;
             }
             for j in 0..16 {
@@ -1615,6 +1623,10 @@ fn cabac_residual(
                 let ia =
                     if bx > 0 { (cd.nzc[comp][by * 2] > 0) as usize } else { ext(a, intra, |m| m.nzc[comp][by * 2 + 1] > 0) };
                 let ib = if by > 0 { (cd.nzc[comp][bx] > 0) as usize } else { ext(b, intra, |m| m.nzc[comp][2 + bx] > 0) };
+                if cd.nzc[comp][blk] == 0 {
+                    cb.residual_empty(w, Cat::ChromaAc, ia + 2 * ib);
+                    continue;
+                }
                 let src = &cd.cac[comp][blk];
                 for j in 0..15 {
                     scan[j] = src[ZIGZAG[j + 1]] as i32;
