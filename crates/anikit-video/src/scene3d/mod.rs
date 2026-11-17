@@ -1392,3 +1392,101 @@ mod tests {
         assert!(c.aperture > 0.5, "f/2.8 at 10 m focus blurs the far field");
     }
 }
+
+/// HDRI environments and PBR texture sets end to end, from local files (no network).
+#[cfg(test)]
+mod asset_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn dir(tag: &str) -> std::path::PathBuf {
+        let d = std::env::temp_dir().join(format!("anikit-s3d-assets-{tag}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&d);
+        std::fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    /// A 128×64 sky: blue above, brown below, a small 4000-nit sun.
+    fn write_hdr(path: &std::path::Path) {
+        let (w, h) = (128u32, 64u32);
+        let img = image::Rgb32FImage::from_fn(w, h, |x, y| {
+            if (60..62).contains(&x) && (14..16).contains(&y) {
+                image::Rgb([4000.0, 3800.0, 3400.0])
+            } else if y < h / 2 {
+                image::Rgb([0.35, 0.5, 0.8])
+            } else {
+                image::Rgb([0.12, 0.09, 0.06])
+            }
+        });
+        image::DynamicImage::ImageRgb32F(img).save(path).unwrap();
+    }
+
+    fn mean(px: &[u8]) -> [f32; 3] {
+        let n = (px.len() / 4) as f32;
+        let mut m = [0.0; 3];
+        for p in px.chunks_exact(4) {
+            for k in 0..3 {
+                m[k] += p[k] as f32 / n;
+            }
+        }
+        m
+    }
+
+    #[test]
+    fn hdri_env_lights_reflects_and_backs_the_scene() {
+        let d = dir("hdri");
+        let hdr = d.join("sky.hdr");
+        write_hdr(&hdr);
+        let props = |bg: Value| json!({
+            "env": { "hdri": hdr.to_string_lossy(), "background": bg },
+            "camera": { "keys": [ { "t": 0, "pos": [0, 0.6, 3], "target": [0, 0.5, 0], "focal": 40 } ] },
+            "objects": [ { "type": "sphere", "radius": 0.5, "pos": [0, 0.5, 0], "material": "chrome" } ]
+        });
+        let mut s = Scene3d::try_from(props(json!(true))).unwrap();
+        s.prepare().map_err(|e| e.0).unwrap();
+        let p = s.p();
+        assert!(p.env.map.is_some());
+        assert!(p.env.key_box().is_some(), "the sun becomes the traced key");
+        let px = s.render(0.0, 1.0 / 30.0, 64, 36, None);
+        // The top of the frame is the blue sky.
+        let top = mean(&px[..64 * 4 * 4]);
+        assert!(top[2] > top[0] + 10.0, "sky should be blue: {top:?}");
+        // Without the background, rays that miss see the dark studio backdrop instead.
+        let mut s2 = Scene3d::try_from(props(json!(false))).unwrap();
+        s2.prepare().map_err(|e| e.0).unwrap();
+        let top2 = mean(&s2.render(0.0, 1.0 / 30.0, 64, 36, None)[..64 * 4 * 4]);
+        assert!(top2[2] + 20.0 < top[2], "{top2:?} vs {top:?}");
+        // Unknown keys and bad values are reported.
+        let bad = Scene3d::try_from(json!({ "env": { "hdri": hdr.to_string_lossy(), "rotation": 3 } })).and_then(|mut s| s.prepare().map_err(|e| e.0));
+        let msg = bad.err().unwrap_or_default();
+        assert!(msg.contains("rotation"), "{msg}");
+        let _ = std::fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn texture_sets_tint_and_roughen_a_material() {
+        let d = dir("pbr");
+        // Red albedo, mid roughness, flat normal.
+        image::RgbImage::from_pixel(32, 32, image::Rgb([200, 30, 30])).save(d.join("Red_Color.jpg")).unwrap();
+        image::GrayImage::from_pixel(32, 32, image::Luma([200])).save(d.join("Red_Roughness.png")).unwrap();
+        image::RgbImage::from_pixel(32, 32, image::Rgb([128, 128, 255])).save(d.join("Red_NormalGL.png")).unwrap();
+        let s = Scene3d::try_from(json!({
+            "env": "studio",
+            "objects": [ { "type": "sphere", "radius": 0.5, "pos": [0, 0.5, 0], "material": { "texture": d.to_string_lossy(), "scale": 2 } } ]
+        }))
+        .and_then(|mut s| s.prepare().map_err(|e| e.0).map(|_| s))
+        .unwrap();
+        let m = &s.p().mats[s.p().objs.iter().find_map(|o| o.parts.first().map(|x| x.1 as usize)).unwrap_or(0)];
+        assert!(m.pbr > 0);
+        let px = s.render(0.0, 1.0 / 30.0, 48, 48, None);
+        // The sphere in the middle reads red.
+        let c = &px[(24 * 48 + 24) * 4..(24 * 48 + 24) * 4 + 3];
+        assert!(c[0] as i32 > c[1] as i32 + 30, "{c:?}");
+        // A folder without a colour map is an error that says so.
+        let empty = dir("pbr-empty");
+        let e = Scene3d::try_from(json!({ "objects": [ { "type": "sphere", "material": { "texture": empty.to_string_lossy() } } ] })).and_then(|mut s| s.prepare().map_err(|e| e.0));
+        assert!(e.unwrap_err().contains("albedo"));
+        let _ = std::fs::remove_dir_all(&d);
+        let _ = std::fs::remove_dir_all(&empty);
+    }
+}

@@ -206,6 +206,19 @@ impl Shape {
             }),
         }
     }
+    /// Texture coordinates of a hit from [`Shape::hit_t`].
+    #[inline]
+    fn uv_at(&self, h: (f32, u32, f32, f32)) -> [f32; 2] {
+        match self {
+            Shape::Mesh(b) => {
+                let tr = &b.tris[h.1 as usize];
+                let w = 1.0 - h.2 - h.3;
+                [tr.uv[0][0] * w + tr.uv[1][0] * h.2 + tr.uv[2][0] * h.3, tr.uv[0][1] * w + tr.uv[1][1] * h.2 + tr.uv[2][1] * h.3]
+            }
+            Shape::Sphere => [0.0, 0.0],
+        }
+    }
+
     /// Object-space direction of +u on a triangle (spheres: around +y).
     fn tangent(&self, tri: u32, n: V3) -> V3 {
         match self {
@@ -865,6 +878,32 @@ impl Scene {
         (lo, hi)
     }
 
+    /// The texture set whose alpha cuts this instance out, if any.
+    #[inline]
+    fn cutout(&self, ob: &Inst) -> Option<&super::pbr::PbrSet> {
+        let m = &self.mats[ob.mat as usize];
+        if m.pbr == 0 {
+            return None;
+        }
+        self.pbr.get(m.pbr as usize - 1).filter(|s| s.alpha.is_some()).map(|s| &**s)
+    }
+
+    /// Closest object-space hit, skipping cut-out texels (a few layers deep).
+    #[inline]
+    fn hit_obj(&self, ob: &Inst, lo: V3, ld: V3, tm: f32) -> Option<(f32, u32, f32, f32)> {
+        let shape = &self.shapes[ob.shape as usize];
+        let Some(set) = self.cutout(ob) else { return shape.hit_t(lo, ld, EPS, tm) };
+        let mut tmin = EPS;
+        for _ in 0..12 {
+            let h = shape.hit_t(lo, ld, tmin, tm)?;
+            if set.solid(shape.uv_at(h)) {
+                return Some(h);
+            }
+            tmin = h.0 + 1e-5 * (1.0 + h.0);
+        }
+        None
+    }
+
     fn trace(&self, o: V3, d: V3, tmax: f32) -> Option<Surf> {
         self.trace_f(o, d, tmax, false)
     }
@@ -893,7 +932,7 @@ impl Scene {
                 return tm;
             }
             let (lo, ld) = self.to_object(k as usize, o, d);
-            if let Some(hh) = self.shapes[ob.shape as usize].hit_t(lo, ld, EPS, tm) {
+            if let Some(hh) = self.hit_obj(ob, lo, ld, tm) {
                 obj = Some((k, lo, ld, hh));
                 hh.0
             } else {
@@ -928,7 +967,11 @@ impl Scene {
                 return tm;
             }
             let (lo, ld) = self.to_object(k as usize, o, d);
-            if self.shapes[ob.shape as usize].occluded(lo, ld, EPS, tm) {
+            let occ = match self.cutout(ob) {
+                Some(_) => self.hit_obj(ob, lo, ld, tm).is_some(),
+                None => self.shapes[ob.shape as usize].occluded(lo, ld, EPS, tm),
+            };
+            if occ {
                 let m = &self.mats[ob.mat as usize];
                 if m.transmission > 0.0 {
                     // Glass: about 85% through each pane (two interfaces).

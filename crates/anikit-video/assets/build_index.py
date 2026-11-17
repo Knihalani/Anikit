@@ -161,6 +161,19 @@ def ph_textures():
     return out
 
 
+def alpha_maps(slug, f, r):
+    """Cutout maps (leaves): Poly Haven's glTF uses JPEG colour, so alpha lives
+    in separate `*_alpha` files next to the textures (`<slug>_<part>_alpha_<r>.png`)."""
+    out = []
+    for key in sorted(f):
+        if key.lower().endswith("alpha"):
+            h = f[key].get(r, {}).get("png") or f[key].get(r, {}).get("jpg")
+            if h:
+                ext = h["url"].rsplit(".", 1)[1]
+                out.append({"path": f"textures/{slug}_{key}_{r}.{ext}", "url": h["url"], "size": h["size"], "md5": h["md5"]})
+    return out
+
+
 def ph_models():
     a = js("https://api.polyhaven.com/assets?t=models")
     buckets = [
@@ -180,6 +193,7 @@ def ph_models():
             files = [{"path": g["url"].rsplit("/", 1)[1], "url": g["url"], "size": g["size"], "md5": g["md5"], "role": "main"}]
             for p, h in sorted(g.get("include", {}).items()):
                 files.append({"path": p, "url": h["url"], "size": h["size"], "md5": h["md5"]})
+            files += alpha_maps(k, f, r)
             res[r] = files
         if not res:
             continue

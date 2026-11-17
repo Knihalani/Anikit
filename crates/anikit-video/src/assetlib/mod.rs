@@ -334,6 +334,15 @@ impl Library {
                             v.push(fr(p.clone(), h, None));
                         }
                     }
+                    // Cutout maps the glTF doesn't reference (see gltf.rs `sibling_alpha`).
+                    if let Some(all) = files.as_object() {
+                        for (key, m) in all.iter().filter(|(k, _)| k.to_lowercase().ends_with("alpha")) {
+                            let h = if m[r]["png"].is_object() { &m[r]["png"] } else { &m[r]["jpg"] };
+                            if let Some(ext) = h["url"].as_str().and_then(|u| u.rsplit_once('.')).map(|x| x.1) {
+                                v.push(fr(format!("textures/{slug}_{key}_{r}.{ext}"), h, None));
+                            }
+                        }
+                    }
                     res.insert(r.to_string(), v);
                 }
                 ("model", "1k")

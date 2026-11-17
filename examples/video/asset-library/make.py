@@ -68,4 +68,9 @@ props = {
     ],
 }
 write("models", spec(props, [label("polyhaven:model/Camera_01 · potted_plant_02 · food_apple_01", "4%", "93%")]))
+# 4. Film LUTs: the models frame through six of the 16 generated looks.
+for lut in ["neutral-print", "teal-orange", "warm-negative", "bleach-bypass", "faded-matte", "mono-silver"]:
+    s = spec(props, [label(f"post.lut  anikit:lut/{lut}", "4%", "93%")])
+    s["post"] = {"preset": "clean", "lut": f"anikit:lut/{lut}"}
+    write(f"lut-{lut}", s)
 print("ok")
