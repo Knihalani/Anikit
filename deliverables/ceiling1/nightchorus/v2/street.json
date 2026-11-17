@@ -1,0 +1,4021 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 24,
+ "background": "#000",
+ "transition": "cut",
+ "intent": {
+  "pace": "frantic"
+ },
+ "compositions": {
+  "c00": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c00.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c01": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c01.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c02": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c02.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c03": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c03.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c04": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c04.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c05": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c05.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c06": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c06.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c07": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c07.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c08": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c08.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c09": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c09.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c10": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c10.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c11": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c11.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c12": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c12.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c13": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c13.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c14": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c14.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c15": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c15.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  },
+  "c16": {
+   "size": [
+    1920,
+    1080
+   ],
+   "duration": 1,
+   "layers": [
+    {
+     "src": "cards/c16.png",
+     "width": 1920,
+     "height": 1080,
+     "x": 960,
+     "y": 540
+    }
+   ]
+  }
+ },
+ "music": {
+  "bpm": 128,
+  "key": "Fm",
+  "length": "7 bars",
+  "seed": 7,
+  "define": {
+   "grit": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "saw",
+       "voices": 3,
+       "detune": 14
+      },
+      {
+       "wave": "square",
+       "semis": -12,
+       "level": 0.6
+      }
+     ],
+     "sub": 0.5,
+     "filter": {
+      "type": "ladder",
+      "cutoff": 380,
+      "res": 0.35,
+      "drive": 3,
+      "env": 3.2
+     },
+     "fenv": [
+      0.001,
+      0.12,
+      0.0,
+      0.08
+     ],
+     "amp": [
+      0.001,
+      0.2,
+      0.7,
+      0.05
+     ],
+     "mono": true
+    }
+   },
+   "buzz": {
+    "synth": {
+     "osc": [
+      {
+       "wave": "square",
+       "pw": 0.3
+      },
+      {
+       "wave": "saw",
+       "semis": 12,
+       "level": 0.4
+      }
+     ],
+     "filter": {
+      "type": "bp",
+      "cutoff": 1800,
+      "res": 0.5
+     },
+     "lfo": {
+      "rate": 30,
+      "trem": 0.5
+     },
+     "amp": [
+      0.005,
+      0.1,
+      0.8,
+      0.1
+     ]
+    }
+   }
+  },
+  "tracks": [
+   {
+    "name": "kick",
+    "inst": "drums:techno",
+    "clips": [
+     {
+      "at": 1,
+      "bars": 4,
+      "drums": {
+       "kick": "X...x...x...x..o",
+       "tom": "................"
+      }
+     },
+     {
+      "at": 5,
+      "bars": 1,
+      "drums": {
+       "kick": "X...............",
+       "crash": "........X......."
+      }
+     },
+     {
+      "at": 6,
+      "bars": 2,
+      "drums": {
+       "kick": "X.......X.......",
+       "tom": "..............x."
+      }
+     }
+    ],
+    "fx": [
+     {
+      "type": "comp",
+      "threshold": -12,
+      "ratio": 4
+     },
+     {
+      "type": "saturate",
+      "drive": 0.4
+     }
+    ]
+   },
+   {
+    "name": "tops",
+    "inst": "drums:909",
+    "clips": [
+     {
+      "at": 1,
+      "bars": 1,
+      "drums": {
+       "hat": "..x...x...x...x."
+      }
+     },
+     {
+      "at": 2,
+      "bars": 2,
+      "drums": {
+       "hat": "x.xxx.xxx.xxx.xX",
+       "clap": "....x.......x...",
+       "rim": "...x..x....x..x."
+      }
+     },
+     {
+      "at": 4,
+      "bars": 1,
+      "drums": {
+       "hat": "xxxxxxxxxxxxxxxx",
+       "clap": "....x.......x.x.",
+       "snare": "........x.x.xxxx"
+      }
+     },
+     {
+      "at": 5,
+      "bars": 1,
+      "drums": {
+       "clap": "........X.......",
+       "ohh": "........X......."
+      }
+     },
+     {
+      "at": 6,
+      "bars": 1,
+      "drums": {
+       "hat": "x.x.x.x.x.x.x.x.",
+       "clap": "....x.......x..."
+      }
+     }
+    ],
+    "gain": -3
+   },
+   {
+    "name": "bass",
+    "inst": "grit",
+    "clips": [
+     {
+      "at": 1,
+      "bars": 4,
+      "notes": "o2 l16 (F2 r F2 F3 r F2 Ab2 r F2 r Eb3 F2 r C3 Eb2 r)x3 F2 r F2 F3 r F2 Ab2 r Db3 Db3 C3 C3 Bb2 Bb2 Ab2 G2"
+     },
+     {
+      "at": 5,
+      "bars": 1,
+      "notes": "o2 F1/16 r/16 r/8 r/4 Db2/2"
+     },
+     {
+      "at": 6,
+      "bars": 2,
+      "notes": "o2 l16 (F2 r F2 F3 r F2 Ab2 r F2 r Eb3 F2 r C3 Eb2 r) F1/1"
+     }
+    ],
+    "duck": 6,
+    "gain": -2,
+    "automate": {
+     "synth.cutoff": [
+      [
+       0,
+       260
+      ],
+      [
+       "@bar4",
+       900
+      ],
+      [
+       "@bar5",
+       400
+      ],
+      [
+       "@bar6",
+       1200
+      ]
+     ]
+    },
+    "fx": [
+     {
+      "type": "saturate",
+      "drive": 0.5
+     }
+    ]
+   },
+   {
+    "name": "stab",
+    "inst": "synth:stab-house",
+    "clips": [
+     {
+      "at": 2,
+      "bars": 3,
+      "notes": "o4 l16 (r r [F4 Ab4 C5] r r r r [F4 Ab4 C5] r r [Eb4 G4 Bb4] r r r r r)x3"
+     },
+     {
+      "at": 5,
+      "bars": 1,
+      "notes": "o4 r/2 [Db4 F4 Ab4 C5]/2"
+     },
+     {
+      "at": 6,
+      "bars": 1,
+      "notes": "o4 l16 (r r [F4 Ab4 C5] r r r r [F4 Ab4 C5] r r [Eb4 G4 Bb4] r r r r r)"
+     }
+    ],
+    "gain": -6,
+    "fx": [
+     {
+      "type": "delay",
+      "note": "1/8d",
+      "feedback": 0.3,
+      "wet": 0.2
+     }
+    ]
+   },
+   {
+    "name": "buzz",
+    "inst": "buzz",
+    "clips": [
+     {
+      "at": 1,
+      "bars": 1,
+      "notes": "o3 F3/4 r/4 F3/8 r/8 r/4"
+     },
+     {
+      "at": 5,
+      "bars": 1,
+      "notes": "o3 r/2 [F3 C4]/2"
+     },
+     {
+      "at": 7,
+      "bars": 1,
+      "notes": "o3 F3/8 r/8 F3/16 r/16 r/8 r/2"
+     }
+    ],
+    "gain": -12,
+    "pan": 0.2
+   },
+   {
+    "name": "voice0",
+    "inst": "choir",
+    "clips": [
+     {
+      "at": "@0.0000",
+      "notes": "F3:24.128",
+      "vel": 0.55
+     }
+    ],
+    "gain": -17.0,
+    "pan": -0.4,
+    "reverb": 0.35
+   },
+   {
+    "name": "voice1",
+    "inst": "choir",
+    "clips": [
+     {
+      "at": "@0.9375",
+      "notes": "C4:22.363",
+      "vel": 0.5800000000000001
+     }
+    ],
+    "gain": -16.6,
+    "pan": -0.32727272727272727,
+    "reverb": 0.35
+   },
+   {
+    "name": "voice2",
+    "inst": "choir",
+    "clips": [
+     {
+      "at": "@1.8750",
+      "notes": "Ab3:20.597",
+      "vel": 0.6100000000000001
+     }
+    ],
+    "gain": -16.2,
+    "pan": -0.2545454545454546,
+    "reverb": 0.35
+   },
+   {
+    "name": "voice3",
+    "inst": "choir",
+    "clips": [
+     {
+      "at": "@2.3438",
+      "notes": "Eb4:19.832",
+      "vel": 0.64
+     }
+    ],
+    "gain": -15.8,
+    "pan": -0.18181818181818185,
+    "reverb": 0.35
+   },
+   {
+    "name": "voice4",
+    "inst": "choir",
+    "clips": [
+     {
+      "at": "@2.8125",
+      "notes": "F4:19.067",
+      "vel": 0.67
+     }
+    ],
+    "gain": -15.4,
+    "pan": -0.10909090909090909,
+    "reverb": 0.35
+   },
+   {
+    "name": "voice5",
+    "inst": "choir",
+    "clips": [
+     {
+      "at": "@3.2812",
+      "notes": "G4:18.301",
+      "vel": 0.7000000000000001
+     }
+    ],
+    "gain": -15.0,
+    "pan": -0.036363636363636376,
+    "reverb": 0.35
+   },
+   {
+    "name": "voice6",
+    "inst": "choir",
+    "clips": [
+     {
+      "at": "@3.7500",
+      "notes": "Ab4:17.536",
+      "vel": 0.73
+     }
+    ],
+    "gain": -14.6,
+    "pan": 0.036363636363636334,
+    "reverb": 0.35
+   },
+   {
+    "name": "voice7",
+    "inst": "choir",
+    "clips": [
+     {
+      "at": "@4.2188",
+      "notes": "C5:16.771",
+      "vel": 0.76
+     }
+    ],
+    "gain": -14.6,
+    "pan": 0.10909090909090909,
+    "reverb": 0.35
+   },
+   {
+    "name": "voice8",
+    "inst": "choir",
+    "clips": [
+     {
+      "at": "@4.6875",
+      "notes": "Bb4:16.005",
+      "vel": 0.79
+     }
+    ],
+    "gain": -14.6,
+    "pan": 0.18181818181818185,
+    "reverb": 0.35
+   },
+   {
+    "name": "voice9",
+    "inst": "choir",
+    "clips": [
+     {
+      "at": "@5.1562",
+      "notes": "Eb5:15.240",
+      "vel": 0.8200000000000001
+     }
+    ],
+    "gain": -14.6,
+    "pan": 0.2545454545454546,
+    "reverb": 0.35
+   },
+   {
+    "name": "voice10",
+    "inst": "choir",
+    "clips": [
+     {
+      "at": "@5.6250",
+      "notes": "F5:14.475",
+      "vel": 0.8500000000000001
+     }
+    ],
+    "gain": -14.6,
+    "pan": 0.32727272727272727,
+    "reverb": 0.35
+   },
+   {
+    "name": "voice11",
+    "inst": "choir",
+    "clips": [
+     {
+      "at": "@6.0938",
+      "notes": "G5:13.709",
+      "vel": 0.88
+     }
+    ],
+    "gain": -14.6,
+    "pan": 0.4,
+    "reverb": 0.35
+   },
+   {
+    "name": "slam",
+    "inst": "strings",
+    "clips": [
+     {
+      "at": "@8.4375",
+      "notes": "[F3 C4 Ab4 C5 Eb5 G5]:6.000",
+      "vel": 0.8
+     }
+    ],
+    "gain": -9,
+    "reverb": 0.4
+   }
+  ],
+  "sfx": [
+   {
+    "sfx": "impact",
+    "at": "@8.4375"
+   },
+   {
+    "sfx": "boom",
+    "at": "@8.4375"
+   },
+   {
+    "sfx": "reverse-cymbal",
+    "at": "@8.4375",
+    "gain": -8
+   }
+  ],
+  "end": "ring",
+  "followCuts": false
+ },
+ "post": {
+  "grain": 0.03,
+  "halation": 0.25
+ },
+ "scenes": [
+  {
+   "duration": 12.6875,
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": "city",
+      "exposure": 1.0,
+      "quality": "standard",
+      "objects": [
+       {
+        "type": "box",
+        "size": [
+         1.0,
+         16,
+         140
+        ],
+        "pos": [
+         -5.6,
+         0,
+         -50
+        ],
+        "material": {
+         "base": "#141210",
+         "roughness": 0.9
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         5.6000000000000005,
+         -1.6688497190771399
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FF9A5A",
+         "emissive": "#FF9A5A",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         8.200000000000001,
+         -1.5189194098992527
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FFB866",
+         "emissive": "#FFB866",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         10.8,
+         -1.5578654505618856
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FF9A5A",
+         "emissive": "#FF9A5A",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         5.6000000000000005,
+         -5.911270574486279
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FFB866",
+         "emissive": "#FFB866",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         8.200000000000001,
+         -6.110218734030584
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         10.8,
+         -6.408474945170354
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FF9A5A",
+         "emissive": "#FF9A5A",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         8.200000000000001,
+         -10.066197176634974
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         10.8,
+         -10.348652341005858
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FFB866",
+         "emissive": "#FFB866",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         5.6000000000000005,
+         -13.553110681475838
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         8.200000000000001,
+         -13.952931837355028
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         5.6000000000000005,
+         -18.36374514728876
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         10.8,
+         -18.16657207833314
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FFB866",
+         "emissive": "#FFB866",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         5.6000000000000005,
+         -22.283425673260037
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         8.200000000000001,
+         -21.896630489795953
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         8.200000000000001,
+         -25.617778310423514
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         5.6000000000000005,
+         -30.0329539802253
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FF9A5A",
+         "emissive": "#FF9A5A",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         8.200000000000001,
+         -29.429880524226917
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         10.8,
+         -30.1708271219294
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         5.6000000000000005,
+         -33.65471403522348
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         8.200000000000001,
+         -33.5905190854453
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         5.6000000000000005,
+         -41.484413616482975
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         10.8,
+         -41.5287466896352
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         5.6000000000000005,
+         -46.4703365571222
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FF9A5A",
+         "emissive": "#FF9A5A",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         8.200000000000001,
+         -50.34981992834145
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FFB866",
+         "emissive": "#FFB866",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         5.6000000000000005,
+         -54.19204856804899
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         5.6000000000000005,
+         -58.232594717942376
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         8.200000000000001,
+         -62.40616464269046
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FF9A5A",
+         "emissive": "#FF9A5A",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         10.8,
+         -61.959763110367
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         5.6000000000000005,
+         -65.71132980650103
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         8.200000000000001,
+         -66.0532018782112
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         10.8,
+         -65.42513925508199
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FFB866",
+         "emissive": "#FFB866",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         10.8,
+         -70.44331380741626
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         8.200000000000001,
+         -78.15240284667094
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FF9A5A",
+         "emissive": "#FF9A5A",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         10.8,
+         -78.24622448854564
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FF9A5A",
+         "emissive": "#FF9A5A",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         10.8,
+         -89.51776743698264
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#FF9A5A",
+         "emissive": "#FF9A5A",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         -5.08,
+         5.6000000000000005,
+         -93.44822093982044
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "box",
+        "size": [
+         1.0,
+         16,
+         140
+        ],
+        "pos": [
+         5.6,
+         0,
+         -50
+        ],
+        "material": {
+         "base": "#111317",
+         "roughness": 0.9
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         5.6000000000000005,
+         5.99023442809859
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#FFB866",
+         "emissive": "#FFB866",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         8.200000000000001,
+         2.2335160993410734
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         8.200000000000001,
+         -1.798030946127903
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         5.6000000000000005,
+         -5.740817648525369
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         10.8,
+         -5.903207008375329
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         5.6000000000000005,
+         -9.671539578580628
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         8.200000000000001,
+         -10.044473213355305
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         10.8,
+         -14.18530179794585
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         8.200000000000001,
+         -17.556106497046606
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         8.200000000000001,
+         -25.4751419706298
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         5.6000000000000005,
+         -33.98025377691785
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         10.8,
+         -33.67035430490558
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         10.8,
+         -37.89626213811873
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         8.200000000000001,
+         -42.383360225282324
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         10.8,
+         -46.46700539901241
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         5.6000000000000005,
+         -54.14364137951263
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         5.6000000000000005,
+         -58.599207261051056
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         8.200000000000001,
+         -57.572974332481245
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         8.200000000000001,
+         -65.94573496419804
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         10.8,
+         -66.24816981591313
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         5.6000000000000005,
+         -70.0970776878961
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         5.6000000000000005,
+         -74.41186946097667
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         8.200000000000001,
+         -73.45134489060202
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#FF9A5A",
+         "emissive": "#FF9A5A",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         8.200000000000001,
+         -78.59886302606594
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         10.8,
+         -77.50022864685802
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         8.200000000000001,
+         -82.14898203525662
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         10.8,
+         -82.00790775753711
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         10.8,
+         -85.88502802615805
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#FFD9A0",
+         "emissive": "#FFD9A0",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         5.6000000000000005,
+         -90.0044333942139
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         8.200000000000001,
+         -89.46578872217884
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         10.8,
+         -90.42805029919504
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         5.6000000000000005,
+         -93.8539760533497
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#2A2A30",
+         "emissive": "#2A2A30",
+         "emissiveStrength": 0.0,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         8.200000000000001,
+         -94.55202819304132
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#9CC4FF",
+         "emissive": "#9CC4FF",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "plane",
+        "size": [
+         1.3,
+         1.6
+        ],
+        "pos": [
+         5.08,
+         10.8,
+         -94.58415604400369
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "material": {
+         "base": "#FF9A5A",
+         "emissive": "#FF9A5A",
+         "emissiveStrength": 0.5,
+         "roughness": 0.2
+        }
+       },
+       {
+        "type": "box",
+        "size": [
+         2.2,
+         0.16,
+         140
+        ],
+        "pos": [
+         -4.0,
+         0,
+         -50
+        ],
+        "material": {
+         "base": "#24221F",
+         "roughness": 0.75
+        }
+       },
+       {
+        "type": "box",
+        "size": [
+         2.2,
+         0.16,
+         140
+        ],
+        "pos": [
+         4.0,
+         0,
+         -50
+        ],
+        "material": {
+         "base": "#24221F",
+         "roughness": 0.75
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         3.2,
+         1.8
+        ],
+        "pos": [
+         -3.2499999999999996,
+         3.4,
+         -0.0
+        ],
+        "rot": [
+         0,
+         -12,
+         0
+        ],
+        "texture": {
+         "composition": "c00",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "thin": true,
+        "name": "c00",
+        "scale": "=[(t<0.06?0:(t<0.10?1:(t<0.16?0:(t<0.20?1:(t<0.24?0:1))))),(t<0.06?0:(t<0.10?1:(t<0.16?0:(t<0.20?1:(t<0.24?0:1))))),(t<0.06?0:(t<0.10?1:(t<0.16?0:(t<0.20?1:(t<0.24?0:1)))))]"
+       },
+       {
+        "type": "box",
+        "size": [
+         0.5,
+         0.06,
+         0.06
+        ],
+        "pos": [
+         -4.9,
+         4.38,
+         -0.0
+        ],
+        "material": "black"
+       },
+       {
+        "type": "pane",
+        "size": [
+         3.2,
+         1.8
+        ],
+        "pos": [
+         3.2499999999999996,
+         3.0,
+         -7.0
+        ],
+        "rot": [
+         0,
+         12,
+         0
+        ],
+        "texture": {
+         "composition": "c01",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "thin": true,
+        "name": "c01",
+        "scale": "=[(t<11.410?1:0),(t<11.410?1:0),(t<11.410?1:0)]"
+       },
+       {
+        "type": "box",
+        "size": [
+         0.5,
+         0.06,
+         0.06
+        ],
+        "pos": [
+         4.9,
+         3.98,
+         -7.0
+        ],
+        "material": "black"
+       },
+       {
+        "type": "pane",
+        "size": [
+         3.2,
+         1.8
+        ],
+        "pos": [
+         -3.2499999999999996,
+         3.0,
+         -14.0
+        ],
+        "rot": [
+         0,
+         -12,
+         0
+        ],
+        "texture": {
+         "composition": "c02",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "thin": true,
+        "name": "c02",
+        "scale": "=[(t<11.520?1:0),(t<11.520?1:0),(t<11.520?1:0)]"
+       },
+       {
+        "type": "box",
+        "size": [
+         0.5,
+         0.06,
+         0.06
+        ],
+        "pos": [
+         -4.9,
+         3.98,
+         -14.0
+        ],
+        "material": "black"
+       },
+       {
+        "type": "pane",
+        "size": [
+         3.2,
+         1.8
+        ],
+        "pos": [
+         3.2499999999999996,
+         3.4,
+         -21.0
+        ],
+        "rot": [
+         0,
+         12,
+         0
+        ],
+        "texture": {
+         "composition": "c03",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "thin": true,
+        "name": "c03",
+        "scale": "=[(t<11.630?1:0),(t<11.630?1:0),(t<11.630?1:0)]"
+       },
+       {
+        "type": "box",
+        "size": [
+         0.5,
+         0.06,
+         0.06
+        ],
+        "pos": [
+         4.9,
+         4.38,
+         -21.0
+        ],
+        "material": "black"
+       },
+       {
+        "type": "pane",
+        "size": [
+         3.2,
+         1.8
+        ],
+        "pos": [
+         -3.2499999999999996,
+         3.0,
+         -28.0
+        ],
+        "rot": [
+         0,
+         -12,
+         0
+        ],
+        "texture": {
+         "composition": "c04",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "thin": true,
+        "name": "c04",
+        "scale": "=[(t<11.740?1:0),(t<11.740?1:0),(t<11.740?1:0)]"
+       },
+       {
+        "type": "box",
+        "size": [
+         0.5,
+         0.06,
+         0.06
+        ],
+        "pos": [
+         -4.9,
+         3.98,
+         -28.0
+        ],
+        "material": "black"
+       },
+       {
+        "type": "pane",
+        "size": [
+         3.2,
+         1.8
+        ],
+        "pos": [
+         3.2499999999999996,
+         3.0,
+         -35.0
+        ],
+        "rot": [
+         0,
+         12,
+         0
+        ],
+        "texture": {
+         "composition": "c05",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "thin": true,
+        "name": "c05",
+        "scale": "=[(t<11.850?1:0),(t<11.850?1:0),(t<11.850?1:0)]"
+       },
+       {
+        "type": "box",
+        "size": [
+         0.5,
+         0.06,
+         0.06
+        ],
+        "pos": [
+         4.9,
+         3.98,
+         -35.0
+        ],
+        "material": "black"
+       },
+       {
+        "type": "pane",
+        "size": [
+         3.2,
+         1.8
+        ],
+        "pos": [
+         -3.2499999999999996,
+         3.4,
+         -42.0
+        ],
+        "rot": [
+         0,
+         -12,
+         0
+        ],
+        "texture": {
+         "composition": "c06",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "thin": true,
+        "name": "c06",
+        "scale": "=[(t<11.960?1:0),(t<11.960?1:0),(t<11.960?1:0)]"
+       },
+       {
+        "type": "box",
+        "size": [
+         0.5,
+         0.06,
+         0.06
+        ],
+        "pos": [
+         -4.9,
+         4.38,
+         -42.0
+        ],
+        "material": "black"
+       },
+       {
+        "type": "pane",
+        "size": [
+         3.2,
+         1.8
+        ],
+        "pos": [
+         3.2499999999999996,
+         3.0,
+         -49.0
+        ],
+        "rot": [
+         0,
+         12,
+         0
+        ],
+        "texture": {
+         "composition": "c07",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "thin": true,
+        "name": "c07",
+        "scale": "=[(t<12.070?1:0),(t<12.070?1:0),(t<12.070?1:0)]"
+       },
+       {
+        "type": "box",
+        "size": [
+         0.5,
+         0.06,
+         0.06
+        ],
+        "pos": [
+         4.9,
+         3.98,
+         -49.0
+        ],
+        "material": "black"
+       },
+       {
+        "type": "pane",
+        "size": [
+         3.2,
+         1.8
+        ],
+        "pos": [
+         -3.2499999999999996,
+         3.0,
+         -56.0
+        ],
+        "rot": [
+         0,
+         -12,
+         0
+        ],
+        "texture": {
+         "composition": "c08",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "thin": true,
+        "name": "c08",
+        "scale": "=[(t<12.180?1:0),(t<12.180?1:0),(t<12.180?1:0)]"
+       },
+       {
+        "type": "box",
+        "size": [
+         0.5,
+         0.06,
+         0.06
+        ],
+        "pos": [
+         -4.9,
+         3.98,
+         -56.0
+        ],
+        "material": "black"
+       },
+       {
+        "type": "pane",
+        "size": [
+         3.2,
+         1.8
+        ],
+        "pos": [
+         3.2499999999999996,
+         3.4,
+         -63.0
+        ],
+        "rot": [
+         0,
+         12,
+         0
+        ],
+        "texture": {
+         "composition": "c09",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "thin": true,
+        "name": "c09",
+        "scale": "=[(t<12.290?1:0),(t<12.290?1:0),(t<12.290?1:0)]"
+       },
+       {
+        "type": "box",
+        "size": [
+         0.5,
+         0.06,
+         0.06
+        ],
+        "pos": [
+         4.9,
+         4.38,
+         -63.0
+        ],
+        "material": "black"
+       },
+       {
+        "type": "pane",
+        "size": [
+         3.2,
+         1.8
+        ],
+        "pos": [
+         -3.2499999999999996,
+         3.0,
+         -70.0
+        ],
+        "rot": [
+         0,
+         -12,
+         0
+        ],
+        "texture": {
+         "composition": "c10",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "thin": true,
+        "name": "c10",
+        "scale": "=[(t<12.400?1:0),(t<12.400?1:0),(t<12.400?1:0)]"
+       },
+       {
+        "type": "box",
+        "size": [
+         0.5,
+         0.06,
+         0.06
+        ],
+        "pos": [
+         -4.9,
+         3.98,
+         -70.0
+        ],
+        "material": "black"
+       },
+       {
+        "type": "pane",
+        "size": [
+         3.2,
+         1.8
+        ],
+        "pos": [
+         3.2499999999999996,
+         3.0,
+         -77.0
+        ],
+        "rot": [
+         0,
+         12,
+         0
+        ],
+        "texture": {
+         "composition": "c11",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "thin": true,
+        "name": "c11",
+        "scale": "=[(t<12.510?1:0),(t<12.510?1:0),(t<12.510?1:0)]"
+       },
+       {
+        "type": "box",
+        "size": [
+         0.5,
+         0.06,
+         0.06
+        ],
+        "pos": [
+         4.9,
+         3.98,
+         -77.0
+        ],
+        "material": "black"
+       },
+       {
+        "type": "pane",
+        "size": [
+         5.6,
+         3.15
+        ],
+        "pos": [
+         1.2,
+         5.2,
+         -86.0
+        ],
+        "rot": [
+         0,
+         -8,
+         0
+        ],
+        "texture": {
+         "composition": "c12",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "scale": "=[((t>=6.562 && t<6.797)?1:0),((t>=6.562 && t<6.797)?1:0),((t>=6.562 && t<6.797)?1:0)]"
+       },
+       {
+        "type": "pane",
+        "size": [
+         5.6,
+         3.15
+        ],
+        "pos": [
+         1.2,
+         5.2,
+         -86.0
+        ],
+        "rot": [
+         0,
+         -8,
+         0
+        ],
+        "texture": {
+         "composition": "c13",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "scale": "=[((t>=6.797 && t<7.031)?1:0),((t>=6.797 && t<7.031)?1:0),((t>=6.797 && t<7.031)?1:0)]"
+       },
+       {
+        "type": "pane",
+        "size": [
+         5.6,
+         3.15
+        ],
+        "pos": [
+         1.2,
+         5.2,
+         -86.0
+        ],
+        "rot": [
+         0,
+         -8,
+         0
+        ],
+        "texture": {
+         "composition": "c14",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "scale": "=[((t>=7.031 && t<7.266)?1:0),((t>=7.031 && t<7.266)?1:0),((t>=7.031 && t<7.266)?1:0)]"
+       },
+       {
+        "type": "pane",
+        "size": [
+         5.6,
+         3.15
+        ],
+        "pos": [
+         1.2,
+         5.2,
+         -86.0
+        ],
+        "rot": [
+         0,
+         -8,
+         0
+        ],
+        "texture": {
+         "composition": "c15",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "scale": "=[((t>=7.266 && t<7.500)?1:0),((t>=7.266 && t<7.500)?1:0),((t>=7.266 && t<7.500)?1:0)]"
+       },
+       {
+        "type": "pane",
+        "size": [
+         14,
+         7.875
+        ],
+        "pos": [
+         0,
+         6.2,
+         -102.0
+        ],
+        "texture": {
+         "composition": "c16",
+         "face": "both"
+        },
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "roughness": 0.35,
+         "transmission": 0
+        },
+        "scale": "=[((t<8.438)?0:(t<11.720?1:(t<11.750?0:(t<11.810?1:(t<11.850?0:(t<11.910?1:0)))))),((t<8.438)?0:(t<11.720?1:(t<11.750?0:(t<11.810?1:(t<11.850?0:(t<11.910?1:0)))))),((t<8.438)?0:(t<11.720?1:(t<11.750?0:(t<11.810?1:(t<11.850?0:(t<11.910?1:0))))))]"
+       },
+       {
+        "type": "box",
+        "size": [
+         14.6,
+         8.4,
+         0.3
+        ],
+        "pos": [
+         0,
+         2.2,
+         -102.3
+        ],
+        "material": {
+         "base": "#0b0b0c",
+         "roughness": 0.6
+        }
+       },
+       {
+        "type": "box",
+        "size": [
+         0.5,
+         0.25,
+         0.4
+        ],
+        "pos": [
+         -4.5,
+         2.0,
+         -100.4
+        ],
+        "rot": [
+         -35,
+         0,
+         0
+        ],
+        "material": "black"
+       },
+       {
+        "type": "box",
+        "size": [
+         0.5,
+         0.25,
+         0.4
+        ],
+        "pos": [
+         0,
+         2.0,
+         -100.4
+        ],
+        "rot": [
+         -35,
+         0,
+         0
+        ],
+        "material": "black"
+       },
+       {
+        "type": "box",
+        "size": [
+         0.5,
+         0.25,
+         0.4
+        ],
+        "pos": [
+         4.5,
+         2.0,
+         -100.4
+        ],
+        "rot": [
+         -35,
+         0,
+         0
+        ],
+        "material": "black"
+       },
+       {
+        "type": "cylinder",
+        "radius": 0.07,
+        "height": 5.0,
+        "pos": [
+         -3.4,
+         2.5,
+         2
+        ],
+        "material": "black"
+       },
+       {
+        "type": "cylinder",
+        "radius": 0.07,
+        "height": 5.0,
+        "pos": [
+         3.4,
+         2.5,
+         -12
+        ],
+        "material": "black"
+       },
+       {
+        "type": "cylinder",
+        "radius": 0.07,
+        "height": 5.0,
+        "pos": [
+         -3.4,
+         2.5,
+         -26
+        ],
+        "material": "black"
+       },
+       {
+        "type": "cylinder",
+        "radius": 0.07,
+        "height": 5.0,
+        "pos": [
+         3.4,
+         2.5,
+         -40
+        ],
+        "material": "black"
+       },
+       {
+        "type": "cylinder",
+        "radius": 0.07,
+        "height": 5.0,
+        "pos": [
+         -3.4,
+         2.5,
+         -54
+        ],
+        "material": "black"
+       },
+       {
+        "type": "cylinder",
+        "radius": 0.07,
+        "height": 5.0,
+        "pos": [
+         3.4,
+         2.5,
+         -68
+        ],
+        "material": "black"
+       },
+       {
+        "type": "cylinder",
+        "radius": 0.07,
+        "height": 5.0,
+        "pos": [
+         -3.4,
+         2.5,
+         -82
+        ],
+        "material": "black"
+       },
+       {
+        "type": "cylinder",
+        "radius": 0.07,
+        "height": 5.0,
+        "pos": [
+         3.4,
+         2.5,
+         -96
+        ],
+        "material": "black"
+       },
+       {
+        "type": "particles",
+        "count": 6000,
+        "emit": {
+         "shape": "box",
+         "size": [
+          10,
+          12,
+          60
+         ],
+         "pos": [
+          0,
+          8,
+          -30
+         ]
+        },
+        "gravity": 9.0,
+        "drag": 0.0,
+        "life": 1.4,
+        "size": 0.006,
+        "color": [
+         "#C8D4FF"
+        ],
+        "blend": "add",
+        "emissive": 0.6,
+        "opacity": 0.5,
+        "stretch": 4
+       }
+      ],
+      "lights": [
+       {
+        "pos": [
+         -4.5,
+         2.2,
+         -100.0
+        ],
+        "target": [
+         -4.5,
+         6.2,
+         -102.0
+        ],
+        "angle": 40,
+        "penumbra": 0.5,
+        "intensity": 60,
+        "color": "#FFE2B0"
+       },
+       {
+        "pos": [
+         0,
+         2.2,
+         -100.0
+        ],
+        "target": [
+         0,
+         6.2,
+         -102.0
+        ],
+        "angle": 40,
+        "penumbra": 0.5,
+        "intensity": 60,
+        "color": "#FFE2B0"
+       },
+       {
+        "pos": [
+         4.5,
+         2.2,
+         -100.0
+        ],
+        "target": [
+         4.5,
+         6.2,
+         -102.0
+        ],
+        "angle": 40,
+        "penumbra": 0.5,
+        "intensity": 60,
+        "color": "#FFE2B0"
+       },
+       {
+        "pos": [
+         -3.0,
+         4.9,
+         2
+        ],
+        "color": "#FFB25A",
+        "intensity": 90
+       },
+       {
+        "pos": [
+         3.0,
+         4.9,
+         -12
+        ],
+        "color": "#FFB25A",
+        "intensity": 90
+       },
+       {
+        "pos": [
+         -3.0,
+         4.9,
+         -26
+        ],
+        "color": "#FFB25A",
+        "intensity": 90
+       },
+       {
+        "pos": [
+         3.0,
+         4.9,
+         -40
+        ],
+        "color": "#FFB25A",
+        "intensity": 90
+       },
+       {
+        "pos": [
+         -3.0,
+         4.9,
+         -54
+        ],
+        "color": "#FFB25A",
+        "intensity": 90
+       },
+       {
+        "pos": [
+         3.0,
+         4.9,
+         -68
+        ],
+        "color": "#FFB25A",
+        "intensity": 90
+       },
+       {
+        "pos": [
+         -3.0,
+         4.9,
+         -82
+        ],
+        "color": "#FFB25A",
+        "intensity": 90
+       },
+       {
+        "pos": [
+         3.0,
+         4.9,
+         -96
+        ],
+        "color": "#FFB25A",
+        "intensity": 90
+       },
+       {
+        "dir": [
+         0.2,
+         0.6,
+         0.7
+        ],
+        "size": [
+         80,
+         40
+        ],
+        "color": "#2B3A66",
+        "intensity": 0.35
+       },
+       {
+        "pos": [
+         -2.8499999999999996,
+         3.0,
+         0.9
+        ],
+        "color": "#ff77aa",
+        "intensity": 40,
+        "shadow": false
+       },
+       {
+        "pos": [
+         2.8499999999999996,
+         2.6,
+         -6.1
+        ],
+        "color": "#feb6cb",
+        "intensity": 40,
+        "shadow": false
+       },
+       {
+        "pos": [
+         -2.8499999999999996,
+         2.6,
+         -13.1
+        ],
+        "color": "#ffdd81",
+        "intensity": 40,
+        "shadow": false
+       },
+       {
+        "pos": [
+         2.8499999999999996,
+         3.0,
+         -20.1
+        ],
+        "color": "#ffef0a",
+        "intensity": 40,
+        "shadow": false
+       },
+       {
+        "pos": [
+         -2.8499999999999996,
+         2.6,
+         -27.1
+        ],
+        "color": "#6d78ff",
+        "intensity": 40,
+        "shadow": false
+       },
+       {
+        "pos": [
+         2.8499999999999996,
+         2.6,
+         -34.1
+        ],
+        "color": "#ffe1d7",
+        "intensity": 40,
+        "shadow": false
+       },
+       {
+        "pos": [
+         -2.8499999999999996,
+         3.0,
+         -41.1
+        ],
+        "color": "#ffd4c4",
+        "intensity": 40,
+        "shadow": false
+       },
+       {
+        "pos": [
+         2.8499999999999996,
+         2.6,
+         -48.1
+        ],
+        "color": "#ff3a31",
+        "intensity": 40,
+        "shadow": false
+       },
+       {
+        "pos": [
+         -2.8499999999999996,
+         2.6,
+         -55.1
+        ],
+        "color": "#ffbaa4",
+        "intensity": 40,
+        "shadow": false
+       },
+       {
+        "pos": [
+         2.8499999999999996,
+         3.0,
+         -62.1
+        ],
+        "color": "#79ffb6",
+        "intensity": 40,
+        "shadow": false
+       },
+       {
+        "pos": [
+         -2.8499999999999996,
+         2.6,
+         -69.1
+        ],
+        "color": "#36d5ff",
+        "intensity": 40,
+        "shadow": false
+       },
+       {
+        "pos": [
+         2.8499999999999996,
+         2.6,
+         -76.1
+        ],
+        "color": "#fbffef",
+        "intensity": 40,
+        "shadow": false
+       }
+      ],
+      "camera": {
+       "interp": "linear",
+       "keys": [
+        {
+         "t": 0.0,
+         "pos": [
+          0,
+          1.4,
+          9.5
+         ],
+         "target": [
+          0,
+          2.4,
+          -30
+         ],
+         "focal": 24,
+         "fstop": 8
+        },
+        {
+         "t": 0.9175,
+         "pos": [
+          0,
+          1.45,
+          8.2
+         ],
+         "target": [
+          -0.3,
+          2.5,
+          -30
+         ],
+         "focal": 24,
+         "fstop": 8
+        },
+        {
+         "t": 1.0375,
+         "pos": [
+          -0.5,
+          1.5,
+          -0.7999999999999998
+         ],
+         "target": [
+          2.5999999999999996,
+          2.8,
+          -7.0
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 1.845,
+         "pos": [
+          -0.4,
+          1.5,
+          -1.6999999999999997
+         ],
+         "target": [
+          2.522,
+          2.8,
+          -7.2
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 1.975,
+         "pos": [
+          0.5,
+          1.5,
+          -7.8
+         ],
+         "target": [
+          -2.5999999999999996,
+          2.8,
+          -14.0
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 2.3138,
+         "pos": [
+          0.4,
+          1.5,
+          -8.7
+         ],
+         "target": [
+          -2.522,
+          2.8,
+          -14.2
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 2.4438,
+         "pos": [
+          -0.5,
+          1.5,
+          -14.8
+         ],
+         "target": [
+          2.5999999999999996,
+          3.1999999999999997,
+          -21.0
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 2.7825,
+         "pos": [
+          -0.4,
+          1.5,
+          -15.700000000000001
+         ],
+         "target": [
+          2.522,
+          3.1999999999999997,
+          -21.2
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 2.9125,
+         "pos": [
+          0.5,
+          1.5,
+          -21.8
+         ],
+         "target": [
+          -2.5999999999999996,
+          2.8,
+          -28.0
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 3.2513,
+         "pos": [
+          0.4,
+          1.5,
+          -22.7
+         ],
+         "target": [
+          -2.522,
+          2.8,
+          -28.2
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 3.3813,
+         "pos": [
+          -0.5,
+          1.5,
+          -28.8
+         ],
+         "target": [
+          2.5999999999999996,
+          2.8,
+          -35.0
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 3.72,
+         "pos": [
+          -0.4,
+          1.5,
+          -29.7
+         ],
+         "target": [
+          2.522,
+          2.8,
+          -35.2
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 3.85,
+         "pos": [
+          0.5,
+          1.5,
+          -35.8
+         ],
+         "target": [
+          -2.5999999999999996,
+          3.1999999999999997,
+          -42.0
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 4.1887,
+         "pos": [
+          0.4,
+          1.5,
+          -36.699999999999996
+         ],
+         "target": [
+          -2.522,
+          3.1999999999999997,
+          -42.2
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 4.3187,
+         "pos": [
+          -0.5,
+          1.5,
+          -42.8
+         ],
+         "target": [
+          2.5999999999999996,
+          2.8,
+          -49.0
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 4.6575,
+         "pos": [
+          -0.4,
+          1.5,
+          -43.699999999999996
+         ],
+         "target": [
+          2.522,
+          2.8,
+          -49.2
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 4.7875,
+         "pos": [
+          0.5,
+          1.5,
+          -49.8
+         ],
+         "target": [
+          -2.5999999999999996,
+          2.8,
+          -56.0
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 5.1262,
+         "pos": [
+          0.4,
+          1.5,
+          -50.699999999999996
+         ],
+         "target": [
+          -2.522,
+          2.8,
+          -56.2
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 5.2562,
+         "pos": [
+          -0.5,
+          1.5,
+          -56.8
+         ],
+         "target": [
+          2.5999999999999996,
+          3.1999999999999997,
+          -63.0
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 5.595,
+         "pos": [
+          -0.4,
+          1.5,
+          -57.699999999999996
+         ],
+         "target": [
+          2.522,
+          3.1999999999999997,
+          -63.2
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 5.725,
+         "pos": [
+          0.5,
+          1.5,
+          -63.8
+         ],
+         "target": [
+          -2.5999999999999996,
+          2.8,
+          -70.0
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 6.0637,
+         "pos": [
+          0.4,
+          1.5,
+          -64.7
+         ],
+         "target": [
+          -2.522,
+          2.8,
+          -70.2
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 6.1937,
+         "pos": [
+          -0.5,
+          1.5,
+          -70.8
+         ],
+         "target": [
+          2.5999999999999996,
+          2.8,
+          -77.0
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 6.5325,
+         "pos": [
+          -0.4,
+          1.5,
+          -71.7
+         ],
+         "target": [
+          2.522,
+          2.8,
+          -77.2
+         ],
+         "focal": 28,
+         "fstop": 5.6
+        },
+        {
+         "t": 6.6425,
+         "pos": [
+          -1.0,
+          1.6,
+          -77.0
+         ],
+         "target": [
+          1.2,
+          5.0,
+          -86.0
+         ],
+         "focal": 35,
+         "fstop": 4
+        },
+        {
+         "t": 7.48,
+         "pos": [
+          -0.9,
+          1.6,
+          -78.4
+         ],
+         "target": [
+          1.2,
+          5.0,
+          -86.0
+         ],
+         "focal": 35,
+         "fstop": 4
+        },
+        {
+         "t": 7.75,
+         "pos": [
+          0,
+          1.2,
+          -84.0
+         ],
+         "target": [
+          0,
+          4.2,
+          -102.0
+         ],
+         "focal": 26,
+         "fstop": 5.6
+        },
+        {
+         "t": 8.4375,
+         "pos": [
+          0,
+          1.15,
+          -84.8
+         ],
+         "target": [
+          0,
+          4.4,
+          -102.0
+         ],
+         "focal": 26,
+         "fstop": 5.6
+        },
+        {
+         "t": 8.6875,
+         "pos": [
+          0,
+          1.15,
+          -86.2
+         ],
+         "target": [
+          0,
+          4.6,
+          -102.0
+         ],
+         "focal": 26,
+         "fstop": 5.6
+        },
+        {
+         "t": 12.6875,
+         "pos": [
+          0,
+          1.25,
+          -89.0
+         ],
+         "target": [
+          0,
+          4.8,
+          -102.0
+         ],
+         "focal": 26,
+         "fstop": 5.6
+        }
+       ]
+      },
+      "shutter": 0.3,
+      "fog": {
+       "density": 0.018,
+       "color": "#0b0d16"
+      },
+      "bloom": 0.12,
+      "vignette": 0.3
+     }
+    }
+   ]
+  }
+ ]
+}

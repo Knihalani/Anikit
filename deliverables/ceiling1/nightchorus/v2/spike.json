@@ -1,0 +1,199 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 24,
+ "fonts": {
+  "Anton": "../../fonts/Anton.ttf",
+  "Monoton": "../../fonts/Monoton.ttf"
+ },
+ "compositions": {
+  "marquee": {
+   "size": [
+    1600,
+    500
+   ],
+   "duration": 4,
+   "background": "#00000000",
+   "layers": [
+    {
+     "shader": "\nfloat mb(vec2 uv, float l){ return textureLod(iChannel0, uv, l).a; }\nfloat hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f){ vec2 R=iResolution.xy; vec2 uv=f/R; float m=texture(iChannel0,uv).a; \n  float cs=22.0; vec2 cell=floor(f/cs); vec2 c=(cell+0.5)*cs; float mm=texture(iChannel0,c/R).a;\n  float r=length(f-c)/cs; float on=step(0.5,mm);\n  float chase = 0.75+0.25*step(0.5,fract((cell.x+cell.y)*0.25 - iTime*4.0));\n  float bulb=smoothstep(0.36,0.30,r); float halo=exp(-r*r*7.0);\n  vec3 w=vec3(1.000,0.769,0.420);\n  vec3 col = on*(w*bulb*1.3*chase + w*halo*0.45) + (1.0-on)*w*0.05*bulb;\n  o = vec4(col, max(on*max(bulb,halo*0.8), 0.6*bulb));\n }",
+     "alpha": true,
+     "channels": [
+      {
+       "layers": [
+        {
+         "text": "TOMAS VELD",
+         "font": "Anton",
+         "fit": true,
+         "width": 1500,
+         "height": 420,
+         "size": 600,
+         "color": "#fff"
+        }
+       ],
+       "mipmaps": true
+      }
+     ]
+    }
+   ]
+  },
+  "neon": {
+   "size": [
+    1400,
+    700
+   ],
+   "duration": 4,
+   "background": "#00000000",
+   "layers": [
+    {
+     "text": "A HALCYON\nPICTURE",
+     "font": "Monoton",
+     "size": 210,
+     "lineHeight": 1.02,
+     "color": "#FFD2E4",
+     "glow": "#FF2D7A",
+     "align": "center"
+    }
+   ]
+  }
+ },
+ "scenes": [
+  {
+   "duration": 2,
+   "layers": [
+    {
+     "component": "scene3d",
+     "props": {
+      "env": "city",
+      "exposure": 1.0,
+      "quality": "standard",
+      "objects": [
+       {
+        "type": "box",
+        "size": [
+         0.6,
+         9,
+         40
+        ],
+        "pos": [
+         -4.2,
+         0,
+         -10
+        ],
+        "material": {
+         "base": "#1a1614",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "box",
+        "size": [
+         0.6,
+         9,
+         40
+        ],
+        "pos": [
+         4.2,
+         0,
+         -10
+        ],
+        "material": {
+         "base": "#16181c",
+         "roughness": 0.85
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         3.2,
+         1.0
+        ],
+        "pos": [
+         -3.85,
+         2.8,
+         -3
+        ],
+        "rot": [
+         0,
+         90,
+         0
+        ],
+        "texture": "#marquee",
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "transmission": 0,
+         "roughness": 0.4
+        }
+       },
+       {
+        "type": "pane",
+        "size": [
+         2.6,
+         1.3
+        ],
+        "pos": [
+         3.85,
+         3.6,
+         -7
+        ],
+        "rot": [
+         0,
+         -90,
+         0
+        ],
+        "texture": "#neon",
+        "material": {
+         "base": "#ffffff",
+         "glow": 1.0,
+         "transmission": 0,
+         "roughness": 0.4
+        }
+       }
+      ],
+      "camera": {
+       "keys": [
+        {
+         "t": 0,
+         "pos": [
+          0.6,
+          1.4,
+          4.5
+         ],
+         "target": [
+          -1.5,
+          2.4,
+          -4
+         ],
+         "focal": 28,
+         "fstop": 2.8
+        },
+        {
+         "t": 2,
+         "pos": [
+          0.4,
+          1.4,
+          2.5
+         ],
+         "target": [
+          -1.5,
+          2.4,
+          -6
+         ],
+         "focal": 28,
+         "fstop": 2.8
+        }
+       ]
+      },
+      "fog": {
+       "density": 0.02,
+       "color": "#0a0c14"
+      }
+     }
+    }
+   ]
+  }
+ ]
+}
