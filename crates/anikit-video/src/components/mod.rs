@@ -26,11 +26,13 @@ use serde_json::{Map, Value};
 use std::sync::Arc;
 
 pub mod style;
+pub mod fxkit;
 pub mod polish;
 pub mod host;
 pub mod text;
 
 pub mod backgrounds;
+pub mod bgfx;
 pub mod blocks;
 pub mod charts;
 pub mod code;
