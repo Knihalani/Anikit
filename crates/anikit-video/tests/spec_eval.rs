@@ -616,3 +616,39 @@ fn one_frame_layers_show_on_exactly_one_frame() {
     let e = errors(r##"{ "scenes": [ { "layers": [ { "shape": "rect", "frames": [4, 4] } ] } ] }"##);
     assert!(e.iter().any(|m| m.contains("[4, 5]")), "{e:?}");
 }
+
+#[test]
+fn on_notes_places_a_layer_on_each_note() {
+    let ev = build(r##"{ "music": { "style": "house", "bpm": 120, "seed": 3 }, "scenes": [
+        { "duration": 4, "layers": [ "a" ] },
+        { "duration": 4, "layers": [ { "onNotes": { "track": "drums", "keys": ["kick"],
+            "layer": { "shape": "rect", "width": "=40 + 100 * $vel", "height": 40, "fill": "#ff0000", "duration": 0.1 } } } ] } ] }"##);
+    let m = ev.music.clone().expect("music");
+    assert!(m.pinned.is_some(), "the render plays the arrangement the layers were bound to");
+    let notes = anikit_video::music::score(&m, ev.duration as f64, false).unwrap();
+    let kicks: Vec<f64> = notes.iter().filter(|n| n.role == "drums" && n.key == 36.0 && n.t >= 4.0 && n.t < 8.0).map(|n| n.t).collect();
+    assert!(kicks.len() >= 4, "{kicks:?}");
+    let rects = |t: f64| ev.eval(t as f32).ops.iter().filter(|o| matches!(o, Op::RoundRect { .. })).count();
+    for &k in &kicks {
+        assert_eq!(rects(k + 0.05), 1, "a rect on the kick at {k}");
+    }
+    assert_eq!(rects(kicks[0] - 0.05), 0, "nothing before the first kick of the scene");
+    // Scene 1 gets none (its notes are outside the onNotes scene).
+    assert_eq!(rects(1.0), 0);
+    let e = errors(r##"{ "music": "house", "scenes": [ { "layers": [ { "onNotes": { "track": "durms", "layer": { "shape": "rect" } } } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("no track 'durms'") && m.contains("drums")), "{e:?}");
+    let e = errors(r##"{ "scenes": [ { "layers": [ { "onNotes": { "layer": { "shape": "rect" } } } ] } ] }"##);
+    assert!(e.iter().any(|m| m.contains("add a top-level \"music\"")), "{e:?}");
+}
+
+#[test]
+fn later_from_that_overrides_an_earlier_move_warns() {
+    let src = r##"{ "scenes": [ { "duration": 4, "layers": [ { "shape": "rect", "x": 100, "anchor": "topLeft", "width": 10, "height": 10,
+        "animate": [ { "to": { "x": 500 }, "at": 0, "duration": 1 }, { "from": { "x": 0 }, "at": 2, "duration": 1 } ] } ] } ] }"##;
+    let e = errors(src);
+    assert!(e.iter().any(|m| m.contains("'x'") && m.contains("use 'to'")), "{e:?}");
+    // `to` after a move is fine, and so is a from at 0 alongside later moves.
+    let ok = errors(r##"{ "scenes": [ { "layers": [ { "shape": "rect", "animate": [ { "to": { "x": 500 }, "duration": 1 }, { "to": { "x": 0 }, "at": 2 } ] },
+        { "shape": "rect", "animate": [ { "from": { "opacity": 0 } }, { "to": { "opacity": 0.5 }, "at": 2 } ] } ] } ] }"##);
+    assert!(!ok.iter().any(|m| m.contains("holds its start value")), "{ok:?}");
+}

@@ -21,6 +21,7 @@ pub const PAGES: &[(&str, &str)] = &[
     ("fluid", include_str!("../docs-cli/fluid.md")),
     ("post", include_str!("../docs-cli/post.md")),
     ("pacing", include_str!("../docs-cli/pacing.md")),
+    ("rhythm", include_str!("../docs-cli/rhythm.md")),
     ("critique", include_str!("../docs-cli/critique.md")),
     ("make-anything", include_str!("../docs-cli/make-anything.md")),
     ("expressions", include_str!("../docs-cli/expressions.md")),
