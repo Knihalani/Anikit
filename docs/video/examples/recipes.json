@@ -1,7 +1,7 @@
 { "size": [1920, 1080], "fps": 30, "scenes": [
   { "duration": 3, "layers": [ { "shader": "hero", "uniforms": { "shape": 0, "color": [0.92, 0.38, 0.2], "rough": 0.2 } } ] },
   { "duration": 3, "transition": { "type": "zoom-blur", "duration": 0.5 }, "layers": [ { "shader": "hero", "uniforms": { "shape": 1, "metal": 1, "rough": 0.06, "color": [0.95, 0.75, 0.4] } } ] },
-  { "duration": 3, "transition": "luma-melt", "layers": [ { "shader": "light-shafts" },
+  { "duration": 3, "transition": "luma-melt", "layers": [ { "shader": "light-shafts", "uniforms": { "angle": 30 } },
       { "text": "Morning", "style": "title", "color": "#f4e6d0" } ] },
   { "duration": 3, "transition": "ink-bleed", "layers": [ { "shader": "particles", "uniforms": { "focus": 0.05 }, "animate": [ { "to": { "focus": 0.95 }, "duration": 3 } ] } ] },
   { "duration": 3, "transition": "swirl", "layers": [

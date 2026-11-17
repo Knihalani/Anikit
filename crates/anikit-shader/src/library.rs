@@ -51,12 +51,12 @@ lib! {
     "sdf-scene", Image, 303, "Portals at golden hour: concrete frames down a reflecting pool, backlit sun, soft shadows, AO, haze, slow dolly.";
     "liquid-chrome", Image, 286, "Liquid metal: a heavy mass with drops that merge and tear away, mirror chrome in a studio or night sky; cut-out with background = 0.";
     "aurora", Image, 968, "Aurora curtains over a ridge, mirrored in a lake. Heavy; lake = 0 + lake-mirror is faster.";
-    "hero", Image, 69, "Product shot: one object (torus, cube, pill, gem, sphere, twisted bar) on a glossy studio floor, plastic or metal.";
+    "hero", Image, 60, "Product shot: one object (torus, cube, pill, gem, sphere, twisted bar) on a glossy studio floor, plastic or metal.";
     "caustics", Image, 55, "Pool-floor caustics from a moving water surface (ray density via derivatives).";
     "flow-ink", Image, 161, "Two inks marbled by a curl-noise flow field on paper.";
     "turing", Image, 156, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
-    "light-shafts", Image, 95, "Volumetric beams through slats from a hard light, with dust motes drifting in them.";
-    "particles", Image, 139, "Glowing particles drifting in depth with bokeh (depth of field), one pass.";
+    "light-shafts", Image, 115, "Sun through a window into a hazy room: pane-shaped beams with mullions and leaves, drifting haze, glinting dust.";
+    "particles", Image, 144, "Glowing particles drifting in depth with bokeh (depth of field), one pass.";
     "film-burn", Filter, 90, "Scorches the frame below from hot spots; animate `amount` 0 → 1.";
     "lake-mirror", Filter, 33, "Reflects everything above a horizon in still, rippled water below it (pairs with aurora lake = 0).";
     "glitch", Filter, 28, "Codec-style block displacement, row smears, RGB split and scanlines in bursts.";
