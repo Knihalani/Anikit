@@ -357,52 +357,40 @@
         }
       }
     },
-    "device": [
-      {
-        "$if": "src",
-        "then": {
-          "id": "{{(id ?? 'device') + '-asset'}}",
-          "src": "{{src}}",
-          "width": 2,
-          "height": 2,
-          "opacity": 0
-        }
-      },
-      {
-        "id": "{{id ?? 'device'}}",
-        "type": "component",
-        "component": "{{kind ?? 'browser'}}",
-        "props": {
-          "$merge": [
-            {
-              "delay": "{{delay ?? 0.3}}",
-              "float": "{{(bob ?? false) ? fmt.u * 0.6 : 0}}"
+    "device": {
+      "id": "{{id ?? 'device'}}",
+      "type": "component",
+      "component": "{{kind ?? 'browser'}}",
+      "props": {
+        "$merge": [
+          {
+            "delay": "{{delay ?? 0.3}}",
+            "float": "{{(bob ?? false) ? fmt.u * 0.6 : 0}}"
+          },
+          {
+            "$if": "src",
+            "then": {
+              "src": "{{src}}"
             },
-            {
-              "$if": "src",
-              "then": {
-                "src": "{{src}}"
-              },
-              "else": {
-                "screen": "{{screen ?? 'dashboard'}}",
-                "title": "{{brand.name}}",
-                "accent": "{{brand.colors.primary}}"
-              }
-            },
-            {
-              "$if": "(kind ?? 'browser') == 'browser' && url",
-              "then": {
-                "url": "{{url}}"
-              }
+            "else": {
+              "screen": "{{screen ?? 'dashboard'}}",
+              "title": "{{brand.name}}",
+              "accent": "{{brand.colors.primary}}"
             }
-          ]
-        },
-        "x": "{{x ?? '50%'}}",
-        "y": "{{y ?? '50%'}}",
-        "width": "{{width}}",
-        "height": "{{height}}"
-      }
-    ],
+          },
+          {
+            "$if": "(kind ?? 'browser') == 'browser' && url",
+            "then": {
+              "url": "{{url}}"
+            }
+          }
+        ]
+      },
+      "x": "{{x ?? '50%'}}",
+      "y": "{{y ?? '50%'}}",
+      "width": "{{width}}",
+      "height": "{{height}}"
+    },
     "ctaButton": {
       "id": "cta-button",
       "type": "component",
