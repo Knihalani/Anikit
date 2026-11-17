@@ -334,10 +334,9 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
     let out = ak264::encode_parallel(cfg, n, |k, buf, hints| {
         let t = Instant::now();
         with_renderer(ev, |_, _| {});
-        WORKER.with(|w| {
+        let held = WORKER.with(|w| {
             let mut w = w.borrow_mut();
-            let Worker { renderer, dl, yuv, map, last, .. } = &mut *w;
-            let r = renderer.as_mut().unwrap();
+            let Worker { dl, map, last, .. } = &mut *w;
             let continuing = !starts.contains(&k) && *last == Some(k.wrapping_sub(1));
             // Held frame: provably identical to the previous one; skip eval and render.
             let fi = (f0 + k) as f32;
@@ -346,10 +345,22 @@ pub fn render_fused(ev: &Evaluator, opts: &RenderOptions, cfg: &ak264::EncoderCo
                 prof.held.fetch_add(1, Ordering::Relaxed);
                 hints.changed = Some(vec![false; map.mb_width * map.mb_height]);
                 *last = Some(k);
-                return;
+                return true;
             }
             eval_frame(ev, (f0 + k) as u32, opts.scale, dl);
-            prof.eval_ns.fetch_add(ns(t), Ordering::Relaxed);
+            false
+        });
+        if held {
+            return;
+        }
+        prof.eval_ns.fetch_add(ns(t), Ordering::Relaxed);
+        // Evaluating can intern new font faces (layouts, counters): sync the renderer after it.
+        with_renderer(ev, |_, _| {});
+        WORKER.with(|w| {
+            let mut w = w.borrow_mut();
+            let Worker { renderer, dl, yuv, map, last, .. } = &mut *w;
+            let r = renderer.as_mut().unwrap();
+            let continuing = !starts.contains(&k) && *last == Some(k.wrapping_sub(1));
             let t = Instant::now();
             let upd = r.render_yuv_incremental(dl, yuv, map);
             prof.render_ns.fetch_add(ns(t), Ordering::Relaxed);
