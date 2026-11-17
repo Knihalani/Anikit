@@ -44,6 +44,7 @@ The card is a black flag that only shows in reflections; it gives chrome contras
 | `cyc.json` | White cyc, chrome type, textured glass panes, aluminium, emissive, reflector cards. |
 | `panes.json` | 3,600 glass panes, each showing frame `i` of a composition. |
 | `glass.json` | Thin and thick glass, a glass sphere, aluminium type. |
+| `geometry.json` | Open geometry: extrude, lathe, tube, surface, heightfield, mesh. |
 | `chrome.json` | The dark-studio lookdev: `{ "text": "ANIKIT" }` with no `objects`. |
 
 ## The spec in one screen
@@ -59,7 +60,7 @@ The card is a black flag that only shows in reflections; it gives chrome contras
   - keys: `{ "interp": "smooth"|"linear", "keys": [ { "t", "pos", "target", "focal": 35, "fstop": 2.8, "focus", "shutter": 0.5 } ] }`. A dense per-frame list with linear interpolation works too. `shutter: 0` turns motion blur off.
   - rigs: `"target": "machine"` aims at the object with that `name` (key `target`s become offsets from it); add `"follow": true` to move with it too (key `pos` become offsets).
 - **`objects`:**
-  - `type`: `text`, `box`, `slab`/`pane`, `plane`, `card`, `sphere`, `cylinder`, `torus`, `phone`, `model` (glTF/GLB via `src`: meshes, PBR factors and node animation, which loops at `speed`);
+  - `type`: `text`, `box`, `slab`/`pane`, `plane`, `card`, `sphere`, `cylinder`, `torus`, `phone`, `extrude`, `lathe`, `tube`, `surface`, `heightfield`, `mesh` (see *Make your own geometry*), `model` (glTF/GLB via `src`: meshes, PBR factors and node animation, which loops at `speed`);
   - placement: `pos`, `rot` (degrees), `scale` (a number or `[sx, sy, sz]`; 0 hides). Each can be an `"=expr"` of `t`, `i`, `lane` or `n`, e.g. `"pos": "=[1.7*i, 0.47, -4*lane]"`;
   - animation: `keys: [{ t, pos, rot, scale, ease }]`, `spin`, `start`/`end`;
   - instances: `count` and `lanes`;
@@ -72,6 +73,28 @@ The card is a black flag that only shows in reflections; it gives chrome contras
   - keys: `base`, `metallic`, `roughness`, `specular`, `clearcoat`, `emissive`, `emissiveStrength`, `transmission`, `ior`, `tint` + `tintDistance`, `glow` (how much a texture glows like a screen).
 - **`glassLayers`:** how many panes a camera ray may pass through (default 5; 3 at `draft`). Lower it for stacks of overlapping glass; each extra pane costs a full trace.
 - **Look:** `quality` (`draft`, `standard`, `high`), `bloom`, `exposure`, `tonemap` (`neutral`, `aces`), `vignette`, `floor` (`false` or `{ color, roughness, reflect, mirror, y }`).
+
+## Make your own geometry
+
+You are not limited to the preset shapes. These types build a mesh from your description. Materials, `pos`/`rot`/`scale`, `keys`, `count` and expressions all apply to them as usual.
+
+- **`extrude`:** any SVG path, as a solid with a rounded bevel. It stands on y = 0, `height` tall. Use it for logos, icons and signs. Inner subpaths cut holes.
+  `{ "type": "extrude", "d": "M0 0 L40 0 L40 10 L10 10 L10 30 L0 30 Z", "height": 0.6, "depth": 0.15, "bevel": 0.01, "material": "gold" }`
+- **`lathe`:** a profile `[[radius, y], ...]` revolved about Y. Use it for vases, bottles, lenses, columns and chess pieces. `segments` defaults to 96.
+  `{ "type": "lathe", "points": [[0, 0], [0.22, 0.02], [0.3, 0.25], [0.12, 0.6], [0.16, 0.85], [0, 0.86]], "material": "ceramic" }`
+- **`tube`:** a circle swept along a path, for cables, neon, springs and paths through space.
+  - The path is `points` `[[x, y, z], ...]` (smoothed) or `path`, an expression of `s` (0→1).
+  - `radius` is a number or an expression of `s`, so tubes can taper.
+  - `segments` (default 256) and `sides` (default 24) set the resolution.
+  `{ "type": "tube", "path": "=[0.35*cos(s*18.85), s*1.2, 0.35*sin(s*18.85)]", "radius": "=0.03+0.02*s", "material": "copper" }`
+- **`surface`:** a parametric surface. `x`, `y` and `z` are expressions of `u` and `v`; `"u": [from, to, steps]` and `"v"` set the ranges (default `[0, 1, 64]`). Use it for ribbons, shells, knots, waves and Möbius strips.
+  `{ "type": "surface", "x": "=u", "y": "=0.2*sin(u*6+v*3)", "z": "=v", "u": [-1, 1, 128], "v": [-1, 1, 64], "material": "chrome" }`
+- **`heightfield`:** `y = expr(x, z)` over a `size` `[w, d]` rectangle centred on the origin, at `res` steps per side (default 128). Use it for terrain, liquid surfaces and data landscapes.
+  `{ "type": "heightfield", "expr": "=0.06*sin(x*9)*cos(z*9)", "size": [4, 4], "res": 128, "material": "matte" }`
+- **`mesh`:** raw `vertices` `[[x, y, z], ...]` and `faces` (triangles, polygons or a flat index list). Normals are smoothed unless `"flat": true`.
+  `{ "type": "mesh", "vertices": [[0, 0.8, 0], [-0.25, 0.1, -0.25], [0.25, 0.1, -0.25], [0, 0.1, 0.25]], "faces": [[0, 2, 1], [0, 3, 2], [0, 1, 3], [1, 2, 3]], "flat": true }`
+
+Shapes are built once when the spec loads, so their expressions use `u`/`v`/`s`/`x`/`z` (not `t`). To animate them, animate the object (`keys`, `"rot": "=[0, t*40, 0]"`), or deform with `scale`. To generate many objects, put `{ "script": "..." }` in `objects`; it expands to the items it returns. Cost: tracing a mesh costs about the same as the preset shapes of similar screen size. A 160×32 surface or a 128² heightfield adds under 5 ms to scene build, and render time is set by pixels covered, not by triangle count.
 
 ## Rules that keep it looking expensive
 
