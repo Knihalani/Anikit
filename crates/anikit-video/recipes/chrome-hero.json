@@ -8,7 +8,7 @@
   },
   "scenes": [
    {
-    "duration": 5,
+    "duration": 3,
     "layers": [
      {
       "component": "scene3d",
@@ -32,7 +32,7 @@
           "fstop": 2.4
          },
          {
-          "t": 5,
+          "t": 3,
           "pos": [
            2.4,
            0.8,
@@ -85,7 +85,8 @@
           0
          ]
         }
-       ]
+       ],
+       "quality": "draft"
       }
      }
     ]

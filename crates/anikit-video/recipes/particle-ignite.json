@@ -4,7 +4,7 @@
   "size": "16:9",
   "scenes": [
    {
-    "duration": 4,
+    "duration": 3,
     "layers": [
      {
       "component": "scene3d",
@@ -27,7 +27,7 @@
           "focal": 40
          },
          {
-          "t": 4,
+          "t": 3,
           "pos": [
            0,
            0.9,
@@ -45,7 +45,7 @@
        "objects": [
         {
          "type": "particles",
-         "count": 500000,
+         "count": 200000,
          "emit": {
           "text": "IGNITE",
           "height": 0.55,
@@ -79,7 +79,8 @@
          "emissive": 3,
          "blend": "add"
         }
-       ]
+       ],
+       "quality": "draft"
       }
      }
     ]
