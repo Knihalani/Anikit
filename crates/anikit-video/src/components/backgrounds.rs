@@ -68,12 +68,14 @@ impl FieldCache {
 
 /// Slow fields are computed at `rate` keyframes per second and blended per
 /// frame into one image: a fraction of the field evaluations, one image draw.
-fn keyframed(ctx: &Ctx, t: f32, rate: f32, field: impl Fn(f32) -> Arc<Field>) -> Vec<Op> {
+fn keyframed(ctx: &Ctx, t: f32, rate: f32, smooth: bool, field: impl Fn(f32) -> Arc<Field>) -> Vec<Op> {
     let rate = rate.clamp(1.0, 120.0);
     let x = t.max(0.0) * rate;
     let k0 = x.floor();
-    // Blend weight quantised to 1/64: identical frames share an image.
-    let f = ((x - k0) * 64.0).round() / 64.0;
+    // Held keyframes (default) keep frames identical between steps, so the
+    // renderer and encoder skip them; `smooth` blends instead (weight
+    // quantised to 1/64 so identical frames still share an image).
+    let f = if smooth { ((x - k0) * 64.0).round() / 64.0 } else { 0.0 };
     let a = field(k0 / rate);
     let b = if f > 0.0 { Some(field((k0 + 1.0) / rate)) } else { None };
     let key = fnv(&[b"blend", &a.key.to_le_bytes(), &b.as_ref().map_or(0, |b| b.key).to_le_bytes(), &f.to_bits().to_le_bytes()]);
@@ -120,7 +122,9 @@ impl Component for Gradient {
         let paint = if self.kind.as_deref() == Some("radial") {
             radial(w * 0.5, h * 0.5, (w * w + h * h).sqrt() * 0.5, stops)
         } else {
-            let a = (self.angle.unwrap_or(90.0) + self.spin * t).to_radians();
+            // Spin updates 15×/s (held between), so frames repeat and encode almost free.
+            let ts = if self.spin != 0.0 { (t * 15.0).floor() / 15.0 } else { 0.0 };
+            let a = (self.angle.unwrap_or(90.0) + self.spin * ts).to_radians();
             let (s, c) = a.sin_cos();
             let half = 0.5 * (w * c.abs() + h * s.abs());
             Paint::Linear { p0: [w * 0.5 - c * half, h * 0.5 - s * half], p1: [w * 0.5 + c * half, h * 0.5 + s * half], stops }
@@ -147,14 +151,17 @@ pub struct MeshGradient {
     pub detail: f32,
     /// Colour strength (1 = the colours as given; lower sits better behind text).
     pub intensity: f32,
-    /// Field keyframes per second (blended in between).
+    /// Field updates per second. Between updates the frame is held (cheap:
+    /// the renderer and encoder skip unchanged frames); slow drift reads as smooth.
     pub rate: f32,
+    /// Blend between updates instead of holding (smoother, costs every frame).
+    pub smooth: bool,
     #[serde(skip)]
     cache: FieldCache,
 }
 impl Default for MeshGradient {
     fn default() -> Self {
-        MeshGradient { colors: Vec::new(), base: None, speed: 1.0, warp: 0.6, seed: 7, detail: 1.0, intensity: 0.75, rate: 12.0, cache: FieldCache::default() }
+        MeshGradient { colors: Vec::new(), base: None, speed: 1.0, warp: 0.6, seed: 7, detail: 1.0, intensity: 0.75, rate: 8.0, smooth: false, cache: FieldCache::default() }
     }
 }
 impl Prepare for MeshGradient {}
@@ -162,7 +169,7 @@ impl Component for MeshGradient {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
         // A still field (speed 0) always reuses one image, so renders stay cached.
         let t = if self.speed == 0.0 { 0.0 } else { t };
-        keyframed(ctx, t, self.rate, |tt| self.field_at(tt, ctx))
+        keyframed(ctx, t, self.rate, self.smooth, |tt| self.field_at(tt, ctx))
     }
 }
 
@@ -244,14 +251,17 @@ pub struct Aurora {
     /// Brightness of the ribbons.
     pub intensity: f32,
     pub seed: u32,
-    /// Field keyframes per second (blended in between).
+    /// Field updates per second. Between updates the frame is held (cheap:
+    /// the renderer and encoder skip unchanged frames); slow drift reads as smooth.
     pub rate: f32,
+    /// Blend between updates instead of holding (smoother, costs every frame).
+    pub smooth: bool,
     #[serde(skip)]
     cache: FieldCache,
 }
 impl Default for Aurora {
     fn default() -> Self {
-        Aurora { colors: Vec::new(), sky: None, speed: 1.0, intensity: 1.0, seed: 3, rate: 12.0, cache: FieldCache::default() }
+        Aurora { colors: Vec::new(), sky: None, speed: 1.0, intensity: 1.0, seed: 3, rate: 12.0, smooth: false, cache: FieldCache::default() }
     }
 }
 impl Prepare for Aurora {}
@@ -259,7 +269,7 @@ impl Component for Aurora {
     fn eval(&self, t: f32, ctx: &Ctx) -> Vec<Op> {
         // A still field (speed 0) always reuses one image, so renders stay cached.
         let t = if self.speed == 0.0 { 0.0 } else { t };
-        keyframed(ctx, t, self.rate, |tt| self.field_at(tt, ctx))
+        keyframed(ctx, t, self.rate, self.smooth, |tt| self.field_at(tt, ctx))
     }
 }
 
@@ -312,7 +322,7 @@ pub struct Grain {
 }
 impl Default for Grain {
     fn default() -> Self {
-        Grain { amount: 0.06, size: 1.0, rate: 24.0, seed: 1 }
+        Grain { amount: 0.06, size: 1.0, rate: 0.0, seed: 1 }
     }
 }
 impl Prepare for Grain {}
@@ -500,10 +510,12 @@ pub struct LightLeak {
     pub intensity: f32,
     pub speed: f32,
     pub seed: u32,
+    /// Updates per second (held in between; the drift is slow enough to read as smooth).
+    pub rate: f32,
 }
 impl Default for LightLeak {
     fn default() -> Self {
-        LightLeak { colors: Vec::new(), intensity: 0.8, speed: 1.0, seed: 11 }
+        LightLeak { colors: Vec::new(), intensity: 0.8, speed: 1.0, seed: 11, rate: 10.0 }
     }
 }
 impl Prepare for LightLeak {}
@@ -514,6 +526,7 @@ impl Component for LightLeak {
         let (w, h) = (ctx.width, ctx.height);
         let mut out = Vec::new();
         push_layer(&mut out, 1.0, Blend::Screen, Vec::new());
+        let t = if self.rate > 0.0 { (t * self.rate).floor() / self.rate } else { t };
         let s = (t * 0.15 * self.speed) as f64;
         for (i, c) in cols.iter().enumerate() {
             let k = i as f64 * 7.7;
@@ -523,7 +536,12 @@ impl Component for LightLeak {
             let cy = h * (0.5 + 0.5 * n.noise2(k + 3.0, s * 0.8) as f32);
             let r = w.max(h) * (0.45 + 0.15 * n.noise2(k + 8.0, s * 1.2) as f32);
             let a = (self.intensity * (0.55 + 0.45 * n.noise2(k + 1.5, s * 2.0) as f32)).clamp(0.0, 1.0);
-            out.push(rect(0.0, 0.0, w, h, 0.0, radial(cx, cy, r, vec![(0.0, alpha(*c, a)), (0.4, alpha(*c, a * 0.45)), (1.0, alpha(*c, 0.0))])));
+            // Only the gradient's own disc (clipped to the frame) is painted.
+            let (x0, y0) = ((cx - r).max(0.0), (cy - r).max(0.0));
+            let (x1, y1) = ((cx + r).min(w), (cy + r).min(h));
+            if x1 > x0 && y1 > y0 {
+                out.push(rect(x0, y0, x1 - x0, y1 - y0, 0.0, radial(cx, cy, r, vec![(0.0, alpha(*c, a)), (0.4, alpha(*c, a * 0.45)), (1.0, alpha(*c, 0.0))])));
+            }
         }
         out.push(Op::PopLayer);
         out

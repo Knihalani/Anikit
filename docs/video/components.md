@@ -163,7 +163,7 @@ Devices keep their aspect ratio and are centred in the box. Screen props are sha
 
 | Kind | Props |
 |---|---|
-| `card` | `title`, `body`, `icon` (`spark`, `bolt`, `check`, `plus`, `arrow`, `info`, `warning`, `x`), `accent`, `glow`, `delay`, `out` |
+| `card` | `title`, `body`, `fontSize` (default scales with the card), `icon` (`spark`, `bolt`, `check`, `plus`, `arrow`, `info`, `warning`, `x`), `accent`, `glow`, `delay`, `out` |
 | `button` | `align` (0 left, 0.5 centre (default), 1 right; vertically centred in the box), `label`, `variant` (`primary`, `secondary`, `ghost`, `gradient`), `size`, `color`, `press` (times), `arrow`, `delay`, `out` |
 | `toggle` | `at` (flip time), `on` (initial state), `size`, `color`, `label` |
 | `badge` | `align` (as `button`), `label`, `color`, `size`, `dot` (pulsing "live" dot), `solid`, `delay`, `out` |
