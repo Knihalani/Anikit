@@ -25,6 +25,8 @@ pub struct Tri {
     pub e1: V3,
     pub e2: V3,
     pub n: [V3; 3],
+    /// Texture coordinates per vertex.
+    pub uv: [[f32; 2]; 3],
 }
 
 /// Closest hit in object space.
@@ -46,6 +48,12 @@ pub struct Bvh {
 impl Bvh {
     /// Build from an indexed mesh (`pos`/`nrm` xyz per vertex).
     pub fn new(pos: &[f32], nrm: &[f32], idx: &[u32]) -> Bvh {
+        Bvh::with_uv(pos, nrm, &[], idx)
+    }
+
+    /// Build from an indexed mesh with texture coordinates (`uv`: two per vertex, may be empty).
+    pub fn with_uv(pos: &[f32], nrm: &[f32], uv: &[f32], idx: &[u32]) -> Bvh {
+        let tc = |i: u32| if uv.len() >= (i as usize + 1) * 2 { [uv[i as usize * 2], uv[i as usize * 2 + 1]] } else { [0.0, 0.0] };
         let p = |i: u32| v3(pos[i as usize * 3], pos[i as usize * 3 + 1], pos[i as usize * 3 + 2]);
         let nn = |i: u32| {
             if nrm.len() >= pos.len() {
@@ -65,7 +73,7 @@ impl Bvh {
             }
             let gn = norm(g);
             let fix = |n: V3| if dot(n, n) < 0.5 { gn } else { n };
-            tris.push(Tri { v0: a, e1, e2, n: [fix(nn(t[0])), fix(nn(t[1])), fix(nn(t[2]))] });
+            tris.push(Tri { v0: a, e1, e2, n: [fix(nn(t[0])), fix(nn(t[1])), fix(nn(t[2]))], uv: [tc(t[0]), tc(t[1]), tc(t[2])] });
         }
         let n = tris.len();
         let cent: Vec<V3> = tris.iter().map(|t| add(t.v0, scale(add(t.e1, t.e2), 1.0 / 3.0))).collect();
@@ -267,6 +275,123 @@ impl Bvh {
             }
             sp -= 1;
             ni = stack[sp];
+        }
+    }
+}
+
+/// Top-level hierarchy over world-space boxes (one per object instance),
+/// rebuilt every frame (cheap: median splits over a few thousand boxes).
+pub struct Tlas {
+    nodes: Vec<Node>,
+    pub items: Vec<u32>,
+}
+
+impl Tlas {
+    pub fn new(boxes: &[(V3, V3)]) -> Tlas {
+        let n = boxes.len();
+        let mut items: Vec<u32> = (0..n as u32).collect();
+        let mut nodes = vec![Node { lo: v3(0.0, 0.0, 0.0), hi: v3(0.0, 0.0, 0.0), first: 0, count: n as u32 }];
+        let mut stack = vec![0usize];
+        while let Some(ni) = stack.pop() {
+            let (first, count) = (nodes[ni].first as usize, nodes[ni].count as usize);
+            let (mut lo, mut hi) = (v3(f32::MAX, f32::MAX, f32::MAX), v3(f32::MIN, f32::MIN, f32::MIN));
+            let (mut clo, mut chi) = (lo, hi);
+            for &i in &items[first..first + count] {
+                let (a, b) = boxes[i as usize];
+                lo = vmin(lo, a);
+                hi = vmax(hi, b);
+                let c = scale(add(a, b), 0.5);
+                clo = vmin(clo, c);
+                chi = vmax(chi, c);
+            }
+            nodes[ni].lo = lo;
+            nodes[ni].hi = hi;
+            if count <= 2 {
+                continue;
+            }
+            let ext = sub(chi, clo);
+            let axis = if ext.x >= ext.y && ext.x >= ext.z { 0 } else if ext.y >= ext.z { 1 } else { 2 };
+            let key = |i: u32| {
+                let (a, b) = boxes[i as usize];
+                get(a, axis) + get(b, axis)
+            };
+            let slice = &mut items[first..first + count];
+            let m = count / 2;
+            slice.select_nth_unstable_by(m, |a, b| key(*a).total_cmp(&key(*b)));
+            let l = nodes.len();
+            nodes.push(Node { lo, hi, first: first as u32, count: m as u32 });
+            nodes.push(Node { lo, hi, first: (first + m) as u32, count: (count - m) as u32 });
+            nodes[ni].first = l as u32;
+            nodes[ni].count = 0;
+            stack.push(l);
+            stack.push(l + 1);
+        }
+        if n == 0 {
+            nodes.clear();
+        }
+        Tlas { nodes, items }
+    }
+
+    /// Visit items whose boxes the ray enters before `tmax` (nearest first);
+    /// `f(item, tmax) -> new tmax` (return a smaller value on a hit, or
+    /// `-1.0` to stop early for shadow rays).
+    #[inline]
+    pub fn visit(&self, o: V3, d: V3, tmin: f32, mut tmax: f32, mut f: impl FnMut(u32, f32) -> f32) {
+        if self.nodes.is_empty() {
+            return;
+        }
+        let inv = v3(1.0 / d.x, 1.0 / d.y, 1.0 / d.z);
+        let mut stack = [0u32; 64];
+        let mut sp = 0usize;
+        let mut ni = 0u32;
+        if slab(&self.nodes[0], o, inv, tmin, tmax).is_none() {
+            return;
+        }
+        loop {
+            let node = &self.nodes[ni as usize];
+            if node.count > 0 {
+                for k in node.first..node.first + node.count {
+                    tmax = f(self.items[k as usize], tmax);
+                    if tmax < 0.0 {
+                        return;
+                    }
+                }
+            } else {
+                let (a, b) = (node.first, node.first + 1);
+                let ta = slab(&self.nodes[a as usize], o, inv, tmin, tmax);
+                let tb = slab(&self.nodes[b as usize], o, inv, tmin, tmax);
+                match (ta, tb) {
+                    (Some(x), Some(y)) => {
+                        let (near, far) = if x <= y { (a, b) } else { (b, a) };
+                        if sp < 64 {
+                            stack[sp] = far;
+                            sp += 1;
+                        }
+                        ni = near;
+                        continue;
+                    }
+                    (Some(_), None) => {
+                        ni = a;
+                        continue;
+                    }
+                    (None, Some(_)) => {
+                        ni = b;
+                        continue;
+                    }
+                    _ => {}
+                }
+            }
+            // Pop, skipping nodes now beyond the closest hit.
+            loop {
+                if sp == 0 {
+                    return;
+                }
+                sp -= 1;
+                ni = stack[sp];
+                if slab(&self.nodes[ni as usize], o, inv, tmin, tmax).is_some() {
+                    break;
+                }
+            }
         }
     }
 }
