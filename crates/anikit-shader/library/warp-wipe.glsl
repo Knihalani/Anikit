@@ -1,7 +1,7 @@
 // Transition: a soft diagonal wipe that smears pixels along its direction
 // as it passes. Uniforms: direction (degrees), smear.
-uniform float direction; // = 20.0
-uniform float smear;     // = 0.12
+uniform float direction; // = 20.0  wipe angle in degrees
+uniform float smear;     // = 0.12  pixel smear length
 
 vec4 transition(vec2 uv) {
     float a = radians(direction);

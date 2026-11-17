@@ -4,13 +4,13 @@
 // beams cost the same as a gradient. Fast (~20–40 ms at 1080p).
 // Uniforms: light (position in uv 0..1), color, intensity, slats (beam count),
 // haze, dust, speed.
-uniform vec2 light;      // = vec2(0.82, 0.92)
-uniform vec3 color;      // = vec3(1.0, 0.78, 0.5)
-uniform float intensity; // = 1.0
-uniform float slats;     // = 9.0
-uniform float haze;      // = 1.0
-uniform float dust;      // = 1.0
-uniform float speed;     // = 1.0
+uniform vec2 light;      // = vec2(0.82, 0.92)  light position, uv 0..1 (keep it near the top edge)
+uniform vec3 color;      // = vec3(1.0, 0.78, 0.5)  light colour
+uniform float intensity; // = 1.0  overall brightness
+uniform float slats;     // = 9.0  beam count
+uniform float haze;      // = 1.0  how much the air glows
+uniform float dust;      // = 1.0  dust mote brightness
+uniform float speed;     // = 1.0  drift speed
 
 float h11(float x) { return fract(sin(x * 127.1) * 43758.5453); }
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }

@@ -55,6 +55,11 @@ impl BeatMarkers {
         BeatMarkers { src, beats: None, music }
     }
 
+    /// The music: (file, timeline `at`, `trimStart`).
+    pub(crate) fn music(&self) -> Option<&(PathBuf, f64, f64)> {
+        self.src.as_ref()
+    }
+
     /// `None` when `name` is not a beat marker; otherwise its global time or an error.
     pub fn resolve(&mut self, name: &str) -> Option<Result<f32, String>> {
         let (kind, n) = parse(name)?;

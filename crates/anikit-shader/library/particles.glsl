@@ -3,13 +3,13 @@
 // particle per cell; near layers are bigger and blurrier (depth of field).
 // Fast (~60–90 ms at 1080p). Uniforms: color, color2, density (0..1),
 // speed, size, focus (0 near … 1 far), direction (drift, uv/s).
-uniform vec3 color;      // = vec3(1.0, 0.72, 0.38)
-uniform vec3 color2;     // = vec3(0.35, 0.6, 1.0)
-uniform float density;   // = 0.6
-uniform float speed;     // = 1.0
-uniform float size;      // = 1.0
-uniform float focus;     // = 0.5
-uniform vec2 direction;  // = vec2(0.02, 0.05)
+uniform vec3 color;      // = vec3(1.0, 0.72, 0.38)  warm particle colour
+uniform vec3 color2;     // = vec3(0.35, 0.6, 1.0)  cool particle colour
+uniform float density;   // = 0.6  0 sparse … 1 dense
+uniform float speed;     // = 1.0  drift speed
+uniform float size;      // = 1.0  particle size
+uniform float focus;     // = 0.5  focal depth: 0 near … 1 far
+uniform vec2 direction;  // = vec2(0.02, 0.05)  drift, screen heights per second
 
 vec3 h33(vec3 p) {
     uvec3 q = uvec3(ivec3(p) + 32768) * uvec3(1597334673u, 3812015801u, 2798796415u);
