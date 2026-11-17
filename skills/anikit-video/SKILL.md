@@ -55,7 +55,7 @@ Open the sheet and three full-size stills (`preview s.json --at T -o f.png`) and
 3. **Where is the weakest frame, and why?**
 4. **Does the sound do as much as the picture?** (Its hits on the cuts; the instrumentation suits the idea.)
 
-If an answer is weak, improve that one thing and preview again (it costs about a second), then render once.
+If an answer is weak, improve that one thing and preview again (it costs about a second), then render once; fixes after that go through `render --from/--to`. `anikit-video docs taste` has what tends to make work land.
 
 ## Shortcuts (optional; each is made from the primitives above)
 
