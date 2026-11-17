@@ -1184,10 +1184,18 @@ fn set_paint(ctx: &mut RenderContext, assets: &View, paint: &Paint) -> bool {
             if *opacity <= 0.0 {
                 return false;
             }
+            // Integer translations sample texel centres exactly: nearest is identical and ~4× cheaper.
+            let t = affine(transform).as_coeffs();
+            let exact = t[0] == 1.0 && t[1] == 0.0 && t[2] == 0.0 && t[3] == 1.0 && t[4].fract() == 0.0 && t[5].fract() == 0.0;
             ctx.set_paint(Image {
                 image: ImageSource::Pixmap(pix),
                 // `Paint::Image` tiles; `Op::Image` draws once.
-                sampler: ImageSampler { alpha: opacity.min(1.0), quality: ImageQuality::Medium, x_extend: Extend::Repeat, y_extend: Extend::Repeat },
+                sampler: ImageSampler {
+                    alpha: opacity.min(1.0),
+                    quality: if exact { ImageQuality::Low } else { ImageQuality::Medium },
+                    x_extend: Extend::Repeat,
+                    y_extend: Extend::Repeat,
+                },
             });
             ctx.set_paint_transform(inv);
         }
