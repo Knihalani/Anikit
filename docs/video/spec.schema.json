@@ -646,7 +646,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "description": "`cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`. One of: cut, crossfade, fade, fadeBlack, fadeWhite, slide, push, zoom, wipe, iris, blur, glitch, morphCut, shader.",
+          "description": "`cut`, `crossfade`, `fadeBlack`, `fadeWhite`, `slide`, `push`, `zoom`, `wipe`, `iris`, `blur`, `glitch`, `morphCut`, `zoomThrough`, `reveal`, `blinds`, `split`, `whip`. One of: cut, crossfade, fade, fadeBlack, fadeWhite, slide, push, zoom, wipe, iris, blur, glitch, morphCut, shader, zoomThrough, reveal, blinds, split, whip.",
           "type": [
             "string",
             "null"
@@ -665,7 +665,12 @@
             "blur",
             "glitch",
             "morphCut",
-            "shader"
+            "shader",
+            "zoomThrough",
+            "reveal",
+            "blinds",
+            "split",
+            "whip"
           ]
         },
         "duration": {
@@ -741,6 +746,29 @@
             "string",
             "null"
           ]
+        },
+        "layer": {
+          "description": "`zoomThrough`: the `id` of a layer in the outgoing scene to fly into (the new scene shows through its shape).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "shape": {
+          "description": "`reveal`: `circle`, `diamond`, `square`, `star`, `blob`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "count": {
+          "description": "`blinds`: number of bars (default 8).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
         },
         "uniforms": {
           "description": "Uniforms for a shader transition.",
@@ -1298,6 +1326,28 @@
               "type": "null"
             }
           ]
+        },
+        "inertia": {
+          "description": "Follow-through: a spring chases the layer's own motion, so every move overshoots and settles.\n`true`, a preset (`soft`, `bouncy`, `tight`, `heavy`) or `{\"stiffness\": 170, \"damping\": 12, \"mass\": 1, \"props\": [\"x\", \"y\", \"rotation\", \"scale\"]}`."
+        },
+        "posterizeTime": {
+          "description": "Posterize time (After Effects style): this layer and its children move at this many frames per second\n(`12` animates \"on twos\" at 24 fps: a handmade, stop-motion feel). The video's frame rate is unchanged.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "drag": {
+          "description": "Group drag (overlapping action): child i follows the group's own motion i × drag seconds later,\nso a moving group trails and settles part by part. Pairs well with `inertia` on the group.",
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
+        },
+        "smear": {
+          "description": "Smear: stretch the layer along its direction of travel on fast moves (`true`, or strength; 1 = default)."
         },
         "matte": {
           "description": "Track matte: another layer of the scene (by `id`) whose alpha or luma shows this one.",
@@ -3237,6 +3287,16 @@
             "null"
           ],
           "format": "double"
+        },
+        "along": {
+          "description": "Colours along the stroke, start to end: a gradient that follows the path (and its `trimEnd` write-on).",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
