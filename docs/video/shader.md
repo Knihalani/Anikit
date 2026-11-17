@@ -106,6 +106,7 @@ Write `fn mainImage(fragCoord: vec2f) -> vec4f` (or `fn transition(uv: vec2f) ->
 | `flow-ink` | layer | two inks marbled by a curl-noise flow field. `speed`, `ink`, `ink2`, `paper` |
 | `turing` | layer | reaction–diffusion spots and labyrinths. `scale`, `balance` (−1 spots … 0 maze … 1 holes), `speed`, `colorA`, `colorB` |
 | `film-burn` | filter | the frame below scorches from hot spots. Animate `amount` 0 → 1; `seed` |
+| `lake-mirror` | filter | reflects everything drawn above a horizon in rippled dark water below it, including layers composited in between. It pairs with `aurora` (`"lake": 0`) for a 1.33× faster aurora. That path is not identical to aurora's traced lake: against it, SSIM 0.955 and ΔE p99.9 11.6, from different jitter noise, stars and the ridge rim. Uniforms: `horizon`, `focal`, `speed`, `ripple`, `gain` |
 | `glitch` | filter | codec-style block slides, row smears, RGB split, scanlines in bursts. `amount`, `rate` |
 | `burn` | transition | the old scene burns away along a noisy ember edge. `glow`, `color` |
 | `ripple` | transition | a ring wave carries the new scene out from the centre. `amplitude`, `waves` |

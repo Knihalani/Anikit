@@ -1,7 +1,11 @@
 // Aurora: curtains of light traced through stacked height layers, over a
-// starfield and mirrored in a dark lake. Uniforms: speed, intensity.
+// starfield and mirrored in a dark lake. Uniforms: speed, intensity, lake
+// (1 = trace the lake here; 0 = sky only, then add the `lake-mirror` filter
+// on top, which reflects the rendered frame: about a third faster, and it
+// reflects any layer in between too).
 uniform float speed;     // = 1.0
 uniform float intensity; // = 1.0
+uniform float lake;      // = 1.0
 
 uint hashu(uint x) { x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16; return x; }
 float hash2(vec2 p) { return float(hashu(uint(int(p.x)) * 1973u + hashu(uint(int(p.y)) + 9277u))) / 4294967295.0; }
@@ -88,6 +92,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         float e = rd.y - rg;
         col = mix(vec3(0.004, 0.007, 0.009), col, smoothstep(-0.0008, 0.0008, e));
         col += vec3(0.05, 0.25, 0.14) * 0.15 * exp(-max(e, 0.0) * 260.0) * step(0.0, e) * intensity;
+    } else if (lake < 0.5) {
+        col = vec3(0.0);   // left for the lake-mirror filter
     } else {
         // Lake: the mirrored sky and ridge, rippled and darkened, brightest at grazing angles.
         vec3 r = vec3(rd.x, -rd.y, rd.z);

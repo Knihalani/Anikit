@@ -36,6 +36,7 @@ lib! {
     "flow-ink", Image, "Two inks marbled by a curl-noise flow field on paper.";
     "turing", Image, "Reaction–diffusion spots and labyrinths (one-wavelength plane-wave sum, no simulation).";
     "film-burn", Filter, "Scorches the frame below from hot spots; animate `amount` 0 → 1.";
+    "lake-mirror", Filter, "Reflects everything above a horizon in still, rippled water below it (pairs with aurora lake = 0).";
     "glitch", Filter, "Codec-style block displacement, row smears, RGB split and scanlines in bursts.";
     "burn", Transition, "Old scene burns away along a noisy ember edge.";
     "ripple", Transition, "A ring wave spreads from the centre carrying the new scene.";
