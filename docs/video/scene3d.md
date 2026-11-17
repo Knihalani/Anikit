@@ -207,6 +207,14 @@ noise is denoised in post and must not trigger supersampling). Secondary
 rays whose whole-path weight is below 0.3% take the pre-filtered
 environment instead (`W_MIN`).
 
+Tried and rejected: temporal reuse of refined (edge) pixels. Reprojected
+history with an id/depth check and a 3×3 luminance clamp doubled ΔE p99.9 on
+`cyc` (14.7 → 31) and raised flicker (42 → 74), because sub-pixel motion
+changes an edge pixel's coverage and a clamp built from centre samples
+accepts any mix. Limiting reuse to whole-pixel motion removes the error but
+also the reuse: every lookdev shot has a moving camera. Speed gain at best
+~3%.
+
 Measure every change:
 
 - `cargo run --release -p anikit-video --example scene3d_bench [-- --reference]`:
