@@ -27,8 +27,9 @@ pub mod bvh;
 pub mod env;
 pub mod geom;
 pub mod gltf;
+pub mod kernel;
 pub mod math;
-pub mod post;
+pub use kernel::post;
 pub mod spec;
 pub mod trace;
 
@@ -235,9 +236,9 @@ impl Prepare for Scene3d {
         };
         let quality_s = m.get("quality").and_then(|q| q.as_str()).unwrap_or("standard");
         let (quality, denoise, bake) = match quality_s {
-            "draft" => (Quality { edge_spp: 3, ao_rays: 1, shadow_rays: 1, max_depth: 2, max_glass: 6, contrast: 0.1, secondary_rays: 0 }, 5, (384, 24)),
+            "draft" => (Quality { edge_spp: 3, ao_rays: 1, shadow_rays: 1, max_depth: 2, max_glass: 6, contrast: 0.1, secondary_rays: 0, full: false }, 5, (384, 24)),
             "standard" => (Quality::default(), 5, (768, 64)),
-            "high" => (Quality { edge_spp: 16, ao_rays: 3, shadow_rays: 3, max_depth: 4, max_glass: 14, contrast: 0.035, secondary_rays: 4 }, 5, (1024, 128)),
+            "high" => (Quality { edge_spp: 16, ao_rays: 3, shadow_rays: 3, max_depth: 4, max_glass: 14, contrast: 0.035, secondary_rays: 4, full: false }, 5, (1024, 128)),
             o => return Err(Error(format!("unknown quality `{o}`; expected draft, standard or high"))),
         };
         let denoise = num_or(m, "denoise", denoise as f32).map_err(Error)? as u32;
@@ -319,7 +320,7 @@ impl Scene3d {
         let prof = std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some();
         if prof {
             trace::PROFILE.store(true, std::sync::atomic::Ordering::Relaxed);
-            for r in &trace::RAYS {
+            for r in trace::RAYS.iter().chain(&trace::TIMES) {
                 r.store(0, std::sync::atomic::Ordering::Relaxed);
             }
         }
@@ -340,10 +341,21 @@ impl Scene3d {
         let n_tex = self.assign_textures(&mut scene, &cam, t, w, h, assets);
         scene.rebuild();
         let t_setup = clock.elapsed();
+        if prof && std::env::var("ANIKIT_SCENE3D_PROFILE").as_deref() == Ok("2") {
+            scene.micro(&cam, w, h);
+        }
 
-        let mut px = vec![trace::Px::default(); w * h];
+        let mut px: kernel::pool::Buf<trace::Px> = kernel::pool::Buf::uninit(w * h);
         let band = 32usize;
-        let q = p.quality;
+        let mut q = p.quality;
+        if std::env::var_os("ANIKIT_SCENE3D_REFERENCE").is_some() {
+            // Converged sampling with the same image model: 1 + 24 samples per
+            // pixel everywhere, 4 shadow and AO rays per sample.
+            q.full = true;
+            q.edge_spp = 24;
+            q.ao_rays = q.ao_rays.max(4);
+            q.shadow_rays = q.shadow_rays.max(4);
+        }
         let body = |(k, rows): (usize, &mut [trace::Px])| {
             let y0 = k * band;
             let y1 = (y0 + rows.len() / w).min(h);
@@ -367,6 +379,8 @@ impl Scene3d {
                 ms(t_trace - t_setup),
                 ms(clock.elapsed() - t_trace)
             );
+            let tm: Vec<u64> = trace::TIMES.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
+            eprintln!("  cpu: centre pass {:.0} ms, refinement {:.0} ms ({:.1}% of pixels refined)", tm[0] as f64 / 1e3, tm[1] as f64 / 1e3, tm[2] as f64 * 100.0 / (w * h) as f64);
             let r: Vec<u64> = trace::RAYS.iter().map(|a| a.load(std::sync::atomic::Ordering::Relaxed)).collect();
             eprintln!("  rays: {:.2}M closest ({:.2}M radiance, {:.2}M floor reflections), {:.2}M shadow/AO, {:.2} primary samples per pixel", r[0] as f64 / 1e6, r[3] as f64 / 1e6, r[4] as f64 / 1e6, r[1] as f64 / 1e6, r[2] as f64 / (w * h) as f64);
         }

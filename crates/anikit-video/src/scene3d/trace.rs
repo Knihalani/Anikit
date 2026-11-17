@@ -327,11 +327,14 @@ pub struct Quality {
     pub contrast: f32,
     /// Shadow and AO rays at secondary hits (0 = unoccluded, noise-free).
     pub secondary_rays: u32,
+    /// Reference mode: every pixel takes `edge_spp` extra samples and no
+    /// speed-only shortcut applies (the quality harness's ground truth).
+    pub full: bool,
 }
 
 impl Default for Quality {
     fn default() -> Self {
-        Quality { edge_spp: 6, ao_rays: 1, shadow_rays: 1, max_depth: 3, max_glass: 10, contrast: 0.06, secondary_rays: 0 }
+        Quality { edge_spp: 6, ao_rays: 1, shadow_rays: 1, max_depth: 3, max_glass: 10, contrast: 0.06, secondary_rays: 0, full: false }
     }
 }
 
@@ -356,9 +359,22 @@ pub static RAYS: [std::sync::atomic::AtomicU64; 6] = [const { std::sync::atomic:
 #[inline]
 fn count(k: usize) {
     if cfg!(debug_assertions) || PROFILE.load(std::sync::atomic::Ordering::Relaxed) {
-        RAYS[k].fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        // Per-thread tallies, flushed in batches (a shared atomic per ray
+        // would serialise the threads and distort the profile).
+        thread_local!(static LOCAL: std::cell::Cell<[u32; 6]> = const { std::cell::Cell::new([0; 6]) });
+        LOCAL.with(|c| {
+            let mut v = c.get();
+            v[k] += 1;
+            if v[k] >= 256 {
+                RAYS[k].fetch_add(v[k] as u64, std::sync::atomic::Ordering::Relaxed);
+                v[k] = 0;
+            }
+            c.set(v);
+        });
     }
 }
+/// Profiling: CPU µs in the centre pass and the refinement pass, refined pixels.
+pub static TIMES: [std::sync::atomic::AtomicU64; 3] = [const { std::sync::atomic::AtomicU64::new(0) }; 3];
 pub static PROFILE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 const EPS: f32 = 1e-4;
 
@@ -384,6 +400,7 @@ impl Diffuse {
 
 /// Per-pixel output of the primary pass.
 #[derive(Clone, Copy, Default)]
+#[repr(C)]
 pub struct Px {
     /// Everything except primary diffuse light and the floor reflection.
     pub col: [f32; 3],
@@ -410,6 +427,9 @@ pub struct Px {
     pub nrm: [f32; 3],
     pub id: u32,
 }
+
+// SAFETY: `Px` is `repr(C)` with only f32/u32 fields (no padding, any bits valid).
+unsafe impl super::kernel::pool::Pod for Px {}
 
 #[derive(Clone, Copy)]
 struct Sample {
@@ -972,16 +992,19 @@ impl Scene {
     pub fn render_rows(&self, cam: &Camera, prev: &Camera, w: usize, h: usize, y0: usize, y1: usize, q: &Quality, out: &mut [Px]) {
         let ya = y0.saturating_sub(1);
         let yb = (y1 + 1).min(h);
+        let clock = std::time::Instant::now();
         let mut centre: Vec<Sample> = Vec::with_capacity((yb - ya) * w);
         for y in ya..yb {
             for x in 0..w {
                 let hs = hash2(x as u32, y as u32);
                 let rot = (u01(hs), u01(hash2(hs, 0x9e37)));
                 // Rough floors are blurred anyway: trace their reflections on a checkerboard.
-                let skip = (x + y) & 1 == 1 && self.floor.as_ref().is_some_and(|f| f.roughness >= 0.2);
+                let skip = !q.full && (x + y) & 1 == 1 && self.floor.as_ref().is_some_and(|f| f.roughness >= 0.2);
                 centre.push(self.primary(cam, prev, w, h, x as f32 + 0.5, y as f32 + 0.5, q, rot, skip));
             }
         }
+        let t_centre = clock.elapsed();
+        let mut refined = 0u64;
         let tms: Vec<f32> = centre
             .iter()
             .map(|s| {
@@ -996,7 +1019,7 @@ impl Scene {
             for x in 0..w {
                 let ci = (y - ya) * w + x;
                 let c = &centre[ci];
-                let mut refine = false;
+                let mut refine = q.full;
                 for (dx, dy) in [(-1i32, 0i32), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1), (-1, 1), (1, -1)] {
                     let (nx, ny) = (x as i32 + dx, y as i32 + dy);
                     if nx < 0 || nx >= w as i32 || ny < ya as i32 || ny >= yb as i32 {
@@ -1011,6 +1034,7 @@ impl Scene {
                 samples.clear();
                 samples.push(*c);
                 if refine {
+                    refined += 1;
                     let hs = hash2(x as u32, y as u32);
                     let rot = (u01(hs), u01(hash2(hs, 0x5bd1)));
                     for i in 0..q.edge_spp {
@@ -1022,6 +1046,56 @@ impl Scene {
                 out[(y - y0) * w + x] = resolve(&samples);
             }
         }
+        if PROFILE.load(std::sync::atomic::Ordering::Relaxed) {
+            use std::sync::atomic::Ordering::Relaxed;
+            TIMES[0].fetch_add(t_centre.as_micros() as u64, Relaxed);
+            TIMES[1].fetch_add((clock.elapsed() - t_centre).as_micros() as u64, Relaxed);
+            TIMES[2].fetch_add(refined, Relaxed);
+        }
+    }
+
+    /// Micro-benchmarks of the building blocks over every pixel (profiling aid).
+    pub fn micro(&self, cam: &Camera, w: usize, h: usize) {
+        use rayon::prelude::*;
+        let time = |name: &str, f: &(dyn Fn(usize, usize) -> f32 + Sync)| {
+            let c = std::time::Instant::now();
+            let s: f32 = (0..h).into_par_iter().map(|y| (0..w).map(|x| f(x, y)).sum::<f32>()).sum();
+            let ms = c.elapsed().as_secs_f64() * 1e3;
+            eprintln!("  micro {name}: {ms:.1} ms ({:.0} ns/px cpu) [{s:.1}]", ms * 1e6 * rayon::current_num_threads() as f64 / (w * h) as f64);
+        };
+        time("cam_ray", &|x, y| Self::cam_ray(cam, w, h, x as f32 + 0.5, y as f32 + 0.5).x);
+        time("trace primary", &|x, y| {
+            let d = Self::cam_ray(cam, w, h, x as f32 + 0.5, y as f32 + 0.5);
+            self.trace(cam.pos, d, 1e6).map(|s| s.t).unwrap_or(0.0)
+        });
+        time("tlas only", &|x, y| {
+            let d = Self::cam_ray(cam, w, h, x as f32 + 0.5, y as f32 + 0.5);
+            let mut n = 0.0;
+            self.tlas.visit(cam.pos, d, EPS, 1e6, |_, tm| {
+                n += 1.0;
+                tm
+            });
+            n
+        });
+        let q = Quality::default();
+        time("primary sample", &|x, y| {
+            let hs = hash2(x as u32, y as u32);
+            let rot = (u01(hs), u01(hash2(hs, 0x9e37)));
+            let skip = (x + y) & 1 == 1 && self.floor.as_ref().is_some_and(|f| f.roughness >= 0.2);
+            self.primary(cam, cam, w, h, x as f32 + 0.5, y as f32 + 0.5, &q, rot, skip).col.x
+        });
+        time("env radiance", &|x, y| {
+            let d = Self::cam_ray(cam, w, h, x as f32 + 0.5, y as f32 + 0.5);
+            self.env.radiance(d, 0.1).x
+        });
+        time("backdrop", &|x, y| {
+            let d = Self::cam_ray(cam, w, h, x as f32 + 0.5, y as f32 + 0.5);
+            self.backdrop(d).x
+        });
+        time("env diffuse", &|x, y| {
+            let d = Self::cam_ray(cam, w, h, x as f32 + 0.5, y as f32 + 0.5);
+            self.env.diffuse(d).x
+        });
     }
 
     /// Bake key visibility and AO over the floor around the objects (for

@@ -1,0 +1,59 @@
+//! Row-parallel helpers. Inside a rayon worker (the video pipeline renders
+//! several frames at once) they run serially, so frames don't fight over
+//! the pool; called from outside they spread rows over every core.
+
+use super::pool::{Buf, Pod};
+use rayon::prelude::*;
+
+/// Whether to split work across the pool (not when already on a worker).
+#[inline]
+pub fn parallel() -> bool {
+    rayon::current_thread_index().is_none()
+}
+
+/// `f(y, row)` for every `w`-wide row of `buf`.
+pub fn rows<T: Send>(buf: &mut [T], w: usize, f: impl Fn(usize, &mut [T]) + Sync + Send) {
+    if w == 0 {
+        return;
+    }
+    if parallel() {
+        // A few rows per task: enough to amortise scheduling, small enough to balance.
+        let per = (8192 / w).clamp(1, 16);
+        buf.par_chunks_mut(w * per).enumerate().for_each(|(k, chunk)| {
+            for (j, row) in chunk.chunks_mut(w).enumerate() {
+                f(k * per + j, row);
+            }
+        });
+    } else {
+        buf.chunks_mut(w).enumerate().for_each(|(y, r)| f(y, r));
+    }
+}
+
+/// A new (pooled) `w × h` buffer with every row produced by `f(y, row)`;
+/// rows start out as `T::default()`.
+pub fn image<T: Pod + Default>(w: usize, h: usize, f: impl Fn(usize, &mut [T]) + Sync + Send) -> Buf<T> {
+    let mut v = Buf::uninit(w * h);
+    rows(&mut v, w, |y, row| {
+        row.fill(T::default());
+        f(y, row)
+    });
+    v
+}
+
+/// Map `f` over `0..n` in parallel chunks, keeping order.
+pub fn map<T: Pod>(n: usize, f: impl Fn(usize) -> T + Sync + Send) -> Buf<T> {
+    let mut v = Buf::uninit(n);
+    let chunk = 16384;
+    if parallel() {
+        v.par_chunks_mut(chunk).enumerate().for_each(|(k, c)| {
+            for (j, o) in c.iter_mut().enumerate() {
+                *o = f(k * chunk + j);
+            }
+        });
+    } else {
+        for (i, o) in v.iter_mut().enumerate() {
+            *o = f(i);
+        }
+    }
+    v
+}
