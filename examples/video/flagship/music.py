@@ -203,58 +203,121 @@ def chord_at(bar):
     return PROG[bar % 4]
 
 
+def lowpass(x, cut):
+    """One-pole low-pass with a per-sample cutoff (array or scalar)."""
+    cut = np.broadcast_to(np.asarray(cut, float), x.shape)
+    a = 1 - np.exp(-2 * np.pi * cut / SR)
+    y = np.zeros_like(x)
+    acc = 0.0
+    for i in range(len(x)):
+        acc += a[i] * (x[i] - acc)
+        y[i] = acc
+    return y
+
+
+def saw(f, t):
+    return 2 * ((f * t) % 1) - 1
+
+
+def marimba(m, vel=1.0):
+    t = tvec(0.8)
+    f = midi(m)
+    return vel * 0.18 * (np.sin(2 * np.pi * f * t) * np.exp(-t / 0.25) + 0.3 * np.sin(2 * np.pi * f * 3.9 * t)
+                         * np.exp(-t / 0.05))
+
+
+def string_stab(ms, dur=0.18, vel=1.0):
+    t = tvec(dur + 0.15)
+    s = sum(saw(midi(m) * (1 + d), t) for m in ms for d in (-0.003, 0.003))
+    s = lowpass(s / (2 * len(ms)), 2600)
+    return vel * 0.22 * s * env_adsr(len(t), 0.01, 0.05, 0.7, 0.12, sustain_len=dur - 0.06)
+
+
+def acid(m, dur=0.22, vel=1.0, sweep=1.0):
+    t = tvec(dur)
+    x = saw(midi(m), t)
+    cut = 300 + 4200 * sweep * np.exp(-t / 0.07)
+    y = lowpass(lowpass(x, cut), cut * 1.2)
+    return vel * 0.35 * np.tanh(3 * y) * np.exp(-t / 0.16)
+
+
+def clap(vel=1.0):
+    t = tvec(0.25)
+    n = rng.standard_normal(len(t))
+    n = n - np.concatenate([[0], n[:-1]])
+    e = sum(np.exp(-np.maximum(0, t - o) / 0.008) * (t >= o) for o in (0, 0.01, 0.02)) + np.exp(-t / 0.08) * 0.6
+    return vel * 0.13 * n * e
+
+
+def brass(ms, dur=0.35, vel=1.0):
+    t = tvec(dur + 0.2)
+    s = sum(saw(midi(m) * (1 + d), t) for m in ms for d in (-0.004, 0.0, 0.004))
+    cut = 800 + 3000 * np.minimum(1, t / 0.06) * np.exp(-t / 0.4)
+    y = lowpass(s / (3 * len(ms)), cut)
+    return vel * 0.3 * y * env_adsr(len(t), 0.03, 0.1, 0.8, 0.2, sustain_len=dur - 0.13)
+
+
+def tom(f=110, vel=1.0):
+    t = tvec(0.4)
+    ff = f * (1 + 0.5 * np.exp(-t / 0.03))
+    return vel * 0.5 * np.sin(2 * np.pi * np.cumsum(ff) / SR) * np.exp(-t / 0.18)
+
+
+def reverse_swell(m, dur=1.2):
+    s = piano(m, dur, 0.8)[::-1] + pad([midi(m), midi(m + 7)], dur, a=0.05, r=0.05)[::-1] * 0.6
+    return s
+
+
 def build():
-    # Room tone: very soft filtered noise through the whole film
+    W = Wd
+    # Room tone under everything
     room = rng.standard_normal(N) * 0.004
     room = np.convolve(room, np.ones(40) / 40, mode="same")
     L[:] += room
     R[:] += np.roll(room, 997)
 
-    # Act 1 (0-12): felt piano, shimmer
+    # --- Act 1 (0-12): felt piano, shimmer; a glass tone as each request appears; flips ripple
     add(pad([midi(81), midi(88)], 12.5, a=2.5, r=3), 0.0, 0.8, rev=0.6)
-    mel1 = [(0.0, 57), (1.0, 64), (2.0, 60), (3.0, 64), (4.0, 57), (5.0, 62), (5.5, 64)]
-    for tt, m in mel1:
+    for tt, m in [(0.0, 57), (1.0, 64), (2.0, 60), (3.0, 64)]:
         add(piano(m, 3.0, 0.9), tt, pan=-0.15, rev=0.5)
-    # pane flip at 6.0: reverse swell into a glass tink
-    add(noise_swell(0.9, True, 800, 9000) * 0.5, T["flip"] - 0.9, rev=0.3)
-    add(tink(3200), T["flip"], 0.9, pan=0.2, rev=0.7)
-    for bar in range(3, 6):                       # 6-12 s: two voices + sub
+    for k in range(W.LANES):
+        add(tink(2400 * 2 ** (k / 12 * 2), 0.5), W.T["reveal0"] + 0.55 * k, 0.7, pan=-0.5 + 0.2 * k, rev=0.7)
+    add(noise_swell(0.8, True, 800, 9000) * 0.5, W.T["flip"] - 0.8, rev=0.3)
+    for k in range(W.LANES):
+        add(tink(3200 * 2 ** (k * 2 / 12)), W.T["flip"] + k * W.T["flip_step"], 0.75, pan=-0.5 + 0.2 * k, rev=0.7)
+    for bar in range(3, 6):
         ch = chord_at(bar)
-        add(sub(ch[0] - 24, 2.0), bar * Wd.BAR, 0.8)
+        add(sub(ch[0] - 24, 2.0), bar * W.BAR, 0.8)
         for k, m in enumerate(ch):
-            add(piano(m, 2.5, 0.6), bar * Wd.BAR + k * B * 0.5, pan=-0.3 + 0.3 * k, rev=0.5)
-        add(piano(ch[2] + 12, 2.0, 0.55), bar * Wd.BAR + 1.5, pan=0.3, rev=0.6)
-    for k in range(12):                           # spec lines light on 8ths
-        add(click(0.35, 3800), 6.5 + k * B / 2 * 0.75, pan=0.4, rev=0.2)
+            add(piano(m, 2.5, 0.6), bar * W.BAR + k * B * 0.5, pan=-0.3 + 0.3 * k, rev=0.5)
+    for k in range(12):
+        add(click(0.35, 3800), 7.8 + k * B * 0.6, pan=0.4, rev=0.2)
 
-    # Act 2a (12-20): pulse bass, the machine
-    for k in range(int((20 - 12) / (B / 2))):
-        tt = 12 + k * B / 2
-        bar = int(tt / Wd.BAR)
-        add(pluck_bass(chord_at(bar)[0] - 12), tt, 0.8)
-    add(pad([midi(m) for m in A_MIN], 8.5, a=1.0, r=1.5), 12.0, 1.3, rev=0.4)
-    add(sub(45 - 12, 6.0), 12.0, 0.5)
-    add(clunk(1.0), T["enter1"], 0.9, rev=0.3)                 # pane drops home
-    add(click(0.8, 2400), T["led"] + 0.05, pan=0.3)           # LED
-    add(noise_swell(1.0, True, 200, 2000) * 0.4, T["frame1_0"])   # machine rolls
-    add(chime(76), T["frame1_1"], 0.9, rev=0.7)                # frame 1 revealed
-    add(chime(83), T["frame1_1"] + 0.25, 0.5, rev=0.7)
+    # --- Act 2a (10-18): pulse bass; six drops into the machine; LEDs; the roll
+    for k in range(int((18 - 10) / (B / 2))):
+        tt = 10 + k * B / 2
+        add(pluck_bass(chord_at(int(tt / W.BAR))[0] - 12), tt, 0.8)
+    add(pad([midi(m) for m in A_MIN], 8.5, a=1.0, r=1.5), 10.0, 1.3, rev=0.4)
+    add(sub(33, 8.0), 10.0, 0.5)
+    for k in range(W.LANES):
+        add(clunk(0.9), W.drop_time(k), 0.85, pan=-0.4 + 0.16 * k, rev=0.3)
+    for k in range(W.LANES):
+        add(click(0.7, 2400 + 120 * k), W.T["led"] + 0.04 * k, pan=-0.4 + 0.16 * k)
+    add(noise_swell(1.0, True, 200, 2000) * 0.4, W.T["frame1_0"])
+    for k, m in enumerate([72, 76, 79, 84]):
+        add(chime(m), W.T["frame1_1"] + 0.06 * k, 0.6, pan=-0.3 + 0.2 * k, rev=0.7)
 
-    # Act 2b (18-28.5): kick on 1 & 3; ticks per frame, accelerating into a whir
-    for k in range(int((28.5 - 18) / B)):
+    # --- Act 2b (18-26): kick on 1 & 3, a tick per frame accelerating into a whir, riser into the run
+    for k in range(int((26 - 18) / B)):
         tt = 18 + k * B
         if k % 2 == 0:
             add(kick(0.9), tt)
-        bar = int(tt / Wd.BAR)
-        add(pluck_bass(chord_at(bar)[0] - 12), tt, 0.8)
-        add(pluck_bass(chord_at(bar)[0] - 12), tt + B / 2, 0.6)
-    # one tick per emitted frame while sparse; above ~30/s, a pitched whir that follows the rate
-    t_whir0 = None
-    prev = Wd.emitted(T["stream0"])
-    tt = T["stream0"]
-    dt = 1 / 600
-    while tt < T["stream1"]:
-        n = Wd.emitted(tt)
+        ch = chord_at(int(tt / W.BAR))
+        add(pluck_bass(ch[0] - 12), tt, 0.8)
+        add(pluck_bass(ch[0] - 12), tt + B / 2, 0.6)
+    prev, tt, dt, t_whir0 = W.emitted(W.T["stream0"]), W.T["stream0"], 1 / 600, None
+    while tt < W.T["stream1"]:
+        n = W.emitted(tt)
         rate = (n - prev) / dt
         if int(n) != int(prev) and rate < 30:
             add(hat(0.9, 0.02), tt, pan=0.25)
@@ -264,112 +327,119 @@ def build():
         prev = n
         tt += dt
     if t_whir0 is not None:
-        t = tvec(T["stream1"] - t_whir0)
+        t = tvec(W.T["stream1"] - t_whir0)
         ts = t_whir0 + t
-        rates = np.array([(Wd.emitted(x + 0.005) - Wd.emitted(x)) / 0.005 for x in ts[::48]])
+        rates = np.array([(W.emitted(x + 0.005) - W.emitted(x)) / 0.005 for x in ts[::48]])
         rates = np.interp(np.arange(len(t)), np.arange(0, len(t), 48)[:len(rates)], rates)
-        f = 220 * 2 ** (np.log2(np.maximum(rates, 30) / 30) / np.log2(600 / 30) * 2)   # up two octaves
+        f = 220 * 2 ** (np.log2(np.maximum(rates, 30) / 30) / np.log2(400 / 30) * 2)
         ph = 2 * np.pi * np.cumsum(f) / SR
         g = np.minimum(1, t / 1.5) * (0.6 + 0.4 * (t / t[-1]))
         whir = (np.sin(ph) + 0.3 * np.sin(2 * ph) + 0.15 * np.sin(3 * ph) + 0.2 * np.sin(1.5 * ph)) * g
         add(0.09 * whir, t_whir0, pan=0.1, rev=0.3)
-    # 3,600 lands: sub drop and a cymbal-ish wash
-    add(sub(33, 1.8) * 1.4, T["stream1"], 1.0)
-    add(kick(1.2), T["stream1"])
-    add(noise_swell(1.5, False, 8000, 800) * 0.8, T["stream1"], rev=0.5)
-
-    # Act 2c (30-40): half-time groove; the browser cart's shutter ratchet
-    for bar in range(15, 20):
-        b0 = bar * Wd.BAR
-        ch = chord_at(bar)
-        add(kick(0.9), b0)
-        add(snare(0.8), b0 + 2 * B, rev=0.3)
-        for k in range(8):
-            add(hat(0.5 if k % 2 else 0.8), b0 + k * B / 2, pan=0.35)
-        add(sub(ch[0] - 24, 2.0), b0, 0.9)
-        add(pad([midi(m + 12) for m in ch], 2.3, a=0.3, r=0.6), b0, 0.5, rev=0.4)
-    m_prev = Wd.browser_emitted(29.0)
-    tt = 29.0
-    while tt < 40.5:
-        m = Wd.browser_emitted(tt)
-        if int(m) != int(m_prev):
-            near = np.clip(1 - abs(tt - 35) / 7, 0.25, 1)
-            add(shutter(0.55 * near), tt, pan=-0.45)
-        m_prev = m
-        tt += 1 / 600
-    add(tink(2600, 1.0), 36.0, 0.8, rev=0.6)      # "21x faster"
-    add(kick(1.0), 36.0)
-
-    # Act 3a (39-49.5): riser into the drop at lock0; drop = full groove + lead
-    add(noise_swell(T["lock0"] - 38.5, True, 300, 12000), 38.5, 1.1, rev=0.4)
+    add(sub(33, 1.0) * 1.2, W.T["stream1"], 1.0)
+    add(noise_swell(W.T["run0"] - 24.0, True, 300, 12000), 24.0, 1.0, rev=0.4)
     for k in range(8):
-        add(snare(0.25 + 0.08 * k), T["lock0"] - 1.0 + k * 0.125, rev=0.2)
-    lead_line = [(0, 76, 1.0), (1.0, 79, 0.5), (1.5, 81, 0.5), (2.0, 79, 1.0), (3.0, 76, 0.5), (3.5, 74, 0.5),
-                 (4.0, 72, 1.5), (5.5, 74, 0.5)]
-    for bar in range(21, 24 + 1):
-        b0 = bar * Wd.BAR
-        ch = [C_MAJ, G_MAJ, A_MIN, F_MAJ][(bar - 21) % 4]
-        for k in range(4):
-            add(kick(1.0), b0 + k * B)
-        for k in range(8):
-            add(hat(0.9 if k % 2 else 0.5, 0.03), b0 + k * B / 2, pan=0.3)
-        add(snare(0.9), b0 + B, rev=0.25)
-        add(snare(0.9), b0 + 3 * B, rev=0.25)
-        for k in range(8):
-            add(pluck_bass(ch[0] - 12), b0 + k * B / 2, 0.85)
-        add(pad([midi(m + 12) for m in ch], 2.2, a=0.05, r=0.4, bright=1.0), b0, 0.7, rev=0.4)
-    for rep in range(2):
-        for tt, m, d in lead_line:
-            add(lead(m, d * 0.95), T["lock0"] + rep * 3.0 * 2 * 0 + rep * 3.0 + tt * 0.5, 1.0, pan=-0.1, rev=0.45)
-    # brake: tape-stop style downward sweep
-    t = tvec(T["brake1"] - T["lock1"])
-    f = 110 * (1 - t / t[-1]) ** 2 + 30
-    add(0.25 * np.sin(2 * np.pi * np.cumsum(f) / SR) * (1 - t / t[-1]), T["lock1"], rev=0.2)
+        add(snare(0.25 + 0.08 * k), W.T["run0"] - 1.0 + k * 0.125, rev=0.2)
 
-    # Act 3b (50-58): fold -> stack lands -> crush -> shrink
-    add(noise_swell(T["fold1"] - T["fold0"], True, 200, 6000) * 1.2, T["fold0"], rev=0.3)
-    add(sub(28, 2.5) * 1.6, T["fold1"], 1.0)
-    add(kick(1.4), T["fold1"])
-    add(tink(1800, 1.2), T["fold1"], 0.9, rev=0.9)
-    t = tvec(T["crush1"] - T["crush0"])
-    crunch = rng.standard_normal(len(t)) * np.exp(-((t / t[-1] - 0.5) ** 2) / 0.08)
-    crunch = np.round(crunch * 6) / 6
-    add(0.08 * crunch, T["crush0"], pan=0.0, rev=0.2)
-    add(clunk(1.0), T["crush1"], 0.9)
-    t = tvec(T["shrink1"] - T["shrink0"])
+    # --- Act 3 (26-50): the run. One kick, six outfits, a hop whoosh into every lane.
+    run0 = W.T["run0"]
+    progs = [[C_MAJ, G_MAJ], [A_MIN, F_MAJ], [F_MAJ, C_MAJ], [A_MIN, G_MAJ], [F_MAJ, A_MIN], [C_MAJ, G_MAJ]]
+    for lane in range(W.LANES):
+        t0 = run0 + lane * W.RUN_LANE_SECONDS
+        for bar in range(2):
+            b0 = t0 + bar * W.BAR
+            ch = progs[lane][bar]
+            root = ch[0] - 12
+            soft = lane == 4
+            for k in range(4):
+                add(kick(0.6 if soft else 1.0), b0 + k * B)
+            add(sub(root - 12, W.BAR), b0, 0.8 if not soft else 1.0)
+            if lane == 0:      # Sundial: warm piano house
+                for k in range(4):
+                    for m in ch:
+                        add(piano(m + 12, 0.6, 0.55), b0 + k * B + B / 2, rev=0.4)
+                    add(hat(0.6), b0 + k * B + B / 2, pan=0.3)
+                for k in range(8):
+                    add(pluck_bass(root), b0 + k * B / 2, 0.7)
+            elif lane == 1:    # Maison Lune: string staccato, minor, elegant
+                for k in range(8):
+                    add(string_stab([m + 12 for m in ch], 0.16, 0.9 if k % 2 == 0 else 0.6), b0 + k * B / 2,
+                        pan=-0.2 + 0.4 * (k % 2), rev=0.5)
+                add(snare(0.5), b0 + 2 * B, rev=0.5)
+            elif lane == 2:    # Rain: marimba arpeggio and clicks
+                arp = [ch[0] + 12, ch[1] + 12, ch[2] + 12, ch[1] + 24]
+                for k in range(16):
+                    add(marimba(arp[k % 4], 0.9), b0 + k * B / 4, pan=-0.4 + 0.8 * ((k * 3) % 8) / 7, rev=0.35)
+                    add(click(0.25, 6000), b0 + k * B / 4 + 0.06, pan=0.5)
+            elif lane == 3:    # No Sleep: acid stabs and claps
+                pat = [0, 0, 12, 0, 3, 0, 12, 7, 0, 0, 12, 0, 3, 15, 12, 7]
+                for k in range(16):
+                    add(acid(root + 12 + pat[k], 0.12, 0.8, sweep=0.5 + 0.5 * ((k % 4) == 0)), b0 + k * B / 4,
+                        pan=0.15)
+                add(clap(1.0), b0 + B, rev=0.3)
+                add(clap(1.0), b0 + 3 * B, rev=0.3)
+                for k in range(8):
+                    add(hat(0.8, 0.015), b0 + k * B / 2 + B / 4, pan=0.4)
+            elif lane == 4:    # Fold: bloom and reversed swells
+                add(pad([midi(m + 12) for m in ch] + [midi(ch[0] + 24)], W.BAR + 0.5, a=0.6, r=0.8, bright=0.9),
+                    b0, 1.0, rev=0.9)
+                rs = reverse_swell(ch[2] + 24, 1.0)
+                add(rs, b0 + W.BAR - 1.0, 0.6, pan=0.3, rev=0.6)
+            elif lane == 5:    # Harbour Cup: brass hits and stadium drums
+                hits = [0, 1.5, 2.5, 3.0] if bar == 0 else [0, 1.0, 2.0, 3.5]
+                for hb in hits:
+                    add(brass([m + 12 for m in ch] + [ch[0] + 24], 0.3, 1.0), b0 + hb * B, rev=0.45)
+                for k in range(4):
+                    add(tom(90 + 20 * (k % 2), 0.9), b0 + k * B + B / 2, pan=-0.3 + 0.6 * (k % 2), rev=0.3)
+                add(snare(1.0), b0 + B, rev=0.5)
+                add(snare(1.0), b0 + 3 * B, rev=0.5)
+        if lane < W.LANES - 1:  # the hop into the next lane
+            t_land = t0 + W.RUN_LANE_SECONDS
+            add(noise_swell(W.T["hop"], True, 500, 9000) * 0.9, t_land - W.T["hop"], pan=-0.1, rev=0.2)
+            add(tink(2600, 0.6), t_land, 0.6, rev=0.5)
+    # a lead line over the last two lanes ties it together
+    for k, (tt, m, d) in enumerate([(0, 76, 1.0), (1.0, 79, 0.5), (1.5, 81, 0.5), (2.0, 79, 1.0), (3.0, 76, 1.0)]):
+        add(lead(m, d * 0.95), run0 + 20.0 + tt * 0.5 * 2, 0.9, pan=-0.1, rev=0.45)
+
+    # --- Act 4 (50-58): brake, fold, land, crush, shrink, six tiles
+    t = tvec(W.T["brake1"] - W.T["run1"])
+    f = 110 * (1 - t / t[-1]) ** 2 + 30
+    add(0.25 * np.sin(2 * np.pi * np.cumsum(f) / SR) * (1 - t / t[-1]), W.T["run1"], rev=0.2)
+    add(noise_swell(W.T["fold1"] - W.T["fold0"], True, 200, 6000) * 1.2, W.T["fold0"], rev=0.3)
+    add(sub(28, 2.5) * 1.6, W.T["fold1"], 1.0)
+    add(kick(1.4), W.T["fold1"])
+    add(tink(1800, 1.2), W.T["fold1"], 0.9, rev=0.9)
+    t = tvec(W.T["crush1"] - W.T["crush0"])
+    crunch = np.round(rng.standard_normal(len(t)) * np.exp(-((t / t[-1] - 0.5) ** 2) / 0.08) * 6) / 6
+    add(0.08 * crunch, W.T["crush0"], rev=0.2)
+    add(clunk(1.0), W.T["crush1"], 0.9)
+    t = tvec(W.T["shrink1"] - W.T["shrink0"])
     f = 600 * 2 ** (2 * t / t[-1])
-    add(0.05 * np.sin(2 * np.pi * np.cumsum(f) / SR) * np.sin(np.pi * t / t[-1]), T["shrink0"], rev=0.6)
+    add(0.05 * np.sin(2 * np.pi * np.cumsum(f) / SR) * np.sin(np.pi * t / t[-1]), W.T["shrink0"], rev=0.6)
+    for k in range(W.LANES):
+        add(tink(3600 + 300 * k, 0.5), W.T["shrink1"] + 0.08 * k, 0.6, pan=-0.5 + 0.2 * k, rev=0.6)
     add(pad([midi(m) for m in C_MAJ] + [midi(67)], 6.5, a=1.5, r=1.5, bright=0.8), 52.0, 1.8, rev=0.6)
     add(sub(36, 6.0), 52.0, 0.6)
-    for k in range(12):
-        add(piano([72, 76, 79, 84][k % 4], 1.5, 0.35), 52.0 + 3 + k * B / 2, pan=0.4 - 0.07 * k, rev=0.7)
 
-    # Act 4 (58-72): tile clicks home, screen lights, melody resolves; cart callback; logo chord
-    add(click(1.0, 1900), T["insert1"], 1.0)
-    add(chime(84), T["screen"], 0.8, rev=0.7)
-    res = [(58.0, 72), (59.0, 76), (60.0, 79), (61.0, 77), (62.0, 76), (63.0, 74), (64.0, 72), (65.0, 79)]
-    for tt, m in res:
+    # --- Act 5 (57-72): six screens light; the melody resolves; the logo chord
+    for k in range(W.LANES):
+        add(chime([72, 74, 76, 79, 81, 84][k], 0.8), W.T["rise0"] + 0.15 * k + 1.5, 0.7, pan=-0.5 + 0.2 * k, rev=0.7)
+    for tt, m in [(59.0, 76), (60.0, 79), (61.0, 77), (62.0, 76), (63.0, 74), (64.0, 72), (65.0, 79)]:
         add(piano(m, 3.0, 0.8), tt, pan=0.1, rev=0.6)
     for bar in range(29, 33):
         ch = [C_MAJ, F_MAJ, A_MIN, G_MAJ][(bar - 29) % 4]
-        add(pad([midi(m) for m in ch] + [midi(ch[0] + 12)], 2.3, a=0.4, r=0.8), bar * Wd.BAR, 0.6, rev=0.5)
-        add(sub(ch[0] - 24, 2.0), bar * Wd.BAR, 0.7)
-    m_prev = Wd.browser_emitted(61.0)
-    tt = 61.0
-    while tt < 64.5:
-        m = Wd.browser_emitted(tt)
-        if int(m) != int(m_prev):
-            add(shutter(0.35), tt, pan=-0.6, rev=0.3)
-        m_prev = m
-        tt += 1 / 600
-    add(piano(60, 4, 0.9), 64.0, rev=0.6)              # "This film was one spec."
-    add(piano(67, 4, 0.7), 64.0, rev=0.6)
+        add(pad([midi(m) for m in ch] + [midi(ch[0] + 12)], 2.3, a=0.4, r=0.8), bar * W.BAR, 0.6, rev=0.5)
+        add(sub(ch[0] - 24, 2.0), bar * W.BAR, 0.7)
+        for k in range(4):
+            add(kick(0.55), bar * W.BAR + k * B)
+            add(hat(0.4), bar * W.BAR + k * B + B / 2, pan=0.3)
+    add(noise_swell(1.0, True, 400, 8000) * 0.6, W.T["part0"] - 0.9, rev=0.4)
     final = [48, 55, 60, 64, 67, 72, 76]
-    add(pad([midi(m) for m in final], 6.0, a=0.8, r=3.0, bright=0.6), T["logo0"], 1.0, rev=0.8)
+    add(pad([midi(m) for m in final], 6.0, a=0.8, r=3.0, bright=0.6), W.T["logo0"], 1.0, rev=0.8)
     for k, m in enumerate(final):
-        add(piano(m, 6.0, 0.7), T["logo0"] + 0.04 * k, pan=-0.4 + 0.13 * k, rev=0.7)
-    add(tink(4200, 0.8), T["logo1"], 0.7, rev=0.9)
-    add(sub(36, 4.0), T["logo0"], 0.7)
+        add(piano(m, 6.0, 0.7), W.T["logo0"] + 0.04 * k, pan=-0.4 + 0.13 * k, rev=0.7)
+    add(tink(4200, 0.8), W.T["logo1"], 0.7, rev=0.9)
+    add(sub(36, 4.0), W.T["logo0"], 0.7)
 
 
 def reverb():
