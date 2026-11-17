@@ -376,12 +376,15 @@ def nosleep():
 # =============================================================================
 
 def fold():
-    BG = "#06140F"
+    BG = "#03100C"
+    glsl = (HERE / "fold.glsl").read_text()
     layers = [
-        rect(960, 540, W, H, "radial-gradient(#0E2A22, #030806)"),
-        {"component": "metaballs", "x": 960, "y": 540, "width": 1300, "height": 1000,
-         "props": {"colors": ["#7CF5D4", "#B48CFF", "#FFC8E6", "#7FD6FF"], "count": 7, "speed": 0.35}},
+        {"shader": glsl, "width": W, "height": H,
+         "uniforms": {"fold": "=0.75 + 0.25 * smoothstep(0, 4, gt) + 0.12 * sin(gt * 0.3)", "spin": 1.0,
+                      "film": "=0.6 + 0.4 * smoothstep(16, 20, gt)"}},
         txt("FOLD", 160, 980, 22, "#BFFFEA", font="JetBrains Mono", weight=500, letterSpacing="0.4em", anchor="left"),
+        txt("glass, folding through itself", 1760, 980, 20, "#BFFFEA99", font="JetBrains Mono", weight=400,
+            anchor="right"),
         {"component": "grain", "props": {"amount": 0.05}},
     ]
     return comp(layers, BG)
