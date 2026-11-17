@@ -1012,8 +1012,6 @@ impl Scene {
         madd(base, c, (-(1.0 - dot(d, g)) / w.max(1e-4)).exp())
     }
 
-    /// Haze between a ray origin and a hit at distance `t`.
-    #[inline]
     /// Fog optical depth along `o + d·t`, `t` in [0, dist]: uniform, or
     /// height fog integrated in closed form (dense near the floor, thin above).
     #[inline]
@@ -1036,6 +1034,8 @@ impl Scene {
         self.haze.0 * (below + h * (e(a) - e(b)) * per_y)
     }
 
+    /// Haze between a ray origin and a hit at distance `t`.
+    #[inline]
     fn hazed(&self, c: V3, t: f32) -> V3 {
         if self.haze.0 <= 0.0 {
             return c;
