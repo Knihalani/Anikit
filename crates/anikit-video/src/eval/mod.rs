@@ -12,6 +12,7 @@ mod compile;
 /// Shader layers and transitions (anikit-shader).
 pub(crate) mod shader;
 pub(crate) mod fx;
+pub(crate) mod graphic;
 mod audio_react;
 pub mod expr;
 pub mod theme;
@@ -360,6 +361,8 @@ pub(crate) struct Node {
     pub blend: Blend,
     pub shadow: Option<Filter>,
     pub glow: Option<Filter>,
+    /// Image treatments (tone map, halftone), applied first.
+    pub treat: Vec<Filter>,
     /// Clip children to the box (with radius).
     pub clip: bool,
     /// A clip path in the layer's local box (clip shapes, shape masks).
@@ -1161,13 +1164,14 @@ impl Evaluator {
             || n.blend != Blend::Normal
             || n.shadow.is_some()
             || n.glow.is_some()
+            || !n.treat.is_empty()
             || n.clip
             || n.clip_path.is_some()
             || wipe < 1.0
             || (opacity < 0.999 && !is_leaf);
         let mut alpha = opacity;
         if needs_layer {
-            let mut filters = Vec::new();
+            let mut filters = n.treat.clone();
             if blur > 0.05 {
                 filters.push(Filter::Blur(blur));
             }
@@ -1624,7 +1628,8 @@ pub(crate) fn scale_filters(ops: &mut [Op], s: f32) {
                         *blur *= s;
                     }
                     Filter::Glow { radius, .. } => *radius *= s,
-                    Filter::ColorMatrix(_) => {}
+                    Filter::Halftone(h) => h.cell *= s,
+                    Filter::ColorMatrix(_) | Filter::Tone(_) => {}
                 }
             }
         }

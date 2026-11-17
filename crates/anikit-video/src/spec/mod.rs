@@ -146,6 +146,88 @@ pub struct Spec {
     /// Named 2D sub-compositions: placed with a `composition` layer, or used as a texture in 3D.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compositions: Option<BTreeMap<String, Composition>>,
+    /// Modular layout grid for every scene (a scene's own `grid` replaces it). Layers snap to it with `cell`
+    /// (`anikit-video docs grid`): `{ "columns": 12, "rows": 8, "margin": 96, "gutter": 24, "baseline": 12, "areas": { "head": "1-8/1-3" } }`.
+    pub grid: Option<GridSpec>,
+}
+
+/// A modular grid: columns × rows of fields inside margins, separated by gutters.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct GridSpec {
+    /// Number of columns. Default 12.
+    pub columns: Option<u32>,
+    /// Number of rows. Default 8 (6 on 9:16 is not inferred: set it).
+    pub rows: Option<u32>,
+    /// Outer margin: a length, or `[vertical, horizontal]`, or `[top, right, bottom, left]`. Default 5% of the frame height (graphics-safe).
+    pub margin: Option<serde_json::Value>,
+    /// Gap between fields: a length or `[column gap, row gap]`. Default 2% of the frame height.
+    pub gutter: Option<serde_json::Value>,
+    /// Baseline grid in px: text inside a `cell` gets its line height rounded to a multiple of it
+    /// and its top on a baseline line.
+    pub baseline: Option<f64>,
+    /// Named areas: name → cell range (`"1-8/1-3"` = columns 1–8, rows 1–3).
+    pub areas: Option<BTreeMap<String, String>>,
+    /// Draw the grid: `true` (over the scene, to check a layout) or `"under"` (beneath the layers, as a
+    /// visible design element, e.g. brand guidelines). Fields and baseline lines when set.
+    #[schemars(with = "Option<serde_json::Value>")]
+    pub show: Option<serde_json::Value>,
+    /// Colour of the drawn grid. Default a translucent magenta over, a 25% ink hairline under.
+    pub color: Option<String>,
+}
+
+/// `halftone`: a cell size in px, or the full settings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum HalftoneValue {
+    Cell(f64),
+    Full(HalftoneSpec),
+}
+
+/// A print halftone screen over the layer.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct HalftoneSpec {
+    /// Screen pitch in px (distance between dot centres). Default 10.
+    pub cell: Option<f64>,
+    /// Screen angle in degrees. Default 45 (black ink); 15/75/0 for other plates.
+    pub angle: Option<f64>,
+    /// `dot` (default), `line` or `square`.
+    pub shape: Option<String>,
+    /// Ink colour. Default `"source"`: each dot keeps the layer's colour there.
+    pub ink: Option<String>,
+    /// Paper colour under the dots, or `"none"` (default): only the dots remain.
+    pub paper: Option<String>,
+    /// Dot gain: > 1 darkens (fatter dots), < 1 lightens. Default 1.
+    pub gain: Option<f64>,
+}
+
+/// `pattern`: a kind with an optional spacing (`"dots 32"`), or the full settings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum PatternValue {
+    Short(String),
+    Full(PatternSpec),
+}
+
+/// A generated pattern filling the layer's box.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct PatternSpec {
+    /// `dots`, `grid`, `lines`, `checker`, `triangles`, `diamonds`, `crosses`, `rings`, `waves`, `zigzag`, `truchet`, `arcs`, `scales`, `bricks`.
+    pub kind: String,
+    /// Repeat distance in px. Default 40.
+    pub spacing: Option<f64>,
+    /// Mark size as a fraction of `spacing` (dot diameter, line weight…). Default depends on the kind.
+    pub mark: Option<f64>,
+    /// Rotation of the whole pattern in degrees.
+    pub angle: Option<f64>,
+    /// Seed for random kinds (`truchet`, `arcs`) and `jitter`.
+    pub seed: Option<u32>,
+    /// Random offset of each mark, as a fraction of `spacing`. Default 0.
+    pub jitter: Option<f64>,
+    /// Mark size from `[a, b]` across the box (left→right; with `angle` it follows the angle): a size ramp like a halftone. Fractions of `mark`.
+    pub ramp: Option<[f64; 2]>,
 }
 
 /// `dots`: many points from an array or a CSV file (`x,y[,colour]` per line).
@@ -371,6 +453,8 @@ pub struct Scene {
     /// `true`, a gap in px, or `{ "gap": 24, "align": "start|center|end" }`. Expanded at load.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stack: Option<serde_json::Value>,
+    /// Modular grid for this scene (replaces the video's `grid`); layers snap to it with `cell`.
+    pub grid: Option<GridSpec>,
     /// Drawn bottom to top.
     #[serde(deserialize_with = "de::layers")]
     #[schemars(with = "Vec<de::LayerItem>")]
@@ -509,6 +593,12 @@ pub struct Layer {
     pub x: Option<Num>,
     pub y: Option<Num>,
     pub anchor: Option<Anchor>,
+    /// Snap the layer to the scene's `grid`: an area name (`"head"`), a range `"1-6/2-4"`
+    /// (columns 1–6, rows 2–4; `"7/1"` one field; `"1-6"` all rows), or `[col, row, cols, rows]`.
+    /// Sets `x`, `y`, `width` (and `height`, except for text); `anchor` picks the point of the cell (default top left).
+    pub cell: Option<serde_json::Value>,
+    /// A group's own grid for its children's `cell`, inside the group's box.
+    pub grid: Option<GridSpec>,
     pub width: Option<Num>,
     pub height: Option<Num>,
     pub scale: Option<Scale>,
@@ -526,6 +616,19 @@ pub struct Layer {
     pub depth: Option<Num>,
     pub shadow: Option<Shadow>,
     pub glow: Option<Glow>,
+    /// Two-colour print look: luma mapped from the first colour (shadows) to the second (highlights).
+    pub duotone: Option<Vec<String>>,
+    /// Gradient map on luma: colours dark→light (tritone = 3), or `[offset, colour]` pairs.
+    pub gradient_map: Option<Vec<serde_json::Value>>,
+    /// Posterise to N tone levels (on luma when combined with `duotone`/`gradientMap`, else per channel).
+    pub posterize: Option<u32>,
+    /// Strength of `duotone` / `gradientMap` / `posterize` (0..1). Default 1.
+    pub tone_amount: Option<f64>,
+    /// Input luma range `[black, white]` (0..1) stretched to the full map before `duotone`/`gradientMap`:
+    /// the pre-curve a print designer sets so a flat source still spans ink to paper. Default `[0, 1]`.
+    pub tone_range: Option<[f64; 2]>,
+    /// Print halftone screen: a cell size in px, or `{ "cell", "angle", "shape", "ink", "paper", "gain" }`.
+    pub halftone: Option<HalftoneValue>,
     /// `true` clips children to the layer box, or a clip shape.
     pub clip: Option<Clip>,
     /// A layer whose alpha masks this one.
@@ -589,6 +692,17 @@ pub struct Layer {
     pub inner_radius: Option<f64>,
     pub d: Option<String>,
     pub head_size: Option<f64>,
+    /// `superellipse` exponent: 2 = ellipse, 4–5 = squircle, higher = squarer, < 2 = pinched star. Default 4.
+    pub exponent: Option<f64>,
+    /// `blob`: how irregular the outline is (0..1). Default 0.3.
+    pub wobble: Option<f64>,
+    /// Seed for `blob` and random `pattern` kinds.
+    pub seed: Option<u32>,
+    /// `arc`: start and end angle in degrees (0 = 12 o'clock, clockwise). Default 0 and 270.
+    pub start_angle: Option<f64>,
+    pub end_angle: Option<f64>,
+    /// A generated pattern filling `width` × `height`: `"dots"`, `"truchet 48"`, or `{ "kind", "spacing", "mark", "angle", "seed", "jitter", "ramp" }`.
+    pub pattern: Option<PatternValue>,
     pub trim_start: Option<Num>,
     pub trim_end: Option<Num>,
 

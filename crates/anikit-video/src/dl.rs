@@ -109,6 +109,41 @@ pub enum Filter {
     Glow { radius: f32, intensity: f32, color: Rgba },
     /// Colour matrix (4×5, row-major) on unpremultiplied colour.
     ColorMatrix([f32; 20]),
+    /// Tone treatment: posterise and/or a gradient map (duotone, tritone) on luma.
+    Tone(std::sync::Arc<ToneLut>),
+    /// Print halftone screen, anchored to the frame (`ox`, `oy`: the layer
+    /// bitmap's frame origin, set by the renderer).
+    Halftone(Halftone),
+}
+
+/// A tone treatment, precomputed: `map` is a 256-entry gradient map indexed
+/// by luma (after posterising to `levels` when `levels >= 2`); without a map,
+/// `levels` posterises each channel.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ToneLut {
+    pub map: Option<Box<[[u8; 3]; 256]>>,
+    pub levels: u8,
+    /// Mix with the original colour (1 = full treatment).
+    pub amount: f32,
+}
+
+/// A halftone screen.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Halftone {
+    /// Cell pitch in pixels.
+    pub cell: f32,
+    /// Screen angle in degrees.
+    pub angle: f32,
+    /// 0 = round dot, 1 = line, 2 = square (diamond at 45°).
+    pub shape: u8,
+    /// Ink colour; alpha 0 = take each cell's own colour.
+    pub ink: Rgba,
+    /// Paper colour; alpha 0 = transparent (only the dots remain).
+    pub paper: Rgba,
+    /// Dot gain: scales dot area (1 = linear in tone).
+    pub gain: f32,
+    pub ox: f32,
+    pub oy: f32,
 }
 
 /// Opaque handle to a decoded image or video frame held by the renderer.

@@ -474,3 +474,57 @@ fn grain_hint_keeps_ssim_floor_off_grain() {
     assert!(chase > off * 3 / 2, "{chase} {off}");
     assert!(hinted * 10 < off * 11, "{hinted} {off}");
 }
+
+/// Encode with B-frames; ffmpeg must decode every reference picture bit-exactly
+/// (and B pictures too when deblocking is off: the encoder doesn't deblock them).
+fn roundtrip_b(cfg: EncoderConfig, frames: &[YuvBuffer], name: &str) -> (Vec<u8>, f64) {
+    let mut e = Encoder::new(cfg.clone());
+    e.keep_recons(true);
+    let mut stream = Vec::new();
+    for f in frames {
+        stream.extend_from_slice(e.encode(&f.frame(), &FrameHints::default()));
+    }
+    stream.extend_from_slice(e.flush());
+    let mut recons = e.take_recons();
+    assert_eq!(recons.len(), frames.len(), "{name}: every frame coded once");
+    recons.sort_by_key(|r| r.0);
+    assert!(recons.iter().enumerate().all(|(i, r)| r.0 == i as u64));
+    if !have_ffmpeg() {
+        return (stream, 0.0);
+    }
+    let (err, dec) = decode(&stream, name);
+    assert!(err.is_empty(), "ffmpeg errors for {name}: {err}");
+    let fsz = frames[0].to_bytes().len();
+    assert_eq!(dec.len(), fsz * frames.len(), "{name}: decoded size");
+    let mut src = Vec::new();
+    for (k, (f, (_, is_ref, r))) in frames.iter().zip(&recons).enumerate() {
+        src.extend_from_slice(&f.to_bytes());
+        if *is_ref || !cfg.deblock {
+            let d = &dec[k * fsz..(k + 1) * fsz];
+            if d != r.to_bytes().as_slice() {
+                let i = d.iter().zip(r.to_bytes()).position(|(a, b)| *a != b).unwrap();
+                panic!("{name}: decode mismatch at frame {k} (ref {is_ref}) offset {i}");
+            }
+        }
+    }
+    (stream.clone(), psnr(&dec, &src))
+}
+
+#[test]
+fn bframes_decode_bit_exact() {
+    let s = Scene::new(176, 144);
+    let frames: Vec<_> = (0..14).map(|t| s.frame(t)).collect();
+    for bf in [1u8, 2, 3] {
+        for deblock in [false, true] {
+            for gop in [5u32, 250] {
+                let c = EncoderConfig { bframes: bf, deblock, gop, ..cfg(176, 144) };
+                let (st, p) = roundtrip_b(c, &frames, &format!("b{bf}{}{gop}", deblock as u8));
+                let (st0, _) = roundtrip(EncoderConfig { deblock, gop, ..cfg(176, 144) }, &frames, &format!("p{bf}{}{gop}", deblock as u8));
+                eprintln!("bframes {bf} deblock {deblock} gop {gop}: {} bytes (P only {}), psnr {p:.2}", st.len(), st0.len());
+                if have_ffmpeg() {
+                    assert!(p > 38.0, "psnr {p}");
+                }
+            }
+        }
+    }
+}

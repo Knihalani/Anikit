@@ -1,0 +1,479 @@
+{
+  "name": "control-calm-sleep",
+  "tags": [
+    "illustration",
+    "motion-design",
+    "square"
+  ],
+  "refs": [
+    "hermes-buck",
+    "tedxsydney",
+    "mad-men"
+  ],
+  "candidate": {
+    "scores": {
+      "idea": 5,
+      "composition": 6,
+      "typography": 4,
+      "colour": 6,
+      "light_texture": 6,
+      "motion": 5,
+      "craft": 7,
+      "originality": 4
+    },
+    "overall": 5.38,
+    "judged_professional": "3/3",
+    "pro_rate": 1.0,
+    "mean_rank": 4,
+    "gaps": [
+      "It needs a specific, memorable idea instead of generic 'calm' imagery: a concept like A's falling man that only this piece could own.",
+      "It needs material and texture contrast (hard edges against soft, real grain, a palette that is not the default wellness pastel), as D's dry-brush shapes have.",
+      "The frames should be choreographed through a transformation or narrative between them, rather than standalone moods that cut between gradient abstractions and profile portraits.",
+      "Replace the abstract gradient interstitials with frames that carry a subject or story beat; right now half the film is ambient wallpaper",
+      "Push the palette away from the category-default blue/peach toward something ownable",
+      "Build a specific concept with an ending (as A has) instead of a mood board of serene faces",
+      "Find a specific idea. Replace the generic 'serene face plus glow' with a concept only this piece could have, as C's falling man is",
+      "Remove or justify the subjectless gradient-blob frames. Make the abstractions grow out of the figures (breath, sound, sleep) so they're motivated",
+      "Push the palette and texture away from the default wellness gradient. Add grain, material and an unexpected accent colour so it doesn't read as template"
+    ],
+    "tells": [
+      "The look is the generic wellness/sleep-app style: soft airbrushed gradients, pastel blue and peach, glowing orbs, and serene profiles with closed eyes. The idea is literal (calm, sleep, headphones).",
+      "There are abstract interludes that are effect without subject: a mirrored gradient horizon and a gradient ring.",
+      "The faces are drawn consistently, with considered lighting and some grain, which points to a human illustrator over pure AI. Even so, the glassy star-in-shield frame is vague and close to a stock 3D primitive.",
+      "The light is soft and the same everywhere, with no texture or material contrast. Every frame shares the same blur value.",
+      "No type is visible, and its absence leaves the brand-film abstraction anonymous.",
+      "The figure illustration is skilled: well-drawn profiles, soft rim light and gradient modelling with a consistent stylistic hand, so it is more than raw AI output",
+      "But it leans on the generic wellness / sleep-app look: blue-peach gradients, glowing orbs and symmetrical radial blur fields",
+      "Frames 2 and 3 are effects with no subject, centred gradient blobs and a mirror-symmetric halo",
+      "The glass star-in-shield frame reads as a stock 3D-ish badge icon",
+      "The idea is literal (calm, sleep, headphones) and leaves nothing a viewer would remember",
+      "No type is visible, and its absence does not help; nothing structures the piece",
+      "Competent airbrush/gradient illustration of profiles with considered skin tones and rim light, which suggests a real illustrator rather than raw generation",
+      "Two of the six frames are pure symmetric gradient blobs and radial rings: effect with no subject, close to the generic wellness and AI-gradient look",
+      "Peach-and-blue pastel glow palette is the stock aesthetic of meditation and sleep apps, with no distinctive point of view",
+      "The idea is literal: calm faces, eyes closed, headphones, a glowing star. That illustrates 'relaxation' rather than saying anything about it",
+      "No visible type, and its absence doesn't add anything. The piece reads like a set of brand spots, not a self-contained film",
+      "Frames alternate between portrait and abstract with no visible connective choreography"
+    ]
+  },
+  "refs_summary": {
+    "hermes-buck": {
+      "overall": 6.5,
+      "judged_professional": "3/3",
+      "mean_rank": 3
+    },
+    "tedxsydney": {
+      "overall": 7.75,
+      "judged_professional": "3/3",
+      "mean_rank": 2
+    },
+    "mad-men": {
+      "overall": 9,
+      "judged_professional": "3/3",
+      "mean_rank": 1
+    }
+  },
+  "ref_mean": 7.75,
+  "delta": -2.37,
+  "trials": [
+    {
+      "key": {
+        "A": "mad-men",
+        "B": "hermes-buck",
+        "C": "candidate",
+        "D": "tedxsydney"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 9
+            },
+            "tells": [
+              "One idea carries the whole piece: a silhouetted ad man falls past skyscraper glass that reflects period advertising. It is specific to its subject and you remember it.",
+              "Choreography from frame to frame: he walks in, a close-up of his shoes, he falls past the reflected ads, his body tumbles in close-up, and the piece resolves on him seated with a cigarette. The ending answers the opening, and the fall gets real weight from the scale changes.",
+              "The palette is limited and deliberate: flat black silhouette, warm grey ground, and saturated vintage ad imagery as the only colour. Red only marks the first name in each credit, which ties the type to the system.",
+              "The credits sit in negative space beside the figure, so the type is placed with the image instead of on top of it like a slide.",
+              "Texture is layered: halftone and print-grain advertising is composited behind the window grid, giving it depth and a sense of the period."
+            ],
+            "gaps": [
+              "The type works but is restrained. A plain condensed grotesk in red and black has less expressive scale than the image does.",
+              "The office interior in the first frame is drawn in a flatter, more generic vector style than the rich collage that follows.",
+              "This is close to the ceiling. It could only go further by matching the custom detail of the silhouette work in the backgrounds as well."
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.9,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "It reads as a fable: a crowd of small figures carries a giant fallen stone head, and the ending scatters the figures into a sculptural landscape. It has a story, not just a style.",
+              "The frame formats and structures change from shot to shot: a close-up crop of the procession, a wide shot of the head, a harlequin pattern in portrait format, a pattern on a dark ground, then a scattered tableau. This suggests editing and transitions with a rhythm.",
+              "The palette is unusual and controlled: ochre, slate blue, coral, blush, mint and charcoal on bone.",
+              "It has real texture: dry-brush grain, stipple, gingham and crosshatch fills, and rough edges on the diamonds.",
+              "The characters are built from asymmetric, idiosyncratic shapes, not clip-art defaults.",
+              "No type is visible, and its absence serves the piece. The story is carried by the image alone, which is right for a poetic short."
+            ],
+            "gaps": [
+              "The idea is evocative but less pointed than A's. The meaning of the head and the procession stays loose, so the piece is harder to retell.",
+              "There is no typographic layer or title integration, which A uses to bind its system together.",
+              "The two pattern interludes risk reading as decorative filler unless the transitions into them are motivated by the story."
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 5,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 7,
+              "motion": 4,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "The illustration has real texture and character: a twill fabric grain on the red ground, risograph-style stipple on the tiger, elephant and seal, and odd details like the eye-flowers in the border.",
+              "The palette is deliberate: oxblood red with teal, ochre and orange. It is committed and consistent.",
+              "The frames repeat one composition: a single circus icon centred on the same floral wallpaper. It feels like a series of stickers or a loop set more than a choreographed film.",
+              "The motion implied by the frames is mostly swapping one object for the next, with little camera work, scale change or interaction between frames.",
+              "No type is visible. Its absence is neutral here, because nothing frames or names the series.",
+              "The subject list (tiger, elephant, cannon, seal, strongman barbell) is the expected circus inventory."
+            ],
+            "gaps": [
+              "It needs choreography: transitions where one object becomes the next, camera moves, or a cause-and-effect chain, instead of centred objects swapped in a repeated layout.",
+              "It needs an idea beyond 'circus objects': a point of view or a narrative that only this piece could have.",
+              "Composition should vary from frame to frame through crops, scale contrast and depth, so that each frame works as a poster."
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 4,
+              "composition": 5,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 5,
+              "craft": 6,
+              "originality": 3
+            },
+            "tells": [
+              "The look is the generic wellness/sleep-app style: soft airbrushed gradients, pastel blue and peach, glowing orbs, and serene profiles with closed eyes. The idea is literal (calm, sleep, headphones).",
+              "There are abstract interludes that are effect without subject: a mirrored gradient horizon and a gradient ring.",
+              "The faces are drawn consistently, with considered lighting and some grain, which points to a human illustrator over pure AI. Even so, the glassy star-in-shield frame is vague and close to a stock 3D primitive.",
+              "The light is soft and the same everywhere, with no texture or material contrast. Every frame shares the same blur value.",
+              "No type is visible, and its absence leaves the brand-film abstraction anonymous."
+            ],
+            "gaps": [
+              "It needs a specific, memorable idea instead of generic 'calm' imagery: a concept like A's falling man that only this piece could own.",
+              "It needs material and texture contrast (hard edges against soft, real grain, a palette that is not the default wellness pastel), as D's dry-brush shapes have.",
+              "The frames should be choreographed through a transformation or narrative between them, rather than standalone moods that cut between gradient abstractions and profile portraits."
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "D",
+          "B",
+          "C"
+        ]
+      },
+      "meta": {
+        "seconds": 32.5,
+        "cost_usd": 0.160341,
+        "tokens": 71885,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "mad-men",
+        "B": "hermes-buck",
+        "C": "tedxsydney",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.95,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A single, specific idea that only this piece could have: a flat black silhouette falling past skyscrapers covered in period advertising, a Saul Bass / Vertigo-style fall that doubles as a character's moral collapse",
+              "The silhouette is cut out against rendered mid-century interiors and translucent ad imagery, so the graphic and photographic layers build density from frame to frame",
+              "Clear choreography: back view, then the step, the fall through layered glass, the tumble in close-up, and the resolution in the iconic reclining pose. The ending answers the opening.",
+              "Typography is restrained but deliberate: a red/black two-weight credit system used consistently, placed to sit in the negative space the figure leaves",
+              "Unusual, period-specific palette (warm grey, black, ad-red, nicotine amber), with grain and transparency that give it real texture",
+              "Every frame works as a poster, and the final frame is a recognisable cultural image"
+            ],
+            "gaps": [
+              "Credit type could be integrated further into the architecture or ads instead of floating as overlays",
+              "The interior render in frame 1 is a touch flatter than the collaged fall sequences",
+              "The palette could commit even harder in the ad layers, some of which wash out slightly when stacked"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "A coherent, strange visual world: a procession of small figures carrying a giant classical head and a fish-like log; there is a narrative and a sense of ritual",
+              "The scale contrast is staged with care (huge carried objects over a row of tiny people), and composition varies from close crop to wide tableau to pattern field",
+              "A deliberate, slightly off palette (ochre, coral, slate blue, mint, charcoal on bone) with consistent grain, dry-brush and halftone textures",
+              "Harlequin diamond patterns act as transitions or match-cuts, which shows thought about how frames connect",
+              "No type is visible; the piece is purely image-led and the absence works, with no loss to the work"
+            ],
+            "gaps": [
+              "The idea is more mood than a sharp concept; it needs a payoff or turn as memorable as A's fall-to-recline",
+              "The pattern-interstitial frames (3, 4) are decorative and add less meaning than the narrative frames",
+              "No typographic layer or title integration; a considered title moment would lift it to award level"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 5,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Hand-crafted illustration with real material: a fabric or twill texture on the red ground, grain and stipple on the tiger, elephant and seal, and a folk-art floral pattern with eye motifs",
+              "A committed, distinctive palette (deep circus red, teal-grey, ochre, cream)",
+              "Weakness: the same composition repeats in every frame, one centred object on the same patterned ground, which reads as a loop or a series of spots rather than a choreographed film",
+              "No type is visible; this is acceptable for an ident or loop series, but nothing replaces the type as a structuring device"
+            ],
+            "gaps": [
+              "Every frame uses one centred-icon layout; vary scale, cropping and depth and let objects interact across cuts",
+              "Needs a narrative or transformational idea (e.g. one object morphing into the next) rather than a catalogue of circus props",
+              "Introduce a typographic or title component with a point of view to anchor the piece"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 7,
+              "motion": 5,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "The figure illustration is skilled: well-drawn profiles, soft rim light and gradient modelling with a consistent stylistic hand, so it is more than raw AI output",
+              "But it leans on the generic wellness / sleep-app look: blue-peach gradients, glowing orbs and symmetrical radial blur fields",
+              "Frames 2 and 3 are effects with no subject, centred gradient blobs and a mirror-symmetric halo",
+              "The glass star-in-shield frame reads as a stock 3D-ish badge icon",
+              "The idea is literal (calm, sleep, headphones) and leaves nothing a viewer would remember",
+              "No type is visible, and its absence does not help; nothing structures the piece"
+            ],
+            "gaps": [
+              "Replace the abstract gradient interstitials with frames that carry a subject or story beat; right now half the film is ambient wallpaper",
+              "Push the palette away from the category-default blue/peach toward something ownable",
+              "Build a specific concept with an ending (as A has) instead of a mood board of serene faces"
+            ]
+          }
+        },
+        "ranking": [
+          "A",
+          "C",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 28.8,
+        "cost_usd": 0.153128,
+        "tokens": 71514,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    {
+      "key": {
+        "A": "tedxsydney",
+        "B": "hermes-buck",
+        "C": "mad-men",
+        "D": "candidate"
+      },
+      "answer": {
+        "entries": {
+          "A": {
+            "verdict": "professional",
+            "confidence": 0.85,
+            "scores": {
+              "idea": 8,
+              "composition": 8,
+              "typography": 6,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 8,
+              "craft": 8,
+              "originality": 8
+            },
+            "tells": [
+              "Distinctive illustrated world: a procession of small, odd characters carrying a giant stone head and a log through the piece, which gives it a specific narrative idea",
+              "Deliberate muted palette (ochre, slate blue, coral, blush, mint, charcoal) used consistently across every frame",
+              "Real hand-made texture: dry-brush grain on the ochre, stipple and halftone on the head, crosshatch fills, rough edges on the diamonds",
+              "Characters are deliberately asymmetrical and quirky, nothing like vector defaults or clip art",
+              "The frame sequence implies varied choreography: a crowd carrying the head across the frame, the harlequin pattern changing aspect ratio (a portrait-format frame), shapes scattering across the field",
+              "No visible type. The piece doesn't need it, because the image carries the story on its own"
+            ],
+            "gaps": [
+              "There's no typographic layer. Title or credits handled as cleverly as C's would lift it from an illustration reel to a complete piece",
+              "The harlequin-diamond interludes read as pattern filler and are weaker than the narrative frames. Tie them to the procession, for example by having the diamonds form from the carried objects",
+              "There's no single iconic frame as memorable as C's man falling past the ads. It needs one image that defines the piece"
+            ]
+          },
+          "B": {
+            "verdict": "professional",
+            "confidence": 0.75,
+            "scores": {
+              "idea": 6,
+              "composition": 6,
+              "typography": 5,
+              "colour": 8,
+              "light_texture": 8,
+              "motion": 5,
+              "craft": 8,
+              "originality": 6
+            },
+            "tells": [
+              "Rich, committed palette: deep oxblood red with teal-grey botanicals and warm cream and orange accents",
+              "Fabric-like woven texture on the ground, plus grain and halftone on the objects, gives a real tactile quality",
+              "Considered circus and fortune-teller iconography with witty details: peacock-eye flowers, the seal's tutu, the strongman's gloved hands",
+              "Same layout in every frame: one centred icon on the same wallpaper. That reads as a series of spots, not choreographed motion",
+              "No visible type. Its absence is neutral; the piece works as a loop or set of spots without it"
+            ],
+            "gaps": [
+              "Break the repeated centred-icon layout. Let the objects interact, overlap, travel and change scale between frames the way A's procession does",
+              "Build an idea beyond a catalogue of circus symbols. Give it a narrative or a transformation that connects tiger, cannon and seal",
+              "Add a typographic or graphic layer with a point of view (circus-poster lettering would be the obvious opportunity) to bring scale contrast"
+            ]
+          },
+          "C": {
+            "verdict": "professional",
+            "confidence": 0.97,
+            "scores": {
+              "idea": 10,
+              "composition": 9,
+              "typography": 8,
+              "colour": 9,
+              "light_texture": 8,
+              "motion": 9,
+              "craft": 9,
+              "originality": 10
+            },
+            "tells": [
+              "A specific, unforgettable idea: a flat silhouette of an ad man dissolving into the office and falling past skyscrapers papered with mid-century advertising, a metaphor for the show itself",
+              "Strong graphic contrast between the solid black silhouette and the translucent, layered photographic ads on the building grid",
+              "Restrained, deliberate palette: grey-cream ground, black, and red used only for first names and the title",
+              "Credit typography is integrated and systematic: two-weight names with the red/black split, placed relative to the figure rather than centred like slides",
+              "Clear choreography across the frames: an establishing shot, a close-up of the feet, a falling figure growing in scale, then a resolution into the reclined pose with a cigarette. The sequence has a beginning, a middle and an end",
+              "Every frame works as a poster"
+            ],
+            "gaps": [
+              "It is the benchmark here. The ad-collage frames could carry slightly more depth or parallax in the layering",
+              "The credit type is a fairly standard condensed grotesk. A more bespoke period face would push typography from strong to exceptional",
+              "Light is mostly flat graphic fill. That suits the concept, but subtler atmospheric grain in the office frames would add richness"
+            ]
+          },
+          "D": {
+            "verdict": "professional",
+            "confidence": 0.55,
+            "scores": {
+              "idea": 5,
+              "composition": 6,
+              "typography": 4,
+              "colour": 6,
+              "light_texture": 6,
+              "motion": 5,
+              "craft": 7,
+              "originality": 4
+            },
+            "tells": [
+              "Competent airbrush/gradient illustration of profiles with considered skin tones and rim light, which suggests a real illustrator rather than raw generation",
+              "Two of the six frames are pure symmetric gradient blobs and radial rings: effect with no subject, close to the generic wellness and AI-gradient look",
+              "Peach-and-blue pastel glow palette is the stock aesthetic of meditation and sleep apps, with no distinctive point of view",
+              "The idea is literal: calm faces, eyes closed, headphones, a glowing star. That illustrates 'relaxation' rather than saying anything about it",
+              "No visible type, and its absence doesn't add anything. The piece reads like a set of brand spots, not a self-contained film",
+              "Frames alternate between portrait and abstract with no visible connective choreography"
+            ],
+            "gaps": [
+              "Find a specific idea. Replace the generic 'serene face plus glow' with a concept only this piece could have, as C's falling man is",
+              "Remove or justify the subjectless gradient-blob frames. Make the abstractions grow out of the figures (breath, sound, sleep) so they're motivated",
+              "Push the palette and texture away from the default wellness gradient. Add grain, material and an unexpected accent colour so it doesn't read as template"
+            ]
+          }
+        },
+        "ranking": [
+          "C",
+          "A",
+          "B",
+          "D"
+        ]
+      },
+      "meta": {
+        "seconds": 31.8,
+        "cost_usd": 0.1600518,
+        "tokens": 71861,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    }
+  ],
+  "cost_usd": 0.474,
+  "judge_seconds": 93.1,
+  "verdict": "PRO"
+}
