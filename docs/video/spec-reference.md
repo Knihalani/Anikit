@@ -128,6 +128,10 @@ That is 1920×1080, 30 fps, 3 seconds, dark background, white Inter text in the 
 | `label` | `$body` | `1.8vh` | 600 | `$muted` (uppercase, letterSpacing 0.08em) |
 | `code` | `$mono` | `2.6vh` | 400 | `$text` |
 
+## Grid
+
+`"grid": { "columns": 12, "rows": 8, "margin": 96, "gutter": 24, "baseline": 12, "areas": { "head": "1-8/1-3" }, "show": false }` on the video, a scene (replaces it) or a group (for its children). Layers snap to it with `cell`. `margin` takes 1, 2 (`[v, h]`) or 4 lengths (default 5% of the short side); `gutter` 1 or 2 (default 2%). With `baseline`, text in a cell gets leading in whole baseline units. `show: true` draws the fields and baselines. Guide: `anikit-video docs graphic`.
+
 ## Scenes
 
 | Key | Type | Default | Meaning |
@@ -198,6 +202,9 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 | `depth` | number | `0` | Parallax and depth of field (see **Camera**). |
 | `blend` | string | `"normal"` | `normal`, `add`, `multiply`, `screen`, `overlay`, `darken`, `lighten`, `softLight`, `difference`. |
 | `shadow` | shadow | none | `{ "x": 0, "y": 12, "blur": 32, "color": "#0008" }` or `true` for a soft default. |
+| `cell` | area name, `"1-6/2-4"`, `[col, row, cols, rows]` | none | Place the layer in a field of the scene's `grid` (sets x, y, width; height except for text). `anchor` picks the cell point (default `topLeft`). See `anikit-video docs graphic`. |
+| `duotone`, `gradientMap` | `[dark, light]`, `[c1, c2, …]` | none | Map the layer's luma to inks (OKLab). `toneRange: [black, white]` pre-stretches, `posterize: N` steps, `toneAmount` mixes. |
+| `halftone` | px or `{cell, angle, shape, ink, paper, gain}` | none | Print screen over the layer (dot/line/square; ink `"source"` keeps colours; fixed to the frame). |
 | `glow` | glow | none | `{ "radius": 24, "intensity": 1, "color": "$primary" }` or a colour string. |
 | `clip` | bool or shape | `false` | `true` clips to the layer's box (with its `radius`); or a static shape `{ "shape": "circle", "width": 300, "height": 300 }` positioned in the layer's box (centred by default). |
 | `mask` | shape layer | none | A shape whose outline cuts this layer (hard-edged; same as a `clip` shape). |
@@ -236,7 +243,11 @@ Every layer has a `type`. You may leave it out when it is obvious: a layer with 
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `shape` | string | **required** | `rect`, `circle` (`ellipse`), `line`, `arrow`, `polygon`, `star`, `path`. |
+| `shape` | string | **required** | `rect`, `circle` (`ellipse`), `line`, `arrow`, `polygon`, `star`, `path`, `squircle` (`superellipse`), `blob`, `arc`, `pattern`. |
+| `exponent` | number | `4` | `superellipse`/`squircle`: 2 ellipse, 4–5 squircle, higher squarer. |
+| `sides`, `wobble`, `seed` | | `6`, `0.3`, `1` | `blob`: lobes, irregularity 0..1, seed. |
+| `startAngle`, `endAngle`, `innerRadius` | degrees, 0..1 | `0`, `270`, `0` | `arc`: 0 = 12 o'clock, clockwise; `innerRadius` > 0 makes a ring segment. |
+| `pattern` | `"dots 32"` or `{kind, spacing, mark, angle, seed, jitter, ramp}` | | Fills the box: `dots grid lines stripes checker triangles diamonds crosses rings waves zigzag truchet arcs scales bricks`. `shape` may be omitted. |
 | `width`, `height` | length | `200` | Box of `rect`, `circle`, `polygon`, `star`. |
 | `radius` | length | `0` | Corner radius of `rect`. |
 | `fill` | colour / gradient / `"none"` | `"$primary"` (`"none"` for `line`, `arrow`, open `path`) | |

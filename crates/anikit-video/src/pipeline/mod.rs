@@ -239,7 +239,8 @@ pub fn scale_list(dl: &mut DisplayList, s: f32) {
                         *blur *= s;
                     }
                     dl::Filter::Glow { radius, .. } => *radius *= s,
-                    dl::Filter::ColorMatrix(_) => {}
+                    dl::Filter::Halftone(h) => h.cell *= s,
+                    dl::Filter::ColorMatrix(_) | dl::Filter::Tone(_) => {}
                 }
             }
         }

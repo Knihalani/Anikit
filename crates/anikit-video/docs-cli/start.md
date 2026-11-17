@@ -35,6 +35,7 @@ A spec is JSON: `{ "size": "16:9", "scenes": [ { "duration": 2, "layers": [ ... 
 | `docs launch` | launch/product videos: principles, process, quality checks; no template (skill: skills/anikit-launch-video) |
 | `docs expressions` · `docs script` · `docs draw` | per-frame maths and colours (music-reactive), generator loops, raw paths and points |
 | `docs mograph` | After Effects-style motion design: repeaters, echo trails, motion paths, text on a path, shape modifiers, marching dashes |
+| `docs graphic` | Graphic design: modular grid with named cells, squircles/blobs/arcs, 15 generated patterns, duotone/gradient-map/posterise/halftone on any layer |
 
 Shortcuts (optional): `anikit-video recipes` (drop-in high-end shots), `looks` (art direction),
 `info --components` (prebuilt widgets), `templates` (quick starts).
