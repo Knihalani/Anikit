@@ -55,7 +55,7 @@ pub mod card_stack;
 #[cfg(test)]
 pub(crate) mod preview;
 
-pub use style::Theme;
+pub use style::{set_draft, Theme};
 pub use text::{Face, TextStyle};
 
 /// What a component can ask the engine for while evaluating.

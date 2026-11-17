@@ -352,6 +352,8 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
                 None => Quality::Good,
                 Some(q) => Quality::parse(q).ok_or_else(|| format!("--quality: use draft, standard or high (got '{q}')"))?,
             };
+            // Draft previews may step slow ambient motion; full quality never does.
+            anikit_video::components::set_draft(quality == Quality::Draft);
             let codec = match a.get("--codec") {
                 // Our encoder by default for MP4; x264 for `--quality best` (smallest files).
                 None => match Codec::from_path(&out) {
