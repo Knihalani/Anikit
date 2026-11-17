@@ -498,7 +498,7 @@ pub fn render_ak264(ev: &Evaluator, opts: &RenderOptions, out: &std::path::Path,
     let n = (f1 - f0) as usize;
     let threads = rayon::current_num_threads().max(1);
     // Enough chunks to keep every core busy, long enough to compress well.
-    let gop = (n / (threads * 3)).clamp(30, 300) as u32;
+    let gop = std::env::var("ANIKIT_GOP").ok().and_then(|g| g.parse().ok()).unwrap_or((n / (threads * 3)).clamp(30, 300) as u32);
     let qp = match opts.quality {
         Quality::Draft => 28,
         Quality::Good => 23,
