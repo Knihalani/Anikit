@@ -549,7 +549,7 @@ impl Instrumentation {
         };
         INSTRUMENTATIONS.iter().find(|i| i.name == n).ok_or_else(|| {
             let names: Vec<&str> = INSTRUMENTATIONS.iter().map(|i| i.name).chain(["hybrid"]).collect();
-            let hint = closest(&n, &names).map(|b| format!(" — did you mean '{b}'?")).unwrap_or_default();
+            let hint = closest(n, &names).map(|b| format!(" — did you mean '{b}'?")).unwrap_or_default();
             format!("music: instrumentation '{name}'{hint} (acoustic orchestral band piano electronic hybrid)")
         })
     }
