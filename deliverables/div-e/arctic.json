@@ -1,0 +1,2810 @@
+{
+ "size": "16:9",
+ "fps": 30,
+ "background": "#04080E",
+ "intent": {
+  "pace": "steady",
+  "genre": "explainer"
+ },
+ "music": {
+  "style": "piano",
+  "bpm": 66,
+  "key": "Dm",
+  "mood": "dark sombre",
+  "instrumentation": "orchestral",
+  "end": "ring"
+ },
+ "post": {
+  "grain": 0.02,
+  "vignette": 0.25
+ },
+ "scenes": [
+  {
+   "duration": 4.5,
+   "layers": [
+    {
+     "shader": "\nuniform float cover;  // = 0.95\nuniform float bright; // = 0.62\nuniform float side;   // = 0.35\nvec2 h2(vec2 p) { p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3))); return fract(sin(p) * 43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f) {\n  vec2 uv = f / iResolution.y * 6.5 + vec2(iTime * 0.025, iTime * 0.008);\n  vec2 g = floor(uv), fr = fract(uv);\n  float d1 = 8.0, d2 = 8.0; vec2 id = g; vec2 p1 = vec2(0.0);\n  for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {\n    vec2 c = vec2(float(x), float(y));\n    vec2 r = h2(g + c);\n    vec2 p = c + 0.5 + 0.38 * sin(iTime * 0.12 + 6.2831 * r) - fr;\n    float d = dot(p, p);\n    if (d < d1) { d2 = d1; d1 = d; id = g + c; p1 = p; } else if (d < d2) { d2 = d; }\n  }\n  float edge = sqrt(d2) - sqrt(d1);\n  vec2 hh = h2(id + 17.0);\n  float melt = clamp((hh.x - cover) * 6.0, 0.0, 1.0);\n  float thr = 0.035 + melt * 0.55;\n  float ice = smoothstep(thr, thr + 0.025, edge) * (1.0 - step(0.999, melt));\n  float grain = fract(sin(dot(floor(f * 0.5), vec2(12.9898, 78.233))) * 43758.5453);\n  vec3 water = vec3(0.012, 0.026, 0.045) + 0.012 * sin(uv.x * 3.0 + iTime * 0.4);\n  vec3 icec = mix(vec3(0.50, 0.63, 0.74), vec3(0.86, 0.93, 0.98), hh.y) * (0.92 + 0.08 * grain);\n  icec *= 0.85 + 0.15 * smoothstep(0.0, 0.25, edge);\n  vec3 col = mix(water, icec * bright, ice);\n  vec2 s = f / iResolution.xy;\n  float fade = smoothstep(side - 0.12, side + 0.22, s.x);\n  col = mix(vec3(0.016, 0.031, 0.055), col, fade);\n  col *= 1.0 - 0.35 * pow(length(s - vec2(0.6, 0.5)), 2.0);\n  o = vec4(col, 1.0);\n}\n",
+     "uniforms": {
+      "cover": 0.97,
+      "bright": 0.6,
+      "side": 0.5
+     },
+     "animate": [
+      {
+       "from": {
+        "cover": 0.97
+       },
+       "to": {
+        "cover": 0.82
+       },
+       "duration": 4.5,
+       "ease": "linear"
+      }
+     ]
+    },
+    {
+     "text": "ARCTIC SEA ICE · 1979–2026",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 30,
+     "weight": 600,
+     "letterSpacing": "0.18em",
+     "x": "7%",
+     "y": "34%",
+     "anchor": "left",
+     "enter": "rise"
+    },
+    {
+     "text": "Every September, the ice\nreaches its yearly low.",
+     "font": "Instrument Serif",
+     "size": "8.4vh",
+     "color": "#E9F1F6",
+     "lineHeight": 1.05,
+     "x": "7%",
+     "y": "50%",
+     "anchor": "left",
+     "enter": "mask by line up",
+     "animate": [
+      {
+       "from": {
+        "opacity": 1
+       },
+       "at": 0
+      }
+     ]
+    },
+    {
+     "text": "That low is shrinking.",
+     "font": "Instrument Serif",
+     "color": "#F0693C",
+     "size": "5.2vh",
+     "italic": true,
+     "x": "7%",
+     "y": "69%",
+     "anchor": "left",
+     "start": 2.2,
+     "enter": "rise"
+    }
+   ]
+  },
+  {
+   "duration": 6.3,
+   "transition": {
+    "type": "fadeBlack",
+    "duration": 0.6
+   },
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#07101A"
+    },
+    {
+     "shape": "circle",
+     "width": 660.0,
+     "height": 660.0,
+     "x": 1300,
+     "y": 540,
+     "fill": "#22364A",
+     "animate": [
+      {
+       "from": {
+        "width": 396.0,
+        "height": 396.0,
+        "opacity": 0
+       },
+       "to": {
+        "width": 660.0,
+        "height": 660.0,
+        "opacity": 1
+       },
+       "duration": 0.9,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "shape": "circle",
+     "width": 660.0,
+     "height": 660.0,
+     "x": 1300,
+     "y": 540,
+     "fill": "none",
+     "stroke": "#C9D7E2",
+     "strokeWidth": 3,
+     "opacity": 0.85,
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "at": 1.6,
+       "duration": 1.0,
+       "ease": "inOutCubic"
+      }
+     ]
+    },
+    {
+     "shape": "circle",
+     "width": 469.6599041135137,
+     "height": 469.6599041135137,
+     "x": 1300,
+     "y": 540,
+     "fill": "#E4EDF3",
+     "start": 0.3,
+     "animate": [
+      {
+       "from": {
+        "width": 396.0,
+        "height": 396.0,
+        "opacity": 0
+       },
+       "to": {
+        "width": 660.0,
+        "height": 660.0,
+        "opacity": 1
+       },
+       "duration": 0.9,
+       "ease": "outCubic"
+      },
+      {
+       "to": {
+        "width": 469.6599041135137,
+        "height": 469.6599041135137
+       },
+       "at": 1.9,
+       "duration": 1.3,
+       "ease": "inOutCubic"
+      }
+     ]
+    },
+    {
+     "text": "1979",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "9vh",
+     "x": "7%",
+     "y": "26%",
+     "anchor": "left",
+     "enter": "rise"
+    },
+    {
+     "text": "7.05 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 44,
+     "weight": 500,
+     "x": "7%",
+     "y": "35%",
+     "anchor": "left",
+     "enter": "rise"
+    },
+    {
+     "text": "2012 · record low",
+     "font": "Instrument Serif",
+     "color": "#F0693C",
+     "size": "9vh",
+     "x": "7%",
+     "y": "52%",
+     "anchor": "left",
+     "start": 2.0,
+     "enter": "rise"
+    },
+    {
+     "text": "3.57 million km²",
+     "font": "Inter",
+     "color": "#E9F1F6",
+     "size": 44,
+     "weight": 500,
+     "x": "7%",
+     "y": "61%",
+     "anchor": "left",
+     "start": 2.2,
+     "enter": "rise"
+    },
+    {
+     "text": "About half the ice of 1979.",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "5vh",
+     "italic": true,
+     "x": "7%",
+     "y": "75%",
+     "anchor": "left",
+     "start": 3.0,
+     "enter": "rise"
+    },
+    {
+     "text": "Disc areas to scale",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 26,
+     "x": 1300,
+     "y": 910.0,
+     "start": 1.0,
+     "enter": "rise"
+    },
+    {
+     "text": "Source: NSIDC Sea Ice Index v4 (G02135) · September monthly average extent",
+     "font": "Inter",
+     "color": "#8A9CAC",
+     "size": 24,
+     "x": "7%",
+     "y": "90.5%",
+     "anchor": "left"
+    }
+   ]
+  },
+  {
+   "duration": 12.9,
+   "transition": {
+    "type": "fadeBlack",
+    "duration": 0.5
+   },
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "linear-gradient(180deg, #08121D, #04080E)"
+    },
+    {
+     "shape": "line",
+     "x": 210,
+     "y": 900.0,
+     "anchor": "left",
+     "width": 1510,
+     "height": 0,
+     "stroke": "#5C7080",
+     "strokeWidth": 2.5,
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.7,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "0",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 26,
+     "x": 196,
+     "y": 900.0,
+     "anchor": "right",
+     "enter": "fade"
+    },
+    {
+     "shape": "line",
+     "x": 210,
+     "y": 736.0,
+     "anchor": "left",
+     "width": 1510,
+     "height": 0,
+     "stroke": "#1E2D3B",
+     "strokeWidth": 1.5,
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.7,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 26,
+     "x": 196,
+     "y": 736.0,
+     "anchor": "right",
+     "enter": "fade"
+    },
+    {
+     "shape": "line",
+     "x": 210,
+     "y": 572.0,
+     "anchor": "left",
+     "width": 1510,
+     "height": 0,
+     "stroke": "#1E2D3B",
+     "strokeWidth": 1.5,
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.7,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "4",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 26,
+     "x": 196,
+     "y": 572.0,
+     "anchor": "right",
+     "enter": "fade"
+    },
+    {
+     "shape": "line",
+     "x": 210,
+     "y": 408.0,
+     "anchor": "left",
+     "width": 1510,
+     "height": 0,
+     "stroke": "#1E2D3B",
+     "strokeWidth": 1.5,
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.7,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "6",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 26,
+     "x": 196,
+     "y": 408.0,
+     "anchor": "right",
+     "enter": "fade"
+    },
+    {
+     "shape": "line",
+     "x": 210,
+     "y": 244.0,
+     "anchor": "left",
+     "width": 1510,
+     "height": 0,
+     "stroke": "#1E2D3B",
+     "strokeWidth": 1.5,
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "duration": 0.7,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "8",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 26,
+     "x": 196,
+     "y": 244.0,
+     "anchor": "right",
+     "enter": "fade"
+    },
+    {
+     "text": "million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 24,
+     "x": 210,
+     "y": 200.0,
+     "anchor": "left",
+     "enter": "fade"
+    },
+    {
+     "text": "1980",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 26,
+     "x": 275.9375,
+     "y": 936,
+     "enter": "fade"
+    },
+    {
+     "text": "1990",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 26,
+     "x": 582.1875,
+     "y": 936,
+     "enter": "fade"
+    },
+    {
+     "text": "2000",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 26,
+     "x": 888.4375,
+     "y": 936,
+     "enter": "fade"
+    },
+    {
+     "text": "2010",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 26,
+     "x": 1194.6875,
+     "y": 936,
+     "enter": "fade"
+    },
+    {
+     "text": "2020",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 26,
+     "x": 1500.9375,
+     "y": 936,
+     "enter": "fade"
+    },
+    {
+     "shape": "rect",
+     "x": 235.81875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 578.1,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 0.9,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1979",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 0.9,
+     "end": 1.05
+    },
+    {
+     "text": "7.05 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 0.9,
+     "end": 1.05
+    },
+    {
+     "shape": "rect",
+     "x": 266.44375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 628.9399999999999,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 1.05,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1980",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 1.05,
+     "end": 1.2
+    },
+    {
+     "text": "7.67 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 1.05,
+     "end": 1.2
+    },
+    {
+     "shape": "rect",
+     "x": 297.06875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 585.48,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 1.2,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1981",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 1.2,
+     "end": 1.35
+    },
+    {
+     "text": "7.14 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 1.2,
+     "end": 1.35
+    },
+    {
+     "shape": "rect",
+     "x": 327.69375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 598.6,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 1.35,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1982",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 1.35,
+     "end": 1.5
+    },
+    {
+     "text": "7.30 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 1.35,
+     "end": 1.5
+    },
+    {
+     "shape": "rect",
+     "x": 358.31875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 605.98,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 1.5,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1983",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 1.5,
+     "end": 1.65
+    },
+    {
+     "text": "7.39 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 1.5,
+     "end": 1.65
+    },
+    {
+     "shape": "rect",
+     "x": 388.94375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 558.42,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 1.65,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1984",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 1.65,
+     "end": 1.7999999999999998
+    },
+    {
+     "text": "6.81 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 1.65,
+     "end": 1.7999999999999998
+    },
+    {
+     "shape": "rect",
+     "x": 419.56875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 549.4,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 1.7999999999999998,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1985",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 1.7999999999999998,
+     "end": 1.9500000000000002
+    },
+    {
+     "text": "6.70 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 1.7999999999999998,
+     "end": 1.9500000000000002
+    },
+    {
+     "shape": "rect",
+     "x": 450.19375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 607.62,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 1.9500000000000002,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1986",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 1.9500000000000002,
+     "end": 2.1
+    },
+    {
+     "text": "7.41 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 1.9500000000000002,
+     "end": 2.1
+    },
+    {
+     "shape": "rect",
+     "x": 480.81875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 596.96,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 2.1,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1987",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 2.1,
+     "end": 2.25
+    },
+    {
+     "text": "7.28 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 2.1,
+     "end": 2.25
+    },
+    {
+     "shape": "rect",
+     "x": 511.44375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 604.34,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 2.25,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1988",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 2.25,
+     "end": 2.4
+    },
+    {
+     "text": "7.37 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 2.25,
+     "end": 2.4
+    },
+    {
+     "shape": "rect",
+     "x": 542.06875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 574.8199999999999,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 2.4,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1989",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 2.4,
+     "end": 2.55
+    },
+    {
+     "text": "7.01 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 2.4,
+     "end": 2.55
+    },
+    {
+     "shape": "rect",
+     "x": 572.69375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 503.47999999999996,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 2.55,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1990",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 2.55,
+     "end": 2.6999999999999997
+    },
+    {
+     "text": "6.14 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 2.55,
+     "end": 2.6999999999999997
+    },
+    {
+     "shape": "rect",
+     "x": 603.31875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 530.54,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 2.6999999999999997,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1991",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 2.6999999999999997,
+     "end": 2.85
+    },
+    {
+     "text": "6.47 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 2.6999999999999997,
+     "end": 2.85
+    },
+    {
+     "shape": "rect",
+     "x": 633.94375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 612.54,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 2.85,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1992",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 2.85,
+     "end": 3.0
+    },
+    {
+     "text": "7.47 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 2.85,
+     "end": 3.0
+    },
+    {
+     "shape": "rect",
+     "x": 664.56875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 524.8000000000001,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 3.0,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1993",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 3.0,
+     "end": 3.15
+    },
+    {
+     "text": "6.40 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 3.0,
+     "end": 3.15
+    },
+    {
+     "shape": "rect",
+     "x": 695.19375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 585.48,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 3.15,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1994",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 3.15,
+     "end": 3.3
+    },
+    {
+     "text": "7.14 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 3.15,
+     "end": 3.3
+    },
+    {
+     "shape": "rect",
+     "x": 725.81875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 498.56,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 3.3,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1995",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 3.3,
+     "end": 3.4499999999999997
+    },
+    {
+     "text": "6.08 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 3.3,
+     "end": 3.4499999999999997
+    },
+    {
+     "shape": "rect",
+     "x": 756.44375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 621.5600000000001,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 3.4499999999999997,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1996",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 3.4499999999999997,
+     "end": 3.5999999999999996
+    },
+    {
+     "text": "7.58 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 3.4499999999999997,
+     "end": 3.5999999999999996
+    },
+    {
+     "shape": "rect",
+     "x": 787.06875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 548.58,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 3.5999999999999996,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1997",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 3.5999999999999996,
+     "end": 3.75
+    },
+    {
+     "text": "6.69 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 3.5999999999999996,
+     "end": 3.75
+    },
+    {
+     "shape": "rect",
+     "x": 817.69375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 536.28,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 3.75,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1998",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 3.75,
+     "end": 3.9
+    },
+    {
+     "text": "6.54 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 3.75,
+     "end": 3.9
+    },
+    {
+     "shape": "rect",
+     "x": 848.31875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 501.84000000000003,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 3.9,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "1999",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 3.9,
+     "end": 4.05
+    },
+    {
+     "text": "6.12 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 3.9,
+     "end": 4.05
+    },
+    {
+     "shape": "rect",
+     "x": 878.94375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 512.5,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 4.05,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2000",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 4.05,
+     "end": 4.2
+    },
+    {
+     "text": "6.25 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 4.05,
+     "end": 4.2
+    },
+    {
+     "shape": "rect",
+     "x": 909.56875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 551.86,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 4.2,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2001",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 4.2,
+     "end": 4.35
+    },
+    {
+     "text": "6.73 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 4.2,
+     "end": 4.35
+    },
+    {
+     "shape": "rect",
+     "x": 940.19375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 478.06,
+     "fill": "#B7CAD8",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 4.35,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2002",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 4.35,
+     "end": 4.5
+    },
+    {
+     "text": "5.83 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 4.35,
+     "end": 4.5
+    },
+    {
+     "shape": "rect",
+     "x": 970.81875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 501.84000000000003,
+     "fill": "#D7E3EC",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 4.5,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2003",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 4.5,
+     "end": 4.65
+    },
+    {
+     "text": "6.12 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 4.5,
+     "end": 4.65
+    },
+    {
+     "shape": "rect",
+     "x": 1001.44375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 490.36,
+     "fill": "#B7CAD8",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 4.65,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2004",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 4.65,
+     "end": 4.8
+    },
+    {
+     "text": "5.98 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 4.65,
+     "end": 4.8
+    },
+    {
+     "shape": "rect",
+     "x": 1032.06875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 451.0,
+     "fill": "#B7CAD8",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 4.8,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2005",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 4.8,
+     "end": 4.95
+    },
+    {
+     "text": "5.50 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 4.8,
+     "end": 4.95
+    },
+    {
+     "shape": "rect",
+     "x": 1062.69375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 480.52000000000004,
+     "fill": "#B7CAD8",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 4.95,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2006",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 4.95,
+     "end": 5.1000000000000005
+    },
+    {
+     "text": "5.86 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 4.95,
+     "end": 5.1000000000000005
+    },
+    {
+     "shape": "rect",
+     "x": 1093.31875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 350.14,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 5.1000000000000005,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2007",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 5.1000000000000005,
+     "end": 5.25
+    },
+    {
+     "text": "4.27 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 5.1000000000000005,
+     "end": 5.25
+    },
+    {
+     "shape": "rect",
+     "x": 1123.94375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 384.58000000000004,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 5.25,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2008",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 5.25,
+     "end": 5.4
+    },
+    {
+     "text": "4.69 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 5.25,
+     "end": 5.4
+    },
+    {
+     "shape": "rect",
+     "x": 1154.56875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 431.32,
+     "fill": "#B7CAD8",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 5.4,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2009",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 5.4,
+     "end": 5.55
+    },
+    {
+     "text": "5.26 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 5.4,
+     "end": 5.55
+    },
+    {
+     "shape": "rect",
+     "x": 1185.19375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 399.34000000000003,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 5.55,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2010",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 5.55,
+     "end": 5.7
+    },
+    {
+     "text": "4.87 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 5.55,
+     "end": 5.7
+    },
+    {
+     "shape": "rect",
+     "x": 1215.81875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 373.91999999999996,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 5.7,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2011",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 5.7,
+     "end": 5.8500000000000005
+    },
+    {
+     "text": "4.56 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 5.7,
+     "end": 5.8500000000000005
+    },
+    {
+     "shape": "rect",
+     "x": 1246.44375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 292.74,
+     "fill": "#F0693C",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 5.8500000000000005,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2012",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 5.8500000000000005,
+     "end": 6.0
+    },
+    {
+     "text": "3.57 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 5.8500000000000005,
+     "end": 6.0
+    },
+    {
+     "shape": "rect",
+     "x": 1277.06875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 427.21999999999997,
+     "fill": "#B7CAD8",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 6.0,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2013",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 6.0,
+     "end": 6.15
+    },
+    {
+     "text": "5.21 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 6.0,
+     "end": 6.15
+    },
+    {
+     "shape": "rect",
+     "x": 1307.69375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 428.03999999999996,
+     "fill": "#B7CAD8",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 6.15,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2014",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 6.15,
+     "end": 6.3
+    },
+    {
+     "text": "5.22 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 6.15,
+     "end": 6.3
+    },
+    {
+     "shape": "rect",
+     "x": 1338.31875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 378.84000000000003,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 6.3,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2015",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 6.3,
+     "end": 6.45
+    },
+    {
+     "text": "4.62 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 6.3,
+     "end": 6.45
+    },
+    {
+     "shape": "rect",
+     "x": 1368.94375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 371.46000000000004,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 6.45,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2016",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 6.45,
+     "end": 6.6000000000000005
+    },
+    {
+     "text": "4.53 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 6.45,
+     "end": 6.6000000000000005
+    },
+    {
+     "shape": "rect",
+     "x": 1399.56875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 395.24,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 6.6000000000000005,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2017",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 6.6000000000000005,
+     "end": 6.75
+    },
+    {
+     "text": "4.82 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 6.6000000000000005,
+     "end": 6.75
+    },
+    {
+     "shape": "rect",
+     "x": 1430.19375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 392.78000000000003,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 6.75,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2018",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 6.75,
+     "end": 6.9
+    },
+    {
+     "text": "4.79 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 6.75,
+     "end": 6.9
+    },
+    {
+     "shape": "rect",
+     "x": 1460.81875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 357.52000000000004,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 6.9,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2019",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 6.9,
+     "end": 7.05
+    },
+    {
+     "text": "4.36 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 6.9,
+     "end": 7.05
+    },
+    {
+     "shape": "rect",
+     "x": 1491.44375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 328.0,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 7.05,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2020",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 7.05,
+     "end": 7.2
+    },
+    {
+     "text": "4.00 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 7.05,
+     "end": 7.2
+    },
+    {
+     "shape": "rect",
+     "x": 1522.06875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 405.90000000000003,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 7.2,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2021",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 7.2,
+     "end": 7.3500000000000005
+    },
+    {
+     "text": "4.95 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 7.2,
+     "end": 7.3500000000000005
+    },
+    {
+     "shape": "rect",
+     "x": 1552.69375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 401.8,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 7.3500000000000005,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2022",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 7.3500000000000005,
+     "end": 7.5
+    },
+    {
+     "text": "4.90 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 7.3500000000000005,
+     "end": 7.5
+    },
+    {
+     "shape": "rect",
+     "x": 1583.31875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 359.15999999999997,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 7.5,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2023",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 7.5,
+     "end": 7.65
+    },
+    {
+     "text": "4.38 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 7.5,
+     "end": 7.65
+    },
+    {
+     "shape": "rect",
+     "x": 1613.94375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 356.7,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 7.65,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2024",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 7.65,
+     "end": 7.8
+    },
+    {
+     "text": "4.35 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 7.65,
+     "end": 7.8
+    },
+    {
+     "shape": "rect",
+     "x": 1644.56875,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 389.5,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 7.8,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2025",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 7.8,
+     "end": 7.95
+    },
+    {
+     "text": "4.75 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 7.8,
+     "end": 7.95
+    },
+    {
+     "shape": "rect",
+     "x": 1675.19375,
+     "y": 900,
+     "anchor": "bottomLeft",
+     "width": 18.9875,
+     "height": 394.41999999999996,
+     "fill": "#93AEC2",
+     "radius": 2,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "at": 7.95,
+       "duration": 0.45,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2026",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "11vh",
+     "x": 1700,
+     "y": 128,
+     "anchor": "right",
+     "start": 7.95
+    },
+    {
+     "text": "4.81 million km²",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 36,
+     "weight": 500,
+     "x": 1700,
+     "y": 204,
+     "anchor": "right",
+     "start": 7.95
+    },
+    {
+     "shape": "rect",
+     "x": 1101.8125,
+     "y": 336.6,
+     "anchor": "topLeft",
+     "width": 2,
+     "height": 205.26,
+     "fill": "#8FA3B3",
+     "start": 5.4,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "duration": 0.4,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2007 · 4.27",
+     "font": "Inter",
+     "color": "#E9F1F6",
+     "size": 28,
+     "weight": 600,
+     "x": 1090.8125,
+     "y": 354.6,
+     "anchor": "right",
+     "start": 5.4,
+     "enter": "rise"
+    },
+    {
+     "shape": "rect",
+     "x": 1254.9375,
+     "y": 295.6,
+     "anchor": "topLeft",
+     "width": 2,
+     "height": 303.65999999999997,
+     "fill": "#F0693C",
+     "start": 6.15,
+     "animate": [
+      {
+       "from": {
+        "height": 0
+       },
+       "duration": 0.4,
+       "ease": "outCubic"
+      }
+     ]
+    },
+    {
+     "text": "2012 · 3.57 · record low",
+     "font": "Inter",
+     "color": "#F0693C",
+     "size": 28,
+     "weight": 600,
+     "x": 1267.9375,
+     "y": 313.6,
+     "anchor": "left",
+     "start": 6.15,
+     "enter": "rise"
+    },
+    {
+     "shape": "path",
+     "d": "M0 0 L 1439.4 285.7",
+     "x": 245.3125,
+     "y": 277.22394557823134,
+     "anchor": "topLeft",
+     "stroke": "#F0693C",
+     "strokeWidth": 5,
+     "fill": "none",
+     "animate": [
+      {
+       "from": {
+        "trimEnd": 0
+       },
+       "to": {
+        "trimEnd": 1
+       },
+       "at": 8.4,
+       "duration": 1.3,
+       "ease": "inOutCubic"
+      }
+     ]
+    },
+    {
+     "text": "Trend: −12% per decade",
+     "font": "Instrument Serif",
+     "color": "#F0693C",
+     "size": "6.6vh",
+     "x": 240,
+     "y": 165,
+     "anchor": "left",
+     "start": 9.4,
+     "enter": "rise"
+    },
+    {
+     "text": "−0.74 million km² per decade, relative to the 1981–2010 average",
+     "font": "Inter",
+     "color": "#E9F1F6",
+     "size": 28,
+     "x": 242,
+     "y": 235,
+     "anchor": "left",
+     "start": 9.700000000000001,
+     "enter": "rise"
+    },
+    {
+     "text": "Arctic sea ice extent, September",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 30,
+     "weight": 600,
+     "letterSpacing": "0.06em",
+     "x": 240,
+     "y": 112,
+     "anchor": "left",
+     "end": 9.3,
+     "enter": "fade"
+    },
+    {
+     "text": "Source: NSIDC Sea Ice Index v4 (G02135) · September monthly average extent",
+     "font": "Inter",
+     "color": "#8A9CAC",
+     "size": 24,
+     "x": "7%",
+     "y": "96%",
+     "anchor": "left"
+    }
+   ]
+  },
+  {
+   "duration": 5.0,
+   "transition": {
+    "type": "fadeBlack",
+    "duration": 0.6
+   },
+   "layers": [
+    {
+     "shader": "\nuniform float cover;  // = 0.95\nuniform float bright; // = 0.62\nuniform float side;   // = 0.35\nvec2 h2(vec2 p) { p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3))); return fract(sin(p) * 43758.5453); }\nvoid mainImage(out vec4 o, in vec2 f) {\n  vec2 uv = f / iResolution.y * 6.5 + vec2(iTime * 0.025, iTime * 0.008);\n  vec2 g = floor(uv), fr = fract(uv);\n  float d1 = 8.0, d2 = 8.0; vec2 id = g; vec2 p1 = vec2(0.0);\n  for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {\n    vec2 c = vec2(float(x), float(y));\n    vec2 r = h2(g + c);\n    vec2 p = c + 0.5 + 0.38 * sin(iTime * 0.12 + 6.2831 * r) - fr;\n    float d = dot(p, p);\n    if (d < d1) { d2 = d1; d1 = d; id = g + c; p1 = p; } else if (d < d2) { d2 = d; }\n  }\n  float edge = sqrt(d2) - sqrt(d1);\n  vec2 hh = h2(id + 17.0);\n  float melt = clamp((hh.x - cover) * 6.0, 0.0, 1.0);\n  float thr = 0.035 + melt * 0.55;\n  float ice = smoothstep(thr, thr + 0.025, edge) * (1.0 - step(0.999, melt));\n  float grain = fract(sin(dot(floor(f * 0.5), vec2(12.9898, 78.233))) * 43758.5453);\n  vec3 water = vec3(0.012, 0.026, 0.045) + 0.012 * sin(uv.x * 3.0 + iTime * 0.4);\n  vec3 icec = mix(vec3(0.50, 0.63, 0.74), vec3(0.86, 0.93, 0.98), hh.y) * (0.92 + 0.08 * grain);\n  icec *= 0.85 + 0.15 * smoothstep(0.0, 0.25, edge);\n  vec3 col = mix(water, icec * bright, ice);\n  vec2 s = f / iResolution.xy;\n  float fade = smoothstep(side - 0.12, side + 0.22, s.x);\n  col = mix(vec3(0.016, 0.031, 0.055), col, fade);\n  col *= 1.0 - 0.35 * pow(length(s - vec2(0.6, 0.5)), 2.0);\n  o = vec4(col, 1.0);\n}\n",
+     "uniforms": {
+      "cover": 0.8,
+      "bright": 0.55,
+      "side": 0.72
+     },
+     "animate": [
+      {
+       "from": {
+        "cover": 0.8
+       },
+       "to": {
+        "cover": 0.4
+       },
+       "duration": 5.0,
+       "ease": "inOutSine"
+      }
+     ]
+    },
+    {
+     "text": "Since 1979, the long-term trend is down",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "6vh",
+     "x": "7%",
+     "y": "34%",
+     "anchor": "left",
+     "enter": "mask by line up"
+    },
+    {
+     "text": "3.5 million",
+     "font": "Instrument Serif",
+     "color": "#E9F1F6",
+     "size": "15vh",
+     "x": "7%",
+     "y": "50%",
+     "anchor": "left",
+     "start": 0.5,
+     "enter": "mask by line up"
+    },
+    {
+     "text": "square kilometres of September ice: more than the area of India.",
+     "font": "Instrument Serif",
+     "color": "#8FA3B3",
+     "size": "5vh",
+     "italic": true,
+     "x": "7%",
+     "y": "65%",
+     "anchor": "left",
+     "start": 1.4,
+     "enter": "rise"
+    }
+   ]
+  },
+  {
+   "duration": 3.5,
+   "transition": {
+    "type": "fadeBlack",
+    "duration": 0.5
+   },
+   "layers": [
+    {
+     "shape": "rect",
+     "width": 1920,
+     "height": 1080,
+     "fill": "#04080E"
+    },
+    {
+     "shape": "line",
+     "x": "7%",
+     "y": "40%",
+     "anchor": "left",
+     "width": 120,
+     "height": 0,
+     "stroke": "#F0693C",
+     "strokeWidth": 4
+    },
+    {
+     "text": "Source",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 28,
+     "weight": 600,
+     "letterSpacing": "0.16em",
+     "uppercase": true,
+     "x": "7%",
+     "y": "46%",
+     "anchor": "left"
+    },
+    {
+     "text": "National Snow and Ice Data Center (NSIDC), Sea Ice Index, Version 4 (G02135)",
+     "font": "Inter",
+     "color": "#E9F1F6",
+     "size": 38,
+     "x": "7%",
+     "y": "53%",
+     "anchor": "left"
+    },
+    {
+     "text": "Arctic September monthly average sea ice extent, 1979–2026 · nsidc.org/data/g02135",
+     "font": "Inter",
+     "color": "#8FA3B3",
+     "size": 30,
+     "x": "7%",
+     "y": "59.5%",
+     "anchor": "left"
+    },
+    {
+     "text": "Trend: least-squares fit, 1979–2026. India: 3.29 million km².",
+     "font": "Inter",
+     "color": "#8A9CAC",
+     "size": 26,
+     "x": "7%",
+     "y": "65%",
+     "anchor": "left"
+    }
+   ]
+  }
+ ]
+}
