@@ -42,6 +42,10 @@ struct Out<T>(*mut T);
 unsafe impl<T> Send for Out<T> {}
 unsafe impl<T> Sync for Out<T> {}
 impl<T> Out<T> {
+    #[inline(always)]
+    fn at(self, i: usize) -> *mut T {
+        self.0.wrapping_add(i)
+    }
     /// SAFETY: `i` is in bounds and no other thread writes index `i`.
     #[inline(always)]
     unsafe fn put(self, i: usize, v: T) {
@@ -321,21 +325,33 @@ fn denoise_vis(pl: &Planes, w: usize, h: usize, passes: u32) -> (Buf<f32>, Buf<f
     }
     // Per-centre depth tolerance (reciprocal).
     let inv_tol: Buf<f32> = par::map(w * h, |i| 1.0 / (pl.depth[i] * 0.02 + 1e-3));
+    // Rows with nothing lit pass through untouched.
+    let row_lit: Vec<bool> = (0..h).map(|y| pl.lit[y * w..y * w + w].iter().any(|&l| l > 0.0)).collect();
     let k = [0.25f32, 0.5, 0.25];
-    let mut out: Buf<[f32; 2]> = Buf::uninit(w * h);
+    let mut ao2: Buf<f32> = Buf::uninit(w * h);
+    let mut vk2: Buf<f32> = Buf::uninit(w * h);
     for pass in 0..passes {
         let step = 1usize << pass;
         let (sa, sv) = (&ao, &vk);
-        par::rows(&mut out, w, |y, row| {
+        let vo = Out(vk2.as_mut_ptr());
+        par::rows(&mut ao2, w, |y, row| {
             let c0 = y * w;
+            // SAFETY: each row of `vk2` is written by the task that owns that row of `ao2`.
+            let vrow = unsafe { std::slice::from_raw_parts_mut(vo.at(c0), w) };
+            if !row_lit[y] {
+                row.copy_from_slice(&sa[c0..c0 + w]);
+                vrow.copy_from_slice(&sv[c0..c0 + w]);
+                return;
+            }
             let (cd, ct, cid, clit) = (&pl.depth[c0..c0 + w], &inv_tol[c0..c0 + w], &pl.id[c0..c0 + w], &pl.lit[c0..c0 + w]);
             let (cnx, cny, cnz) = (&pl.nx[c0..c0 + w], &pl.ny[c0..c0 + w], &pl.nz[c0..c0 + w]);
-            let mut acc0 = vec![0.0f32; w];
-            let mut acc1 = vec![0.0f32; w];
-            let mut wsum = vec![0.0f32; w];
+            let mut acc0 = [0.0f32; 4096];
+            let mut acc1 = [0.0f32; 4096];
+            let mut wsum = [0.0f32; 4096];
+            assert!(w <= 4096, "scene3d: frames wider than 4096 px");
             for (jy, ky) in k.iter().enumerate() {
                 let sy = y as isize + (jy as isize - 1) * step as isize;
-                if sy < 0 || sy >= h as isize {
+                if sy < 0 || sy >= h as isize || !row_lit[sy as usize] {
                     continue;
                 }
                 let r0 = sy as usize * w;
@@ -357,8 +373,8 @@ fn denoise_vis(pl: &Planes, w: usize, h: usize, passes: u32) -> (Buf<f32>, Buf<f
                     let (cnx, cny, cnz) = (&cnx[xa..xb], &cny[xa..xb], &cnz[xa..xb]);
                     let (a0, a1, ws) = (&mut acc0[xa..xb], &mut acc1[xa..xb], &mut wsum[xa..xb]);
                     for x in 0..n {
-                        // Different objects only blend at the floor (id MAX).
-                        let same = tid[x] == cid[x] || tid[x] == u32::MAX || cid[x] == u32::MAX;
+                        // Different objects only blend at the floor (id MAX). Branch-free.
+                        let same = (tid[x] == cid[x]) | (tid[x] == u32::MAX) | (cid[x] == u32::MAX);
                         let dz = (td[x] - cd[x]).abs() * ct[x];
                         let mut nd = (cnx[x] * tnx[x] + cny[x] * tny[x] + cnz[x] * tnz[x]).max(0.0);
                         nd *= nd;
@@ -374,19 +390,20 @@ fn denoise_vis(pl: &Planes, w: usize, h: usize, passes: u32) -> (Buf<f32>, Buf<f
             }
             for x in 0..w {
                 let i = c0 + x;
-                row[x] = if clit[x] > 0.0 && wsum[x] > 1e-6 { [acc0[x] / wsum[x], acc1[x] / wsum[x]] } else { [sa[i], sv[i]] };
+                let keep = !(clit[x] > 0.0 && wsum[x] > 1e-6);
+                row[x] = if keep { sa[i] } else { acc0[x] / wsum[x] };
+                vrow[x] = if keep { sv[i] } else { acc1[x] / wsum[x] };
             }
         });
-        for (i, v) in out.iter().enumerate() {
-            ao[i] = v[0];
-            vk[i] = v[1];
-        }
+        std::mem::swap(&mut ao, &mut ao2);
+        std::mem::swap(&mut vk, &mut vk2);
     }
     (ao, vk)
 }
 
 /// Vogel (golden-angle) disc: `n` points with radius ≤ 1.
 fn vogel(n: usize) -> Vec<(f32, f32)> {
+    // (Points keep their original order and values.)
     (0..n)
         .map(|i| {
             let r = ((i as f32 + 0.5) / n as f32).sqrt();
@@ -409,6 +426,13 @@ fn coc_of(p: &Post, s: f32, depth: f32) -> f32 {
 /// 2×2 prefilter also turns sparse highlights into smooth discs) and blended
 /// over the sharp image by how defocused each pixel is.
 fn depth_of_field(hdr: &mut Img, depth: &[f32], w: usize, h: usize, p: &Post, s: f32) {
+    let prof = std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some();
+    let clock = std::time::Instant::now();
+    let lap = |n: &str| {
+        if prof {
+            eprintln!("    dof {n}: {:.1}", clock.elapsed().as_secs_f64() * 1e3);
+        }
+    };
     let (hw, hh) = (w.div_ceil(2), h.div_ceil(2));
     let mut hd: Buf<f32> = Buf::uninit(hw * hh);
     let hc: Img = {
@@ -433,6 +457,7 @@ fn depth_of_field(hdr: &mut Img, depth: &[f32], w: usize, h: usize, p: &Post, s:
             }
         })
     };
+    lap("prefilter");
     // CoC in half-res pixels.
     let coc: Buf<f32> = par::map(hw * hh, |i| coc_of(p, s, hd[i]) * 0.5);
     // Max CoC per 8×8 tile, dilated by two tiles, bounds the gather radius.
@@ -463,18 +488,29 @@ fn depth_of_field(hdr: &mut Img, depth: &[f32], w: usize, h: usize, p: &Post, s:
             dil[ty * tw + tx] = if g { m } else { 0.0 };
         }
     }
-    let sets: Vec<Vec<(f32, f32)>> = [24usize, 48, 96, 160].iter().map(|&n| vogel(n)).collect();
+    lap("tiles");
+    // Vogel sets with each point's radius (rotation keeps it).
+    let sets: Vec<Vec<(f32, f32, f32)>> = [24usize, 48, 96, 160].iter().map(|&n| vogel(n).into_iter().map(|(x, y)| (x, y, (x * x + y * y).sqrt())).collect()).collect();
+    // Everything a gather tap reads, packed in one 32-byte record: colour,
+    // depth, CoC, its blur alpha smoothstep(0.4, 1.2, coc) and 1 / max(coc², 1).
+    // (For a tap behind the centre, ct = min(coc, cc), and both derived
+    // values are monotonic in ct, so they are min/max of the precomputed ones.)
+    let taps: Buf<[f32; 8]> = par::map(hw * hh, |i| {
+        let c = hc[i];
+        let cc = coc[i];
+        [c[0], c[1], c[2], hd[i], cc, smoothstep(0.4, 1.2, cc), 1.0 / (cc * cc).max(1.0), 0.0]
+    });
     // Half-res result: colour plus how much of it is blur (alpha).
     let out4: Buf<[f32; 4]> = par::image(hw, hh, |y, row: &mut [[f32; 4]]| {
         for x in 0..hw {
             let i0 = y * hw + x;
             let rmax = dil[(y / 8) * tw + x / 8];
-            let c0 = hc[i0];
+            let c0 = taps[i0];
             if rmax < 0.5 {
                 row[x] = [c0[0], c0[1], c0[2], 0.0];
                 continue;
             }
-            let (dc, cc) = (hd[i0], coc[i0]);
+            let (dc, cc, sc, ic) = (c0[3], c0[4], c0[5], c0[6]);
             let set = &sets[if rmax < 2.5 {
                 0
             } else if rmax < 5.0 {
@@ -486,34 +522,37 @@ fn depth_of_field(hdr: &mut Img, depth: &[f32], w: usize, h: usize, p: &Post, s:
             }];
             let ang = u01(hash2(x as u32, y as u32 ^ 0xdead)) * std::f32::consts::TAU;
             let (ca, sa) = (ang.cos(), ang.sin());
-            let wt0 = 1.0 / (cc * cc).max(1.0);
-            let mut acc = [c0[0] * wt0, c0[1] * wt0, c0[2] * wt0, smoothstep(0.4, 1.2, cc) * wt0];
+            let wt0 = ic;
+            let mut acc = [c0[0] * wt0, c0[1] * wt0, c0[2] * wt0, sc * wt0];
             let mut wsum = wt0;
             let (xm, ym) = (hw as f32 - 1.0, hh as f32 - 1.0);
-            for &(dx, dy) in set {
+            for &(dx, dy, r) in set {
                 let (fx, fy) = ((dx * ca - dy * sa) * rmax, (dx * sa + dy * ca) * rmax);
                 // Round to nearest, clamped (non-negative after the clamp, so +0.5 and truncate).
                 let sx = (x as f32 + fx + 0.5).clamp(0.0, xm + 0.5) as usize;
                 let sy = (y as f32 + fy + 0.5).clamp(0.0, ym + 0.5) as usize;
-                let i = sy * hw + sx;
-                let dist = (fx * fx + fy * fy).sqrt();
-                // A sample behind the centre can't blur over it more than the centre is blurred.
-                let ct = if hd[i] > dc { coc[i].min(cc) } else { coc[i] };
+                // SAFETY: sx < hw and sy < hh after the clamps.
+                let t = unsafe { taps.get_unchecked(sy * hw + sx) };
+                let dist = r * rmax;
+                // A sample behind the centre can't blur over it more than the
+                // centre is blurred. Branch-free: a tap that doesn't cover the
+                // centre adds exactly zero.
+                let behind = t[3] > dc;
+                let ct = if behind { t[4].min(cc) } else { t[4] };
                 let cover = ((ct - dist) * 0.5 + 0.5).clamp(0.0, 1.0);
-                if cover <= 0.0 {
-                    continue;
-                }
-                let wt = cover / (ct * ct).max(1.0);
-                let t = hc[i];
+                let st = if behind { t[5].min(sc) } else { t[5] };
+                let it = if behind { t[6].max(ic) } else { t[6] };
+                let wt = cover * it;
                 acc[0] += t[0] * wt;
                 acc[1] += t[1] * wt;
                 acc[2] += t[2] * wt;
-                acc[3] += smoothstep(0.4, 1.2, ct) * wt;
+                acc[3] += st * wt;
                 wsum += wt;
             }
             row[x] = acc.map(|v| v / wsum);
         }
     });
+    lap("gather");
     // A half-res tent smooths the gather's grain before upsampling; in-focus
     // half-res pixels stay exact.
     let o4: Buf<[f32; 4]> = par::image(hw, hh, |y, row: &mut [[f32; 4]]| {
@@ -538,6 +577,7 @@ fn depth_of_field(hdr: &mut Img, depth: &[f32], w: usize, h: usize, p: &Post, s:
             row[x] = std::array::from_fn(|k| own[k] * (1.0 - a) + acc[k] * a);
         }
     });
+    lap("tent");
     // Upsample and blend.
     par::rows(hdr, w, |y, row| {
         let fy = ((y as f32 + 0.5) * 0.5 - 0.5).clamp(0.0, hh as f32 - 1.0);
@@ -590,33 +630,39 @@ fn motion_blur(hdr: &mut Img, vel: &[[f32; 2]], w: usize, h: usize, shutter: f32
     });
 }
 
-/// Bloom: a pyramid of blurred levels, mostly from highlights.
+/// Bloom: a pyramid of blurred levels, mostly from highlights, summed back
+/// up level by level (each level adds its weight and is upsampled 2× into
+/// the next finer one), then upsampled once onto the image.
 fn bloom(hdr: &mut Img, w: usize, h: usize, strength: f32) {
-    let mut levels: Vec<(Img, usize, usize)> = Vec::new();
     // Soft threshold: only what's above ~0.8 contributes strongly.
-    let thr = |c: [f32; 3]| {
-        let l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-        let k = ((l - 0.6) / (l + 1e-4)).clamp(0.0, 1.0) * 0.85 + 0.15;
-        c.map(|v| v * k)
+    let thr: Img = {
+        let src = &*hdr;
+        par::image(w, h, |y, row: &mut [[f32; 3]]| {
+            for (x, o) in row.iter_mut().enumerate() {
+                let c = src[y * w + x];
+                let l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+                let k = ((l - 0.6) / (l + 1e-4)).clamp(0.0, 1.0) * 0.85 + 0.15;
+                *o = c.map(|v| v * k);
+            }
+        })
     };
+    let mut levels: Vec<(Img, usize, usize)> = Vec::new();
     let (mut cw, mut ch) = (w, h);
-    for li in 0..7 {
+    for _ in 0..7 {
         if cw < 8 || ch < 8 {
             break;
         }
         let (nw, nh) = (cw / 2, ch / 2);
-        let prev = levels.last().map(|l| &l.0[..]);
-        let src: &[[f32; 3]] = prev.unwrap_or(&hdr[..]);
-        let first = li == 0;
+        let src: &[[f32; 3]] = levels.last().map(|l| &l.0[..]).unwrap_or(&thr[..]);
         let next: Img = par::image(nw, nh, |y, row: &mut [[f32; 3]]| {
+            let ys = [-1i32, 0, 1, 2].map(|dy| (2 * y as i32 + dy).clamp(0, ch as i32 - 1) as usize * cw);
             for x in 0..nw {
                 // 13-tap-ish: 4×4 tent over the 2×2 block and its ring.
+                let xs = [-1i32, 0, 1, 2].map(|dx| (2 * x as i32 + dx).clamp(0, cw as i32 - 1) as usize);
                 let mut acc = [0.0f32; 3];
-                for (dy, wy) in [(-1i32, 1.0f32), (0, 3.0), (1, 3.0), (2, 1.0)] {
-                    let sy = (2 * y as i32 + dy).clamp(0, ch as i32 - 1) as usize;
-                    for (dx, wx) in [(-1i32, 1.0f32), (0, 3.0), (1, 3.0), (2, 1.0)] {
-                        let sx = (2 * x as i32 + dx).clamp(0, cw as i32 - 1) as usize;
-                        let c = if first { thr(src[sy * cw + sx]) } else { src[sy * cw + sx] };
+                for (j, wy) in [1.0f32, 3.0, 3.0, 1.0].iter().enumerate() {
+                    for (i, wx) in [1.0f32, 3.0, 3.0, 1.0].iter().enumerate() {
+                        let c = src[ys[j] + xs[i]];
                         let wt = wx * wy;
                         for k in 0..3 {
                             acc[k] += c[k] * wt;
@@ -630,20 +676,40 @@ fn bloom(hdr: &mut Img, w: usize, h: usize, strength: f32) {
         cw = nw;
         ch = nh;
     }
-    // Sum levels back up (bilinear upsampling), wider levels weighted more gently.
+    drop(thr);
+    if levels.is_empty() {
+        return;
+    }
+    // Wider levels weighted more gently.
     let weights = [0.2, 0.22, 0.2, 0.16, 0.12, 0.06, 0.04];
     let total: f32 = weights.iter().take(levels.len()).sum();
+    // Sum coarse to fine: acc_l = w_l · L_l + up2(acc_{l+1}).
+    let mut acc: Option<(Img, usize, usize)> = None;
+    for li in (0..levels.len()).rev() {
+        let (img, lw, lh) = (&levels[li].0, levels[li].1, levels[li].2);
+        let wl = weights[li];
+        let up = acc.as_ref();
+        let next: Img = par::image(lw, lh, |y, row: &mut [[f32; 3]]| {
+            for x in 0..lw {
+                let c = img[y * lw + x];
+                let mut v = [c[0] * wl, c[1] * wl, c[2] * wl];
+                if let Some((u, uw, uh)) = up {
+                    let f = fetch(u, *uw, *uh, (x as f32 + 0.5) / 2.0 - 0.5, (y as f32 + 0.5) / 2.0 - 0.5);
+                    for k in 0..3 {
+                        v[k] += f[k];
+                    }
+                }
+                row[x] = v;
+            }
+        });
+        acc = Some((next, lw, lh));
+    }
+    let (b0, bw, bh) = acc.unwrap();
     let k = strength * 1.6 / total;
     par::rows(hdr, w, |y, row| {
+        let fy = (y as f32 + 0.5) / 2.0 - 0.5;
         for x in 0..w {
-            let mut b = [0.0f32; 3];
-            for (li, (img, lw, lh)) in levels.iter().enumerate() {
-                let f = (1 << (li + 1)) as f32;
-                let c = fetch(img, *lw, *lh, (x as f32 + 0.5) / f - 0.5, (y as f32 + 0.5) / f - 0.5);
-                for kk in 0..3 {
-                    b[kk] += c[kk] * weights[li];
-                }
-            }
+            let b = fetch(&b0, bw, bh, (x as f32 + 0.5) / 2.0 - 0.5, fy);
             for kk in 0..3 {
                 row[x][kk] = row[x][kk] * (1.0 - strength) + b[kk] * k;
             }

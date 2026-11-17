@@ -11,22 +11,42 @@ pub fn parallel() -> bool {
     rayon::current_thread_index().is_none()
 }
 
-/// `f(y, row)` for every `w`-wide row of `buf`.
-pub fn rows<T: Send>(buf: &mut [T], w: usize, f: impl Fn(usize, &mut [T]) + Sync + Send) {
+/// `f(y, row)` for every `w`-wide row of `buf`. On CPUs with AVX2 the row
+/// function is compiled for AVX2 too (same IEEE results: no fused
+/// multiply-adds are formed), so its loops vectorise 8 wide.
+pub fn rows<T: Send, F: Fn(usize, &mut [T]) + Sync + Send>(buf: &mut [T], w: usize, f: F) {
     if w == 0 {
         return;
     }
+    let avx = super::wide::avx2();
     if parallel() {
         // A few rows per task: enough to amortise scheduling, small enough to balance.
         let per = (8192 / w).clamp(1, 16);
         buf.par_chunks_mut(w * per).enumerate().for_each(|(k, chunk)| {
             for (j, row) in chunk.chunks_mut(w).enumerate() {
-                f(k * per + j, row);
+                call(&f, k * per + j, row, avx);
             }
         });
     } else {
-        buf.chunks_mut(w).enumerate().for_each(|(y, r)| f(y, r));
+        buf.chunks_mut(w).enumerate().for_each(|(y, r)| call(&f, y, r, avx));
     }
+}
+
+#[inline(always)]
+fn call<T, F: Fn(usize, &mut [T])>(f: &F, y: usize, row: &mut [T], avx: bool) {
+    #[cfg(target_arch = "x86_64")]
+    if avx {
+        // SAFETY: `avx` says the CPU has AVX2 and FMA.
+        return unsafe { call_avx2(f, y, row) };
+    }
+    let _ = avx;
+    f(y, row)
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2,fma")]
+unsafe fn call_avx2<T, F: Fn(usize, &mut [T])>(f: &F, y: usize, row: &mut [T]) {
+    f(y, row)
 }
 
 /// A new (pooled) `w × h` buffer with every row produced by `f(y, row)`;

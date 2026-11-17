@@ -378,6 +378,32 @@ pub static TIMES: [std::sync::atomic::AtomicU64; 3] = [const { std::sync::atomic
 pub static PROFILE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 const EPS: f32 = 1e-4;
 
+/// Secondary rays whose whole-path weight (the luminance factor their
+/// radiance is scaled by on its way to the pixel) is below this take the
+/// pre-filtered environment instead of a traced ray: the error is bounded by
+/// the weight times the radiance difference, under one 8-bit level here.
+const W_MIN: f32 = 0.003;
+
+thread_local!(static PATH_W: std::cell::Cell<f32> = const { std::cell::Cell::new(1.0) });
+
+/// The current path weight (see [`W_MIN`]).
+#[inline]
+fn path_w() -> f32 {
+    PATH_W.with(|c| c.get())
+}
+
+/// Run `f` with the path weight multiplied by `k`.
+#[inline]
+fn weighted<R>(k: f32, f: impl FnOnce() -> R) -> R {
+    PATH_W.with(|c| {
+        let old = c.get();
+        c.set(old * k);
+        let r = f();
+        c.set(old);
+        r
+    })
+}
+
 /// Diffuse lighting split for denoising: albedo, unoccluded ambient,
 /// unshadowed key, and the AO / key visibility to apply to them.
 #[derive(Clone, Copy, Default)]
@@ -646,6 +672,9 @@ impl Scene {
 
     /// Radiance arriving along a secondary ray (diffuse resolved inline).
     fn radiance(&self, o: V3, d: V3, depth: u32, glass: u32, q: &Quality, rough: f32, rot: (f32, f32)) -> V3 {
+        if !q.full && path_w() < W_MIN {
+            return self.sky(d, rough);
+        }
         count(3);
         match self.trace(o, d, 1e6) {
             Some(s) => {
@@ -697,12 +726,12 @@ impl Scene {
             if skip_refl {
                 // Traced by the neighbours (checkerboard): post fills it in.
                 dist = 30.0;
-            } else if depth < q.max_depth && k > 0.025 {
+            } else if depth < q.max_depth && k > 0.025 && (q.full || path_w() * k >= W_MIN) {
                 count(4);
                 match self.trace(madd(p, up, 1e-3), r, 1e6) {
                     Some(h) if h.obj != FLOOR => {
                         dist = h.t;
-                        let (c, dd) = self.shade_obj(&h, r, depth + 1, 0, q, rot, true);
+                        let (c, dd) = weighted(k, || self.shade_obj(&h, r, depth + 1, 0, q, rot, true));
                         refl = self.hazed(add(c, dd.light()), h.t);
                     }
                     _ => {
@@ -781,13 +810,13 @@ impl Scene {
             let fr = fresnel_dielectric(nv.min(1.0), if ob.thin { 1.0 / m.ior } else { eta });
             let rough = m.roughness.clamp(0.0, 1.0);
             let r = reflect(d, n);
-            let refl_l = if depth < q.max_depth.min(2) && entering { self.radiance(madd(s.p, ng, 1e-4), r, depth + 1, glass + 1, q, rough, rot) } else { self.sky(r, rough.max(0.05)) };
+            let refl_l = if depth < q.max_depth.min(2) && entering { weighted(fr * keep, || self.radiance(madd(s.p, ng, 1e-4), r, depth + 1, glass + 1, q, rough, rot)) } else { self.sky(r, rough.max(0.05)) };
             let mut c = scale(refl_l, fr);
             if glass < q.max_glass {
                 let dir = if ob.thin { Some(d) } else { refract(d, n, eta) };
                 match dir {
                     Some(t) => {
-                        let tl = self.radiance(madd(s.p, ng, -1e-4), t, depth, glass + 1, q, rough, rot);
+                        let tl = weighted((1.0 - fr) * m.transmission.clamp(0.0, 1.0) * keep, || self.radiance(madd(s.p, ng, -1e-4), t, depth, glass + 1, q, rough, rot));
                         c = madd(c, tl, (1.0 - fr) * m.transmission.clamp(0.0, 1.0));
                     }
                     None => c = madd(c, refl_l, 1.0 - fr),
@@ -825,7 +854,7 @@ impl Scene {
         }
         let rough_mix = smoothstep(0.18, 0.5, rough);
         let env_raw = self.sky(r, rough);
-        let traced = if depth < q.max_depth && rough_mix < 1.0 { self.radiance(madd(s.p, ng, 1e-4), r, depth + 1, glass, q, rough, rot) } else { v3(0.0, 0.0, 0.0) };
+        let traced = if depth < q.max_depth && rough_mix < 1.0 { weighted(luma(spec_w) * (1.0 - rough_mix) * keep, || self.radiance(madd(s.p, ng, 1e-4), r, depth + 1, glass, q, rough, rot)) } else { v3(0.0, 0.0, 0.0) };
         let (traced, env_spec) = if inline_vis {
             (lerp3(traced, scale(env_raw, ao.powf(0.5 + rough)), rough_mix), v3(0.0, 0.0, 0.0))
         } else {
@@ -927,7 +956,7 @@ impl Scene {
                         a = t[3];
                     }
                     let r = reflect(d, n);
-                    let rl = if entering && layer < 2 && fr * (1.0 - a) * luma(thr) > 0.004 { self.radiance(madd(s.p, ngf, 1e-4), r, 1, layer + 1, q, m.roughness, rot) } else { self.sky(r, m.roughness.max(0.05)) };
+                    let rl = if entering && layer < 2 && fr * (1.0 - a) * luma(thr) > 0.004 { weighted(fr * (1.0 - a) * luma(thr) * haze_f, || self.radiance(madd(s.p, ngf, 1e-4), r, 1, layer + 1, q, m.roughness, rot)) } else { self.sky(r, m.roughness.max(0.05)) };
                     col = add(col, scale(mul(rl, thr), fr * (1.0 - a) * haze_f));
                     // Partly transmissive glass: the rest is a lit surface of its base colour.
                     let opaque = (1.0 - m.transmission).clamp(0.0, 1.0);
@@ -955,7 +984,7 @@ impl Scene {
             // An opaque (or thick glass) surface: the primary hit proper.
             let haze_add = scale(self.haze.1, 1.0 - haze_f);
             if s.obj == FLOOR {
-                let (mut dif, refl, fade, rdist) = self.shade_floor(&s, d, 0, q, rot, false, skip_refl);
+                let (mut dif, refl, fade, rdist) = weighted(luma(thr) * haze_f, || self.shade_floor(&s, d, 0, q, rot, false, skip_refl));
                 let bd = self.backdrop(d);
                 let keepf = (1.0 - fade) * haze_f;
                 dif.alb = mul(dif.alb, scale(thr, keepf));
@@ -970,7 +999,7 @@ impl Scene {
                 let (refl, col) = if direct { (mul(refl, thr), col) } else { (none, add(col, mul(scale(refl, keepf), thr))) };
                 return Sample { col, dif, refl, floor: direct, rad, rf: keepf, rw: if skip_refl { 0.0 } else { 1.0 }, depth: fd, vel: fvel, nrm: fnrm, id: fid };
             }
-            let (c, mut dif) = self.shade_obj(&s, d, 0, layer, q, rot, false);
+            let (c, mut dif) = weighted(luma(thr) * haze_f, || self.shade_obj(&s, d, 0, layer, q, rot, false));
             if luma(dif.alb) > 0.0 || luma(dif.spec) > 0.0 {
                 let ng = if dot(s.ng, d) < 0.0 { s.ng } else { scale(s.ng, -1.0) };
                 let nk = if luma(dif.alb) > 0.0 { q.shadow_rays } else { 0 };
@@ -1009,8 +1038,14 @@ impl Scene {
             .iter()
             .map(|s| {
                 // Perceptual (gamma) tone-mapped luminance, so dark detail
-                // such as floor reflections also triggers refinement.
-                let l = luma(s.total()).max(0.0);
+                // such as floor reflections also triggers refinement. Diffuse
+                // light is taken unshadowed: AO and key visibility come from
+                // one noisy ray each and are denoised in post, so their noise
+                // must not trigger supersampling (it covered whole matte
+                // surfaces); geometric and shading edges still do.
+                let d = &s.dif;
+                let lit = add(mul(d.alb, add(d.amb, d.key)), d.spec);
+                let l = luma(add(add(s.col, s.refl), lit)).max(0.0);
                 (l / (1.0 + l)).powf(1.0 / 2.2)
             })
             .collect();
