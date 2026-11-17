@@ -25,3 +25,5 @@ Every frame can be striking as a still, and every second worth hearing, and "inc
 - Constant tempo, one easing everywhere, fade-and-rise on every element, and wall-to-wall stock beds. Without contrast, the attention fades.
 
 **Check before shipping:** pause on 3 random frames at 100% and look at the `critique --pack` strip; listen once muted and once audio-only. Would a senior motion designer stop scrolling for it? If you can name the trend it resembles, consider another direction. `critique` measures the checkable parts and gives advice, not verdicts.
+
+**Graphic design (2D, print, editorial, identity):** craft notes with numbers and eight style recipes in `docs/video/craft/graphic-design.md`; the tools (grid cells, patterns and custom tiles, duotone, halftone, riso inks, cutouts, op-art fields) in `anikit-video docs graphic`. Print-derived looks come across as crafted when the physics is right: real overprint (multiply), 2–3 inks, a frame-fixed screen, misregistration of a few px, and type that stays crisp.
