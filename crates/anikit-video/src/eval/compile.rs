@@ -2533,6 +2533,7 @@ impl C<'_> {
             filter,
             supersample: l.supersample.unwrap_or(false),
             alpha: l.alpha.unwrap_or(false),
+            label: super::shader::label(path, l.shader.as_deref().or(l.src.as_deref())),
         };
         Some((Kind::Shader(Box::new(sc)), size))
     }
@@ -2566,6 +2567,7 @@ impl C<'_> {
             filter: false,
             supersample: false,
             alpha: false,
+            label: super::shader::label(path, Some(src)),
         })))
     }
 

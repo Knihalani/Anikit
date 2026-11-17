@@ -470,6 +470,15 @@ pub fn eval_frame(ev: &Evaluator, i: u32, scale: f32, out: &mut DisplayList) {
 
 /// Render one frame to straight-alpha RGBA8 (for stills).
 pub fn render_rgba(ev: &Evaluator, t: f32, scale: f32) -> (u32, u32, Vec<u8>) {
+    // Shaders render at the output size (reset when this returns).
+    struct Reset;
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            crate::eval::set_preview_scale(1.0);
+        }
+    }
+    let _reset = Reset;
+    crate::eval::set_preview_scale(scale);
     let mut dl = ev.eval(t);
     scale_list(&mut dl, scale);
     let post = ev.post_at(t).cloned();

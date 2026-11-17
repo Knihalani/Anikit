@@ -152,6 +152,8 @@ Compiling is a one-off. Kernels are cached process-wide by source and uniform se
 
 End to end through the video pipeline (evaluate, render, composite text, H.264 encode): the 18 s [`shaders.json`](examples/shaders.json) showcase, with every built-in and seven shader transitions, is 537 frames in 215 s (400 ms per frame). `{"shader": "sdf-scene"}` alone is 90 frames in 32.2 s.
 
+**Know the cost before you render.** `anikit-video still spec.json` prints each shader layer's measured ms/frame, scaled to full size, and flags anything over 200 ms (`--json` adds a `"shaders"` list). `still --scale 0.5` renders shaders at half size too, about 4× cheaper, so quick looks stay quick. `still --watch` keeps compiled kernels between edits: only a changed shader recompiles.
+
 What costs time is pixels × work per pixel:
 
 - **Raymarch steps and noise octaves** dominate. `aurora` evaluates around 100 noise lookups per pixel; `flow-ink` got from 470 to 160 ms by taking its curl from analytic noise gradients instead of finite differences. Halving octaves or steps halves the time.

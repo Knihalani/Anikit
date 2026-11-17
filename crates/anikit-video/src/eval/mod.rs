@@ -17,6 +17,7 @@ pub mod theme;
 use crate::dl::{self, Affine, Blend, DisplayList, Filter, Glyph, ImageId, Op, Paint, Path, Rgba};
 use crate::text::{kinetic::KineticPlan, TextLayout, TextSpec, UnitKind};
 pub use assets::SharedAssets;
+pub use shader::{set_preview_scale, ShaderStat};
 use crate::spec::Diagnostic;
 use anikit_core::easing::Easing;
 use expr::{Expr, Vars};
