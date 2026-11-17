@@ -80,14 +80,17 @@ fn behind(buf: &mut [u8], s: &mut FilterScratch, w: usize, h: usize, dx: i32, dy
         let arow = &s.a[sy as usize * w..(sy as usize + 1) * w];
         let x0 = dx.max(0) as usize;
         let x1 = (w as i32 + dx.min(0)).max(0) as usize;
-        for x in x0.min(x1)..x1 {
-            let sa = arow[(x as i32 - dx) as usize] as u32;
-            let sa = ((sa * g) >> 8).min(255);
-            let p = &mut row[x * 4..x * 4 + 4];
+        if x0 >= x1 {
+            continue;
+        }
+        let (sx0, n) = ((x0 as i32 - dx) as usize, x1 - x0);
+        let d255 = |v: u32| (v + 128 + ((v + 128) >> 8)) >> 8;
+        for (p, &a) in row[x0 * 4..x1 * 4].chunks_exact_mut(4).zip(&arow[sx0..sx0 + n]) {
+            let sa = ((a as u32 * g) >> 8).min(255);
             let inv = 255 - p[3] as u32;
             for c in 0..4 {
-                let sh = (col[c] * sa + 127) / 255;
-                p[c] = (p[c] as u32 + (sh * inv + 127) / 255).min(255) as u8;
+                let sh = d255(col[c] * sa);
+                p[c] = (p[c] as u32 + d255(sh * inv)).min(255) as u8;
             }
         }
     }
@@ -168,6 +171,18 @@ mod perf {
         let (w, h) = (2042usize, 1202usize);
         let mut buf = vec![100u8; w * h * 4];
         let mut s = FilterScratch::default();
+        let (gw, gh) = (900usize, 300usize);
+        let mut g = vec![0u8; gw * gh * 4];
+        for (i, p) in g.chunks_mut(4).enumerate() {
+            if (i % gw) % 37 < 20 && (i / gw) % 50 < 30 {
+                p.copy_from_slice(&[255, 255, 255, 255]);
+            }
+        }
+        for _ in 0..3 {
+            let t = std::time::Instant::now();
+            apply(&Filter::Glow { radius: 32.4, intensity: 0.6, color: Rgba([0.4, 0.3, 1.0, 1.0]) }, &mut g, gw, gh, &mut s);
+            eprintln!("glow 900x300: {:?}", t.elapsed());
+        }
         for sigma in [2.0f32, 5.0, 8.0, 20.0, 2.0, 5.0, 8.0, 20.0] {
             let t = std::time::Instant::now();
             apply(&Filter::Blur(sigma), &mut buf, w, h, &mut s);

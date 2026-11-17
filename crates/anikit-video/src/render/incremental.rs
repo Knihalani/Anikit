@@ -298,6 +298,34 @@ fn hash_op_with(op: &Op, image_gen: &dyn Fn(crate::dl::ImageId) -> u64) -> u64 {
     h.finish()
 }
 
+/// Automatic cache key for a filtered layer: its content, filters and
+/// frame-space transform. `None` when the layer draws images (their pixels can
+/// change under the same id).
+pub(crate) fn auto_layer_key(inner: &[Op], filters: &[Filter], frame_base: &kurbo::Affine) -> Option<u64> {
+    let mut h = Fx::default();
+    h.write_u64(0x6175_746f_6b65_7900); // "autokey"
+    for c in frame_base.as_coeffs() {
+        h.write_u64(c.to_bits());
+    }
+    for fl in filters {
+        hash_filter(&mut h, fl);
+    }
+    for op in inner {
+        let image = match op {
+            Op::Image { .. } => true,
+            Op::Fill { paint, .. } | Op::Stroke { paint, .. } | Op::RoundRect { paint, .. } | Op::Glyphs { paint, .. } => {
+                matches!(paint, Paint::Image { .. })
+            }
+            _ => false,
+        };
+        if image {
+            return None;
+        }
+        h.write_u64(hash_op(op));
+    }
+    Some(h.finish() | 1 << 63)
+}
+
 fn fingerprint(list: &DisplayList, out: &mut Vec<Print>, image_gen: &dyn Fn(crate::dl::ImageId) -> u64) {
     out.clear();
     let mut stack: Vec<[f32; 4]> = Vec::new();
