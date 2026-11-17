@@ -35,13 +35,12 @@ pub mod trace;
 use crate::components::style::fnv;
 use crate::components::{Component, Ctx, Error, Prepare};
 use crate::dl::Op;
-use crate::eval::Evaluator;
-use crate::pipeline::textures::CompTextures;
+use crate::components::Assets;
 use math::*;
 use serde_json::{Map, Value};
 use spec::{CamSpec, ObjDef};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex};
 use trace::{Floor, FloorVis, Inst, Material, Quality, Scene, Shape, Tex};
 
 const TOP_KEYS: &[&str] = &[
@@ -87,10 +86,9 @@ struct Prepared {
     quality: Quality,
     denoise: u32,
     key: u64,
-    /// Composition textures (shared by every frame and thread).
-    textures: OnceLock<CompTextures>,
-    /// Average colour per (composition, frame), for far panes.
-    averages: Mutex<HashMap<(usize, u32), [f32; 4]>>,
+    /// Average colour per (composition, frame), for far panes; frame
+    /// `u32::MAX` is the composition's fallback (its first frame).
+    averages: Mutex<HashMap<(String, u32), [f32; 4]>>,
 }
 
 #[derive(Clone)]
@@ -276,7 +274,6 @@ impl Prepare for Scene3d {
             quality,
             denoise,
             key,
-            textures: OnceLock::new(),
             averages: Mutex::new(HashMap::new()),
         });
         Ok(())
@@ -290,16 +287,20 @@ fn make_floor(f: &FloorParams, vis: Option<Arc<FloorVis>>) -> Floor {
 /// Every object's instances at time `t` (with transforms at `t - dt` for motion).
 fn instances(objs: &[ObjDef], t: f32, dt: f32) -> Vec<Inst> {
     let mut out = Vec::new();
-    for o in objs {
+    for (oi, o) in objs.iter().enumerate() {
         if t < o.start || t >= o.end {
             continue;
         }
         for lane in 0..o.lanes {
             for i in 0..o.count {
                 let xf = o.xf_at(t, i, lane);
+                // Scale ≈ 0 hides an instance: it costs nothing (no texture, not traced).
+                if xf.s <= 1e-4 * o.scale_mul.max(1e-6) {
+                    continue;
+                }
                 let prev = if dt > 0.0 { o.xf_at(t - dt, i, lane) } else { xf };
                 for &(shape, mat) in &o.parts {
-                    out.push(Inst { shape, xf, prev, mat, tex: None, thin: o.thin, shadow: o.shadow });
+                    out.push(Inst { shape, xf, prev, mat, tex: None, thin: o.thin, shadow: o.shadow, obj: oi as u32, i, lane });
                 }
             }
         }
@@ -313,7 +314,7 @@ impl Scene3d {
     }
 
     /// Render one frame at `w × h` (RGBA8). `root` resolves composition textures.
-    pub fn render(&self, t: f32, dt: f32, w: usize, h: usize, root: Option<&Evaluator>) -> Vec<u8> {
+    pub fn render(&self, t: f32, dt: f32, w: usize, h: usize, assets: Option<&dyn Assets>) -> Vec<u8> {
         let p = self.p();
         let prof = std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some();
         if prof {
@@ -336,7 +337,7 @@ impl Scene3d {
         let mut insts = instances(&p.objs, t, dt);
         // Textures need world boxes, so build the hierarchy first.
         scene.insts = std::mem::take(&mut insts);
-        let n_tex = self.assign_textures(&mut scene, &cam, t, w, h, root);
+        let n_tex = self.assign_textures(&mut scene, &cam, t, w, h, assets);
         scene.rebuild();
         let t_setup = clock.elapsed();
 
@@ -373,74 +374,71 @@ impl Scene3d {
     }
 
     /// Give each textured instance its composition frame at a level of detail
-    /// matching its size on screen (a flat average when tiny or off screen).
-    fn assign_textures(&self, scene: &mut Scene, cam: &trace::Camera, t: f32, w: usize, h: usize, root: Option<&Evaluator>) -> usize {
+    /// matching its size on screen. Tiny or off-screen instances (seen only in
+    /// reflections) take an average colour and never render a frame of their
+    /// own: the average of an already-rendered frame, or the composition's
+    /// fallback average (one tiny render per composition).
+    fn assign_textures(&self, scene: &mut Scene, cam: &trace::Camera, t: f32, w: usize, h: usize, assets: Option<&dyn Assets>) -> usize {
         let p = self.p();
-        let mut k = 0usize;
-        let mut n = 0usize;
+        let Some(assets) = assets else { return 0 };
         let (fwd, right, up) = cam.basis();
         let th = (cam.fov * 0.5).to_radians().tan();
         let aspect = w as f32 / h as f32;
         let focal_px = h as f32 * 0.5 / th;
-        for o in &p.objs {
-            if t < o.start || t >= o.end {
-                continue;
-            }
-            let np = o.parts.len();
-            let count = (o.lanes * o.count) as usize * np;
-            let comp = o.tex.as_ref().and_then(|ts| root.and_then(|r| r.composition(&ts.comp)).map(|c| (ts, c)));
-            let Some((ts, comp)) = comp else {
-                k += count;
-                continue;
-            };
-            let cache = p.textures.get_or_init(|| CompTextures::new(1 << 30));
-            let fps = comp.fps.max(1.0);
-            for lane in 0..o.lanes {
-                for i in 0..o.count {
-                    let (lo, hi) = scene.world_box(&scene.insts[k]);
-                    let s = scene.insts[k].xf.s;
-                    let ct = match &ts.frame {
-                        Some(fr) => {
-                            let vars = crate::eval::expr::Vars { t: t as f64, scene_t: lane as f64, gt: t as f64, i: i as f64, n: o.count as f64, ..Default::default() };
-                            (fr.at(&vars) + 0.25) / fps
-                        }
-                        None => crate::eval::CompTime { trim: ts.offset, speed: ts.speed, looped: ts.looped }.map(t, comp.duration),
-                    };
-                    let ct = if ts.looped && comp.duration > 0.0 { ct.rem_euclid(comp.duration) } else { ct.clamp(0.0, comp.duration.max(0.0)) };
-                    // On-screen size → LOD.
-                    let c = scale(add(lo, hi), 0.5);
-                    let rel = sub(c, cam.pos);
-                    let z = dot(rel, fwd);
-                    let r = len(sub(hi, lo)) * 0.5;
-                    let on_screen = z > -r && {
-                        let zz = z.max(1e-3);
-                        let sx = dot(rel, right) / zz / (th * aspect);
-                        let sy = dot(rel, up) / zz / th;
-                        let m = r / zz / th;
-                        sx.abs() < 1.0 + m * aspect.max(1.0) && sy.abs() < 1.0 + m
-                    };
-                    let px_w = if z > 1e-3 { o.extent * 2.0 * s * focal_px / z } else { 0.0 };
-                    let tex = if on_screen && px_w >= 6.0 {
-                        let lod = ((comp.width as f32 / px_w.max(1.0)).log2().floor().max(0.0) as u8).min(4);
-                        n += 1;
-                        Tex::Image(cache.get(comp, ct, lod))
-                    } else {
-                        // Tiny or off screen (only seen in reflections): average colour.
-                        let id = (Arc::as_ptr(comp) as usize, CompTextures::frame_index(comp, ct));
-                        let cached = p.averages.lock().unwrap().get(&id).copied();
-                        let avg = cached.unwrap_or_else(|| {
-                            let a = Tex::average(&cache.get(comp, ct, 4));
-                            p.averages.lock().unwrap().insert(id, a);
-                            a
-                        });
-                        Tex::Flat(avg)
-                    };
-                    for j in 0..np {
-                        scene.insts[k + j].tex = Some((tex.clone(), ts.face));
-                    }
-                    k += np;
+        let mut infos: HashMap<String, Option<crate::components::CompInfo>> = HashMap::new();
+        let mut n = 0usize;
+        for k in 0..scene.insts.len() {
+            let inst = &scene.insts[k];
+            let o = &p.objs[inst.obj as usize];
+            let Some(ts) = &o.tex else { continue };
+            let info = *infos.entry(ts.comp.clone()).or_insert_with(|| assets.composition_info(&ts.comp));
+            let Some(info) = info else { continue };
+            let fps = info.fps.max(1.0);
+            let dur = info.duration.max(0.0);
+            let ct = match &ts.frame {
+                Some(fr) => {
+                    let vars = crate::eval::expr::Vars { t: t as f64, scene_t: inst.lane as f64, gt: t as f64, i: inst.i as f64, n: o.count as f64, ..Default::default() };
+                    (fr.at(&vars) + 0.25) / fps
                 }
-            }
+                None => ts.offset + t * ts.speed,
+            };
+            let ct = if ts.looped && dur > 0.0 { ct.rem_euclid(dur) } else { ct.clamp(0.0, (dur - 1e-4).max(0.0)) };
+            let frame = ((ct * fps + 1e-3).floor().max(0.0)) as u32;
+            // On-screen size → LOD.
+            let (lo, hi) = scene.world_box(inst);
+            let c = scale(add(lo, hi), 0.5);
+            let rel = sub(c, cam.pos);
+            let z = dot(rel, fwd);
+            let r = len(sub(hi, lo)) * 0.5;
+            let on_screen = z > -r && {
+                let zz = z.max(1e-3);
+                let sx = dot(rel, right) / zz / (th * aspect);
+                let sy = dot(rel, up) / zz / th;
+                let m = r / zz / th;
+                sx.abs() < 1.0 + m * aspect.max(1.0) && sy.abs() < 1.0 + m
+            };
+            let px_w = if z > 1e-3 { o.extent * 2.0 * inst.xf.s * focal_px / z } else { 0.0 };
+            let tex = if on_screen && px_w >= 6.0 {
+                let lod = ((info.width as f32 / px_w.max(1.0)).log2().floor().max(0.0) as u8).min(5);
+                match assets.composition_frame(&ts.comp, ct, lod) {
+                    Some(pm) => {
+                        n += 1;
+                        let avg = Tex::average(&pm);
+                        p.averages.lock().unwrap().entry((ts.comp.clone(), frame)).or_insert(avg);
+                        Tex::Image(pm)
+                    }
+                    None => continue,
+                }
+            } else {
+                let known = { p.averages.lock().unwrap().get(&(ts.comp.clone(), frame)).copied() };
+                let avg = known.or_else(|| p.averages.lock().unwrap().get(&(ts.comp.clone(), u32::MAX)).copied()).unwrap_or_else(|| {
+                    let a = assets.composition_frame(&ts.comp, 0.0, 5).map(|pm| Tex::average(&pm)).unwrap_or([0.5, 0.5, 0.5, 1.0]);
+                    p.averages.lock().unwrap().insert((ts.comp.clone(), u32::MAX), a);
+                    a
+                });
+                Tex::Flat(avg)
+            };
+            scene.insts[k].tex = Some((tex, ts.face));
         }
         n
     }
@@ -454,8 +452,8 @@ impl Component for Scene3d {
         let frame = (t * fps).round();
         let t = frame / fps;
         let key = fnv(&[&p.key.to_le_bytes(), &frame.to_bits().to_le_bytes(), &fps.to_bits().to_le_bytes(), &w.to_le_bytes(), &h.to_le_bytes()]);
-        let root = ctx.root;
-        let image = ctx.assets.image(key, w, h, &mut || self.render(t, 1.0 / fps, w as usize, h as usize, root));
+        let assets = ctx.assets;
+        let image = ctx.assets.image(key, w, h, &mut || self.render(t, 1.0 / fps, w as usize, h as usize, Some(assets)));
         vec![Op::Image { image, dst: [0.0, 0.0, ctx.width, ctx.height], opacity: 1.0, transform: crate::dl::IDENTITY }]
     }
 }
