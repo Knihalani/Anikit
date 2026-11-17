@@ -319,12 +319,12 @@
         "component": "mesh-gradient",
         "props": {
           "colors": [
-            "{{brand.colors.primary}}",
-            "{{brand.colors.secondary}}",
-            "{{mix(brand.colors.background, brand.colors.primary, 0.35)}}"
+            "{{brand.theme == 'light' ? mix(brand.colors.background, brand.colors.primary, 0.22) : brand.colors.primary}}",
+            "{{brand.theme == 'light' ? mix(brand.colors.background, brand.colors.secondary, 0.18) : brand.colors.secondary}}",
+            "{{brand.theme == 'light' ? mix(brand.colors.background, brand.colors.text, 0.05) : mix(brand.colors.background, brand.colors.primary, 0.35)}}"
           ],
-          "base": "{{brand.colors.backgroundDeep}}",
-          "intensity": "{{(intensity ?? 0.38) * (brand.theme == 'light' ? 0.6 : 1)}}",
+          "base": "{{brand.theme == 'light' ? brand.colors.background : brand.colors.backgroundDeep}}",
+          "intensity": "{{(intensity ?? 0.38) * (brand.theme == 'light' ? 1.6 : 1)}}",
           "seed": "{{seed ?? 1}}",
           "speed": "{{(still ?? false) ? 0 : 0.3}}",
           "rate": 3

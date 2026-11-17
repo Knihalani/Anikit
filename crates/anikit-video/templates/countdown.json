@@ -377,7 +377,7 @@
                   "exit": "none",
                   "form": 1.0,
                   "size": 2.4,
-                  "glow": true,
+                  "glow": "{{brand.theme != 'light'}}",
                   "count": 14000,
                   "colors": [
                     "{{brand.colors.text}}",

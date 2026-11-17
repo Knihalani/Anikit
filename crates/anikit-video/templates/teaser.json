@@ -60,8 +60,7 @@
     },
     "captions": {
       "type": "any",
-      "description": "Optional burned-in captions. true: a caption line timed to each beat (the running phrase), for sound-off viewing. Or a list of {text, at, end} cues in seconds (e.g. for a voice-over), or {\"src\": \"subs.srt\"}.",
-      "example": true
+      "description": "Optional burned-in captions. true: a caption line timed to each beat (the running phrase), for sound-off viewing. Or a list of {text, at, end} cues in seconds (e.g. for a voice-over), or {\"src\": \"subs.srt\"}. Best with a voice-over; the beat words are already on screen."
     }
   },
   "spec": {

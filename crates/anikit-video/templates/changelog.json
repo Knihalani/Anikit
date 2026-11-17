@@ -75,7 +75,7 @@
         },
         {
           "type": "improved",
-          "text": "Stills render in 40 ms"
+          "text": "Faster still previews"
         },
         {
           "type": "fixed",
@@ -159,7 +159,7 @@
                 "component": "badge",
                 "props": {
                   "label": "{{version}}",
-                  "solid": true,
+                  "solid": false,
                   "size": "{{fmt.portrait ? fmt.u * 3.4 : fmt.u * 2.8}}",
                   "delay": 0.1
                 },

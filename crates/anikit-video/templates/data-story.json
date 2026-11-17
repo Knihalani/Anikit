@@ -81,20 +81,20 @@
       },
       "example": [
         {
-          "title": "Frames per second at 1080p",
+          "title": "Tickets resolved per week",
           "suffix": "",
           "bars": [
             {
-              "label": "Browser",
-              "value": 24
+              "label": "Q1",
+              "value": 420
             },
             {
-              "label": "Canvas",
-              "value": 61
+              "label": "Q2",
+              "value": 610
             },
             {
-              "label": "Anikit",
-              "value": 250
+              "label": "Q3",
+              "value": 980
             }
           ]
         }
@@ -123,9 +123,9 @@
         }
       },
       "example": {
-        "value": 10,
-        "suffix": "×",
-        "label": "faster than a headless browser"
+        "value": 48,
+        "suffix": "%",
+        "label": "fewer tickets reopened"
       }
     },
     "takeaway": {
@@ -133,13 +133,13 @@
       "required": true,
       "maxWords": 12,
       "description": "The one sentence to remember.",
-      "example": "No browser in the loop means minutes become seconds."
+      "example": "Faster answers mean fewer tickets come back."
     },
     "source": {
       "type": "string",
       "maxChars": 60,
       "description": "Data source, shown small on the last scene.",
-      "example": "Source: internal benchmarks, 4-core laptop"
+      "example": "Source: example data"
     },
     "music": {
       "type": "string",
