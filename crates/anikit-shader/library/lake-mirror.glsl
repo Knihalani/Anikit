@@ -5,11 +5,11 @@
 // camera; animate `horizon`/`focal` with the backdrop's scale.
 // Uniforms: horizon (in (2·fragCoord − res) / res.y units), focal, speed,
 // ripple, gain (reflected brightness).
-uniform float horizon; // = -0.35
-uniform float focal;   // = 1.6
-uniform float speed;   // = 1.0
-uniform float ripple;  // = 1.0
-uniform float gain;    // = 1.0
+uniform float horizon; // = -0.35  waterline, in uv −1 (bottom) … 1 (top)
+uniform float focal;   // = 1.6  perspective of the water plane
+uniform float speed;   // = 1.0  ripple speed
+uniform float ripple;  // = 1.0  ripple strength
+uniform float gain;    // = 1.0  reflection brightness
 
 uint hashu(uint x) { x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16; return x; }
 float hash2(vec2 p) { return float(hashu(uint(int(p.x)) * 1973u + hashu(uint(int(p.y)) + 9277u))) / 4294967295.0; }

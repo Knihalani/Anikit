@@ -23,10 +23,25 @@ pub enum Filter {
 
 /// Texels are stored as straight RGBA8 (the sources are 8-bit): a 1080p
 /// channel is 8 MB instead of 33, which matters for scattered reads.
+/// Float textures (multi-pass buffers) keep exact `f32` texels in `fpx`
+/// instead, unclamped, and are sampled through the call path.
+#[derive(Clone)]
 struct Level {
     w: usize,
     h: usize,
     px: Vec<[u8; 4]>,
+    fpx: Vec<[f32; 4]>,
+}
+
+impl Level {
+    #[inline]
+    fn get(&self, i: usize) -> [f32; 4] {
+        if self.fpx.is_empty() {
+            texel(self.px[i])
+        } else {
+            self.fpx[i]
+        }
+    }
 }
 
 const INV255: f32 = 1.0 / 255.0;
@@ -42,7 +57,8 @@ fn quantize(c: [f32; 4]) -> [u8; 4] {
 
 /// One bound channel.
 pub struct Texture {
-    levels: Vec<Level>,
+    /// Shared: [`Texture::view`] rebinds the same texels with other sampling options.
+    levels: std::sync::Arc<Vec<Level>>,
     pub wrap: Wrap,
     pub filter: Filter,
 }
@@ -62,7 +78,7 @@ impl Texture {
             }
         }
         px.resize(w * h, [0; 4]);
-        Texture { levels: vec![Level { w, h, px }], wrap: Wrap::Clamp, filter: Filter::Linear }
+        Texture { levels: std::sync::Arc::new(vec![Level { w, h, px, fpx: Vec::new() }]), wrap: Wrap::Clamp, filter: Filter::Linear }
     }
 
     /// From straight-alpha float texels (top row first; stored as 8-bit).
@@ -70,7 +86,23 @@ impl Texture {
         let (w, h) = (w.max(1) as usize, h.max(1) as usize);
         let mut px: Vec<[u8; 4]> = px.into_iter().map(quantize).collect();
         px.resize(w * h, [0; 4]);
-        Texture { levels: vec![Level { w, h, px }], wrap: Wrap::Clamp, filter: Filter::Linear }
+        Texture { levels: std::sync::Arc::new(vec![Level { w, h, px, fpx: Vec::new() }]), wrap: Wrap::Clamp, filter: Filter::Linear }
+    }
+
+    /// Exact float texels (top row first), unclamped: multi-pass buffers.
+    pub fn from_f32_exact(w: u32, h: u32, mut px: Vec<[f32; 4]>) -> Texture {
+        let (w, h) = (w.max(1) as usize, h.max(1) as usize);
+        px.resize(w * h, [0.0; 4]);
+        Texture { levels: std::sync::Arc::new(vec![Level { w, h, px: Vec::new(), fpx: px }]), wrap: Wrap::Clamp, filter: Filter::Linear }
+    }
+
+    /// The same texels with other wrap/filter settings (no copy).
+    pub fn view(&self, wrap: Wrap, filter: Filter) -> Texture {
+        Texture { levels: self.levels.clone(), wrap, filter }
+    }
+
+    pub fn is_float(&self) -> bool {
+        !self.levels[0].fpx.is_empty()
     }
 
     pub fn width(&self) -> u32 {
@@ -98,29 +130,36 @@ impl Texture {
     /// Build the mip chain (2×2 box filter), for `textureLod` and minified
     /// `texture` lookups.
     pub fn with_mipmaps(mut self) -> Self {
-        self.levels.truncate(1);
+        let levels = std::sync::Arc::make_mut(&mut self.levels);
+        levels.truncate(1);
         while {
-            let l = self.levels.last().unwrap();
+            let l = levels.last().unwrap();
             l.w > 1 || l.h > 1
         } {
-            let l = self.levels.last().unwrap();
+            let l = levels.last().unwrap();
             let (w, h) = ((l.w / 2).max(1), (l.h / 2).max(1));
-            let mut px = vec![[0u8; 4]; w * h];
+            let float = !l.fpx.is_empty();
+            let mut px = Vec::new();
+            let mut fpx = Vec::new();
             for y in 0..h {
                 for x in 0..w {
                     let mut s = [0.0f32; 4];
                     let (x0, y0) = ((x * 2).min(l.w - 1), (y * 2).min(l.h - 1));
                     let (x1, y1) = ((x * 2 + 1).min(l.w - 1), (y * 2 + 1).min(l.h - 1));
                     for (xx, yy) in [(x0, y0), (x1, y0), (x0, y1), (x1, y1)] {
-                        let p = l.px[yy * l.w + xx];
+                        let i = yy * l.w + xx;
                         for k in 0..4 {
-                            s[k] += p[k] as f32;
+                            s[k] += if float { l.fpx[i][k] } else { l.px[i][k] as f32 };
                         }
                     }
-                    px[y * w + x] = s.map(|v| (v * 0.25 + 0.5) as u8);
+                    if float {
+                        fpx.push(s.map(|v| v * 0.25));
+                    } else {
+                        px.push(s.map(|v| (v * 0.25 + 0.5) as u8));
+                    }
                 }
             }
-            self.levels.push(Level { w, h, px });
+            levels.push(Level { w, h, px, fpx });
         }
         self
     }
@@ -149,7 +188,7 @@ impl Texture {
         if self.filter == Filter::Nearest {
             let xi = self.wrap_i(x.floor() as i64, l.w);
             let yi = self.wrap_i(y.floor() as i64, l.h);
-            return texel(l.px[yi * l.w + xi]);
+            return l.get(yi * l.w + xi);
         }
         let (x, y) = (x - 0.5, y - 0.5);
         let (fx, fy) = (x.floor(), y.floor());
@@ -159,7 +198,7 @@ impl Texture {
         let xb = self.wrap_i(x0 + 1, l.w);
         let ya = self.wrap_i(y0, l.h) * l.w;
         let yb = self.wrap_i(y0 + 1, l.h) * l.w;
-        let (p00, p10, p01, p11) = (texel(l.px[ya + xa]), texel(l.px[ya + xb]), texel(l.px[yb + xa]), texel(l.px[yb + xb]));
+        let (p00, p10, p01, p11) = (l.get(ya + xa), l.get(ya + xb), l.get(yb + xa), l.get(yb + xb));
         let mut o = [0.0; 4];
         for k in 0..4 {
             let top = p00[k] + (p10[k] - p00[k]) * tx;
@@ -195,7 +234,7 @@ impl Texture {
         if x < 0 || y < 0 || x as usize >= l.w || y as usize >= l.h {
             return [0.0; 4];
         }
-        texel(l.px[(l.h - 1 - y as usize) * l.w + x as usize])
+        l.get((l.h - 1 - y as usize) * l.w + x as usize)
     }
 }
 
@@ -247,7 +286,7 @@ impl ChanInfo {
             hf: l.h as f32,
             repeat: (t.wrap == Wrap::Repeat) as i32,
             nearest: (t.filter == Filter::Nearest) as i32,
-            simple: (t.levels.len() == 1 && t.wrap != Wrap::Mirror) as i32,
+            simple: (t.levels.len() == 1 && t.wrap != Wrap::Mirror && !t.is_float()) as i32,
             _pad: 0,
         }
     }

@@ -1,8 +1,8 @@
 // Glitch / datamosh (filter): block displacement, smeared rows that hold
 // stale pixels, RGB channel split and scanlines, in bursts.
 // Uniforms: amount (0..1), rate (bursts per second).
-uniform float amount; // = 0.6
-uniform float rate;   // = 2.0
+uniform float amount; // = 0.6  0 off … 1 wrecked
+uniform float rate;   // = 2.0  bursts per second
 
 float h1(float n) { return fract(sin(n * 12.9898) * 43758.5453); }
 float h2(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }

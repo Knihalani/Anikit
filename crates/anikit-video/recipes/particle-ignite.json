@@ -16,12 +16,12 @@
           "t": 0,
           "pos": [
            0,
-           0.7,
-           3.6
+           0.9,
+           4.4
           ],
           "target": [
            0,
-           0.6,
+           0.85,
            0
           ],
           "focal": 40
@@ -30,12 +30,12 @@
           "t": 4,
           "pos": [
            0,
-           0.7,
-           3.0
+           0.9,
+           3.7
           ],
           "target": [
            0,
-           0.6,
+           0.85,
            0
           ],
           "focal": 42
@@ -45,10 +45,10 @@
        "objects": [
         {
          "type": "particles",
-         "count": 400000,
+         "count": 500000,
          "emit": {
           "text": "IGNITE",
-          "height": 0.9,
+          "height": 0.55,
           "pos": [
            0,
            0.6,
@@ -56,13 +56,18 @@
           ]
          },
          "flow": {
-          "strength": 0.9,
-          "scale": 0.7,
-          "evolve": 0.25
+          "strength": 0.35,
+          "scale": 0.6,
+          "evolve": 0.3,
+          "drift": [
+           0,
+           0.25,
+           0
+          ]
          },
-         "gravity": 0.2,
+         "gravity": 0.05,
          "drag": 0.4,
-         "life": 3,
+         "life": 2.5,
          "size": 0.0035,
          "color": [
           "#fff1c2",

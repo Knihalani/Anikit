@@ -299,7 +299,7 @@ pub fn master_with(l: &mut [f32], r: &mut [f32], rate: u32, p: &MasterParams) ->
     let fs = rate as f32;
     let n = l.len().min(r.len());
     let (l, r) = (&mut l[..n], &mut r[..n]);
-    let input = measure(l, r, fs);
+    let input = super::loudness::fast_measure(l, r, fs);
     let mut report = MasterReport {
         input,
         output: input,
@@ -353,7 +353,7 @@ pub fn master_with(l: &mut [f32], r: &mut [f32], rate: u32, p: &MasterParams) ->
         }
         let mut lim = Limiter::new(fs, &LimiterParams { ceiling: ceil, ..p.limiter.clone() });
         process_aligned(&mut lim, l, r);
-        let out = measure(l, r, fs);
+        let out = super::loudness::fast_measure(l, r, fs);
         let err = out.integrated - p.target as f64;
         let over = out.true_peak - p.ceiling as f64;
         let score = err.abs().max(tol) + over.max(0.0) * 10.0;

@@ -522,6 +522,22 @@ pub struct Layer {
     pub supersample: Option<bool>,
     /// Shader: use `fragColor.a` as alpha (default: opaque, like Shadertoy).
     pub alpha: Option<bool>,
+    /// Shader: Shadertoy-style buffer passes `"A"`…`"D"`, rendered in order before the image
+    /// pass at full float precision. A channel `"A"` reads buffer A: this frame's if A ran
+    /// earlier in the order, else the previous frame's (feedback, for simulations).
+    pub buffers: Option<BTreeMap<String, ShaderBuffer>>,
+}
+
+/// One buffer pass of a shader layer (`buffers.A`).
+#[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ShaderBuffer {
+    /// GLSL/WGSL source or a built-in name, as for a shader layer.
+    pub shader: Option<String>,
+    /// Load the source from a file.
+    pub src: Option<String>,
+    /// `iChannel0..3`: `"A"`…`"D"` (buffers), `"noise"`, or `"none"`; options as for layer channels.
+    pub channels: Option<Vec<serde_json::Value>>,
 }
 
 /// `style`: a theme text-style name (text layers) or a box style (box layers).

@@ -33,6 +33,12 @@ const GM_STANDINS: &[(&str, u8)] = &[
     ("church-bell", 14), ("handpan", 114), ("electric-guitar", 27), ("vibraphone", 11), ("vibes", 11),
 ];
 
+/// Names where the physical/modal model is preferred over the GM sample.
+const PREFER_MODEL: &[&str] = &[
+    "marimba", "vibraphone", "vibes", "xylophone", "glockenspiel", "celesta", "kalimba", "music-box", "tubular-bells", "church-bell",
+    "bell", "handpan", "steel-drum", "wood-block", "crystal", "koto", "banjo", "electric-guitar",
+];
+
 /// Drum kit names → GM kit programs (bank 128).
 const KITS: &[(&str, u8)] = &[
     ("standard", 0), ("room", 8), ("power", 16), ("rock", 16), ("electronic", 24), ("808", 25), ("tr808", 25),
@@ -46,7 +52,16 @@ fn resolve_one(name: &str, base: Option<&Path>) -> Result<Arc<dyn Instrument>, S
     if lower == "drums" || lower == "kit" {
         return Ok(bank::gm_drums(0));
     }
+    if let Some(p) = lower.strip_prefix("phys:") {
+        return crate::physical::preset(p).ok_or_else(|| format!("unknown physical model '{name}' ({})", crate::physical::PRESETS.join(" ")));
+    }
+    if let Some(p) = lower.strip_prefix("synth:") {
+        return crate::synth::preset(p).ok_or_else(|| format!("unknown synth '{name}' ({})", crate::synth::PRESETS.join(" ")));
+    }
     if let Some(k) = lower.strip_prefix("drums:").or_else(|| lower.strip_prefix("kit:")) {
+        if let Some(kit) = crate::synth::kit(k) {
+            return Ok(kit);
+        }
         return KITS.iter().find(|(n, _)| *n == k).map(|(_, p)| bank::gm_drums(*p)).ok_or_else(|| {
             let ks: Vec<&str> = KITS.iter().map(|x| x.0).collect();
             let hint = crate::spec::closest(k, &ks).map(|b| format!(" — did you mean 'drums:{b}'?")).unwrap_or_default();
@@ -89,7 +104,18 @@ fn resolve_one(name: &str, base: Option<&Path>) -> Result<Arc<dyn Instrument>, S
     if let Some(i) = crate::sf2::pack_instrument(&lower) {
         return Ok(i);
     }
+    if let Some(i) = crate::synth::preset(&lower) {
+        return Ok(i);
+    }
+    if PREFER_MODEL.contains(&lower.as_str()) {
+        if let Some(i) = crate::physical::preset(&lower) {
+            return Ok(i);
+        }
+    }
     if let Some(i) = bank::by_name(&lower) {
+        return Ok(i);
+    }
+    if let Some(i) = crate::physical::preset(&lower) {
         return Ok(i);
     }
     if let Some((_, p)) = GM_STANDINS.iter().find(|(n, _)| *n == lower) {
@@ -104,7 +130,9 @@ fn resolve_one(name: &str, base: Option<&Path>) -> Result<Arc<dyn Instrument>, S
 pub fn names() -> Vec<(&'static str, Vec<&'static str>)> {
     vec![
         ("sampled (GM bank)", crate::sf2::bank::NAMES.to_vec()),
-        ("synth & models", GM_STANDINS.iter().map(|x| x.0).collect()),
-        ("drum kits (drums:NAME)", KITS.iter().map(|x| x.0).collect()),
+        ("physical models (phys:NAME)", crate::physical::PRESETS.to_vec()),
+        ("synths (synth:NAME)", crate::synth::PRESETS.to_vec()),
+        ("drum kits (drums:NAME)", crate::synth::KITS.iter().copied().chain(KITS.iter().map(|x| x.0)).collect()),
+        ("packs (anikit-video music fetch …)", crate::sf2::packs::PACKS.iter().map(|p| p.name).collect()),
     ]
 }

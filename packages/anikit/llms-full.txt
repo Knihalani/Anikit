@@ -2528,25 +2528,19 @@ Every export of `anikit`, with where it is described. Types are listed by name; 
 
 # Anikit Video for agents
 
-JSON spec → MP4, rendered natively (no browser). You direct; the engine renders; the critic checks every frame. Read [`skills/anikit-video/SKILL.md`](../../skills/anikit-video/SKILL.md) first (a 1-page method) and [`spec.md`](spec.md) (a 1-page spec).
+Start with [`skills/anikit-video/SKILL.md`](../../skills/anikit-video/SKILL.md) (48 lines): install, the loop, the open primitives and the shortcuts. Then use `anikit-video docs <topic>` (30-line pages, each with a working example) instead of reading long files: `primitives animation camera compositions shader 3d particles physics music post pacing critique make-anything components`.
 
 ```bash
-anikit-video looks                                  # 10 art-direction worlds; looks <name> for one's direction
-anikit-video critique spec.json --render            # contrast, overlaps, cut text, pacing, sameness
-anikit-video preview spec.json                      # contact sheet PNG: look at it
-anikit-video render spec.json -o out.mp4
-anikit-video templates                              # quick starts; expand <t> --look <name> to restyle
+anikit-video docs                                    # topics
+anikit-video recipes [name]                          # drop-in high-end shots and the shader library
+anikit-video still s.json --at 2.4 --width 640 -o f.png
+anikit-video render s.json -o out.mp4
+anikit-video critique s.json --render --pack rv/     # judged against "intent"; open rv/review.md and look
 ```
 
-**Method:** logline → one feeling → a look → a beat-cut shot list (12–25 shots in a 15 s test; each one says what the viewer *understands*) → show what browsers can't (`docs/video/quality/ONLY_ANIKIT.md`) → energetic camera (whips, snaps, speed ramps, impacts, match cuts) → judge against [`quality/BAR.md`](quality/BAR.md) and its pace check (`python3 docs/video/quality/pace.py out.mp4`). `anikit-video prompt director` gives the procedure.
+**MCP** (`anikit-video mcp`): `docs`, `recipes`, `list_looks`, `validate_spec`, `critique_spec` (`render`, `detail`), `render_still`, `render_contact_sheet`, `render_video`, `get_prompt`, `list_templates`, `get_template_schema`, `create_from_template`.
 
-**Looks:** `"look": "noir"` at the top of a spec sets the palette, type, text styles, entrance, transition, camera, backdrop and post. `["editorial", "noir"]` composes looks; `{"base": "swiss", "theme": {"colors": {"primary": "#0050FF"}}}` overrides one; a scene with `"look": false` opts out. Spec keys always win.
-
-**Rules:** hook in ≤ 2 s · hold text words/3 + 1 s · one focal point per frame · 9:16 keeps the top 12% and the bottom 20% clear · contrast ≥ 4.5:1 · cut words, don't shrink type.
-
-**MCP** (`anikit-video mcp`): `list_looks`, `list_templates`, `get_template_schema`, `create_from_template` (with `look`), `validate_spec`, `critique_spec` (`render: true`), `render_still`, `render_contact_sheet`, `render_video`, `get_prompt` (director, critic, storyboarder, script-writer, copy-guard, brand-kit, motion-rules, launch-video-generator, template:<name>). A full template session costs about 2k tokens (`cargo test -p anikit-video --test token_budget -- --nocapture`).
-
-**Builders:** `import { video, template } from 'anikit/video'` and `from anikit.video import video, template`. Scaffold from a README: `anikit-video new launch --from README.md --brand b.json`.
+**Quality:** [`quality/BAR.md`](quality/BAR.md). Scores are not quality verdicts; frames are.
 
 ## Cold-agent dry runs
 
