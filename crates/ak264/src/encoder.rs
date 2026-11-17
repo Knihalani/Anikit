@@ -182,6 +182,8 @@ pub(crate) struct FrameCtx<'a> {
     pub idr: bool,
     pub max_mvy: i32,
     pub subpel: bool,
+    /// Frame-level half-sample planes of the reference (when many macroblocks change).
+    pub hpel: Option<&'a crate::mc::HpelPlanes>,
     pub cabac: bool,
     pub hdr_frame_num: u32,
     pub idr_id: u32,
@@ -614,27 +616,43 @@ impl<'a, 'b> SliceEnc<'a, 'b> {
         let mvp = it.mvp;
         let mvcost = |q: (i32, i32)| -> u32 { lambda * (se_len(q.0 - mvp.0) + se_len(q.1 - mvp.1)) };
         let base_q = it.mv;
-        let hp = crate::mc::Hpel::new(
-            &self.c.refp.y,
-            (mbx as i32 * 16 + (base_q.0 >> 2)) as isize,
-            (mby as i32 * 16 + (base_q.1 >> 2)) as isize,
-        );
+        let (bx, by) = ((mbx as i32 * 16 + (base_q.0 >> 2)) as isize, (mby as i32 * 16 + (base_q.1 >> 2)) as isize);
+        let win = if self.c.hpel.is_none() { Some(crate::mc::Hpel::new(&self.c.refp.y, bx, by)) } else { None };
         let mut p = [0u8; 256];
         let mut d = (0, 0);
+        // SAD for the candidates (cheap), SATD for the final cost.
+        let mut best = it.sad + mvcost(base_q);
+        let start = it.mv;
         for step in [2, 1] {
             let centre = d;
             for (sx, sy) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
                 let cand = (centre.0 + sx * step, centre.1 + sy * step);
-                hp.pred(cand.0, cand.1, &mut p);
+                match (&win, self.c.hpel) {
+                    (Some(w), _) => w.pred(cand.0, cand.1, &mut p),
+                    (None, Some(hp)) => hp.pred(
+                        &self.c.refp.y,
+                        bx + (cand.0 >> 2) as isize,
+                        by + (cand.1 >> 2) as isize,
+                        cand.0 & 3,
+                        cand.1 & 3,
+                        &mut p,
+                    ),
+                    _ => unreachable!(),
+                }
                 let q = (base_q.0 + cand.0, base_q.1 + cand.1);
-                let cst = dsp::satd(src_y, &p, 16, 16) + mvcost(q);
-                if cst < it.cost {
-                    it.cost = cst;
+                let cst = crate::simd::sad16(src_y, 16, &p, 16) + mvcost(q);
+                if cst < best {
+                    best = cst;
                     it.mv = q;
                     d = cand;
                     it.pred = p;
                 }
             }
+        }
+        if it.mv != start {
+            let c = dsp::satd(src_y, &it.pred, 16, 16) + mvcost(it.mv);
+            it.cost = c;
+            it.sad = best - mvcost(it.mv);
         }
     }
 
@@ -1717,6 +1735,9 @@ pub struct Encoder {
     /// Macroblocks where `recon` (the picture before the reference) differs from `refp`.
     stale: Vec<bool>,
     touched: Vec<bool>,
+    hpel: Option<crate::mc::HpelPlanes>,
+    /// `hpel` holds the planes of the current reference.
+    hpel_valid: bool,
     recon: Pic,
     refp: Pic,
     info: Vec<MbInfo>,
@@ -1760,6 +1781,8 @@ impl Encoder {
             cur: Pic::new(mbw, mbh, 0),
             stale: vec![true; mbw * mbh],
             touched: vec![false; mbw * mbh],
+            hpel: None,
+            hpel_valid: false,
             recon: Pic::new(mbw, mbh, PAD),
             refp: Pic::new(mbw, mbh, PAD),
             info: vec![MbInfo::default(); mbw * mbh],
@@ -1959,6 +1982,7 @@ impl Encoder {
             }
             self.recon.extend();
             std::mem::swap(&mut self.recon, &mut self.refp);
+            self.hpel_valid = false;
         }
         if idr {
             self.idr_count = self.idr_count.wrapping_add(1);
@@ -1994,6 +2018,15 @@ impl Encoder {
     }
 
     fn encode_slices(&mut self, idr: bool, frame_num: u32, stats: &mut FrameStats) {
+        // Sub-pel refinement on a busy frame: build the half-sample planes once.
+        if self.cfg.subpel && !idr && !self.hpel_valid {
+            let busy = self.changed.iter().filter(|&&c| c).count() * 4 > self.changed.len();
+            if busy {
+                let r = &self.refp.y;
+                self.hpel.get_or_insert_with(|| crate::mc::HpelPlanes::new(r)).compute(r);
+                self.hpel_valid = true;
+            }
+        }
         let ctx = FrameCtx {
             mbw: self.mbw,
             q: self.q,
@@ -2017,6 +2050,7 @@ impl Encoder {
             idr,
             max_mvy: max_mv_y(self.level),
             subpel: self.cfg.subpel,
+            hpel: if self.hpel_valid { self.hpel.as_ref() } else { None },
             cabac: self.cfg.cabac,
             hdr_frame_num: frame_num,
             idr_id: self.idr_count & 0xffff,
