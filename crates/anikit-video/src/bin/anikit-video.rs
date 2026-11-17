@@ -407,6 +407,13 @@ fn run(a: &Args, json: bool) -> Result<ExitCode, String> {
             let wav = std::env::temp_dir().join(format!("anikit-video-{}.wav", std::process::id()));
             let job = if opts.audio { pipeline::audio_job(&ev, t0, dur, &wav) } else { None };
             let had_audio = job.is_some();
+            // Before a long render, say how long and why (stderr; stdout stays JSON).
+            if !a.has("--quiet") {
+                let est = pipeline::estimate(&ev, &opts, 20.0);
+                if est.secs >= 20.0 {
+                    eprintln!("{est}. Faster: --quality draft, or --from/--to for a range.");
+                }
+            }
             let s = if codec == Codec::Ak264 {
                 // The audio (and any generated music) mixes on a thread while frames render.
                 pipeline::render_ak264_job(&ev, &opts, &out, job)
