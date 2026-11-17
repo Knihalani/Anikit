@@ -42,8 +42,65 @@ impl Material {
     }
 }
 
+/// Object geometry, in object space.
+#[derive(Clone)]
+pub enum Shape {
+    Mesh(Arc<Bvh>),
+    /// The unit sphere, intersected analytically (perfectly round at any size).
+    Sphere,
+}
+
+impl Shape {
+    pub fn bounds(&self) -> (V3, V3) {
+        match self {
+            Shape::Mesh(b) => (b.lo, b.hi),
+            Shape::Sphere => (v3(-1.0, -1.0, -1.0), v3(1.0, 1.0, 1.0)),
+        }
+    }
+    /// Closest hit: (t, object-space shading normal, object-space geometric normal).
+    #[inline]
+    fn hit(&self, o: V3, d: V3, tmin: f32, tmax: f32) -> Option<(f32, V3, V3)> {
+        match self {
+            Shape::Mesh(b) => b.intersect(o, d, tmin, tmax).map(|h| {
+                let tr = &b.tris[h.tri as usize];
+                let w = 1.0 - h.u - h.v;
+                (h.t, add(add(scale(tr.n[0], w), scale(tr.n[1], h.u)), scale(tr.n[2], h.v)), cross(tr.e1, tr.e2))
+            }),
+            Shape::Sphere => sphere_t(o, d, tmin, tmax).map(|t| {
+                let n = madd(o, d, t);
+                (t, n, n)
+            }),
+        }
+    }
+    #[inline]
+    fn occluded(&self, o: V3, d: V3, tmin: f32, tmax: f32) -> bool {
+        match self {
+            Shape::Mesh(b) => b.occluded(o, d, tmin, tmax),
+            Shape::Sphere => sphere_t(o, d, tmin, tmax).is_some(),
+        }
+    }
+}
+
+#[inline]
+fn sphere_t(o: V3, d: V3, tmin: f32, tmax: f32) -> Option<f32> {
+    let a = dot(d, d);
+    let b = dot(o, d);
+    let c = dot(o, o) - 1.0;
+    let disc = b * b - a * c;
+    if disc < 0.0 {
+        return None;
+    }
+    let sq = disc.sqrt();
+    let t0 = (-b - sq) / a;
+    if t0 > tmin && t0 < tmax {
+        return Some(t0);
+    }
+    let t1 = (-b + sq) / a;
+    (t1 > tmin && t1 < tmax).then_some(t1)
+}
+
 pub struct Object {
-    pub bvh: Arc<Bvh>,
+    pub shape: Shape,
     pub xf: Xf,
     /// Transform one frame earlier (for motion vectors).
     pub prev: Xf,
@@ -204,13 +261,11 @@ impl Scene {
         for (i, ob) in self.objects.iter().enumerate() {
             let lo = ob.xf.point_inv(o);
             let ld = scale(ob.xf.rot_inv(d), 1.0 / ob.xf.s);
-            if let Some(h) = ob.bvh.intersect(lo, ld, EPS, tm) {
-                tm = h.t;
-                let tr = &ob.bvh.tris[h.tri as usize];
-                let ng = norm(ob.xf.rot(cross(tr.e1, tr.e2)));
-                let w = 1.0 - h.u - h.v;
-                let ns = norm(ob.xf.rot(add(add(scale(tr.n[0], w), scale(tr.n[1], h.u)), scale(tr.n[2], h.v))));
-                best = Some(Surf { t: h.t, p: madd(o, d, h.t), ng, ns, obj: i });
+            if let Some((t, sn, gn)) = ob.shape.hit(lo, ld, EPS, tm) {
+                tm = t;
+                let ng = norm(ob.xf.rot(gn));
+                let ns = norm(ob.xf.rot(sn));
+                best = Some(Surf { t, p: madd(o, d, t), ng, ns, obj: i });
             }
         }
         best
@@ -227,7 +282,7 @@ impl Scene {
         for ob in &self.objects {
             let lo = ob.xf.point_inv(o);
             let ld = scale(ob.xf.rot_inv(d), 1.0 / ob.xf.s);
-            if ob.bvh.occluded(lo, ld, EPS, tmax) {
+            if ob.shape.occluded(lo, ld, EPS, tmax) {
                 return true;
             }
         }
@@ -532,8 +587,9 @@ impl Scene {
         }
         let (mut lo, mut hi) = (v3(f32::MAX, f32::MAX, f32::MAX), v3(f32::MIN, f32::MIN, f32::MIN));
         for o in &self.objects {
+            let (blo, bhi) = o.shape.bounds();
             for k in 0..8 {
-                let c = v3(if k & 1 == 0 { o.bvh.lo.x } else { o.bvh.hi.x }, if k & 2 == 0 { o.bvh.lo.y } else { o.bvh.hi.y }, if k & 4 == 0 { o.bvh.lo.z } else { o.bvh.hi.z });
+                let c = v3(if k & 1 == 0 { blo.x } else { bhi.x }, if k & 2 == 0 { blo.y } else { bhi.y }, if k & 4 == 0 { blo.z } else { bhi.z });
                 let p = o.xf.point(c);
                 lo = vmin(lo, p);
                 hi = vmax(hi, p);

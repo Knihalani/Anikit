@@ -25,7 +25,7 @@ use env::Env;
 use math::*;
 use serde::Deserialize;
 use std::sync::Arc;
-use trace::{Camera, Floor, Material, Object, Quality, Scene};
+use trace::{Camera, Floor, Material, Object, Quality, Scene, Shape};
 
 /// A camera keyframe.
 #[derive(Deserialize, Clone, Debug)]
@@ -102,7 +102,7 @@ fn default_camera() -> Vec<CamKey> {
         CamKey { at: 0.0, pos: [-4.9, 1.35, 9.4], target: [-1.3, 0.42, 1.2], fov: 28.0, focus: Some(7.9) },
         CamKey { at: 1.6, pos: [-4.1, 1.28, 9.2], target: [-1.0, 0.45, 0.9], fov: 28.0, focus: Some(7.9) },
         CamKey { at: 3.8, pos: [-2.2, 1.15, 9.0], target: [-0.1, 0.5, 0.0], fov: 27.5, focus: None },
-        CamKey { at: 9.0, pos: [3.0, 0.98, 8.2], target: [0.3, 0.52, 0.0], fov: 26.5, focus: None },
+        CamKey { at: 9.0, pos: [2.7, 1.0, 8.9], target: [0.2, 0.52, -0.2], fov: 27.5, focus: None },
     ]
 }
 
@@ -155,35 +155,32 @@ impl Prepare for Scene3d {
             idx.extend(m.idx.iter().map(|i| i + base));
         }
         let word = Arc::new(Bvh::new(&pos, &nrm, &idx));
-        let mut objects = vec![Object { bvh: word, xf: Xf::new(v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0), 1.0), prev: Xf::IDENTITY, mat }];
+        let mut objects = vec![Object { shape: Shape::Mesh(word), xf: Xf::new(v3(0.0, 0.0, 0.0), v3(0.0, 0.0, 0.0), 1.0), prev: Xf::IDENTITY, mat }];
         if self.primitives {
-            let sphere = {
-                let m = anikit_core::raster::sphere(96, 192);
-                Arc::new(Bvh::new(&m.pos, &m.nrm, &m.idx))
-            };
+            let sphere = Shape::Sphere;
             let torus = {
                 let m = anikit_core::raster::torus(1.0, 0.16, 192, 64);
                 Arc::new(Bvh::new(&m.pos, &m.nrm, &m.idx))
             };
             // Glossy black ceramic sphere, back left.
             objects.push(Object {
-                bvh: sphere.clone(),
+                shape: sphere.clone(),
                 xf: Xf::new(v3(-3.3, 0.62, -1.9), v3(0.0, 0.0, 0.0), 0.62),
                 prev: Xf::IDENTITY,
                 mat: Material { base: v3(0.012, 0.012, 0.014), metallic: 0.0, roughness: 0.05, specular: 1.3, ..Material::chrome() },
             });
             // Brushed gold ring standing on its edge, back right.
             objects.push(Object {
-                bvh: torus,
-                xf: Xf::new(v3(3.5, 0.82, -2.3), v3(0.0, -32.0, 0.0), 0.7),
+                shape: Shape::Mesh(torus),
+                xf: Xf::new(v3(3.15, 0.82, -2.3), v3(0.0, -32.0, 0.0), 0.7),
                 prev: Xf::IDENTITY,
                 mat: Material { base: v3(1.0, 0.74, 0.42), metallic: 1.0, roughness: 0.16, ..Material::chrome() },
             });
             // Small chrome sphere in the foreground (the opening focus).
-            objects.push(Object { bvh: sphere.clone(), xf: Xf::new(v3(-1.45, 0.26, 2.1), v3(0.0, 0.0, 0.0), 0.26), prev: Xf::IDENTITY, mat: Material::chrome() });
+            objects.push(Object { shape: sphere.clone(), xf: Xf::new(v3(-1.85, 0.26, 2.3), v3(0.0, 0.0, 0.0), 0.26), prev: Xf::IDENTITY, mat: Material::chrome() });
             // Satin white sphere, front right.
             objects.push(Object {
-                bvh: sphere,
+                shape: sphere,
                 xf: Xf::new(v3(2.75, 0.34, 0.9), v3(0.0, 0.0, 0.0), 0.34),
                 prev: Xf::IDENTITY,
                 mat: Material { base: v3(0.8, 0.79, 0.77), metallic: 0.0, roughness: 0.38, ..Material::chrome() },
