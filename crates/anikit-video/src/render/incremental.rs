@@ -398,6 +398,9 @@ impl Renderer {
     /// this renderer's previous incremental frame. `yuv` must be the frame
     /// passed to the previous call (anything else forces a full frame).
     /// `changed` receives the exact changed-macroblock map versus that frame.
+    /// [`Renderer::frame`] may be stale afterwards outside what was redrawn
+    /// (backdrops, plain-colour backgrounds included, go straight to YUV);
+    /// call [`Renderer::render`] for RGBA.
     pub fn render_yuv_incremental(&mut self, list: &DisplayList, yuv: &mut YuvFrame, changed: &mut MbMap) -> Update {
         if self.post.is_some() || self.quality() == super::Quality::Reference {
             // Post effects are global (bloom, grain): render whole frames.
