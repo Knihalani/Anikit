@@ -33,7 +33,7 @@ A 15–30 s data narrative on a living brand mesh: a kinetic headline over a ris
 ## Example
 
 ```json
-{"kicker":"2026 in numbers","headline":"Support tickets fell by half this year","charts":[{"title":"Frames per second at 1080p","suffix":"","bars":[{"label":"Browser","value":24},{"label":"Canvas","value":61},{"label":"Anikit","value":250}]}],"stat":{"value":10,"suffix":"×","label":"faster than a headless browser"},"takeaway":"No browser in the loop means minutes become seconds.","source":"Source: internal benchmarks, 4-core laptop"}
+{"kicker":"2026 in numbers","headline":"Support tickets fell by half this year","charts":[{"title":"Tickets resolved per week","suffix":"","bars":[{"label":"Q1","value":420},{"label":"Q2","value":610},{"label":"Q3","value":980}]}],"stat":{"value":48,"suffix":"%","label":"fewer tickets reopened"},"takeaway":"Faster answers mean fewer tickets come back.","source":"Source: example data"}
 ```
 
 Create: MCP `create_from_template {template: "data-story", params, brand, format}`, or `anikit-video templates expand data-story params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.

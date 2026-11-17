@@ -560,7 +560,7 @@
               "delay": 0.4
             },
             "x": "{{fmt.landscape ? fmt.w - fmt.safe.right - fmt.w * 0.18 : fmt.cx}}",
-            "y": "{{fmt.landscape ? '50%' : (fmt.portrait ? '46%' : '46%')}}",
+            "y": "{{fmt.landscape ? '50%' : (fmt.portrait ? '53%' : '50%')}}",
             "width": "{{fmt.landscape ? fmt.w * 0.36 : fmt.safe.w * 0.8}}",
             "height": "{{fmt.landscape ? fmt.h * 0.6 : fmt.h * 0.3}}"
           },
@@ -570,7 +570,7 @@
               "$use": "ctaButton",
               "with": {
                 "label": "{{cta}}",
-                "y": "{{fmt.landscape ? '60%' : (fmt.portrait ? '64%' : '70%')}}",
+                "y": "{{fmt.landscape ? '60%' : (fmt.portrait ? '70%' : '74%')}}",
                 "press": 2.2
               },
               "x": "{{fmt.landscape ? fmt.safe.left + fmt.u * 18 : '50%'}}",
@@ -584,7 +584,7 @@
               "style": "caption",
               "x": "{{fmt.landscape ? fmt.safe.left : fmt.cx}}",
               "anchor": "{{fmt.landscape ? 'left' : 'center'}}",
-              "y": "{{fmt.landscape ? '72%' : (fmt.portrait ? '71%' : '79%')}}",
+              "y": "{{fmt.landscape ? '72%' : (fmt.portrait ? '76%' : '81%')}}",
               "enter": {
                 "preset": "fadeIn",
                 "delay": 1

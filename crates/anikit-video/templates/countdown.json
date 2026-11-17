@@ -370,23 +370,33 @@
             "$if": "live",
             "then": [
               {
-                "type": "component",
-                "component": "particle-text",
-                "props": {
+                "$if": "brand.theme == 'light'",
+                "then": {
                   "text": "{{liveText}}",
-                  "exit": "none",
-                  "form": 1.0,
-                  "size": 2.4,
-                  "glow": "{{brand.theme != 'light'}}",
-                  "count": 14000,
-                  "colors": [
-                    "{{brand.colors.text}}",
-                    "{{brand.colors.secondary}}"
-                  ]
+                  "style": "hero",
+                  "y": "{{fmt.portrait ? '46%' : '46%'}}",
+                  "width": "{{fmt.safe.w}}",
+                  "enter": "pop by char from center"
                 },
-                "y": "{{fmt.portrait ? '46%' : '46%'}}",
-                "width": "{{fmt.safe.w}}",
-                "height": "{{fmt.u * 34}}"
+                "else": {
+                  "type": "component",
+                  "component": "particle-text",
+                  "props": {
+                    "text": "{{liveText}}",
+                    "exit": "none",
+                    "form": 1.0,
+                    "size": 2.4,
+                    "glow": "{{brand.theme != 'light'}}",
+                    "count": 14000,
+                    "colors": [
+                      "{{brand.colors.text}}",
+                      "{{brand.colors.secondary}}"
+                    ]
+                  },
+                  "y": "{{fmt.portrait ? '46%' : '46%'}}",
+                  "width": "{{fmt.safe.w}}",
+                  "height": "{{fmt.u * 34}}"
+                }
               },
               {
                 "type": "component",

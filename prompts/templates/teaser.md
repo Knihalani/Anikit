@@ -18,12 +18,12 @@ A 6–12 s vertical teaser for Reels, TikTok and Shorts: one word per beat in hu
 | `payoff` | string |  | ≤ 6 words | Line under the logo at the end: a date, a URL or a call to action. |
 | `flash` | boolean |  |  | Flash every third beat to the brand colour for energy. Default: `true`. |
 | `music` | string |  |  | Optional music file; a strong beat is what makes a teaser work. |
-| `captions` | any |  |  | Optional burned-in captions. true: a caption line timed to each beat (the running phrase), for sound-off viewing. Or a list of {text, at, end} cues in seconds (e.g. for a voice-over), or {"src": "subs.srt"}. |
+| `captions` | any |  |  | Optional burned-in captions. true: a caption line timed to each beat (the running phrase), for sound-off viewing. Or a list of {text, at, end} cues in seconds (e.g. for a voice-over), or {"src": "subs.srt"}. Best with a voice-over; the beat words are already on screen. |
 
 ## Example
 
 ```json
-{"words":["No browser.","No waiting.","Just","JSON","in.","Video","out."],"beat":0.6,"payoff":"Out now · anikit.dev","flash":true,"captions":true}
+{"words":["No browser.","No waiting.","Just","JSON","in.","Video","out."],"beat":0.6,"payoff":"Out now · anikit.dev","flash":true}
 ```
 
 Create: MCP `create_from_template {template: "teaser", params, brand, format}`, or `anikit-video templates expand teaser params.json --brand brand.json -o spec.json`. Word limits are reading-time budgets: cut words, don't shrink type.
