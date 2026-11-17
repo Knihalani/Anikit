@@ -19,4 +19,78 @@ Copyright: only URLs, metadata and our own analysis are in git. Stills and clips
 ## Pieces
 
 <!-- TABLES:START -->
+
+### Kinetic typography & title sequences (`kinetic-type/`, 6)
+
+| Piece | Studio | Year | Length | Pace | Medium | Link |
+|---|---|---|---|---|---|---|
+| [Severance - Intro Title Sequence / Credits / Opening 4K ( Apple TV+) Official](kinetic-type/extraweg-severance-2022.md) | extraweg (director/3D: Oliver Latta); title typography: Teddy Blanks, CHIPS | 2022 | 1:26 | steady | stylised-3d, sim | [watch](https://vimeo.com/680855862) |
+| [Prologue Films // Feud : Bette and Joan - Main Titles](kinetic-type/prologue-feud-bette-and-joan-2017.md) | Prologue (director: Kyle Cooper; designer: Nadia Tzuo; animator: Margherita Premuroso; editor: Rachel Fowler) | 2017 | 1:16 | steady | 2d-vector, cel, kinetic-type | [watch](https://vimeo.com/205161349) |
+| [Netflix Stranger Things Main Title](kinetic-type/imaginary-forces-stranger-things-2016.md) | Imaginary Forces (creative director: Michelle Dougherty; lead animator: Eric Demeusy) | 2016 | 0:53 | steady | kinetic-type, 2d-vector | [watch](https://vimeo.com/174870794) |
+| [HBO's True Detective - Main Title Sequence](kinetic-type/antibody-elastic-true-detective-2014.md) | Elastic / Antibody (director: Patrick Clair; senior designer: Raoul Marks; additional compositing: Breeder) | 2014 | 1:34 | steady | mixed, photo, live-action | [watch](https://vimeo.com/84017154) |
+| [Catch Me If You Can (opening title sequence)](kinetic-type/kuntzel-deygas-catch-me-if-you-can-2002.md) | Kuntzel + Deygas (Olivier Kuntzel, Florence Deygas), produced at Nexus Productions | 2002 | ? | steady | 2d-illustrated, kinetic-type, collage | [watch](https://www.kuntzeldeygas.com/catch-me-if-you-can) |
+| [New Line Cinema's Se7en Main Title](kinetic-type/rga-kyle-cooper-se7en-1995.md) | R/Greenberg Associates West (director: Kyle Cooper; designer: Jenny Shainin; editor: Angus Wall); upload by Imaginary Forces | 1995 | 2:08 | fast | live-action, kinetic-type, collage | [watch](https://vimeo.com/87617487) |
+
+### Product launch films (hardware) (`product-launch/`, 6)
+
+| Piece | Studio | Year | Length | Pace | Medium | Link |
+|---|---|---|---|---|---|---|
+| [XREAL 1S AR Glasses TVC](product-launch/morph-studio-xreal-1s-2025.md) | Morph Studio, Singapore (director: Vitas) | 2025 | 0:26 | fast | 3d-cg, sim | [watch](https://vimeo.com/1145191776) |
+| [Nothing :: 2a Film](product-launch/post-office-studios-nothing-phone-2a-plus-2024.md) | Post Office Studios, Mumbai (director: Prasad Kelkar) | 2024 | 1:05 | steady | 3d-cg, stylised-3d | [watch](https://vimeo.com/999367912) |
+| [Devialet, Opéra De Paris](product-launch/found-devialet-opera-de-paris-2022.md) | Found, London | 2022 | 0:30 | fast | 3d-cg, stylised-3d | [watch](https://vimeo.com/776941201) |
+| [Bang & Olufsen - Beosound Theatre](product-launch/futuredeluxe-bang-olufsen-beosound-theatre-2022.md) | FutureDeluxe (director: Raj Davsi) | 2022 | 0:30 | steady | photoreal-cg, 3d-cg | [watch](https://vimeo.com/746646949) |
+| [OPPO | Reno6 Jin Series](product-launch/tendril-oppo-reno6-jin-2021.md) | Tendril (CD: Nidia Dias; directors: Miguel Rato & Joey Recoskie) | 2021 | 0:31 | steady | 3d-cg, photoreal-cg | [watch](https://vimeo.com/646512105) |
+| [Nike ~ Air Max](product-launch/manvsmachine-nike-air-max-17-2016.md) | ManvsMachine (concept, design & direction) | 2016 | 0:32 | fast | 3d-cg, stylised-3d | [watch](https://vimeo.com/192130017) |
+
+### Brand identity motion & idents (`brand-idents/`, 5)
+
+| Piece | Studio | Year | Length | Pace | Medium | Link |
+|---|---|---|---|---|---|---|
+| [DixonBaxi | CW](brand-idents/dixonbaxi-the-cw-brand-2024.md) | DixonBaxi | 2024 | 0:48 | fast | 2d-vector, kinetic-type | [watch](https://vimeo.com/905627809) |
+| [BBC ONE ~ Idents](brand-idents/manvsmachine-bbc-one-lens-2022.md) | ManvsMachine with BBC Creative | 2022 | 5:40 | calm | live-action, mixed | [watch](https://vimeo.com/709436376) |
+| [Netflix New Logo Animation 2019](brand-idents/netflix-ribbon-logo-2019.md) | Netflix brand team with Imaginary Forces | 2019 | 0:04 | fast | 3d-cg, generative | [watch](https://www.youtube.com/watch?v=GV3HUDMQ-F8) |
+| [CHANNEL 4 REBRAND](brand-idents/channel4-glazer-idents-2015.md) | 4creative with Jonathan Glazer (Academy Films), Neville Brody, DBLG | 2015 | 1:01 | calm | live-action, photoreal-cg | [watch](https://www.youtube.com/watch?v=8Ua5m6lPTbA) |
+| [BBC 2 Phase one 1991](brand-idents/lambie-nairn-bbc-two-1991.md) | Lambie-Nairn (Martin Lambie-Nairn) | 1991 | 0:47 | steady | live-action, stop-motion | [watch](https://www.youtube.com/watch?v=cYwa3W9IiKk) |
+
+### 2D motion graphics & explainers (`explainer-2d/`, 6)
+
+| Piece | Studio | Year | Length | Pace | Medium | Link |
+|---|---|---|---|---|---|---|
+| [What is GitHub?](explainer-2d/buck-github-what-is-github-2022.md) | BUCK Amsterdam (CD: Richard Gray; ECD: Vincent Lammers; animation director: Daniel Rodrigues) | 2022 | ? | fast | mixed, 2d-illustrated, cel | [watch](https://www.youtube.com/watch?v=pBy1zgt0XPc) |
+| [TED-ED | How does artificial intelligence learn?](explainer-2d/champ-ted-ed-how-ai-learns-2021.md) | Pleas Call Me Champ Studio (director: Champ Panupong Techawongthawon) | 2021 | 4:38 | steady | 2d-vector, data-viz | [watch](https://vimeo.com/522542250) |
+| [Creativity Explained - On Color with Eddie Opara](explainer-2d/oddfellows-adobe-on-color-2021.md) | Oddfellows (CD: Jarratt Moody; AD: Ben Hill) | 2021 | 2:19 | steady | 2d-vector, kinetic-type | [watch](https://vimeo.com/561587283) |
+| [School of Motion: Manifesto](explainer-2d/ordinary-folk-school-of-motion-manifesto-2019.md) | Ordinary Folk (CD: Jorge R. Canedo E.) | 2019 | 1:50 | fast | 2d-vector, stylised-3d, mixed | [watch](https://vimeo.com/360269073) |
+| [The Imaginary Friend Society // Finding Out You Have Cancer](explainer-2d/giant-ant-imaginary-friend-society-2017.md) | Giant Ant (CD: Jay Grandin; animation director: Conor Whelan; AD: Rafael Mayani) | 2017 | 1:59 | steady | 2d-illustrated, cel | [watch](https://vimeo.com/235372654) |
+| [Optimistic Nihilism](explainer-2d/kurzgesagt-optimistic-nihilism-2017.md) | Kurzgesagt – In a Nutshell | 2017 | ? | steady | 2d-vector | [watch](https://www.youtube.com/watch?v=MBRqu0YOH14) |
+
+### 3D / CG product & abstract (`cg-3d/`, 5)
+
+| Piece | Studio | Year | Length | Pace | Medium | Link |
+|---|---|---|---|---|---|---|
+| [Hublot MP-10 Launch Film](cg-3d/tendril-hublot-mp-10-2024.md) | Tendril (director: Joey Recoskie; CD: Chris Bahry) | 2024 | 1:08 | fast | photoreal-cg, 3d-cg, kinetic-type | [watch](https://vimeo.com/904510310) |
+| [CHARGE - Blender Open Movie](cg-3d/blender-studio-charge-2022.md) | Blender Studio (director: Hjalti Hjálmarsson) | 2022 | ? | steady | photoreal-cg, 3d-cg | [watch](https://www.youtube.com/watch?v=UXqq0ZvbOnk) |
+| [Eternal Installations](cg-3d/andreas-wannerstedt-eternal-installations-2020.md) | Andreas Wannerstedt | 2020 | 1:00 | steady | photoreal-cg, 3d-cg | [watch](https://vimeo.com/454900647) |
+| [Baidu Raven "H" TVC - Director Cut](cg-3d/builders-club-baidu-raven-h-2017.md) | Builders Club (Jonas Hegi, Julien Simshauser) | 2017 | 1:11 | fast | 3d-cg, photoreal-cg, sim | [watch](https://vimeo.com/244013457) |
+| [Plume](cg-3d/futuredeluxe-plume-2017.md) | FutureDeluxe (art direction and lead CG: Twistedpoly / Nejc Polovsak) | 2017 | 0:58 | steady | 3d-cg, generative | [watch](https://vimeo.com/229537127) |
+
+### Generative, simulation & shader work (`generative/`, 6)
+
+| Piece | Studio | Year | Length | Pace | Medium | Link |
+|---|---|---|---|---|---|---|
+| [Painting a Character with Maths](generative/inigo-quilez-selfie-girl-2020.md) | Inigo Quilez | 2020 | ? | calm | generative, 3d-cg, stylised-3d | [watch](https://www.youtube.com/watch?v=8--5LwHRhjk) |
+| [MACHINE HALLUCINATION : NYC](generative/refik-anadol-machine-hallucination-nyc-2019.md) | Refik Anadol Studio | 2019 | 5:36 | steady | generative, data-viz, photo | [watch](https://vimeo.com/450313024) |
+| [Learning to see: Gloomy Sunday (2017)](generative/memo-akten-learning-to-see-gloomy-sunday-2017.md) | Memo Akten | 2017 | 3:02 | steady | generative, live-action, mixed | [watch](https://vimeo.com/260612034) |
+| [Max Cooper - Order from Chaos - Official Video by Maxime Causeret](generative/maxime-causeret-order-from-chaos-2016.md) | Maxime Causeret (Teresuac) | 2016 | 4:18 | steady | generative, sim, 3d-cg | [watch](https://vimeo.com/196269431) |
+| [Skyline](generative/raven-kwok-skyline-2015.md) | Raven Kwok | 2015 | 4:56 | fast | generative, 2d-vector | [watch](https://vimeo.com/139977231) |
+| [Walking City](generative/universal-everything-walking-city-2014.md) | Universal Everything (creative director: Matt Pyke; animation: Chris Perry) | 2014 | 7:48 | calm | 3d-cg, generative, sim | [watch](https://vimeo.com/85596568) |
+
+### Sports & broadcast packages (`broadcast-sports/`, 4)
+
+| Piece | Studio | Year | Length | Pace | Medium | Link |
+|---|---|---|---|---|---|---|
+| [FIFA World Cup 2026 - Let's Make It Iconic | Official Trailer - BBC](broadcast-sports/blinkink-bbc-world-cup-2026.md) | Blinkink (director: Nicos Livesey; lead designer Dan Evans) | 2026 | 0:52 | fast | mixed, stop-motion, live-action | [watch](https://www.youtube.com/watch?v=ff2k22F4qNM) |
+| [Paris 2024 Olympic Games - BBC Official Trailer | Directed by Fx Goby | Nexus Studios](broadcast-sports/nexus-fx-goby-bbc-paris-2024.md) | Nexus Studios (director: Fx Goby) | 2024 | 1:00 | fast | 2d-illustrated, cel | [watch](https://www.youtube.com/watch?v=j7wDrDsMJhU) |
+| [#Paris2024 - Look of the Games](broadcast-sports/w-conran-paris-2024-look-of-the-games.md) | W Conran Design with the Paris 2024 brand team | 2023 | 2:01 | steady | 2d-vector, kinetic-type, mixed | [watch](https://www.youtube.com/watch?v=08aeo0WZMOY) |
+| [BBC Tokyo 2020](broadcast-sports/factory-fifteen-bbc-tokyo-2020.md) | Factory Fifteen (directors: Paul Nicholls, Jonathan Gales, Kibwe Tavares), produced by Nexus Studios | 2021 | 1:00 | fast | mixed, live-action, 3d-cg | [watch](https://vimeo.com/566015251) |
+
 <!-- TABLES:END -->

@@ -66,8 +66,8 @@ def _scalar(v):
                 cur += ch
         out.append(_scalar(cur))
         return [x for x in out if x is not None]
-    if v[0] in "\"'" and v[-1] == v[0]:
-        return v[1:-1]
+    if v[0] in "\"'" and v[-1] == v[0] and len(v) > 1:
+        return v[1:-1].replace('\\"', '"') if v[0] == '"' else v[1:-1].replace("''", "'")
     if re.fullmatch(r"-?\d+", v):
         return int(v)
     if re.fullmatch(r"-?\d+\.\d*", v):
@@ -138,6 +138,11 @@ def load(require_cache=False):
 
 def cmd_index(a):
     pieces = load()
+    from collections import Counter
+    for k in ("slug", "url"):
+        dup = [x for x, n in Counter(str(p.get(k)).rstrip("/") for p in pieces).items() if n > 1]
+        if dup:
+            print(f"warning: duplicate {k}: {dup}", file=sys.stderr)
     (ROOT / "pieces.json").write_text(json.dumps(pieces, indent=1, ensure_ascii=False) + "\n")
     lines = []
     for cat, label in CATEGORIES:
