@@ -120,6 +120,8 @@ pub struct Def {
     stretch: f32,
     /// Absorbing particles shadow each other and the scene.
     pub shadows: bool,
+    /// Hash of the description (disk cache key).
+    key: u64,
 }
 
 fn gf(m: &Map<String, Value>, k: &str, d: f32, path: &str) -> Res<f32> {
@@ -301,6 +303,11 @@ pub fn parse(v: &Value, shapes: &mut spec::Shapes, mats: &mut Vec<Material>, nam
         substeps: gf(m, "substeps", 2.0, path)?.clamp(1.0, 16.0) as u32,
         stretch: gf(m, "stretch", 1.0, path)?.max(0.0),
         shadows: m.get("shadows").and_then(|x| x.as_bool()).unwrap_or(blend == Blend::Over),
+        key: {
+            // An image emitter's file can change under the same spec.
+            let stamp = emit_v.get("image").and_then(|x| x.as_str()).and_then(|f| std::fs::metadata(f).ok()).and_then(|m| m.modified().ok()).map(|t| format!("{t:?}")).unwrap_or_default();
+            crate::components::style::fnv(&[b"anikit-particles-v1", v.to_string().as_bytes(), emit_v.to_string().as_bytes(), stamp.as_bytes()])
+        },
     })
 }
 
@@ -564,6 +571,8 @@ pub struct Sim {
     tgt: Option<Targets>,
     flows: Option<(FlowGrid, FlowGrid)>,
     floor_y: Option<f32>,
+    /// Disk checkpoint key: the description, fps and floor.
+    key: u64,
     state: Mutex<SimState>,
     busy: std::sync::atomic::AtomicBool,
 }
@@ -606,6 +615,7 @@ impl Sim {
             tgt,
             flows,
             floor_y: if def.collide { floor_y } else { None },
+            key: crate::components::style::fnv(&[&def.key.to_le_bytes(), &fps.to_bits().to_le_bytes(), &floor_y.unwrap_or(f32::NAN).to_bits().to_le_bytes()]),
             state: Mutex::new(SimState { live: None, snaps: HashMap::new(), order: Vec::new(), checkpoints: Vec::new(), steps: 0, sim_ms: 0.0 }),
             busy: std::sync::atomic::AtomicBool::new(false),
         })
@@ -827,15 +837,16 @@ impl Sim {
         let clock = std::time::Instant::now();
         let mut live = match st.live.take() {
             Some(l) if l.frame <= f => l,
-            other => {
-                // Behind: restart from the latest checkpoint at or before `f`.
-                let cp = st.checkpoints.iter().filter(|c| c.frame <= f).max_by_key(|c| c.frame).cloned();
-                match cp {
-                    Some(c) => c,
-                    None => {
-                        drop(other);
-                        self.init()
-                    }
+            ahead => {
+                // Behind the live state (keep it for later frames): restart
+                // from the latest checkpoint at or before `f`, in memory or on disk.
+                st.live = ahead;
+                let mem = st.checkpoints.iter().filter(|c| c.frame <= f).max_by_key(|c| c.frame).cloned();
+                let from_disk = self.disk_checkpoint(f, mem.as_ref().map(|c| c.frame).unwrap_or(0));
+                match (mem, from_disk) {
+                    (_, Some(d)) => d,
+                    (Some(c), None) => c,
+                    (None, None) => self.init(),
                 }
             }
         };
@@ -843,8 +854,11 @@ impl Sim {
         while live.frame < f {
             self.step_frame(&mut live);
             st.steps += 1;
-            if live.frame % CHECK_EVERY == 0 && !st.checkpoints.iter().any(|c| c.frame == live.frame) && (st.checkpoints.len() + 1) * self.def.count * 24 < CHECK_BUDGET {
-                st.checkpoints.push(live.clone());
+            if live.frame % CHECK_EVERY == 0 && !st.checkpoints.iter().any(|c| c.frame == live.frame) {
+                if (st.checkpoints.len() + 1) * self.def.count * 24 < CHECK_BUDGET {
+                    st.checkpoints.push(live.clone());
+                }
+                self.save_checkpoint(&live);
             }
             // Frames close behind the target are likely asked for next (render batches).
             if f - live.frame <= 24 && live.frame < f {
@@ -856,7 +870,9 @@ impl Sim {
         let s = Arc::new(self.snap(&live));
         st.snaps.insert(f, s.clone());
         st.order.push(f);
-        st.live = Some(live);
+        if st.live.as_ref().is_none_or(|l| l.frame <= live.frame) {
+            st.live = Some(live);
+        }
         // Evict the oldest snapshots over budget.
         let per = s.bytes().max(1);
         while st.order.len() * per > SNAP_BUDGET && st.order.len() > 1 {
@@ -868,6 +884,51 @@ impl Sim {
             eprintln!("particles: {} × {} frames in {:.0} ms", self.def.count, st.steps - s0, clock.elapsed().as_secs_f64() * 1e3);
         }
         s
+    }
+
+    fn checkpoint_path(&self, frame: i64) -> Option<std::path::PathBuf> {
+        Some(super::sim_cache_dir()?.join(format!("parts-{:016x}-{frame}.bin", self.key)))
+    }
+
+    /// Write a checkpoint to the disk cache (exact state; written once, renamed into place).
+    fn save_checkpoint(&self, live: &Live) {
+        let Some(p) = self.checkpoint_path(live.frame) else { return };
+        if p.exists() {
+            return;
+        }
+        let n = live.px.len();
+        let mut b = Vec::with_capacity(16 + n * 24);
+        b.extend_from_slice(b"AKPART01");
+        b.extend_from_slice(&(n as u64).to_le_bytes());
+        for a in [&live.px, &live.py, &live.pz, &live.vx, &live.vy, &live.vz] {
+            for v in a.iter() {
+                b.extend_from_slice(&v.to_le_bytes());
+            }
+        }
+        super::prune_sim_cache();
+        let tmp = p.with_extension(format!("tmp{}", std::process::id()));
+        if std::fs::write(&tmp, &b).is_ok() {
+            let _ = std::fs::rename(&tmp, &p);
+        }
+    }
+
+    /// The latest disk checkpoint at or before `f` and after `after`.
+    fn disk_checkpoint(&self, f: i64, after: i64) -> Option<Live> {
+        let mut k = f - f.rem_euclid(CHECK_EVERY);
+        while k > after {
+            if let Some(b) = self.checkpoint_path(k).and_then(|p| std::fs::read(p).ok()) {
+                let n = self.def.count;
+                if b.len() == 16 + n * 24 && &b[..8] == b"AKPART01" && u64::from_le_bytes(b[8..16].try_into().unwrap()) as usize == n {
+                    let col = |c: usize| -> Vec<f32> { b[16 + c * n * 4..16 + (c + 1) * n * 4].chunks_exact(4).map(|x| f32::from_le_bytes(x.try_into().unwrap())).collect() };
+                    if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() {
+                        eprintln!("particles: checkpoint at frame {k} from the cache");
+                    }
+                    return Some(Live { frame: k, px: col(0), py: col(1), pz: col(2), vx: col(3), vy: col(4), vz: col(5) });
+                }
+            }
+            k -= CHECK_EVERY;
+        }
+        None
     }
 
     /// Opacity of particle `i` at `t` (for shadows).
@@ -1367,6 +1428,7 @@ mod tests {
     use super::*;
 
     fn sim(v: Value) -> Sim {
+        std::env::set_var("ANIKIT_CACHE", "off");
         let mut shapes = spec::Shapes::new();
         let d = parse(&v, &mut shapes, &mut Vec::new(), &HashMap::new(), &[], "p").unwrap();
         Sim::new(&d, 30.0, Some(0.0), None, &crate::pipeline::textures::CompTextures::new(1 << 20)).unwrap()

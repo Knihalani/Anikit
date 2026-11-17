@@ -826,6 +826,9 @@ impl Sim {
             if std::env::var_os("ANIKIT_SCENE3D_PROFILE").is_some() && frames.len() > 1 {
                 eprintln!("physics: {} records from the cache", frames.len());
             }
+            if disk.is_some() && frames.len() == 1 {
+                super::prune_sim_cache();
+            }
             *g = Some(State { frames, world: None, steps: 0, sim_secs: 0.0, disk });
         }
         let st = g.as_mut().unwrap();
@@ -883,17 +886,7 @@ mod disk {
     const MAGIC: &[u8; 8] = b"AKPHYS01";
 
     pub fn path(key: u64) -> Option<PathBuf> {
-        let base = match std::env::var("ANIKIT_CACHE") {
-            Ok(v) if v == "off" || v == "0" => return None,
-            Ok(v) if !v.is_empty() => PathBuf::from(v),
-            _ => match std::env::var_os("XDG_CACHE_HOME") {
-                Some(x) => PathBuf::from(x).join("anikit"),
-                None => PathBuf::from(std::env::var_os("HOME")?).join(".cache").join("anikit"),
-            },
-        };
-        let dir = base.join("sim");
-        std::fs::create_dir_all(&dir).ok()?;
-        Some(dir.join(format!("phys-{key:016x}.bin")))
+        Some(super::super::sim_cache_dir()?.join(format!("phys-{key:016x}.bin")))
     }
 
     fn sum(b: &[u8]) -> u32 {

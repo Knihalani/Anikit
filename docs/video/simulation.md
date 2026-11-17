@@ -138,7 +138,12 @@ precomputed on a 64³ grid (two of them, cross-faded over time), so it is
 divergence-free (no clumping) and costs two trilinear lookups per particle.
 The simulation steps frame by frame; frames a render batch asks for out of
 order come from a snapshot cache (positions plus 16-bit velocities), and
-earlier frames restart from checkpoints kept every 2 s.
+earlier frames restart from checkpoints kept every 2 s. Checkpoints are also
+written to the disk cache (`$ANIKIT_CACHE/sim/parts-<hash>-<frame>.bin`,
+exact), so a cold still at 4.5 s of 3M particles steps 15 frames from the
+4 s checkpoint instead of 135 from the start: 20.6 s → 3.3 s, identical
+pixels. The cache keeps itself under `ANIKIT_CACHE_MAX_GB` (default 8),
+oldest files first.
 
 Each particle is projected and splatted (2×2 bilinear, energy-preserving)
 into a pyramid of buffers at the level where its footprint, its own size or
